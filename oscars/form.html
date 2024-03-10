@@ -7,70 +7,96 @@
     <script src="https://unpkg.com/@simplepdf/web-embed-pdf" defer></script>
     <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,700;1,400;1,700&family=Open+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Open Sans', sans-serif;
-            background-color: #f5f5f5; /* Light grey background */
-            color: #333; /* Dark grey text */
-            text-align: center;
-            margin: 0;
-            padding: 20px 10px;
-        }
 
         h1, h2 {
             font-family: 'Lora', serif;
             color: #27496d; /* Deep blue for elegance */
             margin: 0.5em 0;
         }
-
-        h1 {
-            font-size: 1.75em;
-            font-weight: 700;
-        }
-
-        h2 {
-            font-size: 1.25em;
-            font-weight: 400;
-        }
-
-        a {
-            display: inline-block;
-            background-color: #27496d; /* Deep blue button */
-            color: #ffffff; /* White text on the button */
-            padding: 10px 20px;
-            text-decoration: none;
-            font-size: 1em;
-            font-weight: 700;
-            border: 2px solid #27496d; /* Deep blue border */
-            border-radius: 5px;
-            transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
-        }
-
-        a:hover, a:focus {
-            background-color: #ffffff; /* White background on hover/focus */
-            color: #27496d; /* Deep blue text on hover/focus */
-            cursor: pointer;
-        }
-
-        /* Responsive adjustments for larger screens */
-        @media (min-width: 600px) {
+    
             body {
-                padding: 30px 15px;
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                background-color: #f4f4f4;
+                padding: 10px;
+                margin: 0;
+                color: #333;
             }
-
+        
             h1 {
-                font-size: 2.5em;
+                color: #444;
+                font-size: 1.5em; /* Smaller font size for smaller screens */
+                text-align: center; /* Center align the heading */
+                padding: 10px 0;
             }
-
-            h2 {
-                font-size: 1.75em;
+        
+            form {
+                background-color: #fff;
+                padding: 20px;
+                border-radius: 8px;
+                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+                margin: 0 5px; /* Slight margin for small screen breathing space */
             }
-
-            a {
-                font-size: 1.2em;
-                padding: 12px 24px;
+        
+            .form-group {
+                margin-bottom: 15px; /* Smaller margin for compact layout */
             }
-        }
-    </style>
+        
+            .form-group label {
+                display: block;
+                margin-bottom: 5px;
+                font-weight: 600;
+            }
+        
+            .form-group select,
+            .form-group input[type="text"] {
+                width: 100%;
+                padding: 12px; /* Larger padding for easier touch */
+                border-radius: 5px;
+                border: 1px solid #ddd;
+                font-size: 16px; /* Larger font size for readability */
+            }
+        
+            button[type="submit"] {
+                background-color: #007bff;
+                color: #ffffff;
+                padding: 12px 20px; /* Larger padding for easier touch */
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                font-size: 18px; /* Larger font size for readability and touch */
+                display: block; /* Ensure button is block-level for full width */
+                width: 100%;
+                margin-top: 10px; /* Spacing above the submit button */
+            }
+        
+            button[type="submit"]:hover {
+                background-color: #0056b3;
+            }
+        
+            /* Responsive adjustments for larger screens */
+            @media (min-width: 600px) {
+                body {
+                    padding: 20px;
+                }
+        
+                form {
+                    margin: 0 auto; /* Center the form on larger screens */
+                    max-width: 600px; /* Max-width for form containment */
+                }
+        
+                h1 {
+                    font-size: 2em;
+                }
+        
+                .form-group select,
+                .form-group input[type="text"],
+                button[type="submit"] {
+                    padding: 10px 20px;
+                    font-size: 16px;
+                }
+            }
+        </style>
+        
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.3.1/jspdf.umd.min.js"></script>
 
     <script>
@@ -315,7 +341,7 @@
             <option value="Poor Things">"Poor Things"</option>
             <option value="Society of the Snow">"Society of the Snow"</option>
         </select>
-        
+        <br/>
         <button type="submit">Submit Your Votes</button>
     </form>
 
@@ -330,7 +356,7 @@
         
                 doc.setFontSize(18);
                 doc.setFont(undefined, 'bold');
-                doc.text('Oscars 2024 Voting Form Results', 10, 10);
+                doc.text('Grifflix Oscars 2024', 10, 10);
         
                 let yPos = 20;
                 doc.setFontSize(12);
@@ -388,7 +414,7 @@
                 }
             });
             
-            doc.save(`Oscars-Voting-Results-${formData.get('userName') || 'Anonymous'}-${new Date().toISOString()}.pdf`);
+            doc.save(`Oscars-Voting-Results-${formData.get('userName') || 'Anonymous'}.pdf`);
         });
     }
         </script>
