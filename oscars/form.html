@@ -370,17 +370,19 @@
         
         
             formResults.forEach(result => {
-                doc.setFont(undefined, 'bold');
-                doc.text(`${result.category}:`, 10, yPos);
-                yPos += 10;
+                if (result.selection) { // Only add to PDF if selection is not null/undefined
+                    doc.setFont(undefined, 'bold');
+                    doc.text(`${result.category}:`, 10, yPos);
+                    yPos += 6; // Adjust for better spacing
         
-                doc.setFont(undefined, 'normal');
-                doc.text(result.selection, 15, yPos);
-                yPos += 10;
+                    doc.setFont(undefined, 'normal');
+                    doc.text(result.selection, 15, yPos);
+                    yPos += 10;
+                }
             });
         
             // Save the PDF
-            doc.save(`Oscars-Voting-Results-${formData.get('userName')}-${new Date().toISOString()}.pdf`);
+            doc.save(`Oscars-Voting-Results-${formData.get('userName') || 'Anonymous'}-${new Date().toISOString()}.pdf`);
         });
         </script>
         
