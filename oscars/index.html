@@ -354,6 +354,32 @@
             <option value="Poor Things">"Poor Things"</option>
             <option value="Society of the Snow">"Society of the Snow"</option>
         </select>
+
+        <select name="bestAnimatedShortFilm" id="bestAnimatedShortFilm">
+            <option value="">Select...</option>
+            <option value="Letter to a Pig">Letter to a Pig</option>
+            <option value="Ninety-Five Senses">Ninety-Five Senses</option>
+            <option value="Our Uniform">Our Uniform</option>
+            <option value="Pachyderme">Pachyderme</option>
+            <option value="War Is Over! Inspired by the Music of John & Yoko">War Is Over! Inspired by the Music of John & Yoko</option>
+        </select>
+        <select name="bestLiveActionShortFilm" id="bestLiveActionShortFilm">
+            <option value="">Select...</option>
+            <option value="The After">The After</option>
+            <option value="Invincible">Invincible</option>
+            <option value="Knight of Fortune">Knight of Fortune</option>
+            <option value="Red, White and Blue">Red, White and Blue</option>
+            <option value="The Wonderful Story of Henry Sugar">The Wonderful Story of Henry Sugar</option>
+        </select>
+        <select name="bestDocumentaryShortFilm" id="bestDocumentaryShortFilm">
+            <option value="">Select...</option>
+            <option value="The ABCs of Book Banning">The ABCs of Book Banning</option>
+            <option value="The Barber of Little Rock">The Barber of Little Rock</option>
+            <option value="Island in Between">Island in Between</option>
+            <option value="The Last Repair Shop">The Last Repair Shop</option>
+            <option value="Nǎi Nai & Wài Pó">Nǎi Nai & Wài Pó</option>
+        </select>
+                        
         <br/>
         <button type="submit">Submit Your Votes</button>
     </form>
@@ -403,7 +429,11 @@
             {category: 'Best Documentary Short Film Winner', selection: formData.get('bestDocumentaryShortFilm')},
             {category: 'Best Film Editing Winner', selection: formData.get('bestFilmEditing')},
             {category: 'Best Sound Winner', selection: formData.get('bestSound')},
-            {category: 'Best Production Design Winner', selection: formData.get('bestProductionDesign')}
+            {category: 'Best Production Design Winner', selection: formData.get('bestProductionDesign')},
+            {category: 'Best Animated Short Film Winner', selection: formData.get('bestAnimatedShortFilm')},
+            {category: 'Best Live Action Short Film Winner', selection: formData.get('bestLiveActionShortFilm')},
+            {category: 'Best Documentary Short Film Winner', selection: formData.get('bestDocumentaryShortFilm')}
+
             ];
         
         
