@@ -51,7 +51,7 @@
             }
         
             button[type="submit"] {
-                background-color: #007bff;
+                background-color: black;
                 color: #ffffff;
                 padding: 12px 20px; /* Larger padding for easier touch */
                 border: none;
@@ -122,8 +122,7 @@
 <body>
 
 <form id="oscarsForm">
-    <h1>Grifflix Presents</h1>
-    <h2>The Oscars 2024</h2>
+    <h1>Grifflix Presents: The Oscars 2024</h2>
             <div>
             <label for="userName">Your Name:</label>
             <input type="text" id="userName" name="userName" required placeholder="Enter your name">
@@ -350,7 +349,7 @@
         
                 doc.setFontSize(18);
                 doc.setFont(undefined, 'bold');
-                doc.text('Grifflix Oscars 2024', 10, 10);
+                doc.text('Grifflix Presents: The Oscars 2024', 10, 10);
         
                 let yPos = 20;
                 doc.setFontSize(12);
@@ -359,32 +358,32 @@
             // Dynamically add form results with categories
             const formResults = [
             {category: 'Name', selection: formData.get('userName')},
-            {category: 'Best Picture Nominee', selection: formData.get('bestPicture')},
-            {category: 'Best Actor Nominee', selection: formData.get('bestActor')},
-            {category: 'Best Actress Nominee', selection: formData.get('bestActress')},
-            {category: 'Best Supporting Actor Nominee', selection: formData.get('bestSupportingActor')},
-            {category: 'Best Supporting Actress Nominee', selection: formData.get('bestSupportingActress')},
-            {category: 'Best Director Nominee', selection: formData.get('bestDirector')},
-            {category: 'Best International Feature Film Nominee', selection: formData.get('bestInternationalFeatureFilm')},
-            {category: 'Best Animated Feature Film Nominee', selection: formData.get('bestAnimatedFeatureFilm')},
-            {category: 'Best Adapted Screenplay Nominee', selection: formData.get('bestAdaptedScreenplay')},
-            {category: 'Best Original Screenplay Nominee', selection: formData.get('bestOriginalScreenplay')},
-            {category: 'Best Visual Effects Nominee', selection: formData.get('bestVisualEffects')},
-            {category: 'Best Original Score Nominee', selection: formData.get('bestOriginalScore')},
-            {category: 'Best Original Song Nominee', selection: formData.get('bestOriginalSong')},
-            {category: 'Best Documentary Feature Nominee', selection: formData.get('bestDocumentaryFeature')},
-            {category: 'Best Cinematography Nominee', selection: formData.get('bestCinematography')},
-            {category: 'Best Costume Design Nominee', selection: formData.get('bestCostumeDesign')},
-            {category: 'Best Film Editing Nominee', selection: formData.get('bestFilmEditing')},
-            {category: 'Best Sound Nominee', selection: formData.get('bestSound')},
-            {category: 'Best Production Design Nominee', selection: formData.get('bestProductionDesign')},
-            {category: 'Best Makeup and Hairstyling Nominee', selection: formData.get('bestMakeupAndHairstyling')},
-            {category: 'Best Animated Short Film Nominee', selection: formData.get('bestAnimatedShortFilm')},
-            {category: 'Best Live Action Short Film Nominee', selection: formData.get('bestLiveActionShortFilm')},
-            {category: 'Best Documentary Short Film Nominee', selection: formData.get('bestDocumentaryShortFilm')},
-            {category: 'Best Film Editing Nominee', selection: formData.get('bestFilmEditing')},
-            {category: 'Best Sound Nominee', selection: formData.get('bestSound')},
-            {category: 'Best Production Design Nominee', selection: formData.get('bestProductionDesign')}
+            {category: 'Best Picture Winner', selection: formData.get('bestPicture')},
+            {category: 'Best Actor Winner', selection: formData.get('bestActor')},
+            {category: 'Best Actress Winner', selection: formData.get('bestActress')},
+            {category: 'Best Supporting Actor Winner', selection: formData.get('bestSupportingActor')},
+            {category: 'Best Supporting Actress Winner', selection: formData.get('bestSupportingActress')},
+            {category: 'Best Director Winner', selection: formData.get('bestDirector')},
+            {category: 'Best International Feature Film Winner', selection: formData.get('bestInternationalFeatureFilm')},
+            {category: 'Best Animated Feature Film Winner', selection: formData.get('bestAnimatedFeatureFilm')},
+            {category: 'Best Adapted Screenplay Winner', selection: formData.get('bestAdaptedScreenplay')},
+            {category: 'Best Original Screenplay Winner', selection: formData.get('bestOriginalScreenplay')},
+            {category: 'Best Visual Effects Winner', selection: formData.get('bestVisualEffects')},
+            {category: 'Best Original Score Winner', selection: formData.get('bestOriginalScore')},
+            {category: 'Best Original Song Winner', selection: formData.get('bestOriginalSong')},
+            {category: 'Best Documentary Feature Winner', selection: formData.get('bestDocumentaryFeature')},
+            {category: 'Best Cinematography Winner', selection: formData.get('bestCinematography')},
+            {category: 'Best Costume Design Winner', selection: formData.get('bestCostumeDesign')},
+            {category: 'Best Film Editing Winner', selection: formData.get('bestFilmEditing')},
+            {category: 'Best Sound Winner', selection: formData.get('bestSound')},
+            {category: 'Best Production Design Winner', selection: formData.get('bestProductionDesign')},
+            {category: 'Best Makeup and Hairstyling Winner', selection: formData.get('bestMakeupAndHairstyling')},
+            {category: 'Best Animated Short Film Winner', selection: formData.get('bestAnimatedShortFilm')},
+            {category: 'Best Live Action Short Film Winner', selection: formData.get('bestLiveActionShortFilm')},
+            {category: 'Best Documentary Short Film Winner', selection: formData.get('bestDocumentaryShortFilm')},
+            {category: 'Best Film Editing Winner', selection: formData.get('bestFilmEditing')},
+            {category: 'Best Sound Winner', selection: formData.get('bestSound')},
+            {category: 'Best Production Design Winner', selection: formData.get('bestProductionDesign')}
             ];
         
         
