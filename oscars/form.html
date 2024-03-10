@@ -322,33 +322,26 @@
     <script>
         document.getElementById('oscarsForm').addEventListener('submit', function(e) {
             e.preventDefault(); // Prevent default form submission
-
+        
             const formData = new FormData(e.target);
             const formProps = Object.fromEntries(formData);
-
-            localStorage.setItem('oscarsVotes', JSON.stringify(formProps));
-            document.getElementById('oscarsForm').addEventListener('submit', function(e) {
-                e.preventDefault(); // Prevent default form submission
-            
-                const formData = new FormData(e.target);
-                const formProps = Object.fromEntries(formData);
-            
-                // Generate PDF
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF();
-            
-                doc.text('Oscars 2024 Voting Form Results', 10, 10);
-                let yPos = 20;
-            
-                // Iterate through formProps to add them to the PDF
-                for (const [key, value] of Object.entries(formProps)) {
-                    doc.text(`${key}: ${value}`, 10, yPos);
-                    yPos += 10;
-                }
-            
-                // Save the PDF with a dynamic filename
-                doc.save(`Oscars-Voting-Results-${formData.get('userName')}-${new Date().toISOString()}.pdf`);
-            });
-            </script>
+        
+            // Generate PDF
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+        
+            doc.text('Oscars 2024 Voting Form Results', 10, 10);
+            let yPos = 20;
+        
+            // Iterate through formProps to add them to the PDF
+            for (const [key, value] of Object.entries(formProps)) {
+                doc.text(`${key}: ${value}`, 10, yPos);
+                yPos += 10;
+            }
+        
+            // Save the PDF with a dynamic filename
+            doc.save(`Oscars-Voting-Results-${formData.get('userName')}-${new Date().toISOString()}.pdf`);
         });
-    </script>
+        </script>
+    </body>
+    </html>
