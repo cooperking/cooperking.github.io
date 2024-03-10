@@ -320,6 +320,7 @@
     </form>
 
     <script>
+        window.onload = function() {
         document.getElementById('oscarsForm').addEventListener('submit', function(e) {
             e.preventDefault(); // Prevent default form submission
         
@@ -384,6 +385,7 @@
             // Save the PDF
             doc.save(`Oscars-Voting-Results-${formData.get('userName') || 'Anonymous'}-${new Date().toISOString()}.pdf`);
         });
+    }
         </script>
         
     </body>
