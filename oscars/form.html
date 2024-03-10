@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oscars PDF</title>
+    <script src="https://unpkg.com/@simplepdf/web-embed-pdf" defer></script>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,700;1,400;1,700&family=Open+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Open Sans', sans-serif;
+            background-color: #f5f5f5; /* Light grey background */
+            color: #333; /* Dark grey text */
+            text-align: center;
+            margin: 0;
+            padding: 20px 10px;
+        }
+
+        h1, h2 {
+            font-family: 'Lora', serif;
+            color: #27496d; /* Deep blue for elegance */
+            margin: 0.5em 0;
+        }
+
+        h1 {
+            font-size: 1.75em;
+            font-weight: 700;
+        }
+
+        h2 {
+            font-size: 1.25em;
+            font-weight: 400;
+        }
+
+        a {
+            display: inline-block;
+            background-color: #27496d; /* Deep blue button */
+            color: #ffffff; /* White text on the button */
+            padding: 10px 20px;
+            text-decoration: none;
+            font-size: 1em;
+            font-weight: 700;
+            border: 2px solid #27496d; /* Deep blue border */
+            border-radius: 5px;
+            transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
+        }
+
+        a:hover, a:focus {
+            background-color: #ffffff; /* White background on hover/focus */
+            color: #27496d; /* Deep blue text on hover/focus */
+            cursor: pointer;
+        }
+
+        /* Responsive adjustments for larger screens */
+        @media (min-width: 600px) {
+            body {
+                padding: 30px 15px;
+            }
+
+            h1 {
+                font-size: 2.5em;
+            }
+
+            h2 {
+                font-size: 1.75em;
+            }
+
+            a {
+                font-size: 1.2em;
+                padding: 12px 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Grifflix Presents</h1>
+    <h2>The Oscars 2024</h2>
+    <form id="oscarsForm">
+        <!-- Best Picture -->
+        <h2>Best Picture Nominees</h2>
+        <select name="bestPicture" id="bestPicture">
+            <option value="American Fiction">American Fiction</option>
+            <option value="Anatomy of a Fall">Anatomy of a Fall</option>
+            <option value="Barbie">Barbie</option>
+            <option value="The Holdovers">The Holdovers</option>
+            <option value="Killers of the Flower Moon">Killers of the Flower Moon</option>
+            <option value="Maestro">Maestro</option>
+            <option value="Oppenheimer">Oppenheimer</option>
+            <option value="Past Lives">Past Lives</option>
+            <option value="Poor Things">Poor Things</option>
+            <option value="The Zone of Interest">The Zone of Interest</option>
+        </select>
+
+        <!-- Best Actor -->
+        <h2>Best Actor Nominees</h2>
+        <select name="bestActor" id="bestActor">
+            <option value="Bradley Cooper, Maestro">Bradley Cooper, "Maestro"</option>
+            <option value="Colman Domingo, Rustin">Colman Domingo, "Rustin"</option>
+            <option value="Paul Giamatti, The Holdovers">Paul Giamatti, "The Holdovers"</option>
+            <option value="Cillian Murphy, Oppenheimer">Cillian Murphy, "Oppenheimer"</option>
+            <option value="Jeffrey Wright, American Fiction">Jeffrey Wright, "American Fiction"</option>
+        </select>
+
+        <!-- Best Actress -->
+        <h2>Best Actress Nominees</h2>
+        <select name="bestActress" id="bestActress">
+            <option value="Annette Bening, Nyad">Annette Bening, "Nyad"</option>
+            <option value="Lily Gladstone, Killers of the Flower Moon">Lily Gladstone, "Killers of the Flower Moon"</option>
+            <option value="Sandra Hüller, Anatomy of a Fall">Sandra Hüller, "Anatomy of a Fall"</option>
+            <option value="Carey Mulligan, Maestro">Carey Mulligan, "Maestro"</option>
+            <option value="Emma Stone, Poor Things">Emma Stone, "Poor Things"</option>
+        </select>
+
+        <!-- Replicate structure for other categories -->
+
+        <button type="submit">Submit Your Votes</button>
+    </form>
+
+    <script>
+        document.getElementById('oscarsForm').addEventListener('submit', function(e) {
+            e.preventDefault(); // Prevent default form submission
+
+            const formData = new FormData(e.target);
+            const formProps = Object.fromEntries(formData);
+
+            localStorage.setItem('oscarsVotes', JSON.stringify(formProps));
+            alert('Your votes have been saved!');
+        });
+    </script>
+</body>
+</html>
