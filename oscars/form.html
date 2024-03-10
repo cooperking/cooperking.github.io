@@ -321,26 +321,24 @@
 
     <script>
         window.onload = function() {
-        document.getElementById('oscarsForm').addEventListener('submit', function(e) {
-            e.preventDefault(); // Prevent default form submission
+            document.getElementById('oscarsForm').addEventListener('submit', function(e) {
+                e.preventDefault();
         
-            const formData = new FormData(e.target);
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
+                const formData = new FormData(e.target);
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
         
-            // Title Styling
-            doc.setFontSize(18);
-            doc.setFont(undefined, 'bold');
-            doc.text('Oscars 2024 Voting Form Results', 10, 10);
+                doc.setFontSize(18);
+                doc.setFont(undefined, 'bold');
+                doc.text('Oscars 2024 Voting Form Results', 10, 10);
         
-            let yPos = 20;
-        
-            // Content Styling
-            doc.setFontSize(12);
-            doc.setFont(undefined, 'normal');
+                let yPos = 20;
+                doc.setFontSize(12);
+                doc.setFont(undefined, 'normal');
         
             // Dynamically add form results with categories
             const formResults = [
+            {category: 'Name', selection: formData.get('userName')},
             {category: 'Best Picture Nominee', selection: formData.get('bestPicture')},
             {category: 'Best Actor Nominee', selection: formData.get('bestActor')},
             {category: 'Best Actress Nominee', selection: formData.get('bestActress')},
@@ -371,18 +369,25 @@
         
         
             formResults.forEach(result => {
-                if (result.selection) { // Only add to PDF if selection is not null/undefined
+                if (result.selection) {
+                    if(yPos >= 280){ // If near end of page height, add new page
+                        doc.addPage();
+                        yPos = 20;  // Reset y position to top for new page
+                    }
                     doc.setFont(undefined, 'bold');
                     doc.text(`${result.category}:`, 10, yPos);
-                    yPos += 6; // Adjust for better spacing
-        
+                    yPos += 6;
+                    
+                    if(yPos >= 280){
+                        doc.addPage();
+                        yPos = 20;
+                    }
                     doc.setFont(undefined, 'normal');
                     doc.text(result.selection, 15, yPos);
                     yPos += 10;
                 }
             });
-        
-            // Save the PDF
+            
             doc.save(`Oscars-Voting-Results-${formData.get('userName') || 'Anonymous'}-${new Date().toISOString()}.pdf`);
         });
     }
