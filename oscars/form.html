@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-=======
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -23,7 +21,13 @@
                 margin: 0;
                 color: #333;
             }
-    
+        
+            h1 {
+                color: #444;
+                font-size: 1.5em; /* Smaller font size for smaller screens */
+                text-align: center; /* Center align the heading */
+                padding: 10px 0;
+            }
         
             form {
                 background-color: #fff;
@@ -53,7 +57,7 @@
             }
         
             button[type="submit"] {
-                background-color: black;
+                background-color: #007bff;
                 color: #ffffff;
                 padding: 12px 20px; /* Larger padding for easier touch */
                 border: none;
@@ -122,16 +126,10 @@
         
 </head>
 <body>
-<<<<<<< HEAD
-  <h1>Oscars!</h1>
-<a href="Oscars_Ballot_2024.pdf">Pick your Oscars 2024 winners</a>
-</body>
-</html>
->>>>>>> f445d3a (update)
-=======
-
+    <h1>Grifflix Presents</h1>
+    <h2>The Oscars 2024</h2>
 <form id="oscarsForm">
-    <h1>Grifflix Presents: The Oscars 2024</h2>
+
             <div>
             <label for="userName">Your Name:</label>
             <input type="text" id="userName" name="userName" required placeholder="Enter your name">
@@ -140,7 +138,6 @@
         <!-- Best Picture -->
         <h2>Best Picture Nominee</h2>
         <select name="bestPicture" id="bestPicture">
-            <option value="">Select...</option>
             <option value="American Fiction">American Fiction</option>
             <option value="Anatomy of a Fall">Anatomy of a Fall</option>
             <option value="Barbie">Barbie</option>
@@ -156,7 +153,6 @@
         <!-- Best Actor -->
         <h2>Best Actor Nominee</h2>
         <select name="bestActor" id="bestActor">
-            <option value="">Select...</option>
             <option value="Bradley Cooper, Maestro">Bradley Cooper, "Maestro"</option>
             <option value="Colman Domingo, Rustin">Colman Domingo, "Rustin"</option>
             <option value="Paul Giamatti, The Holdovers">Paul Giamatti, "The Holdovers"</option>
@@ -167,7 +163,6 @@
         <!-- Best Actress -->
         <h2>Best Actress Nominee</h2>
         <select name="bestActress" id="bestActress">
-            <option value="">Select...</option>
             <option value="Annette Bening, Nyad">Annette Bening, "Nyad"</option>
             <option value="Lily Gladstone, Killers of the Flower Moon">Lily Gladstone, "Killers of the Flower Moon"</option>
             <option value="Sandra Hüller, Anatomy of a Fall">Sandra Hüller, "Anatomy of a Fall"</option>
@@ -177,7 +172,6 @@
         <!-- Best Supporting Actor -->
         <h2>Best Supporting Actor Nominee</h2>
         <select name="bestSupportingActor" id="bestSupportingActor">
-            <option value="">Select...</option>
             <option value="Sterling K. Brown, American Fiction">Sterling K. Brown, "American Fiction"</option>
             <option value="Robert De Niro, Killers of the Flower Moon">Robert De Niro, "Killers of the Flower Moon"</option>
             <option value="Robert Downey Jr., Oppenheimer">Robert Downey Jr., "Oppenheimer"</option>
@@ -188,7 +182,6 @@
         <!-- Best Supporting Actress -->
         <h2>Best Supporting Actress Nominee</h2>
         <select name="bestSupportingActress" id="bestSupportingActress">
-            <option value="">Select...</option>
             <option value="Emily Blunt, Oppenheimer">Emily Blunt, "Oppenheimer"</option>
             <option value="Danielle Brooks, The Color Purple">Danielle Brooks, "The Color Purple"</option>
             <option value="America Ferrera, Barbie">America Ferrera, "Barbie"</option>
@@ -199,7 +192,6 @@
         <!-- Best Director -->
         <h2>Best Director Nominee</h2>
         <select name="bestDirector" id="bestDirector">
-            <option value="">Select...</option>
             <option value="Jonathan Glazer, The Zone of Interest">Jonathan Glazer, "The Zone of Interest"</option>
             <option value="Yorgos Lanthimos, Poor Things">Yorgos Lanthimos, "Poor Things"</option>
             <option value="Christopher Nolan, Oppenheimer">Christopher Nolan, "Oppenheimer"</option>
@@ -212,7 +204,6 @@
         <!-- Best International Feature Film -->
         <h2>Best International Feature Film Nominee</h2>
         <select name="bestInternationalFeatureFilm" id="bestInternationalFeatureFilm">
-            <option value="">Select...</option>
             <option value="Io Capitano, Italy">"Io Capitano," Italy</option>
             <option value="Perfect Days, Japan">"Perfect Days," Japan</option>
             <option value="Society of the Snow, Spain">"Society of the Snow," Spain</option>
@@ -223,7 +214,6 @@
         <!-- Best Animated Feature Film -->
         <h2>Best Animated Feature Film Nominee</h2>
         <select name="bestAnimatedFeatureFilm" id="bestAnimatedFeatureFilm">
-            <option value="">Select...</option>
             <option value="The Boy and the Heron">"The Boy and the Heron"</option>
             <option value="Elemental">"Elemental"</option>
             <option value="Nimona">"Nimona"</option>
@@ -234,7 +224,6 @@
         <!-- Best Adapted Screenplay -->
         <h2>Best Adapted Screenplay Nominee</h2>
         <select name="bestAdaptedScreenplay" id="bestAdaptedScreenplay">
-            <option value="">Select...</option>
             <option value="American Fiction">"American Fiction"</option>
             <option value="Barbie">"Barbie"</option>
             <option value="Oppenheimer">"Oppenheimer"</option>
@@ -245,7 +234,6 @@
         <!-- Best Original Screenplay -->
         <h2>Best Original Screenplay Nominee</h2>
         <select name="bestOriginalScreenplay" id="bestOriginalScreenplay">
-            <option value="">Select...</option>
             <option value="Anatomy of a Fall">"Anatomy of a Fall"</option>
             <option value="The Holdovers">"The Holdovers"</option>
             <option value="Maestro">"Maestro"</option>
@@ -257,7 +245,6 @@
         <!-- Best Visual Effects -->
         <h2>Best Visual Effects Nominee</h2>
         <select name="bestVisualEffects" id="bestVisualEffects">
-            <option value="">Select...</option>
             <option value="The Creator">"The Creator"</option>
             <option value="Godzilla Minus One">"Godzilla Minus One"</option>
             <option value="Guardians of the Galaxy Vol. 3">"Guardians of the Galaxy Vol. 3"</option>
@@ -268,7 +255,6 @@
         <!-- Best Original Score -->
         <h2>Best Original Score Nominee</h2>
         <select name="bestOriginalScore" id="bestOriginalScore">
-            <option value="">Select...</option>
             <option value="American Fiction">"American Fiction"</option>
             <option value="Indiana Jones and the Dial of Destiny">"Indiana Jones and the Dial of Destiny"</option>
             <option value="Killers of the Flower Moon">"Killers of the Flower Moon"</option>
@@ -279,7 +265,6 @@
         <!-- Best Original Song -->
         <h2>Best Original Song Nominee</h2>
         <select name="bestOriginalSong" id="bestOriginalSong">
-            <option value="">Select...</option>
             <option value="It Never Went Away from American Symphony">"It Never Went Away" from "American Symphony"</option>
             <option value="I'm Just Ken from Barbie">"I'm Just Ken" from "Barbie"</option>
             <option value="What Was I Made For? from Barbie">"What Was I Made For?" from "Barbie"</option>
@@ -290,7 +275,6 @@
         <!-- Best Documentary Feature -->
         <h2>Best Documentary Feature Nominee</h2>
         <select name="bestDocumentaryFeature" id="bestDocumentaryFeature">
-            <option value="">Select...</option>
             <option value="20 Days in Mariupol">"20 Days in Mariupol"</option>
             <option value="Bobi Wine: The People's President">"Bobi Wine: The People's President"</option>
             <option value="The Eternal Memory">"The Eternal Memory"</option>
@@ -301,7 +285,6 @@
         <!-- Best Cinematography -->
         <h2>Best Cinematography Nominee</h2>
         <select name="bestCinematography" id="bestCinematography">
-            <option value="">Select...</option>
             <option value="El Conde">"El Conde"</option>
             <option value="Killers of the Flower Moon">"Killers of the Flower Moon"</option>
             <option value="Maestro">"Maestro"</option>
@@ -312,7 +295,6 @@
         <!-- Best Costume Design -->
         <h2>Best Costume Design Nominee</h2>
         <select name="bestCostumeDesign" id="bestCostumeDesign">
-            <option value="">Select...</option>
             <option value="Barbie">"Barbie"</option>
             <option value="Killers of the Flower Moon">"Killers of the Flower Moon"</option>
             <option value="Napoleon">"Napoleon"</option>
@@ -323,7 +305,6 @@
         <!-- Best Film Editing -->
         <h2>Best Film Editing Nominee</h2>
         <select name="bestFilmEditing" id="bestFilmEditing">
-            <option value="">Select...</option>
             <option value="Anatomy of a Fall">"Anatomy of a Fall"</option>
             <option value="The Holdovers">"The Holdovers"</option>
             <option value="Killers of the Flower Moon">"Killers of the Flower Moon"</option>
@@ -334,7 +315,6 @@
         <!-- Best Sound -->
         <h2>Best Sound Nominee</h2>
         <select name="bestSound" id="bestSound">
-            <option value="">Select...</option>
             <option value="The Creator">"The Creator"</option>
             <option value="Maestro">"Maestro"</option>
             <option value="Mission: Impossible - Dead Reckoning Part One">"Mission: Impossible - Dead Reckoning Part One"</option>
@@ -345,7 +325,6 @@
         <!-- Best Production Design -->
         <h2>Best Production Design Nominee</h2>
         <select name="bestProductionDesign" id="bestProductionDesign">
-            <option value="">Select...</option>
             <option value="Barbie">"Barbie"</option>
             <option value="Killers of the Flower Moon">"Killers of the Flower Moon"</option>
             <option value="Napoleon">"Napoleon"</option>
@@ -356,41 +335,12 @@
         <!-- Best Makeup and Hairstyling -->
         <h2>Best Makeup and Hairstyling Nominee</h2>
         <select name="bestMakeupAndHairstyling" id="bestMakeupAndHairstyling">
-            <option value="">Select...</option>
             <option value="Golda">"Golda"</option>
             <option value="Maestro">"Maestro"</option>
             <option value="Oppenheimer">"Oppenheimer"</option>
             <option value="Poor Things">"Poor Things"</option>
             <option value="Society of the Snow">"Society of the Snow"</option>
         </select>
-        <h2>Best Animated Short Film Nominee</h2>
-        <select name="bestAnimatedShortFilm" id="bestAnimatedShortFilm">
-            <option value="">Select...</option>
-            <option value="Letter to a Pig">Letter to a Pig</option>
-            <option value="Ninety-Five Senses">Ninety-Five Senses</option>
-            <option value="Our Uniform">Our Uniform</option>
-            <option value="Pachyderme">Pachyderme</option>
-            <option value="War Is Over! Inspired by the Music of John & Yoko">War Is Over! Inspired by the Music of John & Yoko</option>
-        </select>
-        <h2>Best Live Action Short Film Nominee</h2>
-        <select name="bestLiveActionShortFilm" id="bestLiveActionShortFilm">
-            <option value="">Select...</option>
-            <option value="The After">The After</option>
-            <option value="Invincible">Invincible</option>
-            <option value="Knight of Fortune">Knight of Fortune</option>
-            <option value="Red, White and Blue">Red, White and Blue</option>
-            <option value="The Wonderful Story of Henry Sugar">The Wonderful Story of Henry Sugar</option>
-        </select>
-        <h2>Best Documentary Short Film Nominee</h2>
-        <select name="bestDocumentaryShortFilm" id="bestDocumentaryShortFilm">
-            <option value="">Select...</option>
-            <option value="The ABCs of Book Banning">The ABCs of Book Banning</option>
-            <option value="The Barber of Little Rock">The Barber of Little Rock</option>
-            <option value="Island in Between">Island in Between</option>
-            <option value="The Last Repair Shop">The Last Repair Shop</option>
-            <option value="Nǎi Nai & Wài Pó">Nǎi Nai & Wài Pó</option>
-        </select>
-                        
         <br/>
         <button type="submit">Submit Your Votes</button>
     </form>
@@ -406,7 +356,7 @@
         
                 doc.setFontSize(18);
                 doc.setFont(undefined, 'bold');
-                doc.text('Grifflix Presents: The Oscars 2024', 10, 10);
+                doc.text('Grifflix Oscars 2024', 10, 10);
         
                 let yPos = 20;
                 doc.setFontSize(12);
@@ -415,36 +365,32 @@
             // Dynamically add form results with categories
             const formResults = [
             {category: 'Name', selection: formData.get('userName')},
-            {category: 'Best Picture Winner', selection: formData.get('bestPicture')},
-            {category: 'Best Actor Winner', selection: formData.get('bestActor')},
-            {category: 'Best Actress Winner', selection: formData.get('bestActress')},
-            {category: 'Best Supporting Actor Winner', selection: formData.get('bestSupportingActor')},
-            {category: 'Best Supporting Actress Winner', selection: formData.get('bestSupportingActress')},
-            {category: 'Best Director Winner', selection: formData.get('bestDirector')},
-            {category: 'Best International Feature Film Winner', selection: formData.get('bestInternationalFeatureFilm')},
-            {category: 'Best Animated Feature Film Winner', selection: formData.get('bestAnimatedFeatureFilm')},
-            {category: 'Best Adapted Screenplay Winner', selection: formData.get('bestAdaptedScreenplay')},
-            {category: 'Best Original Screenplay Winner', selection: formData.get('bestOriginalScreenplay')},
-            {category: 'Best Visual Effects Winner', selection: formData.get('bestVisualEffects')},
-            {category: 'Best Original Score Winner', selection: formData.get('bestOriginalScore')},
-            {category: 'Best Original Song Winner', selection: formData.get('bestOriginalSong')},
-            {category: 'Best Documentary Feature Winner', selection: formData.get('bestDocumentaryFeature')},
-            {category: 'Best Cinematography Winner', selection: formData.get('bestCinematography')},
-            {category: 'Best Costume Design Winner', selection: formData.get('bestCostumeDesign')},
-            {category: 'Best Film Editing Winner', selection: formData.get('bestFilmEditing')},
-            {category: 'Best Sound Winner', selection: formData.get('bestSound')},
-            {category: 'Best Production Design Winner', selection: formData.get('bestProductionDesign')},
-            {category: 'Best Makeup and Hairstyling Winner', selection: formData.get('bestMakeupAndHairstyling')},
-            {category: 'Best Animated Short Film Winner', selection: formData.get('bestAnimatedShortFilm')},
-            {category: 'Best Live Action Short Film Winner', selection: formData.get('bestLiveActionShortFilm')},
-            {category: 'Best Documentary Short Film Winner', selection: formData.get('bestDocumentaryShortFilm')},
-            {category: 'Best Film Editing Winner', selection: formData.get('bestFilmEditing')},
-            {category: 'Best Sound Winner', selection: formData.get('bestSound')},
-            {category: 'Best Production Design Winner', selection: formData.get('bestProductionDesign')},
-            {category: 'Best Animated Short Film Winner', selection: formData.get('bestAnimatedShortFilm')},
-            {category: 'Best Live Action Short Film Winner', selection: formData.get('bestLiveActionShortFilm')},
-            {category: 'Best Documentary Short Film Winner', selection: formData.get('bestDocumentaryShortFilm')}
-
+            {category: 'Best Picture Nominee', selection: formData.get('bestPicture')},
+            {category: 'Best Actor Nominee', selection: formData.get('bestActor')},
+            {category: 'Best Actress Nominee', selection: formData.get('bestActress')},
+            {category: 'Best Supporting Actor Nominee', selection: formData.get('bestSupportingActor')},
+            {category: 'Best Supporting Actress Nominee', selection: formData.get('bestSupportingActress')},
+            {category: 'Best Director Nominee', selection: formData.get('bestDirector')},
+            {category: 'Best International Feature Film Nominee', selection: formData.get('bestInternationalFeatureFilm')},
+            {category: 'Best Animated Feature Film Nominee', selection: formData.get('bestAnimatedFeatureFilm')},
+            {category: 'Best Adapted Screenplay Nominee', selection: formData.get('bestAdaptedScreenplay')},
+            {category: 'Best Original Screenplay Nominee', selection: formData.get('bestOriginalScreenplay')},
+            {category: 'Best Visual Effects Nominee', selection: formData.get('bestVisualEffects')},
+            {category: 'Best Original Score Nominee', selection: formData.get('bestOriginalScore')},
+            {category: 'Best Original Song Nominee', selection: formData.get('bestOriginalSong')},
+            {category: 'Best Documentary Feature Nominee', selection: formData.get('bestDocumentaryFeature')},
+            {category: 'Best Cinematography Nominee', selection: formData.get('bestCinematography')},
+            {category: 'Best Costume Design Nominee', selection: formData.get('bestCostumeDesign')},
+            {category: 'Best Film Editing Nominee', selection: formData.get('bestFilmEditing')},
+            {category: 'Best Sound Nominee', selection: formData.get('bestSound')},
+            {category: 'Best Production Design Nominee', selection: formData.get('bestProductionDesign')},
+            {category: 'Best Makeup and Hairstyling Nominee', selection: formData.get('bestMakeupAndHairstyling')},
+            {category: 'Best Animated Short Film Nominee', selection: formData.get('bestAnimatedShortFilm')},
+            {category: 'Best Live Action Short Film Nominee', selection: formData.get('bestLiveActionShortFilm')},
+            {category: 'Best Documentary Short Film Nominee', selection: formData.get('bestDocumentaryShortFilm')},
+            {category: 'Best Film Editing Nominee', selection: formData.get('bestFilmEditing')},
+            {category: 'Best Sound Nominee', selection: formData.get('bestSound')},
+            {category: 'Best Production Design Nominee', selection: formData.get('bestProductionDesign')}
             ];
         
         
@@ -475,4 +421,3 @@
         
     </body>
     </html>
->>>>>>> b9811799361d51faa5a6f54fb7cd465b7a23d4dd
