@@ -644,7 +644,7 @@ function getRandom() {
     document.getElementById('celebName').value = winner.name+" / ";
     document.getElementById('oscarWinnerMessage').textContent = message;
 }
-        getRandom()
+ 
         // Ensure pdfmake is defined
         if (typeof pdfMake !== 'undefined') {
             pdfMake.vfs = {
@@ -754,7 +754,6 @@ function getRandom() {
 
             const pdf = pdfMake.createPdf(pdfDocument);
             pdf.download(`Oscars-Voting-Results-${formData.get('userName') || 'Anonymous'}.pdf`);
-            getRandom()
         });
     }
     else {
