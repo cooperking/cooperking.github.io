@@ -32,6 +32,12 @@
             color: #C79F27; /* Deep blue for elegance */
             text-transform: uppercase;
         }
+
+        h4 {
+            font-family: 'Baskerville', serif;
+            color: #C79F27; /* Deep blue for elegance */
+
+        }
     
             body {
                 font-family: 'Baskerville', serif;
@@ -123,10 +129,12 @@
 </head>
 <body>
 <form id="oscarsForm">
-    <h1>Grifflix Presents: The Oscars 2024.</h2>
+    <h1>Grifflix Presents: The Oscars 2024</h1>
 
-        <p>This will generate a PDF of your choices, which you can save and forward.  Results for all PDFs entered in the competition will be viewable on the <a href="https://www.appsheet.com/start/61cc2b86-9ba5-4388-a523-fbc1bd8dfb41">Results App</a></p>
+    <p>This will generate a PDF of your choices, which you can save and forward.  Results for all PDFs entered in the competition will be viewable on the <a href="https://www.appsheet.com/start/61cc2b86-9ba5-4388-a523-fbc1bd8dfb41">Results App</a>.</p>
             <div>
+            <h4 id="oscarWinnerMessage"></h4>
+            <input id="celebName" name="celebName" style="visibility:hidden">
             <h2>Your Name:</h2>
             <input type="text" id="userName" name="userName" required placeholder="Enter your name">
         </div>
@@ -394,6 +402,249 @@
 
 <script>
     window.onload = function() {
+        const oscarWinners = [
+    {"year": 1978, "category": "Best Actor", "name": "Richard Dreyfuss"},
+    {"year": 1978, "category": "Best Actress", "name": "Diane Keaton"},
+    {"year": 1978, "category": "Best Supporting Actor", "name": "Jason Robards"},
+    {"year": 1978, "category": "Best Supporting Actress", "name": "Vanessa Redgrave"},
+    {"year": 1978, "category": "Best Director", "name": "Woody Allen"},
+    {"year": 1979, "category": "Best Actor", "name": "Jon Voight"},
+    {"year": 1979, "category": "Best Actress", "name": "Jane Fonda"},
+    {"year": 1979, "category": "Best Supporting Actor", "name": "Christopher Walken"},
+    {"year": 1979, "category": "Best Supporting Actress", "name": "Maggie Smith"},
+    {"year": 1979, "category": "Best Director", "name": "Michael Cimino"},
+    {"year": 1980, "category": "Best Actor", "name": "Dustin Hoffman"},
+    {"year": 1980, "category": "Best Actress", "name": "Sally Field"},
+    {"year": 1980, "category": "Best Supporting Actor", "name": "Melvyn Douglas"},
+    {"year": 1980, "category": "Best Supporting Actress", "name": "Meryl Streep"},
+    {"year": 1980, "category": "Best Director", "name": "Robert Redford"},
+    {"year": 1981, "category": "Best Actor", "name": "Robert De Niro"},
+    {"year": 1981, "category": "Best Actress", "name": "Katharine Hepburn"},
+    {"year": 1981, "category": "Best Supporting Actor", "name": "Timothy Hutton"},
+    {"year": 1981, "category": "Best Supporting Actress", "name": "Mary Steenburgen"},
+    {"year": 1981, "category": "Best Director", "name": "Robert Redford"},
+    {"year": 1982, "category": "Best Actor", "name": "Henry Fonda"},
+    {"year": 1982, "category": "Best Actress", "name": "Katharine Hepburn"},
+    {"year": 1982, "category": "Best Supporting Actor", "name": "John Gielgud"},
+    {"year": 1982, "category": "Best Supporting Actress", "name": "Maureen Stapleton"},
+    {"year": 1982, "category": "Best Director", "name": "Warren Beatty"},
+    {"year": 1983, "category": "Best Actor", "name": "Ben Kingsley"},
+    {"year": 1983, "category": "Best Actress", "name": "Meryl Streep"},
+    {"year": 1983, "category": "Best Supporting Actor", "name": "Louis Gossett Jr."},
+    {"year": 1983, "category": "Best Supporting Actress", "name": "Jessica Lange"},
+    {"year": 1983, "category": "Best Director", "name": "Richard Attenborough"},
+    {"year": 1984, "category": "Best Actor", "name": "Robert Duvall"},
+    {"year": 1984, "category": "Best Actress", "name": "Shirley MacLaine"},
+    {"year": 1984, "category": "Best Supporting Actor", "name": "Jack Nicholson"},
+    {"year": 1984, "category": "Best Supporting Actress", "name": "Linda Hunt"},
+    {"year": 1984, "category": "Best Director", "name": "James L. Brooks"},
+    {"year": 1985, "category": "Best Actor", "name": "F. Murray Abraham"},
+    {"year": 1985, "category": "Best Actress", "name": "Sally Field"},
+    {"year": 1985, "category": "Best Supporting Actor", "name": "Haing S. Ngor"},
+    {"year": 1985, "category": "Best Supporting Actress", "name": "Peggy Ashcroft"},
+    {"year": 1985, "category": "Best Director", "name": "Milos Forman"},
+    {"year": 1986, "category": "Best Actor", "name": "William Hurt"},
+    {"year": 1986, "category": "Best Actress", "name": "Geraldine Page"},
+    {"year": 1986, "category": "Best Supporting Actor", "name": "Don Ameche"},
+    {"year": 1986, "category": "Best Supporting Actress", "name": "Anjelica Huston"},
+    {"year": 1986, "category": "Best Director", "name": "Sydney Pollack"},
+    {"year": 1987, "category": "Best Actor", "name": "Paul Newman"},
+    {"year": 1987, "category": "Best Actress", "name": "Marlee Matlin"},
+    {"year": 1987, "category": "Best Supporting Actor", "name": "Michael Caine"},
+    {"year": 1987, "category": "Best Supporting Actress", "name": "Dianne Wiest"},
+    {"year": 1987, "category": "Best Director", "name": "Oliver Stone"},
+    {"year": 1988, "category": "Best Actor", "name": "Michael Douglas"},
+    {"year": 1988, "category": "Best Actress", "name": "Cher"},
+    {"year": 1988, "category": "Best Supporting Actor", "name": "Sean Connery"},
+    {"year": 1988, "category": "Best Supporting Actress", "name": "Olympia Dukakis"},
+    {"year": 1988, "category": "Best Director", "name": "Bernardo Bertolucci"},
+    {"year": 1989, "category": "Best Actor", "name": "Dustin Hoffman"},
+    {"year": 1989, "category": "Best Actress", "name": "Jodie Foster"},
+    {"year": 1989, "category": "Best Supporting Actor", "name": "Kevin Kline"},
+    {"year": 1989, "category": "Best Supporting Actress", "name": "Geena Davis"},
+    {"year": 1989, "category": "Best Director", "name": "Barry Levinson"},
+    {"year": 1990, "category": "Best Actor", "name": "Daniel Day-Lewis"},
+    {"year": 1990, "category": "Best Actress", "name": "Jessica Tandy"},
+    {"year": 1990, "category": "Best Supporting Actor", "name": "Denzel Washington"},
+    {"year": 1990, "category": "Best Supporting Actress", "name": "Brenda Fricker"},
+    {"year": 1990, "category": "Best Director", "name": "Oliver Stone"},
+    {"year": 1991, "category": "Best Actor", "name": "Jeremy Irons"},
+    {"year": 1991, "category": "Best Actress", "name": "Kathy Bates"},
+    {"year": 1991, "category": "Best Supporting Actor", "name": "Joe Pesci"},
+    {"year": 1991, "category": "Best Supporting Actress", "name": "Whoopi Goldberg"},
+    {"year": 1991, "category": "Best Director", "name": "Jonathan Demme"},
+    {"year": 1992, "category": "Best Actor", "name": "Anthony Hopkins"},
+    {"year": 1992, "category": "Best Actress", "name": "Jodie Foster"},
+    {"year": 1992, "category": "Best Supporting Actor", "name": "Jack Palance"},
+    {"year": 1992, "category": "Best Supporting Actress", "name": "Mercedes Ruehl"},
+    {"year": 1992, "category": "Best Director", "name": "Jonathan Demme"},
+    {"year": 1993, "category": "Best Actor", "name": "Al Pacino"},
+    {"year": 1993, "category": "Best Actress", "name": "Emma Thompson"},
+    {"year": 1993, "category": "Best Supporting Actor", "name": "Gene Hackman"},
+    {"year": 1993, "category": "Best Supporting Actress", "name": "Marisa Tomei"},
+    {"year": 1993, "category": "Best Director", "name": "Clint Eastwood"},
+    {"year": 1994, "category": "Best Actor", "name": "Tom Hanks"},
+    {"year": 1994, "category": "Best Actress", "name": "Holly Hunter"},
+    {"year": 1994, "category": "Best Supporting Actor", "name": "Tommy Lee Jones"},
+    {"year": 1994, "category": "Best Supporting Actress", "name": "Anna Paquin"},
+    {"year": 1994, "category": "Best Director", "name": "Steven Spielberg"},
+    {"year": 1995, "category": "Best Actor", "name": "Tom Hanks"},
+    {"year": 1995, "category": "Best Actress", "name": "Jessica Lange"},
+    {"year": 1995, "category": "Best Supporting Actor", "name": "Martin Landau"},
+    {"year": 1995, "category": "Best Supporting Actress", "name": "Dianne Wiest"},
+    {"year": 1995, "category": "Best Director", "name": "Robert Zemeckis"},
+    {"year": 1996, "category": "Best Actor", "name": "Nicolas Cage"},
+    {"year": 1996, "category": "Best Actress", "name": "Susan Sarandon"},
+    {"year": 1996, "category": "Best Supporting Actor", "name": "Kevin Spacey"},
+    {"year": 1996, "category": "Best Supporting Actress", "name": "Mira Sorvino"},
+    {"year": 1996, "category": "Best Director", "name": "Mel Gibson"},
+    {"year": 1997, "category": "Best Actor", "name": "Geoffrey Rush"},
+    {"year": 1997, "category": "Best Actress", "name": "Frances McDormand"},
+    {"year": 1997, "category": "Best Supporting Actor", "name": "Cuba Gooding Jr."},
+    {"year": 1997, "category": "Best Supporting Actress", "name": "Juliette Binoche"},
+    {"year": 1997, "category": "Best Director", "name": "Anthony Minghella"},
+    {"year": 1998, "category": "Best Actor", "name": "Jack Nicholson"},
+    {"year": 1998, "category": "Best Actress", "name": "Helen Hunt"},
+    {"year": 1998, "category": "Best Supporting Actor", "name": "Robin Williams"},
+    {"year": 1998, "category": "Best Supporting Actress", "name": "Kim Basinger"},
+    {"year": 1998, "category": "Best Director", "name": "James Cameron"},
+    {"year": 1999, "category": "Best Actor", "name": "Roberto Benigni"},
+    {"year": 1999, "category": "Best Actress", "name": "Gwyneth Paltrow"},
+    {"year": 1999, "category": "Best Supporting Actor", "name": "James Coburn"},
+    {"year": 1999, "category": "Best Supporting Actress", "name": "Judi Dench"},
+    {"year": 1999, "category": "Best Director", "name": "Steven Spielberg"},
+    {"year": 2000, "category": "Best Actor", "name": "Kevin Spacey"},
+    {"year": 2000, "category": "Best Actress", "name": "Hilary Swank"},
+    {"year": 2000, "category": "Best Supporting Actor", "name": "Michael Caine"},
+    {"year": 2000, "category": "Best Supporting Actress", "name": "Angelina Jolie"},
+    {"year": 2000, "category": "Best Director", "name": "Sam Mendes"},
+    {"year": 2001, "category": "Best Actor", "name": "Russell Crowe"},
+    {"year": 2001, "category": "Best Actress", "name": "Julia Roberts"},
+    {"year": 2001, "category": "Best Supporting Actor", "name": "Benicio del Toro"},
+    {"year": 2001, "category": "Best Supporting Actress", "name": "Marcia Gay Harden"},
+    {"year": 2001, "category": "Best Director", "name": "Steven Soderbergh"},
+    {"year": 2002, "category": "Best Actor", "name": "Denzel Washington"},
+    {"year": 2002, "category": "Best Actress", "name": "Halle Berry"},
+    {"year": 2002, "category": "Best Supporting Actor", "name": "Jim Broadbent"},
+    {"year": 2002, "category": "Best Supporting Actress", "name": "Jennifer Connelly"},
+    {"year": 2002, "category": "Best Director", "name": "Ron Howard"},
+    {"year": 2003, "category": "Best Actor", "name": "Adrien Brody"},
+    {"year": 2003, "category": "Best Actress", "name": "Nicole Kidman"},
+    {"year": 2003, "category": "Best Supporting Actor", "name": "Chris Cooper"},
+    {"year": 2003, "category": "Best Supporting Actress", "name": "Catherine Zeta-Jones"},
+    {"year": 2003, "category": "Best Director", "name": "Roman Polanski"},
+    {"year": 2004, "category": "Best Actor", "name": "Sean Penn"},
+    {"year": 2004, "category": "Best Actress", "name": "Charlize Theron"},
+    {"year": 2004, "category": "Best Supporting Actor", "name": "Tim Robbins"},
+    {"year": 2004, "category": "Best Supporting Actress", "name": "Renée Zellweger"},
+    {"year": 2004, "category": "Best Director", "name": "Peter Jackson"},
+    {"year": 2005, "category": "Best Actor", "name": "Jamie Foxx"},
+    {"year": 2005, "category": "Best Actress", "name": "Hilary Swank"},
+    {"year": 2005, "category": "Best Supporting Actor", "name": "Morgan Freeman"},
+    {"year": 2005, "category": "Best Supporting Actress", "name": "Cate Blanchett"},
+    {"year": 2005, "category": "Best Director", "name": "Clint Eastwood"},
+    {"year": 2006, "category": "Best Actor", "name": "Philip Seymour Hoffman"},
+    {"year": 2006, "category": "Best Actress", "name": "Reese Witherspoon"},
+    {"year": 2006, "category": "Best Supporting Actor", "name": "George Clooney"},
+    {"year": 2006, "category": "Best Supporting Actress", "name": "Rachel Weisz"},
+    {"year": 2006, "category": "Best Director", "name": "Ang Lee"},
+    {"year": 2007, "category": "Best Actor", "name": "Forest Whitaker"},
+    {"year": 2007, "category": "Best Actress", "name": "Helen Mirren"},
+    {"year": 2007, "category": "Best Supporting Actor", "name": "Alan Arkin"},
+    {"year": 2007, "category": "Best Supporting Actress", "name": "Jennifer Hudson"},
+    {"year": 2007, "category": "Best Director", "name": "Martin Scorsese"},
+    {"year": 2008, "category": "Best Actor", "name": "Daniel Day-Lewis"},
+    {"year": 2008, "category": "Best Actress", "name": "Marion Cotillard"},
+    {"year": 2008, "category": "Best Supporting Actor", "name": "Javier Bardem"},
+    {"year": 2008, "category": "Best Supporting Actress", "name": "Tilda Swinton"},
+    {"year": 2008, "category": "Best Director", "name": "Joel and Ethan Coen"},
+    {"year": 2009, "category": "Best Actor", "name": "Sean Penn"},
+    {"year": 2009, "category": "Best Actress", "name": "Kate Winslet"},
+    {"year": 2009, "category": "Best Supporting Actor", "name": "Heath Ledger"},
+    {"year": 2009, "category": "Best Supporting Actress", "name": "Penélope Cruz"},
+    {"year": 2009, "category": "Best Director", "name": "Danny Boyle"},
+    {"year": 2010, "category": "Best Actor", "name": "Jeff Bridges"},
+    {"year": 2010, "category": "Best Actress", "name": "Sandra Bullock"},
+    {"year": 2010, "category": "Best Supporting Actor", "name": "Christoph Waltz"},
+    {"year": 2010, "category": "Best Supporting Actress", "name": "Mo'Nique"},
+    {"year": 2010, "category": "Best Director", "name": "Kathryn Bigelow"},
+    {"year": 2011, "category": "Best Actor", "name": "Colin Firth"},
+    {"year": 2011, "category": "Best Actress", "name": "Natalie Portman"},
+    {"year": 2011, "category": "Best Supporting Actor", "name": "Christian Bale"},
+    {"year": 2011, "category": "Best Supporting Actress", "name": "Melissa Leo"},
+    {"year": 2011, "category": "Best Director", "name": "Tom Hooper"},
+    {"year": 2012, "category": "Best Actor", "name": "Jean Dujardin"},
+    {"year": 2012, "category": "Best Actress", "name": "Meryl Streep"},
+    {"year": 2012, "category": "Best Supporting Actor", "name": "Christopher Plummer"},
+    {"year": 2012, "category": "Best Supporting Actress", "name": "Octavia Spencer"},
+    {"year": 2012, "category": "Best Director", "name": "Michel Hazanavicius"},
+    {"year": 2013, "category": "Best Actor", "name": "Daniel Day-Lewis"},
+    {"year": 2013, "category": "Best Actress", "name": "Jennifer Lawrence"},
+    {"year": 2013, "category": "Best Supporting Actor", "name": "Christoph Waltz"},
+    {"year": 2013, "category": "Best Supporting Actress", "name": "Anne Hathaway"},
+    {"year": 2013, "category": "Best Director", "name": "Ang Lee"},
+    {"year": 2014, "category": "Best Actor", "name": "Matthew McConaughey"},
+    {"year": 2014, "category": "Best Actress", "name": "Cate Blanchett"},
+    {"year": 2014, "category": "Best Supporting Actor", "name": "Jared Leto"},
+    {"year": 2014, "category": "Best Supporting Actress", "name": "Lupita Nyong'o"},
+    {"year": 2014, "category": "Best Director", "name": "Alfonso Cuarón"},
+    {"year": 2015, "category": "Best Actor", "name": "Eddie Redmayne"},
+    {"year": 2015, "category": "Best Actress", "name": "Julianne Moore"},
+    {"year": 2015, "category": "Best Supporting Actor", "name": "J.K. Simmons"},
+    {"year": 2015, "category": "Best Supporting Actress", "name": "Patricia Arquette"},
+    {"year": 2015, "category": "Best Director", "name": "Alejandro G. Iñárritu"},
+    {"year": 2016, "category": "Best Actor", "name": "Leonardo DiCaprio"},
+    {"year": 2016, "category": "Best Actress", "name": "Brie Larson"},
+    {"year": 2016, "category": "Best Supporting Actor", "name": "Mark Rylance"},
+    {"year": 2016, "category": "Best Supporting Actress", "name": "Alicia Vikander"},
+    {"year": 2016, "category": "Best Director", "name": "Alejandro G. Iñárritu"},
+    {"year": 2017, "category": "Best Actor", "name": "Casey Affleck"},
+    {"year": 2017, "category": "Best Actress", "name": "Emma Stone"},
+    {"year": 2017, "category": "Best Supporting Actor", "name": "Mahershala Ali"},
+    {"year": 2017, "category": "Best Supporting Actress", "name": "Viola Davis"},
+    {"year": 2017, "category": "Best Director", "name": "Damien Chazelle"},
+    {"year": 2018, "category": "Best Actor", "name": "Gary Oldman"},
+    {"year": 2018, "category": "Best Actress", "name": "Frances McDormand"},
+    {"year": 2018, "category": "Best Supporting Actor", "name": "Sam Rockwell"},
+    {"year": 2018, "category": "Best Supporting Actress", "name": "Allison Janney"},
+    {"year": 2018, "category": "Best Director", "name": "Guillermo del Toro"},
+    {"year": 2019, "category": "Best Actor", "name": "Rami Malek"},
+    {"year": 2019, "category": "Best Actress", "name": "Olivia Colman"},
+    {"year": 2019, "category": "Best Supporting Actor", "name": "Mahershala Ali"},
+    {"year": 2019, "category": "Best Supporting Actress", "name": "Regina King"},
+    {"year": 2019, "category": "Best Director", "name": "Alfonso Cuarón"},
+    {"year": 2020, "category": "Best Actor", "name": "Joaquin Phoenix"},
+    {"year": 2020, "category": "Best Actress", "name": "Renée Zellweger"},
+    {"year": 2020, "category": "Best Supporting Actor", "name": "Brad Pitt"},
+    {"year": 2020, "category": "Best Supporting Actress", "name": "Laura Dern"},
+    {"year": 2020, "category": "Best Director", "name": "Bong Joon Ho"},
+    {"year": 2021, "category": "Best Actor", "name": "Anthony Hopkins"},
+    {"year": 2021, "category": "Best Actress", "name": "Frances McDormand"},
+    {"year": 2021, "category": "Best Supporting Actor", "name": "Daniel Kaluuya"},
+    {"year": 2021, "category": "Best Supporting Actress", "name": "Youn Yuh-jung"},
+    {"year": 2021, "category": "Best Director", "name": "Chloé Zhao"},
+    {"year": 2022, "category": "Best Actor", "name": "Will Smith"},
+    {"year": 2022, "category": "Best Actress", "name": "Jessica Chastain"},
+    {"year": 2022, "category": "Best Supporting Actor", "name": "Troy Kotsur"},
+    {"year": 2022, "category": "Best Supporting Actress", "name": "Ariana DeBose"},
+    {"year": 2022, "category": "Best Director", "name": "Jane Campion"},
+
+];
+
+// Function to randomly select an Oscar winner and display a message
+function getRandomOscarWinner() {
+    const randomIndex = Math.floor(Math.random() * oscarWinners.length);
+    const winner = oscarWinners[randomIndex];
+    return winner;
+}
+function getRandom() {
+// To display the message on a webpage, you could use:
+    const winner = getRandomOscarWinner();
+    const message = `You are playing as the ${winner.year} Oscar winner for ${winner.category}, ${winner.name}`;
+    document.getElementById('celebName').value = winner.name+" / ";
+    document.getElementById('oscarWinnerMessage').textContent = message;
+}
+        getRandom()
         // Ensure pdfmake is defined
         if (typeof pdfMake !== 'undefined') {
             pdfMake.vfs = {
@@ -412,12 +663,14 @@
             // Now we can refer to window.pdfMake.vfs
             document.getElementById('oscarsForm').addEventListener('submit', function(e) {
             e.preventDefault();
-
             const formData = new FormData(e.target);
+            if (formData.get('userName') == "results" || formData.get('userName') == "Results") {
+                formData.set('celebName', "");
+            }
             let pdfmakeWrapper = {};
 
             const formResults = [
-            {category: 'Name', selection: formData.get('userName')},
+            {category: 'Name', selection: `${formData.get('celebName')}${formData.get('userName')}`},
             {category: 'Best Picture Winner', selection: formData.get('bestPicture')},
             {category: 'Best Actor Winner', selection: formData.get('bestActor')},
             {category: 'Best Actress Winner', selection: formData.get('bestActress')},
@@ -501,6 +754,7 @@
 
             const pdf = pdfMake.createPdf(pdfDocument);
             pdf.download(`Oscars-Voting-Results-${formData.get('userName') || 'Anonymous'}.pdf`);
+            getRandom()
         });
     }
     else {
