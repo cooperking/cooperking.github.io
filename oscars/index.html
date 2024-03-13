@@ -402,12 +402,25 @@
 
 <script>
     window.onload = function() {
+
+        const savedFormData = localStorage.getItem('formData');
+        if (savedFormData) {
+            const formObject = JSON.parse(savedFormData);
+            const form = document.getElementById('oscarsForm');
+            
+            Object.entries(formObject).forEach(([key, value]) => {
+                const inputElement = form.elements[key];
+                if (inputElement) {
+                    inputElement.value = value;
+                }
+            });
+        }
+        
         const oscarWinners = [
     {"year": 1978, "category": "Best Actor", "name": "Richard Dreyfuss"},
     {"year": 1978, "category": "Best Actress", "name": "Diane Keaton"},
     {"year": 1978, "category": "Best Supporting Actor", "name": "Jason Robards"},
     {"year": 1978, "category": "Best Supporting Actress", "name": "Vanessa Redgrave"},
-    {"year": 1978, "category": "Best Director", "name": "Woody Allen"},
     {"year": 1979, "category": "Best Actor", "name": "Jon Voight"},
     {"year": 1979, "category": "Best Actress", "name": "Jane Fonda"},
     {"year": 1979, "category": "Best Supporting Actor", "name": "Christopher Walken"},
@@ -532,7 +545,6 @@
     {"year": 2003, "category": "Best Actress", "name": "Nicole Kidman"},
     {"year": 2003, "category": "Best Supporting Actor", "name": "Chris Cooper"},
     {"year": 2003, "category": "Best Supporting Actress", "name": "Catherine Zeta-Jones"},
-    {"year": 2003, "category": "Best Director", "name": "Roman Polanski"},
     {"year": 2004, "category": "Best Actor", "name": "Sean Penn"},
     {"year": 2004, "category": "Best Actress", "name": "Charlize Theron"},
     {"year": 2004, "category": "Best Supporting Actor", "name": "Tim Robbins"},
@@ -664,10 +676,17 @@ getRandom()
             // Now we can refer to window.pdfMake.vfs
             document.getElementById('oscarsForm').addEventListener('submit', function(e) {
             e.preventDefault();
+            const formObject = {};
             const formData = new FormData(e.target);
+            for (const [key, value] of formData.entries()) {
+                formObject[key] = value;
+            }
             if (formData.get('userName') == "results" || formData.get('userName') == "Results") {
                 formData.set('celebName', "");
             }
+            localStorage.setItem('formData', JSON.stringify(formObject));
+
+            console.log('Form data saved:', formObject);
             let pdfmakeWrapper = {};
 
             const formResults = [
