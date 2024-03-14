@@ -409,9 +409,19 @@
             const form = document.getElementById('oscarsForm');
             
             Object.entries(formObject).forEach(([key, value]) => {
-                const inputElement = form.elements[key];
-                if (inputElement) {
-                    inputElement.value = value;
+                try {
+                    const inputElement = form.elements[key];
+                    if (inputElement) {
+                        // Check the input type for checkboxes and radio buttons
+                        if (inputElement.type === 'checkbox' || inputElement.type === 'radio') {
+                            inputElement.checked = inputElement.value === value;
+                        } else {
+                            inputElement.value = value;
+                        }
+                    }
+                } catch (error) {
+                    // Log the error or handle it as needed
+                    console.error(`Error setting value for ${key}: ${error.message}`);
                 }
             });
         }
