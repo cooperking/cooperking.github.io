@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flexible Crop and Resize to 1.5:1 Portrait Aspect Ratio</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 0;
+      padding: 20px;
+      background-color: #f4f4f9;
+    }
+
+    #canvas-container {
+      position: relative;
+      display: inline-block;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-top: 20px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    #canvas {
+      display: block;
+      border-radius: 8px;
+    }
+
+    #crop-area {
+      position: absolute;
+      border: 2px dashed #555;
+      display: none;
+      background: rgba(0, 0, 0, 0.15);
+      border-radius: 4px;
+    }
+
+    #upload {
+      padding: 8px 16px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      cursor: pointer;
+      background-color: #fff;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      transition: background-color 0.2s;
+    }
+
+    #upload:hover {
+      background-color: #e8e8e8;
+    }
+
+    #download {
+      margin-top: 16px;
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    #download:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+
+    #download:not(:disabled):hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+
+<input type="file" id="upload" accept="image/*" />
+<div id="canvas-container">
+  <canvas id="canvas"></canvas>
+  <div id="crop-area"></div>
+</div>
+<button id="download" disabled>Download Cropped Image</button>
+
+<script>
+  const uploadInput = document.getElementById('upload');
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  const cropArea = document.getElementById('crop-area');
+  const downloadBtn = document.getElementById('download');
+  
+  let img = new Image();
+  let isDrawing = false;
+  let startX, startY, cropX, cropY, cropWidth, cropHeight;
+  let originalFilename = '';
+
+  uploadInput.addEventListener('change', handleImageUpload);
+  downloadBtn.addEventListener('click', downloadCroppedImage);
+
+  function handleImageUpload(event) {
+    console.log("Image upload triggered");
+    const file = event.target.files[0];
+    if (!file) return;
+
+    originalFilename = file.name.replace(/\.[^/.]+$/, ""); // Extract the filename without extension
+    img.src = URL.createObjectURL(file);
+    img.onload = () => {
+      console.log("Image loaded on canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+      cropArea.style.display = 'none';
+      downloadBtn.disabled = true;
+
+      // Set up pointer events for cropping
+      canvas.addEventListener('pointerdown', startCrop);
+    };
+  }
+
+  function startCrop(event) {
+    event.preventDefault();
+    console.log("Start cropping triggered");
+    isDrawing = true;
+    const rect = canvas.getBoundingClientRect();
+    startX = event.clientX - rect.left;
+    startY = event.clientY - rect.top;
+    cropArea.style.display = 'none';
+
+    // Attach the pointermove event dynamically and listen for pointerup on document
+    console.log("Adding pointermove and document-level pointerup listeners for drawing");
+    canvas.addEventListener('pointermove', drawCropArea);
+    document.addEventListener('pointerup', finishCrop);
+  }
+
+  function drawCropArea(event) {
+    if (!isDrawing) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const endX = event.clientX - rect.left;
+    const endY = event.clientY - rect.top;
+    cropX = Math.min(startX, endX);
+    cropY = Math.min(startY, endY);
+    cropWidth = Math.abs(endX - startX);
+    cropHeight = Math.abs(endY - startY);
+
+    cropArea.style.left = `${cropX}px`;
+    cropArea.style.top = `${cropY}px`;
+    cropArea.style.width = `${cropWidth}px`;
+    cropArea.style.height = `${cropHeight}px`;
+    cropArea.style.display = 'block';
+    console.log(`Drawing crop area: x=${cropX}, y=${cropY}, width=${cropWidth}, height=${cropHeight}`);
+  }
+
+  function finishCrop(event) {
+    console.log("Finish cropping triggered");
+    if (!isDrawing) {
+      console.log("isDrawing is false; finishCrop will not proceed.");
+      return;
+    }
+
+    isDrawing = false;
+
+    // Remove pointermove from canvas and pointerup from document to prevent further adjustments
+    console.log("Removing pointermove from canvas and pointerup from document");
+    canvas.removeEventListener('pointermove', drawCropArea);
+    document.removeEventListener('pointerup', finishCrop);
+
+    // Enable download button
+    downloadBtn.disabled = false;
+    console.log("Cropping finished, download button enabled");
+  }
+
+  function downloadCroppedImage() {
+    console.log("Download triggered");
+    const scaleX = img.width / canvas.width;
+    const scaleY = img.height / canvas.height;
+
+    // Check if cropping area was defined; if not, use the entire image
+    let sourceX = cropX * scaleX || 0;
+    let sourceY = cropY * scaleY || 0;
+    let sourceWidth = cropWidth * scaleX || img.width;
+    let sourceHeight = cropHeight * scaleY || img.height;
+
+    // Calculate final dimensions to fit a 1.5:1 portrait aspect ratio by extending with black bars
+    const aspectRatio = 1.5;
+    let finalWidth, finalHeight;
+    if (sourceHeight / sourceWidth < aspectRatio) {
+      // Add black bars on the top and bottom
+      finalWidth = sourceWidth;
+      finalHeight = sourceWidth * aspectRatio;
+    } else {
+      // Add black bars on the sides
+      finalHeight = sourceHeight;
+      finalWidth = sourceHeight / aspectRatio;
+    }
+
+    // Create a new canvas with black background for the final output
+    const outputCanvas = document.createElement('canvas');
+    outputCanvas.width = finalWidth;
+    outputCanvas.height = finalHeight;
+    const outputCtx = outputCanvas.getContext('2d');
+
+    // Fill background with black
+    outputCtx.fillStyle = '#000';
+    outputCtx.fillRect(0, 0, finalWidth, finalHeight);
+
+    // Calculate where to position the cropped area within the final output
+    const offsetX = (finalWidth - sourceWidth) / 2;
+    const offsetY = (finalHeight - sourceHeight) / 2;
+
+    // Draw the cropped image centered in the output canvas
+    outputCtx.drawImage(
+      img,
+      sourceX,
+      sourceY,
+      sourceWidth,
+      sourceHeight,
+      offsetX,
+      offsetY,
+      sourceWidth,
+      sourceHeight
+    );
+
+    // Create download link with the modified filename
+    const link = document.createElement('a');
+    link.href = outputCanvas.toDataURL('image/png');
+    link.download = `${originalFilename}_cropped.png`;
+    link.click();
+    console.log("Image downloaded");
+  }
+</script>
+
+</body>
+</html>
