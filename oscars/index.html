@@ -128,271 +128,276 @@
         
 </head>
 <body>
-<form id="oscarsForm">
-    <h1>Grifflix Presents: The Oscars 2024</h1>
-
-    <p>This will generate a PDF of your choices, which you can save and forward.  Results for all PDFs entered in the competition will be viewable on the <a href="https://www.appsheet.com/start/61cc2b86-9ba5-4388-a523-fbc1bd8dfb41">Results App</a>.</p>
-            <div>
+    <form id="oscarsForm">
+        <h1>Grifflix Presents: The Oscars 2025</h1>
+    
+        <p>This will generate a PDF of your choices, which you can save and forward. Results for all PDFs entered in the competition will be viewable on the <a href="#">Results App</a>.</p>
+        
+        <div>
             <h4 id="oscarWinnerMessage"></h4>
             <input id="celebName" name="celebName" style="visibility:hidden">
             <h2>Your Name:</h2>
             <input type="text" id="userName" name="userName" required placeholder="Enter your name">
         </div>
-
+    
         <!-- Best Picture -->
         <h2>Best Picture Nominee</h2>
         <select name="bestPicture" id="bestPicture">
             <option value="">Select...</option>
-            <option value="American Fiction">American Fiction</option>
-            <option value="Anatomy of a Fall">Anatomy of a Fall</option>
-            <option value="Barbie">Barbie</option>
-            <option value="The Holdovers">The Holdovers</option>
-            <option value="Killers of the Flower Moon">Killers of the Flower Moon</option>
-            <option value="Maestro">Maestro</option>
-            <option value="Oppenheimer">Oppenheimer</option>
-            <option value="Past Lives">Past Lives</option>
-            <option value="Poor Things">Poor Things</option>
-            <option value="The Zone of Interest">The Zone of Interest</option>
+            <option value="Anora">Anora</option>
+            <option value="The Brutalist">The Brutalist</option>
+            <option value="A Complete Unknown">A Complete Unknown</option>
+            <option value="Conclave">Conclave</option>
+            <option value="Dune: Part Two">Dune: Part Two</option>
+            <option value="Emilia Pérez">Emilia Pérez</option>
+            <option value="I'm Still Here">I'm Still Here</option>
+            <option value="Nickel Boys">Nickel Boys</option>
+            <option value="The Substance">The Substance</option>
+            <option value="Wicked">Wicked</option>
         </select>
-
+    
         <!-- Best Actor -->
         <h2>Best Actor Nominee</h2>
         <select name="bestActor" id="bestActor">
             <option value="">Select...</option>
-            <option value="Bradley Cooper, Maestro">Bradley Cooper, "Maestro"</option>
-            <option value="Colman Domingo, Rustin">Colman Domingo, "Rustin"</option>
-            <option value="Paul Giamatti, The Holdovers">Paul Giamatti, "The Holdovers"</option>
-            <option value="Cillian Murphy, Oppenheimer">Cillian Murphy, "Oppenheimer"</option>
-            <option value="Jeffrey Wright, American Fiction">Jeffrey Wright, "American Fiction"</option>
+            <option value="Adrien Brody, The Brutalist">Adrien Brody, "The Brutalist"</option>
+            <option value="Timothée Chalamet, A Complete Unknown">Timothée Chalamet, "A Complete Unknown"</option>
+            <option value="Colman Domingo, Sing Sing">Colman Domingo, "Sing Sing"</option>
+            <option value="Ralph Fiennes, Conclave">Ralph Fiennes, "Conclave"</option>
+            <option value="Sebastian Stan, The Apprentice">Sebastian Stan, "The Apprentice"</option>
         </select>
-
+    
         <!-- Best Actress -->
         <h2>Best Actress Nominee</h2>
         <select name="bestActress" id="bestActress">
             <option value="">Select...</option>
-            <option value="Annette Bening, Nyad">Annette Bening, "Nyad"</option>
-            <option value="Lily Gladstone, Killers of the Flower Moon">Lily Gladstone, "Killers of the Flower Moon"</option>
-            <option value="Sandra Hüller, Anatomy of a Fall">Sandra Hüller, "Anatomy of a Fall"</option>
-            <option value="Carey Mulligan, Maestro">Carey Mulligan, "Maestro"</option>
-            <option value="Emma Stone, Poor Things">Emma Stone, "Poor Things"</option>
+            <option value="Cynthia Erivo, Wicked">Cynthia Erivo, "Wicked"</option>
+            <option value="Karla Sofía Gascón, Emilia Pérez">Karla Sofía Gascón, "Emilia Pérez"</option>
+            <option value="Mikey Madison, Anora">Mikey Madison, "Anora"</option>
+            <option value="Demi Moore, The Substance">Demi Moore, "The Substance"</option>
+            <option value="Fernanda Torres, I'm Still Here">Fernanda Torres, "I'm Still Here"</option>
         </select>
+    
         <!-- Best Supporting Actor -->
         <h2>Best Supporting Actor Nominee</h2>
         <select name="bestSupportingActor" id="bestSupportingActor">
             <option value="">Select...</option>
-            <option value="Sterling K. Brown, American Fiction">Sterling K. Brown, "American Fiction"</option>
-            <option value="Robert De Niro, Killers of the Flower Moon">Robert De Niro, "Killers of the Flower Moon"</option>
-            <option value="Robert Downey Jr., Oppenheimer">Robert Downey Jr., "Oppenheimer"</option>
-            <option value="Ryan Gosling, Barbie">Ryan Gosling, "Barbie"</option>
-            <option value="Mark Ruffalo, Poor Things">Mark Ruffalo, "Poor Things"</option>
+            <option value="Yura Borisov, Anora">Yura Borisov, "Anora"</option>
+            <option value="Kieran Culkin, A Real Pain">Kieran Culkin, "A Real Pain"</option>
+            <option value="Edward Norton, A Complete Unknown">Edward Norton, "A Complete Unknown"</option>
+            <option value="Guy Pearce, The Brutalist">Guy Pearce, "The Brutalist"</option>
+            <option value="Jeremy Strong, The Apprentice">Jeremy Strong, "The Apprentice"</option>
         </select>
-
+    
         <!-- Best Supporting Actress -->
         <h2>Best Supporting Actress Nominee</h2>
         <select name="bestSupportingActress" id="bestSupportingActress">
             <option value="">Select...</option>
-            <option value="Emily Blunt, Oppenheimer">Emily Blunt, "Oppenheimer"</option>
-            <option value="Danielle Brooks, The Color Purple">Danielle Brooks, "The Color Purple"</option>
-            <option value="America Ferrera, Barbie">America Ferrera, "Barbie"</option>
-            <option value="Jodie Foster, Nyad">Jodie Foster, "Nyad"</option>
-            <option value="Da'Vine Joy Randolph, The Holdovers">Da'Vine Joy Randolph, "The Holdovers"</option>
+            <option value="Monica Barbaro, A Complete Unknown">Monica Barbaro, "A Complete Unknown"</option>
+            <option value="Ariana Grande, Wicked">Ariana Grande, "Wicked"</option>
+            <option value="Felicity Jones, The Brutalist">Felicity Jones, "The Brutalist"</option>
+            <option value="Isabella Rossellini, Conclave">Isabella Rossellini, "Conclave"</option>
+            <option value="Zoe Saldaña, Emilia Pérez">Zoe Saldaña, "Emilia Pérez"</option>
         </select>
-
+    
         <!-- Best Director -->
         <h2>Best Director Nominee</h2>
         <select name="bestDirector" id="bestDirector">
             <option value="">Select...</option>
-            <option value="Jonathan Glazer, The Zone of Interest">Jonathan Glazer, "The Zone of Interest"</option>
-            <option value="Yorgos Lanthimos, Poor Things">Yorgos Lanthimos, "Poor Things"</option>
-            <option value="Christopher Nolan, Oppenheimer">Christopher Nolan, "Oppenheimer"</option>
-            <option value="Martin Scorsese, Killers of the Flower Moon">Martin Scorsese, "Killers of the Flower Moon"</option>
-            <option value="Justine Triet, Anatomy of a Fall">Justine Triet, "Anatomy of a Fall"</option>
+            <option value="Sean Baker, Anora">Sean Baker, "Anora"</option>
+            <option value="Brady Corbet, The Brutalist">Brady Corbet, "The Brutalist"</option>
+            <option value="James Mangold, A Complete Unknown">James Mangold, "A Complete Unknown"</option>
+            <option value="Jacques Audiard, Emilia Pérez">Jacques Audiard, "Emilia Pérez"</option>
+            <option value="Coralie Fargeat, The Substance">Coralie Fargeat, "The Substance"</option>
         </select>
-
-        <!-- Continue adding more categories following the same structure -->
-
+    
         <!-- Best International Feature Film -->
         <h2>Best International Feature Film Nominee</h2>
         <select name="bestInternationalFeatureFilm" id="bestInternationalFeatureFilm">
             <option value="">Select...</option>
-            <option value="Io Capitano, Italy">"Io Capitano," Italy</option>
-            <option value="Perfect Days, Japan">"Perfect Days," Japan</option>
-            <option value="Society of the Snow, Spain">"Society of the Snow," Spain</option>
-            <option value="The Teachers' Lounge, Germany">"The Teachers' Lounge," Germany</option>
-            <option value="The Zone of Interest, United Kingdom">"The Zone of Interest," United Kingdom</option>
+            <option value="Brazil, I'm Still Here">"I'm Still Here," Brazil</option>
+            <option value="Denmark, The Girl with the Needle">"The Girl with the Needle," Denmark</option>
+            <option value="France, Emilia Pérez">"Emilia Pérez," France</option>
+            <option value="Germany, The Seed of the Sacred Fig">"The Seed of the Sacred Fig," Germany</option>
+            <option value="Latvia, Flow">"Flow," Latvia</option>
         </select>
-
+    
         <!-- Best Animated Feature Film -->
         <h2>Best Animated Feature Film Nominee</h2>
         <select name="bestAnimatedFeatureFilm" id="bestAnimatedFeatureFilm">
             <option value="">Select...</option>
-            <option value="The Boy and the Heron">"The Boy and the Heron"</option>
-            <option value="Elemental">"Elemental"</option>
-            <option value="Nimona">"Nimona"</option>
-            <option value="Robot Dreams">"Robot Dreams"</option>
-            <option value="Spider-Man: Across the Spider-Verse">"Spider-Man: Across the Spider-Verse"</option>
+            <option value="Flow">"Flow"</option>
+            <option value="Inside Out 2">"Inside Out 2"</option>
+            <option value="Memoir of a Snail">"Memoir of a Snail"</option>
+            <option value="Wallace & Gromit: Vengeance Most Fowl">"Wallace & Gromit: Vengeance Most Fowl"</option>
+            <option value="The Wild Robot">"The Wild Robot"</option>
         </select>
-
+    
         <!-- Best Adapted Screenplay -->
         <h2>Best Adapted Screenplay Nominee</h2>
         <select name="bestAdaptedScreenplay" id="bestAdaptedScreenplay">
             <option value="">Select...</option>
-            <option value="American Fiction">"American Fiction"</option>
-            <option value="Barbie">"Barbie"</option>
-            <option value="Oppenheimer">"Oppenheimer"</option>
-            <option value="Poor Things">"Poor Things"</option>
-            <option value="The Zone of Interest">"The Zone of Interest"</option>
+            <option value="A Complete Unknown">"A Complete Unknown"</option>
+            <option value="Conclave">"Conclave"</option>
+            <option value="Emilia Pérez">"Emilia Pérez"</option>
+            <option value="Nickel Boys">"Nickel Boys"</option>
+            <option value="Sing Sing">"Sing Sing"</option>
         </select>
-
+    
         <!-- Best Original Screenplay -->
         <h2>Best Original Screenplay Nominee</h2>
         <select name="bestOriginalScreenplay" id="bestOriginalScreenplay">
             <option value="">Select...</option>
-            <option value="Anatomy of a Fall">"Anatomy of a Fall"</option>
-            <option value="The Holdovers">"The Holdovers"</option>
-            <option value="Maestro">"Maestro"</option>
-            <option value="May December">"May December"</option>
-            <option value="Past Lives">"Past Lives"</option>
+            <option value="Anora">"Anora"</option>
+            <option value="The Brutalist">"The Brutalist"</option>
+            <option value="A Real Pain">"A Real Pain"</option>
+            <option value="September 5">"September 5"</option>
+            <option value="The Substance">"The Substance"</option>
         </select>
-
-        <!-- Add remaining categories following the pattern established -->
+    
         <!-- Best Visual Effects -->
         <h2>Best Visual Effects Nominee</h2>
         <select name="bestVisualEffects" id="bestVisualEffects">
             <option value="">Select...</option>
-            <option value="The Creator">"The Creator"</option>
-            <option value="Godzilla Minus One">"Godzilla Minus One"</option>
-            <option value="Guardians of the Galaxy Vol. 3">"Guardians of the Galaxy Vol. 3"</option>
-            <option value="Mission: Impossible - Dead Reckoning Part One">"Mission: Impossible - Dead Reckoning Part One"</option>
-            <option value="Napoleon">"Napoleon"</option>
+            <option value="Alien: Romulus">"Alien: Romulus"</option>
+            <option value="Better Man">"Better Man"</option>
+            <option value="Dune: Part Two">"Dune: Part Two"</option>
+            <option value="Kingdom of the Planet of the Apes">"Kingdom of the Planet of the Apes"</option>
+            <option value="Wicked">"Wicked"</option>
         </select>
-
+    
         <!-- Best Original Score -->
         <h2>Best Original Score Nominee</h2>
         <select name="bestOriginalScore" id="bestOriginalScore">
             <option value="">Select...</option>
-            <option value="American Fiction">"American Fiction"</option>
-            <option value="Indiana Jones and the Dial of Destiny">"Indiana Jones and the Dial of Destiny"</option>
-            <option value="Killers of the Flower Moon">"Killers of the Flower Moon"</option>
-            <option value="Oppenheimer">"Oppenheimer"</option>
-            <option value="Poor Things">"Poor Things"</option>
+            <option value="The Brutalist">"The Brutalist"</option>
+            <option value="Conclave">"Conclave"</option>
+            <option value="Emilia Pérez">"Emilia Pérez"</option>
+            <option value="Wicked">"Wicked"</option>
+            <option value="The Wild Robot">"The Wild Robot"</option>
         </select>
-
+    
         <!-- Best Original Song -->
         <h2>Best Original Song Nominee</h2>
         <select name="bestOriginalSong" id="bestOriginalSong">
             <option value="">Select...</option>
-            <option value="It Never Went Away from American Symphony">"It Never Went Away" from "American Symphony"</option>
-            <option value="I'm Just Ken from Barbie">"I'm Just Ken" from "Barbie"</option>
-            <option value="What Was I Made For? from Barbie">"What Was I Made For?" from "Barbie"</option>
-            <option value="The Fire Inside from Flamin' Hot">"The Fire Inside" from "Flamin' Hot"</option>
-            <option value="Wahzhazhe (A Song For My People) from Killers of the Flower Moon">"Wahzhazhe (A Song For My People)" from "Killers of the Flower Moon"</option>
+            <option value="El Mal from Emilia Pérez">"El Mal" from "Emilia Pérez"</option>
+            <option value="The Journey from The Six Triple Eight">"The Journey" from "The Six Triple Eight"</option>
+            <option value="Like A Bird from Sing Sing">"Like A Bird" from "Sing Sing"</option>
+            <option value="Mi Camino from Emilia Pérez">"Mi Camino" from "Emilia Pérez"</option>
+            <option value="Never Too Late from Elton John: Never Too Late">"Never Too Late" from "Elton John: Never Too Late"</option>
         </select>
-
+    
         <!-- Best Documentary Feature -->
         <h2>Best Documentary Feature Nominee</h2>
         <select name="bestDocumentaryFeature" id="bestDocumentaryFeature">
             <option value="">Select...</option>
-            <option value="20 Days in Mariupol">"20 Days in Mariupol"</option>
-            <option value="Bobi Wine: The People's President">"Bobi Wine: The People's President"</option>
-            <option value="The Eternal Memory">"The Eternal Memory"</option>
-            <option value="Four Daughters">"Four Daughters"</option>
-            <option value="To Kill a Tiger">"To Kill a Tiger"</option>
+            <option value="Black Box Diaries">"Black Box Diaries"</option>
+            <option value="No Other Land">"No Other Land"</option>
+            <option value="Porcelain War">"Porcelain War"</option>
+            <option value="Soundtrack to a Coup d'Etat">"Soundtrack to a Coup d'Etat"</option>
+            <option value="Sugarcane">"Sugarcane"</option>
         </select>
-
+    
         <!-- Best Cinematography -->
         <h2>Best Cinematography Nominee</h2>
         <select name="bestCinematography" id="bestCinematography">
             <option value="">Select...</option>
-            <option value="El Conde">"El Conde"</option>
-            <option value="Killers of the Flower Moon">"Killers of the Flower Moon"</option>
-            <option value="Maestro">"Maestro"</option>
-            <option value="Oppenheimer">"Oppenheimer"</option>
-            <option value="Poor Things">"Poor Things"</option>
+            <option value="The Brutalist">"The Brutalist"</option>
+            <option value="Dune: Part Two">"Dune: Part Two"</option>
+            <option value="Emilia Pérez">"Emilia Pérez"</option>
+            <option value="Maria">"Maria"</option>
+            <option value="Nosferatu">"Nosferatu"</option>
         </select>
-
+    
         <!-- Best Costume Design -->
         <h2>Best Costume Design Nominee</h2>
         <select name="bestCostumeDesign" id="bestCostumeDesign">
             <option value="">Select...</option>
-            <option value="Barbie">"Barbie"</option>
-            <option value="Killers of the Flower Moon">"Killers of the Flower Moon"</option>
-            <option value="Napoleon">"Napoleon"</option>
-            <option value="Oppenheimer">"Oppenheimer"</option>
-            <option value="Poor Things">"Poor Things"</option>
+            <option value="A Complete Unknown">"A Complete Unknown"</option>
+            <option value="Conclave">"Conclave"</option>
+            <option value="Gladiator II">"Gladiator II"</option>
+            <option value="Nosferatu">"Nosferatu"</option>
+            <option value="Wicked">"Wicked"</option>
         </select>
-
+    
         <!-- Best Film Editing -->
         <h2>Best Film Editing Nominee</h2>
         <select name="bestFilmEditing" id="bestFilmEditing">
             <option value="">Select...</option>
-            <option value="Anatomy of a Fall">"Anatomy of a Fall"</option>
-            <option value="The Holdovers">"The Holdovers"</option>
-            <option value="Killers of the Flower Moon">"Killers of the Flower Moon"</option>
-            <option value="Oppenheimer">"Oppenheimer"</option>
-            <option value="Poor Things">"Poor Things"</option>
+            <option value="Anora">"Anora"</option>
+            <option value="The Brutalist">"The Brutalist"</option>
+            <option value="Conclave">"Conclave"</option>
+            <option value="Emilia Pérez">"Emilia Pérez"</option>
+            <option value="Wicked">"Wicked"</option>
         </select>
-
+    
         <!-- Best Sound -->
         <h2>Best Sound Nominee</h2>
         <select name="bestSound" id="bestSound">
             <option value="">Select...</option>
-            <option value="The Creator">"The Creator"</option>
-            <option value="Maestro">"Maestro"</option>
-            <option value="Mission: Impossible - Dead Reckoning Part One">"Mission: Impossible - Dead Reckoning Part One"</option>
-            <option value="Oppenheimer">"Oppenheimer"</option>
-            <option value="The Zone of Interest">"The Zone of Interest"</option>
+            <option value="A Complete Unknown">"A Complete Unknown"</option>
+            <option value="Dune: Part Two">"Dune: Part Two"</option>
+            <option value="Emilia Pérez">"Emilia Pérez"</option>
+            <option value="Wicked">"Wicked"</option>
+            <option value="The Wild Robot">"The Wild Robot"</option>
         </select>
-
+    
         <!-- Best Production Design -->
         <h2>Best Production Design Nominee</h2>
         <select name="bestProductionDesign" id="bestProductionDesign">
             <option value="">Select...</option>
-            <option value="Barbie">"Barbie"</option>
-            <option value="Killers of the Flower Moon">"Killers of the Flower Moon"</option>
-            <option value="Napoleon">"Napoleon"</option>
-            <option value="Oppenheimer">"Oppenheimer"</option>
-            <option value="Poor Things">"Poor Things"</option>
+            <option value="The Brutalist">"The Brutalist"</option>
+            <option value="Conclave">"Conclave"</option>
+            <option value="Dune: Part Two">"Dune: Part Two"</option>
+            <option value="Nosferatu">"Nosferatu"</option>
+            <option value="Wicked">"Wicked"</option>
         </select>
-
+    
         <!-- Best Makeup and Hairstyling -->
         <h2>Best Makeup and Hairstyling Nominee</h2>
         <select name="bestMakeupAndHairstyling" id="bestMakeupAndHairstyling">
             <option value="">Select...</option>
-            <option value="Golda">"Golda"</option>
-            <option value="Maestro">"Maestro"</option>
-            <option value="Oppenheimer">"Oppenheimer"</option>
-            <option value="Poor Things">"Poor Things"</option>
-            <option value="Society of the Snow">"Society of the Snow"</option>
+            <option value="A Different Man">"A Different Man"</option>
+            <option value="Emilia Pérez">"Emilia Pérez"</option>
+            <option value="Nosferatu">"Nosferatu"</option>
+            <option value="The Substance">"The Substance"</option>
+            <option value="Wicked">"Wicked"</option>
         </select>
+    
+        <!-- Best Animated Short Film -->
         <h2>Best Animated Short Film Nominee</h2>
         <select name="bestAnimatedShortFilm" id="bestAnimatedShortFilm">
             <option value="">Select...</option>
-            <option value="Letter to a Pig">Letter to a Pig</option>
-            <option value="Ninety-Five Senses">Ninety-Five Senses</option>
-            <option value="Our Uniform">Our Uniform</option>
-            <option value="Pachyderme">Pachyderme</option>
-            <option value="War Is Over! Inspired by the Music of John & Yoko">War Is Over! Inspired by the Music of John & Yoko</option>
+            <option value="Beautiful Men">Beautiful Men</option>
+            <option value="In the Shadow of the Cypress">In the Shadow of the Cypress</option>
+            <option value="Magic Candies">Magic Candies</option>
+            <option value="Wander to Wonder">Wander to Wonder</option>
+            <option value="Yuck!">Yuck!</option>
         </select>
+    
+        <!-- Best Live Action Short Film -->
         <h2>Best Live Action Short Film Nominee</h2>
         <select name="bestLiveActionShortFilm" id="bestLiveActionShortFilm">
             <option value="">Select...</option>
-            <option value="The After">The After</option>
-            <option value="Invincible">Invincible</option>
-            <option value="Knight of Fortune">Knight of Fortune</option>
-            <option value="Red, White and Blue">Red, White and Blue</option>
-            <option value="The Wonderful Story of Henry Sugar">The Wonderful Story of Henry Sugar</option>
+            <option value="A Lien">A Lien</option>
+            <option value="Anuja">Anuja</option>
+            <option value="I'm Not a Robot">I'm Not a Robot</option>
+            <option value="The Last Ranger">The Last Ranger</option>
+            <option value="The Man Who Could Not Remain Silent">The Man Who Could Not Remain Silent</option>
         </select>
+    
+        <!-- Best Documentary Short Film -->
         <h2>Best Documentary Short Film Nominee</h2>
         <select name="bestDocumentaryShortFilm" id="bestDocumentaryShortFilm">
             <option value="">Select...</option>
-            <option value="The ABCs of Book Banning">The ABCs of Book Banning</option>
-            <option value="The Barber of Little Rock">The Barber of Little Rock</option>
-            <option value="Island in Between">Island in Between</option>
-            <option value="The Last Repair Shop">The Last Repair Shop</option>
-            <option value="Nǎi Nai & Wài Pó">Nǎi Nai & Wài Pó</option>
+            <option value="Death by Numbers">Death by Numbers</option>
+            <option value="I Am Ready, Warden">I Am Ready, Warden</option>
+            <option value="Incident">Incident</option>
+            <option value="Instruments of a Beating Heart">Instruments of a Beating Heart</option>
+            <option value="The Only Girl in the Orchestra">The Only Girl in the Orchestra</option>
         </select>
-                        
+        
         <br/>
         <button type="submit">Submit Your Votes</button>
     </form>
@@ -402,7 +407,6 @@
 
 <script>
     window.onload = function() {
-
         const savedFormData = localStorage.getItem('formData');
         if (savedFormData) {
             const formObject = JSON.parse(savedFormData);
@@ -425,12 +429,13 @@
                 }
             });
         }
-        
+    
         const oscarWinners = [
     {"year": 1978, "category": "Best Actor", "name": "Richard Dreyfuss"},
     {"year": 1978, "category": "Best Actress", "name": "Diane Keaton"},
     {"year": 1978, "category": "Best Supporting Actor", "name": "Jason Robards"},
     {"year": 1978, "category": "Best Supporting Actress", "name": "Vanessa Redgrave"},
+    {"year": 1978, "category": "Best Director", "name": "Woody Allen"},
     {"year": 1979, "category": "Best Actor", "name": "Jon Voight"},
     {"year": 1979, "category": "Best Actress", "name": "Jane Fonda"},
     {"year": 1979, "category": "Best Supporting Actor", "name": "Christopher Walken"},
@@ -555,6 +560,7 @@
     {"year": 2003, "category": "Best Actress", "name": "Nicole Kidman"},
     {"year": 2003, "category": "Best Supporting Actor", "name": "Chris Cooper"},
     {"year": 2003, "category": "Best Supporting Actress", "name": "Catherine Zeta-Jones"},
+    {"year": 2003, "category": "Best Director", "name": "Roman Polanski"},
     {"year": 2004, "category": "Best Actor", "name": "Sean Penn"},
     {"year": 2004, "category": "Best Actress", "name": "Charlize Theron"},
     {"year": 2004, "category": "Best Supporting Actor", "name": "Tim Robbins"},
@@ -666,8 +672,7 @@ function getRandom() {
     document.getElementById('celebName').value = winner.name+" / ";
     document.getElementById('oscarWinnerMessage').textContent = message;
 }
-getRandom()
- 
+        getRandom()
         // Ensure pdfmake is defined
         if (typeof pdfMake !== 'undefined') {
             pdfMake.vfs = {
@@ -688,6 +693,7 @@ getRandom()
             e.preventDefault();
             const formObject = {};
             const formData = new FormData(e.target);
+            // Convert FormData into a regular object
             for (const [key, value] of formData.entries()) {
                 formObject[key] = value;
             }
@@ -695,7 +701,8 @@ getRandom()
                 formData.set('celebName', "");
             }
             localStorage.setItem('formData', JSON.stringify(formObject));
-
+        
+            // Optional: do something after saving, like redirecting or showing a message
             console.log('Form data saved:', formObject);
             let pdfmakeWrapper = {};
 
@@ -784,7 +791,7 @@ getRandom()
 
             const pdf = pdfMake.createPdf(pdfDocument);
             pdf.download(`Oscars-Voting-Results-${formData.get('userName') || 'Anonymous'}.pdf`);
-
+            getRandom()
         });
     }
     else {
