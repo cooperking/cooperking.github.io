@@ -1,0 +1,1965 @@
+div.image{margin-bottom:20px;overflow:hidden}
+div.image img{display:block}
+div.image small{display:block}
+div.textimage div.image{float:left;margin:0 8px 8px 0}
+div.textimage.image_right div.image{float:right!important;margin:0 0 8px 8px!important}
+div.search{padding:0 1px 0 0}
+div.searchRight{border-left:1px solid #ddd;float:right;width:150px;padding-left:20px;padding-bottom:20px}
+div.searchTrends{text-align:justify}
+div.searchRight p{text-align:center;font-weight:bold;margin-bottom:5px}
+div.search span.icon img{width:16px;height:16px}
+div.search span.icon{padding:0 2px 8px 0;background:url(default.gif) no-repeat}
+div.search span.icon.type_doc{background:url(doc.gif) no-repeat}
+div.search span.icon.type_eps{background:url(eps.gif) no-repeat}
+div.search span.icon.type_gif{background:url(zip.gif) no-repeat}
+div.search span.icon.type_jpg{background:url(jpg.gif) no-repeat}
+div.search span.icon.type_pdf{background:url(pdf.gif) no-repeat}
+div.search span.icon.type_ppt{background:url(ppt.gif) no-repeat}
+div.search span.icon.type_tif{background:url(tif.gif) no-repeat}
+div.search span.icon.type_txt{background:url(txt.gif) no-repeat}
+div.search span.icon.type_xls{background:url(xls.gif) no-repeat}
+div.search span.icon.type_zip{background:url(zip.gif) no-repeat}
+#profile_view .form_leftcol{float:left;width:120px}
+#profile_view .form_rightcol{float:left;clear:none}
+#profile_view div.section{padding-bottom:0!important}
+ins.textAdded{color:#0c0}
+del.textRemoved{color:#c00}
+div.image{margin-bottom:20px;overflow:hidden}
+div.image img{display:block}
+div.image small{display:block}
+div.download div.item{clear:both;margin:0 0 8px 0}
+div.download span.icon img{width:16px;height:16px}
+div.download span.icon{float:left;padding:0 8px 8px 0;background:url(default.gif) no-repeat}
+div.download span.icon.type_doc{background:url(doc.gif) no-repeat}
+div.download span.icon.type_eps{background:url(eps.gif) no-repeat}
+div.download span.icon.type_gif{background:url(zip.gif) no-repeat}
+div.download span.icon.type_jpg{background:url(jpg.gif) no-repeat}
+div.download span.icon.type_pdf{background:url(pdf.gif) no-repeat}
+div.download span.icon.type_ppt{background:url(ppt.gif) no-repeat}
+div.download span.icon.type_tif{background:url(tif.gif) no-repeat}
+div.download span.icon.type_txt{background:url(txt.gif) no-repeat}
+div.download span.icon.type_xls{background:url(xls.gif) no-repeat}
+div.download span.icon.type_zip{background:url(zip.gif) no-repeat}
+div.carousel{margin-top:7px;margin-bottom:7px}
+.cq-carousel{position:relative;width:940px;height:270px;overflow:hidden}
+.cq-carousel var{display:none}
+.cq-carousel-banner-item{width:940px;height:270px;left:1000px;position:absolute;top:0;background-color:#eee;overflow:hidden}
+.cq-carousel-banner-item img{width:940px;height:270px;background:no-repeat center center}
+.par .cq-carousel-banner-item img{width:700px;height:245px;background:no-repeat center center}
+.par .cq-carousel{width:700px;height:245px}
+.par .cq-carousel-banner-item{width:700px;height:245px}
+.cq-carousel-banner-item h3,.cq-carousel-banner-item p{padding:10px}
+.cq-carousel-banner{position:absolute}
+.cq-carousel-banner-switches,.cq-carousel-banner-switches-tl,.cq-carousel-banner-switches-tc,.cq-carousel-banner-switches-tr,.cq-carousel-banner-switches-bl,.cq-carousel-banner-switches-bc,.cq-carousel-banner-switches-br{position:absolute;width:100%;margin:0;padding:0}
+.cq-carousel-banner-switches{display:none}
+.cq-carousel-banner-switches-tl{top:0;left:0}
+.cq-carousel-banner-switches-tc{top:0;left:0;text-align:center}
+.cq-carousel-banner-switches-tr{top:0;left:0;text-align:right}
+.cq-carousel-banner-switches-bl{bottom:0;left:0}
+.cq-carousel-banner-switches-bc{bottom:0;left:0;text-align:center}
+.cq-carousel-banner-switches-br{bottom:0;left:0;text-align:right}
+.cq-carousel-banner-switch{display:inline-block;margin:8px;padding:0}
+.cq-carousel-banner-switch-br{position:absolute;margin:0;padding:0;bottom:0;right:8px}
+.cq-carousel-banner-switch-bl{position:absolute;margin:0;padding:0;bottom:0;left:8px}
+.cq-carousel-controls a{position:absolute;width:24px;height:48px;top:111px;background:url("controls.png") no-repeat scroll 0 0 transparent;visibility:hidden}
+.cq-carousel-controls a.cq-carousel-active{visibility:visible}
+a.cq-carousel-control-prev{left:0;background-position:-24px 0}
+a.cq-carousel-control-prev:hover{left:0;background-position:-72px 0}
+a.cq-carousel-control-next{right:0}
+a.cq-carousel-control-next:hover{right:0;background-position:-48px 0}
+.cq-carousel-banner-switch a{display:inline-block;background:url("switcher.png") no-repeat scroll 0 0 transparent}
+.cq-carousel-banner-switch a img{width:25px;height:25px;vertical-align:top}
+.cq-carousel-banner-switch a.cq-carousel-active,.cq-carousel-banner-switch a:hover{background-position:-25px 0}
+.cq-carousel-banner-switch li{background:none!important;display:inline-block;list-style:none;float:left}
+.form_section{width:300px;float:none}
+.form_section form{float:left;width:300px}
+.form_section fieldset{width:300px;float:left}
+.form_section .input_box1{background:url(input_box.gif) no-repeat 0 0;width:185px;height:23px;float:left}
+.form_section input{width:175px;padding-left:5px;padding-right:5px;border:0;background:0;padding-top:4px;font-size:11px;color:#999}
+.form_section input.sign_up{background:url(sign_up_btn.gif) no-repeat 0 0;width:82px;height:23px;float:left;margin-left:5px;display:inline;cursor:pointer}
+form .form_row{display:block;font-size:13px;line-height:24px;color:#666;clear:both}
+form .form_field_checkbox,form .form_field_radio{margin-left:20px}
+form .form_field_text,form .form_field_textarea{background:url("fieldbg.gif") repeat-x scroll center top #fff;border-color:#7c7c7c #c3c3c3 #ddd;border-style:solid;border-width:1px;color:#333;font-family:"Lucida Grande","Lucida Sans Unicode",Arial,Helvetica,sans-serif;font-size:100%;margin:0;padding:2px}
+form .form_field_textarea{width:698px}
+form .form_row_description{font-size:11px;line-height:12px;clear:both;color:#666}
+form .form_rightcol{clear:both}
+form .form_rightcolnobr{clear:none;float:right;margin-bottom:15px}
+form .form_rightcolnooverflow{overflow:hidden}
+form .form_rightcolmark{color:#f00;font-weight:bold}
+form .title{padding-top:10px}
+form .form_leftcolmark{color:#f00}
+form .form_leftcollabel{float:left;font-weight:bold}
+form .form_leftcolmark{float:left;padding-left:2px;font-weight:bold}
+form .form_leftcolnobr{float:left;margin-bottom:15px}
+form .form_captcha_input{float:left;width:170px}
+form .form_captcha_input input{width:170px}
+form .form_captcha_img{float:left;padding-left:16px}
+form .form_captcha_refresh{float:right}
+form .form_captchatimer{float:left;border:1px solid #ccc}
+form .form_captchatimer_bar{float:left;background-color:#ccc;height:8px}
+form .customer_survey_submit{float:right;margin-top:28px}
+form .form_field_text{width:334px;margin-bottom:4px}
+form .form_field_text.form_field_multivalued{width:314px}
+form .form_field_select{width:340px}
+form .form_error{color:#f00;font-weight:bold}
+form div.section{padding-bottom:10px}
+form div.colctrl.section{padding-bottom:0!important}
+form SPAN.mr_write{display:inline-block;width:16px;text-align:right;vertical-align:top}
+form div.address div.form_row{margin-bottom:12px}
+form div.form_address_state{display:inline-block}
+form input.form_address_state{width:204px}
+form div.form_address_zip{display:inline-block;padding-left:20px}
+form input.form_address_zip{width:80px}
+form div.creditcard div.form_row{margin-bottom:12px}
+form div.form_cc_expiry_month,form div.form_cc_expiry_year,form div.form_cc_security_code{display:inline-block}
+form input.form_cc_expiry_month,form input.form_cc_expiry_year{width:40px}
+form div.form_cc_expiry_separator{display:inline-block;font-size:150%;padding-right:6px}
+form input.form_cc_ccv{width:70px}
+
+@font-face {
+  font-family: 'RadikalLight';
+  src: url("RadikalLight.eot");
+  src: url("RadikalLight.eot") format("embedded-opentype"), url("RadikalLight.woff2") format("woff2"), url("RadikalLight.woff") format("woff"), url("RadikalLight.ttf") format("truetype"), url("https://web.archive.org/web/20180214203059im_/https://www.carphonewarehouse.com/content/dam/ews/landing/movie_calendar/fonts/RadikalLight.svg#RadikalBlack") format("svg");
+}
+@font-face {
+  font-family: 'RadikalBlack';
+  src: url("RadikalBlack.eot");
+  src: url("RadikalBlack.eot") format("embedded-opentype"), url("RadikalBlack.woff2") format("woff2"), url("RadikalBlack.woff") format("woff"), url("RadikalBlack.ttf") format("truetype"), url("https://web.archive.org/web/20180214203059im_/https://www.carphonewarehouse.com/content/dam/ews/landing/movie_calendar/fonts/RadikalBlack.svg#RadikalBlack") format("svg");
+}
+@font-face {
+  font-family: 'RadikalBlackItalic';
+  src: url("RadikalBlackItalic.eot");
+  src: url("RadikalBlackItalic.eot") format("embedded-opentype"), url("RadikalBlackItalic.woff2") format("woff2"), url("RadikalBlackItalic.woff") format("woff"), url("RadikalBlackItalic.ttf") format("truetype"), url("https://web.archive.org/web/20180214203059im_/https://www.carphonewarehouse.com/content/dam/ews/landing/movie_calendar/fonts/RadikalBlackItalic.svg#RadikalBlackItalic") format("svg");
+}
+@font-face {
+  font-family: 'SourceCodeProLight';
+  src: url("SourceCodeProLight.eot");
+  src: url("SourceCodeProLight.eot") format("embedded-opentype"), url("SourceCodeProLight.woff2") format("woff2"), url("SourceCodeProLight.woff") format("woff"), url("SourceCodeProLight.ttf") format("truetype"), url("https://web.archive.org/web/20180214203059im_/https://www.carphonewarehouse.com/content/dam/ews/landing/movie_calendar/fonts/SourceCodeProLight.svg#SourceCodeProLight") format("svg");
+}
+@font-face {
+  font-family: 'SourceCodeProRegular';
+  src: url("SourceCodeProRegular.eot");
+  src: url("SourceCodeProRegular.eot") format("embedded-opentype"), url("SourceCodeProRegular.woff2") format("woff2"), url("SourceCodeProRegular.woff") format("woff"), url("SourceCodeProRegular.ttf") format("truetype"), url("https://web.archive.org/web/20180214203059im_/https://www.carphonewarehouse.com/content/dam/ews/landing/movie_calendar/fonts/SourceCodeProRegular.svg#SourceCodeProRegular") format("svg");
+}
+@font-face {
+  font-family: 'SourceCodeProBold';
+  src: url("SourceCodeProBold.eot");
+  src: url("SourceCodeProBold.eot") format("embedded-opentype"), url("SourceCodeProBold.woff2") format("woff2"), url("SourceCodeProBold.woff") format("woff"), url("SourceCodeProBold.ttf") format("truetype"), url("https://web.archive.org/web/20180214203059im_/https://www.carphonewarehouse.com/content/dam/ews/landing/movie_calendar/fonts/SourceCodeProBold.svg#SourceCodeProBold") format("svg");
+}
+/* line 60, ../sass/partials/_typography.scss */
+body,
+button,
+input,
+select,
+textarea {
+  font-weight: 300;
+  font-stretch: normal;
+  color: #222222;
+  font-family: "SourceCodeProRegular";
+}
+
+/* line 72, ../sass/partials/_typography.scss */
+h1, h2, h3, h4, h5, h6 {
+  clear: both;
+  margin: 0;
+  font-weight: normal;
+  font-family: "RadikalBlack";
+}
+
+/* line 80, ../sass/partials/_typography.scss */
+h1 {
+  text-transform: uppercase;
+  font-size: 4.2em;
+  margin-bottom: .3em;
+}
+
+/* line 87, ../sass/partials/_typography.scss */
+h2 {
+  font-size: 2.6em;
+  margin-bottom: .5em;
+}
+
+/* line 93, ../sass/partials/_typography.scss */
+h3 {
+  font-size: 3.6em;
+}
+
+/* line 98, ../sass/partials/_typography.scss */
+h4 {
+  font-size: 1.4em;
+  font-family: "SourceCodeProRegular";
+  line-height: 1.4;
+}
+
+/* line 105, ../sass/partials/_typography.scss */
+h5 {
+  font-size: 1.4em;
+  font-family: "SourceCodeProBold";
+  margin-bottom: .4em;
+}
+
+/* line 112, ../sass/partials/_typography.scss */
+h6 {
+  font-size: 1.4em;
+  font-family: "RadikalBlack";
+  margin-bottom: .4em;
+}
+
+/* line 119, ../sass/partials/_typography.scss */
+p {
+  font-size: 1.2em;
+  margin-bottom: 1.2em;
+}
+/* line 124, ../sass/partials/_typography.scss */
+p:last-child {
+  margin-bottom: 0;
+}
+
+/* line 130, ../sass/partials/_typography.scss */
+a {
+  color: #222222;
+  text-decoration: none;
+  border-bottom: 1px solid;
+}
+/* line 136, ../sass/partials/_typography.scss */
+a:hover, a:focus, a:active {
+  outline: 0;
+  color: #222222;
+  text-decoration: none;
+}
+/* line 145, ../sass/partials/_typography.scss */
+a.button {
+  background-color: #222222;
+  color: #ffffff;
+  font-family: "RadikalBlack";
+  padding: 7px 20px;
+  font-size: 1.8em;
+  text-align: center;
+  border-bottom: 0;
+  display: block;
+}
+/* line 156, ../sass/partials/_typography.scss */
+a.button:before {
+  content: '>>';
+  margin-right: 10px;
+}
+/* line 162, ../sass/partials/_typography.scss */
+a.button:after {
+  content: '<<';
+  margin-left: 10px;
+}
+
+/* line 175, ../sass/partials/_typography.scss */
+dfn, cite, em, i {
+  font-style: italic;
+}
+
+/* line 180, ../sass/partials/_typography.scss */
+blockquote, q {
+  quotes: "" "";
+}
+/* line 184, ../sass/partials/_typography.scss */
+blockquote:before, blockquote:after, q:before, q:after {
+  content: "";
+}
+
+/* line 1, ../sass/partials/_global.scss */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* line 7, ../sass/partials/_global.scss */
+html, body {
+  height: 100%;
+}
+
+/* line 12, ../sass/partials/_global.scss */
+body {
+  background-color: #EFEDE4;
+  overflow-x: hidden;
+  line-height: 2;
+  font-size: 62.5%;
+}
+/* line 19, ../sass/partials/_global.scss */
+body.noscroll {
+  overflow: hidden;
+}
+
+/* line 25, ../sass/partials/_global.scss */
+::selection {
+  background: #8DD3D1;
+}
+
+/* line 29, ../sass/partials/_global.scss */
+::-moz-selection {
+  background: #8DD3D1;
+}
+
+/* line 34, ../sass/partials/_global.scss */
+img {
+  max-width: 100%;
+  height: auto;
+}
+/* line 39, ../sass/partials/_global.scss */
+img.full {
+  width: 100%;
+}
+
+/* line 45, ../sass/partials/_global.scss */
+hr {
+  width: 100%;
+  height: 1px;
+  border: 0;
+  background: #eeeeee;
+}
+
+/* line 53, ../sass/partials/_global.scss */
+.center-block {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* line 58, ../sass/partials/_global.scss */
+.table {
+  display: table;
+  height: 100%;
+  margin-bottom: 0;
+}
+/* line 64, ../sass/partials/_global.scss */
+.table .table-cell {
+  display: table-cell;
+  vertical-align: middle;
+}
+
+/* line 71, ../sass/partials/_global.scss */
+.center-block {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* line 76, ../sass/partials/_global.scss */
+.center-vertically {
+  position: relative;
+  top: 50%;
+  -webkit-transform: translateY(-50%);
+  -ms-transform: translateY(-50%);
+  transform: translateY(-50%);
+}
+
+/* line 81, ../sass/partials/_global.scss */
+.relative {
+  position: relative;
+}
+
+/* line 86, ../sass/partials/_global.scss */
+.padding-right-0 {
+  padding-right: 0;
+}
+
+/* line 91, ../sass/partials/_global.scss */
+.row-eq-height {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  flex-wrap: wrap;
+}
+
+/* line 100, ../sass/partials/_global.scss */
+ul {
+  margin: 0;
+  padding: 0;
+}
+/* line 105, ../sass/partials/_global.scss */
+ul li {
+  list-style: none;
+}
+
+/* line 1, ../sass/partials/_header.scss */
+#the-lowdown {
+  width: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  background-color: #000;
+  padding: 3px 15px 1px;
+  z-index: 9999;
+}
+/* line 11, ../sass/partials/_header.scss */
+#the-lowdown a.the-lowdown {
+  font-family: "RadikalBlack";
+  font-size: 1.4em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: #ffffff;
+  border-bottom: 0;
+  padding-top: 4px;
+  padding-bottom: 3px;
+  float: left;
+}
+/* line 24, ../sass/partials/_header.scss */
+#the-lowdown .addthis_inline_share_toolbox {
+  float: right;
+  clear: none !important;
+}
+/* line 29, ../sass/partials/_header.scss */
+#the-lowdown .addthis_inline_share_toolbox a {
+  background-color: #000 !important;
+}
+/* line 35, ../sass/partials/_header.scss */
+#the-lowdown .share {
+  font-family: "RadikalBlack";
+  font-size: 1.4em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: #ffffff;
+  border-bottom: 0;
+  padding-top: 4px;
+  padding-bottom: 3px;
+  float: right;
+  display: none;
+}
+@media only screen and (min-width: 1200px) {
+  /* line 35, ../sass/partials/_header.scss */
+  #the-lowdown .share {
+    display: block;
+  }
+}
+
+/* line 55, ../sass/partials/_header.scss */
+#hero {
+  padding-top: 50px;
+}
+@media only screen and (min-width: 992px) {
+  /* line 55, ../sass/partials/_header.scss */
+  #hero {
+    padding-top: 60px;
+  }
+}
+@media only screen and (min-width: 1200px) {
+  /* line 55, ../sass/partials/_header.scss */
+  #hero {
+    padding-top: 150px;
+    min-height: 975px;
+  }
+}
+/* line 70, ../sass/partials/_header.scss */
+#hero div.watch-on-this-day {
+  max-width: 540px;
+  width: 100%;
+  margin: 0 auto;
+}
+@media only screen and (min-width: 1200px) {
+  /* line 70, ../sass/partials/_header.scss */
+  #hero div.watch-on-this-day {
+    float: right;
+  }
+}
+/* line 81, ../sass/partials/_header.scss */
+#hero div.watch-on-this-day .todays-movie {
+  padding: 25px 20px 90px;
+}
+@media only screen and (min-width: 1200px) {
+  /* line 81, ../sass/partials/_header.scss */
+  #hero div.watch-on-this-day .todays-movie {
+    padding: 25px 20px 70px;
+  }
+}
+/* line 91, ../sass/partials/_header.scss */
+#hero div.watch-on-this-day h3.watch-on-this-day {
+  background-color: #F39941;
+  width: 100%;
+  padding: 20px 30px 15px;
+  color: #ffffff;
+  position: relative;
+  margin-bottom: 50px;
+  max-width: 540px;
+  display: none;
+}
+@media only screen and (min-width: 1200px) {
+  /* line 91, ../sass/partials/_header.scss */
+  #hero div.watch-on-this-day h3.watch-on-this-day {
+    display: block;
+  }
+}
+/* line 107, ../sass/partials/_header.scss */
+#hero div.watch-on-this-day h3.watch-on-this-day:after {
+  content: '';
+  display: block;
+  width: 40px;
+  height: 40px;
+  transform: rotate(45deg) translateX(-50%);
+  background-color: #F39941;
+  position: absolute;
+  bottom: -33px;
+  left: 50%;
+  z-index: -1;
+}
+/* line 123, ../sass/partials/_header.scss */
+#hero .about-button {
+  z-index: 8888;
+  position: absolute;
+  top: 548px;
+  left: 100px;
+  width: 350px;
+  display: none;
+}
+@media only screen and (min-width: 1200px) {
+  /* line 123, ../sass/partials/_header.scss */
+  #hero .about-button {
+    display: block;
+  }
+}
+/* line 138, ../sass/partials/_header.scss */
+#hero .title {
+  width: 100%;
+  height: 280px;
+  padding: 30px 0 0 30px;
+  position: relative;
+  float: right;
+}
+@media only screen and (min-width: 500px) {
+  /* line 138, ../sass/partials/_header.scss */
+  #hero .title {
+    height: 340px;
+    width: 90%;
+  }
+}
+@media only screen and (min-width: 768px) {
+  /* line 138, ../sass/partials/_header.scss */
+  #hero .title {
+    height: 500px;
+  }
+}
+@media only screen and (min-width: 992px) {
+  /* line 138, ../sass/partials/_header.scss */
+  #hero .title {
+    width: 80%;
+  }
+}
+@media only screen and (min-width: 1200px) {
+  /* line 138, ../sass/partials/_header.scss */
+  #hero .title {
+    height: 100%;
+    width: 100%;
+  }
+}
+/* line 168, ../sass/partials/_header.scss */
+#hero .title span {
+  display: block;
+  transform-origin: bottom right;
+  width: 100%;
+  height: 730px;
+  position: absolute;
+  left: 0;
+}
+/* line 177, ../sass/partials/_header.scss */
+#hero .title span.title-the {
+  -webkit-animation: floatin1 4s 1;
+  -moz-animation: floatin1 4s 1;
+  -ms-animation: floatin1 4s 1;
+  animation: floatin1 4s 1;
+  background: url("massive-movie-calendar-title-the-mobile.png") 20px 20px/588px 347px no-repeat;
+  top: 0;
+}
+@media only screen and (min-width: 500px) {
+  /* line 177, ../sass/partials/_header.scss */
+  #hero .title span.title-the {
+    background: url("massive-movie-calendar-title-the-mobile.png") 20px 20px/785px 463px no-repeat;
+  }
+}
+@media only screen and (min-width: 768px) {
+  /* line 177, ../sass/partials/_header.scss */
+  #hero .title span.title-the {
+    background: url("massive-movie-calendar-title-the.png") 20px 20px/1177px 694px no-repeat;
+  }
+}
+/* line 194, ../sass/partials/_header.scss */
+#hero .title span.title-massive {
+  -webkit-animation: floatin2 4s 1;
+  -moz-animation: floatin2 4s 1;
+  -ms-animation: floatin2 4s 1;
+  animation: floatin2 4s 1;
+  background: url("massive-movie-calendar-title-massive-mobile.png") 20px 20px/714px 374px no-repeat;
+  top: 30px;
+}
+@media only screen and (min-width: 500px) {
+  /* line 194, ../sass/partials/_header.scss */
+  #hero .title span.title-massive {
+    background: url("massive-movie-calendar-title-massive-mobile.png") 20px 20px/953px 499px no-repeat;
+    top: 35px;
+  }
+}
+@media only screen and (min-width: 768px) {
+  /* line 194, ../sass/partials/_header.scss */
+  #hero .title span.title-massive {
+    background: url("massive-movie-calendar-title-massive.png") 20px 20px/1429px 748px no-repeat;
+    top: 60px;
+  }
+}
+/* line 213, ../sass/partials/_header.scss */
+#hero .title span.title-movie {
+  -webkit-animation: floatin3 4s 1;
+  -moz-animation: floatin3 4s 1;
+  -ms-animation: floatin3 4s 1;
+  animation: floatin3 4s 1;
+  background: url("massive-movie-calendar-title-movie-mobile.png") 20px 20px/657px 364px no-repeat;
+  top: 93px;
+}
+@media only screen and (min-width: 500px) {
+  /* line 213, ../sass/partials/_header.scss */
+  #hero .title span.title-movie {
+    background: url("massive-movie-calendar-title-movie-mobile.png") 20px 20px/876px 486px no-repeat;
+    top: 113px;
+  }
+}
+@media only screen and (min-width: 768px) {
+  /* line 213, ../sass/partials/_header.scss */
+  #hero .title span.title-movie {
+    background: url("massive-movie-calendar-title-movie.png") 20px 20px/1314px 729px no-repeat;
+    top: 185px;
+  }
+}
+/* line 232, ../sass/partials/_header.scss */
+#hero .title span.title-calendar {
+  -webkit-animation: floatin4 4s 1;
+  -moz-animation: floatin4 4s 1;
+  -ms-animation: floatin4 4s 1;
+  animation: floatin4 4s 1;
+  background: url("massive-movie-calendar-title-calendar-mobile.png") 20px 20px/728px 353px no-repeat;
+  top: 128px;
+}
+@media only screen and (min-width: 500px) {
+  /* line 232, ../sass/partials/_header.scss */
+  #hero .title span.title-calendar {
+    background: url("massive-movie-calendar-title-calendar-mobile.png") 20px 20px/965px 471px no-repeat;
+    top: 155px;
+  }
+}
+@media only screen and (min-width: 768px) {
+  /* line 232, ../sass/partials/_header.scss */
+  #hero .title span.title-calendar {
+    background: url("massive-movie-calendar-title-calendar.png") 20px 20px/1448px 707px no-repeat;
+    top: 255px;
+  }
+}
+@-webkit-keyframes floatin1 {
+  0% {
+    background-position: 20px 20px;
+  }
+  20% {
+    background-position: 20px 20px;
+  }
+  30% {
+    background-position: 0px 0px;
+  }
+  40% {
+    background-position: 20px 20px;
+  }
+  100% {
+    background-position: 20px 20px;
+  }
+}
+@-moz-keyframes floatin1 {
+  0% {
+    background-position: 20px 20px;
+  }
+  20% {
+    background-position: 20px 20px;
+  }
+  30% {
+    background-position: 0px 0px;
+  }
+  40% {
+    background-position: 20px 20px;
+  }
+  100% {
+    background-position: 20px 20px;
+  }
+}
+@-ms-keyframes floatin1 {
+  0% {
+    background-position: 20px 20px;
+  }
+  20% {
+    background-position: 20px 20px;
+  }
+  30% {
+    background-position: 0px 0px;
+  }
+  40% {
+    background-position: 20px 20px;
+  }
+  100% {
+    background-position: 20px 20px;
+  }
+}
+@keyframes floatin1 {
+  0% {
+    background-position: 20px 20px;
+  }
+  20% {
+    background-position: 20px 20px;
+  }
+  30% {
+    background-position: 0px 0px;
+  }
+  40% {
+    background-position: 20px 20px;
+  }
+  100% {
+    background-position: 20px 20px;
+  }
+}
+@-webkit-keyframes floatin2 {
+  0% {
+    background-position: 20px 20px;
+  }
+  25% {
+    background-position: 20px 20px;
+  }
+  35% {
+    background-position: 0px 0px;
+  }
+  45% {
+    background-position: 20px 20px;
+  }
+  100% {
+    background-position: 20px 20px;
+  }
+}
+@-moz-keyframes floatin2 {
+  0% {
+    background-position: 20px 20px;
+  }
+  25% {
+    background-position: 20px 20px;
+  }
+  35% {
+    background-position: 0px 0px;
+  }
+  45% {
+    background-position: 20px 20px;
+  }
+  100% {
+    background-position: 20px 20px;
+  }
+}
+@-ms-keyframes floatin2 {
+  0% {
+    background-position: 20px 20px;
+  }
+  25% {
+    background-position: 20px 20px;
+  }
+  35% {
+    background-position: 0px 0px;
+  }
+  45% {
+    background-position: 20px 20px;
+  }
+  100% {
+    background-position: 20px 20px;
+  }
+}
+@keyframes floatin2 {
+  0% {
+    background-position: 20px 20px;
+  }
+  25% {
+    background-position: 20px 20px;
+  }
+  35% {
+    background-position: 0px 0px;
+  }
+  45% {
+    background-position: 20px 20px;
+  }
+  100% {
+    background-position: 20px 20px;
+  }
+}
+@-webkit-keyframes floatin3 {
+  0% {
+    background-position: 20px 20px;
+  }
+  30% {
+    background-position: 20px 20px;
+  }
+  40% {
+    background-position: 0px 0px;
+  }
+  50% {
+    background-position: 20px 20px;
+  }
+  100% {
+    background-position: 20px 20px;
+  }
+}
+@-moz-keyframes floatin3 {
+  0% {
+    background-position: 20px 20px;
+  }
+  30% {
+    background-position: 20px 20px;
+  }
+  40% {
+    background-position: 0px 0px;
+  }
+  50% {
+    background-position: 20px 20px;
+  }
+  100% {
+    background-position: 20px 20px;
+  }
+}
+@-ms-keyframes floatin3 {
+  0% {
+    background-position: 20px 20px;
+  }
+  30% {
+    background-position: 20px 20px;
+  }
+  40% {
+    background-position: 0px 0px;
+  }
+  50% {
+    background-position: 20px 20px;
+  }
+  100% {
+    background-position: 20px 20px;
+  }
+}
+@keyframes floatin3 {
+  0% {
+    background-position: 20px 20px;
+  }
+  30% {
+    background-position: 20px 20px;
+  }
+  40% {
+    background-position: 0px 0px;
+  }
+  50% {
+    background-position: 20px 20px;
+  }
+  100% {
+    background-position: 20px 20px;
+  }
+}
+@-webkit-keyframes floatin4 {
+  0% {
+    background-position: 20px 20px;
+  }
+  35% {
+    background-position: 20px 20px;
+  }
+  45% {
+    background-position: 0px 0px;
+  }
+  55% {
+    background-position: 20px 20px;
+  }
+  100% {
+    background-position: 20px 20px;
+  }
+}
+@-moz-keyframes floatin4 {
+  0% {
+    background-position: 20px 20px;
+  }
+  35% {
+    background-position: 20px 20px;
+  }
+  45% {
+    background-position: 0px 0px;
+  }
+  55% {
+    background-position: 20px 20px;
+  }
+  100% {
+    background-position: 20px 20px;
+  }
+}
+@-ms-keyframes floatin4 {
+  0% {
+    background-position: 20px 20px;
+  }
+  35% {
+    background-position: 20px 20px;
+  }
+  45% {
+    background-position: 0px 0px;
+  }
+  55% {
+    background-position: 20px 20px;
+  }
+  100% {
+    background-position: 20px 20px;
+  }
+}
+@keyframes floatin4 {
+  0% {
+    background-position: 20px 20px;
+  }
+  35% {
+    background-position: 20px 20px;
+  }
+  45% {
+    background-position: 0px 0px;
+  }
+  55% {
+    background-position: 20px 20px;
+  }
+  100% {
+    background-position: 20px 20px;
+  }
+}
+/* line 284, ../sass/partials/_header.scss */
+.about-button.mobile {
+  display: block;
+  max-width: 540px;
+  margin: 0 auto 15px;
+}
+@media only screen and (min-width: 768px) {
+  /* line 284, ../sass/partials/_header.scss */
+  .about-button.mobile {
+    margin: 0 auto 30px;
+  }
+}
+@media only screen and (min-width: 1200px) {
+  /* line 284, ../sass/partials/_header.scss */
+  .about-button.mobile {
+    display: none;
+  }
+}
+
+/* line 302, ../sass/partials/_header.scss */
+.todays-movie {
+  padding: 25px;
+  background-color: #ffffff;
+  max-width: 540px;
+  margin-bottom: 15px;
+  position: relative;
+}
+@media only screen and (min-width: 768px) {
+  /* line 302, ../sass/partials/_header.scss */
+  .todays-movie {
+    margin-bottom: 30px;
+  }
+}
+@media only screen and (min-width: 1200px) {
+  /* line 302, ../sass/partials/_header.scss */
+  .todays-movie {
+    margin-bottom: 120px;
+  }
+  /* line 319, ../sass/partials/_header.scss */
+  .todays-movie header {
+    display: -ms-flexbox;
+    display: -webkit-flex;
+    display: flex;
+  }
+  /* line 326, ../sass/partials/_header.scss */
+  .todays-movie .date-container,
+  .todays-movie .meta-container {
+    -webkit-align-self: flex-start;
+    -ms-flex-item-align: start;
+    align-self: flex-start;
+  }
+}
+/* line 335, ../sass/partials/_header.scss */
+.todays-movie .date {
+  margin-top: -35px;
+  margin-right: 17px;
+  margin-bottom: 15px;
+  background-color: #222222;
+  color: #ffffff;
+  font-family: "RadikalBlack";
+  line-height: 1.2;
+  padding: 12px 20px 8px;
+  position: relative;
+  width: 100%;
+  text-align: center;
+}
+@media only screen and (min-width: 500px) {
+  /* line 335, ../sass/partials/_header.scss */
+  .todays-movie .date {
+    padding: 15px 20px 11px;
+    margin-top: -40px;
+  }
+}
+@media only screen and (min-width: 1200px) {
+  /* line 335, ../sass/partials/_header.scss */
+  .todays-movie .date {
+    padding: 18px 10px 8px;
+  }
+}
+/* line 362, ../sass/partials/_header.scss */
+.todays-movie .date .mobile span {
+  font-size: 2em;
+  display: inline-block;
+}
+/* line 367, ../sass/partials/_header.scss */
+.todays-movie .date .mobile span.month {
+  font-size: 2em;
+  text-transform: uppercase;
+  margin-right: 5px;
+}
+/* line 374, ../sass/partials/_header.scss */
+.todays-movie .date .mobile span.day {
+  font-size: 2em;
+}
+/* line 381, ../sass/partials/_header.scss */
+.todays-movie .date .desktop {
+  display: none;
+}
+/* line 385, ../sass/partials/_header.scss */
+.todays-movie .date .desktop span {
+  display: block;
+}
+/* line 389, ../sass/partials/_header.scss */
+.todays-movie .date .desktop span.month {
+  font-size: 2em;
+  text-transform: uppercase;
+}
+/* line 395, ../sass/partials/_header.scss */
+.todays-movie .date .desktop span.day {
+  font-size: 3.6em;
+}
+@media only screen and (min-width: 1200px) {
+  /* line 335, ../sass/partials/_header.scss */
+  .todays-movie .date {
+    width: 75px;
+  }
+  /* line 406, ../sass/partials/_header.scss */
+  .todays-movie .date .mobile {
+    display: none;
+  }
+  /* line 411, ../sass/partials/_header.scss */
+  .todays-movie .date .desktop {
+    display: block;
+  }
+}
+/* line 417, ../sass/partials/_header.scss */
+.todays-movie .date:before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: -10px;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 10px 0 0 10px;
+  border-color: transparent transparent transparent #aaaaaa;
+}
+@media only screen and (min-width: 500px) {
+  /* line 417, ../sass/partials/_header.scss */
+  .todays-movie .date:before {
+    border-width: 15px 0 0 15px;
+    right: -15px;
+  }
+}
+/* line 436, ../sass/partials/_header.scss */
+.todays-movie .date span {
+  display: inline-block;
+  margin: 0 5px;
+}
+@media only screen and (min-width: 1200px) {
+  .todays-movie .date span {
+    display: block;
+  }
+}
+.todays-movie .date span.month,
+.todays-movie .date span.day {
+  font-size: 3em;
+}
+@media only screen and (min-width: 1200px) {
+  /* line 440, ../sass/partials/_header.scss */
+  .todays-movie .date span.month {
+    font-size: 2em;
+  }
+  /* line 445, ../sass/partials/_header.scss */
+  .todays-movie .date span.day {
+    font-size: 3.6em;
+  }
+}
+/* line 452, ../sass/partials/_header.scss */
+.todays-movie h3 {
+  display: inline-block;
+}
+/* line 457, ../sass/partials/_header.scss */
+.todays-movie .meta-info {
+  margin-bottom: 25px;
+}
+/* line 461, ../sass/partials/_header.scss */
+.todays-movie .meta-info p {
+  font-size: 1.2em;
+}
+/* line 467, ../sass/partials/_header.scss */
+.todays-movie .view-trailer {
+  background-color: #eeeeee;
+  width: 100%;
+  padding: 30px;
+  margin: 15px 0 20px;
+}
+/* line 474, ../sass/partials/_header.scss */
+.todays-movie .view-trailer .view-trailer-button {
+  max-width: 234px;
+  max-height: 44px;
+  display: block;
+  margin: 0 auto;
+  cursor: pointer;
+}
+/* line 484, ../sass/partials/_header.scss */
+.todays-movie .if-you-like-this {
+  margin-bottom: 20px;
+}
+@media only screen and (min-width: 1200px) {
+  /* line 484, ../sass/partials/_header.scss */
+  .todays-movie .if-you-like-this {
+    float: left;
+    width: 60%;
+  }
+}
+@media only screen and (min-width: 1200px) {
+  /* line 495, ../sass/partials/_header.scss */
+  .todays-movie .metacritic-score {
+    float: left;
+    width: 40%;
+    text-align: right;
+  }
+}
+/* line 505, ../sass/partials/_header.scss */
+.todays-movie .yesterday,
+.todays-movie .tomorrow {
+  position: absolute;
+  bottom: 20px;
+}
+/* line 511, ../sass/partials/_header.scss */
+.todays-movie .yesterday button,
+.todays-movie .tomorrow button {
+  border: 0;
+  background-color: #222222;
+  color: #ffffff;
+  font-family: "RadikalBlack";
+  font-size: 1.8em;
+  padding: 5px 15px 3px;
+  position: relative;
+  outline: 0;
+  cursor: pointer;
+  border-radius: 0px;
+}
+/* line 523, ../sass/partials/_header.scss */
+.todays-movie .yesterday button:after,
+.todays-movie .tomorrow button:after {
+  content: '';
+  position: absolute;
+  top: -10px;
+  width: 0;
+  height: 0;
+  border-style: solid;
+}
+@media only screen and (min-width: 500px) {
+  /* line 523, ../sass/partials/_header.scss */
+  .todays-movie .yesterday button:after,
+  .todays-movie .tomorrow button:after {
+    top: -15px;
+  }
+}
+@media only screen and (min-width: 500px) {
+  /* line 511, ../sass/partials/_header.scss */
+  .todays-movie .yesterday button,
+  .todays-movie .tomorrow button {
+    padding: 7px 22px;
+  }
+}
+/* line 545, ../sass/partials/_header.scss */
+.todays-movie .yesterday {
+  left: -10px;
+}
+@media only screen and (min-width: 500px) {
+  /* line 545, ../sass/partials/_header.scss */
+  .todays-movie .yesterday {
+    left: -15px;
+  }
+}
+/* line 556, ../sass/partials/_header.scss */
+.todays-movie .yesterday button:after {
+  left: 0;
+  border-width: 0 0 10px 10px;
+  border-color: transparent transparent #aaaaaa transparent;
+}
+@media only screen and (min-width: 500px) {
+  /* line 556, ../sass/partials/_header.scss */
+  .todays-movie .yesterday button:after {
+    border-width: 0 0 15px 15px;
+  }
+}
+/* line 570, ../sass/partials/_header.scss */
+.todays-movie .tomorrow {
+  right: -10px;
+}
+@media only screen and (min-width: 500px) {
+  /* line 570, ../sass/partials/_header.scss */
+  .todays-movie .tomorrow {
+    right: -15px;
+  }
+}
+/* line 581, ../sass/partials/_header.scss */
+.todays-movie .tomorrow button:after {
+  right: 0;
+  border-width: 10px 0 0 10px;
+  border-color: transparent transparent transparent #aaaaaa;
+}
+@media only screen and (min-width: 500px) {
+  /* line 581, ../sass/partials/_header.scss */
+  .todays-movie .tomorrow button:after {
+    border-width: 15px 0 0 15px;
+  }
+}
+
+main .todays-movie h3 {
+  padding-right: 20px;
+}
+/* line 3, ../sass/partials/_main.scss */
+main #pull-out-calendar {
+  background: #ffffff;
+  max-width: 540px;
+  margin: 0 auto;
+  position: relative;
+}
+@media only screen and (min-width: 1200px) {
+  /* line 3, ../sass/partials/_main.scss */
+  main #pull-out-calendar {
+    position: absolute;
+    right: 0;
+    top: 212px;
+    z-index: 8888;
+    transform: translateX(280px);
+    -webkit-transform: translateX(280px);
+    -webkit-transition: transform 600ms cubic-bezier(0.215, 0.61, 0.355, 1);
+    transition: transform 600ms cubic-bezier(0.215, 0.61, 0.355, 1);
+  }
+  /* line 21, ../sass/partials/_main.scss */
+  main #pull-out-calendar.expand {
+    transform: translateX(0px);
+    -webkit-transform: translateX(0px);
+  }
+  /* line 28, ../sass/partials/_main.scss */
+  main #pull-out-calendar.expand header:before, main #pull-out-calendar.expand header:after {
+    content: ">>";
+  }
+  /* line 36, ../sass/partials/_main.scss */
+  main #pull-out-calendar.fixed {
+    position: fixed;
+  }
+}
+/* line 42, ../sass/partials/_main.scss */
+main #pull-out-calendar header {
+  background-color: #222222;
+  color: #ffffff;
+  transform: rotate(-90deg);
+  -webkit-transform: rotate(-90deg);
+  padding: 10px 20px 2px;
+  position: absolute;
+  top: 142px;
+  left: -193px;
+  width: 335px;
+  text-align: center;
+  cursor: pointer;
+  font-family: "RadikalBlack";
+  display: none;
+}
+@media only screen and (min-width: 1200px) {
+  /* line 42, ../sass/partials/_main.scss */
+  main #pull-out-calendar header {
+    display: block;
+  }
+
+}
+/* line 63, ../sass/partials/_main.scss */
+main #pull-out-calendar header:before, main #pull-out-calendar header:after {
+  content: "<<";
+  font-size: 2.7em;
+  transform: rotate(90deg);
+  -webkit-transform: rotate(90deg);
+  position: absolute;
+  top: 0;
+}
+/* line 74, ../sass/partials/_main.scss */
+main #pull-out-calendar header:before {
+  left: 10px;
+}
+/* line 79, ../sass/partials/_main.scss */
+main #pull-out-calendar header:after {
+  right: 10px;
+}
+/* line 87, ../sass/partials/_main.scss */
+main #pull-out-calendar #calendar-container .mobile-image,
+main #pull-out-calendar #calendar-container .mobile-caption {
+  display: none;
+}
+/* line 93, ../sass/partials/_main.scss */
+main #pull-out-calendar #calendar-container .mobile-caption {
+  position: absolute;
+  top: 10px;
+  left: 15px;
+  color: #ffffff;
+  font-size: 1.4em;
+  font-family: 'RadikalLight';
+}
+/* line 102, ../sass/partials/_main.scss */
+main #pull-out-calendar #calendar-container .mobile-caption b {
+  font-family: 'RadikalBlack';
+  margin-right: 10px;
+}
+/* line 109, ../sass/partials/_main.scss */
+main #pull-out-calendar #calendar-container.january .january, main #pull-out-calendar #calendar-container.february .february, main #pull-out-calendar #calendar-container.march .march, main #pull-out-calendar #calendar-container.april .april, main #pull-out-calendar #calendar-container.may .may, main #pull-out-calendar #calendar-container.june .june, main #pull-out-calendar #calendar-container.july .july, main #pull-out-calendar #calendar-container.august .august, main #pull-out-calendar #calendar-container.september .september, main #pull-out-calendar #calendar-container.october .october, main #pull-out-calendar #calendar-container.november .november, main #pull-out-calendar #calendar-container.december .december {
+  display: block;
+}
+@media only screen and (min-width: 1200px) {
+  /* line 109, ../sass/partials/_main.scss */
+  main #pull-out-calendar #calendar-container.january .january, main #pull-out-calendar #calendar-container.february .february, main #pull-out-calendar #calendar-container.march .march, main #pull-out-calendar #calendar-container.april .april, main #pull-out-calendar #calendar-container.may .may, main #pull-out-calendar #calendar-container.june .june, main #pull-out-calendar #calendar-container.july .july, main #pull-out-calendar #calendar-container.august .august, main #pull-out-calendar #calendar-container.september .september, main #pull-out-calendar #calendar-container.october .october, main #pull-out-calendar #calendar-container.november .november, main #pull-out-calendar #calendar-container.december .december {
+    display: none;
+  }
+}
+/* line 130, ../sass/partials/_main.scss */
+main #pull-out-calendar #calendar-container #calendar {
+  margin-left: auto;
+  margin-right: auto;
+  font-family: "SourceCodeProRegular";
+  font-size: 1.3em;
+  padding-top: 25px;
+  padding-bottom: 10px;
+}
+@media only screen and (min-width: 1200px) {
+  /* line 130, ../sass/partials/_main.scss */
+  main #pull-out-calendar #calendar-container #calendar {
+    padding-top: 15px;
+    padding-bottom: 0px;
+  }
+}
+/* line 145, ../sass/partials/_main.scss */
+main #pull-out-calendar #calendar-container #calendar #calendar_header,
+main #pull-out-calendar #calendar-container #calendar #calendar_weekdays,
+main #pull-out-calendar #calendar-container #calendar #calendar_content {
+  position: relative;
+  overflow: hidden;
+  float: none;
+  z-index: 10;
+}
+/* line 155, ../sass/partials/_main.scss */
+main #pull-out-calendar #calendar-container #calendar #calendar_header {
+  width: 100%;
+  text-align: center;
+  padding: 10px 0;
+  background-color: #ffffff !important;
+}
+/* line 162, ../sass/partials/_main.scss */
+main #pull-out-calendar #calendar-container #calendar #calendar_header i {
+  position: absolute;
+  top: 0;
+  width: 15%;
+  font-family: "RadikalBlack";
+  color: #222222;
+  cursor: pointer;
+  font-style: normal;
+  font-size: 2.2em;
+}
+/* line 173, ../sass/partials/_main.scss */
+main #pull-out-calendar #calendar-container #calendar #calendar_header i.icon-chevron-left {
+  left: 0;
+}
+/* line 177, ../sass/partials/_main.scss */
+main #pull-out-calendar #calendar-container #calendar #calendar_header i.icon-chevron-left:before {
+  content: "<";
+}
+/* line 183, ../sass/partials/_main.scss */
+main #pull-out-calendar #calendar-container #calendar #calendar_header i.icon-chevron-right {
+  right: 0;
+}
+/* line 187, ../sass/partials/_main.scss */
+main #pull-out-calendar #calendar-container #calendar #calendar_header i.icon-chevron-right:before {
+  content: ">";
+}
+/* line 197, ../sass/partials/_main.scss */
+main #pull-out-calendar #calendar-container #calendar #calendar_content .today-active {
+  background-color: #eeeeee !important;
+}
+/* line 203, ../sass/partials/_main.scss */
+main #pull-out-calendar #calendar-container #calendar #calendar_weekdays div {
+  display: inline-block;
+  vertical-align: top;
+  font-family: "SourceCodeProBold" !important;
+}
+/* line 210, ../sass/partials/_main.scss */
+main #pull-out-calendar #calendar-container #calendar #calendar_weekdays div,
+main #pull-out-calendar #calendar-container #calendar #calendar_content div {
+  width: 40px;
+  height: 40px;
+  overflow: hidden;
+  text-align: center;
+  background-color: #FFFFFF;
+  color: #787878;
+}
+/* line 221, ../sass/partials/_main.scss */
+main #pull-out-calendar #calendar-container #calendar #calendar_content div {
+  float: left;
+  cursor: pointer;
+}
+/* line 226, ../sass/partials/_main.scss */
+main #pull-out-calendar #calendar-container #calendar #calendar_content div:hover {
+  background-color: #F8F8F8;
+}
+/* line 231, ../sass/partials/_main.scss */
+main #pull-out-calendar #calendar-container #calendar #calendar_content div.blank {
+  cursor: default;
+}
+@media only screen and (min-width: 1200px) {
+  /* line 231, ../sass/partials/_main.scss */
+  main #pull-out-calendar #calendar-container #calendar #calendar_content div.blank {
+    background-color: #E8E8E8;
+  }
+}
+/* line 241, ../sass/partials/_main.scss */
+main #pull-out-calendar #calendar-container #calendar #calendar_content div.today {
+  background-color: #222222 !important;
+  color: #ffffff;
+}
+/* line 251, ../sass/partials/_main.scss */
+main .desktop-calendar {
+  display: none;
+}
+@media only screen and (min-width: 1200px) {
+  /* line 251, ../sass/partials/_main.scss */
+  main .desktop-calendar {
+    display: block;
+  }
+}
+/* line 261, ../sass/partials/_main.scss */
+main #goToTop {
+  content: ">>";
+  position: fixed;
+  bottom: 13%;
+  right: 6%;
+  font-size: 1.8em;
+  font-weight: normal;
+  font-family: "RadikalBlack";
+  moz-animation: bounce 3s infinite;
+  -webkit-animation: bounce 3s infinite;
+  animation: bounce 3s infinite;
+  cursor: pointer;
+  visibility: hidden;
+  opacity: 0;
+  webkit-transition: all 0.4s cubic-bezier(0.34, 0.56, 0.24, 0);
+  transition: all 0.4s cubic-bezier(0.34, 0.56, 0.24, 0);
+  display: block;
+  z-index: 778;
+}
+/* line 281, ../sass/partials/_main.scss */
+main #goToTop:after {
+  content: "<<";
+  font-size: 2.7em;
+  transform: rotate(90deg);
+  position: absolute;
+  top: 0;
+}
+@-moz-keyframes bounce {
+  0%, 100% {
+    -moz-transform: translateY(-3px);
+    -ms-transform: translateY(-3px);
+    -webkit-transform: translateY(-3px);
+    transform: translateY(-3px);
+  }
+  40%, 80% {
+    -moz-transform: translateY(6px);
+    -ms-transform: translateY(6px);
+    -webkit-transform: translateY(6px);
+    transform: translateY(6px);
+  }
+}
+@-webkit-keyframes bounce {
+  0%, 100% {
+    -moz-transform: translateY(-3px);
+    -ms-transform: translateY(-3px);
+    -webkit-transform: translateY(-3px);
+    transform: translateY(-3px);
+  }
+  40%, 80% {
+    -moz-transform: translateY(6px);
+    -ms-transform: translateY(6px);
+    -webkit-transform: translateY(6px);
+    transform: translateY(6px);
+  }
+}
+@keyframes bounce {
+  0%, 100% {
+    -moz-transform: translateY(-3px);
+    -ms-transform: translateY(-3px);
+    -webkit-transform: translateY(-3px);
+    transform: translateY(-3px);
+  }
+  40%, 80% {
+    -moz-transform: translateY(6px);
+    -ms-transform: translateY(6px);
+    -webkit-transform: translateY(6px);
+    transform: translateY(6px);
+  }
+}
+/* line 1, ../sass/partials/_section.scss */
+section {
+  position: relative;
+  background: bottom right -70px/700px no-repeat fixed;
+  webkit-transition: all 0.4s cubic-bezier(0.34, 0.56, 0.24, 0);
+  transition: all 0.4s cubic-bezier(0.34, 0.56, 0.24, 0);
+}
+/* line 8, ../sass/partials/_section.scss */
+section .inner-content {
+  padding-top: 100px;
+  padding-bottom: 100px;
+  position: initial;
+}
+/* line 14, ../sass/partials/_section.scss */
+section .inner-content:before {
+  content: '';
+  display: block;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url("massive-movie-calendar-illustration-texture.png") center/600px fixed;
+}
+@media only screen and (min-width: 1200px) {
+  /* line 31, ../sass/partials/_section.scss */
+  section#january {
+    background-image: url("massive-movie-calendar-illustration-01-january.gif");
+    background-color: #f0a442;
+    box-shadow: inset 0 0 0 1000px #f0a442;
+  }
+  /* line 38, ../sass/partials/_section.scss */
+  section#february {
+    background-image: url("massive-movie-calendar-illustration-02-february.gif");
+    background-color: #ec4d4d;
+  }
+  /* line 44, ../sass/partials/_section.scss */
+  section#march {
+    background-image: url("massive-movie-calendar-illustration-03-march.gif");
+    background-color: #f0a645;
+  }
+  /* line 50, ../sass/partials/_section.scss */
+  section#april {
+    background-image: url("massive-movie-calendar-illustration-04-april.gif");
+    background-color: #5cc7ba;
+  }
+  /* line 56, ../sass/partials/_section.scss */
+  section#may {
+    background-image: url("massive-movie-calendar-illustration-05-may.gif");
+    background-color: #ec85ae;
+  }
+  /* line 62, ../sass/partials/_section.scss */
+  section#june {
+    background-image: url("massive-movie-calendar-illustration-06-june.gif");
+    background-color: #f39531;
+  }
+  /* line 68, ../sass/partials/_section.scss */
+  section#july {
+    background-image: url("massive-movie-calendar-illustration-07-july.gif");
+    background-color: #ec4d4d;
+  }
+  /* line 74, ../sass/partials/_section.scss */
+  section#august {
+    background-image: url("massive-movie-calendar-illustration-08-august.gif");
+    background-color: #5cc7ba;
+  }
+  /* line 80, ../sass/partials/_section.scss */
+  section#september {
+    background-image: url("massive-movie-calendar-illustration-09-september.gif");
+    background-color: #ec85ae;
+  }
+  /* line 86, ../sass/partials/_section.scss */
+  section#october {
+    background-image: url("massive-movie-calendar-illustration-10-october.gif");
+    background-color: #5cc7ba;
+  }
+  /* line 92, ../sass/partials/_section.scss */
+  section#november {
+    background-image: url("massive-movie-calendar-illustration-11-november.gif");
+    background-color: #ec4d4d;
+  }
+  /* line 98, ../sass/partials/_section.scss */
+  section#december {
+    background-image: url("massive-movie-calendar-illustration-12-december.gif");
+    background-color: #ec85ae;
+  }
+}
+
+/* line 3, ../sass/partials/_articles.scss */
+article.date-card {
+  padding-top: 15px;
+  padding-bottom: 15px;
+}
+/* line 8, ../sass/partials/_articles.scss */
+article.date-card .card {
+  border-radius: 0;
+  background-color: #ffffff;
+  height: 210px;
+  position: relative;
+  border: 0;
+  -webkit-transform-style: preserve-3d;
+  transform-style: preserve-3d;
+  -webkit-transition: -webkit-transform 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: -webkit-transform 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: transform 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: transform 1s cubic-bezier(0.175, 0.885, 0.32, 1.275), -webkit-transform 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  -webkit-backface-visibility: hidden;
+  cursor: pointer;
+}
+/* line 24, ../sass/partials/_articles.scss */
+article.date-card .card div {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  padding: 15px;
+}
+/* line 34, ../sass/partials/_articles.scss */
+article.date-card .card .back {
+  -webkit-transform: rotateY(180deg);
+  transform: rotateY(180deg);
+  background-color: #222222;
+  color: #ffffff;
+  font-family: "RadikalBlack";
+  line-height: 1.4;
+  font-size: 3.4em;
+}
+/* line 44, ../sass/partials/_articles.scss */
+article.date-card .card .back:before {
+  content: 'Watch on this day...';
+}
+/* line 49, ../sass/partials/_articles.scss */
+article.date-card .card .back:after {
+  content: '';
+  display: block;
+  width: 30px;
+  height: 30px;
+  -webkit-transform: rotate(45deg);
+  transform: rotate(45deg);
+  position: absolute;
+  bottom: -15px;
+  left: 50%;
+  margin-left: -15px;
+  background-color: #222222;
+}
+/* line 66, ../sass/partials/_articles.scss */
+article.date-card .expanded-movie {
+  display: none;
+  width: 730px;
+  max-width: 730px;
+  margin-top: 50px;
+  margin-bottom: 20px;
+  position: relative;
+}
+/* line 78, ../sass/partials/_articles.scss */
+article.date-card:nth-child(4n+1) .expanded-movie {
+  left: 0px;
+}
+/* line 86, ../sass/partials/_articles.scss */
+article.date-card:nth-child(4n+2) .expanded-movie {
+  left: -190px;
+}
+/* line 94, ../sass/partials/_articles.scss */
+article.date-card:nth-child(4n+3) .expanded-movie {
+  left: -380px;
+}
+/* line 102, ../sass/partials/_articles.scss */
+article.date-card:nth-child(4n+4) .expanded-movie {
+  left: -570px;
+}
+/* line 108, ../sass/partials/_articles.scss */
+article.date-card.flipped {
+  height: auto;
+  z-index: 9;
+}
+/* line 113, ../sass/partials/_articles.scss */
+article.date-card.flipped .card {
+  -webkit-transform: rotateY(180deg);
+  transform: rotateY(180deg);
+}
+/* line 119, ../sass/partials/_articles.scss */
+article.date-card.flipped .expanded-movie {
+  display: block;
+}
+/* line 125, ../sass/partials/_articles.scss */
+article.date-card .year {
+  position: absolute;
+  bottom: 15px;
+  left: 15px;
+}
+/* line 132, ../sass/partials/_articles.scss */
+article.date-card #close-icon {
+  display: block;
+  top: 10px;
+  right: 0;
+  width: 25px;
+  height: 25px;
+  background: transparent;
+  cursor: pointer;
+  z-index: 9999;
+  position: absolute;
+}
+/* line 145, ../sass/partials/_articles.scss */
+article.date-card #close-icon:before {
+  transform: rotate(-45deg);
+  -webkit-transform: rotate(-45deg);
+}
+/* line 151, ../sass/partials/_articles.scss */
+article.date-card #close-icon:after {
+  transform: rotate(45deg);
+  -webkit-transform: rotate(45deg);
+}
+/* line 157, ../sass/partials/_articles.scss */
+article.date-card #close-icon:before, article.date-card #close-icon:after {
+  content: '';
+  display: block;
+  width: 5px;
+  height: 25px;
+  background-color: #222222;
+  position: absolute;
+  top: 0;
+}
+/* line 168, ../sass/partials/_articles.scss */
+article.date-card .videoWrapper {
+  position: relative;
+  padding-bottom: 56.25%;
+  padding-top: 25px;
+  height: 0;
+}
+/* line 175, ../sass/partials/_articles.scss */
+article.date-card .videoWrapper iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* line 1, ../sass/partials/_about.scss */
+#about {
+  background-color: #8DD3D1;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 9999;
+  overflow: hidden;
+  transform: translateY(-100%);
+  -webkit-transform: translateY(-100%);
+  transition: transform 0.4s ease-in-out;
+  display: -ms-flexbox;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-direction: column;
+  -ms-flex-direction: column;
+  flex-direction: column;
+  -webkit-flex-wrap: nowrap;
+  -ms-flex-wrap: nowrap;
+  flex-wrap: nowrap;
+  -webkit-justify-content: center;
+  -ms-flex-pack: center;
+  justify-content: center;
+  -webkit-align-content: stretch;
+  -ms-flex-line-pack: stretch;
+  align-content: stretch;
+  -webkit-align-items: stretch;
+  -ms-flex-align: stretch;
+  align-items: stretch;
+}
+/* line 35, ../sass/partials/_about.scss */
+#about.reveal {
+  visibility: visible;
+  transform: translateY(0%);
+  -webkit-transform: translateY(0%);
+  transition: transform 0.4s ease-in-out;
+}
+/* line 43, ../sass/partials/_about.scss */
+#about #close {
+  display: block;
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  width: 50px;
+  height: 50px;
+  background: transparent;
+  cursor: pointer;
+  z-index: 9999;
+}
+/* line 55, ../sass/partials/_about.scss */
+#about #close:before, #about #close:after {
+  content: '';
+  display: block;
+  width: 10px;
+  height: 50px;
+  background-color: #222222;
+  position: absolute;
+  top: 0;
+  left: 25px;
+}
+/* line 68, ../sass/partials/_about.scss */
+#about #close:before {
+  transform: rotate(-45deg);
+  -webkit-transform: rotate(-45deg);
+}
+/* line 74, ../sass/partials/_about.scss */
+#about #close:after {
+  transform: rotate(45deg);
+  -webkit-transform: rotate(45deg);
+}
+/* line 81, ../sass/partials/_about.scss */
+#about .about-inner {
+  padding: 80px 0;
+  overflow-y: auto;
+}
+/* line 88, ../sass/partials/_about.scss */
+#about .about-inner .related-cta .inner {
+  padding-bottom: 80px;
+}
+/* line 92, ../sass/partials/_about.scss */
+#about .about-inner .related-cta .inner a.button {
+  display: block;
+  bottom: 55px;
+  position: absolute;
+}
+/* line 102, ../sass/partials/_about.scss */
+#about .container {
+  margin: 0 auto;
+  position: relative;
+}
+/* line 107, ../sass/partials/_about.scss */
+#about .container .icon {
+  background-color: #EFEDE4;
+  padding: 20px;
+  margin: -25px -25px 25px;
+}
+/* line 113, ../sass/partials/_about.scss */
+#about .container .icon img {
+  margin: 0 auto;
+  display: block;
+  max-height: 100px;
+}
+/* line 121, ../sass/partials/_about.scss */
+#about .container .inner {
+  background-color: #ffffff;
+  padding: 25px;
+  height: 100%;
+  border-bottom: 30px solid #8DD3D1;
+}
+
+/* line 1, ../sass/partials/_feedify.scss */
+.feedify .feedify-item {
+  position: relative;
+}
+/* line 5, ../sass/partials/_feedify.scss */
+.feedify .feedify-item .feedify-item-header {
+  z-index: 100;
+  transform: translate3d(0, 0, 0);
+  width: 100% !important;
+}
+/* line 11, ../sass/partials/_feedify.scss */
+.feedify .feedify-item .feedify-item-header span.title {
+  font-size: 5em;
+  font-family: "RadikalBlack";
+  display: block;
+  text-transform: uppercase;
+  background-color: #ffffff;
+  border-bottom: 1px solid #EFEDE4;
+  width: 100%;
+  padding: 30px 30px 16px;
+  line-height: 1;
+  position: relative;
+  z-index: 7777;
+}
+/* line 36, ../sass/partials/_feedify.scss */
+.feedify .feedify-item .feedify-item-header span.caption {
+  position: absolute;
+  right: 20px;
+  color: #ffffff;
+  top: 110px;
+  font-size: 1.4em;
+  font-family: 'RadikalLight';
+}
+/* line 45, ../sass/partials/_feedify.scss */
+.feedify .feedify-item .feedify-item-header span.caption b {
+  font-family: 'RadikalBlack';
+  margin-right: 10px;
+}
+/* line 51, ../sass/partials/_feedify.scss */
+.feedify .feedify-item .feedify-item-header span.caption i {
+  margin-left: 10px;
+}
+/* line 58, ../sass/partials/_feedify.scss */
+.feedify .feedify-item .feedify-item-body {
+  width: 100% !important;
+}
+/* line 65, ../sass/partials/_feedify.scss */
+.feedify .feedify-item.fixed .feedify-item-header {
+  position: fixed;
+  top: 0;
+}
+/* line 74, ../sass/partials/_feedify.scss */
+.feedify .feedify-item.bottom .feedify-item-header {
+  position: absolute;
+  bottom: 0;
+}
+
+/* line 1, ../sass/partials/_footer.scss */
+footer {
+  font-size: 1.2em;
+  text-align: center;
+  padding: 20px;
+  font-weight: 600;
+}
+/* line 8, ../sass/partials/_footer.scss */
+footer span {
+  display: block;
+}
+@media only screen and (min-width: 1200px) {
+  /* line 8, ../sass/partials/_footer.scss */
+  footer span {
+    display: inline-block;
+  }
+  /* line 18, ../sass/partials/_footer.scss */
+  footer span:first-child:after {
+    content: '|';
+    margin: 0 20px;
+  }
+}
+/*
+     FILE ARCHIVED ON 20:30:59 Feb 14, 2018 AND RETRIEVED FROM THE
+     INTERNET ARCHIVE ON 13:23:01 Oct 28, 2024.
+     JAVASCRIPT APPENDED BY WAYBACK MACHINE, COPYRIGHT INTERNET ARCHIVE.
+
+     ALL OTHER CONTENT MAY ALSO BE PROTECTED BY COPYRIGHT (17 U.S.C.
+     SECTION 108(a)(3)).
+*/
+/*
+playback timings (ms):
+  captures_list: 0.591
+  exclusion.robots: 0.028
+  exclusion.robots.policy: 0.016
+  esindex: 0.01
+  cdx.remote: 58.142
+  LoadShardBlock: 105.541 (3)
+  PetaboxLoader3.datanode: 172.53 (5)
+  load_resource: 376.977 (2)
+  PetaboxLoader3.resolve: 259.235 (2)
+*/
