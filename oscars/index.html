@@ -601,17 +601,25 @@
                     }
                 };
 
+                const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby9c6RG5IhRrppNY75xbMMnBbRP5t6yRtabo7BDzISnpz362VgHQJwJlTMp8UN-QQ9Fhg/exec';
+                const submitterName = formData.get('userName') || 'Anonymous';
+                const filename = `Oscars-Voting-Results-${submitterName}.pdf`;
+
+                // Step 1: Send form data + PDF to Google Apps Script immediately
+                // using getBase64 but NOT waiting for it before showing feedback
                 const pdf = pdfMake.createPdf(pdfDocument);
 
-                // Download PDF locally (existing behaviour)
-                pdf.download(`Oscars-Voting-Results-${formData.get('userName') || 'Anonymous'}.pdf`);
+                // Show submitting state
+                const submitBtn = document.querySelector('button[type="submit"]');
+                const originalBtnText = submitBtn.textContent;
+                submitBtn.textContent = 'Submitting...';
+                submitBtn.disabled = true;
 
-                // Also send to Google Apps Script (email + save to Drive/Sheet)
                 pdf.getBase64(function(base64pdf) {
                     const payload = {
-                        name: formData.get('userName') || 'Anonymous',
+                        name: submitterName,
                         celebName: formData.get('celebName') || '',
-                        filename: `Oscars-Voting-Results-${formData.get('userName') || 'Anonymous'}.pdf`,
+                        filename: filename,
                         pdf: base64pdf,
                         selections: formResults.reduce((obj, r) => {
                             if (r.selection) obj[r.category] = r.selection;
@@ -619,19 +627,37 @@
                         }, {})
                     };
 
-                    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby9c6RG5IhRrppNY75xbMMnBbRP5t6yRtabo7BDzISnpz362VgHQJwJlTMp8UN-QQ9Fhg/exec';
-
                     fetch(APPS_SCRIPT_URL, {
                         method: 'POST',
                         mode: 'no-cors',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
                     }).then(() => {
-                        console.log('Submitted to Google Apps Script');
+                        console.log('Submitted to Google Apps Script successfully');
+                        submitBtn.textContent = '✓ Submitted!';
+                        submitBtn.style.backgroundColor = '#C79F27';
+                        submitBtn.style.color = '#000';
+                        setTimeout(() => {
+                            submitBtn.textContent = originalBtnText;
+                            submitBtn.style.backgroundColor = '';
+                            submitBtn.style.color = '';
+                            submitBtn.disabled = false;
+                        }, 3000);
                     }).catch(err => {
                         console.error('Submission error:', err);
+                        submitBtn.textContent = originalBtnText;
+                        submitBtn.disabled = false;
                     });
                 });
+
+                // Step 2: Handle PDF download separately
+                // On mobile, open in new tab; on desktop, download
+                const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+                if (isMobile) {
+                    pdf.open();
+                } else {
+                    pdf.download(filename);
+                }
 
                 getRandom();
             });
