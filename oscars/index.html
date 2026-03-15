@@ -208,7 +208,18 @@
             <option value="Joachim Trier, Sentimental Value">Joachim Trier, "Sentimental Value"</option>
             <option value="Ryan Coogler, Sinners">Ryan Coogler, "Sinners"</option>
         </select>
-    
+
+        <!-- Best Casting -->
+        <h2>Best Casting Nominee</h2>
+        <select name="bestCasting" id="bestCasting">
+            <option value="">Select...</option>
+            <option value="Hamnet">Hamnet — Nina Gold</option>
+            <option value="Marty Supreme">Marty Supreme — Jennifer Venditti</option>
+            <option value="One Battle After Another">One Battle After Another — Cassandra Kulukundis</option>
+            <option value="The Secret Agent">The Secret Agent — Gabriel Domingues</option>
+            <option value="Sinners">Sinners — Francine Maisler</option>
+        </select>
+
         <!-- Best International Feature Film -->
         <h2>Best International Feature Film Nominee</h2>
         <select name="bestInternationalFeatureFilm" id="bestInternationalFeatureFilm">
@@ -542,6 +553,7 @@
                     {category: 'Best Supporting Actor Winner', selection: formData.get('bestSupportingActor')},
                     {category: 'Best Supporting Actress Winner', selection: formData.get('bestSupportingActress')},
                     {category: 'Best Director Winner', selection: formData.get('bestDirector')},
+                    {category: 'Best Casting Winner', selection: formData.get('bestCasting')},
                     {category: 'Best International Feature Film Winner', selection: formData.get('bestInternationalFeatureFilm')},
                     {category: 'Best Animated Feature Film Winner', selection: formData.get('bestAnimatedFeatureFilm')},
                     {category: 'Best Adapted Screenplay Winner', selection: formData.get('bestAdaptedScreenplay')},
@@ -590,7 +602,37 @@
                 };
 
                 const pdf = pdfMake.createPdf(pdfDocument);
+
+                // Download PDF locally (existing behaviour)
                 pdf.download(`Oscars-Voting-Results-${formData.get('userName') || 'Anonymous'}.pdf`);
+
+                // Also send to Google Apps Script (email + save to Drive/Sheet)
+                pdf.getBase64(function(base64pdf) {
+                    const payload = {
+                        name: formData.get('userName') || 'Anonymous',
+                        celebName: formData.get('celebName') || '',
+                        filename: `Oscars-Voting-Results-${formData.get('userName') || 'Anonymous'}.pdf`,
+                        pdf: base64pdf,
+                        selections: formResults.reduce((obj, r) => {
+                            if (r.selection) obj[r.category] = r.selection;
+                            return obj;
+                        }, {})
+                    };
+
+                    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby9c6RG5IhRrppNY75xbMMnBbRP5t6yRtabo7BDzISnpz362VgHQJwJlTMp8UN-QQ9Fhg/exec';
+
+                    fetch(APPS_SCRIPT_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    }).then(() => {
+                        console.log('Submitted to Google Apps Script');
+                    }).catch(err => {
+                        console.error('Submission error:', err);
+                    });
+                });
+
                 getRandom();
             });
         } else {
