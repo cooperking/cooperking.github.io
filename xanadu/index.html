@@ -1,0 +1,1663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3D relation explorer</title>
+<style>
+:root{
+  --page:#070912; --card:#171a28; --line:#ffffff22; --line-strong:#ffffff45;
+  --t1:#eef0f6; --t2:#aeb3c4; --t3:#767c90;
+}
+*{box-sizing:border-box;}
+body{
+  margin:0; overflow:hidden; background:var(--page); color:var(--t1);
+  font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size:16px; line-height:1.5;
+}
+.wrap{position:fixed; top:12px; left:12px; z-index:10; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 16px; max-width:640px;}
+h1{font-size:16px; font-weight:500; margin:0 0 8px;}
+select, button{
+  font:inherit; font-size:14px; color:var(--t1); background:var(--card);
+  border:1px solid var(--line-strong); border-radius:8px; padding:6px 10px; max-width:200px;
+}
+button{cursor:pointer;}
+.bar{display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin:0 0 8px;}
+.trail{display:flex; gap:6px; align-items:center; flex-wrap:wrap; font-size:12px; color:var(--t2);}
+.trail .crumb{cursor:pointer; padding:2px 9px; border-radius:9px; border:1px solid var(--line);}
+.trail .crumb.cur{color:var(--t1); font-weight:500;}
+.legend{display:flex; gap:14px; font-size:12px; color:var(--t2); margin:0; flex-wrap:wrap;}
+.legend .dot{display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:5px; vertical-align:-1px;}
+#stage{
+  position:fixed; inset:0; z-index:0;
+  overflow:hidden; touch-action:none; user-select:none;
+  background:radial-gradient(ellipse at 50% 42%, #141834 0%, #0a0d1e 45%, #05060f 100%);
+}
+#stars{position:absolute; inset:-15%; pointer-events:none;}
+.star{position:absolute; border-radius:50%; background:#fff;}
+#edges{position:absolute; inset:0; width:100%; height:100%;}
+#labellayer{position:absolute; inset:0; pointer-events:none;}
+.rlabel{position:absolute; left:0; top:0; z-index:850; font-size:11px; font-weight:500; padding:1px 9px; border-radius:9px; white-space:nowrap;}
+#nodes{position:absolute; inset:0; pointer-events:none;}
+.node{position:absolute; left:0; top:0; cursor:pointer; text-align:center; transform-origin:center; pointer-events:auto;}
+#editor, #typespanel, #groupspanel{left:auto; right:12px; width:300px; max-height:calc(100vh - 24px); overflow:auto;}
+#editor h1, #typespanel h1, #groupspanel h1{display:flex; justify-content:space-between; align-items:center; gap:10px;}
+.field{display:block; font-size:12px; color:var(--t2); margin:0 0 8px;}
+.field input, .field textarea, .field select{
+  display:block; width:100%; margin-top:3px; font:inherit; font-size:13px; color:var(--t1);
+  background:var(--page); border:1px solid var(--line-strong); border-radius:8px; padding:5px 8px; max-width:none;
+}
+.conn{display:flex; align-items:center; font-size:12px; gap:6px; padding:3px 0;}
+.conn select{font-size:11px; padding:2px 4px; max-width:104px; flex-shrink:0;}
+.conn button{padding:0 7px; font-size:12px; flex-shrink:0;}
+.addrow{display:flex; gap:6px; flex-wrap:wrap; margin:8px 0;}
+.addrow select{flex:1; min-width:78px; max-width:none; font-size:12px; padding:5px 6px;}
+.addrow button{font-size:12px;}
+.danger{color:#E24B4A; border-color:#E24B4A; font-size:12px;}
+.sec{font-size:12px; color:var(--t2); margin:12px 0 4px; border-top:1px solid var(--line); padding-top:10px;}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="stars"></div>
+  <svg id="edges"></svg>
+  <div id="labellayer"></div>
+  <div id="nodes"></div>
+</div>
+<div id="zoomctl" style="position:fixed; right:12px; bottom:12px; z-index:10; display:flex; gap:6px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:6px;">
+  <button id="zoomout" type="button" title="Zoom out" style="width:32px; padding:6px 0;">&minus;</button>
+  <button id="zoomin" type="button" title="Zoom in" style="width:32px; padding:6px 0;">+</button>
+</div>
+<div id="lightbox" style="display:none; position:fixed; inset:0; z-index:2000; background:rgba(0,0,0,0.78); cursor:zoom-out; align-items:center; justify-content:center;">
+  <img id="lightbox-img" alt="" style="max-width:90vw; max-height:90vh; border-radius:12px;">
+</div>
+<div class="wrap">
+  <h1 style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+    <span id="title">3D relation explorer</span>
+    <button id="panel-toggle" type="button" style="font-size:12px; padding:2px 9px;" title="Minimize">&minus;</button>
+  </h1>
+  <div id="panel-body">
+  <div class="bar">
+    <select id="jump" aria-label="Jump to node"></select>
+    <button id="typesbtn" type="button">Types</button>
+    <button id="groupsbtn" type="button">Groups</button>
+    <button id="addnode" type="button">Add node</button>
+    <button id="newgraph" type="button">New</button>
+    <button id="load" type="button">Load</button>
+    <button id="merge" type="button">Merge</button>
+    <button id="example" type="button">Example</button>
+    <button id="export" type="button">Export</button>
+    <button id="exportview" type="button" style="display:none;">Export this view</button>
+    <button id="reset" type="button">Reset layout</button>
+    <input type="file" id="file" accept=".json,.zip,application/json,application/zip" style="display:none">
+    <input type="file" id="mergefile" accept=".json,.zip,application/json,application/zip" style="display:none">
+    <div class="trail" id="trail" style="display:none;"></div>
+  </div>
+  <div class="trail" id="graphtrail" style="display:none; margin:0 0 8px;"></div>
+  <div class="legend" id="legend"></div>
+  </div>
+</div>
+<div class="wrap" id="editor" style="display:none;">
+  <h1><span>Edit node</span><button id="ed-close" type="button">Done</button></h1>
+  <label class="field">Name<input id="ed-name"></label>
+  <div style="margin:-4px 0 8px;">
+    <button id="ed-set-start" type="button" style="font-size:12px;">Set as start</button>
+    <span id="ed-start-status" style="font-size:12px; color:var(--t2); margin-left:6px;"></span>
+  </div>
+  <label class="field">Group<select id="ed-group"></select></label>
+  <div id="newgroup" style="display:none; border:1px solid var(--line); border-radius:8px; padding:8px; margin:0 0 8px;">
+    <label class="field">Group label<input id="ng-label" placeholder="e.g. Family"></label>
+    <label class="field">Colour<select id="ng-color"></select></label>
+    <button id="ng-create" type="button" style="font-size:12px;">Create group</button>
+  </div>
+  <label class="field">Description<textarea id="ed-desc" rows="4" placeholder="Supports **bold**, *italic*, `code`, [links](url), and - bullet lines"></textarea></label>
+  <label class="field">URL<input id="ed-url" placeholder="https://"></label>
+  <label class="field">Link text<input id="ed-linktext" placeholder="Defaults to Wikipedia or Link"></label>
+  <label class="field">Image<input id="ed-img" placeholder="Paste an image address"></label>
+  <div style="display:flex; gap:6px; align-items:center; margin:-2px 0 8px; flex-wrap:wrap;">
+    <button id="ed-upload" type="button" style="font-size:12px;">Upload image</button>
+    <span id="ed-imgstatus" style="display:none; font-size:12px; color:var(--t2);">Uploaded image in use<button id="ed-imgremove" type="button" style="font-size:11px; padding:0 7px; margin-left:6px;">remove</button></span>
+  </div>
+  <input type="file" id="ed-imgfile" accept="image/*" style="display:none">
+  <div class="sec">Linked graph</div>
+  <div id="ed-graph-none">
+    <button id="ed-graph-attach" type="button" style="font-size:12px;">Attach graph&hellip;</button>
+  </div>
+  <div id="ed-graph-some" style="display:none;">
+    <div id="ed-graph-status" style="font-size:12px; color:var(--t2); margin:0 0 6px;"></div>
+    <div style="display:flex; gap:6px; flex-wrap:wrap; margin:0 0 8px;">
+      <button id="ed-graph-enter" type="button" style="font-size:12px;">Enter graph &rarr;</button>
+      <button id="ed-graph-detach" type="button" style="font-size:12px; color:#E24B4A; border-color:#E24B4A;">Detach</button>
+    </div>
+  </div>
+  <input type="file" id="ed-graph-file" accept=".json,.zip,application/json,application/zip" style="display:none">
+  <div class="sec">Connections</div>
+  <div id="ed-conns"></div>
+  <div class="addrow">
+    <select id="ed-type"></select>
+    <select id="ed-dir">
+      <option value="out">this &#8594; other</option>
+      <option value="in">other &#8594; this</option>
+    </select>
+    <select id="ed-target"></select>
+    <button id="ed-add" type="button">Add</button>
+  </div>
+  <div id="newtype" style="display:none; border:1px solid var(--line); border-radius:8px; padding:8px; margin:0 0 8px;">
+    <label class="field" style="display:flex; gap:6px; align-items:center; margin-bottom:6px;"><input type="checkbox" id="nt-mutual" checked style="width:auto;"> mutual (no direction)</label>
+    <label class="field">Label<input id="nt-from" placeholder="e.g. partner"></label>
+    <label class="field" id="nt-to-wrap" style="display:none;">Reverse label<input id="nt-to" placeholder="e.g. child"></label>
+    <label class="field" style="display:flex; gap:6px; align-items:center;"><input type="checkbox" id="nt-dashed" style="width:auto;"> dashed line</label>
+    <button id="nt-create" type="button" style="font-size:12px;">Create type</button>
+  </div>
+  <div class="sec">Merge duplicate</div>
+  <div class="addrow">
+    <select id="ed-merge-target"></select>
+    <button id="ed-merge-go" class="danger" type="button">Merge into this node</button>
+  </div>
+  <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;">
+    <button id="ed-delete" class="danger" type="button">Delete node</button>
+    <button id="ed-delete-connected" class="danger" type="button">Delete node + connected</button>
+  </div>
+</div>
+<div class="wrap" id="typespanel" style="display:none;">
+  <h1><span>Relation types</span><button id="tp-close" type="button">Done</button></h1>
+  <div id="tp-list"></div>
+</div>
+<div class="wrap" id="groupspanel" style="display:none;">
+  <h1><span>Groups</span><button id="gp-close" type="button">Done</button></h1>
+  <div id="gp-list"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+const BUILD_TAG="2026-07-24r \u2014 Greek Myth (gods+Odyssey+Iliad) as default example, Zeus start";
+console.log("Relation explorer build:", BUILD_TAG);
+
+const PAL = {
+  purple:["#EEEDFE","#534AB7","#26215C","#7F77DD"],
+  teal:["#E1F5EE","#0F6E56","#04342C","#1D9E75"],
+  coral:["#FAECE7","#993C1D","#4A1B0C","#D85A30"],
+  gray:["#F1EFE8","#5F5E5A","#2C2C2A","#888780"],
+  blue:["#E6F1FB","#185FA5","#042C53","#378ADD"],
+  pink:["#FBEAF0","#993556","#4B1528","#D4537E"],
+  amber:["#FAEEDA","#854F0B","#412402","#EF9F27"],
+  green:["#EAF3DE","#3B6D11","#173404","#97C459"],
+  red:["#FCEBEB","#A32D2D","#501313","#E24B4A"]
+};
+const esc = s => String(s).replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]));
+function md(s){
+  let t=esc(s);
+  t=t.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g,'<a href="$2" target="_blank" rel="noopener" style="color:inherit;">$1</a>');
+  t=t.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
+  t=t.replace(/\*([^*]+)\*/g,'<em>$1</em>');
+  t=t.replace(/`([^`]+)`/g,'<code style="font-family:ui-monospace,monospace;font-size:11px;">$1</code>');
+  const lines=t.split(/\n/);
+  let out="", inList=false;
+  lines.forEach(ln=>{
+    if(/^- /.test(ln)){
+      if(!inList){ out+='<ul style="margin:4px 0;padding-left:16px;text-align:left;">'; inList=true; }
+      out+='<li>'+ln.slice(2)+'</li>';
+    } else {
+      if(inList){ out+='</ul>'; inList=false; }
+      out+=ln+'<br>';
+    }
+  });
+  if(inList) out+='</ul>';
+  return out.replace(/(<br>)+$/,'');
+}
+
+const DEFAULT_DATA = {"title":"Greek Myth","start":"zeus","groups":{"prim":{"label":"Primordial","color":"purple"},"titan":{"label":"Titan","color":"teal"},"oly":{"label":"Olympian","color":"coral"},"mort":{"label":"Mortal / nymph","color":"amber"},"monster":{"label":"Monster","color":"red"},"greek":{"label":"Greek","color":"blue"},"trojan":{"label":"Trojan","color":"amber"}},"types":{"parent":{"fromLabel":"parent","toLabel":"child","arrow":true},"consort":{"label":"consort","mutual":true,"dashed":true},"protects":{"fromLabel":"protector","toLabel":"protected","arrow":true},"endangers":{"fromLabel":"threat","toLabel":"endangered","arrow":true,"dashed":true},"captivates":{"fromLabel":"captor","toLabel":"captive","arrow":true},"advises":{"fromLabel":"advisor","toLabel":"advised","arrow":true},"hosts":{"fromLabel":"host","toLabel":"guest","arrow":true},"courts":{"fromLabel":"suitor","toLabel":"courted","arrow":true},"serves":{"fromLabel":"servant","toLabel":"master","arrow":true},"kills":{"fromLabel":"killer","toLabel":"victim","arrow":true},"sibling":{"label":"sibling","mutual":true},"loves":{"label":"loves","mutual":true,"dashed":true},"friend":{"label":"friend","mutual":true},"forges":{"fromLabel":"smith","toLabel":"equipped","arrow":true},"rival":{"label":"rival","mutual":true},"wounds":{"fromLabel":"attacker","toLabel":"wounded","arrow":true}},"nodes":{"chaos":{"name":"Chaos","group":"prim","desc":"The yawning void; first of all things","url":"https://en.wikipedia.org/wiki/Chaos_(cosmogony)"},"gaia":{"name":"Gaia","group":"prim","desc":"The Earth, mother of Titans","url":"https://en.wikipedia.org/wiki/Gaia"},"uranus":{"name":"Uranus","group":"prim","desc":"The Sky, first ruler of the cosmos","url":"https://en.wikipedia.org/wiki/Uranus_(mythology)"},"nyx":{"name":"Nyx","group":"prim","desc":"Night","url":"https://en.wikipedia.org/wiki/Nyx"},"erebus":{"name":"Erebus","group":"prim","desc":"Darkness","url":"https://en.wikipedia.org/wiki/Erebus"},"tartarus":{"name":"Tartarus","group":"prim","desc":"The abyss beneath the earth","url":"https://en.wikipedia.org/wiki/Tartarus"},"pontus":{"name":"Pontus","group":"prim","desc":"The Sea","url":"https://en.wikipedia.org/wiki/Pontus_(mythology)"},"cronus":{"name":"Cronus","group":"titan","desc":"Titan king; devoured his children","url":"https://en.wikipedia.org/wiki/Cronus"},"rhea":{"name":"Rhea","group":"titan","desc":"Titaness, mother of the Olympians","url":"https://en.wikipedia.org/wiki/Rhea_(mythology)"},"oceanus":{"name":"Oceanus","group":"titan","desc":"The world-encircling river","url":"https://en.wikipedia.org/wiki/Oceanus"},"tethys":{"name":"Tethys","group":"titan","desc":"Mother of rivers and Oceanids","url":"https://en.wikipedia.org/wiki/Tethys_(mythology)"},"hyperion":{"name":"Hyperion","group":"titan","desc":"Titan of heavenly light","url":"https://en.wikipedia.org/wiki/Hyperion_(Titan)"},"theia":{"name":"Theia","group":"titan","desc":"Titaness of sight and shining sky","url":"https://en.wikipedia.org/wiki/Theia"},"themis":{"name":"Themis","group":"titan","desc":"Divine law and order","url":"https://en.wikipedia.org/wiki/Themis"},"mnemosyne":{"name":"Mnemosyne","group":"titan","desc":"Memory; mother of the Muses","url":"https://en.wikipedia.org/wiki/Mnemosyne"},"iapetus":{"name":"Iapetus","group":"titan","desc":"Titan of mortality","url":"https://en.wikipedia.org/wiki/Iapetus"},"coeus":{"name":"Coeus","group":"titan","desc":"Titan of intellect","url":"https://en.wikipedia.org/wiki/Coeus"},"phoebe":{"name":"Phoebe","group":"titan","desc":"Titaness of prophecy","url":"https://en.wikipedia.org/wiki/Phoebe_(Titaness)"},"leto":{"name":"Leto","group":"titan","desc":"Mother of Apollo and Artemis","url":"https://en.wikipedia.org/wiki/Leto"},"metis":{"name":"Metis","group":"titan","desc":"Cunning wisdom; swallowed by Zeus","url":"https://en.wikipedia.org/wiki/Metis_(mythology)"},"atlas":{"name":"Atlas","group":"titan","desc":"Condemned to hold up the sky","url":"https://en.wikipedia.org/wiki/Atlas_(mythology)"},"prometheus":{"name":"Prometheus","group":"titan","desc":"Stole fire for humanity","url":"https://en.wikipedia.org/wiki/Prometheus"},"zeus":{"name":"Zeus","group":"oly","desc":"King of the gods; \n\nsky and thunder\n\n","url":"https://en.wikipedia.org/wiki/Zeus","img":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBAUEBAYFBQUGBgYHCQ4JCQgICRINDQoOFRIWFhUSFBQXGiEcFxgfGRQUHScdHyIjJSUlFhwpLCgkKyEkJST/2wBDAQYGBgkICREJCREkGBQYJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCT/wAARCAGQAQcDASIAAhEBAxEB/8QAHAAAAgIDAQEAAAAAAAAAAAAABQYDBAACBwEI/8QAShAAAgEDAwIDBQYEAgcGBAcAAQIDAAQRBRIhBjETQVEUImFxgQcjMpGhsRVCUsFi0SQlM3Lh8PEWF0NTY4ImNDWSRGRzhKKy4v/EABkBAAMBAQEAAAAAAAAAAAAAAAECAwAEBf/EACURAAICAgICAwEBAQEBAAAAAAABAhEhMQNBElEEEzIiYXEzQv/aAAwDAQACEQMRAD8A6W4ClT614/vKCK997YoYV5uA9xvzqhgZqP8As3A/qFDZ951S2x9KL36bYy2c+8KHyHdq1uPMUEFkHWLE6DcHnHH71H094iW8bYypUD5VL1oc6DMpIyWX96l6bQNaIreQFUX6EehiSRvCxjBoWW8K4lJPJxgUWRcxj1oTLg3UgI544oyFiL+rSlupLMsMEReXzpysxuQfKkrWDjqO1/8A0v7062K/dKQe4rcfYZkl2BHC5P4iKHWEAEJYLnd3q3eR5jJAGcV7p4HsqA8Gs9mWhY0VhHfXQPH3pGKbIZsIE7k0oWmY9Qu2Uf8AjHNM9llmDHtijHQJbNNWIDxf7wqpq8hfS7hSONlbazIfHgUZOZBmvNcx/Crgg4OylfYxHoW1YYxzjFHWxgYpf0Mk28bDOCBxR5TvUeXFOtCPYLiQfxGXPmtU+oI1MtmCONxq8mV1Fx6pVLXOZLXJHDmkHCNpkKuO/rVqT/Yv8qqWjYUAjHFWSu9XOcf3qj0TQJ0c7oHXHaRv3qvD91rtwDjkLVvS1KJKe5ErDHrVRvd198+aLn4VNdFGMUDdgB386oayrNaysTxjt6UQtkU8EZqtqwD2kgHkDVJaERChzagAgAr/AGoN08DGreYDEHPzoxa4e1QHvtoVorOrSxlcYc4YfOljsMtBwg+CZBjd5YPFCNVXbcWrn/zBRgNm3AK4JPNBtdlMcUbqm4o6kDt51p6NEvXZxCpB43Ch2vDfYTD/AAmiFxuey3lSp4OD5c0P1gH2aT02nP5UGFbKWhgi1BzxgcVleaGwNqB8BWUTDeH3IoPfFaXCB1XyNZHKHUMK9chuTUhwde71gwx48QYoa7n+LwcEnngUX1JQYoh2zIKEhtutR5HABxigEi6zU/wUk+ci/vVnQlxAh+FV+sJA+jkD/wA1P3q3oILW6H4U8f0I9B5QWTk4PwoW0Z9pkbknOM0VXIjzVOIZZz/ippCxFDVxjqWAEdov7082DDwlX4Uma5x1Vb5HeH+9N9nlY0+Vbj7NMluwBGxHfFQ2xCwJg+VT3W5onwM5GAKVdT6uu9MdrbTY4G2ABp2Pu59AcftU+XlXHlj8fG54Rb0jR7+W7uZjaSCJpCdz+6CPUZ70ctreS2YhxhfIggj9K5rF9oV7JfiLUYh4hb7uWJvxfDNPOm9Uw3U5eK3wzoAznG128jj1qEPlJ4orLgayb6gA86MOQHHNa6sAdLuSQOEPNeyalaXolhd/DkhkAzjk5GeRWsl1H4SpGUmMgyo/lGPNvQVb7Y02J4O6PdAs5zbW4aPZ4oGwOcEjHfHpRa7a208R77hWErbFPqf8qqfxe306HfdTx+OU96SRtpIz2APalOG/XWNXhvnB8JCSZuTwPQHy8s+dTfyPQy4e2MU2U1BW5BKGqmtH3rRv/Vx+lDf+03tev4Rh4ITGEt3JJ9OOM/GiWqSQ3UEElu0rGOTMgeIoV+PPlVI8qkLKDQVtkV4u3lVoRgWxIHvHzNQ2KjwlzVtlIhZfyrp6IAPTiB7QCQCJDQ+f3Nc3FuGQc1bsXAurlWHCyHNQXCK2rqByDGP3qSHYdtJCFyT9a01HAs5GzwRWW8WU2g4rW/YPYHOBxj61SWhFshsnX2ePHoKH6Vw9wR/LKwIq5aFUtIyPSqGjylLq5YDK+IQR8KWOxnoYkVXhNLvUCgwYYZG9QR680zB41g2xgHd5+lLHU8u2LbhieG4HAwa09AjsI3DbrTao4AFUtUw0DqO5X+1WwPGsiyt3SoL2IezgnklRz9KHQewDoDnwsdsCsrzRjsBXHmaymSwBvI1w/dMTnv8Ay1Z3BhkVC0JWUZBK1KkYTgZ59akyhT1JiVgGe8goZH/9cQHkhSaKalGzeBjA+8zQ62w2u+93CHFDsJB1gh/hXxMy/vV/QQfZ0FVerjjTozj/AMVauaOMQrjtinjsSWg0UwNxYnjtQ+PLSOpJALflRFCrp5kAc1RiClpMYxupmBCr1LuXqi1K5IEX96d7WF0gRpI2UEDv/wA8UuX62NvrHtt3cRRzRxhI0uYXMZHcncPP08qFap1l7CgPhW4jyfdt5uD9K5ZfIUGXjwuaGjqi7kstNRoQoaSeKD3uAN7Y5rUWGm6NYCZYo7i6LYEkqghcc8KeBny/U0kQdYTdSWbx2li6WtvulkmlnLhWHYLx3yeMnAolaawLjSYbiaAXQkXeHLYwACMDjzqPJyqcvJFYcbiqKT9WJrjrFJp0EkO4eHKQqlSDwQcetB9Q1v8AgjzW6FUY5chpNy5xwAR5UB0DpLqrXbqR5Lu10PTLWTZHLdZdmHf3VGM9/M0Qb7Otuu2dxf6/HqenW5aZ4fZWheVh2HJIYZ+I7VHxk9lbitDT0d0/qWvW0mq3N0NOjudrogG+QgfzHJACnyzyfSiZuoNNjez0y6a+uNwiBKBeWPBCg/P8qVuoOuEsVktdOdEUje+DuIPzH/PkKDfZ1fXs3Usl1C7SDGZgo3bvJQfzoRksRRpRf6YcaSS81BrZM3lzvO8bCQG88L8PjTFpqanBay2sXgPqJHDSFSI8dgqjggf27VH1NreqdPQJdxaT4ULZkknW3BIbPZsfnk1tp32kpqlvbmVUmilH8j42nzI9DTKoOmC3JXQM6k+0qTo4ppdxfuJpI/vZnhaQLzjkDCqTn9ak0/qu5v7APaTWM8UiExyQDGHHO11J4BxjijN51jo81lPpjql2JAYZo5owysmOVcYII+PlSdq2h6Np1smoaLaiwLBsxQc27NyAM/yv8OxoyfpmS9o6V09qUOq6XbXcGdkqZ2+ansR9CDReQfdHNI32YXb23T6W1340kiyMVfb7uCew/X86fGAmiO0qCTgBjjNejDlTirOCUGpNIXbQYu7ngcv51Wucx61FwACmePnRJLSW2urjxUK7mBXkEH61Q1IAaraEnkoaKMxgtsMq8YqvqaIYyqjzyfnU1ofdA7itdQT3Mkd6oxEC7FS9smTxVDT3C315GOcSdqJWaMbFSuOCR+tDIQY9VusDs4J+RFJHoZjHC4MWRgZoD1H/APJyE8nFGLcE79uaEdQx7rZs+SmmnoWJJFHKIA8JGwx+8h+VbykvZox4yB3qWzVPZAwHLRAfpVV5wtiUwSUXOB5ilWhuwJYgRlvUO1ZXthteSTDZ941laOgsdnHu15GAfeJ71uxBUj14FQbtsuzPFTGZHqAG+Ak8bj+1CbcA6zuHOFPIotqHLwD4k/pQqzC/xR8Y4Xyo9m6Ier5SLKAeRmWiGj7fDXyoR1hn2e2HrOBRTSAwjQfIU0dsWWg2ziKPk/U0vXGtTWAdbywns4Gc/es34vQgjy88UD1j7Uo7V2s0SFZYpDHkqcuc449fL41tcX2n2aj/ALUzSXMzKCdPB2xR+gcjBZvgeBXHzfIUsROnj4fHLCFj1FLqs7WFnN7XAPfaSSIFIwO5Ldvp3NWr7ozpnW4UafTIHjycSDKs58zwRxQ6frvo17GK3bTUCw/hgUlY19BtBwRSvr32g3eqXot7C6ljjkPhQQABT6AYHlUfOKXsp4tvGBxup9BRW6TsZLezLxsoEeMRKBk58gT258zQjXdd03Q9ETSNPtXEcCbG3sHyMY/EO5z5CrtppvT+jdNPFqFslwoAeaUHa9zJnnLjkDOQAPSlmx6s6YS/WRemol8MErO8sjkN6qWJFacktsMY3obdAvJ7SxjhkgNxqQTxWDgBYge25jwMDjjnilTVrvWeo9RntRNDKs25QUlG0KOTg/y4x8Kr9RdcyanGtpp8HsFrnJIzvk+fmTS9oJMN/JIXMYKkMVPJXzB9c9qnLkt0tDKFLIftfsmttTMiXOsXcgwA62kYJA+L8KKLT9HxdJWjroN3c20zDLC4ADygDsrDj6UH1a/vUtI2ku5LW2Vfu4IDgAfKg8XUF7JYTW4eZos53SAklvr+9L5V0NV9l4a91dGyW8Dz3qyE5QoH358vl8KWL7pDqXQxcXgktbYSPk2sjnapJ7ZHb+1dAh1kaPpyNp6ulzKiRPcSHkMRyB6Uka1rE2sXrJ4j3Ds22NAOAo4HHalbSwsjRVkWl6zdyIZWtwJ9uWyOfy8x3potNc9ntvGtY/B8ePDxAgxy8d9nkaV9P0q8CTSkpHDbkqWDds84Hr3/AFoVe3F7FKsFvDJKoG0GNSdiefzNBOSYzSO1aNrekQWEMd3q5RWQMFTlyT5bVH96arVhb24nji1BkIzko2/Hy8vlXLtD6am0vTbe8ntbi5mAHhphlJz257jjzpg0F+m9UmVLO4v9NvI12lPa3T3s9iCefmK61OSxI5nCLyg1F1lps0hhjttRu5gx9yG3IYY9dx71LqKXc95BOLC7hEI94Sx4PNR9VaLq9zpqrYarNZTMcTBGVGuF8hvAHPx/Medcyn1eXpq5a31Ww1u3n3hgZb1gHA9GGQ304plzShvQv1Rlo7jZyB40fGDipL0Fu/bFc26T+03TklEWpfxCGKQ5SWdFkC/Nk5//AI5+NdGluobqH2i3ljlicZV42DKR8xXbDljNYOWXHKDyDdOl2QMAOAzDnz5oe3u6/ORjawXP5Vb05t6yJ6O1U7iMNq7KSVyq5IoroDD1thSSvY96H60ge3kzz7pq9E6xJtIJ5AqnqO3ZIp7EHFUloSOzNL+8sYif6AP0qjcQiW1UrwwBAYdxzUmksHtbZdz5A558qrWQZrqcFh4ce5QpzkHNItDdgrTkMFzOhbJDnJPyrKlGBqE4GOSD+lZQQw5GVRn4DFV1bk81IYhkg/iP61E8W05XgAdqCRmzW8Ylrf60LslP8Vlx/TzREhmmiDDIAP0qpaqRqM3lxxit2boG9ZkBLHGceOP2okl/BplgLmcMyYwFU4LEjsKF9ZZJ09M5BmP7VHrNr7TpNr4l1JbQxTh5PD/FIu0jaM8DJxye1CbcYyaDFW0mQaDp2j9QazJrcWmXES2RIV5XIi8QD3cD4cHzxxVm2+za51svfavqpt4HO9RBj3wfMs47H1I5oRZXunXF/b2kXtCWtupkaNHPCdyCT3LHjJ9TRDW9Y1PqJZrgTR2+nw8Ow5B9AAe/GPlXmeUatqzuqXQL1P7KdJ1O4A0jWbuOVDseMSpIGPryBj5UQ0b7LdI6Ymj1XU9VuJ3i58D3Mkn+rGSB8AfrS7b3r2twptp1U4YruAxyf3/avbvU2bYhkUv5AknHrmspxWaybxerLfV3UI17Nna2scVoBsEeMEgHjtil5tBFrAok1BoXcHMaLuHPkBW95rcGlKTGTwAATgk/HHlzQ+21iDU7gl5Chbkk98VOUk2Mk0iCbpTUZVLRykk8oZFII/KmPQ+mZ7eBHuAviL3C85xzk15polvyTBcDA8nkzmnHQLN5SUDqrAYLds00IpglJ0B5dKE8q3F8PdjwqxkcFj6jz+Ve3Fm1xJ4JkkigA/Ao25+HwH607SaIGhDMRuJzgDOPWq/8GDMhdS5znAp/Bg80Keq6RthWNVBUlWDYOBx2HxpYTTF0uWcJA6nJy+05wfLmuyT6ZHJCAU3DIA486EatpMMlqRsUA9+Oa0uKsmjyXg53aSW0FtFF3STA2t5y+vz+fpUc9zHpcq3LrFIwbKwk5L/7x8qv6npREcjIuCAXAHkw5BFLi3swUtbRh5X99227iBjtUm2USWx+0Drqa9fF5f6dBJgBIDATGR6Fhzn41NrVtp9xErx262k0z8jbuUZH41P8yHFIUOp6Pe+7eWyWsx90yIMxk/H0o5pOq+zXUMDvOkKn3MHcrqeDsZsg5Hke/wA6K5HVMHjm0Wl1zqbSZhHMYLqzUY2xIGBGeBg/SjEV5bdX6ZJY3lu0kWcgFMvE3qp/t+flQbqSy1C2h9v09y9t+NRt/CO20jyI/WlmDqXxCqgzWd0pILwF0J+nrRU3F09G8fLKJtZ6dTQUZ4i9zbrksyo26Nf6tvfbngny86v/AGbazLH1EltBcLLa3MZjZFbgeat6ZBGPrUM2sXN5bSywXLPfWIE6zf8AiSoOCSuc7scHHfA9KD22qDTtRk1Sw2LFdNueCPhDggnH9PIyB5Zoxl4tSQJR8k0ztmmLsaYH+s1XvRjWRjuYwf1qzZ7ZZJZEPuswYfIjNQXp/wBeRA9jF3+tesjzWGEOAMc7qp6ioKOD5DNXbWPY4YncMcD0qtdbXd8n6CqSEQF0eR1i2xRl2Jxk9lqOyDe23kcmdysc+VXdPjkS2DQkKfEbPyzVW2y+tXeezHn8qmtIeslJsDVpgOPdBP5VlZdIYdZYE5zGOaylGHOVGkI29x2qoXeNiHHPlRD8PzqG7TIz51kwMp3cvKbfxbTVS0c+KWVQzY5q1ktcDdjhDVPT5T7dcKoyO4orZgX1TvmurBSuAHJA+lVurdPvdT0K1srEEzzXKKBnA7HufIDvn4Vf6ifdqGnAjB3NVm6sJNStI7dp2toA26WRVyxHbaPn61Pl/Eh+P9IWU6O/gFrJDNfQo0xUzXIl3yyY/kUfyr+tA+otXFzttIHWG0gGcJ5eePifM0d6q022srcRW0zMxGEeRix+tIcxIuEiMiyBWwdgwD9PjXlT3R3x9lyPYY33AJ7uRk8j489zRjSdP9otjJLhuSVJydo8s0GtrF7sBsLjl8kck9gPzo/qci6NYpLJt2Rrj3TnDY9P71k8Wailqy2WituS3ha8K53sMsB5UuyJ7ejTyxb38tg5OPLipmmlu3NzKEYPy+eST8/SmLR9Mhtrf2hQfEce6p7KDWinJmbog6ctJSoaQESPgkYxtFdS6eskSAyvwpxn4ClHSdNaAgcs8h710LTrVktFj3Ii7eQfQVfjWSU3g9mVwGMZKkcLk/vUDPNkySEFVXvtwR8asyaZeSsWj1C3QnnBQ1QuNH6lCMI57WdRxkEj+1W10SJQ8pcFs4A55/Ko7hvEXBUHHHarFl03rcmXmuLdTj8Xf8q1udFmh3BbtGcd+MgVmn6MmhK6p08eztLCdrKK5usMtt4ngyPE0jDJQ4wM+VdW1ewmS3bcwkXBNJp0srMJGGIxkcD9ai45LJ4Fm6sRErSRRNn+YBs4+YNZba/qNqmzeZYQpUxuu5cemKN6xb/w+FriNdyEchPP4Usx3kiyb3ARt3KZyB9ajyRrRSDvY79O9YRRD3o2Ikj8OSJjgMvpnsfhn86j1uxjto21jQ1kmeA5ltZQpYRE+8QfPFJFwpeYGMg7zwfP4g/vTDohuksWkztLBkYoT7yHgnHn/lQjLoLXZdmtEaBNSsm9+SMsm3hlb/pmgY1kZlsrqzV0UkCVgPLzPHORUVteTQWdxaFmWO1mPbggDkH5c15qUamaK9RkMdwqsCTkAgAHNG6Ds7foyolqqqysBHGAy9j7o5FRX6H+MW7eXhkfrQX7Nbvx9HMOGZYJSi5Odq4zjPmAc4+GKN6vldRtsZ/C1evxu4pnmTVNoLQvlQV5PaoriMpksPjmp7HDIMgD4ele3o4PHlVnokgNpT/cSLntI1VoBt1ac47n+1WNJXPtAPGJTUJPg6tIe/AP6VJaKFK//wDq6k5/2X96ytNRn3anE20r7jDmsoPYR4H4vhivJl3KQK8ILAgd69YcCgjMG3CFZOO+2g2lyE6jcg91AyaOXKn2oD/BQzS4P9bXnu87RTLYCjrWZ9W0yMDlnYCr96JQpCSKkZON47qPnUt3Yq2rW11KVS3tI3d3bsCf+Gf0oTZaxYXTTQXjuUBYKwGDj4/EjFcfyJq/E6OGOLFXqa/tLZWLb3C5yznOR9aXNMtH1FVv8NDbOcKzL+MfD0Hxo51RpXt5iQo/srTqkhHmp9Kk1SEyzQWsCmKADahAwF8h+Qrirs67COnWsLeFFCSwJALY/lXk/rgUL66ukNisYKnLgYH82O9MFlayQWbywKGCARq7sV2gdj6nPekXWdz37+JKJZQMu2eMnsBTcnoWD7INKjlYJEFADMCQR2p90+2BVc8cd/SkbRXKzxCViTtJwe+c4FdL0azlnij3x7BgHHnim48IEtl7TICkpnYHYi5AIo/b3TYyrDaOM/OqLwK0LRD3eO4HaqskrW3BmB2+WKov5JvI1w3IfBJAYd/PNbPdBELjgeYFKCayWkChuB3wOM1ba6aQL75Yn0qimI4MOyam5y3vhsYznv3oVfXQC4EmAx9/B5+vwqjcaoIUfcTkDPJoJPq+TgZBByTng0kuQaMAjqEwdhGHXLDI571RisEMTDYNwOGB7EUH9qluLg4cZ3cD1Hw/em6xhie2DOdoIAJ8vlSxl5MaUfFHPdbRoJJIiuEHG3HcVz+4t19skhDyMAxbAbAx5V17rvTVNul5bqSUOGI7EVyC6B/jE0QGcNgAHBwRkD9anybopx5yWNLlAaSJcDJOVPPyINOdjY28dpb3cc6uyoshizg48+POkm3t5kvCUTeqIWdSOAvYnPemBL0SWklkpwLb30cjgA+WfiO9SWCjyDL9ZE1KW5tWBtpMAoY+cDjmjGlafJrGizRwr74BES+RYZIA+eCKAPZJqmsFIJXyq7iVbGQe4NdL6O0zwbHfOE8GVCGX+kjkEfI+fxqsF5MnN+KCX2WWrRaEJXjERuGMoTGNo7D9jR3Whi+s/wD3VvpsgaQupXYyBlKjGR/1zWmtL99aEnuxH6V6vGqikefN22wla4UqR596kuz7pNR2oyi5Oamul3RE1Z6JIDaSNst2p/rB/Sql17uvqD2Kg1YsD/p90D24NQ3wVdXic/8Al/3qXRTsoa2B7dbkejVlea9kT2z9vxD9KygwjuAM5rR/xgV6h3KD5YrSRgGAB5rIzK9yu25JGSdlDtJffqV23IO0DFE7kj2o58kFDdG4vLt/UiinkB5qmLszaeSwkZN6jyI4xn4ZzXN9ZdLHUJIFlaOSM7XkH8xHfNPHUl3Na6zaXEfCiF1lJ7bcjH61zjVLd9a6gXE7QjLSMU4J+Feb8hf3R28P5sJWt5OyL4khkj8gnbPkai1rUpXs2ljbEi42EeZ9atafpV1YJIDGBahg0TFs5HmfhSr1DrEVjabZcM0s2Ag/mGf2rneMFlksa51FPaR5NzMzsBhEbhR8v71Qt/FkG/cwBO5mY8uT8av6/b28WjpcTDbK6qQuPX9uKHWF5azYXxQ0m7kYyQKJhg6TsFvNXLOuUiUE/EmunC99ht8RRgs3AzXPOl7pLWOWUja0r5+gq1qXUhaYwxH38A7gThB50fKsC1YT1fq3UllkWBkjReCT5+tAJeq9R/E19Ezd8EZP1qKO/suFNib2Q8iWY8H5DyH0oT1Fpen6yjmO0Gn3QAw8JIGfiKm5f6OkhnsuqRKVF2i4btInbFPmjwGe28RSWU/gIGc1w7QYb23za3u5mQ5DZyHHqDXdugrZ5dGRGJXbux8qpwu3QnIsAzXmis9NmlnPhleSf7VzGbrZI2cxhcZ/mNdN+0vT5G6V1Extl0j3j445r5pjik1O5CzOYoEPIXu5ocl+VD8aTVnRbXriKU+H4lrxzjI70xWfWepJDtiljZT2I7UlaTaWtsF8KziKj+vJz88USmaJwHhthav/AFxt7pHxBpVfTNKhlk6sd7aaG4QuJAcjk/DNJ08EM2pJcoAd6AnPnjg/uKmhuElG7xGIHGM9/gaiuohsikQqGifeh8iPP6YyKyk3s1Vo9WWHTb5ZolkUFdrxuOCpPcV5eE21/FHBuNqx37R8fI/LmiTT2t/pvs8ij7hC0bg4YcZGfn6VSvmDxRSEKJYowAQO4+X1p5qlYsHminb4GryTRSMPugA6/wApY9q6bbyx2GjyNbrK1wIstEFJBJ4OB59ucfOuVaeuxpRcxbopQCpGC5AJ7Y7Gm3SdfnswkP313DvBCrk7x/veR7/Wn4pUDkjZ0HptpBdPGZSYRboUjY5MRycjPn5flV7X2B9kOcDxcfpQrRrq9k1qOKS0e2t2ty8QLAl0PYsPJqI6+pEVsx8pgK9Li/Jwcn6CthKHQLnkd6nvGbwsLVKxbYik8+tXpV3R5zXR0RAdjxqNyP8ACtQ6nuXUIOB7yHn61YsgDqs69sqP3rXU0ze2gI7hgKktFAJ1ROyxW7DAIY8/SsqXrDTx7FG6kgh+aygzZG5JxHlCRjOK1mkXcGBrR4MysVHJ5rfYp2sO5OCKCGZBIxmuiewVRUGlIY57gHnJzU93KlvcNuB52qMVHpn+2m8x600RWJH2ga08OpPZybo1VR4YH/iDGc1zyXUltHaVpPvJCMEnt8K6L9pVrvuJblAWKWyggdzzx+9c5j6RnZBeXoCOTlEY54HqPT4V5XLFvkZ6HG14IL22o6zqlhtDXQgzwWbCDmo4bO0g23F9DHc3EXKZ95E884o01wD03Iyld6hWVMYyx47elLc9uZZBHJcKjYyFzjPzqco5wMpYyR6let1BqK2kLl5XIyF7KPh8avWmlxWcy2sLw4U87OSD55Pmau6DpP8ADLRrtE3X9yzLG55C/H5Ac15ZiCC/ubfxCZYl3eKecnz48q3jTyHyxgI2ekXVzZxi1UF2zyTjzqNOmLlJ2W5VkBPLcEt8KZeni0dpAcfy/lRBYWWYym3bn+cjjFM0nkVWK1ppSKWc3CKEbGGyPrW7afE04+/DqewQZzTA+mLf87CuOWJ4zUselpHGVgQK/wDVke6KEY2ZsXHtIpJtsEACLkFvMmul9GgwwtGjKAUIGR54/wAqTmtI7WARqAdvJx50z9IsJbdn3+8Ccj6U8H/YJL+SLrgA6NfKx5MLDGfpXzfFo3hXgJQbHbAbONh/yr6N62V/4Tc92JTGPnXHltcTCJ1yH55/aofIdSRbgeGG9K0iCys1VoXkY8kiqWtWSSITFFNGwHGf70a0ffBGsTgtED7pxkiiF7Z+OwHG3HA86e1JUhGmnbOX21ncK2PZ9zFiTgd6spaXQlDSpsjyVCgg4+NdAt+noxGZfB2gcgE80s6xG1pOVONpbIrOFZN5WDoZbX+HqIIzJOoKsPMfStjb3TbT7NKIpyQDIvKnjGKNdM3FtPorW7bI5mJwTySTyOaIXltcapGvgskM1ufwt/P9B/ar+FrZHzpi5YaHdSXa5ASPG1SE5D98/LFPGiaNbxGKOZU8EuVYgAbGBIOPh51TEm6eEsipKsayFUPHDbT+hopOsljcHCgQXLBhuH4JP+P96mo0x27RBq2v2vTuoWpVg8KOsZO4k+GSR3PmDjPzo3r7mazhdDlPEVgfWhuvdFDXNIL26Bb6IFyjfjk45U/Py+Irexdn6P0qR858GI4PcV3cLeUzl5UtoYdP++tlYDnHNXn4XGTgih+nu0a9uCOwomeITkV29HL2AIQF1uQAnJjz+tT38Z9otGbsC3P0rRFVNcUnsYjW2qSIWi7gbuakuyjB/VUiS6ay8cMv71lRdSoBY7VHu5BBrKDChqYkSrnsRivBtDDitZ2O3jBJFeRe/HgnkGlTCypq4UlmBwwxyPSqPT1wd9yzZK7sAkelE3Ie6nDEYwMDzqrpwWKS4Yj3WbnAp4sVgnXtWtrO79oeBZptm1Ek/Cv+I0EuesrS8RYphCQGxkR/h+RAqTrq2LzypGR79uCmTjkE/pSvpPSY6gTxtRu5YLEEJEsblPEPmSR2GePpXl89/Yzu4vyqNdb6k0+QslrukfOV3rjBFDdA0mS9Ju7iN5nuJQqL2+vy701W/RvS+hkC3sjdTM3d23HHzzVPVL97bULeAMlomx3XauWPGMcdgATU1NRK+PkWLqYabMyvPBFIFIUyHCoPQevPelHTZ1e9vxEWuPEUIJSMZbPcfr+VVOpNRhS5Qo8soJ2jxM5z8B+VFuh7aaZ1lbKwlzuyPMKdoPpzmlhLyYZRqI+6RMqhIX25UYGfI056VPbcI5VnPm3aueTiS2vndI/u8DPng4HNEtM1PxLgDPPBNGM6Yso2jpL2EVxCzFgpNCtQgt9OtZFHnzn1PpWW+uKbcEqdoHNC9Yu5dTUwxRMRj+njNdLkqwQSd5JNG0uO7s5NRvCPDYlY0Xucefxpj6c0FUtZHcvGWJbCnAU1yi96/HS0xttQDH2fkQIpJQeoHnxTppf2lWt1psd3YzxywTDKMp7/AOXypYSjF2xpqT0H9e0JruzlBm7LgZUVyzV+lpGsBqNo+Lm2cmWH+tfPHxFNWpdfyvC/vBeMkk4rmo+0NdTe6mtbhPZ+UyRjcR3I9QfI0nO+OWUNxeccMdNGt1uLeME+9tz862vopLSdJPeCKfpmhXTOrMljAJB7zLnI8vhV7U9WWWMo+FB8+9JUatD27yWf4gWVmf3VA7Vz/qm+G9GDfz0VvtVCjwgxyBwRSrKsupXKSygpaGTwyzYHvHIoN2FKi9aafeLpCXNs5EyqBLA38+3zHow/UU0Kq6nZ216kzRz+CH3+RPo1L5lnsrmIMUcEbdw7NtGBj6cUV0m6MkNoqgrAVHAGASQTwfpV1ojmy/e3O2zgv9hYocOjd3QjDD96u6f9oFjb2SwXIivIVGInYZOAexHqKDX5uBay3ESbdpMiZ7AA/rntQey0iw1t3njHss2fvFUcMfXHrU5Np2h0k1THO76rl1GNpNNdLYheCrbmx6fDmiFrqU2r9Je03EZWeOQo2QBkqw549c0oWGhYBkeVhLCcM6j3XA+Hypr0mIL0pdThpGW6kMqb+20YUYHx2k10fGk3JkeZLxGLS5AIgZO/lRSWQCL1zQfS2LRRjGRj8qLMuUwo716fRw9gK7bw9WgbkZVhWao7m2iYgBvEGcVrqTbdTtWPHcfpW2qe9ZqwI4cVNdjlbXTnS8Fc/h/esqXVgZLDHnx+4rKDVjILFjjB74rcSFApVMkcEVEygunw5rbxCG5AFSGKlxKgv3Y5TChs1NprAmYZUgtmvdiye0FtuDwc+mKoaIWt5rgcNCXwpqsRGBeumWPU7fY2N8eCR/KM80A8db1LGygBEMcQdlXu2ScD5nmjnXkVvJfxGfBVUUqPjk0DtJ0DSG2xvkU5JHbn1rzfkf8Aozt4fwizDpksJw13HBlT7qcsBQF7OFNYPvPcMEzhue5I/KmEadqEsQkW1QK3IORnHqaVdVNxYai26JlYQuPcJHoQfOubkjploS6FvrCR4dVtLJUgilL7lKckfOn3pq+UacttEviQ+KFLPgbhgAsvn3+lcgtnXUuo03yyAA4d/wCjJAJGe9d00prGe1xbzRTW0ePeIwbc9ipwPrWi8UPJFlZZzaLviEjtGQGPG7Dd6D3E8llM07RMC3ZQMbTT/bWmlzxxXMFzDLbSN4YOdxibt29K9uv4RZyzS3lskrQxB4+Mpu34Xjz9ap9LfZL7F6NNB0l49O9rvd5ibBXdwGOM4+lGpbzSLSzkknl8FY0LMI1J38cc1Q13UJILC1mMsLyosexQMo+QSVUdj7uaROpNV8PS5EmlZosBmw4A25PJI7jFV8lDCJ+Lnll250XQ+tdLm1S6sIbKJXYQuJm8a4UHnJJ7elcy1HQL7Q7prrpu7kltWzvtjKGUH1Hlmqd11zYyEwvc+FBH7qRKR29TV/SvtE0O3h9nkmib094DPpk5qLbl0VSUQTdWfUnUds1tdSS2dsfxq2AX+eDkimL7M/su0+4R21++d/BbMaQsVU89j+naqWqdb6AI90V3GGPOwEcfDvVCz+0Gxs5leK4wSQSC3ukenHnWTa6wF50z6B0npjQ7qBbI2ptTkiN4nOVUDg89+eMGlfqDpDULSzS5t1a9gZmG6NTuUqcHK/5UK6e688W1MlpKssbS7m3HcyIe4+p/anLSOpo44VtTMFjglMm1R/WCCflk1a4SwyNSicgk+8uxG8nhqW2kt5V7r2o2dtFY6THtnknuVZ2KnagUE+Xf/pXTNS6e0/Xov4uiLFfxttJXhJiOPf8AQn1FLl10zDqV1HOIo0vLeQjw5CAykDDLzSLicR/sTEjRLk6n1JHeRQt/D4WCL4hwDkY+XNHZ9Hu7dns7adJbJmLRRyMFkhbk7SexHJrLfSl6Yaa1eGSMNucI5woU/DsQfhW2m6jaFBfWyzXMZiBuYD3Kdt6euD5elPFKqYkru0WLXVLd7KTTpXdZRlMN3z35qLQb6xt9UxkKJPdKN3V/n6elT2msadauTYQyPI/eWQCRkX4DsKh6l6fXqHTH1HSpP9Pi4YfhZvTgeYpXTVDR3YXv9QeO2k09ZNrNtdSvcjGP3FGdG1IP02NOuLiI3MMZSNR+Jo18yPhnHxrjlrr+otcx2t9M7TR5G2VcMPl610HpGzN5qFzdrlkt7V/Fc9tzDCj59z9KPDKUZ0uwcqTjk6RpA+4jPw5ot+FOPPk0F0V8wJk4BUUaY/deleutHmvYuaxEXu7QFmUPIRkdxxWalZ7NPJ3sSrAgn51NrIK3Nnz+F/3rzVJP9XyY7cH9aRbY70R3ZzY4Iz25+tZWHL2I+OKygMgqLeRnyEPasMD4wckijDx4JGOQa8EQYdhSKI3kAkQZnDA98YPyqDTrfxbO6QHZiXPHlirt1lLiYZ4B5/Kq2lgRwT72xmQ800RGK/V9s+pXyJChMiwKwQd255x8aG2oWOEzwsShyoI8vKimrS+z6y8m4+7BkeRHJpV0uFrMzWkVwbmK6kaRcniNieef+ea4vkpKVo6uB3GmOE99HaW0WNzOw90A9qVNSZrK7m8dTLNJDykYyeTwo/Lk0wwtDEYGm/GOeR5YpH6s6j9mlvXtnRZPwBye3HAHxya5ZS9nTFehW6fsV13qO4hQBZZZFiWMDhdxJyflium6dZ6l0uS6RWouvdkkDjKeGcjB5yOwpR+w2304jUdXuJGa+iugkeDnaoUlm/I4pum1qPVNbvZLlVJugUWIZPhwhcLn4k8/SlpRVPY8v6f+DBperw6trcFvFHHAbxjJcLC3A2DnHl7xwM/Go77Ubq8uU0++tfYpYZGKsAy+IvkxxjI4HGeKCt0Zf6VPBq8EXiJ4Ii92YqyA88gjOeM5z8a0037SxdbdKle/uQ5IBkKSBRjkYAB7DvmqqTWJEWk8xDPt66xaexRTyokYMJU8hGUYyfnXP+u9TTSumdQSeRTNIht41/mZyMcfHuc1Zsba+XUpJ47gk7wHycCQdw3z9aA/adp73s2nQxrEXiV5JE8lJIGTSLLQ+kAfs06Hs9RIv9WiEis2Io3PHHmfWu3Do/pqS0iS50q0dewzApwPnilHo6wuoLdLd9PkaJFGD4TfXGBT1ZWFtICrxyxMqkspcjb8/KryUnlkVWgZH0H0lGCYtG05hnALQqK55130N060cr2kNvbTDOPB90j5gcV0Gdrf2i5SOV5FiwNxYkAnyrS76Yj1GOOOxCySSRs7BiF2+hJPGDSRcrwx2lWT576V1O80C8kFtIQTlZEOcSrn0/vXa+ntQE+lvqgLBJQvh854B8/rmg2ofYP1BqJe6jgttPAG4mW6QAY7nHJA+dXptCk6c6attNmykkZERCuH8QgEkgjjk0eSD/QISWkMHSXUkyaRcy3A3I13tiJzl2LrngcY/wAq1voJeob6fUtMcYuLx4yWyApB7k9hxg1R0fpm81DR7BbdmFujMJAOWRvJj6g5PNHeh+l9f060ntzGN0jE+BKdofH8yNnBPwPcGnhFvD0JJpW1sE9R6DrcWh39vfOt2YYvHilWQuB3/D+RBHxpB0q7Gh29tqEzt7MX8J5VyWgY+RHmprovW+m6lJo4utCnlM0W72nT/EPujz2D+oc8H6UoObCWwklnxJZzRZlAXuePL/nmhSUjW3EMp1XpUaxvbQWuoecjgbF/zo7KdK1Ao6eNpk/fB5GD6MOCPnSH0NoumX8kkVu3hs+dgaRW2DPYqeT8TTFbabqenmSCC5CRxsytC43hCPTzx/nU3fQ+CzrWh2V7ErtHHLIgyspABBpn6HtXg6G2SqofM+7aOCdxGfj2pFmhvWDNNOsqLxhWx+maeeht8PS95bys33UzhVPkCgOPzzV/j/vJLm/IY0dittGuOcDFHkxLGM9hyaC9OlJbGISYyBwaMzv9w0Ua4Hma9JaOJ7AOtvvmt3XsJl/KttR2vp0+ByFJqHVyIoosfyyKf1qW5LewTgDJZCT+VTWxuiKOVfYEz5gVleWqCbTYS3cqDWUQjzgHNaqo4r0cZ+dbKAcUQAC/IFzcgnjPA+lVdJO+3l8/vD3qTVCEurhvVsfpUOjHFvITwN5oIwsa9cJb9SyvMuYxCpYfCoNP07p+OFru0vygyWaOSQAKPTHf9asazapf9TTwPgpLbBPzpPks/Zr5baG3ktpwW3pKT7pHmM+R8q4fleVp9HX8eqfsK313DqN60ET7QBtyB+BPNvrXP+srxY9NuRapFHFHNtBY++QVGCPXNPcOmQ2VoXuXLPIctsPc+me5pG6hFpd3l5BPBmVVE+0NwB+ELx6DmuCe8nZxhPojS7Xp7piKW3kee9v4hc3G5doQEDCA/wBIGMnuav8ATkcN5re6e49nVd8jSAcuQCQB9e1Bun9ctddtLPQtQSe01KCP3ZYyNsqqOP0xkU4WnSiW+ky3EUpL7gDIckt8Ph8xRacpWzaVDT7fc63dpYWrObKFyWY4OxNpwM/M8D/KtNN6L0uK/TU0TUfulK3Ajt1eM5yQSeCByB9KqabJd9O2vsfhxmdkEtwd4YSbsHaB6gY7c80Ul1OSLwNU0zW3EZYFrQklBnPkANuPPvVoyS/RFp9A7qvQrPTpbi9gZluEMZljjkDxnf2IH4lPnjkGrnSvTmk3F4+oX9qs91CFwZASqt37H3c/n9Kq390mp3tndPPHHM10iSuI9izBTuye/GAcfCprfq+CwW5I1COwijnZGkZN8jt5bV9P3pnKK/oCUn/I86m1wlm88LvgD3Uj2l+3kDxSjremnqS0EySSQvzGRu2Pk9sgdwTXsPXlukYkttWa/t9wEvixBXXPy4P9q11vqqwlUNb+Is6uniEYwyE8HjzNFzjIVRlF4FnQtE1SdXgigDeC5VRnnvgnnv509WOiXFhbOb5kJcj3Y3G7GPMUlab1HMb6f+ELOJZGddpTeuNxOee3JNNdwepUtIfFGnNNMQFF5P7xHwA4H1pYSrQ0lZYbpOW7gkeHVJjbNkMvBVP/AGsCKX7noG4t7l3M0WpSwAtFZyxiHd5nPOGJx8AcV4ZuqNO1eJ4IpLO6DghQ+9JAfIHzX50SOsXV/wBSBRPDFDaq3jdiEBCkofgGyO/Gapa00JT3ZB031XLextp9v0zDBcQe4T46xbT55AyfpUusdQ3lvcwR3NoEkY+GUCA5BPBDDnPbnv8ACuedX2U+odVNeadfw2y3JC7CSAZcZOCOeRj/AJNTXWs6xpVgRfzeKV4jwwYCQeefh3pHNpDqCeizr+rXcurwy+PGJQuwFD/tSpxk/EAjnzpL65vL0WcksFuLi2UFJFTCBI885x3bnuKntNUeOaafJlkbOMH8LH/rXhW+n0e6jjtVnEilSjtyjEcsB2P/AApFKxvGhe6atEurg3mlalNY3MGJEikw4P17n0NdWh1+41CxQ3miB5ymHniIw2PPkjNcmt9NGnwJLEGiKe9HMg4VuxR/TPcH6UzaZLqkktu0njKJjhS52ozY7DHFGTaYEhr0zULWfVAUgKGQHesi7cYHfHwpw6NEUvTryo29Z3ldTnyHuj/+tc61x9RvbSDwRtdAyttHvc+R9MAkfWnr7ONKubXo9Ir1HidppWQMeQpxj9jXR8Z/0R5vyE+m5MWi5PamBpmIAXHPelfp/d4OxfIkZ9RmmONQi5PevRWjhewJrrbE583XH51tdXTxhohGzho2zgdqj6hDEMce6CCPzq+feVt3mh7D4VNfpj9FLTn3afFjyUCsqOw3xWC4xkjzrKKMPpOK2jPvEVoc969hI380TC/f4a4uSwGAxqvpzKLU4HBY1YvDme68xvNV9OObMnthjSozFuYh+qZ1ztKov7Vr1BBGmsW12x3LNb7FyOQVYZH6iskUN1dctjLbE59OKKdR2ss2lCaNA7WzbzxzsP4sfHsfpU+WPlxspxy8ZoTtTlle7mkcYWCLcqgY5OefpXLtUUHXo2lmwJpGidzx29frXS7m8Ly75DkldrEdmHkaQOttLUTRyRgNiTxRnjnP/CvIdXk9KJD0Voj6x11HulMaQxysxwTkY28Y5PfP0rvGk9Nx6DCk5uIpzcZDBc7S2PdGD5/OuF9A62mm9WxNLarcxXCGNo2b/wBwI/8At/WuydS3trBBBDYOpglUTKm7d4b45x6gg08XWxZrOAD1rcPJem4gkBXjDZxhux48jQddfuLKA2F1NNCLpgyruwG9c/lmrtu63F2kc8bOVOSS5wMc559P7VY1TR57oePbRLNLDMA8RAZmQj8QHrk96XbCtAS81GfVbqG3hnkKqSoJ8gV2/tmr139lnUl4NtjbzNHtGySMjZ+Z8vpQ89NX9p1JaMztBEAZkLAFMDGdx47U/WWq6bbks/V928wIykIBXn+knnAz5Uyil+hW23gSo+guqentNaeW3S4VciaS3lE2B8VHvfXBoVLri3LImQCpAIU4DHyGa7E0iXzt4kx8dULw3doCPEA9VNc76r020stVS6uIYg16DLII1Crvx3A+P700kmKmwn0+9x05Hb311CrWl2p7jiRecqSf0+VMTa50xp8Iu3vtQuEJzHbtNjb8O3H51B03at1l0KdFe4VJ0Ba3cnhlB4U58uCvw4NKVr9jfU9vPNNPcW9vGjfdpczBSvyBzuBPnTeL3EW1pjY+pb0BtpHtn1Bgq3MsxPhqASc7uCcfAdq11GTTNH0dbDTdTs4mujunuXBlaUeZ4HJJ+Nc36v0Xr3p2dLi8FvfWSMUSaycMF45yvBHzxQuXq27htk3iRg4x7kQI+WaVuSwOkmZ1xq3gTab/AAu0MtjaOWkmwVYycZY+nAx6DFb3esxamsYmlkXKglRkHP8Aby5rawlGqJJcSJcHaOfd91V7EEeQqq1hDDHbyIMB5Nu0eWM8fKp3aKVkvWCgx/d/jGfc9R3op/Gra005Y3T7xFy8cg5xz2qhaxqlxHke8cKMDnFU+pbBYWikhyqMW3gMcZOCOPzrReASWSx0nKxvbq0njKwz5Ow8hlPINHLPTkS1vNOWRliS4DW7A7imD3HypF0y6nsdTa4zuWNQe/Ze3966BoxVmSSSTaEBLk/zVXytEnFpkcmt3mnc3dnEZACBPggOB5/WupdMWs0Gg2xuZN886+0PgYClwDtA9AMCuazWzdQ6qLeNR4Kcyf8AppwCfr2A9TXWVLJGoUD3VGF+FdXxI7kQ+RLSAmhe6HXP4XYfrR08pgUvaZkzSZGMyNkenNMMfMYyB2rujo5HsEa0u60ck+VXYSfCJxnK8H6VBriJ7DISOw4qxbMXs0OO6DH5Un/0N0D7OVZbUKcAA4/WsrTS4A0Ll8/jIx9ayiYf4V3xkeea0CbZKniXCHA71o4IOaJhVu5A01z672NQ6ZHut95Y4yeK9umVnue+Q7Z+Ne6UcWKnyyf3pUFi5LIqdWXWTwET9qv9Saottpwsw7LJcjJ299g/zoXeAN1Vdnt7qc/Sver4kihjutxZmg2YB7EN/wBKjzSceN0U4knNWK8iSqS0Yj2AkjepGT6GgOv2M141rAxw6j31A/DnnFEpL+RdkouGAI/CxGP+tVHvEAVjIJGYgjbyT8a8p5O9AK20a30PVoLiaNvBD8HvsJHDfSmU3EhmSSSXdFGxRdvOQTyePnQvU7tNRmjVSCivyQc8+n0ovbaYkliksJZJGDAkHgnPmKPg2sGc62G47FWiM1u48dfeAPCsO2Ofga9h1WWwkinVwk8WYw8i7k/3X9CO2arWd4IhnwpX2sMpu5wRggfHvj5UKvopZryT2OZ1U+9yPxj0YUH7DXQatJW1TWIo7qZXklHgwwxN93Buzkkk8ZxUt/0PfW0niS2y24Lf7WO54T5gDP1pbhgcY9oujbj8S7QMf85ojbdXappsGwPKrKCv48gj0BPOPhTeWBayM0dzJFELeO4F1csvhRSkbVx5knzA9aRusNUGo63bQwsXtrECFXP/AImDy31Oap6l19DAskXju00n42Pf4AKPKhhm8Zo5AoliYbyc8k/Glt9jUhlsrm80mwF1YysIBJvQKx3RHHP0J8q3/wC2cmsXfire3l3OwxsJEePr/lVPTrySJwiwh4yMjjIGe+aMWnRmlPewXlpLaAqCblZVKlR6j4g+Q55otK8mi3R7HDqcLeOiCMAbfDZiVXIPfPfNCdMsLKZpY7lXyrAlVwVGQfr3Hej2pdRqbSa3sZPFCsIjO3O4D0B/fvS9p+tWehxNLcCF5J/wsz5C+Q4pYtX/AIFrBJ1BIulW05jVGf2bAxwO+B9aCxQSXGnQNtfMatIzenr+lWdYvDMX8Z4gsi5DH+3x+FVHuJ44BsH3RIHh+q8Vv+hWi/YFFnF3KWDhCcn+Vcdqk1d4pNNeUsjMWVlGecev5GgEHVOlQ3hjkvgNmQysCM/pQjVNcn1W/MGnxSmNgBHkEcH+bHqfL4CqKLEbVhi0ht7i8VJgVilUxMQcFSex/aiml6sbe5e2uQQ6MEZscZ7Z+tDvZn0e0YXk0cjOASAPwnyqGbV1dTOxTxAoXchAyB60WqVA2xr0uY6LrQvcloijK2AcYbuD9QDXabacSwxsBwygjI9RXzLYdQyeNA7M7CSTYrDPvHz+fFfRWh3p1PSYZgp37BuwK6viSpuLOb5EdMracpF5cAjjxW/ejablQ4Xd6UH07IubhSMHxD3o9AABjjmvQjo43sD6uG9hkY8jbmrGnMGsYieAEU/pWutxlbJlX8PPFa6bJv0+DHHuAUj/AEMtFK2cxq+0+6Xb96yoYn8KaZWJ5kasoWGjpMbe5Wm4NUSSkL249a1RiG+dOKKN2rGS6ZGAO9s58xmttIDNZJz6n9a1viEWc/1O371JpgK6epHc5pEMxfhhF31jeRMcLtXPyArTXoW/iVxamJ2jIG1h2II8vUcVHax3snVN/wCxIxnG0jHbt2J8s9qj1PrUBpLO6ihE4JUwsMsp8x371yfIlimdPCu0JWt9MarB4j2W2aIDcob3WA8x6GlO3mfTZmtb6F4Zl8mwNw9RjyrsUIN/bhgjRH8JDdhxSx1hptpFaK0gV5VXeD9fL9a5nlF1gSxqcIkQAD/CoHeug6Onh6bCWHIGT9aU9K6aiuL1b10wrcqvkM0+wWy+x+Eo5A79qrGFIk5W8Aua08UPNHu8Rc8A8n5UKkumld3U4eM5JAxkGmKGJoywAPND9V01Wl8RkyR25Nc7RZMFTyXCiPDojFSFfHY5/wAsitpora7gjiu7aaZSPxBtvI8uPyrX2fw0MfITBwB5ViRzQ3UBhmPgMDvVm+WCKWug2a2nTujtAGh0WJCCctuDP8+RmhV9ALK4aNIgiSncoHYY8vrTDPHJCofxSHI7EkMfkcYIpZ1zxfaoR7QGTOBGvdRjzNB2NEI6K6TF0cREAsFYttI+H/WtrzUbm2ibw41lKHClgeR5VUtGit76CNiymRCu7yUev500zQ6abIowleZQfvEG3LHzPNFtNGSrIi2up3V+TBNH4OW3L4vCGrp0SJbTNyIpMEnav6Hz5q5f+CqySKOFXB3HO4/50vx6nd3MsaTSeHEjcLEvYAefr9aUY8t9KjE8czuTgt3OTgZ75+lE9TkjtdFmmVkSVR7jnnJyMYqF7rfKrxAooBABxyD3yKB9R3DSIsZ4TgBBRX+gdgmx0tL6+mXO4nJz6mnTp7RjbSyTum2Q/hBHwxSDaaibO498MCDhWHH509aH1B7aghEbvtGGbng1VxbeSdpIo9R6RqRRLi7WV7MuviywnOwZ88dhVzS+mtMvCDZTGZR7wjkkyD8PWmhLqG0tLgOrmFomBWRhhsjHn5eZpQGlorJdaXP7OxwQAfdPxB8qso4olKXY12o0zSlVTaRR7RgrKuQD8GFNHTPV1xZn2iC3FzYZC7oAd0ZHHY+VI2ja5HcXI0/W0WOZ/diuduCT6E9iPjXR9FszZKsDRqI+4ZRgHPnxR41T9AnlHQtKvNG6jtlkgkj3kY3Dgg/EVLd6bNY+jL/UKRNS6ZuLdxf6ZK1vN+IbDgMaO9Hdez3d2mgdQW5SeQlIbgL7rH+lvTPrXVHkcXTOZwvKJtRy0cinkYqlpWTYQDPYf3onrNpLZPMjglQxXPofLP0pc066vIzEiW4eHkM2cY5qjyxVo2RN97cD0c1lZA5Oo3WRjnkfSsrMyOgpjYBWrDA7dq2UjkVPbwrcMxc4Re/x+FO3QqFGPTLnVFlW3i3AOcu3Crz60SttDWygWKeRpSo/lG1f8zTScxosUWyKMDsBVGeLxpeFbA53HtmpO+h/+gaW2FlY3M0CBGIJGB3bHf41w7VekZodch1ZZ3CiQPKnfxF3civom6ijW2KEDkc0napoVvIH35ZWB+nyrn5YWX45UKV/qVpDCWtyGP8AIuO4PypK1iefWdT8OQbC55UdlUU3ah0Sry5stRuoEz7yA5A+XpWln0xBpxJTczE+9JISWb86548bvLLOeMI00yzSGERYxtGST50bhjBgDKvvA4PxqCa2VHAQjcQMgeVEIYCsKr55q7ZJIrXFoY4mZFGSMmhN3FuGGGTimWcZAXHYc0PmgUnBHI5qUo2PGQozqEbsahtnRJwJBhCcZxnb8flTfPpMFzDkRhWHwpYv7M2cuWHu1OUB1LODaTVRdF7ZZLeJAeWEZB49OaT+o47triK50xEkuIweWQYUHzxnz/zpln8Jo92MmqZVBgKNo9AKk4jqQs2N3f3l/BBqdgIHY7RKmdjD0I8qYZB7LF4rOwHkgHatpVjcbWUEfDiq93crPBtZ1UjGfQkVmg3ZU3JdMrs+MZYKF5yfKqVyqQyrEi9gXY47k+p8zVuRokj3QlVc8Y9P+FQXcpmxnuTigkPZVll2DPlQTWSWUSHnkn6UZvYtqk5oFqUu6EftTLYCx0lZRa4tzEFBdDna3p5mmC00Q6ZcK0bsqg+QztPy9KUejJ5tI6gjvOUj3gOG/mQnBz+efpX0Le9MxoYrhY18KUZJx5iuyEejlnP2LVhDpmrxDTtZtoyXX3W7Kw9Qaual0G2i2K+yobiyVeGAyyD4+o+NE7jpJrq3YQR52DftB5+a0U6L1W4024/hGpZeFvwF/MH0pvGtk/K9HIdc0hBGzncICffUd428mFdC+yrW2vSOntVbfKozaXP9Y9DTR1d0DbJIZYUU20644HbP7Vz2HTLnpm9huY1P+hzBuPL1+hFBxaeeg+Sawdogs3BNnKCU8v8ACat2PSVvLOlwZIJCh3gsSGBHnirY8PULK21CMgrPGGB+NW9Km3krJ/LxkHyroSRBsFaiIbmeUDeY2jEb7vNlHB/L9qVLa1ay3wOc7XOD6qeQaeNfVbeSzlZdsfihW28ZzkUtazb+zup3FlAK7j39R+9ZYYdoXhJ4l/cAe7gg/pWV4oC30pPmBWVSxDoJI3HFXLGUqjDZuy4zx8Kobsn5Vc0yUvK6Y4GDW5NBjsMQxCRTn3fhiqV9mJRjPHfcaIxOFbBI4qtqkfiICMgEkemaHRuxd1Bp5TshDnb3+XxoDqdvqEiEIoBPxpwwfB90bfpVaWFHTd3+fnUZKysXRzO5XUI0O8SDHlEaqxmbd4k4ck9lIOa6NLp0THAUD1FDbrptLhyTuVvIqaj4Mr5oXdOijuJfGORg+Yq3cOzkKowBVx9Gk09fcJfAoNcXDQE+IjKG4x55oa2bD0XpACoYEfGqsi55JHwqv/FYvwnuPQVrHqMIyGU8nuRRNRdjyo7UP1fTkuo8DGTVu31S2bIDDA9a3nZJYGKMo+vNarNo5/fadNaSFN3ujnNVTGNvfmjuuBgFIJbI5z5UsNcqjsjNg/pUJxopF2bvFI7Y3ZzVC60qUOx3e4OaJWUqS3AXduzR++0qOXTyygB8ZzWXHawZzpiI8ew/i+GKgnlVGUZya31NpLFiJEK/GgE148j+4Cx8gOan4lk+y3d3eWYZ+FRW1kl0heQY29sVPZ6TcXLK7QuM88jtTPo/TEsmTIAEz2qsOPNk5clC1Z6YpvIc52tmNifiMCvoj7MNRXqrotY5GQ3dkxhmUjOGXv8AmMGuR6loj2UXiIrYT3xx5jmnj7N7hul/tDS2GfYNftRPGPLxFGfzKlh9BXTHDTOWTtM6JZWrLIMBECckKO5qv1X02lza+02QCSR++px+Fv8AI9vyo9co1rqRU+8m7HzFR3l7NbSswRXiJwYiOGWrOqpkld2gR0n1Faa3ato984jugMKsh53elB9d0VGvpYJU5ePaR684r3XelIbphqelMyMWDo6591vQ47H9DRh4b+fS9N1HUottzzDNx+Mdlb61ONrDHdbRF9m17K+hXmjTHNxpkhUBu+zy/T9qLqZIbhpVztPmDS5YSDROurS5DBYNST2aX03d1P8Ab601uRBePA3KntTf4D/SPqy4abp5pc+/DiQHHPDA0I6gLPpJkH4opF49Qf8ArRHqQmHRLwMBjwW/LFVNUw2iysdoUqjpznnij3YBJ8Qi9dXJYlQe3asrechdSPHeMfvWU4DoJGWHxFWLDK3YX1WoAw49altxm7jwcd/2pp5Qq2FJZSjj1+FV729ZgIwxyO3FWBHHLCBvIJ7ZHNRi0VFJ29vM81JDg9p5d5QE+96ipltyFGeT371Yisw7mVxyBwBzVpLYY3OMHHFCjWDEgJJbkDPnVmO2Vuc/MVMIg7HI93tivUcKdoIHPlQoNlW5tImUjGCKWtS0gyEnZx6U4sI3yHxkdqpz2wLEAHtWas0XQhT6RAh9+Pv8KiGiQuMoOQe+O1Nd9bbTh0GO+aEuzZBjwF+NRcaZZSsX5en4WcnL7mPPxqpP05JG26B2GO/NM84burD51GIsx8HOe+aFBsR9U0ye3T3QXUDzpcj0N7qQgxY3McDtXTbyAFCGAyRkCg9lphkvcIWxnkfCs0FMVrLpuS1nV44yxzz/AIaKy6ZdSYDybR/T5U7LpsYXO04+HatpdOjMeSgyPPFGKoVuxCk6agn4njD/ADFew9JWFt/sbWNT6he9OMlmqnCgZrz2RQRnkkdqLRkxct9HgjUYRQflVhIIIXCjAbnj1q9JbbHIQkc81SuIGWQNWNRYm0yK7tG8ReMdqFRQy/8AZHSNZjBe40C8AYjv4avtYf8A20021vmAADccZNUejrNLqbqfp+XhCfaAvf3XXB/X96rVoleTpeolbvToLpDlguPmPI1TZvaIAWB3D3ar9HyS3vSMCO2ZYUML582QlT+1ZDKUhkVlxjzrKQKKUN1caDfeOjkW8rYkUHt/io7qRa8iYMzMsi8HP5GqElql9bMpXuCKzpyRjbvptwx8W3J2MT+JfKlunQdqxd6mtpJ9LSaFszW5EiEdwynNMs12uoWdjqsX/wCJiVu/Ykcj86o6jAY0vIiuUBDD696j6Mb2vp6fTX5ksJ2VRn+U8j96dgLPV914fSt5If8Ayz/lWl1ID0eJGAZvBX8+KH/aFM0HR72wH3twyxgY55IqxdlI+jYkB5ZEAB+lZPJqEy6uWF6rlf5Md/jWVSu1K3iSby3BFZTsVHVUHn5CrVr7t1E3luFVlYKAKkZgsTt/SpP5VRioPiA7icAYGBXqKXDbx2ry2nEkEZByHUMPrUqRFee3rUkMawgN+FeB54rZlJUgjFbxIoztyCfWpGTj3uD8KKQLKEiHHmBUUn4QUAzVyZdy7frVZgSpJyCPSs0FMqm5RiQDnIqMXEshIKkBf1qwIlxkAZ+VeKuFYEbj61PxdjWU7hRIhzyfiKBT2+0Y8+c47Gj9wCUJzigl4ffIwcdq0ohiyjglgCeK9MQQ4yOaikO1zkYxUHiZc8nipsoTXCBgWxyBiqVlHG9w8UqAq4ww9RVppSIie5qCJWRvECZOc0AjFBaxRW6xxhVVRhVHYAVHLAMZI/KoI7glUbJHHPwqY3qleRTLQGUplWNchck+eKrMoBBI5q486s2AOKrPhjkUrCDryM/iA5zzivbaxMuC4yPjVlrXxyOWU5zgii1raARKuOT3oxViylRrBYKIhxt+VLdjby6Z9p0EkJIjvrGeJz5HCE/uop8htAVB8seVUmsojr1ncKnvpDKqnHYkc4+lXawS7NegZlMutacO6Tidc+jrn9wasXkZZnG3Yc47d6A9IXXs/WEy52ie3KkH1Vv/APVNWpA+O+eARwKl0P2DtOvBlo2/Ehww9KknDQ3sV7EM8YaoYEPiEryHODViWMgMI2KknsfWjtA0zzVk8R2K/hmi/b/rQTpnxLXWZVTO27hJPwZDj9jRVZnuLEiaMJJA4B+KnjNUtPj9n1C1I5xO4+jLR2rBp0DerpXurvTbSQ7t1yG+gBP9qs9ZXYttKtyMLg9s+gqjrEpuusYIR+G2jLHHqx/yFRdXyLd3ljbYLKFaTB7YyBSxeRmL3ih/BZgOc1lb6hajNusZ24LZI+VZVyZ08gMRkVJOQLeX/cP7VEeJM+Rr26G6zl/3D+1UELXRt57VoVo5OWRTGT8iR/lTJ4gIHmKQvs7nIsJLVzkhvEX5djTxB/KG7YzUY+ijNxI+4nZgdv8AjXsknn5V64JTOCeaiBz7uO1MA8JUL3x86rOjsWkZvcAxj41MfeO396keFTGAuM+eawCpHJuXt286jZAr7hk571Z9mGMEc/CtjAoGD5fpQoxSkiWReOT8qpyaaJOduaMLH7vNbrHGcc4PoaNWawCuhRSECQZOMcedC7zRFgkYKm1f1p3EKgHj6elULu3Xsfe+OKEuNUMpuxCltZUyoGQPh3q/ZafI9tGXTBc55o1PYJk4GM0RtgrQojRplBgMBzipx4/Y7mAItCZ2B35ra40IwQ7yvJ+PemdYwOar3MJkby247fGmcFQqm7E8223hRivI7N3YcDmmI6ajNnbUiWKoOAKRQHcwPBpwkPK81e/h4RVIzwaJLCEGdtSAKVHFUUUibdkMMK7Dk8VRufDW+gKZxhx+lEyNsRXGAKEzESXsQAACqx/atJ4AlkS4JP4f1vZOOFeZoT/7lOP2FPmoozyYBGMdq551H/o2tW84yCtzFJ9A4B/Q10m7WORhKMFmUYqS7RR9C9ps7e0SRsSCh4yfKj8SRXSliBv+PY0sXSPBfMT+lELK5IUjcScZz60IunRmrCGoWsVtZ3DbuSvA+VALebbfwjYeZBz9DRF7x7pXUjjBGPhQqxEkkqyAHja4z54OD+lMpXoDVFKysHvOpb66YHb4uwfJRQfXJ/E6nuoQc+DBGo+HJJ/enG2T2V7lm4wxYmucNdG66hv5mOBIgIP1oILLF85VY2K8K358VlR6hJi1Rt3Zu/0rKsTOmv8Agz6V7Oc2cp/wH9q94KkGopWxaSr6IR+lWJgXpq69k1WyzhI5QY2+ZHH6iukRNg9uMedcZvLh4XtGiyNhVgc+YNdYsLoXEEcytlXUEfWolAi8jbfI1pKRwAfyrV5UHGaikdhwAQCO+KYUkVgB3zW6EnJ7CtLfbJuwwJXAI86kLADaNuT5GlsY2JAUnI+earKXYsfjW8hAT3scngVvGCqDHPmaYUh8PLZZnz8CamiUJk5J+dY5wCQOaghvUVyDgkeRFYJZeQjOMYqnNICBuGM/pW73YkJJGD6VWeYOSp7elZsyRrMQq5HNWLYb0bBwRzzVF/eAA7fAdqkjdkQ8NyPWlQS/GwZOWIPfFYUO3JHGM5qhHdHkMuB5EHOalkm91dijlhnI8qNgos7V2+VaFRkmoxIA2UwSeKkyxPPcVrMaO+BxitTKCMivWQLnCjk5+tVnjYNn0oMKJXy64BxxQpD/AKyhGTtKnOfpVoXARHy3niqsGJtRXByVU/SkegoSuto8XROzaBKOT5gNXRUcNbRnBJ25zSN9oSlEL7cLhsfMc042cw/h1u3cmMH8xmkX6HegLrkyxsHCZ8iKhs7mN41aPsMfQ1JrjqgZzz54oZZ3AlkICgknHHbtmlbyZLAwWUa/jIyDioNJEZupo3IBidh8hnNbQ3ZjQRSEbs8n0zQ1HMWq3QHGSp/Mf8KMXRmiTXbzbBNsIG/j55rnMsng6w4UDHh/Q80365deI4RfLk0pyokurgMODExP6Uy1YH6PNacmxVwuAGHFZU+pxq1hsUcAisq0WyckdUGCuar3PEcvPGw1LGQUGKr3jYt5m8tpqogkasceCRwM09dI3++yW1ZyWiPA/wAJ7Uh6wpCW5wQDR3py/wDYtRhZsbZVERP7frUH+Sq2dMijjHPc1MoB7iqdqcLuJNTGQZB8qZPAtErbVJOK02qzb9vPxrxn88g5qJpiTjJGPPypHsYldfOQcA/lW4zt91q0V1kXzIP61Io2ryQM8ZNOhTYYK4PJqP2ZN5YDgisz4YOcd+PjUb3SoO5+lGwUeNZqM4JBNVJbfa5LENx5irccwlGVYkVjuG4PIobCU0jPc4Ppg1ZhRQQCM54NaMBu4XA+FSBTvHNZGZo1mvisE7ZqcWydnLYB7DzrdPxYx9akfaCAcc9qYBXa3DHKHaPhWxiPfIJrYe42PI+leSSq3ug9qFGshdCCDycnBxUcqKMn4VKZiwyF49ax03pwct5ZoBAsgjdWbBwT3xVGwuQ2qzIgzth8j25o9cWoEJGBzzjFLWnRmLVLw/hHhjn05qclQ6A32izPLaYC5VQSWPemXTT4uj2bB2H3KHI/3RSx1xHiERjyB70w6DNnpyxIHeFMn5AVPsbooarHK0DgKZTnA+HpQTRJQGkieN0nznDjkCmC4u9twFUAqx5571JHpqGRpk5JHvA+VK1bwNdLJpazrLvRlyvHvEefpVNo2XVJ9wxuiQj6ZFFIdKct92SAccjsT60J6kkFne4DbXNuR9dwH96KTA2L97dJvkcn7st7p+FLskqvrSENkeG44+VHJ2RlCYBoIkCDWolAwuGH6VaapUJF5sv3A3ae3HbH71lZLn2eSMduP3rKMdCs6TE33XFRXp/0KUeqmtrVt8WK8vCPZpBjspqtiCLr5ZBbLnhf1r26mIRFiJByDuHka26lgfw7VlBALe8fSqy43oAO7Ckeh1s6L0v1Gur6PHcA5dSY5VB/C68Ef8+tMUcitGpA5PrXCOi+pZun9Wv8KZoJJ23xZ889x6Gul2XXtlNwsNypPkVH71OMWM2hrllAYbTz6VuFJX3hil8dT2cIMhhnPOew4/Wq6deWjggwzbsnsO1amtm3ob027R+2a9lmVlAIJI+PekI/aZpgupbZ0uhLGcMBHwP1qG7+17p+yuXhuWv0dBt2+zsVPGcgjv8AP50fOlbMotukP1wfEUbG2cYxVSZiCA2SAeGFIMn24dLrKsR/iLZ/mW1YgV632ydM8Ye/PytWpXyRfYy45eh+SUR52jv5Vol0WcqFPHnSFJ9s3TYOFGonPb/RG/zrz/vg0E/hF8Mf/ljQ+2Ps31y9HR0lXbnzHep4yr85GK5cv2w6CR957dnz22zYqRftm0GP8I1Af/tif70y5o+wfUzqqsgPGOajuI93vAfKuYJ9tugFsOmo4xyRbH/Orf8A349NsgjHt48sm0amXNBrYv1S9D6mQBkkeXNY+N3HArnf/fH00zEO96gJ7m1atJ/tl6Xj5FzeN8rZ+aH2x9h+qXo6J4nhoxcZAPHFaC4Zm5U+ua58Pts6ReM7ru8UnyNq9an7Z+lJAVaW9ODwRav5djQ+2PsP1S9HQ5nBjOT5Ur20mby7YHHCj5jJpau/tq6cmtysT6ikme3shIP60L0b7SdKvdTuI0ivVBRXDPFgHBPHf41OfInhDR45LLGbrOPxYWlA93GM+VW+m7oP0zZ9j7gWgmvdVaPdaQ8MU8iM+BtkQ9/pUPTmuWdtosFrNIQy9xtJ8+9K76QVQWvUW0ljlckjcc+nIoja36lQQTnHu+hoDN1HZTI4mjm2g7QdoO4etDj1vbWRMNvp8kjLyC7jHwNIvJaQzpj01/LHbb7e2BYeQOK591RrJur/AHyyI8sedyp2X4VT1rqvVb+wmIn9lj4GyD3cjPme9AoYBK6sfwj9avCNu2Tk6VIPwO0yJKRjND5HZNVibjO4/lir0cgRETncORQu7P8ArCFh/Xj9Kfk0LHYXkZTCeO/pWVBG/wBzsJyaysjHRrM7CQDkGtrw/wCjyn/Ca0jPhv8ACtL9wbWXaT+E1UmxV6luD/oiq2RuGRVWFNs+442g8CtNfmAFoAGJ3jJraVtrDPnig0FCnpTBdTu2K5PtDZH1p0s5FMiqq80l6EA19eef37fvTlYqQfdABHJpuLQk9hOeUiBvlQ+IbFye5OanvJCLRyeOKqCTMaDPfApZ7GjoX/x9RXp/9QftSD9pst/b61NNPMsHiKEtZJeEZAOwJ47k59Ke0P8A8R34PYOOfpS31voftt7ePKEnmeLZbiUkogI47A4xyfnUeZXBf9K8TqTDC/Z3Yy9D2N1DNG+rJaiZry2lLR3LYLfIjHAIx2pKtz4hZWd0deTg8Uw9M3mvWHTlvot9e2aWtqhiSO0jPiyqSThnbt3PYVtB05ZxJJczxmV3YtsU5CjyFQ5oxk14FuKUop+QMt7bxh/tZPmDV2LTuABJKT/vGmHSLLToYSoiHPIDdxRmC1hfbsVUGO+KT6hnyCW+nSRIGZpsEhQBkkk9hWsljcqAB465Ut7ykYA710K4so7lY/f2PG4dSB5j4emCa9OjRPJ70+9dsisMYyGxwOfLFMuJC/YcwkhlU/eyXCZG4b1IBHr+tRzwzQ43NMfeKcZ74zXUH0KOUD2iQSKkbIAFAzkYyfjioZdGhEVvGsqs0Lbi7rkscEZ/XNH6TfYcySGeRQQ7spGc7j2rXwC5xvOR8a6cbC2hUK0cR4HYcGqF3YWMZL+FHz392kfE/Y32f4c8mt3jHDk57VTlWZUZllYNnAIPb410Q2tiVDCGMg/ChUmmWAmdJQEt5gyNMveIkcHFD62MuQ0ueg4o9CuHimuLrUxbloi0uE34yBjzHzoJ9n9vOt/dSZV4zEPEdX3Dfnjz/wB6jE+t9RppcunzaHFqBaJrdbq0ulTdldoZlblc+eKuaVaafpxWC2traylkQFoYyoYD0OO+D51aUY2vEipSpqRa1FgbcEcgSLVqynyirkgDgmqt+u207599f3q7bBXjXaBkeldPGQmWJm+5bbwAKFxur3TAjnZn9aI3JmFuwcKAeBjvVCONGvgCePDNDkDAy8BfTZyOAF4/OssfFKgrgjyqa6j3WNwM9kJFVLO7EYWNR72BmlhsMgo1w5RAwA8uPOqVwcXNvngmQCpzMZGUMoDZqrqmVuLfDY+8BoT0aJbtw3iNg+tZUVtOzTbFHPPNZWTCz//Z"},"hera":{"name":"Hera","group":"oly","desc":"Queen of the gods; marriage","url":"https://en.wikipedia.org/wiki/Hera"},"poseidon":{"name":"Poseidon","group":"oly","desc":"God of the sea and earthquakes","url":"https://en.wikipedia.org/wiki/Poseidon"},"hades":{"name":"Hades","group":"oly","desc":"Lord of the underworld","url":"https://en.wikipedia.org/wiki/Hades"},"demeter":{"name":"Demeter","group":"oly","desc":"Goddess of the harvest","url":"https://en.wikipedia.org/wiki/Demeter"},"hestia":{"name":"Hestia","group":"oly","desc":"Goddess of the hearth","url":"https://en.wikipedia.org/wiki/Hestia"},"athena":{"name":"Athena","group":"oly","desc":"Wisdom and strategic war","url":"https://en.wikipedia.org/wiki/Athena"},"apollo":{"name":"Apollo","group":"oly","desc":"Music, prophecy, and the sun","url":"https://en.wikipedia.org/wiki/Apollo"},"artemis":{"name":"Artemis","group":"oly","desc":"The hunt and the moon","url":"https://en.wikipedia.org/wiki/Artemis"},"ares":{"name":"Ares","group":"oly","desc":"God of war","url":"https://en.wikipedia.org/wiki/Ares"},"hephaestus":{"name":"Hephaestus","group":"oly","desc":"The divine smith","url":"https://en.wikipedia.org/wiki/Hephaestus"},"hermes":{"name":"Hermes","group":"oly","desc":"Messenger, trickster, guide of souls","url":"https://en.wikipedia.org/wiki/Hermes"},"aphrodite":{"name":"Aphrodite","group":"oly","desc":"Love and beauty, born of sea foam","url":"https://en.wikipedia.org/wiki/Aphrodite"},"dionysus":{"name":"Dionysus","group":"oly","desc":"Wine, ecstasy, and theatre","url":"https://en.wikipedia.org/wiki/Dionysus"},"persephone":{"name":"Persephone","group":"oly","desc":"Queen of the underworld; spring","url":"https://en.wikipedia.org/wiki/Persephone"},"maia":{"name":"Maia","group":"mort","desc":"Nymph, eldest of the Pleiades","url":"https://en.wikipedia.org/wiki/Maia"},"semele":{"name":"Semele","group":"mort","desc":"Mortal princess of Thebes","url":"https://en.wikipedia.org/wiki/Semele"},"helios":{"name":"Helios","group":"titan","desc":"The sun Titan. His sacred cattle, eaten by starving crewmen against explicit warning, cost the whole crew their lives.","url":"https://en.wikipedia.org/wiki/Helios"},"odysseus":{"name":"Odysseus","group":"mort","desc":"King of Ithaca. Ten years fighting at Troy, ten more getting home — *the man of twists and turns*. Slower to speak than to think, which is the whole point.","url":"https://en.wikipedia.org/wiki/Odysseus"},"penelope":{"name":"Penelope","group":"mort","desc":"Odysseus's wife. Holds off 108 suitors for years by weaving a burial shroud all day and unpicking it every night.","url":"https://en.wikipedia.org/wiki/Penelope"},"telemachus":{"name":"Telemachus","group":"mort","desc":"Their son. Spends the poem's first act growing up — travels to Pylos and Sparta chasing news of a father he barely remembers.","url":"https://en.wikipedia.org/wiki/Telemachus"},"laertes":{"name":"Laertes","group":"mort","desc":"Odysseus's father. Living out his old age tending an orchard, half-grieving a son everyone else has given up on.","url":"https://en.wikipedia.org/wiki/Laertes"},"nestor":{"name":"Nestor","group":"mort","desc":"Aged king of Pylos, veteran of Troy. Long-winded but well-meaning — has no real news of Odysseus, but plenty of advice.","url":"https://en.wikipedia.org/wiki/Nestor_(mythology)"},"menelaus":{"name":"Menelaus","group":"mort","desc":"King of Sparta, Helen's husband. Also took ten years to sail home from Troy — tells Telemachus so over a lavish dinner.","url":"https://en.wikipedia.org/wiki/Menelaus"},"helen":{"name":"Helen","group":"mort","desc":"Whose face launched the whole Trojan War, now settled back into married life at Sparta as if nothing happened.","url":"https://en.wikipedia.org/wiki/Helen_of_Troy"},"eumaeus":{"name":"Eumaeus","group":"mort","desc":"Odysseus's loyal swineherd. Shelters his disguised, unrecognised master without knowing who he is — loyalty as its own reward.","url":"https://en.wikipedia.org/wiki/Eumaeus"},"antinous":{"name":"Antinous","group":"mort","desc":"The boldest and rudest of Penelope's suitors, busy eating Odysseus out of house and home. First to die when the bow comes out.","url":"https://en.wikipedia.org/wiki/Antinous_(suitor)"},"nausicaa":{"name":"Nausicaa","group":"mort","desc":"Phaeacian princess. Finds the shipwrecked, naked Odysseus on the beach and, with impressive composure, doesn't run.","url":"https://en.wikipedia.org/wiki/Nausicaa"},"alcinous":{"name":"Alcinous","group":"mort","desc":"Nausicaa's father, king of the Phaeacians. Hosts Odysseus, hears his whole story, and finally ships him home.","url":"https://en.wikipedia.org/wiki/Alcinous"},"tiresias":{"name":"Tiresias","group":"mort","desc":"Blind prophet, dead and consulted in the underworld anyway. Tells Odysseus exactly what's coming — he mostly ignores it.","url":"https://en.wikipedia.org/wiki/Tiresias"},"circe":{"name":"Circe","group":"mort","desc":"Enchantress on Aeaea. Turns Odysseus's crew into pigs, then — once he resists her — becomes an unexpectedly helpful host for a year.","url":"https://en.wikipedia.org/wiki/Circe"},"calypso":{"name":"Calypso","group":"mort","desc":"Nymph who keeps Odysseus on her island for **seven years**, offering immortality if he'll stay. He still wants to go home.","url":"https://en.wikipedia.org/wiki/Calypso_(mythology)"},"polyphemus":{"name":"Polyphemus","group":"monster","desc":"One-eyed son of Poseidon. Traps Odysseus's crew in his cave and eats several before a red-hot stake and a fake name (\"Nobody\") end the standoff.","url":"https://en.wikipedia.org/wiki/Polyphemus"},"scylla":{"name":"Scylla","group":"monster","desc":"Six-headed monster in a narrow strait. Odysseus sails close to her rather than risk Charybdis — she still takes six men.","url":"https://en.wikipedia.org/wiki/Scylla"},"charybdis":{"name":"Charybdis","group":"monster","desc":"A whirlpool opposite Scylla. Swallows the sea three times a day; the safer-looking choice that turns out not to be.","url":"https://en.wikipedia.org/wiki/Charybdis"},"sirens":{"name":"Sirens","group":"monster","desc":"Singers whose voices lure sailors to wreck on the rocks. Odysseus has himself lashed to the mast just to hear them safely.","url":"https://en.wikipedia.org/wiki/Siren_(mythology)"},"thetis":{"name":"Thetis","group":"mort","desc":"A sea nymph, Achilles' mother. Carries his grievances to Zeus and his armour back from Hephaestus.","url":"https://en.wikipedia.org/wiki/Thetis"},"achilles":{"name":"Achilles","group":"greek","desc":"Greatest of the Greek fighters. The whole poem is technically about *one* of his tempers — the one where he sits out the war over a woman he was made to give up.","url":"https://en.wikipedia.org/wiki/Achilles"},"agamemnon":{"name":"Agamemnon","group":"greek","desc":"Commander of the Greek host. Starts the plot by claiming Achilles' captive, which is either kingly prerogative or spectacularly poor judgement depending who's asked.","url":"https://en.wikipedia.org/wiki/Agamemnon"},"ajax":{"name":"Ajax","group":"greek","desc":"\"The Great.\" Second only to Achilles in raw fighting strength; duels Hector to an honourable draw.","url":"https://en.wikipedia.org/wiki/Ajax_the_Great"},"diomedes":{"name":"Diomedes","group":"greek","desc":"Young Greek spearman having the single best day of anyone in the poem — wounds two Olympians and lives to tell it.","url":"https://en.wikipedia.org/wiki/Diomedes"},"patroclus":{"name":"Patroclus","group":"greek","desc":"Achilles' closest companion. Borrows his armour to rally the Greeks, and pays for it.","url":"https://en.wikipedia.org/wiki/Patroclus"},"briseis":{"name":"Briseis","group":"greek","desc":"Captive woman awarded to Achilles as a war-prize, then seized by Agamemnon — the spark, not really the subject, of the poem's central quarrel.","url":"https://en.wikipedia.org/wiki/Briseis"},"hector":{"name":"Hector","group":"trojan","desc":"Troy's best defender and its clearest head — fights a war he privately suspects is already lost, because someone has to.","url":"https://en.wikipedia.org/wiki/Hector"},"priam":{"name":"Priam","group":"trojan","desc":"Aged king of Troy. Ends the poem begging Achilles, his son's killer, for the body back — and gets it.","url":"https://en.wikipedia.org/wiki/Priam"},"paris":{"name":"Paris","group":"trojan","desc":"Took Helen, started the war, then spends most of it as a considerably less impressive soldier than his brother.","url":"https://en.wikipedia.org/wiki/Paris_(mythology)"},"andromache":{"name":"Andromache","group":"trojan","desc":"Hector's wife. Their farewell scene, with their infant son, is the poem's quietest and most devastating moment.","url":"https://en.wikipedia.org/wiki/Andromache"}},"links":[{"from":"chaos","to":"gaia","type":"parent"},{"from":"chaos","to":"nyx","type":"parent"},{"from":"chaos","to":"erebus","type":"parent"},{"from":"chaos","to":"tartarus","type":"parent"},{"from":"gaia","to":"uranus","type":"parent"},{"from":"gaia","to":"pontus","type":"parent"},{"from":"uranus","to":"cronus","type":"parent"},{"from":"gaia","to":"cronus","type":"parent"},{"from":"uranus","to":"rhea","type":"parent"},{"from":"gaia","to":"rhea","type":"parent"},{"from":"uranus","to":"oceanus","type":"parent"},{"from":"gaia","to":"oceanus","type":"parent"},{"from":"uranus","to":"tethys","type":"parent"},{"from":"gaia","to":"tethys","type":"parent"},{"from":"uranus","to":"hyperion","type":"parent"},{"from":"gaia","to":"hyperion","type":"parent"},{"from":"uranus","to":"theia","type":"parent"},{"from":"gaia","to":"theia","type":"parent"},{"from":"uranus","to":"themis","type":"parent"},{"from":"gaia","to":"themis","type":"parent"},{"from":"uranus","to":"mnemosyne","type":"parent"},{"from":"gaia","to":"mnemosyne","type":"parent"},{"from":"uranus","to":"iapetus","type":"parent"},{"from":"gaia","to":"iapetus","type":"parent"},{"from":"uranus","to":"coeus","type":"parent"},{"from":"gaia","to":"coeus","type":"parent"},{"from":"uranus","to":"phoebe","type":"parent"},{"from":"gaia","to":"phoebe","type":"parent"},{"from":"coeus","to":"leto","type":"parent"},{"from":"phoebe","to":"leto","type":"parent"},{"from":"oceanus","to":"metis","type":"parent"},{"from":"tethys","to":"metis","type":"parent"},{"from":"iapetus","to":"atlas","type":"parent"},{"from":"iapetus","to":"prometheus","type":"parent"},{"from":"cronus","to":"zeus","type":"parent"},{"from":"rhea","to":"zeus","type":"parent"},{"from":"cronus","to":"hera","type":"parent"},{"from":"rhea","to":"hera","type":"parent"},{"from":"cronus","to":"poseidon","type":"parent"},{"from":"rhea","to":"poseidon","type":"parent"},{"from":"cronus","to":"hades","type":"parent"},{"from":"rhea","to":"hades","type":"parent"},{"from":"cronus","to":"demeter","type":"parent"},{"from":"rhea","to":"demeter","type":"parent"},{"from":"cronus","to":"hestia","type":"parent"},{"from":"rhea","to":"hestia","type":"parent"},{"from":"zeus","to":"athena","type":"parent"},{"from":"metis","to":"athena","type":"parent"},{"from":"zeus","to":"apollo","type":"parent"},{"from":"leto","to":"apollo","type":"parent"},{"from":"zeus","to":"artemis","type":"parent"},{"from":"leto","to":"artemis","type":"parent"},{"from":"zeus","to":"ares","type":"parent"},{"from":"hera","to":"ares","type":"parent"},{"from":"zeus","to":"hephaestus","type":"parent"},{"from":"hera","to":"hephaestus","type":"parent"},{"from":"zeus","to":"hermes","type":"parent"},{"from":"maia","to":"hermes","type":"parent"},{"from":"zeus","to":"persephone","type":"parent"},{"from":"demeter","to":"persephone","type":"parent"},{"from":"zeus","to":"dionysus","type":"parent"},{"from":"semele","to":"dionysus","type":"parent"},{"from":"uranus","to":"aphrodite","type":"parent"},{"from":"atlas","to":"maia","type":"parent"},{"from":"gaia","to":"uranus","type":"consort"},{"from":"nyx","to":"erebus","type":"consort"},{"from":"cronus","to":"rhea","type":"consort"},{"from":"oceanus","to":"tethys","type":"consort"},{"from":"hyperion","to":"theia","type":"consort"},{"from":"coeus","to":"phoebe","type":"consort"},{"from":"zeus","to":"hera","type":"consort"},{"from":"hades","to":"persephone","type":"consort"},{"from":"hephaestus","to":"aphrodite","type":"consort"},{"from":"laertes","to":"odysseus","type":"parent"},{"from":"odysseus","to":"penelope","type":"consort"},{"from":"odysseus","to":"telemachus","type":"parent"},{"from":"penelope","to":"telemachus","type":"parent"},{"from":"zeus","to":"helen","type":"parent"},{"from":"menelaus","to":"helen","type":"consort"},{"from":"poseidon","to":"polyphemus","type":"parent"},{"from":"alcinous","to":"nausicaa","type":"parent"},{"from":"athena","to":"odysseus","type":"protects"},{"from":"athena","to":"telemachus","type":"protects"},{"from":"hermes","to":"odysseus","type":"protects"},{"from":"poseidon","to":"odysseus","type":"endangers"},{"from":"polyphemus","to":"odysseus","type":"endangers"},{"from":"scylla","to":"odysseus","type":"endangers"},{"from":"charybdis","to":"odysseus","type":"endangers"},{"from":"sirens","to":"odysseus","type":"endangers"},{"from":"zeus","to":"odysseus","type":"endangers"},{"from":"circe","to":"odysseus","type":"captivates"},{"from":"calypso","to":"odysseus","type":"captivates"},{"from":"tiresias","to":"odysseus","type":"advises"},{"from":"nestor","to":"telemachus","type":"advises"},{"from":"menelaus","to":"telemachus","type":"advises"},{"from":"helios","to":"zeus","type":"advises"},{"from":"alcinous","to":"odysseus","type":"hosts"},{"from":"nausicaa","to":"odysseus","type":"hosts"},{"from":"eumaeus","to":"odysseus","type":"serves"},{"from":"antinous","to":"penelope","type":"courts"},{"from":"odysseus","to":"antinous","type":"kills"},{"from":"priam","to":"hector","type":"parent"},{"from":"priam","to":"paris","type":"parent"},{"from":"hector","to":"andromache","type":"consort"},{"from":"agamemnon","to":"menelaus","type":"sibling"},{"from":"hector","to":"paris","type":"sibling"},{"from":"thetis","to":"achilles","type":"parent"},{"from":"paris","to":"helen","type":"loves"},{"from":"athena","to":"achilles","type":"protects"},{"from":"hera","to":"agamemnon","type":"protects"},{"from":"poseidon","to":"achilles","type":"protects"},{"from":"aphrodite","to":"paris","type":"protects"},{"from":"apollo","to":"hector","type":"protects"},{"from":"ares","to":"hector","type":"protects"},{"from":"athena","to":"diomedes","type":"protects"},{"from":"hector","to":"patroclus","type":"kills"},{"from":"achilles","to":"hector","type":"kills"},{"from":"paris","to":"achilles","type":"kills"},{"from":"apollo","to":"achilles","type":"kills"},{"from":"achilles","to":"patroclus","type":"friend"},{"from":"nestor","to":"agamemnon","type":"advises"},{"from":"odysseus","to":"agamemnon","type":"advises"},{"from":"agamemnon","to":"briseis","type":"captivates"},{"from":"hephaestus","to":"achilles","type":"forges"},{"from":"achilles","to":"agamemnon","type":"rival"},{"from":"ajax","to":"hector","type":"rival"},{"from":"diomedes","to":"aphrodite","type":"wounds"},{"from":"diomedes","to":"ares","type":"wounds"}]};
+
+const stage=document.getElementById("stage"), nodesEl=document.getElementById("nodes"),
+  edgesEl=document.getElementById("edges"), trailEl=document.getElementById("trail"),
+  jump=document.getElementById("jump");
+const SVGNS="http://www.w3.org/2000/svg";
+const F=1150, DIST=1000;
+
+let DATA=null, N={}, GROUPS={}, TYPES={}, E=[], ids=[], P3={}, P0={}, pairCount={};
+let nodeEls={}, edgeEls=[], hitEls=[], labels=[], defsEl=null;
+let nodeSize={};
+let focusId=null, neighbors={}, focusEdges=[], neighborLayout={}, pinnedOffset={}, trail=[];
+let lastPinnedFocus=null;
+let hiddenGroups={};
+function groupKeyOf(id){ const g=(N[id]||{}).group; return (g&&GROUPS[g])?g:""; }
+function isVisible(id){ return !hiddenGroups[groupKeyOf(id)]; }
+let th=0.6, auto=true, dragDist=0, lastX=0, lastY=0, dragging=false, nodeDrag=null;
+let editingId=null;
+let graphStack=[];
+function currentRootData(){ return graphStack.length ? graphStack[0].data : DATA; }
+const cam={x:0,y:0,z:-900};
+let zoomLevel=1;
+const ZOOM_MIN=0.08, ZOOM_MAX=2.5;
+function setZoom(z){ zoomLevel=Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, z)); }
+const proj={};
+
+let seedv=42;
+const rnd=()=>{ seedv=(seedv*9301+49297)%233280; return seedv/233280-0.5; };
+
+defsEl=document.createElementNS(SVGNS,"defs");
+Object.keys(PAL).forEach(k=>{
+  const m=document.createElementNS(SVGNS,"marker");
+  m.setAttribute("id","arr-"+k); m.setAttribute("viewBox","0 0 10 10");
+  m.setAttribute("refX","8"); m.setAttribute("refY","5");
+  m.setAttribute("markerWidth","7"); m.setAttribute("markerHeight","7");
+  m.setAttribute("orient","auto");
+  const pth=document.createElementNS(SVGNS,"path");
+  pth.setAttribute("d","M 0 0 L 10 5 L 0 10 z");
+  pth.setAttribute("fill",PAL[k][3]);
+  m.appendChild(pth); defsEl.appendChild(m);
+});
+const dimM=document.createElementNS(SVGNS,"marker");
+dimM.setAttribute("id","arr-dim"); dimM.setAttribute("viewBox","0 0 10 10");
+dimM.setAttribute("refX","8"); dimM.setAttribute("refY","5");
+dimM.setAttribute("markerWidth","6"); dimM.setAttribute("markerHeight","6");
+dimM.setAttribute("orient","auto");
+const dimP=document.createElementNS(SVGNS,"path");
+dimP.setAttribute("d","M 0 0 L 10 5 L 0 10 z");
+dimP.setAttribute("fill","var(--line-strong)");
+dimP.setAttribute("opacity","0.55");
+dimM.appendChild(dimP); defsEl.appendChild(dimM);
+edgesEl.appendChild(defsEl);
+const labelLayer=document.getElementById("labellayer");
+const starsEl=document.getElementById("stars");
+(function makeStars(){
+  let sseed=137;
+  const srnd=()=>{ sseed=(sseed*9301+49297)%233280; return sseed/233280; };
+  for(let i=0;i<180;i++){
+    const st=document.createElement("div");
+    st.className="star";
+    const sz=srnd()<0.85 ? 1 : 2;
+    st.style.width=sz+"px"; st.style.height=sz+"px";
+    st.style.left=(srnd()*100)+"%";
+    st.style.top=(srnd()*100)+"%";
+    st.style.opacity=(0.25+srnd()*0.6).toFixed(2);
+    starsEl.appendChild(st);
+  }
+})();
+const lightbox=document.getElementById("lightbox"), lightboxImg=document.getElementById("lightbox-img");
+function openLightbox(im){
+  const r=im.getBoundingClientRect();
+  lightboxImg.src=im.src;
+  lightbox.style.display="flex";
+  const dx=(r.left+r.width/2)-window.innerWidth/2;
+  const dy=(r.top+r.height/2)-window.innerHeight/2;
+  lightbox.style.transition="none";
+  lightboxImg.style.transition="none";
+  lightbox.style.background="rgba(0,0,0,0)";
+  lightboxImg.style.transform="translate("+dx+"px,"+dy+"px) scale(0.12)";
+  lightboxImg.style.opacity="0.4";
+  lightboxImg.style.borderRadius="50%";
+  requestAnimationFrame(()=>{ requestAnimationFrame(()=>{
+    lightbox.style.transition="background 0.28s ease";
+    lightboxImg.style.transition="transform 0.34s cubic-bezier(.2,.7,.3,1), opacity 0.25s ease, border-radius 0.34s ease";
+    lightbox.style.background="rgba(0,0,0,0.78)";
+    lightboxImg.style.transform="none";
+    lightboxImg.style.opacity="1";
+    lightboxImg.style.borderRadius="12px";
+  }); });
+}
+function closeLightbox(){
+  lightbox.style.background="rgba(0,0,0,0)";
+  lightboxImg.style.transform="scale(0.85)";
+  lightboxImg.style.opacity="0";
+  setTimeout(()=>{ lightbox.style.display="none"; lightboxImg.src=""; }, 260);
+}
+lightbox.onclick=closeLightbox;
+document.addEventListener("click",ev=>{
+  const im=ev.target.closest(".portrait");
+  if(im && dragDist<6) openLightbox(im);
+  const eg=ev.target.closest(".entergraph");
+  if(eg && dragDist<6) enterSubgraph(eg.dataset.id);
+});
+
+function enterSubgraph(nodeId){
+  const nd=N[nodeId];
+  if(!nd || !nd.subgraph) return;
+  graphStack.push({data:DATA, focusId:nodeId, title:DATA.title||"Untitled graph"});
+  closeEditor();
+  typesPanel.style.display="none";
+  groupsPanel.style.display="none";
+  loadData(nd.subgraph);
+  renderGraphTrail();
+}
+function exitToLevel(i){
+  const entry=graphStack[i];
+  if(!entry) return;
+  graphStack=graphStack.slice(0,i);
+  closeEditor();
+  typesPanel.style.display="none";
+  groupsPanel.style.display="none";
+  loadData(entry.data);
+  if(entry.focusId && N[entry.focusId]) setFocus(entry.focusId);
+  renderGraphTrail();
+}
+function renderGraphTrail(){
+  const gt=document.getElementById("graphtrail");
+  const expBtn=document.getElementById("export");
+  const expViewBtn=document.getElementById("exportview");
+  if(!graphStack.length){
+    gt.style.display="none"; gt.innerHTML="";
+    expBtn.title="Export the full graph as JSON (or a zip if it has uploaded images)";
+    expViewBtn.style.display="none";
+    return;
+  }
+  expBtn.title="Exports the whole top-level graph, including every nested linked graph \u2014 not just this view";
+  expViewBtn.style.display="";
+  expViewBtn.title="Exports only "+(DATA.title||"this graph")+" on its own, without the graph(s) above it";
+  gt.style.display="";
+  gt.innerHTML="";
+  graphStack.forEach((entry,i)=>{
+    const b=document.createElement("span");
+    b.className="crumb";
+    b.textContent=entry.title;
+    b.title="Back to this graph";
+    b.onclick=()=>exitToLevel(i);
+    gt.appendChild(b);
+    const s=document.createElement("span");
+    s.textContent="\u2192"; s.style.color="var(--t3)";
+    gt.appendChild(s);
+  });
+  const cur=document.createElement("span");
+  cur.className="crumb cur";
+  cur.textContent=DATA.title||"Untitled graph";
+  gt.appendChild(cur);
+}
+
+const LS_KEY="relation-explorer-data";
+let saveTimer=null, quotaWarned=false;
+function scheduleSave(){
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(()=>{
+    if(!DATA) return;
+    try{ localStorage.setItem(LS_KEY, JSON.stringify(currentRootData())); }
+    catch(err){
+      if(!quotaWarned){
+        quotaWarned=true;
+        alert("Autosave failed \u2014 the dataset is too large for browser storage (probably embedded images). Export JSON to keep your work.");
+      }
+    }
+  }, 400);
+}
+
+function viewRadii(){
+  const CX=stage.clientWidth/2, CY=stage.clientHeight/2;
+  let halfW=60, halfH=32;
+  Object.keys(neighbors).forEach(n=>{
+    const sz=nodeSize[n];
+    if(sz){ halfW=Math.max(halfW, sz.w/2); halfH=Math.max(halfH, sz.h/2); }
+  });
+  const desiredX=Math.max(220, CX-(halfW*1.1+6)), desiredY=Math.max(160, CY-(halfH*1.1+6));
+  const s0=F*zoomLevel/DIST; // perspective scale at the focus's own depth, for the CURRENT zoom
+  return { CX, CY, RxV:desiredX/s0, RyV:desiredY/s0 };
+}
+
+function typeOf(e){ return TYPES[e.type] || {label:e.type, mutual:true}; }
+function colOf(id){ const g=GROUPS[(N[id]||{}).group]||{}; return PAL[g.color]||PAL.gray; }
+function palName(id){ const g=GROUPS[(N[id]||{}).group]||{}; return PAL[g.color]?g.color:"gray"; }
+function relTo(e){
+  const t=typeOf(e);
+  if(t.mutual) return t.label || e.type;
+  return e.to===focusId ? (t.fromLabel||t.label||e.type) : (t.toLabel||t.label||e.type);
+}
+function typeName(k){
+  const t=TYPES[k]||{};
+  return t.mutual ? (t.label||k) : ((t.fromLabel||k)+" \u2192 "+(t.toLabel||k));
+}
+
+function deriveE(){
+  const fallbackType=Object.keys(TYPES)[0];
+  const list=(Array.isArray(DATA.links)?DATA.links:[])
+    .filter(l=>l && N[l.from] && N[l.to])
+    .map(l=>({from:l.from, to:l.to, type:TYPES[l.type]?l.type:fallbackType, off:0, src:l}));
+  pairCount={};
+  const pairSeen={};
+  list.forEach(e=>{ const k=[e.from,e.to].sort().join("|"); pairCount[k]=(pairCount[k]||0)+1; });
+  list.forEach(e=>{
+    const k=[e.from,e.to].sort().join("|");
+    if(pairCount[k]>1){ const i=pairSeen[k]||0; e.off = i===0 ? -9 : 9; pairSeen[k]=i+1; }
+  });
+  return list;
+}
+
+function rebuildGraph(){
+  ids=Object.keys(N);
+  E=deriveE();
+
+  const fp=focusId && P3[focusId] ? P3[focusId] : {x:0,y:0,z:0};
+  ids.forEach(id=>{
+    if(!P3[id]) P3[id]={x:fp.x+rnd()*160, y:fp.y+rnd()*120, z:fp.z+rnd()*160};
+    if(!P0[id]) P0[id]={x:P3[id].x, y:P3[id].y, z:P3[id].z};
+  });
+  Object.keys(P3).forEach(id=>{ if(!N[id]){ delete P3[id]; delete P0[id]; delete pinnedOffset[id]; } });
+
+  nodesEl.innerHTML="";
+  nodeEls={};
+  ids.forEach(id=>{
+    const el=document.createElement("div");
+    el.className="node";
+    nodesEl.appendChild(el);
+    nodeEls[id]=el;
+    el.addEventListener("click",()=>{ if(dragDist<6) focus(id); });
+    el.addEventListener("dblclick",()=>{ openEditor(id); });
+    el.addEventListener("pointerdown",e=>{
+      e.stopPropagation();
+      nodeDrag=id; auto=false; dragDist=0; lastX=e.clientX; lastY=e.clientY;
+    });
+  });
+
+  edgeEls.forEach(l=>l.remove());
+  hitEls.forEach(h=>h.remove());
+  edgeEls=[]; hitEls=[];
+  E.forEach(()=>{
+    const l=document.createElementNS(SVGNS,"line");
+    edgesEl.insertBefore(l, defsEl);
+    edgeEls.push(l);
+  });
+  E.forEach(e=>{
+    const h=document.createElementNS(SVGNS,"line");
+    h.setAttribute("stroke","rgba(0,0,0,0)");
+    h.setAttribute("stroke-width","16");
+    h.style.pointerEvents="stroke";
+    h.style.cursor="pointer";
+    h.addEventListener("click",ev=>{
+      if(dragDist>=6) return;
+      const rect=stage.getBoundingClientRect();
+      const px=ev.clientX-rect.left, py=ev.clientY-rect.top;
+      const cand=[e.from,e.to].filter(n=>n!==focusId);
+      let target=cand[0];
+      if(cand.length===2){
+        const pa=proj[e.from], pb=proj[e.to];
+        if(pa&&pb){
+          const da=(px-pa.x)*(px-pa.x)+(py-pa.y)*(py-pa.y);
+          const db=(px-pb.x)*(px-pb.x)+(py-pb.y)*(py-pb.y);
+          target = da<=db ? e.from : e.to;
+        }
+      }
+      if(target) focus(target);
+    });
+    edgesEl.appendChild(h);
+    hitEls.push(h);
+  });
+
+  rebuildJump();
+  buildLegend();
+
+  trail=trail.filter(t=>N[t]&&isVisible(t));
+  if(!focusId || !N[focusId] || !isVisible(focusId)) focusId=ids.find(isVisible)||ids[0];
+  setFocus(focusId);
+  renderTrail();
+  scheduleSave();
+}
+
+function loadData(data){
+  if(!data || typeof data.nodes!=="object" || !Object.keys(data.nodes).length)
+    throw new Error('needs a non-empty "nodes" object');
+  DATA=data;
+  N=data.nodes;
+  if(!data.groups) data.groups={};
+  GROUPS=data.groups;
+  if(!data.types || !Object.keys(data.types).length) data.types={link:{label:"link", mutual:true}};
+  TYPES=data.types;
+  if(!Array.isArray(data.links)) data.links=[];
+  ids=Object.keys(N);
+  E=deriveE();
+
+  const inc={};
+  E.forEach(e=>{ if(!typeOf(e).mutual){ (inc[e.to]=inc[e.to]||[]).push(e.from); } });
+  const memo={}, mark={};
+  const dep=id=>{
+    if(memo[id]!==undefined) return memo[id];
+    if(mark[id]) return 0;
+    mark[id]=1;
+    const ps=inc[id]||[];
+    memo[id] = ps.length ? 1+Math.max(...ps.map(dep)) : 0;
+    mark[id]=0;
+    return memo[id];
+  };
+  ids.forEach(dep);
+  const maxD=ids.reduce((m,id)=>Math.max(m,memo[id]),0);
+
+  seedv=42;
+  P3={};
+  ids.forEach(id=>{ P3[id]={x:rnd()*440, y:memo[id]*115 - maxD*115/2, z:rnd()*440}; });
+  for(let it=0; it<220; it++){
+    for(let i=0;i<ids.length;i++) for(let j=i+1;j<ids.length;j++){
+      const a=P3[ids[i]], b=P3[ids[j]];
+      const dx=a.x-b.x, dz=a.z-b.z, dy=(a.y-b.y)*0.5;
+      const d2=dx*dx+dz*dz+dy*dy+0.01, d=Math.sqrt(d2);
+      const f=Math.min(2600/d2, 6)/d;
+      a.x+=dx*f; a.z+=dz*f; b.x-=dx*f; b.z-=dz*f;
+    }
+    E.forEach(e=>{
+      const a=P3[e.from], b=P3[e.to];
+      const dx=b.x-a.x, dz=b.z-a.z;
+      a.x+=dx*0.012; a.z+=dz*0.012; b.x-=dx*0.012; b.z-=dz*0.012;
+    });
+    let mx=0,mz=0; ids.forEach(id=>{mx+=P3[id].x; mz+=P3[id].z;});
+    mx/=ids.length; mz/=ids.length;
+    ids.forEach(id=>{P3[id].x-=mx; P3[id].z-=mz;});
+  }
+  P0=JSON.parse(JSON.stringify(P3));
+
+  document.getElementById("title").textContent=data.title||"Relation explorer";
+  document.title=data.title||"Relation explorer";
+  trail=[]; pinnedOffset={}; nodeDrag=null; lastPinnedFocus=null;
+  hiddenGroups={};
+  focusId=(data.start && N[data.start]) ? data.start : ids[0];
+  cam.x=0; cam.y=0; cam.z=-900; th=0.6; auto=true; zoomLevel=1;
+  closeEditor();
+  typesPanel.style.display="none";
+  groupsPanel.style.display="none";
+  rebuildGraph();
+}
+
+function buildLegend(){
+  const lg=document.getElementById("legend");
+  lg.innerHTML="";
+  const entries=Object.keys(GROUPS).map(k=>({k, label:GROUPS[k].label||k, color:(PAL[GROUPS[k].color]||PAL.gray)[3]}));
+  if(ids.some(id=>groupKeyOf(id)==="") && Object.keys(GROUPS).length)
+    entries.push({k:"", label:"Ungrouped", color:PAL.gray[3]});
+  entries.forEach(en=>{
+    const s=document.createElement("span");
+    s.style.cursor="pointer";
+    s.title="Show / hide this group";
+    if(hiddenGroups[en.k]){ s.style.opacity="0.4"; s.style.textDecoration="line-through"; }
+    s.innerHTML='<span class="dot" style="background:'+en.color+'"></span>'+esc(en.label);
+    s.onclick=()=>toggleGroup(en.k);
+    lg.appendChild(s);
+  });
+  const hint=document.createElement("span");
+  hint.style.color="var(--t3)";
+  hint.textContent="Drag a card to move it \u00b7 drag the background to rotate \u00b7 click a card or connection to focus \u00b7 double-click to edit \u00b7 click a group to show or hide it";
+  lg.appendChild(hint);
+}
+
+function toggleGroup(k){
+  hiddenGroups[k]=!hiddenGroups[k];
+  if(!ids.some(isVisible)){ hiddenGroups[k]=!hiddenGroups[k]; return; }
+  trail=trail.filter(t=>isVisible(t));
+  if(!isVisible(focusId)) focusId=ids.find(isVisible);
+  buildLegend();
+  rebuildJump();
+  setFocus(focusId);
+  renderTrail();
+}
+
+function rebuildJump(){
+  jump.innerHTML="";
+  ids.filter(isVisible).sort((a,b)=>String(N[a].name||a).localeCompare(String(N[b].name||b))).forEach(id=>{
+    const o=document.createElement("option"); o.value=id; o.textContent=N[id].name||id; jump.appendChild(o);
+  });
+  if(focusId && isVisible(focusId)) jump.value=focusId;
+}
+
+function setFocus(id){
+  focusId=id; jump.value=id;
+  neighbors={}; focusEdges=[];
+  E.forEach((e,i)=>{
+    if(e.from===id||e.to===id){
+      const other=e.from===id?e.to:e.from;
+      if(!isVisible(other)) return;
+      neighbors[other]=1;
+      focusEdges.push({e,i});
+    }
+  });
+
+  if(lastPinnedFocus!==id){ pinnedOffset={}; lastPinnedFocus=id; }
+  neighborLayout={};
+  const zone={}, pri={top:3,side:2,bottom:1};
+  focusEdges.forEach(fe=>{
+    const e=fe.e, t=typeOf(e);
+    const n=e.from===id?e.to:e.from;
+    const z = t.mutual ? "side" : (e.to===id ? "top" : "bottom");
+    if(!zone[n]||pri[z]>pri[zone[n]]) zone[n]=z;
+  });
+  const top=[], side=[], bot=[];
+  Object.keys(neighbors).forEach(n=>{ (zone[n]==="top"?top:zone[n]==="side"?side:bot).push(n); });
+  const {RxV:RxV0, RyV:RyV0}=viewRadii();
+  const focusClearPx=280; // half-diagonal clearance so a ring never lands behind the (much larger) focus card
+  const rsMinFrac=Math.min(0.85, focusClearPx/Math.min(RxV0,RyV0));
+  function arrangeZone(list, axis, sign){
+    const n=list.length;
+    if(!n) return;
+    const perRow=4;
+    const rows=Math.max(1, Math.ceil(n/perRow));
+    list.forEach((nid,i)=>{
+      const row=Math.floor(i/perRow);
+      const rowStart=row*perRow;
+      const itemsInRow=Math.min(perRow, n-rowStart);
+      const colInRow=i-rowStart;
+      const primaryFrac = rows===1 ? 1 : rsMinFrac+(row/(rows-1))*(1-rsMinFrac);
+      const secCap = axis==="y" ? 2 : 0.8;
+      const secStep = axis==="y" ? 0.55 : 0.34;
+      const secSpread = itemsInRow<=1 ? 0 : Math.min(secCap, secStep*(itemsInRow-1));
+      const secFrac = itemsInRow<=1 ? 0 : -secSpread/2+secSpread*colInRow/(itemsInRow-1);
+      const dz=row*25;
+      let fx, fy;
+      if(axis==="y"){ fy=sign*primaryFrac; fx=secFrac; }
+      else { fx=sign*primaryFrac; fy=secFrac; }
+      neighborLayout[nid]={fx:fx, fy:fy, dz:dz};
+    });
+  }
+  arrangeZone(top, "y", -1);
+  arrangeZone(bot, "y", 1);
+  const leftSide=[], rightSide=[];
+  side.forEach((n,i)=>{ (i%2?rightSide:leftSide).push(n); });
+  arrangeZone(leftSide, "x", -1);
+  arrangeZone(rightSide, "x", 1);
+
+  ids.forEach(nid=>{
+    const nd=N[nid], c=colOf(nid), el=nodeEls[nid];
+    const nm=esc(nd.name||nid);
+    const avatar=(size,ring,zoom)=> nd.img
+      ? '<img src="'+esc(nd.img)+'"'+(zoom?' class="portrait"':'')+' alt="" style="width:'+size+'px;height:'+size+'px;border-radius:50%;object-fit:cover;border:'+ring+'px solid '+c[3]+';display:block;margin:0 auto '+(size>30?7:4)+'px;'+(zoom?'cursor:zoom-in;':'')+'">'
+      : '<div style="width:'+size+'px;height:'+size+'px;border-radius:50%;background:'+c[3]+';color:#fff;display:flex;align-items:center;justify-content:center;font-weight:500;font-size:'+(size>30?15:11)+'px;margin:0 auto '+(size>30?7:4)+'px;">'+nm.charAt(0)+'</div>';
+    const portalMark = nd.subgraph ? '<span style="opacity:0.7;">\u25c8</span> ' : '';
+    if(nid===id){
+      el.style.cursor="grab";
+      el.style.filter="";
+      let inner='<div style="background:'+c[0]+'; border:2px solid '+c[3]+'; border-radius:12px; padding:12px 16px; width:180px;">'
+        +avatar(nd.img?64:40,2,true)
+        +'<div style="font-size:16px;font-weight:500;color:'+c[2]+';">'+portalMark+nm+'</div>';
+      const gl=(GROUPS[nd.group]||{}).label;
+      if(gl) inner+='<div style="font-size:11px;color:'+c[1]+';margin:1px 0 5px;">'+esc(gl)+'</div>';
+      if(nd.desc) inner+='<div style="font-size:12px;color:'+c[1]+';line-height:1.4;">'+md(nd.desc)+'</div>';
+      if(nd.url){
+        const linktxt = nd.linkText || (/wikipedia/i.test(nd.url)?'Wikipedia':'Link');
+        inner+='<a href="'+esc(nd.url)+'" target="_blank" rel="noopener" style="display:inline-block;margin-top:7px;font-size:12px;color:'+c[1]+';">'+esc(linktxt)+' &#8599;</a>';
+      }
+      if(nd.subgraph){
+        const n2=Object.keys(nd.subgraph.nodes||{}).length;
+        inner+='<div style="margin-top:8px;padding-top:8px;border-top:1px solid '+c[3]+';">'
+          +'<span class="entergraph" data-id="'+nid+'" style="cursor:pointer;font-size:12px;color:'+c[1]+';text-decoration:underline;">Enter graph ('+n2+' node'+(n2===1?'':'s')+') &#8594;</span></div>';
+      }
+      el.innerHTML=inner+'</div>';
+    } else if(neighbors[nid]){
+      el.style.cursor="pointer";
+      el.style.filter="";
+      el.innerHTML='<div style="background:'+c[0]+'; border:1px solid '+c[3]+'; border-radius:10px; padding:6px 10px; min-width:84px;">'
+        +avatar(nd.img?28:22,1,false)
+        +'<div style="font-size:12px;font-weight:500;color:'+c[2]+'; white-space:nowrap;">'+portalMark+nm+'</div></div>';
+    } else {
+      el.style.cursor="pointer";
+      el.style.filter="";
+      el.innerHTML='<div style="padding:4px 6px;">'
+        +(nd.img
+          ? '<img src="'+esc(nd.img)+'" alt="" style="width:16px;height:16px;border-radius:50%;object-fit:cover;display:block;margin:0 auto 3px;">'
+          : '<div style="width:14px;height:14px;border-radius:50%;background:'+c[3]+';margin:0 auto 3px;"></div>')
+        +'<div style="font-size:11px; color:var(--t2); white-space:nowrap;">'+portalMark+nm+'</div></div>';
+    }
+  });
+
+  ids.forEach(nid=>{
+    const el=nodeEls[nid];
+    nodeSize[nid]={w:el.offsetWidth||24, h:el.offsetHeight||24};
+  });
+
+  labelLayer.innerHTML="";
+  const fc=colOf(id);
+  const fracSeen={};
+  labels=focusEdges.map((fe,idx)=>{
+    const d=document.createElement("div");
+    d.className="rlabel";
+    d.style.background=fc[0];
+    d.style.border="1px solid "+fc[3];
+    d.style.color=fc[2];
+    d.textContent=relTo(fe.e);
+    labelLayer.appendChild(d);
+    const k=[fe.e.from,fe.e.to].sort().join("|");
+    let frac;
+    if(pairCount[k]>1){ const seen=fracSeen[k]||0; frac = seen===0 ? 0.42 : 0.62; fracSeen[k]=seen+1; }
+    else { const slots=[0.42,0.56,0.68,0.48,0.60]; frac = slots[idx%slots.length]; }
+    return {el:d,fe,frac:frac,off:fe.e.off||0};
+  });
+
+  if(editingId && editingId!==id && document.getElementById("editor").style.display!=="none"){
+    openEditor(id);
+  }
+}
+
+function focus(id){
+  if(id===focusId) return;
+  if(trail[trail.length-1]!==focusId) trail.push(focusId);
+  if(trail.length>5) trail=trail.slice(-5);
+  setFocus(id);
+  renderTrail();
+}
+function renderTrail(){
+  trailEl.innerHTML="";
+  const items=trail.concat([focusId]);
+  items.forEach((tid,i)=>{
+    if(i>0){ const s=document.createElement("span"); s.textContent="\u2192"; s.style.color="var(--t3)"; trailEl.appendChild(s); }
+    const b=document.createElement("span");
+    b.className="crumb"+(i===items.length-1?" cur":"");
+    b.textContent=N[tid].name||tid;
+    b.onclick=()=>{ trail=trail.slice(0,i); setFocus(tid); renderTrail(); };
+    trailEl.appendChild(b);
+  });
+}
+jump.onchange=()=>focus(jump.value);
+
+const panelBody=document.getElementById("panel-body"), panelToggle=document.getElementById("panel-toggle");
+panelToggle.onclick=()=>{
+  const collapsed=panelBody.style.display==="none";
+  panelBody.style.display=collapsed?"":"none";
+  panelToggle.textContent=collapsed?"\u2212":"+";
+  panelToggle.title=collapsed?"Minimize":"Expand";
+};
+
+const titleEl=document.getElementById("title");
+titleEl.style.cursor="text";
+titleEl.title="Click to rename \u2014 build: "+BUILD_TAG;
+titleEl.onclick=()=>{
+  if(!DATA || titleEl.querySelector("input")) return;
+  const cur=DATA.title||"";
+  const inp=document.createElement("input");
+  inp.value=cur;
+  inp.style.cssText="font:inherit; width:100%; border:1px solid var(--line-strong); border-radius:6px; padding:2px 6px; color:var(--t1); background:var(--page);";
+  titleEl.textContent="";
+  titleEl.appendChild(inp);
+  inp.focus(); inp.select();
+  const commit=()=>{
+    DATA.title=inp.value.trim()||"Untitled graph";
+    titleEl.textContent=DATA.title;
+    document.title=DATA.title;
+    scheduleSave();
+  };
+  inp.onblur=commit;
+  inp.onkeydown=e=>{
+    if(e.key==="Enter") inp.blur();
+    if(e.key==="Escape"){ inp.value=cur; inp.blur(); }
+  };
+};
+
+const edPanel=document.getElementById("editor");
+const edName=document.getElementById("ed-name"), edGroup=document.getElementById("ed-group"),
+  edDesc=document.getElementById("ed-desc"), edUrl=document.getElementById("ed-url"), edLinkText=document.getElementById("ed-linktext"),
+  edImg=document.getElementById("ed-img"),
+  edUpload=document.getElementById("ed-upload"), edImgFile=document.getElementById("ed-imgfile"),
+  edImgStatus=document.getElementById("ed-imgstatus"), edImgRemove=document.getElementById("ed-imgremove"),
+  edConns=document.getElementById("ed-conns"), edType=document.getElementById("ed-type"),
+  edDir=document.getElementById("ed-dir"), edTarget=document.getElementById("ed-target"),
+  edMergeTarget=document.getElementById("ed-merge-target");
+const edGraphNone=document.getElementById("ed-graph-none"), edGraphSome=document.getElementById("ed-graph-some"),
+  edGraphStatus=document.getElementById("ed-graph-status"), edGraphAttach=document.getElementById("ed-graph-attach"),
+  edGraphEnter=document.getElementById("ed-graph-enter"), edGraphDetach=document.getElementById("ed-graph-detach"),
+  edGraphFile=document.getElementById("ed-graph-file");
+const ntWrap=document.getElementById("newtype"), ntMutual=document.getElementById("nt-mutual"),
+  ntFrom=document.getElementById("nt-from"), ntTo=document.getElementById("nt-to"),
+  ntToWrap=document.getElementById("nt-to-wrap"), ntDashed=document.getElementById("nt-dashed");
+const ngWrap=document.getElementById("newgroup"), ngLabel=document.getElementById("ng-label"),
+  ngColor=document.getElementById("ng-color");
+Object.keys(PAL).forEach(k=>{
+  const o=document.createElement("option"); o.value=k; o.textContent=k;
+  o.style.background=PAL[k][0]; o.style.color=PAL[k][2];
+  ngColor.appendChild(o);
+});
+
+const edSetStart=document.getElementById("ed-set-start"), edStartStatus=document.getElementById("ed-start-status");
+function syncStartStatus(){
+  if(!editingId) return;
+  edStartStatus.textContent = (DATA.start===editingId) ? "Current starting node" : "";
+}
+edSetStart.onclick=()=>{
+  if(!editingId) return;
+  DATA.start=editingId;
+  syncStartStatus();
+  scheduleSave();
+};
+
+function syncImgStatus(){
+  const nd=editingId?N[editingId]:null;
+  const isData=!!(nd&&nd.img&&nd.img.slice(0,5)==="data:");
+  edImgStatus.style.display=isData?"":"none";
+  edImg.value=(nd&&nd.img&&!isData)?nd.img:"";
+}
+edUpload.onclick=()=>edImgFile.click();
+edImgFile.onchange=()=>{
+  const f=edImgFile.files[0];
+  if(!f||!editingId) return;
+  const r=new FileReader();
+  r.onload=()=>{ N[editingId].img=r.result; syncImgStatus(); setFocus(focusId); scheduleSave(); };
+  r.readAsDataURL(f);
+  edImgFile.value="";
+};
+edImgRemove.onclick=()=>{ if(!editingId)return; delete N[editingId].img; syncImgStatus(); setFocus(focusId); scheduleSave(); };
+
+function slugKey(base, obj){
+  let s=String(base||"x").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"")||"x";
+  let k=s, i=2;
+  while(obj[k]) k=s+"-"+(i++);
+  return k;
+}
+function refreshTypeSelect(sel){
+  edType.innerHTML="";
+  const ph=document.createElement("option"); ph.value=""; ph.textContent="Relation\u2026"; ph.disabled=true; edType.appendChild(ph);
+  Object.keys(TYPES).forEach(k=>{
+    const o=document.createElement("option"); o.value=k; o.textContent=typeName(k); edType.appendChild(o);
+  });
+  const nw=document.createElement("option"); nw.value="__new"; nw.textContent="+ New type\u2026"; edType.appendChild(nw);
+  edType.value=(sel && TYPES[sel]) ? sel : "";
+  ntWrap.style.display="none";
+  syncDir();
+}
+function refreshGroupSelect(sel){
+  edGroup.innerHTML="";
+  const none=document.createElement("option"); none.value=""; none.textContent="(none)"; edGroup.appendChild(none);
+  Object.keys(GROUPS).forEach(k=>{
+    const o=document.createElement("option"); o.value=k; o.textContent=GROUPS[k].label||k; edGroup.appendChild(o);
+  });
+  const nw=document.createElement("option"); nw.value="__new"; nw.textContent="+ New group\u2026"; edGroup.appendChild(nw);
+  edGroup.value=sel||"";
+  ngWrap.style.display="none";
+}
+ntMutual.onchange=()=>{ ntToWrap.style.display=ntMutual.checked?"none":""; };
+document.getElementById("nt-create").onclick=()=>{
+  const mutual=ntMutual.checked;
+  const fl=ntFrom.value.trim(), tl=ntTo.value.trim();
+  if(!fl){ alert("Give the type a label"); return; }
+  if(!mutual && !tl){ alert("Directional types need a reverse label too"); return; }
+  const key=slugKey(fl, TYPES);
+  TYPES[key] = mutual
+    ? {label:fl, mutual:true, dashed:ntDashed.checked}
+    : {fromLabel:fl, toLabel:tl, arrow:true, dashed:ntDashed.checked};
+  ntFrom.value=""; ntTo.value="";
+  buildLegend();
+  refreshTypeSelect(key);
+  scheduleSave();
+};
+document.getElementById("ng-create").onclick=()=>{
+  const lbl=ngLabel.value.trim();
+  if(!lbl){ alert("Give the group a label"); return; }
+  const key=slugKey(lbl, GROUPS);
+  GROUPS[key]={label:lbl, color:ngColor.value};
+  ngLabel.value="";
+  buildLegend();
+  refreshGroupSelect(key);
+  if(editingId){ N[editingId].group=key; setFocus(focusId); }
+  scheduleSave();
+};
+
+function syncGraphPanel(){
+  const nd=editingId?N[editingId]:null;
+  const has=!!(nd&&nd.subgraph);
+  edGraphNone.style.display=has?"none":"";
+  edGraphSome.style.display=has?"":"none";
+  if(has){
+    const n2=Object.keys(nd.subgraph.nodes||{}).length;
+    edGraphStatus.textContent=(nd.subgraph.title||"Untitled graph")+" \u00b7 "+n2+" node"+(n2===1?"":"s");
+  }
+}
+edGraphAttach.onclick=()=>edGraphFile.click();
+edGraphFile.onchange=async ()=>{
+  const f=edGraphFile.files[0];
+  if(!f||!editingId) return;
+  try{
+    const data=await parseJsonOrZip(f);
+    if(!data||typeof data.nodes!=="object"||!Object.keys(data.nodes).length) throw new Error('needs a non-empty "nodes" object');
+    N[editingId].subgraph=data;
+    syncGraphPanel();
+    setFocus(focusId);
+    scheduleSave();
+  } catch(err){ alert("Couldn't attach: "+err.message); }
+  edGraphFile.value="";
+};
+edGraphEnter.onclick=()=>{ if(editingId) enterSubgraph(editingId); };
+edGraphDetach.onclick=()=>{
+  if(!editingId) return;
+  if(!confirm("Detach the linked graph? The embedded graph is removed \u2014 this node stays.")) return;
+  delete N[editingId].subgraph;
+  syncGraphPanel();
+  setFocus(focusId);
+  scheduleSave();
+};
+
+function openEditor(id){
+  editingId=id;
+  if(id!==focusId){ focus(id); return; }
+  typesPanel.style.display="none";
+  groupsPanel.style.display="none";
+  edPanel.style.display="";
+  const nd=N[id];
+  edName.value=nd.name||"";
+  edDesc.value=nd.desc||"";
+  edUrl.value=nd.url||"";
+  edLinkText.value=nd.linkText||"";
+  syncStartStatus();
+  syncImgStatus();
+  syncGraphPanel();
+  refreshGroupSelect(nd.group&&GROUPS[nd.group]?nd.group:"");
+  refreshTypeSelect();
+  edTarget.innerHTML="";
+  const tph=document.createElement("option"); tph.value=""; tph.textContent="Node\u2026"; tph.disabled=true; edTarget.appendChild(tph);
+  ids.filter(t=>t!==id).sort((a,b)=>String(N[a].name||a).localeCompare(String(N[b].name||b))).forEach(t=>{
+    const o=document.createElement("option"); o.value=t; o.textContent=N[t].name||t; edTarget.appendChild(o);
+  });
+  edTarget.value="";
+  edMergeTarget.innerHTML="";
+  const mph=document.createElement("option"); mph.value=""; mph.textContent="Node\u2026"; mph.disabled=true; edMergeTarget.appendChild(mph);
+  ids.filter(t=>t!==id).sort((a,b)=>String(N[a].name||a).localeCompare(String(N[b].name||b))).forEach(t=>{
+    const o=document.createElement("option"); o.value=t; o.textContent=N[t].name||t; edMergeTarget.appendChild(o);
+  });
+  edMergeTarget.value="";
+  renderConns();
+}
+function closeEditor(){ editingId=null; edPanel.style.display="none"; }
+function syncDir(){
+  const t=TYPES[edType.value];
+  edDir.style.display=(t && !t.mutual)?"":"none";
+}
+function renderConns(){
+  edConns.innerHTML="";
+  if(!editingId) return;
+  DATA.links.forEach((l,i)=>{
+    if(l.from!==editingId && l.to!==editingId) return;
+    if(!N[l.from]||!N[l.to]) return;
+    const other=l.from===editingId?l.to:l.from;
+    const row=document.createElement("div");
+    row.className="conn";
+    const sel=document.createElement("select");
+    Object.keys(TYPES).forEach(k=>{
+      const o=document.createElement("option"); o.value=k; o.textContent=typeName(k); sel.appendChild(o);
+    });
+    sel.value=TYPES[l.type]?l.type:Object.keys(TYPES)[0];
+    sel.title="Change relation type";
+    sel.onchange=()=>{ l.type=sel.value; rebuildGraph(); renderConns(); };
+    row.appendChild(sel);
+    const t=TYPES[l.type]||{};
+    const span=document.createElement("span");
+    span.style.cssText="flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;";
+    if(t.mutual) span.textContent=N[other].name||other;
+    else if(l.from===editingId) span.textContent=(t.toLabel||l.type)+": "+(N[other].name||other);
+    else span.textContent=(t.fromLabel||l.type)+": "+(N[other].name||other);
+    row.appendChild(span);
+    if(!t.mutual){
+      const rev=document.createElement("button");
+      rev.type="button"; rev.textContent="\u21c4"; rev.title="Reverse direction";
+      rev.onclick=()=>{ const f=l.from; l.from=l.to; l.to=f; rebuildGraph(); renderConns(); };
+      row.appendChild(rev);
+    }
+    const del=document.createElement("button");
+    del.type="button"; del.textContent="\u00d7"; del.title="Remove connection";
+    del.onclick=()=>{ DATA.links.splice(i,1); rebuildGraph(); renderConns(); };
+    row.appendChild(del);
+    edConns.appendChild(row);
+  });
+  if(!edConns.children.length){
+    const p=document.createElement("div");
+    p.style.cssText="font-size:12px;color:var(--t3);";
+    p.textContent="No connections yet";
+    edConns.appendChild(p);
+  }
+}
+edType.onchange=()=>{
+  ntWrap.style.display = edType.value==="__new" ? "" : "none";
+  if(edType.value==="__new") ntFrom.focus();
+  syncDir();
+};
+edName.oninput=()=>{ if(!editingId)return; N[editingId].name=edName.value; setFocus(focusId); renderTrail(); scheduleSave();
+  const opt=jump.querySelector('option[value="'+editingId+'"]'); if(opt) opt.textContent=edName.value||editingId; };
+edDesc.oninput=()=>{ if(!editingId)return; if(edDesc.value) N[editingId].desc=edDesc.value; else delete N[editingId].desc; setFocus(focusId); scheduleSave(); };
+edUrl.oninput=()=>{ if(!editingId)return; if(edUrl.value) N[editingId].url=edUrl.value; else delete N[editingId].url; setFocus(focusId); scheduleSave(); };
+edLinkText.oninput=()=>{ if(!editingId)return; if(edLinkText.value) N[editingId].linkText=edLinkText.value; else delete N[editingId].linkText; setFocus(focusId); scheduleSave(); };
+edImg.oninput=()=>{ if(!editingId)return; if(edImg.value) N[editingId].img=edImg.value; else delete N[editingId].img; edImgStatus.style.display="none"; setFocus(focusId); scheduleSave(); };
+edGroup.onchange=()=>{
+  if(!editingId)return;
+  if(edGroup.value==="__new"){ ngWrap.style.display=""; ngLabel.focus(); return; }
+  ngWrap.style.display="none";
+  if(edGroup.value) N[editingId].group=edGroup.value; else delete N[editingId].group;
+  setFocus(focusId);
+  scheduleSave();
+};
+document.getElementById("ed-add").onclick=()=>{
+  if(!editingId) return;
+  if(!edType.value || edType.value==="__new" || !TYPES[edType.value]){ alert("Pick a relation type first"); return; }
+  const other=edTarget.value;
+  if(!other||!N[other]){ alert("Pick a node to connect to"); return; }
+  const t=TYPES[edType.value]||{};
+  const link = (t.mutual || edDir.value==="out")
+    ? {from:editingId, to:other, type:edType.value}
+    : {from:other, to:editingId, type:edType.value};
+  DATA.links.push(link);
+  edTarget.value="";
+  rebuildGraph();
+  renderConns();
+};
+function fillGaps(dst, src, groupMap){
+  if(!dst.desc && src.desc) dst.desc=src.desc;
+  if(!dst.url && src.url) dst.url=src.url;
+  if(!dst.img && src.img) dst.img=src.img;
+  if(!dst.group && src.group) dst.group = groupMap ? (groupMap[src.group]||src.group) : src.group;
+  if(!dst.subgraph && src.subgraph) dst.subgraph=src.subgraph;
+}
+function dedupeLinks(){
+  const seen=new Set();
+  DATA.links=DATA.links.filter(l=>{
+    if(l.from===l.to) return false;
+    const key=l.from+"|"+l.to+"|"+l.type;
+    if(seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+function mergeNodeInto(loserId, keeperId){
+  if(loserId===keeperId) return;
+  const loser=N[loserId], keeper=N[keeperId];
+  if(!loser||!keeper) return;
+  fillGaps(keeper, loser);
+  DATA.links.forEach(l=>{
+    if(l.from===loserId) l.from=keeperId;
+    if(l.to===loserId) l.to=keeperId;
+  });
+  dedupeLinks();
+  delete N[loserId];
+  trail=trail.filter(t=>t!==loserId);
+  if(DATA.start===loserId) DATA.start=keeperId;
+}
+document.getElementById("ed-merge-go").onclick=()=>{
+  if(!editingId) return;
+  const other=edMergeTarget.value;
+  if(!other||!N[other]){ alert("Pick a node to merge in"); return; }
+  const keeperName=N[editingId].name||editingId, loserName=N[other].name||other;
+  if(!confirm('Merge "'+loserName+'" into "'+keeperName+'"? "'+loserName+'" will be deleted \u2014 its connections move onto "'+keeperName+'", and any details "'+keeperName+'" is missing get filled in from it. This cannot be undone.')) return;
+  mergeNodeInto(other, editingId);
+  rebuildGraph();
+  openEditor(editingId);
+};
+
+function connectedComponent(startId){
+  const seen=new Set([startId]);
+  const queue=[startId];
+  while(queue.length){
+    const cur=queue.pop();
+    DATA.links.forEach(l=>{
+      if(l.from===cur && !seen.has(l.to)){ seen.add(l.to); queue.push(l.to); }
+      if(l.to===cur && !seen.has(l.from)){ seen.add(l.from); queue.push(l.from); }
+    });
+  }
+  return seen;
+}
+document.getElementById("ed-delete-connected").onclick=()=>{
+  if(!editingId) return;
+  const comp=connectedComponent(editingId);
+  const n=comp.size;
+  const nm=N[editingId].name||editingId;
+  const ok = n<=1
+    ? confirm('"'+nm+'" has no connections \u2014 delete just this node?')
+    : confirm('Delete '+n+' nodes \u2014 everything connected to "'+nm+'", directly or through other nodes? This cannot be undone.');
+  if(!ok) return;
+  comp.forEach(gid=>{ if(DATA.start===gid) delete DATA.start; delete N[gid]; });
+  DATA.links=DATA.links.filter(l=>!comp.has(l.from)&&!comp.has(l.to));
+  closeEditor();
+  if(comp.has(focusId)) focusId=null;
+  rebuildGraph();
+};
+document.getElementById("ed-delete").onclick=()=>{
+  if(!editingId) return;
+  if(!confirm("Delete \""+(N[editingId].name||editingId)+"\" and all its connections?")) return;
+  const gone=editingId;
+  delete N[gone];
+  if(DATA.start===gone) delete DATA.start;
+  DATA.links=DATA.links.filter(l=>l.from!==gone&&l.to!==gone);
+  closeEditor();
+  if(focusId===gone) focusId=null;
+  rebuildGraph();
+};
+document.getElementById("ed-close").onclick=closeEditor;
+
+const typesPanel=document.getElementById("typespanel"), tpList=document.getElementById("tp-list");
+function renderTypesPanel(){
+  tpList.innerHTML="";
+  const keys=Object.keys(TYPES);
+  if(!keys.length){
+    const p=document.createElement("div");
+    p.style.cssText="font-size:12px;color:var(--t3);";
+    p.textContent="No types yet \u2014 create one when adding a connection";
+    tpList.appendChild(p);
+    return;
+  }
+  keys.forEach(k=>{
+    const t=TYPES[k];
+    const count=DATA.links.filter(l=>l.type===k).length;
+    const card=document.createElement("div");
+    card.style.cssText="border:1px solid var(--line); border-radius:8px; padding:8px 10px; margin:0 0 8px;";
+    const head=document.createElement("div");
+    head.className="conn";
+    const title=document.createElement("span");
+    title.style.cssText="flex:1; min-width:0; font-weight:500;";
+    title.textContent=typeName(k)+" \u00b7 "+count;
+    const del=document.createElement("button");
+    del.type="button"; del.textContent="\u00d7"; del.title="Delete this type and all its connections";
+    del.onclick=()=>{
+      if(count && !confirm('Delete "'+typeName(k)+'" and its '+count+' connection'+(count===1?"":"s")+'?')) return;
+      delete TYPES[k];
+      DATA.links=DATA.links.filter(l=>l.type!==k);
+      rebuildGraph();
+      renderTypesPanel();
+    };
+    head.appendChild(title); head.appendChild(del);
+    card.appendChild(head);
+
+    const applyLive=()=>{ title.textContent=typeName(k)+" \u00b7 "+count; buildLegend(); setFocus(focusId); scheduleSave(); };
+    const mkCheck=(labelTxt,checked,fn)=>{
+      const lab=document.createElement("label");
+      lab.className="field";
+      lab.style.cssText="display:flex; gap:6px; align-items:center; margin:6px 0 4px;";
+      const cb=document.createElement("input");
+      cb.type="checkbox"; cb.checked=checked; cb.style.width="auto"; cb.style.display="inline";
+      cb.onchange=()=>fn(cb.checked);
+      lab.appendChild(cb);
+      lab.appendChild(document.createTextNode(labelTxt));
+      return lab;
+    };
+    const mkInput=(labelTxt,val,fn)=>{
+      const lab=document.createElement("label");
+      lab.className="field";
+      lab.appendChild(document.createTextNode(labelTxt));
+      const inp=document.createElement("input");
+      inp.value=val||"";
+      inp.oninput=()=>{ fn(inp.value); applyLive(); };
+      lab.appendChild(inp);
+      return lab;
+    };
+
+    card.appendChild(mkCheck("mutual (no direction)", !!t.mutual, v=>{
+      if(v){ t.mutual=true; t.label=t.label||t.fromLabel||k; }
+      else { delete t.mutual; t.fromLabel=t.fromLabel||t.label||k; t.toLabel=t.toLabel||t.label||k; if(t.arrow===undefined) t.arrow=true; }
+      applyLive();
+      renderTypesPanel();
+    }));
+    if(t.mutual){
+      card.appendChild(mkInput("Label", t.label||k, v=>{ t.label=v; }));
+    } else {
+      card.appendChild(mkInput("Label (from end)", t.fromLabel||"", v=>{ t.fromLabel=v; }));
+      card.appendChild(mkInput("Label (to end)", t.toLabel||"", v=>{ t.toLabel=v; }));
+      card.appendChild(mkCheck("arrowhead", t.arrow!==false, v=>{ t.arrow=v; applyLive(); }));
+    }
+    card.appendChild(mkCheck("dashed line", !!t.dashed, v=>{ t.dashed=v; applyLive(); }));
+    tpList.appendChild(card);
+  });
+}
+document.getElementById("typesbtn").onclick=()=>{
+  closeEditor();
+  groupsPanel.style.display="none";
+  renderTypesPanel();
+  typesPanel.style.display="";
+};
+document.getElementById("tp-close").onclick=()=>{ typesPanel.style.display="none"; };
+
+const groupsPanel=document.getElementById("groupspanel"), gpList=document.getElementById("gp-list");
+function renderGroupsPanel(){
+  gpList.innerHTML="";
+  const keys=Object.keys(GROUPS);
+  if(!keys.length){
+    const p=document.createElement("div");
+    p.style.cssText="font-size:12px;color:var(--t3);";
+    p.textContent="No groups yet \u2014 create one from a node's Group field";
+    gpList.appendChild(p);
+    return;
+  }
+  keys.forEach(k=>{
+    const g=GROUPS[k];
+    const count=Object.values(N).filter(nd=>nd.group===k).length;
+    const card=document.createElement("div");
+    card.style.cssText="border:1px solid var(--line); border-radius:8px; padding:8px 10px; margin:0 0 8px;";
+    const head=document.createElement("div");
+    head.className="conn";
+    const title=document.createElement("span");
+    title.style.cssText="flex:1; min-width:0; font-weight:500;";
+    title.textContent=(g.label||k)+" \u00b7 "+count;
+    const del=document.createElement("button");
+    del.type="button"; del.textContent="\u00d7"; del.title="Delete this group";
+    del.onclick=()=>{
+      if(count && !confirm('Delete "'+(g.label||k)+'"? '+count+' node'+(count===1?"":"s")+' using it will become ungrouped.')) return;
+      delete GROUPS[k];
+      Object.values(N).forEach(nd=>{ if(nd.group===k) delete nd.group; });
+      rebuildGraph();
+      renderGroupsPanel();
+    };
+    head.appendChild(title); head.appendChild(del);
+    card.appendChild(head);
+
+    const applyLive=()=>{ title.textContent=(g.label||k)+" \u00b7 "+count; buildLegend(); setFocus(focusId); scheduleSave(); };
+    const labLab=document.createElement("label");
+    labLab.className="field";
+    labLab.appendChild(document.createTextNode("Label"));
+    const labInp=document.createElement("input");
+    labInp.value=g.label||"";
+    labInp.oninput=()=>{ g.label=labInp.value; applyLive(); };
+    labLab.appendChild(labInp);
+    card.appendChild(labLab);
+
+    const colLab=document.createElement("label");
+    colLab.className="field";
+    colLab.appendChild(document.createTextNode("Colour"));
+    const colSel=document.createElement("select");
+    Object.keys(PAL).forEach(pk=>{
+      const o=document.createElement("option"); o.value=pk; o.textContent=pk;
+      o.style.background=PAL[pk][0]; o.style.color=PAL[pk][2];
+      colSel.appendChild(o);
+    });
+    colSel.value=PAL[g.color]?g.color:"gray";
+    colSel.onchange=()=>{ g.color=colSel.value; applyLive(); };
+    colLab.appendChild(colSel);
+    card.appendChild(colLab);
+
+    gpList.appendChild(card);
+  });
+}
+document.getElementById("groupsbtn").onclick=()=>{
+  closeEditor();
+  typesPanel.style.display="none";
+  renderGroupsPanel();
+  groupsPanel.style.display="";
+};
+document.getElementById("gp-close").onclick=()=>{ groupsPanel.style.display="none"; };
+document.getElementById("addnode").onclick=()=>{
+  const id="n"+Date.now().toString(36);
+  N[id]={name:"New node"};
+  rebuildGraph();
+  focus(id);
+  openEditor(id);
+  edName.select();
+};
+
+stage.addEventListener("pointerdown",e=>{ dragging=true; auto=false; dragDist=0; lastX=e.clientX; lastY=e.clientY; });
+window.addEventListener("pointermove",e=>{
+  if(!dragging && !nodeDrag) return;
+  const dx=e.clientX-lastX, dy=e.clientY-lastY;
+  lastX=e.clientX; lastY=e.clientY;
+  dragDist+=Math.abs(dx)+Math.abs(dy);
+  if(nodeDrag){
+    const ct=Math.cos(th), st=Math.sin(th);
+    const p=P3[nodeDrag];
+    if(!p) return;
+    let rx=p.x*ct - p.z*st;
+    const rz=p.x*st + p.z*ct;
+    const s=F/Math.max(80, rz-cam.z);
+    rx += dx/s; p.y += dy/s;
+    if(nodeDrag!==focusId && P3[focusId]){
+      const {RxV, RyV}=viewRadii();
+      const fp=P3[focusId];
+      const ffx=fp.x*ct - fp.z*st, ffz=fp.x*st + fp.z*ct;
+      rx = Math.max(ffx-RxV, Math.min(ffx+RxV, rx));
+      p.y = Math.max(fp.y-RyV, Math.min(fp.y+RyV, p.y));
+      p.x = rx*ct + rz*st;
+      p.z = -rx*st + rz*ct;
+      pinnedOffset[nodeDrag] = { vx: rx-ffx, vy: p.y-fp.y, vz: rz-ffz };
+    } else {
+      rx = Math.max(cam.x-900, Math.min(cam.x+900, rx));
+      p.y = Math.max(cam.y-650, Math.min(cam.y+650, p.y));
+      p.x = rx*ct + rz*st;
+      p.z = -rx*st + rz*ct;
+    }
+  } else {
+    th+=dx*0.005;
+  }
+});
+window.addEventListener("pointerup",()=>{ dragging=false; nodeDrag=null; setTimeout(()=>auto=true,1400); });
+document.addEventListener("click",ev=>{
+  const a=ev.target.closest("a");
+  if(a && nodesEl.contains(a) && dragDist>=6) ev.preventDefault();
+},true);
+
+document.getElementById("example").onclick=()=>{
+  graphStack=[];
+  loadData(JSON.parse(JSON.stringify(DEFAULT_DATA)));
+  renderGraphTrail();
+};
+document.getElementById("reset").onclick=()=>{
+  ids.forEach(id=>{ if(P0[id]){ P3[id].x=P0[id].x; P3[id].y=P0[id].y; P3[id].z=P0[id].z; } });
+  pinnedOffset={};
+  lastPinnedFocus=null;
+  trail=[];
+  cam.x=0; cam.y=0; cam.z=-DIST; th=0.6; auto=true;
+  zoomLevel=1;
+  const startId=(DATA.start && N[DATA.start]) ? DATA.start : ids[0];
+  setFocus(startId);
+  renderTrail();
+};
+document.getElementById("zoomin").onclick=()=>setZoom(zoomLevel*1.25);
+document.getElementById("zoomout").onclick=()=>setZoom(zoomLevel/1.25);
+stage.addEventListener("wheel",e=>{
+  e.preventDefault();
+  setZoom(zoomLevel*(e.deltaY<0?1.08:1/1.08));
+},{passive:false});
+async function rehydrateImages(dataset, zip, pathPrefix){
+  const nodes=dataset.nodes||{};
+  for(const id of Object.keys(nodes)){
+    const nd=nodes[id];
+    const img=nd.img;
+    if(img && img.indexOf(pathPrefix+"images/")===0){
+      const zf=zip.file(img);
+      if(zf){
+        const ext=img.split(".").pop().toLowerCase();
+        const mime="image/"+(ext==="jpg"?"jpeg":ext);
+        nd.img="data:"+mime+";base64,"+(await zf.async("base64"));
+      }
+    }
+    if(nd.subgraph) await rehydrateImages(nd.subgraph, zip, pathPrefix+"subgraphs/"+id+"/");
+  }
+}
+async function parseJsonOrZip(file){
+  if(/\.zip$/i.test(file.name)){
+    if(typeof JSZip==="undefined") throw new Error("reading .zip bundles needs the JSZip library (internet required)");
+    const zip=await JSZip.loadAsync(file);
+    const df=zip.file("data.json");
+    if(!df) throw new Error("no data.json inside the zip");
+    const data=JSON.parse(await df.async("string"));
+    await rehydrateImages(data, zip, "");
+    return data;
+  }
+  return JSON.parse(await file.text());
+}
+
+const fileIn=document.getElementById("file");
+document.getElementById("load").onclick=()=>fileIn.click();
+fileIn.onchange=async ()=>{
+  const f=fileIn.files[0];
+  if(!f) return;
+  try{
+    const data=await parseJsonOrZip(f);
+    graphStack=[];
+    loadData(data);
+    renderGraphTrail();
+  }
+  catch(err){ alert("Couldn't load: "+err.message); }
+  fileIn.value="";
+};
+
+function findMergeMatch(nd2){
+  const url2=(nd2.url||"").trim();
+  if(url2){
+    for(const eid of Object.keys(N)){
+      if((N[eid].url||"").trim()===url2) return eid;
+    }
+  }
+  const nm2=(nd2.name||"").trim().toLowerCase();
+  if(nm2){
+    for(const eid of Object.keys(N)){
+      if((N[eid].name||"").trim().toLowerCase()===nm2) return eid;
+    }
+  }
+  return null;
+}
+function mergeInto(data2){
+  if(!data2||typeof data2.nodes!=="object"||!Object.keys(data2.nodes).length){
+    alert("That file has no nodes to merge.");
+    return;
+  }
+  const groupMap={};
+  Object.keys(data2.groups||{}).forEach(k=>{
+    const g2=data2.groups[k];
+    if(GROUPS[k] && JSON.stringify(GROUPS[k])===JSON.stringify(g2)){ groupMap[k]=k; return; }
+    const nk=slugKey(k, GROUPS);
+    GROUPS[nk]=g2;
+    groupMap[k]=nk;
+  });
+  const typeMap={};
+  Object.keys(data2.types||{}).forEach(k=>{
+    const t2=data2.types[k];
+    if(TYPES[k] && JSON.stringify(TYPES[k])===JSON.stringify(t2)){ typeMap[k]=k; return; }
+    const nk=slugKey(k, TYPES);
+    TYPES[nk]=t2;
+    typeMap[k]=nk;
+  });
+  const idMap={};
+  let mergedCount=0, addedCount=0;
+  const fp = focusId && P3[focusId] ? P3[focusId] : {x:0,y:0,z:0};
+  Object.keys(data2.nodes).forEach(k=>{
+    const nd2=data2.nodes[k];
+    const matchId=findMergeMatch(nd2);
+    if(matchId){
+      fillGaps(N[matchId], nd2, groupMap);
+      idMap[k]=matchId;
+      mergedCount++;
+      return;
+    }
+    const nk=slugKey(k, N);
+    const nd=JSON.parse(JSON.stringify(nd2));
+    if(nd.group) nd.group = groupMap[nd.group] || nd.group;
+    N[nk]=nd;
+    idMap[k]=nk;
+    P3[nk]={x:fp.x+rnd()*260-130, y:fp.y+rnd()*180-90, z:fp.z+rnd()*260-130};
+    P0[nk]={x:P3[nk].x, y:P3[nk].y, z:P3[nk].z};
+    addedCount++;
+  });
+  (data2.links||[]).forEach(l=>{
+    if(!idMap[l.from]||!idMap[l.to]) return;
+    const ty = (l.type in typeMap) ? typeMap[l.type] : l.type;
+    const from=idMap[l.from], to=idMap[l.to];
+    if(from===to) return;
+    if(DATA.links.some(x=>x.from===from&&x.to===to&&x.type===ty)) return;
+    DATA.links.push({from,to,type:ty});
+  });
+  rebuildGraph();
+  if(mergedCount) alert("Merged "+mergedCount+" matching node"+(mergedCount===1?"":"s")+" (same Wikipedia/URL or exact name) and added "+addedCount+" new node"+(addedCount===1?"":"s")+".");
+}
+const mergeFileIn=document.getElementById("mergefile");
+document.getElementById("merge").onclick=()=>mergeFileIn.click();
+mergeFileIn.onchange=async ()=>{
+  const f=mergeFileIn.files[0];
+  if(!f) return;
+  try{
+    const data2=await parseJsonOrZip(f);
+    mergeInto(data2);
+  } catch(err){ alert("Couldn't merge: "+err.message); }
+  mergeFileIn.value="";
+};
+function hasEmbeddedImage(ds){
+  return Object.values(ds.nodes||{}).some(nd=>
+    (nd.img && nd.img.slice(0,5)==="data:") || (nd.subgraph && hasEmbeddedImage(nd.subgraph))
+  );
+}
+function collectAndExtractImages(ds, zip, pathPrefix){
+  Object.keys(ds.nodes||{}).forEach(id=>{
+    const nd=ds.nodes[id];
+    const img=nd.img;
+    if(img && img.slice(0,5)==="data:"){
+      const m=img.match(/^data:image\/([a-z0-9.+-]+);base64,(.*)$/i);
+      if(m){
+        const ext=(m[1].toLowerCase()==="jpeg")?"jpg":m[1].toLowerCase().replace(/[^a-z0-9]/g,"");
+        const fname=pathPrefix+"images/"+id+"."+ext;
+        zip.file(fname, m[2], {base64:true});
+        nd.img=fname;
+      }
+    }
+    if(nd.subgraph) collectAndExtractImages(nd.subgraph, zip, pathPrefix+"subgraphs/"+id+"/");
+  });
+}
+async function doExport(dataset){
+  dragDist=0;
+  const base=(dataset.title||"relations").replace(/[^a-z0-9]+/gi,"_").toLowerCase();
+  const dl=(blob,name)=>{
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);
+    a.download=name;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+  if(!hasEmbeddedImage(dataset)){
+    dl(new Blob([JSON.stringify(dataset,null,2)],{type:"application/json"}), base+".json");
+    return;
+  }
+  if(typeof JSZip==="undefined"){
+    alert("Bundling images as separate files needs the JSZip library, which loads from the internet. Exporting with embedded images instead.");
+    dl(new Blob([JSON.stringify(dataset,null,2)],{type:"application/json"}), base+".json");
+    return;
+  }
+  const zip=new JSZip();
+  const copy=JSON.parse(JSON.stringify(dataset));
+  collectAndExtractImages(copy, zip, "");
+  zip.file("data.json", JSON.stringify(copy,null,2));
+  const blob=await zip.generateAsync({type:"blob"});
+  dl(blob, base+".zip");
+}
+document.getElementById("export").onclick=()=>{ if(DATA) doExport(currentRootData()); };
+document.getElementById("exportview").onclick=()=>{ if(DATA) doExport(DATA); };
+
+function frame(){
+  if(!focusId||!P3[focusId]){ requestAnimationFrame(frame); return; }
+  const {CX, CY, RxV, RyV}=viewRadii();
+  if(auto) th+=0.0018;
+  starsEl.style.transform="translateX("+(((-th*160)%(stage.clientWidth*0.3))).toFixed(1)+"px)";
+  const ct=Math.cos(th), st=Math.sin(th);
+  const fp=P3[focusId];
+  const frx=fp.x*ct - fp.z*st, frz=fp.x*st + fp.z*ct;
+  if(nodeDrag!==focusId){
+    cam.x+=(frx-cam.x)*0.06; cam.y+=(fp.y-cam.y)*0.06; cam.z+=((frz-DIST/zoomLevel)-cam.z)*0.06;
+  }
+
+  Object.keys(pinnedOffset).forEach(nid=>{
+    if(nodeDrag===nid || !P3[nid]) return;
+    const off=pinnedOffset[nid];
+    const vx=Math.max(-RxV, Math.min(RxV, off.vx)), vy=Math.max(-RyV, Math.min(RyV, off.vy));
+    const tvx=frx+vx, tvy=fp.y+vy, tvz=frz+off.vz;
+    const wx=tvx*ct+tvz*st, wz=-tvx*st+tvz*ct;
+    P3[nid].x=wx; P3[nid].y=tvy; P3[nid].z=wz;
+  });
+  Object.keys(neighborLayout).forEach(nid=>{
+    if(nodeDrag===nid || pinnedOffset[nid] || !P3[nid]) return;
+    const L=neighborLayout[nid], p=P3[nid];
+    const tvx=frx+L.fx*RxV, tvy=fp.y+L.fy*RyV, tvz=frz+L.dz;
+    const wx=tvx*ct+tvz*st, wz=-tvx*st+tvz*ct;
+    p.x+=(wx-p.x)*0.08; p.y+=(tvy-p.y)*0.08; p.z+=(wz-p.z)*0.08;
+  });
+
+  ids.forEach(id=>{
+    const p=P3[id], el=nodeEls[id];
+    if(!p||!el) return;
+    if(!isVisible(id)){ el.style.display="none"; proj[id]=null; return; }
+    el.style.display="";
+    const rx=p.x*ct - p.z*st, rz=p.x*st + p.z*ct;
+    const dz=Math.max(140, rz-cam.z);
+    const s=F/dz;
+    const sx=CX+(rx-cam.x)*s, sy=CY+(p.y-cam.y)*s;
+    const vs=Math.max(0.35, Math.min(1.2, s));
+    const isF=id===focusId, isN=!!neighbors[id];
+    proj[id]={x:sx,y:sy,s:s,vs:isF?1:vs};
+    const op=isF?1 : isN?Math.max(0.8,Math.min(1,s)) : Math.max(0.15,Math.min(0.75,(s-0.35)*0.9));
+    el.style.transform="translate("+sx+"px,"+sy+"px) translate(-50%,-50%) scale("+(isF?1:vs)+")";
+    el.style.opacity=op;
+    if(isF||isN){ el.style.filter=""; }
+    else {
+      const blur=Math.min(3.2, Math.max(0,(1.02-s)*3.4));
+      el.style.filter="saturate(0.4) blur("+blur.toFixed(2)+"px)";
+    }
+    el.style.zIndex=isF?900:Math.round(800-dz*0.5);
+  });
+
+  function projectApprox(nid){
+    const p=P3[nid];
+    const rx=p.x*ct-p.z*st, rz=p.x*st+p.z*ct;
+    const depth=Math.max(140, rz-cam.z);
+    const s=F/depth;
+    return {x:CX+(rx-cam.x)*s, y:CY+(p.y-cam.y)*s, s};
+  }
+  const collideIds=Object.keys(neighbors).filter(nid=>proj[nid] && nid!==focusId && nodeDrag!==nid && !pinnedOffset[nid]);
+  for(let pass=0; pass<3; pass++){
+    for(let i=0;i<collideIds.length;i++){
+      for(let j=i+1;j<collideIds.length;j++){
+        const a=collideIds[i], b=collideIds[j];
+        if(!P3[a]||!P3[b]) continue;
+        const pa=projectApprox(a), pb=projectApprox(b);
+        const vsa=Math.max(0.35,Math.min(1.2,pa.s)), vsb=Math.max(0.35,Math.min(1.2,pb.s));
+        const szA=nodeSize[a]||{w:84,h:60}, szB=nodeSize[b]||{w:84,h:60};
+        const wa=szA.w*vsa, ha=szA.h*vsa, wb=szB.w*vsb, hb=szB.h*vsb;
+        const dx=pb.x-pa.x, dy=pb.y-pa.y;
+        const pad=14;
+        const overlapX=(wa+wb)/2+pad-Math.abs(dx);
+        const overlapY=(ha+hb)/2+pad-Math.abs(dy);
+        if(overlapX>0 && overlapY>0){
+          const dirX=dx>=0?1:-1, dirY=dy>=0?1:-1;
+          let moveXA=0, moveYA=0, moveXB=0, moveYB=0;
+          if(overlapX<overlapY){ moveXA=-dirX*overlapX/2; moveXB=dirX*overlapX/2; }
+          else { moveYA=-dirY*overlapY/2; moveYB=dirY*overlapY/2; }
+          const sa=Math.max(0.3,pa.s), sb=Math.max(0.3,pb.s), factor=0.5;
+          const rxA=moveXA/sa*factor, ryA=moveYA/sa*factor;
+          const rxB=moveXB/sb*factor, ryB=moveYB/sb*factor;
+          P3[a].x += rxA*ct; P3[a].z += -rxA*st; P3[a].y += ryA;
+          P3[b].x += rxB*ct; P3[b].z += -rxB*st; P3[b].y += ryB;
+        }
+      }
+    }
+  }
+
+  E.forEach((e,i)=>{
+    const a=proj[e.from], b=proj[e.to], l=edgeEls[i], h=hitEls[i];
+    if(!l||!h) return;
+    if(!a||!b){ l.setAttribute("stroke-opacity","0"); l.setAttribute("marker-end",""); h.setAttribute("stroke-width","0"); return; }
+    h.setAttribute("stroke-width","16");
+    h.setAttribute("x1",a.x); h.setAttribute("y1",a.y);
+    h.setAttribute("x2",b.x); h.setAttribute("y2",b.y);
+    const t=typeOf(e);
+    const hot = e.from===focusId||e.to===focusId;
+    let x1=a.x, y1=a.y, x2=b.x, y2=b.y;
+    if(e.off){
+      const ca = e.from<e.to ? a : b, cb = e.from<e.to ? b : a;
+      const cdx=cb.x-ca.x, cdy=cb.y-ca.y, cl=Math.sqrt(cdx*cdx+cdy*cdy)||1;
+      const ox=-cdy/cl*e.off, oy=cdx/cl*e.off;
+      x1+=ox; y1+=oy; x2+=ox; y2+=oy;
+    }
+    const dir = !t.mutual && t.arrow!==false;
+    const hotColorId = t.mutual ? focusId : e.from;
+    if(dir){
+      const sz=nodeSize[e.to]||{w:24,h:24};
+      const vsTo=(b.vs!==undefined)?b.vs:1;
+      const hw=sz.w/2*vsTo+5, hh=sz.h/2*vsTo+5;
+      const dx=x2-x1, dy=y2-y1;
+      const fx = dx!==0 ? 1-hw/Math.abs(dx) : -1e9;
+      const fy = dy!==0 ? 1-hh/Math.abs(dy) : -1e9;
+      let tt=Math.max(fx,fy);
+      tt=Math.max(0,Math.min(1,tt));
+      x2=x1+dx*tt; y2=y1+dy*tt;
+    }
+    l.setAttribute("x1",x1); l.setAttribute("y1",y1);
+    l.setAttribute("x2",x2); l.setAttribute("y2",y2);
+    l.setAttribute("stroke-dasharray", t.dashed ? "5 4" : "");
+    l.setAttribute("marker-end", dir ? (hot ? "url(#arr-"+palName(hotColorId)+")" : "url(#arr-dim)") : "");
+    l.setAttribute("stroke", hot?colOf(hotColorId)[3]:"var(--line-strong)");
+    l.setAttribute("stroke-width", hot?1.8:0.8);
+    l.setAttribute("stroke-opacity", hot?0.9:Math.max(0.08,Math.min(0.3,(a.s+b.s)*0.14)));
+  });
+
+  labels.forEach(lb=>{
+    const e=lb.fe.e, a=proj[e.from], b=proj[e.to];
+    if(!a||!b){ lb.el.style.display="none"; return; }
+    lb.el.style.display="";
+    const ca = e.from<e.to ? a : b, cb = e.from<e.to ? b : a;
+    let ox=0, oy=0;
+    if(lb.off){
+      const cdx=cb.x-ca.x, cdy=cb.y-ca.y, cl=Math.sqrt(cdx*cdx+cdy*cdy)||1;
+      ox=-cdy/cl*lb.off*1.6; oy=cdx/cl*lb.off*1.6;
+    }
+    const fpt = e.from===focusId ? a : b, opt = e.from===focusId ? b : a;
+    const mx=fpt.x+(opt.x-fpt.x)*lb.frac+ox, my=fpt.y+(opt.y-fpt.y)*lb.frac+oy;
+    lb.el.style.transform="translate("+mx+"px,"+my+"px) translate(-50%,-50%)";
+  });
+
+  requestAnimationFrame(frame);
+}
+
+document.getElementById("newgraph").onclick=()=>{
+  if(!confirm("Start a new graph? The current one will be cleared \u2014 Export first if you want to keep it.")) return;
+  graphStack=[];
+  loadData({title:"Untitled graph", nodes:{n1:{name:"New node"}}, links:[]});
+  renderGraphTrail();
+  openEditor("n1");
+  edName.select();
+};
+
+let restored=false;
+try{
+  const raw=localStorage.getItem(LS_KEY);
+  if(raw){ loadData(JSON.parse(raw)); restored=true; }
+}catch(err){ restored=false; }
+if(!restored){
+  loadData(JSON.parse(JSON.stringify(DEFAULT_DATA)));
+}
+renderGraphTrail();
+frame();
+</script>
+</body>
+</html>
