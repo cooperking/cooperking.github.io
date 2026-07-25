@@ -166,7 +166,7 @@ button{cursor:pointer;}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
-const BUILD_TAG="2026-07-25a \u2014 whole info panel draggable (controls still clickable)";
+const BUILD_TAG="2026-07-25c \u2014 fix side nodes off-screen on narrow viewports (radius floor scaled to viewport)";
 console.log("Relation explorer build:", BUILD_TAG);
 
 const PAL = {
@@ -375,13 +375,22 @@ function scheduleSave(){
 }
 
 function viewRadii(){
-  const CX=stage.clientWidth/2, CY=stage.clientHeight/2;
+  // Use the actually-visible viewport (excludes mobile URL/status bars) when available.
+  const vv = window.visualViewport;
+  const vw = vv ? vv.width : stage.clientWidth;
+  const vh = vv ? vv.height : stage.clientHeight;
+  // Centre of the visible region, in stage coordinates (the visible area may be offset
+  // from the stage top when browser chrome overlays part of the page).
+  const CX = (vv ? vv.offsetLeft + vv.width/2 : stage.clientWidth/2);
+  const CY = (vv ? vv.offsetTop + vv.height/2 : stage.clientHeight/2);
   let halfW=60, halfH=32;
   Object.keys(neighbors).forEach(n=>{
     const sz=nodeSize[n];
     if(sz){ halfW=Math.max(halfW, sz.w/2); halfH=Math.max(halfH, sz.h/2); }
   });
-  const desiredX=Math.max(220, CX-(halfW*1.1+6)), desiredY=Math.max(160, CY-(halfH*1.1+6));
+  const marginX = halfW*1.1+6, marginY = halfH*1.1+6;
+  const desiredX = Math.max(Math.min(220, vw/2 - 20), vw/2 - marginX);
+  const desiredY = Math.max(Math.min(160, vh/2 - 20), vh/2 - marginY);
   const s0=F*zoomLevel/DIST; // perspective scale at the focus's own depth, for the CURRENT zoom
   return { CX, CY, RxV:desiredX/s0, RyV:desiredY/s0 };
 }
@@ -1736,6 +1745,13 @@ if(!restored){
 }
 renderGraphTrail();
 frame();
+if(window.visualViewport){
+  let vvT=null;
+  window.visualViewport.addEventListener("resize", ()=>{
+    clearTimeout(vvT);
+    vvT=setTimeout(()=>{ if(focusId && P3[focusId]) snapNeighborsToRing(); }, 150);
+  });
+}
 </script>
 </body>
 </html>
