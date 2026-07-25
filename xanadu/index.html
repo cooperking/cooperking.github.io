@@ -166,7 +166,7 @@ button{cursor:pointer;}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
-const BUILD_TAG="2026-07-25f \u2014 minimal edge margin";
+const BUILD_TAG="2026-07-25g \u2014 synchronous ring-snap on focus change (fixes messy click-through layout)";
 console.log("Relation explorer build:", BUILD_TAG);
 
 const PAL = {
@@ -701,10 +701,10 @@ function setFocus(id){
     openEditor(id);
   }
 
-  // The focus card's real size isn't measurable synchronously (the browser hasn't laid it out
-  // yet), so a first-frame layout can use a wrong size and pile neighbours on the card. Defer a
-  // snap to the next frame, when the card is measured correctly, and place neighbours exactly on
-  // their ring. This is what previously only happened when you clicked Reset.
+  // Snap neighbours onto the ring NOW, so the render frames before the deferred snap don't lerp
+  // and run collision resolution from stale (previous-focus) positions — that's what made
+  // click-through layouts messy. Then re-snap on the next frame once the focus card is measured.
+  snapNeighborsToRing();
   requestAnimationFrame(()=>{
     if(focusId!==id || !P3[id]) return;
     snapNeighborsToRing();
