@@ -166,7 +166,7 @@ button{cursor:pointer;}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
-const BUILD_TAG="2026-07-25c \u2014 fix side nodes off-screen on narrow viewports (radius floor scaled to viewport)";
+const BUILD_TAG="2026-07-25f \u2014 minimal edge margin";
 console.log("Relation explorer build:", BUILD_TAG);
 
 const PAL = {
@@ -388,11 +388,11 @@ function viewRadii(){
     const sz=nodeSize[n];
     if(sz){ halfW=Math.max(halfW, sz.w/2); halfH=Math.max(halfH, sz.h/2); }
   });
-  const marginX = halfW*1.1+6, marginY = halfH*1.1+6;
-  const desiredX = Math.max(Math.min(220, vw/2 - 20), vw/2 - marginX);
-  const desiredY = Math.max(Math.min(160, vh/2 - 20), vh/2 - marginY);
-  const s0=F*zoomLevel/DIST; // perspective scale at the focus's own depth, for the CURRENT zoom
-  return { CX, CY, RxV:desiredX/s0, RyV:desiredY/s0 };
+  const padX = halfW + 2, padY = halfH + 2; // node outer edge sits right up near the visible edge
+  const desiredX = Math.max(70, vw/2 - padX); // screen-space half-extent for node centres
+  const desiredY = Math.max(90, vh/2 - padY);
+  const s0=F*zoomLevel/DIST; // perspective scale at the focus's own depth
+  return { CX, CY, RxV:desiredX/s0, RyV:desiredY/s0, vw, vh };
 }
 
 function typeOf(e){ return TYPES[e.type] || {label:e.type, mutual:true}; }
@@ -640,7 +640,8 @@ function setFocus(id){
     if(nid===id){
       el.style.cursor="grab";
       el.style.filter="";
-      let inner='<div style="background:'+c[0]+'; border:2px solid '+c[3]+'; border-radius:12px; padding:12px 16px; width:180px;">'
+      const fcW = Math.round(Math.max(130, Math.min(180, (window.visualViewport?window.visualViewport.width:window.innerWidth)*0.42)));
+      let inner='<div style="background:'+c[0]+'; border:2px solid '+c[3]+'; border-radius:12px; padding:12px 16px; width:'+fcW+'px;">'
         +avatar(nd.img?64:40,2,true)
         +'<div style="font-size:16px;font-weight:500;color:'+c[2]+';">'+portalMark+nm+'</div>';
       const gl=(GROUPS[nd.group]||{}).label;
@@ -1538,7 +1539,7 @@ document.getElementById("exportview").onclick=()=>{ if(DATA) doExport(DATA); };
 
 function frame(){
   if(!focusId||!P3[focusId]){ requestAnimationFrame(frame); return; }
-  const {CX, CY, RxV, RyV}=viewRadii();
+  const {CX, CY, RxV, RyV, vw, vh}=viewRadii();
   if(auto && !focusMoved) th+=0.0018;
   starsEl.style.transform="translateX("+(((-th*160)%(stage.clientWidth*0.3))).toFixed(1)+"px)";
   const ct=Math.cos(th), st=Math.sin(th);
@@ -1572,9 +1573,6 @@ function frame(){
     const maxScale = 1 / Math.max(Math.abs(L.fx), Math.abs(L.fy), 0.001);
     scale = Math.min(scale, maxScale);
     let tvx=frx + L.fx*scale*RxV, tvy=fp.y + L.fy*scale*RyV;
-    // Keep the node on screen: clamp its view-space target to the visible viewport.
-    // When the hub is dragged toward an edge, neighbours on that side stop at the edge
-    // and their distance to the hub simply compresses.
     tvx = Math.max(cam.x-RxV, Math.min(cam.x+RxV, tvx));
     tvy = Math.max(cam.y-RyV, Math.min(cam.y+RyV, tvy));
     const tvz=frz+L.dz;
@@ -1590,9 +1588,17 @@ function frame(){
     const rx=p.x*ct - p.z*st, rz=p.x*st + p.z*ct;
     const dz=Math.max(140, rz-cam.z);
     const s=F/dz;
-    const sx=CX+(rx-cam.x)*s, sy=CY+(p.y-cam.y)*s;
+    let sx=CX+(rx-cam.x)*s, sy=CY+(p.y-cam.y)*s;
     const vs=Math.max(0.35, Math.min(1.2, s));
     const isF=id===focusId, isN=!!neighbors[id];
+    // Keep neighbour cards fully within the visible viewport (their rendered edge, not just centre).
+    if(isN && !isF){
+      const nsz=nodeSize[id]||{w:120,h:64};
+      const hw=nsz.w/2*vs+4, hh=nsz.h/2*vs+4;
+      const L=CX-vw/2, R=CX+vw/2, T=CY-vh/2, B=CY+vh/2;
+      if(sx-hw<L) sx=L+hw; else if(sx+hw>R) sx=R-hw;
+      if(sy-hh<T) sy=T+hh; else if(sy+hh>B) sy=B-hh;
+    }
     proj[id]={x:sx,y:sy,s:s,vs:isF?1:vs};
     const op=isF?1 : isN?Math.max(0.8,Math.min(1,s)) : Math.max(0.15,Math.min(0.75,(s-0.35)*0.9));
     el.style.transform="translate("+sx+"px,"+sy+"px) translate(-50%,-50%) scale("+(isF?1:vs)+")";
