@@ -67,9 +67,32 @@ button{cursor:pointer;}
 <div id="lightbox" style="display:none; position:fixed; inset:0; z-index:2000; background:rgba(0,0,0,0.78); cursor:zoom-out; align-items:center; justify-content:center;">
   <img id="lightbox-img" alt="" style="max-width:90vw; max-height:90vh; border-radius:12px;">
 </div>
+<div id="webview" style="display:none; position:fixed; inset:0; z-index:2100; background:rgba(0,0,0,0.55); opacity:0; transition:opacity 0.25s ease; align-items:center; justify-content:center;">
+  <div id="webview-panel" style="position:relative; width:min(1100px,94vw); height:min(88vh,900px); background:var(--card); border-radius:14px; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,0.5); transform:scale(0.96); transition:transform 0.28s cubic-bezier(.2,.7,.3,1);">
+    <div style="display:flex; align-items:center; gap:8px; padding:8px 10px; border-bottom:1px solid var(--line); background:var(--card);">
+      <span id="webview-title" style="flex:1; font-size:13px; color:var(--t2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"></span>
+      <a id="webview-external" href="#" target="_blank" rel="noopener" style="font-size:12px; color:var(--t2); text-decoration:none; padding:3px 8px;">Open in new tab &#8599;</a>
+      <button id="webview-close" type="button" style="font-size:14px; padding:3px 10px;">&times;</button>
+    </div>
+    <iframe id="webview-frame" style="width:100%; height:calc(100% - 40px); border:0; background:var(--page);" referrerpolicy="no-referrer"></iframe>
+  </div>
+</div>
+<svg id="connectline" style="display:none; position:fixed; inset:0; z-index:2150; pointer-events:none; width:100%; height:100%;"><line id="connectline-l" stroke="rgba(130,200,255,0.95)" stroke-width="2.5" stroke-dasharray="6 5"></line></svg>
+<button id="dismisstemp" type="button" style="display:none; position:fixed; bottom:16px; left:50%; transform:translateX(-50%); z-index:900; font-size:13px; padding:8px 16px; border-radius:20px; background:var(--card); border:1px solid var(--line-strong); box-shadow:0 4px 16px rgba(0,0,0,0.4);">&#10005; Dismiss added node</button>
+<button id="togglefocus" type="button" title="Hide focus &#8212; see all nodes floating" style="position:fixed; top:12px; right:12px; z-index:900; width:34px; height:34px; border-radius:50%; background:var(--card); border:1px solid var(--line-strong); color:var(--t2); font-size:15px; line-height:1; box-shadow:0 2px 10px rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; padding:0;">&#10005;</button>
+<button id="addtempnode" type="button" title="Add a new node" style="position:fixed; bottom:16px; right:16px; z-index:900; display:flex; align-items:center; gap:6px; background:var(--card); border:1px solid var(--line-strong); border-radius:10px; padding:6px 10px; box-shadow:0 4px 16px rgba(0,0,0,0.4); cursor:pointer;"><span style="width:16px; height:16px; border-radius:50%; background:#c96442; display:flex; align-items:center; justify-content:center; color:#fff; font-size:13px; line-height:1;">+</span><span style="font-size:12px; font-weight:500; color:var(--t2);">node</span></button>
+<div id="connectpop" style="display:none; position:fixed; z-index:2200; background:var(--card); border:1px solid var(--line-strong); border-radius:12px; padding:12px 14px; box-shadow:0 12px 40px rgba(0,0,0,0.5); min-width:220px;">
+  <div id="connectpop-desc" style="font-size:13px; color:var(--t1); margin-bottom:8px;"></div>
+  <select id="connectpop-type" style="width:100%; margin-bottom:10px;"></select>
+  <div style="display:flex; gap:8px; justify-content:flex-end;">
+    <button id="connectpop-cancel" type="button" style="font-size:12px; padding:4px 10px;">Cancel</button>
+    <button id="connectpop-ok" type="button" style="font-size:12px; padding:4px 12px;">Connect</button>
+  </div>
+</div>
 <div class="wrap" id="mainpanel" style="cursor:grab;">
-  <h1 id="panel-handle" style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+  <h1 id="panel-handle" style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
     <span id="title">3D relation explorer</span>
+    <button id="title-edit" type="button" style="font-size:12px; padding:2px 8px; display:none;" title="Rename">&#9998;</button>
     <button id="panel-toggle" type="button" style="font-size:12px; padding:2px 9px;" title="Minimize">&minus;</button>
   </h1>
   <div id="panel-body">
@@ -77,7 +100,6 @@ button{cursor:pointer;}
     <select id="jump" aria-label="Jump to node"></select>
     <button id="typesbtn" type="button">Types</button>
     <button id="groupsbtn" type="button">Groups</button>
-    <button id="addnode" type="button">Add node</button>
     <button id="newgraph" type="button">New</button>
     <button id="load" type="button">Load</button>
     <button id="merge" type="button">Merge</button>
@@ -94,7 +116,7 @@ button{cursor:pointer;}
   </div>
 </div>
 <div class="wrap" id="editor" style="display:none;">
-  <h1><span>Edit node</span><button id="ed-close" type="button">Done</button></h1>
+  <h1><span>Edit node</span><span style="display:flex; gap:8px;"><button id="ed-delete" class="danger" type="button">Delete</button><button id="ed-close" type="button">Done</button></span></h1>
   <label class="field">Name<input id="ed-name"></label>
   <div style="margin:-4px 0 8px;">
     <button id="ed-set-start" type="button" style="font-size:12px;">Set as start</button>
@@ -150,10 +172,6 @@ button{cursor:pointer;}
     <select id="ed-merge-target"></select>
     <button id="ed-merge-go" class="danger" type="button">Merge into this node</button>
   </div>
-  <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;">
-    <button id="ed-delete" class="danger" type="button">Delete node</button>
-    <button id="ed-delete-connected" class="danger" type="button">Delete node + connected</button>
-  </div>
 </div>
 <div class="wrap" id="typespanel" style="display:none;">
   <h1><span>Relation types</span><button id="tp-close" type="button">Done</button></h1>
@@ -166,7 +184,7 @@ button{cursor:pointer;}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
-const BUILD_TAG="2026-07-25g \u2014 synchronous ring-snap on focus change (fixes messy click-through layout)";
+const BUILD_TAG="2026-07-26x \u2014 New just creates the node; capped focus-camera speed so background nodes glide, not streak";
 console.log("Relation explorer build:", BUILD_TAG);
 
 const PAL = {
@@ -215,6 +233,22 @@ let nodeEls={}, edgeEls=[], hitEls=[], labels=[], defsEl=null;
 let nodeSize={};
 let focusId=null, neighbors={}, focusEdges=[], neighborLayout={}, pinnedOffset={}, trail=[];
 let focusMoved=false;
+let screenPos={}; // eased screen-space {x,y} per neighbour — decouples ring spread from camera/rotation
+let pinnedScreen={}; // neighbours dragged to a custom screen spot (hold position, don't ease to ring)
+let broughtIn={}; // distant nodes clicked once: temporarily pulled into view, clickable to focus
+let dragStartNode=null; // node a drag began on, for drag-to-connect
+let focusHidden=false; // when true, hide the focus card + ring and show all nodes floating
+// Orbit camera for floating mode: looks at the cloud centre from `dist`, rotated by yaw/pitch.
+// Pinch/scroll changes dist (zoom); drag changes yaw/pitch (orbit).
+const orbit={ yaw:0, pitch:0.2, dist:1500, targetDist:1500,
+              cx:0, cy:0, cz:0, tcx:0, tcy:0, tcz:0 }; // cx..: current look-at; tcx..: eased target
+let floatDepth={}; // per-frame depth of floating nodes, for closest-few label display
+let floatBlurred={}; // per-frame: nodes blurred by depth (their labels are hidden)
+let orbitSpin=0; // current eased auto-spin rate for the orbit
+let flyTarget=null; // node the camera has flown in on (its label + connected labels stay shown)
+let tempNewNodes={}; // temp nodes created fresh via +, deleted on dismiss if not connected
+let dragStartX=0, dragStartY=0;
+const IS_TOUCH = (("ontouchstart" in window) || navigator.maxTouchPoints>0);
 let lastPinnedFocus=null;
 let hiddenGroups={};
 function groupKeyOf(id){ const g=(N[id]||{}).group; return (g&&GROUPS[g])?g:""; }
@@ -298,7 +332,43 @@ function closeLightbox(){
   setTimeout(()=>{ lightbox.style.display="none"; lightboxImg.src=""; }, 260);
 }
 lightbox.onclick=closeLightbox;
+
+const webview=document.getElementById("webview"), webviewFrame=document.getElementById("webview-frame");
+const webviewTitle=document.getElementById("webview-title"), webviewExternal=document.getElementById("webview-external");
+let webviewFallbackTimer=null;
+function openWebview(url){
+  webviewFrame.src="about:blank";
+  webviewTitle.textContent=url;
+  webviewExternal.href=url;
+  webview.style.display="flex";
+  const panel=document.getElementById("webview-panel");
+  requestAnimationFrame(()=>{ requestAnimationFrame(()=>{
+    webview.style.opacity="1"; panel.style.transform="scale(1)";
+  }); });
+  webviewFrame.src=url;
+  // Some sites block embedding (X-Frame-Options / frame-ancestors). If the frame doesn't load
+  // within a few seconds, surface a note pointing to the new-tab link.
+  clearTimeout(webviewFallbackTimer);
+  let loaded=false;
+  webviewFrame.onload=()=>{ loaded=true; };
+  webviewFallbackTimer=setTimeout(()=>{
+    if(!loaded){ webviewTitle.textContent="This site can\u2019t be shown in-page \u2014 use \u201cOpen in new tab\u201d \u2192"; }
+  }, 2500);
+}
+function closeWebview(){
+  const panel=document.getElementById("webview-panel");
+  webview.style.opacity="0"; panel.style.transform="scale(0.96)";
+  setTimeout(()=>{ webview.style.display="none"; webviewFrame.src="about:blank"; }, 260);
+}
+document.getElementById("webview-close").onclick=closeWebview;
+webview.addEventListener("click", e=>{ if(e.target===webview) closeWebview(); });
+window.addEventListener("keydown", e=>{ if(e.key==="Escape" && webview.style.display==="flex") closeWebview(); });
+
 document.addEventListener("click",ev=>{
+  const hf=ev.target.closest(".hidefocus");
+  if(hf){ ev.preventDefault(); ev.stopPropagation(); if(dragDist<6) setFocusHidden(true); return; }
+  const wl=ev.target.closest(".weblink");
+  if(wl){ ev.preventDefault(); if(dragDist<6) openWebview(wl.dataset.url); return; }
   const im=ev.target.closest(".portrait");
   if(im && dragDist<6) openLightbox(im);
   const eg=ev.target.closest(".entergraph");
@@ -408,11 +478,13 @@ function typeName(k){
   return t.mutual ? (t.label||k) : ((t.fromLabel||k)+" \u2192 "+(t.toLabel||k));
 }
 
+let tempLinks=[]; // transient "brought-in" links: make a distant node a neighbour of the focus; never saved
 function deriveE(){
   const fallbackType=Object.keys(TYPES)[0];
-  const list=(Array.isArray(DATA.links)?DATA.links:[])
+  const rawLinks=(Array.isArray(DATA.links)?DATA.links.slice():[]).concat(tempLinks);
+  const list=rawLinks
     .filter(l=>l && N[l.from] && N[l.to])
-    .map(l=>({from:l.from, to:l.to, type:TYPES[l.type]?l.type:fallbackType, off:0, src:l}));
+    .map(l=>({from:l.from, to:l.to, type:TYPES[l.type]?l.type:fallbackType, off:0, src:l, temp:!!l.temp}));
   pairCount={};
   const pairSeen={};
   list.forEach(e=>{ const k=[e.from,e.to].sort().join("|"); pairCount[k]=(pairCount[k]||0)+1; });
@@ -423,32 +495,7 @@ function deriveE(){
   return list;
 }
 
-function rebuildGraph(){
-  ids=Object.keys(N);
-  E=deriveE();
-
-  const fp=focusId && P3[focusId] ? P3[focusId] : {x:0,y:0,z:0};
-  ids.forEach(id=>{
-    if(!P3[id]) P3[id]={x:fp.x+rnd()*160, y:fp.y+rnd()*120, z:fp.z+rnd()*160};
-    if(!P0[id]) P0[id]={x:P3[id].x, y:P3[id].y, z:P3[id].z};
-  });
-  Object.keys(P3).forEach(id=>{ if(!N[id]){ delete P3[id]; delete P0[id]; delete pinnedOffset[id]; } });
-
-  nodesEl.innerHTML="";
-  nodeEls={};
-  ids.forEach(id=>{
-    const el=document.createElement("div");
-    el.className="node";
-    nodesEl.appendChild(el);
-    nodeEls[id]=el;
-    el.addEventListener("click",()=>{ if(dragDist<6) focus(id); });
-    el.addEventListener("dblclick",()=>{ openEditor(id); });
-    el.addEventListener("pointerdown",e=>{
-      e.stopPropagation();
-      nodeDrag=id; auto=false; dragDist=0; lastX=e.clientX; lastY=e.clientY;
-    });
-  });
-
+function rebindEdges(){
   edgeEls.forEach(l=>l.remove());
   hitEls.forEach(h=>h.remove());
   edgeEls=[]; hitEls=[];
@@ -482,6 +529,67 @@ function rebuildGraph(){
     edgesEl.appendChild(h);
     hitEls.push(h);
   });
+}
+
+function rebuildGraph(){
+  ids=Object.keys(N);
+  E=deriveE();
+
+  const fp=focusId && P3[focusId] ? P3[focusId] : {x:0,y:0,z:0};
+  ids.forEach(id=>{
+    if(!P3[id]) P3[id]={x:fp.x+rnd()*160, y:fp.y+rnd()*120, z:fp.z+rnd()*160};
+    if(!P0[id]) P0[id]={x:P3[id].x, y:P3[id].y, z:P3[id].z};
+  });
+  Object.keys(P3).forEach(id=>{ if(!N[id]){ delete P3[id]; delete P0[id]; delete pinnedOffset[id]; } });
+
+  nodesEl.innerHTML="";
+  nodeEls={};
+  ids.forEach(id=>{
+    const el=document.createElement("div");
+    el.className="node";
+    nodesEl.appendChild(el);
+    nodeEls[id]=el;
+    el.addEventListener("click",()=>{
+      if(dragDist>=6) return;
+      if(focusHidden){
+        const p=P3[id];
+        const dist2 = p ? (p.x-orbit.cx)**2+(p.y-orbit.cy)**2+(p.z-orbit.cz)**2 : 1e9;
+        const centredClose = dist2 < 60*60 && orbit.targetDist < 900;
+        if(centredClose){
+          // already flown in on this node — enter focus mode on it
+          flyTarget=null;
+          setFocusHidden(false);
+          focusId=id; setFocus(id);
+        } else if(p){
+          // fly in: recentre the orbit on this node and zoom toward it
+          orbit.tcx=p.x; orbit.tcy=p.y; orbit.tcz=p.z;
+          orbit.targetDist=650;
+          flyTarget=id; // reveal this node's label + its connected neighbours' labels
+        }
+        return;
+      }
+      if(id===focusId) return;
+      if(neighbors[id]) focus(id);
+      else bringIntoView(id);
+    });
+    el.addEventListener("dblclick",()=>{ openEditor(id); });
+    let lpTimer=null;
+    const cancelLP=()=>{ if(lpTimer){ clearTimeout(lpTimer); lpTimer=null; } };
+    el.addEventListener("pointerdown",e=>{
+      e.stopPropagation();
+      nodeDrag=id; dragStartNode=id; auto=false; dragDist=0; lastX=e.clientX; lastY=e.clientY;
+      dragStartX=e.clientX; dragStartY=e.clientY;
+      // long-press to edit (mobile-friendly alternative to double-click)
+      cancelLP();
+      lpTimer=setTimeout(()=>{ if(dragDist<8){ nodeDrag=null; dragStartNode=null; openEditor(id); } }, 500);
+    });
+    el.addEventListener("pointermove",()=>{ if(dragDist>8) cancelLP(); });
+    el.addEventListener("pointerup",cancelLP);
+    el.addEventListener("pointercancel",cancelLP);
+  });
+
+  rebindEdges();
+
 
   rebuildJump();
   buildLegend();
@@ -548,7 +656,14 @@ function loadData(data){
   trail=[]; pinnedOffset={}; nodeDrag=null; lastPinnedFocus=null;
   hiddenGroups={};
   focusId=(data.start && N[data.start]) ? data.start : ids[0];
-  cam.x=0; cam.y=0; cam.z=-900; th=0.6; auto=true; zoomLevel=1;
+  th=0.6; auto=true; zoomLevel=1;
+  // Centre the camera on the focus node (not the world origin) so the initial framing matches
+  // what a focus-click produces.
+  if(P3[focusId]){
+    const ct=Math.cos(th), st=Math.sin(th);
+    const frx=P3[focusId].x*ct - P3[focusId].z*st, frz=P3[focusId].x*st + P3[focusId].z*ct;
+    cam.x=frx; cam.y=P3[focusId].y; cam.z=frz-DIST;
+  } else { cam.x=0; cam.y=0; cam.z=-900; }
   closeEditor();
   typesPanel.style.display="none";
   groupsPanel.style.display="none";
@@ -637,11 +752,26 @@ function setFocus(id){
       ? '<img src="'+esc(nd.img)+'"'+(zoom?' class="portrait"':'')+' alt="" style="width:'+size+'px;height:'+size+'px;border-radius:50%;object-fit:cover;border:'+ring+'px solid '+c[3]+';display:block;margin:0 auto '+(size>30?7:4)+'px;'+(zoom?'cursor:zoom-in;':'')+'">'
       : '<div style="width:'+size+'px;height:'+size+'px;border-radius:50%;background:'+c[3]+';color:#fff;display:flex;align-items:center;justify-content:center;font-weight:500;font-size:'+(size>30?15:11)+'px;margin:0 auto '+(size>30?7:4)+'px;">'+nm.charAt(0)+'</div>';
     const portalMark = nd.subgraph ? '<span style="opacity:0.7;">\u25c8</span> ' : '';
-    if(nid===id){
+    if(focusHidden){
+      // floating overview: every node is a small background-style token; the name label is
+      // shown only for the closest few nodes (toggled per-frame) so it isn't overwhelming.
+      el.style.cursor="pointer";
+      el.style.filter="";
+      el.innerHTML='<div style="padding:4px 6px;">'
+        +(nd.img
+          ? '<img src="'+esc(nd.img)+'" alt="" style="width:16px;height:16px;border-radius:50%;object-fit:cover;display:block;margin:0 auto 3px;">'
+          : '<div style="width:14px;height:14px;border-radius:50%;background:'+c[3]+';margin:0 auto 3px;"></div>')
+        +'<div class="floatlabel" style="font-size:11px; color:var(--t2); white-space:nowrap; opacity:0; transition:opacity 0.3s;">'+portalMark+nm+'</div></div>';
+    } else if(nid===id){
       el.style.cursor="grab";
       el.style.filter="";
-      const fcW = Math.round(Math.max(130, Math.min(180, (window.visualViewport?window.visualViewport.width:window.innerWidth)*0.42)));
-      let inner='<div style="background:'+c[0]+'; border:2px solid '+c[3]+'; border-radius:12px; padding:12px 16px; width:'+fcW+'px;">'
+      const vpW=(window.visualViewport?window.visualViewport.width:window.innerWidth);
+      const vpH=(window.visualViewport?window.visualViewport.height:window.innerHeight);
+      const fcW = Math.round(Math.max(180, Math.min(230, vpW*0.6)));
+      // Cap card height so neighbours still have room to orbit above/below it (esp. mobile).
+      const fcMaxH = Math.round(vpH*0.46);
+      let inner='<div style="position:relative; background:'+c[0]+'; border:2px solid '+c[3]+'; border-radius:12px; padding:12px 16px; width:'+fcW+'px; max-height:'+fcMaxH+'px; overflow:auto;">'
+        +'<span class="hidefocus" title="Hide \u2014 see all nodes floating" style="position:absolute; top:6px; right:8px; width:22px; height:22px; border-radius:50%; background:'+c[3]+'; color:#fff; font-size:13px; line-height:22px; text-align:center; cursor:pointer; z-index:2;">&#10005;</span>'
         +avatar(nd.img?64:40,2,true)
         +'<div style="font-size:16px;font-weight:500;color:'+c[2]+';">'+portalMark+nm+'</div>';
       const gl=(GROUPS[nd.group]||{}).label;
@@ -649,7 +779,7 @@ function setFocus(id){
       if(nd.desc) inner+='<div style="font-size:12px;color:'+c[1]+';line-height:1.4;">'+md(nd.desc)+'</div>';
       if(nd.url){
         const linktxt = nd.linkText || (/wikipedia/i.test(nd.url)?'Wikipedia':'Link');
-        inner+='<a href="'+esc(nd.url)+'" target="_blank" rel="noopener" style="display:inline-block;margin-top:7px;font-size:12px;color:'+c[1]+';">'+esc(linktxt)+' &#8599;</a>';
+        inner+='<a href="'+esc(nd.url)+'" class="weblink" data-url="'+esc(nd.url)+'" rel="noopener" style="display:inline-block;margin-top:7px;font-size:12px;color:'+c[1]+';cursor:pointer;">'+esc(linktxt)+' &#8599;</a>';
       }
       if(nd.subgraph){
         const n2=Object.keys(nd.subgraph.nodes||{}).length;
@@ -683,6 +813,7 @@ function setFocus(id){
   const fc=colOf(id);
   const fracSeen={};
   labels=focusEdges.map((fe,idx)=>{
+    if(fe.e.temp) return null; // brought-in nodes: no connector label
     const d=document.createElement("div");
     d.className="rlabel";
     d.style.background=fc[0];
@@ -695,27 +826,30 @@ function setFocus(id){
     if(pairCount[k]>1){ const seen=fracSeen[k]||0; frac = seen===0 ? 0.42 : 0.62; fracSeen[k]=seen+1; }
     else { const slots=[0.42,0.56,0.68,0.48,0.60]; frac = slots[idx%slots.length]; }
     return {el:d,fe,frac:frac,off:fe.e.off||0};
-  });
+  }).filter(Boolean);
 
   if(editingId && editingId!==id && document.getElementById("editor").style.display!=="none"){
     openEditor(id);
   }
 
-  // Snap neighbours onto the ring NOW, so the render frames before the deferred snap don't lerp
-  // and run collision resolution from stale (previous-focus) positions — that's what made
-  // click-through layouts messy. Then re-snap on the next frame once the focus card is measured.
-  snapNeighborsToRing();
-  requestAnimationFrame(()=>{
-    if(focusId!==id || !P3[id]) return;
-    snapNeighborsToRing();
-  });
+  // Reset screen-space animation: new neighbours start at the focus centre and glide out to their
+  // ring slots (handled in the draw loop). Even spread is guaranteed there, in screen pixels.
+  screenPos={}; pinnedScreen={};
 }
 
-function snapNeighborsToRing(){
+function snapNeighborsToRing(trustMeasure){
   const fEl=nodeEls[focusId];
-  let fw=fEl?fEl.offsetWidth:0, fh=fEl?fEl.offsetHeight:0;
-  if(fw<40||fh<40){ const c=nodeSize[focusId]; fw=(c&&c.w>40)?c.w:200; fh=(c&&c.h>40)?c.h:400; }
-  else nodeSize[focusId]={w:fw,h:fh};
+  let fw, fh;
+  if(trustMeasure){
+    fw=fEl?fEl.offsetWidth:0; fh=fEl?fEl.offsetHeight:0;
+    if(fw>40 && fh>40) nodeSize[focusId]={w:fw,h:fh};
+    else { const c=nodeSize[focusId]; fw=(c&&c.w>40)?c.w:240; fh=(c&&c.h>40)?c.h:360; }
+  } else {
+    // Synchronous call: the focus element may still hold its old (small neighbour) size because
+    // it hasn't re-rendered as the focus card yet. Use a representative focus-card size so
+    // clearance is generous, not the stale chip size that would cluster neighbours at the centre.
+    fw=240; fh=360;
+  }
   const {RxV,RyV}=viewRadii();
   const cX=Math.min(0.92,(fw/2+80)/Math.max(1,RxV)), cY=Math.min(0.92,(fh/2+80)/Math.max(1,RyV));
   const fp=P3[focusId]; if(!fp) return;
@@ -736,10 +870,30 @@ function snapNeighborsToRing(){
   });
 }
 
+function bringIntoView(id){
+  if(id===focusId || neighbors[id]) return;
+  // add a transient link from the focus to this node so it becomes a real neighbour on the ring
+  if(!tempLinks.some(l=>(l.from===focusId&&l.to===id)||(l.from===id&&l.to===focusId))){
+    tempLinks.push({from:focusId, to:id, type:Object.keys(TYPES)[0], temp:true});
+  }
+  broughtIn[id]=1; // mark transient so it gets the glow
+  const keepFocus=focusId;
+  E=deriveE();
+  rebindEdges();
+  setFocus(keepFocus);
+  updateDismissBtn();
+  renderTrail();
+}
 function focus(id){
   if(id===focusId) return;
   if(trail[trail.length-1]!==focusId) trail.push(focusId);
   if(trail.length>5) trail=trail.slice(-5);
+  // delete any freshly-created temp nodes that were never connected
+  Object.keys(tempNewNodes).forEach(nid=>{ if(broughtIn[nid] && nid!==id){ delete N[nid]; delete P3[nid]; delete P0[nid]; } });
+  tempNewNodes={};
+  broughtIn={};
+  if(tempLinks.length){ tempLinks=[]; E=deriveE(); rebindEdges(); }
+  updateDismissBtn();
   setFocus(id);
   renderTrail();
 }
@@ -758,17 +912,28 @@ function renderTrail(){
 jump.onchange=()=>focus(jump.value);
 
 const panelBody=document.getElementById("panel-body"), panelToggle=document.getElementById("panel-toggle");
-panelToggle.onclick=()=>{
-  const collapsed=panelBody.style.display==="none";
-  panelBody.style.display=collapsed?"":"none";
-  panelToggle.textContent=collapsed?"\u2212":"+";
-  panelToggle.title=collapsed?"Minimize":"Expand";
-};
+const mainpanel=document.getElementById("mainpanel");
+function setPanelCollapsed(collapsed){
+  panelBody.style.display=collapsed?"none":"";
+  panelToggle.textContent=collapsed?"+":"\u2212";
+  panelToggle.title=collapsed?"Expand":"Minimize";
+  if(IS_TOUCH){
+    // On mobile a minimised panel still got in the way, so collapse it to a bare + in the corner:
+    // hide the title and edit button, strip the panel chrome down to just the button.
+    titleEl.style.display=collapsed?"none":"";
+    titleEditBtn.style.display=collapsed?"none":"";
+    mainpanel.style.padding=collapsed?"0":"";
+    mainpanel.style.background=collapsed?"transparent":"";
+    mainpanel.style.border=collapsed?"0":"";
+    panelHandle.style.margin=collapsed?"0":"";
+  }
+}
+panelToggle.onclick=()=>setPanelCollapsed(panelBody.style.display!=="none");
 
 const titleEl=document.getElementById("title");
-titleEl.style.cursor="text";
-titleEl.title="Click to rename \u2014 build: "+BUILD_TAG;
-titleEl.onclick=()=>{
+const titleEditBtn=document.getElementById("title-edit");
+const panelHandle=document.getElementById("panel-handle");
+function startRename(){
   if(!DATA || titleEl.querySelector("input")) return;
   const cur=DATA.title||"";
   const inp=document.createElement("input");
@@ -788,14 +953,28 @@ titleEl.onclick=()=>{
     if(e.key==="Enter") inp.blur();
     if(e.key==="Escape"){ inp.value=cur; inp.blur(); }
   };
-};
+}
+if(IS_TOUCH){
+  // On touch: title is plain text (so the panel drags freely from it); rename via the pencil button.
+  titleEditBtn.style.display="";
+  titleEditBtn.onclick=startRename;
+  titleEl.title="build: "+BUILD_TAG;
+} else {
+  titleEl.style.cursor="text";
+  titleEl.title="Click to rename \u2014 build: "+BUILD_TAG;
+  titleEl.onclick=startRename;
+}
+setPanelCollapsed(true); // start minimised
 
 // Make the whole info panel draggable, but ignore drags that start on an interactive
-// control (button, select, input, link, the title, or a legend chip) so those still work.
+// control (button, select, input, link, or a legend chip) so those still work. On touch the
+// title is draggable (rename is a separate button); on desktop the title is a rename target.
 (function(){
   const panel=document.getElementById("mainpanel");
   let pd=false, sx=0, sy=0, ox=0, oy=0;
-  const isControl=t=> t.closest("button, select, input, textarea, a, label, #title, .legend");
+  const ignoreSel = IS_TOUCH ? "button, select, input, textarea, a, label, .legend"
+                             : "button, select, input, textarea, a, label, #title, .legend";
+  const isControl=t=> t.closest(ignoreSel);
   panel.addEventListener("pointerdown", e=>{
     if(isControl(e.target)) return;
     pd=true;
@@ -958,10 +1137,16 @@ edGraphDetach.onclick=()=>{
 
 function openEditor(id){
   editingId=id;
-  if(id!==focusId){ focus(id); return; }
+  if(id!==focusId){ focus(id); } // navigate to it first; then open the editor below
+  if(!N[id]) { editingId=null; return; } // node was an uncommitted temp and got cleaned up
+  editingId=id;
   typesPanel.style.display="none";
   groupsPanel.style.display="none";
   edPanel.style.display="";
+  edPanel.style.zIndex="2300"; // above floating buttons/overlays so its controls are tappable
+  const at=document.getElementById("addtempnode"); if(at) at.style.display="none";
+  const dt=document.getElementById("dismisstemp"); if(dt) dt.style.display="none";
+  if(typeof resetDeleteBtn==="function") resetDeleteBtn();
   const nd=N[id];
   edName.value=nd.name||"";
   edDesc.value=nd.desc||"";
@@ -986,7 +1171,14 @@ function openEditor(id){
   edMergeTarget.value="";
   renderConns();
 }
-function closeEditor(){ editingId=null; edPanel.style.display="none"; }
+function closeEditor(){
+  editingId=null;
+  edPanel.style.display="none";
+  edPanel.style.zIndex="";
+  if(typeof resetDeleteBtn==="function") resetDeleteBtn();
+  const at=document.getElementById("addtempnode"); if(at) at.style.display="";
+  updateDismissBtn();
+}
 function syncDir(){
   const t=TYPES[edType.value];
   edDir.style.display=(t && !t.mutual)?"":"none";
@@ -1121,32 +1313,40 @@ function connectedComponent(startId){
   }
   return seen;
 }
-document.getElementById("ed-delete-connected").onclick=()=>{
-  if(!editingId) return;
-  const comp=connectedComponent(editingId);
-  const n=comp.size;
-  const nm=N[editingId].name||editingId;
-  const ok = n<=1
-    ? confirm('"'+nm+'" has no connections \u2014 delete just this node?')
-    : confirm('Delete '+n+' nodes \u2014 everything connected to "'+nm+'", directly or through other nodes? This cannot be undone.');
-  if(!ok) return;
-  comp.forEach(gid=>{ if(DATA.start===gid) delete DATA.start; delete N[gid]; });
-  DATA.links=DATA.links.filter(l=>!comp.has(l.from)&&!comp.has(l.to));
-  closeEditor();
-  if(comp.has(focusId)) focusId=null;
-  rebuildGraph();
-};
-document.getElementById("ed-delete").onclick=()=>{
-  if(!editingId) return;
-  if(!confirm("Delete \""+(N[editingId].name||editingId)+"\" and all its connections?")) return;
+let deleteArmed=false, deleteArmTimer=null;
+function resetDeleteBtn(){
+  deleteArmed=false;
+  if(deleteArmTimer){ clearTimeout(deleteArmTimer); deleteArmTimer=null; }
+  const b=document.getElementById("ed-delete");
+  if(b){ b.textContent="Delete"; b.style.background=""; b.style.color=""; b.style.borderColor=""; }
+}
+function doDeleteNode(){
+  if(!editingId || !N[editingId]) return;
+  const b=document.getElementById("ed-delete");
+  if(!deleteArmed){
+    // first tap: arm — no native dialog (those can be blocked/unviewable on mobile)
+    deleteArmed=true;
+    if(b){ b.textContent="Confirm?"; b.style.background="#e0341f"; b.style.color="#fff"; b.style.borderColor="#e0341f"; }
+    deleteArmTimer=setTimeout(resetDeleteBtn, 3000);
+    return;
+  }
+  // second tap: actually delete
+  resetDeleteBtn();
   const gone=editingId;
   delete N[gone];
+  delete P3[gone]; delete P0[gone];
+  delete broughtIn[gone]; delete tempNewNodes[gone];
+  tempLinks=tempLinks.filter(l=>l.from!==gone&&l.to!==gone);
   if(DATA.start===gone) delete DATA.start;
   DATA.links=DATA.links.filter(l=>l.from!==gone&&l.to!==gone);
   closeEditor();
-  if(focusId===gone) focusId=null;
+  if(focusId===gone){ focusId=(DATA.start&&N[DATA.start])?DATA.start:Object.keys(N)[0]||null; }
+  updateDismissBtn();
   rebuildGraph();
-};
+  if(focusId) setFocus(focusId);
+  scheduleSave();
+}
+document.getElementById("ed-delete").onclick=doDeleteNode;
 document.getElementById("ed-close").onclick=closeEditor;
 
 const typesPanel=document.getElementById("typespanel"), tpList=document.getElementById("tp-list");
@@ -1297,22 +1497,62 @@ document.getElementById("groupsbtn").onclick=()=>{
   groupsPanel.style.display="";
 };
 document.getElementById("gp-close").onclick=()=>{ groupsPanel.style.display="none"; };
-document.getElementById("addnode").onclick=()=>{
+document.getElementById("addtempnode").onclick=()=>{
+  if(!focusId){ return; }
   const id="n"+Date.now().toString(36);
   N[id]={name:"New node"};
+  ids=Object.keys(N);
+  // seed a position near the focus so it renders immediately
+  const fp=P3[focusId]||{x:0,y:0,z:0};
+  P3[id]={x:fp.x+40, y:fp.y-40, z:fp.z};
+  P0[id]={x:P3[id].x, y:P3[id].y, z:P3[id].z};
   rebuildGraph();
-  focus(id);
-  openEditor(id);
-  edName.select();
+  tempNewNodes[id]=1;
+  bringIntoView(id);
 };
 
-stage.addEventListener("pointerdown",e=>{ dragging=true; auto=false; dragDist=0; lastX=e.clientX; lastY=e.clientY; });
+stage.addEventListener("pointerdown",e=>{ dragging=true; auto=false; dragDist=0; lastX=e.clientX; lastY=e.clientY; dragStartX=e.clientX; dragStartY=e.clientY; });
+
+// Zoom in floating mode: wheel (desktop) + two-finger pinch (touch)
+const ORBIT_MIN=300, ORBIT_MAX=4200;
+function orbitZoom(factor){
+  orbit.targetDist = Math.max(ORBIT_MIN, Math.min(ORBIT_MAX, orbit.targetDist*factor));
+  if(orbit.targetDist > 1800){ orbit.tcx=0; orbit.tcy=0; orbit.tcz=0; flyTarget=null; } // zoomed out: reframe whole galaxy
+}
+stage.addEventListener("wheel",e=>{
+  if(!focusHidden) return;
+  e.preventDefault();
+  orbitZoom(e.deltaY>0 ? 1.1 : 0.9);
+},{passive:false});
+let pinchDist0=null;
+stage.addEventListener("touchmove",e=>{
+  if(!focusHidden || e.touches.length!==2) return;
+  e.preventDefault();
+  const t=e.touches, d=Math.hypot(t[0].clientX-t[1].clientX, t[0].clientY-t[1].clientY);
+  if(pinchDist0!=null && d>0) orbitZoom(pinchDist0/d);
+  pinchDist0=d;
+},{passive:false});
+stage.addEventListener("touchend",()=>{ pinchDist0=null; });
 window.addEventListener("pointermove",e=>{
   if(!dragging && !nodeDrag) return;
   const dx=e.clientX-lastX, dy=e.clientY-lastY;
   lastX=e.clientX; lastY=e.clientY;
   dragDist+=Math.abs(dx)+Math.abs(dy);
   if(nodeDrag){
+    // Connect mode: while a temporary node is present, dragging the focus or the temp node draws a
+    // link line instead of repositioning (double-duty off).
+    const hasTemp = Object.keys(broughtIn).length>0;
+    if(hasTemp && (nodeDrag===focusId || broughtIn[nodeDrag])){
+      showConnectLine(nodeDrag, e.clientX, e.clientY);
+      return;
+    }
+    if(nodeDrag!==focusId){
+      // Drag a neighbour in screen space: move its screen position with the pointer and pin it.
+      const sp=screenPos[nodeDrag]||{x:CX,y:CY};
+      screenPos[nodeDrag]={x:sp.x+dx, y:sp.y+dy};
+      pinnedScreen[nodeDrag]=1;
+      return;
+    }
     const ct=Math.cos(th), st=Math.sin(th);
     const p=P3[nodeDrag];
     if(!p) return;
@@ -1320,16 +1560,7 @@ window.addEventListener("pointermove",e=>{
     const rz=p.x*st + p.z*ct;
     const s=F/Math.max(80, rz-cam.z);
     rx += dx/s; p.y += dy/s;
-    if(nodeDrag!==focusId && P3[focusId]){
-      const {RxV, RyV}=viewRadii();
-      const fp=P3[focusId];
-      const ffx=fp.x*ct - fp.z*st, ffz=fp.x*st + fp.z*ct;
-      rx = Math.max(ffx-RxV, Math.min(ffx+RxV, rx));
-      p.y = Math.max(fp.y-RyV, Math.min(fp.y+RyV, p.y));
-      p.x = rx*ct + rz*st;
-      p.z = -rx*st + rz*ct;
-      pinnedOffset[nodeDrag] = { vx: rx-ffx, vy: p.y-fp.y, vz: rz-ffz };
-    } else {
+    {
       // dragging the focus node itself: let it go anywhere on screen, and stop the camera re-centering it
       focusMoved=true;
       const {RxV, RyV}=viewRadii();
@@ -1338,11 +1569,168 @@ window.addEventListener("pointermove",e=>{
       p.x = rx*ct + rz*st;
       p.z = -rx*st + rz*ct;
     }
+  } else if(focusHidden){
+    // orbit the galaxy: drag to rotate around it
+    orbit.yaw   += dx*0.006;
+    orbit.pitch += dy*0.006;
+    const lim=1.35;
+    if(orbit.pitch> lim) orbit.pitch= lim; else if(orbit.pitch<-lim) orbit.pitch=-lim;
   } else {
     th+=dx*0.005;
   }
 });
-window.addEventListener("pointerup",()=>{ dragging=false; nodeDrag=null; setTimeout(()=>auto=true,1400); });
+window.addEventListener("pointerup",(e)=>{
+  // Drag-to-connect: only when a temporary (brought-in) node is present, and only between that
+  // temp node and the central focus node (either direction). This turns off the reposition
+  // "double duty" exactly when link-drawing is useful, removing the ambiguity.
+  const hasTemp = Object.keys(broughtIn).length>0;
+  if(hasTemp && dragStartNode && dragDist>=8){
+    const startNode = dragStartNode;
+    const endNode = nodeUnderPoint(e.clientX, e.clientY, startNode);
+    if(endNode && endNode!==startNode){
+      const pair=[startNode, endNode];
+      const isFocusTempPair = pair.includes(focusId) && pair.some(n=>broughtIn[n]);
+      if(isFocusTempPair){
+        openConnectPopup(startNode, endNode, e.clientX, e.clientY);
+      }
+    }
+  }
+  dragStartNode=null;
+  hideConnectLine();
+  dragging=false; nodeDrag=null; setTimeout(()=>auto=true,1400);
+});
+
+function showConnectLine(fromId, px, py){
+  const svg=document.getElementById("connectline"), ln=document.getElementById("connectline-l");
+  const p=proj[fromId]; if(!p) return;
+  const rect=stage.getBoundingClientRect();
+  ln.setAttribute("x1", rect.left+p.x); ln.setAttribute("y1", rect.top+p.y);
+  ln.setAttribute("x2", px); ln.setAttribute("y2", py);
+  svg.style.display="block";
+}
+function hideConnectLine(){ const s=document.getElementById("connectline"); if(s) s.style.display="none"; }
+
+function updateDismissBtn(){
+  const btn=document.getElementById("dismisstemp");
+  if(btn) btn.style.display = Object.keys(broughtIn).length>0 ? "" : "none";
+}
+function setFocusHidden(hidden){
+  focusHidden=hidden;
+  const b=document.getElementById("togglefocus");
+  const at=document.getElementById("addtempnode");
+  if(hidden){
+    broughtIn={}; if(tempLinks.length){ tempLinks=[]; E=deriveE(); rebindEdges(); }
+    updateDismissBtn();
+    if(b){ b.innerHTML="&#9678;"; b.title="Show focus view"; b.style.display=""; }
+    if(at) at.style.display="none";
+    scatterNodes(); // give every node a spread-out 3D position + gentle drift
+    if(focusId) setFocus(focusId); // rebuild node contents as small floating tokens
+  } else {
+    if(b){ b.style.display="none"; } // hidden during focus view — the in-card \u00d7 does the hiding
+    if(at) at.style.display="";
+    drift={}; // stop drifting
+    if(focusId) setFocus(focusId); // rebuild node contents as focus card + neighbour cards
+  }
+}
+document.getElementById("togglefocus").onclick=()=>setFocusHidden(!focusHidden);
+document.getElementById("togglefocus").style.display="none"; // starts in focus view
+
+let drift={}; // per-node velocity while floating {vx,vy,vz}
+function scatterNodes(){
+  // spread nodes through a compact 3D volume and frame the whole cloud from a distance
+  const R=380;
+  ids.forEach(id=>{
+    P3[id]={ x:(Math.random()*2-1)*R, y:(Math.random()*2-1)*R, z:(Math.random()*2-1)*R };
+  });
+  orbit.yaw=0; orbit.pitch=0.2; orbit.dist=3400; orbit.targetDist=2900; // start wide: whole galaxy in view
+  orbit.cx=orbit.cy=orbit.cz=0; orbit.tcx=orbit.tcy=orbit.tcz=0;
+}
+document.getElementById("dismisstemp").onclick=()=>{
+  // delete freshly-created temp nodes that were never connected; keep pre-existing ones
+  Object.keys(tempNewNodes).forEach(id=>{
+    if(broughtIn[id]){ delete N[id]; delete P3[id]; delete P0[id]; }
+  });
+  tempNewNodes={};
+  broughtIn={};
+  tempLinks=[]; E=deriveE(); rebindEdges();
+  updateDismissBtn();
+  rebuildGraph();
+  setFocus(focusId);
+};
+
+function nodeUnderPoint(px, py, excludeId){
+  // Match against each node's known projected screen centre with a generous radius. More reliable
+  // than getBoundingClientRect on transformed/scaled cards; makes the whole area a drop target.
+  const rect=stage.getBoundingClientRect();
+  const sx=px-rect.left, sy=py-rect.top;
+  let best=null, bestD=Infinity;
+  Object.keys(nodeEls).forEach(id=>{
+    if(id===excludeId) return;
+    const el=nodeEls[id];
+    if(!el || el.style.display==="none") return;
+    const p=proj[id];
+    if(!p) return;
+    const nsz=nodeSize[id]||{w:120,h:64};
+    const rad=Math.max(70, (nsz.w+nsz.h)/4*(p.vs||1));
+    const d=Math.hypot(sx-p.x, sy-p.y);
+    if(d<rad && d<bestD){ bestD=d; best=id; }
+  });
+  return best;
+}
+
+let connectFrom=null, connectTo=null;
+function openConnectPopup(fromId, toId, px, py){
+  connectFrom=fromId; connectTo=toId;
+  const pop=document.getElementById("connectpop");
+  const sel=document.getElementById("connectpop-type");
+  const desc=document.getElementById("connectpop-desc");
+  desc.innerHTML="Connect <b>"+esc(N[fromId].name||fromId)+"</b> \u2192 <b>"+esc(N[toId].name||toId)+"</b>";
+  sel.innerHTML="";
+  Object.keys(TYPES).forEach(k=>{
+    const o=document.createElement("option"); o.value=k; o.textContent=typeName(k); sel.appendChild(o);
+  });
+  const newOpt=document.createElement("option"); newOpt.value="__new__"; newOpt.textContent="+ Create new type\u2026"; sel.appendChild(newOpt);
+  if(!Object.keys(TYPES).length){ sel.value="__new__"; }
+  pop.style.display="block";
+  // position near the drop point, kept on screen
+  const pw=pop.offsetWidth||240, ph=pop.offsetHeight||140;
+  let x=Math.min(px, window.innerWidth-pw-8), y=Math.min(py, window.innerHeight-ph-8);
+  pop.style.left=Math.max(8,x)+"px"; pop.style.top=Math.max(8,y)+"px";
+}
+function closeConnectPopup(){ document.getElementById("connectpop").style.display="none"; connectFrom=connectTo=null; }
+document.getElementById("connectpop-cancel").onclick=closeConnectPopup;
+document.getElementById("connectpop-ok").onclick=()=>{
+  if(connectFrom && connectTo){
+    let type=document.getElementById("connectpop-type").value;
+    if(type==="__new__"){
+      const label=prompt("Name this relationship (e.g. 'ally', 'parent'):","");
+      if(label===null) return; // cancelled, keep popup open
+      const fl=label.trim();
+      if(!fl){ alert("Give the relationship a name"); return; }
+      const directional=confirm("Directional arrow?\n\nOK = directional (e.g. "+esc(N[connectFrom].name||connectFrom)+" \u2192 "+esc(N[connectTo].name||connectTo)+")\nCancel = mutual (no direction)");
+      let toLabel="";
+      if(directional){
+        const rev=prompt("Reverse label (how it reads the other way, e.g. 'child of'):", fl);
+        toLabel=(rev===null?fl:rev.trim())||fl;
+      }
+      const key=slugKey(fl, TYPES);
+      TYPES[key] = directional ? {fromLabel:fl, toLabel:toLabel, arrow:true} : {label:fl, mutual:true};
+      buildLegend();
+      type=key;
+    }
+    if(!type){ alert("Pick or create a relationship type"); return; }
+    // remove any transient link between these two, then add the real one
+    tempLinks=tempLinks.filter(l=>!((l.from===connectFrom&&l.to===connectTo)||(l.from===connectTo&&l.to===connectFrom)));
+    delete broughtIn[connectFrom]; delete broughtIn[connectTo];
+    delete tempNewNodes[connectFrom]; delete tempNewNodes[connectTo];
+    DATA.links.push({from:connectFrom, to:connectTo, type:type});
+    scheduleSave();
+    rebuildGraph();
+    updateDismissBtn();
+    setFocus(focusId);
+  }
+  closeConnectPopup();
+};
 document.addEventListener("click",ev=>{
   const a=ev.target.closest("a");
   if(a && nodesEl.contains(a) && dragDist>=6) ev.preventDefault();
@@ -1538,15 +1926,40 @@ document.getElementById("export").onclick=()=>{ if(DATA) doExport(currentRootDat
 document.getElementById("exportview").onclick=()=>{ if(DATA) doExport(DATA); };
 
 function frame(){
-  if(!focusId||!P3[focusId]){ requestAnimationFrame(frame); return; }
+  try{ frameBody(); }
+  catch(err){
+    if(!window.__frameErr){ window.__frameErr=1; alert("Frame error: "+err.message); console.error(err); }
+  }
+  requestAnimationFrame(frame);
+}
+function frameBody(){
+  if(!focusId||!P3[focusId]){ return; }
   const {CX, CY, RxV, RyV, vw, vh}=viewRadii();
+  const nCount=Object.keys(neighbors).length;
+  const crowdScale = nCount<=8 ? 1 : Math.max(0.66, 1-(nCount-8)*0.028);
   if(auto && !focusMoved) th+=0.0018;
   starsEl.style.transform="translateX("+(((-th*160)%(stage.clientWidth*0.3))).toFixed(1)+"px)";
   const ct=Math.cos(th), st=Math.sin(th);
   const fp=P3[focusId];
   const frx=fp.x*ct - fp.z*st, frz=fp.x*st + fp.z*ct;
-  if(nodeDrag!==focusId && !focusMoved){
-    cam.x+=(frx-cam.x)*0.06; cam.y+=(fp.y-cam.y)*0.06; cam.z+=((frz-DIST/zoomLevel)-cam.z)*0.06;
+  if(focusHidden){
+    // Orbit camera: ease zoom and the look-at point toward their targets.
+    orbit.dist += (orbit.targetDist - orbit.dist)*0.12;
+    orbit.cx += (orbit.tcx - orbit.cx)*0.1;
+    orbit.cy += (orbit.tcy - orbit.cy)*0.1;
+    orbit.cz += (orbit.tcz - orbit.cz)*0.1;
+    // Slow auto-spin around the current look-at point (keeps turning even when zoomed in on a
+    // node). Pauses while the user is dragging, as an orientation aid.
+    const spinTarget = dragging ? 0 : 0.0016;
+    orbitSpin += (spinTarget-orbitSpin)*0.05; // ease start/stop so it isn't jerky
+    orbit.yaw += orbitSpin;
+  } else if(nodeDrag!==focusId && !focusMoved){
+    // Ease the camera toward the new focus, but cap per-frame movement so distant traversals
+    // glide rather than streaking the background nodes past.
+    const tx=frx, ty=fp.y, tz=frz-DIST/zoomLevel;
+    const MAXSTEP=26; // px/frame ceiling in world units
+    const step=(cur,target)=>{ let d=(target-cur)*0.06; if(d>MAXSTEP)d=MAXSTEP; else if(d<-MAXSTEP)d=-MAXSTEP; return cur+d; };
+    cam.x=step(cam.x,tx); cam.y=step(cam.y,ty); cam.z=step(cam.z,tz);
   }
 
   Object.keys(pinnedOffset).forEach(nid=>{
@@ -1561,124 +1974,149 @@ function frame(){
   let fw = fEl ? fEl.offsetWidth : 0, fh = fEl ? fEl.offsetHeight : 0;
   if(fw < 40 || fh < 40){ const c = nodeSize[focusId]; fw = (c&&c.w>40)?c.w:200; fh = (c&&c.h>40)?c.h:400; }
   else { nodeSize[focusId] = {w:fw, h:fh}; } // cache the good measurement
-  const clearXFrac = Math.min(0.92, (fw/2 + 80) / Math.max(1, RxV));
-  const clearYFrac = Math.min(0.92, (fh/2 + 80) / Math.max(1, RyV));
-  Object.keys(neighborLayout).forEach(nid=>{
-    if(nodeDrag===nid || pinnedOffset[nid] || !P3[nid]) return;
-    const L=neighborLayout[nid], p=P3[nid];
-    // scale this node's radius outward so it clears the focus card on both axes
-    let scale = 1;
-    if(Math.abs(L.fx) > 0.001) scale = Math.max(scale, clearXFrac/Math.abs(L.fx));
-    if(Math.abs(L.fy) > 0.001) scale = Math.max(scale, clearYFrac/Math.abs(L.fy));
-    const maxScale = 1 / Math.max(Math.abs(L.fx), Math.abs(L.fy), 0.001);
-    scale = Math.min(scale, maxScale);
-    let tvx=frx + L.fx*scale*RxV, tvy=fp.y + L.fy*scale*RyV;
-    tvx = Math.max(cam.x-RxV, Math.min(cam.x+RxV, tvx));
-    tvy = Math.max(cam.y-RyV, Math.min(cam.y+RyV, tvy));
-    const tvz=frz+L.dz;
-    const wx=tvx*ct+tvz*st, wz=-tvx*st+tvz*ct;
-    p.x+=(wx-p.x)*0.08; p.y+=(tvy-p.y)*0.08; p.z+=(wz-p.z)*0.08;
-  });
+  // Neighbour screen-space ring geometry: focus centre + each node's fixed ring angle.
+  // Computed directly in screen pixels so the even spread never depends on the camera or rotation.
+  const focusSX = CX, focusSY = CY; // focus is always drawn at screen centre
+  floatDepth = {}; // per-frame camera depth of floating nodes (for label culling)
+  floatBlurred = {};
 
   ids.forEach(id=>{
     const p=P3[id], el=nodeEls[id];
     if(!p||!el) return;
     if(!isVisible(id)){ el.style.display="none"; proj[id]=null; return; }
     el.style.display="";
+    const isF=!focusHidden && id===focusId, isN=!focusHidden && (!!neighbors[id]||!!broughtIn[id]) && id!==focusId;
+
+    if(isF){
+      // Focus card: always screen centre.
+      proj[id]={x:CX,y:CY,s:1,vs:1};
+      el.style.transform="translate("+CX+"px,"+CY+"px) translate(-50%,-50%) scale(1)";
+      el.style.opacity=1; el.style.filter=""; el.style.zIndex=600;
+      screenPos[id]={x:CX,y:CY};
+      return;
+    }
+
+    if(isN){
+      // Screen-space ring: each node's fixed angle maps to where that ray from the centre meets the
+      // window rectangle (inset by its own half-size). This uses the full window perimeter evenly.
+      const L=neighborLayout[id];
+      const s0=F*zoomLevel/DIST;
+      const nsz=nodeSize[id]||{w:120,h:64};
+      const nvs=Math.max(0.55, Math.min(1.05, s0))*crowdScale;
+      const hw=nsz.w/2*nvs+6, hh=nsz.h/2*nvs+6;
+      const availX = Math.max(20, vw/2 - hw), availY = Math.max(20, vh/2 - hh);
+      // ray direction (fx,fy) -> distance t to the rectangle boundary [-availX,availX]x[-availY,availY]
+      const ax=Math.abs(L.fx), ay=Math.abs(L.fy);
+      const tX = ax>1e-4 ? availX/ax : Infinity;
+      const tY = ay>1e-4 ? availY/ay : Infinity;
+      let t = Math.min(tX, tY); // hit the nearer wall = point on the rectangle edge
+      let tx = focusSX + L.fx*t;
+      let ty = focusSY + L.fy*t;
+      // ensure it still clears the (large) focus card: if inside the card's bounding box, push out
+      const cardHalfW=fw/2+hw+8, cardHalfH=fh/2+hh+8;
+      if(Math.abs(tx-focusSX)<cardHalfW && Math.abs(ty-focusSY)<cardHalfH){
+        // scale the ray up until it exits the card box
+        const sx=cardHalfW/Math.max(1e-4,Math.abs(L.fx)), sy=cardHalfH/Math.max(1e-4,Math.abs(L.fy));
+        const ts=Math.min(sx,sy);
+        tx=focusSX+L.fx*ts; ty=focusSY+L.fy*ts;
+      }
+      // final viewport clamp
+      const Lb=CX-vw/2, Rb=CX+vw/2, Tb=CY-vh/2, Bb=CY+vh/2;
+      if(tx-hw<Lb) tx=Lb+hw; else if(tx+hw>Rb) tx=Rb-hw;
+      if(ty-hh<Tb) ty=Tb+hh; else if(ty+hh>Bb) ty=Bb-hh;
+      // ease displayed position toward target (smooth glide, in screen space)
+      let sp=screenPos[id];
+      if(pinnedScreen[id] && sp){
+        // dragged to a custom spot: hold it (clamped to viewport)
+        sp={x:Math.max(Lb+hw,Math.min(Rb-hw,sp.x)), y:Math.max(Tb+hh,Math.min(Bb-hh,sp.y))};
+      } else {
+        if(!sp){ sp={x:focusSX,y:focusSY}; } // start at centre, glide out to the ring
+        sp={x:sp.x+(tx-sp.x)*0.14, y:sp.y+(ty-sp.y)*0.14};
+      }
+      screenPos[id]=sp;
+      proj[id]={x:sp.x,y:sp.y,s:s0,vs:nvs};
+      el.style.transform="translate("+sp.x+"px,"+sp.y+"px) translate(-50%,-50%) scale("+nvs+")";
+      el.style.opacity=1;
+      // brought-in (temporary) nodes get a glow to signal their transient status
+      el.style.filter = broughtIn[id] ? "drop-shadow(0 0 6px rgba(130,200,255,1)) drop-shadow(0 0 16px rgba(120,190,255,0.95)) drop-shadow(0 0 30px rgba(90,160,255,0.8))" : "";
+      el.style.zIndex=680;
+      return;
+    }
+
+    // Background nodes: keep the 3D starfield projection.
+    delete screenPos[id];
+    if(focusHidden){
+      // Orbit camera: rotate the world (relative to the look-at point) by yaw then pitch, view from dist.
+      const px=p.x-orbit.cx, py=p.y-orbit.cy, pz=p.z-orbit.cz;
+      const cy=Math.cos(orbit.yaw), sy2=Math.sin(orbit.yaw);
+      let ax=px*cy - pz*sy2, az0=px*sy2 + pz*cy;
+      const cp=Math.cos(orbit.pitch), sp=Math.sin(orbit.pitch);
+      let ay=py*cp - az0*sp, az=py*sp + az0*cp;
+      az += orbit.dist; // move the whole cloud in front of the camera
+      if(az<40){ el.style.display="none"; proj[id]=null; return; }
+      const s=F/az;
+      const sx=CX+ax*s, sy=CY+ay*s;
+      // scale relative to a node sitting at the cloud centre, so near nodes grow and far ones shrink
+      const rel = orbit.dist/az;            // >1 in front of centre, <1 behind
+      const vs = Math.max(0.28, Math.min(1.7, rel*rel)); // squared = stronger near/far contrast
+      proj[id]={x:sx,y:sy,s:s,vs:vs};
+      floatDepth[id]=az; // for label culling
+      el.style.transform="translate("+sx+"px,"+sy+"px) translate(-50%,-50%) scale("+vs+")";
+      // fade and blur nodes toward the back of the cloud so depth reads clearly
+      el.style.opacity=Math.max(0.18, Math.min(1, rel*1.05));
+      const blur=Math.max(0, (1-rel)*4);   // behind-centre nodes blur out
+      el.style.filter = blur>0.05 ? "blur("+Math.min(3.5,blur).toFixed(2)+"px)" : "";
+      floatBlurred[id] = blur>0.4; // meaningfully blurred → don't show its label
+      el.style.zIndex=Math.round(4000-az);
+      return;
+    }
     const rx=p.x*ct - p.z*st, rz=p.x*st + p.z*ct;
     const dz=Math.max(140, rz-cam.z);
     const s=F/dz;
     let sx=CX+(rx-cam.x)*s, sy=CY+(p.y-cam.y)*s;
     const vs=Math.max(0.35, Math.min(1.2, s));
-    const isF=id===focusId, isN=!!neighbors[id];
-    // Keep neighbour cards fully within the visible viewport (their rendered edge, not just centre).
-    if(isN && !isF){
-      const nsz=nodeSize[id]||{w:120,h:64};
-      const hw=nsz.w/2*vs+4, hh=nsz.h/2*vs+4;
-      const L=CX-vw/2, R=CX+vw/2, T=CY-vh/2, B=CY+vh/2;
-      if(sx-hw<L) sx=L+hw; else if(sx+hw>R) sx=R-hw;
-      if(sy-hh<T) sy=T+hh; else if(sy+hh>B) sy=B-hh;
-    }
-    proj[id]={x:sx,y:sy,s:s,vs:isF?1:vs};
-    const op=isF?1 : isN?Math.max(0.8,Math.min(1,s)) : Math.max(0.15,Math.min(0.75,(s-0.35)*0.9));
-    el.style.transform="translate("+sx+"px,"+sy+"px) translate(-50%,-50%) scale("+(isF?1:vs)+")";
-    el.style.opacity=op;
-    if(isF||isN){ el.style.filter=""; }
-    else {
+    proj[id]={x:sx,y:sy,s:s,vs:vs};
+    el.style.transform="translate("+sx+"px,"+sy+"px) translate(-50%,-50%) scale("+vs+")";
+    if(focusHidden){
+      // floating overview: keep every node clearly visible and crisp (slight depth fade only)
+      el.style.opacity=Math.max(0.55, Math.min(1,(s-0.2)*1.1));
+      el.style.filter="";
+      el.style.zIndex=Math.round(400-dz*0.3);
+    } else {
+      const op=Math.max(0.15,Math.min(0.75,(s-0.35)*0.9));
+      el.style.opacity=op;
       const blur=Math.min(3.2, Math.max(0,(1.02-s)*3.4));
       el.style.filter="saturate(0.4) blur("+blur.toFixed(2)+"px)";
+      el.style.zIndex=Math.round(400-dz*0.3);
     }
-    el.style.zIndex=isF?600:isN?Math.max(650,Math.round(820-dz*0.4)):Math.round(400-dz*0.3);
   });
 
-  function projectApprox(nid){
-    const p=P3[nid];
-    const rx=p.x*ct-p.z*st, rz=p.x*st+p.z*ct;
-    const depth=Math.max(140, rz-cam.z);
-    const s=F/depth;
-    return {x:CX+(rx-cam.x)*s, y:CY+(p.y-cam.y)*s, s};
-  }
-  const collideIds=Object.keys(neighbors).filter(nid=>proj[nid] && nid!==focusId && nodeDrag!==nid && !pinnedOffset[nid]);
-
-  // Clear neighbors out from behind the focus card (it's large and sits on top, so overlap = unclickable)
-  const pf=proj[focusId];
-  if(pf){
-    const fsz=nodeSize[focusId]||{w:200,h:300};
-    for(let pass=0; pass<3; pass++){
-      collideIds.forEach(nid=>{
-        if(!P3[nid]) return;
-        const pn=projectApprox(nid);
-        const vsn=Math.max(0.35,Math.min(1.2,pn.s));
-        const nsz=nodeSize[nid]||{w:84,h:60};
-        const wn=nsz.w*vsn, hn=nsz.h*vsn;
-        const dx=pn.x-pf.x, dy=pn.y-pf.y;
-        const pad=16;
-        const overlapX=(fsz.w+wn)/2+pad-Math.abs(dx);
-        const overlapY=(fsz.h+hn)/2+pad-Math.abs(dy);
-        if(overlapX>0 && overlapY>0){
-          // push the neighbour out along whichever axis needs less movement (only the neighbour moves)
-          let mx=0, my=0;
-          if(overlapX<overlapY){ mx=(dx>=0?1:-1)*overlapX; }
-          else { my=(dy>=0?1:-1)*overlapY; }
-          const s=Math.max(0.3,pn.s);
-          const rx2=mx/s, ry2=my/s;
-          P3[nid].x += rx2*ct; P3[nid].z += -rx2*st; P3[nid].y += ry2;
-        }
-      });
+  // Floating mode: reveal the name label on the closest few nodes, any node prominent on screen,
+  // and (when you've flown in on a node) that node plus its directly-connected neighbours.
+  if(focusHidden){
+    const NEAR=5;
+    const sorted=Object.keys(floatDepth).sort((a,b)=>floatDepth[a]-floatDepth[b]);
+    const near=new Set(sorted.slice(0,NEAR));
+    let connected=null;
+    if(flyTarget && N[flyTarget]){
+      connected=new Set([flyTarget]);
+      E.forEach(e=>{ if(e.from===flyTarget) connected.add(e.to); else if(e.to===flyTarget) connected.add(e.from); });
     }
-  }
-
-  for(let pass=0; pass<3; pass++){
-    for(let i=0;i<collideIds.length;i++){
-      for(let j=i+1;j<collideIds.length;j++){
-        const a=collideIds[i], b=collideIds[j];
-        if(!P3[a]||!P3[b]) continue;
-        const pa=projectApprox(a), pb=projectApprox(b);
-        const vsa=Math.max(0.35,Math.min(1.2,pa.s)), vsb=Math.max(0.35,Math.min(1.2,pb.s));
-        const szA=nodeSize[a]||{w:84,h:60}, szB=nodeSize[b]||{w:84,h:60};
-        const wa=szA.w*vsa, ha=szA.h*vsa, wb=szB.w*vsb, hb=szB.h*vsb;
-        const dx=pb.x-pa.x, dy=pb.y-pa.y;
-        const pad=14;
-        const overlapX=(wa+wb)/2+pad-Math.abs(dx);
-        const overlapY=(ha+hb)/2+pad-Math.abs(dy);
-        if(overlapX>0 && overlapY>0){
-          const dirX=dx>=0?1:-1, dirY=dy>=0?1:-1;
-          let moveXA=0, moveYA=0, moveXB=0, moveYB=0;
-          if(overlapX<overlapY){ moveXA=-dirX*overlapX/2; moveXB=dirX*overlapX/2; }
-          else { moveYA=-dirY*overlapY/2; moveYB=dirY*overlapY/2; }
-          const sa=Math.max(0.3,pa.s), sb=Math.max(0.3,pb.s), factor=0.5;
-          const rxA=moveXA/sa*factor, ryA=moveYA/sa*factor;
-          const rxB=moveXB/sb*factor, ryB=moveYB/sb*factor;
-          P3[a].x += rxA*ct; P3[a].z += -rxA*st; P3[a].y += ryA;
-          P3[b].x += rxB*ct; P3[b].z += -rxB*st; P3[b].y += ryB;
-        }
-      }
-    }
+    ids.forEach(id=>{
+      const el=nodeEls[id]; if(!el) return;
+      const lab=el.querySelector(".floatlabel");
+      if(!lab) return;
+      const pj=proj[id];
+      const prominent = pj && pj.vs>1.05; // large on screen = in view / zoomed in on it
+      const show = (near.has(id) || prominent || (connected && connected.has(id))) && !floatBlurred[id];
+      lab.style.opacity = show ? "1" : "0";
+    });
   }
 
   E.forEach((e,i)=>{
     const a=proj[e.from], b=proj[e.to], l=edgeEls[i], h=hitEls[i];
     if(!l||!h) return;
+    if(e.temp){ l.setAttribute("stroke-opacity","0"); l.setAttribute("marker-end",""); h.setAttribute("stroke-width","0"); return; }
     if(!a||!b){ l.setAttribute("stroke-opacity","0"); l.setAttribute("marker-end",""); h.setAttribute("stroke-width","0"); return; }
     h.setAttribute("stroke-width","16");
     h.setAttribute("x1",a.x); h.setAttribute("y1",a.y);
@@ -1708,37 +2146,68 @@ function frame(){
     l.setAttribute("x1",x1); l.setAttribute("y1",y1);
     l.setAttribute("x2",x2); l.setAttribute("y2",y2);
     l.setAttribute("stroke-dasharray", t.dashed ? "5 4" : "");
-    l.setAttribute("marker-end", dir ? (hot ? "url(#arr-"+palName(hotColorId)+")" : "url(#arr-dim)") : "");
-    l.setAttribute("stroke", hot?colOf(hotColorId)[3]:"var(--line-strong)");
-    l.setAttribute("stroke-width", hot?1.8:0.8);
-    l.setAttribute("stroke-opacity", hot?0.9:Math.max(0.08,Math.min(0.3,(a.s+b.s)*0.14)));
+    if(focusHidden){
+      // floating overview: uniform faint connectors, no colour or arrowheads
+      l.setAttribute("marker-end","");
+      l.setAttribute("stroke","var(--line-strong)");
+      l.setAttribute("stroke-width",0.8);
+      l.setAttribute("stroke-opacity",Math.max(0.06,Math.min(0.22,(a.s+b.s)*0.12)));
+    } else {
+      l.setAttribute("marker-end", dir ? (hot ? "url(#arr-"+palName(hotColorId)+")" : "url(#arr-dim)") : "");
+      l.setAttribute("stroke", hot?colOf(hotColorId)[3]:"var(--line-strong)");
+      l.setAttribute("stroke-width", hot?1.8:0.8);
+      l.setAttribute("stroke-opacity", hot?0.9:Math.max(0.08,Math.min(0.3,(a.s+b.s)*0.14)));
+    }
   });
 
+  const fpc=proj[focusId];
+  const fcHalfW=(fw/2)+8, fcHalfH=(fh/2)+8;
   labels.forEach(lb=>{
     const e=lb.fe.e, a=proj[e.from], b=proj[e.to];
-    if(!a||!b){ lb.el.style.display="none"; return; }
+    if(focusHidden || !a||!b){ lb.el.style.display="none"; return; }
     lb.el.style.display="";
-    const ca = e.from<e.to ? a : b, cb = e.from<e.to ? b : a;
     let ox=0, oy=0;
     if(lb.off){
+      const ca = e.from<e.to ? a : b, cb = e.from<e.to ? b : a;
       const cdx=cb.x-ca.x, cdy=cb.y-ca.y, cl=Math.sqrt(cdx*cdx+cdy*cdy)||1;
       ox=-cdy/cl*lb.off*1.6; oy=cdx/cl*lb.off*1.6;
     }
     const fpt = e.from===focusId ? a : b, opt = e.from===focusId ? b : a;
-    const mx=fpt.x+(opt.x-fpt.x)*lb.frac+ox, my=fpt.y+(opt.y-fpt.y)*lb.frac+oy;
+    const dx=opt.x-fpt.x, dy=opt.y-fpt.y, len=Math.sqrt(dx*dx+dy*dy)||1;
+    const ux=dx/len, uy=dy/len;
+    // distance from focus centre to where the ray exits the focus-card box (so the label starts
+    // beyond the card, never on top of its text)
+    const exitT = Math.min(
+      Math.abs(ux)>1e-3 ? fcHalfW/Math.abs(ux) : Infinity,
+      Math.abs(uy)>1e-3 ? fcHalfH/Math.abs(uy) : Infinity
+    );
+    // place the label a bit beyond the card edge, but no further than just short of the neighbour
+    const labelDist = Math.min(exitT + 26, Math.max(exitT + 10, len - 24));
+    const mx=fpt.x+ux*labelDist+ox, my=fpt.y+uy*labelDist+oy;
     lb.el.style.transform="translate("+mx+"px,"+my+"px) translate(-50%,-50%)";
   });
-
-  requestAnimationFrame(frame);
 }
 
+let newArmed=false, newArmTimer=null;
+function resetNewBtn(){
+  newArmed=false;
+  if(newArmTimer){ clearTimeout(newArmTimer); newArmTimer=null; }
+  const b=document.getElementById("newgraph");
+  if(b){ b.textContent="New"; b.style.background=""; b.style.color=""; }
+}
 document.getElementById("newgraph").onclick=()=>{
-  if(!confirm("Start a new graph? The current one will be cleared \u2014 Export first if you want to keep it.")) return;
+  const b=document.getElementById("newgraph");
+  if(!newArmed){
+    // first tap: warn in-button (no native dialog — those can be blocked on mobile)
+    newArmed=true;
+    if(b){ b.textContent="Clear & start new?"; b.style.background="#e0341f"; b.style.color="#fff"; }
+    newArmTimer=setTimeout(resetNewBtn, 3500);
+    return;
+  }
+  resetNewBtn();
   graphStack=[];
   loadData({title:"Untitled graph", nodes:{n1:{name:"New node"}}, links:[]});
   renderGraphTrail();
-  openEditor("n1");
-  edName.select();
 };
 
 let restored=false;
@@ -1755,7 +2224,7 @@ if(window.visualViewport){
   let vvT=null;
   window.visualViewport.addEventListener("resize", ()=>{
     clearTimeout(vvT);
-    vvT=setTimeout(()=>{ if(focusId && P3[focusId]) snapNeighborsToRing(); }, 150);
+    vvT=setTimeout(()=>{ if(focusId && P3[focusId]) snapNeighborsToRing(true); }, 150);
   });
 }
 </script>
