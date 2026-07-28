@@ -114,7 +114,7 @@ input[type=range]{ touch-action:none; }
       <a id="webview-external" href="#" target="_blank" rel="noopener" style="font-size:12px; color:var(--t2); text-decoration:none; padding:3px 8px;">Open in new tab &#8599;</a>
       <button id="webview-close" type="button" style="font-size:14px; padding:3px 10px;">&times;</button>
     </div>
-    <iframe id="webview-frame" style="width:100%; height:calc(100% - 40px); border:0; background:var(--page);" referrerpolicy="no-referrer"></iframe>
+    <iframe id="webview-frame" style="width:100%; height:calc(100% - 40px); border:0; background:var(--page);" referrerpolicy="no-referrer" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>
   </div>
 </div>
 <svg id="connectline" style="display:none; position:fixed; inset:0; z-index:2150; pointer-events:none; width:100%; height:100%;"><line id="connectline-l" stroke="rgba(130,200,255,0.95)" stroke-width="2.5" stroke-dasharray="6 5"></line></svg>
@@ -231,6 +231,7 @@ input[type=range]{ touch-action:none; }
   <label class="field">Description<textarea id="ed-desc" rows="4" placeholder="Supports **bold**, *italic*, `code`, [links](url), and - bullet lines"></textarea></label>
   <label class="field">URL<input id="ed-url" placeholder="https://"></label>
   <label class="field">Link text<input id="ed-linktext" placeholder="Defaults to Wikipedia or Link"></label>
+  <label class="field">Video<input id="ed-video" placeholder="YouTube link (optional)"></label>
   <label class="field">Image<input id="ed-img" placeholder="Paste an image address"></label>
   <div style="display:flex; gap:6px; align-items:center; margin:-2px 0 8px; flex-wrap:wrap;">
     <button id="ed-upload" type="button" style="font-size:12px;">Upload image</button>
@@ -284,7 +285,7 @@ input[type=range]{ touch-action:none; }
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
-const BUILD_TAG="2026-08-03q \u2014 fix wrong-planet clicks in floating mode: planet name labels were capturing clicks even while invisible; made them non-interactive so only the planet is clickable";
+const BUILD_TAG="2026-08-03r \u2014 pause the render loop while the web view / lightbox overlay is open (resumes on close); add an optional per-node Video link that embeds YouTube in the in-page view";
 console.log("Relation explorer build:", BUILD_TAG);
 
 const PAL = {
@@ -476,9 +477,23 @@ lightbox.onclick=closeLightbox;
 const webview=document.getElementById("webview"), webviewFrame=document.getElementById("webview-frame");
 const webviewTitle=document.getElementById("webview-title"), webviewExternal=document.getElementById("webview-external");
 let webviewFallbackTimer=null;
-function openWebview(url){
+// Turn a YouTube link (watch, youtu.be, shorts, live, embed, or a bare 11-char id) into an embed URL.
+// Returns null if it doesn't look like YouTube.
+function ytEmbed(u){
+  if(!u) return null;
+  u=String(u).trim();
+  if(/^[\w-]{11}$/.test(u)) return "https://www.youtube.com/embed/"+u;
+  const m=u.match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/)|youtu\.be\/)([\w-]{11})/);
+  return m ? "https://www.youtube.com/embed/"+m[1] : null;
+}
+function openVideo(url){
+  const emb=ytEmbed(url);
+  if(emb) openWebview(emb+"?autoplay=1&rel=0", "Video");   // embeddable YouTube player
+  else openWebview(url, "Video");                          // fall back to opening the link itself
+}
+function openWebview(url, title){
   webviewFrame.src="about:blank";
-  webviewTitle.textContent=url;
+  webviewTitle.textContent=title||url;
   webviewExternal.href=url;
   webview.style.display="flex";
   const panel=document.getElementById("webview-panel");
@@ -511,6 +526,8 @@ document.addEventListener("click",ev=>{
   if(dn){ ev.preventDefault(); ev.stopPropagation(); if(dragDist<6) dismissNode(dn.dataset.id); return; }
   const wl=ev.target.closest(".weblink");
   if(wl){ ev.preventDefault(); if(dragDist<6) openWebview(wl.dataset.url); return; }
+  const vl=ev.target.closest(".vidlink");
+  if(vl){ ev.preventDefault(); if(dragDist<6) openVideo(vl.dataset.url); return; }
   const im=ev.target.closest(".portrait");
   if(im && dragDist<6) openLightbox(im);
   const eg=ev.target.closest(".entergraph");
@@ -1057,6 +1074,9 @@ function setFocus(id){
         const linktxt = nd.linkText || (/wikipedia/i.test(nd.url)?'Wikipedia':'Link');
         inner+='<a href="'+esc(nd.url)+'" class="weblink" data-url="'+esc(nd.url)+'" rel="noopener" style="display:inline-block;margin-top:9px;font-size:12px;color:'+c[3]+';cursor:pointer;">'+esc(linktxt)+' &#8599;</a>';
       }
+      if(nd.video){
+        inner+='<a class="vidlink" data-url="'+esc(nd.video)+'" style="display:inline-block;margin-top:9px;'+(nd.url?'margin-left:14px;':'')+'font-size:12px;color:'+c[3]+';cursor:pointer;">&#9654; Video</a>';
+      }
       if(nd.subgraph){
         const n2=Object.keys(nd.subgraph.nodes||{}).length;
         inner+='<div style="margin-top:9px;padding-top:9px;border-top:1px solid '+c[3]+'55;">'
@@ -1303,6 +1323,7 @@ setPanelCollapsed(true); // start minimised
 const edPanel=document.getElementById("editor");
 const edName=document.getElementById("ed-name"), edGroup=document.getElementById("ed-group"),
   edDesc=document.getElementById("ed-desc"), edUrl=document.getElementById("ed-url"), edLinkText=document.getElementById("ed-linktext"),
+  edVideo=document.getElementById("ed-video"),
   edImg=document.getElementById("ed-img"),
   edUpload=document.getElementById("ed-upload"), edImgFile=document.getElementById("ed-imgfile"),
   edImgStatus=document.getElementById("ed-imgstatus"), edImgRemove=document.getElementById("ed-imgremove"),
@@ -1458,6 +1479,7 @@ function openEditor(id){
   edDesc.value=nd.desc||"";
   edUrl.value=nd.url||"";
   edLinkText.value=nd.linkText||"";
+  edVideo.value=nd.video||"";
   syncStartStatus();
   syncImgStatus();
   syncGraphPanel();
@@ -1542,6 +1564,7 @@ edName.oninput=()=>{ if(!editingId)return; N[editingId].name=edName.value; setFo
 edDesc.oninput=()=>{ if(!editingId)return; if(edDesc.value) N[editingId].desc=edDesc.value; else delete N[editingId].desc; setFocus(focusId); scheduleSave(); };
 edUrl.oninput=()=>{ if(!editingId)return; if(edUrl.value) N[editingId].url=edUrl.value; else delete N[editingId].url; setFocus(focusId); scheduleSave(); };
 edLinkText.oninput=()=>{ if(!editingId)return; if(edLinkText.value) N[editingId].linkText=edLinkText.value; else delete N[editingId].linkText; setFocus(focusId); scheduleSave(); };
+edVideo.oninput=()=>{ if(!editingId)return; const v=edVideo.value.trim(); if(v) N[editingId].video=v; else delete N[editingId].video; setFocus(focusId); scheduleSave(); };
 edImg.oninput=()=>{ if(!editingId)return; if(edImg.value) N[editingId].img=edImg.value; else delete N[editingId].img; edImgStatus.style.display="none"; setFocus(focusId); scheduleSave(); };
 edGroup.onchange=()=>{
   if(!editingId)return;
@@ -2594,11 +2617,17 @@ document.getElementById("export").onclick=()=>{ if(DATA) doExport(currentRootDat
 document.getElementById("exportview").onclick=()=>{ if(DATA) doExport(DATA); };
 
 function frame(){
-  try{ frameBody(); }
-  catch(err){
-    if(!window.__frameErr){ window.__frameErr=1; alert("Frame error: "+err.message); console.error(err); }
+  // Skip rendering while a full-screen overlay (the in-page web view or the image lightbox) covers
+  // the universe — there's nothing visible to animate, so this saves the whole per-frame cost. The
+  // requestAnimationFrame loop stays alive, so it resumes automatically the moment the overlay closes.
+  const overlayOpen = webview.style.display==="flex" || lightbox.style.display==="flex";
+  if(!overlayOpen){
+    try{ frameBody(); }
+    catch(err){
+      if(!window.__frameErr){ window.__frameErr=1; alert("Frame error: "+err.message); console.error(err); }
+    }
+    if(pendingFocusEnter){ pendingFocusEnter=null; }
   }
-  if(pendingFocusEnter){ pendingFocusEnter=null; }
   requestAnimationFrame(frame);
 }
 let pendingFocusEnter=null;
@@ -2621,6 +2650,9 @@ function updatePlanetInfo(){
     if(nd.url){
       const linktxt = nd.linkText || (/wikipedia/i.test(nd.url)?'Wikipedia':'Link');
       html+='<a href="'+esc(nd.url)+'" class="weblink" data-url="'+esc(nd.url)+'" rel="noopener" style="display:inline-block;margin-top:8px;font-size:12px;color:'+c[3]+';cursor:pointer;">'+esc(linktxt)+' &#8599;</a>';
+    }
+    if(nd.video){
+      html+='<a class="vidlink" data-url="'+esc(nd.video)+'" style="display:inline-block;margin-top:8px;'+(nd.url?'margin-left:14px;':'')+'font-size:12px;color:'+c[3]+';cursor:pointer;">&#9654; Video</a>';
     }
     if(nd.subgraph){
       const n2=Object.keys(nd.subgraph.nodes||{}).length;
