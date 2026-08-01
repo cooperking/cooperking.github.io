@@ -262,7 +262,7 @@
    never touches the DOM, and all load/save goes through GraphSource. This is
    the structure the scale work (worker layout, Barnes-Hut, accounts) hangs off.
    ============================================================================= */
-const BUILD="v2-274";
+const BUILD="v2-276";
 document.getElementById("build").textContent=BUILD;
 
 /* ---- palette (name → [lightest, mid-dark, darkest, vivid]) ---- */
@@ -336,6 +336,7 @@ const Model=(()=>{
    ============================================================================= */
 const LS_KEY="relation-explorer-data";
 const LS_BYPASS=()=>{ try{ return sessionStorage.getItem("xanadu_bypassLS")==="1"; }catch(e){ return false; } };
+const IS_ADMIN=(()=>{ try{ return new URLSearchParams(location.search).has("admin"); }catch(e){ return false; } })();   // developer button only shows with ?admin in the URL
 const LocalStorageSource={
   load(){ if(LS_BYPASS()) return null; try{ const s=localStorage.getItem(LS_KEY); return s?JSON.parse(s):null; }catch(e){ return null; } },
   save(doc){ if(LS_BYPASS()) return; try{ localStorage.setItem(LS_KEY, JSON.stringify(doc)); }catch(e){} }
@@ -1647,7 +1648,7 @@ function exitFocus(keepCam){ { const cur = Focus.egoCenter>=0 ? Model.ids[Focus.
   floatControls(false); setHideUnconnected(false); hideRelInfo(); hidePlanetInfo();
   { const at=document.getElementById("addtempnode"); if(at) at.style.display="none"; }
   clearTemp();
-  { const tf=document.getElementById("togglefocus"); if(tf){ tf.style.display="flex"; tf.title="Back into the last star"; } const tc=document.getElementById("toggleconn"); if(tc){ tc.style.display="flex"; paintConnBtn(); } const bl=document.getElementById("bypassls"); if(bl){ bl.style.display="flex"; paintBypassBtn(); } }   // galaxy + connector + test-mode buttons stay available in the galaxy view (only hidden in card mode)
+  { const tf=document.getElementById("togglefocus"); if(tf){ tf.style.display="flex"; tf.title="Back into the last star"; } const tc=document.getElementById("toggleconn"); if(tc){ tc.style.display="flex"; paintConnBtn(); } const bl=document.getElementById("bypassls"); if(bl){ bl.style.display=IS_ADMIN?"flex":"none"; paintBypassBtn(); } }   // galaxy + connector + test-mode buttons stay available in the galaxy view (only hidden in card mode)
   document.getElementById("cards").innerHTML=""; if(!keepCam) flyOut(); else { view.flyTarget=-1; maxZoomDist=Math.max(R*3, universeFitDist()*1.15); } syncTopbar(); }
 
 // --- Floating ego view: fly in on a node, spike its neighbours out on a Fibonacci sphere, hide the
@@ -1736,7 +1737,7 @@ function showRelInfoEdge(a, b, px, py){
 { const psb=document.getElementById("promotesun"); if(psb) psb.onclick=()=>{ if(Focus.planetFocus>=0){ const id=Model.ids[Focus.planetFocus]; Focus.planetFocus=-1; hidePlanetInfo(); egoTo(id); } };   // promote the focused planet to its own sun
   const pi=document.getElementById("planetinfo");
   if(pi){
-    pi.addEventListener("click", e=>{ if(!e.target.closest) return; if(e.target.closest(".pf-dismiss")){ if(Focus.planetFocus>=0){ Focus.planetFocus=-1; hidePlanetInfo(); view.tdist=Focus.fitDist||view.dist; } } else if(e.target.closest(".pf-universe")){ const tf=document.getElementById("togglefocus"); if(tf) tf.click(); } else if(e.target.closest(".pf-promote")){ if(Focus.planetFocus>=0){ const id=Model.ids[Focus.planetFocus]; Focus.planetFocus=-1; hidePlanetInfo(); egoTo(id); } } });   // × on the relationship card → back to the central sun
+    pi.addEventListener("click", e=>{ if(!e.target.closest) return; if(e.target.closest(".pf-dismiss")){ if(Focus.planetFocus>=0){ Focus.planetFocus=-1; hidePlanetInfo(); view.tdist=Focus.fitDist||view.dist; } } else if(e.target.closest(".pf-promote")){ if(Focus.planetFocus>=0){ const id=Model.ids[Focus.planetFocus]; Focus.planetFocus=-1; hidePlanetInfo(); egoTo(id); } } });   // × on the relationship card → back to the central sun
     let lpT=null,lpX=0,lpY=0;   // press-and-hold anywhere on a card (node OR connection) → inline edit
     pi.addEventListener("pointerdown", e=>{ if(e.target.closest && e.target.closest("input,textarea,button,a,select")) return; lpX=e.clientX;lpY=e.clientY; lpT=setTimeout(()=>{lpT=null; enterCardEdit();},500); });
     pi.addEventListener("pointermove", e=>{ if(lpT&&Math.hypot(e.clientX-lpX,e.clientY-lpY)>10){clearTimeout(lpT);lpT=null;} });
@@ -1811,7 +1812,7 @@ function updatePlanetInfo(){
       const nd=Model.nodeById(pid), c=ramp(pid), det=linkDetails(sid,pid), sn=(Model.nodeById(sid)||{}).name||sid, lk=det&&det.link;
       box.style.background="linear-gradient(160deg, "+c[2]+"e6, rgba(8,10,20,0.92))"; box.style.border="1px solid "+c[3];
       box.style.boxShadow="0 0 22px "+c[3]+"44, 0 10px 34px rgba(0,0,0,0.55)";
-      let h='<div style="position:absolute;top:8px;right:8px;display:flex;gap:6px;"><button class="pf-dismiss" title="Back to the system" style="width:26px;height:26px;border-radius:50%;background:var(--card);border:1px solid var(--line-strong);color:var(--t2);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;font-size:14px;line-height:1;">⊖</button><button class="pf-universe" title="See the whole universe" style="width:26px;height:26px;border-radius:50%;background:var(--card);border:1px solid var(--line-strong);color:var(--t2);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;font-size:14px;line-height:1;">⊖</button></div>';
+      let h='<div style="position:absolute;top:8px;right:8px;"><button class="pf-dismiss" title="Return to the solar system" style="width:26px;height:26px;border-radius:50%;background:var(--card);border:1px solid var(--line-strong);color:var(--t2);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;font-size:14px;line-height:1;">⊖</button></div>';
       h+='<div style="font-size:16px;font-weight:600;color:#f4f5fa;padding-right:64px;">'+esc(nd.name||pid)+'</div>';
       if(det) h+='<div style="font-size:11px;color:'+c[3]+';margin:2px 0 7px;letter-spacing:0.03em;text-transform:uppercase;">'+esc(det.rel)+' \u00b7 '+esc(sn)+'</div>';
       if(lk&&lk.img) h+='<img src="'+esc(lk.img)+'" class="portrait" alt="" style="width:100%;max-height:130px;object-fit:cover;border-radius:6px;display:block;margin:2px 0 9px;box-shadow:0 0 12px '+c[3]+'55;cursor:zoom-in;">';
@@ -1977,7 +1978,7 @@ function floatControls(show){ const d=show?"flex":"none";
   const tf=document.getElementById("togglefocus"); if(tf) tf.style.display=d;                                                 // focus-only
   const hu=document.getElementById("hideunconnected"); if(hu) hu.style.display=d;                                             // focus-only
   const tc=document.getElementById("toggleconn"); if(tc){ tc.style.display=d; paintConnBtn(); }                               // connector on/off toggle
-  const bl=document.getElementById("bypassls"); if(bl){ bl.style.display=d; paintBypassBtn(); }                              // test-mode: bypass saved graph
+  const bl=document.getElementById("bypassls"); if(bl){ bl.style.display=IS_ADMIN?d:"none"; paintBypassBtn(); }                              // test-mode: bypass saved graph
   if(show) updateToggleBtn(); }
 // galaxy button: let go of the focused star and free-roam the whole galaxy (framed on its core)
 function updateToggleBtn(){ const b=document.getElementById("togglefocus"); if(!b) return;
