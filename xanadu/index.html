@@ -42,7 +42,8 @@
   #file{display:none;}
   #cards{position:fixed;inset:0;z-index:3;pointer-events:none;}
   @keyframes pfglow{0%,100%{box-shadow:0 0 9px rgba(255,199,122,0.42);}50%{box-shadow:0 0 20px rgba(255,199,122,0.78);}}
-  #planetinfo{left:50%;top:56px;transform:translateX(-50%);}
+  #planetinfo{left:50%;top:56px;transform:translateX(-50%);text-align:center;}
+  .pf-desc,.pf-details{text-align:justify;}
   #search{position:relative;margin:7px 0 3px;}
   #q{width:100%;box-sizing:border-box;padding:6px 9px;background:var(--page);border:1px solid var(--line-strong);border-radius:7px;color:var(--t1);font:inherit;font-size:13px;}
   #q::placeholder{color:var(--t3);}
@@ -218,12 +219,12 @@
 </div>
 <div id="spinctl" style="display:none; position:fixed; bottom:16px; left:16px; z-index:900; height:42px; padding:0 12px; border-radius:21px; background:var(--card); border:1px solid var(--line-strong); box-shadow:0 2px 10px rgba(0,0,0,0.4); align-items:center; gap:8px;">
   <span style="line-height:0; color:var(--t3);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><ellipse cx="12" cy="12" rx="10" ry="4.5" transform="rotate(-30 12 12)"/><circle cx="12" cy="12" r="2.4" fill="currentColor" stroke="none"/><path d="M18.5 6.8 L20.2 8.1 L18.6 9.6"/></svg></span>
-  <input id="spinspeed" type="range" min="0" max="100" value="52" title="Galaxy spin speed" style="width:96px;">
+  <input id="spinspeed" type="range" min="0" max="100" value="39" title="Galaxy spin speed" style="width:96px;">
 </div>
 <button id="toggleconn" type="button" title="Toggle connector lines" style="display:none; position:fixed; bottom:16px; left:172px; z-index:900; width:42px; height:42px; border-radius:21px; background:var(--card); border:1px solid var(--line-strong); box-shadow:0 2px 10px rgba(0,0,0,0.4); color:var(--t3); cursor:pointer; align-items:center; justify-content:center; padding:0;">
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="5.5" cy="6" r="2.3"/><circle cx="18.5" cy="18" r="2.3"/><line x1="7.3" y1="7.4" x2="16.7" y2="16.6"/></svg>
 </button>
-<button id="bypassls" type="button" title="Bypass saved graph (load default, don't save) — for testing" style="display:none; position:fixed; bottom:16px; left:272px; z-index:900; width:42px; height:42px; border-radius:21px; background:var(--card); border:1px solid var(--line-strong); box-shadow:0 2px 10px rgba(0,0,0,0.4); color:var(--t3); cursor:pointer; align-items:center; justify-content:center; padding:0;">
+<button id="bypassls" type="button" title="Clear all saved data and stay fresh (dev)" style="display:none; position:fixed; bottom:16px; left:272px; z-index:900; width:42px; height:42px; border-radius:21px; background:var(--card); border:1px solid var(--line-strong); box-shadow:0 2px 10px rgba(0,0,0,0.4); color:var(--t3); cursor:pointer; align-items:center; justify-content:center; padding:0;">
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><ellipse cx="12" cy="5.6" rx="6.5" ry="2.4"/><path d="M5.5 5.6v12.8c0 1.3 2.9 2.4 6.5 2.4s6.5-1.1 6.5-2.4V5.6"/><line x1="4.5" y1="20" x2="19.5" y2="4" stroke-width="2.1"/></svg>
 </button>
 <div id="spinpad" style="display:none; position:fixed; bottom:16px; right:16px; z-index:900; width:74px; height:74px; border-radius:50%; background:radial-gradient(circle at 38% 34%, rgba(255,255,255,0.06), rgba(20,22,34,0.85)); border:1px solid var(--line-strong); box-shadow:0 2px 12px rgba(0,0,0,0.45); touch-action:none; cursor:grab;">
@@ -262,7 +263,7 @@
    never touches the DOM, and all load/save goes through GraphSource. This is
    the structure the scale work (worker layout, Barnes-Hut, accounts) hangs off.
    ============================================================================= */
-const BUILD="v2-289";
+const BUILD="v2-309";
 document.getElementById("build").textContent=BUILD;
 
 /* ---- palette (name → [lightest, mid-dark, darkest, vivid]) ---- */
@@ -335,7 +336,7 @@ const Model=(()=>{
    exist now; a RemoteSource (accounts) slots in behind the same shape later.
    ============================================================================= */
 const LS_KEY="relation-explorer-data";
-const LS_BYPASS=()=>{ try{ return sessionStorage.getItem("xanadu_bypassLS")==="1"; }catch(e){ return false; } };
+const LS_BYPASS=()=>{ try{ return localStorage.getItem("xanadu_devfresh")==="1"; }catch(e){ return false; } };   // persistent dev-fresh mode: no load, no save
 const IS_ADMIN=(()=>{ try{ return new URLSearchParams(location.search).has("admin"); }catch(e){ return false; } })();   // developer button only shows with ?admin in the URL
 const LocalStorageSource={
   load(){ if(LS_BYPASS()) return null; try{ const s=localStorage.getItem(LS_KEY); return s?JSON.parse(s):null; }catch(e){ return null; } },
@@ -1094,9 +1095,11 @@ const Renderer=(()=>{
               tc.textAlign="center"; tc.textBaseline="middle"; tc.font="600 "+cfs+"px -apple-system,Segoe UI,Roboto,sans-serif"; tc.fillStyle="rgba(240,243,250,0.99)"; tc.fillText(cnm, w/2, h/2); });
             const chw=cref.w*0.5, chh=cref.h*0.5, ccd=Math.max(0,Math.min(0.999,(proj.az[ec]-dist+span)/(2*span)));
             items.push({id:ec, tex:cref.tex, cx:proj.x[ec]*DPR, cy:(proj.y[ec]+proj.r[ec])*DPR + chh + 6*DPR, hw:chw, hh:chh, a:cFade*sysFade, d:ccd});   // fades on zoom-in (card) AND zoom-out (galaxy); sits directly under the sun
+            glLabelHits.push({id:ec, x:proj.x[ec]-chw/DPR, y:(proj.y[ec]+proj.r[ec])+6, w:2*chw/DPR, h:2*chh/DPR});   // so hover doesn't add a duplicate label for the sun
           }
         }
         PlanetGL.drawLabels(items, Math.round(W*DPR), Math.round(H*DPR));
+        if(view.hover>=0 && glLabelHits.some(L=>L.id===view.hover)){ const _le=document.getElementById("label"); if(_le) _le.style.opacity="0"; }   // this node's label is already drawn — kill any hover label for it (authoritative, no frame lag)
       }
       ctx.save(); ctx.setTransform(1,0,0,1,0,0); ctx.drawImage(PlanetGL.canvas(),0,0); ctx.restore();
     } else {
@@ -1144,53 +1147,7 @@ const Renderer=(()=>{
       const ids=Model.ids; ctx.textAlign="center"; ctx.shadowColor="rgba(0,0,0,0.9)"; ctx.shadowBlur=4;
       const labeled=new Set();
       const sysA = (Focus.mode==="ego" && Focus.egoCenter>=0 && proj.front[Focus.egoCenter]) ? Math.max(0,Math.min(1,(cl-0.05)/0.13)) : 0;   // cross-fade system↔galaxy labels through the transition — no hard one-frame swap
-      if(sysA>0.01){
-        // each neighbour: its relationship (small, in its colour) above its name — the old signpost label
-        const ecI=Focus.egoCenter, ecx=proj.x[ecI], ecy=proj.y[ecI];
-        // central label (fades out as the info card takes over)
-        const _cardFF=Focus.fitDist||1;
-        if(!(glLabels && PlanetGL.available()) && proj.front[ecI] && dist >= _cardFF*0.72){ const cnd=Model.nodeById(ids[ecI]), cnm=(cnd&&cnd.name)||ids[ecI];   // 2D fallback only; the WebGL path draws the central label itself
-          const _ff=_cardFF, labelFade=Math.max(0,Math.min(1,(dist - _ff*0.72)/(_ff*0.1)));
-          ctx.font="600 18px -apple-system,Segoe UI,Roboto,sans-serif"; ctx.fillStyle="rgba(240,243,250,0.99)"; ctx.globalAlpha=sysA*labelFade;
-          ctx.fillText(cnm, proj.x[ecI], proj.y[ecI]+proj.r[ecI]+20); labeled.add(ecI); }
-        if(!(glLabels && PlanetGL.available()) && view.showConnectors!==false){   // 2D signpost labels only when the WebGL label path is not active
-          const lbls=[];                                             // gather neighbour labels, then resolve overlaps by depth
-          for(let i=0;i<n;i++){ if(i===ecI || !Focus.egoDir[i] || !proj.front[i]) continue;
-            const onS=proj.vis[i];
-            let px=proj.x[i], py=proj.y[i];
-            if(!onS){ const dx=px-ecx, dy=py-ecy, m=50; let t=1;   // off-screen: clamp along the connector to the screen edge
-              if(dx>0.001) t=Math.min(t,(W-m-ecx)/dx); else if(dx<-0.001) t=Math.min(t,(m-ecx)/dx);
-              if(dy>0.001) t=Math.min(t,(H-m-ecy)/dy); else if(dy<-0.001) t=Math.min(t,(m-ecy)/dy);
-              t=Math.max(0.05,Math.min(1,t)); px=ecx+dx*t; py=ecy+dy*t; }
-            const fs=Math.max(0.72,Math.min(1.45, proj.az[ecI]/proj.az[i]));   // perspective scale
-            const nd=Model.nodeById(ids[i]), nm=(nd&&nd.name)||ids[i];
-            lbls.push({i, px, fs, nm, rel:Focus.egoRel[i], onS, by:py-(onS?proj.r[i]:0)-6, az:proj.az[i]});
-          }
-          lbls.sort((a,b)=> (a.onS?0:1)-(b.onS?0:1) || a.az-b.az);   // on-screen NEAREST first (wins the space); off-screen edge labels last
-          const boxes=[];
-          for(let q=0;q<lbls.length;q++){ const L=lbls[q], fh=11*L.fs, relH=L.rel?9*L.fs:0;
-            ctx.font="600 "+fh.toFixed(1)+"px -apple-system,Segoe UI,Roboto,sans-serif";
-            const w=ctx.measureText(L.nm).width, top=L.by-(L.rel?(11*L.fs+relH):fh)-2, bx=L.px-w/2-5, bw=w+10, bh=(L.by-top)+4;
-            if(L.onS){                                                // on-screen labels must never overlap each other (off-screen edge labels excluded)
-              let clash=false; for(let z=0;z<boxes.length;z++){ const B=boxes[z]; if(bx<B.x+B.w && bx+bw>B.x && top<B.y+B.h && top+bh>B.y){ clash=true; break; } }
-              if(clash) continue; boxes.push({x:bx,y:top,w:bw,h:bh});
-            }
-            ctx.save();                                               // TRUE pixel-level 3D occlusion: clip out the disc of every NEARER body, so the label is masked behind it (sun/planet shows through) instead of vanishing wholesale
-            let clipped=false;
-            for(let m=0;m<cnt;m++){ const j=ord[m]; if(!proj.vis[j] || proj.az[j] >= L.az-2) continue;
-              const jx=proj.x[j], jy=proj.y[j], jr=proj.r[j];
-              const nx=Math.max(bx,Math.min(jx,bx+bw)), ny=Math.max(top,Math.min(jy,top+bh));
-              if((jx-nx)*(jx-nx)+(jy-ny)*(jy-ny) < jr*jr){ if(!clipped){ ctx.beginPath(); ctx.rect(0,0,W,H); clipped=true; } ctx.moveTo(jx+jr,jy); ctx.arc(jx,jy,jr,0,6.2832); } }
-            if(clipped) ctx.clip("evenodd");
-            ctx.shadowBlur=0; ctx.fillStyle="rgba(8,10,18,0.6)"; ctx.beginPath(); if(ctx.roundRect) ctx.roundRect(bx,top,bw,bh,4); else ctx.rect(bx,top,bw,bh); ctx.globalAlpha=sysA*0.85; ctx.fill();   // readable background
-            if(L.rel){ ctx.font="400 "+(9*L.fs).toFixed(1)+"px -apple-system,Segoe UI,Roboto,sans-serif"; ctx.fillStyle=ramp(ids[L.i])[3]; ctx.globalAlpha=sysA; ctx.fillText(L.rel.toLowerCase(), L.px, L.by-11*L.fs); }
-            ctx.font="600 "+fh.toFixed(1)+"px -apple-system,Segoe UI,Roboto,sans-serif"; ctx.fillStyle="rgba(238,241,249,0.98)"; ctx.globalAlpha=sysA; ctx.fillText(L.nm, L.px, L.by); labeled.add(L.i);
-            ctx.restore();
-          }
-          ctx.shadowBlur=4;
-        }
-        ctx.globalAlpha=1;
-      }
+      
       if(sysA<0.99 && SolarSys.isSun.length===n){
         const cand=[];                                          // on-screen suns, biggest (most-connected) first
         for(let k=0;k<cnt;k++){ const i=ord[k]; if(SolarSys.isSun[i] && proj.r[i]>=1.0) cand.push(i); }   // any visible sun; distance (below) decides, not screen size
@@ -1206,7 +1163,7 @@ const Renderer=(()=>{
         }
         ctx.globalAlpha=1;
       }
-      if(view.hover>=0 && proj.vis[view.hover] && !labeled.has(view.hover)){   // the hovered node, only if not already named
+      if(view.hover>=0 && proj.vis[view.hover] && !labeled.has(view.hover) && !glLabelHits.some(L=>L.id===view.hover)){   // the hovered node, only if not already named (2D OR WebGL billboard)
         const i=view.hover, nd=Model.nodeById(ids[i]);
         ctx.fillStyle="rgba(230,234,244,0.97)"; ctx.font="600 12px -apple-system,Segoe UI,Roboto,sans-serif";
         ctx.fillText(nd&&nd.name||ids[i], proj.x[i], proj.y[i]-proj.r[i]-6);
@@ -1233,12 +1190,12 @@ const Renderer=(()=>{
   // ego view: find the spiked-neighbour whose highlighted connector line the point is nearest (within ~12px)
   function pickConnector(mx,my){
     if(Focus.mode!=="ego" || Focus.egoCenter<0 || !proj.vis[Focus.egoCenter]) return -1;
-    const cx=proj.x[Focus.egoCenter], cy=proj.y[Focus.egoCenter]; let best=-1, bestD=12, n=Model.count();
+    const cx=proj.x[Focus.egoCenter], cy=proj.y[Focus.egoCenter]; let best=-1, bestD=(IS_TOUCH?26:24), n=Model.count();
     for(let i=0;i<n;i++){ if(!Focus.egoDir[i] || !proj.vis[i]) continue;
       const d=segDist(mx,my, cx,cy, proj.x[i],proj.y[i]); if(d<bestD){ bestD=d; best=i; } }
     return best; }
 
-  function pickAnyConnector(mx,my){ const E=Model.edges(); let best=null, bestD=14;   // nearest connector line to the tap, any edge (not just the focused system's)
+  function pickAnyConnector(mx,my){ const E=Model.edges(); let best=null, bestD=(IS_TOUCH?26:24);   // nearest connector line to the tap, any edge (not just the focused system's)
     for(let k=0;k<E.length;k+=2){ const a=E[k],b=E[k+1]; if(!proj.front[a]||!proj.front[b]) continue;
       const d=segDist(mx,my, proj.x[a],proj.y[a], proj.x[b],proj.y[b]); if(d<bestD){ bestD=d; best={a,b}; } }
     if(best){ const da=(mx-proj.x[best.a])**2+(my-proj.y[best.a])**2, db=(mx-proj.x[best.b])**2+(my-proj.y[best.b])**2; if(db<da){ const t=best.a; best.a=best.b; best.b=t; } }   // a = endpoint nearer the tap
@@ -1256,7 +1213,7 @@ function segDist(px,py, ax,ay, bx,by){ const dx=bx-ax, dy=by-ay, l2=dx*dx+dy*dy;
    VIEW / CAMERA state + INTERACTION. Input produces small changes to view;
    the render loop reads view. (Intents/undo/collab layer on top of this later.)
    ============================================================================= */
-const view={yaw:0, pitch:0.95, dist:R*3.4, tdist:R*3.4, cx:0,cy:0,cz:0, tcx:0,tcy:0,tcz:0, flyTarget:-1, spin:0.0016, hover:-1, galAngle:0};
+const view={yaw:0, pitch:0.95, dist:R*3.4, tdist:R*3.4, cx:0,cy:0,cz:0, tcx:0,tcy:0,tcz:0, flyTarget:-1, spin:0.00091, hover:-1, galAngle:0};
 const IS_TOUCH = ("ontouchstart" in window) || navigator.maxTouchPoints>0;
 let hideUnconnected=false, padVX=0, padVY=0, spinAccum=0, maxZoomDist=R*12;
 let planetT=0, planetSpeed=1, lastLoopT=0;
@@ -1271,26 +1228,22 @@ cv.addEventListener("pointermove",e=>{
   if(dragging && !pinching && touchCount<2){ const dx=e.clientX-lx, dy=e.clientY-ly; moved+=Math.abs(dx)+Math.abs(dy); view.yaw+=dx*0.006; view.pitch+=dy*0.006; lx=e.clientX; ly=e.clientY; if(moved>6) view.userMoved=true; }
   if(dragging || touchCount>0){ view.hover=-1; labelEl.style.opacity="0"; return; }   // orbiting the camera (or any touch) → no hover label; it was flashing on/off as you dragged over nodes
   view.hover=Renderer.pick(e.clientX,e.clientY);
-  const ids=Model.ids;
-  if(view.hover>=0){ const nd=Model.nodeById(ids[view.hover]);
-    labelEl.textContent=(nd&&nd.name)||ids[view.hover];
-    labelEl.style.left=e.clientX+"px"; labelEl.style.top=e.clientY+"px"; labelEl.style.opacity="1"; }
-  else labelEl.style.opacity="0";
+  labelEl.style.opacity="0";   // naming is handled by the on-canvas hover label (drawn at the node, with occlusion) — avoids a duplicate cursor-following label
 });
 // tap (no drag): a planet → fly the camera in and centre it; empty space → fly back out
 cv.addEventListener("pointerup",e=>{ if(moved>=6||pinching||cardEditing) return;
   const i=Renderer.pick(e.clientX,e.clientY);
   if(Focus.mode==="ego"){
-    if(i>=0){ hideRelInfo(); if(i===Focus.egoCenter){ Focus.planetFocus=-1; view.tdist=(Focus.fitDist||view.dist)*0.5; } else if(i===Focus.planetFocus){ Focus.planetFocus=-1; hidePlanetInfo(); view.tdist=Focus.fitDist||view.dist; } else focusPlanet(i); }   // sun → card view; planet → focus ON it (relationship card appears), no promotion
+    if(i>=0){ hideRelInfo(); if(i===Focus.egoCenter){ Focus.planetFocus=-1; view.tdist=(Focus.fitDist||view.dist)*0.5; } else if(i===Focus.planetFocus){ Focus.planetFocus=-1; hidePlanetInfo(); view.tdist=Focus.fitDist||view.dist; } else goToNode(i); }   // sun → card view; planet → focus ON it (relationship card appears), no promotion
     else { let li=-1; for(let k=0;k<glLabelHits.length;k++){ const L=glLabelHits[k]; if(e.clientX>=L.x && e.clientX<=L.x+L.w && e.clientY>=L.y && e.clientY<=L.y+L.h){ li=L.id; break; } }   // tap a label → focus that planet
-      if(li>=0){ hideRelInfo(); focusPlanet(li); return; }
+      if(li>=0){ hideRelInfo(); if(li===Focus.egoCenter){ Focus.planetFocus=-1; view.tdist=(Focus.fitDist||view.dist)*0.5; } else { goToNode(li); } return; }
       const ci=Renderer.pickConnector(e.clientX,e.clientY);   // only the visible sun→planet connectors are pickable; hidden out-of-system lines are not
       if(ci>=0){ const cc=Focus.egoCenter; view.glowEdge={a:cc,b:ci,t0:performance.now()}; showRelInfoEdge(cc,ci,e.clientX,e.clientY); }
       else if(Focus.planetFocus>=0){ Focus.planetFocus=-1; hidePlanetInfo(); view.tdist=Focus.fitDist||view.dist; }   // tap empty while focused on a planet → back to the central sun
       else hideRelInfo(); }
     return;
   }
-  if(i>=0){ if(Focus.mode==="focus") enterFocus(Model.ids[i]); else { hideRelInfo(); egoTo(Model.ids[i]); } }   // galaxy/universe: tap a star → fly into its floating system (promote), not the card
+  if(i>=0){ if(Focus.mode==="focus") enterFocus(Model.ids[i]); else goToNode(i); }   // galaxy/universe: sun → fly into it; planet → its sun's system, focused on the planet
   else if(Focus.mode==="focus") exitFocus();
   else { const ce=Renderer.pickAnyConnector(e.clientX,e.clientY);   // galaxy: tap a connector → glow + relationship label
     if(ce){ view.glowEdge={a:ce.a,b:ce.b,t0:performance.now()}; showRelInfoEdge(ce.a,ce.b,e.clientX,e.clientY); } else hideRelInfo(); }
@@ -1520,12 +1473,12 @@ function makeCard(id, isFocus, rel, showAvatar){
     const vpW=innerWidth, vpH=innerHeight;
     const fcW=Math.round(Math.max(180, Math.min(230, vpW*0.6)));   // fixed width (60% of screen, clamped) — matches prototype
     const fcMaxH=Math.round(vpH*0.46);                              // cap height so neighbours still orbit above/below
-    h='<div style="position:relative; background:linear-gradient(160deg,'+c[2]+'e6, rgba(8,10,20,0.92)); border:1px solid '+c[3]+'; border-radius:6px; padding:14px 18px; width:'+fcW+'px; max-height:'+fcMaxH+'px; overflow:auto; box-shadow:0 0 22px '+c[3]+'44, 0 10px 34px rgba(0,0,0,0.55); backdrop-filter:blur(3px);">'
+    h='<div style="position:relative; background:linear-gradient(160deg,'+c[2]+'e6, rgba(8,10,20,0.92)); border:1px solid '+c[3]+'; border-radius:6px; padding:14px 18px; text-align:center; width:'+fcW+'px; max-height:'+fcMaxH+'px; overflow:auto; box-shadow:0 0 22px '+c[3]+'44, 0 10px 34px rgba(0,0,0,0.55); backdrop-filter:blur(3px);">'
       +'<span class="hidefocus" title="Return to the universe" style="position:absolute; top:8px; right:9px; width:24px; height:24px; border-radius:50%; background:'+c[3]+'; color:#fff; font-size:16px; line-height:24px; text-align:center; cursor:pointer; box-shadow:0 0 8px '+c[3]+'88;">\u2296</span>'
       +orb
       +'<div style="font-size:17px;font-weight:600;color:#f4f5fa;text-align:center;text-shadow:0 1px 3px rgba(0,0,0,0.5);">'+(nd&&nd.subgraph?'<span style="opacity:0.7;">\u25c8</span> ':'')+nm+'</div>'
       +(g&&g.label?'<div style="font-size:11px;color:'+c[3]+';margin:2px 0 7px;text-align:center;letter-spacing:0.03em;text-transform:uppercase;opacity:0.9;">'+esc(g.label)+'</div>':'')
-      +(nd&&nd.desc?'<div style="font-size:12.5px;color:#c9cdda;line-height:1.5;">'+md(nd.desc)+'</div>':'')
+      +(nd&&nd.desc?'<div class="pf-desc" style="font-size:12.5px;color:#c9cdda;line-height:1.5;">'+md(nd.desc)+'</div>':'')
       +(nd&&nd.url?'<a href="'+esc(nd.url)+'" class="weblink" data-url="'+esc(nd.url)+'" rel="noopener" style="display:inline-block;margin-top:9px;font-size:12px;color:'+c[3]+';cursor:pointer;">'+esc(nd.linkText||(/wikipedia/i.test(nd.url)?'Wikipedia':'Link'))+' &#8599;</a>':'')
       +(nd&&nd.video?'<a class="vidlink" data-url="'+esc(nd.video)+'" style="display:inline-block;margin-top:9px;'+(nd.url?'margin-left:14px;':'')+'font-size:12px;color:'+c[3]+';cursor:pointer;">&#9654; Video</a>':'')
       +(nd&&nd.subgraph?'<div class="entergraph" style="margin-top:9px;font-size:12px;color:'+c[3]+';cursor:pointer;">\u25c8 Enter graph ('+Object.keys(nd.subgraph.nodes||{}).length+' nodes) \u2192</div>':'')
@@ -1578,27 +1531,36 @@ function buildFocusCards(){
   // --- pass 2: measure everything together (one reflow) ---
   const fw=fc.offsetWidth, fh=fc.offsetHeight;
   const sz=cards.map(c=>({w:c.offsetWidth, h:c.offsetHeight}));
-  // --- pass 3: place each neighbour by the prototype's geometry (never covers the central card) ---
-  const layout={ fx:CX, fy:CY, fw, fh, nbrs:[] };
   const Lb=0, Rb=W, Tb=topInset, Bb=H-botInset, targets=[];
+  const _avgW=sz.length?sz.reduce((a,c)=>a+c.w,0)/sz.length:150, _avgH=sz.length?sz.reduce((a,c)=>a+c.h,0)/sz.length:60;
+  const _approxP=2*((Rb-Lb-_avgW)+(Bb-Tb-_avgH));   // fill factor from an approximate inset perimeter
+  let baseScale=Math.max(0.6, Math.min(1.6, (_approxP/Math.max(1,N)*0.8)/Math.max(90,_avgW)));
+  baseScale=Math.min(baseScale, 1.0);   // never scale a neighbour bigger than the central card, which renders at scale 1
+  baseScale=Math.max(0.55, baseScale);
+  const _hw=_avgW/2*baseScale+8, _hh=_avgH/2*baseScale+8;   // inset the perimeter by the scaled card half-size, so cards fit WITHOUT clamping (which was pulling corner cards together)
+  const _pL=Lb+_hw, _pR=Rb-_hw, _pT=Tb+_hh, _pB=Bb-_hh, _rw=Math.max(1,_pR-_pL), _rh=Math.max(1,_pB-_pT);
+  const _r=Math.max(30, Math.min(_rw,_rh)*0.28), _sTop=Math.max(1,_rw-2*_r), _sRight=Math.max(1,_rh-2*_r), _sArc=Math.PI*_r/2, _perimR=2*(_sTop+_sRight)+4*_sArc;   // ROUNDED-rectangle path (corners are arcs)
+  function _rr(s){ s=((s%_perimR)+_perimR)%_perimR;
+    if(s<_sTop) return [_pL+_r+s, _pT]; s-=_sTop;
+    if(s<_sArc){ const a=-Math.PI/2+s/_r; return [_pR-_r+_r*Math.cos(a), _pT+_r+_r*Math.sin(a)]; } s-=_sArc;
+    if(s<_sRight) return [_pR, _pT+_r+s]; s-=_sRight;
+    if(s<_sArc){ const a=s/_r; return [_pR-_r+_r*Math.cos(a), _pB-_r+_r*Math.sin(a)]; } s-=_sArc;
+    if(s<_sTop) return [_pR-_r-s, _pB]; s-=_sTop;
+    if(s<_sArc){ const a=Math.PI/2+s/_r; return [_pL+_r+_r*Math.cos(a), _pB-_r+_r*Math.sin(a)]; } s-=_sArc;
+    if(s<_sRight) return [_pL, _pB-_r-s]; s-=_sRight;
+    const a=Math.PI+s/_r; return [_pL+_r+_r*Math.cos(a), _pT+_r+_r*Math.sin(a)]; }
+  const layout={ fx:CX, fy:CY, fw, fh, nbrs:[] };
   fc.style.opacity="0";
   for(let k=0;k<N;k++){
-    const ang=-Math.PI/2 + 2*Math.PI*k/N, dx=Math.cos(ang), dy=Math.sin(ang), axr=Math.abs(dx), ayr=Math.abs(dy);
-    const nw=sz[k].w, nh=sz[k].h; let nvs=crowd;
-    // beside a wide central card: shrink to fit the gap between the card edge and the screen edge
-    if(axr>ayr && nw>1){ const gapHalf=(W/2 - fw/2 - 10)/2, maxNvs=(gapHalf-6)/(nw/2); if(maxNvs<nvs) nvs=Math.max(0.42, maxNvs); }
-    const hw=nw/2*nvs+6, hh=nh/2*nvs+6;
-    const availX=Math.max(20, W/2-hw), availUp=Math.max(20, H/2-hh-topInset), availDn=Math.max(20, H/2-hh-botInset);
-    const tX=axr>1e-4?availX/axr:Infinity, tY=ayr>1e-4?(dy<0?availUp:availDn)/ayr:Infinity;
-    let t=Math.min(tX,tY), tx=CX+dx*t, ty=CY+dy*t;
-    const cardHalfW=fw/2+hw+8, cardHalfH=fh/2+hh+8;
-    if(Math.abs(tx-CX)<cardHalfW && Math.abs(ty-CY)<cardHalfH){
-      const ts=Math.min(cardHalfW/Math.max(1e-4,axr), cardHalfH/Math.max(1e-4,ayr)); tx=CX+dx*ts; ty=CY+dy*ts;
-    }
-    if(tx-hw<Lb) tx=Lb+hw; else if(tx+hw>Rb) tx=Rb-hw;
-    if(ty-hh<Tb) ty=Tb+hh; else if(ty+hh>Bb) ty=Bb-hh;
-    if(Math.abs(tx-CX)<cardHalfW && Math.abs(ty-CY)<cardHalfH){
-      const dir=dy<=0?-1:1; ty=Math.max(Tb+hh, Math.min(Bb-hh, CY+dir*cardHalfH));
+    // even arc-length around the rounded, inset perimeter — cards already fit, so corners stay evenly spread
+    let _p=_rr(_sTop/2 + (k/N)*_perimR), tx=_p[0], ty=_p[1];
+    const nw=sz[k].w, nh=sz[k].h, nvs=baseScale, hw=nw/2*nvs+6, hh=nh/2*nvs+6;
+    tx=Math.max(Lb+hw, Math.min(Rb-hw, tx)); ty=Math.max(Tb+hh, Math.min(Bb-hh, ty));
+    const cardHalfW=fw/2+hw+8, cardHalfH=fh/2+hh+8, ddx=tx-CX, ddy=ty-CY;
+    if(Math.abs(ddx)<cardHalfW && Math.abs(ddy)<cardHalfH){   // don't cover the central card — push outward, then re-clamp
+      const axr=Math.abs(ddx)||1e-4, ayr=Math.abs(ddy)||1e-4, ts=Math.min(cardHalfW/axr, cardHalfH/ayr);
+      tx=CX+ddx*ts; ty=CY+ddy*ts; tx=Math.max(Lb+hw, Math.min(Rb-hw, tx)); ty=Math.max(Tb+hh, Math.min(Bb-hh, ty));
+      if(Math.abs(tx-CX)<cardHalfW && Math.abs(ty-CY)<cardHalfH){ const dir=ddy<=0?-1:1; ty=Math.max(Tb+hh, Math.min(Bb-hh, CY+dir*cardHalfH)); }
     }
     const card=cards[k], nid=nbrs[k].id;
     if(Focus.pinned[nid]){ tx=Focus.pinned[nid].x; ty=Focus.pinned[nid].y; }  // hold a dragged-to spot
@@ -1609,9 +1571,22 @@ function buildFocusCards(){
     card.addEventListener("dblclick", (ev)=>{ ev.stopPropagation(); if(!tempNewNodes[nid]) enterCardEdit({kind:"node", id:nid}); });
     attachLongPress(card, ()=>{ if(!tempNewNodes[nid]) enterCardEdit({kind:"node", id:nid}); });
     attachCardDrag(card, nid, layout.nbrs.length);
-    targets.push({card, tx, ty});
+    targets.push({card, tx, ty, hw, hh});
     layout.nbrs.push({ id:nid, x:tx, y:ty, w:nw*nvs, h:nh*nvs, dir:nbrs[k].dir, dashed:nbrs[k].dashed });
   }
+  // separate any cards that still overlap (corners especially): a few relaxation passes, then re-clamp + keep clear of the central card
+  for(let it=0; it<16; it++){ let any=false;
+    for(let a=0;a<targets.length;a++){ const A=targets[a];
+      for(let b2=a+1;b2<targets.length;b2++){ const B=targets[b2];
+        const dx=B.tx-A.tx, dy=B.ty-A.ty, ox=(A.hw+B.hw+4)-Math.abs(dx), oy=(A.hh+B.hh+4)-Math.abs(dy);
+        if(ox>0 && oy>0){ if(ox<oy){ const p=ox/2*(dx<0?-1:1)||ox/2; A.tx-=p; B.tx+=p; } else { const p=oy/2*(dy<0?-1:1)||oy/2; A.ty-=p; B.ty+=p; } any=true; }
+      } }
+    if(!any) break;
+  }
+  targets.forEach(t=>{ t.tx=Math.max(Lb+t.hw, Math.min(Rb-t.hw, t.tx)); t.ty=Math.max(Tb+t.hh, Math.min(Bb-t.hh, t.ty));
+    const chw=fw/2+t.hw+8, chh=fh/2+t.hh+8, ddx=t.tx-CX, ddy=t.ty-CY;
+    if(Math.abs(ddx)<chw && Math.abs(ddy)<chh){ const ts=Math.min(chw/(Math.abs(ddx)||1e-4), chh/(Math.abs(ddy)||1e-4)); t.tx=CX+ddx*ts; t.ty=CY+ddy*ts; t.tx=Math.max(Lb+t.hw, Math.min(Rb-t.hw, t.tx)); t.ty=Math.max(Tb+t.hh, Math.min(Bb-t.hh, t.ty)); } });
+  for(let k=0;k<targets.length && k<layout.nbrs.length;k++){ layout.nbrs[k].x=targets[k].tx; layout.nbrs[k].y=targets[k].ty; }
   // per-edge connectors: one line per relationship (not one per neighbour), with a ±9px perpendicular
   // fan when a pair has more than one edge — faithful to the prototype's e.off (deriveE, ±9).
   { const nbrIdx={}; layout.nbrs.forEach((nb,ix)=>nbrIdx[nb.id]=ix);
@@ -1713,11 +1688,33 @@ function linkDetails(aId, bId){   // the connection between two nodes → {text,
   }
   return null;
 }
+function linkDetailsAll(aId, bId){   // EVERY connection between two nodes (a node can relate to a neighbour more than once)
+  const raw=Model.raw, types=raw.types||{}, out=[];
+  for(const l of raw.links.concat(tempLinks)){
+    if((l.from===aId&&l.to===bId)||(l.from===bId&&l.to===aId)){
+      const t=types[l.type]||{mutual:true}, an=(Model.nodeById(l.from)||{}).name||l.from, bn=(Model.nodeById(l.to)||{}).name||l.to;
+      out.push({ text: l.details || relDetailGen(l.type, an, bn), rel: (t.mutual?(t.label||l.type):(l.from===aId?(t.fromLabel||l.type):(t.toLabel||l.type))), link: l, generated: !l.details });
+    }
+  }
+  return out;
+}
 function focusPlanet(i){   // focus a planet: pin it + frame it ONCE so the WHOLE planet fits, same size for every planet
   Focus.planetFocus=i;
   const o=SolarSys.orbit[i], pr=(o&&o.pWorldR)?o.pWorldR:30;
   const half=Math.max(60, Math.min(innerWidth,innerHeight)/2 - 30);
   view.tdist=Math.max(6, pr*F/(half*0.35)); Focus.planetFitDist=view.tdist;   // on-screen radius = pr·F/tdist → target ≈0.35·half so the whole disc shows; user can zoom from here
+}
+function goToNode(i){   // route a clicked node: a sun → go to it; a planet → jump to its sun's system (all its planets in orbit) and focus this planet there
+  const n=Model.count();
+  if(!(SolarSys.isSun && SolarSys.isSun.length===n) || SolarSys.isSun[i]){ hideRelInfo(); egoTo(Model.ids[i]); return; }   // a sun (or topology not ready) → go straight to it
+  if(SolarSys.sun[i]===Focus.egoCenter){ focusPlanet(i); return; }                                                        // already our planet → its planet view
+  let su=SolarSys.sun[i];
+  if(su===i || su<0 || !SolarSys.isSun[su]){                                                                              // its orbital "sun" is itself → find a sun this node is actually connected to
+    su=-1; const nbrs=neighboursOf(Model.ids[i]);
+    for(const nb of nbrs){ const j=Model.index(nb.id); if(j!==undefined && SolarSys.isSun[j]){ su=j; break; } }
+  }
+  hideRelInfo();
+  if(su>=0 && su!==i && Model.ids[su]!=null){ egoTo(Model.ids[su]); focusPlanet(i); } else egoTo(Model.ids[i]);            // its sun's system first (all planets in orbit), then focus this planet; no connected sun → its own view
 }
 function egoTo(id){ const i=Model.index(id); if(i===undefined) return;
   promote(i);   // focusing a node promotes it: it becomes a sun and its neighbours are pulled across to orbit it
@@ -1734,13 +1731,15 @@ function showRelInfoEdge(a, b, px, py){
   let x=Math.min(Math.max(8,px-bw/2), vw-bw-8), y=py+14; if(y+bh>vh-8) y=py-bh-14;
   box.style.left=x+"px"; box.style.top=Math.max(8,y)+"px";
 }
-(function(){ const rb=document.getElementById("relinfo-body"); if(rb) rb.addEventListener("click", e=>{ const t=e.target.closest&&e.target.closest(".relname"); if(t){ const id=t.getAttribute("data-id"); hideRelInfo(); if(id) egoTo(id); } }); })();   // tap a name in the box → fly into that node's floating view
+(function(){ const rb=document.getElementById("relinfo-body"); if(rb) rb.addEventListener("click", e=>{ const t=e.target.closest&&e.target.closest(".relname"); if(t){ const id=t.getAttribute("data-id"); hideRelInfo(); if(id){ const ni=Model.index(id); if(ni!==undefined){ if(ni===Focus.egoCenter){ Focus.planetFocus=-1; view.tdist=(Focus.fitDist||view.dist)*0.5; } else goToNode(ni); } } } }); })();   // tap a name in the box → its planet connector view (relationship card), not a promotion
 { const psb=document.getElementById("promotesun"); if(psb) psb.onclick=()=>{ if(Focus.planetFocus>=0){ const id=Model.ids[Focus.planetFocus]; Focus.planetFocus=-1; hidePlanetInfo(); egoTo(id); } };   // promote the focused planet to its own sun
   const pi=document.getElementById("planetinfo");
   if(pi){
     pi.addEventListener("click", e=>{ if(!e.target.closest) return; if(e.target.closest(".pf-dismiss")){ if(Focus.planetFocus>=0){ Focus.planetFocus=-1; hidePlanetInfo(); view.tdist=Focus.fitDist||view.dist; } } else if(e.target.closest(".pf-promote")){ if(Focus.planetFocus>=0){ const id=Model.ids[Focus.planetFocus]; Focus.planetFocus=-1; hidePlanetInfo(); egoTo(id); } } else if(e.target.closest(".nc-2d")){ if(Focus.egoCenter>=0){ hidePlanetInfo(); enterFocus(Model.ids[Focus.egoCenter]); } } else if(e.target.closest(".nc-solar")){ view.tdist=Focus.fitDist||view.dist; } });   // × on the relationship card → back to the central sun
     let lpT=null,lpX=0,lpY=0;   // press-and-hold anywhere on a card (node OR connection) → inline edit
-    pi.addEventListener("pointerdown", e=>{ if(e.target.closest && e.target.closest("input,textarea,button,a,select")) return; lpX=e.clientX;lpY=e.clientY; lpT=setTimeout(()=>{lpT=null; enterCardEdit();},500); });
+    pi.addEventListener("pointerdown", e=>{ if(e.target.closest && e.target.closest("input,textarea,button,a,select")) return; lpX=e.clientX;lpY=e.clientY;
+      const _conn=e.target.closest&&e.target.closest(".pf-conn"), _li=_conn?+_conn.getAttribute("data-li"):-1;   // which stacked connection was pressed (multi-link cards)
+      lpT=setTimeout(()=>{lpT=null; if(_li>=0 && Focus.mode==="ego" && Focus.planetFocus>=0 && Focus.egoCenter>=0) enterCardEdit({kind:"link", a:Model.ids[Focus.egoCenter], b:Model.ids[Focus.planetFocus], idx:_li}); else enterCardEdit();},500); });
     pi.addEventListener("pointermove", e=>{ if(lpT&&Math.hypot(e.clientX-lpX,e.clientY-lpY)>10){clearTimeout(lpT);lpT=null;} });
     ["pointerup","pointercancel","pointerleave"].forEach(ev=>pi.addEventListener(ev,()=>{ if(lpT){clearTimeout(lpT);lpT=null;} }));
     if(window.visualViewport) window.visualViewport.addEventListener("resize", sizeCardEdit);   // keep the edit form clear of the on-screen keyboard
@@ -1766,18 +1765,18 @@ function pickImageFile(cb){ const inp=document.createElement("input"); inp.type=
   inp.onchange=function(){ const f=this.files&&this.files[0]; if(f){ const r=new FileReader(); r.onload=()=>{ cb(r.result); inp.remove(); }; r.readAsDataURL(f); } else inp.remove(); }; inp.click(); }
 let cardEditing=false;
 function sizeCardEdit(){ const box=document.getElementById("planetinfo"); if(!box||!cardEditing) return; const vv=window.visualViewport, vh=vv?vv.height:innerHeight; box.style.maxHeight=Math.max(160, vh-68)+"px"; }   // fixed at the top; only the height shrinks when the keyboard opens
-function exitCardEdit(){ cardEditing=false; try{document.activeElement&&document.activeElement.blur();}catch(_){} const box=document.getElementById("planetinfo"); if(box){ box.style.top=""; box.style.bottom=""; box.style.maxHeight=""; if(Focus.mode!=="ego") box.style.display="none"; } planetInfoShown=null; }
+function exitCardEdit(){ cardEditing=false; try{document.activeElement&&document.activeElement.blur();}catch(_){} const box=document.getElementById("planetinfo"); if(box){ box.style.top=""; box.style.bottom=""; box.style.maxHeight=""; box.style.textAlign=""; if(Focus.mode!=="ego") box.style.display="none"; } planetInfoShown=null; }
 function enterCardEdit(spec){   // inline hold-to-edit form, shared by node cards, connection cards and 2D cards
   if(cardEditing) return;
   const box=document.getElementById("planetinfo"); if(!box) return;
   let kind,target,c,genText="";
   if(spec && spec.kind==="node"){ target=Model.nodeById(spec.id); if(!target) return; kind="node"; c=ramp(spec.id); }
-  else if(spec && spec.kind==="link"){ const det=linkDetails(spec.a,spec.b); if(!det||!det.link) return; kind="link"; target=det.link; c=ramp(spec.b); genText=det.generated?det.text:""; }
+  else if(spec && spec.kind==="link"){ const _all=linkDetailsAll(spec.a,spec.b), det=(spec.idx!=null&&_all[spec.idx])?_all[spec.idx]:_all[0]; if(!det||!det.link) return; kind="link"; target=det.link; c=ramp(spec.b); genText=det.generated?det.text:""; }
   else if(Focus.mode==="ego" && Focus.planetFocus>=0 && Focus.egoCenter>=0){ const det=linkDetails(Model.ids[Focus.egoCenter],Model.ids[Focus.planetFocus]); if(!det||!det.link) return; kind="link"; target=det.link; c=ramp(Model.ids[Focus.planetFocus]); genText=det.generated?det.text:""; }
   else if(Focus.mode==="ego" && Focus.egoCenter>=0){ const nd=Model.nodeById(Model.ids[Focus.egoCenter]); if(!nd) return; kind="node"; target=nd; c=ramp(Model.ids[Focus.egoCenter]); }
   else return;
   cardEditing=true;
-  box.style.display="block"; box.style.opacity="1"; box.style.top=""; box.style.bottom=""; box.style.left=""; box.style.right=""; box.style.transform=""; sizeCardEdit();   // rests at the card's normal spot (no jump on hold); lifts only for the on-screen keyboard
+  box.style.display="block"; box.style.opacity="1"; box.style.textAlign="left"; box.style.top=""; box.style.bottom=""; box.style.left=""; box.style.right=""; box.style.transform=""; sizeCardEdit();   // rests at the card's normal spot (no jump on hold); lifts only for the on-screen keyboard
   box.style.background="linear-gradient(160deg, "+c[2]+"e6, rgba(8,10,20,0.94))"; box.style.border="1px solid "+c[3]; box.style.boxShadow="0 0 22px "+c[3]+"44, 0 12px 40px rgba(0,0,0,0.6)";
   box.innerHTML="";
   const done=document.createElement("button"); done.type="button"; done.textContent="Done"; done.style.cssText="float:right;font-size:13px;padding:3px 12px;cursor:pointer;"; done.onclick=exitCardEdit; box.appendChild(done);
@@ -1847,14 +1846,19 @@ function updatePlanetInfo(){
     const pf=Focus.planetFocus, pid=Model.ids[pf], sid=Model.ids[Focus.egoCenter];
     if(!pid||!Model.nodeById(pid)){ box.style.display="none"; planetInfoShown=null; return; }
     if(planetInfoShown!=="R"+pf){
-      const nd=Model.nodeById(pid), c=ramp(pid), det=linkDetails(pid,sid), sn=(Model.nodeById(sid)||{}).name||sid, lk=det&&det.link;
+      const nd=Model.nodeById(pid), c=ramp(pid), dets=linkDetailsAll(pid,sid), det=dets[0], sn=(Model.nodeById(sid)||{}).name||sid, lk=det&&det.link;
       box.style.background="linear-gradient(160deg, "+c[2]+"e6, rgba(8,10,20,0.92))"; box.style.border="1px solid "+c[3];
       box.style.boxShadow="0 0 22px "+c[3]+"44, 0 10px 34px rgba(0,0,0,0.55)";
       let h='<div style="position:absolute;top:8px;right:8px;"><button class="pf-dismiss" title="Return to the solar system" style="width:26px;height:26px;border-radius:50%;background:var(--card);border:1px solid var(--line-strong);color:var(--t2);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;font-size:14px;line-height:1;">⊖</button></div>';
-      h+='<div style="font-size:16px;font-weight:600;color:#f4f5fa;padding-right:64px;">'+esc(nd.name||pid)+'</div>';
-      if(det) h+='<div style="font-size:11px;color:'+c[3]+';margin:2px 0 7px;letter-spacing:0.03em;text-transform:uppercase;">'+esc(det.rel)+' \u00b7 '+esc(sn)+'</div>';
-      if(lk&&lk.img) h+='<img src="'+esc(lk.img)+'" class="portrait" alt="" style="width:100%;max-height:130px;object-fit:cover;border-radius:6px;display:block;margin:2px 0 9px;box-shadow:0 0 12px '+c[3]+'55;cursor:zoom-in;">';
-      if(det) h+='<div class="pf-details" title="Press and hold to edit" style="font-size:12.5px;color:#c9cdda;line-height:1.5;cursor:text;'+(det.generated?'opacity:0.92;':'')+'">'+md(det.text)+'</div>';
+      h+='<div style="font-size:16px;font-weight:600;color:#f4f5fa;padding-top:20px;">'+esc(nd.name||pid)+'</div>';
+      dets.forEach((d,di)=>{
+        if(di>0) h+='<div style="border-top:1px solid '+c[3]+'40;margin:11px 0 0;"></div>';   // separate a second/third relationship stacked in the same card
+        h+='<div class="pf-conn" data-li="'+di+'" title="'+(dets.length>1?'Press and hold to edit this connection':'Press and hold to edit')+'" style="cursor:text;">';
+        h+='<div style="font-size:11px;color:'+c[3]+';margin:'+(di>0?'9px':'2px')+' 0 7px;letter-spacing:0.03em;text-transform:uppercase;">'+esc(d.rel)+' \u00b7 '+esc(sn)+'</div>';
+        if(d.link&&d.link.img) h+='<img src="'+esc(d.link.img)+'" class="portrait" alt="" style="width:100%;max-height:130px;object-fit:cover;border-radius:6px;display:block;margin:2px 0 9px;box-shadow:0 0 12px '+c[3]+'55;cursor:zoom-in;">';
+        h+='<div class="pf-details" style="font-size:12.5px;color:#c9cdda;line-height:1.5;'+(d.generated?'opacity:0.92;':'')+'">'+md(d.text)+'</div>';
+        h+='</div>';
+      });
       const links2=[];
       if(lk&&lk.url){ const lt=lk.linkText||(/wikipedia/i.test(lk.url)?'Wikipedia':'Link'); links2.push('<a class="weblink" data-url="'+esc(lk.url)+'" rel="noopener" style="font-size:12px;color:'+c[3]+';cursor:pointer;">'+esc(lt)+' \u2197</a>'); }
       if(lk&&lk.video) links2.push('<a class="vidlink" data-url="'+esc(lk.video)+'" style="font-size:12px;color:'+c[3]+';cursor:pointer;">\u25b6 Video</a>');
@@ -1875,14 +1879,14 @@ function updatePlanetInfo(){
     box.style.boxShadow="0 0 22px "+c[3]+"44, 0 10px 34px rgba(0,0,0,0.55)";
     let h='<div class="nc-2d" title="Open the card view" style="position:absolute;top:8px;left:8px;width:26px;height:26px;border-radius:50%;background:var(--card);border:1px solid var(--line-strong);color:var(--t2);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div><div class="nc-solar" title="Back to the solar system" style="position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:50%;background:var(--card);border:1px solid var(--line-strong);color:var(--t2);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;font-size:14px;line-height:1;">⊖</div>';
     if(!nd.img) h+='<div style="height:22px"></div>';
-    if(nd.img) h+='<img src="'+esc(nd.img)+'" class="portrait" alt="" style="width:64px;height:64px;border-radius:50%;object-fit:cover;display:block;margin:0 auto 9px;box-shadow:0 0 12px '+c[3]+'66, inset -2px -3px 6px rgba(0,0,0,0.5);cursor:zoom-in;">';
-    h+='<div style="font-size:16px;font-weight:600;color:#f4f5fa;text-align:'+(nd.img?'center':'left')+';">'+(nd.subgraph?'<span style="opacity:0.7;">\u25c8</span> ':'')+esc(nd.name||id)+'</div>';
+    if(nd.img) h+='<img src="'+esc(nd.img)+'" class="portrait" alt="" style="width:64px;height:64px;border-radius:50%;object-fit:cover;display:block;margin:0 auto 9px;box-shadow:0 0 12px '+c[3]+'66, inset -2px -3px 6px rgba(0,0,0,0.5);cursor:zoom-in;">'; else h+='<div style="width:44px;height:44px;border-radius:50%;background:radial-gradient(circle at 36% 32%,'+c[3]+' 0%,'+c[1]+' 58%,'+c[2]+' 100%);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:18px;margin:0 auto 9px;box-shadow:0 0 12px '+c[3]+'55, inset -2px -3px 6px '+c[2]+'cc;text-shadow:0 1px 2px rgba(0,0,0,0.5);">'+esc((nd.name||id).charAt(0))+'</div>';
+    h+='<div style="font-size:17px;font-weight:600;color:#f4f5fa;">'+(nd.subgraph?'<span style="opacity:0.7;">\u25c8</span> ':'')+esc(nd.name||id)+'</div>';
     const gl=((Model.raw.groups||{})[nd.group]||{}).label;
-    if(gl) h+='<div style="font-size:11px;color:'+c[3]+';margin:2px 0 6px;letter-spacing:0.03em;text-transform:uppercase;opacity:0.9;'+(nd.img?'text-align:center;':'')+'">'+esc(gl)+'</div>';
-    if(nd.desc) h+='<div style="font-size:12.5px;color:#c9cdda;line-height:1.5;">'+md(nd.desc)+'</div>';
+    if(gl) h+='<div style="font-size:11px;color:'+c[3]+';margin:2px 0 6px;letter-spacing:0.03em;text-transform:uppercase;opacity:0.9;'+'">'+esc(gl)+'</div>';
+    if(nd.desc) h+='<div class="pf-desc" style="font-size:12.5px;color:#c9cdda;line-height:1.5;">'+md(nd.desc)+'</div>';
     if(nd.url){ const lt=nd.linkText||(/wikipedia/i.test(nd.url)?'Wikipedia':'Link'); h+='<a href="'+esc(nd.url)+'" class="weblink" data-url="'+esc(nd.url)+'" rel="noopener" style="display:inline-block;margin-top:8px;font-size:12px;color:'+c[3]+';cursor:pointer;">'+esc(lt)+' &#8599;</a>'; }
     if(nd.video) h+='<a class="vidlink" data-url="'+esc(nd.video)+'" style="display:inline-block;margin-top:8px;'+(nd.url?'margin-left:14px;':'')+'font-size:12px;color:'+c[3]+';cursor:pointer;">&#9654; Video</a>';
-    if(nd.subgraph){ const n2=Object.keys(nd.subgraph.nodes||{}).length; h+='<div style="margin-top:9px;padding-top:8px;border-top:1px solid '+c[3]+'55;"><span class="entergraph" style="cursor:pointer;font-size:12px;color:'+c[3]+';text-decoration:underline;">Enter graph ('+n2+' node'+(n2===1?'':'s')+') \u2192</span></div>'; }
+    if(nd.subgraph){ const n2=Object.keys(nd.subgraph.nodes||{}).length; h+='<div class="entergraph" style="margin-top:9px;font-size:12px;color:'+c[3]+';cursor:pointer;">◈ Enter graph ('+n2+' node'+(n2===1?'':'s')+') →</div>'; }
     box.innerHTML=h; planetInfoShown=id;
   }
   box.style.top=""; box.style.left=""; box.style.right=""; box.style.bottom=""; box.style.transform=""; box.style.maxHeight=""; box.style.display="block";   // fixed at top (CSS) — consistent with the connection card + editing
@@ -2032,7 +2036,7 @@ function paintBypassBtn(){ const b=document.getElementById("bypassls"); if(!b) r
   b.style.color=on?"#e6a23a":"var(--t3)"; b.style.borderColor=on?"#e6a23a":"var(--line-strong)"; b.style.opacity=on?"1":"0.7";
   b.title=on?"TEST MODE: saved graph bypassed — tap to restore & reload":"Bypass saved graph: load default & don't save (for testing)"; }
 (function(){ const b=document.getElementById("bypassls"); if(!b) return;
-  b.onclick=()=>{ try{ sessionStorage.setItem("xanadu_bypassLS", LS_BYPASS()?"0":"1"); }catch(e){} location.reload(); };   // flip the flag then reload so boot loads the default (or your saved graph again)
+  b.onclick=()=>{ try{ if(LS_BYPASS()){ localStorage.removeItem("xanadu_devfresh"); } else { const kill=[]; for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k && (/relation-explorer/.test(k) || /^xanadu/.test(k))) kill.push(k); } kill.forEach(k=>{ try{ localStorage.removeItem(k); }catch(_){} }); try{ sessionStorage.removeItem("xanadu_bypassLS"); }catch(_){} localStorage.setItem("xanadu_devfresh","1"); } }catch(e){} location.reload(); };   // wipe ALL project localStorage and lock it fresh (toggle off to restore normal saving)
   paintBypassBtn();
 })();
 (function(){ const b=document.getElementById("togglefocus"); if(!b) return;
@@ -2459,7 +2463,7 @@ document.getElementById("resetview").onclick=()=>{
   // with rotation, spin speed and zoom reset, and any subgraph exited. (Matches the prototype.)
   const wasSub=graphStack.length>0, root=wasSub?graphStack[0].doc:Model.raw;
   graphStack=[];
-  const ss=document.getElementById("spinspeed"); if(ss) ss.value=52; view.spin=0.52*0.52*0.006; planetSpeed=0.52*0.52*3.7;
+  const ss=document.getElementById("spinspeed"); if(ss) ss.value=39; view.spin=0.39*0.39*0.006; planetSpeed=0.39*0.39*3.7;
   view.yaw=0; view.pitch=0.95; view.userMoved=false; spinAccum=0;
   if(wasSub){ loadGraph(root); }
   else { view.dist=view.tdist=R*3.4; const s=Model.raw.start; if(s!=null && Model.nodeById(s)) egoTo(s); else exitFocus(); }
