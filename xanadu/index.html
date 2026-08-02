@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Xanadu — engine</title>
 <style>
@@ -263,7 +264,7 @@
    never touches the DOM, and all load/save goes through GraphSource. This is
    the structure the scale work (worker layout, Barnes-Hut, accounts) hangs off.
    ============================================================================= */
-const BUILD="v2-309";
+const BUILD="v2-311";
 document.getElementById("build").textContent=BUILD;
 
 /* ---- palette (name → [lightest, mid-dark, darkest, vivid]) ---- */
@@ -1393,9 +1394,9 @@ const webviewTitle=document.getElementById("webview-title"), webviewExternal=doc
 let webviewFallbackTimer=null;
 function ytEmbed(u){
   if(!u) return null; u=String(u).trim();
-  if(/^[\w-]{11}$/.test(u)) return "https://www.youtube.com/embed/"+u;
+  if(/^[\w-]{11}$/.test(u)) return "https://www.youtube-nocookie.com/embed/"+u;
   const m=u.match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/)|youtu\.be\/)([\w-]{11})/);
-  return m ? "https://www.youtube.com/embed/"+m[1] : null;
+  return m ? "https://www.youtube-nocookie.com/embed/"+m[1] : null;
 }
 function openVideo(url){ const emb=ytEmbed(url); if(emb) openWebview(emb+"?autoplay=1&rel=0","Video"); else openWebview(url,"Video"); }
 function openWebview(url, title){
@@ -1480,7 +1481,7 @@ function makeCard(id, isFocus, rel, showAvatar){
       +(g&&g.label?'<div style="font-size:11px;color:'+c[3]+';margin:2px 0 7px;text-align:center;letter-spacing:0.03em;text-transform:uppercase;opacity:0.9;">'+esc(g.label)+'</div>':'')
       +(nd&&nd.desc?'<div class="pf-desc" style="font-size:12.5px;color:#c9cdda;line-height:1.5;">'+md(nd.desc)+'</div>':'')
       +(nd&&nd.url?'<a href="'+esc(nd.url)+'" class="weblink" data-url="'+esc(nd.url)+'" rel="noopener" style="display:inline-block;margin-top:9px;font-size:12px;color:'+c[3]+';cursor:pointer;">'+esc(nd.linkText||(/wikipedia/i.test(nd.url)?'Wikipedia':'Link'))+' &#8599;</a>':'')
-      +(nd&&nd.video?'<a class="vidlink" data-url="'+esc(nd.video)+'" style="display:inline-block;margin-top:9px;'+(nd.url?'margin-left:14px;':'')+'font-size:12px;color:'+c[3]+';cursor:pointer;">&#9654; Video</a>':'')
+      +(nd&&nd.video?(ytEmbed(nd.video)?'<div style="margin-top:10px;position:relative;width:100%;aspect-ratio:16/9;border-radius:6px;overflow:hidden;box-shadow:0 0 12px '+c[3]+'44;"><iframe src="'+esc(ytEmbed(nd.video))+'?rel=0" style="position:absolute;inset:0;width:100%;height:100%;border:0;" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture;web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen loading="lazy"></iframe></div>':'<a class="vidlink" data-url="'+esc(nd.video)+'" style="display:inline-block;margin-top:9px;'+(nd.url?'margin-left:14px;':'')+'font-size:12px;color:'+c[3]+';cursor:pointer;">&#9654; Video</a>'):'')
       +(nd&&nd.subgraph?'<div class="entergraph" style="margin-top:9px;font-size:12px;color:'+c[3]+';cursor:pointer;">\u25c8 Enter graph ('+Object.keys(nd.subgraph.nodes||{}).length+' nodes) \u2192</div>':'')
       +'</div>';
   } else {
@@ -1885,7 +1886,7 @@ function updatePlanetInfo(){
     if(gl) h+='<div style="font-size:11px;color:'+c[3]+';margin:2px 0 6px;letter-spacing:0.03em;text-transform:uppercase;opacity:0.9;'+'">'+esc(gl)+'</div>';
     if(nd.desc) h+='<div class="pf-desc" style="font-size:12.5px;color:#c9cdda;line-height:1.5;">'+md(nd.desc)+'</div>';
     if(nd.url){ const lt=nd.linkText||(/wikipedia/i.test(nd.url)?'Wikipedia':'Link'); h+='<a href="'+esc(nd.url)+'" class="weblink" data-url="'+esc(nd.url)+'" rel="noopener" style="display:inline-block;margin-top:8px;font-size:12px;color:'+c[3]+';cursor:pointer;">'+esc(lt)+' &#8599;</a>'; }
-    if(nd.video) h+='<a class="vidlink" data-url="'+esc(nd.video)+'" style="display:inline-block;margin-top:8px;'+(nd.url?'margin-left:14px;':'')+'font-size:12px;color:'+c[3]+';cursor:pointer;">&#9654; Video</a>';
+    if(nd.video){ const _em=ytEmbed(nd.video); h+= _em ? '<div style="margin-top:10px;position:relative;width:100%;aspect-ratio:16/9;border-radius:6px;overflow:hidden;box-shadow:0 0 12px '+c[3]+'44;"><iframe src="'+esc(_em)+'?rel=0" style="position:absolute;inset:0;width:100%;height:100%;border:0;" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture;web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen loading="lazy"></iframe></div>' : '<a class="vidlink" data-url="'+esc(nd.video)+'" style="display:inline-block;margin-top:8px;'+(nd.url?'margin-left:14px;':'')+'font-size:12px;color:'+c[3]+';cursor:pointer;">&#9654; Video</a>'; }
     if(nd.subgraph){ const n2=Object.keys(nd.subgraph.nodes||{}).length; h+='<div class="entergraph" style="margin-top:9px;font-size:12px;color:'+c[3]+';cursor:pointer;">◈ Enter graph ('+n2+' node'+(n2===1?'':'s')+') →</div>'; }
     box.innerHTML=h; planetInfoShown=id;
   }
