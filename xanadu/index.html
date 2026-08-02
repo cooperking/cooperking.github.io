@@ -264,7 +264,7 @@
    never touches the DOM, and all load/save goes through GraphSource. This is
    the structure the scale work (worker layout, Barnes-Hut, accounts) hangs off.
    ============================================================================= */
-const BUILD="v2-311";
+const BUILD="v2-315";
 document.getElementById("build").textContent=BUILD;
 
 /* ---- palette (name → [lightest, mid-dark, darkest, vivid]) ---- */
@@ -1235,9 +1235,9 @@ cv.addEventListener("pointermove",e=>{
 cv.addEventListener("pointerup",e=>{ if(moved>=6||pinching||cardEditing) return;
   const i=Renderer.pick(e.clientX,e.clientY);
   if(Focus.mode==="ego"){
-    if(i>=0){ hideRelInfo(); if(i===Focus.egoCenter){ Focus.planetFocus=-1; view.tdist=(Focus.fitDist||view.dist)*0.5; } else if(i===Focus.planetFocus){ Focus.planetFocus=-1; hidePlanetInfo(); view.tdist=Focus.fitDist||view.dist; } else goToNode(i); }   // sun → card view; planet → focus ON it (relationship card appears), no promotion
+    if(i>=0){ hideRelInfo(); if(i===Focus.egoCenter){ Focus.planetFocus=-1; if(Focus.cardHidden) Focus.cardHidden=false; else view.tdist=(Focus.fitDist||view.dist)*0.5; } else if(i===Focus.planetFocus){ Focus.planetFocus=-1; hidePlanetInfo(); view.tdist=Focus.fitDist||view.dist; } else goToNode(i); }   // sun → card view; planet → focus ON it (relationship card appears), no promotion
     else { let li=-1; for(let k=0;k<glLabelHits.length;k++){ const L=glLabelHits[k]; if(e.clientX>=L.x && e.clientX<=L.x+L.w && e.clientY>=L.y && e.clientY<=L.y+L.h){ li=L.id; break; } }   // tap a label → focus that planet
-      if(li>=0){ hideRelInfo(); if(li===Focus.egoCenter){ Focus.planetFocus=-1; view.tdist=(Focus.fitDist||view.dist)*0.5; } else { goToNode(li); } return; }
+      if(li>=0){ hideRelInfo(); if(li===Focus.egoCenter){ Focus.planetFocus=-1; if(Focus.cardHidden) Focus.cardHidden=false; else view.tdist=(Focus.fitDist||view.dist)*0.5; } else { goToNode(li); } return; }
       const ci=Renderer.pickConnector(e.clientX,e.clientY);   // only the visible sun→planet connectors are pickable; hidden out-of-system lines are not
       if(ci>=0){ const cc=Focus.egoCenter; view.glowEdge={a:cc,b:ci,t0:performance.now()}; showRelInfoEdge(cc,ci,e.clientX,e.clientY); }
       else if(Focus.planetFocus>=0){ Focus.planetFocus=-1; hidePlanetInfo(); view.tdist=Focus.fitDist||view.dist; }   // tap empty while focused on a planet → back to the central sun
@@ -1472,7 +1472,7 @@ function makeCard(id, isFocus, rel, showAvatar){
   if(isFocus){
     const g=nd&&nd.group&&(Model.raw.groups||{})[nd.group];
     const vpW=innerWidth, vpH=innerHeight;
-    const fcW=Math.round(Math.max(180, Math.min(230, vpW*0.6)));   // fixed width (60% of screen, clamped) — matches prototype
+    const fcW=Math.round(Math.max(180, Math.min(300, vpW*0.6)));   // same max as the 3D node card (300), but capped to 60% width so neighbours still fit around it on narrow screens
     const fcMaxH=Math.round(vpH*0.46);                              // cap height so neighbours still orbit above/below
     h='<div style="position:relative; background:linear-gradient(160deg,'+c[2]+'e6, rgba(8,10,20,0.92)); border:1px solid '+c[3]+'; border-radius:6px; padding:14px 18px; text-align:center; width:'+fcW+'px; max-height:'+fcMaxH+'px; overflow:auto; box-shadow:0 0 22px '+c[3]+'44, 0 10px 34px rgba(0,0,0,0.55); backdrop-filter:blur(3px);">'
       +'<span class="hidefocus" title="Return to the universe" style="position:absolute; top:8px; right:9px; width:24px; height:24px; border-radius:50%; background:'+c[3]+'; color:#fff; font-size:16px; line-height:24px; text-align:center; cursor:pointer; box-shadow:0 0 8px '+c[3]+'88;">\u2296</span>'
@@ -1632,7 +1632,7 @@ function exitFocus(keepCam){ { const cur = Focus.egoCenter>=0 ? Model.ids[Focus.
 //     rest, and label them with signposts. Entered from card mode via the ⊖ button. ---
 function egoSpike(id){
   const i=Model.index(id); if(i===undefined) return;
-  Focus.planetFocus=-1;
+  Focus.planetFocus=-1; Focus.cardHidden=false;
   document.getElementById("cards").innerHTML="";
   hideRelInfo();
   { const at=document.getElementById("addtempnode"); if(at){ at.style.display="flex"; at.style.left="222px"; at.style.right="auto"; } }
@@ -1736,7 +1736,7 @@ function showRelInfoEdge(a, b, px, py){
 { const psb=document.getElementById("promotesun"); if(psb) psb.onclick=()=>{ if(Focus.planetFocus>=0){ const id=Model.ids[Focus.planetFocus]; Focus.planetFocus=-1; hidePlanetInfo(); egoTo(id); } };   // promote the focused planet to its own sun
   const pi=document.getElementById("planetinfo");
   if(pi){
-    pi.addEventListener("click", e=>{ if(!e.target.closest) return; if(e.target.closest(".pf-dismiss")){ if(Focus.planetFocus>=0){ Focus.planetFocus=-1; hidePlanetInfo(); view.tdist=Focus.fitDist||view.dist; } } else if(e.target.closest(".pf-promote")){ if(Focus.planetFocus>=0){ const id=Model.ids[Focus.planetFocus]; Focus.planetFocus=-1; hidePlanetInfo(); egoTo(id); } } else if(e.target.closest(".nc-2d")){ if(Focus.egoCenter>=0){ hidePlanetInfo(); enterFocus(Model.ids[Focus.egoCenter]); } } else if(e.target.closest(".nc-solar")){ view.tdist=Focus.fitDist||view.dist; } });   // × on the relationship card → back to the central sun
+    pi.addEventListener("click", e=>{ if(!e.target.closest) return; if(e.target.closest(".pf-dismiss")){ if(Focus.planetFocus>=0){ Focus.planetFocus=-1; hidePlanetInfo(); view.tdist=Focus.fitDist||view.dist; } } else if(e.target.closest(".pf-promote")){ if(Focus.planetFocus>=0){ const id=Model.ids[Focus.planetFocus]; Focus.planetFocus=-1; hidePlanetInfo(); egoTo(id); } } else if(e.target.closest(".nc-2d")){ if(Focus.egoCenter>=0){ hidePlanetInfo(); enterFocus(Model.ids[Focus.egoCenter]); } } else if(e.target.closest(".nc-solar")){ Focus.cardHidden=true; pi.style.display="none"; planetInfoShown=null; } });   // ⊖ on the node card → just hide it (tap the sun to bring it back)
     let lpT=null,lpX=0,lpY=0;   // press-and-hold anywhere on a card (node OR connection) → inline edit
     pi.addEventListener("pointerdown", e=>{ if(e.target.closest && e.target.closest("input,textarea,button,a,select")) return; lpX=e.clientX;lpY=e.clientY;
       const _conn=e.target.closest&&e.target.closest(".pf-conn"), _li=_conn?+_conn.getAttribute("data-li"):-1;   // which stacked connection was pressed (multi-link cards)
@@ -1777,7 +1777,7 @@ function enterCardEdit(spec){   // inline hold-to-edit form, shared by node card
   else if(Focus.mode==="ego" && Focus.egoCenter>=0){ const nd=Model.nodeById(Model.ids[Focus.egoCenter]); if(!nd) return; kind="node"; target=nd; c=ramp(Model.ids[Focus.egoCenter]); }
   else return;
   cardEditing=true;
-  box.style.display="block"; box.style.opacity="1"; box.style.textAlign="left"; box.style.top=""; box.style.bottom=""; box.style.left=""; box.style.right=""; box.style.transform=""; sizeCardEdit();   // rests at the card's normal spot (no jump on hold); lifts only for the on-screen keyboard
+  box.style.display="block"; box.style.opacity="1"; box.style.textAlign="left"; box.style.width=""; box.style.top=""; box.style.bottom=""; box.style.left=""; box.style.right=""; box.style.transform=""; sizeCardEdit();   // rests at the card's normal spot (no jump on hold); lifts only for the on-screen keyboard
   box.style.background="linear-gradient(160deg, "+c[2]+"e6, rgba(8,10,20,0.94))"; box.style.border="1px solid "+c[3]; box.style.boxShadow="0 0 22px "+c[3]+"44, 0 12px 40px rgba(0,0,0,0.6)";
   box.innerHTML="";
   const done=document.createElement("button"); done.type="button"; done.textContent="Done"; done.style.cssText="float:right;font-size:13px;padding:3px 12px;cursor:pointer;"; done.onclick=exitCardEdit; box.appendChild(done);
@@ -1868,10 +1868,10 @@ function updatePlanetInfo(){
       box.innerHTML=h; planetInfoShown="R"+pf;
     }
     { const _fit=Focus.planetFitDist||view.tdist||1; box.style.opacity=String(Math.max(0,Math.min(1,(_fit*2.4-view.dist)/(_fit*1.4)))); }   // fade out as you zoom away from the planet
-    box.style.display="block"; return;
+    box.style.width=""; box.style.display="block"; return;
   }
   const _ff=Focus.fitDist||1;
-  const on = Focus.mode==="ego" && Focus.egoCenter>=0 && view.dist < _ff*0.72;   // info card only once you zoom in CLOSER than the default framing (not on start / from far out)
+  const on = Focus.mode==="ego" && Focus.egoCenter>=0 && view.dist < _ff*0.72 && !Focus.cardHidden;   // info card only once you zoom in CLOSER than the default framing (not on start / from far out), and not while dismissed
   const id = on ? Model.ids[Focus.egoCenter] : null;
   if(!id || !Model.nodeById(id)){ box.style.display="none"; planetInfoShown=null; return; }
   if(planetInfoShown!==id){
@@ -1891,6 +1891,7 @@ function updatePlanetInfo(){
     box.innerHTML=h; planetInfoShown=id;
   }
   box.style.top=""; box.style.left=""; box.style.right=""; box.style.bottom=""; box.style.transform=""; box.style.maxHeight=""; box.style.display="block";   // fixed at top (CSS) — consistent with the connection card + editing
+  { const big=innerWidth>=900, base=Math.min(300, innerWidth-40), maxW=big?Math.min(Math.round(innerWidth*0.42),640):base, ad=(Focus.fitDist||1)*0.72; box.style.width=Math.round(Math.max(base, Math.min(maxW, base*ad/Math.max(1,view.dist))))+"px"; }   // larger screens: grows from its original size up to a video-comfortable max (42% of width, ≤640); never smaller than original — it just disappears at that point; phones stay fixed
 }
 function hidePlanetInfo(){ cardEditing=false; const box=document.getElementById("planetinfo"); if(box){ box.style.display="none"; box.style.opacity="1"; box.style.top=""; box.style.bottom=""; box.style.maxHeight=""; } planetInfoShown=null; }
 // --- Temp nodes + brought-in neighbours (transient, never saved until a real link connects them) ---
