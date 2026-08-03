@@ -270,7 +270,7 @@
    never touches the DOM, and all load/save goes through GraphSource. This is
    the structure the scale work (worker layout, Barnes-Hut, accounts) hangs off.
    ============================================================================= */
-const BUILD="v2-406";
+const BUILD="v2-407";
 document.getElementById("build").textContent=BUILD;
 
 /* ---- palette (name → [lightest, mid-dark, darkest, vivid]) ---- */
@@ -1126,20 +1126,20 @@ const Renderer=(()=>{
       if(glLabels && PlanetGL.available() && PlanetGL.labelTex && ego && ec>=0 && Focus.planetFocus<0 && SolarSys.isSun.length===n && view.showConnectors!==false){   // WebGL labels: neighbour names sit next to their ON-SCREEN planets. Off-screen ones aren't shown — zoom out to see them.
         const _ids=Model.ids;
         const _sysA=(Focus.mode==="ego" && ec>=0 && proj.front[ec]) ? sysFade : 0;
-        const items=[]; glLabelHits.length=0;
+        const items=[]; glLabelHits.length=0; const LBL_OS=1.5;   // oversample label textures so the per-distance up-scale (fs up to 1.45x) samples DOWN, not up → crisp text in motion
         for(let i=0;i<n;i++){ if(i===ec || !Focus.egoDir[i] || !proj.vis[i]) continue;   // on-screen neighbours, solid — the depth buffer occludes each label behind nearer planets/suns per-pixel (no CPU hiding, no fade)
           const nd=Model.nodeById(_ids[i]), nm=(nd&&nd.name)||_ids[i], rel=Focus.egoRel[i];
-          const nfs=Math.round(11*DPR), rfs=Math.round(9*DPR), pad=Math.round(5*DPR);
+          const nfs=Math.round(11*DPR*LBL_OS), rfs=Math.round(9*DPR*LBL_OS), pad=Math.round(5*DPR*LBL_OS);
           ctx.font="600 "+nfs+"px -apple-system,Segoe UI,Roboto,sans-serif"; const nw=ctx.measureText(nm).width;
           let rw=0; if(rel){ ctx.font="400 "+rfs+"px -apple-system,Segoe UI,Roboto,sans-serif"; rw=ctx.measureText(rel.toLowerCase()).width; }
           const texW=Math.ceil(Math.max(nw,rw)+pad*2), texH=Math.ceil(rel? (nfs+rfs+pad*2+4) : (nfs+pad*2));
           const tref=PlanetGL.labelTex("L"+i+"|"+nm+"|"+(rel||""), texW, texH, (tc,w,h)=>{
             tc.textAlign="center"; const cx=w/2;
-            tc.fillStyle="rgba(8,10,18,0.62)"; tc.beginPath(); if(tc.roundRect) tc.roundRect(0,0,w,h,Math.round(4*DPR)); else tc.rect(0,0,w,h); tc.fill();
+            tc.fillStyle="rgba(8,10,18,0.62)"; tc.beginPath(); if(tc.roundRect) tc.roundRect(0,0,w,h,Math.round(4*DPR*LBL_OS)); else tc.rect(0,0,w,h); tc.fill();
             if(rel){ tc.font="400 "+rfs+"px -apple-system,Segoe UI,Roboto,sans-serif"; tc.fillStyle=ramp(_ids[i])[3]; tc.textBaseline="top"; tc.fillText(rel.toLowerCase(), cx, pad); }
             tc.font="600 "+nfs+"px -apple-system,Segoe UI,Roboto,sans-serif"; tc.fillStyle="rgba(238,241,249,0.98)"; tc.textBaseline="bottom"; tc.fillText(nm, cx, h-pad);
           });
-          const fs=Math.max(0.72,Math.min(1.45, proj.az[ec]/proj.az[i])), hw=tref.w*0.5*fs, hh=tref.h*0.5*fs, d=Math.max(0,Math.min(0.999,(proj.az[i]-dist+span)/(2*span)));
+          const fs=Math.max(0.72,Math.min(1.45, proj.az[ec]/proj.az[i])), hw=tref.w*0.5*fs/LBL_OS, hh=tref.h*0.5*fs/LBL_OS, d=Math.max(0,Math.min(0.999,(proj.az[i]-dist+span)/(2*span)));
           items.push({id:i, tex:tref.tex, cx:proj.x[i]*DPR, cy:(proj.y[i]-proj.r[i])*DPR - hh - 6*DPR, hw, hh, a:_sysA, d});   // just above the planet
           const hwc=hw/DPR, hhc=hh/DPR, lcx=proj.x[i], lcy=(proj.y[i]-proj.r[i])-hhc-6; glLabelHits.push({id:i, x:lcx-hwc, y:lcy-hhc, w:2*hwc, h:2*hhc});
         }
