@@ -211,7 +211,7 @@
 </div>
 <div id="vidlb" style="display:none; position:fixed; inset:0; z-index:2001; background:rgba(0,0,0,0.92); align-items:center; justify-content:center;">
   <div id="vidlb-box" style="position:relative; width:min(94vw,1100px); aspect-ratio:16/9; max-height:84vh; background:#0a0c14; border-radius:8px; overflow:hidden; box-shadow:0 0 44px rgba(0,0,0,0.6);"></div>
-  <button id="vidlb-close" style="position:absolute; top:calc(env(safe-area-inset-top,0px) + 14px); right:16px; z-index:2; width:40px; height:40px; border-radius:50%; border:1px solid rgba(255,255,255,0.5); background:rgba(10,12,20,0.62); color:#fff; font-size:20px; line-height:1; cursor:pointer;">\u00d7</button>
+  <button id="vidlb-close" style="position:absolute; top:calc(env(safe-area-inset-top,0px) + 14px); right:16px; z-index:2; width:40px; height:40px; border-radius:50%; border:1px solid rgba(255,255,255,0.5); background:rgba(10,12,20,0.62); color:#fff; font-size:20px; line-height:1; cursor:pointer;">&times;</button>
 </div>
 <div id="webview" style="display:none; position:fixed; inset:0; z-index:2100; background:rgba(0,0,0,0.55); opacity:0; transition:opacity 0.25s ease; align-items:center; justify-content:center;">
   <div id="webview-panel" style="position:relative; width:min(1100px,94vw); height:min(88vh,900px); background:var(--card); border-radius:14px; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,0.5); transform:scale(0.96); transition:transform 0.28s cubic-bezier(.2,.7,.3,1);">
@@ -277,7 +277,7 @@
    never touches the DOM, and all load/save goes through GraphSource. This is
    the structure the scale work (worker layout, Barnes-Hut, accounts) hangs off.
    ============================================================================= */
-const BUILD="v2-433";
+const BUILD="v2-434";
 document.getElementById("build").textContent=BUILD;
 
 /* ---- palette (name → [lightest, mid-dark, darkest, vivid]) ---- */
@@ -780,7 +780,8 @@ const PlanetGL=(()=>{
     lcv.width=w; lcv.height=h; lctx.clearRect(0,0,w,h); drawFn(lctx,w,h);
     gl.bindTexture(gl.TEXTURE_2D,e.tex); gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,false); gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL,true);
     gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,lcv);
-    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+    gl.generateMipmap(gl.TEXTURE_2D);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
     e.w=w; e.h=h; return e;
   }
