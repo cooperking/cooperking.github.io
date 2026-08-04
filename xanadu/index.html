@@ -273,7 +273,7 @@
    never touches the DOM, and all load/save goes through GraphSource. This is
    the structure the scale work (worker layout, Barnes-Hut, accounts) hangs off.
    ============================================================================= */
-const BUILD="v2-424";
+const BUILD="v2-426";
 document.getElementById("build").textContent=BUILD;
 
 /* ---- palette (name → [lightest, mid-dark, darkest, vivid]) ---- */
@@ -787,7 +787,7 @@ const PlanetGL=(()=>{
     gl.uniform2f(lU.Viewport,dw,dh); gl.uniform2f(lU.VP,dw,dh); gl.activeTexture(gl.TEXTURE0); gl.uniform1i(lU.Tex,0);
     if(dTex){ gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D,dTex); gl.uniform1i(lU.DepthTex,1); gl.uniform1i(lU.Occ,1); gl.activeTexture(gl.TEXTURE0); } else gl.uniform1i(lU.Occ,0);
     items.sort((a,b)=>b.d-a.d);   // far labels first → nearer labels layer on top, matching planet depth
-    for(let k=0;k<items.length;k++){ const it=items[k]; gl.bindTexture(gl.TEXTURE_2D,it.tex); gl.uniform2f(lU.Center,it.cx,it.cy); gl.uniform2f(lU.Half,it.hw,it.hh); gl.uniform1f(lU.Alpha,it.a); gl.uniform1f(lU.LabelDepth,it.d); gl.drawArrays(gl.TRIANGLE_STRIP,0,4); }
+    for(let k=0;k<items.length;k++){ const it=items[k]; gl.bindTexture(gl.TEXTURE_2D,it.tex); gl.uniform2f(lU.Center,Math.round(it.cx),Math.round(it.cy)); gl.uniform2f(lU.Half,Math.round(it.hw),Math.round(it.hh)); gl.uniform1f(lU.Alpha,it.a); gl.uniform1f(lU.LabelDepth,it.d); gl.drawArrays(gl.TRIANGLE_STRIP,0,4); }   // snap center + half-size to whole device pixels so the quad edges land on the grid → no sub-pixel bilinear softening
     gl.bindVertexArray(null); gl.bindTexture(gl.TEXTURE_2D,null); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);   // restore the planets' blend mode
   }
   return { init, render, canvas:()=>cvs, available:()=>ok, STRIDE, labelTex, drawLabels };
@@ -1486,7 +1486,7 @@ document.addEventListener("click",ev=>{
   const eg=ev.target.closest(".entergraph"); if(eg){ ev.preventDefault(); if(Focus.mode==="focus"||Focus.mode==="ego") enterSubgraph(Focus.id); return; }
   const wl=ev.target.closest(".weblink"); if(wl){ ev.preventDefault(); openWebview(wl.dataset.url); return; }
   const vl=ev.target.closest(".vidlink"); if(vl){ ev.preventDefault(); openVideo(vl.dataset.url); return; }
-  const vf=ev.target.closest(".vidfacade"); if(vf){ ev.preventDefault(); vf.style.cursor="default"; vf.style.background="#0a0c14"; vf.innerHTML='<iframe src="'+vf.dataset.embed+'?rel=0&autoplay=1&playsinline=1&enablejsapi=1" style="position:absolute;inset:0;width:100%;height:100%;border:0;" allow="accelerometer;autoplay;clipboard-write;encrypted-media;fullscreen;gyroscope;picture-in-picture;web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>'; const _f=vf.firstChild; if(_f){ const _play=()=>{ try{ _f.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}','*'); }catch(e){} }; _f.addEventListener("load",()=>{ _play(); setTimeout(_play,400); setTimeout(_play,1100); }); } return; }
+  const vf=ev.target.closest(".vidfacade"); if(vf){ ev.preventDefault(); vf.style.cursor="default"; vf.style.background="#0a0c14"; vf.innerHTML='<iframe src="'+vf.dataset.embed+'?rel=0&autoplay=1&playsinline=1&enablejsapi=1&mute=1&cc_load_policy=1&cc_lang_pref=en" style="position:absolute;inset:0;width:100%;height:100%;border:0;" allow="accelerometer;autoplay;clipboard-write;encrypted-media;fullscreen;gyroscope;picture-in-picture;web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>'; const _f=vf.firstChild; if(_f){ const _play=()=>{ try{ _f.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}','*'); }catch(e){} }; _f.addEventListener("load",()=>{ _play(); setTimeout(_play,400); setTimeout(_play,1100); }); } return; }
   const im=ev.target.closest(".portrait"); if(im) openLightbox(im);
 });
 function ramp(id){ return PAL[Model.colorName(id)]; }
