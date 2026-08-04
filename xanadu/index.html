@@ -277,7 +277,7 @@
    never touches the DOM, and all load/save goes through GraphSource. This is
    the structure the scale work (worker layout, Barnes-Hut, accounts) hangs off.
    ============================================================================= */
-const BUILD="v2-437";
+const BUILD="v2-438";
 document.getElementById("build").textContent=BUILD;
 
 /* ---- palette (name → [lightest, mid-dark, darkest, vivid]) ---- */
@@ -690,6 +690,7 @@ const PlanetGL=(()=>{
       cvs=document.createElement("canvas");
       gl=cvs.getContext("webgl2",{alpha:true,premultipliedAlpha:false,antialias:false,depth:false});
       if(!gl) return false;
+      cvs.style.cssText="position:fixed;inset:0;width:100%;height:100%;z-index:2;pointer-events:none;"; document.body.appendChild(cvs);   // render GL directly to a visible layer — Safari softens drawImage(webglCanvas) onto 2D (WebKit bug); backdrop #c is z1 below, UI #hud z950 above, pointer-events:none so touch still hits #c
       const v=sh(gl.VERTEX_SHADER,VS), f=sh(gl.FRAGMENT_SHADER,FS); if(!v||!f) return false;
       prog=gl.createProgram(); gl.attachShader(prog,v); gl.attachShader(prog,f); gl.linkProgram(prog);
       if(!gl.getProgramParameter(prog,gl.LINK_STATUS)){ try{console.warn("PlanetGL link:",gl.getProgramInfoLog(prog));}catch(_){} return false; }
@@ -1168,7 +1169,7 @@ const Renderer=(()=>{
         PlanetGL.drawLabels(items, Math.round(W*DPR), Math.round(H*DPR));
         if(view.hover>=0 && glLabelHits.some(L=>L.id===view.hover)){ const _le=document.getElementById("label"); if(_le) _le.style.opacity="0"; }   // this node's label is already drawn — kill any hover label for it (authoritative, no frame lag)
       }
-      ctx.save(); ctx.setTransform(1,0,0,1,0,0); ctx.imageSmoothingEnabled=false; ctx.drawImage(PlanetGL.canvas(),0,0); ctx.restore();
+      /* GL layer now renders to its own visible canvas (z-index 2) — no drawImage composite, which Safari was softening */
     } else {
       const inv=1/SPHERE_FRAC;
       for(let k=0;k<cnt;k++){ const i=ord[k], sz=proj.r[i]*2*inv;
