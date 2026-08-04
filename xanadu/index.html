@@ -98,6 +98,7 @@
   #loading .lbar{height:4px;background:rgba(255,255,255,0.10);border-radius:3px;overflow:hidden;}
   #loading .lfill{height:100%;width:0;background:var(--accent);border-radius:3px;transition:width .25s ease;}
 @keyframes spin{to{transform:rotate(360deg)}}
+.vidplay{transition:transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;} .vidfacade:hover .vidplay{transform:scale(1.09); background:rgba(10,12,20,0.72); box-shadow:0 4px 18px rgba(0,0,0,0.5);}
 </style>
 </head>
 <body>
@@ -272,7 +273,7 @@
    never touches the DOM, and all load/save goes through GraphSource. This is
    the structure the scale work (worker layout, Barnes-Hut, accounts) hangs off.
    ============================================================================= */
-const BUILD="v2-421";
+const BUILD="v2-422";
 document.getElementById("build").textContent=BUILD;
 
 /* ---- palette (name → [lightest, mid-dark, darkest, vivid]) ---- */
@@ -1459,7 +1460,7 @@ function ytEmbed(u){
 }
 function videoBlock(url, c){   // one consistent video renderer used everywhere a video exists: embedded player for YouTube (nocookie + fullscreen), link fallback otherwise
   const em=ytEmbed(url);
-  if(em){ const vid=(em.match(/\/embed\/([^?&\/]+)/)||[])[1]||''; return '<div class="vidembed-pending" data-embed="'+esc(em)+'" data-vid="'+esc(vid)+'" style="margin-top:10px;position:relative;width:100%;aspect-ratio:16/9;border-radius:6px;overflow:hidden;box-shadow:0 0 12px '+c[3]+'44;background:#0a0c14;"></div>'; }   // deferred: once the card settles, YouTube's thumbnail poster shows first, the iframe loads hidden behind it, then the poster fades to reveal the ready player — no white flash
+  if(em){ const vid=(em.match(/\/embed\/([^?&\/]+)/)||[])[1]||''; const poster=vid?"https://img.youtube.com/vi/"+vid+"/hqdefault.jpg":""; return '<div class="vidfacade" data-embed="'+esc(em)+'" style="margin-top:10px;position:relative;width:100%;aspect-ratio:16/9;border-radius:6px;overflow:hidden;box-shadow:0 0 12px '+c[3]+'44;cursor:pointer;background:#0a0c14'+(poster?" center/cover no-repeat url('"+poster+"')":"")+';"><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.12);"><div class="vidplay" style="width:58px;height:58px;border-radius:50%;background:rgba(10,12,20,0.5);border:1.5px solid rgba(255,255,255,0.9);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 12px rgba(0,0,0,0.4);"><div style="width:0;height:0;border-left:17px solid #fff;border-top:11px solid transparent;border-bottom:11px solid transparent;margin-left:4px;"></div></div></div></div>'; }   // click-to-play facade: thumbnail poster + elegant play button; the iframe loads only on tap
   return '<a class="vidlink" data-url="'+esc(url)+'" style="display:inline-block;margin-top:9px;font-size:12px;color:'+c[3]+';cursor:pointer;">\u25b6 Video</a>';
 }
 function openVideo(url){ const emb=ytEmbed(url); if(emb) openWebview(emb+"?autoplay=1&rel=0","Video"); else openWebview(url,"Video"); }
@@ -1485,6 +1486,7 @@ document.addEventListener("click",ev=>{
   const eg=ev.target.closest(".entergraph"); if(eg){ ev.preventDefault(); if(Focus.mode==="focus"||Focus.mode==="ego") enterSubgraph(Focus.id); return; }
   const wl=ev.target.closest(".weblink"); if(wl){ ev.preventDefault(); openWebview(wl.dataset.url); return; }
   const vl=ev.target.closest(".vidlink"); if(vl){ ev.preventDefault(); openVideo(vl.dataset.url); return; }
+  const vf=ev.target.closest(".vidfacade"); if(vf){ ev.preventDefault(); vf.style.cursor="default"; vf.style.background="#0a0c14"; vf.innerHTML='<iframe src="'+vf.dataset.embed+'?rel=0&autoplay=1" style="position:absolute;inset:0;width:100%;height:100%;border:0;" allow="accelerometer;autoplay;clipboard-write;encrypted-media;fullscreen;gyroscope;picture-in-picture;web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>'; return; }
   const im=ev.target.closest(".portrait"); if(im) openLightbox(im);
 });
 function ramp(id){ return PAL[Model.colorName(id)]; }
@@ -1971,13 +1973,6 @@ function updatePlanetInfo(){
   box.style.top=""; box.style.left=""; box.style.right=""; box.style.bottom=""; box.style.transform=""; box.style.maxHeight=Math.max(160, innerHeight-150)+"px"; box.style.overflowY="auto"; box.style.display="block";   // fixed at top (CSS); cap to the viewport with an inner scroll so a banner image + long text can't run off-screen
   { const big=innerWidth>=900, base=Math.min(300, innerWidth-40), maxW=big?Math.min(Math.round(innerWidth*0.42),640):base, ad=(Focus.fitDist||1)*0.72, _wd=view.tdist; box.style.width=Math.round(Math.max(base, Math.min(maxW, base*ad/Math.max(1,_wd))))+"px"; }   // size from the TARGET distance while the camera is still flying in, so the card is already at its final width when it fades in (no wobble on desktop), then track the live distance once settled   // larger screens: grows from its original size up to a video-comfortable max (42% of width, ≤640); never smaller than original — it just disappears at that point; phones stay fixed
   box.style.opacity=String(Focus._boxOp += (_settleFade-Focus._boxOp)*0.05);   // slower straight fade so its duration matches the planet card's zoom-coupled fade (which is stretched across the approach); the sun card can't couple to the zoom since that happens during the gated burn
-  if(Focus._boxOp>0.9){ const _vp=box.querySelector(".vidembed-pending"); if(_vp){ _vp.classList.remove("vidembed-pending"); const _emb=_vp.dataset.embed, _vid=_vp.dataset.vid;
-    const _mkIframe=()=>{ const f=document.createElement("iframe"); f.style.cssText="position:absolute;inset:0;width:100%;height:100%;border:0;background:#0a0c14;"; f.allow="accelerometer;autoplay;clipboard-write;encrypted-media;fullscreen;gyroscope;picture-in-picture;web-share"; f.referrerPolicy="strict-origin-when-cross-origin"; f.allowFullscreen=true; return f; };
-    if(_vid){ const _pos=document.createElement("img"); _pos.style.cssText="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:2;transition:opacity 0.5s ease;pointer-events:none;"; _vp.appendChild(_pos);
-      _pos.addEventListener("load",()=>{ const f=_mkIframe(); _vp.insertBefore(f,_pos); f.src=_emb+"?rel=0"; const _reveal=()=>{ _pos.style.opacity="0"; setTimeout(()=>{ if(_pos.parentNode) _pos.remove(); },600); }; f.addEventListener("load",()=>setTimeout(_reveal,700)); setTimeout(_reveal,4000); });
-      _pos.src="https://img.youtube.com/vi/"+_vid+"/hqdefault.jpg";
-    } else { const f=_mkIframe(); _vp.appendChild(f); f.src=_emb+"?rel=0"; }
-  } }   // once the card settles: show YouTube's thumbnail poster, load the iframe hidden behind it, then fade the poster out to reveal the ready player — same image, so no white flash and a seamless hand-off
 }
 function hidePlanetInfo(){ cardEditing=false; const box=document.getElementById("planetinfo"); if(box){ if(box.querySelector("iframe")) box.innerHTML=""; box.style.display="none"; box.style.opacity="1"; box.style.top=""; box.style.bottom=""; box.style.maxHeight=""; } planetInfoShown=null; }
 // --- Temp nodes + brought-in neighbours (transient, never saved until a real link connects them) ---
