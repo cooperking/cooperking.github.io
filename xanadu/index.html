@@ -270,7 +270,7 @@
    never touches the DOM, and all load/save goes through GraphSource. This is
    the structure the scale work (worker layout, Barnes-Hut, accounts) hangs off.
    ============================================================================= */
-const BUILD="v2-413";
+const BUILD="v2-415";
 document.getElementById("build").textContent=BUILD;
 
 /* ---- palette (name → [lightest, mid-dark, darkest, vivid]) ---- */
@@ -1968,7 +1968,7 @@ function updatePlanetInfo(){
   box.style.top=""; box.style.left=""; box.style.right=""; box.style.bottom=""; box.style.transform=""; box.style.maxHeight=Math.max(160, innerHeight-150)+"px"; box.style.overflowY="auto"; box.style.display="block";   // fixed at top (CSS); cap to the viewport with an inner scroll so a banner image + long text can't run off-screen
   { const big=innerWidth>=900, base=Math.min(300, innerWidth-40), maxW=big?Math.min(Math.round(innerWidth*0.42),640):base, ad=(Focus.fitDist||1)*0.72, _wd=view.tdist; box.style.width=Math.round(Math.max(base, Math.min(maxW, base*ad/Math.max(1,_wd))))+"px"; }   // size from the TARGET distance while the camera is still flying in, so the card is already at its final width when it fades in (no wobble on desktop), then track the live distance once settled   // larger screens: grows from its original size up to a video-comfortable max (42% of width, ≤640); never smaller than original — it just disappears at that point; phones stay fixed
   box.style.opacity=String(Focus._boxOp += (_settleFade-Focus._boxOp)*0.05);   // slower straight fade so its duration matches the planet card's zoom-coupled fade (which is stretched across the approach); the sun card can't couple to the zoom since that happens during the gated burn
-  if(Focus._boxOp>0.9){ const _vp=box.querySelector(".vidembed-pending"); if(_vp){ _vp.classList.remove("vidembed-pending"); _vp.innerHTML='<iframe src="'+_vp.dataset.embed+'?rel=0" style="position:absolute;inset:0;width:100%;height:100%;border:0;" allow="accelerometer;autoplay;clipboard-write;encrypted-media;fullscreen;gyroscope;picture-in-picture;web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>'; } }   // auto-embed, but only after the card has faded in — keeps the appearance animation clean
+  if(Focus._boxOp>0.9){ const _vp=box.querySelector(".vidembed-pending"); if(_vp){ _vp.classList.remove("vidembed-pending"); _vp.innerHTML='<iframe src="'+_vp.dataset.embed+'?rel=0" style="position:absolute;inset:0;width:100%;height:100%;border:0;background:#0a0c14;opacity:0;transition:opacity 0.6s ease;" allow="accelerometer;autoplay;clipboard-write;encrypted-media;fullscreen;gyroscope;picture-in-picture;web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>'; const _if=_vp.firstChild; if(_if){ _if.addEventListener("load",()=>{ _if.style.opacity="1"; }); setTimeout(()=>{ if(_if) _if.style.opacity="1"; },2500); } } }   // auto-embed after the card settles, then cross-fade the iframe in over the dark placeholder so it arrives softly
 }
 function hidePlanetInfo(){ cardEditing=false; const box=document.getElementById("planetinfo"); if(box){ if(box.querySelector("iframe")) box.innerHTML=""; box.style.display="none"; box.style.opacity="1"; box.style.top=""; box.style.bottom=""; box.style.maxHeight=""; } planetInfoShown=null; }
 // --- Temp nodes + brought-in neighbours (transient, never saved until a real link connects them) ---
