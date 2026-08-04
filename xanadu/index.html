@@ -273,7 +273,7 @@
    never touches the DOM, and all load/save goes through GraphSource. This is
    the structure the scale work (worker layout, Barnes-Hut, accounts) hangs off.
    ============================================================================= */
-const BUILD="v2-429";
+const BUILD="v2-431";
 document.getElementById("build").textContent=BUILD;
 
 /* ---- palette (name → [lightest, mid-dark, darkest, vivid]) ---- */
@@ -1486,7 +1486,14 @@ document.addEventListener("click",ev=>{
   const eg=ev.target.closest(".entergraph"); if(eg){ ev.preventDefault(); if(Focus.mode==="focus"||Focus.mode==="ego") enterSubgraph(Focus.id); return; }
   const wl=ev.target.closest(".weblink"); if(wl){ ev.preventDefault(); openWebview(wl.dataset.url); return; }
   const vl=ev.target.closest(".vidlink"); if(vl){ ev.preventDefault(); openVideo(vl.dataset.url); return; }
-  const vf=ev.target.closest(".vidfacade"); if(vf){ ev.preventDefault(); vf.style.cursor="default"; vf.style.background="#0a0c14"; vf.innerHTML='<iframe src="'+vf.dataset.embed+'?rel=0&autoplay=1&playsinline=1&mute=1&cc_load_policy=1&cc_lang_pref=en" style="position:absolute;inset:0;width:100%;height:100%;border:0;touch-action:none;" allow="autoplay;accelerometer;clipboard-write;encrypted-media;fullscreen;gyroscope;picture-in-picture;web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>'; return; }
+  const vf=ev.target.closest(".vidfacade"); if(vf){ ev.preventDefault(); vf.style.cursor="default"; vf.style.background="#0a0c14";
+    vf.innerHTML='<iframe src="'+vf.dataset.embed+'?rel=0&autoplay=1&playsinline=1&mute=1&enablejsapi=1&cc_load_policy=1&cc_lang_pref=en" style="position:absolute;inset:0;width:100%;height:100%;border:0;" allow="autoplay;accelerometer;clipboard-write;encrypted-media;fullscreen;gyroscope;picture-in-picture;web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>'
+      +'<div class="vidguard" style="position:absolute;inset:0;z-index:3;touch-action:none;cursor:pointer;"></div>'
+      +'<button class="vidmute" style="position:absolute;bottom:8px;right:8px;z-index:4;width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,255,255,0.55);background:rgba(10,12,20,0.62);color:#fff;font-size:16px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;">\uD83D\uDD07</button>';
+    const _if=vf.querySelector("iframe"), _cmd=(f)=>{ try{ _if.contentWindow.postMessage('{"event":"command","func":"'+f+'","args":""}','*'); }catch(e){} };
+    let _playing=true; vf.querySelector(".vidguard").addEventListener("click",()=>{ _playing=!_playing; _cmd(_playing?"playVideo":"pauseVideo"); });
+    let _muted=true; const _mb=vf.querySelector(".vidmute"); _mb.addEventListener("click",(e2)=>{ e2.stopPropagation(); _muted=!_muted; _cmd(_muted?"mute":"unMute"); _mb.textContent=_muted?"\uD83D\uDD07":"\uD83D\uDD0A"; });
+    return; }
   const im=ev.target.closest(".portrait"); if(im) openLightbox(im);
 });
 function ramp(id){ return PAL[Model.colorName(id)]; }
@@ -2659,7 +2666,7 @@ document.addEventListener("pointerdown", e=>{ const s=document.getElementById("s
 function attachLongPress(el, fn){
   let t=null, sx=0, sy=0;
   const clear=()=>{ if(t){ clearTimeout(t); t=null; } };
-  el.addEventListener("pointerdown", e=>{ sx=e.clientX; sy=e.clientY; clear(); t=setTimeout(()=>{ t=null; el._lp=true; fn(); }, 500); });
+  el.addEventListener("pointerdown", e=>{ sx=e.clientX; sy=e.clientY; clear(); t=setTimeout(()=>{ t=null; el._lp=true; fn(); }, 750); });
   el.addEventListener("pointermove", e=>{ if(t && (Math.abs(e.clientX-sx)+Math.abs(e.clientY-sy))>8) clear(); });
   el.addEventListener("pointerup", clear); el.addEventListener("pointercancel", clear); el.addEventListener("pointerleave", clear);
 }
