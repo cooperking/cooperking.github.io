@@ -277,7 +277,7 @@
    never touches the DOM, and all load/save goes through GraphSource. This is
    the structure the scale work (worker layout, Barnes-Hut, accounts) hangs off.
    ============================================================================= */
-const BUILD="v2-440";
+const BUILD="v2-441";
 document.getElementById("build").textContent=BUILD;
 
 /* ---- palette (name → [lightest, mid-dark, darkest, vivid]) ---- */
@@ -1439,7 +1439,8 @@ const lightbox=document.getElementById("lightbox"), lightboxImg=document.getElem
 // Video lightbox: play the embed in a dedicated dark overlay, muted-autoplay, with a pinch-guard + minimal controls.
 function openVidLB(embed){
   const box=document.getElementById("vidlb-box");
-  box.innerHTML='<iframe src="'+embed+'?rel=0&autoplay=1&playsinline=1&mute=1&cc_load_policy=1&cc_lang_pref=en" style="position:absolute;inset:0;width:100%;height:100%;border:0;" allow="autoplay;accelerometer;clipboard-write;encrypted-media;fullscreen;gyroscope;picture-in-picture;web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>';
+  box.innerHTML='<iframe src="'+embed+'?rel=0&autoplay=1&playsinline=1&mute=1&enablejsapi=1&cc_load_policy=1&cc_lang_pref=en" style="position:absolute;inset:0;width:100%;height:100%;border:0;" allow="autoplay;accelerometer;clipboard-write;encrypted-media;fullscreen;gyroscope;picture-in-picture;web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>';
+  const _if=box.querySelector("iframe"); if(_if){ const _play=()=>{ try{ _if.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}','*'); }catch(e){} }; _if.addEventListener("load",_play); [500,1100,1900,2800].forEach(t=>setTimeout(_play,t)); }
   document.getElementById("vidlb").style.display="flex";
 }
 function closeVidLB(){ const lb=document.getElementById("vidlb"); if(!lb||lb.style.display==="none") return; lb.style.display="none"; document.getElementById("vidlb-box").innerHTML=""; }
