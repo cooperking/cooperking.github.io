@@ -209,6 +209,10 @@
 <div id="lightbox" style="display:none; position:fixed; inset:0; z-index:2000; background:rgba(0,0,0,0.78); cursor:zoom-out; align-items:center; justify-content:center;">
   <img id="lightbox-img" alt="" style="max-width:90vw; max-height:90vh; border-radius:12px;">
 </div>
+<div id="vidlb" style="display:none; position:fixed; inset:0; z-index:2001; background:rgba(0,0,0,0.92); align-items:center; justify-content:center;">
+  <div id="vidlb-box" style="position:relative; width:min(94vw,1100px); aspect-ratio:16/9; max-height:84vh; background:#0a0c14; border-radius:8px; overflow:hidden; box-shadow:0 0 44px rgba(0,0,0,0.6);"></div>
+  <button id="vidlb-close" style="position:absolute; top:calc(env(safe-area-inset-top,0px) + 14px); right:16px; z-index:2; width:40px; height:40px; border-radius:50%; border:1px solid rgba(255,255,255,0.5); background:rgba(10,12,20,0.62); color:#fff; font-size:20px; line-height:1; cursor:pointer;">\u00d7</button>
+</div>
 <div id="webview" style="display:none; position:fixed; inset:0; z-index:2100; background:rgba(0,0,0,0.55); opacity:0; transition:opacity 0.25s ease; align-items:center; justify-content:center;">
   <div id="webview-panel" style="position:relative; width:min(1100px,94vw); height:min(88vh,900px); background:var(--card); border-radius:14px; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,0.5); transform:scale(0.96); transition:transform 0.28s cubic-bezier(.2,.7,.3,1);">
     <div style="display:flex; align-items:center; gap:8px; padding:8px 10px; border-bottom:1px solid var(--line); background:var(--card);">
@@ -273,7 +277,7 @@
    never touches the DOM, and all load/save goes through GraphSource. This is
    the structure the scale work (worker layout, Barnes-Hut, accounts) hangs off.
    ============================================================================= */
-const BUILD="v2-431";
+const BUILD="v2-433";
 document.getElementById("build").textContent=BUILD;
 
 /* ---- palette (name → [lightest, mid-dark, darkest, vivid]) ---- */
@@ -1430,6 +1434,14 @@ function md(s){
 }
 // ---- Media block: image lightbox + in-app webview (faithful port of prototype) ----
 const lightbox=document.getElementById("lightbox"), lightboxImg=document.getElementById("lightbox-img");
+// Video lightbox: play the embed in a dedicated dark overlay, muted-autoplay, with a pinch-guard + minimal controls.
+function openVidLB(embed){
+  const box=document.getElementById("vidlb-box");
+  box.innerHTML='<iframe src="'+embed+'?rel=0&autoplay=1&playsinline=1&mute=1&cc_load_policy=1&cc_lang_pref=en" style="position:absolute;inset:0;width:100%;height:100%;border:0;" allow="autoplay;accelerometer;clipboard-write;encrypted-media;fullscreen;gyroscope;picture-in-picture;web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>';
+  document.getElementById("vidlb").style.display="flex";
+}
+function closeVidLB(){ const lb=document.getElementById("vidlb"); if(!lb||lb.style.display==="none") return; lb.style.display="none"; document.getElementById("vidlb-box").innerHTML=""; }
+(function(){ const c=document.getElementById("vidlb-close"), o=document.getElementById("vidlb"); if(c) c.addEventListener("click",closeVidLB); if(o) o.addEventListener("click",(e)=>{ if(e.target.id==="vidlb") closeVidLB(); }); })();
 function openLightbox(im){
   const r=im.getBoundingClientRect();
   lightboxImg.src=im.dataset.full||im.src; lightbox.style.display="flex";
@@ -1486,14 +1498,7 @@ document.addEventListener("click",ev=>{
   const eg=ev.target.closest(".entergraph"); if(eg){ ev.preventDefault(); if(Focus.mode==="focus"||Focus.mode==="ego") enterSubgraph(Focus.id); return; }
   const wl=ev.target.closest(".weblink"); if(wl){ ev.preventDefault(); openWebview(wl.dataset.url); return; }
   const vl=ev.target.closest(".vidlink"); if(vl){ ev.preventDefault(); openVideo(vl.dataset.url); return; }
-  const vf=ev.target.closest(".vidfacade"); if(vf){ ev.preventDefault(); vf.style.cursor="default"; vf.style.background="#0a0c14";
-    vf.innerHTML='<iframe src="'+vf.dataset.embed+'?rel=0&autoplay=1&playsinline=1&mute=1&enablejsapi=1&cc_load_policy=1&cc_lang_pref=en" style="position:absolute;inset:0;width:100%;height:100%;border:0;" allow="autoplay;accelerometer;clipboard-write;encrypted-media;fullscreen;gyroscope;picture-in-picture;web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>'
-      +'<div class="vidguard" style="position:absolute;inset:0;z-index:3;touch-action:none;cursor:pointer;"></div>'
-      +'<button class="vidmute" style="position:absolute;bottom:8px;right:8px;z-index:4;width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,255,255,0.55);background:rgba(10,12,20,0.62);color:#fff;font-size:16px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;">\uD83D\uDD07</button>';
-    const _if=vf.querySelector("iframe"), _cmd=(f)=>{ try{ _if.contentWindow.postMessage('{"event":"command","func":"'+f+'","args":""}','*'); }catch(e){} };
-    let _playing=true; vf.querySelector(".vidguard").addEventListener("click",()=>{ _playing=!_playing; _cmd(_playing?"playVideo":"pauseVideo"); });
-    let _muted=true; const _mb=vf.querySelector(".vidmute"); _mb.addEventListener("click",(e2)=>{ e2.stopPropagation(); _muted=!_muted; _cmd(_muted?"mute":"unMute"); _mb.textContent=_muted?"\uD83D\uDD07":"\uD83D\uDD0A"; });
-    return; }
+  const vf=ev.target.closest(".vidfacade"); if(vf){ ev.preventDefault(); openVidLB(vf.dataset.embed); return; }
   const im=ev.target.closest(".portrait"); if(im) openLightbox(im);
 });
 function ramp(id){ return PAL[Model.colorName(id)]; }
