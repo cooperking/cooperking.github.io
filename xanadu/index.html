@@ -273,7 +273,7 @@
    never touches the DOM, and all load/save goes through GraphSource. This is
    the structure the scale work (worker layout, Barnes-Hut, accounts) hangs off.
    ============================================================================= */
-const BUILD="v2-426";
+const BUILD="v2-427";
 document.getElementById("build").textContent=BUILD;
 
 /* ---- palette (name → [lightest, mid-dark, darkest, vivid]) ---- */
@@ -1486,7 +1486,7 @@ document.addEventListener("click",ev=>{
   const eg=ev.target.closest(".entergraph"); if(eg){ ev.preventDefault(); if(Focus.mode==="focus"||Focus.mode==="ego") enterSubgraph(Focus.id); return; }
   const wl=ev.target.closest(".weblink"); if(wl){ ev.preventDefault(); openWebview(wl.dataset.url); return; }
   const vl=ev.target.closest(".vidlink"); if(vl){ ev.preventDefault(); openVideo(vl.dataset.url); return; }
-  const vf=ev.target.closest(".vidfacade"); if(vf){ ev.preventDefault(); vf.style.cursor="default"; vf.style.background="#0a0c14"; vf.innerHTML='<iframe src="'+vf.dataset.embed+'?rel=0&autoplay=1&playsinline=1&enablejsapi=1&mute=1&cc_load_policy=1&cc_lang_pref=en" style="position:absolute;inset:0;width:100%;height:100%;border:0;" allow="accelerometer;autoplay;clipboard-write;encrypted-media;fullscreen;gyroscope;picture-in-picture;web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>'; const _f=vf.firstChild; if(_f){ const _play=()=>{ try{ _f.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}','*'); }catch(e){} }; _f.addEventListener("load",()=>{ _play(); setTimeout(_play,400); setTimeout(_play,1100); }); } return; }
+  const vf=ev.target.closest(".vidfacade"); if(vf){ ev.preventDefault(); vf.style.cursor="default"; vf.style.background="#0a0c14"; vf.innerHTML='<iframe src="'+vf.dataset.embed+'?rel=0&autoplay=1&playsinline=1&mute=1&cc_load_policy=1&cc_lang_pref=en" style="position:absolute;inset:0;width:100%;height:100%;border:0;" allow="autoplay;accelerometer;clipboard-write;encrypted-media;fullscreen;gyroscope;picture-in-picture;web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>'; return; }
   const im=ev.target.closest(".portrait"); if(im) openLightbox(im);
 });
 function ramp(id){ return PAL[Model.colorName(id)]; }
