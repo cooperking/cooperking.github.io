@@ -277,7 +277,7 @@
    never touches the DOM, and all load/save goes through GraphSource. This is
    the structure the scale work (worker layout, Barnes-Hut, accounts) hangs off.
    ============================================================================= */
-const BUILD="v2-435";
+const BUILD="v2-436";
 document.getElementById("build").textContent=BUILD;
 
 /* ---- palette (name → [lightest, mid-dark, darkest, vivid]) ---- */
@@ -724,7 +724,7 @@ const PlanetGL=(()=>{
   function render(dw,dh, lightView, invView, count, fill, timeMs){
     if(!ok) return;
     curTime = timeMs||0;
-    if(cvs.width!==dw||cvs.height!==dh){ cvs.width=dw; cvs.height=dh; }
+    if(cvs.width!==dw||cvs.height!==dh){ cvs.width=dw; cvs.height=dh; try{ if(IS_ADMIN){ const _bt=document.getElementById("buildtag"); if(_bt) _bt.textContent=BUILD+" req"+dw+"\u00d7"+dh+" buf"+gl.drawingBufferWidth+"\u00d7"+gl.drawingBufferHeight; } }catch(e){} }
     if(count>0){
       if(count>cap){ cap=Math.max(count, cap*2, 256); inst=new Float32Array(cap*STRIDE); }
       fill(inst);
