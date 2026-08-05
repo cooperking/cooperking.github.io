@@ -279,7 +279,7 @@
    never touches the DOM, and all load/save goes through GraphSource. This is
    the structure the scale work (worker layout, Barnes-Hut, accounts) hangs off.
    ============================================================================= */
-const BUILD="v2-492";
+const BUILD="v2-493";
 document.getElementById("build").textContent=BUILD;
 
 /* ---- palette (name → [lightest, mid-dark, darkest, vivid]) ---- */
@@ -2253,7 +2253,7 @@ function buildSolarTopology(){
   // LIVE STARTING STATE = ideal home with the start node pre-focused: ALL its neighbours orbit it.
   const isSun=Uint8Array.from(idealIsSun); let sun;
   if(startIdx!==undefined){
-    const A=adj[startIdx]; for(let x=0;x<A.length;x++){ if(A[x]!==startIdx) isSun[A[x]]=0; }   // demote start's neighbours → they become its planets
+    const A=adj[startIdx]; for(let x=0;x<A.length;x++){ if(A[x]!==startIdx) isSun[A[x]]=0; } for(let i=0;i<n;i++){ const _hn=Model.nodeById(Model.ids[i]); if(_hn&&_hn.highlight) isSun[i]=1; }   // demote start's neighbours → they become its planets
     cover(isSun);                                                                              // anyone orphaned by that gets a home/becomes a sun
     sun=assignHomes(isSun, startIdx);                                                           // and every start-neighbour is pinned to start
   } else { sun=assignHomes(isSun); }
