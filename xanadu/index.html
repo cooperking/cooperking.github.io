@@ -279,7 +279,7 @@
    never touches the DOM, and all load/save goes through GraphSource. This is
    the structure the scale work (worker layout, Barnes-Hut, accounts) hangs off.
    ============================================================================= */
-const BUILD="v2-476";
+const BUILD="v2-478";
 document.getElementById("build").textContent=BUILD;
 
 /* ---- palette (name → [lightest, mid-dark, darkest, vivid]) ---- */
@@ -1313,7 +1313,7 @@ cv.addEventListener("pointerup",e=>{ if(moved>=6||pinching||cardEditing) return;
       else hideRelInfo(); }
     return;
   }
-  if(Focus._highlightView){ if(i>=0){ Focus._highlightView=false; if(Focus._paintHl)Focus._paintHl(); goToNode(i); } return; }   // highlights view: reuse the working node-pick; tap a node → go there, and never fall through to a connector
+  if(Focus._highlightView){ if(i>=0){ const _n=Model.count(); const _rg=new Set(); for(let _k=0;_k<_n;_k++){ const _nd=Model.nodeById(Model.ids[_k]); if(_nd&&_nd.highlight)_rg.add(_k); } (Model.raw&&Model.raw.links?Model.raw.links:[]).forEach(l=>{ if(!l.highlight)return; const _a=Model.index(l.from),_b=Model.index(l.to); if(_a==null||_b==null)return; const _aS=SolarSys.isSun.length===_n&&SolarSys.isSun[_a],_bS=SolarSys.isSun.length===_n&&SolarSys.isSun[_b]; if(_aS&&_bS)return; _rg.add(_aS?_b:_a); }); let _bst=-1,_bD=Infinity; _rg.forEach(_k=>{ if(!proj.vis[_k])return; const _dx=proj.x[i]-proj.x[_k],_dy=proj.y[i]-proj.y[_k],_d2=_dx*_dx+_dy*_dy; if(_d2<_bD){_bD=_d2;_bst=_k;} }); if(_bst>=0){ Focus._highlightView=false; if(Focus._paintHl)Focus._paintHl(); goToNode(_bst); } } return; }   // highlights view: snap the pick to the nearest ringed node (incl. connection endpoints), then go there
   if(i>=0){ if(Focus.mode==="focus") enterFocus(Model.ids[i]); else goToNode(i); }   // galaxy/universe: sun → fly into it; planet → its sun's system, focused on the planet
   else if(Focus.mode==="focus") exitFocus();
   else { const ce=Renderer.pickAnyConnector(e.clientX,e.clientY);   // galaxy: tap a connector → glow + relationship label
@@ -1872,7 +1872,7 @@ function enterCardEdit(spec){   // inline hold-to-edit form, shared by node card
   box.innerHTML="";
   const done=document.createElement("button"); done.type="button"; done.textContent="Done"; done.style.cssText="float:right;font-size:13px;padding:3px 12px;cursor:pointer;"; done.onclick=exitCardEdit; box.appendChild(done);
   const title=document.createElement("div"); title.textContent=kind==="link"?"Edit connection":"Edit node"; title.style.cssText="font-size:13px;font-weight:600;color:#f4f5fa;margin-bottom:9px;"; box.appendChild(title);
-  { const hl=document.createElement("label"); hl.style.cssText="display:flex;align-items:center;gap:7px;color:#f4d97a;font-size:12px;margin-bottom:10px;cursor:pointer;"; const hc=document.createElement("input"); hc.type="checkbox"; hc.style.cssText="width:16px;height:16px;margin:0;flex:none;accent-color:#f4d97a;"; hc.checked=!!target.highlight; hc.addEventListener("change",()=>{ if(hc.checked) target.highlight=true; else delete target.highlight; saveRoot(); }); hl.appendChild(hc); hl.appendChild(document.createTextNode("Highlight")); box.appendChild(hl); }   // highlight toggle — one control, works for both node and connection since target is either
+  { const hl=document.createElement("label"); hl.style.cssText="display:flex;align-items:center;gap:7px;color:#f4d97a;font-size:12px;margin-bottom:10px;cursor:pointer;"; const hc=document.createElement("input"); hc.type="checkbox"; hc.style.cssText="width:16px;height:16px;margin:0;flex:none;accent-color:#f4d97a;"; hc.checked=!!target.highlight; hc.addEventListener("change",()=>{ if(hc.checked) target.highlight=true; else delete target.highlight; saveRoot(); if(typeof buildSolarTopology==="function") buildSolarTopology(); if(typeof buildSolarOrbits==="function") buildSolarOrbits(); if(Focus._updateHlBtn)Focus._updateHlBtn(); }); hl.appendChild(hc); hl.appendChild(document.createTextNode("Highlight")); box.appendChild(hl); }   // highlight toggle — one control, works for both node and connection since target is either
   if(kind==="link"){ const _t=Model.raw.types=Model.raw.types||{};
     const tw=document.createElement("label"); tw.style.cssText="display:block;font-size:11px;color:#aab0c2;margin-bottom:8px;"; tw.textContent="Relationship type";
     const sel=document.createElement("select"); sel.style.cssText="width:100%;box-sizing:border-box;margin-top:3px;";
