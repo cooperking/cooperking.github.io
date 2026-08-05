@@ -279,7 +279,7 @@
    never touches the DOM, and all load/save goes through GraphSource. This is
    the structure the scale work (worker layout, Barnes-Hut, accounts) hangs off.
    ============================================================================= */
-const BUILD="v2-473";
+const BUILD="v2-475";
 document.getElementById("build").textContent=BUILD;
 
 /* ---- palette (name → [lightest, mid-dark, darkest, vivid]) ---- */
@@ -1313,7 +1313,7 @@ cv.addEventListener("pointerup",e=>{ if(moved>=6||pinching||cardEditing) return;
       else hideRelInfo(); }
     return;
   }
-  if(Focus._highlightView){ const _n=Model.count(); let _bst=-1,_bD=40*40; for(let _k=0;_k<_n;_k++){ const _nd=Model.nodeById(Model.ids[_k]); if(!(_nd&&_nd.highlight)||!proj.vis[_k])continue; const _dx=e.clientX-proj.x[_k],_dy=e.clientY-proj.y[_k],_d2=_dx*_dx+_dy*_dy; if(_d2<_bD){_bD=_d2;_bst=_k;} } (Model.raw&&Model.raw.links?Model.raw.links:[]).forEach(l=>{ if(!l.highlight)return; const _a=Model.index(l.from),_b=Model.index(l.to); if(_a==null||_b==null)return; const _aS=SolarSys.isSun.length===_n&&SolarSys.isSun[_a],_bS=SolarSys.isSun.length===_n&&SolarSys.isSun[_b]; if(_aS&&_bS)return; const _t=_aS?_b:_a; if(!proj.vis[_t])return; const _dx=e.clientX-proj.x[_t],_dy=e.clientY-proj.y[_t],_d2=_dx*_dx+_dy*_dy; if(_d2<_bD){_bD=_d2;_bst=_t;} }); if(_bst>=0){ Focus._highlightView=false; if(Focus._paintHl)Focus._paintHl(); goToNode(_bst); } return; }   // highlights view: tap the nearest ringed node → go there; never pick a stray connector
+  if(Focus._highlightView){ const _n=Model.count(),_mx=e.clientX*DPR,_my=e.clientY*DPR; let _bst=-1,_bD=(38*DPR)*(38*DPR); for(let _k=0;_k<_n;_k++){ const _nd=Model.nodeById(Model.ids[_k]); if(!(_nd&&_nd.highlight)||!proj.vis[_k])continue; const _dx=_mx-proj.x[_k],_dy=_my-proj.y[_k],_d2=_dx*_dx+_dy*_dy; if(_d2<_bD){_bD=_d2;_bst=_k;} } (Model.raw&&Model.raw.links?Model.raw.links:[]).forEach(l=>{ if(!l.highlight)return; const _a=Model.index(l.from),_b=Model.index(l.to); if(_a==null||_b==null)return; const _aS=SolarSys.isSun.length===_n&&SolarSys.isSun[_a],_bS=SolarSys.isSun.length===_n&&SolarSys.isSun[_b]; if(_aS&&_bS)return; const _t=_aS?_b:_a; if(!proj.vis[_t])return; const _dx=_mx-proj.x[_t],_dy=_my-proj.y[_t],_d2=_dx*_dx+_dy*_dy; if(_d2<_bD){_bD=_d2;_bst=_t;} }); if(_bst>=0){ Focus._highlightView=false; if(Focus._paintHl)Focus._paintHl(); goToNode(_bst); } return; }   // highlights view: tap the nearest ringed node → go there; never pick a stray connector
   if(i>=0){ if(Focus.mode==="focus") enterFocus(Model.ids[i]); else goToNode(i); }   // galaxy/universe: sun → fly into it; planet → its sun's system, focused on the planet
   else if(Focus.mode==="focus") exitFocus();
   else { const ce=Renderer.pickAnyConnector(e.clientX,e.clientY);   // galaxy: tap a connector → glow + relationship label
@@ -2245,6 +2245,7 @@ function buildSolarTopology(){
   const idealIsSun=new Uint8Array(n);
   if(startIdx!==undefined) idealIsSun[startIdx]=1;
   for(let i=0;i<n;i++) if(deg[i]>=SUN_MIN) idealIsSun[i]=1;
+  for(let i=0;i<n;i++){ const _hn=Model.nodeById(Model.ids[i]); if(_hn&&_hn.highlight) idealIsSun[i]=1; }   // a highlighted node is always a sun — spreads highlights across the galaxy instead of clumping them in one system
   cover(idealIsSun);
   const idealSun=assignHomes(idealIsSun);
   SolarSys.homeSun=Int32Array.from(idealSun); SolarSys.homeIsSun=Uint8Array.from(idealIsSun);
