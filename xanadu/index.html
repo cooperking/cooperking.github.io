@@ -279,7 +279,7 @@
    never touches the DOM, and all load/save goes through GraphSource. This is
    the structure the scale work (worker layout, Barnes-Hut, accounts) hangs off.
    ============================================================================= */
-const BUILD="v2-472";
+const BUILD="v2-473";
 document.getElementById("build").textContent=BUILD;
 
 /* ---- palette (name → [lightest, mid-dark, darkest, vivid]) ---- */
@@ -1223,7 +1223,7 @@ const Renderer=(()=>{
         for(let k=0;k<cnt;k++){ const i=ord[k]; if(SolarSys.isSun[i] && proj.r[i]>=1.0) cand.push(i); }   // any visible sun; distance (below) decides, not screen size
         cand.sort((a,b)=>proj.az[a]-proj.az[b]);   // the suns CLOSEST to the camera → different ones reveal as the galaxy turns
         const gboxes=[], ga=1-sysA; ctx.shadowBlur=0; ctx.font="600 12px -apple-system,Segoe UI,Roboto,sans-serif";
-        for(let k=0;k<cand.length && gboxes.length<18;k++){ const i=cand[k]; if(labeled.has(i)) continue;
+        for(let k=0;k<cand.length && gboxes.length<18 && !Focus._highlightView;k++){ const i=cand[k]; if(labeled.has(i)) continue;
           const nd=Model.nodeById(ids[i]), nm=(nd&&nd.name)||ids[i], w=ctx.measureText(nm).width;
           const lx=proj.x[i], ly=proj.y[i]-proj.r[i]-9, bx=lx-w/2-4, by=ly-12, bw=w+8, bh=16;
           let clash=false; for(let z=0;z<gboxes.length;z++){ const B=gboxes[z]; if(bx<B.x+B.w && bx+bw>B.x && by<B.y+B.h && by+bh>B.y){ clash=true; break; } }
@@ -1233,7 +1233,7 @@ const Renderer=(()=>{
         }
         ctx.globalAlpha=1;
       }
-      if(view.hover>=0 && proj.vis[view.hover] && !labeled.has(view.hover) && !glLabelHits.some(L=>L.id===view.hover)){   // the hovered node, only if not already named (2D OR WebGL billboard)
+      if(view.hover>=0 && proj.vis[view.hover] && !labeled.has(view.hover) && !glLabelHits.some(L=>L.id===view.hover) && !Focus._highlightView){   // the hovered node, only if not already named (2D OR WebGL billboard)
         const i=view.hover, nd=Model.nodeById(ids[i]);
         ctx.fillStyle="rgba(230,234,244,0.97)"; ctx.font="600 12px -apple-system,Segoe UI,Roboto,sans-serif";
         ctx.fillText(nd&&nd.name||ids[i], proj.x[i], proj.y[i]-proj.r[i]-6);
@@ -1313,7 +1313,7 @@ cv.addEventListener("pointerup",e=>{ if(moved>=6||pinching||cardEditing) return;
       else hideRelInfo(); }
     return;
   }
-  if(Focus._highlightView){ let _bst=-1,_bD=28*28; for(let _k=0;_k<n;_k++){ const _nd=Model.nodeById(Model.ids[_k]); if(!(_nd&&_nd.highlight)||!proj.vis[_k])continue; const _dx=e.clientX-proj.x[_k],_dy=e.clientY-proj.y[_k],_d2=_dx*_dx+_dy*_dy; if(_d2<_bD){_bD=_d2;_bst=_k;} } (Model.raw&&Model.raw.links?Model.raw.links:[]).forEach(l=>{ if(!l.highlight)return; const _a=Model.index(l.from),_b=Model.index(l.to); if(_a==null||_b==null)return; const _aS=SolarSys.isSun.length===n&&SolarSys.isSun[_a],_bS=SolarSys.isSun.length===n&&SolarSys.isSun[_b]; if(_aS&&_bS)return; const _t=_aS?_b:_a; if(!proj.vis[_t])return; const _dx=e.clientX-proj.x[_t],_dy=e.clientY-proj.y[_t],_d2=_dx*_dx+_dy*_dy; if(_d2<_bD){_bD=_d2;_bst=_t;} }); if(_bst>=0){ Focus._highlightView=false; if(Focus._paintHl)Focus._paintHl(); goToNode(_bst); } return; }   // highlights view: tap the nearest ringed node → go there; never pick a stray connector
+  if(Focus._highlightView){ const _n=Model.count(); let _bst=-1,_bD=40*40; for(let _k=0;_k<_n;_k++){ const _nd=Model.nodeById(Model.ids[_k]); if(!(_nd&&_nd.highlight)||!proj.vis[_k])continue; const _dx=e.clientX-proj.x[_k],_dy=e.clientY-proj.y[_k],_d2=_dx*_dx+_dy*_dy; if(_d2<_bD){_bD=_d2;_bst=_k;} } (Model.raw&&Model.raw.links?Model.raw.links:[]).forEach(l=>{ if(!l.highlight)return; const _a=Model.index(l.from),_b=Model.index(l.to); if(_a==null||_b==null)return; const _aS=SolarSys.isSun.length===_n&&SolarSys.isSun[_a],_bS=SolarSys.isSun.length===_n&&SolarSys.isSun[_b]; if(_aS&&_bS)return; const _t=_aS?_b:_a; if(!proj.vis[_t])return; const _dx=e.clientX-proj.x[_t],_dy=e.clientY-proj.y[_t],_d2=_dx*_dx+_dy*_dy; if(_d2<_bD){_bD=_d2;_bst=_t;} }); if(_bst>=0){ Focus._highlightView=false; if(Focus._paintHl)Focus._paintHl(); goToNode(_bst); } return; }   // highlights view: tap the nearest ringed node → go there; never pick a stray connector
   if(i>=0){ if(Focus.mode==="focus") enterFocus(Model.ids[i]); else goToNode(i); }   // galaxy/universe: sun → fly into it; planet → its sun's system, focused on the planet
   else if(Focus.mode==="focus") exitFocus();
   else { const ce=Renderer.pickAnyConnector(e.clientX,e.clientY);   // galaxy: tap a connector → glow + relationship label
