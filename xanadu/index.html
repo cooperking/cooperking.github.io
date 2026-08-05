@@ -254,7 +254,7 @@
 </div>
 <div id="planetinfo" style="display:none; position:fixed; z-index:600; width:min(300px, calc(100vw - 40px)); max-height:38vh; overflow:auto; padding:14px 16px; border-radius:6px; box-shadow:0 12px 40px rgba(0,0,0,0.5); pointer-events:auto;"></div>
 <button id="addtempnode" type="button" title="Add a new node" style="display:none; position:fixed; bottom:16px; left:222px; z-index:900; align-items:center; justify-content:center; width:42px; height:42px; padding:0; background:var(--card); border:1px solid var(--line-strong); border-radius:50%; box-shadow:0 4px 16px rgba(0,0,0,0.4); cursor:pointer; color:var(--t2); font-size:19px; font-weight:400; line-height:1;">+</button>
-<div id="buildtag" style="display:none; position:fixed; bottom:64px; left:222px; z-index:900; font-size:10px; color:var(--t2); opacity:0.55; pointer-events:none; letter-spacing:0.02em; font-family:ui-monospace,SFMono-Regular,Menlo,monospace;"></div>
+<div id="buildtag" style="display:none; position:fixed; bottom:64px; left:12px; z-index:900; font-size:10px; color:var(--t2); opacity:0.55; pointer-events:none; letter-spacing:0.02em; font-family:ui-monospace,SFMono-Regular,Menlo,monospace;"></div>
 <svg id="connectline" style="display:none; position:fixed; inset:0; z-index:2150; pointer-events:none; width:100%; height:100%;"><line id="connectline-l" stroke="rgba(130,200,255,0.95)" stroke-width="2.5" stroke-dasharray="6 5"></line></svg>
 <div id="connectpop" style="display:none; position:fixed; z-index:2200; background:var(--card); border:1px solid var(--line-strong); border-radius:8px; padding:10px 12px; box-shadow:0 8px 30px rgba(0,0,0,0.5); font-size:12.5px; color:#eef0f6; max-width:min(260px,90vw);">
   <div id="connectpop-desc" style="margin-bottom:8px;"></div>
@@ -279,7 +279,7 @@
    never touches the DOM, and all load/save goes through GraphSource. This is
    the structure the scale work (worker layout, Barnes-Hut, accounts) hangs off.
    ============================================================================= */
-const BUILD="v2-469";
+const BUILD="v2-470";
 document.getElementById("build").textContent=BUILD;
 
 /* ---- palette (name → [lightest, mid-dark, darkest, vivid]) ---- */
@@ -1103,7 +1103,7 @@ const Renderer=(()=>{
         const fr=sr*(2.4+_igT*4.0), g2=ctx.createRadialGradient(sx,sy,0, sx,sy,fr);
         g2.addColorStop(0,"rgba(255,247,224,"+(0.5*flE).toFixed(3)+")"); g2.addColorStop(0.4,"rgba(255,236,198,"+(0.24*flE).toFixed(3)+")"); g2.addColorStop(1,"rgba(255,222,165,0)");
         ctx.fillStyle=g2; ctx.beginPath(); ctx.arc(sx,sy,fr,0,7); ctx.fill(); }
-      if(Focus._highlightView){ const _hl=new Set(); for(let _i=0;_i<n;_i++){ const _nd=Model.nodeById(Model.ids[_i]); if(_nd&&_nd.highlight)_hl.add(_i); } (Model.raw&&Model.raw.links?Model.raw.links:[]).forEach(l=>{ if(l.highlight){ const _a=Model.index(l.from),_b=Model.index(l.to); if(_a!=null)_hl.add(_a); if(_b!=null)_hl.add(_b); } }); const _pu=0.5+0.5*Math.sin(nowT*0.005); ctx.save(); ctx.globalCompositeOperation="source-over"; _hl.forEach(_i=>{ if(!proj.vis[_i])return; const _x=proj.x[_i],_y=proj.y[_i],_rr=Math.max(24,proj.r[_i]*2.6)+_pu*8; ctx.beginPath(); ctx.arc(_x,_y,_rr+5,0,7); ctx.strokeStyle="rgba(244,217,122,"+(0.18*_pu).toFixed(3)+")"; ctx.lineWidth=9; ctx.stroke(); ctx.beginPath(); ctx.arc(_x,_y,_rr,0,7); ctx.strokeStyle="rgba(248,224,140,"+(0.65+0.35*_pu).toFixed(3)+")"; ctx.lineWidth=3; ctx.stroke(); }); ctx.restore(); }   // highlights view: pulsing gold rings on highlighted nodes + highlighted-connection endpoints
+      if(Focus._highlightView){ if(cl>0.35){ Focus._highlightView=false; if(Focus._paintHl)Focus._paintHl(); } else { ctx.save(); ctx.globalCompositeOperation="source-over"; const _pu=0.5+0.5*Math.sin(nowT*0.004); const _ring=(_x,_y,_br,_lbl)=>{ const _rr=_br+_pu*2; ctx.beginPath(); ctx.arc(_x,_y,_rr+3,0,7); ctx.strokeStyle="rgba(244,217,122,"+(0.10*_pu).toFixed(3)+")"; ctx.lineWidth=5; ctx.stroke(); ctx.beginPath(); ctx.arc(_x,_y,_rr,0,7); ctx.strokeStyle="rgba(248,224,140,"+(0.55+0.22*_pu).toFixed(3)+")"; ctx.lineWidth=2; ctx.stroke(); if(_lbl){ ctx.fillStyle="rgba(248,224,140,0.92)"; ctx.font="11px -apple-system,system-ui,sans-serif"; ctx.textAlign="center"; ctx.textBaseline="top"; ctx.fillText(_lbl, _x, _y+_rr+6); } }; for(let _i=0;_i<n;_i++){ const _nd=Model.nodeById(Model.ids[_i]); if(_nd&&_nd.highlight&&proj.vis[_i]) _ring(proj.x[_i],proj.y[_i],Math.max(12,proj.r[_i]*1.8),null); } (Model.raw&&Model.raw.links?Model.raw.links:[]).forEach(l=>{ if(!l.highlight)return; const _a=Model.index(l.from),_b=Model.index(l.to); if(_a==null||_b==null||!proj.vis[_a]||!proj.vis[_b])return; const _mx=(proj.x[_a]+proj.x[_b])/2,_my=(proj.y[_a]+proj.y[_b])/2; const _an=Model.nodeById(l.from),_bn=Model.nodeById(l.to); _ring(_mx,_my,12,((_an&&_an.name)||l.from)+" \u2013 "+((_bn&&_bn.name)||l.to)); }); ctx.restore(); } }   // highlights view: subtle rings — one per highlighted node + one per highlighted connection (at its midpoint, titled); off on zoom-in
       ctx.globalCompositeOperation="source-over"; }
 
     // planets — WebGL impostor spheres (lit by a world-space sun, surface fixed in world space) when
