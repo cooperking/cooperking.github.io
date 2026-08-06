@@ -285,7 +285,7 @@
    never touches the DOM, and all load/save goes through GraphSource. This is
    the structure the scale work (worker layout, Barnes-Hut, accounts) hangs off.
    ============================================================================= */
-const BUILD="v2-510";
+const BUILD="v2-511";
 document.getElementById("build").textContent=BUILD;
 
 /* ---- palette (name → [lightest, mid-dark, darkest, vivid]) ---- */
@@ -2388,7 +2388,7 @@ function promote(F, inPlace){
   if(!S.isSun[F]){                                  // 1. F becomes a sun on its old sun's spot (swap → stable map)
     const H=S.sun[F];
     if(!inPlace && H>=0 && H!==F && S.isSun[H] && S.placed[H]){ S.sunX[F]=S.sunX[H]; S.sunY[F]=S.sunY[H]; S.sunZ[F]=S.sunZ[H]; }
-    else { const d=(S.disp&&S.disp[F])||galaxyPosNow(F); S.sunX[F]=d.x; S.sunY[F]=d.y; S.sunZ[F]=d.z; }
+    else { const d=inPlace?galaxyPosNow(F):((S.disp&&S.disp[F])||galaxyPosNow(F)); S.sunX[F]=d.x; S.sunY[F]=d.y; S.sunZ[F]=d.z; }
     S.placed[F]=1;
   }
   S.isSun[F]=1; S.sun[F]=F; S.orbit[F]=null;
