@@ -285,7 +285,7 @@
    never touches the DOM, and all load/save goes through GraphSource. This is
    the structure the scale work (worker layout, Barnes-Hut, accounts) hangs off.
    ============================================================================= */
-const BUILD="v2-498";
+const BUILD="v2-499";
 document.getElementById("build").textContent=BUILD;
 
 /* ---- palette (name → [lightest, mid-dark, darkest, vivid]) ---- */
@@ -2150,7 +2150,7 @@ function hlClickConn(l){ closeHlList(); const a=Model.index(l.from), b=Model.ind
   if(aS && !bS){ goToNode(b); }
   else if(bS && !aS){ goToNode(a); }
   else if(aS && bS){ const host=da>=db?a:b, guest=da>=db?b:a; egoTo(Model.ids[host]); setTimeout(()=>{ focusPlanet(guest); }, 900); }
-  else { const host=da>=db?a:b, guest=da>=db?b:a; goToNode(host); const _iv=setInterval(()=>{ if(typeof hideRelInfo==="function") hideRelInfo(); }, 100); setTimeout(()=>{ clearInterval(_iv); hlPromoteFocused(); setTimeout(()=>{ goToNode(guest); }, 1500); }, 1300); }
+  else { const host=da>=db?a:b, guest=da>=db?b:a; goToNode(host); const _iv=setInterval(()=>{ if(typeof hideRelInfo==="function") hideRelInfo(); }, 100); setTimeout(()=>{ clearInterval(_iv); hlPromoteFocused(); setTimeout(()=>{ focusPlanet(guest); }, 1600); }, 1300); }
 }
 function buildHlList(){ const el=document.getElementById("hllist"); if(!el) return; el.innerHTML=""; const n=Model.count(); const items=[]; for(let i=0;i<n;i++){ const nd=Model.nodeById(Model.ids[i]); if(nd&&nd.highlight) items.push({txt:(nd.name)||Model.ids[i], node:i}); } (Model.raw&&Model.raw.links?Model.raw.links:[]).forEach(l=>{ if(!l.highlight)return; const an=Model.nodeById(l.from),bn=Model.nodeById(l.to); items.push({txt:((an&&an.name)||l.from)+" \u2013 "+((bn&&bn.name)||l.to), link:l}); }); items.forEach(it=>{ const lab=document.createElement("div"); lab.textContent=it.txt; lab.className="hllab"; if(it.node!=null){ lab.onclick=()=>hlClickNode(it.node); } else if(it.link){ lab.onclick=()=>hlClickConn(it.link); } el.appendChild(lab); }); } Focus._updateHlBtn=()=>{ let has=true; try{ const nn=Model.raw&&Model.raw.nodes, ll=Model.raw&&Model.raw.links; if(nn&&ll) has=Object.values(nn).some(n=>n&&n.highlight)||ll.some(l=>l&&l.highlight); }catch(e){ has=true; } hb.style.display=has?"flex":"none"; if(!has)Focus._highlightView=false; paintHl(); }; Focus._updateHlBtn(); } }   // always-visible toggle; paint its initial on-state
 function paintConnBtn(){ const b=document.getElementById("toggleconn"); if(!b) return; const on=view.showConnectors!==false;
