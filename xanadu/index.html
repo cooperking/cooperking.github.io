@@ -285,7 +285,7 @@
    never touches the DOM, and all load/save goes through GraphSource. This is
    the structure the scale work (worker layout, Barnes-Hut, accounts) hangs off.
    ============================================================================= */
-const BUILD="v2-502";
+const BUILD="v2-503";
 document.getElementById("build").textContent=BUILD;
 
 /* ---- palette (name → [lightest, mid-dark, darkest, vivid]) ---- */
@@ -2144,7 +2144,7 @@ Focus._breadcrumbOn=true;   // breadcrumb trail on by default
 { const hb=document.getElementById("highlightbtn"); if(hb){ const paintHl=()=>{ const on=!!Focus._highlightView; hb.style.color=on?"#f4d97a":"var(--t3)"; hb.style.borderColor=on?"#f4d97a":"var(--line-strong)"; hb.style.boxShadow=on?"0 0 14px #f4d97a66":"0 2px 10px rgba(0,0,0,0.4)"; }; hb.onclick=()=>{ Focus._highlightView=!Focus._highlightView; const _le=document.getElementById("hllist"); if(Focus._highlightView){ if(typeof exitFocus==="function") exitFocus(); buildHlList(); if(_le) _le.style.display="flex"; } else { if(_le) _le.style.display="none"; } paintHl(); }; Focus._paintHl=paintHl;
 function closeHlList(){ Focus._highlightView=false; const el=document.getElementById("hllist"); if(el) el.style.display="none"; if(Focus._paintHl) Focus._paintHl(); }
 function hlPromoteFocused(){ if(Focus.planetFocus>=0){ const id=Model.ids[Focus.planetFocus]; Focus._igniteId=Focus.planetFocus; Focus._igniteT0=performance.now(); Focus.planetFocus=-1; egoTo(id); view.tdist=(Focus.fitDist||view.dist)*0.5; Focus._igniteZoom=true; } }
-function hlClickNode(i){ closeHlList(); const n=Model.count(); if(SolarSys.isSun && SolarSys.isSun.length===n && SolarSys.isSun[i]){ goToNode(i); } else { goToNode(i); const _iv=setInterval(()=>{ if(typeof hideRelInfo==="function") hideRelInfo(); }, 100); setTimeout(()=>{ clearInterval(_iv); hlPromoteFocused(); }, 1300); } }
+function hlClickNode(i){ closeHlList(); const n=Model.count(); if(SolarSys.isSun && SolarSys.isSun.length===n && SolarSys.isSun[i]){ goToNode(i); } else { goToNode(i); const _iv=setInterval(()=>{ if(typeof hideRelInfo==="function") hideRelInfo(); }, 100); hlAfterSettle(()=>{ clearInterval(_iv); hlPromoteFocused(); }); } }
 function hlAfterSettle(cb, timeout){ const t0=performance.now(); timeout=timeout||3500; let seen=false; const iv=setInterval(()=>{ const near=view.tdist>0 && Math.abs(view.dist-view.tdist)<view.tdist*0.04; if(near) seen=true; if((seen&&near) || performance.now()-t0>timeout){ clearInterval(iv); cb(); } }, 60); }
 function hlClickConn(l){ closeHlList(); const a=Model.index(l.from), b=Model.index(l.to); if(a==null||b==null) return; const n=Model.count(); const iS=SolarSys.isSun; const aS=iS&&iS.length===n&&iS[a], bS=iS&&iS.length===n&&iS[b]; const da=(neighboursOf(l.from)||[]).length, db=(neighboursOf(l.to)||[]).length; const host=da>=db?a:b, guest=da>=db?b:a; const _sup=setInterval(()=>{ if(typeof hideRelInfo==="function") hideRelInfo(); }, 90); const _done=()=>clearInterval(_sup); setTimeout(_done, 9000);
   if(aS && !bS){ _done(); goToNode(b); }
