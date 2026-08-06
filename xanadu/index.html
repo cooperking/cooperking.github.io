@@ -285,7 +285,7 @@
    never touches the DOM, and all load/save goes through GraphSource. This is
    the structure the scale work (worker layout, Barnes-Hut, accounts) hangs off.
    ============================================================================= */
-const BUILD="v2-500";
+const BUILD="v2-502";
 document.getElementById("build").textContent=BUILD;
 
 /* ---- palette (name → [lightest, mid-dark, darkest, vivid]) ---- */
@@ -1177,7 +1177,7 @@ const Renderer=(()=>{
         if(!Focus._highlightView) PlanetGL.drawLabels(items, Math.round(W*DPR), Math.round(H*DPR));
         if(view.hover>=0 && glLabelHits.some(L=>L.id===view.hover)){ const _le=document.getElementById("label"); if(_le) _le.style.opacity="0"; }   // this node's label is already drawn — kill any hover label for it (authoritative, no frame lag)
       }
-      if(Focus._highlightView && PlanetGL.labelTex){ const _hI=[]; Focus._ringHits=[]; const _hn=Model.count(), _OS=2, _pu=0.5+0.5*Math.sin(nowT*0.004); const _rTex=PlanetGL.labelTex("__HLRING__",80,80,(tc,w,h)=>{ tc.clearRect(0,0,w,h); tc.strokeStyle="rgba(255,255,255,1)"; tc.lineWidth=4; tc.beginPath(); tc.arc(w/2,h/2,w/2-8,0,7); tc.stroke(); }); const _addR=(_k,_cn)=>{ if(!proj.vis[_k])return; const _rr=Math.max(12,proj.r[_k]*1.8)+7; _hI.push({id:-1,tex:_rTex.tex,cx:proj.x[_k]*DPR,cy:proj.y[_k]*DPR,hw:_rr*DPR,hh:_rr*DPR,a:0.7+0.22*_pu,d:0.42}); Focus._ringHits.push({i:_k,cx:proj.x[_k],cy:proj.y[_k],r:_rr,conn:_cn}); }; const _addT=(_k,_txt,_cn)=>{ if(!proj.vis[_k])return; const _fs=Math.round(11*DPR*_OS),_pd=Math.round(5*DPR*_OS); ctx.font="600 "+_fs+"px -apple-system,Segoe UI,Roboto,sans-serif"; const _tw=ctx.measureText(_txt).width; const _tW=Math.ceil(_tw+_pd*2),_tH=Math.ceil(_fs+_pd*2); const _tr=PlanetGL.labelTex("HL|"+_txt,_tW,_tH,(tc,w,h)=>{ tc.textAlign="center"; tc.textBaseline="middle"; tc.font="600 "+_fs+"px -apple-system,Segoe UI,Roboto,sans-serif"; tc.fillStyle="rgba(255,255,255,0.96)"; tc.fillText(_txt,w/2,h/2); }); const _hw=_tr.w*0.5/_OS,_hh=_tr.h*0.5/_OS; _hI.push({id:_k,tex:_tr.tex,cx:proj.x[_k]*DPR,cy:(proj.y[_k]+Math.max(12,proj.r[_k]*1.8))*DPR+_hh+10*DPR,hw:_hw,hh:_hh,a:1,d:0.35}); Focus._ringHits.push({i:_k,cx:proj.x[_k],cy:(proj.y[_k]+Math.max(12,proj.r[_k]*1.8))+_hh/DPR+10,hw:_hw/DPR,hh:_hh/DPR,box:true,conn:_cn}); }; for(let _k=0;_k<_hn;_k++){ const _nd=Model.nodeById(Model.ids[_k]); if(_nd&&_nd.highlight){_addR(_k);_addT(_k,(_nd.name)||Model.ids[_k]);} } (Model.raw&&Model.raw.links?Model.raw.links:[]).forEach(l=>{ if(!l.highlight)return; const _a=Model.index(l.from),_b=Model.index(l.to); if(_a==null||_b==null)return; const _aS=SolarSys.isSun.length===_hn&&SolarSys.isSun[_a],_bS=SolarSys.isSun.length===_hn&&SolarSys.isSun[_b]; if(!_aS&&!_bS)return; const _t=_aS?_a:_b, _pl=_aS?_b:_a; if(!(SolarSys.sun&&SolarSys.sun[_pl]===_t))return; const _tn=Model.nodeById(Model.ids[_t]); if(_tn&&_tn.highlight)return; const _an=Model.nodeById(l.from),_bn=Model.nodeById(l.to); _addR(_t,_pl); _addT(_t,((_an&&_an.name)||l.from)+" \u2013 "+((_bn&&_bn.name)||l.to),_pl); }); if(_hI.length) PlanetGL.drawLabels(_hI, Math.round(W*DPR), Math.round(H*DPR)); }
+      /* highlight rings removed — replaced by list overlay */
       /* GL layer now renders to its own visible canvas (z-index 2) — no drawImage composite, which Safari was softening */
     } else {
       const inv=1/SPHERE_FRAC;
@@ -1320,7 +1320,6 @@ cv.addEventListener("pointerup",e=>{ if(moved>=6||pinching||cardEditing) return;
       else hideRelInfo(); }
     return;
   }
-  if(Focus._highlightView){ const _hits=Focus._ringHits||[]; let _best=null,_bD=Infinity; for(let _h=0;_h<_hits.length;_h++){ const _R=_hits[_h],_dx=e.clientX-_R.cx,_dy=e.clientY-_R.cy,_d2=_dx*_dx+_dy*_dy; const _in=_R.box?(Math.abs(_dx)<=_R.hw&&Math.abs(_dy)<=_R.hh):(_d2<=_R.r*_R.r); if(_in && _d2<_bD){_bD=_d2;_best=_R;} } if(_best){ Focus._highlightView=false; if(Focus._paintHl)Focus._paintHl(); goToNode(_best.conn!=null?_best.conn:_best.i); } return; }   // highlights view: node ring → its node; connection ring → the planet node that holds the connection
   if(i>=0){ if(Focus.mode==="focus") enterFocus(Model.ids[i]); else goToNode(i); }   // galaxy/universe: sun → fly into it; planet → its sun's system, focused on the planet
   else if(Focus.mode==="focus") exitFocus();
   else { const ce=Renderer.pickAnyConnector(e.clientX,e.clientY);   // galaxy: tap a connector → glow + relationship label
@@ -1879,7 +1878,7 @@ function enterCardEdit(spec){   // inline hold-to-edit form, shared by node card
   box.innerHTML="";
   const done=document.createElement("button"); done.type="button"; done.textContent="Done"; done.style.cssText="float:right;font-size:13px;padding:3px 12px;cursor:pointer;"; done.onclick=exitCardEdit; box.appendChild(done);
   const title=document.createElement("div"); title.textContent=kind==="link"?"Edit connection":"Edit node"; title.style.cssText="font-size:13px;font-weight:600;color:#f4f5fa;margin-bottom:9px;"; box.appendChild(title);
-  { const hl=document.createElement("label"); hl.style.cssText="display:flex;align-items:center;gap:7px;color:#f4d97a;font-size:12px;margin-bottom:10px;cursor:pointer;"; const hc=document.createElement("input"); hc.type="checkbox"; hc.style.cssText="width:16px;height:16px;margin:0;flex:none;accent-color:#f4d97a;"; hc.checked=!!target.highlight; hc.addEventListener("change",()=>{ if(hc.checked) target.highlight=true; else delete target.highlight; saveRoot(); if(typeof buildSolarTopology==="function") buildSolarTopology(); if(typeof buildSolarOrbits==="function") buildSolarOrbits(); if(Focus._updateHlBtn)Focus._updateHlBtn(); }); hl.appendChild(hc); hl.appendChild(document.createTextNode("Highlight")); box.appendChild(hl); }   // highlight toggle — one control, works for both node and connection since target is either
+  { const hl=document.createElement("label"); hl.style.cssText="display:flex;align-items:center;gap:7px;color:#f4d97a;font-size:12px;margin-bottom:10px;cursor:pointer;"; const hc=document.createElement("input"); hc.type="checkbox"; hc.style.cssText="width:16px;height:16px;margin:0;flex:none;accent-color:#f4d97a;"; hc.checked=!!target.highlight; hc.addEventListener("change",()=>{ if(hc.checked) target.highlight=true; else delete target.highlight; saveRoot(); if(Focus._updateHlBtn)Focus._updateHlBtn(); }); hl.appendChild(hc); hl.appendChild(document.createTextNode("Highlight")); box.appendChild(hl); }   // highlight toggle — one control, works for both node and connection since target is either
   if(kind==="link"){ const _t=Model.raw.types=Model.raw.types||{};
     const tw=document.createElement("label"); tw.style.cssText="display:block;font-size:11px;color:#aab0c2;margin-bottom:8px;"; tw.textContent="Relationship type";
     const sel=document.createElement("select"); sel.style.cssText="width:100%;box-sizing:border-box;margin-top:3px;";
@@ -2153,7 +2152,7 @@ function hlClickConn(l){ closeHlList(); const a=Model.index(l.from), b=Model.ind
   else if(aS && bS){ egoTo(Model.ids[host]); hlAfterSettle(()=>{ focusPlanet(guest); _done(); }); }
   else { goToNode(host); hlAfterSettle(()=>{ hlPromoteFocused(); hlAfterSettle(()=>{ focusPlanet(guest); _done(); }); }); }
 }
-function buildHlList(){ const el=document.getElementById("hllist"); if(!el) return; el.innerHTML=""; const n=Model.count(); const items=[]; for(let i=0;i<n;i++){ const nd=Model.nodeById(Model.ids[i]); if(nd&&nd.highlight) items.push({txt:(nd.name)||Model.ids[i], node:i}); } (Model.raw&&Model.raw.links?Model.raw.links:[]).forEach(l=>{ if(!l.highlight)return; const an=Model.nodeById(l.from),bn=Model.nodeById(l.to); items.push({txt:((an&&an.name)||l.from)+" \u2013 "+((bn&&bn.name)||l.to), link:l}); }); items.forEach(it=>{ const lab=document.createElement("div"); lab.textContent=it.txt; lab.className="hllab"; if(it.node!=null){ lab.onclick=()=>hlClickNode(it.node); } else if(it.link){ lab.onclick=()=>hlClickConn(it.link); } el.appendChild(lab); }); } Focus._updateHlBtn=()=>{ let has=true; try{ const nn=Model.raw&&Model.raw.nodes, ll=Model.raw&&Model.raw.links; if(nn&&ll) has=Object.values(nn).some(n=>n&&n.highlight)||ll.some(l=>l&&l.highlight); }catch(e){ has=true; } hb.style.display=has?"flex":"none"; if(!has)Focus._highlightView=false; paintHl(); }; Focus._updateHlBtn(); } }   // always-visible toggle; paint its initial on-state
+function buildHlList(){ const el=document.getElementById("hllist"); if(!el) return; el.innerHTML=""; const n=Model.count(); const items=[]; for(let i=0;i<n;i++){ const nd=Model.nodeById(Model.ids[i]); if(nd&&nd.highlight) items.push({txt:(nd.name)||Model.ids[i], node:i}); } items.forEach(it=>{ const lab=document.createElement("div"); lab.textContent=it.txt; lab.className="hllab"; if(it.node!=null){ lab.onclick=()=>hlClickNode(it.node); } else if(it.link){ lab.onclick=()=>hlClickConn(it.link); } el.appendChild(lab); }); } Focus._updateHlBtn=()=>{ let has=true; try{ const nn=Model.raw&&Model.raw.nodes, ll=Model.raw&&Model.raw.links; if(nn&&ll) has=Object.values(nn).some(n=>n&&n.highlight)||ll.some(l=>l&&l.highlight); }catch(e){ has=true; } hb.style.display=has?"flex":"none"; if(!has)Focus._highlightView=false; paintHl(); }; Focus._updateHlBtn(); } }   // always-visible toggle; paint its initial on-state
 function paintConnBtn(){ const b=document.getElementById("toggleconn"); if(!b) return; const on=view.showConnectors!==false;
   b.style.color=on?"var(--t1)":"var(--t3)"; b.style.opacity=on?"1":"0.5"; b.title=on?"Hide connector lines":"Show connector lines"; }
 (function(){ const b=document.getElementById("toggleconn"); if(!b) return;
@@ -2263,14 +2262,13 @@ function buildSolarTopology(){
   const idealIsSun=new Uint8Array(n);
   if(startIdx!==undefined) idealIsSun[startIdx]=1;
   for(let i=0;i<n;i++) if(deg[i]>=SUN_MIN) idealIsSun[i]=1;
-  for(let i=0;i<n;i++){ const _hn=Model.nodeById(Model.ids[i]); if(_hn&&_hn.highlight) idealIsSun[i]=1; }   // a highlighted node is always a sun — spreads highlights across the galaxy instead of clumping them in one system
   cover(idealIsSun);
   const idealSun=assignHomes(idealIsSun);
   SolarSys.homeSun=Int32Array.from(idealSun); SolarSys.homeIsSun=Uint8Array.from(idealIsSun);
   // LIVE STARTING STATE = ideal home with the start node pre-focused: ALL its neighbours orbit it.
   const isSun=Uint8Array.from(idealIsSun); let sun;
   if(startIdx!==undefined){
-    const A=adj[startIdx]; for(let x=0;x<A.length;x++){ if(A[x]!==startIdx) isSun[A[x]]=0; } for(let i=0;i<n;i++){ const _hn=Model.nodeById(Model.ids[i]); if(_hn&&_hn.highlight) isSun[i]=1; }   // demote start's neighbours → they become its planets
+    const A=adj[startIdx]; for(let x=0;x<A.length;x++){ if(A[x]!==startIdx) isSun[A[x]]=0; }   // demote start's neighbours → they become its planets
     cover(isSun);                                                                              // anyone orphaned by that gets a home/becomes a sun
     sun=assignHomes(isSun, startIdx);                                                           // and every start-neighbour is pinned to start
   } else { sun=assignHomes(isSun); }
