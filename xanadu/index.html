@@ -285,7 +285,7 @@
    never touches the DOM, and all load/save goes through GraphSource. This is
    the structure the scale work (worker layout, Barnes-Hut, accounts) hangs off.
    ============================================================================= */
-const BUILD="v2-495";
+const BUILD="v2-497";
 document.getElementById("build").textContent=BUILD;
 
 /* ---- palette (name → [lightest, mid-dark, darkest, vivid]) ---- */
@@ -2145,7 +2145,7 @@ Focus._breadcrumbOn=true;   // breadcrumb trail on by default
 { const hb=document.getElementById("highlightbtn"); if(hb){ const paintHl=()=>{ const on=!!Focus._highlightView; hb.style.color=on?"#f4d97a":"var(--t3)"; hb.style.borderColor=on?"#f4d97a":"var(--line-strong)"; hb.style.boxShadow=on?"0 0 14px #f4d97a66":"0 2px 10px rgba(0,0,0,0.4)"; }; hb.onclick=()=>{ Focus._highlightView=!Focus._highlightView; const _le=document.getElementById("hllist"); if(Focus._highlightView){ if(typeof exitFocus==="function") exitFocus(); buildHlList(); if(_le) _le.style.display="flex"; } else { if(_le) _le.style.display="none"; } paintHl(); }; Focus._paintHl=paintHl;
 function closeHlList(){ Focus._highlightView=false; const el=document.getElementById("hllist"); if(el) el.style.display="none"; if(Focus._paintHl) Focus._paintHl(); }
 function hlPromoteFocused(){ if(Focus.planetFocus>=0){ const id=Model.ids[Focus.planetFocus]; Focus._igniteId=Focus.planetFocus; Focus._igniteT0=performance.now(); Focus.planetFocus=-1; egoTo(id); view.tdist=(Focus.fitDist||view.dist)*0.5; Focus._igniteZoom=true; } }
-function hlClickNode(i){ closeHlList(); const n=Model.count(); if(SolarSys.isSun && SolarSys.isSun.length===n && SolarSys.isSun[i]){ goToNode(i); } else { goToNode(i); setTimeout(hlPromoteFocused, 1300); } }
+function hlClickNode(i){ closeHlList(); const n=Model.count(); if(SolarSys.isSun && SolarSys.isSun.length===n && SolarSys.isSun[i]){ goToNode(i); } else { goToNode(i); const _iv=setInterval(()=>{ if(typeof hideRelInfo==="function") hideRelInfo(); }, 100); setTimeout(()=>{ clearInterval(_iv); hlPromoteFocused(); }, 1300); } }
 function buildHlList(){ const el=document.getElementById("hllist"); if(!el) return; el.innerHTML=""; const n=Model.count(); const items=[]; for(let i=0;i<n;i++){ const nd=Model.nodeById(Model.ids[i]); if(nd&&nd.highlight) items.push({txt:(nd.name)||Model.ids[i], node:i}); } (Model.raw&&Model.raw.links?Model.raw.links:[]).forEach(l=>{ if(!l.highlight)return; const an=Model.nodeById(l.from),bn=Model.nodeById(l.to); items.push({txt:((an&&an.name)||l.from)+" \u2013 "+((bn&&bn.name)||l.to), link:l}); }); items.forEach(it=>{ const lab=document.createElement("div"); lab.textContent=it.txt; lab.className="hllab"; if(it.node!=null){ lab.onclick=()=>hlClickNode(it.node); } el.appendChild(lab); }); } Focus._updateHlBtn=()=>{ let has=true; try{ const nn=Model.raw&&Model.raw.nodes, ll=Model.raw&&Model.raw.links; if(nn&&ll) has=Object.values(nn).some(n=>n&&n.highlight)||ll.some(l=>l&&l.highlight); }catch(e){ has=true; } hb.style.display=has?"flex":"none"; if(!has)Focus._highlightView=false; paintHl(); }; Focus._updateHlBtn(); } }   // always-visible toggle; paint its initial on-state
 function paintConnBtn(){ const b=document.getElementById("toggleconn"); if(!b) return; const on=view.showConnectors!==false;
   b.style.color=on?"var(--t1)":"var(--t3)"; b.style.opacity=on?"1":"0.5"; b.title=on?"Hide connector lines":"Show connector lines"; }
