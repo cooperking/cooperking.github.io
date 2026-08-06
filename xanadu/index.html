@@ -285,7 +285,7 @@
    never touches the DOM, and all load/save goes through GraphSource. This is
    the structure the scale work (worker layout, Barnes-Hut, accounts) hangs off.
    ============================================================================= */
-const BUILD="v2-499";
+const BUILD="v2-500";
 document.getElementById("build").textContent=BUILD;
 
 /* ---- palette (name → [lightest, mid-dark, darkest, vivid]) ---- */
@@ -2146,11 +2146,12 @@ Focus._breadcrumbOn=true;   // breadcrumb trail on by default
 function closeHlList(){ Focus._highlightView=false; const el=document.getElementById("hllist"); if(el) el.style.display="none"; if(Focus._paintHl) Focus._paintHl(); }
 function hlPromoteFocused(){ if(Focus.planetFocus>=0){ const id=Model.ids[Focus.planetFocus]; Focus._igniteId=Focus.planetFocus; Focus._igniteT0=performance.now(); Focus.planetFocus=-1; egoTo(id); view.tdist=(Focus.fitDist||view.dist)*0.5; Focus._igniteZoom=true; } }
 function hlClickNode(i){ closeHlList(); const n=Model.count(); if(SolarSys.isSun && SolarSys.isSun.length===n && SolarSys.isSun[i]){ goToNode(i); } else { goToNode(i); const _iv=setInterval(()=>{ if(typeof hideRelInfo==="function") hideRelInfo(); }, 100); setTimeout(()=>{ clearInterval(_iv); hlPromoteFocused(); }, 1300); } }
-function hlClickConn(l){ closeHlList(); const a=Model.index(l.from), b=Model.index(l.to); if(a==null||b==null) return; const n=Model.count(); const iS=SolarSys.isSun; const aS=iS&&iS.length===n&&iS[a], bS=iS&&iS.length===n&&iS[b]; const da=(neighboursOf(l.from)||[]).length, db=(neighboursOf(l.to)||[]).length;
-  if(aS && !bS){ goToNode(b); }
-  else if(bS && !aS){ goToNode(a); }
-  else if(aS && bS){ const host=da>=db?a:b, guest=da>=db?b:a; egoTo(Model.ids[host]); setTimeout(()=>{ focusPlanet(guest); }, 900); }
-  else { const host=da>=db?a:b, guest=da>=db?b:a; goToNode(host); const _iv=setInterval(()=>{ if(typeof hideRelInfo==="function") hideRelInfo(); }, 100); setTimeout(()=>{ clearInterval(_iv); hlPromoteFocused(); setTimeout(()=>{ focusPlanet(guest); }, 1600); }, 1300); }
+function hlAfterSettle(cb, timeout){ const t0=performance.now(); timeout=timeout||3500; let seen=false; const iv=setInterval(()=>{ const near=view.tdist>0 && Math.abs(view.dist-view.tdist)<view.tdist*0.04; if(near) seen=true; if((seen&&near) || performance.now()-t0>timeout){ clearInterval(iv); cb(); } }, 60); }
+function hlClickConn(l){ closeHlList(); const a=Model.index(l.from), b=Model.index(l.to); if(a==null||b==null) return; const n=Model.count(); const iS=SolarSys.isSun; const aS=iS&&iS.length===n&&iS[a], bS=iS&&iS.length===n&&iS[b]; const da=(neighboursOf(l.from)||[]).length, db=(neighboursOf(l.to)||[]).length; const host=da>=db?a:b, guest=da>=db?b:a; const _sup=setInterval(()=>{ if(typeof hideRelInfo==="function") hideRelInfo(); }, 90); const _done=()=>clearInterval(_sup); setTimeout(_done, 9000);
+  if(aS && !bS){ _done(); goToNode(b); }
+  else if(bS && !aS){ _done(); goToNode(a); }
+  else if(aS && bS){ egoTo(Model.ids[host]); hlAfterSettle(()=>{ focusPlanet(guest); _done(); }); }
+  else { goToNode(host); hlAfterSettle(()=>{ hlPromoteFocused(); hlAfterSettle(()=>{ focusPlanet(guest); _done(); }); }); }
 }
 function buildHlList(){ const el=document.getElementById("hllist"); if(!el) return; el.innerHTML=""; const n=Model.count(); const items=[]; for(let i=0;i<n;i++){ const nd=Model.nodeById(Model.ids[i]); if(nd&&nd.highlight) items.push({txt:(nd.name)||Model.ids[i], node:i}); } (Model.raw&&Model.raw.links?Model.raw.links:[]).forEach(l=>{ if(!l.highlight)return; const an=Model.nodeById(l.from),bn=Model.nodeById(l.to); items.push({txt:((an&&an.name)||l.from)+" \u2013 "+((bn&&bn.name)||l.to), link:l}); }); items.forEach(it=>{ const lab=document.createElement("div"); lab.textContent=it.txt; lab.className="hllab"; if(it.node!=null){ lab.onclick=()=>hlClickNode(it.node); } else if(it.link){ lab.onclick=()=>hlClickConn(it.link); } el.appendChild(lab); }); } Focus._updateHlBtn=()=>{ let has=true; try{ const nn=Model.raw&&Model.raw.nodes, ll=Model.raw&&Model.raw.links; if(nn&&ll) has=Object.values(nn).some(n=>n&&n.highlight)||ll.some(l=>l&&l.highlight); }catch(e){ has=true; } hb.style.display=has?"flex":"none"; if(!has)Focus._highlightView=false; paintHl(); }; Focus._updateHlBtn(); } }   // always-visible toggle; paint its initial on-state
 function paintConnBtn(){ const b=document.getElementById("toggleconn"); if(!b) return; const on=view.showConnectors!==false;
