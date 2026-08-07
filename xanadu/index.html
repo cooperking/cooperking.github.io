@@ -237,11 +237,11 @@
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="5.5" cy="6" r="2.3"/><circle cx="18.5" cy="18" r="2.3"/><line x1="7.3" y1="7.4" x2="16.7" y2="16.6"/></svg>
 </button>
 <style>
-#hllist .hllab{ pointer-events:auto; cursor:pointer; color:#eef1f8; font:600 15px -apple-system,Segoe UI,Roboto,sans-serif; letter-spacing:0.3px; padding:9px 22px; border-radius:22px; background:rgba(10,14,26,0.5); border:1px solid rgba(255,255,255,0.1); box-shadow:0 2px 14px rgba(0,0,0,0.45); -webkit-backdrop-filter:blur(7px); backdrop-filter:blur(7px); transition:background .15s,border-color .15s,transform .12s,box-shadow .15s; white-space:nowrap; }
+#hllist .hllab{ flex:none; pointer-events:auto; cursor:pointer; color:#eef1f8; font:600 15px -apple-system,Segoe UI,Roboto,sans-serif; letter-spacing:0.3px; padding:9px 22px; border-radius:22px; background:rgba(10,14,26,0.5); border:1px solid rgba(255,255,255,0.1); box-shadow:0 2px 14px rgba(0,0,0,0.45); -webkit-backdrop-filter:blur(7px); backdrop-filter:blur(7px); transition:background .15s,border-color .15s,transform .12s,box-shadow .15s; white-space:nowrap; }
 #hllist .hllab:active{ background:rgba(30,38,60,0.72); border-color:rgba(255,255,255,0.3); transform:scale(0.97); }
 @media (hover:hover){ #hllist .hllab:hover{ background:rgba(24,30,50,0.66); border-color:rgba(255,255,255,0.24); box-shadow:0 4px 20px rgba(0,0,0,0.5); } }
 </style>
-<div id="hllist" style="display:none; position:fixed; top:0; bottom:0; left:0; right:0; z-index:850; pointer-events:none; flex-direction:column; justify-content:space-evenly; align-items:center; padding:70px 16px 96px; box-sizing:border-box;"></div>
+<div id="hllist" style="display:none; position:fixed; top:78px; bottom:116px; left:50%; transform:translateX(-50%); width:min(300px,66vw); z-index:850; pointer-events:auto; flex-direction:column; justify-content:flex-start; align-items:center; gap:14px; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:6px 6px; box-sizing:border-box;"></div>
 <button id="highlightbtn" type="button" title="Highlights" style="display:flex; position:fixed; bottom:16px; left:272px; z-index:900; width:42px; height:42px; border-radius:21px; background:var(--card); border:1px solid var(--line-strong); box-shadow:0 2px 10px rgba(0,0,0,0.4); color:var(--t3); cursor:pointer; align-items:center; justify-content:center; padding:0; font-size:17px; line-height:1;">&#9733;</button>
 <button id="breadcrumb" type="button" title="Toggle the trail of where you've been" style="display:flex; position:fixed; bottom:16px; left:222px; z-index:900; width:42px; height:42px; border-radius:21px; background:var(--card); border:1px solid var(--line-strong); box-shadow:0 2px 10px rgba(0,0,0,0.4); color:var(--t3); cursor:pointer; align-items:center; justify-content:center; padding:0;"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14" stroke-width="1.3"/></svg></button>
 <button id="bypassls" type="button" title="Clear all saved data and stay fresh (dev)" style="display:none; position:fixed; bottom:16px; left:-9999px; z-index:900; width:42px; height:42px; border-radius:21px; background:var(--card); border:1px solid var(--line-strong); box-shadow:0 2px 10px rgba(0,0,0,0.4); color:var(--t3); cursor:pointer; align-items:center; justify-content:center; padding:0;">
@@ -285,7 +285,7 @@
    never touches the DOM, and all load/save goes through GraphSource. This is
    the structure the scale work (worker layout, Barnes-Hut, accounts) hangs off.
    ============================================================================= */
-const BUILD="v2-513";
+const BUILD="v2-542";
 document.getElementById("build").textContent=BUILD;
 
 /* ---- palette (name → [lightest, mid-dark, darkest, vivid]) ---- */
@@ -1080,7 +1080,7 @@ const Renderer=(()=>{
         g.addColorStop(0,"rgba(255,246,220,0.42)"); g.addColorStop(0.26,"rgba(255,232,190,0.15)"); g.addColorStop(1,"rgba(255,220,165,0)");
         ctx.fillStyle=g; ctx.beginPath(); ctx.arc(sx,sy,cr,0,7); ctx.fill(); };
       const IG_DUR=1700; let _igN=-1,_igT=1;   // planet→star ignition: eased 0..1 for a just-promoted world — a slow ceremonial burn
-      if(Focus._igniteId!=null){ _igT=(nowT-Focus._igniteT0)/IG_DUR; if(_igT>=1){ Focus._igniteId=null; _igT=1; Focus._igniteZoom=false; } else _igN=Focus._igniteId; }   // burn finished → release the card gate and let the last bit of zoom finish at normal speed
+      if(Focus._igniteId!=null){ _igT=(nowT-Focus._igniteT0)/IG_DUR; if(_igT>=1){ Focus._igniteId=null; _igT=1; Focus._igniteZoom=false; } else _igN=Focus._igniteId; } if(Focus.planetFocus>=0 && proj.r && proj.r[Focus.planetFocus]>0.5) Focus._lastPlanetScreenR=proj.r[Focus.planetFocus]; if(Focus._igniteId!=null && Focus._igTargetScreenR>0.5){ const _cur=proj.r&&proj.r[Focus._igniteId]; if(_cur>0.5){ view.dist*=(_cur/Focus._igTargetScreenR); view.tdist=view.dist; } } else if(Focus._igniteId==null && Focus._igTargetScreenR){ Focus._igTargetScreenR=0; }   // burn finished → release the card gate and let the last bit of zoom finish at normal speed
       view._igN=_igN; view._igT=_igT;   // shared with the sphere-flag pass below
       ctx.globalCompositeOperation="lighter";
       const flareAmt=Math.max(0,Math.min(1,1-cl*1.6));   // galaxy stars only — fades right out as you zoom into a system
@@ -1832,7 +1832,7 @@ function showRelInfoEdge(a, b, px, py){
 { const psb=document.getElementById("promotesun"); if(psb) psb.onclick=()=>{ if(Focus.planetFocus>=0){ const id=Model.ids[Focus.planetFocus]; Focus._igniteId=Focus.planetFocus; Focus._igniteT0=performance.now(); Focus.planetFocus=-1; egoTo(id); view.tdist=(Focus.fitDist||view.dist)*0.5; Focus._igniteZoom=true; } };   // promote to a sun; begin a slow zoom toward the card straight away (eased gently through the burn), holding the card back until the ignition finishes
   const pi=document.getElementById("planetinfo");
   if(pi){
-    pi.addEventListener("click", e=>{ if(!e.target.closest) return; if(e.target.closest(".pf-dismiss")){ if(Focus.planetFocus>=0){ Focus.planetFocus=-1; view.tdist=Focus.fitDist||view.dist; } } else if(e.target.closest(".pf-promote")){ if(Focus.planetFocus>=0){ const id=Model.ids[Focus.planetFocus]; Focus._igniteId=Focus.planetFocus; Focus._igniteT0=performance.now(); Focus.planetFocus=-1; egoTo(id); view.tdist=(Focus.fitDist||view.dist)*0.5; Focus._igniteZoom=true; } } else if(e.target.closest(".nc-2d")){ if(Focus.egoCenter>=0){ hidePlanetInfo(); enterFocus(Model.ids[Focus.egoCenter]); } } else if(e.target.closest(".nc-solar")){ Focus.cardHidden=true; pi.innerHTML=""; pi.style.display="none"; planetInfoShown=null; view.tdist=Focus.fitDist||view.dist; } });   // ⊖ on the node card → just hide it and stop any video (tap the sun to bring it back)
+    pi.addEventListener("click", e=>{ if(!e.target.closest) return; if(e.target.closest(".pf-dismiss")){ if(Focus.planetFocus>=0){ Focus.planetFocus=-1; view.tdist=Focus.fitDist||view.dist; } } else if(e.target.closest(".pf-promote")){ if(Focus.planetFocus>=0){ const pf=Focus.planetFocus; const id=Model.ids[pf]; Focus._igTargetScreenR=Focus._lastPlanetScreenR||0; Focus._igniteId=pf; Focus._igniteT0=performance.now(); Focus.planetFocus=-1; egoTo(id); view.tdist=view.dist; Focus._igniteZoom=true; } } else if(e.target.closest(".hl-conn")){ const _hn=e.target.closest(".hl-conn"), _t=_hn.getAttribute("data-target"), _ti=Model.index(_t); if(_ti!=null){ hidePlanetInfo(); goToNode(_ti); } } else if(e.target.closest(".nc-2d")){ if(Focus.egoCenter>=0){ hidePlanetInfo(); enterFocus(Model.ids[Focus.egoCenter]); } } else if(e.target.closest(".nc-solar")){ Focus.cardHidden=true; pi.innerHTML=""; pi.style.display="none"; planetInfoShown=null; view.tdist=Focus.fitDist||view.dist; } });   // ⊖ on the node card → just hide it and stop any video (tap the sun to bring it back)
     let lpT=null,lpX=0,lpY=0;   // press-and-hold anywhere on a card (node OR connection) → inline edit
     pi.addEventListener("pointerdown", e=>{ if(e.target.closest && e.target.closest("input,textarea,button,a,select")) return; lpX=e.clientX;lpY=e.clientY;
       const _conn=e.target.closest&&e.target.closest(".pf-conn"), _li=_conn?+_conn.getAttribute("data-li"):-1;   // which stacked connection was pressed (multi-link cards)
@@ -1940,6 +1940,7 @@ function enterCardEdit(spec){   // inline hold-to-edit form, shared by node card
 function stopCardVideo(){ const b=document.getElementById("planetinfo"); if(b && b.querySelector("iframe")){ b.innerHTML=""; planetInfoShown=null; } }   // pull the embedded video so playback stops the moment the card is hidden or faded out
 function updatePlanetInfo(){
   const box=document.getElementById("planetinfo"); if(!box) return;
+  if(Focus._hlAutoPromote){ box.style.display="none"; planetInfoShown=null; return; }   // suppress the planet card during an automatic list-triggered promote
   if(cardEditing) return;   // inline edit form owns the card while open
   if(box.style.display==="none"||typeof Focus._boxOp!=="number") Focus._boxOp=0;   // box opacity eases toward its target each frame via Focus._boxOp; reset to 0 whenever hidden so it fades up on reappear
   { const psb=document.getElementById("promotesun"); if(psb) psb.style.display="none"; }   // sun-promote button shows only while a planet is focused
@@ -1977,7 +1978,7 @@ function updatePlanetInfo(){
     box.style.display="block"; return;
   }
   const _ff=Focus.fitDist||1;
-  const on = Focus.mode==="ego" && Focus.egoCenter>=0 && view.tdist < _ff*0.72 && !Focus.cardHidden && _settleFade>0.04 && !(Focus._igniteId!=null && Focus._igniteZoom);   // gate on where the camera is HEADING (tdist), never mid-fly — and never while a promoted world is still igniting, so the card waits for the burn to end even though the camera is already easing in
+  const on = Focus.mode==="ego" && Focus.egoCenter>=0 && view.tdist < _ff*0.72 && !Focus.cardHidden && !Focus._hlAutoPromote && _settleFade>0.04 && !(Focus._igniteId!=null && Focus._igniteZoom);   // gate on where the camera is HEADING (tdist), never mid-fly — and never while a promoted world is still igniting, so the card waits for the burn to end even though the camera is already easing in
   const id = on ? Model.ids[Focus.egoCenter] : null;
   if(!id || !Model.nodeById(id)){ if(box.style.display!=="none" && Focus._boxOp>0.06){ box.style.opacity=String(Focus._boxOp*=0.8); return; } stopCardVideo(); box.style.display="none"; planetInfoShown=null; Focus._boxOp=0; return; }   // fade the card out before hiding rather than snapping it off
   if(planetInfoShown!==id){
@@ -1994,6 +1995,7 @@ function updatePlanetInfo(){
     if(nd.url){ const lt=nd.linkText||(/wikipedia/i.test(nd.url)?'Wikipedia':'Link'); h+='<a href="'+esc(nd.url)+'" class="weblink" data-url="'+esc(nd.url)+'" rel="noopener" style="display:inline-block;margin-top:8px;font-size:12px;color:'+c[3]+';cursor:pointer;">'+esc(lt)+' &#8599;</a>'; }
     if(nd.link2){ h+='<a class="weblink" data-url="'+esc(nd.link2)+'" style="display:inline-block;margin-top:8px;margin-left:16px;font-size:12px;color:'+c[3]+';cursor:pointer;">'+esc(nd.link2label||'Link')+' \u2197</a>'; }
     if(nd.subgraph){ const n2=Object.keys(nd.subgraph.nodes||{}).length; h+='<div class="entergraph" style="margin-top:9px;font-size:12px;color:'+c[3]+';cursor:pointer;">◈ Enter graph ('+n2+' node'+(n2===1?'':'s')+') →</div>'; }
+    { const _hc=[]; (Model.raw&&Model.raw.links?Model.raw.links:[]).forEach(l=>{ if(!l.highlight)return; let _oth=null; if(l.from===id)_oth=l.to; else if(l.to===id)_oth=l.from; else return; const _an=Model.nodeById(l.from),_bn=Model.nodeById(l.to); _hc.push('<div class="hl-conn" data-target="'+esc(_oth)+'" style="cursor:pointer;pointer-events:auto;margin-top:6px;padding:7px 11px;border-radius:8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.14);font-size:12.5px;color:#eef1f8;">'+esc(((_an&&_an.name)||l.from)+' \u2013 '+((_bn&&_bn.name)||l.to))+'</div>'); }); if(_hc.length) h+='<div style="margin-top:13px;border-top:1px solid '+c[3]+'40;padding-top:10px;"><div style="font-size:11px;color:'+c[3]+';text-transform:uppercase;letter-spacing:0.03em;margin-bottom:6px;opacity:0.9;">Highlighted connections</div>'+_hc.join('')+'</div>'; }
     box.innerHTML=h; planetInfoShown=id;
   }
   box.style.top=""; box.style.left=""; box.style.right=""; box.style.bottom=""; box.style.transform=""; box.style.maxHeight=Math.max(160, innerHeight-150)+"px"; box.style.overflowY="auto"; box.style.display="block";   // fixed at top (CSS); cap to the viewport with an inner scroll so a banner image + long text can't run off-screen
@@ -2139,12 +2141,12 @@ function floatControls(show){ const d=show?"flex":"none";
 function updateToggleBtn(){ const b=document.getElementById("togglefocus"); if(!b) return;
   b.innerHTML = "&#8853;"; b.title = "See the whole galaxy"; }
 function paintBreadcrumbBtn(){ const b=document.getElementById("breadcrumb"); if(!b) return; const on=Focus._breadcrumbOn; b.style.color=on?"var(--t1)":"var(--t3)"; b.style.opacity=on?"1":"0.5"; b.style.borderColor="var(--line-strong)"; b.style.background="var(--card)"; b.title=on?"Hide the trail of where you've been":"Show the trail of where you've been"; }
-Focus._breadcrumbOn=true;   // breadcrumb trail on by default
+Focus._breadcrumbOn=false;   // breadcrumb trail on by default
 { const bb=document.getElementById("breadcrumb"); if(bb){ bb.onclick=()=>{ Focus._breadcrumbOn=!Focus._breadcrumbOn; paintBreadcrumbBtn(); }; paintBreadcrumbBtn(); } }
 { const hb=document.getElementById("highlightbtn"); if(hb){ const paintHl=()=>{ const on=!!Focus._highlightView; hb.style.color=on?"#f4d97a":"var(--t3)"; hb.style.borderColor=on?"#f4d97a":"var(--line-strong)"; hb.style.boxShadow=on?"0 0 14px #f4d97a66":"0 2px 10px rgba(0,0,0,0.4)"; }; hb.onclick=()=>{ Focus._highlightView=!Focus._highlightView; const _le=document.getElementById("hllist"); if(Focus._highlightView){ if(typeof exitFocus==="function") exitFocus(); buildHlList(); if(_le) _le.style.display="flex"; } else { if(_le) _le.style.display="none"; } paintHl(); }; Focus._paintHl=paintHl;
 function closeHlList(){ Focus._highlightView=false; const el=document.getElementById("hllist"); if(el) el.style.display="none"; if(Focus._paintHl) Focus._paintHl(); }
-function hlPromoteFocused(){ if(Focus.planetFocus>=0){ const pf=Focus.planetFocus; const id=Model.ids[pf]; Focus._igniteId=pf; Focus._igniteT0=performance.now(); Focus.planetFocus=-1; promote(pf, true); Focus.id=id; Focus.egoCenter=pf; Focus.neighbours=neighboursOf(id).filter(nb=>isVisible(nb.id)); } }
-function hlClickNode(i){ closeHlList(); const n=Model.count(); if(SolarSys.isSun && SolarSys.isSun.length===n && SolarSys.isSun[i]){ goToNode(i); } else { goToNode(i); const _iv=setInterval(()=>{ if(typeof hideRelInfo==="function") hideRelInfo(); }, 100); hlAfterSettle(()=>{ clearInterval(_iv); hlPromoteFocused(); }); } }
+function hlPromoteFocused(){ if(Focus.planetFocus>=0){ const pf=Focus.planetFocus; const id=Model.ids[pf]; Focus._igTargetScreenR=Focus._lastPlanetScreenR||0; Focus._igniteId=pf; Focus._igniteT0=performance.now(); Focus.planetFocus=-1; egoTo(id); view.tdist=view.dist; Focus._igniteZoom=true; } }
+function hlClickNode(i){ closeHlList(); const n=Model.count(); if(SolarSys.isSun && SolarSys.isSun.length===n && SolarSys.isSun[i]){ goToNode(i); hlAfterSettle(()=>{ view.tdist=(Focus.fitDist||view.dist)*0.55; }); } else { goToNode(i); Focus._hlAutoPromote=true; const _iv=setInterval(()=>{ if(typeof hideRelInfo==="function") hideRelInfo(); }, 40); hlAfterSettle(()=>{ hlPromoteFocused(); setTimeout(()=>{ clearInterval(_iv); Focus._hlAutoPromote=false; view.tdist=(Focus.fitDist||view.dist)*0.55; }, 1900); }); } }
 function hlAfterSettle(cb, timeout){ const t0=performance.now(); timeout=timeout||3800; let cnt=0; const iv=setInterval(()=>{ const near=view.tdist>0 && Math.abs(view.dist-view.tdist)<view.tdist*0.025; if(near) cnt++; else cnt=0; if(cnt>=6 || performance.now()-t0>timeout){ clearInterval(iv); cb(); } }, 60); }
 function hlClickConn(l){ closeHlList(); const a=Model.index(l.from), b=Model.index(l.to); if(a==null||b==null) return; const n=Model.count(); const iS=SolarSys.isSun; const aS=iS&&iS.length===n&&iS[a], bS=iS&&iS.length===n&&iS[b]; const da=(neighboursOf(l.from)||[]).length, db=(neighboursOf(l.to)||[]).length; const host=da>=db?a:b, guest=da>=db?b:a; const _sup=setInterval(()=>{ if(typeof hideRelInfo==="function") hideRelInfo(); }, 90); const _done=()=>clearInterval(_sup); setTimeout(_done, 9000);
   if(aS && !bS){ _done(); goToNode(b); }
@@ -3059,7 +3061,8 @@ function loop(){
   if(Math.abs(view.tdist-view.dist) < Math.max(2, view.dist*0.012)) view.galAngle += view.spin;   // ambient galactic rotation, but PAUSED while a zoom is in progress so the view doesn't wheel/jump as you zoom
   const cgL=Math.cos(view.galAngle), sgL=Math.sin(view.galAngle);
   // when focused, follow the sun along its galactic orbit so it stays centre-frame while the galaxy wheels past
-  if(Focus.mode==="ego" && Focus.egoCenter>=0 && SolarSys.sunX && SolarSys.sunX.length===Model.count()){
+  if(Focus.mode==="ego" && Focus._igniteId!=null && SolarSys.disp && SolarSys.disp[Focus._igniteId]){ const _d=SolarSys.disp[Focus._igniteId]; view.tcx=_d.x; view.tcy=_d.y; view.tcz=_d.z; }   // during ignite: aim at the planet's live glide (not its endpoint), so the eased camera follows it instead of weaving toward a point it hasn't reached
+  else if(Focus.mode==="ego" && Focus.egoCenter>=0 && SolarSys.sunX && SolarSys.sunX.length===Model.count()){
     const su=Focus.egoCenter;
     if(Focus.planetFocus>=0 && SolarSys.orbit[Focus.planetFocus] && SolarSys.sunX){
       const o=SolarSys.orbit[Focus.planetFocus], su=o.su, th=o.phase+o.speed*planetT*0.001, cs=Math.cos(th), sn=Math.sin(th);   // recompute the planet's exact orbit position (same math the renderer uses this frame) so the camera pins to it with zero lag
@@ -3070,7 +3073,7 @@ function loop(){
       view.tcx=gx; view.tcy=SolarSys.sunY[su]; view.tcz=gz;
     }
   }
-  const trk = (Focus.mode==="ego" && (Focus.planetFocus>=0 || Focus._igniteId!=null)) ? 1 : (Focus.mode==="ego" ? 0.2 : 0.07);   // planet focus / ignite: rigid lock (no chase); sun focus: gentle ease
+  const trk = (Focus.mode==="ego" && Focus.planetFocus>=0) ? 1 : (Focus.mode==="ego" ? 0.2 : 0.07);   // planet focus: rigid lock (no chase); sun focus: gentle ease
   view.cx += (view.tcx-view.cx)*trk; view.cy += (view.tcy-view.cy)*trk; view.cz += (view.tcz-view.cz)*trk;
   if(padVX||padVY){ if(Focus.mode==="ego"||Focus.mode==="focus") exitFocus(true);   // flying breaks the focus lock (keeps the camera) so you're never stuck in a system
       const cpv=Math.cos(view.pitch), spv=Math.sin(view.pitch), D=view.dist;   // spinpad = FLY: left/right steers, forward/back throttles along the look direction
