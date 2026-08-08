@@ -288,7 +288,7 @@
    never touches the DOM, and all load/save goes through GraphSource. This is
    the structure the scale work (worker layout, Barnes-Hut, accounts) hangs off.
    ============================================================================= */
-const BUILD="v2-573";
+const BUILD="v2-577";
 document.getElementById("build").textContent=BUILD;
 
 /* ---- palette (name → [lightest, mid-dark, darkest, vivid]) ---- */
@@ -2153,6 +2153,7 @@ function showInfoCard(msg, title){ let el=document.getElementById("infocard"); i
 function hlPromoteFocused(){ if(Focus.planetFocus>=0){ const pf=Focus.planetFocus; const id=Model.ids[pf]; Focus._igTargetScreenR=Focus._lastPlanetScreenR||0; Focus._igniteId=pf; Focus._igniteT0=performance.now(); Focus.planetFocus=-1; egoTo(id); if(Focus._lastPlanetScreenR>0.5){ const _sr=(SolarSys.sunR&&SolarSys.sunR[pf])||((SolarSys.Rmax||40)*1.2); view.dist=_sr*1150/(Focus._lastPlanetScreenR*7.5); } view.tdist=view.dist; Focus._igniteZoom=true; } }
 function hlClickNode(i){ closeHlList(); const n=Model.count(); if(SolarSys.isSun && SolarSys.isSun.length===n && SolarSys.isSun[i]){ goToNode(i); hlAfterSettle(()=>{ view.tdist=(Focus.fitDist||view.dist)*0.55; }); } else { goToNode(i); Focus._hlAutoPromote=true; const _iv=setInterval(()=>{ if(typeof hideRelInfo==="function") hideRelInfo(); }, 40); hlAfterSettle(()=>{ view.dist=view.tdist; requestAnimationFrame(()=>{ hlPromoteFocused(); setTimeout(()=>{ clearInterval(_iv); Focus._hlAutoPromote=false; }, 1900); }); }); } }
 function hlAfterSettle(cb, timeout){ const t0=performance.now(); timeout=timeout||3800; let cnt=0; const iv=setInterval(()=>{ const near=view.tdist>0 && Math.abs(view.dist-view.tdist)<view.tdist*0.006; if(near) cnt++; else cnt=0; if(cnt>=8 || performance.now()-t0>timeout){ clearInterval(iv); cb(); } }, 60); }
+try{ if(typeof window!=="undefined"){ window.hlClickNode=hlClickNode; window.hlAfterSettle=hlAfterSettle; window.hlPromoteFocused=hlPromoteFocused; } }catch(_){}
 function hlClickConn(l){ closeHlList(); const a=Model.index(l.from), b=Model.index(l.to); if(a==null||b==null) return; const n=Model.count(); const iS=SolarSys.isSun; const aS=iS&&iS.length===n&&iS[a], bS=iS&&iS.length===n&&iS[b]; const da=(neighboursOf(l.from)||[]).length, db=(neighboursOf(l.to)||[]).length; const host=da>=db?a:b, guest=da>=db?b:a; const _sup=setInterval(()=>{ if(typeof hideRelInfo==="function") hideRelInfo(); }, 90); const _done=()=>clearInterval(_sup); setTimeout(_done, 9000);
   if(aS && !bS){ _done(); goToNode(b); }
   else if(bS && !aS){ _done(); goToNode(a); }
@@ -2688,7 +2689,7 @@ function runSearch(){
     d.onclick=()=>pickSearch(m.id); resultsEl.appendChild(d); });
   resultsEl.style.display="block";
 }
-function pickSearch(id){ qEl.value=""; resultsEl.style.display="none"; qMatches=[]; qSel=-1; qEl.blur(); if(Focus.mode==="focus" && typeof exitFocus==="function") exitFocus(); const _i=Model.index(id); if(_i!=null && typeof hlClickNode==="function") hlClickNode(_i); else enterFocus(id); }
+function pickSearch(id){ qEl.value=""; resultsEl.style.display="none"; qMatches=[]; qSel=-1; qEl.blur(); const _i=Model.index(id); if(_i==null||_i<0) return; if(Focus.mode==="focus" && typeof exitFocus==="function") exitFocus(); if(typeof window!=="undefined" && typeof window.hlClickNode==="function") window.hlClickNode(_i); else goToNode(_i); }
 function qHighlight(){ [...resultsEl.children].forEach((c,i)=>c.classList.toggle("sel", i===qSel)); }
 qEl.addEventListener("input", runSearch);
 qEl.addEventListener("keydown", e=>{
