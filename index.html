@@ -55,10 +55,11 @@
   #legend{display:flex;flex-wrap:wrap;gap:5px 9px;margin-top:9px;}
   .leg{display:inline-flex;align-items:center;gap:5px;cursor:pointer;font-size:11px;color:var(--t2);white-space:nowrap;user-select:none;}
   .dot{width:9px;height:9px;border-radius:50%;flex:none;}
-  #editor{position:fixed;top:12px;left:12px;z-index:1000;width:min(320px,calc(100vw - 24px));max-height:calc(100vh - 100px);
+  @keyframes xspin{to{transform:rotate(360deg);}}
+  #editor{position:fixed;top:12px;left:12px;z-index:2400;width:min(320px,calc(100vw - 24px));max-height:calc(100vh - 100px);
     overflow:auto;background:#171a28;border:1px solid var(--line-strong);border-radius:12px;padding:12px 14px;
     box-shadow:0 14px 44px rgba(0,0,0,0.55);display:none;}
-  #typespanel,#groupspanel{position:fixed;top:12px;left:12px;z-index:31;width:min(320px,calc(100vw - 24px));max-height:calc(100vh - 24px);
+  #typespanel,#groupspanel{position:fixed;top:12px;left:12px;z-index:2400;width:min(320px,calc(100vw - 24px));max-height:calc(100vh - 110px);
     overflow:auto;background:#171a28;border:1px solid var(--line-strong);border-radius:12px;padding:12px 14px;
     box-shadow:0 14px 44px rgba(0,0,0,0.55);display:none;}
   #typespanel h1,#groupspanel h1{display:flex;align-items:center;font-size:14px;margin:0 0 10px;}
@@ -236,6 +237,14 @@
 <button id="toggleconn" type="button" title="Toggle connector lines" style="display:none; position:fixed; bottom:16px; left:172px; z-index:900; width:42px; height:42px; border-radius:21px; background:var(--card); border:1px solid var(--line-strong); box-shadow:0 2px 10px rgba(0,0,0,0.4); color:var(--t3); cursor:pointer; align-items:center; justify-content:center; padding:0;">
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="5.5" cy="6" r="2.3"/><circle cx="18.5" cy="18" r="2.3"/><line x1="7.3" y1="7.4" x2="16.7" y2="16.6"/></svg>
 </button>
+<style>
+#hllist .hl-title{ position:sticky; top:0; z-index:2; padding:12px 14px 12px 16px; font:700 15px -apple-system,Segoe UI,Roboto,sans-serif; color:#eef1f8; background:linear-gradient(160deg, rgba(48,56,84,0.99), rgba(36,42,64,0.99)); border-bottom:1px solid rgba(130,150,200,0.28); border-radius:6px 6px 0 0; display:flex; align-items:center; justify-content:space-between; gap:10px; }
+#hllist .hllab{ flex:none; pointer-events:auto; cursor:pointer; color:#eef1f8; font:500 14px -apple-system,Segoe UI,Roboto,sans-serif; padding:11px 16px; border-bottom:1px solid var(--line); transition:background .15s; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+#hllist .hllab:last-child{ border-bottom:none; }
+#hllist .hllab:active{ background:rgba(255,255,255,0.06); }
+@media (hover:hover){ #hllist .hllab:hover{ background:rgba(255,255,255,0.05); } }
+</style>
+<div id="hllist" style="display:none; position:fixed; top:78px; left:50%; transform:translateX(-50%); width:min(300px, calc(100vw - 40px)); max-height:calc(100vh - 210px); z-index:600; pointer-events:auto; flex-direction:column; align-items:stretch; overflow:auto; -webkit-overflow-scrolling:touch; padding:0; box-sizing:border-box; background:linear-gradient(160deg, rgba(44,52,78,0.95), rgba(8,10,20,0.94)); border:1px solid rgba(130,150,200,0.42); border-radius:6px; box-shadow:0 0 22px rgba(130,150,200,0.16), 0 10px 34px rgba(0,0,0,0.55);"></div>
 <button id="highlightbtn" type="button" title="Highlights" style="display:flex; position:fixed; bottom:16px; left:272px; z-index:900; width:42px; height:42px; border-radius:21px; background:var(--card); border:1px solid var(--line-strong); box-shadow:0 2px 10px rgba(0,0,0,0.4); color:var(--t3); cursor:pointer; align-items:center; justify-content:center; padding:0; font-size:17px; line-height:1;">&#9733;</button>
 <button id="breadcrumb" type="button" title="Toggle the trail of where you've been" style="display:flex; position:fixed; bottom:16px; left:222px; z-index:900; width:42px; height:42px; border-radius:21px; background:var(--card); border:1px solid var(--line-strong); box-shadow:0 2px 10px rgba(0,0,0,0.4); color:var(--t3); cursor:pointer; align-items:center; justify-content:center; padding:0;"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14" stroke-width="1.3"/></svg></button>
 <button id="bypassls" type="button" title="Clear all saved data and stay fresh (dev)" style="display:none; position:fixed; bottom:16px; left:-9999px; z-index:900; width:42px; height:42px; border-radius:21px; background:var(--card); border:1px solid var(--line-strong); box-shadow:0 2px 10px rgba(0,0,0,0.4); color:var(--t3); cursor:pointer; align-items:center; justify-content:center; padding:0;">
@@ -279,7 +288,7 @@
    never touches the DOM, and all load/save goes through GraphSource. This is
    the structure the scale work (worker layout, Barnes-Hut, accounts) hangs off.
    ============================================================================= */
-const BUILD="v2-490";
+const BUILD="v2-577";
 document.getElementById("build").textContent=BUILD;
 
 /* ---- palette (name → [lightest, mid-dark, darkest, vivid]) ---- */
@@ -364,7 +373,7 @@ const FileSource={
     const inp=document.getElementById("file");
     inp.value=""; inp.onchange=async()=>{
       const f=inp.files[0]; if(!f){ res(null); return; }
-      try{ res(await parseJsonOrZip(f)); }catch(e){ alert("Couldn't load: "+e.message); res(null); }
+      try{ res(await parseJsonOrZip(f)); }catch(e){ showInfoCard("Couldn't load: "+e.message); res(null); }
     };
     inp.click();
   }); }
@@ -978,6 +987,7 @@ const Renderer=(()=>{
 
     // project + cull (relative to the camera look-at, so fly-in can centre a node)
     let cnt=0;
+    if(Focus.planetFocus>=0){ const _gp=galaxyPosNow(Focus.planetFocus); if(_gp){ view.cx=_gp.x*cg - _gp.z*sg; view.cy=_gp.y; view.cz=_gp.x*sg + _gp.z*cg; } }   // pin the look-at to where the focused planet is THIS frame, so projection isn't one frame behind
     const lax=view.cx, lay=view.cy, laz=view.cz;
     const fSkip = Focus.mode==="focus" ? Focus.skip : null, dim = fSkip?0.5:1;
     const ego = Focus.mode==="ego", ec = ego && Focus.egoCenter>=0 ? Focus.egoCenter : -1;
@@ -1074,7 +1084,7 @@ const Renderer=(()=>{
         g.addColorStop(0,"rgba(255,246,220,0.42)"); g.addColorStop(0.26,"rgba(255,232,190,0.15)"); g.addColorStop(1,"rgba(255,220,165,0)");
         ctx.fillStyle=g; ctx.beginPath(); ctx.arc(sx,sy,cr,0,7); ctx.fill(); };
       const IG_DUR=1700; let _igN=-1,_igT=1;   // planet→star ignition: eased 0..1 for a just-promoted world — a slow ceremonial burn
-      if(Focus._igniteId!=null){ _igT=(nowT-Focus._igniteT0)/IG_DUR; if(_igT>=1){ Focus._igniteId=null; _igT=1; Focus._igniteZoom=false; } else _igN=Focus._igniteId; }   // burn finished → release the card gate and let the last bit of zoom finish at normal speed
+      if(Focus._igniteId!=null){ _igT=(nowT-Focus._igniteT0)/IG_DUR; if(_igT>=1){ Focus._igniteId=null; _igT=1; Focus._igniteZoom=false; } else _igN=Focus._igniteId; if(_igT>=1){ const _ff=Focus.fitDist||view.dist; if(view.tdist > _ff*0.68) view.tdist=_ff*0.68; } } if(Focus.planetFocus>=0 && proj.r && proj.r[Focus.planetFocus]>0.5) Focus._lastPlanetScreenR=proj.r[Focus.planetFocus]; if(Focus._igniteId!=null && Focus._igTargetScreenR>0.5){ const _cur=proj.r&&proj.r[Focus._igniteId]; if(_cur>0.5){ view.dist*=(_cur/Focus._igTargetScreenR); view.tdist=view.dist; } } else if(Focus._igniteId==null && Focus._igTargetScreenR){ Focus._igTargetScreenR=0; }   // burn finished → release the card gate and let the last bit of zoom finish at normal speed
       view._igN=_igN; view._igT=_igT;   // shared with the sphere-flag pass below
       ctx.globalCompositeOperation="lighter";
       const flareAmt=Math.max(0,Math.min(1,1-cl*1.6));   // galaxy stars only — fades right out as you zoom into a system
@@ -1103,7 +1113,7 @@ const Renderer=(()=>{
         const fr=sr*(2.4+_igT*4.0), g2=ctx.createRadialGradient(sx,sy,0, sx,sy,fr);
         g2.addColorStop(0,"rgba(255,247,224,"+(0.5*flE).toFixed(3)+")"); g2.addColorStop(0.4,"rgba(255,236,198,"+(0.24*flE).toFixed(3)+")"); g2.addColorStop(1,"rgba(255,222,165,0)");
         ctx.fillStyle=g2; ctx.beginPath(); ctx.arc(sx,sy,fr,0,7); ctx.fill(); }
-      if(Focus._highlightView && cl>0.35){ Focus._highlightView=false; if(Focus._paintHl)Focus._paintHl(); }   // highlights view off on zoom-in; rings+titles now drawn via the WebGL label layer
+      if(Focus._highlightView && cl>0.35){ Focus._highlightView=false; if(Focus._paintHl)Focus._paintHl(); }   // highlights view off on zoom-in
       ctx.globalCompositeOperation="source-over"; }
 
     // planets — WebGL impostor spheres (lit by a world-space sun, surface fixed in world space) when
@@ -1171,7 +1181,7 @@ const Renderer=(()=>{
         if(!Focus._highlightView) PlanetGL.drawLabels(items, Math.round(W*DPR), Math.round(H*DPR));
         if(view.hover>=0 && glLabelHits.some(L=>L.id===view.hover)){ const _le=document.getElementById("label"); if(_le) _le.style.opacity="0"; }   // this node's label is already drawn — kill any hover label for it (authoritative, no frame lag)
       }
-      if(Focus._highlightView && PlanetGL.labelTex){ const _hI=[]; Focus._ringHits=[]; const _hn=Model.count(), _OS=2, _pu=0.5+0.5*Math.sin(nowT*0.004); const _rTex=PlanetGL.labelTex("__HLRING__",80,80,(tc,w,h)=>{ tc.clearRect(0,0,w,h); tc.strokeStyle="rgba(255,255,255,1)"; tc.lineWidth=4; tc.beginPath(); tc.arc(w/2,h/2,w/2-8,0,7); tc.stroke(); }); const _addR=(_k,_cn)=>{ if(!proj.vis[_k])return; const _rr=Math.max(12,proj.r[_k]*1.8)+7; _hI.push({id:-1,tex:_rTex.tex,cx:proj.x[_k]*DPR,cy:proj.y[_k]*DPR,hw:_rr*DPR,hh:_rr*DPR,a:0.7+0.22*_pu,d:0.42}); Focus._ringHits.push({i:_k,cx:proj.x[_k],cy:proj.y[_k],r:_rr,conn:_cn}); }; const _addT=(_k,_txt,_cn)=>{ if(!proj.vis[_k])return; const _fs=Math.round(11*DPR*_OS),_pd=Math.round(5*DPR*_OS); ctx.font="600 "+_fs+"px -apple-system,Segoe UI,Roboto,sans-serif"; const _tw=ctx.measureText(_txt).width; const _tW=Math.ceil(_tw+_pd*2),_tH=Math.ceil(_fs+_pd*2); const _tr=PlanetGL.labelTex("HL|"+_txt,_tW,_tH,(tc,w,h)=>{ tc.textAlign="center"; tc.textBaseline="middle"; tc.font="600 "+_fs+"px -apple-system,Segoe UI,Roboto,sans-serif"; tc.fillStyle="rgba(255,255,255,0.96)"; tc.fillText(_txt,w/2,h/2); }); const _hw=_tr.w*0.5/_OS,_hh=_tr.h*0.5/_OS; _hI.push({id:_k,tex:_tr.tex,cx:proj.x[_k]*DPR,cy:(proj.y[_k]+Math.max(12,proj.r[_k]*1.8))*DPR+_hh+10*DPR,hw:_hw,hh:_hh,a:1,d:0.35}); Focus._ringHits.push({i:_k,cx:proj.x[_k],cy:(proj.y[_k]+Math.max(12,proj.r[_k]*1.8))+_hh/DPR+10,hw:_hw/DPR,hh:_hh/DPR,box:true,conn:_cn}); }; for(let _k=0;_k<_hn;_k++){ const _nd=Model.nodeById(Model.ids[_k]); if(_nd&&_nd.highlight){_addR(_k);_addT(_k,(_nd.name)||Model.ids[_k]);} } (Model.raw&&Model.raw.links?Model.raw.links:[]).forEach(l=>{ if(!l.highlight)return; const _a=Model.index(l.from),_b=Model.index(l.to); if(_a==null||_b==null)return; const _aS=SolarSys.isSun.length===_hn&&SolarSys.isSun[_a],_bS=SolarSys.isSun.length===_hn&&SolarSys.isSun[_b]; if(!_aS&&!_bS)return; const _t=_aS?_a:_b, _pl=_aS?_b:_a; if(!(SolarSys.sun&&SolarSys.sun[_pl]===_t))return; const _tn=Model.nodeById(Model.ids[_t]); if(_tn&&_tn.highlight)return; const _an=Model.nodeById(l.from),_bn=Model.nodeById(l.to); _addR(_t,_pl); _addT(_t,((_an&&_an.name)||l.from)+" \u2013 "+((_bn&&_bn.name)||l.to),_pl); }); if(_hI.length) PlanetGL.drawLabels(_hI, Math.round(W*DPR), Math.round(H*DPR)); }
+      /* highlight rings removed — replaced by list overlay */
       /* GL layer now renders to its own visible canvas (z-index 2) — no drawImage composite, which Safari was softening */
     } else {
       const inv=1/SPHERE_FRAC;
@@ -1314,7 +1324,6 @@ cv.addEventListener("pointerup",e=>{ if(moved>=6||pinching||cardEditing) return;
       else hideRelInfo(); }
     return;
   }
-  if(Focus._highlightView){ const _hits=Focus._ringHits||[]; let _best=null,_bD=Infinity; for(let _h=0;_h<_hits.length;_h++){ const _R=_hits[_h],_dx=e.clientX-_R.cx,_dy=e.clientY-_R.cy,_d2=_dx*_dx+_dy*_dy; const _in=_R.box?(Math.abs(_dx)<=_R.hw&&Math.abs(_dy)<=_R.hh):(_d2<=_R.r*_R.r); if(_in && _d2<_bD){_bD=_d2;_best=_R;} } if(_best){ Focus._highlightView=false; if(Focus._paintHl)Focus._paintHl(); goToNode(_best.conn!=null?_best.conn:_best.i); } return; }   // highlights view: node ring → its node; connection ring → the planet node that holds the connection
   if(i>=0){ if(Focus.mode==="focus") enterFocus(Model.ids[i]); else goToNode(i); }   // galaxy/universe: sun → fly into it; planet → its sun's system, focused on the planet
   else if(Focus.mode==="focus") exitFocus();
   else { const ce=Renderer.pickAnyConnector(e.clientX,e.clientY);   // galaxy: tap a connector → glow + relationship label
@@ -1827,7 +1836,7 @@ function showRelInfoEdge(a, b, px, py){
 { const psb=document.getElementById("promotesun"); if(psb) psb.onclick=()=>{ if(Focus.planetFocus>=0){ const id=Model.ids[Focus.planetFocus]; Focus._igniteId=Focus.planetFocus; Focus._igniteT0=performance.now(); Focus.planetFocus=-1; egoTo(id); view.tdist=(Focus.fitDist||view.dist)*0.5; Focus._igniteZoom=true; } };   // promote to a sun; begin a slow zoom toward the card straight away (eased gently through the burn), holding the card back until the ignition finishes
   const pi=document.getElementById("planetinfo");
   if(pi){
-    pi.addEventListener("click", e=>{ if(!e.target.closest) return; if(e.target.closest(".pf-dismiss")){ if(Focus.planetFocus>=0){ Focus.planetFocus=-1; view.tdist=Focus.fitDist||view.dist; } } else if(e.target.closest(".pf-promote")){ if(Focus.planetFocus>=0){ const id=Model.ids[Focus.planetFocus]; Focus._igniteId=Focus.planetFocus; Focus._igniteT0=performance.now(); Focus.planetFocus=-1; egoTo(id); view.tdist=(Focus.fitDist||view.dist)*0.5; Focus._igniteZoom=true; } } else if(e.target.closest(".nc-2d")){ if(Focus.egoCenter>=0){ hidePlanetInfo(); enterFocus(Model.ids[Focus.egoCenter]); } } else if(e.target.closest(".nc-solar")){ Focus.cardHidden=true; pi.innerHTML=""; pi.style.display="none"; planetInfoShown=null; view.tdist=Focus.fitDist||view.dist; } });   // ⊖ on the node card → just hide it and stop any video (tap the sun to bring it back)
+    pi.addEventListener("click", e=>{ if(!e.target.closest) return; if(e.target.closest(".pf-dismiss")){ if(Focus.planetFocus>=0){ Focus.planetFocus=-1; view.tdist=Focus.fitDist||view.dist; } } else if(e.target.closest(".pf-promote")){ if(Focus.planetFocus>=0){ const pf=Focus.planetFocus; const id=Model.ids[pf]; Focus._igTargetScreenR=Focus._lastPlanetScreenR||0; Focus._igniteId=pf; Focus._igniteT0=performance.now(); Focus.planetFocus=-1; egoTo(id); if(Focus._lastPlanetScreenR>0.5){ const _sr=(SolarSys.sunR&&SolarSys.sunR[pf])||((SolarSys.Rmax||40)*1.2); view.dist=_sr*1150/(Focus._lastPlanetScreenR*7.5); } view.tdist=view.dist; Focus._igniteZoom=true; } } else if(e.target.closest(".hl-conn")){ const _hn=e.target.closest(".hl-conn"), _t=_hn.getAttribute("data-target"), _ti=Model.index(_t); if(_ti!=null){ hidePlanetInfo(); goToNode(_ti); } } else if(e.target.closest(".nc-2d")){ if(Focus.egoCenter>=0){ hidePlanetInfo(); enterFocus(Model.ids[Focus.egoCenter]); } } else if(e.target.closest(".nc-solar")){ Focus.cardHidden=true; pi.innerHTML=""; pi.style.display="none"; planetInfoShown=null; view.tdist=Focus.fitDist||view.dist; } });   // ⊖ on the node card → just hide it and stop any video (tap the sun to bring it back)
     let lpT=null,lpX=0,lpY=0;   // press-and-hold anywhere on a card (node OR connection) → inline edit
     pi.addEventListener("pointerdown", e=>{ if(e.target.closest && e.target.closest("input,textarea,button,a,select")) return; lpX=e.clientX;lpY=e.clientY;
       const _conn=e.target.closest&&e.target.closest(".pf-conn"), _li=_conn?+_conn.getAttribute("data-li"):-1;   // which stacked connection was pressed (multi-link cards)
@@ -1873,7 +1882,7 @@ function enterCardEdit(spec){   // inline hold-to-edit form, shared by node card
   box.innerHTML="";
   const done=document.createElement("button"); done.type="button"; done.textContent="Done"; done.style.cssText="float:right;font-size:13px;padding:3px 12px;cursor:pointer;"; done.onclick=exitCardEdit; box.appendChild(done);
   const title=document.createElement("div"); title.textContent=kind==="link"?"Edit connection":"Edit node"; title.style.cssText="font-size:13px;font-weight:600;color:#f4f5fa;margin-bottom:9px;"; box.appendChild(title);
-  { const hl=document.createElement("label"); hl.style.cssText="display:flex;align-items:center;gap:7px;color:#f4d97a;font-size:12px;margin-bottom:10px;cursor:pointer;"; const hc=document.createElement("input"); hc.type="checkbox"; hc.style.cssText="width:16px;height:16px;margin:0;flex:none;accent-color:#f4d97a;"; hc.checked=!!target.highlight; hc.addEventListener("change",()=>{ if(hc.checked) target.highlight=true; else delete target.highlight; saveRoot(); if(typeof buildSolarTopology==="function") buildSolarTopology(); if(typeof buildSolarOrbits==="function") buildSolarOrbits(); if(Focus._updateHlBtn)Focus._updateHlBtn(); }); hl.appendChild(hc); hl.appendChild(document.createTextNode("Highlight")); box.appendChild(hl); }   // highlight toggle — one control, works for both node and connection since target is either
+  { const hl=document.createElement("label"); hl.style.cssText="display:flex;align-items:center;gap:7px;color:#f4d97a;font-size:12px;margin-bottom:10px;cursor:pointer;"; const hc=document.createElement("input"); hc.type="checkbox"; hc.style.cssText="width:16px;height:16px;margin:0;flex:none;accent-color:#f4d97a;"; hc.checked=!!target.highlight; hc.addEventListener("change",()=>{ if(hc.checked) target.highlight=true; else delete target.highlight; saveRoot(); if(Focus._updateHlBtn)Focus._updateHlBtn(); }); hl.appendChild(hc); hl.appendChild(document.createTextNode("Highlight")); box.appendChild(hl); }   // highlight toggle — one control, works for both node and connection since target is either
   if(kind==="link"){ const _t=Model.raw.types=Model.raw.types||{};
     const tw=document.createElement("label"); tw.style.cssText="display:block;font-size:11px;color:#aab0c2;margin-bottom:8px;"; tw.textContent="Relationship type";
     const sel=document.createElement("select"); sel.style.cssText="width:100%;box-sizing:border-box;margin-top:3px;";
@@ -1935,6 +1944,7 @@ function enterCardEdit(spec){   // inline hold-to-edit form, shared by node card
 function stopCardVideo(){ const b=document.getElementById("planetinfo"); if(b && b.querySelector("iframe")){ b.innerHTML=""; planetInfoShown=null; } }   // pull the embedded video so playback stops the moment the card is hidden or faded out
 function updatePlanetInfo(){
   const box=document.getElementById("planetinfo"); if(!box) return;
+  if(Focus._hlAutoPromote){ box.style.display="none"; planetInfoShown=null; return; }   // suppress the planet card during an automatic list-triggered promote
   if(cardEditing) return;   // inline edit form owns the card while open
   if(box.style.display==="none"||typeof Focus._boxOp!=="number") Focus._boxOp=0;   // box opacity eases toward its target each frame via Focus._boxOp; reset to 0 whenever hidden so it fades up on reappear
   { const psb=document.getElementById("promotesun"); if(psb) psb.style.display="none"; }   // sun-promote button shows only while a planet is focused
@@ -1972,7 +1982,7 @@ function updatePlanetInfo(){
     box.style.display="block"; return;
   }
   const _ff=Focus.fitDist||1;
-  const on = Focus.mode==="ego" && Focus.egoCenter>=0 && view.tdist < _ff*0.72 && !Focus.cardHidden && _settleFade>0.04 && !(Focus._igniteId!=null && Focus._igniteZoom);   // gate on where the camera is HEADING (tdist), never mid-fly — and never while a promoted world is still igniting, so the card waits for the burn to end even though the camera is already easing in
+  const on = Focus.mode==="ego" && Focus.egoCenter>=0 && view.tdist < _ff*0.72 && !Focus.cardHidden && !Focus._hlAutoPromote && _settleFade>0.04 && !(Focus._igniteId!=null && Focus._igniteZoom);   // gate on where the camera is HEADING (tdist), never mid-fly — and never while a promoted world is still igniting, so the card waits for the burn to end even though the camera is already easing in
   const id = on ? Model.ids[Focus.egoCenter] : null;
   if(!id || !Model.nodeById(id)){ if(box.style.display!=="none" && Focus._boxOp>0.06){ box.style.opacity=String(Focus._boxOp*=0.8); return; } stopCardVideo(); box.style.display="none"; planetInfoShown=null; Focus._boxOp=0; return; }   // fade the card out before hiding rather than snapping it off
   if(planetInfoShown!==id){
@@ -1989,6 +1999,7 @@ function updatePlanetInfo(){
     if(nd.url){ const lt=nd.linkText||(/wikipedia/i.test(nd.url)?'Wikipedia':'Link'); h+='<a href="'+esc(nd.url)+'" class="weblink" data-url="'+esc(nd.url)+'" rel="noopener" style="display:inline-block;margin-top:8px;font-size:12px;color:'+c[3]+';cursor:pointer;">'+esc(lt)+' &#8599;</a>'; }
     if(nd.link2){ h+='<a class="weblink" data-url="'+esc(nd.link2)+'" style="display:inline-block;margin-top:8px;margin-left:16px;font-size:12px;color:'+c[3]+';cursor:pointer;">'+esc(nd.link2label||'Link')+' \u2197</a>'; }
     if(nd.subgraph){ const n2=Object.keys(nd.subgraph.nodes||{}).length; h+='<div class="entergraph" style="margin-top:9px;font-size:12px;color:'+c[3]+';cursor:pointer;">◈ Enter graph ('+n2+' node'+(n2===1?'':'s')+') →</div>'; }
+    { const _hc=[], _oc=[]; (Model.raw&&Model.raw.links?Model.raw.links:[]).forEach(l=>{ let _oth=null; if(l.from===id)_oth=l.to; else if(l.to===id)_oth=l.from; else return; if(typeof isVisible==="function" && !isVisible(_oth)) return; const _on=Model.nodeById(_oth); const _nm=(_on&&_on.name)||_oth; const _ty=(Model.raw.types||{})[l.type]||{}; const _rel=(l.from===id)?(_ty.toLabel||l.type||""):(_ty.fromLabel||l.type||""); const _cc=ramp(_oth); const _cb=(_cc&&_cc[2])||"#888"; const _grp=((Model.raw.groups||{})[groupOf(_oth)]||{}).label||""; const _row={ nm:_nm, html:'<div class="hl-conn" data-target="'+esc(_oth)+'" style="display:flex;align-items:center;cursor:pointer;pointer-events:auto;margin-top:6px;padding:8px 11px;border-radius:8px;background:'+_cb+';border:1px solid '+_cb+';font-size:12.5px;color:#fff;">'+esc(_nm)+(_rel?'<span style="opacity:0.8;font-size:11px;margin-left:6px;">\u00b7 '+esc(_rel)+'</span>':'')+(_grp?'<span style="margin-left:auto;font-size:10.5px;opacity:0.82;padding-left:10px;white-space:nowrap;">'+esc(_grp)+'</span>':'')+'</div>' }; if(l.highlight) _hc.push(_row); else _oc.push(_row); }); const _byn=(a,b)=>a.nm.localeCompare(b.nm); _hc.sort(_byn); _oc.sort(_byn); if(_hc.length) h+='<div style="margin-top:13px;border-top:1px solid '+c[3]+'40;padding-top:10px;"><div style="font-size:11px;color:'+c[3]+';text-transform:uppercase;letter-spacing:0.03em;margin-bottom:6px;opacity:0.9;">Highlighted connections</div>'+_hc.map(x=>x.html).join('')+'</div>'; if(_oc.length) h+='<div style="margin-top:13px;border-top:1px solid '+c[3]+'40;padding-top:10px;"><div style="font-size:11px;color:'+c[3]+';text-transform:uppercase;letter-spacing:0.03em;margin-bottom:6px;opacity:0.9;">'+(_hc.length?'Other connections':'Connections')+'</div>'+_oc.map(x=>x.html).join('')+'</div>'; }
     box.innerHTML=h; planetInfoShown=id;
   }
   box.style.top=""; box.style.left=""; box.style.right=""; box.style.bottom=""; box.style.transform=""; box.style.maxHeight=Math.max(160, innerHeight-150)+"px"; box.style.overflowY="auto"; box.style.display="block";   // fixed at top (CSS); cap to the viewport with an inner scroll so a banner image + long text can't run off-screen
@@ -2134,9 +2145,22 @@ function floatControls(show){ const d=show?"flex":"none";
 function updateToggleBtn(){ const b=document.getElementById("togglefocus"); if(!b) return;
   b.innerHTML = "&#8853;"; b.title = "See the whole galaxy"; }
 function paintBreadcrumbBtn(){ const b=document.getElementById("breadcrumb"); if(!b) return; const on=Focus._breadcrumbOn; b.style.color=on?"var(--t1)":"var(--t3)"; b.style.opacity=on?"1":"0.5"; b.style.borderColor="var(--line-strong)"; b.style.background="var(--card)"; b.title=on?"Hide the trail of where you've been":"Show the trail of where you've been"; }
-Focus._breadcrumbOn=true;   // breadcrumb trail on by default
+Focus._breadcrumbOn=false;   // breadcrumb trail on by default
 { const bb=document.getElementById("breadcrumb"); if(bb){ bb.onclick=()=>{ Focus._breadcrumbOn=!Focus._breadcrumbOn; paintBreadcrumbBtn(); }; paintBreadcrumbBtn(); } }
-{ const hb=document.getElementById("highlightbtn"); if(hb){ const paintHl=()=>{ const on=!!Focus._highlightView; hb.style.color=on?"#f4d97a":"var(--t3)"; hb.style.borderColor=on?"#f4d97a":"var(--line-strong)"; hb.style.boxShadow=on?"0 0 14px #f4d97a66":"0 2px 10px rgba(0,0,0,0.4)"; }; hb.onclick=()=>{ Focus._highlightView=!Focus._highlightView; if(Focus._highlightView){ if(typeof exitFocus==="function") exitFocus(); let _hR=0; const _nn=Model.count(); for(let _k=0;_k<_nn;_k++){ const _nd=Model.nodeById(Model.ids[_k]); if(_nd&&_nd.highlight){ const _d=SolarSys.disp&&SolarSys.disp[_k]; if(_d){ const _r=Math.sqrt(_d.x*_d.x+_d.y*_d.y+_d.z*_d.z); if(_r>_hR)_hR=_r; } } } if(_hR>0) view.tdist=Math.min(R*3.4, _hR*3.6); } paintHl(); }; Focus._paintHl=paintHl; Focus._updateHlBtn=()=>{ let has=true; try{ const nn=Model.raw&&Model.raw.nodes, ll=Model.raw&&Model.raw.links; if(nn&&ll) has=Object.values(nn).some(n=>n&&n.highlight)||ll.some(l=>l&&l.highlight); }catch(e){ has=true; } hb.style.display=has?"flex":"none"; if(!has)Focus._highlightView=false; paintHl(); }; Focus._updateHlBtn(); } }   // always-visible toggle; paint its initial on-state
+{ const hb=document.getElementById("highlightbtn"); if(hb){ const paintHl=()=>{ const on=!!Focus._highlightView; hb.style.color=on?"var(--t1)":"var(--t3)"; hb.style.borderColor="var(--line-strong)"; hb.style.boxShadow="0 2px 10px rgba(0,0,0,0.4)"; hb.style.opacity=on?"1":"0.5"; }; hb.onclick=()=>{ Focus._highlightView=!Focus._highlightView; const _le=document.getElementById("hllist"); if(Focus._highlightView){ if(typeof exitFocus==="function") exitFocus(); buildHlList(); if(_le) _le.style.display="flex"; } else { if(_le) _le.style.display="none"; } paintHl(); }; Focus._paintHl=paintHl;
+function closeHlList(){ Focus._highlightView=false; const el=document.getElementById("hllist"); if(el) el.style.display="none"; if(Focus._paintHl) Focus._paintHl(); }
+function showInfoCard(msg, title){ let el=document.getElementById("infocard"); if(!el){ el=document.createElement("div"); el.id="infocard"; el.style.cssText="display:none; position:fixed; inset:0; z-index:2500; align-items:center; justify-content:center; background:rgba(0,0,0,0.5); pointer-events:auto; padding:20px; box-sizing:border-box;"; el.innerHTML='<div style="max-width:min(360px,calc(100vw - 40px)); max-height:70vh; overflow:auto; background:linear-gradient(160deg, rgba(44,52,78,0.98), rgba(8,10,20,0.98)); border:1px solid rgba(130,150,200,0.42); border-radius:8px; box-shadow:0 12px 44px rgba(0,0,0,0.6); padding:18px;"><div class="ic-title" style="font:700 15px -apple-system,Segoe UI,Roboto,sans-serif; color:#eef1f8; margin-bottom:9px;"></div><div class="ic-msg" style="font:400 13.5px -apple-system,Segoe UI,Roboto,sans-serif; color:#c9d0e0; line-height:1.5; white-space:pre-wrap;"></div><button class="ic-ok" style="margin-top:16px; width:100%; padding:10px; border-radius:6px; background:rgba(130,150,200,0.2); border:1px solid rgba(130,150,200,0.4); color:#eef1f8; font:600 14px -apple-system,Segoe UI,Roboto,sans-serif; cursor:pointer;">OK</button></div>'; document.body.appendChild(el); el.addEventListener("click", e=>{ if(e.target===el || e.target.classList.contains("ic-ok")) el.style.display="none"; }); } const _t=el.querySelector(".ic-title"); _t.textContent=title||"Xanadu"; _t.style.display=title?"block":"none"; el.querySelector(".ic-msg").textContent=msg; el.style.display="flex"; }
+function hlPromoteFocused(){ if(Focus.planetFocus>=0){ const pf=Focus.planetFocus; const id=Model.ids[pf]; Focus._igTargetScreenR=Focus._lastPlanetScreenR||0; Focus._igniteId=pf; Focus._igniteT0=performance.now(); Focus.planetFocus=-1; egoTo(id); if(Focus._lastPlanetScreenR>0.5){ const _sr=(SolarSys.sunR&&SolarSys.sunR[pf])||((SolarSys.Rmax||40)*1.2); view.dist=_sr*1150/(Focus._lastPlanetScreenR*7.5); } view.tdist=view.dist; Focus._igniteZoom=true; } }
+function hlClickNode(i){ closeHlList(); const n=Model.count(); if(SolarSys.isSun && SolarSys.isSun.length===n && SolarSys.isSun[i]){ goToNode(i); hlAfterSettle(()=>{ view.tdist=(Focus.fitDist||view.dist)*0.55; }); } else { goToNode(i); Focus._hlAutoPromote=true; const _iv=setInterval(()=>{ if(typeof hideRelInfo==="function") hideRelInfo(); }, 40); hlAfterSettle(()=>{ view.dist=view.tdist; requestAnimationFrame(()=>{ hlPromoteFocused(); setTimeout(()=>{ clearInterval(_iv); Focus._hlAutoPromote=false; }, 1900); }); }); } }
+function hlAfterSettle(cb, timeout){ const t0=performance.now(); timeout=timeout||3800; let cnt=0; const iv=setInterval(()=>{ const near=view.tdist>0 && Math.abs(view.dist-view.tdist)<view.tdist*0.006; if(near) cnt++; else cnt=0; if(cnt>=8 || performance.now()-t0>timeout){ clearInterval(iv); cb(); } }, 60); }
+try{ if(typeof window!=="undefined"){ window.hlClickNode=hlClickNode; window.hlAfterSettle=hlAfterSettle; window.hlPromoteFocused=hlPromoteFocused; } }catch(_){}
+function hlClickConn(l){ closeHlList(); const a=Model.index(l.from), b=Model.index(l.to); if(a==null||b==null) return; const n=Model.count(); const iS=SolarSys.isSun; const aS=iS&&iS.length===n&&iS[a], bS=iS&&iS.length===n&&iS[b]; const da=(neighboursOf(l.from)||[]).length, db=(neighboursOf(l.to)||[]).length; const host=da>=db?a:b, guest=da>=db?b:a; const _sup=setInterval(()=>{ if(typeof hideRelInfo==="function") hideRelInfo(); }, 90); const _done=()=>clearInterval(_sup); setTimeout(_done, 9000);
+  if(aS && !bS){ _done(); goToNode(b); }
+  else if(bS && !aS){ _done(); goToNode(a); }
+  else if(aS && bS){ egoTo(Model.ids[host]); hlAfterSettle(()=>{ focusPlanet(guest); _done(); }); }
+  else { goToNode(host); hlAfterSettle(()=>{ hlPromoteFocused(); hlAfterSettle(()=>{ focusPlanet(guest); _done(); }); }); }
+}
+function buildHlList(){ const el=document.getElementById("hllist"); if(!el) return; el.innerHTML=""; const _ttl=document.createElement("div"); _ttl.className="hl-title"; _ttl.innerHTML='<span>Highlights</span>'; const _dis=document.createElement("button"); _dis.className="pf-dismiss"; _dis.title="Close"; _dis.innerHTML="\u2296"; _dis.style.cssText="width:26px;height:26px;border-radius:50%;background:var(--card);border:1px solid var(--line-strong);color:var(--t2);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;font-size:14px;line-height:1;flex:none;"; _dis.onclick=(e)=>{ e.stopPropagation(); closeHlList(); }; _ttl.appendChild(_dis); el.appendChild(_ttl); const n=Model.count(); const items=[]; for(let i=0;i<n;i++){ const nd=Model.nodeById(Model.ids[i]); if(nd&&nd.highlight && (typeof isVisible!=="function" || isVisible(Model.ids[i]))) items.push({txt:(nd.name)||Model.ids[i], node:i}); } items.sort((a,b)=>a.txt.localeCompare(b.txt)); items.forEach(it=>{ const lab=document.createElement("div"); lab.className="hllab"; const _id=(it.node!=null)?Model.ids[it.node]:null; const _cc=_id?ramp(_id):null; const _cb=(_cc&&_cc[2])||"#888"; if(_id){ lab.style.background=_cb; lab.style.color="#fff"; } const _grp=_id?(((Model.raw.groups||{})[groupOf(_id)]||{}).label||""):""; lab.style.display="flex"; lab.style.alignItems="center"; lab.innerHTML='<span style="flex:1;overflow:hidden;text-overflow:ellipsis;">'+esc(it.txt)+'</span>'+(_grp?'<span style="font-size:10.5px;opacity:0.82;padding-left:10px;white-space:nowrap;">'+esc(_grp)+'</span>':''); if(it.node!=null){ lab.onclick=()=>hlClickNode(it.node); } else if(it.link){ lab.onclick=()=>hlClickConn(it.link); } el.appendChild(lab); }); } Focus._updateHlBtn=()=>{ let has=true; try{ const nn=Model.raw&&Model.raw.nodes, ll=Model.raw&&Model.raw.links; if(nn&&ll) has=Object.values(nn).some(n=>n&&n.highlight)||ll.some(l=>l&&l.highlight); }catch(e){ has=true; } hb.style.display=has?"flex":"none"; if(!has)Focus._highlightView=false; paintHl(); }; Focus._updateHlBtn(); } }   // always-visible toggle; paint its initial on-state
 function paintConnBtn(){ const b=document.getElementById("toggleconn"); if(!b) return; const on=view.showConnectors!==false;
   b.style.color=on?"var(--t1)":"var(--t3)"; b.style.opacity=on?"1":"0.5"; b.title=on?"Hide connector lines":"Show connector lines"; }
 (function(){ const b=document.getElementById("toggleconn"); if(!b) return;
@@ -2246,7 +2270,6 @@ function buildSolarTopology(){
   const idealIsSun=new Uint8Array(n);
   if(startIdx!==undefined) idealIsSun[startIdx]=1;
   for(let i=0;i<n;i++) if(deg[i]>=SUN_MIN) idealIsSun[i]=1;
-  for(let i=0;i<n;i++){ const _hn=Model.nodeById(Model.ids[i]); if(_hn&&_hn.highlight) idealIsSun[i]=1; }   // a highlighted node is always a sun — spreads highlights across the galaxy instead of clumping them in one system
   cover(idealIsSun);
   const idealSun=assignHomes(idealIsSun);
   SolarSys.homeSun=Int32Array.from(idealSun); SolarSys.homeIsSun=Uint8Array.from(idealIsSun);
@@ -2364,7 +2387,7 @@ function commitSunSystem(F){
 // A neighbour that was itself a sun is demoted; its orphaned planets re-home down their ranked list of
 // connected suns (highest connection count first), and a planet with no connected sun left becomes a lone
 // sun on the galaxy's rim. The node swaps onto its old sun's spot so the map stays stable. Persists.
-function promote(F){
+function promote(F, inPlace){
   const S=SolarSys, n=Model.count(); if(!S.sunX || S.sunX.length!==n) return;
   const deg=new Int32Array(n); for(let i=0;i<n;i++) deg[i]=Model.degOf(i);
   const E=Model.edges(), adj=Array.from({length:n},()=>[]);
@@ -2372,8 +2395,8 @@ function promote(F){
   const nbrF=new Set(adj[F]);
   if(!S.isSun[F]){                                  // 1. F becomes a sun on its old sun's spot (swap → stable map)
     const H=S.sun[F];
-    if(H>=0 && H!==F && S.isSun[H] && S.placed[H]){ S.sunX[F]=S.sunX[H]; S.sunY[F]=S.sunY[H]; S.sunZ[F]=S.sunZ[H]; }
-    else { const d=(S.disp&&S.disp[F])||galaxyPosNow(F); S.sunX[F]=d.x; S.sunY[F]=d.y; S.sunZ[F]=d.z; }
+    if(!inPlace && H>=0 && H!==F && S.isSun[H] && S.placed[H]){ S.sunX[F]=S.sunX[H]; S.sunY[F]=S.sunY[H]; S.sunZ[F]=S.sunZ[H]; }
+    else { const d=inPlace?galaxyPosNow(F):((S.disp&&S.disp[F])||galaxyPosNow(F)); S.sunX[F]=d.x; S.sunY[F]=d.y; S.sunZ[F]=d.z; }
     S.placed[F]=1;
   }
   S.isSun[F]=1; S.sun[F]=F; S.orbit[F]=null;
@@ -2449,7 +2472,7 @@ function fillGaps(dst, src, groupMap){
   if(!dst.subgraph && src.subgraph) dst.subgraph=src.subgraph;
 }
 function mergeInto(data2){
-  if(!data2 || typeof data2.nodes!=="object" || !Object.keys(data2.nodes).length){ alert("That file has no nodes to merge."); return; }
+  if(!data2 || typeof data2.nodes!=="object" || !Object.keys(data2.nodes).length){ showInfoCard("That file has no nodes to merge."); return; }
   const N=Model.raw.nodes, GROUPS=Model.raw.groups=Model.raw.groups||{}, TYPES=Model.raw.types=Model.raw.types||{};
   Model.raw.links=Model.raw.links||[];
   const snap={}; Model.ids.forEach((k,i)=>{ snap[k]={x:Positions.x[i],y:Positions.y[i],z:Positions.z[i]}; });   // survivor positions
@@ -2482,7 +2505,7 @@ function mergeInto(data2){
   rebuildVis(); buildLegend(); rebuildJump(); Renderer.refresh();
   if(Focus.mode==="ego") egoTo(Focus.id); else if(Focus.mode==="focus") enterFocus(Focus.id);
   saveRoot();
-  if(mergedCount||addedCount) alert("Merged "+mergedCount+" matching node"+(mergedCount===1?"":"s")+" and added "+addedCount+" new node"+(addedCount===1?"":"s")+".");
+  if(mergedCount||addedCount) showInfoCard("Merged "+mergedCount+" matching node"+(mergedCount===1?"":"s")+" and added "+addedCount+" new node"+(addedCount===1?"":"s")+".");
 }
 (function(){
   const chooser=document.getElementById("loadchooser");
@@ -2537,18 +2560,20 @@ async function parseJsonOrZip(file){
   }
   return JSON.parse(await file.text());
 }
+function stripLocalMedia(ds){ Object.values(ds.nodes||{}).forEach(nd=>{ MEDIA_FIELDS.forEach(([f])=>{ if(nd[f] && !/^https?:/i.test(nd[f])) delete nd[f]; }); if(nd.subgraph) stripLocalMedia(nd.subgraph); }); return ds; }
+async function embedMediaBase64(ds){ for(const id of Object.keys(ds.nodes||{})){ const nd=ds.nodes[id]; for(const [f] of MEDIA_FIELDS){ const v=nd[f]; if(!v) continue; if(/^data:/i.test(v)||/^https?:/i.test(v)) continue; try{ const blob=await (await fetch(v)).blob(); nd[f]=await new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(blob); }); }catch(e){ delete nd[f]; } } if(nd.subgraph) await embedMediaBase64(nd.subgraph); } return ds; }
 async function doExport(dataset){
   dataset = dataset || (graphStack.length ? graphStack[0].doc : Model.raw);
   const base = (dataset.title||"relations").replace(/[^a-z0-9]+/gi,"_").toLowerCase();
-  const dl=(blob,name)=>{ const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000); };
+  const dl=(blob,name,warn)=>{ const url=URL.createObjectURL(blob); let el=document.getElementById("exportcard"); if(!el){ el=document.createElement("div"); el.id="exportcard"; el.style.cssText="display:none; position:fixed; inset:0; z-index:2500; align-items:center; justify-content:center; background:rgba(0,0,0,0.5); pointer-events:auto; padding:20px; box-sizing:border-box;"; el.innerHTML='<div style="max-width:min(360px,calc(100vw - 40px)); background:linear-gradient(160deg, rgba(44,52,78,0.98), rgba(8,10,20,0.98)); border:1px solid rgba(130,150,200,0.42); border-radius:8px; box-shadow:0 12px 44px rgba(0,0,0,0.6); padding:18px;"><div style="font:700 15px -apple-system,Segoe UI,Roboto,sans-serif; color:#eef1f8; margin-bottom:9px;">Export graph</div><div class="ec-msg" style="font:400 13px -apple-system,Segoe UI,Roboto,sans-serif; color:#c9d0e0; line-height:1.5; margin-bottom:14px;">Tap Download to save your graph as a file.</div><a class="ec-dl" style="display:block; text-align:center; text-decoration:none; padding:11px; border-radius:6px; background:rgba(130,150,200,0.25); border:1px solid rgba(130,150,200,0.45); color:#eef1f8; font:600 14px -apple-system,Segoe UI,Roboto,sans-serif; margin-bottom:9px;">Download</a><button class="ec-close" style="width:100%; padding:9px; border-radius:6px; background:transparent; border:1px solid rgba(130,150,200,0.3); color:#a7adbe; font:500 13px -apple-system,Segoe UI,Roboto,sans-serif; cursor:pointer;">Close</button></div>'; document.body.appendChild(el); el.addEventListener("click", e=>{ if(e.target===el || e.target.classList.contains("ec-close")) el.style.display="none"; }); } const _m=el.querySelector(".ec-msg"); if(_m) _m.textContent=warn||"Tap Download to save your graph as a file."; const a=el.querySelector(".ec-dl"); a.href=url; a.setAttribute("download", name); el.style.display="flex"; };
+  const holdCard=(()=>{ let el=document.getElementById("exporthold"); if(!el){ el=document.createElement("div"); el.id="exporthold"; el.style.cssText="display:none; position:fixed; inset:0; z-index:2500; align-items:center; justify-content:center; background:rgba(0,0,0,0.5); pointer-events:auto; padding:20px; box-sizing:border-box;"; el.innerHTML='<div style="max-width:min(320px,calc(100vw - 40px)); text-align:center; background:linear-gradient(160deg, rgba(44,52,78,0.98), rgba(8,10,20,0.98)); border:1px solid rgba(130,150,200,0.42); border-radius:8px; box-shadow:0 12px 44px rgba(0,0,0,0.6); padding:22px 18px;"><div style="width:26px;height:26px;margin:0 auto 13px;border:3px solid rgba(130,150,200,0.3);border-top-color:#c9d0e0;border-radius:50%;animation:xspin 0.8s linear infinite;"></div><div class="eh-msg" style="font:500 13.5px -apple-system,Segoe UI,Roboto,sans-serif; color:#c9d0e0; line-height:1.5;"></div></div>'; document.body.appendChild(el); } return el; })();
+  const showHold=(m)=>{ holdCard.querySelector(".eh-msg").textContent=m; holdCard.style.display="flex"; };
+  const hideHold=()=>{ holdCard.style.display="none"; };
+  const showChoice=()=>{ let el=document.getElementById("exportchoice"); if(!el){ el=document.createElement("div"); el.id="exportchoice"; el.style.cssText="display:none; position:fixed; inset:0; z-index:2500; align-items:center; justify-content:center; background:rgba(0,0,0,0.5); pointer-events:auto; padding:20px; box-sizing:border-box;"; el.innerHTML='<div style="max-width:min(360px,calc(100vw - 40px)); background:linear-gradient(160deg, rgba(44,52,78,0.98), rgba(8,10,20,0.98)); border:1px solid rgba(130,150,200,0.42); border-radius:8px; box-shadow:0 12px 44px rgba(0,0,0,0.6); padding:18px;"><div style="font:700 15px -apple-system,Segoe UI,Roboto,sans-serif; color:#eef1f8; margin-bottom:6px;">Export graph</div><div style="font:400 13px -apple-system,Segoe UI,Roboto,sans-serif; color:#c9d0e0; line-height:1.5; margin-bottom:14px;">How would you like to export the icons and images?</div><button class="xc-with" style="width:100%; padding:12px; border-radius:6px; background:rgba(130,150,200,0.28); border:1px solid rgba(130,150,200,0.5); color:#eef1f8; font:600 14px -apple-system,Segoe UI,Roboto,sans-serif; cursor:pointer; margin-bottom:8px; text-align:center;">With icons &amp; images<div style="font:400 11px -apple-system,Segoe UI,Roboto,sans-serif; color:#aeb8d4; margin-top:3px;">embedded as base64 \u2014 file may be large</div></button><button class="xc-without" style="width:100%; padding:12px; border-radius:6px; background:rgba(130,150,200,0.12); border:1px solid rgba(130,150,200,0.3); color:#eef1f8; font:600 14px -apple-system,Segoe UI,Roboto,sans-serif; cursor:pointer; margin-bottom:10px; text-align:center;">Without icons &amp; images</button><button class="xc-close" style="width:100%; padding:9px; border-radius:6px; background:transparent; border:1px solid rgba(130,150,200,0.3); color:#a7adbe; font:500 13px -apple-system,Segoe UI,Roboto,sans-serif; cursor:pointer;">Cancel</button></div>'; document.body.appendChild(el); el.addEventListener("click", e=>{ if(e.target===el || e.target.classList.contains("xc-close")) el.style.display="none"; }); } el.querySelector(".xc-with").onclick=async()=>{ el.style.display="none"; showHold("Embedding icons and images\u2026"); try{ const copy=await embedMediaBase64(JSON.parse(JSON.stringify(dataset))); hideHold(); dl(new Blob([JSON.stringify(copy,null,2)],{type:"application/json"}), base+".json", "Icons and images are embedded as base64 in this file, which may make it large."); }catch(e){ hideHold(); dl(new Blob([JSON.stringify(stripLocalMedia(JSON.parse(JSON.stringify(dataset))),null,2)],{type:"application/json"}), base+".json", "Couldn't embed icons and images, so their paths have been removed."); } }; el.querySelector(".xc-without").onclick=()=>{ el.style.display="none"; dl(new Blob([JSON.stringify(stripLocalMedia(JSON.parse(JSON.stringify(dataset))),null,2)],{type:"application/json"}), base+".json", "Icons and images are not included \u2014 their paths have been removed."); }; el.style.display="flex"; };
   if(!hasBundleableMedia(dataset)){ dl(new Blob([JSON.stringify(dataset,null,2)],{type:"application/json"}), base+".json"); return; }
-  if(typeof JSZip==="undefined"){
-    alert("Bundling icons/images as files needs the JSZip library, which loads from the internet. Exporting plain JSON instead (icon/image paths kept as-is).");
-    dl(new Blob([JSON.stringify(dataset,null,2)],{type:"application/json"}), base+".json"); return;
-  }
-  const zip=new JSZip(), copy=JSON.parse(JSON.stringify(dataset));
-  await collectAndExtractMedia(copy, zip, ""); zip.file("data.json", JSON.stringify(copy,null,2));
-  dl(await zip.generateAsync({type:"blob"}), base+".zip");
+  if(typeof JSZip==="undefined"){ showChoice(); return; }
+  showHold("Bundling icons and images into a zip\u2026");
+  try{ const zip=new JSZip(), copy=JSON.parse(JSON.stringify(dataset)); await collectAndExtractMedia(copy, zip, ""); zip.file("data.json", JSON.stringify(copy,null,2)); const blob=await zip.generateAsync({type:"blob"}); hideHold(); dl(blob, base+".zip"); }catch(e){ hideHold(); showChoice(); }
 }
 document.getElementById("export").onclick=()=>doExport();
 // Title rename — tap (or double-click) the title to edit the current graph's name in place
@@ -2604,7 +2629,7 @@ function rebuildJump(){
 }
 (function(){
   const sel=document.getElementById("jump");
-  if(sel) sel.onchange=()=>{ const id=sel.value; if(id && Model.nodeById(id)){ enterFocus(id); } sel.value=""; };
+  if(sel) sel.onchange=()=>{ const id=sel.value; if(id && Model.nodeById(id)){ const _i=Model.index(id); if(_i!=null && typeof hlClickNode==="function") hlClickNode(_i); else enterFocus(id); } sel.value=""; };
 })();
 // --- Collapsible panel body (shared by the − toggle and the topbar's + menu) ---
 let panelCollapsed=false;
@@ -2664,7 +2689,7 @@ function runSearch(){
     d.onclick=()=>pickSearch(m.id); resultsEl.appendChild(d); });
   resultsEl.style.display="block";
 }
-function pickSearch(id){ qEl.value=""; resultsEl.style.display="none"; qMatches=[]; qSel=-1; qEl.blur(); enterFocus(id); }
+function pickSearch(id){ qEl.value=""; resultsEl.style.display="none"; qMatches=[]; qSel=-1; qEl.blur(); const _i=Model.index(id); if(_i==null||_i<0) return; if(Focus.mode==="focus" && typeof exitFocus==="function") exitFocus(); if(typeof window!=="undefined" && typeof window.hlClickNode==="function") window.hlClickNode(_i); else goToNode(_i); }
 function qHighlight(){ [...resultsEl.children].forEach((c,i)=>c.classList.toggle("sel", i===qSel)); }
 qEl.addEventListener("input", runSearch);
 qEl.addEventListener("keydown", e=>{
@@ -2691,6 +2716,7 @@ let editingId=null;
 let pendingExpandConn=null;
 function openEditor(id, expandOther){
   const nd=Model.nodeById(id); if(!nd) return; pendingExpandConn=expandOther||null;
+  { const _pi=document.getElementById("planetinfo"); if(_pi) _pi.style.display="none"; planetInfoShown=null; if(typeof hideRelInfo==="function") hideRelInfo(); }
   resetDeleteBtn();
   editingId=id;
   document.getElementById("ed-name").value=nd.name||"";
@@ -2757,11 +2783,11 @@ function renderGroupsPanel(){
 }
 (function(){
   const tb=document.getElementById("typesbtn"), gb=document.getElementById("groupsbtn");
-  if(tb) tb.onclick=()=>{ document.getElementById("groupspanel").style.display="none"; renderTypesPanel(); document.getElementById("typespanel").style.display="block"; };
-  if(gb) gb.onclick=()=>{ document.getElementById("typespanel").style.display="none"; renderGroupsPanel(); document.getElementById("groupspanel").style.display="block"; };
+  if(tb) tb.onclick=()=>{ const _pi=document.getElementById("planetinfo"); if(_pi) _pi.style.display="none"; document.getElementById("hud").style.display="none"; document.getElementById("groupspanel").style.display="none"; renderTypesPanel(); document.getElementById("typespanel").style.display="block"; };
+  if(gb) gb.onclick=()=>{ const _pi=document.getElementById("planetinfo"); if(_pi) _pi.style.display="none"; document.getElementById("hud").style.display="none"; document.getElementById("typespanel").style.display="none"; renderGroupsPanel(); document.getElementById("groupspanel").style.display="block"; };
   const tc=document.getElementById("tp-close"), gc=document.getElementById("gp-close");
-  if(tc) tc.onclick=()=>{ document.getElementById("typespanel").style.display="none"; };
-  if(gc) gc.onclick=()=>{ document.getElementById("groupspanel").style.display="none"; };
+  if(tc) tc.onclick=()=>{ document.getElementById("typespanel").style.display="none"; document.getElementById("hud").style.display=""; };
+  if(gc) gc.onclick=()=>{ document.getElementById("groupspanel").style.display="none"; document.getElementById("hud").style.display=""; };
 })();
 function applyEdit(){
   if(!editingId) return; const nd=Model.nodeById(editingId); if(!nd) return;
@@ -2794,7 +2820,7 @@ document.getElementById("ed-group").addEventListener("change", ()=>{
   applyEdit();
 });
 document.getElementById("ng-create").onclick=()=>{
-  const lbl=document.getElementById("ng-label").value.trim(); if(!lbl){ alert("Give the group a label"); return; }
+  const lbl=document.getElementById("ng-label").value.trim(); if(!lbl){ showInfoCard("Give the group a label"); return; }
   const groups=Model.raw.groups=Model.raw.groups||{}, key=slugKey(lbl, groups);
   groups[key]={label:lbl, color:document.getElementById("ng-color").value};
   document.getElementById("ng-label").value="";
@@ -2899,8 +2925,8 @@ document.getElementById("nt-mutual").onchange=()=>{ document.getElementById("nt-
 document.getElementById("nt-create").onclick=()=>{
   const mutual=document.getElementById("nt-mutual").checked;
   const fl=document.getElementById("nt-from").value.trim(), tl=document.getElementById("nt-to").value.trim();
-  if(!fl){ alert("Give the type a label"); return; }
-  if(!mutual && !tl){ alert("Directional types need a reverse label too"); return; }
+  if(!fl){ showInfoCard("Give the type a label"); return; }
+  if(!mutual && !tl){ showInfoCard("Directional types need a reverse label too"); return; }
   const types=Model.raw.types=Model.raw.types||{}, key=slugKey(fl, types);
   types[key]=mutual ? {label:fl, mutual:true, dashed:document.getElementById("nt-dashed").checked}
                     : {fromLabel:fl, toLabel:tl, arrow:true, dashed:document.getElementById("nt-dashed").checked};
@@ -2912,9 +2938,9 @@ document.getElementById("nt-create").onclick=()=>{
 document.getElementById("ed-add").onclick=()=>{
   if(!editingId) return;
   const tv=document.getElementById("ed-type").value, types=Model.raw.types||{};
-  if(!tv || !types[tv]){ alert("Pick a connector first"); return; }
+  if(!tv || !types[tv]){ showInfoCard("Pick a connector first"); return; }
   const other=document.getElementById("ed-target").value;
-  if(!other || !Model.nodeById(other)){ alert("Pick a node to connect to"); return; }
+  if(!other || !Model.nodeById(other)){ showInfoCard("Pick a node to connect to"); return; }
   const t=types[tv], dir=document.getElementById("ed-dir").value;
   const link=(t.mutual||dir==="out") ? {from:editingId,to:other,type:tv} : {from:other,to:editingId,type:tv};
   Model.raw.links.push(link);
@@ -2939,7 +2965,7 @@ document.getElementById("ed-graph-file").onchange=function(){
       Model.nodeById(editingId).subgraph=data; syncGraphPanel();
       if(Focus.mode==="focus") buildFocusCards();
       saveRoot();
-    }catch(err){ alert("Couldn't attach: "+err.message); } };
+    }catch(err){ showInfoCard("Couldn't attach: "+err.message); } };
   r.readAsText(f); this.value="";
 };
 document.getElementById("ed-graph-enter").onclick=()=>{ if(editingId) enterSubgraph(editingId); };
@@ -2977,7 +3003,7 @@ function mergeNodeInto(loserId, keeperId){
 document.getElementById("ed-merge-go").onclick=()=>{
   if(!editingId) return;
   const other=document.getElementById("ed-merge-target").value;
-  if(!other||!Model.nodeById(other)){ alert("Pick a node to merge in"); return; }
+  if(!other||!Model.nodeById(other)){ showInfoCard("Pick a node to merge in"); return; }
   const keeperName=Model.nodeById(editingId).name||editingId, loserName=Model.nodeById(other).name||other;
   if(!confirm('Merge "'+loserName+'" into "'+keeperName+'"? "'+loserName+'" will be deleted \u2014 its connections move onto "'+keeperName+'", and any details "'+keeperName+'" is missing get filled in from it. This cannot be undone.')) return;
   const gone=other, snap={}; Model.ids.forEach((id,i)=>{ if(id!==gone) snap[id]={x:Positions.x[i],y:Positions.y[i],z:Positions.z[i]}; });
@@ -3044,9 +3070,12 @@ function loop(){
   if(Math.abs(view.tdist-view.dist) < Math.max(2, view.dist*0.012)) view.galAngle += view.spin;   // ambient galactic rotation, but PAUSED while a zoom is in progress so the view doesn't wheel/jump as you zoom
   const cgL=Math.cos(view.galAngle), sgL=Math.sin(view.galAngle);
   // when focused, follow the sun along its galactic orbit so it stays centre-frame while the galaxy wheels past
-  if(Focus.mode==="ego" && Focus.egoCenter>=0 && SolarSys.sunX && SolarSys.sunX.length===Model.count()){
+  if(Focus.mode==="ego" && Focus._igniteId!=null && SolarSys.disp && SolarSys.disp[Focus._igniteId]){ const _d=SolarSys.disp[Focus._igniteId]; view.tcx=_d.x; view.tcy=_d.y; view.tcz=_d.z; }   // during ignite: aim at the planet's live glide (not its endpoint), so the eased camera follows it instead of weaving toward a point it hasn't reached
+  else if(Focus.mode==="ego" && Focus.egoCenter>=0 && SolarSys.sunX && SolarSys.sunX.length===Model.count()){
     const su=Focus.egoCenter;
-    if(Focus.planetFocus>=0 && SolarSys.orbit[Focus.planetFocus] && SolarSys.sunX){
+    if(Focus.planetFocus>=0 && SolarSys.disp && SolarSys.disp[Focus.planetFocus]){
+      const _d=SolarSys.disp[Focus.planetFocus]; view.tcx=_d.x; view.tcy=_d.y; view.tcz=_d.z;   // track where the planet is actually DRAWN (eased disp), so there is no lag to snap at ignition
+    } else if(Focus.planetFocus>=0 && SolarSys.orbit[Focus.planetFocus] && SolarSys.sunX){
       const o=SolarSys.orbit[Focus.planetFocus], su=o.su, th=o.phase+o.speed*planetT*0.001, cs=Math.cos(th), sn=Math.sin(th);   // recompute the planet's exact orbit position (same math the renderer uses this frame) so the camera pins to it with zero lag
       const bx=SolarSys.sunX[su]+o.r*(cs*o.ux+sn*o.vx), by=SolarSys.sunY[su]+o.r*(cs*o.uy+sn*o.vy), bz=SolarSys.sunZ[su]+o.r*(cs*o.uz+sn*o.vz);
       view.tcx=bx*cgL - bz*sgL; view.tcy=by; view.tcz=bx*sgL + bz*cgL;   // pin POSITION only — leave dist/yaw/pitch free so zoom + look-around still work
@@ -3055,7 +3084,7 @@ function loop(){
       view.tcx=gx; view.tcy=SolarSys.sunY[su]; view.tcz=gz;
     }
   }
-  const trk = (Focus.mode==="ego" && Focus.planetFocus>=0) ? 1 : (Focus.mode==="ego" ? 0.2 : 0.07);   // planet focus: rigid lock (no chase); sun focus: gentle ease
+  const trk = (Focus.mode==="ego" && (Focus.planetFocus>=0 || Focus._igniteId!=null)) ? 1 : (Focus.mode==="ego" ? 0.2 : 0.07);   // planet focus / ignite: rigid lock (no chase); sun focus: gentle ease
   view.cx += (view.tcx-view.cx)*trk; view.cy += (view.tcy-view.cy)*trk; view.cz += (view.tcz-view.cz)*trk;
   if(padVX||padVY){ if(Focus.mode==="ego"||Focus.mode==="focus") exitFocus(true);   // flying breaks the focus lock (keeps the camera) so you're never stuck in a system
       const cpv=Math.cos(view.pitch), spv=Math.sin(view.pitch), D=view.dist;   // spinpad = FLY: left/right steers, forward/back throttles along the look direction
