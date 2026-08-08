@@ -55,10 +55,10 @@
   #legend{display:flex;flex-wrap:wrap;gap:5px 9px;margin-top:9px;}
   .leg{display:inline-flex;align-items:center;gap:5px;cursor:pointer;font-size:11px;color:var(--t2);white-space:nowrap;user-select:none;}
   .dot{width:9px;height:9px;border-radius:50%;flex:none;}
-  #editor{position:fixed;top:12px;left:12px;z-index:1000;width:min(320px,calc(100vw - 24px));max-height:calc(100vh - 100px);
+  #editor{position:fixed;top:12px;left:12px;z-index:2400;width:min(320px,calc(100vw - 24px));max-height:calc(100vh - 100px);
     overflow:auto;background:#171a28;border:1px solid var(--line-strong);border-radius:12px;padding:12px 14px;
     box-shadow:0 14px 44px rgba(0,0,0,0.55);display:none;}
-  #typespanel,#groupspanel{position:fixed;top:12px;left:12px;z-index:31;width:min(320px,calc(100vw - 24px));max-height:calc(100vh - 24px);
+  #typespanel,#groupspanel{position:fixed;top:12px;left:12px;z-index:2400;width:min(320px,calc(100vw - 24px));max-height:calc(100vh - 110px);
     overflow:auto;background:#171a28;border:1px solid var(--line-strong);border-radius:12px;padding:12px 14px;
     box-shadow:0 14px 44px rgba(0,0,0,0.55);display:none;}
   #typespanel h1,#groupspanel h1{display:flex;align-items:center;font-size:14px;margin:0 0 10px;}
@@ -237,11 +237,13 @@
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="5.5" cy="6" r="2.3"/><circle cx="18.5" cy="18" r="2.3"/><line x1="7.3" y1="7.4" x2="16.7" y2="16.6"/></svg>
 </button>
 <style>
-#hllist .hllab{ flex:none; pointer-events:auto; cursor:pointer; color:#eef1f8; font:600 15px -apple-system,Segoe UI,Roboto,sans-serif; letter-spacing:0.3px; padding:9px 22px; border-radius:22px; background:rgba(10,14,26,0.5); border:1px solid rgba(255,255,255,0.1); box-shadow:0 2px 14px rgba(0,0,0,0.45); -webkit-backdrop-filter:blur(7px); backdrop-filter:blur(7px); transition:background .15s,border-color .15s,transform .12s,box-shadow .15s; white-space:nowrap; }
-#hllist .hllab:active{ background:rgba(30,38,60,0.72); border-color:rgba(255,255,255,0.3); transform:scale(0.97); }
-@media (hover:hover){ #hllist .hllab:hover{ background:rgba(24,30,50,0.66); border-color:rgba(255,255,255,0.24); box-shadow:0 4px 20px rgba(0,0,0,0.5); } }
+#hllist .hl-title{ position:sticky; top:0; z-index:2; padding:12px 14px 12px 16px; font:700 15px -apple-system,Segoe UI,Roboto,sans-serif; color:#eef1f8; background:linear-gradient(160deg, rgba(48,56,84,0.99), rgba(36,42,64,0.99)); border-bottom:1px solid rgba(130,150,200,0.28); border-radius:6px 6px 0 0; display:flex; align-items:center; justify-content:space-between; gap:10px; }
+#hllist .hllab{ flex:none; pointer-events:auto; cursor:pointer; color:#eef1f8; font:500 14px -apple-system,Segoe UI,Roboto,sans-serif; padding:11px 16px; border-bottom:1px solid var(--line); transition:background .15s; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+#hllist .hllab:last-child{ border-bottom:none; }
+#hllist .hllab:active{ background:rgba(255,255,255,0.06); }
+@media (hover:hover){ #hllist .hllab:hover{ background:rgba(255,255,255,0.05); } }
 </style>
-<div id="hllist" style="display:none; position:fixed; top:78px; bottom:116px; left:50%; transform:translateX(-50%); width:min(300px,66vw); z-index:850; pointer-events:auto; flex-direction:column; justify-content:flex-start; align-items:center; gap:14px; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:6px 6px; box-sizing:border-box;"></div>
+<div id="hllist" style="display:none; position:fixed; top:78px; left:50%; transform:translateX(-50%); width:min(300px, calc(100vw - 40px)); max-height:calc(100vh - 210px); z-index:600; pointer-events:auto; flex-direction:column; align-items:stretch; overflow:auto; -webkit-overflow-scrolling:touch; padding:0; box-sizing:border-box; background:linear-gradient(160deg, rgba(44,52,78,0.95), rgba(8,10,20,0.94)); border:1px solid rgba(130,150,200,0.42); border-radius:6px; box-shadow:0 0 22px rgba(130,150,200,0.16), 0 10px 34px rgba(0,0,0,0.55);"></div>
 <button id="highlightbtn" type="button" title="Highlights" style="display:flex; position:fixed; bottom:16px; left:272px; z-index:900; width:42px; height:42px; border-radius:21px; background:var(--card); border:1px solid var(--line-strong); box-shadow:0 2px 10px rgba(0,0,0,0.4); color:var(--t3); cursor:pointer; align-items:center; justify-content:center; padding:0; font-size:17px; line-height:1;">&#9733;</button>
 <button id="breadcrumb" type="button" title="Toggle the trail of where you've been" style="display:flex; position:fixed; bottom:16px; left:222px; z-index:900; width:42px; height:42px; border-radius:21px; background:var(--card); border:1px solid var(--line-strong); box-shadow:0 2px 10px rgba(0,0,0,0.4); color:var(--t3); cursor:pointer; align-items:center; justify-content:center; padding:0;"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14" stroke-width="1.3"/></svg></button>
 <button id="bypassls" type="button" title="Clear all saved data and stay fresh (dev)" style="display:none; position:fixed; bottom:16px; left:-9999px; z-index:900; width:42px; height:42px; border-radius:21px; background:var(--card); border:1px solid var(--line-strong); box-shadow:0 2px 10px rgba(0,0,0,0.4); color:var(--t3); cursor:pointer; align-items:center; justify-content:center; padding:0;">
@@ -285,7 +287,7 @@
    never touches the DOM, and all load/save goes through GraphSource. This is
    the structure the scale work (worker layout, Barnes-Hut, accounts) hangs off.
    ============================================================================= */
-const BUILD="v2-542";
+const BUILD="v2-556";
 document.getElementById("build").textContent=BUILD;
 
 /* ---- palette (name → [lightest, mid-dark, darkest, vivid]) ---- */
@@ -370,7 +372,7 @@ const FileSource={
     const inp=document.getElementById("file");
     inp.value=""; inp.onchange=async()=>{
       const f=inp.files[0]; if(!f){ res(null); return; }
-      try{ res(await parseJsonOrZip(f)); }catch(e){ alert("Couldn't load: "+e.message); res(null); }
+      try{ res(await parseJsonOrZip(f)); }catch(e){ showInfoCard("Couldn't load: "+e.message); res(null); }
     };
     inp.click();
   }); }
@@ -1995,7 +1997,7 @@ function updatePlanetInfo(){
     if(nd.url){ const lt=nd.linkText||(/wikipedia/i.test(nd.url)?'Wikipedia':'Link'); h+='<a href="'+esc(nd.url)+'" class="weblink" data-url="'+esc(nd.url)+'" rel="noopener" style="display:inline-block;margin-top:8px;font-size:12px;color:'+c[3]+';cursor:pointer;">'+esc(lt)+' &#8599;</a>'; }
     if(nd.link2){ h+='<a class="weblink" data-url="'+esc(nd.link2)+'" style="display:inline-block;margin-top:8px;margin-left:16px;font-size:12px;color:'+c[3]+';cursor:pointer;">'+esc(nd.link2label||'Link')+' \u2197</a>'; }
     if(nd.subgraph){ const n2=Object.keys(nd.subgraph.nodes||{}).length; h+='<div class="entergraph" style="margin-top:9px;font-size:12px;color:'+c[3]+';cursor:pointer;">◈ Enter graph ('+n2+' node'+(n2===1?'':'s')+') →</div>'; }
-    { const _hc=[]; (Model.raw&&Model.raw.links?Model.raw.links:[]).forEach(l=>{ if(!l.highlight)return; let _oth=null; if(l.from===id)_oth=l.to; else if(l.to===id)_oth=l.from; else return; const _an=Model.nodeById(l.from),_bn=Model.nodeById(l.to); _hc.push('<div class="hl-conn" data-target="'+esc(_oth)+'" style="cursor:pointer;pointer-events:auto;margin-top:6px;padding:7px 11px;border-radius:8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.14);font-size:12.5px;color:#eef1f8;">'+esc(((_an&&_an.name)||l.from)+' \u2013 '+((_bn&&_bn.name)||l.to))+'</div>'); }); if(_hc.length) h+='<div style="margin-top:13px;border-top:1px solid '+c[3]+'40;padding-top:10px;"><div style="font-size:11px;color:'+c[3]+';text-transform:uppercase;letter-spacing:0.03em;margin-bottom:6px;opacity:0.9;">Highlighted connections</div>'+_hc.join('')+'</div>'; }
+    { const _hc=[], _oc=[]; (Model.raw&&Model.raw.links?Model.raw.links:[]).forEach(l=>{ let _oth=null; if(l.from===id)_oth=l.to; else if(l.to===id)_oth=l.from; else return; const _on=Model.nodeById(_oth); const _nm=(_on&&_on.name)||_oth; const _row={ nm:_nm, html:'<div class="hl-conn" data-target="'+esc(_oth)+'" style="cursor:pointer;pointer-events:auto;margin-top:6px;padding:7px 11px;border-radius:8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.14);font-size:12.5px;color:#eef1f8;">'+esc(_nm)+'</div>' }; if(l.highlight) _hc.push(_row); else _oc.push(_row); }); const _byn=(a,b)=>a.nm.localeCompare(b.nm); _hc.sort(_byn); _oc.sort(_byn); if(_hc.length) h+='<div style="margin-top:13px;border-top:1px solid '+c[3]+'40;padding-top:10px;"><div style="font-size:11px;color:'+c[3]+';text-transform:uppercase;letter-spacing:0.03em;margin-bottom:6px;opacity:0.9;">Highlighted connections</div>'+_hc.map(x=>x.html).join('')+'</div>'; if(_oc.length) h+='<div style="margin-top:13px;border-top:1px solid '+c[3]+'40;padding-top:10px;"><div style="font-size:11px;color:'+c[3]+';text-transform:uppercase;letter-spacing:0.03em;margin-bottom:6px;opacity:0.9;">'+(_hc.length?'Other connections':'Connections')+'</div>'+_oc.map(x=>x.html).join('')+'</div>'; }
     box.innerHTML=h; planetInfoShown=id;
   }
   box.style.top=""; box.style.left=""; box.style.right=""; box.style.bottom=""; box.style.transform=""; box.style.maxHeight=Math.max(160, innerHeight-150)+"px"; box.style.overflowY="auto"; box.style.display="block";   // fixed at top (CSS); cap to the viewport with an inner scroll so a banner image + long text can't run off-screen
@@ -2143,8 +2145,9 @@ function updateToggleBtn(){ const b=document.getElementById("togglefocus"); if(!
 function paintBreadcrumbBtn(){ const b=document.getElementById("breadcrumb"); if(!b) return; const on=Focus._breadcrumbOn; b.style.color=on?"var(--t1)":"var(--t3)"; b.style.opacity=on?"1":"0.5"; b.style.borderColor="var(--line-strong)"; b.style.background="var(--card)"; b.title=on?"Hide the trail of where you've been":"Show the trail of where you've been"; }
 Focus._breadcrumbOn=false;   // breadcrumb trail on by default
 { const bb=document.getElementById("breadcrumb"); if(bb){ bb.onclick=()=>{ Focus._breadcrumbOn=!Focus._breadcrumbOn; paintBreadcrumbBtn(); }; paintBreadcrumbBtn(); } }
-{ const hb=document.getElementById("highlightbtn"); if(hb){ const paintHl=()=>{ const on=!!Focus._highlightView; hb.style.color=on?"#f4d97a":"var(--t3)"; hb.style.borderColor=on?"#f4d97a":"var(--line-strong)"; hb.style.boxShadow=on?"0 0 14px #f4d97a66":"0 2px 10px rgba(0,0,0,0.4)"; }; hb.onclick=()=>{ Focus._highlightView=!Focus._highlightView; const _le=document.getElementById("hllist"); if(Focus._highlightView){ if(typeof exitFocus==="function") exitFocus(); buildHlList(); if(_le) _le.style.display="flex"; } else { if(_le) _le.style.display="none"; } paintHl(); }; Focus._paintHl=paintHl;
+{ const hb=document.getElementById("highlightbtn"); if(hb){ const paintHl=()=>{ const on=!!Focus._highlightView; hb.style.color=on?"var(--t1)":"var(--t3)"; hb.style.borderColor="var(--line-strong)"; hb.style.boxShadow="0 2px 10px rgba(0,0,0,0.4)"; hb.style.opacity=on?"1":"0.5"; }; hb.onclick=()=>{ Focus._highlightView=!Focus._highlightView; const _le=document.getElementById("hllist"); if(Focus._highlightView){ if(typeof exitFocus==="function") exitFocus(); buildHlList(); if(_le) _le.style.display="flex"; } else { if(_le) _le.style.display="none"; } paintHl(); }; Focus._paintHl=paintHl;
 function closeHlList(){ Focus._highlightView=false; const el=document.getElementById("hllist"); if(el) el.style.display="none"; if(Focus._paintHl) Focus._paintHl(); }
+function showInfoCard(msg, title){ let el=document.getElementById("infocard"); if(!el){ el=document.createElement("div"); el.id="infocard"; el.style.cssText="display:none; position:fixed; inset:0; z-index:2500; align-items:center; justify-content:center; background:rgba(0,0,0,0.5); pointer-events:auto; padding:20px; box-sizing:border-box;"; el.innerHTML='<div style="max-width:min(360px,calc(100vw - 40px)); max-height:70vh; overflow:auto; background:linear-gradient(160deg, rgba(44,52,78,0.98), rgba(8,10,20,0.98)); border:1px solid rgba(130,150,200,0.42); border-radius:8px; box-shadow:0 12px 44px rgba(0,0,0,0.6); padding:18px;"><div class="ic-title" style="font:700 15px -apple-system,Segoe UI,Roboto,sans-serif; color:#eef1f8; margin-bottom:9px;"></div><div class="ic-msg" style="font:400 13.5px -apple-system,Segoe UI,Roboto,sans-serif; color:#c9d0e0; line-height:1.5; white-space:pre-wrap;"></div><button class="ic-ok" style="margin-top:16px; width:100%; padding:10px; border-radius:6px; background:rgba(130,150,200,0.2); border:1px solid rgba(130,150,200,0.4); color:#eef1f8; font:600 14px -apple-system,Segoe UI,Roboto,sans-serif; cursor:pointer;">OK</button></div>'; document.body.appendChild(el); el.addEventListener("click", e=>{ if(e.target===el || e.target.classList.contains("ic-ok")) el.style.display="none"; }); } const _t=el.querySelector(".ic-title"); _t.textContent=title||"Xanadu"; _t.style.display=title?"block":"none"; el.querySelector(".ic-msg").textContent=msg; el.style.display="flex"; }
 function hlPromoteFocused(){ if(Focus.planetFocus>=0){ const pf=Focus.planetFocus; const id=Model.ids[pf]; Focus._igTargetScreenR=Focus._lastPlanetScreenR||0; Focus._igniteId=pf; Focus._igniteT0=performance.now(); Focus.planetFocus=-1; egoTo(id); view.tdist=view.dist; Focus._igniteZoom=true; } }
 function hlClickNode(i){ closeHlList(); const n=Model.count(); if(SolarSys.isSun && SolarSys.isSun.length===n && SolarSys.isSun[i]){ goToNode(i); hlAfterSettle(()=>{ view.tdist=(Focus.fitDist||view.dist)*0.55; }); } else { goToNode(i); Focus._hlAutoPromote=true; const _iv=setInterval(()=>{ if(typeof hideRelInfo==="function") hideRelInfo(); }, 40); hlAfterSettle(()=>{ hlPromoteFocused(); setTimeout(()=>{ clearInterval(_iv); Focus._hlAutoPromote=false; view.tdist=(Focus.fitDist||view.dist)*0.55; }, 1900); }); } }
 function hlAfterSettle(cb, timeout){ const t0=performance.now(); timeout=timeout||3800; let cnt=0; const iv=setInterval(()=>{ const near=view.tdist>0 && Math.abs(view.dist-view.tdist)<view.tdist*0.025; if(near) cnt++; else cnt=0; if(cnt>=6 || performance.now()-t0>timeout){ clearInterval(iv); cb(); } }, 60); }
@@ -2154,7 +2157,7 @@ function hlClickConn(l){ closeHlList(); const a=Model.index(l.from), b=Model.ind
   else if(aS && bS){ egoTo(Model.ids[host]); hlAfterSettle(()=>{ focusPlanet(guest); _done(); }); }
   else { goToNode(host); hlAfterSettle(()=>{ hlPromoteFocused(); hlAfterSettle(()=>{ focusPlanet(guest); _done(); }); }); }
 }
-function buildHlList(){ const el=document.getElementById("hllist"); if(!el) return; el.innerHTML=""; const n=Model.count(); const items=[]; for(let i=0;i<n;i++){ const nd=Model.nodeById(Model.ids[i]); if(nd&&nd.highlight) items.push({txt:(nd.name)||Model.ids[i], node:i}); } items.forEach(it=>{ const lab=document.createElement("div"); lab.textContent=it.txt; lab.className="hllab"; if(it.node!=null){ lab.onclick=()=>hlClickNode(it.node); } else if(it.link){ lab.onclick=()=>hlClickConn(it.link); } el.appendChild(lab); }); } Focus._updateHlBtn=()=>{ let has=true; try{ const nn=Model.raw&&Model.raw.nodes, ll=Model.raw&&Model.raw.links; if(nn&&ll) has=Object.values(nn).some(n=>n&&n.highlight)||ll.some(l=>l&&l.highlight); }catch(e){ has=true; } hb.style.display=has?"flex":"none"; if(!has)Focus._highlightView=false; paintHl(); }; Focus._updateHlBtn(); } }   // always-visible toggle; paint its initial on-state
+function buildHlList(){ const el=document.getElementById("hllist"); if(!el) return; el.innerHTML=""; const _ttl=document.createElement("div"); _ttl.className="hl-title"; _ttl.innerHTML='<span>Highlights</span>'; const _dis=document.createElement("button"); _dis.className="pf-dismiss"; _dis.title="Close"; _dis.innerHTML="\u2296"; _dis.style.cssText="width:26px;height:26px;border-radius:50%;background:var(--card);border:1px solid var(--line-strong);color:var(--t2);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;font-size:14px;line-height:1;flex:none;"; _dis.onclick=(e)=>{ e.stopPropagation(); closeHlList(); }; _ttl.appendChild(_dis); el.appendChild(_ttl); const n=Model.count(); const items=[]; for(let i=0;i<n;i++){ const nd=Model.nodeById(Model.ids[i]); if(nd&&nd.highlight) items.push({txt:(nd.name)||Model.ids[i], node:i}); } items.sort((a,b)=>a.txt.localeCompare(b.txt)); items.forEach(it=>{ const lab=document.createElement("div"); lab.textContent=it.txt; lab.className="hllab"; if(it.node!=null){ lab.onclick=()=>hlClickNode(it.node); } else if(it.link){ lab.onclick=()=>hlClickConn(it.link); } el.appendChild(lab); }); } Focus._updateHlBtn=()=>{ let has=true; try{ const nn=Model.raw&&Model.raw.nodes, ll=Model.raw&&Model.raw.links; if(nn&&ll) has=Object.values(nn).some(n=>n&&n.highlight)||ll.some(l=>l&&l.highlight); }catch(e){ has=true; } hb.style.display=has?"flex":"none"; if(!has)Focus._highlightView=false; paintHl(); }; Focus._updateHlBtn(); } }   // always-visible toggle; paint its initial on-state
 function paintConnBtn(){ const b=document.getElementById("toggleconn"); if(!b) return; const on=view.showConnectors!==false;
   b.style.color=on?"var(--t1)":"var(--t3)"; b.style.opacity=on?"1":"0.5"; b.title=on?"Hide connector lines":"Show connector lines"; }
 (function(){ const b=document.getElementById("toggleconn"); if(!b) return;
@@ -2466,7 +2469,7 @@ function fillGaps(dst, src, groupMap){
   if(!dst.subgraph && src.subgraph) dst.subgraph=src.subgraph;
 }
 function mergeInto(data2){
-  if(!data2 || typeof data2.nodes!=="object" || !Object.keys(data2.nodes).length){ alert("That file has no nodes to merge."); return; }
+  if(!data2 || typeof data2.nodes!=="object" || !Object.keys(data2.nodes).length){ showInfoCard("That file has no nodes to merge."); return; }
   const N=Model.raw.nodes, GROUPS=Model.raw.groups=Model.raw.groups||{}, TYPES=Model.raw.types=Model.raw.types||{};
   Model.raw.links=Model.raw.links||[];
   const snap={}; Model.ids.forEach((k,i)=>{ snap[k]={x:Positions.x[i],y:Positions.y[i],z:Positions.z[i]}; });   // survivor positions
@@ -2499,7 +2502,7 @@ function mergeInto(data2){
   rebuildVis(); buildLegend(); rebuildJump(); Renderer.refresh();
   if(Focus.mode==="ego") egoTo(Focus.id); else if(Focus.mode==="focus") enterFocus(Focus.id);
   saveRoot();
-  if(mergedCount||addedCount) alert("Merged "+mergedCount+" matching node"+(mergedCount===1?"":"s")+" and added "+addedCount+" new node"+(addedCount===1?"":"s")+".");
+  if(mergedCount||addedCount) showInfoCard("Merged "+mergedCount+" matching node"+(mergedCount===1?"":"s")+" and added "+addedCount+" new node"+(addedCount===1?"":"s")+".");
 }
 (function(){
   const chooser=document.getElementById("loadchooser");
@@ -2554,18 +2557,15 @@ async function parseJsonOrZip(file){
   }
   return JSON.parse(await file.text());
 }
+function stripLocalMedia(ds){ Object.values(ds.nodes||{}).forEach(nd=>{ MEDIA_FIELDS.forEach(([f])=>{ if(nd[f] && !/^https?:/i.test(nd[f])) delete nd[f]; }); if(nd.subgraph) stripLocalMedia(nd.subgraph); }); return ds; }
+async function embedMediaBase64(ds){ for(const id of Object.keys(ds.nodes||{})){ const nd=ds.nodes[id]; for(const [f] of MEDIA_FIELDS){ const v=nd[f]; if(!v) continue; if(/^data:/i.test(v)||/^https?:/i.test(v)) continue; try{ const blob=await (await fetch(v)).blob(); nd[f]=await new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(blob); }); }catch(e){ delete nd[f]; } } if(nd.subgraph) await embedMediaBase64(nd.subgraph); } return ds; }
 async function doExport(dataset){
   dataset = dataset || (graphStack.length ? graphStack[0].doc : Model.raw);
   const base = (dataset.title||"relations").replace(/[^a-z0-9]+/gi,"_").toLowerCase();
-  const dl=(blob,name)=>{ const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000); };
+  const dl=(blob,name,warn)=>{ const url=URL.createObjectURL(blob); let el=document.getElementById("exportcard"); if(!el){ el=document.createElement("div"); el.id="exportcard"; el.style.cssText="display:none; position:fixed; inset:0; z-index:2500; align-items:center; justify-content:center; background:rgba(0,0,0,0.5); pointer-events:auto; padding:20px; box-sizing:border-box;"; el.innerHTML='<div style="max-width:min(360px,calc(100vw - 40px)); background:linear-gradient(160deg, rgba(44,52,78,0.98), rgba(8,10,20,0.98)); border:1px solid rgba(130,150,200,0.42); border-radius:8px; box-shadow:0 12px 44px rgba(0,0,0,0.6); padding:18px;"><div style="font:700 15px -apple-system,Segoe UI,Roboto,sans-serif; color:#eef1f8; margin-bottom:9px;">Export graph</div><div class="ec-msg" style="font:400 13px -apple-system,Segoe UI,Roboto,sans-serif; color:#c9d0e0; line-height:1.5; margin-bottom:14px;">Tap Download to save your graph as a file.</div><a class="ec-dl" style="display:block; text-align:center; text-decoration:none; padding:11px; border-radius:6px; background:rgba(130,150,200,0.25); border:1px solid rgba(130,150,200,0.45); color:#eef1f8; font:600 14px -apple-system,Segoe UI,Roboto,sans-serif; margin-bottom:9px;">Download</a><button class="ec-close" style="width:100%; padding:9px; border-radius:6px; background:transparent; border:1px solid rgba(130,150,200,0.3); color:#a7adbe; font:500 13px -apple-system,Segoe UI,Roboto,sans-serif; cursor:pointer;">Close</button></div>'; document.body.appendChild(el); el.addEventListener("click", e=>{ if(e.target===el || e.target.classList.contains("ec-close")) el.style.display="none"; }); } const _m=el.querySelector(".ec-msg"); if(_m) _m.textContent=warn||"Tap Download to save your graph as a file."; const a=el.querySelector(".ec-dl"); a.href=url; a.setAttribute("download", name); el.style.display="flex"; };
   if(!hasBundleableMedia(dataset)){ dl(new Blob([JSON.stringify(dataset,null,2)],{type:"application/json"}), base+".json"); return; }
-  if(typeof JSZip==="undefined"){
-    alert("Bundling icons/images as files needs the JSZip library, which loads from the internet. Exporting plain JSON instead (icon/image paths kept as-is).");
-    dl(new Blob([JSON.stringify(dataset,null,2)],{type:"application/json"}), base+".json"); return;
-  }
-  const zip=new JSZip(), copy=JSON.parse(JSON.stringify(dataset));
-  await collectAndExtractMedia(copy, zip, ""); zip.file("data.json", JSON.stringify(copy,null,2));
-  dl(await zip.generateAsync({type:"blob"}), base+".zip");
+  if(typeof JSZip!=="undefined"){ try{ const zip=new JSZip(), copy=JSON.parse(JSON.stringify(dataset)); const _b=(async()=>{ await collectAndExtractMedia(copy, zip, ""); zip.file("data.json", JSON.stringify(copy,null,2)); return await zip.generateAsync({type:"blob"}); })(); const _to=new Promise((_,rej)=>setTimeout(()=>rej(new Error("timed out")),8000)); dl(await Promise.race([_b,_to]), base+".zip"); }catch(e){ dl(new Blob([JSON.stringify(stripLocalMedia(JSON.parse(JSON.stringify(dataset))),null,2)],{type:"application/json"}), base+".json", "Couldn't bundle as a zip, so icons and images were removed."); } return; }
+  { let el=document.getElementById("exportchoice"); if(!el){ el=document.createElement("div"); el.id="exportchoice"; el.style.cssText="display:none; position:fixed; inset:0; z-index:2500; align-items:center; justify-content:center; background:rgba(0,0,0,0.5); pointer-events:auto; padding:20px; box-sizing:border-box;"; el.innerHTML='<div style="max-width:min(360px,calc(100vw - 40px)); background:linear-gradient(160deg, rgba(44,52,78,0.98), rgba(8,10,20,0.98)); border:1px solid rgba(130,150,200,0.42); border-radius:8px; box-shadow:0 12px 44px rgba(0,0,0,0.6); padding:18px;"><div style="font:700 15px -apple-system,Segoe UI,Roboto,sans-serif; color:#eef1f8; margin-bottom:6px;">Export graph</div><div style="font:400 13px -apple-system,Segoe UI,Roboto,sans-serif; color:#c9d0e0; line-height:1.5; margin-bottom:14px;">This graph has icons and images. How would you like to export?</div><button class="xc-zip" style="width:100%; padding:12px; border-radius:6px; background:rgba(130,150,200,0.28); border:1px solid rgba(130,150,200,0.5); color:#eef1f8; font:600 14px -apple-system,Segoe UI,Roboto,sans-serif; cursor:pointer; margin-bottom:8px; text-align:center;">Bundle as .zip<div style="font:400 11px -apple-system,Segoe UI,Roboto,sans-serif; color:#aeb8d4; margin-top:3px;">icons &amp; images as separate files</div></button><button class="xc-with" style="width:100%; padding:12px; border-radius:6px; background:rgba(130,150,200,0.25); border:1px solid rgba(130,150,200,0.45); color:#eef1f8; font:600 14px -apple-system,Segoe UI,Roboto,sans-serif; cursor:pointer; margin-bottom:8px; text-align:center;">With icons &amp; images<div style="font:400 11px -apple-system,Segoe UI,Roboto,sans-serif; color:#aeb8d4; margin-top:3px;">embedded as base64 \u2014 file may be large</div></button><button class="xc-without" style="width:100%; padding:12px; border-radius:6px; background:rgba(130,150,200,0.12); border:1px solid rgba(130,150,200,0.3); color:#eef1f8; font:600 14px -apple-system,Segoe UI,Roboto,sans-serif; cursor:pointer; margin-bottom:10px; text-align:center;">Without icons &amp; images</button><button class="xc-close" style="width:100%; padding:9px; border-radius:6px; background:transparent; border:1px solid rgba(130,150,200,0.3); color:#a7adbe; font:500 13px -apple-system,Segoe UI,Roboto,sans-serif; cursor:pointer;">Cancel</button></div>'; document.body.appendChild(el); el.addEventListener("click", e=>{ if(e.target===el || e.target.classList.contains("xc-close")) el.style.display="none"; }); } el.querySelector(".xc-with").onclick=async()=>{ el.style.display="none"; try{ const copy=await embedMediaBase64(JSON.parse(JSON.stringify(dataset))); dl(new Blob([JSON.stringify(copy,null,2)],{type:"application/json"}), base+".json", "Icons and images are embedded as base64 in this file, which may make it large."); }catch(e){ dl(new Blob([JSON.stringify(stripLocalMedia(JSON.parse(JSON.stringify(dataset))),null,2)],{type:"application/json"}), base+".json", "Couldn't embed icons and images, so their paths have been removed."); } }; el.querySelector(".xc-without").onclick=()=>{ el.style.display="none"; dl(new Blob([JSON.stringify(stripLocalMedia(JSON.parse(JSON.stringify(dataset))),null,2)],{type:"application/json"}), base+".json", "Icons and images are not included \u2014 their paths have been removed."); }; el.querySelector(".xc-zip").style.display=(typeof JSZip!=="undefined")?"block":"none"; el.querySelector(".xc-zip").onclick=async()=>{ el.style.display="none"; try{ const zip=new JSZip(), copy=JSON.parse(JSON.stringify(dataset)); const _b=(async()=>{ await collectAndExtractMedia(copy, zip, ""); zip.file("data.json", JSON.stringify(copy,null,2)); return await zip.generateAsync({type:"blob"}); })(); const _to=new Promise((_,rej)=>setTimeout(()=>rej(new Error("timed out")),8000)); dl(await Promise.race([_b,_to]), base+".zip"); }catch(e){ dl(new Blob([JSON.stringify(stripLocalMedia(JSON.parse(JSON.stringify(dataset))),null,2)],{type:"application/json"}), base+".json", "Couldn't bundle as a zip, so icons and images were removed."); } }; el.style.display="flex"; }
 }
 document.getElementById("export").onclick=()=>doExport();
 // Title rename — tap (or double-click) the title to edit the current graph's name in place
@@ -2708,6 +2708,7 @@ let editingId=null;
 let pendingExpandConn=null;
 function openEditor(id, expandOther){
   const nd=Model.nodeById(id); if(!nd) return; pendingExpandConn=expandOther||null;
+  { const _pi=document.getElementById("planetinfo"); if(_pi) _pi.style.display="none"; planetInfoShown=null; if(typeof hideRelInfo==="function") hideRelInfo(); }
   resetDeleteBtn();
   editingId=id;
   document.getElementById("ed-name").value=nd.name||"";
@@ -2774,11 +2775,11 @@ function renderGroupsPanel(){
 }
 (function(){
   const tb=document.getElementById("typesbtn"), gb=document.getElementById("groupsbtn");
-  if(tb) tb.onclick=()=>{ document.getElementById("groupspanel").style.display="none"; renderTypesPanel(); document.getElementById("typespanel").style.display="block"; };
-  if(gb) gb.onclick=()=>{ document.getElementById("typespanel").style.display="none"; renderGroupsPanel(); document.getElementById("groupspanel").style.display="block"; };
+  if(tb) tb.onclick=()=>{ const _pi=document.getElementById("planetinfo"); if(_pi) _pi.style.display="none"; document.getElementById("hud").style.display="none"; document.getElementById("groupspanel").style.display="none"; renderTypesPanel(); document.getElementById("typespanel").style.display="block"; };
+  if(gb) gb.onclick=()=>{ const _pi=document.getElementById("planetinfo"); if(_pi) _pi.style.display="none"; document.getElementById("hud").style.display="none"; document.getElementById("typespanel").style.display="none"; renderGroupsPanel(); document.getElementById("groupspanel").style.display="block"; };
   const tc=document.getElementById("tp-close"), gc=document.getElementById("gp-close");
-  if(tc) tc.onclick=()=>{ document.getElementById("typespanel").style.display="none"; };
-  if(gc) gc.onclick=()=>{ document.getElementById("groupspanel").style.display="none"; };
+  if(tc) tc.onclick=()=>{ document.getElementById("typespanel").style.display="none"; document.getElementById("hud").style.display=""; };
+  if(gc) gc.onclick=()=>{ document.getElementById("groupspanel").style.display="none"; document.getElementById("hud").style.display=""; };
 })();
 function applyEdit(){
   if(!editingId) return; const nd=Model.nodeById(editingId); if(!nd) return;
@@ -2811,7 +2812,7 @@ document.getElementById("ed-group").addEventListener("change", ()=>{
   applyEdit();
 });
 document.getElementById("ng-create").onclick=()=>{
-  const lbl=document.getElementById("ng-label").value.trim(); if(!lbl){ alert("Give the group a label"); return; }
+  const lbl=document.getElementById("ng-label").value.trim(); if(!lbl){ showInfoCard("Give the group a label"); return; }
   const groups=Model.raw.groups=Model.raw.groups||{}, key=slugKey(lbl, groups);
   groups[key]={label:lbl, color:document.getElementById("ng-color").value};
   document.getElementById("ng-label").value="";
@@ -2916,8 +2917,8 @@ document.getElementById("nt-mutual").onchange=()=>{ document.getElementById("nt-
 document.getElementById("nt-create").onclick=()=>{
   const mutual=document.getElementById("nt-mutual").checked;
   const fl=document.getElementById("nt-from").value.trim(), tl=document.getElementById("nt-to").value.trim();
-  if(!fl){ alert("Give the type a label"); return; }
-  if(!mutual && !tl){ alert("Directional types need a reverse label too"); return; }
+  if(!fl){ showInfoCard("Give the type a label"); return; }
+  if(!mutual && !tl){ showInfoCard("Directional types need a reverse label too"); return; }
   const types=Model.raw.types=Model.raw.types||{}, key=slugKey(fl, types);
   types[key]=mutual ? {label:fl, mutual:true, dashed:document.getElementById("nt-dashed").checked}
                     : {fromLabel:fl, toLabel:tl, arrow:true, dashed:document.getElementById("nt-dashed").checked};
@@ -2929,9 +2930,9 @@ document.getElementById("nt-create").onclick=()=>{
 document.getElementById("ed-add").onclick=()=>{
   if(!editingId) return;
   const tv=document.getElementById("ed-type").value, types=Model.raw.types||{};
-  if(!tv || !types[tv]){ alert("Pick a connector first"); return; }
+  if(!tv || !types[tv]){ showInfoCard("Pick a connector first"); return; }
   const other=document.getElementById("ed-target").value;
-  if(!other || !Model.nodeById(other)){ alert("Pick a node to connect to"); return; }
+  if(!other || !Model.nodeById(other)){ showInfoCard("Pick a node to connect to"); return; }
   const t=types[tv], dir=document.getElementById("ed-dir").value;
   const link=(t.mutual||dir==="out") ? {from:editingId,to:other,type:tv} : {from:other,to:editingId,type:tv};
   Model.raw.links.push(link);
@@ -2956,7 +2957,7 @@ document.getElementById("ed-graph-file").onchange=function(){
       Model.nodeById(editingId).subgraph=data; syncGraphPanel();
       if(Focus.mode==="focus") buildFocusCards();
       saveRoot();
-    }catch(err){ alert("Couldn't attach: "+err.message); } };
+    }catch(err){ showInfoCard("Couldn't attach: "+err.message); } };
   r.readAsText(f); this.value="";
 };
 document.getElementById("ed-graph-enter").onclick=()=>{ if(editingId) enterSubgraph(editingId); };
@@ -2994,7 +2995,7 @@ function mergeNodeInto(loserId, keeperId){
 document.getElementById("ed-merge-go").onclick=()=>{
   if(!editingId) return;
   const other=document.getElementById("ed-merge-target").value;
-  if(!other||!Model.nodeById(other)){ alert("Pick a node to merge in"); return; }
+  if(!other||!Model.nodeById(other)){ showInfoCard("Pick a node to merge in"); return; }
   const keeperName=Model.nodeById(editingId).name||editingId, loserName=Model.nodeById(other).name||other;
   if(!confirm('Merge "'+loserName+'" into "'+keeperName+'"? "'+loserName+'" will be deleted \u2014 its connections move onto "'+keeperName+'", and any details "'+keeperName+'" is missing get filled in from it. This cannot be undone.')) return;
   const gone=other, snap={}; Model.ids.forEach((id,i)=>{ if(id!==gone) snap[id]={x:Positions.x[i],y:Positions.y[i],z:Positions.z[i]}; });
