@@ -288,7 +288,7 @@
    never touches the DOM, and all load/save goes through GraphSource. This is
    the structure the scale work (worker layout, Barnes-Hut, accounts) hangs off.
    ============================================================================= */
-const BUILD="v2-561";
+const BUILD="v2-573";
 document.getElementById("build").textContent=BUILD;
 
 /* ---- palette (name → [lightest, mid-dark, darkest, vivid]) ---- */
@@ -987,6 +987,7 @@ const Renderer=(()=>{
 
     // project + cull (relative to the camera look-at, so fly-in can centre a node)
     let cnt=0;
+    if(Focus.planetFocus>=0){ const _gp=galaxyPosNow(Focus.planetFocus); if(_gp){ view.cx=_gp.x*cg - _gp.z*sg; view.cy=_gp.y; view.cz=_gp.x*sg + _gp.z*cg; } }   // pin the look-at to where the focused planet is THIS frame, so projection isn't one frame behind
     const lax=view.cx, lay=view.cy, laz=view.cz;
     const fSkip = Focus.mode==="focus" ? Focus.skip : null, dim = fSkip?0.5:1;
     const ego = Focus.mode==="ego", ec = ego && Focus.egoCenter>=0 ? Focus.egoCenter : -1;
@@ -1835,7 +1836,7 @@ function showRelInfoEdge(a, b, px, py){
 { const psb=document.getElementById("promotesun"); if(psb) psb.onclick=()=>{ if(Focus.planetFocus>=0){ const id=Model.ids[Focus.planetFocus]; Focus._igniteId=Focus.planetFocus; Focus._igniteT0=performance.now(); Focus.planetFocus=-1; egoTo(id); view.tdist=(Focus.fitDist||view.dist)*0.5; Focus._igniteZoom=true; } };   // promote to a sun; begin a slow zoom toward the card straight away (eased gently through the burn), holding the card back until the ignition finishes
   const pi=document.getElementById("planetinfo");
   if(pi){
-    pi.addEventListener("click", e=>{ if(!e.target.closest) return; if(e.target.closest(".pf-dismiss")){ if(Focus.planetFocus>=0){ Focus.planetFocus=-1; view.tdist=Focus.fitDist||view.dist; } } else if(e.target.closest(".pf-promote")){ if(Focus.planetFocus>=0){ const pf=Focus.planetFocus; const id=Model.ids[pf]; Focus._igTargetScreenR=Focus._lastPlanetScreenR||0; Focus._igniteId=pf; Focus._igniteT0=performance.now(); Focus.planetFocus=-1; egoTo(id); view.tdist=view.dist; Focus._igniteZoom=true; } } else if(e.target.closest(".hl-conn")){ const _hn=e.target.closest(".hl-conn"), _t=_hn.getAttribute("data-target"), _ti=Model.index(_t); if(_ti!=null){ hidePlanetInfo(); goToNode(_ti); } } else if(e.target.closest(".nc-2d")){ if(Focus.egoCenter>=0){ hidePlanetInfo(); enterFocus(Model.ids[Focus.egoCenter]); } } else if(e.target.closest(".nc-solar")){ Focus.cardHidden=true; pi.innerHTML=""; pi.style.display="none"; planetInfoShown=null; view.tdist=Focus.fitDist||view.dist; } });   // ⊖ on the node card → just hide it and stop any video (tap the sun to bring it back)
+    pi.addEventListener("click", e=>{ if(!e.target.closest) return; if(e.target.closest(".pf-dismiss")){ if(Focus.planetFocus>=0){ Focus.planetFocus=-1; view.tdist=Focus.fitDist||view.dist; } } else if(e.target.closest(".pf-promote")){ if(Focus.planetFocus>=0){ const pf=Focus.planetFocus; const id=Model.ids[pf]; Focus._igTargetScreenR=Focus._lastPlanetScreenR||0; Focus._igniteId=pf; Focus._igniteT0=performance.now(); Focus.planetFocus=-1; egoTo(id); if(Focus._lastPlanetScreenR>0.5){ const _sr=(SolarSys.sunR&&SolarSys.sunR[pf])||((SolarSys.Rmax||40)*1.2); view.dist=_sr*1150/(Focus._lastPlanetScreenR*7.5); } view.tdist=view.dist; Focus._igniteZoom=true; } } else if(e.target.closest(".hl-conn")){ const _hn=e.target.closest(".hl-conn"), _t=_hn.getAttribute("data-target"), _ti=Model.index(_t); if(_ti!=null){ hidePlanetInfo(); goToNode(_ti); } } else if(e.target.closest(".nc-2d")){ if(Focus.egoCenter>=0){ hidePlanetInfo(); enterFocus(Model.ids[Focus.egoCenter]); } } else if(e.target.closest(".nc-solar")){ Focus.cardHidden=true; pi.innerHTML=""; pi.style.display="none"; planetInfoShown=null; view.tdist=Focus.fitDist||view.dist; } });   // ⊖ on the node card → just hide it and stop any video (tap the sun to bring it back)
     let lpT=null,lpX=0,lpY=0;   // press-and-hold anywhere on a card (node OR connection) → inline edit
     pi.addEventListener("pointerdown", e=>{ if(e.target.closest && e.target.closest("input,textarea,button,a,select")) return; lpX=e.clientX;lpY=e.clientY;
       const _conn=e.target.closest&&e.target.closest(".pf-conn"), _li=_conn?+_conn.getAttribute("data-li"):-1;   // which stacked connection was pressed (multi-link cards)
@@ -2149,9 +2150,9 @@ Focus._breadcrumbOn=false;   // breadcrumb trail on by default
 { const hb=document.getElementById("highlightbtn"); if(hb){ const paintHl=()=>{ const on=!!Focus._highlightView; hb.style.color=on?"var(--t1)":"var(--t3)"; hb.style.borderColor="var(--line-strong)"; hb.style.boxShadow="0 2px 10px rgba(0,0,0,0.4)"; hb.style.opacity=on?"1":"0.5"; }; hb.onclick=()=>{ Focus._highlightView=!Focus._highlightView; const _le=document.getElementById("hllist"); if(Focus._highlightView){ if(typeof exitFocus==="function") exitFocus(); buildHlList(); if(_le) _le.style.display="flex"; } else { if(_le) _le.style.display="none"; } paintHl(); }; Focus._paintHl=paintHl;
 function closeHlList(){ Focus._highlightView=false; const el=document.getElementById("hllist"); if(el) el.style.display="none"; if(Focus._paintHl) Focus._paintHl(); }
 function showInfoCard(msg, title){ let el=document.getElementById("infocard"); if(!el){ el=document.createElement("div"); el.id="infocard"; el.style.cssText="display:none; position:fixed; inset:0; z-index:2500; align-items:center; justify-content:center; background:rgba(0,0,0,0.5); pointer-events:auto; padding:20px; box-sizing:border-box;"; el.innerHTML='<div style="max-width:min(360px,calc(100vw - 40px)); max-height:70vh; overflow:auto; background:linear-gradient(160deg, rgba(44,52,78,0.98), rgba(8,10,20,0.98)); border:1px solid rgba(130,150,200,0.42); border-radius:8px; box-shadow:0 12px 44px rgba(0,0,0,0.6); padding:18px;"><div class="ic-title" style="font:700 15px -apple-system,Segoe UI,Roboto,sans-serif; color:#eef1f8; margin-bottom:9px;"></div><div class="ic-msg" style="font:400 13.5px -apple-system,Segoe UI,Roboto,sans-serif; color:#c9d0e0; line-height:1.5; white-space:pre-wrap;"></div><button class="ic-ok" style="margin-top:16px; width:100%; padding:10px; border-radius:6px; background:rgba(130,150,200,0.2); border:1px solid rgba(130,150,200,0.4); color:#eef1f8; font:600 14px -apple-system,Segoe UI,Roboto,sans-serif; cursor:pointer;">OK</button></div>'; document.body.appendChild(el); el.addEventListener("click", e=>{ if(e.target===el || e.target.classList.contains("ic-ok")) el.style.display="none"; }); } const _t=el.querySelector(".ic-title"); _t.textContent=title||"Xanadu"; _t.style.display=title?"block":"none"; el.querySelector(".ic-msg").textContent=msg; el.style.display="flex"; }
-function hlPromoteFocused(){ if(Focus.planetFocus>=0){ const pf=Focus.planetFocus; const id=Model.ids[pf]; Focus._igTargetScreenR=Focus._lastPlanetScreenR||0; Focus._igniteId=pf; Focus._igniteT0=performance.now(); Focus.planetFocus=-1; egoTo(id); view.tdist=view.dist; Focus._igniteZoom=true; } }
-function hlClickNode(i){ closeHlList(); const n=Model.count(); if(SolarSys.isSun && SolarSys.isSun.length===n && SolarSys.isSun[i]){ goToNode(i); hlAfterSettle(()=>{ view.tdist=(Focus.fitDist||view.dist)*0.55; }); } else { goToNode(i); Focus._hlAutoPromote=true; const _iv=setInterval(()=>{ if(typeof hideRelInfo==="function") hideRelInfo(); }, 40); hlAfterSettle(()=>{ hlPromoteFocused(); setTimeout(()=>{ clearInterval(_iv); Focus._hlAutoPromote=false; view.tdist=(Focus.fitDist||view.dist)*0.55; }, 1900); }); } }
-function hlAfterSettle(cb, timeout){ const t0=performance.now(); timeout=timeout||3800; let cnt=0; const iv=setInterval(()=>{ const near=view.tdist>0 && Math.abs(view.dist-view.tdist)<view.tdist*0.025; if(near) cnt++; else cnt=0; if(cnt>=6 || performance.now()-t0>timeout){ clearInterval(iv); cb(); } }, 60); }
+function hlPromoteFocused(){ if(Focus.planetFocus>=0){ const pf=Focus.planetFocus; const id=Model.ids[pf]; Focus._igTargetScreenR=Focus._lastPlanetScreenR||0; Focus._igniteId=pf; Focus._igniteT0=performance.now(); Focus.planetFocus=-1; egoTo(id); if(Focus._lastPlanetScreenR>0.5){ const _sr=(SolarSys.sunR&&SolarSys.sunR[pf])||((SolarSys.Rmax||40)*1.2); view.dist=_sr*1150/(Focus._lastPlanetScreenR*7.5); } view.tdist=view.dist; Focus._igniteZoom=true; } }
+function hlClickNode(i){ closeHlList(); const n=Model.count(); if(SolarSys.isSun && SolarSys.isSun.length===n && SolarSys.isSun[i]){ goToNode(i); hlAfterSettle(()=>{ view.tdist=(Focus.fitDist||view.dist)*0.55; }); } else { goToNode(i); Focus._hlAutoPromote=true; const _iv=setInterval(()=>{ if(typeof hideRelInfo==="function") hideRelInfo(); }, 40); hlAfterSettle(()=>{ view.dist=view.tdist; requestAnimationFrame(()=>{ hlPromoteFocused(); setTimeout(()=>{ clearInterval(_iv); Focus._hlAutoPromote=false; }, 1900); }); }); } }
+function hlAfterSettle(cb, timeout){ const t0=performance.now(); timeout=timeout||3800; let cnt=0; const iv=setInterval(()=>{ const near=view.tdist>0 && Math.abs(view.dist-view.tdist)<view.tdist*0.006; if(near) cnt++; else cnt=0; if(cnt>=8 || performance.now()-t0>timeout){ clearInterval(iv); cb(); } }, 60); }
 function hlClickConn(l){ closeHlList(); const a=Model.index(l.from), b=Model.index(l.to); if(a==null||b==null) return; const n=Model.count(); const iS=SolarSys.isSun; const aS=iS&&iS.length===n&&iS[a], bS=iS&&iS.length===n&&iS[b]; const da=(neighboursOf(l.from)||[]).length, db=(neighboursOf(l.to)||[]).length; const host=da>=db?a:b, guest=da>=db?b:a; const _sup=setInterval(()=>{ if(typeof hideRelInfo==="function") hideRelInfo(); }, 90); const _done=()=>clearInterval(_sup); setTimeout(_done, 9000);
   if(aS && !bS){ _done(); goToNode(b); }
   else if(bS && !aS){ _done(); goToNode(a); }
@@ -2627,7 +2628,7 @@ function rebuildJump(){
 }
 (function(){
   const sel=document.getElementById("jump");
-  if(sel) sel.onchange=()=>{ const id=sel.value; if(id && Model.nodeById(id)){ enterFocus(id); } sel.value=""; };
+  if(sel) sel.onchange=()=>{ const id=sel.value; if(id && Model.nodeById(id)){ const _i=Model.index(id); if(_i!=null && typeof hlClickNode==="function") hlClickNode(_i); else enterFocus(id); } sel.value=""; };
 })();
 // --- Collapsible panel body (shared by the − toggle and the topbar's + menu) ---
 let panelCollapsed=false;
@@ -2687,7 +2688,7 @@ function runSearch(){
     d.onclick=()=>pickSearch(m.id); resultsEl.appendChild(d); });
   resultsEl.style.display="block";
 }
-function pickSearch(id){ qEl.value=""; resultsEl.style.display="none"; qMatches=[]; qSel=-1; qEl.blur(); enterFocus(id); }
+function pickSearch(id){ qEl.value=""; resultsEl.style.display="none"; qMatches=[]; qSel=-1; qEl.blur(); if(Focus.mode==="focus" && typeof exitFocus==="function") exitFocus(); const _i=Model.index(id); if(_i!=null && typeof hlClickNode==="function") hlClickNode(_i); else enterFocus(id); }
 function qHighlight(){ [...resultsEl.children].forEach((c,i)=>c.classList.toggle("sel", i===qSel)); }
 qEl.addEventListener("input", runSearch);
 qEl.addEventListener("keydown", e=>{
@@ -3071,7 +3072,9 @@ function loop(){
   if(Focus.mode==="ego" && Focus._igniteId!=null && SolarSys.disp && SolarSys.disp[Focus._igniteId]){ const _d=SolarSys.disp[Focus._igniteId]; view.tcx=_d.x; view.tcy=_d.y; view.tcz=_d.z; }   // during ignite: aim at the planet's live glide (not its endpoint), so the eased camera follows it instead of weaving toward a point it hasn't reached
   else if(Focus.mode==="ego" && Focus.egoCenter>=0 && SolarSys.sunX && SolarSys.sunX.length===Model.count()){
     const su=Focus.egoCenter;
-    if(Focus.planetFocus>=0 && SolarSys.orbit[Focus.planetFocus] && SolarSys.sunX){
+    if(Focus.planetFocus>=0 && SolarSys.disp && SolarSys.disp[Focus.planetFocus]){
+      const _d=SolarSys.disp[Focus.planetFocus]; view.tcx=_d.x; view.tcy=_d.y; view.tcz=_d.z;   // track where the planet is actually DRAWN (eased disp), so there is no lag to snap at ignition
+    } else if(Focus.planetFocus>=0 && SolarSys.orbit[Focus.planetFocus] && SolarSys.sunX){
       const o=SolarSys.orbit[Focus.planetFocus], su=o.su, th=o.phase+o.speed*planetT*0.001, cs=Math.cos(th), sn=Math.sin(th);   // recompute the planet's exact orbit position (same math the renderer uses this frame) so the camera pins to it with zero lag
       const bx=SolarSys.sunX[su]+o.r*(cs*o.ux+sn*o.vx), by=SolarSys.sunY[su]+o.r*(cs*o.uy+sn*o.vy), bz=SolarSys.sunZ[su]+o.r*(cs*o.uz+sn*o.vz);
       view.tcx=bx*cgL - bz*sgL; view.tcy=by; view.tcz=bx*sgL + bz*cgL;   // pin POSITION only — leave dist/yaw/pitch free so zoom + look-around still work
@@ -3080,7 +3083,7 @@ function loop(){
       view.tcx=gx; view.tcy=SolarSys.sunY[su]; view.tcz=gz;
     }
   }
-  const trk = (Focus.mode==="ego" && Focus.planetFocus>=0) ? 1 : (Focus.mode==="ego" ? 0.2 : 0.07);   // planet focus: rigid lock (no chase); sun focus: gentle ease
+  const trk = (Focus.mode==="ego" && (Focus.planetFocus>=0 || Focus._igniteId!=null)) ? 1 : (Focus.mode==="ego" ? 0.2 : 0.07);   // planet focus / ignite: rigid lock (no chase); sun focus: gentle ease
   view.cx += (view.tcx-view.cx)*trk; view.cy += (view.tcy-view.cy)*trk; view.cz += (view.tcz-view.cz)*trk;
   if(padVX||padVY){ if(Focus.mode==="ego"||Focus.mode==="focus") exitFocus(true);   // flying breaks the focus lock (keeps the camera) so you're never stuck in a system
       const cpv=Math.cos(view.pitch), spv=Math.sin(view.pitch), D=view.dist;   // spinpad = FLY: left/right steers, forward/back throttles along the look direction
