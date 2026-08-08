@@ -1154,7 +1154,7 @@ const Renderer=(()=>{
           { const _orb=SolarSys.orbit[i]; buf[o+15]=(_isSunI ? planetT*0.00013 : (_orb&&_orb.spin?_orb.spin:0)*planetT*0.0006); buf[o+16]=Math.max(0,Math.min(1,(proj.az[i]-dist+span)/(2*span))); }   // axial-spin angle = rate × planetary clock (frozen when motion is stopped)   // negate depth: view-z points away from camera, but the shader's surface normal z points toward it
         }
       }, nowT);
-      if(glLabels && PlanetGL.available() && PlanetGL.labelTex && ego && ec>=0 && Focus.planetFocus<0 && SolarSys.isSun.length===n && view.showConnectors!==false){   // WebGL labels: neighbour names sit next to their ON-SCREEN planets. Off-screen ones aren't shown — zoom out to see them.
+      if(glLabels && PlanetGL.available() && PlanetGL.labelTex && Focus.mode!=="focus" && Focus.planetFocus<0 && SolarSys.isSun.length===n && view.showConnectors!==false){   // WebGL labels: neighbour names sit next to their ON-SCREEN planets. Off-screen ones aren't shown — zoom out to see them.
         const _ids=Model.ids;
         const _sysA=(Focus.mode==="ego" && ec>=0 && proj.front[ec]) ? sysFade : 0;
         const items=[]; glLabelHits.length=0; const LBL_OS=2;   // oversample label textures 2x so the per-distance up-scale (fs up to 1.45x) always samples DOWN with real headroom → crisp text even at the closest zoom
@@ -1184,6 +1184,24 @@ const Renderer=(()=>{
             const chw=cref.w*0.5, chh=cref.h*0.5, ccd=Math.max(0,Math.min(0.999,(proj.az[ec]-dist+span)/(2*span)));
             items.push({id:ec, tex:cref.tex, cx:proj.x[ec]*DPR, cy:(proj.y[ec]+proj.r[ec])*DPR + chh + 6*DPR, hw:chw, hh:chh, a:cFade*sysFade, d:ccd});   // fades on zoom-in (card) AND zoom-out (galaxy); sits directly under the sun
             glLabelHits.push({id:ec, x:proj.x[ec]-chw/DPR, y:(proj.y[ec]+proj.r[ec])+6, w:2*chw/DPR, h:2*chh/DPR});   // so hover doesn't add a duplicate label for the sun
+          }
+        }
+        { const gA0=1-sysFade;   // GALAXY: sun names as crisp WebGL billboards that FADE with on-screen size (no 2D blur, no hard pop), cross-fading against the ego labels via 1-sysFade
+          if(gA0>0.02){ const gLBL=2;
+            for(let gi=0;gi<n;gi++){ if(gi===ec || !SolarSys.isSun[gi] || !proj.vis[gi]) continue;
+              const gd=Math.max(0,Math.min(0.999,(proj.az[gi]-dist+span)/(2*span))); const gA=gA0*Math.max(0.5, 1-gd*0.5);   // even across the WHOLE galaxy: no size bias (which bunched labels in the bright core and starved the arms) — just a gentle near→far dim, smooth so nothing pops
+              const gnd=Model.nodeById(_ids[gi]), gnm=(gnd&&gnd.name)||_ids[gi];
+              const gfs=Math.round(12*DPR*gLBL), gpad=Math.round(5*DPR*gLBL);
+              ctx.font="600 "+gfs+"px -apple-system,Segoe UI,Roboto,sans-serif"; const gw=ctx.measureText(gnm).width;
+              const gtref=PlanetGL.labelTex("G"+gi+"|"+gnm, Math.ceil(gw+gpad*2), Math.ceil(gfs+gpad*2), (tc,w,h)=>{
+                tc.textAlign="center"; tc.textBaseline="middle";
+                tc.fillStyle="rgba(8,10,18,0.55)"; tc.beginPath(); if(tc.roundRect) tc.roundRect(0,0,w,h,Math.round(4*DPR*gLBL)); else tc.rect(0,0,w,h); tc.fill();
+                tc.font="600 "+gfs+"px -apple-system,Segoe UI,Roboto,sans-serif"; tc.fillStyle="rgba(240,243,250,0.98)"; tc.fillText(gnm, w/2, h/2);
+              });
+              const ghw=gtref.w*0.5/gLBL, ghh=gtref.h*0.5/gLBL;
+              items.push({id:gi, tex:gtref.tex, cx:proj.x[gi]*DPR, cy:(proj.y[gi]+proj.r[gi])*DPR + ghh + 6*DPR, hw:ghw, hh:ghh, a:gA, d:gd});
+              glLabelHits.push({id:gi, x:proj.x[gi]-ghw/DPR, y:(proj.y[gi]+proj.r[gi])+6, w:2*ghw/DPR, h:2*ghh/DPR});
+            }
           }
         }
         if(!Focus._highlightView) PlanetGL.drawLabels(items, Math.round(W*DPR), Math.round(H*DPR));
@@ -1237,21 +1255,6 @@ const Renderer=(()=>{
       const labeled=new Set();
       const sysA = (Focus.mode==="ego" && Focus.egoCenter>=0 && proj.front[Focus.egoCenter]) ? Math.max(0,Math.min(1,(cl-0.05)/0.13)) : 0;   // cross-fade system↔galaxy labels through the transition — no hard one-frame swap
       
-      if(sysA<0.99 && SolarSys.isSun.length===n){
-        const cand=[];                                          // on-screen suns, biggest (most-connected) first
-        for(let k=0;k<cnt;k++){ const i=ord[k]; if(SolarSys.isSun[i] && proj.r[i]>=1.0) cand.push(i); }   // any visible sun; distance (below) decides, not screen size
-        cand.sort((a,b)=>proj.r[b]-proj.r[a]);   // biggest (most prominent) suns first — a STABLE priority so labels stay put as the galaxy turns, instead of churning as different suns become "closest"
-        const gboxes=[], ga=1-sysA; ctx.shadowBlur=0; ctx.font="600 12px -apple-system,Segoe UI,Roboto,sans-serif";
-        for(let k=0;k<cand.length && gboxes.length<120 && !Focus._highlightView;k++){ const i=cand[k]; if(labeled.has(i)) continue;
-          const nd=Model.nodeById(ids[i]), nm=(nd&&nd.name)||ids[i], w=ctx.measureText(nm).width;
-          const lx=proj.x[i], ly=proj.y[i]-proj.r[i]-9, bx=lx-w/2-4, by=ly-12, bw=w+8, bh=16;
-          let clash=false; for(let z=0;z<gboxes.length;z++){ const B=gboxes[z]; if(bx<B.x+B.w && bx+bw>B.x && by<B.y+B.h && by+bh>B.y){ clash=true; break; } }
-          if(clash) continue; gboxes.push({x:bx,y:by,w:bw,h:bh});
-          ctx.globalAlpha=ga; ctx.fillStyle="rgba(8,10,18,0.6)"; ctx.beginPath(); if(ctx.roundRect) ctx.roundRect(bx,by,bw,bh,4); else ctx.rect(bx,by,bw,bh); ctx.fill();
-          ctx.fillStyle="rgba(255,247,230,0.98)"; ctx.fillText(nm, lx, ly); labeled.add(i);
-        }
-        ctx.globalAlpha=1;
-      }
       if(view.hover>=0 && proj.vis[view.hover] && !labeled.has(view.hover) && !glLabelHits.some(L=>L.id===view.hover) && !Focus._highlightView){   // the hovered node, only if not already named (2D OR WebGL billboard)
         const i=view.hover, nd=Model.nodeById(ids[i]);
         ctx.fillStyle="rgba(230,234,244,0.97)"; ctx.font="600 12px -apple-system,Segoe UI,Roboto,sans-serif";
