@@ -4,6 +4,14 @@
 <meta charset="utf-8">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Xanadu">
+<meta name="theme-color" content="#0a0e1c">
 <title>Xanadu — engine</title>
 <style>
   :root{
@@ -288,7 +296,7 @@
    never touches the DOM, and all load/save goes through GraphSource. This is
    the structure the scale work (worker layout, Barnes-Hut, accounts) hangs off.
    ============================================================================= */
-const BUILD="v2-577";
+const BUILD="v2-578";
 document.getElementById("build").textContent=BUILD;
 
 /* ---- palette (name → [lightest, mid-dark, darkest, vivid]) ---- */
@@ -366,7 +374,7 @@ const IS_ADMIN=(()=>{ try{ return new URLSearchParams(location.search).has("admi
 try{ if(IS_ADMIN){ const _bt=document.getElementById("buildtag"); if(_bt){ _bt.textContent=BUILD; _bt.style.display="block"; } } }catch(e){}   // tiny build-version tag by the add-node icon, admin only
 const LocalStorageSource={
   load(){ if(LS_BYPASS()) return null; try{ const s=localStorage.getItem(LS_KEY); return s?JSON.parse(s):null; }catch(e){ return null; } },
-  save(doc){ if(LS_BYPASS()) return; try{ localStorage.setItem(LS_KEY, JSON.stringify(doc)); }catch(e){} }
+  save(doc){ if(LS_BYPASS()) return false; try{ localStorage.setItem(LS_KEY, JSON.stringify(doc)); return true; }catch(e){ if(!LocalStorageSource._warned){ LocalStorageSource._warned=true; try{ showInfoCard("This browser couldn't save your graph so it will persist across refreshes \u2014 it may be too large (embedded images are the usual cause). It still works this session; use Export to keep a copy.", "Couldn't save"); }catch(_){} } return false; } }
 };
 const FileSource={
   pick(){ return new Promise(res=>{
@@ -1232,9 +1240,9 @@ const Renderer=(()=>{
       if(sysA<0.99 && SolarSys.isSun.length===n){
         const cand=[];                                          // on-screen suns, biggest (most-connected) first
         for(let k=0;k<cnt;k++){ const i=ord[k]; if(SolarSys.isSun[i] && proj.r[i]>=1.0) cand.push(i); }   // any visible sun; distance (below) decides, not screen size
-        cand.sort((a,b)=>proj.az[a]-proj.az[b]);   // the suns CLOSEST to the camera → different ones reveal as the galaxy turns
+        cand.sort((a,b)=>proj.r[b]-proj.r[a]);   // biggest (most prominent) suns first — a STABLE priority so labels stay put as the galaxy turns, instead of churning as different suns become "closest"
         const gboxes=[], ga=1-sysA; ctx.shadowBlur=0; ctx.font="600 12px -apple-system,Segoe UI,Roboto,sans-serif";
-        for(let k=0;k<cand.length && gboxes.length<18 && !Focus._highlightView;k++){ const i=cand[k]; if(labeled.has(i)) continue;
+        for(let k=0;k<cand.length && gboxes.length<120 && !Focus._highlightView;k++){ const i=cand[k]; if(labeled.has(i)) continue;
           const nd=Model.nodeById(ids[i]), nm=(nd&&nd.name)||ids[i], w=ctx.measureText(nm).width;
           const lx=proj.x[i], ly=proj.y[i]-proj.r[i]-9, bx=lx-w/2-4, by=ly-12, bw=w+8, bh=16;
           let clash=false; for(let z=0;z<gboxes.length;z++){ const B=gboxes[z]; if(bx<B.x+B.w && bx+bw>B.x && by<B.y+B.h && by+bh>B.y){ clash=true; break; } }
@@ -3134,6 +3142,7 @@ document.getElementById("example").onclick=()=>{
   if(x) x.onclick=()=>{ close(); doExport(); loadExampleNow(); };
   if(warn) warn.addEventListener("click",e=>{ if(e.target===warn) close(); });
 })();
+try{ localStorage.removeItem("xanadu_devfresh"); }catch(_){}   // live build: never leave persistence locked off (the dev-fresh toggle could otherwise strand a graph, reverting to the example on every refresh)
 loadGraph(LocalStorageSource.load() || DEFAULT_DATA);
 setPanelCollapsed(true);   // start minimised — keep the initial floating view clear (matches prototype)
 requestAnimationFrame(loop);
