@@ -339,7 +339,7 @@
    never touches the DOM, and all load/save goes through GraphSource. This is
    the structure the scale work (worker layout, Barnes-Hut, accounts) hangs off.
    ============================================================================= */
-const BUILD="v2-589";
+const BUILD="v2-591";
 document.getElementById("build").textContent=BUILD;
 
 /* ---- palette (name → [lightest, mid-dark, darkest, vivid]) ---- */
@@ -1996,6 +1996,13 @@ function enterCardEdit(spec){   // inline hold-to-edit form, shared by node card
     db.onclick=()=>{ if(!armed){ armed=true; db.textContent="Confirm delete?"; db.style.background="#e0341f"; db.style.color="#fff"; db.style.borderColor="#e0341f"; dtm=setTimeout(()=>{ armed=false; db.textContent="Delete node"; db.style.background=""; db.style.color="#f0a89a"; db.style.borderColor="rgba(224,52,31,0.45)"; },3000); return; } if(dtm) clearTimeout(dtm); const centralId=(Focus.egoCenter>=0)?Model.ids[Focus.egoCenter]:Focus.id; cardEditing=false; hidePlanetInfo(); if(typeof deleteNodeById==="function") deleteNodeById(_id); if(_id===centralId){ if(typeof exitFocus==="function") exitFocus(); } else if(centralId && Model.nodeById(centralId) && typeof egoTo==="function"){ egoTo(centralId); } else if(typeof exitFocus==="function") exitFocus(); };
     dw.appendChild(db); box.appendChild(dw);
   }
+  if(kind==="link"){
+    const dw2=document.createElement("div"); dw2.style.cssText="margin-top:12px;border-top:1px solid rgba(255,255,255,0.12);padding-top:11px;";
+    const db2=document.createElement("button"); db2.type="button"; db2.textContent="Delete connection"; db2.style.cssText="font-size:12px;color:#f0a89a;border-color:rgba(240,120,100,0.4);";
+    let armed2=false, dtm2=null;
+    db2.onclick=()=>{ if(!armed2){ armed2=true; db2.textContent="Confirm delete?"; db2.style.background="#e0341f"; db2.style.color="#fff"; db2.style.borderColor="#e0341f"; dtm2=setTimeout(()=>{ armed2=false; db2.textContent="Delete connection"; db2.style.background=""; db2.style.color="#f0a89a"; db2.style.borderColor="rgba(240,120,100,0.4)"; },3000); return; } clearTimeout(dtm2); const ix=Model.raw.links.indexOf(target); if(ix>=0) Model.raw.links.splice(ix,1); exitCardEdit(); connTopologyChanged(); };
+    dw2.appendChild(db2); box.appendChild(dw2);
+  }
 }
 function stopCardVideo(){ const b=document.getElementById("planetinfo"); if(b && b.querySelector("iframe")){ b.innerHTML=""; planetInfoShown=null; } }   // pull the embedded video so playback stops the moment the card is hidden or faded out
 function updatePlanetInfo(){
@@ -2966,7 +2973,10 @@ function renderConns(){ const box=document.getElementById("ed-conns"); box.inner
     edit.onclick=()=>{ const open=panel.style.display!=="none"; panel.style.display=open?"none":"block"; if(!open && !panel.dataset.built){ buildLinkPanel(panel,l); panel.dataset.built="1"; } };
     row.appendChild(edit);
     const del=document.createElement("button"); del.type="button"; del.textContent="\u00d7"; del.title="Remove connection";
-    del.onclick=()=>{ const ix=raw.links.indexOf(l); if(ix>=0) raw.links.splice(ix,1); connTopologyChanged(); }; row.appendChild(del);
+    del.style.cssText="flex:none;color:#e0645a;font-size:15px;line-height:1;min-width:34px;height:28px;";
+    let delArmed=false, delT=null;
+    del.onclick=()=>{ if(!delArmed){ delArmed=true; del.textContent="Delete?"; del.style.fontSize="11px"; del.style.background="rgba(224,100,90,0.18)"; delT=setTimeout(()=>{ delArmed=false; del.textContent="\u00d7"; del.style.fontSize="15px"; del.style.background=""; },3000); return; } clearTimeout(delT); const ix=raw.links.indexOf(l); if(ix>=0) raw.links.splice(ix,1); connTopologyChanged(); };
+    row.appendChild(del);
     wrap.appendChild(row); wrap.appendChild(panel); box.appendChild(wrap);
     if(pendingExpandConn && other===pendingExpandConn){ panel.style.display="block"; if(!panel.dataset.built){ buildLinkPanel(panel,l); panel.dataset.built="1"; } edit.style.color="var(--t1)"; panel.scrollIntoView&&setTimeout(()=>panel.scrollIntoView({block:"nearest"}),0); }
   });
