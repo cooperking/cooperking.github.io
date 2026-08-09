@@ -108,10 +108,10 @@
   #loading .lfill{height:100%;width:0;background:var(--accent);border-radius:3px;transition:width .25s ease;}
 @keyframes spin{to{transform:rotate(360deg)}}
 .vidplay{transition:transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;} .vidfacade:hover .vidplay{transform:scale(1.09); background:rgba(10,12,20,0.72); box-shadow:0 4px 18px rgba(0,0,0,0.5);}
-  #launcher{ position:fixed; inset:0; z-index:3000; display:none; align-items:center; justify-content:center; padding:24px; box-sizing:border-box; overflow:auto; background:radial-gradient(ellipse at 50% 38%, rgba(18,22,40,0.94), rgba(6,8,16,0.985)); -webkit-backdrop-filter:blur(5px); backdrop-filter:blur(5px); }
+  #launcher{ position:fixed; inset:0; z-index:3000; display:none; align-items:center; justify-content:center; padding:24px; box-sizing:border-box; overflow:auto; background:transparent; }
   #launcher .lc-panel{ width:min(520px,100%); margin:auto; }
-  #launcher .lc-head{ font:700 30px -apple-system,Segoe UI,Roboto,sans-serif; color:var(--t1); text-align:center; letter-spacing:0.5px; }
-  #launcher .lc-sub{ font:400 14px -apple-system,Segoe UI,Roboto,sans-serif; color:var(--t2); text-align:center; margin:7px 0 22px; line-height:1.4; }
+  #launcher .lc-head{ font:700 30px -apple-system,Segoe UI,Roboto,sans-serif; color:var(--t1); text-align:center; letter-spacing:0.5px; text-shadow:0 2px 16px rgba(0,0,0,0.9); }
+  #launcher .lc-sub{ font:400 14px -apple-system,Segoe UI,Roboto,sans-serif; color:var(--t2); text-align:center; margin:7px 0 22px; line-height:1.4; text-shadow:0 1px 12px rgba(0,0,0,0.9); }
   #launcher .lc-list{ display:flex; flex-direction:column; gap:10px; }
   #launcher .lc-card{ display:block; text-align:left; width:100%; background:linear-gradient(160deg, rgba(40,46,68,0.9), rgba(14,17,30,0.9)); border:1px solid var(--line-strong); border-radius:10px; padding:14px 16px; cursor:pointer; color:var(--t1); transition:border-color .15s, transform .05s; font-family:-apple-system,Segoe UI,Roboto,sans-serif; }
   #launcher .lc-card:hover{ border-color:rgba(150,170,220,0.6); }
@@ -121,9 +121,39 @@
   #launcher .lc-resume{ border-color:rgba(120,180,150,0.5); background:linear-gradient(160deg, rgba(30,54,44,0.9), rgba(12,20,18,0.9)); }
   #launcher .lc-action{ background:linear-gradient(160deg, rgba(28,32,50,0.9), rgba(11,13,22,0.9)); }
   #launcher .lc-loading{ color:var(--t3); text-align:center; padding:20px; font:400 13px -apple-system,sans-serif; }
+  #launcher .lc-about{ background:none; border:none; color:var(--t3); text-align:center; padding:6px; font:400 12.5px -apple-system,sans-serif; text-decoration:underline; }
+  #aboutcard{ position:fixed; inset:0; z-index:3600; display:none; align-items:center; justify-content:center; padding:24px; box-sizing:border-box; overflow:auto; background:rgba(4,6,13,0.6); -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px); }
+  #aboutcard .ab-panel{ width:min(440px,100%); margin:auto; background:linear-gradient(160deg, rgba(30,34,52,0.98), rgba(14,17,30,0.98)); border:1px solid var(--line-strong); border-radius:14px; padding:20px; box-shadow:0 20px 60px rgba(0,0,0,0.5); }
+  #aboutcard .ab-title{ font:700 18px -apple-system,Segoe UI,Roboto,sans-serif; color:var(--t1); margin-bottom:8px; }
+  #aboutcard .ab-body{ font:400 13px -apple-system,Segoe UI,Roboto,sans-serif; color:var(--t2); line-height:1.5; margin-bottom:10px; }
+  #aboutcard .ab-list{ margin:0 0 14px; padding-left:18px; color:var(--t2); font:400 13px -apple-system,Segoe UI,Roboto,sans-serif; line-height:1.6; }
+  #aboutcard .ab-list b{ color:var(--t1); font-weight:600; }
+  #aboutcard .ab-close{ display:block; width:100%; padding:10px; border-radius:9px; border:1px solid var(--line-strong); background:linear-gradient(160deg, rgba(40,46,68,0.9), rgba(18,22,36,0.9)); color:var(--t1); font:600 14px -apple-system,sans-serif; cursor:pointer; }
+  #aboutcard .ab-quote{ font:italic 400 14px Georgia, "Times New Roman", serif; color:var(--t1); border-left:2px solid var(--accent); padding:2px 0 2px 12px; margin:2px 0 14px; line-height:1.45; }
+  #aboutcard .ab-quote span{ display:block; font:400 11.5px -apple-system,Segoe UI,Roboto,sans-serif; color:var(--t3); font-style:normal; margin-top:5px; line-height:1.5; }
+  #connbuilder{ position:fixed; inset:0; z-index:3400; display:none; align-items:center; justify-content:center; padding:20px; box-sizing:border-box; overflow:auto; background:rgba(4,6,13,0.62); -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px); }
+  #connbuilder .cb-panel{ width:min(460px,100%); margin:auto; background:linear-gradient(160deg, rgba(30,34,52,0.98), rgba(14,17,30,0.98)); border:1px solid var(--line-strong); border-radius:14px; padding:18px; box-shadow:0 20px 60px rgba(0,0,0,0.5); max-height:88vh; overflow:auto; }
+  #connbuilder .cb-title{ font:700 17px -apple-system,Segoe UI,Roboto,sans-serif; color:var(--t1); margin-bottom:6px; }
+  #connbuilder .cb-label{ font-size:12px; color:var(--t2); margin:14px 0 5px; }
+  #connbuilder .cb-row{ display:flex; gap:6px; align-items:center; }
+  #connbuilder .cb-row select{ flex:1; min-width:0; }
+  #connbuilder select, #connbuilder input[type=text], #connbuilder input:not([type]), #connbuilder textarea{ width:100%; box-sizing:border-box; background:var(--card); color:var(--t1); border:1px solid var(--line-strong); border-radius:7px; padding:7px 9px; font-size:13px; font-family:inherit; }
+  #connbuilder #cb-newtype{ border:1px solid var(--line-strong); border-radius:8px; padding:10px; margin-top:8px; }
+  #connbuilder #cb-newtype label{ display:block; margin-bottom:7px; font-size:12px; color:var(--t2); }
+  #connbuilder .cb-actions{ display:flex; gap:8px; margin-top:16px; }
+  #connbuilder .cb-actions button{ flex:1; padding:10px; border-radius:9px; border:1px solid var(--line-strong); background:linear-gradient(160deg, rgba(40,46,68,0.9), rgba(18,22,36,0.9)); color:var(--t1); font:600 14px -apple-system,sans-serif; cursor:pointer; }
+  #connbuilder #cb-create{ background:var(--accent); border-color:var(--accent); color:#fff; }
+  #connbuilder .cb-search{ position:relative; }
+  #connbuilder .cb-res{ display:none; position:absolute; left:0; right:0; top:100%; margin-top:3px; background:var(--card); border:1px solid var(--line-strong); border-radius:8px; max-height:190px; overflow:auto; z-index:5; box-shadow:0 8px 24px rgba(0,0,0,0.5); }
+  #connbuilder .cb-res-item{ padding:8px 10px; font-size:13px; color:var(--t1); cursor:pointer; border-bottom:1px solid var(--line); }
+  #connbuilder .cb-res-item:last-child{ border-bottom:none; }
+  #connbuilder .cb-res-item:active{ background:rgba(255,255,255,0.08); }
+  #connbuilder .cb-swaprow{ display:flex; justify-content:center; margin:9px 0; }
+  #connbuilder .cb-swaprow button{ font-size:12px; color:var(--t2); background:none; border:1px solid var(--line-strong); border-radius:7px; padding:5px 14px; cursor:pointer; }
+  body.launcher-active #glcanvas, body.launcher-active #hud, body.launcher-active #cards, body.launcher-active #topbar, body.launcher-active #zoomctl, body.launcher-active #spinctl, body.launcher-active #spinpad, body.launcher-active #togglefocus, body.launcher-active #promotesun, body.launcher-active #addtempnode, body.launcher-active #addtempconn, body.launcher-active #toggleconn, body.launcher-active #highlightbtn, body.launcher-active #breadcrumb, body.launcher-active #bypassls, body.launcher-active #buildtag, body.launcher-active #hllist, body.launcher-active #planetinfo, body.launcher-active #relinfo{ display:none !important; }
 </style>
 </head>
-<body>
+<body class="launcher-active">
 <canvas id="c"></canvas>
 <div id="cards"></div>
 <div id="vig"></div>
@@ -135,7 +165,7 @@
     <div id="graphtrail" style="display:none;"></div>
     <div class="bar" style="display:none;"><select id="jump" aria-label="Go to node"></select></div>
     <div class="btngroup"><span class="grouplabel">Structure</span><button id="typesbtn" type="button">Connectors</button><button id="groupsbtn" type="button">Groups</button></div>
-    <div class="btngroup"><span class="grouplabel">Graph</span><button id="newgraph" type="button">New</button><button id="load" type="button">Load</button><button id="export" type="button">Export</button><button id="exportview" type="button" style="display:none;">Export view</button><button id="example" type="button">Example</button><button id="resetview" type="button">Reset</button></div>
+    <div class="btngroup"><span class="grouplabel">Graph</span><button id="newgraph" type="button">New</button><button id="load" type="button">Load</button><button id="export" type="button">Export</button><button id="exportview" type="button" style="display:none;">Export view</button><button id="example" type="button">Example</button><button id="about" type="button">About</button><button id="resetview" type="button">Reset</button></div>
     <div id="search"><input id="q" type="text" placeholder="Search" autocomplete="off" spellcheck="false"><div id="results"></div></div>
     <select id="synth" style="display:none;"><option value="">Synthetic…</option><option>500</option><option>1000</option><option>2500</option><option>5000</option><option>10000</option></select>
     <span id="counts" style="display:none;"></span><span id="fps" style="display:none;"></span><span id="ltime" style="display:none;"></span><small id="build" style="display:none;"></small>
@@ -283,7 +313,7 @@
   <div id="relinfo-body"></div>
 </div>
 <div id="planetinfo" style="display:none; position:fixed; z-index:600; width:min(300px, calc(100vw - 40px)); max-height:38vh; overflow:auto; padding:14px 16px; border-radius:6px; box-shadow:0 12px 40px rgba(0,0,0,0.5); pointer-events:auto;"></div>
-<button id="addtempnode" type="button" title="Add a new node" style="display:none; position:fixed; bottom:16px; left:222px; z-index:900; align-items:center; justify-content:center; width:42px; height:42px; padding:0; background:var(--card); border:1px solid var(--line-strong); border-radius:50%; box-shadow:0 4px 16px rgba(0,0,0,0.4); cursor:pointer; color:var(--t2); font-size:19px; font-weight:400; line-height:1;">+</button>
+<button id="addtempnode" type="button" title="Add a new node" style="display:none; position:fixed; bottom:16px; left:222px; z-index:900; align-items:center; justify-content:center; width:42px; height:42px; padding:0; background:var(--card); border:1px solid var(--line-strong); border-radius:50%; box-shadow:0 4px 16px rgba(0,0,0,0.4); cursor:pointer; color:var(--t2); font-size:19px; font-weight:400; line-height:1;">+</button><button id="addtempconn" type="button" title="New connection" style="display:none; position:fixed; bottom:66px; left:222px; z-index:900; align-items:center; justify-content:center; width:42px; height:42px; padding:0; background:var(--card); border:1px solid var(--line-strong); border-radius:50%; box-shadow:0 4px 16px rgba(0,0,0,0.4); cursor:pointer; color:var(--t2);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="18" r="2.3"/><circle cx="18" cy="6" r="2.3"/><line x1="7.7" y1="16.3" x2="16.3" y2="7.7"/><line x1="4.6" y1="2.6" x2="4.6" y2="6.6"/><line x1="2.6" y1="4.6" x2="6.6" y2="4.6"/></svg></button>
 <div id="buildtag" style="display:none; position:fixed; bottom:64px; left:12px; z-index:900; font-size:10px; color:var(--t2); opacity:0.55; pointer-events:none; letter-spacing:0.02em; font-family:ui-monospace,SFMono-Regular,Menlo,monospace;"></div>
 <svg id="connectline" style="display:none; position:fixed; inset:0; z-index:2150; pointer-events:none; width:100%; height:100%;"><line id="connectline-l" stroke="rgba(130,200,255,0.95)" stroke-width="2.5" stroke-dasharray="6 5"></line></svg>
 <div id="connectpop" style="display:none; position:fixed; z-index:2200; background:var(--card); border:1px solid var(--line-strong); border-radius:8px; padding:10px 12px; box-shadow:0 8px 30px rgba(0,0,0,0.5); font-size:12.5px; color:#eef0f6; max-width:min(260px,90vw);">
@@ -309,7 +339,7 @@
    never touches the DOM, and all load/save goes through GraphSource. This is
    the structure the scale work (worker layout, Barnes-Hut, accounts) hangs off.
    ============================================================================= */
-const BUILD="v2-582";
+const BUILD="v2-589";
 document.getElementById("build").textContent=BUILD;
 
 /* ---- palette (name → [lightest, mid-dark, darkest, vivid]) ---- */
@@ -722,7 +752,7 @@ const PlanetGL=(()=>{
       cvs=document.createElement("canvas");
       gl=cvs.getContext("webgl2",{alpha:true,premultipliedAlpha:false,antialias:true,depth:false});
       if(!gl) return false;
-      cvs.style.cssText="position:fixed;inset:0;width:100%;height:100%;z-index:2;pointer-events:none;"; document.body.appendChild(cvs);   // render GL directly to a visible layer — Safari softens drawImage(webglCanvas) onto 2D (WebKit bug); backdrop #c is z1 below, UI #hud z950 above, pointer-events:none so touch still hits #c
+      cvs.id="glcanvas"; cvs.style.cssText="position:fixed;inset:0;width:100%;height:100%;z-index:2;pointer-events:none;"; document.body.appendChild(cvs);   // render GL directly to a visible layer — Safari softens drawImage(webglCanvas) onto 2D (WebKit bug); backdrop #c is z1 below, UI #hud z950 above, pointer-events:none so touch still hits #c
       const v=sh(gl.VERTEX_SHADER,VS), f=sh(gl.FRAGMENT_SHADER,FS); if(!v||!f) return false;
       prog=gl.createProgram(); gl.attachShader(prog,v); gl.attachShader(prog,f); gl.linkProgram(prog);
       if(!gl.getProgramParameter(prog,gl.LINK_STATUS)){ try{console.warn("PlanetGL link:",gl.getProgramInfoLog(prog));}catch(_){} return false; }
@@ -1006,6 +1036,7 @@ const Renderer=(()=>{
         ctx.globalAlpha=0.08+0.05*Math.sin(nowT*0.0008+d.ph); ctx.beginPath(); ctx.arc(dx*W,dy*H,d.r,0,7); ctx.fill(); }
       ctx.globalAlpha=1; }
 
+    if(typeof window!=="undefined"&&window._launcherOpen){ return; }   // launcher up: draw only the starfield behind it
     // project + cull (relative to the camera look-at, so fly-in can centre a node)
     let cnt=0;
     if(Focus.planetFocus>=0){ const _gp=galaxyPosNow(Focus.planetFocus); if(_gp){ view.cx=_gp.x*cg - _gp.z*sg; view.cy=_gp.y; view.cz=_gp.x*sg + _gp.z*cg; } }   // pin the look-at to where the focused planet is THIS frame, so projection isn't one frame behind
@@ -1167,7 +1198,7 @@ const Renderer=(()=>{
           { const _orb=SolarSys.orbit[i]; buf[o+15]=(_isSunI ? planetT*0.00013 : (_orb&&_orb.spin?_orb.spin:0)*planetT*0.0006); buf[o+16]=Math.max(0,Math.min(1,(proj.az[i]-dist+span)/(2*span))); }   // axial-spin angle = rate × planetary clock (frozen when motion is stopped)   // negate depth: view-z points away from camera, but the shader's surface normal z points toward it
         }
       }, nowT);
-      if(glLabels && PlanetGL.available() && PlanetGL.labelTex && Focus.mode!=="focus" && Focus.planetFocus<0 && SolarSys.isSun.length===n && view.showConnectors!==false){   // WebGL labels: neighbour names sit next to their ON-SCREEN planets. Off-screen ones aren't shown — zoom out to see them.
+      if(glLabels && PlanetGL.available() && PlanetGL.labelTex && Focus.mode!=="focus" && Focus.planetFocus<0 && SolarSys.isSun.length===n && view.showConnectors!==false && !(typeof window!=="undefined"&&window._launcherOpen)){   // WebGL labels: neighbour names sit next to their ON-SCREEN planets. Off-screen ones aren't shown — zoom out to see them.
         const _ids=Model.ids;
         const _sysA=(Focus.mode==="ego" && ec>=0 && proj.front[ec]) ? sysFade : 0;
         const items=[]; glLabelHits.length=0; const LBL_OS=2;   // oversample label textures 2x so the per-distance up-scale (fs up to 1.45x) always samples DOWN with real headroom → crisp text even at the closest zoom
@@ -1734,7 +1765,7 @@ function enterFocus(id){
   if(Focus.id!==id){ Focus.pinned={}; clearTemp(); }  // custom pins + temp nodes are per focus node
   Focus.mode="focus"; Focus.id=id; Focus.neighbours=neighboursOf(id).filter(nb=>isVisible(nb.id));
   floatControls(false); setHideUnconnected(false); hideRelInfo(); hidePlanetInfo();
-  { const at=document.getElementById("addtempnode"); if(at){ at.style.display="flex"; at.style.left="auto"; at.style.right="16px"; at.style.bottom="16px"; } }
+  { const at=document.getElementById("addtempnode"); if(at){ at.style.display="flex"; at.style.left="auto"; at.style.right="16px"; at.style.bottom="16px"; } const ac=document.getElementById("addtempconn"); if(ac){ ac.style.display="flex"; ac.style.left="auto"; ac.style.right="16px"; ac.style.bottom="66px"; } }
   // NOTE: no camera re-frame — the cards overlay the current 3D solar-system view, which stays exactly where it was
   const n=Model.count(); Focus.skip=new Uint8Array(n); Focus.skip[i]=1;
   Focus.neighbours.forEach(nb=>{ const j=Model.index(nb.id); if(j!==undefined) Focus.skip[j]=1; });
@@ -1746,7 +1777,7 @@ function exitFocus(keepCam){ { const cur = Focus.egoCenter>=0 ? Model.ids[Focus.
   Focus.mode="universe"; Focus.id=null; Focus.skip=null; Focus.layout=null; Focus.planetFocus=-1;
   Focus.egoSign={}; Focus.egoDir={}; Focus.egoRel={}; Focus.egoCenter=-1;   // leave focus — the committed sun assignment stays (consistent galaxy)
   floatControls(false); setHideUnconnected(false); hideRelInfo(); hidePlanetInfo();
-  { const at=document.getElementById("addtempnode"); if(at) at.style.display="none"; }
+  { const at=document.getElementById("addtempnode"); if(at) at.style.display="none"; const ac=document.getElementById("addtempconn"); if(ac) ac.style.display="none"; }
   clearTemp();
   { const tf=document.getElementById("togglefocus"); if(tf){ tf.style.display="flex"; tf.title="Back into the last star"; } const tc=document.getElementById("toggleconn"); if(tc){ tc.style.display="flex"; paintConnBtn(); } const bl=document.getElementById("bypassls"); if(bl){ bl.style.display=IS_ADMIN?"flex":"none"; paintBypassBtn(); } }   // galaxy + connector + test-mode buttons stay available in the galaxy view (only hidden in card mode)
   document.getElementById("cards").innerHTML=""; if(!keepCam) flyOut(); else { view.flyTarget=-1; maxZoomDist=Math.max(R*3, universeFitDist()*1.15); } syncTopbar(); }
@@ -1758,7 +1789,7 @@ function egoSpike(id){
   Focus.planetFocus=-1; Focus.cardHidden=false;
   document.getElementById("cards").innerHTML="";
   hideRelInfo();
-  { const at=document.getElementById("addtempnode"); if(at){ at.style.display="flex"; at.style.left="auto"; at.style.right="32px"; at.style.bottom="100px"; } }
+  { const at=document.getElementById("addtempnode"); if(at){ at.style.display="flex"; at.style.left="auto"; at.style.right="32px"; at.style.bottom="100px"; } const ac=document.getElementById("addtempconn"); if(ac){ ac.style.display="flex"; ac.style.left="auto"; ac.style.right="32px"; ac.style.bottom="150px"; } }
   // Ideal-home inspection: tapping a node zooms into ITS home system — the sun it belongs to and that sun's
   // planets — WITHOUT changing any assignment. (Promotion is deliberately not wired up yet.)
   const n=Model.count();
@@ -3084,6 +3115,70 @@ function doDeleteNode(){
 document.getElementById("ed-delete").onclick=doDeleteNode;
 document.getElementById("ed-close").onclick=closeEditor;
 document.getElementById("ed-set-start").onclick=()=>{ if(!editingId) return; Model.raw.start=editingId; saveRoot(); document.getElementById("ed-start-status").textContent="\u2713 start node"; };
+function openConnBuilder(){
+  let el=document.getElementById("connbuilder");
+  if(!el){ el=document.createElement("div"); el.id="connbuilder"; document.body.appendChild(el); }
+  const draft={}; let fromId=null, toId=null;
+  el.innerHTML='<div class="cb-panel"><div class="cb-title">New connection</div>'
+    +'<div class="cb-label">From node</div>'
+    +'<div class="cb-search"><input id="cb-from-q" type="text" placeholder="Search\u2026" autocomplete="off"><div id="cb-from-res" class="cb-res"></div></div>'
+    +'<div class="cb-swaprow"><button id="cb-swap" type="button" title="Swap from and to">\u21c5 swap</button></div>'
+    +'<div class="cb-label">To node</div>'
+    +'<div class="cb-search"><input id="cb-to-q" type="text" placeholder="Search\u2026" autocomplete="off"><div id="cb-to-res" class="cb-res"></div></div>'
+    +'<div class="cb-label">Connector type</div><select id="cb-type"></select>'
+    +'<div id="cb-newtype" style="display:none;"><label style="display:flex;gap:6px;align-items:center;"><input type="checkbox" id="cb-mutual" checked style="width:auto;"> mutual (no direction)</label>'
+      +'<label>Label<input id="cb-fromlabel" placeholder="e.g. mentor" autocomplete="off"></label>'
+      +'<label id="cb-towrap" style="display:none;">Reverse label<input id="cb-tolabel" placeholder="e.g. student" autocomplete="off"></label>'
+      +'<label style="display:flex;gap:6px;align-items:center;"><input type="checkbox" id="cb-dashed" style="width:auto;"> dashed line</label></div>'
+    +'<div class="cb-label">Details</div><div id="cb-details"></div>'
+    +'<div class="cb-actions"><button id="cb-cancel" type="button">Cancel</button><button id="cb-create" type="button">Create connection</button></div></div>';
+  const q=id=>el.querySelector("#"+id);
+  const wireSearch=(inp,res,set)=>{
+    const render=()=>{ res.innerHTML=""; const ql=inp.value.trim().toLowerCase();
+      if(!ql){ res.style.display="none"; return; }
+      const ms=Model.ids.filter(id=>{ const nd=Model.nodeById(id); return ((((nd&&nd.name)||id)).toLowerCase().indexOf(ql)>=0); }).slice(0,8);
+      if(!ms.length){ res.style.display="none"; return; }
+      ms.forEach(id=>{ const nd=Model.nodeById(id), nm=(nd&&nd.name)||id;
+        const d=document.createElement("div"); d.className="cb-res-item"; d.textContent=nm;
+        d.onclick=()=>{ set(id); inp.value=nm; res.innerHTML=""; res.style.display="none"; };
+        res.appendChild(d); });
+      res.style.display="block"; };
+    inp.addEventListener("input",()=>{ set(null); render(); });
+    inp.addEventListener("focus",render);
+  };
+  wireSearch(q("cb-from-q"), q("cb-from-res"), id=>fromId=id);
+  wireSearch(q("cb-to-q"), q("cb-to-res"), id=>toId=id);
+  const typeSel=q("cb-type"), types=Model.raw.types||{};
+  Object.keys(types).forEach(k=>{ const o=document.createElement("option"); o.value=k; o.textContent=typeName(k); typeSel.appendChild(o); });
+  const on=document.createElement("option"); on.value="__new"; on.textContent="+ New connector\u2026"; typeSel.appendChild(on);
+  typeSel.value=Object.keys(types)[0]||"__new";
+  const syncType=()=>{ q("cb-newtype").style.display = typeSel.value==="__new" ? "block":"none"; };
+  syncType(); typeSel.onchange=syncType;
+  const mut=q("cb-mutual"); mut.onchange=()=>{ q("cb-towrap").style.display = mut.checked ? "none":"block"; };
+  buildLinkPanel(q("cb-details"), draft);
+  q("cb-swap").onclick=()=>{ const ti=fromId; fromId=toId; toId=ti; const tv=q("cb-from-q").value; q("cb-from-q").value=q("cb-to-q").value; q("cb-to-q").value=tv; };
+  q("cb-cancel").onclick=()=>{ el.style.display="none"; };
+  el.onclick=(ev)=>{ if(ev.target===el) el.style.display="none"; };
+  q("cb-create").onclick=()=>{
+    if(!fromId||!toId){ showInfoCard("Search and pick two nodes to connect"); return; }
+    if(fromId===toId){ showInfoCard("Choose two different nodes"); return; }
+    let typeKey=typeSel.value;
+    if(typeKey==="__new"){
+      const mutual=mut.checked, fl=q("cb-fromlabel").value.trim(), tl=q("cb-tolabel").value.trim();
+      if(!fl){ showInfoCard("Give the connector a label"); return; }
+      if(!mutual && !tl){ showInfoCard("Directional connectors need a reverse label too"); return; }
+      const tps=Model.raw.types=Model.raw.types||{}; typeKey=slugKey(fl,tps);
+      tps[typeKey]= mutual ? {label:fl,mutual:true,dashed:q("cb-dashed").checked} : {fromLabel:fl,toLabel:tl,arrow:true,dashed:q("cb-dashed").checked};
+    } else if(!(Model.raw.types||{})[typeKey]){ showInfoCard("Pick a connector type"); return; }
+    draft.from=fromId; draft.to=toId; draft.type=typeKey;
+    Model.raw.links.push(draft);
+    connTopologyChanged();
+    el.style.display="none";
+  };
+  el.style.display="flex";
+}
+(function(){ const ac=document.getElementById("addtempconn"); if(ac) ac.onclick=()=>openConnBuilder(); })();
+
 document.getElementById("synth").onchange=(e)=>{ const n=+e.target.value; e.target.value=""; if(n) loadGraph(synthGraph(n)); };
 
 /* ---- render loop ---- */
@@ -3150,6 +3245,7 @@ function loadExampleNow(){ const ex=JSON.parse(JSON.stringify(DEFAULT_DATA)); gr
 let _pendingReplace=null;
 function confirmReplace(proceed){ if(!graphDirty){ proceed(); return; } _pendingReplace=proceed; const w=document.getElementById("examplewarn"); if(w) w.style.display="flex"; else proceed(); }
 document.getElementById("example").onclick=()=>{ openLauncher({examplesOnly:true, dismissable:true}); };
+document.getElementById("about").onclick=()=>openAbout();
 (function(){
   const warn=document.getElementById("examplewarn"), close=()=>{ if(warn) warn.style.display="none"; };
   const c=document.getElementById("ex-cancel"), l=document.getElementById("ex-load"), x=document.getElementById("ex-export");
@@ -3163,7 +3259,26 @@ try{ localStorage.removeItem("xanadu_devfresh"); }catch(_){}   // live build: ne
 
 // ===== Launcher: pick a prebuilt graph, resume, start new, or open a file =====
 const GRAPHS_DIR="graphs/";   // drop .json / .zip graph files here and list them in graphs/manifest.json
-function closeLauncher(){ const el=document.getElementById("launcher"); if(el) el.style.display="none"; }
+function openAbout(){
+  let el=document.getElementById("aboutcard");
+  if(!el){ el=document.createElement("div"); el.id="aboutcard"; document.body.appendChild(el); }
+  el.style.display="flex";
+  el.innerHTML='<div class="ab-panel"><div class="ab-title">About Xanadu</div>'
+    +'<div class="ab-body">Xanadu shows a subject as a galaxy of connected ideas: well-connected topics form <b>suns</b>, and their neighbours <b>orbit</b> them as planets. It is as much about the <b>connections</b> between things as the things themselves.</div>'
+    +'<div class="ab-quote">\u201CEverything is deeply intertwingled.\u201D<span>\u2014 Ted Nelson, who coined <i>intertwingularity</i>: the idea that knowledge can\u2019t be split cleanly into subjects, because everything cross-connects.</span></div>'
+    +'<ul class="ab-list">'
+    +'<li>Drag to orbit the galaxy; pinch or scroll to zoom.</li>'
+    +'<li>Tap a sun to enter its system; tap a planet to read it.</li>'
+    +'<li>On a focused planet, tap the sun icon to make it its own system.</li>'
+    +'<li>Search at the top to jump straight to anything.</li>'
+    +'<li>Use the legend to show or hide groups.</li>'
+    +'<li>Graphs: <b>New</b>, <b>Load</b> a file, <b>Export</b>, or <b>Example</b> to pick a prebuilt one.</li>'
+    +'</ul><button class="ab-close" type="button">Got it</button></div>';
+  const hide=()=>{ el.style.display="none"; };
+  el.querySelector(".ab-close").onclick=hide;
+  el.onclick=(ev)=>{ if(ev.target===el) hide(); };
+}
+function closeLauncher(){ const el=document.getElementById("launcher"); if(el) el.style.display="none"; try{ window._launcherOpen=false; document.body.classList.remove("launcher-active"); }catch(_){} }
 async function fetchGraphManifest(){
   try{ const r=await fetch(GRAPHS_DIR+"manifest.json",{cache:"no-store"});
     if(r.ok){ const j=await r.json(); const arr=Array.isArray(j)?j:(j&&Array.isArray(j.graphs)?j.graphs:[]);
@@ -3182,7 +3297,7 @@ async function fetchGraphDoc(url, name){
 function openLauncher(opts){ opts=opts||{}; const examplesOnly=!!opts.examplesOnly, dismissable=!!opts.dismissable;
   let el=document.getElementById("launcher");
   if(!el){ el=document.createElement("div"); el.id="launcher"; document.body.appendChild(el); }
-  el.style.display="flex";
+  el.style.display="flex"; try{ window._launcherOpen=true; document.body.classList.add("launcher-active"); }catch(_){}
   el.onclick=(ev)=>{ if(dismissable && ev.target===el) closeLauncher(); };
   el.innerHTML='<div class="lc-panel"><div class="lc-head">Xanadu</div><div class="lc-sub">Choose a graph to explore</div><div class="lc-list" id="lc-list"><div class="lc-loading">Loading\u2026</div></div></div>';
   const list=el.querySelector("#lc-list"), sub=el.querySelector(".lc-sub");
@@ -3204,6 +3319,7 @@ function openLauncher(opts){ opts=opts||{}; const examplesOnly=!!opts.examplesOn
       list.appendChild(card("Start a new graph", "Begin from a blank canvas.", ()=>chooseDoc({title:"Untitled graph", start:"n1", nodes:{n1:{name:"New node"}}, links:[], groups:{}, types:{}}), "action"));
       list.appendChild(card("Open a file\u2026", "Load a .json or .zip from your device.", async ()=>{ const d=await FileSource.pick(); if(d) chooseDoc(d); }, "action"));
     }
+    if(!examplesOnly){ const ab=document.createElement("button"); ab.className="lc-about"; ab.type="button"; ab.textContent="About & how to use"; ab.onclick=()=>openAbout(); list.appendChild(ab); }
     if(dismissable){ list.appendChild(card("Cancel", "", ()=>closeLauncher(), "action")); }
   };
   fetchGraphManifest().then(build).catch(()=>build([]));
