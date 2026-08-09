@@ -108,6 +108,19 @@
   #loading .lfill{height:100%;width:0;background:var(--accent);border-radius:3px;transition:width .25s ease;}
 @keyframes spin{to{transform:rotate(360deg)}}
 .vidplay{transition:transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;} .vidfacade:hover .vidplay{transform:scale(1.09); background:rgba(10,12,20,0.72); box-shadow:0 4px 18px rgba(0,0,0,0.5);}
+  #launcher{ position:fixed; inset:0; z-index:3000; display:none; align-items:center; justify-content:center; padding:24px; box-sizing:border-box; overflow:auto; background:radial-gradient(ellipse at 50% 38%, rgba(18,22,40,0.94), rgba(6,8,16,0.985)); -webkit-backdrop-filter:blur(5px); backdrop-filter:blur(5px); }
+  #launcher .lc-panel{ width:min(520px,100%); margin:auto; }
+  #launcher .lc-head{ font:700 30px -apple-system,Segoe UI,Roboto,sans-serif; color:var(--t1); text-align:center; letter-spacing:0.5px; }
+  #launcher .lc-sub{ font:400 14px -apple-system,Segoe UI,Roboto,sans-serif; color:var(--t2); text-align:center; margin:7px 0 22px; line-height:1.4; }
+  #launcher .lc-list{ display:flex; flex-direction:column; gap:10px; }
+  #launcher .lc-card{ display:block; text-align:left; width:100%; background:linear-gradient(160deg, rgba(40,46,68,0.9), rgba(14,17,30,0.9)); border:1px solid var(--line-strong); border-radius:10px; padding:14px 16px; cursor:pointer; color:var(--t1); transition:border-color .15s, transform .05s; font-family:-apple-system,Segoe UI,Roboto,sans-serif; }
+  #launcher .lc-card:hover{ border-color:rgba(150,170,220,0.6); }
+  #launcher .lc-card:active{ transform:translateY(1px); }
+  #launcher .lc-title{ font:600 16px -apple-system,Segoe UI,Roboto,sans-serif; color:var(--t1); }
+  #launcher .lc-desc{ font:400 12.5px -apple-system,Segoe UI,Roboto,sans-serif; color:var(--t2); margin-top:3px; line-height:1.4; }
+  #launcher .lc-resume{ border-color:rgba(120,180,150,0.5); background:linear-gradient(160deg, rgba(30,54,44,0.9), rgba(12,20,18,0.9)); }
+  #launcher .lc-action{ background:linear-gradient(160deg, rgba(28,32,50,0.9), rgba(11,13,22,0.9)); }
+  #launcher .lc-loading{ color:var(--t3); text-align:center; padding:20px; font:400 13px -apple-system,sans-serif; }
 </style>
 </head>
 <body>
@@ -296,7 +309,7 @@
    never touches the DOM, and all load/save goes through GraphSource. This is
    the structure the scale work (worker layout, Barnes-Hut, accounts) hangs off.
    ============================================================================= */
-const BUILD="v2-578";
+const BUILD="v2-579";
 document.getElementById("build").textContent=BUILD;
 
 /* ---- palette (name → [lightest, mid-dark, darkest, vivid]) ---- */
@@ -3146,8 +3159,55 @@ document.getElementById("example").onclick=()=>{
   if(warn) warn.addEventListener("click",e=>{ if(e.target===warn) close(); });
 })();
 try{ localStorage.removeItem("xanadu_devfresh"); }catch(_){}   // live build: never leave persistence locked off (the dev-fresh toggle could otherwise strand a graph, reverting to the example on every refresh)
+
+// ===== Launcher: pick a prebuilt graph, resume, start new, or open a file =====
+const GRAPHS_DIR="graphs/";   // drop .json / .zip graph files here and list them in graphs/manifest.json
+function closeLauncher(){ const el=document.getElementById("launcher"); if(el) el.style.display="none"; }
+async function fetchGraphManifest(){
+  try{ const r=await fetch(GRAPHS_DIR+"manifest.json",{cache:"no-store"});
+    if(r.ok){ const j=await r.json(); const arr=Array.isArray(j)?j:(j&&Array.isArray(j.graphs)?j.graphs:[]);
+      return arr.map(e=>typeof e==="string"?{file:e}:e).filter(e=>e&&e.file); } }catch(_){}
+  try{ const r=await fetch(GRAPHS_DIR,{cache:"no-store"});   // fallback: scrape a directory-listing (autoindex) server
+    if(r.ok){ const html=await r.text(), out=[], seen=new Set(), re=/href="([^"?]+\.(?:json|zip))"/gi; let m;
+      while((m=re.exec(html))){ const fn=m[1].split("/").pop(); if(fn && fn.toLowerCase()!=="manifest.json" && !seen.has(fn)){ seen.add(fn); out.push({file:fn}); } }
+      return out; } }catch(_){}
+  return [];
+}
+async function loadGraphFromUrl(url, name){
+  const r=await fetch(url,{cache:"no-store"}); if(!r.ok) throw new Error("fetch failed ("+r.status+")");
+  const blob=await r.blob(), file=new File([blob], name||url.split("/").pop()||"graph.json");
+  const doc=await parseJsonOrZip(file);
+  graphStack=[]; if(typeof exitFocus==="function") exitFocus();
+  LocalStorageSource.save(doc); loadGraph(doc); if(typeof renderGraphTrail==="function") renderGraphTrail();
+}
+function openLauncher(){
+  let el=document.getElementById("launcher");
+  if(!el){ el=document.createElement("div"); el.id="launcher"; document.body.appendChild(el); }
+  el.style.display="flex";
+  el.innerHTML='<div class="lc-panel"><div class="lc-head">Xanadu</div><div class="lc-sub">Choose a graph to explore</div><div class="lc-list" id="lc-list"><div class="lc-loading">Loading\u2026</div></div></div>';
+  const list=el.querySelector("#lc-list"), sub=el.querySelector(".lc-sub");
+  const card=(title,desc,onclick,kind)=>{ const b=document.createElement("button"); b.className="lc-card"+(kind?" lc-"+kind:""); b.innerHTML='<div class="lc-title"></div>'+(desc?'<div class="lc-desc"></div>':''); b.querySelector(".lc-title").textContent=title; if(desc) b.querySelector(".lc-desc").textContent=desc; b.onclick=onclick; return b; };
+  const chooseDoc=(doc)=>{ closeLauncher(); graphStack=[]; if(typeof exitFocus==="function") exitFocus(); LocalStorageSource.save(doc); loadGraph(doc); if(typeof renderGraphTrail==="function") renderGraphTrail(); };
+  const build=(manifest)=>{
+    list.innerHTML="";
+    let saved=null; try{ saved=LocalStorageSource.load(); }catch(_){}
+    if(saved){ list.appendChild(card("Resume your work", saved.title?("\u201C"+saved.title+"\u201D"):"your last graph", ()=>{ closeLauncher(); graphStack=[]; loadGraph(saved); if(typeof renderGraphTrail==="function") renderGraphTrail(); }, "resume")); }
+    if(manifest.length){
+      manifest.forEach(e=>{ const title=e.title||e.file.replace(/\.[a-z0-9]+$/i,"").replace(/[-_]+/g," "); const url=/^(https?:|\/)/i.test(e.file)?e.file:(GRAPHS_DIR+e.file);
+        const b=card(title, e.desc||"", async ()=>{ sub.textContent="Opening \u201C"+title+"\u201D\u2026"; sub.style.color=""; try{ await loadGraphFromUrl(url, e.file); closeLauncher(); }catch(err){ sub.textContent="Couldn't open \u201C"+title+"\u201D: "+err.message; sub.style.color="#e0a24a"; } });
+        list.appendChild(b); });
+    } else {
+      list.appendChild(card("Greek Myth", "Built-in example \u2014 gods, heroes, and monsters.", ()=>chooseDoc(JSON.parse(JSON.stringify(DEFAULT_DATA)))));
+    }
+    list.appendChild(card("Start a new graph", "Begin from a blank canvas.", ()=>chooseDoc({title:"Untitled graph", start:"n1", nodes:{n1:{name:"New node"}}, links:[], groups:{}, types:{}}), "action"));
+    list.appendChild(card("Open a file\u2026", "Load a .json or .zip from your device.", async ()=>{ const d=await FileSource.pick(); if(d) chooseDoc(d); }, "action"));
+  };
+  fetchGraphManifest().then(build).catch(()=>build([]));
+}
+
 loadGraph(LocalStorageSource.load() || DEFAULT_DATA);
-setPanelCollapsed(true);   // start minimised — keep the initial floating view clear (matches prototype)
+setPanelCollapsed(true);
+openLauncher();   // start minimised — keep the initial floating view clear (matches prototype)
 requestAnimationFrame(loop);
 </script>
 </body>
