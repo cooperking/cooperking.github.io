@@ -216,13 +216,13 @@
     </div>
   </div>
 </div>
-<div id="examplewarn" style="display:none; position:fixed; inset:0; z-index:2300; background:rgba(0,0,0,0.5); align-items:center; justify-content:center;">
+<div id="examplewarn" style="display:none; position:fixed; inset:0; z-index:3500; background:rgba(0,0,0,0.5); align-items:center; justify-content:center;">
   <div style="background:var(--card); border:1px solid var(--line-strong); border-radius:14px; padding:18px 18px 16px; box-shadow:0 20px 60px rgba(0,0,0,0.5); max-width:320px; width:84%;">
-    <div style="font-size:14px; font-weight:600; color:var(--t1); margin-bottom:6px;">Load the example?</div>
+    <div style="font-size:14px; font-weight:600; color:var(--t1); margin-bottom:6px;">Replace current graph?</div>
     <div style="font-size:12.5px; color:var(--t2); line-height:1.45; margin-bottom:14px;">This will replace the graph you're working on. You can export your current graph first so you don't lose it.</div>
     <div style="display:flex; flex-direction:column; gap:8px;">
-      <button id="ex-export" type="button" style="padding:8px 12px; text-align:left;">Export my graph, then load the example</button>
-      <button id="ex-load" type="button" style="padding:8px 12px; text-align:left;">Load the example anyway</button>
+      <button id="ex-export" type="button" style="padding:8px 12px; text-align:left;">Export my graph first, then continue</button>
+      <button id="ex-load" type="button" style="padding:8px 12px; text-align:left;">Replace it anyway</button>
       <button id="ex-cancel" type="button" style="padding:6px 12px; align-self:flex-end; margin-top:2px;">Cancel</button>
     </div>
   </div>
@@ -309,7 +309,7 @@
    never touches the DOM, and all load/save goes through GraphSource. This is
    the structure the scale work (worker layout, Barnes-Hut, accounts) hangs off.
    ============================================================================= */
-const BUILD="v2-579";
+const BUILD="v2-582";
 document.getElementById("build").textContent=BUILD;
 
 /* ---- palette (name → [lightest, mid-dark, darkest, vivid]) ---- */
@@ -1410,7 +1410,8 @@ let graphStack=[];  // nested-subgraph trail: [{doc, focusId, title}], root grap
 let tempLinks=[], broughtIn={}, tempNewNodes={};  // transient: brought-in neighbours + freshly-created nodes (never saved until connected)
 // While inside a subgraph, Model.raw is the nested doc — but it's mutated in place by reference,
 // so every persist must write the ROOT doc, which contains the whole tree.
-function saveRoot(){ LocalStorageSource.save(graphStack.length?graphStack[0].doc:Model.raw); if(Focus._updateHlBtn) Focus._updateHlBtn(); }
+let graphDirty=false;
+function saveRoot(){ graphDirty=true; LocalStorageSource.save(graphStack.length?graphStack[0].doc:Model.raw); if(Focus._updateHlBtn) Focus._updateHlBtn(); }
 
 /* Group visibility / legend — faithful to the prototype: swatch + label per group, click to show/hide,
    hidden groups dimmed + struck through, and never allow hiding every group. */
@@ -2439,7 +2440,7 @@ function promote(F, inPlace){
   buildSolarOrbits(true);   // re-lay orbits, keep the map
   SolarSys.morph=0.07;   // start the neighbour re-homing as a slow, graceful glide into orbit; eased back to normal in the camera loop
 }
-function loadGraph(doc){
+function loadGraph(doc){ graphDirty=false;
   Model.load(doc);
   if(typeof Focus!=="undefined"&&Focus&&Focus._updateHlBtn) Focus._updateHlBtn();   // reveal/hide the highlights button for whatever graph just loaded
   for(const k in hiddenGroups) delete hiddenGroups[k];   // fresh graph, fresh visibility
@@ -2536,7 +2537,7 @@ function mergeInto(data2){
   const show=()=>{ if(chooser) chooser.style.display="flex"; };
   const close=()=>{ if(chooser) chooser.style.display="none"; };
   const ln=document.getElementById("load-new"), lm=document.getElementById("load-merge"), lc=document.getElementById("load-cancel");
-  if(ln) ln.onclick=async()=>{ close(); const d=await FileSource.pick(); if(d){ graphStack=[]; LocalStorageSource.save(d); loadGraph(d); renderGraphTrail(); } };
+  if(ln) ln.onclick=async()=>{ close(); const d=await FileSource.pick(); if(d) confirmReplace(()=>{ graphStack=[]; LocalStorageSource.save(d); loadGraph(d); renderGraphTrail(); }); };
   if(lm) lm.onclick=async()=>{ close(); const d=await FileSource.pick(); if(d) mergeInto(d); };
   if(lc) lc.onclick=close;
   if(chooser) chooser.addEventListener("click",e=>{ if(e.target===chooser) close(); });
@@ -3146,17 +3147,17 @@ function graphDiffersFromExample(){
   }catch(err){ return true; }
 }
 function loadExampleNow(){ const ex=JSON.parse(JSON.stringify(DEFAULT_DATA)); graphStack=[]; LocalStorageSource.save(ex); loadGraph(ex); renderGraphTrail(); }   // loading the example replaces the saved graph, so a reload keeps the example rather than restoring the old one
-document.getElementById("example").onclick=()=>{
-  if(graphDiffersFromExample()) document.getElementById("examplewarn").style.display="flex";
-  else loadExampleNow();
-};
+let _pendingReplace=null;
+function confirmReplace(proceed){ if(!graphDirty){ proceed(); return; } _pendingReplace=proceed; const w=document.getElementById("examplewarn"); if(w) w.style.display="flex"; else proceed(); }
+document.getElementById("example").onclick=()=>{ openLauncher({examplesOnly:true, dismissable:true}); };
 (function(){
   const warn=document.getElementById("examplewarn"), close=()=>{ if(warn) warn.style.display="none"; };
   const c=document.getElementById("ex-cancel"), l=document.getElementById("ex-load"), x=document.getElementById("ex-export");
-  if(c) c.onclick=close;
-  if(l) l.onclick=()=>{ close(); loadExampleNow(); };
-  if(x) x.onclick=()=>{ close(); doExport(); loadExampleNow(); };
-  if(warn) warn.addEventListener("click",e=>{ if(e.target===warn) close(); });
+  const _go=()=>{ const p=_pendingReplace; _pendingReplace=null; close(); if(p) p(); };
+  if(c) c.onclick=()=>{ _pendingReplace=null; close(); };
+  if(l) l.onclick=_go;
+  if(x) x.onclick=()=>{ close(); doExport(); const p=_pendingReplace; _pendingReplace=null; if(p) p(); };
+  if(warn) warn.addEventListener("click",e=>{ if(e.target===warn){ _pendingReplace=null; close(); } });
 })();
 try{ localStorage.removeItem("xanadu_devfresh"); }catch(_){}   // live build: never leave persistence locked off (the dev-fresh toggle could otherwise strand a graph, reverting to the example on every refresh)
 
@@ -3173,34 +3174,37 @@ async function fetchGraphManifest(){
       return out; } }catch(_){}
   return [];
 }
-async function loadGraphFromUrl(url, name){
+async function fetchGraphDoc(url, name){
   const r=await fetch(url,{cache:"no-store"}); if(!r.ok) throw new Error("fetch failed ("+r.status+")");
   const blob=await r.blob(), file=new File([blob], name||url.split("/").pop()||"graph.json");
-  const doc=await parseJsonOrZip(file);
-  graphStack=[]; if(typeof exitFocus==="function") exitFocus();
-  LocalStorageSource.save(doc); loadGraph(doc); if(typeof renderGraphTrail==="function") renderGraphTrail();
+  return await parseJsonOrZip(file);
 }
-function openLauncher(){
+function openLauncher(opts){ opts=opts||{}; const examplesOnly=!!opts.examplesOnly, dismissable=!!opts.dismissable;
   let el=document.getElementById("launcher");
   if(!el){ el=document.createElement("div"); el.id="launcher"; document.body.appendChild(el); }
   el.style.display="flex";
+  el.onclick=(ev)=>{ if(dismissable && ev.target===el) closeLauncher(); };
   el.innerHTML='<div class="lc-panel"><div class="lc-head">Xanadu</div><div class="lc-sub">Choose a graph to explore</div><div class="lc-list" id="lc-list"><div class="lc-loading">Loading\u2026</div></div></div>';
   const list=el.querySelector("#lc-list"), sub=el.querySelector(".lc-sub");
   const card=(title,desc,onclick,kind)=>{ const b=document.createElement("button"); b.className="lc-card"+(kind?" lc-"+kind:""); b.innerHTML='<div class="lc-title"></div>'+(desc?'<div class="lc-desc"></div>':''); b.querySelector(".lc-title").textContent=title; if(desc) b.querySelector(".lc-desc").textContent=desc; b.onclick=onclick; return b; };
-  const chooseDoc=(doc)=>{ closeLauncher(); graphStack=[]; if(typeof exitFocus==="function") exitFocus(); LocalStorageSource.save(doc); loadGraph(doc); if(typeof renderGraphTrail==="function") renderGraphTrail(); };
+  const applyDoc=(doc)=>{ graphStack=[]; if(typeof exitFocus==="function") exitFocus(); LocalStorageSource.save(doc); loadGraph(doc); if(typeof renderGraphTrail==="function") renderGraphTrail(); };
+  const chooseDoc=(doc)=>{ closeLauncher(); confirmReplace(()=>applyDoc(doc)); };
   const build=(manifest)=>{
     list.innerHTML="";
     let saved=null; try{ saved=LocalStorageSource.load(); }catch(_){}
-    if(saved){ list.appendChild(card("Resume your work", saved.title?("\u201C"+saved.title+"\u201D"):"your last graph", ()=>{ closeLauncher(); graphStack=[]; loadGraph(saved); if(typeof renderGraphTrail==="function") renderGraphTrail(); }, "resume")); }
+    if(saved && !examplesOnly){ list.appendChild(card("Resume your work", saved.title?("\u201C"+saved.title+"\u201D"):"your last graph", ()=>{ closeLauncher(); graphStack=[]; loadGraph(saved); if(typeof renderGraphTrail==="function") renderGraphTrail(); }, "resume")); }
     if(manifest.length){
       manifest.forEach(e=>{ const title=e.title||e.file.replace(/\.[a-z0-9]+$/i,"").replace(/[-_]+/g," "); const url=/^(https?:|\/)/i.test(e.file)?e.file:(GRAPHS_DIR+e.file);
-        const b=card(title, e.desc||"", async ()=>{ sub.textContent="Opening \u201C"+title+"\u201D\u2026"; sub.style.color=""; try{ await loadGraphFromUrl(url, e.file); closeLauncher(); }catch(err){ sub.textContent="Couldn't open \u201C"+title+"\u201D: "+err.message; sub.style.color="#e0a24a"; } });
+        const b=card(title, e.desc||"", async ()=>{ sub.textContent="Opening \u201C"+title+"\u201D\u2026"; sub.style.color=""; try{ const doc=await fetchGraphDoc(url, e.file); closeLauncher(); confirmReplace(()=>applyDoc(doc)); }catch(err){ sub.textContent="Couldn't open \u201C"+title+"\u201D: "+err.message; sub.style.color="#e0a24a"; } });
         list.appendChild(b); });
     } else {
       list.appendChild(card("Greek Myth", "Built-in example \u2014 gods, heroes, and monsters.", ()=>chooseDoc(JSON.parse(JSON.stringify(DEFAULT_DATA)))));
     }
-    list.appendChild(card("Start a new graph", "Begin from a blank canvas.", ()=>chooseDoc({title:"Untitled graph", start:"n1", nodes:{n1:{name:"New node"}}, links:[], groups:{}, types:{}}), "action"));
-    list.appendChild(card("Open a file\u2026", "Load a .json or .zip from your device.", async ()=>{ const d=await FileSource.pick(); if(d) chooseDoc(d); }, "action"));
+    if(!examplesOnly){
+      list.appendChild(card("Start a new graph", "Begin from a blank canvas.", ()=>chooseDoc({title:"Untitled graph", start:"n1", nodes:{n1:{name:"New node"}}, links:[], groups:{}, types:{}}), "action"));
+      list.appendChild(card("Open a file\u2026", "Load a .json or .zip from your device.", async ()=>{ const d=await FileSource.pick(); if(d) chooseDoc(d); }, "action"));
+    }
+    if(dismissable){ list.appendChild(card("Cancel", "", ()=>closeLauncher(), "action")); }
   };
   fetchGraphManifest().then(build).catch(()=>build([]));
 }
