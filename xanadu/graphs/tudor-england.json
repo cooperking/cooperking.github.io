@@ -1,0 +1,2185 @@
+{
+  "title": "Tudor and Elizabethan England",
+  "start": "elizabeth_i",
+  "groups": {
+    "monarch": {
+      "label": "Tudor Monarchs",
+      "color": "gold"
+    },
+    "royal": {
+      "label": "Royal Kin & Consorts",
+      "color": "rose"
+    },
+    "statesman": {
+      "label": "Ministers & Statesmen",
+      "color": "blue"
+    },
+    "courtier": {
+      "label": "Courtiers & Nobles",
+      "color": "purple"
+    },
+    "military": {
+      "label": "Soldiers & Seafarers",
+      "color": "teal"
+    },
+    "church": {
+      "label": "Clergy & Reformers",
+      "color": "indigo"
+    },
+    "arts": {
+      "label": "Writers, Players & Musicians",
+      "color": "coral"
+    },
+    "thinker": {
+      "label": "Scholars & Projectors",
+      "color": "cyan"
+    },
+    "foreign": {
+      "label": "Foreign Powers",
+      "color": "red"
+    },
+    "event": {
+      "label": "Events & Crises",
+      "color": "amber"
+    },
+    "place": {
+      "label": "Places",
+      "color": "green"
+    },
+    "work": {
+      "label": "Works & Documents",
+      "color": "slate"
+    }
+  },
+  "types": {
+    "parent": {
+      "fromLabel": "parent",
+      "toLabel": "child",
+      "arrow": true
+    },
+    "sibling": {
+      "label": "sibling",
+      "mutual": true
+    },
+    "married": {
+      "label": "married to",
+      "mutual": true
+    },
+    "descent": {
+      "fromLabel": "ancestor",
+      "toLabel": "descendant",
+      "arrow": true
+    },
+    "succeeded": {
+      "fromLabel": "predecessor",
+      "toLabel": "successor",
+      "arrow": true
+    },
+    "served": {
+      "fromLabel": "servant",
+      "toLabel": "sovereign",
+      "arrow": true
+    },
+    "patron": {
+      "fromLabel": "patron",
+      "toLabel": "client",
+      "arrow": true
+    },
+    "tutor": {
+      "fromLabel": "tutor",
+      "toLabel": "pupil",
+      "arrow": true
+    },
+    "wrote": {
+      "fromLabel": "author",
+      "toLabel": "work",
+      "arrow": true
+    },
+    "enacted": {
+      "fromLabel": "authority",
+      "toLabel": "measure",
+      "arrow": true
+    },
+    "commanded": {
+      "fromLabel": "commander",
+      "toLabel": "undertaking",
+      "arrow": true
+    },
+    "involved": {
+      "fromLabel": "participant",
+      "toLabel": "episode",
+      "arrow": true
+    },
+    "seat": {
+      "fromLabel": "occupant",
+      "toLabel": "seat",
+      "arrow": true
+    },
+    "imprisoned": {
+      "fromLabel": "prisoner",
+      "toLabel": "place of confinement",
+      "arrow": true,
+      "dashed": true
+    },
+    "condemned": {
+      "fromLabel": "condemner",
+      "toLabel": "condemned",
+      "arrow": true,
+      "dashed": true
+    },
+    "rival": {
+      "label": "rival",
+      "mutual": true,
+      "dashed": true
+    },
+    "ally": {
+      "label": "ally",
+      "mutual": true
+    },
+    "attachment": {
+      "label": "attachment",
+      "mutual": true,
+      "dashed": true
+    }
+  },
+  "nodes": {
+    "henry_vii": {
+      "name": "Henry VII",
+      "group": "monarch",
+      "desc": "Founder of the Tudor dynasty, who took the throne after defeating Richard III at Bosworth in 1485.\n\nHe restored royal finances through bonds, recognisances and fines, and used his children's marriages to secure alliances with Spain and Scotland.",
+      "url": "https://en.wikipedia.org/wiki/Henry_VII_of_England"
+    },
+    "henry_viii": {
+      "name": "Henry VIII",
+      "group": "monarch",
+      "desc": "King from 1509, who broke with papal authority in order to annul his first marriage and was declared Supreme Head of the Church of England.\n\nHis six marriages, the dissolution of the monasteries and the associated legislation reshaped English religion, landholding and law.",
+      "url": "https://en.wikipedia.org/wiki/Henry_VIII",
+      "highlight": true
+    },
+    "edward_vi": {
+      "name": "Edward VI",
+      "group": "monarch",
+      "desc": "Henry VIII's only surviving legitimate son, who came to the throne at nine and died at fifteen.\n\nHis minority was governed by two successive regimes, under which the English Church adopted the reformed doctrine of the Books of Common Prayer.",
+      "url": "https://en.wikipedia.org/wiki/Edward_VI"
+    },
+    "mary_i": {
+      "name": "Mary I",
+      "group": "monarch",
+      "desc": "Daughter of Henry VIII and Catherine of Aragon, who reversed her brother's religious settlement and restored papal authority in England.\n\nHer marriage to Philip II of Spain was widely unpopular, and the execution of around 280 Protestants for heresy dominated later accounts of her reign.",
+      "url": "https://en.wikipedia.org/wiki/Mary_I_of_England",
+      "highlight": true
+    },
+    "elizabeth_i": {
+      "name": "Elizabeth I",
+      "group": "monarch",
+      "desc": "The last Tudor monarch, who reigned for forty-five years and never married, maintaining a religious settlement between Catholic and reformed positions.\n\nHer reign saw the defeat of the Spanish Armada, the execution of Mary, Queen of Scots, and a period of sustained activity in drama and overseas venture.",
+      "url": "https://en.wikipedia.org/wiki/Elizabeth_I",
+      "highlight": true
+    },
+    "jane_grey": {
+      "name": "Lady Jane Grey",
+      "group": "monarch",
+      "desc": "Great-granddaughter of Henry VII, proclaimed queen in July 1553 under a scheme by the Duke of Northumberland to preserve a Protestant succession.\n\nSupport collapsed within nine days in favour of Mary I, and Jane was executed in the Tower the following February.",
+      "url": "https://en.wikipedia.org/wiki/Lady_Jane_Grey"
+    },
+    "james_vi_i": {
+      "name": "James VI and I",
+      "group": "monarch",
+      "desc": "King of Scots from infancy and, from 1603, the first Stuart king of England.\n\nHis accession united the two crowns and ended the Tudor line; his claim rested on descent from Henry VII through Margaret Tudor.",
+      "url": "https://en.wikipedia.org/wiki/James_VI_and_I"
+    },
+    "elizabeth_of_york": {
+      "name": "Elizabeth of York",
+      "group": "royal",
+      "desc": "Daughter of Edward IV, whose marriage to Henry VII in 1486 joined the Yorkist and Lancastrian claims and strengthened the legitimacy of the new dynasty.\n\nShe was the mother of Arthur, Henry VIII, Margaret and Mary, and died shortly after childbirth in 1503.",
+      "url": "https://en.wikipedia.org/wiki/Elizabeth_of_York"
+    },
+    "margaret_beaufort": {
+      "name": "Margaret Beaufort",
+      "group": "royal",
+      "desc": "Henry VII's mother, whose Beaufort descent carried the Lancastrian claim that her son advanced in 1485.\n\nShe was involved in the negotiations that preceded Bosworth and later endowed professorships and colleges at Oxford and Cambridge.",
+      "url": "https://en.wikipedia.org/wiki/Lady_Margaret_Beaufort"
+    },
+    "arthur_tudor": {
+      "name": "Arthur, Prince of Wales",
+      "group": "royal",
+      "desc": "Henry VII's eldest son and Prince of Wales, married to Catherine of Aragon in November 1501 to seal the alliance with Spain.\n\nHe died at Ludlow the following April, and the question of whether the marriage had been consummated later became central to Henry VIII's case for annulment.",
+      "url": "https://en.wikipedia.org/wiki/Arthur,_Prince_of_Wales"
+    },
+    "margaret_tudor": {
+      "name": "Margaret Tudor",
+      "group": "royal",
+      "desc": "Henry VII's elder daughter, married to James IV of Scotland in 1503 under a treaty intended to settle the northern border.\n\nHer descendants included Mary, Queen of Scots and James VI, through whom the Stuart line inherited the English throne.",
+      "url": "https://en.wikipedia.org/wiki/Margaret_Tudor"
+    },
+    "catherine_of_aragon": {
+      "name": "Catherine of Aragon",
+      "group": "royal",
+      "desc": "Daughter of Ferdinand and Isabella, widow of Arthur, and queen to Henry VIII for twenty-four years; mother of Mary I.\n\nHer refusal to accept the annulment prolonged the case for six years and contributed directly to the break with Rome.",
+      "url": "https://en.wikipedia.org/wiki/Catherine_of_Aragon",
+      "highlight": true
+    },
+    "anne_boleyn": {
+      "name": "Anne Boleyn",
+      "group": "royal",
+      "desc": "Queen to Henry VIII from 1533 and mother of Elizabeth I, associated with evangelical reform at court.\n\nShe was tried and executed in May 1536 on charges of adultery and treason that historians now generally regard as unfounded.",
+      "url": "https://en.wikipedia.org/wiki/Anne_Boleyn",
+      "highlight": true
+    },
+    "jane_seymour": {
+      "name": "Jane Seymour",
+      "group": "royal",
+      "desc": "Henry VIII's third queen, married in 1536, and the only one of his wives to bear a son who survived infancy.\n\nShe died of complications following Edward's birth in October 1537, and Henry was later buried beside her.",
+      "url": "https://en.wikipedia.org/wiki/Jane_Seymour"
+    },
+    "anne_of_cleves": {
+      "name": "Anne of Cleves",
+      "group": "royal",
+      "desc": "German princess married to Henry VIII in January 1540 as part of a proposed alliance with the Protestant German states.\n\nHenry sought an annulment almost at once; she accepted the settlement, was granted estates and the style of the King's Sister, and outlived his other wives.",
+      "url": "https://en.wikipedia.org/wiki/Anne_of_Cleves"
+    },
+    "catherine_howard": {
+      "name": "Catherine Howard",
+      "group": "royal",
+      "desc": "Niece of the Duke of Norfolk, married to Henry VIII in July 1540 when she was probably about seventeen.\n\nAllegations concerning her conduct before and during the marriage led to an act of attainder and her execution in February 1542.",
+      "url": "https://en.wikipedia.org/wiki/Catherine_Howard"
+    },
+    "catherine_parr": {
+      "name": "Catherine Parr",
+      "group": "royal",
+      "desc": "Henry VIII's sixth queen, a twice-widowed noblewoman of evangelical sympathies who acted as regent during his French campaign of 1544.\n\nShe published devotional works under her own name, the first English queen to do so, and brought Mary and Elizabeth back into the royal household.",
+      "url": "https://en.wikipedia.org/wiki/Catherine_Parr"
+    },
+    "mary_queen_scots": {
+      "name": "Mary, Queen of Scots",
+      "group": "royal",
+      "desc": "Queen of Scots from the age of six days and briefly queen consort of France, and the senior Catholic claimant to the English throne.\n\nDeposed in Scotland in 1567, she spent nineteen years in English custody and was executed in 1587 after being implicated in the Babington plot.",
+      "url": "https://en.wikipedia.org/wiki/Mary,_Queen_of_Scots",
+      "highlight": true
+    },
+    "thomas_wolsey": {
+      "name": "Thomas Wolsey",
+      "group": "statesman",
+      "desc": "The son of an Ipswich tradesman, who rose to become cardinal, papal legate and Lord Chancellor, directing English government and diplomacy for some fifteen years.\n\nHis failure to secure the annulment of Henry VIII's first marriage ended his career in 1529.",
+      "url": "https://en.wikipedia.org/wiki/Thomas_Wolsey",
+      "highlight": true
+    },
+    "thomas_cromwell": {
+      "name": "Thomas Cromwell",
+      "group": "statesman",
+      "desc": "Henry VIII's chief minister from the early 1530s and the principal architect of the royal supremacy, the dissolution of the monasteries and a reorganised administration.\n\nThe failure of the Cleves marriage and opposition from conservative peers led to his attainder and execution in 1540.",
+      "url": "https://en.wikipedia.org/wiki/Thomas_Cromwell",
+      "highlight": true
+    },
+    "thomas_more": {
+      "name": "Thomas More",
+      "group": "statesman",
+      "desc": "Humanist scholar, author of Utopia, and Lord Chancellor from 1529, who resigned in 1532 rather than endorse the king's supremacy over the Church.\n\nHe declined to swear the oath of succession, was convicted of treason and executed in July 1535.",
+      "url": "https://en.wikipedia.org/wiki/Thomas_More"
+    },
+    "william_cecil": {
+      "name": "William Cecil, Lord Burghley",
+      "group": "statesman",
+      "desc": "Created Lord Burghley in 1571, he served Elizabeth I as Secretary and then Lord Treasurer for forty years and was the central figure in her administration.\n\nHe worked consistently for the Protestant settlement and pressed for proceedings against Mary, Queen of Scots.",
+      "url": "https://en.wikipedia.org/wiki/William_Cecil,_1st_Baron_Burghley",
+      "highlight": true
+    },
+    "robert_cecil": {
+      "name": "Robert Cecil",
+      "group": "statesman",
+      "desc": "Burghley's younger son, trained in government from an early age, who succeeded to his father's role as Secretary and dominated the last years of the reign.\n\nHe managed the correspondence that secured James VI's peaceful accession in 1603.",
+      "url": "https://en.wikipedia.org/wiki/Robert_Cecil,_1st_Earl_of_Salisbury"
+    },
+    "francis_walsingham": {
+      "name": "Francis Walsingham",
+      "group": "statesman",
+      "desc": "Elizabeth I's Principal Secretary from 1573 and the organiser of an intelligence network across Europe.\n\nHe argued for a more assertive Protestant foreign policy than the queen would authorise and funded much of his intelligence work himself, dying heavily in debt.",
+      "url": "https://en.wikipedia.org/wiki/Francis_Walsingham"
+    },
+    "edward_seymour": {
+      "name": "Edward Seymour, Duke of Somerset",
+      "group": "statesman",
+      "desc": "Edward VI's elder uncle, created Duke of Somerset and Lord Protector in 1547, who advanced Protestant reform and pursued a costly war with Scotland.\n\nWidespread rebellion in 1549 and opposition within the Council led to his removal and, in 1552, his execution.",
+      "url": "https://en.wikipedia.org/wiki/Edward_Seymour,_1st_Duke_of_Somerset"
+    },
+    "john_dudley": {
+      "name": "John Dudley, Duke of Northumberland",
+      "group": "statesman",
+      "desc": "Created Duke of Northumberland, he displaced Somerset in 1549 and governed for Edward VI as Lord President of the Council.\n\nHe married his son to Jane Grey and supported the attempt to divert the succession from Mary I, for which he was executed in 1553.",
+      "url": "https://en.wikipedia.org/wiki/John_Dudley,_1st_Duke_of_Northumberland"
+    },
+    "christopher_hatton": {
+      "name": "Christopher Hatton",
+      "group": "statesman",
+      "desc": "A courtier who first came to Elizabeth's notice in the 1560s, reportedly through his dancing, and rose to become Lord Chancellor in 1587.\n\nHe managed crown business in the Commons and invested in Drake's circumnavigation.",
+      "url": "https://en.wikipedia.org/wiki/Christopher_Hatton"
+    },
+    "francis_bacon": {
+      "name": "Francis Bacon",
+      "group": "statesman",
+      "desc": "Lawyer, member of parliament and essayist, and an advocate of a new experimental method in natural philosophy.\n\nHe sought office under Elizabeth with limited success, appeared for the crown at the trial of his former patron Essex, and rose to high office under James I.",
+      "url": "https://en.wikipedia.org/wiki/Francis_Bacon"
+    },
+    "robert_dudley": {
+      "name": "Robert Dudley, Earl of Leicester",
+      "group": "courtier",
+      "desc": "Created Earl of Leicester in 1564, he was Elizabeth I's closest courtier from her accession and a candidate for marriage to her in the early 1560s.\n\nHe commanded the English expedition to the Netherlands in 1585 and the land forces assembled at Tilbury in 1588.",
+      "url": "https://en.wikipedia.org/wiki/Robert_Dudley,_1st_Earl_of_Leicester",
+      "highlight": true
+    },
+    "robert_devereux": {
+      "name": "Robert Devereux, Earl of Essex",
+      "group": "courtier",
+      "desc": "Second Earl of Essex, stepson of Leicester and a leading figure at court from the late 1580s.\n\nPopular but frequently at odds with the queen and Council, he was appointed to command in Ireland in 1599, returned without leave, and was executed after an attempted rising in 1601.",
+      "url": "https://en.wikipedia.org/wiki/Robert_Devereux,_2nd_Earl_of_Essex",
+      "highlight": true
+    },
+    "walter_raleigh": {
+      "name": "Walter Raleigh",
+      "group": "courtier",
+      "desc": "Soldier, courtier, poet and promoter of colonisation, who held the queen's favour through the 1580s and lost it after a secret marriage in 1592.\n\nHe organised the Virginia voyages and later expeditions to Guiana, and wrote his History of the World while imprisoned under James I.",
+      "url": "https://en.wikipedia.org/wiki/Walter_Raleigh",
+      "highlight": true
+    },
+    "philip_sidney": {
+      "name": "Philip Sidney",
+      "group": "courtier",
+      "desc": "Courtier, soldier and writer, author of Astrophil and Stella, the Arcadia and the Defence of Poesy.\n\nHe was wounded at Zutphen in September 1586 and died at Arnhem some weeks later; his funeral became a major public occasion.",
+      "url": "https://en.wikipedia.org/wiki/Philip_Sidney"
+    },
+    "charles_brandon": {
+      "name": "Charles Brandon, Duke of Suffolk",
+      "group": "courtier",
+      "desc": "Created Duke of Suffolk in 1514, he was Henry VIII's companion in the tiltyard and one of his closest associates for thirty years.\n\nHe married the king's sister Mary in 1515 without permission and was fined rather than punished, and later commanded against the northern rebels.",
+      "url": "https://en.wikipedia.org/wiki/Charles_Brandon,_1st_Duke_of_Suffolk"
+    },
+    "thomas_howard_norfolk3": {
+      "name": "Thomas Howard, 3rd Duke of Norfolk",
+      "group": "courtier",
+      "desc": "Third Duke of Norfolk, the leading conservative peer of Henry VIII's reign and uncle to two of the king's queens.\n\nHe commanded against the Pilgrimage of Grace and took part in the proceedings against Cromwell; condemned for treason in January 1547, he escaped execution because the king died the night before.",
+      "url": "https://en.wikipedia.org/wiki/Thomas_Howard,_3rd_Duke_of_Norfolk"
+    },
+    "thomas_howard_norfolk4": {
+      "name": "Thomas Howard, 4th Duke of Norfolk",
+      "group": "courtier",
+      "desc": "Fourth Duke of Norfolk and the only duke in England under Elizabeth I, raised as a Protestant.\n\nHe was drawn into proposals to marry Mary, Queen of Scots and then into the Ridolfi plot, and was executed in June 1572.",
+      "url": "https://en.wikipedia.org/wiki/Thomas_Howard,_4th_Duke_of_Norfolk"
+    },
+    "bess_of_hardwick": {
+      "name": "Bess of Hardwick",
+      "group": "courtier",
+      "desc": "Married four times, she accumulated one of the largest private fortunes in Elizabethan England and built Hardwick Hall.\n\nHer fourth husband, the Earl of Shrewsbury, was for fifteen years the custodian of Mary, Queen of Scots, and her granddaughter Arbella Stuart had a claim to the throne.",
+      "url": "https://en.wikipedia.org/wiki/Bess_of_Hardwick"
+    },
+    "lettice_knollys": {
+      "name": "Lettice Knollys",
+      "group": "courtier",
+      "desc": "A cousin of Elizabeth I through the Boleyn line, mother of the Earl of Essex, and from 1578 the second wife of the Earl of Leicester.\n\nThe marriage was made without the queen's knowledge, and Lettice was excluded from court thereafter.",
+      "url": "https://en.wikipedia.org/wiki/Lettice_Knollys"
+    },
+    "thomas_seymour": {
+      "name": "Thomas Seymour",
+      "group": "courtier",
+      "desc": "Edward VI's younger uncle, created Lord Admiral, who married the widowed Catherine Parr in 1547.\n\nHis conduct toward the young Elizabeth, then living in his household, became the subject of a formal enquiry; he was attainted for intriguing against his brother and executed in 1549.",
+      "url": "https://en.wikipedia.org/wiki/Thomas_Seymour,_1st_Baron_Seymour_of_Sudeley"
+    },
+    "francis_drake": {
+      "name": "Francis Drake",
+      "group": "military",
+      "desc": "The first English commander to complete a circumnavigation of the globe, between 1577 and 1580, and vice-admiral of the fleet against the Armada.\n\nHis raids on Spanish ports and shipping made him celebrated in England and regarded in Spain as a pirate.",
+      "url": "https://en.wikipedia.org/wiki/Francis_Drake",
+      "highlight": true
+    },
+    "john_hawkins": {
+      "name": "John Hawkins",
+      "group": "military",
+      "desc": "Sea captain and, from 1577, Treasurer of the Navy, who commanded the first English slaving voyages to West Africa and the Caribbean in the 1560s.\n\nAs Treasurer he oversaw the rebuilding of the fleet as faster race-built galleons, the ships that fought the Armada campaign.",
+      "url": "https://en.wikipedia.org/wiki/John_Hawkins_(naval_commander)",
+      "highlight": true
+    },
+    "martin_frobisher": {
+      "name": "Martin Frobisher",
+      "group": "military",
+      "desc": "Commander of three voyages in search of a North-West Passage between 1576 and 1578; the ore he brought back from Baffin Island proved worthless.\n\nHe commanded the Triumph against the Armada and was knighted at sea during the campaign.",
+      "url": "https://en.wikipedia.org/wiki/Martin_Frobisher"
+    },
+    "richard_grenville": {
+      "name": "Richard Grenville",
+      "group": "military",
+      "desc": "A Cornish landowner and cousin of Raleigh, who commanded the fleet that carried the first Roanoke colonists in 1585.\n\nIn 1591 his ship the Revenge was cut off by a Spanish squadron off the Azores; after a prolonged engagement she was taken and Grenville died of his wounds.",
+      "url": "https://en.wikipedia.org/wiki/Richard_Grenville"
+    },
+    "charles_howard_effingham": {
+      "name": "Charles Howard of Effingham",
+      "group": "military",
+      "desc": "Lord Admiral from 1585 and commander-in-chief of the English fleet against the Armada, later created Earl of Nottingham.\n\nA cousin of the queen, he held together a fleet of independent-minded captains and authorised the fireship attack off Calais.",
+      "url": "https://en.wikipedia.org/wiki/Charles_Howard,_1st_Earl_of_Nottingham",
+      "highlight": true
+    },
+    "humphrey_gilbert": {
+      "name": "Humphrey Gilbert",
+      "group": "military",
+      "desc": "Half-brother of Raleigh, soldier in Ireland and author of a discourse arguing for a North-West Passage to Asia.\n\nHe took possession of Newfoundland for the crown in August 1583 and was lost with his ship on the return voyage.",
+      "url": "https://en.wikipedia.org/wiki/Humphrey_Gilbert"
+    },
+    "john_norreys": {
+      "name": "John Norreys",
+      "group": "military",
+      "desc": "One of the most experienced English field commanders of the reign, serving in the Netherlands, Portugal, Brittany and Ireland.\n\nHe was closely associated with the development of a professional English infantry capable of facing Spanish forces.",
+      "url": "https://en.wikipedia.org/wiki/John_Norreys"
+    },
+    "francis_vere": {
+      "name": "Francis Vere",
+      "group": "military",
+      "desc": "Commander of the English forces in Dutch service, notable for the field of Nieuwpoort in 1600 and the defence of Ostend.\n\nHis campaigns supported the Dutch revolt and occupied a substantial part of Spain's army in the Netherlands.",
+      "url": "https://en.wikipedia.org/wiki/Francis_Vere"
+    },
+    "thomas_cranmer": {
+      "name": "Thomas Cranmer",
+      "group": "church",
+      "desc": "Archbishop of Canterbury from 1533, who pronounced the annulment of Henry VIII's first marriage and compiled the English liturgy.\n\nDeprived under Mary I, he signed several recantations and repudiated them at his execution in March 1556.",
+      "url": "https://en.wikipedia.org/wiki/Thomas_Cranmer",
+      "highlight": true
+    },
+    "reginald_pole": {
+      "name": "Reginald Pole",
+      "group": "church",
+      "desc": "A cousin of Henry VIII through the Plantagenet line, who wrote against the royal supremacy from exile and was made a cardinal; several of his family were executed in England.\n\nHe returned in 1554 as papal legate and became Mary I's Archbishop of Canterbury.",
+      "url": "https://en.wikipedia.org/wiki/Reginald_Pole"
+    },
+    "stephen_gardiner": {
+      "name": "Stephen Gardiner",
+      "group": "church",
+      "desc": "Bishop of Winchester, conservative in doctrine but a defender of royal supremacy, who was deprived and imprisoned under Edward VI.\n\nRestored by Mary I and made Lord Chancellor, he oversaw the repeal of the Edwardian religious legislation.",
+      "url": "https://en.wikipedia.org/wiki/Stephen_Gardiner"
+    },
+    "hugh_latimer": {
+      "name": "Hugh Latimer",
+      "group": "church",
+      "desc": "A prominent preacher of the English Reformation, Bishop of Worcester under Henry VIII, and a critic of enclosure and of clerical wealth.\n\nHe was burned at Oxford with Ridley on 16 October 1555; Foxe records his words to Ridley about lighting a candle that would not be put out.",
+      "url": "https://en.wikipedia.org/wiki/Hugh_Latimer"
+    },
+    "nicholas_ridley": {
+      "name": "Nicholas Ridley",
+      "group": "church",
+      "desc": "Bishop of London under Edward VI and a leading figure in the reform of doctrine and worship in that reign.\n\nHe preached in support of Jane Grey's title in 1553 and was burned at Oxford alongside Latimer in 1555.",
+      "url": "https://en.wikipedia.org/wiki/Nicholas_Ridley_(martyr)"
+    },
+    "john_foxe": {
+      "name": "John Foxe",
+      "group": "church",
+      "desc": "A Protestant exile during Mary I's reign, author of Acts and Monuments, a history of the Church centred on accounts of Protestant martyrs.\n\nThe work was published in English in 1563 and revised through four editions in his lifetime.",
+      "url": "https://en.wikipedia.org/wiki/John_Foxe",
+      "highlight": true
+    },
+    "matthew_parker": {
+      "name": "Matthew Parker",
+      "group": "church",
+      "desc": "Elizabeth I's first Archbishop of Canterbury, consecrated in 1559, and a moderate scholar who gave the religious settlement its working form.\n\nHe oversaw the Thirty-Nine Articles and the Bishops' Bible and assembled a major collection of medieval English manuscripts.",
+      "url": "https://en.wikipedia.org/wiki/Matthew_Parker"
+    },
+    "john_whitgift": {
+      "name": "John Whitgift",
+      "group": "church",
+      "desc": "Archbishop of Canterbury from 1583, who enforced conformity to the Prayer Book through subscription articles and the Court of High Commission.\n\nSeveral hundred ministers were suspended under his campaign against Puritan nonconformity.",
+      "url": "https://en.wikipedia.org/wiki/John_Whitgift"
+    },
+    "edmund_campion": {
+      "name": "Edmund Campion",
+      "group": "church",
+      "desc": "A noted Oxford scholar who joined the Society of Jesus and returned to England in 1580 on the Jesuit mission to English Catholics.\n\nHe was captured at Lyford Grange in 1581, examined under torture, and executed at Tyburn on 1 December that year.",
+      "url": "https://en.wikipedia.org/wiki/Edmund_Campion",
+      "highlight": true
+    },
+    "william_shakespeare": {
+      "name": "William Shakespeare",
+      "group": "arts",
+      "desc": "Actor, playwright and shareholder in the Lord Chamberlain's Men, the company that built the Globe in 1599.\n\nHis histories, comedies and tragedies were written for the commercial playhouses and were collected after his death in the First Folio of 1623.",
+      "url": "https://en.wikipedia.org/wiki/William_Shakespeare",
+      "highlight": true
+    },
+    "christopher_marlowe": {
+      "name": "Christopher Marlowe",
+      "group": "arts",
+      "desc": "Cambridge graduate and playwright whose blank verse shaped the Elizabethan stage, author of Tamburlaine, The Jew of Malta and Doctor Faustus.\n\nHe was killed in a lodging house at Deptford in May 1593, at twenty-nine, in disputed circumstances.",
+      "url": "https://en.wikipedia.org/wiki/Christopher_Marlowe",
+      "highlight": true
+    },
+    "edmund_spenser": {
+      "name": "Edmund Spenser",
+      "group": "arts",
+      "desc": "Poet and colonial official, author of The Shepheardes Calender and The Faerie Queene, written largely from his estate in Munster.\n\nHis verse combined Arthurian romance, Protestant politics and a deliberately archaic English vocabulary.",
+      "url": "https://en.wikipedia.org/wiki/Edmund_Spenser",
+      "highlight": true
+    },
+    "ben_jonson": {
+      "name": "Ben Jonson",
+      "group": "arts",
+      "desc": "Playwright, poet and critic, author of Volpone and The Alchemist and of masques written for the Jacobean court.\n\nHe published his own plays in 1616 as Works, an unusual claim at the time for the literary standing of drama.",
+      "url": "https://en.wikipedia.org/wiki/Ben_Jonson"
+    },
+    "john_lyly": {
+      "name": "John Lyly",
+      "group": "arts",
+      "desc": "Author of Euphues, whose ornate prose style was widely imitated at court, and of comedies written for the boys' companies.\n\nHis patterned dialogue was an important influence on later Elizabethan comedy.",
+      "url": "https://en.wikipedia.org/wiki/John_Lyly"
+    },
+    "richard_burbage": {
+      "name": "Richard Burbage",
+      "group": "arts",
+      "desc": "The leading tragedian of the Chamberlain's and King's Men, and the first player of Hamlet, Lear and Othello.\n\nHis father James had built the Theatre in Shoreditch, whose timbers were reused for the Globe in 1599.",
+      "url": "https://en.wikipedia.org/wiki/Richard_Burbage"
+    },
+    "edward_alleyn": {
+      "name": "Edward Alleyn",
+      "group": "arts",
+      "desc": "A leading tragedian of the period, associated with Marlowe's principal roles and with the Admiral's Men.\n\nHe prospered from playhouse and bear-baiting interests and founded the College of God's Gift at Dulwich in 1619.",
+      "url": "https://en.wikipedia.org/wiki/Edward_Alleyn"
+    },
+    "philip_henslowe": {
+      "name": "Philip Henslowe",
+      "group": "arts",
+      "desc": "Theatre owner and financier, builder of the Rose in 1587 and backer of the Admiral's Men.\n\nHis surviving accounts and papers are among the fullest records of how the Elizabethan theatre business operated.",
+      "url": "https://en.wikipedia.org/wiki/Philip_Henslowe"
+    },
+    "thomas_wyatt": {
+      "name": "Thomas Wyatt",
+      "group": "arts",
+      "desc": "Courtier and diplomat who served Henry VIII as ambassador, and among the first to adapt the Italian sonnet into English.\n\nHe was imprisoned in the Tower twice, and his poems reflect on the hazards of life at court.",
+      "url": "https://en.wikipedia.org/wiki/Thomas_Wyatt_(poet)"
+    },
+    "william_byrd": {
+      "name": "William Byrd",
+      "group": "arts",
+      "desc": "A leading composer of the period and a Gentleman of the Chapel Royal, who held a royal patent for printing music, granted jointly with Thomas Tallis in 1575.\n\nHe wrote for the Anglican rite while remaining a Catholic, and composed Latin masses for private recusant use.",
+      "url": "https://en.wikipedia.org/wiki/William_Byrd"
+    },
+    "john_dee": {
+      "name": "John Dee",
+      "group": "thinker",
+      "desc": "Mathematician, astrologer and adviser on navigation, who selected an auspicious date for Elizabeth's coronation and instructed English pilots.\n\nHe argued for an English claim to territory in the north Atlantic and devoted his later years to attempts at communication with angels through a scryer.",
+      "url": "https://en.wikipedia.org/wiki/John_Dee"
+    },
+    "thomas_gresham": {
+      "name": "Thomas Gresham",
+      "group": "thinker",
+      "desc": "Crown financial agent in Antwerp, who managed royal borrowing and advised on the recoinage, and founded the Royal Exchange in London in 1571.\n\nHis correspondence with Cecil is a detailed record of sixteenth-century credit and currency.",
+      "url": "https://en.wikipedia.org/wiki/Thomas_Gresham",
+      "highlight": true
+    },
+    "nicholas_hilliard": {
+      "name": "Nicholas Hilliard",
+      "group": "thinker",
+      "desc": "Goldsmith and limner to Elizabeth I, and the leading English painter of portrait miniatures.\n\nHis images of the queen and her courtiers established many of the conventions by which the reign was depicted.",
+      "url": "https://en.wikipedia.org/wiki/Nicholas_Hilliard"
+    },
+    "richard_hakluyt": {
+      "name": "Richard Hakluyt",
+      "group": "thinker",
+      "desc": "Clergyman and geographer who collected and edited accounts of English voyages in The Principal Navigations, published from 1589.\n\nHe argued in his Discourse of Western Planting for English colonisation in North America.",
+      "url": "https://en.wikipedia.org/wiki/Richard_Hakluyt"
+    },
+    "roger_ascham": {
+      "name": "Roger Ascham",
+      "group": "thinker",
+      "desc": "Humanist scholar, author of The Scholemaster, and tutor in Greek and Latin to the young Elizabeth.\n\nHe advocated teaching by double translation and encouragement in preference to corporal punishment, and served as Latin secretary to three monarchs.",
+      "url": "https://en.wikipedia.org/wiki/Roger_Ascham"
+    },
+    "hans_holbein": {
+      "name": "Hans Holbein the Younger",
+      "group": "thinker",
+      "desc": "Painter from Augsburg who worked in England from 1526 and became a court painter to Henry VIII in 1536.\n\nHis Whitehall mural of the Tudor dynasty, destroyed by fire in 1698, is known through copies and established the standard image of the king.",
+      "url": "https://en.wikipedia.org/wiki/Hans_Holbein_the_Younger",
+      "highlight": true
+    },
+    "philip_ii": {
+      "name": "Philip II of Spain",
+      "group": "foreign",
+      "desc": "King of Spain from 1556, king consort of England during his marriage to Mary I, and Elizabeth I's principal opponent.\n\nHe authorised the Armada of 1588 with the aim of ending English support for the Dutch revolt and restoring Catholicism in England.",
+      "url": "https://en.wikipedia.org/wiki/Philip_II_of_Spain",
+      "highlight": true
+    },
+    "charles_v": {
+      "name": "Charles V",
+      "group": "foreign",
+      "desc": "Holy Roman Emperor and King of Spain, and nephew of Catherine of Aragon, whose forces occupied Rome in 1527 and left the pope effectively under his control.\n\nHis territories made him central to English diplomacy for four decades.",
+      "url": "https://en.wikipedia.org/wiki/Charles_V,_Holy_Roman_Emperor",
+      "highlight": true
+    },
+    "clement_vii": {
+      "name": "Pope Clement VII",
+      "group": "foreign",
+      "desc": "Pope from 1523, who was unable to grant Henry VIII's annulment while imperial power dominated Rome.\n\nHe deferred the case for six years and gave sentence for Catherine only in 1534, after England had legislated against papal jurisdiction.",
+      "url": "https://en.wikipedia.org/wiki/Pope_Clement_VII"
+    },
+    "pius_v": {
+      "name": "Pope Pius V",
+      "group": "foreign",
+      "desc": "Pope from 1566, who excommunicated Elizabeth I in 1570 by the bull Regnans in Excelsis and purported to release her subjects from allegiance.\n\nThe measure was issued without consulting the Catholic powers and worsened the position of English Catholics.",
+      "url": "https://en.wikipedia.org/wiki/Pope_Pius_V"
+    },
+    "duke_of_parma": {
+      "name": "Alexander Farnese, Duke of Parma",
+      "group": "foreign",
+      "desc": "Alexander Farnese, Spain's leading general and governor-general of the Netherlands, whose army was to cross to England under the Armada's escort.\n\nThe junction was never made, and he continued the reconquest of the Dutch provinces.",
+      "url": "https://en.wikipedia.org/wiki/Alexander_Farnese,_Duke_of_Parma",
+      "highlight": true
+    },
+    "medina_sidonia": {
+      "name": "Duke of Medina Sidonia",
+      "group": "foreign",
+      "desc": "A Spanish nobleman appointed to command the Armada in 1588 after the death of the Marquis of Santa Cruz.\n\nHe held the fleet in formation through the Channel engagements but had no means of embarking Parma's army from Flanders.",
+      "url": "https://en.wikipedia.org/wiki/Alonso_de_Guzm%C3%A1n_y_Sotomayor,_7th_Duke_of_Medina_Sidonia"
+    },
+    "bosworth": {
+      "name": "Battle of Bosworth",
+      "group": "event",
+      "desc": "The battle fought on 22 August 1485 in Leicestershire, at which Richard III was killed and Henry Tudor took the crown.\n\nThe intervention of the Stanleys late in the engagement decided the outcome and ended the main phase of the Wars of the Roses.",
+      "url": "https://en.wikipedia.org/wiki/Battle_of_Bosworth_Field"
+    },
+    "field_cloth_gold": {
+      "name": "Field of the Cloth of Gold",
+      "group": "event",
+      "desc": "The meeting of Henry VIII and Francis I near Guînes in June 1520, staged with temporary palaces, tournaments and elaborate display over some seventeen days.\n\nIt was extremely expensive and produced no lasting diplomatic result; within two years England was at war with France.",
+      "url": "https://en.wikipedia.org/wiki/Field_of_the_Cloth_of_Gold"
+    },
+    "dissolution": {
+      "name": "Dissolution of the Monasteries",
+      "group": "event",
+      "desc": "The suppression of England's monasteries, priories and friaries between 1536 and 1540, and the transfer of their property to the crown.\n\nMost of the land was sold within a decade, making it the largest transfer of property in English history and giving many purchasers an interest in the religious changes.",
+      "url": "https://en.wikipedia.org/wiki/Dissolution_of_the_monasteries",
+      "highlight": true
+    },
+    "pilgrimage_grace": {
+      "name": "Pilgrimage of Grace",
+      "group": "event",
+      "desc": "A large rising across the north of England in the autumn of 1536, in protest at religious change and the policies of Cromwell's government.\n\nThe rebels dispersed after being offered a pardon and a parliament; when disturbances resumed in 1537 the leaders were tried and executed.",
+      "url": "https://en.wikipedia.org/wiki/Pilgrimage_of_Grace"
+    },
+    "wyatt_rebellion": {
+      "name": "Wyatt's Rebellion",
+      "group": "event",
+      "desc": "A rising in Kent in early 1554, led by Thomas Wyatt the Younger, against Mary I's proposed marriage to Philip of Spain.\n\nThe rebels reached the walls of London before surrendering; the failure led to the execution of Jane Grey and to Elizabeth's imprisonment.",
+      "url": "https://en.wikipedia.org/wiki/Wyatt%27s_rebellion"
+    },
+    "marian_persecution": {
+      "name": "The Marian Burnings",
+      "group": "event",
+      "desc": "The prosecution of Protestants for heresy under the revived heresy laws between 1555 and 1558, in which around 280 people were burned.\n\nThe policy did not suppress Protestant belief, and the executions were recorded in detail by John Foxe.",
+      "url": "https://en.wikipedia.org/wiki/Marian_Persecutions",
+      "highlight": true
+    },
+    "babington_plot": {
+      "name": "Babington Plot",
+      "group": "event",
+      "desc": "A conspiracy of 1586 to assassinate Elizabeth I and place Mary, Queen of Scots on the throne, monitored throughout by Walsingham's agents.\n\nMary's written reply approving the design provided the principal evidence at her trial.",
+      "url": "https://en.wikipedia.org/wiki/Babington_Plot"
+    },
+    "spanish_armada": {
+      "name": "The Spanish Armada",
+      "group": "event",
+      "desc": "The Spanish invasion fleet of 1588, dispersed by fireships off Calais, engaged at Gravelines, and largely wrecked on the passage home round Scotland and Ireland.\n\nThe campaign did not end the war with Spain, but its outcome was widely interpreted in England as providential.",
+      "url": "https://en.wikipedia.org/wiki/Spanish_Armada",
+      "highlight": true
+    },
+    "essex_rebellion": {
+      "name": "Essex's Rebellion",
+      "group": "event",
+      "desc": "The Earl of Essex's attempt on 8 February 1601 to raise the City of London and remove his opponents from the court.\n\nThe rising attracted no support and ended the same day; Essex and four supporters were tried and executed.",
+      "url": "https://en.wikipedia.org/wiki/Essex%27s_Rebellion"
+    },
+    "tower_of_london": {
+      "name": "Tower of London",
+      "group": "place",
+      "desc": "A royal fortress on the Thames serving in this period as armoury, treasury, royal lodging and state prison.\n\nSeveral of the most prominent state trials and executions of the sixteenth century concerned prisoners held there, on Tower Green or on adjoining Tower Hill.",
+      "url": "https://en.wikipedia.org/wiki/Tower_of_London",
+      "highlight": true
+    },
+    "hampton_court": {
+      "name": "Hampton Court Palace",
+      "group": "place",
+      "desc": "A palace built by Cardinal Wolsey and transferred to Henry VIII in 1529, then substantially enlarged with a great hall and new kitchens.\n\nEdward VI was born there in 1537 and Jane Seymour died there days afterwards.",
+      "url": "https://en.wikipedia.org/wiki/Hampton_Court_Palace"
+    },
+    "the_globe": {
+      "name": "The Globe",
+      "group": "place",
+      "desc": "The Bankside playhouse opened in 1599, built from the timbers of the Theatre in Shoreditch by the Lord Chamberlain's Men.\n\nUnusually, it was owned by the players themselves rather than by a landlord, giving the leading actors a direct share in the receipts.",
+      "url": "https://en.wikipedia.org/wiki/Globe_Theatre",
+      "highlight": true
+    },
+    "tilbury": {
+      "name": "Tilbury Camp",
+      "group": "place",
+      "desc": "The camp in Essex where the land army assembled in August 1588 against the threat of invasion.\n\nElizabeth reviewed the troops there on 9 August and delivered the speech recorded as referring to the heart and stomach of a king.",
+      "url": "https://en.wikipedia.org/wiki/Speech_to_the_Troops_at_Tilbury"
+    },
+    "fotheringhay": {
+      "name": "Fotheringhay Castle",
+      "group": "place",
+      "desc": "The castle in Northamptonshire where Mary, Queen of Scots was tried in October 1586 and executed on 8 February 1587.\n\nIt fell into ruin during the following century and little now remains above ground.",
+      "url": "https://en.wikipedia.org/wiki/Fotheringhay_Castle",
+      "highlight": true
+    },
+    "hardwick_hall": {
+      "name": "Hardwick Hall",
+      "group": "place",
+      "desc": "The Derbyshire house built for Bess of Hardwick in the 1590s, noted for its unusually large windows and for the builder's initials on the parapet.\n\nIt is among the best-preserved examples of the Elizabethan prodigy house.",
+      "url": "https://en.wikipedia.org/wiki/Hardwick_Hall"
+    },
+    "act_of_supremacy": {
+      "name": "Act of Supremacy (1534)",
+      "group": "work",
+      "desc": "The statute of 1534 declaring the king Supreme Head of the Church of England, with an accompanying treason act making denial of the title punishable by death.\n\nIt removed papal jurisdiction from England and placed the church settlement in the hands of parliament.",
+      "url": "https://en.wikipedia.org/wiki/Acts_of_Supremacy",
+      "highlight": true
+    },
+    "book_of_common_prayer": {
+      "name": "Book of Common Prayer",
+      "group": "work",
+      "desc": "The English liturgy compiled largely by Cranmer, issued in 1549 and revised in a more clearly reformed form in 1552.\n\nIt replaced the Latin rite with a single vernacular book, and its phrasing had a lasting influence on English prose.",
+      "url": "https://en.wikipedia.org/wiki/Book_of_Common_Prayer"
+    },
+    "act_of_uniformity": {
+      "name": "Act of Uniformity (1559)",
+      "group": "work",
+      "desc": "The statute of 1559 requiring the use of a revised Book of Common Prayer in every parish, a central element of the Elizabethan religious settlement.\n\nWith the accompanying Act of Supremacy it established a church reformed in doctrine while retaining an episcopal structure.",
+      "url": "https://en.wikipedia.org/wiki/Act_of_Uniformity_1558",
+      "highlight": true
+    },
+    "book_of_martyrs": {
+      "name": "Foxe's Book of Martyrs",
+      "group": "work",
+      "desc": "John Foxe's Acts and Monuments, a long narrative history of the Church that concentrates on the sufferings of Protestants, particularly under Mary I.\n\nCopies were ordered to be placed in cathedral churches, and it was among the most widely read books of the period.",
+      "url": "https://en.wikipedia.org/wiki/Actes_and_Monuments",
+      "highlight": true
+    },
+    "faerie_queene": {
+      "name": "The Faerie Queene",
+      "group": "work",
+      "desc": "Spenser's allegorical epic, published in 1590 and 1596, in which knights representing the virtues serve the figure of Gloriana.\n\nPlanned in twelve books, of which six were completed, it combines chivalric romance with Protestant political allegory.",
+      "url": "https://en.wikipedia.org/wiki/The_Faerie_Queene"
+    },
+    "hamlet": {
+      "name": "Hamlet",
+      "group": "work",
+      "desc": "Shakespeare's tragedy of about 1600, written for Burbage and the Globe and drawing on an earlier revenge play.\n\nIt survives in three markedly different early texts, and its soliloquies gave the English stage a new form of interior reflection.",
+      "url": "https://en.wikipedia.org/wiki/Hamlet"
+    },
+    "doctor_faustus": {
+      "name": "Doctor Faustus",
+      "group": "work",
+      "desc": "Marlowe's tragedy of a scholar who contracts with the devil in exchange for knowledge and power.\n\nWritten for Alleyn, it survives in two substantially different versions published in 1604 and 1616 and was among the most frequently performed plays of the period.",
+      "url": "https://en.wikipedia.org/wiki/Doctor_Faustus_(play)"
+    },
+    "regnans_in_excelsis": {
+      "name": "Regnans in Excelsis",
+      "group": "work",
+      "desc": "The papal bull of February 1570 excommunicating Elizabeth I, declaring her deposed and purporting to absolve her subjects of obedience.\n\nIt placed English Catholics in a position of divided allegiance and was cited in the treason legislation that followed.",
+      "url": "https://en.wikipedia.org/wiki/Regnans_in_Excelsis"
+    }
+  },
+  "links": [
+    {
+      "from": "anne_boleyn",
+      "to": "elizabeth_i",
+      "type": "parent",
+      "details": "Anne's daughter arrived instead of the son that would have justified everything. Elizabeth rarely mentioned her mother, but she wore Anne's initial ring and promoted her Boleyn relatives throughout the reign.",
+      "highlight": true
+    },
+    {
+      "from": "anne_boleyn",
+      "to": "tower_of_london",
+      "type": "imprisoned",
+      "details": "She entered by the royal apartments where she had lodged before her coronation, and was executed on the green within the walls. Her body was buried in the chapel of St Peter ad Vincula."
+    },
+    {
+      "from": "anne_of_cleves",
+      "to": "hampton_court",
+      "type": "seat",
+      "details": "Anne kept the standing of the King's Sister after the annulment and returned to the palace as an honoured guest, dining with the daughters of the man who had divorced her."
+    },
+    {
+      "from": "arthur_tudor",
+      "to": "catherine_of_aragon",
+      "type": "married",
+      "details": "They were married in November 1501 and sent to Ludlow; Arthur was dead by April. Catherine swore for the rest of her life that the marriage was never consummated, which was the whole legal ground on which her second marriage stood.",
+      "highlight": true
+    },
+    {
+      "from": "ben_jonson",
+      "to": "richard_burbage",
+      "type": "ally",
+      "details": "Burbage acted in Jonson's early comedies, and Jonson wrote parts that demanded exactly the range Burbage had built on Shakespeare's tragedies."
+    },
+    {
+      "from": "ben_jonson",
+      "to": "the_globe",
+      "type": "seat",
+      "details": "Jonson wrote for the Chamberlain's Men, who staged Every Man in His Humour with Shakespeare in the cast, though he kept a critical distance from the popular playhouse."
+    },
+    {
+      "from": "ben_jonson",
+      "to": "william_shakespeare",
+      "type": "rival",
+      "details": "Jonson thought Shakespeare careless and said he wished he had blotted a thousand lines. He also wrote the poem that calls him the soul of the age."
+    },
+    {
+      "from": "bess_of_hardwick",
+      "to": "elizabeth_i",
+      "type": "ally",
+      "details": "Bess served in the privy chamber and stayed close enough to the queen to survive several spells of disgrace over her marriages and her granddaughter's royal blood."
+    },
+    {
+      "from": "bess_of_hardwick",
+      "to": "hardwick_hall",
+      "type": "seat",
+      "details": "Widowed for the fourth time and in possession of a large income, Bess rebuilt the house of her birth between 1590 and 1597 to designs associated with Robert Smythson. Her initials stand in openwork stone along the roofline."
+    },
+    {
+      "from": "bess_of_hardwick",
+      "to": "william_cecil",
+      "type": "ally",
+      "details": "Burghley was Bess's correspondent through the years when her husband was Mary Stuart's keeper, and she wrote to him about both the security of the prisoner and the wreck of her marriage."
+    },
+    {
+      "from": "catherine_howard",
+      "to": "tower_of_london",
+      "type": "imprisoned",
+      "details": "She was held first at Syon and brought to the Tower in February 1542. Foxe and later chroniclers record that she asked for the block to be brought to her room the night before, though the account is not contemporary."
+    },
+    {
+      "from": "catherine_of_aragon",
+      "to": "mary_i",
+      "type": "parent",
+      "details": "Mary was the only one of Catherine's children to survive infancy, and mother and daughter were kept apart for the last years of Catherine's life. Mary's Catholicism and her loyalty to Spain both came from this."
+    },
+    {
+      "from": "catherine_parr",
+      "to": "elizabeth_i",
+      "type": "patron",
+      "details": "Parr brought Elizabeth into her household after 1543 and secured her instruction under reformist scholars including John Cheke and Roger Ascham.\n\nHer own published devotions and her regency in 1544 gave Elizabeth a working precedent for a learned Protestant queen exercising authority."
+    },
+    {
+      "from": "catherine_parr",
+      "to": "thomas_seymour",
+      "type": "married",
+      "details": "Parr had wanted Seymour before Henry chose her, and married him within months of the king's death. The haste caused scandal and the marriage brought Elizabeth into a household that was not safe for her."
+    },
+    {
+      "from": "charles_brandon",
+      "to": "field_cloth_gold",
+      "type": "involved",
+      "details": "Suffolk ran the English jousts alongside the king, in the tiltyard where the two courts spent seventeen days proving they were not afraid of each other."
+    },
+    {
+      "from": "charles_brandon",
+      "to": "henry_viii",
+      "type": "ally",
+      "details": "Brandon was the king's tilting partner and the only man at court who could tell him unwelcome things and survive. He married Henry's sister Mary in secret in 1515 and was fined rather than executed."
+    },
+    {
+      "from": "charles_howard_effingham",
+      "to": "francis_drake",
+      "type": "ally",
+      "details": "Howard defended Drake against captains who accused him of deserting his station on the first night of the campaign to take the damaged Rosario as a prize. Holding a command of independent and quarrelsome captains together through nine days of running engagement was among his more difficult tasks.",
+      "highlight": true
+    },
+    {
+      "from": "charles_howard_effingham",
+      "to": "spanish_armada",
+      "type": "commanded",
+      "details": "Howard held supreme command as Lord Admiral and took the principal decisions of the campaign: to engage from windward, to keep the range open rather than attempt boarding, and to break the Spanish crescent formation with fireships off Calais on the night of 7 August.\n\nHe afterwards spent his own money on relief for unpaid and sick seamen when the crown did not.",
+      "highlight": true
+    },
+    {
+      "from": "charles_v",
+      "to": "catherine_of_aragon",
+      "type": "ally",
+      "details": "Catherine was Charles's maternal aunt, and he treated the annulment proceedings as both a family matter and a point of diplomatic leverage. Imperial influence over Rome after 1527 is the principal reason the case was never determined in Henry's favour.",
+      "highlight": true
+    },
+    {
+      "from": "charles_v",
+      "to": "clement_vii",
+      "type": "rival",
+      "details": "Imperial troops sacked Rome in 1527 and held the pope effectively prisoner. From that point Clement could not rule against the emperor's aunt whatever the merits of Henry's case."
+    },
+    {
+      "from": "charles_v",
+      "to": "henry_viii",
+      "type": "ally",
+      "details": "They allied against France repeatedly and each abandoned the other when terms suited. Charles was Catherine's nephew, which made the alliance useless the moment the annulment began."
+    },
+    {
+      "from": "charles_v",
+      "to": "philip_ii",
+      "type": "parent",
+      "details": "Philip was raised to inherit Spain, the Netherlands and the Indies while his father held the empire together by travelling it. The abdication of 1555 handed him a Habsburg quarrel with England that he then married into.",
+      "highlight": true
+    },
+    {
+      "from": "christopher_hatton",
+      "to": "elizabeth_i",
+      "type": "served",
+      "details": "Hatton was mocked as the dancing chancellor, but he managed the Commons for the crown, sat on the commission that tried Mary Stuart, and died owing the queen a fortune she had lent him."
+    },
+    {
+      "from": "christopher_hatton",
+      "to": "francis_drake",
+      "type": "patron",
+      "details": "Hatton was among the principal investors in the circumnavigation. Drake renamed his ship the Golden Hind during the voyage, adopting the hind that appeared in Hatton's coat of arms."
+    },
+    {
+      "from": "christopher_hatton",
+      "to": "robert_dudley",
+      "type": "rival",
+      "details": "Two favourites competing for the same attention, they quarrelled over precedence and patronage while cooperating on the Privy Council against Spain."
+    },
+    {
+      "from": "christopher_marlowe",
+      "to": "doctor_faustus",
+      "type": "wrote",
+      "details": "Marlowe took a German legend and made the damnation literal and the theology inescapable. Comic scenes were added later by other hands, and the play survives in two versions twelve years apart."
+    },
+    {
+      "from": "christopher_marlowe",
+      "to": "edward_alleyn",
+      "type": "ally",
+      "details": "Alleyn created Tamburlaine, Barabas and Faustus, and Marlowe wrote those parts for a voice that could fill an open yard."
+    },
+    {
+      "from": "christopher_marlowe",
+      "to": "william_shakespeare",
+      "type": "rival",
+      "details": "Marlowe established blank verse, the overreaching protagonist and the English history play on the commercial stage, and Shakespeare's early work responds directly to those models.\n\nAfter Marlowe's death in 1593 Shakespeare quoted a line of his in As You Like It, one of the few explicit acknowledgements of one dramatist by another in the period.",
+      "highlight": true
+    },
+    {
+      "from": "clement_vii",
+      "to": "henry_viii",
+      "type": "rival",
+      "details": "Clement spent six years avoiding a decision on the annulment because the emperor's army controlled Rome. The final sentence for Catherine in 1534 came long after England had already legislated itself out of his jurisdiction."
+    },
+    {
+      "from": "duke_of_parma",
+      "to": "francis_vere",
+      "type": "rival",
+      "details": "Parma's tercios and Vere's English regiments fought over the same Dutch river towns for a decade, in the sieges that turned English soldiering professional."
+    },
+    {
+      "from": "duke_of_parma",
+      "to": "spanish_armada",
+      "type": "involved",
+      "details": "Parma had assembled an army and a fleet of barges at Dunkirk and Nieuwpoort, but no deep-water port was in Spanish hands and Dutch flyboats blockaded the shallows. He received no adequate warning of the fleet's arrival, and the two forces never joined.",
+      "highlight": true
+    },
+    {
+      "from": "edmund_campion",
+      "to": "regnans_in_excelsis",
+      "type": "involved",
+      "details": "The bull was the reason missionary priests could be treated as agents of a foreign power. Campion was pressed at his trial to say whether the queen was lawfully queen, which was the whole trap."
+    },
+    {
+      "from": "edmund_campion",
+      "to": "tower_of_london",
+      "type": "imprisoned",
+      "details": "Campion was held in the Tower from July 1581 and examined under torture on three occasions. He was brought out to take part in public disputations with Protestant divines, conducted without access to books or notes.",
+      "highlight": true
+    },
+    {
+      "from": "edmund_spenser",
+      "to": "elizabeth_i",
+      "type": "served",
+      "details": "Spenser held colonial office in Munster for nearly twenty years and wrote a hard-line tract on governing Ireland. The queen granted him a pension for the poem and little else."
+    },
+    {
+      "from": "edmund_spenser",
+      "to": "faerie_queene",
+      "type": "wrote",
+      "details": "Spenser planned twelve books, each treating a virtue through the adventures of a knight, and completed six along with the fragmentary Mutability Cantos.\n\nFor it he devised a nine-line stanza and a deliberately archaic vocabulary, and framed the whole as a compliment to Elizabeth in the figures of Gloriana and Belphoebe.",
+      "highlight": true
+    },
+    {
+      "from": "edward_alleyn",
+      "to": "doctor_faustus",
+      "type": "involved",
+      "details": "Alleyn's Faustus was famous enough that stories circulated of a real devil appearing on stage during a performance."
+    },
+    {
+      "from": "edward_alleyn",
+      "to": "philip_henslowe",
+      "type": "ally",
+      "details": "Alleyn married Henslowe's stepdaughter and became his partner in playhouses, bear gardens and property. Between them they controlled the Rose, the Fortune and the Admiral's Men."
+    },
+    {
+      "from": "edward_seymour",
+      "to": "edward_vi",
+      "type": "served",
+      "details": "As uncle to the king he took the title of Protector and ruled almost as a monarch, pushing reform faster than the country would take."
+    },
+    {
+      "from": "edward_seymour",
+      "to": "john_dudley",
+      "type": "rival",
+      "details": "Dudley led the coup that removed Somerset from the Protectorate in 1549 and, after a brief reconciliation, had him executed in 1552."
+    },
+    {
+      "from": "edward_vi",
+      "to": "book_of_common_prayer",
+      "type": "enacted",
+      "details": "The Prayer Books were imposed by Acts of Uniformity in 1549 and 1552, the first provoking rebellion in Cornwall and Devon by men who called it a Christmas game."
+    },
+    {
+      "from": "edward_vi",
+      "to": "elizabeth_i",
+      "type": "sibling",
+      "details": "The two youngest children were brought up together under reformist tutors and wrote to each other in Latin. Edward's Protestant education is much of the reason Elizabeth's settlement went the way it did."
+    },
+    {
+      "from": "edward_vi",
+      "to": "jane_grey",
+      "type": "succeeded",
+      "details": "Dying at fifteen, Edward drew up a Device for the Succession excluding both his half-sisters and settling the crown on his Protestant cousin. It had no statutory force, and lasted nine days."
+    },
+    {
+      "from": "edward_vi",
+      "to": "mary_i",
+      "type": "sibling",
+      "details": "Edward's council pressed Mary to give up the Mass, and she refused with imperial backing. The quarrel over her household chapel was the sharpest religious confrontation of his reign."
+    },
+    {
+      "from": "elizabeth_i",
+      "to": "act_of_uniformity",
+      "type": "enacted",
+      "details": "The settlement of 1559 passed the Lords by three votes with two bishops in prison. It imposed a Prayer Book deliberately ambiguous on the eucharist, so that most consciences could just about accept it.",
+      "highlight": true
+    },
+    {
+      "from": "elizabeth_i",
+      "to": "edmund_campion",
+      "type": "condemned",
+      "details": "Campion maintained that his mission was pastoral and not political, and was convicted of conspiring against the queen on evidence that historians generally regard as unfounded. He was executed at Tyburn on 1 December 1581 under the penalty for treason.",
+      "highlight": true
+    },
+    {
+      "from": "elizabeth_i",
+      "to": "francis_drake",
+      "type": "patron",
+      "details": "The queen invested in the circumnavigation and received a large share of the proceeds, while publicly disclaiming responsibility to the Spanish ambassador. She knighted Drake aboard the Golden Hind at Deptford in April 1581."
+    },
+    {
+      "from": "elizabeth_i",
+      "to": "humphrey_gilbert",
+      "type": "patron",
+      "details": "Gilbert held letters patent from the queen to discover and occupy lands not held by any Christian prince, the legal basis of the later Virginia charters."
+    },
+    {
+      "from": "elizabeth_i",
+      "to": "james_vi_i",
+      "type": "succeeded",
+      "details": "Elizabeth refused all her life to name a successor, but Robert Cecil had corresponded secretly with James for years. The accession in March 1603 was managed within hours and without incident."
+    },
+    {
+      "from": "elizabeth_i",
+      "to": "john_dee",
+      "type": "patron",
+      "details": "Dee chose the date of her coronation by astrology, taught her enough mathematics to follow his arguments, and advised her navigators. The favour did not extend to paying him properly."
+    },
+    {
+      "from": "elizabeth_i",
+      "to": "john_lyly",
+      "type": "patron",
+      "details": "Lyly wrote comedies performed before the queen by boy companies and spent thirteen fruitless years petitioning her for the office of Master of the Revels."
+    },
+    {
+      "from": "elizabeth_i",
+      "to": "mary_queen_scots",
+      "type": "condemned",
+      "details": "Elizabeth delayed for months after the trial, and pressed Mary's keeper Sir Amias Paulet to act without a warrant, which he refused to do. She signed the warrant in February 1587, then prosecuted her secretary William Davison for despatching it.",
+      "highlight": true
+    },
+    {
+      "from": "elizabeth_i",
+      "to": "robert_devereux",
+      "type": "condemned",
+      "details": "She signed the warrant, revoked it, and signed again. He was beheaded privately within the Tower in February 1601."
+    },
+    {
+      "from": "elizabeth_i",
+      "to": "spanish_armada",
+      "type": "involved",
+      "details": "The outcome was commemorated with medals bearing an inscription attributing the dispersal to a divine wind. The immediate aftermath was less favourable: thousands of seamen went unpaid and many died of typhus in the Kent ports."
+    },
+    {
+      "from": "elizabeth_i",
+      "to": "thomas_howard_norfolk4",
+      "type": "condemned",
+      "details": "Elizabeth delayed the execution of her only duke for four months and signed the warrant three times before it was carried out."
+    },
+    {
+      "from": "elizabeth_i",
+      "to": "tilbury",
+      "type": "involved",
+      "details": "The queen rode through the camp on 9 August 1588 with an escort and addressed the assembled troops. By that date the Armada had already been driven past the Straits and was making north, though this was not yet known at Tilbury.\n\nThe text of the speech survives only in later copies, and its exact wording is uncertain."
+    },
+    {
+      "from": "elizabeth_i",
+      "to": "tower_of_london",
+      "type": "imprisoned",
+      "details": "She was brought in by water in March 1554, refusing at first to land, and held for two months while the council looked for evidence linking her to Wyatt. She rode through the Tower again in triumph before her coronation.",
+      "highlight": true
+    },
+    {
+      "from": "elizabeth_i",
+      "to": "wyatt_rebellion",
+      "type": "involved",
+      "details": "Elizabeth was the rebels' intended beneficiary whether or not she knew of the plan. No evidence was found, but suspicion put her in the Tower and then under house arrest at Woodstock."
+    },
+    {
+      "from": "elizabeth_of_york",
+      "to": "henry_viii",
+      "type": "parent",
+      "details": "Henry was nine when his mother died on her thirty-seventh birthday, and the household accounts record him inconsolable. Her Yorkist blood was half his claim to the throne."
+    },
+    {
+      "from": "francis_bacon",
+      "to": "elizabeth_i",
+      "type": "served",
+      "details": "Bacon sat in her parliaments and served as learned counsel, but never got the offices he wanted, having offended her early by opposing a subsidy."
+    },
+    {
+      "from": "francis_bacon",
+      "to": "essex_rebellion",
+      "type": "involved",
+      "details": "Bacon appeared for the crown at the trial of his own patron and afterwards wrote the official account justifying the verdict."
+    },
+    {
+      "from": "francis_bacon",
+      "to": "robert_devereux",
+      "type": "ally",
+      "details": "Essex gave Bacon an estate when he could not get him office, and Bacon gave Essex political advice he consistently ignored."
+    },
+    {
+      "from": "francis_drake",
+      "to": "philip_ii",
+      "type": "rival",
+      "details": "Drake's raid on Cadiz in 1587 destroyed shipping and stores and delayed the Armada by a year. Philip put a price on his head; Spain called him El Draque."
+    },
+    {
+      "from": "francis_drake",
+      "to": "spanish_armada",
+      "type": "commanded",
+      "details": "Drake was vice-admiral, captured the Rosario on the first night after leaving the fleet in darkness to chase her, and helped choose the fireships sent in off Calais."
+    },
+    {
+      "from": "francis_vere",
+      "to": "john_norreys",
+      "type": "ally",
+      "details": "The two senior English commanders of the Dutch war, they trained a generation of officers in the tactics that English armies used until the Civil War."
+    },
+    {
+      "from": "francis_walsingham",
+      "to": "babington_plot",
+      "type": "commanded",
+      "details": "Walsingham controlled the beer-barrel channel through which Mary's letters passed and read everything before it was delivered. He let the plot mature until Mary endorsed the assassination in writing, then arrested everyone."
+    },
+    {
+      "from": "francis_walsingham",
+      "to": "christopher_marlowe",
+      "type": "patron",
+      "details": "Marlowe was absent from Cambridge for extended periods, and his degree was granted in 1587 only after the Privy Council certified that he had been employed on matters concerning the queen's service. The nature of that employment is not recorded, but it is generally taken to have been intelligence work.",
+      "highlight": true
+    },
+    {
+      "from": "francis_walsingham",
+      "to": "elizabeth_i",
+      "type": "served",
+      "details": "Walsingham pushed constantly for a more aggressive Protestant foreign policy than the queen wanted, and paid for much of his intelligence work out of his own pocket. He died in debt."
+    },
+    {
+      "from": "francis_walsingham",
+      "to": "fotheringhay",
+      "type": "involved",
+      "details": "Walsingham assembled the evidence, the commission and the venue for the trial, and Mary named him from the floor as the man who had contrived her destruction.\n\nHe did not attend the execution, and the queen's subsequent anger at the warrant's despatch fell on William Davison rather than on him.",
+      "highlight": true
+    },
+    {
+      "from": "francis_walsingham",
+      "to": "philip_sidney",
+      "type": "patron",
+      "details": "Sidney married Walsingham's daughter Frances, and Walsingham paid the debts and the funeral when Sidney died at Zutphen."
+    },
+    {
+      "from": "hans_holbein",
+      "to": "henry_viii",
+      "type": "served",
+      "details": "Holbein was retained as a court painter from 1536 and produced the Whitehall mural of Henry VII, Elizabeth of York, Henry VIII and Jane Seymour. The mural was destroyed when the palace burned in 1698, and the composition survives through copies and a surviving cartoon.",
+      "highlight": true
+    },
+    {
+      "from": "henry_vii",
+      "to": "arthur_tudor",
+      "type": "parent",
+      "details": "Arthur was born in Winchester within eight months of the wedding, and named for the British myth Henry VII wanted attached to his line. He was raised as the heir from the cradle and sent to hold the Welsh Marches at fifteen."
+    },
+    {
+      "from": "henry_vii",
+      "to": "bosworth",
+      "type": "commanded",
+      "details": "Henry landed at Milford Haven in August 1485 with a force of French, Scottish and Welsh troops and gathered support crossing Wales. The battle turned on the Stanleys withholding their men and then intervening; chroniclers report the crown being recovered from the field and placed on Henry's head."
+    },
+    {
+      "from": "henry_vii",
+      "to": "elizabeth_of_york",
+      "type": "married",
+      "details": "The marriage of 1486 united the Lancastrian claimant with the senior Yorkist heiress. It was the political settlement of the Wars of the Roses expressed as a wedding, and the Tudor rose was its badge."
+    },
+    {
+      "from": "henry_vii",
+      "to": "henry_viii",
+      "type": "parent",
+      "details": "Henry was the spare, raised for the church rather than the throne, and only became heir when Arthur died in 1502."
+    },
+    {
+      "from": "henry_vii",
+      "to": "henry_viii",
+      "type": "succeeded",
+      "details": "The accession of April 1509 was the first peaceful transfer of the English crown in almost a century, and it was greeted with relief at the end of the old king's fines and bonds."
+    },
+    {
+      "from": "henry_vii",
+      "to": "margaret_tudor",
+      "type": "parent",
+      "details": "Henry married his elder daughter to James IV in 1503 under the Treaty of Perpetual Peace. Later writers attribute to him the observation that if her descendants should inherit England, the greater realm would draw the lesser, though the remark is recorded only at second hand."
+    },
+    {
+      "from": "henry_viii",
+      "to": "act_of_supremacy",
+      "type": "enacted",
+      "details": "The act of 1534 declared that the king was and had always been Supreme Head of the Church of England, framing the change as recognition of an existing right rather than an innovation.\n\nThe accompanying Treasons Act made it capital to deny the title, which is the provision under which More and Bishop Fisher were tried.",
+      "highlight": true
+    },
+    {
+      "from": "henry_viii",
+      "to": "anne_boleyn",
+      "type": "married",
+      "details": "Henry pursued the annulment of his first marriage for some six years before marrying Anne in January 1533; she was crowned that June. The break with Rome was completed in the same period, and the marriage lasted three years.",
+      "highlight": true
+    },
+    {
+      "from": "henry_viii",
+      "to": "anne_boleyn",
+      "type": "condemned",
+      "details": "The charges of adultery with five men, including her brother, were assembled within a fortnight in May 1536, and all the accused were convicted. Historians generally regard the accusations as unfounded. Anne was beheaded on 19 May by a swordsman brought from Calais.",
+      "highlight": true
+    },
+    {
+      "from": "henry_viii",
+      "to": "anne_of_cleves",
+      "type": "married",
+      "details": "Cromwell arranged the match for a Protestant alliance in 1540. Henry disliked her on sight, the marriage was annulled in six months, and the minister who made it went to the block."
+    },
+    {
+      "from": "henry_viii",
+      "to": "catherine_howard",
+      "type": "married",
+      "details": "Henry married her within weeks of the Cleves annulment and called her his rose without a thorn. He was forty-nine and gouty; she was probably about seventeen."
+    },
+    {
+      "from": "henry_viii",
+      "to": "catherine_howard",
+      "type": "condemned",
+      "details": "Cranmer passed Henry a letter detailing her past, and a new act made it treason for an unchaste woman to marry a king."
+    },
+    {
+      "from": "henry_viii",
+      "to": "catherine_of_aragon",
+      "type": "married",
+      "details": "Henry married his brother's widow in June 1509 under a papal dispensation, and the marriage lasted twenty-four years. After repeated pregnancies produced only one surviving child, he came to argue that the dispensation had been invalid because the union contravened the prohibition in Leviticus.",
+      "highlight": true
+    },
+    {
+      "from": "henry_viii",
+      "to": "catherine_parr",
+      "type": "married",
+      "details": "Parr was a twice-widowed woman of thirty-one who nursed the king through his last years and acted as regent when he campaigned in France. She came close to arrest for heresy and talked her way out of it."
+    },
+    {
+      "from": "henry_viii",
+      "to": "dissolution",
+      "type": "enacted",
+      "details": "Henry took the lands of some eight hundred houses and sold most of them within a decade to pay for war in France and Scotland. The buyers became a landed class with a permanent interest in never restoring the abbeys.",
+      "highlight": true
+    },
+    {
+      "from": "henry_viii",
+      "to": "edward_vi",
+      "type": "parent",
+      "details": "The son Henry had spent thirty years and two marriages pursuing was guarded obsessively, his rooms scrubbed and his visitors screened. He was nine when he inherited."
+    },
+    {
+      "from": "henry_viii",
+      "to": "edward_vi",
+      "type": "succeeded",
+      "details": "Henry's death was concealed for three days while the Seymours secured the boy and the Council. The will named sixteen executors to govern jointly, and that arrangement lasted less than a month."
+    },
+    {
+      "from": "henry_viii",
+      "to": "elizabeth_i",
+      "type": "parent",
+      "details": "Elizabeth was two when her mother was executed and she was declared illegitimate. She never spoke publicly against her father and modelled a great deal of her kingship on him."
+    },
+    {
+      "from": "henry_viii",
+      "to": "field_cloth_gold",
+      "type": "involved",
+      "details": "The two kings and their households met near Guînes for some seventeen days of tournaments, banquets and display, housed in temporary structures of timber, canvas and glass. Chroniclers report a wrestling bout between the kings, though accounts of it are late and unreliable."
+    },
+    {
+      "from": "henry_viii",
+      "to": "hampton_court",
+      "type": "seat",
+      "details": "Henry took the palace from Wolsey and doubled it, adding the great hall, the kitchens and the tennis court."
+    },
+    {
+      "from": "henry_viii",
+      "to": "hans_holbein",
+      "type": "patron",
+      "details": "Holbein was sent abroad to portray prospective brides, among them Christina of Denmark and Anne of Cleves. Later accounts blamed the Cleves portrait for Henry's disappointment on meeting her, though the criticism came after the marriage had already become politically inconvenient.",
+      "highlight": true
+    },
+    {
+      "from": "henry_viii",
+      "to": "jane_seymour",
+      "type": "married",
+      "details": "Henry was betrothed to Jane the day after Anne Boleyn's execution and married her ten days later. She was a Seymour, conservative in religion, and had served both previous queens; her motto was Bound to Obey and Serve."
+    },
+    {
+      "from": "henry_viii",
+      "to": "margaret_tudor",
+      "type": "sibling",
+      "details": "Henry mistrusted his sister's Scottish loyalties and her divorce, and warred against her son James V. His invasion of 1542 ended at Solway Moss and left her granddaughter Mary on the Scottish throne within weeks."
+    },
+    {
+      "from": "henry_viii",
+      "to": "mary_i",
+      "type": "parent",
+      "details": "Mary was the treasured only child until the annulment, when she was declared a bastard, separated from her mother and made to wait on her infant half-sister. She submitted in 1536 and never forgave the men who made her."
+    },
+    {
+      "from": "henry_viii",
+      "to": "pilgrimage_grace",
+      "type": "involved",
+      "details": "Henry authorised Norfolk to promise whatever was necessary and then repudiated it, calling the pilgrims rude commons of one of the most brute shires in the realm. A fresh disturbance in 1537 gave him the pretext to hang the leaders."
+    },
+    {
+      "from": "henry_viii",
+      "to": "thomas_cromwell",
+      "type": "condemned",
+      "details": "Cromwell was arrested at the Council table in June 1540, attainted without trial, and executed on the day the king married Catherine Howard. Henry blamed his councillors for it within a year."
+    },
+    {
+      "from": "henry_viii",
+      "to": "thomas_more",
+      "type": "condemned",
+      "details": "More declined to swear the oath of succession and refused to give reasons, maintaining that the law could not punish silence. He was convicted largely on evidence given by Richard Rich, which More denied, and was beheaded on Tower Hill in July 1535."
+    },
+    {
+      "from": "hugh_latimer",
+      "to": "marian_persecution",
+      "type": "involved",
+      "details": "Foxe records Latimer's words to Ridley at the stake, about lighting a candle in England that would never be put out. The sentence became the most widely quoted passage in Acts and Monuments and shaped later Protestant memory of the reign.",
+      "highlight": true
+    },
+    {
+      "from": "hugh_latimer",
+      "to": "nicholas_ridley",
+      "type": "ally",
+      "details": "Bishop and preacher, they were tried together at Oxford, held in the same Bocardo prison, and burned back to back at the same stake in October 1555."
+    },
+    {
+      "from": "jane_grey",
+      "to": "mary_i",
+      "type": "succeeded",
+      "details": "Mary raised East Anglia from Framlingham, the Council in London changed sides within days, and Jane's regime collapsed without a battle. It is the one moment in the century when popular support for the legitimate heir simply overruled the men holding the capital.",
+      "highlight": true
+    },
+    {
+      "from": "jane_grey",
+      "to": "tower_of_london",
+      "type": "imprisoned",
+      "details": "Jane went to the Tower to be proclaimed queen and never left it. She was held for six months and executed after Wyatt's rebellion made her a standing danger."
+    },
+    {
+      "from": "jane_seymour",
+      "to": "edward_vi",
+      "type": "parent",
+      "details": "Jane died of puerperal fever twelve days after delivering the son Henry had waited nearly thirty years for."
+    },
+    {
+      "from": "jane_seymour",
+      "to": "hampton_court",
+      "type": "seat",
+      "details": "Edward was born in the queen's apartments there in October 1537, and Jane died in the same rooms twelve days later of the infection that followed."
+    },
+    {
+      "from": "john_dee",
+      "to": "richard_hakluyt",
+      "type": "ally",
+      "details": "Dee supplied cartographic and legal arguments for an English title in the north Atlantic, based on claims of earlier discovery, while Hakluyt assembled the voyage narratives. Their work together provided much of the intellectual case for English colonisation."
+    },
+    {
+      "from": "john_dudley",
+      "to": "edward_vi",
+      "type": "served",
+      "details": "Northumberland governed through the Council rather than as Protector, stabilised the currency and the finances, and drove the Prayer Book of 1552 through."
+    },
+    {
+      "from": "john_dudley",
+      "to": "jane_grey",
+      "type": "ally",
+      "details": "Northumberland married his son Guildford to Jane in May 1553, weeks before Edward VI's death, and had her proclaimed queen in July. When support moved to Mary he abandoned the attempt at Cambridge; he conformed to Catholicism before his execution without effect on the sentence."
+    },
+    {
+      "from": "john_dudley",
+      "to": "tower_of_london",
+      "type": "imprisoned",
+      "details": "Northumberland surrendered at Cambridge, was brought back through crowds that shouted for Mary, and heard mass publicly on the scaffold in a failed bid to save his family."
+    },
+    {
+      "from": "john_foxe",
+      "to": "book_of_martyrs",
+      "type": "wrote",
+      "details": "Foxe gathered depositions, letters and eyewitness accounts in exile and after, and published in English in 1563. The book ran to millions of words and was revised through four editions in his lifetime.",
+      "highlight": true
+    },
+    {
+      "from": "john_foxe",
+      "to": "marian_persecution",
+      "type": "involved",
+      "details": "Foxe gathered depositions, letters and eyewitness accounts of the burnings and published them in English in 1563. The book presented the executions within a long history of the Church, and it shaped English accounts of Mary's reign for generations.",
+      "highlight": true
+    },
+    {
+      "from": "john_hawkins",
+      "to": "francis_drake",
+      "type": "ally",
+      "details": "Kinsmen from Plymouth, they sailed together on the 1567 to 1568 voyage that ended when Spanish forces attacked their ships at San Juan de Ulúa, an episode both cited for years afterwards. They died within weeks of each other in 1595 and 1596 on a final Caribbean expedition.",
+      "highlight": true
+    },
+    {
+      "from": "john_hawkins",
+      "to": "spanish_armada",
+      "type": "involved",
+      "details": "Hawkins commanded the Victory in the 1588 campaign, one of the race-built galleons produced by the rebuilding programme he had directed as Treasurer of the Navy since 1577. He was knighted at sea during the Channel fighting.\n\nHe also pressed, without success, for the fleet to be sent to blockade the Spanish coast rather than wait in the Channel.",
+      "highlight": true
+    },
+    {
+      "from": "john_norreys",
+      "to": "robert_devereux",
+      "type": "ally",
+      "details": "Norreys was the professional whose experience Essex leaned on and resented, and the two campaigned together in Normandy and Brittany against the Catholic League."
+    },
+    {
+      "from": "john_whitgift",
+      "to": "act_of_uniformity",
+      "type": "involved",
+      "details": "Whitgift required subscription to three articles affirming the royal supremacy, the Prayer Book and the Thirty-Nine Articles, and used the Court of High Commission to enforce it. Several hundred ministers were suspended, though many later conformed.",
+      "highlight": true
+    },
+    {
+      "from": "john_whitgift",
+      "to": "elizabeth_i",
+      "type": "served",
+      "details": "The queen called him her little black husband and backed his campaign against nonconformity without reservation."
+    },
+    {
+      "from": "lettice_knollys",
+      "to": "robert_devereux",
+      "type": "parent",
+      "details": "Lettice's son inherited his stepfather Leicester's place at court and his mother's exclusion from it, and spent much of his career trying to get her received again."
+    },
+    {
+      "from": "margaret_beaufort",
+      "to": "bosworth",
+      "type": "involved",
+      "details": "Margaret's third husband was Lord Stanley, whose decision to change sides at the critical moment gave her son the battle."
+    },
+    {
+      "from": "margaret_beaufort",
+      "to": "henry_vii",
+      "type": "parent",
+      "details": "Margaret was thirteen when Henry was born and a widow before it. For twenty-eight years she worked to keep his claim alive, and once he was king she signed herself Margaret R."
+    },
+    {
+      "from": "margaret_tudor",
+      "to": "james_vi_i",
+      "type": "descent",
+      "details": "James was Margaret's great-grandson twice over, descending from her through both his father and his mother. That double Tudor descent was the whole legal basis of the union of the crowns in 1603."
+    },
+    {
+      "from": "margaret_tudor",
+      "to": "mary_queen_scots",
+      "type": "descent",
+      "details": "Margaret's marriage to James IV put Tudor blood into the Scottish royal line; Mary was her granddaughter. That descent is exactly what made Mary the Catholic heir to England."
+    },
+    {
+      "from": "martin_frobisher",
+      "to": "humphrey_gilbert",
+      "type": "ally",
+      "details": "Both built careers on the idea of a passage to Cathay round the top of America, Gilbert arguing it in print and Frobisher sailing three times to look for it."
+    },
+    {
+      "from": "martin_frobisher",
+      "to": "spanish_armada",
+      "type": "involved",
+      "details": "Frobisher commanded the Triumph, the largest ship in the English fleet, and held the inshore station off Portland against the Armada's right wing."
+    },
+    {
+      "from": "mary_i",
+      "to": "elizabeth_i",
+      "type": "succeeded",
+      "details": "Mary died childless in November 1558, having failed to secure a Catholic heir, and the crown passed to the half-sister she had imprisoned. Elizabeth kept a good deal of Mary's administration and reversed nearly all of her religion."
+    },
+    {
+      "from": "mary_i",
+      "to": "elizabeth_i",
+      "type": "sibling",
+      "details": "Seventeen years apart, and divided by their mothers, their religion and the legitimacy of each other's birth. Mary imprisoned Elizabeth after Wyatt's rising and could never quite bring herself to destroy her."
+    },
+    {
+      "from": "mary_i",
+      "to": "hugh_latimer",
+      "type": "condemned",
+      "details": "Latimer was tried at Oxford with Ridley and Cranmer and burned in October 1555 outside the town wall."
+    },
+    {
+      "from": "mary_i",
+      "to": "marian_persecution",
+      "type": "commanded",
+      "details": "The heresy laws were revived by parliament in 1554 and the first burnings took place at Smithfield in February 1555. Mary did not alter the policy, despite advice that it was strengthening rather than weakening Protestant opinion."
+    },
+    {
+      "from": "mary_i",
+      "to": "nicholas_ridley",
+      "type": "condemned",
+      "details": "Ridley had preached at Paul's Cross for Jane Grey's title and against both of Henry's daughters as bastards, which made his case hopeless before it began."
+    },
+    {
+      "from": "mary_i",
+      "to": "philip_ii",
+      "type": "married",
+      "details": "The marriage treaty of 1554 gave Philip the title of king but almost no power, and the match was deeply unpopular. He spent barely fourteen months in England, there were no children, and it dragged England into war with France and the loss of Calais.",
+      "highlight": true
+    },
+    {
+      "from": "mary_i",
+      "to": "thomas_cranmer",
+      "type": "condemned",
+      "details": "Cranmer had pronounced the annulment of Mary's mother's marriage, and the sentence against him stood despite the six submissions he signed. At his execution in March 1556 he withdrew the recantations and held his right hand in the fire.",
+      "highlight": true
+    },
+    {
+      "from": "mary_i",
+      "to": "wyatt_rebellion",
+      "type": "involved",
+      "details": "Mary refused to leave London, made a direct appeal at the Guildhall, and the city held. The rising failed at Ludgate, but it hardened her regime considerably."
+    },
+    {
+      "from": "mary_queen_scots",
+      "to": "babington_plot",
+      "type": "involved",
+      "details": "Mary's reply to Babington approved the design against Elizabeth, and a forged postscript asked for the conspirators' names. That letter was read aloud at her trial and she could not explain it away."
+    },
+    {
+      "from": "mary_queen_scots",
+      "to": "elizabeth_i",
+      "type": "rival",
+      "details": "Two queens who never met and corresponded for twenty years. Mary's claim made her the natural focus of every Catholic plot, and Elizabeth's refusal to name an heir kept that claim alive."
+    },
+    {
+      "from": "mary_queen_scots",
+      "to": "fotheringhay",
+      "type": "imprisoned",
+      "details": "Mary was moved to Fotheringhay in September 1586, tried in the great hall in October before a commission of thirty-six peers and councillors, and executed there on 8 February 1587.\n\nShe was refused her own counsel and denied sight of the letters used against her, and she declined to recognise the court's jurisdiction over an anointed foreign queen.",
+      "highlight": true
+    },
+    {
+      "from": "mary_queen_scots",
+      "to": "james_vi_i",
+      "type": "parent",
+      "details": "James was thirteen months old when his mother was forced to abdicate, and he was raised by her enemies. He accepted her execution with a formal protest and no more."
+    },
+    {
+      "from": "mary_queen_scots",
+      "to": "thomas_howard_norfolk4",
+      "type": "ally",
+      "details": "Norfolk was persuaded that marrying the Scottish queen would settle the succession, and Ridolfi turned that into a plot involving Spanish troops."
+    },
+    {
+      "from": "matthew_parker",
+      "to": "act_of_uniformity",
+      "type": "involved",
+      "details": "Parker was consecrated under the new settlement in 1559 and then had to enforce it, issuing the Advertisements on vestments that started the first Puritan quarrel."
+    },
+    {
+      "from": "matthew_parker",
+      "to": "book_of_martyrs",
+      "type": "involved",
+      "details": "Convocation ordered copies of Acts and Monuments to be placed in cathedral churches and in the houses of senior clergy, giving the book a semi-official standing. Parker also lent Foxe manuscripts from his collection of pre-Conquest English texts.",
+      "highlight": true
+    },
+    {
+      "from": "matthew_parker",
+      "to": "elizabeth_i",
+      "type": "served",
+      "details": "Parker took the archbishopric reluctantly and spent it holding a middle line between returning exiles who wanted more reform and parishes that wanted less."
+    },
+    {
+      "from": "medina_sidonia",
+      "to": "duke_of_parma",
+      "type": "ally",
+      "details": "The whole plan depended on these two joining forces, and they had no reliable way of communicating across the Channel. Parma's barges could not come out past the Dutch flyboats, and the fleet had nowhere to wait.",
+      "highlight": true
+    },
+    {
+      "from": "medina_sidonia",
+      "to": "spanish_armada",
+      "type": "commanded",
+      "details": "He wrote to Philip on appointment that he had no experience of naval war and was habitually seasick, and asked to be excused; the king refused. He held the fleet in its defensive formation through the Channel, and brought roughly half of it home."
+    },
+    {
+      "from": "nicholas_hilliard",
+      "to": "elizabeth_i",
+      "type": "served",
+      "details": "Hilliard painted the queen without shadow, on her insistence, producing the flat radiant mask that became the official face of the reign."
+    },
+    {
+      "from": "nicholas_hilliard",
+      "to": "walter_raleigh",
+      "type": "ally",
+      "details": "Hilliard's miniature of Raleigh, all pearls and black and white, is the image that fixed the courtier's self-presentation for posterity."
+    },
+    {
+      "from": "nicholas_ridley",
+      "to": "marian_persecution",
+      "type": "involved",
+      "details": "Ridley's execution in October 1555 was prolonged, and Foxe's account of it circulated widely. Along with Latimer and Cranmer he became known as one of the Oxford Martyrs, commemorated by a memorial erected on the site in the nineteenth century.",
+      "highlight": true
+    },
+    {
+      "from": "philip_henslowe",
+      "to": "christopher_marlowe",
+      "type": "patron",
+      "details": "Henslowe's companies held the Marlowe repertory and his diary records the takings for Faustus and The Jew of Malta, which is much of what we know about their popularity."
+    },
+    {
+      "from": "philip_ii",
+      "to": "spanish_armada",
+      "type": "commanded",
+      "details": "Philip planned the campaign in detail from Madrid, insisting the fleet meet Parma's army off Flanders without ever securing a deep-water port for the rendezvous. The plan's central flaw was his own."
+    },
+    {
+      "from": "philip_sidney",
+      "to": "edmund_spenser",
+      "type": "patron",
+      "details": "Spenser dedicated The Shepheardes Calender to Sidney and put him into later poetry as Astrophel. The two were part of the same militant Protestant literary circle around Leicester."
+    },
+    {
+      "from": "philip_sidney",
+      "to": "francis_vere",
+      "type": "ally",
+      "details": "Both served in the Netherlands under Leicester in the campaign of 1585 to 1586, and both were present in the fighting around Zutphen where Sidney received his wound. Vere afterwards commanded the English forces there for more than a decade."
+    },
+    {
+      "from": "pius_v",
+      "to": "elizabeth_i",
+      "type": "condemned",
+      "details": "The bull of February 1570 followed rather than preceded the Northern Rising, and arrived too late to assist it. Its practical effect was to place English Catholics under suspicion of disloyalty, and it was cited in the treason statutes passed in 1571 and after.",
+      "highlight": true
+    },
+    {
+      "from": "pius_v",
+      "to": "regnans_in_excelsis",
+      "type": "wrote",
+      "details": "Pius issued the bull without consulting the Catholic powers, who thought it reckless. It declared Elizabeth a heretic, deposed her, and forbade her subjects to obey her."
+    },
+    {
+      "from": "reginald_pole",
+      "to": "henry_viii",
+      "type": "rival",
+      "details": "Pole answered the king's request for an opinion with a violent attack on the supremacy, then took a cardinal's hat. Henry could not reach him, so he executed his mother, the Countess of Salisbury, instead."
+    },
+    {
+      "from": "reginald_pole",
+      "to": "mary_i",
+      "type": "served",
+      "details": "Pole returned in 1554 as papal legate and absolved the realm of schism, then became Archbishop of Canterbury after Cranmer's burning. He died within hours of the queen he had come back to serve."
+    },
+    {
+      "from": "richard_burbage",
+      "to": "hamlet",
+      "type": "involved",
+      "details": "Burbage created the part and was still playing it in his forties, and an elegy at his death listed the young prince among the roles that died with him."
+    },
+    {
+      "from": "richard_burbage",
+      "to": "the_globe",
+      "type": "seat",
+      "details": "Burbage and his brother Cuthbert held half the shares in the playhouse, with the other half split among Shakespeare and four fellow actors. It was their father James who had built the Theatre whose timbers became the Globe.",
+      "highlight": true
+    },
+    {
+      "from": "richard_burbage",
+      "to": "william_shakespeare",
+      "type": "ally",
+      "details": "They worked together for twenty years, and the great tragic roles were written for Burbage's particular gifts. Shakespeare left him money for a memorial ring."
+    },
+    {
+      "from": "richard_grenville",
+      "to": "francis_drake",
+      "type": "rival",
+      "details": "Grenville had proposed a Pacific voyage in 1574 that the crown declined to authorise, and the project passed instead to Drake. The two were rival figures in West Country maritime enterprise and in the Irish plantations, though they served the same interests against Spain.",
+      "highlight": true
+    },
+    {
+      "from": "richard_hakluyt",
+      "to": "humphrey_gilbert",
+      "type": "ally",
+      "details": "Hakluyt collected and printed Gilbert's Discourse on the North-West Passage, and used the Newfoundland voyage as the founding precedent for an English claim in America."
+    },
+    {
+      "from": "robert_cecil",
+      "to": "elizabeth_i",
+      "type": "served",
+      "details": "Cecil did the secretary's work for years before he was given the title, and the queen kept him waiting deliberately. By the last years of the reign he controlled access to her almost entirely."
+    },
+    {
+      "from": "robert_cecil",
+      "to": "james_vi_i",
+      "type": "ally",
+      "details": "Cecil conducted a secret correspondence with Edinburgh under cipher for the last years of the reign, coaching James on how to approach the English and ensuring the succession was settled before Elizabeth died."
+    },
+    {
+      "from": "robert_devereux",
+      "to": "elizabeth_i",
+      "type": "served",
+      "details": "Essex wanted to be a general and demanded commands the queen thought beyond him. The Cadiz raid made his reputation and the Irish command destroyed it."
+    },
+    {
+      "from": "robert_devereux",
+      "to": "elizabeth_i",
+      "type": "attachment",
+      "details": "Essex was some thirty-three years younger than the queen and enjoyed a familiarity at court that his rivals resented, sustained through letters of elaborate devotion and periods of ostentatious withdrawal. The relationship broke down in 1599 when he returned from Ireland without leave and entered her private chamber unannounced.",
+      "highlight": true
+    },
+    {
+      "from": "robert_devereux",
+      "to": "essex_rebellion",
+      "type": "commanded",
+      "details": "Deserting his Irish command, confined and ruined, Essex marched into the City with two hundred men expecting London to rise. It did not, and the whole affair was over by nightfall."
+    },
+    {
+      "from": "robert_devereux",
+      "to": "robert_cecil",
+      "type": "rival",
+      "details": "The two men divided the court between war party and peace party, and Cecil won by staying in office while Essex went to Ireland."
+    },
+    {
+      "from": "robert_devereux",
+      "to": "tower_of_london",
+      "type": "imprisoned",
+      "details": "Essex was brought from Lambeth after the rising, tried in Westminster Hall by his peers, and beheaded on Tower Green in the last such execution held there."
+    },
+    {
+      "from": "robert_dudley",
+      "to": "edmund_spenser",
+      "type": "patron",
+      "details": "Spenser entered Leicester's household about 1579 and dedicated The Shepheardes Calender to Sidney from within that circle. The connection placed him close to the militant Protestant grouping at court.\n\nA perceived criticism of the proposed French marriage in Mother Hubberds Tale is generally thought to have cost him further advancement in England.",
+      "highlight": true
+    },
+    {
+      "from": "robert_dudley",
+      "to": "elizabeth_i",
+      "type": "attachment",
+      "details": "They had known each other since childhood and were both in the Tower in 1554. The death of his wife Amy Robsart in 1560 made marriage politically impossible, and he stayed the closest man to her for thirty years regardless.",
+      "highlight": true
+    },
+    {
+      "from": "robert_dudley",
+      "to": "lettice_knollys",
+      "type": "married",
+      "details": "Leicester married Lettice secretly in 1578. When Elizabeth found out she banished the bride permanently and never entirely forgave him."
+    },
+    {
+      "from": "robert_dudley",
+      "to": "philip_sidney",
+      "type": "patron",
+      "details": "Sidney was Leicester's nephew and, until his uncle fathered a son, heir presumptive to the earldom. He served under him as Governor of Flushing in the Netherlands expedition and took his fatal wound there in 1586.",
+      "highlight": true
+    },
+    {
+      "from": "robert_dudley",
+      "to": "tilbury",
+      "type": "involved",
+      "details": "Leicester organised the Tilbury camp and arranged the queen's review of the troops. He died a few weeks later, and Elizabeth kept his last letter in a box by her bed."
+    },
+    {
+      "from": "robert_dudley",
+      "to": "william_cecil",
+      "type": "rival",
+      "details": "Cecil thought Leicester's ambitions dangerous and worked to prevent the marriage; Leicester thought Cecil timid abroad. They quarrelled for thirty years and cooperated for most of them."
+    },
+    {
+      "from": "roger_ascham",
+      "to": "elizabeth_i",
+      "type": "tutor",
+      "details": "Ascham taught Elizabeth Greek and Latin in her teens and boasted of her fluency. Her habit of answering ambassadors in Latin on the spot dates from those lessons."
+    },
+    {
+      "from": "roger_ascham",
+      "to": "mary_i",
+      "type": "served",
+      "details": "Ascham kept the post of Latin secretary through Mary's reign despite his Protestantism, writing her diplomatic correspondence without being asked to change his religion."
+    },
+    {
+      "from": "stephen_gardiner",
+      "to": "marian_persecution",
+      "type": "involved",
+      "details": "Gardiner pressed for the revival of the heresy laws and presided over the early examinations, then drew back as it became clear the burnings were making converts rather than preventing them."
+    },
+    {
+      "from": "stephen_gardiner",
+      "to": "mary_i",
+      "type": "served",
+      "details": "Released from the Tower on Mary's accession and made Lord Chancellor, Gardiner drove the repeal of the Edwardian legislation and negotiated the Spanish marriage treaty he privately disliked."
+    },
+    {
+      "from": "stephen_gardiner",
+      "to": "tower_of_london",
+      "type": "imprisoned",
+      "details": "Gardiner spent the whole of Edward's reign in the Tower for refusing to accept the Protectorate's religious changes, and was deprived of Winchester in 1551."
+    },
+    {
+      "from": "thomas_cranmer",
+      "to": "book_of_common_prayer",
+      "type": "wrote",
+      "details": "Cranmer compiled the 1549 book from Latin, Lutheran and Sarum sources into a single English liturgy, then revised it in 1552 in a firmly Protestant direction. Its collects and its cadences are still audible in English prose.",
+      "highlight": true
+    },
+    {
+      "from": "thomas_cranmer",
+      "to": "edward_vi",
+      "type": "served",
+      "details": "With a Protestant boy on the throne Cranmer could finally legislate the doctrine he had held privately for years, issuing the Prayer Books, the Ordinal and the Forty-Two Articles in six years."
+    },
+    {
+      "from": "thomas_cranmer",
+      "to": "henry_viii",
+      "type": "served",
+      "details": "Cranmer rose by suggesting that the universities of Europe, not the pope, should rule on the king's marriage. As archbishop he then annulled that marriage, and two more besides."
+    },
+    {
+      "from": "thomas_cranmer",
+      "to": "marian_persecution",
+      "type": "involved",
+      "details": "Cranmer was the most valuable of all the victims and the most compromised, having sworn obedience to the crown in religion and then met a crown that ordered him back to Rome."
+    },
+    {
+      "from": "thomas_cranmer",
+      "to": "stephen_gardiner",
+      "type": "rival",
+      "details": "They argued the eucharist in print and in council for twenty years, Gardiner defending the real presence and Cranmer dismantling it. Each in turn imprisoned the other's cause when the throne changed hands.",
+      "highlight": true
+    },
+    {
+      "from": "thomas_cromwell",
+      "to": "act_of_supremacy",
+      "type": "wrote",
+      "details": "Cromwell drafted the supremacy legislation and the treason act that gave it teeth, and organised the administration of the oath throughout the country.\n\nAs Vicegerent in Spirituals he then exercised the new authority on the king's behalf, ranking above the archbishops in convocation.",
+      "highlight": true
+    },
+    {
+      "from": "thomas_cromwell",
+      "to": "dissolution",
+      "type": "commanded",
+      "details": "As Vicegerent in Spirituals, Cromwell ordered the visitations that produced the evidence, drafted the statutes, and ran the commissions that took the surrenders. The proceeds went into the crown's hands and out again into the gentry's.",
+      "highlight": true
+    },
+    {
+      "from": "thomas_cromwell",
+      "to": "henry_viii",
+      "type": "served",
+      "details": "Cromwell supplied the legal machinery of the break with Rome and governed through statute rather than prerogative, carrying the supremacy, the treason act and the dissolution through parliament. He reorganised the royal household departments into something closer to a system of state offices.",
+      "highlight": true
+    },
+    {
+      "from": "thomas_cromwell",
+      "to": "thomas_howard_norfolk3",
+      "type": "rival",
+      "details": "Norfolk represented the old nobility and the old religion, Cromwell the new men and reform. Norfolk helped bring him down in 1540 and enjoyed the victory for exactly six years before his own family fell."
+    },
+    {
+      "from": "thomas_gresham",
+      "to": "elizabeth_i",
+      "type": "served",
+      "details": "Gresham raised and refinanced crown loans on the Antwerp exchange and advised on the 1560 recoinage that withdrew the debased currency of the previous two reigns. He argued for reducing the crown's dependence on foreign lenders.",
+      "highlight": true
+    },
+    {
+      "from": "thomas_gresham",
+      "to": "william_cecil",
+      "type": "ally",
+      "details": "Gresham's long series of letters to Cecil reports on credit conditions in Antwerp, the movement of bullion, and the politics of the Netherlands, and Cecil used him as the government's principal source in the money market.\n\nTheir correspondence underpinned the 1560 recoinage and the crown's gradual withdrawal from foreign borrowing.",
+      "highlight": true
+    },
+    {
+      "from": "thomas_howard_norfolk3",
+      "to": "catherine_howard",
+      "type": "patron",
+      "details": "Norfolk brought his niece to court in 1539 and supported her advancement, as he had earlier supported that of his other niece Anne Boleyn. He took no part in her defence once the allegations were laid, and sat among those who condemned her."
+    },
+    {
+      "from": "thomas_howard_norfolk3",
+      "to": "henry_viii",
+      "type": "served",
+      "details": "Norfolk commanded at Flodden's aftermath, in France and against the northern rebels, and pushed two of his nieces into the king's bed. Service and kinship together kept him at the centre of the reign for forty years."
+    },
+    {
+      "from": "thomas_howard_norfolk3",
+      "to": "pilgrimage_grace",
+      "type": "commanded",
+      "details": "Norfolk faced a rebel host far larger than his own, negotiated a pardon he had no intention of keeping, and hanged the leaders once the movement dispersed."
+    },
+    {
+      "from": "thomas_howard_norfolk3",
+      "to": "thomas_howard_norfolk4",
+      "type": "descent",
+      "details": "The dukedom skipped a generation: the fourth duke's father, the poet Earl of Surrey, was executed in 1547, so the boy was raised by John Foxe and inherited from his grandfather."
+    },
+    {
+      "from": "thomas_howard_norfolk3",
+      "to": "tower_of_london",
+      "type": "imprisoned",
+      "details": "Condemned for treason in January 1547, Norfolk was saved because Henry VIII died the night before the execution. He stayed in the Tower for the whole of Edward's reign and was released by Mary."
+    },
+    {
+      "from": "thomas_howard_norfolk4",
+      "to": "tower_of_london",
+      "type": "imprisoned",
+      "details": "Norfolk was sent there first in 1569 for the Scottish marriage scheme, released to house arrest, and returned in 1571 when the Ridolfi correspondence was found under a doormat at Howard House."
+    },
+    {
+      "from": "thomas_more",
+      "to": "act_of_supremacy",
+      "type": "involved",
+      "details": "More would not swear to the oath and would not say why, arguing that the law could not punish silence. The court decided otherwise."
+    },
+    {
+      "from": "thomas_more",
+      "to": "hans_holbein",
+      "type": "patron",
+      "details": "Erasmus recommended Holbein to More, who received him in Chelsea on his first English visit in 1526 and introduced him to a circle of humanist and mercantile sitters.\n\nThe resulting group portrait of More's household was the first of its kind painted in England; the original is lost and the composition is known from a preparatory drawing and copies.",
+      "highlight": true
+    },
+    {
+      "from": "thomas_more",
+      "to": "henry_viii",
+      "type": "served",
+      "details": "More succeeded Wolsey as Chancellor in 1529 and resigned in 1532 as soon as the church submitted to the king."
+    },
+    {
+      "from": "thomas_more",
+      "to": "tower_of_london",
+      "type": "imprisoned",
+      "details": "More was held for fifteen months, writing the Dialogue of Comfort, while the Act of Supremacy made his silence indefensible."
+    },
+    {
+      "from": "thomas_seymour",
+      "to": "edward_seymour",
+      "type": "sibling",
+      "details": "The Protector's brother resented being left out of power and schemed to control the young king personally. Somerset signed his death warrant, and the fratricide badly damaged his own standing."
+    },
+    {
+      "from": "thomas_seymour",
+      "to": "tower_of_london",
+      "type": "imprisoned",
+      "details": "Seymour was arrested in January 1549 after being found at night near the king's apartments; the guard dog was reportedly shot. He was condemned by act of attainder rather than by trial, no court having been willing to hear the evidence.",
+      "highlight": true
+    },
+    {
+      "from": "thomas_wolsey",
+      "to": "clement_vii",
+      "type": "rival",
+      "details": "As papal legate Wolsey was supposed to be able to deliver the annulment from within the church. The legatine court at Blackfriars was revoked to Rome, and his failure ended his career."
+    },
+    {
+      "from": "thomas_wolsey",
+      "to": "field_cloth_gold",
+      "type": "commanded",
+      "details": "Wolsey organised the whole spectacle, down to the seating, the tents and the order of jousting, as a demonstration of English importance in Europe."
+    },
+    {
+      "from": "thomas_wolsey",
+      "to": "hampton_court",
+      "type": "seat",
+      "details": "Wolsey acquired the manor in 1514 and built a residence on a scale unusual for a subject, with lodgings for a large household and for visiting royalty. He transferred it to Henry VIII in 1529 as his position was failing.",
+      "highlight": true
+    },
+    {
+      "from": "thomas_wolsey",
+      "to": "henry_viii",
+      "type": "served",
+      "details": "As Lord Chancellor, cardinal and papal legate, Wolsey directed domestic administration and foreign policy for roughly fifteen years, allowing the young king to leave the routine of government to him. His position depended entirely on retaining the king's confidence.",
+      "highlight": true
+    },
+    {
+      "from": "thomas_wolsey",
+      "to": "thomas_cromwell",
+      "type": "patron",
+      "details": "Cromwell learned government in Wolsey's service, dissolving small monasteries to fund the cardinal's colleges. When Wolsey fell, Cromwell defended him in parliament and then took his place in the king's business.",
+      "highlight": true
+    },
+    {
+      "from": "thomas_wolsey",
+      "to": "thomas_more",
+      "type": "succeeded",
+      "details": "More took the Great Seal in October 1529 as the cardinal fell, and became the first layman in generations to hold it. He accepted knowing the matter that had destroyed his predecessor was still unresolved."
+    },
+    {
+      "from": "thomas_wyatt",
+      "to": "henry_viii",
+      "type": "served",
+      "details": "Wyatt served as ambassador to the emperor and was twice arrested at home, once in 1536 when his supposed connection to Anne Boleyn made him dangerous."
+    },
+    {
+      "from": "thomas_wyatt",
+      "to": "tower_of_london",
+      "type": "imprisoned",
+      "details": "From a Tower window in May 1536 Wyatt may have watched Anne Boleyn's execution; the poem beginning with the ringing of the bell is usually read that way."
+    },
+    {
+      "from": "walter_raleigh",
+      "to": "christopher_marlowe",
+      "type": "ally",
+      "details": "Marlowe's lyric The Passionate Shepherd to His Love was answered by The Nymph's Reply to the Shepherd, printed as Raleigh's in England's Helicon in 1600. The two moved in overlapping circles of court patronage and speculative discussion, and both were named in the 1593 depositions alleging irreligion at Raleigh's table.\n\nThe association was later used against both men, and it remains one of the few documented literary connections between them.",
+      "highlight": true
+    },
+    {
+      "from": "walter_raleigh",
+      "to": "elizabeth_i",
+      "type": "attachment",
+      "details": "Raleigh arrived at court in 1581 and was showered with monopolies, wine licences and Irish land. His secret marriage to one of her maids of honour in 1592 ended the favour abruptly and sent them both to the Tower."
+    },
+    {
+      "from": "walter_raleigh",
+      "to": "faerie_queene",
+      "type": "involved",
+      "details": "Raleigh was Spenser's neighbour in Munster, brought him to court to present the poem to the queen, and contributed a commendatory sonnet. He appears inside the allegory as the Shepherd of the Ocean."
+    },
+    {
+      "from": "walter_raleigh",
+      "to": "humphrey_gilbert",
+      "type": "sibling",
+      "details": "Gilbert was Raleigh's elder half-brother and the man who first argued for English colonies in the north-west."
+    },
+    {
+      "from": "walter_raleigh",
+      "to": "john_dee",
+      "type": "ally",
+      "details": "Dee advised Raleigh's captains on navigation and supplied the argument that prior discovery gave England a legal title in the north Atlantic."
+    },
+    {
+      "from": "walter_raleigh",
+      "to": "richard_grenville",
+      "type": "patron",
+      "details": "Grenville commanded the fleet that carried Raleigh's first colonists to Roanoke in 1585 and returned with supplies the year after."
+    },
+    {
+      "from": "walter_raleigh",
+      "to": "richard_hakluyt",
+      "type": "ally",
+      "details": "Hakluyt drafted the Discourse of Western Planting for Raleigh's colonial project and put it before the queen in 1584."
+    },
+    {
+      "from": "walter_raleigh",
+      "to": "robert_devereux",
+      "type": "rival",
+      "details": "The two competed through the 1590s for military commands, monopolies and access to the queen, and their followers formed opposing court groupings. Raleigh was present as Captain of the Guard at Essex's execution in 1601, and was criticised at the time for his conduct there.",
+      "highlight": true
+    },
+    {
+      "from": "walter_raleigh",
+      "to": "tower_of_london",
+      "type": "imprisoned",
+      "details": "Raleigh was confined briefly in 1592 over his secret marriage to Elizabeth Throckmorton, and again from 1603 to 1616 under a treason conviction. During the second imprisonment he wrote the first volume of his History of the World.",
+      "highlight": true
+    },
+    {
+      "from": "william_byrd",
+      "to": "elizabeth_i",
+      "type": "served",
+      "details": "Byrd remained a Gentleman of the Chapel Royal throughout the reign and retained the printing patent granted to him and Thomas Tallis in 1575, despite being repeatedly presented as a recusant in the 1580s and 1590s."
+    },
+    {
+      "from": "william_cecil",
+      "to": "act_of_uniformity",
+      "type": "involved",
+      "details": "Cecil managed the settlement bills through a hostile House of Lords in 1559, timing the arrest of two bishops to get the numbers. The church of England as it stood for centuries was largely his parliamentary carpentry.",
+      "highlight": true
+    },
+    {
+      "from": "william_cecil",
+      "to": "babington_plot",
+      "type": "involved",
+      "details": "Burghley pushed the trial forward once the letters were in hand, drafting the commission and managing the parliamentary pressure that made Elizabeth's refusal untenable."
+    },
+    {
+      "from": "william_cecil",
+      "to": "elizabeth_i",
+      "type": "served",
+      "details": "Appointed Secretary on the first day of the reign, Cecil served her for forty years and told her when she was wrong. Their partnership, quarrelsome and unbroken, is the spine of the Elizabethan state."
+    },
+    {
+      "from": "william_cecil",
+      "to": "francis_walsingham",
+      "type": "ally",
+      "details": "They disagreed about how far to provoke Spain but worked as a single machine on security, running the interrogations, the cipher work and the case against Mary Stuart together."
+    },
+    {
+      "from": "william_cecil",
+      "to": "mary_queen_scots",
+      "type": "rival",
+      "details": "Cecil regarded Mary as an existential threat from the moment she landed in England and worked for eighteen years to have her removed. He drafted the Bond of Association and pushed the trial commission through.",
+      "highlight": true
+    },
+    {
+      "from": "william_cecil",
+      "to": "robert_cecil",
+      "type": "parent",
+      "details": "Burghley trained his younger son in government from boyhood and manoeuvred him into the secretaryship, creating something close to a dynasty of ministers."
+    },
+    {
+      "from": "william_shakespeare",
+      "to": "essex_rebellion",
+      "type": "involved",
+      "details": "Supporters of Essex paid the Chamberlain's Men forty shillings to revive Richard II, a play including the deposition of a monarch, on the eve of the rising. The company was examined and accepted to have acted as commercial players; they performed at court the night before Essex's execution.",
+      "highlight": true
+    },
+    {
+      "from": "william_shakespeare",
+      "to": "hamlet",
+      "type": "wrote",
+      "details": "Shakespeare rewrote an older revenge play into something that keeps stopping to think. The text survives in three markedly different versions, and no one is certain which is closest to what the Globe actually staged.",
+      "highlight": true
+    },
+    {
+      "from": "william_shakespeare",
+      "to": "the_globe",
+      "type": "seat",
+      "details": "Shakespeare was one of the housekeepers who owned the Globe outright, which is where his money came from rather than from writing. He wrote for its specific stage: no scenery, daylight, an audience on three sides.",
+      "highlight": true
+    }
+  ]
+}
