@@ -109,10 +109,6 @@
       "mutual": true,
       "dashed": true
     },
-    "friend": {
-      "label": "friend",
-      "mutual": true
-    },
     "forges": {
       "fromLabel": "smith",
       "toLabel": "equipped",
@@ -141,6 +137,11 @@
       "toLabel": "transformed",
       "arrow": true,
       "dashed": true
+    },
+    "precedes": {
+      "fromLabel": "came before",
+      "toLabel": "came after",
+      "arrow": true
     }
   },
   "nodes": {
@@ -2110,28 +2111,26 @@
     {
       "from": "chaos",
       "to": "gaia",
-      "type": "parent",
-      "details": "Out of the first yawning Chaos, Gaia the deep-rooted Earth arose of her own accord — not born but simply coming to be, the first firm ground in a formless void and the foundation on which all later creation would rest.",
-      "highlight": true
+      "type": "precedes",
+      "details": "Out of the first yawning Chaos, Gaia the deep-rooted Earth arose of her own accord — not born but simply coming to be, the first firm ground in a formless void and the foundation on which all later creation would rest."
     },
     {
       "from": "chaos",
       "to": "nyx",
       "type": "parent",
-      "details": "Nyx, primordial Night, was among the very first beings to arise from Chaos, the yawning void at the beginning of all things. She emerged needing no parent in the ordinary sense — a firstborn power of the cosmos, older than the gods, from whom Day and Death and Sleep would all descend.",
-      "highlight": true
+      "details": "Nyx, primordial Night, was among the very first beings to arise from Chaos, the yawning void at the beginning of all things. She emerged needing no parent in the ordinary sense — a firstborn power of the cosmos, older than the gods, from whom Day and Death and Sleep would all descend."
     },
     {
       "from": "chaos",
       "to": "erebus",
       "type": "parent",
-      "details": "Erebus, the underworld's darkness, emerged from Chaos beside his sister Night."
+      "details": "Erebus, the underworld's darkness, emerged from Chaos beside his sister Night.\n\nErebus and Nyx are the only two beings Hesiod actually derives from Chaos, and they immediately mate to produce Aether and Hemera — brightness out of darkness in a single generation."
     },
     {
       "from": "chaos",
       "to": "tartarus",
-      "type": "parent",
-      "details": "Tartarus, the pit beneath the earth, came into being with Chaos — one day the prison of the Titans."
+      "type": "precedes",
+      "details": "Tartarus, the pit beneath the earth, came into being after Chaos rather than out of it — in Hesiod the first four powers arise in succession, with no descent binding them to one another.\n\nHe would become the prison of the Titans, as far below Hades as earth lies below the sky."
     },
     {
       "from": "gaia",
@@ -2149,8 +2148,7 @@
       "from": "uranus",
       "to": "cronus",
       "type": "parent",
-      "details": "Uranus fathered Cronus among the twelve Titans, then hated and imprisoned his monstrous children within the earth — until Cronus, armed by Gaia with a sickle, unmanned his father and seized the throne of heaven for himself.",
-      "highlight": true
+      "details": "Uranus fathered Cronus among the twelve Titans, then hated and imprisoned his monstrous children within the earth — until Cronus, armed by Gaia with a sickle, unmanned his father and seized the throne of heaven for himself."
     },
     {
       "from": "gaia",
@@ -2163,13 +2161,13 @@
       "from": "uranus",
       "to": "rhea",
       "type": "parent",
-      "details": "Rhea, daughter of Uranus, would become the mother of the Olympians."
+      "details": "Rhea, daughter of Uranus, would become the mother of the Olympians.\n\nThe Titan children paired off among themselves, and Rhea married Cronus, the brother who had unmanned their father. She then watched him swallow her own children for the same reason Uranus had buried his."
     },
     {
       "from": "gaia",
       "to": "rhea",
       "type": "parent",
-      "details": "Gaia's daughter Rhea would repeat her mother's trick — helping a son overthrow a devouring father."
+      "details": "Gaia's daughter Rhea would repeat her mother's trick — helping a son overthrow a devouring father.\n\nRhea repeated her mother's manoeuvre exactly: consult Gaia, conceal the youngest son, arm him against his father. Uranus was overthrown by a sickle Gaia made, and Cronus by a stone Rhea substituted for Zeus."
     },
     {
       "from": "uranus",
@@ -2181,103 +2179,106 @@
       "from": "gaia",
       "to": "oceanus",
       "type": "parent",
-      "details": "Gaia's son Oceanus stayed neutral in the war of the gods, and kept his ancient waters."
+      "details": "Gaia's son Oceanus stayed neutral in the war of the gods, and kept his ancient waters.\n\nAlone among the Titans, Oceanus took no part in the war against the Olympians and lost nothing by it. Hesiod keeps him and his three thousand children entirely outside the succession quarrels."
     },
     {
       "from": "uranus",
       "to": "tethys",
       "type": "parent",
-      "details": "Tethys the Titaness is a daughter of Uranus and Gaia, and wife to her brother Oceanus."
+      "details": "Tethys the Titaness is a daughter of Uranus and Gaia, and wife to her brother Oceanus.\n\nTethys and Oceanus were the eldest pair and stood outside the war. In the fourteenth book of the Iliad, Hera calls them the origin of the gods, and says they fostered her in their house while Zeus was fighting Cronus."
     },
     {
       "from": "gaia",
       "to": "tethys",
       "type": "parent",
-      "details": "Gaia's daughter Tethys bore the three thousand rivers and ocean-nymphs."
+      "details": "Gaia's daughter Tethys bore the three thousand rivers and ocean-nymphs.\n\nTethys and Oceanus were reckoned by some, including Homer, as the true origin of everything — the river encircling the world and the water beneath it, from which all the rest came."
     },
     {
       "from": "uranus",
       "to": "hyperion",
       "type": "parent",
-      "details": "Hyperion, Titan of light and father of Sun, Moon and Dawn, is a son of Uranus and Gaia."
+      "details": "Hyperion, Titan of light and father of Sun, Moon and Dawn, is a son of Uranus and Gaia.\n\nHyperion's name means the one who goes above, and his three children are the lights that cross the sky in order. He is barely a character in his own right: the Titan generation supplies the machinery of the world rather than its stories.",
+      "highlight": true
     },
     {
       "from": "gaia",
       "to": "hyperion",
       "type": "parent",
-      "details": "Gaia's son Hyperion fathered the very lights of the sky."
+      "details": "Gaia's son Hyperion fathered the very lights of the sky.\n\nHyperion was one of the four brothers who held their father down at the corners of the world while Cronus cut him — the act Gaia had planned and armed. He is later imprisoned with the rest of the defeated Titans."
     },
     {
       "from": "uranus",
       "to": "theia",
       "type": "parent",
-      "details": "Theia, Titaness of light, is a daughter of Uranus and Gaia and mother of the sky's lights."
+      "details": "Theia, Titaness of light, is a daughter of Uranus and Gaia and mother of the sky's lights.\n\nTheia is called Euryphaessa, the wide-shining, in the Homeric Hymn to Helios. Pindar makes her the reason men value gold and prize strength, as the source of the brightness by which everything else is judged."
     },
     {
       "from": "gaia",
       "to": "theia",
       "type": "parent",
-      "details": "Gaia's daughter Theia mothered the Sun, Moon and Dawn."
+      "details": "Gaia's daughter Theia mothered the Sun, Moon and Dawn.\n\nShe married her brother Hyperion, so the sun, moon and dawn all descend from a single pairing of light with light. None of the three ever ranks as an Olympian, though Helios sees everything and is called as a witness."
     },
     {
       "from": "uranus",
       "to": "themis",
       "type": "parent",
-      "details": "Themis, Titaness of divine law, is a daughter of Uranus and Gaia."
+      "details": "Themis, Titaness of divine law, is a daughter of Uranus and Gaia.\n\nThemis is the settled order of things, and she survived the change of regime — Zeus took her as his second consort and she bore the Seasons and the Fates, which is how the new order acquired legitimacy from the old."
     },
     {
       "from": "gaia",
       "to": "themis",
       "type": "parent",
-      "details": "Gaia's daughter Themis embodied the old order of custom and right."
+      "details": "Gaia's daughter Themis embodied the old order of custom and right.\n\nThemis held the Delphic oracle after Gaia and before Phoebe. She sat beside Zeus in the new order as his counsellor, and it was her warning about Thetis — that any son would surpass his father — that made him marry the sea-nymph to a mortal instead.",
+      "highlight": true
     },
     {
       "from": "uranus",
       "to": "mnemosyne",
       "type": "parent",
-      "details": "Mnemosyne, Memory, is a daughter of Uranus and Gaia, and will mother the nine Muses."
+      "details": "Mnemosyne, Memory, is a daughter of Uranus and Gaia, and will mother the nine Muses.\n\nMemory is a Titan because in an oral culture it is a cosmic force rather than a faculty: what is not remembered has not happened. Every epic opens by asking her daughters to supply what the poet cannot know."
     },
     {
       "from": "gaia",
       "to": "mnemosyne",
       "type": "parent",
-      "details": "Gaia the Earth bore the Titaness Mnemosyne, Memory, whose daughters by Zeus are the Muses."
+      "details": "Gaia the Earth bore the Titaness Mnemosyne, Memory, whose daughters by Zeus are the Muses.\n\nZeus lay with her nine nights running and she bore the nine Muses, so that the memory of what had happened would outlast those it happened to. Poetry, in Hesiod's account, is a Titan's daughter's work."
     },
     {
       "from": "uranus",
       "to": "iapetus",
       "type": "parent",
-      "details": "Iapetus the Titan, father of Atlas and Prometheus, is a son of Uranus and Gaia."
+      "details": "Iapetus the Titan, father of Atlas and Prometheus, is a son of Uranus and Gaia.\n\nEvery one of Iapetus's four sons ends badly — Atlas holding the sky, Menoetius thunderstruck, Prometheus chained, Epimetheus saddled with Pandora. The line supplies the Titanomachy's losers and the human race's troubles alike.",
+      "highlight": true
     },
     {
       "from": "gaia",
       "to": "iapetus",
       "type": "parent",
-      "details": "Gaia's son Iapetus fathered a line of rebels against Olympus."
+      "details": "Gaia's son Iapetus fathered a line of rebels against Olympus.\n\nThrough Prometheus, Iapetus is the ancestor of the human condition in Hesiod's scheme — fire stolen, sacrifice cheated, Pandora sent in reprisal. The line is defined by attempting things against Zeus."
     },
     {
       "from": "uranus",
       "to": "coeus",
       "type": "parent",
-      "details": "Coeus, Titan of the inquiring mind, is a son of Uranus and Gaia."
+      "details": "Coeus, Titan of the inquiring mind, is a son of Uranus and Gaia.\n\nCoeus was also called Polos, the axis on which the heavens turn. He held one corner of the sky at the castration and was thrown into Tartarus after the war with the rest."
     },
     {
       "from": "gaia",
       "to": "coeus",
       "type": "parent",
-      "details": "Gaia's son Coeus, whose line carried the gift of prophecy."
+      "details": "Gaia's son Coeus, whose line carried the gift of prophecy.\n\nHis daughter Phoebe took the Delphic oracle and passed it to Leto's son, so the line of prophecy runs from Coeus through two generations to Apollo without ever passing through Zeus."
     },
     {
       "from": "uranus",
       "to": "phoebe",
       "type": "parent",
-      "details": "Phoebe, Titaness of prophecy, is a daughter of Uranus and Gaia."
+      "details": "Phoebe, Titaness of prophecy, is a daughter of Uranus and Gaia.\n\nHer name descends directly to her grandson: Apollo is called Phoebus, the bright one, after the grandmother who gave him Delphi. It is the clearest case in the theogony of an office being inherited rather than seized."
     },
     {
       "from": "gaia",
       "to": "phoebe",
       "type": "parent",
-      "details": "Gaia's daughter Phoebe passed her prophetic power down to Leto and Apollo."
+      "details": "Gaia's daughter Phoebe passed her prophetic power down to Leto and Apollo.\n\nPhoebe held Delphi after Themis and gave it to her grandson Apollo as a birthday gift, according to the opening of Aeschylus's Eumenides — a peaceful transfer, in contrast with Apollo's killing of Python in the other version."
     },
     {
       "from": "coeus",
@@ -2289,7 +2290,7 @@
       "from": "phoebe",
       "to": "leto",
       "type": "parent",
-      "details": "Phoebe's daughter Leto carried the family's prophetic gift to the next generation."
+      "details": "Phoebe's daughter Leto carried the family's prophetic gift to the next generation.\n\nLeto's prophetic inheritance passes intact to her son. Both versions of how Apollo acquired Delphi run through her mother's line, whether by gift or by conquest."
     },
     {
       "from": "oceanus",
@@ -2302,13 +2303,14 @@
       "from": "tethys",
       "to": "metis",
       "type": "parent",
-      "details": "Tethys bore Metis, whose cunning wisdom Zeus coveted enough to consume."
+      "details": "Tethys bore Metis, whose cunning wisdom Zeus coveted enough to consume.\n\nMetis was Zeus's first consort and the one he could not simply outlast: warned that her second child would surpass him, he swallowed her whole while she was pregnant with Athena.",
+      "highlight": true
     },
     {
       "from": "iapetus",
       "to": "atlas",
       "type": "parent",
-      "details": "Atlas, condemned to hold up the sky, is a son of the Titan Iapetus."
+      "details": "Atlas, condemned to hold up the sky, is a son of the Titan Iapetus.\n\nAtlas is stationed at the western edge holding sky and earth apart — not a punishment invented for him so much as a job that had to be done once the two were separated, given to the strongest of the defeated."
     },
     {
       "from": "iapetus",
@@ -2333,49 +2335,50 @@
       "from": "cronus",
       "to": "hera",
       "type": "parent",
-      "details": "Cronus swallowed the infant Hera whole, fearing the prophecy that a child of his would unseat him."
+      "details": "Cronus swallowed the infant Hera whole, fearing the prophecy that a child of his would unseat him.\n\nCronus had been told by Gaia and Uranus that his own child would master him, so he took each newborn from Rhea and swallowed it. Hera spent her first existence inside her father alongside her brothers and sisters.",
+      "highlight": true
     },
     {
       "from": "rhea",
       "to": "hera",
       "type": "parent",
-      "details": "Rhea's daughter Hera, disgorged from Cronus, would reign as queen of the order that replaced him."
+      "details": "Rhea's daughter Hera, disgorged from Cronus, would reign as queen of the order that replaced him.\n\nDisgorged full-grown, Hera was raised by Oceanus and Tethys during the ten-year war, and married Zeus afterwards. She is his sister first and his wife second, which is part of why the marriage is a contest of equals rather than a possession."
     },
     {
       "from": "cronus",
       "to": "poseidon",
       "type": "parent",
-      "details": "Cronus swallowed Poseidon at birth; Zeus later made him bring the sea-god back up whole."
+      "details": "Cronus swallowed Poseidon at birth; Zeus later made him bring the sea-god back up whole.\n\nOne tradition spares Poseidon the swallowing: Rhea is said to have hidden him among a flock of lambs and given Cronus a foal to eat instead, the same substitution she worked with the stone for Zeus."
     },
     {
       "from": "rhea",
       "to": "poseidon",
       "type": "parent",
-      "details": "Rhea's son Poseidon drew the sea when the three brothers divided the cosmos by lot."
+      "details": "Rhea's son Poseidon drew the sea when the three brothers divided the cosmos by lot.\n\nThe three brothers drew lots after the war — sky, sea and underworld — and the earth and Olympus were left common to all. Poseidon's resentment of Zeus's precedence surfaces whenever he is ordered about in the Iliad."
     },
     {
       "from": "cronus",
       "to": "hades",
       "type": "parent",
-      "details": "Cronus devoured Hades as an infant, as he did all Rhea's children."
+      "details": "Cronus devoured Hades as an infant, as he did all Rhea's children.\n\nHades was the eldest son and the first to be swallowed after his sisters, and by the reckoning that counts the disgorging as a second birth he becomes the youngest — the reversal that lets Zeus rule his elders."
     },
     {
       "from": "rhea",
       "to": "hades",
       "type": "parent",
-      "details": "Rhea's eldest son Hades drew the underworld when the brothers cast lots for the world."
+      "details": "Rhea's eldest son Hades drew the underworld when the brothers cast lots for the world.\n\nThe Greeks preferred not to say his name and called him Plouton, the rich one, for the wealth under the ground. He has almost no cult and almost no myth outside the abduction, which suits a god whose realm no one wanted to think about."
     },
     {
       "from": "cronus",
       "to": "demeter",
       "type": "parent",
-      "details": "Cronus swallowed Demeter, the harvest-goddess-to-be, at her birth."
+      "details": "Cronus swallowed Demeter, the harvest-goddess-to-be, at her birth.\n\nAlone among the six, Demeter keeps to the earth rather than Olympus, and her cult at Eleusis promised initiates something no Olympian offered: a better position after death."
     },
     {
       "from": "rhea",
       "to": "demeter",
       "type": "parent",
-      "details": "Rhea's daughter Demeter would make the earth fruitful — or, in her grief, barren."
+      "details": "Rhea's daughter Demeter would make the earth fruitful — or, in her grief, barren.\n\nDemeter's grief for Persephone is the one force that brings the whole cosmic order to a halt: with no grain there are no sacrifices, and with no sacrifices the gods themselves go without honour."
     },
     {
       "from": "cronus",
@@ -2387,7 +2390,7 @@
       "from": "rhea",
       "to": "hestia",
       "type": "parent",
-      "details": "Rhea's eldest daughter Hestia chose the quiet hearth over a throne among the squabbling gods."
+      "details": "Rhea's eldest daughter Hestia chose the quiet hearth over a throne among the squabbling gods.\n\nFirst swallowed and last disgorged, Hestia declined a throne and took the hearth. Every household fire and every civic hearth was hers, which gave her more daily presence in Greek life than most of the gods with better stories."
     },
     {
       "from": "zeus",
@@ -2407,19 +2410,19 @@
       "from": "zeus",
       "to": "apollo",
       "type": "parent",
-      "details": "Apollo, archer-god of prophecy and plague, is the son of Zeus by the Titaness Leto."
+      "details": "Apollo, archer-god of prophecy and plague, is the son of Zeus by the Titaness Leto.\n\nApollo is the son who most resembles his father in authority and least in appetite — prophecy, plague, music and law, and a temper that falls on those who compete with him."
     },
     {
       "from": "leto",
       "to": "apollo",
       "type": "parent",
-      "details": "Hounded across the world by a jealous Hera, Leto at last bore Apollo on the floating isle of Delos."
+      "details": "Hounded across the world by a jealous Hera, Leto at last bore Apollo on the floating isle of Delos.\n\nHera had forbidden any land under sun to receive Leto, so she came to Delos, which floated and so was not fixed land at all. The island was rewarded with the god's chief sanctuary and was afterwards anchored to the seabed."
     },
     {
       "from": "zeus",
       "to": "artemis",
       "type": "parent",
-      "details": "Artemis the huntress is the daughter of Zeus by Leto, and twin sister of Apollo."
+      "details": "Artemis the huntress is the daughter of Zeus by Leto, and twin sister of Apollo.\n\nArtemis was born first and, in the usual telling, immediately helped her mother deliver Apollo through the nine days of labour that Hera's delay imposed — which is why a virgin goddess is invoked in childbirth."
     },
     {
       "from": "leto",
@@ -2431,19 +2434,19 @@
       "from": "zeus",
       "to": "ares",
       "type": "parent",
-      "details": "Ares, Zeus's son by Hera — and the child Zeus openly calls the most hateful of all the gods."
+      "details": "Ares, Zeus's son by Hera — and the child Zeus openly calls the most hateful of all the gods.\n\nIn the fifth book of the Iliad Zeus tells Ares to his face that he is the most hateful of all the gods to him, and that only being his son keeps him from being thrown into Tartarus with the Titans."
     },
     {
       "from": "hera",
       "to": "ares",
       "type": "parent",
-      "details": "Ares is Hera's son by Zeus — the war-god she alone among the Olympians favours."
+      "details": "Ares is Hera's son by Zeus — the war-god she alone among the Olympians favours.\n\nAres is the one child Hera consistently backs, and the Greeks were markedly ambivalent about him: worshipped where fighting had to be done, distrusted everywhere else, and beaten by Athena whenever the two meet in the poems."
     },
     {
       "from": "zeus",
       "to": "hephaestus",
       "type": "parent",
-      "details": "Hephaestus the smith is a son of Zeus and Hera, cast from Olympus as a child and lamed by the fall."
+      "details": "Hephaestus the smith is a son of Zeus and Hera, cast from Olympus as a child and lamed by the fall.\n\nHesiod has Hera produce him alone in retaliation for Athena; Homer gives him both parents. Either way he was thrown from Olympus — by Hera for his lameness, or by Zeus for taking her side — and the fall is what lamed him in the second version."
     },
     {
       "from": "hera",
@@ -2455,7 +2458,7 @@
       "from": "zeus",
       "to": "hermes",
       "type": "parent",
-      "details": "Hermes the quick-witted messenger is the son of Zeus by the Pleiad Maia."
+      "details": "Hermes the quick-witted messenger is the son of Zeus by the Pleiad Maia.\n\nHermes stole Apollo's cattle on the day he was born, invented the lyre from a tortoise shell, and talked his way out of the charge in front of Zeus, who was amused enough to make him the herald of the gods."
     },
     {
       "from": "maia",
@@ -2467,7 +2470,7 @@
       "from": "zeus",
       "to": "persephone",
       "type": "parent",
-      "details": "Zeus fathered Persephone on Demeter — then promised her, unasked, to his brother Hades."
+      "details": "Zeus fathered Persephone on Demeter — then promised her, unasked, to his brother Hades.\n\nZeus arranged the marriage privately with his brother and said nothing to Demeter, which is why the abduction is a family betrayal rather than a crime: the girl's father had already consented."
     },
     {
       "from": "demeter",
@@ -2485,7 +2488,7 @@
       "from": "semele",
       "to": "dionysus",
       "type": "parent",
-      "details": "Dionysus was carried to term in Zeus's own thigh after his mortal mother Semele was burned to ash."
+      "details": "Dionysus was carried to term in Zeus's own thigh after his mortal mother Semele was burned to ash.\n\nHera, disguised as her nurse, persuaded Semele to ask Zeus to appear in his true form; he had sworn to grant anything and the sight burned her to ash. Zeus sewed the unborn child into his thigh to carry to term."
     },
     {
       "from": "uranus",
@@ -2498,7 +2501,7 @@
       "from": "atlas",
       "to": "maia",
       "type": "parent",
-      "details": "Maia, eldest of Atlas's daughters the Pleiades, hid in a cave and there bore Zeus the god Hermes."
+      "details": "Maia, eldest of Atlas's daughters the Pleiades, hid in a cave and there bore Zeus the god Hermes.\n\nMaia was the eldest and shyest of the seven Pleiades, and lived apart in a cave on Cyllene, which is where Zeus came to her and where Hermes was born at dawn and stole Apollo's cattle by evening."
     },
     {
       "from": "gaia",
@@ -2734,8 +2737,7 @@
       "from": "odysseus",
       "to": "antinous",
       "type": "kills",
-      "details": "Home at last after twenty years, disguised as a ragged beggar, Odysseus found his hall overrun by suitors devouring his wealth and pressing his wife to remarry — chief among them the arrogant Antinous. When Penelope set the test of the great bow that only Odysseus could string, the beggar alone bent and strung it, then turned it on the crowd. His first arrow took Antinous through the throat as the suitor raised a cup to drink, and the slaughter of the whole company began.",
-      "highlight": true
+      "details": "Home at last after twenty years, disguised as a ragged beggar, Odysseus found his hall overrun by suitors devouring his wealth and pressing his wife to remarry — chief among them the arrogant Antinous. When Penelope set the test of the great bow that only Odysseus could string, the beggar alone bent and strung it, then turned it on the crowd. His first arrow took Antinous through the throat as the suitor raised a cup to drink, and the slaughter of the whole company began."
     },
     {
       "from": "priam",
@@ -2794,13 +2796,13 @@
       "from": "hera",
       "to": "agamemnon",
       "type": "protects",
-      "details": "Hera, who loathes Troy, backs the Greek commander Agamemnon throughout the war."
+      "details": "Hera, who loathes Troy, backs the Greek commander Agamemnon throughout the war.\n\nHera's oldest cult was at Argos and Mycenae, so backing Agamemnon is backing her own cities. Her hatred of Troy dates from the judgement of Paris, and in the fourth book she tells Zeus he may destroy any three cities he likes so long as Troy falls."
     },
     {
       "from": "poseidon",
       "to": "achilles",
       "type": "protects",
-      "details": "Poseidon, no friend of Troy, guards the Greek champion Achilles on the field."
+      "details": "Poseidon, no friend of Troy, guards the Greek champion Achilles on the field.\n\nIn the twenty-first book Poseidon and Athena come to Achilles when the river Scamander rises against him, and Poseidon takes his hand and promises he will not die by water. He is even-handed enough to rescue the Trojan Aeneas the same way."
     },
     {
       "from": "aphrodite",
@@ -2818,7 +2820,7 @@
       "from": "ares",
       "to": "hector",
       "type": "protects",
-      "details": "The war-god Ares himself took the field on the Trojan side beside Hector."
+      "details": "The war-god Ares himself took the field on the Trojan side beside Hector.\n\nAres fights openly on the Trojan side until Diomedes, with Athena guiding the spear, wounds him in the belly and he goes bellowing up to Olympus like ten thousand men. Zeus tells him to stop complaining and has him healed."
     },
     {
       "from": "athena",
@@ -2852,15 +2854,14 @@
       "from": "apollo",
       "to": "achilles",
       "type": "kills",
-      "details": "Apollo guides Paris's arrow to Achilles' heel, letting Troy's destroyer be destroyed in turn."
+      "details": "Apollo guides Paris's arrow to Achilles' heel, letting Troy's destroyer be destroyed in turn.\n\nApollo had already struck the armour from Patroclus's back before Hector's spear reached him, and he takes Achilles the same indirect way, guiding the arrow of the least warlike man in Troy to the one place the hero could be hurt."
     },
     {
       "from": "achilles",
       "to": "patroclus",
       "video": "https://youtu.be/-H6e2mo1_eA",
-      "type": "friend",
-      "details": "Achilles and Patroclus were bound closer than brothers, raised together and inseparable at Troy. When Patroclus fell to Hector while wearing Achilles' own armour, grief drove Achilles back into a war he had abandoned — and his vengeance sealed his own doom.",
-      "highlight": true
+      "type": "companion",
+      "details": "Achilles and Patroclus were bound closer than brothers, raised together and inseparable at Troy. When Patroclus fell to Hector while wearing Achilles' own armour, grief drove Achilles back into a war he had abandoned — and his vengeance sealed his own doom."
     },
     {
       "from": "nestor",
@@ -2890,7 +2891,7 @@
       "from": "achilles",
       "to": "agamemnon",
       "type": "rival",
-      "details": "Achilles and Agamemnon quarrel over a captive woman, and really over honour — the wound the whole Iliad turns on."
+      "details": "Agamemnon, forced to give up Chryseis, took Briseis from Achilles to show that the loss would not fall on him alone. The quarrel is not about either woman but about which man the army belongs to.\n\nAchilles withdrew to his ships and asked his mother to have Zeus turn the war against his own side. It costs the Greeks their best fighter and costs him Patroclus, and every later event in the poem runs back to this scene in the first book."
     },
     {
       "from": "ajax",
@@ -2920,7 +2921,7 @@
       "from": "alcmene",
       "to": "heracles",
       "type": "parent",
-      "details": "Alcmene bore Heracles to Zeus, who had come to her disguised as her own husband."
+      "details": "Alcmene bore Heracles to Zeus, who had come to her disguised as her own husband.\n\nZeus came to her in the shape of her husband Amphitryon, home early from war, and made the night three times its length. Amphitryon himself arrived the following night, so she bore twins by two fathers."
     },
     {
       "from": "hera",
@@ -2956,7 +2957,7 @@
     {
       "from": "iolaus",
       "to": "heracles",
-      "type": "friend",
+      "type": "companion",
       "details": "Iolaus, nephew and charioteer of Heracles, seared the Hydra's necks — the help that made his uncle's impossible Labour possible."
     },
     {
@@ -2994,7 +2995,7 @@
       "from": "zeus",
       "to": "perseus",
       "type": "parent",
-      "details": "Perseus is the son of Zeus, who reached the imprisoned Danae as a shower of gold."
+      "details": "Perseus is the son of Zeus, who reached the imprisoned Danae as a shower of gold.\n\nAcrisius had shut his daughter in a bronze chamber to prevent the grandson an oracle said would kill him. Zeus reached her as a shower of gold, and the prophecy was fulfilled years later by a discus throw at a games."
     },
     {
       "from": "danae",
@@ -3038,7 +3039,7 @@
       "from": "hermes",
       "to": "perseus",
       "type": "protects",
-      "details": "Hermes equips Perseus with the winged sandals and the adamantine sickle for the Gorgon's neck."
+      "details": "Hermes equips Perseus with the winged sandals and the adamantine sickle for the Gorgon's neck.\n\nHermes and Athena together set him up: the sickle and the winged sandals, the route to the Graeae, and the trick of stealing their single shared eye until they gave up the way to the nymphs who held the cap of invisibility and the wallet for the head."
     },
     {
       "from": "athena",
@@ -3051,7 +3052,7 @@
       "from": "medusa",
       "to": "pegasus",
       "type": "parent",
-      "details": "From the blood of Medusa's severed neck sprang the winged horse Pegasus."
+      "details": "From the blood of Medusa's severed neck sprang the winged horse Pegasus.\n\nPegasus and the warrior Chrysaor sprang from the severed neck, the children Medusa had conceived by Poseidon in Athena's temple — the act for which Athena had turned her into a monster in the first place."
     },
     {
       "from": "cetus",
@@ -3063,7 +3064,7 @@
       "from": "cepheus",
       "to": "andromeda",
       "type": "parent",
-      "details": "On the oracle's word, King Cepheus chained his own daughter Andromeda to the rock for the monster."
+      "details": "On the oracle's word, King Cepheus chained his own daughter Andromeda to the rock for the monster.\n\nCassiopeia had boasted that she was more beautiful than the Nereids, and Poseidon sent a sea-monster; the oracle required the daughter. Perseus found her chained and bargained for her before killing it."
     },
     {
       "from": "cassiopeia",
@@ -3087,7 +3088,7 @@
       "from": "poseidon",
       "to": "theseus",
       "type": "parent",
-      "details": "By another account Theseus was Poseidon's son — the sea-god's blood behind his heroics."
+      "details": "By another account Theseus was Poseidon's son — the sea-god's blood behind his heroics.\n\nAegeus and Poseidon are both named as his father, and Theseus uses the second when he needs to: challenged by Minos, he dives for a ring thrown into the sea and returns with it and a crown."
     },
     {
       "from": "theseus",
@@ -3118,13 +3119,13 @@
       "from": "europa",
       "to": "minos",
       "type": "parent",
-      "details": "Minos, king and later judge of the dead, is a son of Europa by Zeus."
+      "details": "Minos, king and later judge of the dead, is a son of Europa by Zeus.\n\nZeus took the form of a white bull to carry Europa off to Crete, which makes Minos's later trouble with a bull a family pattern — his wife's passion for one, his stepson the Minotaur, and the beast Heracles removed."
     },
     {
       "from": "zeus",
       "to": "minos",
       "type": "parent",
-      "details": "Minos, Zeus's son by Europa, ruled Crete in life and judged the dead after it."
+      "details": "Minos, Zeus's son by Europa, ruled Crete in life and judged the dead after it.\n\nMinos went into his father's cave on Ida every nine years to receive the laws, and after death he judged the dead with his brother Rhadamanthys and Aeacus — the only mortal in the myths promoted to a permanent office."
     },
     {
       "from": "minos",
@@ -3150,19 +3151,19 @@
       "from": "minos",
       "to": "ariadne",
       "type": "parent",
-      "details": "Ariadne, who betrayed her father for Theseus, is a daughter of King Minos."
+      "details": "Ariadne, who betrayed her father for Theseus, is a daughter of King Minos.\n\nShe gave Theseus the thread that brought him out of her father's labyrinth and sailed away with him, and he abandoned her on Naxos, where Dionysus found her and married her."
     },
     {
       "from": "minos",
       "to": "phaedra",
       "type": "parent",
-      "details": "Phaedra, later wed to Theseus, is a daughter of King Minos."
+      "details": "Phaedra, later wed to Theseus, is a daughter of King Minos.\n\nPhaedra married Theseus and fell in love with his son Hippolytus. Refused, she hanged herself and left a letter accusing him, and Theseus used one of the three curses Poseidon owed him to destroy his own son."
     },
     {
       "from": "ariadne",
       "to": "phaedra",
       "type": "sibling",
-      "details": "Ariadne and Phaedra, daughters of Minos, are both drawn into Theseus's orbit and both undone by it."
+      "details": "Ariadne and Phaedra, daughters of Minos, are both drawn into Theseus's orbit and both undone by it.\n\nBoth sisters attach themselves to the same man and both are destroyed by it — Ariadne abandoned on Naxos, Phaedra dead by her own hand in his house. Ariadne got a god afterwards; Phaedra got nothing."
     },
     {
       "from": "ariadne",
@@ -3198,13 +3199,13 @@
       "from": "aeetes",
       "to": "medea",
       "type": "parent",
-      "details": "Medea, who betrays her father for Jason, is the daughter of King Aeetes of Colchis."
+      "details": "Medea, who betrays her father for Jason, is the daughter of King Aeetes of Colchis.\n\nMedea drugged the dragon, took the fleece and fled with Jason, and killed her own brother on the voyage to delay her father's pursuit. She was a priestess of Hecate before she was anything else."
     },
     {
       "from": "helios",
       "to": "aeetes",
       "type": "parent",
-      "details": "Aeetes, keeper of the Golden Fleece, is a son of Helios the Sun and brother of the witch Circe."
+      "details": "Aeetes, keeper of the Golden Fleece, is a son of Helios the Sun and brother of the witch Circe.\n\nHis palace in Colchis had bronze-hoofed bulls that breathed fire, made by Hephaestus, and his sisters were Circe and Pasiphae — a family in which the daughters keep drugs and the sons keep dragons."
     },
     {
       "from": "aeetes",
@@ -3230,7 +3231,7 @@
       "from": "jason",
       "to": "heracles",
       "type": "companion",
-      "details": "Heracles, mightiest of Jason's Argonauts, left the voyage early to search for a lost companion."
+      "details": "Heracles, mightiest of Jason's Argonauts, left the voyage early to search for a lost companion.\n\nHeracles was offered the command of the Argo and refused it in Jason's favour. He was left behind in Mysia searching for Hylas, and the crew sailed without him after Glaucus said it was fated."
     },
     {
       "from": "jason",
@@ -3242,19 +3243,19 @@
       "from": "jason",
       "to": "atalanta",
       "type": "companion",
-      "details": "The huntress Atalanta joined Jason's Argo, the equal on the voyage of any man aboard."
+      "details": "The huntress Atalanta joined Jason's Argo, the equal on the voyage of any man aboard.\n\nAtalanta had been exposed at birth and raised by a bear, and she takes her place among the Argonauts on equal terms; some versions have Jason refuse her passage to avoid trouble aboard."
     },
     {
       "from": "jason",
       "to": "castor",
       "type": "companion",
-      "details": "Castor the horseman shipped with his twin among Jason's crew."
+      "details": "Castor the horseman shipped with his twin among Jason's crew.\n\nAfter their death the twins were invoked by sailors, and the electrical fire that plays on a mast in a storm was said to be the two of them arriving. Their place on the Argo is the founding voyage of that patronage."
     },
     {
       "from": "jason",
       "to": "pollux",
       "type": "companion",
-      "details": "Pollux the boxer, who felled the brutal king Amycus, rowed with Jason's Argonauts."
+      "details": "Pollux the boxer, who felled the brutal king Amycus, rowed with Jason's Argonauts.\n\nWhen the Argonauts put in at Bebrycia, its king Amycus forced all comers to box him and had killed every one. Pollux accepted, out-boxed him and killed him with a blow to the head, and the crew fought their way clear."
     },
     {
       "from": "phineus",
@@ -3290,19 +3291,19 @@
       "from": "zeus",
       "to": "pollux",
       "type": "parent",
-      "details": "Pollux, the immortal twin, was Zeus's son by Leda."
+      "details": "Pollux, the immortal twin, was Zeus's son by Leda.\n\nWhen Castor was killed in the cattle raid, Pollux asked to give up half his immortality rather than live without him. Zeus allowed the brothers to alternate, a day above and a day below, and set them in the sky as Gemini."
     },
     {
       "from": "leda",
       "to": "castor",
       "type": "parent",
-      "details": "Castor the horseman, the mortal twin, is a son of Leda by her husband."
+      "details": "Castor the horseman, the mortal twin, is a son of Leda by her husband.\n\nCastor was the mortal twin, fathered by Tyndareus on the same night Zeus came as a swan, so the brothers were born of one mother with two fathers and two natures."
     },
     {
       "from": "leda",
       "to": "pollux",
       "type": "parent",
-      "details": "Pollux the boxer, the immortal twin, is a son of Leda by Zeus in the form of a swan."
+      "details": "Pollux the boxer, the immortal twin, is a son of Leda by Zeus in the form of a swan.\n\nZeus came to her as a swan and Tyndareus lay with her the same night, and she produced eggs rather than children. The Spartans were still showing the shell of one, hung up in a temple, centuries later."
     },
     {
       "from": "zeus",
@@ -3314,19 +3315,19 @@
       "from": "leda",
       "to": "helen",
       "type": "parent",
-      "details": "Helen, hatched (the poets said) from an egg, was Leda's daughter by Zeus the swan."
+      "details": "Helen, hatched (the poets said) from an egg, was Leda's daughter by Zeus the swan.\n\nHelen and Pollux came from the egg, Castor and Clytemnestra from the mortal union — the division runs straight through the family, giving Sparta one immortal pair and one that could be killed."
     },
     {
       "from": "leda",
       "to": "clytemnestra",
       "type": "parent",
-      "details": "Clytemnestra, Leda's mortal daughter, sister to Helen and the future killer of Agamemnon."
+      "details": "Clytemnestra, Leda's mortal daughter, sister to Helen and the future killer of Agamemnon.\n\nAgamemnon had killed her first husband and her infant child before taking her, and then killed their daughter Iphigenia at Aulis for a wind. Aeschylus lets her list all of it before the chorus condemns her."
     },
     {
       "from": "castor",
       "to": "helen",
       "type": "sibling",
-      "details": "Castor is a brother of Helen, one of the twins who once rescued her from an early abduction."
+      "details": "Castor is a brother of Helen, one of the twins who once rescued her from an early abduction.\n\nThe twins recovered her from Theseus when she was still a child. By the time of the Trojan War they were already dead, and Helen looks for them from the walls in the third book of the Iliad without knowing it."
     },
     {
       "from": "clytemnestra",
@@ -3392,7 +3393,7 @@
       "from": "oedipus",
       "to": "antigone",
       "type": "parent",
-      "details": "Antigone, born of Oedipus's doomed marriage, would herself die defying a king to bury her brother."
+      "details": "Antigone, born of Oedipus's doomed marriage, would herself die defying a king to bury her brother.\n\nShe led the blinded Oedipus out of Thebes and stayed with him through the wandering years to Colonus, where he died. Sophocles wrote her end before he wrote her beginning: the Antigone came first, the Colonus play last."
     },
     {
       "from": "cadmus",
@@ -3404,13 +3405,13 @@
       "from": "ares",
       "to": "harmonia",
       "type": "parent",
-      "details": "Harmonia, daughter of Ares and Aphrodite, married Cadmus the founder of Thebes."
+      "details": "Harmonia, daughter of Ares and Aphrodite, married Cadmus the founder of Thebes.\n\nHephaestus, whose wife Aphrodite had borne the girl to Ares, made a necklace for her wedding and cursed it. It brought disaster to every woman who owned it for six generations of the Theban house."
     },
     {
       "from": "aphrodite",
       "to": "harmonia",
       "type": "parent",
-      "details": "Aphrodite's daughter Harmonia married Cadmus in a rare gathering of every god."
+      "details": "Aphrodite's daughter Harmonia married Cadmus in a rare gathering of every god.\n\nThe gods all came to the wedding at Thebes — the last time, the poets said, that they sat down openly with mortals. Harmonia and Cadmus were themselves turned into serpents at the end of their lives and sent to the Isles of the Blessed."
     },
     {
       "from": "bellerophon",
@@ -3428,13 +3429,14 @@
       "from": "poseidon",
       "to": "bellerophon",
       "type": "parent",
-      "details": "Some make Bellerophon a son of Poseidon — the sea-god's blood behind his winged conquest."
+      "details": "Some make Bellerophon a son of Poseidon — the sea-god's blood behind his winged conquest.\n\nPegasus was Poseidon's son by Medusa, so in this version the hero and the horse are half-brothers. Bellerophon ended by trying to ride him up to Olympus; Zeus sent a gadfly, the horse threw him, and he wandered lame and hated for the rest of his life."
     },
     {
       "from": "gaia",
       "to": "typhon",
       "type": "parent",
-      "details": "Gaia raised her monstrous last-born Typhon against the Olympians who had chained her Titan sons."
+      "details": "Gaia raised her monstrous last-born Typhon against the Olympians who had chained her Titan sons.\n\nGaia bore Typhon by Tartarus as her last child and her final answer to Zeus for imprisoning the Titans. He had a hundred serpent heads and came close to winning: in one version he cut out Zeus's sinews and hid them in a cave.",
+      "highlight": true
     },
     {
       "from": "tartarus",
@@ -3459,68 +3461,67 @@
       "from": "typhon",
       "to": "zeus",
       "type": "rival",
-      "details": "Typhon rose against Zeus to seize the cosmos, and in their battle briefly tore the sinews from the god's limbs — until Zeus recovered, felled him with a storm of thunderbolts, and pinned him beneath Mount Etna.",
-      "highlight": true
+      "details": "Typhon rose against Zeus to seize the cosmos, and in their battle briefly tore the sinews from the god's limbs — until Zeus recovered, felled him with a storm of thunderbolts, and pinned him beneath Mount Etna."
     },
     {
       "from": "echidna",
       "to": "hydra",
       "type": "parent",
-      "details": "The Lernaean Hydra that Heracles faced is a child of Echidna, mother of monsters."
+      "details": "The Lernaean Hydra that Heracles faced is a child of Echidna, mother of monsters.\n\nHera is said to have raised the Hydra deliberately as a test for Heracles, feeding it in the swamp at Lerna, and to have sent a giant crab to bite his foot while he fought. He crushed the crab, and she set it in the sky as Cancer."
     },
     {
       "from": "echidna",
       "to": "chimera",
       "type": "parent",
-      "details": "Echidna's fire-breathing daughter, the lion-goat-serpent Chimera."
+      "details": "Echidna's fire-breathing daughter, the lion-goat-serpent Chimera.\n\nBellerophon could not get near it for the fire, so he fixed a lump of lead to his spear point and drove it down the creature's throat from the back of Pegasus; the lead melted and burned it from the inside."
     },
     {
       "from": "echidna",
       "to": "cerberus",
       "type": "parent",
-      "details": "Cerberus, the three-headed hound of Hades, is a child of Echidna and Typhon."
+      "details": "Cerberus, the three-headed hound of Hades, is a child of Echidna and Typhon.\n\nThe last labour was to bring him up without weapons. Hades allowed it on that condition, Heracles took him by the throat, and Eurystheus went back into his bronze jar at the sight and told him to put it back."
     },
     {
       "from": "echidna",
       "to": "sphinx",
       "type": "parent",
-      "details": "The riddling Sphinx was Echidna's daughter, sent to plague Thebes."
+      "details": "The riddling Sphinx was Echidna's daughter, sent to plague Thebes.\n\nShe held the road into Thebes and killed everyone who could not answer her. When Oedipus solved the riddle she threw herself from the rock, which is the only recorded death of a monster by its own hand."
     },
     {
       "from": "echidna",
       "to": "nemean_lion",
       "type": "parent",
-      "details": "The impenetrable lion of Nemea was another of Echidna's brood."
+      "details": "The impenetrable lion of Nemea was another of Echidna's brood.\n\nNo weapon marked its hide, so Heracles blocked one mouth of its cave, went in by the other and strangled it. He then skinned it using its own claws, and wore the pelt for the rest of his life."
     },
     {
       "from": "echidna",
       "to": "ladon",
       "type": "parent",
-      "details": "Ladon, the hundred-headed dragon of the golden apples, is a child of Echidna."
+      "details": "Ladon, the hundred-headed dragon of the golden apples, is a child of Echidna.\n\nLadon coiled round the tree in the garden of the Hesperides and never slept. Heracles either shot him or held up the sky while Atlas fetched the apples, depending on the version; Hera set him among the stars as Draco."
     },
     {
       "from": "typhon",
       "to": "chimera",
       "type": "parent",
-      "details": "Typhon's fire lived on in his daughter the Chimera."
+      "details": "Typhon's fire lived on in his daughter the Chimera.\n\nTyphon's whole brood carries some version of his fire or his multiplicity, and the Chimera has both — three heads on one body and flame out of the middle one."
     },
     {
       "from": "typhon",
       "to": "cerberus",
       "type": "parent",
-      "details": "The hound Cerberus counted the storm-monster Typhon as his sire."
+      "details": "The hound Cerberus counted the storm-monster Typhon as his sire.\n\nThe number of heads varies with the teller: three in the usual account, fifty in Hesiod, a hundred in Pindar. His father had a hundred, so the higher counts are the more genealogically consistent."
     },
     {
       "from": "cerberus",
       "to": "hades",
       "type": "serves",
-      "details": "Cerberus lets every shade into the underworld and none back out — the perfect servant of Hades."
+      "details": "Cerberus lets every shade into the underworld and none back out — the perfect servant of Hades.\n\nHesiod gives him a savage trick — fawning on those who enter and devouring anyone who tries to leave. Bringing him up alive and without weapons was the last labour, and Heracles returned him afterwards."
     },
     {
       "from": "gaia",
       "to": "python",
       "type": "parent",
-      "details": "Gaia the Earth bore the serpent Python, who guarded the oracle at Delphi before Apollo came."
+      "details": "Gaia the Earth bore the serpent Python, who guarded the oracle at Delphi before Apollo came.\n\nApollo killed the serpent at Delphi when he was four days old and took the oracle, and had to be purified for the killing afterwards; the Pythian Games were founded in expiation."
     },
     {
       "from": "apollo",
@@ -3538,7 +3539,7 @@
       "from": "gaia",
       "to": "cyclopes",
       "type": "parent_group",
-      "details": "The Cyclopes, one-eyed giant smiths, are children of Gaia the Earth and Uranus the Sky."
+      "details": "The Cyclopes, one-eyed giant smiths, are children of Gaia the Earth and Uranus the Sky.\n\nUranus imprisoned them in Tartarus and Cronus left them there. Zeus released them, and in return they forged the thunderbolt, Poseidon's trident and Hades's helm of invisibility — the three weapons that won the war."
     },
     {
       "from": "uranus",
@@ -3569,19 +3570,19 @@
       "from": "hermes",
       "to": "pan",
       "type": "parent",
-      "details": "Hermes fathered the goat-legged Pan, wild god of the shepherds' hills."
+      "details": "Hermes fathered the goat-legged Pan, wild god of the shepherds' hills.\n\nHis mother is generally a nymph of Arcadia, and Hermes carried the goat-legged infant up to Olympus, where the gods were delighted with him — which is what the Homeric Hymn says his name means."
     },
     {
       "from": "iris",
       "to": "hera",
       "type": "serves",
-      "details": "Iris the rainbow carries the messages of Hera between heaven, earth and sea."
+      "details": "Iris the rainbow carries the messages of Hera between heaven, earth and sea.\n\nIris carries the messages of the Iliad while Hermes carries those of the Odyssey. She also fetches water from the Styx in a golden jug when a god must swear, which is the only errand no other deity will run."
     },
     {
       "from": "nike",
       "to": "zeus",
       "type": "serves",
-      "details": "Winged Nike, Victory, stands at the side of Zeus — the outcome he grants to whom he favours."
+      "details": "Winged Nike, Victory, stands at the side of Zeus — the outcome he grants to whom he favours.\n\nStyx brought her four children — Victory, Emulation, Power and Force — to Zeus at the outbreak of the Titan war, the first to declare for him. He gave them a permanent place beside him and made her waters the gods' binding oath."
     },
     {
       "from": "zeus",
@@ -3599,7 +3600,7 @@
       "from": "eris",
       "to": "ares",
       "type": "sibling",
-      "details": "Eris, Strife, and Ares, War, are siblings who walk the battlefield side by side."
+      "details": "Eris, Strife, and Ares, War, are siblings who walk the battlefield side by side.\n\nHomer says Eris starts small and grows until her head is in the heavens while her feet are on the ground. It was her golden apple, thrown among the goddesses at the wedding of Peleus and Thetis, that started the war her brother enjoyed."
     },
     {
       "from": "nemesis",
@@ -3617,13 +3618,14 @@
       "from": "hyperion",
       "to": "eos",
       "type": "parent",
-      "details": "Eos the Dawn is a daughter of the Titan Hyperion and Theia."
+      "details": "Eos the Dawn is a daughter of the Titan Hyperion and Theia.\n\nEos asked Zeus for immortality for her mortal lover Tithonus and forgot to ask for youth, so he aged without ever being able to die, and shrank at last into the cicada whose voice is all that is left of him.",
+      "highlight": true
     },
     {
       "from": "theia",
       "to": "eos",
       "type": "parent",
-      "details": "Theia bore Eos, the rosy-fingered Dawn."
+      "details": "Theia bore Eos, the rosy-fingered Dawn.\n\nAphrodite cursed her with insatiable desire for young men after finding her in bed with Ares, which is why the dawn goddess is always carrying someone off in the myths — Tithonus, Cephalus, Orion, Cleitus."
     },
     {
       "from": "eos",
@@ -3643,19 +3645,20 @@
       "from": "hyperion",
       "to": "selene",
       "type": "parent",
-      "details": "Selene the Moon is a daughter of the Titan Hyperion, sister to the Sun and the Dawn."
+      "details": "Selene the Moon is a daughter of the Titan Hyperion, sister to the Sun and the Dawn.\n\nShe saw the shepherd Endymion asleep on Latmos and asked Zeus to keep him that way for ever, unaging and unconscious. She is said to have borne him fifty daughters, one for each month of the Olympiad, without waking him."
     },
     {
       "from": "theia",
       "to": "selene",
       "type": "parent",
-      "details": "Theia bore Selene, the Moon."
+      "details": "Theia bore Selene, the Moon.\n\nSelene drives a chariot of two horses across the night as her brother drives four across the day, and the two are the timekeepers of the world before anyone was counting."
     },
     {
       "from": "helios",
       "to": "selene",
       "type": "sibling",
-      "details": "Helios the Sun and Selene the Moon, brother and sister, cross the heavens in turn."
+      "details": "Helios the Sun and Selene the Moon, brother and sister, cross the heavens in turn.\n\nThey cross in turn and never together, and their sister Eos goes before them both. Odysseus's crew ate the cattle of Helios and the sun threatened to go down and shine among the dead instead — the one occasion the machinery is threatened with stopping.",
+      "highlight": true
     },
     {
       "from": "apollo",
@@ -3679,13 +3682,14 @@
       "from": "nyx",
       "to": "hypnos",
       "type": "parent",
-      "details": "Hypnos, gentle Sleep, is a son of Nyx the Night."
+      "details": "Hypnos, gentle Sleep, is a son of Nyx the Night.\n\nHera bribed Hypnos to put Zeus to sleep so that the Greeks could be helped, and the price was one of the Graces as a wife. He had done it for her once before and been chased across the sky for it, and only escaped by taking refuge with his mother, whom Zeus did not dare offend.",
+      "highlight": true
     },
     {
       "from": "nyx",
       "to": "thanatos",
       "type": "parent",
-      "details": "Thanatos, Death, is a son of Nyx the Night and twin brother of Sleep."
+      "details": "Thanatos, Death, is a son of Nyx the Night and twin brother of Sleep.\n\nDeath was chained by Sisyphus so that no one on earth could die, and wrestled by Heracles at the tomb of Alcestis and made to give her back. He is the one power in the myths that mortals repeatedly, if briefly, beat."
     },
     {
       "from": "hypnos",
@@ -3697,13 +3701,13 @@
       "from": "zeus",
       "to": "calliope",
       "type": "parent",
-      "details": "Zeus fathered the nine Muses on Memory; Calliope, of epic song, was the eldest."
+      "details": "Zeus fathered the nine Muses on Memory; Calliope, of epic song, was the eldest.\n\nZeus lay with Memory nine nights running near the summit of Olympus, and she bore the nine in a single birth. They sing at the feasts of the gods and supply mortals with everything anyone knows about them."
     },
     {
       "from": "mnemosyne",
       "to": "calliope",
       "type": "parent",
-      "details": "Calliope, chief of the Muses, is a daughter of Mnemosyne, Memory, by Zeus."
+      "details": "Calliope, chief of the Muses, is a daughter of Mnemosyne, Memory, by Zeus.\n\nCalliope was asked to settle the quarrel between Aphrodite and Persephone over Adonis and divided the year between them, which is the same solution the gods reached over Persephone herself."
     },
     {
       "from": "nyx",
@@ -3721,7 +3725,7 @@
       "from": "chiron",
       "to": "achilles",
       "type": "mentors",
-      "details": "Chiron fed the boy Achilles on lions' marrow and taught him war, medicine and music alike."
+      "details": "Chiron fed the boy Achilles on lions' marrow and taught him war, medicine and music alike.\n\nChiron raised Achilles after Thetis left, and taught Jason, Asclepius and Actaeon besides. Wounded incurably by one of Heracles's poisoned arrows and unable to die, he gave up his immortality to Prometheus and was released."
     },
     {
       "from": "chiron",
@@ -3799,8 +3803,8 @@
     {
       "from": "dionysus",
       "to": "midas",
-      "type": "protects",
-      "details": "Grateful for a kindness, Dionysus granted Midas the golden touch — then, hearing his misery, mercifully took it back."
+      "type": "transforms",
+      "details": "Midas sheltered the lost Silenus for ten days and returned him to Dionysus, who offered any reward he chose. He asked that everything he touched turn to gold.\n\nThe god granted it knowing what it meant, and released him once food, drink and — in Ovid — his own daughter had made the point. Midas washed the power off in the river Pactolus, which ran with gold ever after."
     },
     {
       "from": "pygmalion",
@@ -3843,25 +3847,25 @@
       "from": "gaia",
       "to": "ourea",
       "type": "parent_group",
-      "details": "Gaia the Earth brought forth Ourea, the mountains, from herself alone, as she did the sea and sky."
+      "details": "Gaia the Earth brought forth Ourea, the mountains, from herself alone, as she did the sea and sky.\n\nGaia produced the mountains, the sea and the sky out of herself without a partner, before any pairing existed. The Ourea have no myths of their own; they are the world's furniture appearing as it is made."
     },
     {
       "from": "pontus",
       "to": "nereus",
       "type": "parent",
-      "details": "Nereus, the gentle 'Old Man of the Sea', is the eldest son of Pontus the Deep and Gaia the Earth."
+      "details": "Nereus, the gentle 'Old Man of the Sea', is the eldest son of Pontus the Deep and Gaia the Earth.\n\nHeracles caught the old sea-god asleep and held him through every shape he took until he gave up the location of the golden apples. It is the same technique Menelaus used on Proteus — the sea tells the truth only under restraint."
     },
     {
       "from": "pontus",
       "to": "phorcys",
       "type": "parent",
-      "details": "Phorcys, god of the sea's hidden perils, is a son of Pontus the Deep and Gaia."
+      "details": "Phorcys, god of the sea's hidden perils, is a son of Pontus the Deep and Gaia.\n\nPhorcys and his sister Ceto between them produce almost every monster the heroes have to kill, so the danger of the sea is genealogically the danger of the world."
     },
     {
       "from": "pontus",
       "to": "ceto",
       "type": "parent",
-      "details": "Ceto, mother of sea-monsters, is a daughter of Pontus the Deep and Gaia the Earth."
+      "details": "Ceto, mother of sea-monsters, is a daughter of Pontus the Deep and Gaia the Earth.\n\nHer name is simply the word for a sea-monster, and the beast Perseus killed at Andromeda's rock is called by it. The mother and her offspring are barely distinguished in the language."
     },
     {
       "from": "phorcys",
@@ -3873,25 +3877,25 @@
       "from": "phorcys",
       "to": "medusa",
       "type": "parent",
-      "details": "Medusa the Gorgon is a daughter of the sea-gods Phorcys and Ceto."
+      "details": "Medusa the Gorgon is a daughter of the sea-gods Phorcys and Ceto.\n\nAlone of the three sisters Medusa was born mortal, which is the only reason the raid was possible. Perseus needed a mirror-bright shield, winged sandals and a cap of invisibility to kill something that could in principle be killed."
     },
     {
       "from": "ceto",
       "to": "medusa",
       "type": "parent",
-      "details": "Ceto, goddess of sea-monsters, mothered the Gorgon Medusa with Phorcys."
+      "details": "Ceto, goddess of sea-monsters, mothered the Gorgon Medusa with Phorcys.\n\nAthena had turned her into a monster for lying with Poseidon in her temple, and took the head afterwards for the front of her aegis, where it kept the power to petrify. The punishment and the trophy are the same object."
     },
     {
       "from": "phorcys",
       "to": "graeae",
       "type": "parent_group",
-      "details": "The grey Graeae are daughters of Phorcys and Ceto, sisters and wardens of their kin the Gorgons."
+      "details": "The grey Graeae are daughters of Phorcys and Ceto, sisters and wardens of their kin the Gorgons.\n\nThey were born grey-haired and shared a single eye and a single tooth between the three of them. Perseus took the eye as it passed from hand to hand and would not return it until they told him where to find the nymphs who held his equipment."
     },
     {
       "from": "ceto",
       "to": "graeae",
       "type": "parent_group",
-      "details": "Ceto bore the Graeae, three grey sisters with a single shared eye, alongside her Gorgon daughters."
+      "details": "Ceto bore the Graeae, three grey sisters with a single shared eye, alongside her Gorgon daughters.\n\nThe Graeae are the Gorgons' sisters and their wardens, set on the road to the place where the mortal one could be found. Making them the only route in is what turns the killing of Medusa into a puzzle rather than a fight."
     },
     {
       "from": "nereus",
@@ -3903,31 +3907,31 @@
       "from": "nereus",
       "to": "amphitrite",
       "type": "parent",
-      "details": "Amphitrite, queen of the sea, is a Nereid daughter of Nereus."
+      "details": "Amphitrite, queen of the sea, is a Nereid daughter of Nereus.\n\nPoseidon pursued her and she fled to Atlas at the far edge of the sea. A dolphin found her and argued his case so well that she consented, and Poseidon set the creature among the stars for it."
     },
     {
       "from": "poseidon",
       "to": "triton",
       "type": "parent",
-      "details": "Triton the merman is the son of Poseidon and Amphitrite, herald of his father's sea."
+      "details": "Triton the merman is the son of Poseidon and Amphitrite, herald of his father's sea.\n\nTriton blows a conch to raise or calm the waves at his father's order, and it was that horn, sounded at Zeus's command, that told the flood waters to withdraw after Deucalion."
     },
     {
       "from": "poseidon",
       "to": "proteus",
       "type": "serves",
-      "details": "Proteus the shape-shifting seer serves Poseidon as herdsman of his seals in the deep."
+      "details": "Proteus the shape-shifting seer serves Poseidon as herdsman of his seals in the deep.\n\nHe knows everything that happens in the sea and will say none of it willingly, which is why every encounter with him is a wrestling match. Menelaus got home only by holding him through lion, serpent, water and tree."
     },
     {
       "from": "oceanus",
       "to": "styx",
       "type": "parent",
-      "details": "Styx, eldest of the underworld rivers, is a daughter of the Titan Oceanus and Tethys."
+      "details": "Styx, eldest of the underworld rivers, is a daughter of the Titan Oceanus and Tethys.\n\nStyx was the first of all the gods to come to Zeus's side in the war, bringing her four children with her. He rewarded her by making her water the oath that no god can break — a perjured immortal lies breathless for a year and is exiled for nine more."
     },
     {
       "from": "tethys",
       "to": "styx",
       "type": "parent",
-      "details": "Tethys mothered the river-goddess Styx, whose waters bind even the gods' oaths."
+      "details": "Tethys mothered the river-goddess Styx, whose waters bind even the gods' oaths.\n\nThe river runs through the underworld and the oath runs through the whole pantheon, so a daughter of the Titans holds the one instrument that binds the Olympians who replaced them."
     },
     {
       "from": "styx",
@@ -3939,25 +3943,25 @@
       "from": "uranus",
       "to": "crius",
       "type": "parent",
-      "details": "Crius the Titan of the constellations is a son of Uranus the Sky and Gaia the Earth."
+      "details": "Crius the Titan of the constellations is a son of Uranus the Sky and Gaia the Earth.\n\nCrius is the least characterised of the twelve Titans, defined almost entirely by descendants — through his sons come the winds, the stars, the dawn's husband, and the Titaness Hecate."
     },
     {
       "from": "gaia",
       "to": "crius",
       "type": "parent",
-      "details": "Gaia bore the Titan Crius, whose line would include the stars, the winds and the dawn."
+      "details": "Gaia bore the Titan Crius, whose line would include the stars, the winds and the dawn.\n\nHe held the southern corner of the sky at the castration of Uranus and was imprisoned in Tartarus after the war, along with every other Titan who had fought."
     },
     {
       "from": "iapetus",
       "to": "menoetius",
       "type": "parent",
-      "details": "Menoetius the violent is a son of Iapetus, and brother to Atlas and Prometheus."
+      "details": "Menoetius the violent is a son of Iapetus, and brother to Atlas and Prometheus.\n\nMenoetius is destroyed in a line and a half of the Theogony: Zeus struck him with a thunderbolt for his outrageous pride and his reckless strength, and sent him down to Erebus. He does nothing else in the surviving literature."
     },
     {
       "from": "clymene",
       "to": "menoetius",
       "type": "parent",
-      "details": "The Oceanid Clymene bore Menoetius to Iapetus, alongside Atlas and Prometheus."
+      "details": "The Oceanid Clymene bore Menoetius to Iapetus, alongside Atlas and Prometheus.\n\nClymene's four sons are the tests of a single idea — Prometheus thinks ahead and endures, Epimetheus thinks late and is caught, Atlas is punished with labour and Menoetius simply obliterated."
     },
     {
       "from": "zeus",
@@ -3969,19 +3973,19 @@
       "from": "iapetus",
       "to": "clymene",
       "type": "consort",
-      "details": "The Titan Iapetus and the Oceanid Clymene are the parents of Prometheus, Atlas and Epimetheus."
+      "details": "The Titan Iapetus and the Oceanid Clymene are the parents of Prometheus, Atlas and Epimetheus.\n\nSome accounts substitute the Oceanid Asia for Clymene as the mother of the four, and Aeschylus makes Prometheus a son of Themis instead. The disagreement matters because it decides whether the fire-bringer is a Titan's son or a goddess of law's."
     },
     {
       "from": "clymene",
       "to": "prometheus",
       "type": "parent",
-      "details": "Prometheus the forethinker is the son of Iapetus and the Oceanid Clymene."
+      "details": "Prometheus the forethinker is the son of Iapetus and the Oceanid Clymene.\n\nHe sided with Zeus in the war against his own kin, and was punished later for helping mortals instead — fire hidden in a fennel stalk, and the sacrifice rigged so that men kept the meat and the gods got the bones."
     },
     {
       "from": "clymene",
       "to": "atlas",
       "type": "parent",
-      "details": "Atlas, who holds up the sky, is a son of Iapetus and Clymene."
+      "details": "Atlas, who holds up the sky, is a son of Iapetus and Clymene.\n\nAtlas fought against Zeus and was given the sky to hold rather than Tartarus, a sentence designed to be visible. Heracles took the weight briefly and Atlas fetched the golden apples, then had to be tricked into taking it back."
     },
     {
       "from": "zeus",
@@ -4005,19 +4009,19 @@
       "from": "aphrodite",
       "to": "deimos",
       "type": "parent",
-      "details": "Aphrodite bore Deimos, Terror, to Ares — love and war together fathering panic."
+      "details": "Aphrodite bore Deimos, Terror, to Ares — love and war together fathering panic.\n\nDeimos and Phobos ride with their father in the Iliad and yoke his horses. Terror and Rout are the whole content of the war-god's household — he has no counsellors and no cult of note, only the panic he causes."
     },
     {
       "from": "ares",
       "to": "phobos",
       "type": "parent",
-      "details": "Phobos, Fear, is a son of Ares and Aphrodite, the dread that scatters armies before his father."
+      "details": "Phobos, Fear, is a son of Ares and Aphrodite, the dread that scatters armies before his father.\n\nAgamemnon's shield carries the Gorgon flanked by Terror and Rout, and Phobos appears on the shield of Achilles too. Fear is the thing armies actually break under, so it is fear that gets painted on the equipment."
     },
     {
       "from": "aphrodite",
       "to": "phobos",
       "type": "parent",
-      "details": "Aphrodite mothered Phobos, Fear, with the war-god Ares."
+      "details": "Aphrodite mothered Phobos, Fear, with the war-god Ares.\n\nThat love and war produce Fear, Terror and Harmony between them is the neatest piece of theological argument in the genealogies — the same pairing yields both the panic of the battlefield and the concord of the wedding."
     },
     {
       "from": "deimos",
@@ -4029,7 +4033,7 @@
       "from": "hypnos",
       "to": "morpheus",
       "type": "parent",
-      "details": "Morpheus, who shapes the figures of dreams, is a son of Hypnos the Sleep."
+      "details": "Morpheus, who shapes the figures of dreams, is a son of Hypnos the Sleep.\n\nMorpheus takes the shapes of people in dreams, and his brothers take the shapes of animals and of objects, so the whole content of a dream is divided between three sons of Sleep. Ovid supplies the scheme; earlier sources do not name him."
     },
     {
       "from": "uranus",
@@ -4047,7 +4051,7 @@
       "from": "zeus",
       "to": "charites",
       "type": "parent_group",
-      "details": "The three Graces, who lend beauty and joy, are daughters of Zeus."
+      "details": "The three Graces, who lend beauty and joy, are daughters of Zeus.\n\nThe three Graces attend Aphrodite, weave the robes of the gods, and give whatever charm a thing has beyond its usefulness. Hera promised one of them to Hypnos as the price for putting Zeus to sleep."
     },
     {
       "from": "aphrodite",
@@ -4059,13 +4063,13 @@
       "from": "ceto",
       "to": "stheno",
       "type": "parent",
-      "details": "Stheno the immortal Gorgon is a daughter of the sea-gods Phorcys and Ceto, and sister to Medusa."
+      "details": "Stheno the immortal Gorgon is a daughter of the sea-gods Phorcys and Ceto, and sister to Medusa.\n\nStheno is credited with killing more men than either of her sisters, though she has no story of her own. The Gorgons work as a set: two immortal and undefeatable, one mortal and therefore the plot."
     },
     {
       "from": "ceto",
       "to": "euryale",
       "type": "parent",
-      "details": "Euryale the immortal Gorgon is Ceto's daughter and Medusa's sister."
+      "details": "Euryale the immortal Gorgon is Ceto's daughter and Medusa's sister.\n\nPindar makes the sound of Euryale's grief the origin of the aulos: Athena heard the sisters wailing over Medusa and set the sound to music, inventing the double pipe to reproduce it."
     },
     {
       "from": "medusa",
@@ -4077,13 +4081,13 @@
       "from": "medusa",
       "to": "euryale",
       "type": "sibling",
-      "details": "Euryale is Medusa's immortal sister, whose wail of grief follows Perseus's killing stroke."
+      "details": "Euryale is Medusa's immortal sister, whose wail of grief follows Perseus's killing stroke.\n\nPerseus escaped the two immortal sisters only by the cap of invisibility, since nothing else would have saved him. They could pursue him for ever and never catch or avenge, which is why the story lets them fall behind."
     },
     {
       "from": "stheno",
       "to": "euryale",
       "type": "sibling",
-      "details": "Stheno and Euryale, the two immortal Gorgons, guard the memory of their slain sister Medusa."
+      "details": "Stheno and Euryale, the two immortal Gorgons, guard the memory of their slain sister Medusa.\n\nNeither can die and neither can be avenged, so their part of the story simply stops when Perseus disappears. Their immortality, which should be an advantage, is what makes them powerless in the narrative."
     },
     {
       "from": "perseus",
@@ -4114,13 +4118,13 @@
       "from": "geryon",
       "to": "orthrus",
       "type": "serves",
-      "details": "The two-headed dog Orthrus guarded the cattle of the giant Geryon until Heracles came for the herd."
+      "details": "The two-headed dog Orthrus guarded the cattle of the giant Geryon until Heracles came for the herd.\n\nGeryon had three bodies joined at the waist and kept red cattle on an island in the far west, guarded by the herdsman Eurytion and the two-headed dog. Heracles killed all three to take the herd on the tenth labour."
     },
     {
       "from": "echidna",
       "to": "orthrus",
       "type": "parent",
-      "details": "Orthrus the two-headed hound is another of Echidna's monstrous brood, brother to Cerberus."
+      "details": "Orthrus the two-headed hound is another of Echidna's monstrous brood, brother to Cerberus.\n\nOrthrus dies in a sentence, clubbed on the way to the cattle. In Hesiod he then fathers the Sphinx and the Nemean Lion on his own mother, which makes the monster genealogy fold back on itself."
     },
     {
       "from": "heracles",
@@ -4156,19 +4160,19 @@
       "from": "minos",
       "to": "cretan_bull",
       "type": "hosts",
-      "details": "The Cretan Bull, sent by Poseidon, rampaged over Minos's Crete until Heracles removed it."
+      "details": "The Cretan Bull, sent by Poseidon, rampaged over Minos's Crete until Heracles removed it.\n\nMinos kept the bull rather than sacrificing it, and everything that followed came from that: his wife's passion, the Minotaur, the labyrinth, the Athenian tribute and Theseus. One withheld offering generates the whole Cretan cycle."
     },
     {
       "from": "poseidon",
       "to": "cretan_bull",
-      "type": "parent",
-      "details": "Poseidon sent the Cretan Bull ashore; when Minos failed to sacrifice it, the god turned it wild."
+      "type": "transforms",
+      "details": "Poseidon sent the bull ashore from the sea as a sign that Minos should sacrifice it to him. When Minos kept the beast for his herds and offered a lesser animal instead, the god turned it savage and set it rampaging across Crete.\n\nThe same slight drove Poseidon to make Pasiphae desire the bull, so the Minotaur was the second half of one punishment."
     },
     {
       "from": "heracles",
       "to": "telamon",
       "type": "companion",
-      "details": "Telamon fought beside Heracles in an earlier sack of Troy and sailed with him among the Argonauts."
+      "details": "Telamon fought beside Heracles in an earlier sack of Troy and sailed with him among the Argonauts.\n\nHeracles sacked Troy a generation before the war, over Laomedon's refusal to pay for rescuing his daughter, and gave Telamon the princess Hesione as his prize. Her captivity was still being cited by the Trojans as a grievance when the Greeks arrived."
     },
     {
       "from": "tantalus",
@@ -4188,13 +4192,13 @@
       "from": "pelops",
       "to": "atreus",
       "type": "parent",
-      "details": "Atreus, whose house the family curse would tear apart, is a son of Pelops."
+      "details": "Atreus, whose house the family curse would tear apart, is a son of Pelops.\n\nPelops had won his bride by bribing a charioteer and then killing him, and the dying man's curse ran through the house — Atreus and Thyestes, Agamemnon and Aegisthus, Orestes and Clytemnestra, three generations of it."
     },
     {
       "from": "pelops",
       "to": "thyestes",
       "type": "parent",
-      "details": "Thyestes, rival to his brother Atreus, is a son of Pelops."
+      "details": "Thyestes, rival to his brother Atreus, is a son of Pelops.\n\nThe brothers began by conspiring together to murder their half-brother Chrysippus and were exiled for it. Everything they later did to each other repeats that first collaboration in reverse."
     },
     {
       "from": "atreus",
@@ -4206,19 +4210,19 @@
       "from": "atreus",
       "to": "thyestes",
       "type": "kills",
-      "details": "Atreus took revenge on his brother Thyestes by serving him a feast of his own murdered sons."
+      "details": "Atreus took revenge on his brother Thyestes by serving him a feast of his own murdered sons.\n\nThyestes had seduced Atreus's wife and stolen the golden lamb that carried the kingship. Atreus served him his own children at a reconciliation feast and showed him the hands and heads afterwards."
     },
     {
       "from": "atreus",
       "to": "agamemnon",
       "type": "parent",
-      "details": "Agamemnon, who leads the Greeks to Troy, is a son of Atreus of Mycenae."
+      "details": "Agamemnon, who leads the Greeks to Troy, is a son of Atreus of Mycenae.\n\nAgamemnon inherits the kingship, the curse and the quarrel: Aegisthus, the surviving son of the brother Atreus fed his own children to, was waiting in Mycenae the whole ten years he was at Troy."
     },
     {
       "from": "atreus",
       "to": "menelaus",
       "type": "parent",
-      "details": "Menelaus, whose wife Helen was carried to Troy, is a son of Atreus and brother of Agamemnon."
+      "details": "Menelaus, whose wife Helen was carried to Troy, is a son of Atreus and brother of Agamemnon.\n\nMenelaus gets the gentler share of the inheritance — Helen recovered, no murder waiting at home, and an eventual translation to Elysium because he was Zeus's son-in-law rather than for anything he did."
     },
     {
       "from": "thyestes",
@@ -4266,7 +4270,7 @@
       "from": "agamemnon",
       "to": "orestes",
       "type": "parent",
-      "details": "Orestes is the son who avenges Agamemnon by killing the murderers — including his own mother."
+      "details": "Orestes is the son who avenges Agamemnon by killing the murderers — including his own mother.\n\nClytemnestra killed Agamemnon on his return, and Apollo required Orestes to avenge him by killing her. The Furies pursued him for it until Athena convened the first homicide court at Athens and split the vote in his favour."
     },
     {
       "from": "agamemnon",
@@ -4278,7 +4282,7 @@
       "from": "clytemnestra",
       "to": "orestes",
       "type": "parent",
-      "details": "Orestes is Clytemnestra's son — and, avenging his father, her killer; the Furies hunt him for it."
+      "details": "Orestes is Clytemnestra's son — and, avenging his father, her killer; the Furies hunt him for it.\n\nAeschylus gives her the strongest scene in the trilogy when she bares her breast to him and asks whether he can kill the body that nursed him. He hesitates, Pylades reminds him of Apollo's command, and he does it."
     },
     {
       "from": "orestes",
@@ -4296,7 +4300,7 @@
       "from": "clytemnestra",
       "to": "electra",
       "type": "parent",
-      "details": "Electra, daughter of Clytemnestra, sides wholly with her murdered father and against her mother."
+      "details": "Electra, daughter of Clytemnestra, sides wholly with her murdered father and against her mother.\n\nElectra was kept in the house, married off to a peasant in one version to keep her line harmless, and she waited years for her brother. All three tragedians wrote her, and in each she is more relentless than Orestes."
     },
     {
       "from": "orestes",
@@ -4339,25 +4343,25 @@
       "from": "hecuba",
       "to": "hector",
       "type": "parent",
-      "details": "Hector, Troy's great defender, is the son of Priam and Hecuba."
+      "details": "Hector, Troy's great defender, is the son of Priam and Hecuba.\n\nHecuba bore nineteen of Priam's fifty sons and lost most of them to Achilles. She appeals to Hector from the wall to come inside, baring her breast to remind him she nursed him, and he stays out and dies."
     },
     {
       "from": "hecuba",
       "to": "paris",
       "type": "parent",
-      "details": "Paris, whose theft of Helen doomed Troy, is a son of Priam and Hecuba."
+      "details": "Paris, whose theft of Helen doomed Troy, is a son of Priam and Hecuba.\n\nHecuba dreamed she gave birth to a burning torch, and the seers said the child would destroy the city. He was exposed on Ida, raised by shepherds, and came back to Troy as a young man and was recognised and welcomed."
     },
     {
       "from": "priam",
       "to": "cassandra",
       "type": "parent",
-      "details": "Cassandra, the prophetess no one believes, is a daughter of Priam and Hecuba."
+      "details": "Cassandra, the prophetess no one believes, is a daughter of Priam and Hecuba.\n\nApollo gave her true prophecy to win her and, refused, added the curse that no one would believe her. She told Troy about Paris, the Greeks' ships and the wooden horse, and was ignored each time."
     },
     {
       "from": "hecuba",
       "to": "cassandra",
       "type": "parent",
-      "details": "Hecuba's daughter Cassandra foresees Troy's fall clearly, and is believed by no one."
+      "details": "Hecuba's daughter Cassandra foresees Troy's fall clearly, and is believed by no one.\n\nAfter the sack Hecuba saw Cassandra taken by Agamemnon, her daughter Polyxena killed on Achilles's tomb, and her last son murdered by the guest-friend he had been sent to for safety. Euripides gives her the revenge and the transformation into a dog."
     },
     {
       "from": "apollo",
@@ -4375,7 +4379,7 @@
       "from": "cassandra",
       "to": "hector",
       "type": "sibling",
-      "details": "Cassandra foresaw the death of her brother Hector and the fall of the city, and was mocked for it."
+      "details": "Cassandra foresaw the death of her brother Hector and the fall of the city, and was mocked for it.\n\nShe was the first to see her father bringing Hector's body back from the Greek camp, and it is her cry from the walls that brings the whole city out to meet it in the last book of the Iliad."
     },
     {
       "from": "aphrodite",
@@ -4399,7 +4403,7 @@
       "from": "aphrodite",
       "to": "aeneas",
       "type": "protects",
-      "details": "Aphrodite shields her son Aeneas through the war and out of falling Troy toward a new destiny."
+      "details": "Aphrodite shields her son Aeneas through the war and out of falling Troy toward a new destiny.\n\nShe carries him out of the fighting when Diomedes attacks him and is wounded in the wrist for it, the only goddess in the Iliad to be hurt while shielding a son. Her protection is what lets the Trojan line survive the city."
     },
     {
       "from": "peleus",
@@ -4418,13 +4422,13 @@
       "from": "peleus",
       "to": "chiron",
       "type": "hosts",
-      "details": "The centaur Chiron fostered and taught Peleus, and later his son Achilles, on Mount Pelion."
+      "details": "The centaur Chiron fostered and taught Peleus, and later his son Achilles, on Mount Pelion.\n\nChiron taught Peleus, saved him when he was left weaponless on Pelion, and arranged his marriage to Thetis by telling him how to hold her through her changes of shape."
     },
     {
       "from": "telamon",
       "to": "ajax",
       "type": "parent",
-      "details": "Great Ajax, the bulwark of the Greeks, is the son of Telamon."
+      "details": "Great Ajax, the bulwark of the Greeks, is the son of Telamon.\n\nAjax needs no divine help and gets none: the largest shield in the army, the man who holds the line while Achilles sulks, and the one who kills himself when Achilles's armour is awarded to Odysseus instead."
     },
     {
       "from": "achilles",
@@ -4460,8 +4464,7 @@
       "from": "odysseus",
       "to": "palamedes",
       "type": "kills",
-      "details": "When the kings came to muster Odysseus for the war at Troy, he feigned madness to stay home — until Palamedes exposed the ruse by setting his infant son before his plough, forcing him to swerve and prove his wits sound. Odysseus never forgave the humiliation. Later at Troy he took his revenge by forging a treasonous letter and planting gold in Palamedes's tent, framing him as a traitor bought by the Trojans — and the innocent man was stoned to death by his own comrades.",
-      "highlight": true
+      "details": "When the kings came to muster Odysseus for the war at Troy, he feigned madness to stay home — until Palamedes exposed the ruse by setting his infant son before his plough, forcing him to swerve and prove his wits sound. Odysseus never forgave the humiliation. Later at Troy he took his revenge by forging a treasonous letter and planting gold in Palamedes's tent, framing him as a traitor bought by the Trojans — and the innocent man was stoned to death by his own comrades."
     },
     {
       "from": "anticlea",
@@ -4515,19 +4518,19 @@
       "from": "cadmus",
       "to": "semele",
       "type": "parent",
-      "details": "Semele, mother of Dionysus, is a daughter of Cadmus, founder of Thebes."
+      "details": "Semele, mother of Dionysus, is a daughter of Cadmus, founder of Thebes.\n\nCadmus founded Thebes and his daughters brought it down: Semele burned, Agave tore her son apart, Ino leapt into the sea. Their nephew Pentheus and their great-grandson Oedipus complete the ruin of the house."
     },
     {
       "from": "cadmus",
       "to": "ino",
       "type": "parent",
-      "details": "Ino, who nurses the infant Dionysus, is a daughter of Cadmus and sister of Semele."
+      "details": "Ino, who nurses the infant Dionysus, is a daughter of Cadmus and sister of Semele.\n\nIno nursed the infant Dionysus and was driven mad by Hera for it. She leapt into the sea with her son and was made the sea-goddess Leucothea, who in the Odyssey gives Odysseus the veil that keeps him afloat."
     },
     {
       "from": "cadmus",
       "to": "agave",
       "type": "parent",
-      "details": "Agave, who will tear apart her own son, is a daughter of Cadmus and sister of Semele."
+      "details": "Agave, who will tear apart her own son, is a daughter of Cadmus and sister of Semele.\n\nAgave denied that her sister Semele had lain with Zeus and said the story was a cover for an ordinary seduction. The god's answer was to send her onto the mountain in madness to tear her own son apart with her hands."
     },
     {
       "from": "semele",
@@ -4569,7 +4572,7 @@
       "from": "pentheus",
       "to": "dionysus",
       "type": "rival",
-      "details": "King Pentheus set himself against his cousin the god Dionysus, and was destroyed for it."
+      "details": "King Pentheus set himself against his cousin the god Dionysus, and was destroyed for it.\n\nPentheus refused to admit that his cousin was a god and tried to imprison him. Dionysus led him out to spy on the women in a dress, and his own mother, in the god's madness, tore his head off believing him a lion."
     },
     {
       "from": "artemis",
@@ -4581,19 +4584,19 @@
       "from": "oedipus",
       "to": "eteocles",
       "type": "parent",
-      "details": "Eteocles, who seizes Thebes and dies fighting his brother, is a son of Oedipus."
+      "details": "Eteocles, who seizes Thebes and dies fighting his brother, is a son of Oedipus.\n\nThe brothers agreed to rule Thebes in alternate years and Eteocles refused to give up his turn, which brought Polynices back with an Argive army. They killed each other in single combat at the seventh gate."
     },
     {
       "from": "oedipus",
       "to": "polynices",
       "type": "parent",
-      "details": "Polynices, who brings an army against Thebes and dies by his brother's hand, is a son of Oedipus."
+      "details": "Polynices, who brings an army against Thebes and dies by his brother's hand, is a son of Oedipus.\n\nOedipus cursed both sons for their treatment of him, and at Colonus refused Polynices even after he came to beg for support. The curse was that they should divide their inheritance with the sword."
     },
     {
       "from": "oedipus",
       "to": "ismene",
       "type": "parent",
-      "details": "Ismene, the more cautious sister, is a daughter of Oedipus and sister of Antigone."
+      "details": "Ismene, the more cautious sister, is a daughter of Oedipus and sister of Antigone.\n\nIsmene brings news from Thebes to her father and sister at Colonus and is captured by Creon there. She survives the play she is in and is never mentioned again, which is the closest anyone in the family gets to an ending."
     },
     {
       "from": "eteocles",
@@ -4647,7 +4650,7 @@
       "from": "haemon",
       "to": "antigone",
       "type": "courts",
-      "details": "Haemon is betrothed to Antigone and dies beside her when his father Creon condemns her."
+      "details": "Haemon is betrothed to Antigone and dies beside her when his father Creon condemns her.\n\nHaemon argues with his father in the play's central scene, telling him that the city sympathises with the girl and that a man who cannot listen should not rule. Creon relents too late and finds him already dead in the tomb."
     },
     {
       "from": "jocasta",
@@ -4671,7 +4674,7 @@
       "from": "athena",
       "to": "heracles",
       "type": "protects",
-      "details": "Athena stands by Heracles through his Labours, lending counsel and arms to her favourite mortal."
+      "details": "Athena stands by Heracles through his Labours, lending counsel and arms to her favourite mortal.\n\nShe hands him the bronze rattles that startle the Stymphalian birds off the marsh, holds up the sky beside him, and leads him into Olympus at the end. Hera sent his madness and his labours; Athena is the counterweight throughout."
     },
     {
       "from": "hermes",
@@ -4729,19 +4732,19 @@
       "from": "styx",
       "to": "nike",
       "type": "parent",
-      "details": "Nike, winged victory, is the daughter of the river Styx by the Titan Pallas."
+      "details": "Nike, winged victory, is the daughter of the river Styx by the Titan Pallas.\n\nStyx brought Victory, Emulation, Power and Force to Zeus before the fighting began, and the four of them have stood beside his throne ever since. Choosing early is the reason the family kept its privileges under the new regime."
     },
     {
       "from": "hyperion",
       "to": "helios",
       "type": "parent",
-      "details": "Helios the sun is the son of the Titan Hyperion by his sister Theia."
+      "details": "Helios the sun is the son of the Titan Hyperion by his sister Theia.\n\nHelios sees everything from above and is the witness the other gods call: he told Demeter who had taken Persephone, and told Hephaestus where to find Ares and Aphrodite."
     },
     {
       "from": "theia",
       "to": "helios",
       "type": "parent",
-      "details": "Theia, Titaness of light, bore Helios, Selene and Eos to Hyperion."
+      "details": "Theia, Titaness of light, bore Helios, Selene and Eos to Hyperion.\n\nHe let his son Phaethon drive the chariot for a day and had to watch Zeus strike him out of the sky with a thunderbolt before the earth burned. Helios threatened to stop driving altogether, and had to be talked round."
     },
     {
       "from": "atlas",
@@ -4754,61 +4757,62 @@
       "from": "nyx",
       "to": "eris",
       "type": "parent",
-      "details": "Eris, strife incarnate, is a daughter born of Night alone."
+      "details": "Eris, strife incarnate, is a daughter born of Night alone.\n\nNight's children in the Theogony are all the things that come without a father — Doom, Fate, Death, Sleep, Blame, Misery, the Fates, Retribution, Deceit, Old Age and Strife. Eris is the one who does the most narrative work."
     },
     {
       "from": "nyx",
       "to": "nemesis",
       "type": "parent",
-      "details": "Nemesis, who apportions retribution, is a daughter of Night."
+      "details": "Nemesis, who apportions retribution, is a daughter of Night.\n\nNemesis attends prosperity to make sure it does not exceed itself. In one tradition she, not Leda, was pursued by Zeus in the form of a swan and laid the egg from which Helen came, which makes the Trojan War a retribution by descent."
     },
     {
       "from": "phorcys",
       "to": "echidna",
       "type": "parent",
-      "details": "Echidna, mother of monsters, is a child of the old sea-gods Phorcys and Ceto."
+      "details": "Echidna, mother of monsters, is a child of the old sea-gods Phorcys and Ceto.\n\nHesiod places her in a cave under a rock, half beautiful woman and half enormous serpent, ageless and deathless. Almost every creature the heroes fight is her child by Typhon."
     },
     {
       "from": "ceto",
       "to": "echidna",
       "type": "parent",
-      "details": "Ceto, goddess of the sea's terrors, bore Echidna, half-woman and half-serpent."
+      "details": "Ceto, goddess of the sea's terrors, bore Echidna, half-woman and half-serpent.\n\nSome readings of the Theogony give her different parents — Callirhoe and Chrysaor — and the ambiguity has never been resolved. Either way she stands between the sea-gods and the monsters as the point where one becomes the other."
     },
     {
       "from": "gaia",
       "to": "erinyes",
       "type": "parent_group",
-      "details": "The Furies rose from the blood of the castrated Uranus where it fell upon Gaia."
+      "details": "The Furies rose from the blood of the castrated Uranus where it fell upon Gaia.\n\nThey were born of the blood that fell on the earth when Cronus castrated Uranus, so the Furies who pursue kin-murderers are themselves the issue of the first crime within a family."
     },
     {
       "from": "nyx",
       "to": "charon",
       "type": "parent",
-      "details": "Charon, ferryman of the dead, is a son of Night and Darkness."
+      "details": "Charon, ferryman of the dead, is a son of Night and Darkness.\n\nHe takes an obol from each mouth and refuses anyone unburied, which is why the dead in the poems beg so urgently for their rites: Patroclus comes to Achilles in a dream for exactly this, and Elpenor waylays Odysseus about it in the underworld.",
+      "highlight": true
     },
     {
       "from": "erebus",
       "to": "charon",
       "type": "parent",
-      "details": "Erebus, primordial Darkness, fathered Charon upon Nyx."
+      "details": "Erebus, primordial Darkness, fathered Charon upon Nyx.\n\nDarkness and Night between them produce the ferryman, the gloom of the crossing personified as the man who runs it. His parents are the conditions of the journey rather than characters in it."
     },
     {
       "from": "oceanus",
       "to": "clymene",
       "type": "parent",
-      "details": "Clymene, an Oceanid, is a daughter of Oceanus and Tethys."
+      "details": "Clymene, an Oceanid, is a daughter of Oceanus and Tethys.\n\nThe three thousand Oceanids are the springs, rivers and rainclouds distributed across the world, and Hesiod says no one can name them all — only those who live nearby know each one's name."
     },
     {
       "from": "tethys",
       "to": "clymene",
       "type": "parent",
-      "details": "Tethys bore the three thousand Oceanids, Clymene among them."
+      "details": "Tethys bore the three thousand Oceanids, Clymene among them.\n\nClymene is the Oceanid the myths use most, as mother of the Iapetids and, in Ovid, of Phaethon by Helios. She is the point where the water-nymphs connect to the two families that trouble Zeus."
     },
     {
       "from": "clymene",
       "to": "epimetheus",
       "type": "parent",
-      "details": "Epimetheus, the afterthinker, is a son of Iapetus and Clymene."
+      "details": "Epimetheus, the afterthinker, is a son of Iapetus and Clymene.\n\nPrometheus warned him to accept nothing from Zeus, and he accepted Pandora anyway. She opened the jar, and everything in it went out among men except hope, which stayed under the rim."
     },
     {
       "from": "apollo",
@@ -4838,7 +4842,7 @@
       "from": "peleus",
       "to": "telamon",
       "type": "sibling",
-      "details": "Peleus and Telamon, sons of Aeacus, sailed with the Argonauts and fathered Achilles and Ajax."
+      "details": "Peleus and Telamon, sons of Aeacus, sailed with the Argonauts and fathered Achilles and Ajax.\n\nThe brothers killed their half-brother Phocus and were exiled separately for it, one to Phthia and one to Salamis. Their sons Achilles and Ajax were the two best fighters in the Greek army and cousins who never quarrelled."
     },
     {
       "from": "europa",
@@ -4856,7 +4860,7 @@
       "from": "atlas",
       "to": "epimetheus",
       "type": "sibling",
-      "details": "Atlas and Epimetheus, brothers among the sons of Iapetus."
+      "details": "Atlas and Epimetheus, brothers among the sons of Iapetus.\n\nAtlas holds the sky up and Epimetheus lets the jar be opened: the strongest and the stupidest of the four brothers, punished in ways that fit exactly what each of them is."
     },
     {
       "from": "orpheus",
@@ -4881,151 +4885,153 @@
       "from": "zeus",
       "to": "demeter",
       "type": "sibling",
-      "details": "Among the six children of Cronus and Rhea — the elder Olympians who cast lots for the cosmos."
+      "details": "Sister and brother among the six, and afterwards parents: Persephone was born to Demeter by Zeus, which is what gave him the standing to promise the girl to Hades without consulting her mother.\n\nWhen Demeter withheld the harvest until she was returned, it was Zeus who had to give way, the only occasion in the myths where he is compelled by another god's refusal rather than by fate."
     },
     {
       "from": "zeus",
       "to": "hestia",
       "type": "sibling",
-      "details": "Among the six children of Cronus and Rhea — the elder Olympians who cast lots for the cosmos."
+      "details": "Hestia was the first swallowed and so the last disgorged, which makes her by different reckonings both the eldest and the youngest of the six.\n\nShe asked Zeus for perpetual virginity and the first portion of every sacrifice instead of a throne, and he granted both. Her yielding of an Olympian seat is what left room for Dionysus in the later lists of twelve."
     },
     {
       "from": "hera",
       "to": "poseidon",
       "type": "sibling",
-      "details": "Among the six children of Cronus and Rhea — the elder Olympians who cast lots for the cosmos."
+      "details": "Poseidon joined Hera and Athena in the one attempted coup against Zeus, binding him with a hundred knots while he slept until Thetis fetched the hundred-handed Briareus to loose him.\n\nThey shared a grudge against Troy as well: Poseidon had built its walls for Laomedon and been cheated of the wage, and Hera had been passed over by Paris."
     },
     {
       "from": "hera",
       "to": "hades",
       "type": "sibling",
-      "details": "Among the six children of Cronus and Rhea — the elder Olympians who cast lots for the cosmos."
+      "details": "Hera presides over marriage and Hades made the one marriage in the family that was contracted by abduction, with Zeus's private consent and no word to the bride's mother.\n\nHades keeps almost entirely out of the quarrels on Olympus and Hera almost entirely within them, so the two siblings scarcely appear in a scene together."
     },
     {
       "from": "hera",
       "to": "demeter",
       "type": "sibling",
-      "details": "Among the six children of Cronus and Rhea — the elder Olympians who cast lots for the cosmos."
+      "details": "Both are wronged by Zeus and answer in opposite registers: Hera pursues his lovers and their children for decades, while Demeter simply stops the grain and waits.\n\nDemeter's method works. It is the difference between attacking what a husband cares for and withholding what the whole order depends on."
     },
     {
       "from": "hera",
       "to": "hestia",
       "type": "sibling",
-      "details": "Among the six children of Cronus and Rhea — the elder Olympians who cast lots for the cosmos."
+      "details": "The goddess of marriage and the goddess who refused it, sisters and near-opposites: Hera's authority runs through the wedded household, Hestia's through the hearth at the centre of it.\n\nHestia has almost no narrative — no lovers, no quarrels, no children — which is precisely her character, and the reason she is so rarely depicted in the myths that consume her family."
     },
     {
       "from": "poseidon",
       "to": "demeter",
       "type": "sibling",
-      "details": "Among the six children of Cronus and Rhea — the elder Olympians who cast lots for the cosmos."
+      "details": "Poseidon pursued his sister while she was searching the earth for Persephone. She turned herself into a mare and hid among a herd; he became a stallion and had her regardless.\n\nFrom that came the immortal horse Arion and a daughter whose name was not spoken outside the mysteries. Demeter withdrew to a cave in her rage, and the cult title Erinys — the Fury — belonged to her afterwards in Arcadia."
     },
     {
       "from": "poseidon",
       "to": "hestia",
       "type": "sibling",
-      "details": "Among the six children of Cronus and Rhea — the elder Olympians who cast lots for the cosmos."
+      "details": "Poseidon and Apollo both courted Hestia, and their rivalry over her was serious enough to threaten a quarrel among the gods.\n\nShe refused both, laid her hand on Zeus's head and swore to remain unmarried, and was given the honour of the hearth instead. It is one of the few contests in the myths settled by the woman's own decision."
     },
     {
       "from": "hades",
       "to": "demeter",
       "type": "sibling",
-      "details": "Among the six children of Cronus and Rhea — the elder Olympians who cast lots for the cosmos."
+      "details": "The abduction sets brother against sister: Hades took Persephone with Zeus's consent and Demeter's total ignorance, and Demeter's answer was to let every seed fail.\n\nThe settlement — a third of the year below, the rest above — is a division of the girl rather than a reconciliation, and the seasons are the shape of the unresolved quarrel."
     },
     {
       "from": "hades",
       "to": "hestia",
       "type": "sibling",
-      "details": "Among the six children of Cronus and Rhea — the elder Olympians who cast lots for the cosmos."
+      "details": "The two siblings who keep out of the story: Hestia never leaves the hearth at the centre of the house and Hades never leaves the realm beneath it.\n\nNeither takes part in the Trojan War, neither pursues mortals, and neither has a body of myth in their own name. They are the fixed points the more restless four move around."
     },
     {
       "from": "demeter",
       "to": "hestia",
       "type": "sibling",
-      "details": "Among the six children of Cronus and Rhea — the elder Olympians who cast lots for the cosmos."
+      "details": "Between them the sisters hold the two halves of survival — the grain in the field and the fire on the hearth — and both were worshipped in the house rather than chiefly in the temple.\n\nNeither cult depended on the great sanctuaries: an offering to Hestia opened every sacrifice, and Demeter's Eleusinian rites were open to anyone, including women and slaves."
     },
     {
       "from": "ares",
       "to": "hephaestus",
       "type": "sibling",
-      "details": "Children of Zeus and Hera, born to the ruling couple of Olympus."
+      "details": "Hephaestus caught Ares in bed with his wife Aphrodite using a net of chains too fine to see, and called the gods in to look.\n\nDemodocus sings the story in the Odyssey as comedy: the lame smith outwitting the war-god, the assembled gods laughing, and Poseidon eventually standing surety for the fine."
     },
     {
       "from": "ares",
       "to": "hebe",
       "type": "sibling",
-      "details": "Children of Zeus and Hera, born to the ruling couple of Olympus."
+      "details": "In the Iliad Hebe draws the bath for Ares when he comes back from the field wounded by Diomedes, and washes and dresses him.\n\nIt is a domestic scene set inside a war poem, and one of the few glimpses of the household of Olympus behaving like a household."
     },
     {
       "from": "ares",
       "to": "eileithyia",
       "type": "sibling",
-      "details": "Children of Zeus and Hera, born to the ruling couple of Olympus."
+      "details": "Hera's children stand at the two ends of a life: Eileithyia opens the womb and Ares empties the field.\n\nEileithyia is the more feared of the two in practice — Hera used her to delay Heracles's birth and prolong Alcmene's labour for days, which is a power over mortals that Ares never exercises so directly."
     },
     {
       "from": "hephaestus",
       "to": "hebe",
       "type": "sibling",
-      "details": "Children of Zeus and Hera, born to the ruling couple of Olympus."
+      "details": "Hebe poured the nectar for the gods, and in the first book of the Iliad Hephaestus takes the wine round the hall himself, limping, to break the quarrel between his parents by making everyone laugh.\n\nBrother and sister hold the same office at different moments, and both use it to keep the peace in a violent household."
     },
     {
       "from": "hephaestus",
       "to": "eileithyia",
       "type": "sibling",
-      "details": "Children of Zeus and Hera, born to the ruling couple of Olympus."
+      "details": "Eileithyia governs birth, and Hephaestus is the child Hera bore without a father — in Hesiod's version, produced alone out of anger at Zeus's producing Athena from his head.\n\nHe was thrown from Olympus for his lameness by the same mother, and returned only when he had trapped her in a golden throne of his own making and would not release her until his terms were met."
     },
     {
       "from": "hebe",
       "to": "eileithyia",
       "type": "sibling",
-      "details": "Children of Zeus and Hera, born to the ruling couple of Olympus."
+      "details": "Both daughters work in Hera's own domain — Hebe as the goddess of youth, Eileithyia as the one who attends women in labour — and neither has a story apart from their mother.\n\nHebe was eventually married to the deified Heracles, the very man Hera and Eileithyia had between them tried to prevent from being born."
     },
     {
       "from": "atlas",
       "to": "menoetius",
       "type": "sibling",
-      "details": "Sons of the Titan Iapetus by the Oceanid Clymene."
+      "details": "Both brothers were punished for their part in the war against the Olympians: Atlas was set to hold up the sky at the western edge of the world, and Menoetius was struck by a thunderbolt and driven down into Erebus.\n\nHesiod gives Menoetius no other act at all — he exists in the Theogony as an example of the arrogance that Zeus destroys."
     },
     {
       "from": "prometheus",
       "to": "menoetius",
       "type": "sibling",
-      "details": "Sons of the Titan Iapetus by the Oceanid Clymene."
+      "details": "The names divide the family: Prometheus is forethought and Menoetius is ruinous strength, and Hesiod sets one against the other deliberately.\n\nMenoetius was destroyed at once for his outrage; Prometheus, who calculated, was punished far more elaborately and survived to be released."
     },
     {
       "from": "epimetheus",
       "to": "menoetius",
       "type": "sibling",
-      "details": "Sons of the Titan Iapetus by the Oceanid Clymene."
+      "details": "Of the four sons of Iapetus, two were destroyed outright and two were left to demonstrate the consequences of thinking badly — Epimetheus by accepting Pandora after his brother's warning, Menoetius by needing no argument at all.\n\nTheir line is Hesiod's account of how mortal trouble entered the world through the miscalculations of Titans."
     },
     {
       "from": "helen",
       "to": "pollux",
       "type": "sibling",
-      "details": "The brood of Leda — mortal and immortal children hatched at Sparta."
+      "details": "When Theseus carried the girl Helen off to Attica, her brothers Castor and Pollux invaded, recovered her and took Theseus's mother away as a servant in exchange.\n\nIt is the first abduction of Helen and the only one that was successfully reversed. After the twins were placed among the stars they were invoked as saviours by sailors, while their sister's second abduction was left to ten years of war."
     },
     {
       "from": "paris",
       "to": "cassandra",
       "type": "sibling",
-      "details": "Children of Priam and Hecuba, princes and princess of Troy."
+      "details": "Cassandra knew what her brother's voyage meant and said so, and was disbelieved as always; some accounts have her recognise him as the exposed infant returned when he came back to Troy for the funeral games.\n\nShe watched the war she had predicted arrive, survived the sack, and was carried off by Agamemnon to die in Mycenae.",
+      "highlight": true
     },
     {
       "from": "eteocles",
       "to": "ismene",
       "type": "sibling",
-      "details": "The doomed children of Oedipus and Jocasta."
+      "details": "Ismene loses both brothers on the same day, one attacking Thebes and one defending it, each by the other's hand.\n\nWhere Antigone answers by defying the burial ban, Ismene counsels obedience and lives — the sister the plays leave standing and say nothing further about."
     },
     {
       "from": "polynices",
       "to": "ismene",
       "type": "sibling",
-      "details": "The doomed children of Oedipus and Jocasta."
+      "details": "Polynices is the brother Ismene will not risk her life to bury, though she later offers to share Antigone's punishment for having done it.\n\nAntigone refuses her the share, telling her she cannot claim a death she did not earn, and the two sisters part without reconciling."
     },
     {
       "from": "neoptolemus",
       "to": "priam",
       "type": "kills",
-      "details": "Neoptolemus, Achilles's son, cut down old King Priam at the altar on the night Troy fell."
+      "details": "Neoptolemus, Achilles's son, cut down old King Priam at the altar on the night Troy fell.\n\nPriam had come out to the altar for sanctuary. Neoptolemus killed his son Polites in front of him and then dragged the old king through the blood and cut him down at the altar itself — the sacrilege the Greeks were punished for on the voyage home.",
+      "highlight": true
     },
     {
       "from": "apollo",
@@ -5050,6 +5056,207 @@
       "to": "odysseus",
       "type": "rival",
       "details": "Ajax and Odysseus contended for the armour of dead Achilles; when it went to Odysseus, Ajax fell into fatal madness."
+    },
+    {
+      "from": "phorcys",
+      "to": "stheno",
+      "type": "parent",
+      "details": "Phorcys, the old man of the sea, fathered the Gorgons upon his sister Ceto, and Stheno was the eldest of the three. The graph already gives Medusa both parents; her immortal sisters share them.\n\nWhere Medusa alone was born mortal, Stheno and Euryale took the deathlessness of the sea-gods' line."
+    },
+    {
+      "from": "phorcys",
+      "to": "euryale",
+      "type": "parent",
+      "details": "Euryale is the second of the three Gorgon daughters of Phorcys and Ceto, and like Stheno she cannot die.\n\nIt was her far-carrying cry that Perseus heard behind him as he fled with Medusa's head, the sound of a sister who could pursue him forever and never avenge herself."
+    },
+    {
+      "from": "typhon",
+      "to": "hydra",
+      "type": "parent",
+      "details": "Hesiod names Typhon and Echidna as the parents of the Hydra, so the many-headed serpent of Lerna belongs to the same brood as Cerberus and the Chimera.\n\nIts regeneration is a version of its father's excess: Typhon had a hundred serpent heads, and his daughter grew two for every one struck away."
+    },
+    {
+      "from": "typhon",
+      "to": "sphinx",
+      "type": "parent",
+      "details": "Apollodorus makes the Sphinx a daughter of Typhon and Echidna, though Hesiod assigns her instead to Orthrus and the Chimera — one of several places where the monstrous genealogies disagree.\n\nEither way she belongs to the same line of hybrid creatures, and she was sent against Thebes by a god rather than acting on her own account.",
+      "highlight": true
+    },
+    {
+      "from": "typhon",
+      "to": "nemean_lion",
+      "type": "parent",
+      "details": "Apollodorus gives the Nemean Lion to Typhon and Echidna; Hesiod makes it the offspring of Orthrus and the Chimera, which would make it Echidna's grandchild rather than her son.\n\nIts impenetrable hide is the family trait — the monsters of this line are each defined by one property no ordinary weapon can overcome."
+    },
+    {
+      "from": "typhon",
+      "to": "ladon",
+      "type": "parent",
+      "details": "Ladon, the hundred-headed dragon coiled about the tree of golden apples, is named a child of Typhon and Echidna by Apollodorus, though Hesiod assigns him to Phorcys and Ceto instead.\n\nThe many heads mark him as his father's son whichever version is followed."
+    },
+    {
+      "from": "typhon",
+      "to": "orthrus",
+      "type": "parent",
+      "details": "Orthrus, the two-headed hound that guarded Geryon's red cattle, was the son of Typhon and Echidna and so the elder brother of Cerberus.\n\nHeracles killed him in passing on the tenth labour, an obstacle rather than an opponent, though in Hesiod he goes on to father the Sphinx and the Nemean Lion upon his own mother."
+    },
+    {
+      "from": "orpheus",
+      "to": "sirens",
+      "type": "rival",
+      "details": "When the Argo came under the Sirens' island the crew began to turn the ship toward the voices, and Orpheus took up his lyre and played louder, drowning them out until the danger was past.\n\nIt is the one recorded defeat of the Sirens by direct contest rather than by Odysseus's trick of the mast and the wax, and it turns on a singer meeting singers on their own ground.",
+      "highlight": true
+    },
+    {
+      "from": "circe",
+      "to": "sirens",
+      "type": "advises",
+      "details": "Circe's sailing directions to Odysseus name the Sirens first among the perils ahead and prescribe the remedy exactly: wax in the crew's ears, the captain bound upright to the mast, and no man to loosen him however he pleads.\n\nThe episode works only because he is forewarned, which makes Circe — the enchantress who first detained him — the reason he survives the voyage at all.",
+      "highlight": true
+    },
+    {
+      "from": "eros",
+      "to": "medea",
+      "type": "captivates",
+      "details": "In Apollonius, Hera and Athena cannot make Medea help Jason and so go to Aphrodite, who sends her son to do it; Eros shoots the arrow into Medea as she stands in her father's hall and the burning does the rest.\n\nEverything that follows — the fleece, the murdered brother, the killed children — descends from that single shot, which is why the poem stages it so carefully.",
+      "highlight": true
+    },
+    {
+      "from": "eros",
+      "to": "apollo",
+      "type": "wounds",
+      "details": "Stung by Apollo's mockery of his archery, Eros shot him with a golden arrow to kindle helpless love and shot Daphne with a leaden one to breed refusal, so that the god of prophecy could not foresee or prevent his own humiliation.\n\nOvid uses the episode to establish that desire outranks every other divine power, including Apollo's.",
+      "highlight": true
+    },
+    {
+      "from": "hecate",
+      "to": "demeter",
+      "type": "advises",
+      "details": "Hecate alone heard Persephone cry out as the earth opened, and she came to Demeter with a torch in each hand to tell her what she had heard and to search beside her.\n\nWhen the girl was restored, Hecate went with her as her attendant and forerunner, which is how a goddess of crossroads and night became fixed to the story of the returning year.",
+      "highlight": true
+    },
+    {
+      "from": "hecate",
+      "to": "persephone",
+      "type": "protects",
+      "details": "After the return from the underworld Hecate became Persephone's companion and guide, going before her at each descent and each ascent.\n\nIt is an unusual relationship among the gods: not kinship, marriage or service, but an attendance freely given because of what she witnessed.",
+      "highlight": true
+    },
+    {
+      "from": "tiresias",
+      "to": "oedipus",
+      "type": "advises",
+      "details": "Summoned to name the killer polluting Thebes, Tiresias refused, and only under insult said what he knew: that Oedipus was the man he sought, and blind to what he was.\n\nThe blind prophet who sees and the sighted king who does not is the play's central figure, and Oedipus ends it having taken his own sight."
+    },
+    {
+      "from": "scylla",
+      "to": "charybdis",
+      "type": "rival",
+      "details": "The two lie within a bowshot on opposite sides of the strait, a rock and a whirlpool, so that avoiding one means passing within reach of the other.\n\nCirce advised Odysseus to hold to Scylla's side and lose six men rather than risk the whole ship in Charybdis, and the choice between two evils has carried their names ever since."
+    },
+    {
+      "from": "neoptolemus",
+      "to": "andromache",
+      "type": "captivates",
+      "details": "Hector's widow was allotted to Achilles's son in the division of the Trojan captives, so the woman who had lost husband, father and brothers to Achilles was given to the man who killed her son.\n\nEuripides makes the marriage the subject of a whole play, in which she survives by endurance rather than by rescue."
+    },
+    {
+      "from": "meleager",
+      "to": "moirai",
+      "type": "endangers",
+      "details": "At Meleager's birth the Fates told his mother Althaea that he would live only as long as a brand then burning on the hearth. She snatched it out and hid it away.\n\nWhen he killed her brothers in the quarrel over the Calydonian boar's hide, she took the brand out and put it back in the fire, and he died where he stood."
+    },
+    {
+      "from": "pan",
+      "to": "echo",
+      "type": "courts",
+      "details": "Pan pursued Echo through the woods and, refused, drove the shepherds mad so that they tore her apart, leaving only her voice scattered across the hills.\n\nIt is the harsher version of her story, older than the one in which she wastes away for Narcissus, and it explains the voice without a body the same way."
+    },
+    {
+      "from": "harpies",
+      "to": "jason",
+      "type": "endangers",
+      "details": "The Harpies had been sent to snatch and befoul the food of the blind seer Phineus, who could not eat, and the Argonauts found him starving.\n\nZetes and Calais, the winged sons of the North Wind, drove the creatures off across the sea, and Phineus repaid the crew with the sailing directions that got the Argo through the Clashing Rocks.",
+      "highlight": true
+    },
+    {
+      "from": "medea",
+      "to": "aegeus",
+      "type": "consort",
+      "details": "Fleeing Corinth after killing her children, Medea came to Athens and married the childless Aegeus on the promise of an heir.\n\nWhen Theseus arrived unrecognised she knew him at once and persuaded Aegeus to hand him a cup of poison, and the king dashed it from his son's lips at the last moment on seeing the sword."
+    },
+    {
+      "from": "medea",
+      "to": "pelias",
+      "type": "kills",
+      "details": "Medea offered Pelias's daughters a demonstration: she cut up an old ram, boiled it with herbs, and a lamb sprang from the cauldron.\n\nConvinced, they cut their father up and boiled him, and she withheld the herbs. It is the only one of Jason's enemies destroyed entirely by her doing, and it cost them both the throne of Iolcus."
+    },
+    {
+      "from": "iolaus",
+      "to": "hydra",
+      "type": "wounds",
+      "details": "Every head Heracles struck from the Hydra doubled, and the labour was unwinnable until Iolaus came in with a burning brand and seared each stump as it was cut.\n\nEurystheus refused to count the labour on the ground that Heracles had had help, which is why the tally was raised from ten to twelve."
+    },
+    {
+      "from": "sisyphus",
+      "to": "hades",
+      "type": "rival",
+      "details": "Sisyphus chained Thanatos so that no one on earth could die, and when he was freed and Sisyphus finally brought below, he had told his wife to leave his body unburied and talked his way back up to punish her.\n\nHe stayed for years. The stone is the answer to a man who twice cheated the underworld by argument."
+    },
+    {
+      "from": "proteus",
+      "to": "menelaus",
+      "type": "advises",
+      "details": "Becalmed off Egypt on the way home, Menelaus was told to ambush the old sea-god at noon among his seals and hold him through every shape he took — lion, serpent, water, tree — until he answered.\n\nProteus gave him the wind he needed, the fate of Ajax and Agamemnon, and the news that Odysseus was alive on Calypso's island."
+    },
+    {
+      "from": "triton",
+      "to": "jason",
+      "type": "advises",
+      "details": "Driven into Lake Tritonis and unable to find the sea, the Argonauts made an offering of a bronze tripod, and Triton appeared to them and pointed out the channel.\n\nHe took the tripod, gave Euphemus a clod of Libyan earth, and towed the ship clear himself, in one of the few episodes where a sea-deity simply helps."
+    },
+    {
+      "from": "eurycleia",
+      "to": "telemachus",
+      "type": "protects",
+      "details": "The old nurse had raised Odysseus and then his son, and it is to her that Telemachus entrusts his secret departure for Pylos, swearing her not to tell his mother for a dozen days.\n\nShe later recognises Odysseus by the boar-scar while washing his feet, and he stops her crying out with a hand at her throat."
+    },
+    {
+      "from": "ganymede",
+      "to": "hebe",
+      "type": "rival",
+      "details": "Hebe had poured the nectar for the gods until Zeus carried off the Trojan boy and gave him the office, after which she was married to the newly immortal Heracles.\n\nThe replacement is recorded without comment in the sources, one immortal displacing another in the household of Olympus."
+    },
+    {
+      "from": "helios",
+      "to": "icarus",
+      "type": "endangers",
+      "details": "Daedalus warned his son to keep the middle course — low and the sea's damp would weigh the wings, high and the sun's heat would loosen them.\n\nIcarus climbed anyway, the wax ran, and he fell into the water that took his name. The sun destroys him without intent, which is what makes the story a warning rather than a punishment.",
+      "highlight": true
+    },
+    {
+      "from": "heracles",
+      "to": "eurystheus",
+      "type": "serves",
+      "details": "The labours were not freely undertaken: the Pythia set Heracles to serve his weaker cousin for ten years in expiation for killing his own children in a madness sent by Hera, and Eurystheus devised the tasks.\n\nHe refused to count two of them — the Hydra because Iolaus helped, the Augean stables because Heracles took a fee — which is how ten labours became twelve."
+    },
+    {
+      "from": "achilles",
+      "to": "briseis",
+      "type": "consort",
+      "details": "Briseis was taken when Achilles sacked Lyrnessus, her husband and brothers killed in the same action, and she lived in his tent as his prize.\n\nIn the ninth book he calls her his wife in all but name and asks why the Greeks should fight over Helen if a man may not love the woman he has won; in the Iliad's terms that is an argument, not a sentiment. She mourns him alone over Patroclus's body."
+    },
+    {
+      "from": "eumaeus",
+      "to": "telemachus",
+      "type": "protects",
+      "details": "The swineherd's hut is where Telemachus goes first on returning from Pylos, avoiding the harbour where the suitors' ambush is waiting.\n\nIt is in that hut that Odysseus reveals himself to his son, and Eumaeus is one of only two servants told the truth before the killing in the hall, fighting beside them when it comes."
+    },
+    {
+      "from": "apollo",
+      "to": "midas",
+      "type": "transforms",
+      "details": "Asked to judge a contest between Apollo's lyre and Pan's pipes, Midas alone gave the prize to Pan, and Apollo gave him the ears of an ass for having judged so badly.\n\nMidas hid them under a cap, but his barber could not keep it in and whispered it into a hole in the ground; the reeds that grew there repeated it whenever the wind blew."
     }
   ]
 }
