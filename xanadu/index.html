@@ -339,7 +339,7 @@
    never touches the DOM, and all load/save goes through GraphSource. This is
    the structure the scale work (worker layout, Barnes-Hut, accounts) hangs off.
    ============================================================================= */
-const BUILD="v2-591";
+const BUILD="v2-595";
 document.getElementById("build").textContent=BUILD;
 
 /* ---- palette (name → [lightest, mid-dark, darkest, vivid]) ---- */
@@ -1939,6 +1939,13 @@ function enterCardEdit(spec){   // inline hold-to-edit form, shared by node card
   const done=document.createElement("button"); done.type="button"; done.textContent="Done"; done.style.cssText="float:right;font-size:13px;padding:3px 12px;cursor:pointer;"; done.onclick=exitCardEdit; box.appendChild(done);
   const title=document.createElement("div"); title.textContent=kind==="link"?"Edit connection":"Edit node"; title.style.cssText="font-size:13px;font-weight:600;color:#f4f5fa;margin-bottom:9px;"; box.appendChild(title);
   { const hl=document.createElement("label"); hl.style.cssText="display:flex;align-items:center;gap:7px;color:#f4d97a;font-size:12px;margin-bottom:10px;cursor:pointer;"; const hc=document.createElement("input"); hc.type="checkbox"; hc.style.cssText="width:16px;height:16px;margin:0;flex:none;accent-color:#f4d97a;"; hc.checked=!!target.highlight; hc.addEventListener("change",()=>{ if(hc.checked) target.highlight=true; else delete target.highlight; saveRoot(); if(Focus._updateHlBtn)Focus._updateHlBtn(); }); hl.appendChild(hc); hl.appendChild(document.createTextNode("Highlight")); box.appendChild(hl); }   // highlight toggle — one control, works for both node and connection since target is either
+  if(kind==="node"){ const _sid=(spec&&spec.kind==="node")?spec.id:Model.ids[Focus.egoCenter];
+    const sl=document.createElement("label"); sl.style.cssText="display:flex;align-items:center;gap:7px;color:#8ad0a0;font-size:12px;margin-bottom:10px;cursor:pointer;";
+    const sc=document.createElement("input"); sc.type="checkbox"; sc.style.cssText="width:16px;height:16px;margin:0;flex:none;accent-color:#8ad0a0;";
+    sc.checked=(Model.raw.start===_sid);
+    sc.addEventListener("change",()=>{ if(sc.checked) Model.raw.start=_sid; else if(Model.raw.start===_sid) Model.raw.start=""; saveRoot(); });   // single top-level start field → auto-unsets any previous start node
+    sl.appendChild(sc); sl.appendChild(document.createTextNode("Start node")); box.appendChild(sl);
+  }
   if(kind==="link"){ const _t=Model.raw.types=Model.raw.types||{};
     const tw=document.createElement("label"); tw.style.cssText="display:block;font-size:11px;color:#aab0c2;margin-bottom:8px;"; tw.textContent="Relationship type";
     const sel=document.createElement("select"); sel.style.cssText="width:100%;box-sizing:border-box;margin-top:3px;";
@@ -2000,7 +2007,7 @@ function enterCardEdit(spec){   // inline hold-to-edit form, shared by node card
     const dw2=document.createElement("div"); dw2.style.cssText="margin-top:12px;border-top:1px solid rgba(255,255,255,0.12);padding-top:11px;";
     const db2=document.createElement("button"); db2.type="button"; db2.textContent="Delete connection"; db2.style.cssText="font-size:12px;color:#f0a89a;border-color:rgba(240,120,100,0.4);";
     let armed2=false, dtm2=null;
-    db2.onclick=()=>{ if(!armed2){ armed2=true; db2.textContent="Confirm delete?"; db2.style.background="#e0341f"; db2.style.color="#fff"; db2.style.borderColor="#e0341f"; dtm2=setTimeout(()=>{ armed2=false; db2.textContent="Delete connection"; db2.style.background=""; db2.style.color="#f0a89a"; db2.style.borderColor="rgba(240,120,100,0.4)"; },3000); return; } clearTimeout(dtm2); const ix=Model.raw.links.indexOf(target); if(ix>=0) Model.raw.links.splice(ix,1); exitCardEdit(); connTopologyChanged(); };
+    db2.onclick=()=>{ if(!armed2){ armed2=true; db2.textContent="Confirm delete?"; db2.style.background="#e0341f"; db2.style.color="#fff"; db2.style.borderColor="#e0341f"; dtm2=setTimeout(()=>{ armed2=false; db2.textContent="Delete connection"; db2.style.background=""; db2.style.color="#f0a89a"; db2.style.borderColor="rgba(240,120,100,0.4)"; },3000); return; } clearTimeout(dtm2); const _sun=(Focus.mode==="ego" && Focus.egoCenter>=0)?Model.ids[Focus.egoCenter]:null; const ix=Model.raw.links.indexOf(target); if(ix>=0) Model.raw.links.splice(ix,1); exitCardEdit(); connTopologyChanged(); if(_sun){ if(typeof buildSolarTopology==="function"){ buildSolarTopology(); buildSolarOrbits(); } if(typeof egoTo==="function") egoTo(_sun); } };   // rebuild topology (a link delete doesn't change node count, so it isn't auto-rebuilt) then re-focus, banishing the now-disconnected planet
     dw2.appendChild(db2); box.appendChild(dw2);
   }
 }
@@ -3158,6 +3165,7 @@ function openConnBuilder(){
   };
   wireSearch(q("cb-from-q"), q("cb-from-res"), id=>fromId=id);
   wireSearch(q("cb-to-q"), q("cb-to-res"), id=>toId=id);
+  if(Focus.mode==="ego" && Focus.egoCenter>=0){ const _sid=Model.ids[Focus.egoCenter], _snd=Model.nodeById(_sid); if(_sid){ fromId=_sid; q("cb-from-q").value=(_snd&&_snd.name)||_sid; } }   // default the From node to the focused sun
   const typeSel=q("cb-type"), types=Model.raw.types||{};
   Object.keys(types).forEach(k=>{ const o=document.createElement("option"); o.value=k; o.textContent=typeName(k); typeSel.appendChild(o); });
   const on=document.createElement("option"); on.value="__new"; on.textContent="+ New connector\u2026"; typeSel.appendChild(on);
@@ -3180,10 +3188,12 @@ function openConnBuilder(){
       const tps=Model.raw.types=Model.raw.types||{}; typeKey=slugKey(fl,tps);
       tps[typeKey]= mutual ? {label:fl,mutual:true,dashed:q("cb-dashed").checked} : {fromLabel:fl,toLabel:tl,arrow:true,dashed:q("cb-dashed").checked};
     } else if(!(Model.raw.types||{})[typeKey]){ showInfoCard("Pick a connector type"); return; }
+    const _sun=(Focus.mode==="ego" && Focus.egoCenter>=0)?Model.ids[Focus.egoCenter]:null;
     draft.from=fromId; draft.to=toId; draft.type=typeKey;
     Model.raw.links.push(draft);
     connTopologyChanged();
     el.style.display="none";
+    if(_sun && (fromId===_sun || toId===_sun) && typeof egoTo==="function") egoTo(_sun);   // pull the new planet straight into the focused sun’s orbit
   };
   el.style.display="flex";
 }
