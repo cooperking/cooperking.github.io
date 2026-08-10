@@ -1,0 +1,2417 @@
+{
+  "title": "The History of DC Comics",
+  "start": "dc_comics",
+  "groups": {
+    "company": {
+      "label": "Companies & Imprints",
+      "color": "green"
+    },
+    "context": {
+      "label": "Eras & Context",
+      "color": "gold"
+    },
+    "pioneer": {
+      "label": "Founders & Executives",
+      "color": "slate"
+    },
+    "editor": {
+      "label": "Editors",
+      "color": "purple"
+    },
+    "writer": {
+      "label": "Writers",
+      "color": "blue"
+    },
+    "artist": {
+      "label": "Artists",
+      "color": "amber"
+    },
+    "character": {
+      "label": "Characters",
+      "color": "red"
+    },
+    "team": {
+      "label": "Teams",
+      "color": "rose"
+    },
+    "title": {
+      "label": "Titles & Landmark Works",
+      "color": "teal"
+    },
+    "event": {
+      "label": "Crossovers & Events",
+      "color": "orange"
+    },
+    "media": {
+      "label": "Screen Adaptations",
+      "color": "magenta"
+    }
+  },
+  "types": {
+    "founded": {
+      "fromLabel": "founder",
+      "toLabel": "founded",
+      "arrow": true
+    },
+    "created": {
+      "fromLabel": "creator",
+      "toLabel": "creation",
+      "arrow": true
+    },
+    "wrote": {
+      "fromLabel": "writer",
+      "toLabel": "wrote",
+      "arrow": true
+    },
+    "drew": {
+      "fromLabel": "artist",
+      "toLabel": "drew",
+      "arrow": true
+    },
+    "edited": {
+      "fromLabel": "editor",
+      "toLabel": "edited",
+      "arrow": true
+    },
+    "debut": {
+      "fromLabel": "debut appearance",
+      "toLabel": "introduced",
+      "arrow": true
+    },
+    "published": {
+      "fromLabel": "publisher",
+      "toLabel": "published",
+      "arrow": true
+    },
+    "imprint_of": {
+      "fromLabel": "parent company",
+      "toLabel": "imprint",
+      "arrow": true
+    },
+    "acquired": {
+      "fromLabel": "acquirer",
+      "toLabel": "acquired",
+      "arrow": true
+    },
+    "member": {
+      "fromLabel": "team",
+      "toLabel": "member",
+      "arrow": true
+    },
+    "key_role": {
+      "fromLabel": "event",
+      "toLabel": "key participant",
+      "arrow": true
+    },
+    "succeeded": {
+      "fromLabel": "predecessor",
+      "toLabel": "successor",
+      "arrow": true
+    },
+    "adapted": {
+      "fromLabel": "source",
+      "toLabel": "adaptation",
+      "arrow": true
+    },
+    "influenced": {
+      "fromLabel": "influence",
+      "toLabel": "influenced",
+      "arrow": true
+    },
+    "defined": {
+      "fromLabel": "era",
+      "toLabel": "landmark",
+      "arrow": true
+    },
+    "nemesis": {
+      "label": "nemesis",
+      "mutual": true,
+      "dashed": true
+    },
+    "ally": {
+      "label": "ally",
+      "mutual": true,
+      "dashed": true
+    },
+    "collaborator": {
+      "label": "collaborator",
+      "mutual": true
+    },
+    "dispute": {
+      "label": "legal dispute",
+      "mutual": true,
+      "dashed": true
+    }
+  },
+  "nodes": {
+    "dc_comics": {
+      "name": "DC Comics",
+      "group": "company",
+      "desc": "The American comic book publisher that grew out of Malcolm Wheeler-Nicholson's National Allied Publications, founded in 1934. The company took its familiar initials from its flagship title, Detective Comics, and used DC as a cover logo for decades before formally adopting the name DC Comics in 1977.\n\nThrough a chain of mergers it absorbed its sister firm All-American Publications in 1946 and was reorganised as National Comics Publications, then National Periodical Publications. Its characters — Superman, Batman and Wonder Woman above all — became the founding archetypes of the superhero genre, and its corporate history since 1967 has been that of a subsidiary inside a succession of ever larger media conglomerates.",
+      "url": "https://en.wikipedia.org/wiki/DC_Comics",
+      "highlight": true
+    },
+    "national_allied_publications": {
+      "name": "National Allied Publications",
+      "group": "company",
+      "desc": "The company founded in 1934 by Malcolm Wheeler-Nicholson, and the direct corporate ancestor of DC Comics. Its first release, New Fun #1 in early 1935, was among the first American comic books to carry entirely original material rather than reprinted newspaper strips.\n\nChronically undercapitalised, National Allied depended on the printing and distribution services of Harry Donenfeld and the bookkeeping of Jack Liebowitz. Wheeler-Nicholson was forced out in 1938 and the firm was folded into the business that became DC.",
+      "url": "https://en.wikipedia.org/wiki/National_Allied_Publications"
+    },
+    "detective_comics_inc": {
+      "name": "Detective Comics, Inc.",
+      "group": "company",
+      "desc": "The partnership formed in 1937 between Malcolm Wheeler-Nicholson and the Donenfeld-Liebowitz business to launch a third title when National Allied could not fund it alone. The company published Detective Comics #1 in March 1938.\n\nWithin a year Wheeler-Nicholson had been bought out and Donenfeld and Liebowitz controlled both companies outright. The corporate name survived as the source of the two letters — DC — under which the publisher would eventually be known worldwide."
+    },
+    "all_american_publications": {
+      "name": "All-American Publications",
+      "group": "company",
+      "desc": "A sister company set up in 1939 by Max Gaines with financial backing from Jack Liebowitz, operating from separate offices with Sheldon Mayer as editor. Legally distinct but marketed jointly, All-American shared the DC cover logo and the two lines were widely read as one publisher.\n\nAll-American produced a remarkable share of the Golden Age canon: Flash Comics, All-American Comics, All Star Comics, Green Lantern and Wonder Woman. Gaines sold his interest in 1946 and the company was absorbed into National Comics Publications, unifying the two halves of what became DC.",
+      "url": "https://en.wikipedia.org/wiki/All-American_Publications",
+      "highlight": true
+    },
+    "fawcett_comics": {
+      "name": "Fawcett Comics",
+      "group": "company",
+      "desc": "The comics division of Fawcett Publications, whose Captain Marvel outsold Superman during the 1940s and became the best-selling superhero of the decade. Whiz Comics, Captain Marvel Adventures and the wider Marvel Family made Fawcett DC's most serious commercial rival.\n\nNational sued Fawcett for infringing Superman, and after more than a decade of litigation Fawcett settled and stopped publishing superhero comics in 1953. DC licensed the characters in 1972 and bought them outright in 1991 — an acquisition of the very property it had once sued out of existence.",
+      "url": "https://en.wikipedia.org/wiki/Fawcett_Comics"
+    },
+    "charlton_comics": {
+      "name": "Charlton Comics",
+      "group": "company",
+      "desc": "A Connecticut publisher that printed its own comics on presses originally bought for song lyric magazines, paying low rates but allowing unusual creative freedom. Its 1960s action-hero line included Steve Ditko's Blue Beetle and the Question, along with Captain Atom, Nightshade, Peacemaker and Thunderbolt.\n\nCharlton left comics publishing in the mid-1980s and DC bought its superhero characters in 1983. The purchase had an outsized consequence: Alan Moore's proposal to use the newly acquired heroes was redirected into original analogues, producing Watchmen.",
+      "url": "https://en.wikipedia.org/wiki/Charlton_Comics"
+    },
+    "ec_comics": {
+      "name": "EC Comics",
+      "group": "company",
+      "desc": "The publisher Max Gaines founded after selling his stake in All-American, originally issuing educational and Bible comics. Under his son William Gaines it became EC — home of Tales from the Crypt, Weird Science and Mad — and the most artistically admired line of the early 1950s.\n\nEC's horror and crime titles were the central target of the 1954 anti-comics campaign, and the Comics Code destroyed its business model. The company survived only through Mad, which converted to magazine format to escape the Code; Mad was later bought by DC's parent and published alongside DC for decades.",
+      "url": "https://en.wikipedia.org/wiki/EC_Comics"
+    },
+    "warner_communications": {
+      "name": "Warner Communications",
+      "group": "company",
+      "desc": "The conglomerate that has owned DC since 1967, when Kinney National Company acquired National Periodical Publications. Kinney bought Warner Bros.-Seven Arts in 1969 and renamed itself Warner Communications in 1972, placing the comics publisher inside a company that also owned a film studio, a record business and, later, a cable network.\n\nCorporate ownership passed through Time Warner, AT&T's WarnerMedia and, from 2022, Warner Bros. Discovery. The arrangement made DC's characters film and television assets as much as publishing ones, and increasingly shaped editorial strategy around screen exploitation.",
+      "url": "https://en.wikipedia.org/wiki/Warner_Communications"
+    },
+    "vertigo": {
+      "name": "Vertigo",
+      "group": "company",
+      "desc": "The adult-oriented imprint launched in 1993 under executive editor Karen Berger, gathering the mature titles she had already been editing — Sandman, Hellblazer, Swamp Thing, Doom Patrol — under one banner published without the Comics Code seal.\n\nVertigo institutionalised the British invasion of American comics and a creator-driven model with better rights terms than DC's superhero line, producing Preacher, Y: The Last Man, Fables, Transmetropolitan and 100 Bullets. Berger left in 2013; DC announced the imprint's closure in 2019 and it stopped publishing in January 2020, with its function passing to DC Black Label and Young Animal. The name was revived in 2024.",
+      "url": "https://en.wikipedia.org/wiki/Vertigo_Comics",
+      "highlight": true
+    },
+    "wildstorm": {
+      "name": "WildStorm",
+      "group": "company",
+      "desc": "Jim Lee's studio, founded in 1992 as one of the constituent parts of Image Comics, publishing WildC.A.T.s, Gen 13 and later the Warren Ellis-driven titles The Authority and Planetary that reshaped superhero storytelling in the late 1990s.\n\nLee sold WildStorm to DC in a deal agreed in 1998 and effective from January 1999. The deal brought DC a sub-imprint, the Homage and America's Best Comics lines, and — most consequentially — Lee himself, who moved from studio owner to DC's best-known artist and eventually to its senior creative leadership.",
+      "url": "https://en.wikipedia.org/wiki/WildStorm"
+    },
+    "milestone_media": {
+      "name": "Milestone Media",
+      "group": "company",
+      "desc": "A Black-owned comics company founded in 1993 by Dwayne McDuffie, Denys Cowan, Michael Davis and Derek T. Dingle, created to put characters of colour at the centre of a superhero universe rather than at its margins.\n\nMilestone retained ownership of its characters while DC handled publishing and distribution, an unusual arrangement for the period. Its line included Icon, Hardware, Blood Syndicate and Static, whose animated adaptation Static Shock reached a far larger audience than the comics. The imprint wound down in the later 1990s and was revived with DC in 2021.",
+      "url": "https://en.wikipedia.org/wiki/Milestone_Media"
+    },
+    "dc_studios": {
+      "name": "DC Studios",
+      "group": "company",
+      "desc": "The Warner Bros. Discovery division established in 2022 with James Gunn and Peter Safran as co-chairs, given authority over DC film, television and animation in order to end the fragmented approach of the previous decade.\n\nIts remit was to build a single planned continuity across media, beginning with the 2025 film Superman. The creation of DC Studios marked the point at which the screen operation, rather than the publishing arm, became the principal steward of the characters.",
+      "url": "https://en.wikipedia.org/wiki/DC_Studios"
+    },
+    "golden_age": {
+      "name": "The Golden Age",
+      "group": "context",
+      "desc": "The period from roughly 1938 to the mid-1950s in which the superhero was invented and the American comic book became a mass medium, selling in the millions to children and to servicemen during the Second World War.\n\nFor DC the era begins with Action Comics #1 and runs through Batman, Wonder Woman, the Justice Society and a crowded field of costumed imitators. The boom collapsed after the war as readers turned to crime, romance, western and horror titles, and by the early 1950s only Superman, Batman and Wonder Woman were still published continuously.",
+      "url": "https://en.wikipedia.org/wiki/Golden_Age_of_Comic_Books",
+      "highlight": true
+    },
+    "silver_age": {
+      "name": "The Silver Age",
+      "group": "context",
+      "desc": "The revival of the superhero from the mid-1950s, conventionally dated at DC to Showcase #4 in 1956, in which editor Julius Schwartz reintroduced the Flash as a new character with a science-fiction origin rather than reviving the old one.\n\nThe formula — bright, rationalised, aimed squarely at children under the Comics Code — produced a new Green Lantern, the Justice League, and eventually the multiverse, which allowed the Golden Age heroes to return as inhabitants of a parallel Earth. DC's success with the Justice League is widely credited with prompting the rival line that became Marvel.",
+      "url": "https://en.wikipedia.org/wiki/Silver_Age_of_Comic_Books",
+      "highlight": true
+    },
+    "bronze_age": {
+      "name": "The Bronze Age",
+      "group": "context",
+      "desc": "The period from about 1970 to the mid-1980s in which superhero comics took on social subject matter, darker art and more continuity-heavy storytelling, while the newsstand audience shrank and the direct market of specialist shops began to replace it.\n\nAt DC the era is marked by Denny O'Neil and Neal Adams returning Batman to the night, their Green Lantern/Green Arrow road stories about racism, poverty and addiction, Jack Kirby's Fourth World, and the arrival of a generation of writers and artists who would demand royalties and creator credit.",
+      "url": "https://en.wikipedia.org/wiki/Bronze_Age_of_Comic_Books"
+    },
+    "fredric_wertham": {
+      "name": "Fredric Wertham",
+      "group": "context",
+      "desc": "A German-American psychiatrist who ran clinics serving poor and largely Black patients in Harlem and who campaigned through the late 1940s and early 1950s against comic books as a cause of juvenile delinquency.\n\nHis testimony and writing gave scientific respectability to a broad public campaign against the medium. Later examination of his surviving research files found that he had overstated and reshaped case material to fit his conclusions, though his influence on the industry at the time was decisive and lasting.",
+      "url": "https://en.wikipedia.org/wiki/Fredric_Wertham"
+    },
+    "seduction_of_the_innocent": {
+      "name": "Seduction of the Innocent",
+      "group": "context",
+      "desc": "Fredric Wertham's 1954 book arguing that comic books taught children violence, sadism and sexual deviance, illustrated with panels reproduced out of context. It included readings of Batman and Robin as a coded homosexual household and of Wonder Woman as a figure of bondage and man-hating.\n\nA bestseller that fed directly into United States Senate subcommittee hearings on juvenile delinquency the same year, the book pushed publishers into pre-emptive self-regulation and shaped what American comics could depict for the next two decades.",
+      "url": "https://en.wikipedia.org/wiki/Seduction_of_the_Innocent"
+    },
+    "comics_code_authority": {
+      "name": "Comics Code Authority",
+      "group": "context",
+      "desc": "The self-censorship body created in 1954 by the Comics Magazine Association of America in response to the anti-comics campaign and the threat of legislation. Its code banned horror and crime titles outright, forbade sympathetic criminals, and required that authority always be respected and evil always punished.\n\nDistributors refused unsealed comics, so compliance was effectively compulsory. DC, whose wholesome house style was already close to the Code's requirements, was among the least damaged publishers and became one of the system's staunchest supporters. DC finally abandoned the seal in 2011.",
+      "url": "https://en.wikipedia.org/wiki/Comics_Code_Authority",
+      "highlight": true
+    },
+    "malcolm_wheeler_nicholson": {
+      "name": "Malcolm Wheeler-Nicholson",
+      "group": "pioneer",
+      "desc": "A former United States cavalry officer and pulp adventure writer who founded National Allied Publications in 1934, becoming the first publisher to build a comic book line on original material rather than newspaper strip reprints.\n\nHis instinct for the form was better than his finances. Unable to pay printers or contributors, he took Harry Donenfeld as a partner on Detective Comics and was squeezed out of his own company in 1938, months before Superman made it rich. He received nothing from the character's success and died in relative obscurity in 1965.",
+      "url": "https://en.wikipedia.org/wiki/Malcolm_Wheeler-Nicholson",
+      "highlight": true
+    },
+    "harry_donenfeld": {
+      "name": "Harry Donenfeld",
+      "group": "pioneer",
+      "desc": "A printer and pulp magazine publisher whose Independent News distribution arm gave him leverage over the struggling comic book firms he serviced. He took control of Detective Comics, Inc. and then of National Allied after Wheeler-Nicholson's bankruptcy.\n\nDonenfeld was the public face of the company through the Superman boom while Jack Liebowitz ran the business. He presided over the purchase of Superman for a flat fee and the litigation that followed, and remained president until ill health ended his involvement in the early 1960s.",
+      "url": "https://en.wikipedia.org/wiki/Harry_Donenfeld"
+    },
+    "jack_liebowitz": {
+      "name": "Jack Liebowitz",
+      "group": "pioneer",
+      "desc": "An accountant who became Donenfeld's partner and the operational mind of the company for three decades, financing All-American Publications, consolidating the two lines in 1946, and steering National Periodical Publications through the Code years.\n\nHe negotiated the 1967 sale to Kinney National Company and joined its board, converting a comic book firm into a media asset. Cautious, litigious and commercially shrewd, he did more than anyone to make DC an institution — and was the executive most directly responsible for keeping Siegel and Shuster from any share of Superman.",
+      "url": "https://en.wikipedia.org/wiki/Jack_Liebowitz",
+      "highlight": true
+    },
+    "max_gaines": {
+      "name": "Max Gaines",
+      "group": "pioneer",
+      "desc": "A salesman usually credited with proving that reprinted newspaper strips could be sold as a standalone magazine, an insight that helped create the American comic book. He worked as a middleman and packager before founding All-American Publications in 1939 with Liebowitz's money.\n\nGaines is also credited with passing the Superman submission along to National after seeing it. He sold his All-American interest in 1946 and started what became EC Comics, dying in a boating accident in 1947 and leaving the company to his son William.",
+      "url": "https://en.wikipedia.org/wiki/Max_Gaines"
+    },
+    "jenette_kahn": {
+      "name": "Jenette Kahn",
+      "group": "pioneer",
+      "desc": "A magazine publisher hired in 1976, at twenty-eight, to run a DC that was losing badly to Marvel. She served as publisher, then president, and finally president and editor-in-chief until 2002 — the longest and most transformative executive tenure in the company's history.\n\nKahn introduced royalties and creator incentives, restored Siegel and Shuster's credit and pensions, recruited British writers, backed the direct market, and gave editorial room to the books that became The Dark Knight Returns, Watchmen and Vertigo. She turned DC from an imitator of Marvel into the industry's prestige publisher.",
+      "url": "https://en.wikipedia.org/wiki/Jenette_Kahn",
+      "highlight": true
+    },
+    "paul_levitz": {
+      "name": "Paul Levitz",
+      "group": "pioneer",
+      "desc": "A fanzine editor who joined DC in 1973 and spent more than three decades there as writer, editor and executive, serving as president and publisher from 2002 to 2009 — one of the few people to hold both a long creative and a long corporate career at the company.\n\nAs a writer he is best known for a lengthy Legion of Super-Heroes run including The Great Darkness Saga. As an executive he helped design the royalty and creator-rights reforms of the Kahn era and stabilised DC's business through the direct market's boom and its 1990s collapse.",
+      "url": "https://en.wikipedia.org/wiki/Paul_Levitz"
+    },
+    "whitney_ellsworth": {
+      "name": "Whitney Ellsworth",
+      "group": "editor",
+      "desc": "DC's editorial director from 1940, the executive who set the house standards that governed the company through the Golden Age. He drafted an internal code restricting violence, gore and sexual suggestion well before the industry adopted one, which left DC comparatively unscathed when the Comics Code arrived.\n\nEllsworth moved to Hollywood to supervise DC's screen properties, producing the Superman film serials' successors and the Adventures of Superman television series. He is the figure who first made the company think of its characters as licensable assets rather than magazine content.",
+      "url": "https://en.wikipedia.org/wiki/Whitney_Ellsworth"
+    },
+    "sheldon_mayer": {
+      "name": "Sheldon Mayer",
+      "group": "editor",
+      "desc": "A cartoonist who became Max Gaines's editor at All-American Publications while still in his twenties, overseeing Flash Comics, All-American Comics, All Star Comics and the arrival of Wonder Woman.\n\nBy his own later account, Mayer retrieved the rejected Superman strip from a discard pile and pressed Gaines to push it forward. He left editing to return to drawing, producing the long-running children's humour strip Sugar and Spike, and remains one of the few Golden Age figures respected equally as an editor and as a cartoonist.",
+      "url": "https://en.wikipedia.org/wiki/Sheldon_Mayer"
+    },
+    "mort_weisinger": {
+      "name": "Mort Weisinger",
+      "group": "editor",
+      "desc": "A science fiction fan and agent who joined the company in 1941 and edited the Superman line for most of three decades. He co-created Aquaman and Green Arrow before turning to the work that defined him: the systematic construction of a Superman mythology.\n\nUnder Weisinger came Supergirl, Krypto, the Bottle City of Kandor, the Fortress of Solitude, Bizarro, red and gold kryptonite and the Legion of Super-Heroes — an elaborate internally consistent world built from reader-suggestion letters. He was also notorious among his writers as a harsh and belittling editor.",
+      "url": "https://en.wikipedia.org/wiki/Mort_Weisinger",
+      "highlight": true
+    },
+    "julius_schwartz": {
+      "name": "Julius Schwartz",
+      "group": "editor",
+      "desc": "A science fiction literary agent turned comics editor whose 1956 decision to revive the Flash as an entirely new character with a new secret identity is the conventional starting point of the Silver Age.\n\nSchwartz repeated the method with Green Lantern, Hawkman and the Atom, commissioned the Justice League, and authorised the parallel-Earth story that created DC's multiverse. In 1964 he took over a flagging Batman and instituted the New Look. He later edited the Superman titles for years, closing that era with Alan Moore's Whatever Happened to the Man of Tomorrow?",
+      "url": "https://en.wikipedia.org/wiki/Julius_Schwartz",
+      "highlight": true
+    },
+    "dick_giordano": {
+      "name": "Dick Giordano",
+      "group": "editor",
+      "desc": "An inker and editor who came to DC in 1968 from Charlton, bringing with him several younger creators including Denny O'Neil and Steve Skeates. He inked much of Neal Adams's DC work and formed a studio partnership with him in the 1970s.\n\nReturning as an executive, Giordano was DC's editorial leader from 1983 to 1993, the period that produced Crisis on Infinite Earths, the Byrne Superman relaunch, The Dark Knight Returns, Watchmen, Batman: Year One and the mature-readers line that became Vertigo. Few editors have presided over a comparable run.",
+      "url": "https://en.wikipedia.org/wiki/Dick_Giordano"
+    },
+    "karen_berger": {
+      "name": "Karen Berger",
+      "group": "editor",
+      "desc": "The editor who recruited Alan Moore to Swamp Thing and then, acting as DC's talent scout in Britain, brought over Neil Gaiman, Grant Morrison, Jamie Delano, Peter Milligan and others.\n\nIn 1993 she consolidated the mature-readers titles she had been editing into Vertigo and ran the imprint as executive editor for twenty years, giving creators unusual freedom and better rights terms. Sandman, Preacher, Y: The Last Man and Fables were all published on her watch; the imprint's literary reputation is largely her editorial signature.",
+      "url": "https://en.wikipedia.org/wiki/Karen_Berger",
+      "highlight": true
+    },
+    "jerry_siegel": {
+      "name": "Jerry Siegel",
+      "group": "writer",
+      "desc": "The Cleveland science fiction fan who conceived Superman with his schoolfriend Joe Shuster around 1933 and spent five years failing to sell him as a newspaper strip before the pair placed the material with National in 1938.\n\nSiegel and Shuster signed away the character for 130 dollars and page rates, and litigated repeatedly for the rest of their lives to reclaim it. They were removed from the Superman titles in the late 1940s after suing, and Siegel spent years out of comics. A public campaign in 1975 secured pensions and the restoration of their creator credit on every Superman story.",
+      "url": "https://en.wikipedia.org/wiki/Jerry_Siegel",
+      "highlight": true
+    },
+    "bill_finger": {
+      "name": "Bill Finger",
+      "group": "writer",
+      "desc": "The writer who turned Bob Kane's initial sketch of a red-suited bird-themed hero into Batman: the cowl, the cape, the grey and black costume, the name Bruce Wayne, Gotham City, the detective emphasis and much of the supporting cast and rogues' gallery.\n\nKane's contract gave him sole credit, and Finger worked without a byline on Batman for the rest of his life, dying in poverty in 1974. After decades of campaigning, largely by his family and by fellow professionals, DC agreed in 2015 to credit Batman as created by Bob Kane with Bill Finger.",
+      "url": "https://en.wikipedia.org/wiki/Bill_Finger",
+      "highlight": true
+    },
+    "william_moulton_marston": {
+      "name": "William Moulton Marston",
+      "group": "writer",
+      "desc": "A Harvard-trained psychologist, a developer of systolic blood pressure deception testing that fed into the polygraph, and a popular writer on psychology who was hired by Max Gaines as a consultant after publicly defending comics.\n\nMarston proposed a female hero who would conquer through love rather than force, and wrote Wonder Woman under the pen name Charles Moulton from 1941 until his death in 1947, drawn throughout by H. G. Peter. The strip's feminism, its unconventional domestic origins in Marston's own household, and its recurring bondage imagery have been debated ever since.",
+      "url": "https://en.wikipedia.org/wiki/William_Moulton_Marston"
+    },
+    "gardner_fox": {
+      "name": "Gardner Fox",
+      "group": "writer",
+      "desc": "One of the most prolific writers in comics, credited with thousands of stories across four decades and with much of DC's structural imagination. He created the Flash, Hawkman, Doctor Fate, the Sandman and the Justice Society of America — comics' first superhero team — in the Golden Age.\n\nReturning under Julius Schwartz, he wrote the Justice League of America from its 1960 debut and invented DC's multiverse in Flash of Two Worlds, which let the Golden Age heroes exist on a parallel Earth. He also co-created Barbara Gordon's Batgirl. He left DC in 1968 after pressing for health benefits.",
+      "url": "https://en.wikipedia.org/wiki/Gardner_Fox"
+    },
+    "john_broome": {
+      "name": "John Broome",
+      "group": "writer",
+      "desc": "A quiet and widely travelled writer who was Julius Schwartz's principal scripter through the early Silver Age, giving the revived heroes their tone of brisk, good-humoured pseudo-science.\n\nWith Gil Kane he co-created Hal Jordan's Green Lantern and the Green Lantern Corps, Sinestro and the Guardians of the Universe; with Carmine Infantino he built most of the Flash's rogues gallery, including Captain Cold, Gorilla Grodd and the Reverse-Flash, and wrote Flash of Two Worlds from Fox's premise of parallel Earths. He left comics in the 1970s to teach abroad.",
+      "url": "https://en.wikipedia.org/wiki/John_Broome_(writer)"
+    },
+    "denny_oneil": {
+      "name": "Denny O'Neil",
+      "group": "writer",
+      "desc": "A former journalist who became the defining writer of DC's Bronze Age. With Neal Adams he stripped the camp from Batman and returned him to a grim night-time detective, and sent Green Lantern and Green Arrow across America in stories about racism, poverty, pollution and heroin addiction.\n\nHe co-created Ra's al Ghul, Talia, John Stewart and the modern Two-Face characterisation, and wrote the Question and Iron Man. As Batman group editor from 1986 to 2000 he oversaw Year One, A Death in the Family, Knightfall and No Man's Land.",
+      "url": "https://en.wikipedia.org/wiki/Denny_O%27Neil"
+    },
+    "len_wein": {
+      "name": "Len Wein",
+      "group": "writer",
+      "desc": "A writer and editor who moved fluently between DC and Marvel, co-creating Swamp Thing with Bernie Wrightson at DC and Wolverine and the revived X-Men at Marvel — an unusual double claim on two companies' most valuable properties.\n\nAt DC he wrote Justice League of America, co-created Amanda Waller for the Suicide Squad, and edited Watchmen, where his early editorial pressure shaped the series' structure. He also scripted the framing text pieces and, later in life, returned to write Swamp Thing again.",
+      "url": "https://en.wikipedia.org/wiki/Len_Wein"
+    },
+    "marv_wolfman": {
+      "name": "Marv Wolfman",
+      "group": "writer",
+      "desc": "The writer who gave DC its biggest commercial success of the early 1980s. With George Pérez he relaunched the Teen Titans as The New Teen Titans in 1980, creating Raven, Cyborg and Starfire and building a soap-operatic ensemble that finally rivalled Marvel's X-Men in sales.\n\nWolfman then conceived and wrote Crisis on Infinite Earths, the twelve-issue series that demolished the multiverse he had inherited and rebuilt DC's continuity from scratch. He also created Blade at Marvel and later wrote extensively for animation.",
+      "url": "https://en.wikipedia.org/wiki/Marv_Wolfman"
+    },
+    "alan_moore": {
+      "name": "Alan Moore",
+      "group": "writer",
+      "desc": "The British writer whose arrival at DC in 1983 changed what mainstream superhero comics were assumed to be capable of. His Swamp Thing dismantled the character's premise in a single issue and rebuilt him as an elemental, and introduced John Constantine.\n\nWith Dave Gibbons he wrote Watchmen, the most acclaimed work the medium has produced. He also wrote The Killing Joke, For the Man Who Has Everything and Whatever Happened to the Man of Tomorrow? Disputes over the Watchmen rights reversion and over merchandising ended his relationship with DC, and he has since refused credit or payment for adaptations.",
+      "url": "https://en.wikipedia.org/wiki/Alan_Moore",
+      "highlight": true
+    },
+    "frank_miller": {
+      "name": "Frank Miller",
+      "group": "writer",
+      "desc": "A writer-artist who came to DC after redefining Daredevil at Marvel. Batman: The Dark Knight Returns, published in 1986, imagined an ageing Batman returning to a decayed Gotham and recast the character as a figure of grim, contested authority.\n\nWith David Mazzucchelli he then wrote Batman: Year One, which became the accepted account of the character's first year. Together with Watchmen, The Dark Knight Returns is credited with — and blamed for — the darker, more adult register that dominated superhero comics for the following decade.",
+      "url": "https://en.wikipedia.org/wiki/Frank_Miller_(comics)"
+    },
+    "grant_morrison": {
+      "name": "Grant Morrison",
+      "group": "writer",
+      "desc": "A Scottish writer recruited to DC in the late 1980s, whose Animal Man and Doom Patrol turned superhero comics into vehicles for metafiction and surrealism, and whose The Invisibles anchored Vertigo's most experimental period.\n\nMorrison also wrote at DC's commercial centre: JLA restored the Justice League as a pantheon of gods, All-Star Superman distilled the character to his essentials, and Batman R.I.P., Final Crisis and the introduction of Damian Wayne reshaped both flagship franchises. Their work characteristically treats continuity as a resource rather than an obstacle.",
+      "url": "https://en.wikipedia.org/wiki/Grant_Morrison"
+    },
+    "neil_gaiman": {
+      "name": "Neil Gaiman",
+      "group": "writer",
+      "desc": "A British journalist and writer brought to DC by Karen Berger, who took a minor Golden Age title and produced The Sandman: seventy-five issues, ending in 1996, about Dream of the Endless and the limits of change.\n\nSandman drew an audience that had not previously read comics, was unusually widely read by women, and became the commercial foundation and the argument for Vertigo. Gaiman also wrote Black Orchid, Signal to Noise and the Batman story Whatever Happened to the Caped Crusader?, before moving primarily to prose fiction.",
+      "url": "https://en.wikipedia.org/wiki/Neil_Gaiman"
+    },
+    "geoff_johns": {
+      "name": "Geoff Johns",
+      "group": "writer",
+      "desc": "The writer most responsible for DC's direction through the 2000s and 2010s, known for taking discarded or damaged characters and restoring them by treating their continuity as an asset. He returned Hal Jordan to the Green Lantern books and built the emotional spectrum and Blackest Night around him.\n\nHe wrote Infinite Crisis, Flashpoint — which triggered the New 52 relaunch — and DC Universe: Rebirth #1, which reversed much of it. Johns also served as DC's chief creative officer, extending his influence over the company's film and television output.",
+      "url": "https://en.wikipedia.org/wiki/Geoff_Johns"
+    },
+    "john_ostrander": {
+      "name": "John Ostrander",
+      "group": "writer",
+      "desc": "A playwright turned comics writer whose 1987 Suicide Squad took a forgotten 1950s title and turned it into a black-ops political thriller in which convicted supervillains ran deniable missions for the American government and were killed off without warning.\n\nOstrander built the series around Amanda Waller, an unglamorous, uncompromising bureaucrat who remains one of DC's most durable original characters. He also wrote The Spectre, Firestorm and Grimjack, and his Squad is the direct source of the character's later film and television versions.",
+      "url": "https://en.wikipedia.org/wiki/John_Ostrander"
+    },
+    "scott_snyder": {
+      "name": "Scott Snyder",
+      "group": "writer",
+      "desc": "A short story writer who became DC's flagship Batman writer at the New 52 relaunch in 2011, running with artist Greg Capullo for five years — one of the longest continuous creative teams on the title.\n\nHis Court of Owls introduced a secret society claiming to have run Gotham for centuries, arguing that Batman had never truly known his own city, and Death of the Family returned the Joker to outright horror. Snyder later wrote the Dark Nights: Metal event and Justice League, and has since concentrated on creator-owned work.",
+      "url": "https://en.wikipedia.org/wiki/Scott_Snyder"
+    },
+    "dwayne_mcduffie": {
+      "name": "Dwayne McDuffie",
+      "group": "writer",
+      "desc": "A writer and editor who co-founded Milestone Media in 1993 to create a superhero universe in which characters of colour were central rather than tokenised, and who wrote much of its line including Icon and Hardware.\n\nMcDuffie went on to become one of the most influential writers in superhero animation, story editing and writing Static Shock and Justice League Unlimited, where he made John Stewart, Hawkgirl and Amanda Waller familiar to a mass audience. He died in 2011; Milestone's characters were later folded into DC's main continuity.",
+      "url": "https://en.wikipedia.org/wiki/Dwayne_McDuffie"
+    },
+    "joe_shuster": {
+      "name": "Joe Shuster",
+      "group": "artist",
+      "desc": "The artist half of the Superman partnership, who drew the character from the first Cleveland sketches through Action Comics #1 and the early years of the strip, establishing the cape, the chest emblem, the leap and the visual grammar of the superhero.\n\nHis eyesight failed steadily and he was largely out of comics by the 1950s, working in obscurity and poor health. With Siegel he pursued decades of unsuccessful litigation over Superman before the 1975 campaign secured both men a pension and permanent creator credit from Warner.",
+      "url": "https://en.wikipedia.org/wiki/Joe_Shuster",
+      "highlight": true
+    },
+    "bob_kane": {
+      "name": "Bob Kane",
+      "group": "artist",
+      "desc": "The cartoonist credited as Batman's creator, who brought an initial concept to editor Vin Sullivan in 1939 and then developed it with Bill Finger, whose contributions were decisive and uncredited.\n\nKane negotiated an unusually strong contract giving him a sole byline and a share of the character, and for decades signed work substantially produced by ghost artists including Jerry Robinson, Sheldon Moldoff and Dick Sprang. He remained a public figure associated with Batman until his death in 1998. DC added Finger's name to the credit line in 2015.",
+      "url": "https://en.wikipedia.org/wiki/Bob_Kane"
+    },
+    "jerry_robinson": {
+      "name": "Jerry Robinson",
+      "group": "artist",
+      "desc": "Hired at seventeen to letter and ink for Bob Kane, Robinson became a central figure of the early Batman studio and is credited by most accounts with the playing-card idea that produced the Joker, and with naming Dick Grayson.\n\nHe later worked as an illustrator, cartoonist and comics historian, and served as president of the National Cartoonists Society. In 1975 he led the public campaign, with Neal Adams, that forced Warner to grant Siegel and Shuster pensions and credit — an early and rare victory for creators' rights in the industry.",
+      "url": "https://en.wikipedia.org/wiki/Jerry_Robinson"
+    },
+    "curt_swan": {
+      "name": "Curt Swan",
+      "group": "artist",
+      "desc": "The artist who drew Superman for roughly thirty years from the mid-1950s and whose clean, warm, unexaggerated figure work became the definitive look of the character for two generations of readers.\n\nSwan illustrated the entire Weisinger mythos and stayed through the Schwartz era, closing it by drawing Alan Moore's Whatever Happened to the Man of Tomorrow?, the story that formally ended the pre-Crisis Superman in 1986. His style is the visual baseline against which every later Superman artist has been measured.",
+      "url": "https://en.wikipedia.org/wiki/Curt_Swan"
+    },
+    "carmine_infantino": {
+      "name": "Carmine Infantino",
+      "group": "artist",
+      "desc": "The artist whose sleek, streamlined design work opened the Silver Age: he drew Showcase #4, redesigned the Flash's costume, and gave DC's revived heroes their modern look. He also drew the New Look Batman and co-created Barbara Gordon's Batgirl and Deadman.\n\nInfantino moved into management as editorial director in 1967 and then publisher until 1976 — the rare artist to run a major comics company. He recruited Jack Kirby to DC, but the period was commercially difficult and he returned to drawing afterwards.",
+      "url": "https://en.wikipedia.org/wiki/Carmine_Infantino"
+    },
+    "gil_kane": {
+      "name": "Gil Kane",
+      "group": "artist",
+      "desc": "A draughtsman admired for dynamic anatomy and dramatic low-angle figures, who with John Broome designed and drew the Silver Age Green Lantern — the crew-cut test pilot Hal Jordan and the sleek green and black costume that replaced Alan Scott's Golden Age design.\n\nKane also drew the Atom's revival, worked extensively at Marvel, and produced His Name Is... Savage and Blackmark, early attempts at the graphic novel format that anticipated the market by a decade.",
+      "url": "https://en.wikipedia.org/wiki/Gil_Kane"
+    },
+    "neal_adams": {
+      "name": "Neal Adams",
+      "group": "artist",
+      "desc": "The artist whose photographic realism and cinematic staging broke DC's flat house style at the end of the 1960s. With Denny O'Neil he returned Batman to a gaunt night-time figure and drew the Green Lantern/Green Arrow stories that brought social subject matter into mainstream superhero comics.\n\nAdams was equally consequential as an activist: he campaigned for original art to be returned to artists, for page-rate and royalty reform, and led the 1975 effort with Jerry Robinson that won Siegel and Shuster their pensions and credit.",
+      "url": "https://en.wikipedia.org/wiki/Neal_Adams",
+      "highlight": true
+    },
+    "jack_kirby": {
+      "name": "Jack Kirby",
+      "group": "artist",
+      "desc": "The artist who had co-created most of the Marvel universe and who left it for DC in 1970 in a dispute over credit and ownership, recruited by Carmine Infantino with the promise of writing, drawing and editing his own titles.\n\nThe result was the Fourth World — New Gods, Mister Miracle, The Forever People and a retooled Superman's Pal Jimmy Olsen — an interlocking modern mythology introducing Darkseid, Apokolips and New Genesis. Commercially disappointing and cancelled early, it became one of the most influential bodies of work in the medium.",
+      "url": "https://en.wikipedia.org/wiki/Jack_Kirby",
+      "highlight": true
+    },
+    "bernie_wrightson": {
+      "name": "Bernie Wrightson",
+      "group": "artist",
+      "desc": "A horror artist of exceptional line control who co-created Swamp Thing with Len Wein in 1971, first in a standalone House of Secrets story and then in the ongoing series, establishing the moody Louisiana-gothic register the character has kept ever since.\n\nWrightson left the title after ten issues and spent much of the following decade on a set of detailed pen-and-ink illustrations for Mary Shelley's Frankenstein, widely regarded as his masterwork. His influence runs through nearly all later horror comics art.",
+      "url": "https://en.wikipedia.org/wiki/Bernie_Wrightson"
+    },
+    "george_perez": {
+      "name": "George Pérez",
+      "group": "artist",
+      "desc": "An artist celebrated for dense, meticulous crowd scenes and for drawing large casts without losing individual character. With Marv Wolfman he co-created The New Teen Titans in 1980 and then drew Crisis on Infinite Earths, a series that required rendering essentially every character DC owned.\n\nAfter Crisis he wrote and drew the relaunched Wonder Woman, rebuilding her around Greek myth and taking her seriously as a mythological figure for the first time in decades. He later drew The Infinity Gauntlet at Marvel and returned for Infinite Crisis.",
+      "url": "https://en.wikipedia.org/wiki/George_P%C3%A9rez"
+    },
+    "dave_gibbons": {
+      "name": "Dave Gibbons",
+      "group": "artist",
+      "desc": "The British artist who drew Watchmen, whose disciplined nine-panel grid, controlled colour and buried visual repetitions are inseparable from the work's meaning — the formal argument that the series makes as much as its script.\n\nGibbons came to DC from 2000 AD alongside the other British recruits of the mid-1980s and also drew Green Lantern, Superman and, with Frank Miller, Martha Washington. He was the only principal Watchmen creator to remain on speaking terms with DC after the dispute over the property.",
+      "url": "https://en.wikipedia.org/wiki/Dave_Gibbons"
+    },
+    "john_byrne": {
+      "name": "John Byrne",
+      "group": "artist",
+      "desc": "A writer-artist who arrived from Marvel, where his Uncanny X-Men and Fantastic Four runs had made him one of the industry's biggest names, to restart Superman after Crisis on Infinite Earths.\n\nHis 1986 miniseries The Man of Steel rebuilt the character from the ground up: Krypton cold and sterile, the Kents alive into Clark's adulthood, no super-career as Superboy, Lex Luthor recast as a corrupt billionaire, and Clark rather than Superman as the real identity. The template governed the character for twenty-five years.",
+      "url": "https://en.wikipedia.org/wiki/John_Byrne_(comics)"
+    },
+    "jim_lee": {
+      "name": "Jim Lee",
+      "group": "artist",
+      "desc": "The best-selling artist of the early 1990s, who left Marvel to co-found Image Comics and ran the WildStorm studio before selling it to DC in 1999 and joining the company himself.\n\nHis Batman: Hush with Jeph Loeb and his All Star Batman and Robin and Superman: For Tomorrow work made him DC's marquee artist, while his redesigns underpinned the New 52 relaunch, for which he served as co-publisher. He has since held DC's most senior creative posts, an unusual trajectory from superstar penciller to company leadership.",
+      "url": "https://en.wikipedia.org/wiki/Jim_Lee"
+    },
+    "superman": {
+      "name": "Superman",
+      "group": "character",
+      "desc": "Created by Jerry Siegel and Joe Shuster and first published in Action Comics #1 in 1938, Superman is the character from which the superhero genre descends: the secret identity, the costume, the powers used in public service, the newspaper-office supporting cast.\n\nAn immigrant survivor of a destroyed world raised in rural Kansas, he began as a crusading strongman against slum landlords and corrupt politicians and grew steadily more powerful and more cosmic through the 1950s and 1960s. He has been rebooted repeatedly — in 1986, in 2011 and again after Rebirth — and remains the property on which DC's identity rests.",
+      "url": "https://en.wikipedia.org/wiki/Superman",
+      "highlight": true
+    },
+    "batman": {
+      "name": "Batman",
+      "group": "character",
+      "desc": "Created by Bob Kane with Bill Finger and introduced in Detective Comics #27 in 1939, Batman is a wealthy orphan without superhuman powers who trains himself into a detective and vigilante after witnessing his parents' murder.\n\nHis tone has swung further than any comparable character's: pulp avenger in 1939, avuncular deputised policeman under the Comics Code, television camp in 1966, Bronze Age night creature under O'Neil and Adams, and grim myth after The Dark Knight Returns. He is DC's most commercially valuable character and the anchor of an unusually large family of related titles.",
+      "url": "https://en.wikipedia.org/wiki/Batman",
+      "highlight": true
+    },
+    "wonder_woman": {
+      "name": "Wonder Woman",
+      "group": "character",
+      "desc": "Created by William Moulton Marston with artist H. G. Peter and introduced in All Star Comics #8 in 1941, Wonder Woman was conceived as a deliberate corrective — a hero who would win through love and truth rather than force, and a model of female strength for child readers.\n\nAn Amazon princess from Themyscira with a lasso that compels truth, she is one of only three DC characters published continuously since the Golden Age. Her interpretation has shifted repeatedly, from Marston's idiosyncratic feminism through a powerless 1960s reinvention to George Pérez's 1987 relaunch grounding her firmly in Greek myth.",
+      "url": "https://en.wikipedia.org/wiki/Wonder_Woman",
+      "highlight": true
+    },
+    "lois_lane": {
+      "name": "Lois Lane",
+      "group": "character",
+      "desc": "Introduced alongside Superman in Action Comics #1, Lois Lane is a reporter at the Daily Planet whose pursuit of stories repeatedly outruns her own safety and whose scepticism about Clark Kent long structured the strip's central irony.\n\nShe was one of very few women to headline a mainstream superhero comic, in Superman's Girl Friend, Lois Lane, which ran from 1958 to 1974 and increasingly engaged with contemporary social questions. Later writers rebuilt her as an investigative journalist of the first rank rather than a romantic foil, and she married Clark Kent in 1996.",
+      "url": "https://en.wikipedia.org/wiki/Lois_Lane"
+    },
+    "lex_luthor": {
+      "name": "Lex Luthor",
+      "group": "character",
+      "desc": "Superman's principal antagonist, introduced by Siegel and Shuster in 1940 as a red-haired mad scientist and settled into his familiar bald form shortly afterwards. For decades he was a criminal genius in a purple and green battlesuit driven by a personal grudge.\n\nJohn Byrne's 1986 reboot recast him as a corporate billionaire whose power is legitimate and largely untouchable, making the conflict one of accountability rather than mad science. In that form he has been elected President of the United States within the fiction, and remains DC's most politically pointed villain.",
+      "url": "https://en.wikipedia.org/wiki/Lex_Luthor"
+    },
+    "supergirl": {
+      "name": "Supergirl",
+      "group": "character",
+      "desc": "Kara Zor-El, Superman's cousin, introduced by Otto Binder and Al Plastino in Action Comics #252 in 1959 as part of Mort Weisinger's expansion of the Superman mythos, and initially kept secret from the world as an emergency reserve.\n\nHer death saving the multiverse in Crisis on Infinite Earths was one of the defining images of that series, and the post-Crisis rule that Superman be Krypton's only survivor kept her out of continuity for years. She returned in the 2000s and has since become a durable franchise in her own right in comics and on television.",
+      "url": "https://en.wikipedia.org/wiki/Supergirl"
+    },
+    "dick_grayson": {
+      "name": "Dick Grayson / Robin",
+      "group": "character",
+      "desc": "The first Robin, introduced in Detective Comics #38 in 1940 as a circus acrobat orphaned by gangsters and taken in by Bruce Wayne. The character was created to give Batman someone to talk to and to give young readers a point of entry; sales rose sharply and kid sidekicks became a genre convention.\n\nGrayson led the Teen Titans, broke with Batman and took the identity of Nightwing in 1984, and has periodically served as Batman himself. His progression from sidekick to independent hero is the template for legacy characters at DC.",
+      "url": "https://en.wikipedia.org/wiki/Dick_Grayson"
+    },
+    "joker": {
+      "name": "The Joker",
+      "group": "character",
+      "desc": "Introduced in Batman #1 in 1940, the Joker was conceived as a grinning murderer modelled in part on Conrad Veidt's face in The Man Who Laughs; Jerry Robinson, Bill Finger and Bob Kane have all been associated with his creation, and the credit is disputed.\n\nHe was softened into a harmless prankster under the Comics Code and returned to homicidal form in the 1970s under Denny O'Neil and Neal Adams. Later stories — The Killing Joke, A Death in the Family — made him the agent of permanent damage to Batman's world, and deliberately left his origin unfixed.",
+      "url": "https://en.wikipedia.org/wiki/Joker_(character)"
+    },
+    "catwoman": {
+      "name": "Catwoman",
+      "group": "character",
+      "desc": "Selina Kyle, introduced as the Cat in Batman #1 in 1940 by Bill Finger and Bob Kane, a jewel thief written from the start as an antagonist Batman was unwilling to treat as a simple criminal.\n\nThe Comics Code's restrictions kept her out of print for more than a decade from the mid-1950s. She returned through the 1966 television series and was rebuilt in the 1980s, notably in Batman: Year One and in Ed Brubaker's run, into an anti-hero with her own long-running title and a durable moral ambiguity unusual for a Golden Age creation.",
+      "url": "https://en.wikipedia.org/wiki/Catwoman"
+    },
+    "barbara_gordon": {
+      "name": "Barbara Gordon / Batgirl",
+      "group": "character",
+      "desc": "Created by Gardner Fox and Carmine Infantino in 1967, partly at the request of the Batman television producers who wanted a new female lead, Barbara Gordon was a librarian and the police commissioner's daughter who became Batgirl.\n\nShot and paralysed by the Joker in The Killing Joke in 1988, she was reinvented by John Ostrander and Kim Yale as Oracle, the information broker at the centre of the DC universe's heroes and one of the few prominent disabled characters in superhero comics. She returned to walking and to the Batgirl identity in the 2011 relaunch, a decision that remains contested among readers.",
+      "url": "https://en.wikipedia.org/wiki/Barbara_Gordon"
+    },
+    "jay_garrick": {
+      "name": "Jay Garrick / Flash",
+      "group": "character",
+      "desc": "The original Flash, created by Gardner Fox and Harry Lampert for Flash Comics #1 in 1940 — a college student who gains super-speed from inhaling hard water vapours and fights crime in a winged tin helmet borrowed from his father's war service.\n\nA charter member of the Justice Society, Garrick was cancelled with the rest of the Golden Age heroes in the early 1950s. His reappearance in 1961 as an inhabitant of a parallel Earth in Flash of Two Worlds made him the first legacy figure in DC's continuity and gave the multiverse its founding logic.",
+      "url": "https://en.wikipedia.org/wiki/Jay_Garrick"
+    },
+    "barry_allen": {
+      "name": "Barry Allen / Flash",
+      "group": "character",
+      "desc": "The Silver Age Flash, introduced in Showcase #4 in 1956: a methodical police scientist doused in chemicals struck by lightning, who takes his hero name from a comic book he read as a boy. His debut is conventionally treated as the beginning of the Silver Age.\n\nAllen's sacrifice in Crisis on Infinite Earths in 1985 was among the first permanent deaths of a major superhero and stood for over two decades. Geoff Johns returned him in 2008, and his running through time to save his mother is the premise of Flashpoint, which triggered DC's 2011 relaunch.",
+      "url": "https://en.wikipedia.org/wiki/Barry_Allen"
+    },
+    "wally_west": {
+      "name": "Wally West / Flash",
+      "group": "character",
+      "desc": "Introduced in 1959 as Kid Flash, Barry Allen's nephew by marriage, and a founding member of the Teen Titans. After Allen's death in Crisis on Infinite Earths he took the identity of the Flash — the first time at DC that a sidekick permanently replaced his mentor in a flagship role.\n\nThe promotion, and the long runs by William Messner-Loebs, Mark Waid and Geoff Johns that followed, made legacy succession a defining DC idea rather than a temporary stunt. His removal from continuity in the New 52 and restoration in Rebirth became a symbol of that argument.",
+      "url": "https://en.wikipedia.org/wiki/Wally_West"
+    },
+    "alan_scott": {
+      "name": "Alan Scott / Green Lantern",
+      "group": "character",
+      "desc": "The Golden Age Green Lantern, created by Martin Nodell with Bill Finger for All-American Comics #16 in 1940 — a railway engineer who survives a bridge collapse and forges a ring from a mystical green lantern, its power useless against wood.\n\nMagical rather than science-fictional and unconnected to the later Green Lantern Corps, Scott was a charter member of the Justice Society. He returned as an Earth-Two character in the Silver Age and has since been written as one of DC's most prominent LGBT characters.",
+      "url": "https://en.wikipedia.org/wiki/Alan_Scott"
+    },
+    "hal_jordan": {
+      "name": "Hal Jordan / Green Lantern",
+      "group": "character",
+      "desc": "The Silver Age Green Lantern, created by John Broome and Gil Kane in Showcase #22 in 1959: a test pilot chosen by a dying alien to join an interstellar police force whose ring can build anything its bearer imagines.\n\nJordan's reinvention converted a magical Golden Age hero into a space-opera franchise with the Guardians of the Universe, Oa and the Corps. Denny O'Neil sent him across America with Green Arrow to interrogate his own assumptions; he was later destroyed and rehabilitated across the 1990s and 2000s in one of DC's most contested character arcs.",
+      "url": "https://en.wikipedia.org/wiki/Hal_Jordan"
+    },
+    "john_stewart": {
+      "name": "John Stewart / Green Lantern",
+      "group": "character",
+      "desc": "Created by Denny O'Neil and Neal Adams in 1971 as an architect recruited as a replacement Green Lantern, and among the first Black superheroes at DC. His introduction was written as a direct challenge to Hal Jordan's assumptions about who deserved authority.\n\nAfter years as a substitute he became a lead Green Lantern in his own right. His prominence in Justice League and Justice League Unlimited, where Dwayne McDuffie was central to the writing, made him the version of the character most familiar to a mass audience.",
+      "url": "https://en.wikipedia.org/wiki/John_Stewart_(character)"
+    },
+    "aquaman": {
+      "name": "Aquaman",
+      "group": "character",
+      "desc": "Created by Mort Weisinger and Paul Norris in More Fun Comics #73 in 1941, one of the few Golden Age heroes to survive continuously into the Silver Age, when he was rewritten as Arthur Curry, heir to the throne of Atlantis.\n\nA founding member of the Justice League, Aquaman spent decades as the butt of jokes about talking to fish, a reputation later writers attacked directly by emphasising the political burden of ruling an undersea kingdom in perpetual tension with the surface world. Peter David's 1990s run and the 2018 film substantially rehabilitated him.",
+      "url": "https://en.wikipedia.org/wiki/Aquaman"
+    },
+    "green_arrow": {
+      "name": "Green Arrow",
+      "group": "character",
+      "desc": "Created by Mort Weisinger and George Papp in More Fun Comics #73 in 1941, Oliver Queen began as a straightforward archery-themed hero with a sidekick, a signal-arrow gadget and an Arrowcar.\n\nHe was transformed in 1969 by Neal Adams's redesign and Denny O'Neil's writing into a bankrupt, bearded left-wing populist who argued with Hal Jordan across America about race and poverty — an unusually explicit political voice in mainstream comics. Mike Grell's Longbow Hunters later moved him into grounded urban crime drama.",
+      "url": "https://en.wikipedia.org/wiki/Green_Arrow"
+    },
+    "martian_manhunter": {
+      "name": "Martian Manhunter",
+      "group": "character",
+      "desc": "J'onn J'onzz, created by Joseph Samachson and Joe Certa in Detective Comics #225 in 1955, a Martian accidentally teleported to Earth who works as a human police detective — a science-fiction hero introduced before the Silver Age revivals proper, and sometimes cited as their forerunner.\n\nA founding member of the Justice League and, in most versions, the last survivor of his species, he has been written increasingly as the team's emotional centre and its longest-serving member, the one who holds the League together between rosters.",
+      "url": "https://en.wikipedia.org/wiki/Martian_Manhunter"
+    },
+    "darkseid": {
+      "name": "Darkseid",
+      "group": "character",
+      "desc": "Created by Jack Kirby for the Fourth World, appearing in Superman's Pal Jimmy Olsen in 1970 and fully in the following year, the ruler of Apokolips seeks the Anti-Life Equation — a formula that would extinguish free will everywhere.\n\nCold, static and unhurried where earlier villains were flamboyant, Darkseid became DC's default cosmic threat and the antagonist of Final Crisis, the Justice League's founding story in several continuities, and much of Superman's later mythology. He is the most widely used character to come out of Kirby's DC period.",
+      "url": "https://en.wikipedia.org/wiki/Darkseid"
+    },
+    "swamp_thing": {
+      "name": "Swamp Thing",
+      "group": "character",
+      "desc": "Created by Len Wein and Bernie Wrightson in 1971, originally a scientist transformed by chemicals and fire into a shambling plant creature searching for his humanity — a horror hero made possible by the Comics Code's 1971 relaxation.\n\nAlan Moore's 1984 revision reversed the premise entirely: the creature was never a man, but vegetable matter that had absorbed a dead man's memories and believed itself human. That single issue reset the character as an elemental force and made Swamp Thing the seedbed of what became Vertigo.",
+      "url": "https://en.wikipedia.org/wiki/Swamp_Thing"
+    },
+    "john_constantine": {
+      "name": "John Constantine",
+      "group": "character",
+      "desc": "Introduced by Alan Moore, Stephen Bissette and John Totleben in Swamp Thing #37 in 1985, a working-class English occult confidence man who manipulates the powerful and survives by outliving the people around him. His appearance was modelled on the musician Sting.\n\nHis solo title Hellblazer launched in 1988, ran for three hundred issues and became Vertigo's longest-running series, ageing him in real time and using horror as a vehicle for commentary on Thatcher-era and post-Thatcher Britain.",
+      "url": "https://en.wikipedia.org/wiki/John_Constantine"
+    },
+    "harley_quinn": {
+      "name": "Harley Quinn",
+      "group": "character",
+      "desc": "Created by Paul Dini and Bruce Timm for Batman: The Animated Series in 1992 as a one-episode henchwoman for the Joker, and voiced by Arleen Sorkin. She proved so popular that she was written into the comics, first in Mad Love in 1994 and into mainstream continuity in 1999.\n\nHarleen Quinzel, an Arkham psychiatrist seduced and abused by her patient, was gradually rewritten as an independent anti-hero who leaves the Joker. She is the most commercially successful character DC has created since the 1980s, and the clearest case of an adaptation feeding back into the source.",
+      "url": "https://en.wikipedia.org/wiki/Harley_Quinn"
+    },
+    "captain_marvel": {
+      "name": "Captain Marvel / Shazam",
+      "group": "character",
+      "desc": "Created by Bill Parker and C. C. Beck for Fawcett in 1940, Billy Batson is a homeless newsboy who becomes an adult superhero by speaking the wizard's name. Whimsical and warm where Superman was earnest, he outsold him through the 1940s.\n\nNational's infringement suit against Fawcett ended with Fawcett abandoning the character in 1953. DC licensed him in 1972 and bought him outright in 1991, but Marvel's trademark on the name meant DC could publish him only under the title Shazam!, which eventually became his name.",
+      "url": "https://en.wikipedia.org/wiki/Captain_Marvel_(DC_Comics)"
+    },
+    "justice_society": {
+      "name": "Justice Society of America",
+      "group": "team",
+      "desc": "The first superhero team in comics, assembled by Gardner Fox in All Star Comics #3 in the winter of 1940 as a device to showcase characters from across the All-American and National lines in a single book, each taking a solo chapter of a shared case.\n\nThe Society disbanded in print in 1951 as the genre collapsed. Its members were later placed on the parallel Earth-Two, where they aged in real time, and the team became DC's vehicle for its own history — the generation that preceded and mentored everyone else.",
+      "url": "https://en.wikipedia.org/wiki/Justice_Society_of_America",
+      "highlight": true
+    },
+    "justice_league": {
+      "name": "Justice League",
+      "group": "team",
+      "desc": "Introduced by Gardner Fox and Mike Sekowsky in The Brave and the Bold #28 in 1960, uniting Superman, Batman, Wonder Woman, the Flash, Green Lantern, Aquaman and the Martian Manhunter as a modern successor to the Justice Society.\n\nIts immediate success is widely credited with prompting the rival superhero team that became the Fantastic Four, and so with starting the Marvel age. The League has run through many formats — the satirical Justice League International, Grant Morrison's pantheon-scaled JLA — and remains DC's central shared-universe institution.",
+      "url": "https://en.wikipedia.org/wiki/Justice_League",
+      "highlight": true
+    },
+    "teen_titans": {
+      "name": "Teen Titans",
+      "group": "team",
+      "desc": "A team of established sidekicks — Robin, Kid Flash, Aqualad and Wonder Girl — first gathered in the 1960s, allowing DC to write teenagers without disturbing the senior characters.\n\nThe 1980 relaunch as The New Teen Titans by Marv Wolfman and George Pérez, adding Raven, Cyborg and Starfire, became DC's best-selling title of the era and its answer to the X-Men. Its long-form serialised storytelling and its willingness to let sidekicks grow up produced Nightwing and set up much of Crisis on Infinite Earths.",
+      "url": "https://en.wikipedia.org/wiki/Teen_Titans"
+    },
+    "suicide_squad": {
+      "name": "Suicide Squad",
+      "group": "team",
+      "desc": "Originally a 1959 adventure team, revived by John Ostrander in 1987 as Task Force X: imprisoned supervillains sent on deniable government missions in exchange for reduced sentences, with explosive implants ensuring compliance and a high casualty rate.\n\nRun by Amanda Waller, the series worked as Cold War political thriller as much as superhero comic and made villains viable as leads. It is among the most heavily adapted DC properties of the last decade, in film, television and animation.",
+      "url": "https://en.wikipedia.org/wiki/Suicide_Squad"
+    },
+    "new_fun": {
+      "name": "New Fun / More Fun Comics",
+      "group": "title",
+      "desc": "New Fun #1, published by Malcolm Wheeler-Nicholson in early 1935, was a tabloid-sized anthology and one of the first American comic books made up entirely of original material rather than reprinted newspaper strips.\n\nRenamed More Fun Comics, it became the company's longest thread back to its origins and later introduced the Spectre, Doctor Fate, Aquaman and Green Arrow. Its significance is less any single story than the proposition it proved: that a comic book could commission new work instead of recycling the funny pages.",
+      "url": "https://en.wikipedia.org/wiki/More_Fun_Comics"
+    },
+    "action_comics": {
+      "name": "Action Comics",
+      "group": "title",
+      "desc": "Launched in 1938 as a general anthology, Action Comics #1 led with a thirteen-page Superman story bought for 130 dollars and carrying a cover of a man lifting a car over his head. Readers asked newsstands for the comic with Superman in it, and the industry changed within a year.\n\nThe title ran continuously for more than seven decades, was renumbered twice in modern relaunches and restored to its original numbering, and passed issue 1000 in 2018. Surviving copies of the first issue are the most valuable comic books in existence.",
+      "url": "https://en.wikipedia.org/wiki/Action_Comics",
+      "highlight": true
+    },
+    "detective_comics_series": {
+      "name": "Detective Comics",
+      "group": "title",
+      "desc": "Begun in March 1938 as a crime and mystery anthology, Detective Comics gave the company both its longest-running title and the two letters of its name. Its twenty-seventh issue, in May 1939, introduced Batman in a six-page story.\n\nThe title carried Batman thereafter and introduced Robin, the Joker's early appearances, Batgirl and the Martian Manhunter. Like Action Comics it has run essentially without interruption since the 1930s, and reached its thousandth issue in 2019.",
+      "url": "https://en.wikipedia.org/wiki/Detective_Comics"
+    },
+    "all_star_comics": {
+      "name": "All Star Comics",
+      "group": "title",
+      "desc": "An All-American Publications anthology that in its third issue, in late 1940, gathered the company's heroes into the Justice Society of America — the first superhero team, and the origin of the shared-universe crossover as a commercial form.\n\nIts eighth issue introduced Wonder Woman in a backup feature before she was given her own title. All Star ended in 1951, converted briefly into a western, and was revived in the 1970s, by which point the Justice Society had become the emblem of DC's own past.",
+      "url": "https://en.wikipedia.org/wiki/All_Star_Comics"
+    },
+    "showcase": {
+      "name": "Showcase",
+      "group": "title",
+      "desc": "A try-out anthology launched in 1956 to test new concepts without committing to an ongoing series. Its fourth issue introduced Julius Schwartz's rebuilt Flash, and its success set the pattern for the entire Silver Age revival.\n\nShowcase went on to introduce the Silver Age Green Lantern, the Challengers of the Unknown, Adam Strange, the Sea Devils and Metamorpho, among many others. No other title is as directly responsible for DC's post-war roster.",
+      "url": "https://en.wikipedia.org/wiki/Showcase_(comics)"
+    },
+    "green_lantern_green_arrow": {
+      "name": "Green Lantern/Green Arrow",
+      "group": "title",
+      "desc": "The run beginning with Green Lantern #76 in 1970, written by Denny O'Neil and drawn by Neal Adams, in which a Black man asks Hal Jordan why he has helped orange and purple skins but never his own people — and the hero has no answer.\n\nThe two heroes then travelled America arguing about racism, corporate exploitation, pollution and religious cults. The story in which Green Arrow's sidekick Speedy is found to be addicted to heroin was published with the Comics Code's newly relaxed rules. Critically celebrated and commercially unsuccessful, it defined what Bronze Age relevance meant."
+    },
+    "new_gods": {
+      "name": "New Gods",
+      "group": "title",
+      "desc": "The centrepiece of Jack Kirby's Fourth World, launched in 1971: two worlds, the serene New Genesis and the industrial hell of Apokolips, locked in a war fought over the freedom of the mind rather than territory.\n\nKirby wrote, drew and edited an interconnected suite of titles introducing Darkseid, Orion, Mister Miracle, Big Barda and the Anti-Life Equation. Cancelled before its planned ending, the work was later recognised as one of the medium's great acts of world-building and has supplied villains and cosmology to DC ever since.",
+      "url": "https://en.wikipedia.org/wiki/New_Gods"
+    },
+    "new_teen_titans": {
+      "name": "The New Teen Titans",
+      "group": "title",
+      "desc": "Launched in 1980 by Marv Wolfman and George Pérez, the series took DC's grown-up sidekicks and added Raven, Cyborg and Starfire, running character-driven serialised stories with continuing consequences.\n\nIt became DC's best-selling comic of the early 1980s and its first genuine answer to the X-Men, producing the Judas Contract and Deathstroke, and giving Dick Grayson the room to become Nightwing. Its commercial success bought Wolfman and Pérez the standing to propose Crisis on Infinite Earths.",
+      "url": "https://en.wikipedia.org/wiki/The_New_Teen_Titans"
+    },
+    "saga_of_the_swamp_thing": {
+      "name": "Saga of the Swamp Thing",
+      "group": "title",
+      "desc": "Alan Moore took over a cancellation-bound title in 1984 and, in the issue titled The Anatomy Lesson, revealed that the creature had never been a transformed man at all — a reversal that turned a monster comic into a meditation on identity, ecology and the American South.\n\nDrawn largely by Stephen Bissette, John Totleben and Rick Veitch, the run introduced John Constantine, dropped the Comics Code seal, and demonstrated that mature material could sell through the direct market. It is the immediate ancestor of Vertigo."
+    },
+    "man_of_steel_1986": {
+      "name": "The Man of Steel",
+      "group": "title",
+      "desc": "John Byrne's six-issue 1986 miniseries, commissioned to restart Superman from zero after Crisis on Infinite Earths removed nearly fifty years of accumulated continuity.\n\nByrne pared the character back: powers reduced, Krypton rendered cold and emotionally sterile, Superboy erased, the Kents alive to advise their adult son, Luthor rebuilt as a corporate predator, and Clark Kent treated as the real person rather than the disguise. The reboot was a commercial success and set the terms for the character until 2011.",
+      "url": "https://en.wikipedia.org/wiki/The_Man_of_Steel_(comics)"
+    },
+    "dark_knight_returns": {
+      "name": "The Dark Knight Returns",
+      "group": "title",
+      "desc": "Frank Miller's four-part 1986 series showing a fifty-five-year-old Bruce Wayne coming out of retirement into a Gotham of gang violence, saturation television news and Cold War brinkmanship, ending in a confrontation with a state-sanctioned Superman.\n\nPublished in prestige format at a higher price, it proved that a comic could be sold as a book to adults, and its commercial success helped establish the graphic novel as a retail category. Its influence on the tone of subsequent superhero comics and films is difficult to overstate.",
+      "url": "https://en.wikipedia.org/wiki/The_Dark_Knight_Returns",
+      "highlight": true
+    },
+    "watchmen": {
+      "name": "Watchmen",
+      "group": "title",
+      "desc": "Alan Moore and Dave Gibbons's twelve-issue series, published from 1986, set in an America where costumed vigilantes are real, Nixon is still president and a single genuinely superhuman being has destabilised the Cold War.\n\nBuilt on a rigid nine-panel grid with dense symmetry, embedded documents and a comic-within-the-comic, it treated the superhero as a political and psychological problem. It has never gone out of print, is routinely listed among the significant novels of the century, and its rights arrangement — under which the property never reverted to its creators — permanently soured Moore's relationship with DC.",
+      "url": "https://en.wikipedia.org/wiki/Watchmen",
+      "highlight": true
+    },
+    "batman_year_one": {
+      "name": "Batman: Year One",
+      "group": "title",
+      "desc": "Frank Miller and David Mazzucchelli's four-part 1987 story, published in Batman itself rather than as a separate miniseries, retelling Bruce Wayne's first year alongside Jim Gordon's arrival in a comprehensively corrupt Gotham police force.\n\nMazzucchelli's stripped-down art and Richmond Lewis's muted colour gave the story a crime-fiction register rather than a superheroic one. It became the accepted account of Batman's origin, displacing earlier versions, and supplied the framework for later screen adaptations.",
+      "url": "https://en.wikipedia.org/wiki/Batman:_Year_One"
+    },
+    "sandman": {
+      "name": "The Sandman",
+      "group": "title",
+      "desc": "Neil Gaiman's seventy-five-issue series, begun in 1989, about Dream of the Endless — one of seven personifications older than gods — who is imprisoned for seventy years and must rebuild his kingdom, and himself, afterwards.\n\nDrawing on myth, folklore, history and literature, and drawn by a rotating cast of artists including Sam Kieth, Kelley Jones, Marc Hempel and P. Craig Russell under Dave McKean's covers, it reached readers who had never bought a comic before. Gaiman ended it deliberately in 1996 rather than let it continue without him.",
+      "url": "https://en.wikipedia.org/wiki/The_Sandman_(comic_book)"
+    },
+    "all_star_superman": {
+      "name": "All-Star Superman",
+      "group": "title",
+      "desc": "Grant Morrison and Frank Quitely's twelve-issue series, published from 2005 outside regular continuity, in which Superman is fatally overexposed to solar radiation and sets about completing twelve final labours.\n\nAffectionate towards the strangest material of the Weisinger era while entirely modern in construction, it argued that the character's optimism is his point rather than his limitation. It is widely regarded as the best modern Superman story and directly informed later screen interpretations.",
+      "url": "https://en.wikipedia.org/wiki/All-Star_Superman"
+    },
+    "crisis_on_infinite_earths": {
+      "name": "Crisis on Infinite Earths",
+      "group": "event",
+      "desc": "The twelve-issue series by Marv Wolfman and George Pérez, published across 1985 and 1986 for DC's fiftieth anniversary, in which an antimatter wave destroys the multiverse and the survivors emerge into a single merged universe with a single history.\n\nIt was conceived as a solution to decades of accumulated parallel Earths that editorial believed were deterring new readers. Supergirl and Barry Allen died; every title was affected. It established the line-wide crossover as a commercial fixture and set a pattern of periodic continuity resets that DC has followed ever since.",
+      "url": "https://en.wikipedia.org/wiki/Crisis_on_Infinite_Earths",
+      "highlight": true
+    },
+    "death_of_superman": {
+      "name": "The Death of Superman",
+      "group": "event",
+      "desc": "The 1992 storyline in which Superman is beaten to death by the monster Doomsday, followed by Funeral for a Friend, Reign of the Supermen and his eventual return roughly a year later.\n\nCovered as news by mainstream media worldwide, it produced the biggest single sales spike in modern comics and drew enormous numbers of speculative buyers who never returned. The episode is a central exhibit in accounts of the 1990s speculator bubble and of the industry's near-collapse when that bubble burst.",
+      "url": "https://en.wikipedia.org/wiki/The_Death_of_Superman"
+    },
+    "flashpoint": {
+      "name": "Flashpoint",
+      "group": "event",
+      "desc": "Geoff Johns and Andy Kubert's 2011 crossover, in which Barry Allen wakes into a world where his mother is alive, Thomas Wayne is Batman, and Atlantis and Themyscira are at war — the consequence of his own journey back through time to prevent her murder.\n\nRepairing the damage required Barry to let his mother die again, and the reconstituted timeline was not the one he left. Flashpoint served as the narrative mechanism for the New 52, folding the WildStorm and Vertigo characters into a single continuity.",
+      "url": "https://en.wikipedia.org/wiki/Flashpoint_(comics)"
+    },
+    "new_52": {
+      "name": "The New 52",
+      "group": "event",
+      "desc": "DC's September 2011 relaunch, in which the entire line was cancelled and restarted with fifty-two new first issues under co-publishers Dan DiDio and Jim Lee, with continuity reset to a universe five years old and every title released digitally the same day as in print.\n\nThe move produced a substantial short-term sales increase and drew back lapsed readers, but the compressed history discarded marriages, legacies and characters that long-time readers valued — most contentiously Wally West and the Justice Society — and much of it was reversed within five years.",
+      "url": "https://en.wikipedia.org/wiki/The_New_52",
+      "highlight": true
+    },
+    "dc_rebirth": {
+      "name": "DC Rebirth",
+      "group": "event",
+      "desc": "The 2016 relaunch initiated by Geoff Johns in DC Universe: Rebirth #1, framed explicitly as a correction to the New 52: the missing years, relationships and legacies had been stolen from the universe by an outside force, and Wally West's return was the story's emotional centre.\n\nRebirth restored twice-monthly publication at a lower price, brought back the pre-Flashpoint Superman and his family, and reintroduced the Justice Society. It also set up Doomsday Clock, which folded the Watchmen characters into DC continuity.",
+      "url": "https://en.wikipedia.org/wiki/DC_Rebirth"
+    },
+    "batman_1966": {
+      "name": "Batman (1966 television series)",
+      "group": "media",
+      "desc": "The ABC series starring Adam West and Burt Ward, broadcast twice weekly from 1966, which played Batman as deadpan camp in saturated colour with onomatopoeic fight captions and a rotating cast of guest villains.\n\nIt was an immediate international phenomenon and briefly lifted comics sales enormously, and it prompted DC to add Batgirl to the comics and to the show. When the fashion passed, the series left the character indelibly associated with silliness — a reputation Denny O'Neil and later Frank Miller spent decades undoing.",
+      "url": "https://en.wikipedia.org/wiki/Batman_(TV_series)",
+      "highlight": true
+    },
+    "superman_1978": {
+      "name": "Superman (1978 film)",
+      "group": "media",
+      "desc": "Richard Donner's film, starring Christopher Reeve with Marlon Brando and Gene Hackman, was made on a scale no comic book adaptation had previously attempted and marketed on the promise that audiences would believe a man could fly.\n\nIts commercial and critical success established the superhero film as a serious studio proposition and demonstrated to Warner the value of the characters it had bought in 1967. Reeve's performance, which took the character's sincerity seriously, remained the reference point for decades.",
+      "url": "https://en.wikipedia.org/wiki/Superman_(1978_film)"
+    },
+    "batman_1989": {
+      "name": "Batman (1989 film)",
+      "group": "media",
+      "desc": "Tim Burton's film, with Michael Keaton as Batman and Jack Nicholson as the Joker, drew on the darker comics of the preceding years and on Anton Furst's gothic Gotham to erase the public memory of the 1966 series.\n\nIt was one of the highest-grossing films of its year and its merchandising campaign was unprecedented, proving that DC's characters were valuable to Warner far beyond publishing. Its success led directly to Batman: The Animated Series and to three sequels of declining quality.",
+      "url": "https://en.wikipedia.org/wiki/Batman_(1989_film)"
+    },
+    "batman_animated_series": {
+      "name": "Batman: The Animated Series",
+      "group": "media",
+      "desc": "The 1992 series developed by Bruce Timm and Eric Radomski, animated on black paper to give Gotham a permanently nocturnal art-deco look, with a symphonic score and voice performances by Kevin Conroy and Mark Hamill that became definitive.\n\nIt treated its villains as tragedies rather than gimmicks, won critical respect unusual for children's television, and created Harley Quinn. Its style extended into Superman, Batman Beyond and Justice League Unlimited, forming a coherent animated universe that shaped a generation's sense of the characters.",
+      "url": "https://en.wikipedia.org/wiki/Batman:_The_Animated_Series",
+      "highlight": true
+    },
+    "dark_knight_film": {
+      "name": "The Dark Knight",
+      "group": "media",
+      "desc": "Christopher Nolan's 2008 film, the second of his trilogy, treating Gotham as a plausible modern city and the Joker, played by Heath Ledger, as an agent of pure disorder testing whether institutions and individuals hold under pressure.\n\nIt earned Ledger a posthumous Academy Award, passed a billion dollars at the box office, and made the case that superhero films could be treated as serious cinema. Its influence pushed Warner and its competitors towards darker, more realistic adaptations for the following decade.",
+      "url": "https://en.wikipedia.org/wiki/The_Dark_Knight"
+    }
+  },
+  "links": [
+    {
+      "from": "malcolm_wheeler_nicholson",
+      "to": "national_allied_publications",
+      "type": "founded",
+      "details": "Wheeler-Nicholson set up National Allied Publications in 1934 on almost no capital, betting that readers would buy a magazine of original comics rather than newspaper reprints. The bet was correct; his finances were not, and he never saw the profits.",
+      "highlight": true
+    },
+    {
+      "from": "malcolm_wheeler_nicholson",
+      "to": "detective_comics_inc",
+      "type": "founded",
+      "details": "Unable to fund a third title alone, Wheeler-Nicholson formed Detective Comics, Inc. in 1937 as a partnership with his printer and distributor. It was the arrangement that gave DC both its most valuable title and its name — and cost him his company.",
+      "highlight": true
+    },
+    {
+      "from": "harry_donenfeld",
+      "to": "detective_comics_inc",
+      "type": "founded",
+      "details": "Donenfeld put up the money and the presses for the new venture, taking an equity position in the partnership. Within a year he had used Wheeler-Nicholson's unpaid debts to take the whole business."
+    },
+    {
+      "from": "jack_liebowitz",
+      "to": "detective_comics_inc",
+      "type": "founded",
+      "details": "Liebowitz held the books and the other half of Donenfeld's interest, and it was he who managed the bankruptcy proceedings that removed Wheeler-Nicholson from the company he had started."
+    },
+    {
+      "from": "harry_donenfeld",
+      "to": "national_allied_publications",
+      "type": "acquired",
+      "details": "When National Allied went into bankruptcy in 1938, Donenfeld and Liebowitz bought its assets — including an unpublished Superman story already scheduled for Action Comics #1 — and merged the line into their own."
+    },
+    {
+      "from": "malcolm_wheeler_nicholson",
+      "to": "harry_donenfeld",
+      "type": "dispute",
+      "details": "The founder was forced out of his own firm months before Superman made it rich. Wheeler-Nicholson received a modest settlement and no share of what followed; the episode set an early pattern for how the company handled the people who brought it its properties.",
+      "highlight": true
+    },
+    {
+      "from": "harry_donenfeld",
+      "to": "jack_liebowitz",
+      "type": "collaborator",
+      "details": "The partnership of the flamboyant pulp publisher and the meticulous accountant ran the company for three decades. Donenfeld was the name and the personality; Liebowitz made the decisions that mattered and outlasted him.",
+      "highlight": true
+    },
+    {
+      "from": "national_allied_publications",
+      "to": "new_fun",
+      "type": "published",
+      "details": "New Fun #1, dated February 1935, was National Allied's first release and one of the first American comic books composed entirely of new material. It lost money, but it established that comics could be commissioned rather than recycled."
+    },
+    {
+      "from": "detective_comics_inc",
+      "to": "detective_comics_series",
+      "type": "published",
+      "details": "Detective Comics #1 appeared in March 1938 as a themed crime anthology — an unusual idea at a time when comic books were general grab-bags. Its title supplied the two initials the publisher has used ever since."
+    },
+    {
+      "from": "national_allied_publications",
+      "to": "dc_comics",
+      "type": "succeeded",
+      "details": "National Allied is the root of the corporate line that runs through Detective Comics, Inc. and National Periodical Publications to the modern DC Comics — an unbroken commercial descent from a bankrupt 1930s pulp operation."
+    },
+    {
+      "from": "detective_comics_inc",
+      "to": "dc_comics",
+      "type": "succeeded",
+      "details": "The partnership's name outlived the partnership. Consolidated with National Allied and later renamed National Comics Publications, the firm kept using DC as a cover logo for four decades before adopting it formally in 1977."
+    },
+    {
+      "from": "jack_liebowitz",
+      "to": "dc_comics",
+      "type": "influenced",
+      "details": "Liebowitz shaped the company more than any other executive of its first thirty years: he financed All-American, unified the two lines in 1946, kept the publisher on the right side of the Comics Code, and sold the whole business to Kinney National in 1967."
+    },
+    {
+      "from": "jack_liebowitz",
+      "to": "all_american_publications",
+      "type": "founded",
+      "details": "Liebowitz put up the backing for Gaines's new company in 1939 while keeping it formally separate from National — an arrangement that spread the financial risk and left him with leverage over both halves of the business.",
+      "highlight": true
+    },
+    {
+      "from": "max_gaines",
+      "to": "all_american_publications",
+      "type": "founded",
+      "details": "Gaines ran All-American as a distinct editorial operation with its own offices and its own editor, and produced a strikingly large share of the Golden Age canon: the Flash, Green Lantern, the Justice Society and Wonder Woman all came from his line.",
+      "highlight": true
+    },
+    {
+      "from": "dc_comics",
+      "to": "all_american_publications",
+      "type": "acquired",
+      "details": "Gaines sold his interest in 1946 and All-American was absorbed into National Comics Publications, formally merging the two halves of what readers had always treated as one publisher because they shared a cover logo."
+    },
+    {
+      "from": "max_gaines",
+      "to": "ec_comics",
+      "type": "founded",
+      "details": "With the proceeds of the All-American sale Gaines started a small educational comics line, and after his death in a 1947 boating accident his son William turned it into EC — the horror and satire publisher that the Comics Code was largely designed to destroy."
+    },
+    {
+      "from": "max_gaines",
+      "to": "superman",
+      "type": "influenced",
+      "details": "Gaines is generally credited with passing the rejected Superman samples on to Vin Sullivan at National, the referral that put the strip into Action Comics #1 after five years of rejections."
+    },
+    {
+      "from": "sheldon_mayer",
+      "to": "superman",
+      "type": "influenced",
+      "details": "By Mayer's own later account, he retrieved the Superman submission from the reject pile as Gaines's young assistant and argued repeatedly that it should be published — an editorial judgement that decided the shape of the industry."
+    },
+    {
+      "from": "sheldon_mayer",
+      "to": "all_american_publications",
+      "type": "edited",
+      "details": "Mayer edited All-American's whole line in his twenties, overseeing Flash Comics, All-American Comics and All Star Comics, and hiring and shielding the creators who built the company's Golden Age roster."
+    },
+    {
+      "from": "all_american_publications",
+      "to": "all_star_comics",
+      "type": "published",
+      "details": "All Star Comics was All-American's showcase anthology, and the book in which Mayer and Gardner Fox gathered the line's heroes into a single team — the format innovation that made the shared universe a commercial proposition.",
+      "highlight": true
+    },
+    {
+      "from": "dc_comics",
+      "to": "fawcett_comics",
+      "type": "dispute",
+      "details": "National sued Fawcett for infringing Superman with Captain Marvel, and the litigation ran through the 1940s and into the early 1950s. With superhero sales collapsing anyway, Fawcett settled and stopped publishing the character in 1953.",
+      "highlight": true
+    },
+    {
+      "from": "dc_comics",
+      "to": "fawcett_comics",
+      "type": "acquired",
+      "details": "DC licensed the Fawcett superheroes in 1972 and bought them outright in 1991 — acquiring the character it had spent a decade suing out of print, though Marvel's trademark on the name meant it could only be sold as Shazam!"
+    },
+    {
+      "from": "fawcett_comics",
+      "to": "captain_marvel",
+      "type": "published",
+      "details": "Whiz Comics #2 introduced Captain Marvel in 1940, and by mid-decade Captain Marvel Adventures was outselling Superman — the commercial fact that made National's infringement suit worth pursuing so relentlessly."
+    },
+    {
+      "from": "dc_comics",
+      "to": "charlton_comics",
+      "type": "acquired",
+      "details": "DC bought Charlton's superhero characters in 1983 as the smaller publisher left the business, picking up the Question, Blue Beetle, Captain Atom, Peacemaker and Nightshade for a modest sum."
+    },
+    {
+      "from": "warner_communications",
+      "to": "dc_comics",
+      "type": "acquired",
+      "details": "Kinney National Company bought National Periodical Publications in 1967 and, after absorbing Warner Bros.-Seven Arts, renamed itself Warner Communications in 1972. DC has been a subsidiary of a large media conglomerate ever since, through Time Warner, WarnerMedia and Warner Bros. Discovery.",
+      "highlight": true
+    },
+    {
+      "from": "jack_liebowitz",
+      "to": "warner_communications",
+      "type": "influenced",
+      "details": "Liebowitz negotiated the 1967 sale and took a seat on the acquiring company's board, converting his publishing business into a corporate position and setting DC's future as one asset among many."
+    },
+    {
+      "from": "dc_comics",
+      "to": "vertigo",
+      "type": "imprint_of",
+      "details": "Vertigo was launched in 1993 as DC's mature-readers imprint, publishing without the Comics Code seal and on terms closer to creator ownership. It gave the company literary standing and a second audience that the superhero line could not reach."
+    },
+    {
+      "from": "karen_berger",
+      "to": "vertigo",
+      "type": "founded",
+      "details": "Berger proposed gathering the adult titles she was already editing under a single imprint and ran it as executive editor for twenty years, defining its house style: literate, unheroic, and dominated by British writers she had personally recruited."
+    },
+    {
+      "from": "jenette_kahn",
+      "to": "vertigo",
+      "type": "influenced",
+      "details": "Kahn's insistence that DC compete on prestige rather than imitate Marvel, and her willingness to publish outside the Comics Code, created the conditions in which an imprint like Vertigo could be proposed at all.",
+      "highlight": true
+    },
+    {
+      "from": "dc_comics",
+      "to": "wildstorm",
+      "type": "acquired",
+      "details": "DC bought Jim Lee's studio in a deal agreed in 1998 and effective from January 1999, gaining a superhero line with a distinct house style and, more importantly, Lee himself. WildStorm's characters were later folded into DC continuity at the New 52 relaunch."
+    },
+    {
+      "from": "jim_lee",
+      "to": "wildstorm",
+      "type": "founded",
+      "details": "Lee founded WildStorm in 1992 as his studio within Image Comics, publishing WildC.A.T.s and Gen 13 and later commissioning Warren Ellis's The Authority and Planetary, which pushed superhero storytelling towards widescreen scale and cynicism."
+    },
+    {
+      "from": "dc_comics",
+      "to": "milestone_media",
+      "type": "published",
+      "details": "DC handled printing and distribution for Milestone from 1993 while the founders retained ownership of their characters — an unusual arrangement for the period, and the reason the line could be revived on its creators' terms decades later."
+    },
+    {
+      "from": "dwayne_mcduffie",
+      "to": "milestone_media",
+      "type": "founded",
+      "details": "McDuffie co-founded Milestone with Denys Cowan, Michael Davis and Derek T. Dingle, arguing that the problem with superhero comics was not a shortage of Black characters but that they were created and owned by people outside the communities they represented."
+    },
+    {
+      "from": "warner_communications",
+      "to": "dc_studios",
+      "type": "founded",
+      "details": "Warner Bros. Discovery created DC Studios in 2022 under James Gunn and Peter Safran, consolidating film, television and animation under a single planned continuity after a decade of inconsistent and separately commissioned adaptations."
+    },
+    {
+      "from": "dc_studios",
+      "to": "dc_comics",
+      "type": "influenced",
+      "details": "The 2022 reorganisation confirmed a long shift in the company's centre of gravity: the comics line increasingly functions as a development laboratory and a rights archive for a screen operation that dwarfs it commercially."
+    },
+    {
+      "from": "dc_comics",
+      "to": "action_comics",
+      "type": "published",
+      "details": "Action Comics has run essentially continuously since 1938 and passed its thousandth issue in 2018, making it the publisher's oldest surviving property and the direct source of its fortune."
+    },
+    {
+      "from": "dc_comics",
+      "to": "detective_comics_series",
+      "type": "published",
+      "details": "Detective Comics gave the company its initials and, from its twenty-seventh issue, its most bankable character. It reached issue 1000 in 2019, having run without meaningful interruption for eighty years."
+    },
+    {
+      "from": "whitney_ellsworth",
+      "to": "dc_comics",
+      "type": "influenced",
+      "details": "As editorial director from 1940 Ellsworth wrote an internal content code restricting violence and sexual suggestion, which kept DC's line comparatively clean and left it far less exposed than its rivals when the industry was attacked in 1954."
+    },
+    {
+      "from": "whitney_ellsworth",
+      "to": "detective_comics_series",
+      "type": "edited",
+      "details": "As editorial director Ellsworth ruled in the early 1940s that Batman would not kill and would not carry a gun, a decision taken within three years of the character's debut. It moved the strip decisively away from its pulp-vigilante beginnings and established a constraint that has held, with rare exceptions, ever since."
+    },
+    {
+      "from": "fredric_wertham",
+      "to": "seduction_of_the_innocent",
+      "type": "created",
+      "details": "Wertham assembled a decade of clinical anecdote and out-of-context panel reproductions into a book arguing that comics taught children violence and deviance. It was widely reviewed, widely believed, and its evidentiary basis was never seriously examined at the time."
+    },
+    {
+      "from": "seduction_of_the_innocent",
+      "to": "comics_code_authority",
+      "type": "influenced",
+      "details": "The book fed directly into the 1954 Senate subcommittee hearings on juvenile delinquency. Facing the prospect of legislation, publishers formed their own censorship body within months rather than have one imposed.",
+      "highlight": true
+    },
+    {
+      "from": "seduction_of_the_innocent",
+      "to": "wonder_woman",
+      "type": "influenced",
+      "details": "Wertham read Wonder Woman as a figure of bondage and man-hating and treated her as evidence of comics' sexual deviance. The pressure contributed to the character being written for years afterwards as gentler, more domestic and markedly less powerful.",
+      "highlight": true
+    },
+    {
+      "from": "seduction_of_the_innocent",
+      "to": "batman",
+      "type": "influenced",
+      "details": "Wertham described the Wayne household as a coded homosexual fantasy. In response DC added female characters, daylight settings and outlandish science fiction to the Batman titles, moving them away from the pulp crime register of the early years."
+    },
+    {
+      "from": "comics_code_authority",
+      "to": "ec_comics",
+      "type": "influenced",
+      "details": "The Code's outright ban on horror and crime titles and on the words horror and terror in a title destroyed EC's line. Only Mad survived, by converting to magazine format and escaping the Code's jurisdiction entirely.",
+      "highlight": true
+    },
+    {
+      "from": "comics_code_authority",
+      "to": "catwoman",
+      "type": "influenced",
+      "details": "Catwoman disappeared from print for more than a decade from the mid-1950s, her mixture of criminality and sexual suggestion being precisely what the Code was written to remove. She returned only after the 1966 television series revived interest.",
+      "highlight": true
+    },
+    {
+      "from": "comics_code_authority",
+      "to": "silver_age",
+      "type": "influenced",
+      "details": "The Code effectively mandated the tone of the superhero revival: crime and horror were closed off, so DC's returning heroes were bright, rationalised, science-fictional and unambiguously on the side of the police."
+    },
+    {
+      "from": "comics_code_authority",
+      "to": "swamp_thing",
+      "type": "influenced",
+      "details": "The Code's 1971 revision permitted horror figures drawn from classic literature, opening the door to the monster comics of the early 1970s and making a book like Swamp Thing publishable for the first time in fifteen years."
+    },
+    {
+      "from": "comics_code_authority",
+      "to": "green_lantern_green_arrow",
+      "type": "influenced",
+      "details": "Denny O'Neil's story of Speedy's heroin addiction appeared as the Code was being revised to permit anti-drug narratives — one of the first mainstream superhero stories to test how far the new rules would stretch."
+    },
+    {
+      "from": "golden_age",
+      "to": "action_comics",
+      "type": "defined",
+      "details": "Action Comics #1 is the conventional starting point of the Golden Age. Within two years every publisher in the business had a costumed hero, and the comic book had shifted from a reprint sideline to a mass medium."
+    },
+    {
+      "from": "golden_age",
+      "to": "superman",
+      "type": "defined",
+      "details": "Superman established the whole grammar of the genre in a single thirteen-page story: the costume, the secret identity, the powers used publicly for others, and the newspaper-office supporting cast that gave the double life its friction."
+    },
+    {
+      "from": "golden_age",
+      "to": "batman",
+      "type": "defined",
+      "details": "Batman proved that the formula did not require superhuman powers, and gave the young medium its pulp-derived alternative: a detective, a city, a grievance and a rogues' gallery."
+    },
+    {
+      "from": "golden_age",
+      "to": "wonder_woman",
+      "type": "defined",
+      "details": "Wonder Woman was the era's most deliberate creation, commissioned as a corrective to a genre that Marston argued was training boys in blood and thunder while offering girls nothing at all."
+    },
+    {
+      "from": "golden_age",
+      "to": "justice_society",
+      "type": "defined",
+      "details": "The Justice Society was the Golden Age's structural invention: the discovery that characters from separate titles could share a story, and that readers would follow them across books to see it.",
+      "highlight": true
+    },
+    {
+      "from": "golden_age",
+      "to": "captain_marvel",
+      "type": "defined",
+      "details": "Captain Marvel outsold Superman through the 1940s, and the Golden Age's most consequential legal battle was fought over the resemblance between them — a dispute that ended with the losing character eventually owned by the winner.",
+      "highlight": true
+    },
+    {
+      "from": "silver_age",
+      "to": "showcase",
+      "type": "defined",
+      "details": "Showcase #4 in 1956 is the standard starting date for the Silver Age. The decision to keep the name and discard the character, giving the Flash a new identity and a scientific origin, became the template for the whole revival.",
+      "highlight": true
+    },
+    {
+      "from": "silver_age",
+      "to": "barry_allen",
+      "type": "defined",
+      "details": "Barry Allen embodied the era's method and its tone: a police scientist rather than a mystic, powers explained by chemistry and lightning, and a costume redesigned by Carmine Infantino for speed rather than symbolism."
+    },
+    {
+      "from": "silver_age",
+      "to": "justice_league",
+      "type": "defined",
+      "details": "The Justice League's 1960 debut was the moment the revival became a shared universe, and its sales are widely credited with prompting the competing superhero team that started Marvel's rise.",
+      "highlight": true
+    },
+    {
+      "from": "julius_schwartz",
+      "to": "silver_age",
+      "type": "influenced",
+      "details": "No individual is more responsible for the Silver Age. Schwartz's insistence on rebuilding rather than reviving, and his recruitment of science fiction writers to script superheroes, set the terms that the rest of the industry followed for a decade.",
+      "highlight": true
+    },
+    {
+      "from": "bronze_age",
+      "to": "green_lantern_green_arrow",
+      "type": "defined",
+      "details": "The O'Neil and Adams run is the Bronze Age's emblem: superhero comics turning to address racism, poverty and addiction directly, winning critical praise and selling badly enough to be cancelled."
+    },
+    {
+      "from": "bronze_age",
+      "to": "new_gods",
+      "type": "defined",
+      "details": "Kirby's Fourth World marked the arrival of the auteur at DC — a single creator writing, drawing and editing an interconnected line — and the era's appetite for myth on a scale the Silver Age had not attempted."
+    },
+    {
+      "from": "bronze_age",
+      "to": "swamp_thing",
+      "type": "defined",
+      "details": "Swamp Thing represents the Bronze Age's other movement: away from the Code-mandated brightness of the 1960s and back towards horror, atmosphere and moral ambiguity."
+    },
+    {
+      "from": "denny_oneil",
+      "to": "bronze_age",
+      "type": "influenced",
+      "details": "O'Neil supplied the era's editorial argument — that superheroes should be answerable to the world outside the panel — and then, as Batman group editor, spent fourteen years applying it to DC's most valuable character."
+    },
+    {
+      "from": "neal_adams",
+      "to": "bronze_age",
+      "type": "influenced",
+      "details": "Adams's photographic anatomy and cinematic staging broke DC's flat, uniform house style, and his campaigning on original art, page rates and creator credit changed the terms on which the next generation would work.",
+      "highlight": true
+    },
+    {
+      "from": "jerry_siegel",
+      "to": "superman",
+      "type": "created",
+      "details": "Siegel conceived Superman in Cleveland in the early 1930s, reworking an earlier villainous version into a benevolent strongman, and wrote the character for a decade. The first stories are notably populist: Superman fights slum landlords, wife-beaters and corrupt lobbyists rather than supervillains."
+    },
+    {
+      "from": "joe_shuster",
+      "to": "superman",
+      "type": "created",
+      "details": "Shuster drew the character from the earliest schoolboy sketches to Action Comics #1, fixing the cape, the chest emblem and the leaping pose that became the visual shorthand for the entire genre.",
+      "highlight": true
+    },
+    {
+      "from": "jerry_siegel",
+      "to": "joe_shuster",
+      "type": "collaborator",
+      "details": "The two met as teenagers in Cleveland over shared science fiction enthusiasms, spent five years failing to sell Superman as a newspaper strip, and were bound together afterwards by the character and by decades of litigation over it.",
+      "highlight": true
+    },
+    {
+      "from": "action_comics",
+      "to": "superman",
+      "type": "debut",
+      "details": "Superman's thirteen-page story led Action Comics #1 in 1938, bought outright for 130 dollars. Readers began asking newsstands for the comic with the strongman on the cover, and the publisher took several issues to work out why the title was selling.",
+      "highlight": true
+    },
+    {
+      "from": "action_comics",
+      "to": "lois_lane",
+      "type": "debut",
+      "details": "Lois Lane appeared in the same first story, already established as a reporter who resents being patronised, is contemptuous of Clark Kent, and pursues stories into danger — the engine of the strip's central irony from page one."
+    },
+    {
+      "from": "action_comics",
+      "to": "lex_luthor",
+      "type": "debut",
+      "details": "Luthor arrived in Action Comics #23 in 1940 as a red-haired scientist directing a European war for profit. He was drawn bald within a year, and that version displaced the original entirely."
+    },
+    {
+      "from": "action_comics",
+      "to": "supergirl",
+      "type": "debut",
+      "details": "Action Comics #252 in 1959 introduced Kara Zor-El, a survivor of Argo City sent to Earth by her father. Weisinger had tested the idea with a one-off story three years earlier and kept her hidden from the world in the strip for years."
+    },
+    {
+      "from": "jerry_siegel",
+      "to": "lex_luthor",
+      "type": "created",
+      "details": "Siegel devised Luthor as the answer to a structural problem: a hero who could not be beaten by force needed an antagonist who did not use it. The result was the genre's first great villain of intellect rather than muscle."
+    },
+    {
+      "from": "superman",
+      "to": "lex_luthor",
+      "type": "nemesis",
+      "details": "The opposition has been rewritten repeatedly — mad scientist, armoured warlord, corporate billionaire, elected president — but its core has held since 1940: human ingenuity, embittered, set against an alien whose goodness Luthor regards as an insult to the species."
+    },
+    {
+      "from": "superman",
+      "to": "lois_lane",
+      "type": "ally",
+      "details": "For fifty years the strip ran on Lois's contempt for Clark and pursuit of Superman. Later writers reversed the arrangement: she learned his identity, they married in 1996, and the partnership rather than the deception became the point."
+    },
+    {
+      "from": "jerry_siegel",
+      "to": "dc_comics",
+      "type": "dispute",
+      "details": "Siegel and Shuster sued in 1947 to reclaim Superman and were dropped from the titles for it. Further suits in the 1960s and 1970s failed. Only public pressure in 1975, ahead of the film, secured them annual pensions and a permanent creator credit line."
+    },
+    {
+      "from": "joe_shuster",
+      "to": "dc_comics",
+      "type": "dispute",
+      "details": "By the early 1970s Shuster was in poor health with failing eyesight and living in near-poverty while Superman was being licensed worldwide. His circumstances, once reported, made the campaign for the pair difficult for Warner to resist."
+    },
+    {
+      "from": "neal_adams",
+      "to": "jerry_siegel",
+      "type": "ally",
+      "details": "Adams took up the creators' case in 1975, using his professional standing and the press interest around the forthcoming Superman film to make Warner's treatment of them a public embarrassment.",
+      "highlight": true
+    },
+    {
+      "from": "jerry_robinson",
+      "to": "jerry_siegel",
+      "type": "ally",
+      "details": "Robinson, a past president of the National Cartoonists Society and, until that year, of the Association of American Editorial Cartoonists, lent the campaign institutional weight, framing it as a matter of professional dignity for cartoonists generally rather than a favour to two individuals."
+    },
+    {
+      "from": "jenette_kahn",
+      "to": "jerry_siegel",
+      "type": "ally",
+      "details": "Kahn pressed Warner from inside the company for the pensions and the restoration of the byline, and later extended the principle into the royalty and creator-equity policies that reshaped how DC paid everyone else.",
+      "highlight": true
+    },
+    {
+      "from": "mort_weisinger",
+      "to": "action_comics",
+      "type": "edited",
+      "details": "Weisinger edited the Superman titles for most of three decades, building Kandor, the Fortress, Krypto, Bizarro, the coloured kryptonites and the Legion of Super-Heroes into a coherent world, much of it prompted by reader letters he solicited and mined.",
+      "highlight": true
+    },
+    {
+      "from": "mort_weisinger",
+      "to": "supergirl",
+      "type": "created",
+      "details": "Weisinger conceived Supergirl as an addition to his expanding Superman family and had Otto Binder and Al Plastino execute her, keeping her existence secret within the fiction so that her eventual public reveal could itself be an event.",
+      "highlight": true
+    },
+    {
+      "from": "curt_swan",
+      "to": "superman",
+      "type": "drew",
+      "details": "Swan drew the character for roughly thirty years, and his unexaggerated, humane figure work is what most readers of the period picture when they picture Superman. He was given the last pre-Crisis story as a deliberate act of closure."
+    },
+    {
+      "from": "mort_weisinger",
+      "to": "curt_swan",
+      "type": "collaborator",
+      "details": "Weisinger paired Swan with the Superman line and kept him there, and the editor's exhaustive world-building and the artist's steady naturalism together produced the most stable visual continuity any DC character has had."
+    },
+    {
+      "from": "julius_schwartz",
+      "to": "superman",
+      "type": "edited",
+      "details": "Schwartz took over the Superman titles after Weisinger, pruning the accumulated apparatus of the 1960s, and closed his tenure by commissioning Alan Moore to write a formal ending for the character before the 1986 reboot."
+    },
+    {
+      "from": "alan_moore",
+      "to": "curt_swan",
+      "type": "collaborator",
+      "details": "For Whatever Happened to the Man of Tomorrow? in 1986, Moore wrote an affectionate and fatal last story for the pre-Crisis Superman and asked for Swan to draw it — the artist who had defined the era being given the job of ending it."
+    },
+    {
+      "from": "john_byrne",
+      "to": "man_of_steel_1986",
+      "type": "wrote",
+      "details": "Byrne was hired away from Marvel to restart Superman from zero, and used the six issues to strip out Superboy, the Kryptonian survivors and much of the accumulated power set, arguing that a character who could move planets had no dramatic stakes left."
+    },
+    {
+      "from": "john_byrne",
+      "to": "man_of_steel_1986",
+      "type": "drew",
+      "details": "Byrne pencilled the series as well as writing it, with Dick Giordano inking — an editorial signal that the reboot was a single authored statement rather than a house product."
+    },
+    {
+      "from": "man_of_steel_1986",
+      "to": "superman",
+      "type": "influenced",
+      "details": "The reboot's decisions governed the character for twenty-five years: Clark Kent as the real identity rather than the disguise, the Kents alive into his adulthood, Krypton cold and unmourned, and Luthor as a businessman no prosecutor could touch.",
+      "highlight": true
+    },
+    {
+      "from": "grant_morrison",
+      "to": "all_star_superman",
+      "type": "wrote",
+      "details": "Morrison built the series from the oddest material of the Weisinger years — the Bottle City, the Fortress key, Bizarro — and treated it seriously, on the argument that Superman's strangeness and his kindness are the same quality."
+    },
+    {
+      "from": "all_star_superman",
+      "to": "superman",
+      "type": "influenced",
+      "details": "Published outside continuity and free of reboot obligations, it reframed the character for a generation of readers and writers as fundamentally optimistic, and has shaped screen interpretations since."
+    },
+    {
+      "from": "death_of_superman",
+      "to": "superman",
+      "type": "key_role",
+      "details": "Doomsday beat Superman to death in 1992 in a story covered as news by broadcasters worldwide. He returned within roughly a year, which is exactly what the industry's critics had predicted, and the episode became shorthand for the decade's willingness to sell events rather than stories."
+    },
+    {
+      "from": "death_of_superman",
+      "to": "dc_comics",
+      "type": "influenced",
+      "details": "The storyline produced the largest sales spike in modern comics and pulled in enormous numbers of speculative buyers who left when the resale market collapsed. The bust that followed nearly destroyed the direct market and reshaped DC's publishing strategy for a decade."
+    },
+    {
+      "from": "superman",
+      "to": "supergirl",
+      "type": "ally",
+      "details": "Kara was introduced as the one other survivor of his world, which gave Superman something the strip had denied him for twenty years — family — and made her death in Crisis on Infinite Earths a deliberate act of restoring his isolation."
+    },
+    {
+      "from": "superman",
+      "to": "batman",
+      "type": "ally",
+      "details": "The two were paired from the 1940s radio serials onwards and shared World's Finest Comics for decades as untroubled friends. Post-Crisis writing recast the relationship as a working alliance between temperaments that distrust each other, which is now the standard reading."
+    },
+    {
+      "from": "superman",
+      "to": "superman_1978",
+      "type": "adapted",
+      "details": "Donner's film treated the character earnestly at a moment when that was an unfashionable choice, and Christopher Reeve's performance — separating Clark and Superman almost entirely through posture — became the reference version for decades."
+    },
+    {
+      "from": "bob_kane",
+      "to": "batman",
+      "type": "created",
+      "details": "Kane brought editor Vin Sullivan a sketch of a red-suited hero with stiff bat wings in 1939, then took it to Bill Finger, who redesigned nearly every element of it. Kane's contract secured him the sole byline for life."
+    },
+    {
+      "from": "bill_finger",
+      "to": "batman",
+      "type": "created",
+      "details": "Finger supplied the cowl, the scalloped cape, the grey and black palette, the name Bruce Wayne, Gotham City, the murdered parents, and the emphasis on detection over strength. He was credited only in 2015, forty-one years after his death."
+    },
+    {
+      "from": "bob_kane",
+      "to": "bill_finger",
+      "type": "collaborator",
+      "details": "The working relationship produced the most valuable character in comics and one of the industry's defining injustices: Kane's deal made Finger a work-for-hire ghost on a creation that was substantially his, and Kane publicly maintained sole authorship for decades.",
+      "highlight": true
+    },
+    {
+      "from": "detective_comics_series",
+      "to": "batman",
+      "type": "debut",
+      "details": "The Case of the Chemical Syndicate ran six pages in Detective Comics #27 in May 1939 — a straight pulp mystery in which the hero throws a criminal into a vat of acid, a register the character would abandon and periodically return to."
+    },
+    {
+      "from": "detective_comics_series",
+      "to": "dick_grayson",
+      "type": "debut",
+      "details": "Robin appeared in Detective Comics #38 in 1940. Sales rose sharply, the strip acquired daylight and dialogue, and within two years virtually every hero in the industry had acquired a boy sidekick."
+    },
+    {
+      "from": "detective_comics_series",
+      "to": "barbara_gordon",
+      "type": "debut",
+      "details": "Barbara Gordon's Batgirl was introduced in Detective Comics #359 in 1967, developed at the request of the television producers who wanted a new female lead for the third season and got a comics debut timed to match."
+    },
+    {
+      "from": "detective_comics_series",
+      "to": "martian_manhunter",
+      "type": "debut",
+      "details": "J'onn J'onzz was introduced as a backup feature in Detective Comics #225 in 1955 — a science fiction hero appearing a year before Showcase #4, which is why some historians date the Silver Age from here instead."
+    },
+    {
+      "from": "bill_finger",
+      "to": "joker",
+      "type": "created",
+      "details": "Finger scripted the Joker's earliest appearances and credited the grin to a photograph of Conrad Veidt in The Man Who Laughs. His account of the character's origin and Jerry Robinson's have never been reconciled, and the credit remains one of the most contested in comics.",
+      "highlight": true
+    },
+    {
+      "from": "jerry_robinson",
+      "to": "joker",
+      "type": "created",
+      "details": "Robinson said he brought in a playing card as the character's visual hook and the name that went with it. Kane disputed the account for the rest of his life; the credit remains genuinely contested among historians."
+    },
+    {
+      "from": "bob_kane",
+      "to": "jerry_robinson",
+      "type": "collaborator",
+      "details": "Robinson was hired at seventeen to letter and ink for Kane's studio and became one of its principal artists, though the byline on all of it was Kane's. He later became one of the industry's most effective advocates for creator credit."
+    },
+    {
+      "from": "bill_finger",
+      "to": "catwoman",
+      "type": "created",
+      "details": "Finger and Kane introduced the Cat in Batman #1 as a jewel thief in a masquerade, explicitly designed as a character Batman would be reluctant to catch — the strip's first admission that its hero's motives were not purely juridical."
+    },
+    {
+      "from": "bill_finger",
+      "to": "dick_grayson",
+      "type": "created",
+      "details": "Finger wrote Robin's origin as a deliberate mirror of Batman's, giving the strip a second orphan and a reason for its protagonist to speak aloud. Jerry Robinson is credited with naming him after Robin Hood."
+    },
+    {
+      "from": "batman",
+      "to": "joker",
+      "type": "nemesis",
+      "details": "The Code turned the Joker into a harmless prankster for two decades; O'Neil and Adams restored him as a murderer in 1973. Later stories built the opposition into a philosophical one — order against the argument that one bad day is enough to unmake anyone.",
+      "highlight": true
+    },
+    {
+      "from": "batman",
+      "to": "catwoman",
+      "type": "ally",
+      "details": "The relationship has been written as flirtation, romance, rivalry and uneasy partnership since 1940, and is the longest-running unresolved attachment in superhero comics. Year One rebuilt it as two people working the same corrupt city from opposite directions."
+    },
+    {
+      "from": "batman",
+      "to": "dick_grayson",
+      "type": "ally",
+      "details": "Grayson's progression from ward to Teen Titans leader to Nightwing, and periodically to Batman himself, established the legacy principle at DC: sidekicks grow up and inherit rather than remaining permanently adolescent."
+    },
+    {
+      "from": "joker",
+      "to": "barbara_gordon",
+      "type": "nemesis",
+      "details": "The Killing Joke had the Joker shoot and paralyse Barbara Gordon to torment her father. The story is frequently criticised for injuring a long-running character to motivate two men, and equally often cited for what came next: her reinvention as Oracle."
+    },
+    {
+      "from": "denny_oneil",
+      "to": "batman",
+      "type": "wrote",
+      "details": "O'Neil deliberately reversed the television series' influence, returning the character to night, solitude and detection, and adding Ra's al Ghul and Talia as antagonists whose scale matched him. He later spent fourteen years as the line's group editor."
+    },
+    {
+      "from": "neal_adams",
+      "to": "batman",
+      "type": "drew",
+      "details": "Adams drew Batman gaunt, cloaked and shadowed, with anatomy and staging borrowed from film rather than from comics convention. The look he established in the early 1970s remains the character's default."
+    },
+    {
+      "from": "denny_oneil",
+      "to": "neal_adams",
+      "type": "collaborator",
+      "details": "Their partnership produced both halves of DC's Bronze Age: the restoration of Batman as a creature of the night, and the Green Lantern/Green Arrow road stories that brought contemporary politics into mainstream superhero comics."
+    },
+    {
+      "from": "julius_schwartz",
+      "to": "batman",
+      "type": "edited",
+      "details": "Handed a title close to cancellation in 1964, Schwartz instituted the New Look — the yellow ellipse around the chest emblem, a return to detective plots, and the removal of the sillier science fiction — reviving sales just before the television series arrived."
+    },
+    {
+      "from": "carmine_infantino",
+      "to": "batman",
+      "type": "drew",
+      "details": "Infantino's design work on the New Look, including the yellow-ringed emblem, modernised the character's appearance for the first time since 1939 and provided the visual basis for the 1966 television series."
+    },
+    {
+      "from": "gardner_fox",
+      "to": "barbara_gordon",
+      "type": "created",
+      "details": "Fox scripted Batgirl's introduction to a brief supplied by the television production: a competent, independent woman with her own reasons, rather than a female counterpart defined by the hero."
+    },
+    {
+      "from": "carmine_infantino",
+      "to": "barbara_gordon",
+      "type": "created",
+      "details": "Infantino designed the costume and drew her first appearance, giving her a look that has survived essentially unchanged through every subsequent revision of the character."
+    },
+    {
+      "from": "frank_miller",
+      "to": "dark_knight_returns",
+      "type": "wrote",
+      "details": "Miller's premise — an ageing Batman returning to a Gotham of gang violence and saturation news — let him treat the character as a political problem rather than an adventure hero, ending with a state-sanctioned Superman sent to stop him.",
+      "highlight": true
+    },
+    {
+      "from": "frank_miller",
+      "to": "dark_knight_returns",
+      "type": "drew",
+      "details": "Miller drew the series with Klaus Janson and Lynn Varley, using dense sixteen-panel grids and television screens as narration — a formal approach as deliberate as Watchmen's, and published in the same year."
+    },
+    {
+      "from": "frank_miller",
+      "to": "batman_year_one",
+      "type": "wrote",
+      "details": "Year One ran in the monthly Batman title rather than as a prestige miniseries, retelling Bruce Wayne's first year alongside Jim Gordon's arrival in a police force where honesty is the aberration."
+    },
+    {
+      "from": "dark_knight_returns",
+      "to": "batman",
+      "type": "influenced",
+      "details": "The series recast Batman permanently as an obsessive and a potential authoritarian rather than a deputised crimefighter, and its commercial success made that reading the industry default for two decades."
+    },
+    {
+      "from": "batman_year_one",
+      "to": "batman",
+      "type": "influenced",
+      "details": "Year One displaced every earlier account of the character's origin and supplied the structure — the failed first outing, the bat through the window, the corrupt police force — that later comics and films have followed almost without variation."
+    },
+    {
+      "from": "dark_knight_returns",
+      "to": "dc_comics",
+      "type": "influenced",
+      "details": "Published in prestige format at a premium price and sold successfully to adults through bookshops, it demonstrated that DC could operate outside the newsstand entirely, and helped establish the graphic novel as a retail category."
+    },
+    {
+      "from": "scott_snyder",
+      "to": "batman",
+      "type": "wrote",
+      "details": "Snyder's five-year New 52 run with Greg Capullo built its central story around the Court of Owls, a secret society claiming to have governed Gotham for centuries — an argument that Batman had never understood his own city."
+    },
+    {
+      "from": "jim_lee",
+      "to": "batman",
+      "type": "drew",
+      "details": "Lee's Batman: Hush with Jeph Loeb in 2002 was a deliberate commercial exercise, touring the character's entire rogues gallery, and it made him DC's marquee artist and eventually one of its senior executives."
+    },
+    {
+      "from": "batman",
+      "to": "batman_1966",
+      "type": "adapted",
+      "details": "The ABC series played the character as deadpan camp twice weekly and made him a global phenomenon within months. It also fixed a reputation for silliness in the public mind that DC's writers spent the following twenty years dismantling.",
+      "highlight": true
+    },
+    {
+      "from": "batman_1966",
+      "to": "barbara_gordon",
+      "type": "influenced",
+      "details": "The producers wanted a new female lead for the third season, and DC introduced Batgirl in the comics first so that the character would arrive on screen with an existing history — an early instance of publishing serving screen requirements.",
+      "highlight": true
+    },
+    {
+      "from": "batman",
+      "to": "batman_1989",
+      "type": "adapted",
+      "details": "Burton's film drew directly on the darker comics of the preceding years and, with an unprecedented merchandising campaign, erased the camp association left by the television series in a single summer."
+    },
+    {
+      "from": "dark_knight_returns",
+      "to": "batman_1989",
+      "type": "influenced",
+      "details": "Miller's ageing, brutal Batman and Burton's gothic Gotham arrived within three years of each other, and the film's success is generally credited with confirming to Warner that the darker reading of the character was the commercially valuable one.",
+      "highlight": true
+    },
+    {
+      "from": "batman_1989",
+      "to": "batman_animated_series",
+      "type": "influenced",
+      "details": "The animated series was commissioned in the wake of the film's success and inherited its art-deco Gotham and Danny Elfman's musical register, then quietly outdid it in writing and characterisation."
+    },
+    {
+      "from": "batman",
+      "to": "batman_animated_series",
+      "type": "adapted",
+      "details": "Timm and Radomski's series animated on black paper to make Gotham permanently nocturnal, treated the villains as tragedies, and through Kevin Conroy and Mark Hamill's performances became the definitive version of the character for a generation.",
+      "highlight": true
+    },
+    {
+      "from": "batman",
+      "to": "dark_knight_film",
+      "type": "adapted",
+      "details": "Nolan's film placed the character in a plausible modern city and built its plot around institutional fragility rather than costumed spectacle, making the case that superhero films could be treated as serious cinema."
+    },
+    {
+      "from": "joker",
+      "to": "dark_knight_film",
+      "type": "adapted",
+      "details": "Heath Ledger's performance, drawing on the deliberately unfixed origin established in The Killing Joke, won a posthumous Academy Award and reset public expectations of what a comic book villain could be."
+    },
+    {
+      "from": "batman_animated_series",
+      "to": "harley_quinn",
+      "type": "debut",
+      "details": "Harley Quinn was written for a single 1992 episode as a henchwoman with a Brooklyn accent, voiced by Arleen Sorkin. She became so popular that the comics adopted her — the clearest case at DC of an adaptation feeding a character back into the source.",
+      "highlight": true
+    },
+    {
+      "from": "harley_quinn",
+      "to": "joker",
+      "type": "ally",
+      "details": "Dini and Timm's Mad Love established her as an Arkham psychiatrist manipulated and abused by her patient. Later writers took the abuse seriously and had her leave him, which is what turned a sidekick into DC's most commercially successful modern character."
+    },
+    {
+      "from": "william_moulton_marston",
+      "to": "wonder_woman",
+      "type": "created",
+      "details": "Marston proposed the character to Max Gaines after publicly defending comics in a magazine interview, arguing that the genre needed a hero who conquered by love rather than force. He wrote the strip as Charles Moulton until his death in 1947, drawn throughout by H. G. Peter.",
+      "highlight": true
+    },
+    {
+      "from": "all_star_comics",
+      "to": "wonder_woman",
+      "type": "debut",
+      "details": "Wonder Woman was introduced in a backup feature in All Star Comics #8 at the end of 1941, moved to the lead of Sensation Comics within a month, and had her own title by the following summer — an unusually fast promotion.",
+      "highlight": true
+    },
+    {
+      "from": "max_gaines",
+      "to": "william_moulton_marston",
+      "type": "collaborator",
+      "details": "Gaines hired Marston as an educational consultant to give All-American academic cover against the era's critics, and then let him write the character he had proposed. It is the rare case of a publisher's public-relations hire producing a lasting creation."
+    },
+    {
+      "from": "george_perez",
+      "to": "wonder_woman",
+      "type": "wrote",
+      "details": "Pérez's 1987 relaunch after Crisis restarted the character from her first arrival in the outside world and grounded her firmly in Greek myth, treating her as an emissary rather than a costumed adventurer. It is generally regarded as the modern foundation of the character."
+    },
+    {
+      "from": "george_perez",
+      "to": "wonder_woman",
+      "type": "drew",
+      "details": "Pérez drew as well as plotted the relaunch, designing a Themyscira of classical architecture and a cast of Amazons with individual faces — the visual vocabulary the character has used since."
+    },
+    {
+      "from": "gardner_fox",
+      "to": "jay_garrick",
+      "type": "created",
+      "details": "Fox and Harry Lampert introduced the first Flash in 1940, giving him super-speed from hard water vapour and a winged helmet taken from his father's war service — an origin that reads as pulp science even by the standards of its own decade."
+    },
+    {
+      "from": "bill_finger",
+      "to": "alan_scott",
+      "type": "created",
+      "details": "Finger scripted the first Green Lantern from Martin Nodell's concept: a railway engineer who survives a bridge collapse and forges a ring from a mystical lantern, its power arbitrarily useless against wood."
+    },
+    {
+      "from": "gardner_fox",
+      "to": "justice_society",
+      "type": "created",
+      "details": "Fox devised the Justice Society for All Star Comics #3 as a way of showcasing several titles at once, giving each hero a solo chapter of a shared case. It was the first superhero team, and it invented the crossover as a commercial device.",
+      "highlight": true
+    },
+    {
+      "from": "all_star_comics",
+      "to": "justice_society",
+      "type": "debut",
+      "details": "The team assembled in All Star Comics #3, dated Winter 1940. The book's structure — a framing sequence, individual chapters, a shared conclusion — remained the standard team-comic format for two decades.",
+      "highlight": true
+    },
+    {
+      "from": "justice_society",
+      "to": "jay_garrick",
+      "type": "member",
+      "details": "Garrick was a charter member, and by the rules of the day so successful that he was moved to honorary status to make room for less established heroes — a mechanism the writers used to keep the roster promoting weaker titles."
+    },
+    {
+      "from": "justice_society",
+      "to": "alan_scott",
+      "type": "member",
+      "details": "Scott was another founder, and his Golden Age partnership with Garrick became the model for the long friendship between the two men that later Justice Society writers made the team's emotional core."
+    },
+    {
+      "from": "justice_society",
+      "to": "wonder_woman",
+      "type": "member",
+      "details": "Wonder Woman joined the Society shortly after her debut and was made its secretary, a detail frequently cited as evidence of how narrow the era's imagination was even about the character created to widen it."
+    },
+    {
+      "from": "justice_society",
+      "to": "justice_league",
+      "type": "influenced",
+      "details": "The League was explicitly modelled on the Society, updated for a science-fiction age and a mass-market name. Julius Schwartz chose the word League over Society on the grounds that American readers knew baseball leagues better than learned societies."
+    },
+    {
+      "from": "julius_schwartz",
+      "to": "showcase",
+      "type": "edited",
+      "details": "Schwartz used Showcase as a laboratory: test a concept over a few issues, measure the sales, and promote only what worked. The Flash, Green Lantern, Adam Strange and the Challengers of the Unknown all reached print through it.",
+      "highlight": true
+    },
+    {
+      "from": "showcase",
+      "to": "barry_allen",
+      "type": "debut",
+      "details": "Showcase #4 in 1956 introduced a new Flash with a new name, job and origin, keeping only the concept. The decision to rebuild rather than revive is the single editorial choice from which the whole Silver Age follows."
+    },
+    {
+      "from": "showcase",
+      "to": "hal_jordan",
+      "type": "debut",
+      "details": "Showcase #22 in 1959 repeated the Flash method on Green Lantern, replacing a magical Golden Age hero with a test pilot recruited by dying aliens into an interstellar police force — the shift from mysticism to space opera that defined DC's 1960s."
+    },
+    {
+      "from": "carmine_infantino",
+      "to": "barry_allen",
+      "type": "drew",
+      "details": "Infantino redesigned the Flash as a smooth red silhouette with no visible seams or belt, and drew speed as trailing multiple images rather than motion lines. The design has survived essentially unaltered for seventy years."
+    },
+    {
+      "from": "john_broome",
+      "to": "barry_allen",
+      "type": "wrote",
+      "details": "Broome wrote most of the character's formative years and built his rogues gallery — Captain Cold, Gorilla Grodd, Mirror Master, the Reverse-Flash — a set of recurring, non-lethal, personality-driven villains unusual for its coherence."
+    },
+    {
+      "from": "john_broome",
+      "to": "hal_jordan",
+      "type": "created",
+      "details": "Broome scripted Green Lantern's introduction and invented the surrounding apparatus: the Guardians of the Universe, the Corps, the oath, and Sinestro as a fallen member of the hero's own police force."
+    },
+    {
+      "from": "gil_kane",
+      "to": "hal_jordan",
+      "type": "created",
+      "details": "Kane designed the crew-cut test pilot and the sleek green and black costume that replaced Alan Scott's ornate Golden Age outfit, and drew the character's first decade with the dynamic low-angle figure work he was known for."
+    },
+    {
+      "from": "julius_schwartz",
+      "to": "john_broome",
+      "type": "collaborator",
+      "details": "Schwartz had been Broome's literary agent in science fiction before either worked in comics, and their long partnership gave the Silver Age its characteristic tone: brisk, rationalised adventure with a scientific alibi for everything."
+    },
+    {
+      "from": "julius_schwartz",
+      "to": "gardner_fox",
+      "type": "collaborator",
+      "details": "Schwartz commissioned from Fox both the Justice League and Flash of Two Worlds, the two ideas that turned a set of revived characters into a connected universe with its own history."
+    },
+    {
+      "from": "julius_schwartz",
+      "to": "carmine_infantino",
+      "type": "collaborator",
+      "details": "Schwartz paired Infantino with the revivals and let him redesign as he went. The clean, modern look that resulted is as responsible for the Silver Age's success as any script decision."
+    },
+    {
+      "from": "jay_garrick",
+      "to": "barry_allen",
+      "type": "succeeded",
+      "details": "Flash of Two Worlds in 1961 had Barry Allen vibrate onto a parallel Earth and meet the hero he had read about as a boy. The story created the multiverse, made DC's own back catalogue part of its fiction, and invented the legacy structure the company still runs on."
+    },
+    {
+      "from": "barry_allen",
+      "to": "wally_west",
+      "type": "succeeded",
+      "details": "West took the identity after Allen's death in Crisis on Infinite Earths — the first time at DC that a sidekick permanently replaced his mentor in a flagship role, and the decision that made legacy succession a real principle rather than a temporary stunt."
+    },
+    {
+      "from": "alan_scott",
+      "to": "hal_jordan",
+      "type": "succeeded",
+      "details": "The two Green Lanterns share little beyond a ring and a name: Scott's power is magical and personal, Jordan's is issued by an interstellar bureaucracy. The gap between them is the clearest single measure of what changed between the Golden and Silver Ages."
+    },
+    {
+      "from": "hal_jordan",
+      "to": "john_stewart",
+      "type": "succeeded",
+      "details": "Stewart was introduced as Jordan's designated replacement, initially resented by him, and spent years as a substitute before becoming a lead Green Lantern in his own right and, through animation, the most widely recognised version of the character."
+    },
+    {
+      "from": "denny_oneil",
+      "to": "john_stewart",
+      "type": "created",
+      "details": "O'Neil wrote Stewart's introduction as a direct challenge to Jordan's assumptions — an architect who refuses to wear a mask because he has nothing to hide, and who is proved right about the story's racist antagonist while the hero is proved wrong."
+    },
+    {
+      "from": "neal_adams",
+      "to": "john_stewart",
+      "type": "created",
+      "details": "Adams designed Stewart and drew his first appearance during the run in which he and O'Neil were deliberately testing whether a mainstream superhero comic could carry arguments about race without flinching."
+    },
+    {
+      "from": "denny_oneil",
+      "to": "green_lantern_green_arrow",
+      "type": "wrote",
+      "details": "O'Neil opened the run with a Black man asking Green Lantern why he has helped every colour of alien and never his own people, and gave the hero no answer. The stories that followed took the two heroes across America to argue about poverty, pollution, cults and addiction."
+    },
+    {
+      "from": "neal_adams",
+      "to": "green_lantern_green_arrow",
+      "type": "drew",
+      "details": "Adams drew the run with the naturalism he had brought to Batman, staging arguments in real American landscapes rather than generic cityscapes — the visual argument that these were not fantasy problems.",
+      "highlight": true
+    },
+    {
+      "from": "green_lantern_green_arrow",
+      "to": "hal_jordan",
+      "type": "influenced",
+      "details": "The run reframed Jordan permanently as an authority figure whose instincts require examination, a reading that later writers pushed to breaking point when they had him destroy the Corps and then spent a decade rehabilitating him."
+    },
+    {
+      "from": "hal_jordan",
+      "to": "green_arrow",
+      "type": "ally",
+      "details": "Pairing a licensed cosmic policeman with a bankrupt left-wing populist gave the Bronze Age its most productive argument, and the friendship survived it: the two have been written as antagonistic allies ever since."
+    },
+    {
+      "from": "mort_weisinger",
+      "to": "aquaman",
+      "type": "created",
+      "details": "Weisinger and Paul Norris introduced Aquaman as a backup feature in 1941. He is one of very few Golden Age heroes to survive continuously into the Silver Age, when he acquired Atlantis, a throne and the political burden that later writers built him around."
+    },
+    {
+      "from": "mort_weisinger",
+      "to": "green_arrow",
+      "type": "created",
+      "details": "Weisinger and George Papp built Green Arrow from the Batman formula with archery substituted for detection, complete with a sidekick, a signal arrow and an Arrowcar. It took thirty years and Neal Adams's redesign to make him distinctive.",
+      "highlight": true
+    },
+    {
+      "from": "new_fun",
+      "to": "aquaman",
+      "type": "debut",
+      "details": "Aquaman first appeared in More Fun Comics #73 in 1941, in the same issue as Green Arrow — an unusually productive month for a title that had begun life as the company's loss-making experiment in original material."
+    },
+    {
+      "from": "new_fun",
+      "to": "green_arrow",
+      "type": "debut",
+      "details": "Green Arrow's debut shared More Fun Comics #73 with Aquaman's. Both were designed as reliable backup features rather than headline characters, and both outlasted almost every hero who was."
+    },
+    {
+      "from": "denny_oneil",
+      "to": "green_arrow",
+      "type": "wrote",
+      "details": "O'Neil bankrupted Oliver Queen, took away his gadgets and gave him a temper and a political argument, converting a second-string Batman imitation into the most explicitly left-wing voice in mainstream superhero comics."
+    },
+    {
+      "from": "gardner_fox",
+      "to": "justice_league",
+      "type": "created",
+      "details": "Fox wrote the League's debut in The Brave and the Bold #28 in 1960 and its first several years, using a rotating cast and a standard structure of splitting the team into pairs against a single threat.",
+      "highlight": true
+    },
+    {
+      "from": "justice_league",
+      "to": "superman",
+      "type": "member",
+      "details": "Superman was a founding member but was used sparingly in the early years, since editorial protected the flagship characters and a hero who could solve most plots alone is a structural problem for a team book."
+    },
+    {
+      "from": "justice_league",
+      "to": "batman",
+      "type": "member",
+      "details": "Batman's presence in the League has always required justification — the one member without powers — and writers from Gardner Fox to Grant Morrison have made that anomaly the point, casting him as the team's strategist and its check on itself."
+    },
+    {
+      "from": "justice_league",
+      "to": "wonder_woman",
+      "type": "member",
+      "details": "Wonder Woman's charter membership secured her place in DC's central trinity, the three characters treated as the company's permanent core regardless of how many times the surrounding continuity is rebuilt."
+    },
+    {
+      "from": "justice_league",
+      "to": "barry_allen",
+      "type": "member",
+      "details": "Allen was a founding member and, in most versions of the origin, the one who proposes the team — appropriate for the character whose own revival had started the era that made the League possible."
+    },
+    {
+      "from": "justice_league",
+      "to": "hal_jordan",
+      "type": "member",
+      "details": "Jordan joined at the founding, bringing the interstellar scale of the Green Lantern Corps into a book that otherwise ran on Earth-bound threats and giving writers a route to cosmic plots."
+    },
+    {
+      "from": "justice_league",
+      "to": "aquaman",
+      "type": "member",
+      "details": "Aquaman's charter membership kept him at the centre of DC's continuity through decades in which his solo titles sold poorly, and later writers used his kingship to make the League's dealings with Atlantis a diplomatic rather than heroic matter."
+    },
+    {
+      "from": "justice_league",
+      "to": "martian_manhunter",
+      "type": "member",
+      "details": "The Martian Manhunter has served in more rosters than any other member and is routinely written as the team's continuity and its conscience — the one who stays when the flagship characters leave for their own books."
+    },
+    {
+      "from": "jack_kirby",
+      "to": "new_gods",
+      "type": "wrote",
+      "details": "Kirby came to DC in 1970 on the promise of writing, drawing and editing his own titles, and used the freedom to build an interlocking modern mythology about the war between free will and its abolition.",
+      "highlight": true
+    },
+    {
+      "from": "jack_kirby",
+      "to": "new_gods",
+      "type": "drew",
+      "details": "The Fourth World books contain some of the most extreme drawing of Kirby's career — collaged photographic textures, cosmic machinery, the crackling energy fields that bear his name — and were cancelled before he could finish the story."
+    },
+    {
+      "from": "jack_kirby",
+      "to": "darkseid",
+      "type": "created",
+      "details": "Kirby designed Darkseid as the opposite of a flamboyant supervillain: immobile, patient, granite-faced, and interested only in the Anti-Life Equation, a formula that would end free will everywhere. He has since become DC's default cosmic threat.",
+      "highlight": true
+    },
+    {
+      "from": "new_gods",
+      "to": "darkseid",
+      "type": "debut",
+      "details": "Darkseid first appeared in a cameo in Kirby's Superman's Pal Jimmy Olsen at the end of 1970 and properly in the Fourth World titles the following year, arriving fully formed with Apokolips, the Parademons and Granny Goodness around him."
+    },
+    {
+      "from": "carmine_infantino",
+      "to": "jack_kirby",
+      "type": "collaborator",
+      "details": "As DC's editorial director Infantino personally recruited Kirby away from Marvel, offering the creative control and ownership terms Kirby had been denied there. The commercial results disappointed both men; the creative legacy outlasted the company that cancelled it.",
+      "highlight": true
+    },
+    {
+      "from": "darkseid",
+      "to": "superman",
+      "type": "nemesis",
+      "details": "Kirby placed Darkseid opposite Superman deliberately, setting the character who represents the promise of power against the one who represents its appetite. The pairing became a fixture of the Superman titles and of nearly every animated adaptation."
+    },
+    {
+      "from": "darkseid",
+      "to": "justice_league",
+      "type": "nemesis",
+      "details": "Darkseid's invasion is the League's origin story in several continuities, including the New 52 and its screen adaptations — the threat large enough to require the founding of the team.",
+      "highlight": true
+    },
+    {
+      "from": "len_wein",
+      "to": "swamp_thing",
+      "type": "created",
+      "details": "Wein wrote a standalone horror story for House of Secrets in 1971 about a man transformed into a plant creature by chemicals and betrayal. Reader response was strong enough that the character was given his own title within a year."
+    },
+    {
+      "from": "bernie_wrightson",
+      "to": "swamp_thing",
+      "type": "created",
+      "details": "Wrightson's dense, gothic pen work established the character's Louisiana swamp register and remains the reference point for every artist who has drawn him since, despite Wrightson leaving the title after ten issues."
+    },
+    {
+      "from": "alan_moore",
+      "to": "saga_of_the_swamp_thing",
+      "type": "wrote",
+      "details": "Moore inherited a title scheduled for cancellation and opened by revealing that the creature had never been a transformed man — only vegetable matter that had absorbed a dead man's memories and believed itself to be him. The revision made the character an elemental and the book a critical event.",
+      "highlight": true
+    },
+    {
+      "from": "alan_moore",
+      "to": "john_constantine",
+      "type": "created",
+      "details": "Moore introduced Constantine with Stephen Bissette and John Totleben in 1985 as a working-class English occultist who manipulates the powerful and survives everyone around him. The artists had wanted to draw someone who looked like Sting; the character was built to fit."
+    },
+    {
+      "from": "saga_of_the_swamp_thing",
+      "to": "john_constantine",
+      "type": "debut",
+      "details": "Constantine appeared first as an unexplained figure who seemed to know more than the protagonist, a deliberate refusal to supply an origin. He was given his own title, Hellblazer, three years later; it ran for three hundred issues."
+    },
+    {
+      "from": "karen_berger",
+      "to": "saga_of_the_swamp_thing",
+      "type": "edited",
+      "details": "Berger recruited Moore to the title on the strength of his British work and then defended the run's departures from house practice, including the decision to publish without the Comics Code seal — the precedent on which Vertigo was later built.",
+      "highlight": true
+    },
+    {
+      "from": "karen_berger",
+      "to": "alan_moore",
+      "type": "collaborator",
+      "details": "Berger's recruitment of Moore began the British invasion of American comics, and her success with him gave her the standing to bring over Gaiman, Morrison, Delano and Milligan in the years that followed.",
+      "highlight": true
+    },
+    {
+      "from": "saga_of_the_swamp_thing",
+      "to": "vertigo",
+      "type": "influenced",
+      "details": "The run proved that a mature, Code-free, single-author horror comic could sell profitably through the direct market. Vertigo was essentially the institutionalisation of that discovery eight years later.",
+      "highlight": true
+    },
+    {
+      "from": "john_constantine",
+      "to": "swamp_thing",
+      "type": "ally",
+      "details": "Constantine spent the Moore run steering Swamp Thing towards a destiny he refused to explain, using him as he uses everyone. The relationship set the pattern for how the character has been written for forty years."
+    },
+    {
+      "from": "neil_gaiman",
+      "to": "sandman",
+      "type": "wrote",
+      "details": "Gaiman took a discarded Golden Age title name and wrote seventy-five issues about Dream of the Endless, structured as a single story about whether a being older than gods can change. He ended it deliberately in 1996 rather than let it continue without him."
+    },
+    {
+      "from": "karen_berger",
+      "to": "sandman",
+      "type": "edited",
+      "details": "Berger commissioned the series from a writer with almost no American track record and protected its unusual shape — anthology issues, rotating artists, an announced ending — against the commercial logic of monthly publishing.",
+      "highlight": true
+    },
+    {
+      "from": "vertigo",
+      "to": "sandman",
+      "type": "published",
+      "details": "Sandman predated Vertigo by four years and was folded into the imprint at its 1993 launch, where it became the commercial anchor: a comic that sold in bookshops, to adults, and in unusually large numbers to women."
+    },
+    {
+      "from": "sandman",
+      "to": "vertigo",
+      "type": "influenced",
+      "details": "The series supplied the imprint's argument to the trade: that literate, creator-driven, non-superhero comics could support a permanent line, and that collected editions could earn more over time than monthly issues."
+    },
+    {
+      "from": "karen_berger",
+      "to": "neil_gaiman",
+      "type": "collaborator",
+      "details": "Berger brought Gaiman from Britain on the strength of Violent Cases and Black Orchid, and their working relationship across Sandman's seven-year run is the clearest single example of what the Vertigo editorial model was for."
+    },
+    {
+      "from": "karen_berger",
+      "to": "grant_morrison",
+      "type": "collaborator",
+      "details": "Berger recruited Morrison alongside Gaiman and gave Animal Man, Doom Patrol and later The Invisibles the editorial room to be as strange as they were — the experimental end of the imprint's range."
+    },
+    {
+      "from": "alan_moore",
+      "to": "watchmen",
+      "type": "wrote",
+      "details": "Moore's original proposal used the newly acquired Charlton characters; told that would render them unusable afterwards, he built analogues instead. The result treats the superhero as a political and psychological problem, and asks what a genuinely superhuman being would do to history.",
+      "highlight": true
+    },
+    {
+      "from": "dave_gibbons",
+      "to": "watchmen",
+      "type": "drew",
+      "details": "Gibbons held the series to a rigid nine-panel grid and filled it with symmetries, repeated objects and buried rhymes, so that the formal structure carries as much of the argument as the script. The discipline is inseparable from the work's reputation.",
+      "highlight": true
+    },
+    {
+      "from": "charlton_comics",
+      "to": "watchmen",
+      "type": "influenced",
+      "details": "Moore wrote the proposal for the Charlton heroes DC had just bought, and the analogues remain traceable: the Question became Rorschach, Blue Beetle became Nite Owl, Captain Atom became Doctor Manhattan, Peacemaker became the Comedian.",
+      "highlight": true
+    },
+    {
+      "from": "len_wein",
+      "to": "watchmen",
+      "type": "edited",
+      "details": "Wein edited the series through its early issues, pressing Moore on structure and pacing, and later described the working relationship as a difficult one. He had also edited Moore's Swamp Thing, and it was that run that made the case for handing him an original twelve-issue series in the first place."
+    },
+    {
+      "from": "alan_moore",
+      "to": "dc_comics",
+      "type": "dispute",
+      "details": "Moore understood the Watchmen contract to return the rights once the work went out of print; it never has, so it never did. Disputes over that, over merchandising and over later projects ended his relationship with DC, and he has since declined credit or payment for adaptations of his work."
+    },
+    {
+      "from": "watchmen",
+      "to": "dc_comics",
+      "type": "influenced",
+      "details": "Watchmen gave DC a permanent commercial and critical asset and a permanent reputational problem: the work most often cited as proof of what comics can do is also the industry's most cited example of how it treats the people who make them."
+    },
+    {
+      "from": "marv_wolfman",
+      "to": "new_teen_titans",
+      "type": "wrote",
+      "details": "Wolfman took DC's grown-up sidekicks, added three new characters, and wrote them as an ensemble with continuing relationships and consequences — an approach borrowed frankly from what was working for Marvel's X-Men."
+    },
+    {
+      "from": "george_perez",
+      "to": "new_teen_titans",
+      "type": "drew",
+      "details": "Pérez's detailed figure work and willingness to draw large casts without losing individual expression made the ensemble legible, and his design work on Raven, Cyborg and Starfire gave the book its identity."
+    },
+    {
+      "from": "marv_wolfman",
+      "to": "george_perez",
+      "type": "collaborator",
+      "details": "Their partnership produced both DC's best-selling title of the early 1980s and the series that demolished its continuity: the commercial standing earned by New Teen Titans is what allowed them to propose Crisis on Infinite Earths."
+    },
+    {
+      "from": "teen_titans",
+      "to": "dick_grayson",
+      "type": "member",
+      "details": "Leading the Titans gave Grayson an identity independent of Batman, and it was in Wolfman and Pérez's run that he finally broke with him and became Nightwing in 1984."
+    },
+    {
+      "from": "teen_titans",
+      "to": "wally_west",
+      "type": "member",
+      "details": "West was a founding Titan as Kid Flash, and the team's long-form serialised storytelling gave him the accumulated history that made his promotion to the Flash after Crisis feel earned rather than arbitrary."
+    },
+    {
+      "from": "new_teen_titans",
+      "to": "teen_titans",
+      "type": "influenced",
+      "details": "The 1980 relaunch transformed a periodically cancelled team book into DC's flagship for a decade, and established that sidekicks could be written as adults with their own lives rather than as junior versions of their mentors."
+    },
+    {
+      "from": "marv_wolfman",
+      "to": "crisis_on_infinite_earths",
+      "type": "wrote",
+      "details": "Wolfman proposed the series to solve what editorial regarded as a problem: fifty years of parallel Earths and duplicate characters that made the line unwelcoming. His solution was to destroy the multiverse and merge the survivors into one history.",
+      "highlight": true
+    },
+    {
+      "from": "george_perez",
+      "to": "crisis_on_infinite_earths",
+      "type": "drew",
+      "details": "The commission required Pérez to draw effectively every character DC owned, often dozens to a page, across twelve issues. The double-page spreads of massed heroes became the series' signature and the model for every crossover since."
+    },
+    {
+      "from": "dick_giordano",
+      "to": "crisis_on_infinite_earths",
+      "type": "edited",
+      "details": "As DC's editorial leader Giordano authorised a series that would rewrite every title in the line simultaneously, and enforced the coordination across editors that made a line-wide crossover possible for the first time."
+    },
+    {
+      "from": "crisis_on_infinite_earths",
+      "to": "barry_allen",
+      "type": "key_role",
+      "details": "Allen died destroying the antimatter cannon, running until he unravelled into the energy that powered his own speed. It was among the first permanent deaths of a major superhero and stood for twenty-three years.",
+      "highlight": true
+    },
+    {
+      "from": "crisis_on_infinite_earths",
+      "to": "supergirl",
+      "type": "key_role",
+      "details": "Supergirl was killed saving Superman, and Pérez's image of him carrying her body became the series' defining panel. Post-Crisis editorial then ruled that he must be Krypton's only survivor, keeping her out of continuity for years."
+    },
+    {
+      "from": "crisis_on_infinite_earths",
+      "to": "wally_west",
+      "type": "key_role",
+      "details": "West took the Flash's name in the series' aftermath, the first permanent promotion of a sidekick to his mentor's role at DC and the moment legacy succession became a governing idea rather than an occasional device."
+    },
+    {
+      "from": "crisis_on_infinite_earths",
+      "to": "dc_comics",
+      "type": "influenced",
+      "details": "Crisis established the line-wide crossover as a commercial fixture and the periodic continuity reset as company practice. Every subsequent DC relaunch, including the New 52 and Rebirth, is a descendant of the solution it proposed."
+    },
+    {
+      "from": "crisis_on_infinite_earths",
+      "to": "man_of_steel_1986",
+      "type": "influenced",
+      "details": "Clearing the multiverse created the opening for a total restart of the company's oldest character, and Byrne's miniseries was commissioned to fill it within months of the crossover ending."
+    },
+    {
+      "from": "new_teen_titans",
+      "to": "crisis_on_infinite_earths",
+      "type": "influenced",
+      "details": "Crisis grew directly out of its creators' standing on Titans, and borrowed its method: character-driven serialisation with consequences that stick, applied for the first time to an entire publishing line at once."
+    },
+    {
+      "from": "john_ostrander",
+      "to": "suicide_squad",
+      "type": "wrote",
+      "details": "Ostrander revived a forgotten 1959 title as a black-ops political thriller: convicted supervillains sent on deniable missions with explosive implants, killed off without warning, and run by a bureaucrat rather than a hero."
+    },
+    {
+      "from": "len_wein",
+      "to": "suicide_squad",
+      "type": "created",
+      "details": "Wein co-created Amanda Waller with Ostrander and John Byrne — an uncompromising government administrator with no powers and no interest in being liked, and the most durable original character to come out of DC's late 1980s."
+    },
+    {
+      "from": "john_ostrander",
+      "to": "barbara_gordon",
+      "type": "wrote",
+      "details": "With Kim Yale, Ostrander responded to The Killing Joke by rebuilding the paralysed Barbara Gordon as Oracle, the information broker at the centre of the DC universe — a deliberate refusal to leave the character as someone else's plot device."
+    },
+    {
+      "from": "dwayne_mcduffie",
+      "to": "john_stewart",
+      "type": "wrote",
+      "details": "McDuffie's work on Justice League and Justice League Unlimited placed Stewart at the centre of the team, giving him a long-running relationship, a military past treated seriously, and the prominence that made him the default Green Lantern for a mass audience."
+    },
+    {
+      "from": "geoff_johns",
+      "to": "hal_jordan",
+      "type": "wrote",
+      "details": "Johns restored Jordan after a decade in which he had been written as a villain and then killed, attributing the fall to an external parasite. The rehabilitation, and the emotional-spectrum mythology he built afterwards, made Green Lantern one of DC's best-selling franchises for years."
+    },
+    {
+      "from": "geoff_johns",
+      "to": "flashpoint",
+      "type": "wrote",
+      "details": "Johns built the crossover around Barry Allen's single selfish act — running back through time to save his mother — and made repairing it require letting her die again, a rare case of an event crossover turning on a personal moral failure."
+    },
+    {
+      "from": "flashpoint",
+      "to": "new_52",
+      "type": "influenced",
+      "details": "The altered timeline supplied the in-fiction mechanism for the relaunch: when Barry restored history it came back different, five years younger and with the WildStorm and Vertigo characters folded in alongside the DC ones.",
+      "highlight": true
+    },
+    {
+      "from": "new_52",
+      "to": "dc_comics",
+      "type": "influenced",
+      "details": "Cancelling and restarting the entire line at once was the most drastic commercial intervention in DC's history. It produced a real short-term sales increase and a lasting loss of the accumulated history that distinguished the company from its competitor."
+    },
+    {
+      "from": "new_52",
+      "to": "jim_lee",
+      "type": "key_role",
+      "details": "Lee served as co-publisher for the relaunch and redesigned much of the line's costuming, giving the New 52 a uniform house style built around collars, seams and armour plating that dated quickly."
+    },
+    {
+      "from": "new_52",
+      "to": "scott_snyder",
+      "type": "key_role",
+      "details": "Snyder's Batman was the relaunch's critical and commercial flagship, and the one New 52 title whose reputation survived the reversal of nearly everything around it."
+    },
+    {
+      "from": "new_52",
+      "to": "wally_west",
+      "type": "key_role",
+      "details": "West was written out of existence by the relaunch, which cut the timeline too short to accommodate a second-generation Flash. His absence became the focus of reader objections to the New 52 as a whole."
+    },
+    {
+      "from": "new_52",
+      "to": "dc_rebirth",
+      "type": "succeeded",
+      "details": "Rebirth reversed the relaunch within five years, restoring the marriages, legacies and history it had deleted, and framing the loss in-fiction as a theft to be undone rather than an editorial decision to be defended.",
+      "highlight": true
+    },
+    {
+      "from": "geoff_johns",
+      "to": "dc_rebirth",
+      "type": "wrote",
+      "details": "Johns wrote DC Universe: Rebirth #1 as an argument about the company's own values — that continuity, legacy and optimism were assets rather than obstacles — and built it around Wally West trying to get back into a world that has forgotten him."
+    },
+    {
+      "from": "dc_rebirth",
+      "to": "wally_west",
+      "type": "key_role",
+      "details": "West's return is the emotional centre of Rebirth, and his restoration was read by readers and by DC alike as a statement that the legacy structure the New 52 had discarded was being reinstated permanently."
+    },
+    {
+      "from": "dc_rebirth",
+      "to": "watchmen",
+      "type": "influenced",
+      "details": "Rebirth implicated Doctor Manhattan in the theft of DC's history, setting up Doomsday Clock and folding the Watchmen characters into DC continuity — a commercial decision widely criticised given the circumstances of the original series' creation."
+    },
+    {
+      "from": "jenette_kahn",
+      "to": "dc_comics",
+      "type": "influenced",
+      "details": "Kahn arrived in 1976 at a company losing badly to Marvel and left in 2002 having introduced royalties and creator incentives, recruited a generation of British writers, backed the direct market, and made DC the industry's prestige publisher.",
+      "highlight": true
+    },
+    {
+      "from": "paul_levitz",
+      "to": "dc_comics",
+      "type": "influenced",
+      "details": "Levitz spent more than three decades at DC as writer, editor and finally president, helping design the creator-rights reforms of the Kahn years and steering the company through the 1990s speculator crash without the retrenchment that damaged its competitors."
+    },
+    {
+      "from": "paul_levitz",
+      "to": "jenette_kahn",
+      "type": "collaborator",
+      "details": "Kahn set the direction and Levitz made the business work, a division of labour that lasted a quarter of a century and covers the period in which nearly all of DC's most celebrated comics were published."
+    },
+    {
+      "from": "dick_giordano",
+      "to": "dc_comics",
+      "type": "influenced",
+      "details": "Giordano's decade as editorial leader from 1983 covers Crisis, the Byrne Superman, The Dark Knight Returns, Watchmen, Year One and the mature line that became Vertigo — as concentrated a run of consequential publishing as any editor in the medium has overseen."
+    },
+    {
+      "from": "dick_giordano",
+      "to": "denny_oneil",
+      "type": "collaborator",
+      "details": "Giordano brought O'Neil with him from Charlton to DC in 1968, and the pairing of the editor and the writer runs through the Bronze Age from Green Lantern/Green Arrow to O'Neil's own long tenure editing the Batman line."
+    },
+    {
+      "from": "carmine_infantino",
+      "to": "dc_comics",
+      "type": "influenced",
+      "details": "Infantino moved from drawing the Silver Age to running the company as editorial director and then publisher, recruiting Kirby and pushing DC towards larger formats and higher prices — an artist's tenure at the top that has no real parallel in the industry."
+    },
+    {
+      "from": "jim_lee",
+      "to": "dc_comics",
+      "type": "influenced",
+      "details": "Lee arrived with the WildStorm acquisition and rose from marquee artist to co-publisher and then to DC's most senior creative posts, shaping the New 52's look and the company's direction for two decades."
+    },
+    {
+      "from": "geoff_johns",
+      "to": "dc_comics",
+      "type": "influenced",
+      "details": "Johns wrote or architected most of DC's major events for fifteen years and served as chief creative officer, extending a single writer's editorial preference — that continuity is an asset to be repaired rather than a burden to be cleared — across publishing and screen alike."
+    },
+    {
+      "from": "superman_1978",
+      "to": "batman_1989",
+      "type": "influenced",
+      "details": "Donner's film proved the commercial case for taking DC's characters to the screen at scale, and its eventual decline into camp sequels made Warner receptive to Burton's argument for a darker approach a decade later."
+    },
+    {
+      "from": "superman_1978",
+      "to": "dc_comics",
+      "type": "influenced",
+      "details": "The film's production is also what made the Siegel and Shuster campaign effective: Warner had a costly, heavily publicised release approaching and no appetite for stories about the creators living in poverty."
+    },
+    {
+      "from": "captain_marvel",
+      "to": "superman",
+      "type": "dispute",
+      "details": "The resemblance was the substance of National's case: a flying, invulnerable strongman in a caped costume, published in a market where Superman's success had made imitation universal. The suit's outcome shaped what publishers believed they could copy for decades."
+    },
+    {
+      "from": "comics_code_authority",
+      "to": "dc_comics",
+      "type": "influenced",
+      "details": "DC's own house standards already met most of the new industry code, so the company lost almost nothing while its horror and crime competitors were destroyed. That advantage made DC one of the Code's firmest institutional defenders, and it kept the seal on its covers until 2011."
+    }
+  ]
+}
