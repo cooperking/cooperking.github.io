@@ -339,7 +339,7 @@
    never touches the DOM, and all load/save goes through GraphSource. This is
    the structure the scale work (worker layout, Barnes-Hut, accounts) hangs off.
    ============================================================================= */
-const BUILD="v2-595";
+const BUILD="v2-596";
 document.getElementById("build").textContent=BUILD;
 
 /* ---- palette (name → [lightest, mid-dark, darkest, vivid]) ---- */
@@ -3347,7 +3347,14 @@ function openLauncher(opts){ opts=opts||{}; const examplesOnly=!!opts.examplesOn
 
 loadGraph(LocalStorageSource.load() || DEFAULT_DATA);
 setPanelCollapsed(true);
-openLauncher();   // start minimised — keep the initial floating view clear (matches prototype)
+{ const _params=new URLSearchParams(location.search), _gp=_params.get("graph")||_params.get("g");
+  if(_gp){                                   // deep-link, e.g. ?graph=history-of-jazz.json  or  ?graph=https://host/mygraph.json
+    try{ window._launcherOpen=true; }catch(_){}   // show only stars while we fetch — no launcher, no backdrop flash
+    const _url=/^(https?:|\/)/i.test(_gp) ? _gp : (GRAPHS_DIR+_gp);   // bare name → graphs/ folder; full URL/path → as-is
+    fetchGraphDoc(_url, _gp.split("/").pop()).then(doc=>{ graphStack=[]; if(typeof exitFocus==="function") exitFocus(); LocalStorageSource.save(doc); loadGraph(doc); if(typeof renderGraphTrail==="function") renderGraphTrail(); closeLauncher(); })
+      .catch(()=>{ openLauncher(); });        // fall back to the chooser if the URL can't be loaded
+  } else { openLauncher(); }                  // no deep-link → the normal launcher
+}
 requestAnimationFrame(loop);
 </script>
 </body>
