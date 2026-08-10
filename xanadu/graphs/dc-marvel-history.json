@@ -156,6 +156,11 @@
       "fromLabel": "departing creator",
       "toLabel": "destination",
       "arrow": true
+    },
+    "part_of": {
+      "fromLabel": "component",
+      "toLabel": "larger work",
+      "arrow": true
     }
   },
   "nodes": {
@@ -355,8 +360,7 @@
       "name": "Bill Finger",
       "group": "writer",
       "desc": "The writer who turned Bob Kane's initial sketch of a red-suited bird-themed hero into Batman: the cowl, the cape, the grey and black costume, the name Bruce Wayne, Gotham City, the detective emphasis and much of the supporting cast and rogues' gallery.\n\nKane's contract gave him sole credit, and Finger worked without a byline on Batman for the rest of his life, dying in poverty in 1974. After decades of campaigning, largely by his family and by fellow professionals, DC agreed in 2015 to credit Batman as created by Bob Kane with Bill Finger.",
-      "url": "https://en.wikipedia.org/wiki/Bill_Finger",
-      "highlight": true
+      "url": "https://en.wikipedia.org/wiki/Bill_Finger"
     },
     "william_moulton_marston": {
       "name": "William Moulton Marston",
@@ -483,8 +487,7 @@
       "name": "Neal Adams",
       "group": "artist",
       "desc": "An artist whose photographic anatomy and cinematic staging, brought from advertising illustration, broke the flat house styles of both major publishers at the end of the 1960s.\n\nAt DC, with Denny O'Neil, he returned Batman to a gaunt night-time figure and drew the Green Lantern/Green Arrow stories that brought racism, poverty and addiction into mainstream superhero comics. At Marvel he drew a short, much-admired X-Men run shortly before that title's cancellation, and part of the Kree-Skrull War in The Avengers.\n\nHe was equally consequential as an activist, campaigning for the return of original artwork, for page-rate and royalty reform, and leading the 1975 effort with Jerry Robinson that won Siegel and Shuster their pensions and credit. He died in 2022.",
-      "url": "https://en.wikipedia.org/wiki/Neal_Adams",
-      "highlight": true
+      "url": "https://en.wikipedia.org/wiki/Neal_Adams"
     },
     "jack_kirby": {
       "name": "Jack Kirby",
@@ -503,7 +506,8 @@
       "name": "George Pérez",
       "group": "artist",
       "desc": "An artist celebrated for dense, meticulous crowd scenes and for drawing large casts without losing individual character. With Marv Wolfman he co-created The New Teen Titans in 1980 and then drew Crisis on Infinite Earths, a series that required rendering essentially every character DC owned.\n\nAfter Crisis he wrote and drew the relaunched Wonder Woman, rebuilding her around Greek myth and taking her seriously as a mythological figure for the first time in decades. He later drew The Infinity Gauntlet at Marvel and returned for Infinite Crisis.",
-      "url": "https://en.wikipedia.org/wiki/George_P%C3%A9rez"
+      "url": "https://en.wikipedia.org/wiki/George_P%C3%A9rez",
+      "highlight": true
     },
     "dave_gibbons": {
       "name": "Dave Gibbons",
@@ -869,7 +873,7 @@
     "mister_miracle_title": {
       "name": "Mister Miracle",
       "group": "title",
-      "desc": "The Fourth World title that outlived the rest, running to eighteen issues before its 1974 cancellation and revived repeatedly since. It follows an escape artist raised in Apokolips's orphanage who has made a career out of the one skill that upbringing taught him.\n\nKirby wrote and drew it as the most personal of the four books: the escape is the point, and every trap is a version of the same one. It introduced Big Barda and Granny Goodness, and Tom King and Mitch Gerads's 2017 revival — which read the escapes as a study of trauma and depression — is among the most acclaimed DC comics of the last decade.",
+      "desc": "The Fourth World title that outlived the rest, running to eighteen issues before Kirby's run ended in November 1973, and revived repeatedly since. It follows an escape artist raised in Apokolips's orphanage who has made a career out of the one skill that upbringing taught him.\n\nKirby wrote and drew it as the most personal of the four books: the escape is the point, and every trap is a version of the same one. It introduced Big Barda and Granny Goodness, and Tom King and Mitch Gerads's 2017 revival — which read the escapes as a study of trauma and depression — is among the most acclaimed DC comics of the last decade.",
       "url": "https://en.wikipedia.org/wiki/Mister_Miracle"
     },
     "kamandi": {
@@ -1072,7 +1076,8 @@
       "name": "Chris Claremont",
       "group": "writer",
       "desc": "The writer of Uncanny X-Men from 1975 to 1991, one of the longest continuous runs on a single title in mainstream comics, during which a cancelled book became the best-selling comic in America.\n\nHis method was serial and cumulative: subplots ran for years, characters aged and changed allegiance, and the mutant premise was steadily developed into an extended argument about prejudice and belonging. He wrote unusually prominent and varied women characters for the period, and created or co-created Rogue, Kitty Pryde, Mystique, Gambit and Sabretooth. His departure in 1991, after conflict over editorial control with the artists then driving sales, ended the run.",
-      "url": "https://en.wikipedia.org/wiki/Chris_Claremont"
+      "url": "https://en.wikipedia.org/wiki/Chris_Claremont",
+      "highlight": true
     },
     "jim_starlin": {
       "name": "Jim Starlin",
@@ -1481,6 +1486,144 @@
       "desc": "The shared film and television continuity begun with Iron Man in 2008, which became the highest-grossing film franchise ever made and the dominant form in which Marvel's characters reach the public.\n\nIts structure is taken directly from the comics: crossovers, long-running subplots, and payoffs delayed across years of releases. The relationship runs both ways — the films draw on storylines by Kirby, Starlin, Millar, Brubaker and Coates, and in turn shape which characters the comics publish and how they look. For most of its audience the films, not the comics, are what Marvel is.",
       "url": "https://en.wikipedia.org/wiki/Marvel_Cinematic_Universe",
       "highlight": true
+    },
+    "fourth_world": {
+      "name": "The Fourth World",
+      "group": "title",
+      "desc": "The interconnected line Jack Kirby wrote, drew and edited at DC from 1970: New Gods, Mister Miracle, The Forever People and a retooled Superman's Pal, Jimmy Olsen, telling one story across four monthly titles.\n\nIt describes a war between New Genesis and Apokolips fought not over territory but over the Anti-Life Equation — a formula that would abolish free will — and it gave DC Darkseid, Orion, Mister Miracle, Big Barda and Granny Goodness. Commercially disappointing and cancelled across 1972 and 1973 with its ending unpublished, it has since become the cosmology DC's own writers treat as the company's mythology, supplying the material for Final Crisis and much else.",
+      "url": "https://en.wikipedia.org/wiki/Fourth_World_(comics)"
+    },
+    "galactus": {
+      "name": "Galactus",
+      "group": "character",
+      "desc": "A being who consumes inhabited worlds to survive, introduced by Jack Kirby and Stan Lee in Fantastic Four in 1966 as an antagonist with no malice in him at all — a natural force with a face, indifferent to the lives he ends.\n\nKirby has said he wanted a threat above the level of costumed villainy, closer to a god than a criminal, and drew him in armour of no discernible technology. The three-issue sequence that introduces him, along with his herald the Silver Surfer, is generally regarded as the high point of the Lee and Kirby collaboration.",
+      "url": "https://en.wikipedia.org/wiki/Galactus"
+    },
+    "doctor_doom": {
+      "name": "Doctor Doom",
+      "group": "character",
+      "desc": "Victor von Doom, introduced by Lee and Kirby in Fantastic Four #5 in 1962: a scientist and sorcerer whose face was ruined by his own experiment, and who rules the small European state of Latveria as an absolute monarch with diplomatic immunity.\n\nHe is Marvel's most durable villain and its most explicitly political one — a head of state whose crimes are unprosecutable — and his vanity, his competence and his genuine care for his subjects have kept later writers arguing about whether he is a tyrant or a rival hero. In Secret Wars he takes the Beyonder's power and finds he cannot hold it.",
+      "url": "https://en.wikipedia.org/wiki/Doctor_Doom"
+    },
+    "magneto": {
+      "name": "Magneto",
+      "group": "character",
+      "desc": "Introduced by Lee and Kirby in X-Men #1 in 1963 as a straightforward would-be conqueror with power over magnetism, and rebuilt by Chris Claremont in the 1970s and 1980s into the most morally complicated antagonist in superhero comics.\n\nClaremont made him a survivor of Auschwitz whose refusal to trust the promises of the powerful is founded on evidence, and set his separatism against Xavier's integrationism as an argument the books have never fully resolved. He has since served as an X-Men member and as headmaster of the school, and returned to villainy repeatedly.",
+      "url": "https://en.wikipedia.org/wiki/Magneto_(Marvel_Comics)"
+    },
+    "green_goblin": {
+      "name": "Green Goblin",
+      "group": "character",
+      "desc": "Spider-Man's principal antagonist, introduced in 1964 and revealed in 1966 as Norman Osborn, the industrialist father of Peter Parker's college friend — the first Marvel villain whose unmasking mattered because the reader already knew the man underneath.\n\nSteve Ditko and Stan Lee gave conflicting accounts of who decided the identity, and the disagreement contributed to Ditko's departure. The character killed Gwen Stacy in 1973, an act that fixed him permanently as the one antagonist Spider-Man cannot treat as a nuisance.",
+      "url": "https://en.wikipedia.org/wiki/Green_Goblin"
+    },
+    "gwen_stacy": {
+      "name": "Gwen Stacy",
+      "group": "character",
+      "desc": "Peter Parker's college girlfriend, introduced in 1965, and the subject of the single most consequential death in Marvel's publishing history.\n\nIn 1973 the Green Goblin threw her from a bridge; Spider-Man caught her with a web-line and the sound effect at her neck left it ambiguous whether the fall or the rescue killed her. Marvel had intended a shock and got a permanent change of register: the hero's failure could not be undone, and the story is routinely cited as the point at which the Silver Age's assumptions ended.",
+      "url": "https://en.wikipedia.org/wiki/Gwen_Stacy"
+    },
+    "amanda_waller": {
+      "name": "Amanda Waller",
+      "group": "character",
+      "desc": "Created in 1986 by John Ostrander, Len Wein and John Byrne, the government administrator who runs Task Force X: no powers, no costume, no interest in being liked, and complete willingness to spend convicted criminals on missions the state needs deniable.\n\nShe was written from the start as the equal of anyone she gives orders to, and as a genuinely unsettling figure rather than a bureaucratic obstacle. She has become one of DC's most reliably adapted characters, and reached a mass audience through Justice League Unlimited.",
+      "url": "https://en.wikipedia.org/wiki/Amanda_Waller"
+    },
+    "blade": {
+      "name": "Blade",
+      "group": "character",
+      "desc": "A vampire hunter introduced by Marv Wolfman and Gene Colan in The Tomb of Dracula in 1973, created for a horror title that the Comics Code's relaxation had made possible two years earlier.\n\nA supporting character for two decades, he became the most commercially important thing in Marvel's back catalogue in 1998, when a film adaptation of a minor 1970s horror creation proved that Marvel characters could carry a successful modern film — the discovery on which everything the company did afterwards depends.",
+      "url": "https://en.wikipedia.org/wiki/Blade_(character)"
+    },
+    "blade_1998": {
+      "name": "Blade (1998 film)",
+      "group": "media",
+      "desc": "The New Line film starring Wesley Snipes, adapted from a supporting character in a cancelled 1970s horror comic and released while Marvel was emerging from bankruptcy.\n\nIt was the first commercially successful modern film built on a Marvel property, and it worked on terms nobody had expected: an R-rated horror-action film with almost no superhero furniture. Its success made X-Men and Spider-Man financeable, and Marvel — which had licensed the character away for very little — took almost none of the money.",
+      "url": "https://en.wikipedia.org/wiki/Blade_(1998_film)"
+    },
+    "howard_the_duck": {
+      "name": "Howard the Duck",
+      "group": "character",
+      "desc": "Steve Gerber's talking duck, introduced in 1973 and given his own title in 1976, stranded in Cleveland and used as a vehicle for satire of American politics, self-help culture and the comics industry itself.\n\nThe book was a genuine mainstream oddity — a Marvel comic in which almost nothing superheroic happens — and its popularity gave Gerber the standing for his later legal argument that he, not Marvel, owned the character. A 1986 film adaptation was among the most publicised failures of its decade.",
+      "url": "https://en.wikipedia.org/wiki/Howard_the_Duck"
+    },
+    "the_question": {
+      "name": "The Question",
+      "group": "character",
+      "desc": "Steve Ditko's Charlton creation of 1967: a journalist who investigates in a featureless mask, driven by an Objectivist certainty that questions of right and wrong admit no compromise and no shades between them.\n\nThe character was among those DC acquired with Charlton in 1983, and Alan Moore's original Watchmen proposal would have used him. Told that would leave the new properties unusable, Moore built Rorschach instead — keeping the absolutism and the blank face, and then examining both until they came apart.",
+      "url": "https://en.wikipedia.org/wiki/Question_(character)"
+    },
+    "dave_cockrum": {
+      "name": "Dave Cockrum",
+      "group": "artist",
+      "desc": "An artist who redesigned two teams for two companies. At DC he drew the Legion of Super-Heroes in the early 1970s and gave its large cast individual costumes for the first time.\n\nMoving to Marvel, he designed most of the new X-Men for Giant-Size X-Men #1 in 1975 — Storm, Nightcrawler and Colossus among them — several of them from characters he had devised for the Legion and been unable to use. He drew the relaunched title through its first years, establishing the look Claremont's writing then built on.",
+      "url": "https://en.wikipedia.org/wiki/Dave_Cockrum"
+    },
+    "heroes_reborn": {
+      "name": "Heroes Reborn",
+      "group": "event",
+      "desc": "Marvel's 1996 decision to hand four of its oldest titles — Fantastic Four, Avengers, Iron Man and Captain America — to the studios of Jim Lee and Rob Liefeld, the star artists who had left four years earlier to found Image.\n\nThe characters were restarted in a separate continuity with new origins, an admission that the company could no longer sell its founding properties from inside its own building. Sales rose briefly and fell again; the arrangement was ended after a year and the characters returned in Heroes Return.",
+      "url": "https://en.wikipedia.org/wiki/Heroes_Reborn_(1996_comic)"
+    },
+    "legion_of_super_heroes": {
+      "name": "Legion of Super-Heroes",
+      "group": "team",
+      "desc": "A club of super-powered teenagers from the thirtieth century, introduced in 1958 as a one-off Superboy backup and expanded under Mort Weisinger into one of DC's densest fictional constructions: dozens of members, elections, expulsions, a constitution and a continuity readers policed closely.\n\nPaul Levitz's long runs, particularly The Great Darkness Saga, are its high point. The Legion's difficulty is also instructive — every DC continuity reboot has broken a team defined entirely by its own accumulated history, and it has been restarted more often than any other property the company owns.",
+      "url": "https://en.wikipedia.org/wiki/Legion_of_Super-Heroes"
+    },
+    "doom_patrol": {
+      "name": "Doom Patrol",
+      "group": "team",
+      "desc": "A team of accident victims given powers they experience as disfigurement, introduced at DC in 1963 and led by a wheelchair-using scientist — a premise close enough to the X-Men, published months later, to have generated decades of argument about coincidence.\n\nGrant Morrison's 1989 run turned the book into the strangest thing DC published: Dadaist villains, a sentient street, a character who was the collective identity of sixty-four people. It was among the titles folded into Vertigo at its launch and remains the imprint's clearest example of what editorial freedom could produce.",
+      "url": "https://en.wikipedia.org/wiki/Doom_Patrol"
+    },
+    "nick_fury": {
+      "name": "Nick Fury",
+      "group": "character",
+      "desc": "Created by Lee and Kirby in 1963 as the cigar-chewing sergeant of a Second World War commando unit, and moved two years later into the present as director of the espionage agency S.H.I.E.L.D., which let Marvel run spy fiction alongside its superhero line.\n\nThe Ultimate imprint redrew him in 2001 in the likeness of Samuel L. Jackson, with the actor's agreement, and Jackson then played the part across the Marvel Cinematic Universe — where Fury's appearance in a post-credits scene is what announced that the films would share a continuity.",
+      "url": "https://en.wikipedia.org/wiki/Nick_Fury"
+    },
+    "the_killing_joke": {
+      "name": "Batman: The Killing Joke",
+      "group": "title",
+      "desc": "Alan Moore and Brian Bolland's one-shot of 1988, published in prestige format and coloured by John Higgins, which sets an unreliable account of the Joker's origin against his attempt to prove that anyone can be broken by a single bad day.\n\nTo make the argument he shoots and paralyses Barbara Gordon and torments her father. The book sold enormously and its two consequences outlived its reputation: it fixed the Joker's origin as deliberately unverifiable, and it removed a long-running character from her own title. Moore has since described it as a minor work he would not write again, and it is now as often cited in criticism of how the industry treats its female characters as it is for its craft.",
+      "url": "https://en.wikipedia.org/wiki/Batman:_The_Killing_Joke"
+    },
+    "brian_bolland": {
+      "name": "Brian Bolland",
+      "group": "artist",
+      "desc": "A British artist of exceptional precision who came to American comics from 2000 AD, where his Judge Dredd work had made his reputation, as part of the same recruitment that brought Moore, Gaiman and Morrison across.\n\nHe drew Camelot 3000 for DC and then The Killing Joke, working so slowly that the book took the best part of two years, and recoloured it himself for the 2008 edition in muted tones he considered closer to his intent. He has spent most of his subsequent career as a cover artist, where the finish his method demands is an advantage rather than a scheduling problem.",
+      "url": "https://en.wikipedia.org/wiki/Brian_Bolland"
+    },
+    "dc_vs_marvel": {
+      "name": "DC vs. Marvel",
+      "group": "event",
+      "desc": "The 1996 crossover in which the two universes meet and their characters fight, written by Ron Marz and Peter David with art by Dan Jurgens and Claudio Castellini, and with five of the eleven contests decided by a reader vote.\n\nIts second half merged the two universes into a single amalgamated one, published as Amalgam Comics: a month of one-shots starring combined characters — Batman and Wolverine as one figure, Superman and Captain America as another — presented as if they had decades of back issues behind them. Commercially it was a stunt at the height of the speculator years; as a document it is the clearest statement of how completely the two companies' properties had become a shared vocabulary.",
+      "url": "https://en.wikipedia.org/wiki/DC_vs._Marvel"
+    },
+    "superman_vs_spider_man": {
+      "name": "Superman vs. The Amazing Spider-Man",
+      "group": "title",
+      "desc": "The 1976 oversized one-shot that was the first crossover between the two companies, written by Gerry Conway with art by Ross Andru and Dick Giordano.\n\nGetting it published required an agreement between two firms that had spent fifteen years competing, and the negotiations were reportedly harder than the story. It sold well, established that inter-company crossovers were possible at all, and was followed by Batman and the Hulk, the X-Men and the Teen Titans, and eventually by the full company-versus-company crossover of 1996.",
+      "url": "https://en.wikipedia.org/wiki/Superman_vs._the_Amazing_Spider-Man"
+    },
+    "jla_avengers": {
+      "name": "JLA/Avengers",
+      "group": "title",
+      "desc": "Kurt Busiek and George Pérez's four-issue crossover of 2003, in which the two teams meet, misjudge each other and are then set against one another by Krona and the Grandmaster.\n\nAn earlier attempt in the early 1980s had collapsed amid disagreements between the two publishers, with Pérez's completed pages left unpublished for twenty years. The finished work is dense with both companies' history — Pérez drew crowd scenes containing hundreds of characters — and turns on the observation that the Justice League are revered as gods while the Avengers are treated as public servants.",
+      "url": "https://en.wikipedia.org/wiki/JLA/Avengers"
+    },
+    "deathstroke": {
+      "name": "Deathstroke",
+      "group": "character",
+      "desc": "Slade Wilson, a mercenary enhanced by military experiment, introduced by Marv Wolfman and George Pérez in The New Teen Titans in 1980 as an antagonist who takes his dead son's contract on the team and pursues it as a matter of professional obligation.\n\nHe is the centre of The Judas Contract, in which a Titan is revealed to have been working for him from the start. His name is also the origin of a long-running industry joke: Marvel's Deadpool, created eleven years later, was named Wade Wilson in deliberate reference to him.",
+      "url": "https://en.wikipedia.org/wiki/Deathstroke"
+    },
+    "man_thing": {
+      "name": "Man-Thing",
+      "group": "character",
+      "desc": "A scientist transformed by a serum and a swamp into a shambling muck creature that burns whatever feels fear in its presence, introduced by Roy Thomas, Gerry Conway and Gray Morrow in 1971.\n\nMan-Thing appeared two months before DC's Swamp Thing, and the resemblance has been discussed ever since. Both draw on the 1940s Heap, both emerged as the Comics Code relaxed enough to permit horror, and the writers involved knew one another — Wein and Conway were sharing an apartment at the time. Under Steve Gerber the character became the setting for some of the strangest work Marvel published in the 1970s.",
+      "url": "https://en.wikipedia.org/wiki/Man-Thing"
     }
   },
   "links": [
@@ -1555,7 +1698,7 @@
     {
       "from": "jack_liebowitz",
       "to": "dc_comics",
-      "type": "influenced",
+      "type": "led",
       "details": "Liebowitz shaped the company more than any other executive of its first thirty years: he financed All-American, unified the two lines in 1946, kept the publisher on the right side of the Comics Code, and sold the whole business to Kinney National in 1967."
     },
     {
@@ -1658,7 +1801,8 @@
       "from": "jenette_kahn",
       "to": "vertigo",
       "type": "influenced",
-      "details": "Kahn's insistence that DC compete on prestige rather than imitate Marvel, and her willingness to publish outside the Comics Code, created the conditions in which an imprint like Vertigo could be proposed at all."
+      "details": "Kahn's insistence that DC compete on prestige rather than imitate Marvel, and her willingness to publish outside the Comics Code, created the conditions in which an imprint like Vertigo could be proposed at all.",
+      "highlight": true
     },
     {
       "from": "dc_comics",
@@ -1697,21 +1841,9 @@
       "details": "The 2022 reorganisation confirmed a long shift in the company's centre of gravity: the comics line increasingly functions as a development laboratory and a rights archive for a screen operation that dwarfs it commercially."
     },
     {
-      "from": "dc_comics",
-      "to": "action_comics",
-      "type": "published",
-      "details": "Action Comics has run essentially continuously since 1938 and passed its thousandth issue in 2018, making it the publisher's oldest surviving property and the direct source of its fortune."
-    },
-    {
-      "from": "dc_comics",
-      "to": "detective_comics_series",
-      "type": "published",
-      "details": "Detective Comics gave the company its initials and, from its twenty-seventh issue, its most bankable character. It reached issue 1000 in 2019, having run without meaningful interruption for eighty years."
-    },
-    {
       "from": "whitney_ellsworth",
       "to": "dc_comics",
-      "type": "influenced",
+      "type": "led",
       "details": "As editorial director from 1940 Ellsworth wrote an internal content code restricting violence and sexual suggestion, which kept DC's line comparatively clean and left it far less exposed than its rivals when the industry was attacked in 1954."
     },
     {
@@ -1955,8 +2087,7 @@
       "from": "jenette_kahn",
       "to": "jerry_siegel",
       "type": "ally",
-      "details": "Kahn pressed Warner from inside the company for the pensions and the restoration of the byline, and later extended the principle into the royalty and creator-equity policies that reshaped how DC paid everyone else.",
-      "highlight": true
+      "details": "Kahn pressed Warner from inside the company for the pensions and the restoration of the byline, and later extended the principle into the royalty and creator-equity policies that reshaped how DC paid everyone else."
     },
     {
       "from": "mort_weisinger",
@@ -2029,8 +2160,7 @@
       "from": "death_of_superman",
       "to": "superman",
       "type": "key_role",
-      "details": "Doomsday beat Superman to death in 1992 in a story covered as news by broadcasters worldwide. He returned within roughly a year, which is exactly what the industry's critics had predicted, and the episode became shorthand for the decade's willingness to sell events rather than stories.",
-      "highlight": true
+      "details": "Doomsday beat Superman to death in 1992 in a story covered as news by broadcasters worldwide. He returned within roughly a year, which is exactly what the industry's critics had predicted, and the episode became shorthand for the decade's willingness to sell events rather than stories."
     },
     {
       "from": "death_of_superman",
@@ -2073,8 +2203,7 @@
       "from": "bob_kane",
       "to": "bill_finger",
       "type": "collaborator",
-      "details": "The working relationship produced the most valuable character in comics and one of the industry's defining injustices: Kane's deal made Finger a work-for-hire ghost on a creation that was substantially his, and Kane publicly maintained sole authorship for decades.",
-      "highlight": true
+      "details": "The working relationship produced the most valuable character in comics and one of the industry's defining injustices: Kane's deal made Finger a work-for-hire ghost on a creation that was substantially his, and Kane publicly maintained sole authorship for decades."
     },
     {
       "from": "detective_comics_series",
@@ -2104,8 +2233,7 @@
       "from": "bill_finger",
       "to": "joker",
       "type": "created",
-      "details": "Finger scripted the Joker's earliest appearances and credited the grin to a photograph of Conrad Veidt in The Man Who Laughs. His account of the character's origin and Jerry Robinson's have never been reconciled, and the credit remains one of the most contested in comics.",
-      "highlight": true
+      "details": "Finger scripted the Joker's earliest appearances and credited the grin to a photograph of Conrad Veidt in The Man Who Laughs. His account of the character's origin and Jerry Robinson's have never been reconciled, and the credit remains one of the most contested in comics."
     },
     {
       "from": "jerry_robinson",
@@ -2274,14 +2402,14 @@
       "from": "batman_1989",
       "to": "batman_animated_series",
       "type": "influenced",
-      "details": "The animated series was commissioned in the wake of the film's success and inherited its art-deco Gotham and Danny Elfman's musical register, then quietly outdid it in writing and characterisation.",
-      "highlight": true
+      "details": "The animated series was commissioned in the wake of the film's success and inherited its art-deco Gotham and Danny Elfman's musical register, then quietly outdid it in writing and characterisation."
     },
     {
       "from": "batman",
       "to": "batman_animated_series",
       "type": "adapted",
-      "details": "Timm and Radomski's series animated on black paper to make Gotham permanently nocturnal, treated the villains as tragedies, and through Kevin Conroy and Mark Hamill's performances became the definitive version of the character for a generation."
+      "details": "Timm and Radomski's series animated on black paper to make Gotham permanently nocturnal, treated the villains as tragedies, and through Kevin Conroy and Mark Hamill's performances became the definitive version of the character for a generation.",
+      "highlight": true
     },
     {
       "from": "batman",
@@ -2330,7 +2458,8 @@
       "from": "george_perez",
       "to": "wonder_woman",
       "type": "wrote",
-      "details": "Pérez's 1987 relaunch after Crisis restarted the character from her first arrival in the outside world and grounded her firmly in Greek myth, treating her as an emissary rather than a costumed adventurer. It is generally regarded as the modern foundation of the character."
+      "details": "Pérez's 1987 relaunch after Crisis restarted the character from her first arrival in the outside world and grounded her firmly in Greek myth, treating her as an emissary rather than a costumed adventurer. It is generally regarded as the modern foundation of the character.",
+      "highlight": true
     },
     {
       "from": "george_perez",
@@ -2384,8 +2513,7 @@
       "from": "justice_society",
       "to": "justice_league",
       "type": "influenced",
-      "details": "The League was explicitly modelled on the Society, updated for a science-fiction age and a mass-market name. Julius Schwartz chose the word League over Society on the grounds that American readers knew baseball leagues better than learned societies.",
-      "highlight": true
+      "details": "The League was explicitly modelled on the Society, updated for a science-fiction age and a mass-market name. Julius Schwartz chose the word League over Society on the grounds that American readers knew baseball leagues better than learned societies."
     },
     {
       "from": "julius_schwartz",
@@ -2644,7 +2772,8 @@
       "from": "alan_moore",
       "to": "saga_of_the_swamp_thing",
       "type": "wrote",
-      "details": "Moore inherited a title scheduled for cancellation and opened by revealing that the creature had never been a transformed man — only vegetable matter that had absorbed a dead man's memories and believed itself to be him. The revision made the character an elemental and the book a critical event."
+      "details": "Moore inherited a title scheduled for cancellation and opened by revealing that the creature had never been a transformed man — only vegetable matter that had absorbed a dead man's memories and believed itself to be him. The revision made the character an elemental and the book a critical event.",
+      "highlight": true
     },
     {
       "from": "alan_moore",
@@ -2729,8 +2858,7 @@
       "from": "dave_gibbons",
       "to": "watchmen",
       "type": "drew",
-      "details": "Gibbons held the series to a rigid nine-panel grid and filled it with symmetries, repeated objects and buried rhymes, so that the formal structure carries as much of the argument as the script. The discipline is inseparable from the work's reputation.",
-      "highlight": true
+      "details": "Gibbons held the series to a rigid nine-panel grid and filled it with symmetries, repeated objects and buried rhymes, so that the formal structure carries as much of the argument as the script. The discipline is inseparable from the work's reputation."
     },
     {
       "from": "charlton_comics",
@@ -2749,8 +2877,7 @@
       "from": "alan_moore",
       "to": "dc_comics",
       "type": "dispute",
-      "details": "Moore understood the Watchmen contract to return the rights once the work went out of print; it never has, so it never did. Disputes over that, over merchandising and over later projects ended his relationship with DC, and he has since declined credit or payment for adaptations of his work.",
-      "highlight": true
+      "details": "Moore understood the Watchmen contract to return the rights once the work went out of print; it never has, so it never did. Disputes over that, over merchandising and over later projects ended his relationship with DC, and he has since declined credit or payment for adaptations of his work."
     },
     {
       "from": "watchmen",
@@ -2942,13 +3069,13 @@
     {
       "from": "jenette_kahn",
       "to": "dc_comics",
-      "type": "influenced",
+      "type": "led",
       "details": "Kahn arrived in 1976 at a company losing badly to Marvel and left in 2002 having introduced royalties and creator incentives, recruited a generation of British writers, backed the direct market, and made DC the industry's prestige publisher."
     },
     {
       "from": "paul_levitz",
       "to": "dc_comics",
-      "type": "influenced",
+      "type": "led",
       "details": "Levitz spent more than three decades at DC as writer, editor and finally president, helping design the creator-rights reforms of the Kahn years and steering the company through the 1990s speculator crash without the retrenchment that damaged its competitors."
     },
     {
@@ -2960,7 +3087,7 @@
     {
       "from": "dick_giordano",
       "to": "dc_comics",
-      "type": "influenced",
+      "type": "led",
       "details": "Giordano's decade as editorial leader from 1983 covers Crisis, the Byrne Superman, The Dark Knight Returns, Watchmen, Year One and the mature line that became Vertigo — as concentrated a run of consequential publishing as any editor in the medium has overseen."
     },
     {
@@ -2972,13 +3099,13 @@
     {
       "from": "carmine_infantino",
       "to": "dc_comics",
-      "type": "influenced",
+      "type": "led",
       "details": "Infantino moved from drawing the Silver Age to running the company as editorial director and then publisher, recruiting Kirby and pushing DC towards larger formats and higher prices — an artist's tenure at the top that has no real parallel in the industry."
     },
     {
       "from": "jim_lee",
       "to": "dc_comics",
-      "type": "influenced",
+      "type": "led",
       "details": "Lee arrived with the WildStorm acquisition and rose from marquee artist to co-publisher and then to DC's most senior creative posts, shaping the New 52's look and the company's direction for two decades."
     },
     {
@@ -2993,12 +3120,6 @@
       "type": "influenced",
       "details": "Donner's film proved the commercial case for taking DC's characters to the screen at scale, and its eventual decline into camp sequels made Warner receptive to Burton's argument for a darker approach a decade later.",
       "highlight": true
-    },
-    {
-      "from": "superman_1978",
-      "to": "dc_comics",
-      "type": "influenced",
-      "details": "The film's production is also what made the Siegel and Shuster campaign effective: Warner had a costly, heavily publicised release approaching and no appetite for stories about the creators living in poverty."
     },
     {
       "from": "captain_marvel",
@@ -3035,7 +3156,8 @@
       "from": "justice_league",
       "to": "marvel_comics",
       "type": "influenced",
-      "details": "The League's success is widely credited with prompting Martin Goodman to ask Stan Lee for a superhero team, producing the Fantastic Four in 1961. DC's own commercial triumph is therefore the conventional starting point of the rival line that would displace it within a decade."
+      "details": "The League's success is widely credited with prompting Martin Goodman to ask Stan Lee for a superhero team, producing the Fantastic Four in 1961. DC's own commercial triumph is therefore the conventional starting point of the rival line that would displace it within a decade.",
+      "highlight": true
     },
     {
       "from": "marvel_comics",
@@ -3089,7 +3211,7 @@
       "from": "jack_kirby",
       "to": "mister_miracle_title",
       "type": "wrote",
-      "details": "Kirby wrote Mister Miracle as the Fourth World's most personal book — an escape artist raised in a prison state, whose every trap is a restatement of the one he grew up in. It ran to eighteen issues, outlasting the other titles, and is the only part of the line to have been revived repeatedly since."
+      "details": "Kirby wrote Mister Miracle as the Fourth World's most personal book — an escape artist raised in a prison state, whose every trap is a restatement of the one he grew up in. It ran to eighteen issues under Kirby, outlasting the other titles by a year, and is the only part of the line to have been revived repeatedly since."
     },
     {
       "from": "jack_kirby",
@@ -3108,12 +3230,6 @@
       "to": "big_barda",
       "type": "debut",
       "details": "Barda arrived in the fourth issue as the commander of Darkseid's Female Furies, sent to retrieve Scott Free and defecting instead. She was written from the start as his equal and his superior in a fight, and the two have been inseparable in every subsequent treatment."
-    },
-    {
-      "from": "dc_comics",
-      "to": "mister_miracle_title",
-      "type": "published",
-      "details": "DC cancelled the title in 1974 with the Fourth World story unresolved, then returned to the character repeatedly — in the Justice League's International era, in Grant Morrison's Seven Soldiers, and in Tom King and Mitch Gerads's 2017 series, which won its year's major awards."
     },
     {
       "from": "jack_kirby",
@@ -3216,8 +3332,7 @@
       "from": "final_crisis",
       "to": "batman",
       "type": "key_role",
-      "details": "Batman is struck by Darkseid's Omega Sanction and removed from continuity for roughly a year, a death that turned out to be a displacement through time. Handing that beat to a Kirby villain placed the Fourth World at the centre of DC's biggest character franchise.",
-      "highlight": true
+      "details": "Batman is struck by Darkseid's Omega Sanction and removed from continuity for roughly a year, a death that turned out to be a displacement through time. Handing that beat to a Kirby villain placed the Fourth World at the centre of DC's biggest character franchise."
     },
     {
       "from": "new_gods",
@@ -3309,21 +3424,9 @@
     },
     {
       "from": "marvel_comics",
-      "to": "uncanny_x_men",
-      "type": "published",
-      "details": "Rather than cancel the failing title outright in 1970, Marvel kept it in print filled with reprints. That decision is why the 1975 revival could resume the original numbering from issue 94, and why the series Claremont wrote is continuous with the one Lee and Kirby launched."
-    },
-    {
-      "from": "marvel_comics",
       "to": "avengers_title",
       "type": "published",
       "details": "The title Marvel uses to administer its shared universe: a book whose membership is designed to change, and which the company has repeatedly used to promote characters from elsewhere in the line or to stage the consequences of a crossover."
-    },
-    {
-      "from": "marvel_comics",
-      "to": "incredible_hulk_title",
-      "type": "published",
-      "details": "Marvel cancelled the series after six issues in 1963, kept the character alive in a shared slot in Tales to Astonish, and then renumbered that title to continue the Hulk's original count from issue 102 — an early instance of the company's reluctance to let a numbering run end."
     },
     {
       "from": "marvel_comics",
@@ -3360,12 +3463,6 @@
       "to": "marvels",
       "type": "published",
       "details": "Published in 1994 as a four-issue prestige-format series on heavier paper at a higher price — a format Marvel used for work aimed at older readers, and a deliberate contrast to the foil-covered speculator products dominating its schedule that year."
-    },
-    {
-      "from": "marvel_comics",
-      "to": "x_men_1_1991",
-      "type": "published",
-      "details": "Marvel published the issue with four interlocking covers that assembled into one image, with a fifth gatefold carrying the whole, a device explicitly designed to sell the same comic more than once to the same buyer. The resulting figure was reported as a record and functioned as a warning."
     },
     {
       "from": "marvel_comics",
@@ -3506,8 +3603,7 @@
       "from": "stan_lee",
       "to": "steve_ditko",
       "type": "collaborator",
-      "details": "Lee and Ditko created Spider-Man and Doctor Strange, and produced the first thirty-eight issues of Amazing Spider-Man together. From around the twenty-fifth issue Ditko was plotting the stories himself and receiving a plotting credit, and by the end the two men were reportedly no longer speaking directly and communicated through the office.\n\nDitko left in 1966 without public explanation and never afterwards discussed the split. He maintained for the rest of his life that he was Spider-Man's co-creator on equal terms, and declined the credit-based payments Marvel later offered.",
-      "highlight": true
+      "details": "Lee and Ditko created Spider-Man and Doctor Strange, and produced the first thirty-eight issues of Amazing Spider-Man together. From around the twenty-fifth issue Ditko was plotting the stories himself and receiving a plotting credit, and by the end the two men were reportedly no longer speaking directly and communicated through the office.\n\nDitko left in 1966 without public explanation and never afterwards discussed the split. He maintained for the rest of his life that he was Spider-Man's co-creator on equal terms, and declined the credit-based payments Marvel later offered."
     },
     {
       "from": "stan_lee",
@@ -3545,14 +3641,14 @@
       "from": "stan_lee",
       "to": "spider_man",
       "type": "created",
-      "details": "Lee has said he wanted a teenage hero who was not a sidekick and whose problems continued after the fight ended, and that Goodman objected on the grounds that people dislike spiders and teenagers cannot lead. He put the character in the final issue of a cancelled anthology, where the risk was minimal."
+      "details": "Lee has said he wanted a teenage hero who was not a sidekick and whose problems continued after the fight ended, and that Goodman objected on the grounds that people dislike spiders and teenagers cannot lead. He put the character in the final issue of a cancelled anthology, where the risk was minimal.",
+      "highlight": true
     },
     {
       "from": "steve_ditko",
       "to": "spider_man",
       "type": "created",
-      "details": "Ditko designed the costume that hides the wearer's age and expression entirely, invented the web-shooters as a mechanical device built by a bright teenager, and drew the character as physically slight and awkward out of costume. The moral shape of the early strip — guilt, obligation, the refusal of easy reward — is largely his.",
-      "highlight": true
+      "details": "Ditko designed the costume that hides the wearer's age and expression entirely, invented the web-shooters as a mechanical device built by a bright teenager, and drew the character as physically slight and awkward out of costume. The moral shape of the early strip — guilt, obligation, the refusal of easy reward — is largely his."
     },
     {
       "from": "amazing_fantasy_15",
@@ -3674,8 +3770,7 @@
       "from": "avengers_title",
       "to": "avengers",
       "type": "debut",
-      "details": "The team was assembled in September 1963 from characters who already had their own books, partly as a way of filling a schedule gap. Its fourth issue revived Captain America from suspended animation, folding Timely's Golden Age into the new continuity and giving the modern Marvel universe a past.",
-      "highlight": true
+      "details": "The team was assembled in September 1963 from characters who already had their own books, partly as a way of filling a schedule gap. Its fourth issue revived Captain America from suspended animation, folding Timely's Golden Age into the new continuity and giving the modern Marvel universe a past."
     },
     {
       "from": "stan_lee",
@@ -3754,7 +3849,8 @@
       "from": "silver_age",
       "to": "marvel_method",
       "type": "defined",
-      "details": "The working process and the period are inseparable: the density of invention in Marvel's 1961-1966 output is a direct consequence of artists plotting visually at speed, and so is the permanent ambiguity about who created what, which no later account has been able to resolve."
+      "details": "The working process and the period are inseparable: the density of invention in Marvel's 1961-1966 output is a direct consequence of artists plotting visually at speed, and so is the permanent ambiguity about who created what, which no later account has been able to resolve.",
+      "highlight": true
     },
     {
       "from": "silver_age",
@@ -4027,8 +4123,7 @@
       "from": "neal_adams",
       "to": "uncanny_x_men",
       "type": "drew",
-      "details": "Adams drew nine issues in 1969 and 1970 — the run from issue 56 to 63, and issue 65, at the end of the original run and shortly before cancellation. The work is remembered for its anatomy and layouts rather than its sales, and it is often cited as evidence that the title's early failure was not for want of talent.",
-      "highlight": true
+      "details": "Adams drew nine issues in 1969 and 1970 — the run from issue 56 to 63, and issue 65, at the end of the original run and shortly before cancellation. The work is remembered for its anatomy and layouts rather than its sales, and it is often cited as evidence that the title's early failure was not for want of talent."
     },
     {
       "from": "marv_wolfman",
@@ -4077,8 +4172,7 @@
       "from": "creator_rights",
       "to": "neal_adams",
       "type": "defined",
-      "details": "Adams used his commercial standing to press publishers on behalf of other creators, organising support for the return of original artwork to Kirby and campaigning successfully for DC to acknowledge and pay Superman's creators. He was among the few figures of his generation willing to spend his own leverage on the issue.",
-      "highlight": true
+      "details": "Adams used his commercial standing to press publishers on behalf of other creators, organising support for the return of original artwork to Kirby and campaigning successfully for DC to acknowledge and pay Superman's creators. He was among the few figures of his generation willing to spend his own leverage on the issue."
     },
     {
       "from": "creator_rights",
@@ -4157,7 +4251,8 @@
       "from": "chris_claremont",
       "to": "uncanny_x_men",
       "type": "wrote",
-      "details": "Claremont wrote the title continuously from 1975 to 1991, developing subplots over years, aging his cast, and turning the mutant premise into a sustained argument about prejudice, assimilation and separatism.\n\nHe created or co-created Rogue, Kitty Pryde, Mystique, Gambit and Sabretooth, and wrote a range of prominent women characters unusual for mainstream comics of the period. His departure in 1991, after losing control of the direction to the artists then driving sales, ended the run and the era."
+      "details": "Claremont wrote the title continuously from 1975 to 1991, developing subplots over years, aging his cast, and turning the mutant premise into a sustained argument about prejudice, assimilation and separatism.\n\nHe created or co-created Rogue, Kitty Pryde, Mystique, Gambit and Sabretooth, and wrote a range of prominent women characters unusual for mainstream comics of the period. His departure in 1991, after losing control of the direction to the artists then driving sales, ended the run and the era.",
+      "highlight": true
     },
     {
       "from": "john_byrne",
@@ -4169,13 +4264,15 @@
       "from": "chris_claremont",
       "to": "x_men",
       "type": "wrote",
-      "details": "More than any other writer, Claremont determined what the X-Men are: a found family with long memories, internal politics and a metaphorical reach that later writers and film-makers have all worked within. Almost every X-Men adaptation draws primarily on his sixteen years."
+      "details": "More than any other writer, Claremont determined what the X-Men are: a found family with long memories, internal politics and a metaphorical reach that later writers and film-makers have all worked within. Almost every X-Men adaptation draws primarily on his sixteen years.",
+      "highlight": true
     },
     {
       "from": "chris_claremont",
       "to": "dark_phoenix_saga",
       "type": "wrote",
-      "details": "The story took a founding member of the team, gave her limitless power, and had her destroy an inhabited star system before choosing to die. Claremont and Byrne had planned a lesser punishment; Jim Shooter insisted that a character responsible for billions of deaths could not simply return to the team, and the ending was rewritten."
+      "details": "The story took a founding member of the team, gave her limitless power, and had her destroy an inhabited star system before choosing to die. Claremont and Byrne had planned a lesser punishment; Jim Shooter insisted that a character responsible for billions of deaths could not simply return to the team, and the ending was rewritten.",
+      "highlight": true
     },
     {
       "from": "john_byrne",
@@ -4308,8 +4405,7 @@
       "from": "todd_mcfarlane",
       "to": "image_comics",
       "type": "founded",
-      "details": "McFarlane was the central organiser of the 1992 walkout, having concluded that the artists generating Marvel's sales had no share in what they created and no prospect of getting one. Spawn, his creator-owned title, went on to sell in numbers comparable to Marvel's best.",
-      "highlight": true
+      "details": "McFarlane was the central organiser of the 1992 walkout, having concluded that the artists generating Marvel's sales had no share in what they created and no prospect of getting one. Spawn, his creator-owned title, went on to sell in numbers comparable to Marvel's best."
     },
     {
       "from": "jim_lee",
@@ -4458,8 +4554,7 @@
       "from": "jonathan_hickman",
       "to": "x_men",
       "type": "wrote",
-      "details": "House of X and Powers of X in 2019 reset the franchise entirely, relocating mutants to a sovereign island nation with its own laws, economy and diplomacy. It replaced the decades-old premise of a persecuted minority seeking acceptance with something closer to a state pursuing its own interests, and reorganised the whole line around it.",
-      "highlight": true
+      "details": "House of X and Powers of X in 2019 reset the franchise entirely, relocating mutants to a sovereign island nation with its own laws, economy and diplomacy. It replaced the decades-old premise of a persecuted minority seeking acceptance with something closer to a state pursuing its own interests, and reorganised the whole line around it."
     },
     {
       "from": "ta_nehisi_coates",
@@ -4580,8 +4675,7 @@
       "from": "black_panther",
       "to": "marvel_cinematic_universe",
       "type": "adapted",
-      "details": "The 2018 film drew on the Kirby conception of Wakanda and on the political framing that Christopher Priest and Ta-Nehisi Coates had developed, and became one of the highest-grossing films ever released in the United States — evidence of an audience the industry had long assumed did not exist for this material.",
-      "highlight": true
+      "details": "The 2018 film drew on the Kirby conception of Wakanda and on the political framing that Christopher Priest and Ta-Nehisi Coates had developed, and became one of the highest-grossing films ever released in the United States — evidence of an audience the industry had long assumed did not exist for this material."
     },
     {
       "from": "kamala_khan",
@@ -4671,8 +4765,7 @@
       "from": "silver_age",
       "to": "marvel_comics",
       "type": "defined",
-      "details": "The company as it now exists dates from this period: the characters, the shared continuity, the editorial voice and the working method were all established between 1961 and 1966, and everything since has been built on or against them.\n\nWhat separated Marvel's version of the revival from DC's was that its heroes were given ordinary problems — money, illness, unpopularity, each other — and a single New York they all occupied, so that a character could appear in someone else's book and the reader was expected to notice. Both devices are still the basis of the publishing line and of the films.",
-      "highlight": true
+      "details": "The company as it now exists dates from this period: the characters, the shared continuity, the editorial voice and the working method were all established between 1961 and 1966, and everything since has been built on or against them.\n\nWhat separated Marvel's version of the revival from DC's was that its heroes were given ordinary problems — money, illness, unpopularity, each other — and a single New York they all occupied, so that a character could appear in someone else's book and the reader was expected to notice. Both devices are still the basis of the publishing line and of the films."
     },
     {
       "from": "avengers",
@@ -4739,13 +4832,15 @@
       "from": "steve_ditko",
       "to": "charlton_comics",
       "type": "departed_for",
-      "details": "After walking out of Marvel in 1966 Ditko worked extensively at Charlton, where the rates were the lowest in the business and the editorial interference close to none. There he created the Question and revived Blue Beetle — the characters DC bought in 1983 and Alan Moore then asked to use."
+      "details": "After walking out of Marvel in 1966 Ditko worked extensively at Charlton, where the rates were the lowest in the business and the editorial interference close to none. There he created the Question and revived Blue Beetle — the characters DC bought in 1983 and Alan Moore then asked to use.",
+      "highlight": true
     },
     {
       "from": "steve_ditko",
       "to": "watchmen",
       "type": "influenced",
-      "details": "Moore's original Watchmen proposal used the Charlton heroes DC had just acquired, and Rorschach is a direct reworking of Ditko's the Question: the absolutist with a blank face, whose objectivist certainty Moore kept and then examined until it broke. Ditko had no involvement in and no regard for the result."
+      "details": "Moore's original Watchmen proposal used the Charlton heroes DC had just acquired, and Rorschach is a direct reworking of Ditko's the Question: the absolutist with a blank face, whose objectivist certainty Moore kept and then examined until it broke. Ditko had no involvement in and no regard for the result.",
+      "highlight": true
     },
     {
       "from": "dick_giordano",
@@ -4856,7 +4951,8 @@
       "from": "creator_rights",
       "to": "jerry_siegel",
       "type": "defined",
-      "details": "The argument begins with Superman: sold outright for 130 dollars in 1938, litigated over for four decades, and settled only in 1975 by public pressure rather than by law. Every later campaign at either company — Simon's, Gerber's, Kirby's — was fought against the precedent that case set."
+      "details": "The argument begins with Superman: sold outright for 130 dollars in 1938, litigated over for four decades, and settled only in 1975 by public pressure rather than by law. Every later campaign at either company — Simon's, Gerber's, Kirby's — was fought against the precedent that case set.",
+      "highlight": true
     },
     {
       "from": "creator_rights",
@@ -4875,13 +4971,753 @@
       "from": "image_comics",
       "to": "wildstorm",
       "type": "imprint_of",
-      "details": "WildStorm was Jim Lee's studio within Image, one of the founder-run imprints under the shared banner. When Lee sold it to DC the arrangement ended, moving a company founded on creator ownership into the ownership of one of the two publishers it had been founded against."
+      "details": "WildStorm was Jim Lee's studio within Image, one of the founder-run imprints under the shared banner. When Lee sold it to DC the arrangement ended, moving a company founded on creator ownership into the ownership of one of the two publishers it had been founded against.",
+      "highlight": true
     },
     {
       "from": "marvel_cinematic_universe",
       "to": "dc_studios",
       "type": "influenced",
-      "details": "DC spent the 2010s attempting to assemble a shared film continuity on the Marvel model and failing to sequence it, and DC Studios was created in 2022 to impose the single planned continuity that Marvel had run since 2008. The device both were copying was the one the comics had used since Fantastic Four #1."
+      "details": "DC spent the 2010s attempting to assemble a shared film continuity on the Marvel model and failing to sequence it, and DC Studios was created in 2022 to impose the single planned continuity that Marvel had run since 2008. The device both were copying was the one the comics had used since Fantastic Four #1.",
+      "highlight": true
+    },
+    {
+      "from": "jack_kirby",
+      "to": "fourth_world",
+      "type": "created",
+      "details": "Kirby arrived at DC in 1970 having been promised what Marvel would not give him: titles he would write, draw and edit himself. The Fourth World is what he did with that freedom — a single story told across four monthly books, with a beginning and a planned ending, which was almost unheard of in mainstream comics at the time."
+    },
+    {
+      "from": "new_gods",
+      "to": "fourth_world",
+      "type": "part_of",
+      "details": "New Gods was the line's centrepiece, carrying Orion, Highfather and the war between the two worlds. It was cancelled after eleven issues in 1972 with the confrontation the whole structure had been built towards still unpublished."
+    },
+    {
+      "from": "mister_miracle_title",
+      "to": "fourth_world",
+      "type": "part_of",
+      "details": "Mister Miracle carried the line's most personal thread — the child traded to Apokolips who escapes for a living — and outlasted the others by a year, running to eighteen issues before Kirby's run ended in November 1973 — New Gods and Forever People had both been cancelled at their eleventh issues in the summer of 1972."
+    },
+    {
+      "from": "forever_people",
+      "to": "fourth_world",
+      "type": "part_of",
+      "details": "The Forever People carried the New Genesis side of the story to Earth, and its first issue contains Darkseid's first full appearance. It was cancelled alongside New Gods in 1972."
+    },
+    {
+      "from": "jimmy_olsen",
+      "to": "fourth_world",
+      "type": "part_of",
+      "details": "Jimmy Olsen was the entry point: an existing Superman title Kirby took over so that the new mythology would be tied into DC's universe from the start rather than standing outside it. Darkseid first appears here, in a single panel, before any of the dedicated titles existed."
+    },
+    {
+      "from": "darkseid",
+      "to": "fourth_world",
+      "type": "part_of",
+      "details": "Darkseid is the Fourth World's most durable export. Created for a line that was cancelled inside three years, he has since become DC's default cosmic antagonist and the villain of its largest crossovers."
+    },
+    {
+      "from": "bronze_age",
+      "to": "fourth_world",
+      "type": "defined",
+      "details": "The Fourth World is the era's clearest case of a single creator being given a line of his own, and of the commercial system failing to accommodate it: critically celebrated, structurally ambitious, cancelled unfinished, and treated as foundational within twenty years."
+    },
+    {
+      "from": "fourth_world",
+      "to": "final_crisis",
+      "type": "influenced",
+      "details": "Nearly forty years after cancellation, Grant Morrison built a line-wide crossover directly out of the unfinished line — the gods, the war and the Anti-Life Equation — treating Kirby's cancelled titles as DC's founding scripture rather than as back catalogue."
+    },
+    {
+      "from": "jack_kirby",
+      "to": "galactus",
+      "type": "created",
+      "details": "Kirby wanted a threat above the level of costumed villainy and drew a figure closer to a natural process than a criminal — armoured, impassive, and consuming inhabited worlds because that is what he is. The Galactus sequence is generally taken as the peak of his Marvel period."
+    },
+    {
+      "from": "stan_lee",
+      "to": "galactus",
+      "type": "created",
+      "details": "Lee scripted the character's arrival, giving a world-eater the diction of an indifferent god rather than a boasting villain. The choice made the threat feel structural rather than personal, and it is the clearest demonstration of what the Lee and Kirby division of labour could produce."
+    },
+    {
+      "from": "fantastic_four_title",
+      "to": "galactus",
+      "type": "debut",
+      "details": "Galactus arrives across Fantastic Four #48 to #50 in 1966, along with his herald the Silver Surfer, in a sequence Kirby produced without prior discussion and Lee scripted afterwards. The three issues are the most anthologised work of the collaboration."
+    },
+    {
+      "from": "galactus",
+      "to": "fantastic_four",
+      "type": "nemesis",
+      "details": "The team's response to Galactus is not to defeat him — they cannot — but to make him leave, which reframed what a superhero comic's climax could be. He returns periodically as a problem to be negotiated rather than beaten."
+    },
+    {
+      "from": "galactus",
+      "to": "silver_surfer",
+      "type": "ally",
+      "details": "The Surfer serves as Galactus's herald, finding inhabited worlds for him, until Earth persuades him to refuse. Kirby created the character as an afterthought within the sequence, and the servitude and the refusal became the basis of everything written about him since."
+    },
+    {
+      "from": "stan_lee",
+      "to": "doctor_doom",
+      "type": "created",
+      "details": "Lee gave Doom the register of a head of state rather than a criminal — formal, aggrieved, convinced of his own legitimacy — which is why the character has survived sixty years of writers who each think they have found a new reading of him."
+    },
+    {
+      "from": "jack_kirby",
+      "to": "doctor_doom",
+      "type": "created",
+      "details": "Kirby designed the armour, the cloak and the iron mask over a face the reader is almost never shown, and gave Latveria the look of a central European principality rather than a supervillain's lair."
+    },
+    {
+      "from": "fantastic_four_title",
+      "to": "doctor_doom",
+      "type": "debut",
+      "details": "Doom arrived in Fantastic Four #5 in 1962, four issues into the title, and established that Marvel's antagonists would have histories entangled with the heroes' own — in his case a university rivalry with Reed Richards that neither man has ever let go."
+    },
+    {
+      "from": "doctor_doom",
+      "to": "fantastic_four",
+      "type": "nemesis",
+      "details": "The rivalry is between two men who were the cleverest in the room until they met each other, and the books have always treated Doom's grievance as legitimate on its own terms. He is the only Marvel villain routinely written as the protagonist of his own story."
+    },
+    {
+      "from": "secret_wars",
+      "to": "doctor_doom",
+      "type": "key_role",
+      "details": "Doom's seizure of the Beyonder's power is the part of Secret Wars that outlived the toy promotion. Finding he cannot hold what he has taken is the closest the character comes to self-knowledge, and later writers have returned to it repeatedly."
+    },
+    {
+      "from": "stan_lee",
+      "to": "magneto",
+      "type": "created",
+      "details": "Lee and Kirby introduced Magneto in X-Men #1 in 1963 as a conqueror with a motive no deeper than power, in the same issue that established mutants as a persecuted minority — a juxtaposition later writers found more useful than its authors did."
+    },
+    {
+      "from": "uncanny_x_men",
+      "to": "magneto",
+      "type": "debut",
+      "details": "Magneto appears in the first issue of X-Men in 1963 and has been bound to the title ever since, as antagonist, as ally, as headmaster of the school and as its most frequent argument against itself."
+    },
+    {
+      "from": "chris_claremont",
+      "to": "magneto",
+      "type": "wrote",
+      "details": "Claremont rebuilt Magneto as a survivor of Auschwitz whose distrust of the powerful rests on evidence, then made him lead the school Xavier founded. Turning the strip's chief villain into its most persuasive dissenting voice is the single most consequential thing any writer has done with the X-Men."
+    },
+    {
+      "from": "magneto",
+      "to": "x_men",
+      "type": "nemesis",
+      "details": "The opposition between Xavier's integrationism and Magneto's separatism has structured the franchise for sixty years, and the books have never settled it — which is why every adaptation reaches for it and why neither position is allowed to be simply wrong."
+    },
+    {
+      "from": "steve_ditko",
+      "to": "green_goblin",
+      "type": "created",
+      "details": "Ditko drew and plotted the Goblin's appearances and, by his own account, had settled the man behind the mask long before the reveal. His disagreement with Lee about that identity is one of the specific grievances behind his departure from Marvel in 1966."
+    },
+    {
+      "from": "amazing_spider_man",
+      "to": "green_goblin",
+      "type": "debut",
+      "details": "The Goblin arrived in 1964 as an unexplained figure in a Halloween mask and was unmasked two years later as the father of Peter Parker's college friend — the first Marvel unmasking that mattered because the reader already knew the man underneath."
+    },
+    {
+      "from": "green_goblin",
+      "to": "spider_man",
+      "type": "nemesis",
+      "details": "Norman Osborn is the antagonist Spider-Man cannot treat as a nuisance: he knows the identity, he knows the family, and in 1973 he killed the person Peter loved. Every later attempt to retire the character has been reversed."
+    },
+    {
+      "from": "amazing_spider_man",
+      "to": "gwen_stacy",
+      "type": "debut",
+      "details": "Gwen Stacy was introduced in 1965 as a college classmate and became Peter Parker's first serious relationship, in a strip that had until then treated romance as a running joke about missed appointments."
+    },
+    {
+      "from": "gerry_conway",
+      "to": "gwen_stacy",
+      "type": "wrote",
+      "details": "Conway, barely into his twenties, decided the strip needed a loss it could not undo and killed Gwen Stacy in 1973. The sound effect at her neck as the web-line catches her left the responsibility deliberately unresolved, and readers have argued about it ever since."
+    },
+    {
+      "from": "green_goblin",
+      "to": "gwen_stacy",
+      "type": "nemesis",
+      "details": "The Goblin throws her from a bridge to punish Spider-Man, and the rescue is what kills her. It is the moment Marvel's house style of soap-operatic setback turned into something with permanent consequences."
+    },
+    {
+      "from": "bronze_age",
+      "to": "gwen_stacy",
+      "type": "defined",
+      "details": "Her death is the conventional marker for the end of the Silver Age's assumptions: the hero arrives in time, does everything right, and fails anyway. The era's darker register at both companies dates from around this point."
+    },
+    {
+      "from": "john_ostrander",
+      "to": "amanda_waller",
+      "type": "created",
+      "details": "Ostrander built the revived Suicide Squad around an administrator with no powers who is nonetheless the most frightening person in the book, and wrote her as neither a villain nor an obstacle but as someone doing a job the state wants done and will not admit to."
+    },
+    {
+      "from": "len_wein",
+      "to": "amanda_waller",
+      "type": "created",
+      "details": "Wein co-created Waller with Ostrander and John Byrne for Legends in 1986, giving DC a character with no costume, no powers and no interest in the moral vocabulary the rest of the line runs on."
+    },
+    {
+      "from": "suicide_squad",
+      "to": "amanda_waller",
+      "type": "member",
+      "details": "Waller runs Task Force X and is the only fixed point in a team designed around a high casualty rate. The series works because she is the one making the decisions the reader is asked to be uneasy about."
+    },
+    {
+      "from": "dwayne_mcduffie",
+      "to": "amanda_waller",
+      "type": "wrote",
+      "details": "McDuffie brought Waller into Justice League Unlimited as the head of a government project convinced the League cannot be left unchecked, and gave the argument enough weight that the show never fully sided against her."
+    },
+    {
+      "from": "marv_wolfman",
+      "to": "blade",
+      "type": "created",
+      "details": "Wolfman created Blade as a supporting character in a horror title, a hunter with a personal grievance against Dracula, and gave Marvel a property that turned out three decades later to be worth more than most of the line."
+    },
+    {
+      "from": "gene_colan",
+      "to": "blade",
+      "type": "created",
+      "details": "Colan designed the character during his unbroken run on The Tomb of Dracula, giving him the bandolier of teak knives and a look owing more to 1970s crime cinema than to superhero comics."
+    },
+    {
+      "from": "tomb_of_dracula",
+      "to": "blade",
+      "type": "debut",
+      "details": "Blade appeared in the tenth issue in 1973, in a title that existed only because the Comics Code had been revised two years earlier to permit vampires. Marvel's most commercially consequential 1990s asset came out of a horror book most of the industry had written off."
+    },
+    {
+      "from": "blade",
+      "to": "blade_1998",
+      "type": "adapted",
+      "details": "A minor supporting character from a cancelled horror comic became the first Marvel property to carry a commercially successful modern film. Marvel had licensed him out cheaply while in bankruptcy and saw almost none of the money."
+    },
+    {
+      "from": "blade_1998",
+      "to": "x_men_2000",
+      "type": "influenced",
+      "details": "Blade's success is what made X-Men financeable: it demonstrated that a Marvel property could open a film without a recognisable brand behind it, two years before Fox's release and four before Spider-Man."
+    },
+    {
+      "from": "avi_arad",
+      "to": "blade_1998",
+      "type": "led",
+      "details": "Arad pushed the film through as head of Marvel's studio arm while the parent company was in bankruptcy, and used its success as the evidence for his argument that Marvel should be making films rather than licensing characters into other people's."
+    },
+    {
+      "from": "steve_gerber",
+      "to": "howard_the_duck",
+      "type": "created",
+      "details": "Gerber used a talking duck stranded in Cleveland to satirise American politics, self-help culture and the comics business, in a Marvel title where almost nothing superheroic happens. It was the strangest commercially successful book either company published in the 1970s."
+    },
+    {
+      "from": "creator_rights",
+      "to": "howard_the_duck",
+      "type": "defined",
+      "details": "Gerber's later attempt to establish ownership of the character, and the industry benefit comic Destroyer Duck that he and Kirby produced to fund it, made Howard the test case for whether a work-for-hire creation could ever belong to the person who thought of it."
+    },
+    {
+      "from": "bronze_age",
+      "to": "howard_the_duck",
+      "type": "defined",
+      "details": "The book is the era's clearest demonstration of how much room a successful writer could take at Marvel in the 1970s, and of how quickly the company closed that room once the writer began asking who owned the result."
+    },
+    {
+      "from": "steve_ditko",
+      "to": "the_question",
+      "type": "created",
+      "details": "Ditko created the Question at Charlton in 1967, where the rates were the worst in the business and the editorial interference close to none, and used him to argue an Objectivist position the character never doubts."
+    },
+    {
+      "from": "the_question",
+      "to": "watchmen",
+      "type": "influenced",
+      "details": "Moore's Watchmen proposal was written for the Question and the other Charlton heroes DC had just bought. Rorschach keeps the blank face and the absolutism and then has both examined until they break — the analogue that most directly reworks its source."
+    },
+    {
+      "from": "dave_cockrum",
+      "to": "giant_size_x_men_1",
+      "type": "drew",
+      "details": "Cockrum designed most of the new team for the 1975 relaunch — Storm, Nightcrawler and Colossus among them — reusing several concepts he had devised for the Legion of Super-Heroes at DC and been unable to place there."
+    },
+    {
+      "from": "dave_cockrum",
+      "to": "storm",
+      "type": "created",
+      "details": "Cockrum's design work gave Storm the silhouette and the bearing that made her the visual centre of the relaunched team, and she became within a decade the X-Men's leader and one of Marvel's most prominent Black characters."
+    },
+    {
+      "from": "dave_cockrum",
+      "to": "legion_of_super_heroes",
+      "type": "drew",
+      "details": "Before Marvel, Cockrum drew the Legion at DC and gave its enormous cast individual costumes for the first time. When he moved companies he took the unused half of that design work with him and built the new X-Men out of it."
+    },
+    {
+      "from": "len_wein",
+      "to": "dave_cockrum",
+      "type": "collaborator",
+      "details": "Wein and Cockrum assembled the international replacement team for Giant-Size X-Men #1 — Wein choosing the premise and the nationalities, Cockrum designing the characters — and handed the result to Chris Claremont, who wrote it for sixteen years."
+    },
+    {
+      "from": "marvel_bankruptcy",
+      "to": "heroes_reborn",
+      "type": "influenced",
+      "details": "Handing four founding titles to the artists who had walked out four years earlier was an admission of how far the company's creative standing had fallen while its finances collapsed. It ran for a year and was reversed."
+    },
+    {
+      "from": "heroes_reborn",
+      "to": "jim_lee",
+      "type": "key_role",
+      "details": "Lee's studio took Fantastic Four and Iron Man, restarting both in a separate continuity. Marvel had spent 1992 insisting the Image founders were replaceable and spent 1996 paying them to relaunch its oldest characters."
+    },
+    {
+      "from": "heroes_reborn",
+      "to": "rob_liefeld",
+      "type": "key_role",
+      "details": "Liefeld's studio took Avengers and Captain America; the arrangement with him was ended early amid disputes over deadlines and quality, and the titles were reassigned partway through the year."
+    },
+    {
+      "from": "heroes_reborn",
+      "to": "fantastic_four",
+      "type": "key_role",
+      "details": "Marvel's first family were restarted with new origins outside the continuity they had anchored since 1961 — the most direct measure of how completely the company had lost confidence in its own founding material."
+    },
+    {
+      "from": "mort_weisinger",
+      "to": "legion_of_super_heroes",
+      "type": "created",
+      "details": "The Legion began as a single Superboy backup story in 1958 and Weisinger let readers build it, adding members, elections and a constitution in response to letters until it had a denser internal history than anything else DC published."
+    },
+    {
+      "from": "paul_levitz",
+      "to": "legion_of_super_heroes",
+      "type": "wrote",
+      "details": "Levitz's runs, and The Great Darkness Saga in particular, are the team's high point, treating an enormous cast as a functioning society with politics rather than a roster to be worked through."
+    },
+    {
+      "from": "silver_age",
+      "to": "legion_of_super_heroes",
+      "type": "defined",
+      "details": "The Legion is the era's most extreme product: a fictional world elaborated by editor and readers together over decades, and consequently the property most damaged by every subsequent continuity reboot."
+    },
+    {
+      "from": "crisis_on_infinite_earths",
+      "to": "legion_of_super_heroes",
+      "type": "key_role",
+      "details": "Removing Superboy from continuity broke a team founded in-story by teenagers who had idolised him, and the contortions required to explain the Legion afterwards are the standard example of what a continuity reset costs."
+    },
+    {
+      "from": "grant_morrison",
+      "to": "doom_patrol",
+      "type": "wrote",
+      "details": "Morrison took a cancelled team of damaged misfits and wrote Dadaist villains, a sentient street and a character who is sixty-four people at once — the run that established what DC's mature line could be before that line had a name."
+    },
+    {
+      "from": "vertigo",
+      "to": "doom_patrol",
+      "type": "published",
+      "details": "Doom Patrol was among the titles folded into Vertigo at its 1993 launch, having already been publishing without the Comics Code seal. It is the imprint's clearest case of editorial freedom producing something no other publisher would have printed."
+    },
+    {
+      "from": "karen_berger",
+      "to": "doom_patrol",
+      "type": "edited",
+      "details": "Berger edited Doom Patrol through the earlier part of Morrison's run and chose to bring it into Vertigo's launch line-up in 1993 alongside the titles she had built the imprint around, even though it had begun life as a conventional DC superhero book. Axel Alonso took the title over in 1994."
+    },
+    {
+      "from": "silver_age",
+      "to": "doom_patrol",
+      "type": "defined",
+      "details": "Introduced months before the X-Men and built on the same premise — outcasts with powers they experience as disfigurement, led by a scientist in a wheelchair — the resemblance has generated sixty years of inconclusive argument about who saw what first."
+    },
+    {
+      "from": "jack_kirby",
+      "to": "nick_fury",
+      "type": "created",
+      "details": "Kirby drew Fury first as a Second World War sergeant, in a war comic that let him return to the material he had drawn in the 1940s, and then in the present as a spymaster once Marvel wanted a Bond of its own."
+    },
+    {
+      "from": "stan_lee",
+      "to": "nick_fury",
+      "type": "created",
+      "details": "Lee moved the character forward twenty years into S.H.I.E.L.D. in 1965, giving Marvel a spy franchise alongside the superheroes and a device for tying otherwise unconnected titles into one another."
+    },
+    {
+      "from": "ultimate_marvel",
+      "to": "nick_fury",
+      "type": "influenced",
+      "details": "The Ultimate line redrew Fury in 2001 in the likeness of Samuel L. Jackson, with the actor's agreement. Jackson then played the part on screen — an imprint's casting suggestion becoming the version of the character that a global audience knows."
+    },
+    {
+      "from": "marvel_cinematic_universe",
+      "to": "nick_fury",
+      "type": "key_role",
+      "details": "Fury's appearance after the credits of Iron Man is the moment the shared continuity was announced, and he functions across the films as the connective device the comics had used him for since 1965."
+    },
+    {
+      "from": "alan_moore",
+      "to": "the_killing_joke",
+      "type": "wrote",
+      "details": "Moore wrote it as a study of the Joker's claim that sanity is one bad day away from collapse, and gave him an origin the book itself refuses to confirm. He has since called it a minor work about which he had nothing much to say, and regretted the injury to Barbara Gordon in particular."
+    },
+    {
+      "from": "brian_bolland",
+      "to": "the_killing_joke",
+      "type": "drew",
+      "details": "Bolland drew the book across roughly two years, from 1986, at a level of finish no monthly schedule could have accommodated, which is part of why it was published as a prestige one-shot. He recoloured the whole thing for the 2008 edition, replacing the original's saturated palette with something far more restrained."
+    },
+    {
+      "from": "alan_moore",
+      "to": "brian_bolland",
+      "type": "collaborator",
+      "details": "Two of the British creators DC recruited in the mid-1980s, working together on a single book that outsold and outlasted most of what either did at the company. Both have since distanced themselves from it, for different reasons."
+    },
+    {
+      "from": "denny_oneil",
+      "to": "the_killing_joke",
+      "type": "edited",
+      "details": "O'Neil is the credited editor, having taken the Batman line over from Len Wein while the book was in production. The editorial approval for shooting Barbara Gordon was given earlier, under Wein — Moore has said he asked and was told to proceed, though the wording usually attributed to that exchange is disputed. Bolland recalled O'Neil as almost entirely hands-off, with a single phone call between them about the book."
+    },
+    {
+      "from": "dc_comics",
+      "to": "the_killing_joke",
+      "type": "published",
+      "details": "DC published it as a prestige-format one-shot at a premium price, the model The Dark Knight Returns had proved two years earlier, and it became one of the company's best-selling single volumes and has never been out of print."
+    },
+    {
+      "from": "direct_market",
+      "to": "the_killing_joke",
+      "type": "defined",
+      "details": "A single expensive volume with no continuing series behind it only works where retailers order to a known readership. The Killing Joke is the clearest demonstration of the format the direct market made viable, and of how completely DC had moved away from the newsstand by 1988."
+    },
+    {
+      "from": "the_killing_joke",
+      "to": "joker",
+      "type": "influenced",
+      "details": "The book made the Joker's origin permanently unreliable — he remembers it several ways and prefers it that way — and that refusal has been treated as canonical ever since, in the comics and in every screen version that followed."
+    },
+    {
+      "from": "the_killing_joke",
+      "to": "barbara_gordon",
+      "type": "influenced",
+      "details": "Barbara Gordon is shot and paralysed to give two men something to feel, and the book has been criticised on exactly those terms since. What DC did next is the more interesting half: Ostrander and Kim Yale refused to leave her as a plot device and rebuilt her as Oracle."
+    },
+    {
+      "from": "gerry_conway",
+      "to": "superman_vs_spider_man",
+      "type": "wrote",
+      "details": "Conway, who had written for both companies, scripted the 1976 one-shot that brought their two flagship characters together for the first time. Getting the agreement signed took longer than producing the comic, and the result reads as carefully even-handed: neither hero is allowed to win."
+    },
+    {
+      "from": "superman",
+      "to": "superman_vs_spider_man",
+      "type": "key_role",
+      "details": "The first meeting between the two companies' central characters was staged as a misunderstanding followed by an alliance, the template every inter-company crossover has used since — and a tacit admission that the rivalry was as much a shared market as a fight.",
+      "highlight": true
+    },
+    {
+      "from": "spider_man",
+      "to": "superman_vs_spider_man",
+      "type": "key_role",
+      "details": "Marvel's most valuable character shared a cover with DC's for the first time in 1976, in a treasury-sized edition priced well above a normal comic. It sold strongly enough to make the format a recurring event for the following decade."
+    },
+    {
+      "from": "dick_giordano",
+      "to": "superman_vs_spider_man",
+      "type": "drew",
+      "details": "Giordano inked Ross Andru's pencils on the crossover, one of the rare occasions when creative staff worked openly across the line separating the two publishers rather than moving from one to the other."
+    },
+    {
+      "from": "kurt_busiek",
+      "to": "jla_avengers",
+      "type": "wrote",
+      "details": "Busiek built the crossover on the difference between the two universes rather than the similarity: a world where heroes are revered as gods meeting one where they are treated as public servants, each finding the other's arrangement obscene."
+    },
+    {
+      "from": "george_perez",
+      "to": "jla_avengers",
+      "type": "drew",
+      "details": "Pérez had drawn pages for an abandoned early-1980s attempt at the same crossover that collapsed in disagreement between the publishers, and waited twenty years to finish the job. The completed series is the fullest display of his ability to hold hundreds of characters in a single panel.",
+      "highlight": true
+    },
+    {
+      "from": "justice_league",
+      "to": "jla_avengers",
+      "type": "key_role",
+      "details": "The League are written as figures the public treats with awe, which is what the Avengers find hardest to accept about them — the crossover's central observation about how the two companies imagine their heroes' place in the world."
+    },
+    {
+      "from": "avengers",
+      "to": "jla_avengers",
+      "type": "key_role",
+      "details": "The Avengers arrive as a working team with government paperwork and personal failures, and read the League's world as complacent. Busiek gives each side the argument its own publisher's history supports."
+    },
+    {
+      "from": "dc_vs_marvel",
+      "to": "marvel_comics",
+      "type": "key_role",
+      "details": "The 1996 crossover put the two companies' characters against each other directly, with five of the eleven fights settled by reader ballot, and then merged the universes into the Amalgam line for a month of one-shots."
+    },
+    {
+      "from": "dc_vs_marvel",
+      "to": "dc_comics",
+      "type": "key_role",
+      "details": "For DC the crossover came at the top of the speculator market and was sold accordingly, in multiple covers and voting coupons. Its lasting interest is as evidence: two firms who had spent sixty years competing agreed that their properties were legible as a single shared vocabulary."
+    },
+    {
+      "from": "speculator_boom",
+      "to": "dc_vs_marvel",
+      "type": "defined",
+      "details": "A company-versus-company crossover decided by mail-in vote, with an entire imprint of merged characters published in a single month, is the purest artefact of the period's belief that events sold themselves regardless of what happened in them."
+    },
+    {
+      "from": "superman_vs_spider_man",
+      "to": "dc_vs_marvel",
+      "type": "influenced",
+      "details": "The 1976 one-shot proved the two companies could co-publish at all; twenty years later the arrangement had become a line-wide crossover with a merged universe attached. What began as a novelty ended as a marketing format."
+    },
+    {
+      "from": "gil_kane",
+      "to": "amazing_spider_man",
+      "type": "drew",
+      "details": "Kane, who had designed the Silver Age Green Lantern at DC, drew the Spider-Man issues that broke the Comics Code in 1971 and then the 1973 issue in which Gwen Stacy dies — two of the most consequential comics Marvel published in the period, drawn by one of DC's defining architects."
+    },
+    {
+      "from": "gil_kane",
+      "to": "gwen_stacy",
+      "type": "drew",
+      "details": "Kane pencilled the death sequence, including the panel with the sound effect at Gwen's neck that made the hero's responsibility ambiguous. The decision to leave it there has been attributed variously to Kane, Conway and the production process."
+    },
+    {
+      "from": "george_perez",
+      "to": "infinity_gauntlet",
+      "type": "drew",
+      "details": "Pérez drew the first half of Marvel's 1991 crossover, six years after doing the same job for DC on Crisis on Infinite Earths. He is the only artist to have drawn both companies' universe-spanning events, and the visual language of massed heroes is his in each case.",
+      "highlight": true
+    },
+    {
+      "from": "george_perez",
+      "to": "avengers",
+      "type": "drew",
+      "details": "Pérez drew the Avengers in the 1970s and returned for the 1998 relaunch with Busiek, a run generally regarded as the modern high point for the team — the same combination of dense cast and clear staging he had brought to the New Teen Titans at DC."
+    },
+    {
+      "from": "stan_lee",
+      "to": "dc_comics",
+      "type": "wrote",
+      "details": "In 2001 DC gave Lee its own characters to reimagine from scratch in the Just Imagine series, pairing him with artists including John Buscema and Jim Lee. The company that had spent forty years as Marvel's rival hired the man most identified with it to redesign Superman and Batman."
+    },
+    {
+      "from": "roy_thomas",
+      "to": "dc_comics",
+      "type": "departed_for",
+      "details": "Thomas left Marvel for DC in 1980 after years as its editor-in-chief and chief continuity keeper, and spent most of the decade there building All-Star Squadron and Infinity Inc. out of DC's own Golden Age — applying to another company's history the archival instinct he had developed at Marvel."
+    },
+    {
+      "from": "roy_thomas",
+      "to": "justice_society",
+      "type": "wrote",
+      "details": "All-Star Squadron set Thomas's stories among DC's wartime heroes, treating the Justice Society's original run as a historical record to be filled in rather than superseded. It is the most thorough use any writer has made of the company's Golden Age."
+    },
+    {
+      "from": "jim_shooter",
+      "to": "legion_of_super_heroes",
+      "type": "wrote",
+      "details": "Shooter sold his first Legion scripts to DC at thirteen, working from Pennsylvania by mail, and wrote the title for years before he was old enough to drive. The industry's most powerful editor of the 1980s began as a child freelancer for the rival company.",
+      "highlight": true
+    },
+    {
+      "from": "gerry_conway",
+      "to": "dc_comics",
+      "type": "departed_for",
+      "details": "Conway moved between the two companies repeatedly through the 1970s, writing Justice League of America and co-creating Firestamp-era characters at DC while his Spider-Man work was still in print. He is the clearest case of a writer whose career simply ignored the rivalry."
+    },
+    {
+      "from": "joe_quesada",
+      "to": "batman",
+      "type": "drew",
+      "details": "Before Marvel Knights, Quesada drew Batman: Sword of Azrael at DC — the series that introduced the character who would replace Batman during Knightfall. Marvel's most consequential modern editor-in-chief came up through its competitor's flagship franchise."
+    },
+    {
+      "from": "denny_oneil",
+      "to": "iron_man",
+      "type": "wrote",
+      "details": "O'Neil wrote Iron Man at Marvel in the early 1980s, running Tony Stark's alcoholism across an extended arc in which he loses the company and the armour. Having brought social realism to DC's heroes a decade earlier, he did the same for Marvel's most corporate one."
+    },
+    {
+      "from": "jim_starlin",
+      "to": "batman",
+      "type": "wrote",
+      "details": "Starlin wrote A Death in the Family at DC in 1988, in which readers voted by telephone on whether the second Robin would survive and narrowly chose to kill him. Marvel's cosmic architect is also responsible for the single most notorious editorial stunt in DC's history.",
+      "highlight": true
+    },
+    {
+      "from": "jim_starlin",
+      "to": "darkseid",
+      "type": "wrote",
+      "details": "In Cosmic Odyssey Starlin wrote Kirby's New Gods at DC, twelve years after building Thanos at Marvel on the same template. The line of influence runs Kirby to Darkseid to Thanos and then back to Darkseid in the hands of Thanos's creator."
+    },
+    {
+      "from": "neil_gaiman",
+      "to": "marvel_comics",
+      "type": "wrote",
+      "details": "Gaiman wrote 1602 and a revival of Kirby's Eternals for Marvel in the 2000s, long after Sandman had made him DC's most celebrated import. Both projects took the same approach he had used at DC: treat the company's back catalogue as folklore rather than continuity."
+    },
+    {
+      "from": "geoff_johns",
+      "to": "avengers",
+      "type": "wrote",
+      "details": "Before he became the writer most identified with DC's direction, Johns wrote The Avengers at Marvel in the early 2000s. Movement in that direction — DC's future architect learning on Marvel's flagship team — was routine by then and rarely remarked on.",
+      "highlight": true
+    },
+    {
+      "from": "ed_brubaker",
+      "to": "catwoman",
+      "type": "wrote",
+      "details": "Brubaker relaunched Catwoman at DC in 2001, moving her out of costumed crime into street-level noir, and wrote Gotham Central with Greg Rucka before taking the same crime-fiction sensibility to Captain America at Marvel."
+    },
+    {
+      "from": "gene_colan",
+      "to": "batman",
+      "type": "drew",
+      "details": "Colan drew Batman and Detective Comics at DC in the 1980s after two decades at Marvel, bringing the same shadowed, fluid figure work he had used on Daredevil and Tomb of Dracula to a character it suited just as well."
+    },
+    {
+      "from": "carmine_infantino",
+      "to": "marvel_comics",
+      "type": "departed_for",
+      "details": "Having run DC as publisher until 1976, Infantino spent much of the following decade drawing for Marvel — Star Wars, Nova, Spider-Woman — a reversal made stranger by the fact that he had personally recruited Kirby away from Marvel six years earlier."
+    },
+    {
+      "from": "john_romita_sr",
+      "to": "marvel_comics",
+      "type": "departed_for",
+      "details": "Romita spent the late 1950s and early 1960s drawing romance comics at DC, and returned to Marvel in 1965 expecting more of the same. He was given Spider-Man instead, and became the artist who defined the character's commercial peak."
+    },
+    {
+      "from": "todd_mcfarlane",
+      "to": "marvel_comics",
+      "type": "departed_for",
+      "details": "McFarlane broke in at DC on Infinity Inc. in the mid-1980s before moving to Marvel, where The Amazing Spider-Man made him the industry's biggest-selling artist — and from which he left again, four years later, to found Image."
+    },
+    {
+      "from": "rob_liefeld",
+      "to": "marvel_comics",
+      "type": "departed_for",
+      "details": "Liefeld's first regular work was Hawk & Dove at DC in 1988. Two years later he was relaunching New Mutants at Marvel, and two years after that he was one of the seven founders who walked out to start Image."
+    },
+    {
+      "from": "chris_claremont",
+      "to": "dc_comics",
+      "type": "wrote",
+      "details": "After leaving the X-Men in 1991 Claremont wrote Sovereign Seven for DC, a creator-owned series set in the DC universe — an unusual arrangement at the time, and a reminder that the writer most identified with one company spent years working for the other."
+    },
+    {
+      "from": "alex_ross",
+      "to": "superman",
+      "type": "drew",
+      "details": "Ross painted Kingdom Come and Superman: Peace on Earth at DC in the years after Marvels, applying the same method — photographic reference, oil paint, the world seen from ground level — to the characters of the rival company."
+    },
+    {
+      "from": "dwayne_mcduffie",
+      "to": "marvel_comics",
+      "type": "wrote",
+      "details": "McDuffie worked as a Marvel editor and wrote Damage Control, a comedy about the contractors who clean up after superhero fights, before leaving to found Milestone. His argument about who gets to create characters was formed inside the company he left."
+    },
+    {
+      "from": "archie_goodwin",
+      "to": "batman",
+      "type": "edited",
+      "details": "Goodwin edited Legends of the Dark Knight at DC in the 1990s, having earlier run Marvel's Epic line. He is one of very few editors whose reputation for talent-handling was equally strong at both companies."
+    },
+    {
+      "from": "steve_gerber",
+      "to": "jack_kirby",
+      "type": "collaborator",
+      "details": "Gerber and Kirby created Destroyer Duck together in 1982, publishing it independently to raise funds for Gerber's lawsuit against Marvel over Howard the Duck. Two creators from opposite ends of the company's history used a comic to finance an argument with it."
+    },
+    {
+      "from": "uncanny_x_men",
+      "to": "new_teen_titans",
+      "type": "influenced",
+      "details": "Wolfman and Pérez built The New Teen Titans as DC's answer to the X-Men, using the same formula of a large cast with continuing personal lives, and it became the only DC title of the era to compete with it directly. Both books were then drawn into the two companies' first joint publication in 1982."
+    },
+    {
+      "from": "deathstroke",
+      "to": "deadpool",
+      "type": "influenced",
+      "details": "Deadpool was created eleven years after Deathstroke and named Wade Wilson against Slade Wilson, an in-joke his co-creator has acknowledged. What began as a visual and nominal parody of a DC villain became one of Marvel's most valuable properties."
+    },
+    {
+      "from": "marv_wolfman",
+      "to": "deathstroke",
+      "type": "created",
+      "details": "Wolfman conceived Deathstroke as a professional rather than a fanatic — a mercenary who takes the contract his son died attempting, and pursues it without personal animus, which made him harder for the Titans to answer than a conventional villain."
+    },
+    {
+      "from": "george_perez",
+      "to": "deathstroke",
+      "type": "created",
+      "details": "Pérez designed the two-tone mask and armour, one of the few costume designs of the period that has survived unaltered into film and television adaptations."
+    },
+    {
+      "from": "new_teen_titans",
+      "to": "deathstroke",
+      "type": "debut",
+      "details": "Deathstroke appeared in the second issue of the 1980 relaunch and became the series' defining antagonist, culminating in The Judas Contract, in which a Titan is revealed to have been his agent from the beginning."
+    },
+    {
+      "from": "roy_thomas",
+      "to": "man_thing",
+      "type": "created",
+      "details": "Thomas devised Man-Thing with Gerry Conway and Gray Morrow for Savage Tales in 1971, two months before DC published Swamp Thing. Both drew on the 1940s Heap, and the creators involved were friends — Wein and Conway were sharing an apartment — which is why the resemblance is usually treated as common inheritance rather than theft."
+    },
+    {
+      "from": "gerry_conway",
+      "to": "man_thing",
+      "type": "created",
+      "details": "Conway scripted the character's first appearance, and later wrote Spider-Man while his flatmate wrote Swamp Thing at the other company — a small illustration of how narrow the professional world producing both universes actually was."
+    },
+    {
+      "from": "man_thing",
+      "to": "swamp_thing",
+      "type": "influenced",
+      "details": "Man-Thing reached print in May 1971 and Swamp Thing in July, and the two have been compared ever since. Neither was copied from the other: both descend from the same 1940s pulp figure, and both were made possible by the same relaxation of the Comics Code."
+    },
+    {
+      "from": "seduction_of_the_innocent",
+      "to": "atlas_comics",
+      "type": "influenced",
+      "details": "Wertham's campaign and the hearings that followed fell hardest on the horror and crime lines, and Goodman's Atlas was among the most exposed publishers in the business. The Code that resulted removed the genres his line depended on and contributed directly to its near-collapse."
+    },
+    {
+      "from": "marvel_bankruptcy",
+      "to": "dc_comics",
+      "type": "influenced",
+      "details": "Marvel's purchase of a distributor in 1995 forced every other publisher to pick a side, and DC signed an exclusive agreement with Diamond in response. The consolidation that followed left the direct market with a single distributor, which is the arrangement the whole industry has lived under since."
+    },
+    {
+      "from": "marvel_method",
+      "to": "dc_comics",
+      "type": "influenced",
+      "details": "DC continued to work from full scripts while Marvel's artists were plotting from a conversation, and the difference eventually mattered a great deal: the ambiguity the Marvel Method created about who had authored what is the ground on which every subsequent credit dispute between Lee, Kirby and Ditko was fought."
+    },
+    {
+      "from": "dc_comics",
+      "to": "martin_goodman",
+      "type": "influenced",
+      "details": "Goodman's distribution arrangement in the late 1950s was with Independent News — owned by DC's proprietors — and it capped his output at eight titles a month. Marvel's rival controlled the size of its line for years before the 1961 relaunch made that arrangement untenable."
     }
   ]
 }
