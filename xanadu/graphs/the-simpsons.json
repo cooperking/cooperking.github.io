@@ -1878,7 +1878,8 @@
    "from": "krusty_the_clown",
    "to": "sideshow_mel",
    "type": "employs",
-   "details": "Mel replaced Bob and has served without incident since, which the show notes is the only reason he lacks a criminal record.\n\nMel is a trained Shakespearean actor reduced to being hit with a plank, and the show occasionally lets his diction remind the audience of the fact.\n\nUnlike Bob, he has never attempted revenge, which the series presents as the difference between resentment expressed and resentment endured."
+   "details": "Mel replaced Bob and has served without incident since, which the show notes is the only reason he lacks a criminal record.\n\nMel is a trained Shakespearean actor reduced to being hit with a plank, and the show occasionally lets his diction remind the audience of the fact.\n\nUnlike Bob, he has never attempted revenge, which the series presents as the difference between resentment expressed and resentment endured.",
+   "highlight": true
   },
   {
    "from": "sideshow_bob",
@@ -2084,13 +2085,6 @@
    "to": "crazy_cat_lady",
    "type": "part_of",
    "details": "Abernathy is a fixture of Springfield's streets, communicating by shrieking and throwing cats, until a later episode retrofits her with a name and a history as a burnt-out doctor and lawyer.\n\nThe retrofit is characteristic of the show's later method: a background joke given a biography that makes it less comfortable without removing it.\n\nHer few intelligible lines are usually the most lucid thing said in the scene, which is the joke the later writing found in her."
-  },
-  {
-   "from": "bumblebee_man",
-   "to": "krusty_the_clown",
-   "type": "rival",
-   "details": "Both hold down Springfield television slots aimed at children, and the show occasionally sets the Channel Ocho slapstick against Krusty's programme as competing forms of the same cynicism.\n\nBoth are seen off-air in their own episodes, and both are shown to be miserable in ways their programmes are designed to conceal.\n\nThe show uses the pairing to note that Springfield's television output is uniformly cynical regardless of which language it is broadcast in.",
-   "highlight": true
   },
   {
    "from": "springfield",
@@ -3561,12 +3555,6 @@
   },
   {
    "from": "bart_simpson",
-   "to": "sherri_and_terri",
-   "type": "rival",
-   "details": "The twins sit behind Bart and exist mainly to announce his failures in unison, which makes them the classroom's permanent audience rather than his enemies.\n\nTheir commentary is the show's most economical way of confirming that everyone present has seen what just happened to him."
-  },
-  {
-   "from": "bart_simpson",
    "to": "martin_prince",
    "type": "rival",
    "details": "Martin is everything the school rewards and Bart is everything it punishes, which the show has used for contests, elections and one episode in which Bart is hired to protect him.\n\nThe rivalry is asymmetric: Martin admires Bart and says so, and Bart has never once returned the interest."
@@ -3708,18 +3696,6 @@
    "to": "santas_little_helper",
    "type": "rival",
    "details": "Homer's objection to the dog is financial and permanent, and the show has used it for episodes in which the animal is sold, trained away or replaced.\n\nEach ends with Homer conceding, which the series treats as the least surprising outcome available."
-  },
-  {
-   "from": "santas_little_helper",
-   "to": "snowball_ii",
-   "type": "friend",
-   "details": "The two pets occupy the same house without much interaction, and the show has occasionally given them a silent subplot running underneath the human one.\n\nA later episode reveals a longer history of Simpson cats than anyone in the family has acknowledged, all of them named Snowball and all of them replaced without ceremony."
-  },
-  {
-   "from": "mr_burns",
-   "to": "blinky",
-   "type": "rival",
-   "details": "Burns eats Blinky on camera during a campaign for governor and cannot swallow it, which is the moment the election is lost.\n\nThe fish is the plant's most visible product, and the show has used it since the second season as the shorthand for everything the inspections do not catch."
   },
   {
    "from": "stonecutters",
@@ -4171,12 +4147,6 @@
    "details": "Selman has run a growing share of the show's seasons alongside Jean, and the two are credited together on its later output.\n\nThe arrangement is the first time since the fourth season that the series has been run by two people at once."
   },
   {
-   "from": "al_jean",
-   "to": "conan_obrien",
-   "type": "friend",
-   "details": "O'Brien was hired onto the staff Jean and Reiss were running, with no television credits and a background in sketch comedy.\n\nJean has described the decision to produce his monorail script largely unchanged as the least controversial call of the season."
-  },
-  {
    "from": "danny_elfman",
    "to": "alf_clausen",
    "type": "influenced",
@@ -4207,14 +4177,8 @@
    "details": "The merchandising boom arrived in the network's third year and gave a fourth network its first genuine mass-culture property.\n\nFox's willingness to leave the show alone during the early seasons is usually attributed to how much the licensing was earning while it did so."
   },
   {
-   "from": "bart_simpson",
+   "from": "marcia_wallace",
    "to": "chalkboard_gag",
-   "type": "influenced",
-   "details": "The punishment is written for Bart and changes weekly, which makes it the show's only fixed slot for material with no connection to the episode around it.\n\nIt has been used for topical comment, for apologies and, on several occasions, for the show writing about itself."
-  },
-  {
-   "from": "chalkboard_gag",
-   "to": "marcia_wallace",
    "type": "influenced",
    "details": "After Wallace's death in 2013 the chalkboard was used to acknowledge it, with Bart writing a line about his teacher rather than a punishment.\n\nThe show retired Edna Krabappel rather than recast her, and the chalkboard was the only place it marked the fact."
   },
@@ -4303,30 +4267,6 @@
    "details": "Brush with Greatness reveals that Marge sent Starr a portrait as a teenager and gave up painting when no reply came.\n\nThe episode's premise is that he has been answering fan mail continuously ever since, which is the most generous thing the show has ever invented about a real person."
   },
   {
-   "from": "meryl_streep",
-   "to": "bart_simpson",
-   "type": "influenced",
-   "details": "Streep voiced Jessica Lovejoy, the minister's daughter, who is considerably worse behaved than Bart and entirely willing to let him take the blame.\n\nThe episode is one of the few to give Bart a peer who outmatches him, and it ends with him publicly convicted of something he did not do."
-  },
-  {
-   "from": "john_waters",
-   "to": "homer_simpson",
-   "type": "influenced",
-   "details": "Waters voiced John, the antiques dealer whose friendship with the family forces Homer into the episode's argument with himself.\n\nThe resolution is careful: Homer is not persuaded by an argument but by John saving his life, which the show presents as the only mechanism likely to work on him."
-  },
-  {
-   "from": "james_earl_jones",
-   "to": "treehouse_of_horror",
-   "type": "influenced",
-   "details": "Jones narrated The Raven in the first anthology and returned to later instalments in other roles, becoming the strand's most frequently used guest voice.\n\nHis presence in the first episode is part of why the format was taken seriously enough to be repeated."
-  },
-  {
-   "from": "dustin_hoffman",
-   "to": "lisa_simpson",
-   "type": "influenced",
-   "details": "Hoffman voiced Mr. Bergstrom, the substitute teacher who takes Lisa seriously and then leaves, which is the whole of the episode's argument.\n\nThe note he leaves her, telling her who she is, is the earliest piece of writing the show produced that was not built towards a joke."
-  },
-  {
    "from": "jon_lovitz",
    "to": "ep_the_way_we_was",
    "type": "guested",
@@ -4371,12 +4311,6 @@
    "details": "Ling is raised in the twins' flat, which makes Patty the second parent by default and gives the show a rare instance of the pair having to modify anything about their lives.\n\nHer presence has been used sparingly, mostly to demonstrate that Selma's household is more functional than the Simpsons'."
   },
   {
-   "from": "kwik_e_mart",
-   "to": "manjula_nahasapeemapetilon",
-   "type": "part_of",
-   "details": "Manjula has run the store during Apu's absences and is generally shown to be better at it, which the show plays as a fact rather than a punchline.\n\nThe marriage's collapse into separation is conducted partly through the business, since it is the only property either of them controls."
-  },
-  {
    "from": "moes_tavern",
    "to": "barney_gumble",
    "type": "part_of",
@@ -4387,18 +4321,6 @@
    "to": "lenny_leonard",
    "type": "part_of",
    "details": "Lenny and Carl occupy the same stools every night, which makes them the tavern's fixed scenery as much as its customers.\n\nThe bar's regulars vote as a bloc on every town matter the show puts to them, and are wrong with a consistency the series treats as structural."
-  },
-  {
-   "from": "springfield",
-   "to": "professor_frink",
-   "type": "friend",
-   "details": "Frink is called in whenever Springfield needs a scientific solution and has never once provided one that did not create a second problem.\n\nThe show's one serious scene for him, in which his father is briefly restored, is played almost entirely without the character's usual tics."
-  },
-  {
-   "from": "professor_frink",
-   "to": "springfield_nuclear_plant",
-   "type": "rival",
-   "details": "Frink's inventions and the plant's negligence are the town's two sources of catastrophe, and the show occasionally sets them against each other for an episode.\n\nNeither institution has ever been held responsible for anything, which is the joke the pairing exists to make."
   },
   {
    "from": "springfield",
@@ -4413,64 +4335,10 @@
    "details": "Channel Ocho broadcasts from Springfield, which the show uses to establish that the town has a Spanish-language media industry as cynical as its English-language one.\n\nThe character's off-duty scenes, in which he speaks normally and is miserable, are among the series' most efficient two-line jokes."
   },
   {
-   "from": "crazy_cat_lady",
-   "to": "springfield_elementary",
-   "type": "rival",
-   "details": "Abernathy's appearances at the school, usually as an intruder, are one of the few times the show lets a background joke enter a plot.\n\nThe later revelation that she qualified as both a doctor and a lawyer is delivered in a scene that also has her throwing a cat."
-  },
-  {
-   "from": "kwik_e_mart",
-   "to": "gil_gunderson",
-   "type": "part_of",
-   "details": "Gil has worked at almost every business in Springfield, the Kwik-E-Mart included, and been dismissed from each within an episode.\n\nHe is the show's standing measure of a bad situation: if Gil is doing better than you, the plot has gone wrong."
-  },
-  {
-   "from": "hans_moleman",
-   "to": "mayor_quimby",
-   "type": "rival",
-   "details": "Moleman's appearances before the town council are the show's most reliable demonstration that Springfield's government does not listen to anyone.\n\nHe has been ignored, buried and driven into by successive administrations without ever raising his voice."
-  },
-  {
-   "from": "cletus_spuckler",
-   "to": "shelbyville",
-   "type": "rival",
-   "details": "The Spucklers occupy the rural ground between the two towns, which the show uses whenever a plot needs the border crossed.\n\nLemon of Troy establishes the geography properly, and Cletus's family are the only people who appear to live in either direction."
-  },
-  {
-   "from": "shelbyville",
-   "to": "springfield_elementary",
-   "type": "rival",
-   "details": "The two towns' schools supply the mirror characters Lemon of Troy runs on, including a Shelbyville equivalent for every child in Bart's group.\n\nThe joke is that the rivalry is inherited rather than earned, and that neither side can remember what the founding argument was about."
-  },
-  {
-   "from": "blinky",
-   "to": "lisa_simpson",
-   "type": "influenced",
-   "details": "Blinky is the earliest evidence the show gave Lisa for the argument she has been making ever since, and the episode ends with the fish's existence successfully denied.\n\nThe plant's inspection is passed by bribery, which sets the pattern for every subsequent environmental storyline."
-  },
-  {
-   "from": "moes_tavern",
-   "to": "duff_beer",
-   "type": "part_of",
-   "details": "Moe's sells Duff almost exclusively, and the show has used the dependence for episodes about supply, sponsorship and one substantial health scare.\n\nThe brewery's tour, which reveals its three products flowing from a single pipe, is the series' most direct joke about brand differentiation."
-  },
-  {
-   "from": "radioactive_man",
-   "to": "rainier_wolfcastle",
-   "type": "part_of",
-   "details": "Wolfcastle is cast as Radioactive Man in the Springfield production, which the show uses to satirise both action stardom and comic-book adaptation at once.\n\nThe shoot collapses when the town's price rises, and the production leaves without finishing, which is the episode's actual subject."
-  },
-  {
    "from": "bleeding_gums_murphy",
    "to": "lisa_simpson",
    "type": "influenced",
    "details": "Murphy is the only Springfield adult who takes Lisa's playing seriously, and the show gives their scenes a stillness it allows almost nowhere else.\n\nHis death in 1995 produced the series' most sustained treatment of grief, and established Lisa's musical life as the place its unironic material lives."
-  },
-  {
-   "from": "george_meyer",
-   "to": "john_swartzwelder",
-   "type": "friend",
-   "details": "Meyer and Swartzwelder were both on the staff from the first season and are the two writers most often named when the early seasons' comic method is described.\n\nTheir approaches differ sharply: Meyer's influence was exercised in rewrites, Swartzwelder's in the volume of scripts he delivered."
   },
   {
    "from": "george_meyer",
@@ -4479,34 +4347,10 @@
    "details": "Meyer's contribution to the early seasons was made largely in the rewrite room rather than on credited scripts, and colleagues have named this episode among the clearest results.\n\nThe show's practice of rewriting collectively is why individual credits from the period understate who wrote what."
   },
   {
-   "from": "conan_obrien",
-   "to": "ep_deep_space_homer",
-   "type": "influenced",
-   "details": "O'Brien was on the staff during the period the episode was written and has been credited by colleagues with pushing the show towards premises it could not justify.\n\nHe left in 1993 to host Late Night, giving up a secure writing job for a programme he had never presented."
-  },
-  {
    "from": "david_x_cohen",
    "to": "matt_groening",
    "type": "friend",
    "details": "Cohen and Groening developed Futurama together after Cohen's years on the Simpsons staff, taking with them a shared appetite for science-fiction mechanics the earlier show could only use at Halloween.\n\nHe wrote under the name David S. Cohen during his Simpsons tenure."
-  },
-  {
-   "from": "ken_keeler",
-   "to": "david_x_cohen",
-   "type": "friend",
-   "details": "Keeler and Cohen were both on the Simpsons staff in the mid-1990s and both moved to Futurama, where their scripts became the ones most associated with the show's mathematical jokes.\n\nBoth arrived from academic backgrounds rather than from television."
-  },
-  {
-   "from": "brad_bird",
-   "to": "david_silverman",
-   "type": "friend",
-   "details": "Bird and Silverman both worked on the show's early animation and both went on to direct features, Bird at Pixar and Silverman on the Simpsons film.\n\nThe two are frequently credited together with establishing how the characters actually move, at a point when the models were changing between scenes."
-  },
-  {
-   "from": "rich_moore",
-   "to": "david_silverman",
-   "type": "friend",
-   "details": "Moore and Silverman directed a substantial share of the early seasons between them, and both later moved into feature animation.\n\nTheir episodes are the ones most often cited when the show's early staging is discussed, particularly the musical numbers."
   },
   {
    "from": "richard_sakai",
@@ -4521,108 +4365,16 @@
    "details": "Smith originally auditioned for Bart and Cartwright for Lisa, and the two were swapped, which is the origin story the cast has repeated for three decades.\n\nThey have recorded opposite each other continuously since 1987, first on the shorts and then on the series."
   },
   {
-   "from": "phil_hartman",
-   "to": "ep_the_way_we_was",
-   "type": "guested",
-   "details": "Hartman voiced the announcer and several incidental parts across the early seasons before Troy McClure and Lionel Hutz became fixed roles.\n\nHe appeared in dozens of episodes, more than almost any performer outside the regular cast, and both his characters were retired rather than recast after his death in 1998."
-  },
-  {
-   "from": "phil_hartman",
-   "to": "krusty_the_clown",
-   "type": "friend",
-   "details": "Hartman's characters occupy the same corner of Springfield's entertainment industry as Krusty: television personalities whose private circumstances are considerably worse than their public ones.\n\nThe show has paired them for telethons, roasts and one substantial fraud, in which the difference between the two men is a matter of degree."
-  },
-  {
-   "from": "joe_mantegna",
-   "to": "kelsey_grammer",
-   "type": "friend",
-   "details": "Both are recurring guest performers whose characters have outlasted three decades of one-episode celebrity appearances, and both are cast against the register of their live-action work.\n\nThe show treats them as a class apart from its guest stars: performers hired to create a character rather than to play themselves."
-  },
-  {
-   "from": "joe_mantegna",
-   "to": "mayor_quimby",
-   "type": "voices",
-   "details": "Mantegna's Fat Tony deals with Quimby's administration directly, and the show records both sides of the arrangement as ordinary municipal business.\n\nThe courtesy in the performance is what makes the threats work: nothing is ever said that could be quoted in court."
-  },
-  {
-   "from": "russi_taylor",
-   "to": "nancy_cartwright",
-   "type": "friend",
-   "details": "Taylor and Cartwright recorded the school's children opposite each other for three decades, covering most of the class between them.\n\nTaylor's death in 2019 largely retired Martin Prince from speaking roles, leaving a gap in the classroom scenes the show has not filled."
-  },
-  {
-   "from": "michael_jackson",
-   "to": "bart_simpson",
-   "type": "influenced",
-   "details": "Jackson is widely reported to have written Do the Bartman and to have gone uncredited on it, a claim Groening and Al Jean have both confirmed in interviews rather than one the record supports.\n\nHe also wrote the birthday song Bart performs in Stark Raving Dad, an episode the producers withdrew from circulation in 2019.",
-   "highlight": true
-  },
-  {
-   "from": "johnny_cash",
-   "to": "homer_simpson",
-   "type": "influenced",
-   "details": "The space coyote's advice sends Homer out of Springfield in search of a soulmate and returns him to the conclusion that he already had one.\n\nCash plays the sequence entirely straight, which is why an episode built on a chilli hallucination can end on a genuine marital crisis."
-  },
-  {
-   "from": "buzz_aldrin",
-   "to": "homer_simpson",
-   "type": "influenced",
-   "details": "Aldrin's presence on the flight lets the episode make its jokes about NASA's public standing from inside the programme rather than at a distance.\n\nHis line about coming second is the show's most economical observation about how the moon landings are actually remembered."
-  },
-  {
    "from": "leonard_nimoy",
    "to": "springfield",
    "type": "guested",
    "details": "Nimoy's two appearances establish the show's standing joke about celebrity in Springfield: he arrives without explanation, contributes nothing and leaves mid-sentence.\n\nThe second, narrating The Springfield Files in 1997, depends entirely on the audience remembering the first."
   },
   {
-   "from": "danny_devito",
-   "to": "homer_simpson",
-   "type": "influenced",
-   "details": "DeVito's Herb is the relative who succeeds where Homer cannot, which the show uses to make its bluntest statement about how much of Homer's situation is his own doing.\n\nThe car that ruins Herb is designed to Homer's specification, and the episode declines to soften the consequence."
-  },
-  {
    "from": "stephen_hawking",
    "to": "lisa_simpson",
    "type": "friend",
    "details": "Hawking arrives to deflate Springfield's Mensa chapter and is the only visitor to the town who treats Lisa as an equal rather than as a precocious child.\n\nHis appearances are among the show's most cited guest spots, and he returned to the role several times."
-  },
-  {
-   "from": "tony_bennett",
-   "to": "homer_simpson",
-   "type": "influenced",
-   "details": "Bennett appeared as himself in 1990, among the earliest celebrities to play themselves rather than a character, at a point when the show's guest policy was still being decided.\n\nThe episode has Homer become a mascot for the town's baseball team and lose the job on promotion, and Bennett's presence is what marks the whole enterprise as a bigger deal than it turns out to be."
-  },
-  {
-   "from": "aerosmith",
-   "to": "moes_tavern",
-   "type": "influenced",
-   "details": "The band play a set at the transformed tavern and are paid in free pickled eggs, which the episode treats as an adequate fee.\n\nTheir appearance opened the way for the long line of musicians who have since played versions of themselves in Springfield."
-  },
-  {
-   "from": "u2",
-   "to": "homer_simpson",
-   "type": "influenced",
-   "details": "Homer interrupts the band's Springfield concert to launch a campaign for sanitation commissioner, using a stage built to be climbed on.\n\nThe sequence parodies their own touring production in detail, and the band's willingness to be the setup rather than the punchline is why it works."
-  },
-  {
-   "from": "couch_gag",
-   "to": "simpsons_movie",
-   "type": "influenced",
-   "details": "The gag is the show's one guaranteed slot for material with no connection to the episode, and guest artists including Banksy in 2010 and Guillermo del Toro in 2013 have been handed it.\n\nIts variations range from a few seconds to sequences longer than an act, and the film opened with an extended version of the same idea."
-  },
-  {
-   "from": "longest_running_record",
-   "to": "doh",
-   "type": "influenced",
-   "details": "The show's length is a large part of why the catchphrase entered general use: it was in weekly circulation for over a decade before any dictionary considered it.\n\nIt was added to the Oxford English Dictionary in 2001, defined as an expression of frustration at one's own stupidity, and remains the series' most widely adopted contribution to English.",
-   "highlight": true
-  },
-  {
-   "from": "treehouse_of_horror",
-   "to": "simpsons_did_it",
-   "type": "influenced",
-   "details": "The phrase comes from a 2002 South Park episode in which a character trying to devise an original scheme finds the Simpsons has used every idea first.\n\nThe anthology is the strand that makes the claim most plausible, since its segments are free to parody anything without regard to continuity."
   },
   {
    "from": "disney_acquisition",
@@ -4637,52 +4389,10 @@
    "details": "The studio animated the original title sequence, whose rougher line and unstable colour are characteristic of the shorts and the first three seasons.\n\nThe sequence was reworked when the show moved to high definition in 2009, by which point almost nothing of the original animation remained."
   },
   {
-   "from": "danny_elfman",
-   "to": "simpsons_movie",
-   "type": "influenced",
-   "details": "Elfman's theme, written in 1989, opens the feature as it opens the episodes, and is the only piece of the show's music the film could not have replaced.\n\nHe has said the piece came to him unusually quickly, and it has remained essentially unchanged for the entire run."
-  },
-  {
-   "from": "george_harrison",
-   "to": "ep_homers_barbershop_quartet",
-   "type": "influenced",
-   "details": "Harrison's appearance is the point of the parody: a real member of the group being imitated turns up to be unimpressed by the imitation.\n\nHis flat verdict on the rooftop reunion is the episode's last joke and its most affectionate."
-  },
-  {
-   "from": "dustin_hoffman",
-   "to": "phil_hartman",
-   "type": "influenced",
-   "details": "Hoffman appeared under a pseudonym, as several early guests did when they were unsure about lending their names to a cartoon.\n\nThe caution disappeared within a few seasons, and performers including Hartman went on to build recurring characters on the show rather than one-off appearances."
-  },
-  {
-   "from": "kevin_michael_richardson",
-   "to": "alex_desert",
-   "type": "friend",
-   "details": "Both took over long-established characters in the early 2020s under the show's decision that white actors would no longer voice non-white characters.\n\nNeither recast was acknowledged on screen, and both performers kept the existing readings rather than reinterpreting the parts."
-  },
-  {
-   "from": "meryl_streep",
-   "to": "reverend_lovejoy",
-   "type": "influenced",
-   "details": "Streep voiced the minister's daughter, whose behaviour is considerably worse than Bart's and entirely concealed from her father.\n\nThe episode uses the family to make its point about how much a congregation is willing not to notice."
-  },
-  {
-   "from": "springfield_naming",
-   "to": "shelbyville",
-   "type": "influenced",
-   "details": "The show's refusal to name the state extends to the neighbouring town, whose founding story is given in full while its location remains as unfixed as Springfield's.\n\nLemon of Troy makes the shared history explicit and still declines to say where either place is."
-  },
-  {
    "from": "matt_groening",
    "to": "couch_gag",
-   "type": "influenced",
+   "type": "created",
    "details": "The couch gag and the chalkboard were built into the title sequence from the second episode as the show's two weekly variables.\n\nBoth were originally used to adjust the running time, and both survived long after the scheduling problem they solved."
-  },
-  {
-   "from": "elizabeth_taylor",
-   "to": "lisa_simpson",
-   "type": "influenced",
-   "details": "Taylor voiced Maggie's first word at the end of Lisa's First Word, an episode Lisa prompts by asking how she got her own name.\n\nThe word is delivered only once Homer has left the room, which the show has never revisited and never allowed Maggie to repeat in his hearing."
   }
  ]
 }
