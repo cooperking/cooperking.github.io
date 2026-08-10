@@ -141,6 +141,11 @@
       "label": "legal dispute",
       "mutual": true,
       "dashed": true
+    },
+    "rival": {
+      "label": "rival publisher",
+      "mutual": true,
+      "dashed": true
     }
   },
   "nodes": {
@@ -842,6 +847,60 @@
       "group": "media",
       "desc": "Christopher Nolan's 2008 film, the second of his trilogy, treating Gotham as a plausible modern city and the Joker, played by Heath Ledger, as an agent of pure disorder testing whether institutions and individuals hold under pressure.\n\nIt earned Ledger a posthumous Academy Award, passed a billion dollars at the box office, and made the case that superhero films could be treated as serious cinema. Its influence pushed Warner and its competitors towards darker, more realistic adaptations for the following decade.",
       "url": "https://en.wikipedia.org/wiki/The_Dark_Knight"
+    },
+    "marvel_comics": {
+      "name": "Marvel Comics",
+      "group": "company",
+      "desc": "The rival publisher, founded as Timely Comics in 1939 and branding its covers Marvel from 1963. Its 1961 relaunch under Stan Lee and Jack Kirby was commissioned after DC's Justice League demonstrated that superhero teams could sell again, and it answered DC's clean, rationalised house style with continuity, argument and heroes who had money troubles.\n\nMarvel overtook DC in market share in the early 1970s and held the lead for most of the following two decades, a reversal that drove much of DC's response: the recruitment of Kirby in 1970, the editorial reforms of the Kahn era, and the eventual turn towards prestige and creator-driven publishing. Staff have moved between the two companies continuously.",
+      "url": "https://en.wikipedia.org/wiki/Marvel_Comics"
+    },
+    "jimmy_olsen": {
+      "name": "Superman's Pal, Jimmy Olsen",
+      "group": "title",
+      "desc": "A long-running Superman spin-off that became, unexpectedly, the entry point for Jack Kirby's DC career. Offered his choice of assignment in 1970, Kirby asked for the title precisely because it was selling badly and had no regular creative team, so that taking it would cost nobody their job.\n\nHe took over with issue 133 and used it to introduce the Newsboy Legion's successors, the DNA Project and, in issue 134, the first glimpse of Darkseid. DC had his Superman faces redrawn by staff artists to preserve the house look — an editorial decision Kirby resented and which is visible on the page.",
+      "url": "https://en.wikipedia.org/wiki/Superman%27s_Pal_Jimmy_Olsen"
+    },
+    "forever_people": {
+      "name": "The Forever People",
+      "group": "title",
+      "desc": "One of the three titles Kirby launched in 1971 to carry the Fourth World, following a group of young New Genesis characters who arrive on Earth searching for a missing friend and who summon a single warrior, the Infinity Man, by joining hands.\n\nIts first issue contains Darkseid's first full appearance, and its counterculture register — communal, itinerant, suspicious of authority — is the most explicitly of-its-moment thing Kirby produced at DC. It was cancelled after eleven issues in 1972, before its story could be completed.",
+      "url": "https://en.wikipedia.org/wiki/Forever_People"
+    },
+    "mister_miracle_title": {
+      "name": "Mister Miracle",
+      "group": "title",
+      "desc": "The Fourth World title that outlived the rest, running to eighteen issues before its 1974 cancellation and revived repeatedly since. It follows an escape artist raised in Apokolips's orphanage who has made a career out of the one skill that upbringing taught him.\n\nKirby wrote and drew it as the most personal of the four books: the escape is the point, and every trap is a version of the same one. It introduced Big Barda and Granny Goodness, and Tom King and Mitch Gerads's 2017 revival — which read the escapes as a study of trauma and depression — is among the most acclaimed DC comics of the last decade.",
+      "url": "https://en.wikipedia.org/wiki/Mister_Miracle"
+    },
+    "kamandi": {
+      "name": "Kamandi, the Last Boy on Earth",
+      "group": "title",
+      "desc": "Kirby's post-apocalyptic series, begun in 1972, following a boy raised in a bunker into a ruined North America governed by intelligent animal societies — tiger warlords, dog scientists, ape gangs — with humanity reduced to livestock.\n\nIt was his best-selling DC title of the period, outlasting the Fourth World books that had been the point of hiring him, and ran to fifty-nine issues with Kirby writing and drawing the first forty. Its treatment of ruin as an adventure playground rather than a tragedy has been widely imitated since.",
+      "url": "https://en.wikipedia.org/wiki/Kamandi"
+    },
+    "scott_free": {
+      "name": "Scott Free / Mister Miracle",
+      "group": "character",
+      "desc": "The son of Highfather of New Genesis, handed to Darkseid as a child under a peace treaty that exchanged the two rulers' sons, and raised in Granny Goodness's orphanage on Apokolips.\n\nHe escapes to Earth, apprentices himself to a stage escapologist and takes his name, turning an upbringing designed to break him into a career performing impossible escapes. Kirby made the metaphor explicit rather than incidental, and later writers — Grant Morrison in Seven Soldiers, Tom King in 2017 — have built their runs on it. He served for years in the Justice League's International era.",
+      "url": "https://en.wikipedia.org/wiki/Mister_Miracle"
+    },
+    "big_barda": {
+      "name": "Big Barda",
+      "group": "character",
+      "desc": "Commander of Darkseid's Female Furies, trained from childhood as a soldier of Apokolips, who defects for Scott Free and follows him to Earth.\n\nKirby wrote her as physically the stronger of the pair and entirely unembarrassed by it, and their marriage as a settled partnership rather than a romance in progress — an unusual arrangement for a superhero comic of 1971, and the reason the two characters have remained inseparable in every later treatment.",
+      "url": "https://en.wikipedia.org/wiki/Big_Barda"
+    },
+    "orion": {
+      "name": "Orion",
+      "group": "character",
+      "desc": "Darkseid's son, given to Highfather in the exchange that sent Scott Free to Apokolips, and raised on New Genesis by the enemy of his father.\n\nOrion is the Fourth World's central argument in one figure: a being whose inherited rage is visible whenever his Astro-Force harness fails, permanently uncertain whether he is his upbringing or his blood. Kirby wrote the war between the worlds as ending in a prophesied confrontation between father and son, which the cancellation of the titles left unpublished for years.",
+      "url": "https://en.wikipedia.org/wiki/Orion_(character)"
+    },
+    "final_crisis": {
+      "name": "Final Crisis",
+      "group": "event",
+      "desc": "Grant Morrison's 2008 crossover, drawn principally by J. G. Jones and Doug Mahnke, built on the premise that the war Kirby described had already been lost: Darkseid has fallen through reality onto Earth, and the Anti-Life Equation is loose and spreading through the population as a formula that ends free will.\n\nStructured in fragments and elliptical jumps rather than conventional crossover beats, it divided readers sharply. It also brought the Fourth World back to the centre of DC's cosmology, and removed Batman from continuity for a year via Darkseid's Omega Sanction.",
+      "url": "https://en.wikipedia.org/wiki/Final_Crisis"
     }
   },
   "links": [
@@ -1997,10 +2056,10 @@
       "highlight": true
     },
     {
-      "from": "new_gods",
+      "from": "jimmy_olsen",
       "to": "darkseid",
       "type": "debut",
-      "details": "Darkseid first appeared in a cameo in Kirby's Superman's Pal Jimmy Olsen at the end of 1970 and properly in the Fourth World titles the following year, arriving fully formed with Apokolips, the Parademons and Granny Goodness around him."
+      "details": "Darkseid first appeared in a single panel of Superman's Pal, Jimmy Olsen #134 in December 1970 — a seated figure watching a monitor, unnamed and unexplained — and in full in The Forever People #1 two months later. Introducing the villain in a Superman spin-off before his own titles existed tied the Fourth World into the DC universe from the outset rather than leaving it as a separate imprint."
     },
     {
       "from": "carmine_infantino",
@@ -2412,6 +2471,216 @@
       "to": "dc_comics",
       "type": "influenced",
       "details": "DC's own house standards already met most of the new industry code, so the company lost almost nothing while its horror and crime competitors were destroyed. That advantage made DC one of the Code's firmest institutional defenders, and it kept the seal on its covers until 2011."
+    },
+    {
+      "from": "marvel_comics",
+      "to": "dc_comics",
+      "type": "rival",
+      "details": "The defining rivalry in American comics. DC's Justice League prompted the superhero team book that began Marvel's rise in 1961; Marvel took the market lead in the early 1970s and held it for most of two decades, and much of DC's subsequent history — hiring Kirby, the Kahn reforms, the turn to prestige publishing — was a response to losing that position."
+    },
+    {
+      "from": "jack_kirby",
+      "to": "marvel_comics",
+      "type": "dispute",
+      "details": "Kirby left the company he had co-built in 1970 over pay, credit and the refusal to return his original artwork, having co-created most of its characters on a page rate with no ownership. The grievance outlived him: his heirs filed copyright termination notices in 2009, and the case was settled in 2014."
+    },
+    {
+      "from": "carmine_infantino",
+      "to": "marvel_comics",
+      "type": "rival",
+      "details": "Infantino's recruitment of Kirby in 1970 was a direct raid on the competitor then overtaking DC in sales, and was reported as such. The terms he offered — write, draw and edit your own titles, with no editorial supervision — were precisely what Marvel had declined to give."
+    },
+    {
+      "from": "justice_league",
+      "to": "marvel_comics",
+      "type": "influenced",
+      "details": "The League's success is widely credited with prompting Martin Goodman to ask Stan Lee for a superhero team, producing the Fantastic Four in 1961. DC's own commercial triumph is therefore the conventional starting point of the rival line that would displace it within a decade."
+    },
+    {
+      "from": "marvel_comics",
+      "to": "dc_comics",
+      "type": "influenced",
+      "details": "Losing the market lead in the early 1970s forced changes at DC that its own success never would have: the recruitment of Marvel's most valuable artist, the editorial overhaul under Jenette Kahn, royalties and creator incentives, and eventually a house style built on prestige rather than volume."
+    },
+    {
+      "from": "marvel_comics",
+      "to": "captain_marvel",
+      "type": "dispute",
+      "details": "Marvel registered its own Captain Marvel in the late 1960s, so when DC licensed the Fawcett character in 1972 it could not use his name on the cover. The book was published as Shazam! instead, and the wizard's name eventually became the character's — a trademark accident that renamed a hero who had once outsold Superman."
+    },
+    {
+      "from": "jack_kirby",
+      "to": "jimmy_olsen",
+      "type": "wrote",
+      "details": "Kirby asked for the title because it was unassigned and selling poorly, so that taking it would not cost anyone work. He used it to seed the Fourth World into existing DC continuity, introducing the DNA Project, a cloned Newsboy Legion and the first appearance of Darkseid before any of his own titles had launched."
+    },
+    {
+      "from": "jack_kirby",
+      "to": "jimmy_olsen",
+      "type": "drew",
+      "details": "Kirby drew the run himself, and DC had his Superman heads redrawn by staff artists to preserve the established house likeness. The correction is visible on the page and remains the clearest illustration of the limits placed on his autonomy even at the company that had recruited him for it."
+    },
+    {
+      "from": "dc_comics",
+      "to": "jimmy_olsen",
+      "type": "published",
+      "details": "DC handed Kirby the weakest title on the Superman schedule and got back a book that introduced Apokolips, the Anti-Life Equation and Darkseid. Sales rose sharply on his arrival and the Superman office's discomfort with his handling of the character began almost as quickly."
+    },
+    {
+      "from": "jack_kirby",
+      "to": "forever_people",
+      "type": "wrote",
+      "details": "Kirby wrote the Forever People as young New Genesis emigrants moving through an America of communes, television preachers and hostile police — the Fourth World's argument about free will translated into the idiom of 1971. The book was cancelled after eleven issues with its story unfinished."
+    },
+    {
+      "from": "jack_kirby",
+      "to": "forever_people",
+      "type": "drew",
+      "details": "The title carries some of Kirby's most experimental DC pages, including photo-collage sequences for the Infinity Man's appearances that no other mainstream comic of the period would have printed."
+    },
+    {
+      "from": "forever_people",
+      "to": "darkseid",
+      "type": "key_role",
+      "details": "The Forever People #1 in 1971 carried Darkseid's first full appearance, two months after the Jimmy Olsen cameo. He is introduced not as a monster but as an administrator: unhurried, uninterested in combat, and pursuing a formula rather than a conquest."
+    },
+    {
+      "from": "jack_kirby",
+      "to": "mister_miracle_title",
+      "type": "wrote",
+      "details": "Kirby wrote Mister Miracle as the Fourth World's most personal book — an escape artist raised in a prison state, whose every trap is a restatement of the one he grew up in. It ran to eighteen issues, outlasting the other titles, and is the only part of the line to have been revived repeatedly since."
+    },
+    {
+      "from": "jack_kirby",
+      "to": "mister_miracle_title",
+      "type": "drew",
+      "details": "Kirby drew the escapes as engineering problems, filling pages with the machinery of confinement and the mechanisms of getting out of it — the clearest expression at DC of his habit of treating technology as the subject rather than the scenery."
+    },
+    {
+      "from": "mister_miracle_title",
+      "to": "scott_free",
+      "type": "debut",
+      "details": "Scott Free appeared in Mister Miracle #1 in 1971, arriving on Earth as an apprentice to an ageing stage escapologist whose name and act he inherits. His Apokolips upbringing is withheld and then revealed across the run, turning the series retrospectively into an escape story about childhood."
+    },
+    {
+      "from": "mister_miracle_title",
+      "to": "big_barda",
+      "type": "debut",
+      "details": "Barda arrived in the fourth issue as the commander of Darkseid's Female Furies, sent to retrieve Scott Free and defecting instead. She was written from the start as his equal and his superior in a fight, and the two have been inseparable in every subsequent treatment."
+    },
+    {
+      "from": "dc_comics",
+      "to": "mister_miracle_title",
+      "type": "published",
+      "details": "DC cancelled the title in 1974 with the Fourth World story unresolved, then returned to the character repeatedly — in the Justice League's International era, in Grant Morrison's Seven Soldiers, and in Tom King and Mitch Gerads's 2017 series, which won its year's major awards."
+    },
+    {
+      "from": "jack_kirby",
+      "to": "scott_free",
+      "type": "created",
+      "details": "Kirby built the character from the Fourth World's central exchange: Highfather's son given to Darkseid under a peace treaty and raised in Granny Goodness's orphanage. Making the victim of that bargain into a professional escape artist is the neatest idea in the whole line."
+    },
+    {
+      "from": "jack_kirby",
+      "to": "big_barda",
+      "type": "created",
+      "details": "Kirby created Barda as a soldier bred by Apokolips who walks away from it, and wrote her marriage to Scott Free as settled and equal rather than as a romance to be strung out — an unusual choice for a 1971 superhero comic and the reason the pair have aged better than most of his DC creations."
+    },
+    {
+      "from": "jack_kirby",
+      "to": "orion",
+      "type": "created",
+      "details": "Orion is Kirby's argument in one figure: Darkseid's son raised by his enemy, whose inherited rage shows whenever his harness fails. The character exists to test whether upbringing can outrun blood, which is the question the entire Fourth World is organised around."
+    },
+    {
+      "from": "new_gods",
+      "to": "orion",
+      "type": "debut",
+      "details": "Orion led New Gods from its first issue in 1971, sent from New Genesis to fight the father he was traded away from. Kirby planned the war to end in a confrontation between them; the cancellation left that ending unpublished for years."
+    },
+    {
+      "from": "darkseid",
+      "to": "orion",
+      "type": "nemesis",
+      "details": "Father and son, each raised by the other's enemy under the treaty that exchanged them. Kirby wrote the opposition as inheritance against upbringing rather than good against evil, and prophesied an ending in which one kills the other."
+    },
+    {
+      "from": "darkseid",
+      "to": "scott_free",
+      "type": "nemesis",
+      "details": "Scott Free is the child Darkseid was given as a hostage and the one person to have escaped Apokolips outright. The pursuit that follows is the Fourth World's demonstration that the Anti-Life Equation has a counter-example walking around."
+    },
+    {
+      "from": "scott_free",
+      "to": "big_barda",
+      "type": "ally",
+      "details": "They meet as prisoner and guard commander on Apokolips, leave together, and are married for most of their publication history. Kirby wrote the partnership as already settled, and later writers have generally treated the marriage as the fixed point the stories happen around."
+    },
+    {
+      "from": "justice_league",
+      "to": "scott_free",
+      "type": "member",
+      "details": "Scott Free and Barda served through the League's International era in the late 1980s, when the book was played largely for comedy. Placing two Fourth World characters in a sitcom roster is a good measure of how far DC's use of Kirby's material has ranged from his own."
+    },
+    {
+      "from": "jack_kirby",
+      "to": "kamandi",
+      "type": "wrote",
+      "details": "Kirby wrote Kamandi from 1972 as the Fourth World titles were being cancelled around him, and it became his best-selling DC book — a ruined America of animal empires that gave him a new landscape to invent in every issue without the burden of a planned mythology."
+    },
+    {
+      "from": "jack_kirby",
+      "to": "kamandi",
+      "type": "drew",
+      "details": "Kirby drew the first forty issues, and the series is where his DC-period design work is at its loosest: tiger cavalry, submerged cities, machinery repurposed by species that do not understand it."
+    },
+    {
+      "from": "dc_comics",
+      "to": "kamandi",
+      "type": "published",
+      "details": "The title outlasted the Fourth World that DC had hired Kirby to build, running fifty-nine issues to 1978. That his most commercially successful DC work was the one with no grand structure behind it is a fair summary of how the company and the artist misunderstood each other."
+    },
+    {
+      "from": "jack_kirby",
+      "to": "dc_comics",
+      "type": "influenced",
+      "details": "Kirby's four years at DC produced no commercial hit on the scale the company had hoped for, and every one of the Fourth World titles was cancelled mid-story. What they left behind — Darkseid, Apokolips, the New Gods, the Anti-Life Equation — has since become the cosmology the rest of DC's universe is measured against, used by nearly every major event the company has published."
+    },
+    {
+      "from": "jack_kirby",
+      "to": "marvel_comics",
+      "type": "succeeded",
+      "details": "Kirby returned to Marvel in 1975 after the DC titles were cancelled, writing and drawing Captain America and The Eternals there before leaving mainstream comics again. His DC period lasted four years and is the only stretch of his career in which he had full control of his own line."
+    },
+    {
+      "from": "jack_kirby",
+      "to": "grant_morrison",
+      "type": "influenced",
+      "details": "Morrison has treated the Fourth World as DC's genuine mythology rather than as a set of unused characters, building Seven Soldiers, Final Crisis and much of their Batman work out of Kirby's cosmology and its vocabulary of gods, traps and equations."
+    },
+    {
+      "from": "grant_morrison",
+      "to": "final_crisis",
+      "type": "wrote",
+      "details": "Morrison wrote Final Crisis as the war Kirby described, already lost: Darkseid fallen to Earth, the Anti-Life Equation loose and spreading through ordinary people as a formula that ends the capacity to choose. The elliptical, fragmentary structure divided readers as sharply as anything DC published that decade."
+    },
+    {
+      "from": "final_crisis",
+      "to": "darkseid",
+      "type": "key_role",
+      "details": "The crossover put Darkseid at the centre of DC's continuity for the first time since Kirby created him, treating the Anti-Life Equation not as a weapon to be seized but as an infection already taking hold — the argument for free will the Fourth World was built to make, staged as an apocalypse."
+    },
+    {
+      "from": "final_crisis",
+      "to": "batman",
+      "type": "key_role",
+      "details": "Batman is struck by Darkseid's Omega Sanction and removed from continuity for roughly a year, a death that turned out to be a displacement through time. Handing that beat to a Kirby villain placed the Fourth World at the centre of DC's biggest character franchise."
+    },
+    {
+      "from": "new_gods",
+      "to": "final_crisis",
+      "type": "influenced",
+      "details": "Nearly forty years after cancellation, the unfinished Fourth World supplied the material for a line-wide crossover: the gods, the war and the equation, brought forward by a writer treating Kirby's cancelled titles as DC's founding scripture rather than as back catalogue."
     }
   ]
 }
