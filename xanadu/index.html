@@ -339,7 +339,7 @@
    never touches the DOM, and all load/save goes through GraphSource. This is
    the structure the scale work (worker layout, Barnes-Hut, accounts) hangs off.
    ============================================================================= */
-const BUILD="v2-596";
+const BUILD="v2-598";
 document.getElementById("build").textContent=BUILD;
 
 /* ---- palette (name → [lightest, mid-dark, darkest, vivid]) ---- */
@@ -1491,8 +1491,10 @@ function toggleGroup(k){
 function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
 // Markdown subset for descriptions: links, bold, italic, code, and - bullet lists (faithful to prototype md())
 function md(s){
+  const _cb=[];
+  s=(s==null?"":String(s)).replace(/```[^\n]*\n?([\s\S]*?)```/g,(m,code)=>{ const i=_cb.length; _cb.push('<pre style="margin:7px 0;padding:8px 10px;background:rgba(0,0,0,0.28);border:1px solid rgba(255,255,255,0.1);border-radius:7px;overflow-x:auto;-webkit-overflow-scrolling:touch;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;line-height:1.45;white-space:pre;text-align:left;">'+esc(code.replace(/\n$/,""))+'</pre>'); return "@@CB"+i+"@@"; });
   let t=esc(s);
-  t=t.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g,'<a href="$2" target="_blank" rel="noopener" style="color:inherit;">$1</a>');
+  t=t.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g,'<a class="weblink" data-url="$2" style="color:inherit;text-decoration:underline;cursor:pointer;">$1</a>');
   t=t.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
   t=t.replace(/\*([^*]+)\*/g,'<em>$1</em>');
   t=t.replace(/`([^`]+)`/g,'<code style="font-family:ui-monospace,monospace;font-size:11px;">$1</code>');
@@ -1502,7 +1504,8 @@ function md(s){
     else { if(inList){ out+='</ul>'; inList=false; } out+=ln+'<br>'; }
   });
   if(inList) out+='</ul>';
-  return out.replace(/(<br>)+$/,'');
+  out=out.replace(/(<br>)+$/,'');
+  return out.replace(/@@CB(\d+)@@/g,(m,i)=>_cb[+i]);
 }
 // ---- Media block: image lightbox + in-app webview (faithful port of prototype) ----
 const lightbox=document.getElementById("lightbox"), lightboxImg=document.getElementById("lightbox-img");
