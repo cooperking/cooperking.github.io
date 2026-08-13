@@ -28,5 +28,10 @@
     "title" : "Tudor & Elizabethan England",
     "file" : "tudor-england.json",
     "desc" : "The dynasties, courtiers, and rivalries of the Tudor age."
+  },
+  {
+    "title" : "Xanadu — The Codebase",
+    "file" : "xanadu-project.json",
+    "desc" : "Xanadu mapping itself — every function in the app as a node, wired by the real call graph, with its source and an explanation."
   }
 ]
