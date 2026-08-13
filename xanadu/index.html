@@ -151,6 +151,13 @@
   #connbuilder .cb-swaprow{ display:flex; justify-content:center; margin:9px 0; }
   #connbuilder .cb-swaprow button{ font-size:12px; color:var(--t2); background:none; border:1px solid var(--line-strong); border-radius:7px; padding:5px 14px; cursor:pointer; }
   body.launcher-active #glcanvas, body.launcher-active #hud, body.launcher-active #cards, body.launcher-active #topbar, body.launcher-active #zoomctl, body.launcher-active #spinctl, body.launcher-active #spinpad, body.launcher-active #togglefocus, body.launcher-active #promotesun, body.launcher-active #addtempnode, body.launcher-active #addtempconn, body.launcher-active #toggleconn, body.launcher-active #highlightbtn, body.launcher-active #breadcrumb, body.launcher-active #bypassls, body.launcher-active #buildtag, body.launcher-active #hllist, body.launcher-active #planetinfo, body.launcher-active #relinfo{ display:none !important; }
+  #codelb{ position:fixed; inset:0; z-index:4000; display:none; align-items:center; justify-content:center; padding:16px; box-sizing:border-box; background:rgba(4,6,13,0.82); -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px); }
+  #codelb .clb-panel{ width:min(760px,100%); height:min(80vh,100%); display:flex; flex-direction:column; background:#0c0e18; border:1px solid var(--line-strong); border-radius:12px; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,0.6); }
+  #codelb .clb-head{ display:flex; align-items:center; gap:8px; padding:11px 14px; border-bottom:1px solid var(--line); }
+  #codelb .clb-title{ flex:1; min-width:0; font:600 13px -apple-system,Segoe UI,sans-serif; color:var(--t1); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  #codelb .clb-done{ font:600 13px -apple-system,sans-serif; color:var(--t1); background:linear-gradient(160deg,rgba(40,46,68,0.9),rgba(18,22,36,0.9)); border:1px solid var(--line-strong); border-radius:8px; padding:6px 15px; cursor:pointer; }
+  #codelb .clb-area{ flex:1; width:100%; box-sizing:border-box; border:none; outline:none; resize:none; background:#0c0e18; color:#dfe3ee; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.5px; line-height:1.5; padding:14px; white-space:pre; overflow:auto; -webkit-overflow-scrolling:touch; }
+  body.card-editing #zoomctl, body.card-editing #spinctl, body.card-editing #spinpad, body.card-editing #togglefocus, body.card-editing #promotesun, body.card-editing #addtempnode, body.card-editing #addtempconn, body.card-editing #toggleconn, body.card-editing #highlightbtn, body.card-editing #breadcrumb, body.card-editing #bypassls, body.card-editing #buildtag, body.card-editing #hllist{ display:none !important; }
 </style>
 </head>
 <body class="launcher-active">
@@ -339,7 +346,7 @@
    never touches the DOM, and all load/save goes through GraphSource. This is
    the structure the scale work (worker layout, Barnes-Hut, accounts) hangs off.
    ============================================================================= */
-const BUILD="v2-598";
+const BUILD="v2-601-r16";
 document.getElementById("build").textContent=BUILD;
 
 /* ---- palette (name → [lightest, mid-dark, darkest, vivid]) ---- */
@@ -1573,6 +1580,7 @@ window.addEventListener("keydown", e=>{ if(e.key==="Escape" && webview.style.dis
 document.addEventListener("click",ev=>{
   const eg=ev.target.closest(".entergraph"); if(eg){ ev.preventDefault(); if(Focus.mode==="focus"||Focus.mode==="ego") enterSubgraph(Focus.id); return; }
   const wl=ev.target.closest(".weblink"); if(wl){ ev.preventDefault(); openWebview(wl.dataset.url); return; }
+  const cv=ev.target.closest(".codeview"); if(cv){ ev.preventDefault(); ev.stopPropagation(); if(cv.dataset.codeNode){ const _n=Model.nodeById(cv.dataset.codeNode); if(_n&&_n.code) openCodeBox(_n.code, null, (_n.name||"")+" — code"); } else if(cv.dataset.codeLi!=null && Focus.planetFocus>=0 && Focus.egoCenter>=0){ const _pid=Model.ids[Focus.planetFocus], _sid=Model.ids[Focus.egoCenter], _dl=linkDetailsAll(_pid,_sid)[+cv.dataset.codeLi]; if(_dl&&_dl.link&&_dl.link.code) openCodeBox(_dl.link.code, null, "Connection — code"); } return; }
   const vl=ev.target.closest(".vidlink"); if(vl){ ev.preventDefault(); openVideo(vl.dataset.url); return; }
   const vf=ev.target.closest(".vidfacade"); if(vf){ ev.preventDefault(); openVidLB(vf.dataset.embed); return; }
   const im=ev.target.closest(".portrait"); if(im) openLightbox(im);
@@ -1615,15 +1623,9 @@ function attachCardDrag(card, nid, k){
   const end=(e)=>{ if(cardDrag&&cardDrag.id===nid){ if(cardDrag.connect) dropConnect(nid, e.clientX, e.clientY); cardDrag=null; hideConnectLine(); } };
   card.addEventListener("pointerup", end); card.addEventListener("pointercancel", end);
 }
-function makeCard(id, isFocus, rel, showAvatar){
-  const nd=Model.nodeById(id), c=ramp(id), nm=esc(nd&&nd.name||id), div=document.createElement("div");
-  div.className="card";
-  const hasImg=nd&&nd.icon, orbSz=isFocus?(hasImg?64:44):(hasImg?28:22), mb=isFocus?9:5;
-  const orb = hasImg
-    ? '<img decoding="async" loading="lazy" src="'+esc(nd.icon)+'" data-full="'+esc(nd.image||"")+'"'+(isFocus?' class="portrait"':'')+' style="width:'+orbSz+'px;height:'+orbSz+'px;border-radius:50%;object-fit:cover;display:block;margin:0 auto '+mb+'px;box-shadow:0 0 12px '+c[3]+'66, 0 0 4px '+c[3]+'99, inset -2px -3px 6px rgba(0,0,0,0.5);'+(isFocus?'cursor:zoom-in;':'')+'">'
-    : '';
+function makeFocusCardHtml(nd, c, nm, orb){
   let h;
-  if(isFocus){
+
     const g=nd&&nd.group&&(Model.raw.groups||{})[nd.group];
     const vpW=innerWidth, vpH=innerHeight;
     const fcW=Math.round(Math.max(180, Math.min(640, vpW-40)));   // wide on desktop; buildFocusCards shrinks it to fit when room is tight (mobile) so it still clears the widest neighbour
@@ -1639,7 +1641,12 @@ function makeCard(id, isFocus, rel, showAvatar){
       +(nd&&nd.video?'<a class="vidlink" data-url="'+esc(nd.video)+'" style="display:inline-block;margin-top:9px;margin-left:16px;font-size:12px;color:'+c[3]+';cursor:pointer;">\u25b6 Video</a>':'')
       +(nd&&nd.subgraph?'<div class="entergraph" style="margin-top:9px;font-size:12px;color:'+c[3]+';cursor:pointer;">\u25c8 Enter graph ('+Object.keys(nd.subgraph.nodes||{}).length+' nodes) \u2192</div>':'')
       +'</div>';
-  } else {
+  
+  return h;
+}
+function makeNeighbourCardHtml(nd, c, nm, orb, id, rel, showAvatar){
+  let h;
+
     const bi=broughtIn[id], tn=tempNewNodes[id];
     const glow = (bi||tn) ? '0 0 20px '+c[3]+'88, 0 4px 14px rgba(0,0,0,0.4)' : '0 0 12px '+c[3]+'33, 0 4px 14px rgba(0,0,0,0.4)';
     const dismissX = bi ? '<span class="dismissnode" data-id="'+esc(id)+'" title="Remove this added node" style="position:absolute; top:-9px; right:-9px; width:24px; height:24px; border-radius:50%; background:'+c[3]+'; color:#fff; font-size:13px; line-height:24px; text-align:center; cursor:pointer; z-index:3; box-shadow:0 1px 4px rgba(0,0,0,0.4);">\u2715</span>' : '';
@@ -1652,22 +1659,24 @@ function makeCard(id, isFocus, rel, showAvatar){
       +(showAvatar?orb:'')
       +nameHtml
       +'</div>';
-  }
+  
+  return h;
+}
+function makeCard(id, isFocus, rel, showAvatar){
+  const nd=Model.nodeById(id), c=ramp(id), nm=esc(nd&&nd.name||id), div=document.createElement("div");
+  div.className="card";
+  const hasImg=nd&&nd.icon, orbSz=isFocus?(hasImg?64:44):(hasImg?28:22), mb=isFocus?9:5;
+  const orb = hasImg
+    ? '<img decoding="async" loading="lazy" src="'+esc(nd.icon)+'" data-full="'+esc(nd.image||"")+'"'+(isFocus?' class="portrait"':'')+' style="width:'+orbSz+'px;height:'+orbSz+'px;border-radius:50%;object-fit:cover;display:block;margin:0 auto '+mb+'px;box-shadow:0 0 12px '+c[3]+'66, 0 0 4px '+c[3]+'99, inset -2px -3px 6px rgba(0,0,0,0.5);'+(isFocus?'cursor:zoom-in;':'')+'">'
+    : '';
+  let h;
+  if(isFocus){ h=makeFocusCardHtml(nd,c,nm,orb); } else { h=makeNeighbourCardHtml(nd,c,nm,orb,id,rel,showAvatar); }
   div.innerHTML=h;
   { const dn=div.querySelector(".dismissnode"); if(dn) dn.addEventListener("click", ev=>{ ev.stopPropagation(); dismissBrought(id); }); }
   { const nn=div.querySelector(".newnodename"); if(nn) nn.addEventListener("click", ev=>{ ev.stopPropagation(); startNameEdit(id, nn); }); }
   return div;
 }
-function buildFocusCards(){
-  const host=document.getElementById("cards"); host.innerHTML="";
-  if(Focus.mode!=="focus"||!Focus.id) return;
-  const W=innerWidth, H=innerHeight, CX=W/2, CY=H/2;
-  const nbrs=Focus.neighbours, N=nbrs.length;
-  const crowd=N<=8?1:Math.max(0.6, 1-(N-8)*0.03), manyNbr=N>14;
-  const tb=document.getElementById("topbar");
-  const topInset=(tb && tb.offsetHeight) ? tb.offsetHeight+6 : 44;   // clear the card-mode top bar (title + group key, taller when it wraps)
-  const botInset=54;                                                  // clear the bottom controls (node-maker / home indicator)
-  // --- pass 1: create + append every card (positions written later, in one batch) ---
+function buildFocusCenterCard(host, CX, CY){
   const fc=makeCard(Focus.id, true, null, true);
   fc.style.left=CX+"px"; fc.style.top=CY+"px"; host.appendChild(fc);
   const hd=fc.querySelector(".hidefocus"); if(hd) hd.onclick=(ev)=>{ ev.stopPropagation(); egoTo(Focus.id); };   // → floating focused on THIS node's own system (promote it), not its old sun's
@@ -1682,6 +1691,19 @@ function buildFocusCards(){
     if(cardDrag.moved>4){ fc._lp=true; view.yaw+=dx*0.006; view.pitch+=dy*0.006; } });
   const fend=(e)=>{ if(cardDrag&&cardDrag.isFocus){ if(cardDrag.connect) dropConnect(Focus.id, e.clientX, e.clientY); cardDrag=null; hideConnectLine(); } };
   fc.addEventListener("pointerup", fend); fc.addEventListener("pointercancel", fend);
+  return fc;
+}
+function buildFocusCards(){
+  const host=document.getElementById("cards"); host.innerHTML="";
+  if(Focus.mode!=="focus"||!Focus.id) return;
+  const W=innerWidth, H=innerHeight, CX=W/2, CY=H/2;
+  const nbrs=Focus.neighbours, N=nbrs.length;
+  const crowd=N<=8?1:Math.max(0.6, 1-(N-8)*0.03), manyNbr=N>14;
+  const tb=document.getElementById("topbar");
+  const topInset=(tb && tb.offsetHeight) ? tb.offsetHeight+6 : 44;   // clear the card-mode top bar (title + group key, taller when it wraps)
+  const botInset=54;                                                  // clear the bottom controls (node-maker / home indicator)
+  // --- pass 1: create + append every card (positions written later, in one batch) ---
+  const fc=buildFocusCenterCard(host, CX, CY);
   const cards=[];
   for(let k=0;k<N;k++){ const card=makeCard(nbrs[k].id, false, nbrs[k].rel, !manyNbr); host.appendChild(card); cards.push(card); }
   // --- pass 2: measure everything together (one reflow) ---
@@ -1925,31 +1947,20 @@ function pickImageFile(cb){ const inp=document.createElement("input"); inp.type=
   inp.onchange=function(){ const f=this.files&&this.files[0]; if(f){ const r=new FileReader(); r.onload=()=>{ cb(r.result); inp.remove(); }; r.readAsDataURL(f); } else inp.remove(); }; inp.click(); }
 let cardEditing=false;
 function sizeCardEdit(){ const box=document.getElementById("planetinfo"); if(!box||!cardEditing) return; const vv=window.visualViewport, vh=vv?vv.height:innerHeight; box.style.maxHeight=Math.max(160, vh-150)+"px"; box.style.overflowY="auto"; }   // fixed at the top; cap short of the bottom control cluster with an inner scroll (shrinks further when the keyboard opens)
-function exitCardEdit(){ cardEditing=false; try{document.activeElement&&document.activeElement.blur();}catch(_){} const box=document.getElementById("planetinfo"); if(box){ box.style.top=""; box.style.bottom=""; box.style.maxHeight=""; box.style.textAlign=""; if(Focus.mode!=="ego") box.style.display="none"; } planetInfoShown=null; }
-function enterCardEdit(spec){   // inline hold-to-edit form, shared by node cards, connection cards and 2D cards
-  if(cardEditing) return;
-  const box=document.getElementById("planetinfo"); if(!box) return;
-  let kind,target,c,genText="";
-  if(spec && spec.kind==="node"){ target=Model.nodeById(spec.id); if(!target) return; kind="node"; c=ramp(spec.id); }
-  else if(spec && spec.kind==="link"){ const _all=linkDetailsAll(spec.a,spec.b), det=(spec.idx!=null&&_all[spec.idx])?_all[spec.idx]:_all[0]; if(!det||!det.link) return; kind="link"; target=det.link; c=ramp(spec.b); genText=det.generated?det.text:""; }
-  else if(Focus.mode==="ego" && Focus.planetFocus>=0 && Focus.egoCenter>=0){ const det=linkDetails(Model.ids[Focus.egoCenter],Model.ids[Focus.planetFocus]); if(!det||!det.link) return; kind="link"; target=det.link; c=ramp(Model.ids[Focus.planetFocus]); genText=det.generated?det.text:""; }
-  else if(Focus.mode==="ego" && Focus.egoCenter>=0){ const nd=Model.nodeById(Model.ids[Focus.egoCenter]); if(!nd) return; kind="node"; target=nd; c=ramp(Model.ids[Focus.egoCenter]); }
-  else return;
-  cardEditing=true;
-  box.style.display="block"; box.style.opacity="1"; box.style.textAlign="left"; box.style.width=""; box.style.top=""; box.style.bottom=""; box.style.left=""; box.style.right=""; box.style.transform=""; sizeCardEdit();   // rests at the card's normal spot (no jump on hold); lifts only for the on-screen keyboard
-  box.style.background="linear-gradient(160deg, "+c[2]+"e6, rgba(8,10,20,0.94))"; box.style.border="1px solid "+c[3]; box.style.boxShadow="0 0 22px "+c[3]+"44, 0 12px 40px rgba(0,0,0,0.6)";
-  box.innerHTML="";
-  const done=document.createElement("button"); done.type="button"; done.textContent="Done"; done.style.cssText="float:right;font-size:13px;padding:3px 12px;cursor:pointer;"; done.onclick=exitCardEdit; box.appendChild(done);
-  const title=document.createElement("div"); title.textContent=kind==="link"?"Edit connection":"Edit node"; title.style.cssText="font-size:13px;font-weight:600;color:#f4f5fa;margin-bottom:9px;"; box.appendChild(title);
-  { const hl=document.createElement("label"); hl.style.cssText="display:flex;align-items:center;gap:7px;color:#f4d97a;font-size:12px;margin-bottom:10px;cursor:pointer;"; const hc=document.createElement("input"); hc.type="checkbox"; hc.style.cssText="width:16px;height:16px;margin:0;flex:none;accent-color:#f4d97a;"; hc.checked=!!target.highlight; hc.addEventListener("change",()=>{ if(hc.checked) target.highlight=true; else delete target.highlight; saveRoot(); if(Focus._updateHlBtn)Focus._updateHlBtn(); }); hl.appendChild(hc); hl.appendChild(document.createTextNode("Highlight")); box.appendChild(hl); }   // highlight toggle — one control, works for both node and connection since target is either
-  if(kind==="node"){ const _sid=(spec&&spec.kind==="node")?spec.id:Model.ids[Focus.egoCenter];
+function exitCardEdit(){ cardEditing=false; try{ document.body.classList.remove("card-editing"); }catch(_){} try{document.activeElement&&document.activeElement.blur();}catch(_){} const box=document.getElementById("planetinfo"); if(box){ box.style.top=""; box.style.bottom=""; box.style.maxHeight=""; box.style.textAlign=""; box.style.width=""; if(Focus.mode!=="ego") box.style.display="none"; } planetInfoShown=null; }
+function buildEditHighlight(box, target){
+    const hl=document.createElement("label"); hl.style.cssText="display:flex;align-items:center;gap:7px;color:#f4d97a;font-size:12px;margin-bottom:10px;cursor:pointer;"; const hc=document.createElement("input"); hc.type="checkbox"; hc.style.cssText="width:16px;height:16px;margin:0;flex:none;accent-color:#f4d97a;"; hc.checked=!!target.highlight; hc.addEventListener("change",()=>{ if(hc.checked) target.highlight=true; else delete target.highlight; saveRoot(); if(Focus._updateHlBtn)Focus._updateHlBtn(); }); hl.appendChild(hc); hl.appendChild(document.createTextNode("Highlight")); box.appendChild(hl);
+  }
+function buildEditStart(spec, box){
+    const _sid=(spec&&spec.kind==="node")?spec.id:Model.ids[Focus.egoCenter];
     const sl=document.createElement("label"); sl.style.cssText="display:flex;align-items:center;gap:7px;color:#8ad0a0;font-size:12px;margin-bottom:10px;cursor:pointer;";
     const sc=document.createElement("input"); sc.type="checkbox"; sc.style.cssText="width:16px;height:16px;margin:0;flex:none;accent-color:#8ad0a0;";
     sc.checked=(Model.raw.start===_sid);
     sc.addEventListener("change",()=>{ if(sc.checked) Model.raw.start=_sid; else if(Model.raw.start===_sid) Model.raw.start=""; saveRoot(); });   // single top-level start field → auto-unsets any previous start node
     sl.appendChild(sc); sl.appendChild(document.createTextNode("Start node")); box.appendChild(sl);
   }
-  if(kind==="link"){ const _t=Model.raw.types=Model.raw.types||{};
+function buildEditLinkType(box, target){
+    const _t=Model.raw.types=Model.raw.types||{};
     const tw=document.createElement("label"); tw.style.cssText="display:block;font-size:11px;color:#aab0c2;margin-bottom:8px;"; tw.textContent="Relationship type";
     const sel=document.createElement("select"); sel.style.cssText="width:100%;box-sizing:border-box;margin-top:3px;";
     const fill=()=>{ sel.innerHTML=""; Object.keys(_t).forEach(k=>{ const o=document.createElement("option"); o.value=k; o.textContent=(typeof typeName==="function"?typeName(k):k); sel.appendChild(o); }); const nw=document.createElement("option"); nw.value="__new__"; nw.textContent="+ Create new type\u2026"; sel.appendChild(nw); sel.value=_t[target.type]?target.type:Object.keys(_t)[0]; };
@@ -1964,7 +1975,15 @@ function enterCardEdit(spec){   // inline hold-to-edit form, shared by node card
     np.appendChild(nmi); np.appendChild(dl); np.appendChild(rn); np.appendChild(add); box.appendChild(np);
     sel.addEventListener("change",()=>{ if(sel.value==="__new__"){ np.style.display="block"; nmi.focus(); } else { np.style.display="none"; target.type=sel.value; if(typeof connTopologyChanged==="function") connTopologyChanged(); saveRoot(); } });
   }
-  if(kind==="node"){ const groups=Model.raw.groups=Model.raw.groups||{};
+function buildEditDeleteConn(box, target){
+    const dw2=document.createElement("div"); dw2.style.cssText="margin-top:12px;border-top:1px solid rgba(255,255,255,0.12);padding-top:11px;";
+    const db2=document.createElement("button"); db2.type="button"; db2.textContent="Delete connection"; db2.style.cssText="font-size:12px;color:#f0a89a;border-color:rgba(240,120,100,0.4);";
+    let armed2=false, dtm2=null;
+    db2.onclick=()=>{ if(!armed2){ armed2=true; db2.textContent="Confirm delete?"; db2.style.background="#e0341f"; db2.style.color="#fff"; db2.style.borderColor="#e0341f"; dtm2=setTimeout(()=>{ armed2=false; db2.textContent="Delete connection"; db2.style.background=""; db2.style.color="#f0a89a"; db2.style.borderColor="rgba(240,120,100,0.4)"; },3000); return; } clearTimeout(dtm2); const _sun=(Focus.mode==="ego" && Focus.egoCenter>=0)?Model.ids[Focus.egoCenter]:null; const ix=Model.raw.links.indexOf(target); if(ix>=0) Model.raw.links.splice(ix,1); exitCardEdit(); connTopologyChanged(); if(_sun){ if(typeof buildSolarTopology==="function"){ buildSolarTopology(); buildSolarOrbits(); } if(typeof egoTo==="function") egoTo(_sun); } };   // rebuild topology (a link delete doesn't change node count, so it isn't auto-rebuilt) then re-focus, banishing the now-disconnected planet
+    dw2.appendChild(db2); box.appendChild(dw2);
+  }
+function buildEditNodeFields(box, target){
+    const groups=Model.raw.groups=Model.raw.groups||{};
     const refreshColor=()=>{ if(typeof rebuildVis==="function") rebuildVis(); if(Renderer&&Renderer.refresh) Renderer.refresh(); if(typeof buildLegend==="function") buildLegend(); planetInfoShown=null; };
     const gw=document.createElement("label"); gw.style.cssText="display:block;font-size:11px;color:#aab0c2;margin-bottom:8px;"; gw.textContent="Group";
     const gsel=document.createElement("select"); gsel.style.cssText="width:100%;box-sizing:border-box;margin-top:3px;";
@@ -1978,6 +1997,63 @@ function enterCardEdit(spec){   // inline hold-to-edit form, shared by node card
     gp.appendChild(gni); gp.appendChild(gcs); gp.appendChild(gadd); box.appendChild(gp);
     gsel.addEventListener("change",()=>{ if(gsel.value==="__newg__"){ gp.style.display="block"; gni.focus(); } else { gp.style.display="none"; if(gsel.value) target.group=gsel.value; else delete target.group; saveRoot(); refreshColor(); } });
   }
+function buildEditDeleteNode(spec, box){
+    const _id=(spec&&spec.kind==="node")?spec.id:Model.ids[Focus.egoCenter];
+    const dw=document.createElement("div"); dw.style.cssText="margin-top:12px;border-top:1px solid rgba(255,255,255,0.12);padding-top:11px;";
+    const db=document.createElement("button"); db.type="button"; db.textContent="Delete node"; db.style.cssText="font-size:12px;color:#f0a89a;border-color:rgba(224,52,31,0.45);";
+    let armed=false, dtm=null;
+    db.onclick=()=>{ if(!armed){ armed=true; db.textContent="Confirm delete?"; db.style.background="#e0341f"; db.style.color="#fff"; db.style.borderColor="#e0341f"; dtm=setTimeout(()=>{ armed=false; db.textContent="Delete node"; db.style.background=""; db.style.color="#f0a89a"; db.style.borderColor="rgba(224,52,31,0.45)"; },3000); return; } if(dtm) clearTimeout(dtm); const centralId=(Focus.egoCenter>=0)?Model.ids[Focus.egoCenter]:Focus.id; cardEditing=false; hidePlanetInfo(); if(typeof deleteNodeById==="function") deleteNodeById(_id); if(_id===centralId){ if(typeof exitFocus==="function") exitFocus(); } else if(centralId && Model.nodeById(centralId) && typeof egoTo==="function"){ egoTo(centralId); } else if(typeof exitFocus==="function") exitFocus(); };
+    dw.appendChild(db); box.appendChild(dw);
+  }
+function codePreview(code, dataAttr, accent){
+  const lines=String(code).split("\n"); const shown=lines.slice(0,5).join("\n"); const more=lines.length>5;
+  return '<div class="codeview" '+dataAttr+' style="margin-top:9px;cursor:pointer;border:1px solid '+accent+'33;border-radius:8px;overflow:hidden;position:relative;background:#0c0e18;">'
+    +'<pre style="margin:0;padding:9px 11px 14px;max-height:96px;overflow:hidden;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;line-height:1.5;color:#c9cdda;white-space:pre;">'+esc(shown)+'</pre>'
+    +'<div style="position:absolute;left:0;right:0;bottom:23px;height:30px;background:linear-gradient(transparent,#0c0e18);pointer-events:none;"></div>'
+    +'<div style="padding:4px 11px 6px;font-size:10.5px;color:'+accent+';border-top:1px solid '+accent+'22;">◇ '+(more?'tap to expand':'tap to open')+'</div></div>';
+}
+function openCodeBox(code, onSave, title){
+  let el=document.getElementById("codelb");
+  if(!el){ el=document.createElement("div"); el.id="codelb"; document.body.appendChild(el); }
+  const ro=!onSave;
+  el.innerHTML='<div class="clb-panel"><div class="clb-head"><span class="clb-title"></span><button class="clb-done" type="button">Done</button></div><textarea class="clb-area" spellcheck="false" autocapitalize="off" autocomplete="off" '+(ro?'readonly':'')+'></textarea></div>';
+  el.querySelector(".clb-title").textContent=title||"Code";
+  const ta=el.querySelector(".clb-area"); ta.value=code||"";
+  if(!ro) ta.addEventListener("input",()=>onSave(ta.value));
+  const hide=()=>{ el.style.display="none"; };
+  el.querySelector(".clb-done").onclick=hide;
+  el.onclick=(ev)=>{ if(ev.target===el) hide(); };
+  el.style.display="flex";
+  if(!ro) setTimeout(()=>{ try{ ta.focus(); }catch(_){} }, 60);
+}
+function buildEditCode(box, target, label){
+  const wrap=document.createElement("div"); wrap.style.cssText="margin:11px 0;";
+  const lab=document.createElement("div"); lab.style.cssText="font-size:11px;color:#aab0c2;margin-bottom:5px;"; lab.textContent="Code"; wrap.appendChild(lab);
+  const btn=document.createElement("button"); btn.type="button"; btn.style.cssText="font-size:12px;";
+  const paint=()=>{ const has=!!(target.code&&String(target.code).trim()); btn.textContent=has?"◇ Edit code":"◇ Add code"; };
+  paint();
+  btn.onclick=()=>{ openCodeBox(target.code||"", (v)=>{ if(v&&v.trim()) target.code=v; else delete target.code; saveRoot(); paint(); }, (label||"")+" code"); };
+  wrap.appendChild(btn); box.appendChild(wrap);
+}
+function enterCardEdit(spec){   // inline hold-to-edit form, shared by node cards, connection cards and 2D cards
+  if(cardEditing) return;
+  const box=document.getElementById("planetinfo"); if(!box) return;
+  let kind,target,c,genText="";
+  if(spec && spec.kind==="node"){ target=Model.nodeById(spec.id); if(!target) return; kind="node"; c=ramp(spec.id); }
+  else if(spec && spec.kind==="link"){ const _all=linkDetailsAll(spec.a,spec.b), det=(spec.idx!=null&&_all[spec.idx])?_all[spec.idx]:_all[0]; if(!det||!det.link) return; kind="link"; target=det.link; c=ramp(spec.b); genText=det.generated?det.text:""; }
+  else if(Focus.mode==="ego" && Focus.planetFocus>=0 && Focus.egoCenter>=0){ const det=linkDetails(Model.ids[Focus.egoCenter],Model.ids[Focus.planetFocus]); if(!det||!det.link) return; kind="link"; target=det.link; c=ramp(Model.ids[Focus.planetFocus]); genText=det.generated?det.text:""; }
+  else if(Focus.mode==="ego" && Focus.egoCenter>=0){ const nd=Model.nodeById(Model.ids[Focus.egoCenter]); if(!nd) return; kind="node"; target=nd; c=ramp(Model.ids[Focus.egoCenter]); }
+  else return;
+  cardEditing=true; try{ document.body.classList.add("card-editing"); }catch(_){}
+  box.style.display="block"; box.style.opacity="1"; box.style.textAlign="left"; box.style.width="min(94vw, 680px)"; box.style.top=""; box.style.bottom=""; box.style.left=""; box.style.right=""; box.style.transform=""; sizeCardEdit();   // rests at the card's normal spot (no jump on hold); lifts only for the on-screen keyboard
+  box.style.background="linear-gradient(160deg, "+c[2]+"e6, rgba(8,10,20,0.94))"; box.style.border="1px solid "+c[3]; box.style.boxShadow="0 0 22px "+c[3]+"44, 0 12px 40px rgba(0,0,0,0.6)";
+  box.innerHTML="";
+  const done=document.createElement("button"); done.type="button"; done.textContent="Done"; done.style.cssText="float:right;font-size:13px;padding:3px 12px;cursor:pointer;"; done.onclick=exitCardEdit; box.appendChild(done);
+  const title=document.createElement("div"); title.textContent=kind==="link"?"Edit connection":"Edit node"; title.style.cssText="font-size:13px;font-weight:600;color:#f4f5fa;margin-bottom:9px;"; box.appendChild(title);
+  buildEditHighlight(box, target);   // highlight toggle — one control, works for both node and connection since target is either
+  if(kind==="node")buildEditStart(spec, box);
+  if(kind==="link")buildEditLinkType(box, target);
+  if(kind==="node")buildEditNodeFields(box, target);
   const descKey=kind==="link"?"details":"desc";
   const fields=kind==="link"?[["details","Description",1],["url","Link (URL)",0],["video","Video",0]]:[["name","Name",0],["desc","Description",1],["url","Link (URL)",0],["linkText","Link text",0],["link2","Second link (URL)",0],["link2label","Second link label",0],["video","Video",0]];
   fields.forEach(([key,label,ml])=>{ const w=document.createElement("label"); w.style.cssText="display:block;font-size:11px;color:#aab0c2;margin-bottom:8px;"; w.textContent=label;
@@ -1999,22 +2075,44 @@ function enterCardEdit(spec){   // inline hold-to-edit form, shared by node card
     rb.appendChild(up); rb.appendChild(st); rb.appendChild(rm); iw.appendChild(rb); syncI(); box.appendChild(iw); };
   imgControl("icon","Icon (round avatar)");
   imgControl("image","Image (opens when you tap the icon)");
-  if(kind==="node"){ const _id=(spec&&spec.kind==="node")?spec.id:Model.ids[Focus.egoCenter];
-    const dw=document.createElement("div"); dw.style.cssText="margin-top:12px;border-top:1px solid rgba(255,255,255,0.12);padding-top:11px;";
-    const db=document.createElement("button"); db.type="button"; db.textContent="Delete node"; db.style.cssText="font-size:12px;color:#f0a89a;border-color:rgba(224,52,31,0.45);";
-    let armed=false, dtm=null;
-    db.onclick=()=>{ if(!armed){ armed=true; db.textContent="Confirm delete?"; db.style.background="#e0341f"; db.style.color="#fff"; db.style.borderColor="#e0341f"; dtm=setTimeout(()=>{ armed=false; db.textContent="Delete node"; db.style.background=""; db.style.color="#f0a89a"; db.style.borderColor="rgba(224,52,31,0.45)"; },3000); return; } if(dtm) clearTimeout(dtm); const centralId=(Focus.egoCenter>=0)?Model.ids[Focus.egoCenter]:Focus.id; cardEditing=false; hidePlanetInfo(); if(typeof deleteNodeById==="function") deleteNodeById(_id); if(_id===centralId){ if(typeof exitFocus==="function") exitFocus(); } else if(centralId && Model.nodeById(centralId) && typeof egoTo==="function"){ egoTo(centralId); } else if(typeof exitFocus==="function") exitFocus(); };
-    dw.appendChild(db); box.appendChild(dw);
-  }
-  if(kind==="link"){
-    const dw2=document.createElement("div"); dw2.style.cssText="margin-top:12px;border-top:1px solid rgba(255,255,255,0.12);padding-top:11px;";
-    const db2=document.createElement("button"); db2.type="button"; db2.textContent="Delete connection"; db2.style.cssText="font-size:12px;color:#f0a89a;border-color:rgba(240,120,100,0.4);";
-    let armed2=false, dtm2=null;
-    db2.onclick=()=>{ if(!armed2){ armed2=true; db2.textContent="Confirm delete?"; db2.style.background="#e0341f"; db2.style.color="#fff"; db2.style.borderColor="#e0341f"; dtm2=setTimeout(()=>{ armed2=false; db2.textContent="Delete connection"; db2.style.background=""; db2.style.color="#f0a89a"; db2.style.borderColor="rgba(240,120,100,0.4)"; },3000); return; } clearTimeout(dtm2); const _sun=(Focus.mode==="ego" && Focus.egoCenter>=0)?Model.ids[Focus.egoCenter]:null; const ix=Model.raw.links.indexOf(target); if(ix>=0) Model.raw.links.splice(ix,1); exitCardEdit(); connTopologyChanged(); if(_sun){ if(typeof buildSolarTopology==="function"){ buildSolarTopology(); buildSolarOrbits(); } if(typeof egoTo==="function") egoTo(_sun); } };   // rebuild topology (a link delete doesn't change node count, so it isn't auto-rebuilt) then re-focus, banishing the now-disconnected planet
-    dw2.appendChild(db2); box.appendChild(dw2);
-  }
+  buildEditCode(box, target, kind==="link"?"Connection":"Node");
+  if(kind==="node")buildEditDeleteNode(spec, box);
+  if(kind==="link")buildEditDeleteConn(box, target);
 }
 function stopCardVideo(){ const b=document.getElementById("planetinfo"); if(b && b.querySelector("iframe")){ b.innerHTML=""; planetInfoShown=null; } }   // pull the embedded video so playback stops the moment the card is hidden or faded out
+function piSunCardHtml(nd, c, id){
+    let h='<div class="nc-2d" title="Open the card view" style="position:absolute;top:8px;left:8px;width:26px;height:26px;border-radius:50%;background:var(--card);border:1px solid var(--line-strong);color:var(--t2);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div><div class="nc-solar" title="Back to the solar system" style="position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:50%;background:var(--card);border:1px solid var(--line-strong);color:var(--t2);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;font-size:14px;line-height:1;">⊖</div>';
+    if(nd.icon) h+='<img decoding="async" loading="lazy" src="'+esc(nd.icon)+'" class="portrait" data-full="'+esc(nd.image||"")+'" alt="" style="width:64px;height:64px;border-radius:50%;object-fit:cover;display:block;margin:0 auto 9px;box-shadow:0 0 12px '+c[3]+'66, inset -2px -3px 6px rgba(0,0,0,0.5);cursor:zoom-in;">'; else h+='<div style="height:22px"></div>';
+    h+='<div style="font-size:17px;font-weight:600;color:#f4f5fa;">'+(nd.subgraph?'<span style="opacity:0.7;">\u25c8</span> ':'')+esc(nd.name||id)+'</div>';
+    const gl=((Model.raw.groups||{})[nd.group]||{}).label;
+    if(gl) h+='<div style="font-size:11px;color:'+c[3]+';margin:2px 0 6px;letter-spacing:0.03em;text-transform:uppercase;opacity:0.9;'+'">'+esc(gl)+'</div>';
+    if(nd.video) h+=videoBlock(nd.video, c);
+    if(nd.desc) h+='<div class="pf-desc" style="font-size:12.5px;color:#c9cdda;line-height:1.5;">'+md(nd.desc)+'</div>';
+    if(nd.url){ const lt=nd.linkText||(/wikipedia/i.test(nd.url)?'Wikipedia':'Link'); h+='<a href="'+esc(nd.url)+'" class="weblink" data-url="'+esc(nd.url)+'" rel="noopener" style="display:inline-block;margin-top:8px;font-size:12px;color:'+c[3]+';cursor:pointer;">'+esc(lt)+' &#8599;</a>'; }
+    if(nd.link2){ h+='<a class="weblink" data-url="'+esc(nd.link2)+'" style="display:inline-block;margin-top:8px;margin-left:16px;font-size:12px;color:'+c[3]+';cursor:pointer;">'+esc(nd.link2label||'Link')+' \u2197</a>'; }
+    if(nd.subgraph){ const n2=Object.keys(nd.subgraph.nodes||{}).length; h+='<div class="entergraph" style="margin-top:9px;font-size:12px;color:'+c[3]+';cursor:pointer;">◈ Enter graph ('+n2+' node'+(n2===1?'':'s')+') →</div>'; }
+    if(nd.code) h+=codePreview(nd.code, 'data-code-node="'+esc(id)+'"', c[3]); { const _hc=[], _oc=[]; (Model.raw&&Model.raw.links?Model.raw.links:[]).forEach(l=>{ let _oth=null; if(l.from===id)_oth=l.to; else if(l.to===id)_oth=l.from; else return; if(typeof isVisible==="function" && !isVisible(_oth)) return; const _on=Model.nodeById(_oth); const _nm=(_on&&_on.name)||_oth; const _ty=(Model.raw.types||{})[l.type]||{}; const _rel=(l.from===id)?(_ty.toLabel||l.type||""):(_ty.fromLabel||l.type||""); const _cc=ramp(_oth); const _cb=(_cc&&_cc[2])||"#888"; const _grp=((Model.raw.groups||{})[groupOf(_oth)]||{}).label||""; const _row={ nm:_nm, html:'<div class="hl-conn" data-target="'+esc(_oth)+'" style="display:flex;align-items:center;cursor:pointer;pointer-events:auto;margin-top:6px;padding:8px 11px;border-radius:8px;background:'+_cb+';border:1px solid '+_cb+';font-size:12.5px;color:#fff;">'+esc(_nm)+(_rel?'<span style="opacity:0.8;font-size:11px;margin-left:6px;">\u00b7 '+esc(_rel)+'</span>':'')+(_grp?'<span style="margin-left:auto;font-size:10.5px;opacity:0.82;padding-left:10px;white-space:nowrap;">'+esc(_grp)+'</span>':'')+'</div>' }; if(l.highlight) _hc.push(_row); else _oc.push(_row); }); const _byn=(a,b)=>a.nm.localeCompare(b.nm); _hc.sort(_byn); _oc.sort(_byn); if(_hc.length) h+='<div style="margin-top:13px;border-top:1px solid '+c[3]+'40;padding-top:10px;"><div style="font-size:11px;color:'+c[3]+';text-transform:uppercase;letter-spacing:0.03em;margin-bottom:6px;opacity:0.9;">Highlighted connections</div>'+_hc.map(x=>x.html).join('')+'</div>'; if(_oc.length) h+='<div style="margin-top:13px;border-top:1px solid '+c[3]+'40;padding-top:10px;"><div style="font-size:11px;color:'+c[3]+';text-transform:uppercase;letter-spacing:0.03em;margin-bottom:6px;opacity:0.9;">'+(_hc.length?'Other connections':'Connections')+'</div>'+_oc.map(x=>x.html).join('')+'</div>'; }
+    return h;
+  }
+function piPlanetCardHtml(nd, c, dets, lk, pid, sid, sn){
+      let h='<div style="position:absolute;top:8px;right:8px;"><button class="pf-dismiss" title="Return to the solar system" style="width:26px;height:26px;border-radius:50%;background:var(--card);border:1px solid var(--line-strong);color:var(--t2);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;font-size:14px;line-height:1;">⊖</button></div>';
+      { const _sunNd=Model.nodeById(sid)||{}, _both=_sunNd.icon&&nd.icon, _ic=(s,full)=>'<img decoding="async" loading="lazy" src="'+esc(s)+'" class="portrait" data-full="'+esc(full||"")+'" alt="" style="width:22px;height:22px;border-radius:50%;object-fit:cover;vertical-align:middle;margin:0 5px 2px;cursor:zoom-in;">'; h+='<div style="font-size:16px;font-weight:600;color:#f4f5fa;padding-top:20px;">'+(_both?_ic(_sunNd.icon,_sunNd.image):'')+esc(sn)+' \u2192 '+(_both?_ic(nd.icon,nd.image):'')+esc(nd.name||pid)+'</div>'; }
+      dets.forEach((d,di)=>{
+        if(di>0) h+='<div style="border-top:1px solid '+c[3]+'40;margin:11px 0 0;"></div>';   // separate a second/third relationship stacked in the same card
+        h+='<div class="pf-conn" data-li="'+di+'" title="'+(dets.length>1?'Press and hold to edit this connection':'Press and hold to edit')+'" style="cursor:text;">';
+        { const _t=(Model.raw.types||{})[d.link&&d.link.type]||{}, _sr=(d.link&&!_t.mutual)?(d.link.from===sid?(_t.fromLabel||d.link.type):(_t.toLabel||d.link.type)):null, _rb=(_sr&&_sr!==d.rel)?(_sr+' \u2192 '+d.rel):d.rel;   // sun role → planet role, matching the Sun → Planet title direction
+          h+='<div style="font-size:11px;color:'+c[3]+';margin:'+(di>0?'9px':'2px')+' 0 7px;letter-spacing:0.03em;text-transform:uppercase;">'+esc(_rb)+'</div>'; }
+        if(d.link&&d.link.img) h+='<img src="'+esc(d.link.img)+'" class="portrait" alt="" style="width:100%;max-height:130px;object-fit:cover;border-radius:6px;display:block;margin:2px 0 9px;box-shadow:0 0 12px '+c[3]+'55;cursor:zoom-in;">';
+        h+='<div class="pf-details" style="font-size:12.5px;color:#c9cdda;line-height:1.5;'+(d.generated?'opacity:0.92;':'')+'">'+md(d.text)+'</div>'; if(d.link&&d.link.code) h+=codePreview(d.link.code, 'data-code-li="'+di+'"', c[3]);
+        h+='</div>';
+      });
+      if(lk&&lk.video) h+=videoBlock(lk.video, c);
+      const links2=[];
+      if(lk&&lk.url){ const lt=lk.linkText||(/wikipedia/i.test(lk.url)?'Wikipedia':'Link'); links2.push('<a class="weblink" data-url="'+esc(lk.url)+'" rel="noopener" style="font-size:12px;color:'+c[3]+';cursor:pointer;">'+esc(lt)+' \u2197</a>'); }
+      if(links2.length) h+='<div style="margin-top:9px;display:flex;gap:16px;">'+links2.join('')+'</div>';
+      h+='<div style="display:flex;justify-content:center;margin-top:13px;"><button class="pf-promote" title="Promote to sun" style="width:44px;height:44px;border-radius:50%;background:var(--card);border:1px solid var(--line-strong);color:var(--t2);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;animation:pfglow 2.2s ease-in-out infinite;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2" fill="currentColor" stroke="none"/><path d="M12 2.6v2.6M12 18.8v2.6M2.6 12h2.6M18.8 12h2.6M5.3 5.3l1.9 1.9M16.8 16.8l1.9 1.9M18.7 5.3l-1.9 1.9M7.2 16.8l-1.9 1.9"/></svg></button></div>';
+      return h;
+    }
 function updatePlanetInfo(){
   const box=document.getElementById("planetinfo"); if(!box) return;
   if(Focus._hlAutoPromote){ box.style.display="none"; planetInfoShown=null; return; }   // suppress the planet card during an automatic list-triggered promote
@@ -2032,22 +2130,7 @@ function updatePlanetInfo(){
       const nd=Model.nodeById(pid), c=ramp(pid), dets=linkDetailsAll(pid,sid), det=dets[0], sn=(Model.nodeById(sid)||{}).name||sid, lk=det&&det.link;
       box.style.background="linear-gradient(160deg, "+c[2]+"e6, rgba(8,10,20,0.92))"; box.style.border="1px solid "+c[3];
       box.style.boxShadow="0 0 22px "+c[3]+"44, 0 10px 34px rgba(0,0,0,0.55)";
-      let h='<div style="position:absolute;top:8px;right:8px;"><button class="pf-dismiss" title="Return to the solar system" style="width:26px;height:26px;border-radius:50%;background:var(--card);border:1px solid var(--line-strong);color:var(--t2);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;font-size:14px;line-height:1;">⊖</button></div>';
-      { const _sunNd=Model.nodeById(sid)||{}, _both=_sunNd.icon&&nd.icon, _ic=(s,full)=>'<img decoding="async" loading="lazy" src="'+esc(s)+'" class="portrait" data-full="'+esc(full||"")+'" alt="" style="width:22px;height:22px;border-radius:50%;object-fit:cover;vertical-align:middle;margin:0 5px 2px;cursor:zoom-in;">'; h+='<div style="font-size:16px;font-weight:600;color:#f4f5fa;padding-top:20px;">'+(_both?_ic(_sunNd.icon,_sunNd.image):'')+esc(sn)+' \u2192 '+(_both?_ic(nd.icon,nd.image):'')+esc(nd.name||pid)+'</div>'; }
-      dets.forEach((d,di)=>{
-        if(di>0) h+='<div style="border-top:1px solid '+c[3]+'40;margin:11px 0 0;"></div>';   // separate a second/third relationship stacked in the same card
-        h+='<div class="pf-conn" data-li="'+di+'" title="'+(dets.length>1?'Press and hold to edit this connection':'Press and hold to edit')+'" style="cursor:text;">';
-        { const _t=(Model.raw.types||{})[d.link&&d.link.type]||{}, _sr=(d.link&&!_t.mutual)?(d.link.from===sid?(_t.fromLabel||d.link.type):(_t.toLabel||d.link.type)):null, _rb=(_sr&&_sr!==d.rel)?(_sr+' \u2192 '+d.rel):d.rel;   // sun role → planet role, matching the Sun → Planet title direction
-          h+='<div style="font-size:11px;color:'+c[3]+';margin:'+(di>0?'9px':'2px')+' 0 7px;letter-spacing:0.03em;text-transform:uppercase;">'+esc(_rb)+'</div>'; }
-        if(d.link&&d.link.img) h+='<img src="'+esc(d.link.img)+'" class="portrait" alt="" style="width:100%;max-height:130px;object-fit:cover;border-radius:6px;display:block;margin:2px 0 9px;box-shadow:0 0 12px '+c[3]+'55;cursor:zoom-in;">';
-        h+='<div class="pf-details" style="font-size:12.5px;color:#c9cdda;line-height:1.5;'+(d.generated?'opacity:0.92;':'')+'">'+md(d.text)+'</div>';
-        h+='</div>';
-      });
-      if(lk&&lk.video) h+=videoBlock(lk.video, c);
-      const links2=[];
-      if(lk&&lk.url){ const lt=lk.linkText||(/wikipedia/i.test(lk.url)?'Wikipedia':'Link'); links2.push('<a class="weblink" data-url="'+esc(lk.url)+'" rel="noopener" style="font-size:12px;color:'+c[3]+';cursor:pointer;">'+esc(lt)+' \u2197</a>'); }
-      if(links2.length) h+='<div style="margin-top:9px;display:flex;gap:16px;">'+links2.join('')+'</div>';
-      h+='<div style="display:flex;justify-content:center;margin-top:13px;"><button class="pf-promote" title="Promote to sun" style="width:44px;height:44px;border-radius:50%;background:var(--card);border:1px solid var(--line-strong);color:var(--t2);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;animation:pfglow 2.2s ease-in-out infinite;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2" fill="currentColor" stroke="none"/><path d="M12 2.6v2.6M12 18.8v2.6M2.6 12h2.6M18.8 12h2.6M5.3 5.3l1.9 1.9M16.8 16.8l1.9 1.9M18.7 5.3l-1.9 1.9M7.2 16.8l-1.9 1.9"/></svg></button></div>';
+      const h=piPlanetCardHtml(nd, c, dets, lk, pid, sid, sn);
       box.innerHTML=h; planetInfoShown="R"+pf;
     }
     box.style.opacity=String(Focus._boxOp += (_op-Focus._boxOp)*0.1);   // ease gently so the incoming card fades in elegantly rather than snapping
@@ -2062,17 +2145,7 @@ function updatePlanetInfo(){
     const nd=Model.nodeById(id), c=ramp(id);
     box.style.background="linear-gradient(160deg, "+c[2]+"e6, rgba(8,10,20,0.92))"; box.style.border="1px solid "+c[3];
     box.style.boxShadow="0 0 22px "+c[3]+"44, 0 10px 34px rgba(0,0,0,0.55)";
-    let h='<div class="nc-2d" title="Open the card view" style="position:absolute;top:8px;left:8px;width:26px;height:26px;border-radius:50%;background:var(--card);border:1px solid var(--line-strong);color:var(--t2);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div><div class="nc-solar" title="Back to the solar system" style="position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:50%;background:var(--card);border:1px solid var(--line-strong);color:var(--t2);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;font-size:14px;line-height:1;">⊖</div>';
-    if(nd.icon) h+='<img decoding="async" loading="lazy" src="'+esc(nd.icon)+'" class="portrait" data-full="'+esc(nd.image||"")+'" alt="" style="width:64px;height:64px;border-radius:50%;object-fit:cover;display:block;margin:0 auto 9px;box-shadow:0 0 12px '+c[3]+'66, inset -2px -3px 6px rgba(0,0,0,0.5);cursor:zoom-in;">'; else h+='<div style="height:22px"></div>';
-    h+='<div style="font-size:17px;font-weight:600;color:#f4f5fa;">'+(nd.subgraph?'<span style="opacity:0.7;">\u25c8</span> ':'')+esc(nd.name||id)+'</div>';
-    const gl=((Model.raw.groups||{})[nd.group]||{}).label;
-    if(gl) h+='<div style="font-size:11px;color:'+c[3]+';margin:2px 0 6px;letter-spacing:0.03em;text-transform:uppercase;opacity:0.9;'+'">'+esc(gl)+'</div>';
-    if(nd.video) h+=videoBlock(nd.video, c);
-    if(nd.desc) h+='<div class="pf-desc" style="font-size:12.5px;color:#c9cdda;line-height:1.5;">'+md(nd.desc)+'</div>';
-    if(nd.url){ const lt=nd.linkText||(/wikipedia/i.test(nd.url)?'Wikipedia':'Link'); h+='<a href="'+esc(nd.url)+'" class="weblink" data-url="'+esc(nd.url)+'" rel="noopener" style="display:inline-block;margin-top:8px;font-size:12px;color:'+c[3]+';cursor:pointer;">'+esc(lt)+' &#8599;</a>'; }
-    if(nd.link2){ h+='<a class="weblink" data-url="'+esc(nd.link2)+'" style="display:inline-block;margin-top:8px;margin-left:16px;font-size:12px;color:'+c[3]+';cursor:pointer;">'+esc(nd.link2label||'Link')+' \u2197</a>'; }
-    if(nd.subgraph){ const n2=Object.keys(nd.subgraph.nodes||{}).length; h+='<div class="entergraph" style="margin-top:9px;font-size:12px;color:'+c[3]+';cursor:pointer;">◈ Enter graph ('+n2+' node'+(n2===1?'':'s')+') →</div>'; }
-    { const _hc=[], _oc=[]; (Model.raw&&Model.raw.links?Model.raw.links:[]).forEach(l=>{ let _oth=null; if(l.from===id)_oth=l.to; else if(l.to===id)_oth=l.from; else return; if(typeof isVisible==="function" && !isVisible(_oth)) return; const _on=Model.nodeById(_oth); const _nm=(_on&&_on.name)||_oth; const _ty=(Model.raw.types||{})[l.type]||{}; const _rel=(l.from===id)?(_ty.toLabel||l.type||""):(_ty.fromLabel||l.type||""); const _cc=ramp(_oth); const _cb=(_cc&&_cc[2])||"#888"; const _grp=((Model.raw.groups||{})[groupOf(_oth)]||{}).label||""; const _row={ nm:_nm, html:'<div class="hl-conn" data-target="'+esc(_oth)+'" style="display:flex;align-items:center;cursor:pointer;pointer-events:auto;margin-top:6px;padding:8px 11px;border-radius:8px;background:'+_cb+';border:1px solid '+_cb+';font-size:12.5px;color:#fff;">'+esc(_nm)+(_rel?'<span style="opacity:0.8;font-size:11px;margin-left:6px;">\u00b7 '+esc(_rel)+'</span>':'')+(_grp?'<span style="margin-left:auto;font-size:10.5px;opacity:0.82;padding-left:10px;white-space:nowrap;">'+esc(_grp)+'</span>':'')+'</div>' }; if(l.highlight) _hc.push(_row); else _oc.push(_row); }); const _byn=(a,b)=>a.nm.localeCompare(b.nm); _hc.sort(_byn); _oc.sort(_byn); if(_hc.length) h+='<div style="margin-top:13px;border-top:1px solid '+c[3]+'40;padding-top:10px;"><div style="font-size:11px;color:'+c[3]+';text-transform:uppercase;letter-spacing:0.03em;margin-bottom:6px;opacity:0.9;">Highlighted connections</div>'+_hc.map(x=>x.html).join('')+'</div>'; if(_oc.length) h+='<div style="margin-top:13px;border-top:1px solid '+c[3]+'40;padding-top:10px;"><div style="font-size:11px;color:'+c[3]+';text-transform:uppercase;letter-spacing:0.03em;margin-bottom:6px;opacity:0.9;">'+(_hc.length?'Other connections':'Connections')+'</div>'+_oc.map(x=>x.html).join('')+'</div>'; }
+    const h=piSunCardHtml(nd, c, id);
     box.innerHTML=h; planetInfoShown=id;
   }
   box.style.top=""; box.style.left=""; box.style.right=""; box.style.bottom=""; box.style.transform=""; box.style.maxHeight=Math.max(160, innerHeight-150)+"px"; box.style.overflowY="auto"; box.style.display="block";   // fixed at top (CSS); cap to the viewport with an inner scroll so a banner image + long text can't run off-screen
@@ -2809,11 +2882,7 @@ function openEditor(id, expandOther){
 function closeEditor(){ resetDeleteBtn(); editingId=null; document.getElementById("editor").style.display="none"; }
 // --- Types panel: bulk-manage relationship types (label, direction, dashed, delete) ---
 function typesApplyLive(){ buildLegend(); rebuildVis(); Renderer.refresh(); if(Focus.mode==="focus") refocusCards(); saveRoot(); }
-function renderTypesPanel(){
-  const tpList=document.getElementById("tp-list"); tpList.innerHTML="";
-  const types=Model.raw.types||{}, keys=Object.keys(types);
-  if(!keys.length){ const p=document.createElement("div"); p.style.cssText="font-size:12px;color:var(--t3);"; p.textContent="No types yet \u2014 create one when adding a connection"; tpList.appendChild(p); return; }
-  keys.forEach(k=>{ const t=types[k], count=(Model.raw.links||[]).filter(l=>l.type===k).length;
+function edTypeCard(k, types, tpList){ const t=types[k], count=(Model.raw.links||[]).filter(l=>l.type===k).length;
     const card=document.createElement("div"); card.style.cssText="border:1px solid var(--line); border-radius:8px; padding:8px 10px; margin:0 0 8px;";
     const head=document.createElement("div"); head.style.cssText="display:flex;gap:6px;align-items:center;";
     const title=document.createElement("span"); title.style.cssText="flex:1;min-width:0;font-weight:500;"; title.textContent=typeName(k)+" \u00b7 "+count;
@@ -2831,14 +2900,15 @@ function renderTypesPanel(){
     else { card.appendChild(mkInput("Label (from end)", t.fromLabel||"", v=>{ t.fromLabel=v; })); card.appendChild(mkInput("Label (to end)", t.toLabel||"", v=>{ t.toLabel=v; })); card.appendChild(mkCheck("arrowhead", t.arrow!==false, v=>{ t.arrow=v; applyLive(); })); }
     card.appendChild(mkCheck("dashed line", !!t.dashed, v=>{ t.dashed=v; applyLive(); }));
     tpList.appendChild(card);
-  });
+  }
+function renderTypesPanel(){
+  const tpList=document.getElementById("tp-list"); tpList.innerHTML="";
+  const types=Model.raw.types||{}, keys=Object.keys(types);
+  if(!keys.length){ const p=document.createElement("div"); p.style.cssText="font-size:12px;color:var(--t3);"; p.textContent="No types yet \u2014 create one when adding a connection"; tpList.appendChild(p); return; }
+  keys.forEach(k=>edTypeCard(k, types, tpList));
 }
 // --- Groups panel: bulk-manage groups (label, colour, delete) ---
-function renderGroupsPanel(){
-  const gpList=document.getElementById("gp-list"); gpList.innerHTML="";
-  const groups=Model.raw.groups||{}, keys=Object.keys(groups);
-  if(!keys.length){ const p=document.createElement("div"); p.style.cssText="font-size:12px;color:var(--t3);"; p.textContent="No groups yet \u2014 create one from a node's Group field"; gpList.appendChild(p); return; }
-  keys.forEach(k=>{ const gr=groups[k], count=Object.values(Model.raw.nodes).filter(nd=>nd.group===k).length;
+function edGroupCard(k, groups, gpList){ const gr=groups[k], count=Object.values(Model.raw.nodes).filter(nd=>nd.group===k).length;
     const card=document.createElement("div"); card.style.cssText="border:1px solid var(--line); border-radius:8px; padding:8px 10px; margin:0 0 8px;";
     const head=document.createElement("div"); head.style.cssText="display:flex;gap:6px;align-items:center;";
     const title=document.createElement("span"); title.style.cssText="flex:1;min-width:0;font-weight:500;"; title.textContent=(gr.label||k)+" \u00b7 "+count;
@@ -2852,7 +2922,12 @@ function renderGroupsPanel(){
     PAL_SELECTABLE.forEach(nm=>{ const o=document.createElement("option"); o.value=nm; o.textContent=nm; o.style.background=PAL[nm][0]; o.style.color=PAL[nm][2]; colSel.appendChild(o); });
     colSel.value=gr.color||PAL_SELECTABLE[0]; colSel.onchange=()=>{ gr.color=colSel.value; applyLive(); }; colLab.appendChild(colSel); card.appendChild(colLab);
     gpList.appendChild(card);
-  });
+  }
+function renderGroupsPanel(){
+  const gpList=document.getElementById("gp-list"); gpList.innerHTML="";
+  const groups=Model.raw.groups||{}, keys=Object.keys(groups);
+  if(!keys.length){ const p=document.createElement("div"); p.style.cssText="font-size:12px;color:var(--t3);"; p.textContent="No groups yet \u2014 create one from a node's Group field"; gpList.appendChild(p); return; }
+  keys.forEach(k=>edGroupCard(k, groups, gpList));
 }
 (function(){
   const tb=document.getElementById("typesbtn"), gb=document.getElementById("groupsbtn");
@@ -2959,12 +3034,8 @@ function buildLinkPanel(panel, l){
   function sync(){ if(isData()){ st.textContent="Uploaded image in use"; rm.style.display=""; ip.style.display="none"; } else { st.textContent=""; rm.style.display=l.img?"":"none"; ip.style.display=""; } }
   rb.appendChild(up); rb.appendChild(st); rb.appendChild(rm); iw.appendChild(rb); sync(); panel.appendChild(iw);
 }
-function renderConns(){ const box=document.getElementById("ed-conns"); box.innerHTML="";
-  if(!editingId) return; const raw=Model.raw, types=raw.types||{}; let any=false;
-  raw.links.forEach(l=>{
-    if(l.from!==editingId && l.to!==editingId) return;
-    if(!Model.nodeById(l.from)||!Model.nodeById(l.to)) return;
-    any=true; const other=l.from===editingId?l.to:l.from, t=types[l.type]||{};
+function edConnRow(l, types, raw, box){
+    const other=l.from===editingId?l.to:l.from, t=types[l.type]||{};
     const wrap=document.createElement("div"); wrap.style.cssText="margin-bottom:5px;";
     const row=document.createElement("div"); row.style.cssText="display:flex;gap:5px;align-items:center;";
     const sel=document.createElement("select");
@@ -2989,6 +3060,13 @@ function renderConns(){ const box=document.getElementById("ed-conns"); box.inner
     row.appendChild(del);
     wrap.appendChild(row); wrap.appendChild(panel); box.appendChild(wrap);
     if(pendingExpandConn && other===pendingExpandConn){ panel.style.display="block"; if(!panel.dataset.built){ buildLinkPanel(panel,l); panel.dataset.built="1"; } edit.style.color="var(--t1)"; panel.scrollIntoView&&setTimeout(()=>panel.scrollIntoView({block:"nearest"}),0); }
+  }
+function renderConns(){ const box=document.getElementById("ed-conns"); box.innerHTML="";
+  if(!editingId) return; const raw=Model.raw, types=raw.types||{}; let any=false;
+  raw.links.forEach(l=>{
+    if(l.from!==editingId && l.to!==editingId) return;
+    if(!Model.nodeById(l.from)||!Model.nodeById(l.to)) return;
+    any=true; edConnRow(l, types, raw, box);
   });
   pendingExpandConn=null;
   if(!any){ const p=document.createElement("div"); p.style.cssText="font-size:12px;color:var(--t2);"; p.textContent="No connections yet"; box.appendChild(p); }
@@ -3135,11 +3213,7 @@ function doDeleteNode(){
 document.getElementById("ed-delete").onclick=doDeleteNode;
 document.getElementById("ed-close").onclick=closeEditor;
 document.getElementById("ed-set-start").onclick=()=>{ if(!editingId) return; Model.raw.start=editingId; saveRoot(); document.getElementById("ed-start-status").textContent="\u2713 start node"; };
-function openConnBuilder(){
-  let el=document.getElementById("connbuilder");
-  if(!el){ el=document.createElement("div"); el.id="connbuilder"; document.body.appendChild(el); }
-  const draft={}; let fromId=null, toId=null;
-  el.innerHTML='<div class="cb-panel"><div class="cb-title">New connection</div>'
+function connBuilderHtml(){ return '<div class="cb-panel"><div class="cb-title">New connection</div>'
     +'<div class="cb-label">From node</div>'
     +'<div class="cb-search"><input id="cb-from-q" type="text" placeholder="Search\u2026" autocomplete="off"><div id="cb-from-res" class="cb-res"></div></div>'
     +'<div class="cb-swaprow"><button id="cb-swap" type="button" title="Swap from and to">\u21c5 swap</button></div>'
@@ -3151,7 +3225,12 @@ function openConnBuilder(){
       +'<label id="cb-towrap" style="display:none;">Reverse label<input id="cb-tolabel" placeholder="e.g. student" autocomplete="off"></label>'
       +'<label style="display:flex;gap:6px;align-items:center;"><input type="checkbox" id="cb-dashed" style="width:auto;"> dashed line</label></div>'
     +'<div class="cb-label">Details</div><div id="cb-details"></div>'
-    +'<div class="cb-actions"><button id="cb-cancel" type="button">Cancel</button><button id="cb-create" type="button">Create connection</button></div></div>';
+    +'<div style="margin:10px 0 4px;"><button id="cb-code" type="button" style="font-size:12px;">◇ Add code</button></div><div class="cb-actions"><button id="cb-cancel" type="button">Cancel</button><button id="cb-create" type="button">Create connection</button></div></div>'; }
+function openConnBuilder(){
+  let el=document.getElementById("connbuilder");
+  if(!el){ el=document.createElement("div"); el.id="connbuilder"; document.body.appendChild(el); }
+  const draft={}; let fromId=null, toId=null;
+  el.innerHTML=connBuilderHtml();
   const q=id=>el.querySelector("#"+id);
   const wireSearch=(inp,res,set)=>{
     const render=()=>{ res.innerHTML=""; const ql=inp.value.trim().toLowerCase();
@@ -3180,7 +3259,8 @@ function openConnBuilder(){
   q("cb-swap").onclick=()=>{ const ti=fromId; fromId=toId; toId=ti; const tv=q("cb-from-q").value; q("cb-from-q").value=q("cb-to-q").value; q("cb-to-q").value=tv; };
   q("cb-cancel").onclick=()=>{ el.style.display="none"; };
   el.onclick=(ev)=>{ if(ev.target===el) el.style.display="none"; };
-  q("cb-create").onclick=()=>{
+  const _cbCode=q("cb-code"); if(_cbCode){ const _pc=()=>{ const has=!!(draft.code&&String(draft.code).trim()); _cbCode.textContent=has?"◇ Edit code":"◇ Add code"; }; _pc(); _cbCode.onclick=()=>{ openCodeBox(draft.code||"", (v)=>{ if(v&&v.trim()) draft.code=v; else delete draft.code; _pc(); }, "Connection — code"); }; }
+    q("cb-create").onclick=()=>{
     if(!fromId||!toId){ showInfoCard("Search and pick two nodes to connect"); return; }
     if(fromId===toId){ showInfoCard("Choose two different nodes"); return; }
     let typeKey=typeSel.value;
