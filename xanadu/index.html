@@ -172,7 +172,7 @@
     <div id="graphtrail" style="display:none;"></div>
     <div class="bar" style="display:none;"><select id="jump" aria-label="Go to node"></select></div>
     <div class="btngroup"><span class="grouplabel">Structure</span><button id="typesbtn" type="button">Connectors</button><button id="groupsbtn" type="button">Groups</button></div>
-    <div class="btngroup"><span class="grouplabel">Graph</span><button id="newgraph" type="button">New</button><button id="load" type="button">Load</button><button id="export" type="button">Export</button><button id="exportview" type="button" style="display:none;">Export view</button><button id="example" type="button">Example</button><button id="about" type="button">About</button><button id="resetview" type="button">Reset</button></div>
+    <div class="btngroup"><span class="grouplabel">Graph</span><button id="newgraph" type="button">New</button><button id="load" type="button">Load</button><button id="export" type="button">Export</button><button id="exportview" type="button" style="display:none;">Export view</button><button id="about" type="button">About</button><button id="resetview" type="button">Reset</button></div>
     <div id="search"><input id="q" type="text" placeholder="Search" autocomplete="off" spellcheck="false"><div id="results"></div></div>
     <select id="synth" style="display:none;"><option value="">Synthetic…</option><option>500</option><option>1000</option><option>2500</option><option>5000</option><option>10000</option></select>
     <span id="counts" style="display:none;"></span><span id="fps" style="display:none;"></span><span id="ltime" style="display:none;"></span><small id="build" style="display:none;"></small>
@@ -242,17 +242,7 @@
 
 <div id="typespanel"><h1><span>Connectors</span><button id="tp-close" type="button">Done</button></h1><div id="tp-list"></div></div>
 <div id="groupspanel"><h1><span>Groups</span><button id="gp-close" type="button">Done</button></h1><div id="gp-list"></div></div>
-<div id="loadchooser" style="display:none; position:fixed; inset:0; z-index:2300; background:rgba(0,0,0,0.5); align-items:center; justify-content:center;">
-  <div style="background:var(--card); border:1px solid var(--line-strong); border-radius:14px; padding:18px 18px 16px; box-shadow:0 20px 60px rgba(0,0,0,0.5); max-width:300px; width:82%;">
-    <div style="font-size:14px; font-weight:600; color:var(--t1); margin-bottom:6px;">Load a file</div>
-    <div style="font-size:12.5px; color:var(--t2); line-height:1.45; margin-bottom:14px;">Open it as a completely new scene, or merge it onto the current one?</div>
-    <div style="display:flex; flex-direction:column; gap:8px;">
-      <button id="load-new" type="button" style="padding:8px 12px; text-align:left;">New scene &mdash; replace what's here</button>
-      <button id="load-merge" type="button" style="padding:8px 12px; text-align:left;">Merge &mdash; add onto this scene</button>
-      <button id="load-cancel" type="button" style="padding:6px 12px; align-self:flex-end; margin-top:2px;">Cancel</button>
-    </div>
-  </div>
-</div>
+
 <div id="examplewarn" style="display:none; position:fixed; inset:0; z-index:3500; background:rgba(0,0,0,0.5); align-items:center; justify-content:center;">
   <div style="background:var(--card); border:1px solid var(--line-strong); border-radius:14px; padding:18px 18px 16px; box-shadow:0 20px 60px rgba(0,0,0,0.5); max-width:320px; width:84%;">
     <div style="font-size:14px; font-weight:600; color:var(--t1); margin-bottom:6px;">Replace current graph?</div>
@@ -335,7 +325,6 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="xanadu-data.js"></script>
 <script>
 "use strict";
 /* =============================================================================
@@ -346,7 +335,7 @@
    never touches the DOM, and all load/save goes through GraphSource. This is
    the structure the scale work (worker layout, Barnes-Hut, accounts) hangs off.
    ============================================================================= */
-const BUILD="v2-601-r16";
+const BUILD="v2-606-r21";
 document.getElementById("build").textContent=BUILD;
 
 /* ---- palette (name → [lightest, mid-dark, darkest, vivid]) ---- */
@@ -1439,10 +1428,7 @@ window.addEventListener("resize",()=>{ Renderer.resize(); if(Focus.mode==="focus
 const Focus={ mode:"universe", id:null, neighbours:[], skip:null, layout:null, pinned:{}, egoDir:{}, egoCenter:-1, egoPos:{}, egoRel:{}, egoOrbit:{} };
 const EGO_R=180;   // ego-view spike length: how far each neighbour sits from the flown-in node
 // Evenly-spaced unit vectors on a sphere (Fibonacci sphere) — a node's neighbours fan out around it.
-function fibSphere(m){ const pts=[], gr=Math.PI*(3-Math.sqrt(5));
-  for(let i=0;i<m;i++){ const y=m===1?0:1-(i/(m-1))*2, r=Math.sqrt(Math.max(0,1-y*y)), th=gr*i;
-    pts.push({x:Math.cos(th)*r, y:y, z:Math.sin(th)*r}); }
-  return pts; }
+
 let cardDrag=null;  // active card drag: {id, k, lx, ly, moved, isFocus}
 let graphStack=[];  // nested-subgraph trail: [{doc, focusId, title}], root graph at index 0
 let tempLinks=[], broughtIn={}, tempNewNodes={};  // transient: brought-in neighbours + freshly-created nodes (never saved until connected)
@@ -1464,22 +1450,16 @@ function legendEntries(){
   if(Object.keys(groups).length && ids.some(id=>!groupOf(id))) entries.push({k:"", label:"Ungrouped", color:PAL.gray[3]});
   return entries;
 }
-function buildLegend(){
-  const lg=document.getElementById("legend"); if(!lg) return; lg.innerHTML="";
+function paintLegendInto(elId){
+  const lg=document.getElementById(elId); if(!lg) return; lg.innerHTML="";
   legendEntries().forEach(en=>{ const s=document.createElement("span"); s.className="leg"; s.title="Show / hide this group";
     if(hiddenGroups[en.k]){ s.style.opacity="0.4"; s.style.textDecoration="line-through"; }
     s.innerHTML='<span class="dot" style="background:'+en.color+'"></span>'+esc(en.label);
     s.onclick=()=>toggleGroup(en.k); lg.appendChild(s); });
-  buildTopbarLegend();
 }
+function buildLegend(){ paintLegendInto("legend"); buildTopbarLegend(); }
 // --- Card-mode topbar: horizontal legend + title, shown while viewing a node's card (Focus.mode==="focus") ---
-function buildTopbarLegend(){
-  const tl=document.getElementById("topbar-legend"); if(!tl) return; tl.innerHTML="";
-  legendEntries().forEach(en=>{ const s=document.createElement("span"); s.className="leg"; s.title="Show / hide this group";
-    if(hiddenGroups[en.k]){ s.style.opacity="0.4"; s.style.textDecoration="line-through"; }
-    s.innerHTML='<span class="dot" style="background:'+en.color+'"></span>'+esc(en.label);
-    s.onclick=()=>toggleGroup(en.k); tl.appendChild(s); });
-}
+function buildTopbarLegend(){ paintLegendInto("topbar-legend"); }
 function syncTopbar(){
   const tb=document.getElementById("topbar"); if(!tb) return;
   const inCard = Focus.mode==="focus";
@@ -1602,9 +1582,7 @@ function neighboursOf(id){
   }
   return out.map(r=>({ id:r.id, rel:r.rels.join(" \u00b7 ").toUpperCase(), dir:r.dir, dashed:r.dashed }));
 }
-function rayToRect(cx,cy,ang,halfW,halfH){ const dx=Math.cos(ang),dy=Math.sin(ang);
-  const tx=dx!==0?halfW/Math.abs(dx):1e9, ty=dy!==0?halfH/Math.abs(dy):1e9, t=Math.min(tx,ty);
-  return [cx+dx*t, cy+dy*t]; }
+
 function toEdge(ox,oy,tx,ty,hw,hh){ const dx=tx-ox,dy=ty-oy;
   const fx=dx!==0?hw/Math.abs(dx):1e9, fy=dy!==0?hh/Math.abs(dy):1e9, t=Math.min(1,Math.min(fx,fy));
   return [ox+dx*t, oy+dy*t]; }
@@ -1858,15 +1836,8 @@ function relDetailGen(type, a, b){   // fallback description when a connection h
     courts:a+" courts "+b+"."};
   return T[type] || (a+" and "+b+" share a "+type+" bond.");
 }
-function linkDetails(aId, bId){   // the connection between two nodes → {text, rel}; an explicit .details field wins, else a generated line
-  const raw=Model.raw, types=raw.types||{};
-  for(const l of raw.links.concat(tempLinks)){
-    if((l.from===aId&&l.to===bId)||(l.from===bId&&l.to===aId)){
-      const t=types[l.type]||{mutual:true}, an=(Model.nodeById(l.from)||{}).name||l.from, bn=(Model.nodeById(l.to)||{}).name||l.to;
-      return { text: l.details || relDetailGen(l.type, an, bn), rel: (t.mutual?(t.label||l.type):(l.from===aId?(t.fromLabel||l.type):(t.toLabel||l.type))), link: l, generated: !l.details };
-    }
-  }
-  return null;
+function linkDetails(aId, bId){   // the first connection between two nodes, or null (thin wrapper over linkDetailsAll)
+  const all=linkDetailsAll(aId, bId); return all.length ? all[0] : null;
 }
 function linkDetailsAll(aId, bId){   // EVERY connection between two nodes (a node can relate to a neighbour more than once)
   const raw=Model.raw, types=raw.types||{}, out=[];
@@ -1927,18 +1898,7 @@ function showRelInfoEdge(a, b, px, py){
     if(window.visualViewport) window.visualViewport.addEventListener("resize", sizeCardEdit);   // keep the edit form clear of the on-screen keyboard
     pi.addEventListener("focusin", ()=>{ if(cardEditing) sizeCardEdit(); });   // a field was focused → keep the form above the keyboard
   } }
-function showRelInfo(nbrIndex, px, py){
-  if(Focus.egoCenter<0) return;
-  const centerId=Model.ids[Focus.egoCenter], farId=Model.ids[nbrIndex], c=ramp(centerId), role=Focus.egoRel[nbrIndex]||"";
-  const box=document.getElementById("relinfo"); if(!box) return;
-  box.style.background="linear-gradient(160deg, "+c[2]+"e6, rgba(8,10,20,0.92))";
-  box.style.border="1px solid "+c[3]; box.style.boxShadow="0 0 20px "+c[3]+"44, 0 10px 30px rgba(0,0,0,0.5)";
-  document.getElementById("relinfo-body").innerHTML=(role?'<span style="opacity:0.7;">'+esc(role.toLowerCase())+':</span> ':'')+'<span style="font-weight:600;">'+esc((Model.nodeById(farId)||{}).name||farId)+'</span>';
-  box.style.display="block";
-  const vw=window.innerWidth, vh=window.innerHeight, bw=box.offsetWidth||220, bh=box.offsetHeight||60;
-  let x=Math.min(Math.max(8,px-bw/2), vw-bw-8), y=py+14; if(y+bh>vh-8) y=py-bh-14;
-  box.style.left=x+"px"; box.style.top=Math.max(8,y)+"px";
-}
+
 function hideRelInfo(){ const box=document.getElementById("relinfo"); if(box) box.style.display="none"; }
 (function(){ const x=document.getElementById("relinfo-close"); if(x) x.onclick=(e)=>{ e.stopPropagation(); hideRelInfo(); }; })();
 // Planet-info: the flown-in node's full detail card, shown in the ego view while zoomed in on it.
@@ -2502,10 +2462,7 @@ function buildSolarOrbits(keep){
   SolarSys.orbit=orbit; SolarSys.sunR=sunRArr; SolarSys.sunX=sunX; SolarSys.sunY=sunY; SolarSys.sunZ=sunZ; SolarSys.placed=placed; SolarSys.Rmax=Rb; SolarSys.galaxyR=galaxyR; SolarSys.systemDist=Rb*11;
 }
 // camera target to frame a node's solar system: the sun for a planet, itself for a sun/lone body
-function sysFocus(i){ const S=SolarSys; if(!S.sunX||S.isSun.length!==Model.count()) return null;
-  const su = S.isSun[i] ? i : (S.sun[i]>=0 && S.isSun[S.sun[i]] ? S.sun[i] : i);
-  if(S.placed && S.placed[su]) return {x:S.sunX[su], y:S.sunY[su], z:S.sunZ[su]};
-  return null; }
+
 // a node's CURRENT position in the galaxy layout (orbiting planet, static sun, or scattered lone body)
 function galaxyPosNow(i){ const S=SolarSys; if(!S.sunX) return {x:Positions.x[i],y:Positions.y[i],z:Positions.z[i]};
   const orb=S.orbit[i];
@@ -2654,25 +2611,20 @@ function mergeInto(data2){
   if(mergedCount||addedCount) showInfoCard("Merged "+mergedCount+" matching node"+(mergedCount===1?"":"s")+" and added "+addedCount+" new node"+(addedCount===1?"":"s")+".");
 }
 (function(){
-  const chooser=document.getElementById("loadchooser");
-  const show=()=>{ if(chooser) chooser.style.display="flex"; };
-  const close=()=>{ if(chooser) chooser.style.display="none"; };
-  const ln=document.getElementById("load-new"), lm=document.getElementById("load-merge"), lc=document.getElementById("load-cancel");
-  if(ln) ln.onclick=async()=>{ close(); const d=await FileSource.pick(); if(d) confirmReplace(()=>{ graphStack=[]; LocalStorageSource.save(d); loadGraph(d); renderGraphTrail(); }); };
-  if(lm) lm.onclick=async()=>{ close(); const d=await FileSource.pick(); if(d) mergeInto(d); };
-  if(lc) lc.onclick=close;
-  if(chooser) chooser.addEventListener("click",e=>{ if(e.target===chooser) close(); });
   const loadBtn=document.getElementById("load");
-  if(loadBtn) loadBtn.onclick=show;
+  if(loadBtn) loadBtn.onclick=()=>openLauncher({dismissable:true});
 })();
 // Export the graph as a .zip that bundles every icon AND image — both embedded data: URIs and relative
 // files (e.g. icons/zeus.jpg, fetched same-origin into the zip). Absolute http(s) URLs are left as links.
 // Round-trips via parseJsonOrZip, which rehydrates bundled media back to embedded data: URIs (self-contained).
 // JSZip loads from a CDN, so offline it falls back to plain JSON with paths kept as-is.
 const MEDIA_FIELDS=[["icon","icons"],["image","images"]];
+function eachMediaField(ds, fn){
+  Object.values(ds.nodes||{}).forEach(nd=>{ MEDIA_FIELDS.forEach(([f])=>fn(nd, f)); if(nd.subgraph) eachMediaField(nd.subgraph, fn); });
+  return ds;
+}
 function hasBundleableMedia(ds){
-  return Object.values(ds.nodes||{}).some(nd=>
-    MEDIA_FIELDS.some(([f])=> nd[f] && !/^https?:/i.test(nd[f]) ) || (nd.subgraph && hasBundleableMedia(nd.subgraph)) );
+  let found=false; eachMediaField(ds, (nd,f)=>{ if(nd[f] && !/^https?:/i.test(nd[f])) found=true; }); return found;
 }
 async function collectAndExtractMedia(ds, zip, pathPrefix){
   for(const id of Object.keys(ds.nodes||{})){ const nd=ds.nodes[id];
@@ -2706,7 +2658,7 @@ async function parseJsonOrZip(file){
   }
   return JSON.parse(await file.text());
 }
-function stripLocalMedia(ds){ Object.values(ds.nodes||{}).forEach(nd=>{ MEDIA_FIELDS.forEach(([f])=>{ if(nd[f] && !/^https?:/i.test(nd[f])) delete nd[f]; }); if(nd.subgraph) stripLocalMedia(nd.subgraph); }); return ds; }
+function stripLocalMedia(ds){ eachMediaField(ds, (nd,f)=>{ if(nd[f] && !/^https?:/i.test(nd[f])) delete nd[f]; }); return ds; }
 async function embedMediaBase64(ds){ for(const id of Object.keys(ds.nodes||{})){ const nd=ds.nodes[id]; for(const [f] of MEDIA_FIELDS){ const v=nd[f]; if(!v) continue; if(/^data:/i.test(v)||/^https?:/i.test(v)) continue; try{ const blob=await (await fetch(v)).blob(); nd[f]=await new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(blob); }); }catch(e){ delete nd[f]; } } if(nd.subgraph) await embedMediaBase64(nd.subgraph); } return ds; }
 async function doExport(dataset){
   dataset = dataset || (graphStack.length ? graphStack[0].doc : Model.raw);
@@ -2901,12 +2853,13 @@ function edTypeCard(k, types, tpList){ const t=types[k], count=(Model.raw.links|
     card.appendChild(mkCheck("dashed line", !!t.dashed, v=>{ t.dashed=v; applyLive(); }));
     tpList.appendChild(card);
   }
-function renderTypesPanel(){
-  const tpList=document.getElementById("tp-list"); tpList.innerHTML="";
-  const types=Model.raw.types||{}, keys=Object.keys(types);
-  if(!keys.length){ const p=document.createElement("div"); p.style.cssText="font-size:12px;color:var(--t3);"; p.textContent="No types yet \u2014 create one when adding a connection"; tpList.appendChild(p); return; }
-  keys.forEach(k=>edTypeCard(k, types, tpList));
+function renderEditPanel(listId, items, emptyMsg, cardFn){
+  const list=document.getElementById(listId); list.innerHTML="";
+  const keys=Object.keys(items);
+  if(!keys.length){ const p=document.createElement("div"); p.style.cssText="font-size:12px;color:var(--t3);"; p.textContent=emptyMsg; list.appendChild(p); return; }
+  keys.forEach(k=>cardFn(k, items, list));
 }
+function renderTypesPanel(){ renderEditPanel("tp-list", Model.raw.types||{}, "No types yet \u2014 create one when adding a connection", edTypeCard); }
 // --- Groups panel: bulk-manage groups (label, colour, delete) ---
 function edGroupCard(k, groups, gpList){ const gr=groups[k], count=Object.values(Model.raw.nodes).filter(nd=>nd.group===k).length;
     const card=document.createElement("div"); card.style.cssText="border:1px solid var(--line); border-radius:8px; padding:8px 10px; margin:0 0 8px;";
@@ -2923,12 +2876,7 @@ function edGroupCard(k, groups, gpList){ const gr=groups[k], count=Object.values
     colSel.value=gr.color||PAL_SELECTABLE[0]; colSel.onchange=()=>{ gr.color=colSel.value; applyLive(); }; colLab.appendChild(colSel); card.appendChild(colLab);
     gpList.appendChild(card);
   }
-function renderGroupsPanel(){
-  const gpList=document.getElementById("gp-list"); gpList.innerHTML="";
-  const groups=Model.raw.groups||{}, keys=Object.keys(groups);
-  if(!keys.length){ const p=document.createElement("div"); p.style.cssText="font-size:12px;color:var(--t3);"; p.textContent="No groups yet \u2014 create one from a node's Group field"; gpList.appendChild(p); return; }
-  keys.forEach(k=>edGroupCard(k, groups, gpList));
-}
+function renderGroupsPanel(){ renderEditPanel("gp-list", Model.raw.groups||{}, "No groups yet \u2014 create one from a node\u2019s Group field", edGroupCard); }
 (function(){
   const tb=document.getElementById("typesbtn"), gb=document.getElementById("groupsbtn");
   if(tb) tb.onclick=()=>{ const _pi=document.getElementById("planetinfo"); if(_pi) _pi.style.display="none"; document.getElementById("hud").style.display="none"; document.getElementById("groupspanel").style.display="none"; renderTypesPanel(); document.getElementById("typespanel").style.display="block"; };
@@ -2978,9 +2926,12 @@ document.getElementById("ng-create").onclick=()=>{
   if(Focus.mode==="focus") buildFocusCards();
 };
 // Image: paste URL, upload file (→ data URL), or remove. Only cards show images (planets never do).
-function syncImgStatus(){ const nd=editingId?Model.nodeById(editingId):null, isData=!!(nd&&nd.image&&nd.image.slice(0,5)==="data:");
-  document.getElementById("ed-imgstatus").style.display=isData?"":"none";
-  document.getElementById("ed-img").value=(nd&&nd.image&&!isData)?nd.image:""; }
+function syncMediaStatus(field, statusId, inputId){
+  const nd=editingId?Model.nodeById(editingId):null, isData=!!(nd&&nd[field]&&nd[field].slice(0,5)==="data:");
+  document.getElementById(statusId).style.display=isData?"":"none";
+  document.getElementById(inputId).value=(nd&&nd[field]&&!isData)?nd[field]:"";
+}
+function syncImgStatus(){ syncMediaStatus("image", "ed-imgstatus", "ed-img"); }
 function imgChanged(){ saveRoot(); if(Focus.mode==="focus") buildFocusCards(); }
 document.getElementById("ed-img").addEventListener("input", ()=>{ if(!editingId) return; const nd=Model.nodeById(editingId), v=document.getElementById("ed-img").value;
   if(v) nd.image=v; else delete nd.image; document.getElementById("ed-imgstatus").style.display="none"; imgChanged(); });
@@ -2988,9 +2939,7 @@ document.getElementById("ed-upload").onclick=()=>document.getElementById("ed-img
 document.getElementById("ed-imgfile").onchange=function(){ const f=this.files[0]; if(!f||!editingId) return;
   const r=new FileReader(); r.onload=()=>{ Model.nodeById(editingId).image=r.result; syncImgStatus(); imgChanged(); }; r.readAsDataURL(f); this.value=""; };
 document.getElementById("ed-imgremove").onclick=()=>{ if(!editingId) return; delete Model.nodeById(editingId).image; syncImgStatus(); imgChanged(); };
-function syncIconStatus(){ const nd=editingId?Model.nodeById(editingId):null, isData=!!(nd&&nd.icon&&nd.icon.slice(0,5)==="data:");
-  document.getElementById("ed-iconstatus").style.display=isData?"":"none";
-  document.getElementById("ed-icon").value=(nd&&nd.icon&&!isData)?nd.icon:""; }
+function syncIconStatus(){ syncMediaStatus("icon", "ed-iconstatus", "ed-icon"); }
 document.getElementById("ed-iconupload").onclick=()=>document.getElementById("ed-iconfile").click();
 document.getElementById("ed-iconfile").onchange=function(){ const f=this.files[0]; if(!f||!editingId) return;
   const r=new FileReader(); r.onload=()=>{ Model.nodeById(editingId).icon=r.result; syncIconStatus(); imgChanged(); }; r.readAsDataURL(f); this.value=""; };
@@ -3001,10 +2950,13 @@ function refreshTypeSelect(selKey){ const sel=document.getElementById("ed-type")
   Object.keys(Model.raw.types||{}).forEach(k=>{ const o=document.createElement("option"); o.value=k; o.textContent=typeName(k); sel.appendChild(o); });
   const nw=document.createElement("option"); nw.value="__new"; nw.textContent="+ New connector\u2026"; sel.appendChild(nw);
   sel.value=selKey||""; }
-function refreshTargetSelect(){ const sel=document.getElementById("ed-target"); sel.innerHTML="";
-  const ph=document.createElement("option"); ph.value=""; ph.textContent="Node\u2026"; ph.disabled=true; sel.appendChild(ph);
+function populateNodeSelect(selId, placeholder){
+  const sel=document.getElementById(selId); sel.innerHTML="";
+  const ph=document.createElement("option"); ph.value=""; ph.textContent=placeholder; ph.disabled=true; sel.appendChild(ph);
   Model.ids.forEach(id=>{ if(id===editingId) return; const o=document.createElement("option"); o.value=id; o.textContent=(Model.nodeById(id).name)||id; sel.appendChild(o); });
-  sel.value=""; }
+  sel.value="";
+}
+function refreshTargetSelect(){ populateNodeSelect("ed-target", "Node\u2026"); }
 function syncDir(){ const t=(Model.raw.types||{})[document.getElementById("ed-type").value]; document.getElementById("ed-dir").style.display=(t&&!t.mutual)?"":"none"; }
 // rebuild the focus cards after a link change — recompute neighbours, keep the camera where it is
 function refocusCards(){ if(Focus.mode!=="focus"||!Focus.id) return;
@@ -3131,17 +3083,8 @@ document.getElementById("ed-graph-detach").onclick=()=>{
   saveRoot();
 };
 // --- Merge (faithful port of the prototype's mergeNodeInto) ---
-function refreshMergeTarget(){ const sel=document.getElementById("ed-merge-target"); sel.innerHTML="";
-  const ph=document.createElement("option"); ph.value=""; ph.textContent="Node to merge in\u2026"; ph.disabled=true; sel.appendChild(ph);
-  Model.ids.forEach(id=>{ if(id===editingId) return; const o=document.createElement("option"); o.value=id; o.textContent=(Model.nodeById(id).name)||id; sel.appendChild(o); });
-  sel.value=""; }
-function fillGaps(dst, src){
-  if(!dst.desc && src.desc) dst.desc=src.desc;
-  if(!dst.url && src.url) dst.url=src.url;
-  if(!dst.img && src.img) dst.img=src.img;
-  if(!dst.group && src.group) dst.group=src.group;
-  if(!dst.subgraph && src.subgraph) dst.subgraph=src.subgraph;
-}
+function refreshMergeTarget(){ populateNodeSelect("ed-merge-target", "Node to merge in\u2026"); }
+
 function dedupeLinks(raw){ const seen=new Set();
   raw.links=raw.links.filter(l=>{ if(l.from===l.to) return false; const key=l.from+"|"+l.to+"|"+l.type; if(seen.has(key)) return false; seen.add(key); return true; }); }
 function mergeNodeInto(loserId, keeperId){
@@ -3330,24 +3273,16 @@ function loop(){
   requestAnimationFrame(loop);
 }
 
-/* ---- boot: GraphSource provides the graph (saved graph wins, else the built-in default) ---- */
-const DEFAULT_DATA=/*__DATA__*/(window.XANADU_DATA||{title:"Data not loaded",start:"",groups:{},types:{},nodes:{},links:[]});
+/* ---- boot: GraphSource provides the graph (saved graph wins, else the launcher opens) ---- */
+
 Renderer.init(cv);
-// "Example" loads the built-in graph and saves it as the current graph, replacing any previously saved one (a reload keeps the example, not the old graph).
+// "Example" opens the launcher in examples-only mode to browse the example graphs from the manifest.
 (function(){ const ev=document.getElementById("exportview"); if(ev) ev.onclick=()=>doExport(Model.raw); })();
 // --- Example button: warn before discarding the user's own graph ---
-function graphDiffersFromExample(){
-  try{
-    const cur = graphStack.length ? graphStack[0].doc : Model.raw;
-    const a={t:cur.title, n:Object.keys(cur.nodes||{}).sort(), l:(cur.links||[]).length};
-    const b={t:DEFAULT_DATA.title, n:Object.keys(DEFAULT_DATA.nodes||{}).sort(), l:(DEFAULT_DATA.links||[]).length};
-    return JSON.stringify(a)!==JSON.stringify(b);
-  }catch(err){ return true; }
-}
-function loadExampleNow(){ const ex=JSON.parse(JSON.stringify(DEFAULT_DATA)); graphStack=[]; LocalStorageSource.save(ex); loadGraph(ex); renderGraphTrail(); }   // loading the example replaces the saved graph, so a reload keeps the example rather than restoring the old one
+
+   // replacing the current graph discards unsaved edits, so warn first when the graph is dirty
 let _pendingReplace=null;
 function confirmReplace(proceed){ if(!graphDirty){ proceed(); return; } _pendingReplace=proceed; const w=document.getElementById("examplewarn"); if(w) w.style.display="flex"; else proceed(); }
-document.getElementById("example").onclick=()=>{ openLauncher({examplesOnly:true, dismissable:true}); };
 document.getElementById("about").onclick=()=>openAbout();
 (function(){
   const warn=document.getElementById("examplewarn"), close=()=>{ if(warn) warn.style.display="none"; };
@@ -3397,7 +3332,7 @@ async function fetchGraphDoc(url, name){
   const blob=await r.blob(), file=new File([blob], name||url.split("/").pop()||"graph.json");
   return await parseJsonOrZip(file);
 }
-function openLauncher(opts){ opts=opts||{}; const examplesOnly=!!opts.examplesOnly, dismissable=!!opts.dismissable;
+function openLauncher(opts){ opts=opts||{}; const dismissable=!!opts.dismissable;
   let el=document.getElementById("launcher");
   if(!el){ el=document.createElement("div"); el.id="launcher"; document.body.appendChild(el); }
   el.style.display="flex"; try{ window._launcherOpen=true; document.body.classList.add("launcher-active"); }catch(_){}
@@ -3410,25 +3345,22 @@ function openLauncher(opts){ opts=opts||{}; const examplesOnly=!!opts.examplesOn
   const build=(manifest)=>{
     list.innerHTML="";
     let saved=null; try{ saved=LocalStorageSource.load(); }catch(_){}
-    if(saved && !examplesOnly){ list.appendChild(card("Resume your work", saved.title?("\u201C"+saved.title+"\u201D"):"your last graph", ()=>{ closeLauncher(); graphStack=[]; loadGraph(saved); if(typeof renderGraphTrail==="function") renderGraphTrail(); }, "resume")); }
+    if(saved){ list.appendChild(card("Resume your work", saved.title?("\u201C"+saved.title+"\u201D"):"your last graph", ()=>{ closeLauncher(); graphStack=[]; loadGraph(saved); if(typeof renderGraphTrail==="function") renderGraphTrail(); }, "resume")); }
     if(manifest.length){
       manifest.forEach(e=>{ const title=e.title||e.file.replace(/\.[a-z0-9]+$/i,"").replace(/[-_]+/g," "); const url=/^(https?:|\/)/i.test(e.file)?e.file:(GRAPHS_DIR+e.file);
         const b=card(title, e.desc||"", async ()=>{ sub.textContent="Opening \u201C"+title+"\u201D\u2026"; sub.style.color=""; try{ const doc=await fetchGraphDoc(url, e.file); closeLauncher(); confirmReplace(()=>applyDoc(doc)); }catch(err){ sub.textContent="Couldn't open \u201C"+title+"\u201D: "+err.message; sub.style.color="#e0a24a"; } });
         list.appendChild(b); });
-    } else {
-      list.appendChild(card("Greek Myth", "Built-in example \u2014 gods, heroes, and monsters.", ()=>chooseDoc(JSON.parse(JSON.stringify(DEFAULT_DATA)))));
     }
-    if(!examplesOnly){
-      list.appendChild(card("Start a new graph", "Begin from a blank canvas.", ()=>chooseDoc({title:"Untitled graph", start:"n1", nodes:{n1:{name:"New node"}}, links:[], groups:{}, types:{}}), "action"));
+    list.appendChild(card("Start a new graph", "Begin from a blank canvas.", ()=>chooseDoc({title:"Untitled graph", start:"n1", nodes:{n1:{name:"New node"}}, links:[], groups:{}, types:{}}), "action"));
       list.appendChild(card("Open a file\u2026", "Load a .json or .zip from your device.", async ()=>{ const d=await FileSource.pick(); if(d) chooseDoc(d); }, "action"));
-    }
-    if(!examplesOnly){ const ab=document.createElement("button"); ab.className="lc-about"; ab.type="button"; ab.textContent="About & how to use"; ab.onclick=()=>openAbout(); list.appendChild(ab); }
+      list.appendChild(card("Merge a file\u2026", "Combine a .json or .zip into the current graph.", async ()=>{ const d=await FileSource.pick(); if(d){ closeLauncher(); mergeInto(d); } }, "action"));
+    { const ab=document.createElement("button"); ab.className="lc-about"; ab.type="button"; ab.textContent="About & how to use"; ab.onclick=()=>openAbout(); list.appendChild(ab); }
     if(dismissable){ list.appendChild(card("Cancel", "", ()=>closeLauncher(), "action")); }
   };
   fetchGraphManifest().then(build).catch(()=>build([]));
 }
 
-loadGraph(LocalStorageSource.load() || DEFAULT_DATA);
+{ const _saved=LocalStorageSource.load(); if(_saved){ loadGraph(_saved); } else { loadGraph({title:"",start:"",groups:{},types:{},nodes:{},links:[]}); openLauncher(); } }
 setPanelCollapsed(true);
 { const _params=new URLSearchParams(location.search), _gp=_params.get("graph")||_params.get("g");
   if(_gp){                                   // deep-link, e.g. ?graph=history-of-jazz.json  or  ?graph=https://host/mygraph.json
