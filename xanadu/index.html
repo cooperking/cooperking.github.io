@@ -120,6 +120,10 @@
   #launcher .lc-desc{ font:400 12.5px -apple-system,Segoe UI,Roboto,sans-serif; color:var(--t2); margin-top:3px; line-height:1.4; }
   #launcher .lc-resume{ border-color:rgba(120,180,150,0.5); background:linear-gradient(160deg, rgba(30,54,44,0.9), rgba(12,20,18,0.9)); }
   #launcher .lc-action{ background:linear-gradient(160deg, rgba(28,32,50,0.9), rgba(11,13,22,0.9)); }
+    .lc-graph{ display:flex; align-items:stretch; gap:0; padding:0; overflow:hidden; }
+    .lc-graph-main{ flex:1; min-width:0; padding:14px 16px; cursor:pointer; }
+    .lc-merge{ flex:none; align-self:stretch; padding:0 16px; font:600 12.5px -apple-system,Segoe UI,Roboto,sans-serif; color:var(--t2); background:rgba(255,255,255,0.04); border:none; border-left:1px solid var(--line-strong); cursor:pointer; }
+    .lc-merge:hover{ background:rgba(150,170,220,0.14); color:var(--t1); }
   #launcher .lc-loading{ color:var(--t3); text-align:center; padding:20px; font:400 13px -apple-system,sans-serif; }
   #launcher .lc-about{ background:none; border:none; color:var(--t3); text-align:center; padding:6px; font:400 12.5px -apple-system,sans-serif; text-decoration:underline; }
   #aboutcard{ position:fixed; inset:0; z-index:3600; display:none; align-items:center; justify-content:center; padding:24px; box-sizing:border-box; overflow:auto; background:rgba(4,6,13,0.6); -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px); }
@@ -184,60 +188,6 @@
   <span id="topbar-title" style="font-size:13px; font-weight:600; color:var(--t1); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:34%; line-height:24px; flex:none;"></span>
   <button id="topbar-menu" type="button" title="Menu" style="flex:none; width:22px; height:22px; border-radius:6px; background:var(--card); border:1px solid var(--line-strong); color:var(--t2); font-size:14px; line-height:1; display:flex; align-items:center; justify-content:center; padding:0; cursor:pointer;">+</button>
   <div id="topbar-legend" style="display:flex; flex-wrap:wrap; gap:6px 10px; flex:1; justify-content:flex-end; align-content:flex-start; row-gap:5px; max-height:70px; overflow-y:auto;"></div>
-</div>
-<div id="editor">
-  <div class="edhead"><span>Edit node</span><button id="ed-close">Done</button></div>
-  <label>Name<input id="ed-name" autocomplete="off" spellcheck="false"></label>
-  <div class="edrow"><button id="ed-set-start">Set as start</button><span id="ed-start-status"></span></div>
-  <label>Group<select id="ed-group"></select></label>
-  <div id="newgroup">
-    <label>Group label<input id="ng-label" placeholder="e.g. Family" autocomplete="off"></label>
-    <label>Colour<select id="ng-color"></select></label>
-    <button id="ng-create">Create group</button>
-  </div>
-  <label>Description<textarea id="ed-desc" rows="4" placeholder="Supports **bold**, *italic*, `code`, [links](url)"></textarea></label>
-  <label>URL<input id="ed-url" placeholder="https://"></label>
-  <label>Link text<input id="ed-linktext" placeholder="Defaults to Wikipedia or Link"></label>
-  <label>Second link<input id="ed-link2" placeholder="https://"></label>
-  <label>Second link label<input id="ed-link2label" placeholder="Label (e.g. Theoi)"></label>
-  <label>Video<input id="ed-video" placeholder="YouTube link (optional)"></label>
-  <label>Icon (avatar)<input id="ed-icon" placeholder="Paste an image address" autocomplete="off"></label>
-  <div class="edrow"><button id="ed-iconupload">Upload icon</button><span id="ed-iconstatus" style="display:none;font-size:12px;color:var(--t2);">Uploaded icon in use <button id="ed-iconremove" style="font-size:11px;padding:0 7px;">remove</button></span></div>
-  <input type="file" id="ed-iconfile" accept="image/*" style="display:none">
-  <label>Image (tap-to-open)<input id="ed-img" placeholder="Paste an image address" autocomplete="off"></label>
-  <div class="edrow"><button id="ed-upload">Upload image</button><span id="ed-imgstatus" style="display:none;font-size:12px;color:var(--t2);">Uploaded image in use <button id="ed-imgremove" style="font-size:11px;padding:0 7px;">remove</button></span></div>
-  <input type="file" id="ed-imgfile" accept="image/*" style="display:none">
-  <div style="margin-top:12px;border-top:1px solid var(--line);padding-top:10px;">
-    <div style="font-size:12px;color:var(--t2);margin-bottom:6px;">Connections</div>
-    <div id="ed-conns"></div>
-    <div class="edrow" style="flex-wrap:wrap;gap:6px;margin-top:8px;">
-      <select id="ed-type"></select>
-      <select id="ed-dir"><option value="out">&#8594; out</option><option value="in">&#8592; in</option></select>
-      <select id="ed-target"></select>
-      <button id="ed-add">Add</button>
-    </div>
-    <div id="newtype" style="display:none;border:1px solid var(--line-strong);border-radius:8px;padding:9px 10px;margin-top:8px;">
-      <label style="display:flex;gap:6px;align-items:center;margin-bottom:6px;"><input type="checkbox" id="nt-mutual" checked style="width:auto;"> mutual (no direction)</label>
-      <label>Label<input id="nt-from" placeholder="e.g. partner" autocomplete="off"></label>
-      <label id="nt-to-wrap" style="display:none;">Reverse label<input id="nt-to" placeholder="e.g. child" autocomplete="off"></label>
-      <label style="display:flex;gap:6px;align-items:center;"><input type="checkbox" id="nt-dashed" style="width:auto;"> dashed line</label>
-      <button id="nt-create" type="button">Create connector</button>
-    </div>
-  </div>
-  <div style="margin-top:12px;border-top:1px solid var(--line);padding-top:10px;">
-    <div style="font-size:12px;color:var(--t2);margin-bottom:6px;">Linked graph</div>
-    <div id="ed-graph-none"><button id="ed-graph-attach">Attach a graph (JSON)</button></div>
-    <div id="ed-graph-some" style="display:none;">
-      <div id="ed-graph-status" style="font-size:12px;color:var(--t2);margin-bottom:6px;"></div>
-      <div class="edrow" style="gap:6px;"><button id="ed-graph-enter">Enter graph</button><button id="ed-graph-detach">Detach</button></div>
-    </div>
-    <input type="file" id="ed-graph-file" accept=".json,application/json" style="display:none">
-  </div>
-  <div style="margin-top:12px;border-top:1px solid var(--line);padding-top:10px;">
-    <div style="font-size:12px;color:var(--t2);margin-bottom:6px;">Merge another node into this one</div>
-    <div class="edrow" style="gap:6px;"><select id="ed-merge-target"></select><button id="ed-merge-go">Merge</button></div>
-  </div>
-  <div class="edrow" style="margin-top:12px;border-top:1px solid var(--line);padding-top:12px;"><button id="ed-delete">Delete node</button></div>
 </div>
 
 <div id="typespanel"><h1><span>Connectors</span><button id="tp-close" type="button">Done</button></h1><div id="tp-list"></div></div>
@@ -312,17 +262,6 @@
 <div id="planetinfo" style="display:none; position:fixed; z-index:600; width:min(300px, calc(100vw - 40px)); max-height:38vh; overflow:auto; padding:14px 16px; border-radius:6px; box-shadow:0 12px 40px rgba(0,0,0,0.5); pointer-events:auto;"></div>
 <button id="addtempnode" type="button" title="Add a new node" style="display:none; position:fixed; bottom:16px; left:222px; z-index:900; align-items:center; justify-content:center; width:42px; height:42px; padding:0; background:var(--card); border:1px solid var(--line-strong); border-radius:50%; box-shadow:0 4px 16px rgba(0,0,0,0.4); cursor:pointer; color:var(--t2); font-size:19px; font-weight:400; line-height:1;">+</button><button id="addtempconn" type="button" title="New connection" style="display:none; position:fixed; bottom:66px; left:222px; z-index:900; align-items:center; justify-content:center; width:42px; height:42px; padding:0; background:var(--card); border:1px solid var(--line-strong); border-radius:50%; box-shadow:0 4px 16px rgba(0,0,0,0.4); cursor:pointer; color:var(--t2);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="18" r="2.3"/><circle cx="18" cy="6" r="2.3"/><line x1="7.7" y1="16.3" x2="16.3" y2="7.7"/><line x1="4.6" y1="2.6" x2="4.6" y2="6.6"/><line x1="2.6" y1="4.6" x2="6.6" y2="4.6"/></svg></button>
 <div id="buildtag" style="display:none; position:fixed; bottom:64px; left:12px; z-index:900; font-size:10px; color:var(--t2); opacity:0.55; pointer-events:none; letter-spacing:0.02em; font-family:ui-monospace,SFMono-Regular,Menlo,monospace;"></div>
-<svg id="connectline" style="display:none; position:fixed; inset:0; z-index:2150; pointer-events:none; width:100%; height:100%;"><line id="connectline-l" stroke="rgba(130,200,255,0.95)" stroke-width="2.5" stroke-dasharray="6 5"></line></svg>
-<div id="connectpop" style="display:none; position:fixed; z-index:2200; background:var(--card); border:1px solid var(--line-strong); border-radius:8px; padding:10px 12px; box-shadow:0 8px 30px rgba(0,0,0,0.5); font-size:12.5px; color:#eef0f6; max-width:min(260px,90vw);">
-  <div id="connectpop-desc" style="margin-bottom:8px;"></div>
-  <select id="connectpop-type" style="width:100%; margin-bottom:8px;"></select>
-  <div id="connectpop-new" style="display:none; margin-bottom:8px;">
-    <input id="connectpop-newname" type="text" placeholder="Relationship (e.g. ally, parent)" autocomplete="off" style="width:100%; padding:6px 8px; margin-bottom:7px; background:var(--page); border:1px solid var(--line-strong); border-radius:6px; color:var(--t1);">
-    <label style="display:flex; align-items:center; gap:8px; color:var(--t2); margin-bottom:7px; cursor:pointer;"><input id="connectpop-directional" type="checkbox" style="width:18px; height:18px; margin:0; flex:none;"> Directional (arrow)</label>
-    <input id="connectpop-revname" type="text" placeholder="Reverse label (how it reads back)" autocomplete="off" style="display:none; width:100%; padding:6px 8px; background:var(--page); border:1px solid var(--line-strong); border-radius:6px; color:var(--t1);">
-  </div>
-  <div style="display:flex; gap:6px; justify-content:flex-end;"><button id="connectpop-cancel" type="button">Cancel</button><button id="connectpop-go" type="button">Connect</button></div>
-</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
@@ -335,7 +274,7 @@
    never touches the DOM, and all load/save goes through GraphSource. This is
    the structure the scale work (worker layout, Barnes-Hut, accounts) hangs off.
    ============================================================================= */
-const BUILD="v2-606-r21";
+const BUILD="v2-616-r31";
 document.getElementById("build").textContent=BUILD;
 
 /* ---- palette (name → [lightest, mid-dark, darkest, vivid]) ---- */
@@ -1431,7 +1370,7 @@ const EGO_R=180;   // ego-view spike length: how far each neighbour sits from th
 
 let cardDrag=null;  // active card drag: {id, k, lx, ly, moved, isFocus}
 let graphStack=[];  // nested-subgraph trail: [{doc, focusId, title}], root graph at index 0
-let tempLinks=[], broughtIn={}, tempNewNodes={};  // transient: brought-in neighbours + freshly-created nodes (never saved until connected)
+
 // While inside a subgraph, Model.raw is the nested doc — but it's mutated in place by reference,
 // so every persist must write the ROOT doc, which contains the whole tree.
 let graphDirty=false;
@@ -1569,7 +1508,7 @@ function ramp(id){ return PAL[Model.colorName(id)]; }
 // direct neighbours of a node + the relationship label(s) from that node's point of view
 function neighboursOf(id){
   const raw=Model.raw, types=raw.types||{}, seen={}, out=[];
-  for(const l of raw.links.concat(tempLinks)){
+  for(const l of raw.links){
     let other=null, rel=null, dir=0; const t=types[l.type]||{mutual:true}; const directional=!t.mutual && t.arrow!==false;
     if(l.from===id){ other=l.to; rel=t.mutual?(t.label||l.type):(t.toLabel||t.label||l.type); if(directional) dir=1; }
     else if(l.to===id){ other=l.from; rel=t.mutual?(t.label||l.type):(t.fromLabel||t.label||l.type); if(directional) dir=-1; }
@@ -1589,16 +1528,13 @@ function toEdge(ox,oy,tx,ty,hw,hh){ const dx=tx-ox,dy=ty-oy;
 // Drag a neighbour card to pin it at a custom screen spot (prototype pinnedScreen). Its connector
 // endpoint (layout.nbrs[k]) moves with it live, and the click that would refocus is suppressed.
 function attachCardDrag(card, nid, k){
-  card.addEventListener("pointerdown", e=>{ cardDrag={id:nid, k, lx:e.clientX, ly:e.clientY, moved:0, isFocus:false, connect:false}; try{card.setPointerCapture(e.pointerId);}catch(_){} });
+  card.addEventListener("pointerdown", e=>{ cardDrag={id:nid, k, lx:e.clientX, ly:e.clientY, moved:0, isFocus:false}; try{card.setPointerCapture(e.pointerId);}catch(_){} });
   card.addEventListener("pointermove", e=>{ if(!cardDrag||cardDrag.id!==nid||cardDrag.isFocus) return;
     const dx=e.clientX-cardDrag.lx, dy=e.clientY-cardDrag.ly; cardDrag.lx=e.clientX; cardDrag.ly=e.clientY; cardDrag.moved+=Math.abs(dx)+Math.abs(dy);
-    if(Object.keys(broughtIn).length>0 && broughtIn[nid]){   // connect mode: draw a link line instead of pinning
-      if(cardDrag.moved>4){ card._lp=true; cardDrag.connect=true; const nb=Focus.layout&&Focus.layout.nbrs[k]; if(nb) showConnectLine(nb.x, nb.y, e.clientX, e.clientY); }
-      return; }
     if(cardDrag.moved>4){ card._lp=true; const nb=Focus.layout&&Focus.layout.nbrs[k]; if(!nb) return;
       nb.x+=dx; nb.y+=dy; Focus.pinned[nid]={x:nb.x, y:nb.y};
       card.style.transition="none"; card.style.left=nb.x+"px"; card.style.top=nb.y+"px"; } });
-  const end=(e)=>{ if(cardDrag&&cardDrag.id===nid){ if(cardDrag.connect) dropConnect(nid, e.clientX, e.clientY); cardDrag=null; hideConnectLine(); } };
+  const end=(e)=>{ if(cardDrag&&cardDrag.id===nid){ cardDrag=null; } };
   card.addEventListener("pointerup", end); card.addEventListener("pointercancel", end);
 }
 function makeFocusCardHtml(nd, c, nm, orb){
@@ -1625,12 +1561,9 @@ function makeFocusCardHtml(nd, c, nm, orb){
 function makeNeighbourCardHtml(nd, c, nm, orb, id, rel, showAvatar){
   let h;
 
-    const bi=broughtIn[id], tn=tempNewNodes[id];
-    const glow = (bi||tn) ? '0 0 20px '+c[3]+'88, 0 4px 14px rgba(0,0,0,0.4)' : '0 0 12px '+c[3]+'33, 0 4px 14px rgba(0,0,0,0.4)';
-    const dismissX = bi ? '<span class="dismissnode" data-id="'+esc(id)+'" title="Remove this added node" style="position:absolute; top:-9px; right:-9px; width:24px; height:24px; border-radius:50%; background:'+c[3]+'; color:#fff; font-size:13px; line-height:24px; text-align:center; cursor:pointer; z-index:3; box-shadow:0 1px 4px rgba(0,0,0,0.4);">\u2715</span>' : '';
-    const nameHtml = tn
-      ? '<div class="newnodename" data-id="'+esc(id)+'" title="Click to name this node" style="font-size:12px;font-weight:500;color:#eceef4;white-space:nowrap;text-align:center;text-shadow:0 1px 2px rgba(0,0,0,0.5);cursor:text;text-decoration:underline dotted;text-underline-offset:3px;">'+nm+'</div>'
-      : '<div style="font-size:12px;font-weight:500;color:#eceef4;white-space:nowrap;text-align:center;text-shadow:0 1px 2px rgba(0,0,0,0.5);">'+nm+'</div>';
+    const glow = '0 0 12px '+c[3]+'33, 0 4px 14px rgba(0,0,0,0.4)';
+    const dismissX = '';
+    const nameHtml = '<div style="font-size:12px;font-weight:500;color:#eceef4;white-space:nowrap;text-align:center;text-shadow:0 1px 2px rgba(0,0,0,0.5);">'+nm+'</div>';
     h='<div style="position:relative; background:linear-gradient(160deg,'+c[2]+'e0, rgba(8,10,20,0.9)); border:1px solid '+c[3]+'aa; border-radius:6px; padding:7px 11px; min-width:70px; box-shadow:'+glow+';">'
       +dismissX
       +(rel?'<div style="font-size:9.5px;font-weight:600;color:'+c[3]+';text-transform:uppercase;letter-spacing:0.04em;text-align:center;margin:1px 0 2px;opacity:0.95;white-space:nowrap;">'+esc(rel)+'</div>':'')
@@ -1650,7 +1583,6 @@ function makeCard(id, isFocus, rel, showAvatar){
   let h;
   if(isFocus){ h=makeFocusCardHtml(nd,c,nm,orb); } else { h=makeNeighbourCardHtml(nd,c,nm,orb,id,rel,showAvatar); }
   div.innerHTML=h;
-  { const dn=div.querySelector(".dismissnode"); if(dn) dn.addEventListener("click", ev=>{ ev.stopPropagation(); dismissBrought(id); }); }
   { const nn=div.querySelector(".newnodename"); if(nn) nn.addEventListener("click", ev=>{ ev.stopPropagation(); startNameEdit(id, nn); }); }
   return div;
 }
@@ -1661,13 +1593,11 @@ function buildFocusCenterCard(host, CX, CY){
   fc.addEventListener("dblclick", ()=>enterCardEdit({kind:"node", id:Focus.id}));
   attachLongPress(fc, ()=>enterCardEdit({kind:"node", id:Focus.id}));
   // drag the focus card to rotate the background universe (mirrors the prototype turning the hidden 3D view)
-  fc.addEventListener("pointerdown", e=>{ if(e.target.closest(".hidefocus,.weblink,.vidlink,.portrait,.entergraph")) return; cardDrag={id:Focus.id, lx:e.clientX, ly:e.clientY, moved:0, isFocus:true, connect:false}; try{fc.setPointerCapture(e.pointerId);}catch(_){} });
+  fc.addEventListener("pointerdown", e=>{ if(e.target.closest(".hidefocus,.weblink,.vidlink,.portrait,.entergraph")) return; cardDrag={id:Focus.id, lx:e.clientX, ly:e.clientY, moved:0, isFocus:true}; try{fc.setPointerCapture(e.pointerId);}catch(_){} });
   fc.addEventListener("pointermove", e=>{ if(!cardDrag||!cardDrag.isFocus) return;
     const dx=e.clientX-cardDrag.lx, dy=e.clientY-cardDrag.ly; cardDrag.lx=e.clientX; cardDrag.ly=e.clientY; cardDrag.moved+=Math.abs(dx)+Math.abs(dy);
-    if(Object.keys(broughtIn).length>0){   // connect mode: draw a link line from the focus instead of rotating
-      if(cardDrag.moved>4){ fc._lp=true; cardDrag.connect=true; const L=Focus.layout; if(L) showConnectLine(L.fx, L.fy, e.clientX, e.clientY); } return; }
     if(cardDrag.moved>4){ fc._lp=true; view.yaw+=dx*0.006; view.pitch+=dy*0.006; } });
-  const fend=(e)=>{ if(cardDrag&&cardDrag.isFocus){ if(cardDrag.connect) dropConnect(Focus.id, e.clientX, e.clientY); cardDrag=null; hideConnectLine(); } };
+  const fend=(e)=>{ if(cardDrag&&cardDrag.isFocus){ cardDrag=null; } };
   fc.addEventListener("pointerup", fend); fc.addEventListener("pointercancel", fend);
   return fc;
 }
@@ -1748,7 +1678,7 @@ function buildFocusCards(){
   // fan when a pair has more than one edge — faithful to the prototype's e.off (deriveE, ±9).
   { const nbrIdx={}; layout.nbrs.forEach((nb,ix)=>nbrIdx[nb.id]=ix);
     const raw=Model.raw, types=raw.types||{}, pairCount={}, pairSeen={}, edges=[];
-    for(const l of (raw.links||[]).concat(tempLinks)){
+    for(const l of (raw.links||[])){
       let other=null, dir=0; const t=types[l.type]||{mutual:true}, directional=!t.mutual && t.arrow!==false;
       if(l.from===Focus.id){ other=l.to; if(directional) dir=1; }
       else if(l.to===Focus.id){ other=l.from; if(directional) dir=-1; }
@@ -1765,7 +1695,7 @@ function buildFocusCards(){
 }
 function enterFocus(id){
   const i=Model.index(id); if(i===undefined) return;
-  if(Focus.id!==id){ Focus.pinned={}; clearTemp(); }  // custom pins + temp nodes are per focus node
+  if(Focus.id!==id){ Focus.pinned={}; }  // custom pins + temp nodes are per focus node
   Focus.mode="focus"; Focus.id=id; Focus.neighbours=neighboursOf(id).filter(nb=>isVisible(nb.id));
   floatControls(false); setHideUnconnected(false); hideRelInfo(); hidePlanetInfo();
   { const at=document.getElementById("addtempnode"); if(at){ at.style.display="flex"; at.style.left="auto"; at.style.right="16px"; at.style.bottom="16px"; } const ac=document.getElementById("addtempconn"); if(ac){ ac.style.display="flex"; ac.style.left="auto"; ac.style.right="16px"; ac.style.bottom="66px"; } }
@@ -1780,8 +1710,7 @@ function exitFocus(keepCam){ { const cur = Focus.egoCenter>=0 ? Model.ids[Focus.
   Focus.mode="universe"; Focus.id=null; Focus.skip=null; Focus.layout=null; Focus.planetFocus=-1;
   Focus.egoSign={}; Focus.egoDir={}; Focus.egoRel={}; Focus.egoCenter=-1;   // leave focus — the committed sun assignment stays (consistent galaxy)
   floatControls(false); setHideUnconnected(false); hideRelInfo(); hidePlanetInfo();
-  { const at=document.getElementById("addtempnode"); if(at) at.style.display="none"; const ac=document.getElementById("addtempconn"); if(ac) ac.style.display="none"; }
-  clearTemp();
+  { const at=document.getElementById("addtempnode"); if(at){ at.style.display="flex"; at.style.left="auto"; at.style.right="16px"; at.style.bottom="16px"; } const ac=document.getElementById("addtempconn"); if(ac) ac.style.display="none"; }
   { const tf=document.getElementById("togglefocus"); if(tf){ tf.style.display="flex"; tf.title="Back into the last star"; } const tc=document.getElementById("toggleconn"); if(tc){ tc.style.display="flex"; paintConnBtn(); } const bl=document.getElementById("bypassls"); if(bl){ bl.style.display=IS_ADMIN?"flex":"none"; paintBypassBtn(); } }   // galaxy + connector + test-mode buttons stay available in the galaxy view (only hidden in card mode)
   document.getElementById("cards").innerHTML=""; if(!keepCam) flyOut(); else { view.flyTarget=-1; maxZoomDist=Math.max(R*3, universeFitDist()*1.15); } syncTopbar(); }
 
@@ -1841,7 +1770,7 @@ function linkDetails(aId, bId){   // the first connection between two nodes, or 
 }
 function linkDetailsAll(aId, bId){   // EVERY connection between two nodes (a node can relate to a neighbour more than once)
   const raw=Model.raw, types=raw.types||{}, out=[];
-  for(const l of raw.links.concat(tempLinks)){
+  for(const l of raw.links){
     if((l.from===aId&&l.to===bId)||(l.from===bId&&l.to===aId)){
       const t=types[l.type]||{mutual:true}, an=(Model.nodeById(l.from)||{}).name||l.from, bn=(Model.nodeById(l.to)||{}).name||l.to;
       out.push({ text: l.details || relDetailGen(l.type, an, bn), rel: (t.mutual?(t.label||l.type):(l.from===aId?(t.fromLabel||l.type):(t.toLabel||l.type))), link: l, generated: !l.details });
@@ -1907,7 +1836,27 @@ function pickImageFile(cb){ const inp=document.createElement("input"); inp.type=
   inp.onchange=function(){ const f=this.files&&this.files[0]; if(f){ const r=new FileReader(); r.onload=()=>{ cb(r.result); inp.remove(); }; r.readAsDataURL(f); } else inp.remove(); }; inp.click(); }
 let cardEditing=false;
 function sizeCardEdit(){ const box=document.getElementById("planetinfo"); if(!box||!cardEditing) return; const vv=window.visualViewport, vh=vv?vv.height:innerHeight; box.style.maxHeight=Math.max(160, vh-150)+"px"; box.style.overflowY="auto"; }   // fixed at the top; cap short of the bottom control cluster with an inner scroll (shrinks further when the keyboard opens)
-function exitCardEdit(){ cardEditing=false; try{ document.body.classList.remove("card-editing"); }catch(_){} try{document.activeElement&&document.activeElement.blur();}catch(_){} const box=document.getElementById("planetinfo"); if(box){ box.style.top=""; box.style.bottom=""; box.style.maxHeight=""; box.style.textAlign=""; box.style.width=""; if(Focus.mode!=="ego") box.style.display="none"; } planetInfoShown=null; }
+function exitCardEdit(){
+  if(_editKind==="node" && _editNode && !((_editNode.name||"").trim())){
+    const box=document.getElementById("planetinfo");
+    if(box && !document.getElementById("_namewarn")){
+      const wn=document.createElement("div"); wn.id="_namewarn"; wn.style.cssText="margin:8px 0;padding:9px;border:1px solid #e0a24a;border-radius:6px;background:rgba(224,162,74,0.12);font-size:12px;color:#f0d9b0;";
+      const msg=document.createElement("div"); msg.textContent="This node needs a name before it can be kept."; wn.appendChild(msg);
+      const bw=document.createElement("div"); bw.style.cssText="display:flex;gap:8px;margin-top:8px;";
+      const disc=document.createElement("button"); disc.type="button"; disc.textContent="Discard node"; disc.style.cssText="font-size:12px;cursor:pointer;";
+      disc.onclick=()=>{ const nid=_editNodeId; _editKind=null; _editNode=null; _editNodeId=null; _reallyExitCardEdit(); if(nid){ deleteNodeById(nid); connTopologyChanged(); } };
+      const keep=document.createElement("button"); keep.type="button"; keep.textContent="Keep editing"; keep.style.cssText="font-size:12px;cursor:pointer;";
+      keep.onclick=()=>{ wn.remove(); };
+      bw.appendChild(disc); bw.appendChild(keep); wn.appendChild(bw); const hdr=document.getElementById("_editheader"); if(hdr&&hdr.nextSibling){ box.insertBefore(wn, hdr.nextSibling); } else { box.appendChild(wn); } box.scrollTop=0;
+    }
+    return;
+  }
+  if(typeof _editConnectCommit==="function") _editConnectCommit();
+  const wasNew=(_editKind==="node" && _newNodeId && _editNodeId===_newNodeId), newId=_editNodeId;
+  _reallyExitCardEdit();
+  if(wasNew){ const ni=Model.index(newId); if(ni!=null){ if(Focus.mode==="focus"){ if(typeof refocusCards==="function") refocusCards(); } else if(typeof goToNode==="function"){ goToNode(ni); } } }
+}
+function _reallyExitCardEdit(){ cardEditing=false; _editKind=null; _editNode=null; _editNodeId=null; _newNodeId=null; _editConnectCommit=null; try{ document.body.classList.remove("card-editing"); }catch(_){} try{document.activeElement&&document.activeElement.blur();}catch(_){} const box=document.getElementById("planetinfo"); if(box){ box.style.top=""; box.style.bottom=""; box.style.maxHeight=""; box.style.textAlign=""; box.style.width=""; if(Focus.mode!=="ego") box.style.display="none"; } planetInfoShown=null; }
 function buildEditHighlight(box, target){
     const hl=document.createElement("label"); hl.style.cssText="display:flex;align-items:center;gap:7px;color:#f4d97a;font-size:12px;margin-bottom:10px;cursor:pointer;"; const hc=document.createElement("input"); hc.type="checkbox"; hc.style.cssText="width:16px;height:16px;margin:0;flex:none;accent-color:#f4d97a;"; hc.checked=!!target.highlight; hc.addEventListener("change",()=>{ if(hc.checked) target.highlight=true; else delete target.highlight; saveRoot(); if(Focus._updateHlBtn)Focus._updateHlBtn(); }); hl.appendChild(hc); hl.appendChild(document.createTextNode("Highlight")); box.appendChild(hl);
   }
@@ -1988,41 +1937,80 @@ function openCodeBox(code, onSave, title){
 }
 function buildEditCode(box, target, label){
   const wrap=document.createElement("div"); wrap.style.cssText="margin:11px 0;";
-  const lab=document.createElement("div"); lab.style.cssText="font-size:11px;color:#aab0c2;margin-bottom:5px;"; lab.textContent="Code"; wrap.appendChild(lab);
+  const lab=document.createElement("div"); lab.style.cssText="font-size:11px;color:#aab0c2;margin-bottom:5px;"; lab.textContent="Code Block"; wrap.appendChild(lab);
   const btn=document.createElement("button"); btn.type="button"; btn.style.cssText="font-size:12px;";
   const paint=()=>{ const has=!!(target.code&&String(target.code).trim()); btn.textContent=has?"◇ Edit code":"◇ Add code"; };
   paint();
   btn.onclick=()=>{ openCodeBox(target.code||"", (v)=>{ if(v&&v.trim()) target.code=v; else delete target.code; saveRoot(); paint(); }, (label||"")+" code"); };
   wrap.appendChild(btn); box.appendChild(wrap);
 }
+let _editKind=null,_editNode=null,_editNodeId=null,_newNodeId=null,_editConnectCommit=null;
+function buildEditConnect(box, thisId){
+  const types=Model.raw.types=Model.raw.types||{};
+  const sec=document.createElement("div"); sec.style.cssText="margin:2px 0 10px;padding:9px;border:1px solid var(--line-strong);border-radius:6px;";
+  const hd=document.createElement("div"); hd.textContent="Connections"; hd.style.cssText="font-size:11px;color:#aab0c2;margin-bottom:7px;"; sec.appendChild(hd);
+  const exWrap=document.createElement("div"); sec.appendChild(exWrap);
+  const listExisting=()=>{ exWrap.innerHTML="";
+    (Model.raw.links||[]).filter(l=>l.from===thisId||l.to===thisId).forEach(l=>{ const other=l.from===thisId?l.to:l.from;
+      const row=document.createElement("div"); row.style.cssText="display:flex;align-items:center;gap:6px;font-size:12px;color:#cdd2e0;margin-bottom:4px;";
+      const lbl=document.createElement("span"); lbl.style.flex="1"; lbl.textContent=typeName(l.type)+" → "+((Model.nodeById(other)||{}).name||other); row.appendChild(lbl);
+      const rm=document.createElement("button"); rm.type="button"; rm.textContent="✕"; rm.title="Remove connection"; rm.style.cssText="font-size:11px;padding:0 6px;cursor:pointer;";
+      rm.onclick=()=>{ const gi=(Model.raw.links||[]).indexOf(l); if(gi>=0) Model.raw.links.splice(gi,1); connTopologyChanged(); listExisting(); };
+      row.appendChild(rm); exWrap.appendChild(row); }); };
+  listExisting();
+  const tsel=document.createElement("select"); tsel.style.cssText="width:100%;box-sizing:border-box;margin-top:6px;";
+  const fillTargets=()=>{ tsel.innerHTML=""; const ph=document.createElement("option"); ph.value=""; ph.textContent="Connect to node…"; ph.disabled=true; tsel.appendChild(ph);
+    Model.ids.forEach(id=>{ if(id===thisId) return; const o=document.createElement("option"); o.value=id; o.textContent=(Model.nodeById(id)||{}).name||id; tsel.appendChild(o); });
+    tsel.value=(Focus.id&&Focus.id!==thisId&&Model.nodeById(Focus.id))?Focus.id:""; };
+  fillTargets();
+  const typesel=document.createElement("select"); typesel.style.cssText="width:100%;box-sizing:border-box;margin-top:6px;";
+  const fillTypes=()=>{ typesel.innerHTML=""; const ph=document.createElement("option"); ph.value=""; ph.textContent="Choose a type…"; ph.disabled=true; typesel.appendChild(ph);
+    Object.keys(types).forEach(k=>{ const o=document.createElement("option"); o.value=k; o.textContent=typeName(k); typesel.appendChild(o); });
+    const nw=document.createElement("option"); nw.value="__new__"; nw.textContent="+ Create new type…"; typesel.appendChild(nw); typesel.value=""; };
+  fillTypes();
+  const newName=document.createElement("input"); newName.type="text"; newName.placeholder="New type name (e.g. friend of)"; newName.autocomplete="off"; newName.style.cssText="width:100%;box-sizing:border-box;margin-top:6px;display:none;";
+  typesel.addEventListener("change",()=>{ newName.style.display=typesel.value==="__new__"?"":"none"; if(typesel.value==="__new__") newName.focus(); });
+  const add=document.createElement("button"); add.type="button"; add.textContent="Add connection"; add.style.cssText="font-size:13px;cursor:pointer;margin-top:7px;";
+  const commit=(fromDone)=>{ const other=tsel.value; if(!other){ if(!fromDone) tsel.focus(); return false; } let type=typesel.value;
+    if(type==="__new__"){ const lbl=newName.value.trim(); if(!lbl){ if(!fromDone) newName.focus(); return false; } const key=slugKey(lbl,types); types[key]={label:lbl,mutual:true}; type=key; }
+    else if(!type){ if(!fromDone) typesel.focus(); return false; }
+    Model.raw.links=Model.raw.links||[]; Model.raw.links.push({from:other,to:thisId,type});
+    connTopologyChanged(); fillTypes(); tsel.value=""; newName.value=""; newName.style.display="none"; listExisting(); return true; };
+  add.onclick=()=>commit(false);
+  _editConnectCommit=()=>commit(true);
+  sec.appendChild(tsel); sec.appendChild(typesel); sec.appendChild(newName); sec.appendChild(add); box.appendChild(sec);
+}
 function enterCardEdit(spec){   // inline hold-to-edit form, shared by node cards, connection cards and 2D cards
   if(cardEditing) return;
   const box=document.getElementById("planetinfo"); if(!box) return;
-  let kind,target,c,genText="";
-  if(spec && spec.kind==="node"){ target=Model.nodeById(spec.id); if(!target) return; kind="node"; c=ramp(spec.id); }
+  let kind,target,c,genText="",editNodeId=null;
+  if(spec && spec.kind==="node"){ target=Model.nodeById(spec.id); if(!target) return; kind="node"; c=ramp(spec.id); editNodeId=spec.id; }
   else if(spec && spec.kind==="link"){ const _all=linkDetailsAll(spec.a,spec.b), det=(spec.idx!=null&&_all[spec.idx])?_all[spec.idx]:_all[0]; if(!det||!det.link) return; kind="link"; target=det.link; c=ramp(spec.b); genText=det.generated?det.text:""; }
   else if(Focus.mode==="ego" && Focus.planetFocus>=0 && Focus.egoCenter>=0){ const det=linkDetails(Model.ids[Focus.egoCenter],Model.ids[Focus.planetFocus]); if(!det||!det.link) return; kind="link"; target=det.link; c=ramp(Model.ids[Focus.planetFocus]); genText=det.generated?det.text:""; }
-  else if(Focus.mode==="ego" && Focus.egoCenter>=0){ const nd=Model.nodeById(Model.ids[Focus.egoCenter]); if(!nd) return; kind="node"; target=nd; c=ramp(Model.ids[Focus.egoCenter]); }
+  else if(Focus.mode==="ego" && Focus.egoCenter>=0){ const nd=Model.nodeById(Model.ids[Focus.egoCenter]); if(!nd) return; kind="node"; target=nd; c=ramp(Model.ids[Focus.egoCenter]); editNodeId=Model.ids[Focus.egoCenter]; }
   else return;
+  _editKind=kind; _editNode=(kind==="node")?target:null; _editNodeId=(kind==="node")?editNodeId:null;
   cardEditing=true; try{ document.body.classList.add("card-editing"); }catch(_){}
   box.style.display="block"; box.style.opacity="1"; box.style.textAlign="left"; box.style.width="min(94vw, 680px)"; box.style.top=""; box.style.bottom=""; box.style.left=""; box.style.right=""; box.style.transform=""; sizeCardEdit();   // rests at the card's normal spot (no jump on hold); lifts only for the on-screen keyboard
   box.style.background="linear-gradient(160deg, "+c[2]+"e6, rgba(8,10,20,0.94))"; box.style.border="1px solid "+c[3]; box.style.boxShadow="0 0 22px "+c[3]+"44, 0 12px 40px rgba(0,0,0,0.6)";
   box.innerHTML="";
   const done=document.createElement("button"); done.type="button"; done.textContent="Done"; done.style.cssText="float:right;font-size:13px;padding:3px 12px;cursor:pointer;"; done.onclick=exitCardEdit; box.appendChild(done);
-  const title=document.createElement("div"); title.textContent=kind==="link"?"Edit connection":"Edit node"; title.style.cssText="font-size:13px;font-weight:600;color:#f4f5fa;margin-bottom:9px;"; box.appendChild(title);
+  const title=document.createElement("div"); title.textContent=kind==="link"?"Edit connection":"Edit node"; title.style.cssText="font-size:13px;font-weight:600;color:#f4f5fa;margin-bottom:9px;"; title.id="_editheader"; box.appendChild(title);
   buildEditHighlight(box, target);   // highlight toggle — one control, works for both node and connection since target is either
   if(kind==="node")buildEditStart(spec, box);
   if(kind==="link")buildEditLinkType(box, target);
-  if(kind==="node")buildEditNodeFields(box, target);
   const descKey=kind==="link"?"details":"desc";
-  const fields=kind==="link"?[["details","Description",1],["url","Link (URL)",0],["video","Video",0]]:[["name","Name",0],["desc","Description",1],["url","Link (URL)",0],["linkText","Link text",0],["link2","Second link (URL)",0],["link2label","Second link label",0],["video","Video",0]];
-  fields.forEach(([key,label,ml])=>{ const w=document.createElement("label"); w.style.cssText="display:block;font-size:11px;color:#aab0c2;margin-bottom:8px;"; w.textContent=label;
+  const mkField=([key,label,ml])=>{ const w=document.createElement("label"); w.style.cssText="display:block;font-size:11px;color:#aab0c2;margin-bottom:8px;"; w.textContent=label;
     const inp=document.createElement(ml?"textarea":"input"); if(ml) inp.rows=3;
     inp.value=(target[key]!=null?target[key]:"")||(key===descKey?genText:"");
     inp.placeholder=key===descKey?"\u2026":(key==="url"?"https://":key==="video"?"YouTube link":key==="linkText"?"Defaults to Wikipedia or Link":key==="link2"?"https://":key==="link2label"?"Label (e.g. Theoi)":"");
     inp.autocomplete="off"; inp.spellcheck=false; inp.style.cssText="width:100%;box-sizing:border-box;margin-top:3px;";
     inp.addEventListener("input",()=>{ const v=inp.value.trim(); if(v) target[key]=v; else delete target[key]; saveRoot(); });
-    w.appendChild(inp); box.appendChild(w); });
+    w.appendChild(inp); box.appendChild(w); };
+  if(kind==="node") mkField(["name","Name",0]);
+  mkField([descKey,"Description",1]);
+  buildEditCode(box, target, kind==="link"?"Connection":"Node");
+  (kind==="link"?[["url","Link (URL)",0],["video","Video",0]]:[["url","Link (URL)",0],["linkText","Link text",0],["link2","Second link (URL)",0],["link2label","Second link label",0],["video","Video",0]]).forEach(mkField);
   const imgControl=(key,label)=>{ const iw=document.createElement("div"); iw.style.cssText="margin-bottom:9px;"; const il=document.createElement("div"); il.textContent=label; il.style.cssText="font-size:11px;color:#aab0c2;margin-bottom:3px;"; iw.appendChild(il);
     const isData=()=>target[key]&&/^data:/.test(target[key]);
     const paste=document.createElement("input"); paste.type="text"; paste.placeholder="Paste an image address"; paste.autocomplete="off"; paste.value=isData()?"":(target[key]||""); paste.style.cssText="width:100%;box-sizing:border-box;";
@@ -2035,7 +2023,8 @@ function enterCardEdit(spec){   // inline hold-to-edit form, shared by node card
     rb.appendChild(up); rb.appendChild(st); rb.appendChild(rm); iw.appendChild(rb); syncI(); box.appendChild(iw); };
   imgControl("icon","Icon (round avatar)");
   imgControl("image","Image (opens when you tap the icon)");
-  buildEditCode(box, target, kind==="link"?"Connection":"Node");
+  if(kind==="node")buildEditNodeFields(box, target);
+  if(kind==="node")buildEditConnect(box, editNodeId);
   if(kind==="node")buildEditDeleteNode(spec, box);
   if(kind==="link")buildEditDeleteConn(box, target);
 }
@@ -2114,95 +2103,27 @@ function updatePlanetInfo(){
 }
 function hidePlanetInfo(){ cardEditing=false; const box=document.getElementById("planetinfo"); if(box){ if(box.querySelector("iframe")) box.innerHTML=""; box.style.display="none"; box.style.opacity="1"; box.style.top=""; box.style.bottom=""; box.style.maxHeight=""; } planetInfoShown=null; }
 // --- Temp nodes + brought-in neighbours (transient, never saved until a real link connects them) ---
-function bringIntoView(id){
-  if(!Focus.id || id===Focus.id) return;
-  if(!tempLinks.some(l=>(l.from===Focus.id&&l.to===id)||(l.from===id&&l.to===Focus.id)))
-    tempLinks.push({from:Focus.id, to:id, type:Object.keys(Model.raw.types||{})[0]||"related", temp:true});
-  broughtIn[id]=1;
-  if(Focus.mode==="focus") enterFocus(Focus.id);   // rebuild cards with the new neighbour
-}
+
 function addTempNode(){
-  if(!Focus.id) return;
   const id="n"+Date.now().toString(36);
   const snap={}; Model.ids.forEach((k,i)=>{ snap[k]={x:Positions.x[i],y:Positions.y[i],z:Positions.z[i]}; });
-  Model.raw.nodes[id]={name:"New node"};
+  Model.raw.nodes[id]={name:""};
   Model.load(Model.raw); Positions.ensure(Model.count());
   Model.ids.forEach((k,i)=>{ const p=snap[k]; if(p){ Positions.x[i]=p.x; Positions.y[i]=p.y; Positions.z[i]=p.z; } });
-  const ni=Model.index(id), fi=Model.index(Focus.id);           // seed near the focus so it appears at once
-  Positions.x[ni]=Positions.x[fi]+40; Positions.y[ni]=Positions.y[fi]-40; Positions.z[ni]=Positions.z[fi];
+  const ni=Model.index(id);
+  const _anchor=(Focus.id && Model.index(Focus.id)!=null)?Model.index(Focus.id):(Focus.egoCenter>=0?Focus.egoCenter:null);
+  if(_anchor!=null){ Positions.x[ni]=Positions.x[_anchor]+40; Positions.y[ni]=Positions.y[_anchor]-40; Positions.z[ni]=Positions.z[_anchor]; }
+  else { Positions.x[ni]=0; Positions.y[ni]=0; Positions.z[ni]=0; }
   rebuildVis(); Renderer.refresh();
-  tempNewNodes[id]=1;
-  bringIntoView(id);
+  _newNodeId=id;
+  enterCardEdit({kind:"node", id});
 }
-function clearTemp(){
-  // fresh nodes that never got a real connection are discarded (position-buffer remap, like delete)
-  const orphans=Object.keys(tempNewNodes).filter(nid=>Model.nodeById(nid) && !Model.raw.links.some(l=>l.from===nid||l.to===nid));
-  if(orphans.length){
-    const snap={}; Model.ids.forEach((k,i)=>{ if(orphans.indexOf(k)<0) snap[k]={x:Positions.x[i],y:Positions.y[i],z:Positions.z[i]}; });
-    orphans.forEach(nid=>delete Model.raw.nodes[nid]);
-    Model.load(Model.raw); Positions.ensure(Model.count());
-    Model.ids.forEach((k,i)=>{ const p=snap[k]; if(p){ Positions.x[i]=p.x; Positions.y[i]=p.y; Positions.z[i]=p.z; } });
-    rebuildVis(); Renderer.refresh();
-  }
-  tempNewNodes={}; broughtIn={}; tempLinks=[];
-}
+
 // Connect-line drag: while a temp/brought-in node is present, dragging the focus or that node draws a
 // link line; dropping on the other opens a type-picker that creates a real link (making it permanent).
-function showConnectLine(sx,sy,px,py){ const svg=document.getElementById("connectline"), ln=document.getElementById("connectline-l"); if(!svg||!ln) return;
-  ln.setAttribute("x1",sx); ln.setAttribute("y1",sy); ln.setAttribute("x2",px); ln.setAttribute("y2",py); svg.style.display="block"; }
-function hideConnectLine(){ const s=document.getElementById("connectline"); if(s) s.style.display="none"; }
-function cardUnderPoint(px,py,excludeId){
-  if(Focus.mode!=="focus"||!Focus.layout) return null;
-  const L=Focus.layout; let best=null, bestD=Infinity;
-  if(Focus.id!==excludeId){ const d=Math.hypot(px-L.fx, py-L.fy), rad=Math.max(80,(L.fw+L.fh)/3); if(d<rad && d<bestD){ bestD=d; best=Focus.id; } }
-  L.nbrs.forEach(nb=>{ if(nb.id===excludeId) return; const d=Math.hypot(px-nb.x, py-nb.y), rad=Math.max(70,(nb.w+nb.h)/3); if(d<rad && d<bestD){ bestD=d; best=nb.id; } });
-  return best;
-}
-function dropConnect(startId, px, py){
-  const endId=cardUnderPoint(px, py, startId);
-  if(endId && endId!==startId){ const pair=[startId,endId];
-    if(pair.indexOf(Focus.id)>=0 && pair.some(n=>broughtIn[n])) openConnectPopup(startId, endId, px, py); }
-}
-let connectFrom=null, connectTo=null;
-function openConnectPopup(fromId, toId, px, py){
-  connectFrom=fromId; connectTo=toId;
-  const pop=document.getElementById("connectpop"), sel=document.getElementById("connectpop-type"), types=Model.raw.types||{};
-  document.getElementById("connectpop-desc").innerHTML="Connect <b>"+esc((Model.nodeById(fromId)||{}).name||fromId)+"</b> \u2192 <b>"+esc((Model.nodeById(toId)||{}).name||toId)+"</b>";
-  sel.innerHTML="";
-  const keys=Object.keys(types);
-  if(!keys.length){ const o=document.createElement("option"); o.value="related"; o.textContent="related"; sel.appendChild(o); }
-  keys.forEach(k=>{ const o=document.createElement("option"); o.value=k; o.textContent=typeName(k); sel.appendChild(o); });
-  const nw=document.createElement("option"); nw.value="__new__"; nw.textContent="+ Create new type\u2026"; sel.appendChild(nw);
-  document.getElementById("connectpop-newname").value=""; document.getElementById("connectpop-revname").value="";
-  document.getElementById("connectpop-revname").style.display="none"; document.getElementById("connectpop-directional").checked=false;
-  syncConnectNewType();
-  pop.style.display="block";
-  const pw=pop.offsetWidth||240, ph=pop.offsetHeight||120;
-  pop.style.left=Math.max(8,Math.min(px, window.innerWidth-pw-8))+"px"; pop.style.top=Math.max(8,Math.min(py, window.innerHeight-ph-8))+"px";
-}
-function closeConnectPopup(){ const p=document.getElementById("connectpop"); if(p) p.style.display="none"; connectFrom=connectTo=null; }
-function syncConnectNewType(){ const sel=document.getElementById("connectpop-type"), box=document.getElementById("connectpop-new");
-  const isNew=sel.value==="__new__"; box.style.display=isNew?"block":"none"; }
-(function(){
-  const sel=document.getElementById("connectpop-type"), dir=document.getElementById("connectpop-directional");
-  if(sel) sel.addEventListener("change", syncConnectNewType);
-  if(dir) dir.addEventListener("change", function(){ document.getElementById("connectpop-revname").style.display=this.checked?"block":"none"; });
-})();
+
 // remove a brought-in node without connecting it — a freshly-created one is deleted outright
-function dismissBrought(id){
-  delete broughtIn[id];
-  tempLinks=tempLinks.filter(l=>l.to!==id && l.from!==id);
-  const _egoId=(Focus.mode==="ego" && Focus.egoCenter>=0)?Model.ids[Focus.egoCenter]:null;   // remember the floating-view centre so a delete-reload doesn't drop us to the galaxy
-  if(tempNewNodes[id] && !Model.raw.links.some(l=>l.from===id||l.to===id)){
-    const snap={}; Model.ids.forEach((k,i)=>{ if(k!==id) snap[k]={x:Positions.x[i],y:Positions.y[i],z:Positions.z[i]}; });
-    delete Model.raw.nodes[id]; delete tempNewNodes[id];
-    Model.load(Model.raw); Positions.ensure(Model.count());
-    Model.ids.forEach((k,i)=>{ const p=snap[k]; if(p){ Positions.x[i]=p.x; Positions.y[i]=p.y; Positions.z[i]=p.z; } });
-    rebuildVis(); Renderer.refresh();
-  }
-  if(Focus.mode==="focus") enterFocus(Focus.id);
-  else if(Focus.mode==="ego" && _egoId!=null && Model.nodeById(_egoId)){ const _cam={cx:view.cx,cy:view.cy,cz:view.cz,tcx:view.tcx,tcy:view.tcy,tcz:view.tcz,dist:view.dist,tdist:view.tdist,yaw:view.yaw,pitch:view.pitch}; egoTo(_egoId); Object.assign(view,_cam); }   // stay in the same floating system with the same camera instead of dropping to galaxy
-}
+
 // inline-edit a fresh node's name in place (stays transient until connected, so no save here)
 function startNameEdit(id, el){
   const nd=Model.nodeById(id); if(!nd) return;
@@ -2214,30 +2135,6 @@ function startNameEdit(id, el){
   input.addEventListener("blur", commit);
   input.addEventListener("pointerdown", e=>e.stopPropagation());
 }
-(function(){
-  const go=document.getElementById("connectpop-go"), cancel=document.getElementById("connectpop-cancel");
-  if(go) go.onclick=()=>{
-    if(!connectFrom||!connectTo) return closeConnectPopup();
-    let type=document.getElementById("connectpop-type").value||"related";
-    if(type==="__new__"){
-      const fl=document.getElementById("connectpop-newname").value.trim();
-      if(!fl){ document.getElementById("connectpop-newname").focus(); return; }
-      const directional=document.getElementById("connectpop-directional").checked;
-      const rev=document.getElementById("connectpop-revname").value.trim();
-      const types=Model.raw.types=Model.raw.types||{}, key=slugKey(fl, types);
-      types[key]=directional ? {fromLabel:fl, toLabel:rev||fl, arrow:true} : {label:fl, mutual:true};
-      type=key;
-    } else if(!(Model.raw.types||{})[type]){ (Model.raw.types=Model.raw.types||{})[type]={label:type, mutual:true}; }
-    Model.raw.links.push({from:connectFrom, to:connectTo, type});
-    [connectFrom,connectTo].forEach(nid=>{ delete tempNewNodes[nid]; delete broughtIn[nid]; });   // now permanent
-    tempLinks=tempLinks.filter(l=>!((l.from===connectFrom&&l.to===connectTo)||(l.from===connectTo&&l.to===connectFrom)));
-    Model.load(Model.raw); rebuildVis(); Renderer.refresh();
-    closeConnectPopup();
-    if(Focus.mode==="focus") enterFocus(Focus.id);
-    saveRoot();
-  };
-  if(cancel) cancel.onclick=closeConnectPopup;
-})();
 
 // --- Floating-view controls (shown in the ego view): zoom slider, spin-speed, hide-unconnected, spinpad ---
 function floatControls(show){ const d=show?"flex":"none";
@@ -2312,7 +2209,7 @@ function syncZoomSlider(){ const zs=document.getElementById("zoomslider"); if(zs
   window.addEventListener("pointermove",onMove,{passive:false});
   const end=()=>{ if(!active) return; active=false; padVX=0; padVY=0; setKnob(0,0); pad.style.cursor="grab"; };
   window.addEventListener("pointerup",end); window.addEventListener("pointercancel",end); })();
-(function(){ const at=document.getElementById("addtempnode"); if(at) at.onclick=()=>{ if(Focus.mode==="ego" && Focus.egoCenter>=0) enterFocus(Model.ids[Focus.egoCenter]); addTempNode(); }; })();
+(function(){ const at=document.getElementById("addtempnode"); if(at) at.onclick=()=>{ addTempNode(); }; })();
 function paintHideBtn(){ const btn=document.getElementById("hideunconnected"); if(!btn) return;
   if(hideUnconnected){ btn.style.background=PAL.teal[3]; btn.style.borderColor=PAL.teal[3]; btn.style.color="#fff"; }
   else { btn.style.background="var(--card)"; btn.style.borderColor="var(--line-strong)"; btn.style.color="var(--t3)"; } }
@@ -2812,26 +2709,8 @@ function attachLongPress(el, fn){
 }
 let editingId=null;
 let pendingExpandConn=null;
-function openEditor(id, expandOther){
-  const nd=Model.nodeById(id); if(!nd) return; pendingExpandConn=expandOther||null;
-  { const _pi=document.getElementById("planetinfo"); if(_pi) _pi.style.display="none"; planetInfoShown=null; if(typeof hideRelInfo==="function") hideRelInfo(); }
-  resetDeleteBtn();
-  editingId=id;
-  document.getElementById("ed-name").value=nd.name||"";
-  refreshGroupSelect(nd.group||"");
-  document.getElementById("ed-desc").value=nd.desc||"";
-  document.getElementById("ed-url").value=nd.url||"";
-  document.getElementById("ed-linktext").value=nd.linkText||"";
-  document.getElementById("ed-link2").value=nd.link2||"";
-  document.getElementById("ed-link2label").value=nd.link2label||"";
-  document.getElementById("ed-video").value=nd.video||"";
-  document.getElementById("ed-icon").value=(nd.icon&&!/^data:/.test(nd.icon))?nd.icon:"";
-  syncImgStatus(); syncIconStatus();
-  refreshTypeSelect(); refreshTargetSelect(); syncDir(); renderConns(); refreshMergeTarget(); syncGraphPanel();
-  document.getElementById("ed-start-status").textContent = (Model.raw.start===id)?"\u2713 start node":"";
-  document.getElementById("editor").style.display="block";
-}
-function closeEditor(){ resetDeleteBtn(); editingId=null; document.getElementById("editor").style.display="none"; }
+
+function closeEditor(){ editingId=null; }
 // --- Types panel: bulk-manage relationship types (label, direction, dashed, delete) ---
 function typesApplyLive(){ buildLegend(); rebuildVis(); Renderer.refresh(); if(Focus.mode==="focus") refocusCards(); saveRoot(); }
 function edTypeCard(k, types, tpList){ const t=types[k], count=(Model.raw.links||[]).filter(l=>l.type===k).length;
@@ -2885,79 +2764,13 @@ function renderGroupsPanel(){ renderEditPanel("gp-list", Model.raw.groups||{}, "
   if(tc) tc.onclick=()=>{ document.getElementById("typespanel").style.display="none"; document.getElementById("hud").style.display=""; };
   if(gc) gc.onclick=()=>{ document.getElementById("groupspanel").style.display="none"; document.getElementById("hud").style.display=""; };
 })();
-function applyEdit(){
-  if(!editingId) return; const nd=Model.nodeById(editingId); if(!nd) return;
-  nd.name=document.getElementById("ed-name").value;
-  const g=document.getElementById("ed-group").value; if(g) nd.group=g; else delete nd.group;
-  const d=document.getElementById("ed-desc").value; if(d) nd.desc=d; else delete nd.desc;
-  const u=document.getElementById("ed-url").value; if(u) nd.url=u; else delete nd.url;
-  const lt=document.getElementById("ed-linktext").value; if(lt) nd.linkText=lt; else delete nd.linkText;
-  const l2=document.getElementById("ed-link2").value.trim(); if(l2) nd.link2=l2; else delete nd.link2;
-  const l2l=document.getElementById("ed-link2label").value.trim(); if(l2l) nd.link2label=l2l; else delete nd.link2label;
-  const ic=document.getElementById("ed-icon").value.trim(); if(ic) nd.icon=ic; else if(nd.icon&&!/^data:/.test(nd.icon)) delete nd.icon;
-  const v=document.getElementById("ed-video").value.trim(); if(v) nd.video=v; else delete nd.video;
-  saveRoot();
-  Renderer.refresh(); rebuildVis(); buildLegend();   // group edit → colour + legend
-  if(Focus.mode==="focus") buildFocusCards();          // reflect name/desc/group in the cards
-}
-["ed-name","ed-desc","ed-url","ed-linktext","ed-link2","ed-link2label","ed-video","ed-icon"].forEach(fid=>document.getElementById(fid).addEventListener("input", applyEdit));
+
 function slugKey(base, obj){ let s=String(base||"x").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"")||"x", k=s, i=2; while(obj[k]) k=s+"-"+(i++); return k; }
-function refreshGroupSelect(sel){
-  const gsel=document.getElementById("ed-group"); gsel.innerHTML="";
-  const groups=Model.raw.groups||{};
-  const none=document.createElement("option"); none.value=""; none.textContent="(none)"; gsel.appendChild(none);
-  Object.keys(groups).forEach(k=>{ const o=document.createElement("option"); o.value=k; o.textContent=groups[k].label||k; gsel.appendChild(o); });
-  const nw=document.createElement("option"); nw.value="__new"; nw.textContent="+ New group\u2026"; gsel.appendChild(nw);
-  gsel.value=sel||""; document.getElementById("newgroup").style.display="none";
-}
-(function(){ const nc=document.getElementById("ng-color"); PAL_SELECTABLE.forEach(k=>{ const o=document.createElement("option"); o.value=k; o.textContent=k; o.style.background=PAL[k][0]; o.style.color=PAL[k][2]; nc.appendChild(o); }); })();
-document.getElementById("ed-group").addEventListener("change", ()=>{
-  if(document.getElementById("ed-group").value==="__new"){ document.getElementById("newgroup").style.display="block"; document.getElementById("ng-label").focus(); return; }
-  applyEdit();
-});
-document.getElementById("ng-create").onclick=()=>{
-  const lbl=document.getElementById("ng-label").value.trim(); if(!lbl){ showInfoCard("Give the group a label"); return; }
-  const groups=Model.raw.groups=Model.raw.groups||{}, key=slugKey(lbl, groups);
-  groups[key]={label:lbl, color:document.getElementById("ng-color").value};
-  document.getElementById("ng-label").value="";
-  refreshGroupSelect(key);
-  if(editingId) Model.nodeById(editingId).group=key;
-  saveRoot(); Renderer.refresh(); rebuildVis(); buildLegend();
-  if(Focus.mode==="focus") buildFocusCards();
-};
+
 // Image: paste URL, upload file (→ data URL), or remove. Only cards show images (planets never do).
-function syncMediaStatus(field, statusId, inputId){
-  const nd=editingId?Model.nodeById(editingId):null, isData=!!(nd&&nd[field]&&nd[field].slice(0,5)==="data:");
-  document.getElementById(statusId).style.display=isData?"":"none";
-  document.getElementById(inputId).value=(nd&&nd[field]&&!isData)?nd[field]:"";
-}
-function syncImgStatus(){ syncMediaStatus("image", "ed-imgstatus", "ed-img"); }
-function imgChanged(){ saveRoot(); if(Focus.mode==="focus") buildFocusCards(); }
-document.getElementById("ed-img").addEventListener("input", ()=>{ if(!editingId) return; const nd=Model.nodeById(editingId), v=document.getElementById("ed-img").value;
-  if(v) nd.image=v; else delete nd.image; document.getElementById("ed-imgstatus").style.display="none"; imgChanged(); });
-document.getElementById("ed-upload").onclick=()=>document.getElementById("ed-imgfile").click();
-document.getElementById("ed-imgfile").onchange=function(){ const f=this.files[0]; if(!f||!editingId) return;
-  const r=new FileReader(); r.onload=()=>{ Model.nodeById(editingId).image=r.result; syncImgStatus(); imgChanged(); }; r.readAsDataURL(f); this.value=""; };
-document.getElementById("ed-imgremove").onclick=()=>{ if(!editingId) return; delete Model.nodeById(editingId).image; syncImgStatus(); imgChanged(); };
-function syncIconStatus(){ syncMediaStatus("icon", "ed-iconstatus", "ed-icon"); }
-document.getElementById("ed-iconupload").onclick=()=>document.getElementById("ed-iconfile").click();
-document.getElementById("ed-iconfile").onchange=function(){ const f=this.files[0]; if(!f||!editingId) return;
-  const r=new FileReader(); r.onload=()=>{ Model.nodeById(editingId).icon=r.result; syncIconStatus(); imgChanged(); }; r.readAsDataURL(f); this.value=""; };
-document.getElementById("ed-iconremove").onclick=()=>{ if(!editingId) return; delete Model.nodeById(editingId).icon; syncIconStatus(); imgChanged(); };
+
 function typeName(k){ const t=(Model.raw.types||{})[k]||{}; return t.mutual ? (t.label||k) : ((t.fromLabel||k)+" \u2192 "+(t.toLabel||k)); }
-function refreshTypeSelect(selKey){ const sel=document.getElementById("ed-type"); sel.innerHTML="";
-  const ph=document.createElement("option"); ph.value=""; ph.textContent="Relation\u2026"; ph.disabled=true; sel.appendChild(ph);
-  Object.keys(Model.raw.types||{}).forEach(k=>{ const o=document.createElement("option"); o.value=k; o.textContent=typeName(k); sel.appendChild(o); });
-  const nw=document.createElement("option"); nw.value="__new"; nw.textContent="+ New connector\u2026"; sel.appendChild(nw);
-  sel.value=selKey||""; }
-function populateNodeSelect(selId, placeholder){
-  const sel=document.getElementById(selId); sel.innerHTML="";
-  const ph=document.createElement("option"); ph.value=""; ph.textContent=placeholder; ph.disabled=true; sel.appendChild(ph);
-  Model.ids.forEach(id=>{ if(id===editingId) return; const o=document.createElement("option"); o.value=id; o.textContent=(Model.nodeById(id).name)||id; sel.appendChild(o); });
-  sel.value="";
-}
-function refreshTargetSelect(){ populateNodeSelect("ed-target", "Node\u2026"); }
-function syncDir(){ const t=(Model.raw.types||{})[document.getElementById("ed-type").value]; document.getElementById("ed-dir").style.display=(t&&!t.mutual)?"":"none"; }
+
 // rebuild the focus cards after a link change — recompute neighbours, keep the camera where it is
 function refocusCards(){ if(Focus.mode!=="focus"||!Focus.id) return;
   Focus.neighbours=neighboursOf(Focus.id).filter(nb=>isVisible(nb.id));
@@ -2966,7 +2779,7 @@ function refocusCards(){ if(Focus.mode!=="focus"||!Focus.id) return;
   buildFocusCards(); }
 function connTopologyChanged(){ Model.load(Model.raw); rebuildVis(); Renderer.refresh();
   const c=document.getElementById("counts"); if(c) c.textContent=Model.count()+" / "+(Model.edges().length/2);
-  refocusCards(); renderConns(); saveRoot(); }
+  refocusCards(); saveRoot(); }
 function buildLinkPanel(panel, l){
   const mk=(label, val, ph, ml)=>{ const w=document.createElement("label"); w.style.cssText="display:block;font-size:11px;color:var(--t2);margin-bottom:6px;";
     w.textContent=label; const inp=document.createElement(ml?"textarea":"input"); if(ml) inp.rows=3;
@@ -2986,136 +2799,10 @@ function buildLinkPanel(panel, l){
   function sync(){ if(isData()){ st.textContent="Uploaded image in use"; rm.style.display=""; ip.style.display="none"; } else { st.textContent=""; rm.style.display=l.img?"":"none"; ip.style.display=""; } }
   rb.appendChild(up); rb.appendChild(st); rb.appendChild(rm); iw.appendChild(rb); sync(); panel.appendChild(iw);
 }
-function edConnRow(l, types, raw, box){
-    const other=l.from===editingId?l.to:l.from, t=types[l.type]||{};
-    const wrap=document.createElement("div"); wrap.style.cssText="margin-bottom:5px;";
-    const row=document.createElement("div"); row.style.cssText="display:flex;gap:5px;align-items:center;";
-    const sel=document.createElement("select");
-    Object.keys(types).forEach(k=>{ const o=document.createElement("option"); o.value=k; o.textContent=typeName(k); sel.appendChild(o); });
-    sel.value=types[l.type]?l.type:Object.keys(types)[0]; sel.title="Change connector";
-    sel.onchange=()=>{ l.type=sel.value; connTopologyChanged(); }; row.appendChild(sel);
-    const span=document.createElement("span"); span.style.cssText="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;";
-    const oname=(Model.nodeById(other).name)||other;
-    span.textContent = t.mutual ? oname : (l.from===editingId ? (t.toLabel||l.type)+": "+oname : (t.fromLabel||l.type)+": "+oname);
-    row.appendChild(span);
-    if(!t.mutual){ const rev=document.createElement("button"); rev.type="button"; rev.textContent="\u21c4"; rev.title="Reverse direction";
-      rev.onclick=()=>{ const f=l.from; l.from=l.to; l.to=f; connTopologyChanged(); }; row.appendChild(rev); }
-    const edit=document.createElement("button"); edit.type="button"; edit.textContent="\u270e"; edit.title="Edit description, image, video, link";
-    if(l.details||l.img||l.video||l.url) edit.style.color="var(--t1)";
-    const panel=document.createElement("div"); panel.style.cssText="display:none;margin:6px 0 2px;padding:8px;border:1px solid var(--line);border-radius:6px;background:rgba(0,0,0,0.22);";
-    edit.onclick=()=>{ const open=panel.style.display!=="none"; panel.style.display=open?"none":"block"; if(!open && !panel.dataset.built){ buildLinkPanel(panel,l); panel.dataset.built="1"; } };
-    row.appendChild(edit);
-    const del=document.createElement("button"); del.type="button"; del.textContent="\u00d7"; del.title="Remove connection";
-    del.style.cssText="flex:none;color:#e0645a;font-size:15px;line-height:1;min-width:34px;height:28px;";
-    let delArmed=false, delT=null;
-    del.onclick=()=>{ if(!delArmed){ delArmed=true; del.textContent="Delete?"; del.style.fontSize="11px"; del.style.background="rgba(224,100,90,0.18)"; delT=setTimeout(()=>{ delArmed=false; del.textContent="\u00d7"; del.style.fontSize="15px"; del.style.background=""; },3000); return; } clearTimeout(delT); const ix=raw.links.indexOf(l); if(ix>=0) raw.links.splice(ix,1); connTopologyChanged(); };
-    row.appendChild(del);
-    wrap.appendChild(row); wrap.appendChild(panel); box.appendChild(wrap);
-    if(pendingExpandConn && other===pendingExpandConn){ panel.style.display="block"; if(!panel.dataset.built){ buildLinkPanel(panel,l); panel.dataset.built="1"; } edit.style.color="var(--t1)"; panel.scrollIntoView&&setTimeout(()=>panel.scrollIntoView({block:"nearest"}),0); }
-  }
-function renderConns(){ const box=document.getElementById("ed-conns"); box.innerHTML="";
-  if(!editingId) return; const raw=Model.raw, types=raw.types||{}; let any=false;
-  raw.links.forEach(l=>{
-    if(l.from!==editingId && l.to!==editingId) return;
-    if(!Model.nodeById(l.from)||!Model.nodeById(l.to)) return;
-    any=true; edConnRow(l, types, raw, box);
-  });
-  pendingExpandConn=null;
-  if(!any){ const p=document.createElement("div"); p.style.cssText="font-size:12px;color:var(--t2);"; p.textContent="No connections yet"; box.appendChild(p); }
-}
-document.getElementById("ed-type").onchange=()=>{
-  if(document.getElementById("ed-type").value==="__new"){ document.getElementById("newtype").style.display=""; document.getElementById("nt-from").focus(); return; }
-  document.getElementById("newtype").style.display="none"; syncDir();
-};
-document.getElementById("nt-mutual").onchange=()=>{ document.getElementById("nt-to-wrap").style.display=document.getElementById("nt-mutual").checked?"none":""; };
-document.getElementById("nt-create").onclick=()=>{
-  const mutual=document.getElementById("nt-mutual").checked;
-  const fl=document.getElementById("nt-from").value.trim(), tl=document.getElementById("nt-to").value.trim();
-  if(!fl){ showInfoCard("Give the type a label"); return; }
-  if(!mutual && !tl){ showInfoCard("Directional types need a reverse label too"); return; }
-  const types=Model.raw.types=Model.raw.types||{}, key=slugKey(fl, types);
-  types[key]=mutual ? {label:fl, mutual:true, dashed:document.getElementById("nt-dashed").checked}
-                    : {fromLabel:fl, toLabel:tl, arrow:true, dashed:document.getElementById("nt-dashed").checked};
-  document.getElementById("nt-from").value=""; document.getElementById("nt-to").value="";
-  document.getElementById("newtype").style.display="none";
-  refreshTypeSelect(key); syncDir();
-  saveRoot();
-};
-document.getElementById("ed-add").onclick=()=>{
-  if(!editingId) return;
-  const tv=document.getElementById("ed-type").value, types=Model.raw.types||{};
-  if(!tv || !types[tv]){ showInfoCard("Pick a connector first"); return; }
-  const other=document.getElementById("ed-target").value;
-  if(!other || !Model.nodeById(other)){ showInfoCard("Pick a node to connect to"); return; }
-  const t=types[tv], dir=document.getElementById("ed-dir").value;
-  const link=(t.mutual||dir==="out") ? {from:editingId,to:other,type:tv} : {from:other,to:editingId,type:tv};
-  Model.raw.links.push(link);
-  document.getElementById("ed-target").value="";
-  connTopologyChanged();
-};
+
 let deleteArmed=false, deleteArmTimer=null;
 // --- Linked graph (subgraph) attach / enter / detach ---
-function syncGraphPanel(){
-  const nd=editingId?Model.nodeById(editingId):null, has=!!(nd&&nd.subgraph);
-  document.getElementById("ed-graph-none").style.display=has?"none":"";
-  document.getElementById("ed-graph-some").style.display=has?"":"none";
-  if(has){ const n2=Object.keys(nd.subgraph.nodes||{}).length;
-    document.getElementById("ed-graph-status").textContent=(nd.subgraph.title||"Untitled graph")+" \u00b7 "+n2+" node"+(n2===1?"":"s"); }
-}
-document.getElementById("ed-graph-attach").onclick=()=>document.getElementById("ed-graph-file").click();
-document.getElementById("ed-graph-file").onchange=function(){
-  const f=this.files[0]; if(!f||!editingId) return;
-  const r=new FileReader();
-  r.onload=()=>{ try{ const data=JSON.parse(r.result);
-      if(!data||typeof data.nodes!=="object"||!Object.keys(data.nodes).length) throw new Error('needs a non-empty "nodes" object');
-      Model.nodeById(editingId).subgraph=data; syncGraphPanel();
-      if(Focus.mode==="focus") buildFocusCards();
-      saveRoot();
-    }catch(err){ showInfoCard("Couldn't attach: "+err.message); } };
-  r.readAsText(f); this.value="";
-};
-document.getElementById("ed-graph-enter").onclick=()=>{ if(editingId) enterSubgraph(editingId); };
-document.getElementById("ed-graph-detach").onclick=()=>{
-  if(!editingId) return;
-  if(!confirm("Detach the linked graph? The embedded graph is removed \u2014 this node stays.")) return;
-  delete Model.nodeById(editingId).subgraph; syncGraphPanel();
-  if(Focus.mode==="focus") buildFocusCards();
-  saveRoot();
-};
-// --- Merge (faithful port of the prototype's mergeNodeInto) ---
-function refreshMergeTarget(){ populateNodeSelect("ed-merge-target", "Node to merge in\u2026"); }
 
-function dedupeLinks(raw){ const seen=new Set();
-  raw.links=raw.links.filter(l=>{ if(l.from===l.to) return false; const key=l.from+"|"+l.to+"|"+l.type; if(seen.has(key)) return false; seen.add(key); return true; }); }
-function mergeNodeInto(loserId, keeperId){
-  if(loserId===keeperId) return;
-  const raw=Model.raw, loser=raw.nodes[loserId], keeper=raw.nodes[keeperId];
-  if(!loser||!keeper) return;
-  fillGaps(keeper, loser);
-  raw.links.forEach(l=>{ if(l.from===loserId) l.from=keeperId; if(l.to===loserId) l.to=keeperId; });
-  dedupeLinks(raw);
-  delete raw.nodes[loserId];
-  if(raw.start===loserId) raw.start=keeperId;
-}
-document.getElementById("ed-merge-go").onclick=()=>{
-  if(!editingId) return;
-  const other=document.getElementById("ed-merge-target").value;
-  if(!other||!Model.nodeById(other)){ showInfoCard("Pick a node to merge in"); return; }
-  const keeperName=Model.nodeById(editingId).name||editingId, loserName=Model.nodeById(other).name||other;
-  if(!confirm('Merge "'+loserName+'" into "'+keeperName+'"? "'+loserName+'" will be deleted \u2014 its connections move onto "'+keeperName+'", and any details "'+keeperName+'" is missing get filled in from it. This cannot be undone.')) return;
-  const gone=other, snap={}; Model.ids.forEach((id,i)=>{ if(id!==gone) snap[id]={x:Positions.x[i],y:Positions.y[i],z:Positions.z[i]}; });
-  mergeNodeInto(other, editingId);
-  Model.load(Model.raw);
-  Positions.ensure(Model.count());
-  Model.ids.forEach((id,i)=>{ const p=snap[id]; if(p){ Positions.x[i]=p.x; Positions.y[i]=p.y; Positions.z[i]=p.z; } });
-  rebuildVis(); Renderer.refresh(); buildLegend();
-  const counts=document.getElementById("counts"); if(counts) counts.textContent=Model.count()+" / "+(Model.edges().length/2);
-  if(Focus.mode==="focus"){ if(Focus.id===gone) enterFocus(editingId); else refocusCards(); }
-  saveRoot();
-  openEditor(editingId);  // reopen the keeper — its fields/connections changed
-};
-function resetDeleteBtn(){ deleteArmed=false; if(deleteArmTimer){ clearTimeout(deleteArmTimer); deleteArmTimer=null; }
-  const b=document.getElementById("ed-delete"); if(b){ b.textContent="Delete node"; b.style.background=""; b.style.color=""; b.style.borderColor=""; } }
 function deleteNodeById(gone){
   const raw=Model.raw; if(!raw.nodes[gone]) return;
   const snap={}; Model.ids.forEach((id,i)=>{ if(id!==gone) snap[id]={x:Positions.x[i],y:Positions.y[i],z:Positions.z[i]}; });
@@ -3126,36 +2813,7 @@ function deleteNodeById(gone){
   const counts=document.getElementById("counts"); if(counts) counts.textContent=Model.count()+" / "+(Model.edges().length/2);
   LocalStorageSource.save(raw);
 }
-function doDeleteNode(){
-  if(!editingId || !Model.nodeById(editingId)) return;
-  const b=document.getElementById("ed-delete");
-  if(!deleteArmed){ // first tap arms (no native dialog — those misbehave on mobile); second tap deletes
-    deleteArmed=true; if(b){ b.textContent="Confirm?"; b.style.background="#e0341f"; b.style.color="#fff"; b.style.borderColor="#e0341f"; }
-    deleteArmTimer=setTimeout(resetDeleteBtn, 3000); return;
-  }
-  resetDeleteBtn();
-  const gone=editingId, raw=Model.raw;
-  // positions are index-keyed, and deleting shifts every later index — so snapshot survivors by id,
-  // mutate the doc, re-derive the Model, then rebuild the buffer in the new order (no re-layout).
-  const snap={}; Model.ids.forEach((id,i)=>{ if(id!==gone) snap[id]={x:Positions.x[i], y:Positions.y[i], z:Positions.z[i]}; });
-  delete raw.nodes[gone];
-  raw.links=raw.links.filter(l=>l.from!==gone && l.to!==gone);
-  if(raw.start===gone) delete raw.start;
-  closeEditor();
-  Model.load(raw);
-  Positions.ensure(Model.count());
-  Model.ids.forEach((id,i)=>{ const p=snap[id]; if(p){ Positions.x[i]=p.x; Positions.y[i]=p.y; Positions.z[i]=p.z; } });
-  rebuildVis(); Renderer.refresh(); buildLegend();
-  const counts=document.getElementById("counts"); if(counts) counts.textContent=Model.count()+" / "+(Model.edges().length/2);
-  if(Focus.mode==="focus"){
-    if(Focus.id===gone){ const start=(raw.start&&Model.nodeById(raw.start))?raw.start:Model.ids[0]; if(start) enterFocus(start); else exitFocus(); }
-    else enterFocus(Focus.id);  // a neighbour may have gone — rebuild the focus cards
-  }
-  LocalStorageSource.save(raw);
-}
-document.getElementById("ed-delete").onclick=doDeleteNode;
-document.getElementById("ed-close").onclick=closeEditor;
-document.getElementById("ed-set-start").onclick=()=>{ if(!editingId) return; Model.raw.start=editingId; saveRoot(); document.getElementById("ed-start-status").textContent="\u2713 start node"; };
+
 function connBuilderHtml(){ return '<div class="cb-panel"><div class="cb-title">New connection</div>'
     +'<div class="cb-label">From node</div>'
     +'<div class="cb-search"><input id="cb-from-q" type="text" placeholder="Search\u2026" autocomplete="off"><div id="cb-from-res" class="cb-res"></div></div>'
@@ -3348,8 +3006,12 @@ function openLauncher(opts){ opts=opts||{}; const dismissable=!!opts.dismissable
     if(saved){ list.appendChild(card("Resume your work", saved.title?("\u201C"+saved.title+"\u201D"):"your last graph", ()=>{ closeLauncher(); graphStack=[]; loadGraph(saved); if(typeof renderGraphTrail==="function") renderGraphTrail(); }, "resume")); }
     if(manifest.length){
       manifest.forEach(e=>{ const title=e.title||e.file.replace(/\.[a-z0-9]+$/i,"").replace(/[-_]+/g," "); const url=/^(https?:|\/)/i.test(e.file)?e.file:(GRAPHS_DIR+e.file);
-        const b=card(title, e.desc||"", async ()=>{ sub.textContent="Opening \u201C"+title+"\u201D\u2026"; sub.style.color=""; try{ const doc=await fetchGraphDoc(url, e.file); closeLauncher(); confirmReplace(()=>applyDoc(doc)); }catch(err){ sub.textContent="Couldn't open \u201C"+title+"\u201D: "+err.message; sub.style.color="#e0a24a"; } });
-        list.appendChild(b); });
+        const row=document.createElement("div"); row.className="lc-card lc-graph";
+        const main=document.createElement("div"); main.className="lc-graph-main"; main.innerHTML='<div class="lc-title"></div>'+(e.desc?'<div class="lc-desc"></div>':''); main.querySelector(".lc-title").textContent=title; if(e.desc) main.querySelector(".lc-desc").textContent=e.desc;
+        main.onclick=async ()=>{ sub.textContent="Opening \u201C"+title+"\u201D\u2026"; sub.style.color=""; try{ const doc=await fetchGraphDoc(url, e.file); closeLauncher(); confirmReplace(()=>applyDoc(doc)); }catch(err){ sub.textContent="Couldn\u2019t open \u201C"+title+"\u201D: "+err.message; sub.style.color="#e0a24a"; } };
+        const mg=document.createElement("button"); mg.type="button"; mg.className="lc-merge"; mg.textContent="Merge"; mg.title="Merge this graph into the current one";
+        mg.onclick=async (ev)=>{ ev.stopPropagation(); sub.textContent="Merging \u201C"+title+"\u201D\u2026"; sub.style.color=""; try{ const doc=await fetchGraphDoc(url, e.file); closeLauncher(); mergeInto(doc); }catch(err){ sub.textContent="Couldn\u2019t merge \u201C"+title+"\u201D: "+err.message; sub.style.color="#e0a24a"; } };
+        row.appendChild(main); row.appendChild(mg); list.appendChild(row); });
     }
     list.appendChild(card("Start a new graph", "Begin from a blank canvas.", ()=>chooseDoc({title:"Untitled graph", start:"n1", nodes:{n1:{name:"New node"}}, links:[], groups:{}, types:{}}), "action"));
       list.appendChild(card("Open a file\u2026", "Load a .json or .zip from your device.", async ()=>{ const d=await FileSource.pick(); if(d) chooseDoc(d); }, "action"));
