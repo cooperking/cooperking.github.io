@@ -267,7 +267,7 @@
 <script>
 "use strict";
 
-const BUILD="v2-815-r230"
+const BUILD="v2-816-r231"
 
 document.getElementById("build").textContent=BUILD;
 
@@ -794,7 +794,7 @@ void main(){
   float grow=smoothstep(0.35,1.05,uTime); float iris=smoothstep(grow*2.4+0.02, grow*2.4-0.35, r); float cover=iris*(1.0 - smoothstep(0.65,1.0,uPhase)*smoothstep(0.4,0.0,r));
   o=vec4(col, clamp(cover,0.0,1.0));
 }
-`; pPortal=mkP(QVS,PORTAL_FS); if(pPortal){ pUni.res=gl.getUniformLocation(pPortal,"uRes"); pUni.center=gl.getUniformLocation(pPortal,"uCenter"); pUni.axisA=gl.getUniformLocation(pPortal,"uAxisA"); pUni.axisB=gl.getUniformLocation(pPortal,"uAxisB"); pUni.time=gl.getUniformLocation(pPortal,"uTime"); pUni.color=gl.getUniformLocation(pPortal,"uColor"); }
+`; pPortal=mkP(QVS,PORTAL_FS); (window.requestIdleCallback||function(f){return setTimeout(f,1500);})(function(){ try{ if(!pTunnel){ pTunnel=mkP(QVS,TUNNEL_FS); if(pTunnel){ ptU.res=gl.getUniformLocation(pTunnel,"uRes"); ptU.time=gl.getUniformLocation(pTunnel,"uTime"); ptU.phase=gl.getUniformLocation(pTunnel,"uPhase"); ptU.color=gl.getUniformLocation(pTunnel,"uColor"); } } }catch(_){} }); if(pPortal){ pUni.res=gl.getUniformLocation(pPortal,"uRes"); pUni.center=gl.getUniformLocation(pPortal,"uCenter"); pUni.axisA=gl.getUniformLocation(pPortal,"uAxisA"); pUni.axisB=gl.getUniformLocation(pPortal,"uAxisB"); pUni.time=gl.getUniformLocation(pPortal,"uTime"); pUni.color=gl.getUniformLocation(pPortal,"uColor"); }
         if(pBright&&pBlur&&pComp){
           fsqVao=gl.createVertexArray(); gl.bindVertexArray(fsqVao); gl.bindBuffer(gl.ARRAY_BUFFER,quadBuf);
           gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0,2,gl.FLOAT,false,0,0); gl.bindVertexArray(null);
@@ -950,7 +950,7 @@ void main(){
   }
   function drawTunnel(t,phase,cr,cg,cb,dw,dh){ if(!pTunnel||!fsqVao) return; gl.useProgram(pTunnel); gl.bindVertexArray(fsqVao); gl.uniform2f(ptU.res,dw,dh); gl.uniform1f(ptU.time,t); gl.uniform1f(ptU.phase,phase); gl.uniform3f(ptU.color,cr,cg,cb); gl.disable(gl.DEPTH_TEST); gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA); gl.drawArrays(gl.TRIANGLE_STRIP,0,4); }
   function drawPortal(cx,cy,aax,aay,abx,aby,pdepth,cr,cg,cb,time,dw,dh){ if(!pPortal||!fsqVao) return; gl.useProgram(pPortal); gl.bindVertexArray(fsqVao); gl.uniform2f(pUni.res,dw,dh); gl.uniform2f(pUni.center,cx,cy); gl.uniform2f(pUni.axisA,aax,aay); gl.uniform2f(pUni.axisB,abx,aby); gl.uniform1f(pUni.time,time); gl.uniform3f(pUni.color,cr,cg,cb); gl.disable(gl.DEPTH_TEST); gl.depthMask(false); gl.enable(gl.BLEND); gl.blendFunc(gl.ONE,gl.ONE); gl.drawArrays(gl.TRIANGLE_STRIP,0,4); gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA); }
-  return { init, render, canvas:()=>cvs, available:()=>ok, drawPortal, portalReady:()=>!!(pPortal&&fsqVao), drawTunnel, tunnelReady:()=>!!(pTunnel&&fsqVao), ensureTunnel:()=>{ if(!pTunnel){ pTunnel=mkP(QVS,TUNNEL_FS); if(pTunnel){ ptU.res=gl.getUniformLocation(pTunnel,"uRes"); ptU.time=gl.getUniformLocation(pTunnel,"uTime"); ptU.phase=gl.getUniformLocation(pTunnel,"uPhase"); ptU.color=gl.getUniformLocation(pTunnel,"uColor"); } } }, STRIDE, labelTex, drawLabels, uploadClouds, drawOverlay, labelCtx:()=>lctx };
+  return { init, render, canvas:()=>cvs, available:()=>ok, drawPortal, portalReady:()=>!!(pPortal&&fsqVao), drawTunnel, tunnelReady:()=>!!(pTunnel&&fsqVao), STRIDE, labelTex, drawLabels, uploadClouds, drawOverlay, labelCtx:()=>lctx };
 })();
 
 // Scene layer: owns the model projection and per-frame geometry, and drives PlanetGL each frame.
@@ -3111,7 +3111,6 @@ setPanelCollapsed(true);
   else { openLauncher(); }
 }
 requestAnimationFrame(loop);
-(window.requestIdleCallback||function(f){return setTimeout(f,2000);})(function(){ try{ if(typeof PlanetGL!=="undefined" && PlanetGL.ensureTunnel) PlanetGL.ensureTunnel(); }catch(_){} });
 </script>
 </body>
 </html>
