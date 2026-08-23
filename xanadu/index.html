@@ -267,7 +267,7 @@
 <script>
 "use strict";
 
-const BUILD="v2-816-r231"
+const BUILD="v2-863-r278"
 
 document.getElementById("build").textContent=BUILD;
 
@@ -1060,7 +1060,7 @@ const Renderer=(()=>{
       }
       const tgx=bx*cg - bz*sg, tgy=by, tgz=bx*sg + bz*cg;
 
-      let dsp=SolarSys.disp[i]; if(!dsp){ dsp=SolarSys.disp[i]={x:tgx,y:tgy,z:tgz}; } else if(i===Focus.planetFocus){ dsp.x=tgx; dsp.y=tgy; dsp.z=tgz; } else { const _mo=SolarSys.morph||0.26; dsp.x+=(tgx-dsp.x)*_mo; dsp.y+=(tgy-dsp.y)*_mo; dsp.z+=(tgz-dsp.z)*_mo; }
+      let dsp=SolarSys.disp[i]; if(!dsp){ dsp=SolarSys.disp[i]={x:tgx,y:tgy,z:tgz}; } else if(i===Focus.planetFocus){ dsp.x=tgx; dsp.y=tgy; dsp.z=tgz; } else if(!(_warp && !_warp.loaded)){ const _mo=SolarSys.morph||0.26; dsp.x+=(tgx-dsp.x)*_mo; dsp.y+=(tgy-dsp.y)*_mo; dsp.z+=(tgz-dsp.z)*_mo; }
       let ex=dsp.x, ey=dsp.y, ez=dsp.z;
       const rx=ex-lax, ry=ey-lay, rz=ez-laz;
       const ax=rx*cyaw - rz*syaw, az0=rx*syaw + rz*cyaw;
@@ -1173,14 +1173,14 @@ const Renderer=(()=>{
         if(view.glowEdge){ const g=view.glowEdge, age=nowT-g.t0; if(age<750 && proj.front[g.a] && proj.front[g.b]){ const p=age/750, gax=proj.x[g.a],gay=proj.y[g.a],gbx=proj.x[g.b],gby=proj.y[g.b], gtt=Math.min(1,p*1.3), gdx=gax+(gbx-gax)*gtt, gdy=gay+(gby-gay)*gtt;
           _EFL.push(gax*_Dfg,gay*_Dfg,gbx*_Dfg,gby*_Dfg, 0.588,0.804,1.0,(1-p)*0.85, (1+3.5*(1-p))*_Dfg);
           _FGG.push(gdx*_Dfg,gdy*_Dfg,(2.5+2*(1-p))*_Dfg, 0.831,0.925,1.0,(1-p)); } }
-        _PORTALS.length=0; _PORTALHIT.length=0; if(PlanetGL.portalReady() && SolarSys.isSun && SolarSys.isSun.length===Model.count()){ const _np=Model.count(); for(let i=0;i<_np;i++){ if(!SolarSys.isSun[i]) continue; const _sgN=Model.nodeById(Model.ids[i]); if(_sgN && (_sgN.subgraph || Model.ids[i]===Focus._returnNode)){ const _sr=(SolarSys.sunR&&SolarSys.sunR[i])||((SolarSys.Rmax||40)*0.6); const _dp=SolarSys.disp[i]||{x:0,y:0,z:0}; const _dr=_sr*0.8, _cyy=_dp.y+_sr*5.3; const _bp=_PROJPT(_dp.x,_cyy,_dp.z); const _rp=_PROJPT(_dp.x+_dr,_cyy,_dp.z); const _upp=_PROJPT(_dp.x,_cyy+_dr*0.7,_dp.z+_dr*0.7); let _aax=_rp.sx-_bp.sx,_aay=_rp.sy-_bp.sy,_abx=_upp.sx-_bp.sx,_aby=_upp.sy-_bp.sy; const _fbr=_dr*F/Math.max(_bp.az,1); if(!isFinite(_aax)||!isFinite(_aay)||Math.hypot(_aax,_aay)>_fbr*4.0){ _aax=_fbr; _aay=0; } if(!isFinite(_abx)||!isFinite(_aby)||Math.hypot(_abx,_aby)>_fbr*4.0){ _abx=0; _aby=_fbr; } const _hr=(Math.hypot(_aax,_aay)+Math.hypot(_abx,_aby))*0.5; _PORTALS.push(_bp.sx*_Dfg,_bp.sy*_Dfg,_aax*_Dfg,_aay*_Dfg,_abx*_Dfg,_aby*_Dfg,_bp.az, glcol(Model.colorName(Model.ids[i]))[0],glcol(Model.colorName(Model.ids[i]))[1],glcol(Model.colorName(Model.ids[i]))[2]); if(view.showConnectors!==false){ var _cc=glcol(Model.colorName(Model.ids[i])); _OVL.push(proj.x[i]*_Dfg, proj.y[i]*_Dfg, _bp.sx*_Dfg, _bp.sy*_Dfg, _cc[0],_cc[1],_cc[2], 0.22, 7.0*_Dfg); _OVL.push(proj.x[i]*_Dfg, proj.y[i]*_Dfg, _bp.sx*_Dfg, _bp.sy*_Dfg, Math.min(1.0,_cc[0]*1.25),Math.min(1.0,_cc[1]*1.25),Math.min(1.0,_cc[2]*1.25), 0.9, 1.5*_Dfg); } _PORTALHIT.push({x:_bp.sx,y:_bp.sy,r:_hr*1.5,node:i,doc:_sgN.subgraph,entry:_sgN.subgraphEntry,isReturn:(Model.ids[i]===Focus._returnNode),col:glcol(Model.colorName(Model.ids[i])),px3:_dp.x,py3:_cyy,pz3:_dp.z,pr3:_dr}); } } } if(SolarSys.isSun && SolarSys.isSun.length===Model.count()){ const _n2=Model.count(); for(let i=0;i<_n2;i++) if(SolarSys.isSun[i] && proj.vis[i]){
+        if(graphStack.length){ if(Focus._exitMapFor!==Model.raw){ const _em={}; const _P=graphStack[graphStack.length-1].doc; const _cur=Model.raw; if(_P&&_P.nodes){ for(const _pid in _P.nodes){ const _pn=_P.nodes[_pid]; if(_pn&&_pn.subgraph===_cur&&_pn.subgraphEntry) _em[_pn.subgraphEntry]=_pid; } } Focus._exitMap=_em; Focus._exitMapFor=Model.raw; } } else { Focus._exitMap=null; Focus._exitMapFor=null; } _PORTALS.length=0; _PORTALHIT.length=0; if(PlanetGL.portalReady() && SolarSys.isSun && SolarSys.isSun.length===Model.count()){ const _np=Model.count(); for(let i=0;i<_np;i++){ if(!SolarSys.isSun[i] && i!==Focus.planetFocus) continue; const _sgN=Model.nodeById(Model.ids[i]); const _csun=(SolarSys.isSun[i] && Focus._connSub&&Focus._connSub[Model.ids[i]]); if(SolarSys.isSun[i] && _sgN && (_sgN.subgraph || _csun || (Focus._exitMap && Focus._exitMap[Model.ids[i]]) || Model.ids[i]===Focus._returnNode)){ const _sr=(SolarSys.sunR&&SolarSys.sunR[i])||((SolarSys.Rmax||40)*0.6); const _dp=SolarSys.disp[i]||{x:0,y:0,z:0}; const _nr=(SolarSys.orbit&&SolarSys.orbit[i]&&SolarSys.orbit[i].pWorldR)||_sr; const _dr=_nr*0.8, _cyy=_dp.y+_nr*5.3; const _bp=_PROJPT(_dp.x,_cyy,_dp.z); const _rp=_PROJPT(_dp.x+_dr,_cyy,_dp.z); const _upp=_PROJPT(_dp.x,_cyy+_dr*0.7,_dp.z+_dr*0.7); let _aax=_rp.sx-_bp.sx,_aay=_rp.sy-_bp.sy,_abx=_upp.sx-_bp.sx,_aby=_upp.sy-_bp.sy; const _fbr=_dr*F/Math.max(_bp.az,1); if(!isFinite(_aax)||!isFinite(_aay)||Math.hypot(_aax,_aay)>_fbr*4.0){ _aax=_fbr; _aay=0; } if(!isFinite(_abx)||!isFinite(_aby)||Math.hypot(_abx,_aby)>_fbr*4.0){ _abx=0; _aby=_fbr; } const _hr=(Math.hypot(_aax,_aay)+Math.hypot(_abx,_aby))*0.5; const _inSys=(!ego || i===Focus.egoCenter || Focus.egoDir[i]); _PORTALS.push(_bp.sx*_Dfg,_bp.sy*_Dfg,_aax*_Dfg,_aay*_Dfg,_abx*_Dfg,_aby*_Dfg,_bp.az, glcol(Model.colorName(Model.ids[i]))[0],glcol(Model.colorName(Model.ids[i]))[1],glcol(Model.colorName(Model.ids[i]))[2]); if(view.showConnectors!==false && _inSys){ var _cc=glcol(Model.colorName(Model.ids[i])); _OVL.push(proj.x[i]*_Dfg, proj.y[i]*_Dfg, _bp.sx*_Dfg, _bp.sy*_Dfg, _cc[0],_cc[1],_cc[2], 0.22, 7.0*_Dfg); _OVL.push(proj.x[i]*_Dfg, proj.y[i]*_Dfg, _bp.sx*_Dfg, _bp.sy*_Dfg, Math.min(1.0,_cc[0]*1.25),Math.min(1.0,_cc[1]*1.25),Math.min(1.0,_cc[2]*1.25), 0.9, 1.5*_Dfg); } _PORTALHIT.push({x:_bp.sx,y:_bp.sy,r:_hr*1.5,node:i,doc:((_sgN&&_sgN.subgraph)||(_csun&&_csun.doc)),entry:((_sgN&&_sgN.subgraph)?_sgN.subgraphEntry:(_csun&&_csun.entry)),isReturn:((Focus._exitMap && Focus._exitMap[Model.ids[i]])?true:(Model.ids[i]===Focus._returnNode)),retTo:((Focus._exitMap && Focus._exitMap[Model.ids[i]])||null),col:glcol(Model.colorName(Model.ids[i])),px3:_dp.x,py3:_cyy,pz3:_dp.z,pr3:_dr,az:_bp.az}); } } } if(SolarSys.isSun && SolarSys.isSun.length===Model.count()){ const _n2=Model.count(); for(let i=0;i<_n2;i++) if(SolarSys.isSun[i] && proj.vis[i]){
           let _fa=(SolarSys.fade[i]==null?1:SolarSys.fade[i]);
           if(_fa>0.01){ const sxD=proj.x[i]*_Dfg, syD=proj.y[i]*_Dfg, r=Math.max(2,proj.r[i]);
             _BGG.push(sxD,syD, r*3.6*_Dfg, 1.0,0.94,0.80, 0.42*_fa);
             { const _sgN=Model.nodeById(Model.ids[i]); if(_sgN && (_sgN.subgraph || Model.ids[i]===Focus._returnNode)){ if(!PlanetGL.portalReady()){ _emitPortal(sxD, syD, r, _fa, _EFL, _FGG, _Dfg); } } }
             if(_flareAmt>0.02 && proj.r[i]>2.5){ const spD=(proj.r[i]*2.4+4)*_Dfg, al=0.1*_flareAmt*_fa, wd=0.8*_Dfg;
               _EFL.push(sxD-spD,syD,sxD+spD,syD, 1.0,0.957,0.839,al,wd); _EFL.push(sxD,syD-spD,sxD,syD+spD, 1.0,0.957,0.839,al,wd); } } } }
-      if(Focus.mode==="ego" && Focus.id!=null && SolarSys.isSun && SolarSys.isSun.length===Model.count()){ const _cmap={}, _cid=Focus.id; (Model.raw.links||[]).forEach(l=>{ if(!l||!l.subgraph) return; let _o=null; if(l.from===_cid)_o=l.to; else if(l.to===_cid)_o=l.from; if(_o) _cmap[_o]={doc:l.subgraph, entry:l.subgraphEntry}; }); Focus._connSub=_cmap; const _n4=Model.count(); for(let i=0;i<_n4;i++){ if(SolarSys.isSun[i] || (!proj.vis[i] && !(_warp && !_warp.loaded && _warp.nodeIdx===i))) continue; const _cs=_cmap[Model.ids[i]]; if(!_cs) continue; const _fa=(SolarSys.fade[i]==null?1:SolarSys.fade[i]); if(_fa>0.01){ const sxD=proj.x[i]*_Dfg, syD=proj.y[i]*_Dfg, r=Math.max(2,proj.r[i]); if(PlanetGL.portalReady()){ const _sr=(SolarSys.sunR&&SolarSys.sunR[i])||((SolarSys.Rmax||40)*0.45); const _dp=SolarSys.disp[i]||{x:0,y:0,z:0}; const _dr=_sr*0.8, _cyy=_dp.y+_sr*5.3; const _bp=_PROJPT(_dp.x,_cyy,_dp.z); const _rp=_PROJPT(_dp.x+_dr,_cyy,_dp.z); const _upp=_PROJPT(_dp.x,_cyy+_dr*0.7,_dp.z+_dr*0.7); let _aax=_rp.sx-_bp.sx,_aay=_rp.sy-_bp.sy,_abx=_upp.sx-_bp.sx,_aby=_upp.sy-_bp.sy; const _fbr=_dr*F/Math.max(_bp.az,1); if(!isFinite(_aax)||!isFinite(_aay)||Math.hypot(_aax,_aay)>_fbr*4.0){ _aax=_fbr; _aay=0; } if(!isFinite(_abx)||!isFinite(_aby)||Math.hypot(_abx,_aby)>_fbr*4.0){ _abx=0; _aby=_fbr; } const _hr=(Math.hypot(_aax,_aay)+Math.hypot(_abx,_aby))*0.5; const _d01=Math.max(0,Math.min(0.999,(_bp.az-dist+span)/(2*span))); _PORTALS.push(_bp.sx*_Dfg,_bp.sy*_Dfg,_aax*_Dfg,_aay*_Dfg,_abx*_Dfg,_aby*_Dfg,_bp.az, glcol(Model.colorName(Model.ids[i]))[0],glcol(Model.colorName(Model.ids[i]))[1],glcol(Model.colorName(Model.ids[i]))[2]); if(view.showConnectors!==false){ var _cc=glcol(Model.colorName(Model.ids[i])); _OVL.push(proj.x[i]*_Dfg, proj.y[i]*_Dfg, _bp.sx*_Dfg, _bp.sy*_Dfg, _cc[0],_cc[1],_cc[2], 0.22, 7.0*_Dfg); _OVL.push(proj.x[i]*_Dfg, proj.y[i]*_Dfg, _bp.sx*_Dfg, _bp.sy*_Dfg, Math.min(1.0,_cc[0]*1.25),Math.min(1.0,_cc[1]*1.25),Math.min(1.0,_cc[2]*1.25), 0.9, 1.5*_Dfg); } _PORTALHIT.push({x:_bp.sx,y:_bp.sy,r:_hr*1.5,node:i,doc:_cs.doc,entry:_cs.entry,isReturn:false,col:glcol(Model.colorName(Model.ids[i])),px3:_dp.x,py3:_cyy,pz3:_dp.z,pr3:_dr}); } else { _emitPortal(sxD, syD, r, _fa, _EFL, _FGG, _Dfg); } } } }
+      if(Focus.mode==="ego" && Focus.id!=null && SolarSys.isSun && SolarSys.isSun.length===Model.count()){ const _cmap={}, _cid=Focus.id; (Model.raw.links||[]).forEach(l=>{ if(!l||!l.subgraph) return; let _o=null; if(l.from===_cid)_o=l.to; else if(l.to===_cid)_o=l.from; if(_o) _cmap[_o]={doc:l.subgraph, entry:l.subgraphEntry}; }); Focus._connSub=_cmap; const _n4=Model.count(); for(let i=0;i<_n4;i++){ if(SolarSys.isSun[i] || (!proj.vis[i] && !(_warp && !_warp.loaded && _warp.nodeIdx===i))) continue; const _cs=_cmap[Model.ids[i]]; if(!_cs) continue; const _fa=(SolarSys.fade[i]==null?1:SolarSys.fade[i]); if(_fa>0.01){ const sxD=proj.x[i]*_Dfg, syD=proj.y[i]*_Dfg, r=Math.max(2,proj.r[i]); if(PlanetGL.portalReady()){ const _sr=(SolarSys.sunR&&SolarSys.sunR[i])||((SolarSys.Rmax||40)*0.45); const _dp=SolarSys.disp[i]||{x:0,y:0,z:0}; const _nr=(SolarSys.orbit&&SolarSys.orbit[i]&&SolarSys.orbit[i].pWorldR)||_sr; const _dr=_nr*0.8, _cyy=_dp.y+_nr*5.3; const _bp=_PROJPT(_dp.x,_cyy,_dp.z); const _rp=_PROJPT(_dp.x+_dr,_cyy,_dp.z); const _upp=_PROJPT(_dp.x,_cyy+_dr*0.7,_dp.z+_dr*0.7); let _aax=_rp.sx-_bp.sx,_aay=_rp.sy-_bp.sy,_abx=_upp.sx-_bp.sx,_aby=_upp.sy-_bp.sy; const _fbr=_dr*F/Math.max(_bp.az,1); if(!isFinite(_aax)||!isFinite(_aay)||Math.hypot(_aax,_aay)>_fbr*4.0){ _aax=_fbr; _aay=0; } if(!isFinite(_abx)||!isFinite(_aby)||Math.hypot(_abx,_aby)>_fbr*4.0){ _abx=0; _aby=_fbr; } const _hr=(Math.hypot(_aax,_aay)+Math.hypot(_abx,_aby))*0.5; const _inSys=(!ego || i===Focus.egoCenter || Focus.egoDir[i]); const _d01=Math.max(0,Math.min(0.999,(_bp.az-dist+span)/(2*span))); _PORTALS.push(_bp.sx*_Dfg,_bp.sy*_Dfg,_aax*_Dfg,_aay*_Dfg,_abx*_Dfg,_aby*_Dfg,_bp.az, glcol(Model.colorName(Model.ids[i]))[0],glcol(Model.colorName(Model.ids[i]))[1],glcol(Model.colorName(Model.ids[i]))[2]); if(view.showConnectors!==false && _inSys){ var _cc=glcol(Model.colorName(Model.ids[i])); _OVL.push(proj.x[i]*_Dfg, proj.y[i]*_Dfg, _bp.sx*_Dfg, _bp.sy*_Dfg, _cc[0],_cc[1],_cc[2], 0.22, 7.0*_Dfg); _OVL.push(proj.x[i]*_Dfg, proj.y[i]*_Dfg, _bp.sx*_Dfg, _bp.sy*_Dfg, Math.min(1.0,_cc[0]*1.25),Math.min(1.0,_cc[1]*1.25),Math.min(1.0,_cc[2]*1.25), 0.9, 1.5*_Dfg); } _PORTALHIT.push({x:_bp.sx,y:_bp.sy,r:_hr*1.5,node:i,doc:_cs.doc,entry:_cs.entry,isReturn:false,col:glcol(Model.colorName(Model.ids[i])),px3:_dp.x,py3:_cyy,pz3:_dp.z,pr3:_dr,az:_bp.az}); } else { _emitPortal(sxD, syD, r, _fa, _EFL, _FGG, _Dfg); } } } }
       }
       if(_warp){ const _nw=performance.now(); const blast=(_warp.blastAt!=null)?Math.min(1,(_nw-_warp.blastAt)/700):0; if(blast>=1){ _warp=null; } }
       const _fg = (_EFL.length||_FGG.length||_BGG.length||_OVL.length) ? { lnN:_EFL.length/9, lnFill:(b)=>b.set(_EFL), glN:_FGG.length/7, glFill:(b)=>b.set(_FGG), bgN:_BGG.length/7, bgFill:(b)=>b.set(_BGG), ovN:_OVL.length/9, ovFill:(b)=>b.set(_OVL) } : null;
@@ -1214,11 +1214,11 @@ const Renderer=(()=>{
       }, nowT, _starN, _starFill, _starDirty, _dustN, _dustFill, _cN, _cFill, _cCol, _cW, _clN, _clFill, _bkCx, _bkCy, _bkR, _fg, _portalCb);
       
       if(_warp && PlanetGL.tunnelReady()){ const _tel=(performance.now()-_warp.t0)*0.001; const _tph=_warp.blastAt!=null?Math.min(1,(performance.now()-_warp.blastAt)/600):0; const _tc=_warp.col||[0.5,0.6,1.0]; PlanetGL.drawTunnel(_tel, _tph, _tc[0],_tc[1],_tc[2], Math.round(W*DPR), Math.round(H*DPR)); }
-      if(glLabels && PlanetGL.available() && PlanetGL.labelTex && Focus.mode!=="focus" && Focus.planetFocus<0 && SolarSys.isSun.length===n && view.showConnectors!==false && !(typeof window!=="undefined"&&window._launcherOpen)){
+      if(glLabels && PlanetGL.available() && PlanetGL.labelTex && Focus.mode!=="focus" && (Focus.planetFocus<0 || Focus.planetCardHidden) && SolarSys.isSun.length===n && view.showConnectors!==false && !(typeof window!=="undefined"&&window._launcherOpen)){
         const _ids=Model.ids;
         const _sysA=(Focus.mode==="ego" && ec>=0 && proj.front[ec]) ? sysFade : 0;
         const items=[]; glLabelHits.length=0; const LBL_OS=2;
-        for(let i=0;i<n;i++){ if(i===ec || !Focus.egoDir[i] || !proj.vis[i]) continue;
+        for(let i=0;i<n;i++){ if(i===ec || !Focus.egoDir[i] || !proj.vis[i]) continue; if(Focus.planetFocus>=0 && i!==Focus.planetFocus) continue;
           const nd=Model.nodeById(_ids[i]), nm=(nd&&nd.name)||_ids[i], rel=Focus.egoRel[i];
           const nfs=Math.round(11*DPR*LBL_OS), rfs=Math.round(9*DPR*LBL_OS), pad=Math.round(5*DPR*LBL_OS);
           lctx.font="600 "+nfs+"px -apple-system,Segoe UI,Roboto,sans-serif"; const nw=lctx.measureText(nm).width;
@@ -1230,11 +1230,11 @@ const Renderer=(()=>{
             if(rel){ tc.font="400 "+rfs+"px -apple-system,Segoe UI,Roboto,sans-serif"; tc.fillStyle=ramp(_ids[i])[3]; tc.textBaseline="top"; tc.fillText(rel.toLowerCase(), cx, pad); }
             tc.font="600 "+nfs+"px -apple-system,Segoe UI,Roboto,sans-serif"; tc.fillStyle="rgba(238,241,249,0.98)"; tc.textBaseline="bottom"; tc.fillText(nm, cx, h-pad);
           });
-          const fs=Math.max(0.72,Math.min(1.45, proj.az[ec]/proj.az[i])), hw=tref.w*0.5*fs/LBL_OS, hh=tref.h*0.5*fs/LBL_OS, d=Math.max(0,Math.min(0.999,(proj.az[i]-dist+span)/(2*span)));
-          items.push({id:i, tex:tref.tex, cx:proj.x[i]*DPR, cy:(proj.y[i]-proj.r[i])*DPR - hh - 6*DPR, hw, hh, a:_sysA, d});
+          const fs=(Focus.planetFocus>=0 && i===Focus.planetFocus ? 1 : Math.max(0.72,Math.min(1.45, proj.az[ec]/proj.az[i]))), hw=tref.w*0.5*fs/LBL_OS, hh=tref.h*0.5*fs/LBL_OS, d=Math.max(0,Math.min(0.999,(proj.az[i]-dist+span)/(2*span)));
+          items.push({id:i, tex:tref.tex, cx:proj.x[i]*DPR, cy:(proj.y[i]-proj.r[i])*DPR - hh - 6*DPR, hw, hh, a:(Focus.planetFocus>=0?1:_sysA), d});
           const hwc=hw/DPR, hhc=hh/DPR, lcx=proj.x[i], lcy=(proj.y[i]-proj.r[i])-hhc-6; glLabelHits.push({id:i, x:lcx-hwc, y:lcy-hhc, w:2*hwc, h:2*hhc});
         }
-        if(proj.front[ec]){
+        if(Focus.planetFocus<0 && proj.front[ec]){
           const _ff=Focus.fitDist||1, cFade=Math.max(0,Math.min(1,(dist-_ff*0.72)/(_ff*0.1)));
           if(cFade>0.01){ const cnd=Model.nodeById(_ids[ec]), cnm=(cnd&&cnd.name)||_ids[ec];
             const cfs=Math.round(18*DPR), cpad=Math.round(6*DPR);
@@ -1246,7 +1246,7 @@ const Renderer=(()=>{
             glLabelHits.push({id:ec, x:proj.x[ec]-chw/DPR, y:(proj.y[ec]+proj.r[ec])+6, w:2*chw/DPR, h:2*chh/DPR});
           }
         }
-        { const gA0=1-sysFade;
+        { const gA0=(Focus.planetFocus<0?1-sysFade:0);
           if(gA0>0.02){ const gLBL=2;
             for(let gi=0;gi<n;gi++){ if(gi===ec || !SolarSys.isSun[gi] || !proj.vis[gi]) continue;
               const gd=Math.max(0,Math.min(0.999,(proj.az[gi]-dist+span)/(2*span))); const gA=gA0*Math.max(0.5, 1-gd*0.5);
@@ -1264,7 +1264,7 @@ const Renderer=(()=>{
             }
           }
         }
-        { const _FNT="-apple-system,Segoe UI,Roboto,sans-serif"; for(let _pj=0;_pj<_PORTALHIT.length;_pj++){ const _ph=_PORTALHIT[_pj]; if(_ph.node==null||(!proj.vis[_ph.node] && _ph.node!==Focus.planetFocus)) continue; const _pnd=Model.nodeById(Model.ids[_ph.node]); let _pnm; try{ if(_ph.entry && _ph.doc && _ph.doc.nodes && _ph.doc.nodes[_ph.entry]) _pnm=_ph.doc.nodes[_ph.entry].name; }catch(_e){} if(!_pnm && _ph.doc && _ph.doc.nodes){ try{ const _ks=Object.keys(_ph.doc.nodes); if(_ks.length) _pnm=(_ph.doc.nodes[_ks[0]]&&_ph.doc.nodes[_ks[0]].name)||_ks[0]; }catch(_e2){} } if(!_pnm) _pnm=(_pnd&&_pnd.name)||Model.ids[_ph.node]; let _ptt=(_ph.doc&&(_ph.doc.title||_ph.doc.name))||(_ph.isReturn?"return":"subgraph"); if(_ph.isReturn && graphStack.length){ try{ const _par=graphStack[graphStack.length-1]; if(_par){ _ptt="return · "+(_par.title||"parent"); if(_par.focusName) _pnm=_par.focusName; } }catch(_pe){} } const _pfs=Math.round(11*DPR*2), _prfs=Math.round(9*DPR*2), _ppad=Math.round(5*DPR*2); lctx.font="600 "+_pfs+"px "+_FNT; const _pnw=lctx.measureText(_pnm).width; lctx.font="400 "+_prfs+"px "+_FNT; const _ptw=lctx.measureText(_ptt).width; const _ptexW=Math.ceil(Math.max(_pnw,_ptw)+_ppad*2), _ptexH=Math.ceil(_pfs+_prfs+_ppad*2+4); const _pref=PlanetGL.labelTex("P"+_ph.node+"|"+_pnm+"|"+_ptt, _ptexW, _ptexH, (tc,w,h)=>{ tc.textAlign="center"; const cx=w/2; tc.fillStyle="rgba(8,10,18,0.62)"; tc.beginPath(); if(tc.roundRect) tc.roundRect(0,0,w,h,Math.round(4*DPR*2)); else tc.rect(0,0,w,h); tc.fill(); tc.font="400 "+_prfs+"px "+_FNT; tc.fillStyle=ramp(Model.ids[_ph.node])[3]; tc.textBaseline="top"; tc.fillText(_ptt, cx, _ppad); tc.font="600 "+_pfs+"px "+_FNT; tc.fillStyle="rgba(238,241,249,0.98)"; tc.textBaseline="bottom"; tc.fillText(_pnm, cx, h-_ppad); }); const _phw=_pref.w*0.5/2, _phh=_pref.h*0.5/2; const _pd=Math.max(0,Math.min(0.999,(proj.az[_ph.node]-dist+span)/(2*span))); items.push({id:"P"+_ph.node, tex:_pref.tex, cx:_ph.x*DPR, cy:(_ph.y+_ph.r)*DPR + _phh + 6*DPR, hw:_phw, hh:_phh, a:1.0, d:_pd}); _ph.lx=_ph.x-_phw/DPR; _ph.ly=(_ph.y+_ph.r)+6; _ph.lw=2*_phw/DPR; _ph.lh=2*_phh/DPR; } }
+        { const _FNT="-apple-system,Segoe UI,Roboto,sans-serif"; for(let _pj=0;_pj<_PORTALHIT.length;_pj++){ const _ph=_PORTALHIT[_pj]; if(_ph.node==null||(_ph.az!=null && _ph.az<=0)||_ph.x<-100||_ph.x>W+100||_ph.y<-100||_ph.y>H+100) continue; const _pnd=Model.nodeById(Model.ids[_ph.node]); let _pnm; try{ if(_ph.entry && _ph.doc && _ph.doc.nodes && _ph.doc.nodes[_ph.entry]) _pnm=_ph.doc.nodes[_ph.entry].name; }catch(_e){} if(!_pnm && _ph.doc && _ph.doc.nodes){ try{ const _ks=Object.keys(_ph.doc.nodes); if(_ks.length) _pnm=(_ph.doc.nodes[_ks[0]]&&_ph.doc.nodes[_ks[0]].name)||_ks[0]; }catch(_e2){} } if(!_pnm) _pnm=(_pnd&&_pnd.name)||Model.ids[_ph.node]; let _ptt=(_ph.doc&&(_ph.doc.title||_ph.doc.name))||(_ph.isReturn?"return":"subgraph"); if(_ph.isReturn && graphStack.length){ try{ const _par=graphStack[graphStack.length-1]; if(_par){ _ptt="return · "+(_par.title||"parent"); let _rnm=null; if(_ph.retTo && _par.doc && _par.doc.nodes && _par.doc.nodes[_ph.retTo]) _rnm=_par.doc.nodes[_ph.retTo].name; if(_rnm) _pnm=_rnm; else if(_par.focusName) _pnm = _par.connName ? (_par.focusName+" › "+_par.connName) : _par.focusName; } }catch(_pe){} } const _pfs=Math.round(11*DPR*2), _prfs=Math.round(9*DPR*2), _ppad=Math.round(5*DPR*2); lctx.font="600 "+_pfs+"px "+_FNT; const _pnw=lctx.measureText(_pnm).width; lctx.font="400 "+_prfs+"px "+_FNT; const _ptw=lctx.measureText(_ptt).width; const _ptexW=Math.ceil(Math.max(_pnw,_ptw)+_ppad*2), _ptexH=Math.ceil(_pfs+_prfs+_ppad*2+4); const _pref=PlanetGL.labelTex("P"+_ph.node+"|"+_pnm+"|"+_ptt, _ptexW, _ptexH, (tc,w,h)=>{ tc.textAlign="center"; const cx=w/2; tc.fillStyle="rgba(8,10,18,0.62)"; tc.beginPath(); if(tc.roundRect) tc.roundRect(0,0,w,h,Math.round(4*DPR*2)); else tc.rect(0,0,w,h); tc.fill(); tc.font="400 "+_prfs+"px "+_FNT; tc.fillStyle=ramp(Model.ids[_ph.node])[3]; tc.textBaseline="top"; tc.fillText(_ptt, cx, _ppad); tc.font="600 "+_pfs+"px "+_FNT; tc.fillStyle="rgba(238,241,249,0.98)"; tc.textBaseline="bottom"; tc.fillText(_pnm, cx, h-_ppad); }); const _phw=_pref.w*0.5/2, _phh=_pref.h*0.5/2; const _pd=Math.max(0,Math.min(0.999,(proj.az[_ph.node]-dist+span)/(2*span))); items.push({id:"P"+_ph.node, tex:_pref.tex, cx:_ph.x*DPR, cy:(_ph.y+_ph.r)*DPR + _phh + 6*DPR, hw:_phw, hh:_phh, a:1.0, d:_pd}); _ph.lx=_ph.x-_phw/DPR; _ph.ly=(_ph.y+_ph.r)+6; _ph.lw=2*_phw/DPR; _ph.lh=2*_phh/DPR; } }
       if(!Focus._highlightView && !_warp) PlanetGL.drawLabels(items, Math.round(W*DPR), Math.round(H*DPR));
         if(view.hover>=0 && glLabelHits.some(L=>L.id===view.hover)){ const _le=document.getElementById("label"); if(_le) _le.style.opacity="0"; }
       }
@@ -1352,18 +1352,18 @@ let dragging=false, lx=0, ly=0, moved=0;
 let _holdT=null, _holdFired=false;
 cv.addEventListener("pointerdown",e=>{dragging=true;moved=0;lx=e.clientX;ly=e.clientY;cv.setPointerCapture(e.pointerId); _holdFired=false; if(_holdT)clearTimeout(_holdT); const _hx=e.clientX,_hy=e.clientY; _holdT=setTimeout(()=>{ _holdT=null; }, 480); });
 cv.addEventListener("pointermove",e=>{
-  if(dragging && !pinching && touchCount<2){ const dx=e.clientX-lx, dy=e.clientY-ly; moved+=Math.abs(dx)+Math.abs(dy); if(moved>=26 && _holdT){ clearTimeout(_holdT); _holdT=null; } view.yaw+=dx*0.006; view.pitch+=dy*0.006; lx=e.clientX; ly=e.clientY; if(moved>6) view.userMoved=true; }
+  if(dragging && !pinching && touchCount<2){ const dx=e.clientX-lx, dy=e.clientY-ly; moved+=Math.abs(dx)+Math.abs(dy); if(moved>=26 && _holdT){ clearTimeout(_holdT); _holdT=null; } view.yaw+=dx*0.006; view.pitch+=dy*0.006; view._pitchTo=null; view._yawTo=null; lx=e.clientX; ly=e.clientY; if(moved>6) view.userMoved=true; }
   if(dragging || touchCount>0){ view.hover=-1; labelEl.style.opacity="0"; return; }
   view.hover=Renderer.pick(e.clientX,e.clientY);
   labelEl.style.opacity="0";
 });
 
-cv.addEventListener("pointerup",e=>{ if(_holdT){ clearTimeout(_holdT); _holdT=null; } if(_holdFired){ _holdFired=false; return; } if(moved<6 && !pinching){ const _tx=e.clientX, _ty=e.clientY; for(const p of _PORTALHIT){ const dx=_tx-p.x, dy=_ty-p.y, hr=p.r*1.5; if(dx*dx+dy*dy < hr*hr || (p.lx!=null && _tx>=p.lx && _tx<=p.lx+p.lw && _ty>=p.ly && _ty<=p.ly+p.lh)){ if(p.isReturn){ exitPortal(); } else { portalWarp(p.node, p.doc, p.entry); } return; } } } if(moved>=6||pinching||cardEditing) return;
+cv.addEventListener("pointerup",e=>{ if(_holdT){ clearTimeout(_holdT); _holdT=null; } if(_holdFired){ _holdFired=false; return; } if(moved<6 && !pinching){ const _tx=e.clientX, _ty=e.clientY; const _pk=(Renderer&&Renderer.pick)?Renderer.pick(_tx,_ty):-1; for(const p of _PORTALHIT){ const dx=_tx-p.x, dy=_ty-p.y, hr=p.r*1.5; const _lbl=(p.lx!=null && _tx>=p.lx && _tx<=p.lx+p.lw && _ty>=p.ly && _ty<=p.ly+p.lh); let _disc=(dx*dx+dy*dy < hr*hr); if(_disc && _pk>=0 && _pk===p.node) _disc=false; if(_disc || _lbl){ if(p.isReturn){ exitPortal(p.node, p.retTo); } else { portalWarp(p.node, p.doc, p.entry); } return; } } } if(moved>=6||pinching||cardEditing) return;
   const i=Renderer.pick(e.clientX,e.clientY);
   if(Focus.mode==="ego"){
-    if(i>=0){ hideRelInfo(); if(i===Focus.egoCenter){ Focus.planetFocus=-1; Focus.cardHidden=false; view.tdist=(Focus.fitDist||view.dist)*0.5; } else if(i===Focus.planetFocus){ Focus.planetFocus=-1; view.tdist=Focus.fitDist||view.dist; } else goToNode(i); }
+    if(i>=0){ hideRelInfo(); if(_nodeHasWormhole(Model.ids[i])){ view._pitchTo=0.95; view._yawTo=0; } if(i===Focus.egoCenter){ Focus.planetFocus=-1; Focus.cardHidden=false; view.tdist=(Focus.fitDist||view.dist)*0.5; } else if(i===Focus.planetFocus){ Focus.planetCardHidden=!Focus.planetCardHidden; } else goToNode(i); }
     else { let li=-1; for(let k=0;k<glLabelHits.length;k++){ const L=glLabelHits[k]; if(e.clientX>=L.x && e.clientX<=L.x+L.w && e.clientY>=L.y && e.clientY<=L.y+L.h){ li=L.id; break; } }
-      if(li>=0){ hideRelInfo(); if(li===Focus.egoCenter){ Focus.planetFocus=-1; Focus.cardHidden=false; view.tdist=(Focus.fitDist||view.dist)*0.5; } else { goToNode(li); } return; }
+      if(li>=0){ hideRelInfo(); if(_nodeHasWormhole(Model.ids[li])){ view._pitchTo=0.95; view._yawTo=0; } if(li===Focus.egoCenter){ Focus.planetFocus=-1; Focus.cardHidden=false; view.tdist=(Focus.fitDist||view.dist)*0.5; } else { goToNode(li); } return; }
       const ci=Renderer.pickConnector(e.clientX,e.clientY);
       if(ci>=0){ const cc=Focus.egoCenter; view.glowEdge={a:cc,b:ci,t0:performance.now()}; showRelInfoEdge(cc,ci,e.clientX,e.clientY); }
       else if(Focus.planetFocus>=0){ Focus.planetFocus=-1; view.tdist=Focus.fitDist||view.dist; }
@@ -1665,7 +1665,7 @@ function buildFocusCenterCard(host, CX, CY){
   fc.addEventListener("pointerdown", e=>{ if(e.target.closest(".hidefocus,.weblink,.vidlink,.portrait,.entergraph")) return; cardDrag={id:Focus.id, lx:e.clientX, ly:e.clientY, moved:0, isFocus:true}; try{fc.setPointerCapture(e.pointerId);}catch(_){} });
   fc.addEventListener("pointermove", e=>{ if(!cardDrag||!cardDrag.isFocus) return;
     const dx=e.clientX-cardDrag.lx, dy=e.clientY-cardDrag.ly; cardDrag.lx=e.clientX; cardDrag.ly=e.clientY; cardDrag.moved+=Math.abs(dx)+Math.abs(dy);
-    if(cardDrag.moved>4){ fc._lp=true; view.yaw+=dx*0.006; view.pitch+=dy*0.006; } });
+    if(cardDrag.moved>4){ fc._lp=true; view.yaw+=dx*0.006; view.pitch+=dy*0.006; view._pitchTo=null; view._yawTo=null; } });
   const fend=(e)=>{ if(cardDrag&&cardDrag.isFocus){ cardDrag=null; } };
   fc.addEventListener("pointerup", fend); fc.addEventListener("pointercancel", fend);
   return fc;
@@ -1843,8 +1843,9 @@ function linkDetailsAll(aId, bId){
   }
   return out;
 }
+function _nodeHasWormhole(nodeId){ if(nodeId==null) return false; if(nodeId===Focus._returnNode) return true; const nd=Model.nodeById(nodeId); if(nd&&nd.subgraph) return true; const _ll=Model.raw&&Model.raw.links; if(_ll){ for(let _k=0;_k<_ll.length;_k++){ const _l=_ll[_k]; if(_l&&_l.subgraph&&(_l.from===nodeId||_l.to===nodeId)) return true; } } return false; }
 function focusPlanet(i){
-  Focus.planetFocus=i;
+  Focus.planetFocus=i; Focus.planetCardHidden=false;
   { if(!Focus._breadcrumb) Focus._breadcrumb=[]; if(i!=null && !Focus._breadcrumb.includes(i)) Focus._breadcrumb.push(i); }
   const o=SolarSys.orbit[i], pr=(o&&o.pWorldR)?o.pWorldR:30;
   const half=Math.max(60, Math.min(innerWidth,innerHeight)/2 - 30);
@@ -1883,7 +1884,7 @@ function showRelInfoEdge(a, b, px, py){
 { const psb=document.getElementById("promotesun"); if(psb) psb.onclick=()=>{ if(Focus.planetFocus>=0){ const id=Model.ids[Focus.planetFocus]; Focus._igniteId=Focus.planetFocus; Focus._igniteT0=performance.now(); Focus.planetFocus=-1; egoTo(id); view.tdist=(Focus.fitDist||view.dist)*0.5; Focus._igniteZoom=true; } };
   const pi=document.getElementById("planetinfo");
   if(pi){
-    pi.addEventListener("click", e=>{ if(!e.target.closest) return; if(e.target.closest(".pf-dismiss")){ if(Focus.planetFocus>=0){ Focus.planetFocus=-1; view.tdist=Focus.fitDist||view.dist; } } else if(e.target.closest(".pf-promote")){ if(Focus.planetFocus>=0){ const pf=Focus.planetFocus; const id=Model.ids[pf]; Focus._igTargetScreenR=Focus._lastPlanetScreenR||0; Focus._igniteId=pf; Focus._igniteT0=performance.now(); Focus.planetFocus=-1; egoTo(id); if(Focus._lastPlanetScreenR>0.5){ const _sr=(SolarSys.sunR&&SolarSys.sunR[pf])||((SolarSys.Rmax||40)*1.2); view.dist=_sr*1150/(Focus._lastPlanetScreenR*7.5); } view.tdist=view.dist; Focus._igniteZoom=true; } } else if(e.target.closest(".hl-conn")){ const _hn=e.target.closest(".hl-conn"), _t=_hn.getAttribute("data-target"), _ti=Model.index(_t); if(_ti!=null){ hidePlanetInfo(); goToNode(_ti); } } else if(e.target.closest(".nc-2d")){ if(Focus.egoCenter>=0){ hidePlanetInfo(); enterFocus(Model.ids[Focus.egoCenter]); } } else if(e.target.closest(".nc-solar")){ Focus.cardHidden=true; pi.innerHTML=""; pi.style.display="none"; planetInfoShown=null; view.tdist=Focus.fitDist||view.dist; } });
+    pi.addEventListener("click", e=>{ if(!e.target.closest) return; if(e.target.closest(".pf-dismiss")){ if(Focus.planetFocus>=0){ Focus.planetFocus=-1; view.tdist=Focus.fitDist||view.dist; } } else if(e.target.closest(".pf-promote")){ if(Focus.planetFocus>=0){ const pf=Focus.planetFocus; const id=Model.ids[pf]; Focus._igTargetScreenR=Focus._lastPlanetScreenR||0; Focus._igniteId=pf; Focus._igniteT0=performance.now(); Focus.planetFocus=-1; egoTo(id); if(Focus._lastPlanetScreenR>0.5){ const _sr=(SolarSys.sunR&&SolarSys.sunR[pf])||((SolarSys.Rmax||40)*1.2); view.dist=_sr*1150/(Focus._lastPlanetScreenR*7.5); } view.tdist=view.dist; Focus._igniteZoom=true; } } else if(e.target.closest(".hl-conn")){ const _hn=e.target.closest(".hl-conn"), _t=_hn.getAttribute("data-target"), _ti=Model.index(_t); if(_ti!=null){ hidePlanetInfo(); goToNode(_ti); } } else if(e.target.closest(".nc-2d")){ if(Focus.egoCenter>=0){ hidePlanetInfo(); enterFocus(Model.ids[Focus.egoCenter]); } } else if(e.target.closest(".nc-solar")){ Focus.cardHidden=true; pi.innerHTML=""; pi.style.display="none"; planetInfoShown=null; view.tdist=Focus.fitDist||view.dist; } else if(!cardEditing){ if(Focus.planetFocus>=0){ Focus.planetCardHidden=true; } else { Focus.cardHidden=true; } pi.style.display="none"; planetInfoShown=null; } });
     let lpT=null,lpX=0,lpY=0;
     pi.addEventListener("pointerdown", e=>{ if(e.target.closest && e.target.closest("input,textarea,button,a,select")) return; lpX=e.clientX;lpY=e.clientY;
       const _conn=e.target.closest&&e.target.closest(".pf-conn"), _li=_conn?+_conn.getAttribute("data-li"):-1;
@@ -2169,6 +2170,7 @@ function updatePlanetInfo(){
   { const psb=document.getElementById("promotesun"); if(psb) psb.style.display="none"; }
   const _settleFade = Math.max(0, Math.min(1, (view.dist*0.6 - Math.abs(view.tdist-view.dist))/Math.max(1, view.dist*0.35)));
   if(Focus.mode==="ego" && Focus.planetFocus>=0 && Focus.egoCenter>=0){
+    if(Focus.planetCardHidden){ stopCardVideo(); box.style.display="none"; planetInfoShown=null; Focus._boxOp=0; return; }
     const pf=Focus.planetFocus, pid=Model.ids[pf], sid=Model.ids[Focus.egoCenter];
     if(!pid||!Model.nodeById(pid)){ stopCardVideo(); box.style.display="none"; planetInfoShown=null; return; }
     const _fit0=Focus.planetFitDist||view.tdist||1, _op=Math.max(0,Math.min(1,(_fit0*2.4-view.dist)/(_fit0*1.4)))*_settleFade;
@@ -2314,18 +2316,20 @@ function _snapView(){ return {yaw:view.yaw,pitch:view.pitch,dist:view.dist,tdist
 function portalWarp(i, subDoc, entryId){
   try{ if(navigator.vibrate) navigator.vibrate(15); }catch(_){}
   view.showConnectors=false;
-  const _sid=Model.ids[i];
+  view._pitchTo=null; view._yawTo=null; Focus._igniteId=null; Focus._igTargetScreenR=0; Focus._igniteZoom=false;
+  const _sid=(Focus.mode==="ego" && Focus.egoCenter>=0 && Model.ids[Focus.egoCenter]) ? Model.ids[Focus.egoCenter] : Model.ids[i];
+  const _farNd=Model.nodeById(Model.ids[i]); const _isConn=(_sid!==Model.ids[i] && !(_farNd&&_farNd.subgraph)); const _connName=_isConn ? ((_farNd&&_farNd.name)||Model.ids[i]) : null; const _connId=_isConn ? Model.ids[i] : null;
   const _vs=_snapView();
   var _wcol; try{ const _ph0=_PORTALHIT&&_PORTALHIT.find(p=>p&&p.node===i&&p.col); if(_ph0) _wcol=_ph0.col; }catch(_wc){} if(!_wcol){ try{ _wcol=glcol(Model.colorName(Model.ids[i])); }catch(_){} } if(!_wcol) _wcol=[0.55,0.65,1.0]; _warp={t0:performance.now(), blastAt:null, loaded:false, col:_wcol, id:(++_warpSeq), nodeIdx:i}; var _wid=_warp.id; try{ const _ph2=_PORTALHIT&&_PORTALHIT.find(p=>p&&p.node===i); _warp.px=_ph2?_ph2.x/innerWidth:0.5; _warp.py=_ph2?(1.0-_ph2.y/innerHeight):0.5; }catch(_dv){ _warp.px=0.5; _warp.py=0.5; } try{ const _phP=_PORTALHIT&&_PORTALHIT.find(p=>p&&p.node===i&&p.px3!=null); if(_phP){ view.tcx=_phP.px3; view.tcy=_phP.py3; view.tcz=_phP.pz3; view.tdist=Math.max(0.15,_phP.pr3*0.075); view.flyTarget=-1; } else { const _dp=SolarSys.disp[i]; if(_dp){ const _sr2=(SolarSys.sunR&&SolarSys.sunR[i])||((SolarSys.Rmax||40)*0.6); view.tcx=_dp.x; view.tcy=_dp.y+_sr2*5.3; view.tcz=_dp.z; view.tdist=Math.max(0.15,_sr2*0.06); view.flyTarget=-1; } } }catch(_fv){} 
-  setTimeout(()=>{ if(_warp && _warp.id===_wid){ _warp.loaded=true; enterSubgraphDoc(subDoc, _sid, _vs, entryId); view.showConnectors=true; } }, 1200); setTimeout(()=>{ if(_warp && _warp.id===_wid && _warp.blastAt==null){ try{ view.cx=view.tcx; view.cy=view.tcy; view.cz=view.tcz; Focus._igTargetScreenR=0; const _ff=Focus.fitDist||view.dist; view.tdist=_ff; }catch(_zf){} _warp.blastAt=performance.now(); } }, 2000);
+  setTimeout(()=>{ if(_warp && _warp.id===_wid){ _warp.loaded=true; enterSubgraphDoc(subDoc, _sid, _vs, entryId, _connName, _connId); view.showConnectors=true; } }, 1200); setTimeout(()=>{ if(_warp && _warp.id===_wid && _warp.blastAt==null){ try{ view.cx=view.tcx; view.cy=view.tcy; view.cz=view.tcz; Focus._igTargetScreenR=0; const _ff=Focus.fitDist||view.dist; view.tdist=_ff; }catch(_zf){} _warp.blastAt=performance.now(); } }, 2000); 
   setTimeout(()=>{ if(_warp && _warp.id===_wid && _warp.blastAt==null) _warp.blastAt=performance.now(); }, 8000);
 }
-function exitPortal(){ if(!graphStack.length) return; view.showConnectors=false; _warp={t0:performance.now(), blastAt:null, loaded:false, col:[0.55,0.65,1.0], id:(++_warpSeq)}; var _wid=_warp.id; var _flew=false; try{ if(Focus._returnNode!=null){ let _ri=-1; for(let k=0;k<Model.ids.length;k++){ if(Model.ids[k]===Focus._returnNode){ _ri=k; break; } } if(_ri>=0 && SolarSys.disp && SolarSys.disp[_ri]){ const _dp=SolarSys.disp[_ri]; const _sr2=(SolarSys.sunR&&SolarSys.sunR[_ri])||((SolarSys.Rmax||40)*0.6); view.tcx=_dp.x; view.tcy=_dp.y+_sr2*5.3; view.tcz=_dp.z; view.tdist=Math.max(0.15,_sr2*0.06); view.flyTarget=-1; _warp.nodeIdx=_ri; try{ const _phc=_PORTALHIT&&_PORTALHIT.find(p=>p&&p.node===_ri&&p.col); if(_phc) _warp.col=_phc.col; }catch(_){} try{ const _ph2=_PORTALHIT&&_PORTALHIT.find(p=>p&&p.node===_ri); _warp.px=_ph2?_ph2.x/innerWidth:0.5; _warp.py=_ph2?(1.0-_ph2.y/innerHeight):0.5; }catch(_dv){} _flew=true; } } }catch(_fv){} if(!_flew){ view.tdist=Math.max(view.dist*3.5, 60); } if(_warp.px==null){ _warp.px=0.5; _warp.py=0.5; } setTimeout(()=>{ if(_warp && _warp.id===_wid){ _warp.loaded=true; exitToLevel(graphStack.length-1); view.showConnectors=true; } }, 1200); setTimeout(()=>{ if(_warp && _warp.id===_wid && _warp.blastAt==null){ try{ view.cx=view.tcx; view.cy=view.tcy; view.cz=view.tcz; Focus._igTargetScreenR=0; }catch(_zf){} _warp.blastAt=performance.now(); } }, 2000); setTimeout(()=>{ if(_warp && _warp.id===_wid && _warp.blastAt==null) _warp.blastAt=performance.now(); }, 8000); }
-function enterSubgraphDoc(doc, focusId, savedView, entryId){
+function exitPortal(nodeIdx, retTo){ if(!graphStack.length) return; view.showConnectors=false; view._pitchTo=null; view._yawTo=null; Focus._igniteId=null; Focus._igTargetScreenR=0; Focus._igniteZoom=false; _warp={t0:performance.now(), blastAt:null, loaded:false, col:[0.55,0.65,1.0], id:(++_warpSeq)}; var _wid=_warp.id; var _flew=false; try{ { let _ri=(nodeIdx!=null&&nodeIdx>=0)?nodeIdx:-1; if(_ri<0 && Focus._returnNode!=null){ for(let k=0;k<Model.ids.length;k++){ if(Model.ids[k]===Focus._returnNode){ _ri=k; break; } } } if(_ri>=0 && SolarSys.disp && SolarSys.disp[_ri]){ const _dp=SolarSys.disp[_ri]; const _sr2=(SolarSys.sunR&&SolarSys.sunR[_ri])||((SolarSys.Rmax||40)*0.6); const _phR=_PORTALHIT&&_PORTALHIT.find(p=>p&&p.node===_ri&&p.px3!=null); if(_phR){ view.tcx=_phR.px3; view.tcy=_phR.py3; view.tcz=_phR.pz3; view.tdist=Math.max(0.15,_phR.pr3*0.075); } else { view.tcx=_dp.x; view.tcy=_dp.y+_sr2*5.3; view.tcz=_dp.z; view.tdist=Math.max(0.15,_sr2*0.06); } view.flyTarget=-1; _warp.nodeIdx=_ri; try{ const _phc=_PORTALHIT&&_PORTALHIT.find(p=>p&&p.node===_ri&&p.col); if(_phc) _warp.col=_phc.col; }catch(_){} try{ const _ph2=_PORTALHIT&&_PORTALHIT.find(p=>p&&p.node===_ri); _warp.px=_ph2?_ph2.x/innerWidth:0.5; _warp.py=_ph2?(1.0-_ph2.y/innerHeight):0.5; }catch(_dv){} _flew=true; } } }catch(_fv){} if(!_flew){ view.tcx=view.cx; view.tcy=view.cy; view.tcz=view.cz; view.tdist=Math.max(view.dist*3.5, 60); } if(_warp.px==null){ _warp.px=0.5; _warp.py=0.5; } setTimeout(()=>{ if(_warp && _warp.id===_wid){ _warp.loaded=true; exitToLevel(graphStack.length-1, retTo); view.showConnectors=true; } }, 1200); setTimeout(()=>{ if(_warp && _warp.id===_wid && _warp.blastAt==null){ try{ view.cx=view.tcx; view.cy=view.tcy; view.cz=view.tcz; Focus._igTargetScreenR=0; const _ff=Focus.fitDist||view.dist; view.tdist=_ff; }catch(_zf){} _warp.blastAt=performance.now(); } }, 2000);  setTimeout(()=>{ if(_warp && _warp.id===_wid && _warp.blastAt==null) _warp.blastAt=performance.now(); }, 8000); }
+function enterSubgraphDoc(doc, focusId, savedView, entryId, connName, connId){
   if(!doc) return;
   const _origStart=doc.start;
   if(entryId && doc.nodes && doc.nodes[entryId]) doc.start=entryId;
-  graphStack.push({doc:Model.raw, focusId:focusId, focusName:(function(){try{var _fn2=Model.nodeById(focusId);return (_fn2&&_fn2.name)?_fn2.name:focusId;}catch(_fe){return focusId;}})(), title:Model.title(), vs:savedView||_snapView(), returnNode:Focus._returnNode||null});
+  graphStack.push({doc:Model.raw, focusId:focusId, focusName:(function(){try{var _fn2=Model.nodeById(focusId);return (_fn2&&_fn2.name)?_fn2.name:focusId;}catch(_fe){return focusId;}})(), connName:connName||null, connId:connId||null, title:Model.title(), vs:savedView||_snapView(), returnNode:Focus._returnNode||null});
   closeEditor(); exitFocus();
   loadGraph(doc);
   doc.start=_origStart;
@@ -2340,16 +2344,17 @@ function enterSubgraph(nodeId){
   const nd=Model.nodeById(nodeId); if(!nd || !nd.subgraph) return;
   enterSubgraphDoc(nd.subgraph, nodeId);
 }
-function exitToLevel(i){
+function exitToLevel(i, focusOverride){
   const entry=graphStack[i]; if(!entry) return;
   graphStack=graphStack.slice(0,i);
   closeEditor(); exitFocus();
+  const _rStart=entry.doc&&entry.doc.start; if(entry.focusId!=null && entry.doc && entry.doc.nodes && entry.doc.nodes[entry.focusId]) entry.doc.start=entry.focusId;
   loadGraph(entry.doc);
+  if(entry.doc) entry.doc.start=_rStart;
   Focus._returnNode=entry.returnNode||null;
-  try{ if(entry.focusId!=null && !(SolarSys.isSun && SolarSys.isSun[Model.index(entry.focusId)])){ Focus._igniteId=null; Focus._igniteZoom=false; Focus._igTargetScreenR=0; } }catch(_ei){}
+  Focus._igniteId=null; Focus._igniteZoom=false; Focus._igTargetScreenR=0;
   const _vs=entry.vs;
-  if(_vs && _vs.mode==="ego" && entry.focusId && Model.nodeById(entry.focusId) && SolarSys.isSun && SolarSys.isSun[Model.index(entry.focusId)]){ egoTo(entry.focusId); }
-  else if(_vs && entry.focusId!=null && Model.nodeById(entry.focusId) && SolarSys.orbit && SolarSys.orbit[Model.index(entry.focusId)] && SolarSys.orbit[Model.index(entry.focusId)].su!=null){ const _pi=Model.index(entry.focusId); const _su=SolarSys.orbit[_pi].su; egoTo(Model.ids[_su]); Focus.planetFocus=_pi; Focus._igniteId=null; Focus._igniteZoom=false; Focus._igTargetScreenR=0; if(_vs){ view.dist=_vs.dist; view.tdist=_vs.tdist; } }
+  if(focusOverride && Model.nodeById(focusOverride) && focusOverride!==entry.focusId){ egoTo(focusOverride); } else if(_vs && _vs.mode==="ego" && entry.focusId && Model.nodeById(entry.focusId)){ egoTo(entry.focusId); if(_vs){ view.dist=_vs.dist; view.tdist=_vs.tdist; } if(entry.connId && Model.nodeById(entry.connId)){ const _ci=Model.index(entry.connId); if(_ci!=null && _ci>=0){ focusPlanet(_ci); Focus.planetCardHidden=true; } } }
   else if(_vs){ view.yaw=_vs.yaw; view.pitch=_vs.pitch; view.dist=_vs.dist; view.tdist=_vs.tdist; view.cx=_vs.cx; view.cy=_vs.cy; view.cz=_vs.cz; view.tcx=_vs.tcx; view.tcy=_vs.tcy; view.tcz=_vs.tcz; }
   hidePlanetInfo(); hideRelInfo(); Focus.cardHidden=true;
   renderGraphTrail();
@@ -2970,9 +2975,9 @@ document.getElementById("synth").onchange=(e)=>{ const n=+e.target.value; e.targ
 let fpsT=performance.now(), fpsN=0;
 function loop(){
   { const _lt=performance.now(); const _dt=lastLoopT?Math.min(50,_lt-lastLoopT):16; lastLoopT=_lt; if(!(_warp && !_warp.loaded)) planetT += _dt*planetSpeed; }
-  view.dist += (view.tdist-view.dist)*((_warp && !_warp.loaded)?0.16:(Focus._igniteId!=null && Focus._igniteZoom)?0.025:0.08);
+  view.dist += (view.tdist-view.dist)*((_warp && !_warp.loaded)?0.16:(Focus._igniteId!=null && Focus._igniteZoom)?0.025:0.08); if(view._pitchTo!=null){ view.pitch += (view._pitchTo-view.pitch)*0.1; if(Math.abs(view._pitchTo-view.pitch)<0.002){ view.pitch=view._pitchTo; view._pitchTo=null; } } if(view._yawTo!=null){ var _dy=view._yawTo-view.yaw; _dy=Math.atan2(Math.sin(_dy),Math.cos(_dy)); view.yaw+=_dy*0.1; if(Math.abs(_dy)<0.002){ view.yaw=view._yawTo; view._yawTo=null; } }
   if(SolarSys.morph!=null && SolarSys.morph<0.26) SolarSys.morph += (0.26-SolarSys.morph)*0.02;
-  if(Math.abs(view.tdist-view.dist) < Math.max(2, view.dist*0.012)) view.galAngle += view.spin;
+  if(Math.abs(view.tdist-view.dist) < Math.max(2, view.dist*0.012) && !(_warp && !_warp.loaded)) view.galAngle += view.spin;
   const cgL=Math.cos(view.galAngle), sgL=Math.sin(view.galAngle);
 
   if(!(_warp && !_warp.loaded) && Focus.mode==="ego" && Focus._igniteId!=null && SolarSys.disp && SolarSys.disp[Focus._igniteId]){ const _d=SolarSys.disp[Focus._igniteId]; view.tcx=_d.x; view.tcy=_d.y; view.tcz=_d.z; }
@@ -2989,8 +2994,9 @@ function loop(){
       view.tcx=gx; view.tcy=SolarSys.sunY[su]; view.tcz=gz;
     }
   }
-  const trk = (Focus.mode==="ego" && (Focus.planetFocus>=0 || Focus._igniteId!=null)) ? 1 : (Focus.mode==="ego" ? 0.2 : 0.07);
-  if(_warp && _warp.loaded){ view.cx=view.tcx; view.cy=view.tcy; view.cz=view.tcz; view.dist=view.tdist; } view.cx += (view.tcx-view.cx)*trk; view.cy += (view.tcy-view.cy)*trk; view.cz += (view.tcz-view.cz)*trk;
+  const _trk0 = (Focus.mode==="ego" && (Focus.planetFocus>=0 || Focus._igniteId!=null)) ? 1 : (Focus.mode==="ego" ? 0.2 : 0.07); const trk = _trk0;
+  if(_warp && _warp.loaded){ view.cx=view.tcx; view.cy=view.tcy; view.cz=view.tcz; view.dist=view.tdist; } view.cx += (view.tcx-view.cx)*trk; view.cy += (view.tcy-view.cy)*trk; view.cz += (view.tcz-view.cz)*trk; 
+
   if(padVX||padVY){ if(Focus.mode==="ego"||Focus.mode==="focus") exitFocus(true);
       const cpv=Math.cos(view.pitch), spv=Math.sin(view.pitch), D=view.dist;
       let syv=Math.sin(view.yaw), cyv=Math.cos(view.yaw);
