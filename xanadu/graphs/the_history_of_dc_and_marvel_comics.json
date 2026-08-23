@@ -1783,6 +1783,114 @@
    "name": "Herb Trimpe",
    "group": "artist",
    "desc": "An American comics artist, the longtime penciller of The Incredible Hulk, who drew the first appearance of Wolverine in Incredible Hulk #181 (1974) — making him a co-creator of the character alongside Len Wein and John Romita Sr."
+  },
+  "cyclops": {
+   "name": "Cyclops",
+   "group": "character",
+   "subgraphRef": "sg1",
+   "subgraphEntry": "cyclops",
+   "desc": "Scott Summers, field leader of the X-Men and for decades the franchise's moral center. Created by Stan Lee and Jack Kirby in X-Men #1 (1963), he evolved from a straight-arrow Boy Scout into the militant leader of the mutant-rights movement — one of Marvel's most argued-over heroes."
+  },
+  "beast": {
+   "name": "Beast",
+   "group": "character",
+   "subgraphRef": "sg1",
+   "subgraphEntry": "beast",
+   "desc": "Henry 'Hank' McCoy, the ape-agile genius of the founding X-Men, created by Stan Lee and Jack Kirby (X-Men #1, 1963). A later self-experiment turned him blue and furry, cementing him as Marvel's signature blend of brute strength and scientific brilliance."
+  },
+  "angel": {
+   "name": "Angel",
+   "group": "character",
+   "subgraphRef": "sg1",
+   "subgraphEntry": "angel",
+   "desc": "Warren Worthington III, the winged, wealthy founding X-Man created by Stan Lee and Jack Kirby (X-Men #1, 1963). His 1980s rebirth as Apocalypse's blue-skinned Horseman, Archangel, became one of the defining arcs of the Claremont era."
+  },
+  "iceman": {
+   "name": "Iceman",
+   "group": "character",
+   "subgraphRef": "sg1",
+   "subgraphEntry": "iceman",
+   "desc": "Bobby Drake, the youngest of the five original X-Men and an Omega-level cryokinetic, created by Stan Lee and Jack Kirby (X-Men #1, 1963). Long the team's comic-relief kid brother, he became one of Marvel's most prominent gay characters after coming out in 2015."
+  },
+  "professor_x": {
+   "name": "Professor X",
+   "group": "character",
+   "subgraphRef": "sg1",
+   "subgraphEntry": "professor_x",
+   "desc": "Charles Xavier, the telepathic founder of the X-Men and their school, created by Stan Lee and Jack Kirby (X-Men #1, 1963). His dream of human-mutant coexistence — and the compromises behind it — has been the franchise's central argument for sixty years."
+  },
+  "marc_silvestri": {
+   "name": "Marc Silvestri",
+   "group": "artist",
+   "desc": "An American artist and founder of Top Cow whose dynamic, detailed style defined the late-1980s Uncanny X-Men. With Chris Claremont he co-created Mister Sinister (1987)."
+  },
+  "jackson_guice": {
+   "name": "Jackson Guice",
+   "group": "artist",
+   "desc": "An American comics artist (often credited Butch Guice) who, with writer Louise Simonson, co-created Apocalypse in X-Factor (1986)."
+  },
+  "nightcrawler": {
+   "name": "Nightcrawler",
+   "group": "character",
+   "subgraphRef": "sg1",
+   "subgraphEntry": "nightcrawler",
+   "desc": "Kurt Wagner, the swashbuckling, teleporting, blue-furred X-Man introduced by Len Wein and Dave Cockrum in Giant-Size X-Men #1 (1975). A devout Catholic and one of the 'all-new, all-different' team, he became a fan-favourite emblem of the book's message that difference is not deformity."
+  },
+  "colossus": {
+   "name": "Colossus",
+   "group": "character",
+   "subgraphRef": "sg1",
+   "subgraphEntry": "colossus",
+   "desc": "Piotr Rasputin, the steel-skinned Russian farm boy of the 'all-new' X-Men, created by Len Wein and Dave Cockrum in Giant-Size X-Men #1 (1975). His gentle-giant warmth and doomed loves made him one of the team's emotional anchors."
+  },
+  "shadowcat": {
+   "name": "Shadowcat",
+   "group": "character",
+   "subgraphRef": "sg1",
+   "subgraphEntry": "shadowcat",
+   "desc": "Kitty Pryde, the phasing teenage prodigy created by Chris Claremont and John Byrne (Uncanny X-Men #129, 1980). Introduced as a 13-year-old audience surrogate, she grew into one of Marvel's most beloved characters and, eventually, an X-Men leader — the template for the smart young heroine."
+  },
+  "mystique": {
+   "name": "Mystique",
+   "group": "character",
+   "subgraphRef": "sg1",
+   "subgraphEntry": "mystique",
+   "desc": "Raven Darkholme, the ancient shapeshifting mutant terrorist created by Chris Claremont and Dave Cockrum (Ms. Marvel #16, 1978). Leader of her own Brotherhood, adoptive mother of Rogue and birth mother of Nightcrawler, she is one of Marvel's most morally slippery and enduring antagonists."
+  },
+  "sabretooth": {
+   "name": "Sabretooth",
+   "group": "character",
+   "subgraphRef": "sg1",
+   "subgraphEntry": "sabretooth",
+   "desc": "Victor Creed, the savage, healing-factor killer created by Chris Claremont and John Byrne (Iron Fist #14, 1977). Originally a non-powered serial murderer, he was retconned into Wolverine's feral mirror-image and lifelong nemesis."
+  },
+  "apocalypse": {
+   "name": "Apocalypse",
+   "group": "character",
+   "subgraphRef": "sg1",
+   "subgraphEntry": "apocalypse",
+   "desc": "En Sabah Nur, the millennia-old 'survival of the fittest' tyrant created by Louise Simonson and Jackson Guice (X-Factor #5-6, 1986). Marvel's first ancient mutant, his Darwinian creed and his Horsemen made him one of the franchise's defining villains."
+  },
+  "mister_sinister": {
+   "name": "Mister Sinister",
+   "group": "character",
+   "subgraphRef": "sg1",
+   "subgraphEntry": "mister_sinister",
+   "desc": "Nathaniel Essex, the Victorian geneticist obsessed with the Summers and Grey bloodlines, created by Chris Claremont and Marc Silvestri (Uncanny X-Men #221, 1987). The hidden hand behind the Mutant Massacre, he became the X-Men's coldest and most cerebral foe."
+  },
+  "emma_frost": {
+   "name": "Emma Frost",
+   "group": "character",
+   "subgraphRef": "sg1",
+   "subgraphEntry": "emma_frost",
+   "desc": "Emma Frost, the telepathic 'White Queen' of the Hellfire Club created by Chris Claremont and John Byrne (Uncanny X-Men #129, 1980). Her long turn from ruthless villain to X-Men headmistress and co-leader is one of comics' great redemption arcs."
+  },
+  "sentinels": {
+   "name": "Sentinels",
+   "group": "character",
+   "subgraphRef": "sg1",
+   "subgraphEntry": "sentinels",
+   "desc": "The mutant-hunting robots created by Stan Lee and Jack Kirby (X-Men #14, 1965). Built in-story by Bolivar Trask, they turned state-sanctioned genocide into the X-Men's recurring existential threat and the engine of 'Days of Future Past'."
   }
  },
  "links": [
@@ -6249,6 +6357,336 @@
    "to": "len_wein",
    "type": "collaborator",
    "details": "Collaborated on The Incredible Hulk, introducing Wolverine in #181 (1974)."
+  },
+  {
+   "from": "stan_lee",
+   "to": "cyclops",
+   "type": "created",
+   "details": "Co-created Cyclops as one of the founding X-Men in X-Men #1 (1963)."
+  },
+  {
+   "from": "jack_kirby",
+   "to": "cyclops",
+   "type": "created",
+   "details": "Co-created and designed Cyclops for X-Men #1 (1963)."
+  },
+  {
+   "from": "uncanny_x_men",
+   "to": "cyclops",
+   "type": "debut",
+   "details": "Introduced Cyclops among the founding X-Men in X-Men #1 (1963)."
+  },
+  {
+   "from": "stan_lee",
+   "to": "beast",
+   "type": "created",
+   "details": "Co-created Beast as one of the founding X-Men in X-Men #1 (1963)."
+  },
+  {
+   "from": "jack_kirby",
+   "to": "beast",
+   "type": "created",
+   "details": "Co-created and designed Beast for X-Men #1 (1963)."
+  },
+  {
+   "from": "uncanny_x_men",
+   "to": "beast",
+   "type": "debut",
+   "details": "Introduced Beast among the founding X-Men in X-Men #1 (1963)."
+  },
+  {
+   "from": "stan_lee",
+   "to": "angel",
+   "type": "created",
+   "details": "Co-created Angel as one of the founding X-Men in X-Men #1 (1963)."
+  },
+  {
+   "from": "jack_kirby",
+   "to": "angel",
+   "type": "created",
+   "details": "Co-created and designed Angel for X-Men #1 (1963)."
+  },
+  {
+   "from": "uncanny_x_men",
+   "to": "angel",
+   "type": "debut",
+   "details": "Introduced Angel among the founding X-Men in X-Men #1 (1963)."
+  },
+  {
+   "from": "stan_lee",
+   "to": "iceman",
+   "type": "created",
+   "details": "Co-created Iceman as one of the founding X-Men in X-Men #1 (1963)."
+  },
+  {
+   "from": "jack_kirby",
+   "to": "iceman",
+   "type": "created",
+   "details": "Co-created and designed Iceman for X-Men #1 (1963)."
+  },
+  {
+   "from": "uncanny_x_men",
+   "to": "iceman",
+   "type": "debut",
+   "details": "Introduced Iceman among the founding X-Men in X-Men #1 (1963)."
+  },
+  {
+   "from": "stan_lee",
+   "to": "professor_x",
+   "type": "created",
+   "details": "Co-created Professor X as one of the founding X-Men in X-Men #1 (1963)."
+  },
+  {
+   "from": "jack_kirby",
+   "to": "professor_x",
+   "type": "created",
+   "details": "Co-created and designed Professor X for X-Men #1 (1963)."
+  },
+  {
+   "from": "uncanny_x_men",
+   "to": "professor_x",
+   "type": "debut",
+   "details": "Introduced Professor X among the founding X-Men in X-Men #1 (1963)."
+  },
+  {
+   "from": "x_men",
+   "to": "cyclops",
+   "type": "member",
+   "details": "A founding member and the team's longtime field leader."
+  },
+  {
+   "from": "x_men",
+   "to": "beast",
+   "type": "member",
+   "details": "A founding member; later also an Avenger and a defining Marvel scientist."
+  },
+  {
+   "from": "x_men",
+   "to": "angel",
+   "type": "member",
+   "details": "A founding member; later Archangel and a backer of X-Factor."
+  },
+  {
+   "from": "x_men",
+   "to": "iceman",
+   "type": "member",
+   "details": "A founding member and the youngest of the original five."
+  },
+  {
+   "from": "professor_x",
+   "to": "x_men",
+   "type": "led",
+   "details": "Xavier founded the X-Men and their school and has led the team through most of its history."
+  },
+  {
+   "from": "professor_x",
+   "to": "magneto",
+   "type": "nemesis",
+   "details": "Xavier and Magneto embody the franchise's central debate — coexistence versus mutant supremacy — as old friends turned ideological adversaries."
+  },
+  {
+   "from": "cyclops",
+   "to": "jean_grey",
+   "type": "ally",
+   "details": "Scott and Jean are the central X-Men romance, from the earliest issues through the Phoenix saga and beyond."
+  },
+  {
+   "from": "len_wein",
+   "to": "nightcrawler",
+   "type": "created",
+   "details": "Co-created Nightcrawler for Giant-Size X-Men #1 (1975)."
+  },
+  {
+   "from": "dave_cockrum",
+   "to": "nightcrawler",
+   "type": "created",
+   "details": "Co-created and designed Nightcrawler — a favourite of his own design — for Giant-Size X-Men #1 (1975)."
+  },
+  {
+   "from": "len_wein",
+   "to": "colossus",
+   "type": "created",
+   "details": "Co-created Colossus for Giant-Size X-Men #1 (1975)."
+  },
+  {
+   "from": "dave_cockrum",
+   "to": "colossus",
+   "type": "created",
+   "details": "Co-created and designed Colossus for Giant-Size X-Men #1 (1975)."
+  },
+  {
+   "from": "chris_claremont",
+   "to": "shadowcat",
+   "type": "created",
+   "details": "Co-created Kitty Pryde as writer in Uncanny X-Men #129 (1980)."
+  },
+  {
+   "from": "john_byrne",
+   "to": "shadowcat",
+   "type": "created",
+   "details": "Co-created and designed Kitty Pryde for Uncanny X-Men #129 (1980)."
+  },
+  {
+   "from": "chris_claremont",
+   "to": "mystique",
+   "type": "created",
+   "details": "Co-created Mystique, naming and defining Cockrum’s design in Ms. Marvel #16 (1978)."
+  },
+  {
+   "from": "dave_cockrum",
+   "to": "mystique",
+   "type": "created",
+   "details": "Designed Mystique, co-creating the shapeshifter who debuted in Ms. Marvel #16 (1978)."
+  },
+  {
+   "from": "chris_claremont",
+   "to": "sabretooth",
+   "type": "created",
+   "details": "Co-created Sabretooth as writer in Iron Fist #14 (1977)."
+  },
+  {
+   "from": "john_byrne",
+   "to": "sabretooth",
+   "type": "created",
+   "details": "Co-created and designed Sabretooth for Iron Fist #14 (1977)."
+  },
+  {
+   "from": "louise_simonson",
+   "to": "apocalypse",
+   "type": "created",
+   "details": "Co-created Apocalypse as writer in X-Factor #5-6 (1986)."
+  },
+  {
+   "from": "jackson_guice",
+   "to": "apocalypse",
+   "type": "created",
+   "details": "Co-created and designed Apocalypse for X-Factor (1986)."
+  },
+  {
+   "from": "chris_claremont",
+   "to": "mister_sinister",
+   "type": "created",
+   "details": "Co-created Mister Sinister as writer, seeding him behind the Marauders (Uncanny X-Men #221, 1987)."
+  },
+  {
+   "from": "marc_silvestri",
+   "to": "mister_sinister",
+   "type": "created",
+   "details": "Co-created and designed Mister Sinister for Uncanny X-Men #221 (1987)."
+  },
+  {
+   "from": "chris_claremont",
+   "to": "emma_frost",
+   "type": "created",
+   "details": "Co-created Emma Frost as writer in Uncanny X-Men #129 (1980)."
+  },
+  {
+   "from": "john_byrne",
+   "to": "emma_frost",
+   "type": "created",
+   "details": "Co-created and designed the White Queen for Uncanny X-Men #129 (1980)."
+  },
+  {
+   "from": "stan_lee",
+   "to": "sentinels",
+   "type": "created",
+   "details": "Co-created the Sentinels as writer in X-Men #14 (1965)."
+  },
+  {
+   "from": "jack_kirby",
+   "to": "sentinels",
+   "type": "created",
+   "details": "Co-created and designed the Sentinels for X-Men #14 (1965)."
+  },
+  {
+   "from": "giant_size_x_men_1",
+   "to": "nightcrawler",
+   "type": "debut",
+   "details": "Introduced Nightcrawler among the all-new X-Men (1975)."
+  },
+  {
+   "from": "giant_size_x_men_1",
+   "to": "colossus",
+   "type": "debut",
+   "details": "Introduced Colossus among the all-new X-Men (1975)."
+  },
+  {
+   "from": "uncanny_x_men",
+   "to": "shadowcat",
+   "type": "debut",
+   "details": "Introduced Kitty Pryde in Uncanny X-Men #129 (1980)."
+  },
+  {
+   "from": "uncanny_x_men",
+   "to": "emma_frost",
+   "type": "debut",
+   "details": "Introduced Emma Frost, the Hellfire Club’s White Queen, in Uncanny X-Men #129 (1980)."
+  },
+  {
+   "from": "uncanny_x_men",
+   "to": "mister_sinister",
+   "type": "debut",
+   "details": "First alluded to and later revealed across Claremont’s run, debuting in Uncanny X-Men #221 (1987)."
+  },
+  {
+   "from": "uncanny_x_men",
+   "to": "sentinels",
+   "type": "debut",
+   "details": "Introduced the Sentinels in X-Men #14 (1965)."
+  },
+  {
+   "from": "x_men",
+   "to": "nightcrawler",
+   "type": "member",
+   "details": "A stalwart of the all-new team from 1975 on."
+  },
+  {
+   "from": "x_men",
+   "to": "colossus",
+   "type": "member",
+   "details": "A mainstay of the team from 1975, on and off, for decades."
+  },
+  {
+   "from": "x_men",
+   "to": "shadowcat",
+   "type": "member",
+   "details": "Joined at 13 in 1980 and became a long-serving member and leader."
+  },
+  {
+   "from": "x_men",
+   "to": "emma_frost",
+   "type": "member",
+   "details": "Crossed from the Hellfire Club to become an X-Man, headmistress and co-leader."
+  },
+  {
+   "from": "sabretooth",
+   "to": "wolverine",
+   "type": "nemesis",
+   "details": "Sabretooth is Wolverine’s feral opposite and most personal enemy, their history entwined through Weapon X."
+  },
+  {
+   "from": "apocalypse",
+   "to": "x_men",
+   "type": "nemesis",
+   "details": "Apocalypse’s survival-of-the-fittest crusade has made him one of the X-Men’s greatest recurring threats."
+  },
+  {
+   "from": "mister_sinister",
+   "to": "x_men",
+   "type": "nemesis",
+   "details": "Sinister’s experiments on mutant bloodlines set him permanently against the X-Men."
+  },
+  {
+   "from": "mystique",
+   "to": "x_men",
+   "type": "nemesis",
+   "details": "Through her Brotherhood and Freedom Force, Mystique has been a persistent adversary — and occasional ally — of the X-Men."
+  },
+  {
+   "from": "sentinels",
+   "to": "x_men",
+   "type": "nemesis",
+   "details": "Built to hunt mutants, the Sentinels are the X-Men’s ever-present existential threat."
   }
  ],
  "schemaVersion": 1,
@@ -6557,7 +6995,7 @@
     "emma_frost": {
      "name": "Emma Frost",
      "group": "hellfire",
-     "desc": "A telepath of the first rank who can also shift into a form of organic diamond, immune to psychic attack. She rose through the Hellfire Club as its White Queen, ran the Massachusetts Academy as a rival school to Xavier's, and trained the Hellions as a counterweight to the New Mutants.\n\nThe murder of her students broke her allegiance to the Club and pushed her, by degrees, into teaching for the other side: Generation X with Banshee, then the X-Men themselves, where she became headmistress and Cyclops's partner. She never softened, and the franchise uses her as its coldest strategist, capable of things the X-Men prefer not to do themselves.",
+     "desc": "Created by Chris Claremont and John Byrne (1980). A telepath of the first rank who can also shift into a form of organic diamond, immune to psychic attack. She rose through the Hellfire Club as its White Queen, ran the Massachusetts Academy as a rival school to Xavier's, and trained the Hellions as a counterweight to the New Mutants.\n\nThe murder of her students broke her allegiance to the Club and pushed her, by degrees, into teaching for the other side: Generation X with Banshee, then the X-Men themselves, where she became headmistress and Cyclops's partner. She never softened, and the franchise uses her as its coldest strategist, capable of things the X-Men prefer not to do themselves.",
      "url": "https://en.wikipedia.org/wiki/Emma_Frost",
      "highlight": true
     },
@@ -6652,14 +7090,14 @@
     "mystique": {
      "name": "Mystique",
      "group": "brotherhood",
-     "desc": "Raven Darkhölme, a shapeshifter who can take the exact appearance and voice of any person, and who ages very slowly. She has spent decades inside human governments and mutant terror cells alike, and her loyalties change with whatever will keep her and her own alive.\n\nShe led her own Brotherhood of Evil Mutants and later remade it as the government-sanctioned Freedom Force. Her family ties bind her to both sides of the mutant question: she is a parent of Nightcrawler, the mother of the human anti-mutant demagogue Graydon Creed, and the foster mother of Rogue. Her decades-long partnership with the precognitive Destiny is the one attachment she never trades away.",
+     "desc": "Created by Chris Claremont and Dave Cockrum (1978). Raven Darkhölme, a shapeshifter who can take the exact appearance and voice of any person, and who ages very slowly. She has spent decades inside human governments and mutant terror cells alike, and her loyalties change with whatever will keep her and her own alive.\n\nShe led her own Brotherhood of Evil Mutants and later remade it as the government-sanctioned Freedom Force. Her family ties bind her to both sides of the mutant question: she is a parent of Nightcrawler, the mother of the human anti-mutant demagogue Graydon Creed, and the foster mother of Rogue. Her decades-long partnership with the precognitive Destiny is the one attachment she never trades away.",
      "url": "https://en.wikipedia.org/wiki/Mystique_(character)",
      "highlight": true
     },
     "sabretooth": {
      "name": "Sabretooth",
      "group": "brotherhood",
-     "desc": "Victor Creed, a mutant with a healing factor, claws, fangs and animal senses closely comparable to Wolverine's, and none of the restraint. He is a killer who enjoys it, and the books have used him as the answer to what Logan would be without the effort of conscience.\n\nThe two men's history reaches back more than a century and through the Weapon X programme, though the exact nature of it — rival, tormentor, one-time comrade — has been rewritten more than once. He served in the Marauders during the Mutant Massacre, ran with Magneto's followers, and fathered Graydon Creed with Mystique.",
+     "desc": "Created by Chris Claremont and John Byrne (1977). Victor Creed, a mutant with a healing factor, claws, fangs and animal senses closely comparable to Wolverine's, and none of the restraint. He is a killer who enjoys it, and the books have used him as the answer to what Logan would be without the effort of conscience.\n\nThe two men's history reaches back more than a century and through the Weapon X programme, though the exact nature of it — rival, tormentor, one-time comrade — has been rewritten more than once. He served in the Marauders during the Mutant Massacre, ran with Magneto's followers, and fathered Graydon Creed with Mystique.",
      "url": "https://en.wikipedia.org/wiki/Sabretooth_(character)"
     },
     "toad": {
