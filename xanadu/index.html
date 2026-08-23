@@ -267,7 +267,7 @@
 <script>
 "use strict";
 
-const BUILD="v2-866-r281"
+const BUILD="v2-867-r282"
 
 document.getElementById("build").textContent=BUILD;
 
@@ -2510,9 +2510,7 @@ function promote(F, inPlace){
   for(const k of orphans){ if(nbrF.has(k) || S.sun[k]===F) continue;
     let best=-1,bd=-1; for(const s of adj[k]){ if(s!==k && S.isSun[s] && deg[s]>bd){ bd=deg[s]; best=s; } }
     if(best>=0){ S.sun[k]=best; S.isSun[k]=0; }
-    else { S.isSun[k]=1; S.sun[k]=k;
-      const ang=((k*2654435761)>>>0)/4294967296*6.283, rr=(S.galaxyR||300)*1.03;
-      S.sunX[k]=Math.cos(ang)*rr; S.sunZ[k]=Math.sin(ang)*rr; S.sunY[k]=(((k*40503)%100)/100-0.5)*(S.galaxyR||300)*0.05; S.placed[k]=1; }
+    else { S.sun[k]=F; S.isSun[k]=0; }
   }
   buildSolarOrbits(true);
   SolarSys.morph=0.07;
