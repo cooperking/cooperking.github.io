@@ -8372,7 +8372,7 @@
      "from": "professor_x",
      "to": "magneto",
      "type": "rival",
-     "details": "They met in Haifa, both working at a psychiatric hospital treating Holocaust survivors, and became friends who argued about the future of mutantkind before either had done anything about it. Every subsequent conflict — Genosha, Asteroid M, Onslaught, Krakoa — is a continuation of that argument between two men who like each other and cannot agree.",
+     "details": "Charles Xavier and Erik Lehnsherr met in Haifa, both working at a psychiatric hospital treating Holocaust survivors, and became friends who argued about the future of mutantkind before either had acted on it. Every later conflict — Genosha, Asteroid M, Onslaught, Krakoa — continues that argument between two men who like each other and cannot agree.",
      "highlight": true
     },
     {
@@ -9895,13 +9895,13 @@
      "from": "rogue",
      "to": "gambit",
      "type": "romance",
-     "details": "A woman who cannot touch anyone and a man who lies by reflex have been the X-Men's central couple since the 1990s, and the relationship's obstacles are entirely internal. They eventually married, which the books treated as an achievement earned over thirty years rather than a plot resolution."
+     "details": "Rogue, who cannot touch anyone without harming them, and Gambit, who lies by reflex, have been the X-Men's central couple since the 1990s, their obstacles almost entirely internal. They eventually married — something the books treated as an achievement earned over thirty years rather than a plot resolution."
     },
     {
      "from": "colossus",
      "to": "shadowcat",
      "type": "romance",
-     "details": "Begun when both were teenagers newly arrived at the school, interrupted by his death, her death, his corruption in Limbo and an abandoned wedding, and never quite ended. It is one of the longest-running romances in the franchise and the one most defined by bad timing."
+     "details": "Piotr Rasputin and Kitty Pryde began their romance as teenagers newly arrived at the school. It was interrupted by Colossus's death, Kitty's own brush with death, his corruption in Limbo and an abandoned wedding, and never quite ended — one of the franchise's longest-running romances, and the one most defined by bad timing."
     },
     {
      "from": "havok",
@@ -11377,7 +11377,7 @@
      "from": "longshot",
      "to": "dazzler",
      "type": "romance",
-     "details": "Two performers, one engineered for an audience and one who chose the stage, formed the most improbable stable couple of the Australian era. They left the team together, and the relationship has been picked up and dropped by successive writers ever since."
+     "details": "Longshot, engineered to perform for an audience, and Dazzler, who chose the stage of her own will, formed the most improbable stable couple of the Australian era. They left the team together, and the relationship has been picked up and dropped by successive writers ever since."
     },
     {
      "from": "longshot",
@@ -12674,6 +12674,66 @@
      "to": "x_23",
      "type": "ally",
      "details": "Anole and X-23 served together in the New X-Men, two of the young generation who survived where so many classmates did not. Both outsiders in their own skins — one visibly inhuman, one built rather than born — they belonged to the core handful of students the era kept alive to carry its losses forward."
+    },
+    {
+     "from": "havok",
+     "to": "vulcan",
+     "type": "sibling",
+     "details": "Alex and Gabriel Summers are brothers, reunited only after Vulcan’s resurrection."
+    },
+    {
+     "from": "longshot",
+     "to": "spiral",
+     "type": "enemy",
+     "details": "Spiral, Mojo’s sorceress, is bound to Longshot in a tangled history of enmity."
+    },
+    {
+     "from": "mister_sinister",
+     "to": "inferno",
+     "type": "involved_in",
+     "details": "Sinister’s schemes with the Summers bloodline set the stage for Inferno."
+    },
+    {
+     "from": "cable",
+     "to": "messiah_complex",
+     "type": "involved_in",
+     "details": "Cable fled into the future with the messiah child at the climax of Messiah Complex."
+    },
+    {
+     "from": "leech",
+     "to": "generation_x",
+     "type": "member_of",
+     "details": "Leech was taken in by the students of Generation X."
+    },
+    {
+     "from": "warlock",
+     "to": "x_force",
+     "type": "member_of",
+     "details": "The Technarch Warlock served alongside the New Mutants and into X-Force."
+    },
+    {
+     "from": "toad",
+     "to": "magneto",
+     "type": "ally",
+     "details": "Toad began as Magneto’s cringing, devoted henchman in the original Brotherhood."
+    },
+    {
+     "from": "selene",
+     "to": "necrosha",
+     "type": "involved_in",
+     "details": "Selene engineered Necrosha, resurrecting the dead of Genosha as her army."
+    },
+    {
+     "from": "leech",
+     "to": "x_factor",
+     "type": "member_of",
+     "details": "Leech was among the young mutants sheltered by the government X-Factor."
+    },
+    {
+     "from": "omega_red",
+     "to": "x_men",
+     "type": "enemy",
+     "details": "Omega Red’s death-spores make him a lethal recurring threat to the X-Men."
     }
    ],
    "schemaVersion": 1
