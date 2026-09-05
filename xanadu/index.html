@@ -154,14 +154,14 @@
   #connbuilder .cb-res-item:active{ background:rgba(255,255,255,0.08); }
   #connbuilder .cb-swaprow{ display:flex; justify-content:center; margin:9px 0; }
   #connbuilder .cb-swaprow button{ font-size:12px; color:var(--t2); background:none; border:1px solid var(--line-strong); border-radius:7px; padding:5px 14px; cursor:pointer; }
-  body.launcher-active #hud, body.launcher-active #cards, body.launcher-active #topbar, body.launcher-active #zoomctl, body.launcher-active #spinctl, body.launcher-active #spinpad, body.launcher-active #togglefocus, body.launcher-active #promotesun, body.launcher-active #addtempnode, body.launcher-active #addtempconn, body.launcher-active #toggleconn, body.launcher-active #highlightbtn, body.launcher-active #breadcrumb, body.launcher-active #bypassls, body.launcher-active #buildtag, body.launcher-active #hllist, body.launcher-active #planetinfo, body.launcher-active #relinfo{ display:none !important; }
+  body.launcher-active #hud, body.launcher-active #cards, body.launcher-active #topbar, body.launcher-active #zoomctl, body.launcher-active #spinctl, body.launcher-active #spinpad, body.launcher-active #facetbtn, body.launcher-active #togglefocus, body.launcher-active #promotesun, body.launcher-active #addtempnode, body.launcher-active #addtempconn, body.launcher-active #toggleconn, body.launcher-active #highlightbtn, body.launcher-active #breadcrumb, body.launcher-active #bypassls, body.launcher-active #buildtag, body.launcher-active #hllist, body.launcher-active #planetinfo, body.launcher-active #relinfo{ display:none !important; }
   #codelb{ position:fixed; inset:0; z-index:4000; display:none; align-items:center; justify-content:center; padding:16px; box-sizing:border-box; background:rgba(4,6,13,0.82); -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px); }
   #codelb .clb-panel{ width:min(760px,100%); height:min(80vh,100%); display:flex; flex-direction:column; background:#0c0e18; border:1px solid var(--line-strong); border-radius:12px; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,0.6); }
   #codelb .clb-head{ display:flex; align-items:center; gap:8px; padding:11px 14px; border-bottom:1px solid var(--line); }
   #codelb .clb-title{ flex:1; min-width:0; font:600 13px -apple-system,Segoe UI,sans-serif; color:var(--t1); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   #codelb .clb-done{ font:600 13px -apple-system,sans-serif; color:var(--t1); background:linear-gradient(160deg,rgba(40,46,68,0.9),rgba(18,22,36,0.9)); border:1px solid var(--line-strong); border-radius:8px; padding:6px 15px; cursor:pointer; }
   #codelb .clb-area{ flex:1; width:100%; box-sizing:border-box; border:none; outline:none; resize:none; background:#0c0e18; color:#dfe3ee; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.5px; line-height:1.5; padding:14px; white-space:pre; overflow:auto; -webkit-overflow-scrolling:touch; }
-  body.card-editing #zoomctl, body.card-editing #spinctl, body.card-editing #spinpad, body.card-editing #togglefocus, body.card-editing #promotesun, body.card-editing #addtempnode, body.card-editing #addtempconn, body.card-editing #toggleconn, body.card-editing #highlightbtn, body.card-editing #breadcrumb, body.card-editing #bypassls, body.card-editing #buildtag, body.card-editing #hllist{ display:none !important; }
+  body.card-editing #zoomctl, body.card-editing #spinctl, body.card-editing #spinpad, body.card-editing #facetbtn, body.card-editing #togglefocus, body.card-editing #promotesun, body.card-editing #addtempnode, body.card-editing #addtempconn, body.card-editing #toggleconn, body.card-editing #highlightbtn, body.card-editing #breadcrumb, body.card-editing #bypassls, body.card-editing #buildtag, body.card-editing #hllist{ display:none !important; }
 </style>
 </head>
 <body class="launcher-active">
@@ -252,6 +252,7 @@
   <div id="spinpad-knob" style="position:absolute; top:50%; left:50%; width:26px; height:26px; margin:-13px 0 0 -13px; border-radius:50%; background:radial-gradient(circle at 36% 32%, #cbd0de, #6b7185); box-shadow:0 1px 4px rgba(0,0,0,0.5); pointer-events:none;"></div>
 </div>
 <button id="togglefocus" type="button" title="See the whole universe" style="display:none; position:fixed; top:12px; right:12px; z-index:900; width:34px; height:34px; border-radius:50%; background:var(--card); border:1px solid var(--line-strong); color:var(--t2); font-size:15px; line-height:1; box-shadow:0 2px 10px rgba(0,0,0,0.4); align-items:center; justify-content:center; padding:0;">&#8854;</button>
+<button id="facetbtn" type="button" title="Toggle facet view" style="display:none; position:fixed; top:12px; right:52px; z-index:900; width:34px; height:34px; border-radius:50%; background:var(--card); border:1px solid var(--line-strong); color:var(--t2); font-size:15px; line-height:1; box-shadow:0 2px 10px rgba(0,0,0,0.4); align-items:center; justify-content:center; padding:0;">&#9672;</button>
 <button id="promotesun" type="button" title="Promote this planet to a sun of its own" style="display:none; position:fixed; bottom:16px; left:272px; z-index:900; width:42px; height:42px; border-radius:21px; background:var(--card); border:1px solid var(--line-strong); box-shadow:0 2px 10px rgba(0,0,0,0.4); color:var(--t2); cursor:pointer; align-items:center; justify-content:center; padding:0;">
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2" fill="currentColor" stroke="none"/><path d="M12 2.6v2.6M12 18.8v2.6M2.6 12h2.6M18.8 12h2.6M5.3 5.3l1.9 1.9M16.8 16.8l1.9 1.9M18.7 5.3l-1.9 1.9M7.2 16.8l-1.9 1.9"/></svg>
 </button>
@@ -267,7 +268,7 @@
 <script>
 "use strict";
 
-const BUILD="v2-869-r284"
+const BUILD="v2-871-r286"
 
 document.getElementById("build").textContent=BUILD;
 
@@ -1447,7 +1448,7 @@ function rehydratePool(root){
   const out={}; for(const k in root){ if(k==="_subgraphs") continue; out[k]=hy(root[k]); } return out;
 }
 
-function saveRoot(){ graphDirty=true; LocalStorageSource.save(graphStack.length?graphStack[0].doc:Model.raw); if(Focus._updateHlBtn) Focus._updateHlBtn(); }
+function saveRoot(){ graphDirty=true; LocalStorageSource.save(graphStack.length?graphStack[0].doc:(_facetDoc||Model.raw)); if(Focus._updateHlBtn) Focus._updateHlBtn(); }
 
 const hiddenGroups={};
 let visFlags=null;
@@ -2330,7 +2331,7 @@ function enterSubgraphDoc(doc, focusId, savedView, entryId, connName, connId){
   if(!doc) return;
   const _origStart=doc.start;
   if(entryId && doc.nodes && doc.nodes[entryId]) doc.start=entryId;
-  graphStack.push({doc:Model.raw, focusId:focusId, focusName:(function(){try{var _fn2=Model.nodeById(focusId);return (_fn2&&_fn2.name)?_fn2.name:focusId;}catch(_fe){return focusId;}})(), connName:connName||null, connId:connId||null, title:Model.title(), vs:savedView||_snapView(), returnNode:Focus._returnNode||null});
+  graphStack.push({doc:(_facetDoc||Model.raw), focusId:focusId, focusName:(function(){try{var _fn2=Model.nodeById(focusId);return (_fn2&&_fn2.name)?_fn2.name:focusId;}catch(_fe){return focusId;}})(), connName:connName||null, connId:connId||null, title:Model.title(), vs:savedView||_snapView(), returnNode:Focus._returnNode||null});
   closeEditor(); exitFocus();
   loadGraph(doc);
   doc.start=_origStart;
@@ -2517,13 +2518,51 @@ function promote(F, inPlace){
   buildSolarOrbits(true);
   SolarSys.morph=0.07;
 }
+/* ---- FACETS. A facet node carries facet:true and facetOf:"<parentSlug>" and groups an
+   overwhelmed hub's links onto an aspect. FACET VIEW (default when the graph contains facets)
+   renders them exactly as authored — facets are ordinary nodes. ORIGINAL VIEW relinks every
+   facet node's links onto its parent, drops the resulting self-loops, and hides the facet.
+   Facets work at ANY level (root or subgraph). The current level's authored doc stays canonical
+   (_facetDoc, what saveRoot persists and the subgraph stack holds); the collapse keeps surviving node objects BY REFERENCE, so field edits and saves
+   reach the real graph in either view. Only re-pointed links are fresh objects. ---- */
+let _facetDoc=null;
+const FACET={on:false,avail:false};
+function hasFacets(doc){ if(!doc||!doc.nodes) return false; for(const id in doc.nodes){ const n=doc.nodes[id]; if(n&&n.facet&&n.facetOf&&doc.nodes[n.facetOf]) return true; } return false; }
+function collapseFacets(doc){
+  const parent={};
+  for(const id in doc.nodes){ const n=doc.nodes[id]; if(n&&n.facet&&n.facetOf&&doc.nodes[n.facetOf]) parent[id]=n.facetOf; }
+  const ult=(id)=>{ const seen=new Set(); while((id in parent)&&!seen.has(id)){ seen.add(id); id=parent[id]; } return id; };
+  const nodes={};
+  for(const id in doc.nodes){ if(!(id in parent)) nodes[id]=doc.nodes[id]; }
+  const map=(x)=> (x in parent)? ult(x) : x;
+  const seen=new Set(); const links=[];
+  for(const l of (doc.links||[])){
+    if(!l) continue;
+    const f=map(l.from), t=map(l.to);
+    if(f===t) continue;
+    if(!(f in nodes)||!(t in nodes)) continue;
+    const k=f+"\u0000"+t+"\u0000"+(l.type||"");
+    if(seen.has(k)) continue; seen.add(k);
+    links.push((f===l.from&&t===l.to)? l : Object.assign({},l,{from:f,to:t}));
+  }
+  const out=Object.assign({},doc,{nodes:nodes,links:links});
+  if(out.start && (out.start in parent)) out.start=ult(out.start);
+  out.__facetDerived=true;
+  return out;
+}
+function _updateFacetBtn(){ const b=document.getElementById("facetbtn"); if(!b) return; const show=FACET.avail; b.style.display=show?"flex":"none"; if(show){ b.style.color=FACET.on?"#bfe0ff":"var(--t2)"; b.style.opacity=FACET.on?"1":"0.6"; b.title=FACET.on?"Facet view \u2014 tap for the original hub":"Original view \u2014 tap for facets"; } }
+function toggleFacetView(){ if(!FACET.avail||!_facetDoc) return; FACET.on=!FACET.on; loadGraph(FACET.on?_facetDoc:collapseFacets(_facetDoc)); }
+{ const _fb=document.getElementById("facetbtn"); if(_fb) _fb.onclick=toggleFacetView; }
+
 function loadGraph(doc){ graphDirty=false;
+  if(!(doc&&doc.__facetDerived)){ _facetDoc=doc; FACET.avail=hasFacets(doc); FACET.on=FACET.avail; }
   Model.load(doc);
   if(typeof Focus!=="undefined"&&Focus&&Focus._updateHlBtn) Focus._updateHlBtn();
   for(const k in hiddenGroups) delete hiddenGroups[k];
   rebuildVis(); if(_warp){ requestAnimationFrame(()=>{ buildLegend(); rebuildJump(); }); } else { buildLegend(); rebuildJump(); }
   document.getElementById("title").textContent=Model.title();
   document.getElementById("counts").textContent=Model.count()+" / "+(Model.edges().length/2);
+  try{_updateFacetBtn();}catch(_){}
   Renderer.refresh();
   Layout.seed();
   buildSolarTopology(); buildSolarOrbits();
