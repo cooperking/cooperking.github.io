@@ -268,7 +268,7 @@
 <script>
 "use strict";
 
-const BUILD="v2-871-r286"
+const BUILD="v2-872-r287"
 
 document.getElementById("build").textContent=BUILD;
 
@@ -2526,6 +2526,7 @@ function promote(F, inPlace){
    (_facetDoc, what saveRoot persists and the subgraph stack holds); the collapse keeps surviving node objects BY REFERENCE, so field edits and saves
    reach the real graph in either view. Only re-pointed links are fresh objects. ---- */
 let _facetDoc=null;
+let _facetRefocus=null;   // node id to re-centre on after a facet toggle (null: normal load)
 const FACET={on:false,avail:false};
 function hasFacets(doc){ if(!doc||!doc.nodes) return false; for(const id in doc.nodes){ const n=doc.nodes[id]; if(n&&n.facet&&n.facetOf&&doc.nodes[n.facetOf]) return true; } return false; }
 function collapseFacets(doc){
@@ -2551,7 +2552,20 @@ function collapseFacets(doc){
   return out;
 }
 function _updateFacetBtn(){ const b=document.getElementById("facetbtn"); if(!b) return; const show=FACET.avail; b.style.display=show?"flex":"none"; if(show){ b.style.color=FACET.on?"#bfe0ff":"var(--t2)"; b.style.opacity=FACET.on?"1":"0.6"; b.title=FACET.on?"Facet view \u2014 tap for the original hub":"Original view \u2014 tap for facets"; } }
-function toggleFacetView(){ if(!FACET.avail||!_facetDoc) return; FACET.on=!FACET.on; loadGraph(FACET.on?_facetDoc:collapseFacets(_facetDoc)); }
+function toggleFacetView(){
+  if(!FACET.avail||!_facetDoc) return;
+  var keep=null; try{ keep=(Focus.egoCenter>=0 ? Model.ids[Focus.egoCenter] : (Focus.id||Focus.lastId)); }catch(_){}
+  FACET.on=!FACET.on;
+  var doc = FACET.on ? _facetDoc : collapseFacets(_facetDoc);
+  // if we were on a facet node that this view collapses away, re-centre on its hub instead
+  if(keep && !(doc.nodes && doc.nodes[keep])){
+    var src=_facetDoc.nodes[keep];
+    keep=(src && src.facetOf && doc.nodes && doc.nodes[src.facetOf]) ? src.facetOf : null;
+  }
+  _facetRefocus=keep;
+  loadGraph(doc);
+  _facetRefocus=null;
+}
 { const _fb=document.getElementById("facetbtn"); if(_fb) _fb.onclick=toggleFacetView; }
 
 function loadGraph(doc){ graphDirty=false;
@@ -2569,7 +2583,7 @@ function loadGraph(doc){ graphDirty=false;
   view.dist=view.tdist=R*3.4; view.yaw=0; view.pitch=0.95; spinAccum=0;
   view.cx=view.cy=view.cz=view.tcx=view.tcy=view.tcz=0; view.flyTarget=-1;
 
-  { const s=Model.raw.start; if(s && Model.nodeById(s)){ const si=Model.index(s); egoTo(s); if(si!==undefined){ Focus._igniteId=si; Focus._igniteT0=performance.now(); view.tdist=(Focus.fitDist||view.dist); Focus._igniteZoom=true; Focus.cardHidden=true; } } else exitFocus(); }
+  { const s=(_facetRefocus && Model.nodeById(_facetRefocus)) ? _facetRefocus : Model.raw.start; if(s && Model.nodeById(s)){ const si=Model.index(s); egoTo(s); if(si!==undefined){ Focus._igniteId=si; Focus._igniteT0=performance.now(); view.tdist=(Focus.fitDist||view.dist); Focus._igniteZoom=true; Focus.cardHidden=true; } } else exitFocus(); }
   const n=Model.count();
   loadMsg="Laying out "+n.toLocaleString()+" nodes\u2026";
   document.getElementById("ltime").textContent="settling\u2026";
