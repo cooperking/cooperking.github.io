@@ -53,6 +53,16 @@
   @keyframes pfglow{0%,100%{box-shadow:0 0 9px rgba(255,199,122,0.42);}50%{box-shadow:0 0 20px rgba(255,199,122,0.78);}}
   #planetinfo{left:50%;top:56px;transform:translateX(-50%);text-align:center;}
   .pf-desc,.pf-details{text-align:justify;}
+.pf-desc,.pf-details,.pf-conn,.lc-desc,.lc-title,#citepop,#relinfo,#planetinfo{-webkit-user-select:text;user-select:text;}
+.cite{color:#8ab4ff;cursor:pointer;font-size:0.78em;vertical-align:super;line-height:0;padding:0 1px;font-weight:600;}
+.cite:hover{text-decoration:underline;}
+#citepop{position:fixed;z-index:99999;max-width:300px;background:var(--card,#1a1d28);border:1px solid #ffffff30;border-radius:8px;padding:10px 26px 10px 12px;font-size:12px;color:#c9cdda;line-height:1.45;box-shadow:0 8px 28px rgba(0,0,0,0.55);display:none;}
+#citepop .cite-x{position:absolute;top:5px;right:8px;cursor:pointer;opacity:0.55;font-size:16px;line-height:1;}
+#citepop .cite-x:hover{opacity:1;}
+#citepop .ck{font-size:10px;text-transform:uppercase;letter-spacing:0.04em;opacity:0.6;margin-bottom:3px;}
+#citepop .ct{font-weight:600;color:#f4f5fa;}
+#citepop .cl{opacity:0.75;margin-top:2px;}
+#citepop a{color:#8ab4ff;text-decoration:underline;cursor:pointer;display:inline-block;margin-top:7px;}
   #search{position:relative;margin:7px 0 3px;}
   #q{width:100%;box-sizing:border-box;padding:6px 9px;background:var(--page);border:1px solid var(--line-strong);border-radius:7px;color:var(--t1);font:inherit;font-size:13px;}
   #q::placeholder{color:var(--t3);}
@@ -60,6 +70,7 @@
   #results div{padding:6px 10px;font-size:13px;color:var(--t1);cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   #results div:hover,#results div.sel{background:rgba(255,255,255,0.09);}
   #results .grp{font-size:10px;color:var(--t3);text-transform:uppercase;margin-left:7px;}
+  #results .rmatch{font-size:10px;color:var(--t3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px;}
   #legend{display:flex;flex-wrap:wrap;gap:5px 9px;margin-top:9px;}
   .leg{display:inline-flex;align-items:center;gap:5px;cursor:pointer;font-size:11px;color:var(--t2);white-space:nowrap;user-select:none;}
   .dot{width:9px;height:9px;border-radius:50%;flex:none;}
@@ -268,7 +279,7 @@
 <script>
 "use strict";
 
-const BUILD="v2-872-r287"
+const BUILD="v2-873-r299"
 
 document.getElementById("build").textContent=BUILD;
 
@@ -1356,7 +1367,7 @@ cv.addEventListener("pointerdown",e=>{dragging=true;moved=0;lx=e.clientX;ly=e.cl
 cv.addEventListener("pointermove",e=>{
   if(dragging && !pinching && touchCount<2){ const dx=e.clientX-lx, dy=e.clientY-ly; moved+=Math.abs(dx)+Math.abs(dy); if(moved>=26 && _holdT){ clearTimeout(_holdT); _holdT=null; } view.yaw+=dx*0.006; view.pitch+=dy*0.006; view._pitchTo=null; view._yawTo=null; lx=e.clientX; ly=e.clientY; if(moved>6) view.userMoved=true; }
   if(dragging || touchCount>0){ view.hover=-1; labelEl.style.opacity="0"; return; }
-  view.hover=Renderer.pick(e.clientX,e.clientY);
+  view.hover=-1;
   labelEl.style.opacity="0";
 });
 
@@ -1488,6 +1499,30 @@ function toggleGroup(k){
 }
 function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
 
+function citeMark(html, sources){
+  if(!sources) return html;
+  return html.replace(/\[(\d+)\]/g, function(m, n){
+    var so=sources[n]; if(!so) return m;
+    var d=function(k){ return esc(String(so[k]==null?"":so[k])); };
+    return '<sup class="cite" data-ct="'+d('title')+'" data-ck="'+d('kind')+'" data-cu="'+d('url')+'" data-cl="'+d('loc')+'">['+n+']</sup>';
+  });
+}
+function showCite(el){
+  var pop=document.getElementById("citepop");
+  if(!pop){ pop=document.createElement("div"); pop.id="citepop"; document.body.appendChild(pop); }
+  var t=el.dataset.ct, k=el.dataset.ck, l=el.dataset.cl, u=el.dataset.cu, h='<span class="cite-x" title="Close">\u00d7</span>';
+  if(k) h+='<div class="ck">'+esc(k)+'</div>';
+  h+='<div class="ct">'+esc(t||"Source")+'</div>';
+  if(l) h+='<div class="cl">'+esc(l)+'</div>';
+  if(u) h+='<a href="'+esc(u)+'" target="_blank" rel="noopener">Open \u2197</a>';
+  pop.innerHTML=h; pop.style.display="block";
+  var r=el.getBoundingClientRect(), pw=pop.offsetWidth||280, ph=pop.offsetHeight||60;
+  var x=r.left, y=r.bottom+6;
+  if(x+pw>window.innerWidth-10) x=window.innerWidth-10-pw;
+  if(x<10) x=10;
+  if(y+ph>window.innerHeight-10) y=r.top-ph-6;
+  pop.style.left=x+"px"; pop.style.top=y+"px";
+}
 function md(s){
   const _cb=[];
   s=(s==null?"":String(s)).replace(/```[^\n]*\n?([\s\S]*?)```/g,(m,code)=>{ const i=_cb.length; _cb.push('<pre style="margin:7px 0;padding:8px 10px;background:rgba(0,0,0,0.28);border:1px solid rgba(255,255,255,0.1);border-radius:7px;overflow-x:auto;-webkit-overflow-scrolling:touch;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;line-height:1.45;white-space:pre;text-align:left;">'+esc(code.replace(/\n$/,""))+'</pre>'); return "@@CB"+i+"@@"; });
@@ -1569,6 +1604,8 @@ document.getElementById("webview-close").onclick=closeWebview;
 webview.addEventListener("click", e=>{ if(e.target===webview) closeWebview(); });
 window.addEventListener("keydown", e=>{ if(e.key==="Escape" && webview.style.display==="flex") closeWebview(); });
 document.addEventListener("click",ev=>{
+  { const _pop=document.getElementById("citepop"); if(_pop&&_pop.style.display==="block"&&!ev.target.closest(".cite,#citepop")) _pop.style.display="none"; }
+  const _ci=ev.target.closest(".cite"); if(_ci){ ev.preventDefault(); ev.stopPropagation(); showCite(_ci); return; }
   const eg=ev.target.closest(".entergraph"); if(eg){ ev.preventDefault(); if(Focus.mode==="focus"||Focus.mode==="ego") enterSubgraph(Focus.id); return; }
   const wl=ev.target.closest(".weblink"); if(wl){ ev.preventDefault(); openWebview(wl.dataset.url); return; }
   const cv=ev.target.closest(".codeview"); if(cv){ ev.preventDefault(); ev.stopPropagation(); if(cv.dataset.codeNode){ const _n=Model.nodeById(cv.dataset.codeNode); if(_n&&_n.code) openCodeBox(_n.code, null, (_n.name||"")+" — code"); } else if(cv.dataset.codeLi!=null && Focus.planetFocus>=0 && Focus.egoCenter>=0){ const _pid=Model.ids[Focus.planetFocus], _sid=Model.ids[Focus.egoCenter], _dl=linkDetailsAll(_pid,_sid)[+cv.dataset.codeLi]; if(_dl&&_dl.link&&_dl.link.code) openCodeBox(_dl.link.code, null, "Connection — code"); } return; }
@@ -1576,6 +1613,18 @@ document.addEventListener("click",ev=>{
   const vf=ev.target.closest(".vidfacade"); if(vf){ ev.preventDefault(); openVidLB(vf.dataset.embed); return; }
   const im=ev.target.closest(".portrait"); if(im) openLightbox(im);
 });
+// citations: handle marker taps in the CAPTURE phase, before any card/canvas/panel handler, so
+// opening the popup never triggers their drag / long-press / tap-to-dismiss (which hides the panel).
+["pointerdown","pointerup","mousedown"].forEach(function(t){
+  document.addEventListener(t, function(e){ if(e.target.closest && e.target.closest(".cite")) e.stopPropagation(); }, true);
+});
+function hideCite(){ var p=document.getElementById("citepop"); if(p) p.style.display="none"; }
+document.addEventListener("click", function(e){
+  if(e.target.closest && e.target.closest(".cite-x")){ e.preventDefault(); e.stopPropagation(); hideCite(); return; }
+  var ci = e.target.closest && e.target.closest(".cite");
+  if(ci){ e.preventDefault(); e.stopPropagation(); showCite(ci); }
+}, true);
+document.addEventListener("keydown", function(e){ if(e.key==="Escape"){ var p=document.getElementById("citepop"); if(p&&p.style.display==="block"){ e.stopPropagation(); hideCite(); } } });
 function ramp(id){ return PAL[Model.colorName(id)]; }
 
 function neighboursOf(id){
@@ -1618,13 +1667,13 @@ function makeFocusCardHtml(nd, c, nm, orb){
     h='<div style="position:relative; background:linear-gradient(160deg,'+c[2]+'e6, rgba(8,10,20,0.92)); border:1px solid '+c[3]+'; border-radius:6px; padding:14px 18px; text-align:center; width:'+fcW+'px; max-height:'+fcMaxH+'px; overflow:auto; box-shadow:0 0 22px '+c[3]+'44, 0 10px 34px rgba(0,0,0,0.55); backdrop-filter:blur(3px);">'
       +'<span class="hidefocus" title="Return to the universe" style="position:absolute; top:8px; right:9px; width:24px; height:24px; border-radius:50%; background:'+c[3]+'; color:#fff; font-size:16px; line-height:24px; text-align:center; cursor:pointer; box-shadow:0 0 8px '+c[3]+'88;">\u2296</span>'
       +orb
-      +'<div style="font-size:17px;font-weight:600;color:#f4f5fa;text-align:center;text-shadow:0 1px 3px rgba(0,0,0,0.5);">'+(nd&&nd.subgraph?'<span style="opacity:0.7;">\u25c8</span> ':'')+nm+'</div>'
+      +'<div style="font-size:17px;font-weight:600;color:#f4f5fa;text-align:center;text-shadow:0 1px 3px rgba(0,0,0,0.5);">'+nm+'</div>'
       +(g&&g.label?'<div style="font-size:11px;color:'+c[3]+';margin:2px 0 7px;text-align:center;letter-spacing:0.03em;text-transform:uppercase;opacity:0.9;">'+esc(g.label)+'</div>':'')
-      +(nd&&nd.desc?'<div class="pf-desc" style="font-size:12.5px;color:#c9cdda;line-height:1.5;">'+md(nd.desc)+'</div>':'')
+      +(nd&&nd.desc?'<div class="pf-desc" style="font-size:12.5px;color:#c9cdda;line-height:1.5;">'+citeMark(md(nd.desc),nd.sources)+'</div>':'')
       +(nd&&nd.url?'<a href="'+esc(nd.url)+'" class="weblink" data-url="'+esc(nd.url)+'" rel="noopener" style="display:inline-block;margin-top:9px;font-size:12px;color:'+c[3]+';cursor:pointer;">'+esc(nd.linkText||(/wikipedia/i.test(nd.url)?'Wikipedia':'Link'))+' &#8599;</a>':'')
       +(nd&&nd.link2?'<a class="weblink" data-url="'+esc(nd.link2)+'" style="display:inline-block;margin-top:9px;margin-left:16px;font-size:12px;color:'+c[3]+';cursor:pointer;">'+esc(nd.link2label||'Link')+' \u2197</a>':'')
       +(nd&&nd.video?'<a class="vidlink" data-url="'+esc(nd.video)+'" style="display:inline-block;margin-top:9px;margin-left:16px;font-size:12px;color:'+c[3]+';cursor:pointer;">\u25b6 Video</a>':'')
-      +(nd&&nd.subgraph?'<div class="entergraph" style="margin-top:9px;font-size:12px;color:'+c[3]+';cursor:pointer;">\u25c8 Enter graph ('+Object.keys(nd.subgraph.nodes||{}).length+' nodes) \u2192</div>':'')
+
       +'</div>';
 
   return h;
@@ -1664,7 +1713,7 @@ function buildFocusCenterCard(host, CX, CY){
   fc.addEventListener("dblclick", ()=>enterCardEdit({kind:"node", id:Focus.id}));
   attachLongPress(fc, ()=>enterCardEdit({kind:"node", id:Focus.id}));
 
-  fc.addEventListener("pointerdown", e=>{ if(e.target.closest(".hidefocus,.weblink,.vidlink,.portrait,.entergraph")) return; cardDrag={id:Focus.id, lx:e.clientX, ly:e.clientY, moved:0, isFocus:true}; try{fc.setPointerCapture(e.pointerId);}catch(_){} });
+  fc.addEventListener("pointerdown", e=>{ if(e.target.closest(".hidefocus,.weblink,.vidlink,.portrait,.entergraph,.cite,.pf-desc,.pf-details")) return; cardDrag={id:Focus.id, lx:e.clientX, ly:e.clientY, moved:0, isFocus:true}; try{fc.setPointerCapture(e.pointerId);}catch(_){} });
   fc.addEventListener("pointermove", e=>{ if(!cardDrag||!cardDrag.isFocus) return;
     const dx=e.clientX-cardDrag.lx, dy=e.clientY-cardDrag.ly; cardDrag.lx=e.clientX; cardDrag.ly=e.clientY; cardDrag.moved+=Math.abs(dx)+Math.abs(dy);
     if(cardDrag.moved>4){ fc._lp=true; view.yaw+=dx*0.006; view.pitch+=dy*0.006; view._pitchTo=null; view._yawTo=null; } });
@@ -1733,17 +1782,24 @@ function buildFocusCards(){
     layout.nbrs.push({ id:nid, x:tx, y:ty, w:nw*nvs, h:nh*nvs, dir:nbrs[k].dir, dashed:nbrs[k].dashed });
   }
 
-  for(let it=0; it<16; it++){ let any=false;
+  for(let it=0; it<80; it++){ let any=false;
+    // separate overlapping pairs
     for(let a=0;a<targets.length;a++){ const A=targets[a];
       for(let b2=a+1;b2<targets.length;b2++){ const B=targets[b2];
         const dx=B.tx-A.tx, dy=B.ty-A.ty, ox=(A.hw+B.hw+4)-Math.abs(dx), oy=(A.hh+B.hh+4)-Math.abs(dy);
         if(ox>0 && oy>0){ if(ox<oy){ const p=ox/2*(dx<0?-1:1)||ox/2; A.tx-=p; B.tx+=p; } else { const p=oy/2*(dy<0?-1:1)||oy/2; A.ty-=p; B.ty+=p; } any=true; }
       } }
+    // keep each card OUTSIDE the centre card and INSIDE the bounds — every iteration, so the
+    // final state satisfies all three constraints together (this is what was previously done
+    // once at the end, reintroducing the overlaps the relaxation had just removed)
+    for(let a=0;a<targets.length;a++){ const t=targets[a];
+      const chw=fw/2+t.hw+8, chh=fh/2+t.hh+8, ddx=t.tx-CX, ddy=t.ty-CY;
+      if(Math.abs(ddx)<chw && Math.abs(ddy)<chh){ const ts=Math.min(chw/(Math.abs(ddx)||1e-4), chh/(Math.abs(ddy)||1e-4)); t.tx=CX+ddx*ts; t.ty=CY+ddy*ts; any=true; }
+      t.tx=Math.max(Lb+t.hw, Math.min(Rb-t.hw, t.tx)); t.ty=Math.max(Tb+t.hh, Math.min(Bb-t.hh, t.ty));
+    }
     if(!any) break;
   }
-  targets.forEach(t=>{ t.tx=Math.max(Lb+t.hw, Math.min(Rb-t.hw, t.tx)); t.ty=Math.max(Tb+t.hh, Math.min(Bb-t.hh, t.ty));
-    const chw=fw/2+t.hw+8, chh=fh/2+t.hh+8, ddx=t.tx-CX, ddy=t.ty-CY;
-    if(Math.abs(ddx)<chw && Math.abs(ddy)<chh){ const ts=Math.min(chw/(Math.abs(ddx)||1e-4), chh/(Math.abs(ddy)||1e-4)); t.tx=CX+ddx*ts; t.ty=CY+ddy*ts; t.tx=Math.max(Lb+t.hw, Math.min(Rb-t.hw, t.tx)); t.ty=Math.max(Tb+t.hh, Math.min(Bb-t.hh, t.ty)); } });
+  targets.forEach(t=>{ t.tx=Math.max(Lb+t.hw, Math.min(Rb-t.hw, t.tx)); t.ty=Math.max(Tb+t.hh, Math.min(Bb-t.hh, t.ty)); });
   for(let k=0;k<targets.length && k<layout.nbrs.length;k++){ layout.nbrs[k].x=targets[k].tx; layout.nbrs[k].y=targets[k].ty; }
 
   { const nbrIdx={}; layout.nbrs.forEach((nb,ix)=>nbrIdx[nb.id]=ix);
@@ -1886,7 +1942,7 @@ function showRelInfoEdge(a, b, px, py){
 { const psb=document.getElementById("promotesun"); if(psb) psb.onclick=()=>{ if(Focus.planetFocus>=0){ const id=Model.ids[Focus.planetFocus]; Focus._igniteId=Focus.planetFocus; Focus._igniteT0=performance.now(); Focus.planetFocus=-1; egoTo(id); view.tdist=(Focus.fitDist||view.dist)*0.5; Focus._igniteZoom=true; } };
   const pi=document.getElementById("planetinfo");
   if(pi){
-    pi.addEventListener("click", e=>{ if(!e.target.closest) return; if(e.target.closest(".pf-dismiss")){ if(Focus.planetFocus>=0){ Focus.planetFocus=-1; view.tdist=Focus.fitDist||view.dist; } } else if(e.target.closest(".pf-promote")){ if(Focus.planetFocus>=0){ const pf=Focus.planetFocus; const id=Model.ids[pf]; Focus._igTargetScreenR=Focus._lastPlanetScreenR||0; Focus._igniteId=pf; Focus._igniteT0=performance.now(); Focus.planetFocus=-1; egoTo(id); if(Focus._lastPlanetScreenR>0.5){ const _sr=(SolarSys.sunR&&SolarSys.sunR[pf])||((SolarSys.Rmax||40)*1.2); view.dist=_sr*1150/(Focus._lastPlanetScreenR*7.5); } view.tdist=view.dist; Focus._igniteZoom=true; } } else if(e.target.closest(".hl-conn")){ const _hn=e.target.closest(".hl-conn"), _t=_hn.getAttribute("data-target"), _ti=Model.index(_t); if(_ti!=null){ hidePlanetInfo(); goToNode(_ti); } } else if(e.target.closest(".nc-2d")){ if(Focus.egoCenter>=0){ hidePlanetInfo(); enterFocus(Model.ids[Focus.egoCenter]); } } else if(e.target.closest(".nc-solar")){ Focus.cardHidden=true; pi.innerHTML=""; pi.style.display="none"; planetInfoShown=null; view.tdist=Focus.fitDist||view.dist; } else if(!cardEditing){ if(Focus.planetFocus>=0){ Focus.planetCardHidden=true; } else { Focus.cardHidden=true; } pi.style.display="none"; planetInfoShown=null; } });
+    pi.addEventListener("click", e=>{ if(!e.target.closest) return; if(e.target.closest(".pf-dismiss")){ if(Focus.planetFocus>=0){ Focus.planetCardHidden=true; } else { Focus.cardHidden=true; } pi.style.display="none"; planetInfoShown=null; } else if(e.target.closest(".pf-promote")){ if(Focus.planetFocus>=0){ const pf=Focus.planetFocus; const id=Model.ids[pf]; Focus._igTargetScreenR=Focus._lastPlanetScreenR||0; Focus._igniteId=pf; Focus._igniteT0=performance.now(); Focus.planetFocus=-1; egoTo(id); if(Focus._lastPlanetScreenR>0.5){ const _sr=(SolarSys.sunR&&SolarSys.sunR[pf])||((SolarSys.Rmax||40)*1.2); view.dist=_sr*1150/(Focus._lastPlanetScreenR*7.5); } view.tdist=view.dist; Focus._igniteZoom=true; } } else if(e.target.closest(".hl-conn")){ const _hn=e.target.closest(".hl-conn"), _t=_hn.getAttribute("data-target"), _ti=Model.index(_t); if(_ti!=null){ hidePlanetInfo(); goToNode(_ti); } } else if(e.target.closest(".nc-2d")){ if(Focus.egoCenter>=0){ hidePlanetInfo(); enterFocus(Model.ids[Focus.egoCenter]); } } else if(e.target.closest(".nc-solar")){ Focus.cardHidden=true; pi.innerHTML=""; pi.style.display="none"; planetInfoShown=null; view.tdist=Focus.fitDist||view.dist; } });
     let lpT=null,lpX=0,lpY=0;
     pi.addEventListener("pointerdown", e=>{ if(e.target.closest && e.target.closest("input,textarea,button,a,select")) return; lpX=e.clientX;lpY=e.clientY;
       const _conn=e.target.closest&&e.target.closest(".pf-conn"), _li=_conn?+_conn.getAttribute("data-li"):-1;
@@ -2134,19 +2190,19 @@ function stopCardVideo(){ const b=document.getElementById("planetinfo"); if(b &&
 function piSunCardHtml(nd, c, id){
     let h='<div class="nc-2d" title="Open the card view" style="position:absolute;top:8px;left:8px;width:26px;height:26px;border-radius:50%;background:var(--card);border:1px solid var(--line-strong);color:var(--t2);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div><div class="nc-solar" title="Back to the solar system" style="position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:50%;background:var(--card);border:1px solid var(--line-strong);color:var(--t2);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;font-size:14px;line-height:1;">⊖</div>';
     if(nd.icon) h+='<img decoding="async" loading="lazy" src="'+esc(nd.icon)+'" class="portrait" data-full="'+esc(nd.image||"")+'" alt="" style="width:64px;height:64px;border-radius:50%;object-fit:cover;display:block;margin:0 auto 9px;box-shadow:0 0 12px '+c[3]+'66, inset -2px -3px 6px rgba(0,0,0,0.5);cursor:zoom-in;">'; else h+='<div style="height:22px"></div>';
-    h+='<div style="font-size:17px;font-weight:600;color:#f4f5fa;">'+(nd.subgraph?'<span style="opacity:0.7;">\u25c8</span> ':'')+esc(nd.name||id)+'</div>';
+    h+='<div style="font-size:17px;font-weight:600;color:#f4f5fa;">'+esc(nd.name||id)+'</div>';
     const gl=((Model.raw.groups||{})[nd.group]||{}).label;
     if(gl) h+='<div style="font-size:11px;color:'+c[3]+';margin:2px 0 6px;letter-spacing:0.03em;text-transform:uppercase;opacity:0.9;'+'">'+esc(gl)+'</div>';
     if(nd.video) h+=videoBlock(nd.video, c);
-    if(nd.desc) h+='<div class="pf-desc" style="font-size:12.5px;color:#c9cdda;line-height:1.5;">'+md(nd.desc)+'</div>';
+    if(nd.desc) h+='<div class="pf-desc" style="font-size:12.5px;color:#c9cdda;line-height:1.5;">'+citeMark(md(nd.desc),nd.sources)+'</div>';
     if(nd.url){ const lt=nd.linkText||(/wikipedia/i.test(nd.url)?'Wikipedia':'Link'); h+='<a href="'+esc(nd.url)+'" class="weblink" data-url="'+esc(nd.url)+'" rel="noopener" style="display:inline-block;margin-top:8px;font-size:12px;color:'+c[3]+';cursor:pointer;">'+esc(lt)+' &#8599;</a>'; }
     if(nd.link2){ h+='<a class="weblink" data-url="'+esc(nd.link2)+'" style="display:inline-block;margin-top:8px;margin-left:16px;font-size:12px;color:'+c[3]+';cursor:pointer;">'+esc(nd.link2label||'Link')+' \u2197</a>'; }
-    if(nd.subgraph){ const n2=Object.keys(nd.subgraph.nodes||{}).length; h+='<div class="entergraph" style="margin-top:9px;font-size:12px;color:'+c[3]+';cursor:pointer;">◈ Enter graph ('+n2+' node'+(n2===1?'':'s')+') →</div>'; }
-    if(nd.code) h+=codePreview(nd.code, 'data-code-node="'+esc(id)+'"', c[3]); { const _hc=[], _oc=[]; (Model.raw&&Model.raw.links?Model.raw.links:[]).forEach(l=>{ let _oth=null; if(l.from===id)_oth=l.to; else if(l.to===id)_oth=l.from; else return; if(typeof isVisible==="function" && !isVisible(_oth)) return; const _on=Model.nodeById(_oth); const _nm=(_on&&_on.name)||_oth; const _ty=(Model.raw.types||{})[l.type]||{}; const _rel=(l.from===id)?(_ty.toLabel||l.type||""):(_ty.fromLabel||l.type||""); const _cc=ramp(_oth); const _cb=(_cc&&_cc[2])||"#888"; const _grp=((Model.raw.groups||{})[groupOf(_oth)]||{}).label||""; const _row={ nm:_nm, html:'<div class="hl-conn" data-target="'+esc(_oth)+'" style="display:flex;align-items:center;cursor:pointer;pointer-events:auto;margin-top:6px;padding:8px 11px;border-radius:8px;background:'+_cb+';border:1px solid '+_cb+';font-size:12.5px;color:#fff;">'+esc(_nm)+(_rel?'<span style="opacity:0.8;font-size:11px;margin-left:6px;">\u00b7 '+esc(_rel)+'</span>':'')+(_grp?'<span style="margin-left:auto;font-size:10.5px;opacity:0.82;padding-left:10px;white-space:nowrap;">'+esc(_grp)+'</span>':'')+'</div>' }; if(l.highlight) _hc.push(_row); else _oc.push(_row); }); const _byn=(a,b)=>a.nm.localeCompare(b.nm); _hc.sort(_byn); _oc.sort(_byn); if(_hc.length) h+='<div style="margin-top:13px;border-top:1px solid '+c[3]+'40;padding-top:10px;"><div style="font-size:11px;color:'+c[3]+';text-transform:uppercase;letter-spacing:0.03em;margin-bottom:6px;opacity:0.9;">Highlighted connections</div>'+_hc.map(x=>x.html).join('')+'</div>'; if(_oc.length) h+='<div style="margin-top:13px;border-top:1px solid '+c[3]+'40;padding-top:10px;"><div style="font-size:11px;color:'+c[3]+';text-transform:uppercase;letter-spacing:0.03em;margin-bottom:6px;opacity:0.9;">'+(_hc.length?'Other connections':'Connections')+'</div>'+_oc.map(x=>x.html).join('')+'</div>'; }
+
+    if(nd.code) h+=codePreview(nd.code, 'data-code-node="'+esc(id)+'"', c[3]); { const _hc=[], _oc=[]; (Model.raw&&Model.raw.links?Model.raw.links:[]).forEach(l=>{ let _oth=null; if(l.from===id)_oth=l.to; else if(l.to===id)_oth=l.from; else return; if(typeof isVisible==="function" && !isVisible(_oth)) return; const _on=Model.nodeById(_oth); const _nm=(_on&&_on.name)||_oth; const _ty=(Model.raw.types||{})[l.type]||{}; const _rel=(l.from===id)?(_ty.toLabel||l.type||""):(_ty.fromLabel||l.type||""); const _cc=ramp(_oth); const _cb=(_cc&&_cc[2])||"#888"; const _grp=((Model.raw.groups||{})[groupOf(_oth)]||{}).label||""; const _row={ nm:_nm, html:'<div class="hl-conn" data-target="'+esc(_oth)+'" style="display:flex;align-items:center;flex-wrap:wrap;overflow:hidden;overflow-wrap:anywhere;cursor:pointer;pointer-events:auto;margin-top:6px;padding:8px 11px;border-radius:8px;background:'+_cb+';border:1px solid '+_cb+';font-size:12.5px;color:#fff;">'+esc(_nm)+(_rel?'<span style="opacity:0.8;font-size:11px;margin-left:6px;">\u00b7 '+esc(_rel)+'</span>':'')+(_grp?'<span style="margin-left:auto;font-size:10.5px;opacity:0.82;padding-left:10px;min-width:0;">'+esc(_grp)+'</span>':'')+'</div>' }; if(l.highlight) _hc.push(_row); else _oc.push(_row); }); const _byn=(a,b)=>a.nm.localeCompare(b.nm); _hc.sort(_byn); _oc.sort(_byn); if(_hc.length) h+='<div style="margin-top:13px;border-top:1px solid '+c[3]+'40;padding-top:10px;"><div style="font-size:11px;color:'+c[3]+';text-transform:uppercase;letter-spacing:0.03em;margin-bottom:6px;opacity:0.9;">Highlighted connections</div>'+_hc.map(x=>x.html).join('')+'</div>'; if(_oc.length) h+='<div style="margin-top:13px;border-top:1px solid '+c[3]+'40;padding-top:10px;"><div style="font-size:11px;color:'+c[3]+';text-transform:uppercase;letter-spacing:0.03em;margin-bottom:6px;opacity:0.9;">'+(_hc.length?'Other connections':'Connections')+'</div>'+_oc.map(x=>x.html).join('')+'</div>'; }
     return h;
   }
 function piPlanetCardHtml(nd, c, dets, lk, pid, sid, sn){
-      let h='<div style="position:absolute;top:8px;right:8px;"><button class="pf-dismiss" title="Return to the solar system" style="width:26px;height:26px;border-radius:50%;background:var(--card);border:1px solid var(--line-strong);color:var(--t2);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;font-size:14px;line-height:1;">⊖</button></div>';
+      let h='<div style="position:absolute;top:8px;right:8px;"><button class="pf-dismiss" title="Close" style="width:26px;height:26px;border-radius:50%;background:var(--card);border:1px solid var(--line-strong);color:var(--t2);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;font-size:14px;line-height:1;">⊖</button></div>';
       { const _sunNd=Model.nodeById(sid)||{}, _both=_sunNd.icon&&nd.icon, _ic=(s,full)=>'<img decoding="async" loading="lazy" src="'+esc(s)+'" class="portrait" data-full="'+esc(full||"")+'" alt="" style="width:22px;height:22px;border-radius:50%;object-fit:cover;vertical-align:middle;margin:0 5px 2px;cursor:zoom-in;">'; h+='<div style="font-size:16px;font-weight:600;color:#f4f5fa;padding-top:20px;">'+(_both?_ic(_sunNd.icon,_sunNd.image):'')+esc(sn)+' \u2192 '+(_both?_ic(nd.icon,nd.image):'')+esc(nd.name||pid)+'</div>'; }
       dets.forEach((d,di)=>{
         if(di>0) h+='<div style="border-top:1px solid '+c[3]+'40;margin:11px 0 0;"></div>';
@@ -2154,7 +2210,7 @@ function piPlanetCardHtml(nd, c, dets, lk, pid, sid, sn){
         { const _t=(Model.raw.types||{})[d.link&&d.link.type]||{}, _sr=(d.link&&!_t.mutual)?(d.link.from===sid?(_t.fromLabel||d.link.type):(_t.toLabel||d.link.type)):null, _rb=(_sr&&_sr!==d.rel)?(_sr+' \u2192 '+d.rel):d.rel;
           h+='<div style="font-size:11px;color:'+c[3]+';margin:'+(di>0?'9px':'2px')+' 0 7px;letter-spacing:0.03em;text-transform:uppercase;">'+esc(_rb)+'</div>'; }
         if(d.link&&d.link.img) h+='<img src="'+esc(d.link.img)+'" class="portrait" alt="" style="width:100%;max-height:130px;object-fit:cover;border-radius:6px;display:block;margin:2px 0 9px;box-shadow:0 0 12px '+c[3]+'55;cursor:zoom-in;">';
-        h+='<div class="pf-details" style="font-size:12.5px;color:#c9cdda;line-height:1.5;'+(d.generated?'opacity:0.92;':'')+'">'+md(d.text)+'</div>'; if(d.link&&d.link.code) h+=codePreview(d.link.code, 'data-code-li="'+di+'"', c[3]);
+        h+='<div class="pf-details" style="font-size:12.5px;color:#c9cdda;line-height:1.5;'+(d.generated?'opacity:0.92;':'')+'">'+citeMark(md(d.text),d.link&&d.link.sources)+'</div>'; if(d.link&&d.link.code) h+=codePreview(d.link.code, 'data-code-li="'+di+'"', c[3]);
         h+='</div>';
       });
       if(lk&&lk.video) h+=videoBlock(lk.video, c);
@@ -2825,14 +2881,25 @@ function runSearch(){
   const term=qEl.value.trim().toLowerCase();
   resultsEl.innerHTML=""; qMatches=[]; qSel=-1;
   if(!term){ resultsEl.style.display="none"; return; }
-  const ids=Model.ids, n=Model.count(), hits=[];
-  for(let i=0;i<n && hits.length<60;i++){ const nd=Model.nodeById(ids[i]), nm=(nd&&nd.name)||ids[i];
-    if(nm.toLowerCase().indexOf(term)>=0) hits.push({id:ids[i], name:nm, group:nd&&nd.group}); }
-  hits.sort((a,b)=>{ const ap=a.name.toLowerCase().startsWith(term)?0:1, bp=b.name.toLowerCase().startsWith(term)?0:1; return ap-bp || a.name.localeCompare(b.name); });
-  qMatches=hits.slice(0,10);
+  const ids=Model.ids, n=Model.count(), groups=(Model.raw&&Model.raw.groups)||{};
+  const glabel=g=>((typeof g==="string"?g:(g&&g.label))||"");
+  const snip=text=>{ const t=text.toLowerCase(), i=t.indexOf(term); if(i<0) return ""; const st=Math.max(0,i-24), en=Math.min(text.length,i+term.length+24); return (st>0?"\u2026":"")+text.slice(st,en)+(en<text.length?"\u2026":""); };
+  const seen=new Map();
+  // rank: 0 name-prefix, 1 name-contains, 2 in description, 3 in a connection, 4 in group
+  const add=(id,rank,why,sn)=>{ if(id==null) return; const ex=seen.get(id); if(ex&&ex.rank<=rank) return; const nd=Model.nodeById(id); seen.set(id,{id,name:(nd&&nd.name)||id,group:nd&&nd.group,rank,why:why||"",sn:sn||""}); };
+  for(let i=0;i<n;i++){ const id=ids[i], nd=Model.nodeById(id), nm=((nd&&nd.name)||id).toLowerCase();
+    if(nm.startsWith(term)) add(id,0); else if(nm.indexOf(term)>=0) add(id,1);
+    if(nd&&nd.desc && nd.desc.toLowerCase().indexOf(term)>=0) add(id,2,"in description",snip(nd.desc));
+    if(nd&&nd.group){ const gl=glabel(groups[nd.group]); if(gl && gl.toLowerCase().indexOf(term)>=0) add(id,4,"in "+gl); }
+  }
+  const links=(Model.raw&&Model.raw.links)||[];
+  for(const l of links){ if(l&&l.details && l.details.toLowerCase().indexOf(term)>=0){ const sn=snip(l.details); add(l.from,3,"in a connection",sn); add(l.to,3,"in a connection",sn); } }
+  let hits=[...seen.values()]; hits.sort((a,b)=> a.rank-b.rank || a.name.localeCompare(b.name));
+  qMatches=hits;
   if(!qMatches.length){ resultsEl.style.display="none"; return; }
-  qMatches.forEach(m=>{ const d=document.createElement("div"); const g=m.group&&(Model.raw.groups||{})[m.group];
-    d.innerHTML=esc(m.name)+(g&&g.label?'<span class="grp">'+esc(g.label)+'</span>':"");
+  qMatches.forEach(m=>{ const d=document.createElement("div"); const gl=glabel(groups[m.group]);
+    d.innerHTML=esc(m.name)+(gl?'<span class="grp">'+esc(gl)+'</span>':"")
+      +(m.sn?'<div class="rmatch">'+esc(m.sn)+'</div>':"");
     d.onclick=()=>pickSearch(m.id); resultsEl.appendChild(d); });
   resultsEl.style.display="block";
 }
