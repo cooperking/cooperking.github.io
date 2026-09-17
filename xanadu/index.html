@@ -279,7 +279,7 @@
 <script>
 "use strict";
 
-const BUILD="v2-873-r304"
+const BUILD="v2-873-r305"
 
 document.getElementById("build").textContent=BUILD;
 
@@ -2888,24 +2888,24 @@ function runSearch(){
   const snip=text=>{ const t=text.toLowerCase(), i=t.indexOf(term); if(i<0) return ""; const st=Math.max(0,i-24), en=Math.min(text.length,i+term.length+24); return (st>0?"\u2026":"")+text.slice(st,en)+(en<text.length?"\u2026":""); };
   const seen=new Map();
   // rank: 0 name-prefix, 1 name-contains, 2 in description, 3 in a connection, 4 in group
-  const add=(id,rank,why,sn)=>{ if(id==null) return; const ex=seen.get(id); if(ex&&ex.rank<=rank) return; const nd=Model.nodeById(id); seen.set(id,{id,name:(nd&&nd.name)||id,group:nd&&nd.group,rank,why:why||"",sn:sn||""}); };
+  const add=(id,rank,why,sn,sun)=>{ if(id==null) return; const ex=seen.get(id); if(ex&&ex.rank<=rank) return; const nd=Model.nodeById(id); seen.set(id,{id,name:(nd&&nd.name)||id,group:nd&&nd.group,rank,why:why||"",sn:sn||"",sun:sun||null}); };
   for(let i=0;i<n;i++){ const id=ids[i], nd=Model.nodeById(id), nm=((nd&&nd.name)||id).toLowerCase();
     if(nm.startsWith(term)) add(id,0); else if(nm.indexOf(term)>=0) add(id,1);
     if(nd&&nd.desc && nd.desc.toLowerCase().indexOf(term)>=0) add(id,2,"in description",snip(nd.desc));
     if(nd&&nd.group){ const gl=glabel(groups[nd.group]); if(gl && gl.toLowerCase().indexOf(term)>=0) add(id,4,"in "+gl); }
   }
   const links=(Model.raw&&Model.raw.links)||[];
-  for(const l of links){ if(l&&l.details && l.details.toLowerCase().indexOf(term)>=0){ const sn=snip(l.details); add(l.from,3,"in a connection",sn); add(l.to,3,"in a connection",sn); } }
+  for(const l of links){ if(l&&l.details && l.details.toLowerCase().indexOf(term)>=0){ const sn=snip(l.details); add(l.from,3,"in a connection",sn,l.to); add(l.to,3,"in a connection",sn,l.from); } }
   let hits=[...seen.values()]; hits.sort((a,b)=> a.rank-b.rank || a.name.localeCompare(b.name));
   qMatches=hits;
   if(!qMatches.length){ resultsEl.style.display="none"; return; }
   qMatches.forEach(m=>{ const d=document.createElement("div"); const gl=glabel(groups[m.group]);
     d.innerHTML=esc(m.name)+(gl?'<span class="grp">'+esc(gl)+'</span>':"")
       +(m.sn?'<div class="rmatch">'+esc(m.sn)+'</div>':"");
-    d.onclick=()=>pickSearch(m.id); resultsEl.appendChild(d); });
+    d.onclick=()=>pickSearch(m.id, m.sun); resultsEl.appendChild(d); });
   resultsEl.style.display="block";
 }
-function pickSearch(id){ qEl.value=""; resultsEl.style.display="none"; qMatches=[]; qSel=-1; qEl.blur(); const _i=Model.index(id); if(_i==null||_i<0) return; if(Focus.mode==="focus" && typeof exitFocus==="function") exitFocus(); if(typeof window!=="undefined" && typeof window.hlClickNode==="function") window.hlClickNode(_i); else goToNode(_i); }
+function pickSearch(id, sun){ qEl.value=""; resultsEl.style.display="none"; qMatches=[]; qSel=-1; qEl.blur(); const _i=Model.index(id); if(_i==null||_i<0) return; if(Focus.mode==="focus" && typeof exitFocus==="function") exitFocus(); const _su=(sun!=null)?Model.index(sun):null; if(_su!=null && _su>=0){ egoTo(sun); focusPlanet(_i); return; } if(typeof window!=="undefined" && typeof window.hlClickNode==="function") window.hlClickNode(_i); else goToNode(_i); }
 function qHighlight(){ [...resultsEl.children].forEach((c,i)=>c.classList.toggle("sel", i===qSel)); }
 qEl.addEventListener("input", runSearch);
 qEl.addEventListener("keydown", e=>{
@@ -2913,7 +2913,7 @@ qEl.addEventListener("keydown", e=>{
   if(!qMatches.length) return;
   if(e.key==="ArrowDown"){ e.preventDefault(); qSel=Math.min(qMatches.length-1, qSel+1); qHighlight(); }
   else if(e.key==="ArrowUp"){ e.preventDefault(); qSel=Math.max(0, qSel-1); qHighlight(); }
-  else if(e.key==="Enter"){ e.preventDefault(); pickSearch(qMatches[qSel>=0?qSel:0].id); }
+  else if(e.key==="Enter"){ e.preventDefault(); { const _m=qMatches[qSel>=0?qSel:0]; pickSearch(_m.id, _m.sun); } }
 });
 document.addEventListener("pointerdown", e=>{ const s=document.getElementById("search"); if(s && !s.contains(e.target)) resultsEl.style.display="none"; });
 
