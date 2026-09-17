@@ -279,7 +279,7 @@
 <script>
 "use strict";
 
-const BUILD="v2-873-r305"
+const BUILD="v2-873-r306"
 
 document.getElementById("build").textContent=BUILD;
 
@@ -1512,9 +1512,8 @@ function showCite(el){
   if(!pop){ pop=document.createElement("div"); pop.id="citepop"; document.body.appendChild(pop); }
   var t=el.dataset.ct, k=el.dataset.ck, l=el.dataset.cl, u=el.dataset.cu, y=el.dataset.cy, h='<span class="cite-x" title="Close">\u00d7</span>';
   if(k) h+='<div class="ck">'+esc(k)+'</div>';
-  h+='<div class="ct">'+esc(t||"Source")+'</div>';
-  var meta=[y,l].filter(Boolean).join(" \u00b7 ");
-  if(meta) h+='<div class="cl">'+esc(meta)+'</div>';
+  h+='<div class="ct">'+esc(t||"Source")+(y?' ('+esc(y)+')':'')+'</div>';
+  if(l) h+='<div class="cl">'+esc(l)+'</div>';
   if(u) h+='<a href="'+esc(u)+'" target="_blank" rel="noopener">Open \u2197</a>';
   pop.innerHTML=h; pop.style.display="block";
   var r=el.getBoundingClientRect(), pw=pop.offsetWidth||280, ph=pop.offsetHeight||60;
