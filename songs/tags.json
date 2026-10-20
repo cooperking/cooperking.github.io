@@ -14,8 +14,6 @@
   "Pop",
   "Electronic",
   "Hip-hop",
-  "Jazz",
-  "Psych",
   "Country",
   "World"
  ],
@@ -53,7 +51,7 @@
    "artist": "Hannah Frances, Daniel Rossen",
    "mood": "Wistful",
    "dance": false,
-   "moodFrom": "Claude (judged)",
+   "moodFrom": "Claude (guess)",
    "genres": [
     "Folk"
    ],
@@ -134,7 +132,6 @@
     "art pop",
     "baroque pop",
     "indie pop",
-    "jazz",
     "piano rock",
     "pop",
     "rock"
@@ -276,7 +273,8 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Indie"
+    "Indie",
+    "Pop"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
@@ -306,7 +304,6 @@
     "blues/rock",
     "experimental rock",
     "folk",
-    "jazz",
     "rock"
    ]
   },
@@ -324,7 +321,7 @@
     "Indie",
     "Folk"
    ],
-   "genreFrom": "Claude (judged)"
+   "genreFrom": "Claude (guess)"
   },
   "5ClqcvP4dYDDX6Zv3jPQD1": {
    "n": 14,
@@ -543,12 +540,12 @@
    "artist": "Zohra",
    "mood": "Upbeat",
    "dance": true,
-   "moodFrom": "Claude (judged)",
+   "moodFrom": "Claude (guess)",
    "genres": [
     "World",
     "Soul & R&B"
    ],
-   "genreFrom": "Claude (judged)"
+   "genreFrom": "Claude (guess)"
   },
   "0lbPLoj61m0e7jPMdGF5yK": {
    "n": 24,
@@ -644,14 +641,11 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Jazz"
+    "Folk"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "avant-garde jazz",
     "folk",
-    "jazz",
-    "orchestral jazz",
     "psychedelic folk"
    ]
   },
@@ -922,16 +916,11 @@
    "dance": false,
    "moodFrom": "Claude (judged)",
    "genres": [
-    "Jazz"
+    "World"
    ],
-   "genreFrom": "MusicBrainz",
+   "genreFrom": "Claude (judged)",
    "musicbrainz": [
-    "avant-garde jazz",
-    "free jazz",
-    "jazz",
-    "jazz and blues",
-    "jazz fusion",
-    "spiritual jazz"
+    "jazz and blues"
    ]
   },
   "5Up7kKnSg7Z1YHRToUbZ1p": {
@@ -1188,7 +1177,8 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Rock"
+    "Rock",
+    "Pop"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
@@ -1238,10 +1228,9 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Psych",
-    "Indie"
+    "Rock"
    ],
-   "genreFrom": "Claude (judged)",
+   "genreFrom": "MusicBrainz",
    "musicbrainz": [
     "electronic",
     "indie pop",
@@ -1294,7 +1283,6 @@
     "folk rock",
     "indie folk",
     "indie rock",
-    "jazz",
     "pop",
     "pop rock",
     "rock"
@@ -1314,7 +1302,7 @@
     "Pop",
     "Folk"
    ],
-   "genreFrom": "Claude (judged)"
+   "genreFrom": "Claude (guess)"
   },
   "6vO5OZ18h33ZO40S9plFDx": {
    "n": 59,
@@ -1345,7 +1333,7 @@
    "artist": "Blue Sky Black Death, Chen Lo, Jean Grae",
    "mood": "Brooding",
    "dance": false,
-   "moodFrom": "Claude (judged)",
+   "moodFrom": "Claude (guess)",
    "genres": [
     "Hip-hop",
     "Electronic"
@@ -1422,7 +1410,6 @@
     "electronic",
     "house",
     "pop",
-    "psychedelic",
     "rock"
    ]
   },
@@ -1438,7 +1425,7 @@
    "moodFrom": "ReccoBeats",
    "genres": [
     "Indie",
-    "Psych"
+    "Rock"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
@@ -1465,14 +1452,14 @@
    "dance": false,
    "moodFrom": "Claude (judged)",
    "genres": [
-    "Pop"
+    "Pop",
+    "Soul & R&B"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
     "classic rock",
     "downtempo",
     "folk rock",
-    "jazz",
     "pop",
     "rock",
     "soul"
@@ -1625,7 +1612,6 @@
    "musicbrainz": [
     "deep soul",
     "gospel",
-    "jazz",
     "old school soul",
     "quiet storm",
     "r&b",
@@ -1772,7 +1758,6 @@
     "contemporary r&b",
     "funk / soul",
     "hip hop",
-    "jazz",
     "neo soul",
     "pop",
     "r&b",
@@ -1854,7 +1839,7 @@
    "moodFrom": "ReccoBeats",
    "genres": [
     "Rock",
-    "Jazz"
+    "Pop"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
@@ -1917,13 +1902,12 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Jazz"
+    "Folk",
+    "Pop"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "contemporary jazz",
     "folk",
-    "jazz",
     "vocal jazz"
    ]
   },
@@ -2401,7 +2385,7 @@
     "Pop",
     "Rock"
    ],
-   "genreFrom": "Claude (judged)"
+   "genreFrom": "Claude (guess)"
   },
   "77h5SC6UU6kfKNSGQ9hZ4k": {
    "n": 108,
@@ -2452,7 +2436,7 @@
    "artist": "Getdown Services",
    "mood": "Upbeat",
    "dance": true,
-   "moodFrom": "Claude (judged)",
+   "moodFrom": "Claude (guess)",
    "genres": [
     "Rock",
     "Soul & R&B"
@@ -2744,10 +2728,10 @@
    "artist": "Vulfmon, Evangeline",
    "mood": "Upbeat",
    "dance": true,
-   "moodFrom": "Claude (judged)",
+   "moodFrom": "Claude (guess)",
    "genres": [
     "Soul & R&B",
-    "Jazz"
+    "Pop"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
@@ -3008,14 +2992,12 @@
    "artist": "Emily King",
    "mood": "Mellow",
    "dance": false,
-   "moodFrom": "Claude (judged)",
+   "moodFrom": "Claude (guess)",
    "genres": [
-    "Soul & R&B",
-    "Jazz"
+    "Soul & R&B"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "jazz",
     "rhythm and blues",
     "soul"
    ]
@@ -3026,7 +3008,7 @@
    "artist": "Omni, Izzy Glaudini",
    "mood": "Upbeat",
    "dance": false,
-   "moodFrom": "Claude (judged)",
+   "moodFrom": "Claude (guess)",
    "genres": [
     "Rock",
     "Indie"
@@ -3096,12 +3078,10 @@
    "dance": true,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Jazz"
+    "Pop",
+    "Soul & R&B"
    ],
-   "genreFrom": "MusicBrainz",
-   "musicbrainz": [
-    "jazz"
-   ]
+   "genreFrom": "Claude (guess)"
   },
   "5qm0KiVKMXW1kq6VrnIhz5": {
    "n": 140,
@@ -3191,8 +3171,8 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Rock",
-    "Indie"
+    "Indie",
+    "Rock"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
@@ -3248,7 +3228,6 @@
    ],
    "genreFrom": "Claude (judged)",
    "musicbrainz": [
-    "jazz",
     "marabi",
     "rock"
    ]
@@ -3303,13 +3282,12 @@
    "dance": false,
    "moodFrom": "Claude (judged)",
    "genres": [
-    "Jazz",
+    "Pop",
     "World"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
     "exotica",
-    "jazz",
     "lounge",
     "mambo",
     "vocal jazz"
@@ -3326,8 +3304,7 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Rock",
-    "Psych"
+    "Rock"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
@@ -3424,8 +3401,8 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Indie",
-    "Pop"
+    "Pop",
+    "Indie"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
@@ -3516,7 +3493,7 @@
    "artist": "Willie J Healey",
    "mood": "Mellow",
    "dance": false,
-   "moodFrom": "Claude (judged)",
+   "moodFrom": "Claude (guess)",
    "genres": [
     "Indie"
    ],
@@ -3599,14 +3576,13 @@
    "moodFrom": "Claude (judged)",
    "genres": [
     "Electronic",
-    "Folk"
+    "Pop"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
     "electronic",
     "folk",
     "folktronica",
-    "jazz",
     "pop"
    ]
   },
@@ -3639,7 +3615,8 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Pop"
+    "Pop",
+    "Indie"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
@@ -3650,7 +3627,6 @@
     "electronic",
     "electropop",
     "indie pop",
-    "jazz",
     "pop",
     "synthpop"
    ]
@@ -3712,7 +3688,6 @@
     "comedy rock",
     "funk",
     "funk rock",
-    "jazz",
     "synth funk",
     "synth-pop"
    ]
@@ -3982,7 +3957,7 @@
    "artist": "Benny Sings",
    "mood": "Mellow",
    "dance": false,
-   "moodFrom": "Claude (judged)",
+   "moodFrom": "Claude (guess)",
    "genres": [
     "Pop",
     "Indie"
@@ -4018,9 +3993,9 @@
     "boogie rock",
     "classic rock",
     "hard rock",
-    "jazz fusion",
     "pop",
-    "progressive rock"
+    "progressive rock",
+    "rock"
    ]
   },
   "5ehBcancKNsR7lFRduET7R": {
@@ -4165,7 +4140,7 @@
    "artist": "Lime Garden",
    "mood": "Upbeat",
    "dance": true,
-   "moodFrom": "Claude (judged)",
+   "moodFrom": "Claude (guess)",
    "genres": [
     "Indie"
    ],
@@ -4313,7 +4288,8 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Soul & R&B"
+    "Soul & R&B",
+    "Pop"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
@@ -4424,13 +4400,11 @@
    "dance": true,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Jazz",
     "Soul & R&B"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
     "funk soul",
-    "jazz",
     "jazz-funk",
     "soul",
     "soul jazz",
@@ -4498,7 +4472,6 @@
     "art rock",
     "baroque pop",
     "folk rock",
-    "jazz",
     "pop",
     "pop rock",
     "reggae",
@@ -4642,7 +4615,7 @@
     "Folk",
     "Indie"
    ],
-   "genreFrom": "Claude (judged)"
+   "genreFrom": "Claude (guess)"
   },
   "29U7stRjqHU6rMiS8BfaI9": {
    "n": 211,
@@ -4655,15 +4628,12 @@
    "dance": false,
    "moodFrom": "Claude (judged)",
    "genres": [
-    "Jazz"
+    "Pop"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "dixieland",
     "gospel",
-    "jazz",
     "pop",
-    "swing",
     "traditional pop",
     "vocal jazz"
    ]
@@ -4741,8 +4711,8 @@
    "dance": false,
    "moodFrom": "Claude (judged)",
    "genres": [
-    "Psych",
-    "Indie"
+    "Indie",
+    "Pop"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
@@ -4775,7 +4745,6 @@
    "musicbrainz": [
     "folk",
     "funk",
-    "jazz",
     "louisiana blues",
     "new orleans r&b",
     "psychedelic rock"
@@ -4941,8 +4910,7 @@
    "dance": false,
    "moodFrom": "Claude (judged)",
    "genres": [
-    "Pop",
-    "Psych"
+    "Pop"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
@@ -4967,14 +4935,12 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Rock",
-    "Jazz"
+    "Pop"
    ],
-   "genreFrom": "MusicBrainz",
+   "genreFrom": "Claude (judged)",
    "musicbrainz": [
     "funk pop",
     "indie pop",
-    "jazz",
     "rock"
    ]
   },
@@ -5315,7 +5281,6 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Psych",
     "Rock"
    ],
    "genreFrom": "MusicBrainz",
@@ -5480,12 +5445,10 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Psych"
+    "Folk",
+    "Pop"
    ],
-   "genreFrom": "MusicBrainz",
-   "musicbrainz": [
-    "psychedelic"
-   ]
+   "genreFrom": "Claude (guess)"
   },
   "7uhgdMtt4b4p35ehIYRqq6": {
    "n": 249,
@@ -5493,7 +5456,7 @@
    "artist": "Chaparelle, Zella Day, Jesse Woods",
    "mood": "Mellow",
    "dance": false,
-   "moodFrom": "Claude (judged)",
+   "moodFrom": "Claude (guess)",
    "genres": [
     "Country",
     "Folk"
