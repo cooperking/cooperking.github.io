@@ -106,19 +106,7 @@ def main():
     os.makedirs(os.path.dirname(CACHE), exist_ok=True)
     with open(CACHE, 'w') as f:
         json.dump(cache, f)
-    probe = {}
-    for artist, title in (('Louis Armstrong', 'What A Wonderful World'), ('Warren Zevon', 'Werewolves of London'), ('Cher', 'Believe')):
-        time.sleep(0.5)
-        a = get(API + '?' + urllib.parse.urlencode(dict(method='track.getTopTags', api_key=KEY, format='json', artist=artist, track=title))) or {}
-        time.sleep(0.5)
-        b = get(API + '?' + urllib.parse.urlencode(dict(method='track.getInfo', api_key=KEY, format='json', artist=artist, track=title))) or {}
-        tt = (a.get('toptags') or {}).get('tag')
-        it = ((b.get('track') or {}).get('toptags') or {}).get('tag')
-        probe[title] = {'getTopTags': {'keys': sorted(a), 'error': a.get('error'), 'tags': len(tt) if isinstance(tt, list) else type(tt).__name__},
-                        'getInfo': {'keys': sorted(b), 'error': b.get('error'), 'found': bool(b.get('track')),
-                                    'trackKeys': sorted((b.get('track') or {})), 'tags': len(it) if isinstance(it, list) else type(it).__name__}}
     status = {
-        'probe': probe,
         'about': 'How the last Last.fm fetch went (counts only; the tags themselves stay out of the repo).',
         'at': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime(now)),
         'songs': len(songs), 'fetched': len(todo), 'cached': sum(1 for s in songs if s['id'] in cache),

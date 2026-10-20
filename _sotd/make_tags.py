@@ -80,7 +80,7 @@ SOUND = {
     "Dark": {"mt:dark": .8, "aggressive": .5, "mt:heavy": .4, "mt:dramatic": .3, "mt:drama": .2, "valence": -.4},
 }
 
-WEIGHTS = {"claude": 0.55, "claude_guess": 0.15, "listeners": 0.30, "sound": 0.20}
+WEIGHTS = {"claude": 0.55, "claude_guess": 0.15, "listeners": 0.30, "artist": 0.12, "sound": 0.20}
 GENRE_WEIGHTS = {"musicbrainz": 0.5, "listeners": 0.3, "sound": 0.2}
 MB_SOURCE_WEIGHT = {"album": 3, "artist": 2, "recording": 1}
 
@@ -179,6 +179,10 @@ def main():
         stats['listener mood tags strong enough'] += bool(lmoods and rel >= 0.15)
         if lmoods and rel >= 0.15:
             voices.append((WEIGHTS['listeners'] * rel, lmoods))
+        # Last.fm has track tags for few of these songs; the artist's tags are a weaker stand-in
+        amoods, arel = listener_moods(lf.get('artist', []))
+        if not (lmoods and rel >= 0.15) and amoods and arel >= 0.15:
+            voices.append((WEIGHTS['artist'] * arel, amoods))
         if tid in sound:
             voices.append((WEIGHTS['sound'], sound[tid]))
         mix = {}
@@ -257,6 +261,9 @@ def main():
             if lis_top:
                 stats['listeners heard'] += 1
                 stats['listeners back Claude'] += c['moods'][0] in lis_top
+            if amoods and arel >= 0.15:
+                stats['artist tags heard'] += 1
+                stats['artist tags back Claude'] += c['moods'][0] in top(amoods, 3)
             if tid in sound:
                 stats['audio heard'] += 1
                 stats['audio backs Claude'] += c['moods'][0] in rec['sound']
@@ -272,10 +279,11 @@ def main():
                   "anything to say. Genres come from MusicBrainz, Last.fm and Essentia's Discogs styles. John's "
                   "corrections from the admin page always win."),
         'agreement': {
-            'about': "For songs Claude knows: how often Last.fm listeners' three strongest moods, and the audio models' "
-                     "three strongest, include Claude's first pick.",
+            'about': "For songs Claude knows: how often the three strongest moods from Last.fm listeners' track tags, "
+                     "from the artist's Last.fm tags, and from the audio models include Claude's first pick.",
             'listeners': [stats['listeners back Claude'], stats['listeners heard']],
             'audio': [stats['audio backs Claude'], stats['audio heard']],
+            'artistTags': [stats['artist tags back Claude'], stats['artist tags heard']],
             'songsWithListenerTags': stats['listener tags'],
             'songsWithListenerMoodTags': stats['listener mood tags'],
             'songsWhereListenersCount': stats['listener mood tags strong enough'],
