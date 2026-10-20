@@ -67,9 +67,14 @@ def nodes(meta, default_in, default_out):
 
 def load_songs():
     songs = json.loads(get(SONGS_URL))['songs']
+    saved = {}
+    path = os.path.join(HERE, 'data', 'previews.json')
+    if os.path.exists(path):
+        with open(path) as f:
+            saved = json.load(f)['previews']
     out = []
     for s in songs:
-        p = s.get('p') or ''
+        p = s.get('p') or ('https://p.scdn.co/mp3-preview/' + saved[s['id']] if s['id'] in saved else '')
         if p:
             out.append({'id': s['id'], 'n': s['n'], 'title': s['title'], 'artist': s['artist'],
                         'preview': p.rsplit('/', 1)[-1], 'url': p})

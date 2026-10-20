@@ -53,11 +53,29 @@ jobs:
         if: steps.check.outputs.todo != '0'
         run: python _sotd/analyze_audio.py ${{ inputs.redo && '--all' || '' }}
 
+      - name: Cache the Last.fm tags (kept out of the repo)
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/lastfm
+          key: lastfm-${{ github.run_id }}
+          restore-keys: lastfm-
+
+      - name: Listener tags from Last.fm
+        env:
+          LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
+        run: python _sotd/lastfm.py
+
+      - name: Genres from MusicBrainz
+        run: python _sotd/musicbrainz.py
+
+      - name: Weigh up moods and genres
+        run: python _sotd/make_tags.py
+
       - name: Save changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
-          git add _sotd/data songs/tags.json
+          git add _sotd/data songs/moods.json
           if git diff --cached --quiet; then echo "nothing changed"; exit 0; fi
           git commit -m "Song moods and genres: update from the latest songs"
           for i in 1 2 3; do git pull --rebase --quiet && git push && exit 0; sleep 5; done
