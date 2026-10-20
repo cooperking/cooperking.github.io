@@ -258,7 +258,7 @@ def main():
         for w, d, _ in parts:
             for b, x in d.items():
                 gmix[b] = gmix.get(b, 0) + w * x / gw
-        picked = [b for b in top(gmix, 2) if gmix[b] >= 0.25]
+        picked = top(gmix, 1) + [b for b in top(gmix, 2)[1:] if gmix[b] >= 0.25]   # the top genre, plus a second at 25% or more
         if c.get('genres'):
             rec['genres'], rec['genreFrom'] = c['genres'], 'Claude'
         elif picked:
