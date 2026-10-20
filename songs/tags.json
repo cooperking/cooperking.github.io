@@ -1,5 +1,5 @@
 {
- "about": "Mood and broad genre for each song on John's Song of the Day. To correct one, change its mood or genres and set moodFrom or genreFrom to \"John\"; a rebuild keeps those. Upbeat = energetic and positive, Mellow = calm and positive, Wistful = calm and sad, Brooding = energetic and dark. Measured moods come from ReccoBeats energy and positivity (0 to 1, split at 0.5); Claude (judged) means Claude replaced or supplied the value from knowing the song, Claude (guess) that Claude does not know the song well. Genres come from MusicBrainz tags on the song's album, its artists and the recording.",
+ "about": "Mood and broad genre for each song on John's Song of the Day. To correct one, change its mood or genres and set moodFrom or genreFrom to \"John\"; a rebuild keeps those. Upbeat = energetic and positive, Mellow = calm and positive, Wistful = calm and sad, Brooding = energetic and dark. Measured moods come from ReccoBeats energy and positivity (0 to 1, split at 0.5); Claude (judged) means Claude replaced or supplied the value from knowing the song, Claude (guess) that Claude does not know the song well. Genres come from MusicBrainz tags on the song's album, its artists and the recording. check = Claude doesn't know the song well enough to vouch for its mood or genres.",
  "moods": [
   "Upbeat",
   "Mellow",
@@ -65,7 +65,8 @@
     "progressive folk",
     "progressive rock",
     "rock"
-   ]
+   ],
+   "check": true
   },
   "4ymUJhziZLrUZJ2uQVL6kf": {
    "n": 3,
@@ -87,7 +88,8 @@
     "indie",
     "pop",
     "rock"
-   ]
+   ],
+   "check": true
   },
   "29Fam5ByZMf0lKBdEnNfnR": {
    "n": 4,
@@ -108,7 +110,8 @@
     "piano rock",
     "pop rock",
     "roots rock"
-   ]
+   ],
+   "check": true
   },
   "2zhOjOH2DvARkRcCvCo7DC": {
    "n": 5,
@@ -160,7 +163,8 @@
     "synth-pop",
     "techno",
     "trip hop"
-   ]
+   ],
+   "check": true
   },
   "4x4ja0ulDFFtfjB1ygExa2": {
    "n": 7,
@@ -184,7 +188,8 @@
     "grunge",
     "indie rock",
     "lo-fi"
-   ]
+   ],
+   "check": true
   },
   "0PFVZNMRc3Z8TC3BVn2Dln": {
    "n": 8,
@@ -211,7 +216,8 @@
     "pop",
     "pop rock",
     "rock"
-   ]
+   ],
+   "check": true
   },
   "5gSwQihHUXvC5H4SBCo03D": {
    "n": 9,
@@ -260,7 +266,8 @@
     "indie rock",
     "pop",
     "rock"
-   ]
+   ],
+   "check": true
   },
   "2aBSFHjDOewbd4mdqhwTAb": {
    "n": 11,
@@ -282,7 +289,8 @@
     "pop rock",
     "psychedelic pop",
     "rock"
-   ]
+   ],
+   "check": true
   },
   "1kQToxrczVpLtYdssdOsrr": {
    "n": 12,
@@ -321,7 +329,8 @@
     "Indie",
     "Folk"
    ],
-   "genreFrom": "Claude (guess)"
+   "genreFrom": "Claude (guess)",
+   "check": true
   },
   "5ClqcvP4dYDDX6Zv3jPQD1": {
    "n": 14,
@@ -396,7 +405,8 @@
     "pop",
     "rock",
     "synth-pop"
-   ]
+   ],
+   "check": true
   },
   "3zwxnzanbTdJhsrR8JvT3j": {
    "n": 17,
@@ -509,7 +519,8 @@
     "indie folk",
     "indie rock",
     "rock"
-   ]
+   ],
+   "check": true
   },
   "3POpqoO9i1UB6WzYZ0MvOC": {
    "n": 22,
@@ -545,7 +556,8 @@
     "World",
     "Soul & R&B"
    ],
-   "genreFrom": "Claude (guess)"
+   "genreFrom": "Claude (guess)",
+   "check": true
   },
   "0lbPLoj61m0e7jPMdGF5yK": {
    "n": 24,
@@ -569,7 +581,8 @@
     "pop rock",
     "post-punk",
     "rock"
-   ]
+   ],
+   "check": true
   },
   "3bdZcA30lsJeS61B6UBsWc": {
    "n": 25,
@@ -581,7 +594,8 @@
    "genres": [
     "Pop"
    ],
-   "genreFrom": "Claude (guess)"
+   "genreFrom": "Claude (guess)",
+   "check": true
   },
   "2h9uCNUYH0mJkeEwQChtT8": {
    "n": 26,
@@ -647,7 +661,8 @@
    "musicbrainz": [
     "folk",
     "psychedelic folk"
-   ]
+   ],
+   "check": true
   },
   "31ijr2O0SsuzAPVDLnq3XV": {
    "n": 29,
@@ -758,7 +773,8 @@
     "alternative rock",
     "indie pop",
     "indie rock"
-   ]
+   ],
+   "check": true
   },
   "3uPEZYXmeUgRFBywQCndKj": {
    "n": 34,
@@ -943,7 +959,8 @@
     "electronic",
     "rock",
     "synth-pop"
-   ]
+   ],
+   "check": true
   },
   "7Gk8IPlFTLUcoIH3mtASI0": {
    "n": 42,
@@ -968,7 +985,8 @@
     "indie pop",
     "indie rock",
     "pop"
-   ]
+   ],
+   "check": true
   },
   "5dE8s6uWRGNc1Ac7y8rULq": {
    "n": 43,
@@ -1023,7 +1041,8 @@
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
     "rock"
-   ]
+   ],
+   "check": true
   },
   "72PoJMDfdaw9gGECgA9kTZ": {
    "n": 46,
@@ -1063,7 +1082,8 @@
     "Pop",
     "Indie"
    ],
-   "genreFrom": "Claude (judged)"
+   "genreFrom": "Claude (judged)",
+   "check": true
   },
   "6ECyOXQ2622F9WpFgRfHeK": {
    "n": 48,
@@ -1078,7 +1098,8 @@
    "genres": [
     "Indie"
    ],
-   "genreFrom": "Claude (guess)"
+   "genreFrom": "Claude (guess)",
+   "check": true
   },
   "1cAHI9tJN6oHMdG4ghlQKY": {
    "n": 49,
@@ -1164,7 +1185,8 @@
    "musicbrainz": [
     "indie pop",
     "pop"
-   ]
+   ],
+   "check": true
   },
   "3TAJx9S2t0dH9Slo908D9t": {
    "n": 53,
@@ -1261,7 +1283,8 @@
     "mpb",
     "r&b",
     "soul"
-   ]
+   ],
+   "check": true
   },
   "0Fjy4haCEoFaiJME5pvbgB": {
    "n": 57,
@@ -1302,7 +1325,8 @@
     "Pop",
     "Folk"
    ],
-   "genreFrom": "Claude (guess)"
+   "genreFrom": "Claude (guess)",
+   "check": true
   },
   "6vO5OZ18h33ZO40S9plFDx": {
    "n": 59,
@@ -1345,7 +1369,8 @@
     "hip hop",
     "instrumental hip hop",
     "trip hop"
-   ]
+   ],
+   "check": true
   },
   "20mUVwCxR1x2d5SuBRGW1F": {
    "n": 61,
@@ -1388,7 +1413,8 @@
     "conscious hip hop",
     "hip hop",
     "neo soul"
-   ]
+   ],
+   "check": true
   },
   "1uwTbud19jsbc5BkRmt5rN": {
    "n": 63,
@@ -1411,7 +1437,8 @@
     "house",
     "pop",
     "rock"
-   ]
+   ],
+   "check": true
   },
   "5shcxlhR6ChgqDf5eBtpBW": {
    "n": 64,
@@ -1439,7 +1466,8 @@
     "indie pop",
     "indie rock",
     "jazz rock"
-   ]
+   ],
+   "check": true
   },
   "0WAEGVylZjbe2mQ6Or6HxY": {
    "n": 65,
@@ -1484,7 +1512,8 @@
     "indie",
     "indie rock",
     "rock"
-   ]
+   ],
+   "check": true
   },
   "3Nt1G38u1lalca5B2lm8Sd": {
    "n": 67,
@@ -1509,7 +1538,8 @@
     "pop",
     "punk",
     "rock"
-   ]
+   ],
+   "check": true
   },
   "7DH0ytUP9o7Crj8NM1Uabg": {
    "n": 68,
@@ -1524,7 +1554,8 @@
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
     "soul"
-   ]
+   ],
+   "check": true
   },
   "2eJogHu4qygT1BDhAve9Us": {
    "n": 69,
@@ -1549,7 +1580,8 @@
     "pop",
     "pop rock",
     "synth-pop"
-   ]
+   ],
+   "check": true
   },
   "6w09qyTrLgzCQP8gLMPEcd": {
    "n": 70,
@@ -1571,7 +1603,8 @@
     "pop",
     "r&b",
     "soul"
-   ]
+   ],
+   "check": true
   },
   "3lJ70fh0ENq6hzgtOfOGYZ": {
    "n": 71,
@@ -1593,7 +1626,8 @@
     "pop",
     "psychedelic rock",
     "rock"
-   ]
+   ],
+   "check": true
   },
   "1SJvBv2vJnJqguLFD46pBK": {
    "n": 72,
@@ -1713,7 +1747,8 @@
     "rock",
     "slacker rock",
     "twee pop"
-   ]
+   ],
+   "check": true
   },
   "2YJgM8lj4u5YEZRSHSfL60": {
    "n": 77,
@@ -1867,7 +1902,8 @@
     "electronic",
     "electronica",
     "indie"
-   ]
+   ],
+   "check": true
   },
   "3K5VXelPukt6EXUcCeCS67": {
    "n": 84,
@@ -1909,7 +1945,8 @@
    "musicbrainz": [
     "folk",
     "vocal jazz"
-   ]
+   ],
+   "check": true
   },
   "1nGsq8KWsWVWnbhRkMaXGc": {
    "n": 86,
@@ -1952,7 +1989,8 @@
     "pop",
     "pop rock",
     "rock"
-   ]
+   ],
+   "check": true
   },
   "7elJX0ZTRfmPeSDt18k0Ww": {
    "n": 88,
@@ -1964,7 +2002,8 @@
    "genres": [
     "Pop"
    ],
-   "genreFrom": "Claude (guess)"
+   "genreFrom": "Claude (guess)",
+   "check": true
   },
   "14I61w6cyYUHiV2n28IYdP": {
    "n": 89,
@@ -2034,7 +2073,8 @@
     "indie rock",
     "pop",
     "rock"
-   ]
+   ],
+   "check": true
   },
   "63G27PTar9LZQgKU2BKjx9": {
    "n": 92,
@@ -2132,7 +2172,8 @@
     "post-punk 2k",
     "post-punk revival",
     "synth-pop"
-   ]
+   ],
+   "check": true
   },
   "60WIrEOVESSiwBoYy9WIMC": {
    "n": 96,
@@ -2158,7 +2199,8 @@
     "pop",
     "post-rock",
     "rock"
-   ]
+   ],
+   "check": true
   },
   "6zNXjEQEhoEkLa4irSikDW": {
    "n": 97,
@@ -2182,7 +2224,8 @@
     "indie rock",
     "pop",
     "rock"
-   ]
+   ],
+   "check": true
   },
   "6sSyiY3TuAYzlEh9CN1PBO": {
    "n": 98,
@@ -2203,7 +2246,8 @@
     "pop",
     "pop rock",
     "rock"
-   ]
+   ],
+   "check": true
   },
   "5xwmLfRd5kLb6XohkIqNV2": {
    "n": 99,
@@ -2241,7 +2285,8 @@
     "Indie",
     "Pop"
    ],
-   "genreFrom": "Claude (guess)"
+   "genreFrom": "Claude (guess)",
+   "check": true
   },
   "23y2DjW3Ljd7o0ZcFnqRo9": {
    "n": 101,
@@ -2264,7 +2309,8 @@
     "pop",
     "pop rock",
     "rock"
-   ]
+   ],
+   "check": true
   },
   "3mW90BgmaWI8Do3taVesEj": {
    "n": 102,
@@ -2303,7 +2349,8 @@
     "pop",
     "power pop",
     "rock"
-   ]
+   ],
+   "check": true
   },
   "4WFNb2UhW5E5qxHGsgebuQ": {
    "n": 104,
@@ -2347,7 +2394,8 @@
     "pop",
     "rock",
     "soft rock"
-   ]
+   ],
+   "check": true
   },
   "2CwNOqVypdZfKA8lXQKSUb": {
    "n": 106,
@@ -2385,7 +2433,8 @@
     "Pop",
     "Rock"
    ],
-   "genreFrom": "Claude (guess)"
+   "genreFrom": "Claude (guess)",
+   "check": true
   },
   "77h5SC6UU6kfKNSGQ9hZ4k": {
    "n": 108,
@@ -2409,7 +2458,8 @@
     "indie pop",
     "indie rock",
     "rock"
-   ]
+   ],
+   "check": true
   },
   "6eCWvDQXTITW534IANR5n1": {
    "n": 109,
@@ -2446,7 +2496,8 @@
     "art pop",
     "disco",
     "post-punk"
-   ]
+   ],
+   "check": true
   },
   "43b1sAhXptGHyelc3knOOQ": {
    "n": 111,
@@ -2470,7 +2521,8 @@
     "r&b",
     "rock",
     "soul"
-   ]
+   ],
+   "check": true
   },
   "40IPlaLrR3YEPNkI7z3bYp": {
    "n": 112,
@@ -2496,7 +2548,8 @@
     "pop",
     "pop rock",
     "rock"
-   ]
+   ],
+   "check": true
   },
   "6nSt8n7r0bznM8PCvHEmPj": {
    "n": 113,
@@ -2561,7 +2614,8 @@
     "dubstep",
     "electronic",
     "hip hop"
-   ]
+   ],
+   "check": true
   },
   "4FGIHe2zLB3Y43mPybYdDa": {
    "n": 116,
@@ -2652,7 +2706,8 @@
     "post-punk",
     "post-punk revival",
     "rave"
-   ]
+   ],
+   "check": true
   },
   "30zaeAGK7hGe1N406m3pKL": {
    "n": 120,
@@ -2720,7 +2775,8 @@
     "pop",
     "rock",
     "soft rock"
-   ]
+   ],
+   "check": true
   },
   "4CSKUENltc2dGwvGGtDRgI": {
    "n": 123,
@@ -2738,7 +2794,8 @@
     "funk",
     "jazz-funk",
     "pop soul"
-   ]
+   ],
+   "check": true
   },
   "29O9cSdpmLZKFcTRMlnqo2": {
    "n": 124,
@@ -2964,7 +3021,8 @@
     "post-punk 2k",
     "post-rock",
     "punk"
-   ]
+   ],
+   "check": true
   },
   "4AxAd49jPozjHMZyXI2Gzv": {
    "n": 134,
@@ -3000,7 +3058,8 @@
    "musicbrainz": [
     "rhythm and blues",
     "soul"
-   ]
+   ],
+   "check": true
   },
   "06SgGRLn7xmwCz8wIxIx8U": {
    "n": 136,
@@ -3019,7 +3078,8 @@
     "indie rock",
     "post-punk",
     "rock"
-   ]
+   ],
+   "check": true
   },
   "4Yh1pyb3eGk32z6KeG0MPF": {
    "n": 137,
@@ -3081,7 +3141,8 @@
     "Pop",
     "Soul & R&B"
    ],
-   "genreFrom": "Claude (guess)"
+   "genreFrom": "Claude (guess)",
+   "check": true
   },
   "5qm0KiVKMXW1kq6VrnIhz5": {
    "n": 140,
@@ -3135,7 +3196,8 @@
     "Indie",
     "Folk"
    ],
-   "genreFrom": "Claude (guess)"
+   "genreFrom": "Claude (guess)",
+   "check": true
   },
   "1CPTAkaqBwFfe7xUjScKIr": {
    "n": 143,
@@ -3214,7 +3276,8 @@
    "musicbrainz": [
     "american folk music",
     "folk"
-   ]
+   ],
+   "check": true
   },
   "4S4dCACmtuPWbhvMSfDXqN": {
    "n": 147,
@@ -3253,7 +3316,8 @@
     "folk",
     "indie",
     "rock"
-   ]
+   ],
+   "check": true
   },
   "3TMtoSysAJ61pUnvVPHlI5": {
    "n": 149,
@@ -3335,7 +3399,8 @@
     "indie",
     "pop",
     "synth-pop"
-   ]
+   ],
+   "check": true
   },
   "748yv6bb3l3CcKS45a6SZ8": {
    "n": 153,
@@ -3415,7 +3480,8 @@
     "pop",
     "psychedelic pop",
     "rock"
-   ]
+   ],
+   "check": true
   },
   "0Shb2a6oTnJsIxEzn2SDLh": {
    "n": 156,
@@ -3438,7 +3504,8 @@
     "power pop",
     "punk",
     "rock"
-   ]
+   ],
+   "check": true
   },
   "0USF54f34DPnAn9nEmqNIN": {
    "n": 157,
@@ -3457,7 +3524,8 @@
     "electronic",
     "house",
     "progressive house"
-   ]
+   ],
+   "check": true
   },
   "4U9ZjqhaGF9wl56899E4sW": {
    "n": 158,
@@ -3485,7 +3553,8 @@
     "new wave",
     "pop",
     "pop rock"
-   ]
+   ],
+   "check": true
   },
   "0qgZruwLnh1ed7Z7ZXNMTc": {
    "n": 159,
@@ -3500,7 +3569,8 @@
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
     "indie"
-   ]
+   ],
+   "check": true
   },
   "0IVAlb0cFCH1cQ974iR1TU": {
    "n": 160,
@@ -3562,7 +3632,8 @@
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
     "indie rock"
-   ]
+   ],
+   "check": true
   },
   "2mpFugcHYSOPZSVdTu5OUw": {
    "n": 163,
@@ -3629,7 +3700,8 @@
     "indie pop",
     "pop",
     "synthpop"
-   ]
+   ],
+   "check": true
   },
   "2gOiPzXFWh2Rw5SdEECM4K": {
    "n": 166,
@@ -3690,7 +3762,8 @@
     "funk rock",
     "synth funk",
     "synth-pop"
-   ]
+   ],
+   "check": true
   },
   "0iI3MhPi785gdx8SUySPay": {
    "n": 169,
@@ -3705,7 +3778,8 @@
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
     "hip hop"
-   ]
+   ],
+   "check": true
   },
   "1XxRYmDKuABtbtCozx3pA2": {
    "n": 170,
@@ -3747,7 +3821,8 @@
    "musicbrainz": [
     "punk rock",
     "rock"
-   ]
+   ],
+   "check": true
   },
   "0Z74CG8R6pWeh7NPnYubFP": {
    "n": 172,
@@ -3768,7 +3843,8 @@
     "indie",
     "indie pop",
     "pop"
-   ]
+   ],
+   "check": true
   },
   "0fN65FwO4sNc07YBFFNDxt": {
    "n": 173,
@@ -3791,7 +3867,8 @@
     "pop",
     "punk",
     "rock"
-   ]
+   ],
+   "check": true
   },
   "5wDEOCfVVAqkdjkrSwDwGJ": {
    "n": 174,
@@ -3832,7 +3909,8 @@
     "Indie",
     "Pop"
    ],
-   "genreFrom": "Claude (guess)"
+   "genreFrom": "Claude (guess)",
+   "check": true
   },
   "49mvGXitaWpfTwuwUQaN0c": {
    "n": 176,
@@ -3904,7 +3982,8 @@
     "punk",
     "rock",
     "soul"
-   ]
+   ],
+   "check": true
   },
   "7GejAcJCqmZm7FAU4KHuyv": {
    "n": 179,
@@ -3969,7 +4048,8 @@
     "pop",
     "popmusik",
     "soul"
-   ]
+   ],
+   "check": true
   },
   "4m5m7bonUvkScVaFExn6rR": {
    "n": 182,
@@ -4015,7 +4095,8 @@
    "musicbrainz": [
     "bedroom pop",
     "indie pop"
-   ]
+   ],
+   "check": true
   },
   "0fC0IMesoMAtirBH2VVjqm": {
    "n": 184,
@@ -4034,7 +4115,8 @@
    "musicbrainz": [
     "indie pop",
     "pop"
-   ]
+   ],
+   "check": true
   },
   "2R2sXZXyRcEMdoHxeYyBtF": {
    "n": 185,
@@ -4150,7 +4232,8 @@
     "indie pop",
     "new rave",
     "post-punk revival"
-   ]
+   ],
+   "check": true
   },
   "5GTEB0XsQBwCaiJYaIRCgg": {
    "n": 190,
@@ -4189,7 +4272,8 @@
     "dream pop",
     "indie pop",
     "indie rock"
-   ]
+   ],
+   "check": true
   },
   "1ABegtCPBMMJaMpfDyATjE": {
    "n": 192,
@@ -4348,7 +4432,8 @@
     "country pop",
     "country rock",
     "pop"
-   ]
+   ],
+   "check": true
   },
   "2GORop0i2cyx8C0A3JzL44": {
    "n": 199,
@@ -4551,7 +4636,8 @@
     "pop",
     "psychedelic pop",
     "synth-pop"
-   ]
+   ],
+   "check": true
   },
   "1SmzAbt4g7a1FfAIwovtwq": {
    "n": 208,
@@ -4575,7 +4661,8 @@
     "indie",
     "indie rock",
     "rock"
-   ]
+   ],
+   "check": true
   },
   "6hzEumHWNUVB0VWobDBT6x": {
    "n": 209,
@@ -4599,7 +4686,8 @@
     "indie rock",
     "lo-fi",
     "pop"
-   ]
+   ],
+   "check": true
   },
   "4C7GZbwKnoucpGdkBQ9iGt": {
    "n": 210,
@@ -4615,7 +4703,8 @@
     "Folk",
     "Indie"
    ],
-   "genreFrom": "Claude (guess)"
+   "genreFrom": "Claude (guess)",
+   "check": true
   },
   "29U7stRjqHU6rMiS8BfaI9": {
    "n": 211,
@@ -4900,7 +4989,8 @@
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
     "soft rock"
-   ]
+   ],
+   "check": true
   },
   "0lsM3dkpJuMN2KYrGI1WLK": {
    "n": 224,
@@ -4966,7 +5056,8 @@
     "indie rock",
     "pop",
     "rock"
-   ]
+   ],
+   "check": true
   },
   "05pizkWWDPXqvpUSwo1DMj": {
    "n": 227,
@@ -4985,7 +5076,8 @@
     "electronic",
     "indie rock",
     "lo-fi"
-   ]
+   ],
+   "check": true
   },
   "2kIDECuRDbagrRqLOY3Mnm": {
    "n": 228,
@@ -5005,7 +5097,8 @@
    "musicbrainz": [
     "pop",
     "rock"
-   ]
+   ],
+   "check": true
   },
   "2OPh8c8b2jKTAp5WWpLSxd": {
    "n": 229,
@@ -5028,7 +5121,8 @@
     "indie rock",
     "lo-fi",
     "rock"
-   ]
+   ],
+   "check": true
   },
   "3LTinH60rltyAZiMmHF7JH": {
    "n": 230,
@@ -5095,7 +5189,8 @@
     "pop",
     "pop rock",
     "rock"
-   ]
+   ],
+   "check": true
   },
   "7IFEQiMBMLjfCRNisLdIRE": {
    "n": 233,
@@ -5115,7 +5210,8 @@
    "musicbrainz": [
     "pop rock",
     "punk rock"
-   ]
+   ],
+   "check": true
   },
   "6ebFwjg7AyBUjFdOTZLIU8": {
    "n": 234,
@@ -5157,7 +5253,8 @@
     "indie rock",
     "pop",
     "rock"
-   ]
+   ],
+   "check": true
   },
   "5Ay4ujNQ4xCrIxpDnk2SUC": {
    "n": 236,
@@ -5177,7 +5274,8 @@
    "musicbrainz": [
     "hypnagogic pop",
     "lo-fi"
-   ]
+   ],
+   "check": true
   },
   "3lrh0hthzUFsMNPH1mIiBT": {
    "n": 237,
@@ -5353,7 +5451,8 @@
     "Indie",
     "Pop"
    ],
-   "genreFrom": "Claude (guess)"
+   "genreFrom": "Claude (guess)",
+   "check": true
   },
   "1qRA5BS78u3gME0loMl9AA": {
    "n": 245,
@@ -5448,7 +5547,8 @@
     "Folk",
     "Pop"
    ],
-   "genreFrom": "Claude (guess)"
+   "genreFrom": "Claude (guess)",
+   "check": true
   },
   "7uhgdMtt4b4p35ehIYRqq6": {
    "n": 249,
@@ -5466,7 +5566,8 @@
     "americana",
     "contemporary country",
     "country"
-   ]
+   ],
+   "check": true
   },
   "00m7Q2wHED7wAbYq83XxOh": {
    "n": 250,
@@ -5553,7 +5654,8 @@
    "musicbrainz": [
     "country",
     "soul"
-   ]
+   ],
+   "check": true
   }
  }
 }
