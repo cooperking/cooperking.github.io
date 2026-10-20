@@ -1,13 +1,116 @@
 {
+ "probe": {
+  "What A Wonderful World": {
+   "getTopTags": {
+    "keys": [
+     "toptags"
+    ],
+    "error": null,
+    "tags": 10
+   },
+   "getInfo": {
+    "keys": [
+     "track"
+    ],
+    "error": null,
+    "found": true,
+    "trackKeys": [
+     "album",
+     "artist",
+     "duration",
+     "listeners",
+     "mbid",
+     "name",
+     "playcount",
+     "streamable",
+     "toptags",
+     "url",
+     "wiki"
+    ],
+    "tags": 5
+   }
+  },
+  "Werewolves of London": {
+   "getTopTags": {
+    "keys": [
+     "toptags"
+    ],
+    "error": null,
+    "tags": 0
+   },
+   "getInfo": {
+    "keys": [
+     "track"
+    ],
+    "error": null,
+    "found": true,
+    "trackKeys": [
+     "album",
+     "artist",
+     "duration",
+     "listeners",
+     "mbid",
+     "name",
+     "playcount",
+     "streamable",
+     "toptags",
+     "url",
+     "wiki"
+    ],
+    "tags": 0
+   }
+  },
+  "Believe": {
+   "getTopTags": {
+    "keys": [
+     "toptags"
+    ],
+    "error": null,
+    "tags": 10
+   },
+   "getInfo": {
+    "keys": [
+     "track"
+    ],
+    "error": null,
+    "found": true,
+    "trackKeys": [
+     "album",
+     "artist",
+     "duration",
+     "listeners",
+     "mbid",
+     "name",
+     "playcount",
+     "streamable",
+     "toptags",
+     "url",
+     "wiki"
+    ],
+    "tags": 5
+   }
+  }
+ },
  "about": "How the last Last.fm fetch went (counts only; the tags themselves stay out of the repo).",
- "at": "2026-10-20T09:32:47Z",
+ "at": "2026-10-20T09:41:18Z",
  "songs": 253,
- "fetched": 253,
+ "fetched": 0,
  "cached": 253,
  "withTrackTags": 11,
+ "songNumbersWithTrackTags": [
+  27,
+  32,
+  65,
+  74,
+  138,
+  153,
+  158,
+  188,
+  211,
+  232,
+  245
+ ],
  "withArtistTags": 251,
- "trackTagsFrom": {
-  "from getTopTags": 11
- },
+ "trackTagsFrom": {},
  "problems": {}
 }
