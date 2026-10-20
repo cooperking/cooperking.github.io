@@ -1,5 +1,19 @@
 {
  "about": "Moods and broad genres for each song on John's Song of the Day. Each song gets up to two of ten moods, weighed up from Claude's picks (songs Claude knows, sound and lyrics), Last.fm listener tags, and Essentia's mood models listening to the 30-second preview (Music Technology Group, Universitat Pompeu Fabra, CC BY-NC-SA 4.0). sound = the three moods the audio models hear most; listeners = whether Last.fm listeners' tags back the first mood; check = the voices disagree, or only the audio had anything to say. Genres come from MusicBrainz, Last.fm and Essentia's Discogs styles. John's corrections from the admin page always win.",
+ "agreement": {
+  "about": "For songs Claude knows: how often Last.fm listeners' three strongest moods, and the audio models' three strongest, include Claude's first pick.",
+  "listeners": [
+   2,
+   3
+  ],
+  "audio": [
+   77,
+   139
+  ],
+  "songsWithListenerTags": 11,
+  "songsWithListenerMoodTags": 8,
+  "songsWhereListenersCount": 3
+ },
  "moods": [
   "Joyful",
   "Uplifting",
@@ -123,7 +137,8 @@
    "title": "Hurts to Be Alive",
    "artist": "Whitmer Thomas",
    "moods": [
-    "Dark"
+    "Dark",
+    "Energetic"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -507,7 +522,8 @@
    "title": "Saturdays (feat. HAIM)",
    "artist": "Twin Shadow, HAIM",
    "moods": [
-    "Joyful"
+    "Joyful",
+    "Bittersweet"
    ],
    "moodFrom": "Claude",
    "sound": [
@@ -734,7 +750,8 @@
    "title": "100% Endurance",
    "artist": "Yard Act",
    "moods": [
-    "Uplifting"
+    "Uplifting",
+    "Bittersweet"
    ],
    "moodFrom": "Claude",
    "sound": [
@@ -916,7 +933,8 @@
    "title": "Drugs",
    "artist": "The Philharmonik",
    "moods": [
-    "Mellow"
+    "Mellow",
+    "Energetic"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -1051,7 +1069,8 @@
    "title": "The Night",
    "artist": "Frankie Valli & The Four Seasons",
    "moods": [
-    "Energetic"
+    "Energetic",
+    "Dark"
    ],
    "moodFrom": "Claude",
    "sound": [
@@ -1087,7 +1106,8 @@
    "title": "Pocket Piano",
    "artist": "DJ Mehdi",
    "moods": [
-    "Playful"
+    "Playful",
+    "Energetic"
    ],
    "moodFrom": "Claude",
    "sound": [
@@ -1123,7 +1143,8 @@
    "title": "Got to Have Love",
    "artist": "Pulp",
    "moods": [
-    "Joyful"
+    "Joyful",
+    "Energetic"
    ],
    "moodFrom": "Claude",
    "sound": [
@@ -1158,7 +1179,8 @@
    "title": "Space Age Love Song",
    "artist": "A Flock Of Seagulls",
    "moods": [
-    "Dreamy"
+    "Dreamy",
+    "Romantic"
    ],
    "moodFrom": "Claude",
    "sound": [
@@ -1601,7 +1623,8 @@
    "title": "Bike Dream",
    "artist": "Rostam",
    "moods": [
-    "Joyful"
+    "Joyful",
+    "Dreamy"
    ],
    "moodFrom": "Claude",
    "sound": [
@@ -1937,7 +1960,8 @@
    "title": "Old Peel",
    "artist": "Aldous Harding",
    "moods": [
-    "Playful"
+    "Playful",
+    "Dark"
    ],
    "moodFrom": "Claude",
    "sound": [
@@ -1974,7 +1998,8 @@
    "title": "Bad Kids",
    "artist": "TTRRUUCES",
    "moods": [
-    "Playful"
+    "Playful",
+    "Energetic"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -2052,7 +2077,8 @@
    "title": "Try Again",
    "artist": "Andy Shauf",
    "moods": [
-    "Melancholy"
+    "Melancholy",
+    "Mellow"
    ],
    "moodFrom": "Claude",
    "sound": [
@@ -2191,7 +2217,8 @@
    "title": "Say You Don't Mind",
    "artist": "Colin Blunstone",
    "moods": [
-    "Romantic"
+    "Romantic",
+    "Energetic"
    ],
    "moodFrom": "Claude",
    "sound": [
@@ -2329,7 +2356,8 @@
    "title": "Cannock Chase",
    "artist": "Labi Siffre",
    "moods": [
-    "Mellow"
+    "Mellow",
+    "Bittersweet"
    ],
    "moodFrom": "Claude",
    "sound": [
@@ -2396,7 +2424,8 @@
    "title": "Make Me A Song",
    "artist": "Eleanor Friedberger",
    "moods": [
-    "Melancholy"
+    "Melancholy",
+    "Uplifting"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -2677,7 +2706,8 @@
    "title": "Ain't That Peculiar",
    "artist": "Fanny",
    "moods": [
-    "Energetic"
+    "Energetic",
+    "Playful"
    ],
    "moodFrom": "Claude",
    "sound": [
@@ -2867,7 +2897,8 @@
    "title": "River Song",
    "artist": "Dennis Wilson",
    "moods": [
-    "Uplifting"
+    "Uplifting",
+    "Bittersweet"
    ],
    "moodFrom": "Claude",
    "sound": [
@@ -2937,7 +2968,8 @@
    "title": "The Lonely Surfer",
    "artist": "Jack Nitzsche",
    "moods": [
-    "Melancholy"
+    "Melancholy",
+    "Dreamy"
    ],
    "moodFrom": "Claude",
    "sound": [
@@ -3003,7 +3035,8 @@
    "title": "The Magic Position",
    "artist": "Patrick Wolf",
    "moods": [
-    "Joyful"
+    "Joyful",
+    "Romantic"
    ],
    "moodFrom": "Claude",
    "sound": [
@@ -3108,7 +3141,8 @@
    "title": "Ignorant Boy, Beautiful Girl (Namanama)",
    "artist": "Loney dear",
    "moods": [
-    "Dreamy"
+    "Dreamy",
+    "Dark"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -3327,7 +3361,8 @@
    "title": "Dance Music",
    "artist": "The Mountain Goats",
    "moods": [
-    "Bittersweet"
+    "Bittersweet",
+    "Dark"
    ],
    "moodFrom": "Claude",
    "sound": [
@@ -3365,7 +3400,8 @@
    "title": "Werewolves of London",
    "artist": "Warren Zevon",
    "moods": [
-    "Playful"
+    "Playful",
+    "Dark"
    ],
    "moodFrom": "Claude",
    "sound": [
@@ -3440,7 +3476,8 @@
    "title": "Modern Drift",
    "artist": "Efterklang",
    "moods": [
-    "Bittersweet"
+    "Bittersweet",
+    "Uplifting"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -3775,7 +3812,8 @@
    "title": "I Don't Know Why",
    "artist": "Stevie Wonder",
    "moods": [
-    "Melancholy"
+    "Melancholy",
+    "Romantic"
    ],
    "moodFrom": "Claude",
    "sound": [
@@ -3871,7 +3909,8 @@
    "title": "Romeo's Tune",
    "artist": "Steve Forbert",
    "moods": [
-    "Romantic"
+    "Romantic",
+    "Joyful"
    ],
    "moodFrom": "Claude",
    "sound": [
@@ -4118,7 +4157,8 @@
    "title": "Eleanor",
    "artist": "Hot Chip",
    "moods": [
-    "Uplifting"
+    "Uplifting",
+    "Joyful"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -4157,7 +4197,8 @@
    "title": "Gimme Some Truth - Remastered 2010",
    "artist": "John Lennon",
    "moods": [
-    "Dark"
+    "Dark",
+    "Energetic"
    ],
    "moodFrom": "Claude",
    "sound": [
@@ -4555,7 +4596,8 @@
    "title": "Everyone's in Love with You",
    "artist": "David Byrne",
    "moods": [
-    "Playful"
+    "Playful",
+    "Romantic"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -4663,7 +4705,8 @@
    "title": "Happy",
    "artist": "The Rolling Stones",
    "moods": [
-    "Joyful"
+    "Joyful",
+    "Energetic"
    ],
    "moodFrom": "Claude",
    "sound": [
@@ -5047,7 +5090,8 @@
    "title": "Fashion",
    "artist": "Tom A. Smith",
    "moods": [
-    "Dark"
+    "Dark",
+    "Energetic"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -5111,7 +5155,8 @@
    "title": "While You Wait For The Others",
    "artist": "Grizzly Bear",
    "moods": [
-    "Melancholy"
+    "Melancholy",
+    "Dreamy"
    ],
    "moodFrom": "Claude",
    "sound": [
@@ -5148,7 +5193,8 @@
    "title": "Love You",
    "artist": "The Free Design",
    "moods": [
-    "Romantic"
+    "Romantic",
+    "Joyful"
    ],
    "moodFrom": "Claude",
    "sound": [
@@ -5679,7 +5725,8 @@
    "title": "Ms. Fat Booty",
    "artist": "Mos Def",
    "moods": [
-    "Playful"
+    "Playful",
+    "Romantic"
    ],
    "moodFrom": "Claude",
    "sound": [
@@ -6128,7 +6175,8 @@
    "title": "Too Cold for You",
    "artist": "Sahara Hotnights",
    "moods": [
-    "Energetic"
+    "Energetic",
+    "Playful"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -6161,7 +6209,8 @@
    "title": "I Saw",
    "artist": "Young Fathers",
    "moods": [
-    "Energetic"
+    "Energetic",
+    "Dark"
    ],
    "moodFrom": "Claude",
    "sound": [
@@ -6589,7 +6638,8 @@
    "title": "The Clapping Song (Clap Pat Clap Slap) - Single Version",
    "artist": "Shirley Ellis",
    "moods": [
-    "Playful"
+    "Playful",
+    "Joyful"
    ],
    "moodFrom": "Claude",
    "sound": [
@@ -6764,7 +6814,8 @@
    "title": "If You Know What's Right",
    "artist": "Her's",
    "moods": [
-    "Joyful"
+    "Joyful",
+    "Energetic"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -6938,7 +6989,8 @@
    "title": "Groovin'",
    "artist": "The Young Rascals",
    "moods": [
-    "Mellow"
+    "Mellow",
+    "Romantic"
    ],
    "moodFrom": "Claude",
    "sound": [
@@ -7090,7 +7142,8 @@
    "title": "So Long Chicago",
    "artist": "Pokey LaFarge",
    "moods": [
-    "Playful"
+    "Playful",
+    "Bittersweet"
    ],
    "moodFrom": "Claude",
    "sound": [
@@ -7122,7 +7175,8 @@
    "title": "Take Yo' Praise",
    "artist": "Camille Yarbrough",
    "moods": [
-    "Romantic"
+    "Romantic",
+    "Uplifting"
    ],
    "moodFrom": "Claude",
    "sound": [
@@ -7158,7 +7212,8 @@
    "title": "Tarkovski",
    "artist": "BODEGA",
    "moods": [
-    "Energetic"
+    "Energetic",
+    "Playful"
    ],
    "moodFrom": "Claude",
    "sound": [
@@ -7267,7 +7322,8 @@
    "title": "The Things We Do For Love",
    "artist": "10cc",
    "moods": [
-    "Romantic"
+    "Romantic",
+    "Playful"
    ],
    "moodFrom": "Claude",
    "sound": [
@@ -7550,7 +7606,8 @@
    "title": "Drift Away",
    "artist": "Dobie Gray",
    "moods": [
-    "Mellow"
+    "Mellow",
+    "Uplifting"
    ],
    "moodFrom": "Claude",
    "sound": [
@@ -7583,7 +7640,8 @@
    "title": "Take Me to the River",
    "artist": "Al Green",
    "moods": [
-    "Romantic"
+    "Romantic",
+    "Mellow"
    ],
    "moodFrom": "Claude",
    "sound": [
@@ -7619,7 +7677,8 @@
    "title": "Congratulations",
    "artist": "MGMT",
    "moods": [
-    "Bittersweet"
+    "Bittersweet",
+    "Dreamy"
    ],
    "moodFrom": "Claude",
    "sound": [
@@ -7811,7 +7870,8 @@
    "title": "Just One of the Guys",
    "artist": "Jenny Lewis",
    "moods": [
-    "Bittersweet"
+    "Bittersweet",
+    "Melancholy"
    ],
    "moodFrom": "Claude",
    "sound": [
@@ -7880,7 +7940,8 @@
    "title": "A Beautiful Morning - Single Version",
    "artist": "The Rascals",
    "moods": [
-    "Joyful"
+    "Joyful",
+    "Uplifting"
    ],
    "moodFrom": "Claude",
    "sound": [
@@ -7987,7 +8048,8 @@
    "title": "Bust Your Knee Caps - Johnny Don't Leave Me",
    "artist": "Pomplamoose",
    "moods": [
-    "Playful"
+    "Playful",
+    "Dark"
    ],
    "moodFrom": "Claude",
    "sound": [
@@ -8086,7 +8148,8 @@
    "title": "Kinky",
    "artist": "bby",
    "moods": [
-    "Energetic"
+    "Energetic",
+    "Playful"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -8460,7 +8523,8 @@
    "title": "I'd Like To Walk Around In Your Mind",
    "artist": "Vashti Bunyan",
    "moods": [
-    "Dreamy"
+    "Dreamy",
+    "Romantic"
    ],
    "moodFrom": "Claude",
    "sound": [
@@ -8575,7 +8639,8 @@
    "title": "Happiness",
    "artist": "Ken Dodd",
    "moods": [
-    "Joyful"
+    "Joyful",
+    "Playful"
    ],
    "moodFrom": "Claude",
    "sound": [
@@ -8714,7 +8779,8 @@
    "title": "The Weight - Remastered 2000",
    "artist": "The Band",
    "moods": [
-    "Bittersweet"
+    "Bittersweet",
+    "Uplifting"
    ],
    "moodFrom": "Claude",
    "sound": [
@@ -8853,7 +8919,8 @@
    "title": "Sunlight",
    "artist": "The Youngbloods",
    "moods": [
-    "Mellow"
+    "Mellow",
+    "Romantic"
    ],
    "moodFrom": "Claude",
    "sound": [
