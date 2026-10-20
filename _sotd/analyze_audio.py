@@ -120,7 +120,7 @@ def main():
     deam_classes = [c.lower() for c in meta.get('classes', ['valence', 'arousal'])]
 
     tmp = tempfile.mkdtemp()
-    failed = 0
+    failed = {}
     for k, s in enumerate(todo, 1):
         try:
             mp3 = os.path.join(tmp, 'p.mp3')
@@ -146,14 +146,14 @@ def main():
             print(f"{k}/{len(todo)} {s['title']} — {s['artist']}: happy {rec['happy']} sad {rec['sad']} "
                   f"valence {rec.get('valence')} arousal {rec.get('arousal')}")
         except Exception as e:
-            failed += 1
-            print(f"{k}/{len(todo)} FAILED {s['title']}: {e}")
+            failed[s['id']] = f"{s['n']} {s['title']}: {type(e).__name__}: {e}"[:300]
+            print(f"{k}/{len(todo)} FAILED {failed[s['id']]}")
         if k % 25 == 0 or k == len(todo):
-            save(done, classes)
-    print(f'done, {failed} failed')
+            save(done, classes, failed)
+    print(f'done, {len(failed)} failed')
 
 
-def save(done, classes):
+def save(done, classes, failed=None):
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     out = {
         'about': ("Essentia model outputs for each song's 30-second Spotify preview, averaged over the clip. "
@@ -164,6 +164,8 @@ def save(done, classes):
         'moodthemeClasses': classes['moodtheme'],
         'songs': dict(sorted(done.items(), key=lambda kv: kv[1]['n'])),
     }
+    if failed:
+        out['failed'] = failed
     with open(OUT + '.part', 'w') as f:
         json.dump(out, f, ensure_ascii=False, indent=0, separators=(',', ':'))
     os.replace(OUT + '.part', OUT)
