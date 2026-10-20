@@ -16,6 +16,7 @@ MAX_AGE = 60 * 86400
 
 
 ERRORS = {}
+COUNTS = {}
 
 
 def get(url):
@@ -51,10 +52,27 @@ def call(method, **params):
             sys.exit('Last.fm refused the API key: ' + str(j.get('message', '')))
         ERRORS['error %s' % code] = ERRORS.get('error %s' % code, 0) + 1
         return [] if code == 6 else None   # 6 = not found on Last.fm
+    if method == 'track.getInfo':   # top tags without counts: weigh them by rank
+        tags = ((j.get('track') or {}).get('toptags') or {}).get('tag') or []
+        if isinstance(tags, dict):
+            tags = [tags]
+        return [[t['name'].lower().strip(), max(20, 100 - 20 * i)] for i, t in enumerate(tags)]
     tags = (j.get('toptags') or {}).get('tag') or []
     if isinstance(tags, dict):
         tags = [tags]
     return [[t['name'].lower().strip(), int(t.get('count') or 0)] for t in tags if int(t.get('count') or 0) > 0][:40]
+
+
+def track_tags(artist, title):
+    tags = call('track.getTopTags', artist=artist, track=title)
+    if tags:
+        COUNTS['from getTopTags'] = COUNTS.get('from getTopTags', 0) + 1
+        return tags
+    info = call('track.getInfo', artist=artist, track=title)   # getTopTags often comes back empty
+    if info:
+        COUNTS['from getInfo'] = COUNTS.get('from getInfo', 0) + 1
+        return info
+    return None if tags is None and info is None else []
 
 
 def clean_title(t):
@@ -79,7 +97,7 @@ def main():
     artists = {}
     for s in todo:
         artist = (s.get('artists') or [s['artist']])[0]
-        track = call('track.getTopTags', artist=artist, track=clean_title(s['title']))
+        track = track_tags(artist, clean_title(s['title']))
         if artist not in artists:
             artists[artist] = call('artist.getTopTags', artist=artist)
         if track is None or artists[artist] is None:
@@ -94,6 +112,7 @@ def main():
         'songs': len(songs), 'fetched': len(todo), 'cached': sum(1 for s in songs if s['id'] in cache),
         'withTrackTags': sum(1 for s in songs if cache.get(s['id'], {}).get('track')),
         'withArtistTags': sum(1 for s in songs if cache.get(s['id'], {}).get('artist')),
+        'trackTagsFrom': COUNTS,
         'problems': ERRORS,
     }
     with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'lastfm-status.json'), 'w') as f:
