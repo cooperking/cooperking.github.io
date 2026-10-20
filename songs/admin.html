@@ -66,8 +66,11 @@ ol.songs { list-style: none; margin: 0; padding: 0; }
 .group .lab { width: 4.6em; font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
 .chipb { border: 1px solid var(--line); background: var(--chip); border-radius: 999px; padding: 6px 11px; font: 13px/1.2 var(--sans); color: var(--fg); cursor: pointer; }
 .chipb[aria-pressed="true"] { background: var(--fg); border-color: var(--fg); color: var(--bg); }
+.chipb.lead { box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.5px var(--accent); }
 .src { grid-column: 2; font-size: 12.5px; color: var(--muted); }
 .src .chg { color: var(--accent); font-weight: 600; }
+.src.why { font-style: italic; }
+.src.why a { color: inherit; font-style: normal; }
 .actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .link { border: 0; background: none; padding: 2px 0; font: 600 11.5px/1.2 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .empty { padding: 40px 0; text-align: center; color: var(--muted); font-family: var(--serif); font-style: italic; font-size: 18px; }
@@ -97,7 +100,7 @@ ol.songs { list-style: none; margin: 0; padding: 0; }
     </div>
     <div class="row"><span class="stat" id="stat"></span></div>
   </header>
-  <p class="help">Set the right mood and genres, or tap <b>Right as it is</b> to confirm a song. Changes stay in this browser until you download or copy them (bar at the bottom) and send them to Claude, who applies them to the calendar. A song needs one mood and up to two genres.</p>
+  <p class="help">Set the right moods and genres, or tap <b>Right as it is</b> to confirm a song. A song takes one or two moods (the first you tick leads) and up to two genres. Changes stay in this browser until you download or copy them (bar at the bottom) and send them to Claude, who applies them to the calendar. <b>To check</b> means the evidence disagrees, or only the audio analysis had anything to say.</p>
   <ol class="songs" id="list"></ol>
   <p class="empty" id="none" hidden>Nothing here.</p>
 </div>
@@ -111,7 +114,8 @@ ol.songs { list-style: none; margin: 0; padding: 0; }
 <audio id="audio" preload="none"></audio>
 <script>
 (function () {
-  var MOODS = ['Upbeat', 'Mellow', 'Wistful', 'Brooding'];
+  var MOODS = ['Joyful', 'Uplifting', 'Energetic', 'Playful', 'Mellow', 'Dreamy', 'Romantic', 'Bittersweet', 'Melancholy', 'Dark'];
+  var MOOD_INFO = { Joyful: 'happy and bright', Uplifting: 'hopeful and rousing', Energetic: 'driving and high-energy', Playful: 'fun, cheeky or quirky', Mellow: 'calm and laid-back', Dreamy: 'hazy, floating, atmospheric', Romantic: 'love and longing', Bittersweet: 'happy-sad, nostalgic', Melancholy: 'sad or lonely', Dark: 'brooding, tense or angry' };
   var GENRES = ['Soul & R&B', 'Rock', 'Indie', 'Folk', 'Pop', 'Electronic', 'Hip-hop', 'Country', 'World'];
   var LIVE = 'https://sotd-playlists.cooperking.workers.dev/songs.json';
   var KEY = 'sotd-admin-edits';
@@ -121,25 +125,35 @@ ol.songs { list-style: none; margin: 0; padding: 0; }
   var songs = [], edits = {}, show = 'check', playingBtn = null;
   var list = document.getElementById('list'), audio = document.getElementById('audio');
 
-  function load() { try { edits = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { edits = {}; } }
+  function load() {
+    try { edits = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { edits = {}; }
+    // edits made with the old four moods no longer fit: drop them
+    Object.keys(edits).forEach(function (id) { if (!Array.isArray(edits[id].moods)) delete edits[id]; });
+  }
   function save() { try { localStorage.setItem(KEY, JSON.stringify(edits)); } catch (e) {} }
   function fold(t) { return String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
   function toast(msg) { var t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(function () { t.classList.remove('show'); }, 2200); }
-  function cur(s) { var e = edits[s.id]; return { mood: e ? e.mood : s.mood, genres: e ? e.genres : s.genres }; }
-  function same(a, b) { return (a.mood || '') === (b.mood || '') && (a.genres || []).join('|') === (b.genres || []).join('|'); }
+  function cur(s) { var e = edits[s.id]; return { moods: e ? e.moods : s.moods, genres: e ? e.genres : s.genres }; }
+  function same(a, b) { return (a.moods || []).join('|') === (b.moods || []).join('|') && (a.genres || []).join('|') === (b.genres || []).join('|'); }
   function dateOf(iso) { if (!iso) return ''; var d = new Date(iso); return d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear(); }
 
   MOODS.forEach(function (m) { var o = document.createElement('option'); o.value = o.textContent = m; document.getElementById('fmood').appendChild(o); });
   GENRES.forEach(function (g) { var o = document.createElement('option'); o.value = o.textContent = g; document.getElementById('fgenre').appendChild(o); });
 
+  var LISTENERS = { agree: 'back the first mood', differ: 'lean another way', none: 'no mood tags' };
   function sourceText(s) {
     var bits = [];
-    var mf = s.moodFrom || '', gf = s.genreFrom || '';
-    var m = 'Mood from ' + (mf || 'nowhere yet');
-    if (s.energy != null && s.positivity != null) m += ' (energy ' + s.energy.toFixed(2) + ', positivity ' + s.positivity.toFixed(2) + ')';
-    bits.push(m);
-    var g = 'genres from ' + (gf || 'nowhere yet');
-    if (s.musicbrainz && s.musicbrainz.length) g += ' (' + s.musicbrainz.slice(0, 6).join(', ') + ')';
+    if (s.moodFrom === 'John') bits.push('Moods set by you');
+    var BASIS = { knows: 'knows it', 'researched-high': 'read about it', 'researched-medium': 'read a little about it', 'researched-low': 'found little, a guess', guess: 'a guess' };
+    if (s.claude && s.claude.length) bits.push('Claude (' + (BASIS[s.claudeBasis] || 'a guess') + '): ' + s.claude.join(', '));
+    if (s.sound && s.sound.length) bits.push('Audio: ' + s.sound.join(', ').toLowerCase());
+    if (s.listeners) bits.push('Last.fm listeners: ' + (LISTENERS[s.listeners] || s.listeners));
+    if (!bits.length) bits.push('Moods from ' + (s.moodFrom || 'nowhere yet'));
+    var g = 'Genres ' + (s.genreFrom === 'Weighed up' ? 'weighed up' : s.genreFrom === 'John' ? 'set by you' : 'from ' + (s.genreFrom || 'nowhere yet'));
+    var ev = [];
+    if (s.musicbrainz && s.musicbrainz.length) ev.push('MusicBrainz: ' + s.musicbrainz.slice(0, 5).join(', '));
+    if (s.styles && s.styles.length) ev.push('audio: ' + s.styles.join(', '));
+    if (ev.length) g += ' (' + ev.join('; ') + ')';
     bits.push(g);
     return bits.join(' · ');
   }
@@ -174,9 +188,16 @@ ol.songs { list-style: none; margin: 0; padding: 0; }
     var gm = document.createElement('div'); gm.className = 'group';
     var lm = document.createElement('span'); lm.className = 'lab'; lm.textContent = 'Mood'; gm.appendChild(lm);
     MOODS.forEach(function (m) {
-      var b = document.createElement('button'); b.type = 'button'; b.className = 'chipb'; b.textContent = m;
-      b.setAttribute('aria-pressed', c.mood === m ? 'true' : 'false');
-      b.addEventListener('click', function () { setEdit(s, { mood: m, genres: cur(s).genres }); });
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'chipb'; b.textContent = m; b.title = MOOD_INFO[m];
+      var at = (c.moods || []).indexOf(m);
+      b.setAttribute('aria-pressed', at !== -1 ? 'true' : 'false');
+      if (at === 0 && c.moods.length > 1) b.className += ' lead';
+      b.addEventListener('click', function () {
+        var now = (cur(s).moods || []).slice(), i = now.indexOf(m);
+        if (i !== -1) now.splice(i, 1);
+        else { if (now.length >= 2) { toast('Two moods at most: untick one first'); return; } now.push(m); }
+        setEdit(s, { moods: now, genres: cur(s).genres });
+      });
       gm.appendChild(b);
     });
     var gg = document.createElement('div'); gg.className = 'group';
@@ -189,14 +210,14 @@ ol.songs { list-style: none; margin: 0; padding: 0; }
         var now = (cur(s).genres || []).slice(), i = now.indexOf(g);
         if (i !== -1) now.splice(i, 1);
         else { if (now.length >= 2) { toast('Two genres at most: untick one first'); return; } now.push(g); }
-        setEdit(s, { mood: cur(s).mood, genres: now });
+        setEdit(s, { moods: cur(s).moods, genres: now });
       });
       gg.appendChild(b);
     });
     var acts = document.createElement('div'); acts.className = 'actions';
     if (!changed) {
       var ok = document.createElement('button'); ok.type = 'button'; ok.className = 'link'; ok.textContent = 'Right as it is';
-      ok.addEventListener('click', function () { setEdit(s, { mood: s.mood, genres: (s.genres || []).slice() }); });
+      ok.addEventListener('click', function () { setEdit(s, { moods: (s.moods || []).slice(), genres: (s.genres || []).slice() }); });
       acts.appendChild(ok);
     } else {
       var undo = document.createElement('button'); undo.type = 'button'; undo.className = 'link'; undo.textContent = 'Undo';
@@ -210,16 +231,25 @@ ol.songs { list-style: none; margin: 0; padding: 0; }
     src.textContent = sourceText(s);
     if (changed && !same(c, s)) {
       var was = document.createElement('span'); was.className = 'chg';
-      was.textContent = ' · was ' + (s.mood || 'no mood') + ', ' + ((s.genres || []).join(' / ') || 'no genre');
+      was.textContent = ' · was ' + ((s.moods || []).join(' / ') || 'no mood') + ', ' + ((s.genres || []).join(' / ') || 'no genre');
       src.appendChild(was);
     }
     li.appendChild(src);
+    if (s.claudeWhy) {
+      var why = document.createElement('div'); why.className = 'src why';
+      why.textContent = s.claudeWhy + ' ';
+      if (/^https:\/\//.test(s.claudeSource || '')) {
+        var a = document.createElement('a'); a.href = s.claudeSource; a.target = '_blank'; a.rel = 'noopener noreferrer';
+        a.textContent = 'Source'; why.appendChild(a);
+      }
+      li.appendChild(why);
+    }
     return li;
   }
 
   function setEdit(s, v) {
-    if (!v.mood) { toast('Pick a mood as well'); }
-    edits[s.id] = { mood: v.mood || null, genres: v.genres || [] };
+    if (!(v.moods || []).length) { toast('Pick a mood as well'); }
+    edits[s.id] = { moods: v.moods || [], genres: v.genres || [] };
     save(); refresh(s.id);
   }
   function refresh(id) {
@@ -234,7 +264,7 @@ ol.songs { list-style: none; margin: 0; padding: 0; }
     var q = fold(document.getElementById('q').value.trim());
     if (q && fold(s.title + ' ' + s.artist).indexOf(q) === -1) return false;
     var c = cur(s), fm = document.getElementById('fmood').value, fg = document.getElementById('fgenre').value;
-    if (fm && c.mood !== fm) return false;
+    if (fm && (c.moods || []).indexOf(fm) === -1) return false;
     if (fg && (c.genres || []).indexOf(fg) === -1) return false;
     return true;
   }
@@ -256,7 +286,7 @@ ol.songs { list-style: none; margin: 0; padding: 0; }
     var out = {};
     songs.forEach(function (s) {
       var e = edits[s.id]; if (!e) return;
-      out[s.id] = { n: s.n, title: s.title, artist: s.artist, mood: e.mood, genres: e.genres, was: { mood: s.mood || null, genres: s.genres || [] } };
+      out[s.id] = { n: s.n, title: s.title, artist: s.artist, moods: e.moods, genres: e.genres, was: { moods: s.moods || [], genres: s.genres || [] } };
     });
     return { exported: new Date().toISOString(), count: Object.keys(out).length, edits: out };
   }
@@ -294,7 +324,7 @@ ol.songs { list-style: none; margin: 0; padding: 0; }
 
   load();
   Promise.all([
-    fetch('tags.json', { cache: 'no-cache' }).then(function (r) { return r.json(); }),
+    fetch('moods.json', { cache: 'no-cache' }).then(function (r) { return r.json(); }),
     fetch(LIVE).then(function (r) { return r.ok ? r.json() : { songs: [] }; }).catch(function () { return { songs: [] }; })
   ]).then(function (res) {
     var tags = res[0].songs || {}, live = res[1].songs || [];
@@ -307,8 +337,9 @@ ol.songs { list-style: none; margin: 0; padding: 0; }
       var lt = l.tag || {};
       return {
         id: id, n: l.n || t.n, a: l.a || null, title: l.title || t.title, artist: l.artist || t.artist, img: l.img || '', p: l.p || '',
-        mood: t.mood || lt.m || null, genres: t.genres || lt.g || [], moodFrom: t.moodFrom || (lt.m ? 'the Worker (ReccoBeats)' : ''),
-        genreFrom: t.genreFrom || (lt.g && lt.g.length ? 'the Worker (MusicBrainz)' : ''), energy: t.energy, positivity: t.positivity,
+        moods: t.moods || [], genres: t.genres || lt.g || [], moodFrom: t.moodFrom || '',
+        genreFrom: t.genreFrom || (lt.g && lt.g.length ? 'the Worker (MusicBrainz)' : ''),
+        claude: t.claude, claudeBasis: t.claudeBasis, claudeWhy: t.claudeWhy, claudeSource: t.claudeSource, sound: t.sound, listeners: t.listeners, styles: t.styles,
         musicbrainz: t.musicbrainz, check: tags[id] ? !!t.check : true
       };
     }).sort(function (a, b) { return b.n - a.n; });

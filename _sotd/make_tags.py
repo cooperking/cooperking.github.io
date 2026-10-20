@@ -9,7 +9,7 @@ Each song's mood is weighed up from three voices, then John's corrections win:
 Genres: MusicBrainz tags (album, artists, recording), Last.fm tags and Essentia's Discogs styles,
 with Claude's corrections and then John's on top.
 
-A song is marked "check" when the voices disagree or only the sound model had anything to say.
+A song is marked "check" unless Claude knows or has researched it (and listeners and audio don't both disagree).
 """
 import json, math, os, sys, urllib.request
 from collections import Counter
@@ -80,7 +80,9 @@ SOUND = {
     "Dark": {"mt:dark": .8, "aggressive": .5, "mt:heavy": .4, "mt:dramatic": .3, "mt:drama": .2, "valence": -.4},
 }
 
-WEIGHTS = {"claude": 0.55, "claude_guess": 0.15, "listeners": 0.30, "artist": 0.12, "sound": 0.20}
+# Claude's picks count by how they were made: knowing the song, researching it (by how clear the sources were), or a guess
+CLAUDE_WEIGHT = {"knows": 0.55, "researched-high": 0.5, "researched-medium": 0.35, "researched-low": 0.15, "guess": 0.15}
+WEIGHTS = {"listeners": 0.30, "sound": 0.20}
 GENRE_WEIGHTS = {"musicbrainz": 0.5, "listeners": 0.3, "sound": 0.2}
 MB_SOURCE_WEIGHT = {"album": 3, "artist": 2, "recording": 1}
 
@@ -171,18 +173,19 @@ def main():
 
         # ---------- moods ----------
         voices = []   # (weight, shares)
+        basis = c.get('basis') or ('knows' if c.get('moodSure') else 'guess')
+        solid = bool(c.get('moods')) and basis in ('knows', 'researched-high')   # Claude knows what the song is about
         if c.get('moods'):
-            voices.append((WEIGHTS['claude'] if c.get('moodSure') else WEIGHTS['claude_guess'], picks_dist(c['moods'])))
+            voices.append((CLAUDE_WEIGHT[basis], picks_dist(c['moods'])))
         lmoods, rel = listener_moods(lf.get('track', []))
         stats['listener tags'] += bool(lf.get('track'))
         stats['listener mood tags'] += bool(lmoods)
         stats['listener mood tags strong enough'] += bool(lmoods and rel >= 0.15)
         if lmoods and rel >= 0.15:
             voices.append((WEIGHTS['listeners'] * rel, lmoods))
-        # Last.fm has track tags for few of these songs; the artist's tags are a weaker stand-in
+        # Last.fm has track tags for few of these songs. The artist's tags were tried as a stand-in, but backed
+        # Claude's pick less often than chance, so they are only measured (see agreement), not used.
         amoods, arel = listener_moods(lf.get('artist', []))
-        if not (lmoods and rel >= 0.15) and amoods and arel >= 0.15:
-            voices.append((WEIGHTS['artist'] * arel, amoods))
         if tid in sound:
             voices.append((WEIGHTS['sound'], sound[tid]))
         mix = {}
@@ -191,23 +194,29 @@ def main():
                 mix[m] = mix.get(m, 0) + w * x
         ranked = top(mix, 10)
         moods = ranked[:1] + [m for m in ranked[1:2] if mix[m] >= 0.5 * mix[ranked[0]]] if ranked else []
-        rec['moods'], rec['moodFrom'] = moods, ('Claude' if c.get('moodSure') else 'Weighed up')
+        rec['moods'] = moods
+        rec['moodFrom'] = 'Claude' if solid and basis == 'knows' else 'Claude (researched)' if solid else 'Weighed up'
         if tid in sound:
             rec['sound'] = top(sound[tid], 3)
         if c.get('moods'):
             rec['claude'] = c['moods']
-            if not c.get('moodSure'):
-                rec['claudeGuess'] = True
+            rec['claudeBasis'] = basis
+            if c.get('why'):
+                rec['claudeWhy'] = c['why']
+            if c.get('source'):
+                rec['claudeSource'] = c['source']
         lis_top = top(lmoods, 3) if lmoods and rel >= 0.15 else []
         rec['listeners'] = 'none' if not lis_top else ('agree' if moods and moods[0] in lis_top else 'differ')
 
         # do the voices back the first mood?
         first = moods[0] if moods else None
-        if c.get('moodSure'):
-            others = [v for v in (lis_top, rec.get('sound', [])) if v]
-            check = bool(others) and all(first not in v for v in others)
+        if solid:
+            # the audio models alone are too unreliable to overrule Claude; it takes listeners and audio both disagreeing
+            check = bool(lis_top) and first not in lis_top and first not in rec.get('sound', [first])
+        elif c.get('moods') and basis == 'researched-medium':
+            check = tid in sound and first not in rec['sound'] and first not in lis_top
         else:
-            check = (not lis_top) or (tid in sound and first not in rec['sound'] and first not in lis_top[:1])
+            check = True   # nothing firmer than a guess or the audio models
         # ---------- genres ----------
         parts, mb_seen = [], []
         m = mbz.get(tid, {})
@@ -257,7 +266,7 @@ def main():
         if check and rec['moodFrom'] != 'John':
             rec['check'] = True
         out[tid] = rec
-        if c.get('moodSure'):   # how often each other voice backs Claude's first pick, as a running check on them
+        if solid:   # how often each other voice backs Claude's first pick, as a running check on them
             if lis_top:
                 stats['listeners heard'] += 1
                 stats['listeners back Claude'] += c['moods'][0] in lis_top
@@ -272,11 +281,11 @@ def main():
 
     tags = {
         'about': ("Moods and broad genres for each song on John's Song of the Day. Each song gets up to two of ten moods, "
-                  "weighed up from Claude's picks (songs Claude knows, sound and lyrics), Last.fm listener tags, and "
+                  "weighed up from Claude's picks (songs Claude knows or has read about, sound and lyrics), Last.fm listener tags, and "
                   "Essentia's mood models listening to the 30-second preview (Music Technology Group, Universitat Pompeu "
                   "Fabra, CC BY-NC-SA 4.0). sound = the three moods the audio models hear most; listeners = whether "
-                  "Last.fm listeners' tags back the first mood; check = the voices disagree, or only the audio had "
-                  "anything to say. Genres come from MusicBrainz, Last.fm and Essentia's Discogs styles. John's "
+                  "Last.fm listeners' tags back the first mood; check = nothing firmer than a guess or the audio "
+                  "models, or listeners and audio both disagree with Claude. Genres come from MusicBrainz, Last.fm and Essentia's Discogs styles. John's "
                   "corrections from the admin page always win."),
         'agreement': {
             'about': "For songs Claude knows: how often the three strongest moods from Last.fm listeners' track tags, "
