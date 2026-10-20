@@ -1,0 +1,47 @@
+name: Essentia raw outputs
+
+# One-off export: every output of every Essentia model for every song preview, unchanged.
+# Results go to the essentia-raw branch, not main, so the website repo stays small.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["_sotd/essentia_raw.py", ".github/workflows/essentia-raw.yml"]
+
+permissions:
+  contents: write
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Cache the Essentia models
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/essentia-models
+          key: essentia-models-v1
+
+      - name: Install Essentia
+        run: pip install --quiet "essentia-tensorflow==2.1b6.dev1389" numpy
+
+      - name: Run every model on every preview
+        env:
+          OUTDIR: ${{ runner.temp }}/essentia-raw
+        run: python _sotd/essentia_raw.py
+
+      - name: Save to the essentia-raw branch
+        run: |
+          cd "${{ runner.temp }}/essentia-raw"
+          git init -q -b essentia-raw
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Essentia raw outputs for every song preview"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" essentia-raw
