@@ -194,6 +194,8 @@ def main():
                 mix[m] = mix.get(m, 0) + w * x
         ranked = top(mix, 10)
         moods = ranked[:1] + [m for m in ranked[1:2] if mix[m] >= 0.5 * mix[ranked[0]]] if ranked else []
+        if solid:
+            moods = c['moods'][:2]   # Claude knows or has read what the song is about: its picks stand as given
         rec['moods'] = moods
         rec['moodFrom'] = 'Claude' if solid and basis == 'knows' else 'Claude (researched)' if solid else 'Weighed up'
         if tid in sound:
