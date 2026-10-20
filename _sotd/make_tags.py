@@ -100,6 +100,12 @@ def top(d, k=3):
     return [m for m, v in sorted(d.items(), key=lambda kv: -kv[1])[:k] if v > 0]
 
 
+def shares(d, k=3):
+    """The k biggest shares of a {name: weight} dict, as [[name, percent]]."""
+    t = sum(v for v in d.values() if v > 0) or 1
+    return [[n, round(100 * v / t)] for n, v in sorted(d.items(), key=lambda kv: -kv[1])[:k] if v > 0]
+
+
 def picks_dist(picks):
     return dict(zip(picks, [0.65, 0.35])) if len(picks) > 1 else ({picks[0]: 1.0} if picks else {})
 
@@ -176,20 +182,20 @@ def main():
         basis = c.get('basis') or ('knows' if c.get('moodSure') else 'guess')
         solid = bool(c.get('moods')) and basis in ('knows', 'researched-high')   # Claude knows what the song is about
         if c.get('moods'):
-            voices.append((CLAUDE_WEIGHT[basis], picks_dist(c['moods'])))
+            voices.append((CLAUDE_WEIGHT[basis], picks_dist(c['moods']), 'Claude'))
         lmoods, rel = listener_moods(lf.get('track', []))
         stats['listener tags'] += bool(lf.get('track'))
         stats['listener mood tags'] += bool(lmoods)
         stats['listener mood tags strong enough'] += bool(lmoods and rel >= 0.15)
         if lmoods and rel >= 0.15:
-            voices.append((WEIGHTS['listeners'] * rel, lmoods))
+            voices.append((WEIGHTS['listeners'] * rel, lmoods, 'Last.fm'))
         # Last.fm has track tags for few of these songs. The artist's tags were tried as a stand-in, but backed
         # Claude's pick less often than chance, so they are only measured (see agreement), not used.
         amoods, arel = listener_moods(lf.get('artist', []))
         if tid in sound:
-            voices.append((WEIGHTS['sound'], sound[tid]))
+            voices.append((WEIGHTS['sound'], sound[tid], 'Audio'))
         mix = {}
-        for w, d in voices:
+        for w, d, _ in voices:
             for m, x in d.items():
                 mix[m] = mix.get(m, 0) + w * x
         ranked = top(mix, 10)
@@ -197,6 +203,10 @@ def main():
         if solid:
             moods = c['moods'][:2]   # Claude knows or has read what the song is about: its picks stand as given
         rec['moods'] = moods
+        if voices and not solid:   # show the working: each voice's weight and leanings, and the result
+            vw = sum(w for w, _, _ in voices)
+            rec['moodMix'] = shares(mix)
+            rec['moodEvidence'] = [[label, round(100 * w / vw), shares(d)] for w, d, label in voices]
         rec['moodFrom'] = 'Claude' if solid and basis == 'knows' else 'Claude (researched)' if solid else 'Weighed up'
         if tid in sound:
             rec['sound'] = top(sound[tid], 3)
@@ -231,10 +241,10 @@ def main():
                 for b, x in d.items():
                     mbmix[b] = mbmix.get(b, 0) + MB_SOURCE_WEIGHT[src] * x
         if wsum:
-            parts.append((GENRE_WEIGHTS['musicbrainz'], {b: x / wsum for b, x in mbmix.items()}))
+            parts.append((GENRE_WEIGHTS['musicbrainz'], {b: x / wsum for b, x in mbmix.items()}, 'MusicBrainz'))
         lg = dist(lf.get('track', []) + [[t, cnt / 2] for t, cnt in lf.get('artist', [])])
         if lg:
-            parts.append((GENRE_WEIGHTS['listeners'], lg))
+            parts.append((GENRE_WEIGHTS['listeners'], lg, 'Last.fm'))
         if a and a.get('styles'):
             sg = {}
             for label, x in a['styles']:
@@ -242,10 +252,10 @@ def main():
                 if b:
                     sg[b] = sg.get(b, 0) + x
             if sg:
-                parts.append((GENRE_WEIGHTS['sound'], norm(sg)))
+                parts.append((GENRE_WEIGHTS['sound'], norm(sg), 'Audio'))
             rec['styles'] = [l.split('---')[-1] for l, _ in a['styles'][:3]]
-        gmix, gw = {}, sum(w for w, _ in parts)
-        for w, d in parts:
+        gmix, gw = {}, sum(w for w, _, _ in parts)
+        for w, d, _ in parts:
             for b, x in d.items():
                 gmix[b] = gmix.get(b, 0) + w * x / gw
         picked = [b for b in top(gmix, 2) if gmix[b] >= 0.25]
@@ -257,6 +267,9 @@ def main():
             rec['genres'], rec['genreFrom'] = c['genresIfNone'], 'Claude'
         else:
             rec['genres'], rec['genreFrom'] = [], 'none'
+        if parts:   # show the working: each source's weight and leanings, and the combined shares
+            rec['genreMix'] = shares(gmix)
+            rec['genreEvidence'] = [[label, round(100 * w / gw), shares(d)] for w, d, label in parts]
         if mb_seen:
             rec['musicbrainz'] = sorted(set(t for t in mb_seen if bucket(t)))[:10]
 
