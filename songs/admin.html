@@ -100,7 +100,7 @@ ol.songs { list-style: none; margin: 0; padding: 0; }
     </div>
     <div class="row"><span class="stat" id="stat"></span></div>
   </header>
-  <p class="help">Set the right moods and genres, or tap <b>Right as it is</b> to confirm a song. A song takes one or two moods (the first you tick leads) and up to two genres. Changes stay in this browser until you download or copy them (bar at the bottom) and send them to Claude, who applies them to the calendar. <b>To check</b> means the evidence disagrees, or only the audio analysis had anything to say.</p>
+  <p class="help">Set the right moods and genres, or tap <b>Right as it is</b> to confirm a song. A song takes one or two moods (the first you tick leads) and up to two genres. Changes stay in this browser until you download or copy them (bar at the bottom) and send them to Claude, who applies them to the calendar. <b>To check</b> means Claude found little about the song, so its moods rest on a guess and the audio analysis. A ringed mood leads.</p>
   <ol class="songs" id="list"></ol>
   <p class="empty" id="none" hidden>Nothing here.</p>
 </div>
@@ -147,7 +147,7 @@ ol.songs { list-style: none; margin: 0; padding: 0; }
     var BASIS = { knows: 'knows it', 'researched-high': 'read about it', 'researched-medium': 'read a little about it', 'researched-low': 'found little, a guess', guess: 'a guess' };
     if (s.claude && s.claude.length) bits.push('Claude (' + (BASIS[s.claudeBasis] || 'a guess') + '): ' + s.claude.join(', '));
     if (s.sound && s.sound.length) bits.push('Audio: ' + s.sound.join(', ').toLowerCase());
-    if (s.listeners) bits.push('Last.fm listeners: ' + (LISTENERS[s.listeners] || s.listeners));
+    if (s.listeners && s.listeners !== 'none') bits.push('Last.fm listeners: ' + (LISTENERS[s.listeners] || s.listeners));
     if (!bits.length) bits.push('Moods from ' + (s.moodFrom || 'nowhere yet'));
     var g = 'Genres ' + (s.genreFrom === 'Weighed up' ? 'weighed up' : s.genreFrom === 'John' ? 'set by you' : 'from ' + (s.genreFrom || 'nowhere yet'));
     var ev = [];
