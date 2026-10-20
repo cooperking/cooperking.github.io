@@ -1,5 +1,5 @@
 {
- "about": "Moods and broad genres for each song on John's Song of the Day. Each song gets up to two of ten moods, weighed up from Claude's picks (songs Claude knows, sound and lyrics), Last.fm listener tags, and Essentia's mood models listening to the 30-second preview (Music Technology Group, Universitat Pompeu Fabra, CC BY-NC-SA 4.0). sound = the three moods the audio models hear most; listeners = whether Last.fm listeners' tags back the first mood; check = the voices disagree, or only the audio had anything to say. Genres come from MusicBrainz, Last.fm and Essentia's Discogs styles. John's corrections from the admin page always win.",
+ "about": "Moods and broad genres for each song on John's Song of the Day. Each song gets up to two of ten moods, weighed up from Claude's picks (songs Claude knows or has read about, sound and lyrics), Last.fm listener tags, and Essentia's mood models listening to the 30-second preview (Music Technology Group, Universitat Pompeu Fabra, CC BY-NC-SA 4.0). sound = the three moods the audio models hear most; listeners = whether Last.fm listeners' tags back the first mood; check = nothing firmer than a guess or the audio models, or listeners and audio both disagree with Claude. Genres come from MusicBrainz, Last.fm and Essentia's Discogs styles. John's corrections from the admin page always win.",
  "agreement": {
   "about": "For songs Claude knows: how often the three strongest moods from Last.fm listeners' track tags, from the artist's Last.fm tags, and from the audio models include Claude's first pick.",
   "listeners": [
@@ -7,12 +7,12 @@
    3
   ],
   "audio": [
-   77,
-   139
+   104,
+   192
   ],
   "artistTags": [
-   2,
-   15
+   3,
+   21
   ],
   "songsWithListenerTags": 11,
   "songsWithListenerMoodTags": 8,
@@ -72,6 +72,7 @@
     "Melancholy",
     "Bittersweet"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Alternative Rock",
@@ -92,28 +93,28 @@
     "pop",
     "rock",
     "roots rock"
-   ],
-   "check": true
+   ]
   },
   "0AQSOcvFfPGxofpNuK7zyA": {
    "n": 2,
    "title": "Life's Work",
    "artist": "Hannah Frances, Daniel Rossen",
    "moods": [
-    "Dreamy",
-    "Melancholy"
+    "Bittersweet"
    ],
-   "moodFrom": "Weighed up",
+   "moodFrom": "Claude (researched)",
    "sound": [
     "Bittersweet",
     "Melancholy",
     "Dreamy"
    ],
    "claude": [
-    "Dreamy",
-    "Melancholy"
+    "Bittersweet",
+    "Playful"
    ],
-   "claudeGuess": true,
+   "claudeBasis": "researched-high",
+   "claudeWhy": "Whimsical, haywire chamber-folk with bursts of trombone (arranged by Daniel Rossen) over a story of family estrangement and learning to trust again.",
+   "claudeSource": "https://firetalkrecs.com/news/hannahfrances-lifeswork",
    "listeners": "none",
    "styles": [
     "Ethereal",
@@ -133,8 +134,7 @@
     "progressive folk",
     "progressive rock",
     "rock"
-   ],
-   "check": true
+   ]
   },
   "4ymUJhziZLrUZJ2uQVL6kf": {
    "n": 3,
@@ -142,7 +142,7 @@
    "artist": "Whitmer Thomas",
    "moods": [
     "Dark",
-    "Energetic"
+    "Melancholy"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -150,6 +150,13 @@
     "Energetic",
     "Joyful"
    ],
+   "claude": [
+    "Melancholy",
+    "Dark"
+   ],
+   "claudeBasis": "researched-low",
+   "claudeWhy": "Thomas calls it one of the album's sincere, non-joke songs; the album is gothy darkwave about trauma and his mother's life, but nothing describes this track's sound.",
+   "claudeSource": "https://www.thefader.com/2020/04/09/whitmer-thomas-the-golden-one-interview",
    "listeners": "none",
    "styles": [
     "Coldwave",
@@ -174,18 +181,22 @@
    "title": "Short King",
    "artist": "Alex Cameron",
    "moods": [
-    "Playful"
+    "Playful",
+    "Bittersweet"
    ],
-   "moodFrom": "Weighed up",
+   "moodFrom": "Claude (researched)",
    "sound": [
     "Uplifting",
     "Romantic",
     "Joyful"
    ],
    "claude": [
-    "Playful"
+    "Playful",
+    "Bittersweet"
    ],
-   "claudeGuess": true,
+   "claudeBasis": "researched-high",
+   "claudeWhy": "A self-produced, Lou Reed-style chugging groove in which the 6'4\" Cameron jokingly sulks with jealousy because the woman he likes prefers a much shorter man.",
+   "claudeSource": "https://stereogum.com/2326207/alex-cameron-short-king/music",
    "listeners": "none",
    "styles": [
     "Pop Rock",
@@ -204,8 +215,7 @@
     "piano rock",
     "pop rock",
     "roots rock"
-   ],
-   "check": true
+   ]
   },
   "2zhOjOH2DvARkRcCvCo7DC": {
    "n": 5,
@@ -224,6 +234,7 @@
     "Melancholy",
     "Dark"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Folk",
@@ -251,14 +262,22 @@
    "title": "Dance Your Life Away",
    "artist": "audiobooks",
    "moods": [
+    "Energetic",
     "Playful"
    ],
-   "moodFrom": "Weighed up",
+   "moodFrom": "Claude (researched)",
    "sound": [
     "Playful",
     "Joyful",
     "Energetic"
    ],
+   "claude": [
+    "Energetic",
+    "Playful"
+   ],
+   "claudeBasis": "researched-high",
+   "claudeWhy": "Upbeat, genre-hopping party track with wild shrieked vocals, about crashing a chaotic LA hotel party in disguise and throwing off inhibitions.",
+   "claudeSource": "https://www.thelineofbestfit.com/new-music/discovery/audiobooks-dance-your-life-away",
    "listeners": "none",
    "styles": [
     "House",
@@ -277,22 +296,29 @@
     "synth-pop",
     "techno",
     "trip hop"
-   ],
-   "check": true
+   ]
   },
   "4x4ja0ulDFFtfjB1ygExa2": {
    "n": 7,
    "title": "Schatze",
    "artist": "Ohtis, Stef Chura",
    "moods": [
-    "Uplifting"
+    "Playful",
+    "Energetic"
    ],
-   "moodFrom": "Weighed up",
+   "moodFrom": "Claude (researched)",
    "sound": [
     "Uplifting",
     "Energetic",
     "Bittersweet"
    ],
+   "claude": [
+    "Playful",
+    "Energetic"
+   ],
+   "claudeBasis": "researched-high",
+   "claudeWhy": "Punchy lo-fi garage rock with synths and a droning bass; a call-and-response duet sketching a self-absorbed husband whose wife pushes back.",
+   "claudeSource": "https://thelineofbestfit.com/new-music/song-of-the-day/ohtis-stef-chura-schatze",
    "listeners": "none",
    "styles": [
     "Indie Rock",
@@ -311,23 +337,29 @@
     "grunge",
     "indie rock",
     "lo-fi"
-   ],
-   "check": true
+   ]
   },
   "0PFVZNMRc3Z8TC3BVn2Dln": {
    "n": 8,
    "title": "Carousel Ride",
    "artist": "Rubblebucket",
    "moods": [
-    "Energetic",
-    "Dark"
+    "Playful",
+    "Bittersweet"
    ],
-   "moodFrom": "Weighed up",
+   "moodFrom": "Claude (researched)",
    "sound": [
     "Energetic",
     "Dark",
     "Bittersweet"
    ],
+   "claude": [
+    "Playful",
+    "Bittersweet"
+   ],
+   "claudeBasis": "researched-high",
+   "claudeWhy": "Whimsical, colourful track swinging between crunchy synths and bouncy bass grooves, in which Kalmia Traver looks back on where her life has gone after her cancer diagnosis.",
+   "claudeSource": "https://kexp.org/read/2014/8/28/song-of-the-day-rubblebucket-carousel-ride/",
    "listeners": "none",
    "styles": [
     "Indie Rock",
@@ -349,8 +381,7 @@
     "pop",
     "pop rock",
     "rock"
-   ],
-   "check": true
+   ]
   },
   "5gSwQihHUXvC5H4SBCo03D": {
    "n": 9,
@@ -369,6 +400,7 @@
     "Dreamy",
     "Playful"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "African",
@@ -394,15 +426,22 @@
    "title": "Be the Wheel",
    "artist": "Theo Katzman, 10 Good Songs",
    "moods": [
-    "Mellow",
-    "Romantic"
+    "Uplifting",
+    "Energetic"
    ],
-   "moodFrom": "Weighed up",
+   "moodFrom": "Claude (researched)",
    "sound": [
     "Mellow",
     "Romantic",
     "Melancholy"
    ],
+   "claude": [
+    "Uplifting",
+    "Energetic"
+   ],
+   "claudeBasis": "researched-high",
+   "claudeWhy": "An upbeat funk-pop track built on a groovy bassline, funky guitar and tight chorus harmonies, urging you to take control of your life rather than wait for chances to come.",
+   "claudeSource": "https://lightning100.com/2023/theo-katzman-be-the-wheel-dans-dj-pick-of-the-week/",
    "listeners": "none",
    "styles": [
     "Neo Soul",
@@ -419,15 +458,15 @@
     "indie rock",
     "pop",
     "rock"
-   ],
-   "check": true
+   ]
   },
   "2aBSFHjDOewbd4mdqhwTAb": {
    "n": 11,
    "title": "Eggs in one Basket",
    "artist": "Tele Novella",
    "moods": [
-    "Dreamy"
+    "Playful",
+    "Dark"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -435,6 +474,13 @@
     "Uplifting",
     "Mellow"
    ],
+   "claude": [
+    "Playful",
+    "Dark"
+   ],
+   "claudeBasis": "researched-medium",
+   "claudeWhy": "Bass-heavy, Gorillaz-like groove with electric drums that a reviewer likened to skeletons dancing in a claymation Halloween film; lyrics' subject not found.",
+   "claudeSource": "https://earbites.substack.com/p/i-hope-the-ghosts-that-haunt-me-sound",
    "listeners": "none",
    "styles": [
     "Pop Rock",
@@ -472,6 +518,7 @@
     "Romantic",
     "Melancholy"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Blues Rock",
@@ -489,26 +536,29 @@
     "experimental rock",
     "folk",
     "rock"
-   ],
-   "check": true
+   ]
   },
   "4fZgmYwkxfeSSIK9wTdg6N": {
    "n": 13,
    "title": "Checking Out",
    "artist": "Divorce",
    "moods": [
-    "Bittersweet"
+    "Dark",
+    "Playful"
    ],
-   "moodFrom": "Weighed up",
+   "moodFrom": "Claude (researched)",
    "sound": [
     "Bittersweet",
     "Melancholy",
     "Romantic"
    ],
    "claude": [
-    "Bittersweet"
+    "Dark",
+    "Playful"
    ],
-   "claudeGuess": true,
+   "claudeBasis": "researched-high",
+   "claudeWhy": "Fuzzy country-tinged indie rock murder ballad, told with tongue-in-cheek humour, about a mistreated wife who arms herself and ends it violently.",
+   "claudeSource": "https://beatsperminute.com/divorce-conjure-their-own-version-of-a-murder-ballad-with-checking-out-announce-debut-ep/",
    "listeners": "none",
    "styles": [
     "Alternative Rock",
@@ -518,8 +568,7 @@
    "genres": [
     "Indie"
    ],
-   "genreFrom": "Weighed up",
-   "check": true
+   "genreFrom": "Weighed up"
   },
   "5ClqcvP4dYDDX6Zv3jPQD1": {
    "n": 14,
@@ -539,6 +588,7 @@
     "Joyful",
     "Bittersweet"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Synth-pop",
@@ -580,6 +630,7 @@
     "Uplifting",
     "Bittersweet"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Synth-pop",
@@ -609,7 +660,6 @@
    "title": "In The Morning I'll Be Better",
    "artist": "Tennis",
    "moods": [
-    "Dreamy",
     "Mellow"
    ],
    "moodFrom": "Weighed up",
@@ -618,6 +668,13 @@
     "Mellow",
     "Dark"
    ],
+   "claude": [
+    "Mellow",
+    "Bittersweet"
+   ],
+   "claudeBasis": "researched-medium",
+   "claudeWhy": "Soulful Carole King/Laura Nyro-style chill groove with bluesy guitar stabs; Moore says the lyric holds two conflicting feelings about femininity, but no source spells out the story.",
+   "claudeSource": "https://5280.com/tennis-drops-its-fourth-album/",
    "listeners": "none",
    "styles": [
     "Alternative Rock",
@@ -635,8 +692,7 @@
     "pop",
     "rock",
     "synth-pop"
-   ],
-   "check": true
+   ]
   },
   "3zwxnzanbTdJhsrR8JvT3j": {
    "n": 17,
@@ -655,6 +711,7 @@
     "Joyful",
     "Romantic"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Pop Rock",
@@ -691,6 +748,7 @@
     "Bittersweet",
     "Joyful"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Pop Rock",
@@ -710,8 +768,7 @@
     "indietronica",
     "pop",
     "rock"
-   ],
-   "check": true
+   ]
   },
   "3kJXrEVUCdPQ3e4e5k9OHC": {
    "n": 19,
@@ -730,6 +787,7 @@
     "Energetic",
     "Joyful"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Pop Rock",
@@ -767,6 +825,7 @@
     "Uplifting",
     "Bittersweet"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Nu-Disco",
@@ -791,20 +850,22 @@
    "title": "Is This a Dream?",
    "artist": "Badly Drawn Boy",
    "moods": [
-    "Dreamy",
-    "Bittersweet"
+    "Playful",
+    "Energetic"
    ],
-   "moodFrom": "Weighed up",
+   "moodFrom": "Claude (researched)",
    "sound": [
     "Uplifting",
     "Joyful",
     "Energetic"
    ],
    "claude": [
-    "Dreamy",
-    "Bittersweet"
+    "Playful",
+    "Energetic"
    ],
-   "claudeGuess": true,
+   "claudeBasis": "researched-high",
+   "claudeWhy": "An upbeat, deliberately cartoonish sound collage of chaos and confusion that satirises misinformation, untrustworthy leaders and the hunt for online likes.",
+   "claudeSource": "https://faroutmagazine.co.uk/badly-drawn-boy-new-song/",
    "listeners": "none",
    "styles": [
     "Indie Rock",
@@ -820,8 +881,7 @@
     "indie folk",
     "indie rock",
     "rock"
-   ],
-   "check": true
+   ]
   },
   "3POpqoO9i1UB6WzYZ0MvOC": {
    "n": 22,
@@ -841,6 +901,7 @@
     "Dark",
     "Energetic"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Indie Rock",
@@ -864,8 +925,8 @@
    "title": "Badala Zamana (Habibi Funk 015)",
    "artist": "Zohra",
    "moods": [
-    "Playful",
-    "Energetic"
+    "Energetic",
+    "Joyful"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -874,9 +935,12 @@
     "Joyful"
    ],
    "claude": [
-    "Playful"
+    "Energetic",
+    "Joyful"
    ],
-   "claudeGuess": true,
+   "claudeBasis": "researched-medium",
+   "claudeWhy": "1977 disco-leaning Algerian track sung in a Berber dialect over Western dance production; lyrical subject not found.",
+   "claudeSource": "https://oye-records.com/releases/zohra-badala-zamana",
    "listeners": "none",
    "styles": [
     "Disco",
@@ -887,16 +951,14 @@
     "Electronic",
     "Soul & R&B"
    ],
-   "genreFrom": "Weighed up",
-   "check": true
+   "genreFrom": "Weighed up"
   },
   "0lbPLoj61m0e7jPMdGF5yK": {
    "n": 24,
    "title": "2020",
    "artist": "SUUNS",
    "moods": [
-    "Dark",
-    "Dreamy"
+    "Dark"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -905,10 +967,11 @@
     "Energetic"
    ],
    "claude": [
-    "Dark",
-    "Energetic"
+    "Dark"
    ],
-   "claudeGuess": true,
+   "claudeBasis": "researched-medium",
+   "claudeWhy": "Dissonant, hypnotic track of squealing detuned guitar over wobbling dub bass and droning vocals, described as dystopian; no specific subject given.",
+   "claudeSource": "https://music.mxdwn.com/?p=32258",
    "listeners": "none",
    "styles": [
     "Downtempo",
@@ -931,16 +994,15 @@
     "pop rock",
     "post-punk",
     "rock"
-   ],
-   "check": true
+   ]
   },
   "3bdZcA30lsJeS61B6UBsWc": {
    "n": 25,
    "title": "Drugs",
    "artist": "The Philharmonik",
    "moods": [
-    "Mellow",
-    "Energetic"
+    "Dark",
+    "Melancholy"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -949,10 +1011,12 @@
     "Mellow"
    ],
    "claude": [
-    "Mellow",
-    "Dreamy"
+    "Dark",
+    "Melancholy"
    ],
-   "claudeGuess": true,
+   "claudeBasis": "researched-medium",
+   "claudeWhy": "Theatrical piano number that Christian Gates dedicates to people tempted into illicit ways of making money because their pay isn't enough.",
+   "claudeSource": "https://www.wunc.org/2024-05-29/the-philharmonik-tiny-desk-concert",
    "listeners": "none",
    "styles": [
     "Trap",
@@ -962,8 +1026,7 @@
    "genres": [
     "Hip-hop"
    ],
-   "genreFrom": "Weighed up",
-   "check": true
+   "genreFrom": "Weighed up"
   },
   "2h9uCNUYH0mJkeEwQChtT8": {
    "n": 26,
@@ -983,6 +1046,7 @@
     "Romantic",
     "Bittersweet"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Pop Rock",
@@ -1018,6 +1082,7 @@
     "Melancholy",
     "Dark"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Indie Rock",
@@ -1045,8 +1110,8 @@
    "title": "High On A Rocky Ledge",
    "artist": "Moondog",
    "moods": [
-    "Melancholy",
-    "Bittersweet"
+    "Romantic",
+    "Melancholy"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -1054,6 +1119,13 @@
     "Bittersweet",
     "Romantic"
    ],
+   "claude": [
+    "Romantic",
+    "Melancholy"
+   ],
+   "claudeBasis": "researched-medium",
+   "claudeWhy": "Whimsical, fairy-tale song from a piano-led album of 'celestial' melodies, in which a lovesick narrator climbs a mountain to reach a cold, distant beloved and learns only death will unite them.",
+   "claudeSource": "https://www.elyrics.net/read/m/moondog-lyrics/high-on-a-rocky-ledge-lyrics.html",
    "listeners": "none",
    "styles": [
     "Ballad",
@@ -1067,8 +1139,7 @@
    "musicbrainz": [
     "folk",
     "psychedelic folk"
-   ],
-   "check": true
+   ]
   },
   "31ijr2O0SsuzAPVDLnq3XV": {
    "n": 29,
@@ -1088,6 +1159,7 @@
     "Energetic",
     "Dark"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Soul",
@@ -1125,6 +1197,7 @@
     "Playful",
     "Energetic"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Deep House",
@@ -1162,6 +1235,7 @@
     "Joyful",
     "Energetic"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "House",
@@ -1198,6 +1272,7 @@
     "Dreamy",
     "Romantic"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "New Wave",
@@ -1217,16 +1292,14 @@
     "rock",
     "synth-pop",
     "synthpop"
-   ],
-   "check": true
+   ]
   },
   "7JVhqngi3ICalifdkpzaCp": {
    "n": 33,
    "title": "Greater Expectations",
    "artist": "Wesley Gonzalez, Rose Elinor Dougall",
    "moods": [
-    "Romantic",
-    "Joyful"
+    "Bittersweet"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -1234,6 +1307,13 @@
     "Joyful",
     "Bittersweet"
    ],
+   "claude": [
+    "Bittersweet",
+    "Mellow"
+   ],
+   "claudeBasis": "researched-low",
+   "claudeWhy": "Nothing specific found on this opening duet; its album sets upbeat 70s-style pop against a breakup and a family cancer diagnosis.",
+   "claudeSource": "https://sisterray.co.uk/products/wax-limousine",
    "listeners": "none",
    "styles": [
     "Pop Rock",
@@ -1269,6 +1349,7 @@
     "Melancholy",
     "Dreamy"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "RnB/Swing",
@@ -1289,28 +1370,29 @@
     "pop",
     "rock",
     "soul"
-   ],
-   "check": true
+   ]
   },
   "1A2BT8JYVRjsKdswwvWXG6": {
    "n": 35,
    "title": "Cut Me",
    "artist": "Moses Sumney",
    "moods": [
-    "Mellow",
-    "Melancholy"
+    "Bittersweet",
+    "Romantic"
    ],
-   "moodFrom": "Weighed up",
+   "moodFrom": "Claude (researched)",
    "sound": [
     "Mellow",
     "Romantic",
     "Melancholy"
    ],
    "claude": [
-    "Melancholy",
-    "Dark"
+    "Bittersweet",
+    "Romantic"
    ],
-   "claudeGuess": true,
+   "claudeBasis": "researched-high",
+   "claudeWhy": "Deceptively bright, horn-blaring track about the masochism of staying in love and finding hurt exhilarating.",
+   "claudeSource": "https://daily.bandcamp.com/features/moses-sumney-interview",
    "listeners": "none",
    "styles": [
     "Neo Soul",
@@ -1333,8 +1415,7 @@
     "progressive pop",
     "psychedelic soul",
     "soul"
-   ],
-   "check": true
+   ]
   },
   "5IXTT9RvcVupmzLTFqIInj": {
    "n": 36,
@@ -1354,6 +1435,7 @@
     "Melancholy",
     "Bittersweet"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Indie Pop",
@@ -1392,6 +1474,7 @@
     "Dreamy",
     "Joyful"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Screw",
@@ -1409,8 +1492,7 @@
     "noise pop",
     "pop",
     "rock"
-   ],
-   "check": true
+   ]
   },
   "1g422OzRyFhcRH1yMWaW14": {
    "n": 38,
@@ -1429,6 +1511,7 @@
     "Melancholy",
     "Dreamy"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Indie Rock",
@@ -1464,6 +1547,7 @@
     "Melancholy",
     "Romantic"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Pop Rock",
@@ -1505,6 +1589,7 @@
     "Uplifting",
     "Dreamy"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Deep House",
@@ -1517,23 +1602,29 @@
    "genreFrom": "Claude",
    "musicbrainz": [
     "jazz and blues"
-   ],
-   "check": true
+   ]
   },
   "5Up7kKnSg7Z1YHRToUbZ1p": {
    "n": 41,
    "title": "Miraculous Weekend",
    "artist": "Peter Ivers",
    "moods": [
-    "Dreamy",
-    "Mellow"
+    "Playful",
+    "Energetic"
    ],
-   "moodFrom": "Weighed up",
+   "moodFrom": "Claude (researched)",
    "sound": [
     "Mellow",
     "Melancholy",
     "Dreamy"
    ],
+   "claude": [
+    "Playful",
+    "Energetic"
+   ],
+   "claudeBasis": "researched-high",
+   "claudeWhy": "Brash 'blue-eyed yacht funk' with a rowdy shuffling groove, harmonica, piano and flamboyant falsetto, celebrating a party weekend.",
+   "claudeSource": "https://secure.thestranger.com/slog/2019/11/29/42118341/inbox-jukebox-track-of-the-day-the-brash-yacht-funk-of-miraculous-weekend-by-in-heaven-composer-peter-ivers",
    "listeners": "none",
    "styles": [
     "Louisiana Blues",
@@ -1550,22 +1641,29 @@
     "electronic",
     "rock",
     "synth-pop"
-   ],
-   "check": true
+   ]
   },
   "7Gk8IPlFTLUcoIH3mtASI0": {
    "n": 42,
    "title": "Record Player",
    "artist": "Daisy the Great, AJR",
    "moods": [
+    "Bittersweet",
     "Playful"
    ],
-   "moodFrom": "Weighed up",
+   "moodFrom": "Claude (researched)",
    "sound": [
     "Playful",
     "Romantic",
     "Joyful"
    ],
+   "claude": [
+    "Bittersweet",
+    "Playful"
+   ],
+   "claudeBasis": "researched-high",
+   "claudeWhy": "A hook-heavy indie electropop remix of a TikTok-viral chorus, set against lyrics about impostor syndrome and feeling trapped in a version of yourself you invented.",
+   "claudeSource": "https://www.allaccess.com/alternative/artist-info/q/id/15525/daisy-the-great-x-ajr",
    "listeners": "none",
    "styles": [
     "Crunk",
@@ -1584,8 +1682,7 @@
     "indie pop",
     "indie rock",
     "pop"
-   ],
-   "check": true
+   ]
   },
   "5dE8s6uWRGNc1Ac7y8rULq": {
    "n": 43,
@@ -1605,6 +1702,7 @@
     "Bittersweet",
     "Playful"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Vocal",
@@ -1623,8 +1721,7 @@
     "progressive rock",
     "rock",
     "soft rock"
-   ],
-   "check": true
+   ]
   },
   "1acb8u70kClk6NjITaZyuG": {
    "n": 44,
@@ -1644,6 +1741,7 @@
     "Joyful",
     "Dreamy"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "EBM",
@@ -1659,15 +1757,15 @@
     "indie rock",
     "pop",
     "rock"
-   ],
-   "check": true
+   ]
   },
   "5Ec7pcVTaHm5q7BGB35hiU": {
    "n": 45,
    "title": "Wildman",
    "artist": "Sun Drug",
    "moods": [
-    "Dark"
+    "Dark",
+    "Energetic"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -1675,6 +1773,13 @@
     "Uplifting",
     "Bittersweet"
    ],
+   "claude": [
+    "Energetic",
+    "Dreamy"
+   ],
+   "claudeBasis": "researched-low",
+   "claudeWhy": "Nothing specific found; the debut-EP band is described as sweeping psych-leaning rock with falsetto vocals and bright ringing guitars.",
+   "claudeSource": "https://www.bmi.com/news/entry/indie_spotlight_sun_drug",
    "listeners": "none",
    "styles": [
     "Indie Rock",
@@ -1709,6 +1814,7 @@
     "Playful",
     "Joyful"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Soul",
@@ -1734,6 +1840,7 @@
    "title": "The Work",
    "artist": "Issy Wood",
    "moods": [
+    "Dreamy",
     "Playful"
    ],
    "moodFrom": "Weighed up",
@@ -1742,6 +1849,13 @@
     "Energetic",
     "Joyful"
    ],
+   "claude": [
+    "Dreamy",
+    "Melancholy"
+   ],
+   "claudeBasis": "researched-low",
+   "claudeWhy": "Nothing found on this song; best guess from the album, which is tagged hypnagogic pop and described as sticky pop cuts and woozy R&B.",
+   "claudeSource": "https://www.perfectlyimperfect.fyi/p/issy-wood",
    "listeners": "none",
    "styles": [
     "Electro",
@@ -1759,7 +1873,8 @@
    "title": "Elvis",
    "artist": "Zuta",
    "moods": [
-    "Playful"
+    "Playful",
+    "Dark"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -1767,6 +1882,12 @@
     "Energetic",
     "Joyful"
    ],
+   "claude": [
+    "Dark"
+   ],
+   "claudeBasis": "researched-low",
+   "claudeWhy": "Nothing found on the song itself; Zuta is a Polish pop duo known for low vocals and intense, theatrical live shows, so this is a guess.",
+   "claudeSource": "https://www.ebilet.pl/en/muzyka/pop/zuta",
    "listeners": "none",
    "styles": [
     "Synth-pop",
@@ -1798,6 +1919,7 @@
     "Melancholy",
     "Mellow"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Soft Rock",
@@ -1837,6 +1959,7 @@
     "Dreamy",
     "Bittersweet"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Ragtime",
@@ -1852,8 +1975,7 @@
     "art rock",
     "baroque pop",
     "rock"
-   ],
-   "check": true
+   ]
   },
   "1qpt5uh3yuEM7fo4rNU688": {
    "n": 51,
@@ -1873,6 +1995,7 @@
     "Playful",
     "Energetic"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Boom Bap",
@@ -1896,8 +2019,8 @@
    "title": "None Of My Friends",
    "artist": "Liz Lawrence",
    "moods": [
-    "Uplifting",
-    "Joyful"
+    "Bittersweet",
+    "Playful"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -1905,6 +2028,13 @@
     "Joyful",
     "Energetic"
    ],
+   "claude": [
+    "Bittersweet",
+    "Playful"
+   ],
+   "claudeBasis": "researched-medium",
+   "claudeWhy": "Conversational, satirical take on millennial hypocrisy and nobody being okay, from a pop album described as both celebratory and panicked; the track's own sound isn't described in detail.",
+   "claudeSource": "https://diymag.com/review/album/liz-lawrence-pity-party-album-review",
    "listeners": "none",
    "styles": [
     "Indie Rock",
@@ -1939,6 +2069,7 @@
     "Joyful",
     "Energetic"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Pop Rock",
@@ -1981,6 +2112,7 @@
     "Playful",
     "Dark"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Indie Rock",
@@ -1998,16 +2130,15 @@
     "indie rock",
     "pop",
     "rock"
-   ],
-   "check": true
+   ]
   },
   "0gjcEL2CTKu3fT9qMVVu2w": {
    "n": 55,
    "title": "Bad Kids",
    "artist": "TTRRUUCES",
    "moods": [
-    "Dreamy",
-    "Playful"
+    "Playful",
+    "Energetic"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -2019,7 +2150,9 @@
     "Playful",
     "Energetic"
    ],
-   "claudeGuess": true,
+   "claudeBasis": "researched-low",
+   "claudeWhy": "Nothing specific found; it sits in a psychedelic rock opera about two youths chasing a mind-altering drug on a coming-of-age quest.",
+   "claudeSource": "https://en.wikipedia.org/wiki/Ttrruuces_(album)",
    "listeners": "none",
    "styles": [
     "Psychedelic Rock",
@@ -2045,8 +2178,8 @@
    "title": "Bom-Senso",
    "artist": "Tim Maia",
    "moods": [
-    "Playful",
-    "Mellow"
+    "Uplifting",
+    "Energetic"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -2055,10 +2188,12 @@
     "Melancholy"
    ],
    "claude": [
-    "Playful",
-    "Mellow"
+    "Uplifting",
+    "Energetic"
    ],
-   "claudeGuess": true,
+   "claudeBasis": "researched-medium",
+   "claudeWhy": "Isley Brothers-style funk with fiery guitar; Maia looks back on loneliness and mistakes and finds clarity through reading (his Rational Culture phase).",
+   "claudeSource": "https://soundsandcolours.com/articles/brazil/tim-maias-journey-into-rational-culture-884",
    "listeners": "none",
    "styles": [
     "Soul",
@@ -2098,6 +2233,7 @@
     "Melancholy",
     "Mellow"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Folk Rock",
@@ -2117,15 +2253,14 @@
     "pop",
     "pop rock",
     "rock"
-   ],
-   "check": true
+   ]
   },
   "6SYwCFYNJo66SbnQKOXRUg": {
    "n": 58,
    "title": "Keep Kicking & Screaming",
    "artist": "Johnny Parry Chamber Orchestra, Johnny Parry",
    "moods": [
-    "Dark"
+    "Uplifting"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -2133,6 +2268,12 @@
     "Bittersweet",
     "Romantic"
    ],
+   "claude": [
+    "Uplifting"
+   ],
+   "claudeBasis": "researched-medium",
+   "claudeWhy": "The relatively upbeat lead single opening a darker album, played by a 30-piece band with horns and strings; its subject isn't described.",
+   "claudeSource": "https://forfolkssake.com/?p=15782",
    "listeners": "none",
    "styles": [
     "Indie Rock",
@@ -2163,6 +2304,7 @@
     "Dark",
     "Dreamy"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "K-pop",
@@ -2180,26 +2322,29 @@
     "house",
     "midwest hip hop",
     "pop rap"
-   ],
-   "check": true
+   ]
   },
   "4a5VnoioMgv1e9R3EWAfYB": {
    "n": 60,
    "title": "Threats",
    "artist": "Blue Sky Black Death, Chen Lo, Jean Grae",
    "moods": [
-    "Dark"
+    "Dark",
+    "Energetic"
    ],
-   "moodFrom": "Weighed up",
+   "moodFrom": "Claude (researched)",
    "sound": [
     "Mellow",
     "Energetic",
     "Dreamy"
    ],
    "claude": [
-    "Dark"
+    "Dark",
+    "Energetic"
    ],
-   "claudeGuess": true,
+   "claudeBasis": "researched-high",
+   "claudeWhy": "Jean Grae's combative reworking of Jay-Z's 'Threat' over an angry, stomping blues beat, with Chen Lo taking over partway.",
+   "claudeSource": "https://www.rapreviews.com/?p=2408",
    "listeners": "none",
    "styles": [
     "RnB/Swing",
@@ -2217,8 +2362,7 @@
     "hip hop",
     "instrumental hip hop",
     "trip hop"
-   ],
-   "check": true
+   ]
   },
   "20mUVwCxR1x2d5SuBRGW1F": {
    "n": 61,
@@ -2238,6 +2382,7 @@
     "Romantic",
     "Energetic"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Soundtrack",
@@ -2254,23 +2399,27 @@
     "pop rock",
     "punk",
     "rock"
-   ],
-   "check": true
+   ]
   },
   "2w4yylkuKugYjEVhwKc0OD": {
    "n": 62,
    "title": "IKYK",
    "artist": "Ogi",
    "moods": [
-    "Mellow",
-    "Romantic"
+    "Uplifting"
    ],
-   "moodFrom": "Weighed up",
+   "moodFrom": "Claude (researched)",
    "sound": [
     "Mellow",
     "Romantic",
     "Dreamy"
    ],
+   "claude": [
+    "Uplifting"
+   ],
+   "claudeBasis": "researched-high",
+   "claudeWhy": "Soaring, gospel-tinged organ-and-brass ballad written for her younger brother, about togetherness and caring for each other.",
+   "claudeSource": "https://atwoodmagazine.com/?p=166203",
    "listeners": "none",
    "styles": [
     "Soul",
@@ -2285,15 +2434,15 @@
     "conscious hip hop",
     "hip hop",
     "neo soul"
-   ],
-   "check": true
+   ]
   },
   "1uwTbud19jsbc5BkRmt5rN": {
    "n": 63,
    "title": "Duet",
    "artist": "Diane Coffee, Felicia Douglass",
    "moods": [
-    "Dreamy"
+    "Romantic",
+    "Bittersweet"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -2301,6 +2450,13 @@
     "Joyful",
     "Playful"
    ],
+   "claude": [
+    "Romantic",
+    "Bittersweet"
+   ],
+   "claudeBasis": "researched-medium",
+   "claudeWhy": "Confident, nostalgic early-70s R&B-style duet ballad with a wah-wah funk break; subject not described.",
+   "claudeSource": "https://www.npr.org/2015/08/26/433482215/first-listen-diane-coffee-everybodys-a-good-dog",
    "listeners": "none",
    "styles": [
     "Indie Rock",
@@ -2326,7 +2482,8 @@
    "title": "I Love You",
    "artist": "The Bees",
    "moods": [
-    "Melancholy"
+    "Romantic",
+    "Dreamy"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -2334,6 +2491,13 @@
     "Mellow",
     "Romantic"
    ],
+   "claude": [
+    "Romantic",
+    "Dreamy"
+   ],
+   "claudeBasis": "researched-medium",
+   "claudeWhy": "An aching love song that updates the doo-wop of The Flamingos' 'I Only Have Eyes For You'; the review covers the sound but not the lyric.",
+   "claudeSource": "https://www.drownedinsound.org/archive-album-review-the-bees-free-the-bees-10093/",
    "listeners": "none",
    "styles": [
     "Indie Rock",
@@ -2355,8 +2519,7 @@
     "indie pop",
     "indie rock",
     "jazz rock"
-   ],
-   "check": true
+   ]
   },
   "0WAEGVylZjbe2mQ6Or6HxY": {
    "n": 65,
@@ -2376,6 +2539,7 @@
     "Mellow",
     "Bittersweet"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Folk Rock",
@@ -2400,15 +2564,21 @@
    "title": "Holy City",
    "artist": "Joan As Police Woman",
    "moods": [
-    "Joyful",
-    "Playful"
+    "Joyful"
    ],
-   "moodFrom": "Weighed up",
+   "moodFrom": "Claude (researched)",
    "sound": [
     "Joyful",
     "Playful",
     "Energetic"
    ],
+   "claude": [
+    "Joyful",
+    "Romantic"
+   ],
+   "claudeBasis": "researched-high",
+   "claudeWhy": "Breathless, Motown-fuelled soul-pop that uses cheeky, ribald devotional language for a love song, the album's closest nod to Amy Winehouse.",
+   "claudeSource": "https://www.theskinny.co.uk/music/reviews/albums/joan-as-police-woman-the-classic",
    "listeners": "none",
    "styles": [
     "Soul",
@@ -2423,23 +2593,29 @@
     "indie",
     "indie rock",
     "rock"
-   ],
-   "check": true
+   ]
   },
   "3Nt1G38u1lalca5B2lm8Sd": {
    "n": 67,
    "title": "Make Me A Song",
    "artist": "Eleanor Friedberger",
    "moods": [
-    "Melancholy",
-    "Uplifting"
+    "Dreamy",
+    "Mellow"
    ],
-   "moodFrom": "Weighed up",
+   "moodFrom": "Claude (researched)",
    "sound": [
     "Melancholy",
     "Uplifting",
     "Mellow"
    ],
+   "claude": [
+    "Dreamy",
+    "Mellow"
+   ],
+   "claudeBasis": "researched-high",
+   "claudeWhy": "Long, meditative track on a synth-and-drum-machine album; not a love song but about wanting to try harder and to write songs that move people.",
+   "claudeSource": "https://www.undertheradarmag.com/news/eleanor_friedberger_shares_video_for_new_song_make_me_a_song",
    "listeners": "none",
    "styles": [
     "Indie Rock",
@@ -2459,15 +2635,15 @@
     "pop",
     "punk",
     "rock"
-   ],
-   "check": true
+   ]
   },
   "7DH0ytUP9o7Crj8NM1Uabg": {
    "n": 68,
    "title": "Dean Martin",
    "artist": "Tess Henley",
    "moods": [
-    "Romantic"
+    "Romantic",
+    "Mellow"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -2476,9 +2652,12 @@
     "Melancholy"
    ],
    "claude": [
-    "Romantic"
+    "Romantic",
+    "Mellow"
    ],
-   "claudeGuess": true,
+   "claudeBasis": "researched-low",
+   "claudeWhy": "Nothing specific found; best guess from Henley's classic-soul piano style and a title nodding to the mid-century crooner.",
+   "claudeSource": "https://en.wikipedia.org/wiki/Tess_Henley",
    "listeners": "none",
    "styles": [
     "Neo Soul",
@@ -2499,7 +2678,7 @@
    "title": "Like a Dream",
    "artist": "Francis and the Lights",
    "moods": [
-    "Mellow",
+    "Dreamy",
     "Romantic"
    ],
    "moodFrom": "Weighed up",
@@ -2508,6 +2687,13 @@
     "Romantic",
     "Dreamy"
    ],
+   "claude": [
+    "Dreamy",
+    "Romantic"
+   ],
+   "claudeBasis": "researched-medium",
+   "claudeWhy": "Ghostly falsetto over ominous piano thumps opens out into Beach Boys-style doo-wop harmonies and a swooning chorus; the lyric isn't described.",
+   "claudeSource": "https://www.goodreads.com/author_blog_posts/5255627-francis-the-lights-share-like-a-dream-video",
    "listeners": "none",
    "styles": [
     "Downtempo",
@@ -2527,15 +2713,14 @@
     "pop",
     "pop rock",
     "synth-pop"
-   ],
-   "check": true
+   ]
   },
   "6w09qyTrLgzCQP8gLMPEcd": {
    "n": 70,
    "title": "The Spot",
    "artist": "Your Smith",
    "moods": [
-    "Joyful",
+    "Mellow",
     "Playful"
    ],
    "moodFrom": "Weighed up",
@@ -2544,6 +2729,13 @@
     "Playful",
     "Energetic"
    ],
+   "claude": [
+    "Mellow",
+    "Playful"
+   ],
+   "claudeBasis": "researched-medium",
+   "claudeWhy": "A breezy, mid-'90s-style pop track likened to Luscious Jackson with Sheryl Crow; no source found on what the lyrics are about.",
+   "claudeSource": "https://www.philthymag.com/your-smith-i-want-to-make-songs-that-you-feel-in-your-chest/",
    "listeners": "none",
    "styles": [
     "House",
@@ -2568,8 +2760,7 @@
    "title": "The River",
    "artist": "Michael Farneti",
    "moods": [
-    "Mellow",
-    "Dreamy"
+    "Mellow"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -2577,6 +2768,11 @@
     "Dreamy",
     "Melancholy"
    ],
+   "claude": [
+    "Mellow"
+   ],
+   "claudeBasis": "researched-low",
+   "claudeWhy": "Nothing found about this 2011 track or artist beyond streaming metadata; guess based only on the gentle album title.",
    "listeners": "none",
    "styles": [
     "Neofolk",
@@ -2612,6 +2808,7 @@
    "claude": [
     "Romantic"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Ballad",
@@ -2630,8 +2827,7 @@
     "r&b",
     "soul",
     "southern soul"
-   ],
-   "check": true
+   ]
   },
   "1yw66ZPsfqblI4PFcEdIKe": {
    "n": 73,
@@ -2651,6 +2847,7 @@
     "Romantic",
     "Mellow"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "City Pop",
@@ -2688,6 +2885,7 @@
     "Melancholy",
     "Bittersweet"
    ],
+   "claudeBasis": "knows",
    "listeners": "agree",
    "styles": [
     "Indie Pop",
@@ -2726,6 +2924,7 @@
     "Energetic",
     "Playful"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Pop Rock",
@@ -2752,7 +2951,7 @@
    "artist": "Adam Green, Binki Shapiro",
    "moods": [
     "Bittersweet",
-    "Uplifting"
+    "Romantic"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -2760,6 +2959,13 @@
     "Uplifting",
     "Melancholy"
    ],
+   "claude": [
+    "Bittersweet",
+    "Romantic"
+   ],
+   "claudeBasis": "researched-medium",
+   "claudeWhy": "Semi-waltz 1960s-style male-female duet (Lee and Nancy comparisons) about drifting back to a former lover, delivered coolly rather than mopily.",
+   "claudeSource": "https://interviewmagazine.com/music/adam-green-binki-shapiro",
    "listeners": "none",
    "styles": [
     "Indie Rock",
@@ -2780,8 +2986,7 @@
     "rock",
     "slacker rock",
     "twee pop"
-   ],
-   "check": true
+   ]
   },
   "2YJgM8lj4u5YEZRSHSfL60": {
    "n": 77,
@@ -2801,6 +3006,7 @@
     "Melancholy",
     "Romantic"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Pop Rock",
@@ -2840,6 +3046,7 @@
     "Melancholy",
     "Romantic"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Contemporary R&B",
@@ -2859,8 +3066,7 @@
     "r&b",
     "rhythm & blues",
     "soul"
-   ],
-   "check": true
+   ]
   },
   "6RgrpOgbTI3M2qvA8XIvTb": {
    "n": 79,
@@ -2880,6 +3086,7 @@
     "Playful",
     "Joyful"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Indie Rock",
@@ -2896,8 +3103,7 @@
     "indie rock",
     "pop",
     "rock"
-   ],
-   "check": true
+   ]
   },
   "70Ao5L10SKV701DcOH68Jo": {
    "n": 80,
@@ -2917,6 +3123,7 @@
     "Uplifting",
     "Bittersweet"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Hard Rock",
@@ -2929,8 +3136,7 @@
    "genreFrom": "Weighed up",
    "musicbrainz": [
     "classic rock"
-   ],
-   "check": true
+   ]
   },
   "6Mnne5V9ZifNID59dswUcZ": {
    "n": 81,
@@ -2950,6 +3156,7 @@
     "Romantic",
     "Mellow"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Ballad",
@@ -2967,8 +3174,7 @@
     "folk rock",
     "pop",
     "rock"
-   ],
-   "check": true
+   ]
   },
   "0CxWbbbU0PB7ccm6CgHnrf": {
    "n": 82,
@@ -2988,6 +3194,7 @@
     "Melancholy",
     "Dreamy"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Pop Rock",
@@ -3003,8 +3210,7 @@
     "lounge",
     "pop",
     "rock"
-   ],
-   "check": true
+   ]
   },
   "21xq13U2jrLgDG5yWCqoGI": {
    "n": 83,
@@ -3013,12 +3219,19 @@
    "moods": [
     "Dreamy"
    ],
-   "moodFrom": "Weighed up",
+   "moodFrom": "Claude (researched)",
    "sound": [
     "Dreamy",
     "Mellow",
     "Uplifting"
    ],
+   "claude": [
+    "Dreamy",
+    "Melancholy"
+   ],
+   "claudeBasis": "researched-high",
+   "claudeWhy": "Hazy, breathy synth-pop with a slow pulsing beat, about a rare connection that falls apart, leaving her alone with things unsaid.",
+   "claudeSource": "https://broken8records.com/blogs/watch/julia-sophie-reveals-new-single-telephone-a-dreamy-dive-into-heartbreak",
    "listeners": "none",
    "styles": [
     "Synthwave",
@@ -3034,8 +3247,7 @@
     "electronic",
     "electronica",
     "indie"
-   ],
-   "check": true
+   ]
   },
   "3K5VXelPukt6EXUcCeCS67": {
    "n": 84,
@@ -3055,6 +3267,7 @@
     "Joyful",
     "Romantic"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Alternative Rock",
@@ -3074,15 +3287,15 @@
     "folk rock",
     "indie",
     "rock"
-   ],
-   "check": true
+   ]
   },
   "76LVdwqMv86jglsB8MFEXE": {
    "n": 85,
    "title": "Sweeter",
    "artist": "Gwyneth Herbert",
    "moods": [
-    "Romantic"
+    "Romantic",
+    "Bittersweet"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -3090,6 +3303,13 @@
     "Mellow",
     "Melancholy"
    ],
+   "claude": [
+    "Bittersweet",
+    "Dreamy"
+   ],
+   "claudeBasis": "researched-low",
+   "claudeWhy": "Nothing specific found beyond a mention of its 'magical middle eight'; best guess from The Sea Cabinet, a cabaret, folk and jazz song cycle about the sea, memory, obsession and love.",
+   "claudeSource": "https://en.wikipedia.org/wiki/The_Sea_Cabinet",
    "listeners": "none",
    "styles": [
     "Future Jazz",
@@ -3112,6 +3332,7 @@
    "title": "Consider Yourself",
    "artist": "Half Moon Run",
    "moods": [
+    "Dark",
     "Energetic"
    ],
    "moodFrom": "Weighed up",
@@ -3121,9 +3342,12 @@
     "Uplifting"
    ],
    "claude": [
+    "Dark",
     "Energetic"
    ],
-   "claudeGuess": true,
+   "claudeBasis": "researched-medium",
+   "claudeWhy": "Keyboard-led, electro-tinted indie on a slow steady beat that erupts into a short Muse-like burst of fuzz rock; subject not found.",
+   "claudeSource": "https://poppedmusic.co.uk/2015/10/27/album-review-half-moon-run-sun-leads-me-on/",
    "listeners": "none",
    "styles": [
     "Indie Rock",
@@ -3140,16 +3364,15 @@
     "indie pop",
     "indie rock",
     "rock"
-   ],
-   "check": true
+   ]
   },
   "7JsvW1GU2hbMnGETSyy7ig": {
    "n": 87,
    "title": "Ignorant Boy, Beautiful Girl (Namanama)",
    "artist": "Loney dear",
    "moods": [
-    "Dreamy",
-    "Dark"
+    "Romantic",
+    "Bittersweet"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -3158,9 +3381,12 @@
     "Dreamy"
    ],
    "claude": [
-    "Dreamy"
+    "Romantic",
+    "Bittersweet"
    ],
-   "claudeGuess": true,
+   "claudeBasis": "researched-medium",
+   "claudeWhy": "Theme only: tender but impatient longing for a partner brave and honest enough to let the singer in; no description of the sound found.",
+   "claudeSource": "https://www.last.fm/music/Loney+Dear/_/Ignorant+Boy,+Beautiful+Girl/+lyrics",
    "listeners": "none",
    "styles": [
     "Ambient",
@@ -3187,6 +3413,7 @@
    "title": "Truth",
    "artist": "Ben Seal",
    "moods": [
+    "Mellow",
     "Dreamy"
    ],
    "moodFrom": "Weighed up",
@@ -3195,6 +3422,11 @@
     "Mellow",
     "Dark"
    ],
+   "claude": [
+    "Mellow"
+   ],
+   "claudeBasis": "researched-low",
+   "claudeWhy": "Nothing found about this 2020 Ben Seal single or the artist beyond the Spotify listing, so this is a pure guess.",
    "listeners": "none",
    "styles": [
     "Vaporwave",
@@ -3225,6 +3457,7 @@
     "Energetic",
     "Playful"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Conscious",
@@ -3246,8 +3479,7 @@
     "midwest rap",
     "pop",
     "pop rap"
-   ],
-   "check": true
+   ]
   },
   "6nkMHXkhmvCzxtvewoOEJT": {
    "n": 90,
@@ -3266,6 +3498,7 @@
     "Energetic",
     "Playful"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Alternative Rock",
@@ -3293,18 +3526,21 @@
    "title": "The Old King",
    "artist": "Hamilton Leithauser",
    "moods": [
-    "Melancholy"
+    "Bittersweet"
    ],
-   "moodFrom": "Weighed up",
+   "moodFrom": "Claude (researched)",
    "sound": [
     "Mellow",
     "Melancholy",
     "Romantic"
    ],
    "claude": [
-    "Melancholy"
+    "Bittersweet",
+    "Uplifting"
    ],
-   "claudeGuess": true,
+   "claudeBasis": "researched-high",
+   "claudeWhy": "About a wealthy, well-liked old friend haunted by darkness and why they drifted apart, reworked from a slow Pogues-style dirge into a triumphant melody with his daughters' sweet, haunting backing vocals.",
+   "claudeSource": "https://www.stereogum.com/2079590/hamilton-leithauser-loves-of-your-life-track-by-track/franchises/interview/footnotes-interview/",
    "listeners": "none",
    "styles": [
     "Folk",
@@ -3321,8 +3557,7 @@
     "indie rock",
     "pop",
     "rock"
-   ],
-   "check": true
+   ]
   },
   "63G27PTar9LZQgKU2BKjx9": {
    "n": 92,
@@ -3342,6 +3577,7 @@
     "Uplifting",
     "Bittersweet"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Brit Pop",
@@ -3360,8 +3596,7 @@
     "indie rock",
     "neo-psychedelia",
     "rock"
-   ],
-   "check": true
+   ]
   },
   "4mn30l2lxnohEGT3goNzUR": {
    "n": 93,
@@ -3381,6 +3616,7 @@
     "Bittersweet",
     "Dark"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Folk",
@@ -3420,6 +3656,7 @@
     "Playful",
     "Dark"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Hard Rock",
@@ -3441,14 +3678,14 @@
     "piano rock",
     "pop",
     "pop rock"
-   ],
-   "check": true
+   ]
   },
   "0LS9j29qzv8vKFz2Hi3G8c": {
    "n": 95,
    "title": "Cristina",
    "artist": "Teleman",
    "moods": [
+    "Bittersweet",
     "Uplifting"
    ],
    "moodFrom": "Weighed up",
@@ -3457,6 +3694,13 @@
     "Bittersweet",
     "Melancholy"
    ],
+   "claude": [
+    "Bittersweet",
+    "Mellow"
+   ],
+   "claudeBasis": "researched-low",
+   "claudeWhy": "Little found beyond listener comments calling this simple guitar-and-synth indie-pop debut single touching; subject unknown.",
+   "claudeSource": "https://soundcloud.com/moshimoshimusic/teleman-cristina",
    "listeners": "none",
    "styles": [
     "Indie Rock",
@@ -3483,15 +3727,22 @@
    "title": "Modern Drift",
    "artist": "Efterklang",
    "moods": [
-    "Dreamy",
-    "Bittersweet"
+    "Bittersweet",
+    "Uplifting"
    ],
-   "moodFrom": "Weighed up",
+   "moodFrom": "Claude (researched)",
    "sound": [
     "Bittersweet",
     "Uplifting",
     "Melancholy"
    ],
+   "claude": [
+    "Bittersweet",
+    "Uplifting"
+   ],
+   "claudeBasis": "researched-high",
+   "claudeWhy": "Expansive, cinematic pop with brass, strings, piano and electronics about the gap between loss and recovery and a fragile reconciliation.",
+   "claudeSource": "https://as.vanderbilt.edu/nashvillereview/archives/393",
    "listeners": "none",
    "styles": [
     "Alternative Rock",
@@ -3512,15 +3763,15 @@
     "pop",
     "post-rock",
     "rock"
-   ],
-   "check": true
+   ]
   },
   "6zNXjEQEhoEkLa4irSikDW": {
    "n": 97,
    "title": "Night Nurse",
    "artist": "Dean & Britta",
    "moods": [
-    "Uplifting"
+    "Dreamy",
+    "Romantic"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -3528,6 +3779,13 @@
     "Bittersweet",
     "Joyful"
    ],
+   "claude": [
+    "Dreamy",
+    "Romantic"
+   ],
+   "claudeBasis": "researched-medium",
+   "claudeWhy": "Dean and Britta trade vocals over smooth, twinkly strings and keys on a witty original from a dreamy, falling-in-love album; the lyric's subject isn't given.",
+   "claudeSource": "https://www.popmatters.com/phillipsbritta-lavventura-2496026027.html",
    "listeners": "none",
    "styles": [
     "Indie Rock",
@@ -3554,8 +3812,8 @@
    "title": "Gotta Have Pop",
    "artist": "Segarini",
    "moods": [
-    "Energetic",
-    "Dark"
+    "Joyful",
+    "Energetic"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -3563,6 +3821,13 @@
     "Dark",
     "Joyful"
    ],
+   "claude": [
+    "Joyful",
+    "Energetic"
+   ],
+   "claudeBasis": "researched-medium",
+   "claudeWhy": "The radio-friendly, AM-style power-pop opener of the 1978 album, with a pounding repeated piano chord, harmonies and colourful guitars in the vein of Costello and XTC; the lyrics' subject isn't described.",
+   "claudeSource": "https://popdiggers.com/?p=6678",
    "listeners": "none",
    "styles": [
     "Pop Rock",
@@ -3578,8 +3843,7 @@
     "pop",
     "pop rock",
     "rock"
-   ],
-   "check": true
+   ]
   },
   "5xwmLfRd5kLb6XohkIqNV2": {
    "n": 99,
@@ -3599,6 +3863,7 @@
     "Joyful",
     "Energetic"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Psychedelic Rock",
@@ -3616,16 +3881,15 @@
     "pop",
     "rock",
     "soft rock"
-   ],
-   "check": true
+   ]
   },
   "3V2jcyKqjtbuSffYQ63CZ0": {
    "n": 100,
    "title": "Sunday Girl",
    "artist": "Dunno",
    "moods": [
-    "Romantic",
-    "Bittersweet"
+    "Joyful",
+    "Romantic"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -3633,6 +3897,13 @@
     "Bittersweet",
     "Melancholy"
    ],
+   "claude": [
+    "Joyful",
+    "Romantic"
+   ],
+   "claudeBasis": "researched-medium",
+   "claudeWhy": "Described as an infectious 1973 sunshine-pop single; lyrics' subject not found (romantic guess from the title).",
+   "claudeSource": "https://wearecult.rocks/bubblerock-is-here-to-stay-the-british-pop-explosion-1970-73",
    "listeners": "none",
    "styles": [
     "Psychedelic Rock",
@@ -3650,14 +3921,22 @@
    "title": "Impossible Weight - feat. Sharon Van Etten",
    "artist": "Deep Sea Diver, Sharon Van Etten",
    "moods": [
-    "Uplifting"
+    "Uplifting",
+    "Energetic"
    ],
-   "moodFrom": "Weighed up",
+   "moodFrom": "Claude (researched)",
    "sound": [
     "Uplifting",
     "Energetic",
     "Bittersweet"
    ],
+   "claude": [
+    "Uplifting",
+    "Energetic"
+   ],
+   "claudeBasis": "researched-high",
+   "claudeWhy": "Propulsive synth-textured alt-rock banger about silencing the inner critic and allowing yourself self-compassion through depression.",
+   "claudeSource": "https://americansongwriter.com/the-meaning-behind-deep-sea-divers-impossible-weight-and-the-volunteer-work-that-inspired-it/",
    "listeners": "none",
    "styles": [
     "Indie Rock",
@@ -3675,8 +3954,7 @@
     "pop",
     "pop rock",
     "rock"
-   ],
-   "check": true
+   ]
   },
   "3mW90BgmaWI8Do3taVesEj": {
    "n": 102,
@@ -3695,6 +3973,7 @@
     "Playful",
     "Bittersweet"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Synth-pop",
@@ -3715,8 +3994,7 @@
    "title": "Nuclear Boy",
    "artist": "20/20",
    "moods": [
-    "Energetic",
-    "Joyful"
+    "Energetic"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -3724,6 +4002,13 @@
     "Joyful",
     "Uplifting"
    ],
+   "claude": [
+    "Energetic",
+    "Playful"
+   ],
+   "claudeBasis": "researched-medium",
+   "claudeWhy": "Picked out as a 'big-beat' highlight of 20/20's skinny-tie power-pop second album; its subject isn't described.",
+   "claudeSource": "https://trouserpress.com/reviews/20-20/",
    "listeners": "none",
    "styles": [
     "Indie Rock",
@@ -3739,8 +4024,7 @@
     "pop",
     "power pop",
     "rock"
-   ],
-   "check": true
+   ]
   },
   "4WFNb2UhW5E5qxHGsgebuQ": {
    "n": 104,
@@ -3760,6 +4044,7 @@
     "Dreamy",
     "Bittersweet"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Indie Rock",
@@ -3778,22 +4063,29 @@
     "indie pop",
     "indie rock",
     "rock"
-   ],
-   "check": true
+   ]
   },
   "0Ib6SoU3oQTEgWEBVUF1IR": {
    "n": 105,
    "title": "Fucking Crazy",
    "artist": "Robert Ellis",
    "moods": [
-    "Bittersweet"
+    "Romantic",
+    "Playful"
    ],
-   "moodFrom": "Weighed up",
+   "moodFrom": "Claude (researched)",
    "sound": [
     "Bittersweet",
     "Melancholy",
     "Romantic"
    ],
+   "claude": [
+    "Romantic",
+    "Playful"
+   ],
+   "claudeBasis": "researched-high",
+   "claudeWhy": "A smooth, Elton-style piano croon about a couple who admit they're both unhinged and shut out a senseless world inside their own intense love.",
+   "claudeSource": "https://www.popmatters.com/robert-ellis-texas-piano-man-2625655942.html",
    "listeners": "none",
    "styles": [
     "Vocal",
@@ -3811,8 +4103,7 @@
     "pop",
     "rock",
     "soft rock"
-   ],
-   "check": true
+   ]
   },
   "2CwNOqVypdZfKA8lXQKSUb": {
    "n": 106,
@@ -3832,6 +4123,7 @@
     "Melancholy",
     "Romantic"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Soul",
@@ -3848,8 +4140,7 @@
     "pop",
     "rhythm & blues",
     "soul"
-   ],
-   "check": true
+   ]
   },
   "4N8FB9gd4FjEi68O6eVJ4p": {
    "n": 107,
@@ -3865,6 +4156,13 @@
     "Melancholy",
     "Uplifting"
    ],
+   "claude": [
+    "Bittersweet",
+    "Melancholy"
+   ],
+   "claudeBasis": "researched-low",
+   "claudeWhy": "Nothing specific found; the album partly deals with Stew's breakup with collaborator Heidi Rodewald.",
+   "claudeSource": "https://www.npr.org/artists/19349107/stew",
    "listeners": "none",
    "styles": [
     "Alternative Rock",
@@ -3882,15 +4180,20 @@
    "title": "How It Should Be (Sha Sha)",
    "artist": "Ben Kweller, Kimya Dawson, John David Kent, Josh Lattanzi",
    "moods": [
-    "Joyful",
-    "Uplifting"
+    "Playful"
    ],
-   "moodFrom": "Weighed up",
+   "moodFrom": "Claude (researched)",
    "sound": [
     "Joyful",
     "Uplifting",
     "Playful"
    ],
+   "claude": [
+    "Playful"
+   ],
+   "claudeBasis": "researched-high",
+   "claudeWhy": "Quirky, catchy 1:42 sketch built on awkward piano and a walking bass, with an absurd lyrical turn about a fading movie career.",
+   "claudeSource": "https://www.sputnikmusic.com/album/9995/Ben-Kweller-Sha-Sha",
    "listeners": "none",
    "styles": [
     "Lounge",
@@ -3908,8 +4211,7 @@
     "indie pop",
     "indie rock",
     "rock"
-   ],
-   "check": true
+   ]
   },
   "6eCWvDQXTITW534IANR5n1": {
    "n": 109,
@@ -3929,6 +4231,7 @@
     "Romantic",
     "Joyful"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Pop Rock",
@@ -3952,7 +4255,6 @@
    "title": "My Stuff",
    "artist": "Getdown Services",
    "moods": [
-    "Mellow",
     "Playful"
    ],
    "moodFrom": "Weighed up",
@@ -3961,6 +4263,13 @@
     "Playful",
     "Dreamy"
    ],
+   "claude": [
+    "Playful",
+    "Energetic"
+   ],
+   "claudeBasis": "researched-low",
+   "claudeWhy": "Nothing found on this song; Getdown Services make silly, satirical disco-punk with Krautrock beats, so this is a guess from the band's style.",
+   "claudeSource": "https://www.bristol247.com/culture/music/review-getdown-services-strange-brew-scrumptious-cathartic-grooving-tunes-drenched-in-sweat-and-reality",
    "listeners": "none",
    "styles": [
     "Folk",
@@ -3984,18 +4293,22 @@
    "title": "Lady, You Shot Me",
    "artist": "Har Mar Superstar",
    "moods": [
+    "Bittersweet",
     "Romantic"
    ],
-   "moodFrom": "Weighed up",
+   "moodFrom": "Claude (researched)",
    "sound": [
     "Playful",
     "Joyful",
     "Energetic"
    ],
    "claude": [
+    "Bittersweet",
     "Romantic"
    ],
-   "claudeGuess": true,
+   "claudeBasis": "researched-high",
+   "claudeWhy": "Vintage horn-driven soul in a Sam Cooke and Otis Redding mould, with a strolling groove and key change, singing about betrayal and heartbreak; the title takes Cooke's reported last words.",
+   "claudeSource": "https://www.npr.org/transcripts/188301709",
    "listeners": "none",
    "styles": [
     "Soul",
@@ -4014,16 +4327,15 @@
     "r&b",
     "rock",
     "soul"
-   ],
-   "check": true
+   ]
   },
   "40IPlaLrR3YEPNkI7z3bYp": {
    "n": 112,
    "title": "Never Get Ahead",
    "artist": "Bobby Conn",
    "moods": [
-    "Energetic",
-    "Joyful"
+    "Playful",
+    "Dark"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -4031,6 +4343,13 @@
     "Joyful",
     "Playful"
    ],
+   "claude": [
+    "Playful",
+    "Dark"
+   ],
+   "claudeBasis": "researched-medium",
+   "claudeWhy": "Satirical glam-rock jab at the idea that hard work brings success, with crude wordplay and a choppy scratchy fiddle on the chorus.",
+   "claudeSource": "https://popmatters.com/connbobby-live2005-2495863515.html",
    "listeners": "none",
    "styles": [
     "Alternative Rock",
@@ -4051,8 +4370,7 @@
     "pop",
     "pop rock",
     "rock"
-   ],
-   "check": true
+   ]
   },
   "6nSt8n7r0bznM8PCvHEmPj": {
    "n": 113,
@@ -4072,6 +4390,7 @@
     "Playful",
     "Joyful"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Vocal",
@@ -4107,6 +4426,7 @@
     "Uplifting",
     "Melancholy"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Soundtrack",
@@ -4123,15 +4443,14 @@
     "americana",
     "indie rock",
     "neo soul"
-   ],
-   "check": true
+   ]
   },
   "5Bv1HoYXGCICY3ymEIdpHF": {
    "n": 115,
    "title": "Waiting",
    "artist": "Fabiana Palladino",
    "moods": [
-    "Dreamy",
+    "Romantic",
     "Mellow"
    ],
    "moodFrom": "Weighed up",
@@ -4140,6 +4459,13 @@
     "Mellow",
     "Romantic"
    ],
+   "claude": [
+    "Romantic",
+    "Mellow"
+   ],
+   "claudeBasis": "researched-low",
+   "claudeWhy": "Only influences are documented (Joe Jackson, Squeeze, early Police, Prince); subject not found, so moods are a guess from her sophisti-pop style.",
+   "claudeSource": "https://en.wikipedia.org/wiki/Fabiana_Palladino",
    "listeners": "none",
    "styles": [
     "RnB/Swing",
@@ -4164,20 +4490,21 @@
    "title": "Eleanor",
    "artist": "Hot Chip",
    "moods": [
-    "Uplifting",
-    "Joyful"
+    "Uplifting"
    ],
-   "moodFrom": "Weighed up",
+   "moodFrom": "Claude (researched)",
    "sound": [
     "Uplifting",
     "Joyful",
     "Playful"
    ],
    "claude": [
-    "Joyful",
-    "Romantic"
+    "Uplifting",
+    "Bittersweet"
    ],
-   "claudeGuess": true,
+   "claudeBasis": "researched-high",
+   "claudeWhy": "Punchy, shimmering synth-pop that Alexis Taylor says is about getting through overwhelming pain, families pulled apart and close friendship.",
+   "claudeSource": "https://thelineofbestfit.com/news/latest-news/hot-chip-share-new-song-eleanor",
    "listeners": "none",
    "styles": [
     "Disco",
@@ -4196,8 +4523,7 @@
     "indie rock",
     "indietronica",
     "synth-pop"
-   ],
-   "check": true
+   ]
   },
   "3d2oiHuHm3rftzRDPeL5LU": {
    "n": 117,
@@ -4217,6 +4543,7 @@
     "Dark",
     "Energetic"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Prog Rock",
@@ -4252,6 +4579,7 @@
     "Playful",
     "Joyful"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Indie Rock",
@@ -4267,8 +4595,7 @@
     "garage rock",
     "indie rock",
     "rock"
-   ],
-   "check": true
+   ]
   },
   "2FPcTfECQrZviBAarAHv1f": {
    "n": 119,
@@ -4277,12 +4604,19 @@
    "moods": [
     "Energetic"
    ],
-   "moodFrom": "Weighed up",
+   "moodFrom": "Claude (researched)",
    "sound": [
     "Energetic",
     "Playful",
     "Dark"
    ],
+   "claude": [
+    "Energetic",
+    "Playful"
+   ],
+   "claudeBasis": "researched-high",
+   "claudeWhy": "Drum-heavy electro-punk with crowd-style chanting and a quick, catchy chorus, its sparse, absurdist lyrics built around declaring love for the world.",
+   "claudeSource": "https://www.redbrick.me/single-review-fat-dog-peace-song/",
    "listeners": "none",
    "styles": [
     "Drum n Bass",
@@ -4305,8 +4639,7 @@
     "post-punk",
     "post-punk revival",
     "rave"
-   ],
-   "check": true
+   ]
   },
   "30zaeAGK7hGe1N406m3pKL": {
    "n": 120,
@@ -4326,6 +4659,7 @@
     "Romantic",
     "Joyful"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Soul",
@@ -4340,8 +4674,7 @@
     "pop",
     "r&b",
     "soul"
-   ],
-   "check": true
+   ]
   },
   "5O5u7dukzRu4iskuCTiaYj": {
    "n": 121,
@@ -4361,6 +4694,7 @@
     "Energetic",
     "Playful"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Pop Rock",
@@ -4389,8 +4723,7 @@
    "title": "She Fell into My Arms",
    "artist": "Ed Harcourt",
    "moods": [
-    "Bittersweet",
-    "Melancholy"
+    "Romantic"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -4398,6 +4731,13 @@
     "Melancholy",
     "Romantic"
    ],
+   "claude": [
+    "Romantic",
+    "Playful"
+   ],
+   "claudeBasis": "researched-medium",
+   "claudeWhy": "Piano-led song with horns that a reviewer called witty and catchy; subject not described beyond the falling-in-love title.",
+   "claudeSource": "https://pennyblackmusic.co.uk/Home/Details?id=10052",
    "listeners": "none",
    "styles": [
     "Indie Rock",
@@ -4414,15 +4754,13 @@
     "pop",
     "rock",
     "soft rock"
-   ],
-   "check": true
+   ]
   },
   "4CSKUENltc2dGwvGGtDRgI": {
    "n": 123,
    "title": "As Long As I Still Get You",
    "artist": "Vulfmon, Evangeline",
    "moods": [
-    "Joyful",
     "Mellow"
    ],
    "moodFrom": "Weighed up",
@@ -4432,10 +4770,12 @@
     "Dreamy"
    ],
    "claude": [
-    "Joyful",
+    "Mellow",
     "Romantic"
    ],
-   "claudeGuess": true,
+   "claudeBasis": "researched-medium",
+   "claudeWhy": "Warm, laid-back live-room ballad with bassoon, flute and Wurlitzer under Evangeline's sunny vocal; lyrics not described.",
+   "claudeSource": "https://anotherwhiskyformisterbukowski.com/evangeline-vulfmon-sortent-as-long-as-i-still-get-you-et-cest-doux/",
    "listeners": "none",
    "styles": [
     "Indie Pop",
@@ -4450,22 +4790,29 @@
     "funk",
     "jazz-funk",
     "pop soul"
-   ],
-   "check": true
+   ]
   },
   "29O9cSdpmLZKFcTRMlnqo2": {
    "n": 124,
    "title": "Da Butt",
    "artist": "E.U.",
    "moods": [
+    "Playful",
     "Energetic"
    ],
-   "moodFrom": "Weighed up",
+   "moodFrom": "Claude (researched)",
    "sound": [
     "Energetic",
     "Joyful",
     "Playful"
    ],
+   "claude": [
+    "Playful",
+    "Energetic"
+   ],
+   "claudeBasis": "researched-high",
+   "claudeWhy": "Marcus Miller's go-go-flavoured party funk from School Daze, a cartoonish call-and-response chant cheerfully celebrating big behinds.",
+   "claudeSource": "https://www.washingtoncitypaper.com/news/article/13042419/da-oral-history-of-da-butt-put-your-memory-in",
    "listeners": "none",
    "styles": [
     "New Jack Swing",
@@ -4478,8 +4825,7 @@
    "genreFrom": "Weighed up",
    "musicbrainz": [
     "funk"
-   ],
-   "check": true
+   ]
   },
   "60JI0WkwFt0zqnJw8KzNoE": {
    "n": 125,
@@ -4499,6 +4845,7 @@
     "Uplifting",
     "Bittersweet"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Pop Rock",
@@ -4520,28 +4867,29 @@
     "mod",
     "pop rock",
     "power pop"
-   ],
-   "check": true
+   ]
   },
   "4clw6ilYxpOiBeoSkJJvSX": {
    "n": 126,
    "title": "When It Comes Down To It",
    "artist": "Minnie Riperton",
    "moods": [
-    "Romantic",
-    "Joyful"
+    "Uplifting",
+    "Energetic"
    ],
-   "moodFrom": "Weighed up",
+   "moodFrom": "Claude (researched)",
    "sound": [
     "Energetic",
     "Joyful",
     "Playful"
    ],
    "claude": [
-    "Romantic",
-    "Joyful"
+    "Uplifting",
+    "Energetic"
    ],
-   "claudeGuess": true,
+   "claudeBasis": "researched-high",
+   "claudeWhy": "Funky bass, drums, brass and a dramatic vocal carry a hopeful message that love outweighs wealth or status and that the lost will find comfort.",
+   "claudeSource": "https://dereksmusicblog.com/2011/08/17/minnie-riperton-adventures-in-paradise/",
    "listeners": "none",
    "styles": [
     "Disco",
@@ -4558,8 +4906,7 @@
     "r&b",
     "smooth soul",
     "soul"
-   ],
-   "check": true
+   ]
   },
   "2dpGNisIy8LNjpEGzDdtft": {
    "n": 127,
@@ -4579,6 +4926,7 @@
     "Joyful",
     "Energetic"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Pop Rock",
@@ -4604,7 +4952,7 @@
    "artist": "David Byrne",
    "moods": [
     "Playful",
-    "Romantic"
+    "Bittersweet"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -4613,9 +4961,12 @@
     "Mellow"
    ],
    "claude": [
-    "Playful"
+    "Playful",
+    "Bittersweet"
    ],
-   "claudeGuess": true,
+   "claudeBasis": "researched-medium",
+   "claudeWhy": "Short tongue-in-cheek album closer with Mellotron, called a 'bittersweet beat sundae'; subject not described.",
+   "claudeSource": "https://www.austinchronicle.com/music/eye-to-eye-11709908/",
    "listeners": "none",
    "styles": [
     "Pop Rock",
@@ -4637,8 +4988,7 @@
     "post-punk",
     "punk",
     "rock"
-   ],
-   "check": true
+   ]
   },
   "5OuaAMBmGjjJMK7yXpaFAK": {
    "n": 129,
@@ -4658,6 +5008,7 @@
     "Bittersweet",
     "Energetic"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Pop Rock",
@@ -4671,8 +5022,7 @@
    "musicbrainz": [
     "folk",
     "rock"
-   ],
-   "check": true
+   ]
   },
   "2hq50hCUUknhUXZ9uL3wgq": {
    "n": 130,
@@ -4691,6 +5041,7 @@
     "Romantic",
     "Joyful"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Psychedelic Rock",
@@ -4725,6 +5076,7 @@
     "Joyful",
     "Energetic"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Garage Rock",
@@ -4763,6 +5115,7 @@
     "Joyful",
     "Energetic"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Reggae-Pop",
@@ -4784,15 +5137,22 @@
    "title": "There’s So Many People That Want To Be Loved",
    "artist": "Sorry",
    "moods": [
-    "Melancholy",
-    "Bittersweet"
+    "Bittersweet",
+    "Melancholy"
    ],
-   "moodFrom": "Weighed up",
+   "moodFrom": "Claude (researched)",
    "sound": [
     "Melancholy",
     "Bittersweet",
     "Mellow"
    ],
+   "claude": [
+    "Bittersweet",
+    "Melancholy"
+   ],
+   "claudeBasis": "researched-high",
+   "claudeWhy": "Slow, soft folk-leaning track the singer calls a sad-funny love song about being out of love and lonely in the city.",
+   "claudeSource": "https://faroutmagazine.co.uk/sorry-share-heartfelt-new-single/",
    "listeners": "none",
    "styles": [
     "Indie Rock",
@@ -4815,8 +5175,7 @@
     "post-punk 2k",
     "post-rock",
     "punk"
-   ],
-   "check": true
+   ]
   },
   "4AxAd49jPozjHMZyXI2Gzv": {
    "n": 134,
@@ -4836,6 +5195,7 @@
     "Uplifting",
     "Bittersweet"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Pop Rock",
@@ -4850,26 +5210,29 @@
    "musicbrainz": [
     "pop",
     "rock"
-   ],
-   "check": true
+   ]
   },
   "0ISfH0HKPrQd3mWmzk76Ij": {
    "n": 135,
    "title": "This Year",
    "artist": "Emily King",
    "moods": [
-    "Uplifting"
+    "Uplifting",
+    "Bittersweet"
    ],
-   "moodFrom": "Weighed up",
+   "moodFrom": "Claude (researched)",
    "sound": [
     "Joyful",
     "Playful",
     "Romantic"
    ],
    "claude": [
-    "Uplifting"
+    "Uplifting",
+    "Bittersweet"
    ],
-   "claudeGuess": true,
+   "claudeBasis": "researched-high",
+   "claudeWhy": "Upbeat, anthemic new-year song written after King realised she'd spent too long chasing someone who couldn't love her back.",
+   "claudeSource": "https://lpm.org/music/2022-12-15/listen-hear-song-of-the-day-emily-king-shares-new-upbeat-anthem-this-year",
    "listeners": "none",
    "styles": [
     "Contemporary R&B",
@@ -4883,22 +5246,29 @@
    "musicbrainz": [
     "rhythm and blues",
     "soul"
-   ],
-   "check": true
+   ]
   },
   "06SgGRLn7xmwCz8wIxIx8U": {
    "n": 136,
    "title": "Plastic Pyramid",
    "artist": "Omni, Izzy Glaudini",
    "moods": [
-    "Energetic"
+    "Energetic",
+    "Playful"
    ],
-   "moodFrom": "Weighed up",
+   "moodFrom": "Claude (researched)",
    "sound": [
     "Energetic",
     "Joyful",
     "Playful"
    ],
+   "claude": [
+    "Energetic",
+    "Playful"
+   ],
+   "claudeBasis": "researched-high",
+   "claudeWhy": "Jittery, frantic post-punk duet that eases into a bluesy, Television-like sway, using a balloon as an absurd metaphor for how pointless effort can feel.",
+   "claudeSource": "https://beatsperminute.com/album-review-omni-souvenir/",
    "listeners": "none",
    "styles": [
     "Indie Rock",
@@ -4915,8 +5285,7 @@
     "indie rock",
     "post-punk",
     "rock"
-   ],
-   "check": true
+   ]
   },
   "4Yh1pyb3eGk32z6KeG0MPF": {
    "n": 137,
@@ -4936,6 +5305,7 @@
     "Melancholy",
     "Romantic"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Vocal",
@@ -4973,6 +5343,7 @@
     "Energetic",
     "Dark"
    ],
+   "claudeBasis": "knows",
    "listeners": "differ",
    "styles": [
     "Punk",
@@ -5000,15 +5371,22 @@
    "title": "I'm So Serious",
    "artist": "Daryl Johns",
    "moods": [
-    "Energetic",
+    "Playful",
     "Joyful"
    ],
-   "moodFrom": "Weighed up",
+   "moodFrom": "Claude (researched)",
    "sound": [
     "Energetic",
     "Joyful",
     "Playful"
    ],
+   "claude": [
+    "Playful",
+    "Joyful"
+   ],
+   "claudeBasis": "researched-high",
+   "claudeWhy": "Glossy bubblegum pop-rock with stylophone and a big chorus, a nostalgic and silly tribute to early-80s burgers, milkshakes and TV jingles.",
+   "claudeSource": "https://www.theindiescene.co.uk/single-reviews/daryl-johns-announces-debut-album",
    "listeners": "none",
    "styles": [
     "Pop Rock",
@@ -5019,8 +5397,7 @@
     "Pop",
     "Soul & R&B"
    ],
-   "genreFrom": "Claude",
-   "check": true
+   "genreFrom": "Claude"
   },
   "5qm0KiVKMXW1kq6VrnIhz5": {
    "n": 140,
@@ -5040,6 +5417,7 @@
     "Uplifting",
     "Energetic"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Hard Rock",
@@ -5054,8 +5432,7 @@
     "blues rock",
     "instrumental rock",
     "rock"
-   ],
-   "check": true
+   ]
   },
   "6TOhXLevQUI4fjrxLL1nJE": {
    "n": 141,
@@ -5075,6 +5452,7 @@
     "Uplifting",
     "Joyful"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Soul",
@@ -5089,23 +5467,28 @@
     "disco",
     "electronic",
     "gospel"
-   ],
-   "check": true
+   ]
   },
   "1aoFQBQrclXuxUTCldGNYh": {
    "n": 142,
    "title": "Fashion",
    "artist": "Tom A. Smith",
    "moods": [
-    "Dark",
     "Energetic"
    ],
-   "moodFrom": "Weighed up",
+   "moodFrom": "Claude (researched)",
    "sound": [
     "Dark",
     "Energetic",
     "Playful"
    ],
+   "claude": [
+    "Energetic",
+    "Playful"
+   ],
+   "claudeBasis": "researched-high",
+   "claudeWhy": "Rowdy, high-energy post-punk with riffy guitars and snarling synths, joking about not affording drinks on a London night out.",
+   "claudeSource": "https://www.thelineofbestfit.com/tracks/tom-a-smith-fashion",
    "listeners": "none",
    "styles": [
     "Alternative Rock",
@@ -5116,8 +5499,7 @@
     "Indie",
     "Rock"
    ],
-   "genreFrom": "Weighed up",
-   "check": true
+   "genreFrom": "Weighed up"
   },
   "1CPTAkaqBwFfe7xUjScKIr": {
    "n": 143,
@@ -5137,6 +5519,7 @@
     "Uplifting",
     "Mellow"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Soft Rock",
@@ -5154,8 +5537,7 @@
     "pop rock",
     "rock",
     "soft rock"
-   ],
-   "check": true
+   ]
   },
   "3GWhvJNnbkhl3iMK1W4iQC": {
    "n": 144,
@@ -5175,6 +5557,7 @@
     "Melancholy",
     "Dreamy"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Indie Rock",
@@ -5213,6 +5596,7 @@
     "Romantic",
     "Joyful"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Folk",
@@ -5225,8 +5609,7 @@
    "genreFrom": "Weighed up",
    "musicbrainz": [
     "sunshine pop"
-   ],
-   "check": true
+   ]
   },
   "3PtmCb2kQYekdoh3HB81yU": {
    "n": 146,
@@ -5236,16 +5619,19 @@
     "Bittersweet",
     "Mellow"
    ],
-   "moodFrom": "Weighed up",
+   "moodFrom": "Claude (researched)",
    "sound": [
     "Mellow",
     "Melancholy",
     "Dreamy"
    ],
    "claude": [
-    "Bittersweet"
+    "Bittersweet",
+    "Mellow"
    ],
-   "claudeGuess": true,
+   "claudeBasis": "researched-high",
+   "claudeWhy": "A lovely descending folk melody and wry delivery for a song about chosen solitude, sensing a lost partner in the landscape without self-pity.",
+   "claudeSource": "https://www.fluxblog.org/?p=3238",
    "listeners": "none",
    "styles": [
     "Soundtrack",
@@ -5259,8 +5645,7 @@
    "musicbrainz": [
     "american folk music",
     "folk"
-   ],
-   "check": true
+   ]
   },
   "4S4dCACmtuPWbhvMSfDXqN": {
    "n": 147,
@@ -5280,6 +5665,7 @@
     "Joyful",
     "Playful"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Latin Jazz",
@@ -5300,18 +5686,22 @@
    "title": "Love Me Tenderly",
    "artist": "The Felice Brothers",
    "moods": [
-    "Romantic"
+    "Romantic",
+    "Bittersweet"
    ],
-   "moodFrom": "Weighed up",
+   "moodFrom": "Claude (researched)",
    "sound": [
     "Romantic",
     "Bittersweet",
     "Melancholy"
    ],
    "claude": [
-    "Romantic"
+    "Romantic",
+    "Bittersweet"
    ],
-   "claudeGuess": true,
+   "claudeBasis": "researched-high",
+   "claudeWhy": "A bouncy, old-timey Americana tune sung as a hard-luck small-time crook pining for his woman.",
+   "claudeSource": "https://www.popmatters.com/the-felice-brothers-the-felice-brothers-2496170793.html",
    "listeners": "none",
    "styles": [
     "Alternative Rock",
@@ -5331,8 +5721,7 @@
     "folk",
     "indie",
     "rock"
-   ],
-   "check": true
+   ]
   },
   "3TMtoSysAJ61pUnvVPHlI5": {
    "n": 149,
@@ -5351,7 +5740,9 @@
     "Energetic",
     "Romantic"
    ],
-   "claudeGuess": true,
+   "claudeBasis": "researched-low",
+   "claudeWhy": "Nothing found about the song; it is from a 1983 LP by the Italo-disco act behind Walking in the Neon.",
+   "claudeSource": "https://www.deezer.com/artist/319115",
    "listeners": "none",
    "styles": [
     "Italo-Disco",
@@ -5387,6 +5778,7 @@
     "Playful",
     "Energetic"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Vocal",
@@ -5423,6 +5815,7 @@
     "Uplifting",
     "Mellow"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Blues Rock",
@@ -5439,15 +5832,14 @@
     "psychedelic rock",
     "rock",
     "rock and roll"
-   ],
-   "check": true
+   ]
   },
   "3PuzCzuFmDqVtCp6PWlUio": {
    "n": 152,
    "title": "Things Will Never Be The Same Again",
    "artist": "JJ",
    "moods": [
-    "Uplifting"
+    "Dreamy"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -5455,6 +5847,13 @@
     "Dreamy",
     "Mellow"
    ],
+   "claude": [
+    "Dreamy",
+    "Bittersweet"
+   ],
+   "claudeBasis": "researched-medium",
+   "claudeWhy": "Balearic dream-pop with calypso maracas and steel drums over strings and bass drum, sung wispily; subject not described.",
+   "claudeSource": "https://wildcat.arizona.edu/120907/uncategorized/cd-review-jj-jj-n-2/",
    "listeners": "none",
    "styles": [
     "Downtempo",
@@ -5472,8 +5871,7 @@
     "indie",
     "pop",
     "synth-pop"
-   ],
-   "check": true
+   ]
   },
   "748yv6bb3l3CcKS45a6SZ8": {
    "n": 153,
@@ -5493,6 +5891,7 @@
     "Romantic",
     "Bittersweet"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Pop Rock",
@@ -5515,8 +5914,7 @@
     "rock",
     "sophisti-pop",
     "synth-pop"
-   ],
-   "check": true
+   ]
   },
   "3f3HHRPF5vAo90GwdpDMaQ": {
    "n": 154,
@@ -5536,6 +5934,7 @@
     "Joyful",
     "Playful"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Boom Bap",
@@ -5570,6 +5969,13 @@
     "Dreamy",
     "Melancholy"
    ],
+   "claude": [
+    "Dark",
+    "Playful"
+   ],
+   "claudeBasis": "researched-medium",
+   "claudeWhy": "One of the darker tracks on a lo-fi, children's-choir Halloween album about ghosts and zombies that reviewers call spooky but playful.",
+   "claudeSource": "https://ktsw.txst.edu/music/reviews-archive/deadmansbones.html",
    "listeners": "none",
    "styles": [
     "Lo-Fi",
@@ -5590,8 +5996,7 @@
     "pop",
     "psychedelic pop",
     "rock"
-   ],
-   "check": true
+   ]
   },
   "0Shb2a6oTnJsIxEzn2SDLh": {
    "n": 156,
@@ -5606,6 +6011,13 @@
     "Joyful",
     "Dark"
    ],
+   "claude": [
+    "Energetic",
+    "Joyful"
+   ],
+   "claudeBasis": "researched-medium",
+   "claudeWhy": "Tonight's 1978 UK No. 14 hit, cited as the first chart hit of the British power-pop wave; no source found on the lyrics.",
+   "claudeSource": "https://myglobalmind.com/2010/10/26/tonight-drummer-man/",
    "listeners": "none",
    "styles": [
     "Punk",
@@ -5623,23 +6035,29 @@
     "power pop",
     "punk",
     "rock"
-   ],
-   "check": true
+   ]
   },
   "0USF54f34DPnAn9nEmqNIN": {
    "n": 157,
    "title": "Love & Tears",
    "artist": "GENER8ION, Yannis",
    "moods": [
-    "Dreamy",
-    "Mellow"
+    "Bittersweet",
+    "Dark"
    ],
-   "moodFrom": "Weighed up",
+   "moodFrom": "Claude (researched)",
    "sound": [
     "Dreamy",
     "Mellow",
     "Melancholy"
    ],
+   "claude": [
+    "Bittersweet",
+    "Dark"
+   ],
+   "claudeBasis": "researched-high",
+   "claudeWhy": "Swings between bright 50s snap and electro-pop and a brooding mood, telling of watching a beloved figure fall, read as a parable about AI as idol.",
+   "claudeSource": "https://metalmagazine.eu/en/post/gener8ion-love-and-tears",
    "listeners": "none",
    "styles": [
     "Dream Pop",
@@ -5656,23 +6074,29 @@
     "electronic",
     "house",
     "progressive house"
-   ],
-   "check": true
+   ]
   },
   "4U9ZjqhaGF9wl56899E4sW": {
    "n": 158,
    "title": "Besties",
    "artist": "Black Country, New Road",
    "moods": [
-    "Bittersweet",
-    "Romantic"
+    "Joyful",
+    "Uplifting"
    ],
-   "moodFrom": "Weighed up",
+   "moodFrom": "Claude (researched)",
    "sound": [
     "Bittersweet",
     "Romantic",
     "Melancholy"
    ],
+   "claude": [
+    "Joyful",
+    "Uplifting"
+   ],
+   "claudeBasis": "researched-high",
+   "claudeWhy": "Harpsichord-led baroque pop with anthemic vocals and a sunshine-pop refrain, celebrating the innocence of friendship.",
+   "claudeSource": "https://ksdt.ucsd.edu/blog/besties-a-new-era-begins-for-black-country-new-road",
    "listeners": "none",
    "styles": [
     "Alternative Rock",
@@ -5695,16 +6119,15 @@
     "new wave",
     "pop",
     "pop rock"
-   ],
-   "check": true
+   ]
   },
   "0qgZruwLnh1ed7Z7ZXNMTc": {
    "n": 159,
    "title": "Ditch",
    "artist": "Willie J Healey",
    "moods": [
-    "Mellow",
-    "Melancholy"
+    "Romantic",
+    "Mellow"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -5712,6 +6135,13 @@
     "Melancholy",
     "Romantic"
    ],
+   "claude": [
+    "Romantic",
+    "Mellow"
+   ],
+   "claudeBasis": "researched-medium",
+   "claudeWhy": "Stripped-back song that Healey says is about old-fashioned, star-crossed young love and its nerves; the track's sound isn't described in detail.",
+   "claudeSource": "https://www.thelineofbestfit.com/news/willie-j-healey-returns-with-details-of-a-new-ep-143-and-shares-ditch-single",
    "listeners": "none",
    "styles": [
     "Soul",
@@ -5724,8 +6154,7 @@
    "genreFrom": "Weighed up",
    "musicbrainz": [
     "indie"
-   ],
-   "check": true
+   ]
   },
   "0IVAlb0cFCH1cQ974iR1TU": {
    "n": 160,
@@ -5745,6 +6174,7 @@
     "Playful",
     "Romantic"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Conscious",
@@ -5766,8 +6196,7 @@
    "title": "Violent Sun",
    "artist": "Everything Everything",
    "moods": [
-    "Energetic",
-    "Dark"
+    "Energetic"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -5776,10 +6205,12 @@
     "Bittersweet"
    ],
    "claude": [
-    "Dark",
-    "Energetic"
+    "Energetic",
+    "Bittersweet"
    ],
-   "claudeGuess": true,
+   "claudeBasis": "researched-medium",
+   "claudeWhy": "An 'electrifying' track that Jonathan Higgs says captures sensing something terrible approaching while wanting to hold on to the moment, the last song of the night; little detail on the sound itself.",
+   "claudeSource": "https://faroutmagazine.co.uk/everything-everything-new-song-violent-sun/",
    "listeners": "none",
    "styles": [
     "Indie Rock",
@@ -5797,22 +6228,29 @@
     "indietronica",
     "math rock",
     "progressive pop"
-   ],
-   "check": true
+   ]
   },
   "0g95vn2Szj5apK4CIOcyAZ": {
    "n": 162,
    "title": "Like Best Friends",
    "artist": "Dirty Nice",
    "moods": [
-    "Energetic"
+    "Joyful",
+    "Romantic"
    ],
-   "moodFrom": "Weighed up",
+   "moodFrom": "Claude (researched)",
    "sound": [
     "Energetic",
     "Dark",
     "Joyful"
    ],
+   "claude": [
+    "Joyful",
+    "Romantic"
+   ],
+   "claudeBasis": "researched-high",
+   "claudeWhy": "Bright, bouncy, jaunty indie pop about the rush of instantly clicking with someone new, with a first-date video.",
+   "claudeSource": "https://hashbrandnew.com/Artists/Dirty+Nice/Albums/Like+Best+Friends+-+Fine+For+Now",
    "listeners": "none",
    "styles": [
     "Coldwave",
@@ -5825,8 +6263,7 @@
    "genreFrom": "Weighed up",
    "musicbrainz": [
     "indie rock"
-   ],
-   "check": true
+   ]
   },
   "2mpFugcHYSOPZSVdTu5OUw": {
    "n": 163,
@@ -5846,6 +6283,7 @@
     "Playful",
     "Dark"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Experimental",
@@ -5868,20 +6306,21 @@
    "title": "Notting Hill",
    "artist": "Suki Waterhouse",
    "moods": [
-    "Dreamy",
-    "Melancholy"
+    "Bittersweet"
    ],
-   "moodFrom": "Weighed up",
+   "moodFrom": "Claude (researched)",
    "sound": [
     "Bittersweet",
     "Melancholy",
     "Dreamy"
    ],
    "claude": [
-    "Dreamy",
-    "Melancholy"
+    "Bittersweet",
+    "Dreamy"
    ],
-   "claudeGuess": true,
+   "claudeBasis": "researched-high",
+   "claudeWhy": "Hazy, echoey vocals over a building beat with piano; a nostalgic love letter to her old London home.",
+   "claudeSource": "https://music.mxdwn.com/2026/07/11/news/suki-waterhouse-shares-nostalgic-new-single-video-notting-hill/",
    "listeners": "none",
    "styles": [
     "Alternative Rock",
@@ -5898,23 +6337,29 @@
     "neo-psychedelia",
     "pop",
     "pop rock"
-   ],
-   "check": true
+   ]
   },
   "4cgmk2owigBlmlV4KsqRNs": {
    "n": 165,
    "title": "Undercover",
    "artist": "Susanne Sundfør",
    "moods": [
-    "Dreamy",
-    "Melancholy"
+    "Melancholy",
+    "Dark"
    ],
-   "moodFrom": "Weighed up",
+   "moodFrom": "Claude (researched)",
    "sound": [
     "Dreamy",
     "Melancholy",
     "Mellow"
    ],
+   "claude": [
+    "Melancholy",
+    "Dark"
+   ],
+   "claudeBasis": "researched-high",
+   "claudeWhy": "Piano ballad that builds to chilling vocals, about distrust in love and heartbreak.",
+   "claudeSource": "https://highclouds.org/?p=28191",
    "listeners": "none",
    "styles": [
     "Folk",
@@ -5936,8 +6381,7 @@
     "indie pop",
     "pop",
     "synthpop"
-   ],
-   "check": true
+   ]
   },
   "2gOiPzXFWh2Rw5SdEECM4K": {
    "n": 166,
@@ -5957,6 +6401,7 @@
     "Playful",
     "Energetic"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Nu-Disco",
@@ -5992,6 +6437,7 @@
     "Dark",
     "Dreamy"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "EBM",
@@ -6017,14 +6463,22 @@
    "title": "Struttin'",
    "artist": "Thumpasaurus",
    "moods": [
-    "Playful"
+    "Playful",
+    "Energetic"
    ],
-   "moodFrom": "Weighed up",
+   "moodFrom": "Claude (researched)",
    "sound": [
     "Playful",
     "Joyful",
     "Energetic"
    ],
+   "claude": [
+    "Energetic",
+    "Playful"
+   ],
+   "claudeBasis": "researched-high",
+   "claudeWhy": "Danceable, high-energy funk-punk with a ridiculous, comic setup, from an album that mixes dance, punk, funk and jazz.",
+   "claudeSource": "https://musicsurvivalguide.org/2022/01/12/thumpasaurus-thumpaverse-album-review/",
    "listeners": "none",
    "styles": [
     "Pop Rock",
@@ -6041,8 +6495,7 @@
     "funk rock",
     "synth funk",
     "synth-pop"
-   ],
-   "check": true
+   ]
   },
   "0iI3MhPi785gdx8SUySPay": {
    "n": 169,
@@ -6051,16 +6504,19 @@
    "moods": [
     "Playful"
    ],
-   "moodFrom": "Weighed up",
+   "moodFrom": "Claude (researched)",
    "sound": [
     "Energetic",
     "Playful",
     "Joyful"
    ],
    "claude": [
-    "Playful"
+    "Playful",
+    "Dark"
    ],
-   "claudeGuess": true,
+   "claudeBasis": "researched-high",
+   "claudeWhy": "Ironic, ostensibly pro-pill hip-hop anthem built on cartoonish jazz samples, insidious basslines and catchy backing vocals.",
+   "claudeSource": "https://www.thepitchkc.com/danger-mouse-and-jemini/",
    "listeners": "none",
    "styles": [
     "Conscious",
@@ -6073,8 +6529,7 @@
    "genreFrom": "Weighed up",
    "musicbrainz": [
     "hip hop"
-   ],
-   "check": true
+   ]
   },
   "1XxRYmDKuABtbtCozx3pA2": {
    "n": 170,
@@ -6094,6 +6549,7 @@
     "Bittersweet",
     "Romantic"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Indie Rock",
@@ -6112,8 +6568,7 @@
     "psychedelic pop",
     "rock",
     "sunshine pop"
-   ],
-   "check": true
+   ]
   },
   "2hPaiBndfRVCpYyIqv5zQG": {
    "n": 171,
@@ -6129,6 +6584,13 @@
     "Energetic",
     "Uplifting"
    ],
+   "claude": [
+    "Dark",
+    "Energetic"
+   ],
+   "claudeBasis": "researched-medium",
+   "claudeWhy": "Punk band's full rock track built from a Dave Sitek beat, about hopelessness, nihilism and being alone, eased by a close friendship.",
+   "claudeSource": "https://www.rollingstone.co.uk/music/surfbort-debut-new-video-for-lot-lizard-93-directed-by-lizzie-armanto-10207/",
    "listeners": "none",
    "styles": [
     "Indie Rock",
@@ -6142,23 +6604,29 @@
    "musicbrainz": [
     "punk rock",
     "rock"
-   ],
-   "check": true
+   ]
   },
   "0Z74CG8R6pWeh7NPnYubFP": {
    "n": 172,
    "title": "Bad Thing",
    "artist": "Miya Folick",
    "moods": [
-    "Joyful",
+    "Bittersweet",
     "Uplifting"
    ],
-   "moodFrom": "Weighed up",
+   "moodFrom": "Claude (researched)",
    "sound": [
     "Joyful",
     "Uplifting",
     "Playful"
    ],
+   "claude": [
+    "Bittersweet",
+    "Uplifting"
+   ],
+   "claudeBasis": "researched-high",
+   "claudeWhy": "Glassy synths and echoing delays give it a late-night party sheen over a hungover account of self-destructive habits and a hopeful resolve to change.",
+   "claudeSource": "https://atwoodmagazine.com/mfbt-miya-folick-bad-thing-song-review/",
    "listeners": "none",
    "styles": [
     "Indie Rock",
@@ -6174,16 +6642,14 @@
     "indie",
     "indie pop",
     "pop"
-   ],
-   "check": true
+   ]
   },
   "0fN65FwO4sNc07YBFFNDxt": {
    "n": 173,
    "title": "Too Cold for You",
    "artist": "Sahara Hotnights",
    "moods": [
-    "Energetic",
-    "Playful"
+    "Energetic"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -6191,6 +6657,12 @@
     "Playful",
     "Joyful"
    ],
+   "claude": [
+    "Energetic"
+   ],
+   "claudeBasis": "researched-medium",
+   "claudeWhy": "Brash, driving punk-pop with ringing guitars and piercing vocals; reviews don't discuss what the lyrics are about.",
+   "claudeSource": "https://trouserpress.com/reviews/sahara-hotnights/",
    "listeners": "none",
    "styles": [
     "Pop Rock",
@@ -6208,8 +6680,7 @@
     "pop",
     "punk",
     "rock"
-   ],
-   "check": true
+   ]
   },
   "5wDEOCfVVAqkdjkrSwDwGJ": {
    "n": 174,
@@ -6229,6 +6700,7 @@
     "Energetic",
     "Dark"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "House",
@@ -6258,8 +6730,7 @@
    "title": "Taking up Space",
    "artist": "Mustard Service",
    "moods": [
-    "Mellow",
-    "Uplifting"
+    "Mellow"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -6267,6 +6738,13 @@
     "Uplifting",
     "Joyful"
    ],
+   "claude": [
+    "Mellow",
+    "Bittersweet"
+   ],
+   "claudeBasis": "researched-medium",
+   "claudeWhy": "Written a month after the singer was pushed out of his old band, in the group's beachy surf-and-bossa 'zest pop' style.",
+   "claudeSource": "https://en.wikipedia.org/wiki/Mustard_Service",
    "listeners": "none",
    "styles": [
     "Dream Pop",
@@ -6276,8 +6754,7 @@
    "genres": [
     "Indie"
    ],
-   "genreFrom": "Weighed up",
-   "check": true
+   "genreFrom": "Weighed up"
   },
   "49mvGXitaWpfTwuwUQaN0c": {
    "n": 176,
@@ -6295,6 +6772,7 @@
    "claude": [
     "Melancholy"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Shoegaze",
@@ -6335,6 +6813,7 @@
     "Romantic",
     "Playful"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Prog Rock",
@@ -6351,22 +6830,29 @@
     "experimental rock",
     "power pop",
     "progressive pop"
-   ],
-   "check": true
+   ]
   },
   "5RZNyJd4RJRWe6wKtXJVVj": {
    "n": 178,
    "title": "Shy",
    "artist": "Hether",
    "moods": [
-    "Dreamy"
+    "Uplifting",
+    "Playful"
    ],
-   "moodFrom": "Weighed up",
+   "moodFrom": "Claude (researched)",
    "sound": [
     "Joyful",
     "Romantic",
     "Playful"
    ],
+   "claude": [
+    "Uplifting",
+    "Playful"
+   ],
+   "claudeBasis": "researched-high",
+   "claudeWhy": "Flamboyant, confident, upbeat track turning shyness and insecurity into a bold anthem for the soft-spoken.",
+   "claudeSource": "https://americansongwriter.com/daily-discovery-hether-shy/",
    "listeners": "none",
    "styles": [
     "Soul",
@@ -6385,8 +6871,7 @@
     "punk",
     "rock",
     "soul"
-   ],
-   "check": true
+   ]
   },
   "7GejAcJCqmZm7FAU4KHuyv": {
    "n": 179,
@@ -6406,6 +6891,7 @@
     "Bittersweet",
     "Playful"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Pop Rock",
@@ -6423,8 +6909,7 @@
     "new wave",
     "post-punk",
     "rock"
-   ],
-   "check": true
+   ]
   },
   "0S3izfZXcQAO6uoVN9mQvn": {
    "n": 180,
@@ -6444,6 +6929,7 @@
     "Uplifting",
     "Bittersweet"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Ambient",
@@ -6459,26 +6945,29 @@
     "pop",
     "pop rock",
     "rock"
-   ],
-   "check": true
+   ]
   },
   "2KnfMlqUIr2RLFIRlCQzhw": {
    "n": 181,
    "title": "The World",
    "artist": "Benny Sings",
    "moods": [
-    "Mellow"
+    "Mellow",
+    "Joyful"
    ],
-   "moodFrom": "Weighed up",
+   "moodFrom": "Claude (researched)",
    "sound": [
     "Mellow",
     "Joyful",
     "Dreamy"
    ],
    "claude": [
-    "Mellow"
+    "Mellow",
+    "Joyful"
    ],
-   "claudeGuess": true,
+   "claudeBasis": "researched-high",
+   "claudeWhy": "Laid-back, nostalgic 70s yacht-rock pastiche whose chorus is about living it up.",
+   "claudeSource": "https://westcoastsoul.de/?p=3454",
    "listeners": "none",
    "styles": [
     "K-pop",
@@ -6496,8 +6985,7 @@
     "pop",
     "popmusik",
     "soul"
-   ],
-   "check": true
+   ]
   },
   "4m5m7bonUvkScVaFExn6rR": {
    "n": 182,
@@ -6515,6 +7003,7 @@
    "claude": [
     "Melancholy"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Pop Rock",
@@ -6544,7 +7033,7 @@
    "artist": "Cuco",
    "moods": [
     "Dreamy",
-    "Romantic"
+    "Melancholy"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -6552,6 +7041,13 @@
     "Romantic",
     "Mellow"
    ],
+   "claude": [
+    "Dreamy",
+    "Melancholy"
+   ],
+   "claudeBasis": "researched-low",
+   "claudeWhy": "Nothing specific found beyond its place as an unreleased original on the Nobody Wants This S2 soundtrack; guess based on Cuco's hazy bossa-nova and psych-tinged bedroom pop and the title's sense of longing.",
+   "claudeSource": "https://www.tunefind.com/artist/cuco",
    "listeners": "none",
    "styles": [
     "Alternative Rock",
@@ -6574,7 +7070,7 @@
    "artist": "Lola Marsh",
    "moods": [
     "Dreamy",
-    "Uplifting"
+    "Romantic"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -6582,6 +7078,13 @@
     "Uplifting",
     "Mellow"
    ],
+   "claude": [
+    "Romantic",
+    "Dreamy"
+   ],
+   "claudeBasis": "researched-low",
+   "claudeWhy": "Nothing specific found; the album is described as indie pop mixed with folk, dream pop and spaghetti-western touches.",
+   "claudeSource": "https://blog.a38.hu/2017/10/13/lola-marsh-marsh-mellow/",
    "listeners": "none",
    "styles": [
     "K-pop",
@@ -6616,6 +7119,7 @@
     "Melancholy",
     "Romantic"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Vocal",
@@ -6657,6 +7161,7 @@
     "Playful",
     "Joyful"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Twist",
@@ -6693,6 +7198,7 @@
     "Joyful",
     "Energetic"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Flamenco",
@@ -6728,6 +7234,7 @@
     "Dark",
     "Dreamy"
    ],
+   "claudeBasis": "knows",
    "listeners": "agree",
    "styles": [
     "Synthwave",
@@ -6756,6 +7263,7 @@
    "title": "Cross My Heart",
    "artist": "Lime Garden",
    "moods": [
+    "Energetic",
     "Playful"
    ],
    "moodFrom": "Weighed up",
@@ -6764,6 +7272,13 @@
     "Energetic",
     "Joyful"
    ],
+   "claude": [
+    "Energetic",
+    "Bittersweet"
+   ],
+   "claudeBasis": "researched-low",
+   "claudeWhy": "Nothing specific found; best guess from the album, an indie-disco record following a chaotic night out, dating and an ex.",
+   "claudeSource": "https://diymag.com/news/lime-garden-second-album-maybe-not-tonight-23",
    "listeners": "none",
    "styles": [
     "Alternative Rock",
@@ -6800,6 +7315,7 @@
     "Playful",
     "Energetic"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Electro",
@@ -6820,8 +7336,8 @@
    "title": "If You Know What's Right",
    "artist": "Her's",
    "moods": [
-    "Joyful",
-    "Energetic"
+    "Dreamy",
+    "Joyful"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -6829,6 +7345,13 @@
     "Energetic",
     "Romantic"
    ],
+   "claude": [
+    "Dreamy",
+    "Mellow"
+   ],
+   "claudeBasis": "researched-low",
+   "claudeWhy": "Nothing found on this song beyond being a live favourite; Her's made drum-machine dream pop and 80s-inspired oddball indie, so this is a guess.",
+   "claudeSource": "https://atwoodmagazine.com/htbc-hers-band-tribute/",
    "listeners": "none",
    "styles": [
     "K-pop",
@@ -6865,6 +7388,7 @@
     "Energetic",
     "Joyful"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Pop Rock",
@@ -6900,6 +7424,7 @@
     "Romantic",
     "Joyful"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Pop Rock",
@@ -6935,6 +7460,7 @@
     "Playful",
     "Joyful"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Funk",
@@ -6959,8 +7485,8 @@
    "title": "Saved",
    "artist": "Elkie Brooks",
    "moods": [
-    "Uplifting",
-    "Energetic"
+    "Joyful",
+    "Playful"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -6969,9 +7495,12 @@
     "Playful"
    ],
    "claude": [
-    "Uplifting"
+    "Joyful",
+    "Playful"
    ],
-   "claudeGuess": true,
+   "claudeBasis": "researched-medium",
+   "claudeWhy": "A Leiber-Stoller gospel and R&B romp, sung tongue-in-cheek by a former hell-raiser proclaiming salvation, here on a soul/rock album the songwriters produced; Brooks's version itself isn't described.",
+   "claudeSource": "https://en.wikipedia.org/wiki/Saved_(Leiber_and_Stoller_song)",
    "listeners": "none",
    "styles": [
     "Gospel",
@@ -6987,8 +7516,7 @@
     "pop",
     "rock",
     "soul"
-   ],
-   "check": true
+   ]
   },
   "3c2kMiSB86tVq1J4oULmvL": {
    "n": 196,
@@ -7008,6 +7536,7 @@
     "Mellow",
     "Romantic"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Soul",
@@ -7049,6 +7578,7 @@
     "Bittersweet",
     "Mellow"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Pop Rock",
@@ -7069,26 +7599,29 @@
     "progressive pop",
     "rock",
     "soft rock"
-   ],
-   "check": true
+   ]
   },
   "7f5D1QJXjVue8IA4i0DmwS": {
    "n": 198,
    "title": "Here I Am",
    "artist": "Dolly Parton",
    "moods": [
-    "Uplifting"
+    "Uplifting",
+    "Romantic"
    ],
-   "moodFrom": "Weighed up",
+   "moodFrom": "Claude (researched)",
    "sound": [
     "Melancholy",
     "Romantic",
     "Mellow"
    ],
    "claude": [
-    "Uplifting"
+    "Uplifting",
+    "Romantic"
    ],
-   "claudeGuess": true,
+   "claudeBasis": "researched-high",
+   "claudeWhy": "Bold, shouted country declaration in which she steps out of a demure image and offers someone her help and love.",
+   "claudeSource": "https://www.ystrickler.com/2017-8-29-here-i-am-dolly-parton/",
    "listeners": "none",
    "styles": [
     "Vocal",
@@ -7106,8 +7639,7 @@
     "country pop",
     "country rock",
     "pop"
-   ],
-   "check": true
+   ]
   },
   "2GORop0i2cyx8C0A3JzL44": {
    "n": 199,
@@ -7127,6 +7659,7 @@
     "Romantic",
     "Mellow"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Soft Rock",
@@ -7161,6 +7694,7 @@
     "Playful",
     "Bittersweet"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Pop Rock",
@@ -7194,6 +7728,7 @@
     "Romantic",
     "Uplifting"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Jazz-Funk",
@@ -7210,8 +7745,7 @@
     "soul",
     "soul jazz",
     "soul-jazz"
-   ],
-   "check": true
+   ]
   },
   "5CNjsDtTDzqeqoxvL4jDiR": {
    "n": 202,
@@ -7231,6 +7765,7 @@
     "Energetic",
     "Playful"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Dream Pop",
@@ -7266,6 +7801,7 @@
     "Joyful",
     "Romantic"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Gospel",
@@ -7301,6 +7837,7 @@
    "claude": [
     "Playful"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Soul",
@@ -7320,8 +7857,7 @@
     "pop rock",
     "reggae",
     "rock"
-   ],
-   "check": true
+   ]
   },
   "6KEWtSOGKpIXGw6l1uJgsR": {
    "n": 205,
@@ -7341,6 +7877,7 @@
     "Romantic",
     "Playful"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Prog Rock",
@@ -7359,8 +7896,7 @@
     "pop rock",
     "progressive pop",
     "rock"
-   ],
-   "check": true
+   ]
   },
   "1Ryxsiacu8pUXIMCVnIQ8J": {
    "n": 206,
@@ -7378,6 +7914,7 @@
    "claude": [
     "Bittersweet"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Pop Rock",
@@ -7398,8 +7935,7 @@
     "rock and roll",
     "soft rock",
     "southern rock"
-   ],
-   "check": true
+   ]
   },
   "4BVFVaa1fDo20Ud1q5Gd2N": {
    "n": 207,
@@ -7408,12 +7944,18 @@
    "moods": [
     "Playful"
    ],
-   "moodFrom": "Weighed up",
+   "moodFrom": "Claude (researched)",
    "sound": [
     "Playful",
     "Energetic",
     "Joyful"
    ],
+   "claude": [
+    "Playful"
+   ],
+   "claudeBasis": "researched-high",
+   "claudeWhy": "Choppy, bouncy slacker-psych synth-pop with deadpan vocals, taking a wry, sympathetic look at the internet-age urge for fame.",
+   "claudeSource": "https://www.undertheradarmag.com/interviews/superorganism_on_their_self-titled_debut_album",
    "listeners": "none",
    "styles": [
     "Experimental",
@@ -7434,23 +7976,29 @@
     "pop",
     "psychedelic pop",
     "synth-pop"
-   ],
-   "check": true
+   ]
   },
   "1SmzAbt4g7a1FfAIwovtwq": {
    "n": 208,
    "title": "New Birth in New England",
    "artist": "Phosphorescent",
    "moods": [
-    "Melancholy",
-    "Mellow"
+    "Joyful",
+    "Uplifting"
    ],
-   "moodFrom": "Weighed up",
+   "moodFrom": "Claude (researched)",
    "sound": [
     "Melancholy",
     "Mellow",
     "Dreamy"
    ],
+   "claude": [
+    "Joyful",
+    "Uplifting"
+   ],
+   "claudeBasis": "researched-high",
+   "claudeWhy": "Breezy, catchy track with a bright riff, about a restless man stuck in a New England bar whose routine is revived by a chance meeting with a woman.",
+   "claudeSource": "https://www.treblezine.com/phosphorescent-new-birth-in-new-england-essential-track/",
    "listeners": "none",
    "styles": [
     "Pop Rock",
@@ -7470,22 +8018,29 @@
     "indie",
     "indie rock",
     "rock"
-   ],
-   "check": true
+   ]
   },
   "6hzEumHWNUVB0VWobDBT6x": {
    "n": 209,
    "title": "Choking on Flowers",
    "artist": "Fox Academy",
    "moods": [
-    "Dreamy"
+    "Dreamy",
+    "Bittersweet"
    ],
-   "moodFrom": "Weighed up",
+   "moodFrom": "Claude (researched)",
    "sound": [
     "Dreamy",
     "Mellow",
     "Dark"
    ],
+   "claude": [
+    "Bittersweet",
+    "Dreamy"
+   ],
+   "claudeBasis": "researched-high",
+   "claudeWhy": "Slinking, tropical-lilted indie pop with a bleached, faded-photograph haze, about anxiously meeting a partner's family and longing for earlier, happier days.",
+   "claudeSource": "https://varioussmallflames.co.uk/2015/07/28/fox-academy-elsie/",
    "listeners": "none",
    "styles": [
     "Experimental",
@@ -7503,18 +8058,17 @@
     "indie rock",
     "lo-fi",
     "pop"
-   ],
-   "check": true
+   ]
   },
   "4C7GZbwKnoucpGdkBQ9iGt": {
    "n": 210,
    "title": "Katie Queen of Tennessee",
    "artist": "The Apache Relay",
    "moods": [
-    "Uplifting",
-    "Romantic"
+    "Romantic",
+    "Bittersweet"
    ],
-   "moodFrom": "Weighed up",
+   "moodFrom": "Claude (researched)",
    "sound": [
     "Uplifting",
     "Bittersweet",
@@ -7522,9 +8076,11 @@
    ],
    "claude": [
     "Romantic",
-    "Joyful"
+    "Bittersweet"
    ],
-   "claudeGuess": true,
+   "claudeBasis": "researched-high",
+   "claudeWhy": "Catchy Orbison-style vintage pop with swirling violin and harmonies, about a man devoted to a woman who does not love him back.",
+   "claudeSource": "https://www.audiofemme.com/track-of-the-week-the-apache-relay-katie-queen-of-tennessee/",
    "listeners": "none",
    "styles": [
     "Indie Rock",
@@ -7535,8 +8091,7 @@
     "Indie",
     "Country"
    ],
-   "genreFrom": "Weighed up",
-   "check": true
+   "genreFrom": "Weighed up"
   },
   "29U7stRjqHU6rMiS8BfaI9": {
    "n": 211,
@@ -7556,6 +8111,7 @@
     "Uplifting",
     "Mellow"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Vocal",
@@ -7571,8 +8127,7 @@
     "pop",
     "traditional pop",
     "vocal jazz"
-   ],
-   "check": true
+   ]
   },
   "5NelxeQ8Yd4ytdhdGog8c5": {
    "n": 212,
@@ -7590,6 +8145,7 @@
    "claude": [
     "Romantic"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Soul",
@@ -7604,8 +8160,7 @@
     "funk",
     "r&b",
     "soul"
-   ],
-   "check": true
+   ]
   },
   "13iTIQHlw3VHIdycCUcc3M": {
    "n": 213,
@@ -7625,6 +8180,7 @@
     "Mellow",
     "Uplifting"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Pop Rock",
@@ -7659,6 +8215,7 @@
     "Romantic",
     "Mellow"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Blues Rock",
@@ -7675,8 +8232,7 @@
     "smooth soul",
     "soul",
     "southern soul"
-   ],
-   "check": true
+   ]
   },
   "6kblAEj0T0312fv5QWsXzo": {
    "n": 215,
@@ -7696,6 +8252,7 @@
     "Bittersweet",
     "Dreamy"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Indie Rock",
@@ -7737,6 +8294,7 @@
     "Bittersweet",
     "Mellow"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Easy Listening",
@@ -7753,8 +8311,7 @@
     "louisiana blues",
     "new orleans r&b",
     "psychedelic rock"
-   ],
-   "check": true
+   ]
   },
   "7cDbqFvw45zdLHGltdb1g9": {
    "n": 217,
@@ -7774,6 +8331,7 @@
     "Playful",
     "Energetic"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Pop Rock",
@@ -7812,6 +8370,7 @@
     "Romantic",
     "Joyful"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Soul",
@@ -7826,8 +8385,7 @@
    "musicbrainz": [
     "rock",
     "soft rock"
-   ],
-   "check": true
+   ]
   },
   "7n3kGSVCx32nesO6xfSmrW": {
    "n": 219,
@@ -7847,6 +8405,7 @@
     "Dreamy",
     "Melancholy"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Pop Rock",
@@ -7868,8 +8427,7 @@
     "rock",
     "rock music",
     "soft rock"
-   ],
-   "check": true
+   ]
   },
   "5YdrHBh16li6d7U5mdTwUb": {
    "n": 220,
@@ -7889,6 +8447,7 @@
     "Bittersweet",
     "Melancholy"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Dream Pop",
@@ -7909,7 +8468,8 @@
    "title": "La De Da",
    "artist": "Link Wray",
    "moods": [
-    "Mellow"
+    "Energetic",
+    "Playful"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -7918,10 +8478,12 @@
     "Dreamy"
    ],
    "claude": [
-    "Mellow",
+    "Energetic",
     "Playful"
    ],
-   "claudeGuess": true,
+   "claudeBasis": "researched-low",
+   "claudeWhy": "Only a hint found (called the greatest song the Stones never wrote); album is raw, homemade swampy roots rock with gritty vocals.",
+   "claudeSource": "https://lightintheattic.net/products/link-wray",
    "listeners": "none",
    "styles": [
     "Psychedelic Rock",
@@ -7959,6 +8521,7 @@
     "Joyful",
     "Uplifting"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Psychedelic Rock",
@@ -7976,16 +8539,14 @@
     "psychedelic pop",
     "rock",
     "sunshine pop"
-   ],
-   "check": true
+   ]
   },
   "0yT9wIJek4ZuMCTZA61mUc": {
    "n": 223,
    "title": "Put a Little Away",
    "artist": "Innovations",
    "moods": [
-    "Mellow",
-    "Romantic"
+    "Mellow"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -7993,6 +8554,11 @@
     "Romantic",
     "Melancholy"
    ],
+   "claude": [
+    "Mellow"
+   ],
+   "claudeBasis": "researched-low",
+   "claudeWhy": "Nothing found about Innovations or this 1977 track beyond the Spotify listing, so this is a pure guess.",
    "listeners": "none",
    "styles": [
     "Pop Rock",
@@ -8026,6 +8592,7 @@
     "Uplifting",
     "Romantic"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Rock & Roll",
@@ -8046,8 +8613,7 @@
     "rock",
     "rock pop",
     "sunshine pop"
-   ],
-   "check": true
+   ]
   },
   "1Fem9jSJEleNWT1kgt70ST": {
    "n": 225,
@@ -8067,6 +8633,7 @@
     "Playful",
     "Dark"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Pop Rock",
@@ -8088,15 +8655,22 @@
    "title": "Hold U",
    "artist": "Indigo De Souza",
    "moods": [
-    "Uplifting",
-    "Dreamy"
+    "Joyful",
+    "Uplifting"
    ],
-   "moodFrom": "Weighed up",
+   "moodFrom": "Claude (researched)",
    "sound": [
     "Uplifting",
     "Dreamy",
     "Joyful"
    ],
+   "claude": [
+    "Joyful",
+    "Uplifting"
+   ],
+   "claudeBasis": "researched-high",
+   "claudeWhy": "Opens on shimmering synths, then breaks into a bright, funky, danceable groove celebrating non-romantic love: holding space for friends and community.",
+   "claudeSource": "https://floodmagazine.com/91117/watch-indigo-de-souza-hold-u/",
    "listeners": "none",
    "styles": [
     "Alternative Rock",
@@ -8114,15 +8688,14 @@
     "indie rock",
     "pop",
     "rock"
-   ],
-   "check": true
+   ]
   },
   "05pizkWWDPXqvpUSwo1DMj": {
    "n": 227,
    "title": "Woof Woof",
    "artist": "ARTHUR",
    "moods": [
-    "Joyful",
+    "Dreamy",
     "Playful"
    ],
    "moodFrom": "Weighed up",
@@ -8131,6 +8704,13 @@
     "Playful",
     "Energetic"
    ],
+   "claude": [
+    "Dreamy",
+    "Playful"
+   ],
+   "claudeBasis": "researched-low",
+   "claudeWhy": "Nothing specific on the title track; the album is called dreamy, disjointed and trippy, made during a manic spell at his parents' house.",
+   "claudeSource": "https://editorial.americansongwriter.com/arthur-hair-of-the-dog-album-feature/?nb=1",
    "listeners": "none",
    "styles": [
     "Pop Rock",
@@ -8163,6 +8743,13 @@
     "Playful",
     "Dark"
    ],
+   "claude": [
+    "Energetic",
+    "Playful"
+   ],
+   "claudeBasis": "researched-low",
+   "claudeWhy": "Nothing specific found; best guess from bby's raucous alt-rock/hip-hop sound, a rowdy video and an album about relationship highs and lows.",
+   "claudeSource": "https://theconcertchronicles.com/2024/08/22/bby-share-raucous-new-video-for-kinky-and-release-debut-album-1/",
    "listeners": "none",
    "styles": [
     "Alternative Rock",
@@ -8185,14 +8772,22 @@
    "title": "Swooning",
    "artist": "JW Francis",
    "moods": [
-    "Uplifting"
+    "Joyful",
+    "Romantic"
    ],
-   "moodFrom": "Weighed up",
+   "moodFrom": "Claude (researched)",
    "sound": [
     "Uplifting",
     "Energetic",
     "Dreamy"
    ],
+   "claude": [
+    "Joyful",
+    "Romantic"
+   ],
+   "claudeBasis": "researched-high",
+   "claudeWhy": "Bright, cheerful synth-and-guitar indie with optimistic, danceable beats, about his affection for someone.",
+   "claudeSource": "https://music.mxdwn.com/2023/02/16/reviews/album-review-jw-francis-dream-house/",
    "listeners": "none",
    "styles": [
     "Indie Rock",
@@ -8209,8 +8804,7 @@
     "indie rock",
     "lo-fi",
     "rock"
-   ],
-   "check": true
+   ]
   },
   "3LTinH60rltyAZiMmHF7JH": {
    "n": 230,
@@ -8229,6 +8823,7 @@
     "Joyful",
     "Romantic"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Pop Rock",
@@ -8267,6 +8862,7 @@
     "Bittersweet",
     "Joyful"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Pop Rock",
@@ -8283,16 +8879,15 @@
     "folk rock",
     "rock",
     "rock and roll"
-   ],
-   "check": true
+   ]
   },
   "007JQyyu6DrGza9XX6scAN": {
    "n": 232,
    "title": "Wrecking Ball",
    "artist": "Mother Mother",
    "moods": [
-    "Joyful",
-    "Playful"
+    "Uplifting",
+    "Energetic"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -8300,6 +8895,13 @@
     "Playful",
     "Romantic"
    ],
+   "claude": [
+    "Uplifting",
+    "Energetic"
+   ],
+   "claudeBasis": "researched-medium",
+   "claudeWhy": "Ryan Guldemond introduced it on stage as being about chasing your dream with determination; the track's sound isn't described (it went viral on TikTok in 2020).",
+   "claudeSource": "https://nysmusic.com/2022/10/20/mother-mother-come-back-to-buffalo-to-wreck-obsatcles/",
    "listeners": "none",
    "styles": [
     "Pop Rock",
@@ -8326,15 +8928,22 @@
    "title": "Speed of the Sound (of you)",
    "artist": "Peter McPoland",
    "moods": [
-    "Uplifting",
-    "Joyful"
+    "Joyful",
+    "Romantic"
    ],
-   "moodFrom": "Weighed up",
+   "moodFrom": "Claude (researched)",
    "sound": [
     "Uplifting",
     "Joyful",
     "Romantic"
    ],
+   "claude": [
+    "Joyful",
+    "Romantic"
+   ],
+   "claudeBasis": "researched-high",
+   "claudeWhy": "Bright, clean, cheerful indie pop fit for a coming-of-age film, about being swept up in love.",
+   "claudeSource": "https://www.onestowatch.com/en/blog/peter-mcpoland-friend",
    "listeners": "none",
    "styles": [
     "Indie Rock",
@@ -8349,8 +8958,7 @@
    "musicbrainz": [
     "pop rock",
     "punk rock"
-   ],
-   "check": true
+   ]
   },
   "6ebFwjg7AyBUjFdOTZLIU8": {
    "n": 234,
@@ -8369,6 +8977,7 @@
     "Energetic",
     "Playful"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Indie Rock",
@@ -8392,7 +9001,8 @@
    "title": "Mindless Creatures",
    "artist": "Dayglow",
    "moods": [
-    "Energetic"
+    "Energetic",
+    "Bittersweet"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -8400,6 +9010,13 @@
     "Playful",
     "Joyful"
    ],
+   "claude": [
+    "Bittersweet",
+    "Energetic"
+   ],
+   "claudeBasis": "researched-medium",
+   "claudeWhy": "High-energy guitar-pop opener, first written at 16, about feeling like a jaded cynic, rewritten as he looks back on his younger self.",
+   "claudeSource": "https://floodmagazine.com/174539/dayglow-self-titled-track-by-track/",
    "listeners": "none",
    "styles": [
     "Alternative Rock",
@@ -8417,14 +9034,14 @@
     "indie rock",
     "pop",
     "rock"
-   ],
-   "check": true
+   ]
   },
   "5Ay4ujNQ4xCrIxpDnk2SUC": {
    "n": 236,
    "title": "Julie",
    "artist": "Outer Limits Recordings, Sam Mehran",
    "moods": [
+    "Dreamy",
     "Dark"
    ],
    "moodFrom": "Weighed up",
@@ -8433,6 +9050,13 @@
     "Dreamy",
     "Mellow"
    ],
+   "claude": [
+    "Dreamy",
+    "Bittersweet"
+   ],
+   "claudeBasis": "researched-low",
+   "claudeWhy": "Nothing found on this track; the compilation is described as woozy, AM-radio-style power pop that is childlike and unsettling, full of longing and alienation.",
+   "claudeSource": "https://weirdworldrecordco.com/2013/03/new-release-outer-limits-recordings-singles-demos-and-rarities-2007-2010/",
    "listeners": "none",
    "styles": [
     "Experimental",
@@ -8468,6 +9092,7 @@
     "Playful",
     "Joyful"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Psychedelic Rock",
@@ -8484,8 +9109,7 @@
     "pop rock",
     "rock",
     "rock and roll"
-   ],
-   "check": true
+   ]
   },
   "5lQxMlCMTzCj3j4vyzdl8T": {
    "n": 238,
@@ -8505,6 +9129,7 @@
     "Romantic",
     "Mellow"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Gospel",
@@ -8542,6 +9167,7 @@
     "Dreamy",
     "Romantic"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Chanson",
@@ -8580,6 +9206,7 @@
     "Romantic",
     "Mellow"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Pop Rock",
@@ -8618,6 +9245,7 @@
     "Melancholy",
     "Romantic"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Psychedelic Rock",
@@ -8658,6 +9286,7 @@
     "Joyful",
     "Playful"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Pop Rock",
@@ -8689,6 +9318,7 @@
     "Mellow",
     "Bittersweet"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Country Rock",
@@ -8715,6 +9345,7 @@
    "title": "Darling",
    "artist": "Christian Leave",
    "moods": [
+    "Romantic",
     "Melancholy"
    ],
    "moodFrom": "Weighed up",
@@ -8724,9 +9355,11 @@
     "Uplifting"
    ],
    "claude": [
+    "Romantic",
     "Melancholy"
    ],
-   "claudeGuess": true,
+   "claudeBasis": "researched-low",
+   "claudeWhy": "No source found for this song (search limit reached); a guess from the title and Christian Leave's soft, melancholic indie-pop style.",
    "listeners": "none",
    "styles": [
     "Indie Rock",
@@ -8757,6 +9390,7 @@
     "Dark",
     "Melancholy"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Folk Rock",
@@ -8777,8 +9411,7 @@
     "psychedelic folk",
     "psychedelic rock",
     "rock"
-   ],
-   "check": true
+   ]
   },
   "0P7DoyGrr4Wp9w5TotEtUC": {
    "n": 246,
@@ -8798,6 +9431,7 @@
     "Bittersweet",
     "Uplifting"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Blues Rock",
@@ -8820,8 +9454,7 @@
     "pop rock",
     "rock",
     "roots rock"
-   ],
-   "check": true
+   ]
   },
   "7uPmQttafLiJyju14JREY4": {
    "n": 247,
@@ -8841,6 +9474,7 @@
     "Energetic",
     "Playful"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Soft Rock",
@@ -8867,15 +9501,22 @@
    "title": "The Nest",
    "artist": "Jeannie Piersol",
    "moods": [
-    "Romantic",
-    "Joyful"
+    "Dreamy",
+    "Mellow"
    ],
-   "moodFrom": "Weighed up",
+   "moodFrom": "Claude (researched)",
    "sound": [
     "Romantic",
     "Joyful",
     "Playful"
    ],
+   "claude": [
+    "Dreamy",
+    "Mellow"
+   ],
+   "claudeBasis": "researched-high",
+   "claudeWhy": "Slow-burning 1969 psychedelic track with sarod, funky backbeat and hypnotic vocals, now a chill-out favourite; written about the songwriter's parents.",
+   "claudeSource": "https://www.gratefulweb.com/?p=476262",
    "listeners": "none",
    "styles": [
     "Yé-Yé",
@@ -8886,22 +9527,29 @@
     "Folk",
     "Pop"
    ],
-   "genreFrom": "Claude",
-   "check": true
+   "genreFrom": "Claude"
   },
   "7uhgdMtt4b4p35ehIYRqq6": {
    "n": 249,
    "title": "Inside the Lines",
    "artist": "Chaparelle, Zella Day, Jesse Woods",
    "moods": [
-    "Joyful"
+    "Romantic",
+    "Playful"
    ],
-   "moodFrom": "Weighed up",
+   "moodFrom": "Claude (researched)",
    "sound": [
     "Joyful",
     "Uplifting",
     "Romantic"
    ],
+   "claude": [
+    "Romantic",
+    "Playful"
+   ],
+   "claudeBasis": "researched-high",
+   "claudeWhy": "1960s-style country duet with Zella Day's breathy, Betty Boop-ish vocal, about the lusty energy of a new romance.",
+   "claudeSource": "https://savingcountrymusic.com/album-review-chaparelles-western-pleasure/",
    "listeners": "none",
    "styles": [
     "Folk",
@@ -8917,8 +9565,7 @@
     "americana",
     "contemporary country",
     "country"
-   ],
-   "check": true
+   ]
   },
   "00m7Q2wHED7wAbYq83XxOh": {
    "n": 250,
@@ -8938,6 +9585,7 @@
     "Mellow",
     "Romantic"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Folk",
@@ -8975,6 +9623,7 @@
     "Energetic",
     "Dark"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Pop Rock",
@@ -9015,6 +9664,7 @@
    "claude": [
     "Dark"
    ],
+   "claudeBasis": "knows",
    "listeners": "none",
    "styles": [
     "Pop Rock",
@@ -9027,14 +9677,14 @@
    "genreFrom": "Weighed up",
    "musicbrainz": [
     "rock"
-   ],
-   "check": true
+   ]
   },
   "1sN36lAQq4ElbU1dgNefol": {
    "n": 253,
    "title": "Righteously",
    "artist": "Anna Ash",
    "moods": [
+    "Romantic",
     "Joyful"
    ],
    "moodFrom": "Weighed up",
@@ -9043,6 +9693,12 @@
     "Uplifting",
     "Playful"
    ],
+   "claude": [
+    "Romantic"
+   ],
+   "claudeBasis": "researched-low",
+   "claudeWhy": "A review exists but was blocked; if it's a cover of Lucinda Williams' song (unconfirmed), it's about wanting respect and real love from a difficult partner.",
+   "claudeSource": "https://en.wikipedia.org/wiki/Righteously_(song)",
    "listeners": "none",
    "styles": [
     "Indie Rock",
