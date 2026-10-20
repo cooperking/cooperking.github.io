@@ -1,5 +1,5 @@
 {
- "about": "Mood and broad genre for each song on John's Song of the Day. To correct one, change its mood or genres and set moodFrom or genreFrom to \"John\"; a rebuild keeps those. Moods come from energy and positivity (0 to 1): Upbeat = energetic and positive, Mellow = calm and positive, Wistful = calm and sad, Brooding = energetic and dark. dance = danceability of 0.7 or more.",
+ "about": "Mood and broad genre for each song on John's Song of the Day. To correct one, change its mood or genres and set moodFrom or genreFrom to \"John\"; a rebuild keeps those. Upbeat = energetic and positive, Mellow = calm and positive, Wistful = calm and sad, Brooding = energetic and dark. Measured moods come from ReccoBeats energy and positivity (0 to 1, split at 0.5); Claude (judged) means Claude replaced or supplied the value from knowing the song, Claude (guess) that Claude does not know the song well. Genres come from MusicBrainz tags on the song's album, its artists and the recording.",
  "moods": [
   "Upbeat",
   "Mellow",
@@ -31,17 +31,20 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Rock",
-    "Indie"
+    "Indie",
+    "Rock"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
+    "alt-country",
     "alternative",
     "alternative rock",
     "country",
     "folk",
+    "indie rock",
+    "pop",
     "rock",
-    "singer-songwriter"
+    "roots rock"
    ]
   },
   "0AQSOcvFfPGxofpNuK7zyA": {
@@ -52,11 +55,19 @@
    "dance": false,
    "moodFrom": "Claude (judged)",
    "genres": [
-    "Rock",
     "Folk"
    ],
    "genreFrom": "MusicBrainz",
-   "musicbrainz": []
+   "musicbrainz": [
+    "americana",
+    "art rock",
+    "avant-folk",
+    "chamber folk",
+    "folk",
+    "progressive folk",
+    "progressive rock",
+    "rock"
+   ]
   },
   "4ymUJhziZLrUZJ2uQVL6kf": {
    "n": 3,
@@ -72,7 +83,13 @@
     "Indie",
     "Pop"
    ],
-   "genreFrom": "Claude (judged)"
+   "genreFrom": "Claude (judged)",
+   "musicbrainz": [
+    "americana",
+    "indie",
+    "pop",
+    "rock"
+   ]
   },
   "29Fam5ByZMf0lKBdEnNfnR": {
    "n": 4,
@@ -82,11 +99,17 @@
    "dance": false,
    "moodFrom": "Claude (guess)",
    "genres": [
+    "Rock",
     "Indie"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "indie"
+    "blues rock",
+    "boogie rock",
+    "indie",
+    "piano rock",
+    "pop rock",
+    "roots rock"
    ]
   },
   "2zhOjOH2DvARkRcCvCo7DC": {
@@ -100,16 +123,20 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Rock",
+    "Indie",
     "Pop"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
+    "alternative",
     "alternative pop",
+    "alternative rock",
     "art pop",
     "baroque pop",
+    "indie pop",
     "jazz",
     "piano rock",
+    "pop",
     "rock"
    ]
   },
@@ -124,13 +151,13 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Electronic"
+    "Electronic",
+    "Pop"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
     "dark wave",
     "electronic",
-    "experimental",
     "experimental rock",
     "pop rock",
     "synth-pop",
@@ -149,8 +176,8 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Folk",
-    "Indie"
+    "Indie",
+    "Folk"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
@@ -159,8 +186,7 @@
     "folk",
     "grunge",
     "indie rock",
-    "lo-fi",
-    "singer-songwriter"
+    "lo-fi"
    ]
   },
   "0PFVZNMRc3Z8TC3BVn2Dln": {
@@ -174,17 +200,20 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Pop",
-    "Indie"
+    "Indie",
+    "Pop"
    ],
-   "genreFrom": "MusicBrainz",
+   "genreFrom": "Claude (judged)",
    "musicbrainz": [
     "alternative dance",
     "alternative rock",
     "art pop",
     "indie pop",
     "indie rock",
-    "neo-psychedelia"
+    "neo-psychedelia",
+    "pop",
+    "pop rock",
+    "rock"
    ]
   },
   "5gSwQihHUXvC5H4SBCo03D": {
@@ -198,17 +227,17 @@
    "dance": true,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Folk",
-    "Pop"
+    "Pop",
+    "World"
    ],
-   "genreFrom": "MusicBrainz",
+   "genreFrom": "Claude (judged)",
    "musicbrainz": [
+    "adult contemporary",
     "folk",
     "folk rock",
     "pop",
     "pop rock",
-    "rock",
-    "singer-songwriter"
+    "rock"
    ]
   },
   "3OZzMeazGgm3HnTQXRsXAk": {
@@ -222,8 +251,8 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Folk",
-    "Rock"
+    "Rock",
+    "Folk"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
@@ -233,8 +262,7 @@
     "indie pop",
     "indie rock",
     "pop",
-    "rock",
-    "singer-songwriter"
+    "rock"
    ]
   },
   "2aBSFHjDOewbd4mdqhwTAb": {
@@ -269,13 +297,13 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Rock",
-    "Folk"
+    "Rock"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
+    "alternative rock",
     "blues rock",
-    "experimental",
+    "blues/rock",
     "experimental rock",
     "folk",
     "jazz",
@@ -309,19 +337,20 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Indie",
     "Pop"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
     "alternative rock",
     "chillwave",
+    "electronic",
     "indie pop",
     "indie rock",
-    "leftfield",
     "new wave",
     "pop",
-    "rock"
+    "rock",
+    "synth-pop",
+    "synthpop"
    ]
   },
   "1FNS17AcgHo7Uol0Li9Xfx": {
@@ -335,28 +364,29 @@
    "dance": true,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Indie",
     "Pop"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
+    "ambient",
     "art pop",
     "dream pop",
+    "electronic",
     "new wave",
-    "scottish",
-    "sophisti-pop"
+    "pop",
+    "pop rock",
+    "rock",
+    "sophisti-pop",
+    "synth-pop"
    ]
   },
   "5EG2jND3cGjpoh0YCOjQ9T": {
    "n": 16,
    "title": "In The Morning I'll Be Better",
    "artist": "Tennis",
-   "energy": 0.075,
-   "positivity": 0.534,
-   "danceability": 0.97,
    "mood": "Mellow",
-   "dance": true,
-   "moodFrom": "AcousticBrainz",
+   "dance": false,
+   "moodFrom": "Claude (guess)",
    "genres": [
     "Indie",
     "Pop"
@@ -366,6 +396,8 @@
     "dream pop",
     "indie pop",
     "lo-fi",
+    "pop",
+    "rock",
     "synth-pop"
    ]
   },
@@ -384,8 +416,11 @@
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "classic pop and rock",
-    "pop rock"
+    "dance",
+    "electronic",
+    "pop",
+    "pop rock",
+    "rock"
    ]
   },
   "4dRqYKhLVujxiBXcq50YzG": {
@@ -399,15 +434,18 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Indie"
+    "Indie",
+    "Pop"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "american",
+    "art pop",
+    "baroque pop",
     "indie",
     "indie pop",
     "indie rock",
     "indietronica",
+    "pop",
     "rock"
    ]
   },
@@ -461,12 +499,9 @@
    "n": 21,
    "title": "Is This a Dream?",
    "artist": "Badly Drawn Boy",
-   "energy": 0.416,
-   "positivity": 0.366,
-   "danceability": 0.986,
-   "mood": "Wistful",
-   "dance": true,
-   "moodFrom": "AcousticBrainz",
+   "mood": "Upbeat",
+   "dance": false,
+   "moodFrom": "Claude (guess)",
    "genres": [
     "Indie",
     "Folk"
@@ -474,11 +509,9 @@
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
     "alternative rock",
-    "british",
     "indie folk",
     "indie rock",
-    "rock",
-    "uk"
+    "rock"
    ]
   },
   "3POpqoO9i1UB6WzYZ0MvOC": {
@@ -492,13 +525,13 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Indie"
+    "Indie",
+    "Rock"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
     "alternative",
-    "american",
-    "female vocalists",
+    "alternative rock",
     "indie",
     "indie rock",
     "rock"
@@ -521,21 +554,22 @@
    "n": 24,
    "title": "2020",
    "artist": "SUUNS",
-   "energy": 0.47,
-   "positivity": 0.679,
-   "danceability": 1,
-   "mood": "Mellow",
-   "dance": true,
-   "moodFrom": "AcousticBrainz",
+   "mood": "Brooding",
+   "dance": false,
+   "moodFrom": "Claude (guess)",
    "genres": [
     "Rock"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
     "art rock",
+    "electro",
     "electronic",
+    "experimental rock",
+    "indie rock",
     "krautrock",
     "pop",
+    "pop rock",
     "post-punk",
     "rock"
    ]
@@ -564,16 +598,13 @@
    "moodFrom": "ReccoBeats",
    "genres": [
     "Pop",
-    "Folk"
+    "Rock"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "film score",
-    "film soundtrack",
     "pop",
     "pop rock",
-    "rock",
-    "singer-songwriter"
+    "rock"
    ]
   },
   "0pJW1Xw3aY4Eh6k5iuBkfI": {
@@ -592,12 +623,14 @@
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
+    "chamber folk",
     "chamber pop",
     "folk",
     "indie",
     "indie folk",
     "indie rock",
-    "singer-songwriter"
+    "pop rock",
+    "rock"
    ]
   },
   "0L2ljTJonS78v8qSlpxM0d": {
@@ -615,11 +648,11 @@
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "avant-garde",
     "avant-garde jazz",
-    "experimental",
-    "modern classical",
-    "orchestral jazz"
+    "folk",
+    "jazz",
+    "orchestral jazz",
+    "psychedelic folk"
    ]
   },
   "31ijr2O0SsuzAPVDLnq3XV": {
@@ -630,16 +663,14 @@
    "positivity": 0.378,
    "danceability": 0.401,
    "mood": "Brooding",
-   "dance": false,
-   "moodFrom": "ReccoBeats",
+   "dance": true,
+   "moodFrom": "Claude (judged)",
    "genres": [
-    "Pop",
-    "Rock"
+    "Soul & R&B",
+    "Pop"
    ],
-   "genreFrom": "MusicBrainz",
+   "genreFrom": "Claude (judged)",
    "musicbrainz": [
-    "aln-sh",
-    "classic pop and rock",
     "doo-wop",
     "pop",
     "pop music",
@@ -654,21 +685,20 @@
    "energy": 0.805,
    "positivity": 0.467,
    "danceability": 0.573,
-   "mood": "Brooding",
-   "dance": false,
-   "moodFrom": "ReccoBeats",
+   "mood": "Upbeat",
+   "dance": true,
+   "moodFrom": "Claude (judged)",
    "genres": [
-    "Hip-hop",
     "Electronic"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "=",
     "electro",
+    "electronic",
     "electronic music",
     "hip hop",
     "hip-hop",
-    "rock and indie"
+    "house"
    ]
   },
   "4bhA5X3qMEcTycEoW6BvJ2": {
@@ -686,7 +716,6 @@
    "musicbrainz": [
     "alternative rock",
     "art rock",
-    "british",
     "britpop",
     "indie pop",
     "post-punk"
@@ -712,6 +741,7 @@
     "new romantic",
     "new wave",
     "post-punk",
+    "rock",
     "synth-pop",
     "synthpop"
    ]
@@ -727,37 +757,34 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Indie",
-    "Folk"
+    "Indie"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
     "alternative rock",
-    "indie rock",
-    "singer-songwriter"
+    "indie pop",
+    "indie rock"
    ]
   },
   "3uPEZYXmeUgRFBywQCndKj": {
    "n": 34,
    "title": "I Carried This for Years",
    "artist": "Ibeyi",
-   "energy": 0.064,
-   "positivity": 0.15,
-   "danceability": 0,
    "mood": "Wistful",
    "dance": false,
-   "moodFrom": "AcousticBrainz",
+   "moodFrom": "Claude (judged)",
    "genres": [
-    "Soul & R&B",
-    "Electronic"
+    "Soul & R&B"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
+    "alternative r&b",
     "contemporary r&b",
     "downtempo",
     "electronic",
-    "experimental",
-    "leftfield",
+    "indie pop",
+    "pop",
+    "rock",
     "soul"
    ]
   },
@@ -778,9 +805,15 @@
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
     "alternative r&b",
+    "ambient pop",
     "art pop",
+    "art rock",
+    "indie folk",
     "indie soul",
-    "poggers"
+    "neo soul",
+    "progressive pop",
+    "psychedelic soul",
+    "soul"
    ]
   },
   "5IXTT9RvcVupmzLTFqIInj": {
@@ -794,16 +827,16 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Indie",
-    "Electronic"
+    "Indie"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
+    "alternative rock",
     "art pop",
-    "classic pop and rock",
     "electronic",
     "indie pop",
     "indie rock",
+    "pop",
     "rock"
    ]
   },
@@ -822,8 +855,12 @@
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
+    "electronic",
+    "indie rock",
     "lo-fi indie",
-    "noise pop"
+    "noise pop",
+    "pop",
+    "rock"
    ]
   },
   "1g422OzRyFhcRH1yMWaW14": {
@@ -833,18 +870,19 @@
    "energy": 0.501,
    "positivity": 0.332,
    "danceability": 0.519,
-   "mood": "Brooding",
+   "mood": "Wistful",
    "dance": false,
-   "moodFrom": "ReccoBeats",
+   "moodFrom": "Claude (judged)",
    "genres": [
-    "Indie"
+    "Indie",
+    "Rock"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
     "dream pop",
     "indie rock",
     "noise pop",
-    "the lost generation"
+    "rock"
    ]
   },
   "3SPcBPzvbmWLl8NU5efx4W": {
@@ -862,11 +900,14 @@
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
+    "album rock",
     "art rock",
+    "classic rock",
+    "pop",
     "pop rock",
+    "progressive pop",
     "progressive rock",
     "rock",
-    "symphonic prog",
     "symphonic rock"
    ]
   },
@@ -877,9 +918,9 @@
    "energy": 0.4,
    "positivity": 0.394,
    "danceability": 0.447,
-   "mood": "Wistful",
+   "mood": "Mellow",
    "dance": false,
-   "moodFrom": "ReccoBeats",
+   "moodFrom": "Claude (judged)",
    "genres": [
     "Jazz"
    ],
@@ -888,8 +929,8 @@
     "avant-garde jazz",
     "free jazz",
     "jazz",
+    "jazz and blues",
     "jazz fusion",
-    "new age",
     "spiritual jazz"
    ]
   },
@@ -908,8 +949,11 @@
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "american",
-    "rock"
+    "alternative rock",
+    "disco",
+    "electronic",
+    "rock",
+    "synth-pop"
    ]
   },
   "7Gk8IPlFTLUcoIH3mtASI0": {
@@ -972,24 +1016,18 @@
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "american",
-    "américain",
-    "composer",
-    "lyricist",
+    "indie rock",
     "pop",
-    "usa"
+    "rock"
    ]
   },
   "5Ec7pcVTaHm5q7BGB35hiU": {
    "n": 45,
    "title": "Wildman",
    "artist": "Sun Drug",
-   "energy": 0.565,
-   "positivity": 0.692,
-   "danceability": 1,
    "mood": "Upbeat",
-   "dance": true,
-   "moodFrom": "AcousticBrainz",
+   "dance": false,
+   "moodFrom": "Claude (guess)",
    "genres": [
     "Rock"
    ],
@@ -1013,11 +1051,12 @@
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "2008 universal fire victim",
+    "classic soul/r&b",
     "funk",
     "gospel",
+    "pop rock",
     "r&b",
-    "session",
+    "rock",
     "soul"
    ]
   },
@@ -1063,7 +1102,6 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Folk",
     "Pop"
    ],
    "genreFrom": "MusicBrainz",
@@ -1071,8 +1109,10 @@
     "country",
     "folk",
     "folk rock",
-    "gitarre",
-    "gitarrist",
+    "hard rock",
+    "pop",
+    "pop rock",
+    "rock",
     "soft rock"
    ]
   },
@@ -1080,12 +1120,9 @@
    "n": 50,
    "title": "Paris 1919",
    "artist": "John Cale",
-   "energy": 0.342,
-   "positivity": 0.634,
-   "danceability": 0.15,
    "mood": "Mellow",
    "dance": false,
-   "moodFrom": "AcousticBrainz",
+   "moodFrom": "Claude (judged)",
    "genres": [
     "Rock",
     "Pop"
@@ -1095,8 +1132,6 @@
     "art pop",
     "art rock",
     "baroque pop",
-    "british",
-    "drone",
     "rock"
    ]
   },
@@ -1115,7 +1150,11 @@
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "hip hop"
+    "electro",
+    "glam rap",
+    "hip hop",
+    "pop-rap",
+    "rap and hip-hop"
    ]
   },
   "2yFRJ1eJjycB5auItpeT5S": {
@@ -1149,17 +1188,20 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Rock",
-    "Folk"
+    "Rock"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
     "electronic",
-    "experimental",
     "folk",
+    "folk rock",
+    "general rock",
+    "gospel",
+    "jam band",
     "pop",
-    "rock",
-    "singer/songwriter"
+    "pop rock",
+    "psychedelic pop",
+    "rock"
    ]
   },
   "0vuZebTvcwkstUpoo82lpG": {
@@ -1181,8 +1223,8 @@
     "folk",
     "indie folk",
     "indie rock",
-    "new zealand",
-    "singer-songwriter"
+    "pop",
+    "rock"
    ]
   },
   "0gjcEL2CTKu3fT9qMVVu2w": {
@@ -1199,7 +1241,14 @@
     "Psych",
     "Indie"
    ],
-   "genreFrom": "Claude (judged)"
+   "genreFrom": "Claude (judged)",
+   "musicbrainz": [
+    "electronic",
+    "indie pop",
+    "pop",
+    "psychedelic rock",
+    "rock"
+   ]
   },
   "7j2ExpvZTeURjspK443YKU": {
    "n": 56,
@@ -1208,9 +1257,9 @@
    "energy": 0.685,
    "positivity": 0.484,
    "danceability": 0.447,
-   "mood": "Brooding",
-   "dance": false,
-   "moodFrom": "ReccoBeats",
+   "mood": "Upbeat",
+   "dance": true,
+   "moodFrom": "Claude (guess)",
    "genres": [
     "Soul & R&B",
     "World"
@@ -1232,14 +1281,24 @@
    "energy": 0.598,
    "positivity": 0.872,
    "danceability": 0.755,
-   "mood": "Upbeat",
-   "dance": true,
-   "moodFrom": "ReccoBeats",
+   "mood": "Mellow",
+   "dance": false,
+   "moodFrom": "Claude (judged)",
    "genres": [
     "Indie",
     "Folk"
    ],
-   "genreFrom": "Claude (judged)"
+   "genreFrom": "Claude (judged)",
+   "musicbrainz": [
+    "alternative rock",
+    "folk rock",
+    "indie folk",
+    "indie rock",
+    "jazz",
+    "pop",
+    "pop rock",
+    "rock"
+   ]
   },
   "6SYwCFYNJo66SbnQKOXRUg": {
    "n": 58,
@@ -1288,15 +1347,16 @@
    "dance": false,
    "moodFrom": "Claude (judged)",
    "genres": [
-    "Hip-hop"
+    "Hip-hop",
+    "Electronic"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
     "downtempo",
     "glacial rap",
     "hip hop",
-    "instrumental",
-    "instrumental hip hop"
+    "instrumental hip hop",
+    "trip hop"
    ]
   },
   "20mUVwCxR1x2d5SuBRGW1F": {
@@ -1306,15 +1366,20 @@
    "energy": 0.176,
    "positivity": 0.546,
    "danceability": 0.35,
-   "mood": "Mellow",
+   "mood": "Upbeat",
    "dance": false,
-   "moodFrom": "ReccoBeats",
+   "moodFrom": "Claude (judged)",
    "genres": [
-    "Rock",
-    "Pop"
+    "Pop",
+    "Rock"
    ],
    "genreFrom": "MusicBrainz",
-   "musicbrainz": []
+   "musicbrainz": [
+    "pop",
+    "pop rock",
+    "punk",
+    "rock"
+   ]
   },
   "2w4yylkuKugYjEVhwKc0OD": {
    "n": 62,
@@ -1348,8 +1413,8 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Electronic",
-    "Pop"
+    "Pop",
+    "Rock"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
@@ -1372,16 +1437,21 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Indie"
+    "Indie",
+    "Psych"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
+    "alternative pop/rock",
+    "alternative rock",
+    "alternative/indie rock",
+    "blues rock",
+    "british trad rock",
     "dub",
+    "indie",
     "indie pop",
-    "jazz rock",
-    "neo-psychedelia",
-    "psychedelic pop",
-    "reggae"
+    "indie rock",
+    "jazz rock"
    ]
   },
   "0WAEGVylZjbe2mQ6Or6HxY": {
@@ -1391,9 +1461,9 @@
    "energy": 0.484,
    "positivity": 0.492,
    "danceability": 0.381,
-   "mood": "Wistful",
+   "mood": "Mellow",
    "dance": false,
-   "moodFrom": "ReccoBeats",
+   "moodFrom": "Claude (judged)",
    "genres": [
     "Pop"
    ],
@@ -1404,7 +1474,6 @@
     "folk rock",
     "jazz",
     "pop",
-    "rare groove a to z",
     "rock",
     "soul"
    ]
@@ -1420,15 +1489,14 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Folk",
-    "Indie"
+    "Indie",
+    "Rock"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "female vocalist",
     "indie",
-    "rock and indie",
-    "singer-songwriter"
+    "indie rock",
+    "rock"
    ]
   },
   "3Nt1G38u1lalca5B2lm8Sd": {
@@ -1442,8 +1510,8 @@
    "dance": true,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Indie",
-    "Rock"
+    "Rock",
+    "Pop"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
@@ -1451,7 +1519,6 @@
     "alternative rock",
     "indie pop",
     "indie rock",
-    "podcast",
     "pop",
     "punk",
     "rock"
@@ -1461,12 +1528,9 @@
    "n": 68,
    "title": "Dean Martin",
    "artist": "Tess Henley",
-   "energy": 0.199,
-   "positivity": 0.552,
-   "danceability": 0.86,
    "mood": "Mellow",
-   "dance": true,
-   "moodFrom": "AcousticBrainz",
+   "dance": false,
+   "moodFrom": "Claude (guess)",
    "genres": [
     "Soul & R&B"
    ],
@@ -1562,7 +1626,9 @@
     "deep soul",
     "gospel",
     "jazz",
+    "old school soul",
     "quiet storm",
+    "r&b",
     "soul",
     "southern soul"
    ]
@@ -1584,9 +1650,10 @@
    "musicbrainz": [
     "chicago soul",
     "funk",
+    "funk soul",
     "psychedelic soul",
     "r&b",
-    "singer-songwriter",
+    "rhythm and blues",
     "soul"
    ]
   },
@@ -1602,7 +1669,7 @@
    "moodFrom": "ReccoBeats",
    "genres": [
     "Indie",
-    "Folk"
+    "Rock"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
@@ -1611,27 +1678,28 @@
     "folk rock",
     "indie folk",
     "indie rock",
-    "psychedelic rock"
+    "psychedelic rock",
+    "rock"
    ]
   },
   "4RAS6QT974bl5blsapzVGq": {
    "n": 75,
    "title": "Ain't That Peculiar",
    "artist": "Fanny",
-   "energy": 0.468,
-   "positivity": 0.759,
-   "danceability": 0.274,
-   "mood": "Mellow",
+   "mood": "Upbeat",
    "dance": false,
-   "moodFrom": "AcousticBrainz",
+   "moodFrom": "Claude (judged)",
    "genres": [
-    "Rock",
-    "Pop"
+    "Rock"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
+    "blues/rock",
+    "classic rock",
     "glam rock",
+    "hard rock",
     "pop rock",
+    "psychedelic rock",
     "rock"
    ]
   },
@@ -1653,10 +1721,12 @@
    "musicbrainz": [
     "anti-folk",
     "folk",
+    "folk pop",
+    "folk rock",
+    "pop",
     "rock",
-    "rock and indie",
-    "singer-songwriter",
-    "united states"
+    "slacker rock",
+    "twee pop"
    ]
   },
   "2YJgM8lj4u5YEZRSHSfL60": {
@@ -1666,19 +1736,22 @@
    "energy": 0.695,
    "positivity": 0.646,
    "danceability": 0.404,
-   "mood": "Upbeat",
+   "mood": "Wistful",
    "dance": false,
-   "moodFrom": "ReccoBeats",
+   "moodFrom": "Claude (judged)",
    "genres": [
     "Rock"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "blues",
+    "adult contemporary",
     "blues rock",
+    "classic rock",
     "jam band",
     "rock",
-    "rock & roll"
+    "rock & roll",
+    "rock/pop",
+    "soft rock"
    ]
   },
   "1yK9LISg5uBOOW5bT2Wm0i": {
@@ -1688,19 +1761,22 @@
    "energy": 0.821,
    "positivity": 0.549,
    "danceability": 0.496,
-   "mood": "Upbeat",
+   "mood": "Wistful",
    "dance": false,
-   "moodFrom": "ReccoBeats",
+   "moodFrom": "Claude (judged)",
    "genres": [
     "Soul & R&B"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
     "contemporary r&b",
+    "funk / soul",
+    "hip hop",
     "jazz",
     "neo soul",
     "pop",
     "r&b",
+    "rhythm & blues",
     "soul"
    ]
   },
@@ -1719,7 +1795,11 @@
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "indie pop"
+    "alternative rock",
+    "indie pop",
+    "indie rock",
+    "pop",
+    "rock"
    ]
   },
   "70Ao5L10SKV701DcOH68Jo": {
@@ -1733,15 +1813,11 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Rock",
-    "Folk"
+    "Rock"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "classic pop and rock",
-    "classic rock",
-    "pop/rock",
-    "singer/songwriter"
+    "classic rock"
    ]
   },
   "6Mnne5V9ZifNID59dswUcZ": {
@@ -1751,20 +1827,19 @@
    "energy": 0.276,
    "positivity": 0.4,
    "danceability": 0.559,
-   "mood": "Wistful",
+   "mood": "Mellow",
    "dance": false,
-   "moodFrom": "ReccoBeats",
+   "moodFrom": "Claude (judged)",
    "genres": [
     "Folk"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "2008 universal fire victim",
-    "classic pop and rock",
+    "contemporary folk",
     "folk",
     "folk rock",
-    "rock",
-    "singer-songwriter"
+    "pop",
+    "rock"
    ]
   },
   "0CxWbbbU0PB7ccm6CgHnrf": {
@@ -1778,10 +1853,13 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Rock"
+    "Rock",
+    "Jazz"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
+    "lounge",
+    "pop",
     "rock"
    ]
   },
@@ -1803,7 +1881,6 @@
     "electro",
     "electronic",
     "electronica",
-    "experimental",
     "indie"
    ]
   },
@@ -1811,24 +1888,22 @@
    "n": 84,
    "title": "The Magic Position",
    "artist": "Patrick Wolf",
-   "energy": 0.218,
-   "positivity": 0.488,
-   "danceability": 0.067,
-   "mood": "Wistful",
+   "mood": "Upbeat",
    "dance": false,
-   "moodFrom": "AcousticBrainz",
+   "moodFrom": "Claude (judged)",
    "genres": [
-    "Folk",
+    "Pop",
     "Indie"
    ],
-   "genreFrom": "MusicBrainz",
+   "genreFrom": "Claude (judged)",
    "musicbrainz": [
     "alternative",
-    "british",
+    "electro",
+    "electronic",
     "folk",
+    "folk rock",
     "indie",
-    "lgbtqi",
-    "singer-songwriter"
+    "rock"
    ]
   },
   "76LVdwqMv86jglsB8MFEXE": {
@@ -1842,16 +1917,13 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Jazz",
-    "Folk"
+    "Jazz"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
     "contemporary jazz",
     "folk",
     "jazz",
-    "musical theatre",
-    "singer-songwriter",
     "vocal jazz"
    ]
   },
@@ -1863,14 +1935,15 @@
    "dance": false,
    "moodFrom": "Claude (judged)",
    "genres": [
-    "Indie",
-    "Folk"
+    "Indie"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
+    "country",
     "indie folk",
     "indie pop",
-    "indie rock"
+    "indie rock",
+    "rock"
    ]
   },
   "7JsvW1GU2hbMnGETSyy7ig": {
@@ -1880,18 +1953,21 @@
    "energy": 0.763,
    "positivity": 0.493,
    "danceability": 0.507,
-   "mood": "Brooding",
+   "mood": "Upbeat",
    "dance": false,
-   "moodFrom": "ReccoBeats",
+   "moodFrom": "Claude (guess)",
    "genres": [
     "Indie"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
     "alternative rock",
+    "folk rock",
+    "indie pop",
     "indie rock",
-    "rock and indie",
-    "sverige"
+    "pop",
+    "pop rock",
+    "rock"
    ]
   },
   "7elJX0ZTRfmPeSDt18k0Ww": {
@@ -1913,20 +1989,22 @@
    "energy": 0.631,
    "positivity": 0.432,
    "danceability": 0.754,
-   "mood": "Brooding",
+   "mood": "Upbeat",
    "dance": true,
-   "moodFrom": "ReccoBeats",
+   "moodFrom": "Claude (judged)",
    "genres": [
     "Hip-hop"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "boom bap",
+    "alternative hip hop",
+    "chipmunk soul",
     "christian hip hop",
     "east coast hip hop",
+    "east coast rap",
     "experimental hip hop",
-    "grammy winner",
     "hip hop",
+    "midwest rap",
     "pop",
     "pop rap"
    ]
@@ -1935,20 +2013,19 @@
    "n": 90,
    "title": "Salute Your Solution",
    "artist": "The Raconteurs",
-   "energy": 0.064,
-   "positivity": 0.498,
-   "danceability": 0,
-   "mood": "Wistful",
+   "mood": "Upbeat",
    "dance": false,
-   "moodFrom": "AcousticBrainz",
+   "moodFrom": "Claude (judged)",
    "genres": [
     "Indie",
     "Rock"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
+    "alternative",
     "alternative rock",
     "blues rock",
+    "country rock",
     "garage rock revival",
     "indie rock",
     "pop",
@@ -1963,8 +2040,8 @@
    "dance": false,
    "moodFrom": "Claude (guess)",
    "genres": [
-    "Rock",
-    "Indie"
+    "Indie",
+    "Rock"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
@@ -1982,9 +2059,9 @@
    "energy": 0.546,
    "positivity": 0.263,
    "danceability": 0.32,
-   "mood": "Brooding",
+   "mood": "Wistful",
    "dance": false,
-   "moodFrom": "ReccoBeats",
+   "moodFrom": "Claude (judged)",
    "genres": [
     "Indie"
    ],
@@ -1992,9 +2069,10 @@
    "musicbrainz": [
     "alternative rock",
     "art rock",
-    "british",
+    "brit pop",
     "britpop",
     "indie rock",
+    "neo-psychedelia",
     "rock"
    ]
   },
@@ -2009,17 +2087,18 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Rock",
-    "Folk"
+    "Folk",
+    "Rock"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "4ad",
-    "american",
+    "chamber folk",
+    "chamber pop",
     "folk rock",
+    "indie folk",
+    "indie rock",
     "lo-fi",
-    "rock",
-    "singer-songwriter"
+    "rock"
    ]
   },
   "6kotXaSQaGYxE62hVpdHWu": {
@@ -2037,31 +2116,35 @@
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
+    "acoustic rock",
+    "album rock",
     "alternative rock",
-    "blues",
+    "classic rock",
+    "contemporary pop/rock",
     "folk",
+    "hard rock",
     "piano rock",
-    "pop rock",
-    "rock"
+    "pop",
+    "pop rock"
    ]
   },
   "0LS9j29qzv8vKFz2Hi3G8c": {
    "n": 95,
    "title": "Cristina",
    "artist": "Teleman",
-   "energy": 0.092,
-   "positivity": 0.12,
-   "danceability": 0.063,
-   "mood": "Wistful",
+   "mood": "Mellow",
    "dance": false,
-   "moodFrom": "AcousticBrainz",
+   "moodFrom": "Claude (guess)",
    "genres": [
     "Indie",
     "Pop"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
+    "electronic",
+    "indie pop",
     "indie rock",
+    "pop",
     "post-punk 2k",
     "post-punk revival",
     "synth-pop"
@@ -2083,11 +2166,14 @@
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
     "alternative rock",
-    "danois",
+    "art rock",
+    "electronic",
+    "folk rock",
+    "indie pop",
+    "indie rock",
+    "pop",
     "post-rock",
-    "rock and indie",
-    "scandinave",
-    "scandinavia"
+    "rock"
    ]
   },
   "6zNXjEQEhoEkLa4irSikDW": {
@@ -2104,7 +2190,15 @@
     "Indie",
     "Pop"
    ],
-   "genreFrom": "Claude (judged)"
+   "genreFrom": "Claude (judged)",
+   "musicbrainz": [
+    "contemporary folk",
+    "dream pop",
+    "folk",
+    "indie rock",
+    "pop",
+    "rock"
+   ]
   },
   "6sSyiY3TuAYzlEh9CN1PBO": {
    "n": 98,
@@ -2117,11 +2211,12 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Pop",
-    "Rock"
+    "Rock",
+    "Pop"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
+    "pop",
     "pop rock",
     "rock"
    ]
@@ -2137,19 +2232,15 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Pop",
-    "Rock"
+    "Pop"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "classical",
-    "instrumental",
     "instrumental pop",
     "mainstream rock",
     "pop",
     "rock",
-    "soft rock",
-    "soundtrack"
+    "soft rock"
    ]
   },
   "3V2jcyKqjtbuSffYQ63CZ0": {
@@ -2179,10 +2270,10 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Pop",
-    "Indie"
+    "Indie",
+    "Rock"
    ],
-   "genreFrom": "MusicBrainz",
+   "genreFrom": "Claude (judged)",
    "musicbrainz": [
     "dream pop",
     "indie",
@@ -2198,17 +2289,16 @@
    "energy": 0.77,
    "positivity": 0.451,
    "danceability": 0.563,
-   "mood": "Brooding",
+   "mood": "Upbeat",
    "dance": false,
-   "moodFrom": "ReccoBeats",
+   "moodFrom": "Claude (judged)",
    "genres": [
     "Indie"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
     "alternative pop",
-    "indie rock",
-    "supergroup"
+    "indie rock"
    ]
   },
   "5iYEFC545nN3zmNZXRIcki": {
@@ -2226,7 +2316,9 @@
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "pop"
+    "pop",
+    "power pop",
+    "rock"
    ]
   },
   "4WFNb2UhW5E5qxHGsgebuQ": {
@@ -2236,21 +2328,22 @@
    "energy": 0.609,
    "positivity": 0.359,
    "danceability": 0.675,
-   "mood": "Brooding",
+   "mood": "Upbeat",
    "dance": false,
-   "moodFrom": "ReccoBeats",
+   "moodFrom": "Claude (judged)",
    "genres": [
     "Indie",
-    "Folk"
+    "Rock"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
+    "alternative",
     "alternative rock",
+    "general indie rock",
     "indie folk",
     "indie pop",
     "indie rock",
-    "rock",
-    "singer/songwriter"
+    "rock"
    ]
   },
   "0Ib6SoU3oQTEgWEBVUF1IR": {
@@ -2261,8 +2354,7 @@
    "dance": false,
    "moodFrom": "Claude (guess)",
    "genres": [
-    "Country",
-    "Folk"
+    "Pop"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
@@ -2280,16 +2372,15 @@
    "energy": 0.483,
    "positivity": 0.533,
    "danceability": 0.42,
-   "mood": "Mellow",
+   "mood": "Wistful",
    "dance": false,
-   "moodFrom": "ReccoBeats",
+   "moodFrom": "Claude (judged)",
    "genres": [
     "Soul & R&B"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
     "contemporary r&b",
-    "film soundtrack",
     "funk",
     "pop",
     "rhythm & blues",
@@ -2323,16 +2414,17 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Folk",
-    "Indie"
+    "Indie",
+    "Rock"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
+    "alternative",
+    "alternative and punk",
     "indie folk",
     "indie pop",
     "indie rock",
-    "rock",
-    "singer-songwriter"
+    "rock"
    ]
   },
   "6eCWvDQXTITW534IANR5n1": {
@@ -2343,15 +2435,15 @@
    "dance": false,
    "moodFrom": "Claude (judged)",
    "genres": [
-    "Folk"
+    "Folk",
+    "Pop"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
     "contemporary folk",
     "folk",
     "folk rock",
-    "pop rock",
-    "singer-songwriter"
+    "pop rock"
    ]
   },
   "57fT0m2UMxuue7KhToRAIJ": {
@@ -2379,16 +2471,21 @@
    "energy": 0.81,
    "positivity": 0.459,
    "danceability": 0.397,
-   "mood": "Brooding",
+   "mood": "Upbeat",
    "dance": false,
-   "moodFrom": "ReccoBeats",
+   "moodFrom": "Claude (guess)",
    "genres": [
-    "Soul & R&B"
+    "Soul & R&B",
+    "Indie"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
+    "electronic",
     "indie rock",
-    "leftfield"
+    "northern soul",
+    "r&b",
+    "rock",
+    "soul"
    ]
   },
   "40IPlaLrR3YEPNkI7z3bYp": {
@@ -2407,9 +2504,14 @@
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
+    "alternative rock",
+    "american rock",
+    "disco",
     "indie pop",
     "indie rock",
-    "rock and indie"
+    "pop",
+    "pop rock",
+    "rock"
    ]
   },
   "6nSt8n7r0bznM8PCvHEmPj": {
@@ -2423,13 +2525,11 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Pop",
-    "Rock"
+    "Pop"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
     "aor",
-    "musical",
     "pop",
     "rock",
     "soft rock"
@@ -2471,7 +2571,13 @@
     "Soul & R&B",
     "Pop"
    ],
-   "genreFrom": "Claude (judged)"
+   "genreFrom": "Claude (judged)",
+   "musicbrainz": [
+    "dub",
+    "dubstep",
+    "electronic",
+    "hip hop"
+   ]
   },
   "4FGIHe2zLB3Y43mPybYdDa": {
    "n": 116,
@@ -2504,39 +2610,36 @@
    "energy": 0.783,
    "positivity": 0.768,
    "danceability": 0.561,
-   "mood": "Upbeat",
+   "mood": "Brooding",
    "dance": false,
-   "moodFrom": "ReccoBeats",
+   "moodFrom": "Claude (judged)",
    "genres": [
     "Rock",
     "Pop"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "british",
-    "experimental",
     "pop",
-    "rock",
-    "singer-songwriter",
-    "uk"
+    "pop rock",
+    "rock"
    ]
   },
   "5iaWq4djtfWZk8McqrtprO": {
    "n": 118,
    "title": "Class Historian",
    "artist": "BRONCHO",
-   "energy": 0.534,
-   "positivity": 0.58,
-   "danceability": 0.073,
    "mood": "Upbeat",
    "dance": false,
-   "moodFrom": "AcousticBrainz",
+   "moodFrom": "Claude (judged)",
    "genres": [
-    "Indie"
+    "Indie",
+    "Rock"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "indie rock"
+    "garage rock",
+    "indie rock",
+    "rock"
    ]
   },
   "2FPcTfECQrZviBAarAHv1f": {
@@ -2550,16 +2653,20 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Indie",
+    "Rock",
     "Electronic"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
     "alternative rock",
     "dance-punk",
+    "dance-punk revival",
     "ebm",
+    "electronic",
     "new rave",
+    "new wave",
     "post-punk",
+    "post-punk revival",
     "rave"
    ]
   },
@@ -2571,10 +2678,15 @@
    "dance": false,
    "moodFrom": "Claude (judged)",
    "genres": [
-    "Soul & R&B"
+    "Soul & R&B",
+    "Pop"
    ],
    "genreFrom": "MusicBrainz",
-   "musicbrainz": []
+   "musicbrainz": [
+    "pop",
+    "r&b",
+    "soul"
+   ]
   },
   "5O5u7dukzRu4iskuCTiaYj": {
    "n": 121,
@@ -2592,12 +2704,16 @@
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
+    "album rock",
     "art pop",
     "art rock",
+    "contemporary pop/rock",
+    "electronic",
     "glam rock",
     "new romantic",
-    "rock",
-    "sophisti-pop"
+    "new wave",
+    "pop",
+    "pop rock"
    ]
   },
   "5MpZt5R522VJa8AxKxAD4H": {
@@ -2607,19 +2723,19 @@
    "energy": 0.624,
    "positivity": 0.373,
    "danceability": 0.621,
-   "mood": "Brooding",
+   "mood": "Mellow",
    "dance": false,
-   "moodFrom": "ReccoBeats",
+   "moodFrom": "Claude (guess)",
    "genres": [
-    "Indie",
-    "Folk"
+    "Indie"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
     "alternative rock",
     "indie rock",
-    "rock and indie",
-    "singer-songwriter"
+    "pop",
+    "rock",
+    "soft rock"
    ]
   },
   "4CSKUENltc2dGwvGGtDRgI": {
@@ -2648,15 +2764,14 @@
    "positivity": 0.752,
    "danceability": 0.663,
    "mood": "Upbeat",
-   "dance": false,
-   "moodFrom": "ReccoBeats",
+   "dance": true,
+   "moodFrom": "Claude (judged)",
    "genres": [
     "Soul & R&B"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "funk",
-    "go-go"
+    "funk"
    ]
   },
   "60JI0WkwFt0zqnJw8KzNoE": {
@@ -2674,12 +2789,16 @@
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "british",
-    "english",
+    "album rock",
+    "alternative rock",
+    "aor",
+    "arena rock",
+    "classic rock",
+    "garage rock",
+    "hard rock",
     "mod",
-    "rock",
-    "rock & roll",
-    "rock and roll"
+    "pop rock",
+    "power pop"
    ]
   },
   "4clw6ilYxpOiBeoSkJJvSX": {
@@ -2697,11 +2816,11 @@
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "artificial high register",
+    "funk soul",
+    "pop soul",
     "r&b",
-    "soprano",
-    "soul",
-    "whistle register"
+    "smooth soul",
+    "soul"
    ]
   },
   "2dpGNisIy8LNjpEGzDdtft": {
@@ -2711,15 +2830,19 @@
    "energy": 0.85,
    "positivity": 0.343,
    "danceability": 0.492,
-   "mood": "Brooding",
+   "mood": "Upbeat",
    "dance": false,
-   "moodFrom": "ReccoBeats",
+   "moodFrom": "Claude (judged)",
    "genres": [
+    "Pop",
     "Soul & R&B"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "classic pop and rock",
+    "pop",
+    "pop rock",
+    "rock",
+    "soft rock",
     "soul"
    ]
   },
@@ -2739,11 +2862,14 @@
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
+    "alternative rock",
     "art pop",
     "art rock",
+    "chamber pop",
     "experimental rock",
     "pop rock",
     "post-punk",
+    "punk",
     "rock"
    ]
   },
@@ -2763,12 +2889,8 @@
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "aln-sh",
-    "classic pop and rock",
     "folk",
-    "multiple ipi",
-    "rock",
-    "singer-songwriter"
+    "rock"
    ]
   },
   "2hq50hCUUknhUXZ9uL3wgq": {
@@ -2782,13 +2904,13 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Folk",
-    "Pop"
+    "Pop",
+    "Rock"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "2008 universal fire victim",
-    "singer-songwriter",
+    "pop",
+    "rock",
     "soft rock"
    ]
   },
@@ -2808,11 +2930,12 @@
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
     "blues rock",
-    "british",
     "british rhythm & blues",
     "classic rock",
+    "country rock",
     "psychedelic rock",
-    "rock"
+    "rock",
+    "rock and roll"
    ]
   },
   "5dt9vV7sfjzS78y2MJUvZt": {
@@ -2828,7 +2951,6 @@
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
     "kwaito",
-    "south africa",
     "township bubblegum"
    ]
   },
@@ -2843,13 +2965,21 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Indie"
+    "Indie",
+    "Rock"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
+    "grunge",
+    "hardcore",
+    "indie",
+    "indie pop",
     "indie rock",
+    "pop",
+    "post-punk",
     "post-punk 2k",
-    "shoegaze"
+    "post-rock",
+    "punk"
    ]
   },
   "4AxAd49jPozjHMZyXI2Gzv": {
@@ -2867,7 +2997,10 @@
     "Pop"
    ],
    "genreFrom": "MusicBrainz",
-   "musicbrainz": []
+   "musicbrainz": [
+    "pop",
+    "rock"
+   ]
   },
   "0ISfH0HKPrQd3mWmzk76Ij": {
    "n": 135,
@@ -2915,9 +3048,9 @@
    "moodFrom": "Claude (judged)",
    "genres": [
     "Soul & R&B",
-    "Rock"
+    "Pop"
    ],
-   "genreFrom": "MusicBrainz",
+   "genreFrom": "Claude (judged)",
    "musicbrainz": [
     "blues rock",
     "gospel",
@@ -2933,19 +3066,22 @@
    "energy": 0.716,
    "positivity": 0.545,
    "danceability": 0.618,
-   "mood": "Upbeat",
+   "mood": "Brooding",
    "dance": false,
-   "moodFrom": "ReccoBeats",
+   "moodFrom": "Claude (judged)",
    "genres": [
     "Rock"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
     "alternative rock",
+    "emo",
     "hardcore",
+    "indie rock",
     "post-hardcore",
     "post-punk",
     "punk",
+    "punk rock",
     "rock"
    ]
   },
@@ -2974,13 +3110,18 @@
    "energy": 0.775,
    "positivity": 0.313,
    "danceability": 0.449,
-   "mood": "Brooding",
+   "mood": "Upbeat",
    "dance": false,
-   "moodFrom": "ReccoBeats",
+   "moodFrom": "Claude (judged)",
    "genres": [
     "Rock"
    ],
-   "genreFrom": "Claude (judged)"
+   "genreFrom": "MusicBrainz",
+   "musicbrainz": [
+    "blues rock",
+    "instrumental rock",
+    "rock"
+   ]
   },
   "6TOhXLevQUI4fjrxLL1nJE": {
    "n": 141,
@@ -2989,9 +3130,9 @@
    "energy": 0.729,
    "positivity": 0.387,
    "danceability": 0.719,
-   "mood": "Brooding",
+   "mood": "Upbeat",
    "dance": true,
-   "moodFrom": "ReccoBeats",
+   "moodFrom": "Claude (judged)",
    "genres": [
     "Soul & R&B",
     "Electronic"
@@ -3023,9 +3164,9 @@
    "energy": 0.495,
    "positivity": 0.319,
    "danceability": 0.611,
-   "mood": "Wistful",
+   "mood": "Mellow",
    "dance": false,
-   "moodFrom": "ReccoBeats",
+   "moodFrom": "Claude (judged)",
    "genres": [
     "Rock",
     "Pop"
@@ -3050,8 +3191,8 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Psych",
-    "Folk"
+    "Rock",
+    "Indie"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
@@ -3060,84 +3201,78 @@
     "indie rock",
     "neo-psychedelia",
     "psychedelic folk",
-    "psychedelic pop"
+    "psychedelic pop",
+    "rock"
    ]
   },
   "1WFFonSzN8LuoIC3R8Ja53": {
    "n": 145,
    "title": "Love You",
    "artist": "The Free Design",
-   "energy": 0.064,
-   "positivity": 0.317,
-   "danceability": 0,
-   "mood": "Wistful",
+   "mood": "Mellow",
    "dance": false,
-   "moodFrom": "AcousticBrainz",
+   "moodFrom": "Claude (judged)",
    "genres": [
     "Pop"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "sunshine pop",
-    "vocal group"
+    "sunshine pop"
    ]
   },
   "3PtmCb2kQYekdoh3HB81yU": {
    "n": 146,
    "title": "Talkin' Like You (Two Tall Mountains)",
    "artist": "Connie Converse",
-   "energy": 0.031,
-   "positivity": 0.175,
-   "danceability": 0.003,
    "mood": "Wistful",
    "dance": false,
-   "moodFrom": "AcousticBrainz",
+   "moodFrom": "Claude (guess)",
    "genres": [
     "Folk"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "folk",
-    "singer-songwriter"
+    "american folk music",
+    "folk"
    ]
   },
   "4S4dCACmtuPWbhvMSfDXqN": {
    "n": 147,
    "title": "Pata Pata",
    "artist": "Miriam Makeba",
-   "energy": 0.064,
-   "positivity": 0.509,
-   "danceability": 0,
-   "mood": "Mellow",
-   "dance": false,
-   "moodFrom": "AcousticBrainz",
+   "mood": "Upbeat",
+   "dance": true,
+   "moodFrom": "Claude (judged)",
    "genres": [
     "World"
    ],
-   "genreFrom": "MusicBrainz",
+   "genreFrom": "Claude (judged)",
    "musicbrainz": [
-    "2008 universal fire victim",
+    "jazz",
     "marabi",
-    "songwriter"
+    "rock"
    ]
   },
   "6oBVQQ4y3KkStoa0apQPrK": {
    "n": 148,
    "title": "Love Me Tenderly",
    "artist": "The Felice Brothers",
-   "energy": 0.132,
-   "positivity": 0.734,
-   "danceability": 0.239,
    "mood": "Mellow",
    "dance": false,
-   "moodFrom": "AcousticBrainz",
+   "moodFrom": "Claude (guess)",
    "genres": [
     "Folk",
     "Rock"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
+    "acoustic rock",
+    "alternative country",
+    "americana",
+    "bluegrass",
+    "country",
     "folk",
+    "indie",
     "rock"
    ]
   },
@@ -3148,9 +3283,9 @@
    "energy": 0.421,
    "positivity": 0.954,
    "danceability": 0.798,
-   "mood": "Mellow",
+   "mood": "Upbeat",
    "dance": true,
-   "moodFrom": "ReccoBeats",
+   "moodFrom": "Claude (judged)",
    "genres": [
     "Electronic"
    ],
@@ -3164,19 +3299,15 @@
    "n": 150,
    "title": "Goomba Boomba",
    "artist": "Yma Sumac",
-   "energy": 0.096,
-   "positivity": 0.322,
-   "danceability": 0.285,
-   "mood": "Wistful",
+   "mood": "Upbeat",
    "dance": false,
-   "moodFrom": "AcousticBrainz",
+   "moodFrom": "Claude (judged)",
    "genres": [
     "Jazz",
     "World"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "2008 universal fire victim",
     "exotica",
     "jazz",
     "lounge",
@@ -3201,7 +3332,10 @@
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
     "blues rock",
-    "psychedelic rock"
+    "hard rock",
+    "psychedelic rock",
+    "rock",
+    "rock and roll"
    ]
   },
   "3PuzCzuFmDqVtCp6PWlUio": {
@@ -3218,7 +3352,13 @@
     "Pop"
    ],
    "genreFrom": "MusicBrainz",
-   "musicbrainz": []
+   "musicbrainz": [
+    "electronic",
+    "electropop",
+    "indie",
+    "pop",
+    "synth-pop"
+   ]
   },
   "748yv6bb3l3CcKS45a6SZ8": {
    "n": 153,
@@ -3237,10 +3377,14 @@
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
     "art pop",
+    "electronic",
     "new wave",
     "pop",
     "pop rock",
+    "progressive pop",
     "psychedelic pop",
+    "rock",
+    "sophisti-pop",
     "synth-pop"
    ]
   },
@@ -3260,12 +3404,13 @@
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
+    "alternative dance",
     "dance",
     "electronic",
-    "experimental",
     "experimental hip hop",
     "hip hop",
-    "plunderphonics"
+    "plunderphonics",
+    "rock"
    ]
   },
   "2Tp3uEfVC5FNiIdGFWQxOC": {
@@ -3280,10 +3425,20 @@
    "moodFrom": "ReccoBeats",
    "genres": [
     "Indie",
-    "Rock"
+    "Pop"
    ],
    "genreFrom": "MusicBrainz",
-   "musicbrainz": []
+   "musicbrainz": [
+    "alternative rock",
+    "baroque pop",
+    "indie",
+    "indie folk",
+    "indie pop",
+    "indie rock",
+    "pop",
+    "psychedelic pop",
+    "rock"
+   ]
   },
   "0Shb2a6oTnJsIxEzn2SDLh": {
    "n": 156,
@@ -3339,16 +3494,20 @@
    "moodFrom": "ReccoBeats",
    "genres": [
     "Rock",
-    "Indie"
+    "Pop"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
+    "alternative rock",
     "art rock",
+    "baroque pop",
     "chamber pop",
     "experimental rock",
+    "folk",
+    "indie rock",
     "new wave",
-    "post-punk",
-    "post-rock"
+    "pop",
+    "pop rock"
    ]
   },
   "0qgZruwLnh1ed7Z7ZXNMTc": {
@@ -3381,7 +3540,8 @@
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "2008 universal fire victim",
+    "conscious hip hop",
+    "east coast hip hop",
     "hip hop"
    ]
   },
@@ -3434,19 +3594,20 @@
    "energy": 0.816,
    "positivity": 0.742,
    "danceability": 0.688,
-   "mood": "Upbeat",
+   "mood": "Brooding",
    "dance": false,
-   "moodFrom": "ReccoBeats",
+   "moodFrom": "Claude (judged)",
    "genres": [
-    "Folk",
-    "Electronic"
+    "Electronic",
+    "Folk"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
     "electronic",
-    "experimental",
     "folk",
-    "folktronica"
+    "folktronica",
+    "jazz",
+    "pop"
    ]
   },
   "30Wb4wrx78MZ8lAXfVb7wk": {
@@ -3457,17 +3618,14 @@
    "dance": false,
    "moodFrom": "Claude (judged)",
    "genres": [
-    "Pop",
-    "Indie"
+    "Pop"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "female vocals",
     "indie pop",
     "neo-psychedelia",
     "pop",
-    "pop rock",
-    "singer-songwriter"
+    "pop rock"
    ]
   },
   "4cgmk2owigBlmlV4KsqRNs": {
@@ -3485,9 +3643,13 @@
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
+    "acoustic",
+    "alternative/indie rock",
     "art pop",
+    "chamber folk",
     "electronic",
     "electropop",
+    "indie pop",
     "jazz",
     "pop",
     "synthpop"
@@ -3501,11 +3663,14 @@
    "dance": true,
    "moodFrom": "Claude (judged)",
    "genres": [
-    "Electronic"
+    "Electronic",
+    "Pop"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "electronic"
+    "art pop",
+    "electronic",
+    "pop"
    ]
   },
   "7nOwuv3N6Cwo2N9xkXWUmI": {
@@ -3556,12 +3721,9 @@
    "n": 169,
    "title": "Don't Do Drugs",
    "artist": "Danger Mouse, Jemini",
-   "energy": 0.804,
-   "positivity": 0.304,
-   "danceability": 0.936,
    "mood": "Brooding",
    "dance": true,
-   "moodFrom": "AcousticBrainz",
+   "moodFrom": "Claude (guess)",
    "genres": [
     "Hip-hop"
    ],
@@ -3578,8 +3740,8 @@
    "positivity": 0.374,
    "danceability": 0.738,
    "mood": "Wistful",
-   "dance": true,
-   "moodFrom": "ReccoBeats",
+   "dance": false,
+   "moodFrom": "Claude (judged)",
    "genres": [
     "Pop"
    ],
@@ -3628,11 +3790,9 @@
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "female vocalists",
     "indie",
     "indie pop",
-    "pop",
-    "singer-songwriter"
+    "pop"
    ]
   },
   "0fN65FwO4sNc07YBFFNDxt": {
@@ -3651,8 +3811,10 @@
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
+    "alternative rock",
     "indie rock",
     "pop",
+    "punk",
     "rock"
    ]
   },
@@ -3669,12 +3831,16 @@
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
+    "alternative",
+    "alternative hip hop",
+    "art pop",
     "dance",
     "electronica",
     "hip hop",
     "hip-hop",
     "house",
-    "pop"
+    "indie electronic",
+    "left-field pop"
    ]
   },
   "2l0KF9ywMxglacqb7Nb6H0": {
@@ -3704,17 +3870,19 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Folk",
-    "Indie"
+    "Indie",
+    "Folk"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
     "alternative country",
     "alternative rock",
     "folk",
+    "folk rock",
     "indie folk",
     "indie pop",
-    "singer-songwriter"
+    "indie rock",
+    "rock"
    ]
   },
   "5hb92JsDZjB3PuysBhwTAS": {
@@ -3734,11 +3902,9 @@
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
     "art pop",
-    "composer",
     "experimental rock",
     "power pop",
-    "progressive pop",
-    "singer-songwriter"
+    "progressive pop"
    ]
   },
   "5RZNyJd4RJRWe6wKtXJVVj": {
@@ -3781,12 +3947,12 @@
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "c81",
     "indie pop",
+    "indie rock",
     "jangle pop",
     "new wave",
     "post-punk",
-    "scottish"
+    "rock"
    ]
   },
   "0S3izfZXcQAO6uoVN9mQvn": {
@@ -3800,13 +3966,13 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Rock",
-    "Pop"
+    "Pop",
+    "Rock"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "american",
     "pop",
+    "pop rock",
     "rock"
    ]
   },
@@ -3823,9 +3989,11 @@
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
+    "indie pop",
+    "lo-fi",
     "pop",
     "popmusik",
-    "sänger"
+    "soul"
    ]
   },
   "4m5m7bonUvkScVaFExn6rR": {
@@ -3843,12 +4011,16 @@
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
+    "album rock",
     "blue-eyed soul",
     "blues rock",
+    "blues-rock",
     "boogie rock",
+    "classic rock",
+    "hard rock",
     "jazz fusion",
     "pop",
-    "rock"
+    "progressive rock"
    ]
   },
   "5ehBcancKNsR7lFRduET7R": {
@@ -3881,12 +4053,12 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Indie",
-    "Pop"
+    "Indie"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "indie pop"
+    "indie pop",
+    "pop"
    ]
   },
   "2R2sXZXyRcEMdoHxeYyBtF": {
@@ -3905,12 +4077,16 @@
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "canadian",
+    "alternative",
     "chamber pop",
     "electronic",
-    "female vocals",
+    "electronica dance",
     "folk",
-    "indie pop"
+    "folk rock",
+    "indie",
+    "indie pop",
+    "pop",
+    "rock"
    ]
   },
   "7kxMwCdLI8SOXjLA9tWVyF": {
@@ -3921,19 +4097,17 @@
    "positivity": 0.654,
    "danceability": 0.697,
    "mood": "Upbeat",
-   "dance": false,
-   "moodFrom": "ReccoBeats",
+   "dance": true,
+   "moodFrom": "Claude (judged)",
    "genres": [
     "Soul & R&B"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "comedy",
     "funk",
     "mod",
     "pop",
     "pop rock",
-    "rnb/swing",
     "rock",
     "soul"
    ]
@@ -3953,7 +4127,8 @@
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "pennsylvania",
+    "alternative rock",
+    "folk rock",
     "rock"
    ]
   },
@@ -3972,11 +4147,15 @@
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
+    "electro",
     "electro house",
     "electronic",
     "french electro",
     "french house",
+    "house",
+    "italo-disco",
     "synth-pop",
+    "synthpop",
     "synthwave"
    ]
   },
@@ -4013,12 +4192,7 @@
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "brazil",
-    "brazilian",
-    "brésil",
-    "brésilien",
-    "indie rock",
-    "south american"
+    "indie rock"
    ]
   },
   "7KO4XNfwEKhTbSGo3O6qX5": {
@@ -4038,7 +4212,8 @@
    "musicbrainz": [
     "bedroom pop",
     "dream pop",
-    "indie pop"
+    "indie pop",
+    "indie rock"
    ]
   },
   "1ABegtCPBMMJaMpfDyATjE": {
@@ -4052,12 +4227,10 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Rock",
-    "Pop"
+    "Rock"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "british",
     "merseybeat",
     "pop",
     "pop rock",
@@ -4076,14 +4249,14 @@
    "dance": true,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Rock"
+    "Rock",
+    "Pop"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "aln-sh",
-    "classic pop and rock",
+    "pop rock",
     "rock",
-    "session"
+    "soft rock"
    ]
   },
   "13Mzsb8VzRSZ5w3pM48cn6": {
@@ -4093,9 +4266,9 @@
    "energy": 0.446,
    "positivity": 0.924,
    "danceability": 0.801,
-   "mood": "Mellow",
+   "mood": "Upbeat",
    "dance": true,
-   "moodFrom": "ReccoBeats",
+   "moodFrom": "Claude (judged)",
    "genres": [
     "Soul & R&B"
    ],
@@ -4120,14 +4293,13 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Rock",
-    "Soul & R&B"
+    "Rock"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "aln-sh",
-    "blues",
-    "rock"
+    "pop",
+    "rock",
+    "soul"
    ]
   },
   "3c2kMiSB86tVq1J4oULmvL": {
@@ -4141,14 +4313,18 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Pop",
     "Soul & R&B"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
     "blue-eyed soul",
+    "classic rock",
+    "doo-wop",
     "pop rock",
     "psychedelic pop",
+    "psychedelic soul",
+    "rock",
+    "soul",
     "sunshine pop"
    ]
   },
@@ -4168,10 +4344,13 @@
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
     "blue-eyed soul",
+    "classic rock",
     "new wave",
     "pop",
     "pop rock",
     "pop soul",
+    "progressive pop",
+    "rock",
     "soft rock"
    ]
   },
@@ -4179,12 +4358,9 @@
    "n": 198,
    "title": "Here I Am",
    "artist": "Dolly Parton",
-   "energy": 0.344,
-   "positivity": 0.396,
-   "danceability": 0.266,
-   "mood": "Wistful",
+   "mood": "Mellow",
    "dance": false,
-   "moodFrom": "AcousticBrainz",
+   "moodFrom": "Claude (guess)",
    "genres": [
     "Country"
    ],
@@ -4194,7 +4370,7 @@
     "classic country",
     "country",
     "country pop",
-    "nashville sound",
+    "country rock",
     "pop"
    ]
   },
@@ -4205,16 +4381,15 @@
    "energy": 0.392,
    "positivity": 0.493,
    "danceability": 0.565,
-   "mood": "Wistful",
+   "mood": "Mellow",
    "dance": false,
-   "moodFrom": "ReccoBeats",
+   "moodFrom": "Claude (judged)",
    "genres": [
     "Rock",
     "Pop"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "2008 universal fire victim",
     "rock",
     "soft rock"
    ]
@@ -4270,15 +4445,15 @@
    "dance": false,
    "moodFrom": "Claude (judged)",
    "genres": [
-    "Indie",
-    "Rock"
+    "Rock",
+    "Indie"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
     "art punk",
     "indie rock",
     "post-punk",
-    "united states"
+    "punk"
    ]
   },
   "6208B8Utmd2fTqgGMjeNr6": {
@@ -4289,20 +4464,18 @@
    "positivity": 0.901,
    "danceability": 0.692,
    "mood": "Upbeat",
-   "dance": false,
-   "moodFrom": "ReccoBeats",
+   "dance": true,
+   "moodFrom": "Claude (judged)",
    "genres": [
     "Soul & R&B"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "'70s",
     "contemporary r&b",
     "disco",
     "pop",
     "pop rock",
     "rock",
-    "soprano",
     "soul"
    ]
   },
@@ -4317,18 +4490,18 @@
    "dance": true,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Pop",
-    "Rock"
+    "World",
+    "Pop"
    ],
-   "genreFrom": "MusicBrainz",
+   "genreFrom": "Claude (judged)",
    "musicbrainz": [
     "art rock",
     "baroque pop",
-    "experimental",
     "folk rock",
     "jazz",
     "pop",
     "pop rock",
+    "reggae",
     "rock"
    ]
   },
@@ -4371,9 +4544,15 @@
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "classic pop and rock",
     "classic rock heartland rock rock and roll",
-    "rock"
+    "classic rock; soft rock; ballads",
+    "hard rock",
+    "heartland rock",
+    "pop rock",
+    "rock",
+    "rock and roll",
+    "soft rock",
+    "southern rock"
    ]
   },
   "4BVFVaa1fDo20Ud1q5Gd2N": {
@@ -4392,9 +4571,11 @@
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
     "alternative rock",
+    "electronic",
     "indie pop",
     "indie rock",
     "indietronica",
+    "pop",
     "psychedelic pop",
     "synth-pop"
    ]
@@ -4414,12 +4595,13 @@
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "aln-sh",
     "alt-country",
     "alternative",
+    "alternative rock",
     "folk rock",
     "indie",
-    "indie rock"
+    "indie rock",
+    "rock"
    ]
   },
   "6hzEumHWNUVB0VWobDBT6x": {
@@ -4439,7 +4621,6 @@
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
     "bedroom pop",
-    "experimental",
     "indie",
     "indie pop",
     "indie rock",
@@ -4470,9 +4651,9 @@
    "energy": 0.165,
    "positivity": 0.202,
    "danceability": 0.271,
-   "mood": "Wistful",
+   "mood": "Mellow",
    "dance": false,
-   "moodFrom": "ReccoBeats",
+   "moodFrom": "Claude (judged)",
    "genres": [
     "Jazz"
    ],
@@ -4481,6 +4662,7 @@
     "dixieland",
     "gospel",
     "jazz",
+    "pop",
     "swing",
     "traditional pop",
     "vocal jazz"
@@ -4501,6 +4683,8 @@
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
+    "funk",
+    "r&b",
     "soul"
    ]
   },
@@ -4519,8 +4703,8 @@
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "2008 universal fire victim",
-    "classic pop and rock",
+    "old school soul",
+    "r&b",
     "soul"
    ]
   },
@@ -4539,7 +4723,6 @@
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "1980s",
     "gospel",
     "memphis soul",
     "smooth soul",
@@ -4554,21 +4737,25 @@
    "energy": 0.637,
    "positivity": 0.656,
    "danceability": 0.761,
-   "mood": "Upbeat",
-   "dance": true,
-   "moodFrom": "ReccoBeats",
+   "mood": "Wistful",
+   "dance": false,
+   "moodFrom": "Claude (judged)",
    "genres": [
-    "Indie",
-    "Psych"
+    "Psych",
+    "Indie"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
+    "alternative rock",
+    "electronic",
     "indie pop",
     "indie rock",
+    "indie surf",
     "neo-psychedelia",
+    "progressive pop",
     "psychedelic pop",
-    "rock",
-    "synth-pop"
+    "psychedelic rock",
+    "rock"
    ]
   },
   "5QfsQPEqDbtZtU2zZkJ1kR": {
@@ -4582,15 +4769,14 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Soul & R&B",
-    "Psych"
+    "Soul & R&B"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "blues",
     "folk",
     "funk",
     "jazz",
+    "louisiana blues",
     "new orleans r&b",
     "psychedelic rock"
    ]
@@ -4606,7 +4792,8 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Indie"
+    "Indie",
+    "Rock"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
@@ -4633,7 +4820,7 @@
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "2008 universal fire victim",
+    "rock",
     "soft rock"
    ]
   },
@@ -4653,11 +4840,14 @@
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "blues",
     "blues rock",
     "british blues",
+    "classic rock",
+    "pop",
+    "pop music",
     "pop rock",
     "rock",
+    "rock music",
     "soft rock"
    ]
   },
@@ -4668,19 +4858,16 @@
    "energy": 0.663,
    "positivity": 0.366,
    "danceability": 0.325,
-   "mood": "Brooding",
+   "mood": "Wistful",
    "dance": false,
-   "moodFrom": "ReccoBeats",
+   "moodFrom": "Claude (judged)",
    "genres": [
-    "Rock",
     "Indie"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "american",
     "indie rock",
-    "rock",
-    "united states"
+    "rock"
    ]
   },
   "0IlYgHJnP4D8HWUCuyJnQW": {
@@ -4694,11 +4881,13 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Rock"
+    "Rock",
+    "Country"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "power chord",
+    "american folk music",
+    "country rock",
     "rock",
     "rock and roll",
     "rockabilly"
@@ -4715,14 +4904,14 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Pop",
-    "Soul & R&B"
+    "Pop"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
     "blue-eyed soul",
     "pop rock",
     "psychedelic pop",
+    "rock",
     "sunshine pop"
    ]
   },
@@ -4748,15 +4937,12 @@
    "n": 224,
    "title": "This Will Be Our Year - Mono Remastered",
    "artist": "The Zombies",
-   "energy": 0.374,
-   "positivity": 0.463,
-   "danceability": 0.324,
-   "mood": "Wistful",
+   "mood": "Mellow",
    "dance": false,
-   "moodFrom": "AcousticBrainz",
+   "moodFrom": "Claude (judged)",
    "genres": [
     "Pop",
-    "Rock"
+    "Psych"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
@@ -4765,7 +4951,9 @@
     "british rhythm & blues",
     "pop",
     "psychedelic pop",
-    "rock"
+    "rock",
+    "rock pop",
+    "sunshine pop"
    ]
   },
   "1Fem9jSJEleNWT1kgt70ST": {
@@ -4802,7 +4990,7 @@
    "moodFrom": "ReccoBeats",
    "genres": [
     "Indie",
-    "Folk"
+    "Rock"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
@@ -4811,32 +4999,26 @@
     "indie",
     "indie rock",
     "pop",
-    "singer-songwriter"
+    "rock"
    ]
   },
   "05pizkWWDPXqvpUSwo1DMj": {
    "n": 227,
    "title": "Woof Woof",
    "artist": "ARTHUR",
-   "energy": 0.464,
-   "positivity": 0.882,
-   "danceability": 0.469,
    "mood": "Mellow",
    "dance": false,
-   "moodFrom": "AcousticBrainz",
+   "moodFrom": "Claude (guess)",
    "genres": [
-    "Indie",
-    "Electronic"
+    "Electronic",
+    "Indie"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
     "bedroom pop",
-    "classical",
     "electronic",
-    "experimental",
     "indie rock",
-    "lo-fi",
-    "tape music"
+    "lo-fi"
    ]
   },
   "2kIDECuRDbagrRqLOY3Mnm": {
@@ -4893,32 +5075,28 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Folk",
-    "Psych"
+    "Pop",
+    "Rock"
    ],
-   "genreFrom": "MusicBrainz",
+   "genreFrom": "Claude (judged)",
    "musicbrainz": [
-    "2008 universal fire victim",
     "folk pop",
     "folk rock",
     "pop rock",
     "psychedelic pop",
-    "psychedelic rock"
+    "psychedelic rock",
+    "rock"
    ]
   },
   "1G0ku3TLCGwrAHj9WPudKX": {
    "n": 231,
    "title": "Handle With Care",
    "artist": "Traveling Wilburys",
-   "energy": 0.494,
-   "positivity": 0.637,
-   "danceability": 0.172,
-   "mood": "Mellow",
+   "mood": "Upbeat",
    "dance": false,
-   "moodFrom": "AcousticBrainz",
+   "moodFrom": "Claude (judged)",
    "genres": [
-    "Rock",
-    "Folk"
+    "Rock"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
@@ -4926,8 +5104,7 @@
     "country rock",
     "folk rock",
     "rock",
-    "rock and roll",
-    "singer-songwriter"
+    "rock and roll"
    ]
   },
   "007JQyyu6DrGza9XX6scAN": {
@@ -4982,11 +5159,12 @@
    "dance": false,
    "moodFrom": "Claude (judged)",
    "genres": [
-    "Folk"
+    "Rock"
    ],
-   "genreFrom": "MusicBrainz",
+   "genreFrom": "Claude (judged)",
    "musicbrainz": [
     "experimental rock",
+    "folk",
     "folk rock",
     "indie rock",
     "psychedelic rock"
@@ -5008,7 +5186,11 @@
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
     "bedroom pop",
-    "indie pop"
+    "electronic",
+    "indie pop",
+    "indie rock",
+    "pop",
+    "rock"
    ]
   },
   "5Ay4ujNQ4xCrIxpDnk2SUC": {
@@ -5042,17 +5224,15 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Pop",
-    "Folk"
+    "Pop"
    ],
-   "genreFrom": "MusicBrainz",
+   "genreFrom": "Claude (judged)",
    "musicbrainz": [
     "blues rock",
-    "film score",
-    "film soundtrack",
     "pop",
     "pop rock",
-    "singer-songwriter"
+    "rock",
+    "rock and roll"
    ]
   },
   "5lQxMlCMTzCj3j4vyzdl8T": {
@@ -5071,9 +5251,10 @@
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "canadian",
     "country",
+    "country; classic country",
     "pop",
+    "rock",
     "soft rock"
    ]
   },
@@ -5081,23 +5262,22 @@
    "n": 239,
    "title": "I'd Like To Walk Around In Your Mind",
    "artist": "Vashti Bunyan",
-   "energy": 0.044,
-   "positivity": 0.079,
-   "danceability": 0,
    "mood": "Wistful",
    "dance": false,
-   "moodFrom": "AcousticBrainz",
+   "moodFrom": "Claude (judged)",
    "genres": [
     "Folk"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "british",
+    "acoustic",
     "contemporary folk",
-    "english",
     "folk",
-    "singer-songwriter",
-    "uk"
+    "folk rock",
+    "freak folk",
+    "pop",
+    "psychedelic folk",
+    "rock"
    ]
   },
   "3ssnFwx5lu6qxhLBR0vutB": {
@@ -5111,13 +5291,17 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Psych",
+    "Pop",
     "Rock"
    ],
-   "genreFrom": "MusicBrainz",
+   "genreFrom": "Claude (judged)",
    "musicbrainz": [
+    "album rock",
+    "arena rock",
     "classic rock",
-    "psychedelic rock"
+    "contemporary pop/rock",
+    "psychedelic rock",
+    "rock"
    ]
   },
   "6OojY4NdPiEGWHV2EUSwHz": {
@@ -5136,6 +5320,9 @@
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
+    "acid rock",
+    "baroque pop",
+    "classic rock",
     "folk rock",
     "garage rock",
     "psychedelic folk",
@@ -5159,8 +5346,6 @@
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "comedy",
-    "non-music",
     "pop"
    ]
   },
@@ -5175,17 +5360,18 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Rock",
-    "Soul & R&B"
+    "Rock"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "blues",
+    "album rock",
     "blues rock",
+    "blues-rock",
     "classic rock",
-    "guitar",
+    "country-rock",
+    "pop",
     "rock",
-    "singer-songwriter"
+    "soft rock"
    ]
   },
   "2Fw4gGClr8zVFZVwIRjyWK": {
@@ -5211,17 +5397,19 @@
    "energy": 0.519,
    "positivity": 0.822,
    "danceability": 0.653,
-   "mood": "Upbeat",
+   "mood": "Brooding",
    "dance": false,
-   "moodFrom": "ReccoBeats",
+   "moodFrom": "Claude (judged)",
    "genres": [
     "Folk",
     "Rock"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "american",
+    "album rock",
+    "classic folk rock",
     "country rock",
+    "country-rock",
     "folk rock",
     "psychedelic folk",
     "psychedelic rock",
@@ -5244,8 +5432,12 @@
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
+    "album rock",
     "americana",
+    "classic rock",
+    "cosmic country",
     "country rock",
+    "country soul",
     "folk rock",
     "pop rock",
     "rock",
@@ -5263,15 +5455,17 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
+    "Soul & R&B",
     "Rock"
    ],
-   "genreFrom": "MusicBrainz",
+   "genreFrom": "Claude (judged)",
    "musicbrainz": [
     "alternative rock",
     "art pop",
     "art rock",
     "glam rock",
     "pop",
+    "pop rock",
     "rock"
    ]
   },
@@ -5322,7 +5516,8 @@
    "dance": false,
    "moodFrom": "ReccoBeats",
    "genres": [
-    "Folk"
+    "Folk",
+    "Rock"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
@@ -5330,31 +5525,33 @@
     "country rock",
     "folk pop",
     "folk rock",
-    "psychedelic pop"
+    "psychedelic pop",
+    "rock"
    ]
   },
   "1GIV1YzfuFzYAoUjwx3r7W": {
    "n": 251,
    "title": "Oliver's Army",
    "artist": "Elvis Costello & The Attractions",
-   "energy": 0.094,
-   "positivity": 0.737,
-   "danceability": 0.99,
-   "mood": "Mellow",
-   "dance": true,
-   "moodFrom": "AcousticBrainz",
+   "mood": "Upbeat",
+   "dance": false,
+   "moodFrom": "Claude (judged)",
    "genres": [
-    "Pop",
-    "Rock"
+    "Rock",
+    "Pop"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
+    "alternative rock",
+    "college rock",
     "country",
     "new wave",
     "pop rock",
     "pop soul",
+    "post-punk",
     "power pop",
-    "singer-songwriter"
+    "rock",
+    "rock and roll"
    ]
   },
   "4cHBP73V974hbCl66gvWsi": {
@@ -5364,21 +5561,15 @@
    "energy": 0.704,
    "positivity": 0.768,
    "danceability": 0.559,
-   "mood": "Upbeat",
+   "mood": "Brooding",
    "dance": false,
-   "moodFrom": "ReccoBeats",
+   "moodFrom": "Claude (judged)",
    "genres": [
-    "Rock",
-    "Soul & R&B"
+    "Rock"
    ],
    "genreFrom": "MusicBrainz",
    "musicbrainz": [
-    "blues",
-    "british",
-    "classic pop and rock",
-    "english",
-    "rock",
-    "uk"
+    "rock"
    ]
   }
  }
