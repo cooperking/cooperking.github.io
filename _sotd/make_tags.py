@@ -19,7 +19,7 @@ sys.path.insert(0, HERE)
 from genres import GENRES, bucket, dist, discogs_bucket   # noqa: E402
 
 DATA = os.path.join(HERE, 'data')
-OUT = os.path.join(HERE, '..', 'songs', 'moods.json')
+OUT = os.environ.get('SOTD_OUT') or os.path.join(HERE, '..', 'songs', 'moods.json')
 SONGS_URL = os.environ.get('SOTD_SONGS_URL', 'https://sotd-playlists.cooperking.workers.dev/songs.json')
 LASTFM = os.path.expanduser(os.environ.get('LASTFM_CACHE', '~/.cache/lastfm/tags.json'))
 
@@ -174,6 +174,9 @@ def main():
         if c.get('moods'):
             voices.append((WEIGHTS['claude'] if c.get('moodSure') else WEIGHTS['claude_guess'], picks_dist(c['moods'])))
         lmoods, rel = listener_moods(lf.get('track', []))
+        stats['listener tags'] += bool(lf.get('track'))
+        stats['listener mood tags'] += bool(lmoods)
+        stats['listener mood tags strong enough'] += bool(lmoods and rel >= 0.15)
         if lmoods and rel >= 0.15:
             voices.append((WEIGHTS['listeners'] * rel, lmoods))
         if tid in sound:
@@ -183,7 +186,7 @@ def main():
             for m, x in d.items():
                 mix[m] = mix.get(m, 0) + w * x
         ranked = top(mix, 10)
-        moods = ranked[:1] + [m for m in ranked[1:2] if mix[m] >= 0.55 * mix[ranked[0]]] if ranked else []
+        moods = ranked[:1] + [m for m in ranked[1:2] if mix[m] >= 0.5 * mix[ranked[0]]] if ranked else []
         rec['moods'], rec['moodFrom'] = moods, ('Claude' if c.get('moodSure') else 'Weighed up')
         if tid in sound:
             rec['sound'] = top(sound[tid], 3)
@@ -250,6 +253,13 @@ def main():
         if check and rec['moodFrom'] != 'John':
             rec['check'] = True
         out[tid] = rec
+        if c.get('moodSure'):   # how often each other voice backs Claude's first pick, as a running check on them
+            if lis_top:
+                stats['listeners heard'] += 1
+                stats['listeners back Claude'] += c['moods'][0] in lis_top
+            if tid in sound:
+                stats['audio heard'] += 1
+                stats['audio backs Claude'] += c['moods'][0] in rec['sound']
         stats['voices %d' % len(voices)] += 1
         stats['listeners ' + rec['listeners']] += 1
 
@@ -261,6 +271,15 @@ def main():
                   "Last.fm listeners' tags back the first mood; check = the voices disagree, or only the audio had "
                   "anything to say. Genres come from MusicBrainz, Last.fm and Essentia's Discogs styles. John's "
                   "corrections from the admin page always win."),
+        'agreement': {
+            'about': "For songs Claude knows: how often Last.fm listeners' three strongest moods, and the audio models' "
+                     "three strongest, include Claude's first pick.",
+            'listeners': [stats['listeners back Claude'], stats['listeners heard']],
+            'audio': [stats['audio backs Claude'], stats['audio heard']],
+            'songsWithListenerTags': stats['listener tags'],
+            'songsWithListenerMoodTags': stats['listener mood tags'],
+            'songsWhereListenersCount': stats['listener mood tags strong enough'],
+        },
         'moods': MOODS, 'moodInfo': MOOD_INFO, 'genres': GENRES, 'songs': out,
     }
     with open(OUT, 'w', encoding='utf-8') as f:

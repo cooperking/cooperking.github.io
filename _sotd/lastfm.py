@@ -15,27 +15,42 @@ UA = {'User-Agent': 'SongOfTheDayCalendar/1.0 (https://cooperking.github.io/song
 MAX_AGE = 60 * 86400
 
 
+ERRORS = {}
+
+
 def get(url):
     for i in range(4):
         try:
             with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=30) as r:
                 return json.loads(r.read())
         except urllib.error.HTTPError as e:
-            if e.code in (400, 403, 404):
-                return json.loads(e.read() or b'{}')
-            time.sleep(3 * (i + 1))
-        except Exception:
-            time.sleep(3 * (i + 1))
+            try:
+                body = json.loads(e.read() or b'{}')
+            except ValueError:
+                body = {}
+            if body.get('error') not in (8, 11, 16, 29):   # only these are worth retrying
+                return body or {'error': 'http %d' % e.code}
+            ERRORS['retry %s' % body.get('error')] = ERRORS.get('retry %s' % body.get('error'), 0) + 1
+            time.sleep(10 * (i + 1))
+        except Exception as e:
+            ERRORS['network'] = ERRORS.get('network', 0) + 1
+            time.sleep(5 * (i + 1))
     return None
 
 
 def call(method, **params):
-    time.sleep(0.25)   # Last.fm asks for no more than five requests a second
+    """Top tags as [[name, count]], or None when Last.fm couldn't answer (try again next run)."""
+    time.sleep(0.5)   # Last.fm asks for no more than five requests a second; stay well under
     j = get(API + '?' + urllib.parse.urlencode(dict(method=method, api_key=KEY, format='json', autocorrect=1, **params)))
-    if not j or 'error' in j:
-        if j and j.get('error') in (10, 26):   # invalid or suspended key
-            sys.exit('Last.fm refused the API key: ' + j.get('message', ''))
-        return []
+    if j is None:
+        ERRORS['gave up'] = ERRORS.get('gave up', 0) + 1
+        return None
+    if 'error' in j:
+        code = j.get('error')
+        if code in (10, 26):   # invalid or suspended key
+            sys.exit('Last.fm refused the API key: ' + str(j.get('message', '')))
+        ERRORS['error %s' % code] = ERRORS.get('error %s' % code, 0) + 1
+        return [] if code == 6 else None   # 6 = not found on Last.fm
     tags = (j.get('toptags') or {}).get('tag') or []
     if isinstance(tags, dict):
         tags = [tags]
@@ -58,7 +73,8 @@ def main():
     with urllib.request.urlopen(urllib.request.Request(SONGS_URL, headers=UA), timeout=60) as r:
         songs = json.loads(r.read())['songs']
     now = time.time()
-    todo = [s for s in songs if now - cache.get(s['id'], {}).get('at', 0) > MAX_AGE]
+    # refresh tags after 60 days, or after 14 when Last.fm had none for the song
+    todo = [s for s in songs if now - cache.get(s['id'], {}).get('at', 0) > (MAX_AGE if cache.get(s['id'], {}).get('track') else MAX_AGE / 4)]
     print(f'{len(todo)} songs to fetch listener tags for')
     artists = {}
     for s in todo:
@@ -66,12 +82,23 @@ def main():
         track = call('track.getTopTags', artist=artist, track=clean_title(s['title']))
         if artist not in artists:
             artists[artist] = call('artist.getTopTags', artist=artist)
+        if track is None or artists[artist] is None:
+            continue   # Last.fm didn't answer: leave it for the next run
         cache[s['id']] = {'at': now, 'track': track, 'artist': artists[artist]}
     os.makedirs(os.path.dirname(CACHE), exist_ok=True)
     with open(CACHE, 'w') as f:
         json.dump(cache, f)
-    have = sum(1 for s in songs if cache.get(s['id'], {}).get('track'))
-    print(f'{have} of {len(songs)} songs have track tags')
+    status = {
+        'about': 'How the last Last.fm fetch went (counts only; the tags themselves stay out of the repo).',
+        'at': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime(now)),
+        'songs': len(songs), 'fetched': len(todo), 'cached': sum(1 for s in songs if s['id'] in cache),
+        'withTrackTags': sum(1 for s in songs if cache.get(s['id'], {}).get('track')),
+        'withArtistTags': sum(1 for s in songs if cache.get(s['id'], {}).get('artist')),
+        'problems': ERRORS,
+    }
+    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'lastfm-status.json'), 'w') as f:
+        json.dump(status, f, indent=1)
+    print(status)
 
 
 if __name__ == '__main__':
