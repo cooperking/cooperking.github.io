@@ -1,0 +1,64 @@
+name: Song moods and genres
+
+# Listens to new songs on John's Song of the Day, gathers listener tags and MusicBrainz genres,
+# and rebuilds songs/tags.json for the calendar at cooperking.github.io/songs/.
+on:
+  workflow_dispatch:
+    inputs:
+      redo:
+        description: "Re-analyse every song's audio"
+        type: boolean
+        default: false
+  schedule:
+    - cron: "40 9 * * *"
+    - cron: "40 19 * * *"
+  push:
+    branches: [main]
+    paths: ["_sotd/**", ".github/workflows/song-tags.yml"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: song-tags
+  cancel-in-progress: false
+
+jobs:
+  tags:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Any songs to listen to?
+        id: check
+        run: python _sotd/analyze_audio.py --check ${{ inputs.redo && '--all' || '' }}
+
+      - name: Cache the Essentia models
+        if: steps.check.outputs.todo != '0'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/essentia-models
+          key: essentia-models-v1
+
+      - name: Install Essentia
+        if: steps.check.outputs.todo != '0'
+        run: pip install --quiet "essentia-tensorflow==2.1b6.dev1389" numpy
+
+      - name: Listen to the previews
+        if: steps.check.outputs.todo != '0'
+        run: python _sotd/analyze_audio.py ${{ inputs.redo && '--all' || '' }}
+
+      - name: Save changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add _sotd/data songs/tags.json
+          if git diff --cached --quiet; then echo "nothing changed"; exit 0; fi
+          git commit -m "Song moods and genres: update from the latest songs"
+          for i in 1 2 3; do git pull --rebase --quiet && git push && exit 0; sleep 5; done
+          exit 1
