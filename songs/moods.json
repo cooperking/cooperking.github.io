@@ -1,7 +1,7 @@
 {
  "about": "Moods and broad genres for each song on John's Song of the Day. Each song gets up to two of ten moods, weighed up from Claude's picks (songs Claude knows, sound and lyrics), Last.fm listener tags, and Essentia's mood models listening to the 30-second preview (Music Technology Group, Universitat Pompeu Fabra, CC BY-NC-SA 4.0). sound = the three moods the audio models hear most; listeners = whether Last.fm listeners' tags back the first mood; check = the voices disagree, or only the audio had anything to say. Genres come from MusicBrainz, Last.fm and Essentia's Discogs styles. John's corrections from the admin page always win.",
  "agreement": {
-  "about": "For songs Claude knows: how often Last.fm listeners' three strongest moods, and the audio models' three strongest, include Claude's first pick.",
+  "about": "For songs Claude knows: how often the three strongest moods from Last.fm listeners' track tags, from the artist's Last.fm tags, and from the audio models include Claude's first pick.",
   "listeners": [
    2,
    3
@@ -9,6 +9,10 @@
   "audio": [
    77,
    139
+  ],
+  "artistTags": [
+   2,
+   15
   ],
   "songsWithListenerTags": 11,
   "songsWithListenerMoodTags": 8,
@@ -860,7 +864,8 @@
    "title": "Badala Zamana (Habibi Funk 015)",
    "artist": "Zohra",
    "moods": [
-    "Playful"
+    "Playful",
+    "Energetic"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -890,7 +895,8 @@
    "title": "2020",
    "artist": "SUUNS",
    "moods": [
-    "Dark"
+    "Dark",
+    "Dreamy"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -1519,6 +1525,7 @@
    "title": "Miraculous Weekend",
    "artist": "Peter Ivers",
    "moods": [
+    "Dreamy",
     "Mellow"
    ],
    "moodFrom": "Weighed up",
@@ -1999,8 +2006,8 @@
    "title": "Bad Kids",
    "artist": "TTRRUUCES",
    "moods": [
-    "Playful",
-    "Energetic"
+    "Dreamy",
+    "Playful"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -2286,8 +2293,7 @@
    "title": "Duet",
    "artist": "Diane Coffee, Felicia Douglass",
    "moods": [
-    "Uplifting",
-    "Joyful"
+    "Dreamy"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -3477,8 +3483,8 @@
    "title": "Modern Drift",
    "artist": "Efterklang",
    "moods": [
-    "Bittersweet",
-    "Uplifting"
+    "Dreamy",
+    "Bittersweet"
    ],
    "moodFrom": "Weighed up",
    "sound": [
@@ -6353,8 +6359,7 @@
    "title": "Shy",
    "artist": "Hether",
    "moods": [
-    "Joyful",
-    "Romantic"
+    "Dreamy"
    ],
    "moodFrom": "Weighed up",
    "sound": [
