@@ -1099,10 +1099,9 @@
    "title": "Be the Wheel",
    "artist": "Theo Katzman, 10 Good Songs",
    "moods": [
-    "Uplifting",
-    "Energetic"
+    "Uplifting"
    ],
-   "moodFrom": "Claude (researched)",
+   "moodFrom": "John",
    "sound": [
     "Mellow",
     "Romantic",
@@ -5100,6 +5099,7 @@
    "musicbrainz": [
     "rock"
    ],
+   "checkWhy": "Energetic, but the audio sounds calmer than 86% of the songs",
    "check": true
   },
   "72PoJMDfdaw9gGECgA9kTZ": {
@@ -6256,6 +6256,7 @@
     "psychedelic rock",
     "rock"
    ],
+   "checkWhy": "Energetic, but the audio sounds calmer than 91% of the songs",
    "check": true
   },
   "7j2ExpvZTeURjspK443YKU": {
@@ -6514,7 +6515,9 @@
     "pop",
     "pop rock",
     "rock"
-   ]
+   ],
+   "checkWhy": "Mellow, but the audio sounds livelier than 85% of the songs",
+   "check": true
   },
   "6SYwCFYNJo66SbnQKOXRUg": {
    "n": 58,
@@ -8103,6 +8106,7 @@
     "r&b",
     "soul"
    ],
+   "checkWhy": "Mellow, but the audio sounds livelier than 93% of the songs",
    "check": true
   },
   "3lJ70fh0ENq6hzgtOfOGYZ": {
@@ -10253,7 +10257,9 @@
     "midwest rap",
     "pop",
     "pop rap"
-   ]
+   ],
+   "checkWhy": "Energetic, but the audio sounds calmer than 86% of the songs",
+   "check": true
   },
   "6nkMHXkhmvCzxtvewoOEJT": {
    "n": 90,
@@ -24054,7 +24060,9 @@
     "smooth soul",
     "soul",
     "southern soul"
-   ]
+   ],
+   "checkWhy": "Mellow, but the audio sounds livelier than 89% of the songs",
+   "check": true
   },
   "6kblAEj0T0312fv5QWsXzo": {
    "n": 215,
@@ -27909,7 +27917,9 @@
       ]
      ]
     ]
-   ]
+   ],
+   "checkWhy": "Mellow, but the audio sounds livelier than 87% of the songs",
+   "check": true
   },
   "7uhgdMtt4b4p35ehIYRqq6": {
    "n": 249,
