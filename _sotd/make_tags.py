@@ -83,6 +83,7 @@ SOUND = {
 # Claude's picks count by how they were made: knowing the song, researching it (by how clear the sources were), or a guess
 CLAUDE_WEIGHT = {"knows": 0.55, "researched-high": 0.5, "researched-medium": 0.35, "researched-low": 0.15, "guess": 0.15}
 WEIGHTS = {"listeners": 0.30, "sound": 0.20}
+ENERGY_CHECK = 15   # flag Energetic in the calmest 15% of clips, Mellow in the liveliest 15%
 GENRE_WEIGHTS = {"musicbrainz": 0.5, "listeners": 0.3, "sound": 0.2}
 MB_SOURCE_WEIGHT = {"album": 3, "artist": 2, "recording": 1}
 
@@ -167,6 +168,10 @@ def main():
     john = load(os.path.join(DATA, 'john.json'), {})
     lfm = load(LASTFM, {})
     sound = sound_moods(audio)
+    # how lively each clip sounds against the rest (DEAM arousal, the dimension audio models judge best)
+    ar = sorted(a['arousal'] for a in audio.get('songs', {}).values() if 'arousal' in a)
+    energy_pct = {tid: round(100 * sum(1 for v in ar if v <= a['arousal']) / len(ar))
+                  for tid, a in audio.get('songs', {}).items() if 'arousal' in a} if ar else {}
     out, stats = {}, Counter()
 
     for s in songs:
@@ -278,7 +283,17 @@ def main():
             rec['moods'], rec['moodFrom'] = [x for x in j['moods'] if x in MOODS][:2], 'John'
         if j.get('genres'):
             rec['genres'], rec['genreFrom'] = [x for x in j['genres'] if x in GENRES][:2], 'John'
-        if check and rec['moodFrom'] != 'John':
+        # however a mood was picked, the audio can still catch an Energetic song that sounds calm, or the reverse
+        why = []
+        pc = energy_pct.get(tid)
+        if pc is not None and rec['moodFrom'] != 'John':
+            if 'Energetic' in rec['moods'] and pc <= ENERGY_CHECK:
+                why.append(f'Energetic, but the audio sounds calmer than {100 - pc}% of the songs')
+            if 'Mellow' in rec['moods'] and pc >= 100 - ENERGY_CHECK:
+                why.append(f'Mellow, but the audio sounds livelier than {pc}% of the songs')
+        if why:
+            rec['checkWhy'] = '; '.join(why)
+        if (check or why) and rec['moodFrom'] != 'John':
             rec['check'] = True
         out[tid] = rec
         if solid:   # how often each other voice backs Claude's first pick, as a running check on them
