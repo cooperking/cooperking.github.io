@@ -439,6 +439,15 @@ def main():
                                    f'{len(dated)} SO FAR', covers(latest)))
     print(f'{len(by_month)} month pages; calendar card {stamp}')
 
+    # the calendar's own link preview says how many songs there are so far
+    site = os.path.join(SONGS, 'index.html')
+    if os.path.exists(site):
+        page_html = open(site, encoding='utf-8').read()
+        desc = f'A song a day, {len(dated)} so far'
+        new_html = re.sub(r'(<meta (?:name="description"|property="og:description") content=")[^"]*(">)', lambda m: m.group(1) + desc + m.group(2), page_html)
+        if write(site, new_html):
+            print('calendar description:', desc)
+
 
 if __name__ == '__main__':
     main()
