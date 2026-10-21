@@ -1,47 +1,16 @@
 {
-"about":"YouTube match for each song (key: Spotify track id), from YouTube search; alts are the runners-up.",
+"about":"YouTube video for each song (key: Spotify track id): from John's list (data/links.json) or YouTube search; list / searched: the one not chosen; alts: the search's runners-up.",
 "songs":{
 "5mgCP62kIGit9ICUdaqIgq":{
 "n":1,
 "checked":"2026-10-21",
-"from":"YouTube search",
-"alts":[
-{
+"from":"John's list",
+"listId":"6CtxkCmcsiw",
 "id":"6CtxkCmcsiw",
 "title":"That’s Just the Way That I Feel",
 "channel":"Purple Mountains - Topic",
-"score":103
-},
-{
-"id":"pwzNRSeiDZE",
-"title":"Purple Mountains - That's Just the Way That I Feel",
-"channel":"syncups",
-"score":65
-},
-{
-"id":"CdY4j6k_jnY",
-"title":"Purple Mountains - That's Just the Way That I Feel (subtítulos español)",
-"channel":"𝕊𝕜𝕦𝕝𝕝 𝕨𝕚𝕥𝕙 𝕙𝕖𝕒𝕕𝕡𝕙𝕠𝕟𝕖𝕤",
-"score":65
-},
-{
-"id":"EJtw7p4a-Ew",
-"title":"Majesties play \"That's Just the Way That I Feel\" at DCB Day 2023",
-"channel":"barthesian",
-"score":40
-}
-],
-"id":"6CtxkCmcsiw",
-"title":"That’s Just the Way That I Feel",
-"channel":"Purple Mountains - Topic",
-"kind":"audio",
-"score":103,
-"why":[
-"title",
-"artist",
-"official channel"
-],
-"embed":true
+"embed":true,
+"kind":"audio"
 },
 "0AQSOcvFfPGxofpNuK7zyA":{
 "n":2,
@@ -84,301 +53,106 @@
 "official channel",
 "official video"
 ],
+"embed":true,
+"listId":"ULfkfGuwfKE",
+"list":{
+"id":"ULfkfGuwfKE",
+"title":"Hannah Frances - Life's Work (Official Audio)",
+"channel":"Fire Talk",
+"kind":"audio",
 "embed":true
+}
 },
 "4ymUJhziZLrUZJ2uQVL6kf":{
 "n":3,
 "checked":"2026-10-21",
-"from":"YouTube search",
-"alts":[
-{
+"from":"John's list",
+"listId":"2fZAfaTfrFk",
 "id":"2fZAfaTfrFk",
 "title":"Hurts to Be Alive",
 "channel":"Whitmer Thomas - Topic",
-"score":103
-},
-{
-"id":"ZRkO1LgABIs",
-"title":"Whitmer Thomas performs \"Hurts to be Alive\" | AVC Sessions: House Shows",
-"channel":"The A.V. Club",
-"score":50
-},
-{
-"id":"eo5NTdUA9I0",
-"title":"Hurts to be Alive",
-"channel":"Sno Day",
-"score":40
-},
-{
-"id":"3CJUoSrDQi8",
-"title":"Whitmer Thomas - Stick Around (Official Video)",
-"channel":"whitmer thomas",
-"score":35
-}
-],
-"id":"2fZAfaTfrFk",
-"title":"Hurts to Be Alive",
-"channel":"Whitmer Thomas - Topic",
-"kind":"audio",
-"score":103,
-"why":[
-"title",
-"artist",
-"official channel"
-],
-"embed":true
+"embed":true,
+"kind":"audio"
 },
 "29Fam5ByZMf0lKBdEnNfnR":{
 "n":4,
 "checked":"2026-10-21",
-"from":"YouTube search",
-"alts":[
-{
-"id":"VExumTJ0mX0",
-"title":"Alex Cameron - \"Short King\" - The Vic (Chicago, IL) - 10/21/25",
-"channel":"RandomSliceofMusic",
-"score":65
-},
-{
-"id":"6utvKOd7R_g",
-"title":"Alex Cameron - Short King",
-"channel":"TheWesleyWillis",
-"score":65
-},
-{
-"id":"PiLyjl2TpPM",
-"title":"Alex Cameron Short King San Diego Oct 2025",
-"channel":"eat tucker",
-"score":65
-},
-{
-"id":"aG_zURd5rOE",
-"title":"Short King",
-"channel":"Release - Topic",
-"score":53
-}
-],
+"from":"John's list",
+"listId":"bT2eiag28wA",
+"id":"bT2eiag28wA",
+"title":"Alex Cameron - Sara Jo (Official Video)",
+"channel":"MYSHOWBACKTV",
+"embed":true,
+"kind":"video",
+"searched":{
 "id":"VExumTJ0mX0",
 "title":"Alex Cameron - \"Short King\" - The Vic (Chicago, IL) - 10/21/25",
 "channel":"RandomSliceofMusic",
 "kind":"other",
-"score":65,
-"why":[
-"title",
-"artist"
-],
 "embed":true
+}
 },
 "2zhOjOH2DvARkRcCvCo7DC":{
 "n":5,
 "checked":"2026-10-21",
-"from":"YouTube search",
-"alts":[
-{
+"from":"John's list",
+"listId":"vJt0sBWU7WY",
 "id":"vJt0sBWU7WY",
 "title":"Valentine",
 "channel":"Fiona Apple - Topic",
-"score":103
-},
-{
-"id":"oDfSA4VloPg",
-"title":"Fiona Apple :: Valentine :: Bowery Ballroom NYC 3.26.12",
-"channel":"Erika Bogner",
-"score":65
-},
-{
-"id":"MtRYV_jjXoY",
-"title":"fiona apple - valentine",
-"channel":"deer vs headlights",
-"score":65
-},
-{
-"id":"DtpTc6S01fs",
-"title":"Fiona Apple - Valentine",
-"channel":"Priscila PBN",
-"score":65
-}
-],
-"id":"vJt0sBWU7WY",
-"title":"Valentine",
-"channel":"Fiona Apple - Topic",
-"kind":"audio",
-"score":103,
-"why":[
-"title",
-"artist",
-"official channel"
-],
-"embed":true
+"embed":true,
+"kind":"audio"
 },
 "3UZRTwoPQhmD1KDqWmSdsy":{
 "n":6,
 "checked":"2026-10-21",
-"from":"YouTube search",
-"alts":[
-{
-"id":"0Rc17efBYW8",
-"title":"Dance Your Life Away (Extended Mix)",
-"channel":"audiobooks - Topic",
-"score":103
-},
-{
-"id":"89NzSE1fO3Q",
-"title":"Dance Your Life Away (Edit)",
-"channel":"audiobooks - Topic",
-"score":103
-},
-{
+"from":"John's list",
+"listId":"gg_UQRA61o8",
 "id":"gg_UQRA61o8",
 "title":"Dance Your Life Away",
 "channel":"audiobooks",
-"score":95
-},
-{
-"id":"9jImR2LVusM",
-"title":"audiobooks - Dance Your Life Away",
-"channel":"Jocelyn Allen",
-"score":65
-}
-],
+"embed":true,
+"kind":"other",
+"searched":{
 "id":"0Rc17efBYW8",
 "title":"Dance Your Life Away (Extended Mix)",
 "channel":"audiobooks - Topic",
 "kind":"audio",
-"score":103,
-"why":[
-"title",
-"artist",
-"official channel"
-],
 "embed":true
+}
 },
 "4x4ja0ulDFFtfjB1ygExa2":{
 "n":7,
 "checked":"2026-10-21",
-"from":"YouTube search",
-"alts":[
-{
+"from":"John's list",
+"listId":"ud5eYbdI9mA",
 "id":"ud5eYbdI9mA",
 "title":"Ohtis - Schatze (feat. Stef Chura) [Official Music Video]",
 "channel":"Saddle Creek",
-"score":85
-},
-{
-"id":"5fPik8hkSOw",
-"title":"Ohtis - Schatze (feat. Stef Chura)",
-"channel":"David Dean Burkhart",
-"score":65
-},
-{
-"id":"jPxFqZdLN14",
-"title":"Ohtis - Schatze (feat. Stef Chura) Alternative Rock",
-"channel":"DSRAZ",
-"score":65
-},
-{
-"id":"tsx49zPwsVE",
-"title":"Ohtis - Schatze (feat. Stef Chura)",
-"channel":"Indie/Rock Playlist",
-"score":65
-}
-],
-"id":"ud5eYbdI9mA",
-"title":"Ohtis - Schatze (feat. Stef Chura) [Official Music Video]",
-"channel":"Saddle Creek",
-"kind":"video",
-"score":85,
-"why":[
-"title",
-"artist",
-"official video"
-],
-"embed":true
+"embed":true,
+"kind":"video"
 },
 "0PFVZNMRc3Z8TC3BVn2Dln":{
 "n":8,
 "checked":"2026-10-21",
-"from":"YouTube search",
-"alts":[
-{
+"from":"John's list",
+"listId":"iZPc6WNmjgw",
 "id":"iZPc6WNmjgw",
 "title":"Rubblebucket - \"Carousel Ride\" (Official Music Video)",
 "channel":"Rubblebucket",
-"score":115
-},
-{
-"id":"QirwI-p0ZP4",
-"title":"Rubblebucket - \"Carousel Ride\"",
-"channel":"Rubblebucket",
-"score":95
-},
-{
-"id":"-sQupj6b6uw",
-"title":"\"Carousel Ride\" Acoustic",
-"channel":"Rubblebucket",
-"score":95
-},
-{
-"id":"ThyhJuvn2fA",
-"title":"Rubblebucket - Carousel Ride - 1/9/2016 - Paste Studios, New York, NY",
-"channel":"Paste Magazine",
-"score":65
-}
-],
-"id":"iZPc6WNmjgw",
-"title":"Rubblebucket - \"Carousel Ride\" (Official Music Video)",
-"channel":"Rubblebucket",
-"kind":"video",
-"score":115,
-"why":[
-"title",
-"artist",
-"official channel",
-"official video"
-],
-"embed":true
+"embed":true,
+"kind":"video"
 },
 "5gSwQihHUXvC5H4SBCo03D":{
 "n":9,
 "checked":"2026-10-21",
-"from":"YouTube search",
-"alts":[
-{
+"from":"John's list",
+"listId":"34DL0Ai4OZ8",
 "id":"34DL0Ai4OZ8",
 "title":"Paul Simon - Can't Run But (Official Audio)",
 "channel":"PaulSimonVEVO",
-"score":103
-},
-{
-"id":"znfNpN6rfoM",
-"title":"Can't Run But",
-"channel":"Paul Simon - Topic",
-"score":103
-},
-{
-"id":"Ux1sasYKbus",
-"title":"Paul Simon - Can't Run But (Live at B.A.M. Majestic Theater Brooklyn, NY 2008)",
-"channel":"The Mosh Pit - Topic",
-"score":78
-},
-{
-"id":"r0bjMnGQDt8",
-"title":"Paul Simon - Can't run but",
-"channel":"enlufs",
-"score":65
-}
-],
-"id":"34DL0Ai4OZ8",
-"title":"Paul Simon - Can't Run But (Official Audio)",
-"channel":"PaulSimonVEVO",
-"kind":"audio",
-"score":103,
-"why":[
-"title",
-"artist",
-"official channel"
-],
-"embed":true
+"embed":true,
+"kind":"audio"
 },
 "3OZzMeazGgm3HnTQXRsXAk":{
 "n":10,
@@ -421,49 +195,26 @@
 "official channel",
 "official video"
 ],
+"embed":true,
+"listId":"0Ij2gWljijw",
+"list":{
+"id":"0Ij2gWljijw",
+"title":"Be the Wheel",
+"channel":"Theo Katzman - Topic",
+"kind":"audio",
 "embed":true
+}
 },
 "2aBSFHjDOewbd4mdqhwTAb":{
 "n":11,
 "checked":"2026-10-21",
-"from":"YouTube search",
-"alts":[
-{
+"from":"John's list",
+"listId":"dTB-uwAd0v8",
 "id":"dTB-uwAd0v8",
 "title":"Tele Novella - Eggs in one Basket (Official Music Video)",
 "channel":"Kill Rock Stars",
-"score":85
-},
-{
-"id":"aL8l9ExmUx4",
-"title":"Eggs in One Basket  Tele Novella Official Music Video",
-"channel":"Wicked Monkey",
-"score":85
-},
-{
-"id":"hOAHen2LjP4",
-"title":"Tele Novella - Eggs in One Basket (official video) (Greek subs)",
-"channel":"Spyros Perdiou",
-"score":85
-},
-{
-"id":"htwsqk71ptc",
-"title":"Tele Novella - Eggs in one Basket - Gothic Theatre - Denver, Colorado - 9-10-2025",
-"channel":"Mike (MAWT Designs)",
-"score":65
-}
-],
-"id":"dTB-uwAd0v8",
-"title":"Tele Novella - Eggs in one Basket (Official Music Video)",
-"channel":"Kill Rock Stars",
-"kind":"video",
-"score":85,
-"why":[
-"title",
-"artist",
-"official video"
-],
-"embed":true
+"embed":true,
+"kind":"video"
 },
 "1kQToxrczVpLtYdssdOsrr":{
 "n":12,
@@ -505,7 +256,15 @@
 "artist",
 "official video"
 ],
+"embed":true,
+"listId":"qWDJIwqCXi4",
+"list":{
+"id":"qWDJIwqCXi4",
+"title":"Tom Waits - \"Downtown Train\"",
+"channel":"Tom Waits",
+"kind":"other",
 "embed":true
+}
 },
 "4fZgmYwkxfeSSIK9wTdg6N":{
 "n":13,
@@ -548,7 +307,15 @@
 "official channel",
 "official video"
 ],
+"embed":true,
+"listId":"1kKkDQFQ-eQ",
+"list":{
+"id":"1kKkDQFQ-eQ",
+"title":"Divorce - Checking Out",
+"channel":"Red Dog Music",
+"kind":"other",
 "embed":true
+}
 },
 "5ClqcvP4dYDDX6Zv3jPQD1":{
 "n":14,
@@ -591,92 +358,37 @@
 "official channel",
 "official video"
 ],
+"embed":true,
+"listId":"NXpYoiCOuLE",
+"list":{
+"id":"NXpYoiCOuLE",
+"title":"Twin Shadow - Saturdays (feat HAIM) [Official HD Audio]",
+"channel":"Twin Shadow",
+"kind":"other",
 "embed":true
+}
 },
 "1FNS17AcgHo7Uol0Li9Xfx":{
 "n":15,
 "checked":"2026-10-21",
-"from":"YouTube search",
-"alts":[
-{
+"from":"John's list",
+"listId":"PVMIHrikhDk",
 "id":"PVMIHrikhDk",
 "title":"The Blue Nile - I Love This Life (Official Audio)",
 "channel":"The Blue Nile Official",
-"score":103
-},
-{
-"id":"h3vit0yatY8",
-"title":"The Blue Nile • I Love This Life (1981)",
-"channel":"sidewaysoul",
-"score":65
-},
-{
-"id":"tP7q6IzqMrw",
-"title":"The Blue Nile - I Love this life",
-"channel":"MrSherco12",
-"score":65
-},
-{
-"id":"Rzw3d1UrlgY",
-"title":"The Blue Nile - I Love This Life (Full Single)",
-"channel":"socky",
-"score":65
-}
-],
-"id":"PVMIHrikhDk",
-"title":"The Blue Nile - I Love This Life (Official Audio)",
-"channel":"The Blue Nile Official",
-"kind":"audio",
-"score":103,
-"why":[
-"title",
-"artist",
-"official channel"
-],
-"embed":true
+"embed":true,
+"kind":"audio"
 },
 "5EG2jND3cGjpoh0YCOjQ9T":{
 "n":16,
 "checked":"2026-10-21",
-"from":"YouTube search",
-"alts":[
-{
+"from":"John's list",
+"listId":"Mpf0qymjZvU",
 "id":"Mpf0qymjZvU",
 "title":"Tennis - In The Morning I'll Be Better (Official Video)",
 "channel":"Tennis",
-"score":115
-},
-{
-"id":"gGTWXcndhzo",
-"title":"Tennis - In The Morning I'll Be Better",
-"channel":"Velvet Zen FM",
-"score":65
-},
-{
-"id":"MRS-N2rkxhY",
-"title":"Tennis - In The Morning I'll Be Better",
-"channel":"WNRN",
-"score":65
-},
-{
-"id":"jfzYzFTgmdY",
-"title":"Tennis - In the Morning I'll Be Better (Brooklyn Steel, NYC 11/11/21)",
-"channel":"IronChefWong",
-"score":65
-}
-],
-"id":"Mpf0qymjZvU",
-"title":"Tennis - In The Morning I'll Be Better (Official Video)",
-"channel":"Tennis",
-"kind":"video",
-"score":115,
-"why":[
-"title",
-"artist",
-"official channel",
-"official video"
-],
-"embed":true
+"embed":true,
+"kind":"video"
 },
 "3zwxnzanbTdJhsrR8JvT3j":{
 "n":17,
@@ -718,7 +430,15 @@
 "artist",
 "official video"
 ],
+"embed":true,
+"listId":"FK2Jwh0MhaU",
+"list":{
+"id":"FK2Jwh0MhaU",
+"title":"Rush Hour",
+"channel":"Jane Wiedlin - Topic",
+"kind":"audio",
 "embed":true
+}
 },
 "4dRqYKhLVujxiBXcq50YzG":{
 "n":18,
@@ -761,216 +481,98 @@
 "official channel",
 "official video"
 ],
+"embed":true,
+"listId":"KIGNNOZ0948",
+"list":{
+"id":"KIGNNOZ0948",
+"title":"Vampire Weekend - This Life (Official Audio)",
+"channel":"VampireWeekendVEVO",
+"kind":"audio",
 "embed":true
+}
 },
 "3kJXrEVUCdPQ3e4e5k9OHC":{
 "n":19,
 "checked":"2026-10-21",
-"from":"YouTube search",
-"alts":[
-{
-"id":"3fi0avAxrlE",
-"title":"Dwight Twilley Band - Looking For The Magic (1977)",
-"channel":"senswinthecup",
-"score":65
-},
-{
-"id":"wKEnO5crVos",
-"title":"Dwight Twilley Band, \"Looking for the Magic\"",
-"channel":"Queenigma",
-"score":65
-},
-{
-"id":"zY_VWbn_pCA",
-"title":"Dwight Twilley Band - Looking For The Magic (USA 1977)",
-"channel":"Abc New Wave",
-"score":65
-},
-{
-"id":"CjCCzSwT9T4",
-"title":"Dwight Twilley Band - Looking for the Magic",
-"channel":"Ara Araujjus",
-"score":65
-}
-],
+"from":"John's list",
+"listId":"VQ6CflnSxyo",
+"id":"VQ6CflnSxyo",
+"title":"Looking For The Magic",
+"channel":"Dwight Twilley - Topic",
+"embed":true,
+"kind":"audio",
+"searched":{
 "id":"3fi0avAxrlE",
 "title":"Dwight Twilley Band - Looking For The Magic (1977)",
 "channel":"senswinthecup",
 "kind":"other",
-"score":65,
-"why":[
-"title",
-"artist"
-],
 "embed":true
+}
 },
 "0jhDyfdBiRfMi3jh9z2S0U":{
 "n":20,
 "checked":"2026-10-21",
-"from":"YouTube search",
-"alts":[
-{
-"id":"RzsUVnDI3Ew",
-"title":"100% Endurance",
-"channel":"Yard Act - Topic",
-"score":103
-},
-{
+"from":"John's list",
+"listId":"phSkbBZelCw",
 "id":"phSkbBZelCw",
 "title":"Yard Act - 100% Endurance",
 "channel":"YardActVEVO",
-"score":95
-},
-{
-"id":"b3HSa4CLO8k",
-"title":"Yard Act - 100% Endurance (Elton John Version)",
-"channel":"Yard Act",
-"score":95
-},
-{
-"id":"R3aA71TgTNE",
-"title":"Yard Act - 100% Endurance",
-"channel":"L'enfant Terrible",
-"score":65
-}
-],
+"embed":true,
+"kind":"other",
+"searched":{
 "id":"RzsUVnDI3Ew",
 "title":"100% Endurance",
 "channel":"Yard Act - Topic",
 "kind":"audio",
-"score":103,
-"why":[
-"title",
-"artist",
-"official channel"
-],
 "embed":true
+}
 },
 "0wTtJ4sR7OnlqB26YiNK56":{
 "n":21,
 "checked":"2026-10-21",
-"from":"YouTube search",
-"alts":[
-{
+"from":"John's list",
+"listId":"cJ_BRDrb5WE",
 "id":"cJ_BRDrb5WE",
 "title":"Badly Drawn Boy - Is This A Dream? (Official Video)",
 "channel":"Badly Drawn Boy",
-"score":115
-},
-{
-"id":"DbNOgDgf7sU",
-"title":"BADLY DRAWN BOY ‘IS THIS A DREAM?’ NEW TRACK @ ROUNDHOUSE, LDN 25.1.20",
-"channel":"fromoutofnowhereis",
-"score":65
-},
-{
-"id":"HMtsJZB1KdM",
-"title":"Badly Drawn Boy - Is This A Dream? (Live On The Chris Evans Breakfast Show with Sky)",
-"channel":"Virgin Radio UK",
-"score":50
-},
-{
-"id":"07XsMkymyOQ",
-"title":"Badly Drawn Boy - Tony Wilson Said",
-"channel":"Badly Drawn Boy",
-"score":15
-}
-],
-"id":"cJ_BRDrb5WE",
-"title":"Badly Drawn Boy - Is This A Dream? (Official Video)",
-"channel":"Badly Drawn Boy",
-"kind":"video",
-"score":115,
-"why":[
-"title",
-"artist",
-"official channel",
-"official video"
-],
-"embed":true
+"embed":true,
+"kind":"video"
 },
 "3POpqoO9i1UB6WzYZ0MvOC":{
 "n":22,
 "checked":"2026-10-21",
-"from":"YouTube search",
-"alts":[
-{
-"id":"ItIEXbqzhGg",
-"title":"The Execution Of All Things",
-"channel":"Rilo Kiley - Topic",
-"score":103
-},
-{
-"id":"azYjgw3Um54",
-"title":"The Execution Of All Things",
-"channel":"Rilo Kiley - Topic",
-"score":103
-},
-{
-"id":"ldier3cvquU",
-"title":"The Execution of All Things [Rilo Kiley, 2002]",
-"channel":"Frill Picks",
-"score":65
-},
-{
-"id":"7oWjOzQaqxo",
-"title":"03 - The Execution of All Things - Rilo Kiley",
-"channel":"sammymuttt",
-"score":65
-}
-],
+"from":"John's list",
+"listId":"xDzoDxXKctI",
+"id":"xDzoDxXKctI",
+"title":"The Execution Of All Things - Rilo Kiley - From the 2002 Album - 'The Execution Of All Things'",
+"channel":"Rock Of London - Classic Rock to Mod to Indie",
+"embed":true,
+"kind":"other",
+"searched":{
 "id":"ItIEXbqzhGg",
 "title":"The Execution Of All Things",
 "channel":"Rilo Kiley - Topic",
 "kind":"audio",
-"score":103,
-"why":[
-"title",
-"artist",
-"official channel"
-],
 "embed":true
+}
 },
 "1G4aMGkzJV5yqF3XRHNqWL":{
 "n":23,
 "checked":"2026-10-21",
-"from":"YouTube search",
-"alts":[
-{
-"id":"XteQaGOkCJo",
-"title":"Zohra - Badala Zamana (Habibi Funk 015)",
-"channel":"Galactocerebrósido",
-"score":65
-},
-{
+"from":"John's list",
+"listId":"Z3SImqHN06E",
 "id":"Z3SImqHN06E",
 "title":"Habibi Funk // حبيبي فنك : Zohra - Badala Zamana (Algeria, late 1970s, sung in Chaoui)",
 "channel":"Habibi Funk",
-"score":50
-},
-{
-"id":"M_xmqiwJBC4",
-"title":"Habibi Funk // حبيبي فنك : Zohra - Badala Zamana (Studio performance, late 1970s)",
-"channel":"Habibi Funk",
-"score":35
-},
-{
-"id":"3g1uDuA-nBw",
-"title":"Badala Zamana",
-"channel":"Zohra - Topic",
-"score":23
-}
-],
+"embed":true,
+"kind":"other",
+"searched":{
 "id":"XteQaGOkCJo",
 "title":"Zohra - Badala Zamana (Habibi Funk 015)",
 "channel":"Galactocerebrósido",
 "kind":"other",
-"score":65,
-"why":[
-"title",
-"artist"
-],
 "embed":true
+}
 },
 "0lbPLoj61m0e7jPMdGF5yK":{
 "n":24,
@@ -1012,92 +614,37 @@
 "artist",
 "official video"
 ],
+"embed":true,
+"listId":"urUeb3aYqK0",
+"list":{
+"id":"urUeb3aYqK0",
+"title":"2020 - SUUNS",
+"channel":"DianaCrayola",
+"kind":"other",
 "embed":true
+}
 },
 "3bdZcA30lsJeS61B6UBsWc":{
 "n":25,
 "checked":"2026-10-21",
-"from":"YouTube search",
-"alts":[
-{
+"from":"John's list",
+"listId":"QlJhndmnX7g",
 "id":"QlJhndmnX7g",
 "title":"Drugs (Official Music Video)",
 "channel":"The Philharmonik",
-"score":115
-},
-{
-"id":"9K4aV72j0Dw",
-"title":"Drugs (Live at NPR's Tiny Desk)",
-"channel":"The Philharmonik - Topic",
-"score":103
-},
-{
-"id":"7coe-Ho9km8",
-"title":"The Philharmonik - Drugs (Live in Toronto 2019)",
-"channel":"StacksMaxwell",
-"score":50
-},
-{
-"id":"bDsbJghf0dw",
-"title":"The Philharmonik - Drugs (Karaoke)",
-"channel":"NickyDee Karaoke",
-"score":20
-}
-],
-"id":"QlJhndmnX7g",
-"title":"Drugs (Official Music Video)",
-"channel":"The Philharmonik",
-"kind":"video",
-"score":115,
-"why":[
-"title",
-"artist",
-"official channel",
-"official video"
-],
-"embed":true
+"embed":true,
+"kind":"video"
 },
 "2h9uCNUYH0mJkeEwQChtT8":{
 "n":26,
 "checked":"2026-10-21",
-"from":"YouTube search",
-"alts":[
-{
+"from":"John's list",
+"listId":"l7fGIAWMnD4",
 "id":"l7fGIAWMnD4",
 "title":"Love Story (You and Me)",
 "channel":"Randy Newman - Topic",
-"score":103
-},
-{
-"id":"rs6qrJd7jgc",
-"title":"Love Story (You and Me) (Live)",
-"channel":"Randy Newman - Topic",
-"score":103
-},
-{
-"id":"ILNz6M_ps_k",
-"title":"Love Story (You & Me)",
-"channel":"Randy Newman - Topic",
-"score":103
-},
-{
-"id":"jYMr6oXGy84",
-"title":"Love Story (You And Me) (Live)",
-"channel":"Randy Newman - Topic",
-"score":103
-}
-],
-"id":"l7fGIAWMnD4",
-"title":"Love Story (You and Me)",
-"channel":"Randy Newman - Topic",
-"kind":"audio",
-"score":103,
-"why":[
-"title",
-"artist",
-"official channel"
-],
-"embed":true
+"embed":true,
+"kind":"audio"
 },
 "0pJW1Xw3aY4Eh6k5iuBkfI":{
 "n":27,
@@ -1140,174 +687,59 @@
 "official channel",
 "official video"
 ],
+"embed":true,
+"listId":"UQByi9IHiZo",
+"list":{
+"id":"UQByi9IHiZo",
+"title":"Phoebe Bridgers - I Know The End",
+"channel":"David Dean Burkhart",
+"kind":"other",
 "embed":true
+}
 },
 "0L2ljTJonS78v8qSlpxM0d":{
 "n":28,
 "checked":"2026-10-21",
-"from":"YouTube search",
-"alts":[
-{
+"from":"John's list",
+"listId":"8MhwjtkyI2w",
 "id":"8MhwjtkyI2w",
 "title":"High On A Rocky Ledge",
 "channel":"Moondog - Topic",
-"score":103
-},
-{
-"id":"Dijb-zouJd8",
-"title":"Moondog - High On A Rocky Ledge (1978)",
-"channel":"Jean-Philippe Boisbriand",
-"score":65
-},
-{
-"id":"-wzPb8nZmY8",
-"title":"High On A Rocky Ledge - Moondog",
-"channel":"Shane Bordoli",
-"score":65
-},
-{
-"id":"HwixhGdOUak",
-"title":"High On A Rocky Ledge - Moondog",
-"channel":"Joshua Gerling",
-"score":65
-}
-],
-"id":"8MhwjtkyI2w",
-"title":"High On A Rocky Ledge",
-"channel":"Moondog - Topic",
-"kind":"audio",
-"score":103,
-"why":[
-"title",
-"artist",
-"official channel"
-],
-"embed":true
+"embed":true,
+"kind":"audio"
 },
 "31ijr2O0SsuzAPVDLnq3XV":{
 "n":29,
 "checked":"2026-10-21",
-"from":"YouTube search",
-"alts":[
-{
+"from":"John's list",
+"listId":"V5wsT9StFS4",
 "id":"V5wsT9StFS4",
 "title":"Frankie Valli & The Four Seasons - The Night (Official Audio)",
 "channel":"RHINO",
-"score":73
-},
-{
-"id":"XsqmqxTxXn8",
-"title":"Northern Soul At The Proms 2023: The Night - Darrell Smith (Frankie Valli & The Four Seasons)",
-"channel":"Tom Hawk",
-"score":65
-},
-{
-"id":"LFdD5E7N0NU",
-"title":"FRANKIE VALLI & THE FOUR SEASONS - THE NIGHT",
-"channel":"COLOURING THE PAST",
-"score":65
-},
-{
-"id":"JfKz1PYsY78",
-"title":"Frankie Valli & The Four Seasons - The Night",
-"channel":"brico",
-"score":65
-}
-],
-"id":"V5wsT9StFS4",
-"title":"Frankie Valli & The Four Seasons - The Night (Official Audio)",
-"channel":"RHINO",
-"kind":"audio",
-"score":73,
-"why":[
-"title",
-"artist"
-],
-"embed":true
+"embed":true,
+"kind":"audio"
 },
 "4oyQ6vDzJMFYhmO9p5qrjE":{
 "n":30,
 "checked":"2026-10-21",
-"from":"YouTube search",
-"alts":[
-{
+"from":"John's list",
+"listId":"5PDoQgXhlF4",
 "id":"5PDoQgXhlF4",
 "title":"DJ Mehdi - Pocket Piano (Official Audio)",
 "channel":"Ed Banger Records",
-"score":73
-},
-{
-"id":"6p7AyP7aq-o",
-"title":"DJ Mehdi - Pocket Piano (Official Audio)",
-"channel":"Ed Banger Records",
-"score":73
-},
-{
-"id":"oflT81_xJyc",
-"title":"DJ Mehdi - POCKET PIANO - version longue 2026",
-"channel":"MemoZiq",
-"score":65
-},
-{
-"id":"zIxvCwo6PnQ",
-"title":"Giga Papaskiri - Pocket Piano (Original Mix) Rip Dj Mehdi!",
-"channel":"Giga Papaskiri",
-"score":65
-}
-],
-"id":"5PDoQgXhlF4",
-"title":"DJ Mehdi - Pocket Piano (Official Audio)",
-"channel":"Ed Banger Records",
-"kind":"audio",
-"score":73,
-"why":[
-"title",
-"artist"
-],
-"embed":true
+"embed":true,
+"kind":"audio"
 },
 "4bhA5X3qMEcTycEoW6BvJ2":{
 "n":31,
 "checked":"2026-10-21",
-"from":"YouTube search",
-"alts":[
-{
+"from":"John's list",
+"listId":"c_xnLmRz6XM",
 "id":"c_xnLmRz6XM",
 "title":"Pulp - Got to Have Love (Official Video)",
 "channel":"Pulp",
-"score":115
-},
-{
-"id":"fqlk86AXluw",
-"title":"Got to Have Love (Live)",
-"channel":"Pulp - Topic",
-"score":103
-},
-{
-"id":"YDIDQjT5GzU",
-"title":"Pulp - Got To Have Love (Radio 2 In Concert)",
-"channel":"4K Pulp - Lives & Rare",
-"score":65
-},
-{
-"id":"IXoUswg0jgQ",
-"title":"Pulp - Got To Have Love - The 02, London - 13-06-2025",
-"channel":"1i2c",
-"score":65
-}
-],
-"id":"c_xnLmRz6XM",
-"title":"Pulp - Got to Have Love (Official Video)",
-"channel":"Pulp",
-"kind":"video",
-"score":115,
-"why":[
-"title",
-"artist",
-"official channel",
-"official video"
-],
-"embed":true
+"embed":true,
+"kind":"video"
 },
 "4FMsajq8hKiOmcJ7UzOhag":{
 "n":32,
@@ -1350,91 +782,51 @@
 "official channel",
 "official video"
 ],
+"embed":true,
+"listId":"2Jt7gz7AbLM",
+"list":{
+"id":"2Jt7gz7AbLM",
+"title":"Space Age Love Song (2023 Remaster)",
+"channel":"A Flock Of Seagulls - Topic",
+"kind":"audio",
 "embed":true
+}
 },
 "7JVhqngi3ICalifdkpzaCp":{
 "n":33,
 "checked":"2026-10-21",
-"from":"YouTube search",
-"alts":[
-{
-"id":"j--kEirDBaA",
-"title":"Greater Expectations",
-"channel":"Wesley Gonzalez - Topic",
-"score":103
-},
-{
+"from":"John's list",
+"listId":"EG_4d1x3Wi4",
 "id":"EG_4d1x3Wi4",
 "title":"WESLEY GONZALEZ - Greater Expectations (with Rose Elinor Dougall)",
 "channel":"WesleyGonzalezVEVO",
-"score":95
-},
-{
-"id":"MW5ud5peUY4",
-"title":"Wesley Gonzalez plays \"Greater Expectations\". Newcastle upon Tyne, 23rd March 2022.",
-"channel":"Chris Trew",
-"score":65
-},
-{
-"id":"28XJ35gEaTY",
-"title":"Wesley Gonzalez...Greater Expectations...Head Of Steam Newcastle 18 Nov 2022",
-"channel":"Tony Maddison",
-"score":65
-}
-],
+"embed":true,
+"kind":"other",
+"searched":{
 "id":"j--kEirDBaA",
 "title":"Greater Expectations",
 "channel":"Wesley Gonzalez - Topic",
 "kind":"audio",
-"score":103,
-"why":[
-"title",
-"artist",
-"official channel"
-],
 "embed":true
+}
 },
 "3uPEZYXmeUgRFBywQCndKj":{
 "n":34,
 "checked":"2026-10-21",
-"from":"YouTube search",
-"alts":[
-{
-"id":"0c15Tga0ehE",
-"title":"I Carried This for Years",
-"channel":"Ibeyi - Topic",
-"score":103
-},
-{
-"id":"h3VgTJz8d94",
-"title":"Ibeyi - I Carried This for Years - 2019 Pitchfork Music Festival Chicago",
-"channel":"imstld",
-"score":65
-},
-{
+"from":"John's list",
+"listId":"OcqOU1e15V0",
 "id":"OcqOU1e15V0",
 "title":"Ibeyi - I Carried This for Years @ Brooklyn Steel, NY 2017",
 "channel":"hellspawn3000",
-"score":65
-},
-{
-"id":"x6yhON7CnVg",
-"title":"Ibeyi| I Carried This For Years|@svatavakobzova",
-"channel":"Svatava Kalab Kobzova",
-"score":65
-}
-],
+"embed":true,
+"kind":"other",
+"searched":{
 "id":"0c15Tga0ehE",
 "title":"I Carried This for Years",
 "channel":"Ibeyi - Topic",
 "kind":"audio",
-"score":103,
-"why":[
-"title",
-"artist",
-"official channel"
-],
 "embed":true
+}
 },
 "1A2BT8JYVRjsKdswwvWXG6":{
 "n":35,
@@ -1477,7 +869,15 @@
 "official channel",
 "official video"
 ],
+"embed":true,
+"listId":"T92EJVfJdU4",
+"list":{
+"id":"T92EJVfJdU4",
+"title":"Moses Sumney - Cut Me [Official Audio]",
+"channel":"Moses Sumney",
+"kind":"audio",
 "embed":true
+}
 },
 "5IXTT9RvcVupmzLTFqIInj":{
 "n":36,
@@ -1520,7 +920,15 @@
 "official channel",
 "official video"
 ],
+"embed":true,
+"listId":"n48vQgfXygc",
+"list":{
+"id":"n48vQgfXygc",
+"title":"St. Vincent - New York",
+"channel":"St. Vincent",
+"kind":"other",
 "embed":true
+}
 },
 "0Z7b5GlC70FAES1YduhhqQ":{
 "n":37,
@@ -1562,49 +970,26 @@
 "artist",
 "official video"
 ],
+"embed":true,
+"listId":"Hg4UCBKIHGA",
+"list":{
+"id":"Hg4UCBKIHGA",
+"title":"Sleigh Bells - Rill Rill",
+"channel":"Ryan Seale",
+"kind":"other",
 "embed":true
+}
 },
 "1g422OzRyFhcRH1yMWaW14":{
 "n":38,
 "checked":"2026-10-21",
-"from":"YouTube search",
-"alts":[
-{
+"from":"John's list",
+"listId":"2OgdDhGeIOI",
 "id":"2OgdDhGeIOI",
 "title":"Black Flowers",
 "channel":"Yo La Tengo - Topic",
-"score":103
-},
-{
-"id":"Blq1IaATnGY",
-"title":"Yo La Tengo - Black Flowers (@Hard Club, Porto, 7 fevereiro 2019)",
-"channel":"SHR Live Music",
-"score":65
-},
-{
-"id":"7rDgU2A_Mlk",
-"title":"Yo La Tengo - Black flowers",
-"channel":"Indieexploration",
-"score":65
-},
-{
-"id":"-5oL0bMuHIQ",
-"title":"Yo La Tengo | Black Flowers - Bowery Ballroom, NYC 12/24/2022",
-"channel":"roolin",
-"score":65
-}
-],
-"id":"2OgdDhGeIOI",
-"title":"Black Flowers",
-"channel":"Yo La Tengo - Topic",
-"kind":"audio",
-"score":103,
-"why":[
-"title",
-"artist",
-"official channel"
-],
-"embed":true
+"embed":true,
+"kind":"audio"
 },
 "3SPcBPzvbmWLl8NU5efx4W":{
 "n":39,
@@ -1646,219 +1031,70 @@
 "artist",
 "official video"
 ],
+"embed":true,
+"listId":"77R1Wp6Y_5Y",
+"list":{
+"id":"77R1Wp6Y_5Y",
+"title":"Electric Light Orchestra - Telephone Line (Audio)",
+"channel":"ELOVEVO",
+"kind":"audio",
 "embed":true
+}
 },
 "09IKRwPeAYjmX1iABuP6fn":{
 "n":40,
 "checked":"2026-10-21",
-"from":"YouTube search",
-"alts":[
-{
+"from":"John's list",
+"listId":"As8vGWnfqBU",
 "id":"As8vGWnfqBU",
 "title":"Govinda Jai Jai",
 "channel":"Alice Coltrane - Topic",
-"score":103
-},
-{
-"id":"Oi5Cc6_1fos",
-"title":"Govinda Jai Jai",
-"channel":"Alice Coltrane - Topic",
-"score":103
-},
-{
-"id":"gVP8KFX3hWI",
-"title":"Govinda Jai Jai",
-"channel":"Alice Coltrane - Topic",
-"score":103
-},
-{
-"id":"4KJHb9pMzx0",
-"title":"✧.* Alice Coltrane • Govinda Jai Jai • 1977 ✧.*",
-"channel":"Grooove Archive",
-"score":65
-}
-],
-"id":"As8vGWnfqBU",
-"title":"Govinda Jai Jai",
-"channel":"Alice Coltrane - Topic",
-"kind":"audio",
-"score":103,
-"why":[
-"title",
-"artist",
-"official channel"
-],
-"embed":true
+"embed":true,
+"kind":"audio"
 },
 "5Up7kKnSg7Z1YHRToUbZ1p":{
 "n":41,
 "checked":"2026-10-21",
-"from":"YouTube search",
-"alts":[
-{
+"from":"John's list",
+"listId":"hGY_PkpODJM",
 "id":"hGY_PkpODJM",
 "title":"Miraculous Weekend",
 "channel":"Peter Ivers - Topic",
-"score":103
-},
-{
-"id":"4YsCk1mD2CQ",
-"title":"Peter Ivers - Miraculous Weekend",
-"channel":"brett stano",
-"score":65
-},
-{
-"id":"H6udzBFUPFM",
-"title":"Miraculous Weekend - Demo - Peter Ivers Roderick Falconer Van Dyke Parks Richard Green Marty Krystal",
-"channel":"l1n3",
-"score":65
-},
-{
-"id":"oI9-WpcL5Ks",
-"title":"PETER IVERS - Miraculous Weekend",
-"channel":"KickItJane",
-"score":65
-}
-],
-"id":"hGY_PkpODJM",
-"title":"Miraculous Weekend",
-"channel":"Peter Ivers - Topic",
-"kind":"audio",
-"score":103,
-"why":[
-"title",
-"artist",
-"official channel"
-],
-"embed":true
+"embed":true,
+"kind":"audio"
 },
 "7Gk8IPlFTLUcoIH3mtASI0":{
 "n":42,
 "checked":"2026-10-21",
-"from":"YouTube search",
-"alts":[
-{
+"from":"John's list",
+"listId":"3x2xtPV9oxQ",
 "id":"3x2xtPV9oxQ",
 "title":"Daisy The Great x AJR - Record Player (Official Music Video)",
 "channel":"Daisy the Great",
-"score":115
-},
-{
-"id":"3EmwqHEy0Lg",
-"title":"the record player song by us !!!",
-"channel":"Daisy the Great",
-"score":95
-},
-{
-"id":"3Ag6EU_D6X4",
-"title":"Daisy The Great x AJR - Record Player - LIVE (Wyckoff Sessions)",
-"channel":"Daisy the Great",
-"score":80
-},
-{
-"id":"3qOIAefjaT0",
-"title":"Daisy the Great - The Record Player Song (NPR Tiny Desk Contest 2017)",
-"channel":"Daisy the Great",
-"score":80
-}
-],
-"id":"3x2xtPV9oxQ",
-"title":"Daisy The Great x AJR - Record Player (Official Music Video)",
-"channel":"Daisy the Great",
-"kind":"video",
-"score":115,
-"why":[
-"title",
-"artist",
-"official channel",
-"official video"
-],
-"embed":true
+"embed":true,
+"kind":"video"
 },
 "5dE8s6uWRGNc1Ac7y8rULq":{
 "n":43,
 "checked":"2026-10-21",
-"from":"YouTube search",
-"alts":[
-{
+"from":"John's list",
+"listId":"u8pVZ5hTGJQ",
 "id":"u8pVZ5hTGJQ",
 "title":"Goodbye Stranger (Remastered 2010)",
 "channel":"Supertramp - Topic",
-"score":103
-},
-{
-"id":"C3aJCQUk2pI",
-"title":"Goodbye Stranger (Remastered 2026)",
-"channel":"Supertramp - Topic",
-"score":103
-},
-{
-"id":"pJPMesAnsU8",
-"title":"Goodbye Stranger",
-"channel":"Supertramp - Topic",
-"score":103
-},
-{
-"id":"eVRxeAnHhc4",
-"title":"Supertramp - Goodbye Stranger (Official Audio)",
-"channel":"Supertramp ",
-"score":103
-}
-],
-"id":"u8pVZ5hTGJQ",
-"title":"Goodbye Stranger (Remastered 2010)",
-"channel":"Supertramp - Topic",
-"kind":"audio",
-"score":103,
-"why":[
-"title",
-"artist",
-"official channel"
-],
-"embed":true
+"embed":true,
+"kind":"audio"
 },
 "1acb8u70kClk6NjITaZyuG":{
 "n":44,
 "checked":"2026-10-21",
-"from":"YouTube search",
-"alts":[
-{
+"from":"John's list",
+"listId":"mv6AT9cqscE",
 "id":"mv6AT9cqscE",
 "title":"Rostam - \"Bike Dream\" [Official Music Video]",
 "channel":"Rostam",
-"score":115
-},
-{
-"id":"Srqu8KnikPU",
-"title":"BIKE DREAM - ROSTAM",
-"channel":"Color Creature",
-"score":65
-},
-{
-"id":"tSYufS8Z8u8",
-"title":"Rostam - \"Bike Dream\"",
-"channel":"KUTX Austin",
-"score":65
-},
-{
-"id":"OXx6nWEbRYs",
-"title":"Bike Dream - Rostam",
-"channel":"PsychLChic",
-"score":65
-}
-],
-"id":"mv6AT9cqscE",
-"title":"Rostam - \"Bike Dream\" [Official Music Video]",
-"channel":"Rostam",
-"kind":"video",
-"score":115,
-"why":[
-"title",
-"artist",
-"official channel",
-"official video"
-],
-"embed":true
+"embed":true,
+"kind":"video"
 },
 "5Ec7pcVTaHm5q7BGB35hiU":{
 "n":45,
@@ -1901,132 +1137,55 @@
 "official channel",
 "official video"
 ],
+"embed":true,
+"listId":"Amxw-eLGg2k",
+"list":{
+"id":"Amxw-eLGg2k",
+"title":"Wildman",
+"channel":"Sun Drug - Topic",
+"kind":"audio",
 "embed":true
+}
 },
 "72PoJMDfdaw9gGECgA9kTZ":{
 "n":46,
 "checked":"2026-10-21",
-"from":"YouTube search",
-"alts":[
-{
-"id":"IX2bE-OBtwk",
-"title":"Billy Preston - Nothing From Nothing • TopPop",
-"channel":"TopPop",
-"score":65
-},
-{
+"from":"John's list",
+"listId":"8HqyEHqEYho",
 "id":"8HqyEHqEYho",
 "title":"Billy Preston - Nothing From Nothing (1974)",
 "channel":"adamtrng",
-"score":65
-},
-{
-"id":"aj5DccgBYeM",
-"title":"Billy Preston - Nothing From Nothing",
-"channel":"OpDePlanken",
-"score":65
-},
-{
-"id":"On5R1sxgk94",
-"title":"Billy Preston: Nothing From Nothing - on Soul Train in 1974 (My \"Stereo Studio Sound\" Re-Edit)",
-"channel":"ilviolino1",
-"score":65
-}
-],
+"embed":true,
+"kind":"other",
+"searched":{
 "id":"IX2bE-OBtwk",
 "title":"Billy Preston - Nothing From Nothing • TopPop",
 "channel":"TopPop",
 "kind":"other",
-"score":65,
-"why":[
-"title",
-"artist"
-],
 "embed":true
+}
 },
 "2wFdAZ7IgvRnTRZ4OOPdGS":{
 "n":47,
 "checked":"2026-10-21",
-"from":"YouTube search",
-"alts":[
-{
+"from":"John's list",
+"listId":"NAz41Rtf68A",
 "id":"NAz41Rtf68A",
 "title":"The Work",
 "channel":"Issy Wood - Topic",
-"score":103
-},
-{
-"id":"QV29Nq-jFTk",
-"title":"How artist Issy Wood chooses what to paint",
-"channel":"Louisiana Channel",
-"score":-15
-},
-{
-"id":"7yFi2II0w6o",
-"title":"Issy Wood Featured at Carlos/Ishikawa Gallery in London",
-"channel":"London Paint Club",
-"score":-15
-},
-{
-"id":"QKtP6dhxdsQ",
-"title":"Issy Wood at Carlos/Ishikawa #contemporaryart #painting #artgallery",
-"channel":"London Paint Club",
-"score":-15
-}
-],
-"id":"NAz41Rtf68A",
-"title":"The Work",
-"channel":"Issy Wood - Topic",
-"kind":"audio",
-"score":103,
-"why":[
-"title",
-"artist",
-"official channel"
-],
-"embed":true
+"embed":true,
+"kind":"audio"
 },
 "6ECyOXQ2622F9WpFgRfHeK":{
 "n":48,
 "checked":"2026-10-21",
-"from":"YouTube search",
-"alts":[
-{
+"from":"John's list",
+"listId":"DwSy_mYXQwo",
 "id":"DwSy_mYXQwo",
 "title":"Zuta - Elvis",
 "channel":"Zuta",
-"score":95
-},
-{
-"id":"GxuhWAn6M2Y",
-"title":"Elvis jest już z nami od tygodnia i nie zwalnia tempa! #shorts",
-"channel":"Zuta",
-"score":95
-},
-{
-"id":"SRMsxf5uirY",
-"title":"Elvis odwiedził wczoraj DDTVN #shorts",
-"channel":"Zuta",
-"score":95
-},
-{
-"id":"rMTmYJNd-DA",
-"title":"Zuta - Elvis (live from Hydrozagadka)",
-"channel":"Zuta",
-"score":80
-}
-],
-"id":"DwSy_mYXQwo",
-"title":"Zuta - Elvis",
-"channel":"Zuta",
-"kind":"other",
-"score":95,
-"why":[
-"title",
-"artist",
-"official channel"
-],
-"embed":true
+"embed":true,
+"kind":"other"
 },
 "1cAHI9tJN6oHMdG4ghlQKY":{
 "n":49,
@@ -2068,49 +1227,33 @@
 "artist",
 "official video"
 ],
+"embed":true,
+"listId":"pYPJw8UZClw",
+"list":{
+"id":"pYPJw8UZClw",
+"title":"Bluer Than Blue (Remastered 2001)",
+"channel":"Michael Johnson - Topic",
+"kind":"audio",
 "embed":true
+}
 },
 "5Zpy2HR2vYLjlTQVd81DLH":{
 "n":50,
 "checked":"2026-10-21",
-"from":"YouTube search",
-"alts":[
-{
-"id":"mzwm7LUZCig",
-"title":"Paris 1919 (Remastered 2024)",
-"channel":"John Cale - Topic",
-"score":103
-},
-{
+"from":"John's list",
+"listId":"q5YHqWqhFkU",
 "id":"q5YHqWqhFkU",
 "title":"John Cale - Paris 1919",
 "channel":"SpaceOdyssee0",
-"score":65
-},
-{
-"id":"j3O-gL4JQps",
-"title":"John Cale - Paris 1919 (Brussels, 1992)",
-"channel":"fglmusic",
-"score":65
-},
-{
-"id":"o9LV-RRsdnE",
-"title":"John Cale - Paris 1919｜Vinyl Monday",
-"channel":"Abigail Devoe",
-"score":65
-}
-],
+"embed":true,
+"kind":"other",
+"searched":{
 "id":"mzwm7LUZCig",
 "title":"Paris 1919 (Remastered 2024)",
 "channel":"John Cale - Topic",
 "kind":"audio",
-"score":103,
-"why":[
-"title",
-"artist",
-"official channel"
-],
 "embed":true
+}
 },
 "1qpt5uh3yuEM7fo4rNU688":{
 "n":51,
@@ -2152,91 +1295,51 @@
 "artist",
 "official video"
 ],
+"embed":true,
+"listId":"2xdKuhYaW_0",
+"list":{
+"id":"2xdKuhYaW_0",
+"title":"Mickey Avalon - Jane Fonda",
+"channel":"MickeyAvalonVEVO",
+"kind":"other",
 "embed":true
+}
 },
 "2yFRJ1eJjycB5auItpeT5S":{
 "n":52,
 "checked":"2026-10-21",
-"from":"YouTube search",
-"alts":[
-{
-"id":"GkRNgwlA5NE",
-"title":"Liz Lawrence - None Of My Friends",
-"channel":"LizLawrenceVEVO",
-"score":95
-},
-{
-"id":"B0lv8f7cGAw",
-"title":"Liz Lawrence - None of My Friends (Visualizer)",
-"channel":"Kartel Music Group",
-"score":73
-},
-{
+"from":"John's list",
+"listId":"XFIgibWe734",
 "id":"XFIgibWe734",
 "title":"Liz Lawrence - None Of My Friends (Official Audio)",
 "channel":"indie culture",
-"score":73
-},
-{
-"id":"I2cjUIxwhdQ",
-"title":"Liz Lawrence:  None of my Friends,  Glasgow 2020",
-"channel":"Tenacious D",
-"score":65
-}
-],
+"embed":true,
+"kind":"audio",
+"searched":{
 "id":"GkRNgwlA5NE",
 "title":"Liz Lawrence - None Of My Friends",
 "channel":"LizLawrenceVEVO",
 "kind":"other",
-"score":95,
-"why":[
-"title",
-"artist",
-"official channel"
-],
 "embed":true
+}
 },
 "3TAJx9S2t0dH9Slo908D9t":{
 "n":53,
 "checked":"2026-10-21",
-"from":"YouTube search",
-"alts":[
-{
-"id":"sKzvEThmqxE",
-"title":"What Is Life (2014 Remaster)",
-"channel":"George Harrison - Topic",
-"score":103
-},
-{
-"id":"5Y5olEjNjAw",
-"title":"What Is Life (2009 Remaster)",
-"channel":"George Harrison - Topic",
-"score":103
-},
-{
-"id":"HXcwO9QKe4M",
-"title":"What Is Life (Session Outtakes and Jams) (Take 1)",
-"channel":"George Harrison - Topic",
-"score":103
-},
-{
-"id":"fiH9edd25Bc",
-"title":"George Harrison - What Is Life",
-"channel":"GeorgeHarrisonVEVO",
-"score":95
-}
-],
+"from":"John's list",
+"listId":"y2wkO8xeCPo",
+"id":"y2wkO8xeCPo",
+"title":"George Harrison - What Is Life (2020 mix)",
+"channel":"Carlos Boellinger",
+"embed":true,
+"kind":"other",
+"searched":{
 "id":"sKzvEThmqxE",
 "title":"What Is Life (2014 Remaster)",
 "channel":"George Harrison - Topic",
 "kind":"audio",
-"score":103,
-"why":[
-"title",
-"artist",
-"official channel"
-],
 "embed":true
+}
 },
 "0vuZebTvcwkstUpoo82lpG":{
 "n":54,
@@ -2279,7 +1382,15 @@
 "official channel",
 "official video"
 ],
+"embed":true,
+"listId":"FGiq3bxqxB0",
+"list":{
+"id":"FGiq3bxqxB0",
+"title":"Aldous Harding - Old Peel",
+"channel":"David Dean Burkhart",
+"kind":"other",
 "embed":true
+}
 },
 "0gjcEL2CTKu3fT9qMVVu2w":{
 "n":55,
@@ -2322,131 +1433,55 @@
 "official channel",
 "official video"
 ],
+"embed":true,
+"listId":"Qc_bq339C9k",
+"list":{
+"id":"Qc_bq339C9k",
+"title":"TTRRUUCES - Bad Kids ♪",
+"channel":"BIRP!",
+"kind":"other",
 "embed":true
+}
 },
 "7j2ExpvZTeURjspK443YKU":{
 "n":56,
 "checked":"2026-10-21",
-"from":"YouTube search",
-"alts":[
-{
+"from":"John's list",
+"listId":"NdqM_oFRbz4",
 "id":"NdqM_oFRbz4",
 "title":"Tim Maia – Bom Senso (Official Audio)",
 "channel":"Luaka Bop",
-"score":73
-},
-{
-"id":"idc7mo9JT8o",
-"title":"Tim Maia - Bom Senso",
-"channel":"Vinicius Farina",
-"score":65
-},
-{
-"id":"S75BqaACpqs",
-"title":"Seu Jorge   Bom senso Som Brasil Tim Maia",
-"channel":"N.A Lourenço",
-"score":65
-},
-{
-"id":"NbriwVnBfH4",
-"title":"Tim Maia   Bom Senso",
-"channel":"Fabio Martins",
-"score":65
-}
-],
-"id":"NdqM_oFRbz4",
-"title":"Tim Maia – Bom Senso (Official Audio)",
-"channel":"Luaka Bop",
-"kind":"audio",
-"score":73,
-"why":[
-"title",
-"artist"
-],
-"embed":true
+"embed":true,
+"kind":"audio"
 },
 "0Fjy4haCEoFaiJME5pvbgB":{
 "n":57,
 "checked":"2026-10-21",
-"from":"YouTube search",
-"alts":[
-{
+"from":"John's list",
+"listId":"thiHFeIw_5U",
 "id":"thiHFeIw_5U",
 "title":"Andy Shauf - \"Try Again\"",
 "channel":"ANTI- Records",
-"score":65
-},
-{
-"id":"rL3DKlNogTo",
-"title":"Andy Shauf - Try Again",
-"channel":"David Dean Burkhart",
-"score":65
-},
-{
-"id":"efHN09tgq7I",
-"title":"Andy Shauf - Try Again",
-"channel":"BIRP!",
-"score":65
-},
-{
-"id":"Q8lkNWoTBeU",
-"title":"Andy Shauf - Try Again",
-"channel":"Indie Nation",
-"score":65
-}
-],
-"id":"thiHFeIw_5U",
-"title":"Andy Shauf - \"Try Again\"",
-"channel":"ANTI- Records",
-"kind":"other",
-"score":65,
-"why":[
-"title",
-"artist"
-],
-"embed":true
+"embed":true,
+"kind":"other"
 },
 "6SYwCFYNJo66SbnQKOXRUg":{
 "n":58,
 "checked":"2026-10-21",
-"from":"YouTube search",
-"alts":[
-{
-"id":"rOkpsjQ9aa4",
-"title":"Keep Kicking & Screaming",
-"channel":"Johnny Parry Chamber Orchestra - Topic",
-"score":103
-},
-{
+"from":"John's list",
+"listId":"LuNIwLxo4pQ",
 "id":"LuNIwLxo4pQ",
 "title":"Keep Kicking and Screaming - Johnny Parry Chamber Orchestra",
 "channel":"Johnny Parry Chamber Orchestra",
-"score":95
-},
-{
-"id":"UQaLEJqy6Jw",
-"title":"Kicking and Screaming",
-"channel":"Johnny Parry - Topic",
-"score":38
-},
-{
-"id":"HbOJMtiLM4g",
-"title":"Piece by Piece - Johnny Parry Trio and Chamber Orchestra",
-"channel":"Johnny Parry Chamber Orchestra",
-"score":15
-}
-],
+"embed":true,
+"kind":"other",
+"searched":{
 "id":"rOkpsjQ9aa4",
 "title":"Keep Kicking & Screaming",
 "channel":"Johnny Parry Chamber Orchestra - Topic",
 "kind":"audio",
-"score":103,
-"why":[
-"title",
-"artist",
-"official channel"
-],
 "embed":true
+}
 },
 "6vO5OZ18h33ZO40S9plFDx":{
 "n":59,
@@ -2488,1177 +1523,2222 @@
 "artist",
 "official video"
 ],
+"embed":true,
+"listId":"OeS8v4SG1Do",
+"list":{
+"id":"OeS8v4SG1Do",
+"title":"Kid Cudi - Creepers (Cruel Summer)",
+"channel":"KidCudiWizard",
+"kind":"other",
 "embed":true
+}
 },
 "4a5VnoioMgv1e9R3EWAfYB":{
 "n":60,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"J61o2lVEZLw",
+"id":"J61o2lVEZLw",
+"title":"Blue Sky Black Death - \"Threats\" (feat. Jean Grae & Chen Lo) [Official Audio]",
+"channel":"Babygrande Records",
+"embed":true,
+"kind":"audio"
 },
 "20mUVwCxR1x2d5SuBRGW1F":{
 "n":61,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"7hruVd_LvRE",
+"id":"7hruVd_LvRE",
+"title":"Colin Blunstone - \"Say You Don't Mind\"",
+"channel":"Colin Blunstone",
+"embed":true,
+"kind":"other"
 },
 "2w4yylkuKugYjEVhwKc0OD":{
 "n":62,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"8P0LbQe79Pk",
+"id":"8P0LbQe79Pk",
+"title":"Ogi - IKYK [Official Audio]",
+"channel":"Ogi",
+"embed":true,
+"kind":"audio"
 },
 "1uwTbud19jsbc5BkRmt5rN":{
 "n":63,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"ew0TKUzTLU8",
+"id":"ew0TKUzTLU8",
+"title":"Duet",
+"channel":"Diane Coffee - Topic",
+"embed":true,
+"kind":"audio"
 },
 "5shcxlhR6ChgqDf5eBtpBW":{
 "n":64,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"vVqoNRv6_iI",
+"id":"vVqoNRv6_iI",
+"title":"I Love You - The Bees",
+"channel":"Lil Darling",
+"embed":true,
+"kind":"other"
 },
 "0WAEGVylZjbe2mQ6Or6HxY":{
 "n":65,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"aavxo3n8-xE",
+"id":"aavxo3n8-xE",
+"title":"Labi Siffre - Cannock Chase (Official Lyric Video)",
+"channel":"Labi Siffre ",
+"embed":true,
+"kind":"audio"
 },
 "1LqHKAfYbUaAOlDVs9kqcf":{
 "n":66,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"zS5pjxseTQM",
+"id":"zS5pjxseTQM",
+"title":"Joan As Police Woman - Holy City (Official Video)",
+"channel":"Joan As Police Woman",
+"embed":true,
+"kind":"video"
 },
 "3Nt1G38u1lalca5B2lm8Sd":{
 "n":67,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"e5l_cPu0GeI",
+"id":"e5l_cPu0GeI",
+"title":"Eleanor Friedberger - Make Me A Song (Official Audio)",
+"channel":"FKR.TV",
+"embed":true,
+"kind":"audio"
 },
 "7DH0ytUP9o7Crj8NM1Uabg":{
 "n":68,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"cK-ywSsMA50",
+"id":"cK-ywSsMA50",
+"title":"Tess Henley - Dean Martin (Official Audio)",
+"channel":"Tess Henley",
+"embed":true,
+"kind":"audio"
 },
 "2eJogHu4qygT1BDhAve9Us":{
 "n":69,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"yqhaMewA2K0",
+"id":"yqhaMewA2K0",
+"title":"Francis and the Lights - Like a Dream",
+"channel":"francisandthelights",
+"embed":true,
+"kind":"other"
 },
 "6w09qyTrLgzCQP8gLMPEcd":{
 "n":70,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"SXUezPili4A",
+"id":"SXUezPili4A",
+"title":"Your Smith - The Spot",
+"channel":"Your Smith",
+"embed":true,
+"kind":"other"
 },
 "3lJ70fh0ENq6hzgtOfOGYZ":{
 "n":71,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"_A3Avc5jyp4",
+"id":"_A3Avc5jyp4",
+"title":"The River",
+"channel":"Michael Farneti - Topic",
+"embed":true,
+"kind":"audio"
 },
 "1SJvBv2vJnJqguLFD46pBK":{
 "n":72,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"1UkDxu7u3z4",
+"id":"1UkDxu7u3z4",
+"title":"Prove It (Mono 45 Version)",
+"channel":"Aretha Franklin - Topic",
+"embed":true,
+"kind":"audio"
 },
 "1yw66ZPsfqblI4PFcEdIKe":{
 "n":73,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"ILWYIISX-VA",
+"id":"ILWYIISX-VA",
+"title":"Make Me Believe in You",
+"channel":"Curtis Mayfield - Topic",
+"embed":true,
+"kind":"audio"
 },
 "5CBqLg9XdeEHcknJX0fZIJ":{
 "n":74,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"0AyIHYjqWow",
+"id":"0AyIHYjqWow",
+"title":"Paul (2023 Remaster)",
+"channel":"Big Thief - Topic",
+"embed":true,
+"kind":"audio"
 },
 "4RAS6QT974bl5blsapzVGq":{
 "n":75,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"imZUqkPlUaQ",
+"id":"imZUqkPlUaQ",
+"title":"Fanny - Ain't that peculiar (1972) | LIVE",
+"channel":"Beat-Club",
+"embed":false,
+"kind":"live"
 },
 "2cxRPp0Qlk7DtkZQnq3laf":{
 "n":76,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"Vo9FESkVsWM",
+"id":"Vo9FESkVsWM",
+"title":"Adam Green & Binki Shapiro - \"Here I Am\"",
+"channel":"Rounder Records",
+"embed":true,
+"kind":"other"
 },
 "2YJgM8lj4u5YEZRSHSfL60":{
 "n":77,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"tQjxIvcGGdE",
+"id":"tQjxIvcGGdE",
+"title":"Bell Bottom Blues",
+"channel":"Derek & The Dominos - Topic",
+"embed":true,
+"kind":"audio"
 },
 "1yK9LISg5uBOOW5bT2Wm0i":{
 "n":78,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"_cuHFUqJ-UU",
+"id":"_cuHFUqJ-UU",
+"title":"Alicia Keys - Try Sleeping with a Broken Heart",
+"channel":"DanceHype",
+"embed":true,
+"kind":"other"
 },
 "6RgrpOgbTI3M2qvA8XIvTb":{
 "n":79,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"-AV_ErZt3ts",
+"id":"-AV_ErZt3ts",
+"title":"Foxygen - Shuggie",
+"channel":"RadioEspemeCampus",
+"embed":true,
+"kind":"other"
 },
 "70Ao5L10SKV701DcOH68Jo":{
 "n":80,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"YiZoSHVQXmk",
+"id":"YiZoSHVQXmk",
+"title":"River Song",
+"channel":"Dennis Wilson - Topic",
+"embed":true,
+"kind":"audio"
 },
 "6Mnne5V9ZifNID59dswUcZ":{
 "n":81,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"sBohO1zr7jw",
+"id":"sBohO1zr7jw",
+"title":"Love And Affection",
+"channel":"Joan Armatrading - Topic",
+"embed":true,
+"kind":"audio"
 },
 "0CxWbbbU0PB7ccm6CgHnrf":{
 "n":82,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"1o_5z6-OIPY",
+"id":"1o_5z6-OIPY",
+"title":"Jack Nitzsche - The Lonely Surfer",
+"channel":"Wayne Smith",
+"embed":true,
+"kind":"other"
 },
 "21xq13U2jrLgDG5yWCqoGI":{
 "n":83,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"raeYA797_SM",
+"id":"raeYA797_SM",
+"title":"Julia-Sophie - telephone",
+"channel":"indiebus ",
+"embed":true,
+"kind":"other"
 },
 "3K5VXelPukt6EXUcCeCS67":{
 "n":84,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"SFI9s6INJPQ",
+"id":"SFI9s6INJPQ",
+"title":"Patrick Wolf - The Magic Position",
+"channel":"PatrickWolfVEVO",
+"embed":true,
+"kind":"other"
 },
 "76LVdwqMv86jglsB8MFEXE":{
 "n":85,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"xbdPN6biXso",
+"id":"xbdPN6biXso",
+"title":"Gwyneth Herbert - Sweeter (Live at Kino-Teatr, St Leonards-on-Sea)",
+"channel":"Gwyneth Herbert",
+"embed":true,
+"kind":"live"
 },
 "1nGsq8KWsWVWnbhRkMaXGc":{
 "n":86,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"q9_3X8-Gc50",
+"id":"q9_3X8-Gc50",
+"title":"Half Moon Run - Consider Yourself [Official Version]",
+"channel":"Half Moon Run",
+"embed":true,
+"kind":"other"
 },
 "7JsvW1GU2hbMnGETSyy7ig":{
 "n":87,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"Lg5HAoeeTLg",
+"id":"Lg5HAoeeTLg",
+"title":"Loney Dear - Ignorant Boy, Beautiful Girl [OFFICIAL AUDIO]",
+"channel":"Polyvinyl Records",
+"embed":true,
+"kind":"audio"
 },
 "7elJX0ZTRfmPeSDt18k0Ww":{
 "n":88,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"vvDs-jd4xUg",
+"id":"vvDs-jd4xUg",
+"title":"Ben Seal | TRUTH",
+"channel":"Ben Seal Music",
+"embed":true,
+"kind":"other"
 },
 "14I61w6cyYUHiV2n28IYdP":{
 "n":89,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"TWxXXcVQevI",
+"id":"TWxXXcVQevI",
+"title":"Jay-Z, Kanye West - Otis ft. Otis Redding (AUDIO)",
+"channel":"Music Audios",
+"embed":true,
+"kind":"audio"
 },
 "6nkMHXkhmvCzxtvewoOEJT":{
 "n":90,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"7lL1CW140FQ",
+"id":"7lL1CW140FQ",
+"title":"The Raconteurs – Salute Your Solution (Official Music Video)",
+"channel":"The Raconteurs",
+"embed":true,
+"kind":"video"
 },
 "3UjcwK0kMZYvAA8qVDF7Y7":{
 "n":91,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"DJcEGFUZG8I",
+"id":"DJcEGFUZG8I",
+"title":"Hamilton Leithauser - The Old King",
+"channel":"Hamilton Leithauser",
+"embed":true,
+"kind":"other"
 },
 "63G27PTar9LZQgKU2BKjx9":{
 "n":92,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"IxAqJ7c0zm0",
+"id":"IxAqJ7c0zm0",
+"title":"The Universal",
+"channel":"Blur - Topic",
+"embed":true,
+"kind":"audio"
 },
 "4mn30l2lxnohEGT3goNzUR":{
 "n":93,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"K4Ie3nqPELc",
+"id":"K4Ie3nqPELc",
+"title":"The Mountain Goats - Dance Music (Alternate Recording)",
+"channel":"willneu97",
+"embed":true,
+"kind":"other"
 },
 "6kotXaSQaGYxE62hVpdHWu":{
 "n":94,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"c6M89iDabwM",
+"id":"c6M89iDabwM",
+"title":"Warren Zevon - Werewolves of London (Official Audio)",
+"channel":"RHINO",
+"embed":true,
+"kind":"audio"
 },
 "0LS9j29qzv8vKFz2Hi3G8c":{
 "n":95,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"m1W3ui1E3dY",
+"id":"m1W3ui1E3dY",
+"title":"Teleman - Cristina",
+"channel":"telemanVEVO",
+"embed":true,
+"kind":"other"
 },
 "60WIrEOVESSiwBoYy9WIMC":{
 "n":96,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"vVj3rTWfVVw",
+"id":"vVj3rTWfVVw",
+"title":"Efterklang - Modern Drift (Official Video)",
+"channel":"4AD",
+"embed":true,
+"kind":"video"
 },
 "6zNXjEQEhoEkLa4irSikDW":{
 "n":97,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"8CQK5LBA4ls",
+"id":"8CQK5LBA4ls",
+"title":"Dean Wareham & Britta Phillips: \"Night Nurse\"",
+"channel":"truckstopmedia",
+"embed":true,
+"kind":"other"
 },
 "6sSyiY3TuAYzlEh9CN1PBO":{
 "n":98,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"LQoYNUw-HKg",
+"id":"LQoYNUw-HKg",
+"title":"Bob Segarini   Gotta Have Pop 1979",
+"channel":"TheBudgie29",
+"embed":true,
+"kind":"other"
 },
 "5xwmLfRd5kLb6XohkIqNV2":{
 "n":99,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"X6ipT3d2kFg",
+"id":"X6ipT3d2kFg",
+"title":"Joy",
+"channel":"apollo 100 - Topic",
+"embed":true,
+"kind":"audio"
 },
 "3V2jcyKqjtbuSffYQ63CZ0":{
 "n":100,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"z6Qe8JzYcD8",
+"id":"z6Qe8JzYcD8",
+"title":"Sunday Girl - Dunno",
+"channel":"Michael Morrison",
+"embed":true,
+"kind":"other"
 },
 "23y2DjW3Ljd7o0ZcFnqRo9":{
 "n":101,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"xzkr2i6Szy8",
+"id":"xzkr2i6Szy8",
+"title":"Deep Sea Diver - Impossible Weight featuring Sharon Van Etten (Official Video)",
+"channel":"Deep Sea Diver",
+"embed":true,
+"kind":"video"
 },
 "3mW90BgmaWI8Do3taVesEj":{
 "n":102,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"Ac3qj-E4K4M",
+"id":"Ac3qj-E4K4M",
+"title":"FFS - Johnny Delusional (Official Audio)",
+"channel":"FFS (Franz Ferdinand & Sparks)",
+"embed":true,
+"kind":"audio"
 },
 "5iYEFC545nN3zmNZXRIcki":{
 "n":103,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"mnpt1A88LzA",
+"id":"mnpt1A88LzA",
+"title":"Nuclear Boy",
+"channel":"Hindered Folk",
+"embed":true,
+"kind":"other"
 },
 "4WFNb2UhW5E5qxHGsgebuQ":{
 "n":104,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"iwMTZFBd5eQ",
+"id":"iwMTZFBd5eQ",
+"title":"Eels - Flyswatter",
+"channel":"EelsVEVO",
+"embed":true,
+"kind":"other"
 },
 "0Ib6SoU3oQTEgWEBVUF1IR":{
 "n":105,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"9H0IS3iqZkc",
+"id":"9H0IS3iqZkc",
+"title":"Robert Ellis - \"Fucking Crazy\" [Audio Only]",
+"channel":"New West Records",
+"embed":true,
+"kind":"other"
 },
 "2CwNOqVypdZfKA8lXQKSUb":{
 "n":106,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"Yw-r-XhLhBU",
+"id":"Yw-r-XhLhBU",
+"title":"Stevie Wonder - I Don't Know Why",
+"channel":"johnniewalker23",
+"embed":true,
+"kind":"other"
 },
 "4N8FB9gd4FjEi68O6eVJ4p":{
 "n":107,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"UpgK4dP8ddw",
+"id":"UpgK4dP8ddw",
+"title":"Curse",
+"channel":"Stew & the Negro Problem - Topic",
+"embed":true,
+"kind":"audio"
 },
 "77h5SC6UU6kfKNSGQ9hZ4k":{
 "n":108,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"YouTube search",
+"alts":[
+{
+"id":"BVDRqeQfPsw",
+"title":"How It Should Be (Sha Sha)",
+"channel":"Ben Kweller - Topic",
+"score":103
+},
+{
+"id":"eG0nG42tkfg",
+"title":"How It Should Be (Sha Sha)",
+"channel":"Ben Kweller - Topic",
+"score":103
+},
+{
+"id":"TwHkgZVCzNY",
+"title":"Ben Kweller - How It Should Be (Sha Sha)",
+"channel":"colemantis",
+"score":65
+},
+{
+"id":"r6JpNCeW_gI",
+"title":"Ben Kweller- How it Should Be (Sha Sha)- Austin City Limits 2013, Austin, TX",
+"channel":"Bleed_DukeBlue",
+"score":65
+}
+],
+"id":"BVDRqeQfPsw",
+"title":"How It Should Be (Sha Sha)",
+"channel":"Ben Kweller - Topic",
+"kind":"audio",
+"score":103,
+"why":[
+"title",
+"artist",
+"official channel"
+],
+"embed":true
 },
 "6eCWvDQXTITW534IANR5n1":{
 "n":109,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"vYMu2qgOiJs",
+"id":"vYMu2qgOiJs",
+"title":"Romeo's Tune",
+"channel":"Steve Forbert - Topic",
+"embed":true,
+"kind":"audio"
 },
 "57fT0m2UMxuue7KhToRAIJ":{
 "n":110,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"hG-2wVn9XeU",
+"id":"hG-2wVn9XeU",
+"title":"Getdown Services - Full Performance (Live on KEXP)",
+"channel":"KEXP",
+"embed":true,
+"kind":"live"
 },
 "43b1sAhXptGHyelc3knOOQ":{
 "n":111,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"ouuqJ0pkWvU",
+"id":"ouuqJ0pkWvU",
+"title":"Lady, You Shot Me - Har Mar Superstar",
+"channel":"CultRecordsNYC",
+"embed":true,
+"kind":"other"
 },
 "40IPlaLrR3YEPNkI7z3bYp":{
 "n":112,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"MEoBevSykk0",
+"id":"MEoBevSykk0",
+"title":"Never Get Ahead",
+"channel":"Bobby Conn - Topic",
+"embed":true,
+"kind":"audio"
 },
 "6nSt8n7r0bznM8PCvHEmPj":{
 "n":113,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"06J4NiCl4Vc",
+"id":"06J4NiCl4Vc",
+"title":"You're Moving out Today",
+"channel":"Carole Bayer Sager - Topic",
+"embed":true,
+"kind":"audio"
 },
 "4ilmoz7rKBlE85HWzbGAPu":{
 "n":114,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"jy52LDizrn4",
+"id":"jy52LDizrn4",
+"title":"Rob Moose - I Bend But Never Break (Official Video) ft. Brittany Howard",
+"channel":"RobMooseVEVO",
+"embed":true,
+"kind":"video"
 },
 "5Bv1HoYXGCICY3ymEIdpHF":{
 "n":115,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"qetNjwRUIAg",
+"id":"qetNjwRUIAg",
+"title":"Fabiana Palladino - Waiting (Lyric Video)",
+"channel":"Fabiana Palladino",
+"embed":true,
+"kind":"audio"
 },
 "4FGIHe2zLB3Y43mPybYdDa":{
 "n":116,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"nRqHrmAePDE",
+"id":"nRqHrmAePDE",
+"title":"Hot Chip - Eleanor (Official Audio)",
+"channel":"Hot Chip",
+"embed":true,
+"kind":"audio"
 },
 "3d2oiHuHm3rftzRDPeL5LU":{
 "n":117,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"dynMUeKLCOA",
+"id":"dynMUeKLCOA",
+"title":"Gimme Some Truth (Ultimate Mix)",
+"channel":"John Lennon - Topic",
+"embed":true,
+"kind":"audio"
 },
 "5iaWq4djtfWZk8McqrtprO":{
 "n":118,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"BFo-Fp2eJWQ",
+"id":"BFo-Fp2eJWQ",
+"title":"BRONCHO - Class Historian [Official Audio]",
+"channel":"Broncho",
+"embed":true,
+"kind":"audio"
 },
 "2FPcTfECQrZviBAarAHv1f":{
 "n":119,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"XvBCKNYXzLI",
+"id":"XvBCKNYXzLI",
+"title":"Fat Dog - Peace Song (Official Video)",
+"channel":"Fat Dog",
+"embed":true,
+"kind":"video"
 },
 "30zaeAGK7hGe1N406m3pKL":{
 "n":120,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"gEtnJx1JS34",
+"id":"gEtnJx1JS34",
+"title":"Syreeta - I Love Every Little Thing About You (1972)",
+"channel":"Contain Yr Brain",
+"embed":true,
+"kind":"other"
 },
 "5O5u7dukzRu4iskuCTiaYj":{
 "n":121,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"RzUM1OMuxhM",
+"id":"RzUM1OMuxhM",
+"title":"Roxy Music - Cry Cry Cry (1979)",
+"channel":"The Way.",
+"embed":true,
+"kind":"other"
 },
 "5MpZt5R522VJa8AxKxAD4H":{
 "n":122,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"h-i9lEQczTY",
+"id":"h-i9lEQczTY",
+"title":"She Fell into My Arms",
+"channel":"Ed Harcourt - Topic",
+"embed":true,
+"kind":"audio"
 },
 "4CSKUENltc2dGwvGGtDRgI":{
 "n":123,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"c9T5J97hvYY",
+"id":"c9T5J97hvYY",
+"title":"As Long As I Still Get You",
+"channel":"Vulfmon - Topic",
+"embed":true,
+"kind":"audio"
 },
 "29O9cSdpmLZKFcTRMlnqo2":{
 "n":124,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"p86ncGX3FoM",
+"id":"p86ncGX3FoM",
+"title":"Da Butt",
+"channel":"E.U. - Topic",
+"embed":true,
+"kind":"audio"
 },
 "60JI0WkwFt0zqnJw8KzNoE":{
 "n":125,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"qs6G9tisVdU",
+"id":"qs6G9tisVdU",
+"title":"The Kinks - Better Things (Audio)",
+"channel":"TheKinksVEVO",
+"embed":true,
+"kind":"audio"
 },
 "4clw6ilYxpOiBeoSkJJvSX":{
 "n":126,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"7HZqx6uFr2A",
+"id":"7HZqx6uFr2A",
+"title":"When It Comes Down To It",
+"channel":"Minnie Riperton - Topic",
+"embed":true,
+"kind":"audio"
 },
 "2dpGNisIy8LNjpEGzDdtft":{
 "n":127,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"r3ZtImowdLU",
+"id":"r3ZtImowdLU",
+"title":"I've Got the Music in Me",
+"channel":"Kiki Dee - Topic",
+"embed":true,
+"kind":"audio"
 },
 "1P3S1DDr0qEENA8Zy3RLmG":{
 "n":128,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"G1FyjuG7QbI",
+"id":"G1FyjuG7QbI",
+"title":"Everyone's in Love with You",
+"channel":"David Byrne - Topic",
+"embed":true,
+"kind":"audio"
 },
 "5OuaAMBmGjjJMK7yXpaFAK":{
 "n":129,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"BrCLkeYKuEw",
+"id":"BrCLkeYKuEw",
+"title":"Doctor My Eyes (1997 Remaster)",
+"channel":"Jackson Browne - Topic",
+"embed":true,
+"kind":"audio"
 },
 "2hq50hCUUknhUXZ9uL3wgq":{
 "n":130,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"9F-WqdmZwd8",
+"id":"9F-WqdmZwd8",
+"title":"Somebody Made For Me",
+"channel":"Emitt Rhodes - Topic",
+"embed":true,
+"kind":"audio"
 },
 "5fXRPS1tp70DbqsBZVyG4e":{
 "n":131,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"56-JEHWfrfI",
+"id":"56-JEHWfrfI",
+"title":"Happy",
+"channel":"The Rolling Stones - Topic",
+"embed":true,
+"kind":"audio"
 },
 "5dt9vV7sfjzS78y2MJUvZt":{
 "n":132,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"FNGOCtVhRAg",
+"id":"FNGOCtVhRAg",
+"title":"Vuli Ndlela",
+"channel":"Brenda Fassie - Topic",
+"embed":true,
+"kind":"audio"
 },
 "1Tq1uBzzuRywZEme8QijxT":{
 "n":133,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"uEPWy2rvCIY",
+"id":"uEPWy2rvCIY",
+"title":"Sorry - There’s So Many People That Want To Be Loved",
+"channel":"Sorry Band",
+"embed":true,
+"kind":"other"
 },
 "4AxAd49jPozjHMZyXI2Gzv":{
 "n":134,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"gmoejUaK4dA",
+"id":"gmoejUaK4dA",
+"title":"PAUL WILLIAMS  ~ SOMEDAY MAN ~    Ｍｕｓｉｃ ｂｙ Ｒｏｇｅｒ Ｎｉｃｈｏｌｓ",
+"channel":"GewaGewa ch.",
+"embed":true,
+"kind":"other"
 },
 "0ISfH0HKPrQd3mWmzk76Ij":{
 "n":135,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"xiDnuRylHMU",
+"id":"xiDnuRylHMU",
+"title":"Emily King - This Year (Official Lyric Video)",
+"channel":"EmilyKingVEVO",
+"embed":true,
+"kind":"audio"
 },
 "06SgGRLn7xmwCz8wIxIx8U":{
 "n":136,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"6w27a-OTn7g",
+"id":"6w27a-OTn7g",
+"title":"Plastic Pyramid",
+"channel":"Omni - Topic",
+"embed":true,
+"kind":"audio"
 },
 "4Yh1pyb3eGk32z6KeG0MPF":{
 "n":137,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"y1-g5VG2pWg",
+"id":"y1-g5VG2pWg",
+"title":"P.P. Arnold: The first cut is the deepest",
+"channel":"luposol66",
+"embed":true,
+"kind":"other"
 },
 "2DBlfjL5chsdeULzhTp5K8":{
 "n":138,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"C3LXkdpHNOQ",
+"id":"C3LXkdpHNOQ",
+"title":"Waiting Room",
+"channel":"Fugazi - Topic",
+"embed":true,
+"kind":"audio"
 },
 "15EOCEksKtUd844TrW9Tjv":{
 "n":139,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"DK2ItHcBMs4",
+"id":"DK2ItHcBMs4",
+"title":"Daryl Johns -  I'm So Serious (Official)",
+"channel":"Daryl Johns",
+"embed":true,
+"kind":"other"
 },
 "5qm0KiVKMXW1kq6VrnIhz5":{
 "n":140,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"wpAC1vr_pcg",
+"id":"wpAC1vr_pcg",
+"title":"Cliffs Of Dover (Instrumental)",
+"channel":"Eric Johnson - Topic",
+"embed":true,
+"kind":"audio"
 },
 "6TOhXLevQUI4fjrxLL1nJE":{
 "n":141,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"x9UV58U9DyU",
+"id":"x9UV58U9DyU",
+"title":"The Joubert Singers - Stand on the Word (1982 Version)",
+"channel":"My Ideal Playlist",
+"embed":true,
+"kind":"other"
 },
 "1aoFQBQrclXuxUTCldGNYh":{
 "n":142,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"tXoYEmDFnmk",
+"id":"tXoYEmDFnmk",
+"title":"Tom A Smith Fashion",
+"channel":"mainlymono",
+"embed":true,
+"kind":"other"
 },
 "1CPTAkaqBwFfe7xUjScKIr":{
 "n":143,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"KgjUGGh6J0g",
+"id":"KgjUGGh6J0g",
+"title":"Paul McCartney & Wings - With A Little Luck (Audio)",
+"channel":"PaulMcCartneyVEVO",
+"embed":true,
+"kind":"audio"
 },
 "3GWhvJNnbkhl3iMK1W4iQC":{
 "n":144,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"E9I4vUUUpSQ",
+"id":"E9I4vUUUpSQ",
+"title":"Grizzly Bear - While You Wait For The Others",
+"channel":"GrizzlyBearVEVO",
+"embed":true,
+"kind":"other"
 },
 "1WFFonSzN8LuoIC3R8Ja53":{
 "n":145,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"kvyX16jxPqU",
+"id":"kvyX16jxPqU",
+"title":"Love You",
+"channel":"The Free Design - Topic",
+"embed":true,
+"kind":"audio"
 },
 "3PtmCb2kQYekdoh3HB81yU":{
 "n":146,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"D1fuhg2JSfg",
+"id":"D1fuhg2JSfg",
+"title":"Connie Converse - Talkin' Like You (Two Tall Mountains)",
+"channel":"cool music for cool people",
+"embed":true,
+"kind":"other"
 },
 "4S4dCACmtuPWbhvMSfDXqN":{
 "n":147,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"JBJVVhn7iuo",
+"id":"JBJVVhn7iuo",
+"title":"Miriam Makeba - Pata Pata (Stereo Version)",
+"channel":"Strut Records",
+"embed":true,
+"kind":"other"
 },
 "6oBVQQ4y3KkStoa0apQPrK":{
 "n":148,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"6R69sjHEC-8",
+"id":"6R69sjHEC-8",
+"title":"Love Me Tenderly",
+"channel":"The Felice Brothers - Topic",
+"embed":true,
+"kind":"audio"
 },
 "3TMtoSysAJ61pUnvVPHlI5":{
 "n":149,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"oSYE-b5g7Q0",
+"id":"oSYE-b5g7Q0",
+"title":"Peter Richard - Marlene",
+"channel":"GoodyMusic Production",
+"embed":true,
+"kind":"other"
 },
 "49dxrmTySyejmAzmQxWjOu":{
 "n":150,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"YjxbHs7tB0s",
+"id":"YjxbHs7tB0s",
+"title":"Yma Sumac - Goomba Bomba",
+"channel":"Lomejor712",
+"embed":true,
+"kind":"other"
 },
 "6nTL1KhyjN3RzdRJFICZ81":{
 "n":151,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"9axQuDoP9GI",
+"id":"9axQuDoP9GI",
+"title":"Everybody's Gotta Live",
+"channel":"Arthur Lee - Topic",
+"embed":true,
+"kind":"audio"
 },
 "3PuzCzuFmDqVtCp6PWlUio":{
 "n":152,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"afdddCO8Vnc",
+"id":"afdddCO8Vnc",
+"title":"Things Will Never Be The Same Again",
+"channel":"JJ - Topic",
+"embed":true,
+"kind":"audio"
 },
 "748yv6bb3l3CcKS45a6SZ8":{
 "n":153,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"726IPv--fko",
+"id":"726IPv--fko",
+"title":"Head Over Heels",
+"channel":"Tears For Fears - Topic",
+"embed":true,
+"kind":"audio"
 },
 "3f3HHRPF5vAo90GwdpDMaQ":{
 "n":154,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"aE8RLK8SMg8",
+"id":"aE8RLK8SMg8",
+"title":"THE AVALANCHES - Because I'm Me (2016)",
+"channel":"NO SOUL NO LIFE",
+"embed":true,
+"kind":"other"
 },
 "2Tp3uEfVC5FNiIdGFWQxOC":{
 "n":155,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"FM3JnVZgKrI",
+"id":"FM3JnVZgKrI",
+"title":"Lose Your Soul",
+"channel":"Dead Man's Bones - Topic",
+"embed":true,
+"kind":"audio"
 },
 "0Shb2a6oTnJsIxEzn2SDLh":{
 "n":156,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"TD3dOkWDBr4",
+"id":"TD3dOkWDBr4",
+"title":"Drummer Man",
+"channel":"Tonight - Topic",
+"embed":true,
+"kind":"audio"
 },
 "0USF54f34DPnAn9nEmqNIN":{
 "n":157,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"5NGIpXM8Cn0",
+"id":"5NGIpXM8Cn0",
+"title":"GENER8ION - LOVE & TEARS featuring Yannis Philippakis",
+"channel":"GENER8ION",
+"embed":true,
+"kind":"other"
 },
 "4U9ZjqhaGF9wl56899E4sW":{
 "n":158,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"slU8mMjr7-o",
+"id":"slU8mMjr7-o",
+"title":"Black Country, New Road - 'Besties' (Lyric Video)",
+"channel":"Black Country, New Road",
+"embed":true,
+"kind":"audio"
 },
 "0qgZruwLnh1ed7Z7ZXNMTc":{
 "n":159,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"bGPHUMTKb8c",
+"id":"bGPHUMTKb8c",
+"title":"Willie J Healey - Ditch (Official video)",
+"channel":"Willie J Healey",
+"embed":true,
+"kind":"video"
 },
 "0IVAlb0cFCH1cQ974iR1TU":{
 "n":160,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"aZvjiLbDQq8",
+"id":"aZvjiLbDQq8",
+"title":"Ms. Fat Booty",
+"channel":"Mos Def - Topic",
+"embed":true,
+"kind":"audio"
 },
 "47wEx68K50IsPnpKoqCuzm":{
 "n":161,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"LVrDAmH_kPQ",
+"id":"LVrDAmH_kPQ",
+"title":"Everything Everything - Violent Sun",
+"channel":"evrythngevrythngVEVO",
+"embed":true,
+"kind":"other"
 },
 "0g95vn2Szj5apK4CIOcyAZ":{
 "n":162,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"EN2pLRpVbGY",
+"id":"EN2pLRpVbGY",
+"title":"Dirty Nice - Love U Like A Human",
+"channel":"Dirty Nice",
+"embed":true,
+"kind":"other"
 },
 "2mpFugcHYSOPZSVdTu5OUw":{
 "n":163,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"UtHeUepXSJk",
+"id":"UtHeUepXSJk",
+"title":"A Cold Freezin' Night",
+"channel":"The Books - Topic",
+"embed":true,
+"kind":"audio"
 },
 "30Wb4wrx78MZ8lAXfVb7wk":{
 "n":164,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"oSWR3uwiWu0",
+"id":"oSWR3uwiWu0",
+"title":"suki waterhouse - notting hill (slowed + reverb)",
+"channel":"reverbify",
+"embed":true,
+"kind":"other"
 },
 "4cgmk2owigBlmlV4KsqRNs":{
 "n":165,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"gnVTrT8aWdk",
+"id":"gnVTrT8aWdk",
+"title":"Susanne Sundfør - Undercover (Edit)",
+"channel":"Susanne Sundfør",
+"embed":true,
+"kind":"other"
 },
 "2gOiPzXFWh2Rw5SdEECM4K":{
 "n":166,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"w33OAePLj4U",
+"id":"w33OAePLj4U",
+"title":"Charlotte Adigéry & Bolis Pupul - HAHA (Official Lyric Video)",
+"channel":"Charlotte Adigéry & Bolis Pupul",
+"embed":true,
+"kind":"audio"
 },
 "7nOwuv3N6Cwo2N9xkXWUmI":{
 "n":167,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"dZn_3ufzgdo",
+"id":"dZn_3ufzgdo",
+"title":"The Lake (Cinematic)",
+"channel":"Fever Ray - Topic",
+"embed":true,
+"kind":"audio"
 },
 "5DMlvpclXTm1ptZyCfDvUy":{
 "n":168,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"1B1RJiOGPUI",
+"id":"1B1RJiOGPUI",
+"title":"Struttin'",
+"channel":"THUMPASAURUS",
+"embed":true,
+"kind":"other"
 },
 "0iI3MhPi785gdx8SUySPay":{
 "n":169,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"sHzzGJb_ZR8",
+"id":"sHzzGJb_ZR8",
+"title":"Danger Mouse, Jemini the Gifted One - Don't Do Drugs (OFFICIAL AUDIO)",
+"channel":"Danger Mouse",
+"embed":true,
+"kind":"audio"
 },
 "1XxRYmDKuABtbtCozx3pA2":{
 "n":170,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"FfruDTmFDUA",
+"id":"FfruDTmFDUA",
+"title":"The Monkees - Me & Magdalena (Official Audio)",
+"channel":"The Monkees",
+"embed":true,
+"kind":"audio"
 },
 "2hPaiBndfRVCpYyIqv5zQG":{
 "n":171,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"n8jHP_5NwTE",
+"id":"n8jHP_5NwTE",
+"title":"Surfbort - \"Lot Lizard 93\" (Official Video)",
+"channel":"Surfbort",
+"embed":true,
+"kind":"video"
 },
 "0Z74CG8R6pWeh7NPnYubFP":{
 "n":172,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"Zp5aYXL24vo",
+"id":"Zp5aYXL24vo",
+"title":"Miya Folick - Bad Thing",
+"channel":"Miya Folick",
+"embed":true,
+"kind":"other"
 },
 "0fN65FwO4sNc07YBFFNDxt":{
 "n":173,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"jx2GhwaFOcQ",
+"id":"jx2GhwaFOcQ",
+"title":"Too Cold for You",
+"channel":"Sahara Hotnights - Topic",
+"embed":true,
+"kind":"audio"
 },
 "5wDEOCfVVAqkdjkrSwDwGJ":{
 "n":174,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"uPyC0JUfZrU",
+"id":"uPyC0JUfZrU",
+"title":"Young Fathers - 'I Saw' (Official Video)",
+"channel":"YOUNG FATHERS",
+"embed":true,
+"kind":"video"
 },
 "2l0KF9ywMxglacqb7Nb6H0":{
 "n":175,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"IPkhcqkTGAY",
+"id":"IPkhcqkTGAY",
+"title":"Taking up Space",
+"channel":"Mustard Service - Topic",
+"embed":true,
+"kind":"audio"
 },
 "49mvGXitaWpfTwuwUQaN0c":{
 "n":176,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"gRnP054ie-g",
+"id":"gRnP054ie-g",
+"title":"Julia Jacklin - Eastwick [OFFICIAL AUDIO]",
+"channel":"Polyvinyl Records",
+"embed":true,
+"kind":"audio"
 },
 "5hb92JsDZjB3PuysBhwTAS":{
 "n":177,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"QQDhHX0cy48",
+"id":"QQDhHX0cy48",
+"title":"Izzat Love? (2015 Remaster)",
+"channel":"Todd Rundgren - Topic",
+"embed":true,
+"kind":"audio"
 },
 "5RZNyJd4RJRWe6wKtXJVVj":{
 "n":178,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"fajO5D4Xm-M",
+"id":"fajO5D4Xm-M",
+"title":"Shy",
+"channel":"Hether - Topic",
+"embed":true,
+"kind":"audio"
 },
 "7GejAcJCqmZm7FAU4KHuyv":{
 "n":179,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"L_PZmeicBg4",
+"id":"L_PZmeicBg4",
+"title":"The Orange Juice - I Guess I'm Just a Little Too Sensitive (1984)",
+"channel":"tendingthepalebloom",
+"embed":true,
+"kind":"other"
 },
 "0S3izfZXcQAO6uoVN9mQvn":{
 "n":180,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"1k_ffl3ZM2s",
+"id":"1k_ffl3ZM2s",
+"title":"Love and Mercy (Remastered)",
+"channel":"Brian Wilson - Topic",
+"embed":true,
+"kind":"audio"
 },
 "2KnfMlqUIr2RLFIRlCQzhw":{
 "n":181,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"a2bcd81RLIM",
+"id":"a2bcd81RLIM",
+"title":"Benny Sings - The World (official lyric video)",
+"channel":"Benny Sings",
+"embed":true,
+"kind":"audio"
 },
 "4m5m7bonUvkScVaFExn6rR":{
 "n":182,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"LQy94F-iQFQ",
+"id":"LQy94F-iQFQ",
+"title":"Dying to Live",
+"channel":"Edgar Winter - Topic",
+"embed":true,
+"kind":"audio"
 },
 "5ehBcancKNsR7lFRduET7R":{
 "n":183,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"7kZ_9pjnhuQ",
+"id":"7kZ_9pjnhuQ",
+"title":"Cuco - Homesick (from the Netflix Series \"Nobody Wants This\" Season 2) (Official Audio)",
+"channel":"CucoMusicVEVO",
+"embed":true,
+"kind":"audio"
 },
 "0fC0IMesoMAtirBH2VVjqm":{
 "n":184,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"4kzhLgDmgzg",
+"id":"4kzhLgDmgzg",
+"title":"Lola Marsh - You're Mine",
+"channel":"LolaMarshVEVO",
+"embed":true,
+"kind":"other"
 },
 "2R2sXZXyRcEMdoHxeYyBtF":{
 "n":185,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"YW5hhrhkdNQ",
+"id":"YW5hhrhkdNQ",
+"title":"The Limit To Your Love",
+"channel":"Feist - Topic",
+"embed":true,
+"kind":"audio"
 },
 "7kxMwCdLI8SOXjLA9tWVyF":{
 "n":186,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"w8AwYcf2Hhk",
+"id":"w8AwYcf2Hhk",
+"title":"The Clapping Song (Clap Pat Clap Slap) (Single Version)",
+"channel":"Shirley Ellis - Topic",
+"embed":true,
+"kind":"audio"
 },
 "6XK6Zw6JkFsHXzAcMWNiIr":{
 "n":187,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"rwHv2XlIC_w",
+"id":"rwHv2XlIC_w",
+"title":"Send Me on My Way",
+"channel":"Rusted Root - Topic",
+"embed":true,
+"kind":"audio"
 },
 "0U0ldCRmgCqhVvD6ksG63j":{
 "n":188,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"MV_3Dpw-BRY",
+"id":"MV_3Dpw-BRY",
+"title":"Kavinsky - Nightcall (Drive Original Movie Soundtrack) (Official Audio)",
+"channel":"Record Makers",
+"embed":true,
+"kind":"audio"
 },
 "2uEWM5lSQsl0ubzbxFd6U7":{
 "n":189,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"Xy-GTJc5wYo",
+"id":"Xy-GTJc5wYo",
+"title":"Lime Garden - Cross My Heart (Lyric Video)",
+"channel":"Lime Garden",
+"embed":true,
+"kind":"audio"
 },
 "5GTEB0XsQBwCaiJYaIRCgg":{
 "n":190,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"7agPOt1XZz8",
+"id":"7agPOt1XZz8",
+"title":"CSS - Let's Make Love and Listen to Death From Above (OFFICIAL VIDEO)",
+"channel":"Sub Pop",
+"embed":true,
+"kind":"video"
 },
 "7KO4XNfwEKhTbSGo3O6qX5":{
 "n":191,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"9CbtWVb8Omc",
+"id":"9CbtWVb8Omc",
+"title":"Her's - If You Know What's Right (Official Audio)",
+"channel":"Her's",
+"embed":true,
+"kind":"audio"
 },
 "1ABegtCPBMMJaMpfDyATjE":{
 "n":192,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"dhdOPhTHeoE",
+"id":"dhdOPhTHeoE",
+"title":"Birthday (Remastered 2009)",
+"channel":"The Beatles - Topic",
+"embed":true,
+"kind":"audio"
 },
 "4jV4ld7z4BrswF3uKqz8Ny":{
 "n":193,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"1ybp3msfAQk",
+"id":"1ybp3msfAQk",
+"title":"Never Let Her Slip Away (2020 Remaster)",
+"channel":"Andrew Gold - Topic",
+"embed":true,
+"kind":"audio"
 },
 "13Mzsb8VzRSZ5w3pM48cn6":{
 "n":194,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"ygkswJazPbM",
+"id":"ygkswJazPbM",
+"title":"The Rubberband Man",
+"channel":"The Spinners - Topic",
+"embed":true,
+"kind":"audio"
 },
 "0d7kxiTEwdtY0fAZP8buBC":{
 "n":195,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"I3wJjBNoVIE",
+"id":"I3wJjBNoVIE",
+"title":"Sunshine After The Rain",
+"channel":"Elkie Brooks - Topic",
+"embed":true,
+"kind":"audio"
 },
 "3c2kMiSB86tVq1J4oULmvL":{
 "n":196,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"nTvjjjAeqkw",
+"id":"nTvjjjAeqkw",
+"title":"Groovin' (Single Version)",
+"channel":"The Young Rascals - Topic",
+"embed":true,
+"kind":"audio"
 },
 "2aoHAxXJYM1sF71NT1cLg0":{
 "n":197,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"YOHIe5fRKhc",
+"id":"YOHIe5fRKhc",
+"title":"Had I Known You Better Then",
+"channel":"Hall & Oates - Topic",
+"embed":true,
+"kind":"audio"
 },
 "7f5D1QJXjVue8IA4i0DmwS":{
 "n":198,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"RindBGXOmC4",
+"id":"RindBGXOmC4",
+"title":"Here I Am",
+"channel":"Dolly Parton - Topic",
+"embed":true,
+"kind":"audio"
 },
 "2GORop0i2cyx8C0A3JzL44":{
 "n":199,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"op9ApJJyhD4",
+"id":"op9ApJJyhD4",
+"title":"Dance with Me",
+"channel":"Orleans - Topic",
+"embed":true,
+"kind":"audio"
 },
 "0SkrhXLkBeVy2QPCWi0Jxz":{
 "n":200,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"JzzfFQNs5WM",
+"id":"JzzfFQNs5WM",
+"title":"Pokey LaFarge - So Long Chicago (Official Lyric Video)",
+"channel":"Pokey LaFarge",
+"embed":true,
+"kind":"audio"
 },
 "2c4zwlPMc5dHS3Kg6oeUjk":{
 "n":201,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"iYa8F0827_g",
+"id":"iYa8F0827_g",
+"title":"Camille Yarbrough - Take Yo' Praise (Official Audio)",
+"channel":"Craft Recordings",
+"embed":true,
+"kind":"audio"
 },
 "5CNjsDtTDzqeqoxvL4jDiR":{
 "n":202,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"mARVYuoOEQM",
+"id":"mARVYuoOEQM",
+"title":"Tarkovski - BODEGA (Live at Earth Hall London, 24th October 2024)",
+"channel":"BODEGA NYC",
+"embed":true,
+"kind":"live"
 },
 "6208B8Utmd2fTqgGMjeNr6":{
 "n":203,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"_bna2ni6h4c",
+"id":"_bna2ni6h4c",
+"title":"Maxine Nightingale - Right Back Where We Started From • TopPop",
+"channel":"TopPop",
+"embed":true,
+"kind":"other"
 },
 "2AX1pP318rwvRa3lYZ3sJC":{
 "n":204,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"U2_PbdaIjwQ",
+"id":"U2_PbdaIjwQ",
+"title":"Van Dyke Parks - \"John Jones\"",
+"channel":"deevoss",
+"embed":true,
+"kind":"other"
 },
 "6KEWtSOGKpIXGw6l1uJgsR":{
 "n":205,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"GVVNzS1tuOY",
+"id":"GVVNzS1tuOY",
+"title":"10cc - The Things We Do For Love (2023 Remaster)",
+"channel":"Stereo Classics",
+"embed":true,
+"kind":"other"
 },
 "1Ryxsiacu8pUXIMCVnIQ8J":{
 "n":206,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"PuNXEUwIQMY",
+"id":"PuNXEUwIQMY",
+"title":"Still The Same",
+"channel":"Bob Seger - Topic",
+"embed":true,
+"kind":"audio"
 },
 "4BVFVaa1fDo20Ud1q5Gd2N":{
 "n":207,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"QTPedhOjcts",
+"id":"QTPedhOjcts",
+"title":"Superorganism - Everybody Wants to Be Famous",
+"channel":"David Dean Burkhart",
+"embed":true,
+"kind":"other"
 },
 "1SmzAbt4g7a1FfAIwovtwq":{
 "n":208,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"wn27g_eKP5I",
+"id":"wn27g_eKP5I",
+"title":"Phosphorescent - New Birth in New England (Official Audio)",
+"channel":"Dead Oceans",
+"embed":true,
+"kind":"audio"
 },
 "6hzEumHWNUVB0VWobDBT6x":{
 "n":209,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"ecBv6rYPJVo",
+"id":"ecBv6rYPJVo",
+"title":"Fox Academy - Choking On Flowers (Extended)",
+"channel":"Quentandil",
+"embed":true,
+"kind":"other"
 },
 "4C7GZbwKnoucpGdkBQ9iGt":{
 "n":210,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"K8OD2X15NFc",
+"id":"K8OD2X15NFc",
+"title":"Katie Queen of Tennessee",
+"channel":"The Apache Relay - Topic",
+"embed":true,
+"kind":"audio"
 },
 "29U7stRjqHU6rMiS8BfaI9":{
 "n":211,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"rBrd_3VMC3c",
+"id":"rBrd_3VMC3c",
+"title":"Louis Armstrong - What A Wonderful World (Official Video)",
+"channel":"LouisArmstrongVEVO",
+"embed":true,
+"kind":"video"
 },
 "5NelxeQ8Yd4ytdhdGog8c5":{
 "n":212,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"i8HnQX2f158",
+"id":"i8HnQX2f158",
+"title":"Freddie Scott - (You) Got What I Need (Official Audio)",
+"channel":"LegacyRecordingsVEVO",
+"embed":true,
+"kind":"audio"
 },
 "13iTIQHlw3VHIdycCUcc3M":{
 "n":213,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"6FSs53Ib8Jw",
+"id":"6FSs53Ib8Jw",
+"title":"Dobie Gray | Drift Away (HQ)",
+"channel":"♪FenderGibson Sounds♪",
+"embed":true,
+"kind":"other"
 },
 "62r1CS9zL1FL5Ilb7hLX7n":{
 "n":214,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"9FBUgdhxe9M",
+"id":"9FBUgdhxe9M",
+"title":"Al Green - Take Me To The River (Official Audio)",
+"channel":"Al Green",
+"embed":true,
+"kind":"audio"
 },
 "6kblAEj0T0312fv5QWsXzo":{
 "n":215,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"H_GvVnPsUeg",
+"id":"H_GvVnPsUeg",
+"title":"Mgmt- Congratulations",
+"channel":"TheRecentMusic",
+"embed":true,
+"kind":"other"
 },
 "5QfsQPEqDbtZtU2zZkJ1kR":{
 "n":216,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"rkbwZqQ5XRQ",
+"id":"rkbwZqQ5XRQ",
+"title":"Did She Mention My Name",
+"channel":"Dr. John - Topic",
+"embed":true,
+"kind":"audio"
 },
 "7cDbqFvw45zdLHGltdb1g9":{
 "n":217,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"FqzdRKrHs2w",
+"id":"FqzdRKrHs2w",
+"title":"The Underdog",
+"channel":"Spoon - Topic",
+"embed":true,
+"kind":"audio"
 },
 "7tJsTykoo4Jk5JguHTx9W7":{
 "n":218,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"GUO9SDd9UhU",
+"id":"GUO9SDd9UhU",
+"title":"Don't Pull Your Love Out",
+"channel":"Hamilton, Joe Frank & Reynolds - Topic",
+"embed":true,
+"kind":"audio"
 },
 "7n3kGSVCx32nesO6xfSmrW":{
 "n":219,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"Cv1QeakamkQ",
+"id":"Cv1QeakamkQ",
+"title":"That's All for Everyone (2015 Remaster)",
+"channel":"Fleetwood Mac - Topic",
+"embed":true,
+"kind":"audio"
 },
 "5YdrHBh16li6d7U5mdTwUb":{
 "n":220,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"PuxU5an9-H8",
+"id":"PuxU5an9-H8",
+"title":"Jenny Lewis - Just One Of The Guys [Official Lyric Video]",
+"channel":"Jenny Lewis",
+"embed":true,
+"kind":"audio"
 },
 "0IlYgHJnP4D8HWUCuyJnQW":{
 "n":221,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"DXPFiFUW7E4",
+"id":"DXPFiFUW7E4",
+"title":"La De Da",
+"channel":"Link Wray - Topic",
+"embed":true,
+"kind":"audio"
 },
 "3QwbKe0s8TcNclzXAXHeHy":{
 "n":222,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"ykLVZR7RG_w",
+"id":"ykLVZR7RG_w",
+"title":"The Rascals - A Beautiful Morning (Official Audio)",
+"channel":"RHINO",
+"embed":true,
+"kind":"audio"
 },
 "0yT9wIJek4ZuMCTZA61mUc":{
 "n":223,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"5evu-4ZU7iM",
+"id":"5evu-4ZU7iM",
+"title":"Innovations - Seabird / Put A Little Away (Full Single)",
+"channel":"Munster Records",
+"embed":true,
+"kind":"other"
 },
 "0lsM3dkpJuMN2KYrGI1WLK":{
 "n":224,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"Xj-06hLuZ8Y",
+"id":"Xj-06hLuZ8Y",
+"title":"This Will Be Our Year (Mono Version)",
+"channel":"THE ZOMBIES - Topic",
+"embed":true,
+"kind":"audio"
 },
 "1Fem9jSJEleNWT1kgt70ST":{
 "n":225,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"FlDGFrP4NgI",
+"id":"FlDGFrP4NgI",
+"title":"Bust Your Knee Caps (Johnny Don't Leave Me) - Pomplamoose",
+"channel":"PomplamooseMusic",
+"embed":true,
+"kind":"other"
 },
 "3LXWz3LTASiVb63HWc7Wa7":{
 "n":226,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"ZstVTHCCcGs",
+"id":"ZstVTHCCcGs",
+"title":"Indigo De Souza - Hold U [Official Music Video]",
+"channel":"Indigo De Souza",
+"embed":true,
+"kind":"video"
 },
 "05pizkWWDPXqvpUSwo1DMj":{
 "n":227,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"QGD25KekY_c",
+"id":"QGD25KekY_c",
+"title":"ARTHUR - Woof Woof",
+"channel":"PLZ Make It Ruins",
+"embed":true,
+"kind":"other"
 },
 "2kIDECuRDbagrRqLOY3Mnm":{
 "n":228,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"4Y3jlgA0UD8",
+"id":"4Y3jlgA0UD8",
+"title":"bby - Kinky [visualiser]",
+"channel":"bby",
+"embed":true,
+"kind":"audio"
 },
 "2OPh8c8b2jKTAp5WWpLSxd":{
 "n":229,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"IN6ctxFXQQk",
+"id":"IN6ctxFXQQk",
+"title":"JW Francis - Swooning",
+"channel":"David Dean Burkhart",
+"embed":true,
+"kind":"other"
 },
 "3LTinH60rltyAZiMmHF7JH":{
 "n":230,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"A3-ATRs99_M",
+"id":"A3-ATRs99_M",
+"title":"Sooner Or Later",
+"channel":"The Grass Roots - Topic",
+"embed":true,
+"kind":"audio"
 },
 "1G0ku3TLCGwrAHj9WPudKX":{
 "n":231,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"qL_MjRnPiQo",
+"id":"qL_MjRnPiQo",
+"title":"The Traveling Wilburys - Handle With Care (Official audio)",
+"channel":"Jbs2a",
+"embed":true,
+"kind":"audio"
 },
 "007JQyyu6DrGza9XX6scAN":{
 "n":232,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"oQMORqh_zEU",
+"id":"oQMORqh_zEU",
+"title":"Mother Mother - Wrecking Ball (Official English Lyric Video)",
+"channel":"LastGangRadio",
+"embed":true,
+"kind":"audio"
 },
 "7IFEQiMBMLjfCRNisLdIRE":{
 "n":233,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"g-0D-tEMG2U",
+"id":"g-0D-tEMG2U",
+"title":"Peter McPoland - Speed of the Sound (Of You) -The best lyrics (English/Español)",
+"channel":"José Manuel",
+"embed":true,
+"kind":"audio"
 },
 "6ebFwjg7AyBUjFdOTZLIU8":{
 "n":234,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"MtqMEeaeybk",
+"id":"MtqMEeaeybk",
+"title":"Father John Misty - She Cleans Up (Official Audio)",
+"channel":"Father John Misty",
+"embed":true,
+"kind":"audio"
 },
 "5lzZuwEPInxJRwYUQFqIlH":{
 "n":235,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"qZ3-BJICTzY",
+"id":"qZ3-BJICTzY",
+"title":"Mindless Creatures",
+"channel":"Dayglow - Topic",
+"embed":true,
+"kind":"audio"
 },
 "5Ay4ujNQ4xCrIxpDnk2SUC":{
 "n":236,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"lobykMqX3c8",
+"id":"lobykMqX3c8",
+"title":"Outer Limits Recordings - Julie (Official Music Video)",
+"channel":"GunkTVRecords",
+"embed":true,
+"kind":"video"
 },
 "3lrh0hthzUFsMNPH1mIiBT":{
 "n":237,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"u5tqRmAEG7g",
+"id":"u5tqRmAEG7g",
+"title":"Simon Smith and the Amazing Dancing Bear (Reprise) (Bonus Track)",
+"channel":"Alan Price - Topic",
+"embed":true,
+"kind":"audio"
 },
 "5lQxMlCMTzCj3j4vyzdl8T":{
 "n":238,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"IS0AvH8pMto",
+"id":"IS0AvH8pMto",
+"title":"Danny's Song",
+"channel":"Anne Murray - Topic",
+"embed":true,
+"kind":"audio"
 },
 "6bqB7idfAnJVisSMQA1mZQ":{
 "n":239,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"82xcICYq11Y",
+"id":"82xcICYq11Y",
+"title":"Vashti Bunyan - I'd Like To Walk Around In Your Mind",
+"channel":"hcloudforest",
+"embed":true,
+"kind":"other"
 },
 "3ssnFwx5lu6qxhLBR0vutB":{
 "n":240,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"AOMuK7YYxeg",
+"id":"AOMuK7YYxeg",
+"title":"Jefferson Starship Count On Me",
+"channel":"foghatrules",
+"embed":true,
+"kind":"other"
 },
 "6OojY4NdPiEGWHV2EUSwHz":{
 "n":241,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"a19QBz7HEWY",
+"id":"a19QBz7HEWY",
+"title":"Love - Always See Your Face (Official Audio)",
+"channel":"RHINO",
+"embed":true,
+"kind":"audio"
 },
 "1WaBuuaXGwrU4sFvxAjnkf":{
 "n":242,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"50TDntDgGLc",
+"id":"50TDntDgGLc",
+"title":"Happiness",
+"channel":"Ken Dodd - Topic",
+"embed":true,
+"kind":"audio"
 },
 "1oar8gdDX5yHWzVstAHDav":{
 "n":243,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"U8P0EVFKV74",
+"id":"U8P0EVFKV74",
+"title":"Promises",
+"channel":"Eric Clapton - Topic",
+"embed":true,
+"kind":"audio"
 },
 "2Fw4gGClr8zVFZVwIRjyWK":{
 "n":244,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"982JKu-j48E",
+"id":"982JKu-j48E",
+"title":"Christian Leave - Darling (Lyrics)",
+"channel":"던트daunt",
+"embed":true,
+"kind":"audio"
 },
 "1qRA5BS78u3gME0loMl9AA":{
 "n":245,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"80_39eAx3z8",
+"id":"80_39eAx3z8",
+"title":"Buffalo Springfield - For What It's Worth (Official Audio)",
+"channel":"RHINO",
+"embed":true,
+"kind":"audio"
 },
 "0P7DoyGrr4Wp9w5TotEtUC":{
 "n":246,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"xLFAQuWFcTo",
+"id":"xLFAQuWFcTo",
+"title":"The Weight (Remastered 2000)",
+"channel":"The Band - Topic",
+"embed":true,
+"kind":"audio"
 },
 "7uPmQttafLiJyju14JREY4":{
 "n":247,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"iO6OvHxD_m8",
+"id":"iO6OvHxD_m8",
+"title":"Young Americans (2016 Remaster)",
+"channel":"David Bowie - Topic",
+"embed":true,
+"kind":"audio"
 },
 "1x5r0EPkRhWLVbHQeyCiZE":{
 "n":248,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"A9dkzKjqlBY",
+"id":"A9dkzKjqlBY",
+"title":"Jeannie Piersol | The Nest [Official Video]",
+"channel":"High Moon Records",
+"embed":true,
+"kind":"video"
 },
 "7uhgdMtt4b4p35ehIYRqq6":{
 "n":249,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"IgWyQAzkqaU",
+"id":"IgWyQAzkqaU",
+"title":"Chaparelle - Inside the Lines (Official Video)",
+"channel":"chaparelleVEVO",
+"embed":true,
+"kind":"video"
 },
 "00m7Q2wHED7wAbYq83XxOh":{
 "n":250,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"8jgttWaKBbQ",
+"id":"8jgttWaKBbQ",
+"title":"Sunlight",
+"channel":"The Youngbloods - Topic",
+"embed":true,
+"kind":"audio"
 },
 "1GIV1YzfuFzYAoUjwx3r7W":{
 "n":251,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"LrjHz5hrupA",
+"id":"LrjHz5hrupA",
+"title":"Elvis Costello & The Attractions - Oliver's Army",
+"channel":"ElvisCostelloVEVO",
+"embed":true,
+"kind":"other"
 },
 "4cHBP73V974hbCl66gvWsi":{
 "n":252,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"yCoCgB3eIU4",
+"id":"yCoCgB3eIU4",
+"title":"Memo From Turner",
+"channel":"Mick Jagger - Topic",
+"embed":true,
+"kind":"audio"
 },
 "1sN36lAQq4ElbU1dgNefol":{
 "n":253,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"John's list",
+"listId":"8VcONCM0BzY",
+"id":"8VcONCM0BzY",
+"title":"Righteously - Anna Ash",
+"channel":"Anna Ash",
+"embed":true,
+"kind":"other"
 },
 "4HCOHRCSQelz2GPX8iTamO":{
 "n":254,
 "checked":"2026-10-21",
-"from":"song.link",
-"error":401
+"from":"YouTube search",
+"alts":[
+{
+"id":"5dPwBWvmcbQ",
+"title":"Justice - Flower In A Hurricane (ft Tame Impala, SZA, King Gizzard & the Lizard Wizard) [from GTAVI]",
+"channel":"Justice",
+"score":95
+},
+{
+"id":"qlcqiEUQAhU",
+"title":"Justice - Flower In A Hurricane // GTA 6 Music Video 4K",
+"channel":"Knight Driver",
+"score":85
+},
+{
+"id":"UQsFdPzhQjA",
+"title":"Justice | Flower In A Hurricane (UnOfficial Music Video)",
+"channel":"GCV",
+"score":85
+},
+{
+"id":"VIjea7Rxtco",
+"title":"Flower in a Hurricane - Justice ft. Tame Impala, SZA, King Gizzard & the Lizard Wizzard / Video",
+"channel":"Yener Namaz",
+"score":65
+}
+],
+"id":"qlcqiEUQAhU",
+"title":"Justice - Flower In A Hurricane // GTA 6 Music Video 4K",
+"channel":"Knight Driver",
+"kind":"video",
+"score":85,
+"why":[
+"title",
+"artist",
+"official video"
+],
+"embed":true
 }
 }
 }
