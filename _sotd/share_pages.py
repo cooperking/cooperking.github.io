@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Writes a small page for each day's song, so a shared link shows that song's cover, title and artist:
 
-  songs/d/2026-10-21/index.html   one per day, sends the visitor on to songs/#2026-10-21
+  songs/21-october-2026/index.html   one per day, sends the visitor on to songs/#21-october-2026
   songs/today/index.html          the latest song, sends the visitor on to songs/#today
 
 Days follow the calendar's rule: a song's day is when it was added (London time), and when two
@@ -27,6 +27,10 @@ def days(songs):
         out.append((d, s))
         nxt = d
     return list(reversed(out))
+
+
+def slug(d):
+    return f'{d.day}-{d:%B}-{d.year}'.lower()
 
 
 def long_date(d):
@@ -84,8 +88,8 @@ def main():
     dated = days(songs)
     changed = 0
     for d, s in dated:
-        iso = d.isoformat()
-        changed += write(os.path.join(SONGS, 'd', iso, 'index.html'), page(d, s, f'../../#{iso}', f'{SITE}d/{iso}/'))
+        sl = slug(d)
+        changed += write(os.path.join(SONGS, sl, 'index.html'), page(d, s, f'../#{sl}', f'{SITE}{sl}/'))
     d, s = dated[-1]
     changed += write(os.path.join(SONGS, 'today', 'index.html'), page(d, s, '../#today', f'{SITE}today/'))
     print(f'{len(dated)} day pages, {changed} written or changed; latest {d} {s["title"]}')
