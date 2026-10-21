@@ -4,6 +4,8 @@ or John's own pick in data/john.json "videos"), in the order of the days.
 
 It acts for the YouTube channel John picked when he signed in once through Google's OAuth Playground; the
 sign-in lives in three GitHub secrets (YT_CLIENT_ID, YT_CLIENT_SECRET, YT_REFRESH_TOKEN). Without them it does nothing.
+A new sign-in for a different channel starts a new playlist there; the old one is left for John to delete.
+On a channel named for Song of the Day the playlist is public; on any other (John's own, for testing) it's unlisted.
 
 YouTube allows 10,000 units a day and each added song costs 50, so a run adds at most 190; a long backlog
 fills over two days. What's been added is kept in data/youtube-playlist.json."""
@@ -79,20 +81,34 @@ def main():
 
     changed = False
     try:
+        me = (call('GET', API + 'channels?part=snippet&mine=true', token=token).get('items') or [{}])[0]
+        if not me.get('id'):
+            sys.exit('could not see which YouTube channel the sign-in is for')
+        name = me['snippet'].get('title', '')
+        print('signed in as the YouTube channel', name)
+        if state.get('channel') and state['channel'] != me['id']:
+            print('a different channel from before (' + state.get('channelName', '') + '): starting a new playlist here;',
+                  'the old one stays at', state.get('url'))
+            state = {'playlist': None, 'added': {}, 'before': state.get('url')}
+            changed = True
+        if state.get('channel') != me['id'] or state.get('channelName') != name:
+            state['channel'], state['channelName'] = me['id'], name
+            changed = True
         if state.get('playlist'):   # still there? (it may have been deleted on YouTube)
             j = call('GET', API + 'playlists?' + urllib.parse.urlencode({'part': 'id', 'id': state['playlist']}), token=token)
             if not j.get('items'):
                 print('the playlist has gone; making a new one')
-                state = {'playlist': None, 'added': {}}
+                state.update({'playlist': None, 'added': {}})
                 changed = True
         if not state.get('playlist'):
+            privacy = 'public' if 'song of the day' in name.lower() else 'unlisted'
             j = call('POST', API + 'playlists?part=snippet,status', {
-                'snippet': {'title': TITLE, 'description': ABOUT}, 'status': {'privacyStatus': 'public'}}, token=token)
+                'snippet': {'title': TITLE, 'description': ABOUT}, 'status': {'privacyStatus': privacy}}, token=token)
             if not j.get('id'):
                 sys.exit('could not make the playlist: ' + str(j))
             state['playlist'] = j['id']
             changed = True
-            print('made the playlist', 'https://www.youtube.com/playlist?list=' + j['id'])
+            print('made the playlist (' + privacy + ')', 'https://www.youtube.com/playlist?list=' + j['id'])
 
         adds = 0
         for pos, s in enumerate(songs):
