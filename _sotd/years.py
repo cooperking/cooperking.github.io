@@ -97,7 +97,7 @@ def main():
             json.dump(data, f, ensure_ascii=False, indent=0, separators=(',', ':'))
     out = {}
     for t, e in data['songs'].items():
-        ys = [y for y in (e.get('mb'), e.get('sp')) if y]
+        ys = [y for y in (e.get('mb'), e.get('sp')) if y and y > 1900]   # Spotify puts 1900 for an unknown date
         if ys:
             out[t] = min(ys)
     for t, y in john.items():
