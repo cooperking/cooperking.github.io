@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""Keeps a YouTube playlist in step with the Spotify playlist: every song with a YouTube match (data/youtube.json,
-or John's own pick in data/john-videos.json "videos"), in the order of the days.
+"""Keeps a YouTube playlist in step with the Spotify playlist: every song's video, in the order of the days.
+Each song uses the same video as the site's Play as video button (songs/videos.json, written by youtube.py just
+before this runs); only a song the site has no video for falls back to data/youtube.json.
 
 It acts for the YouTube channel John picked when he signed in once through Google's OAuth Playground; the
 sign-in lives in three GitHub secrets (YT_CLIENT_ID, YT_CLIENT_SECRET, YT_REFRESH_TOKEN). Without them it does nothing.
@@ -11,7 +12,8 @@ Each added song costs 50 of YouTube's daily units, shared with the searches (see
 fills over a few days. What's been added is kept in data/youtube-playlist.json.
 
 Each run first reads what is actually in the playlist (1 unit per 50 songs), so songs added by hand on YouTube count as
-added, and anything that isn't one of the songs' videos (a video since replaced, or a song in twice) is taken out."""
+added, and anything that isn't one of the songs' videos (a video since replaced, or a song in twice) is taken out.
+Songs out of day order (say, added by hand at the end) are moved into place, 50 units a move."""
 import json, os, sys, urllib.parse, urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -21,6 +23,7 @@ from ytapi import API, Quota   # noqa: E402
 
 OUT = os.path.join(HERE, 'data', 'youtube-playlist.json')
 MATCH = os.path.join(HERE, 'data', 'youtube.json')
+SITE = os.path.join(os.path.dirname(HERE), 'songs', 'videos.json')
 JOHN = os.path.join(HERE, 'data', 'john-videos.json')
 SONGS_URL = os.environ.get('SOTD_SONGS_URL', 'https://sotd-playlists.cooperking.workers.dev/songs.json')
 TITLE = "John's Song of the Day"
@@ -48,9 +51,12 @@ def main():
         with open(OUT) as f:
             state = json.load(f)
     match = {}
-    if os.path.exists(MATCH):
+    if os.path.exists(MATCH):   # fallback only
         with open(MATCH) as f:
             match = {t: e['id'] for t, e in json.load(f)['songs'].items() if e.get('id')}
+    if os.path.exists(SITE):    # the site's choice wins
+        with open(SITE) as f:
+            match.update({t: v['v'] for t, v in (json.load(f).get('videos') or {}).items()})
     if os.path.exists(JOHN):
         with open(JOHN) as f:
             for t, v in ((json.load(f) or {}).get('videos') or {}).items():
@@ -144,6 +150,31 @@ def main():
                 print('added', s['n'], s['title'], '—', s['artist'])
             else:
                 print('could not add', s['n'], s['title'], vid, j.get('_status'), j.get('_text', '')[:160])
+        # day order: move any song that isn't where it should be (songs added by hand go in at the end)
+        cur = [s['id'] for s in songs if s['id'] in state['added']]
+        q = {'part': 'snippet', 'playlistId': state['playlist'], 'maxResults': 50}
+        now, page = [], None
+        while True:
+            if page:
+                q['pageToken'] = page
+            j = call('GET', API + 'playlistItems?' + urllib.parse.urlencode(q), token=token)
+            now += [it['id'] for it in j.get('items', [])]
+            page = j.get('nextPageToken')
+            if not page:
+                break
+        by_item = {v['item']: t for t, v in state['added'].items()}
+        order = [by_item[i] for i in now if i in by_item]
+        for want_pos, t in enumerate(cur):
+            if order[want_pos] == t:
+                continue
+            item = state['added'][t]
+            r = call('PUT', API + 'playlistItems?part=snippet', {'id': item['item'], 'snippet': {
+                'playlistId': state['playlist'], 'position': want_pos,
+                'resourceId': {'kind': 'youtube#video', 'videoId': item['v']}}}, token=token, units=50)
+            if '_status' in r:
+                print('could not move', t, r.get('_status'), r.get('_text', '')[:160]); break
+            order.remove(t); order.insert(want_pos, t)
+            print('moved into place:', next(s['n'] for s in songs if s['id'] == t), '->', want_pos + 1)
     except Quota:
         print("today's YouTube allowance is used up; the rest go in tomorrow")
     if changed:
