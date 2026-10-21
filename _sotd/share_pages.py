@@ -306,7 +306,9 @@ def plain_page(title, desc, target, url, image, theme, alt):
 <meta property="og:url" content="{e(url)}">
 {img_tags}<meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="{theme}">
-<link rel="icon" type="image/png" sizes="96x96" href="/songs/favicon-96.png?v=2">
+<link rel="icon" type="image/png" sizes="96x96" href="https://cooperking.github.io/songs/favicon-96.png?v=2">
+<link rel="icon" type="image/png" sizes="192x192" href="https://cooperking.github.io/songs/icon-192.png?v=2">
+<link rel="apple-touch-icon" sizes="180x180" href="https://cooperking.github.io/songs/apple-touch-icon.png?v=2">
 <script>{redirect(target)}</script>
 </head>
 <body style="font-family: Georgia, serif; padding: 24px;">
@@ -340,7 +342,9 @@ def page(d, s, target, url, image):
 <meta name="twitter:title" content="{e(title)}">
 <meta name="twitter:description" content="{e(desc)}">
 <meta name="theme-color" content="{PALETTES[d.month - 1][0]}">
-<link rel="icon" type="image/png" sizes="96x96" href="/songs/favicon-96.png?v=2">
+<link rel="icon" type="image/png" sizes="96x96" href="https://cooperking.github.io/songs/favicon-96.png?v=2">
+<link rel="icon" type="image/png" sizes="192x192" href="https://cooperking.github.io/songs/icon-192.png?v=2">
+<link rel="apple-touch-icon" sizes="180x180" href="https://cooperking.github.io/songs/apple-touch-icon.png?v=2">
 <script>{redirect(target)}</script>
 </head>
 <body style="font-family: Georgia, serif; padding: 24px;">
