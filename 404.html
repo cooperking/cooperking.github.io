@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Page not found</title>
 <script>
-  // A Song of the Day link for a day whose share page hasn't been built yet: open that day on the calendar.
+  // A Song of the Day link to a day or month whose share page hasn't been built yet: open it on the calendar.
   (function () {
-    var m = location.pathname.match(/^\/songs\/(?:d\/)?(\d{4}-\d{2}-\d{2}|\d{1,2}-(?:\d{1,2}|[a-z]+)-\d{4}|today)\/?$/i);
+    var m = location.pathname.match(/^\/songs\/(?:d\/)?(\d{4}-\d{2}-\d{2}|\d{1,2}-(?:\d{1,2}|[a-z]+)-\d{4}|\d{1,2}-\d{4}|today)\/?$/i);
     if (m) location.replace('/songs/#' + m[1].toLowerCase());
   })();
 </script>

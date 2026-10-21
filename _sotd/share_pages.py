@@ -5,6 +5,8 @@ a proper card: the cover with its record, the title, the artist and the date, on
   songs/21-10-2026/index.html   one per day, sends the visitor on to songs/#21-10-2026
   songs/21-10-2026/card.jpg     1200 x 630 picture for link previews
   songs/today/index.html        the latest song, sends the visitor on to songs/#today
+  songs/10-2026/index.html      one per month, with card.jpg: that month's covers
+  songs/card.jpg                the whole calendar's picture (the site's own link preview uses it)
 
 Days follow the calendar's rule: a song's day is when it was added (London time), and when two
 were added on one day the earlier one moves back to the day before.
@@ -192,8 +194,10 @@ def card(d, s, cover):
     return out.getvalue()
 
 
-def cover_bytes(s):
+def cover_bytes(s, small=False):
     url = (s.get('img') or '').replace('ab67616d00001e02', 'ab67616d0000b273')
+    if small:
+        url = url.replace('ab67616d0000b273', 'ab67616d00001e02')
     if COVERS:
         p = os.path.join(COVERS, url.rsplit('/', 1)[-1][-24:] + '.jpg')
         return open(p, 'rb').read() if os.path.exists(p) else None
@@ -203,7 +207,106 @@ def cover_bytes(s):
         return r.read()
 
 
+def grid_card(month, lines, kicker, foot, covers):
+    """A month or the whole calendar: the name on the left, the covers in a grid on the right."""
+    from PIL import Image, ImageDraw, ImageFilter
+    img = ground(month).convert('RGBA')
+    ax, ay, aw, ah, gap = 520, 48, W - 520 - 48, H - 96, 10
+    n = len(covers)
+    best = (0, 1, 1)
+    for cols in range(2, 10):
+        rows = -(-n // cols)
+        cell = min((aw - (cols - 1) * gap) / cols, (ah - (rows - 1) * gap) / rows)
+        if cell > best[0]:
+            best = (cell, cols, rows)
+    cell, cols, rows = int(best[0]), best[1], best[2]
+    gw, gh = cols * cell + (cols - 1) * gap, rows * cell + (rows - 1) * gap
+    ox, oy = ax + (aw - gw) // 2, ay + (ah - gh) // 2
+    shadow = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+    sd = ImageDraw.Draw(shadow)
+    pos = []
+    for i, c in enumerate(covers):
+        x, y = ox + (i % cols) * (cell + gap), oy + (i // cols) * (cell + gap)
+        pos.append((x, y, c))
+        sd.rectangle((x + 3, y + 6, x + cell + 3, y + cell + 6), fill=(20, 6, 20, 90))
+    img = Image.alpha_composite(img, shadow.filter(ImageFilter.GaussianBlur(8)))
+    for x, y, c in pos:
+        try:
+            img.paste(Image.open(io.BytesIO(c)).convert('RGB').resize((cell, cell), Image.LANCZOS), (x, y))
+        except Exception:
+            ImageDraw.Draw(img).rectangle((x, y, x + cell, y + cell), fill=(255, 255, 255, 40))
+    dr = ImageDraw.Draw(img)
+    x0, width = 64, ax - 64 - 40
+    small = font('HankenGrotesk.ttf', 19, weight=600)
+    for tsize in (84, 76, 68, 60, 54):
+        tf = font('Newsreader.ttf', tsize, weight=500, opsz=72)
+        if all(dr.textlength(l, font=tf) <= width for l in lines):
+            break
+    fsize = 30
+    ff = font('Newsreader-Italic.ttf', fsize, weight=400, opsz=30)
+    while dr.textlength(foot, font=ff) > width and fsize > 20:
+        fsize -= 2
+        ff = font('Newsreader-Italic.ttf', fsize, weight=400, opsz=30)
+    lh = int(tsize * 1.04)
+    block = 19 + 28 + len(lines) * lh + 24 + 30
+    y = (H - block) // 2
+    spaced(dr, (x0, y), kicker, small, INK + (230,), 3.2)
+    y += 19 + 28
+    for l in lines:
+        dr.text((x0, y), l, font=tf, fill=INK)
+        y += lh
+    y += 24
+    dr.text((x0, y), foot, font=ff, fill=INK + (235,))
+    out = io.BytesIO()
+    img.convert('RGB').save(out, 'JPEG', quality=84, optimize=True, progressive=True)
+    return out.getvalue()
+
+
+def refresh_card(path, stamp, make):
+    """Draws a card only when what it shows has changed; returns whether it exists."""
+    sp = os.path.join(os.path.dirname(path), '.' + os.path.basename(path) + '.stamp')
+    if os.path.exists(path) and os.path.exists(sp) and open(sp).read().strip() == stamp:
+        return True
+    try:
+        write(path, make())
+        write(sp, stamp + '\n')
+        return True
+    except Exception as ex:
+        print('card failed for', path, ex)
+        return os.path.exists(path)
+
+
 # ---------- the page ----------
+
+def plain_page(title, desc, target, url, image, theme, alt):
+    e = lambda x: html.escape(x, quote=True)
+    img_tags = (f'<meta property="og:image" content="{e(image)}">\n<meta property="og:image:type" content="image/jpeg">\n'
+                f'<meta property="og:image:width" content="{W}">\n<meta property="og:image:height" content="{H}">\n'
+                f'<meta property="og:image:alt" content="{e(alt)}">\n<meta name="twitter:image" content="{e(image)}">\n') if image else ''
+    return f"""<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{e(title)} · John's Song of the Day</title>
+<meta name="description" content="{e(desc)}">
+<link rel="canonical" href="{e(url)}">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="John's Song of the Day">
+<meta property="og:title" content="{e(title)}">
+<meta property="og:description" content="{e(desc)}">
+<meta property="og:url" content="{e(url)}">
+{img_tags}<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="{theme}">
+<link rel="icon" type="image/png" sizes="96x96" href="/songs/favicon-96.png?v=2">
+<meta http-equiv="refresh" content="0; url={e(target)}">
+<script>location.replace({json.dumps(target)});</script>
+</head>
+<body style="font-family: Georgia, serif; padding: 24px;">
+<p><a href="{e(target)}">{e(title)}</a>: {e(desc)}</p>
+</body>
+</html>
+"""
 
 def page(d, s, target, url, image):
     e = lambda x: html.escape(x, quote=True)
@@ -281,6 +384,43 @@ def main():
     image = f'{SITE}{sl}/card.jpg' if os.path.exists(os.path.join(SONGS, sl, 'card.jpg')) else ''
     pages += write(os.path.join(SONGS, 'today', 'index.html'), page(d, s, '../#today', f'{SITE}today/', image))
     print(f'{len(dated)} days: {pages} pages and {cards} cards written or changed; latest {d} {s["title"]}')
+
+    # months: a page and a card of that month's covers
+    small = {}
+    def covers(items):
+        out = []
+        for _, x in items:
+            if x['id'] not in small:
+                try:
+                    small[x['id']] = cover_bytes(x, small=True)
+                except Exception:
+                    small[x['id']] = None
+            if small[x['id']]:
+                out.append(small[x['id']])
+        return out
+    by_month = {}
+    for d, s in dated:
+        by_month.setdefault((d.year, d.month), []).append((d, s))
+    for (y, m), items in sorted(by_month.items()):
+        ms = f'{m:02d}-{y}'
+        name = f"{items[0][0]:%B} {y}"
+        count = f"{len(items)} {'song' if len(items) == 1 else 'songs'}"
+        stamp = hashlib.sha1((CARD_VERSION + ' ' + ' '.join(x['id'] + str(x.get('img')) for _, x in items)).encode()).hexdigest()[:12]
+        path = os.path.join(SONGS, ms, 'card.jpg')
+        ok = refresh_card(path, stamp, lambda: grid_card(m - 1, [f"{items[0][0]:%B}", str(y)], "JOHN'S SONG OF THE DAY", count, covers(items)))
+        image = f'{SITE}{ms}/card.jpg?v={stamp}' if ok else ''
+        pages += write(os.path.join(SONGS, ms, 'index.html'),
+                       plain_page(name, f"{count} on John's Song of the Day, one for each day of {name}", f'../#{ms}', f'{SITE}{ms}/',
+                                  image, PALETTES[m - 1][0], f"Covers of the songs for {name}"))
+
+    # the whole calendar: its newest covers
+    latest = dated[-20:][::-1]
+    first = dated[0][0]
+    stamp = hashlib.sha1((CARD_VERSION + f' {len(dated)} ' + ' '.join(x['id'] for _, x in latest)).encode()).hexdigest()[:12]
+    refresh_card(os.path.join(SONGS, 'card.jpg'), stamp,
+                 lambda: grid_card(dated[-1][0].month - 1, ["John's Song", 'of the Day'], f'{len(dated)} SONGS SO FAR',
+                                   f'A song a day since {first.day} {first:%B %Y}', covers(latest)))
+    print(f'{len(by_month)} month pages; calendar card {stamp}')
 
 
 if __name__ == '__main__':
