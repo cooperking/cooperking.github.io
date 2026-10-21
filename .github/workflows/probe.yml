@@ -5,8 +5,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          curl -s -i -A "SongOfTheDayCalendar/1.0 (https://cooperking.github.io/songs/)" "https://api.song.link/v1-alpha.1/links?url=https%3A%2F%2Fopen.spotify.com%2Ftrack%2F5mgCP62kIGit9ICUdaqIgq&userCountry=GB" | head -c 1500; echo
-          echo ----
-          curl -s -i "https://api.song.link/v1-alpha.1/links?url=spotify%3Atrack%3A5mgCP62kIGit9ICUdaqIgq" | head -c 800; echo
-          echo ----
-          curl -s -i "https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=dQw4w9WgXcQ&format=json" | head -c 600; echo
+          a=$(curl -s -i -A "SongOfTheDayCalendar/1.0 (https://cooperking.github.io/songs/)" "https://api.song.link/v1-alpha.1/links?url=https%3A%2F%2Fopen.spotify.com%2Ftrack%2F5mgCP62kIGit9ICUdaqIgq&userCountry=GB" | head -c 1200 | tr '\r\n' '  ')
+          echo "::notice title=songlink::$a"
+          b=$(curl -s -i "https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=dQw4w9WgXcQ&format=json" | head -c 500 | tr '\r\n' '  ')
+          echo "::notice title=oembed::$b"
