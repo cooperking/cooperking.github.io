@@ -28,6 +28,8 @@ jobs:
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main   # the latest, even when this run waited behind another that saved data
 
       - uses: actions/setup-python@v5
         with:
@@ -68,6 +70,10 @@ jobs:
         run: python _sotd/musicbrainz.py
 
       - name: A YouTube video for each song
+        env:
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
         run: python _sotd/youtube.py
 
       - name: Keep the YouTube playlist in step

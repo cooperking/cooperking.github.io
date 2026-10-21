@@ -7,59 +7,34 @@ sign-in lives in three GitHub secrets (YT_CLIENT_ID, YT_CLIENT_SECRET, YT_REFRES
 A new sign-in for a different channel starts a new playlist there; the old one is left for John to delete.
 On a channel named for Song of the Day the playlist is public; on any other (John's own, for testing) it's unlisted.
 
-YouTube allows 10,000 units a day and each added song costs 50, so a run adds at most 190; a long backlog
-fills over two days. What's been added is kept in data/youtube-playlist.json."""
-import json, os, sys, urllib.error, urllib.parse, urllib.request
+Each added song costs 50 of YouTube's daily units, shared with the searches (see ytapi.py), so a long backlog
+fills over a few days. What's been added is kept in data/youtube-playlist.json."""
+import json, os, sys, urllib.parse, urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+import ytapi   # noqa: E402
+from ytapi import API, Quota   # noqa: E402
+
 OUT = os.path.join(HERE, 'data', 'youtube-playlist.json')
 MATCH = os.path.join(HERE, 'data', 'youtube.json')
 JOHN = os.path.join(HERE, 'data', 'john.json')
 SONGS_URL = os.environ.get('SOTD_SONGS_URL', 'https://sotd-playlists.cooperking.workers.dev/songs.json')
-API = 'https://www.googleapis.com/youtube/v3/'
 TITLE = "John's Song of the Day"
 ABOUT = ("A song for every day since 10 February 2026, in the same order as the Spotify playlist. "
          "The calendar, with a preview of each song: https://cooperking.github.io/songs/")
-MAX_ADDS = 190
 
 
-class Quota(Exception):
-    pass
-
-
-def call(method, url, body=None, token=None, form=False):
-    data, headers = None, {'User-Agent': 'SongOfTheDayCalendar/1.0'}
-    if token:
-        headers['Authorization'] = 'Bearer ' + token
-    if body is not None:
-        if form:
-            data = urllib.parse.urlencode(body).encode()
-            headers['Content-Type'] = 'application/x-www-form-urlencoded'
-        else:
-            data = json.dumps(body).encode()
-            headers['Content-Type'] = 'application/json'
-    try:
-        with urllib.request.urlopen(urllib.request.Request(url, data=data, headers=headers, method=method), timeout=30) as r:
-            raw = r.read()
-            return json.loads(raw) if raw else {}
-    except urllib.error.HTTPError as e:
-        text = e.read().decode('utf-8', 'replace')
-        if e.code == 403 and ('quotaExceeded' in text or 'rateLimitExceeded' in text):
-            raise Quota()
-        return {'_status': e.code, '_text': text[:300]}
+def call(method, url, body=None, token=None, units=1):
+    ytapi.spend(units)
+    return ytapi.call(method, url, body, token=token)
 
 
 def main():
-    env = {k: os.environ.get(k, '').strip() for k in ('YT_CLIENT_ID', 'YT_CLIENT_SECRET', 'YT_REFRESH_TOKEN')}
-    if not all(env.values()):
+    token = ytapi.token()
+    if not token:
         print('YouTube playlist: not set up yet (no YT_* secrets)')
         return
-    tok = call('POST', 'https://oauth2.googleapis.com/token', {
-        'client_id': env['YT_CLIENT_ID'], 'client_secret': env['YT_CLIENT_SECRET'],
-        'refresh_token': env['YT_REFRESH_TOKEN'], 'grant_type': 'refresh_token'}, form=True)
-    token = tok.get('access_token')
-    if not token:
-        sys.exit('YouTube sign-in failed: ' + str(tok.get('_status')) + ' ' + str(tok.get('_text')))
 
     state = {'playlist': None, 'added': {}}
     if os.path.exists(OUT):
@@ -103,7 +78,7 @@ def main():
         if not state.get('playlist'):
             privacy = 'public' if 'song of the day' in name.lower() else 'unlisted'
             j = call('POST', API + 'playlists?part=snippet,status', {
-                'snippet': {'title': TITLE, 'description': ABOUT}, 'status': {'privacyStatus': privacy}}, token=token)
+                'snippet': {'title': TITLE, 'description': ABOUT}, 'status': {'privacyStatus': privacy}}, token=token, units=50)
             if not j.get('id'):
                 sys.exit('could not make the playlist: ' + str(j))
             state['playlist'] = j['id']
@@ -116,18 +91,15 @@ def main():
             have = state['added'].get(s['id'])
             if not vid or (have and have['v'] == vid):
                 continue
-            if adds >= MAX_ADDS:
-                print('enough for one day; the rest go in tomorrow')
-                break
             if have:   # a different video picked since: take the old one out
-                call('DELETE', API + 'playlistItems?' + urllib.parse.urlencode({'id': have['item']}), token=token)
+                call('DELETE', API + 'playlistItems?' + urllib.parse.urlencode({'id': have['item']}), token=token, units=50)
                 state['added'].pop(s['id'])
                 changed = True
             # in day order: just after the songs before it that are already in
             at = sum(1 for x in songs[:pos] if x['id'] in state['added'])
             j = call('POST', API + 'playlistItems?part=snippet', {'snippet': {
                 'playlistId': state['playlist'], 'position': at,
-                'resourceId': {'kind': 'youtube#video', 'videoId': vid}}}, token=token)
+                'resourceId': {'kind': 'youtube#video', 'videoId': vid}}}, token=token, units=50)
             adds += 1
             if j.get('id'):
                 state['added'][s['id']] = {'v': vid, 'item': j['id']}
@@ -136,7 +108,7 @@ def main():
             else:
                 print('could not add', s['n'], s['title'], vid, j.get('_status'), j.get('_text', '')[:160])
     except Quota:
-        print("YouTube's daily allowance is used up; the rest go in tomorrow")
+        print("today's YouTube allowance is used up; the rest go in tomorrow")
     if changed:
         state['url'] = 'https://www.youtube.com/playlist?list=' + state['playlist']
         with open(OUT, 'w') as f:
