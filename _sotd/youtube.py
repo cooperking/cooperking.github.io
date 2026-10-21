@@ -30,7 +30,8 @@ JOHN = os.path.join(HERE, 'data', 'john-videos.json')
 LINKS = os.path.join(HERE, 'data', 'links.json')
 LIST = "John's list"
 LINK_OK = 30      # a link scoring under this doesn't look like the song
-LINK_CHECK = 2    # bump to look at every link again
+LINK_CHECK = 3    # bump to look at every link again
+LENGTH_PENALTY = 60
 SITE = os.path.join(ROOT, 'songs', 'videos.json')
 SONGS_URL = os.environ.get('SOTD_SONGS_URL', 'https://sotd-playlists.cooperking.workers.dev/songs.json')
 RETRY_DAYS = 30
@@ -98,10 +99,33 @@ def score(song, cand):
     elif k == 'live':
         s -= 15; why.append('live')
     song_words = set(fold(song['title']).split()) | set(fold(song.get('album', '')).split())
+    official = 'official channel' in why or re.search(r'\bofficial\b', ct)
     for w in WRONG:
+        if w.startswith('lyric') and official:
+            continue   # the artist's or label's own lyric video is the song
         if re.search(r'\b' + re.escape(w) + r'\b', ct) and not set(w.split()) <= song_words:
             s -= 45; why.append(w); break
     return s, why, k
+
+
+def iso_secs(x):
+    m = re.match(r'P(?:(\d+)D)?T?(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$', x or '')
+    if not m:
+        return None
+    d, h, mi, se = (int(v or 0) for v in m.groups())
+    return ((d * 24 + h) * 60 + mi) * 60 + se
+
+
+def length_off(cand, ms):
+    """Mark down an upload whose length is well off the song's on Spotify (a snippet, a live set, an extended mix,
+    both sides of a single), unless it's an official video, which often runs long."""
+    if not ms or cand.get('secs') is None or cand.get('kind') == 'video':
+        return False
+    diff = abs(cand['secs'] - ms / 1000)
+    if diff > 40 and diff > .2 * ms / 1000:
+        cand['score'] -= LENGTH_PENALTY; cand['why'] = cand.get('why', []) + ['length %d:%02d' % divmod(cand['secs'], 60)]
+        return True
+    return False
 
 
 def due(e):
@@ -137,6 +161,18 @@ def lookup(s, tok):
         c['score'], c['why'], c['kind'] = score(s, c)
         cands.append(c)
     cands.sort(key=lambda c: -c['score'])
+    top = cands[:5]
+    if top:
+        st = ytapi.get('videos', {'part': 'status,contentDetails', 'id': ','.join(c['id'] for c in top)}, tok, units=1)
+        info = {it['id']: it for it in st.get('items', [])}
+        for c in top:
+            it = info.get(c['id'])
+            if it:
+                c['secs'] = iso_secs(it['contentDetails'].get('duration'))
+                c['embed'] = bool(it['status'].get('embeddable') and it['status'].get('privacyStatus') == 'public')
+                length_off(c, s.get('ms'))
+        cands = top + cands[5:]
+        cands.sort(key=lambda c: -c['score'])
     e['alts'] = [{k: c[k] for k in ('id', 'title', 'channel', 'score')} for c in cands[:4]]
     best = cands[0] if cands and cands[0]['score'] >= GOOD else None
     if not best:
@@ -148,23 +184,23 @@ def lookup(s, tok):
         if v:
             best = v
     e.update({'id': best['id'], 'title': best['title'], 'channel': best['channel'], 'kind': best['kind'],
-              'score': best['score'], 'why': best['why']})
-    st = ytapi.get('videos', {'part': 'status', 'id': best['id']}, tok, units=1)
-    item = (st.get('items') or [None])[0]
-    e['embed'] = None if '_status' in st else bool(item and item['status'].get('embeddable') and item['status'].get('privacyStatus') == 'public')
+              'score': best['score'], 'why': best['why'], 'embed': best.get('embed')})
+    if best.get('secs') is not None:
+        e['secs'] = best['secs']
     return e
 
 
-def from_links(songs, data, links, tok):
+def from_links(songs, data, links, tok, ms=None):
     """Check John's links, 50 to a 1-unit lookup, and take them as each song's video unless the search did better."""
     need = [s for s in songs if links.get(s['id']) and data['songs'].get(s['id'], {}).get('from') != 'John' and (data['songs'].get(s['id'], {}).get('listId') != links[s['id']]
                                                        or data['songs'].get(s['id'], {}).get('listCheck') != LINK_CHECK)]
+    ms = ms or {}
     print(len(need), "songs to take from John's links")
     today = datetime.date.today().isoformat()
     took = 0
     for i in range(0, len(need), 50):
         batch = need[i:i + 50]
-        j = ytapi.get('videos', {'part': 'snippet,status', 'id': ','.join(links[s['id']] for s in batch), 'maxResults': 50}, tok, units=1)
+        j = ytapi.get('videos', {'part': 'snippet,status,contentDetails', 'id': ','.join(links[s['id']] for s in batch), 'maxResults': 50}, tok, units=1)
         if '_status' in j:
             print('could not check the links:', j['_status'], j.get('_text', '')[:160]); return took
         found = {it['id']: it for it in j.get('items', [])}
@@ -182,6 +218,10 @@ def from_links(songs, data, links, tok):
                     'channel': sn.get('channelTitle', ''), 'embed': bool(st.get('embeddable') and st.get('privacyStatus') == 'public')}
             mine['kind'] = kind(mine['title'], mine['channel'])
             mine['score'], mine['why'], _ = score(s, mine)
+            mine['secs'] = iso_secs((it.get('contentDetails') or {}).get('duration'))
+            if mine['secs'] is None:
+                mine.pop('secs')
+            length_off(mine, ms.get(s['id']))
             searched = old.get('searched') if old.get('from') == LIST else old
             if not (searched and searched.get('id') and searched['id'] != vid and searched.get('from', 'YouTube search') == 'YouTube search'):
                 searched = old if old.get('id') and old.get('from') == 'YouTube search' and old['id'] != vid else None
@@ -300,10 +340,11 @@ def main():
     import urllib.request
     with urllib.request.urlopen(urllib.request.Request(SONGS_URL, headers={'User-Agent': ytapi.UA}), timeout=30) as r:
         songs = json.loads(r.read())['songs']
-    links = {}
+    links, ms = {}, {}
     if os.path.exists(LINKS):
         with open(LINKS) as f:
-            links = json.load(f).get('links') or {}
+            lj = json.load(f)
+            links, ms = lj.get('links') or {}, lj.get('ms') or {}
     john = {}
     if os.path.exists(JOHN):
         with open(JOHN) as f:
@@ -311,7 +352,7 @@ def main():
     done = 0
     try:
         done += johns_picks(songs, data, john, tok)
-        done += from_links(songs, data, links, tok)
+        done += from_links(songs, data, links, tok, ms)
     except ytapi.Quota:
         print("today's YouTube allowance is used up")
     todo = [s for s in songs if s['id'] not in data['songs'] or due(data['songs'][s['id']])]
@@ -319,7 +360,10 @@ def main():
     try:
         for s in todo:
             prev = data['songs'].get(s['id'], {})
-            e = lookup(dict(s, listId=prev.get('listId')), tok)
+            e = lookup(dict(s, listId=prev.get('listId'), ms=ms.get(s['id']) or s.get('ms')), tok)
+            for k in ('listNote', 'listCheck'):
+                if k in prev:
+                    e[k] = prev[k]
             data['songs'][s['id']] = e
             done += 1
             print(s['n'], s['title'], '—', s['artist'], '→', e.get('kind', ''), e.get('id'), '|', e.get('channel', ''), '|',
