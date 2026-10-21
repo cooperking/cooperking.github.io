@@ -8,13 +8,16 @@ marked down for covers, lyrics, karaoke, live, remixes and the like that the son
 and one more lookup says whether its owner lets other sites play it. The runner-up uploads are kept for John.
 
 John's own links come first (data/links.json, from his playlist export): one lookup of 1 unit checks 50 of them
-(title, channel, whether other sites may play it). His link is used unless the search already found an official
-video where his link is an audio-only upload, or his link can't be played on other sites and the search's can.
-Only songs with no usable link are searched.
+(title, channel, whether other sites may play it). His link is used unless it doesn't look like the song (scores
+under LINK_OK: another song's title, or a slowed / lyrics / live version the song isn't), or the search already found
+an official video where his link is an audio-only upload, or his link can't be played on other sites and the
+search's can. Songs with no usable link are searched, never picking a link already judged wrong.
+Each chosen video's length is fetched too (50 to a 1-unit lookup) and kept as secs, to compare with Spotify's.
 
 Nothing is downloaded: the calendar plays the video in YouTube's own player.
-YouTube allows 100 searches a day, so a long backlog takes a few days; songs not done yet wait for the next run. Songs with no good match are tried again after 30 days. John's own picks (data/john.json
-"videos": {track id: video id, or "" for none}) win over the search."""
+YouTube allows 100 searches a day, so a long backlog takes a few days; songs not done yet wait for the next run.
+Songs with no good match are tried again after 30 days. John's own picks (data/john-videos.json "videos":
+{track id: video id, or "" for none}) win over everything."""
 import datetime, json, os, re, sys, unicodedata
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -23,9 +26,11 @@ import ytapi   # noqa: E402
 
 ROOT = os.path.dirname(HERE)
 OUT = os.path.join(HERE, 'data', 'youtube.json')
-JOHN = os.path.join(HERE, 'data', 'john.json')
+JOHN = os.path.join(HERE, 'data', 'john-videos.json')
 LINKS = os.path.join(HERE, 'data', 'links.json')
 LIST = "John's list"
+LINK_OK = 30      # a link scoring under this doesn't look like the song
+LINK_CHECK = 2    # bump to look at every link again
 SITE = os.path.join(ROOT, 'songs', 'videos.json')
 SONGS_URL = os.environ.get('SOTD_SONGS_URL', 'https://sotd-playlists.cooperking.workers.dev/songs.json')
 RETRY_DAYS = 30
@@ -126,7 +131,7 @@ def lookup(s, tok):
     for it in j.get('items', []):
         vid = (it.get('id') or {}).get('videoId')
         sn = it.get('snippet') or {}
-        if not vid:
+        if not vid or vid == s.get('listId'):
             continue
         c = {'id': vid, 'title': unescape(sn.get('title', '')), 'channel': sn.get('channelTitle', '')}
         c['score'], c['why'], c['kind'] = score(s, c)
@@ -152,7 +157,8 @@ def lookup(s, tok):
 
 def from_links(songs, data, links, tok):
     """Check John's links, 50 to a 1-unit lookup, and take them as each song's video unless the search did better."""
-    need = [s for s in songs if links.get(s['id']) and data['songs'].get(s['id'], {}).get('listId') != links[s['id']]]
+    need = [s for s in songs if links.get(s['id']) and data['songs'].get(s['id'], {}).get('from') != 'John' and (data['songs'].get(s['id'], {}).get('listId') != links[s['id']]
+                                                       or data['songs'].get(s['id'], {}).get('listCheck') != LINK_CHECK)]
     print(len(need), "songs to take from John's links")
     today = datetime.date.today().isoformat()
     took = 0
@@ -167,7 +173,7 @@ def from_links(songs, data, links, tok):
             it = found.get(vid)
             if not it or (it.get('status') or {}).get('privacyStatus') not in ('public', 'unlisted'):
                 e = dict(old) if old.get('id') and old.get('from') == 'YouTube search' else {'n': s['n'], 'id': None, 'from': LIST}
-                e.update({'listId': vid, 'checked': today, 'listNote': 'link gone or private'})
+                e.update({'listId': vid, 'listCheck': LINK_CHECK, 'checked': today, 'listNote': 'link gone or private'})
                 data['songs'][s['id']] = e
                 print(s['n'], s['title'], '— his link is gone or private', vid)
                 continue
@@ -175,21 +181,71 @@ def from_links(songs, data, links, tok):
             mine = {'n': s['n'], 'checked': today, 'from': LIST, 'listId': vid, 'id': vid, 'title': unescape(sn.get('title', '')),
                     'channel': sn.get('channelTitle', ''), 'embed': bool(st.get('embeddable') and st.get('privacyStatus') == 'public')}
             mine['kind'] = kind(mine['title'], mine['channel'])
-            searched = old if old.get('id') and old.get('from') == 'YouTube search' and old['id'] != vid else None
+            mine['score'], mine['why'], _ = score(s, mine)
+            searched = old.get('searched') if old.get('from') == LIST else old
+            if not (searched and searched.get('id') and searched['id'] != vid and searched.get('from', 'YouTube search') == 'YouTube search'):
+                searched = old if old.get('id') and old.get('from') == 'YouTube search' and old['id'] != vid else None
+            if mine['score'] < LINK_OK:   # not this song, or the wrong version of it
+                e = dict(searched, n=s['n'], **{'from': 'YouTube search'}) if searched and searched.get('id') else {'n': s['n'], 'id': None, 'from': LIST}
+                e.update({'listId': vid, 'listCheck': LINK_CHECK, 'checked': today, 'listNote': 'link looks wrong: ' + mine['title'] + ' | ' + mine['channel']})
+                data['songs'][s['id']] = e
+                print(s['n'], s['title'], '— his link looks wrong:', mine['title'], '|', mine['channel'], mine['why'])
+                continue
             better = searched and ((searched.get('kind') == 'video' and mine['kind'] != 'video' and searched.get('embed'))
                                    or (searched.get('embed') and not mine['embed']))
             if better:
-                e = dict(searched); e['listId'] = vid
+                e = dict(searched); e['listId'] = vid; e['from'] = 'YouTube search' 
                 e['list'] = {k: mine[k] for k in ('id', 'title', 'channel', 'kind', 'embed')}
             else:
                 e = mine
                 if searched:
                     e['searched'] = {k: searched.get(k) for k in ('id', 'title', 'channel', 'kind', 'embed')}
+            e['listCheck'] = LINK_CHECK
             data['songs'][s['id']] = e
             took += 1
             print(s['n'], s['title'], '—', s['artist'], '→', e['from'], e.get('kind'), e['id'], '|', e.get('channel'), '|', e.get('title'),
                   '' if e.get('embed') else '(owner blocks other sites)')
     return took
+
+
+def johns_picks(songs, data, john, tok):
+    """John's own video for a song: looked up once (title, channel, whether other sites may play it) and always used."""
+    by = {s['id']: s for s in songs}
+    need = [(t, v) for t, v in john.items() if v and t in by and (data['songs'].get(t, {}).get('from') != 'John' or data['songs'][t].get('id') != v)]
+    for t, v in need:
+        j = ytapi.get('videos', {'part': 'snippet,status', 'id': v}, tok, units=1)
+        it = (j.get('items') or [None])[0]
+        old = data['songs'].get(t, {})
+        e = {'n': by[t]['n'], 'from': 'John', 'id': v, 'checked': datetime.date.today().isoformat()}
+        for k in ('listId', 'listCheck', 'listNote'):
+            if k in old:
+                e[k] = old[k]
+        if old.get('id') and old['id'] != v:
+            e['before'] = {k: old.get(k) for k in ('id', 'title', 'channel', 'from')}
+        if it:
+            e.update({'title': unescape(it['snippet'].get('title', '')), 'channel': it['snippet'].get('channelTitle', ''),
+                      'embed': bool(it['status'].get('embeddable') and it['status'].get('privacyStatus') == 'public')})
+            e['kind'] = kind(e['title'], e['channel'])
+        else:
+            e['embed'] = False
+        data['songs'][t] = e
+        print(e['n'], by[t]['title'], "— John's pick:", v, '|', e.get('channel'), '|', e.get('title'), '' if e.get('embed') else '(not playable on other sites)')
+    return len(need)
+
+
+def lengths(data, tok):
+    """Each chosen video's length in seconds, 50 to a 1-unit lookup."""
+    need = [e for e in data['songs'].values() if e.get('id') and 'secs' not in e]
+    for i in range(0, len(need), 50):
+        batch = need[i:i + 50]
+        j = ytapi.get('videos', {'part': 'contentDetails', 'id': ','.join(e['id'] for e in batch), 'maxResults': 50}, tok, units=1)
+        got = {it['id']: it['contentDetails'].get('duration', '') for it in j.get('items', [])}
+        for e in batch:
+            m = re.match(r'P(?:(\d+)D)?T?(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$', got.get(e['id'], ''))
+            if m:
+                d, h, mi, se = (int(x or 0) for x in m.groups())
+                e['secs'] = ((d * 24 + h) * 60 + mi) * 60 + se
+    return len(need)
 
 
 def unescape(x):
@@ -207,8 +263,13 @@ def write_site(data):
         if e.get('id') and e.get('embed'):
             out[tid] = {'v': e['id'], 'k': e.get('kind', 'other')}
     for tid, v in john.items():
-        if v:
-            out[tid] = {'v': v, 'k': 'video', 'j': 1}
+        e = data['songs'].get(tid, {})
+        if not v:
+            out.pop(tid, None)
+        elif not (e.get('from') == 'John' and e.get('id') == v):
+            out[tid] = {'v': v, 'k': 'video'}   # not looked up yet
+        elif e.get('embed'):
+            out[tid] = {'v': v, 'k': e.get('kind', 'video')}
         else:
             out.pop(tid, None)
     counts = {}
@@ -243,8 +304,13 @@ def main():
     if os.path.exists(LINKS):
         with open(LINKS) as f:
             links = json.load(f).get('links') or {}
+    john = {}
+    if os.path.exists(JOHN):
+        with open(JOHN) as f:
+            john = (json.load(f) or {}).get('videos') or {}
     done = 0
     try:
+        done += johns_picks(songs, data, john, tok)
         done += from_links(songs, data, links, tok)
     except ytapi.Quota:
         print("today's YouTube allowance is used up")
@@ -261,6 +327,10 @@ def main():
                   ('error ' + str(e['error'])) if e.get('error') else '')
     except ytapi.Quota:
         print("today's search allowance is used up; the rest wait for tomorrow")
+    try:
+        done += lengths(data, tok)
+    except ytapi.Quota:
+        print("no allowance left today for the videos' lengths")
     if done:
         with open(OUT, 'w') as f:
             json.dump(data, f, ensure_ascii=False, indent=0, separators=(',', ':'))

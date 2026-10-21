@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Keeps a YouTube playlist in step with the Spotify playlist: every song with a YouTube match (data/youtube.json,
-or John's own pick in data/john.json "videos"), in the order of the days.
+or John's own pick in data/john-videos.json "videos"), in the order of the days.
 
 It acts for the YouTube channel John picked when he signed in once through Google's OAuth Playground; the
 sign-in lives in three GitHub secrets (YT_CLIENT_ID, YT_CLIENT_SECRET, YT_REFRESH_TOKEN). Without them it does nothing.
@@ -18,7 +18,7 @@ from ytapi import API, Quota   # noqa: E402
 
 OUT = os.path.join(HERE, 'data', 'youtube-playlist.json')
 MATCH = os.path.join(HERE, 'data', 'youtube.json')
-JOHN = os.path.join(HERE, 'data', 'john.json')
+JOHN = os.path.join(HERE, 'data', 'john-videos.json')
 SONGS_URL = os.environ.get('SOTD_SONGS_URL', 'https://sotd-playlists.cooperking.workers.dev/songs.json')
 TITLE = "John's Song of the Day"
 ABOUT = ("A song for every day since 10 February 2026, in the same order as the Spotify playlist. "

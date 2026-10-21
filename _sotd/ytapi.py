@@ -13,6 +13,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 LEDGER = os.path.join(HERE, 'data', 'youtube-quota.json')
 API = 'https://www.googleapis.com/youtube/v3/'
 DAY_LIMIT = 9800          # a little under YouTube's 10,000, for the odd retry
+READ_LIMIT = 9990         # 1-unit lookups may use the last of the day
 SEARCH_LIMIT = 95         # under YouTube's 100 searches a day
 UA = 'SongOfTheDayCalendar/1.0 (https://cooperking.github.io/songs/)'
 
@@ -96,8 +97,8 @@ def token():
     return tok['access_token']
 
 
-def get(path, params, tok, units=1, cap=DAY_LIMIT, search=False):
-    spend(units, cap, search)
+def get(path, params, tok, units=1, cap=None, search=False):
+    spend(units, cap or (READ_LIMIT if units == 1 else DAY_LIMIT), search)
     try:
         return call('GET', API + path + '?' + urllib.parse.urlencode(params), token=tok)
     except Quota:
