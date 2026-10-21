@@ -278,9 +278,17 @@ def refresh_card(path, stamp, make):
 
 # ---------- the page ----------
 
+# link-preview fetchers (WhatsApp, iMessage, Facebook, Slack...) must stay on this page to read its tags
+BOTS = r'bot|crawl|spider|preview|facebookexternalhit|facebot|whatsapp|telegram|slack|discord|linkedin|pinterest|embedly|iframely|skype|viber|signal|vkshare|redditbot|applebot|google|bing'
+
+
+def redirect(target):
+    return f"if (!/{BOTS}/i.test(navigator.userAgent)) location.replace({json.dumps(target)});"
+
+
 def plain_page(title, desc, target, url, image, theme, alt):
     e = lambda x: html.escape(x, quote=True)
-    img_tags = (f'<meta property="og:image" content="{e(image)}">\n<meta property="og:image:type" content="image/jpeg">\n'
+    img_tags = (f'<meta property="og:image" content="{e(image)}">\n<meta property="og:image:secure_url" content="{e(image)}">\n<meta property="og:image:type" content="image/jpeg">\n'
                 f'<meta property="og:image:width" content="{W}">\n<meta property="og:image:height" content="{H}">\n'
                 f'<meta property="og:image:alt" content="{e(alt)}">\n<meta name="twitter:image" content="{e(image)}">\n') if image else ''
     return f"""<!doctype html>
@@ -299,8 +307,7 @@ def plain_page(title, desc, target, url, image, theme, alt):
 {img_tags}<meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="{theme}">
 <link rel="icon" type="image/png" sizes="96x96" href="/songs/favicon-96.png?v=2">
-<meta http-equiv="refresh" content="0; url={e(target)}">
-<script>location.replace({json.dumps(target)});</script>
+<script>{redirect(target)}</script>
 </head>
 <body style="font-family: Georgia, serif; padding: 24px;">
 <p><a href="{e(target)}">{e(title)}</a>: {e(desc)}</p>
@@ -312,7 +319,7 @@ def page(d, s, target, url, image):
     e = lambda x: html.escape(x, quote=True)
     title = clean_title(s['title'])
     desc = f"{artists_of(s)} · John's Song of the Day, {long_date(d)}"
-    img_tags = (f'<meta property="og:image" content="{e(image)}">\n<meta property="og:image:type" content="image/jpeg">\n'
+    img_tags = (f'<meta property="og:image" content="{e(image)}">\n<meta property="og:image:secure_url" content="{e(image)}">\n<meta property="og:image:type" content="image/jpeg">\n'
                 f'<meta property="og:image:width" content="{W}">\n<meta property="og:image:height" content="{H}">\n'
                 f'<meta property="og:image:alt" content="{e(title)} by {e(s["artist"])}">\n'
                 f'<meta name="twitter:image" content="{e(image)}">\n') if image else ''
@@ -334,8 +341,7 @@ def page(d, s, target, url, image):
 <meta name="twitter:description" content="{e(desc)}">
 <meta name="theme-color" content="{PALETTES[d.month - 1][0]}">
 <link rel="icon" type="image/png" sizes="96x96" href="/songs/favicon-96.png?v=2">
-<meta http-equiv="refresh" content="0; url={e(target)}">
-<script>location.replace({json.dumps(target)});</script>
+<script>{redirect(target)}</script>
 </head>
 <body style="font-family: Georgia, serif; padding: 24px;">
 <p><a href="{e(target)}">{e(title)} by {e(s['artist'])}</a>, John's Song of the Day for {e(long_date(d))}.</p>
@@ -377,7 +383,7 @@ def main():
                     has_card = True
             except Exception as ex:
                 print('card failed for', sl, s['title'], ex)
-        image = f'{SITE}{sl}/card.jpg?v={stamp}' if has_card else ''
+        image = f'{SITE}{sl}/card.jpg' if has_card else ''
         pages += write(os.path.join(folder, 'index.html'), page(d, s, f'../#{sl}', f'{SITE}{sl}/', image))
     d, s = dated[-1]
     sl = slug(d)
@@ -408,7 +414,7 @@ def main():
         stamp = hashlib.sha1((CARD_VERSION + ' ' + ' '.join(x['id'] + str(x.get('img')) for _, x in items)).encode()).hexdigest()[:12]
         path = os.path.join(SONGS, ms, 'card.jpg')
         ok = refresh_card(path, stamp, lambda: grid_card(m - 1, [f"{items[0][0]:%B}", str(y)], "JOHN'S SONG OF THE DAY", count, covers(items)))
-        image = f'{SITE}{ms}/card.jpg?v={stamp}' if ok else ''
+        image = f'{SITE}{ms}/card.jpg' if ok else ''
         pages += write(os.path.join(SONGS, ms, 'index.html'),
                        plain_page(name, f"{count} on John's Song of the Day, one for each day of {name}", f'../#{ms}', f'{SITE}{ms}/',
                                   image, PALETTES[m - 1][0], f"Covers of the songs for {name}"))
