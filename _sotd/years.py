@@ -5,7 +5,8 @@ Two sources, and the earlier year wins:
   MusicBrainz  the recording's first release date (data CC0), from recordings with the song's title by the same artist;
   Spotify      the album's release date, from John's playlist export (data/spotify-dates.json), which gives the
                reissue year for remasters and compilations, so on its own it can be late.
-A song MusicBrainz doesn't know keeps Spotify's year. John's corrections (data/john-years.json: {track id: year})
+When MusicBrainz has no recording under the song's title, it tries the title without any bracketed or " - " part
+("(Bonus Track)", "- Instrumental"), then the album's first release. A song MusicBrainz doesn't know keeps Spotify's year. John's corrections (data/john-years.json: {track id: year})
 win over both. MusicBrainz asks for at most one request a second."""
 import datetime, json, os, re, sys, time, unicodedata, urllib.parse, urllib.request
 
@@ -18,6 +19,7 @@ SONGS_URL = os.environ.get('SOTD_SONGS_URL', 'https://sotd-playlists.cooperking.
 MB = 'https://musicbrainz.org/ws/2/'
 UA = {'User-Agent': 'SongOfTheDayCalendar/1.0 (https://cooperking.github.io/songs/)', 'Accept': 'application/json'}
 RETRY_DAYS = 60
+VERSION = 2   # songs looked up by an earlier version without finding a year are looked up again
 
 
 def get(url):
@@ -44,30 +46,71 @@ def clean_title(t):
     return t.strip() or t
 
 
+def base_title(t):
+    """The title with every bracketed part and anything after " - " taken off."""
+    t = re.sub(r'\s+-\s+.*$', '', t)
+    t = re.sub(r'\s*[(\[][^)\]]*[)\]]', '', t)
+    return t.strip()
+
+
 def q(x):
     return x.replace('\\', '\\\\').replace('"', '\\"')
 
 
-def mb_year(s):
-    title = clean_title(s['title'])
-    artist = (s.get('artists') or [s['artist']])[0]
+def first_year(x):
+    m = re.match(r'(\d{4})', x or '')
+    return int(m.group(1)) if m and 1900 < int(m.group(1)) <= datetime.date.today().year else None
+
+
+def recordings(title, artist, loose):
     time.sleep(1.1)
     j = get(MB + 'recording?' + urllib.parse.urlencode({
         'query': f'recording:"{q(title)}" AND artist:"{q(artist)}"', 'limit': 25, 'fmt': 'json'}))
     if not j:
-        return None, 'no answer'
+        return None
     ft, fa = fold(title), fold(artist)
     years = []
     for r in j.get('recordings', []):
-        if r.get('score', 0) < 85 or fold(clean_title(r.get('title', ''))) != ft:
+        rt = base_title(r.get('title', '')) if loose else clean_title(r.get('title', ''))
+        if r.get('score', 0) < 85 or fold(rt) != ft:
             continue
         names = ' '.join(fold(c.get('name') or (c.get('artist') or {}).get('name', '')) for c in r.get('artist-credit', []) if isinstance(c, dict))
         if fa not in names:
             continue
-        m = re.match(r'(\d{4})', r.get('first-release-date') or '')
-        if m and 1900 < int(m.group(1)) <= datetime.date.today().year:
-            years.append(int(m.group(1)))
-    return (min(years), f'{len(years)} recordings') if years else (None, 'not found')
+        y = first_year(r.get('first-release-date'))
+        if y:
+            years.append(y)
+    return years
+
+
+def album_year(s, artist):
+    """The first release of the song's album (for a song too new, or too obscure, to have its recording listed)."""
+    album = base_title(s.get('album') or '')
+    if not album:
+        return None
+    time.sleep(1.1)
+    j = get(MB + 'release-group?' + urllib.parse.urlencode({
+        'query': f'releasegroup:"{q(album)}" AND artist:"{q(artist)}"', 'limit': 10, 'fmt': 'json'}))
+    fa = fold(artist)
+    for g in (j or {}).get('release-groups', []):
+        names = ' '.join(fold(c.get('name') or (c.get('artist') or {}).get('name', '')) for c in g.get('artist-credit', []) if isinstance(c, dict))
+        if g.get('score', 0) >= 90 and fold(base_title(g.get('title', ''))) == fold(album) and fa in names:
+            return first_year(g.get('first-release-date'))
+    return None
+
+
+def mb_year(s):
+    artist = (s.get('artists') or [s['artist']])[0]
+    title = clean_title(s['title'])
+    years = recordings(title, artist, False)
+    if years is None:
+        return None, 'no answer'
+    if not years and base_title(title) and base_title(title) != title:
+        years = recordings(base_title(title), artist, True) or []
+    if years:
+        return min(years), f'{len(years)} recordings'
+    y = album_year(s, artist)
+    return (y, 'album') if y else (None, 'not found')
 
 
 def main():
@@ -84,11 +127,16 @@ def main():
     done = 0
     for s in feed['songs']:
         e = data['songs'].get(s['id'])
-        if e and (e.get('mb') or (today - datetime.date.fromisoformat(e.get('checked', '2000-01-01'))).days < RETRY_DAYS):
+        # look again: a song with no year at all (a new song MusicBrainz may list soon), one an earlier version
+        # couldn't find, and every 60 days one MusicBrainz didn't know
+        if e and (e.get('mb') or (e.get('sp') and e.get('v', 1) >= VERSION
+                                  and (today - datetime.date.fromisoformat(e.get('checked', '2000-01-01'))).days < RETRY_DAYS)):
             continue
         mb, note = mb_year(s)
+        if note == 'no answer':   # MusicBrainz didn't answer: try again next run
+            continue
         spy = int(sp[s['id']][:4]) if sp.get(s['id']) else None
-        e = {'n': s['n'], 'checked': today.isoformat(), 'mb': mb, 'mbNote': note, 'sp': spy}
+        e = {'n': s['n'], 'checked': today.isoformat(), 'mb': mb, 'mbNote': note, 'sp': spy, 'v': VERSION}
         data['songs'][s['id']] = e
         done += 1
         print(s['n'], s['title'], '—', s['artist'], '| MusicBrainz', mb, f'({note})', '| Spotify', spy)
