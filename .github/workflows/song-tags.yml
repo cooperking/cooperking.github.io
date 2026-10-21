@@ -70,8 +70,10 @@ jobs:
       - name: Weigh up moods and genres
         run: python _sotd/make_tags.py
 
-      - name: A page per day for sharing links
-        run: python _sotd/share_pages.py
+      - name: A page and a picture per day for sharing links
+        run: |
+          pip install --quiet pillow numpy
+          python _sotd/share_pages.py
 
       - name: Save changes
         run: |

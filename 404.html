@@ -7,7 +7,7 @@
 <script>
   // A Song of the Day link for a day whose share page hasn't been built yet: open that day on the calendar.
   (function () {
-    var m = location.pathname.match(/^\/songs\/(?:d\/)?(\d{4}-\d{2}-\d{2}|\d{1,2}-[a-z]+-\d{4}|today)\/?$/i);
+    var m = location.pathname.match(/^\/songs\/(?:d\/)?(\d{4}-\d{2}-\d{2}|\d{1,2}-(?:\d{1,2}|[a-z]+)-\d{4}|today)\/?$/i);
     if (m) location.replace('/songs/#' + m[1].toLowerCase());
   })();
 </script>

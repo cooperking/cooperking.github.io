@@ -1,21 +1,38 @@
 #!/usr/bin/env python3
-"""Writes a small page for each day's song, so a shared link shows that song's cover, title and artist:
+"""Writes a small page and a picture for each day's song, so a shared link (WhatsApp, iMessage...) shows
+a proper card: the cover with its record, the title, the artist and the date, on that month's colours.
 
-  songs/21-october-2026/index.html   one per day, sends the visitor on to songs/#21-october-2026
-  songs/today/index.html          the latest song, sends the visitor on to songs/#today
+  songs/21-10-2026/index.html   one per day, sends the visitor on to songs/#21-10-2026
+  songs/21-10-2026/card.jpg     1200 x 630 picture for link previews
+  songs/today/index.html        the latest song, sends the visitor on to songs/#today
 
 Days follow the calendar's rule: a song's day is when it was added (London time), and when two
 were added on one day the earlier one moves back to the day before.
 """
-import html, json, os, urllib.request
-from datetime import date, datetime, timedelta
+import hashlib, html, io, json, os, re, urllib.request
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SONGS = os.path.join(HERE, '..', 'songs')
+FONTS = os.path.join(HERE, 'fonts')
 SITE = 'https://cooperking.github.io/songs/'
 SONGS_URL = os.environ.get('SOTD_SONGS_URL', 'https://sotd-playlists.cooperking.workers.dev/songs.json')
+COVERS = os.environ.get('SOTD_COVERS')   # a local folder of covers by image id, for testing without the network
 LONDON = ZoneInfo('Europe/London')
+CARD_VERSION = '1'   # bump to redraw every card
+W, H = 1200, 630
+INK = (255, 250, 245)
+
+# the calendar's month colours: ground, then glows (top right, centre, bottom left, bottom right)
+PALETTES = [
+    ('#0c1445', '#0094de', '#8833ff', '#f700f7', '#009aa8'), ('#652bee', '#3333ff', '#cc33ff', '#3388ff', '#ff2bb8'),
+    ('#11970c', '#429e00', '#00a150', '#7d9600', '#009e84'), ('#b613ec', '#fc00e7', '#8833ff', '#ff33aa', '#5533ff'),
+    ('#096a42', '#00a336', '#009e91', '#00a30e', '#0097c9'), ('#ec1a13', '#fa5300', '#ff3366', '#db6e00', '#ff3399'),
+    ('#1346ec', '#008ff5', '#5533ff', '#0097c9', '#8833ff'), ('#d85a06', '#c47c00', '#ff4a2e', '#b28600', '#ff3344'),
+    ('#0b86d3', '#0098b0', '#3370ff', '#009e91', '#3333ff'), ('#ec135b', '#ff3344', '#ff30b3', '#ff4c29', '#fc00e7'),
+    ('#09696d', '#009e77', '#0094d4', '#00a150', '#198cff'), ('#ec13c1', '#ff3399', '#dd33ff', '#ff3366', '#aa33ff'),
+]
 
 
 def days(songs):
@@ -30,55 +47,209 @@ def days(songs):
 
 
 def slug(d):
-    return f'{d.day}-{d:%B}-{d.year}'.lower()
+    return f'{d.day:02d}-{d.month:02d}-{d.year}'
 
 
 def long_date(d):
     return f'{d:%A} {d.day} {d:%B %Y}'
 
 
-def page(d, s, target, url):
+def clean_title(t):
+    t = re.sub(r'\s+-\s+.*(remaster|version|mix|edit|mono|stereo|single|live|demo|take|recording|anniversary|bonus).*$', '', t, flags=re.I)
+    t = re.sub(r'\s*[(\[](feat|with|ft)\.?[^)\]]*[)\]]', '', t, flags=re.I)
+    t = re.sub(r'\s*\[[^\]]*\]', '', t)
+    return t.strip() or t
+
+
+def artists_of(s):
+    a = s.get('artists') or [x.strip() for x in s['artist'].split(',')]
+    if len(a) <= 2:
+        return ' & '.join(a)
+    return f'{a[0]}, {a[1]} & {len(a) - 2} more'
+
+
+# ---------- the picture ----------
+
+def hexrgb(h):
+    return tuple(int(h[i:i + 2], 16) for i in (1, 3, 5))
+
+
+def ground(month):
+    """The month's ground and glows, drawn the way the calendar's CSS draws them."""
+    import numpy as np
+    from PIL import Image
+    bg, g1, g2, g3, g4 = (np.array(hexrgb(c), float) for c in PALETTES[month])
+    img = np.ones((H, W, 3)) * bg
+    yy, xx = np.mgrid[0:H, 0:W].astype(float)
+    vmax = max(W, H)
+    # (colour, strength, width, height (vmax), centre x, y (%)), painted bottom layer first
+    for col, k, rx, ry, cx, cy in [(g3, .7, 34, 28, 8, 10), (g4, .85, 38, 30, 96, 102), (g3, 1, 52, 40, 2, 98),
+                                   (g2, .85, 40, 32, 30, 40), (g1, 1, 54, 42, 92, 4)]:
+        d = np.sqrt(((xx - cx / 100 * W) / (rx / 100 * vmax)) ** 2 + ((yy - cy / 100 * H) / (ry / 100 * vmax)) ** 2)
+        a = (np.clip(1 - d / .72, 0, 1) * k)[..., None]
+        img = img * (1 - a) + col * a
+    return Image.fromarray(img.clip(0, 255).astype('uint8'), 'RGB')
+
+
+def font(name, size, weight=None, opsz=None):
+    from PIL import ImageFont
+    f = ImageFont.truetype(os.path.join(FONTS, name), size)
+    if weight is not None:
+        axes = f.get_variation_axes()
+        vals = []
+        for ax in axes:
+            n = ax['name'] if isinstance(ax['name'], str) else ax['name'].decode()
+            vals.append(weight if n == 'Weight' else (opsz or size) if n == 'Optical Size' else ax['default'])
+        f.set_variation_by_axes(vals)
+    return f
+
+
+def wrap(draw, text, f, width):
+    words, lines, line = text.split(), [], ''
+    for w in words:
+        t = (line + ' ' + w).strip()
+        if draw.textlength(t, font=f) <= width or not line:
+            line = t
+        else:
+            lines.append(line)
+            line = w
+    if line:
+        lines.append(line)
+    return lines
+
+
+def spaced(draw, xy, text, f, fill, tracking):
+    x, y = xy
+    for ch in text:
+        draw.text((x, y), ch, font=f, fill=fill)
+        x += draw.textlength(ch, font=f) + tracking
+    return x
+
+
+def card(d, s, cover):
+    from PIL import Image, ImageDraw, ImageFilter
+    img = ground(d.month - 1).convert('RGBA')
+    size, cx, cy = 400, 70, (H - 400) // 2
+    art = Image.open(io.BytesIO(cover)).convert('RGB').resize((size, size), Image.LANCZOS)
+    # the record half out of its sleeve, as in the calendar's day view
+    rd = size - 16
+    rec = Image.new('RGBA', (rd, rd), (0, 0, 0, 0))
+    r = ImageDraw.Draw(rec)
+    r.ellipse((0, 0, rd - 1, rd - 1), fill=(10, 9, 14, 255))
+    for i in range(8, rd // 2 - rd // 5, 3):
+        r.ellipse((i, i, rd - 1 - i, rd - 1 - i), outline=(30, 28, 38, 255), width=1)
+    lab = int(rd * .38)
+    mask = Image.new('L', (lab, lab), 0)
+    ImageDraw.Draw(mask).ellipse((0, 0, lab - 1, lab - 1), fill=255)
+    rec.paste(art.resize((lab, lab), Image.LANCZOS), ((rd - lab) // 2, (rd - lab) // 2), mask)
+    hole = 9
+    r.ellipse((rd // 2 - hole // 2, rd // 2 - hole // 2, rd // 2 + hole // 2, rd // 2 + hole // 2), fill=hexrgb(PALETTES[d.month - 1][0]) + (255,))
+    shadow = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+    sd = ImageDraw.Draw(shadow)
+    rx, ry = cx + size - rd // 2 + 12, cy + 8
+    sd.ellipse((rx + 6, ry + 14, rx + rd + 6, ry + rd + 14), fill=(20, 6, 20, 110))
+    sd.rectangle((cx + 6, cy + 16, cx + size + 6, cy + size + 16), fill=(20, 6, 20, 120))
+    img = Image.alpha_composite(img, shadow.filter(ImageFilter.GaussianBlur(18)))
+    img.alpha_composite(rec, (rx, ry))
+    img.paste(art, (cx, cy))
+
+    dr = ImageDraw.Draw(img)
+    x0, x1 = rx + rd + 48, W - 64
+    width = x1 - x0
+    small = font('HankenGrotesk.ttf', 19, weight=600)
+    title = clean_title(s['title'])
+    for tsize in (68, 62, 56, 50, 45, 40, 36):
+        tf = font('Newsreader.ttf', tsize, weight=500, opsz=72)
+        lines = wrap(dr, title, tf, width)
+        # no line left with a single short word, unless the title is one word
+        widow = len(lines) > 1 and len(lines[-1]) <= 3
+        if len(lines) <= 3 and not widow and all(dr.textlength(l, font=tf) <= width for l in lines):
+            break
+    if len(lines) > 3:
+        lines = lines[:3]
+        while dr.textlength(lines[2] + '…', font=tf) > width and ' ' in lines[2]:
+            lines[2] = lines[2].rsplit(' ', 1)[0]
+        lines[2] += '…'
+    af = font('HankenGrotesk.ttf', 22, weight=600)
+    artist = artists_of(s).upper()
+    while dr.textlength(artist, font=af) + len(artist) * 2.4 > width and len(artist) > 8:
+        artist = artist[:-2].rstrip() + '…' if not artist.endswith('…') else artist[:-2].rstrip() + '…'
+    df = font('Newsreader-Italic.ttf', 30, weight=400, opsz=30)
+    lh = int(tsize * 1.08)
+    block = 19 + 26 + len(lines) * lh + 22 + 22 + 30 + 30
+    y = (H - block) // 2
+    spaced(dr, (x0, y), "JOHN'S SONG OF THE DAY", small, INK + (230,), 3.2)
+    y += 19 + 26
+    for l in lines:
+        dr.text((x0, y), l, font=tf, fill=INK)
+        y += lh
+    y += 22
+    spaced(dr, (x0, y), artist, af, INK + (240,), 2.4)
+    y += 22 + 30
+    dr.text((x0, y), long_date(d), font=df, fill=INK + (235,))
+    out = io.BytesIO()
+    img.convert('RGB').save(out, 'JPEG', quality=84, optimize=True, progressive=True)
+    return out.getvalue()
+
+
+def cover_bytes(s):
+    url = (s.get('img') or '').replace('ab67616d00001e02', 'ab67616d0000b273')
+    if COVERS:
+        p = os.path.join(COVERS, url.rsplit('/', 1)[-1][-24:] + '.jpg')
+        return open(p, 'rb').read() if os.path.exists(p) else None
+    if not url:
+        return None
+    with urllib.request.urlopen(urllib.request.Request(url, headers={'User-Agent': 'SongOfTheDayCalendar/1.0'}), timeout=30) as r:
+        return r.read()
+
+
+# ---------- the page ----------
+
+def page(d, s, target, url, image):
     e = lambda x: html.escape(x, quote=True)
-    img = (s.get('img') or '').replace('ab67616d00001e02', 'ab67616d0000b273')   # the 640-pixel cover
-    title = f"{s['title']} — {s['artist']}"
-    desc = f"John's Song of the Day for {long_date(d)}"
+    title = clean_title(s['title'])
+    desc = f"{artists_of(s)} · John's Song of the Day, {long_date(d)}"
+    img_tags = (f'<meta property="og:image" content="{e(image)}">\n<meta property="og:image:type" content="image/jpeg">\n'
+                f'<meta property="og:image:width" content="{W}">\n<meta property="og:image:height" content="{H}">\n'
+                f'<meta property="og:image:alt" content="{e(title)} by {e(s["artist"])}">\n'
+                f'<meta name="twitter:image" content="{e(image)}">\n') if image else ''
     return f"""<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{e(title)} · John's Song of the Day</title>
-<meta name="description" content="{e(desc)}: {e(s['title'])} by {e(s['artist'])}.">
+<meta name="description" content="{e(desc)}">
 <link rel="canonical" href="{e(url)}">
 <meta property="og:type" content="music.song">
 <meta property="og:site_name" content="John's Song of the Day">
 <meta property="og:title" content="{e(title)}">
 <meta property="og:description" content="{e(desc)}">
 <meta property="og:url" content="{e(url)}">
-{f'<meta property="og:image" content="{e(img)}">' if img else ''}
-<meta property="og:image:width" content="640">
-<meta property="og:image:height" content="640">
-<meta name="twitter:card" content="summary_large_image">
+{img_tags}<meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="{e(title)}">
 <meta name="twitter:description" content="{e(desc)}">
-{f'<meta name="twitter:image" content="{e(img)}">' if img else ''}
+<meta name="theme-color" content="{PALETTES[d.month - 1][0]}">
 <link rel="icon" type="image/png" sizes="96x96" href="/songs/favicon-96.png?v=2">
 <meta http-equiv="refresh" content="0; url={e(target)}">
 <script>location.replace({json.dumps(target)});</script>
 </head>
 <body style="font-family: Georgia, serif; padding: 24px;">
-<p><a href="{e(target)}">{e(s['title'])} by {e(s['artist'])}</a>, John's Song of the Day for {e(long_date(d))}.</p>
+<p><a href="{e(target)}">{e(title)} by {e(s['artist'])}</a>, John's Song of the Day for {e(long_date(d))}.</p>
 </body>
 </html>
 """
 
 
-def write(path, text):
+def write(path, data):
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    if os.path.exists(path) and open(path, encoding='utf-8').read() == text:
-        return False
-    with open(path, 'w', encoding='utf-8') as f:
-        f.write(text)
+    mode = 'wb' if isinstance(data, bytes) else 'w'
+    if os.path.exists(path):
+        with open(path, 'rb' if mode == 'wb' else 'r', **({} if mode == 'wb' else {'encoding': 'utf-8'})) as f:
+            if f.read() == data:
+                return False
+    with open(path, mode, **({} if mode == 'wb' else {'encoding': 'utf-8'})) as f:
+        f.write(data)
     return True
 
 
@@ -86,13 +257,30 @@ def main():
     with urllib.request.urlopen(urllib.request.Request(SONGS_URL, headers={'User-Agent': 'SongOfTheDayCalendar/1.0'}), timeout=60) as r:
         songs = json.loads(r.read())['songs']
     dated = days(songs)
-    changed = 0
+    pages = cards = 0
     for d, s in dated:
         sl = slug(d)
-        changed += write(os.path.join(SONGS, sl, 'index.html'), page(d, s, f'../#{sl}', f'{SITE}{sl}/'))
+        folder = os.path.join(SONGS, sl)
+        # redraw the card only when the song on that day, its cover or the design changes
+        stamp = hashlib.sha1(f"{CARD_VERSION} {s['id']} {s.get('img')} {s['title']} {s['artist']}".encode()).hexdigest()[:12]
+        stamp_path = os.path.join(folder, '.card')
+        has_card = os.path.exists(os.path.join(folder, 'card.jpg'))
+        if not has_card or not os.path.exists(stamp_path) or open(stamp_path).read().strip() != stamp:
+            try:
+                c = cover_bytes(s)
+                if c:
+                    cards += write(os.path.join(folder, 'card.jpg'), card(d, s, c))
+                    write(stamp_path, stamp + '\n')
+                    has_card = True
+            except Exception as ex:
+                print('card failed for', sl, s['title'], ex)
+        image = f'{SITE}{sl}/card.jpg?v={stamp}' if has_card else ''
+        pages += write(os.path.join(folder, 'index.html'), page(d, s, f'../#{sl}', f'{SITE}{sl}/', image))
     d, s = dated[-1]
-    changed += write(os.path.join(SONGS, 'today', 'index.html'), page(d, s, '../#today', f'{SITE}today/'))
-    print(f'{len(dated)} day pages, {changed} written or changed; latest {d} {s["title"]}')
+    sl = slug(d)
+    image = f'{SITE}{sl}/card.jpg' if os.path.exists(os.path.join(SONGS, sl, 'card.jpg')) else ''
+    pages += write(os.path.join(SONGS, 'today', 'index.html'), page(d, s, '../#today', f'{SITE}today/', image))
+    print(f'{len(dated)} days: {pages} pages and {cards} cards written or changed; latest {d} {s["title"]}')
 
 
 if __name__ == '__main__':
