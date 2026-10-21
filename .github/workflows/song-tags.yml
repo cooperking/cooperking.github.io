@@ -83,6 +83,9 @@ jobs:
           YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
         run: python _sotd/youtube_playlist.py
 
+      - name: The year each song first came out
+        run: python _sotd/years.py
+
       - name: Weigh up moods and genres
         run: python _sotd/make_tags.py
 
