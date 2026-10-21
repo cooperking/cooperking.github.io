@@ -76,13 +76,6 @@ jobs:
           YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
         run: python _sotd/youtube.py
 
-      - name: Keep the YouTube playlist in step
-        env:
-          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
-          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
-          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
-        run: python _sotd/youtube_playlist.py
-
       - name: Weigh up moods and genres
         run: python _sotd/make_tags.py
 
