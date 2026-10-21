@@ -22,7 +22,8 @@ SITE = 'https://cooperking.github.io/songs/'
 SONGS_URL = os.environ.get('SOTD_SONGS_URL', 'https://sotd-playlists.cooperking.workers.dev/songs.json')
 COVERS = os.environ.get('SOTD_COVERS')   # a local folder of covers by image id, for testing without the network
 LONDON = ZoneInfo('Europe/London')
-CARD_VERSION = '1'   # bump to redraw every card
+CARD_VERSION = '1'   # bump to redraw every day's card
+GRID_VERSION = '2'   # bump to redraw the month and whole-calendar cards
 W, H = 1200, 630
 INK = (255, 250, 245)
 
@@ -207,58 +208,64 @@ def cover_bytes(s, small=False):
         return r.read()
 
 
-def grid_card(month, lines, kicker, foot, covers):
-    """A month or the whole calendar: the name on the left, the covers in a grid on the right."""
+GRIDS = [(12, 4, 3), (9, 3, 3), (6, 3, 2), (4, 2, 2), (3, 3, 1), (2, 2, 1), (1, 1, 1)]   # (covers shown, columns, rows): always a full rectangle
+
+
+def pick(covers, k):
+    """k covers spread evenly across the list, first and last included."""
+    if len(covers) <= k:
+        return covers[:k]
+    return [covers[round(i * (len(covers) - 1) / (k - 1))] for i in range(k)] if k > 1 else covers[:1]
+
+
+def grid_card(month, roman, italic, kicker, foot, covers):
+    """A month or the whole calendar: the name on the left (set like the calendar's own heading: roman then
+    italic), a full rectangle of covers on the right, the two blocks sharing a top and bottom edge."""
     from PIL import Image, ImageDraw, ImageFilter
     img = ground(month).convert('RGBA')
-    ax, ay, aw, ah, gap = 520, 48, W - 520 - 48, H - 96, 10
-    n = len(covers)
-    best = (0, 1, 1)
-    for cols in range(2, 10):
-        rows = -(-n // cols)
-        cell = min((aw - (cols - 1) * gap) / cols, (ah - (rows - 1) * gap) / rows)
-        if cell > best[0]:
-            best = (cell, cols, rows)
-    cell, cols, rows = int(best[0]), best[1], best[2]
+    k, cols, rows = next(g for g in GRIDS if len(covers) >= g[0])
+    covers = pick(covers, k)
+    gap, right, top_bot = 14, 64, 72
+    cell = min((H - 2 * top_bot - (rows - 1) * gap) // rows, (560 - (cols - 1) * gap) // cols)
     gw, gh = cols * cell + (cols - 1) * gap, rows * cell + (rows - 1) * gap
-    ox, oy = ax + (aw - gw) // 2, ay + (ah - gh) // 2
+    ox, oy = W - right - gw, (H - gh) // 2
     shadow = Image.new('RGBA', (W, H), (0, 0, 0, 0))
     sd = ImageDraw.Draw(shadow)
-    pos = []
+    radius = max(4, cell // 30)
+    mask = Image.new('L', (cell, cell), 0)
+    ImageDraw.Draw(mask).rounded_rectangle((0, 0, cell - 1, cell - 1), radius=radius, fill=255)
+    for i in range(len(covers)):
+        x, y = ox + (i % cols) * (cell + gap), oy + (i // cols) * (cell + gap)
+        sd.rounded_rectangle((x, y + 8, x + cell, y + cell + 8), radius=radius, fill=(20, 6, 20, 80))
+    img = Image.alpha_composite(img, shadow.filter(ImageFilter.GaussianBlur(10)))
     for i, c in enumerate(covers):
         x, y = ox + (i % cols) * (cell + gap), oy + (i // cols) * (cell + gap)
-        pos.append((x, y, c))
-        sd.rectangle((x + 3, y + 6, x + cell + 3, y + cell + 6), fill=(20, 6, 20, 90))
-    img = Image.alpha_composite(img, shadow.filter(ImageFilter.GaussianBlur(8)))
-    for x, y, c in pos:
         try:
-            img.paste(Image.open(io.BytesIO(c)).convert('RGB').resize((cell, cell), Image.LANCZOS), (x, y))
+            img.paste(Image.open(io.BytesIO(c)).convert('RGB').resize((cell, cell), Image.LANCZOS), (x, y), mask)
         except Exception:
-            ImageDraw.Draw(img).rectangle((x, y, x + cell, y + cell), fill=(255, 255, 255, 40))
+            ImageDraw.Draw(img).rounded_rectangle((x, y, x + cell, y + cell), radius=radius, fill=(255, 255, 255, 40))
+
     dr = ImageDraw.Draw(img)
-    x0, width = 64, ax - 64 - 40
-    small = font('HankenGrotesk.ttf', 19, weight=600)
-    for tsize in (84, 76, 68, 60, 54):
-        tf = font('Newsreader.ttf', tsize, weight=500, opsz=72)
-        if all(dr.textlength(l, font=tf) <= width for l in lines):
+    x0, width = 64, ox - 64 - 48
+    small = font('HankenGrotesk.ttf', 18, weight=600)
+    for tsize in (112, 100, 90, 80, 72, 64, 56):
+        rf = font('Newsreader.ttf', tsize, weight=400, opsz=72)
+        itf = font('Newsreader-Italic.ttf', tsize, weight=400, opsz=72)
+        if dr.textlength(roman, font=rf) <= width and dr.textlength(italic, font=itf) <= width:
             break
-    fsize = 30
-    ff = font('Newsreader-Italic.ttf', fsize, weight=400, opsz=30)
-    while dr.textlength(foot, font=ff) > width and fsize > 20:
-        fsize -= 2
-        ff = font('Newsreader-Italic.ttf', fsize, weight=400, opsz=30)
-    lh = int(tsize * 1.04)
-    block = 19 + 28 + len(lines) * lh + 24 + 30
-    y = (H - block) // 2
-    spaced(dr, (x0, y), kicker, small, INK + (230,), 3.2)
-    y += 19 + 28
-    for l in lines:
-        dr.text((x0, y), l, font=tf, fill=INK)
-        y += lh
-    y += 24
-    dr.text((x0, y), foot, font=ff, fill=INK + (235,))
+    # kicker on the grid's top edge, foot on its bottom edge, the name centred between
+    spaced(dr, (x0, oy - 4), kicker, small, INK + (225,), 3.4)
+    fb = dr.textbbox((0, 0), foot, font=small)
+    spaced(dr, (x0, oy + gh - (fb[3] - fb[1]) - 2), foot, small, INK + (225,), 3.4)
+    lh = int(tsize * 1.0)
+    rb = dr.textbbox((0, 0), roman, font=rf)
+    ib = dr.textbbox((0, 0), italic, font=itf)
+    block = (rb[3] - rb[1]) + (lh - (rb[3] - rb[1])) + (ib[3] - ib[1])
+    y = oy + (gh - block) // 2 - rb[1]
+    dr.text((x0, y), roman, font=rf, fill=INK)
+    dr.text((x0, y + lh), italic, font=itf, fill=INK)
     out = io.BytesIO()
-    img.convert('RGB').save(out, 'JPEG', quality=84, optimize=True, progressive=True)
+    img.convert('RGB').save(out, 'JPEG', quality=86, optimize=True, progressive=True)
     return out.getvalue()
 
 
@@ -415,21 +422,21 @@ def main():
         ms = f'{m:02d}-{y}'
         name = f"{items[0][0]:%B} {y}"
         count = f"{len(items)} {'song' if len(items) == 1 else 'songs'}"
-        stamp = hashlib.sha1((CARD_VERSION + ' ' + ' '.join(x['id'] + str(x.get('img')) for _, x in items)).encode()).hexdigest()[:12]
+        stamp = hashlib.sha1((GRID_VERSION + ' ' + ' '.join(x['id'] + str(x.get('img')) for _, x in items)).encode()).hexdigest()[:12]
         path = os.path.join(SONGS, ms, 'card.jpg')
-        ok = refresh_card(path, stamp, lambda: grid_card(m - 1, [f"{items[0][0]:%B}", str(y)], "JOHN'S SONG OF THE DAY", count, covers(items)))
+        ok = refresh_card(path, stamp, lambda: grid_card(m - 1, f"{items[0][0]:%B}", str(y), "JOHN'S SONG OF THE DAY", count.upper(), covers(items)))
         image = f'{SITE}{ms}/card.jpg' if ok else ''
         pages += write(os.path.join(SONGS, ms, 'index.html'),
-                       plain_page(name, f"{count} on John's Song of the Day, one for each day of {name}", f'../#{ms}', f'{SITE}{ms}/',
+                       plain_page(name, f"{count} for each day", f'../#{ms}', f'{SITE}{ms}/',
                                   image, PALETTES[m - 1][0], f"Covers of the songs for {name}"))
 
     # the whole calendar: its newest covers
-    latest = dated[-20:][::-1]
+    latest = dated[-12:][::-1]
     first = dated[0][0]
-    stamp = hashlib.sha1((CARD_VERSION + f' {len(dated)} ' + ' '.join(x['id'] for _, x in latest)).encode()).hexdigest()[:12]
+    stamp = hashlib.sha1((GRID_VERSION + f' {len(dated)} ' + ' '.join(x['id'] for _, x in latest)).encode()).hexdigest()[:12]
     refresh_card(os.path.join(SONGS, 'card.jpg'), stamp,
-                 lambda: grid_card(dated[-1][0].month - 1, ["John's Song", 'of the Day'], f'{len(dated)} SONGS SO FAR',
-                                   f'A song a day since {first.day} {first:%B %Y}', covers(latest)))
+                 lambda: grid_card(dated[-1][0].month - 1, "John's Song", 'of the Day', 'A SONG A DAY',
+                                   f'{len(dated)} SO FAR', covers(latest)))
     print(f'{len(by_month)} month pages; calendar card {stamp}')
 
 
