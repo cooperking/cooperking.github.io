@@ -27,7 +27,11 @@ ABOUT = ("A song for every day since 10 February 2026, in the same order as the 
 
 def call(method, url, body=None, token=None, units=1):
     ytapi.spend(units)
-    return ytapi.call(method, url, body, token=token)
+    try:
+        return ytapi.call(method, url, body, token=token)
+    except Quota:
+        ytapi.full()
+        raise
 
 
 def main():

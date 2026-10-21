@@ -7,9 +7,13 @@ artist's own, VEVO, or YouTube's auto-generated "Artist - Topic" upload of the r
 marked down for covers, lyrics, karaoke, live, remixes and the like that the song itself isn't. The best one wins,
 and one more lookup says whether its owner lets other sites play it. The runner-up uploads are kept for John.
 
+John's own links come first (data/links.json, from his playlist export): one lookup of 1 unit checks 50 of them
+(title, channel, whether other sites may play it). His link is used unless the search already found an official
+video where his link is an audio-only upload, or his link can't be played on other sites and the search's can.
+Only songs with no usable link are searched.
+
 Nothing is downloaded: the calendar plays the video in YouTube's own player.
-Each search costs 100 of YouTube's 10,000 units a day, so a long backlog takes a few days; songs not done yet wait
-for the next run. Songs with no good match are tried again after 30 days. John's own picks (data/john.json
+YouTube allows 100 searches a day, so a long backlog takes a few days; songs not done yet wait for the next run. Songs with no good match are tried again after 30 days. John's own picks (data/john.json
 "videos": {track id: video id, or "" for none}) win over the search."""
 import datetime, json, os, re, sys, unicodedata
 
@@ -20,6 +24,8 @@ import ytapi   # noqa: E402
 ROOT = os.path.dirname(HERE)
 OUT = os.path.join(HERE, 'data', 'youtube.json')
 JOHN = os.path.join(HERE, 'data', 'john.json')
+LINKS = os.path.join(HERE, 'data', 'links.json')
+LIST = "John's list"
 SITE = os.path.join(ROOT, 'songs', 'videos.json')
 SONGS_URL = os.environ.get('SOTD_SONGS_URL', 'https://sotd-playlists.cooperking.workers.dev/songs.json')
 RETRY_DAYS = 30
@@ -96,6 +102,8 @@ def score(song, cand):
 def due(e):
     if e.get('id'):
         return e.get('embed') is None
+    if e.get('from') == LIST:
+        return True   # his link can't be used: search instead
     if e.get('error') or e.get('from') == 'song.link':
         return True   # the old song.link tries all failed: do them properly
     try:
@@ -106,9 +114,11 @@ def due(e):
 
 def lookup(s, tok):
     e = {'n': s['n'], 'checked': datetime.date.today().isoformat(), 'from': 'YouTube search'}
+    if s.get('listId'):
+        e['listId'] = s['listId']   # his link was looked at already; don't look again
     q = clean_title(s['title']) + ' ' + (s.get('artists') or [s['artist']])[0]
     j = ytapi.get('search', {'part': 'snippet', 'type': 'video', 'maxResults': 10, 'q': q, 'regionCode': 'GB'},
-                  tok, units=100, cap=ytapi.SEARCH_SHARE)
+                  tok, units=1, search=True)
     if '_status' in j:
         e['error'] = j['_status']; e['detail'] = j.get('_text', '')[:200]
         return e
@@ -138,6 +148,48 @@ def lookup(s, tok):
     item = (st.get('items') or [None])[0]
     e['embed'] = None if '_status' in st else bool(item and item['status'].get('embeddable') and item['status'].get('privacyStatus') == 'public')
     return e
+
+
+def from_links(songs, data, links, tok):
+    """Check John's links, 50 to a 1-unit lookup, and take them as each song's video unless the search did better."""
+    need = [s for s in songs if links.get(s['id']) and data['songs'].get(s['id'], {}).get('listId') != links[s['id']]]
+    print(len(need), "songs to take from John's links")
+    today = datetime.date.today().isoformat()
+    took = 0
+    for i in range(0, len(need), 50):
+        batch = need[i:i + 50]
+        j = ytapi.get('videos', {'part': 'snippet,status', 'id': ','.join(links[s['id']] for s in batch), 'maxResults': 50}, tok, units=1)
+        if '_status' in j:
+            print('could not check the links:', j['_status'], j.get('_text', '')[:160]); return took
+        found = {it['id']: it for it in j.get('items', [])}
+        for s in batch:
+            vid, old = links[s['id']], data['songs'].get(s['id'], {})
+            it = found.get(vid)
+            if not it or (it.get('status') or {}).get('privacyStatus') not in ('public', 'unlisted'):
+                e = dict(old) if old.get('id') and old.get('from') == 'YouTube search' else {'n': s['n'], 'id': None, 'from': LIST}
+                e.update({'listId': vid, 'checked': today, 'listNote': 'link gone or private'})
+                data['songs'][s['id']] = e
+                print(s['n'], s['title'], '— his link is gone or private', vid)
+                continue
+            sn, st = it['snippet'], it['status']
+            mine = {'n': s['n'], 'checked': today, 'from': LIST, 'listId': vid, 'id': vid, 'title': unescape(sn.get('title', '')),
+                    'channel': sn.get('channelTitle', ''), 'embed': bool(st.get('embeddable') and st.get('privacyStatus') == 'public')}
+            mine['kind'] = kind(mine['title'], mine['channel'])
+            searched = old if old.get('id') and old.get('from') == 'YouTube search' and old['id'] != vid else None
+            better = searched and ((searched.get('kind') == 'video' and mine['kind'] != 'video' and searched.get('embed'))
+                                   or (searched.get('embed') and not mine['embed']))
+            if better:
+                e = dict(searched); e['listId'] = vid
+                e['list'] = {k: mine[k] for k in ('id', 'title', 'channel', 'kind', 'embed')}
+            else:
+                e = mine
+                if searched:
+                    e['searched'] = {k: searched.get(k) for k in ('id', 'title', 'channel', 'kind', 'embed')}
+            data['songs'][s['id']] = e
+            took += 1
+            print(s['n'], s['title'], '—', s['artist'], '→', e['from'], e.get('kind'), e['id'], '|', e.get('channel'), '|', e.get('title'),
+                  '' if e.get('embed') else '(owner blocks other sites)')
+    return took
 
 
 def unescape(x):
@@ -177,7 +229,8 @@ def main():
     if os.path.exists(OUT):
         with open(OUT) as f:
             data = json.load(f)
-    data['about'] = 'YouTube match for each song (key: Spotify track id), from YouTube search; alts are the runners-up.'
+    data['about'] = ("YouTube video for each song (key: Spotify track id): from John's list (data/links.json) or YouTube search; "
+                     "list / searched: the one not chosen; alts: the search's runners-up.")
     tok = ytapi.token()
     if not tok:
         print('YouTube: not set up yet (no YT_* secrets)')
@@ -186,12 +239,21 @@ def main():
     import urllib.request
     with urllib.request.urlopen(urllib.request.Request(SONGS_URL, headers={'User-Agent': ytapi.UA}), timeout=30) as r:
         songs = json.loads(r.read())['songs']
-    todo = [s for s in songs if s['id'] not in data['songs'] or due(data['songs'][s['id']])]
-    print(f'{len(todo)} songs to find on YouTube; {ytapi.ledger()["used"]} units used today')
+    links = {}
+    if os.path.exists(LINKS):
+        with open(LINKS) as f:
+            links = json.load(f).get('links') or {}
     done = 0
     try:
+        done += from_links(songs, data, links, tok)
+    except ytapi.Quota:
+        print("today's YouTube allowance is used up")
+    todo = [s for s in songs if s['id'] not in data['songs'] or due(data['songs'][s['id']])]
+    print(f'{len(todo)} songs to search YouTube for; {ytapi.ledger()["used"]} units used today')
+    try:
         for s in todo:
-            e = lookup(s, tok)
+            prev = data['songs'].get(s['id'], {})
+            e = lookup(dict(s, listId=prev.get('listId')), tok)
             data['songs'][s['id']] = e
             done += 1
             print(s['n'], s['title'], '—', s['artist'], '→', e.get('kind', ''), e.get('id'), '|', e.get('channel', ''), '|',
