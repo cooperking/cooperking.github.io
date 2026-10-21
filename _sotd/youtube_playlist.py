@@ -8,7 +8,10 @@ A new sign-in for a different channel starts a new playlist there; the old one i
 On a channel named for Song of the Day the playlist is public; on any other (John's own, for testing) it's unlisted.
 
 Each added song costs 50 of YouTube's daily units, shared with the searches (see ytapi.py), so a long backlog
-fills over a few days. What's been added is kept in data/youtube-playlist.json."""
+fills over a few days. What's been added is kept in data/youtube-playlist.json.
+
+Each run first reads what is actually in the playlist (1 unit per 50 songs), so songs added by hand on YouTube count as
+added, and anything that isn't one of the songs' videos (a video since replaced, or a song in twice) is taken out."""
 import json, os, sys, urllib.parse, urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -88,6 +91,36 @@ def main():
             state['playlist'] = j['id']
             changed = True
             print('made the playlist (' + privacy + ')', 'https://www.youtube.com/playlist?list=' + j['id'])
+
+        # what's really in the playlist now
+        items, page = [], None
+        while True:
+            q = {'part': 'snippet', 'playlistId': state['playlist'], 'maxResults': 50}
+            if page:
+                q['pageToken'] = page
+            j = call('GET', API + 'playlistItems?' + urllib.parse.urlencode(q), token=token)
+            if '_status' in j:
+                sys.exit('could not read the playlist: ' + str(j.get('_status')) + ' ' + j.get('_text', '')[:160])
+            items += [(it['id'], it['snippet']['resourceId'].get('videoId')) for it in j.get('items', [])]
+            page = j.get('nextPageToken')
+            if not page:
+                break
+        spare = {}
+        for item, vid in items:
+            spare.setdefault(vid, []).append(item)
+        added = {}
+        for s in songs:
+            vid = match.get(s['id'])
+            if vid and spare.get(vid):
+                added[s['id']] = {'v': vid, 'item': spare[vid].pop(0)}
+        if added != state['added']:
+            state['added'] = added
+            changed = True
+        extra = [i for left in spare.values() for i in left]
+        print(len(items), 'in the playlist;', len(added), 'are songs;', len(extra), 'to take out')
+        for item in extra:   # replaced videos and repeats
+            r = call('DELETE', API + 'playlistItems?' + urllib.parse.urlencode({'id': item}), token=token, units=50)
+            print('took out', item, r.get('_status', 'ok'))
 
         adds = 0
         for pos, s in enumerate(songs):
