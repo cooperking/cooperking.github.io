@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Page not found</title>
+<script>
+  // A Song of the Day link for a day whose share page hasn't been built yet: open that day on the calendar.
+  (function () {
+    var m = location.pathname.match(/^\/songs\/(?:d\/(\d{4}-\d{2}-\d{2})|(today))\/?$/);
+    if (m) location.replace('/songs/#' + (m[1] || m[2]));
+  })();
+</script>
+<style>
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #fffaf5; color: #1b1020; font-family: Georgia, "Times New Roman", serif; padding: 24px; }
+  @media (prefers-color-scheme: dark) { body { background: #160c18; color: #fffaf5; } a { color: #ff7aa8; } }
+  p { font-size: 18px; text-align: center; }
+</style>
+</head>
+<body>
+<p>There's no page here. <a href="/">Back to the start</a>.</p>
+</body>
+</html>

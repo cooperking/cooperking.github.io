@@ -70,11 +70,14 @@ jobs:
       - name: Weigh up moods and genres
         run: python _sotd/make_tags.py
 
+      - name: A page per day for sharing links
+        run: python _sotd/share_pages.py
+
       - name: Save changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
-          git add _sotd/data songs/moods.json
+          git add _sotd/data songs/moods.json songs/d songs/today
           if git diff --cached --quiet; then echo "nothing changed"; exit 0; fi
           git commit -m "Song moods and genres: update from the latest songs"
           for i in 1 2 3; do git pull --rebase --quiet && git push && exit 0; sleep 5; done
