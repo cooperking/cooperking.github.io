@@ -316,8 +316,16 @@ def write_site(data):
     for x in out.values():
         counts[x['k']] = counts.get(x['k'], 0) + 1
     print('playable on the calendar:', len(out), counts)
-    new = json.dumps({'about': 'YouTube video for each song (Spotify track id: v video id, k video / live / audio / other)',
-                      'videos': out}, ensure_ascii=False, separators=(',', ':'), sort_keys=True)
+    site = {'about': 'YouTube video for each song (Spotify track id: v video id, k video / live / audio / other); '
+                     'playlist: the YouTube playlist of them all',
+            'videos': out}
+    pl = os.path.join(HERE, 'data', 'youtube-playlist.json')
+    if os.path.exists(pl):
+        with open(pl) as f:
+            url = json.load(f).get('url')
+        if url:
+            site['playlist'] = url
+    new = json.dumps(site, ensure_ascii=False, separators=(',', ':'), sort_keys=True)
     old = open(SITE).read() if os.path.exists(SITE) else ''
     if new != old:
         with open(SITE, 'w') as f:

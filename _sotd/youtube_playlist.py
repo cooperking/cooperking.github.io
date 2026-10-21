@@ -182,6 +182,14 @@ def main():
         with open(OUT, 'w') as f:
             json.dump(state, f, ensure_ascii=False, indent=0, separators=(',', ':'))
     print(len(state['added']), 'songs in the playlist:', state.get('url', ''))
+    # the site links to the playlist (a new channel means a new address)
+    if state.get('url') and os.path.exists(SITE):
+        with open(SITE) as f:
+            site = json.load(f)
+        if site.get('playlist') != state['url']:
+            site['playlist'] = state['url']
+            with open(SITE, 'w') as f:
+                f.write(json.dumps(site, ensure_ascii=False, separators=(',', ':'), sort_keys=True))
 
 
 if __name__ == '__main__':
