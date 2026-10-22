@@ -2,6 +2,8 @@ name: Song moods and genres
 
 # Listens to new songs on John's Song of the Day, gathers listener tags and MusicBrainz genres,
 # and rebuilds songs/tags.json for the calendar at cooperking.github.io/songs/.
+# No timer: the Cloudflare Worker (sotd-playlists) starts it when it sees the Spotify playlist has changed,
+# and a push to the code here starts it too.
 on:
   workflow_dispatch:
     inputs:
@@ -9,8 +11,6 @@ on:
         description: "Re-analyse every song's audio"
         type: boolean
         default: false
-  schedule:
-    - cron: "40 7,9,13,19 * * *"
   push:
     branches: [main]
     paths: ["_sotd/**", ".github/workflows/song-tags.yml"]
