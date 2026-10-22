@@ -316,7 +316,7 @@
      [
       [
        "Dark",
-       39
+       40
       ],
       [
        "Energetic",
@@ -5379,7 +5379,7 @@
       ],
       [
        "Energetic",
-       5
+       4
       ],
       [
        "Joyful",
@@ -11504,7 +11504,7 @@
      [
       [
        "Romantic",
-       18
+       19
       ],
       [
        "Bittersweet",
@@ -22052,7 +22052,7 @@
       ],
       [
        "Playful",
-       23
+       24
       ]
      ]
     ]
@@ -24495,8 +24495,8 @@
    ],
    "moodFrom": "Claude",
    "sound": [
-    "Melancholy",
     "Romantic",
+    "Melancholy",
     "Bittersweet"
    ],
    "claude": [
@@ -26684,8 +26684,8 @@
    ],
    "moodFrom": "Claude",
    "sound": [
-    "Joyful",
     "Mellow",
+    "Joyful",
     "Dark"
    ],
    "claude": [
@@ -28571,6 +28571,139 @@
       ]
      ]
     ]
+   ],
+   "check": true
+  },
+  "2KSwmLHkgjZCE49YFkgspo": {
+   "n": 255,
+   "title": "Baby It's You",
+   "artist": "Smith",
+   "moods": [
+    "Energetic",
+    "Joyful"
+   ],
+   "moodMix": [
+    [
+     "Energetic",
+     32
+    ],
+    [
+     "Joyful",
+     22
+    ],
+    [
+     "Playful",
+     9
+    ]
+   ],
+   "moodEvidence": [
+    [
+     "Audio",
+     100,
+     [
+      [
+       "Energetic",
+       32
+      ],
+      [
+       "Joyful",
+       22
+      ],
+      [
+       "Playful",
+       9
+      ]
+     ]
+    ]
+   ],
+   "moodFrom": "Weighed up",
+   "sound": [
+    "Energetic",
+    "Joyful",
+    "Playful"
+   ],
+   "listeners": "none",
+   "styles": [
+    "Pop Rock",
+    "Psychedelic Rock",
+    "Bubblegum"
+   ],
+   "genres": [
+    "Rock",
+    "Pop"
+   ],
+   "genreFrom": "Weighed up",
+   "genreMix": [
+    [
+     "Rock",
+     46
+    ],
+    [
+     "Pop",
+     36
+    ],
+    [
+     "Soul & R&B",
+     16
+    ]
+   ],
+   "genreEvidence": [
+    [
+     "MusicBrainz",
+     50,
+     [
+      [
+       "Pop",
+       53
+      ],
+      [
+       "Soul & R&B",
+       27
+      ],
+      [
+       "Rock",
+       20
+      ]
+     ]
+    ],
+    [
+     "Last.fm",
+     30,
+     [
+      [
+       "Rock",
+       97
+      ],
+      [
+       "Soul & R&B",
+       3
+      ]
+     ]
+    ],
+    [
+     "Audio",
+     20,
+     [
+      [
+       "Pop",
+       48
+      ],
+      [
+       "Rock",
+       34
+      ],
+      [
+       "Soul & R&B",
+       9
+      ]
+     ]
+    ]
+   ],
+   "musicbrainz": [
+    "blue-eyed soul",
+    "pop rock",
+    "rock",
+    "soul"
    ],
    "check": true
   }
