@@ -8,6 +8,7 @@
 // No timers: everything follows from someone opening the calendar. When the Worker reads the playlist for
 // /songs.json (at most every 10 minutes) and finds it changed, it starts the GitHub job (song-tags.yml) that
 // finds each new song's video, year and moods, keeps the YouTube playlist in step and makes the share pages.
+// The job runs once a day (London time): once it has started, the Worker doesn't look again until tomorrow.
 // The same visit gives new songs a mood (ReccoBeats) and genres (MusicBrainz) until the job's own are out,
 // and once a day removes the playlists made for visitors from John's library once they are KEEP_DAYS old.
 //
@@ -241,18 +242,30 @@ async function songsJson(request, env, ctx) {
 
 // After each look at the playlist: start the GitHub job if the playlist has changed since the job last started;
 // once a day, clean up old visitor playlists and tag songs the published tags don't have yet.
+let jobDay = '';   // the London day this copy of the Worker last saw the job started: nothing more to do that day
+
+function londonDay(d) {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(d ? new Date(d) : new Date());   // 2026-10-22
+}
+
 async function afterLook(env, items) {
-  const sig = await sha256hex(items.map(i => i.id).join(','));
+  const today = londonDay();
+  if (jobDay === today) return;
   const job = (await env.SOTD.get('job', 'json')) || {};
-  const today = new Date().toISOString().slice(0, 10);
   const chores = [];
-  // a failed start is tried again after 10 minutes
-  if (job.sig !== sig && !(job.err && job.tried > Date.now() - 600e3)) chores.push(startJob(env, sig, job, items.length));
   if ((await env.SOTD.get('choresDay')) !== today) {   // the first look of the day
     await env.SOTD.put('choresDay', today);
     chores.push(cleanup(env), tagNewSongs(env, items, 3));
-  } else if (job.sig !== sig) {
-    chores.push(tagNewSongs(env, items, 3));   // a new song: tag it now
+  }
+  if (job.at && londonDay(job.at) === today) {
+    jobDay = today;   // already started today
+  } else {
+    const sig = await sha256hex(items.map(i => i.id).join(','));
+    // a start GitHub refused is tried again after 10 minutes
+    if (job.sig !== sig && !(job.err && job.tried > Date.now() - 600e3)) {
+      chores.push(startJob(env, sig, job, items.length));
+      if (chores.length === 1) chores.push(tagNewSongs(env, items, 3));   // a new song: tag it now
+    }
   }
   await Promise.all(chores.map(p => p.catch(() => {})));
 }
@@ -271,6 +284,7 @@ async function startJob(env, sig, job, songs) {
     }).catch(e => ({ status: 0, text: async () => String(e) }));
     if (r.status === 204) {
       Object.assign(rec, { sig, at: new Date().toISOString(), songs });
+      jobDay = londonDay();
       delete rec.err;
     } else {
       rec.err = 'GitHub answered ' + r.status + ': ' + (await r.text()).slice(0, 200);
