@@ -1,0 +1,440 @@
+// Song of the Day — playlist maker (Cloudflare Worker)
+//
+// Visitors open  /p?t=<trackId>,<trackId>,...&n=<name>  (sent by the calendar's "Open in Spotify" button).
+// /songs.json gives the website calendar the playlist as it is now (covers and 30-second previews included).
+// The Worker checks every track is on the Song of the Day playlist, creates a playlist with them in that
+// order on John's Spotify account, and redirects the visitor to it on open.spotify.com.
+//
+// No timers: everything follows from someone opening the calendar. When the Worker reads the playlist for
+// /songs.json (at most every 10 minutes) and finds it changed, it starts the GitHub job (song-tags.yml) that
+// finds each new song's video, year and moods, keeps the YouTube playlist in step and makes the share pages.
+// The same visit gives new songs a mood (ReccoBeats) and genres (MusicBrainz) until the job's own are out,
+// and once a day removes the playlists made for visitors from John's library once they are KEEP_DAYS old.
+//
+// Only John ever signs in to Spotify (via /login once, then again every 6 months when Spotify expires the
+// login), so the Development Mode limit of 5 users does not apply to visitors.
+//
+// Needs one KV namespace bound as SOTD, and the secret GH_TOKEN: a fine-grained GitHub token for
+// cooperking/cooperking.github.io only, with Actions: Read and write. Everything else is set below.
+
+const CLIENT_ID = '21a0fa3c6c09482ea57271dbdbef1c1f';   // Spotify app "Song of the Day" (public identifier)
+const OWNER_ID = 'cooperking';                          // only this Spotify account may link the Worker
+const SOURCE_PLAYLIST = '4zyegiBCapCQm8VWYYHhGo';         // John's Song of the Day playlist
+const MAKE_PUBLIC = false;                              // private: opens from its link, kept off John's profile
+const KEEP_DAYS = 7;                                    // clean-up removes playlists older than this
+const DEFAULT_NAME = 'Song of the Day picks';
+const MAX_NAME = 80;
+const MAX_TRACKS = 300;
+const PER_IP_PER_HOUR = 10;                             // new playlists per visitor per hour
+const SCOPES = 'playlist-modify-public playlist-modify-private playlist-read-private';
+const API = 'https://api.spotify.com/v1';
+const ID_RE = /^[0-9A-Za-z]{22}$/;
+const DAY = 864e5;
+const REPO = 'cooperking/cooperking.github.io';         // the website, and the job that runs after a change
+const JOB = 'song-tags.yml';
+
+class HttpError extends Error {
+  constructor(status, message, extra) { super(message); this.status = status; this.extra = extra || {}; }
+}
+
+export default {
+  async fetch(request, env, ctx) {
+    const url = new URL(request.url);
+    try {
+      if (url.pathname === '/songs.json') return await songsJson(request, env, ctx);
+      if (url.pathname === '/login') return await login(url);
+      if (url.pathname === '/callback') return await callback(request, url, env);
+      if (url.pathname === '/p') return await makePlaylist(request, url, env);
+      if (url.pathname === '/status') return await status(env);
+      return page('Song of the Day', '<p>This service makes Spotify playlists from the Song of the Day calendar.</p>');
+    } catch (e) {
+      if (e instanceof HttpError) return errorPage(e);
+      return page('Something went wrong', '<p>The playlist could not be made. Please try again later.</p><p class="small">' + esc(e.message || String(e)) + '</p>', 500);
+    }
+  }
+};
+
+// ---------- linking John's Spotify account ----------
+
+// The PKCE verifier waits in a short-lived cookie on this address (nothing is written to KV until
+// Spotify confirms it is John signing in).
+async function login(url) {
+  const verifier = b64url(crypto.getRandomValues(new Uint8Array(48)));
+  const challenge = b64url(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier)));
+  const state = b64url(crypto.getRandomValues(new Uint8Array(18)));
+  const q = new URLSearchParams({
+    client_id: CLIENT_ID, response_type: 'code', redirect_uri: url.origin + '/callback',
+    code_challenge_method: 'S256', code_challenge: challenge, state, scope: SCOPES, show_dialog: 'true'
+  });
+  return new Response(null, { status: 302, headers: {
+    Location: 'https://accounts.spotify.com/authorize?' + q,
+    'Set-Cookie': 'pkce=' + state + '.' + verifier + '; Path=/callback; Max-Age=900; HttpOnly; Secure; SameSite=Lax',
+    'Cache-Control': 'no-store'
+  } });
+}
+
+async function callback(request, url, env) {
+  const code = url.searchParams.get('code'), state = url.searchParams.get('state');
+  if (url.searchParams.get('error')) throw new HttpError(400, 'Spotify sign-in was cancelled (' + url.searchParams.get('error') + '). Start again at /login.');
+  if (!code || !state) throw new HttpError(400, 'Spotify did not send a sign-in code. Start again at /login.');
+  const m = (request.headers.get('Cookie') || '').match(/(?:^|;\s*)pkce=([\w-]+)\.([\w-]+)/);
+  if (!m || m[1] !== state) throw new HttpError(400, 'This sign-in link has expired. Start again at /login.');
+  const verifier = m[2];
+  const r = await fetch('https://accounts.spotify.com/api/token', {
+    method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ grant_type: 'authorization_code', code, redirect_uri: url.origin + '/callback', client_id: CLIENT_ID, code_verifier: verifier })
+  });
+  const j = await r.json();
+  if (!r.ok) throw new HttpError(400, 'Spotify refused the sign-in: ' + (j.error_description || j.error || r.status));
+  const me = await (await fetch(API + '/me', { headers: { Authorization: 'Bearer ' + j.access_token } })).json();
+  if (!me || me.id !== OWNER_ID) throw new HttpError(403, 'Only the owner of the Song of the Day playlist can link this service.');
+  await env.SOTD.put('auth', JSON.stringify({
+    refresh_token: j.refresh_token, access_token: j.access_token, expires_at: Date.now() + j.expires_in * 1000,
+    linked_at: new Date().toISOString(), owner: me.id
+  }));
+  await env.SOTD.delete('allowed');
+  return page('Linked', '<p>Linked to Spotify as <b>' + esc(me.id) + '</b>. The calendar can now make playlists.</p><p class="small">Spotify asks for this again after 6 months: open /login on this address to renew it.</p>');
+}
+
+async function status(env) {
+  const auth = await env.SOTD.get('auth', 'json');
+  const last = await env.SOTD.get('cleanup', 'json');
+  let html = auth
+    ? '<p>Linked as <b>' + esc(auth.owner) + '</b> since ' + esc(auth.linked_at.slice(0, 10)) + '.</p><p>Renew by <b>' + new Date(new Date(auth.linked_at).getTime() + 180 * DAY).toISOString().slice(0, 10) + '</b> (open /login).</p>'
+    : '<p>Not linked to Spotify yet. Open /login on this address.</p>';
+  const runs = (last && last.runs) || [];
+  html += runs.length
+    ? '<p>Clean-ups (newest first), removing playlists older than ' + KEEP_DAYS + ' days:</p><ul>' + runs.map(r => '<li>' + esc(r.at.slice(0, 16).replace('T', ' ')) + ' UTC: removed ' + r.removed + ', ' + r.waiting + ' still to go' + (r.error ? '. Error: ' + esc(r.error) : '') + '</li>').join('') + '</ul>'
+    : '<p>No clean-up has run yet.</p>';
+  const job = (await env.SOTD.get('job', 'json')) || {};
+  html += '<p>GitHub job: ' + (job.at ? 'last started ' + esc(job.at.slice(0, 16).replace('T', ' ')) + ' UTC, when the playlist had ' + job.songs + ' songs.' : 'not started from here yet.')
+    + (!env.GH_TOKEN ? ' The GH_TOKEN secret is not set.' : job.err ? ' Last try failed: ' + esc(job.err) : '') + '</p>';
+  return page(auth ? 'Status' : 'Not linked', html);
+}
+
+async function getToken(env) {
+  const auth = await env.SOTD.get('auth', 'json');
+  if (!auth) throw new HttpError(503, 'The playlist maker is not set up yet.');
+  if (auth.access_token && auth.expires_at > Date.now() + 60000) return auth.access_token;
+  const r = await fetch('https://accounts.spotify.com/api/token', {
+    method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: auth.refresh_token, client_id: CLIENT_ID })
+  });
+  const j = await r.json();
+  if (!r.ok) {
+    // Another request may have just refreshed (PKCE refresh tokens can change on every refresh).
+    const again = await env.SOTD.get('auth', 'json');
+    if (again && again.refresh_token !== auth.refresh_token && again.expires_at > Date.now() + 60000) return again.access_token;
+    if (j.error === 'invalid_grant') throw new HttpError(503, 'The playlist maker needs its Spotify link renewed.');
+    throw new Error('Spotify sign-in refresh failed: ' + (j.error_description || j.error || r.status));
+  }
+  const next = Object.assign({}, auth, {
+    access_token: j.access_token, expires_at: Date.now() + j.expires_in * 1000,
+    refresh_token: j.refresh_token || auth.refresh_token
+  });
+  await env.SOTD.put('auth', JSON.stringify(next));
+  return next.access_token;
+}
+
+async function spotify(token, path, method, body) {
+  const r = await fetch(path.startsWith('http') ? path : API + path, {
+    method: method || 'GET',
+    headers: Object.assign({ Authorization: 'Bearer ' + token }, body ? { 'Content-Type': 'application/json' } : {}),
+    body: body ? JSON.stringify(body) : undefined
+  });
+  if (r.status === 429) throw new HttpError(429, 'Spotify is busy right now.', { retryAfter: r.headers.get('Retry-After') });
+  const j = r.status === 204 ? {} : await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error('Spotify ' + r.status + ': ' + ((j.error && (j.error.message || j.error)) || 'request failed'));
+  return j;
+}
+
+// ---------- the playlist maker ----------
+
+async function playlistItems(token) {
+  const out = [];
+  let next = '/playlists/' + SOURCE_PLAYLIST + '/items?limit=100';
+  while (next) {
+    const j = await spotify(token, next);
+    for (const it of j.items || []) {
+      const t = it.item || it.track;
+      if (!t || !t.id) continue;
+      const imgs = (t.album && t.album.images) || [];
+      const img = imgs.find(i => i.width === 300) || imgs[1] || imgs[0];
+      out.push({ a: it.added_at, id: t.id, title: t.name, artist: (t.artists || []).map(x => x.name).join(', '), artists: (t.artists || []).map(x => x.name), album: t.album ? t.album.name : '', img: img ? img.url : '' });
+    }
+    next = j.next;
+  }
+  return out;
+}
+
+async function allowedTracks(env, token, fresh) {
+  const cached = fresh ? null : await env.SOTD.get('allowed', 'json');
+  if (cached && cached.at > Date.now() - 6 * 3600e3) return new Set(cached.ids);
+  const ids = (await playlistItems(token)).map(i => i.id);
+  await env.SOTD.put('allowed', JSON.stringify({ at: Date.now(), ids }));
+  return new Set(ids);
+}
+
+function cleanName(s) {
+  return Array.from(String(s || '').replace(/[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u2028-\u202e\u2066-\u2069\ufeff]/g, ' ').replace(/\s+/g, ' ').trim())
+    .slice(0, MAX_NAME).join('').trim();
+}
+
+async function makePlaylist(request, url, env) {
+  const raw = (url.searchParams.get('t') || '').split(',').map(s => s.trim()).filter(Boolean);
+  if (!raw.length) throw new HttpError(400, 'No songs were chosen. Heart some songs on the calendar first.');
+  if (raw.length > MAX_TRACKS) throw new HttpError(400, 'That is more songs than the calendar has.');
+  if (!raw.every(id => ID_RE.test(id))) throw new HttpError(400, 'That link is not a Song of the Day playlist link.');
+  const ids = [...new Set(raw)];
+  const name = cleanName(url.searchParams.get('n')) || DEFAULT_NAME;
+
+  const token = await getToken(env);
+  let allowed = await allowedTracks(env, token);
+  if (!ids.every(id => allowed.has(id))) allowed = await allowedTracks(env, token, true);   // a song added since the last check
+  if (!ids.every(id => allowed.has(id))) throw new HttpError(400, 'Some of those songs are not on the Song of the Day calendar.');
+
+  const key = 'pl:' + await sha256hex(name + '\n' + ids.join(','));
+  const existing = await env.SOTD.get(key);
+  if (existing) return Response.redirect('https://open.spotify.com/playlist/' + existing, 302);
+
+  const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+  const rk = 'rl:' + ip + ':' + Math.floor(Date.now() / 3600e3);
+  const used = parseInt(await env.SOTD.get(rk) || '0', 10);
+  if (used >= PER_IP_PER_HOUR) throw new HttpError(429, 'You have made a lot of playlists in the last hour.', { retryAfter: '3600' });
+  await env.SOTD.put(rk, String(used + 1), { expirationTtl: 3700 });
+
+  const pl = await spotify(token, '/me/playlists', 'POST', {
+    name,
+    description: 'This playlist is removed after a week. To keep the songs, tap ••• then Add to other playlist, then New playlist.',
+    public: MAKE_PUBLIC
+  });
+  for (let i = 0; i < ids.length; i += 100) {
+    await spotify(token, '/playlists/' + pl.id + '/items', 'POST', { uris: ids.slice(i, i + 100).map(id => 'spotify:track:' + id) });
+  }
+  await env.SOTD.put(key, pl.id, { metadata: { id: pl.id, at: Date.now() } });
+  return Response.redirect('https://open.spotify.com/playlist/' + pl.id, 302);
+}
+
+// ---------- the playlist as it is now, for the website calendar ----------
+
+async function songsJson(request, env, ctx) {
+  const cacheKey = new Request(new URL('/songs.json?v=2', request.url).toString());   // bump to drop cached copies after a format change
+  const hit = await caches.default.match(cacheKey);
+  if (hit) return hit;
+  const token = await getToken(env);
+  const items = await playlistItems(token);
+  let pv = (await env.SOTD.get('previews', 'json')) || {};
+  // a song added since the last look-up gets its preview now, so the calendar never shows it without one
+  if (items.some(it => !(it.id in pv))) pv = await fillPreviews(env, items, 3, pv);
+  const tags = (await env.SOTD.get('tags', 'json')) || {};
+  const songs = items.map((it, i) => Object.assign({ n: i + 1 }, it,
+    pv[it.id] && pv[it.id] !== '-' ? { p: 'https://p.scdn.co/mp3-preview/' + pv[it.id] } : {},
+    tags[it.id] && (tags[it.id].m || (tags[it.id].g || []).length) ? { tag: { m: tags[it.id].m, d: tags[it.id].d, g: tags[it.id].g } } : {}));
+  if (items.some(it => !(it.id in pv))) ctx.waitUntil(fillPreviews(env, items, 6));
+  ctx.waitUntil(afterLook(env, items));
+  const res = new Response(JSON.stringify({ at: new Date().toISOString(), songs }), { headers: {
+    'Content-Type': 'application/json; charset=utf-8', 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'public, max-age=600'
+  } });
+  ctx.waitUntil(caches.default.put(cacheKey, res.clone()));
+  return res;
+}
+
+// After each look at the playlist: start the GitHub job if the playlist has changed since the job last started;
+// once a day, clean up old visitor playlists and tag songs the published tags don't have yet.
+async function afterLook(env, items) {
+  const sig = await sha256hex(items.map(i => i.id).join(','));
+  const job = (await env.SOTD.get('job', 'json')) || {};
+  const today = new Date().toISOString().slice(0, 10);
+  const chores = [];
+  // a failed start is tried again after 10 minutes
+  if (job.sig !== sig && !(job.err && job.tried > Date.now() - 600e3)) chores.push(startJob(env, sig, job, items.length));
+  if ((await env.SOTD.get('choresDay')) !== today) {   // the first look of the day
+    await env.SOTD.put('choresDay', today);
+    chores.push(cleanup(env), tagNewSongs(env, items, 3));
+  } else if (job.sig !== sig) {
+    chores.push(tagNewSongs(env, items, 3));   // a new song: tag it now
+  }
+  await Promise.all(chores.map(p => p.catch(() => {})));
+}
+
+async function startJob(env, sig, job, songs) {
+  const rec = Object.assign({}, job, { tried: Date.now() });
+  await env.SOTD.put('job', JSON.stringify(rec));   // so a second visit right now doesn't start it twice
+  if (!env.GH_TOKEN) {
+    rec.err = 'The GH_TOKEN secret is not set.';
+  } else {
+    const r = await fetch('https://api.github.com/repos/' + REPO + '/actions/workflows/' + JOB + '/dispatches', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + env.GH_TOKEN, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28',
+        'User-Agent': 'SongOfTheDayWorker', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ref: 'main' })
+    }).catch(e => ({ status: 0, text: async () => String(e) }));
+    if (r.status === 204) {
+      Object.assign(rec, { sig, at: new Date().toISOString(), songs });
+      delete rec.err;
+    } else {
+      rec.err = 'GitHub answered ' + r.status + ': ' + (await r.text()).slice(0, 200);
+    }
+  }
+  await env.SOTD.put('job', JSON.stringify(rec));
+}
+
+// The Web API no longer gives preview links, but each song's Spotify embed page carries one.
+// Looks up at most `limit` songs per run, newest first; '-' marks a song with no preview.
+async function fillPreviews(env, items, limit, known) {
+  const pv = known || (await env.SOTD.get('previews', 'json')) || {};
+  const todo = items.filter(it => !(it.id in pv)).reverse().slice(0, limit);
+  let changed = false;
+  for (const it of todo) {
+    const r = await fetch('https://open.spotify.com/embed/track/' + it.id, { headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0 Safari/537.36', 'Accept-Language': 'en-GB' } });
+    if (!r.ok) break;
+    const m = (await r.text()).match(/https:\/\/p\.scdn\.co\/mp3-preview\/([0-9a-f]{20,})/);
+    pv[it.id] = m ? m[1] : '-';
+    changed = true;
+  }
+  if (changed) await env.SOTD.put('previews', JSON.stringify(pv));
+  return pv;
+}
+
+// ---------- mood and genres for songs added since tags.json was made ----------
+
+const TAGS_URL = 'https://cooperking.github.io/songs/tags.json';
+const MB = 'https://musicbrainz.org/ws/2/';
+const MB_HEADERS = { 'User-Agent': 'SongOfTheDayCalendar/1.0 (https://cooperking.github.io/songs/)', Accept: 'application/json' };
+const GENRE_EXACT = {"acid rock": "Rock", "acoustic": "Folk", "adult contemporary": "Pop", "afrobeat": "World", "afropop": "World", "alt country": "Country", "alt-country": "Country", "alternative": "Indie", "alternative country": "Country", "alternative dance": "Electronic", "alternative hip hop": "Hip-hop", "alternative pop": "Indie", "alternative rock": "Indie", "ambient": "Electronic", "american folk": "Folk", "americana": "Folk", "anti-folk": "Folk", "aor": "Pop", "arabic": "World", "art pop": "Pop", "art punk": "Indie", "art rock": "Rock", "avant-garde pop": "Pop", "baroque pop": "Pop", "beat music": "Rock", "bedroom pop": "Indie", "blue-eyed soul": "Soul & R&B", "bluegrass": "Country", "blues": "Soul & R&B", "blues rock": "Rock", "boogie": "Soul & R&B", "bossa nova": "World", "breakbeat": "Electronic", "brill building": "Pop", "british blues": "Rock", "british folk": "Folk", "british rhythm & blues": "Rock", "britpop": "Indie", "bubblegum": "Pop", "chamber folk": "Folk", "chamber pop": "Pop", "chanson": "World", "chillwave": "Indie", "city pop": "Pop", "classic rock": "Rock", "conscious hip hop": "Hip-hop", "contemporary folk": "Folk", "contemporary r&b": "Soul & R&B", "cosmic american music": "Country", "country": "Country", "country pop": "Country", "country rock": "Country", "cumbia": "World", "dance": "Electronic", "dance-pop": "Pop", "dance-punk": "Indie", "dark wave": "Electronic", "darkwave": "Electronic", "disco": "Soul & R&B", "doo-wop": "Soul & R&B", "downtempo": "Electronic", "dream pop": "Indie", "drum and bass": "Electronic", "dub": "World", "dubstep": "Electronic", "easy listening": "Pop", "ebm": "Electronic", "edm": "Electronic", "electro": "Electronic", "electro house": "Electronic", "electronic": "Electronic", "electronica": "Electronic", "electropop": "Pop", "emo": "Indie", "ethio-jazz": "World", "exotica": "World", "folk": "Folk", "folk pop": "Folk", "folk rock": "Folk", "folktronica": "Folk", "freak folk": "Folk", "french electro": "Electronic", "french house": "Electronic", "french pop": "World", "funk": "Soul & R&B", "funk pop": "Pop", "future bass": "Electronic", "garage rock": "Rock", "garage rock revival": "Indie", "glam rock": "Rock", "gospel": "Soul & R&B", "grunge": "Rock", "hard rock": "Rock", "hardcore": "Rock", "hardcore punk": "Rock", "heartland rock": "Rock", "heavy metal": "Rock", "highlife": "World", "hip hop": "Hip-hop", "hip-hop": "Hip-hop", "honky tonk": "Country", "house": "Electronic", "hypnagogic pop": "Pop", "idm": "Electronic", "indie": "Indie", "indie folk": "Folk", "indie pop": "Indie", "indie rock": "Indie", "indietronica": "Indie", "instrumental pop": "Pop", "italo-disco": "Electronic", "jam band": "Rock", "jangle pop": "Indie", "jazz pop": "Pop", "jazz-funk": "Soul & R&B", "krautrock": "Rock", "kwaito": "World", "latin": "World", "lo-fi": "Indie", "lo-fi indie": "Indie", "lounge": "Pop", "mainstream rock": "Rock", "mambo": "World", "marabi": "World", "math rock": "Indie", "merseybeat": "Rock", "metal": "Rock", "mod": "Rock", "motown": "Soul & R&B", "mpb": "World", "neo soul": "Soul & R&B", "neo-psychedelia": "Indie", "new rave": "Electronic", "new romantic": "Pop", "new wave": "Rock", "noise pop": "Indie", "noise rock": "Indie", "northern soul": "Soul & R&B", "nu-disco": "Electronic", "outlaw country": "Country", "plunderphonics": "Electronic", "pop": "Pop", "pop rock": "Pop", "pop soul": "Pop", "post-hardcore": "Rock", "post-punk": "Rock", "post-punk 2k": "Indie", "post-punk revival": "Indie", "post-rock": "Indie", "power pop": "Pop", "progressive pop": "Pop", "progressive rock": "Rock", "proto-punk": "Rock", "psychedelic folk": "Folk", "psychedelic pop": "Pop", "psychedelic rock": "Rock", "psychedelic soul": "Soul & R&B", "pub rock": "Rock", "punk": "Rock", "punk rock": "Rock", "quiet storm": "Soul & R&B", "r&b": "Soul & R&B", "rap": "Hip-hop", "rave": "Electronic", "raï": "World", "reggae": "World", "rhythm & blues": "Soul & R&B", "rock": "Rock", "rock and roll": "Rock", "rockabilly": "Rock", "roots rock": "Rock", "samba": "World", "shoegaze": "Indie", "singer-songwriter": "Folk", "singer/songwriter": "Folk", "ska": "World", "slacker rock": "Indie", "slowcore": "Indie", "soft rock": "Pop", "sophisti-pop": "Pop", "soul": "Soul & R&B", "soul jazz": "Soul & R&B", "southern rock": "Rock", "space rock": "Rock", "sunshine pop": "Pop", "surf rock": "Rock", "synth-pop": "Pop", "synthpop": "Pop", "synthwave": "Electronic", "techno": "Electronic", "township bubblegum": "World", "traditional pop": "Pop", "trip hop": "Electronic", "tropicália": "World", "twee pop": "Indie", "vocal jazz": "Pop", "yacht rock": "Pop", "zouk": "World"};
+const GENRE_IGNORE = new Set(["avant-garde", "blues", "classic pop and rock", "comedy", "experimental", "film soundtrack", "leftfield", "non-music", "pop/rock", "rock and indie", "seen live", "session", "singer-songwriter", "singer/songwriter", "soundtrack"]);
+const GENRE_WORDS = [["hip hop", "Hip-hop"], ["rap", "Hip-hop"], ["folk", "Folk"], ["country", "Country"], ["soul", "Soul & R&B"], ["funk", "Soul & R&B"], ["r&b", "Soul & R&B"], ["blues", "Soul & R&B"], ["disco", "Soul & R&B"], ["house", "Electronic"], ["techno", "Electronic"], ["electro", "Electronic"], ["ambient", "Electronic"], ["indie", "Indie"], ["punk", "Rock"], ["rock", "Rock"], ["pop", "Pop"]];
+
+function genreBucket(name) {
+  const n = name.toLowerCase().trim();
+  if (GENRE_IGNORE.has(n)) return null;
+  if (GENRE_EXACT[n]) return GENRE_EXACT[n];
+  for (const [w, b] of GENRE_WORDS) if (new RegExp('\\b' + w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).test(n)) return b;
+  return null;
+}
+function moodFrom(e, v) { return e >= 0.5 ? (v >= 0.5 ? 'Upbeat' : 'Brooding') : (v >= 0.5 ? 'Mellow' : 'Wistful'); }
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+async function mbGet(path) {
+  await sleep(1100);   // MusicBrainz allows one request a second
+  const r = await fetch(MB + path + (path.includes('?') ? '&' : '?') + 'fmt=json', { headers: MB_HEADERS });
+  return r.ok ? r.json() : null;
+}
+
+async function tagNewSongs(env, items, limit) {
+  const known = await fetch(TAGS_URL, { cf: { cacheTtl: 300 } }).then(r => r.ok ? r.json() : null).catch(() => null);
+  if (!known) return;   // without the published list every song would look new
+  const kv = (await env.SOTD.get('tags', 'json')) || {};
+  const todo = items.filter(it => !(known.songs || {})[it.id] && !kv[it.id]).reverse().slice(0, limit);
+  if (!todo.length) return;
+  const rb = await fetch('https://api.reccobeats.com/v1/audio-features?ids=' + todo.map(t => t.id).join(','))
+    .then(r => r.ok ? r.json() : null).catch(() => null);
+  const feats = {};
+  for (const f of (rb && rb.content) || []) { const m = (f.href || '').match(/track\/(\w+)/); if (m) feats[m[1]] = f; }
+  for (const it of todo) {
+    const t = { at: Date.now(), g: [] };
+    const f = feats[it.id];
+    if (f) { t.m = moodFrom(f.energy, f.valence); t.d = f.danceability >= 0.7 ? 1 : 0; }
+    const title = it.title.replace(/\s+-\s+.*(remaster|version|mix|edit|mono|stereo|single|live|demo|take|recording|anniversary|bonus).*$/i, '')
+      .replace(/\s*[\(\[](feat|with|ft)\.?[^\)\]]*[\)\]]/ig, '').trim();
+    const lq = x => x.replace(/[\\"]/g, '\\$&');
+    const found = await mbGet('recording?query=' + encodeURIComponent('recording:"' + lq(title) + '" AND artist:"' + lq((it.artists || [it.artist])[0]) + '"') + '&limit=3');
+    const hit = found && (found.recordings || []).find(r => r.score >= 85);
+    // genres: MusicBrainz tags on the song's album (counts most), its artists and the recording
+    const share = pairs => {
+      const w = {};
+      for (const g of pairs) { if (g.count !== undefined && g.count <= 0) continue; const b = genreBucket(g.name); if (b) w[b] = (w[b] || 0) + Math.max(1, g.count || 1); }
+      const tot = Object.values(w).reduce((x, y) => x + y, 0);
+      return tot ? Object.fromEntries(Object.entries(w).map(([b, x]) => [b, x / tot])) : null;
+    };
+    const parts = [];
+    const album = (it.album || '').replace(/\s*[\(\[][^\)\]]*(remaster|deluxe|edition|expanded|version|anniversary|mono|stereo|bonus|reissue)[^\)\]]*[\)\]]/ig, '')
+      .replace(/\s+-\s+.*(remaster|deluxe|edition|version|anniversary).*$/i, '').trim();
+    if (album) {
+      const rgs = await mbGet('release-group?query=' + encodeURIComponent('releasegroup:"' + lq(album) + '" AND artist:"' + lq((it.artists || [it.artist])[0]) + '"') + '&limit=3');
+      const rg = rgs && (rgs['release-groups'] || []).find(x => x.score >= 90);
+      parts.push([3, share((rg && rg.tags) || [])]);
+    }
+    let artistTags = [];
+    for (const ac of hit ? (hit['artist-credit'] || []).slice(0, 2) : []) {
+      const a = await mbGet('artist/' + ac.artist.id + '?inc=tags');
+      let tags = (a && (a.tags || a.genres)) || [];
+      if (!tags.some(g => genreBucket(g.name))) {
+        // artist has no usable tags: count the tags on its releases instead
+        const rg = await mbGet('release-group?query=' + encodeURIComponent('arid:' + ac.artist.id) + '&limit=100');
+        tags = ((rg && rg['release-groups']) || []).flatMap(x => x.tags || []);
+      }
+      artistTags = artistTags.concat(tags);
+    }
+    parts.push([2, share(artistTags)]);
+    parts.push([1, share(((hit && hit.tags) || []).map(g => ({ name: g.name, count: 1 })))]);
+    const w = {};
+    let wsum = 0;
+    for (const [weight, d] of parts) {
+      if (!d) continue;
+      wsum += weight;
+      for (const [b, x] of Object.entries(d)) w[b] = (w[b] || 0) + weight * x;
+    }
+    t.g = Object.entries(w).sort((x, y) => y[1] - x[1]).filter(([, x]) => wsum && x / wsum >= 0.25).slice(0, 2).map(([b]) => b);
+    kv[it.id] = t;
+  }
+  await env.SOTD.put('tags', JSON.stringify(kv));
+}
+
+// ---------- weekly clean-up (runs from the Cron Trigger) ----------
+
+async function cleanup(env) {
+  const cutoff = Date.now() - KEEP_DAYS * DAY;
+  const due = [];
+  let waiting = 0, cursor;
+  do {
+    const lst = await env.SOTD.list({ prefix: 'pl:', cursor });
+    for (const k of lst.keys) {
+      const md = k.metadata || {};
+      if (md.at && md.at > cutoff) { waiting++; continue; }
+      due.push({ key: k.name, id: md.id || await env.SOTD.get(k.name) });
+    }
+    cursor = lst.list_complete ? null : lst.cursor;
+  } while (cursor);
+
+  let removed = 0, done = 0, error = null;
+  try {
+    if (due.length) {
+      const token = await getToken(env);
+      for (let i = 0; i < due.length; i += 40) {
+        const chunk = due.slice(i, i + 40), batch = chunk.filter(d => d.id);
+        if (batch.length) await spotify(token, '/me/library?uris=' + batch.map(d => 'spotify:playlist:' + d.id).join(','), 'DELETE');
+        for (const d of chunk) await env.SOTD.delete(d.key);
+        removed += batch.length; done += chunk.length;
+      }
+    }
+  } catch (e) {
+    error = e.message || String(e);
+  }
+  const runs = ((await env.SOTD.get('cleanup', 'json')) || {}).runs || [];
+  runs.unshift({ at: new Date().toISOString(), removed, waiting: waiting + due.length - done, error });
+  await env.SOTD.put('cleanup', JSON.stringify({ runs: runs.slice(0, 5) }));
+}
+
+// ---------- helpers ----------
+
+function errorPage(e) {
+  if (e.status === 429) {
+    const mins = Math.max(1, Math.round((parseInt(e.extra.retryAfter || '600', 10)) / 60));
+    return page('Try again later', '<p>' + esc(e.message) + ' Please try again in about ' + mins + (mins === 1 ? ' minute' : ' minutes') + '.</p>', 429);
+  }
+  return page(e.status === 503 ? 'Not available right now' : 'Can’t make that playlist', '<p>' + esc(e.message) + '</p>', e.status);
+}
+
+function page(title, body, status) {
+  const html = '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
+    '<title>' + esc(title) + '</title><style>' +
+    'body{margin:0;min-height:100vh;display:grid;place-items:center;background:#ec135b;color:#fffaf5;font:17px/1.5 Georgia,serif;padding:24px}' +
+    'main{max-width:30em;background:#fff;color:#1b1020;border-radius:18px;padding:28px 26px;box-shadow:0 20px 60px rgba(0,0,0,.25)}' +
+    'h1{margin:0 0 10px;font-weight:500;font-size:30px;line-height:1.1}.small{font:13px/1.5 system-ui,sans-serif;color:#6b5a6e}' +
+    '</style></head><body><main><h1>' + esc(title) + '</h1>' + body + '</main></body></html>';
+  return new Response(html, { status: status || 200, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } });
+}
+
+function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]); }
+function b64url(buf) { return btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+async function sha256hex(s) { return [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))].map(b => b.toString(16).padStart(2, '0')).join(''); }
