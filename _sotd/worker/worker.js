@@ -12,6 +12,8 @@
 // calendar that has fallen behind catches up; once one has, the Worker doesn't look again until tomorrow.
 // The same visit gives new songs a mood (ReccoBeats) and genres (MusicBrainz) until the job's own are out,
 // and once a day removes the playlists made for visitors from John's library once they are KEEP_DAYS old.
+// Removing one makes its link stop working, but a visitor already playing it carries on to the next songs
+// (tested 23 Oct 2026) unless their Spotify app restarts; a day covers one listen.
 //
 // Only John ever signs in to Spotify (via /login once, then again every 6 months when Spotify expires the
 // login), so the Development Mode limit of 5 users does not apply to visitors.
@@ -23,7 +25,7 @@ const CLIENT_ID = '21a0fa3c6c09482ea57271dbdbef1c1f';   // Spotify app "Song of 
 const OWNER_ID = 'cooperking';                          // only this Spotify account may link the Worker
 const SOURCE_PLAYLIST = '4zyegiBCapCQm8VWYYHhGo';         // John's Song of the Day playlist
 const MAKE_PUBLIC = false;                              // private: opens from its link, kept off John's profile
-const KEEP_DAYS = 7;                                    // clean-up removes playlists older than this
+const KEEP_DAYS = 1;                                    // clean-up removes playlists older than this
 const DEFAULT_NAME = 'Song of the Day picks';
 const MAX_NAME = 80;
 const MAX_TRACKS = 300;
@@ -106,7 +108,7 @@ async function status(env) {
     : '<p>Not linked to Spotify yet. Open /login on this address.</p>';
   const runs = (last && last.runs) || [];
   html += runs.length
-    ? '<p>Clean-ups (newest first), removing playlists older than ' + KEEP_DAYS + ' days:</p><ul>' + runs.map(r => '<li>' + esc(r.at.slice(0, 16).replace('T', ' ')) + ' UTC: removed ' + r.removed + ', ' + r.waiting + ' still to go' + (r.error ? '. Error: ' + esc(r.error) : '') + '</li>').join('') + '</ul>'
+    ? '<p>Clean-ups (newest first), removing playlists older than ' + (KEEP_DAYS === 1 ? 'a day' : KEEP_DAYS + ' days') + ':</p><ul>' + runs.map(r => '<li>' + esc(r.at.slice(0, 16).replace('T', ' ')) + ' UTC: removed ' + r.removed + ', ' + r.waiting + ' still to go' + (r.error ? '. Error: ' + esc(r.error) : '') + '</li>').join('') + '</ul>'
     : '<p>No clean-up has run yet.</p>';
   const job = (await env.SOTD.get('job', 'json')) || {};
   html += '<p>GitHub job: ' + (job.at ? 'last started ' + esc(job.at.slice(0, 16).replace('T', ' ')) + ' UTC, when the playlist had ' + job.songs + ' songs.' : 'not started from here yet.')
@@ -207,7 +209,7 @@ async function makePlaylist(request, url, env) {
 
   const pl = await spotify(token, '/me/playlists', 'POST', {
     name,
-    description: 'This playlist is removed after a week. To keep the songs, tap ••• then Add to other playlist, then New playlist.',
+    description: 'This playlist is removed after a day. To keep the songs, tap ••• then Add to other playlist, then New playlist.',
     public: MAKE_PUBLIC
   });
   for (let i = 0; i < ids.length; i += 100) {
@@ -396,7 +398,7 @@ async function tagNewSongs(env, items, limit) {
   await env.SOTD.put('tags', JSON.stringify(kv));
 }
 
-// ---------- weekly clean-up (runs from the Cron Trigger) ----------
+// ---------- daily clean-up (on the first look of the day) ----------
 
 async function cleanup(env) {
   const cutoff = Date.now() - KEEP_DAYS * DAY;
@@ -418,7 +420,18 @@ async function cleanup(env) {
       const token = await getToken(env);
       for (let i = 0; i < due.length; i += 40) {
         const chunk = due.slice(i, i + 40), batch = chunk.filter(d => d.id);
-        if (batch.length) await spotify(token, '/me/library?uris=' + batch.map(d => 'spotify:playlist:' + d.id).join(','), 'DELETE');
+        if (batch.length) {
+          try { await spotify(token, '/me/library?uris=' + batch.map(d => 'spotify:playlist:' + d.id).join(','), 'DELETE'); }
+          catch (e) {
+            // One playlist Spotify won't take (already gone, say) mustn't hold up the rest: try them one at a time,
+            // and drop any it refuses outright (4xx); anything else is left for tomorrow.
+            if (!/^Spotify 4/.test(e.message || '')) throw e;
+            for (const d of batch) {
+              try { await spotify(token, '/me/library?uris=spotify:playlist:' + d.id, 'DELETE'); }
+              catch (e2) { if (!/^Spotify 4/.test(e2.message || '')) throw e2; }
+            }
+          }
+        }
         for (const d of chunk) await env.SOTD.delete(d.key);
         removed += batch.length; done += chunk.length;
       }
