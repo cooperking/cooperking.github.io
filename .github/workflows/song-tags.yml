@@ -69,10 +69,6 @@ jobs:
       - name: Genres from MusicBrainz
         run: python _sotd/musicbrainz.py
 
-      - name: Sources for the song facts (Wikipedia, Wikidata, MusicBrainz)
-        continue-on-error: true   # the facts can wait for the next run; the rest still saves
-        run: python _sotd/about.py
-
       - name: A YouTube video for each song
         env:
           YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
@@ -92,9 +88,6 @@ jobs:
 
       - name: Weigh up moods and genres
         run: python _sotd/make_tags.py
-
-      - name: Song facts for the calendar
-        run: python _sotd/make_facts.py
 
       - name: A page and a picture per day for sharing links
         run: |
