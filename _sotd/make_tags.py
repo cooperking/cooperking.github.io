@@ -9,7 +9,8 @@ Each song's mood is weighed up from three voices, then John's corrections win:
 Genres: MusicBrainz tags (album, artists, recording), Last.fm tags and Essentia's Discogs styles,
 with Claude's corrections and then John's on top.
 
-A song is marked "check" unless Claude knows or has researched it (and listeners and audio don't both disagree).
+A song is marked "check" unless Claude knows or has researched it (and listeners and audio don't both disagree), or
+checked it thoroughly (claude.json "checked"; those picks stand as given).
 """
 import json, math, os, sys, urllib.request
 from collections import Counter
@@ -185,7 +186,8 @@ def main():
         # ---------- moods ----------
         voices = []   # (weight, shares)
         basis = c.get('basis') or ('knows' if c.get('moodSure') else 'guess')
-        solid = bool(c.get('moods')) and basis in ('knows', 'researched-high')   # Claude knows what the song is about
+        # Claude knows what the song is about, or checked it thoroughly (the recheck of 23 Oct 2026): its picks stand
+        solid = bool(c.get('moods')) and (basis in ('knows', 'researched-high') or bool(c.get('checked')))
         if c.get('moods'):
             voices.append((CLAUDE_WEIGHT[basis], picks_dist(c['moods']), 'Claude'))
         lmoods, rel = listener_moods(lf.get('track', []))
@@ -227,7 +229,9 @@ def main():
 
         # do the voices back the first mood?
         first = moods[0] if moods else None
-        if solid:
+        if c.get('checked'):
+            check = False   # checked thoroughly, song by song
+        elif solid:
             # the audio models alone are too unreliable to overrule Claude; it takes listeners and audio both disagreeing
             check = bool(lis_top) and first not in lis_top and first not in rec.get('sound', [first])
         elif c.get('moods') and basis == 'researched-medium':

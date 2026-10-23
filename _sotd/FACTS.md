@@ -51,8 +51,11 @@ American singer-songwriter", "received positive reviews", chart positions on the
 **Clear.** Each fact is read on its own, under its heading, with nothing around it.
 - The first time a fact mentions any person, use their full name ("Al Green and Mabon ‘Teenie’ Hodges wrote it...",
   never "Green and Hodges" or "Teenie Hodges"). After that, in the same fact, a surname or pronoun is fine.
-- No he, she, they, his or her for a person the fact hasn't named. A song fact never starts with a pronoun. An artist
-  fact names the artist ("Louis Armstrong followed his mentor...").
+- An artist fact is shown under the artist's name, so it doesn't repeat it: it says he, she or they (or "the band")
+  for the artist ("He followed his mentor Joe ‘King’ Oliver to Chicago..."). Use the artist's name only where a pronoun
+  would be unclear, for instance after another person has been mentioned.
+- A song fact is shown under the song's title, so it names the artist ("Al Green and Mabon ‘Teenie’ Hodges wrote
+  it..."), and never uses he, she or they for anyone it hasn't named. Every other musician gets their full name.
 - "It" for the song is fine in a song fact. Name albums, bands and other songs in full.
 - Song titles in single curly quotes: ‘Hey, Girl’. Album titles plain. British spelling and dates (13 October 2025).
 - One sentence, two at most. 30 words at most; aim for 15 to 28.
@@ -88,8 +91,9 @@ fetch the result). Then decide:
 
 1. True to its source: every name, date, number, place and claim is on the page. Nothing added. Narrow or drop
    anything that goes further than the page; drop it if the page can't be reached or doesn't back it.
-2. Clear on its own: full name at first mention of any person; no pronoun for someone not yet named; a song fact never
-   starts with a pronoun; an artist fact names the artist.
+2. Clear on its own: full name at first mention of anyone other than the artist; under an artist's heading the artist
+   is he, she or they (not their name, unless a pronoun would be unclear); a song fact names the artist and uses no
+   pronoun for anyone it hasn't named.
 3. Fit to show: 30 words at most; no lyrics; no allegations, health details or how someone died; no gossip; not a
    near-repeat of another fact for the same song or artist.
 
