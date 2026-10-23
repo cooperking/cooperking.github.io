@@ -302,6 +302,8 @@ def write_site(data):
     for tid, e in data['songs'].items():
         if e.get('id') and e.get('embed'):
             out[tid] = {'v': e['id'], 'k': e.get('kind', 'other')}
+            if e.get('secs'):
+                out[tid]['s'] = e['secs']   # its length: the calendar tells an advert from the video by it
     for tid, v in john.items():
         e = data['songs'].get(tid, {})
         if not v:
@@ -310,13 +312,15 @@ def write_site(data):
             out[tid] = {'v': v, 'k': 'video'}   # not looked up yet
         elif e.get('embed'):
             out[tid] = {'v': v, 'k': e.get('kind', 'video')}
+            if e.get('secs'):
+                out[tid]['s'] = e['secs']
         else:
             out.pop(tid, None)
     counts = {}
     for x in out.values():
         counts[x['k']] = counts.get(x['k'], 0) + 1
     print('playable on the calendar:', len(out), counts)
-    site = {'about': 'YouTube video for each song (Spotify track id: v video id, k video / live / audio / other); '
+    site = {'about': 'YouTube video for each song (Spotify track id: v video id, k video / live / audio / other, s its length in seconds); '
                      'playlist: the YouTube playlist of them all',
             'videos': out}
     pl = os.path.join(HERE, 'data', 'youtube-playlist.json')
