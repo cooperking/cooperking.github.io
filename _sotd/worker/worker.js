@@ -192,7 +192,8 @@ async function playlistItems(token) {
       if (!t || !t.id) continue;
       const imgs = (t.album && t.album.images) || [];
       const img = imgs.find(i => i.width === 300) || imgs[1] || imgs[0];
-      out.push({ a: it.added_at, id: t.id, title: t.name, artist: (t.artists || []).map(x => x.name).join(', '), artists: (t.artists || []).map(x => x.name), album: t.album ? t.album.name : '', img: img ? img.url : '' });
+      out.push({ a: it.added_at, id: t.id, title: t.name, artist: (t.artists || []).map(x => x.name).join(', '), artists: (t.artists || []).map(x => x.name),
+        aids: (t.artists || []).map(x => x.id), album: t.album ? t.album.name : '', alid: t.album ? t.album.id : '', img: img ? img.url : '' });   // aids, alid: Spotify ids, for the song facts' sources
     }
     next = j.next;
   }
@@ -250,7 +251,7 @@ async function makePlaylist(request, url, env) {
 // ---------- the playlist as it is now, for the website calendar ----------
 
 async function songsJson(request, env, ctx) {
-  const cacheKey = new Request(new URL('/songs.json?v=2', request.url).toString());   // bump to drop cached copies after a format change
+  const cacheKey = new Request(new URL('/songs.json?v=3', request.url).toString());   // bump to drop cached copies after a format change
   const hit = await caches.default.match(cacheKey);
   if (hit) return hit;
   const token = await getToken(env);
