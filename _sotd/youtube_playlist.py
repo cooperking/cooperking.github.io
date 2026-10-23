@@ -165,7 +165,7 @@ def main():
         by_item = {v['item']: t for t, v in state['added'].items()}
         order = [by_item[i] for i in now if i in by_item]
         for want_pos, t in enumerate(cur):
-            if order[want_pos] == t:
+            if want_pos < len(order) and order[want_pos] == t:
                 continue
             item = state['added'][t]
             r = call('PUT', API + 'playlistItems?part=snippet', {'id': item['item'], 'snippet': {
@@ -173,7 +173,9 @@ def main():
                 'resourceId': {'kind': 'youtube#video', 'videoId': item['v']}}}, token=token, units=50)
             if '_status' in r:
                 print('could not move', t, r.get('_status'), r.get('_text', '')[:160]); break
-            order.remove(t); order.insert(want_pos, t)
+            if t in order:   # a video added moments ago may not show in YouTube's listing yet
+                order.remove(t)
+            order.insert(want_pos, t)
             print('moved into place:', next(s['n'] for s in songs if s['id'] == t), '->', want_pos + 1)
     except Quota:
         print("today's YouTube allowance is used up; the rest go in tomorrow")
