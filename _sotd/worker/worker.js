@@ -106,14 +106,42 @@ async function status(env) {
   let html = auth
     ? '<p>Linked as <b>' + esc(auth.owner) + '</b> since ' + esc(auth.linked_at.slice(0, 10)) + '.</p><p>Renew by <b>' + new Date(new Date(auth.linked_at).getTime() + 180 * DAY).toISOString().slice(0, 10) + '</b> (open /login).</p>'
     : '<p>Not linked to Spotify yet. Open /login on this address.</p>';
+  html += '<p class="small">Times are UK time.</p>';
   const runs = (last && last.runs) || [];
   html += runs.length
-    ? '<p>Clean-ups (newest first), removing playlists older than ' + (KEEP_DAYS === 1 ? 'a day' : KEEP_DAYS + ' days') + ':</p><ul>' + runs.map(r => '<li>' + esc(r.at.slice(0, 16).replace('T', ' ')) + ' UTC: removed ' + r.removed + ', ' + r.waiting + ' still to go' + (r.error ? '. Error: ' + esc(r.error) : '') + '</li>').join('') + '</ul>'
+    ? '<h2>Clean-ups</h2><p>Newest first. Each removes the visitor playlists older than ' + (KEEP_DAYS === 1 ? 'a day' : KEEP_DAYS + ' days') + '.</p><ul>' + runs.map(r => '<li>' + uk(r.at) + ': removed ' + r.removed + ', ' + r.waiting + ' still to go' + (r.error ? '. Error: ' + esc(r.error) : '') + '</li>').join('') + '</ul>'
     : '<p>No clean-up has run yet.</p>';
+
+  // the Worker's own records: the only playlists it will ever remove
+  const waiting = [];
+  let cursor;
+  do {
+    const lst = await env.SOTD.list({ prefix: 'pl:', cursor });
+    for (const k of lst.keys) waiting.push(k.metadata || {});
+    cursor = lst.list_complete ? null : lst.cursor;
+  } while (cursor);
+  waiting.sort((x, y) => (y.at || 0) - (x.at || 0));
+  html += '<h2>Waiting to be removed</h2>' + (waiting.length
+    ? '<p>Playlists the Worker made for visitors. Each goes at the first calendar visit after it is ' + (KEEP_DAYS === 1 ? 'a day' : KEEP_DAYS + ' days') + ' old.</p><ul>' + waiting.map(m => '<li>' + plLine(m.name, m.n, m.id) + ', made ' + (m.at ? uk(m.at) : 'at an unknown time') + '</li>').join('') + '</ul>'
+    : '<p>None.</p>');
+
+  const removed = (await env.SOTD.get('removed', 'json')) || [];
+  html += '<h2>Removed</h2>' + (removed.length
+    ? '<p>Newest first, the last ' + removed.length + '.</p><ul>' + removed.map(r => '<li>' + uk(r.at) + ': ' + plLine(r.name, r.n, null) + (r.made ? ', made ' + uk(r.made) : '') + (r.refused ? ' (Spotify said it was already gone)' : '') + '</li>').join('') + '</ul>'
+    : '<p>None yet.</p>');
+
   const job = (await env.SOTD.get('job', 'json')) || {};
-  html += '<p>GitHub job: ' + (job.at ? 'last started ' + esc(job.at.slice(0, 16).replace('T', ' ')) + ' UTC, when the playlist had ' + job.songs + ' songs.' : 'not started from here yet.')
+  html += '<h2>GitHub job</h2><p>' + (job.at ? 'Last started ' + uk(job.at) + ', when the playlist had ' + job.songs + ' songs.' : 'Not started from here yet.')
     + (!env.GH_TOKEN ? ' The GH_TOKEN secret is not set.' : job.err ? ' Last try failed: ' + esc(job.err) : '') + '</p>';
   return page(auth ? 'Status' : 'Not linked', html);
+}
+function uk(t) {   // a time as UK time, e.g. 23 Oct 13:19
+  try { return esc(new Date(t).toLocaleString('en-GB', { timeZone: 'Europe/London', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).replace(',', '')); }
+  catch (e) { return esc(String(t)); }
+}
+function plLine(name, n, id) {
+  const label = name ? '“' + esc(name) + '”' : 'name not recorded';
+  return (id ? '<a href="https://open.spotify.com/playlist/' + esc(id) + '">' + label + '</a>' : label) + (n ? ', ' + n + (n === 1 ? ' song' : ' songs') : '');
 }
 
 async function getToken(env) {
@@ -215,7 +243,7 @@ async function makePlaylist(request, url, env) {
   for (let i = 0; i < ids.length; i += 100) {
     await spotify(token, '/playlists/' + pl.id + '/items', 'POST', { uris: ids.slice(i, i + 100).map(id => 'spotify:track:' + id) });
   }
-  await env.SOTD.put(key, pl.id, { metadata: { id: pl.id, at: Date.now() } });
+  await env.SOTD.put(key, pl.id, { metadata: { id: pl.id, at: Date.now(), name, n: ids.length } });
   return Response.redirect('https://open.spotify.com/playlist/' + pl.id, 302);
 }
 
@@ -409,15 +437,20 @@ async function cleanup(env) {
     for (const k of lst.keys) {
       const md = k.metadata || {};
       if (md.at && md.at > cutoff) { waiting++; continue; }
-      due.push({ key: k.name, id: md.id || await env.SOTD.get(k.name) });
+      due.push({ key: k.name, id: md.id || await env.SOTD.get(k.name), name: md.name, n: md.n, made: md.at });
     }
     cursor = lst.list_complete ? null : lst.cursor;
   } while (cursor);
 
   let removed = 0, done = 0, error = null;
+  const log = [];
   try {
     if (due.length) {
       const token = await getToken(env);
+      for (const d of due) {   // playlists recorded before names were kept: ask Spotify (fails if it's already gone)
+        if (d.name || !d.id) continue;
+        try { d.name = (await spotify(token, '/playlists/' + d.id + '?fields=name')).name; } catch (e) {}
+      }
       for (let i = 0; i < due.length; i += 40) {
         const chunk = due.slice(i, i + 40), batch = chunk.filter(d => d.id);
         if (batch.length) {
@@ -428,11 +461,14 @@ async function cleanup(env) {
             if (!/^Spotify 4/.test(e.message || '')) throw e;
             for (const d of batch) {
               try { await spotify(token, '/me/library?uris=spotify:playlist:' + d.id, 'DELETE'); }
-              catch (e2) { if (!/^Spotify 4/.test(e2.message || '')) throw e2; }
+              catch (e2) { if (!/^Spotify 4/.test(e2.message || '')) throw e2; d.refused = (e2.message || '').slice(0, 60); }
             }
           }
         }
-        for (const d of chunk) await env.SOTD.delete(d.key);
+        for (const d of chunk) {
+          await env.SOTD.delete(d.key);
+          log.push({ at: new Date().toISOString(), id: d.id || null, name: d.name || null, n: d.n || null, made: d.made ? new Date(d.made).toISOString() : null, refused: d.refused || null });
+        }
         removed += batch.length; done += chunk.length;
       }
     }
@@ -441,6 +477,10 @@ async function cleanup(env) {
   }
   const runs = ((await env.SOTD.get('cleanup', 'json')) || {}).runs || [];
   runs.unshift({ at: new Date().toISOString(), removed, waiting: waiting + due.length - done, error });
+  if (log.length) {
+    const kept = ((await env.SOTD.get('removed', 'json')) || []);
+    await env.SOTD.put('removed', JSON.stringify(log.reverse().concat(kept).slice(0, 100)));
+  }
   await env.SOTD.put('cleanup', JSON.stringify({ runs: runs.slice(0, 5) }));
 }
 
@@ -458,8 +498,9 @@ function page(title, body, status) {
   const html = '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
     '<title>' + esc(title) + '</title><style>' +
     'body{margin:0;min-height:100vh;display:grid;place-items:center;background:#ec135b;color:#fffaf5;font:17px/1.5 Georgia,serif;padding:24px}' +
-    'main{max-width:30em;background:#fff;color:#1b1020;border-radius:18px;padding:28px 26px;box-shadow:0 20px 60px rgba(0,0,0,.25)}' +
+    'main{max-width:34em;background:#fff;color:#1b1020;border-radius:18px;padding:28px 26px;box-shadow:0 20px 60px rgba(0,0,0,.25)}' +
     'h1{margin:0 0 10px;font-weight:500;font-size:30px;line-height:1.1}.small{font:13px/1.5 system-ui,sans-serif;color:#6b5a6e}' +
+    'h2{margin:22px 0 4px;font:600 12px/1.4 system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#6b5a6e}ul{padding-left:1.1em;margin:6px 0}li{margin:4px 0;font-size:15px}a{color:#c2104b}' +
     '</style></head><body><main><h1>' + esc(title) + '</h1>' + body + '</main></body></html>';
   return new Response(html, { status: status || 200, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } });
 }
