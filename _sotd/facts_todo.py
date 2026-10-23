@@ -3,7 +3,8 @@
 
     python3 _sotd/facts_todo.py OUTDIR
 
-A song needs facts when it has none live, none signed off and none waiting for John. For each, writes into OUTDIR:
+A song needs facts when it isn't in the live facts at all (one there with none found isn't tried again) and has none
+waiting for John. For each, writes into OUTDIR:
 todo.md (each song with its album, year, credited artists, MusicBrainz details and the saved Wikipedia pages to read)
 and pages/*.txt (those pages' text). Prints how many songs need facts; 0 means nothing to do.
 """
@@ -40,9 +41,8 @@ def main(out):
     pending = load(os.path.join(HERE, 'data', 'facts-pending.json'), {'songs': {}})
     years = load(os.path.join(HERE, 'data', 'years.json'), {'songs': {}})['songs']
 
-    def has_live(tid):
-        e = live['songs'].get(tid)
-        return bool(e and (e.get('s') or any(live['artists'].get(k, {}).get('f') for k in e.get('a', [])) or tid in live.get('signed', {})))
+    def has_live(tid):   # on the calendar already, even with no facts (nothing could be found): not tried again
+        return tid in live['songs'] or tid in live.get('signed', {})
     todo = sorted((s for tid, s in S['songs'].items() if not has_live(tid) and tid not in pending['songs']), key=lambda s: s['n'])
     os.makedirs(os.path.join(out, 'pages'), exist_ok=True)
     lines = []
