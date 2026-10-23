@@ -4,7 +4,7 @@ comes from and the words in that source that back it) and _sotd/data/sources.jso
 
 On the site each day shows "About the song" and "About <artist>", with the Wikipedia articles (CC BY-SA 4.0) and
 MusicBrainz pages the facts come from linked underneath. At most three of each."""
-import json, os
+import json, os, re
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -40,16 +40,20 @@ def main():
             refs.append(item)
         return index[k]
 
+    def nice(t):   # typographic quotes: "x" -> “x”, 'x' -> ‘x’ (apostrophes stay as they are)
+        t = re.sub(r'"([^"]+)"', '\u201c\\1\u201d', t)
+        return re.sub(r"(^|[\s(\[])'([^']+)'(?=[\s,.;:!?)\]]|$)", '\\1\u2018\\2\u2019', t)
+
     out_artists = {}
     for key, fs in facts.get('artists', {}).items():
-        rows = [[f['t'], ref(f['src'], key)] for f in fs[:MAX]]
+        rows = [[nice(f['t']), ref(f['src'], key)] for f in fs[:MAX]]
         rows = [r for r in rows if r[1] is not None]
         if rows and key in artists_src:
             out_artists[key] = {'name': artists_src[key]['name'], 'f': rows}
     out_songs = {}
     for tid, e in songs_src.items():
         fs = facts.get('songs', {}).get(tid) or []
-        rows = [[f['t'], ref(f['src'], None)] for f in fs[:MAX]]
+        rows = [[nice(f['t']), ref(f['src'], None)] for f in fs[:MAX]]
         rows = [r for r in rows if r[1] is not None]
         arts = [a for a in e.get('artists', []) if a in out_artists]
         if rows or arts:
