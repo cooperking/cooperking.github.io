@@ -1,16 +1,21 @@
 {
- "about": "Claude's picks. moods: up to two of the ten, strongest first. basis: knows = Claude knows the song (sound and lyrics); researched-high/medium/low = Claude read about it (reviews, interviews, label notes), by how clearly the sources described it, with why and source; guess = Claude knows it only roughly. genres: Claude's correction where MusicBrainz was wrong; genresIfNone: used only when nothing else names a genre.",
+ "about": "Claude's picks. moods: up to two of the ten, strongest first. basis: knows = Claude knows the song (sound and lyrics); researched-high/medium/low = Claude read about it (reviews, interviews, label notes), by how clearly the sources described it, with why and source; guess = Claude knows it only roughly. genres: Claude's correction where MusicBrainz was wrong; genresIfNone: used only when nothing else names a genre. checked: the date of the thorough recheck; those picks stand as given (John's still win).",
  "songs": {
   "5mgCP62kIGit9ICUdaqIgq": {
    "n": 1,
    "title": "That’s Just the Way That I Feel",
    "artist": "Purple Mountains",
    "moods": [
-    "Melancholy",
-    "Bittersweet"
+    "Bittersweet",
+    "Melancholy"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Indie",
+    "Country"
+   ],
+   "checked": "2026-10-23",
+   "why": "Jaunty, twangy country-rock shuffle under Berman's deadpan baritone, singing of failure and despair: bright sound, bleak words."
   },
   "0AQSOcvFfPGxofpNuK7zyA": {
    "n": 2,
@@ -20,14 +25,17 @@
     "Bittersweet",
     "Playful"
    ],
-   "moodSure": true,
    "guessBefore": [
     "Dreamy",
     "Melancholy"
    ],
    "basis": "researched-high",
-   "why": "Whimsical, haywire chamber-folk with bursts of trombone (arranged by Daniel Rossen) over a story of family estrangement and learning to trust again.",
-   "source": "https://firetalkrecs.com/news/hannahfrances-lifeswork"
+   "why": "Bouncy, skittery chamber-folk with plucky, Broadway-ish horns arranged by Daniel Rossen, over lyrics aching for her younger self in a hostile family.",
+   "source": "https://klofmag.com/2025/10/hannah-frances-nested-in-tangles/ ; https://stereogum.com/2324015/hannah-frances-lifes-work/music",
+   "genres": [
+    "Folk"
+   ],
+   "checked": "2026-10-23"
   },
   "4ymUJhziZLrUZJ2uQVL6kf": {
    "n": 3,
@@ -39,13 +47,13 @@
    ],
    "genreSure": true,
    "moods": [
-    "Melancholy",
-    "Dark"
+    "Dark",
+    "Melancholy"
    ],
    "basis": "researched-low",
-   "moodSure": false,
-   "why": "Thomas calls it one of the album's sincere, non-joke songs; the album is gothy darkwave about trauma and his mother's life, but nothing describes this track's sound.",
-   "source": "https://www.thefader.com/2020/04/09/whitmer-thomas-the-golden-one-interview"
+   "why": "Opener of a gothy darkwave album drawn from his childhood hardships, and one of its sincere songs; no review describes this track's sound.",
+   "source": "https://www.piccadillyrecords.com/134694/Whitmer-Thomas-Songs-From-The-Golden-One-Hardly-Art",
+   "checked": "2026-10-23"
   },
   "29Fam5ByZMf0lKBdEnNfnR": {
    "n": 4,
@@ -55,13 +63,17 @@
     "Playful",
     "Bittersweet"
    ],
-   "moodSure": true,
    "guessBefore": [
     "Playful"
    ],
    "basis": "researched-high",
-   "why": "A self-produced, Lou Reed-style chugging groove in which the 6'4\" Cameron jokingly sulks with jealousy because the woman he likes prefers a much shorter man.",
-   "source": "https://stereogum.com/2326207/alex-cameron-short-king/music"
+   "why": "Knowingly silly Lou Reed-style chug in which the 6'4\" Cameron sulks that the woman he likes prefers a much shorter man.",
+   "source": "https://stereogum.com/2326207/alex-cameron-short-king/music",
+   "genres": [
+    "Rock",
+    "Pop"
+   ],
+   "checked": "2026-10-23"
   },
   "2zhOjOH2DvARkRcCvCo7DC": {
    "n": 5,
@@ -69,10 +81,14 @@
    "artist": "Fiona Apple",
    "moods": [
     "Melancholy",
-    "Dark"
+    "Romantic"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Indie"
+   ],
+   "checked": "2026-10-23",
+   "why": "Sparse, plaintive piano and a voice moving from whisper to strained cry; a lonely song of unrequited love whose refrain declares it."
   },
   "3UZRTwoPQhmD1KDqWmSdsy": {
    "n": 6,
@@ -83,9 +99,12 @@
     "Playful"
    ],
    "basis": "researched-high",
-   "moodSure": true,
-   "why": "Upbeat, genre-hopping party track with wild shrieked vocals, about crashing a chaotic LA hotel party in disguise and throwing off inhibitions.",
-   "source": "https://www.thelineofbestfit.com/new-music/discovery/audiobooks-dance-your-life-away"
+   "why": "Genre-hopping dance track, Talking Heads-style post-funk with explosive Björk-like shrieks, soundtracking a chaotic LA hotel party you sneak into.",
+   "source": "https://www.thelineofbestfit.com/new-music/discovery/audiobooks-dance-your-life-away",
+   "genres": [
+    "Electronic"
+   ],
+   "checked": "2026-10-23"
   },
   "4x4ja0ulDFFtfjB1ygExa2": {
    "n": 7,
@@ -96,9 +115,13 @@
     "Energetic"
    ],
    "basis": "researched-high",
-   "moodSure": true,
-   "why": "Punchy lo-fi garage rock with synths and a droning bass; a call-and-response duet sketching a self-absorbed husband whose wife pushes back.",
-   "source": "https://thelineofbestfit.com/new-music/song-of-the-day/ohtis-stef-chura-schatze"
+   "why": "Punchy lo-fi garage rock with arpeggiated synths and a droning bass; a call-and-response duet sending up a selfish, neglectful husband.",
+   "source": "https://thelineofbestfit.com/new-music/song-of-the-day/ohtis-stef-chura-schatze",
+   "genres": [
+    "Indie",
+    "Rock"
+   ],
+   "checked": "2026-10-23"
   },
   "0PFVZNMRc3Z8TC3BVn2Dln": {
    "n": 8,
@@ -114,9 +137,9 @@
     "Bittersweet"
    ],
    "basis": "researched-high",
-   "moodSure": true,
-   "why": "Whimsical, colourful track swinging between crunchy synths and bouncy bass grooves, in which Kalmia Traver looks back on where her life has gone after her cancer diagnosis.",
-   "source": "https://kexp.org/read/2014/8/28/song-of-the-day-rubblebucket-carousel-ride/"
+   "why": "Whimsical, colourful indie pop of crunching synths, bouncy bass and a triumphant chorus, with Kalmia Traver looking back on her life after cancer.",
+   "source": "https://kexp.org/read/2014/8/28/song-of-the-day-rubblebucket-carousel-ride/",
+   "checked": "2026-10-23"
   },
   "5gSwQihHUXvC5H4SBCo03D": {
    "n": 9,
@@ -126,31 +149,31 @@
     "Dreamy",
     "Playful"
    ],
-   "moodSure": true,
    "genres": [
     "Pop",
     "World"
    ],
    "genreSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "checked": "2026-10-23",
+   "why": "Uakti's glassy, interlocking Brazilian percussion floats under Simon's quiet, conversational vocal; oblique, uneasy lyrics in a light, skittering setting."
   },
   "3OZzMeazGgm3HnTQXRsXAk": {
    "n": 10,
    "title": "Be the Wheel",
    "artist": "Theo Katzman, 10 Good Songs",
    "moods": [
-    "Uplifting",
-    "Energetic"
+    "Uplifting"
    ],
-   "basis": "researched-high",
-   "moodSure": true,
-   "why": "An upbeat funk-pop track built on a groovy bassline, funky guitar and tight chorus harmonies, urging you to take control of your life rather than wait for chances to come.",
-   "source": "https://lightning100.com/2023/theo-katzman-be-the-wheel-dans-dj-pick-of-the-week/",
+   "basis": "researched-medium",
+   "why": "Groovy, soulful title track on a Joe Dart bassline, building to a rousing finish and urging you to steer your own life.",
+   "source": "https://lightning100.com/?p=68095",
    "genres": [
     "Soul & R&B",
     "Pop"
    ],
-   "genreSure": true
+   "genreSure": true,
+   "checked": "2026-10-23"
   },
   "2aBSFHjDOewbd4mdqhwTAb": {
    "n": 11,
@@ -161,9 +184,13 @@
     "Dark"
    ],
    "basis": "researched-medium",
-   "moodSure": false,
-   "why": "Bass-heavy, Gorillaz-like groove with electric drums that a reviewer likened to skeletons dancing in a claymation Halloween film; lyrics' subject not found.",
-   "source": "https://earbites.substack.com/p/i-hope-the-ghosts-that-haunt-me-sound"
+   "why": "Wry bass-driven funk with congas, electric drums and sultry vocals; a reviewer likened it to skeletons dancing in a claymation Halloween film.",
+   "source": "https://killrockstars.com/products/poets-tooth ; https://earbites.substack.com/p/i-hope-the-ghosts-that-haunt-me-sound ; https://psychedelicscene.com/?p=6083",
+   "genres": [
+    "Indie",
+    "Soul & R&B"
+   ],
+   "checked": "2026-10-23"
   },
   "1kQToxrczVpLtYdssdOsrr": {
    "n": 12,
@@ -173,8 +200,12 @@
     "Romantic",
     "Melancholy"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Rock"
+   ],
+   "checked": "2026-10-23",
+   "why": "Big, Springsteen-like rock with Waits's rasp; a lonely man pining for a woman he sees on the downtown train. Longing leads, loneliness behind it."
   },
   "4fZgmYwkxfeSSIK9wTdg6N": {
    "n": 13,
@@ -184,7 +215,6 @@
     "Dark",
     "Playful"
    ],
-   "moodSure": true,
    "genresIfNone": [
     "Indie",
     "Folk"
@@ -194,8 +224,13 @@
     "Bittersweet"
    ],
    "basis": "researched-high",
-   "why": "Fuzzy country-tinged indie rock murder ballad, told with tongue-in-cheek humour, about a mistreated wife who arms herself and ends it violently.",
-   "source": "https://beatsperminute.com/divorce-conjure-their-own-version-of-a-murder-ballad-with-checking-out-announce-debut-ep/"
+   "why": "Urgent, fuzzy indie-punk murder ballad modelled on Marty Robbins gunfighter songs; a wronged wife's revenge, told with satirical humour.",
+   "source": "https://www.clashmusic.com/news/divorce-share-biting-new-song-checking-out/ ; https://beatsperminute.com/divorce-conjure-their-own-version-of-a-murder-ballad-with-checking-out-announce-debut-ep/",
+   "genres": [
+    "Indie",
+    "Country"
+   ],
+   "checked": "2026-10-23"
   },
   "5ClqcvP4dYDDX6Zv3jPQD1": {
    "n": 14,
@@ -205,8 +240,13 @@
     "Joyful",
     "Bittersweet"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Pop",
+    "Indie"
+   ],
+   "checked": "2026-10-23",
+   "why": "Bright, driving 80s-style synth-rock with HAIM harmonies on the last chorus; sunny weekend feel with a nostalgic edge."
   },
   "1FNS17AcgHo7Uol0Li9Xfx": {
    "n": 15,
@@ -216,8 +256,13 @@
     "Uplifting",
     "Bittersweet"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Pop",
+    "Indie"
+   ],
+   "checked": "2026-10-23",
+   "why": "Chiming, upbeat early-80s new-wave single with Buchanan's yearning voice; a celebration of life with a wistful undertow."
   },
   "5EG2jND3cGjpoh0YCOjQ9T": {
    "n": 16,
@@ -225,12 +270,15 @@
    "artist": "Tennis",
    "moods": [
     "Mellow",
-    "Bittersweet"
+    "Romantic"
    ],
    "basis": "researched-medium",
-   "moodSure": false,
-   "why": "Soulful Carole King/Laura Nyro-style chill groove with bluesy guitar stabs; Moore says the lyric holds two conflicting feelings about femininity, but no source spells out the story.",
-   "source": "https://5280.com/tennis-drops-its-fourth-album/"
+   "why": "Laid-back, soulful Carole King-style groove with bluesy guitar; Stereogum calls it 'a harmony-laden declaration of devotion'.",
+   "source": "https://stereogum.com/1914115/tennis-in-the-morning-ill-be-better-video/music",
+   "genres": [
+    "Indie"
+   ],
+   "checked": "2026-10-23"
   },
   "3zwxnzanbTdJhsrR8JvT3j": {
    "n": 17,
@@ -240,8 +288,12 @@
     "Joyful",
     "Romantic"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Pop"
+   ],
+   "checked": "2026-10-23",
+   "why": "Bubbly late-80s synth-pop with a propulsive beat and shimmering keyboards; a crush described through a traffic metaphor."
   },
   "4dRqYKhLVujxiBXcq50YzG": {
    "n": 18,
@@ -251,8 +303,12 @@
     "Bittersweet",
     "Joyful"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Indie"
+   ],
+   "checked": "2026-10-23",
+   "why": "Sunny guitars, handclaps and a Latin shuffle over lyrics about doubt, infidelity and inevitable suffering: jaunty sound, sad story."
   },
   "3kJXrEVUCdPQ3e4e5k9OHC": {
    "n": 19,
@@ -262,19 +318,29 @@
     "Energetic",
     "Joyful"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Pop",
+    "Rock"
+   ],
+   "checked": "2026-10-23",
+   "why": "Driving power pop: ringing guitars, handclaps and Beatles-style harmonies, chasing an elusive thrill."
   },
   "0jhDyfdBiRfMi3jh9z2S0U": {
    "n": 20,
    "title": "100% Endurance",
    "artist": "Yard Act",
    "moods": [
-    "Uplifting",
-    "Bittersweet"
+    "Bittersweet",
+    "Uplifting"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Indie"
+   ],
+   "checked": "2026-10-23",
+   "why": "Gentle, slow-building album closer, half-spoken; accepts life's pointlessness and finds it beautiful. Skiddle calls it 'almost uplifting'.",
+   "source": "https://www.skiddle.com/news/all/Yard-Act-The-Overload---Track-by-Track-Review/55857/amp.html"
   },
   "0wTtJ4sR7OnlqB26YiNK56": {
    "n": 21,
@@ -284,14 +350,16 @@
     "Playful",
     "Energetic"
    ],
-   "moodSure": true,
    "guessBefore": [
     "Dreamy",
     "Bittersweet"
    ],
-   "basis": "researched-high",
-   "why": "An upbeat, deliberately cartoonish sound collage of chaos and confusion that satirises misinformation, untrustworthy leaders and the hunt for online likes.",
-   "source": "https://faroutmagazine.co.uk/badly-drawn-boy-new-song/"
+   "basis": "knows",
+   "why": "Bouncy, brass-and-sample-stuffed indie pop collage, deliberately cartoonish, satirising misinformation and chaotic times; cheeky first, driving second.",
+   "genres": [
+    "Indie"
+   ],
+   "checked": "2026-10-23"
   },
   "3POpqoO9i1UB6WzYZ0MvOC": {
    "n": 22,
@@ -301,8 +369,12 @@
     "Dark",
     "Energetic"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Indie"
+   ],
+   "checked": "2026-10-23",
+   "why": "Quiet opening that builds into a loud, crashing indie-rock climax; lyrics catalogue destruction, rain and hopelessness."
   },
   "1G4aMGkzJV5yqF3XRHNqWL": {
    "n": 23,
@@ -312,7 +384,6 @@
     "Energetic",
     "Joyful"
    ],
-   "moodSure": false,
    "genresIfNone": [
     "World",
     "Soul & R&B"
@@ -322,24 +393,34 @@
     "Playful"
    ],
    "basis": "researched-medium",
-   "why": "1977 disco-leaning Algerian track sung in a Berber dialect over Western dance production; lyrical subject not found.",
-   "source": "https://oye-records.com/releases/zohra-badala-zamana"
+   "why": "1977 Algerian disco sung in Chaoui Berber over orchestrated Western dance production; danceable and upbeat.",
+   "source": "https://www.last.fm/music/Zohra/Habibi+Funk:+An+Eclectic+Selection+of+Music+from+the+Arab+World+(Part+2)+(Habibi+Funk+015)/Badala+Zamana ; https://oye-records.com/releases/zohra-badala-zamana",
+   "genres": [
+    "World",
+    "Soul & R&B"
+   ],
+   "checked": "2026-10-23"
   },
   "0lbPLoj61m0e7jPMdGF5yK": {
    "n": 24,
    "title": "2020",
    "artist": "SUUNS",
    "moods": [
-    "Dark"
+    "Dark",
+    "Energetic"
    ],
-   "moodSure": false,
    "guessBefore": [
     "Dark",
     "Energetic"
    ],
-   "basis": "researched-medium",
-   "why": "Dissonant, hypnotic track of squealing detuned guitar over wobbling dub bass and droning vocals, described as dystopian; no specific subject given.",
-   "source": "https://music.mxdwn.com/?p=32258"
+   "basis": "researched-high",
+   "why": "Squealing near-atonal guitar over dubstep-style bass wobble and a strong, hypnotic drum groove building to a climax; dystopian.",
+   "source": "https://kexp.org/read/2013/3/2/album-review-suuns-images-du-futur/ ; https://music.mxdwn.com/2013/03/10/reviews/suuns-images-du-futur/",
+   "genres": [
+    "Indie",
+    "Electronic"
+   ],
+   "checked": "2026-10-23"
   },
   "3bdZcA30lsJeS61B6UBsWc": {
    "n": 25,
@@ -349,7 +430,6 @@
     "Dark",
     "Melancholy"
    ],
-   "moodSure": false,
    "genresIfNone": [
     "Pop"
    ],
@@ -358,20 +438,28 @@
     "Mellow",
     "Dreamy"
    ],
-   "basis": "researched-medium",
-   "why": "Theatrical piano number that Christian Gates dedicates to people tempted into illicit ways of making money because their pay isn't enough.",
-   "source": "https://www.wunc.org/2024-05-29/the-philharmonik-tiny-desk-concert"
+   "basis": "researched-low",
+   "why": "Theatrical upright-piano number about people pushed toward illicit money-making because their pay isn't enough.",
+   "source": "https://www.wunc.org/2024-05-29/the-philharmonik-tiny-desk-concert",
+   "genres": [
+    "Hip-hop"
+   ],
+   "checked": "2026-10-23"
   },
   "2h9uCNUYH0mJkeEwQChtT8": {
    "n": 26,
    "title": "Love Story (You and Me)",
    "artist": "Randy Newman",
    "moods": [
-    "Romantic",
-    "Bittersweet"
+    "Bittersweet",
+    "Romantic"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Pop"
+   ],
+   "checked": "2026-10-23",
+   "why": "Tender orchestral love song tracing a couple from wedding to old age in a Florida home; wry, wistful, happy-sad."
   },
   "0pJW1Xw3aY4Eh6k5iuBkfI": {
    "n": 27,
@@ -381,8 +469,13 @@
     "Melancholy",
     "Dark"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Indie",
+    "Folk"
+   ],
+   "checked": "2026-10-23",
+   "why": "Hushed, sad road-song opening swelling into brass and an apocalyptic, screaming finale about depression and the end of the world."
   },
   "0L2ljTJonS78v8qSlpxM0d": {
    "n": 28,
@@ -390,12 +483,15 @@
    "artist": "Moondog",
    "moods": [
     "Romantic",
-    "Melancholy"
+    "Mellow"
    ],
    "basis": "researched-medium",
-   "moodSure": false,
-   "why": "Whimsical, fairy-tale song from a piano-led album of 'celestial' melodies, in which a lovesick narrator climbs a mountain to reach a cold, distant beloved and learns only death will unite them.",
-   "source": "https://www.elyrics.net/read/m/moondog-lyrics/high-on-a-rocky-ledge-lyrics.html"
+   "why": "Devotional love song: breezy, floating piano line under Moondog's warm baritone, delivered with life-affirming tenderness.",
+   "source": "https://audiopile.ca/product/moondog-hart-songs-managa/",
+   "genres": [
+    "Folk"
+   ],
+   "checked": "2026-10-23"
   },
   "31ijr2O0SsuzAPVDLnq3XV": {
    "n": 29,
@@ -405,13 +501,14 @@
     "Energetic",
     "Dark"
    ],
-   "moodSure": true,
    "genres": [
     "Soul & R&B",
     "Pop"
    ],
    "genreSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "checked": "2026-10-23",
+   "why": "Pounding northern-soul stomper with an ominous minor-key edge, warning a girl about a lover's lies."
   },
   "4oyQ6vDzJMFYhmO9p5qrjE": {
    "n": 30,
@@ -421,8 +518,12 @@
     "Playful",
     "Energetic"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Electronic"
+   ],
+   "checked": "2026-10-23",
+   "why": "Bouncy French-touch house built on a bright, looping keyboard riff; fun and dancefloor-driving."
   },
   "4bhA5X3qMEcTycEoW6BvJ2": {
    "n": 31,
@@ -432,8 +533,14 @@
     "Joyful",
     "Energetic"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "researched-high",
+   "genres": [
+    "Indie",
+    "Soul & R&B"
+   ],
+   "checked": "2026-10-23",
+   "why": "Euphoric, swirling disco and Northern soul stomp with rushing drums, swooping strings and wailing backing vocals; Cocker telling himself to embrace love.",
+   "source": "https://stereogum.com/2309148/pulp-got-to-have-her-love/music ; https://theneedledrop.com/news/pulp-embrace-northern-soul-in-new-single-got-to-have-love/ ; https://www.nme.com/news/music/pulp-share-euphoric-new-single-got-to-have-love-3864835"
   },
   "4FMsajq8hKiOmcJ7UzOhag": {
    "n": 32,
@@ -443,32 +550,45 @@
     "Dreamy",
     "Romantic"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Rock",
+    "Pop"
+   ],
+   "checked": "2026-10-23",
+   "why": "Shimmering, echoing new wave guitar and synth pads over a steady beat; about the instant chemistry of meeting someone."
   },
   "7JVhqngi3ICalifdkpzaCp": {
    "n": 33,
    "title": "Greater Expectations",
    "artist": "Wesley Gonzalez, Rose Elinor Dougall",
    "moods": [
-    "Bittersweet",
-    "Mellow"
+    "Bittersweet"
    ],
    "basis": "researched-low",
-   "moodSure": false,
-   "why": "Nothing specific found on this opening duet; its album sets upbeat 70s-style pop against a breakup and a family cancer diagnosis.",
-   "source": "https://sisterray.co.uk/products/wax-limousine"
+   "why": "Opening duet of an album of uplifting 70s-style pop set against breakup and illness; this song mocks flawed self-help preachers. No track-level description found.",
+   "source": "https://sisterray.co.uk/products/wax-limousine ; https://diymag.com/news/wesley-gonzalez-new-album-wax-limousine",
+   "genres": [
+    "Indie"
+   ],
+   "checked": "2026-10-23"
   },
   "3uPEZYXmeUgRFBywQCndKj": {
    "n": 34,
    "title": "I Carried This for Years",
    "artist": "Ibeyi",
    "moods": [
-    "Melancholy",
-    "Dreamy"
+    "Dreamy",
+    "Dark"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "researched-high",
+   "genres": [
+    "Electronic",
+    "World"
+   ],
+   "checked": "2026-10-23",
+   "why": "90-second hypnotic mantra over a looped Bulgarian choir sample, synth bass and bata drums; reviewers call it haunting, spooky, dark and stormy.",
+   "source": "https://www.thestranger.com/?p=236224 ; https://www.beautifulsongoftheweek.com/week-473-i-carried-this-for-years-by-ibeyi/ ; https://newmodelradio.sk/en/frenchcuban-twins-ibeyi-contrast-album-ash"
   },
   "1A2BT8JYVRjsKdswwvWXG6": {
    "n": 35,
@@ -478,14 +598,18 @@
     "Bittersweet",
     "Romantic"
    ],
-   "moodSure": true,
    "guessBefore": [
     "Melancholy",
     "Dark"
    ],
    "basis": "researched-high",
-   "why": "Deceptively bright, horn-blaring track about the masochism of staying in love and finding hurt exhilarating.",
-   "source": "https://daily.bandcamp.com/features/moses-sumney-interview"
+   "why": "Deceptively upbeat, blaring-horn falsetto groove; Sumney says it's about the continued masochism of being in love.",
+   "source": "https://daily.bandcamp.com/features/moses-sumney-interview",
+   "genres": [
+    "Soul & R&B",
+    "Pop"
+   ],
+   "checked": "2026-10-23"
   },
   "5IXTT9RvcVupmzLTFqIInj": {
    "n": 36,
@@ -495,8 +619,12 @@
     "Melancholy",
     "Bittersweet"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Indie"
+   ],
+   "checked": "2026-10-23",
+   "why": "Sparse piano ballad mourning a lost friend or lover and the city that's changed without them; tender chorus swell."
   },
   "0Z7b5GlC70FAES1YduhhqQ": {
    "n": 37,
@@ -506,8 +634,12 @@
     "Dreamy",
     "Joyful"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Indie"
+   ],
+   "checked": "2026-10-23",
+   "why": "Hazy, sunny loop of Funkadelic's acoustic guitar with a programmed beat and sweet, chanted vocals; the gentlest track on a noisy album."
   },
   "1g422OzRyFhcRH1yMWaW14": {
    "n": 38,
@@ -517,8 +649,12 @@
     "Melancholy",
     "Dreamy"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Indie"
+   ],
+   "checked": "2026-10-23",
+   "why": "Slow, hushed McNew vocal with weeping strings and horns; a sad, drifting orchestral chamber piece."
   },
   "3SPcBPzvbmWLl8NU5efx4W": {
    "n": 39,
@@ -528,8 +664,13 @@
     "Melancholy",
     "Romantic"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Pop",
+    "Rock"
+   ],
+   "checked": "2026-10-23",
+   "why": "Lush, slow string-laden ballad with doo-wop harmonies; a lonely man ringing a lover who won't answer."
   },
   "09IKRwPeAYjmX1iABuP6fn": {
    "n": 40,
@@ -539,12 +680,13 @@
     "Uplifting",
     "Dreamy"
    ],
-   "moodSure": true,
    "genres": [
     "World"
    ],
    "genreSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "checked": "2026-10-23",
+   "why": "Sanskrit devotional chant with call-and-response choir and handclaps over Coltrane's swirling Fender Rhodes; rapturous and hypnotic."
   },
   "5Up7kKnSg7Z1YHRToUbZ1p": {
    "n": 41,
@@ -552,12 +694,16 @@
    "artist": "Peter Ivers",
    "moods": [
     "Playful",
-    "Energetic"
+    "Joyful"
    ],
-   "basis": "researched-high",
-   "moodSure": true,
-   "why": "Brash 'blue-eyed yacht funk' with a rowdy shuffling groove, harmonica, piano and flamboyant falsetto, celebrating a party weekend.",
-   "source": "https://secure.thestranger.com/slog/2019/11/29/42118341/inbox-jukebox-track-of-the-day-the-brash-yacht-funk-of-miraculous-weekend-by-in-heaven-composer-peter-ivers"
+   "basis": "researched-medium",
+   "why": "Brash, catchy bawdy shuffle with harmonica, piano and debauched falsetto celebrating a party weekend: cheeky and celebratory rather than driving.",
+   "source": "https://secure.thestranger.com/slog/2019/11/29/42118341/inbox-jukebox-track-of-the-day-the-brash-yacht-funk-of-miraculous-weekend-by-in-heaven-composer-peter-ivers",
+   "genres": [
+    "Rock",
+    "Soul & R&B"
+   ],
+   "checked": "2026-10-23"
   },
   "7Gk8IPlFTLUcoIH3mtASI0": {
    "n": 42,
@@ -567,21 +713,28 @@
     "Bittersweet",
     "Playful"
    ],
-   "basis": "researched-high",
-   "moodSure": true,
-   "why": "A hook-heavy indie electropop remix of a TikTok-viral chorus, set against lyrics about impostor syndrome and feeling trapped in a version of yourself you invented.",
-   "source": "https://www.allaccess.com/alternative/artist-info/q/id/15525/daisy-the-great-x-ajr"
+   "basis": "knows",
+   "why": "Bouncy, hook-heavy indie pop with handclaps and a singalong chorus over lyrics about impostor syndrome: jaunty sound, uneasy subject.",
+   "genres": [
+    "Indie"
+   ],
+   "checked": "2026-10-23"
   },
   "5dE8s6uWRGNc1Ac7y8rULq": {
    "n": 43,
    "title": "Goodbye Stranger",
    "artist": "Supertramp",
    "moods": [
-    "Bittersweet",
-    "Playful"
+    "Playful",
+    "Bittersweet"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Rock",
+    "Pop"
+   ],
+   "checked": "2026-10-23",
+   "why": "Breezy Wurlitzer groove and falsetto chorus on a snarky kiss-off from a roving man; cheeky first, wistful farewell second."
   },
   "1acb8u70kClk6NjITaZyuG": {
    "n": 44,
@@ -589,10 +742,15 @@
    "artist": "Rostam",
    "moods": [
     "Joyful",
-    "Dreamy"
+    "Uplifting"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Indie",
+    "Pop"
+   ],
+   "checked": "2026-10-23",
+   "why": "Chugging, bright indie-pop anthem with stacked harmonies and strings about identity and being at ease in your own skin."
   },
   "5Ec7pcVTaHm5q7BGB35hiU": {
    "n": 45,
@@ -603,9 +761,13 @@
     "Dreamy"
    ],
    "basis": "researched-low",
-   "moodSure": false,
-   "why": "Nothing specific found; the debut-EP band is described as sweeping psych-leaning rock with falsetto vocals and bright ringing guitars.",
-   "source": "https://www.bmi.com/news/entry/indie_spotlight_sun_drug"
+   "why": "Nothing on the song itself; the EP is described as expansive psychedelic rock with piercing falsettos and chiming guitar hooks.",
+   "source": "https://www.bmi.com/news/entry/indie_spotlight_sun_drug",
+   "genres": [
+    "Rock",
+    "Indie"
+   ],
+   "checked": "2026-10-23"
   },
   "72PoJMDfdaw9gGECgA9kTZ": {
    "n": 46,
@@ -615,8 +777,12 @@
     "Playful",
     "Joyful"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Soul & R&B"
+   ],
+   "checked": "2026-10-23",
+   "why": "Bouncy gospel-soul piano boogie with comic, wisecracking lyrics about being broke; fun and sunny throughout."
   },
   "2wFdAZ7IgvRnTRZ4OOPdGS": {
    "n": 47,
@@ -628,13 +794,16 @@
    ],
    "genreSure": true,
    "moods": [
-    "Dreamy",
-    "Melancholy"
+    "Playful",
+    "Dreamy"
    ],
    "basis": "researched-low",
-   "moodSure": false,
-   "why": "Nothing found on this song; best guess from the album, which is tagged hypnagogic pop and described as sticky pop cuts and woozy R&B.",
-   "source": "https://www.perfectlyimperfect.fyi/p/issy-wood"
+   "why": "Nothing on this song; her style is described as earworm pop with bopping, glitchy beats and hazy harmonies over doleful lyrics.",
+   "source": "https://news.artnet.com/art-world/issy-wood-music-1925352?amp=1",
+   "genres": [
+    "Pop"
+   ],
+   "checked": "2026-10-23"
   },
   "6ECyOXQ2622F9WpFgRfHeK": {
    "n": 48,
@@ -645,12 +814,17 @@
    ],
    "genreSure": false,
    "moods": [
-    "Dark"
+    "Joyful",
+    "Romantic"
    ],
-   "basis": "researched-low",
-   "moodSure": false,
-   "why": "Nothing found on the song itself; Zuta is a Polish pop duo known for low vocals and intense, theatrical live shows, so this is a guess.",
-   "source": "https://www.ebilet.pl/en/muzyka/pop/zuta"
+   "basis": "researched-medium",
+   "why": "Catchy dance-pop with '80s synths and guitars; Zuta wrote it as a love declaration to bandmate Maks after watching the Elvis film.",
+   "source": "https://dziendobry.tvn.pl/gwiazdy/zuta-odkrywa-nowy-poziom-energii-i-milosci-na-naszej-scenie-zaprezentowala-singiel-elvis-st7354554",
+   "genres": [
+    "Pop",
+    "Electronic"
+   ],
+   "checked": "2026-10-23"
   },
   "1cAHI9tJN6oHMdG4ghlQKY": {
    "n": 49,
@@ -660,19 +834,28 @@
     "Melancholy",
     "Mellow"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Pop"
+   ],
+   "checked": "2026-10-23",
+   "why": "Gentle soft-rock ballad with acoustic guitar and strings; a man alone after a breakup, trying to look on the bright side."
   },
   "5Zpy2HR2vYLjlTQVd81DLH": {
    "n": 50,
    "title": "Paris 1919",
    "artist": "John Cale",
    "moods": [
-    "Dreamy",
-    "Bittersweet"
+    "Bittersweet",
+    "Dreamy"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Pop",
+    "Rock"
+   ],
+   "checked": "2026-10-23",
+   "why": "Stately orchestral baroque pop with strings and piano; nostalgic, enigmatic lyrics about ghosts and post-war Paris."
   },
   "1qpt5uh3yuEM7fo4rNU688": {
    "n": 51,
@@ -682,21 +865,29 @@
     "Playful",
     "Energetic"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Hip-hop"
+   ],
+   "checked": "2026-10-23",
+   "why": "Bouncy, electro-tinged glam rap, sleazy and comic, about his mother doing the Jane Fonda workout; cheeky first, high-energy second."
   },
   "2yFRJ1eJjycB5auItpeT5S": {
    "n": 52,
    "title": "None Of My Friends",
    "artist": "Liz Lawrence",
    "moods": [
-    "Bittersweet",
-    "Playful"
+    "Playful",
+    "Bittersweet"
    ],
    "basis": "researched-medium",
-   "moodSure": false,
-   "why": "Conversational, satirical take on millennial hypocrisy and nobody being okay, from a pop album described as both celebratory and panicked; the track's own sound isn't described in detail.",
-   "source": "https://diymag.com/review/album/liz-lawrence-pity-party-album-review"
+   "why": "Bass-driven, amusing ode to her friends online and off, laughing at how absurd everyone is; a wry joke with a quietly disturbing edge.",
+   "source": "https://discover.ticketmaster.co.uk/?p=47137 ; https://brightonandhovenews.org/?p=102329",
+   "genres": [
+    "Indie",
+    "Pop"
+   ],
+   "checked": "2026-10-23"
   },
   "3TAJx9S2t0dH9Slo908D9t": {
    "n": 53,
@@ -706,8 +897,13 @@
     "Joyful",
     "Energetic"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Rock",
+    "Pop"
+   ],
+   "checked": "2026-10-23",
+   "why": "Brisk wall-of-sound pop-rock with horns, strings, fuzz guitar and driving tambourine; an exuberant declaration of love."
   },
   "0vuZebTvcwkstUpoo82lpG": {
    "n": 54,
@@ -715,10 +911,16 @@
    "artist": "Aldous Harding",
    "moods": [
     "Playful",
-    "Dark"
+    "Joyful"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "researched-medium",
+   "genres": [
+    "Indie",
+    "Folk"
+   ],
+   "checked": "2026-10-23",
+   "why": "Keyboard-led band song produced by John Parish, with a playful feel and an upbeat, sunny disposition; quirky rather than dark.",
+   "source": "https://weallwantsomeone.org/2021/06/16/aldous-harding-shares-new-song-old-peel/"
   },
   "0gjcEL2CTKu3fT9qMVVu2w": {
    "n": 55,
@@ -726,9 +928,8 @@
    "artist": "TTRRUUCES",
    "moods": [
     "Playful",
-    "Energetic"
+    "Dreamy"
    ],
-   "moodSure": false,
    "genresIfNone": [
     "Indie",
     "Pop"
@@ -739,8 +940,13 @@
     "Energetic"
    ],
    "basis": "researched-low",
-   "why": "Nothing specific found; it sits in a psychedelic rock opera about two youths chasing a mind-altering drug on a coming-of-age quest.",
-   "source": "https://en.wikipedia.org/wiki/Ttrruuces_(album)"
+   "why": "Psychedelic alt-pop from a rock opera about drug-pushing Bad Kids; nothing describes the track itself, and the audio reads calm and bright, not high-energy.",
+   "source": "https://www.clashmusic.com/?p=38485 ; https://www.lastbusmagazine.com/allposts/o9k9pw2k6rp9tdbr238gti4742jjxx",
+   "genres": [
+    "Rock",
+    "Indie"
+   ],
+   "checked": "2026-10-23"
   },
   "7j2ExpvZTeURjspK443YKU": {
    "n": 56,
@@ -750,30 +956,36 @@
     "Uplifting",
     "Energetic"
    ],
-   "moodSure": false,
    "guessBefore": [
     "Playful",
     "Mellow"
    ],
    "basis": "researched-medium",
-   "why": "Isley Brothers-style funk with fiery guitar; Maia looks back on loneliness and mistakes and finds clarity through reading (his Rational Culture phase).",
-   "source": "https://soundsandcolours.com/articles/brazil/tim-maias-journey-into-rational-culture-884"
+   "why": "Isley Brothers-style soul-funk with incendiary guitar; Maia looks back on loneliness and mistakes and finds clarity in his new Rational Culture faith.",
+   "source": "https://soundsandcolours.com/articles/brazil/tim-maias-journey-into-rational-culture-884/",
+   "genres": [
+    "Soul & R&B",
+    "World"
+   ],
+   "checked": "2026-10-23"
   },
   "0Fjy4haCEoFaiJME5pvbgB": {
    "n": 57,
    "title": "Try Again",
    "artist": "Andy Shauf",
    "moods": [
-    "Melancholy",
-    "Mellow"
+    "Bittersweet",
+    "Playful"
    ],
-   "moodSure": true,
    "genres": [
     "Indie",
     "Folk"
    ],
    "genreSure": true,
-   "basis": "knows"
+   "basis": "researched-high",
+   "checked": "2026-10-23",
+   "why": "Bright, cheery strum with claps and clarinet over an awkward, flirty exchange between two ex-lovers, jealousy underneath; deceptively sweet.",
+   "source": "https://atwoodmagazine.com/aftg-andy-shauf-try-again-song-review/ ; https://andyshauf.bandcamp.com/track/try-again"
   },
   "6SYwCFYNJo66SbnQKOXRUg": {
    "n": 58,
@@ -785,23 +997,34 @@
    ],
    "genreSure": false,
    "moods": [
-    "Uplifting"
+    "Uplifting",
+    "Bittersweet"
    ],
    "basis": "researched-medium",
-   "moodSure": false,
-   "why": "The relatively upbeat lead single opening a darker album, played by a 30-piece band with horns and strings; its subject isn't described.",
-   "source": "https://forfolkssake.com/?p=15782"
+   "why": "Two-chord orchestral build in the manner of Bowie's Heroes, recalling elegiac Joy Division and Arcade Fire; the downbeat album's relatively upbeat opener.",
+   "source": "https://theartsdesk.com/node/38959 ; https://forfolkssake.com/?p=15782",
+   "genres": [
+    "Indie",
+    "Rock"
+   ],
+   "checked": "2026-10-23"
   },
   "6vO5OZ18h33ZO40S9plFDx": {
    "n": 59,
    "title": "Creepers",
    "artist": "Kid Cudi",
    "moods": [
-    "Dark",
-    "Dreamy"
+    "Dreamy",
+    "Energetic"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "researched-medium",
+   "genres": [
+    "Hip-hop",
+    "Electronic"
+   ],
+   "checked": "2026-10-23",
+   "why": "Dan Black's ambient synths under Cudi's garbled, euphoric hook; soaring and club-friendly even as he airs his grievances.",
+   "source": "https://beatsperminute.com/album-review-g-o-o-d-music-cruel-summer/ ; https://www.complex.com/music/a/complex/the-25-best-kid-cudi-hooks"
   },
   "4a5VnoioMgv1e9R3EWAfYB": {
    "n": 60,
@@ -811,13 +1034,16 @@
     "Dark",
     "Energetic"
    ],
-   "moodSure": true,
    "guessBefore": [
     "Dark"
    ],
    "basis": "researched-high",
-   "why": "Jean Grae's combative reworking of Jay-Z's 'Threat' over an angry, stomping blues beat, with Chen Lo taking over partway.",
-   "source": "https://www.rapreviews.com/?p=2408"
+   "why": "Jean Grae's combative take on Jay-Z's Threat over an angrily stomping blues backing, with Chen Lo cutting in partway.",
+   "source": "https://www.rapreviews.com/?p=2408",
+   "genres": [
+    "Hip-hop"
+   ],
+   "checked": "2026-10-23"
   },
   "20mUVwCxR1x2d5SuBRGW1F": {
    "n": 61,
@@ -827,8 +1053,13 @@
     "Romantic",
     "Energetic"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "researched-high",
+   "genres": [
+    "Pop"
+   ],
+   "checked": "2026-10-23",
+   "why": "Breathy, delicate vocal over brisk staccato strings and nothing else; Neil Tennant called it a very energetic song driven by the strings.",
+   "source": "https://en.wikipedia.org/wiki/Say_You_Don%27t_Mind"
   },
   "2w4yylkuKugYjEVhwKc0OD": {
    "n": 62,
@@ -838,9 +1069,12 @@
     "Uplifting"
    ],
    "basis": "researched-high",
-   "moodSure": true,
-   "why": "Soaring, gospel-tinged organ-and-brass ballad written for her younger brother, about togetherness and caring for each other.",
-   "source": "https://atwoodmagazine.com/?p=166203"
+   "why": "Soaring gospel-tinged ballad with organ, brass and layered vocals, written for her little brother about togetherness and care.",
+   "source": "https://atwoodmagazine.com/?p=166203",
+   "genres": [
+    "Soul & R&B"
+   ],
+   "checked": "2026-10-23"
   },
   "1uwTbud19jsbc5BkRmt5rN": {
    "n": 63,
@@ -851,9 +1085,13 @@
     "Bittersweet"
    ],
    "basis": "researched-medium",
-   "moodSure": false,
-   "why": "Confident, nostalgic early-70s R&B-style duet ballad with a wah-wah funk break; subject not described.",
-   "source": "https://www.npr.org/2015/08/26/433482215/first-listen-diane-coffee-everybodys-a-good-dog"
+   "why": "Early-70s R&B-style take-me-back duet ballad with a wah-wah funk break; longing for a lost lover, nostalgic sound.",
+   "source": "https://www.npr.org/2015/08/26/433482215/first-listen-diane-coffee-everybodys-a-good-dog",
+   "genres": [
+    "Soul & R&B",
+    "Indie"
+   ],
+   "checked": "2026-10-23"
   },
   "5shcxlhR6ChgqDf5eBtpBW": {
    "n": 64,
@@ -864,9 +1102,13 @@
     "Dreamy"
    ],
    "basis": "researched-medium",
-   "moodSure": false,
-   "why": "An aching love song that updates the doo-wop of The Flamingos' 'I Only Have Eyes For You'; the review covers the sound but not the lyric.",
-   "source": "https://www.drownedinsound.org/archive-album-review-the-bees-free-the-bees-10093/"
+   "why": "Aching slow love song updating the Flamingos' doo-wop 'I Only Have Eyes for You', understated vocal and atmospheric choir backing.",
+   "source": "https://www.drownedinsound.org/archive-album-review-the-bees-free-the-bees-10093/",
+   "genres": [
+    "Indie",
+    "Soul & R&B"
+   ],
+   "checked": "2026-10-23"
   },
   "0WAEGVylZjbe2mQ6Or6HxY": {
    "n": 65,
@@ -876,8 +1118,13 @@
     "Mellow",
     "Bittersweet"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "researched-high",
+   "genres": [
+    "Folk"
+   ],
+   "checked": "2026-10-23",
+   "why": "Fingerpicked acoustic guitar and strings; finding solace in nature after a period of despair, gentle with a note of hope.",
+   "source": "https://zaraflack.substack.com/p/this-is-my-song-labi-siffre-and-crying"
   },
   "1LqHKAfYbUaAOlDVs9kqcf": {
    "n": 66,
@@ -885,41 +1132,52 @@
    "artist": "Joan As Police Woman",
    "moods": [
     "Joyful",
-    "Romantic"
+    "Energetic"
    ],
    "basis": "researched-high",
-   "moodSure": true,
-   "why": "Breathless, Motown-fuelled soul-pop that uses cheeky, ribald devotional language for a love song, the album's closest nod to Amy Winehouse.",
-   "source": "https://www.theskinny.co.uk/music/reviews/albums/joan-as-police-woman-the-classic"
+   "why": "Motown-tinged stomp with urgent loping rhythm, trumpet blasts, guitar and Reggie Watts scat-rap; inspired by Jerusalem's Wailing Wall, not a love song.",
+   "source": "https://thequietus.com/?p=14776",
+   "genres": [
+    "Soul & R&B",
+    "Indie"
+   ],
+   "checked": "2026-10-23"
   },
   "3Nt1G38u1lalca5B2lm8Sd": {
    "n": 67,
    "title": "Make Me A Song",
    "artist": "Eleanor Friedberger",
    "moods": [
-    "Dreamy",
-    "Mellow"
+    "Mellow",
+    "Dreamy"
    ],
    "basis": "researched-high",
-   "moodSure": true,
-   "why": "Long, meditative track on a synth-and-drum-machine album; not a love song but about wanting to try harder and to write songs that move people.",
-   "source": "https://www.undertheradarmag.com/news/eleanor_friedberger_shares_video_for_new_song_make_me_a_song"
+   "why": "Easygoing, dazed synth-and-drum-machine chug in a reverb haze, warm alto; about trying to write a song that moves people.",
+   "source": "https://thesinglesjukebox.com/?p=7190",
+   "genres": [
+    "Indie",
+    "Pop"
+   ],
+   "checked": "2026-10-23"
   },
   "7DH0ytUP9o7Crj8NM1Uabg": {
    "n": 68,
    "title": "Dean Martin",
    "artist": "Tess Henley",
    "moods": [
-    "Romantic",
-    "Mellow"
+    "Playful",
+    "Romantic"
    ],
-   "moodSure": false,
    "guessBefore": [
     "Romantic"
    ],
    "basis": "researched-low",
-   "why": "Nothing specific found; best guess from Henley's classic-soul piano style and a title nodding to the mid-century crooner.",
-   "source": "https://en.wikipedia.org/wiki/Tess_Henley"
+   "why": "Classic-soul track from an upbeat, feel-good EP; a writer calls the song lighthearted and funny, with lines about 'Dino'.",
+   "source": "https://twostorymelody.com/tess-henley-on-not-in-the-mood-great-parents-and-dino/",
+   "genres": [
+    "Soul & R&B"
+   ],
+   "checked": "2026-10-23"
   },
   "2eJogHu4qygT1BDhAve9Us": {
    "n": 69,
@@ -930,9 +1188,12 @@
     "Romantic"
    ],
    "basis": "researched-medium",
-   "moodSure": false,
-   "why": "Ghostly falsetto over ominous piano thumps opens out into Beach Boys-style doo-wop harmonies and a swooning chorus; the lyric isn't described.",
-   "source": "https://www.goodreads.com/author_blog_posts/5255627-francis-the-lights-share-like-a-dream-video"
+   "why": "Ghostly falsetto over ominous piano thumps opening into Beach Boys-style harmonies and a swooning, radio-ready chorus.",
+   "source": "https://www.goodreads.com/author_blog_posts/5255627-francis-the-lights-share-like-a-dream-video",
+   "genres": [
+    "Pop"
+   ],
+   "checked": "2026-10-23"
   },
   "6w09qyTrLgzCQP8gLMPEcd": {
    "n": 70,
@@ -943,20 +1204,27 @@
     "Playful"
    ],
    "basis": "researched-medium",
-   "moodSure": false,
-   "why": "A breezy, mid-'90s-style pop track likened to Luscious Jackson with Sheryl Crow; no source found on what the lyrics are about.",
-   "source": "https://www.philthymag.com/your-smith-i-want-to-make-songs-that-you-feel-in-your-chest/"
+   "why": "Breezy mid-90s-style indie pop with warm, dusty sounds and carefree vocals, likened to Luscious Jackson and Sheryl Crow.",
+   "source": "https://femmusic.com/?p=115201",
+   "genres": [
+    "Indie"
+   ],
+   "checked": "2026-10-23"
   },
   "3lJ70fh0ENq6hzgtOfOGYZ": {
    "n": 71,
    "title": "The River",
    "artist": "Michael Farneti",
    "moods": [
-    "Mellow"
+    "Melancholy"
    ],
-   "basis": "researched-low",
-   "moodSure": false,
-   "why": "Nothing found about this 2011 track or artist beyond streaming metadata; guess based only on the gentle album title."
+   "basis": "researched-medium",
+   "why": "Closing ballad of a 1976 lo-fi private-press pop LP; Farneti calls it sad, about rejection by someone attracted but held back.",
+   "genres": [
+    "Pop"
+   ],
+   "checked": "2026-10-23",
+   "source": "https://www.furious.com/perfect/michaelfarneti.html"
   },
   "1SJvBv2vJnJqguLFD46pBK": {
    "n": 72,
@@ -965,8 +1233,13 @@
    "moods": [
     "Romantic"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "researched-low",
+   "genres": [
+    "Soul & R&B"
+   ],
+   "checked": "2026-10-23",
+   "why": "1967 Atlantic deep-soul side; Aretha demands a lover show his love rather than claim it. Sources give style only, not tempo.",
+   "source": "https://www.classic45s.com/products/chain-of-fools-prove-it-4 ; https://en.wikipedia.org/wiki/Aretha_Arrives"
   },
   "1yw66ZPsfqblI4PFcEdIKe": {
    "n": 73,
@@ -976,8 +1249,12 @@
     "Romantic",
     "Mellow"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Soul & R&B"
+   ],
+   "checked": "2026-10-23",
+   "why": "Curtis's own 5:29 take: unhurried string-and-conga groove, soft falsetto, asking a lover to make him believe in her."
   },
   "5CBqLg9XdeEHcknJX0fZIJ": {
    "n": 74,
@@ -987,8 +1264,13 @@
     "Melancholy",
     "Bittersweet"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Indie",
+    "Folk"
+   ],
+   "checked": "2026-10-23",
+   "why": "Gently strummed, building indie-folk ballad; Lenker looks back on a relationship she wrecked, tender and regretful."
   },
   "4RAS6QT974bl5blsapzVGq": {
    "n": 75,
@@ -998,8 +1280,12 @@
     "Energetic",
     "Playful"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Rock"
+   ],
+   "checked": "2026-10-23",
+   "why": "Motown cover turned into a hard-driving rock workout with Bobby Keys' sax and June Millington's guitar; loose and fun."
   },
   "2cxRPp0Qlk7DtkZQnq3laf": {
    "n": 76,
@@ -1010,9 +1296,13 @@
     "Romantic"
    ],
    "basis": "researched-medium",
-   "moodSure": false,
-   "why": "Semi-waltz 1960s-style male-female duet (Lee and Nancy comparisons) about drifting back to a former lover, delivered coolly rather than mopily.",
-   "source": "https://interviewmagazine.com/music/adam-green-binki-shapiro"
+   "why": "Semi-waltz Lee-and-Nancy-style folk-pop duet about drifting back to an old lover; reviews note a bright sound over heartbreak.",
+   "source": "https://thefirenote.com/reviews/adam-green-binki-shapiro-adam-green-binki-shapiro-album-review/",
+   "genres": [
+    "Indie",
+    "Folk"
+   ],
+   "checked": "2026-10-23"
   },
   "2YJgM8lj4u5YEZRSHSfL60": {
    "n": 77,
@@ -1022,8 +1312,12 @@
     "Melancholy",
     "Romantic"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Rock"
+   ],
+   "checked": "2026-10-23",
+   "why": "Aching mid-tempo plea to Pattie Boyd, Clapton's strained vocal and mournful guitar; heartbreak leads, longing follows."
   },
   "1yK9LISg5uBOOW5bT2Wm0i": {
    "n": 78,
@@ -1033,8 +1327,13 @@
     "Melancholy",
     "Romantic"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Soul & R&B"
+   ],
+   "checked": "2026-10-23",
+   "why": "Downtempo 83 bpm synth ballad with Prince-like riff; she can't stop thinking of a lover she's trying to leave.",
+   "source": "https://en.wikipedia.org/wiki/Try_Sleeping_with_a_Broken_Heart"
   },
   "6RgrpOgbTI3M2qvA8XIvTb": {
    "n": 79,
@@ -1044,8 +1343,13 @@
     "Playful",
     "Joyful"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Indie"
+   ],
+   "checked": "2026-10-23",
+   "why": "Swaggering lite indie-funk that bursts into giddy symphonic psych-pop; absurd lyrics about free sodas at a bar.",
+   "source": "https://exclaim.ca/music/article/foxygen-shuggie_video"
   },
   "70Ao5L10SKV701DcOH68Jo": {
    "n": 80,
@@ -1055,8 +1359,12 @@
     "Uplifting",
     "Bittersweet"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Rock"
+   ],
+   "checked": "2026-10-23",
+   "why": "Pounding piano and gospel choir build to a soaring chorus; Dennis's rasp longs for the river over the dirty city."
   },
   "6Mnne5V9ZifNID59dswUcZ": {
    "n": 81,
@@ -1066,8 +1374,13 @@
     "Romantic",
     "Mellow"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Folk",
+    "Pop"
+   ],
+   "checked": "2026-10-23",
+   "why": "Slow, sensual love song building from acoustic guitar and voice to strings, sax and Clarke Peters' baritone; unhurried throughout."
   },
   "0CxWbbbU0PB7ccm6CgHnrf": {
    "n": 82,
@@ -1077,8 +1390,13 @@
     "Melancholy",
     "Dreamy"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Rock",
+    "Pop"
+   ],
+   "checked": "2026-10-23",
+   "why": "Widescreen instrumental: lone twangy bass-guitar melody over galloping drums, swelling strings and horns; wistful and cinematic."
   },
   "21xq13U2jrLgDG5yWCqoGI": {
    "n": 83,
@@ -1089,9 +1407,13 @@
     "Melancholy"
    ],
    "basis": "researched-high",
-   "moodSure": true,
-   "why": "Hazy, breathy synth-pop with a slow pulsing beat, about a rare connection that falls apart, leaving her alone with things unsaid.",
-   "source": "https://broken8records.com/blogs/watch/julia-sophie-reveals-new-single-telephone-a-dreamy-dive-into-heartbreak"
+   "why": "Hazy, breathy 1980s-style synth-pop on a slow pulsing beat; wistful love that falls apart, the loss song of her album.",
+   "source": "Earlier research (For The Rabbits; Julia-Sophie's own notes) as summarised in the batch facts",
+   "genres": [
+    "Electronic",
+    "Pop"
+   ],
+   "checked": "2026-10-23"
   },
   "3K5VXelPukt6EXUcCeCS67": {
    "n": 84,
@@ -1101,26 +1423,31 @@
     "Joyful",
     "Romantic"
    ],
-   "moodSure": true,
    "genres": [
     "Pop",
     "Indie"
    ],
    "genreSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "checked": "2026-10-23",
+   "why": "Bright, bouncing baroque indie pop with violin, ukulele, brass and electro beats; a giddy celebration of falling in love."
   },
   "76LVdwqMv86jglsB8MFEXE": {
    "n": 85,
    "title": "Sweeter",
    "artist": "Gwyneth Herbert",
    "moods": [
-    "Bittersweet",
-    "Dreamy"
+    "Romantic",
+    "Bittersweet"
    ],
    "basis": "researched-low",
-   "moodSure": false,
-   "why": "Nothing specific found beyond a mention of its 'magical middle eight'; best guess from The Sea Cabinet, a cabaret, folk and jazz song cycle about the sea, memory, obsession and love.",
-   "source": "https://en.wikipedia.org/wiki/The_Sea_Cabinet"
+   "why": "Only 'beguiling' and a 'magical middle eight' found; from a folk-cabaret-jazz sea song cycle reviewers call wistful and personal.",
+   "source": "https://jazzwise.com/review/album-interview-gwyneth-herbert-the-sea-cabinet ; https://gwynethherbert.com/?p=135",
+   "genres": [
+    "Pop",
+    "Folk"
+   ],
+   "checked": "2026-10-23"
   },
   "1nGsq8KWsWVWnbhRkMaXGc": {
    "n": 86,
@@ -1130,13 +1457,16 @@
     "Dark",
     "Energetic"
    ],
-   "moodSure": false,
    "guessBefore": [
     "Energetic"
    ],
    "basis": "researched-medium",
-   "why": "Keyboard-led, electro-tinted indie on a slow steady beat that erupts into a short Muse-like burst of fuzz rock; subject not found.",
-   "source": "https://poppedmusic.co.uk/2015/10/27/album-review-half-moon-run-sun-leads-me-on/"
+   "why": "Brooding, State Trooper-like keyboard verses on a steady beat, then a sudden fuzz-rock eruption; DIY called it an 'enraged bruiser'.",
+   "source": "Reviews quoted in the batch facts: NOW Magazine, Popped Music, DIY (Jamie Milton)",
+   "genres": [
+    "Indie"
+   ],
+   "checked": "2026-10-23"
   },
   "7JsvW1GU2hbMnGETSyy7ig": {
    "n": 87,
@@ -1146,13 +1476,16 @@
     "Romantic",
     "Bittersweet"
    ],
-   "moodSure": false,
    "guessBefore": [
     "Dreamy"
    ],
-   "basis": "researched-medium",
-   "why": "Theme only: tender but impatient longing for a partner brave and honest enough to let the singer in; no description of the sound found.",
-   "source": "https://www.last.fm/music/Loney+Dear/_/Ignorant+Boy,+Beautiful+Girl/+lyrics"
+   "basis": "researched-low",
+   "why": "Layered one-man-band indie pop with falsetto and a 'namanama' chant; a 'celestial' singalong of impatient longing for a lover.",
+   "source": "https://wideorbits.com/?p=1034",
+   "genres": [
+    "Indie"
+   ],
+   "checked": "2026-10-23"
   },
   "7elJX0ZTRfmPeSDt18k0Ww": {
    "n": 88,
@@ -1163,11 +1496,15 @@
    ],
    "genreSure": false,
    "moods": [
-    "Mellow"
+    "Mellow",
+    "Dreamy"
    ],
    "basis": "researched-low",
-   "moodSure": false,
-   "why": "Nothing found about this 2020 Ben Seal single or the artist beyond the Spotify listing, so this is a pure guess."
+   "why": "Nothing found on this 2020 single or the artist; tags rest on the audio models' leanings alone.",
+   "genres": [
+    "Electronic"
+   ],
+   "checked": "2026-10-23"
   },
   "14I61w6cyYUHiV2n28IYdP": {
    "n": 89,
@@ -1177,8 +1514,12 @@
     "Energetic",
     "Playful"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Hip-hop"
+   ],
+   "checked": "2026-10-23",
+   "why": "Swaggering, boastful back-and-forth over a chopped, near-drumless loop of Otis Redding's 'Try a Little Tenderness'."
   },
   "6nkMHXkhmvCzxtvewoOEJT": {
    "n": 90,
@@ -1188,8 +1529,13 @@
     "Energetic",
     "Playful"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Rock",
+    "Indie"
+   ],
+   "checked": "2026-10-23",
+   "why": "Breakneck garage-rock stomp with a Free/Aerosmith-style monster riff and Jack White's rapid, yelping, tongue-twisting vocal."
   },
   "3UjcwK0kMZYvAA8qVDF7Y7": {
    "n": 91,
@@ -1199,13 +1545,16 @@
     "Bittersweet",
     "Uplifting"
    ],
-   "moodSure": true,
    "guessBefore": [
     "Melancholy"
    ],
    "basis": "researched-high",
-   "why": "About a wealthy, well-liked old friend haunted by darkness and why they drifted apart, reworked from a slow Pogues-style dirge into a triumphant melody with his daughters' sweet, haunting backing vocals.",
-   "source": "https://www.stereogum.com/2079590/hamilton-leithauser-loves-of-your-life-track-by-track/franchises/interview/footnotes-interview/"
+   "why": "Rousing piano-led song with his daughters' backing vocals; a triumphant melody over a portrait of a dark, weary old friend he parted from.",
+   "source": "https://www.stereogum.com/2079590/hamilton-leithauser-loves-of-your-life-track-by-track/franchises/interview/footnotes-interview/",
+   "genres": [
+    "Indie"
+   ],
+   "checked": "2026-10-23"
   },
   "63G27PTar9LZQgKU2BKjx9": {
    "n": 92,
@@ -1215,8 +1564,12 @@
     "Uplifting",
     "Bittersweet"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Indie"
+   ],
+   "checked": "2026-10-23",
+   "why": "Sweeping string-laden Britpop anthem; swelling, hopeful chorus over a wry, faintly sad picture of a sedated, too-comfortable future."
   },
   "4mn30l2lxnohEGT3goNzUR": {
    "n": 93,
@@ -1226,32 +1579,43 @@
     "Bittersweet",
     "Dark"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Folk",
+    "Indie"
+   ],
+   "checked": "2026-10-23",
+   "why": "Bouncy piano-and-acoustic indie folk about a child escaping a violent stepfather by turning up records; jaunty sound, harrowing story."
   },
   "6kotXaSQaGYxE62hVpdHWu": {
    "n": 94,
    "title": "Werewolves of London",
    "artist": "Warren Zevon",
    "moods": [
-    "Playful",
-    "Dark"
+    "Playful"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Rock"
+   ],
+   "checked": "2026-10-23",
+   "why": "Rolling piano-riff rock with howls and deadpan comic lyrics about a dapper werewolf loose in London; macabre joke, jaunty sound."
   },
   "0LS9j29qzv8vKFz2Hi3G8c": {
    "n": 95,
    "title": "Cristina",
    "artist": "Teleman",
    "moods": [
-    "Bittersweet",
-    "Mellow"
+    "Mellow",
+    "Bittersweet"
    ],
-   "basis": "researched-low",
-   "moodSure": false,
-   "why": "Little found beyond listener comments calling this simple guitar-and-synth indie-pop debut single touching; subject unknown.",
-   "source": "https://soundcloud.com/moshimoshimusic/teleman-cristina"
+   "basis": "researched-medium",
+   "why": "Pared-back, easy-going indie pop with psychedelic organ, plucky bass and a Beach Boys tinge; gentle, wistful vocal listeners call touching.",
+   "source": "https://theupcoming.co.uk/2014/06/09/teleman-breakfast-album-review",
+   "genres": [
+    "Indie"
+   ],
+   "checked": "2026-10-23"
   },
   "60WIrEOVESSiwBoYy9WIMC": {
    "n": 96,
@@ -1262,9 +1626,12 @@
     "Uplifting"
    ],
    "basis": "researched-high",
-   "moodSure": true,
-   "why": "Expansive, cinematic pop with brass, strings, piano and electronics about the gap between loss and recovery and a fragile reconciliation.",
-   "source": "https://as.vanderbilt.edu/nashvillereview/archives/393"
+   "why": "Expansive, cinematic indie pop with brass, strings and piano building steadily; about loss, recovery and a fragile reconciliation.",
+   "source": "https://as.vanderbilt.edu/nashvillereview/archives/393",
+   "genres": [
+    "Indie"
+   ],
+   "checked": "2026-10-23"
   },
   "6zNXjEQEhoEkLa4irSikDW": {
    "n": 97,
@@ -1280,9 +1647,9 @@
     "Romantic"
    ],
    "basis": "researched-medium",
-   "moodSure": false,
-   "why": "Dean and Britta trade vocals over smooth, twinkly strings and keys on a witty original from a dreamy, falling-in-love album; the lyric's subject isn't given.",
-   "source": "https://www.popmatters.com/phillipsbritta-lavventura-2496026027.html"
+   "why": "Male-female duet over smooth, twinkly strings and keys, Gainsbourg-and-Birkin style, on a lush, falling-in-love album; witty, playful lyric.",
+   "source": "https://www.popmatters.com/phillipsbritta-lavventura-2496026027.html",
+   "checked": "2026-10-23"
   },
   "6sSyiY3TuAYzlEh9CN1PBO": {
    "n": 98,
@@ -1293,9 +1660,13 @@
     "Energetic"
    ],
    "basis": "researched-medium",
-   "moodSure": false,
-   "why": "The radio-friendly, AM-style power-pop opener of the 1978 album, with a pounding repeated piano chord, harmonies and colourful guitars in the vein of Costello and XTC; the lyrics' subject isn't described.",
-   "source": "https://popdiggers.com/?p=6678"
+   "why": "Bright AM-radio power pop with a pounding piano chord, harmonies and Costello/XTC-style guitars; an upbeat title-track celebration of pop.",
+   "source": "https://popdiggers.com/?p=6678",
+   "genres": [
+    "Pop",
+    "Rock"
+   ],
+   "checked": "2026-10-23"
   },
   "5xwmLfRd5kLb6XohkIqNV2": {
    "n": 99,
@@ -1305,8 +1676,13 @@
     "Joyful",
     "Energetic"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Pop",
+    "Rock"
+   ],
+   "checked": "2026-10-23",
+   "why": "Brisk instrumental: Bach's 'Jesu, Joy of Man's Desiring' on harpsichord and electric guitar over a rock beat; bright and bouncy."
   },
   "3V2jcyKqjtbuSffYQ63CZ0": {
    "n": 100,
@@ -1318,31 +1694,31 @@
    ],
    "genreSure": false,
    "moods": [
-    "Joyful",
-    "Romantic"
+    "Joyful"
    ],
-   "basis": "researched-medium",
-   "moodSure": false,
-   "why": "Described as an infectious 1973 sunshine-pop single; lyrics' subject not found (romantic guess from the title).",
-   "source": "https://wearecult.rocks/bubblerock-is-here-to-stay-the-british-pop-explosion-1970-73"
+   "basis": "researched-low",
+   "why": "Belfast group's 1973 single, described only as 'infectious sunshine pop'; lyric subject not found, so Joyful alone.",
+   "source": "https://wearecult.rocks/bubblerock-is-here-to-stay-the-british-pop-explosion-1970-73",
+   "genres": [
+    "Pop"
+   ],
+   "checked": "2026-10-23"
   },
   "23y2DjW3Ljd7o0ZcFnqRo9": {
    "n": 101,
    "title": "Impossible Weight - feat. Sharon Van Etten",
    "artist": "Deep Sea Diver, Sharon Van Etten",
    "genres": [
-    "Indie",
-    "Rock"
+    "Indie"
    ],
    "genreSure": true,
    "moods": [
     "Uplifting",
     "Energetic"
    ],
-   "basis": "researched-high",
-   "moodSure": true,
-   "why": "Propulsive synth-textured alt-rock banger about silencing the inner critic and allowing yourself self-compassion through depression.",
-   "source": "https://americansongwriter.com/the-meaning-behind-deep-sea-divers-impossible-weight-and-the-volunteer-work-that-inspired-it/"
+   "basis": "knows",
+   "why": "Propulsive drums, layered synths and guitars build to a rousing duet chorus; about carrying depression and learning self-compassion.",
+   "checked": "2026-10-23"
   },
   "3mW90BgmaWI8Do3taVesEj": {
    "n": 102,
@@ -1352,32 +1728,44 @@
     "Playful",
     "Bittersweet"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Indie"
+   ],
+   "checked": "2026-10-23",
+   "why": "Bouncy glam art-pop with Russell Mael's falsetto trading lines with Kapranos; a jaunty tune about a man deluded over a woman out of reach."
   },
   "5iYEFC545nN3zmNZXRIcki": {
    "n": 103,
    "title": "Nuclear Boy",
    "artist": "20/20",
    "moods": [
-    "Energetic",
-    "Playful"
+    "Energetic"
    ],
    "basis": "researched-medium",
-   "moodSure": false,
-   "why": "Picked out as a 'big-beat' highlight of 20/20's skinny-tie power-pop second album; its subject isn't described.",
-   "source": "https://trouserpress.com/reviews/20-20/"
+   "why": "Trouser Press calls it the 'big-beat' highlight of Look Out!, a darker, synth-tinged new-wave power-pop album; subject not described anywhere found.",
+   "source": "https://trouserpress.com/reviews/20-20/ ; https://www.qobuz.com/ca-en/interpreter/20-20/673432",
+   "genres": [
+    "Pop",
+    "Rock"
+   ],
+   "checked": "2026-10-23"
   },
   "4WFNb2UhW5E5qxHGsgebuQ": {
    "n": 104,
    "title": "Flyswatter",
    "artist": "Eels",
    "moods": [
-    "Dreamy",
-    "Bittersweet"
+    "Playful",
+    "Dreamy"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "researched-medium",
+   "genres": [
+    "Indie"
+   ],
+   "checked": "2026-10-23",
+   "why": "Quirky, melodic toybox tune likened to Danny Elfman and Willy Wonka, with an eerie haze; a witty detour from the album's sadness.",
+   "source": "https://ducts.sundresspublications.com/09_00/criticism/criticism_eels.html ; https://audioxide.com/reviews/eels-daisies-of-the-galaxy"
   },
   "0Ib6SoU3oQTEgWEBVUF1IR": {
    "n": 105,
@@ -1388,9 +1776,12 @@
     "Playful"
    ],
    "basis": "researched-high",
-   "moodSure": true,
-   "why": "A smooth, Elton-style piano croon about a couple who admit they're both unhinged and shut out a senseless world inside their own intense love.",
-   "source": "https://www.popmatters.com/robert-ellis-texas-piano-man-2625655942.html"
+   "why": "Smooth Elton-style piano croon, cocktail-lounge feel; a tongue-in-cheek love song about a couple who admit they're both mad.",
+   "source": "https://www.rollingstone.com/music/music-country/robert-ellis-texas-piano-man-album-794426/",
+   "genres": [
+    "Pop"
+   ],
+   "checked": "2026-10-23"
   },
   "2CwNOqVypdZfKA8lXQKSUb": {
    "n": 106,
@@ -1400,8 +1791,12 @@
     "Melancholy",
     "Romantic"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Soul & R&B"
+   ],
+   "checked": "2026-10-23",
+   "why": "Slow, dramatically building soul ballad with clavinet and strings; Wonder's anguished vocal pleads his love for someone who hurts him."
   },
   "4N8FB9gd4FjEi68O6eVJ4p": {
    "n": 107,
@@ -1417,9 +1812,12 @@
     "Melancholy"
    ],
    "basis": "researched-low",
-   "moodSure": false,
-   "why": "Nothing specific found; the album partly deals with Stew's breakup with collaborator Heidi Rodewald.",
-   "source": "https://www.npr.org/artists/19349107/stew"
+   "why": "Breakup song from Stew's album about splitting with Heidi Rodewald, delivered with wry, self-mocking humour; its sound isn't described anywhere found.",
+   "source": "https://www.npr.org/transcripts/144318767",
+   "genres": [
+    "Indie"
+   ],
+   "checked": "2026-10-23"
   },
   "77h5SC6UU6kfKNSGQ9hZ4k": {
    "n": 108,
@@ -1429,9 +1827,12 @@
     "Playful"
    ],
    "basis": "researched-high",
-   "moodSure": true,
-   "why": "Quirky, catchy 1:42 sketch built on awkward piano and a walking bass, with an absurd lyrical turn about a fading movie career.",
-   "source": "https://www.sputnikmusic.com/album/9995/Ben-Kweller-Sha-Sha"
+   "why": "Quirky, catchy sub-two-minute sketch on awkward piano and walking bass, with an absurd turn about a fading movie career.",
+   "source": "https://www.sputnikmusic.com/album/9995/Ben-Kweller-Sha-Sha",
+   "genres": [
+    "Indie"
+   ],
+   "checked": "2026-10-23"
   },
   "6eCWvDQXTITW534IANR5n1": {
    "n": 109,
@@ -1441,21 +1842,28 @@
     "Romantic",
     "Joyful"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Folk",
+    "Pop"
+   ],
+   "checked": "2026-10-23",
+   "why": "Bright, bouncing piano lick and Forbert's raspy voice; an upbeat love song asking a girl to meet him and say everything's all right."
   },
   "57fT0m2UMxuue7KhToRAIJ": {
    "n": 110,
    "title": "My Stuff",
    "artist": "Getdown Services",
    "moods": [
-    "Playful",
-    "Energetic"
+    "Playful"
    ],
    "basis": "researched-low",
-   "moodSure": false,
-   "why": "Nothing found on this song; Getdown Services make silly, satirical disco-punk with Krautrock beats, so this is a guess from the band's style.",
-   "source": "https://www.bristol247.com/culture/music/review-getdown-services-strange-brew-scrumptious-cathartic-grooving-tunes-drenched-in-sweat-and-reality"
+   "why": "Nothing found on this song; Getdown Services make funny, groovy disco-punk with guitar, drums and odd electronic flourishes, so Playful by style.",
+   "source": "https://blurredculture.com/getdown-services-i-cant-die-like-that-massive-champion-review/ ; https://www.theskinny.co.uk/music/reviews/albums/getdown-services-massive-champion",
+   "genres": [
+    "Indie"
+   ],
+   "checked": "2026-10-23"
   },
   "43b1sAhXptGHyelc3knOOQ": {
    "n": 111,
@@ -1465,26 +1873,32 @@
     "Bittersweet",
     "Romantic"
    ],
-   "moodSure": true,
    "guessBefore": [
     "Romantic"
    ],
-   "basis": "researched-high",
-   "why": "Vintage horn-driven soul in a Sam Cooke and Otis Redding mould, with a strolling groove and key change, singing about betrayal and heartbreak; the title takes Cooke's reported last words.",
-   "source": "https://www.npr.org/transcripts/188301709"
+   "basis": "researched-medium",
+   "why": "Foot-stomping retro soul with fiery horns and a strolling groove, crooning the blues over a woman who wounded him.",
+   "source": "https://kexp.org/read/2013/7/18/song-of-the-day-har-mar-superstar-lady-you-shot-me/ ; https://popmatters.com/170523-har-mar-superstar-bye-bye-17-2495763294.html",
+   "genres": [
+    "Soul & R&B"
+   ],
+   "checked": "2026-10-23"
   },
   "40IPlaLrR3YEPNkI7z3bYp": {
    "n": 112,
    "title": "Never Get Ahead",
    "artist": "Bobby Conn",
    "moods": [
-    "Playful",
-    "Dark"
+    "Playful"
    ],
    "basis": "researched-medium",
-   "moodSure": false,
-   "why": "Satirical glam-rock jab at the idea that hard work brings success, with crude wordplay and a choppy scratchy fiddle on the chorus.",
-   "source": "https://popmatters.com/connbobby-live2005-2495863515.html"
+   "why": "Greasy glam-rock satire of 'work hard and you'll succeed', with crude double meanings and scratchy fiddle; sardonic and comic, not angry.",
+   "source": "https://popmatters.com/connbobby-live2005-2495863515.html",
+   "genres": [
+    "Indie",
+    "Rock"
+   ],
+   "checked": "2026-10-23"
   },
   "6nSt8n7r0bznM8PCvHEmPj": {
    "n": 113,
@@ -1494,8 +1908,12 @@
     "Playful",
     "Joyful"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Pop"
+   ],
+   "checked": "2026-10-23",
+   "why": "Jaunty, vaudeville-tinged pop in which she cheerfully throws out a messy lover and his belongings; comic and bright."
   },
   "4ilmoz7rKBlE85HWzbGAPu": {
    "n": 114,
@@ -1505,26 +1923,31 @@
     "Uplifting",
     "Melancholy"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "researched-high",
+   "genres": [
+    "Soul & R&B",
+    "Indie"
+   ],
+   "checked": "2026-10-23",
+   "why": "Swelling strings and a church-like choir behind Howard's soulful plea for strength when tapped out; hopeful lifeline with a sad, cinematic ache.",
+   "source": "https://www.rollingstone.com/music/music-news/rob-moose-brittany-howard-i-bend-but-never-break-1234721342/ ; https://music.mxdwn.com/2023/08/14/reviews/album-review-rob-moose-inflorescence/"
   },
   "5Bv1HoYXGCICY3ymEIdpHF": {
    "n": 115,
    "title": "Waiting",
    "artist": "Fabiana Palladino",
    "genres": [
-    "Soul & R&B",
-    "Pop"
+    "Pop",
+    "Soul & R&B"
    ],
    "genreSure": true,
    "moods": [
-    "Romantic",
-    "Mellow"
+    "Romantic"
    ],
-   "basis": "researched-low",
-   "moodSure": false,
-   "why": "Only influences are documented (Joe Jackson, Squeeze, early Police, Prince); subject not found, so moods are a guess from her sophisti-pop style.",
-   "source": "https://en.wikipedia.org/wiki/Fabiana_Palladino"
+   "basis": "researched-medium",
+   "why": "New-wave guitar pop after Joe Jackson, Squeeze and Prince; a broken android, restless and frustrated, waiting for her human lover to return.",
+   "source": "https://stereogum.com/2093673/the-paul-institute-summer-2020/music ; https://www.thefader.com/2020/08/04/listen-to-the-paul-institutes-ep-paul-institute--summer-2020",
+   "checked": "2026-10-23"
   },
   "4FGIHe2zLB3Y43mPybYdDa": {
    "n": 116,
@@ -1534,14 +1957,17 @@
     "Uplifting",
     "Bittersweet"
    ],
-   "moodSure": true,
    "guessBefore": [
     "Joyful",
     "Romantic"
    ],
-   "basis": "researched-high",
-   "why": "Punchy, shimmering synth-pop that Alexis Taylor says is about getting through overwhelming pain, families pulled apart and close friendship.",
-   "source": "https://thelineofbestfit.com/news/latest-news/hot-chip-share-new-song-eleanor"
+   "basis": "knows",
+   "why": "Bright, propulsive synth-pop about getting through pain, families pulled apart and strong friendship; rousing with an ache underneath.",
+   "genres": [
+    "Electronic",
+    "Indie"
+   ],
+   "checked": "2026-10-23"
   },
   "3d2oiHuHm3rftzRDPeL5LU": {
    "n": 117,
@@ -1551,8 +1977,12 @@
     "Dark",
     "Energetic"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Rock"
+   ],
+   "checked": "2026-10-23",
+   "why": "Snarling, chugging rock tirade against political hypocrisy and lies, with Harrison's biting slide solo; angry and driving."
   },
   "5iaWq4djtfWZk8McqrtprO": {
    "n": 118,
@@ -1562,8 +1992,13 @@
     "Playful",
     "Joyful"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Rock",
+    "Indie"
+   ],
+   "checked": "2026-10-23",
+   "why": "Fuzzy, bouncy garage-pop built on a wordless sing-along hook and a drawled vocal; cheeky and sunny."
   },
   "2FPcTfECQrZviBAarAHv1f": {
    "n": 119,
@@ -1573,10 +2008,13 @@
     "Energetic",
     "Playful"
    ],
-   "basis": "researched-high",
-   "moodSure": true,
-   "why": "Drum-heavy electro-punk with crowd-style chanting and a quick, catchy chorus, its sparse, absurdist lyrics built around declaring love for the world.",
-   "source": "https://www.redbrick.me/single-review-fat-dog-peace-song/"
+   "basis": "knows",
+   "why": "Pounding, bouncy electro-punk rave with chanted vocals and absurdist lines about loving the world; high energy with a daft streak.",
+   "genres": [
+    "Electronic",
+    "Indie"
+   ],
+   "checked": "2026-10-23"
   },
   "30zaeAGK7hGe1N406m3pKL": {
    "n": 120,
@@ -1586,8 +2024,12 @@
     "Romantic",
     "Joyful"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Soul & R&B"
+   ],
+   "checked": "2026-10-23",
+   "why": "Warm, funky Stevie Wonder-produced love song, Syreeta adoring every detail of her partner over a bright, bubbling groove."
   },
   "5O5u7dukzRu4iskuCTiaYj": {
    "n": 121,
@@ -1597,8 +2039,14 @@
     "Energetic",
     "Playful"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "researched-medium",
+   "genres": [
+    "Rock",
+    "Soul & R&B"
+   ],
+   "checked": "2026-10-23",
+   "why": "Brisk, under-three-minute brassy stomp with backing singers; Ferry pastiching old-fashioned soul with a knowing, cheeky swagger.",
+   "source": "https://greilmarcus.net/2014/08/04/roxy-musics-respite-manifesto-050379/"
   },
   "5MpZt5R522VJa8AxKxAD4H": {
    "n": 122,
@@ -1609,26 +2057,31 @@
     "Playful"
    ],
    "basis": "researched-medium",
-   "moodSure": false,
-   "why": "Piano-led song with horns that a reviewer called witty and catchy; subject not described beyond the falling-in-love title.",
-   "source": "https://pennyblackmusic.co.uk/Home/Details?id=10052"
+   "why": "Jaunty piano-and-horns song, called witty and catchy; a lovesick narrator, infatuated and self-mocking, ready to upend his life for her.",
+   "source": "https://pennyblackmusic.co.uk/Home/Details?id=10052 ; https://www.hotpress.com/music/here-be-monsters-1351418",
+   "genres": [
+    "Indie"
+   ],
+   "checked": "2026-10-23"
   },
   "4CSKUENltc2dGwvGGtDRgI": {
    "n": 123,
    "title": "As Long As I Still Get You",
    "artist": "Vulfmon, Evangeline",
    "moods": [
-    "Mellow",
-    "Romantic"
+    "Mellow"
    ],
-   "moodSure": false,
    "guessBefore": [
     "Joyful",
     "Romantic"
    ],
-   "basis": "researched-medium",
-   "why": "Warm, laid-back live-room ballad with bassoon, flute and Wurlitzer under Evangeline's sunny vocal; lyrics not described.",
-   "source": "https://anotherwhiskyformisterbukowski.com/evangeline-vulfmon-sortent-as-long-as-i-still-get-you-et-cest-doux/"
+   "basis": "researched-low",
+   "why": "Warm, laid-back soft-soul ballad: Vulfmon on Wurlitzer, Aaron Kruziki's woodwind arrangement, Evangeline singing; lyric not described anywhere I could read.",
+   "source": "https://www.youtube.com/watch?v=c9T5J97hvYY ; https://old.fbpe.org/as-long-as-i-still-get-you.html",
+   "genres": [
+    "Soul & R&B"
+   ],
+   "checked": "2026-10-23"
   },
   "29O9cSdpmLZKFcTRMlnqo2": {
    "n": 124,
@@ -1638,10 +2091,12 @@
     "Playful",
     "Energetic"
    ],
-   "basis": "researched-high",
-   "moodSure": true,
-   "why": "Marcus Miller's go-go-flavoured party funk from School Daze, a cartoonish call-and-response chant cheerfully celebrating big behinds.",
-   "source": "https://www.washingtoncitypaper.com/news/article/13042419/da-oral-history-of-da-butt-put-your-memory-in"
+   "basis": "knows",
+   "why": "Marcus Miller's go-go party funk from School Daze: chanted call-and-response, thumping percussion, a cheeky celebration of big behinds.",
+   "genres": [
+    "Soul & R&B"
+   ],
+   "checked": "2026-10-23"
   },
   "60JI0WkwFt0zqnJw8KzNoE": {
    "n": 125,
@@ -1651,8 +2106,12 @@
     "Uplifting",
     "Bittersweet"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Rock"
+   ],
+   "checked": "2026-10-23",
+   "why": "Rousing piano-driven Kinks rocker; Ray Davies wishing an ex well as they part, hopeful but tinged with farewell."
   },
   "4clw6ilYxpOiBeoSkJJvSX": {
    "n": 126,
@@ -1662,14 +2121,17 @@
     "Uplifting",
     "Energetic"
    ],
-   "moodSure": true,
    "guessBefore": [
     "Romantic",
     "Joyful"
    ],
    "basis": "researched-high",
-   "why": "Funky bass, drums, brass and a dramatic vocal carry a hopeful message that love outweighs wealth or status and that the lost will find comfort.",
-   "source": "https://dereksmusicblog.com/2011/08/17/minnie-riperton-adventures-in-paradise/"
+   "why": "Funky bass, drums and brass under a soaring vocal; hopeful message that love outweighs wealth and status.",
+   "source": "earlier research (not re-read this pass; search budget exhausted)",
+   "genres": [
+    "Soul & R&B"
+   ],
+   "checked": "2026-10-23"
   },
   "2dpGNisIy8LNjpEGzDdtft": {
    "n": 127,
@@ -1679,8 +2141,13 @@
     "Joyful",
     "Energetic"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Pop",
+    "Soul & R&B"
+   ],
+   "checked": "2026-10-23",
+   "why": "Exuberant, gospel-tinged pop-soul belter about the joy of music, with a false ending and repeated title refrains."
   },
   "1P3S1DDr0qEENA8Zy3RLmG": {
    "n": 128,
@@ -1690,13 +2157,17 @@
     "Playful",
     "Bittersweet"
    ],
-   "moodSure": false,
    "guessBefore": [
     "Playful"
    ],
-   "basis": "researched-medium",
-   "why": "Short tongue-in-cheek album closer with Mellotron, called a 'bittersweet beat sundae'; subject not described.",
-   "source": "https://www.austinchronicle.com/music/eye-to-eye-11709908/"
+   "basis": "researched-low",
+   "why": "Short Mellotron-led album closer with backing vocals, described as tongue-in-cheek; subject not described in any review I could read.",
+   "source": "https://www.austinchronicle.com/music/eye-to-eye-11709908/ ; https://en.wikipedia.org/wiki/Look_into_the_Eyeball",
+   "genres": [
+    "Rock",
+    "Pop"
+   ],
+   "checked": "2026-10-23"
   },
   "5OuaAMBmGjjJMK7yXpaFAK": {
    "n": 129,
@@ -1706,8 +2177,12 @@
     "Bittersweet",
     "Energetic"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Rock"
+   ],
+   "checked": "2026-10-23",
+   "why": "Driving piano, congas and a Jesse Ed Davis guitar solo carry a weary lyric about eyes gone numb to life's pain."
   },
   "2hq50hCUUknhUXZ9uL3wgq": {
    "n": 130,
@@ -1717,8 +2192,12 @@
     "Romantic",
     "Joyful"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Pop"
+   ],
+   "checked": "2026-10-23",
+   "why": "McCartney-style home-recorded piano pop with stacked harmonies; a glad love song about finding the one meant for him."
   },
   "5fXRPS1tp70DbqsBZVyG4e": {
    "n": 131,
@@ -1728,8 +2207,12 @@
     "Joyful",
     "Energetic"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Rock"
+   ],
+   "checked": "2026-10-23",
+   "why": "Loose, horn-driven rock and roll with Keith Richards singing a grinning, carefree lead about needing love to keep him happy."
   },
   "5dt9vV7sfjzS78y2MJUvZt": {
    "n": 132,
@@ -1739,8 +2222,13 @@
     "Joyful",
     "Energetic"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "World",
+    "Pop"
+   ],
+   "checked": "2026-10-23",
+   "why": "Bouncy kwaito-pop groove with call-and-response vocals celebrating a son's wedding; South Africa's best-known wedding dance song."
   },
   "1Tq1uBzzuRywZEme8QijxT": {
    "n": 133,
@@ -1751,9 +2239,12 @@
     "Melancholy"
    ],
    "basis": "researched-high",
-   "moodSure": true,
-   "why": "Slow, soft folk-leaning track the singer calls a sad-funny love song about being out of love and lonely in the city.",
-   "source": "https://faroutmagazine.co.uk/sorry-share-heartfelt-new-single/"
+   "why": "Slow, gently paced, folk-leaning track with clean guitars; Asha Lorenz calls it a sad-funny love song about loneliness after falling out of love.",
+   "source": "https://faroutmagazine.co.uk/sorry-share-heartfelt-new-single/ ; https://stereogum.com/2184057/sorry-theres-so-many-people-that-want-to-be-loved/music",
+   "genres": [
+    "Indie"
+   ],
+   "checked": "2026-10-23"
   },
   "4AxAd49jPozjHMZyXI2Gzv": {
    "n": 134,
@@ -1761,26 +2252,34 @@
    "artist": "Paul Williams",
    "moods": [
     "Uplifting",
-    "Bittersweet"
+    "Joyful"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "researched-high",
+   "genres": [
+    "Pop"
+   ],
+   "checked": "2026-10-23",
+   "why": "Bright sunshine pop with strings and horns, building to a big chorus; The Second Disc calls the title song optimistic and positive.",
+   "source": "https://theseconddisc.com/2010/11/30/review-paul-williams-someday-man-deluxe-expanded-edition/ ; https://en.wikipedia.org/wiki/Someday_Man"
   },
   "0ISfH0HKPrQd3mWmzk76Ij": {
    "n": 135,
    "title": "This Year",
    "artist": "Emily King",
    "moods": [
-    "Uplifting",
-    "Bittersweet"
+    "Uplifting"
    ],
-   "moodSure": true,
    "guessBefore": [
     "Uplifting"
    ],
    "basis": "researched-high",
-   "why": "Upbeat, anthemic new-year song written after King realised she'd spent too long chasing someone who couldn't love her back.",
-   "source": "https://lpm.org/music/2022-12-15/listen-hear-song-of-the-day-emily-king-shares-new-upbeat-anthem-this-year"
+   "why": "Slick, grand, cinematic soul-pop anthem; King sings it daily as an affirmation about quitting the chase for online validation.",
+   "source": "https://www.wonderlandmagazine.com/2023/04/24/emily-king/ ; https://www.wbgo.org/music/2023-05-06/for-emily-king-every-day-is-a-special-occasion",
+   "genres": [
+    "Soul & R&B",
+    "Pop"
+   ],
+   "checked": "2026-10-23"
   },
   "06SgGRLn7xmwCz8wIxIx8U": {
    "n": 136,
@@ -1790,10 +2289,14 @@
     "Energetic",
     "Playful"
    ],
-   "basis": "researched-high",
-   "moodSure": true,
-   "why": "Jittery, frantic post-punk duet that eases into a bluesy, Television-like sway, using a balloon as an absurd metaphor for how pointless effort can feel.",
-   "source": "https://beatsperminute.com/album-review-omni-souvenir/"
+   "basis": "researched-medium",
+   "why": "Jittery, angular post-punk duet easing into a Television-like sway, with a balloon as an absurd metaphor for pointless effort.",
+   "source": "earlier research note in the batch file; not re-read this pass (web search limit reached)",
+   "genres": [
+    "Indie",
+    "Rock"
+   ],
+   "checked": "2026-10-23"
   },
   "4Yh1pyb3eGk32z6KeG0MPF": {
    "n": 137,
@@ -1803,13 +2306,15 @@
     "Melancholy",
     "Romantic"
    ],
-   "moodSure": true,
    "genres": [
     "Soul & R&B",
     "Pop"
    ],
    "genreSure": true,
-   "basis": "knows"
+   "basis": "researched-high",
+   "checked": "2026-10-23",
+   "why": "Spector-style wall of sound with harpsichord, kettle drums and strings; Arnold goes from tearful quaver to soulful wail over a wounding love.",
+   "source": "https://bestsong.substack.com/p/the-first-cut-is-the-deepest-by-pp ; https://en.wikipedia.org/wiki/The_First_Cut_Is_the_Deepest"
   },
   "2DBlfjL5chsdeULzhTp5K8": {
    "n": 138,
@@ -1819,8 +2324,12 @@
     "Energetic",
     "Dark"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Rock"
+   ],
+   "checked": "2026-10-23",
+   "why": "Post-hardcore built on a bouncing bass riff, tense stop-start dynamics and shouted vocals about refusing to sit and wait."
   },
   "15EOCEksKtUd844TrW9Tjv": {
    "n": 139,
@@ -1828,7 +2337,7 @@
    "artist": "Daryl Johns",
    "genres": [
     "Pop",
-    "Soul & R&B"
+    "Rock"
    ],
    "genreSure": false,
    "moods": [
@@ -1836,9 +2345,9 @@
     "Joyful"
    ],
    "basis": "researched-high",
-   "moodSure": true,
-   "why": "Glossy bubblegum pop-rock with stylophone and a big chorus, a nostalgic and silly tribute to early-80s burgers, milkshakes and TV jingles.",
-   "source": "https://www.theindiescene.co.uk/single-reviews/daryl-johns-announces-debut-album"
+   "why": "Bubblegum pop-rock with stylophone, recalling AOR acts like The Outfield and Starship; a silly, nostalgic love letter to the early 1980s.",
+   "source": "https://www.theindiescene.co.uk/single-reviews/daryl-johns-announces-debut-album ; https://www.glamglare.com/music/daryl-johns-im-so-serious/",
+   "checked": "2026-10-23"
   },
   "5qm0KiVKMXW1kq6VrnIhz5": {
    "n": 140,
@@ -1848,12 +2357,16 @@
     "Uplifting",
     "Energetic"
    ],
-   "moodSure": true,
    "genresIfNone": [
     "Rock"
    ],
    "genreSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Rock"
+   ],
+   "checked": "2026-10-23",
+   "why": "Bright, soaring major-key guitar instrumental with fast virtuoso runs over a driving rhythm section."
   },
   "6TOhXLevQUI4fjrxLL1nJE": {
    "n": 141,
@@ -1863,8 +2376,12 @@
     "Uplifting",
     "Joyful"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Soul & R&B"
+   ],
+   "checked": "2026-10-23",
+   "why": "Rousing gospel-disco: church choir and children's voices over a pounding four-on-the-floor beat, a praise song of faith."
   },
   "1aoFQBQrclXuxUTCldGNYh": {
    "n": 142,
@@ -1880,9 +2397,13 @@
     "Playful"
    ],
    "basis": "researched-high",
-   "moodSure": true,
-   "why": "Rowdy, high-energy post-punk with riffy guitars and snarling synths, joking about not affording drinks on a London night out.",
-   "source": "https://www.thelineofbestfit.com/tracks/tom-a-smith-fashion"
+   "why": "Thunderous post-punk with grabby drums, snarling synths, grating guitars and rowdy vocals, joking about the cost of a London night out.",
+   "source": "https://www.thelineofbestfit.com/tracks/tom-a-smith-fashion",
+   "genres": [
+    "Indie",
+    "Rock"
+   ],
+   "checked": "2026-10-23"
   },
   "1CPTAkaqBwFfe7xUjScKIr": {
    "n": 143,
@@ -1892,8 +2413,13 @@
     "Uplifting",
     "Mellow"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Pop"
+   ],
+   "checked": "2026-10-23",
+   "why": "Optimistic midtempo synth and electric-piano soft rock with smooth harmonies, hoping love can work out with a little luck.",
+   "source": "https://en.wikipedia.org/wiki/With_a_Little_Luck"
   },
   "3GWhvJNnbkhl3iMK1W4iQC": {
    "n": 144,
@@ -1903,19 +2429,28 @@
     "Melancholy",
     "Dreamy"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Indie"
+   ],
+   "checked": "2026-10-23",
+   "why": "Rossen's guitar-led waltz swelling into layered 'ooh' harmonies and a climactic cry; a wary, unhappy song about a false partner.",
+   "source": "https://culturecatch.com/music/grizzly-bear-veckatimest-review"
   },
   "1WFFonSzN8LuoIC3R8Ja53": {
    "n": 145,
    "title": "Love You",
    "artist": "The Free Design",
    "moods": [
-    "Romantic",
-    "Joyful"
+    "Joyful",
+    "Romantic"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Pop"
+   ],
+   "checked": "2026-10-23",
+   "why": "Bright, bouncy sunshine pop with flute and sweet family harmonies, a simple happy declaration of love."
   },
   "3PtmCb2kQYekdoh3HB81yU": {
    "n": 146,
@@ -1925,13 +2460,15 @@
     "Bittersweet",
     "Mellow"
    ],
-   "moodSure": true,
    "guessBefore": [
     "Bittersweet"
    ],
-   "basis": "researched-high",
-   "why": "A lovely descending folk melody and wry delivery for a song about chosen solitude, sensing a lost partner in the landscape without self-pity.",
-   "source": "https://www.fluxblog.org/?p=3238"
+   "basis": "knows",
+   "why": "Quiet home-recorded voice and guitar, a lovely wry melody about solitude, seeing an absent lover in the landscape without self-pity.",
+   "genres": [
+    "Folk"
+   ],
+   "checked": "2026-10-23"
   },
   "4S4dCACmtuPWbhvMSfDXqN": {
    "n": 147,
@@ -1941,12 +2478,13 @@
     "Joyful",
     "Playful"
    ],
-   "moodSure": true,
    "genres": [
     "World"
    ],
    "genreSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "checked": "2026-10-23",
+   "why": "Sunny South African township dance tune with spoken asides and call-and-response, an invitation to a 'touch touch' dance."
   },
   "6oBVQQ4y3KkStoa0apQPrK": {
    "n": 148,
@@ -1956,30 +2494,36 @@
     "Romantic",
     "Bittersweet"
    ],
-   "moodSure": true,
    "guessBefore": [
     "Romantic"
    ],
-   "basis": "researched-high",
-   "why": "A bouncy, old-timey Americana tune sung as a hard-luck small-time crook pining for his woman.",
-   "source": "https://www.popmatters.com/the-felice-brothers-the-felice-brothers-2496170793.html"
+   "basis": "researched-medium",
+   "why": "Bouncy, old-timey Americana with scratchy harmonies, sung as a hard-luck small-time crook pining for his woman.",
+   "source": "PopMatters (Chris Conaton) and Uncut (Rob Hughes) reviews as cited in the batch facts; not re-read this pass",
+   "genres": [
+    "Folk"
+   ],
+   "checked": "2026-10-23"
   },
   "3TMtoSysAJ61pUnvVPHlI5": {
    "n": 149,
    "title": "Marlene",
    "artist": "Peter Richard",
    "moods": [
-    "Energetic",
-    "Romantic"
+    "Energetic"
    ],
-   "moodSure": false,
    "guessBefore": [
     "Energetic",
     "Romantic"
    ],
    "basis": "researched-low",
-   "why": "Nothing found about the song; it is from a 1983 LP by the Italo-disco act behind Walking in the Neon.",
-   "source": "https://www.deezer.com/artist/319115"
+   "why": "Synth-driven 1983 Italo-disco from the Walking in the Neon act; nothing found describing this track itself.",
+   "source": "https://fondsound.com/peter-richard-frozen-red-1983",
+   "genres": [
+    "Electronic",
+    "Soul & R&B"
+   ],
+   "checked": "2026-10-23"
   },
   "49dxrmTySyejmAzmQxWjOu": {
    "n": 150,
@@ -1989,19 +2533,30 @@
     "Playful",
     "Energetic"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "researched-low",
+   "genres": [
+    "World",
+    "Pop"
+   ],
+   "checked": "2026-10-23",
+   "why": "Billy May's swinging big-band mambo with Yma Sumac's quirky vocal acrobatics and unsettling laughter; exotica novelty.",
+   "source": "https://indiehoy.com/indieayer/yma-sumac-mambo/"
   },
   "6nTL1KhyjN3RzdRJFICZ81": {
    "n": 151,
    "title": "Everybody's Gotta Live",
    "artist": "Arthur Lee",
    "moods": [
-    "Uplifting",
-    "Mellow"
+    "Uplifting"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "researched-medium",
+   "genres": [
+    "Folk",
+    "Rock"
+   ],
+   "checked": "2026-10-23",
+   "why": "Acoustic shuffle that builds to a communal, invigorating singalong about living and dying; affirming rather than calm.",
+   "source": "https://en.wikipedia.org/wiki/Everybody%27s_Gotta_Live"
   },
   "3PuzCzuFmDqVtCp6PWlUio": {
    "n": 152,
@@ -2009,12 +2564,16 @@
    "artist": "JJ",
    "moods": [
     "Dreamy",
-    "Bittersweet"
+    "Mellow"
    ],
    "basis": "researched-medium",
-   "moodSure": false,
-   "why": "Balearic dream-pop with calypso maracas and steel drums over strings and bass drum, sung wispily; subject not described.",
-   "source": "https://wildcat.arizona.edu/120907/uncategorized/cd-review-jj-jj-n-2/"
+   "why": "Gentle Balearic lullaby: semi-orchestral easy-listening strings, sweet female vocal, pseudo-ska and calypso percussion; hazy and soothing.",
+   "source": "https://scaruffi.com/vol7/jj.html ; https://en.wikipedia.org/wiki/Jj_n%E1%B5%92_2",
+   "genres": [
+    "Indie",
+    "Pop"
+   ],
+   "checked": "2026-10-23"
   },
   "748yv6bb3l3CcKS45a6SZ8": {
    "n": 153,
@@ -2024,8 +2583,13 @@
     "Romantic",
     "Bittersweet"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Pop",
+    "Rock"
+   ],
+   "checked": "2026-10-23",
+   "why": "Lush, yearning mid-tempo pop-rock love song with piano and soaring chorus that turns wistful at the close."
   },
   "3f3HHRPF5vAo90GwdpDMaQ": {
    "n": 154,
@@ -2035,34 +2599,43 @@
     "Joyful",
     "Playful"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Electronic",
+    "Hip-hop"
+   ],
+   "checked": "2026-10-23",
+   "why": "Sunny sample collage of horns, a crooning child's voice and Camp Lo's rap; the joyous, cheeky opener of Wildflower."
   },
   "2Tp3uEfVC5FNiIdGFWQxOC": {
    "n": 155,
    "title": "Lose Your Soul",
    "artist": "Dead Man's Bones",
    "moods": [
-    "Dark",
-    "Playful"
+    "Dark"
    ],
-   "basis": "researched-medium",
-   "moodSure": false,
-   "why": "One of the darker tracks on a lo-fi, children's-choir Halloween album about ghosts and zombies that reviewers call spooky but playful.",
-   "source": "https://ktsw.txst.edu/music/reviews-archive/deadmansbones.html"
+   "basis": "knows",
+   "why": "Slow, gothic doo-wop ballad: piano, Gosling's low croon and a chanting children's choir, building to a spooky, brooding climax.",
+   "genres": [
+    "Indie"
+   ],
+   "checked": "2026-10-23"
   },
   "0Shb2a6oTnJsIxEzn2SDLh": {
    "n": 156,
    "title": "Drummer Man",
    "artist": "Tonight",
    "moods": [
-    "Energetic",
-    "Joyful"
+    "Energetic"
    ],
-   "basis": "researched-medium",
-   "moodSure": false,
-   "why": "Tonight's 1978 UK No. 14 hit, cited as the first chart hit of the British power-pop wave; no source found on the lyrics.",
-   "source": "https://myglobalmind.com/2010/10/26/tonight-drummer-man/"
+   "basis": "researched-low",
+   "why": "Punchy 1978 power-pop single, credited as the movement's first chart hit; sources describe the style but not the lyrics.",
+   "source": "https://myglobalmind.com/2010/10/26/tonight-drummer-man/ ; https://en.wikipedia.org/wiki/Tonight_(band)",
+   "genres": [
+    "Rock",
+    "Pop"
+   ],
+   "checked": "2026-10-23"
   },
   "0USF54f34DPnAn9nEmqNIN": {
    "n": 157,
@@ -2073,9 +2646,12 @@
     "Dark"
    ],
    "basis": "researched-high",
-   "moodSure": true,
-   "why": "Swings between bright 50s snap and electro-pop and a brooding mood, telling of watching a beloved figure fall, read as a parable about AI as idol.",
-   "source": "https://metalmagazine.eu/en/post/gener8ion-love-and-tears"
+   "why": "Moves from 1950s snap and bright electro-pop to a brooding mood; falsetto tells of watching a beloved figure fall.",
+   "source": "https://metalmagazine.eu/en/post/gener8ion-love-and-tears",
+   "genres": [
+    "Electronic"
+   ],
+   "checked": "2026-10-23"
   },
   "4U9ZjqhaGF9wl56899E4sW": {
    "n": 158,
@@ -2085,10 +2661,13 @@
     "Joyful",
     "Uplifting"
    ],
-   "basis": "researched-high",
-   "moodSure": true,
-   "why": "Harpsichord-led baroque pop with anthemic vocals and a sunshine-pop refrain, celebrating the innocence of friendship.",
-   "source": "https://ksdt.ucsd.edu/blog/besties-a-new-era-begins-for-black-country-new-road"
+   "basis": "knows",
+   "why": "Loud, sprightly baroque pop on harpsichord and recorders with an anthemic vocal; an ode to female friendship.",
+   "genres": [
+    "Indie",
+    "Pop"
+   ],
+   "checked": "2026-10-23"
   },
   "0qgZruwLnh1ed7Z7ZXNMTc": {
    "n": 159,
@@ -2099,9 +2678,12 @@
     "Mellow"
    ],
    "basis": "researched-medium",
-   "moodSure": false,
-   "why": "Stripped-back song that Healey says is about old-fashioned, star-crossed young love and its nerves; the track's sound isn't described in detail.",
-   "source": "https://www.thelineofbestfit.com/news/willie-j-healey-returns-with-details-of-a-new-ep-143-and-shares-ditch-single"
+   "why": "Slow-paced, hazy indie-pop groove with sitar-like effects; Healey says it's about Romeo-and-Juliet young love and being scared.",
+   "source": "https://www.clashmusic.com/news/willie-j-healey-announces-new-ep-143/",
+   "genres": [
+    "Indie"
+   ],
+   "checked": "2026-10-23"
   },
   "0IVAlb0cFCH1cQ974iR1TU": {
    "n": 160,
@@ -2109,10 +2691,14 @@
    "artist": "Mos Def",
    "moods": [
     "Playful",
-    "Romantic"
+    "Bittersweet"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Hip-hop"
+   ],
+   "checked": "2026-10-23",
+   "why": "Laid-back boom-bap on a soulful Aretha sample; Mos Def's witty tale of a hook-up he falls for, who then drops him."
   },
   "47wEx68K50IsPnpKoqCuzm": {
    "n": 161,
@@ -2120,16 +2706,19 @@
    "artist": "Everything Everything",
    "moods": [
     "Energetic",
-    "Bittersweet"
+    "Uplifting"
    ],
-   "moodSure": false,
    "guessBefore": [
     "Dark",
     "Energetic"
    ],
-   "basis": "researched-medium",
-   "why": "An 'electrifying' track that Jonathan Higgs says captures sensing something terrible approaching while wanting to hold on to the moment, the last song of the night; little detail on the sound itself.",
-   "source": "https://faroutmagazine.co.uk/everything-everything-new-song-violent-sun/"
+   "basis": "researched-high",
+   "why": "Propulsive New Order-style surge of drums and synths, huge euphoric anthem about savouring a last moment as time runs out.",
+   "source": "https://www.nme.com/reviews/album/everything-everything-re-animator-album-review-2749996",
+   "genres": [
+    "Indie"
+   ],
+   "checked": "2026-10-23"
   },
   "0g95vn2Szj5apK4CIOcyAZ": {
    "n": 162,
@@ -2139,10 +2728,13 @@
     "Joyful",
     "Romantic"
    ],
-   "basis": "researched-high",
-   "moodSure": true,
-   "why": "Bright, bouncy, jaunty indie pop about the rush of instantly clicking with someone new, with a first-date video.",
-   "source": "https://hashbrandnew.com/Artists/Dirty+Nice/Albums/Like+Best+Friends+-+Fine+For+Now"
+   "basis": "researched-low",
+   "why": "Bright, bouncy indie pop about instantly clicking with someone new; first-date video in Lisbon.",
+   "source": "Earlier research and band quote in batch file; no page re-read (web search budget exhausted this turn)",
+   "genres": [
+    "Indie"
+   ],
+   "checked": "2026-10-23"
   },
   "2mpFugcHYSOPZSVdTu5OUw": {
    "n": 163,
@@ -2152,8 +2744,12 @@
     "Playful",
     "Dark"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Electronic"
+   ],
+   "checked": "2026-10-23",
+   "why": "Jittery sample collage of children's taunts over twitchy guitar and woodpecker drums: cartoonish fun with a creepy edge."
   },
   "30Wb4wrx78MZ8lAXfVb7wk": {
    "n": 164,
@@ -2163,14 +2759,18 @@
     "Bittersweet",
     "Dreamy"
    ],
-   "moodSure": true,
    "guessBefore": [
     "Dreamy",
     "Melancholy"
    ],
    "basis": "researched-high",
-   "why": "Hazy, echoey vocals over a building beat with piano; a nostalgic love letter to her old London home.",
-   "source": "https://music.mxdwn.com/2026/07/11/news/suki-waterhouse-shares-nostalgic-new-single-video-notting-hill/"
+   "why": "Slower, softer alt-pop with hazy echoing vocals over a building piano-and-percussion pulse; nostalgic farewell to her old London flat.",
+   "source": "https://music.mxdwn.com/2026/07/11/news/suki-waterhouse-shares-nostalgic-new-single-video-notting-hill/ ; https://www.nme.com/reviews/album/suki-waterhouse-loveland-review-3956191",
+   "genres": [
+    "Pop",
+    "Indie"
+   ],
+   "checked": "2026-10-23"
   },
   "4cgmk2owigBlmlV4KsqRNs": {
    "n": 165,
@@ -2178,23 +2778,31 @@
    "artist": "Susanne Sundfør",
    "moods": [
     "Melancholy",
-    "Dark"
+    "Romantic"
    ],
    "basis": "researched-high",
-   "moodSure": true,
-   "why": "Piano ballad that builds to chilling vocals, about distrust in love and heartbreak.",
-   "source": "https://highclouds.org/?p=28191"
+   "why": "Country-tinged piano ballad with pedal steel and choir-like voices, building; brokenhearted, uneasy love song.",
+   "source": "https://thesinglesjukebox.com/susanne-sundfr-undercover/ ; https://en.wikipedia.org/wiki/Music_for_People_in_Trouble",
+   "genres": [
+    "Folk",
+    "Pop"
+   ],
+   "checked": "2026-10-23"
   },
   "2gOiPzXFWh2Rw5SdEECM4K": {
    "n": 166,
    "title": "HAHA",
    "artist": "Charlotte Adigéry, Bolis Pupul, Charlotte Adigéry & Bolis Pupul",
    "moods": [
-    "Playful",
-    "Energetic"
+    "Playful"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "researched-high",
+   "genres": [
+    "Electronic"
+   ],
+   "checked": "2026-10-23",
+   "why": "Slinky 80s-style electro groove whose only vocal is chopped, glitchy laughter; fun, danceable, a little odd.",
+   "source": "https://beatsperminute.com/charlotte-adigery-and-bolis-pupul-cackle-and-roar-on-knee-slapping-single-haha/ ; https://diymag.com/2022/03/04/charlotte-adigery-bolis-pupul-topical-dancer-album-review"
   },
   "7nOwuv3N6Cwo2N9xkXWUmI": {
    "n": 167,
@@ -2204,37 +2812,48 @@
     "Dark",
     "Dreamy"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "researched-low",
+   "genres": [
+    "Electronic",
+    "Pop"
+   ],
+   "checked": "2026-10-23",
+   "why": "Squelchy, swirling Knife-like synths and haunting vocals, in an expanded film arrangement performed in the film's underground nightclub scene.",
+   "source": "https://www.galvnews.com/new-music-from-fever-ray-from-the-bride-original-motion-picture-soundtrack-available-now/article_5ac82610-37eb-5d9b-b6c4-91555066f954.html"
   },
   "5DMlvpclXTm1ptZyCfDvUy": {
    "n": 168,
    "title": "Struttin'",
    "artist": "Thumpasaurus",
    "moods": [
-    "Energetic",
-    "Playful"
+    "Playful",
+    "Energetic"
    ],
-   "basis": "researched-high",
-   "moodSure": true,
-   "why": "Danceable, high-energy funk-punk with a ridiculous, comic setup, from an album that mixes dance, punk, funk and jazz.",
-   "source": "https://musicsurvivalguide.org/2022/01/12/thumpasaurus-thumpaverse-album-review/"
+   "basis": "researched-medium",
+   "why": "Whimsical, driving, Western-tinged party funk about strutting, with a comic chaps-in-the-desert video.",
+   "source": "https://liveforlivemusic.com/features/welcome-to-the-thumpaverse-thumpasaurus-plots-its-next-moves/ ; https://www.metafilter.com/198506/Thumpasaurus",
+   "genres": [
+    "Soul & R&B"
+   ],
+   "checked": "2026-10-23"
   },
   "0iI3MhPi785gdx8SUySPay": {
    "n": 169,
    "title": "Don't Do Drugs",
    "artist": "Danger Mouse, Jemini",
    "moods": [
-    "Playful",
-    "Dark"
+    "Playful"
    ],
-   "moodSure": true,
    "guessBefore": [
     "Playful"
    ],
    "basis": "researched-high",
-   "why": "Ironic, ostensibly pro-pill hip-hop anthem built on cartoonish jazz samples, insidious basslines and catchy backing vocals.",
-   "source": "https://www.thepitchkc.com/danger-mouse-and-jemini/"
+   "why": "Ironic, ostensibly pro-pill rap over cartoonish jazz samples, sly bass lines and catchy backing vocals.",
+   "source": "https://www.thepitchkc.com/?p=50230",
+   "genres": [
+    "Hip-hop"
+   ],
+   "checked": "2026-10-23"
   },
   "1XxRYmDKuABtbtCozx3pA2": {
    "n": 170,
@@ -2244,8 +2863,14 @@
     "Bittersweet",
     "Romantic"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "researched-high",
+   "genres": [
+    "Pop",
+    "Folk"
+   ],
+   "checked": "2026-10-23",
+   "why": "Slow, sparse ballad (piano, upright bass, brushed drums, two-part harmonies): a world-weary prayer for a long life together.",
+   "source": "https://medialoper.com/certain-songs-1196-the-monkees-me-and-magdalena-version-2/ ; https://www.oxfordstudent.com/2016/06/07/review-good-times-monkees/"
   },
   "2hPaiBndfRVCpYyIqv5zQG": {
    "n": 171,
@@ -2256,9 +2881,12 @@
     "Energetic"
    ],
    "basis": "researched-medium",
-   "moodSure": false,
-   "why": "Punk band's full rock track built from a Dave Sitek beat, about hopelessness, nihilism and being alone, eased by a close friendship.",
-   "source": "https://www.rollingstone.co.uk/music/surfbort-debut-new-video-for-lot-lizard-93-directed-by-lizzie-armanto-10207/"
+   "why": "Full punk-rock track grown from a Dave Sitek beat; Dani Miller says it is about feeling hopeless, nihilistic and alone, eased by close friendship.",
+   "source": "https://www.rollingstone.co.uk/music/surfbort-debut-new-video-for-lot-lizard-93-directed-by-lizzie-armanto-10207/",
+   "genres": [
+    "Rock"
+   ],
+   "checked": "2026-10-23"
   },
   "0Z74CG8R6pWeh7NPnYubFP": {
    "n": 172,
@@ -2269,9 +2897,13 @@
     "Uplifting"
    ],
    "basis": "researched-high",
-   "moodSure": true,
-   "why": "Glassy synths and echoing delays give it a late-night party sheen over a hungover account of self-destructive habits and a hopeful resolve to change.",
-   "source": "https://atwoodmagazine.com/mfbt-miya-folick-bad-thing-song-review/"
+   "why": "Effervescent synth-led indie pop about a cycle of bad behaviour; Folick says it is not bleak and there is hope in it.",
+   "source": "https://stereogum.com/2197590/miya-folick-bad-thing/music ; https://northerntransmissions.com/miya-folick-debuts-bad-thing",
+   "genres": [
+    "Indie",
+    "Pop"
+   ],
+   "checked": "2026-10-23"
   },
   "0fN65FwO4sNc07YBFFNDxt": {
    "n": 173,
@@ -2281,9 +2913,13 @@
     "Energetic"
    ],
    "basis": "researched-medium",
-   "moodSure": false,
-   "why": "Brash, driving punk-pop with ringing guitars and piercing vocals; reviews don't discuss what the lyrics are about.",
-   "source": "https://trouserpress.com/reviews/sahara-hotnights/"
+   "why": "Brash teenage punk-pop with a piercing wail of a vocal and plenty of drive; reviews say nothing of the lyrics.",
+   "source": "https://popmatters.com/saharahotnights-cmon-2496072701.html",
+   "genres": [
+    "Rock",
+    "Indie"
+   ],
+   "checked": "2026-10-23"
   },
   "5wDEOCfVVAqkdjkrSwDwGJ": {
    "n": 174,
@@ -2293,8 +2929,14 @@
     "Energetic",
     "Dark"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "researched-high",
+   "genres": [
+    "Indie",
+    "Hip-hop"
+   ],
+   "checked": "2026-10-23",
+   "why": "Stomping shuffle beat, frenzied shouting and hypnotic refrains, aimed at the swagger and delusion of a long-dead British empire.",
+   "source": "https://stereogum.com/2203423/young-fathers-i-saw/music ; https://www.treblezine.com/young-fathers-heavy-heavy-review/"
   },
   "2l0KF9ywMxglacqb7Nb6H0": {
    "n": 175,
@@ -2306,13 +2948,15 @@
    ],
    "genreSure": false,
    "moods": [
-    "Mellow",
-    "Bittersweet"
+    "Mellow"
    ],
-   "basis": "researched-medium",
-   "moodSure": false,
-   "why": "Written a month after the singer was pushed out of his old band, in the group's beachy surf-and-bossa 'zest pop' style.",
-   "source": "https://en.wikipedia.org/wiki/Mustard_Service"
+   "basis": "researched-low",
+   "why": "Beachy surf-and-bossa 'zest pop', written a month after Marco Rivero was pushed out of his old band; no review describes the track itself.",
+   "source": "https://en.wikipedia.org/wiki/Mustard_Service",
+   "genres": [
+    "Indie"
+   ],
+   "checked": "2026-10-23"
   },
   "49mvGXitaWpfTwuwUQaN0c": {
    "n": 176,
@@ -2321,8 +2965,14 @@
    "moods": [
     "Melancholy"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "researched-high",
+   "genres": [
+    "Indie",
+    "Folk"
+   ],
+   "checked": "2026-10-23",
+   "why": "Slow-burning, laid-back melody over brooding lyrics, prompted by a low night in front of Dancing With the Stars.",
+   "source": "https://mixdownmag.com.au/news/music/julia-jacklin-releases-new-single-and-video-eastwick/"
   },
   "5hb92JsDZjB3PuysBhwTAS": {
    "n": 177,
@@ -2332,8 +2982,13 @@
     "Romantic",
     "Playful"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Pop",
+    "Rock"
+   ],
+   "checked": "2026-10-23",
+   "why": "Two-minute bouncy power-pop confection, bright keyboards and Rundgren's high vocal, puzzling over whether a feeling is love."
   },
   "5RZNyJd4RJRWe6wKtXJVVj": {
    "n": 178,
@@ -2343,10 +2998,14 @@
     "Uplifting",
     "Playful"
    ],
-   "basis": "researched-high",
-   "moodSure": true,
-   "why": "Flamboyant, confident, upbeat track turning shyness and insecurity into a bold anthem for the soft-spoken.",
-   "source": "https://americansongwriter.com/daily-discovery-hether-shy/"
+   "basis": "researched-medium",
+   "why": "Hether's 'anthem for the soft spoken': social frustration and insecurity turned into a flamboyant, confident song.",
+   "source": "https://americansongwriter.com/daily-discovery-hether-shy/",
+   "genres": [
+    "Indie",
+    "Rock"
+   ],
+   "checked": "2026-10-23"
   },
   "7GejAcJCqmZm7FAU4KHuyv": {
    "n": 179,
@@ -2356,8 +3015,14 @@
     "Bittersweet",
     "Playful"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "researched-medium",
+   "genres": [
+    "Indie",
+    "Soul & R&B"
+   ],
+   "checked": "2026-10-23",
+   "why": "One of Orange Juice's last R&B-flavoured tunes, on a bittersweet farewell album; self-mocking title Collins dedicated on tour to Morrissey.",
+   "source": "https://music.apple.com/album/1185497090"
   },
   "0S3izfZXcQAO6uoVN9mQvn": {
    "n": 180,
@@ -2367,8 +3032,13 @@
     "Uplifting",
     "Bittersweet"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Pop"
+   ],
+   "checked": "2026-10-23",
+   "why": "Hymn-like prayer for love and mercy from a lonely man watching a violent world; 1995 Don Was re-recording with a studio band.",
+   "source": "https://en.wikipedia.org/wiki/I_Just_Wasn%27t_Made_for_These_Times_(album)"
   },
   "2KnfMlqUIr2RLFIRlCQzhw": {
    "n": 181,
@@ -2378,13 +3048,17 @@
     "Mellow",
     "Joyful"
    ],
-   "moodSure": true,
    "guessBefore": [
     "Mellow"
    ],
-   "basis": "researched-high",
-   "why": "Laid-back, nostalgic 70s yacht-rock pastiche whose chorus is about living it up.",
-   "source": "https://westcoastsoul.de/?p=3454"
+   "basis": "researched-medium",
+   "why": "Breezy 70s yacht-rock pastiche with a soulful groove; Benny Sings calls it very nostalgic, and its chorus is about living it up.",
+   "source": "https://westcoastsoul.de/?p=3454",
+   "genres": [
+    "Pop",
+    "Soul & R&B"
+   ],
+   "checked": "2026-10-23"
   },
   "4m5m7bonUvkScVaFExn6rR": {
    "n": 182,
@@ -2393,8 +3067,12 @@
    "moods": [
     "Melancholy"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Rock"
+   ],
+   "checked": "2026-10-23",
+   "why": "Slow, mournful piano ballad with a plaintive vocal; an anti-war song from the Vietnam years. Sad throughout."
   },
   "5ehBcancKNsR7lFRduET7R": {
    "n": 183,
@@ -2405,22 +3083,28 @@
     "Melancholy"
    ],
    "basis": "researched-low",
-   "moodSure": false,
-   "why": "Nothing specific found beyond its place as an unreleased original on the Nobody Wants This S2 soundtrack; guess based on Cuco's hazy bossa-nova and psych-tinged bedroom pop and the title's sense of longing.",
-   "source": "https://www.tunefind.com/artist/cuco"
+   "why": "No description found; going on Cuco's hazy, reverb-soaked bedroom pop and a title about longing for home.",
+   "source": "https://www.netflix.com/tudum/articles/nobody-wants-this-season-2-soundtrack-tracklisting",
+   "genres": [
+    "Indie"
+   ],
+   "checked": "2026-10-23"
   },
   "0fC0IMesoMAtirBH2VVjqm": {
    "n": 184,
    "title": "You're Mine",
    "artist": "Lola Marsh",
    "moods": [
-    "Romantic",
-    "Dreamy"
+    "Dreamy",
+    "Romantic"
    ],
    "basis": "researched-low",
-   "moodSure": false,
-   "why": "Nothing specific found; the album is described as indie pop mixed with folk, dream pop and spaghetti-western touches.",
-   "source": "https://blog.a38.hu/2017/10/13/lola-marsh-marsh-mellow/"
+   "why": "Cinematic indie pop with western touches; a love song about possession and an affectionate tug-of-war. Little written about its sound.",
+   "source": "https://en.wikipedia.org/wiki/Lola_Marsh",
+   "genres": [
+    "Indie"
+   ],
+   "checked": "2026-10-23"
   },
   "2R2sXZXyRcEMdoHxeYyBtF": {
    "n": 185,
@@ -2430,8 +3114,12 @@
     "Melancholy",
     "Romantic"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Indie"
+   ],
+   "checked": "2026-10-23",
+   "why": "Sparse piano and hushed vocal over a slow pulse; a lover reaching the edge of someone's emotional reserve. Loss leads, longing follows."
   },
   "7kxMwCdLI8SOXjLA9tWVyF": {
    "n": 186,
@@ -2441,8 +3129,12 @@
     "Playful",
     "Joyful"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Soul & R&B"
+   ],
+   "checked": "2026-10-23",
+   "why": "Novelty soul built on a playground clapping rhyme, handclaps and a bouncing beat; pure fun."
   },
   "6XK6Zw6JkFsHXzAcMWNiIr": {
    "n": 187,
@@ -2450,10 +3142,15 @@
    "artist": "Rusted Root",
    "moods": [
     "Joyful",
-    "Energetic"
+    "Uplifting"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Rock",
+    "Folk"
+   ],
+   "checked": "2026-10-23",
+   "why": "Carefree acoustic folk-rock with hand drums, pennywhistle and wordless chanting; a hopeful send-off. Buoyant rather than driving."
   },
   "0U0ldCRmgCqhVvD6ksG63j": {
    "n": 188,
@@ -2463,8 +3160,12 @@
     "Dark",
     "Dreamy"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Electronic"
+   ],
+   "checked": "2026-10-23",
+   "why": "Slow, brooding synthwave with a vocoder voice and a night-drive pulse; menacing and hazy."
   },
   "2uEWM5lSQsl0ubzbxFd6U7": {
    "n": 189,
@@ -2472,12 +3173,15 @@
    "artist": "Lime Garden",
    "moods": [
     "Energetic",
-    "Bittersweet"
+    "Playful"
    ],
-   "basis": "researched-low",
-   "moodSure": false,
-   "why": "Nothing specific found; best guess from the album, an indie-disco record following a chaotic night out, dating and an ex.",
-   "source": "https://diymag.com/news/lime-garden-second-album-maybe-not-tonight-23"
+   "basis": "researched-medium",
+   "why": "Baggy indie-dance between Stone Roses, Happy Mondays and Yeah Yeah Yeahs; the rush of freedom after a break-up.",
+   "source": "https://www.undertheradarmag.com/news/lime_garden_share_new_single_cross_my_heart",
+   "genres": [
+    "Indie"
+   ],
+   "checked": "2026-10-23"
   },
   "5GTEB0XsQBwCaiJYaIRCgg": {
    "n": 190,
@@ -2487,21 +3191,29 @@
     "Playful",
     "Energetic"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Indie",
+    "Electronic"
+   ],
+   "checked": "2026-10-23",
+   "why": "Cheeky electroclash: fuzzy synths, a dance-punk beat and deadpan come-on lyrics name-checking Death from Above."
   },
   "7KO4XNfwEKhTbSGo3O6qX5": {
    "n": 191,
    "title": "If You Know What's Right",
    "artist": "Her's",
    "moods": [
-    "Dreamy",
-    "Mellow"
+    "Joyful",
+    "Dreamy"
    ],
    "basis": "researched-low",
-   "moodSure": false,
-   "why": "Nothing found on this song beyond being a live favourite; Her's made drum-machine dream pop and 80s-inspired oddball indie, so this is a guess.",
-   "source": "https://atwoodmagazine.com/htbc-hers-band-tribute/"
+   "why": "Retro, pastel-toned drum-machine indie pop that got crowds dancing live; bright and danceable first, hazy production second.",
+   "source": "The Guardian review of Invitation to Her's (Emily Mackay) and LeftLion's Sept 2018 Rough Trade Nottingham review, as quoted in the batch facts; no other description found",
+   "genres": [
+    "Indie"
+   ],
+   "checked": "2026-10-23"
   },
   "1ABegtCPBMMJaMpfDyATjE": {
    "n": 192,
@@ -2511,19 +3223,26 @@
     "Energetic",
     "Joyful"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Rock"
+   ],
+   "checked": "2026-10-23",
+   "why": "Pounding riff-driven rock and roll with shouted gang chorus, a party song celebrating a birthday."
   },
   "4jV4ld7z4BrswF3uKqz8Ny": {
    "n": 193,
    "title": "Never Let Her Slip Away",
    "artist": "Andrew Gold",
    "moods": [
-    "Romantic",
-    "Joyful"
+    "Romantic"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Pop"
+   ],
+   "checked": "2026-10-23",
+   "why": "Lush mid-tempo soft rock with piano and stacked harmonies; a yearning love song about holding on to her."
   },
   "13Mzsb8VzRSZ5w3pM48cn6": {
    "n": 194,
@@ -2533,8 +3252,12 @@
     "Playful",
     "Joyful"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Soul & R&B"
+   ],
+   "checked": "2026-10-23",
+   "why": "Bouncy Philly soul-funk with a twangy rubber-band bass and comic vocal ad-libs, a feel-good song celebrating a dancing character."
   },
   "0d7kxiTEwdtY0fAZP8buBC": {
    "n": 195,
@@ -2544,13 +3267,17 @@
     "Joyful",
     "Playful"
    ],
-   "moodSure": false,
    "guessBefore": [
     "Uplifting"
    ],
-   "basis": "researched-medium",
-   "why": "A Leiber-Stoller gospel and R&B romp, sung tongue-in-cheek by a former hell-raiser proclaiming salvation, here on a soul/rock album the songwriters produced; Brooks's version itself isn't described.",
-   "source": "https://en.wikipedia.org/wiki/Saved_(Leiber_and_Stoller_song)"
+   "basis": "researched-low",
+   "why": "Short Leiber-Stoller gospel/R&B romp, a tongue-in-cheek salvation song, belted by Brooks on a Leiber-Stoller-produced American soul-rock album.",
+   "source": "https://en.wikipedia.org/wiki/Two_Days_Away",
+   "genres": [
+    "Soul & R&B",
+    "Rock"
+   ],
+   "checked": "2026-10-23"
   },
   "3c2kMiSB86tVq1J4oULmvL": {
    "n": 196,
@@ -2560,8 +3287,13 @@
     "Mellow",
     "Romantic"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Soul & R&B",
+    "Pop"
+   ],
+   "checked": "2026-10-23",
+   "why": "Lazy Latin-tinged blue-eyed soul with congas, harmonica and birdsong, about a slow Sunday afternoon with a loved one."
   },
   "2aoHAxXJYM1sF71NT1cLg0": {
    "n": 197,
@@ -2569,10 +3301,14 @@
    "artist": "Daryl Hall & John Oates",
    "moods": [
     "Bittersweet",
-    "Mellow"
+    "Romantic"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Pop"
+   ],
+   "checked": "2026-10-23",
+   "why": "Gentle acoustic, country-tinged soft pop sung by Oates about falling in love just as he has to leave; regretful longing."
   },
   "7f5D1QJXjVue8IA4i0DmwS": {
    "n": 198,
@@ -2582,13 +3318,16 @@
     "Uplifting",
     "Romantic"
    ],
-   "moodSure": true,
    "guessBefore": [
     "Uplifting"
    ],
-   "basis": "researched-high",
-   "why": "Bold, shouted country declaration in which she steps out of a demure image and offers someone her help and love.",
-   "source": "https://www.ystrickler.com/2017-8-29-here-i-am-dolly-parton/"
+   "basis": "researched-medium",
+   "why": "Bombastic, gospel-tinged country with steel guitar, fiddles and choir; a proud, assertive offer of love and support.",
+   "source": "https://holler.country/reviews/country-classics/dolly-parton-coat-of-many-colors/ ; https://www.ystrickler.com/2017-8-29-here-i-am-dolly-parton/",
+   "genres": [
+    "Country"
+   ],
+   "checked": "2026-10-23"
   },
   "2GORop0i2cyx8C0A3JzL44": {
    "n": 199,
@@ -2598,8 +3337,12 @@
     "Romantic",
     "Mellow"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Pop"
+   ],
+   "checked": "2026-10-23",
+   "why": "Airy acoustic soft rock with light percussion and high harmonies; a gentle invitation to a lover to dance."
   },
   "0SkrhXLkBeVy2QPCWi0Jxz": {
    "n": 200,
@@ -2607,10 +3350,15 @@
    "artist": "Pokey LaFarge",
    "moods": [
     "Playful",
-    "Bittersweet"
+    "Joyful"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "researched-medium",
+   "genres": [
+    "Folk"
+   ],
+   "checked": "2026-10-23",
+   "why": "Loping retro Americana with a stomping, slightly reggae beat and electric guitar, cheerfully mocking snowbirds escaping to the beach.",
+   "source": "https://www.makingascene.org/pokey-lafarge-rhumba-country ; https://www.timesnews.net/tri-cities-scene/pokey-lafarge-aims-for-a-groove-on-rhumba-country/article_a3154f9c-2ced-11ef-b924-435a509a0a0d.html"
   },
   "2c4zwlPMc5dHS3Kg6oeUjk": {
    "n": 201,
@@ -2620,8 +3368,12 @@
     "Romantic",
     "Uplifting"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Soul & R&B"
+   ],
+   "checked": "2026-10-23",
+   "why": "Warm, slow-rolling soul-jazz groove with a half-spoken vocal praising someone who stood by her through hard times; devoted and quietly rousing."
   },
   "5CNjsDtTDzqeqoxvL4jDiR": {
    "n": 202,
@@ -2631,8 +3383,14 @@
     "Energetic",
     "Playful"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "researched-high",
+   "genres": [
+    "Indie",
+    "Rock"
+   ],
+   "checked": "2026-10-23",
+   "why": "High-energy, playful art-rock/post-punk with glossy hooks, a groove-riding middle and a spoken improvisation; a pun on Tarkovsky and skiing.",
+   "source": "https://www.godisinthetvzine.co.uk/2024/01/09/news-bodega-announce-new-album-our-brand-could-be-your-life-share-lead-single-tarkovski/ ; https://weallwantsomeone.org/2024/01/28/bodega-tarkovski/ ; https://www.clashmusic.com/?p=391362"
   },
   "6208B8Utmd2fTqgGMjeNr6": {
    "n": 203,
@@ -2642,8 +3400,12 @@
     "Joyful",
     "Romantic"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Soul & R&B"
+   ],
+   "checked": "2026-10-23",
+   "why": "Bright, bouncy disco-soul with strings and a soaring vocal, celebrating a love that keeps returning to where it began."
   },
   "2AX1pP318rwvRa3lYZ3sJC": {
    "n": 204,
@@ -2652,13 +3414,14 @@
    "moods": [
     "Playful"
    ],
-   "moodSure": true,
    "genres": [
     "World",
     "Pop"
    ],
    "genreSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "checked": "2026-10-23",
+   "why": "Whimsical reggae cover dressed in Parks's calypso and steel-band arrangement, light and quirky in the manner of all of Discover America."
   },
   "6KEWtSOGKpIXGw6l1uJgsR": {
    "n": 205,
@@ -2668,8 +3431,13 @@
     "Romantic",
     "Playful"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Pop",
+    "Rock"
+   ],
+   "checked": "2026-10-23",
+   "why": "Bouncy, Beatles-ish piano pop-rock with stacked harmonies, wryly listing the trials people put up with for love; upbeat and cheeky."
   },
   "1Ryxsiacu8pUXIMCVnIQ8J": {
    "n": 206,
@@ -2678,8 +3446,12 @@
    "moods": [
     "Bittersweet"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Rock"
+   ],
+   "checked": "2026-10-23",
+   "why": "Mid-tempo piano-led heartland rock with gospel-tinged backing vocals; a rueful, detached portrait of a gambler who never changes."
   },
   "4BVFVaa1fDo20Ud1q5Gd2N": {
    "n": 207,
@@ -2688,10 +3460,13 @@
    "moods": [
     "Playful"
    ],
-   "basis": "researched-high",
-   "moodSure": true,
-   "why": "Choppy, bouncy slacker-psych synth-pop with deadpan vocals, taking a wry, sympathetic look at the internet-age urge for fame.",
-   "source": "https://www.undertheradarmag.com/interviews/superorganism_on_their_self-titled_debut_album"
+   "basis": "knows",
+   "why": "Choppy, sample-strewn indie pop over programmed beats with Orono's deadpan vocal, wryly sympathetic about the internet-age hunger for fame.",
+   "genres": [
+    "Indie",
+    "Electronic"
+   ],
+   "checked": "2026-10-23"
   },
   "1SmzAbt4g7a1FfAIwovtwq": {
    "n": 208,
@@ -2701,10 +3476,13 @@
     "Joyful",
     "Uplifting"
    ],
-   "basis": "researched-high",
-   "moodSure": true,
-   "why": "Breezy, catchy track with a bright riff, about a restless man stuck in a New England bar whose routine is revived by a chance meeting with a woman.",
-   "source": "https://www.treblezine.com/phosphorescent-new-birth-in-new-england-essential-track/"
+   "basis": "knows",
+   "why": "Breezy, percussive folk-pop with a bright riff, likened to 'Cecilia'; a man's stuck routine revived by love and new life.",
+   "genres": [
+    "Indie",
+    "Folk"
+   ],
+   "checked": "2026-10-23"
   },
   "6hzEumHWNUVB0VWobDBT6x": {
    "n": 209,
@@ -2714,10 +3492,13 @@
     "Bittersweet",
     "Dreamy"
    ],
-   "basis": "researched-high",
-   "moodSure": true,
-   "why": "Slinking, tropical-lilted indie pop with a bleached, faded-photograph haze, about anxiously meeting a partner's family and longing for earlier, happier days.",
-   "source": "https://varioussmallflames.co.uk/2015/07/28/fox-academy-elsie/"
+   "basis": "researched-low",
+   "why": "Hazy, drowsy lo-fi bedroom pop with a slight tropical lilt, about nervously meeting a partner's family and missing easier days.",
+   "source": "https://last.fm/music/Fox+Academy/+wiki",
+   "genres": [
+    "Indie"
+   ],
+   "checked": "2026-10-23"
   },
   "4C7GZbwKnoucpGdkBQ9iGt": {
    "n": 210,
@@ -2727,7 +3508,6 @@
     "Romantic",
     "Bittersweet"
    ],
-   "moodSure": true,
    "genresIfNone": [
     "Folk",
     "Indie"
@@ -2738,8 +3518,13 @@
     "Joyful"
    ],
    "basis": "researched-high",
-   "why": "Catchy Orbison-style vintage pop with swirling violin and harmonies, about a man devoted to a woman who does not love him back.",
-   "source": "https://www.audiofemme.com/track-of-the-week-the-apache-relay-katie-queen-of-tennessee/"
+   "why": "Catchy, upbeat Orbison-style throwback pop with swirling violin and sweet harmonies, about a man pining for a woman who won't love him back.",
+   "source": "https://www.audiofemme.com/track-of-the-week-the-apache-relay-katie-queen-of-tennessee/",
+   "genres": [
+    "Indie",
+    "Pop"
+   ],
+   "checked": "2026-10-23"
   },
   "29U7stRjqHU6rMiS8BfaI9": {
    "n": 211,
@@ -2749,8 +3534,12 @@
     "Uplifting",
     "Mellow"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Pop"
+   ],
+   "checked": "2026-10-23",
+   "why": "Slow, warm orchestral ballad; Armstrong's gravelly voice quietly marvelling at everyday beauty. Hopeful message, unhurried calm."
   },
   "5NelxeQ8Yd4ytdhdGog8c5": {
    "n": 212,
@@ -2759,19 +3548,28 @@
    "moods": [
     "Romantic"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "researched-medium",
+   "genres": [
+    "Soul & R&B"
+   ],
+   "checked": "2026-10-23",
+   "why": "Tuneful, funky Gamble-Huff soul with prominent drums; Scott's gritty vocal pleading his devotion. A love song first.",
+   "source": "https://funky16corners.com/?p=2715"
   },
   "13iTIQHlw3VHIdycCUcc3M": {
    "n": 213,
    "title": "Drift Away",
    "artist": "Dobie Gray",
    "moods": [
-    "Mellow",
-    "Uplifting"
+    "Uplifting",
+    "Mellow"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Soul & R&B"
+   ],
+   "checked": "2026-10-23",
+   "why": "Easy-paced Nashville country-soul; troubled verses lift into a rousing singalong chorus about music freeing the soul."
   },
   "62r1CS9zL1FL5Ilb7hLX7n": {
    "n": 214,
@@ -2781,8 +3579,12 @@
     "Romantic",
     "Mellow"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Soul & R&B"
+   ],
+   "checked": "2026-10-23",
+   "why": "Slinky, simmering Hi Records groove with harmonica; Green's sultry vocal mixes desire for a woman with a plea for baptism."
   },
   "6kblAEj0T0312fv5QWsXzo": {
    "n": 215,
@@ -2792,19 +3594,28 @@
     "Bittersweet",
     "Dreamy"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Indie"
+   ],
+   "checked": "2026-10-23",
+   "why": "Gentle, swaying psych-folk ballad, hazy and wistful; wry reflection on success and fame feeling hollow.",
+   "source": "https://en.wikipedia.org/wiki/Congratulations_(MGMT_song)"
   },
   "5QfsQPEqDbtZtU2zZkJ1kR": {
    "n": 216,
    "title": "Did She Mention My Name",
    "artist": "Dr. John",
    "moods": [
-    "Bittersweet",
-    "Mellow"
+    "Bittersweet"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "researched-low",
+   "genres": [
+    "Soul & R&B"
+   ],
+   "checked": "2026-10-23",
+   "why": "Early-1960s New Orleans soul side, sold by collectors as Northern Soul (a dancer); lyric asks after a lost love.",
+   "source": "https://www.popsike.com/RARE-NORTHERN-SOUL-RB-45-RONNIE-BARRON-DID-SHE-MENTION-MY-NAME-MICHELLE/390898380014.html"
   },
   "7cDbqFvw45zdLHGltdb1g9": {
    "n": 217,
@@ -2812,10 +3623,14 @@
    "artist": "Spoon",
    "moods": [
     "Playful",
-    "Energetic"
+    "Joyful"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Indie"
+   ],
+   "checked": "2026-10-23",
+   "why": "Breezy strummed indie pop with handclaps and fiesta horns over a sneering lyric about arrogant big shots. Cheeky and bright."
   },
   "7tJsTykoo4Jk5JguHTx9W7": {
    "n": 218,
@@ -2825,8 +3640,13 @@
     "Romantic",
     "Joyful"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Pop",
+    "Rock"
+   ],
+   "checked": "2026-10-23",
+   "why": "Bouncy early-70s pop-rock with piano, handclaps and an Elvis-style vocal, begging a lover not to leave."
   },
   "7n3kGSVCx32nesO6xfSmrW": {
    "n": 219,
@@ -2836,8 +3656,14 @@
     "Dreamy",
     "Melancholy"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "researched-high",
+   "genres": [
+    "Rock",
+    "Pop"
+   ],
+   "checked": "2026-10-23",
+   "why": "Spaced-out, reverb-drenched ballad: chiming charango, kalimba, Beach Boys-style wordless harmonies; a wistful farewell, everyone sent home.",
+   "source": "https://en.wikipedia.org/wiki/That%27s_All_for_Everyone"
   },
   "5YdrHBh16li6d7U5mdTwUb": {
    "n": 220,
@@ -2845,27 +3671,35 @@
    "artist": "Jenny Lewis",
    "moods": [
     "Bittersweet",
-    "Melancholy"
+    "Mellow"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "researched-high",
+   "genres": [
+    "Indie"
+   ],
+   "checked": "2026-10-23",
+   "why": "Relaxed, slow, lazily strummed with bells and Beck's harmonies, over an angry lyric about the biological clock and double standards.",
+   "source": "https://www.audiofemme.com/track-review-jenny-lewis-just-one-of-the-guys/"
   },
   "0IlYgHJnP4D8HWUCuyJnQW": {
    "n": 221,
    "title": "La De Da",
    "artist": "Link Wray",
    "moods": [
-    "Energetic",
-    "Playful"
+    "Playful",
+    "Energetic"
    ],
-   "moodSure": false,
    "guessBefore": [
     "Mellow",
     "Playful"
    ],
-   "basis": "researched-low",
-   "why": "Only a hint found (called the greatest song the Stones never wrote); album is raw, homemade swampy roots rock with gritty vocals.",
-   "source": "https://lightintheattic.net/products/link-wray"
+   "basis": "researched-medium",
+   "why": "Funky, ultra-loose back-porch jam with stomped percussion, fuzzy guitar and lively, half-slurred vocals; Stones-style swagger more than drive.",
+   "source": "https://salon.com/2007/01/17/link_wray",
+   "genres": [
+    "Rock"
+   ],
+   "checked": "2026-10-23"
   },
   "3QwbKe0s8TcNclzXAXHeHy": {
    "n": 222,
@@ -2875,8 +3709,12 @@
     "Joyful",
     "Uplifting"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Pop"
+   ],
+   "checked": "2026-10-23",
+   "why": "Bright sunshine pop with piano, bells and birdsong, celebrating a fresh morning and leaving worries behind."
   },
   "0yT9wIJek4ZuMCTZA61mUc": {
    "n": 223,
@@ -2886,8 +3724,12 @@
     "Mellow"
    ],
    "basis": "researched-low",
-   "moodSure": false,
-   "why": "Nothing found about Innovations or this 1977 track beyond the Spotify listing, so this is a pure guess."
+   "why": "Peruvian 1977 soft-rock cover of a Four Seasons Helicon track, B-side to a yacht-rock 'Seabird'; no description of this side found.",
+   "genres": [
+    "Pop"
+   ],
+   "checked": "2026-10-23",
+   "source": "https://forcedexposure.com/Catalog/MR.7357EP.html"
   },
   "0lsM3dkpJuMN2KYrGI1WLK": {
    "n": 224,
@@ -2897,8 +3739,13 @@
     "Uplifting",
     "Romantic"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Pop",
+    "Rock"
+   ],
+   "checked": "2026-10-23",
+   "why": "Warm, horn-and-piano baroque pop love song looking forward to a happy year together."
   },
   "1Fem9jSJEleNWT1kgt70ST": {
    "n": 225,
@@ -2906,14 +3753,17 @@
    "artist": "Pomplamoose",
    "moods": [
     "Playful",
-    "Dark"
+    "Romantic"
    ],
-   "moodSure": true,
    "genres": [
+    "Soul & R&B",
     "Pop"
    ],
    "genreSure": true,
-   "basis": "knows"
+   "basis": "researched-high",
+   "checked": "2026-10-23",
+   "why": "Sweet, head-bopping doo-wop pastiche begging a boyfriend to stay while cheerfully listing what happens to men who jilt the Don's daughter.",
+   "source": "https://tvtropes.org/pmwiki/pmwiki.php/Music/Pomplamoose ; https://spectrumculture.com/2011/11/09/pomplamoose-louis-and-genevieve-concert-review-portland/"
   },
   "3LXWz3LTASiVb63HWc7Wa7": {
    "n": 226,
@@ -2924,22 +3774,28 @@
     "Uplifting"
    ],
    "basis": "researched-high",
-   "moodSure": true,
-   "why": "Opens on shimmering synths, then breaks into a bright, funky, danceable groove celebrating non-romantic love: holding space for friends and community.",
-   "source": "https://floodmagazine.com/91117/watch-indigo-de-souza-hold-u/"
+   "why": "Shimmering synth opening into a bright, funky, danceable groove celebrating non-romantic love for friends and community.",
+   "source": "Song facts in batch (Indigo De Souza interviews on Any Shape You Take)",
+   "genres": [
+    "Indie"
+   ],
+   "checked": "2026-10-23"
   },
   "05pizkWWDPXqvpUSwo1DMj": {
    "n": 227,
    "title": "Woof Woof",
    "artist": "ARTHUR",
    "moods": [
-    "Dreamy",
-    "Playful"
+    "Playful",
+    "Bittersweet"
    ],
-   "basis": "researched-low",
-   "moodSure": false,
-   "why": "Nothing specific on the title track; the album is called dreamy, disjointed and trippy, made during a manic spell at his parents' house.",
-   "source": "https://editorial.americansongwriter.com/arthur-hair-of-the-dog-album-feature/?nb=1"
+   "basis": "researched-medium",
+   "why": "83-second album intro: fast, bouncy bass and drums, high-pitched vocal and barnyard quirks over heartbroken lyrics about self-worth and depression.",
+   "source": "https://impact89fm.org/52614/music/jam-of-the-day/jam-of-the-day-woof-woof/",
+   "genres": [
+    "Indie"
+   ],
+   "checked": "2026-10-23"
   },
   "2kIDECuRDbagrRqLOY3Mnm": {
    "n": 228,
@@ -2950,9 +3806,13 @@
     "Playful"
    ],
    "basis": "researched-low",
-   "moodSure": false,
-   "why": "Nothing specific found; best guess from bby's raucous alt-rock/hip-hop sound, a rowdy video and an album about relationship highs and lows.",
-   "source": "https://theconcertchronicles.com/2024/08/22/bby-share-raucous-new-video-for-kinky-and-release-debut-album-1/"
+   "why": "Nothing specific on the track; bby's album is raucous, grunge-seasoned indie with heavy bass, and the 'Kinky' video is called wild and raucous.",
+   "source": "https://theconcertchronicles.com/2024/08/22/bby-share-raucous-new-video-for-kinky-and-release-debut-album-1/ ; https://diymag.com/review/album/bby-1",
+   "genres": [
+    "Indie",
+    "Pop"
+   ],
+   "checked": "2026-10-23"
   },
   "2OPh8c8b2jKTAp5WWpLSxd": {
    "n": 229,
@@ -2963,9 +3823,12 @@
     "Romantic"
    ],
    "basis": "researched-high",
-   "moodSure": true,
-   "why": "Bright, cheerful synth-and-guitar indie with optimistic, danceable beats, about his affection for someone.",
-   "source": "https://music.mxdwn.com/2023/02/16/reviews/album-review-jw-francis-dream-house/"
+   "why": "Upbeat, optimistic synth-and-guitar lo-fi indie with danceable beats, sung about the love he feels for someone.",
+   "source": "https://music.mxdwn.com/2023/02/16/reviews/album-review-jw-francis-dream-house/",
+   "genres": [
+    "Indie"
+   ],
+   "checked": "2026-10-23"
   },
   "3LTinH60rltyAZiMmHF7JH": {
    "n": 230,
@@ -2975,13 +3838,14 @@
     "Joyful",
     "Romantic"
    ],
-   "moodSure": true,
    "genres": [
     "Pop",
     "Rock"
    ],
    "genreSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "checked": "2026-10-23",
+   "why": "Bouncy, brassy Wrecking Crew pop-rock with organ and shared lead vocals, an upbeat, sunny love song."
   },
   "1G0ku3TLCGwrAHj9WPudKX": {
    "n": 231,
@@ -2991,8 +3855,12 @@
     "Bittersweet",
     "Joyful"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Rock"
+   ],
+   "checked": "2026-10-23",
+   "why": "Jangly mid-tempo folk-rock with warm group vocals; a battered, lonely narrator asking for love, delivered with a grin."
   },
   "007JQyyu6DrGza9XX6scAN": {
    "n": 232,
@@ -3002,10 +3870,14 @@
     "Uplifting",
     "Energetic"
    ],
-   "basis": "researched-medium",
-   "moodSure": false,
-   "why": "Ryan Guldemond introduced it on stage as being about chasing your dream with determination; the track's sound isn't described (it went viral on TikTok in 2020).",
-   "source": "https://nysmusic.com/2022/10/20/mother-mother-come-back-to-buffalo-to-wreck-obsatcles/"
+   "basis": "researched-low",
+   "why": "Defiant, intense indie pop-rock; Guldemond introduces it live as chasing a dream and wrecking obstacles. Sound itself not described in reviews.",
+   "source": "https://nysmusic.com/2022/10/20/mother-mother-come-back-to-buffalo-to-wreck-obsatcles/ ; https://pennyblackmusic.co.uk/Home/Details?id=18060",
+   "genres": [
+    "Indie",
+    "Pop"
+   ],
+   "checked": "2026-10-23"
   },
   "7IFEQiMBMLjfCRNisLdIRE": {
    "n": 233,
@@ -3016,9 +3888,13 @@
     "Romantic"
    ],
    "basis": "researched-high",
-   "moodSure": true,
-   "why": "Bright, clean, cheerful indie pop fit for a coming-of-age film, about being swept up in love.",
-   "source": "https://www.onestowatch.com/en/blog/peter-mcpoland-friend"
+   "why": "Bright, clean, cheerful love song; Ones to Watch calls Friend 'the familiar indie sound' and tags it indie and indie pop.",
+   "source": "https://www.onestowatch.com/en/blog/peter-mcpoland-friend",
+   "genres": [
+    "Indie",
+    "Pop"
+   ],
+   "checked": "2026-10-23"
   },
   "6ebFwjg7AyBUjFdOTZLIU8": {
    "n": 234,
@@ -3028,38 +3904,46 @@
     "Energetic",
     "Playful"
    ],
-   "moodSure": true,
    "genres": [
     "Rock"
    ],
    "genreSure": true,
-   "basis": "knows"
+   "basis": "researched-high",
+   "checked": "2026-10-23",
+   "why": "Stomping glam rocker with chunky fuzz bass, sax spaz-outs, 'groove and strut'; Tillman's sardonic swagger, compared to Cake.",
+   "source": "https://au.rollingstone.com/music/music-news/father-john-misty-she-cleans-up-mahashmashana-67924 ; https://diymag.com/review/album/father-john-misty-mahashmashana ; https://atwoodmagazine.com/mahashmashana-father-john-misty-album-review/"
   },
   "5lzZuwEPInxJRwYUQFqIlH": {
    "n": 235,
    "title": "Mindless Creatures",
    "artist": "Dayglow",
    "moods": [
-    "Bittersweet",
-    "Energetic"
+    "Energetic",
+    "Bittersweet"
    ],
    "basis": "researched-medium",
-   "moodSure": false,
-   "why": "High-energy guitar-pop opener, first written at 16, about feeling like a jaded cynic, rewritten as he looks back on his younger self.",
-   "source": "https://floodmagazine.com/174539/dayglow-self-titled-track-by-track/"
+   "why": "Dance-worthy tempo and punchy rhythms after gentle strummed opening; Struble rewrote it about burnout and how much he has changed.",
+   "source": "https://whenthehornblows.com/content/2024/9/17/album-review-dayglow-dayglow ; https://www.thelunacollective.co/journal/qa-dayglow-2024",
+   "genres": [
+    "Indie"
+   ],
+   "checked": "2026-10-23"
   },
   "5Ay4ujNQ4xCrIxpDnk2SUC": {
    "n": 236,
    "title": "Julie",
    "artist": "Outer Limits Recordings, Sam Mehran",
    "moods": [
-    "Dreamy",
-    "Bittersweet"
+    "Dreamy"
    ],
    "basis": "researched-low",
-   "moodSure": false,
-   "why": "Nothing found on this track; the compilation is described as woozy, AM-radio-style power pop that is childlike and unsettling, full of longing and alienation.",
-   "source": "https://weirdworldrecordco.com/2013/03/new-release-outer-limits-recordings-singles-demos-and-rarities-2007-2010/"
+   "why": "Hazy lo-fi hypnagogic synth-pop; Crack lists it among Mehran's 'stunningly psychedelic, lo-fi power-pop tracks'. No source describes it as dark.",
+   "source": "https://crackmagazine.net/article/news/outer-limits/2",
+   "genres": [
+    "Indie",
+    "Pop"
+   ],
+   "checked": "2026-10-23"
   },
   "3lrh0hthzUFsMNPH1mIiBT": {
    "n": 237,
@@ -3069,12 +3953,13 @@
     "Playful",
     "Joyful"
    ],
-   "moodSure": true,
    "genres": [
     "Pop"
    ],
    "genreSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "checked": "2026-10-23",
+   "why": "Bouncy vaudeville piano-and-brass romp about a showman and his dancing bear; Randy Newman's wry satire played as cheerful music hall."
   },
   "5lQxMlCMTzCj3j4vyzdl8T": {
    "n": 238,
@@ -3084,8 +3969,13 @@
     "Romantic",
     "Mellow"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Country",
+    "Pop"
+   ],
+   "checked": "2026-10-23",
+   "why": "Gentle acoustic country-pop ballad; tender, contented love song about being happy together despite having no money."
   },
   "6bqB7idfAnJVisSMQA1mZQ": {
    "n": 239,
@@ -3095,8 +3985,12 @@
     "Dreamy",
     "Romantic"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Folk"
+   ],
+   "checked": "2026-10-23",
+   "why": "Hushed, fragile voice over sparse double bass, cello and guitar; a soft song of longing to know someone's inner world."
   },
   "3ssnFwx5lu6qxhLBR0vutB": {
    "n": 240,
@@ -3106,13 +4000,14 @@
     "Romantic",
     "Mellow"
    ],
-   "moodSure": true,
    "genres": [
     "Pop",
     "Rock"
    ],
    "genreSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "checked": "2026-10-23",
+   "why": "Smooth late-70s soft-rock ballad sung tenderly by Marty Balin; a promise of devotion and reassurance to a lover."
   },
   "6OojY4NdPiEGWHV2EUSwHz": {
    "n": 241,
@@ -3122,8 +4017,12 @@
     "Melancholy",
     "Romantic"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Rock"
+   ],
+   "checked": "2026-10-23",
+   "why": "Slow, soulful late-Love rocker; Arthur Lee's aching vocal about a lost lover he still sees everywhere. Pining leads, love second."
   },
   "1WaBuuaXGwrU4sFvxAjnkf": {
    "n": 242,
@@ -3133,8 +4032,12 @@
     "Joyful",
     "Playful"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Pop"
+   ],
+   "checked": "2026-10-23",
+   "why": "Bouncy, sing-along variety-show pop; Dodd's cheery counting-your-blessings anthem delivered with music-hall comedy."
   },
   "1oar8gdDX5yHWzVstAHDav": {
    "n": 243,
@@ -3144,18 +4047,22 @@
     "Mellow",
     "Bittersweet"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Rock",
+    "Pop"
+   ],
+   "checked": "2026-10-23",
+   "why": "Easy, largely acoustic soft-rock shuffle with Marcy Levy harmonies; a rueful song about a muddled love affair set to a relaxed groove.",
+   "source": "https://en.wikipedia.org/wiki/Promises_(Eric_Clapton_song)"
   },
   "2Fw4gGClr8zVFZVwIRjyWK": {
    "n": 244,
    "title": "Darling",
    "artist": "Christian Leave",
    "moods": [
-    "Romantic",
-    "Melancholy"
+    "Romantic"
    ],
-   "moodSure": false,
    "genresIfNone": [
     "Indie",
     "Pop"
@@ -3165,7 +4072,12 @@
     "Melancholy"
    ],
    "basis": "researched-low",
-   "why": "No source found for this song (search limit reached); a guess from the title and Christian Leave's soft, melancholic indie-pop style."
+   "why": "Tender, devoted love song about missing a partner when apart, in Leave's edgier 2019 indie-rock sound. Longing, not sadness.",
+   "genres": [
+    "Indie"
+   ],
+   "checked": "2026-10-23",
+   "source": "https://www.songtexte.com/songtext/christian-leave/darling-g53a5db1d.html ; https://www.musicmetricsvault.com/artists/christian-leave/2G8UkPZnQ8i78L8TfqP1X6"
   },
   "1qRA5BS78u3gME0loMl9AA": {
    "n": 245,
@@ -3175,8 +4087,13 @@
     "Dark",
     "Melancholy"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Rock",
+    "Folk"
+   ],
+   "checked": "2026-10-23",
+   "why": "Ominous two-note guitar harmonics and a wary, subdued vocal about the 1966 Sunset Strip unrest; tense and sombre."
   },
   "0P7DoyGrr4Wp9w5TotEtUC": {
    "n": 246,
@@ -3186,8 +4103,13 @@
     "Bittersweet",
     "Uplifting"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Rock",
+    "Folk"
+   ],
+   "checked": "2026-10-23",
+   "why": "Rolling roots-rock with weary, surreal verses about a traveller in Nazareth and a rousing gospel-style group chorus."
   },
   "7uPmQttafLiJyju14JREY4": {
    "n": 247,
@@ -3197,44 +4119,49 @@
     "Energetic",
     "Playful"
    ],
-   "moodSure": true,
    "genres": [
-    "Soul & R&B",
-    "Rock"
+    "Soul & R&B"
    ],
    "genreSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "checked": "2026-10-23",
+   "why": "Upbeat Philadelphia-soul romp with funky sax, congas and gospel backing vocals; Bowie's breathless, wry take on young American life.",
+   "source": "https://en.wikipedia.org/wiki/Young_Americans_(song)"
   },
   "1x5r0EPkRhWLVbHQeyCiZE": {
    "n": 248,
    "title": "The Nest",
    "artist": "Jeannie Piersol",
    "genres": [
-    "Folk",
-    "Pop"
+    "Rock",
+    "Soul & R&B"
    ],
    "genreSure": false,
    "moods": [
     "Dreamy",
     "Mellow"
    ],
-   "basis": "researched-high",
-   "moodSure": true,
-   "why": "Slow-burning 1969 psychedelic track with sarod, funky backbeat and hypnotic vocals, now a chill-out favourite; written about the songwriter's parents.",
-   "source": "https://www.gratefulweb.com/?p=476262"
+   "basis": "researched-medium",
+   "why": "Slow-burning, smouldering psychedelic track mixing rock, soul and Indian sounds, now a chill-out favourite; hypnotic and laid-back.",
+   "source": "https://48hills.org/2025/01/55-years-later-psychedelic-songbird-jeannie-piersol-returns-to-the-nest ; https://www.bighassle.com/jeannie-piersol",
+   "checked": "2026-10-23"
   },
   "7uhgdMtt4b4p35ehIYRqq6": {
    "n": 249,
    "title": "Inside the Lines",
    "artist": "Chaparelle, Zella Day, Jesse Woods",
    "moods": [
-    "Romantic",
-    "Playful"
+    "Playful",
+    "Romantic"
    ],
    "basis": "researched-high",
-   "moodSure": true,
-   "why": "1960s-style country duet with Zella Day's breathy, Betty Boop-ish vocal, about the lusty energy of a new romance.",
-   "source": "https://savingcountrymusic.com/album-review-chaparelles-western-pleasure/"
+   "why": "Retro country duet with breathy, flirty vocals telling the story of a devoted showbiz couple; reviewers call it a fun 'party romp'.",
+   "source": "https://globeradio.org/gtotw-chaparelle-inside-the-lines/ ; https://savingcountrymusic.com/album-review-chaparelles-western-pleasure/",
+   "genres": [
+    "Country",
+    "Folk"
+   ],
+   "checked": "2026-10-23"
   },
   "00m7Q2wHED7wAbYq83XxOh": {
    "n": 250,
@@ -3244,8 +4171,13 @@
     "Mellow",
     "Romantic"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Folk",
+    "Rock"
+   ],
+   "checked": "2026-10-23",
+   "why": "Gentle, unhurried folk-rock love song about lying in the morning sun with a lover; warm and calm."
   },
   "1GIV1YzfuFzYAoUjwx3r7W": {
    "n": 251,
@@ -3255,8 +4187,13 @@
     "Energetic",
     "Dark"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Rock",
+    "Pop"
+   ],
+   "checked": "2026-10-23",
+   "why": "Bouncy new-wave pop with ABBA-style piano and a sneering vocal; the lyric attacks militarism and boy soldiers in Belfast. Upbeat sound, dark subject."
   },
   "4cHBP73V974hbCl66gvWsi": {
    "n": 252,
@@ -3265,8 +4202,12 @@
    "moods": [
     "Dark"
    ],
-   "moodSure": true,
-   "basis": "knows"
+   "basis": "knows",
+   "genres": [
+    "Rock"
+   ],
+   "checked": "2026-10-23",
+   "why": "Slinky, sleazy slide-guitar blues-rock; Jagger sneers through a gangster's menacing monologue from Performance. Brooding and threatening throughout."
   },
   "1sN36lAQq4ElbU1dgNefol": {
    "n": 253,
@@ -3276,9 +4217,63 @@
     "Romantic"
    ],
    "basis": "researched-low",
-   "moodSure": false,
-   "why": "A review exists but was blocked; if it's a cover of Lucinda Williams' song (unconfirmed), it's about wanting respect and real love from a difficult partner.",
-   "source": "https://en.wikipedia.org/wiki/Righteously_(song)"
+   "why": "Folk-leaning, atmospheric indie-pop take on Lucinda Williams' song; a plea to a lover for respect and real love.",
+   "source": "https://currencynews.co.za/tag/music/page/3 ; https://annaash.bandcamp.com/track/righteously",
+   "genres": [
+    "Folk",
+    "Indie"
+   ],
+   "checked": "2026-10-23"
+  },
+  "4HCOHRCSQelz2GPX8iTamO": {
+   "n": 254,
+   "title": "Flower In A Hurricane (feat. Tame Impala, SZA, King Gizzard & the Lizard Wizard) [from GTAVI]",
+   "artist": "Justice, Tame Impala, SZA, Grand Theft Auto VI, King Gizzard & The Lizard Wizard",
+   "moods": [
+    "Energetic",
+    "Uplifting"
+   ],
+   "genres": [
+    "Electronic",
+    "Rock"
+   ],
+   "basis": "researched-high",
+   "checked": "2026-10-23",
+   "why": "'80s-style synth-rock anthem with a chugging riff; Parker and SZA harmonise on devotion amid chaos. Big, driving and triumphant.",
+   "source": "https://stereogum.com/2514667/justice-score-gta-vi-share-tame-impala-sza-king-gizzard-collab-flower-in-a-hurricane/music ; https://ratingsgamemusic.com/2026/10/16/tame-impala-sza-and-king-gizzard-up-the-intensity-on-flower-in-a-hurricane/"
+  },
+  "2KSwmLHkgjZCE49YFkgspo": {
+   "n": 255,
+   "title": "Baby It's You",
+   "artist": "Smith",
+   "moods": [
+    "Romantic",
+    "Energetic"
+   ],
+   "genres": [
+    "Soul & R&B",
+    "Rock"
+   ],
+   "basis": "knows",
+   "checked": "2026-10-23",
+   "why": "Heavy blue-eyed-soul rock arrangement; Gayle McCormick's soul-shouting vocal clings to a faithless lover. Passionate longing, powerfully driven.",
+   "source": "https://bestclassicbands.com/smith-baby-its-you-10-11-17"
+  },
+  "6EZYFQzGkmDhkYQRKZXOWb": {
+   "n": 256,
+   "title": "Get Closer",
+   "artist": "Life in Film",
+   "moods": [
+    "Joyful",
+    "Uplifting"
+   ],
+   "genres": [
+    "Indie"
+   ],
+   "basis": "researched-medium",
+   "checked": "2026-10-23",
+   "why": "Sprightly, fast indie pop with glockenspiel and chiming harmonies; written at a time of change, looking ahead. Bright and gently anthemic.",
+   "source": "https://www.clashmusic.com/news/premiere-life-in-film-get-closer/ ; https://www.interviewmagazine.com/music/exclusive-song-premiere-get-closer-life-in-film"
   }
  }
 }
