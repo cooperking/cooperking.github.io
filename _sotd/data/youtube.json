@@ -1551,55 +1551,22 @@
 },
 "1qpt5uh3yuEM7fo4rNU688":{
 "n":51,
-"checked":"2026-10-21",
-"from":"YouTube search",
-"alts":[
-{
+"from":"John",
 "id":"2xdKuhYaW_0",
-"title":"Mickey Avalon - Jane Fonda",
-"channel":"MickeyAvalonVEVO",
-"score":95
-},
-{
-"id":"R8p30gTtevc",
-"title":"Jane Fonda Mickey Avalon Music Video",
-"channel":"Farrah Taheri",
-"score":85
-},
-{
-"id":"_gxrvRmpyYk",
-"title":"Mickey Avalon - Jane Fonda (Live Version)",
-"channel":"MickeyAvalonVEVO",
-"score":80
-},
-{
-"id":"orMp7UfqEKY",
-"title":"Mickey Avalon - Jane Fonda",
-"channel":"Danny D",
-"score":65
-}
-],
-"id":"R8p30gTtevc",
-"title":"Jane Fonda Mickey Avalon Music Video",
-"channel":"Farrah Taheri",
-"kind":"video",
-"score":85,
-"why":[
-"title",
-"artist",
-"official video"
-],
-"embed":true,
+"checked":"2026-10-23",
 "listId":"2xdKuhYaW_0",
-"list":{
-"id":"2xdKuhYaW_0",
+"listCheck":3,
+"before":{
+"id":"R8p30gTtevc",
+"title":"Jane Fonda Mickey Avalon Music Video",
+"channel":"Farrah Taheri",
+"from":"YouTube search"
+},
 "title":"Mickey Avalon - Jane Fonda",
 "channel":"MickeyAvalonVEVO",
+"embed":true,
 "kind":"other",
-"embed":true
-},
-"listCheck":3,
-"secs":167
+"secs":272
 },
 "2yFRJ1eJjycB5auItpeT5S":{
 "n":52,
@@ -2416,21 +2383,22 @@
 },
 "14I61w6cyYUHiV2n28IYdP":{
 "n":89,
-"checked":"2026-10-21",
-"from":"John's list",
+"from":"John",
+"id":"BoEKWtgJQAU",
+"checked":"2026-10-23",
 "listId":"TWxXXcVQevI",
+"listCheck":3,
+"before":{
 "id":"TWxXXcVQevI",
 "title":"Jay-Z, Kanye West - Otis ft. Otis Redding (AUDIO)",
 "channel":"Music Audios",
+"from":"John's list"
+},
+"title":"JAŸ-Z, Kanye West - Otis ft. Otis Redding",
+"channel":"KanyeWestVEVO",
 "embed":true,
-"kind":"audio",
-"score":73,
-"why":[
-"title",
-"artist"
-],
-"secs":183,
-"listCheck":3
+"kind":"other",
+"secs":197
 },
 "6nkMHXkhmvCzxtvewoOEJT":{
 "n":90,
