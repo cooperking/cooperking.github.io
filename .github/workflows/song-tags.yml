@@ -93,6 +93,9 @@ jobs:
       - name: Weigh up moods and genres
         run: python _sotd/make_tags.py
 
+      - name: Song facts for the calendar
+        run: python _sotd/make_facts.py
+
       - name: A page and a picture per day for sharing links
         run: |
           pip install --quiet pillow numpy
