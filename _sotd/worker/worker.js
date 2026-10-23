@@ -11,8 +11,7 @@
 // Until a run has included the song for today (London time), every change to the playlist starts a run, so a
 // calendar that has fallen behind catches up; once one has, the Worker doesn't look again until tomorrow.
 // The same visit gives new songs a mood (ReccoBeats) and genres (MusicBrainz) until the job's own are out,
-// A playlist made for a visitor is taken out of John's library as soon as it is made (Spotify keeps it, and its
-// link keeps working); once a day the Worker retries any it could not take out.
+// and once a day removes the playlists made for visitors from John's library once they are KEEP_DAYS old.
 //
 // Only John ever signs in to Spotify (via /login once, then again every 6 months when Spotify expires the
 // login), so the Development Mode limit of 5 users does not apply to visitors.
@@ -24,7 +23,7 @@ const CLIENT_ID = '21a0fa3c6c09482ea57271dbdbef1c1f';   // Spotify app "Song of 
 const OWNER_ID = 'cooperking';                          // only this Spotify account may link the Worker
 const SOURCE_PLAYLIST = '4zyegiBCapCQm8VWYYHhGo';         // John's Song of the Day playlist
 const MAKE_PUBLIC = false;                              // private: opens from its link, kept off John's profile
-const KEEP_DAYS = 7;                                    // the same songs and name get the same playlist for this long
+const KEEP_DAYS = 7;                                    // clean-up removes playlists older than this
 const DEFAULT_NAME = 'Song of the Day picks';
 const MAX_NAME = 80;
 const MAX_TRACKS = 300;
@@ -107,11 +106,8 @@ async function status(env) {
     : '<p>Not linked to Spotify yet. Open /login on this address.</p>';
   const runs = (last && last.runs) || [];
   html += runs.length
-    ? '<p>Daily clean-ups (newest first), taking visitor playlists out of John’s library:</p><ul>' + runs.map(r => '<li>' + esc(r.at.slice(0, 16).replace('T', ' ')) + ' UTC: removed ' + r.removed + ', ' + r.waiting + ' still to go' + (r.error ? '. Error: ' + esc(r.error) : '') + '</li>').join('') + '</ul>'
+    ? '<p>Clean-ups (newest first), removing playlists older than ' + KEEP_DAYS + ' days:</p><ul>' + runs.map(r => '<li>' + esc(r.at.slice(0, 16).replace('T', ' ')) + ' UTC: removed ' + r.removed + ', ' + r.waiting + ' still to go' + (r.error ? '. Error: ' + esc(r.error) : '') + '</li>').join('') + '</ul>'
     : '<p>No clean-up has run yet.</p>';
-  const made = await env.SOTD.get('made', 'json');
-  if (made) html += '<p>Last playlist made ' + esc(made.at.slice(0, 16).replace('T', ' ')) + ' UTC: '
-    + (made.off ? 'taken out of John’s library straight away.' : 'still in John’s library (' + esc(made.err || 'unknown') + '); the next clean-up tries again.') + '</p>';
   const job = (await env.SOTD.get('job', 'json')) || {};
   html += '<p>GitHub job: ' + (job.at ? 'last started ' + esc(job.at.slice(0, 16).replace('T', ' ')) + ' UTC, when the playlist had ' + job.songs + ' songs.' : 'not started from here yet.')
     + (!env.GH_TOKEN ? ' The GH_TOKEN secret is not set.' : job.err ? ' Last try failed: ' + esc(job.err) : '') + '</p>';
@@ -211,18 +207,13 @@ async function makePlaylist(request, url, env) {
 
   const pl = await spotify(token, '/me/playlists', 'POST', {
     name,
-    description: 'Songs from John’s Song of the Day calendar: cooperking.github.io/songs',
+    description: 'This playlist is removed after a week. To keep the songs, tap ••• then Add to other playlist, then New playlist.',
     public: MAKE_PUBLIC
   });
   for (let i = 0; i < ids.length; i += 100) {
     await spotify(token, '/playlists/' + pl.id + '/items', 'POST', { uris: ids.slice(i, i + 100).map(id => 'spotify:track:' + id) });
   }
-  // Out of John's library straight away. Spotify has no deleting: the playlist stays, and its link keeps working.
-  let off = false, err = null;
-  try { await spotify(token, '/me/library?uris=spotify:playlist:' + pl.id, 'DELETE'); off = true; }
-  catch (e) { err = e.message || String(e); }
-  await env.SOTD.put(key, pl.id, { expirationTtl: KEEP_DAYS * 86400, metadata: { id: pl.id, at: Date.now(), off } });
-  await env.SOTD.put('made', JSON.stringify({ at: new Date().toISOString(), id: pl.id, off, err }));
+  await env.SOTD.put(key, pl.id, { metadata: { id: pl.id, at: Date.now() } });
   return Response.redirect('https://open.spotify.com/playlist/' + pl.id, 302);
 }
 
@@ -405,18 +396,18 @@ async function tagNewSongs(env, items, limit) {
   await env.SOTD.put('tags', JSON.stringify(kv));
 }
 
-// ---------- daily clean-up (on the first look of the day) ----------
-// Takes out of John's library any visitor playlist that wasn't taken out when it was made
-// (and those made before playlists were taken out straight away).
+// ---------- weekly clean-up (runs from the Cron Trigger) ----------
 
 async function cleanup(env) {
+  const cutoff = Date.now() - KEEP_DAYS * DAY;
   const due = [];
-  let cursor;
+  let waiting = 0, cursor;
   do {
     const lst = await env.SOTD.list({ prefix: 'pl:', cursor });
     for (const k of lst.keys) {
       const md = k.metadata || {};
-      if (!md.off) due.push({ key: k.name, id: md.id || await env.SOTD.get(k.name) });
+      if (md.at && md.at > cutoff) { waiting++; continue; }
+      due.push({ key: k.name, id: md.id || await env.SOTD.get(k.name) });
     }
     cursor = lst.list_complete ? null : lst.cursor;
   } while (cursor);
@@ -436,7 +427,7 @@ async function cleanup(env) {
     error = e.message || String(e);
   }
   const runs = ((await env.SOTD.get('cleanup', 'json')) || {}).runs || [];
-  runs.unshift({ at: new Date().toISOString(), removed, waiting: due.length - done, error });
+  runs.unshift({ at: new Date().toISOString(), removed, waiting: waiting + due.length - done, error });
   await env.SOTD.put('cleanup', JSON.stringify({ runs: runs.slice(0, 5) }));
 }
 
