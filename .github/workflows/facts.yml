@@ -1,0 +1,40 @@
+name: Song facts signed off
+
+# Puts the song facts John has signed off (on songs/facts-admin.html) on the calendar: fetches them from the
+# Cloudflare Worker, which starts this job each time he signs off, and updates songs/facts.json, the draft's copy
+# and the list still waiting. Quick: no other steps.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: facts
+  cancel-in-progress: false
+
+jobs:
+  facts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Put the signed-off facts live
+        run: python _sotd/facts_apply.py
+
+      - name: Save changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add songs/facts.json songs/facts-pending.json songs/draft/facts.json _sotd/data/facts-pending.json
+          if git diff --cached --quiet; then echo "nothing changed"; exit 0; fi
+          git commit -m "Song facts: signed off by John"
+          for i in 1 2 3 4 5; do git pull --rebase --quiet && git push && exit 0; sleep 5; done
+          exit 1

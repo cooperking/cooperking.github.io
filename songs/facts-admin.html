@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Song facts sign-off</title>
+<link rel="icon" type="image/png" sizes="96x96" href="/songs/favicon-96.png?v=2">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..600&family=Hanken+Grotesk:wght@400;500;600&display=swap">
+<style>
+:root {
+  --bg: #fffaf5; --fg: #1b1020; --fg-2: rgba(27, 16, 32, .9); --muted: rgba(27, 16, 32, .66);
+  --line: rgba(27, 16, 32, .16); --chip: rgba(27, 16, 32, .05); --accent: #ec135b; --on-accent: #fffaf5;
+  --warn: #b4235b; --ok: #1d7a4d; --field: #fff;
+  --serif: "Newsreader", "Iowan Old Style", Georgia, serif;
+  --sans: "Hanken Grotesk", "Helvetica Neue", Arial, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #160c18; --fg: #fffaf5; --fg-2: rgba(255, 250, 245, .9); --muted: rgba(255, 250, 245, .66);
+    --line: rgba(255, 250, 245, .18); --chip: rgba(255, 250, 245, .06); --accent: #ff3d7f; --on-accent: #160c18;
+    --warn: #ff7aa8; --ok: #5fd39a; --field: #1f1422; color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--fg-2); font-family: var(--sans); font-size: 15px; line-height: 1.45; }
+.wrap { max-width: 980px; margin: 0 auto; padding: 0 16px 120px; }
+header.top { border-bottom: 1px solid var(--line); padding: 18px 0 14px; display: grid; gap: 10px; }
+h1 { margin: 0; font-family: var(--serif); font-weight: 500; font-size: clamp(28px, 6vw, 40px); line-height: 1; color: var(--fg); }
+h1 em { font-style: italic; font-weight: 400; color: var(--muted); }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.btn { border: 1px solid var(--line); background: var(--chip); color: var(--fg); border-radius: 999px; padding: 8px 14px; font: 600 12px/1.2 var(--sans); letter-spacing: .08em; text-transform: uppercase; cursor: pointer; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.btn:disabled { opacity: .45; cursor: default; }
+.seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 18px; padding: 3px; background: var(--chip); }
+.seg button { border: 0; background: none; padding: 6px 12px; border-radius: 999px; font: 500 12.5px/1.2 var(--sans); color: var(--muted); cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+input, select, textarea { font: 15px var(--sans); color: var(--fg); background: var(--field); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; min-width: 0; }
+input[type=search] { flex: 1 1 180px; }
+input[type=password] { flex: 1 1 160px; max-width: 260px; }
+.stat { font-size: 13px; color: var(--muted); }
+.stat b { color: var(--fg); font-weight: 600; }
+.stat.good { color: var(--ok); } .stat.bad { color: var(--warn); }
+.help { margin: 14px 0 4px; font-size: 14px; color: var(--muted); max-width: 66ch; }
+.help a { color: var(--accent); }
+ol.days { list-style: none; margin: 0; padding: 0; }
+.day { padding: 20px 0; border-bottom: 1px solid var(--line); display: grid; gap: 12px; }
+.dhead { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 2px 14px; align-items: start; }
+.dhead img { grid-row: span 3; width: 64px; height: 64px; border-radius: 6px; object-fit: cover; background: var(--chip); }
+.meta { font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.meta a { color: inherit; }
+.title { font-family: var(--serif); font-weight: 500; font-size: 22px; line-height: 1.1; color: var(--fg); overflow-wrap: anywhere; }
+.artist { font-size: 13px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--fg-2); }
+.badge { font-family: var(--sans); font-weight: 600; display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px; font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; vertical-align: 2px; }
+.badge.waiting { background: var(--warn); color: var(--on-accent); }
+.badge.signed { background: var(--ok); color: var(--on-accent); }
+.badge.old, .badge.none, .badge.edited { background: var(--chip); color: var(--muted); border: 1px solid var(--line); }
+.badge.edited { color: var(--accent); border-color: var(--accent); }
+.group h3 { margin: 4px 0 6px; font: 600 11px/1.2 var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+ul.facts { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.fact { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 8px; }
+.fact textarea { width: 100%; resize: vertical; font: 400 16px/1.4 var(--serif); padding: 8px 10px; min-height: 2.6em; }
+.fact.gone textarea { text-decoration: line-through; opacity: .5; }
+.tools { display: flex; flex-direction: column; gap: 4px; }
+.tool { width: 32px; height: 32px; border: 1px solid var(--line); background: var(--chip); color: var(--fg); border-radius: 8px; cursor: pointer; font: 600 15px/1 var(--sans); }
+.fmeta { grid-column: 1; font-size: 12.5px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+.fmeta a { color: inherit; }
+.fmeta .long { color: var(--warn); font-weight: 600; }
+.fmeta .pv { color: var(--accent); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; font-size: 10.5px; }
+.link { border: 0; background: none; padding: 0; font: 600 11px/1.2 var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+blockquote { grid-column: 1; margin: 2px 0 0; padding: 6px 10px; border-left: 3px solid var(--line); font: italic 14px/1.4 var(--serif); color: var(--muted); }
+.add { justify-self: start; }
+.dfoot { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.empty { padding: 40px 0; text-align: center; color: var(--muted); font-family: var(--serif); font-style: italic; font-size: 18px; }
+.dock { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; background: var(--bg); border-top: 1px solid var(--line); padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; box-shadow: 0 -8px 24px rgba(0,0,0,.08); }
+.dock[hidden] { display: none; }
+.toast { position: fixed; left: 50%; bottom: 84px; transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 10px 16px; border-radius: 18px; font-size: 14px; opacity: 0; transition: opacity .2s; pointer-events: none; max-width: calc(100vw - 32px); z-index: 7; }
+.toast.show { opacity: 1; }
+@media (max-width: 520px) {
+  .dhead { grid-template-columns: 56px minmax(0, 1fr); }
+  .dhead img { width: 56px; height: 56px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>Song facts <em>sign-off</em></h1>
+    <div class="row">
+      <div class="seg" role="group" aria-label="Show">
+        <button type="button" data-show="waiting" aria-pressed="true">Waiting</button>
+        <button type="button" data-show="signed" aria-pressed="false">Signed off</button>
+        <button type="button" data-show="old" aria-pressed="false">Live, not signed</button>
+        <button type="button" data-show="none" aria-pressed="false">No facts</button>
+        <button type="button" data-show="all" aria-pressed="false">All</button>
+      </div>
+      <select id="month" aria-label="Month"><option value="">Any month</option></select>
+      <input type="search" id="q" placeholder="Find a song or artist" autocomplete="off" aria-label="Find a song or artist">
+    </div>
+    <div class="row">
+      <input type="password" id="key" placeholder="Admin password" autocomplete="current-password" aria-label="Admin password">
+      <button class="btn" id="keysave" type="button">Use password</button>
+      <span class="stat" id="keystat"></span>
+    </div>
+    <div class="row"><span class="stat" id="stat">Loading…</span></div>
+  </header>
+  <p class="help">Rewrite a fact, move it up (<b>↑</b>), remove it (<b>✕</b>; again to undo) or add your own. The first song fact and the first artist fact are the two shown in the 30-second preview. <b>Supporting words</b> shows the passage each fact was checked against. Changes stay on this device until you sign the day off, which puts exactly what you see live within a couple of minutes. A signed-off day can be changed and signed off again. Days waiting already show on the <a href="./draft/">draft</a>.</p>
+  <ol class="days" id="list"></ol>
+  <p class="empty" id="none" hidden>Nothing here.</p>
+</div>
+<div class="dock" id="dock" hidden>
+  <span class="stat" id="dockn"></span>
+  <button class="btn primary" id="bulk" type="button">Sign off all shown</button>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+(function () {
+  var WORKER = 'https://sotd-playlists.cooperking.workers.dev';
+  var EDITS = 'sotd-facts-edits', KEYS = 'sotd-admin-key';
+  var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  var songs = [], live = { src: [], songs: {}, artists: {} }, pending = { songs: {} }, signedW = {}, edits = {}, show = 'waiting', armed = false;
+  var list = document.getElementById('list');
+  function store(k, v) { try { if (v === undefined) localStorage.removeItem(k); else localStorage.setItem(k, typeof v === 'string' ? v : JSON.stringify(v)); } catch (e) {} }
+  function read(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  try { edits = JSON.parse(read(EDITS) || '{}') || {}; } catch (e) { edits = {}; }
+  function saveEdits() { store(EDITS, edits); }
+  function toast(msg) { var t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(function () { t.classList.remove('show'); }, 3200); }
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function clone(x) { return JSON.parse(JSON.stringify(x)); }
+  function words(t) { return (String(t).trim().match(/\S+/g) || []).length; }
+  var londonDay = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit' });
+  function dayOf(iso) { var p = londonDay.formatToParts(new Date(iso)), o = {}; p.forEach(function (x) { o[x.type] = x.value; }); return { slug: o.day + '-' + o.month + '-' + o.year, label: (+o.day) + ' ' + MONTHS[+o.month - 1] + ' ' + o.year, month: o.year + '-' + o.month }; }
+  function getJSON(u) { return fetch(u, { cache: 'no-cache' }).then(function (r) { if (!r.ok) throw new Error(u + ' ' + r.status); return r.json(); }); }
+
+  // a song's facts as they stand: waiting, signed off (perhaps not live yet), live from before sign-off, or none
+  function fromLive(tid) {
+    var e = live.songs[tid]; if (!e) return null;
+    function f(x) { var s = live.src[x[1]] || {}; return s.u ? { t: x[0], u: s.u, src: s.t } : { t: x[0], by: 'John' }; }
+    var a = {}; (e.a || []).forEach(function (k) { var ar = live.artists[k]; a[k] = { name: ar ? ar.name : '', f: ar ? ar.f.map(f) : [] }; });
+    return { s: (e.s || []).map(f), a: a };
+  }
+  function state(s) {
+    var tid = s.id, w = signedW[tid], p = pending.songs[tid], ls = (live.signed || {})[tid];
+    if (w && (!ls || w.at > ls) && !(p && p.written && p.written > w.at)) return { st: 'signed', at: w.at, base: { s: w.s, a: w.a }, going: true };
+    if (p) return { st: 'waiting', base: { s: p.s, a: p.a }, written: p.written };
+    if (ls) return { st: 'signed', at: ls, base: fromLive(tid) };
+    var l = fromLive(tid);
+    if (l && (l.s.length || Object.keys(l.a).some(function (k) { return l.a[k].f.length; }))) return { st: 'old', base: l };
+    var a = {}; (s.aids || []).forEach(function (k, i) { a[k] = { name: (s.artists || [])[i] || '', f: [] }; });
+    if (l) Object.keys(l.a).forEach(function (k) { a[k] = l.a[k]; });
+    return { st: 'none', base: { s: [], a: a } };
+  }
+  function working(s, st) { return edits[s.id] || clone(st.base); }
+  function changed(s, st) { return !!edits[s.id] && JSON.stringify(edits[s.id]) !== JSON.stringify(st.base); }
+  function payload(s, st) {
+    var w = working(s, st);
+    function keep(f) { return !f.gone && String(f.t || '').trim(); }
+    function out(f) { return f.u ? { t: f.t.trim(), u: f.u, src: f.src } : { t: f.t.trim(), by: 'John' }; }
+    var a = {}; Object.keys(w.a || {}).forEach(function (k) { a[k] = { name: w.a[k].name, f: w.a[k].f.filter(keep).map(out) }; });
+    return { track: s.id, s: (w.s || []).filter(keep).map(out), a: a };
+  }
+
+  function factList(s, st, w, path, title) {
+    var g = el('div', 'group'); g.appendChild(el('h3', null, title));
+    var arr = path === 's' ? w.s : w.a[path].f, ul = el('ul', 'facts');
+    function commit() { edits[s.id] = w; saveEdits(); stats(); }
+    arr.forEach(function (f, i) {
+      var li = el('li', 'fact' + (f.gone ? ' gone' : ''));
+      var ta = el('textarea'); ta.value = f.t; ta.rows = 2; ta.setAttribute('aria-label', title + ' fact ' + (i + 1));
+      var meta = el('div', 'fmeta'), wc = el('span');
+      function count() { var n = words(ta.value); wc.textContent = n + ' words'; wc.className = n > 30 ? 'long' : ''; }
+      ta.addEventListener('input', function () { f.t = ta.value; count(); commit(); });
+      count();
+      var tools = el('div', 'tools');
+      var up = el('button', 'tool', '↑'); up.type = 'button'; up.title = 'Move up'; up.disabled = i === 0;
+      up.addEventListener('click', function () { arr.splice(i - 1, 0, arr.splice(i, 1)[0]); commit(); redraw(s); });
+      var rm = el('button', 'tool', f.gone ? '↺' : '✕'); rm.type = 'button'; rm.title = f.gone ? 'Bring back' : 'Remove';
+      rm.addEventListener('click', function () {
+        if (!f.u && !String(f.t).trim()) arr.splice(i, 1); else f.gone = !f.gone;
+        commit(); redraw(s);
+      });
+      tools.appendChild(up); tools.appendChild(rm);
+      li.appendChild(ta); li.appendChild(tools);
+      var firstShown = arr.filter(function (x) { return !x.gone; })[0] === f;
+      var firstArtist = path === 's' || Object.keys(w.a)[0] === path;
+      if (firstShown && firstArtist) meta.appendChild(el('span', 'pv', 'In the preview'));
+      meta.appendChild(wc);
+      if (f.u) {
+        var a = el('a', null, f.src || 'Source'); a.href = f.u; a.target = '_blank'; a.rel = 'noopener'; meta.appendChild(a);
+        if (f.q) {
+          var qb = el('button', 'link', 'Supporting words'); qb.type = 'button';
+          var bq = el('blockquote', null, f.q); bq.hidden = true;
+          qb.addEventListener('click', function () { bq.hidden = !bq.hidden; });
+          meta.appendChild(qb); li.appendChild(meta); li.appendChild(bq);
+        } else li.appendChild(meta);
+      } else { meta.appendChild(el('span', null, 'Your fact')); li.appendChild(meta); }
+      ul.appendChild(li);
+    });
+    g.appendChild(ul);
+    var add = el('button', 'btn add', '+ Add your own'); add.type = 'button';
+    add.addEventListener('click', function () { arr.push({ t: '', by: 'John' }); commit(); redraw(s); var tas = document.querySelectorAll('[data-id="' + s.id + '"] [data-path="' + path + '"] textarea'); if (tas.length) tas[tas.length - 1].focus(); });
+    g.setAttribute('data-path', path);
+    g.appendChild(add);
+    return g;
+  }
+
+  function card(s) {
+    var st = state(s), w = working(s, st), d = dayOf(s.a);
+    var li = el('li', 'day'); li.setAttribute('data-id', s.id);
+    var h = el('div', 'dhead'), img = el('img'); img.alt = ''; img.loading = 'lazy'; if (s.img) img.src = s.img; h.appendChild(img);
+    var meta = el('div', 'meta'), dl = el('a', null, 'No. ' + s.n + ' · ' + d.label); dl.href = './draft/#' + d.slug; dl.target = '_blank'; dl.title = 'Open this day on the draft';
+    meta.appendChild(dl);
+    var label = { waiting: 'Waiting', signed: st.going ? 'Signed off · going live' : 'Signed off', old: 'Live, not signed', none: 'No facts yet' }[st.st];
+    meta.appendChild(el('span', 'badge ' + st.st, label));
+    if (changed(s, st)) meta.appendChild(el('span', 'badge edited', 'Your changes'));
+    h.appendChild(meta);
+    h.appendChild(el('div', 'title', s.title));
+    h.appendChild(el('div', 'artist', s.artist));
+    li.appendChild(h);
+    li.appendChild(factList(s, st, w, 's', 'About the song'));
+    Object.keys(w.a || {}).forEach(function (k) { li.appendChild(factList(s, st, w, k, 'About ' + (w.a[k].name || 'the artist'))); });
+    var foot = el('div', 'dfoot');
+    var go = el('button', 'btn primary', st.st === 'signed' && !changed(s, st) ? 'Sign off again' : 'Sign off'); go.type = 'button';
+    go.addEventListener('click', function () { signoff([s]); });
+    foot.appendChild(go);
+    if (edits[s.id]) {
+      var undo = el('button', 'btn', 'Discard my changes'); undo.type = 'button';
+      undo.addEventListener('click', function () { delete edits[s.id]; saveEdits(); redraw(s); stats(); });
+      foot.appendChild(undo);
+    }
+    if (st.st === 'signed') foot.appendChild(el('span', 'stat', 'Signed off ' + new Date(st.at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })));
+    if (st.st === 'waiting' && st.written) foot.appendChild(el('span', 'stat', 'Written ' + st.written));
+    li.appendChild(foot);
+    return li;
+  }
+  function redraw(s) { var old = list.querySelector('[data-id="' + s.id + '"]'); if (old) old.replaceWith(card(s)); }
+
+  function visible(s) {
+    var st = state(s).st, q = document.getElementById('q').value.trim().toLowerCase(), m = document.getElementById('month').value;
+    if (show !== 'all' && st !== show) return false;
+    if (m && dayOf(s.a).month !== m) return false;
+    return !q || (s.title + ' ' + s.artist).toLowerCase().indexOf(q) >= 0;
+  }
+  function render() {
+    list.textContent = '';
+    var shown = songs.filter(visible);
+    shown.forEach(function (s) { list.appendChild(card(s)); });
+    document.getElementById('none').hidden = !!shown.length;
+    armed = false; bulkLabel(shown);
+    stats();
+  }
+  function bulkLabel(shown) {
+    shown = shown || songs.filter(visible);
+    var dock = document.getElementById('dock'), b = document.getElementById('bulk');
+    dock.hidden = shown.length < 2;
+    b.textContent = armed ? 'Tap again to sign off ' + shown.length + ' days' : 'Sign off all ' + shown.length + ' shown';
+    document.getElementById('dockn').textContent = armed ? 'Exactly as shown, with your changes' : '';
+  }
+  function stats() {
+    var c = { waiting: 0, signed: 0, old: 0, none: 0 }; songs.forEach(function (s) { c[state(s).st]++; });
+    var n = Object.keys(edits).length;
+    document.getElementById('stat').innerHTML = '<b>' + c.waiting + '</b> waiting · <b>' + c.signed + '</b> signed off · <b>' + c.old + '</b> live, not signed · <b>' + c.none + '</b> with no facts' + (n ? ' · your changes on <b>' + n + '</b>' : '');
+  }
+
+  function key() { return read(KEYS) || ''; }
+  function post(items) {
+    return fetch(WORKER + '/facts/signoff', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + key() }, body: JSON.stringify({ items: items }) })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { j.status = r.status; return j; }); });
+  }
+  function signoff(list_) {
+    if (!key()) { toast('Type the admin password at the top first'); document.getElementById('key').focus(); return; }
+    var items = list_.map(function (s) { return payload(s, state(s)); });
+    var long = items.filter(function (it) { return it.s.concat.apply(it.s, Object.keys(it.a).map(function (k) { return it.a[k].f; })).some(function (f) { return words(f.t) > 30; }); });
+    if (long.length && !signoff.ok) { signoff.ok = true; toast('Some facts run over 30 words and may not fit the caption. Sign off again to go ahead.'); return; }
+    signoff.ok = false;
+    post(items).then(function (j) {
+      if (j.status === 401) { toast('Wrong password'); keyStat(false); return; }
+      if (!j.ok) { toast(j.error || 'Not signed off: the Worker said ' + j.status); return; }
+      items.forEach(function (it) { signedW[it.track] = { at: j.at, s: it.s, a: it.a }; delete edits[it.track]; });
+      saveEdits();
+      toast(j.signed === 1 ? 'Signed off. Live in a couple of minutes.' : j.signed + ' days signed off. Live in a couple of minutes.');
+      if (j.job && j.job !== 'started') toast('Saved, but the site job didn\'t start: ' + j.job);
+      render();
+    }).catch(function () { toast('Couldn\'t reach the Worker. Nothing was signed off.'); });
+  }
+  function keyStat(ok, msg) { var k = document.getElementById('keystat'); k.textContent = msg || (ok ? 'Password works' : 'Wrong password'); k.className = 'stat ' + (ok ? 'good' : 'bad'); }
+  document.getElementById('keysave').addEventListener('click', function () {
+    var v = document.getElementById('key').value; if (!v) return;
+    store(KEYS, v); document.getElementById('key').value = '';
+    post([]).then(function (j) { if (j.status === 200) keyStat(true); else { keyStat(false, j.error || 'Wrong password'); if (j.status === 401) store(KEYS); } }).catch(function () { keyStat(false, 'Couldn\'t reach the Worker'); });
+  });
+  if (key()) keyStat(true, 'Password saved on this device');
+
+  [].forEach.call(document.querySelectorAll('[data-show]'), function (b) {
+    b.addEventListener('click', function () {
+      show = b.getAttribute('data-show');
+      [].forEach.call(document.querySelectorAll('[data-show]'), function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+      render();
+    });
+  });
+  document.getElementById('q').addEventListener('input', render);
+  document.getElementById('month').addEventListener('change', render);
+  document.getElementById('bulk').addEventListener('click', function () {
+    var shown = songs.filter(visible);
+    if (!armed) { armed = true; bulkLabel(shown); clearTimeout(bulkLabel.t); bulkLabel.t = setTimeout(function () { armed = false; bulkLabel(); }, 6000); return; }
+    armed = false; signoff(shown);
+  });
+
+  Promise.all([
+    getJSON(WORKER + '/songs.json'),
+    getJSON('facts.json').catch(function () { return live; }),
+    getJSON('facts-pending.json').catch(function () { return pending; }),
+    getJSON(WORKER + '/facts/signed').catch(function () { return {}; })
+  ]).then(function (r) {
+    songs = (r[0].songs || []).slice().reverse(); live = r[1]; pending = r[2]; signedW = r[3] || {};
+    live.src = live.src || []; live.songs = live.songs || {}; live.artists = live.artists || {}; pending.songs = pending.songs || {};
+    var months = {}; songs.forEach(function (s) { months[dayOf(s.a).month] = 1; });
+    var sel = document.getElementById('month');
+    Object.keys(months).sort().reverse().forEach(function (m) { var o = el('option', null, MONTHS[+m.slice(5) - 1] + ' ' + m.slice(0, 4)); o.value = m; sel.appendChild(o); });
+    if (!songs.some(function (s) { return state(s).st === 'waiting'; })) { show = 'all'; [].forEach.call(document.querySelectorAll('[data-show]'), function (x) { x.setAttribute('aria-pressed', x.getAttribute('data-show') === 'all' ? 'true' : 'false'); }); }
+    render();
+  }).catch(function (e) { document.getElementById('stat').textContent = 'Couldn\'t load the songs: ' + e.message; });
+})();
+</script>
+</body>
+</html>

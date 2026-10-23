@@ -18,8 +18,13 @@
 // Only John ever signs in to Spotify (via /login once, then again every 6 months when Spotify expires the
 // login), so the Development Mode limit of 5 users does not apply to visitors.
 //
-// Needs one KV namespace bound as SOTD, and the secret GH_TOKEN: a fine-grained GitHub token for
-// cooperking/cooperking.github.io only, with Actions: Read and write. Everything else is set below.
+// Song facts: John signs each day's facts off on songs/facts-admin.html, which posts them to /facts/signoff with
+// his admin password; the Worker keeps them (KV key factsSigned) and starts the GitHub job facts.yml, which puts
+// them on the site. /facts/signed gives them back to that job.
+//
+// Needs one KV namespace bound as SOTD, and two secrets: GH_TOKEN, a fine-grained GitHub token for
+// cooperking/cooperking.github.io only, with Actions: Read and write; and ADMIN_KEY, the password John types into
+// the facts sign-off page. Everything else is set below.
 
 const CLIENT_ID = '21a0fa3c6c09482ea57271dbdbef1c1f';   // Spotify app "Song of the Day" (public identifier)
 const OWNER_ID = 'cooperking';                          // only this Spotify account may link the Worker
@@ -36,6 +41,9 @@ const ID_RE = /^[0-9A-Za-z]{22}$/;
 const DAY = 864e5;
 const REPO = 'cooperking/cooperking.github.io';         // the website, and the job that runs after a change
 const JOB = 'song-tags.yml';
+const FACTS_JOB = 'facts.yml';                          // puts signed-off facts on the site
+const ADMIN_ORIGIN = 'https://cooperking.github.io';     // the sign-off page's address
+const FACTS_MAX = { items: 400, facts: 12, text: 400 };
 
 class HttpError extends Error {
   constructor(status, message, extra) { super(message); this.status = status; this.extra = extra || {}; }
@@ -50,6 +58,8 @@ export default {
       if (url.pathname === '/callback') return await callback(request, url, env);
       if (url.pathname === '/p') return await makePlaylist(request, url, env);
       if (url.pathname === '/status') return await status(env);
+      if (url.pathname === '/facts/signed') return await factsSigned(env);
+      if (url.pathname === '/facts/signoff') return await factsSignoff(request, env);
       return page('Song of the Day', '<p>This service makes Spotify playlists from the Song of the Day calendar.</p>');
     } catch (e) {
       if (e instanceof HttpError) return errorPage(e);
@@ -192,7 +202,8 @@ async function playlistItems(token) {
       if (!t || !t.id) continue;
       const imgs = (t.album && t.album.images) || [];
       const img = imgs.find(i => i.width === 300) || imgs[1] || imgs[0];
-      out.push({ a: it.added_at, id: t.id, title: t.name, artist: (t.artists || []).map(x => x.name).join(', '), artists: (t.artists || []).map(x => x.name), album: t.album ? t.album.name : '', img: img ? img.url : '' });
+      out.push({ a: it.added_at, id: t.id, title: t.name, artist: (t.artists || []).map(x => x.name).join(', '), artists: (t.artists || []).map(x => x.name),
+        aids: (t.artists || []).map(x => x.id), album: t.album ? t.album.name : '', alid: t.album ? t.album.id : '', img: img ? img.url : '' });   // aids, alid: Spotify ids, for finding the song facts' sources
     }
     next = j.next;
   }
@@ -250,7 +261,7 @@ async function makePlaylist(request, url, env) {
 // ---------- the playlist as it is now, for the website calendar ----------
 
 async function songsJson(request, env, ctx) {
-  const cacheKey = new Request(new URL('/songs.json?v=2', request.url).toString());   // bump to drop cached copies after a format change
+  const cacheKey = new Request(new URL('/songs.json?v=3', request.url).toString());   // bump to drop cached copies after a format change
   const hit = await caches.default.match(cacheKey);
   if (hit) return hit;
   const token = await getToken(env);
@@ -269,6 +280,74 @@ async function songsJson(request, env, ctx) {
   } });
   ctx.waitUntil(caches.default.put(cacheKey, res.clone()));
   return res;
+}
+
+// ---------- song facts John has signed off ----------
+
+function factsHeaders(origin) {
+  return { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'Access-Control-Allow-Origin': origin || '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Authorization, Content-Type', 'Access-Control-Max-Age': '86400' };
+}
+
+async function factsSigned(env) {
+  return new Response((await env.SOTD.get('factsSigned')) || '{}', { headers: factsHeaders('*') });
+}
+
+// one fact as John left it: its text, and the source it came from (none for one he wrote himself)
+function cleanFact(f) {
+  const t = String((f && f.t) || '').replace(/\s+/g, ' ').trim().slice(0, FACTS_MAX.text);
+  if (!t) return null;
+  const u = /^https?:\/\/\S+$/.test(String(f.u || '')) ? String(f.u).slice(0, 500) : '';
+  return u ? { t, u, src: String(f.src || '').slice(0, 200) } : { t, by: 'John' };
+}
+
+async function factsSignoff(request, env) {
+  const h = factsHeaders(ADMIN_ORIGIN);
+  const answer = (status, body) => new Response(JSON.stringify(body), { status, headers: h });
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: h });
+  if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
+  if (!env.ADMIN_KEY) return answer(503, { error: 'The ADMIN_KEY secret is not set on the Worker.' });
+  const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+  const failKey = 'factsfail:' + ip + ':' + new Date().toISOString().slice(0, 13);
+  const fails = Number(await env.SOTD.get(failKey)) || 0;
+  if (fails >= 20) return answer(429, { error: 'Too many wrong passwords from here this hour.' });
+  const given = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
+  if (!given || await sha256hex(given) !== await sha256hex(env.ADMIN_KEY)) {
+    await env.SOTD.put(failKey, String(fails + 1), { expirationTtl: 7200 });
+    return answer(401, { error: 'Wrong password.' });
+  }
+  const body = await request.json().catch(() => null);
+  const items = body && Array.isArray(body.items) ? body.items.slice(0, FACTS_MAX.items) : null;
+  if (!items) return answer(400, { error: 'Nothing to sign off.' });
+  if (!items.length) return answer(200, { ok: true, signed: 0 });   // the page checking its password
+  const signed = (await env.SOTD.get('factsSigned', 'json')) || {};
+  const at = new Date().toISOString();
+  let n = 0;
+  for (const it of items) {
+    if (!it || !ID_RE.test(String(it.track || ''))) continue;
+    const s = (Array.isArray(it.s) ? it.s : []).slice(0, FACTS_MAX.facts).map(cleanFact).filter(Boolean);
+    const a = {};
+    for (const [k, v] of Object.entries(it.a || {})) {
+      if (!ID_RE.test(k) || !v) continue;
+      a[k] = { name: String(v.name || '').slice(0, 200), f: (Array.isArray(v.f) ? v.f : []).slice(0, FACTS_MAX.facts).map(cleanFact).filter(Boolean) };
+    }
+    signed[it.track] = { at, s, a };
+    n++;
+  }
+  await env.SOTD.put('factsSigned', JSON.stringify(signed));
+  const job = await startFactsJob(env);
+  return answer(200, { ok: true, signed: n, at, job });
+}
+
+async function startFactsJob(env) {
+  if (!env.GH_TOKEN) return 'The GH_TOKEN secret is not set.';
+  const r = await fetch('https://api.github.com/repos/' + REPO + '/actions/workflows/' + FACTS_JOB + '/dispatches', {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + env.GH_TOKEN, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28',
+      'User-Agent': 'SongOfTheDayWorker', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ref: 'main' })
+  }).catch(e => ({ status: 0, text: async () => String(e) }));
+  return r.status === 204 ? 'started' : 'GitHub answered ' + r.status + ': ' + (await r.text()).slice(0, 200);
 }
 
 // After each look at the playlist: start the GitHub job if the playlist has changed since the job last started;
