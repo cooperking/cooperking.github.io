@@ -1,0 +1,63 @@
+name: Find official videos
+
+# Looks songs up on YouTube for Claude to choose each one's official video (see _sotd/video_hunt.py).
+# Started by hand: songs is a list of song numbers to search for; ids a list of video ids to look up.
+on:
+  workflow_dispatch:
+    inputs:
+      songs:
+        description: "Song numbers to search YouTube for (one search each)"
+        default: ""
+      video:
+        description: "Search for '<title> <artist> official video'"
+        type: boolean
+        default: false
+      ids:
+        description: "Video ids to look up"
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: song-tags   # shares the YouTube allowance ledger with the main job, so never at the same time
+  cancel-in-progress: false
+
+jobs:
+  hunt:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Search and look up
+        env:
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+          SONGS: ${{ inputs.songs }}
+          VIDEO: ${{ inputs.video }}
+          IDS: ${{ inputs.ids }}
+        run: |
+          set -f
+          args=""
+          if [ -n "$SONGS" ]; then args="--songs $SONGS"; fi
+          if [ "$VIDEO" = "true" ]; then args="$args --video"; fi
+          if [ -n "$IDS" ]; then args="$args --ids $IDS"; fi
+          python _sotd/video_hunt.py $args
+
+      - name: Save
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add _sotd/data/video-hunt.json _sotd/data/youtube-quota.json
+          if git diff --cached --quiet; then echo "nothing changed"; exit 0; fi
+          git commit -m "YouTube lookups for choosing official videos"
+          for i in 1 2 3 4 5; do git pull --rebase --quiet && git push && exit 0; sleep 5; done
+          exit 1
