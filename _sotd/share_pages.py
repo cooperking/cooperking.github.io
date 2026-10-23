@@ -289,8 +289,10 @@ def refresh_card(path, stamp, make):
 BOTS = r'bot|crawl|spider|preview|facebookexternalhit|facebot|whatsapp|telegram|slack|discord|linkedin|pinterest|embedly|iframely|skype|viber|signal|vkshare|redditbot|applebot|google|bing'
 
 
-def redirect(target):
-    return f"if (!/{BOTS}/i.test(navigator.userAgent)) location.replace({json.dumps(target)});"
+def redirect(target):   # passes the link's query on (?play=video / ?play=preview says how the song opens)
+    base, _, frag = target.partition('#')
+    to = json.dumps(base) + ' + location.search' + (' + ' + json.dumps('#' + frag) if frag else '')
+    return f"if (!/{BOTS}/i.test(navigator.userAgent)) location.replace({to});"
 
 
 def plain_page(title, desc, target, url, image, theme, alt):
