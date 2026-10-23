@@ -74,6 +74,15 @@ ul.facts { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
 .link { border: 0; background: none; padding: 0; font: 600 11px/1.2 var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 blockquote { grid-column: 1; margin: 2px 0 0; padding: 6px 10px; border-left: 3px solid var(--line); font: italic 14px/1.4 var(--serif); color: var(--muted); }
 .add { justify-self: start; }
+.tags { display: grid; gap: 8px; }
+.trow { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.trow .lab { width: 4.6em; font: 600 10.5px/1.2 var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.chipb { border: 1px solid var(--line); background: var(--chip); border-radius: 999px; padding: 6px 11px; font: 13px/1.2 var(--sans); color: var(--fg); cursor: pointer; }
+.chipb[aria-pressed="true"] { background: var(--fg); border-color: var(--fg); color: var(--bg); }
+.chipb.lead { box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.5px var(--accent); }
+.trow input { flex: 1 1 220px; max-width: 420px; font-size: 14px; padding: 6px 9px; }
+.trow a { font-size: 13.5px; color: var(--accent); }
+.fmeta .src a { color: var(--accent); }
 .dfoot { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .empty { padding: 40px 0; text-align: center; color: var(--muted); font-family: var(--serif); font-style: italic; font-size: 18px; }
 .dock { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; background: var(--bg); border-top: 1px solid var(--line); padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; box-shadow: 0 -8px 24px rgba(0,0,0,.08); }
@@ -108,7 +117,7 @@ blockquote { grid-column: 1; margin: 2px 0 0; padding: 6px 10px; border-left: 3p
     </div>
     <div class="row"><span class="stat" id="stat">Loading…</span></div>
   </header>
-  <p class="help">Rewrite a fact, move it up (<b>↑</b>), remove it (<b>✕</b>; again to undo) or add your own. The first song fact and the first artist fact are the two shown in the 30-second preview. <b>Supporting words</b> shows the passage each fact was checked against. New songs wait here for you. Every live day can be changed too: <b>Save changes</b> puts exactly what you see live within a couple of minutes. Changes stay on this device until you sign off or save. Days waiting already show on the <a href="./draft/">draft</a>.</p>
+  <p class="help">Set the day's moods (one or two; the first leads) and genres (up to two), and paste a different YouTube link if the video is wrong (type <i>none</i> for no video). Rewrite a fact, move it up (<b>↑</b>), remove it (<b>✕</b>; again to undo) or add your own; each written fact links to its source. The first song fact and the first artist fact are the two shown in the 30-second preview. <b>Supporting words</b> shows the passage each fact was checked against. New songs wait here for you. Every live day can be changed too: <b>Save changes</b> puts exactly what you see live within a couple of minutes. Changes stay on this device until you sign off or save. Days waiting already show on the <a href="./draft/">draft</a>.</p>
   <ol class="days" id="list"></ol>
   <p class="empty" id="none" hidden>Nothing here.</p>
 </div>
@@ -123,6 +132,9 @@ blockquote { grid-column: 1; margin: 2px 0 0; padding: 6px 10px; border-left: 3p
   var EDITS = 'sotd-facts-edits', KEYS = 'sotd-admin-key';
   var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   var songs = [], live = { src: [], songs: {}, artists: {} }, pending = { songs: {} }, signedW = {}, edits = {}, show = 'waiting', armed = false;
+  var TAGS = {}, VIDS = {}, QUOTES = {};
+  var MOODS = ['Joyful', 'Uplifting', 'Energetic', 'Playful', 'Mellow', 'Dreamy', 'Romantic', 'Bittersweet', 'Melancholy', 'Dark'];
+  var GENRES = ['Soul & R&B', 'Rock', 'Indie', 'Folk', 'Pop', 'Electronic', 'Hip-hop', 'Country', 'World'];
   var list = document.getElementById('list');
   function store(k, v) { try { if (v === undefined) localStorage.removeItem(k); else localStorage.setItem(k, typeof v === 'string' ? v : JSON.stringify(v)); } catch (e) {} }
   function read(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
@@ -154,14 +166,24 @@ blockquote { grid-column: 1; margin: 2px 0 0; padding: 6px 10px; border-left: 3p
     if (l) Object.keys(l.a).forEach(function (k) { a[k] = l.a[k]; });
     return { st: 'none', base: { s: [], a: a } };
   }
-  function working(s, st) { return edits[s.id] || clone(st.base); }
+  // the day's moods, genres and video as the calendar shows them (or as signed off, while that goes live)
+  function withTags(s, st) {
+    var b = st.base, t = TAGS[s.id] || {}, w = signedW[s.id];
+    if (!('moods' in b)) b.moods = (st.going && w && w.moods) || (t.moods || []).slice();
+    if (!('genres' in b)) b.genres = (st.going && w && w.genres) || (t.genres || []).slice();
+    if (!('video' in b)) b.video = (st.going && w && 'video' in w) ? w.video : ((VIDS[s.id] || {}).v || '');
+    return st;
+  }
+  var state0 = state;
+  state = function (s) { return withTags(s, state0(s)); };
+  function working(s, st) { var w = edits[s.id] || clone(st.base); if (!('moods' in w)) { w.moods = clone(st.base.moods); w.genres = clone(st.base.genres); w.video = st.base.video; } return w; }
   function changed(s, st) { return !!edits[s.id] && JSON.stringify(edits[s.id]) !== JSON.stringify(st.base); }
   function payload(s, st) {
     var w = working(s, st);
     function keep(f) { return !f.gone && String(f.t || '').trim(); }
     function out(f) { return f.u ? { t: f.t.trim(), u: f.u, src: f.src } : { t: f.t.trim(), by: 'John' }; }
     var a = {}; Object.keys(w.a || {}).forEach(function (k) { a[k] = { name: w.a[k].name, f: w.a[k].f.filter(keep).map(out) }; });
-    return { track: s.id, s: (w.s || []).filter(keep).map(out), a: a };
+    return { track: s.id, s: (w.s || []).filter(keep).map(out), a: a, moods: w.moods || [], genres: w.genres || [], video: w.video || '' };
   }
 
   function factList(s, st, w, path, title) {
@@ -190,10 +212,12 @@ blockquote { grid-column: 1; margin: 2px 0 0; padding: 6px 10px; border-left: 3p
       if (firstShown && firstArtist) meta.appendChild(el('span', 'pv', 'In the preview'));
       meta.appendChild(wc);
       if (f.u) {
-        var a = el('a', null, f.src || 'Source'); a.href = f.u; a.target = '_blank'; a.rel = 'noopener'; meta.appendChild(a);
-        if (f.q) {
+        var srcl = el('span', 'src', 'Source: '), a = el('a', null, (f.src || 'the page') + ' ↗'); a.href = f.u; a.target = '_blank'; a.rel = 'noopener'; a.title = f.u;
+        srcl.appendChild(a); meta.appendChild(srcl);
+        var q = f.q || QUOTES[f.t];
+        if (q) {
           var qb = el('button', 'link', 'Supporting words'); qb.type = 'button';
-          var bq = el('blockquote', null, f.q); bq.hidden = true;
+          var bq = el('blockquote', null, q); bq.hidden = true;
           qb.addEventListener('click', function () { bq.hidden = !bq.hidden; });
           meta.appendChild(qb); li.appendChild(meta); li.appendChild(bq);
         } else li.appendChild(meta);
@@ -208,6 +232,45 @@ blockquote { grid-column: 1; margin: 2px 0 0; padding: 6px 10px; border-left: 3p
     return g;
   }
 
+  function youtubeId(v) {
+    v = String(v || '').trim();
+    var m = v.match(/(?:youtu\.be\/|[?&]v=|\/shorts\/|\/embed\/|\/live\/)([\w-]{11})/) || v.match(/^([\w-]{11})$/);
+    return m ? m[1] : null;
+  }
+  function tagRows(s, w) {
+    var box = el('div', 'tags');
+    function commit() { edits[s.id] = w; saveEdits(); stats(); redraw(s); }
+    function row(label, list, key) {
+      var r = el('div', 'trow'); r.appendChild(el('span', 'lab', label));
+      list.forEach(function (name) {
+        var on = w[key].indexOf(name) >= 0, b = el('button', 'chipb' + (on && w[key][0] === name && key === 'moods' && w[key].length > 1 ? ' lead' : ''), name);
+        b.type = 'button'; b.setAttribute('aria-pressed', on ? 'true' : 'false');
+        b.addEventListener('click', function () {
+          var a = w[key], i = a.indexOf(name);
+          if (i >= 0) a.splice(i, 1); else if (a.length < 2) a.push(name); else a[1] = name;
+          commit();
+        });
+        r.appendChild(b);
+      });
+      return r;
+    }
+    box.appendChild(row('Moods', MOODS, 'moods'));
+    box.appendChild(row('Genres', GENRES, 'genres'));
+    var vr = el('div', 'trow'); vr.appendChild(el('span', 'lab', 'Video'));
+    if (w.video) { var va = el('a', null, 'Watch on YouTube ↗'); va.href = 'https://www.youtube.com/watch?v=' + w.video; va.target = '_blank'; va.rel = 'noopener'; vr.appendChild(va); }
+    else vr.appendChild(el('span', 'stat', 'No video'));
+    var vi = el('input'); vi.type = 'url'; vi.placeholder = 'Paste a different YouTube link'; vi.setAttribute('aria-label', 'A different YouTube link for ' + s.title);
+    vi.addEventListener('change', function () {
+      var v = vi.value.trim(); if (!v) return;
+      if (/^none$/i.test(v)) { w.video = ''; commit(); return; }
+      var id = youtubeId(v);
+      if (!id) { toast('That doesn\'t look like a YouTube link'); return; }
+      w.video = id; commit();
+    });
+    vr.appendChild(vi);
+    box.appendChild(vr);
+    return box;
+  }
   function card(s) {
     var st = state(s), w = working(s, st), d = dayOf(s.a);
     var li = el('li', 'day'); li.setAttribute('data-id', s.id);
@@ -221,6 +284,7 @@ blockquote { grid-column: 1; margin: 2px 0 0; padding: 6px 10px; border-left: 3p
     h.appendChild(el('div', 'title', s.title));
     h.appendChild(el('div', 'artist', s.artist));
     li.appendChild(h);
+    li.appendChild(tagRows(s, w));
     li.appendChild(factList(s, st, w, 's', 'About the song'));
     Object.keys(w.a || {}).forEach(function (k) { li.appendChild(factList(s, st, w, k, 'About ' + (w.a[k].name || 'the artist'))); });
     var foot = el('div', 'dfoot');
@@ -314,9 +378,13 @@ blockquote { grid-column: 1; margin: 2px 0 0; padding: 6px 10px; border-left: 3p
     getJSON(WORKER + '/songs.json'),
     getJSON('facts.json').catch(function () { return live; }),
     getJSON('facts-pending.json').catch(function () { return pending; }),
-    getJSON(WORKER + '/facts/signed').catch(function () { return {}; })
+    getJSON(WORKER + '/facts/signed').catch(function () { return {}; }),
+    getJSON('moods.json').catch(function () { return {}; }),
+    getJSON('videos.json').catch(function () { return {}; }),
+    getJSON('facts-quotes.json').catch(function () { return {}; })
   ]).then(function (r) {
     songs = (r[0].songs || []).slice().reverse(); live = r[1]; pending = r[2]; signedW = r[3] || {};
+    TAGS = (r[4] && r[4].songs) || {}; VIDS = (r[5] && r[5].videos) || {}; QUOTES = r[6] || {};
     live.src = live.src || []; live.songs = live.songs || {}; live.artists = live.artists || {}; pending.songs = pending.songs || {};
     var months = {}; songs.forEach(function (s) { months[dayOf(s.a).month] = 1; });
     var sel = document.getElementById('month');

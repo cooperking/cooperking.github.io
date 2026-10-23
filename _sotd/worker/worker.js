@@ -18,9 +18,9 @@
 // Only John ever signs in to Spotify (via /login once, then again every 6 months when Spotify expires the
 // login), so the Development Mode limit of 5 users does not apply to visitors.
 //
-// Song facts: John signs each day's facts off on songs/facts-admin.html, which posts them to /facts/signoff with
-// his admin password; the Worker keeps them (KV key factsSigned) and starts the GitHub job facts.yml, which puts
-// them on the site. /facts/signed gives them back to that job.
+// Song facts: John signs each day off on songs/facts-admin.html (its facts, moods, genres and video), which posts it
+// to /facts/signoff with his admin password; the Worker keeps it (KV key factsSigned) and starts the GitHub job
+// facts.yml, which puts it on the site. /facts/signed gives them back to that job.
 //
 // Needs one KV namespace bound as SOTD, and two secrets: GH_TOKEN, a fine-grained GitHub token for
 // cooperking/cooperking.github.io only, with Actions: Read and write; and ADMIN_KEY, the password John types into
@@ -44,6 +44,8 @@ const JOB = 'song-tags.yml';
 const FACTS_JOB = 'facts.yml';                          // puts signed-off facts on the site
 const ADMIN_ORIGIN = 'https://cooperking.github.io';     // the sign-off page's address
 const FACTS_MAX = { items: 400, facts: 12, text: 400 };
+const MOOD_LIST = ['Joyful', 'Uplifting', 'Energetic', 'Playful', 'Mellow', 'Dreamy', 'Romantic', 'Bittersweet', 'Melancholy', 'Dark'];
+const GENRE_LIST = ['Soul & R&B', 'Rock', 'Indie', 'Folk', 'Pop', 'Electronic', 'Hip-hop', 'Country', 'World'];
 
 class HttpError extends Error {
   constructor(status, message, extra) { super(message); this.status = status; this.extra = extra || {}; }
@@ -331,7 +333,12 @@ async function factsSignoff(request, env) {
       if (!ID_RE.test(k) || !v) continue;
       a[k] = { name: String(v.name || '').slice(0, 200), f: (Array.isArray(v.f) ? v.f : []).slice(0, FACTS_MAX.facts).map(cleanFact).filter(Boolean) };
     }
-    signed[it.track] = { at, s, a };
+    const rec = { at, s, a };
+    // the day's moods (one or two of the ten), genres (up to two of the nine) and YouTube video, as John left them
+    if (Array.isArray(it.moods)) rec.moods = it.moods.filter(m => MOOD_LIST.includes(m)).slice(0, 2);
+    if (Array.isArray(it.genres)) rec.genres = it.genres.filter(g => GENRE_LIST.includes(g)).slice(0, 2);
+    if (typeof it.video === 'string' && /^([\w-]{11})?$/.test(it.video)) rec.video = it.video;
+    signed[it.track] = rec;
     n++;
   }
   await env.SOTD.put('factsSigned', JSON.stringify(signed));

@@ -13,6 +13,11 @@ Files:
     _sotd/data/facts-pending.json    written and checked, waiting for John: each fact with its source and supporting words
     songs/facts-pending.json         the same, for the sign-off page (songs/facts-admin.html)
     songs/draft/facts.json           live with the waiting ones on top, for the draft calendar (songs/draft/)
+    _sotd/data/facts-quotes.json     each written fact's supporting words from its source (fact text: words), kept when
+    songs/facts-quotes.json          it goes live, for the sign-off page's "Supporting words"
+A sign-off can also carry the day's moods, genres and YouTube video as John left them: where they differ from what the
+calendar shows, they go into _sotd/data/john.json (moods, genres) and _sotd/data/john-videos.json (video), which win
+over everything, and the job (facts.yml) then starts song-tags.yml to rebuild the calendar's moods and videos.
 
 A sign-off replaces everything live for that song and its artists with exactly what John signed: his edits, his own
 facts (marked by John) and his order. Run by .github/workflows/facts.yml, which the Worker starts on each sign-off.
@@ -25,6 +30,12 @@ LIVE = os.path.join(ROOT, 'songs', 'facts.json')
 PENDING = os.path.join(HERE, 'data', 'facts-pending.json')
 PENDING_PUB = os.path.join(ROOT, 'songs', 'facts-pending.json')
 DRAFT = os.path.join(ROOT, 'songs', 'draft', 'facts.json')
+QUOTES = os.path.join(HERE, 'data', 'facts-quotes.json')
+QUOTES_PUB = os.path.join(ROOT, 'songs', 'facts-quotes.json')
+JOHN_TAGS = os.path.join(HERE, 'data', 'john.json')
+JOHN_VIDEOS = os.path.join(HERE, 'data', 'john-videos.json')
+MOODS_PUB = os.path.join(ROOT, 'songs', 'moods.json')
+VIDEOS_PUB = os.path.join(ROOT, 'songs', 'videos.json')
 SIGNED_URL = os.environ.get('SOTD_FACTS_URL', 'https://sotd-playlists.cooperking.workers.dev/facts/signed')
 ABOUT = ('Facts about each song and its artists, written from Wikipedia (CC BY-SA 4.0), MusicBrainz (CC0), the artists\' and '
          'labels\' own pages and interviews and articles in the music press, each checked against its source, and signed off '
@@ -88,12 +99,43 @@ def page_format(live, extra_songs=None):
     return out
 
 
+def tags_and_videos(news):
+    """The moods, genres and video John signed off with, where they differ from what the calendar shows now."""
+    shown = load(MOODS_PUB, {'songs': {}}).get('songs', {})
+    vids = load(VIDEOS_PUB, {'videos': {}}).get('videos', {})
+    john = load(JOHN_TAGS, {})
+    jv = load(JOHN_VIDEOS, {'videos': {}, 'notes': {}})
+    jv.setdefault('videos', {}); jv.setdefault('notes', {})
+    for tid, e in news.items():
+        day = (e.get('at') or '')[:10]
+        cur = shown.get(tid, {})
+        moods, genres = e.get('moods'), e.get('genres')
+        if (moods and moods != cur.get('moods')) or (genres is not None and genres != cur.get('genres')):
+            rec = john.get(tid) or {'n': cur.get('n'), 'title': cur.get('title'), 'artist': cur.get('artist')}
+            if moods:
+                rec['moods'] = moods
+            if genres is not None:
+                rec['genres'] = genres
+            rec['note'] = 'John, on the sign-off page (%s)' % day
+            john[tid] = rec
+        if 'video' in e and e['video'] != (vids.get(tid) or {}).get('v', ''):
+            jv['videos'][tid] = e['video']
+            jv['notes'][tid] = '%s: John, on the sign-off page (%s)' % (cur.get('title') or tid, day)
+    write(JOHN_TAGS, john, False)
+    write(JOHN_VIDEOS, jv, False)
+
+
 def main(offline, promote=()):
     live = load(LIVE, {'src': [], 'songs': {}, 'artists': {}})
     pending = load(PENDING, {'songs': {}})
     pending['about'] = ('Song facts written and checked, waiting for John to sign them off on songs/facts-admin.html. '
                         'Each fact: t the fact, u and src its source, q the words in the source that back it.')
     applied = []
+    quotes = load(QUOTES, {})
+    for e in pending['songs'].values():   # keep every waiting fact's supporting words, to show once it's live too
+        for f in e.get('s', []) + [f for a in e.get('a', {}).values() for f in a.get('f', [])]:
+            if f.get('q'):
+                quotes[f['t']] = f['q']
     if not offline:
         with urllib.request.urlopen(urllib.request.Request(SIGNED_URL, headers={'User-Agent': 'SongOfTheDayCalendar/1.0'}), timeout=30) as r:
             signed = json.loads(r.read())
@@ -109,6 +151,7 @@ def main(offline, promote=()):
                 pending['songs'].pop(tid, None)
                 applied.append(tid)
             live = merged
+            tags_and_videos(news)
     if promote:
         ids = list(pending['songs']) if 'all' in promote else [t for t in promote if t in pending['songs']]
         if ids:
@@ -118,7 +161,8 @@ def main(offline, promote=()):
             print(len(ids), 'waiting songs put live without sign-off')
     live = page_format(live)
     changed = [p for p, d, c in ((LIVE, live, True), (PENDING, pending, False), (PENDING_PUB, pending, True),
-                                 (DRAFT, page_format(live, pending['songs']), True)) if write(p, d, c)]
+                                 (DRAFT, page_format(live, pending['songs']), True), (QUOTES, quotes, False),
+                                 (QUOTES_PUB, quotes, True)) if write(p, d, c)]
     print(len(applied), 'songs signed off and put live;', len(pending['songs']), 'waiting;',
           'changed:', ', '.join(os.path.relpath(p, ROOT) for p in changed) or 'nothing')
 
