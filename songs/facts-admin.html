@@ -94,7 +94,7 @@ blockquote { grid-column: 1; margin: 2px 0 0; padding: 6px 10px; border-left: 3p
       <div class="seg" role="group" aria-label="Show">
         <button type="button" data-show="waiting" aria-pressed="true">Waiting</button>
         <button type="button" data-show="signed" aria-pressed="false">Signed off</button>
-        <button type="button" data-show="old" aria-pressed="false">Live, not signed</button>
+        <button type="button" data-show="old" aria-pressed="false">Live</button>
         <button type="button" data-show="none" aria-pressed="false">No facts</button>
         <button type="button" data-show="all" aria-pressed="false">All</button>
       </div>
@@ -108,7 +108,7 @@ blockquote { grid-column: 1; margin: 2px 0 0; padding: 6px 10px; border-left: 3p
     </div>
     <div class="row"><span class="stat" id="stat">Loading…</span></div>
   </header>
-  <p class="help">Rewrite a fact, move it up (<b>↑</b>), remove it (<b>✕</b>; again to undo) or add your own. The first song fact and the first artist fact are the two shown in the 30-second preview. <b>Supporting words</b> shows the passage each fact was checked against. Changes stay on this device until you sign the day off, which puts exactly what you see live within a couple of minutes. A signed-off day can be changed and signed off again. Days waiting already show on the <a href="./draft/">draft</a>.</p>
+  <p class="help">Rewrite a fact, move it up (<b>↑</b>), remove it (<b>✕</b>; again to undo) or add your own. The first song fact and the first artist fact are the two shown in the 30-second preview. <b>Supporting words</b> shows the passage each fact was checked against. New songs wait here for you. Every live day can be changed too: <b>Save changes</b> puts exactly what you see live within a couple of minutes. Changes stay on this device until you sign off or save. Days waiting already show on the <a href="./draft/">draft</a>.</p>
   <ol class="days" id="list"></ol>
   <p class="empty" id="none" hidden>Nothing here.</p>
 </div>
@@ -214,7 +214,7 @@ blockquote { grid-column: 1; margin: 2px 0 0; padding: 6px 10px; border-left: 3p
     var h = el('div', 'dhead'), img = el('img'); img.alt = ''; img.loading = 'lazy'; if (s.img) img.src = s.img; h.appendChild(img);
     var meta = el('div', 'meta'), dl = el('a', null, 'No. ' + s.n + ' · ' + d.label); dl.href = './draft/#' + d.slug; dl.target = '_blank'; dl.title = 'Open this day on the draft';
     meta.appendChild(dl);
-    var label = { waiting: 'Waiting', signed: st.going ? 'Signed off · going live' : 'Signed off', old: 'Live, not signed', none: 'No facts yet' }[st.st];
+    var label = { waiting: 'Waiting for you', signed: st.going ? 'Signed off · going live' : 'Signed off by you', old: 'Live', none: 'No facts yet' }[st.st];
     meta.appendChild(el('span', 'badge ' + st.st, label));
     if (changed(s, st)) meta.appendChild(el('span', 'badge edited', 'Your changes'));
     h.appendChild(meta);
@@ -224,7 +224,7 @@ blockquote { grid-column: 1; margin: 2px 0 0; padding: 6px 10px; border-left: 3p
     li.appendChild(factList(s, st, w, 's', 'About the song'));
     Object.keys(w.a || {}).forEach(function (k) { li.appendChild(factList(s, st, w, k, 'About ' + (w.a[k].name || 'the artist'))); });
     var foot = el('div', 'dfoot');
-    var go = el('button', 'btn primary', st.st === 'signed' && !changed(s, st) ? 'Sign off again' : 'Sign off'); go.type = 'button';
+    var go = el('button', 'btn primary', st.st === 'waiting' ? 'Sign off' : 'Save changes'); go.type = 'button';
     go.addEventListener('click', function () { signoff([s]); });
     foot.appendChild(go);
     if (edits[s.id]) {
@@ -263,7 +263,7 @@ blockquote { grid-column: 1; margin: 2px 0 0; padding: 6px 10px; border-left: 3p
   function stats() {
     var c = { waiting: 0, signed: 0, old: 0, none: 0 }; songs.forEach(function (s) { c[state(s).st]++; });
     var n = Object.keys(edits).length;
-    document.getElementById('stat').innerHTML = '<b>' + c.waiting + '</b> waiting · <b>' + c.signed + '</b> signed off · <b>' + c.old + '</b> live, not signed · <b>' + c.none + '</b> with no facts' + (n ? ' · your changes on <b>' + n + '</b>' : '');
+    document.getElementById('stat').innerHTML = '<b>' + c.waiting + '</b> waiting · <b>' + c.signed + '</b> signed off by you · <b>' + c.old + '</b> live · <b>' + c.none + '</b> with no facts' + (n ? ' · your changes on <b>' + n + '</b>' : '');
   }
 
   function key() { return read(KEYS) || ''; }
@@ -275,7 +275,7 @@ blockquote { grid-column: 1; margin: 2px 0 0; padding: 6px 10px; border-left: 3p
     if (!key()) { toast('Type the admin password at the top first'); document.getElementById('key').focus(); return; }
     var items = list_.map(function (s) { return payload(s, state(s)); });
     var long = items.filter(function (it) { return it.s.concat.apply(it.s, Object.keys(it.a).map(function (k) { return it.a[k].f; })).some(function (f) { return words(f.t) > 30; }); });
-    if (long.length && !signoff.ok) { signoff.ok = true; toast('Some facts run over 30 words and may not fit the caption. Sign off again to go ahead.'); return; }
+    if (long.length && !signoff.ok) { signoff.ok = true; toast('Some facts run over 30 words and may not fit the caption. Press again to go ahead.'); return; }
     signoff.ok = false;
     post(items).then(function (j) {
       if (j.status === 401) { toast('Wrong password'); keyStat(false); return; }

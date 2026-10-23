@@ -3,6 +3,10 @@
 
     python3 _sotd/facts_apply.py             fetch John's sign-offs from the Worker, apply them, rebuild the copies
     python3 _sotd/facts_apply.py --offline   only rebuild the copies from what is saved here
+    python3 _sotd/facts_apply.py --offline --promote TRACK...|all
+                                             put waiting facts live without John's sign-off (only when he has said so:
+                                             on 23 Oct 2026 he asked for the checked rewrite of every existing song to go
+                                             straight live; each new song's facts still wait for him)
 
 Files:
     songs/facts.json                 live: the facts the calendar shows (signed off by John, or from before sign-off began)
@@ -84,7 +88,7 @@ def page_format(live, extra_songs=None):
     return out
 
 
-def main(offline):
+def main(offline, promote=()):
     live = load(LIVE, {'src': [], 'songs': {}, 'artists': {}})
     pending = load(PENDING, {'songs': {}})
     pending['about'] = ('Song facts written and checked, waiting for John to sign them off on songs/facts-admin.html. '
@@ -105,6 +109,13 @@ def main(offline):
                 pending['songs'].pop(tid, None)
                 applied.append(tid)
             live = merged
+    if promote:
+        ids = list(pending['songs']) if 'all' in promote else [t for t in promote if t in pending['songs']]
+        if ids:
+            live = page_format(live, {t: pending['songs'][t] for t in ids})
+            for t in ids:
+                pending['songs'].pop(t)
+            print(len(ids), 'waiting songs put live without sign-off')
     live = page_format(live)
     changed = [p for p, d, c in ((LIVE, live, True), (PENDING, pending, False), (PENDING_PUB, pending, True),
                                  (DRAFT, page_format(live, pending['songs']), True)) if write(p, d, c)]
@@ -113,4 +124,5 @@ def main(offline):
 
 
 if __name__ == '__main__':
-    main('--offline' in sys.argv)
+    args = sys.argv[1:]
+    main('--offline' in args, args[args.index('--promote') + 1:] if '--promote' in args else ())
