@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ["_tvapp/**", ".github/workflows/tv-app.yml"]
+    paths: ["_tvapp/src/**", "_tvapp/res/**", "_tvapp/AndroidManifest.xml", "_tvapp/build.sh", "_tvapp/make_key.py", ".github/workflows/tv-app.yml"]
 
 permissions:
   contents: write

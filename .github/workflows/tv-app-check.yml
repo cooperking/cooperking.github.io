@@ -1,0 +1,54 @@
+name: Fire TV app check
+
+# Runs songs/tv.apk in an Android TV emulator and works it with remote-control keys, saving a screenshot after
+# each step and the app's log to _tvapp/check/. Started by hand.
+on:
+  workflow_dispatch:
+    inputs:
+      api:
+        description: "Android version (API level) of the TV emulator"
+        default: "34"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tv-app
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Let the emulator use KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run the app with the remote
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ inputs.api }}
+          target: android-tv
+          arch: x86
+          profile: tv_1080p
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: bash _tvapp/check.sh
+
+      - name: Save what it saw
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add -A _tvapp/check
+          if git diff --cached --quiet; then echo "nothing to save"; exit 0; fi
+          git commit -m "Fire TV app check (API ${{ inputs.api }})"
+          for i in 1 2 3 4 5; do git pull --rebase --quiet && git push && exit 0; sleep 5; done
+          exit 1

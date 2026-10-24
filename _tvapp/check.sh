@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# The app in a TV emulator, worked with remote keys; a screenshot after each step into _tvapp/check/ (see
+# tv-app-check.yml). Starts on the live site, then Menu switches to the draft.
+set -uo pipefail
+cd "$(dirname "$0")"
+OUT=check; rm -rf "$OUT"; mkdir -p "$OUT"
+n=0
+shot() { n=$((n + 1)); local f; f=$(printf '%s/%02d-%s.png' "$OUT" "$n" "$1"); adb exec-out screencap -p > "$f"; echo "shot $f"; }
+key() { adb shell input keyevent "$@"; sleep 1.2; }
+{
+  echo "device: $(adb shell getprop ro.build.version.release) API $(adb shell getprop ro.build.version.sdk)"
+  echo "webview: $(adb shell dumpsys webviewupdate | grep -m1 'Current WebView package' )"
+  adb shell wm size; adb shell wm density
+} > "$OUT/device.txt" 2>&1
+adb logcat -c
+adb install -r ../songs/tv.apk >> "$OUT/device.txt" 2>&1
+adb shell am start -W -n io.github.cooperking.sotd/.MainActivity >> "$OUT/device.txt" 2>&1
+sleep 25; shot live
+key KEYCODE_MENU; sleep 20; shot draft
+key KEYCODE_DPAD_RIGHT KEYCODE_DPAD_RIGHT; shot right-right
+key KEYCODE_DPAD_DOWN; shot down
+key KEYCODE_DPAD_CENTER; sleep 4; shot ok-day
+key KEYCODE_MEDIA_PLAY_PAUSE; sleep 3; shot playpause
+key KEYCODE_MEDIA_FAST_FORWARD; sleep 4; shot fastforward
+key KEYCODE_DPAD_RIGHT; shot right-to-video
+key KEYCODE_DPAD_CENTER; sleep 25; shot video
+key KEYCODE_BACK; sleep 3; shot back
+key KEYCODE_DPAD_UP KEYCODE_DPAD_UP KEYCODE_DPAD_UP; shot up-up-up
+key KEYCODE_BACK; sleep 3; shot back-closes-app
+adb shell dumpsys activity activities | grep -E "mResumedActivity|topResumedActivity" >> "$OUT/device.txt" 2>&1
+adb logcat -d -v brief chromium:I cr_*:I AndroidRuntime:E ActivityManager:W SOTD:V '*:S' > "$OUT/log.txt" 2>&1
+ls -l "$OUT"
+exit 0
