@@ -71,6 +71,7 @@ public class MainActivity extends Activity {
     final Runnable okHold = new Runnable() { public void run() { if (okDown != null && !okHeld) { okHeld = true; page("hold"); } } };
     String pendingApk;   // an update waiting for this app to be allowed to install apps
     volatile boolean updating;
+    boolean handedOver;   // the download handed to the installer, which is open
 
     @Override
     protected void onCreate(Bundle saved) {
@@ -143,12 +144,13 @@ public class MainActivity extends Activity {
             prefs.edit().putString("pendingApk", apk).putLong("pendingUntil", System.currentTimeMillis() + 30L * 60 * 1000).apply();
             try {
                 startActivity(new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:" + getPackageName())));
-                Toast.makeText(this, "Turn Song of the Day on, then press Back", Toast.LENGTH_LONG).show();
+                // turning it on closes the app (Android does that), so the update carries on when it's opened again
+                Toast.makeText(this, "Turn Song of the Day on, then open Song of the Day again", Toast.LENGTH_LONG).show();
             } catch (ActivityNotFoundException e) {
                 new AlertDialog.Builder(this)
                     .setTitle("Let the app install its update")
                     .setMessage("In Settings, go to Device & Software (or My Fire TV) \u2192 Developer options \u2192 Install unknown apps, "
-                        + "and turn on Song of the Day. Then come back here.")
+                        + "and turn on Song of the Day. Then open Song of the Day again.")
                     .setPositiveButton("OK", null)
                     .show();
             }
@@ -190,11 +192,11 @@ public class MainActivity extends Activity {
         Intent i = new Intent(Intent.ACTION_VIEW);
         i.setDataAndType(Uri.parse("content://" + ApkProvider.AUTHORITY + "/" + ApkProvider.NAME), "application/vnd.android.package-archive");
         i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
-        try { startActivity(i); }
+        try { startActivity(i); handedOver = true; }   // still updating until the installer's closed (back in onResume)
         catch (ActivityNotFoundException e) {
+            updating = false;
             Toast.makeText(this, "This TV won't install it from here. It's at cooperking.github.io/songs/tv.apk", Toast.LENGTH_LONG).show();
         }
-        updating = false;
     }
 
     void makeWeb() {
@@ -385,6 +387,7 @@ public class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
         web.onResume();
+        if (handedOver) { handedOver = false; updating = false; }   // the installer was closed without updating
         if (pendingApk == null && System.currentTimeMillis() < prefs.getLong("pendingUntil", 0)) pendingApk = prefs.getString("pendingApk", null);
         if (pendingApk != null && mayInstall() && !updating) {   // back from allowing it
             String a = pendingApk; pendingApk = null;

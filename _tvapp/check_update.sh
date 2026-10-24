@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # The update check, in a TV emulator: an old build (version 1, built by tv-app-check.yml with the real key) opens,
 # finds the newest build in songs/tv.json, offers it; Install asks for the TV's permission the first time (given here
-# with adb, as the TV's switch would), downloads it and hands it to the installer; the installer's Update is pressed;
+# with adb, as the TV's switch would; Android closes the app then, so it's opened again), downloads it and hands it to the installer; the installer's Update is pressed;
 # the installed version is then the newest. Screenshots into _tvapp/check/.
 set -uo pipefail
 cd "$(dirname "$0")"
@@ -20,9 +20,15 @@ adb shell am start -W -n io.github.cooperking.sotd/.MainActivity >> "$OUT/device
 sleep 25; shot offered
 key KEYCODE_DPAD_RIGHT KEYCODE_DPAD_CENTER; sleep 4; shot install-pressed
 echo "may install before: $(adb shell appops get io.github.cooperking.sotd REQUEST_INSTALL_PACKAGES)" >> "$OUT/device.txt"
-adb shell appops set io.github.cooperking.sotd REQUEST_INSTALL_PACKAGES allow
-key KEYCODE_BACK; sleep 15; shot installer
+adb shell appops set io.github.cooperking.sotd REQUEST_INSTALL_PACKAGES allow   # Android closes the app when this changes
+sleep 3; shot switched-on
+key KEYCODE_BACK; sleep 2; shot back
+echo "app running after the switch: $(adb shell pidof io.github.cooperking.sotd || echo no)" >> "$OUT/device.txt"
+adb shell am start -W -n io.github.cooperking.sotd/.MainActivity >> "$OUT/device.txt" 2>&1   # opened again
+sleep 15; shot installer
 key KEYCODE_DPAD_RIGHT KEYCODE_DPAD_CENTER; sleep 25; shot after-update
+adb shell am start -W -n io.github.cooperking.sotd/.MainActivity >> "$OUT/device.txt" 2>&1
+sleep 15; shot opened-after-update
 echo "after: $(ver)" >> "$OUT/device.txt"
 adb logcat -d -v time > "$OUT/full.txt" 2>&1
 grep -E "SOTD|sotd|cooperking|PackageInstaller|has died|FATAL|AndroidRuntime" "$OUT/full.txt" | grep -vE "com.google.android.gms|GmsCore" > "$OUT/log.txt"
