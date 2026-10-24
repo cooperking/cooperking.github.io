@@ -8,9 +8,12 @@ Starting: Intent { cmp=io.github.cooperking.sotd/.MainActivity }
 Status: ok
 LaunchState: COLD
 Activity: io.github.cooperking.sotd/.MainActivity
-TotalTime: 1094
-WaitTime: 1098
+TotalTime: 793
+WaitTime: 831
 Complete
+after ~3s: pid 3007 top     topResumedActivity=ActivityRecord{c05a389 u0 io.github.cooperking.sotd/.MainActivity t7}
+after ~8s: pid 3007 top     topResumedActivity=ActivityRecord{c05a389 u0 io.github.cooperking.sotd/.MainActivity t7}
+after ~15s: pid  top       topResumedActivity=ActivityRecord{dcd144f u0 com.google.android.tvlauncher/.MainActivity t6}
 app pid after start: 
 app pid on the draft: 
-      topResumedActivity=ActivityRecord{1042b98 u0 com.google.android.tvlauncher/.MainActivity t5}
+    topResumedActivity=ActivityRecord{d1c1d76 u0 com.google.android.youtube.tv/com.google.android.apps.youtube.tv.activity.MainActivity t9}
