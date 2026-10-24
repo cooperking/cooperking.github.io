@@ -65,10 +65,11 @@ jobs:
       - name: Put it on the site
         run: |
           cp _tvapp/build/sotd-tv.apk songs/tv.apk
+          printf '{"build": %s, "apk": "https://cooperking.github.io/songs/tv.apk"}\n' "${{ github.run_number }}" > songs/tv.json   # the app looks here for updates
           { echo "build ${{ github.run_number }}"; cat _tvapp/build/info.txt _tvapp/build/badging.txt _tvapp/build/verify.txt; } > _tvapp/last-build.txt
           git config user.name "github-actions[bot]"
           git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
-          git add songs/tv.apk _tvapp/last-build.txt
+          git add songs/tv.apk songs/tv.json _tvapp/last-build.txt
           if git diff --cached --quiet; then echo "nothing changed"; exit 0; fi
           git commit -m "Fire TV app, build ${{ github.run_number }}"
           for i in 1 2 3 4 5; do git pull --rebase --quiet && git push && exit 0; sleep 5; done

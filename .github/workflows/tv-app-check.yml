@@ -8,6 +8,9 @@ on:
       api:
         description: "Android version (API level) of the TV emulator"
         default: "34"
+      script:
+        description: "What to check: check.sh (the app with the remote) or check_update.sh (the update check)"
+        default: "check.sh"
 
 permissions:
   contents: write
@@ -31,6 +34,23 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
+      - uses: actions/setup-java@v4
+        if: inputs.script == 'check_update.sh'
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: An old build (version 1) to update from, with the real key
+        if: inputs.script == 'check_update.sh'
+        env:
+          SEED: ${{ secrets.YT_CLIENT_SECRET }}
+        run: |
+          pip install --quiet "cryptography>=44"
+          export KS_PASS="$(openssl rand -hex 16)" KEYSTORE="$RUNNER_TEMP/tv.p12" VERSION_CODE=1
+          python _tvapp/make_key.py "$KEYSTORE"
+          bash _tvapp/build.sh
+          rm -f "$RUNNER_TEMP/tv.p12"
+
       - name: Run the app with the remote
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -41,7 +61,7 @@ jobs:
           ram-size: 4096M
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          script: bash _tvapp/check.sh
+          script: bash _tvapp/${{ inputs.script }}
 
       - name: Save what it saw
         if: always()

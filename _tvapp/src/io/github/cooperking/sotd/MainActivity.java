@@ -1,15 +1,19 @@
 package io.github.cooperking.sotd;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
@@ -28,18 +32,32 @@ import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
 import android.widget.Toast;
 
+import org.json.JSONObject;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+
 /**
  * John's Song of the Day on a Fire TV: the site in a full-screen browser view. The page knows it's on a TV from
  * the browser's name (SOTDTV) and then works by the remote's arrows and OK; this passes it the other buttons:
  * Back (closes the top pop-up, or the app), play/pause, rewind / fast-forward (the day or month before or after),
  * and Menu, which switches between the live site and the draft. OK held down is the page's "hold" (on a day: add it
  * to My playlist); a press of OK goes to the page as it was, once it's let go.
+ * On opening it looks for a newer build (songs/tv.json, written with each build) and offers to install it.
  */
 public class MainActivity extends Activity {
     static final String LIVE = "https://cooperking.github.io/songs/";
     static final String DRAFT = "https://cooperking.github.io/songs/draft/";
     static final String HOST = "cooperking.github.io";
     static final String TAG = "SOTD";
+    static final String UPDATE_INFO = "https://cooperking.github.io/songs/tv.json";
+    static final String UPDATE_APK = "https://cooperking.github.io/songs/tv.apk";
 
     WebView web;
     FrameLayout root;
@@ -51,6 +69,8 @@ public class MainActivity extends Activity {
     KeyEvent okDown;   // OK pressed and not yet let go
     boolean okHeld;
     final Runnable okHold = new Runnable() { public void run() { if (okDown != null && !okHeld) { okHeld = true; page("hold"); } } };
+    String pendingApk;   // an update waiting for this app to be allowed to install apps
+    volatile boolean updating;
 
     @Override
     protected void onCreate(Bundle saved) {
@@ -63,6 +83,117 @@ public class MainActivity extends Activity {
         web.requestFocus();
         if (saved != null) web.restoreState(saved);
         else web.loadUrl(home());
+        new File(getCacheDir(), ApkProvider.NAME).delete();   // an update already installed (this is it)
+        if (saved == null) later.postDelayed(new Runnable() { public void run() { checkForUpdate(); } }, 4000);
+    }
+
+    // ---- updates: the site says which build is newest (songs/tv.json); a newer one is offered, downloaded and handed
+    // to the TV's installer, which asks to confirm. The first time, the TV has to allow this app to install apps. ----
+    int myBuild() {
+        try { return getPackageManager().getPackageInfo(getPackageName(), 0).versionCode; } catch (Exception e) { return Integer.MAX_VALUE; }
+    }
+
+    static String readAll(InputStream in) throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        byte[] b = new byte[8192];
+        for (int n; (n = in.read(b)) > 0; ) out.write(b, 0, n);
+        in.close();
+        return out.toString("UTF-8");
+    }
+
+    void checkForUpdate() {
+        if (updating || System.currentTimeMillis() < prefs.getLong("laterUntil", 0)) return;
+        new Thread(new Runnable() {
+            public void run() {
+                try {
+                    HttpURLConnection c = (HttpURLConnection) new URL(UPDATE_INFO + "?t=" + System.currentTimeMillis()).openConnection();
+                    c.setConnectTimeout(10000); c.setReadTimeout(10000); c.setUseCaches(false);
+                    if (c.getResponseCode() != 200) { Log.w(TAG, "update check: HTTP " + c.getResponseCode()); return; }
+                    JSONObject j = new JSONObject(readAll(c.getInputStream()));
+                    final int latest = j.optInt("build", 0);
+                    final String apk = j.optString("apk", UPDATE_APK);
+                    Log.i(TAG, "update check: this is build " + myBuild() + ", newest " + latest);
+                    if (latest > myBuild()) runOnUiThread(new Runnable() { public void run() { offerUpdate(latest, apk); } });
+                } catch (Exception e) { Log.w(TAG, "update check: " + e); }
+            }
+        }).start();
+    }
+
+    void offerUpdate(final int latest, final String apk) {
+        if (isFinishing() || updating) return;
+        new AlertDialog.Builder(this)
+            .setTitle("A new version of Song of the Day")
+            .setMessage("Build " + latest + " is ready (this is build " + myBuild() + "). Install it now?")
+            .setPositiveButton("Install", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface d, int w) { startUpdate(apk); }
+            })
+            .setNegativeButton("Later", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface d, int w) {   // asked again in a day
+                    prefs.edit().putLong("laterUntil", System.currentTimeMillis() + 24L * 3600 * 1000).apply();
+                }
+            })
+            .show();
+    }
+
+    boolean mayInstall() { return Build.VERSION.SDK_INT < 26 || getPackageManager().canRequestPackageInstalls(); }
+
+    void startUpdate(String apk) {
+        if (!mayInstall()) {   // the TV's switch for this app: Install unknown apps
+            pendingApk = apk;
+            try {
+                startActivity(new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:" + getPackageName())));
+                Toast.makeText(this, "Turn Song of the Day on, then press Back", Toast.LENGTH_LONG).show();
+            } catch (ActivityNotFoundException e) {
+                new AlertDialog.Builder(this)
+                    .setTitle("Let the app install its update")
+                    .setMessage("In Settings, go to Device & Software (or My Fire TV) \u2192 Developer options \u2192 Install unknown apps, "
+                        + "and turn on Song of the Day. Then come back here.")
+                    .setPositiveButton("OK", null)
+                    .show();
+            }
+            return;
+        }
+        download(apk);
+    }
+
+    void download(final String apk) {
+        updating = true;
+        Toast.makeText(this, "Getting the new version\u2026", Toast.LENGTH_SHORT).show();
+        new Thread(new Runnable() {
+            public void run() {
+                File part = new File(getCacheDir(), "update.part"), done = new File(getCacheDir(), ApkProvider.NAME);
+                try {
+                    HttpURLConnection c = (HttpURLConnection) new URL(apk + "?t=" + System.currentTimeMillis()).openConnection();
+                    c.setConnectTimeout(15000); c.setReadTimeout(30000); c.setUseCaches(false);
+                    if (c.getResponseCode() != 200) throw new IOException("HTTP " + c.getResponseCode());
+                    InputStream in = c.getInputStream();
+                    OutputStream out = new FileOutputStream(part);
+                    byte[] b = new byte[65536];
+                    for (int n; (n = in.read(b)) > 0; ) out.write(b, 0, n);
+                    out.close(); in.close();
+                    if (!part.renameTo(done)) throw new IOException("couldn't keep the download");
+                    done.setReadable(true, false);
+                    runOnUiThread(new Runnable() { public void run() { install(); } });
+                } catch (final Exception e) {
+                    Log.w(TAG, "update download: " + e);
+                    runOnUiThread(new Runnable() { public void run() {
+                        updating = false;
+                        Toast.makeText(MainActivity.this, "Couldn't get the new version. It's at cooperking.github.io/songs/tv.apk", Toast.LENGTH_LONG).show();
+                    } });
+                }
+            }
+        }).start();
+    }
+
+    void install() {
+        Intent i = new Intent(Intent.ACTION_VIEW);
+        i.setDataAndType(Uri.parse("content://" + ApkProvider.AUTHORITY + "/" + ApkProvider.NAME), "application/vnd.android.package-archive");
+        i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
+        try { startActivity(i); }
+        catch (ActivityNotFoundException e) {
+            Toast.makeText(this, "This TV won't install it from here. It's at cooperking.github.io/songs/tv.apk", Toast.LENGTH_LONG).show();
+        }
+        updating = false;
     }
 
     void makeWeb() {
@@ -253,6 +384,7 @@ public class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
         web.onResume();
+        if (pendingApk != null && mayInstall()) { String a = pendingApk; pendingApk = null; download(a); }   // back from allowing it
     }
 
     @Override
