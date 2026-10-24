@@ -50,6 +50,7 @@ ul.people { list-style: none; margin: 0; padding: 0; }
 .person .who { font-family: var(--serif); font-size: 20px; color: var(--fg); min-width: 8em; }
 .link { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; width: 100%; padding: 8px 10px; border-radius: 10px; background: var(--chip); border: 1px dashed var(--line); }
 .link code { font-size: 12.5px; overflow-wrap: anywhere; flex: 1 1 280px; }
+.link code.big { flex: 0 0 auto; font: 600 30px/1 ui-monospace, Menlo, monospace; letter-spacing: .12em; color: var(--fg); }
 ol.songs { list-style: none; margin: 0; padding: 0; }
 .song { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; gap: 4px 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); }
 .song img { width: 56px; height: 56px; border-radius: 5px; object-fit: cover; background: var(--chip); }
@@ -85,12 +86,13 @@ table.match select { max-width: 100%; font-size: 13px; padding: 4px 6px; }
   </header>
 
   <h2>Family</h2>
-  <p class="help">Add someone and send them the link it gives. Opening it signs that phone, computer or TV in (up to 5 devices, within 30 days); after that they hear the whole song and see your video where you've added one. <b>Remove</b> signs all their devices out. <b>New link</b> gives a fresh one (the old one stops working).</p>
+  <p class="help">Add someone and send them the link it gives. Opening it signs that phone or computer in (up to 5 devices, within 30 days); after that they hear the whole song and see your video where you've added one. For a Fire TV, use <b>TV code</b>: a six-letter code to type in the app's ≡ menu (Family sign-in). <b>Remove</b> signs all their devices out. <b>New link</b> gives a fresh one (the old one stops working).</p>
   <div class="row">
     <input class="name" id="newname" placeholder="Their name" autocomplete="off" aria-label="Their name">
     <button class="btn primary" id="invite" type="button">Invite</button>
   </div>
   <div class="link" id="newlink" hidden><code id="linktext"></code><button class="btn small" id="copy" type="button">Copy</button><button class="btn small" id="share" type="button">Share</button></div>
+  <div class="link" id="tvbox" hidden><span class="stat">On <b id="tvfor"></b>’s Fire TV: Song of the Day → ≡ → Family sign-in, and type</span><code id="tvcode" class="big"></code><span class="stat">(once, within <span id="tvmins"></span> minutes)</span></div>
   <ul class="people" id="people"></ul>
 
   <h2>Songs, videos and sharing pictures</h2>
@@ -171,8 +173,12 @@ table.match select { max-width: 100%; font-size: 13px; padding: 4px 6px; }
       st.textContent = (m.devices ? m.devices + (m.devices === 1 ? ' device' : ' devices') : 'not signed in yet') + (m.seen ? ' · last here ' + new Date(m.seen).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '')
         + (m.invite ? ' · link: ' + (m.invite.left && m.invite.until > Date.now() ? m.invite.left + ' more device' + (m.invite.left === 1 ? '' : 's') + ' until ' + new Date(m.invite.until).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : 'used up') : '');
       var nl = button('New link', function () { api('/members/admin', { op: 'reinvite', id: m.id }).then(showLink); });
+      var tv = button('TV code', function () { api('/members/admin', { op: 'tvcode', id: m.id }).then(function (j) {
+        if (!j.code) { toast(j.error || 'Couldn’t make a code'); return; }
+        $('tvcode').textContent = j.code.slice(0, 3) + ' ' + j.code.slice(3); $('tvfor').textContent = j.name; $('tvmins').textContent = j.minutes; $('tvbox').hidden = false;
+      }); });
       var rm = button('Remove', function () { if (!confirm('Remove ' + m.name + '? Their devices are signed out.')) return; api('/members/admin', { op: 'remove', id: m.id }).then(function (j) { if (j.members) { MEMBERS = j.members; people(); toast(m.name + ' removed'); } }); });
-      li.appendChild(who); li.appendChild(st); li.appendChild(nl); li.appendChild(rm); ul.appendChild(li);
+      li.appendChild(who); li.appendChild(st); li.appendChild(nl); li.appendChild(tv); li.appendChild(rm); ul.appendChild(li);
     });
   }
   function button(label, fn) { var b = document.createElement('button'); b.type = 'button'; b.className = 'btn small'; b.textContent = label; b.addEventListener('click', fn); return b; }

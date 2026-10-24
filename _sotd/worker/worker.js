@@ -376,6 +376,10 @@ async function startFactsJob(env) {
 const MEMBERS_ORIGIN = 'https://cooperking.github.io';
 const MEMBERS_JOIN = 'https://cooperking.github.io/songs/#join=';
 const INVITE_USES = 5, INVITE_DAYS = 30, LINK_HOURS = 12, MEMBERS_MAX = 40;
+// a TV can't open a link: John makes a short code for the member instead, typed in the Fire TV app's menu; one use,
+// for TV_CODE_MINUTES
+const TV_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789', TV_CODE_MINUTES = 30;
+function tvCode() { return [...crypto.getRandomValues(new Uint8Array(6))].map(b => TV_CODE_CHARS[b % TV_CODE_CHARS.length]).join(''); }
 const MEDIA_KINDS = { a: { ext: 'mp3', type: 'audio/mpeg' }, v: { ext: 'mp4', type: 'video/mp4' } };
 const MEDIA_KEY_RE = /^(a\/[0-9A-Za-z]{22}\.mp3|v\/[0-9A-Za-z]{22}\.mp4)$/;
 
@@ -450,6 +454,12 @@ async function members(request, url, env) {
       if (!m) return answer(404, { error: 'No such member.' });
       const link = await invite(m); await save();
       return answer(200, { id: body.id, link, members: listing() });
+    }
+    case 'tvcode': {
+      if (!all[body.id]) return answer(404, { error: 'No such member.' });
+      const code = tvCode();
+      await env.SOTD.put('tvcode:' + await sha256hex(code), body.id, { expirationTtl: TV_CODE_MINUTES * 60 });
+      return answer(200, { code, minutes: TV_CODE_MINUTES, name: all[body.id].name });
     }
     case 'remove': {
       if (!all[body.id]) return answer(404, { error: 'No such member.' });
@@ -554,16 +564,29 @@ async function memberJoin(request, env, answer) {
   const fails = Number(await env.SOTD.get(failKey)) || 0;
   if (fails >= 20) return answer(429, { error: 'Too many tries from here this hour.' });
   const body = await request.json().catch(() => ({}));
-  const hash = await sha256hex(String(body.code || ''));
   const all = (await env.SOTD.get('members', 'json')) || {};
-  const id = Object.keys(all).find(k => all[k].invite && all[k].invite.hash === hash);
-  const m = id && all[id];
-  if (!m || m.invite.until < Date.now() || m.invite.uses >= INVITE_USES) {
-    if (!m) await env.SOTD.put(failKey, String(fails + 1), { expirationTtl: 7200 });
-    return answer(403, { error: m ? 'This invite has run out. Ask John for a new one.' : 'This invite isn’t valid. Ask John for a new one.' });
+  const given = String(body.code || '');
+  const short = given.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  let id, m, tvKey = null;
+  if (short.length === 6) {   // a TV code: one use
+    tvKey = 'tvcode:' + await sha256hex(short);
+    id = await env.SOTD.get(tvKey);
+    m = id && all[id];
+    if (!m) {
+      await env.SOTD.put(failKey, String(fails + 1), { expirationTtl: 7200 });
+      return answer(403, { error: 'That code isn’t right, or it has run out. Ask John for a new one.' });
+    }
+  } else {
+    const hash = await sha256hex(given);
+    id = Object.keys(all).find(k => all[k].invite && all[k].invite.hash === hash);
+    m = id && all[id];
+    if (!m || m.invite.until < Date.now() || m.invite.uses >= INVITE_USES) {
+      if (!m) await env.SOTD.put(failKey, String(fails + 1), { expirationTtl: 7200 });
+      return answer(403, { error: m ? 'This invite has run out. Ask John for a new one.' : 'This invite isn’t valid. Ask John for a new one.' });
+    }
   }
   const token = randomCode(32);
-  m.invite.uses++;
+  if (tvKey) await env.SOTD.delete(tvKey); else m.invite.uses++;
   m.devices = m.devices || {};
   m.devices[await sha256hex(token)] = { at: Date.now(), seen: Date.now() };
   await env.SOTD.put('members', JSON.stringify(all));

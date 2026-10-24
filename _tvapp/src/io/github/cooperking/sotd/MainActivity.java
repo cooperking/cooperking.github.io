@@ -30,6 +30,9 @@ import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.text.InputFilter;
+import android.text.InputType;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.Toast;
 
@@ -95,7 +98,6 @@ public class MainActivity extends Activity {
         if (saved != null) web.restoreState(saved);
         else web.loadUrl(home());
         new File(getCacheDir(), ApkProvider.NAME).delete();   // an update already installed (this is it)
-        if (saved == null) later.postDelayed(new Runnable() { public void run() { checkForUpdate(); } }, 4000);
     }
 
     // ---- updates: the site says which build is newest (songs/tv.json); a newer one is offered, downloaded and handed
@@ -112,8 +114,15 @@ public class MainActivity extends Activity {
         return out.toString("UTF-8");
     }
 
-    void checkForUpdate() {
-        if (updating || System.currentTimeMillis() < prefs.getLong("laterUntil", 0)) return;
+    // looked for a few seconds after the app comes up, whether it's opened afresh or brought back from the background
+    // (a TV keeps it in memory, so reopening it is usually the second), at most every 20 minutes; or from the menu
+    long lastCheck;
+    boolean offering;
+    final Runnable autoCheck = new Runnable() { public void run() { checkForUpdate(false); } };
+
+    void checkForUpdate(final boolean asked) {
+        lastCheck = System.currentTimeMillis();
+        if (updating || offering || (!asked && System.currentTimeMillis() < prefs.getLong("laterUntil", 0))) return;
         new Thread(new Runnable() {
             public void run() {
                 try {
@@ -125,14 +134,22 @@ public class MainActivity extends Activity {
                     final String apk = j.optString("apk", UPDATE_APK);
                     Log.i(TAG, "update check: this is build " + myBuild() + ", newest " + latest);
                     if (latest > myBuild()) runOnUiThread(new Runnable() { public void run() { offerUpdate(latest, apk); } });
-                } catch (Exception e) { Log.w(TAG, "update check: " + e); }
+                    else if (asked) runOnUiThread(new Runnable() { public void run() {
+                        Toast.makeText(MainActivity.this, "This is the newest version (build " + myBuild() + ")", Toast.LENGTH_LONG).show(); } });
+                } catch (final Exception e) {
+                    Log.w(TAG, "update check: " + e);
+                    if (asked) runOnUiThread(new Runnable() { public void run() {
+                        Toast.makeText(MainActivity.this, "Couldn't check for a new version: " + e.getMessage(), Toast.LENGTH_LONG).show(); } });
+                }
             }
         }).start();
     }
 
     void offerUpdate(final int latest, final String apk) {
-        if (isFinishing() || updating) return;
+        if (isFinishing() || updating || offering) return;
+        offering = true;
         new AlertDialog.Builder(this)
+            .setOnDismissListener(new DialogInterface.OnDismissListener() { public void onDismiss(DialogInterface d) { offering = false; } })
             .setTitle("A new version of Song of the Day")
             .setMessage("Build " + latest + " is ready (this is build " + myBuild() + "). Install it now?")
             .setPositiveButton("Install", new DialogInterface.OnClickListener() {
@@ -330,15 +347,50 @@ public class MainActivity extends Activity {
 
     void menu() {
         final boolean yt = signedIn();
-        String[] items = { yt ? "Sign out of YouTube" : "Sign in to YouTube (with Premium, no adverts)" };
+        String[] items = { yt ? "Sign out of YouTube" : "Sign in to YouTube (with Premium, no adverts)",
+            "Family sign-in (a TV code from John)", "Check for a new version" };
         new AlertDialog.Builder(this)
             .setTitle("Song of the Day \u00b7 build " + myBuild() + (yt ? " \u00b7 signed in to YouTube" : ""))
             .setItems(items, new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface d, int which) {
-                    if (yt) signOut(); else signIn();
+                    if (which == 0) { if (yt) signOut(); else signIn(); }
+                    else if (which == 1) familySignIn();
+                    else checkForUpdate(true);
                 }
             })
             .show();
+    }
+
+    // a family member's TV: John makes a short code on the members page (songs/members-admin.html), it's typed here, and
+    // the page signs this TV in with it (sotdJoin), as an invite link does on a phone
+    void familySignIn() {
+        final EditText code = new EditText(this);
+        code.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+        code.setFilters(new InputFilter[] { new InputFilter.AllCaps(), new InputFilter.LengthFilter(12) });
+        code.setHint("e.g. K7MP2Q");
+        code.setTextSize(28);
+        FrameLayout box = new FrameLayout(this);
+        int pad = (int) (24 * getResources().getDisplayMetrics().density);
+        box.setPadding(pad, pad / 2, pad, 0);
+        box.addView(code);
+        new AlertDialog.Builder(this)
+            .setTitle("Family sign-in")
+            .setMessage("Type the TV code from John's members page.")
+            .setView(box)
+            .setPositiveButton("Sign in", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface d, int w) {
+                    String c = code.getText().toString().toUpperCase().replaceAll("[^A-Z0-9]", "");
+                    if (c.length() < 6) { Toast.makeText(MainActivity.this, "That code is too short", Toast.LENGTH_SHORT).show(); return; }
+                    web.evaluateJavascript("typeof sotdJoin === 'function' ? (sotdJoin('" + c + "'), 'ok') : 'no'", new ValueCallback<String>() {
+                        public void onReceiveValue(String r) {
+                            if (!"\"ok\"".equals(r)) Toast.makeText(MainActivity.this, "Family sign-in isn't on the site yet", Toast.LENGTH_LONG).show();
+                        }
+                    });
+                }
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
+        code.requestFocus();
     }
 
     void offerSignIn() {
@@ -468,6 +520,7 @@ public class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
         web.onResume();
+        if (System.currentTimeMillis() - lastCheck > 20L * 60 * 1000) { lastCheck = System.currentTimeMillis(); later.postDelayed(autoCheck, 3000); }
         if (handedOver) { handedOver = false; updating = false; }   // the installer was closed without updating
         if (pendingApk == null && System.currentTimeMillis() < prefs.getLong("pendingUntil", 0)) pendingApk = prefs.getString("pendingApk", null);
         if (pendingApk != null && mayInstall() && !updating) {   // back from allowing it

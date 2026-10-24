@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# The YouTube sign-in, in a TV emulator: an advert starting (made to look so, through the view's debugging socket)
-# offers it, once; Not now; Menu opens the menu; its first line opens Google's sign-in in the app; OK on the page
-# brings the keyboard; Back leaves the sign-in for the songs. Nobody signs in here.
+# The menu, in a TV emulator: an advert starting (made to look so, through the view's debugging socket) offers the
+# YouTube sign-in, once; Not now; Menu: Check for a new version says this is the newest; Family sign-in takes a code
+# (the live site has no family sign-in yet, so it says so); the first line opens Google's sign-in in the app; OK on the
+# page brings the keyboard; Back leaves the sign-in for the songs. Nobody signs in here.
 # Screenshots into _tvapp/check/.
 set -uo pipefail
 cd "$(dirname "$0")"
@@ -24,6 +25,13 @@ key KEYCODE_DPAD_LEFT KEYCODE_DPAD_CENTER; sleep 1; shot not-now
 python3 cdp.py "document.documentElement.classList.remove('vad'); $AD" >> "$OUT/device.txt" 2>&1; sleep 2; shot second-advert-no-offer
 python3 cdp.py "document.documentElement.classList.remove('vad'); document.dispatchEvent(new Event('sotd-ad')); 'off'" >> "$OUT/device.txt" 2>&1
 key KEYCODE_MENU; sleep 1; shot menu
+key KEYCODE_DPAD_DOWN KEYCODE_DPAD_DOWN KEYCODE_DPAD_CENTER; sleep 4; shot check-for-a-new-version
+key KEYCODE_MENU; sleep 1
+key KEYCODE_DPAD_DOWN KEYCODE_DPAD_CENTER; sleep 2; shot family-sign-in
+adb shell input text K7MP2Q; sleep 1; shot code-typed
+key KEYCODE_BACK; sleep 1; shot keyboard-away
+key KEYCODE_DPAD_DOWN KEYCODE_DPAD_RIGHT KEYCODE_DPAD_CENTER; sleep 3; shot signed-in-or-not
+key KEYCODE_MENU; sleep 1; shot menu-again
 key KEYCODE_DPAD_CENTER; sleep 12; shot google-sign-in
 key KEYCODE_DPAD_CENTER; sleep 3; shot ok-on-the-page
 key KEYCODE_TAB; sleep 2; shot tab
