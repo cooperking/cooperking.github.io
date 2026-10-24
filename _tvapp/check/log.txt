@@ -1,48 +1,84 @@
-10-24 19:26:38.802 I/SOTD    ( 3416): loaded https://cooperking.github.io/songs/
-10-24 19:26:39.973 I/SOTD    ( 3416): update check: this is build 18, newest 18
-10-24 19:27:01.063 D/AndroidRuntime( 3644): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
-10-24 19:27:01.064 I/AndroidRuntime( 3644): Using default boot image
-10-24 19:27:01.064 I/AndroidRuntime( 3644): Leaving lock profiling enabled
-10-24 19:27:01.099 D/AndroidRuntime( 3644): Calling main entry com.android.commands.input.Input
-10-24 19:27:01.103 D/AndroidRuntime( 3644): Shutting down VM
-10-24 19:27:06.888 D/AndroidRuntime( 3720): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
-10-24 19:27:06.889 I/AndroidRuntime( 3720): Using default boot image
-10-24 19:27:06.889 I/AndroidRuntime( 3720): Leaving lock profiling enabled
-10-24 19:27:06.922 D/AndroidRuntime( 3720): Calling main entry com.android.commands.input.Input
-10-24 19:27:06.927 D/AndroidRuntime( 3720): Shutting down VM
-10-24 19:27:10.168 D/AndroidRuntime( 3737): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
-10-24 19:27:10.168 I/AndroidRuntime( 3737): Using default boot image
-10-24 19:27:10.168 I/AndroidRuntime( 3737): Leaving lock profiling enabled
-10-24 19:27:10.202 D/AndroidRuntime( 3737): Calling main entry com.android.commands.input.Input
-10-24 19:27:10.213 D/AndroidRuntime( 3737): Shutting down VM
-10-24 19:27:10.422 W/SOTD    ( 3416): page: Error with Permissions-Policy header: Unrecognized feature: 'ch-ua-bitness'. (:0)
-10-24 19:27:10.422 W/SOTD    ( 3416): page: Error with Permissions-Policy header: Unrecognized feature: 'ch-ua-full-version-list'. (:0)
-10-24 19:27:10.422 W/SOTD    ( 3416): page: Error with Permissions-Policy header: Unrecognized feature: 'ch-ua-wow64'. (:0)
-10-24 19:27:10.422 W/SOTD    ( 3416): page: Error with Permissions-Policy header: Unrecognized feature: 'ch-ua-form-factors'. (:0)
-10-24 19:27:11.026 I/SOTD    ( 3416): loaded https://accounts.google.com/v3/signin/identifier?continue=https://www.youtube.com/signin?action_handle_signin%3Dtrue%26app%3Ddesktop%26next%3Dhttps%253A%252F%252Fwww.youtube.com%252F&passive=true&service=youtube&uilel=3&flowName=GlifWebSignIn&flowEntry=ServiceLogin&dsh=S439603589:1792870030772728
-10-24 19:27:11.064 W/SOTD    ( 3416): page: Deprecated API for given entry type. (https://www.gstatic.com/_/mss/boq-identity/_/js/k=boq-identity.AccountsSignInUi.en_US.JyoyqFyLVIc.es5.O/ck=boq-identity.AccountsSignInUi.3Dcbv-MmpUc.L.B1.O/am=nw8IAQAAADjCSwAAkACgfwMACBCsA95rAZgAIQMAAAAAAAAAAF0DAFBFAAE/d=1/exm=CMcBD,DqMihc,E87wgc,EFQ78c,EN3i8d,Fndnac,GwYlN,IZT63,K0PMbc,K1ZKnb,KUM7Z,L1AAkb,L9OGUe,LDQI,LEikZe,MY7mZe,MpJwZc,NLiXbe,OVRNMb,OgOVNe,PHUIyb,PrPYRd,QIhFr,SCuOPb,SD8Jgb,SpsfSb,Tbb4sb,UMu52b,UUJqVe,Uas9Hd,WpP9Yc,YHI3We,YTxL4,YYmHzb,YgOFye,ZSzced,_b,_tp,aXwZ4c,bTi8wc,byfTOb,cYShmd,cciGGe,eWuMIe,f8Gu1e,gJzDyc,hc6Ubd,inNHtf,jNpgbe,kqeOEd,lkFgGf,lsjVmc,lwddkf,m9oV,mvkUhe,n73qwf,oLggrd,oqkvIf,pw70Gc,pxq3x,qPYxq,qmdT9,rmumx,shdUjf,siKnQd,soHxf,t2srLd,tUnxGc,vHEMJe,vjKJJ,ws9Tlc,xQtZb,xiZRqc,y5vRwf,yRXbo,ywOR5c,z0u0L,zbML3c,zr1jrb,zy0vNb/excm=_b,_tp,identifierview/ed=1/wt=2/ujg=1/rs=AOaEmlEPytDHsxj4Zd_H9KrqRePB5_OSjg/ee=ASJRFf:DAnQ7e;Al0B8:kibjWe;BcQPH:lOY4De;DaIJ8c:iAskyc;EVNhjf:pw70Gc;EkYFhd:GwYlN;EmZ2Bf:zr1jrb;JsbNhc:Xd8iUd;K5nYTd:ZDZcre;LBgRLc:XVMNvd;Me32dd:MEeYgc;NJ1rfe:qTnoBf;NPKaK:PVlQOd;NSEoX:lazG7b;Pjplud:EEDORb;QGR0gd:Mlhmy;Qi0VDf:Z8tw0d;QmdKjc:F43khe;RXZJ9:NlLKQc;SMDL4c:K0PMbc;SNUn3:ZwDk9d;ScI3Yc:e7Hzgb;UpnZUd:nnwwYc;Uvc8o:VDovNc;UyjXyd:qXkWrc;VlRiDf:j7ZRif;XdiAjb:NLiXbe;YIZmRd:A1yn5d;a56pNe:JEfCwb;cEt90b:ws9Tlc;dIoSBb:SpsfSb;dowIGb:ebZ3mb;eBAeSb:zbML3c;iFQyKf:QIhFr;j9c1Cc:xywqXb;lGvXed:Gtn19d;lOO0Vd:OTA3Ae;nTuGK:JKNPM;oGtAuc:sOXFj;oSUNyd:K0PMbc;oXZmbc:tUnxGc;pXdRYb:L9OGUe;qQEoOc:KUM7Z;qafBPd:yDVVkb;qddgKe:xQtZb;sHdTOe:nSePib;twueg:ouk7y;vNjB7d:YTxL4;wPl4gf:eRWIQd;wR5FRb:siKnQd;wc73nd:kqeOEd;yxTchf:KUM7Z/dti=1/m=p3hmRc,LvGhrf,RqjULd:27)
-10-24 19:27:11.340 W/SOTD    ( 3416): page: Error with Permissions-Policy header: Unrecognized feature: 'ch-ua-bitness'. (:0)
-10-24 19:27:11.340 W/SOTD    ( 3416): page: Error with Permissions-Policy header: Unrecognized feature: 'ch-ua-full-version-list'. (:0)
-10-24 19:27:11.340 W/SOTD    ( 3416): page: Error with Permissions-Policy header: Unrecognized feature: 'ch-ua-wow64'. (:0)
-10-24 19:27:11.340 W/SOTD    ( 3416): page: Error with Permissions-Policy header: Unrecognized feature: 'ch-ua-form-factors'. (:0)
-10-24 19:27:11.628 W/SOTD    ( 3416): page: Error with Permissions-Policy header: Unrecognized feature: 'ch-ua-bitness'. (:0)
-10-24 19:27:11.628 W/SOTD    ( 3416): page: Error with Permissions-Policy header: Unrecognized feature: 'ch-ua-full-version-list'. (:0)
-10-24 19:27:11.628 W/SOTD    ( 3416): page: Error with Permissions-Policy header: Unrecognized feature: 'ch-ua-wow64'. (:0)
-10-24 19:27:11.628 W/SOTD    ( 3416): page: Error with Permissions-Policy header: Unrecognized feature: 'ch-ua-form-factors'. (:0)
-10-24 19:27:11.639 I/SOTD    ( 3416): loaded https://accounts.google.com/v3/signin/identifier?continue=https://www.youtube.com/signin?action_handle_signin%3Dtrue%26app%3Ddesktop%26next%3Dhttps%253A%252F%252Fwww.youtube.com%252F&passive=true&service=youtube&uilel=3&flowName=GlifWebSignIn&flowEntry=ServiceLogin&dsh=S439603589:1792870030772728
-10-24 19:27:24.333 D/AndroidRuntime( 3776): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
-10-24 19:27:24.334 I/AndroidRuntime( 3776): Using default boot image
-10-24 19:27:24.334 I/AndroidRuntime( 3776): Leaving lock profiling enabled
-10-24 19:27:24.371 D/AndroidRuntime( 3776): Calling main entry com.android.commands.input.Input
-10-24 19:27:24.375 D/AndroidRuntime( 3776): Shutting down VM
-10-24 19:27:29.476 D/AndroidRuntime( 3814): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
-10-24 19:27:29.477 I/AndroidRuntime( 3814): Using default boot image
-10-24 19:27:29.477 I/AndroidRuntime( 3814): Leaving lock profiling enabled
-10-24 19:27:29.510 D/AndroidRuntime( 3814): Calling main entry com.android.commands.input.Input
-10-24 19:27:29.518 D/AndroidRuntime( 3814): Shutting down VM
-10-24 19:27:33.590 D/AndroidRuntime( 3831): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
-10-24 19:27:33.591 I/AndroidRuntime( 3831): Using default boot image
-10-24 19:27:33.591 I/AndroidRuntime( 3831): Leaving lock profiling enabled
-10-24 19:27:33.622 D/AndroidRuntime( 3831): Calling main entry com.android.commands.input.Input
-10-24 19:27:33.628 D/AndroidRuntime( 3831): Shutting down VM
-10-24 19:27:33.838 I/SOTD    ( 3416): loaded https://cooperking.github.io/songs/
+10-24 22:38:02.584 I/SOTD    ( 3397): update check: this is build 19, newest 19
+10-24 22:38:02.954 I/SOTD    ( 3397): loaded https://cooperking.github.io/songs/
+10-24 22:38:25.273 D/AndroidRuntime( 3561): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+10-24 22:38:25.274 I/AndroidRuntime( 3561): Using default boot image
+10-24 22:38:25.274 I/AndroidRuntime( 3561): Leaving lock profiling enabled
+10-24 22:38:25.312 D/AndroidRuntime( 3561): Calling main entry com.android.commands.input.Input
+10-24 22:38:25.317 D/AndroidRuntime( 3561): Shutting down VM
+10-24 22:38:31.325 D/AndroidRuntime( 3585): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+10-24 22:38:31.326 I/AndroidRuntime( 3585): Using default boot image
+10-24 22:38:31.326 I/AndroidRuntime( 3585): Leaving lock profiling enabled
+10-24 22:38:31.371 D/AndroidRuntime( 3585): Calling main entry com.android.commands.input.Input
+10-24 22:38:31.378 D/AndroidRuntime( 3585): Shutting down VM
+10-24 22:38:34.662 D/AndroidRuntime( 3602): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+10-24 22:38:34.664 I/AndroidRuntime( 3602): Using default boot image
+10-24 22:38:34.664 I/AndroidRuntime( 3602): Leaving lock profiling enabled
+10-24 22:38:34.709 D/AndroidRuntime( 3602): Calling main entry com.android.commands.input.Input
+10-24 22:38:34.719 D/AndroidRuntime( 3602): Shutting down VM
+10-24 22:38:34.774 I/SOTD    ( 3397): update check: this is build 19, newest 19
+10-24 22:38:41.107 D/AndroidRuntime( 3624): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+10-24 22:38:41.108 I/AndroidRuntime( 3624): Using default boot image
+10-24 22:38:41.108 I/AndroidRuntime( 3624): Leaving lock profiling enabled
+10-24 22:38:41.148 D/AndroidRuntime( 3624): Calling main entry com.android.commands.input.Input
+10-24 22:38:41.155 D/AndroidRuntime( 3624): Shutting down VM
+10-24 22:38:44.108 D/AndroidRuntime( 3637): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+10-24 22:38:44.109 I/AndroidRuntime( 3637): Using default boot image
+10-24 22:38:44.109 I/AndroidRuntime( 3637): Leaving lock profiling enabled
+10-24 22:38:44.152 D/AndroidRuntime( 3637): Calling main entry com.android.commands.input.Input
+10-24 22:38:44.161 D/AndroidRuntime( 3637): Shutting down VM
+10-24 22:38:48.345 D/AndroidRuntime( 3677): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+10-24 22:38:48.346 I/AndroidRuntime( 3677): Using default boot image
+10-24 22:38:48.346 I/AndroidRuntime( 3677): Leaving lock profiling enabled
+10-24 22:38:48.386 D/AndroidRuntime( 3677): Calling main entry com.android.commands.input.Input
+10-24 22:38:49.287 D/AndroidRuntime( 3677): Shutting down VM
+10-24 22:38:50.980 D/AndroidRuntime( 3697): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+10-24 22:38:50.981 I/AndroidRuntime( 3697): Using default boot image
+10-24 22:38:50.981 I/AndroidRuntime( 3697): Leaving lock profiling enabled
+10-24 22:38:51.020 D/AndroidRuntime( 3697): Calling main entry com.android.commands.input.Input
+10-24 22:38:51.029 D/AndroidRuntime( 3697): Shutting down VM
+10-24 22:38:54.348 D/AndroidRuntime( 3770): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+10-24 22:38:54.349 I/AndroidRuntime( 3770): Using default boot image
+10-24 22:38:54.349 I/AndroidRuntime( 3770): Leaving lock profiling enabled
+10-24 22:38:54.388 D/AndroidRuntime( 3770): Calling main entry com.android.commands.input.Input
+10-24 22:38:54.395 D/AndroidRuntime( 3770): Shutting down VM
+10-24 22:38:59.797 D/AndroidRuntime( 3789): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+10-24 22:38:59.798 I/AndroidRuntime( 3789): Using default boot image
+10-24 22:38:59.798 I/AndroidRuntime( 3789): Leaving lock profiling enabled
+10-24 22:38:59.843 D/AndroidRuntime( 3789): Calling main entry com.android.commands.input.Input
+10-24 22:38:59.856 D/AndroidRuntime( 3789): Shutting down VM
+10-24 22:39:03.172 D/AndroidRuntime( 3806): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+10-24 22:39:03.173 I/AndroidRuntime( 3806): Using default boot image
+10-24 22:39:03.173 I/AndroidRuntime( 3806): Leaving lock profiling enabled
+10-24 22:39:03.217 D/AndroidRuntime( 3806): Calling main entry com.android.commands.input.Input
+10-24 22:39:03.225 D/AndroidRuntime( 3806): Shutting down VM
+10-24 22:39:03.441 W/SOTD    ( 3397): page: Error with Permissions-Policy header: Unrecognized feature: 'ch-ua-bitness'. (:0)
+10-24 22:39:03.441 W/SOTD    ( 3397): page: Error with Permissions-Policy header: Unrecognized feature: 'ch-ua-full-version-list'. (:0)
+10-24 22:39:03.441 W/SOTD    ( 3397): page: Error with Permissions-Policy header: Unrecognized feature: 'ch-ua-wow64'. (:0)
+10-24 22:39:03.441 W/SOTD    ( 3397): page: Error with Permissions-Policy header: Unrecognized feature: 'ch-ua-form-factors'. (:0)
+10-24 22:39:04.147 I/SOTD    ( 3397): loaded https://accounts.google.com/v3/signin/identifier?continue=https://www.youtube.com/signin?action_handle_signin%3Dtrue%26app%3Ddesktop%26next%3Dhttps%253A%252F%252Fwww.youtube.com%252F&passive=true&service=youtube&uilel=3&flowName=GlifWebSignIn&flowEntry=ServiceLogin&dsh=S723490612:1792881544024037
+10-24 22:39:04.198 W/SOTD    ( 3397): page: Deprecated API for given entry type. (https://www.gstatic.com/_/mss/boq-identity/_/js/k=boq-identity.AccountsSignInUi.en_US.JyoyqFyLVIc.es5.O/ck=boq-identity.AccountsSignInUi.3Dcbv-MmpUc.L.B1.O/am=nw8IAQAAADjCSwAAkACgfwMACBCsA95rAZgAIQMAAAAAAAAAAF0CAFBFAAE/d=1/exm=CMcBD,DqMihc,E87wgc,EFQ78c,EN3i8d,Fndnac,GwYlN,IZT63,K0PMbc,K1ZKnb,KUM7Z,L1AAkb,L9OGUe,LDQI,LEikZe,MY7mZe,MpJwZc,NLiXbe,OVRNMb,OgOVNe,PHUIyb,PrPYRd,QIhFr,SCuOPb,SD8Jgb,SpsfSb,Tbb4sb,UMu52b,UUJqVe,Uas9Hd,WpP9Yc,YHI3We,YTxL4,YYmHzb,YgOFye,ZSzced,_b,_tp,aXwZ4c,bTi8wc,byfTOb,cYShmd,cciGGe,eWuMIe,f8Gu1e,gJzDyc,hc6Ubd,inNHtf,jNpgbe,kqeOEd,lkFgGf,lsjVmc,lwddkf,m9oV,mvkUhe,n73qwf,oLggrd,oqkvIf,pw70Gc,pxq3x,qPYxq,qmdT9,rmumx,shdUjf,siKnQd,soHxf,t2srLd,tUnxGc,vHEMJe,vjKJJ,ws9Tlc,xQtZb,xiZRqc,y5vRwf,yRXbo,ywOR5c,z0u0L,zbML3c,zr1jrb,zy0vNb/excm=_b,_tp,identifierview/ed=1/wt=2/ujg=1/rs=AOaEmlHiUQY9oMLr1PWdndKDDnx5F55pdA/ee=ASJRFf:DAnQ7e;Al0B8:kibjWe;BcQPH:lOY4De;DaIJ8c:iAskyc;EVNhjf:pw70Gc;EkYFhd:GwYlN;EmZ2Bf:zr1jrb;JsbNhc:Xd8iUd;K5nYTd:ZDZcre;LBgRLc:XVMNvd;Me32dd:MEeYgc;NJ1rfe:qTnoBf;NPKaK:PVlQOd;NSEoX:lazG7b;Pjplud:EEDORb;QGR0gd:Mlhmy;Qi0VDf:Z8tw0d;QmdKjc:F43khe;RXZJ9:NlLKQc;SMDL4c:K0PMbc;SNUn3:ZwDk9d;ScI3Yc:e7Hzgb;UpnZUd:nnwwYc;Uvc8o:VDovNc;UyjXyd:qXkWrc;VlRiDf:j7ZRif;XdiAjb:NLiXbe;YIZmRd:A1yn5d;a56pNe:JEfCwb;cEt90b:ws9Tlc;dIoSBb:SpsfSb;dowIGb:ebZ3mb;eBAeSb:zbML3c;iFQyKf:QIhFr;j9c1Cc:xywqXb;lGvXed:Gtn19d;lOO0Vd:OTA3Ae;nTuGK:JKNPM;oGtAuc:sOXFj;oSUNyd:K0PMbc;oXZmbc:tUnxGc;pXdRYb:L9OGUe;qQEoOc:KUM7Z;qafBPd:yDVVkb;qddgKe:xQtZb;sHdTOe:nSePib;twueg:ouk7y;vNjB7d:YTxL4;wPl4gf:eRWIQd;wR5FRb:siKnQd;wc73nd:kqeOEd;yxTchf:KUM7Z/dti=1/m=p3hmRc,LvGhrf,RqjULd:27)
+10-24 22:39:04.638 W/SOTD    ( 3397): page: Error with Permissions-Policy header: Unrecognized feature: 'ch-ua-bitness'. (:0)
+10-24 22:39:04.638 W/SOTD    ( 3397): page: Error with Permissions-Policy header: Unrecognized feature: 'ch-ua-full-version-list'. (:0)
+10-24 22:39:04.638 W/SOTD    ( 3397): page: Error with Permissions-Policy header: Unrecognized feature: 'ch-ua-wow64'. (:0)
+10-24 22:39:04.638 W/SOTD    ( 3397): page: Error with Permissions-Policy header: Unrecognized feature: 'ch-ua-form-factors'. (:0)
+10-24 22:39:04.642 W/SOTD    ( 3397): page: Error with Permissions-Policy header: Unrecognized feature: 'ch-ua-bitness'. (:0)
+10-24 22:39:04.642 W/SOTD    ( 3397): page: Error with Permissions-Policy header: Unrecognized feature: 'ch-ua-full-version-list'. (:0)
+10-24 22:39:04.642 W/SOTD    ( 3397): page: Error with Permissions-Policy header: Unrecognized feature: 'ch-ua-wow64'. (:0)
+10-24 22:39:04.642 W/SOTD    ( 3397): page: Error with Permissions-Policy header: Unrecognized feature: 'ch-ua-form-factors'. (:0)
+10-24 22:39:04.692 I/SOTD    ( 3397): loaded https://accounts.google.com/v3/signin/identifier?continue=https://www.youtube.com/signin?action_handle_signin%3Dtrue%26app%3Ddesktop%26next%3Dhttps%253A%252F%252Fwww.youtube.com%252F&passive=true&service=youtube&uilel=3&flowName=GlifWebSignIn&flowEntry=ServiceLogin&dsh=S723490612:1792881544024037
+10-24 22:39:17.432 D/AndroidRuntime( 3831): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+10-24 22:39:17.434 I/AndroidRuntime( 3831): Using default boot image
+10-24 22:39:17.434 I/AndroidRuntime( 3831): Leaving lock profiling enabled
+10-24 22:39:17.473 D/AndroidRuntime( 3831): Calling main entry com.android.commands.input.Input
+10-24 22:39:17.477 D/AndroidRuntime( 3831): Shutting down VM
+10-24 22:39:22.646 D/AndroidRuntime( 3850): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+10-24 22:39:22.647 I/AndroidRuntime( 3850): Using default boot image
+10-24 22:39:22.647 I/AndroidRuntime( 3850): Leaving lock profiling enabled
+10-24 22:39:22.691 D/AndroidRuntime( 3850): Calling main entry com.android.commands.input.Input
+10-24 22:39:22.695 D/AndroidRuntime( 3850): Shutting down VM
+10-24 22:39:26.844 D/AndroidRuntime( 3868): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+10-24 22:39:26.845 I/AndroidRuntime( 3868): Using default boot image
+10-24 22:39:26.845 I/AndroidRuntime( 3868): Leaving lock profiling enabled
+10-24 22:39:26.886 D/AndroidRuntime( 3868): Calling main entry com.android.commands.input.Input
+10-24 22:39:26.892 D/AndroidRuntime( 3868): Shutting down VM
+10-24 22:39:26.991 I/SOTD    ( 3397): loaded https://cooperking.github.io/songs/
