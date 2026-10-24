@@ -1,19 +1,18 @@
-device: 14 API 34
-webview:   Current WebView package (name, version): (com.google.android.webview, 113.0.5672.136)
-Physical size: 1920x1080
-Physical density: 320
+device: 11 API 30
 Package com.android.vending new state: disabled-user
-Performing Streamed Install
+Serving...
+All files should be loaded. Notifying the device.
+Performing Incremental Install
 Success
+Install command complete in 127 ms
+installed: versionCode=1 (newest on the site: {"build": 14, "apk": "https://cooperking.github.io/songs/tv.apk"})
 Starting: Intent { cmp=io.github.cooperking.sotd/.MainActivity }
 Status: ok
 LaunchState: COLD
 Activity: io.github.cooperking.sotd/.MainActivity
-TotalTime: 491
-WaitTime: 500
+TotalTime: 583
+WaitTime: 584
 Complete
-after ~3s: pid 3412 top     topResumedActivity=ActivityRecord{8a19953 u0 io.github.cooperking.sotd/.MainActivity t6}
-after ~8s: pid 3412 top     topResumedActivity=ActivityRecord{8a19953 u0 io.github.cooperking.sotd/.MainActivity t6}
-after ~15s: pid 3412 top     topResumedActivity=ActivityRecord{8a19953 u0 io.github.cooperking.sotd/.MainActivity t6}
-app pid after start: 3412
-app pid on the draft: 3412
+may install before: No operations.
+Default mode: default
+after: versionCode=1

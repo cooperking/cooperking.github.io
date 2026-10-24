@@ -1,0 +1,38 @@
+10-24 17:22:57.188 V/BackupManagerService(  468): [UserID:0] restoreAtInstall pkg=io.github.cooperking.sotd token=1 restoreSet=0
+10-24 17:22:57.210 I/MediaProvider( 1139): Invalidating LocalCallingIdentity cache for package io.github.cooperking.sotd. Reason: package android.intent.action.PACKAGE_ADDED
+10-24 17:22:57.211 D/AvrcpMediaPlayerList(  663): Name of package changed: io.github.cooperking.sotd
+10-24 17:22:57.274 I/FontLog ( 1000): Package io.github.cooperking.sotd has no metadata [CONTEXT service_id=132 ]
+10-24 17:22:57.570 I/ActivityTaskManager(  468): START u0 {flg=0x10000000 cmp=io.github.cooperking.sotd/.MainActivity} from uid 2000
+10-24 17:22:57.607 W/cooperking.sot( 3403): Unexpected CPU variant for X86 using defaults: x86
+10-24 17:22:57.608 I/ActivityManager(  468): Start proc 3403:io.github.cooperking.sotd/u0a76 for pre-top-activity {io.github.cooperking.sotd/io.github.cooperking.sotd.MainActivity}
+10-24 17:22:57.609 E/cooperking.sot( 3403): Not starting debugger since process cannot load the jdwp agent.
+10-24 17:22:57.858 I/ActivityManager(  468): Start proc 3449:com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0/u0ai9000 for  {io.github.cooperking.sotd/org.chromium.content.app.SandboxedProcessService0:0}
+10-24 17:22:57.880 I/TetheringManager( 3403): registerTetheringEventCallback:io.github.cooperking.sotd
+10-24 17:22:58.153 D/ArtManagerInternalImpl(  468): /data/misc/iorapd/io.github.cooperking.sotd/1/io.github.cooperking.sotd.MainActivity/compiled_traces/compiled_trace.pb doesn't exist
+10-24 17:22:58.154 I/ActivityTaskManager(  468): Displayed io.github.cooperking.sotd/.MainActivity: +583ms
+10-24 17:23:02.440 I/SOTD    ( 3403): loaded https://cooperking.github.io/songs/
+10-24 17:23:02.757 I/SOTD    ( 3403): update check: this is build 1, newest 14
+10-24 17:23:07.320 I/katniss_interactor_UiActionExecutor( 1160): Foreground app = io.github.cooperking.sotd
+10-24 17:23:07.742 I/katniss_interactor_UiActionExecutor( 1160): Foreground app = io.github.cooperking.sotd
+10-24 17:23:23.747 D/AndroidRuntime( 3576): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+10-24 17:23:23.748 I/AndroidRuntime( 3576): Using default boot image
+10-24 17:23:23.748 I/AndroidRuntime( 3576): Leaving lock profiling enabled
+10-24 17:23:23.793 D/AndroidRuntime( 3576): Calling main entry com.android.commands.input.Input
+10-24 17:23:23.803 D/AndroidRuntime( 3576): Shutting down VM
+10-24 17:23:23.906 I/ActivityTaskManager(  468): START u0 {act=android.settings.MANAGE_UNKNOWN_APP_SOURCES dat=package:io.github.cooperking.sotd cmp=com.android.tv.settings/.device.apps.specialaccess.ExternalSourcesActivity} from uid 10076
+10-24 17:23:27.422 W/NotificationService(  468): Toast already killed. pkg=io.github.cooperking.sotd token=android.os.BinderProxy@947247a
+10-24 17:23:30.091 I/ActivityManager(  468): Killing 3403:io.github.cooperking.sotd/u0a76 (adj 102): REQUEST_INSTALL_PACKAGES changed.
+10-24 17:23:30.092 W/ActivityTaskManager(  468): Force removing ActivityRecord{f54ef38 u0 io.github.cooperking.sotd/.MainActivity t5}: app died, no saved state
+10-24 17:23:30.322 D/AndroidRuntime( 3617): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+10-24 17:23:30.346 I/AndroidRuntime( 3617): Using default boot image
+10-24 17:23:30.347 I/AndroidRuntime( 3617): Leaving lock profiling enabled
+10-24 17:23:30.468 D/AndroidRuntime( 3617): Calling main entry com.android.commands.input.Input
+10-24 17:23:30.473 D/AndroidRuntime( 3617): Shutting down VM
+10-24 17:23:30.475 I/AndroidRuntime( 3617): NOTE: attach of thread 'Binder:3617_2' failed
+10-24 17:23:37.850 W/BroadcastQueue(  468): Background execution not allowed: receiving Intent { act=android.intent.action.PACKAGE_ADDED dat=package:io.github.cooperking.sotd flg=0x4000010 (has extras) } to com.google.android.packageinstaller/com.android.packageinstaller.PackageInstalledReceiver
+10-24 17:23:37.850 W/BroadcastQueue(  468): Background execution not allowed: receiving Intent { act=android.intent.action.PACKAGE_ADDED dat=package:io.github.cooperking.sotd flg=0x4000010 (has extras) } to com.google.android.tv/com.android.tv.receiver.PackageIntentsReceiver
+10-24 17:23:48.079 D/AndroidRuntime( 3753): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+10-24 17:23:48.086 I/AndroidRuntime( 3753): Using default boot image
+10-24 17:23:48.086 I/AndroidRuntime( 3753): Leaving lock profiling enabled
+10-24 17:23:48.138 D/AndroidRuntime( 3753): Calling main entry com.android.commands.input.Input
+10-24 17:23:48.159 D/AndroidRuntime( 3753): Shutting down VM
