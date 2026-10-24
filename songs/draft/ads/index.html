@@ -37,6 +37,12 @@ a { color: inherit; text-underline-offset: .15em; }
 .index .you { flex: none; font: 600 10.5px/1 var(--sans); letter-spacing: .12em; text-transform: uppercase; color: #fff; background: var(--bg); padding: 4px 7px 3px; border-radius: 999px; }
 .index .you[hidden] { display: none; }
 .up { display: inline-block; margin-top: 2px; font: 600 10.5px/1 var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); text-decoration: none; }
+/* something to type: a box with its own Copy button */
+.copy { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; max-width: 100%; padding: 4px 4px 4px 12px; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+.copy code { font: 500 15px/1.3 ui-monospace, "SF Mono", Menlo, Consolas, monospace; white-space: nowrap; user-select: all; -webkit-user-select: all; }
+@media (max-width: 420px) { .copy code { font-size: 13px; } .copy button { margin-left: 2px; padding: 7px 9px 6px; letter-spacing: .08em; } }
+.copy button { flex: none; margin-left: 6px; padding: 7px 12px 6px; border: 0; border-radius: 7px; background: var(--ink); color: #fff; font: 600 11px/1 var(--sans); letter-spacing: .12em; text-transform: uppercase; cursor: pointer; }
+.copy button.done { background: #1d7a3a; }
 .sources { margin-top: 30px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 14px; color: var(--muted); }
 .sources a { display: block; margin-top: 4px; }
 </style>
@@ -63,7 +69,10 @@ a { color: inherit; text-underline-offset: .15em; }
 <a class="up" href="#top">↑ Index</a>
 
 <h2 id="chrome">Premium: Chrome or Edge</h2>
-<p>Sign in to YouTube in the same browser. Its cookies are allowed here unless you’ve changed that. If adverts still show, in Chrome go to <span class="path">Settings → Privacy and security → Third-party cookies</span> and add <span class="path">[*.]youtube.com</span>, starting with the square bracket, under “Allowed to use third-party cookies”.</p>
+<p>Sign in to YouTube in the same browser. Its cookies are allowed here unless you’ve changed that. If adverts still show, in Chrome go to <span class="path">Settings → Privacy and security → Third-party cookies</span>, or paste this into the address bar:</p>
+<p><span class="copy"><code>chrome://settings/cookies</code><button type="button">Copy</button></span></p>
+<p>Under “Allowed to use third-party cookies”, press <b>Add</b> and paste:</p>
+<p><span class="copy"><code>[*.]youtube.com</code><button type="button">Copy</button></span></p>
 <a class="up" href="#top">↑ Index</a>
 
 <h2 id="iphone">Premium: iPhone or iPad</h2>
@@ -97,6 +106,15 @@ a { color: inherit; text-underline-offset: .15em; }
 </div>
 </main>
 <script>
+/* the Copy buttons: the box's text to the clipboard (or, failing that, selected for the reader to copy) */
+[].forEach.call(document.querySelectorAll('.copy button'), function (btn) {
+  btn.addEventListener('click', function () {
+    var code = btn.parentNode.querySelector('code'), text = code.textContent;
+    function done() { btn.textContent = 'Copied'; btn.classList.add('done'); setTimeout(function () { btn.textContent = 'Copy'; btn.classList.remove('done'); }, 1800); }
+    function select() { var r = document.createRange(); r.selectNodeContents(code); var sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); try { if (document.execCommand('copy')) done(); } catch (e) {} }
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, select); else select();
+  });
+});
 /* marks the index line for the reader's own browser */
 (function () {
   var u = navigator.userAgent, k = '';
