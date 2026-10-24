@@ -1,38 +1,89 @@
-10-24 17:22:57.188 V/BackupManagerService(  468): [UserID:0] restoreAtInstall pkg=io.github.cooperking.sotd token=1 restoreSet=0
-10-24 17:22:57.210 I/MediaProvider( 1139): Invalidating LocalCallingIdentity cache for package io.github.cooperking.sotd. Reason: package android.intent.action.PACKAGE_ADDED
-10-24 17:22:57.211 D/AvrcpMediaPlayerList(  663): Name of package changed: io.github.cooperking.sotd
-10-24 17:22:57.274 I/FontLog ( 1000): Package io.github.cooperking.sotd has no metadata [CONTEXT service_id=132 ]
-10-24 17:22:57.570 I/ActivityTaskManager(  468): START u0 {flg=0x10000000 cmp=io.github.cooperking.sotd/.MainActivity} from uid 2000
-10-24 17:22:57.607 W/cooperking.sot( 3403): Unexpected CPU variant for X86 using defaults: x86
-10-24 17:22:57.608 I/ActivityManager(  468): Start proc 3403:io.github.cooperking.sotd/u0a76 for pre-top-activity {io.github.cooperking.sotd/io.github.cooperking.sotd.MainActivity}
-10-24 17:22:57.609 E/cooperking.sot( 3403): Not starting debugger since process cannot load the jdwp agent.
-10-24 17:22:57.858 I/ActivityManager(  468): Start proc 3449:com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0/u0ai9000 for  {io.github.cooperking.sotd/org.chromium.content.app.SandboxedProcessService0:0}
-10-24 17:22:57.880 I/TetheringManager( 3403): registerTetheringEventCallback:io.github.cooperking.sotd
-10-24 17:22:58.153 D/ArtManagerInternalImpl(  468): /data/misc/iorapd/io.github.cooperking.sotd/1/io.github.cooperking.sotd.MainActivity/compiled_traces/compiled_trace.pb doesn't exist
-10-24 17:22:58.154 I/ActivityTaskManager(  468): Displayed io.github.cooperking.sotd/.MainActivity: +583ms
-10-24 17:23:02.440 I/SOTD    ( 3403): loaded https://cooperking.github.io/songs/
-10-24 17:23:02.757 I/SOTD    ( 3403): update check: this is build 1, newest 14
-10-24 17:23:07.320 I/katniss_interactor_UiActionExecutor( 1160): Foreground app = io.github.cooperking.sotd
-10-24 17:23:07.742 I/katniss_interactor_UiActionExecutor( 1160): Foreground app = io.github.cooperking.sotd
-10-24 17:23:23.747 D/AndroidRuntime( 3576): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
-10-24 17:23:23.748 I/AndroidRuntime( 3576): Using default boot image
-10-24 17:23:23.748 I/AndroidRuntime( 3576): Leaving lock profiling enabled
-10-24 17:23:23.793 D/AndroidRuntime( 3576): Calling main entry com.android.commands.input.Input
-10-24 17:23:23.803 D/AndroidRuntime( 3576): Shutting down VM
-10-24 17:23:23.906 I/ActivityTaskManager(  468): START u0 {act=android.settings.MANAGE_UNKNOWN_APP_SOURCES dat=package:io.github.cooperking.sotd cmp=com.android.tv.settings/.device.apps.specialaccess.ExternalSourcesActivity} from uid 10076
-10-24 17:23:27.422 W/NotificationService(  468): Toast already killed. pkg=io.github.cooperking.sotd token=android.os.BinderProxy@947247a
-10-24 17:23:30.091 I/ActivityManager(  468): Killing 3403:io.github.cooperking.sotd/u0a76 (adj 102): REQUEST_INSTALL_PACKAGES changed.
-10-24 17:23:30.092 W/ActivityTaskManager(  468): Force removing ActivityRecord{f54ef38 u0 io.github.cooperking.sotd/.MainActivity t5}: app died, no saved state
-10-24 17:23:30.322 D/AndroidRuntime( 3617): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
-10-24 17:23:30.346 I/AndroidRuntime( 3617): Using default boot image
-10-24 17:23:30.347 I/AndroidRuntime( 3617): Leaving lock profiling enabled
-10-24 17:23:30.468 D/AndroidRuntime( 3617): Calling main entry com.android.commands.input.Input
-10-24 17:23:30.473 D/AndroidRuntime( 3617): Shutting down VM
-10-24 17:23:30.475 I/AndroidRuntime( 3617): NOTE: attach of thread 'Binder:3617_2' failed
-10-24 17:23:37.850 W/BroadcastQueue(  468): Background execution not allowed: receiving Intent { act=android.intent.action.PACKAGE_ADDED dat=package:io.github.cooperking.sotd flg=0x4000010 (has extras) } to com.google.android.packageinstaller/com.android.packageinstaller.PackageInstalledReceiver
-10-24 17:23:37.850 W/BroadcastQueue(  468): Background execution not allowed: receiving Intent { act=android.intent.action.PACKAGE_ADDED dat=package:io.github.cooperking.sotd flg=0x4000010 (has extras) } to com.google.android.tv/com.android.tv.receiver.PackageIntentsReceiver
-10-24 17:23:48.079 D/AndroidRuntime( 3753): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
-10-24 17:23:48.086 I/AndroidRuntime( 3753): Using default boot image
-10-24 17:23:48.086 I/AndroidRuntime( 3753): Leaving lock profiling enabled
-10-24 17:23:48.138 D/AndroidRuntime( 3753): Calling main entry com.android.commands.input.Input
-10-24 17:23:48.159 D/AndroidRuntime( 3753): Shutting down VM
+10-24 17:29:15.402 V/BackupManagerService(  473): [UserID:0] restoreAtInstall pkg=io.github.cooperking.sotd token=1 restoreSet=0
+10-24 17:29:15.422 I/MediaProvider( 1121): Invalidating LocalCallingIdentity cache for package io.github.cooperking.sotd. Reason: package android.intent.action.PACKAGE_ADDED
+10-24 17:29:15.422 W/BroadcastQueue(  473): Background execution not allowed: receiving Intent { act=android.intent.action.PACKAGE_ADDED dat=package:io.github.cooperking.sotd flg=0x4000010 (has extras) } to com.google.android.packageinstaller/com.android.packageinstaller.PackageInstalledReceiver
+10-24 17:29:15.422 W/BroadcastQueue(  473): Background execution not allowed: receiving Intent { act=android.intent.action.PACKAGE_ADDED dat=package:io.github.cooperking.sotd flg=0x4000010 (has extras) } to com.google.android.tv/com.android.tv.receiver.PackageIntentsReceiver
+10-24 17:29:15.448 D/AvrcpMediaPlayerList(  666): Name of package changed: io.github.cooperking.sotd
+10-24 17:29:15.469 I/FontLog ( 1065): Package io.github.cooperking.sotd has no metadata [CONTEXT service_id=132 ]
+10-24 17:29:15.774 I/ActivityTaskManager(  473): START u0 {flg=0x10000000 cmp=io.github.cooperking.sotd/.MainActivity} from uid 2000
+10-24 17:29:15.803 I/ActivityManager(  473): Start proc 3252:io.github.cooperking.sotd/u0a76 for pre-top-activity {io.github.cooperking.sotd/io.github.cooperking.sotd.MainActivity}
+10-24 17:29:15.825 W/cooperking.sot( 3252): Unexpected CPU variant for X86 using defaults: x86
+10-24 17:29:15.849 E/cooperking.sot( 3252): Not starting debugger since process cannot load the jdwp agent.
+10-24 17:29:16.027 I/TetheringManager( 3252): registerTetheringEventCallback:io.github.cooperking.sotd
+10-24 17:29:16.033 I/ActivityManager(  473): Start proc 3294:com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0/u0ai9000 for  {io.github.cooperking.sotd/org.chromium.content.app.SandboxedProcessService0:0}
+10-24 17:29:16.326 D/ArtManagerInternalImpl(  473): /data/misc/iorapd/io.github.cooperking.sotd/1/io.github.cooperking.sotd.MainActivity/compiled_traces/compiled_trace.pb doesn't exist
+10-24 17:29:16.326 I/ActivityTaskManager(  473): Displayed io.github.cooperking.sotd/.MainActivity: +551ms
+10-24 17:29:16.537 I/PackageDexOptimizer(  473): Running dexopt (dexoptNeeded=1) on: /data/app/~~Y91kAsE2Otoc-plzzj0GhA==/io.github.cooperking.sotd-M7JQEtyReI7ta2U421aSlw==/base.apk pkg=io.github.cooperking.sotd isa=x86 dexoptFlags=boot_complete,public,enable_hidden_api_checks targetFilter=verify oatDir=null classLoaderContext=PCL[]{}
+10-24 17:29:16.537 V/installd(  386): DexInv: --- BEGIN '/data/app/~~Y91kAsE2Otoc-plzzj0GhA==/io.github.cooperking.sotd-M7JQEtyReI7ta2U421aSlw==/base.apk' ---
+10-24 17:29:16.550 W/dex2oat32( 3379): /apex/com.android.art/bin/dex2oat32 --zip-fd=7 --zip-location=base.apk --input-vdex-fd=-1 --output-vdex-fd=9 --oat-fd=8 --oat-location=/data/dalvik-cache/x86/data@app@~~Y91kAsE2Otoc-plzzj0GhA==@io.github.cooperking.sotd-M7JQEtyReI7ta2U421aSlw==@base.apk@classes.dex --instruction-set=x86 --instruction-set-variant=x86 --instruction-set-features=default --runtime-arg -Xbootclasspath:/apex/com.android.art/javalib/core-oj.jar:/apex/com.android.art/javalib/core-libart.jar:/apex/com.android.art/javalib/core-icu4j.jar:/apex/com.android.art/javalib/okhttp.jar:/apex/com.android.art/javalib/bouncycastle.jar:/apex/com.android.art/javalib/apache-xml.jar:/system/framework/framework.jar:/system/framework/ext.jar:/system/framework/telephony-common.jar:/system/framework/voip-common.jar:/system/framework/ims-common.jar:/system/framework/framework-atb-backward-compatibility.jar --runtime-arg -Xms64m --runtime-arg -Xmx512m --updatable-bcp-packages-file=/system/etc/updatable-bcp-packages.txt --resolve-startup-const-strings=true --max-image-block-size=524288 --compiler-filter=verify --swap-fd=10 --classpath-dir=/data/app/~~Y91kAsE2Otoc-plzzj0GhA==/io.github.cooperking.sotd-M7JQEtyReI7ta2U421aSlw== --class-loader-context=PCL[]{} --generate-mini-debug-info --compact-dex-level=none --runtime-arg -Xtarget-sdk-version:34 --runtime-arg -Xhidden-api-policy:enabled --compilation-reason=boot
+10-24 17:29:16.550 I/dex2oat32( 3379): /apex/com.android.art/bin/dex2oat32 --input-vdex-fd=-1 --output-vdex-fd=9 --updatable-bcp-packages-file=/system/etc/updatable-bcp-packages.txt --resolve-startup-const-strings=true --max-image-block-size=524288 --compiler-filter=verify --classpath-dir=/data/app/~~Y91kAsE2Otoc-plzzj0GhA==/io.github.cooperking.sotd-M7JQEtyReI7ta2U421aSlw== --class-loader-context=PCL[]{} --generate-mini-debug-info --compact-dex-level=none --compilation-reason=boot
+10-24 17:29:16.592 V/installd(  386): DexInv: --- END '/data/app/~~Y91kAsE2Otoc-plzzj0GhA==/io.github.cooperking.sotd-M7JQEtyReI7ta2U421aSlw==/base.apk' (success) ---
+10-24 17:29:16.617 I/BackgroundDexOptService(  473): Pinning optimized code {android, io.github.cooperking.sotd}
+10-24 17:29:18.974 I/SOTD    ( 3252): loaded https://cooperking.github.io/songs/
+10-24 17:29:20.207 I/SOTD    ( 3252): update check: this is build 1, newest 15
+10-24 17:29:26.502 I/katniss_interactor_UiActionExecutor( 1130): Foreground app = io.github.cooperking.sotd
+10-24 17:29:26.841 I/katniss_interactor_UiActionExecutor( 1130): Foreground app = io.github.cooperking.sotd
+10-24 17:29:41.823 D/AndroidRuntime( 3453): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+10-24 17:29:41.825 I/AndroidRuntime( 3453): Using default boot image
+10-24 17:29:41.825 I/AndroidRuntime( 3453): Leaving lock profiling enabled
+10-24 17:29:41.874 D/AndroidRuntime( 3453): Calling main entry com.android.commands.input.Input
+10-24 17:29:41.880 D/AndroidRuntime( 3453): Shutting down VM
+10-24 17:29:41.891 I/ActivityTaskManager(  473): START u0 {act=android.settings.MANAGE_UNKNOWN_APP_SOURCES dat=package:io.github.cooperking.sotd cmp=com.android.tv.settings/.device.apps.specialaccess.ExternalSourcesActivity} from uid 10076
+10-24 17:29:45.403 W/NotificationService(  473): Toast already killed. pkg=io.github.cooperking.sotd token=android.os.BinderProxy@f6dab6a
+10-24 17:29:48.160 I/ActivityManager(  473): Killing 3252:io.github.cooperking.sotd/u0a76 (adj 102): REQUEST_INSTALL_PACKAGES changed.
+10-24 17:29:48.164 W/ActivityTaskManager(  473): Force removing ActivityRecord{319c363 u0 io.github.cooperking.sotd/.MainActivity t5}: app died, no saved state
+10-24 17:29:48.168 W/InputDispatcher(  473): channel '32186f3 io.github.cooperking.sotd/io.github.cooperking.sotd.MainActivity (server)' ~ Consumer closed input channel or an error occurred.  events=0x9
+10-24 17:29:48.168 E/InputDispatcher(  473): channel '32186f3 io.github.cooperking.sotd/io.github.cooperking.sotd.MainActivity (server)' ~ Channel is unrecoverably broken and will be disposed!
+10-24 17:29:48.196 W/InputDispatcher(  473): Attempted to unregister already unregistered input channel '32186f3 io.github.cooperking.sotd/io.github.cooperking.sotd.MainActivity (server)'
+10-24 17:29:51.509 D/AndroidRuntime( 3496): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+10-24 17:29:51.510 I/AndroidRuntime( 3496): Using default boot image
+10-24 17:29:51.511 I/AndroidRuntime( 3496): Leaving lock profiling enabled
+10-24 17:29:51.567 D/AndroidRuntime( 3496): Calling main entry com.android.commands.input.Input
+10-24 17:29:51.572 D/AndroidRuntime( 3496): Shutting down VM
+10-24 17:29:56.355 I/ActivityTaskManager(  473): START u0 {flg=0x10000000 cmp=io.github.cooperking.sotd/.MainActivity} from uid 2000
+10-24 17:29:56.404 I/ActivityManager(  473): Start proc 3521:io.github.cooperking.sotd/u0a76 for pre-top-activity {io.github.cooperking.sotd/io.github.cooperking.sotd.MainActivity}
+10-24 17:29:56.419 W/cooperking.sot( 3521): Unexpected CPU variant for X86 using defaults: x86
+10-24 17:29:56.455 E/cooperking.sot( 3521): Not starting debugger since process cannot load the jdwp agent.
+10-24 17:29:56.551 I/ActivityManager(  473): Start proc 3550:com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0/u0i1 for  {io.github.cooperking.sotd/org.chromium.content.app.SandboxedProcessService0:0}
+10-24 17:29:56.567 I/TetheringManager( 3521): registerTetheringEventCallback:io.github.cooperking.sotd
+10-24 17:29:56.824 D/ArtManagerInternalImpl(  473): /data/misc/iorapd/io.github.cooperking.sotd/1/io.github.cooperking.sotd.MainActivity/compiled_traces/compiled_trace.pb doesn't exist
+10-24 17:29:56.824 I/ActivityTaskManager(  473): Displayed io.github.cooperking.sotd/.MainActivity: +469ms
+10-24 17:29:58.697 W/NotificationService(  473): Toast already killed. pkg=io.github.cooperking.sotd token=android.os.BinderProxy@5e336ac
+10-24 17:29:59.170 I/ActivityTaskManager(  473): START u0 {act=android.intent.action.VIEW dat=content://io.github.cooperking.sotd.apk/update.apk typ=application/vnd.android.package-archive flg=0x10000001 cmp=com.google.android.packageinstaller/com.android.packageinstaller.InstallStart} from uid 10076
+10-24 17:29:59.176 I/SOTD    ( 3521): loaded https://cooperking.github.io/songs/
+10-24 17:29:59.598 I/ActivityTaskManager(  473): START u0 {act=android.intent.action.VIEW dat=content://io.github.cooperking.sotd.apk/update.apk typ=application/vnd.android.package-archive flg=0x2000000 cmp=com.google.android.packageinstaller/com.android.packageinstaller.InstallStaging (has extras)} from uid 10036
+10-24 17:30:00.543 I/ActivityTaskManager(  473): START u0 {act=android.intent.action.VIEW dat=file:///data/user_de/0/com.google.android.packageinstaller/no_backup/package3655070828629580217.apk flg=0x10000 cmp=com.google.android.packageinstaller/com.android.packageinstaller.PackageInstallerActivity (has extras)} from uid 10036
+10-24 17:30:00.897 I/ActivityTaskManager(  473): Displayed com.google.android.packageinstaller/com.android.packageinstaller.PackageInstallerActivity: +485ms
+10-24 17:30:12.031 D/AndroidRuntime( 3618): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+10-24 17:30:12.033 I/AndroidRuntime( 3618): Using default boot image
+10-24 17:30:12.033 I/AndroidRuntime( 3618): Leaving lock profiling enabled
+10-24 17:30:12.093 D/AndroidRuntime( 3618): Calling main entry com.android.commands.input.Input
+10-24 17:30:12.100 D/AndroidRuntime( 3618): Shutting down VM
+10-24 17:30:29.565 I/ActivityManager(  473): Force stopping io.github.cooperking.sotd appid=10076 user=-1: installPackageLI
+10-24 17:30:29.566 I/ActivityManager(  473): Killing 3521:io.github.cooperking.sotd/u0a76 (adj 700): stop io.github.cooperking.sotd due to installPackageLI
+10-24 17:30:29.568 W/ActivityTaskManager(  473): Force removing ActivityRecord{240f9a6 u0 io.github.cooperking.sotd/.MainActivity t6 f}}: app died, no saved state
+10-24 17:30:29.569 I/PackageManager(  473): Update package io.github.cooperking.sotd code path from /data/app/~~Y91kAsE2Otoc-plzzj0GhA==/io.github.cooperking.sotd-M7JQEtyReI7ta2U421aSlw== to /data/app/~~88UHU2NvFj980J3NhMvvNg==/io.github.cooperking.sotd-M3cyCcorgWzGW-xp0kRRxg==; Retain data and using new
+10-24 17:30:29.569 I/PackageManager(  473): Update package io.github.cooperking.sotd resource path from /data/app/~~Y91kAsE2Otoc-plzzj0GhA==/io.github.cooperking.sotd-M7JQEtyReI7ta2U421aSlw== to /data/app/~~88UHU2NvFj980J3NhMvvNg==/io.github.cooperking.sotd-M3cyCcorgWzGW-xp0kRRxg==; Retain data and using new
+10-24 17:30:29.629 I/PackageDexOptimizer(  473): Running dexopt (dexoptNeeded=1) on: /data/app/~~88UHU2NvFj980J3NhMvvNg==/io.github.cooperking.sotd-M3cyCcorgWzGW-xp0kRRxg==/base.apk pkg=io.github.cooperking.sotd isa=x86 dexoptFlags=boot_complete,profile_guided,public,enable_hidden_api_checks targetFilter=speed-profile oatDir=/data/app/~~88UHU2NvFj980J3NhMvvNg==/io.github.cooperking.sotd-M3cyCcorgWzGW-xp0kRRxg==/oat classLoaderContext=PCL[]{}
+10-24 17:30:29.629 V/installd(  386): DexInv: --- BEGIN '/data/app/~~88UHU2NvFj980J3NhMvvNg==/io.github.cooperking.sotd-M3cyCcorgWzGW-xp0kRRxg==/base.apk' ---
+10-24 17:30:29.637 W/dex2oat32( 3712): /apex/com.android.art/bin/dex2oat32 --zip-fd=7 --zip-location=base.apk --input-vdex-fd=-1 --output-vdex-fd=9 --oat-fd=8 --oat-location=/data/app/~~88UHU2NvFj980J3NhMvvNg==/io.github.cooperking.sotd-M3cyCcorgWzGW-xp0kRRxg==/oat/x86/base.odex --instruction-set=x86 --instruction-set-variant=x86 --instruction-set-features=default --runtime-arg -Xbootclasspath:/apex/com.android.art/javalib/core-oj.jar:/apex/com.android.art/javalib/core-libart.jar:/apex/com.android.art/javalib/core-icu4j.jar:/apex/com.android.art/javalib/okhttp.jar:/apex/com.android.art/javalib/bouncycastle.jar:/apex/com.android.art/javalib/apache-xml.jar:/system/framework/framework.jar:/system/framework/ext.jar:/system/framework/telephony-common.jar:/system/framework/voip-common.jar:/system/framework/ims-common.jar:/system/framework/framework-atb-backward-compatibility.jar --runtime-arg -Xms64m --runtime-arg -Xmx512m --updatable-bcp-packages-file=/system/etc/updatable-bcp-packages.txt --resolve-startup-const-strings=true --max-image-block-size=524288 --compiler-filter=speed-profile --swap-fd=10 --classpath-dir=/data/app/~~88UHU2NvFj980J3NhMvvNg==/io.github.cooperking.sotd-M3cyCcorgWzGW-xp0kRRxg== --class-loader-context=PCL[]{} --generate-mini-debug-info --compact-dex-level=none --runtime-arg -Xtarget-sdk-version:34 --runtime-arg -Xhidden-api-policy:enabled --compilation-reason=install
+10-24 17:30:29.637 I/dex2oat32( 3712): /apex/com.android.art/bin/dex2oat32 --input-vdex-fd=-1 --output-vdex-fd=9 --updatable-bcp-packages-file=/system/etc/updatable-bcp-packages.txt --resolve-startup-const-strings=true --max-image-block-size=524288 --compiler-filter=speed-profile --classpath-dir=/data/app/~~88UHU2NvFj980J3NhMvvNg==/io.github.cooperking.sotd-M3cyCcorgWzGW-xp0kRRxg== --class-loader-context=PCL[]{} --generate-mini-debug-info --compact-dex-level=none --compilation-reason=install
+10-24 17:30:29.662 V/installd(  386): DexInv: --- END '/data/app/~~88UHU2NvFj980J3NhMvvNg==/io.github.cooperking.sotd-M3cyCcorgWzGW-xp0kRRxg==/base.apk' (success) ---
+10-24 17:30:29.666 I/ActivityManager(  473): Force stopping io.github.cooperking.sotd appid=10076 user=0: pkg removed
+10-24 17:30:29.673 W/BroadcastQueue(  473): Background execution not allowed: receiving Intent { act=android.intent.action.PACKAGE_REMOVED dat=package:io.github.cooperking.sotd flg=0x4000010 (has extras) } to com.google.android.tv/com.android.tv.receiver.PackageIntentsReceiver
+10-24 17:30:29.674 I/MediaProvider( 1121): Invalidating LocalCallingIdentity cache for package io.github.cooperking.sotd. Reason: package android.intent.action.PACKAGE_REMOVED
+10-24 17:30:29.690 I/MediaProvider( 1121): Invalidating LocalCallingIdentity cache for package io.github.cooperking.sotd. Reason: package android.intent.action.PACKAGE_ADDED
+10-24 17:30:29.694 W/BroadcastQueue(  473): Background execution not allowed: receiving Intent { act=android.intent.action.PACKAGE_ADDED dat=package:io.github.cooperking.sotd flg=0x4000010 (has extras) } to com.google.android.packageinstaller/com.android.packageinstaller.PackageInstalledReceiver
+10-24 17:30:29.695 D/AvrcpMediaPlayerList(  666): Name of package changed: io.github.cooperking.sotd
+10-24 17:30:29.696 W/BroadcastQueue(  473): Background execution not allowed: receiving Intent { act=android.intent.action.PACKAGE_ADDED dat=package:io.github.cooperking.sotd flg=0x4000010 (has extras) } to com.google.android.tv/com.android.tv.receiver.PackageIntentsReceiver
+10-24 17:30:29.755 I/FontLog ( 1065): Package io.github.cooperking.sotd has no metadata [CONTEXT service_id=132 ]
+10-24 17:30:30.071 W/SQLiteLog( 3002): (28) double-quoted string literal: "io.github.cooperking.sotd"
+10-24 17:30:39.210 I/ActivityTaskManager(  473): START u0 {flg=0x10000000 cmp=io.github.cooperking.sotd/.MainActivity} from uid 2000
+10-24 17:30:39.262 I/ActivityManager(  473): Start proc 3752:io.github.cooperking.sotd/u0a76 for pre-top-activity {io.github.cooperking.sotd/io.github.cooperking.sotd.MainActivity}
+10-24 17:30:39.271 W/cooperking.sot( 3752): Unexpected CPU variant for X86 using defaults: x86
+10-24 17:30:39.276 E/cooperking.sot( 3752): Not starting debugger since process cannot load the jdwp agent.
+10-24 17:30:39.442 I/ActivityManager(  473): Start proc 3780:com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0/u0i2 for  {io.github.cooperking.sotd/org.chromium.content.app.SandboxedProcessService0:0}
+10-24 17:30:39.470 I/TetheringManager( 3752): registerTetheringEventCallback:io.github.cooperking.sotd
+10-24 17:30:39.716 D/ArtManagerInternalImpl(  473): /data/misc/iorapd/io.github.cooperking.sotd/15/io.github.cooperking.sotd.MainActivity/compiled_traces/compiled_trace.pb doesn't exist
+10-24 17:30:39.717 I/ActivityTaskManager(  473): Displayed io.github.cooperking.sotd/.MainActivity: +493ms
+10-24 17:30:41.197 I/SOTD    ( 3752): loaded https://cooperking.github.io/songs/
+10-24 17:30:43.657 I/SOTD    ( 3752): update check: this is build 15, newest 15
