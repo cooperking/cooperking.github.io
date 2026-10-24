@@ -139,7 +139,8 @@ public class MainActivity extends Activity {
 
     void startUpdate(String apk) {
         if (!mayInstall()) {   // the TV's switch for this app: Install unknown apps
-            pendingApk = apk;
+            pendingApk = apk;   // kept, in case turning the switch on restarts the app
+            prefs.edit().putString("pendingApk", apk).putLong("pendingUntil", System.currentTimeMillis() + 30L * 60 * 1000).apply();
             try {
                 startActivity(new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:" + getPackageName())));
                 Toast.makeText(this, "Turn Song of the Day on, then press Back", Toast.LENGTH_LONG).show();
@@ -384,7 +385,12 @@ public class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
         web.onResume();
-        if (pendingApk != null && mayInstall()) { String a = pendingApk; pendingApk = null; download(a); }   // back from allowing it
+        if (pendingApk == null && System.currentTimeMillis() < prefs.getLong("pendingUntil", 0)) pendingApk = prefs.getString("pendingApk", null);
+        if (pendingApk != null && mayInstall() && !updating) {   // back from allowing it
+            String a = pendingApk; pendingApk = null;
+            prefs.edit().remove("pendingApk").remove("pendingUntil").apply();
+            download(a);
+        }
     }
 
     @Override

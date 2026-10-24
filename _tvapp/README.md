@@ -15,6 +15,12 @@ The screen stays on while something plays. Spotify and YouTube links open in the
 **Install:** on the Fire TV, Settings → My Fire TV → Developer options → Install unknown apps → Downloader: on.
 In Downloader, go to `cooperking.github.io/songs/tv.apk` and install. New builds install over the old one.
 
+**Updates:** the site itself changes in the app straight away. For the app, each build writes its number to
+`songs/tv.json`; from build 13 on, the app looks there a few seconds after it opens and, if there's a newer build,
+offers it (Later: asks again in a day). Install downloads it and hands it to the TV's installer, which asks to
+confirm. The first time, the TV asks to let Song of the Day install apps (the same switch as for Downloader).
+Checked in an emulator with `check_update.sh` (tv-app-check.yml, script: check_update.sh).
+
 **Build:** `.github/workflows/tv-app.yml` runs `build.sh` (aapt2, javac, d8, apksigner; no Gradle) on any change
 here and puts the APK at `songs/tv.apk`. It's signed with a key derived from the `YT_CLIENT_SECRET` secret
 (`make_key.py`), so it's the same for every build without being stored anywhere.
