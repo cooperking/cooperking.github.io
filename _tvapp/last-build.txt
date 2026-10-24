@@ -1,0 +1,26 @@
+build 2
+build-tools 37.0.0, platform android-36, target 34, version 2
+package: name='io.github.cooperking.sotd' versionCode='2' versionName='1.2' platformBuildVersionName='16' platformBuildVersionCode='36' compileSdkVersion='36' compileSdkVersionCodename='16'
+minSdkVersion:'22'
+targetSdkVersion:'34'
+uses-permission: name='android.permission.INTERNET'
+application-label:'Song of the Day'
+application-icon-320:'res/mipmap-xxxhdpi-v4/ic_launcher.png'
+application-icon-640:'res/mipmap-xxxhdpi-v4/ic_launcher.png'
+application: label='Song of the Day' icon='res/mipmap-xxxhdpi-v4/ic_launcher.png' banner='res/drawable-xhdpi-v4/banner.png'
+launchable-activity: name='io.github.cooperking.sotd.MainActivity'  label='' icon=''
+leanback-launchable-activity: name='io.github.cooperking.sotd.MainActivity'  label='' icon='' banner=''
+feature-group: label=''
+  uses-feature-not-required: name='android.hardware.touchscreen'
+  uses-feature-not-required: name='android.software.leanback'
+  uses-feature: name='android.hardware.screen.landscape'
+  uses-implied-feature: name='android.hardware.screen.landscape' reason='one or more activities have specified a landscape orientation'
+main
+supports-screens: 'small' 'normal' 'large' 'xlarge'
+supports-any-density: 'true'
+locales: '--_--'
+densities: '320' '640'
+V3.0 Signer: certificate DN: CN=John's Song of the Day
+V3.0 Signer: certificate SHA-256 digest: 88aca69cfedeacd9683d2b8fddace2d584d702d6f708d13a1b7624f6c6df8c27
+V3.0 Signer: certificate SHA-1 digest: 1160abba1f2931070a3f11dc8057616d5322b8f5
+V3.0 Signer: certificate MD5 digest: a3769c61cffde27ae05aab8a2fb4136c
