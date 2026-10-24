@@ -2581,8 +2581,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   fabSync();
   function playMine(from) { startQueue(fav.slice(), plname.value.replace(/\s+/g, ' ').trim() || 'My playlist', 'mine', from || 0); }
   document.getElementById('mineplay').addEventListener('click', function () { playMine(0); });
-  // Play all, in the bar: every song, the newest first
+  // Play all, in the bar: every song, the newest first, as videos (a song with none plays its preview)
   document.getElementById('playall').addEventListener('click', function () {
+    playMode = 'video';
     var all = songs.slice().sort(function (a, b) { return b.n - a.n; }).map(function (s) { return s.track; });
     startQueue(all, 'John\u2019s Song of the Day', 'all');
   });
