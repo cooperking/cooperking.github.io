@@ -1,0 +1,150 @@
+--------- beginning of system
+W/ActivityManager(  486): Slow operation: 61ms so far, now at startProcess: returned from zygote!
+W/ActivityManager(  486): Slow operation: 63ms so far, now at startProcess: done updating battery stats
+W/ActivityManager(  486): Slow operation: 70ms so far, now at startProcess: building log message
+W/ActivityManager(  486): Slow operation: 71ms so far, now at startProcess: starting to update pids map
+W/ActivityManager(  486): Slow operation: 71ms so far, now at startProcess: done updating pids map
+W/ActivityManager(  486): Slow operation: 63ms so far, now at startProcess: returned from zygote!
+W/ActivityManager(  486): Slow operation: 63ms so far, now at startProcess: done updating battery stats
+W/ActivityManager(  486): Slow operation: 63ms so far, now at startProcess: building log message
+W/ActivityManager(  486): Slow operation: 63ms so far, now at startProcess: starting to update pids map
+W/ActivityManager(  486): Slow operation: 63ms so far, now at startProcess: done updating pids map
+W/ActivityManager(  486): Slow operation: 51ms so far, now at startProcess: done updating battery stats
+W/ActivityManager(  486): Slow operation: 51ms so far, now at startProcess: building log message
+W/ActivityManager(  486): Slow operation: 51ms so far, now at startProcess: starting to update pids map
+W/ActivityManager(  486): Slow operation: 51ms so far, now at startProcess: done updating pids map
+W/ActivityManager(  486): Slow operation: 914ms so far, now at startProcess: done updating battery stats
+W/ActivityManager(  486): Slow operation: 918ms so far, now at startProcess: building log message
+W/ActivityManager(  486): Slow operation: 918ms so far, now at startProcess: starting to update pids map
+W/ActivityManager(  486): Slow operation: 918ms so far, now at startProcess: done updating pids map
+W/ActivityManager(  486): Unable to start service Intent { act=com.google.android.gms.nearby.discovery:ACTION_INIT_MESSAGES_PATH cmp=com.google.android.gms/.nearby.discovery.service.DiscoveryService } U=0: not found
+W/ActivityManager(  486): Slow operation: 77ms so far, now at startProcess: returned from zygote!
+W/ActivityManager(  486): Slow operation: 166ms so far, now at startProcess: done updating battery stats
+W/ActivityManager(  486): Slow operation: 166ms so far, now at startProcess: building log message
+W/ActivityManager(  486): Slow operation: 166ms so far, now at startProcess: starting to update pids map
+W/ActivityManager(  486): Slow operation: 166ms so far, now at startProcess: done updating pids map
+--------- beginning of main
+W/chromium( 2870): [WARNING:dns_config_service_android.cc(115)] Failed to read DnsConfig.
+W/ActivityManager(  486): Slow operation: 58ms so far, now at attachApplicationLocked: immediately after bindApplication
+W/ActivityManager(  486): Slow operation: 58ms so far, now at attachApplicationLocked: after updateLruProcessLocked
+W/ActivityManager(  486): Unable to start service Intent { cmp=com.google.android.apps.mediashell/.LocalGrpcAuthService } U=0: not found
+W/chromium( 1176): [FTL:1176:3139:WARNING:publisher.cc(33)] No subscribers for event
+W/chromium( 1176): "assistant.api.events.RecognitionEvent" from publisher "InitializeInternal"
+W/chromium( 1176): [FTL:1176:3139:WARNING:publisher.cc(33)] No subscribers for event
+W/chromium( 1176): "assistant.api.events.DeviceStateEvent" from publisher "InitializeInternal"
+W/chromium( 1176): [FTL:1176:3145:WARNING:publisher.cc(33)] No subscribers for event
+W/chromium( 1176): "assistant.api.events.MetricEvent" from publisher "RecordCastEventImpl"
+W/chromium( 1176): [FTL:1176:3145:WARNING:publisher.cc(33)] No subscribers for event
+W/chromium( 1176): "assistant.api.events.ConversationEvent" from publisher "ActivityManagerImpl"
+W/chromium( 1176): [FTL:1176:3139:WARNING:publisher.cc(33)] No subscribers for event
+W/chromium( 1176): "assistant.api.events.DeviceStateEvent" from publisher "InitializeInternal"
+W/chromium( 1176): [FTL:1176:3139:WARNING:publisher.cc(33)] No subscribers for event
+W/chromium( 1176): "assistant.api.events.MetricEvent" from publisher "UmaMetricsForwarder"
+W/chromium( 1176): [FTL:1176:3145:WARNING:publisher.cc(33)] No subscribers for event
+W/chromium( 1176): "assistant.api.events.ConversationEvent" from publisher "S3Session"
+W/ActivityManager(  486): Unable to start service Intent { cmp=com.google.android.katniss/com.google.android.apps.tvsearch.led.controller.LedHalService } U=0: not found
+W/chromium( 1176): [FTL:1176:3139:WARNING:publisher.cc(33)] No subscribers for event
+W/chromium( 1176): "assistant.api.events.DeviceStateEvent" from publisher "InitializeInternal"
+E/chromium( 1176): [FTL:1176:3145:ERROR:action_processor.cc(537)] Module "feedback" tried to
+E/chromium( 1176): shadow action_path "feedback.UPLOAD_CRASH_REPORT", but it is already registered
+E/chromium( 1176): by "DelegatingActionExecutor"
+W/chromium( 1176): [FTL:1176:3145:WARNING:action_processor.cc(197)] Failed to find
+W/chromium( 1176): |conversation_id| for |interaction_id|: 0
+W/chromium( 1176): [FTL:1176:3145:WARNING:action_processor.cc(197)] Failed to find
+W/chromium( 1176): |conversation_id| for |interaction_id|: 66
+W/chromium( 1176): [FTL:1176:3151:WARNING:publisher.cc(33)] No subscribers for event
+W/chromium( 1176): "assistant.api.events.MetricEvent" from publisher "RecordCastEventImpl"
+W/chromium( 1176): [FTL:1176:3151:WARNING:publisher.cc(33)] No subscribers for event
+W/chromium( 1176): "assistant.api.events.MetricEvent" from publisher "RecordCastEventImpl"
+W/chromium( 1176): [FTL:1176:3145:WARNING:publisher.cc(33)] No subscribers for event
+W/chromium( 1176): "assistant.api.events.DeviceStateEvent" from publisher "ProcessSettingsAction"
+W/chromium( 1176): [FTL:1176:3145:WARNING:publisher.cc(33)] No subscribers for event
+W/chromium( 1176): "assistant.api.events.DeviceStateEvent" from publisher "ProcessSettingsAction"
+W/chromium( 1176): [FTL:1176:3145:WARNING:publisher.cc(33)] No subscribers for event
+W/chromium( 1176): "assistant.api.events.ConversationEvent" from publisher "S3Session"
+W/chromium( 1176): [FTL:1176:3145:WARNING:publisher.cc(33)] No subscribers for event
+W/chromium( 1176): "assistant.api.events.ConversationEvent" from publisher "S3Session"
+W/chromium( 1176): [FTL:1176:3139:WARNING:publisher.cc(33)] No subscribers for event
+W/chromium( 1176): "assistant.api.events.DeviceStateEvent" from publisher "InitializeInternal"
+E/chromium( 1176): [FTL:1176:3145:ERROR:action_processor.cc(537)] Module "feedback" tried to
+E/chromium( 1176): shadow action_path "feedback.UPLOAD_CRASH_REPORT", but it is already registered
+E/chromium( 1176): by "DelegatingActionExecutor"
+W/chromium( 1176): [FTL:1176:3145:WARNING:publisher.cc(33)] No subscribers for event
+W/chromium( 1176): "assistant.api.events.ConversationEvent" from publisher "S3Session"
+E/chromium( 2870): [ERROR:page_load_metrics_update_dispatcher.cc(178)] Invalid first_paint (unset) for first_image_paint 2.623 s
+E/chromium( 2870): [ERROR:page_load_metrics_update_dispatcher.cc(178)] Invalid first_paint (unset) for first_image_paint 2.623 s
+E/chromium( 2870): [ERROR:page_load_metrics_update_dispatcher.cc(178)] Invalid first_paint (unset) for first_image_paint 2.623 s
+W/ActivityManager(  486): Unable to start service Intent { cmp=com.google.android.gms/.fido.authenticator.service.AuthenticatorService } U=0: not found
+W/ActivityManager(  486): Unable to start service Intent { act=com.google.android.gms.nearby.discovery:ACTION_INIT_MESSAGES_PATH cmp=com.google.android.gms/.nearby.discovery.service.DiscoveryService } U=0: not found
+E/chromium( 2870): [ERROR:page_load_metrics_update_dispatcher.cc(178)] Invalid first_paint 8.52 s for first_image_paint 2.623 s
+E/chromium( 2870): [ERROR:page_load_metrics_update_dispatcher.cc(178)] Invalid first_paint 8.52 s for first_image_paint 2.623 s
+E/chromium( 2870): [ERROR:page_load_metrics_update_dispatcher.cc(178)] Invalid first_paint 8.52 s for first_image_paint 2.623 s
+E/chromium( 2870): [ERROR:page_load_metrics_update_dispatcher.cc(178)] Invalid first_paint 8.52 s for first_image_paint 2.623 s
+W/ActivityManager(  486): Service done with onDestroy, but not inDestroying: ServiceRecord{9e4f041 u0 com.android.vending/com.google.frameworks.client.data.android.server.play.BackgroundProcessEndpointService}, app=ProcessRecord{a56fb2 0:com.android.vending:background/u0a84}
+W/ActivityManager(  486): Service done with onDestroy, but not inDestroying: ServiceRecord{673acdc u0 com.android.vending/com.google.frameworks.client.data.android.server.play.QuickLaunchProcessEndpointService}, app=ProcessRecord{9d69c29 0:com.android.vending:quick_launch/u0a84}
+W/ActivityManager(  486): Scheduling restart of crashed service com.google.android.gms/.common.stats.GmsCoreStatsService in 1000ms for start-requested
+W/ActivityManager(  486): Scheduling restart of crashed service com.google.android.gms/com.google.android.location.internal.GoogleLocationManagerService in 11000ms for start-requested
+W/ActivityManager(  486): Scheduling restart of crashed service com.google.android.gms/.clearcut.debug.ClearcutDebugDumpService in 21000ms for start-requested
+W/ActivityManager(  486): Scheduling restart of crashed service com.google.android.gms/com.google.android.contextmanager.service.ContextManagerService in 31000ms for start-requested
+W/ActivityManager(  486): Scheduling restart of crashed service com.google.android.gms/.deviceconnection.service.DeviceConnectionWatcherService in 41000ms for start-requested
+W/ActivityManager(  486): Scheduling restart of crashed service com.google.android.gms/.location.persistent.LocationPersistentService in 51000ms for start-requested
+W/ActivityManager(  486): Scheduling restart of crashed service com.google.android.gms/.chimera.PersistentDirectBootAwareApiService in 61000ms for connection
+W/ActivityManager(  486): Scheduling restart of crashed service com.google.android.gms/.auth.setup.devicesignals.LockScreenService in 71000ms for start-requested
+W/ActivityManager(  486): Scheduling restart of crashed service com.google.android.gms/.chimera.PersistentApiService in 81000ms for connection
+W/ActivityManager(  486): Scheduling restart of crashed service com.google.android.gms/.gcm.GcmService in 91000ms for start-requested
+W/ActivityManager(  486): Scheduling restart of crashed service com.google.android.gms/.location.geocode.GeocodeService in 100999ms for connection
+W/ActivityManager(  486): Scheduling restart of crashed service com.google.android.gms/.gcm.nts.SchedulerService in 110999ms for start-requested
+W/ActivityManager(  486): Scheduling restart of crashed service com.google.android.gms/com.google.android.location.network.NetworkLocationService in 120999ms for connection
+W/ActivityManager(  486): Scheduling restart of crashed service com.google.android.gms/com.google.android.location.fused.FusedLocationService in 130999ms for connection
+W/ActivityManager(  486): Scheduling restart of crashed service com.google.android.gms/com.google.android.location.internal.server.HardwareArProviderService in 140999ms for connection
+W/ActivityManager(  486): Scheduling restart of crashed service com.google.android.gms/.chimera.PersistentIntentOperationService in 150999ms for start-requested
+W/ActivityManager(  486): Scheduling restart of crashed service com.google.android.gms/.chimera.PersistentBoundBrokerService in 160999ms for connection
+W/ActivityManager(  486): Scheduling restart of crashed service com.google.android.gms/com.google.android.location.internal.server.GoogleLocationService in 170999ms for start-requested
+W/ActivityManager(  486): Exception when unbinding service com.google.android.gms/.chimera.GmsBoundBrokerService
+W/ActivityManager(  486): android.os.DeadObjectException
+W/ActivityManager(  486): 	at android.os.BinderProxy.transactNative(Native Method)
+W/ActivityManager(  486): 	at android.os.BinderProxy.transact(BinderProxy.java:584)
+W/ActivityManager(  486): 	at android.app.IApplicationThread$Stub$Proxy.scheduleUnbindService(IApplicationThread.java:1419)
+W/ActivityManager(  486): 	at com.android.server.am.ActiveServices.removeConnectionLocked(ActiveServices.java:5896)
+W/ActivityManager(  486): 	at com.android.server.am.ActiveServices.killServicesLocked(ActiveServices.java:6432)
+W/ActivityManager(  486): 	at com.android.server.am.ActivityManagerService.cleanUpApplicationRecordLocked(ActivityManagerService.java:13009)
+W/ActivityManager(  486): 	at com.android.server.am.ActivityManagerService.handleAppDiedLocked(ActivityManagerService.java:3338)
+W/ActivityManager(  486): 	at com.android.server.am.ActivityManagerService.appDiedLocked(ActivityManagerService.java:3453)
+W/ActivityManager(  486): 	at com.android.server.am.ActivityManagerService$AppDeathRecipient.binderDied(ActivityManagerService.java:1583)
+W/ActivityManager(  486): 	at android.os.IBinder$DeathRecipient.binderDied(IBinder.java:319)
+W/ActivityManager(  486): 	at android.os.BinderProxy.sendDeathNotice(BinderProxy.java:704)
+W/ActivityManager(  486): Exception when unbinding service io.github.cooperking.sotd/org.chromium.content.app.SandboxedProcessService0:0
+W/ActivityManager(  486): android.os.DeadObjectException
+W/ActivityManager(  486): 	at android.os.BinderProxy.transactNative(Native Method)
+W/ActivityManager(  486): 	at android.os.BinderProxy.transact(BinderProxy.java:584)
+W/ActivityManager(  486): 	at android.app.IApplicationThread$Stub$Proxy.scheduleUnbindService(IApplicationThread.java:1419)
+W/ActivityManager(  486): 	at com.android.server.am.ActiveServices.removeConnectionLocked(ActiveServices.java:5896)
+W/ActivityManager(  486): 	at com.android.server.am.ActiveServices.killServicesLocked(ActiveServices.java:6432)
+W/ActivityManager(  486): 	at com.android.server.am.ActivityManagerService.cleanUpApplicationRecordLocked(ActivityManagerService.java:13009)
+W/ActivityManager(  486): 	at com.android.server.am.ActivityManagerService.handleAppDiedLocked(ActivityManagerService.java:3338)
+W/ActivityManager(  486): 	at com.android.server.am.ActivityManagerService.appDiedLocked(ActivityManagerService.java:3453)
+W/ActivityManager(  486): 	at com.android.server.am.ActivityManagerService$AppDeathRecipient.binderDied(ActivityManagerService.java:1583)
+W/ActivityManager(  486): 	at android.os.IBinder$DeathRecipient.binderDied(IBinder.java:319)
+W/ActivityManager(  486): 	at android.os.BinderProxy.sendDeathNotice(BinderProxy.java:704)
+W/ActivityManager(  486): Scheduling restart of crashed service com.google.android.gms/.chimera.GmsIntentOperationService in 180910ms for start-requested
+W/ActivityManager(  486): setHasOverlayUi called on unknown pid: 2870
+W/ActivityManager(  486): Slow operation: 91ms so far, now at startProcess: done updating battery stats
+W/ActivityManager(  486): Slow operation: 91ms so far, now at startProcess: building log message
+W/ActivityManager(  486): Slow operation: 92ms so far, now at startProcess: starting to update pids map
+W/ActivityManager(  486): Slow operation: 92ms so far, now at startProcess: done updating pids map
+W/ActivityManager(  486): Rescheduling restart of crashed service com.google.android.gms/.chimera.GmsIntentOperationService in 972ms for other
+W/ActivityManager(  486): Unable to start service Intent { cmp=com.google.android.gms/.fido.authenticator.service.AuthenticatorService } U=0: not found
+W/ActivityManager(  486): Unable to start service Intent { act=com.google.android.gms.nearby.discovery:ACTION_INIT_MESSAGES_PATH cmp=com.google.android.gms/.nearby.discovery.service.DiscoveryService } U=0: not found
+W/ActivityManager(  486): Unable to start service Intent { act=com.google.android.gms.findmydevice.spot.service.management.START pkg=com.google.android.gms } U=0: not found
+W/ActivityManager(  486): Unbind failed: could not find connection for android.os.BinderProxy@6813146
+W/ActivityManager(  486): Unable to start service Intent { cmp=com.google.android.gms/.fido.fido2.pollux.CableAuthenticatorService } U=0: not found
+W/ActivityManager(  486): Unable to start service Intent { act=com.google.android.gms.findmydevice.spot.service.management.START pkg=com.google.android.gms } U=0: not found
+W/ActivityManager(  486): Unbind failed: could not find connection for android.os.BinderProxy@814c044
+W/ActivityManager(  486): Unable to start service Intent { act=com.google.android.gms.securitystate.provider.api.SecurityStateUpdateInfoRegistrationApiService.START pkg=com.google.android.gms } U=0: not found
+W/ActivityManager(  486): Unbind failed: could not find connection for android.os.BinderProxy@1047773
+W/ActivityManager(  486): Unable to start service Intent { act=com.google.android.gms.findmydevice.spot.service.management.START pkg=com.google.android.gms } U=0: not found
+W/ActivityManager(  486): Unbind failed: could not find connection for android.os.BinderProxy@679a967
+W/ActivityManager(  486): Unable to start service Intent { cmp=com.google.android.gms/.fido.fido2.pollux.CableAuthenticatorService } U=0: not found
+W/ActivityManager(  486): Unable to start service Intent { cmp=com.google.android.gms/.fido.authenticator.service.AuthenticatorService } U=0: not found
+W/ActivityManager(  486): Unable to start service Intent { act=com.google.android.gms.findmydevice.spot.service.management.START pkg=com.google.android.gms } U=0: not found
+W/ActivityManager(  486): Unbind failed: could not find connection for android.os.BinderProxy@3236f73
