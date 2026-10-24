@@ -627,7 +627,9 @@ async function mediaFile(request, url, env) {
   const head = await env.MEDIA.head(key);
   if (!head) return plain(404, 'Not here.');
   const size = head.size, type = MEDIA_KINDS[m[1]].type;
-  const hdrs = { 'Content-Type': type, 'Accept-Ranges': 'bytes', 'Cache-Control': 'private, max-age=3600', 'ETag': head.httpEtag };
+  const hdrs = { 'Content-Type': type, 'Accept-Ranges': 'bytes', 'Cache-Control': 'private, max-age=3600', 'ETag': head.httpEtag,
+    // the calendar fetches a song to keep it on the device (a member's download)
+    'Access-Control-Allow-Origin': MEMBERS_ORIGIN, 'Access-Control-Expose-Headers': 'Content-Length, Content-Range, Accept-Ranges' };
   let start = 0, end = size - 1, partial = false;
   const rg = /^bytes=(\d*)-(\d*)$/.exec(request.headers.get('Range') || '');
   if (rg && (rg[1] || rg[2])) {

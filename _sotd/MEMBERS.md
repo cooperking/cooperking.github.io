@@ -27,6 +27,20 @@ he does).
 - **The Worker** (`worker/worker.js`, the members section) keeps only hashes of invite codes and tokens. It serves the
   files in ranges (phones need that), and refuses a link that has been changed or has run out.
 
+## Offline (songs only)
+
+A member can keep John's recordings on a device and play them with no connection:
+- *Download* (the arrow) on a day, next to a month's Share, or next to My playlist. A tick once it's on the device; a dot
+  on its day in the calendar. Tap the tick to remove it; *Remove downloads* under My playlist removes them all.
+- With no connection the calendar still opens (the last copy of the page, its data and the covers); days without a
+  download are greyed, and one tapped says it needs a connection.
+- How: a service worker (`songs/sw.js`, `songs/draft/sw.js`) keeps the page, its data and the covers, and the songs
+  the page puts in its store; it plays them in ranges (an iPhone won't otherwise). The Worker's file links allow the
+  page to fetch them (CORS).
+- Downloads are cleared if the member is removed. Best from the Home Screen icon on an iPhone: Safari can clear a
+  website's stored data once it goes unvisited for a week or so; the Home Screen app is kept apart from that.
+- Videos aren't kept (yet).
+
 ## Setting it up (once)
 
 1. Cloudflare dashboard → R2: turn R2 on (Cloudflare asks for a payment method; the first 10 GB a month are free,
@@ -50,4 +64,8 @@ With fake files (`_sotd` doesn't keep them), against the Worker run locally with
   - as a member: whole song, own video, full screen, and falling back where a file is missing;
   - as a visitor;
   - with a wrong token;
-  - once removed.
+  - once removed;
+  - offline: downloading a day and a month, the calendar and a downloaded song (seeking too) with no connection, a day
+    not downloaded, downloads gone once removed.
+
+Not yet on a real iPhone or Fire TV.
