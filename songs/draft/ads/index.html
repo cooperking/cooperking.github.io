@@ -12,7 +12,8 @@
 <style>
 :root { --bg: #ec135b; --ink: #1b1020; --muted: #5f4b63; --line: rgba(27, 16, 32, .14); --serif: "Newsreader", Georgia, serif; --sans: "Hanken Grotesk", Arial, sans-serif; }
 * { box-sizing: border-box; }
-html { background: var(--bg); }
+html { background: var(--bg); scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 body { margin: 0; min-height: 100vh; font: 17px/1.55 var(--serif); color: var(--ink);
   background: radial-gradient(120% 80% at 10% 0%, #ff3344 0%, transparent 60%), radial-gradient(100% 80% at 100% 100%, #fc00b4 0%, transparent 60%), var(--bg);
   padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 48px max(16px, env(safe-area-inset-left)); }
@@ -20,49 +21,93 @@ main { max-width: 720px; margin: 24px auto 0; background: #fffaf5; border-radius
 .back { display: inline-block; margin-bottom: 18px; font: 600 11px/1 var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); text-decoration: none; }
 .back:hover, .back:focus-visible { color: var(--ink); }
 h1 { margin: 0 0 14px; font-weight: 500; font-size: clamp(34px, 7vw, 52px); line-height: 1.02; letter-spacing: -.015em; }
-h2 { margin: 34px 0 8px; padding-top: 20px; border-top: 1px solid var(--line); font: 600 12px/1.2 var(--sans); letter-spacing: .14em; text-transform: uppercase; }
+h2 { margin: 30px 0 8px; padding-top: 18px; border-top: 1px solid var(--line); font: 600 12px/1.2 var(--sans); letter-spacing: .14em; text-transform: uppercase; scroll-margin-top: 16px; }
 p { margin: 0 0 12px; }
-ul { margin: 0 0 12px; padding-left: 1.1em; }
-li { margin-bottom: 9px; }
 b { font-weight: 600; }
 blockquote { margin: 0 0 12px; padding: 2px 0 2px 16px; border-left: 3px solid var(--bg); font-style: italic; }
 a { color: inherit; text-underline-offset: .15em; }
-.path { font: 600 14px/1.4 var(--sans); white-space: normal; }
-.note { color: var(--muted); font-size: 15px; }
-.sources { margin-top: 34px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 14px; color: var(--muted); }
+.path { font: 600 14px/1.4 var(--sans); }
+/* the index: one line per case; the reader's own browser marked */
+.index { margin: 18px 0 0; padding: 0; list-style: none; border-top: 1px solid var(--line); }
+.index li { border-bottom: 1px solid var(--line); }
+.index a { display: flex; align-items: baseline; gap: 10px; padding: 11px 2px; text-decoration: none; }
+.index a:hover .l, .index a:focus-visible .l { text-decoration: underline; }
+.index .g { font: 600 10.5px/1 var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); width: 7.6em; flex: none; white-space: nowrap; }
+.index .l { flex: 1; }
+.index .you { flex: none; font: 600 10.5px/1 var(--sans); letter-spacing: .12em; text-transform: uppercase; color: #fff; background: var(--bg); padding: 4px 7px 3px; border-radius: 999px; }
+.index .you[hidden] { display: none; }
+.up { display: inline-block; margin-top: 2px; font: 600 10.5px/1 var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); text-decoration: none; }
+.sources { margin-top: 30px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 14px; color: var(--muted); }
 .sources a { display: block; margin-top: 4px; }
 </style>
 </head>
 <body>
-<main>
+<main id="top">
 <a class="back" href="../">← John’s Song of the Day</a>
 <h1>Why am I seeing this ad?</h1>
-<p>The videos here play in YouTube’s own player. YouTube decides when to show an advert before or during a video, and keeps what it earns from it. This site earns nothing from the adverts and can’t turn them off.</p>
+<p>The videos here play in YouTube’s own player. YouTube chooses when to show an advert and keeps what it earns from it. This site earns nothing from the adverts and can’t turn them off.</p>
 
-<h2>Without YouTube Premium</h2>
-<ul>
-<li>Many adverts have a <b>Skip</b> button after 5 seconds.</li>
-<li><b>Close video</b> to hear the song’s 30-second preview instead. Previews have no adverts.</li>
+<ul class="index">
+<li><a href="#no-premium"><span class="g">No Premium</span><span class="l">Skip, or hear the preview</span></a></li>
+<li><a href="#chrome"><span class="g">Premium</span><span class="l">Chrome or Edge</span><span class="you" data-for="chrome" hidden>Your browser</span></a></li>
+<li><a href="#iphone"><span class="g">Premium</span><span class="l">iPhone or iPad</span><span class="you" data-for="ios" hidden>Your browser</span></a></li>
+<li><a href="#mac"><span class="g">Premium</span><span class="l">Safari on a Mac</span><span class="you" data-for="mac" hidden>Your browser</span></a></li>
+<li><a href="#firefox"><span class="g">Premium</span><span class="l">Firefox</span><span class="you" data-for="firefox" hidden>Your browser</span></a></li>
+<li><a href="#youtube"><span class="g">Premium</span><span class="l">Any browser: watch on YouTube</span></a></li>
+<li><a href="#tv"><span class="g">Fire TV</span><span class="l">The Song of the Day app</span><span class="you" data-for="tv" hidden>You</span></a></li>
+<li><a href="#why"><span class="g">Why</span><span class="l">Why Premium isn’t always recognised here</span></a></li>
 </ul>
 
-<h2>With YouTube Premium</h2>
-<p>Premium only removes adverts when YouTube’s player knows it’s you. In a video on another website, it can only tell if you’re signed in to YouTube in the same browser and the browser lets YouTube use its cookies on this site. YouTube’s help says:</p>
-<blockquote>“If you’re watching a YouTube video embedded on a website, make sure that you aren’t blocking YouTube cookies.”</blockquote>
-<ul>
-<li><b>Chrome or Edge</b> (computer or Android): YouTube’s cookies are allowed unless you’ve changed it. If adverts still show, in Chrome go to <span class="path">Settings → Privacy and security → Third-party cookies</span> and add <span class="path">[*.]youtube.com</span> under “Allowed to use third-party cookies”.</li>
-<li><b>Safari on iPhone or iPad:</b> <span class="path">Settings → Apps → Safari</span> (on iOS 17 and earlier, <span class="path">Settings → Safari</span>), then turn off <b>Prevent Cross-Site Tracking</b>. This applies to every website, not only this one.</li>
-<li><b>Safari on a Mac:</b> <span class="path">Safari → Settings → Privacy</span>, then untick <b>Prevent cross-site tracking</b>. This also applies to every website.</li>
-<li><b>Firefox:</b> on this site, click the shield to the left of the address bar and turn off Enhanced Tracking Protection for it.</li>
-</ul>
-<p>Or, in any browser, press the <b>YouTube</b> logo in the player to watch the song on YouTube itself, or <b>On YouTube</b> at the top for the whole playlist. Premium works there, and on a phone it opens the YouTube app.</p>
+<h2 id="no-premium">Without YouTube Premium</h2>
+<p>Many adverts have a <b>Skip</b> button after 5 seconds. Or press <b>Close video</b> to hear the song’s 30-second preview instead: previews have no adverts.</p>
+<a class="up" href="#top">↑ Index</a>
 
-<h2>In the Fire TV app</h2>
+<h2 id="chrome">Premium: Chrome or Edge</h2>
+<p>Sign in to YouTube in the same browser. Its cookies are allowed here unless you’ve changed that. If adverts still show, in Chrome go to <span class="path">Settings → Privacy and security → Third-party cookies</span> and add <span class="path">[*.]youtube.com</span> under “Allowed to use third-party cookies”.</p>
+<a class="up" href="#top">↑ Index</a>
+
+<h2 id="iphone">Premium: iPhone or iPad</h2>
+<p>Sign in to YouTube in Safari. Then go to <span class="path">Settings → Apps → Safari</span> (on iOS 17 and earlier, <span class="path">Settings → Safari</span>) and turn off <b>Prevent Cross-Site Tracking</b>. This applies to every website, not only this one. If you’d rather not, <a href="#youtube">watch on YouTube</a>.</p>
+<a class="up" href="#top">↑ Index</a>
+
+<h2 id="mac">Premium: Safari on a Mac</h2>
+<p>Sign in to YouTube in Safari. Then go to <span class="path">Safari → Settings → Privacy</span> and untick <b>Prevent cross-site tracking</b>. This applies to every website, not only this one.</p>
+<a class="up" href="#top">↑ Index</a>
+
+<h2 id="firefox">Premium: Firefox</h2>
+<p>Sign in to YouTube in Firefox. Then, on this site, click the shield to the left of the address bar and turn off Enhanced Tracking Protection for it.</p>
+<a class="up" href="#top">↑ Index</a>
+
+<h2 id="youtube">Premium: any browser</h2>
+<p>Press the <b>YouTube</b> logo in the player to watch the song on YouTube itself, or <b>On YouTube</b> at the top of the calendar for the whole playlist. Premium works there, and on a phone it opens the YouTube app.</p>
+<a class="up" href="#top">↑ Index</a>
+
+<h2 id="tv">The Fire TV app</h2>
 <p>The app can’t sign in to YouTube, so adverts show even with Premium. Close the video to hear the preview instead, or play the playlist in the YouTube app.</p>
+<a class="up" href="#top">↑ Index</a>
+
+<h2 id="why">Why Premium isn’t always recognised here</h2>
+<p>Premium only removes adverts when YouTube’s player knows it’s you. In a video on another website, it can only tell if you’re signed in to YouTube in the same browser and the browser lets YouTube use its cookies on that website. YouTube’s help says:</p>
+<blockquote>“If you’re watching a YouTube video embedded on a website, make sure that you aren’t blocking YouTube cookies.”</blockquote>
+<a class="up" href="#top">↑ Index</a>
 
 <div class="sources">Sources
 <a href="https://support.google.com/youtube/answer/7437519?hl=en-GB">YouTube Help: I see ads on YouTube videos</a>
 <a href="https://support.mozilla.org/kb/third-party-cookies-firefox-tracking-protection">Mozilla: Third-party cookies and Firefox tracking protection</a>
 </div>
 </main>
+<script>
+/* marks the index line for the reader's own browser */
+(function () {
+  var u = navigator.userAgent, k = '';
+  if (/SOTDTV/.test(u)) k = 'tv';
+  else if (/iPhone|iPad|iPod/.test(u) || (/Macintosh/.test(u) && navigator.maxTouchPoints > 1)) k = 'ios';
+  else if (/Firefox\//.test(u)) k = 'firefox';
+  else if (/Edg\/|Chrome\//.test(u)) k = 'chrome';
+  else if (/Macintosh/.test(u) && /Safari\//.test(u)) k = 'mac';
+  var el = k && document.querySelector('.index .you[data-for="' + k + '"]');
+  if (el) el.hidden = false;
+})();
+</script>
 </body>
 </html>
