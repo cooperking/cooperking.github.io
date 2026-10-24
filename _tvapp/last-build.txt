@@ -1,6 +1,6 @@
-build 18
-build-tools 37.0.0, platform android-36, target 34, version 18
-package: name='io.github.cooperking.sotd' versionCode='18' versionName='1.18' platformBuildVersionName='16' platformBuildVersionCode='36' compileSdkVersion='36' compileSdkVersionCodename='16'
+build 19
+build-tools 37.0.0, platform android-36, target 34, version 19
+package: name='io.github.cooperking.sotd' versionCode='19' versionName='1.19' platformBuildVersionName='16' platformBuildVersionCode='36' compileSdkVersion='36' compileSdkVersionCodename='16'
 minSdkVersion:'22'
 targetSdkVersion:'34'
 uses-permission: name='android.permission.INTERNET'
