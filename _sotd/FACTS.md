@@ -2,18 +2,24 @@
 
 The calendar (cooperking.github.io/songs/) shows short facts about each song and its artists as captions over the
 song's video or 30-second preview: one at a time, under a heading (the song's title for a song fact, the artist's name
-for an artist fact). John signs every song's facts off before they go live.
+for an artist fact). A new song's facts go live as soon as they're written and checked, and the song's day only shows
+on the live calendar from then (John, 24 Oct 2026); John checks, edits and signs them off afterwards.
 
-- `songs/facts.json`: live. Only `_sotd/facts_apply.py` changes it, when John signs off.
-- `_sotd/data/facts-pending.json`: written and checked, waiting for John. Shown on the draft calendar and on the sign-off
-  page, `songs/facts-admin.html`, where he edits, removes, reorders, adds his own and signs off. The Cloudflare Worker
-  keeps his sign-offs and starts `.github/workflows/facts.yml`, which runs `facts_apply.py` to put them live.
+- `songs/facts.json`: live. Only `_sotd/facts_apply.py` changes it: it puts each new song's checked facts there straight
+  away (which brings the song out on the live calendar, the share pages and the YouTube playlist: `_sotd/released.py`),
+  and replaces them with what John signs off.
+- `_sotd/data/facts-pending.json`: written and checked, waiting for John's sign-off (and live meanwhile). Shown on the
+  draft calendar and on the sign-off page, `songs/facts-admin.html`, where he edits, removes, reorders, adds his own and
+  signs off. The Cloudflare Worker keeps his sign-offs and starts `.github/workflows/facts.yml`, which runs
+  `facts_apply.py` to put them live.
 - `_sotd/data/sources.json`: what the facts are written from first: the English Wikipedia articles on each song, album
   and artist, and MusicBrainz's details on each artist. The job song-tags.yml adds each new song's (`_sotd/about.py`).
 
-## The scheduled task: facts for new songs
+## The facts task: facts for new songs
 
-Every few hours, a scheduled session does this. Nothing it does reaches the live site.
+Claude's routine "Song facts for new songs" does this. It has no timer: song-tags.yml starts it through the routine's API
+trigger at the end of the run that saves a new song's sources (`_sotd/facts_ask.py`; the secrets SOTD_FACTS_URL and
+SOTD_FACTS_TOKEN hold its address and token). The new song stays off the live calendar until this has run.
 
 1. `git pull` in the repository (cooperking/cooperking.github.io).
 2. `python3 _sotd/facts_todo.py <work folder>`. If it says 0 songs need facts, stop: nothing to report. A song only
@@ -24,13 +30,16 @@ Every few hours, a scheduled session does this. Nothing it does reaches the live
    of `written.json` and the work folder (for the saved pages), and have it write `<work folder>/verdicts.json`. Don't
    check your own facts.
 5. `python3 _sotd/facts_add.py <work folder>/written.json <work folder>/verdicts.json`, then
-   `python3 _sotd/facts_apply.py --offline`.
-6. Commit `_sotd/data/facts-pending.json`, `songs/facts-pending.json` and `songs/draft/facts.json` ("Song facts written
-   for <song>: waiting for John's sign-off"), pull with rebase and push.
+   `python3 _sotd/facts_apply.py --offline` (which puts the checked facts live, and with them the song's day).
+6. Commit `songs/facts.json`, `_sotd/data/facts-pending.json`, `songs/facts-pending.json`, `songs/draft/facts.json`,
+   `_sotd/data/facts-quotes.json` and `songs/facts-quotes.json` ("Song facts for <song>: live, waiting for John's
+   sign-off"), pull with rebase and push. The push starts song-tags.yml again, which adds the song to the YouTube
+   playlist and makes its share page.
 7. Tell John in one or two lines: which songs now wait at https://cooperking.github.io/songs/facts-admin.html, with how
    many facts each, and any that fell short and why.
 
-Never edit `songs/facts.json` or anything else on the live site; never sign anything off.
+Never edit `songs/facts.json` by hand or anything else on the live site; never run `facts_apply.py --promote`; never
+sign anything off.
 
 ## Writing
 

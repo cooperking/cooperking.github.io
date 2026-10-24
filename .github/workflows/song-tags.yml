@@ -3,12 +3,16 @@ name: Song moods and genres
 # Listens to new songs on John's Song of the Day, gathers listener tags and MusicBrainz genres,
 # and rebuilds songs/tags.json for the calendar at cooperking.github.io/songs/.
 # No timer: the Cloudflare Worker (sotd-playlists) starts it when it sees the Spotify playlist has changed,
-# and a push to the code here starts it too.
+# and a push to the code here starts it too. At the end it starts Claude's facts task for any new song (facts_ask.py).
 on:
   workflow_dispatch:
     inputs:
       redo:
         description: "Re-analyse every song's audio"
+        type: boolean
+        default: false
+      ask_facts:
+        description: "Start Claude's facts task even if no song needs facts (to test the link)"
         type: boolean
         default: false
   push:
@@ -107,3 +111,18 @@ jobs:
           git commit -m "Song moods and genres: update from the latest songs"
           for i in 1 2 3; do git pull --rebase --quiet && git push && exit 0; sleep 5; done
           exit 1
+
+      # a new song's facts: Claude's facts task, started now (its sources are saved), not on a timer; the song shows on
+      # the live calendar once they're written and checked (_sotd/released.py)
+      - name: Ask Claude for the new songs' facts
+        env:
+          FACTS_TASK_URL: ${{ secrets.SOTD_FACTS_URL }}
+          FACTS_TASK_TOKEN: ${{ secrets.SOTD_FACTS_TOKEN }}
+          FORCE: ${{ inputs.ask_facts }}
+        run: |
+          git pull --rebase --quiet || true
+          python _sotd/facts_ask.py
+          git add _sotd/data/facts-asked.json 2>/dev/null || true
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Asked Claude for the new songs' facts"
+          for i in 1 2 3; do git pull --rebase --quiet && git push && exit 0; sleep 5; done

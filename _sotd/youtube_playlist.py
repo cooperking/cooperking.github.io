@@ -20,6 +20,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import ytapi   # noqa: E402
 from ytapi import API, Quota   # noqa: E402
+from released import released   # noqa: E402
 
 OUT = os.path.join(HERE, 'data', 'youtube-playlist.json')
 MATCH = os.path.join(HERE, 'data', 'youtube.json')
@@ -66,6 +67,12 @@ def main():
                     match.pop(t, None)
     with urllib.request.urlopen(urllib.request.Request(SONGS_URL, headers={'User-Agent': 'SongOfTheDayCalendar/1.0'}), timeout=30) as r:
         songs = json.loads(r.read())['songs']
+    out = released()   # a new song joins once it's out on the calendar (its facts written and checked)
+    if out is not None:
+        held = [s['title'] for s in songs if s['id'] not in out]
+        songs = [s for s in songs if s['id'] in out]
+        if held:
+            print('not out on the calendar yet, so not in the playlist yet:', ', '.join(held))
 
     changed = False
     try:

@@ -14,6 +14,9 @@ were added on one day the earlier one moves back to the day before.
 import hashlib, html, io, json, os, re, urllib.request
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
+import sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from released import released   # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SONGS = os.path.join(HERE, '..', 'songs')
@@ -378,7 +381,8 @@ def write(path, data):
 def main():
     with urllib.request.urlopen(urllib.request.Request(SONGS_URL, headers={'User-Agent': 'SongOfTheDayCalendar/1.0'}), timeout=60) as r:
         songs = json.loads(r.read())['songs']
-    dated = days(songs)
+    out = released()   # days follow the whole playlist; only the songs out on the calendar get pages (released.py)
+    dated = [(d, s) for d, s in days(songs) if out is None or s['id'] in out]
     pages = cards = 0
     for d, s in dated:
         sl = slug(d)
