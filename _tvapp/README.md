@@ -8,7 +8,8 @@ between buttons with the arrows (`html.tv`, `window.sotdTV` in the page). The ap
 - Back: closes the top pop-up; with none open, closes the app (on another page, like the advert help page, goes back)
 - Play/pause: the song or video playing, or the open day's first song
 - Rewind / fast-forward: the day before or after (or the month, on the calendar)
-- Menu: switches between the live site and the draft (remembered)
+- Menu: a menu with Sign in to YouTube (Google's sign-in, in the app; with Premium the videos have no adverts;
+  Sign out once signed in) and switching between the live site and the draft (remembered); it shows the build
 
 The screen stays on while something plays. Spotify and YouTube links open in their apps, if installed.
 

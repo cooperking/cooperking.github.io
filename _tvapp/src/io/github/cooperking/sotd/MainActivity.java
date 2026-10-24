@@ -20,6 +20,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.webkit.ConsoleMessage;
+import android.webkit.CookieManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.RenderProcessGoneDetail;
 import android.webkit.ValueCallback;
@@ -47,7 +48,8 @@ import java.net.URL;
  * John's Song of the Day on a Fire TV: the site in a full-screen browser view. The page knows it's on a TV from
  * the browser's name (SOTDTV) and then works by the remote's arrows and OK; this passes it the other buttons:
  * Back (closes the top pop-up, or the app), play/pause, rewind / fast-forward (the day or month before or after),
- * and Menu, which switches between the live site and the draft. OK held down is the page's "hold" (on a day: add it
+ * and Menu: signing in to YouTube (with Premium, the videos have no adverts) and switching between the live site and
+ * the draft. OK held down is the page's "hold" (on a day: add it
  * to My playlist); a press of OK goes to the page as it was, once it's let go.
  * On opening it looks for a newer build (songs/tv.json, written with each build) and offers to install it.
  */
@@ -58,6 +60,9 @@ public class MainActivity extends Activity {
     static final String TAG = "SOTD";
     static final String UPDATE_INFO = "https://cooperking.github.io/songs/tv.json";
     static final String UPDATE_APK = "https://cooperking.github.io/songs/tv.apk";
+    // YouTube's own sign-in link: Google's sign-in, then back to YouTube, which keeps the sign-in for its player
+    static final String YT_SIGNIN = "https://accounts.google.com/ServiceLogin?service=youtube&uilel=3&passive=true&continue="
+        + Uri.encode("https://www.youtube.com/signin?action_handle_signin=true&app=desktop&next=" + Uri.encode("https://www.youtube.com/"));
 
     WebView web;
     FrameLayout root;
@@ -72,6 +77,7 @@ public class MainActivity extends Activity {
     String pendingApk;   // an update waiting for this app to be allowed to install apps
     volatile boolean updating;
     boolean handedOver;   // the download handed to the installer, which is open
+    boolean signingIn;   // Google's sign-in pages are open in the view
 
     @Override
     protected void onCreate(Bundle saved) {
@@ -212,6 +218,9 @@ public class MainActivity extends Activity {
         s.setTextZoom(100);
         s.setSupportMultipleWindows(false);
         s.setUserAgentString(s.getUserAgentString() + " SOTDTV/1");
+        // YouTube's player is in a frame from youtube.com: its sign-in cookies count there only if they're let through
+        CookieManager.getInstance().setAcceptCookie(true);
+        CookieManager.getInstance().setAcceptThirdPartyCookies(web, true);
         web.setBackgroundColor(Color.rgb(0xec, 0x13, 0x5b));
         web.addJavascriptInterface(new Bridge(), "SOTDTV");
 
@@ -221,6 +230,7 @@ public class MainActivity extends Activity {
                 if (!req.isForMainFrame()) return false;
                 Uri u = req.getUrl();
                 if (HOST.equals(u.getHost()) && u.getPath() != null && u.getPath().startsWith("/songs")) return false;
+                if (signingIn && google(u.getHost())) return false;   // the sign-in's own pages, in the view
                 // Spotify, YouTube and anything else: in the app that opens it, if there is one
                 try {
                     startActivity(new Intent(Intent.ACTION_VIEW, u));
@@ -234,6 +244,15 @@ public class MainActivity extends Activity {
             public void onPageFinished(WebView view, String url) {
                 Log.i(TAG, "loaded " + url);
                 if (fresh) { fresh = false; view.clearHistory(); }
+                Uri u = Uri.parse(url);
+                if (HOST.equals(u.getHost())) signingIn = false;
+                else if (signingIn && u.getHost() != null && u.getHost().endsWith("youtube.com") && signedIn()) {
+                    signingIn = false;   // signed in: back to the songs
+                    CookieManager.getInstance().flush();
+                    Toast.makeText(MainActivity.this, "Signed in to YouTube", Toast.LENGTH_LONG).show();
+                    fresh = true;
+                    view.loadUrl(home());
+                }
             }
 
             @Override
@@ -291,6 +310,60 @@ public class MainActivity extends Activity {
 
     String home() { return prefs.getBoolean("draft", false) ? DRAFT : LIVE; }
 
+    // ---- Menu: YouTube sign-in, and the live site or the draft ----
+    static boolean google(String host) {
+        if (host == null) return false;
+        for (String d : new String[] { "google.com", "youtube.com", "google.co.uk", "gstatic.com", "googleusercontent.com" })
+            if (host.equals(d) || host.endsWith("." + d)) return true;
+        return false;
+    }
+
+    static boolean signedIn() {
+        String c = CookieManager.getInstance().getCookie("https://www.youtube.com");
+        return c != null && c.contains("LOGIN_INFO=");
+    }
+
+    void menu() {
+        final boolean draft = prefs.getBoolean("draft", false), yt = signedIn();
+        String[] items = {
+            yt ? "Sign out of YouTube" : "Sign in to YouTube (with Premium, no adverts)",
+            draft ? "Switch to the live site" : "Switch to the draft"
+        };
+        new AlertDialog.Builder(this)
+            .setTitle("Song of the Day \u00b7 build " + myBuild() + (yt ? " \u00b7 signed in to YouTube" : ""))
+            .setItems(items, new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface d, int which) {
+                    if (which == 0) { if (yt) signOut(); else signIn(); }
+                    else switchSite();
+                }
+            })
+            .show();
+    }
+
+    void signIn() {
+        signingIn = true;
+        Toast.makeText(this, "Sign in with your YouTube Premium account. Back returns to the songs.", Toast.LENGTH_LONG).show();
+        web.loadUrl(YT_SIGNIN);
+    }
+
+    void signOut() {   // the site keeps nothing in cookies (My playlist is in the page's storage), so all of them go
+        CookieManager.getInstance().removeAllCookies(new ValueCallback<Boolean>() {
+            public void onReceiveValue(Boolean ok) {
+                CookieManager.getInstance().flush();
+                Toast.makeText(MainActivity.this, "Signed out of YouTube", Toast.LENGTH_SHORT).show();
+                web.reload();
+            }
+        });
+    }
+
+    void switchSite() {
+        boolean draft = !prefs.getBoolean("draft", false);
+        prefs.edit().putBoolean("draft", draft).apply();
+        Toast.makeText(this, draft ? "The draft" : "The live site", Toast.LENGTH_SHORT).show();
+        fresh = true;   // the other site starts a new history: Back doesn't return to this one
+        web.loadUrl(home());
+    }
+
     void leaveFull() {
         if (full == null) return;
         root.removeView(full);
@@ -324,6 +397,7 @@ public class MainActivity extends Activity {
             case KeyEvent.KEYCODE_BACK:
                 if (e.getAction() == KeyEvent.ACTION_UP) {
                     if (full != null) { leaveFull(); return true; }
+                    if (signingIn) { signingIn = false; fresh = true; web.loadUrl(home()); return true; }   // out of the sign-in
                     // the site closes its top pop-up (true), or has none open (false: the app closes); any other page
                     // (the advert help page, say) goes back to the one before it
                     web.evaluateJavascript("window.sotdTV ? sotdTV.back() : 'page'", new ValueCallback<String>() {
@@ -351,13 +425,7 @@ public class MainActivity extends Activity {
                 }
                 return true;
             case KeyEvent.KEYCODE_MENU:
-                if (first) {
-                    boolean draft = !prefs.getBoolean("draft", false);
-                    prefs.edit().putBoolean("draft", draft).apply();
-                    Toast.makeText(this, draft ? "The draft" : "The live site", Toast.LENGTH_SHORT).show();
-                    fresh = true;   // the other site starts a new history: Back doesn't return to this one
-                    web.loadUrl(home());
-                }
+                if (first) menu();
                 return true;
             case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
             case KeyEvent.KEYCODE_MEDIA_PLAY:

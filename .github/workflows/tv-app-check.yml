@@ -9,7 +9,7 @@ on:
         description: "Android version (API level) of the TV emulator"
         default: "34"
       script:
-        description: "What to check: check.sh (the app with the remote) or check_update.sh (the update check)"
+        description: "What to check: check.sh (the app with the remote), check_update.sh (the update check) or check_signin.sh (Menu's YouTube sign-in)"
         default: "check.sh"
 
 permissions:
