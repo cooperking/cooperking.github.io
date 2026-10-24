@@ -17,6 +17,9 @@
         android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen">
         <activity
             android:name=".MainActivity"
+            android:icon="@mipmap/ic_launcher"
+            android:banner="@drawable/banner"
+            android:label="Song of the Day"
             android:exported="true"
             android:launchMode="singleTask"
             android:screenOrientation="landscape"
