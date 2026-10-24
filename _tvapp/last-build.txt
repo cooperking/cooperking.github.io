@@ -1,15 +1,18 @@
-build 7
-build-tools 37.0.0, platform android-36, target 34, version 7
-package: name='io.github.cooperking.sotd' versionCode='7' versionName='1.7' platformBuildVersionName='16' platformBuildVersionCode='36' compileSdkVersion='36' compileSdkVersionCodename='16'
+build 8
+build-tools 37.0.0, platform android-36, target 34, version 8
+package: name='io.github.cooperking.sotd' versionCode='8' versionName='1.8' platformBuildVersionName='16' platformBuildVersionCode='36' compileSdkVersion='36' compileSdkVersionCodename='16'
 minSdkVersion:'22'
 targetSdkVersion:'34'
 uses-permission: name='android.permission.INTERNET'
 application-label:'Song of the Day'
-application-icon-320:'res/mipmap-xxxhdpi-v4/ic_launcher.png'
+application-icon-160:'res/mipmap-mdpi-v4/ic_launcher.png'
+application-icon-240:'res/mipmap-hdpi-v4/ic_launcher.png'
+application-icon-320:'res/mipmap-xhdpi-v4/ic_launcher.png'
+application-icon-480:'res/mipmap-xxhdpi-v4/ic_launcher.png'
 application-icon-640:'res/mipmap-xxxhdpi-v4/ic_launcher.png'
-application: label='Song of the Day' icon='res/mipmap-xxxhdpi-v4/ic_launcher.png' banner='res/drawable-xhdpi-v4/banner.png'
-launchable-activity: name='io.github.cooperking.sotd.MainActivity'  label='' icon=''
-leanback-launchable-activity: name='io.github.cooperking.sotd.MainActivity'  label='' icon='' banner=''
+application: label='Song of the Day' icon='res/mipmap-mdpi-v4/ic_launcher.png' banner='res/drawable-mdpi-v4/banner.png'
+launchable-activity: name='io.github.cooperking.sotd.MainActivity'  label='Song of the Day' icon='res/mipmap-mdpi-v4/ic_launcher.png'
+leanback-launchable-activity: name='io.github.cooperking.sotd.MainActivity'  label='Song of the Day' icon='res/mipmap-mdpi-v4/ic_launcher.png' banner='res/drawable-mdpi-v4/banner.png'
 feature-group: label=''
   uses-feature-not-required: name='android.hardware.touchscreen'
   uses-feature-not-required: name='android.software.leanback'
@@ -19,7 +22,7 @@ main
 supports-screens: 'small' 'normal' 'large' 'xlarge'
 supports-any-density: 'true'
 locales: '--_--'
-densities: '320' '640'
+densities: '160' '240' '320' '480' '640'
 V3.0 Signer: certificate DN: CN=John's Song of the Day
 V3.0 Signer: certificate SHA-256 digest: 88aca69cfedeacd9683d2b8fddace2d584d702d6f708d13a1b7624f6c6df8c27
 V3.0 Signer: certificate SHA-1 digest: 1160abba1f2931070a3f11dc8057616d5322b8f5
