@@ -22,9 +22,13 @@
 // to /facts/signoff with his admin password; the Worker keeps it (KV key factsSigned) and starts the GitHub job
 // facts.yml, which puts it on the site. /facts/signed gives them back to that job.
 //
-// Needs one KV namespace bound as SOTD, and two secrets: GH_TOKEN, a fine-grained GitHub token for
+// Members (John and his family): John's own recordings of the songs and their videos, kept private in R2 and played
+// on the calendar instead of the preview and YouTube by anyone signed in (see the members section below).
+//
+// Needs one KV namespace bound as SOTD, an R2 bucket bound as MEDIA (for the members' files; without it the members
+// part says it's not set up), and two secrets: GH_TOKEN, a fine-grained GitHub token for
 // cooperking/cooperking.github.io only, with Actions: Read and write; and ADMIN_KEY, the password John types into
-// the facts sign-off page. Everything else is set below.
+// the facts sign-off page and the members page. Everything else is set below.
 
 const CLIENT_ID = '21a0fa3c6c09482ea57271dbdbef1c1f';   // Spotify app "Song of the Day" (public identifier)
 const OWNER_ID = 'cooperking';                          // only this Spotify account may link the Worker
@@ -62,6 +66,9 @@ export default {
       if (url.pathname === '/status') return await status(env);
       if (url.pathname === '/facts/signed') return await factsSigned(env);
       if (url.pathname === '/facts/signoff') return await factsSignoff(request, env);
+      if (url.pathname.startsWith('/members/')) return await members(request, url, env);
+      if (url.pathname.startsWith('/m/')) return await mediaFile(request, url, env);
+      if (url.pathname === '/covers.json' || url.pathname.startsWith('/c/')) return await ownCover(request, url, env);
       return page('Song of the Day', '<p>This service makes Spotify playlists from the Song of the Day calendar.</p>');
     } catch (e) {
       if (e instanceof HttpError) return errorPage(e);
@@ -357,6 +364,263 @@ async function startFactsJob(env) {
   return r.status === 204 ? 'started' : 'GitHub answered ' + r.status + ': ' + (await r.text()).slice(0, 200);
 }
 
+// ---------- members: John and his family ----------
+//
+// John's own recordings: a/<track>.mp3 (the song) and v/<track>.mp4 (its video) in the R2 bucket MEDIA. He invites
+// someone on songs/members-admin.html (with ADMIN_KEY): that gives a link to the calendar ending #join=<code>, which he
+// sends them. Opening it signs that device in (up to INVITE_USES devices, within INVITE_DAYS): the page gets its own
+// token for the device, which it keeps. Removing someone stops all their devices at once. A member's page asks
+// /members/me for links to the files, signed for LINK_HOURS (a phone's audio and video players can't send a token, so
+// the files at /m/... are checked by their link's signature alone). Anyone else, and any song without its own file,
+// gets the preview and YouTube as before. Only hashes of invite codes and tokens are kept.
+const MEMBERS_ORIGIN = 'https://cooperking.github.io';
+const MEMBERS_JOIN = 'https://cooperking.github.io/songs/#join=';
+const INVITE_USES = 5, INVITE_DAYS = 30, LINK_HOURS = 12, MEMBERS_MAX = 40;
+const MEDIA_KINDS = { a: { ext: 'mp3', type: 'audio/mpeg' }, v: { ext: 'mp4', type: 'video/mp4' } };
+const MEDIA_KEY_RE = /^(a\/[0-9A-Za-z]{22}\.mp3|v\/[0-9A-Za-z]{22}\.mp4)$/;
+
+function randomCode(bytes) { return b64url(crypto.getRandomValues(new Uint8Array(bytes))); }
+
+async function adminOk(request, env, answer) {   // null if the admin password is right, else the answer to give
+  if (!env.ADMIN_KEY) return answer(503, { error: 'The ADMIN_KEY secret is not set on the Worker.' });
+  const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+  const failKey = 'factsfail:' + ip + ':' + new Date().toISOString().slice(0, 13);
+  const fails = Number(await env.SOTD.get(failKey)) || 0;
+  if (fails >= 20) return answer(429, { error: 'Too many wrong passwords from here this hour.' });
+  const given = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
+  if (!given || await sha256hex(given) !== await sha256hex(env.ADMIN_KEY)) {
+    await env.SOTD.put(failKey, String(fails + 1), { expirationTtl: 7200 });
+    return answer(401, { error: 'Wrong password.' });
+  }
+  return null;
+}
+
+async function mediaSig(env, kind, track, exp) {
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode('sotd-media|' + env.ADMIN_KEY), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  return b64url(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(kind + '/' + track + '/' + exp))).slice(0, 32);
+}
+
+async function catalog(env) { return (await env.SOTD.get('mediaCatalog', 'json')) || {}; }
+
+async function catalogSet(env, key, size) {   // which songs have which files: a and v, with their sizes (0: gone)
+  const c = await catalog(env), kind = key[0], track = key.slice(2, 24);
+  const e = c[track] || {};
+  if (size) e[kind] = size; else delete e[kind];
+  if (Object.keys(e).length) c[track] = e; else delete c[track];
+  await env.SOTD.put('mediaCatalog', JSON.stringify(c));
+}
+
+async function members(request, url, env) {
+  const h = factsHeaders(MEMBERS_ORIGIN);
+  const answer = (status, body) => new Response(JSON.stringify(body), { status, headers: h });
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: h });
+  const route = url.pathname.slice('/members/'.length);
+  if (route === 'join') return memberJoin(request, env, answer);
+  if (route === 'me') return memberMe(request, env, answer);
+  if (!['admin', 'upload', 'cover'].includes(route)) return answer(404, { error: 'Not here.' });
+  if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
+  const no = await adminOk(request, env, answer);
+  if (no) return no;
+  if (route === 'upload') return memberUpload(request, url, env, answer);
+  if (route === 'cover') return coverSet(request, url, env, answer);
+  const body = await request.json().catch(() => ({}));
+  const all = (await env.SOTD.get('members', 'json')) || {};
+  const save = () => env.SOTD.put('members', JSON.stringify(all));
+  const invite = async (m) => {
+    const code = randomCode(18);
+    m.invite = { hash: await sha256hex(code), uses: 0, until: Date.now() + INVITE_DAYS * DAY };
+    return MEMBERS_JOIN + code;
+  };
+  const listing = () => Object.entries(all).map(([id, m]) => ({ id, name: m.name, created: m.created,
+    devices: Object.keys(m.devices || {}).length, seen: Math.max(0, ...Object.values(m.devices || {}).map(d => d.seen || 0)) || null,
+    invite: m.invite ? { uses: m.invite.uses, left: Math.max(0, INVITE_USES - m.invite.uses), until: m.invite.until } : null }));
+  switch (body.op) {
+    case 'list': return answer(200, { members: listing(), catalog: await catalog(env), media: !!env.MEDIA });
+    case 'invite': {
+      const name = String(body.name || '').replace(/\s+/g, ' ').trim().slice(0, 60);
+      if (!name) return answer(400, { error: 'Give their name.' });
+      if (Object.keys(all).length >= MEMBERS_MAX) return answer(400, { error: 'That is the most members there can be.' });
+      const id = randomCode(6), m = { name, created: Date.now(), devices: {} };
+      const link = await invite(m);
+      all[id] = m; await save();
+      return answer(200, { id, link, members: listing() });
+    }
+    case 'reinvite': {
+      const m = all[body.id];
+      if (!m) return answer(404, { error: 'No such member.' });
+      const link = await invite(m); await save();
+      return answer(200, { id: body.id, link, members: listing() });
+    }
+    case 'remove': {
+      if (!all[body.id]) return answer(404, { error: 'No such member.' });
+      delete all[body.id]; await save();
+      return answer(200, { ok: true, members: listing() });
+    }
+    case 'files': {
+      if (!env.MEDIA) return answer(503, { error: 'No R2 bucket is bound to the Worker as MEDIA yet.' });
+      const files = [];
+      let cursor;
+      do {
+        const r = await env.MEDIA.list({ cursor, limit: 1000 });
+        r.objects.forEach(o => files.push({ key: o.key, size: o.size, at: o.uploaded }));
+        cursor = r.truncated ? r.cursor : null;
+      } while (cursor);
+      const c = {};   // the catalog again from what's really there
+      files.forEach(f => { if (MEDIA_KEY_RE.test(f.key)) { const t = f.key.slice(2, 24); (c[t] = c[t] || {})[f.key[0]] = f.size; } });
+      await env.SOTD.put('mediaCatalog', JSON.stringify(c));
+      return answer(200, { files, catalog: c });
+    }
+    case 'delete': {
+      if (!env.MEDIA) return answer(503, { error: 'No R2 bucket is bound to the Worker as MEDIA yet.' });
+      if (!MEDIA_KEY_RE.test(String(body.key || ''))) return answer(400, { error: 'Not one of the files.' });
+      await env.MEDIA.delete(body.key); await catalogSet(env, body.key, 0);
+      return answer(200, { ok: true });
+    }
+  }
+  return answer(400, { error: 'Unknown request.' });
+}
+
+// a file up in parts (a video can be bigger than the Worker takes in one go): start, then each part, then done
+async function memberUpload(request, url, env, answer) {
+  if (!env.MEDIA) return answer(503, { error: 'No R2 bucket is bound to the Worker as MEDIA yet.' });
+  const key = url.searchParams.get('key') || '', op = url.searchParams.get('op'), id = url.searchParams.get('uploadId') || '';
+  if (!MEDIA_KEY_RE.test(key)) return answer(400, { error: 'Not one of the files (a/<track>.mp3 or v/<track>.mp4).' });
+  if (op === 'start') {
+    const up = await env.MEDIA.createMultipartUpload(key, { httpMetadata: { contentType: MEDIA_KINDS[key[0]].type } });
+    return answer(200, { uploadId: up.uploadId });
+  }
+  if (!id) return answer(400, { error: 'Which upload?' });
+  const up = env.MEDIA.resumeMultipartUpload(key, id);
+  if (op === 'part') {
+    const n = parseInt(url.searchParams.get('n'), 10);
+    if (!(n >= 1 && n <= 10000) || !request.body) return answer(400, { error: 'Which part?' });
+    const part = await up.uploadPart(n, request.body);
+    return answer(200, { partNumber: part.partNumber, etag: part.etag });
+  }
+  if (op === 'done') {
+    const body = await request.json().catch(() => ({}));
+    const parts = (Array.isArray(body.parts) ? body.parts : []).map(p => ({ partNumber: Number(p.partNumber), etag: String(p.etag) }));
+    if (!parts.length) return answer(400, { error: 'No parts.' });
+    const obj = await up.complete(parts);
+    await catalogSet(env, key, obj.size);
+    return answer(200, { ok: true, key, size: obj.size });
+  }
+  if (op === 'abort') { await up.abort(); return answer(200, { ok: true }); }
+  return answer(400, { error: 'Unknown step.' });
+}
+
+// John's own picture for a day's sharing link (songs/<day>/ and its card), instead of the album cover: kept in R2 as
+// c/<track> (public: link previews fetch it), listed at /covers.json; each change starts song-tags.yml, whose
+// share_pages.py remakes that day's card from it. Taking it away puts the album cover back.
+const COVER_TYPES = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }, COVER_MAX = 15e6;
+
+async function coverSet(request, url, env, answer) {
+  if (!env.MEDIA) return answer(503, { error: 'No R2 bucket is bound to the Worker as MEDIA yet.' });
+  const track = url.searchParams.get('track') || '';
+  if (!ID_RE.test(track)) return answer(400, { error: 'Which song?' });
+  const covers = (await env.SOTD.get('covers', 'json')) || {};
+  if (url.searchParams.get('op') === 'remove') {
+    await env.MEDIA.delete('c/' + track);
+    delete covers[track];
+  } else {
+    const type = (request.headers.get('Content-Type') || '').split(';')[0].trim().toLowerCase();
+    if (!COVER_TYPES[type]) return answer(400, { error: 'A JPEG, PNG or WebP picture, please.' });
+    const bytes = await request.arrayBuffer();
+    if (!bytes.byteLength || bytes.byteLength > COVER_MAX) return answer(400, { error: 'The picture is empty or bigger than 15 MB.' });
+    await env.MEDIA.put('c/' + track, bytes, { httpMetadata: { contentType: type } });
+    covers[track] = { at: new Date().toISOString(), type, size: bytes.byteLength };
+  }
+  await env.SOTD.put('covers', JSON.stringify(covers));
+  const job = await startJob(env, null, (await env.SOTD.get('job', 'json')) || {}, null, null, true);
+  return answer(200, { ok: true, covers, job });
+}
+
+async function ownCover(request, url, env) {
+  const h = { 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'public, max-age=300' };
+  if (url.pathname === '/covers.json') {
+    return new Response((await env.SOTD.get('covers')) || '{}', { headers: Object.assign({ 'Content-Type': 'application/json; charset=utf-8' }, h) });
+  }
+  const m = /^\/c\/([0-9A-Za-z]{22})$/.exec(url.pathname);
+  if (!m || !env.MEDIA) return new Response('Not here.', { status: 404 });
+  const obj = await env.MEDIA.get('c/' + m[1]);
+  if (!obj) return new Response('Not here.', { status: 404 });
+  return new Response(obj.body, { headers: Object.assign({ 'Content-Type': (obj.httpMetadata && obj.httpMetadata.contentType) || 'image/jpeg' }, h) });
+}
+
+async function memberJoin(request, env, answer) {
+  if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
+  const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+  const failKey = 'joinfail:' + ip + ':' + new Date().toISOString().slice(0, 13);
+  const fails = Number(await env.SOTD.get(failKey)) || 0;
+  if (fails >= 20) return answer(429, { error: 'Too many tries from here this hour.' });
+  const body = await request.json().catch(() => ({}));
+  const hash = await sha256hex(String(body.code || ''));
+  const all = (await env.SOTD.get('members', 'json')) || {};
+  const id = Object.keys(all).find(k => all[k].invite && all[k].invite.hash === hash);
+  const m = id && all[id];
+  if (!m || m.invite.until < Date.now() || m.invite.uses >= INVITE_USES) {
+    if (!m) await env.SOTD.put(failKey, String(fails + 1), { expirationTtl: 7200 });
+    return answer(403, { error: m ? 'This invite has run out. Ask John for a new one.' : 'This invite isn’t valid. Ask John for a new one.' });
+  }
+  const token = randomCode(32);
+  m.invite.uses++;
+  m.devices = m.devices || {};
+  m.devices[await sha256hex(token)] = { at: Date.now(), seen: Date.now() };
+  await env.SOTD.put('members', JSON.stringify(all));
+  return answer(200, { token, name: m.name });
+}
+
+async function memberMe(request, env, answer) {
+  if (request.method !== 'GET') return answer(405, { error: 'Use GET.' });
+  const token = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
+  if (!token) return answer(401, { error: 'Not signed in.' });
+  const hash = await sha256hex(token);
+  const all = (await env.SOTD.get('members', 'json')) || {};
+  const id = Object.keys(all).find(k => all[k].devices && all[k].devices[hash]);
+  if (!id) return answer(401, { error: 'Not a member (any more).' });
+  const m = all[id], dev = m.devices[hash];
+  if (Date.now() - (dev.seen || 0) > 6 * 3600e3) { dev.seen = Date.now(); await env.SOTD.put('members', JSON.stringify(all)); }
+  const exp = Math.floor(Date.now() / 1000) + LINK_HOURS * 3600, base = new URL(request.url).origin, media = {};
+  if (env.MEDIA && env.ADMIN_KEY) {
+    for (const [track, e] of Object.entries(await catalog(env))) {
+      const one = {};
+      for (const kind of Object.keys(MEDIA_KINDS)) if (e[kind]) one[kind] = base + '/m/' + kind + '/' + track + '.' + MEDIA_KINDS[kind].ext + '?e=' + exp + '&s=' + await mediaSig(env, kind, track, exp);
+      media[track] = one;
+    }
+  }
+  return answer(200, { name: m.name, exp, media });
+}
+
+// a member's file, by a signed link: in ranges, as audio and video players ask (a phone's won't play without)
+async function mediaFile(request, url, env) {
+  const m = /^\/m\/([av])\/([0-9A-Za-z]{22})\.(mp3|mp4)$/.exec(url.pathname);
+  const plain = (status, text) => new Response(text, { status, headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' } });
+  if (!m || MEDIA_KINDS[m[1]].ext !== m[3]) return plain(404, 'Not here.');
+  if (!env.MEDIA || !env.ADMIN_KEY) return plain(503, 'Not set up.');
+  if (request.method !== 'GET' && request.method !== 'HEAD') return plain(405, 'Use GET.');
+  const exp = parseInt(url.searchParams.get('e'), 10), sig = url.searchParams.get('s') || '';
+  if (!(exp > Date.now() / 1000) || sig !== await mediaSig(env, m[1], m[2], exp)) return plain(403, 'This link has run out or isn’t valid.');
+  const key = m[1] + '/' + m[2] + '.' + m[3];
+  const head = await env.MEDIA.head(key);
+  if (!head) return plain(404, 'Not here.');
+  const size = head.size, type = MEDIA_KINDS[m[1]].type;
+  const hdrs = { 'Content-Type': type, 'Accept-Ranges': 'bytes', 'Cache-Control': 'private, max-age=3600', 'ETag': head.httpEtag };
+  let start = 0, end = size - 1, partial = false;
+  const rg = /^bytes=(\d*)-(\d*)$/.exec(request.headers.get('Range') || '');
+  if (rg && (rg[1] || rg[2])) {
+    if (rg[1]) { start = parseInt(rg[1], 10); if (rg[2]) end = Math.min(size - 1, parseInt(rg[2], 10)); }
+    else { start = Math.max(0, size - parseInt(rg[2], 10)); }
+    if (start >= size || start > end) return new Response(null, { status: 416, headers: Object.assign(hdrs, { 'Content-Range': 'bytes */' + size }) });
+    partial = true;
+  }
+  hdrs['Content-Length'] = String(end - start + 1);
+  if (partial) hdrs['Content-Range'] = 'bytes ' + start + '-' + end + '/' + size;
+  if (request.method === 'HEAD') return new Response(null, { status: partial ? 206 : 200, headers: hdrs });
+  const obj = await env.MEDIA.get(key, partial ? { range: { offset: start, length: end - start + 1 } } : {});
+  if (!obj) return plain(404, 'Not here.');
+  return new Response(obj.body, { status: partial ? 206 : 200, headers: hdrs });
+}
+
 // After each look at the playlist: start the GitHub job if the playlist has changed since the job last started;
 // once a day, clean up old visitor playlists and tag songs the published tags don't have yet.
 let jobDay = '';   // the London day this copy of the Worker saw a run include that day's song: nothing more to do
@@ -388,7 +652,17 @@ async function afterLook(env, items) {
   await Promise.all(chores.map(p => p.catch(() => {})));
 }
 
-async function startJob(env, sig, job, songs, newest) {
+async function startJob(env, sig, job, songs, newest, justRun) {
+  if (justRun) {   // a run for another reason (a new picture for a sharing link): the playlist's record stays as it is
+    if (!env.GH_TOKEN) return 'The GH_TOKEN secret is not set.';
+    const r = await fetch('https://api.github.com/repos/' + REPO + '/actions/workflows/' + JOB + '/dispatches', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + env.GH_TOKEN, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28',
+        'User-Agent': 'SongOfTheDayWorker', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ref: 'main' })
+    }).catch(e => ({ status: 0, text: async () => String(e) }));
+    return r.status === 204 ? 'started' : 'GitHub answered ' + r.status + ': ' + (await r.text()).slice(0, 200);
+  }
   const rec = Object.assign({}, job, { tried: Date.now() });
   await env.SOTD.put('job', JSON.stringify(rec));   // so a second visit right now doesn't start it twice
   if (!env.GH_TOKEN) {

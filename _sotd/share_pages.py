@@ -23,6 +23,9 @@ SONGS = os.path.join(HERE, '..', 'songs')
 FONTS = os.path.join(HERE, 'fonts')
 SITE = 'https://cooperking.github.io/songs/'
 SONGS_URL = os.environ.get('SOTD_SONGS_URL', 'https://sotd-playlists.cooperking.workers.dev/songs.json')
+# John's own pictures for sharing links, set on songs/members-admin.html (the Worker keeps them): a day with one gets
+# it on its card instead of the album cover
+OWN_URL = os.environ.get('SOTD_OWN_URL', 'https://sotd-playlists.cooperking.workers.dev/')
 COVERS = os.environ.get('SOTD_COVERS')   # a local folder of covers by image id, for testing without the network
 LONDON = ZoneInfo('Europe/London')
 CARD_VERSION = '1'   # bump to redraw every day's card
@@ -196,6 +199,33 @@ def card(d, s, cover):
     out = io.BytesIO()
     img.convert('RGB').save(out, 'JPEG', quality=84, optimize=True, progressive=True)
     return out.getvalue()
+
+
+def own_pictures():
+    """{track: when it was set} for the days John has given his own picture (none if the Worker can't be reached)."""
+    try:
+        with urllib.request.urlopen(urllib.request.Request(OWN_URL + 'covers.json', headers={'User-Agent': 'SongOfTheDayCalendar/1.0'}), timeout=30) as r:
+            return {t: e.get('at', '') for t, e in json.loads(r.read()).items()}
+    except Exception as ex:
+        print('own pictures: could not get the list:', ex)
+        return {}
+
+
+def own_picture(track):
+    """John's picture for a day, cut to a square from its middle, as JPEG bytes (None if it can't be had)."""
+    from PIL import Image
+    try:
+        with urllib.request.urlopen(urllib.request.Request(OWN_URL + 'c/' + track, headers={'User-Agent': 'SongOfTheDayCalendar/1.0'}), timeout=60) as r:
+            im = Image.open(io.BytesIO(r.read()))
+        im = im.convert('RGB')
+        side = min(im.size)
+        im = im.crop(((im.width - side) // 2, (im.height - side) // 2, (im.width + side) // 2, (im.height + side) // 2))
+        out = io.BytesIO()
+        im.resize((640, 640), Image.LANCZOS).save(out, 'JPEG', quality=90)
+        return out.getvalue()
+    except Exception as ex:
+        print('own picture for', track, 'could not be had:', ex)
+        return None
 
 
 def cover_bytes(s, small=False):
@@ -383,17 +413,18 @@ def main():
         songs = json.loads(r.read())['songs']
     out = released()   # days follow the whole playlist; only the songs out on the calendar get pages (released.py)
     dated = [(d, s) for d, s in days(songs) if out is None or s['id'] in out]
+    own = own_pictures()
     pages = cards = 0
     for d, s in dated:
         sl = slug(d)
         folder = os.path.join(SONGS, sl)
-        # redraw the card only when the song on that day, its cover or the design changes
-        stamp = hashlib.sha1(f"{CARD_VERSION} {s['id']} {s.get('img')} {s['title']} {s['artist']}".encode()).hexdigest()[:12]
+        # redraw the card only when the song on that day, its cover (or John's own picture) or the design changes
+        stamp = hashlib.sha1(f"{CARD_VERSION} {s['id']} {s.get('img')} {s['title']} {s['artist']} {own.get(s['id'], '')}".encode()).hexdigest()[:12]
         stamp_path = os.path.join(folder, '.card')
         has_card = os.path.exists(os.path.join(folder, 'card.jpg'))
         if not has_card or not os.path.exists(stamp_path) or open(stamp_path).read().strip() != stamp:
             try:
-                c = cover_bytes(s)
+                c = (own_picture(s['id']) if s['id'] in own else None) or cover_bytes(s)
                 if c:
                     cards += write(os.path.join(folder, 'card.jpg'), card(d, s, c))
                     write(stamp_path, stamp + '\n')
