@@ -8,7 +8,9 @@ Starting: Intent { cmp=io.github.cooperking.sotd/.MainActivity }
 Status: ok
 LaunchState: COLD
 Activity: io.github.cooperking.sotd/.MainActivity
-TotalTime: 1740
-WaitTime: 1764
+TotalTime: 1094
+WaitTime: 1098
 Complete
-      topResumedActivity=ActivityRecord{701446f u0 com.google.android.tvlauncher/.MainActivity t5}
+app pid after start: 
+app pid on the draft: 
+      topResumedActivity=ActivityRecord{1042b98 u0 com.google.android.tvlauncher/.MainActivity t5}
