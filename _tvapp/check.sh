@@ -15,7 +15,9 @@ key() { adb shell input keyevent "$@"; sleep 1.2; }
 adb logcat -c
 adb install -r ../songs/tv.apk >> "$OUT/device.txt" 2>&1
 adb shell am start -W -n io.github.cooperking.sotd/.MainActivity >> "$OUT/device.txt" 2>&1
-sleep 25; shot live
+for t in 3 8 15; do sleep 5; echo "after ~${t}s: pid $(adb shell pidof io.github.cooperking.sotd) top $(adb shell dumpsys activity activities | grep -m1 topResumedActivity)" >> "$OUT/device.txt"; done
+shot start
+sleep 10; shot live
 echo "app pid after start: $(adb shell pidof io.github.cooperking.sotd)" >> "$OUT/device.txt"
 key KEYCODE_MENU; sleep 20; shot draft
 echo "app pid on the draft: $(adb shell pidof io.github.cooperking.sotd)" >> "$OUT/device.txt"
@@ -30,6 +32,8 @@ key KEYCODE_BACK; sleep 3; shot back
 key KEYCODE_DPAD_UP KEYCODE_DPAD_UP KEYCODE_DPAD_UP; shot up-up-up
 key KEYCODE_BACK; sleep 3; shot back-closes-app
 adb shell dumpsys activity activities | grep -E "mResumedActivity|topResumedActivity" >> "$OUT/device.txt" 2>&1
-adb logcat -d -v brief SOTD:V chromium:I '*:W' | grep -vE 'com.google.android.gms|Slow operation|GmsCore|katniss|mediashell' > "$OUT/log.txt" 2>&1
+adb logcat -d -v time > "$OUT/full.txt" 2>&1
+grep -E "SOTD|sotd|cooperking|lowmemorykiller|lmkd|has died|Killing|FATAL|AndroidRuntime|DEBUG|chromium|cr_" "$OUT/full.txt" | grep -vE "com.google.android.gms|GmsCore|katniss|mediashell" > "$OUT/log.txt"
+gzip -f "$OUT/full.txt"
 ls -l "$OUT"
 exit 0
