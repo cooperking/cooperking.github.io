@@ -38,6 +38,7 @@ jobs:
           target: android-tv
           arch: x86
           profile: tv_1080p
+          ram-size: 4096M
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           script: bash _tvapp/check.sh

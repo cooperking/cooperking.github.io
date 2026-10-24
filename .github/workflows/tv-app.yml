@@ -44,8 +44,18 @@ jobs:
             export KS_PASS="$(openssl rand -hex 16)" KEYSTORE="$RUNNER_TEMP/tv.p12"
             python _tvapp/make_key.py "$KEYSTORE"
           fi
-          bash _tvapp/build.sh
+          mkdir -p _tvapp/build
+          set -o pipefail
+          bash _tvapp/build.sh 2>&1 | tee "$RUNNER_TEMP/build-log.txt"
           rm -f "$RUNNER_TEMP/tv.p12"
+
+      - name: Keep the error, if it failed
+        if: failure()
+        run: |
+          { echo "build ${{ github.run_number }} FAILED"; tail -60 "$RUNNER_TEMP/build-log.txt"; } > _tvapp/last-build.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add _tvapp/last-build.txt && git commit -m "Fire TV app, build ${{ github.run_number }} failed" && git pull --rebase --quiet && git push
 
       - uses: actions/upload-artifact@v4
         with:

@@ -16,7 +16,9 @@ adb logcat -c
 adb install -r ../songs/tv.apk >> "$OUT/device.txt" 2>&1
 adb shell am start -W -n io.github.cooperking.sotd/.MainActivity >> "$OUT/device.txt" 2>&1
 sleep 25; shot live
+echo "app pid after start: $(adb shell pidof io.github.cooperking.sotd)" >> "$OUT/device.txt"
 key KEYCODE_MENU; sleep 20; shot draft
+echo "app pid on the draft: $(adb shell pidof io.github.cooperking.sotd)" >> "$OUT/device.txt"
 key KEYCODE_DPAD_RIGHT KEYCODE_DPAD_RIGHT; shot right-right
 key KEYCODE_DPAD_DOWN; shot down
 key KEYCODE_DPAD_CENTER; sleep 4; shot ok-day
@@ -28,6 +30,6 @@ key KEYCODE_BACK; sleep 3; shot back
 key KEYCODE_DPAD_UP KEYCODE_DPAD_UP KEYCODE_DPAD_UP; shot up-up-up
 key KEYCODE_BACK; sleep 3; shot back-closes-app
 adb shell dumpsys activity activities | grep -E "mResumedActivity|topResumedActivity" >> "$OUT/device.txt" 2>&1
-adb logcat -d -v brief chromium:I cr_*:I AndroidRuntime:E ActivityManager:W SOTD:V '*:S' > "$OUT/log.txt" 2>&1
+adb logcat -d -v brief SOTD:V chromium:I '*:W' | grep -vE 'com.google.android.gms|Slow operation|GmsCore|katniss|mediashell' > "$OUT/log.txt" 2>&1
 ls -l "$OUT"
 exit 0

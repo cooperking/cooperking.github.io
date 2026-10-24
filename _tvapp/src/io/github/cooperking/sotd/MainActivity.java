@@ -8,11 +8,14 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.webkit.ConsoleMessage;
 import android.webkit.JavascriptInterface;
+import android.webkit.RenderProcessGoneDetail;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceError;
@@ -33,6 +36,7 @@ public class MainActivity extends Activity {
     static final String LIVE = "https://cooperking.github.io/songs/";
     static final String DRAFT = "https://cooperking.github.io/songs/draft/";
     static final String HOST = "cooperking.github.io";
+    static final String TAG = "SOTD";
 
     WebView web;
     FrameLayout root;
@@ -46,10 +50,16 @@ public class MainActivity extends Activity {
         prefs = getSharedPreferences("sotd", MODE_PRIVATE);
         root = new FrameLayout(this);
         root.setBackgroundColor(Color.rgb(0xec, 0x13, 0x5b));
+        setContentView(root);
+        makeWeb();
+        web.requestFocus();
+        if (saved != null) web.restoreState(saved);
+        else web.loadUrl(home());
+    }
+
+    void makeWeb() {
         web = new WebView(this);
         root.addView(web, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-        setContentView(root);
-
         WebView.setWebContentsDebuggingEnabled(true);
         WebSettings s = web.getSettings();
         s.setJavaScriptEnabled(true);
@@ -79,6 +89,23 @@ public class MainActivity extends Activity {
             }
 
             @Override
+            public void onPageFinished(WebView view, String url) { Log.i(TAG, "loaded " + url); }
+
+            @Override
+            public boolean onRenderProcessGone(WebView view, RenderProcessGoneDetail d) {
+                // the page's process stopped (out of memory, say): a new view, the same page, rather than the app closing
+                Log.w(TAG, "page process gone, crashed: " + d.didCrash());
+                if (view != web) return true;
+                String url = view.getUrl();
+                root.removeView(view);
+                view.destroy();
+                makeWeb();
+                web.loadUrl(url != null && url.startsWith("https://") ? url : home());
+                web.requestFocus();
+                return true;
+            }
+
+            @Override
             public void onReceivedError(WebView view, WebResourceRequest req, WebResourceError err) {
                 if (!req.isForMainFrame()) return;
                 String back = req.getUrl().toString().replace("'", "%27");
@@ -103,14 +130,18 @@ public class MainActivity extends Activity {
             public void onHideCustomView() { leaveFull(); }
 
             @Override
+            public boolean onConsoleMessage(ConsoleMessage m) {
+                if (m.messageLevel() == ConsoleMessage.MessageLevel.ERROR || m.messageLevel() == ConsoleMessage.MessageLevel.WARNING)
+                    Log.w(TAG, "page: " + m.message() + " (" + m.sourceId() + ":" + m.lineNumber() + ")");
+                return true;
+            }
+
+            @Override
             public Bitmap getDefaultVideoPoster() {   // no grey play button over a video before it starts
                 return Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888);
             }
         });
 
-        web.requestFocus();
-        if (saved != null) web.restoreState(saved);
-        else web.loadUrl(home());
     }
 
     String home() { return prefs.getBoolean("draft", false) ? DRAFT : LIVE; }
