@@ -78,6 +78,10 @@ public class MainActivity extends Activity {
     volatile boolean updating;
     boolean handedOver;   // the download handed to the installer, which is open
     boolean signingIn;   // Google's sign-in pages are open in the view
+    boolean adAsked;   // offered the sign-in for an advert, this time the app's open
+    // the page sets html.vad and sends sotd-ad when an advert starts or ends: the app hears of the start
+    static final String AD_HOOK = "if (!window.__sotdAd) { window.__sotdAd = 1; document.addEventListener('sotd-ad', function () {"
+        + " if (document.documentElement.classList.contains('vad') && window.SOTDTV && SOTDTV.advert) SOTDTV.advert(); }); }";
 
     @Override
     protected void onCreate(Bundle saved) {
@@ -245,7 +249,7 @@ public class MainActivity extends Activity {
                 Log.i(TAG, "loaded " + url);
                 if (fresh) { fresh = false; view.clearHistory(); }
                 Uri u = Uri.parse(url);
-                if (HOST.equals(u.getHost())) signingIn = false;
+                if (HOST.equals(u.getHost())) { signingIn = false; view.evaluateJavascript(AD_HOOK, null); }
                 else if (signingIn && u.getHost() != null && u.getHost().endsWith("youtube.com") && signedIn()) {
                     signingIn = false;   // signed in: back to the songs
                     CookieManager.getInstance().flush();
@@ -340,6 +344,20 @@ public class MainActivity extends Activity {
             .show();
     }
 
+    void offerSignIn() {
+        if (adAsked || signingIn || signedIn() || isFinishing()) return;
+        adAsked = true;
+        new AlertDialog.Builder(this)
+            .setTitle("Adverts")
+            .setMessage("With YouTube Premium the videos have no adverts, once you're signed in to YouTube here. "
+                + "Sign in now? (It's in the \u2261 menu too.)")
+            .setPositiveButton("Sign in", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface d, int w) { signIn(); }
+            })
+            .setNegativeButton("Not now", null)
+            .show();
+    }
+
     void signIn() {
         signingIn = true;
         Toast.makeText(this, "Sign in with your YouTube Premium account. Back returns to the songs.", Toast.LENGTH_LONG).show();
@@ -376,6 +394,11 @@ public class MainActivity extends Activity {
 
     /** Called by the page. */
     class Bridge {
+        @JavascriptInterface
+        public void advert() {   // an advert's started: not signed in to YouTube, the sign-in's offered (once a time)
+            runOnUiThread(new Runnable() { public void run() { offerSignIn(); } });
+        }
+
         @JavascriptInterface
         public void playing(final boolean on) {   // the screen stays on while something plays
             runOnUiThread(new Runnable() {
