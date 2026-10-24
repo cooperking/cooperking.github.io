@@ -1,0 +1,64 @@
+name: Fire TV app
+
+# Builds the Fire TV app (_tvapp/) and puts it on the site at songs/tv.apk, for the Downloader app on the TV.
+# Signed with a key made the same every time from the YT_CLIENT_SECRET secret (_tvapp/make_key.py), so each new
+# build installs over the last.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["_tvapp/**", ".github/workflows/tv-app.yml"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tv-app
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build
+        env:
+          SEED: ${{ secrets.YT_CLIENT_SECRET }}
+          VERSION_CODE: ${{ github.run_number }}
+        run: |
+          if [ -n "$SEED" ]; then
+            pip install --quiet "cryptography>=44"
+            export KS_PASS="$(openssl rand -hex 16)" KEYSTORE="$RUNNER_TEMP/tv.p12"
+            python _tvapp/make_key.py "$KEYSTORE"
+          fi
+          bash _tvapp/build.sh
+          rm -f "$RUNNER_TEMP/tv.p12"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sotd-tv
+          path: _tvapp/build/sotd-tv.apk
+
+      - name: Put it on the site
+        run: |
+          cp _tvapp/build/sotd-tv.apk songs/tv.apk
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add songs/tv.apk
+          if git diff --cached --quiet; then echo "nothing changed"; exit 0; fi
+          git commit -m "Fire TV app, build ${{ github.run_number }}"
+          for i in 1 2 3 4 5; do git pull --rebase --quiet && git push && exit 0; sleep 5; done
+          exit 1
