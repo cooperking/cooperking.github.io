@@ -10,7 +10,7 @@ Run by .github/workflows/video-hunt.yml; the chosen ones go into data/john-video
     python _sotd/video_hunt.py --ids ID ID ...          only look up these uploads
 
 Writes data/video-hunt.json: songs {track id: {n, title, artist, secs (Spotify), query, results [...]}} and
-ids {video id: {...}}. Searches count against the day's 95 (data/youtube-quota.json); lookups cost 1 unit per 50.
+ids {video id: {...}}. Searches count against the day's 90 (data/youtube-quota.json; the last 5 are kept for today's song); lookups cost 1 unit per 50.
 """
 import datetime, json, os, sys, urllib.request
 

@@ -147,7 +147,7 @@ def lookup(s, tok):
         e['listId'] = s['listId']   # his link was looked at already; don't look again
     q = clean_title(s['title']) + ' ' + (s.get('artists') or [s['artist']])[0]
     j = ytapi.get('search', {'part': 'snippet', 'type': 'video', 'maxResults': 10, 'q': q, 'regionCode': 'GB'},
-                  tok, units=1, search=True)
+                  tok, units=1, search=True, priority=bool(s.get('newest')))
     if '_status' in j:
         e['error'] = j['_status']; e['detail'] = j.get('_text', '')[:200]
         return e
@@ -368,11 +368,13 @@ def main():
     except ytapi.Quota:
         print("today's YouTube allowance is used up")
     todo = [s for s in songs if s['id'] not in data['songs'] or due(data['songs'][s['id']])]
+    newest = max((s['n'] for s in songs), default=None)
+    todo.sort(key=lambda s: -s['n'])   # today's song first, and it may use the searches kept back for it
     print(f'{len(todo)} songs to search YouTube for; {ytapi.ledger()["used"]} units used today')
     try:
         for s in todo:
             prev = data['songs'].get(s['id'], {})
-            e = lookup(dict(s, listId=prev.get('listId'), ms=ms.get(s['id']) or s.get('ms')), tok)
+            e = lookup(dict(s, listId=prev.get('listId'), ms=ms.get(s['id']) or s.get('ms'), newest=s['n'] == newest), tok)
             for k in ('listNote', 'listCheck'):
                 if k in prev:
                     e[k] = prev[k]

@@ -15,6 +15,7 @@ API = 'https://www.googleapis.com/youtube/v3/'
 DAY_LIMIT = 9800          # a little under YouTube's 10,000, for the odd retry
 READ_LIMIT = 9990         # 1-unit lookups may use the last of the day
 SEARCH_LIMIT = 95         # under YouTube's 100 searches a day
+SEARCH_RESERVE = 5        # of those, kept for the newest song (today's): other searches stop at 90 (John, 24 Oct 2026)
 UA = 'SongOfTheDayCalendar/1.0 (https://cooperking.github.io/songs/)'
 
 
@@ -39,10 +40,12 @@ def ledger():
     return j
 
 
-def spend(units, cap=DAY_LIMIT, search=False):
-    """Count units (and searches) against today; raise Quota if that would pass a limit."""
+def spend(units, cap=DAY_LIMIT, search=False, priority=False):
+    """Count units (and searches) against today; raise Quota if that would pass a limit.
+    Only a priority search (today's song) may use the last SEARCH_RESERVE searches."""
     j = ledger()
-    if j['used'] + units > cap or (search and j['searches'] >= SEARCH_LIMIT):
+    limit = SEARCH_LIMIT if priority else SEARCH_LIMIT - SEARCH_RESERVE
+    if j['used'] + units > cap or (search and j['searches'] >= limit):
         raise Quota()
     j['used'] += units
     if search:
@@ -97,8 +100,8 @@ def token():
     return tok['access_token']
 
 
-def get(path, params, tok, units=1, cap=None, search=False):
-    spend(units, cap or (READ_LIMIT if units == 1 else DAY_LIMIT), search)
+def get(path, params, tok, units=1, cap=None, search=False, priority=False):
+    spend(units, cap or (READ_LIMIT if units == 1 else DAY_LIMIT), search, priority)
     try:
         return call('GET', API + path + '?' + urllib.parse.urlencode(params), token=tok)
     except Quota:
