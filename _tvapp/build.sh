@@ -6,13 +6,15 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
-BT="$(ls -d "$SDK"/build-tools/* | sort -V | tail -1)"
-PLATFORM="$(ls -d "$SDK"/platforms/android-* | sort -V | tail -1)"
+# released versions only (the runners also carry previews, like android-37.2-beta3)
+BT="$(ls -d "$SDK"/build-tools/* | grep -E '/[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)"
+PLATFORM="$(ls -d "$SDK"/platforms/android-* | grep -E '/android-[0-9]+$' | sort -V | tail -1)"
 JAR="$PLATFORM/android.jar"
-TARGET="$(basename "$PLATFORM" | sed 's/android-//')"; [ "$TARGET" -gt 34 ] 2>/dev/null && TARGET=34   # Fire OS is Android 11 at most
+TARGET="$(basename "$PLATFORM" | sed 's/android-//')"
+if [ "$TARGET" -gt 34 ]; then TARGET=34; fi   # Fire OS is Android 11 at most
 VERSION_CODE="${VERSION_CODE:-1}"
-echo "build-tools $(basename "$BT"), platform $TARGET, version $VERSION_CODE"
-rm -rf build && mkdir -p build/gen build/classes build/dex
+echo "build-tools $(basename "$BT"), platform $(basename "$PLATFORM"), target $TARGET, version $VERSION_CODE" | tee /dev/stderr > /tmp/sotd-info.txt
+rm -rf build && mkdir -p build/gen build/classes build/dex && mv /tmp/sotd-info.txt build/info.txt
 
 "$BT/aapt2" compile --dir res -o build/res.zip
 "$BT/aapt2" link -o build/base.apk -I "$JAR" --manifest AndroidManifest.xml build/res.zip \
