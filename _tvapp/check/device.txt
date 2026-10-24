@@ -6,6 +6,9 @@ Starting: Intent { cmp=io.github.cooperking.sotd/.MainActivity }
 Status: ok
 LaunchState: COLD
 Activity: io.github.cooperking.sotd/.MainActivity
-TotalTime: 683
-WaitTime: 684
+TotalTime: 582
+WaitTime: 585
 Complete
+{"id":1,"result":{"result":{"type":"string","value":"advert"}}}
+{"id":1,"result":{"result":{"type":"string","value":"advert"}}}
+{"id":1,"result":{"result":{"type":"string","value":"off"}}}
