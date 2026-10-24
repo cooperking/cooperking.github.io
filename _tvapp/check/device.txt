@@ -9,12 +9,11 @@ Starting: Intent { cmp=io.github.cooperking.sotd/.MainActivity }
 Status: ok
 LaunchState: COLD
 Activity: io.github.cooperking.sotd/.MainActivity
-TotalTime: 734
-WaitTime: 783
+TotalTime: 801
+WaitTime: 828
 Complete
-after ~3s: pid 3442 top     topResumedActivity=ActivityRecord{17f6348 u0 io.github.cooperking.sotd/.MainActivity t6}
-after ~8s: pid 3442 top     topResumedActivity=ActivityRecord{17f6348 u0 io.github.cooperking.sotd/.MainActivity t6}
-after ~15s: pid 3442 top     topResumedActivity=ActivityRecord{17f6348 u0 io.github.cooperking.sotd/.MainActivity t6}
-app pid after start: 3442
-app pid on the draft: 3442
-      topResumedActivity=ActivityRecord{b2205d6 u0 com.google.android.tvlauncher/.MainActivity t5}
+after ~3s: pid 3477 top     topResumedActivity=ActivityRecord{ba12367 u0 io.github.cooperking.sotd/.MainActivity t6}
+after ~8s: pid 3477 top     topResumedActivity=ActivityRecord{ba12367 u0 io.github.cooperking.sotd/.MainActivity t6}
+after ~15s: pid 3477 top     topResumedActivity=ActivityRecord{ba12367 u0 io.github.cooperking.sotd/.MainActivity t6}
+app pid after start: 3477
+app pid on the draft: 3477
