@@ -708,7 +708,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     <span class="mark">John’s Song of the Day</span>
     <div class="bar-actions">
     <button class="pill follow searchpill" id="searchbtn" type="button" aria-haspopup="dialog" aria-label="Search songs, artists, years, moods and genres" title="Search"><span class="long">Search</span><span class="short">Search</span><svg class="ext sr" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="7" cy="7" r="4.6"/><path d="m10.6 10.6 3.6 3.6"/></svg></button>
-    <button class="pill follow playall" id="playall" type="button" aria-label="Play every song from the first day" title="Play every song from the first day"><span class="long">Play all</span><span class="short">Play all</span><svg class="ext pl" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M4 2.5v11l9.5-5.5z"/></svg></button>
+    <button class="pill follow playall" id="playall" type="button" aria-label="Play every song, the newest first" title="Play every song, the newest first"><span class="long">Play all</span><span class="short">Play all</span><svg class="ext pl" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M4 2.5v11l9.5-5.5z"/></svg></button>
     <a class="pill follow" href="https://open.spotify.com/playlist/4zyegiBCapCQm8VWYYHhGo" target="_blank" rel="noopener" aria-label="Follow on Spotify" title="Follow on Spotify"><span class="long">Follow on Spotify</span><span class="short">Spotify</span> <svg class="go" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M1.5 6h9M7 2.5 10.5 6 7 9.5"/></svg><svg class="ext note" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M6 12V3.5l7-1.5v8.5"/><circle cx="4.2" cy="12" r="1.8"/><circle cx="11.2" cy="10.5" r="1.8"/></svg></a>
     <a class="pill follow ytfollow" id="ytfollow" href="#" target="_blank" rel="noopener" aria-label="The playlist on YouTube" title="The playlist on YouTube" hidden><span class="long">On YouTube</span><span class="short">YouTube</span> <svg class="go" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M1.5 6h9M7 2.5 10.5 6 7 9.5"/></svg><svg class="ext yt" viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="3.5" width="13" height="9" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.6 5.8v4.4L10.3 8z" fill="currentColor"/></svg></a>
     <button class="pill follow sharesite" id="siteshare" type="button" aria-label="Share John’s Song of the Day" title="Share the calendar"><span class="long">Share</span><span class="short">Share</span></button>
@@ -2581,9 +2581,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   fabSync();
   function playMine(from) { startQueue(fav.slice(), plname.value.replace(/\s+/g, ' ').trim() || 'My playlist', 'mine', from || 0); }
   document.getElementById('mineplay').addEventListener('click', function () { playMine(0); });
-  // Play all, in the bar: every song from the first day on
+  // Play all, in the bar: every song, the newest first
   document.getElementById('playall').addEventListener('click', function () {
-    var all = songs.slice().sort(function (a, b) { return a.n - b.n; }).map(function (s) { return s.track; });
+    var all = songs.slice().sort(function (a, b) { return b.n - a.n; }).map(function (s) { return s.track; });
     startQueue(all, 'John\u2019s Song of the Day', 'all');
   });
   // "Open in YouTube": the songs' videos, in the same order, as YouTube's own list (50 at most per list)
