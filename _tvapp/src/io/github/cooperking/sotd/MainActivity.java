@@ -43,6 +43,7 @@ public class MainActivity extends Activity {
     View full;   // a video shown full screen
     WebChromeClient.CustomViewCallback fullDone;
     SharedPreferences prefs;
+    boolean fresh;   // clear the history once the page now loading has loaded
 
     @Override
     protected void onCreate(Bundle saved) {
@@ -89,7 +90,10 @@ public class MainActivity extends Activity {
             }
 
             @Override
-            public void onPageFinished(WebView view, String url) { Log.i(TAG, "loaded " + url); }
+            public void onPageFinished(WebView view, String url) {
+                Log.i(TAG, "loaded " + url);
+                if (fresh) { fresh = false; view.clearHistory(); }
+            }
 
             @Override
             public boolean onRenderProcessGone(WebView view, RenderProcessGoneDetail d) {
@@ -179,8 +183,14 @@ public class MainActivity extends Activity {
             case KeyEvent.KEYCODE_BACK:
                 if (e.getAction() == KeyEvent.ACTION_UP) {
                     if (full != null) { leaveFull(); return true; }
-                    web.evaluateJavascript("window.sotdTV ? sotdTV.back() : false", new ValueCallback<String>() {
-                        public void onReceiveValue(String r) { if (!"true".equals(r)) finish(); }
+                    // the site closes its top pop-up (true), or has none open (false: the app closes); any other page
+                    // (the advert help page, say) goes back to the one before it
+                    web.evaluateJavascript("window.sotdTV ? sotdTV.back() : 'page'", new ValueCallback<String>() {
+                        public void onReceiveValue(String r) {
+                            if ("true".equals(r)) return;
+                            if ("\"page\"".equals(r) && web.canGoBack()) web.goBack();
+                            else finish();
+                        }
                     });
                 }
                 return true;
@@ -189,6 +199,7 @@ public class MainActivity extends Activity {
                     boolean draft = !prefs.getBoolean("draft", false);
                     prefs.edit().putBoolean("draft", draft).apply();
                     Toast.makeText(this, draft ? "The draft" : "The live site", Toast.LENGTH_SHORT).show();
+                    fresh = true;   // the other site starts a new history: Back doesn't return to this one
                     web.loadUrl(home());
                 }
                 return true;
