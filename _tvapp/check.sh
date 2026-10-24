@@ -12,6 +12,11 @@ key() { adb shell input keyevent "$@"; sleep 1.2; }
   echo "webview: $(adb shell dumpsys webviewupdate | grep -m1 'Current WebView package' )"
   adb shell wm size; adb shell wm density
 } > "$OUT/device.txt" 2>&1
+# a fresh emulator updates Google's apps for its first minutes, and that can take a browser view's process down
+# with it (seen: "depends on provider ...gms FontsProvider in dying proc"), which a Fire TV doesn't have; so
+# no Play Store updates, and a minute to settle
+adb shell pm disable-user --user 0 com.android.vending >> "$OUT/device.txt" 2>&1
+sleep 60
 adb logcat -c
 adb install -r ../songs/tv.apk >> "$OUT/device.txt" 2>&1
 adb shell am start -W -n io.github.cooperking.sotd/.MainActivity >> "$OUT/device.txt" 2>&1
