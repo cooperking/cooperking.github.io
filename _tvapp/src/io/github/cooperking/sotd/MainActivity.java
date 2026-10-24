@@ -48,14 +48,13 @@ import java.net.URL;
  * John's Song of the Day on a Fire TV: the site in a full-screen browser view. The page knows it's on a TV from
  * the browser's name (SOTDTV) and then works by the remote's arrows and OK; this passes it the other buttons:
  * Back (closes the top pop-up, or the app), play/pause, rewind / fast-forward (the day or month before or after),
- * and Menu: signing in to YouTube (with Premium, the videos have no adverts) and switching between the live site and
- * the draft. OK held down is the page's "hold" (on a day: add it
+ * and Menu: signing in to YouTube (with Premium, the videos have no adverts). It only ever shows the live site.
+ * OK held down is the page's "hold" (on a day: add it
  * to My playlist); a press of OK goes to the page as it was, once it's let go.
  * On opening it looks for a newer build (songs/tv.json, written with each build) and offers to install it.
  */
 public class MainActivity extends Activity {
     static final String LIVE = "https://cooperking.github.io/songs/";
-    static final String DRAFT = "https://cooperking.github.io/songs/draft/";
     static final String HOST = "cooperking.github.io";
     static final String TAG = "SOTD";
     static final String UPDATE_INFO = "https://cooperking.github.io/songs/tv.json";
@@ -87,6 +86,7 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle saved) {
         super.onCreate(saved);
         prefs = getSharedPreferences("sotd", MODE_PRIVATE);
+        prefs.edit().remove("draft").apply();   // the draft switch that older builds had
         root = new FrameLayout(this);
         root.setBackgroundColor(Color.rgb(0xec, 0x13, 0x5b));
         setContentView(root);
@@ -249,6 +249,7 @@ public class MainActivity extends Activity {
                 Log.i(TAG, "loaded " + url);
                 if (fresh) { fresh = false; view.clearHistory(); }
                 Uri u = Uri.parse(url);
+                if (HOST.equals(u.getHost()) && u.getPath() != null && u.getPath().startsWith("/songs/draft")) { fresh = true; view.loadUrl(LIVE); return; }   // never the draft
                 if (HOST.equals(u.getHost())) { signingIn = false; view.evaluateJavascript(AD_HOOK, null); }
                 else if (signingIn && u.getHost() != null && u.getHost().endsWith("youtube.com") && signedIn()) {
                     signingIn = false;   // signed in: back to the songs
@@ -312,9 +313,9 @@ public class MainActivity extends Activity {
 
     }
 
-    String home() { return prefs.getBoolean("draft", false) ? DRAFT : LIVE; }
+    String home() { return LIVE; }   // the published app: the live site only, never the draft
 
-    // ---- Menu: YouTube sign-in, and the live site or the draft ----
+    // ---- Menu: YouTube sign-in ----
     static boolean google(String host) {
         if (host == null) return false;
         for (String d : new String[] { "google.com", "youtube.com", "google.co.uk", "gstatic.com", "googleusercontent.com" })
@@ -328,17 +329,13 @@ public class MainActivity extends Activity {
     }
 
     void menu() {
-        final boolean draft = prefs.getBoolean("draft", false), yt = signedIn();
-        String[] items = {
-            yt ? "Sign out of YouTube" : "Sign in to YouTube (with Premium, no adverts)",
-            draft ? "Switch to the live site" : "Switch to the draft"
-        };
+        final boolean yt = signedIn();
+        String[] items = { yt ? "Sign out of YouTube" : "Sign in to YouTube (with Premium, no adverts)" };
         new AlertDialog.Builder(this)
             .setTitle("Song of the Day \u00b7 build " + myBuild() + (yt ? " \u00b7 signed in to YouTube" : ""))
             .setItems(items, new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface d, int which) {
-                    if (which == 0) { if (yt) signOut(); else signIn(); }
-                    else switchSite();
+                    if (yt) signOut(); else signIn();
                 }
             })
             .show();
@@ -374,13 +371,6 @@ public class MainActivity extends Activity {
         });
     }
 
-    void switchSite() {
-        boolean draft = !prefs.getBoolean("draft", false);
-        prefs.edit().putBoolean("draft", draft).apply();
-        Toast.makeText(this, draft ? "The draft" : "The live site", Toast.LENGTH_SHORT).show();
-        fresh = true;   // the other site starts a new history: Back doesn't return to this one
-        web.loadUrl(home());
-    }
 
     void leaveFull() {
         if (full == null) return;

@@ -9,7 +9,10 @@ between buttons with the arrows (`html.tv`, `window.sotdTV` in the page). The ap
 - Play/pause: the song or video playing, or the open day's first song
 - Rewind / fast-forward: the day before or after (or the month, on the calendar)
 - Menu: a menu with Sign in to YouTube (Google's sign-in, in the app; with Premium the videos have no adverts;
-  Sign out once signed in) and switching between the live site and the draft (remembered); it shows the build
+  Sign out once signed in); it shows the build
+
+The app shows the live site only, never the draft. To see the draft as the TV lays it out, open
+`cooperking.github.io/songs/draft/?tv=1` in a browser.
 - The first advert each time the app's open, while not signed in to YouTube: the app offers the sign-in
 
 The screen stays on while something plays. Spotify and YouTube links open in their apps, if installed.
