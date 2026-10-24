@@ -28,6 +28,21 @@ key KEYCODE_MENU; sleep 20; shot draft
 echo "app pid on the draft: $(adb shell pidof io.github.cooperking.sotd)" >> "$OUT/device.txt"
 # the draft starts on today, the latest song
 key KEYCODE_DPAD_LEFT; shot left-day-before
+adb shell input keyevent --longpress KEYCODE_DPAD_CENTER; sleep 1; shot hold-adds-to-my-playlist
+key KEYCODE_DPAD_CENTER; sleep 5; shot ok-opens-day
+key KEYCODE_DPAD_DOWN KEYCODE_DPAD_DOWN KEYCODE_DPAD_DOWN; shot down-to-favourite
+key KEYCODE_DPAD_RIGHT; sleep 4; shot right-next-day
+key KEYCODE_BACK; sleep 3; shot back-closes-day
+key KEYCODE_DPAD_UP KEYCODE_DPAD_UP; shot up-up-to-bar
+key KEYCODE_BACK; sleep 3; shot back-closes-app
+adb shell dumpsys activity activities | grep -m1 topResumedActivity)" >> "$OUT/device.txt"; done
+shot start
+sleep 10; shot live
+echo "app pid after start: $(adb shell pidof io.github.cooperking.sotd)" >> "$OUT/device.txt"
+key KEYCODE_MENU; sleep 20; shot draft
+echo "app pid on the draft: $(adb shell pidof io.github.cooperking.sotd)" >> "$OUT/device.txt"
+# the draft starts on today, the latest song
+key KEYCODE_DPAD_LEFT; shot left-day-before
 key KEYCODE_DPAD_CENTER; sleep 5; shot ok-opens-day
 key KEYCODE_MEDIA_PLAY_PAUSE; sleep 3; shot playpause
 key KEYCODE_MEDIA_FAST_FORWARD; sleep 5; shot fastforward-next-day

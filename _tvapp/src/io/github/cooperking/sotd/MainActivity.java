@@ -8,6 +8,8 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
@@ -30,7 +32,8 @@ import android.widget.Toast;
  * John's Song of the Day on a Fire TV: the site in a full-screen browser view. The page knows it's on a TV from
  * the browser's name (SOTDTV) and then works by the remote's arrows and OK; this passes it the other buttons:
  * Back (closes the top pop-up, or the app), play/pause, rewind / fast-forward (the day or month before or after),
- * and Menu, which switches between the live site and the draft.
+ * and Menu, which switches between the live site and the draft. OK held down is the page's "hold" (on a day: add it
+ * to My playlist); a press of OK goes to the page as it was, once it's let go.
  */
 public class MainActivity extends Activity {
     static final String LIVE = "https://cooperking.github.io/songs/";
@@ -44,6 +47,10 @@ public class MainActivity extends Activity {
     WebChromeClient.CustomViewCallback fullDone;
     SharedPreferences prefs;
     boolean fresh;   // clear the history once the page now loading has loaded
+    final Handler later = new Handler(Looper.getMainLooper());
+    KeyEvent okDown;   // OK pressed and not yet let go
+    boolean okHeld;
+    final Runnable okHold = new Runnable() { public void run() { if (okDown != null && !okHeld) { okHeld = true; page("hold"); } } };
 
     @Override
     protected void onCreate(Bundle saved) {
@@ -192,6 +199,21 @@ public class MainActivity extends Activity {
                             else finish();
                         }
                     });
+                }
+                return true;
+            case KeyEvent.KEYCODE_DPAD_CENTER:
+            case KeyEvent.KEYCODE_ENTER:
+            case KeyEvent.KEYCODE_NUMPAD_ENTER:
+                if (full != null) return super.dispatchKeyEvent(e);   // a video full screen: its own
+                if (e.getAction() == KeyEvent.ACTION_DOWN) {
+                    if (e.getRepeatCount() == 0) { okDown = new KeyEvent(e); okHeld = false; later.postDelayed(okHold, 600); }
+                    else { later.removeCallbacks(okHold); okHold.run(); }   // the remote repeating: it's held
+                    return true;
+                }
+                if (e.getAction() == KeyEvent.ACTION_UP) {
+                    later.removeCallbacks(okHold);
+                    if (!okHeld && okDown != null) { web.dispatchKeyEvent(okDown); web.dispatchKeyEvent(e); }   // a press
+                    okDown = null;
                 }
                 return true;
             case KeyEvent.KEYCODE_MENU:

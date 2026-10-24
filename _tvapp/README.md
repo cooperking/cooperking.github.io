@@ -4,6 +4,7 @@ A small Android app that shows https://cooperking.github.io/songs/ full screen o
 The page knows it's on a TV from the browser's name (`SOTDTV`) and then lays itself out 1280 wide and moves
 between buttons with the arrows (`html.tv`, `window.sotdTV` in the page). The app passes on the other buttons:
 
+- OK: opens a day or presses a button; held down on a day, adds it to My playlist (or takes it off)
 - Back: closes the top pop-up; with none open, closes the app (on another page, like the advert help page, goes back)
 - Play/pause: the song or video playing, or the open day's first song
 - Rewind / fast-forward: the day before or after (or the month, on the calendar)
