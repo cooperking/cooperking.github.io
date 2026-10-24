@@ -14,9 +14,9 @@
    5,
    29
   ],
-  "songsWithListenerTags": 11,
-  "songsWithListenerMoodTags": 8,
-  "songsWhereListenersCount": 3
+  "songsWithListenerTags": 12,
+  "songsWithListenerMoodTags": 9,
+  "songsWhereListenersCount": 4
  },
  "moods": [
   "Joyful",
@@ -8712,7 +8712,7 @@
    "sound": [
     "Energetic",
     "Dark",
-    "Bittersweet"
+    "Uplifting"
    ],
    "claude": [
     "Dark",
@@ -20202,8 +20202,8 @@
    ],
    "moodFrom": "Claude (researched)",
    "sound": [
-    "Joyful",
     "Energetic",
+    "Joyful",
     "Playful"
    ],
    "claude": [
@@ -20916,7 +20916,7 @@
    "sound": [
     "Playful",
     "Energetic",
-    "Joyful"
+    "Romantic"
    ],
    "claude": [
     "Playful"
@@ -25972,6 +25972,157 @@
     "pop",
     "rock"
    ]
+  },
+  "0UV5zxRMz6AO4ZwUOZNIKI": {
+   "n": 257,
+   "title": "Where'd All the Time Go?",
+   "artist": "Dr. Dog",
+   "moods": [
+    "Dreamy"
+   ],
+   "moodMix": [
+    [
+     "Dreamy",
+     61
+    ],
+    [
+     "Joyful",
+     10
+    ],
+    [
+     "Bittersweet",
+     10
+    ]
+   ],
+   "moodEvidence": [
+    [
+     "Last.fm",
+     60,
+     [
+      [
+       "Dreamy",
+       100
+      ]
+     ]
+    ],
+    [
+     "Audio",
+     40,
+     [
+      [
+       "Joyful",
+       24
+      ],
+      [
+       "Bittersweet",
+       24
+      ],
+      [
+       "Romantic",
+       13
+      ]
+     ]
+    ]
+   ],
+   "moodFrom": "Weighed up",
+   "sound": [
+    "Joyful",
+    "Bittersweet",
+    "Romantic"
+   ],
+   "listeners": "agree",
+   "styles": [
+    "Indie Rock",
+    "Psychedelic Rock",
+    "Power Pop"
+   ],
+   "genres": [
+    "Indie"
+   ],
+   "genreFrom": "Weighed up",
+   "genreMix": [
+    [
+     "Indie",
+     58
+    ],
+    [
+     "Folk",
+     14
+    ],
+    [
+     "Rock",
+     14
+    ]
+   ],
+   "genreEvidence": [
+    [
+     "MusicBrainz",
+     50,
+     [
+      [
+       "Indie",
+       48
+      ],
+      [
+       "Folk",
+       22
+      ],
+      [
+       "Rock",
+       18
+      ]
+     ]
+    ],
+    [
+     "Last.fm",
+     30,
+     [
+      [
+       "Indie",
+       85
+      ],
+      [
+       "Folk",
+       10
+      ],
+      [
+       "Soul & R&B",
+       4
+      ]
+     ]
+    ],
+    [
+     "Audio",
+     20,
+     [
+      [
+       "Indie",
+       44
+      ],
+      [
+       "Pop",
+       33
+      ],
+      [
+       "Rock",
+       23
+      ]
+     ]
+    ]
+   ],
+   "musicbrainz": [
+    "baroque pop",
+    "indie folk",
+    "indie pop",
+    "indie rock",
+    "neo-psychedelia",
+    "psychedelic folk",
+    "psychedelic pop",
+    "psychedelic rock",
+    "rock",
+    "slacker rock"
+   ],
+   "check": true
   }
  }
 }
