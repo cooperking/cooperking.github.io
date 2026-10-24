@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Starts Claude's facts task for new songs (the routine "Song facts for new songs", see FACTS.md), straight after
+"""Starts Claude's facts task for new songs (the routine "Song facts for new songs (on demand)", see FACTS.md), straight after
 song-tags.yml has saved their sources, instead of on a timer. Called at the end of that job.
 
 The routine is started through its API trigger: its address and token, which John made at claude.ai/code/routines and

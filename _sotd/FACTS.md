@@ -17,7 +17,7 @@ on the live calendar from then (John, 24 Oct 2026); John checks, edits and signs
 
 ## The facts task: facts for new songs
 
-Claude's routine "Song facts for new songs" does this. It has no timer: song-tags.yml starts it through the routine's API
+Claude's routine "Song facts for new songs (on demand)" (claude.ai/code/routines) does this. It has no timer: song-tags.yml starts it through the routine's API
 trigger at the end of the run that saves a new song's sources (`_sotd/facts_ask.py`; the secrets SOTD_FACTS_URL and
 SOTD_FACTS_TOKEN hold its address and token). The new song stays off the live calendar until this has run.
 
