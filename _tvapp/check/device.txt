@@ -1,33 +1,11 @@
 device: 11 API 30
 Package com.android.vending new state: disabled-user
-Serving...
-All files should be loaded. Notifying the device.
-Performing Incremental Install
+Performing Streamed Install
 Success
-Install command complete in 62 ms
-installed: versionCode=1 (newest on the site: {"build": 15, "apk": "https://cooperking.github.io/songs/tv.apk"})
 Starting: Intent { cmp=io.github.cooperking.sotd/.MainActivity }
 Status: ok
 LaunchState: COLD
 Activity: io.github.cooperking.sotd/.MainActivity
-TotalTime: 551
-WaitTime: 554
+TotalTime: 683
+WaitTime: 684
 Complete
-may install before: No operations.
-Default mode: default
-app running after the switch: no
-Starting: Intent { cmp=io.github.cooperking.sotd/.MainActivity }
-Status: ok
-LaunchState: COLD
-Activity: io.github.cooperking.sotd/.MainActivity
-TotalTime: 469
-WaitTime: 470
-Complete
-Starting: Intent { cmp=io.github.cooperking.sotd/.MainActivity }
-Status: ok
-LaunchState: COLD
-Activity: io.github.cooperking.sotd/.MainActivity
-TotalTime: 493
-WaitTime: 495
-Complete
-after: versionCode=15
