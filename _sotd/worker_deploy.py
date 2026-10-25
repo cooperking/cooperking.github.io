@@ -40,6 +40,12 @@ def cf(method, path, body=None, ctype='application/json'):
     return out.get('result')
 
 
+def note(msg, kind='notice'):
+    print(msg)
+    if os.environ.get('GITHUB_ACTIONS'):
+        print('::%s title=Worker::%s' % (kind, msg.replace('%', '%25').replace('\n', '%0A')))
+
+
 def get(url):
     try:
         with urllib.request.urlopen(urllib.request.Request(url, headers={'User-Agent': 'sotd-deploy-check'}), timeout=30) as r:
@@ -52,7 +58,7 @@ def get(url):
 
 def main():
     if not TOKEN:
-        print('No CLOUDFLARE_API_TOKEN secret yet: nothing done.')
+        note('No CLOUDFLARE_API_TOKEN secret yet: nothing done.', 'warning')
         return
     global ACCOUNT
     if not ACCOUNT:
@@ -81,20 +87,20 @@ def main():
             latest = max(deps, key=lambda d: d.get('created_on') or '')
             before = [{'version_id': v['version_id'], 'percentage': v.get('percentage', 100)} for v in latest.get('versions') or []]
     except Refused as e:
-        print('(No list of versions, so no automatic undo:', e, ')')
-    print('Running now:', ', '.join('%s (%s%%)' % (v['version_id'], v['percentage']) for v in before) or 'unknown')
+        note('No list of versions, so no automatic undo: %s' % e, 'warning')
+    note('Running now: ' + (', '.join('%s (%s%%)' % (v['version_id'], v['percentage']) for v in before) or 'unknown'))
     try:
         settings = cf('GET', base + '/settings') or {}
         binds = {b.get('name'): b.get('type') for b in settings.get('bindings') or []}
-        print('Bindings:', ', '.join('%s (%s)' % kv for kv in sorted(binds.items())) or 'none')
+        note('Bindings: ' + (', '.join('%s (%s)' % kv for kv in sorted(binds.items())) or 'none'))
         for need, what in (('SOTD', 'KV'), ('GH_TOKEN', 'secret'), ('ADMIN_KEY', 'secret')):
             if need not in binds:
-                print('WARNING: no %s %s binding; parts of the Worker that use it will fail.' % (what, need))
+                note('No %s %s binding; parts of the Worker that use it will fail.' % (what, need), 'warning')
         if 'MEDIA' not in binds:
-            print('WARNING: no MEDIA (R2) binding yet: the members part will answer but can\'t keep or give files. '
-                  'Cloudflare: Workers & Pages > sotd-playlists > Settings > Bindings > Add > R2 bucket, MEDIA, sotd-members.')
+            note('No MEDIA (R2) binding yet: the members part will answer but can\'t keep or give files. '
+                  'Cloudflare: Workers & Pages > sotd-playlists > Settings > Bindings > Add > R2 bucket, MEDIA, sotd-members.', 'warning')
     except Refused as e:
-        print('(Couldn\'t read the bindings:', e, ')')
+        note('Couldn\'t read the bindings: %s' % e, 'warning')
 
     # 3. the code
     code = open(SRC, 'rb').read()
@@ -106,7 +112,7 @@ def main():
         b'Content-Type: application/javascript+module\r\n\r\n', code, b'\r\n',
         b'--' + bnd.encode() + b'--\r\n'])
     cf('PUT', base + '/content', body, 'multipart/form-data; boundary=' + bnd)
-    print('Uploaded worker.js (%d bytes).' % len(code))
+    note('Uploaded worker.js (%d bytes).' % len(code))
 
     # 4. the Worker answers
     ok_status = ok_new = False
@@ -117,19 +123,23 @@ def main():
         ok_status, ok_new = s == 200, n == 200 and 'json' in t
         if ok_status and ok_new:
             break
-    print('/status:', 'answers' if ok_status else 'FAILS', '| /covers.json (members part):', 'answers' if ok_new else 'not yet')
+    note('/status: ' + ('answers' if ok_status else 'FAILS') + ' | /covers.json (members part): ' + ('answers' if ok_new else 'not yet'))
     if not ok_status:
         if before:
             cf('POST', base + '/deployments', {'strategy': 'percentage', 'versions': before})
-            print('Put the previous version back.')
+            note('Put the previous version back.', 'error')
         raise SystemExit('The Worker stopped answering after the upload.')
     if not ok_new:
         raise SystemExit('Uploaded, but the new code isn\'t answering yet (/covers.json).')
-    print('Done: the Worker is running this code.')
+    note('Done: the Worker is running this code.')
 
 
 if __name__ == '__main__':
     try:
         main()
     except Refused as e:
-        raise SystemExit(str(e))
+        note(str(e), 'error'); raise SystemExit(1)
+    except SystemExit as e:
+        if isinstance(e.code, str):
+            note(e.code, 'error'); raise SystemExit(1)
+        raise
