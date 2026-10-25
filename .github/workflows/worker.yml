@@ -1,0 +1,29 @@
+name: Worker
+# Puts _sotd/worker/worker.js in place as the Cloudflare Worker sotd-playlists whenever it changes (or when run by hand),
+# keeping the Worker's bindings and secrets. See _sotd/worker_deploy.py.
+on:
+  push:
+    branches: [main]
+    paths: ['_sotd/worker/worker.js']
+  workflow_dispatch:
+
+concurrency:
+  group: worker-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Put the Worker's code in place
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: python3 _sotd/worker_deploy.py

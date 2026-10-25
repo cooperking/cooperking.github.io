@@ -46,7 +46,11 @@ A member can keep John's recordings on a device and play them with no connection
 1. Cloudflare dashboard → R2: turn R2 on (Cloudflare asks for a payment method; the first 10 GB a month are free,
    then about $0.015 per GB a month, and downloads are free). Create a bucket, e.g. `sotd-members`.
 2. Workers → `sotd-playlists` → Settings → Bindings → Add → R2 bucket: variable name `MEDIA`, the bucket above.
-3. Deploy the Worker with this repository's `_sotd/worker/worker.js`.
+3. The Worker's code goes in place by itself: `.github/workflows/worker.yml` runs `_sotd/worker_deploy.py`
+   whenever `_sotd/worker/worker.js` changes (or by hand). It uploads only the code, keeping the bindings and
+   secrets, checks the Worker still answers, and puts the previous version back if it doesn't. It needs two
+   repository secrets: `CLOUDFLARE_API_TOKEN` (a Cloudflare token with Account > Workers Scripts > Edit) and
+   `CLOUDFLARE_ACCOUNT_ID`.
 4. Draft calendar first: the members code is on `songs/draft/` until John signs it off.
 
 ## Adding the real files later
