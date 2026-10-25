@@ -895,7 +895,9 @@ async function memberPlaylists(request, env, answer) {
 function appManifest(url) {
   const code = /^[A-Za-z0-9]{6}$/.test(url.searchParams.get('c') || '') ? url.searchParams.get('c') : '';
   const path = url.searchParams.get('p') === '/songs/draft/' ? '/songs/draft/' : '/songs/';
-  const site = 'https://cooperking.github.io', v = '?v=4';
+  // the icons' ?v= as icons.py sets it each month (m + year and month, London)
+  const ym = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', year: 'numeric', month: '2-digit' }).formatToParts(new Date());
+  const site = 'https://cooperking.github.io', v = '?v=m' + ym.find(x => x.type === 'year').value + ym.find(x => x.type === 'month').value;
   const m = { name: 'John’s Song of the Day', short_name: 'Song of the Day', id: site + '/songs/',
     start_url: site + path + (code ? '#join=' + code : ''), scope: site + '/songs/', display: 'standalone',
     background_color: '#ec1a13', theme_color: '#ec1a13',

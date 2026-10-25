@@ -105,6 +105,9 @@ jobs:
           pip install --quiet pillow numpy
           python _sotd/share_pages.py
 
+      - name: The app icons in this month's colours (when the month changes)
+        run: python _sotd/icons.py
+
       - name: Save changes
         run: |
           git config user.name "github-actions[bot]"
