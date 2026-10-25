@@ -87,13 +87,13 @@ table.match select { max-width: 100%; font-size: 13px; padding: 4px 6px; }
   </header>
 
   <h2>Family</h2>
-  <p class="help">Add someone and send them the link it gives. Opening it signs that phone or computer in (up to 5 devices, within 30 days); after that they hear the whole song and see your video where you've added one. For a Fire TV, use <b>TV code</b>: a six-letter code to type in the app's ≡ menu (Family sign-in). <b>Remove</b> signs all their devices out. <b>New link</b> gives a fresh one (the old one stops working).</p>
+  <p class="help">Add someone and send them the link it gives. Opening it signs that phone or computer in (up to 5 devices, within 30 days); after that they hear the whole song and see your video where you've added one. For a Fire TV or an iPhone Home Screen icon (which keeps its own storage, apart from Safari), use <b>Code</b>: six letters to type in, once, within 30 minutes: on the TV in the app's ≡ menu → Family sign-in; on the Home Screen icon, Family sign-in under the month. <b>Remove</b> signs all their devices out. <b>New link</b> gives a fresh one (the old one stops working).</p>
   <div class="row">
     <input class="name" id="newname" placeholder="Their name" autocomplete="off" aria-label="Their name">
     <button class="btn primary" id="invite" type="button">Invite</button>
   </div>
   <div class="link" id="newlink" hidden><code id="linktext"></code><button class="btn small" id="copy" type="button">Copy</button><button class="btn small" id="share" type="button">Share</button><a class="btn small" id="ondraft" target="_blank" rel="noopener" title="While members is only on the draft calendar: opens the link there, signing this device in">Open on the draft</a></div>
-  <div class="link" id="tvbox" hidden><span class="stat">On <b id="tvfor"></b>’s Fire TV: Song of the Day → ≡ → Family sign-in, and type</span><code id="tvcode" class="big"></code><span class="stat">(once, within <span id="tvmins"></span> minutes)</span></div>
+  <div class="link" id="tvbox" hidden><span class="stat">For <b id="tvfor"></b>: on the Fire TV, Song of the Day → ≡ → Family sign-in; on the Home Screen icon, Family sign-in under the month. Type</span><code id="tvcode" class="big"></code><span class="stat">(once, within <span id="tvmins"></span> minutes)</span></div>
   <ul class="people" id="people"></ul>
 
   <h2>Songs, videos and sharing pictures</h2>
@@ -174,7 +174,7 @@ table.match select { max-width: 100%; font-size: 13px; padding: 4px 6px; }
       st.textContent = (m.devices ? m.devices + (m.devices === 1 ? ' device' : ' devices') : 'not signed in yet') + (m.seen ? ' · last here ' + new Date(m.seen).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '')
         + (m.invite ? ' · link: ' + (m.invite.left && m.invite.until > Date.now() ? m.invite.left + ' more device' + (m.invite.left === 1 ? '' : 's') + ' until ' + new Date(m.invite.until).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : 'used up') : '');
       var nl = button('New link', function () { api('/members/admin', { op: 'reinvite', id: m.id }).then(showLink); });
-      var tv = button('TV code', function () { api('/members/admin', { op: 'tvcode', id: m.id }).then(function (j) {
+      var tv = button('Code', function () { api('/members/admin', { op: 'tvcode', id: m.id }).then(function (j) {
         if (!j.code) { toast(j.error || 'Couldn’t make a code'); return; }
         $('tvcode').textContent = j.code.slice(0, 3) + ' ' + j.code.slice(3); $('tvfor').textContent = j.name; $('tvmins').textContent = j.minutes; $('tvbox').hidden = false;
       }); });
