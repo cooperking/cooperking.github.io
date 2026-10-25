@@ -9,7 +9,8 @@ on the live calendar from then (John, 24 Oct 2026); John checks, edits and signs
   away (which brings the song out on the live calendar, the share pages and the YouTube playlist: `_sotd/released.py`),
   and replaces them with what John signs off.
 - `_sotd/data/facts-pending.json`: written and checked, waiting for John's sign-off (and live meanwhile). Shown on the
-  draft calendar and on the sign-off page, `songs/facts-admin.html`, where he edits, removes, reorders, adds his own and
+  draft calendar and on the sign-off page (the Facts tab of `songs/admin.html`, behind the admin password; the part page
+  is `songs/facts-admin.html`, which only shows inside it), where he edits, removes, reorders, adds his own and
   signs off. The Cloudflare Worker keeps his sign-offs and starts `.github/workflows/facts.yml`, which runs
   `facts_apply.py` to put them live.
 - `_sotd/data/sources.json`: what the facts are written from first: the English Wikipedia articles on each song, album
@@ -35,7 +36,7 @@ SOTD_FACTS_TOKEN hold its address and token). The new song stays off the live ca
    `_sotd/data/facts-quotes.json` and `songs/facts-quotes.json` ("Song facts for <song>: live, waiting for John's
    sign-off"), pull with rebase and push. The push starts song-tags.yml again, which adds the song to the YouTube
    playlist and makes its share page.
-7. Tell John in one or two lines: which songs now wait at https://cooperking.github.io/songs/facts-admin.html, with how
+7. Tell John in one or two lines: which songs now wait at https://cooperking.github.io/songs/admin.html, with how
    many facts each, and any that fell short and why.
 
 Never edit `songs/facts.json` by hand or anything else on the live site; never run `facts_apply.py --promote`; never

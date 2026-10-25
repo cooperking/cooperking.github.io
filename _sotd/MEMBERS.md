@@ -10,7 +10,7 @@ he does).
 - **Files**: in a private Cloudflare R2 bucket, bound to the Worker (`sotd-playlists`) as `MEDIA`:
   `a/<track>.mp3` (the song), `v/<track>.mp4` (its video), `c/<track>` (a sharing picture). The site's repository is
   public, so none of them are in it.
-- **Members page**: `songs/members-admin.html`, with the admin password (the same one as the facts sign-off page).
+- **Members page**: the Members tab of `songs/admin.html` (the part page is `songs/members-admin.html`, which only shows inside it), after the admin password.
   - Invite someone: it gives a link to the calendar ending `#join=…`; John sends it to them.
   - Opening the link signs that device in, up to 5 devices within 30 days. *New link* makes a fresh one; *Remove* signs
     all their devices out.

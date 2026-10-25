@@ -3,8 +3,20 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="robots" content="noindex">
+<meta name="robots" content="noindex, nofollow">
 <title>Song facts sign-off</title>
+<style id="admin-gate">html { visibility: hidden; } .in-admin .keyrow { display: none !important; }</style>
+<script>
+// Shown only inside the admin page (admin.html), once it has checked the password with the Worker; opened on its own
+// this page goes back there.
+(function () {
+  var ok = false;
+  try { ok = window.parent !== window && window.parent.SOTD_ADMIN_OK === true && /\/songs\/admin\.html$/.test(window.parent.location.pathname); } catch (e) {}
+  if (!ok) { location.replace('/songs/admin.html#facts'); return; }
+  document.documentElement.classList.add('in-admin');
+  document.getElementById('admin-gate').textContent = '.in-admin .keyrow { display: none !important; }';
+})();
+</script>
 <link rel="icon" type="image/png" sizes="96x96" href="/songs/favicon-96.png?v=2">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -110,7 +122,7 @@ blockquote { grid-column: 1; margin: 2px 0 0; padding: 6px 10px; border-left: 3p
       <select id="month" aria-label="Month"><option value="">Any month</option></select>
       <input type="search" id="q" placeholder="Find a song or artist" autocomplete="off" aria-label="Find a song or artist">
     </div>
-    <div class="row">
+    <div class="row keyrow">
       <input type="password" id="key" placeholder="Admin password" autocomplete="current-password" aria-label="Admin password">
       <button class="btn" id="keysave" type="button">Use password</button>
       <span class="stat" id="keystat"></span>
@@ -351,7 +363,9 @@ blockquote { grid-column: 1; margin: 2px 0 0; padding: 6px 10px; border-left: 3p
       render();
     }).catch(function () { toast('Couldn\'t reach the Worker. Nothing was signed off.'); });
   }
-  function keyStat(ok, msg) { var k = document.getElementById('keystat'); k.textContent = msg || (ok ? 'Password works' : 'Wrong password'); k.className = 'stat ' + (ok ? 'good' : 'bad'); }
+  function keyStat(ok, msg) {
+    if (!ok) { try { if (window.parent.SOTD_ADMIN_LOCK) { window.parent.SOTD_ADMIN_LOCK(); return; } } catch (e) {} }
+    var k = document.getElementById('keystat'); k.textContent = msg || (ok ? 'Password works' : 'Wrong password'); k.className = 'stat ' + (ok ? 'good' : 'bad'); }
   document.getElementById('keysave').addEventListener('click', function () {
     var v = document.getElementById('key').value; if (!v) return;
     store(KEYS, v); document.getElementById('key').value = '';
