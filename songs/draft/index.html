@@ -700,6 +700,24 @@ html.offline #grid .day.has:not(.dl) { opacity: .4 !important; }   /* over the d
   font: 600 12px/1 var(--sans); letter-spacing: .04em; cursor: pointer; box-shadow: 0 4px 16px rgba(0, 0, 0, .3);
   -webkit-tap-highlight-color: transparent; }
 .vidsound[hidden] { display: none; }
+/* John's own videos, in the day: a tap brings these up over the video (pause or play, full screen) and it plays on;
+   they go after a few seconds, and stay while it's paused */
+.vidfloat > .vidctl { position: absolute; inset: 0; z-index: 6; width: auto; height: auto; background: rgba(10, 4, 14, .28); opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .2s, visibility .2s; }
+.vidfloat.own.ctl > .vidctl { opacity: 1; visibility: visible; }
+html.theatre .vidfloat > .vidctl, .vidfloat.bgv > .vidctl { display: none; }
+.vidctl button { position: absolute; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; color: #fff; background: rgba(20, 10, 24, .55); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); cursor: pointer; pointer-events: auto; }
+.vidfloat.own:not(.ctl) .vidctl button { pointer-events: none; }
+.vidctl .vc-play { left: 50%; top: 50%; width: 60px; height: 60px; transform: translate(-50%, -50%); }
+.vidctl .vc-play svg { width: 26px; height: 26px; }
+.vidctl .vc-full { right: 10px; bottom: 10px; width: 40px; height: 40px; }
+.vidctl .vc-full svg { width: 18px; height: 18px; }
+/* full screen, John's own video or a song's record: the buttons come up over the picture (it keeps its size, and
+   plays on), with a shade top and bottom so they read; YouTube's still make room, as nothing may cover its player */
+.vidfloat > .thshade { position: absolute; inset: 0; z-index: 5; pointer-events: none; opacity: 0; transition: opacity .25s; background: linear-gradient(rgba(0, 0, 0, .7), rgba(0, 0, 0, .3) 32%, rgba(0, 0, 0, .3) 60%, rgba(0, 0, 0, .75)); }
+html.theatre.tvui.thover .vidfloat > .thshade { opacity: 1; }
+html.theatre.thover #capdock { transition: opacity .25s; }
+html.theatre.tvui.thover #capdock { opacity: 0; }   /* the facts make way for the buttons while they're up */
+html.theatre.thover #sheet .sheet-head, html.theatre.thover #picks { text-shadow: 0 1px 3px rgba(0, 0, 0, .6); }
 .vidsound svg { width: 18px; height: 18px; flex: none; }
 .vidsound.hint { pointer-events: none; }
 .pick.watching .deck { display: none; }
@@ -2051,6 +2069,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       clearInterval(vplay.timer); clearTimeout(vplay.check);
       try { if (shared && shared.stopVideo) shared.stopVideo(); } catch (e) {}   // kept for the next video: once you've pressed play in it, its sound stays allowed
       if (vplay.cover) coverPlayer.off();
+      ctlHide();
       vidspot.hidden = true;
       if (vplay.ui) { vplay.ui.bar.style.width = '0%'; vplay.ui.time.textContent = fmt(0); }
       vplay = null;
@@ -2256,7 +2275,12 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (!vidfloat.classList.contains('own') && !vidfloat.classList.contains('cover')) return;
     e.preventDefault(); e.stopPropagation();
     if (theatre) { if (uiUp()) uiDrop(); else uiShow(); return; }
-    vidToggle();
+    if (vidfloat.classList.contains('own')) {   // John's own video: the buttons over it, or away; it plays on
+      if (e.target.closest && e.target.closest('.vidctl button')) return;
+      if (vidfloat.classList.contains('ctl') && !vidPausedNow()) ctlHide(); else ctlShow();
+      return;
+    }
+    vidToggle();   // a song's record: play or pause
   });
   vidfloat.addEventListener('dblclick', function (e) { e.preventDefault(); e.stopPropagation(); });
   // Full screen (html.theatre): a video showing in the day fills the screen, under the day, which goes see-through so
@@ -2342,7 +2366,25 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (ic && thSearch.parentNode !== ic) { thMineSync(); ic.appendChild(thSearch); ic.appendChild(thMine); }
   }
   document.getElementById('fsbtn').addEventListener('click', function () { setFull(false); });
+  var ctlT = 0, vidctl = document.createElement('div'), PAUSE_ICON = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4.5" width="4" height="15" rx="1"/><rect x="14" y="4.5" width="4" height="15" rx="1"/></svg>', PLAY_ICON = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 4.8v14.4a.8.8 0 0 0 1.2.7l11.4-7.2a.8.8 0 0 0 0-1.4L9.2 4.1a.8.8 0 0 0-1.2.7z"/></svg>';
+  vidctl.className = 'vidctl';
+  var shade = document.createElement('span'); shade.className = 'thshade'; vidfloat.appendChild(shade);
+  function ctlSync() {   // the button as the video stands: Pause while it plays, Play while it's paused (and then they stay up)
+    var paused = vidPausedNow(), b = vidctl.querySelector('.vc-play');
+    if (!b) return;
+    var want = paused ? 'Play' : 'Pause';
+    if (b.getAttribute('aria-label') !== want) { b.setAttribute('aria-label', want); b.innerHTML = paused ? PLAY_ICON : PAUSE_ICON; }
+    if (!vidfloat.classList.contains('ctl')) return;
+    clearTimeout(ctlT);
+    if (!paused) ctlT = setTimeout(ctlHide, 3000);
+  }
+  function ctlShow() { vidfloat.classList.add('ctl'); ctlSync(); }
+  function ctlHide() { clearTimeout(ctlT); vidfloat.classList.remove('ctl'); }
   var FS_ICON = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 6V2.5H6M10 2.5h3.5V6M13.5 10v3.5H10M6 13.5H2.5V10"/></svg>';
+  vidctl.innerHTML = '<button type="button" class="vc-play" aria-label="Pause">' + PAUSE_ICON + '</button><button type="button" class="vc-full" aria-label="Full screen" title="Full screen">' + FS_ICON + '</button>';
+  vidfloat.appendChild(vidctl);
+  vidctl.querySelector('.vc-play').addEventListener('click', function (e) { e.stopPropagation(); vidToggle(); ctlShow(); });
+  vidctl.querySelector('.vc-full').addEventListener('click', function (e) { e.stopPropagation(); ctlHide(); setFull(true); });
   // a tap or click on the picture: the buttons up, or away
   thBack.addEventListener('click', function () {
     if (!theatre || Date.now() - thSwiped < 600) return;
@@ -2393,10 +2435,14 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       if (land) { var pw = Math.round(Math.min(560, Math.max(320, W * 0.42))); placeDlg(dlg, W - pw, 0, pw, H); aW = W - pw - sa.l; }
       else { var ph = Math.round(H * 0.56); placeDlg(dlg, 0, H - ph, W, ph); aH = H - ph - ay; }
     }
-    var up = uiUp() && !dlg, topH = 0, botH = 0;
-    if (up) {
+    // John's own video or a song's record: the buttons over the picture, which keeps its size; YouTube's: room made
+    var over = !!(vplay && vplay.player && (vplay.player.own || vplay.player.cover));
+    root.classList.toggle('thover', over);
+    var bar = uiUp() && !dlg, up = bar && !over, topH = 0, botH = 0, barTop = 0, barBot = 0;
+    if (bar) {
       var hr = sheet.querySelector('.sheet-head').getBoundingClientRect(), pr = document.getElementById('picks').getBoundingClientRect();
-      topH = Math.max(0, hr.bottom + 10 - ay); botH = Math.max(0, H - sa.b - pr.top + 10);   // what they take of the area
+      barTop = Math.max(0, hr.bottom + 10 - ay); barBot = Math.max(0, H - sa.b - pr.top + 10);   // what they take of the area
+      if (up) { topH = barTop; botH = barBot; }
     }
     var capW = Math.max(0, Math.min(aW - 2 * e, 1100)), capH = 0;
     if (capdock.style.width !== px(capW)) { capdock.style.width = px(capW); capShow.refit(); }   // the fact on screen re-broken for the new width
@@ -2429,8 +2475,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       if (capH >= 44 && !adLive(adState)) sTop = y + v.h + 6; else if (y - 54 >= ay + topH) sTop = y - 54; else sVis = 'hidden';
     }
     vidsound.style.left = px(x + v.w / 2); vidsound.style.top = px(sTop); vidsound.style.visibility = sVis;
-    if (up) {   // the arrows: either side of the video (on a screen wider than tall), or under it, either side
-      var ty = land ? y + v.h / 2 - arw / 2 : Math.max(y + block + 4, y + block + (ay + aH - botH - y - block) / 2 - arw / 2);
+    if (bar) {   // the arrows: either side of the video (on a screen wider than tall), or under it, either side
+      var ty = land ? y + v.h / 2 - arw / 2 : Math.max(y + block + 4, y + block + (ay + aH - barBot - y - block) / 2 - arw / 2);
+      if (!land && ty + arw > ay + aH - barBot) ty = y + v.h / 2 - arw / 2;   // no room between the video and the buttons: over the video's sides
       put4(document.getElementById('dayprev'), ax + e, ty, arw, arw);
       put4(document.getElementById('daynext'), ax + aW - e - arw, ty, arw, arw);
     }
@@ -2600,6 +2647,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     clearInterval(v.timer);
     if (v.on) v.timer = setInterval(vidPaint, 250);
     vidPaint(); setState();
+    if (v.player && v.player.own && !theatre) { if (e.data === 2 && !TV) ctlShow(); else ctlSync(); }   // paused: Play over it
   }
   // if the phone won't start a video with sound, start it without, so the songs carry on; a tap on it turns the sound on
   function armCheck(mine) {
