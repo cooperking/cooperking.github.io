@@ -689,6 +689,15 @@
   }
   function score(name, s) {
     var base = String(name).replace(/\.(mp3|mp4|m4v|m4a)$/i, '').replace(/^\s*\d{1,3}(\s*[-._)]\s*|\s+)/, ''), best = sim(base, s.title);
+    // the artist and the title with nothing between them, either way round: the title's words found together in the
+    // name, the rest of it the artist; or else all the words, in any order
+    var fw = wordsOf(base), tw = wordsOf(s.title);
+    for (var i = 0; tw.length && i + tw.length <= fw.length; i++) {
+      if (fw.slice(i, i + tw.length).join(' ') !== tw.join(' ')) continue;
+      var rest = fw.slice(0, i).concat(fw.slice(i + tw.length)).join(' ');
+      if (rest) best = Math.max(best, 0.6 + sim(rest, s.artist) * 0.4);
+    }
+    best = Math.max(best, sim(base, s.title + ' ' + s.artist) * 0.95);
     var parts = base.split(/\s+[-–—]\s+/);
     for (var k = 1; k < parts.length; k++) {
       var l = parts.slice(0, k).join(' - '), r = parts.slice(k).join(' - ');

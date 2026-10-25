@@ -1963,8 +1963,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // straight away, with a button over it to turn the sound on (soundUI); once a video has played with sound after a
   // tap in the player, the videos after it play with sound
   var IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  function quietStart() {   // John: a video never starts muted with Tap for sound; where the phone won't start it with
-    return false;            // sound, it waits, paused, for a tap on its play button
+  function quietStart() {
     if (!IOS) return false;
     try { return !(shared && sharedReady && shared.isMuted && !shared.isMuted()); } catch (e) { return true; }
   }
@@ -1992,7 +1991,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     ownVid.addEventListener('volumechange', function () { soundUI(); });
     function go() {
       var p = ownVid.play();
-      if (p && p.catch) p.catch(function () { fire(2); });   // not allowed with sound here yet: paused, for a tap to play it (never muted)
+      // not allowed with sound here yet: paused, for a tap to play it (John: his own videos never start muted with Tap
+      // for sound; YouTube's still can, as before)
+      if (p && p.catch) p.catch(function () { fire(2); });
     }
     ownObj = {
       own: true,
@@ -2421,7 +2422,6 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   // if the phone won't start a video with sound, start it without, so the songs carry on; a tap on it turns the sound on
   function armCheck(mine) {
-    return;   // (no muted start: see quietStart)
     clearTimeout(mine.check);
     mine.check = setTimeout(function () {
       if (!IOS || vplay !== mine || mine.on || !shared || !shared.mute) return;
