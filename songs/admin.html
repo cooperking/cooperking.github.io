@@ -97,7 +97,7 @@ h1 em { font-style: italic; font-weight: 400; color: var(--muted); }
     if (!frames[tab]) {
       var f = document.createElement('iframe');
       f.allow = 'web-share; clipboard-write *';   // the parts can use the phone's share sheet and copy
-      f.title = tab; f.src = PAGES[tab]; frames[tab] = f; $('panes').appendChild(f);
+      f.title = tab; f.src = PAGES[tab] + '?v=' + Date.now(); frames[tab] = f; $('panes').appendChild(f);
     }
     Object.keys(frames).forEach(function (k) { frames[k].hidden = k !== tab; });
     document.querySelectorAll('.tabs button').forEach(function (b) { b.setAttribute('aria-selected', String(b.dataset.tab === tab)); });
