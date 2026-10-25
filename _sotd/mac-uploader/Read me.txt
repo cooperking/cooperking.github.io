@@ -1,0 +1,28 @@
+SOTD Uploader
+=============
+
+Puts each new or changed MP3 and MP4 in your SOTD folder on the Song of the Day site by itself, as the admin page's
+folder upload does. Each video then gets its TV copy made, as usual.
+
+Setting up
+1. Double-click "Install.command". If macOS says it can't be opened (it isn't from the App Store), open
+   System Settings > Privacy & Security, scroll down to the message about Install.command, click Open Anyway, and
+   double-click it again.
+2. Choose your SOTD folder, then type the admin page password.
+That's it: it runs in the background, when the folder changes and every 15 minutes, and starts again with the Mac.
+
+What it sends
+- Files whose names clearly match one song: "Artist - Title", "Title Artist" or just the title.
+- Only new or changed files: anything already on the site is recognised and left.
+- A file still being exported or copied waits until it has stopped changing for a minute.
+- A file it can't match is left alone; if it still can't place it after 6 hours (today's song may not be on the
+  playlist yet), you get a notification, and can rename it or upload it on the admin page.
+
+Notifications tell you what went up. The full record is in
+~/Library/Application Support/SOTD Uploader/uploader.log
+
+If nothing goes up and the folder is in Documents, Desktop or Downloads, macOS may be stopping it from reading
+there: System Settings > Privacy & Security > Full Disk Access, click +, press Cmd+Shift+G, type
+/usr/bin/python3, and add it. (Or keep the SOTD folder somewhere else, such as your home folder.)
+
+To change the folder or the password, double-click Install.command again. To stop it, double-click Uninstall.command.
