@@ -313,7 +313,7 @@ dialog.pop::backdrop { background: rgba(24, 8, 24, .35); -webkit-backdrop-filter
     g.strokeStyle = 'rgb(30, 28, 38)'; g.lineWidth = 1;
     for (var k = 8; k < rd / 2 - rd / 5; k += 3) { g.beginPath(); g.arc(rx + rd / 2, ry + rd / 2, rd / 2 - k, 0, Math.PI * 2); g.stroke(); }
     var lab = Math.floor(rd * .38);
-    function square(im) { var sd = Math.min(im.naturalWidth, im.naturalHeight); return [(im.naturalWidth - sd) / 2, (im.naturalHeight - sd) / 2, sd, sd]; }
+    function square(im) { var w = im.naturalWidth || im.width, h = im.naturalHeight || im.height, sd = Math.min(w, h); return [(w - sd) / 2, (h - sd) / 2, sd, sd]; }
     if (cover) {
       var sq = square(cover);
       g.save(); g.beginPath(); g.arc(rx + rd / 2, ry + rd / 2, lab / 2, 0, Math.PI * 2); g.clip();
@@ -347,6 +347,45 @@ dialog.pop::backdrop { background: rgba(24, 8, 24, .35); -webkit-backdrop-filter
     g.fillText(when.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).replace(',', ''), x0, y0);
     return c.toDataURL('image/jpeg', 0.84);
   }
+  // John's own picture made into an album cover: the photo, darkened at the foot and the head so the words read, with
+  // the calendar's name across the top and the person's name set like the calendar's own heading (roman, then italic)
+  function albumCover(im, name) {
+    var N = 640, c = document.createElement('canvas'); c.width = c.height = N;
+    var g = c.getContext('2d'), w = im.naturalWidth || im.width, h = im.naturalHeight || im.height, sd = Math.min(w, h);
+    g.drawImage(im, (w - sd) / 2, (h - sd) / 2, sd, sd, 0, 0, N, N);
+    var foot = g.createLinearGradient(0, N * .38, 0, N);
+    foot.addColorStop(0, 'rgba(12, 6, 14, 0)'); foot.addColorStop(.55, 'rgba(12, 6, 14, .45)'); foot.addColorStop(1, 'rgba(12, 6, 14, .82)');
+    g.fillStyle = foot; g.fillRect(0, 0, N, N);
+    var head = g.createLinearGradient(0, 0, 0, N * .26);
+    head.addColorStop(0, 'rgba(12, 6, 14, .5)'); head.addColorStop(1, 'rgba(12, 6, 14, 0)');
+    g.fillStyle = head; g.fillRect(0, 0, N, N * .26);
+    var m = 44, ink = '#fffaf5';
+    g.textBaseline = 'alphabetic'; g.fillStyle = ink;
+    function tracked(t, x, y, f, tr) { g.font = f; for (var i = 0; i < t.length; i++) { g.fillText(t[i], x, y); x += g.measureText(t[i]).width + tr; } return x; }
+    g.shadowColor = 'rgba(0, 0, 0, .35)'; g.shadowBlur = 12;
+    tracked('JOHN’S SONG OF THE DAY', m, m + 18, '600 21px "Hanken Grotesk"', 4);
+    // the name, as big as fits (two lines at most), then "is invited" in italic
+    var words = name || 'You', size = 132, lines;
+    for (; size >= 56; size -= 4) {
+      g.font = '500 ' + size + 'px Newsreader';
+      lines = []; var cur = '';
+      words.split(/\s+/).forEach(function (x) { var t = (cur + ' ' + x).trim(); if (g.measureText(t).width <= N - 2 * m || !cur) cur = t; else { lines.push(cur); cur = x; } });
+      if (cur) lines.push(cur);
+      if (lines.length <= 2 && lines.every(function (l) { return g.measureText(l).width <= N - 2 * m; })) break;
+    }
+    var italic = Math.round(Math.max(40, Math.min(64, size * .5))), y = N - m - 44;
+    g.font = 'italic 400 ' + italic + 'px Newsreader'; g.fillText(name ? 'is invited' : 'are invited', m + 2, y);
+    g.font = '500 ' + size + 'px Newsreader';
+    y -= italic * .95;
+    for (var i = lines.length - 1; i >= 0; i--) { g.fillText(lines[i], m - size * .03, y); y -= size * .92; }
+    g.shadowBlur = 0;
+    g.fillStyle = 'rgba(255, 250, 245, .55)'; g.fillRect(m, N - m - 22, N - 2 * m, 1.5);
+    g.fillStyle = 'rgba(255, 250, 245, .85)';
+    tracked('AN INVITATION', m, N - m + 2, '600 15px "Hanken Grotesk"', 3.4);
+    g.font = '600 15px "Hanken Grotesk"';
+    var yr = String(londonNow().getUTCFullYear()); tracked(yr, N - m - g.measureText(yr).width - 3.4 * yr.length, N - m + 2, '600 15px "Hanken Grotesk"', 3.4);
+    return c;
+  }
   function invTitle() { return (invFor ? invFor.split(' ')[0] : 'You') + (invFor ? ' is invited' : ' are invited'); }
   function invBusy(on) {
     $('invwait').hidden = !on;
@@ -358,6 +397,7 @@ dialog.pop::backdrop { background: rgba(24, 8, 24, .35); -webkit-backdrop-filter
     var fonts = document.fonts ? Promise.all(['500 68px Newsreader', 'italic 400 30px Newsreader', '600 19px "Hanken Grotesk"'].map(function (f) { return document.fonts.load(f); })) : Promise.resolve();
     return fonts.then(function () { return pic ? loadImg(pic).catch(function () { return null; }) : null; }).then(function (im) {
       if (mine !== INV.busy) return;
+      if (im && INV.pic) im = albumCover(im, invFor ? invFor.split(' ')[0] : '');   // John's photo: an album cover
       var card = drawCard(title, im);
       $('invimg').src = card;
       return api('/members/admin', { op: 'invitecard', id: INV.id, link: $('linktext').textContent, title: title, card: card, page: INV.page }).then(function (j) {
