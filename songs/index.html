@@ -263,8 +263,8 @@ html.theatre #sheet .thbtn { display: inline-flex; align-items: center; justify-
 .hero h1 em { font-style: italic; font-weight: 400; color: var(--fg-2); }
 .hsub { margin: -10px 0 2px; font-family: var(--serif); font-weight: 500; font-size: clamp(19px, 4.8vw, 26px); line-height: 1.1; letter-spacing: -.005em; color: var(--fg-2); }
 .hsub em { font-style: italic; font-weight: 400; }
-/* the Home Screen app only, not signed in: a family member types the code from John's members page */
-/* family sign-in, in the bar: "Sign in" (an outline person on narrow screens), and once signed in a small filled person */
+/* the Home Screen app only, not signed in: a member types the code from John's members page */
+/* sign-in, in the bar: "Sign in" (an outline person on narrow screens), and once signed in a small filled person */
 .bar-top .signin svg.pe { width: 15px; height: 15px; }
 .bar-top .signin .pf { display: none; }
 @media (min-width: 481px) { .bar-top .signin.in { padding-left: 10px; padding-right: 10px; } }
@@ -928,7 +928,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     <a class="pill follow" href="https://open.spotify.com/playlist/4zyegiBCapCQm8VWYYHhGo" target="_blank" rel="noopener" aria-label="Follow on Spotify" title="Follow on Spotify"><span class="long">Follow on Spotify</span><span class="short">Spotify</span> <svg class="go" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M1.5 6h9M7 2.5 10.5 6 7 9.5"/></svg><svg class="ext note" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M6 12V3.5l7-1.5v8.5"/><circle cx="4.2" cy="12" r="1.8"/><circle cx="11.2" cy="10.5" r="1.8"/></svg></a>
     <a class="pill follow ytfollow" id="ytfollow" href="#" target="_blank" rel="noopener" aria-label="The playlist on YouTube" title="The playlist on YouTube" hidden><span class="long">On YouTube</span><span class="short">YouTube</span> <svg class="go" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M1.5 6h9M7 2.5 10.5 6 7 9.5"/></svg><svg class="ext yt" viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="3.5" width="13" height="9" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.6 5.8v4.4L10.3 8z" fill="currentColor"/></svg></a>
     <button class="pill follow sharesite" id="siteshare" type="button" aria-label="Share John’s Song of the Day" title="Share the calendar"><span class="long">Share</span><span class="short">Share</span></button>
-    <button class="pill follow signin" id="famjoin" type="button" aria-label="Family sign-in" title="Family sign-in" hidden><span class="long">Sign in</span><span class="short">Sign in</span><svg class="ext pe" viewBox="0 0 16 16" aria-hidden="true"><g class="po" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="5.2" r="2.7"/><path d="M2.8 14c.6-2.9 2.7-4.4 5.2-4.4s4.6 1.5 5.2 4.4"/></g><g class="pf" fill="currentColor"><circle cx="8" cy="5.2" r="3"/><path d="M2.5 14.5c.5-3.2 2.8-5 5.5-5s5 1.8 5.5 5z"/></g></svg></button>
+    <button class="pill follow signin" id="famjoin" type="button" aria-label="Sign in" title="Sign in" hidden><span class="long">Sign in</span><span class="short">Sign in</span><svg class="ext pe" viewBox="0 0 16 16" aria-hidden="true"><g class="po" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="5.2" r="2.7"/><path d="M2.8 14c.6-2.9 2.7-4.4 5.2-4.4s4.6 1.5 5.2 4.4"/></g><g class="pf" fill="currentColor"><circle cx="8" cy="5.2" r="3"/><path d="M2.5 14.5c.5-3.2 2.8-5 5.5-5s5 1.8 5.5 5z"/></g></svg></button>
     </div>
   </div>
 
@@ -3750,7 +3750,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     }
     return list;
   }
-  // ---- members (John's family). An invite link (the calendar with #join=<code>) signs this device in; from then on,
+  // ---- members. An invite link (the calendar with #join=<code>) signs this device in; from then on,
   // where John has added them, the whole song plays instead of the preview and his own video instead of YouTube's.
   // Anyone else, and any day without them, gets the preview and YouTube as before. The Worker's links to the files last
   // 12 hours, so they're fetched again before then. ----
@@ -4040,7 +4040,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       }).catch(function () { toast('Couldn’t reach the site to join. Try again.'); });
   }
   window.sotdJoin = memberJoin;
-  // Sign in, in the bar (not on a TV: the Fire TV app has it in its menu): a family member types the code John makes on
+  // Sign in, in the bar (not on a TV: the Fire TV app has it in its menu): a member types the code John makes on
   // his members page (the same one-use code as the TV's), or pastes the invite link. A Home Screen app keeps its own
   // storage (an iPhone copies only cookies from Safari, and the token isn't one), so it signs in on its own. Signed in,
   // the button is a small person: tapping it says who's signed in and offers to sign this device out.
@@ -4050,7 +4050,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var tok = ''; try { tok = localStorage.getItem(MKEY) || ''; } catch (e) {}
     famBtn.hidden = !(MBASE && window.fetch) || TV;
     famBtn.classList.toggle('in', !!tok);
-    var lab = tok ? (MEMBER && MEMBER.name ? 'Signed in as ' + MEMBER.name : 'Signed in') : 'Family sign-in';
+    var lab = tok ? (MEMBER && MEMBER.name ? 'Signed in as ' + MEMBER.name : 'Signed in') : 'Sign in';
     famBtn.setAttribute('aria-label', lab); famBtn.title = lab;
     document.documentElement.classList.toggle('signedin', !!tok);
     var who = document.getElementById('who');
@@ -4061,7 +4061,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   if (famBtn) famBtn.addEventListener('click', function () {
     var tok = ''; try { tok = localStorage.getItem(MKEY) || ''; } catch (e) {}
     if (tok) { acctOpen(); return; }
-    ask({ k: 'Sign in', h: 'Family sign-in', t: 'Type the six-letter code from John, or paste your invite link.', input: { placeholder: 'Code or link', caps: true }, ok: 'Sign in' }).then(function (c) {
+    ask({ h: 'Sign in', t: 'Type the six-letter code from John, or paste your invite link.', input: { placeholder: 'Code or link', caps: true }, ok: 'Sign in' }).then(function (c) {
       c = c || ''; var m = /join=([\w-]+)/.exec(c);
       c = m ? m[1] : c.replace(/[\s-]+/g, '').toUpperCase();
       if (c) memberJoin(c);

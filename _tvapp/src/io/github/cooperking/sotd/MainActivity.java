@@ -348,22 +348,22 @@ public class MainActivity extends Activity {
     void menu() {
         final boolean yt = signedIn();
         String[] items = { yt ? "Sign out of YouTube" : "Sign in to YouTube (with Premium, no adverts)",
-            "Family sign-in (a TV code from John)", "Check for a new version" };
+            "Sign in (a TV code from John)", "Check for a new version" };
         new AlertDialog.Builder(this)
             .setTitle("Song of the Day \u00b7 build " + myBuild() + (yt ? " \u00b7 signed in to YouTube" : ""))
             .setItems(items, new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface d, int which) {
                     if (which == 0) { if (yt) signOut(); else signIn(); }
-                    else if (which == 1) familySignIn();
+                    else if (which == 1) memberSignIn();
                     else checkForUpdate(true);
                 }
             })
             .show();
     }
 
-    // a family member's TV: John makes a short code on the members page (songs/members-admin.html), it's typed here, and
+    // a member's TV: John makes a short code on the members page (songs/members-admin.html), it's typed here, and
     // the page signs this TV in with it (sotdJoin), as an invite link does on a phone
-    void familySignIn() {
+    void memberSignIn() {
         final EditText code = new EditText(this);
         code.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
         code.setFilters(new InputFilter[] { new InputFilter.AllCaps(), new InputFilter.LengthFilter(12) });
@@ -374,7 +374,7 @@ public class MainActivity extends Activity {
         box.setPadding(pad, pad / 2, pad, 0);
         box.addView(code);
         new AlertDialog.Builder(this)
-            .setTitle("Family sign-in")
+            .setTitle("Sign in")
             .setMessage("Type the TV code from John's members page.")
             .setView(box)
             .setPositiveButton("Sign in", new DialogInterface.OnClickListener() {
@@ -383,7 +383,7 @@ public class MainActivity extends Activity {
                     if (c.length() < 6) { Toast.makeText(MainActivity.this, "That code is too short", Toast.LENGTH_SHORT).show(); return; }
                     web.evaluateJavascript("typeof sotdJoin === 'function' ? (sotdJoin('" + c + "'), 'ok') : 'no'", new ValueCallback<String>() {
                         public void onReceiveValue(String r) {
-                            if (!"\"ok\"".equals(r)) Toast.makeText(MainActivity.this, "Family sign-in isn't on the site yet", Toast.LENGTH_LONG).show();
+                            if (!"\"ok\"".equals(r)) Toast.makeText(MainActivity.this, "Signing in isn't on the site yet", Toast.LENGTH_LONG).show();
                         }
                     });
                 }

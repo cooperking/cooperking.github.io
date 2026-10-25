@@ -1,6 +1,6 @@
-# Members: John's family
+# Members
 
-Family members signed in on a device hear John's own recording of each song instead of the 30-second preview, and see
+Members signed in on a device hear John's own recording of each song instead of the 30-second preview, and see
 his own video instead of YouTube's, wherever he has added them. Anyone else, and any day without a file, gets the
 preview and YouTube as before. John can also give any day his own picture for its sharing link (the album cover until
 he does).
@@ -51,7 +51,7 @@ A member can keep John's recordings on a device and play them with no connection
 
 *Invite* (or *New link*) on the Members tab opens the invitation, shared like a day's song: only a link is sent, and
 its preview (WhatsApp, iMessage...) is a card drawn on the members page exactly as a day's card is drawn
-(`share_pages.py` card()), with "<first name> is invited" as the song, JOHN'S FAMILY as the artist, today's date, and
+(`share_pages.py` card()), with "<first name> is invited" as the song, AN INVITATION as the artist, today's date, and
 as the cover the picture John chose (*Choose picture…*, kept on that device for next time) or else the latest song's.
 The Worker keeps the card and its page (`/i/<id>`, KV `invcard:` and `invpage:`, for as long as the invitation lasts);
 the page sends a person on to their invitation on the calendar. *Share…* (on a phone), Messages, WhatsApp, Email and

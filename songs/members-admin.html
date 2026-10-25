@@ -116,7 +116,7 @@ dialog.pop::backdrop { background: rgba(24, 8, 24, .35); -webkit-backdrop-filter
 <body>
 <div class="wrap">
   <header class="top">
-    <h1>Members <em>John’s family</em></h1>
+    <h1>Members</h1>
     <div class="row keyrow">
       <input type="password" id="key" placeholder="Admin password" autocomplete="current-password" aria-label="Admin password">
       <button class="btn" id="keysave" type="button">Use password</button>
@@ -125,14 +125,14 @@ dialog.pop::backdrop { background: rgba(24, 8, 24, .35); -webkit-backdrop-filter
     <div class="row"><span class="stat" id="stat">Loading…</span></div>
   </header>
 
-  <h2>Family</h2>
-  <p class="help">Add someone and send them the link it gives. Opening it signs that phone or computer in (up to 5 devices, within 30 days); after that they hear the whole song and see your video where you've added one. For a Fire TV or an iPhone Home Screen icon (which keeps its own storage, apart from Safari), use <b>Code</b>: six letters to type in, once, within 30 minutes: on the TV in the app's ≡ menu → Family sign-in; on the Home Screen icon, Family sign-in under the month. <b>Remove</b> signs all their devices out. <b>New link</b> gives a fresh one (the old one stops working).</p>
+  <h2>People</h2>
+  <p class="help">Add someone and send them the link it gives. Opening it signs that phone or computer in (up to 5 devices, within 30 days); after that they hear the whole song and see your video where you've added one. For a Fire TV or an iPhone Home Screen icon (which keeps its own storage, apart from Safari), use <b>Code</b>: six letters to type in, once, within 30 minutes: on the TV in the app's ≡ menu → Sign in; on the Home Screen icon, Sign in at the top. <b>Remove</b> signs all their devices out. <b>New link</b> gives a fresh one (the old one stops working).</p>
   <div class="row">
     <input class="name" id="newname" placeholder="Their name" autocomplete="off" aria-label="Their name">
     <button class="btn primary" id="invite" type="button">Invite</button>
   </div>
   <div class="link" id="newlink" hidden><code id="linktext"></code><button class="btn small" id="copy" type="button">Copy</button><button class="btn small primary" id="share" type="button">Send invitation…</button></div>
-  <div class="link" id="tvbox" hidden><span class="stat">For <b id="tvfor"></b>: on the Fire TV, Song of the Day → ≡ → Family sign-in; on the Home Screen icon, Family sign-in under the month. Type</span><code id="tvcode" class="big"></code><span class="stat">(once, within <span id="tvmins"></span> minutes)</span></div>
+  <div class="link" id="tvbox" hidden><span class="stat">For <b id="tvfor"></b>: on the Fire TV, Song of the Day → ≡ → Sign in; on the Home Screen icon, Sign in at the top. Type</span><code id="tvcode" class="big"></code><span class="stat">(once, within <span id="tvmins"></span> minutes)</span></div>
   <ul class="people" id="people"></ul>
 
   <h2>Songs, videos and sharing pictures</h2>
@@ -234,7 +234,7 @@ dialog.pop::backdrop { background: rgba(24, 8, 24, .35); -webkit-backdrop-filter
     }).catch(function () { $('stat').textContent = 'Couldn’t reach the Worker'; return false; });
   }
 
-  // ---- family ----
+  // ---- people ----
   function people() {
     var ul = $('people'); ul.innerHTML = '';
     MEMBERS.forEach(function (m) {
@@ -248,7 +248,7 @@ dialog.pop::backdrop { background: rgba(24, 8, 24, .35); -webkit-backdrop-filter
         if (!j.code) { toast(j.error || 'Couldn’t make a code'); return; }
         $('tvcode').textContent = j.code.slice(0, 3) + ' ' + j.code.slice(3); $('tvfor').textContent = j.name; $('tvmins').textContent = j.minutes; $('tvbox').hidden = false;
       }); });
-      var rm = button('Remove', function () { ask('Family', 'Remove ' + m.name + '?', 'All their devices are signed out, and their saved playlists go.', 'Remove').then(function (yes) { if (!yes) return; api('/members/admin', { op: 'remove', id: m.id }).then(function (j) { if (j.members) { MEMBERS = j.members; people(); toast(m.name + ' removed'); } }); }); });
+      var rm = button('Remove', function () { ask('Members', 'Remove ' + m.name + '?', 'All their devices are signed out, and their saved playlists go.', 'Remove').then(function (yes) { if (!yes) return; api('/members/admin', { op: 'remove', id: m.id }).then(function (j) { if (j.members) { MEMBERS = j.members; people(); toast(m.name + ' removed'); } }); }); });
       li.appendChild(who); li.appendChild(st); li.appendChild(nl); li.appendChild(tv); li.appendChild(rm); ul.appendChild(li);
     });
   }
@@ -341,7 +341,7 @@ dialog.pop::backdrop { background: rgba(24, 8, 24, .35); -webkit-backdrop-filter
     g.font = tf; g.fillStyle = INK;
     lines.forEach(function (l) { g.fillText(l, x0, y0 - tsize * .08); y0 += lh; });
     y0 += 22;
-    spaced('JOHN’S FAMILY', x0, y0, '600 22px "Hanken Grotesk"', 'rgba(255, 250, 245, .94)', 2.4);
+    spaced('AN INVITATION', x0, y0, '600 22px "Hanken Grotesk"', 'rgba(255, 250, 245, .94)', 2.4);
     y0 += 22 + 30;
     g.font = 'italic 400 30px Newsreader'; g.fillStyle = 'rgba(255, 250, 245, .92)';
     g.fillText(when.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).replace(',', ''), x0, y0);
@@ -448,7 +448,7 @@ dialog.pop::backdrop { background: rgba(24, 8, 24, .35); -webkit-backdrop-filter
       var bar = document.createElement('div'); bar.className = 'bar'; bar.hidden = true; bar.innerHTML = '<i></i>';
       li.appendChild(img); li.appendChild(mid); li.appendChild(have); li.appendChild(bar); ol.appendChild(li);
     });
-    $('stat').textContent = SONGS.length + ' days · ' + files + ' files (' + mb(bytes) + ') · ' + Object.keys(COVERS).length + ' own pictures · ' + MEMBERS.length + ' in the family';
+    $('stat').textContent = SONGS.length + ' days · ' + files + ' files (' + mb(bytes) + ') · ' + Object.keys(COVERS).length + ' own pictures · ' + MEMBERS.length + (MEMBERS.length === 1 ? ' member' : ' members');
   }
   // a pill: press to add (or replace) the file; with one there, ✕ beside it takes it away
   function pill(label, on, add, remove) {
