@@ -3457,8 +3457,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function bgShow() { bgOff(); openLayer(sheet); sheet.scrollTop = 0; syncFloat(); }   // the song's page again
   document.getElementById('fabnow').addEventListener('click', bgShow);
   document.getElementById('fabstop').addEventListener('click', function () { bgOff(); closeDialog(sheet, true); });
-  document.getElementById('fabnext').addEventListener('click', function () { if (bgOn && vplay && vplay.el) playOn(vplay.el); });
-  document.getElementById('fabprev').addEventListener('click', function () { if (bgOn) goDay(-flip()); });
+  // back and forward go as a swipe does: to the card on the left or the right (Play all, newest first: left is the day before)
+  document.getElementById('fabnext').addEventListener('click', function () { if (bgOn) goDay(1); });
+  document.getElementById('fabprev').addEventListener('click', function () { if (bgOn) goDay(-1); });
   window.addEventListener('resize', function () { if (bgOn) syncFloat(); });
   function fabSync() {
     bgDraw();
