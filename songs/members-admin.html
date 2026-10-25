@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
-<title>Members</title>
-<style id="admin-gate">html { visibility: hidden; } .in-admin .keyrow { display: none !important; }</style>
+<title>Members · Song of the Day admin</title>
+<style id="admin-gate">html { visibility: hidden; }</style>
 <script>
 // Shown only inside the admin page (admin.html), once it has checked the password with the Worker; opened on its own
 // this page goes back there.
@@ -14,143 +14,54 @@
   try { ok = window.parent !== window && window.parent.SOTD_ADMIN_OK === true && /\/songs\/admin\.html$/.test(window.parent.location.pathname); } catch (e) {}
   if (!ok) { location.replace('/songs/admin.html#members'); return; }
   document.documentElement.classList.add('in-admin');
-  document.getElementById('admin-gate').textContent = '.in-admin .keyrow { display: none !important; }';
+  document.getElementById('admin-gate').textContent = '';
 })();
 </script>
 <link rel="icon" type="image/png" sizes="96x96" href="/songs/favicon-96.png?v=4">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..600&family=Hanken+Grotesk:wght@400;500;600&display=swap">
+<meta name="theme-color" content="#ec135b">
+<script src="admin-theme.js"></script>
+<link rel="stylesheet" href="admin.css">
 <style>
-:root {
-  --bg: #fffaf5; --fg: #1b1020; --fg-2: rgba(27, 16, 32, .9); --muted: rgba(27, 16, 32, .66);
-  --line: rgba(27, 16, 32, .16); --chip: rgba(27, 16, 32, .05); --accent: #ec1a13; --on-accent: #fffaf5;
-  --warn: #b4235b; --ok: #1d7a4d; --field: #fff;
-  --serif: "Newsreader", "Iowan Old Style", Georgia, serif;
-  --sans: "Hanken Grotesk", "Helvetica Neue", Arial, sans-serif;
-  color-scheme: light;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #160c18; --fg: #fffaf5; --fg-2: rgba(255, 250, 245, .9); --muted: rgba(255, 250, 245, .66);
-    --line: rgba(255, 250, 245, .18); --chip: rgba(255, 250, 245, .06); --accent: #ff5a3d; --on-accent: #160c18;
-    --warn: #ff7aa8; --ok: #5fd39a; --field: #1f1422; color-scheme: dark;
-  }
-}
-* { box-sizing: border-box; }
-html, body { margin: 0; }
-body { background: var(--bg); color: var(--fg-2); font-family: var(--sans); font-size: 15px; line-height: 1.45; }
-.wrap { max-width: 980px; margin: 0 auto; padding: 0 16px 120px; }
-header.top { border-bottom: 1px solid var(--line); padding: 18px 0 14px; display: grid; gap: 10px; }
-h1 { margin: 0; font-family: var(--serif); font-weight: 500; font-size: clamp(28px, 6vw, 40px); line-height: 1; color: var(--fg); }
-h1 em { font-style: italic; font-weight: 400; color: var(--muted); }
-h2 { margin: 28px 0 6px; font: 600 12px/1.2 var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
-.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-a.btn { text-decoration: none; display: inline-block; }
-.btn { border: 1px solid var(--line); background: var(--chip); color: var(--fg); border-radius: 999px; padding: 8px 14px; font: 600 12px/1.2 var(--sans); letter-spacing: .08em; text-transform: uppercase; cursor: pointer; }
-.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
-.btn.small { padding: 5px 10px; font-size: 11px; }
-.btn:disabled { opacity: .45; cursor: default; }
-input, select { font: 15px var(--sans); color: var(--fg); background: var(--field); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; min-width: 0; }
-input[type=password], input.name { flex: 1 1 160px; max-width: 260px; }
-input[type=search] { flex: 1 1 180px; }
-.stat { font-size: 13px; color: var(--muted); }
-.stat.good { color: var(--ok); } .stat.bad { color: var(--warn); }
-.help { margin: 8px 0; font-size: 14px; color: var(--muted); max-width: 70ch; }
-.help b { color: var(--fg-2); }
-ul.people { list-style: none; margin: 0; padding: 0; }
-.person { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--line); }
-.person .who { font-family: var(--serif); font-size: 20px; color: var(--fg); min-width: 8em; }
-.link { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; width: 100%; padding: 8px 10px; border-radius: 10px; background: var(--chip); border: 1px dashed var(--line); }
-.link code { font-size: 12.5px; overflow-wrap: anywhere; flex: 1 1 280px; }
-.link code.big { flex: 0 0 auto; font: 600 30px/1 ui-monospace, Menlo, monospace; letter-spacing: .12em; color: var(--fg); }
-ol.songs { list-style: none; margin: 0; padding: 0; }
-.song { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; gap: 4px 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); }
-.song img { width: 56px; height: 56px; border-radius: 5px; object-fit: cover; background: var(--chip); }
-.song .meta { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
-.song .t { font-family: var(--serif); font-size: 18px; line-height: 1.15; color: var(--fg); overflow-wrap: anywhere; }
-.song .a { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
-.have { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
-.pill { font: 600 10.5px/1.2 var(--sans); letter-spacing: .08em; text-transform: uppercase; padding: 4px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); background: none; cursor: pointer; }
-.pill.on { background: var(--ok); border-color: var(--ok); color: var(--on-accent); }
-.pill.own { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
-.bar { grid-column: 2 / -1; height: 4px; border-radius: 2px; background: var(--chip); overflow: hidden; }
-.bar i { display: block; height: 100%; width: 0; background: var(--accent); }
-table.match { width: 100%; border-collapse: collapse; font-size: 13.5px; }
-table.match td { padding: 6px 4px; border-bottom: 1px solid var(--line); vertical-align: top; }
-table.match td.f { color: var(--muted); overflow-wrap: anywhere; }
-table.match select { max-width: 100%; font-size: 13px; padding: 4px 6px; }
-.toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 10px 16px; border-radius: 18px; font-size: 14px; opacity: 0; transition: opacity .2s; pointer-events: none; max-width: calc(100vw - 32px); text-align: center; }
-.toast.show { opacity: 1; }
-/* the invitation (and the page's questions): its own pop-ups, never the browser's */
-dialog.pop { border: 0; padding: 0; width: min(480px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); overflow: auto; border-radius: 20px;
-  background: var(--bg); color: var(--fg-2); box-shadow: 0 30px 80px rgba(24, 8, 24, .45); }
-dialog.pop::backdrop { background: rgba(24, 8, 24, .35); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
-.pop-in { display: grid; gap: 14px; padding: 16px 18px 20px; }
-.pop-head { display: flex; justify-content: space-between; align-items: center; }
-.kicker { font: 600 11px/1.2 var(--sans); letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
-.x { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line); background: var(--chip); color: var(--fg); cursor: pointer; display: grid; place-items: center; }
-.x svg { width: 12px; height: 12px; }
-.pop h3 { margin: 0; font-family: var(--serif); font-weight: 500; font-size: 26px; line-height: 1.1; color: var(--fg); overflow-wrap: anywhere; }
-.pop p { margin: 0; font-size: 14px; color: var(--muted); }
-.invcard { position: relative; margin: 0; border-radius: 12px; overflow: hidden; background: var(--chip); aspect-ratio: 1200 / 630; }
+.people { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.person { padding: 14px 16px; display: grid; gap: 8px; }
+.person .who { font-family: var(--serif); font-weight: 500; font-size: 24px; line-height: 1.1; color: var(--fg); }
+.person .acts { display: flex; flex-wrap: wrap; gap: 6px; }
+.inviter { padding: 16px; display: grid; gap: 10px; }
+.inviter .row input { flex: 1 1 180px; }
+.link { display: grid; gap: 8px; padding: 12px; border-radius: 12px; background: var(--chip); border: 1px dashed var(--line); }
+.link code { font-size: 12.5px; overflow-wrap: anywhere; color: var(--fg); }
+.tvcode { font: 600 34px/1 ui-monospace, Menlo, monospace; letter-spacing: .14em; color: var(--fg); }
+.invcard { position: relative; margin: 0; border-radius: 12px; overflow: hidden; background: var(--tile); aspect-ratio: 1200 / 630; }
 .invcard img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .invcard img:not([src]) { visibility: hidden; }
 .invwait { position: absolute; inset: 0; display: grid; place-items: center; font-size: 13px; color: var(--muted); }
-.invwait[hidden] { display: none; }
-.invacts .btn.off { opacity: .45; pointer-events: none; }
-.invpic { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.pop textarea { width: 100%; min-height: 150px; resize: vertical; font: 400 16px/1.45 var(--serif); color: var(--fg); background: var(--field); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
-.invacts { display: flex; flex-wrap: wrap; gap: 8px; }
-.invacts .btn { display: inline-flex; align-items: center; gap: 7px; padding: 10px 14px; }
-.invacts .btn svg { width: 15px; height: 15px; }
-.invnote { font-size: 12.5px !important; }
-@media (max-width: 560px) {
-  dialog.pop { width: 100%; max-width: 100%; margin: auto 0 0; border-radius: 22px 22px 0 0; max-height: 92dvh; }
-  .pop-in { padding-bottom: max(20px, calc(env(safe-area-inset-bottom, 0px) + 12px)); }
-}
-[hidden] { display: none !important; }
-@media (max-width: 560px) { .song { grid-template-columns: 48px minmax(0, 1fr); } .song img { width: 48px; height: 48px; } .have { grid-column: 1 / -1; justify-content: flex-start; } }
+.invpic, .invacts { display: flex; flex-wrap: wrap; gap: 8px; }
 </style>
 </head>
 <body>
+<div class="glow" aria-hidden="true"></div>
 <div class="wrap">
   <header class="top">
     <h1>Members</h1>
-    <div class="row keyrow">
-      <input type="password" id="key" placeholder="Admin password" autocomplete="current-password" aria-label="Admin password">
-      <button class="btn" id="keysave" type="button">Use password</button>
-      <span class="stat" id="keystat"></span>
-    </div>
-    <div class="row"><span class="stat" id="stat">Loading…</span></div>
+    <p class="sub" id="stat">Loading…</p>
+    <p class="help">Members hear your own recording of each song and see your own videos (added on the Songs tab), and can save their playlists. Invite someone and send them the invitation: opening it signs that phone or computer in (up to 5 devices, within 30 days). For a Fire TV or an iPhone Home Screen icon, use <b>Code</b>: six letters to type in once, within 30 minutes (on the TV: ≡ → Sign in; on the Home Screen icon: Sign in at the top).</p>
   </header>
-
-  <h2>People</h2>
-  <p class="help">Add someone and send them the link it gives. Opening it signs that phone or computer in (up to 5 devices, within 30 days); after that they hear the whole song and see your video where you've added one. For a Fire TV or an iPhone Home Screen icon (which keeps its own storage, apart from Safari), use <b>Code</b>: six letters to type in, once, within 30 minutes: on the TV in the app's ≡ menu → Sign in; on the Home Screen icon, Sign in at the top. <b>Remove</b> signs all their devices out. <b>New link</b> gives a fresh one (the old one stops working).</p>
-  <div class="row">
-    <input class="name" id="newname" placeholder="Their name" autocomplete="off" aria-label="Their name">
-    <button class="btn primary" id="invite" type="button">Invite</button>
+  <div class="card inviter">
+    <div class="kicker">Invite someone</div>
+    <div class="row">
+      <input class="name" id="newname" placeholder="Their name" autocomplete="off" aria-label="Their name">
+      <button class="btn primary" id="invite" type="button">Invite</button>
+    </div>
+    <div class="link" id="newlink" hidden><code id="linktext"></code><div class="row"><button class="btn small" id="copy" type="button">Copy the link</button><button class="btn small primary" id="share" type="button">Send the invitation…</button></div></div>
+    <div class="link" id="tvbox" hidden><span class="stat">For <b id="tvfor"></b>, once, within <span id="tvmins"></span> minutes:</span><span class="tvcode" id="tvcode"></span></div>
   </div>
-  <div class="link" id="newlink" hidden><code id="linktext"></code><button class="btn small" id="copy" type="button">Copy</button><button class="btn small primary" id="share" type="button">Send invitation…</button></div>
-  <div class="link" id="tvbox" hidden><span class="stat">For <b id="tvfor"></b>: on the Fire TV, Song of the Day → ≡ → Sign in; on the Home Screen icon, Sign in at the top. Type</span><code id="tvcode" class="big"></code><span class="stat">(once, within <span id="tvmins"></span> minutes)</span></div>
+  <div class="top" style="padding-bottom:4px"><div class="kicker" style="color:var(--ink-2)">People</div></div>
   <ul class="people" id="people"></ul>
-
-  <h2>Songs, videos and sharing pictures</h2>
-  <p class="help">Your own recording of each song (<b>MP3</b>) and video (<b>MP4</b>) plays for members instead of the preview and YouTube; anyone else, and any day without one, gets the preview and YouTube as before. <b>Picture</b> sets your own picture for the day's sharing link (the album cover until you do; the link's card is remade within a few minutes).
-  To add many at once, choose the folder they're in: each file is matched to its day by its name (best as <i>Artist - Title.mp3</i>); check the matches, then upload.</p>
-  <div class="row">
-    <label class="btn" for="folder">Choose folder…</label>
-    <input type="file" id="folder" webkitdirectory multiple hidden>
-    <input type="search" id="q" placeholder="Find a song or artist" autocomplete="off" aria-label="Find a song or artist">
-    <select id="filter" aria-label="Show"><option value="">All days</option><option value="none">No song yet</option><option value="novid">No video yet</option><option value="has">With files</option><option value="own">Own picture</option></select>
-  </div>
-  <div id="matchbox" hidden>
-    <table class="match"><tbody id="matches"></tbody></table>
-    <div class="row" style="margin-top:8px"><button class="btn primary" id="upall" type="button">Upload</button><button class="btn" id="cancel" type="button">Cancel</button><span class="stat" id="upstat"></span></div>
-  </div>
-  <ol class="songs" id="songs"></ol>
+  <p class="empty" id="nobody" hidden>Nobody yet.</p>
 </div>
-<input type="file" id="one" hidden>
 <dialog class="pop" id="invdlg" aria-labelledby="invh">
   <div class="pop-in">
     <div class="pop-head"><span class="kicker">Share</span><button class="x" id="invx" type="button" aria-label="Close"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 2l10 10M12 2 2 12"/></svg></button></div>
@@ -199,15 +110,7 @@ dialog.pop::backdrop { background: rgba(24, 8, 24, .35); -webkit-backdrop-filter
       return r.json().catch(function () { return {}; }).then(function (j) { j.status = r.status; if (r.status === 401) keyStat(false); if (r.status >= 400 && !j.error) j.error = 'The Worker answered ' + r.status; return j; });
     });
   }
-  function keyStat(ok, msg) {
-    if (!ok) { try { if (window.parent.SOTD_ADMIN_LOCK) { window.parent.SOTD_ADMIN_LOCK(); return; } } catch (e) {} }
-    var k = $('keystat'); k.textContent = msg || (ok ? 'Password works' : 'Wrong password'); k.className = 'stat ' + (ok ? 'good' : 'bad'); }
-  $('keysave').addEventListener('click', function () {
-    var v = $('key').value.trim(); if (!v) return;
-    store(KEYS, v); $('key').value = '';
-    refresh().then(function (ok) { if (ok) keyStat(true); });
-  });
-  $('key').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('keysave').click(); });
+  function keyStat(ok) { if (!ok) { try { if (window.parent.SOTD_ADMIN_LOCK) window.parent.SOTD_ADMIN_LOCK(); } catch (e) {} } }
 
   // ---- the songs and their days, as the calendar works them out ----
   var SONGS = [], CAT = {}, COVERS = {}, MEMBERS = [];
@@ -225,20 +128,21 @@ dialog.pop::backdrop { background: rgba(24, 8, 24, .35); -webkit-backdrop-filter
 
   function refresh() {
     if (!key()) { $('stat').textContent = 'Type the admin password at the top.'; return Promise.resolve(false); }
-    return Promise.all([api('/members/admin', { op: 'list' }), fetch(WORKER + '/covers.json').then(function (r) { return r.json(); }).catch(function () { return {}; })]).then(function (got) {
-      var j = got[0];
+    return api('/members/admin', { op: 'list' }).then(function (j) {
       if (j.status !== 200) { $('stat').textContent = j.error || 'Couldn’t reach the Worker'; return false; }
-      MEMBERS = j.members || []; CAT = j.catalog || {}; COVERS = got[1] || {};
-      if (!j.media) $('stat').textContent = 'The Worker has no R2 bucket yet (MEDIA): members can be invited, but files can’t be added until it has.';
-      people(); render(); return true;
+      MEMBERS = j.members || [];
+      people(); return true;
     }).catch(function () { $('stat').textContent = 'Couldn’t reach the Worker'; return false; });
   }
 
   // ---- people ----
   function people() {
     var ul = $('people'); ul.innerHTML = '';
+    var on = MEMBERS.filter(function (m) { return m.devices; }).length;
+    $('stat').textContent = MEMBERS.length ? MEMBERS.length + (MEMBERS.length === 1 ? ' member' : ' members') + ' · ' + on + ' signed in' : 'Nobody invited yet';
+    $('nobody').hidden = MEMBERS.length > 0;
     MEMBERS.forEach(function (m) {
-      var li = document.createElement('li'); li.className = 'person';
+      var li = document.createElement('li'); li.className = 'card person';
       var who = document.createElement('span'); who.className = 'who'; who.textContent = m.name;
       var st = document.createElement('span'); st.className = 'stat';
       st.textContent = (m.devices ? m.devices + (m.devices === 1 ? ' device' : ' devices') : 'not signed in yet') + (m.seen ? ' · last here ' + new Date(m.seen).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '')
@@ -249,7 +153,8 @@ dialog.pop::backdrop { background: rgba(24, 8, 24, .35); -webkit-backdrop-filter
         $('tvcode').textContent = j.code.slice(0, 3) + ' ' + j.code.slice(3); $('tvfor').textContent = j.name; $('tvmins').textContent = j.minutes; $('tvbox').hidden = false;
       }); });
       var rm = button('Remove', function () { ask('Members', 'Remove ' + m.name + '?', 'All their devices are signed out, and their saved playlists go.', 'Remove').then(function (yes) { if (!yes) return; api('/members/admin', { op: 'remove', id: m.id }).then(function (j) { if (j.members) { MEMBERS = j.members; people(); toast(m.name + ' removed'); } }); }); });
-      li.appendChild(who); li.appendChild(st); li.appendChild(nl); li.appendChild(tv); li.appendChild(rm); ul.appendChild(li);
+      var acts = document.createElement('div'); acts.className = 'acts'; acts.appendChild(nl); acts.appendChild(tv); acts.appendChild(rm);
+      li.appendChild(who); li.appendChild(st); li.appendChild(acts); ul.appendChild(li);
     });
   }
   function button(label, fn) { var b = document.createElement('button'); b.type = 'button'; b.className = 'btn small'; b.textContent = label; b.addEventListener('click', fn); return b; }
@@ -462,163 +367,10 @@ dialog.pop::backdrop { background: rgba(24, 8, 24, .35); -webkit-backdrop-filter
   $('copy').addEventListener('click', function () { navigator.clipboard.writeText($('linktext').textContent).then(function () { toast('Link copied'); }); });
   $('share').addEventListener('click', invOpen);
 
-  // ---- songs ----
-  function render() {
-    var ol = $('songs'), q = $('q').value.trim().toLowerCase(), f = $('filter').value;
-    ol.innerHTML = '';
-    var n = 0, files = 0, bytes = 0;
-    Object.keys(CAT).forEach(function (t) { var e = CAT[t]; if (e.a) { files++; bytes += e.a; } if (e.v) { files++; bytes += e.v; } });
-    SONGS.slice().reverse().forEach(function (s) {
-      var e = CAT[s.id] || {};
-      if (q && (s.title + ' ' + s.artist).toLowerCase().indexOf(q) < 0) return;
-      if (f === 'none' && e.a) return; if (f === 'novid' && e.v) return; if (f === 'has' && !e.a && !e.v) return; if (f === 'own' && !COVERS[s.id]) return;
-      if (++n > 400) return;
-      var li = document.createElement('li'); li.className = 'song'; li.id = 's-' + s.id;
-      var img = document.createElement('img'); img.alt = ''; img.loading = 'lazy';
-      img.src = COVERS[s.id] ? WORKER + '/c/' + s.id + '?v=' + encodeURIComponent(COVERS[s.id].at) : (s.img || '');
-      var mid = document.createElement('div');
-      mid.innerHTML = '<div class="meta"></div><div class="t"></div><div class="a"></div>';
-      mid.children[0].textContent = longDay(s.d); mid.children[1].textContent = s.title; mid.children[2].textContent = s.artist;
-      var have = document.createElement('div'); have.className = 'have';
-      have.appendChild(pill(e.a ? 'MP3 ' + mb(e.a) : 'Add MP3', !!e.a, function () { pick(s, 'a'); }, e.a && function () { drop(s, 'a'); }));
-      have.appendChild(pill(e.v ? 'MP4 ' + mb(e.v) : 'Add MP4', !!e.v, function () { pick(s, 'v'); }, e.v && function () { drop(s, 'v'); }));
-      var pic = pill(COVERS[s.id] ? 'Own picture' : 'Picture', false, function () { pick(s, 'c'); }, COVERS[s.id] && function () { unpicture(s); });
-      if (COVERS[s.id]) pic.firstChild.classList.add('own');
-      have.appendChild(pic);
-      var bar = document.createElement('div'); bar.className = 'bar'; bar.hidden = true; bar.innerHTML = '<i></i>';
-      li.appendChild(img); li.appendChild(mid); li.appendChild(have); li.appendChild(bar); ol.appendChild(li);
-    });
-    $('stat').textContent = SONGS.length + ' days · ' + files + ' files (' + mb(bytes) + ') · ' + Object.keys(COVERS).length + ' own pictures · ' + MEMBERS.length + (MEMBERS.length === 1 ? ' member' : ' members');
-  }
-  // a pill: press to add (or replace) the file; with one there, ✕ beside it takes it away
-  function pill(label, on, add, remove) {
-    var w = document.createElement('span'), b = document.createElement('button');
-    b.type = 'button'; b.className = 'pill' + (on ? ' on' : ''); b.textContent = label; b.title = on ? 'Replace it' : 'Add it';
-    b.addEventListener('click', add); w.appendChild(b);
-    if (remove) {
-      var x = document.createElement('button'); x.type = 'button'; x.className = 'pill'; x.textContent = '✕'; x.title = 'Take it away'; x.setAttribute('aria-label', 'Take ' + label + ' away');
-      x.addEventListener('click', function () { ask('Songs', 'Take it away?', '', 'Take it away').then(function (yes) { if (yes) remove(); }); });
-      w.appendChild(x);
-    }
-    return w;
-  }
-  $('q').addEventListener('input', render); $('filter').addEventListener('change', render);
-  var picking = null;
-  function pick(s, kind) {
-    picking = { s: s, kind: kind };
-    var one = $('one'); one.value = '';
-    one.accept = kind === 'a' ? 'audio/mpeg,.mp3' : kind === 'v' ? 'video/mp4,.mp4,.m4v' : 'image/jpeg,image/png,image/webp';
-    one.click();
-  }
-  $('one').addEventListener('change', function () {
-    var f = this.files[0], p = picking; if (!f || !p) return;
-    if (p.kind === 'c') { picture(p.s, f); return; }
-    upload(p.s, p.kind, f).then(function (ok) { if (ok) { toast('Added'); render(); } });
-  });
-  function drop(s, kind) {
-    api('/members/admin', { op: 'delete', key: kind + '/' + s.id + (kind === 'a' ? '.mp3' : '.mp4') }).then(function (j) {
-      if (j.ok) { var e = CAT[s.id] || {}; delete e[kind]; toast('Taken away'); render(); } else toast(j.error || 'Couldn’t take it away');
-    });
-  }
-  function picture(s, f) {
-    if (!/^image\/(jpeg|png|webp)$/.test(f.type)) { toast('A JPEG, PNG or WebP picture, please'); return; }
-    api('/members/cover?track=' + s.id, f, true, f.type).then(function (j) {
-      if (j.ok) { COVERS = j.covers; render(); toast('Picture set: the sharing card is remade in a few minutes'); } else toast(j.error || 'Couldn’t set it');
-    });
-  }
-  function unpicture(s) {
-    api('/members/cover?track=' + s.id + '&op=remove', null, true).then(function (j) { if (j.ok) { COVERS = j.covers; render(); toast('Album cover back'); } else toast(j.error || 'Couldn’t'); });
-  }
-
-  // ---- sending a file up, in parts (the Worker takes up to 100 MB at a time) ----
-  function upload(s, kind, f, onPart) {
-    var k = kind + '/' + s.id + (kind === 'a' ? '.mp3' : '.mp4'), li = $('s-' + s.id), bar = li && li.querySelector('.bar');
-    if (bar) { bar.hidden = false; bar.firstChild.style.width = '0%'; }
-    var parts = [], n = Math.max(1, Math.ceil(f.size / PART)), id;
-    function part(i) {
-      if (i > n) return api('/members/upload?op=done&key=' + k + '&uploadId=' + encodeURIComponent(id), { parts: parts });
-      return api('/members/upload?op=part&key=' + k + '&uploadId=' + encodeURIComponent(id) + '&n=' + i, f.slice((i - 1) * PART, Math.min(f.size, i * PART)), true).then(function (j) {
-        if (!j.etag) throw new Error(j.error || 'a part didn’t go');
-        parts.push({ partNumber: j.partNumber, etag: j.etag });
-        if (bar) bar.firstChild.style.width = Math.round(100 * i / n) + '%';
-        if (onPart) onPart(i / n);
-        return part(i + 1);
-      });
-    }
-    return api('/members/upload?op=start&key=' + k).then(function (j) {
-      if (!j.uploadId) throw new Error(j.error || 'couldn’t start');
-      id = j.uploadId; return part(1);
-    }).then(function (j) {
-      if (!j.ok) throw new Error(j.error || 'couldn’t finish');
-      (CAT[s.id] = CAT[s.id] || {})[kind] = j.size;
-      if (bar) bar.hidden = true;
-      return true;
-    }).catch(function (e) {
-      if (id) api('/members/upload?op=abort&key=' + k + '&uploadId=' + encodeURIComponent(id));
-      if (bar) bar.hidden = true;
-      toast(s.title + ': ' + e.message); return false;
-    });
-  }
-
-  // ---- a whole folder: each file matched to its day by name ----
-  function norm(x) {
-    return String(x).normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase()
-      .replace(/\.(mp3|mp4|m4v|m4a)$/, '').replace(/[\(\[][^\)\]]*(remaster|version|edit|mix|live|official|video|audio|lyric|hd|4k)[^\)\]]*[\)\]]/g, ' ')
-      .replace(/\b(feat|ft|featuring)\b.*$/, ' ').replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, ' ').replace(/\b(the|a|an)\b/g, ' ').replace(/\s+/g, ' ').trim();
-  }
-  function words(x) { return norm(x).split(' ').filter(Boolean); }
-  function score(name, s) {   // how well a file's name fits a song: its title's words and its artist's, both needed
-    var fw = words(name), set = {}; fw.forEach(function (w) { set[w] = 1; });
-    var tw = words(s.title), aw = words(s.artist);
-    if (!tw.length) return 0;
-    var t = tw.filter(function (w) { return set[w]; }).length / tw.length, a = aw.length ? aw.filter(function (w) { return set[w]; }).length / aw.length : 0;
-    var extra = fw.length - tw.length - aw.length;
-    return t * 0.65 + a * 0.35 - Math.max(0, extra) * 0.02 + (norm(name).indexOf(norm(s.title)) >= 0 ? 0.05 : 0);
-  }
-  var PLAN = [];
-  $('folder').addEventListener('change', function () {
-    var files = [].filter.call(this.files, function (f) { return /\.(mp3|mp4|m4v)$/i.test(f.name) && f.name.charAt(0) !== '.'; });
-    PLAN = files.map(function (f) {
-      var kind = /\.mp3$/i.test(f.name) ? 'a' : 'v', idm = /([0-9A-Za-z]{22})\.(mp3|mp4|m4v)$/.exec(f.name), best = null, bs = 0;
-      if (idm && SONGS.some(function (s) { return s.id === idm[1]; })) { best = SONGS.filter(function (s) { return s.id === idm[1]; })[0]; bs = 1; }
-      else SONGS.forEach(function (s) { var sc = score(f.name, s); if (sc > bs) { bs = sc; best = s; } });
-      return { f: f, kind: kind, s: bs >= 0.6 ? best : null, sure: bs >= 0.85 };
-    }).sort(function (x, y) { return (x.s ? 1 : 0) - (y.s ? 1 : 0) || x.f.name.localeCompare(y.f.name); });
-    var tb = $('matches'); tb.innerHTML = '';
-    PLAN.forEach(function (p, i) {
-      var tr = document.createElement('tr'), a = document.createElement('td'), b = document.createElement('td'), c = document.createElement('td');
-      a.className = 'f'; a.textContent = p.f.name + ' · ' + mb(p.f.size);
-      var sel = document.createElement('select');
-      sel.innerHTML = '<option value="">— not matched: pick its day, or leave it —</option>';
-      SONGS.slice().reverse().forEach(function (s) { var o = document.createElement('option'); o.value = s.id; o.textContent = longDay(s.d) + ' · ' + s.title + ' — ' + s.artist; if (p.s && p.s.id === s.id) o.selected = true; sel.appendChild(o); });
-      sel.addEventListener('change', function () { p.s = SONGS.filter(function (s) { return s.id === sel.value; })[0] || null; p.sure = true; count(); });
-      b.appendChild(sel);
-      var e = p.s && CAT[p.s.id] && CAT[p.s.id][p.kind];
-      c.className = 'stat'; c.textContent = (p.kind === 'a' ? 'song' : 'video') + (p.s && !p.sure ? ' · check' : '') + (e ? ' · replaces ' + mb(e) : '');
-      tr.appendChild(a); tr.appendChild(b); tr.appendChild(c); tb.appendChild(tr);
-    });
-    $('matchbox').hidden = !PLAN.length; count();
-    if (!PLAN.length) toast('No MP3 or MP4 files in that folder');
-  });
-  function count() { var n = PLAN.filter(function (p) { return p.s; }).length; $('upall').textContent = 'Upload ' + n + ' file' + (n === 1 ? '' : 's'); $('upall').disabled = !n; }
-  $('cancel').addEventListener('click', function () { PLAN = []; $('matchbox').hidden = true; $('folder').value = ''; });
-  $('upall').addEventListener('click', function () {
-    var todo = PLAN.filter(function (p) { return p.s; }), done = 0, failed = 0, i = 0, total = todo.reduce(function (t, p) { return t + p.f.size; }, 0), sent = 0;
-    $('upall').disabled = true;
-    (function next() {
-      if (i >= todo.length) { $('upstat').textContent = done + ' uploaded' + (failed ? ', ' + failed + ' failed (try them again)' : ''); $('upall').disabled = false; render(); return; }
-      var p = todo[i++];
-      $('upstat').textContent = 'Uploading ' + i + ' of ' + todo.length + ': ' + p.f.name + ' (' + Math.round(100 * sent / total) + '% of ' + mb(total) + ')';
-      upload(p.s, p.kind, p.f, function (fr) { $('upstat').textContent = 'Uploading ' + i + ' of ' + todo.length + ': ' + p.f.name + ' (' + Math.round(100 * (sent + fr * p.f.size) / total) + '% of ' + mb(total) + ')'; })
-        .then(function (ok) { if (ok) done++; else failed++; sent += p.f.size; next(); });
-    })();
-  });
-
   fetch(WORKER + '/songs.json').then(function (r) { return r.json(); }).then(function (j) {
     SONGS = withDays((j.songs || []).map(function (x) { return { id: x.id, title: x.title, artist: x.artist, img: x.img, a: x.a }; }));
-    if (!key()) { $('stat').textContent = 'Type the admin password at the top.'; render(); return; }
-    refresh();
-  }).catch(function () { $('stat').textContent = 'Couldn’t get the songs from the Worker'; });
+  }).catch(function () {});
+  refresh();
 })();
 </script>
 </body>

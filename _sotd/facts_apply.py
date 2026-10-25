@@ -13,7 +13,7 @@ Files:
     songs/facts.json                 live: the facts the calendar shows (signed off by John, from before sign-off began,
                                      or checked and waiting for him: those go live straight away, with the song's day)
     _sotd/data/facts-pending.json    written and checked, waiting for John: each fact with its source and supporting words
-    songs/facts-pending.json         the same, for the sign-off page (songs/facts-admin.html)
+    songs/facts-pending.json         the same, for the sign-off page (the Songs tab of songs/admin.html)
     songs/draft/facts.json           live with the waiting ones on top, for the draft calendar (songs/draft/)
     _sotd/data/facts-quotes.json     each written fact's supporting words from its source (fact text: words), kept when
     songs/facts-quotes.json          it goes live, for the sign-off page's "Supporting words"
@@ -130,7 +130,7 @@ def tags_and_videos(news):
 def main(offline, promote=()):
     live = load(LIVE, {'src': [], 'songs': {}, 'artists': {}})
     pending = load(PENDING, {'songs': {}})
-    pending['about'] = ('Song facts written and checked, waiting for John to sign them off on songs/facts-admin.html. '
+    pending['about'] = ('Song facts written and checked, waiting for John to sign them off on the Songs tab of songs/admin.html. '
                         'Each fact: t the fact, u and src its source, q the words in the source that back it.')
     applied = []
     quotes = load(QUOTES, {})

@@ -2,7 +2,7 @@
 
 A new song is held back from the live calendar, the share pages and the YouTube playlist until its facts are written
 and checked (John, 24 Oct 2026: it can go live before he signs them off; he checks and edits them afterwards on
-songs/facts-admin.html). By then song-tags.yml has looked for its video too: the same run that saves the sources the
+the Songs tab of songs/admin.html). By then song-tags.yml has looked for its video too: the same run that saves the sources the
 facts are written from. A song is out once it's in songs/facts.json, where facts_apply.py puts checked facts straight
 away. The draft calendar (songs/draft/) shows every song, out or not.
 """

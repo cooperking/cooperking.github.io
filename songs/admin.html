@@ -10,53 +10,41 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..600&family=Hanken+Grotesk:wght@400;500;600&display=swap">
+<meta name="theme-color" content="#ec135b">
+<script src="admin-theme.js"></script>
+<link rel="stylesheet" href="admin.css">
 <style>
-:root {
-  --bg: #fffaf5; --fg: #1b1020; --fg-2: rgba(27, 16, 32, .9); --muted: rgba(27, 16, 32, .66);
-  --line: rgba(27, 16, 32, .16); --chip: rgba(27, 16, 32, .05); --accent: #ec135b; --on-accent: #fffaf5;
-  --warn: #b4235b; --ok: #1d7a4d; --field: #fff;
-  --serif: "Newsreader", "Iowan Old Style", Georgia, serif;
-  --sans: "Hanken Grotesk", "Helvetica Neue", Arial, sans-serif;
-  color-scheme: light;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #160c18; --fg: #fffaf5; --fg-2: rgba(255, 250, 245, .9); --muted: rgba(255, 250, 245, .66);
-    --line: rgba(255, 250, 245, .18); --chip: rgba(255, 250, 245, .06); --accent: #ff3d7f; --on-accent: #160c18;
-    --warn: #ff7aa8; --ok: #5fd39a; --field: #1f1422; color-scheme: dark;
-  }
-}
-* { box-sizing: border-box; }
-html, body { margin: 0; height: 100%; }
-body { background: var(--bg); color: var(--fg-2); font-family: var(--sans); font-size: 15px; line-height: 1.45; }
-[hidden] { display: none !important; }
-.btn { border: 1px solid var(--line); background: var(--chip); color: var(--fg); border-radius: 999px; padding: 8px 14px; font: 600 12px/1.2 var(--sans); letter-spacing: .08em; text-transform: uppercase; cursor: pointer; }
-.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
-.btn:disabled { opacity: .45; cursor: default; }
-input[type=password] { font: 400 16px/1.2 var(--sans); padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--field); color: var(--fg); width: 100%; }
-/* the password screen */
-.gate { min-height: 100%; display: grid; place-items: center; padding: 24px 16px; }
-.gate form { width: 100%; max-width: 340px; display: grid; gap: 12px; }
-h1 { margin: 0; font-family: var(--serif); font-weight: 500; font-size: clamp(30px, 7vw, 40px); line-height: 1; color: var(--fg); }
-h1 em { font-style: italic; font-weight: 400; color: var(--muted); }
-.stat { font-size: 13px; color: var(--muted); min-height: 1.3em; }
-.stat.bad { color: var(--warn); }
-/* the admin page itself */
-.app { height: 100%; display: flex; flex-direction: column; }
-.bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px 16px; border-bottom: 1px solid var(--line); }
-.bar .name { font-family: var(--serif); font-size: 20px; color: var(--fg); margin-right: auto; }
-.tabs { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 3px; background: var(--chip); }
-.tabs button { border: 0; background: none; padding: 7px 14px; border-radius: 999px; font: 600 12.5px/1.2 var(--sans); color: var(--muted); cursor: pointer; }
-.tabs button[aria-selected="true"] { background: var(--fg); color: var(--bg); }
+html, body { height: 100%; }
+body { overflow: hidden; }
+/* the password screen: a white card on the month's colours */
+.gate { position: relative; z-index: 1; min-height: 100%; display: grid; place-items: center; padding: 24px 16px; }
+.gate form { width: 100%; max-width: 380px; padding: 22px 20px 20px; display: grid; gap: 12px; }
+.gate h2 { font-size: 34px; }
+.gate h2 em { font-style: italic; font-weight: 400; }
+.gate input[type=password] { width: 100%; border: 1px solid var(--line); background: var(--field); color: var(--fg); border-radius: 12px; padding: 12px 14px; font: 16px var(--sans); }
+.gate input:focus { outline: 1.5px solid var(--fg); outline-offset: 1px; }
+.gate .btn { padding: 12px 18px; }
+/* signed in: the bar along the top, as the calendar's, and the tab under it */
+.app { position: relative; z-index: 1; height: 100%; display: flex; flex-direction: column; }
+.bar { margin: max(10px, env(safe-area-inset-top, 0px)) 12px 0; display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 18px; border-radius: 999px; background: var(--glass-2); border: 1px solid var(--glass-line); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+.bar .name { font-family: var(--serif); font-weight: 500; font-size: 18px; color: var(--ink); margin-right: auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.bar .name em { font-style: italic; font-weight: 400; color: var(--ink-2); }
+.tabs { display: inline-flex; gap: 2px; padding: 3px; border-radius: 999px; background: var(--glass); }
+.tabs button { border: 0; background: none; padding: 8px 14px; border-radius: 999px; font: 600 11.5px/1.2 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-2); cursor: pointer; }
+.tabs button[aria-selected="true"] { background: var(--ink); color: var(--fg); }
+.out { width: 38px; height: 38px; flex: none; border-radius: 50%; border: 1px solid var(--glass-line); background: var(--glass); color: var(--ink); display: grid; place-items: center; cursor: pointer; }
+.out svg { width: 16px; height: 16px; }
 .panes { flex: 1; position: relative; min-height: 0; }
-.panes iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: var(--bg); }
-@media (max-width: 520px) { .bar .name { flex-basis: 100%; } .tabs { flex: 1; } .tabs button { flex: 1; padding: 7px 8px; } }
+.panes iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: transparent; }
+@media (max-width: 480px) { .bar .name em { display: none; } .tabs button { padding: 8px 11px; } .bar { padding-left: 14px; } }
 </style>
 </head>
 <body>
+<div class="glow" aria-hidden="true"></div>
 <div class="gate" id="gate">
-  <form id="login" autocomplete="on">
-    <h1>Admin <em>Song of the Day</em></h1>
+  <form class="card" id="login" autocomplete="on">
+    <div class="kicker">John’s Song of the Day</div>
+    <h2>Admin</h2>
     <input type="text" name="username" value="John" autocomplete="username" hidden>
     <input type="password" id="pw" placeholder="Password" autocomplete="current-password" aria-label="Password" required>
     <button class="btn primary" id="go" type="submit">Open</button>
@@ -65,24 +53,23 @@ h1 em { font-style: italic; font-weight: 400; color: var(--muted); }
 </div>
 <div class="app" id="app" hidden>
   <div class="bar">
-    <span class="name">Song of the Day admin</span>
+    <span class="name">Admin <em>Song of the Day</em></span>
     <div class="tabs" role="tablist">
-      <button type="button" role="tab" data-tab="facts" aria-selected="false">Facts</button>
-      <button type="button" role="tab" data-tab="moods" aria-selected="false">Moods</button>
+      <button type="button" role="tab" data-tab="songs" aria-selected="false">Songs</button>
       <button type="button" role="tab" data-tab="members" aria-selected="false">Members</button>
     </div>
-    <button class="btn" id="out" type="button">Sign out</button>
+    <button class="out" id="out" type="button" aria-label="Sign out" title="Sign out"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 2.5h-3v11h3M10 5l3 3-3 3M13 8H6"/></svg></button>
   </div>
   <div class="panes" id="panes"></div>
 </div>
 <script>
 (function () {
   // Nothing of the admin side shows until the Worker accepts the password (the same ADMIN_KEY the facts and members
-  // parts use). The parts (facts-admin.html, moods-admin.html, members-admin.html) only show inside this page, once
+  // parts use). The parts (songs-admin.html, members-admin.html) only show inside this page, once
   // it has said the password is right (window.SOTD_ADMIN_OK); opened on their own they come back here.
   var WORKER = 'https://sotd-playlists.cooperking.workers.dev';
   var KEYS = 'sotd-admin-key';
-  var PAGES = { facts: 'facts-admin.html', moods: 'moods-admin.html', members: 'members-admin.html' };
+  var PAGES = { songs: 'songs-admin.html', members: 'members-admin.html' };
   var frames = {}, $ = function (id) { return document.getElementById(id); };
   function read() { try { return localStorage.getItem(KEYS) || ''; } catch (e) { return ''; } }
   function store(v) { try { if (v) localStorage.setItem(KEYS, v); else localStorage.removeItem(KEYS); } catch (e) {} }
@@ -92,7 +79,7 @@ h1 em { font-style: italic; font-weight: 400; color: var(--muted); }
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + pw }, body: '{"items":[]}' })
       .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { return { status: r.status, error: j.error }; }); });
   }
-  function tabNow() { var t = location.hash.slice(1); return PAGES[t] ? t : 'facts'; }
+  function tabNow() { var t = location.hash.slice(1); return PAGES[t] ? t : 'songs'; }   // (#facts and #moods, from before, open Songs)
   function show(tab) {
     if (!frames[tab]) {
       var f = document.createElement('iframe');

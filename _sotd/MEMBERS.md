@@ -10,13 +10,9 @@ he does).
 - **Files**: in a private Cloudflare R2 bucket, bound to the Worker (`sotd-playlists`) as `MEDIA`:
   `a/<track>.mp3` (the song), `v/<track>.mp4` (its video), `c/<track>` (a sharing picture). The site's repository is
   public, so none of them are in it.
-- **Members page**: the Members tab of `songs/admin.html` (the part page is `songs/members-admin.html`, which only shows inside it), after the admin password.
-  - Invite someone: it gives a link to the calendar ending `#join=…`; John sends it to them.
-  - Opening the link signs that device in, up to 5 devices within 30 days. *New link* makes a fresh one; *Remove* signs
-    all their devices out.
-  - Add files one by one, or choose a folder: each file is matched to its day by its name, best as
-    `Artist - Title.mp3`. A name ending in the Spotify track id (`…<22 characters>.mp3`) matches exactly.
-  - *Picture* sets a day's sharing picture; song-tags.yml then remakes that day's card (`share_pages.py`).
+- **Members page**: the Members tab of `songs/admin.html` (`songs/members-admin.html`), after the admin password: inviting,
+  codes and removing people. Each song's own recording, video and sharing picture are added on the Songs tab
+  (`songs/songs-admin.html`), with the rest of that song.
 - **The calendar** (`template.html`):
   - The device keeps its member token (`sotd-member` in local storage) and asks the Worker's `/members/me` for links to
     the files, signed for 12 hours.
@@ -80,7 +76,7 @@ Removing a member removes their saved playlists. Visitors keep the single My pla
 
 ## Adding the real files later
 
-Members page → *Choose folder…* → the folder with the MP3s and MP4s → check each match (fix any with its menu) →
+Songs tab of the admin page → *Upload a folder of songs…* → the folder with the MP3s and MP4s → check each match (fix any with its menu) →
 *Upload*. Files up to any size go up in 50 MB parts; one that's already there is replaced. Videos should be H.264 MP4
 (what phones, computers and the Fire TV all play).
 

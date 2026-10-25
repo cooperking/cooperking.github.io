@@ -1,6 +1,6 @@
 name: Song facts signed off
 
-# Puts what John has signed off on songs/facts-admin.html on the calendar: fetches it from the Cloudflare Worker,
+# Puts what John has signed off on the Songs tab of songs/admin.html on the calendar: fetches it from the Cloudflare Worker,
 # which starts this job each time he signs off, and updates songs/facts.json, the draft's copy and the list still
 # waiting. Where he changed a day's moods, genres or video, they go into his own files (john.json, john-videos.json)
 # and this job starts song-tags.yml to rebuild the calendar's moods and videos from them.

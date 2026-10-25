@@ -9,8 +9,8 @@ on the live calendar from then (John, 24 Oct 2026); John checks, edits and signs
   away (which brings the song out on the live calendar, the share pages and the YouTube playlist: `_sotd/released.py`),
   and replaces them with what John signs off.
 - `_sotd/data/facts-pending.json`: written and checked, waiting for John's sign-off (and live meanwhile). Shown on the
-  draft calendar and on the sign-off page (the Facts tab of `songs/admin.html`, behind the admin password; the part page
-  is `songs/facts-admin.html`, which only shows inside it), where he edits, removes, reorders, adds his own and
+  draft calendar and on the sign-off page (the Songs tab of `songs/admin.html`, behind the admin password; the part page
+  is `songs/songs-admin.html`, which only shows inside it), where he edits, removes, reorders, adds his own and
   signs off. The Cloudflare Worker keeps his sign-offs and starts `.github/workflows/facts.yml`, which runs
   `facts_apply.py` to put them live.
 - `_sotd/data/sources.json`: what the facts are written from first: the English Wikipedia articles on each song, album
