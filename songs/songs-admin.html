@@ -72,6 +72,12 @@
 .piccard { margin: 0; border-radius: 12px; overflow: hidden; background: var(--tile); aspect-ratio: 1200 / 630; position: relative; }
 .piccard img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .piccard .invwait { position: absolute; inset: 0; display: grid; place-items: center; font-size: 13px; color: var(--muted); }
+.covers { display: grid; gap: 8px; }
+.coverrow { display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 6px; border-radius: 12px; background: var(--chip); border: 1px solid var(--line); }
+.coverrow img { width: 48px; height: 48px; border-radius: 4px; object-fit: cover; display: block; background: var(--tile); }
+.coverrow .who { font-size: 13px; color: var(--fg); overflow-wrap: anywhere; }
+.coverrow .who small { display: block; color: var(--muted); font-size: 12px; }
+.coverrow .acts { display: flex; gap: 6px; }
 .upbar { height: 4px; border-radius: 4px; background: var(--chip); overflow: hidden; }
 .upbar i { display: block; height: 100%; width: 0; background: var(--fg); transition: width .2s; }
 .sfoot { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; padding-top: 16px; border-top: 1px solid var(--line); }
@@ -127,11 +133,13 @@
   <div class="pop-in">
     <div class="pop-head"><span class="kicker">Your cover · members only</span><button class="x" id="picx" type="button" aria-label="Close"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 2l10 10M12 2 2 12"/></svg></button></div>
     <figure class="piccard"><img id="picimg" alt="How the day’s link will look"><span class="invwait" id="picwait" hidden>Drawing…</span></figure>
-    <div><h3 id="pich"></h3><p id="pict">Members see your cover in place of the album’s, on the calendar and while it plays, and their shares of this day show this card. Everyone else keeps the album cover.</p></div>
+    <div><h3 id="pich"></h3><p id="pict">The members you choose see this cover in place of the album’s, on the calendar and while it plays, and their shares of this day show this card. A cover chosen for someone wins over one for all members; everyone else keeps the album cover.</p></div>
     <div class="row">
       <label class="btn" for="picfile">Choose picture…</label><input type="file" id="picfile" accept="image/*" hidden>
-      <button class="btn" id="picorig" type="button">Back to the album cover</button>
+      <button class="btn" id="picorig" type="button">Remove this cover</button>
     </div>
+    <div class="kicker">Who sees it</div>
+    <div class="chips" id="picwho"></div>
     <div class="row"><button class="btn primary" id="picsave" type="button">Save</button><button class="btn" id="picno" type="button">Cancel</button><span class="stat" id="picstat"></span></div>
   </div>
 </dialog>
@@ -156,7 +164,7 @@
   var PLAY = '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M4 2.5v11l9.5-5.5z"/></svg>', PAUSE = '<svg viewBox="0 0 16 16" fill="currentColor"><rect x="3.5" y="2.5" width="3" height="11"/><rect x="9.5" y="2.5" width="3" height="11"/></svg>';
   var CHEV = '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2.5 4.5 6 8l3.5-3.5"/></svg>';
   var songs = [], live = { src: [], songs: {}, artists: {} }, pending = { songs: {} }, signedW = {}, edits = {}, show = 'waiting', armed = false;
-  var TAGS = {}, VIDS = {}, QUOTES = {}, CAT = {}, COVERS = {}, OPEN = {}, DAYS = {}, media = true;
+  var TAGS = {}, VIDS = {}, QUOTES = {}, CAT = {}, COVERS = {}, MEMBERS = [], OPEN = {}, DAYS = {}, media = true;
   var list = document.getElementById('list'), audio = document.getElementById('audio'), playingBtn = null;
   function $(id) { return document.getElementById(id); }
   function store(k, v) { try { if (v === undefined) localStorage.removeItem(k); else localStorage.setItem(k, typeof v === 'string' ? v : JSON.stringify(v)); } catch (e) {} }
@@ -353,11 +361,20 @@
     var row = el('div', 'files');
     row.appendChild(fileBtn(e.a ? 'Song · ' + mb(e.a) : 'Add song (MP3)', !!e.a, function () { pick(s, 'a'); }, e.a && function () { drop(s, 'a'); }));
     row.appendChild(fileBtn(e.v ? 'Video · ' + mb(e.v) : 'Add video (MP4)', !!e.v, function () { pick(s, 'v'); }, e.v && function () { drop(s, 'v'); }));
-    var sp = el('span', 'file' + (COVERS[s.id] ? ' on' : '')), spb = el('button', null, COVERS[s.id] ? 'Your cover' : 'Add your cover'); spb.type = 'button';
-    spb.addEventListener('click', function () { picOpen(s); }); sp.appendChild(spb); row.appendChild(sp);
     sec.appendChild(row);
+    var cl = el('div', 'covers');
+    covList(s).forEach(function (c) {
+      var r = el('div', 'coverrow'), im = el('img'); im.alt = ''; im.loading = 'lazy'; im.src = WORKER + '/c/' + covPath(s, c) + '?v=' + encodeURIComponent(c.at || ''); r.appendChild(im);
+      var w = el('div', 'who', whoText(c.who)); w.appendChild(el('small', null, c.share ? 'Your cover' : 'Your cover (no card yet)')); r.appendChild(w);
+      var a = el('div', 'acts'), ed = el('button', 'btn small', 'Change'); ed.type = 'button'; ed.addEventListener('click', function () { picOpen(s, c); }); a.appendChild(ed);
+      r.appendChild(a); cl.appendChild(r);
+    });
+    var add = el('button', 'btn small', covList(s).length ? '+ Add another cover' : '+ Add your cover'); add.type = 'button'; add.style.justifySelf = 'start';
+    add.addEventListener('click', function () { picOpen(s, null); });
+    cl.appendChild(add);
+    sec.appendChild(cl);
     var bar = el('div', 'upbar'); bar.hidden = true; bar.appendChild(el('i')); bar.setAttribute('data-bar', s.id); sec.appendChild(bar);
-    sec.appendChild(el('p', 'stat', 'Members hear your song and see your video instead of the preview and YouTube, and see your cover in place of the album’s, on the calendar and while it plays; when they share the day, its link shows your cover.'));
+    sec.appendChild(el('p', 'stat', 'Members hear your song and see your video instead of the preview and YouTube. Each cover is seen by all members or by the ones you choose, in place of the album’s, and their shares of the day show it.'));
     return sec;
   }
   function fileBtn(label, on, add, remove) {
@@ -375,7 +392,8 @@
     var li = el('li', 'card song' + (open ? ' open' : '')); li.setAttribute('data-id', s.id);
     var h = el('div', 'shead'); h.setAttribute('role', 'button'); h.tabIndex = 0; h.setAttribute('aria-expanded', open ? 'true' : 'false');
     var cov = el('div', 'cov'), img = el('img'); img.alt = ''; img.loading = 'lazy';
-    img.src = COVERS[s.id] ? WORKER + '/c/' + s.id + '?v=' + encodeURIComponent(COVERS[s.id].at) : (s.img || ''); cov.appendChild(img);
+    var hc = covList(s).filter(function (c) { return c.who === 'all'; })[0] || covList(s)[0];
+    img.src = hc ? WORKER + '/c/' + covPath(s, hc) + '?v=' + encodeURIComponent(hc.at || '') : (s.img || ''); cov.appendChild(img);
     var pb = el('button', 'pp'); pb.type = 'button'; pb.innerHTML = PLAY; pb.setAttribute('aria-label', 'Play the preview of ' + s.title); pb.disabled = !s.p;
     pb.addEventListener('click', function (ev) {
       ev.stopPropagation();
@@ -518,13 +536,17 @@
       if (j.ok) { var e = CAT[s.id] || {}; delete e[kind]; toast('Taken away'); redraw(s); counts(); } else toast(j.error || 'Couldn’t take it away');
     });
   }
-  function unpicture(s) {
-    api('/members/cover?track=' + s.id + '&op=remove', null, true).then(function (j) { if (j.ok) { COVERS = j.covers; redraw(s); toast('Album cover back'); } else toast(j.error || 'Couldn’t'); });
+  function covList(s) { return (COVERS[s.id] && COVERS[s.id].list) || []; }
+  function covPath(s, c) { return s.id + (c.id === '0' ? '' : '/' + c.id); }
+  function whoText(who) {
+    if (who === 'all') return 'All members';
+    var names = (who || []).map(function (id) { var m = MEMBERS.filter(function (x) { return x.id === id; })[0]; return m ? m.name : null; }).filter(Boolean);
+    return names.length ? names.join(', ') : 'Nobody (choose who)';
   }
   // ---- a day's own cover (members only): John's photo made into an album cover, as an invitation's is (the
   // song's title, the artist in italic, its number and day along the foot), and the day's card drawn with it, as the
   // site draws a day's; members see the cover while the song plays, and their shares of the day show the card ----
-  var C = window.SOTDCards, PIC = { s: null, photo: null, cover: null, card: '', busy: 0 };
+  var C = window.SOTDCards, PIC = { s: null, c: null, who: 'all', photo: null, cover: null, card: '', busy: 0 };
   function dayDate(s) { var p = (DAYS[s.id] || dayOf(s.a).slug).split('-'); return new Date(Date.UTC(+p[2], +p[1] - 1, +p[0], 12)); }
   function cleanTitle(t) { return String(t).replace(/\s+-\s+.*(remaster|version|mix|edit|mono|stereo|single|live|demo|take|recording|anniversary|bonus).*$/i, '').replace(/\s*[(\[](feat|with|ft)\.?[^)\]]*[)\]]/i, '').trim() || t; }
   function picDraw() {
@@ -536,15 +558,30 @@
       if (mine !== PIC.busy) return;
       PIC.cover = PIC.photo ? C.albumCover(PIC.photo, { big: cleanTitle(s.title), italic: s.artist, left: 'No. ' + s.n, right: when.getUTCDate() + ' ' + MONTHS[when.getUTCMonth()].slice(0, 3) + ' ' + when.getUTCFullYear() }) : null;
       PIC.card = C.drawCard({ title: cleanTitle(s.title), line: s.artist, when: when, cover: PIC.cover || im });
-      $('picimg').src = PIC.card; $('picwait').hidden = true; $('picsave').disabled = !PIC.photo;
+      $('picimg').src = PIC.card; $('picwait').hidden = true; picReady();
     });
   }
-  function picOpen(s) {
-    PIC.s = s; PIC.photo = null; PIC.cover = null;
+  function sameWho(a, b) { return JSON.stringify(a) === JSON.stringify(b); }
+  function picReady() { $('picsave').disabled = !(PIC.photo || (PIC.c && !sameWho(PIC.who, PIC.c.who))) || (PIC.who !== 'all' && !PIC.who.length); }
+  function picWho() {   // All members, or the ones chosen
+    var box = $('picwho'); box.textContent = '';
+    function chip(label, on, fn) { var b = el('button', 'chipb', label); b.type = 'button'; b.setAttribute('aria-pressed', on ? 'true' : 'false'); b.addEventListener('click', function () { fn(); picWho(); picReady(); }); box.appendChild(b); }
+    chip('All members', PIC.who === 'all', function () { PIC.who = 'all'; });
+    MEMBERS.forEach(function (m) {
+      var on = PIC.who !== 'all' && PIC.who.indexOf(m.id) >= 0;
+      chip(m.name, on, function () {
+        var w = PIC.who === 'all' ? [] : PIC.who.slice(), i = w.indexOf(m.id);
+        if (i >= 0) w.splice(i, 1); else w.push(m.id);
+        PIC.who = w;
+      });
+    });
+  }
+  function picOpen(s, c) {
+    PIC.s = s; PIC.c = c || null; PIC.photo = null; PIC.cover = null; PIC.who = c ? (c.who === 'all' ? 'all' : (c.who || []).slice()) : 'all';
     $('pich').textContent = cleanTitle(s.title);
-    $('picstat').textContent = ''; $('picorig').hidden = !COVERS[s.id];
-    var c = COVERS[s.id];
-    if (c && c.share) { $('picimg').src = WORKER + '/s/' + s.id + '.jpg?v=' + encodeURIComponent(c.share.at); $('picsave').disabled = true; $('picwait').hidden = true; }
+    $('picstat').textContent = ''; $('picorig').hidden = !c;
+    picWho();
+    if (c && c.share) { $('picimg').src = WORKER + '/s/' + covPath(s, c) + '.jpg?v=' + encodeURIComponent(c.share.at); $('picwait').hidden = true; picReady(); }
     else picDraw();
     $('picdlg').showModal();
   }
@@ -557,24 +594,33 @@
     C.loadImg(url).then(function (im) { PIC.photo = im; return picDraw(); }).catch(function () { toast('That file isn’t a picture this browser can read'); }).then(function () { URL.revokeObjectURL(url); });
   });
   $('picorig').addEventListener('click', function () {
-    var s = PIC.s;
-    ask('Your cover', 'Back to the album cover?', 'Members see the album cover again, and their shares of this day show it.', 'Use the album cover').then(function (yes) {
+    var s = PIC.s, c = PIC.c; if (!c) return;
+    $('picdlg').close();
+    ask('Your cover', 'Remove this cover?', whoText(c.who) + ' will see ' + (covList(s).length > 1 ? 'another of your covers, if one is for them, or ' : '') + 'the album cover.', 'Remove').then(function (yes) {
       if (!yes) return;
-      unpicture(s); $('picdlg').close();
+      api('/members/cover?track=' + s.id + '&op=remove&id=' + encodeURIComponent(c.id), null, true).then(function (j) { if (j.ok) { COVERS = j.covers; redraw(s); toast('Cover removed'); } else toast(j.error || 'Couldn’t'); });
     });
   });
-  $('picsave').addEventListener('click', function () {
-    var s = PIC.s; if (!PIC.cover || !PIC.card) return;
+  $('picsave').addEventListener('click', function () {   // the picture (and its card), then who sees it
+    var s = PIC.s, id = PIC.c ? PIC.c.id : '', who = PIC.who, q = '/members/cover?track=' + s.id;
+    if (!PIC.photo && !PIC.c) return;
     $('picsave').disabled = true; $('picstat').textContent = 'Saving…';
-    new Promise(function (res) { PIC.cover.toBlob(res, 'image/jpeg', 0.9); }).then(function (blob) {
-      return api('/members/cover?track=' + s.id, blob, true, 'image/jpeg');
+    var step = Promise.resolve({ ok: true, id: id });
+    if (PIC.photo) step = new Promise(function (res) { PIC.cover.toBlob(res, 'image/jpeg', 0.9); }).then(function (blob) {
+      return api(q + (id ? '&id=' + encodeURIComponent(id) : ''), blob, true, 'image/jpeg');
     }).then(function (j) {
       if (!j.ok) throw new Error(j.error || 'the picture didn’t go');
-      var when = dayDate(s);
-      return api('/members/cover?track=' + s.id + '&op=card', { card: PIC.card, title: cleanTitle(s.title), desc: s.artist + ' · John’s Song of the Day, ' + C.longDate(when), slug: DAYS[s.id] || dayOf(s.a).slug });
-    }).then(function (j) {
+      id = j.id; var when = dayDate(s);
+      return api(q + '&op=card&id=' + encodeURIComponent(id), { card: PIC.card, title: cleanTitle(s.title), desc: s.artist + ' · John’s Song of the Day, ' + C.longDate(when), slug: DAYS[s.id] || dayOf(s.a).slug });
+    });
+    step.then(function (j) {
       if (!j.ok) throw new Error(j.error || 'the card didn’t go');
-      COVERS = j.covers; $('picdlg').close(); redraw(s); toast('Saved: members see your cover, and their shares of this day show it');
+      var was = PIC.c ? PIC.c.who : 'all';
+      return sameWho(who, was) ? j : api(q + '&op=who&id=' + encodeURIComponent(id), { who: who });
+    }).then(function (j) {
+      if (!j.ok) throw new Error(j.error || 'who sees it didn’t go');
+      if (j.covers) COVERS = j.covers;
+      $('picdlg').close(); redraw(s); toast('Saved: ' + whoText(who) + ' ' + (who === 'all' || who.length > 1 ? 'see' : 'sees') + ' this cover');
     }).catch(function (e) { $('picstat').textContent = 'Not saved: ' + e.message; $('picsave').disabled = false; });
   });
   function upload(s, kind, f, onPart) {   // in parts (the Worker takes up to 100 MB at a time)
@@ -663,8 +709,7 @@
     getJSON('moods.json').catch(function () { return {}; }),
     getJSON('videos.json').catch(function () { return {}; }),
     getJSON('facts-quotes.json').catch(function () { return {}; }),
-    api('/members/admin', { op: 'list' }).catch(function () { return {}; }),
-    getJSON(WORKER + '/covers.json').catch(function () { return {}; })
+    api('/members/admin', { op: 'list' }).catch(function () { return {}; })
   ]).then(function (r) {
     var asc = (r[0].songs || []).slice(), next = null;
     for (var di = asc.length - 1; di >= 0; di--) { var dd = dayOf(asc[di].a), iso = dd.slug.split('-').reverse().join('-');
@@ -672,7 +717,7 @@
       DAYS[asc[di].id] = iso.split('-').reverse().join('-'); next = iso; }
     songs = (r[0].songs || []).slice().reverse(); live = r[1]; pending = r[2]; signedW = r[3] || {};
     TAGS = (r[4] && r[4].songs) || {}; VIDS = (r[5] && r[5].videos) || {}; QUOTES = r[6] || {};
-    CAT = r[7].catalog || {}; media = r[7].media !== false; COVERS = r[8] || {};
+    CAT = r[7].catalog || {}; media = r[7].media !== false; COVERS = r[7].covers || {}; MEMBERS = r[7].members || [];
     live.src = live.src || []; live.songs = live.songs || {}; live.artists = live.artists || {}; pending.songs = pending.songs || {};
     var months = {}; songs.forEach(function (s) { months[dayOf(s.a).month] = 1; });
     Object.keys(months).sort().reverse().forEach(function (m) { var o = el('option', null, MONTHS[+m.slice(5) - 1] + ' ' + m.slice(0, 4)); o.value = m; $('month').appendChild(o); });

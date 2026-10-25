@@ -11,8 +11,7 @@ he does).
   `a/<track>.mp3` (the song), `v/<track>.mp4` (its video), `c/<track>` (a sharing picture). The site's repository is
   public, so none of them are in it.
 - **Members page**: the Members tab of `songs/admin.html` (`songs/members-admin.html`), after the admin password: inviting,
-  codes and removing people; *Sees your covers / Sees album covers* chooses, for each member, whether they see John's own
-  covers (KV member record `covers`, false for album covers; `/members/me` says which); and *This is me* on John's own member: the Worker keeps which member is John (KV `owner`)
+  codes and removing people; and *This is me* on John's own member: the Worker keeps which member is John (KV `owner`)
   and tells only that member's devices (`/members/me` gives `owner: true`), whose Profile then has the Admin button
   (as does any device that has opened the admin page with its password). Each song's own recording, video and sharing picture are added on the Songs tab
   (`songs/songs-admin.html`), with the rest of that song.
@@ -56,15 +55,18 @@ The Worker keeps the card and its page (`/i/<id>`, KV `invcard:` and `invpage:`,
 the page sends a person on to their invitation on the calendar. *Share…* (on a phone), Messages, WhatsApp, Email and
 Copy link all send that link.
 
-## A day's own cover (members only)
+## A day's own covers (members only)
 
-On the Songs tab, *Your cover* on a song: John chooses a photo; it's made into an album cover as an invitation's
-is (the song's title, the artist in italic, its number and day along the foot), and the day's card is drawn with it,
-shown before it's saved. Members see that cover in place of the album's everywhere on the calendar (the month, the
-lists, the day and its record while it plays), and their shares
-of the day go out as the Worker's `/s/<track>` page with that card (they can pick *Album cover* instead in the share
-panel); everyone else's shares, and the site's own day cards, keep the album cover. *Back to the album cover* takes it
-away. Kept in R2 (`c/<track>` the cover, `sc/<track>` the card) and KV `covers`.
+On the Songs tab, under a song's *Members only*: *Add your cover* (then *Add another cover*), and *Change* on each.
+John chooses a photo; it's made into an album cover as an invitation's is (the song's title, the artist in italic, its
+number and day along the foot), and the day's card is drawn with it, shown before it's saved. *Who sees it*: all
+members (the default) or the members he picks; a cover picked for a member wins over one for all members, and anyone
+with neither sees the album cover. Members see their cover in place of the album's everywhere on the calendar (the
+month, the lists, the day and its record while it plays), and their shares of the day go out as the Worker's
+`/s/<track>/<id>` page with that card (they can pick *Album cover* instead in the share panel); everyone else's
+shares, and the site's own day cards, keep the album cover. *Remove this cover* takes one away. KV `covers`
+({ <track>: { list: [{ id, at, who, share }] } }), R2 `c/<track>/<id>` (the cover) and `sc/<track>/<id>` (the card);
+`/members/me` gives each member the covers they see (`mycovers`).
 
 ## Saved playlists
 

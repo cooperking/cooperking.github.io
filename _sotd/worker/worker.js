@@ -438,11 +438,11 @@ async function members(request, url, env) {
     m.invite = { hash: await sha256hex(code), uses: 0, until: Date.now() + INVITE_DAYS * DAY };
     return MEMBERS_JOIN + code;
   };
-  const listing = (own = owner) => Object.entries(all).map(([id, m]) => ({ id, name: m.name, created: m.created, owner: id === own, covers: m.covers !== false,
+  const listing = (own = owner) => Object.entries(all).map(([id, m]) => ({ id, name: m.name, created: m.created, owner: id === own,
     devices: Object.keys(m.devices || {}).length, seen: Math.max(0, ...Object.values(m.devices || {}).map(d => d.seen || 0)) || null,
     invite: m.invite ? { uses: m.invite.uses, left: Math.max(0, INVITE_USES - m.invite.uses), until: m.invite.until } : null }));
   switch (body.op) {
-    case 'list': return answer(200, { members: listing(), catalog: await catalog(env), media: !!env.MEDIA });
+    case 'list': return answer(200, { members: listing(), catalog: await catalog(env), media: !!env.MEDIA, covers: await coversAll(env) });
     case 'invite': {
       const name = String(body.name || '').replace(/\s+/g, ' ').trim().slice(0, 60);
       if (!name) return answer(400, { error: 'Give their name.' });
@@ -463,11 +463,6 @@ async function members(request, url, env) {
       const code = tvCode();
       await env.SOTD.put('tvcode:' + await sha256hex(code), body.id, { expirationTtl: TV_CODE_MINUTES * 60 });
       return answer(200, { code, minutes: TV_CODE_MINUTES, name: all[body.id].name });
-    }
-    case 'covers': {   // whether this member sees John's own covers (or the album covers)
-      if (!all[body.id]) return answer(404, { error: 'No such member.' });
-      all[body.id].covers = !!body.on; await save();
-      return answer(200, { ok: true, members: listing() });
     }
     case 'owner': {   // "This is me": the member who is John (or nobody, with no id)
       if (body.id && !all[body.id]) return answer(404, { error: 'No such member.' });
@@ -553,61 +548,81 @@ async function memberUpload(request, url, env, answer) {
 // share_pages.py remakes that day's card from it. Taking it away puts the album cover back.
 const COVER_TYPES = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }, COVER_MAX = 15e6;
 
+// John's own covers for a day: several, each seen by all members or by the members he picks (one given to a member
+// wins over one for all). KV covers: { <track>: { list: [{ id, at, who: 'all' | [member ids], share: { at, title, desc,
+// slug } }] } }; R2 c/<track>/<id> the cover, sc/<track>/<id> the day's card with it ('0' is the one from before
+// there could be several: c/<track>, sc/<track>).
+function coverList(c) { return !c ? [] : Array.isArray(c.list) ? c.list : [{ id: '0', at: c.at, who: 'all', share: c.share || null }]; }
+async function coversAll(env) {
+  const raw = (await env.SOTD.get('covers', 'json')) || {}, out = {};
+  for (const [t, c] of Object.entries(raw)) { const list = coverList(c); if (list.length) out[t] = { list }; }
+  return out;
+}
+function coverKey(track, id, card) { return (card ? 'sc/' : 'c/') + track + (id === '0' ? '' : '/' + id); }
+function coverFor(list, memberId) { return list.find(x => Array.isArray(x.who) && x.who.includes(memberId)) || list.find(x => x.who === 'all') || null; }
+
 async function coverSet(request, url, env, answer) {
   if (!env.MEDIA) return answer(503, { error: 'No R2 bucket is bound to the Worker as MEDIA yet.' });
-  const track = url.searchParams.get('track') || '';
+  const track = url.searchParams.get('track') || '', op = url.searchParams.get('op') || '', id = url.searchParams.get('id') || '';
   if (!ID_RE.test(track)) return answer(400, { error: 'Which song?' });
-  const covers = (await env.SOTD.get('covers', 'json')) || {};
-  if (url.searchParams.get('op') === 'remove') {
-    await env.MEDIA.delete('c/' + track); await env.MEDIA.delete('sc/' + track);
-    delete covers[track];
-  } else if (url.searchParams.get('op') === 'card') {   // the card a member's share of this day shows, with its words
-    if (!covers[track]) return answer(400, { error: 'Set the picture first.' });
+  const covers = await coversAll(env), list = (covers[track] || { list: [] }).list, x = list.find(c => c.id === id);
+  if (op && !x) return answer(404, { error: 'No such cover.' });
+  if (op === 'remove') {
+    await env.MEDIA.delete(coverKey(track, id)); await env.MEDIA.delete(coverKey(track, id, true));
+    list.splice(list.indexOf(x), 1);
+  } else if (op === 'card') {   // the card a member's share of this day shows with this cover, and its words
     const body = await request.json().catch(() => ({}));
     const b64 = String(body.card || '').replace(/^data:image\/jpeg;base64,/, '');
     if (!b64 || b64.length > 2.5e6) return answer(400, { error: 'The card is missing or too big.' });
-    await env.MEDIA.put('sc/' + track, Uint8Array.from(atob(b64), ch => ch.charCodeAt(0)), { httpMetadata: { contentType: 'image/jpeg' } });
-    const t = x => String(x || '').slice(0, 200);
-    covers[track].share = { at: new Date().toISOString(), title: t(body.title), desc: t(body.desc), slug: /^\d\d-\d\d-\d{4}$/.test(body.slug || '') ? body.slug : '' };
-  } else {
+    await env.MEDIA.put(coverKey(track, id, true), Uint8Array.from(atob(b64), ch => ch.charCodeAt(0)), { httpMetadata: { contentType: 'image/jpeg' } });
+    const t = v => String(v || '').slice(0, 200);
+    x.share = { at: new Date().toISOString(), title: t(body.title), desc: t(body.desc), slug: /^\d\d-\d\d-\d{4}$/.test(body.slug || '') ? body.slug : '' };
+  } else if (op === 'who') {   // who sees it: 'all', or some members
+    const body = await request.json().catch(() => ({}));
+    const all = (await env.SOTD.get('members', 'json')) || {};
+    x.who = body.who === 'all' ? 'all' : (Array.isArray(body.who) ? body.who : []).filter(m => all[m]).slice(0, MEMBERS_MAX);
+  } else if (op) return answer(400, { error: 'Say what to do.' });
+  else {   // a cover: a new one (for all members), or a new picture for one there already (&id=)
     const type = (request.headers.get('Content-Type') || '').split(';')[0].trim().toLowerCase();
     if (!COVER_TYPES[type]) return answer(400, { error: 'A JPEG, PNG or WebP picture, please.' });
     const bytes = await request.arrayBuffer();
     if (!bytes.byteLength || bytes.byteLength > COVER_MAX) return answer(400, { error: 'The picture is empty or bigger than 15 MB.' });
-    await env.MEDIA.put('c/' + track, bytes, { httpMetadata: { contentType: type } });
-    covers[track] = { at: new Date().toISOString(), type, size: bytes.byteLength };
+    let c = list.find(v => v.id === id);
+    if (!c) { if (list.length >= 12) return answer(400, { error: 'That’s the most covers a day can have.' }); c = { id: randomCode(6), who: 'all' }; list.push(c); }
+    await env.MEDIA.put(coverKey(track, c.id), bytes, { httpMetadata: { contentType: type } });
+    c.at = new Date().toISOString();
+    covers[track] = { list };
+    await env.SOTD.put('covers', JSON.stringify(covers));
+    return answer(200, { ok: true, id: c.id, covers });
   }
+  if (list.length) covers[track] = { list }; else delete covers[track];
   await env.SOTD.put('covers', JSON.stringify(covers));
-  return answer(200, { ok: true, covers });   // (members' shares only: the site's own cards keep the album cover)
+  return answer(200, { ok: true, covers });   // (members only: the site's own cards keep the album cover)
 }
 
 async function ownCover(request, url, env) {
   const h = { 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'public, max-age=300' };
-  if (url.pathname === '/covers.json') {
-    return new Response((await env.SOTD.get('covers')) || '{}', { headers: Object.assign({ 'Content-Type': 'application/json; charset=utf-8' }, h) });
-  }
-  const sm = /^\/s\/([0-9A-Za-z]{22})(\.jpg)?$/.exec(url.pathname);
-  if (sm) return memberShare(url, env, sm[1], !!sm[2]);
-  const m = /^\/c\/([0-9A-Za-z]{22})$/.exec(url.pathname);
+  if (url.pathname === '/covers.json') return new Response('{}', { headers: Object.assign({ 'Content-Type': 'application/json; charset=utf-8' }, h) });   // (members are told theirs by /members/me)
+  const sm = /^\/s\/([0-9A-Za-z]{22})(?:\/([\w-]{8}))?(\.jpg)?$/.exec(url.pathname);
+  if (sm) return memberShare(url, env, sm[1], sm[2] || '0', !!sm[3]);
+  const m = /^\/c\/([0-9A-Za-z]{22})(?:\/([\w-]{8}))?$/.exec(url.pathname);
   if (!m || !env.MEDIA) return new Response('Not here.', { status: 404 });
-  const obj = await env.MEDIA.get('c/' + m[1]);
+  const obj = await env.MEDIA.get(coverKey(m[1], m[2] || '0'));
   if (!obj) return new Response('Not here.', { status: 404 });
   return new Response(obj.body, { headers: Object.assign({ 'Content-Type': (obj.httpMetadata && obj.httpMetadata.contentType) || 'image/jpeg' }, h) });
 }
 
-// a day shared by a member, with John's own picture: a page whose preview (WhatsApp, iMessage...) is that card, sending
-// the person on to the day, as the day's own page does. Anyone else's share of the day keeps the album cover.
-async function memberShare(url, env, track, image) {
-  const covers = (await env.SOTD.get('covers', 'json')) || {}, c = covers[track];
+async function memberShare(url, env, track, id, image) {
+  const covers = await coversAll(env), c = ((covers[track] || {}).list || []).find(x => x.id === id);
   const day = 'https://cooperking.github.io/songs/' + (c && c.share && c.share.slug ? c.share.slug + '/' : '');
   if (image) {
-    const obj = c && c.share && env.MEDIA ? await env.MEDIA.get('sc/' + track) : null;
+    const obj = c && c.share && env.MEDIA ? await env.MEDIA.get(coverKey(track, id, true)) : null;
     if (!obj) return Response.redirect(day + 'card.jpg', 302);
     return new Response(obj.body, { headers: { 'Content-Type': 'image/jpeg', 'Cache-Control': 'public, max-age=3600' } });
   }
   const to = day + url.search;
   if (!c || !c.share) return Response.redirect(to, 302);
-  const e = x => esc(String(x)), img = url.origin + '/s/' + track + '.jpg?v=' + encodeURIComponent(c.share.at);
+  const e = x => esc(String(x)), img = url.origin + '/s/' + track + (id === '0' ? '' : '/' + id) + '.jpg?v=' + encodeURIComponent(c.share.at);
   return new Response(`<!doctype html>
 <html lang="en">
 <head>
@@ -694,7 +709,12 @@ async function memberMe(request, env, answer) {
     }
   }
   const owner = (await env.SOTD.get('owner')) === id;   // John's own devices: the calendar shows them the way to the admin page
-  return answer(200, Object.assign({ name: m.name, exp, media, covers: m.covers !== false }, owner ? { owner: true } : {}));
+  const mycovers = {};   // for each day with John's own covers, the one this member sees (one given to them, else one for all)
+  for (const [track, c] of Object.entries(await coversAll(env))) {
+    const x = coverFor(c.list, id);
+    if (x) mycovers[track] = x.share ? { id: x.id, at: x.at, share: x.share.at } : { id: x.id, at: x.at };
+  }
+  return answer(200, Object.assign({ name: m.name, exp, media, mycovers }, owner ? { owner: true } : {}));
 }
 
 // an invitation's link: a page that shows a proper card in a message (WhatsApp, iMessage...), like a day's share page,
