@@ -608,8 +608,6 @@ html.theatre .vidfloat > .coverbox { --bg: #000; }
 .iconbtn.dlbtn.done { color: var(--accent, #ec1a13); }
 .iconbtn.dlbtn.busy svg { animation: dlpulse 1s ease-in-out infinite; }
 @keyframes dlpulse { 50% { opacity: .3; } }
-#grid .day .dlmark { position: absolute; right: 4px; bottom: 4px; z-index: 2; width: 18px; height: 18px; display: block; color: #ec1a13; --bg: #fff; filter: drop-shadow(0 1px 3px rgba(0, 0, 0, .35)); pointer-events: none; }
-#grid .day .dlmark svg { display: block; width: 100%; height: 100%; }
 html.offline #grid .day.has:not(.dl) { opacity: .4 !important; }   /* over the days' own fade-in */
 .dlsum { margin: 0; font-size: 13px; color: var(--muted); }
 #monthdl[hidden], #minedl[hidden] { display: none; }
@@ -4007,12 +4005,6 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       ms.hidden = !any;
       if (any) dlSize().then(function (n) { document.getElementById('dlsumt').textContent = any + (any === 1 ? ' song' : ' songs') + ' downloaded on this device (' + Math.max(1, Math.round(n / 1e6)) + ' MB)'; });
     }
-    document.querySelectorAll('#grid .day.has').forEach(function (c) {   // a downloaded day: the green disc in its corner
-      var ps = byDate[c.getAttribute('data-day')] || [], on = ps.some(function (s) { return OFFL[s.track]; }), m = c.querySelector('.dlmark');
-      c.classList.toggle('dl', on);
-      if (on && !m) { m = document.createElement('span'); m.className = 'dlmark'; m.setAttribute('aria-hidden', 'true'); m.innerHTML = DONE_ICON; c.appendChild(m); }
-      if (!on && m) m.remove();
-    });
   }
   function onlineSync() { root.classList.toggle('offline', navigator.onLine === false); }
   window.addEventListener('online', onlineSync); window.addEventListener('offline', function () { onlineSync(); if (Object.keys(OFFL).length) toast('No connection: your downloaded songs still play'); });
