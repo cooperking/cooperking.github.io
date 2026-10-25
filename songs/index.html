@@ -273,6 +273,11 @@ html.theatre #sheet .thbtn { display: inline-flex; align-items: center; justify-
 .bar-top .signin.in .po { display: none; } .bar-top .signin.in .pf { display: inline; }
 .bar-top .signin.in, .bar-top .signin.in:hover { background: var(--fg); border-color: var(--fg); color: var(--bg); }
 /* signed in: a chip under the month's count saying who, so it shows at a glance on the front page */
+.heroplay { display: inline-flex; align-items: center; gap: 9px; margin: -2px 0 0; padding: 12px 22px 12px 18px; border: 0; border-radius: 999px; background: var(--fg); color: var(--bg); font: 600 12.5px/1.2 var(--sans); letter-spacing: .14em; text-transform: uppercase; cursor: pointer; box-shadow: 0 10px 28px var(--shadow); }
+.heroplay svg { width: 13px; height: 13px; }
+@media (hover: hover) { .heroplay:hover { transform: translateY(-1px); } }
+html.big .heroplay { display: none; }   /* a TV or a computer: Play all is in the bar */
+html:not(.big) .bar-top .playall { display: none; }
 .signedchip { display: inline-flex; align-items: center; gap: 6px; margin: -6px 0 0; padding: 5px 12px 5px 9px; border-radius: 999px; background: var(--fg); color: var(--bg); font: 600 11px/1.2 var(--sans); letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; cursor: pointer; border: 0; }
 .signedchip svg { width: 13px; height: 13px; flex: none; }
 .signedchip[hidden] { display: none; }
@@ -946,6 +951,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   <header class="hero">
     <h1><span id="mname"></span> <em id="myr"></em></h1>
     <p class="hsub" id="count"></p>
+    <button class="heroplay" id="heroplay" type="button" aria-label="Play every song, the newest first"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M4 2.5v11l9.5-5.5z"/></svg>Play all</button>
     <button class="signedchip" id="who" type="button" hidden><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><circle cx="8" cy="5.2" r="3"/><path d="M2.5 14.5c.5-3.2 2.8-5 5.5-5s5 1.8 5.5 5z"/></svg><span id="whotext">Signed in</span></button>
     <div class="monthnav">
       <button class="round" id="prev" type="button" aria-label="Previous month"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 3 5 8l5 5"/></svg></button>
@@ -1752,18 +1758,12 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     show.last = function () { return last; };   // the latest one shown: it may come back after a pause
     return show;
   }
-  // what a caption box should show at time t of a plan: nothing when Facts is off, and never a fact already shown
-  // since the day opened (unless it is the one on screen now)
+  // what a caption box should show at time t of a plan: nothing when Facts is off (every play shows all its facts)
   function capPick(plan, t, s, show) {
     if (!capsOn) return null;
-    var it = capAt(plan, t);
-    if (!it) return null;
-    var k = factKey(s, it);
-    if (shownFacts[k] && show.last() !== it.k + '|' + it.t) return null;
-    shownFacts[k] = true;
-    return it;
+    return capAt(plan, t) || null;
   }
-  function freshItems(s) { return capItems(s).filter(function (it) { return !shownFacts[factKey(s, it)]; }); }
+  function freshItems(s) { return capItems(s); }
   var vidcap = document.getElementById('vidcap'), capShow = Captions(vidcap), vidPlanKey = '', vidPlan = [];
   var vidwrap = document.getElementById('vidwrap'), capdock = document.getElementById('capdock'), capMeasure = document.getElementById('capmeasure');
   Captions(capMeasure);   // an unseen copy of the panel's text, to measure facts with
@@ -2532,7 +2532,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   var curDay = null;   // the day open in the pop-up
   // 'video' after Play as video (or Play all), 'audio' after Play as preview: every day opened, however it's opened,
   // plays the same way, and the choice is kept for next time (a shared link's own choice counts only until one's made)
-  var playMode = 'audio', modeSaved = false;
+  // until they choose (kept from then on): a member hears the songs, anyone else sees the videos (memberApply)
+  var playMode = 'video', modeSaved = false, modeLink = false;
   try { var pm0 = localStorage.getItem('sotd-play'); if (pm0 === 'video' || pm0 === 'audio') { playMode = pm0; modeSaved = true; } } catch (e) {}
   function setPlayMode(m) { playMode = m; modeSaved = true; try { localStorage.setItem('sotd-play', m); } catch (e) {} }
   var queue = null;   // My playlist playing in order: { list: track ids, i: the one playing }
@@ -3390,9 +3391,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   fabSync();
   function playMine(from) { startQueue(fav.slice(), plname.value.replace(/\s+/g, ' ').trim() || 'My playlist', 'mine', from || 0); }
   document.getElementById('mineplay').addEventListener('click', function () { playMine(0); });
-  // Play all, in the bar: every song, the newest first, as videos (a song with none plays its preview)
+  document.getElementById('heroplay').addEventListener('click', function () { document.getElementById('playall').click(); });
+  // Play all (under the month, and in the bar on a TV or a computer): every song, the newest first, the way songs
+  // are playing (a member's songs, or the videos, until they choose)
   document.getElementById('playall').addEventListener('click', function () {
-    setPlayMode('video');
     var all = songs.slice().sort(function (a, b) { return b.n - a.n; }).map(function (s) { return s.track; });
     startQueue(all, 'John\u2019s Song of the Day', 'all', 0, shuffleOn);
   });
@@ -4101,6 +4103,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   });
 
   function memberApply() {
+    if (!modeSaved && !modeLink) playMode = MEMBER ? 'audio' : 'video';   // not chosen yet: a member's songs, or the videos
     vidsMerge();
     root.classList.toggle('member', !!MEMBER);
     dlRefresh();
@@ -4177,7 +4180,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // a link straight to a day opens it now, or once the live list arrives (a new song may not be in the page yet)
   (function () {
     var m = /[?&]play=(video|preview)\b/.exec(location.search);
-    if (m && !modeSaved) playMode = m[1] === 'video' ? 'video' : 'audio';   // the viewer's own choice comes first
+    if (m && !modeSaved) { playMode = m[1] === 'video' ? 'video' : 'audio'; modeLink = true; }   // the viewer's own choice comes first
     linkVideo = playMode === 'video';   // the videos list may not be here yet: start the video when it is
     if (m) try { history.replaceState(null, '', location.pathname + location.hash); } catch (e) {}
   })();
