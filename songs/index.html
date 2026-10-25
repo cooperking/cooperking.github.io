@@ -4002,7 +4002,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   document.getElementById('pldel').addEventListener('click', function () {
     var l = PL.lists.filter(function (x) { return x.id === PL.cur; })[0];
     if (!l) return;
-    ask({ k: 'Saved playlists', h: 'Delete “' + l.name + '”?', t: 'It goes from all your devices. Its songs stay in My playlist here.', ok: 'Delete', no: 'Keep it' }).then(function (yes) {
+    ask({ k: 'Saved playlists', h: 'Delete “' + l.name + '”?', ok: 'Delete', no: 'Keep it' }).then(function (yes) {
     if (!yes) return;
     plApi({ op: 'delete', id: l.id }).then(function (j) {
       if (j.status !== 200) { plStat(j.error || 'Couldn’t delete just now'); return; }
