@@ -823,6 +823,15 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
 .mine-empty { margin: 0; padding: 18px 4px; font-family: var(--serif); font-style: italic; font-size: 17px; color: var(--muted); }
 .mine-foot { display: grid; gap: 10px; }
 .mine-sort { display: grid; justify-items: start; gap: 10px; }
+/* a member's saved playlists (kept with their sign-in, on all their devices) */
+.mine-saved { display: grid; gap: 8px; }
+.mine-saved[hidden] { display: none; }
+.mine-saved .savedh { margin: 0; font: 600 11px/1.2 var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.mine-saved .savedrow { display: flex; flex-wrap: wrap; gap: 6px; }
+.mine-saved .savedrow .tchip .n { opacity: .7; margin-left: 4px; }
+.mine-saved .savedacts { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+.mine-saved .savedacts [hidden] { display: none; }
+.mine-saved .plstat { font-size: 12px; color: var(--muted); }
 .sortrow { display: flex; flex-wrap: nowrap; gap: 6px; max-width: 100%; overflow-x: auto; scrollbar-width: none; }
 .sortrow::-webkit-scrollbar { display: none; }
 .sortrow .tchip { flex: 0 0 auto; }
@@ -943,6 +952,11 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       <button class="close" id="mineclose" type="button" aria-label="Close" autofocus><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 2l10 10M12 2 2 12"/></svg></button>
     </div>
     <h3 id="mineh" style="margin:0;font-family:var(--serif);font-weight:500;font-size:34px;line-height:1.05;color:var(--fg);overflow-wrap:anywhere">My <em>playlist</em></h3>
+    <div class="mine-saved" id="minesaved" hidden>
+      <p class="savedh">Your saved playlists</p>
+      <div class="savedrow" id="savedrow"></div>
+      <div class="savedacts"><button class="tchip" id="plsave" type="button">Save this playlist</button><button class="clear" id="pldel" type="button">Delete</button><span class="plstat" id="plstat" aria-live="polite"></span></div>
+    </div>
     <div class="mine-foot" id="minefoot">
       <label class="namefield" for="plname">Playlist name</label>
       <input class="nameinput" id="plname" type="text" maxlength="80" placeholder="Song of the Day picks" autocomplete="off" enterkeyhint="go" spellcheck="false">
@@ -1142,7 +1156,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   var HEART = '<svg class="heart" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 14s-5.5-3.3-5.5-7.4A3 3 0 0 1 8 4.6a3 3 0 0 1 5.5 2C13.5 10.7 8 14 8 14z"/></svg>';
   function readFav() { try { return JSON.parse(localStorage.getItem('sotd-playlist') || '[]').filter(function (t) { return byTrack[t]; }); } catch (e) { return []; } }
   var fav = readFav();
-  function saveFav() { try { localStorage.setItem('sotd-playlist', JSON.stringify(fav)); } catch (e) {} }
+  function saveFav() { try { localStorage.setItem('sotd-playlist', JSON.stringify(fav)); } catch (e) {} if (typeof plChanged === 'function') plChanged(); }
   function isFav(s) { return fav.indexOf(s.track) !== -1; }
   function toggleFav(s) {
     var i = fav.indexOf(s.track);
@@ -1172,6 +1186,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       if (!fab.hidden && lastCount !== -1) { fab.classList.remove('bump', 'enter'); void fab.offsetWidth; fab.classList.add(entering ? 'enter' : 'bump'); }
       lastCount = fav.length;
     }
+    if (!fav.length && typeof plAny === 'function') { fab.hidden = !plAny(); document.documentElement.classList.toggle('fab-on', !fab.hidden); }
     document.querySelectorAll('[data-track]').forEach(function (el) {
       var on = fav.indexOf(el.getAttribute('data-track')) !== -1;
       el.classList.toggle('is-fav', on);
@@ -2981,14 +2996,15 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   var clearArmed = false;
 
   function renderMine() {
-    if (!fav.length && mine.open) { closeDialog(mine); return; }
+    if (typeof plRender === 'function') plRender();
+    if (!fav.length && mine.open && !(typeof plAny === 'function' && plAny())) { closeDialog(mine); return; }
     minelist.textContent = '';
     document.getElementById('minec').textContent = fav.length + (fav.length === 1 ? ' song' : ' songs');
     document.getElementById('minefoot').hidden = fav.length === 0;
     document.getElementById('minesort').hidden = fav.length < 2;
     setOrderButtons();
     document.getElementById('clearbtn').hidden = fav.length === 0;
-    clearArmed = false; document.getElementById('clearbtn').textContent = 'Clear playlist';
+    clearArmed = false; document.getElementById('clearbtn').textContent = (typeof PL === 'object' && PL && PL.cur) ? 'Close playlist' : 'Clear playlist';
     setMakeLink();
     fav.forEach(function (t, idx) {
       var s = byTrack[t];
@@ -3213,7 +3229,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   setTitles();
   plname.addEventListener('input', function () {
     try { localStorage.setItem('sotd-plname', plname.value); } catch (e) {}
-    setMakeLink(); setTitles();
+    setMakeLink(); setTitles(); plChanged();
   });
   plname.addEventListener('keydown', function (e) {
     if (e.key === 'Enter') { e.preventDefault(); setMakeLink(); document.getElementById('makebtn').click(); }
@@ -3231,6 +3247,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   });
   document.getElementById('clearbtn').addEventListener('click', function () {
     var b = document.getElementById('clearbtn');
+    if (PL.cur) { plOpen(null); return; }   // a saved playlist: put away (it stays saved), leaving an empty one
     if (!clearArmed) { clearArmed = true; b.textContent = 'Tap again to clear all ' + fav.length; return; }
     fav = []; saveFav(); syncFav();
     plname.value = '';
@@ -3653,10 +3670,117 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (MEMBER && MEMBER.media) Object.keys(MEMBER.media).forEach(function (t) { if (MEMBER.media[t].v) v[t] = Object.assign({}, VIDS_YT[t] || {}, { own: MEMBER.media[t].v }); });
     VIDS = v;
   }
+  // ---- a member's saved playlists: kept by the Worker with their sign-in (/members/playlists), so all their devices
+  // have them. My playlist is the one being played and changed; once it's saved (or a saved one is opened), changes to
+  // it are saved as they're made. Close playlist puts it away (still saved) for an empty one.
+  var PL = { lists: [], cur: null, loaded: false, t: 0, busy: null };
+  try { PL.cur = localStorage.getItem('sotd-plcur') || null; } catch (e) {}
+  function plAny() { return !!(MEMBER && PL.lists.length); }
+  function plTok() { try { return localStorage.getItem(MKEY) || ''; } catch (e) { return ''; } }
+  function plSetCur(id) { PL.cur = id; try { if (id) localStorage.setItem('sotd-plcur', id); else localStorage.removeItem('sotd-plcur'); } catch (e) {} }
+  function plAt(v) { try { if (v === undefined) return Number(localStorage.getItem('sotd-plat')) || 0; localStorage.setItem('sotd-plat', String(v)); } catch (e) {} return 0; }
+  function plStat(t) { var el = document.getElementById('plstat'); if (el) el.textContent = t || ''; }
+  function plApi(body) {
+    var o = { headers: { Authorization: 'Bearer ' + plTok() }, cache: 'no-store' };
+    if (body) { o.method = 'POST'; o.headers['Content-Type'] = 'application/json'; o.body = JSON.stringify(body); }
+    return fetch(MBASE + '/members/playlists', o).then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { j.status = r.status; return j; }); });
+  }
+  function plName() { return plname.value.replace(/\s+/g, ' ').trim() || 'My playlist'; }
+  function plRender() {
+    var box = document.getElementById('minesaved');
+    if (!box) return;
+    box.hidden = !(MEMBER && PL.loaded);
+    if (box.hidden) return;
+    var row = document.getElementById('savedrow'); row.textContent = '';
+    PL.lists.forEach(function (l) {
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'tchip';
+      b.setAttribute('aria-pressed', l.id === PL.cur ? 'true' : 'false');
+      b.textContent = l.name;
+      var n = document.createElement('span'); n.className = 'n'; n.textContent = l.tracks.length; b.appendChild(n);
+      b.setAttribute('aria-label', l.name + ', ' + l.tracks.length + (l.tracks.length === 1 ? ' song' : ' songs') + (l.id === PL.cur ? ', open' : ''));
+      b.addEventListener('click', function () { if (l.id !== PL.cur) plOpen(l); });
+      row.appendChild(b);
+    });
+    row.hidden = !PL.lists.length;
+    document.getElementById('plsave').hidden = !!PL.cur || !fav.length;
+    document.getElementById('pldel').hidden = !PL.cur;
+    if (!PL.lists.length && !fav.length) plStat('Add songs with the heart, then save them here.');
+  }
+  // open a saved playlist as My playlist (or, with null, an empty unsaved one)
+  function plOpen(l, force) {
+    if (l && !force && !PL.cur && fav.length && !window.confirm('The songs in My playlist now aren’t saved. Open “' + l.name + '” instead of them?')) return;
+    PL.quiet = true;
+    clearTimeout(PL.t);
+    plSetCur(l ? l.id : null); plAt(l ? l.at : 0);
+    fav = l ? l.tracks.filter(function (t) { return byTrack[t]; }) : [];
+    plname.value = l ? (l.name === 'My playlist' ? '' : l.name) : '';
+    try { localStorage.setItem('sotd-plname', plname.value); } catch (e) {}
+    saveFav(); syncFav(); setTitles(); setMakeLink(); renderMine();
+    PL.quiet = false;
+    plStat('');
+    if (!l) toast('Playlist put away. It’s still saved.');
+  }
+  function plSend() {
+    if (!MEMBER || !PL.cur) return;
+    var cur = PL.cur, body = { op: 'save', id: cur, name: plName(), tracks: fav.slice() };
+    plStat('Saving…');
+    plApi(body).then(function (j) {
+      if (j.status !== 200) { plStat(j.error || 'Couldn’t save just now'); return; }
+      PL.lists = j.lists; if (PL.cur === cur) plAt(j.list.at);
+      plStat('Saved'); plRender();
+    }).catch(function () { plStat('Not saved: no connection. It’ll save next time.'); });
+  }
+  function plChanged() {
+    if (PL.quiet || !MEMBER || !PL.cur) { if (MEMBER && mine.open) plRender(); return; }
+    plAt(Date.now() + 1);   // newer than the saved copy until it's sent
+    clearTimeout(PL.t); PL.t = setTimeout(plSend, 900);
+    plStat('Saving…');
+  }
+  function plLoad() {
+    if (!MEMBER || !MBASE) return;
+    plApi(null).then(function (j) {
+      if (j.status !== 200) return;
+      PL.lists = j.lists || []; PL.loaded = true;
+      var l = PL.cur && PL.lists.filter(function (x) { return x.id === PL.cur; })[0];
+      if (PL.cur && !l) plSetCur(null);   // deleted on another device: what's here stays, unsaved
+      else if (l) {
+        var mine_ = plAt();
+        if (mine_ > l.at) plSend();   // changed here while offline
+        else if (l.at > mine_ || l.tracks.join() !== fav.join()) plOpen(l, true);   // changed on another device
+      }
+      syncFav(); plRender();
+    }).catch(function () {});
+  }
+  function plMember() {
+    if (MEMBER) { if (!PL.loaded) plLoad(); }
+    else { PL.lists = []; PL.loaded = false; plSetCur(null); }
+    syncFav(); plRender();
+  }
+  document.getElementById('plsave').addEventListener('click', function () {
+    if (!fav.length) return;
+    var n = plname.value.replace(/\s+/g, ' ').trim();
+    if (!n) { n = (window.prompt('Name this playlist', '') || '').replace(/\s+/g, ' ').trim(); if (!n) return; plname.value = n; try { localStorage.setItem('sotd-plname', n); } catch (e) {} setTitles(); setMakeLink(); }
+    plStat('Saving…');
+    plApi({ op: 'save', name: n, tracks: fav.slice() }).then(function (j) {
+      if (j.status !== 200) { plStat(j.error || 'Couldn’t save just now'); return; }
+      PL.lists = j.lists; plSetCur(j.list.id); plAt(j.list.at);
+      plStat('Saved. It’s on all your devices.'); renderMine();
+    }).catch(function () { plStat('Couldn’t reach the site. Try again.'); });
+  });
+  document.getElementById('pldel').addEventListener('click', function () {
+    var l = PL.lists.filter(function (x) { return x.id === PL.cur; })[0];
+    if (!l || !window.confirm('Delete “' + l.name + '” from your saved playlists? Its songs stay in My playlist here.')) return;
+    plApi({ op: 'delete', id: l.id }).then(function (j) {
+      if (j.status !== 200) { plStat(j.error || 'Couldn’t delete just now'); return; }
+      PL.lists = j.lists; plSetCur(null); plStat('Deleted'); renderMine(); syncFav();
+    }).catch(function () { plStat('Couldn’t reach the site. Try again.'); });
+  });
+
   function memberApply() {
     vidsMerge();
     root.classList.toggle('member', !!MEMBER);
     dlRefresh();
+    plMember();
     if (sheet.open && curDay && !vplay && (!playing || audio.paused)) openDay(curDay, { keepQueue: true });   // its buttons for the whole song and own video
     else document.querySelectorAll('#picks .pick').forEach(addWatch);
   }

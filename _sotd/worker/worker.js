@@ -421,6 +421,7 @@ async function members(request, url, env) {
   const route = url.pathname.slice('/members/'.length);
   if (route === 'join') return memberJoin(request, env, answer);
   if (route === 'me') return memberMe(request, env, answer);
+  if (route === 'playlists') return memberPlaylists(request, env, answer);
   if (!['admin', 'upload', 'cover'].includes(route)) return answer(404, { error: 'Not here.' });
   if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
   const no = await adminOk(request, env, answer);
@@ -464,6 +465,7 @@ async function members(request, url, env) {
     case 'remove': {
       if (!all[body.id]) return answer(404, { error: 'No such member.' });
       delete all[body.id]; await save();
+      await env.SOTD.delete('mpl:' + body.id);   // their saved playlists go too
       return answer(200, { ok: true, members: listing() });
     }
     case 'files': {
@@ -612,6 +614,44 @@ async function memberMe(request, env, answer) {
     }
   }
   return answer(200, { name: m.name, exp, media });
+}
+
+// a member's saved playlists, kept with their sign-in so every device of theirs has them (KV key mpl:<member id>).
+// GET: { lists: [{ id, name, tracks, at }] }, the newest first. POST { op: 'save', id?, name, tracks } adds one (no id) or
+// replaces it, giving back { list, lists }; POST { op: 'delete', id } removes one.
+const PLAYLISTS_MAX = 50, PLAYLIST_TRACKS = 500, PLAYLIST_NAME = 80;
+async function memberFromToken(request, env) {
+  const token = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
+  if (!token) return null;
+  const hash = await sha256hex(token);
+  const all = (await env.SOTD.get('members', 'json')) || {};
+  return Object.keys(all).find(k => all[k].devices && all[k].devices[hash]) || null;
+}
+async function memberPlaylists(request, env, answer) {
+  const id = await memberFromToken(request, env);
+  if (!id) return answer(401, { error: 'Not a member (any more).' });
+  const key = 'mpl:' + id;
+  const lists = (await env.SOTD.get(key, 'json')) || [];
+  const sorted = () => lists.slice().sort((a, b) => b.at - a.at);
+  if (request.method === 'GET') return answer(200, { lists: sorted() });
+  if (request.method !== 'POST') return answer(405, { error: 'Use GET or POST.' });
+  const body = await request.json().catch(() => ({}));
+  if (body.op === 'delete') {
+    const i = lists.findIndex(l => l.id === body.id);
+    if (i >= 0) { lists.splice(i, 1); await env.SOTD.put(key, JSON.stringify(lists)); }
+    return answer(200, { ok: true, lists: sorted() });
+  }
+  if (body.op !== 'save') return answer(400, { error: 'Say save or delete.' });
+  const name = String(body.name || '').replace(/\s+/g, ' ').trim().slice(0, PLAYLIST_NAME) || 'My playlist';
+  const tracks = [...new Set((Array.isArray(body.tracks) ? body.tracks : []).map(String).filter(t => ID_RE.test(t)))].slice(0, PLAYLIST_TRACKS);
+  let list = body.id ? lists.find(l => l.id === body.id) : null;
+  if (!list) {
+    if (lists.length >= PLAYLISTS_MAX) return answer(400, { error: 'That’s the most playlists you can keep (' + PLAYLISTS_MAX + '). Delete one first.' });
+    list = { id: randomCode(9) }; lists.push(list);
+  }
+  Object.assign(list, { name, tracks, at: Date.now() });
+  await env.SOTD.put(key, JSON.stringify(lists));
+  return answer(200, { list, lists: sorted() });
 }
 
 // a member's file, by a signed link: in ranges, as audio and video players ask (a phone's won't play without)

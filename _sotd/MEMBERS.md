@@ -46,6 +46,15 @@ A member can keep John's recordings on a device and play them with no connection
   the month's count shows it on the front page too.
 - Videos aren't kept (yet).
 
+## Saved playlists
+
+A member can save My playlist (*Save this playlist* in it, with a name) and keep several. They're kept by the Worker
+with their sign-in (`/members/playlists`, KV key `mpl:<member id>`), so every device they're signed in on has them.
+Tapping one opens it as My playlist; changes to an open saved playlist save themselves (a device that was offline sends
+its changes when it's back; one that wasn't takes the newer copy). *Close playlist* puts it away (still saved) for an
+empty one; *Delete* removes it from the saved ones (its songs stay on that device). Up to 50 playlists of 500 songs.
+Removing a member removes their saved playlists. Visitors keep the single My playlist on their device, as before.
+
 ## Setting it up (once)
 
 1. Cloudflare dashboard → R2: turn R2 on (Cloudflare asks for a payment method; the first 10 GB a month are free,
