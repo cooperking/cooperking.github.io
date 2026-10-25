@@ -91,6 +91,9 @@ jobs:
           YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
         run: python _sotd/youtube_playlist.py
 
+      - name: Other uploads to offer for still-picture videos (admin page)
+        run: python _sotd/video_alts.py
+
       - name: The year each song first came out
         run: python _sotd/years.py
 

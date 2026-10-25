@@ -51,12 +51,13 @@ jobs:
           if [ "$VIDEO" = "true" ]; then args="$args --video"; fi
           if [ -n "$IDS" ]; then args="$args --ids $IDS"; fi
           python _sotd/video_hunt.py $args
+          python _sotd/video_alts.py
 
       - name: Save
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
-          git add _sotd/data/video-hunt.json _sotd/data/youtube-quota.json
+          git add _sotd/data/video-hunt.json _sotd/data/youtube-quota.json songs/video-alts.json
           if git diff --cached --quiet; then echo "nothing changed"; exit 0; fi
           git commit -m "YouTube lookups for choosing official videos"
           for i in 1 2 3 4 5; do git pull --rebase --quiet && git push && exit 0; sleep 5; done

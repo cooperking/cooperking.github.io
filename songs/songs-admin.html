@@ -52,6 +52,20 @@
 .why a { color: var(--fg); }
 .vrow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .vrow input { flex: 1 1 220px; }
+/* a still picture's other uploads, to watch and choose from */
+.alts { display: grid; gap: 8px; margin-top: 10px; }
+.alts > summary { cursor: pointer; font-size: 13px; color: var(--fg); font-weight: 600; list-style: none; }
+.alts > summary::-webkit-details-marker { display: none; }
+.alts > summary::before { content: "▸ "; } .alts[open] > summary::before { content: "▾ "; }
+.alt { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 10px; align-items: center; padding: 6px; border-radius: 12px; border: 1px solid var(--line); background: var(--field); }
+.alt.on { border-color: var(--fg); }
+.alt .th { position: relative; display: block; width: 112px; aspect-ratio: 16 / 9; border-radius: 8px; overflow: hidden; background: #1d0b1e; }
+.alt .th img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.alt .th .len { position: absolute; right: 4px; bottom: 4px; padding: 1px 5px; border-radius: 4px; background: rgba(0, 0, 0, .75); color: #fff; font: 600 10.5px/1.4 var(--sans); }
+.alt .tt { font-size: 13.5px; color: var(--fg); line-height: 1.3; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.alt .ch { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.alt .acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; align-items: center; }
+.alt .badge.k-video, .alt .badge.k-tv { background: var(--ok); border-color: var(--ok); color: #fff; }
 .facts { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
 .fact { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 8px; }
 .fact.gone textarea { text-decoration: line-through; opacity: .5; }
@@ -173,7 +187,7 @@
   var PLAY = '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M4 2.5v11l9.5-5.5z"/></svg>', PAUSE = '<svg viewBox="0 0 16 16" fill="currentColor"><rect x="3.5" y="2.5" width="3" height="11"/><rect x="9.5" y="2.5" width="3" height="11"/></svg>';
   var CHEV = '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2.5 4.5 6 8l3.5-3.5"/></svg>';
   var songs = [], live = { src: [], songs: {}, artists: {} }, pending = { songs: {} }, signedW = {}, edits = {}, show = 'waiting', armed = false;
-  var TAGS = {}, VIDS = {}, QUOTES = {}, CAT = {}, COVERS = {}, MEMBERS = [], OPEN = {}, DAYS = {}, media = true;
+  var ALTS = {}, TAGS = {}, VIDS = {}, QUOTES = {}, CAT = {}, COVERS = {}, MEMBERS = [], OPEN = {}, DAYS = {}, media = true;
   var list = document.getElementById('list'), audio = document.getElementById('audio'), playingBtn = null;
   function $(id) { return document.getElementById(id); }
   function store(k, v) { try { if (v === undefined) localStorage.removeItem(k); else localStorage.setItem(k, typeof v === 'string' ? v : JSON.stringify(v)); } catch (e) {} }
@@ -320,7 +334,38 @@
       w.video = id; commit(true);
     });
     vr.appendChild(vi); sec.appendChild(vr);
+    var alts = (ALTS[s.id] || []).filter(function (a) { return a.v !== (VIDS[s.id] || {}).v; });
+    if (stillPic(s) && alts.length) sec.appendChild(altList(s, w, alts, commit));
     return sec;
+  }
+  // a still picture's other uploads (from the YouTube searches, best first: music videos and TV first), each to watch
+  // on YouTube or use in its place (saved with Sign off or Save changes, like a pasted link)
+  var ALTOPEN = {};
+  var KIND = { video: 'Music video', tv: 'TV', other: 'Upload', live: 'Live', lyric: 'Lyric video', audio: 'Still picture' };
+  function altList(s, w, alts, commit) {
+    var d = el('details', 'alts'), real = alts.filter(function (a) { return a.k === 'video' || a.k === 'tv'; }).length;
+    d.appendChild(el('summary', null, alts.length + ' other upload' + (alts.length === 1 ? '' : 's') + ' to try' + (real ? ' · ' + real + ' look' + (real === 1 ? 's' : '') + ' like a real video' : '')));
+    var spot = (VIDS[s.id] || {}).s || 0;
+    d.open = !!ALTOPEN[s.id]; d.addEventListener('toggle', function () { ALTOPEN[s.id] = d.open; });   // stays open as the card's drawn again
+    alts.forEach(function (a) {
+      var row = el('div', 'alt' + (w.video === a.v ? ' on' : ''));
+      var th = el('a', 'th'); th.href = 'https://www.youtube.com/watch?v=' + a.v; th.target = '_blank'; th.rel = 'noopener';
+      var im = el('img'); im.loading = 'lazy'; im.alt = ''; im.src = 'https://i.ytimg.com/vi/' + a.v + '/mqdefault.jpg'; th.appendChild(im);
+      if (a.s) th.appendChild(el('span', 'len', Math.floor(a.s / 60) + ':' + ('0' + a.s % 60).slice(-2)));
+      row.appendChild(th);
+      var info = el('div');
+      info.appendChild(el('div', 'tt', a.t));
+      var diff = spot && a.s ? a.s - spot : 0;
+      info.appendChild(el('div', 'ch', (a.c || '') + (Math.abs(diff) >= 5 ? ' · ' + (diff > 0 ? '+' : '−') + Math.abs(diff) + 's against the song' : '')));
+      var acts = el('div', 'acts');
+      acts.appendChild(el('span', 'badge k-' + a.k, KIND[a.k] || a.k));
+      var wa = el('a', 'link', 'Watch ↗'); wa.href = th.href; wa.target = '_blank'; wa.rel = 'noopener'; acts.appendChild(wa);
+      var use = el('button', 'btn small' + (w.video === a.v ? ' primary' : ''), w.video === a.v ? 'Chosen' : 'Use this'); use.type = 'button';
+      use.addEventListener('click', function () { w.video = a.v; commit(true); toast('Chosen: Sign off or Save changes puts it live'); });
+      acts.appendChild(use); info.appendChild(acts); row.appendChild(info);
+      d.appendChild(row);
+    });
+    return d;
   }
   function factSection(s, st, w, path, title) {
     var sec = el('div', 'sec'), commit = commitOf(s, w);
@@ -796,8 +841,10 @@
     getJSON('moods.json').catch(function () { return {}; }),
     getJSON('videos.json').catch(function () { return {}; }),
     getJSON('facts-quotes.json').catch(function () { return {}; }),
-    api('/members/admin', { op: 'list' }).catch(function () { return {}; })
+    api('/members/admin', { op: 'list' }).catch(function () { return {}; }),
+    getJSON('video-alts.json').catch(function () { return {}; })
   ]).then(function (r) {
+    ALTS = (r[8] && r[8].songs) || {};
     var asc = (r[0].songs || []).slice(), next = null;
     for (var di = asc.length - 1; di >= 0; di--) { var dd = dayOf(asc[di].a), iso = dd.slug.split('-').reverse().join('-');
       if (next && next <= iso) { var nd = new Date(next + 'T12:00:00Z'); nd.setUTCDate(nd.getUTCDate() - 1); iso = nd.toISOString().slice(0, 10); }
