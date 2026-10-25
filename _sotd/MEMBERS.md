@@ -115,3 +115,14 @@ With fake files (`_sotd` doesn't keep them), against the Worker run locally with
     not downloaded, downloads gone once removed.
 
 Not yet on a real iPhone or Fire TV.
+
+## TV-friendly copies of John's videos
+
+Many uploaded videos are AV1 or VP9 (YouTube's formats), some 4K, and glitch on a Fire TV Stick. `.github/workflows/video-tv.yml`
+(`_sotd/video_tv.py`) makes an H.264 copy (1080p at most, about 4–5 Mbps, faststart) of each that needs one at `h/<track>.mp4`
+in the R2 bucket; the Worker plays the copy wherever there is one. It runs after each video upload (the Worker starts it for
+that video), once a day, and by hand (all of them). The originals are kept as they are.
+
+It needs four repository secrets: `R2_ACCESS_KEY_ID` and `R2_SECRET_ACCESS_KEY` (an R2 API token: Cloudflare dashboard,
+R2, Manage R2 API Tokens, Create API token, Object Read & Write, applied to the bucket), `R2_BUCKET` (the bucket's name), and
+`CLOUDFLARE_ACCOUNT_ID` (already there).

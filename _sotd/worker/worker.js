@@ -69,6 +69,7 @@ export default {
       if (url.pathname.startsWith('/members/')) return await members(request, url, env);
       if (url.pathname.startsWith('/m/')) return await mediaFile(request, url, env);
       if (url.pathname === '/media/report') return await mediaReport(url, env);
+      if (url.pathname === '/app.webmanifest') return appManifest(url);
       if (url.pathname.startsWith('/i/')) return await invitePage(url, env);
       if (url.pathname === '/covers.json' || url.pathname.startsWith('/c/') || url.pathname.startsWith('/s/')) return await ownCover(request, url, env);
       return page('Song of the Day', '<p>This service makes Spotify playlists from the Song of the Day calendar.</p>');
@@ -365,6 +366,17 @@ async function factsSignoff(request, env) {
   return answer(200, { ok: true, signed: n, at, job });
 }
 
+async function startTvCopy(env, track) {   // video-tv.yml for one video, just uploaded
+  if (!env.GH_TOKEN) return 'The GH_TOKEN secret is not set.';
+  const r = await fetch('https://api.github.com/repos/' + REPO + '/actions/workflows/video-tv.yml/dispatches', {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + env.GH_TOKEN, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28',
+      'User-Agent': 'SongOfTheDayWorker', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ref: 'main', inputs: { track } })
+  }).catch(e => ({ status: 0, text: async () => String(e) }));
+  return r.status === 204 ? 'started' : 'GitHub answered ' + r.status;
+}
+
 async function startFactsJob(env) {
   if (!env.GH_TOKEN) return 'The GH_TOKEN secret is not set.';
   const r = await fetch('https://api.github.com/repos/' + REPO + '/actions/workflows/' + FACTS_JOB + '/dispatches', {
@@ -521,6 +533,7 @@ async function members(request, url, env) {
       if (!env.MEDIA) return answer(503, { error: 'No R2 bucket is bound to the Worker as MEDIA yet.' });
       if (!MEDIA_KEY_RE.test(String(body.key || ''))) return answer(400, { error: 'Not one of the files.' });
       await env.MEDIA.delete(body.key); await catalogSet(env, body.key, 0);
+      if (body.key[0] === 'v') await env.MEDIA.delete('h/' + body.key.slice(2));   // and its TV copy
       return answer(200, { ok: true });
     }
   }
@@ -563,6 +576,7 @@ async function memberUpload(request, url, env, answer) {
     if (!parts.length) return answer(400, { error: 'No parts.' });
     const obj = await up.complete(parts);
     await catalogSet(env, key, obj.size, typeof body.fp === 'string' ? body.fp.slice(0, 80) : '');
+    if (key[0] === 'v') { await env.MEDIA.delete('h/' + key.slice(2)); await startTvCopy(env, key.slice(2, 24)); }   // a new video: its TV copy made again
     return answer(200, { ok: true, key, size: obj.size });
   }
   if (op === 'abort') { await up.abort(); return answer(200, { ok: true }); }
@@ -875,6 +889,22 @@ async function memberPlaylists(request, env, answer) {
 }
 
 // a member's file, by a signed link: in ranges, as audio and video players ask (a phone's won't play without)
+// ---------- the calendar's app manifest, with a one-use sign-in code in its start address: an iPhone's Home Screen app
+// opens at the manifest's start address (not the page's), and keeps its own storage apart from Safari, so this is how
+// it opens signed in. The calendar points its manifest here while it offers the app. ----------
+function appManifest(url) {
+  const code = /^[A-Za-z0-9]{6}$/.test(url.searchParams.get('c') || '') ? url.searchParams.get('c') : '';
+  const path = url.searchParams.get('p') === '/songs/draft/' ? '/songs/draft/' : '/songs/';
+  const site = 'https://cooperking.github.io', v = '?v=4';
+  const m = { name: 'John’s Song of the Day', short_name: 'Song of the Day', id: site + '/songs/',
+    start_url: site + path + (code ? '#join=' + code : ''), scope: site + '/songs/', display: 'standalone',
+    background_color: '#ec1a13', theme_color: '#ec1a13',
+    icons: [{ src: site + '/songs/icon-192.png' + v, sizes: '192x192', type: 'image/png', purpose: 'any' },
+            { src: site + '/songs/icon-512.png' + v, sizes: '512x512', type: 'image/png', purpose: 'any' },
+            { src: site + '/songs/icon-maskable-512.png' + v, sizes: '512x512', type: 'image/png', purpose: 'maskable' }] };
+  return new Response(JSON.stringify(m), { headers: { 'Content-Type': 'application/manifest+json; charset=utf-8', 'Cache-Control': 'no-store', 'Access-Control-Allow-Origin': '*' } });
+}
+
 // ---------- what John's videos are, for playing on a TV: read from each MP4's own header (no download) ----------
 // /media/report?from=0&n=30 gives, for each video: size, length, width x height, codec (avc1 is H.264; hvc1/hev1 is
 // HEVC), H.264 profile and level, frame rate, bitrate, and whether its index comes first (faststart). Kept in KV
@@ -969,8 +999,9 @@ async function mediaFile(request, url, env) {
   if (request.method !== 'GET' && request.method !== 'HEAD') return plain(405, 'Use GET.');
   const exp = parseInt(url.searchParams.get('e'), 10), sig = url.searchParams.get('s') || '';
   if (!(exp > Date.now() / 1000) || sig !== await mediaSig(env, m[1], m[2], exp)) return plain(403, 'This link has run out or isn’t valid.');
-  const key = m[1] + '/' + m[2] + '.' + m[3];
-  const head = await env.MEDIA.head(key);
+  // a video's TV-friendly copy (h/<track>.mp4, made by video-tv.yml) wherever there is one: it plays everywhere
+  let key = m[1] + '/' + m[2] + '.' + m[3], head = m[1] === 'v' ? await env.MEDIA.head('h/' + m[2] + '.mp4') : null;
+  if (head) key = 'h/' + m[2] + '.mp4'; else head = await env.MEDIA.head(key);
   if (!head) return plain(404, 'Not here.');
   const size = head.size, type = MEDIA_KINDS[m[1]].type;
   const hdrs = { 'Content-Type': type, 'Accept-Ranges': 'bytes', 'Cache-Control': 'private, max-age=3600', 'ETag': head.httpEtag,
