@@ -3409,7 +3409,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var ptr = document.getElementById('ptr'), ptrX = 0, ptrY = null, ptrPull = 0, ptrMode = null, PTR_AT = 64;
     var ptrBar = document.querySelector('.bar-top'), ptrGap = 0, ptrBarBottom = 0;
     var ptrBody = [document.querySelector('.hero'), document.getElementById('cal'), document.querySelector('.side')];
-    var anyOpen = function () { return !!document.querySelector('dialog[open]'); };
+    // a pop-up on top stops it; a song playing on with its day closed (the mini player) doesn't, nor does a reload stop
+    // that for long: it's saved as it goes, and My playlist's box has it again after the reload, ready to carry on
+    var anyOpen = function () { return layers().length > 0 || siteOn(); };
     var ptrLabel = function () {
       var lab = ptr.querySelector('.ptr-lab'), last = songs[songs.length - 1];
       lab.textContent = '';
@@ -3453,6 +3455,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       if (ptrMode === 'down' && ptrPull >= PTR_AT) {
         ptrSet(PTR_AT, 220);
         ptr.classList.add('spin');
+        if (bgOn) resumeSave();   // where it's got to, for after the reload
         setTimeout(function () { location.reload(); }, 500);
       } else if (ptrMode === 'down') {
         ptrSet(0, 280);
