@@ -828,7 +828,7 @@ async function memberTvCode(request, env, answer) {
   const id = await memberFromToken(request, env);
   if (!id) return answer(401, { error: 'Not a member (any more).' });
   const rk = 'tvcodes:' + id + ':' + new Date().toISOString().slice(0, 13), n = Number(await env.SOTD.get(rk)) || 0;
-  if (n >= 10) return answer(429, { error: 'That’s a lot of codes this hour. Try again later.' });
+  if (n >= 30) return answer(429, { error: 'That’s a lot of codes this hour. Try again in a little while.' });
   await env.SOTD.put(rk, String(n + 1), { expirationTtl: 7200 });
   const code = tvCode();
   await env.SOTD.put('tvcode:' + await sha256hex(code), id, { expirationTtl: TV_CODE_MINUTES * 60 });

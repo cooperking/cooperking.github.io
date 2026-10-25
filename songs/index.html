@@ -4561,13 +4561,18 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (!c) return;
     if ((acct.open || appDlg.open) && !/^#join=/.test(location.hash)) try { history.replaceState(history.state, '', location.pathname + location.search + '#join=' + c); } catch (e) {}
   }
-  function appCodeGet() {   // one code while it lasts (30 minutes), not one each time the Profile opens
+  function appCodeGet() {   // one code while it lasts (30 minutes), kept through reloads: not one each time the Profile opens
+    if (!appCode) try { appCode = JSON.parse(localStorage.getItem('sotd-appcode') || 'null'); } catch (e) {}
     if (appCode && appCode.until > Date.now() + 5 * 60e3) { appCodeShow(); return; }
     var tok = ''; try { tok = localStorage.getItem(MKEY) || ''; } catch (e) {}
     if (!tok || !MBASE || appCodeGet.busy) return;
     appCodeGet.busy = true;
     fetch(MBASE + '/members/tvcode', { method: 'POST', headers: { Authorization: 'Bearer ' + tok } }).then(function (r) { return r.json(); }).then(function (j) {
-      if (j.code) { appCode = { code: j.code, until: Date.now() + (j.minutes || 30) * 60e3 }; if (acct.open || appDlg.open) appCodeShow(); }
+      if (j.code) {
+        appCode = { code: j.code, until: Date.now() + (j.minutes || 30) * 60e3 };
+        try { localStorage.setItem('sotd-appcode', JSON.stringify(appCode)); } catch (e) {}
+        if (acct.open || appDlg.open) appCodeShow();
+      }
     }).catch(function () {}).then(function () { appCodeGet.busy = false; });
   }
   function codeOut() {   // the code out of the address again
@@ -4633,7 +4638,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   });
   acOut.addEventListener('click', function () {
     if (!acOut.classList.contains('armed')) { acOut.classList.add('armed'); acOut.textContent = 'Tap again to sign out'; return; }
-    var was = ''; try { was = localStorage.getItem(MKEY) || ''; localStorage.removeItem(MKEY); } catch (e) {}
+    var was = ''; try { was = localStorage.getItem(MKEY) || ''; localStorage.removeItem(MKEY); localStorage.removeItem('sotd-appcode'); } catch (e) {}
+    appCode = null;
     if (was && MBASE) fetch(MBASE + '/members/signout', { method: 'POST', headers: { Authorization: 'Bearer ' + was } }).catch(function () {});   // off the members page too
     closeDialog(acct);
     dlClear(); MEMBER = null; memberApply(); famSync(); OWNC_SIG = '{}'; render(); toast('Signed out on this device');   // (the album covers back)
@@ -4687,7 +4693,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       .then(function (r) { return r.json().then(function (j) { j.ok = r.ok; return j; }); })   // (the device's own id: a sign-in here replaces the last)
       .then(function (j) {
         if (!j.ok || !j.token) { toast(j.error || 'That invite didn’t work. Ask John for a new one.'); memberLoad(); return; }
-        try { localStorage.setItem(MKEY, j.token); } catch (e) {}
+        try { localStorage.setItem(MKEY, j.token); localStorage.removeItem('sotd-appcode'); } catch (e) {}   // (a code kept for the app was the last member's)
+        appCode = null;
         memberLoad();
       }).catch(function () { toast('Couldn’t reach the site to join. Try again.'); });
   }
