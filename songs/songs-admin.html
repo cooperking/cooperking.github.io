@@ -764,11 +764,9 @@
       if (i >= PLAN.length) {
         PLAN.forEach(planState); $('upstat').textContent = ''; drawPlan();
         // files up from before fingerprints, the same size: their fingerprints noted, so a changed one is seen next time
-        PLAN.forEach(function (p) {
-          var e = p.s && CAT[p.s.id];
-          if (p.st === 'same' && e && !e['f' + p.kind]) api('/members/upload?op=mark&key=' + p.kind + '/' + p.s.id + (p.kind === 'a' ? '.mp3' : '.mp4'), { size: p.f.size, fp: p.fp })
-            .then(function (j) { if (j.ok) e['f' + p.kind] = p.fp; });
-        });
+        var marks = PLAN.filter(function (p) { var e = p.s && CAT[p.s.id]; return p.st === 'same' && p.fp && e && !e['f' + p.kind]; });
+        if (marks.length) api('/members/upload?op=mark', { items: marks.map(function (p) { return { key: p.kind + '/' + p.s.id + (p.kind === 'a' ? '.mp3' : '.mp4'), size: p.f.size, fp: p.fp }; }) })   // all in one go
+          .then(function (j) { if (j.ok) marks.forEach(function (p) { CAT[p.s.id]['f' + p.kind] = p.fp; }); });
         return;
       }
       var p = PLAN[i++];

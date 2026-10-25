@@ -164,8 +164,17 @@ function plLine(name, n, id) {
   return (id ? '<a href="https://open.spotify.com/playlist/' + esc(id) + '">' + label + '</a>' : label) + (n ? ', ' + n + (n === 1 ? ' song' : ' songs') : '');
 }
 
+// A write to KV that mustn't stop the answer if it fails (on the free plan, after the day's 1,000 writes, every write
+// fails until 00:00 UTC): the song list, a member's sign-in check and the like carry on without it.
+async function kvSoft(env, key, value, opts) {
+  try { await env.SOTD.put(key, value, opts); return true; } catch (e) { console.log('KV write skipped (' + key + '): ' + (e && e.message)); return false; }
+}
+// Spotify's sign-in, also kept here between requests, for when KV can't take the new one (see kvSoft): Spotify may
+// replace the refresh token each time, and losing the newest would mean signing in again
+let authMem = null;
 async function getToken(env) {
-  const auth = await env.SOTD.get('auth', 'json');
+  let auth = await env.SOTD.get('auth', 'json');
+  if (authMem && (!auth || (authMem.expires_at || 0) > (auth.expires_at || 0))) auth = authMem;
   if (!auth) throw new HttpError(503, 'The playlist maker is not set up yet.');
   if (auth.access_token && auth.expires_at > Date.now() + 60000) return auth.access_token;
   const r = await fetch('https://accounts.spotify.com/api/token', {
@@ -184,7 +193,8 @@ async function getToken(env) {
     access_token: j.access_token, expires_at: Date.now() + j.expires_in * 1000,
     refresh_token: j.refresh_token || auth.refresh_token
   });
-  await env.SOTD.put('auth', JSON.stringify(next));
+  authMem = next;
+  await kvSoft(env, 'auth', JSON.stringify(next));
   return next.access_token;
 }
 
@@ -224,7 +234,7 @@ async function allowedTracks(env, token, fresh) {
   const cached = fresh ? null : await env.SOTD.get('allowed', 'json');
   if (cached && cached.at > Date.now() - 6 * 3600e3) return new Set(cached.ids);
   const ids = (await playlistItems(token)).map(i => i.id);
-  await env.SOTD.put('allowed', JSON.stringify({ at: Date.now(), ids }));
+  await kvSoft(env, 'allowed', JSON.stringify({ at: Date.now(), ids }));
   return new Set(ids);
 }
 
@@ -276,15 +286,15 @@ async function songsJson(request, env, ctx) {
   if (hit) return hit;
   const token = await getToken(env);
   const items = await playlistItems(token);
-  let pv = (await env.SOTD.get('previews', 'json')) || {};
+  let pv = Object.assign({}, pvMem, (await env.SOTD.get('previews', 'json')) || {});
   // a song added since the last look-up gets its preview now, so the calendar never shows it without one
   if (items.some(it => !(it.id in pv))) pv = await fillPreviews(env, items, 3, pv);
   const tags = (await env.SOTD.get('tags', 'json')) || {};
   const songs = items.map((it, i) => Object.assign({ n: i + 1 }, it,
     pv[it.id] && pv[it.id] !== '-' ? { p: 'https://p.scdn.co/mp3-preview/' + pv[it.id] } : {},
     tags[it.id] && (tags[it.id].m || (tags[it.id].g || []).length) ? { tag: { m: tags[it.id].m, d: tags[it.id].d, g: tags[it.id].g } } : {}));
-  if (items.some(it => !(it.id in pv))) ctx.waitUntil(fillPreviews(env, items, 6));
-  ctx.waitUntil(afterLook(env, items));
+  if (items.some(it => !(it.id in pv))) ctx.waitUntil(fillPreviews(env, items, 6).catch(() => {}));
+  ctx.waitUntil(afterLook(env, items).catch(e => console.log('afterLook: ' + (e && e.message))));
   const res = new Response(JSON.stringify({ at: new Date().toISOString(), songs }), { headers: {
     'Content-Type': 'application/json; charset=utf-8', 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'public, max-age=600'
   } });
@@ -519,16 +529,23 @@ async function members(request, url, env) {
 async function memberUpload(request, url, env, answer) {
   if (!env.MEDIA) return answer(503, { error: 'No R2 bucket is bound to the Worker as MEDIA yet.' });
   const key = url.searchParams.get('key') || '', op = url.searchParams.get('op'), id = url.searchParams.get('uploadId') || '';
+  if (op === 'mark') {   // files already up (from before fingerprints), each the same size as the one picked: their
+    // fingerprints noted, all in one write ({items: [{key, size, fp}]})
+    const body = await request.json().catch(() => ({})), c = await catalog(env), done = [];
+    for (const it of (Array.isArray(body.items) ? body.items : []).slice(0, 2000)) {
+      const k = String(it.key || '');
+      if (!MEDIA_KEY_RE.test(k) || typeof it.fp !== 'string') continue;
+      const e = c[k.slice(2, 24)];
+      if (!e || e[k[0]] !== Number(it.size)) continue;
+      e['f' + k[0]] = it.fp.slice(0, 80); done.push(k);
+    }
+    if (done.length) await env.SOTD.put('mediaCatalog', JSON.stringify(c));
+    return answer(200, { ok: true, marked: done });
+  }
   if (!MEDIA_KEY_RE.test(key)) return answer(400, { error: 'Not one of the files (a/<track>.mp3 or v/<track>.mp4).' });
   if (op === 'start') {
     const up = await env.MEDIA.createMultipartUpload(key, { httpMetadata: { contentType: MEDIA_KINDS[key[0]].type } });
     return answer(200, { uploadId: up.uploadId });
-  }
-  if (op === 'mark') {   // a file already up (from before fingerprints), the same size as the one picked: its fingerprint noted
-    const body = await request.json().catch(() => ({})), head = await env.MEDIA.head(key);
-    if (!head || head.size !== Number(body.size) || typeof body.fp !== 'string') return answer(409, { error: 'Not the same file.' });
-    await catalogSet(env, key, head.size, body.fp.slice(0, 80));
-    return answer(200, { ok: true });
   }
   if (!id) return answer(400, { error: 'Which upload?' });
   const up = env.MEDIA.resumeMultipartUpload(key, id);
@@ -706,7 +723,7 @@ async function memberMe(request, env, answer) {
   const id = Object.keys(all).find(k => all[k].devices && all[k].devices[hash]);
   if (!id) return answer(401, { error: 'Not a member (any more).' });
   const m = all[id], dev = m.devices[hash];
-  if (Date.now() - (dev.seen || 0) > 6 * 3600e3) { dev.seen = Date.now(); await env.SOTD.put('members', JSON.stringify(all)); }
+  if (Date.now() - (dev.seen || 0) > 6 * 3600e3) { dev.seen = Date.now(); await kvSoft(env, 'members', JSON.stringify(all)); }
   const exp = Math.floor(Date.now() / 1000) + LINK_HOURS * 3600, base = new URL(request.url).origin, media = {};
   if (env.MEDIA && env.ADMIN_KEY) {
     for (const [track, e] of Object.entries(await catalog(env))) {
@@ -869,8 +886,7 @@ async function afterLook(env, items) {
   if (jobDay === today) return;
   const job = (await env.SOTD.get('job', 'json')) || {};
   const chores = [];
-  if ((await env.SOTD.get('choresDay')) !== today) {   // the first look of the day
-    await env.SOTD.put('choresDay', today);
+  if ((await env.SOTD.get('choresDay')) !== today && await kvSoft(env, 'choresDay', today)) {   // the first look of the day
     chores.push(cleanup(env), tagNewSongs(env, items, 3));
   }
   if (job.at && londonDay(job.at) === today && job.newest === today) {
@@ -922,6 +938,7 @@ async function startJob(env, sig, job, songs, newest, justRun) {
 
 // The Web API no longer gives preview links, but each song's Spotify embed page carries one.
 // Looks up at most `limit` songs per run, newest first; '-' marks a song with no preview.
+const pvMem = {};   // previews found, kept between requests too (for when KV can't take them: see kvSoft)
 async function fillPreviews(env, items, limit, known) {
   const pv = known || (await env.SOTD.get('previews', 'json')) || {};
   const todo = items.filter(it => !(it.id in pv)).reverse().slice(0, limit);
@@ -933,7 +950,7 @@ async function fillPreviews(env, items, limit, known) {
     pv[it.id] = m ? m[1] : '-';
     changed = true;
   }
-  if (changed) await env.SOTD.put('previews', JSON.stringify(pv));
+  if (changed) { Object.assign(pvMem, pv); await kvSoft(env, 'previews', JSON.stringify(pv)); }
   return pv;
 }
 
