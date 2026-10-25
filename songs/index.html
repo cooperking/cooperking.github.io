@@ -2756,7 +2756,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     // a member sharing a day John has given his own picture: its own link, with his card (or, if they choose, the album cover)
     var own = MEMBER && OWNC[s.track] && OWNC[s.track].share && MBASE && !DRAFT;
     var o = { lines: ['John\u2019s Song of the Day', longDate(iso), '', t, s.artist], title: t, sub: s.artist + ' \u00b7 ' + longDate(iso),
-      mode: mode, modes: hasVid && hasPre, pics: !!own, pic: own ? 'own' : 'album' };
+      mode: mode, modes: hasVid && hasPre, pics: !!own, pic: own ? 'own' : 'album', song: whole(s) };   // song: the whole song here (John's recording), not the preview
     o.urlFor = function (m) { return o.pic === 'own' ? MBASE + '/s/' + s.track + (m ? '?play=' + m : '') : dayLink(slug, m); };
     o.imageFor = function () { return o.pic === 'own' ? MBASE + '/s/' + s.track + '.jpg?v=' + encodeURIComponent(OWNC[s.track].share.at) : SITE + slug + '/card.jpg'; };
     o.url = o.urlFor(mode); o.image = o.imageFor();
@@ -2781,7 +2781,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     sm.hidden = !o.modes;
     var pm = document.getElementById('shpicmode'); pm.hidden = !o.pics;
     [].forEach.call(pm.querySelectorAll('button'), function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-pic') === o.pic ? 'true' : 'false'); });
-    [].forEach.call(sm.querySelectorAll('button'), function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-mode') === o.mode ? 'true' : 'false'); });
+    [].forEach.call(sm.querySelectorAll('button'), function (b) {
+      b.setAttribute('aria-pressed', b.getAttribute('data-mode') === o.mode ? 'true' : 'false');
+      if (b.getAttribute('data-mode') === 'preview') b.textContent = o.song ? 'Song' : 'Preview';
+    });
     document.getElementById('shtitle').textContent = o.title;
     document.getElementById('shsub').textContent = o.sub;
     var card = document.getElementById('shcard'), img = document.getElementById('shimg');
