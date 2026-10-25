@@ -984,12 +984,18 @@ async function mediaReport(url, env) {
   let changed = false;
   for (const t of tracks.slice(from, from + n)) {
     const size = cat[t].v;
-    if (keep[t] && keep[t].size === size && !keep[t].err) continue;
-    try { keep[t] = await probeMp4(env, 'v/' + t + '.mp4', size); } catch (e) { keep[t] = { size, err: String(e && e.message || e).slice(0, 120) }; }
+    if (!(keep[t] && keep[t].size === size && !keep[t].err)) {
+      try { keep[t] = await probeMp4(env, 'v/' + t + '.mp4', size); } catch (e) { keep[t] = { size, err: String(e && e.message || e).slice(0, 120) }; }
+      changed = true;
+    }
+    const hh = await env.MEDIA.head('h/' + t + '.mp4');   // its TV copy too, if it has one
+    if (!hh) { if (keep['h:' + t]) { delete keep['h:' + t]; changed = true; } continue; }
+    if (keep['h:' + t] && keep['h:' + t].size === hh.size && !keep['h:' + t].err) continue;
+    try { keep['h:' + t] = await probeMp4(env, 'h/' + t + '.mp4', hh.size); } catch (e) { keep['h:' + t] = { size: hh.size, err: String(e && e.message || e).slice(0, 120) }; }
     changed = true;
   }
   if (changed) await kvSoft(env, 'mediaProbe', JSON.stringify(keep));
-  const videos = {}; tracks.forEach(t => { if (keep[t] && keep[t].size === cat[t].v) videos[t] = keep[t]; });
+  const videos = {}; tracks.forEach(t => { if (keep[t] && keep[t].size === cat[t].v) videos[t] = Object.assign({}, keep[t], keep['h:' + t] ? { tv: keep['h:' + t] } : {}); });
   return new Response(JSON.stringify({ total: tracks.length, done: Object.keys(videos).length, next: from + n < tracks.length ? from + n : null, videos }), { headers: h });
 }
 
@@ -1006,11 +1012,15 @@ async function mediaFile(request, url, env) {
   if (head) key = 'h/' + m[2] + '.mp4'; else head = await env.MEDIA.head(key);
   if (!head) return plain(404, 'Not here.');
   const size = head.size, type = MEDIA_KINDS[m[1]].type;
-  const hdrs = { 'Content-Type': type, 'Accept-Ranges': 'bytes', 'Cache-Control': 'private, max-age=3600', 'ETag': head.httpEtag,
+  // a video can change under the same address (its TV copy arriving): browsers check before using what they kept
+  // (no-cache), and a piece asked for against the old file (If-Range) gets the whole new one, not a piece of it
+  const hdrs = { 'Content-Type': type, 'Accept-Ranges': 'bytes', 'Cache-Control': m[1] === 'v' ? 'private, no-cache' : 'private, max-age=3600', 'ETag': head.httpEtag,
     // the calendar fetches a song to keep it on the device (a member's download)
-    'Access-Control-Allow-Origin': MEMBERS_ORIGIN, 'Access-Control-Expose-Headers': 'Content-Length, Content-Range, Accept-Ranges' };
+    'Access-Control-Allow-Origin': MEMBERS_ORIGIN, 'Access-Control-Expose-Headers': 'Content-Length, Content-Range, Accept-Ranges, ETag' };
+  if (request.headers.get('If-None-Match') === head.httpEtag) return new Response(null, { status: 304, headers: hdrs });
   let start = 0, end = size - 1, partial = false;
-  const rg = /^bytes=(\d*)-(\d*)$/.exec(request.headers.get('Range') || '');
+  const ifr = request.headers.get('If-Range');
+  const rg = ifr && ifr !== head.httpEtag ? null : /^bytes=(\d*)-(\d*)$/.exec(request.headers.get('Range') || '');
   if (rg && (rg[1] || rg[2])) {
     if (rg[1]) { start = parseInt(rg[1], 10); if (rg[2]) end = Math.min(size - 1, parseInt(rg[2], 10)); }
     else { start = Math.max(0, size - parseInt(rg[2], 10)); }
