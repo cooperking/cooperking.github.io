@@ -1813,11 +1813,17 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     return !vplay.started;
   }
   function songStarted(v) { if (!v.started) { v.started = true; v.startedAt = Date.now(); } }
+  // on a TV the remote can't follow a link: the panel says how to sign in to YouTube (Premium has no adverts) instead
+  if (TV) (function () {
+    var l = document.getElementById('adwhylink'); if (!l) return;
+    l.removeAttribute('href'); l.removeAttribute('target'); l.tabIndex = -1; l.setAttribute('aria-hidden', 'false');
+    l.textContent = 'No adverts with YouTube Premium: press \u2630 on the remote, then Sign in to YouTube';
+  })();
   function adWhy(on) {
     var a = document.getElementById('adwhy'), l = document.getElementById('adwhylink');
     if (!a || a.classList.contains('on') === on) return;
     a.classList.toggle('on', on);
-    l.tabIndex = on && !l.getAttribute('data-out') ? 0 : -1;
+    l.tabIndex = on && !TV && !l.getAttribute('data-out') ? 0 : -1;
   }
   function capTick() {   // the video's facts, on the video's clock: a pause holds them, a skip moves them
     var p = vplay && vplay.player;
@@ -4372,7 +4378,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       toast('The remote is in YouTube\u2019s player: arrows to Skip, then OK. Back to come out.');
     }
     function takeBack() {
-      var aw = document.getElementById('adwhylink'); if (aw.getAttribute('data-out')) { aw.removeAttribute('data-out'); if (document.getElementById('adwhy').classList.contains('on')) aw.tabIndex = 0; }
+      var aw = document.getElementById('adwhylink'); if (aw.getAttribute('data-out')) { aw.removeAttribute('data-out'); if (document.getElementById('adwhy').classList.contains('on') && !TV) aw.tabIndex = 0; }
       if (!inYT()) return;
       sheet.setAttribute('tabindex', '-1'); sheet.focus({ preventScroll: true });
       if (toastEl.classList.contains('show') && /YouTube\u2019s player/.test(toastEl.textContent)) toastEl.classList.remove('show');
