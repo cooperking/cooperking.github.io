@@ -4487,33 +4487,73 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     }
     return { steps: steps, note: note };
   }
-  function iosSteps() {   // both places: the pop-up (with pictures) and the Profile (words)
-    var g = iosGuide();
+  // Android, when the browser hasn't offered its own Install (Chrome only does once it's ready, and not again for a while
+  // after it's turned down; other browsers never do): the steps in that browser's menu. An app's own browser (Instagram,
+  // Facebook and the like, "; wv)" in its name) can't install, so it says to open Chrome first. Android's app shares the
+  // browser's sign-in, so it opens signed in.
+  function androidGuide() {
+    var inApp = /; wv\)|FBAN|FBAV|FB_IAB|Instagram|LinkedInApp|Snapchat|musical_ly|BytedanceWebview|Line\/|GSA\//i.test(UA);
+    var samsung = /SamsungBrowser/.test(UA), firefox = /Firefox\//.test(UA), edge = /EdgA\//.test(UA);
+    var KEBAB = '<svg viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="3" r="1.4"/><circle cx="8" cy="8" r="1.4"/><circle cx="8" cy="13" r="1.4"/></svg>';
+    var BURGER = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 4.5h10M3 8h10M3 11.5h10"/></svg>';
+    var DOTS = '<svg viewBox="0 0 16 16" fill="currentColor"><circle cx="3" cy="8" r="1.4"/><circle cx="8" cy="8" r="1.4"/><circle cx="13" cy="8" r="1.4"/></svg>';
+    var PHONE = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="4.5" y="1.5" width="7" height="13" rx="1.5"/><path d="M7 12.5h2"/></svg>';
+    function ic(svg, hot) { return '<span class="ic dots' + (hot ? ' hot' : '') + '">' + svg + '</span>'; }
+    function bar(items) { return '<div class="mock mbar">' + items.join('') + '</div>'; }
+    function rows(list, hot) { return '<div class="mock sheet">' + list.map(function (r, i) { return '<span class="row' + (i === hot ? ' hot' : '') + '">' + r + '</span>'; }).join('') + '</div>'; }
+    var URL_ = '<span class="url">cooperking.github.io</span>';
+    function confirmBox(title, ok) { return '<div class="mock top"><span>Cancel</span><b>' + title + '</b><span class="hot">' + ok + '</span></div>'; }
+    var steps = [];
+    if (inApp) {
+      steps.push({ t: 'This page is open inside another app. Tap <b>⋮</b> (top right) and choose <b>Open in Chrome</b> (or <b>Open in browser</b>)', m: bar([URL_, ic(KEBAB, true)]) });
+      steps.push({ t: 'In Chrome, tap <b>⋮</b> at the top right, then <b>Add to home screen</b>' });
+      steps.push({ t: 'Tap <b>Install</b>', m: confirmBox('Add to home screen', 'Install'), last: true });
+    } else if (samsung) {
+      steps.push({ t: 'Tap <b>☰</b> at the bottom right of Samsung Internet', m: bar([URL_, ic(BURGER, true)]) });
+      steps.push({ t: 'Tap <b>Add page to</b>, then <b>Home screen</b>', m: rows(['Bookmarks', PHONE + 'Add page to', 'Downloads'], 1) });
+      steps.push({ t: 'Tap <b>Add</b>', m: confirmBox('Add to Home screen', 'Add'), last: true });
+    } else if (firefox) {
+      steps.push({ t: 'Tap <b>⋮</b> in Firefox’s bar', m: bar([URL_, ic(KEBAB, true)]) });
+      steps.push({ t: 'Tap <b>Add app to Home screen</b> <span class="q">(or <b>Install</b>)</span>', m: rows(['Bookmarks', 'History', PHONE + 'Add app to Home screen'], 2) });
+      steps.push({ t: 'Tap <b>Add</b>', m: confirmBox('Add to Home screen', 'Add'), last: true });
+    } else if (edge) {
+      steps.push({ t: 'Tap <b>•••</b> in the middle of Edge’s bottom bar', m: bar([URL_, ic(DOTS, true)]) });
+      steps.push({ t: 'Tap <b>Add to phone</b> <span class="q">(swipe the menu up if you don’t see it)</span>', m: rows(['Favourites', 'History', PHONE + 'Add to phone'], 2) });
+      steps.push({ t: 'Tap <b>Install</b>', m: confirmBox('Install app', 'Install'), last: true });
+    } else {
+      steps.push({ t: 'Tap <b>⋮</b> at the top right of Chrome', m: bar([URL_, ic(KEBAB, true)]) });
+      steps.push({ t: 'Tap <b>Add to home screen</b> <span class="q">(or <b>Install app</b>)</span>', m: rows(['New tab', 'Bookmarks', PHONE + 'Add to home screen'], 2) });
+      steps.push({ t: 'Tap <b>Install</b>', m: confirmBox('Add to home screen', 'Install'), last: true });
+    }
+    return { steps: steps };
+  }
+  function iosSteps() {   // both places: the pop-up (with pictures) and the Profile (words); Android's when not an iPhone
+    var g = IOS ? iosGuide() : androidGuide();
     var box = document.getElementById('appsteps'), keep = document.getElementById('appnot');
     if (keep && keep.parentNode === box) document.querySelector('#appdlg .app-acts').appendChild(keep);
     box.innerHTML = g.steps.map(function (st, i) {
-      return '<div class="astep"><span class="n">' + (i + 1) + '</span><div><p>' + st.t + (st.last ? '. It opens signed in.' : '') + '</p>' + (st.m || '') + (st.last ? '<p class="q" id="appcode"></p>' : '') + '</div></div>';
+      return '<div class="astep"><span class="n">' + (i + 1) + '</span><div><p>' + st.t + (st.last ? '. It opens signed in.' : '') + '</p>' + (st.m || '') + (st.last && IOS ? '<p class="q" id="appcode"></p>' : '') + '</div></div>';
     }).join('');
     document.getElementById('acsteps').innerHTML = g.steps.map(function (st) {
-      return '<li>' + st.t + '.' + (st.last ? ' It opens signed in. <span class="q" id="acappcode"></span>' : '') + '</li>';
+      return '<li>' + st.t + '.' + (st.last ? ' It opens signed in.' + (IOS ? ' <span class="q" id="acappcode"></span>' : '') : '') + '</li>';
     }).join('');
   }
-  window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); installEv = e; if (acct.open) appDraw(); });
+  // Chrome's own Install can come a moment after the pop-up opens: the pop-up and the Profile follow it
+  window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); installEv = e; if (acct.open) appDraw(); if (appDlg && appDlg.open && document.getElementById('appsteps').hidden) appOfferDraw(); });
   window.addEventListener('appinstalled', function () { installEv = null; if (acct.open) appDraw(); toast('Added: Song of the Day is on your home screen'); });
   function appCan() { return !standalone && !TV && !!MEMBER && (touchy || !!installEv); }
   function appDraw() {
     var box = document.getElementById('acapp'), t = document.getElementById('acappt'), steps = document.getElementById('acsteps'), ib = document.getElementById('acinstall');
     box.hidden = !appCan();
     if (box.hidden) return;
-    ib.hidden = !installEv; steps.hidden = !IOS || !!installEv;
+    ib.hidden = !installEv; steps.hidden = !!installEv;
     if (installEv) t.textContent = 'Put Song of the Day on your home screen as an app: it opens full screen, signed in.';
-    else if (IOS) { t.textContent = 'Put Song of the Day on your home screen as an app: it opens full screen, like any other.'; iosSteps(); appCodeGet(); }
-    else t.textContent = 'Put Song of the Day on your home screen as an app: open the browser’s menu (⋮) and choose Install app or Add to Home screen.';
+    else { t.textContent = 'Put Song of the Day on your home screen as an app: it opens full screen, like any other.'; iosSteps(); if (IOS) appCodeGet(); }
   }
   function appCodeShow() {
     var c = appCode && appCode.code;
     ['acappcode', 'appcode'].forEach(function (id) {
-      var el = document.getElementById(id); el.textContent = '';
+      var el = document.getElementById(id); if (!el) return; el.textContent = '';   // (an iPhone's only)
       if (!c) return;
       el.appendChild(document.createTextNode('If it doesn’t, tap Sign in there and type '));
       var b = document.createElement('b'); b.textContent = c.slice(0, 3) + ' ' + c.slice(3); el.appendChild(b);
@@ -4535,17 +4575,20 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (/^#join=/.test(location.hash)) try { history.replaceState(history.state, '', location.pathname + location.search); } catch (e) {}
   }
   acct.addEventListener('close', codeOut);
-  // a member joining from an invite on a device that wasn't signed in (their first time): Get the app, in its own pop-up. Android:
-  // Chrome's install box; iPhone: the three steps slide up, drawn as Safari shows them. The Profile has it after that.
+  // a member joining from an invite on a device that wasn't signed in (their first time): Get the app, in its own pop-up.
+  // Android: Chrome's install box when Chrome offers one, or else the steps in that browser's menu; iPhone: the steps slide
+  // up, drawn as Safari (or the browser in hand) shows them. The Profile has it after that.
   var appDlg = document.getElementById('appdlg');
-  function appOffer() {
-    if (IOS) iosSteps();
+  function appOfferDraw() {
+    iosSteps();
     document.getElementById('appsteps').hidden = true;
     document.getElementById('appnot').textContent = 'Not now';
     document.querySelector('#appdlg .app-acts').appendChild(document.getElementById('appnot'));
-    document.getElementById('appt').textContent = IOS || installEv ? 'Song of the Day on your home screen: full screen, signed in, a tap away.'
-      : 'Song of the Day on your home screen: open the browser’s menu (⋮) and choose Install app or Add to Home screen.';
-    document.getElementById('appgo').hidden = !(IOS || installEv);
+    document.getElementById('appt').textContent = 'Song of the Day on your home screen: full screen, signed in, a tap away.';
+    document.getElementById('appgo').hidden = false;
+  }
+  function appOffer() {
+    appOfferDraw();
     openLayer(appDlg);
     if (IOS) appCodeGet();
   }
@@ -4558,12 +4601,12 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       (ev.userChoice || Promise.resolve({})).then(function (c) { if (c && c.outcome === 'accepted') closeDialog(appDlg); });
       return;
     }
-    if (IOS) {
+    {   // the steps for this phone and browser
       this.hidden = true;
       var nb = document.getElementById('appnot'), st = document.getElementById('appsteps');
       nb.textContent = 'Done'; st.appendChild(nb);   // Done under the steps
       st.hidden = false;
-      appCodeShow();
+      if (IOS) appCodeShow();
       setTimeout(function () { document.getElementById('appsteps').scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 60);
     }
   });
