@@ -4085,7 +4085,6 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       .then(function (j) {
         if (!j.ok || !j.token) { toast(j.error || 'That invite didn’t work. Ask John for a new one.'); memberLoad(); return; }
         try { localStorage.setItem(MKEY, j.token); } catch (e) {}
-        toast('Welcome, ' + j.name + ': the whole songs and John’s own videos are on here');
         memberLoad();
       }).catch(function () { toast('Couldn’t reach the site to join. Try again.'); });
   }
