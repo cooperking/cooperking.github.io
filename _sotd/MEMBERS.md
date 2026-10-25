@@ -42,10 +42,17 @@ A member can keep John's recordings on a device and play them with no connection
 - The Home Screen app keeps its own storage (an iPhone copies only cookies from Safari), so an invite opened in Safari
   doesn't sign it in. *Sign in* (the last button in the bar, everywhere but the TV) takes the members page's *Code*
   (the same one-use code as a TV's) or the invite link pasted in. Signed in, it's a small filled person: tapping it (or the
-  *Signed in as* chip) opens their own sheet: their name, their saved playlists (tap one to open it as My playlist) and
+  *Signed in as* chip) opens their *Profile*: their name, their saved playlists (tap one to open it as My playlist) and
   *Sign out* (two taps; that device's downloads go too). A white *Signed in as <name>* chip under
   the month's count shows it on the front page too.
 - Videos aren't kept (yet).
+
+## Invitations
+
+*Invite* (or *New link*) on the Members tab opens the invitation: a message written for them with their link (it can be
+changed), and a picture: the calendar's sharing picture, one John chooses (*Choose picture…*, kept on that device for
+next time) or none. *Share…* (on a phone) hands the words and the picture to the phone's share sheet; Messages,
+WhatsApp, Email and Copy send the words alone.
 
 ## Saved playlists
 

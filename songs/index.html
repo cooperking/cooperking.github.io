@@ -349,7 +349,7 @@ button.day:focus-visible .sleeve { box-shadow: 0 16px 34px var(--shadow), 0 0 0 
 .emptymsg { color: var(--muted); padding: 10px 0; font-family: var(--serif); font-style: italic; }
 
 /* day view */
-dialog#sheet, dialog#mine, dialog#index {
+dialog#sheet, dialog#mine, dialog#index, dialog#acctsheet, dialog#askdlg {
   --bg: #ffffff; --fg: #1d0b1e; --fg-2: rgba(29, 11, 30, .9); --muted: rgba(29, 11, 30, .62); --faint: rgba(29, 11, 30, .45);
   --line: rgba(29, 11, 30, .14); --tile: #f3eef0; --chip-bg: rgba(29, 11, 30, .04); --pill-bg: rgba(29, 11, 30, .03); --pill-hover: rgba(29, 11, 30, .08);
   border: 0; padding: 0; color: var(--fg-2); background: var(--bg); color-scheme: light;
@@ -357,13 +357,13 @@ dialog#sheet, dialog#mine, dialog#index {
   scrollbar-gutter: stable;   /* Windows-style scrollbars: keep the width fixed so the layout can't flip between fitting and scrolling */
   box-shadow: 0 30px 80px rgba(24, 8, 24, .45);
 }
-dialog#sharesheet, dialog#acctsheet {
+dialog#sharesheet {
   --bg: #ffffff; --fg: #1d0b1e; --muted: rgba(29, 11, 30, .62); --line: rgba(29, 11, 30, .14); --pill-bg: rgba(29, 11, 30, .03);
   border: 0; padding: 0; color: var(--fg); background: var(--bg); color-scheme: light;
   width: min(420px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow: auto; border-radius: 20px;
   box-shadow: 0 30px 80px rgba(24, 8, 24, .45);
 }
-dialog#sharesheet::backdrop, dialog#acctsheet::backdrop { background: rgba(24, 8, 24, .35); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+dialog#sharesheet::backdrop { background: rgba(24, 8, 24, .35); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
 .sh-in { display: grid; gap: 16px; padding: 14px 18px 20px; }
 .sh-mode { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .sh-lab { font-family: var(--sans); font-size: 10.5px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
@@ -373,6 +373,12 @@ dialog#sharesheet::backdrop, dialog#acctsheet::backdrop { background: rgba(24, 8
 .seg2 button[aria-pressed="true"] { background: var(--fg); color: #fffaf5; }
 .sh-head { display: flex; justify-content: space-between; align-items: center; }
 /* a member's own sheet (their person in the bar): who's signed in, their saved playlists, Sign out */
+.ac-who { display: grid; gap: 4px; }
+.ac-who h3, .ask h3 { margin: 0; font-family: var(--serif); font-weight: 500; font-size: 34px; line-height: 1.05; color: var(--fg); overflow-wrap: anywhere; }
+.ac-who p, .ask .ask-t { margin: 0; font-size: 14px; color: var(--muted); }
+.ask .ask-t:empty, .ask .nameinput[hidden] { display: none; }
+.ask .nameinput { margin-top: 0; }
+.ask-acts { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 .ac-h { margin: 0 0 6px; font: 600 11px/1.2 var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
 .ac-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .ac-list button { width: 100%; display: flex; align-items: center; gap: 10px; padding: 11px 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--pill-bg); color: var(--fg); font: 500 17px/1.2 var(--serif); text-align: left; cursor: pointer; }
@@ -403,7 +409,7 @@ dialog#sharesheet::backdrop, dialog#acctsheet::backdrop { background: rgba(24, 8
 .sh-link { display: none; }
 #shmail { display: none; }
 @media (min-width: 601px) {
-  dialog#sharesheet, dialog#acctsheet { bottom: env(safe-area-inset-bottom, 0px); width: min(540px, calc(100vw - 32px)); }
+  dialog#sharesheet { bottom: env(safe-area-inset-bottom, 0px); width: min(540px, calc(100vw - 32px)); }
   .sh-in { gap: 14px; padding: 16px 20px 20px; }
   .sh-link { display: flex; gap: 8px; }
   .sh-link input { flex: 1; min-width: 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: #faf7f8; color: var(--fg); font-family: var(--sans); font-size: 13px; }
@@ -422,21 +428,21 @@ dialog#sharesheet::backdrop, dialog#acctsheet::backdrop { background: rgba(24, 8
   .sh-act:focus-visible .ic { box-shadow: none; }
 }
 @media (max-width: 600px) {
-  dialog#sharesheet, dialog#acctsheet { width: 100%; max-width: 100%; margin: auto 0 0; border-radius: 22px 22px 0 0; max-height: 92dvh; }
-  dialog#sharesheet, dialog#acctsheet { top: auto !important; bottom: 0; }
+  dialog#sharesheet { width: 100%; max-width: 100%; margin: auto 0 0; border-radius: 22px 22px 0 0; max-height: 92dvh; }
+  dialog#sharesheet { top: auto !important; bottom: 0; }
   .sh-in { padding-bottom: max(20px, calc(env(safe-area-inset-bottom, 0px) + 10px)); }
 }
 @media (max-width: 600px) and (prefers-reduced-motion: no-preference) {
-  dialog#sharesheet[open], dialog#acctsheet[open] { animation: shup .32s cubic-bezier(.2, .8, .25, 1) both; }
+  dialog#sharesheet[open] { animation: shup .32s cubic-bezier(.2, .8, .25, 1) both; }
 }
 @keyframes shup { from { transform: translateY(100%); } to { transform: none; } }
 /* home-screen app: the page runs under the clock and the home bar, so the pop-ups keep clear of both */
-dialog#sheet, dialog#mine, dialog#index {
+dialog#sheet, dialog#mine, dialog#index, dialog#acctsheet, dialog#askdlg {
   top: env(safe-area-inset-top, 0px); bottom: env(safe-area-inset-bottom, 0px);
   max-height: calc(100dvh - 32px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
 }
-dialog#sharesheet, dialog#acctsheet { top: env(safe-area-inset-top, 0px); max-height: calc(100dvh - 32px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
-dialog#sheet::backdrop, dialog#mine::backdrop, dialog#index::backdrop { background: rgba(24, 8, 24, .3); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+dialog#sharesheet { top: env(safe-area-inset-top, 0px); max-height: calc(100dvh - 32px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
+dialog#sheet::backdrop, dialog#mine::backdrop, dialog#index::backdrop, dialog#acctsheet::backdrop, dialog#askdlg::backdrop { background: rgba(24, 8, 24, .3); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
 .sheet-in { display: grid; gap: 18px; padding: 16px 18px 24px; }
 .sheet-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .sheet-head p { margin: 0; }
@@ -560,7 +566,21 @@ dialog#sheet::backdrop, dialog#mine::backdrop, dialog#index::backdrop { backgrou
 .vidfloat iframe, .vidfloat > div { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #000; }
 .vidfloat video.ownvid { position: absolute; inset: 0; width: 100%; height: 100%; background: #000; object-fit: contain; z-index: 1; }
 .vidfloat video.ownvid[hidden] { display: none; }
-.vidfloat.own > iframe, .vidfloat.own > #vidslot { visibility: hidden; }   /* a member's own video: YouTube's player waits behind it */
+.vidfloat.own > iframe, .vidfloat.own > #vidslot, .vidfloat.cover > iframe, .vidfloat.cover > #vidslot { visibility: hidden; }
+/* a song or preview played in the video's place (the record and its sleeve, as big as the box), so its facts come down
+   under it and full screen works the same; the player's own controls never show (only the page's) */
+.vidfloat.cover, .vid.cover { background: transparent; box-shadow: none; }
+.vidfloat > .coverbox { display: none; background: transparent; place-items: center; z-index: 1; --bg: #fff; }
+.vidfloat.cover > .coverbox { display: grid; }
+.coverbox .deck { position: relative; width: auto; height: 100%; max-width: 100%; aspect-ratio: 1.55; }
+html.theatre .vidfloat.cover { background: #000; }
+html.theatre .vidfloat > .coverbox { --bg: #000; }
+@media (prefers-reduced-motion: no-preference) {
+  .coverbox .deck .slide { animation: pull .8s cubic-bezier(.2,.8,.25,1) both; }
+  .coverbox .deck .disc { animation: spin 1.8s linear infinite; animation-play-state: paused; }
+  .vidfloat.spin .coverbox .deck .disc { animation-play-state: running; }
+}
+.vidfloat video.ownvid { pointer-events: none; }   /* a member's own video: YouTube's player waits behind it */
 /* a member's downloads: the day's button (a tick once it's here), a mark on the calendar, and with no connection the
    days that can't play greyed */
 .iconbtn.dlbtn[hidden] { display: none; }
@@ -730,7 +750,7 @@ html.fab-on:not(.fab-under) .toast { bottom: calc(max(16px, env(safe-area-inset-
 /* Pop-ups are ordinary page layers (opened with show(), not showModal()): the browser's top layer can't have
    anything placed above it before iOS 17, and the My playlist button has to stay on top of a day and A–Z / Moods.
    The site draws the dim background (the scrim) itself and keeps the page behind from being tapped. */
-dialog#sheet, dialog#mine, dialog#index, dialog#sharesheet, dialog#acctsheet { position: fixed; left: 0; right: 0; height: fit-content; margin: auto; z-index: 50; overscroll-behavior: contain; }
+dialog#sheet, dialog#mine, dialog#index, dialog#sharesheet, dialog#acctsheet, dialog#askdlg { position: fixed; left: 0; right: 0; height: fit-content; margin: auto; z-index: 50; overscroll-behavior: contain; }
 dialog#index { height: calc(100dvh - 32px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
 .scrim { position: fixed; inset: 0; z-index: 49; display: none; background: rgba(24, 8, 24, .3); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); touch-action: none; }
 html.layer-open .scrim { display: block; }
@@ -1054,12 +1074,12 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
 </dialog>
 
 <dialog id="acctsheet" aria-labelledby="acname">
-  <div class="sh-in">
-    <div class="sh-head">
-      <span class="sh-kicker">Family</span>
+  <div class="sheet-in">
+    <div class="sheet-head">
+      <p class="mine-top"><span class="chip">Profile</span></p>
       <button class="close" id="acclose" type="button" aria-label="Close" autofocus><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 2l10 10M12 2 2 12"/></svg></button>
     </div>
-    <div class="sh-text">
+    <div class="ac-who">
       <h3 id="acname">Signed in</h3>
       <p>Signed in on this device: whole songs and John’s own videos play here.</p>
     </div>
@@ -1070,6 +1090,18 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     </div>
     <button class="ac-out" id="acout" type="button">Sign out</button>
   </div>
+</dialog>
+<dialog id="askdlg" aria-labelledby="askh">
+  <form class="sheet-in ask" id="askform" method="dialog">
+    <div class="sheet-head">
+      <p class="mine-top"><span class="chip" id="askk"></span></p>
+      <button class="close" id="askclose" type="button" aria-label="Close"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 2l10 10M12 2 2 12"/></svg></button>
+    </div>
+    <h3 id="askh"></h3>
+    <p class="ask-t" id="askt"></p>
+    <input class="nameinput" id="aski" type="text" autocomplete="off" spellcheck="false" maxlength="200">
+    <div class="ask-acts"><button class="copy" id="askok" type="submit">OK</button><button class="ac-out" id="askno" type="button">Cancel</button></div>
+  </form>
 </dialog>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -1380,7 +1412,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var open = layers(), top = open[open.length - 1], root = document.documentElement;
     root.classList.toggle('layer-open', !!top);
     scrimEl.style.zIndex = top ? String((+top.style.zIndex || 50) - 1) : '';
-    var under = open.some(function (d) { return d.id === 'mine' || d.id === 'sharesheet' || d.id === 'acctsheet'; });
+    var under = open.some(function (d) { return d.id === 'mine' || d.id === 'sharesheet' || d.id === 'acctsheet' || d.id === 'askdlg'; });
     root.classList.toggle('fab-under', under);
     if (top) pageEl.setAttribute('inert', ''); else pageEl.removeAttribute('inert');
     syncFloat();   // the floating video keeps to its day's place in the stack
@@ -1398,6 +1430,36 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var o = layers(); if (!o.length) return;
     e.preventDefault(); closeDialog(o[o.length - 1]);
   });
+  // the site's own question pop-up, in place of the browser's (never alert, confirm or prompt):
+  // ask({ k: kicker, h: title, t: text, input: { value, placeholder }, ok: 'OK', no: 'Cancel' }) gives a promise of the
+  // text typed (with input), true (without), or null if it's put away
+  var askDlg = document.getElementById('askdlg'), askDone = null;
+  function ask(o) {
+    if (askDone) askDone(null);
+    document.getElementById('askk').textContent = o.k || '';
+    document.getElementById('askk').hidden = !o.k;
+    document.getElementById('askh').textContent = o.h || '';
+    document.getElementById('askt').textContent = o.t || '';
+    var inp = document.getElementById('aski');
+    inp.hidden = !o.input; inp.value = o.input ? o.input.value || '' : ''; inp.placeholder = o.input ? o.input.placeholder || '' : '';
+    if (o.input && o.input.caps) inp.setAttribute('autocapitalize', 'characters'); else inp.removeAttribute('autocapitalize');
+    document.getElementById('askok').textContent = o.ok || 'OK';
+    document.getElementById('askno').textContent = o.no || 'Cancel';
+    openLayer(askDlg);
+    setTimeout(function () { try { (o.input ? inp : document.getElementById('askok')).focus({ preventScroll: true }); } catch (e) {} }, 60);
+    return new Promise(function (res) { askDone = function (v) { askDone = null; res(v); }; });
+  }
+  function askEnd(v) { var d = askDone; askDone = null; if (askDlg.open) closeDialog(askDlg); if (d) d(v); }
+  document.getElementById('askform').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var inp = document.getElementById('aski');
+    if (!inp.hidden && !inp.value.trim()) { inp.focus(); return; }
+    askEnd(inp.hidden ? true : inp.value);
+  });
+  document.getElementById('askno').addEventListener('click', function () { askEnd(null); });
+  document.getElementById('askclose').addEventListener('click', function () { askEnd(null); });
+  askDlg.addEventListener('close', function () { if (askDone) askEnd(null); });
+
   var audio = new Audio();
   audio.preload = 'none';
   var playing = null; // { s, el, bar, time }
@@ -1431,6 +1493,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
 
   function toggle(s, ui) {
     if (vplay && vplay.el === ui.el) { vidToggle(); return; }
+    watch(ui.el, coverVd(s)); return;   // in the video's place (below: the record playing it in the day, before)
     stopVideos();
     if (playing && playing.s === s) {
       if (audio.paused) { var p0 = audio.play(); if (p0 && p0.catch) p0.catch(function () {}); } else audio.pause();
@@ -1472,9 +1535,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var b = document.createElement('button'); b.type = 'button'; b.className = 'pill watch';
     watchLabel(el, b, false);
     b.addEventListener('click', function () {
-      if (!el.classList.contains('watching')) { setPlayMode('video'); watch(el, vd); return; }
+      if (!isVideo(el)) { setPlayMode('video'); watch(el, vd); return; }
       if (!o.ui) { unwatch(el); return; }   // a song with no preview: the video just closes
-      setPlayMode('audio'); fullReset(); unwatch(el); toggle(o.s, o.ui);   // Play as preview: the preview now, and from here on (out of full screen)
+      setPlayMode('audio'); watch(el, coverVd(o.s));   // Play as preview: the preview now, and from here on (full screen stays)
     });
     if (o.player) o.player.appendChild(b); else o.acts.insertBefore(b, o.acts.firstChild);
   }
@@ -1747,7 +1810,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (Date.now() - vplay.startedAt < 500) { if (capOpen) capShow(capIntro(s)); return; }   // the song's clock catching up after an advert's
     var items = vplay.items || (vplay.items = freshItems(s));
     var k = vidSession + '|' + Math.round(d);   // planned once per video started, from the facts it started with
-    if (k !== vidPlanKey) { vidPlanKey = k; vidPlan = videoPlan(items, 4, d - 2); }
+    if (k !== vidPlanKey) { vidPlanKey = k; vidPlan = vplay.cover && !whole(s) ? previewPlan(items, 0.8, d - 0.4) : videoPlan(items, 4, d - 2); }
     var plan = vidPlan, intro = capIntro(s);
     setCapH(capNeed([intro].concat(items)));
     var first = plan.length ? plan[0].s : 4, end = plan.length ? plan[plan.length - 1].e : 4;
@@ -1792,6 +1855,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (vplay && vplay.el === el) {
       clearInterval(vplay.timer); clearTimeout(vplay.check);
       try { if (shared && shared.stopVideo) shared.stopVideo(); } catch (e) {}   // kept for the next video: once you've pressed play in it, its sound stays allowed
+      if (vplay.cover) coverPlayer.off();
       vidspot.hidden = true;
       if (vplay.ui) { vplay.ui.bar.style.width = '0%'; vplay.ui.time.textContent = fmt(0); }
       vplay = null;
@@ -1826,10 +1890,14 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // reused: once a tap has let it play with sound, the videos after it can too.
   var ownVid = null, ownObj = null;
   function ownPlayer() {
+    coverPlayer.off();
     if (ownObj) { ownVid.hidden = false; vidfloat.classList.add('own'); return ownObj; }
     ownVid = document.createElement('video');
     ownVid.className = 'ownvid'; ownVid.playsInline = true; ownVid.setAttribute('playsinline', ''); ownVid.setAttribute('webkit-playsinline', '');
-    ownVid.controls = true; ownVid.preload = 'auto'; ownVid.setAttribute('controlslist', 'nodownload'); ownVid.disablePictureInPicture = false;
+    ownVid.controls = false; ownVid.preload = 'auto'; ownVid.disablePictureInPicture = true; ownVid.disableRemotePlayback = true;
+    ownVid.setAttribute('controlslist', 'nodownload nofullscreen noremoteplayback noplaybackrate'); ownVid.setAttribute('disablepictureinpicture', '');
+    ownVid.setAttribute('x-webkit-airplay', 'deny'); ownVid.tabIndex = -1;
+    ['webkitbeginfullscreen', 'enterpictureinpicture'].forEach(function (n) { ownVid.addEventListener(n, function () { try { if (ownVid.webkitExitFullscreen) ownVid.webkitExitFullscreen(); if (document.pictureInPictureElement) document.exitPictureInPicture(); } catch (x) {} }); });
     vidfloat.insertBefore(ownVid, vidfloat.firstChild);
     var state = -1;
     function fire(st) { state = st; vidState({ data: st, target: ownObj }); }
@@ -1869,6 +1937,65 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (ownVid) { ownVid.pause(); ownVid.hidden = true; ownVid.removeAttribute('src'); try { ownVid.load(); } catch (x) {} }
     vidfloat.classList.remove('own');
   };
+  // a song or a preview, played in the video's place: the record in its sleeve as big as the box, the page's audio
+  // playing it, worked through the same calls as the video players (so its facts come down under it, and full screen,
+  // Play all, My playlist and the remote work the same way)
+  var coverObj = null, coverOn = false, coverBox = document.createElement('div');
+  coverBox.className = 'coverbox'; coverBox.setAttribute('aria-hidden', 'true');
+  vidfloat.insertBefore(coverBox, vidfloat.firstChild);
+  function coverState(st) { coverObj.state = st; vidfloat.classList.toggle('spin', st === 1); vidState({ data: st, target: coverObj }); }
+  audio.addEventListener('playing', function () { if (coverOn) coverState(1); });
+  audio.addEventListener('pause', function () { if (coverOn && !audio.ended) coverState(2); });
+  audio.addEventListener('waiting', function () { if (coverOn) coverState(3); });
+  audio.addEventListener('ended', function () { if (coverOn) coverState(0); });
+  audio.addEventListener('error', function () {   // no connection and not downloaded: stopped, and said so
+    if (!coverOn || !vplay || !vplay.cover || navigator.onLine !== false) return;
+    var el = vplay.el; if (OFFL[el.sotd.s.track]) return;
+    coverState(2); toast('That one isn’t downloaded: it needs a connection');
+    if (queue) setTimeout(function () { if (vplay && vplay.el === el && audio.paused) playOn(el); }, 1500);
+  });
+  function coverPlayer(s) {
+    if (ytPlayer) try { ytPlayer.stopVideo(); } catch (x) {}
+    ownPlayer.off();
+    coverBox.textContent = '';
+    var deck = div('deck'), slide = div('slide'), disc = div('disc'), label = div('label'), bs = div('bigsleeve');
+    label.appendChild(artEl(s)); disc.appendChild(label); slide.appendChild(disc); bs.appendChild(artEl(s));
+    deck.appendChild(slide); deck.appendChild(bs); coverBox.appendChild(deck);
+    vidfloat.classList.add('cover'); vidspot.classList.add('cover'); vidfloat.classList.remove('spin');
+    coverOn = true;
+    if (coverObj) return coverObj;
+    coverObj = {
+      cover: true, state: -1,
+      loadVideoById: function (url) { coverObj.state = -1; audio.src = url; var p = audio.play(); if (p && p.catch) p.catch(function () { coverState(2); }); },
+      playVideo: function () { var p = audio.play(); if (p && p.catch) p.catch(function () {}); },
+      pauseVideo: function () { audio.pause(); },
+      stopVideo: function () { audio.pause(); },
+      seekTo: function (sec) { try { audio.currentTime = sec; } catch (x) {} },
+      getCurrentTime: function () { return audio.currentTime || 0; },
+      getDuration: function () { return isFinite(audio.duration) ? audio.duration : 0; },
+      getPlayerState: function () { return coverObj.state; },
+      isMuted: function () { return audio.muted; },
+      mute: function () { audio.muted = true; },
+      unMute: function () { audio.muted = false; },
+      setVolume: function (v) { audio.volume = Math.max(0, Math.min(1, v / 100)); },
+      unloadModule: function () {}, addEventListener: function () {}
+    };
+    return coverObj;
+  }
+  coverPlayer.off = function () {
+    if (coverOn) { coverOn = false; audio.pause(); }
+    vidfloat.classList.remove('cover', 'spin'); vidspot.classList.remove('cover');
+  };
+  function coverVd(s) { return { cover: true, src: songSrc(s) }; }
+  function isVideo(el) { return el.classList.contains('watching') && !!vplay && vplay.el === el && !vplay.cover; }
+  // a tap on a member's own video or a song's record: only ever the page's own buttons (full screen), or play and pause
+  vidfloat.addEventListener('click', function (e) {
+    if (!vidfloat.classList.contains('own') && !vidfloat.classList.contains('cover')) return;
+    e.preventDefault(); e.stopPropagation();
+    if (theatre) { if (uiUp()) uiDrop(); else uiShow(); return; }
+    vidToggle();
+  });
+  vidfloat.addEventListener('dblclick', function (e) { e.preventDefault(); e.stopPropagation(); });
   // Full screen (html.theatre): a video showing in the day fills the screen, under the day, which goes see-through so
   // its buttons can come up over the video. On a TV it's on unless turned off; anywhere else, the full-screen button
   // turns it on (and the browser's own full screen with it, where there is one). Kept for next time.
@@ -2258,6 +2385,14 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     dockReady(el.sotd.s);
     mine.shared = true;
     followFloat();
+    if (vd.cover) {   // a song or preview, in the video's place
+      shared = coverPlayer(el.sotd.s); sharedReady = true;
+      mine.player = shared;
+      soundHint = false; mutedByUs = false; soundUI();
+      shared.loadVideoById(vd.src);
+      return;
+    }
+    coverPlayer.off();
     var quiet = quietStart();
     if (vd.own) {   // a member: John's own video, in the page's own player
       if (ytPlayer) try { ytPlayer.stopVideo(); } catch (x) {}
@@ -2313,7 +2448,11 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function watch(el, vd) {
     // no waiting for a sliding card: the player sits outside the card and only shows once the card has settled,
     // so the next video starts loading straight away
-    if (el.classList.contains('watching')) { unwatch(el); return; }
+    if (el.classList.contains('watching')) {
+      var was = vplay && vplay.el === el ? (vplay.cover ? 'cover' : 'video') : '';
+      unwatch(el);
+      if (!was || was === (vd.cover ? 'cover' : 'video')) return;   // the same again: it stops
+    }
     stopVideos(el);
     audio.pause();
     if (playing) { playing.bar.style.width = '0%'; playing.time.textContent = fmt(0); playing = null; }
@@ -2322,8 +2461,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     dockShut();
     el.classList.add('watching');
     var sb = el.querySelector('.pill.watch');
-    if (sb) watchLabel(el, sb, true);
-    vplay = { el: el, ui: o.ui, player: null, on: false, timer: 0, vid: vd.v, started: false, startedAt: 0 };
+    if (sb) watchLabel(el, sb, !vd.cover);
+    vplay = { el: el, ui: o.ui, player: null, on: false, timer: 0, vid: vd.v, cover: !!vd.cover, started: false, startedAt: 0 };
     adState = -1; adOff = 0; adFlag(); capDone = false; clearTimeout(capWait); capWait = 0;   // any advert from the video before is over; this one's facts to come
     var np = document.getElementById('nowplaying'); np.textContent = o.s.title;
     var npBy = document.createElement('span'); npBy.className = 'by'; npBy.textContent = o.s.artist; np.appendChild(npBy);
@@ -2455,7 +2594,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       var dlb = document.createElement('button'); dlb.type = 'button'; dlb.className = 'iconbtn dlbtn';
       dlb.addEventListener('click', function () { if (OFFL[s.track]) dlRemove(s.track).then(function () { toast('Removed from this device'); }); else dlSong(s).then(function (ok) { if (ok) toast('Downloaded: it plays with no connection'); }); });
       dlButton(dlb, s); icons.insertBefore(dlb, ln);
-      if (VIDS[s.track]) {   // full screen, for its video (shown while the video shows)
+      if (VIDS[s.track] || songSrc(s)) {   // full screen, for its video or the song (shown while either plays)
         var fsi = document.createElement('button'); fsi.type = 'button'; fsi.className = 'iconbtn fsicon';
         fsi.setAttribute('aria-label', 'Watch full screen'); fsi.title = 'Full screen'; fsi.innerHTML = FS_ICON;
         fsi.addEventListener('click', function () { setFull(true); });
@@ -3737,8 +3876,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (!PL.lists.length && !fav.length) plStat('Add songs with the heart, then save them here.');
   }
   // open a saved playlist as My playlist (or, with null, an empty unsaved one)
-  function plOpen(l, force) {
-    if (l && !force && !PL.cur && fav.length && !window.confirm('The songs in My playlist now aren’t saved. Open “' + l.name + '” instead of them?')) return;
+  function plOpen(l, force) {   // a promise: true once it's open (false if they kept what's there)
+    if (l && !force && !PL.cur && fav.length) return ask({ k: 'My playlist', h: 'Open “' + l.name + '”?', t: 'The ' + fav.length + (fav.length === 1 ? ' song' : ' songs') + ' in My playlist now aren’t saved. Opening “' + l.name + '” puts them away.', ok: 'Open it', no: 'Keep these' })
+      .then(function (yes) { return yes ? plOpen(l, true) : false; });
     PL.quiet = true;
     clearTimeout(PL.t);
     plSetCur(l ? l.id : null); plAt(l ? l.at : 0);
@@ -3749,6 +3889,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     PL.quiet = false;
     plStat('');
     if (!l) toast('Playlist put away. It’s still saved.');
+    return Promise.resolve(true);
   }
   function plSend() {
     if (!MEMBER || !PL.cur) return;
@@ -3789,21 +3930,31 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   document.getElementById('plsave').addEventListener('click', function () {
     if (!fav.length) return;
     var n = plname.value.replace(/\s+/g, ' ').trim();
-    if (!n) { n = (window.prompt('Name this playlist', '') || '').replace(/\s+/g, ' ').trim(); if (!n) return; plname.value = n; try { localStorage.setItem('sotd-plname', n); } catch (e) {} setTitles(); setMakeLink(); }
+    if (n) { plSaveNew(n); return; }
+    ask({ k: 'Save playlist', h: 'Name this playlist', input: { placeholder: 'e.g. Sunday morning' }, ok: 'Save' }).then(function (v) {
+      n = (v || '').replace(/\s+/g, ' ').trim(); if (!n) return;
+      plname.value = n; try { localStorage.setItem('sotd-plname', n); } catch (e) {} setTitles(); setMakeLink();
+      plSaveNew(n);
+    });
+  });
+  function plSaveNew(n) {
     plStat('Saving…');
     plApi({ op: 'save', name: n, tracks: fav.slice() }).then(function (j) {
       if (j.status !== 200) { plStat(j.error || 'Couldn’t save just now'); return; }
       PL.lists = j.lists; plSetCur(j.list.id); plAt(j.list.at);
       plStat('Saved. It’s on all your devices.'); renderMine();
     }).catch(function () { plStat('Couldn’t reach the site. Try again.'); });
-  });
+  }
   document.getElementById('pldel').addEventListener('click', function () {
     var l = PL.lists.filter(function (x) { return x.id === PL.cur; })[0];
-    if (!l || !window.confirm('Delete “' + l.name + '” from your saved playlists? Its songs stay in My playlist here.')) return;
+    if (!l) return;
+    ask({ k: 'Saved playlists', h: 'Delete “' + l.name + '”?', t: 'It goes from all your devices. Its songs stay in My playlist here.', ok: 'Delete', no: 'Keep it' }).then(function (yes) {
+    if (!yes) return;
     plApi({ op: 'delete', id: l.id }).then(function (j) {
       if (j.status !== 200) { plStat(j.error || 'Couldn’t delete just now'); return; }
       PL.lists = j.lists; plSetCur(null); plStat('Deleted'); renderMine(); syncFav();
     }).catch(function () { plStat('Couldn’t reach the site. Try again.'); });
+    });
   });
 
   // the member's own sheet: their name, their saved playlists (tap one to open it as My playlist) and Sign out
@@ -3818,9 +3969,11 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       if (l.id === PL.cur) { var on = document.createElement('span'); on.className = 'on'; on.textContent = 'Open'; b.appendChild(on); }
       var ct = document.createElement('span'); ct.className = 'ct'; ct.textContent = l.tracks.length + (l.tracks.length === 1 ? ' song' : ' songs'); b.appendChild(ct);
       b.addEventListener('click', function () {
-        if (l.id !== PL.cur) { plOpen(l); if (PL.cur !== l.id) return; }   // not if they chose to keep what's there
-        closeDialog(acct);
-        if (fav.length || plAny()) { if (sheet.open && !theatre) closeDialog(sheet); renderMine(); openLayer(mine); mine.scrollTop = 0; }
+        (l.id === PL.cur ? Promise.resolve(true) : plOpen(l)).then(function (ok) {
+          if (!ok) return;   // they kept what's there
+          closeDialog(acct);
+          if (fav.length || plAny()) { if (sheet.open && !theatre) closeDialog(sheet); renderMine(); openLayer(mine); mine.scrollTop = 0; }
+        });
       });
       li.appendChild(b); ul.appendChild(li);
     });
@@ -3898,9 +4051,11 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   if (famBtn) famBtn.addEventListener('click', function () {
     var tok = ''; try { tok = localStorage.getItem(MKEY) || ''; } catch (e) {}
     if (tok) { acctOpen(); return; }
-    var c = window.prompt('Sign in: type the code from John, or paste your invite link') || '', m = /join=([\w-]+)/.exec(c);
-    c = m ? m[1] : c.replace(/[\s-]+/g, '').toUpperCase();
-    if (c) memberJoin(c);
+    ask({ k: 'Sign in', h: 'Family sign-in', t: 'Type the six-letter code from John, or paste your invite link.', input: { placeholder: 'Code or link', caps: true }, ok: 'Sign in' }).then(function (c) {
+      c = c || ''; var m = /join=([\w-]+)/.exec(c);
+      c = m ? m[1] : c.replace(/[\s-]+/g, '').toUpperCase();
+      if (c) memberJoin(c);
+    });
   });
   function joinFromHash() {
     var m = /^#join=([\w-]{16,}|[A-Za-z0-9]{6})$/.exec(location.hash);
