@@ -402,6 +402,11 @@ dialog#sharesheet::backdrop { background: rgba(24, 8, 24, .35); -webkit-backdrop
 .ac-list .on { flex: none; font: 600 10.5px/1.2 var(--sans); letter-spacing: .1em; text-transform: uppercase; padding: 3px 7px; border-radius: 999px; background: var(--fg); color: var(--bg); }
 .ac-none { margin: 0; font-size: 13px; color: var(--muted); }
 .ac-dev { display: grid; gap: 8px; }
+.ac-app { display: grid; gap: 8px; padding: 14px; border-radius: 16px; background: var(--pill-bg); border: 1px solid var(--line); }
+.ac-steps { margin: 0; padding-left: 20px; display: grid; gap: 6px; font-size: 14.5px; line-height: 1.4; color: var(--fg); }
+.ac-steps svg { vertical-align: -2px; }
+.ac-steps .q { color: var(--muted); font-size: 13px; }
+.ac-steps .q b { font: 600 13px/1 ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: .1em; color: var(--fg); }
 .ac-code { display: grid; gap: 4px; padding: 12px 14px; border-radius: 14px; background: var(--pill-bg); border: 1px solid var(--line); }
 .ac-code .code { font: 600 34px/1.1 ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: .14em; color: var(--fg); }
 .ac-acts .clear { text-decoration: underline; text-underline-offset: 3px; }
@@ -1151,6 +1156,16 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     </div>
     <div class="ac-who">
       <h3 id="acname">Signed in</h3>
+    </div>
+    <div class="ac-app" id="acapp" hidden>
+      <p class="ac-h">The app</p>
+      <p class="ac-none" id="acappt"></p>
+      <ol class="ac-steps" id="acsteps" hidden>
+        <li>Tap <b>Share</b> <svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-label="(the square with an arrow)"><path d="M8 10V1.8M5.2 4.4 8 1.6l2.8 2.8"/><path d="M5.5 6.5H3.5v7.5h9V6.5h-2"/></svg> in Safari’s bar <span class="q">(at the bottom, or behind ••• on newer iPhones)</span>.</li>
+        <li>Scroll down and tap <b>Add to Home Screen</b>.</li>
+        <li>Tap <b>Add</b>. It opens signed in. <span class="q" id="acappcode"></span></li>
+      </ol>
+      <div class="ac-acts"><button class="copy" id="acinstall" type="button" hidden>Install the app</button></div>
     </div>
     <div>
       <p class="ac-h">Your playlists</p>
@@ -4339,9 +4354,55 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     none.textContent = !PL.loaded ? 'Loading…' : 'None saved yet. Add songs with the heart, then open My playlist and tap Save.';
     acOut.classList.remove('armed'); acOut.textContent = 'Sign out';
     document.getElementById('accode').hidden = true; document.getElementById('acgetcode').textContent = 'Get a code';
+    appDraw();
   }
+  // ---- the site as an app on a phone's home screen: on Android, Chrome's own Install (one tap, from our button); on an
+  // iPhone or iPad, Safari's Share, Add to Home Screen (Apple allows no button). An iPhone's Home Screen app keeps its own
+  // storage, apart from Safari, so it starts signed out: a one-use code goes into this page's address while the Profile
+  // is open (the app opens at the address it was added from, and signs in with it), and is shown too, to type in if not.
+  // Offered in the Profile on phones and tablets, and opened by itself after joining from an invite. ----
+  var installEv = null, appCode = null;
+  window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); installEv = e; if (acct.open) appDraw(); });
+  window.addEventListener('appinstalled', function () { installEv = null; if (acct.open) appDraw(); toast('Added: Song of the Day is on your home screen'); });
+  function appCan() { return !standalone && !TV && !!MEMBER && (touchy || !!installEv); }
+  function appDraw() {
+    var box = document.getElementById('acapp'), t = document.getElementById('acappt'), steps = document.getElementById('acsteps'), ib = document.getElementById('acinstall');
+    box.hidden = !appCan();
+    if (box.hidden) return;
+    ib.hidden = !installEv; steps.hidden = !IOS || !!installEv;
+    if (installEv) t.textContent = 'Put Song of the Day on your home screen as an app: it opens full screen, signed in.';
+    else if (IOS) { t.textContent = 'Put Song of the Day on your home screen as an app: it opens full screen, like any other.'; appCodeGet(); }
+    else t.textContent = 'Put Song of the Day on your home screen as an app: open the browser’s menu (⋮) and choose Install app or Add to Home screen.';
+  }
+  function appCodeShow() {
+    var c = appCode && appCode.code, el = document.getElementById('acappcode');
+    el.textContent = '';
+    if (!c) return;
+    el.appendChild(document.createTextNode('If it doesn’t, tap Sign in there and type '));
+    var b = document.createElement('b'); b.textContent = c.slice(0, 3) + ' ' + c.slice(3); el.appendChild(b);
+    el.appendChild(document.createTextNode('.'));
+    if (acct.open && !/^#join=/.test(location.hash)) try { history.replaceState(history.state, '', location.pathname + location.search + '#join=' + c); } catch (e) {}
+  }
+  function appCodeGet() {   // one code while it lasts (30 minutes), not one each time the Profile opens
+    if (appCode && appCode.until > Date.now() + 5 * 60e3) { appCodeShow(); return; }
+    var tok = ''; try { tok = localStorage.getItem(MKEY) || ''; } catch (e) {}
+    if (!tok || !MBASE || appCodeGet.busy) return;
+    appCodeGet.busy = true;
+    fetch(MBASE + '/members/tvcode', { method: 'POST', headers: { Authorization: 'Bearer ' + tok } }).then(function (r) { return r.json(); }).then(function (j) {
+      if (j.code) { appCode = { code: j.code, until: Date.now() + (j.minutes || 30) * 60e3 }; if (acct.open) appCodeShow(); }
+    }).catch(function () {}).then(function () { appCodeGet.busy = false; });
+  }
+  acct.addEventListener('close', function () {   // the code out of the address again
+    if (/^#join=/.test(location.hash)) try { history.replaceState(history.state, '', location.pathname + location.search); } catch (e) {}
+  });
+  document.getElementById('acinstall').addEventListener('click', function () {
+    if (!installEv) return;
+    var ev = installEv; installEv = null;
+    ev.prompt();
+    (ev.userChoice || Promise.resolve({})).then(function () { appDraw(); });
+  });
   function acctOpen() {
-    acctDraw(); openLayer(acct);
+    acctDraw(); openLayer(acct); appDraw();   // (again, open: the code goes into the address only while it's open)
     if (MEMBER && !PL.loaded) plLoad();
   }
   document.getElementById('acclose').addEventListener('click', function () { closeDialog(acct); });
@@ -4385,6 +4446,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     }).then(function (j) {
       if (!j) return;
       MEMBER = j; memberApply(); famSync(); resumeInit();
+      if (appAfterJoin) { appAfterJoin = false; if (appCan()) setTimeout(acctOpen, 600); }
       var mc = JSON.stringify(j.mycovers || {});   // John's own covers this member sees: the calendar drawn again with them
       if (mc !== OWNC_SIG) { OWNC_SIG = mc; render(); if (idx.open) renderIndex(); }
       memberLoad.t = setTimeout(memberLoad, Math.max(60e3, j.exp * 1000 - Date.now() - 30 * 60e3));
@@ -4392,8 +4454,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   // joining: from an invite link (#join=<code>, the address then losing the code), or a TV code typed in the Fire TV
   // app's menu (the app calls sotdJoin)
-  function memberJoin(code) {
+  var appAfterJoin = false;
+  function memberJoin(code, invite) {
     if (!MBASE || !window.fetch) return;
+    if (invite) appAfterJoin = true;   // joined from an invite: then the app is offered (Profile)
     fetch(MBASE + '/members/join', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: code }) })
       .then(function (r) { return r.json().then(function (j) { j.ok = r.ok; return j; }); })
       .then(function (j) {
@@ -4434,7 +4498,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var m = /^#join=([\w-]{16,}|[A-Za-z0-9]{6})$/.exec(location.hash);
     if (!m) return false;
     try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
-    memberJoin(m[1]);
+    memberJoin(m[1], true);
     return true;
   }
   if (!joinFromHash()) memberLoad();
