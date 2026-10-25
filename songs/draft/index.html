@@ -1637,6 +1637,20 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
 
   var audio = new Audio();
   audio.preload = 'none';
+  // the page's audio, allowed to play with sound by the first tap (a moment of silence): a phone only lets a
+  // player start with sound after a tap on the page, and later, with the screen locked, there's no tap to be had (a
+  // video carrying on as its sound, or the next song after a video). Only while it's free.
+  var BGV = !TV && (/iPad|iPhone|iPod|Android/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
+  var audioOk = false, SILENT = 'data:audio/wav;base64,UklGRrQBAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YZABAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA';
+  function audioBless() {
+    if (audioOk || coverOn || ownBg || !audio.paused || audio.getAttribute('src')) return;   // in use (or used: already allowed)
+    audioOk = true;
+    audio.src = SILENT;
+    var p = audio.play();
+    function done() { if (audio.getAttribute('src') === SILENT) { audio.pause(); audio.removeAttribute('src'); try { audio.load(); } catch (x) {} } }
+    if (p && p.then) p.then(done, function () { audioOk = false; done(); }); else done();
+  }
+  if (BGV) ['touchend', 'click', 'keydown'].forEach(function (n) { document.addEventListener(n, audioBless, true); });
   var playing = null; // { s, el, bar, time }
 
   function fmt(sec) { sec = Math.max(0, Math.floor(sec || 0)); return Math.floor(sec / 60) + ':' + pad(sec % 60); }
@@ -2063,7 +2077,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // a member's video (John's own MP4): the browser's own player in the video's box, worked through the same calls as
   // YouTube's player (so the facts, full screen, Play all and the remote work the same way); no adverts. One player,
   // reused: once a tap has let it play with sound, the videos after it can too.
-  var ownVid = null, ownObj = null;
+  var ownVid = null, ownObj = null, ownBg = null;   // ownBg: the video's sound carrying on in the page's audio, out of sight
   function ownPlayer() {
     coverPlayer.off();
     if (ownObj) { ownVid.hidden = false; vidfloat.classList.add('own'); return ownObj; }
@@ -2074,39 +2088,107 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     ownVid.setAttribute('x-webkit-airplay', 'deny'); ownVid.tabIndex = -1;
     ['webkitbeginfullscreen', 'enterpictureinpicture'].forEach(function (n) { ownVid.addEventListener(n, function () { try { if (ownVid.webkitExitFullscreen) ownVid.webkitExitFullscreen(); if (document.pictureInPictureElement) document.exitPictureInPicture(); } catch (x) {} }); });
     vidfloat.insertBefore(ownVid, vidfloat.firstChild);
-    var state = -1;
+    var state = -1, vidUrl = '', lostAt = 0, askedAt = 0;
     function fire(st) { state = st; vidState({ data: st, target: ownObj }); }
-    ownVid.addEventListener('playing', function () { fire(1); });
-    ownVid.addEventListener('pause', function () { if (!ownVid.ended) fire(2); });
-    ownVid.addEventListener('waiting', function () { fire(3); });
-    ownVid.addEventListener('ended', function () { fire(0); });
+    function mine() { return vplay && vplay.player === ownObj; }
+    ownVid.addEventListener('playing', function () { if (!ownBg) fire(1); });
+    ownVid.addEventListener('pause', function () {
+      if (ownBg || ownVid.ended) return;
+      if ((state === 1 || state === 3) && Date.now() - askedAt > 1000) lostAt = Date.now();   // stopped by the phone (locked), not by a tap
+      fire(2);
+    });
+    ownVid.addEventListener('waiting', function () { if (!ownBg) fire(3); });
+    ownVid.addEventListener('ended', function () { if (!ownBg) fire(0); });
     ownVid.addEventListener('volumechange', function () { soundUI(); });
+    // Out of sight (the phone locked, or another app in front) a phone stops a video, but not a song: the video's
+    // sound carries on from the same second in the page's audio, as the song's MP3 (lighter than the video), or the
+    // video's own file where there's no MP3 or the MP3 is a different length (another edit); the lock screen's buttons
+    // and the next song work as ever. Back in sight, the video carries on from wherever the sound has got to.
+    // Phones and tablets only (a computer keeps playing a video in another tab); not YouTube's, which can't.
+    audio.addEventListener('playing', function () { if (ownBg) fire(1); });
+    audio.addEventListener('pause', function () { if (ownBg && !audio.ended) fire(2); });
+    audio.addEventListener('waiting', function () { if (ownBg) fire(3); });
+    audio.addEventListener('ended', function () { if (ownBg) fire(0); });
+    audio.addEventListener('error', function () { if (ownBg && vidUrl && audio.src.split('#')[0] !== vidUrl) bgSrc(vidUrl, ownBg.t, true); });
+    audio.addEventListener('loadedmetadata', function () {
+      if (!ownBg) return;
+      if (ownBg.t > 0.5 && Math.abs((audio.currentTime || 0) - ownBg.t) > 1) try { audio.currentTime = ownBg.t; } catch (x) {}   // where the #t= wasn't taken
+      if (!ownBg.check) return;
+      ownBg.check = false;
+      var vd = ownBg.dur, ad = audio.duration;
+      if (vd && isFinite(ad) && Math.abs(ad - vd) > 2.5) bgSrc(vidUrl, audio.currentTime || ownBg.t, !audio.paused);   // another edit: the video's own sound
+    });
+    function bgSrc(url, t, play) {
+      ownBg.t = t || 0;
+      audio.src = url + (t > 0.5 ? '#t=' + t.toFixed(2) : '');
+      if (play) { var p = audio.play(); if (p && p.catch) p.catch(function () { if (ownBg) fire(2); }); }
+    }
+    function bgOut(play, t) {   // the video's sound, into the page's audio
+      if (!vplay || !vplay.el.sotd) return;
+      var s = vplay.el.sotd.s, mp3 = (OFFL[s.track] && SWOK) || ownSong(s) ? songSrc(s) : '';
+      if (t == null) t = ownVid.currentTime || 0;
+      ownBg = { t: t, dur: isFinite(ownVid.duration) ? ownVid.duration : 0, check: !!mp3 };
+      try { ownVid.pause(); } catch (x) {}
+      audio.muted = ownVid.muted; audio.volume = ownVid.volume;
+      bgSrc(mp3 || vidUrl, t, play);
+      if (!play) fire(2);
+    }
+    function bgIn() {   // back in sight: the video again, from where the sound got to
+      var b = ownBg; if (!b) return;
+      var t = audio.getAttribute('src') ? audio.currentTime || b.t : b.t, play = !audio.paused;
+      ownBg = null;
+      audio.pause(); audio.removeAttribute('src'); try { audio.load(); } catch (x) {}
+      if (!mine()) return;
+      if ((ownVid.getAttribute('src') || '').split('#')[0] !== vidUrl) {   // started out of sight: the picture now, from there
+        ownVid.src = vidUrl + (t > 0.5 ? '#t=' + t.toFixed(2) : '');
+        if (t > 0.5) ownVid.addEventListener('loadedmetadata', function at() { ownVid.removeEventListener('loadedmetadata', at); if (Math.abs(ownVid.currentTime - t) > 1) try { ownVid.currentTime = t; } catch (x) {} });
+      } else try { ownVid.currentTime = t; } catch (x) {}
+      if (play) go(); else fire(2);
+    }
+    document.addEventListener('visibilitychange', function () {
+      if (!BGV) return;
+      if (!document.hidden) { bgIn(); return; }
+      if (ownBg || !mine() || ownVid.ended) return;
+      // playing, or stopped by the phone as it locked (just now, or its pause not yet heard), not by a tap
+      var on = !ownVid.paused || (Date.now() - askedAt > 1000 && ((state === 1 || state === 3) || (lostAt && Date.now() - lostAt < 2000)));
+      if (on) bgOut(true);
+    });
+    function cur() { return ownBg ? audio : ownVid; }
     function go() {
-      var p = ownVid.play();
+      var p = cur().play();
       // not allowed with sound here yet: paused, for a tap to play it (John: his own videos never start muted with Tap
       // for sound; YouTube's still can, as before)
       if (p && p.catch) p.catch(function () { fire(2); });
     }
     ownObj = {
       own: true,
-      loadVideoById: function (url, quiet) { state = -1; ownVid.muted = !!quiet; ownVid.src = url; go(); },
+      loadVideoById: function (url, quiet) {
+        state = -1; lostAt = 0; ownVid.muted = !!quiet; vidUrl = url;
+        if (ownBg) { ownBg = null; audio.pause(); }
+        if (BGV && document.hidden) {   // the next one starts with the screen locked: its sound now, the picture when it's back in sight
+          ownVid.removeAttribute('src'); try { ownVid.load(); } catch (x) {}
+          bgOut(true, 0); return;
+        }
+        ownVid.src = url; go();
+      },
       playVideo: go,
-      pauseVideo: function () { ownVid.pause(); },
-      stopVideo: function () { ownVid.pause(); },
-      seekTo: function (sec) { try { ownVid.currentTime = sec; } catch (x) {} },
-      getCurrentTime: function () { return ownVid.currentTime || 0; },
-      getDuration: function () { return isFinite(ownVid.duration) ? ownVid.duration : 0; },
+      pauseVideo: function () { askedAt = Date.now(); cur().pause(); },
+      stopVideo: function () { askedAt = Date.now(); cur().pause(); },
+      seekTo: function (sec) { try { cur().currentTime = sec; } catch (x) {} if (ownBg) ownBg.t = sec; },
+      getCurrentTime: function () { return cur().currentTime || (ownBg ? ownBg.t : 0); },
+      getDuration: function () { var d = cur().duration; return isFinite(d) && d ? d : ownBg ? ownBg.dur : 0; },
       getPlayerState: function () { return state; },
-      isMuted: function () { return ownVid.muted; },
-      mute: function () { ownVid.muted = true; },
-      unMute: function () { ownVid.muted = false; },
-      setVolume: function (v) { ownVid.volume = Math.max(0, Math.min(1, v / 100)); },
+      isMuted: function () { return cur().muted; },
+      mute: function () { ownVid.muted = audio.muted = true; },
+      unMute: function () { ownVid.muted = audio.muted = false; },
+      setVolume: function (v) { ownVid.volume = audio.volume = Math.max(0, Math.min(1, v / 100)); },
       unloadModule: function () {}, addEventListener: function () {}
     };
     vidfloat.classList.add('own');
     return ownObj;
   }
   ownPlayer.off = function () {   // back to YouTube's player
+    if (ownBg) { ownBg = null; audio.pause(); audio.removeAttribute('src'); }
     if (ownVid) { ownVid.pause(); ownVid.hidden = true; ownVid.removeAttribute('src'); try { ownVid.load(); } catch (x) {} }
     vidfloat.classList.remove('own');
   };
@@ -2703,7 +2785,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function mixed(a) { a = a.slice(); for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), x = a[i]; a[i] = a[j]; a[j] = x; } return a; }
   function playPick(p) {   // a song on the open day, as its video or its preview, whichever way is on
     var vd = playMode === 'video' && VIDS[p.sotd.s.track];
-    if (vd && document.hidden && p.sotd.ui) vd = null;   // out of sight (a locked phone), where a video can't play: the song
+    // out of sight (a locked phone), where a video can't play: the song; one of John's own videos plays as its sound
+    // (and is there as the video when the phone's unlocked)
+    if (vd && document.hidden && p.sotd.ui && !(vd.own && BGV)) vd = null;
     if (vd) { watch(p, vd); return true; }
     if (p.sotd.ui) { toggle(p.sotd.s, p.sotd.ui); return true; }
     return false;
