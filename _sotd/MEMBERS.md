@@ -54,7 +54,7 @@ A member can keep John's recordings on a device and play them with no connection
    secrets, checks the Worker still answers, and puts the previous version back if it doesn't. It needs two
    repository secrets: `CLOUDFLARE_API_TOKEN` (a Cloudflare token with Account > Workers Scripts > Edit) and
    `CLOUDFLARE_ACCOUNT_ID`.
-4. Draft calendar first: the members code is on `songs/draft/` until John signs it off.
+4. Draft calendar first, then live: the members code went live on `songs/` on 25 Oct 2026 (with `songs/sw.js`).
 
 ## Adding the real files later
 
