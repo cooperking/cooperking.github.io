@@ -387,6 +387,8 @@ dialog#sharesheet::backdrop { background: rgba(24, 8, 24, .35); -webkit-backdrop
 .ac-list .ct { flex: none; font: 500 12px/1.2 var(--sans); color: var(--muted); }
 .ac-list .on { flex: none; font: 600 10.5px/1.2 var(--sans); letter-spacing: .1em; text-transform: uppercase; padding: 3px 7px; border-radius: 999px; background: var(--fg); color: var(--bg); }
 .ac-none { margin: 0; font-size: 13px; color: var(--muted); }
+.ac-acts { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.ac-acts .copy[hidden] { display: none; }
 .ac-out { justify-self: start; padding: 10px 18px; border-radius: 999px; border: 1px solid var(--line); background: none; color: var(--fg); font: 600 12px/1.2 var(--sans); letter-spacing: .1em; text-transform: uppercase; cursor: pointer; }
 .ac-out.armed { background: var(--fg); color: var(--bg); border-color: var(--fg); }
 .sh-kicker { font-family: var(--sans); font-size: 11px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
@@ -1097,7 +1099,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       <ul class="ac-list" id="aclist"></ul>
       <p class="ac-none" id="acnone" hidden></p>
     </div>
-    <button class="ac-out" id="acout" type="button">Sign out</button>
+    <div class="ac-acts"><a class="copy" id="acadmin" href="/songs/admin.html" hidden><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13" aria-hidden="true"><path d="M8 1.8l1.2 1.3 1.8-.3.4 1.8 1.6.9-.8 1.6.8 1.6-1.6.9-.4 1.8-1.8-.3L8 14.2l-1.2-1.3-1.8.3-.4-1.8-1.6-.9.8-1.6-.8-1.6 1.6-.9.4-1.8 1.8.3z"/><circle cx="8" cy="8" r="2.2"/></svg>Admin</a><button class="ac-out" id="acout" type="button">Sign out</button></div>
   </div>
 </dialog>
 <dialog id="askdlg" aria-labelledby="askh">
@@ -3976,6 +3978,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // the member's own sheet: their name, their saved playlists (tap one to open it as My playlist) and Sign out
   var acct = document.getElementById('acctsheet'), acOut = document.getElementById('acout');
   function acctDraw() {
+    // John's own: the admin page, on a device he's opened it on (it keeps its password here) or signed in as John
+    var adminKey = ''; try { adminKey = localStorage.getItem('sotd-admin-key') || ''; } catch (e) {}
+    document.getElementById('acadmin').hidden = !(adminKey || (MEMBER && /^john\b/i.test(MEMBER.name || '')));
     document.getElementById('acname').textContent = MEMBER && MEMBER.name ? MEMBER.name : 'Signed in';
     var ul = document.getElementById('aclist'), none = document.getElementById('acnone');
     ul.textContent = '';
