@@ -10,7 +10,7 @@ CLOUDFLARE_ACCOUNT_ID. Without the token it does nothing.
 4. Checks the Worker: /status still answers (the old part), /covers.json answers JSON (the members part).
    If /status fails, the version from step 2 is put back and the job fails.
 """
-import json, os, shutil, subprocess, sys, tempfile, time, urllib.error, urllib.request, uuid
+import re, json, os, shutil, subprocess, sys, tempfile, time, urllib.error, urllib.request, uuid
 
 API = os.environ.get('CF_API', 'https://api.cloudflare.com/client/v4')   # (another address only for testing)
 NAME = 'sotd-playlists'
@@ -132,6 +132,13 @@ def main():
     if not ok_new:
         raise SystemExit('Uploaded, but the new code isn\'t answering yet (/covers.json).')
     note('Done: the Worker is running this code.')
+    # the calendar's song list, from Spotify: said here, with the Worker's own words if it fails (not a reason to undo)
+    s, t, b = get(LIVE + '/songs.json?check=' + str(int(time.time())))
+    if s == 200 and 'json' in t:
+        note('/songs.json: answers (%d songs)' % len(json.loads(b).get('songs', [])))
+    else:
+        words = re.sub(r'\s+', ' ', re.sub(r'<[^>]+>', ' ', b.decode('utf-8', 'replace'))).strip()[:400]
+        note('/songs.json FAILS (%s): %s' % (s, words), 'warning')
 
 
 if __name__ == '__main__':
