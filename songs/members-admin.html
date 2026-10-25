@@ -34,6 +34,7 @@ h1 { margin: 0; font-family: var(--serif); font-weight: 500; font-size: clamp(28
 h1 em { font-style: italic; font-weight: 400; color: var(--muted); }
 h2 { margin: 28px 0 6px; font: 600 12px/1.2 var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
 .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+a.btn { text-decoration: none; display: inline-block; }
 .btn { border: 1px solid var(--line); background: var(--chip); color: var(--fg); border-radius: 999px; padding: 8px 14px; font: 600 12px/1.2 var(--sans); letter-spacing: .08em; text-transform: uppercase; cursor: pointer; }
 .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
 .btn.small { padding: 5px 10px; font-size: 11px; }
@@ -91,7 +92,7 @@ table.match select { max-width: 100%; font-size: 13px; padding: 4px 6px; }
     <input class="name" id="newname" placeholder="Their name" autocomplete="off" aria-label="Their name">
     <button class="btn primary" id="invite" type="button">Invite</button>
   </div>
-  <div class="link" id="newlink" hidden><code id="linktext"></code><button class="btn small" id="copy" type="button">Copy</button><button class="btn small" id="share" type="button">Share</button></div>
+  <div class="link" id="newlink" hidden><code id="linktext"></code><button class="btn small" id="copy" type="button">Copy</button><button class="btn small" id="share" type="button">Share</button><a class="btn small" id="ondraft" target="_blank" rel="noopener" title="While members is only on the draft calendar: opens the link there, signing this device in">Open on the draft</a></div>
   <div class="link" id="tvbox" hidden><span class="stat">On <b id="tvfor"></b>’s Fire TV: Song of the Day → ≡ → Family sign-in, and type</span><code id="tvcode" class="big"></code><span class="stat">(once, within <span id="tvmins"></span> minutes)</span></div>
   <ul class="people" id="people"></ul>
 
@@ -186,6 +187,7 @@ table.match select { max-width: 100%; font-size: 13px; padding: 4px 6px; }
     if (!j.link) { toast(j.error || 'Couldn’t make a link'); return; }
     if (j.members) { MEMBERS = j.members; people(); }
     $('linktext').textContent = j.link; $('newlink').hidden = false;
+    $('ondraft').href = j.link.replace('/songs/#', '/songs/draft/#');   // members is on the draft only until it goes live
   }
   $('invite').addEventListener('click', function () {
     var n = $('newname').value.trim(); if (!n) { $('newname').focus(); return; }
