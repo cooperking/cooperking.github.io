@@ -1,0 +1,131 @@
+// The pictures the admin page draws: a link's card, exactly as _sotd/share_pages.py card() draws a day's (the month's
+// colours, the record half out of its sleeve, the words), and a photo made into an album cover. Used for invitations
+// (members-admin.html) and for each song's own sharing picture (songs-admin.html).
+window.SOTDCards = (function () {
+var PALETTES = [
+  ['#0c1445', '#0094de', '#8833ff', '#f700f7', '#009aa8'], ['#652bee', '#3333ff', '#cc33ff', '#3388ff', '#ff2bb8'],
+  ['#11970c', '#429e00', '#00a150', '#7d9600', '#009e84'], ['#b613ec', '#fc00e7', '#8833ff', '#ff33aa', '#5533ff'],
+  ['#096a42', '#00a336', '#009e91', '#00a30e', '#0097c9'], ['#ec1a13', '#fa5300', '#ff3366', '#db6e00', '#ff3399'],
+  ['#1346ec', '#008ff5', '#5533ff', '#0097c9', '#8833ff'], ['#d85a06', '#c47c00', '#ff4a2e', '#b28600', '#ff3344'],
+  ['#0b86d3', '#0098b0', '#3370ff', '#009e91', '#3333ff'], ['#ec135b', '#ff3344', '#ff30b3', '#ff4c29', '#fc00e7'],
+  ['#09696d', '#009e77', '#0094d4', '#00a150', '#198cff'], ['#ec13c1', '#ff3399', '#dd33ff', '#ff3366', '#aa33ff']
+];
+function rgb(h) { return [1, 3, 5].map(function (i) { return parseInt(h.slice(i, i + 2), 16); }); }
+function londonNow() {
+  var o = {}; new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', year: 'numeric', month: 'numeric', day: 'numeric' }).formatToParts(new Date()).forEach(function (x) { o[x.type] = +x.value; });
+  return new Date(Date.UTC(o.year, o.month - 1, o.day, 12));
+}
+function loadImg(src) {
+  return new Promise(function (res, rej) { var im = new Image(); im.crossOrigin = 'anonymous'; im.onload = function () { res(im); }; im.onerror = rej; im.src = src; });
+}
+function drawCard(o) {   // o: { title, line (in capitals), when (a Date at noon UTC), cover (an image or canvas) }
+  var title = o.title, cover = o.cover;
+  var W = 1200, H = 630, c = document.createElement('canvas'); c.width = W; c.height = H;
+  var g = c.getContext('2d'), when = o.when || londonNow(), pal = PALETTES[when.getUTCMonth()];
+  // the month's ground and glows, as the calendar's CSS draws them (share_pages.py ground())
+  var img = g.createImageData(W, H), d = img.data, bg = rgb(pal[0]), vmax = Math.max(W, H);
+  var layers = [[pal[3], .7, 34, 28, 8, 10], [pal[4], .85, 38, 30, 96, 102], [pal[3], 1, 52, 40, 2, 98], [pal[2], .85, 40, 32, 30, 40], [pal[1], 1, 54, 42, 92, 4]]
+    .map(function (l) { return { c: rgb(l[0]), k: l[1], rx: l[2] / 100 * vmax, ry: l[3] / 100 * vmax, cx: l[4] / 100 * W, cy: l[5] / 100 * H }; });
+  for (var y = 0; y < H; y++) for (var x = 0; x < W; x++) {
+    var r = bg[0], gg = bg[1], b = bg[2];
+    for (var i = 0; i < 5; i++) {
+      var L = layers[i], dx = (x - L.cx) / L.rx, dy = (y - L.cy) / L.ry, a = Math.max(0, Math.min(1, 1 - Math.sqrt(dx * dx + dy * dy) / .72)) * L.k;
+      r = r * (1 - a) + L.c[0] * a; gg = gg * (1 - a) + L.c[1] * a; b = b * (1 - a) + L.c[2] * a;
+    }
+    var p = (y * W + x) * 4; d[p] = r; d[p + 1] = gg; d[p + 2] = b; d[p + 3] = 255;
+  }
+  g.putImageData(img, 0, 0);
+  // the cover, with its record half out of the sleeve
+  var size = 400, cx = 70, cy = (H - size) / 2, rd = size - 16, rx = cx + size - rd / 2 + 12, ry = cy + 8;
+  g.save(); g.shadowColor = 'rgba(20, 6, 20, .43)'; g.shadowBlur = 36; g.shadowOffsetX = 6; g.shadowOffsetY = 14;
+  g.fillStyle = 'rgb(10, 9, 14)'; g.beginPath(); g.arc(rx + rd / 2, ry + rd / 2, rd / 2, 0, Math.PI * 2); g.fill();
+  g.shadowOffsetY = 16; g.fillStyle = 'rgba(20, 6, 20, .47)'; g.fillRect(cx, cy, size, size);
+  g.restore();
+  g.fillStyle = 'rgb(10, 9, 14)'; g.beginPath(); g.arc(rx + rd / 2, ry + rd / 2, rd / 2, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = 'rgb(30, 28, 38)'; g.lineWidth = 1;
+  for (var k = 8; k < rd / 2 - rd / 5; k += 3) { g.beginPath(); g.arc(rx + rd / 2, ry + rd / 2, rd / 2 - k, 0, Math.PI * 2); g.stroke(); }
+  var lab = Math.floor(rd * .38);
+  function square(im) { var w = im.naturalWidth || im.width, h = im.naturalHeight || im.height, sd = Math.min(w, h); return [(w - sd) / 2, (h - sd) / 2, sd, sd]; }
+  if (cover) {
+    var sq = square(cover);
+    g.save(); g.beginPath(); g.arc(rx + rd / 2, ry + rd / 2, lab / 2, 0, Math.PI * 2); g.clip();
+    g.drawImage(cover, sq[0], sq[1], sq[2], sq[3], rx + (rd - lab) / 2, ry + (rd - lab) / 2, lab, lab); g.restore();
+  }
+  g.fillStyle = pal[0]; g.beginPath(); g.arc(rx + rd / 2, ry + rd / 2, 4.5, 0, Math.PI * 2); g.fill();
+  if (cover) { var sq2 = square(cover); g.drawImage(cover, sq2[0], sq2[1], sq2[2], sq2[3], cx, cy, size, size); }
+  else { g.fillStyle = 'rgba(255, 250, 245, .14)'; g.fillRect(cx, cy, size, size); }
+  // the words: as a day's
+  var x0 = rx + rd + 48, width = W - 64 - x0, INK = 'rgb(255, 250, 245)';
+  g.textBaseline = 'top';
+  function spaced(t, x, y, f, fill, tr) { g.font = f; g.fillStyle = fill; for (var i = 0; i < t.length; i++) { g.fillText(t[i], x, y); x += g.measureText(t[i]).width + tr; } }
+  function wrap(t, f) { g.font = f; var w = t.split(/\s+/), out = [], line = ''; w.forEach(function (x) { var tt = (line + ' ' + x).trim(); if (g.measureText(tt).width <= width || !line) line = tt; else { out.push(line); line = x; } }); if (line) out.push(line); return out; }
+  var tsize, lines, tf;
+  [68, 62, 56, 50, 45, 40, 36].some(function (sz) {
+    tsize = sz; tf = '500 ' + sz + 'px Newsreader'; lines = wrap(title, tf);
+    var widow = lines.length > 1 && lines[lines.length - 1].length <= 3;
+    g.font = tf;
+    return lines.length <= 3 && !widow && lines.every(function (l) { return g.measureText(l).width <= width; });
+  });
+  lines = lines.slice(0, 3);
+  var lh = Math.floor(tsize * 1.08), block = 19 + 26 + lines.length * lh + 22 + 22 + 30 + 30, y0 = Math.floor((H - block) / 2);
+  spaced('JOHN’S SONG OF THE DAY', x0, y0, '600 19px "Hanken Grotesk"', 'rgba(255, 250, 245, .9)', 3.2);
+  y0 += 19 + 26;
+  g.font = tf; g.fillStyle = INK;
+  lines.forEach(function (l) { g.fillText(l, x0, y0 - tsize * .08); y0 += lh; });
+  y0 += 22;
+  var line = String(o.line || '').toUpperCase(); g.font = '600 22px "Hanken Grotesk"';
+  while (g.measureText(line).width + line.length * 2.4 > width && line.length > 8) line = line.slice(0, -2).replace(/\s+$/, '') + '…';
+  spaced(line, x0, y0, '600 22px "Hanken Grotesk"', 'rgba(255, 250, 245, .94)', 2.4);
+  y0 += 22 + 30;
+  g.font = 'italic 400 30px Newsreader'; g.fillStyle = 'rgba(255, 250, 245, .92)';
+  g.fillText(longDate(when), x0, y0);
+  return c.toDataURL('image/jpeg', 0.84);
+}
+// John's own picture made into an album cover: the photo, darkened at the foot and the head so the words read, with
+// the calendar's name across the top and the person's name set like the calendar's own heading (roman, then italic)
+function albumCover(im, o) {   // o: { big (roman, as big as fits), italic (under it), left and right (along the foot) }
+  var N = 640, c = document.createElement('canvas'); c.width = c.height = N;
+  var g = c.getContext('2d'), w = im.naturalWidth || im.width, h = im.naturalHeight || im.height, sd = Math.min(w, h);
+  g.drawImage(im, (w - sd) / 2, (h - sd) / 2, sd, sd, 0, 0, N, N);
+  var foot = g.createLinearGradient(0, N * .38, 0, N);
+  foot.addColorStop(0, 'rgba(12, 6, 14, 0)'); foot.addColorStop(.55, 'rgba(12, 6, 14, .45)'); foot.addColorStop(1, 'rgba(12, 6, 14, .82)');
+  g.fillStyle = foot; g.fillRect(0, 0, N, N);
+  var head = g.createLinearGradient(0, 0, 0, N * .26);
+  head.addColorStop(0, 'rgba(12, 6, 14, .5)'); head.addColorStop(1, 'rgba(12, 6, 14, 0)');
+  g.fillStyle = head; g.fillRect(0, 0, N, N * .26);
+  var m = 44, ink = '#fffaf5';
+  g.textBaseline = 'alphabetic'; g.fillStyle = ink;
+  function tracked(t, x, y, f, tr) { g.font = f; for (var i = 0; i < t.length; i++) { g.fillText(t[i], x, y); x += g.measureText(t[i]).width + tr; } return x; }
+  g.shadowColor = 'rgba(0, 0, 0, .35)'; g.shadowBlur = 12;
+  tracked('JOHN’S SONG OF THE DAY', m, m + 18, '600 21px "Hanken Grotesk"', 4);
+  // the big words, as big as fits (two lines at most), then the italic line
+  var words = o.big || '', size = 132, lines;
+  for (; size >= 44; size -= 4) {
+    g.font = '500 ' + size + 'px Newsreader';
+    lines = []; var cur = '';
+    words.split(/\s+/).forEach(function (x) { var t = (cur + ' ' + x).trim(); if (g.measureText(t).width <= N - 2 * m || !cur) cur = t; else { lines.push(cur); cur = x; } });
+    if (cur) lines.push(cur);
+    if (lines.length <= 2 && lines.every(function (l) { return g.measureText(l).width <= N - 2 * m; })) break;
+  }
+  var italic = Math.round(Math.max(40, Math.min(64, size * .5))), y = N - m - 44;
+  g.font = 'italic 400 ' + italic + 'px Newsreader'; var it = o.italic || '';
+  while (it.length > 4 && g.measureText(it).width > N - 2 * m) it = it.slice(0, -2).replace(/\s+$/, '') + '…';
+  g.fillText(it, m + 2, y);
+  g.font = '500 ' + size + 'px Newsreader';
+  y -= italic * .95;
+  for (var i = lines.length - 1; i >= 0; i--) { g.fillText(lines[i], m - size * .03, y); y -= size * .92; }
+  g.shadowBlur = 0;
+  g.fillStyle = 'rgba(255, 250, 245, .55)'; g.fillRect(m, N - m - 22, N - 2 * m, 1.5);
+  g.fillStyle = 'rgba(255, 250, 245, .85)';
+  tracked(String(o.left || '').toUpperCase(), m, N - m + 2, '600 15px "Hanken Grotesk"', 3.4);
+  g.font = '600 15px "Hanken Grotesk"';
+  var rt = String(o.right || '').toUpperCase(); tracked(rt, N - m - g.measureText(rt).width - 3.4 * rt.length, N - m + 2, '600 15px "Hanken Grotesk"', 3.4);
+  return c;
+}
+function fontsReady() {
+  if (!document.fonts) return Promise.resolve();
+  return Promise.all(['500 68px Newsreader', 'italic 400 30px Newsreader', '600 19px "Hanken Grotesk"'].map(function (f) { return document.fonts.load(f); })).catch(function () {});
+}
+function longDate(d) { return d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).replace(',', ''); }
+return { drawCard: drawCard, albumCover: albumCover, loadImg: loadImg, londonNow: londonNow, fontsReady: fontsReady, longDate: longDate };
+})();

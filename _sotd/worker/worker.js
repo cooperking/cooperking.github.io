@@ -69,7 +69,7 @@ export default {
       if (url.pathname.startsWith('/members/')) return await members(request, url, env);
       if (url.pathname.startsWith('/m/')) return await mediaFile(request, url, env);
       if (url.pathname.startsWith('/i/')) return await invitePage(url, env);
-      if (url.pathname === '/covers.json' || url.pathname.startsWith('/c/')) return await ownCover(request, url, env);
+      if (url.pathname === '/covers.json' || url.pathname.startsWith('/c/') || url.pathname.startsWith('/s/')) return await ownCover(request, url, env);
       return page('Song of the Day', '<p>This service makes Spotify playlists from the Song of the Day calendar.</p>');
     } catch (e) {
       if (e instanceof HttpError) return errorPage(e);
@@ -554,8 +554,16 @@ async function coverSet(request, url, env, answer) {
   if (!ID_RE.test(track)) return answer(400, { error: 'Which song?' });
   const covers = (await env.SOTD.get('covers', 'json')) || {};
   if (url.searchParams.get('op') === 'remove') {
-    await env.MEDIA.delete('c/' + track);
+    await env.MEDIA.delete('c/' + track); await env.MEDIA.delete('sc/' + track);
     delete covers[track];
+  } else if (url.searchParams.get('op') === 'card') {   // the card a member's share of this day shows, with its words
+    if (!covers[track]) return answer(400, { error: 'Set the picture first.' });
+    const body = await request.json().catch(() => ({}));
+    const b64 = String(body.card || '').replace(/^data:image\/jpeg;base64,/, '');
+    if (!b64 || b64.length > 2.5e6) return answer(400, { error: 'The card is missing or too big.' });
+    await env.MEDIA.put('sc/' + track, Uint8Array.from(atob(b64), ch => ch.charCodeAt(0)), { httpMetadata: { contentType: 'image/jpeg' } });
+    const t = x => String(x || '').slice(0, 200);
+    covers[track].share = { at: new Date().toISOString(), title: t(body.title), desc: t(body.desc), slug: /^\d\d-\d\d-\d{4}$/.test(body.slug || '') ? body.slug : '' };
   } else {
     const type = (request.headers.get('Content-Type') || '').split(';')[0].trim().toLowerCase();
     if (!COVER_TYPES[type]) return answer(400, { error: 'A JPEG, PNG or WebP picture, please.' });
@@ -565,8 +573,7 @@ async function coverSet(request, url, env, answer) {
     covers[track] = { at: new Date().toISOString(), type, size: bytes.byteLength };
   }
   await env.SOTD.put('covers', JSON.stringify(covers));
-  const job = await startJob(env, null, (await env.SOTD.get('job', 'json')) || {}, null, null, true);
-  return answer(200, { ok: true, covers, job });
+  return answer(200, { ok: true, covers });   // (members' shares only: the site's own cards keep the album cover)
 }
 
 async function ownCover(request, url, env) {
@@ -574,11 +581,57 @@ async function ownCover(request, url, env) {
   if (url.pathname === '/covers.json') {
     return new Response((await env.SOTD.get('covers')) || '{}', { headers: Object.assign({ 'Content-Type': 'application/json; charset=utf-8' }, h) });
   }
+  const sm = /^\/s\/([0-9A-Za-z]{22})(\.jpg)?$/.exec(url.pathname);
+  if (sm) return memberShare(url, env, sm[1], !!sm[2]);
   const m = /^\/c\/([0-9A-Za-z]{22})$/.exec(url.pathname);
   if (!m || !env.MEDIA) return new Response('Not here.', { status: 404 });
   const obj = await env.MEDIA.get('c/' + m[1]);
   if (!obj) return new Response('Not here.', { status: 404 });
   return new Response(obj.body, { headers: Object.assign({ 'Content-Type': (obj.httpMetadata && obj.httpMetadata.contentType) || 'image/jpeg' }, h) });
+}
+
+// a day shared by a member, with John's own picture: a page whose preview (WhatsApp, iMessage...) is that card, sending
+// the person on to the day, as the day's own page does. Anyone else's share of the day keeps the album cover.
+async function memberShare(url, env, track, image) {
+  const covers = (await env.SOTD.get('covers', 'json')) || {}, c = covers[track];
+  const day = 'https://cooperking.github.io/songs/' + (c && c.share && c.share.slug ? c.share.slug + '/' : '');
+  if (image) {
+    const obj = c && c.share && env.MEDIA ? await env.MEDIA.get('sc/' + track) : null;
+    if (!obj) return Response.redirect(day + 'card.jpg', 302);
+    return new Response(obj.body, { headers: { 'Content-Type': 'image/jpeg', 'Cache-Control': 'public, max-age=3600' } });
+  }
+  const to = day + url.search;
+  if (!c || !c.share) return Response.redirect(to, 302);
+  const e = x => esc(String(x)), img = url.origin + '/s/' + track + '.jpg?v=' + encodeURIComponent(c.share.at);
+  return new Response(`<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${e(c.share.title)} · John's Song of the Day</title>
+<meta name="description" content="${e(c.share.desc)}">
+<meta property="og:type" content="music.song">
+<meta property="og:site_name" content="John's Song of the Day">
+<meta property="og:title" content="${e(c.share.title)}">
+<meta property="og:description" content="${e(c.share.desc)}">
+<meta property="og:url" content="${e(url.origin + url.pathname)}">
+<meta property="og:image" content="${e(img)}">
+<meta property="og:image:secure_url" content="${e(img)}">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="${e(c.share.title)}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="${e(img)}">
+<link rel="icon" type="image/png" sizes="96x96" href="https://cooperking.github.io/songs/favicon-96.png?v=2">
+<link rel="apple-touch-icon" sizes="180x180" href="https://cooperking.github.io/songs/apple-touch-icon.png?v=2">
+<script>if (!${INVITE_BOTS}.test(navigator.userAgent)) location.replace(${JSON.stringify(to)});</script>
+</head>
+<body style="font-family: Georgia, serif; padding: 24px;">
+<p><a href="${e(to)}">${e(c.share.title)}</a>: ${e(c.share.desc)}.</p>
+</body>
+</html>
+`, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } });
 }
 
 async function memberJoin(request, env, answer) {

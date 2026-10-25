@@ -1065,6 +1065,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       <h3 id="shtitle"></h3>
       <p id="shsub"></p>
     </div>
+    <div class="sh-mode" id="shpicmode" hidden>
+      <span class="sh-lab">Picture</span>
+      <span class="seg2" role="group" aria-label="The link's picture"><button type="button" data-pic="own">John’s</button><button type="button" data-pic="album">Album cover</button></span>
+    </div>
     <div class="sh-mode" id="shmode" hidden>
       <span class="sh-lab">Opens with</span>
       <span class="seg2" role="group" aria-label="What the link opens with"><button type="button" data-mode="preview">Preview</button><button type="button" data-mode="video">Video</button></span>
@@ -1195,6 +1199,15 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function hue(str) { var h = 0; for (var i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) % 360; return h; }
   function initials(t) { return t.replace(/\(.*?\)|-.*$/g, '').trim().split(/\s+/).slice(0, 2).map(function (w) { return w.charAt(0); }).join(''); }
 
+  // John's own picture for a day (an album cover he's made), for members only: on the record while it plays, and on
+  // their shares of the day (the Worker's /s/ page)
+  var OWNC = {};
+  function ownArt(s) {
+    var c = MEMBER && OWNC[s.track]; if (!c || !c.at || !MBASE) return null;
+    var el = document.createElement('span'); el.className = 'art'; el.setAttribute('role', 'img'); el.setAttribute('aria-label', 'John’s picture for ' + s.title);
+    el.style.backgroundImage = 'url(' + MBASE + '/c/' + s.track + '?v=' + encodeURIComponent(c.at) + ')'; el.style.backgroundSize = 'cover'; el.style.backgroundPosition = 'center';
+    return el;
+  }
   function artEl(s, small) {
     var el = document.createElement('span');
     el.className = 'art';
@@ -1969,7 +1982,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     ownPlayer.off();
     coverBox.textContent = '';
     var deck = div('deck'), slide = div('slide'), disc = div('disc'), label = div('label'), bs = div('bigsleeve');
-    label.appendChild(artEl(s)); disc.appendChild(label); slide.appendChild(disc); bs.appendChild(artEl(s));
+    label.appendChild(ownArt(s) || artEl(s)); disc.appendChild(label); slide.appendChild(disc); bs.appendChild(ownArt(s) || artEl(s));
     deck.appendChild(slide); deck.appendChild(bs); coverBox.appendChild(deck);
     vidfloat.classList.add('cover'); vidspot.classList.add('cover'); vidfloat.classList.remove('spin');
     coverOn = true;
@@ -2733,9 +2746,14 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var watching = !!(pick && pick.classList.contains('watching'));
     // what it's on as you share: video mode (or a song with only a video) gives Video, otherwise Preview
     var mode = hasVid && (watching || !hasPre || playMode === 'video') ? 'video' : hasPre ? 'preview' : '';
-    openShare({ lines: ['John\u2019s Song of the Day', longDate(iso), '', t, s.artist], url: dayLink(slug, mode),
-      image: SITE + slug + '/card.jpg', title: t, sub: s.artist + ' \u00b7 ' + longDate(iso),
-      mode: mode, modes: hasVid && hasPre, urlFor: function (m) { return dayLink(slug, m); } });
+    // a member sharing a day John has given his own picture: its own link, with his card (or, if they choose, the album cover)
+    var own = MEMBER && OWNC[s.track] && OWNC[s.track].share && MBASE && !DRAFT;
+    var o = { lines: ['John\u2019s Song of the Day', longDate(iso), '', t, s.artist], title: t, sub: s.artist + ' \u00b7 ' + longDate(iso),
+      mode: mode, modes: hasVid && hasPre, pics: !!own, pic: own ? 'own' : 'album' };
+    o.urlFor = function (m) { return o.pic === 'own' ? MBASE + '/s/' + s.track + (m ? '?play=' + m : '') : dayLink(slug, m); };
+    o.imageFor = function () { return o.pic === 'own' ? MBASE + '/s/' + s.track + '.jpg?v=' + encodeURIComponent(OWNC[s.track].share.at) : SITE + slug + '/card.jpg'; };
+    o.url = o.urlFor(mode); o.image = o.imageFor();
+    openShare(o);
   }
 
   // lines end with a blank line and the link. The link goes to the share sheet as a link, so phones fetch
@@ -2754,6 +2772,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var o = shareNow, msg = o.lines.join('\n') + '\n\n' + o.url;
     var sm = document.getElementById('shmode');
     sm.hidden = !o.modes;
+    var pm = document.getElementById('shpicmode'); pm.hidden = !o.pics;
+    [].forEach.call(pm.querySelectorAll('button'), function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-pic') === o.pic ? 'true' : 'false'); });
     [].forEach.call(sm.querySelectorAll('button'), function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-mode') === o.mode ? 'true' : 'false'); });
     document.getElementById('shtitle').textContent = o.title;
     document.getElementById('shsub').textContent = o.sub;
@@ -2771,6 +2791,13 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     document.getElementById('shpic').hidden = !(navigator.clipboard && navigator.clipboard.write && window.ClipboardItem);
     document.getElementById('shmore').hidden = !navigator.share || inFrame();
   }
+  [].forEach.call(document.querySelectorAll('#shpicmode button'), function (b) {
+    b.addEventListener('click', function () {
+      if (!shareNow || !shareNow.imageFor) return;
+      shareNow.pic = b.getAttribute('data-pic'); shareNow.url = shareNow.urlFor(shareNow.mode); shareNow.image = shareNow.imageFor();
+      drawShare();
+    });
+  });
   [].forEach.call(document.querySelectorAll('#shmode button'), function (b) {
     b.addEventListener('click', function () {
       if (!shareNow || !shareNow.urlFor) return;
@@ -4035,6 +4062,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     }).then(function (j) {
       if (!j) return;
       MEMBER = j; memberApply(); famSync();
+      if (!OWNC.loaded) fetch(MBASE + '/covers.json', { cache: 'no-cache' }).then(function (r) { return r.json(); }).then(function (c) { OWNC = c || {}; OWNC.loaded = true; }).catch(function () {});
       memberLoad.t = setTimeout(memberLoad, Math.max(60e3, j.exp * 1000 - Date.now() - 30 * 60e3));
     }).catch(function () {});
   }

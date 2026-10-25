@@ -55,6 +55,15 @@ The Worker keeps the card and its page (`/i/<id>`, KV `invcard:` and `invpage:`,
 the page sends a person on to their invitation on the calendar. *Share…* (on a phone), Messages, WhatsApp, Email and
 Copy link all send that link.
 
+## A day's own picture (members only)
+
+On the Songs tab, *Sharing picture* on a song: John chooses a photo; it's made into an album cover as an invitation's
+is (the song's title, the artist in italic, its number and day along the foot), and the day's card is drawn with it,
+shown before it's saved. Members see that cover on the record while the day's song or preview plays, and their shares
+of the day go out as the Worker's `/s/<track>` page with that card (they can pick *Album cover* instead in the share
+panel); everyone else's shares, and the site's own day cards, keep the album cover. *Back to the album cover* takes it
+away. Kept in R2 (`c/<track>` the cover, `sc/<track>` the card) and KV `covers`.
+
 ## Saved playlists
 
 A member can save My playlist (*Save this playlist* in it, with a name) and keep several. They're kept by the Worker

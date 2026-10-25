@@ -413,7 +413,7 @@ def main():
         songs = json.loads(r.read())['songs']
     out = released()   # days follow the whole playlist; only the songs out on the calendar get pages (released.py)
     dated = [(d, s) for d, s in days(songs) if out is None or s['id'] in out]
-    own = own_pictures()
+    own = {}   # John's own pictures are for members' shares only now (the Worker's /s/ pages): the site's cards keep the album cover
     pages = cards = 0
     for d, s in dated:
         sl = slug(d)
