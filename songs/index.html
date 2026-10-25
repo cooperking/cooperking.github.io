@@ -280,6 +280,7 @@ html.theatre #sheet .thbtn { display: inline-flex; align-items: center; justify-
 .heroplay svg { width: 15px; height: 15px; margin-left: 2px; }
 .heroshuf { border: 1px solid var(--line); background: var(--pill-bg); color: var(--fg); }
 .heroshuf svg { width: 17px; height: 17px; }
+.heroshuf[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
 @media (hover: hover) { .heroplay:hover, .heroshuf:hover { transform: scale(1.06); } }
 html.big .heroacts { margin: 0 auto 0 0; flex-wrap: nowrap; }
 html.big .heroacts .hsub { margin: 0 6px 0 0; }
@@ -603,10 +604,11 @@ html.theatre .vidfloat > .coverbox { --bg: #000; }
 /* a member's downloads: the day's button (a tick once it's here), a mark on the calendar, and with no connection the
    days that can't play greyed */
 .iconbtn.dlbtn[hidden] { display: none; }
-.iconbtn.dlbtn.done { color: var(--accent, #ec1a13); }
+.iconbtn.dlbtn.done { color: inherit; }
+.iconbtn.dlbtn.done svg { width: 20px; height: 20px; }
 .iconbtn.dlbtn.busy svg { animation: dlpulse 1s ease-in-out infinite; }
 @keyframes dlpulse { 50% { opacity: .3; } }
-#grid .day.dl .sticker::after { content: ""; display: inline-block; width: 6px; height: 6px; margin-left: 4px; border-radius: 50%; background: currentColor; vertical-align: 2px; }
+#grid .day .dlmark { position: absolute; right: 4px; bottom: 4px; z-index: 2; width: 18px; height: 18px; display: block; filter: drop-shadow(0 1px 3px rgba(0, 0, 0, .35)); pointer-events: none; }
 html.offline #grid .day.has:not(.dl) { opacity: .4 !important; }   /* over the days' own fade-in */
 .dlsum { margin: 0; font-size: 13px; color: var(--muted); }
 #monthdl[hidden], #minedl[hidden] { display: none; }
@@ -3456,9 +3458,14 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function playMine(from) { startQueue(fav.slice(), plname.value.replace(/\s+/g, ' ').trim() || 'My playlist', 'mine', from || 0); }
   document.getElementById('mineplay').addEventListener('click', function () { playMine(0); });
   // beside the month's count: play every song, newest first, or shuffled (kept for next time, like Shuffle while playing)
-  function playAll(mix) { shuffleOn = mix; try { localStorage.setItem('sotd-shuffle', mix ? '1' : '0'); } catch (e) {} document.getElementById('playall').click(); }
-  document.getElementById('heroplay').addEventListener('click', function () { playAll(false); });
-  document.getElementById('heroshuf').addEventListener('click', function () { playAll(true); });
+  // Play plays every song, newest first or shuffled; Shuffle beside it only turns shuffling on or off (kept, and shown)
+  var heroShuf = document.getElementById('heroshuf');
+  function shufSync() { heroShuf.setAttribute('aria-pressed', shuffleOn ? 'true' : 'false'); heroShuf.setAttribute('aria-label', shuffleOn ? 'Shuffle: on' : 'Shuffle: off'); heroShuf.title = shuffleOn ? 'Shuffle on' : 'Shuffle off'; }
+  shufSync();
+  document.getElementById('heroplay').addEventListener('click', function () { document.getElementById('playall').click(); });
+  heroShuf.addEventListener('click', function () {   // the same as the playlist's own Shuffle (which reorders what's playing)
+    document.getElementById('qshuffle').click(); toast(shuffleOn ? 'Shuffle on' : 'Shuffle off');
+  });
   // Play all (under the month, and in the bar on a TV or a computer): every song, the newest first, the way songs
   // are playing (a member's songs, or the videos, until they choose)
   document.getElementById('playall').addEventListener('click', function () {
@@ -3470,6 +3477,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   document.getElementById('qshuffle').addEventListener('click', function () {
     shuffleOn = !shuffleOn;
     try { localStorage.setItem('sotd-shuffle', shuffleOn ? '1' : '0'); } catch (e) {}
+    if (typeof shufSync === 'function' && heroShuf) shufSync();
     if (queue && queue.back === 'all') {
       var now = queue.list[queue.i], heard = queue.heard;
       if (shuffleOn) queue.list = queue.list.slice(0, queue.i + 1).concat(mixed(queue.order.filter(function (t) { return !heard[t]; })));
@@ -3934,7 +3942,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       .then(function (a) { return a.reduce(function (x, y) { return x + y; }, 0); });
   }
   var DL_ICON = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2.5v7.5M4.8 7l3.2 3.2L11.2 7"/><path d="M3 13h10"/></svg>';
-  var DONE_ICON = '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="currentColor"/><path d="M5.2 8.2 7.2 10l3.6-4" fill="none" stroke="var(--bg, #fff)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var DONE_ICON = '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7.5" fill="#1ed760"/><path d="M8 4.2v7.2M5 8.6l3 3 3-3" fill="none" stroke="#121212" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>';   // downloaded: a green disc with an arrow
   // the same button beside a song in the month's list and in My playlist
   var dlReady = false;
   function rowDl(s) {
@@ -3971,7 +3979,12 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       ms.hidden = !any;
       if (any) dlSize().then(function (n) { document.getElementById('dlsumt').textContent = any + (any === 1 ? ' song' : ' songs') + ' downloaded on this device (' + Math.max(1, Math.round(n / 1e6)) + ' MB)'; });
     }
-    document.querySelectorAll('#grid .day.has').forEach(function (c) { var ps = byDate[c.getAttribute('data-day')] || []; c.classList.toggle('dl', ps.some(function (s) { return OFFL[s.track]; })); });
+    document.querySelectorAll('#grid .day.has').forEach(function (c) {   // a downloaded day: the green disc in its corner
+      var ps = byDate[c.getAttribute('data-day')] || [], on = ps.some(function (s) { return OFFL[s.track]; }), m = c.querySelector('.dlmark');
+      c.classList.toggle('dl', on);
+      if (on && !m) { m = document.createElement('span'); m.className = 'dlmark'; m.setAttribute('aria-hidden', 'true'); m.innerHTML = DONE_ICON; c.appendChild(m); }
+      if (!on && m) m.remove();
+    });
   }
   function onlineSync() { root.classList.toggle('offline', navigator.onLine === false); }
   window.addEventListener('online', onlineSync); window.addEventListener('offline', function () { onlineSync(); if (Object.keys(OFFL).length) toast('No connection: your downloaded songs still play'); });
