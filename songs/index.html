@@ -264,8 +264,13 @@ html.theatre #sheet .thbtn { display: inline-flex; align-items: center; justify-
 .hsub { margin: -10px 0 2px; font-family: var(--serif); font-weight: 500; font-size: clamp(19px, 4.8vw, 26px); line-height: 1.1; letter-spacing: -.005em; color: var(--fg-2); }
 .hsub em { font-style: italic; font-weight: 400; }
 /* the Home Screen app only, not signed in: a family member types the code from John's members page */
-.famjoin { display: block; margin: 12px auto 0; padding: 4px 8px; background: none; border: 0; color: var(--fg-2); font: 600 11px/1.2 var(--sans); letter-spacing: .14em; text-transform: uppercase; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
-.famjoin[hidden] { display: none; }
+/* family sign-in, in the bar: "Sign in" (an outline person on narrow screens), and once signed in a small filled person */
+.bar-top .signin svg.pe { width: 15px; height: 15px; }
+.bar-top .signin .pf { display: none; }
+@media (min-width: 481px) { .bar-top .signin.in { padding-left: 10px; padding-right: 10px; } }
+.bar-top .signin.in .long, .bar-top .signin.in .short { display: none !important; }
+.bar-top .signin.in svg.pe { display: block; }
+.bar-top .signin.in .po { display: none; } .bar-top .signin.in .pf { display: inline; }
 .monthnav { display: flex; align-items: center; gap: 6px; max-width: 100%; padding: 4px; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); }
 .round { width: 38px; height: 38px; flex: 0 0 auto; border-radius: 50%; border: 1px solid var(--line); background: var(--glass); display: grid; place-items: center; cursor: pointer; color: var(--fg); }
 .round:hover:not(:disabled) { border-color: var(--fg); }
@@ -847,6 +852,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
 @media (max-width: 480px) { .bar-top { gap: 8px; padding: 8px 8px 8px 16px; } .bar-actions { gap: 3px; } .bar-top .pill { width: 32px; height: 32px; padding: 0; justify-content: center; } .mark { font-size: 15px; } }
 @media (max-width: 380px) { .bar-top { padding-left: 13px; } .bar-top .pill { width: 30px; height: 30px; } .mark { font-size: 14.5px; } }
 @media (max-width: 350px) { .bar-top { gap: 5px; padding: 6px 6px 6px 11px; } .bar-actions { gap: 2px; } .bar-top .pill { width: 27px; height: 27px; } .bar-top .pill svg { transform: scale(.9); } .mark { font-size: 13px; } }
+/* six icons with Sign in: a little smaller and closer, so the title still fits whole */
+@media (max-width: 480px) { .bar-actions { gap: 1px; } .bar-top .pill { width: 28px; height: 28px; } }
+@media (max-width: 380px) { .bar-top .pill { width: 26px; height: 26px; } }
+@media (max-width: 350px) { .bar-top .pill { width: 24px; height: 24px; } }
 /* between a phone and a wide screen: the buttons' short names */
 @media (min-width: 901px) and (max-width: 1100px) { .bar-top .pill .long { display: none; } .bar-top .pill .short { display: inline; } }
 </style>
@@ -863,13 +872,13 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     <a class="pill follow" href="https://open.spotify.com/playlist/4zyegiBCapCQm8VWYYHhGo" target="_blank" rel="noopener" aria-label="Follow on Spotify" title="Follow on Spotify"><span class="long">Follow on Spotify</span><span class="short">Spotify</span> <svg class="go" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M1.5 6h9M7 2.5 10.5 6 7 9.5"/></svg><svg class="ext note" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M6 12V3.5l7-1.5v8.5"/><circle cx="4.2" cy="12" r="1.8"/><circle cx="11.2" cy="10.5" r="1.8"/></svg></a>
     <a class="pill follow ytfollow" id="ytfollow" href="#" target="_blank" rel="noopener" aria-label="The playlist on YouTube" title="The playlist on YouTube" hidden><span class="long">On YouTube</span><span class="short">YouTube</span> <svg class="go" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M1.5 6h9M7 2.5 10.5 6 7 9.5"/></svg><svg class="ext yt" viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="3.5" width="13" height="9" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.6 5.8v4.4L10.3 8z" fill="currentColor"/></svg></a>
     <button class="pill follow sharesite" id="siteshare" type="button" aria-label="Share John’s Song of the Day" title="Share the calendar"><span class="long">Share</span><span class="short">Share</span></button>
+    <button class="pill follow signin" id="famjoin" type="button" aria-label="Family sign-in" title="Family sign-in" hidden><span class="long">Sign in</span><span class="short">Sign in</span><svg class="ext pe" viewBox="0 0 16 16" aria-hidden="true"><g class="po" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="5.2" r="2.7"/><path d="M2.8 14c.6-2.9 2.7-4.4 5.2-4.4s4.6 1.5 5.2 4.4"/></g><g class="pf" fill="currentColor"><circle cx="8" cy="5.2" r="3"/><path d="M2.5 14.5c.5-3.2 2.8-5 5.5-5s5 1.8 5.5 5z"/></g></svg></button>
     </div>
   </div>
 
   <header class="hero">
     <h1><span id="mname"></span> <em id="myr"></em></h1>
     <p class="hsub" id="count"></p>
-    <button class="famjoin" id="famjoin" type="button" hidden>Family sign-in</button>
     <div class="monthnav">
       <button class="round" id="prev" type="button" aria-label="Previous month"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 3 5 8l5 5"/></svg></button>
       <nav class="strip" id="strip" aria-label="Months"></nav>
@@ -3653,7 +3662,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       return r.ok ? r.json() : null;
     }).then(function (j) {
       if (!j) return;
-      MEMBER = j; memberApply();
+      MEMBER = j; memberApply(); famSync();
       memberLoad.t = setTimeout(memberLoad, Math.max(60e3, j.exp * 1000 - Date.now() - 30 * 60e3));
     }).catch(function () {});
   }
@@ -3671,16 +3680,29 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       }).catch(function () { toast('Couldn’t reach the site to join. Try again.'); });
   }
   window.sotdJoin = memberJoin;
-  // A Home Screen app keeps its own storage (an iPhone copies only cookies from Safari, and the token isn't one), so an
-  // invite opened in Safari doesn't reach it: there, a family member types the code John makes on his members page
-  // (the same one-use code as the TV's), or pastes the invite link
+  // Sign in, in the bar (not on a TV: the Fire TV app has it in its menu): a family member types the code John makes on
+  // his members page (the same one-use code as the TV's), or pastes the invite link. A Home Screen app keeps its own
+  // storage (an iPhone copies only cookies from Safari, and the token isn't one), so it signs in on its own. Signed in,
+  // the button is a small person: tapping it says who's signed in and offers to sign this device out.
   var famBtn = document.getElementById('famjoin');
   function famSync() {
+    if (!famBtn) return;
     var tok = ''; try { tok = localStorage.getItem(MKEY) || ''; } catch (e) {}
-    if (famBtn) famBtn.hidden = !(standalone && MBASE && window.fetch && !tok);
+    famBtn.hidden = !(MBASE && window.fetch) || TV;
+    famBtn.classList.toggle('in', !!tok);
+    var lab = tok ? (MEMBER && MEMBER.name ? 'Signed in as ' + MEMBER.name : 'Signed in') : 'Family sign-in';
+    famBtn.setAttribute('aria-label', lab); famBtn.title = lab;
   }
   if (famBtn) famBtn.addEventListener('click', function () {
-    var c = window.prompt('Family sign-in: type the code from John') || '', m = /join=([\w-]+)/.exec(c);
+    var tok = ''; try { tok = localStorage.getItem(MKEY) || ''; } catch (e) {}
+    if (tok) {
+      var who = MEMBER && MEMBER.name ? 'Signed in as ' + MEMBER.name + '.' : 'Signed in.';
+      if (!window.confirm(who + '\n\nSign this device out? Songs downloaded here are removed too.')) return;
+      try { localStorage.removeItem(MKEY); } catch (e) {}
+      dlClear(); MEMBER = null; memberApply(); famSync(); toast('Signed out on this device');
+      return;
+    }
+    var c = window.prompt('Sign in: type the code from John, or paste your invite link') || '', m = /join=([\w-]+)/.exec(c);
     c = m ? m[1] : c.replace(/[\s-]+/g, '').toUpperCase();
     if (c) memberJoin(c);
   });

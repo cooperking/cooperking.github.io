@@ -40,8 +40,9 @@ A member can keep John's recordings on a device and play them with no connection
 - Downloads are cleared if the member is removed. Best from the Home Screen icon on an iPhone: Safari can clear a
   website's stored data once it goes unvisited for a week or so; the Home Screen app is kept apart from that.
 - The Home Screen app keeps its own storage (an iPhone copies only cookies from Safari), so an invite opened in Safari
-  doesn't sign it in. There, *Family sign-in* (under the month, only in the Home Screen app and only when not signed in)
-  takes the members page's *Code* (the same one-use code as a TV's) or the invite link pasted in.
+  doesn't sign it in. *Sign in* (the last button in the bar, everywhere but the TV) takes the members page's *Code*
+  (the same one-use code as a TV's) or the invite link pasted in. Signed in, it's a small filled person: tapping it says
+  who's signed in and offers to sign that device out (its downloads go too).
 - Videos aren't kept (yet).
 
 ## Setting it up (once)
