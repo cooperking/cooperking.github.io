@@ -68,6 +68,7 @@ export default {
       if (url.pathname === '/facts/signoff') return await factsSignoff(request, env);
       if (url.pathname.startsWith('/members/')) return await members(request, url, env);
       if (url.pathname.startsWith('/m/')) return await mediaFile(request, url, env);
+      if (url.pathname === '/media/report') return await mediaReport(url, env);
       if (url.pathname.startsWith('/i/')) return await invitePage(url, env);
       if (url.pathname === '/covers.json' || url.pathname.startsWith('/c/') || url.pathname.startsWith('/s/')) return await ownCover(request, url, env);
       return page('Song of the Day', '<p>This service makes Spotify playlists from the Song of the Day calendar.</p>');
@@ -874,6 +875,92 @@ async function memberPlaylists(request, env, answer) {
 }
 
 // a member's file, by a signed link: in ranges, as audio and video players ask (a phone's won't play without)
+// ---------- what John's videos are, for playing on a TV: read from each MP4's own header (no download) ----------
+// /media/report?from=0&n=30 gives, for each video: size, length, width x height, codec (avc1 is H.264; hvc1/hev1 is
+// HEVC), H.264 profile and level, frame rate, bitrate, and whether its index comes first (faststart). Kept in KV
+// (mediaProbe) so each file is read once, until it changes. Technical details only, no files or links.
+function boxes(dv, start, end) {   // the boxes in dv[start, end): [{ type, at, size, body }]
+  const out = [];
+  let o = start;
+  while (o + 8 <= end) {
+    let size = dv.getUint32(o), hdr = 8;
+    const type = String.fromCharCode(dv.getUint8(o + 4), dv.getUint8(o + 5), dv.getUint8(o + 6), dv.getUint8(o + 7));
+    if (size === 1 && o + 16 <= end) { size = Number(dv.getBigUint64(o + 8)); hdr = 16; }
+    else if (size === 0) size = end - o;
+    if (size < hdr) break;
+    out.push({ type, at: o, size, body: o + hdr, end: Math.min(end, o + size) });
+    o += size;
+  }
+  return out;
+}
+function child(dv, b, type) { return boxes(dv, b.body, b.end).find(x => x.type === type); }
+function moovInfo(dv, moov) {
+  const info = {};
+  const mvhd = child(dv, moov, 'mvhd');
+  if (mvhd) { const v = dv.getUint8(mvhd.body); const ts = dv.getUint32(mvhd.body + (v ? 20 : 12)); const du = v ? Number(dv.getBigUint64(mvhd.body + 24)) : dv.getUint32(mvhd.body + 16); info.dur = ts ? Math.round(du / ts * 10) / 10 : 0; }
+  for (const trak of boxes(dv, moov.body, moov.end).filter(x => x.type === 'trak')) {
+    const mdia = child(dv, trak, 'mdia'); if (!mdia) continue;
+    const hdlr = child(dv, mdia, 'hdlr'); const kind = hdlr ? String.fromCharCode(...[8, 9, 10, 11].map(i => dv.getUint8(hdlr.body + i))) : '';
+    const mdhd = child(dv, mdia, 'mdhd');
+    let ts = 0, du = 0;
+    if (mdhd) { const v = dv.getUint8(mdhd.body); ts = dv.getUint32(mdhd.body + (v ? 20 : 12)); du = v ? Number(dv.getBigUint64(mdhd.body + 24)) : dv.getUint32(mdhd.body + 16); }
+    const stbl = (() => { const minf = child(dv, mdia, 'minf'); return minf && child(dv, minf, 'stbl'); })();
+    const stsd = stbl && child(dv, stbl, 'stsd');
+    const entry = stsd && boxes(dv, stsd.body + 8, stsd.end)[0];
+    if (kind === 'vide' && entry) {
+      info.codec = entry.type;
+      const tkhd = child(dv, trak, 'tkhd');
+      if (tkhd) { info.w = dv.getUint32(tkhd.end - 8) >>> 16; info.h = dv.getUint32(tkhd.end - 4) >>> 16; }
+      const cfg = boxes(dv, entry.body + 78, entry.end).find(x => x.type === 'avcC' || x.type === 'hvcC');
+      if (cfg && cfg.type === 'avcC') { info.profile = dv.getUint8(cfg.body + 1); info.level = dv.getUint8(cfg.body + 3) / 10; }
+      if (cfg && cfg.type === 'hvcC') { info.profile = dv.getUint8(cfg.body + 1) & 31; info.level = dv.getUint8(cfg.body + 12) / 30; }
+      const stsz = stbl && child(dv, stbl, 'stsz');
+      if (stsz && ts && du) info.fps = Math.round(dv.getUint32(stsz.body + 8) / (du / ts) * 100) / 100;
+    }
+    if (kind === 'soun' && entry) info.audio = entry.type;
+  }
+  return info;
+}
+async function probeMp4(env, key, size) {
+  const read = async (offset, length) => { const o = await env.MEDIA.get(key, { range: { offset, length: Math.min(length, size - offset) } }); return o ? new DataView(await o.arrayBuffer()) : null; };
+  const order = [];
+  let off = 0, info = null, steps = 0;
+  while (off < size && steps++ < 12) {   // the top-level boxes, one header at a time (mdat is skipped, not read)
+    const h = await read(off, 16); if (!h || h.byteLength < 8) break;
+    const b = boxes(h, 0, h.byteLength)[0]; if (!b) break;
+    let len = b.size;
+    if (h.getUint32(0) === 1) len = Number(h.getBigUint64(8)); else if (h.getUint32(0) === 0) len = size - off;
+    order.push(b.type);
+    if (b.type === 'moov') {
+      const m = await read(off, Math.min(len, 32 << 20)); if (!m) break;
+      info = moovInfo(m, boxes(m, 0, m.byteLength)[0]);
+    }
+    off += len;
+  }
+  info = info || {};
+  info.size = size;
+  info.fast = order.indexOf('moov') >= 0 && (order.indexOf('mdat') < 0 || order.indexOf('moov') < order.indexOf('mdat'));
+  if (info.dur) info.kbps = Math.round(size * 8 / info.dur / 1000);
+  return info;
+}
+async function mediaReport(url, env) {
+  const h = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'Access-Control-Allow-Origin': '*' };
+  if (!env.MEDIA) return new Response('{}', { headers: h });
+  const cat = await catalog(env), keep = (await env.SOTD.get('mediaProbe', 'json')) || {};
+  const tracks = Object.keys(cat).filter(t => cat[t].v).sort();
+  const from = Math.max(0, parseInt(url.searchParams.get('from'), 10) || 0), n = Math.min(60, Math.max(1, parseInt(url.searchParams.get('n'), 10) || 30));
+  let changed = false;
+  for (const t of tracks.slice(from, from + n)) {
+    const size = cat[t].v;
+    if (keep[t] && keep[t].size === size && !keep[t].err) continue;
+    try { keep[t] = await probeMp4(env, 'v/' + t + '.mp4', size); } catch (e) { keep[t] = { size, err: String(e && e.message || e).slice(0, 120) }; }
+    changed = true;
+  }
+  if (changed) await kvSoft(env, 'mediaProbe', JSON.stringify(keep));
+  const videos = {}; tracks.forEach(t => { if (keep[t] && keep[t].size === cat[t].v) videos[t] = keep[t]; });
+  return new Response(JSON.stringify({ total: tracks.length, done: Object.keys(videos).length, next: from + n < tracks.length ? from + n : null, videos }), { headers: h });
+}
+
 async function mediaFile(request, url, env) {
   const m = /^\/m\/([av])\/([0-9A-Za-z]{22})\.(mp3|mp4)$/.exec(url.pathname);
   const plain = (status, text) => new Response(text, { status, headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' } });

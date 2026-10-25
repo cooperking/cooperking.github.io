@@ -1,0 +1,41 @@
+name: Video report
+
+# What John's own videos are (size, length, picture size, codec, bitrate, faststart), read by the Worker from each MP4's
+# header (/media/report), saved to _sotd/data/media-report.json to see which need a lighter copy for a TV. Started by hand.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read every video's header, a few at a time
+        run: |
+          python3 - <<'PY'
+          import json, time, urllib.request
+          base = 'https://sotd-playlists.cooperking.workers.dev/media/report'
+          frm, out = 0, None
+          for _ in range(40):
+              with urllib.request.urlopen(urllib.request.Request('%s?from=%d&n=25' % (base, frm), headers={'User-Agent': 'sotd-media-report'}), timeout=120) as r:
+                  out = json.loads(r.read())
+              print('from', frm, '->', out['done'], 'of', out['total'])
+              if out['next'] is None:
+                  break
+              frm = out['next']
+          out['at'] = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
+          json.dump(out, open('_sotd/data/media-report.json', 'w'), indent=1)
+          PY
+      - name: Save
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add _sotd/data/media-report.json
+          if git diff --cached --quiet; then echo "nothing changed"; exit 0; fi
+          git commit -m "Video report: what John's own videos are"
+          for i in 1 2 3 4 5; do git pull --rebase --quiet && git push && exit 0; sleep 5; done
+          exit 1
