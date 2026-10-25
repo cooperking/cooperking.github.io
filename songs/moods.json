@@ -840,8 +840,8 @@
    "moodFrom": "Claude (researched)",
    "sound": [
     "Energetic",
-    "Dark",
-    "Bittersweet"
+    "Bittersweet",
+    "Dark"
    ],
    "claude": [
     "Playful",
@@ -4710,8 +4710,8 @@
    ],
    "moodFrom": "Claude",
    "sound": [
-    "Energetic",
     "Playful",
+    "Energetic",
     "Joyful"
    ],
    "claude": [
@@ -18138,8 +18138,8 @@
    ],
    "moodFrom": "Claude",
    "sound": [
-    "Dreamy",
     "Mellow",
+    "Dreamy",
     "Melancholy"
    ],
    "claude": [
@@ -20202,8 +20202,8 @@
    ],
    "moodFrom": "Claude (researched)",
    "sound": [
-    "Energetic",
     "Joyful",
+    "Energetic",
     "Playful"
    ],
    "claude": [
@@ -20916,7 +20916,7 @@
    "sound": [
     "Playful",
     "Energetic",
-    "Romantic"
+    "Joyful"
    ],
    "claude": [
     "Playful"
@@ -22115,8 +22115,8 @@
    ],
    "moodFrom": "Claude (researched)",
    "sound": [
-    "Melancholy",
     "Romantic",
+    "Melancholy",
     "Bittersweet"
    ],
    "claude": [
@@ -26121,6 +26121,146 @@
     "psychedelic rock",
     "rock",
     "slacker rock"
+   ],
+   "check": true
+  },
+  "3frbUD4VMBZRMgxOGMVXSY": {
+   "n": 258,
+   "title": "Take One For The Team",
+   "artist": "Du Blonde",
+   "moods": [
+    "Dark"
+   ],
+   "moodMix": [
+    [
+     "Dark",
+     68
+    ],
+    [
+     "Melancholy",
+     9
+    ],
+    [
+     "Dreamy",
+     7
+    ]
+   ],
+   "moodEvidence": [
+    [
+     "Audio",
+     100,
+     [
+      [
+       "Dark",
+       68
+      ],
+      [
+       "Melancholy",
+       9
+      ],
+      [
+       "Dreamy",
+       7
+      ]
+     ]
+    ]
+   ],
+   "moodFrom": "Weighed up",
+   "sound": [
+    "Dark",
+    "Melancholy",
+    "Dreamy"
+   ],
+   "listeners": "none",
+   "styles": [
+    "Alternative Rock",
+    "Pop Rock",
+    "Indie Rock"
+   ],
+   "genres": [
+    "Rock",
+    "Indie"
+   ],
+   "genreFrom": "Weighed up",
+   "genreMix": [
+    [
+     "Rock",
+     35
+    ],
+    [
+     "Indie",
+     29
+    ],
+    [
+     "Pop",
+     19
+    ]
+   ],
+   "genreEvidence": [
+    [
+     "MusicBrainz",
+     50,
+     [
+      [
+       "Rock",
+       36
+      ],
+      [
+       "Pop",
+       32
+      ],
+      [
+       "Folk",
+       20
+      ]
+     ]
+    ],
+    [
+     "Last.fm",
+     30,
+     [
+      [
+       "Indie",
+       60
+      ],
+      [
+       "Rock",
+       39
+      ],
+      [
+       "Soul & R&B",
+       1
+      ]
+     ]
+    ],
+    [
+     "Audio",
+     20,
+     [
+      [
+       "Indie",
+       56
+      ],
+      [
+       "Rock",
+       27
+      ],
+      [
+       "Pop",
+       17
+      ]
+     ]
+    ]
+   ],
+   "musicbrainz": [
+    "electronic",
+    "freak folk",
+    "garage rock",
+    "pop",
+    "pop-folk",
+    "psychedelic pop",
+    "rock",
+    "wonky pop"
    ],
    "check": true
   }
