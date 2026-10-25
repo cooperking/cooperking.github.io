@@ -4522,11 +4522,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (/^#join=/.test(location.hash)) try { history.replaceState(history.state, '', location.pathname + location.search); } catch (e) {}
   }
   acct.addEventListener('close', codeOut);
-  // the first time a member joins from an invite (once on this device, ever): Get the app, in its own pop-up. Android:
+  // a member joining from an invite on a device that wasn't signed in (their first time): Get the app, in its own pop-up. Android:
   // Chrome's install box; iPhone: the three steps slide up, drawn as Safari shows them. The Profile has it after that.
   var appDlg = document.getElementById('appdlg');
   function appOffer() {
-    try { if (localStorage.getItem('sotd-appoffer')) return; localStorage.setItem('sotd-appoffer', '1'); } catch (e) {}
     if (IOS) iosSteps();
     document.getElementById('appsteps').hidden = true;
     document.getElementById('appnot').textContent = 'Not now';
@@ -4617,7 +4616,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   var appAfterJoin = false;
   function memberJoin(code, invite) {
     if (!MBASE || !window.fetch) return;
-    if (invite) appAfterJoin = true;   // joined from an invite: then the app is offered (Profile)
+    var had = ''; try { had = localStorage.getItem(MKEY) || ''; } catch (e) {}
+    if (invite && !had) appAfterJoin = true;   // a device joining from an invite, not signed in before: the app is offered
     fetch(MBASE + '/members/join', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: code }) })
       .then(function (r) { return r.json().then(function (j) { j.ok = r.ok; return j; }); })
       .then(function (j) {
