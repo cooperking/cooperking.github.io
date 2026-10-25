@@ -407,10 +407,10 @@ async function mediaSig(env, kind, track, exp) {
 
 async function catalog(env) { return (await env.SOTD.get('mediaCatalog', 'json')) || {}; }
 
-async function catalogSet(env, key, size) {   // which songs have which files: a and v, with their sizes (0: gone)
-  const c = await catalog(env), kind = key[0], track = key.slice(2, 24);
-  const e = c[track] || {};
-  if (size) e[kind] = size; else delete e[kind];
+async function catalogSet(env, key, size, fp) {   // which songs have which files: a and v, with their sizes (0: gone),
+  const c = await catalog(env), kind = key[0], track = key.slice(2, 24);   // and fa, fv: each file's fingerprint, so a
+  const e = c[track] || {};                                                // folder upload can skip what's already there
+  if (size) { e[kind] = size; if (fp) e['f' + kind] = fp; else delete e['f' + kind]; } else { delete e[kind]; delete e['f' + kind]; }
   if (Object.keys(e).length) c[track] = e; else delete c[track];
   await env.SOTD.put('mediaCatalog', JSON.stringify(c));
 }
@@ -500,8 +500,8 @@ async function members(request, url, env) {
         r.objects.forEach(o => files.push({ key: o.key, size: o.size, at: o.uploaded }));
         cursor = r.truncated ? r.cursor : null;
       } while (cursor);
-      const c = {};   // the catalog again from what's really there
-      files.forEach(f => { if (MEDIA_KEY_RE.test(f.key)) { const t = f.key.slice(2, 24); (c[t] = c[t] || {})[f.key[0]] = f.size; } });
+      const c = {}, was = await catalog(env);   // the catalog again from what's really there (fingerprints kept where the size is the same)
+      files.forEach(f => { if (MEDIA_KEY_RE.test(f.key)) { const t = f.key.slice(2, 24), k = f.key[0], e = (c[t] = c[t] || {}); e[k] = f.size; const o = was[t] || {}; if (o[k] === f.size && o['f' + k]) e['f' + k] = o['f' + k]; } });
       await env.SOTD.put('mediaCatalog', JSON.stringify(c));
       return answer(200, { files, catalog: c });
     }
@@ -524,6 +524,12 @@ async function memberUpload(request, url, env, answer) {
     const up = await env.MEDIA.createMultipartUpload(key, { httpMetadata: { contentType: MEDIA_KINDS[key[0]].type } });
     return answer(200, { uploadId: up.uploadId });
   }
+  if (op === 'mark') {   // a file already up (from before fingerprints), the same size as the one picked: its fingerprint noted
+    const body = await request.json().catch(() => ({})), head = await env.MEDIA.head(key);
+    if (!head || head.size !== Number(body.size) || typeof body.fp !== 'string') return answer(409, { error: 'Not the same file.' });
+    await catalogSet(env, key, head.size, body.fp.slice(0, 80));
+    return answer(200, { ok: true });
+  }
   if (!id) return answer(400, { error: 'Which upload?' });
   const up = env.MEDIA.resumeMultipartUpload(key, id);
   if (op === 'part') {
@@ -537,7 +543,7 @@ async function memberUpload(request, url, env, answer) {
     const parts = (Array.isArray(body.parts) ? body.parts : []).map(p => ({ partNumber: Number(p.partNumber), etag: String(p.etag) }));
     if (!parts.length) return answer(400, { error: 'No parts.' });
     const obj = await up.complete(parts);
-    await catalogSet(env, key, obj.size);
+    await catalogSet(env, key, obj.size, typeof body.fp === 'string' ? body.fp.slice(0, 80) : '');
     return answer(200, { ok: true, key, size: obj.size });
   }
   if (op === 'abort') { await up.abort(); return answer(200, { ok: true }); }

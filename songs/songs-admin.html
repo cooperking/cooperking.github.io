@@ -85,7 +85,13 @@
 .matchbox { padding: 16px; display: grid; gap: 12px; }
 .match { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; max-height: 50vh; overflow: auto; }
 .match li { display: grid; gap: 4px; }
-.match .f { font-size: 13px; color: var(--fg); overflow-wrap: anywhere; }
+.match .f { font-size: 13px; color: var(--fg); overflow-wrap: anywhere; display: flex; gap: 8px; align-items: flex-start; }
+.match .f input { margin: 2px 0 0; flex: none; width: 16px; height: 16px; accent-color: var(--fg); }
+.match .st { font: 600 10px/1.2 var(--sans); letter-spacing: .1em; text-transform: uppercase; padding: 3px 7px 2px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+.match .st.new { background: var(--fg); border-color: var(--fg); color: #fff; }
+.match .st.chg { color: var(--accent); border-color: var(--accent); }
+.match li.same { opacity: .55; }
+.match .more { font-size: 13px; }
 .match select { width: 100%; border: 1px solid var(--line); background: var(--field); border-radius: 10px; padding: 8px 10px; font: 14px var(--sans); color: var(--fg); }
 @media (max-width: 520px) {
   .shead { grid-template-columns: 60px minmax(0, 1fr) auto; gap: 2px 12px; padding: 10px; }
@@ -529,7 +535,7 @@
   }
   $('one').addEventListener('change', function () {
     var f = this.files[0], p = picking; if (!f || !p) return;
-    upload(p.s, p.kind, f).then(function (ok) { if (ok) { toast('Added'); redraw(p.s); counts(); } });
+    fingerprint(f).catch(function () { return ''; }).then(function (fp) { return upload(p.s, p.kind, f, null, fp); }).then(function (ok) { if (ok) { toast('Added'); redraw(p.s); counts(); } });
   });
   function drop(s, kind) {
     api('/members/admin', { op: 'delete', key: kind + '/' + s.id + (kind === 'a' ? '.mp3' : '.mp4') }).then(function (j) {
@@ -623,12 +629,19 @@
       $('picdlg').close(); redraw(s); toast('Saved: ' + whoText(who) + ' ' + (who === 'all' || who.length > 1 ? 'see' : 'sees') + ' this cover');
     }).catch(function (e) { $('picstat').textContent = 'Not saved: ' + e.message; $('picsave').disabled = false; });
   });
-  function upload(s, kind, f, onPart) {   // in parts (the Worker takes up to 100 MB at a time)
+  // a file's fingerprint: its size and SHA-256 (of the whole file, or for a big one its start, middle and end),
+  // kept by the Worker, so a folder upload sends only new and changed files
+  function fingerprint(f) {
+    var B = 4 << 20, parts = f.size <= 64 << 20 ? [f] : [f.slice(0, B), f.slice(Math.floor(f.size / 2) - B / 2, Math.floor(f.size / 2) + B / 2), f.slice(f.size - B)];
+    return new Blob([String(f.size)].concat(parts)).arrayBuffer().then(function (b) { return crypto.subtle.digest('SHA-256', b); })
+      .then(function (h) { return f.size + ':' + [].map.call(new Uint8Array(h).slice(0, 16), function (x) { return ('0' + x.toString(16)).slice(-2); }).join(''); });
+  }
+  function upload(s, kind, f, onPart, fp) {   // in parts (the Worker takes up to 100 MB at a time)
     var k = kind + '/' + s.id + (kind === 'a' ? '.mp3' : '.mp4'), bar = list.querySelector('[data-bar="' + s.id + '"]');
     if (bar) { bar.hidden = false; bar.firstChild.style.width = '0%'; }
     var parts = [], n = Math.max(1, Math.ceil(f.size / PART)), id;
     function part(i) {
-      if (i > n) return api('/members/upload?op=done&key=' + k + '&uploadId=' + encodeURIComponent(id), { parts: parts });
+      if (i > n) return api('/members/upload?op=done&key=' + k + '&uploadId=' + encodeURIComponent(id), { parts: parts, fp: fp || '' });
       return api('/members/upload?op=part&key=' + k + '&uploadId=' + encodeURIComponent(id) + '&n=' + i, f.slice((i - 1) * PART, Math.min(f.size, i * PART)), true).then(function (j) {
         if (!j.etag) throw new Error(j.error || 'a part didn’t go');
         parts.push({ partNumber: j.partNumber, etag: j.etag });
@@ -642,7 +655,7 @@
       id = j.uploadId; return part(1);
     }).then(function (j) {
       if (!j.ok) throw new Error(j.error || 'couldn’t finish');
-      (CAT[s.id] = CAT[s.id] || {})[kind] = j.size;
+      var ce = (CAT[s.id] = CAT[s.id] || {}); ce[kind] = j.size; if (fp) ce['f' + kind] = fp; else delete ce['f' + kind];
       if (bar) bar.hidden = true;
       return true;
     }).catch(function (e) {
@@ -665,38 +678,80 @@
     var t = tw.filter(function (w) { return set[w]; }).length / tw.length, a = aw.length ? aw.filter(function (w) { return set[w]; }).length / aw.length : 0;
     return t * 0.65 + a * 0.35 - Math.max(0, fw.length - tw.length - aw.length) * 0.02 + (norm(name).indexOf(norm(s.title)) >= 0 ? 0.05 : 0);
   }
-  var PLAN = [];
+  var PLAN = [], SHOWSAME = false;
+  // what a file is next to what's up already: new (nothing there), same (the same fingerprint, or from before fingerprints
+  // the same size) or changed
+  function sameAs(p) {
+    var e = p.s && CAT[p.s.id] || {}, was = e[p.kind], f = e['f' + p.kind];
+    if (!was) return 'new';
+    if (f) return f === p.fp ? 'same' : 'changed';
+    return was === p.f.size ? 'same' : 'changed';
+  }
+  function planState(p) { p.st = p.s ? sameAs(p) : ''; p.on = !!p.s && p.st !== 'same'; }
+  function drawPlan() {
+    var ul = $('matches'); ul.innerHTML = '';
+    var same = PLAN.filter(function (p) { return p.st === 'same'; }).length;
+    PLAN.forEach(function (p) {
+      if (p.st === 'same' && !SHOWSAME && !p.on) return;
+      var li = el('li', p.st === 'same' && !p.on ? 'same' : null), e = p.s && CAT[p.s.id] && CAT[p.s.id][p.kind];
+      var f = el('label', 'f'), cb = el('input'); cb.type = 'checkbox'; cb.checked = p.on; cb.disabled = !p.s;
+      cb.addEventListener('change', function () { p.on = cb.checked; li.classList.toggle('same', p.st === 'same' && !p.on); upCount(); });
+      f.appendChild(cb);
+      var txt = el('span', null, p.f.name + ' · ' + mb(p.f.size) + ' · ' + (p.kind === 'a' ? 'song' : 'video') + (p.s && !p.sure ? ' · check this' : '') + (p.st === 'changed' && e ? ' · replaces ' + mb(e) : ''));
+      f.appendChild(txt);
+      if (p.st) f.appendChild(el('span', 'st' + (p.st === 'new' ? ' new' : p.st === 'changed' ? ' chg' : ''), p.st === 'same' ? 'Already up' : p.st === 'new' ? 'New' : 'Changed'));
+      li.appendChild(f);
+      var sel = el('select');
+      sel.appendChild(el('option', null, '— not matched: pick its day, or leave it —')).value = '';
+      songs.forEach(function (s) { var o = el('option', null, dayOf(s.a).label + ' · ' + s.title + ' — ' + s.artist); o.value = s.id; if (p.s && p.s.id === s.id) o.selected = true; sel.appendChild(o); });
+      sel.addEventListener('change', function () { p.s = songs.filter(function (s) { return s.id === sel.value; })[0] || null; p.sure = true; planState(p); drawPlan(); });
+      li.appendChild(sel); ul.appendChild(li);
+    });
+    if (same) {
+      var li = el('li'), b = el('button', 'link more', SHOWSAME ? 'Hide the ' + same + ' already up' : same + ' already up and unchanged: skipped (show)');
+      b.type = 'button'; b.addEventListener('click', function () { SHOWSAME = !SHOWSAME; drawPlan(); });
+      li.appendChild(b); ul.appendChild(li);
+    }
+    upCount();
+  }
   $('folder').addEventListener('change', function () {
     var files = [].filter.call(this.files, function (f) { return /\.(mp3|mp4|m4v)$/i.test(f.name) && f.name.charAt(0) !== '.'; });
+    SHOWSAME = false;
     PLAN = files.map(function (f) {
       var kind = /\.mp3$/i.test(f.name) ? 'a' : 'v', idm = /([0-9A-Za-z]{22})\.(mp3|mp4|m4v)$/.exec(f.name), best = null, bs = 0;
       if (idm && songs.some(function (s) { return s.id === idm[1]; })) { best = songs.filter(function (s) { return s.id === idm[1]; })[0]; bs = 1; }
       else songs.forEach(function (s) { var sc = score(f.name, s); if (sc > bs) { bs = sc; best = s; } });
       return { f: f, kind: kind, s: bs >= 0.6 ? best : null, sure: bs >= 0.85 };
     }).sort(function (x, y) { return (x.s ? 1 : 0) - (y.s ? 1 : 0) || x.f.name.localeCompare(y.f.name); });
-    var ul = $('matches'); ul.innerHTML = '';
-    PLAN.forEach(function (p) {
-      var li = el('li'), e = p.s && CAT[p.s.id] && CAT[p.s.id][p.kind];
-      li.appendChild(el('div', 'f', p.f.name + ' · ' + mb(p.f.size) + ' · ' + (p.kind === 'a' ? 'song' : 'video') + (p.s && !p.sure ? ' · check this' : '') + (e ? ' · replaces ' + mb(e) : '')));
-      var sel = el('select');
-      sel.appendChild(el('option', null, '— not matched: pick its day, or leave it —')).value = '';
-      songs.forEach(function (s) { var o = el('option', null, dayOf(s.a).label + ' · ' + s.title + ' — ' + s.artist); o.value = s.id; if (p.s && p.s.id === s.id) o.selected = true; sel.appendChild(o); });
-      sel.addEventListener('change', function () { p.s = songs.filter(function (s) { return s.id === sel.value; })[0] || null; p.sure = true; upCount(); });
-      li.appendChild(sel); ul.appendChild(li);
-    });
-    $('matchbox').hidden = !PLAN.length; upCount();
-    if (!PLAN.length) toast('No MP3 or MP4 files in that folder');
+    if (!PLAN.length) { $('matchbox').hidden = true; toast('No MP3 or MP4 files in that folder'); return; }
+    $('matchbox').hidden = false; $('matches').innerHTML = ''; $('upall').disabled = true; $('upstat').textContent = 'Checking which files are new or changed…';
+    var i = 0;
+    (function next() {   // one at a time, so a big folder doesn't fill the memory
+      if (i >= PLAN.length) {
+        PLAN.forEach(planState); $('upstat').textContent = ''; drawPlan();
+        // files up from before fingerprints, the same size: their fingerprints noted, so a changed one is seen next time
+        PLAN.forEach(function (p) {
+          var e = p.s && CAT[p.s.id];
+          if (p.st === 'same' && e && !e['f' + p.kind]) api('/members/upload?op=mark&key=' + p.kind + '/' + p.s.id + (p.kind === 'a' ? '.mp3' : '.mp4'), { size: p.f.size, fp: p.fp })
+            .then(function (j) { if (j.ok) e['f' + p.kind] = p.fp; });
+        });
+        return;
+      }
+      var p = PLAN[i++];
+      $('upstat').textContent = 'Checking ' + i + ' of ' + PLAN.length + '…';
+      fingerprint(p.f).then(function (fp) { p.fp = fp; }, function () { p.fp = ''; }).then(next);
+    })();
   });
-  function upCount() { var n = PLAN.filter(function (p) { return p.s; }).length; $('upall').textContent = 'Upload ' + n + ' file' + (n === 1 ? '' : 's'); $('upall').disabled = !n; }
+  function upCount() { var n = PLAN.filter(function (p) { return p.s && p.on; }).length; $('upall').textContent = n ? 'Upload ' + n + ' file' + (n === 1 ? '' : 's') : 'Nothing new to upload'; $('upall').disabled = !n; }
   $('cancel').addEventListener('click', function () { PLAN = []; $('matchbox').hidden = true; $('folder').value = ''; });
   $('upall').addEventListener('click', function () {
-    var todo = PLAN.filter(function (p) { return p.s; }), done = 0, failed = 0, i = 0, total = todo.reduce(function (t, p) { return t + p.f.size; }, 0), sent = 0;
+    var todo = PLAN.filter(function (p) { return p.s && p.on; }), done = 0, failed = 0, i = 0, total = todo.reduce(function (t, p) { return t + p.f.size; }, 0), sent = 0;
     $('upall').disabled = true;
     (function next() {
-      if (i >= todo.length) { $('upstat').textContent = done + ' uploaded' + (failed ? ', ' + failed + ' failed (try them again)' : ''); $('upall').disabled = false; render(); return; }
+      if (i >= todo.length) { $('upstat').textContent = done + ' uploaded' + (failed ? ', ' + failed + ' failed (try them again)' : ''); drawPlan(); render(); return; }
       var p = todo[i++];
-      upload(p.s, p.kind, p.f, function (fr) { $('upstat').textContent = 'Uploading ' + i + ' of ' + todo.length + ': ' + p.f.name + ' (' + Math.round(100 * (sent + fr * p.f.size) / total) + '% of ' + mb(total) + ')'; })
-        .then(function (ok) { if (ok) done++; else failed++; sent += p.f.size; next(); });
+      upload(p.s, p.kind, p.f, function (fr) { $('upstat').textContent = 'Uploading ' + i + ' of ' + todo.length + ': ' + p.f.name + ' (' + Math.round(100 * (sent + fr * p.f.size) / total) + '% of ' + mb(total) + ')'; }, p.fp)
+        .then(function (ok) { if (ok) { done++; p.st = 'same'; p.on = false; } else failed++; sent += p.f.size; next(); });
     })();
   });
 
