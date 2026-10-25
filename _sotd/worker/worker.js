@@ -438,7 +438,7 @@ async function members(request, url, env) {
     m.invite = { hash: await sha256hex(code), uses: 0, until: Date.now() + INVITE_DAYS * DAY };
     return MEMBERS_JOIN + code;
   };
-  const listing = (own = owner) => Object.entries(all).map(([id, m]) => ({ id, name: m.name, created: m.created, owner: id === own,
+  const listing = (own = owner) => Object.entries(all).map(([id, m]) => ({ id, name: m.name, created: m.created, owner: id === own, covers: m.covers !== false,
     devices: Object.keys(m.devices || {}).length, seen: Math.max(0, ...Object.values(m.devices || {}).map(d => d.seen || 0)) || null,
     invite: m.invite ? { uses: m.invite.uses, left: Math.max(0, INVITE_USES - m.invite.uses), until: m.invite.until } : null }));
   switch (body.op) {
@@ -463,6 +463,11 @@ async function members(request, url, env) {
       const code = tvCode();
       await env.SOTD.put('tvcode:' + await sha256hex(code), body.id, { expirationTtl: TV_CODE_MINUTES * 60 });
       return answer(200, { code, minutes: TV_CODE_MINUTES, name: all[body.id].name });
+    }
+    case 'covers': {   // whether this member sees John's own covers (or the album covers)
+      if (!all[body.id]) return answer(404, { error: 'No such member.' });
+      all[body.id].covers = !!body.on; await save();
+      return answer(200, { ok: true, members: listing() });
     }
     case 'owner': {   // "This is me": the member who is John (or nobody, with no id)
       if (body.id && !all[body.id]) return answer(404, { error: 'No such member.' });
@@ -689,7 +694,7 @@ async function memberMe(request, env, answer) {
     }
   }
   const owner = (await env.SOTD.get('owner')) === id;   // John's own devices: the calendar shows them the way to the admin page
-  return answer(200, Object.assign({ name: m.name, exp, media }, owner ? { owner: true } : {}));
+  return answer(200, Object.assign({ name: m.name, exp, media, covers: m.covers !== false }, owner ? { owner: true } : {}));
 }
 
 // an invitation's link: a page that shows a proper card in a message (WhatsApp, iMessage...), like a day's share page,

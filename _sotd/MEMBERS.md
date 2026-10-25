@@ -11,7 +11,8 @@ he does).
   `a/<track>.mp3` (the song), `v/<track>.mp4` (its video), `c/<track>` (a sharing picture). The site's repository is
   public, so none of them are in it.
 - **Members page**: the Members tab of `songs/admin.html` (`songs/members-admin.html`), after the admin password: inviting,
-  codes and removing people, and *This is me* on John's own member: the Worker keeps which member is John (KV `owner`)
+  codes and removing people; *Sees your covers / Sees album covers* chooses, for each member, whether they see John's own
+  covers (KV member record `covers`, false for album covers; `/members/me` says which); and *This is me* on John's own member: the Worker keeps which member is John (KV `owner`)
   and tells only that member's devices (`/members/me` gives `owner: true`), whose Profile then has the Admin button
   (as does any device that has opened the admin page with its password). Each song's own recording, video and sharing picture are added on the Songs tab
   (`songs/songs-admin.html`), with the rest of that song.

@@ -158,7 +158,12 @@
       var me = button(m.owner ? 'Not me' : 'This is me', function () {   // the Admin button shows on this member's devices only
         api('/members/admin', { op: 'owner', id: m.owner ? '' : m.id }).then(function (j) { if (j.members) { MEMBERS = j.members; people(); toast(m.owner ? 'Done' : 'Done: your Profile on the calendar now has the Admin button'); } else toast(j.error || 'Couldn’t'); });
       });
-      var acts = document.createElement('div'); acts.className = 'acts'; acts.appendChild(nl); acts.appendChild(tv); acts.appendChild(me); acts.appendChild(rm);
+      var cv = button(m.covers ? 'Sees your covers' : 'Sees album covers', function () {   // which covers this member sees
+        api('/members/admin', { op: 'covers', id: m.id, on: !m.covers }).then(function (j) { if (j.members) { MEMBERS = j.members; people(); toast(m.name + (m.covers ? ' now sees the album covers' : ' now sees your covers')); } else toast(j.error || 'Couldn’t'); });
+      });
+      cv.title = 'Tap to switch between your covers and the album covers for ' + m.name;
+      if (m.covers) cv.classList.add('primary');
+      var acts = document.createElement('div'); acts.className = 'acts'; acts.appendChild(nl); acts.appendChild(tv); acts.appendChild(cv); acts.appendChild(me); acts.appendChild(rm);
       li.appendChild(who); li.appendChild(st); li.appendChild(acts); ul.appendChild(li);
     });
   }

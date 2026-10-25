@@ -1202,7 +1202,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // calendar (the month, the lists, the day and its record), and on their shares of the day (the Worker's /s/ page)
   var OWNC = {};
   function ownArt(s) {
-    var c = MEMBER && OWNC[s.track]; if (!c || !c.at || !MBASE) return null;
+    var c = MEMBER && MEMBER.covers !== false && OWNC[s.track]; if (!c || !c.at || !MBASE) return null;   // (John chooses, for each member, whether they see his covers)
     var el = document.createElement('span'); el.className = 'art'; el.setAttribute('role', 'img'); el.setAttribute('aria-label', 'John’s picture for ' + s.title);
     el.style.backgroundImage = 'url(' + MBASE + '/c/' + s.track + '?v=' + encodeURIComponent(c.at) + ')'; el.style.backgroundSize = 'cover'; el.style.backgroundPosition = 'center';
     return el;
@@ -2753,7 +2753,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     // what it's on as you share: video mode (or a song with only a video) gives Video, otherwise Preview
     var mode = hasVid && (watching || !hasPre || playMode === 'video') ? 'video' : hasPre ? 'preview' : '';
     // a member sharing a day John has given his own picture: its own link, with his card (or, if they choose, the album cover)
-    var own = MEMBER && OWNC[s.track] && OWNC[s.track].share && MBASE && !DRAFT;
+    var own = MEMBER && MEMBER.covers !== false && OWNC[s.track] && OWNC[s.track].share && MBASE && !DRAFT;
     var o = { lines: ['John\u2019s Song of the Day', longDate(iso), '', t, s.artist], title: t, sub: s.artist + ' \u00b7 ' + longDate(iso),
       mode: mode, modes: hasVid && hasPre, pics: !!own, pic: own ? 'own' : 'album', song: whole(s) };   // song: the whole song here (John's recording), not the preview
     o.urlFor = function (m) { return o.pic === 'own' ? MBASE + '/s/' + s.track + (m ? '?play=' + m : '') : dayLink(slug, m); };
