@@ -95,6 +95,10 @@ dialog.pop::backdrop { background: rgba(24, 8, 24, .35); -webkit-backdrop-filter
 .pop p { margin: 0; font-size: 14px; color: var(--muted); }
 .invcard { position: relative; margin: 0; border-radius: 12px; overflow: hidden; background: var(--chip); aspect-ratio: 1200 / 630; }
 .invcard img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.invcard img:not([src]) { visibility: hidden; }
+.invwait { position: absolute; inset: 0; display: grid; place-items: center; font-size: 13px; color: var(--muted); }
+.invwait[hidden] { display: none; }
+.invacts .btn.off { opacity: .45; pointer-events: none; }
 .invpic { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .pop textarea { width: 100%; min-height: 150px; resize: vertical; font: 400 16px/1.45 var(--serif); color: var(--fg); background: var(--field); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
 .invacts { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -149,23 +153,23 @@ dialog.pop::backdrop { background: rgba(24, 8, 24, .35); -webkit-backdrop-filter
 <input type="file" id="one" hidden>
 <dialog class="pop" id="invdlg" aria-labelledby="invh">
   <div class="pop-in">
-    <div class="pop-head"><span class="kicker">Invitation</span><button class="x" id="invx" type="button" aria-label="Close"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 2l10 10M12 2 2 12"/></svg></button></div>
-    <figure class="invcard"><img id="invimg" alt="The picture that goes with the invitation"></figure>
+    <div class="pop-head"><span class="kicker">Share</span><button class="x" id="invx" type="button" aria-label="Close"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 2l10 10M12 2 2 12"/></svg></button></div>
+    <figure class="invcard"><img id="invimg" alt=""><span class="invwait" id="invwait">Making the card…</span></figure>
+    <div>
+      <h3 id="invh">Invite</h3>
+      <p>John’s Song of the Day</p>
+    </div>
     <div class="invpic">
       <label class="btn small" for="invfile">Choose picture…</label><input type="file" id="invfile" accept="image/*" hidden>
-      <button class="btn small" id="invdef" type="button">Use the calendar’s picture</button>
-      <button class="btn small" id="invnone" type="button">No picture</button>
+      <button class="btn small" id="invdef" type="button">Latest song’s cover</button>
     </div>
-    <h3 id="invh">Invite</h3>
-    <textarea id="invmsg" aria-label="The invitation"></textarea>
     <div class="invacts">
       <button class="btn primary" id="invshare" type="button"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 10V2.5M5 5.5l3-3 3 3"/><path d="M3.5 8.5v4.5h9V8.5"/></svg>Share…</button>
       <a class="btn" id="invsms" target="_blank" rel="noopener">Messages</a>
       <a class="btn" id="invwa" target="_blank" rel="noopener">WhatsApp</a>
       <a class="btn" id="invmail" target="_blank" rel="noopener">Email</a>
-      <button class="btn" id="invcopy" type="button">Copy</button>
+      <button class="btn" id="invcopy" type="button">Copy link</button>
     </div>
-    <p class="invnote" id="invnote"></p>
   </div>
 </dialog>
 <dialog class="pop" id="askdlg" aria-labelledby="askh">
@@ -249,80 +253,155 @@ dialog.pop::backdrop { background: rgba(24, 8, 24, .35); -webkit-backdrop-filter
     });
   }
   function button(label, fn) { var b = document.createElement('button'); b.type = 'button'; b.className = 'btn small'; b.textContent = label; b.addEventListener('click', fn); return b; }
-  var invFor = '';
+  var invFor = '', INV;
   function showLink(j) {
     if (!j.link) { toast(j.error || 'Couldn’t make a link'); return; }
     if (j.members) { MEMBERS = j.members; people(); }
     var m = (MEMBERS || []).filter(function (x) { return x.id === j.id; })[0];
-    invFor = m ? m.name : '';
+    invFor = m ? m.name : ''; INV.id = j.id;
     $('linktext').textContent = j.link; $('newlink').hidden = false;
     invOpen();
   }
-  // ---- the invitation: a message (written for them, changeable) with the link, and a picture: the calendar's own
-  // sharing picture, one John chooses (kept on this device for next time), or none. Share… hands both to the phone's
-  // share sheet (Messages, WhatsApp, Mail…); the other buttons send the words alone.
-  var PIC_KEY = 'sotd-invite-pic', DEF_PIC = '/songs/card.jpg';
-  function picNow() { try { var v = localStorage.getItem(PIC_KEY); return v === 'none' ? '' : v || DEF_PIC; } catch (e) { return DEF_PIC; } }
-  function picSet(v) { try { if (v === DEF_PIC) localStorage.removeItem(PIC_KEY); else localStorage.setItem(PIC_KEY, v || 'none'); } catch (e) { toast('That picture is too big to keep here; it’s used this time only'); } invPic(v); }
-  var picThisTime = null;
-  function invPic(v) {
-    picThisTime = v;
-    var img = $('invimg'); img.parentNode.hidden = !v; if (v) img.src = v;
+  // ---- the invitation: shared like a day's song. Its link opens a page on the Worker whose preview (WhatsApp,
+  // iMessage...) is a card drawn here exactly as a day's card is drawn (_sotd/share_pages.py card()), with
+  // "<name> is invited" as the song and John's chosen picture (or else the latest song's cover) as the cover; the
+  // page sends them on to their invitation. Only the link is sent.
+  var PIC_KEY = 'sotd-invite-pic'; INV = { id: '', page: '', url: '', pic: '', busy: 0 };
+  var PALETTES = [
+    ['#0c1445', '#0094de', '#8833ff', '#f700f7', '#009aa8'], ['#652bee', '#3333ff', '#cc33ff', '#3388ff', '#ff2bb8'],
+    ['#11970c', '#429e00', '#00a150', '#7d9600', '#009e84'], ['#b613ec', '#fc00e7', '#8833ff', '#ff33aa', '#5533ff'],
+    ['#096a42', '#00a336', '#009e91', '#00a30e', '#0097c9'], ['#ec1a13', '#fa5300', '#ff3366', '#db6e00', '#ff3399'],
+    ['#1346ec', '#008ff5', '#5533ff', '#0097c9', '#8833ff'], ['#d85a06', '#c47c00', '#ff4a2e', '#b28600', '#ff3344'],
+    ['#0b86d3', '#0098b0', '#3370ff', '#009e91', '#3333ff'], ['#ec135b', '#ff3344', '#ff30b3', '#ff4c29', '#fc00e7'],
+    ['#09696d', '#009e77', '#0094d4', '#00a150', '#198cff'], ['#ec13c1', '#ff3399', '#dd33ff', '#ff3366', '#aa33ff']
+  ];
+  function rgb(h) { return [1, 3, 5].map(function (i) { return parseInt(h.slice(i, i + 2), 16); }); }
+  function londonNow() {
+    var o = {}; new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', year: 'numeric', month: 'numeric', day: 'numeric' }).formatToParts(new Date()).forEach(function (x) { o[x.type] = +x.value; });
+    return new Date(Date.UTC(o.year, o.month - 1, o.day, 12));
   }
-  function invText() {
-    var first = (invFor || '').split(' ')[0];
-    return (first ? 'Hi ' + first + '! ' : 'Hi! ') + 'You’re invited to my Song of the Day: a song every day, with my own recordings and videos of them, just for family.\n\n'
-      + 'Open this link on your phone (and on any computer or tablet you’d like it on) and you’re in:\n' + $('linktext').textContent + '\n\nJohn';
+  function latestCover() {
+    var s = SONGS.slice().sort(function (a, b) { return a.a < b.a ? 1 : -1; })[0];
+    return s && s.img ? s.img.replace('ab67616d00001e02', 'ab67616d0000b273') : '';
   }
-  function invLinks() {
-    var t = $('invmsg').value, e = encodeURIComponent(t);
-    $('invsms').href = 'sms:?&body=' + e;
-    $('invwa').href = 'https://wa.me/?text=' + e;
-    $('invmail').href = 'mailto:?subject=' + encodeURIComponent('You’re invited to my Song of the Day') + '&body=' + e;
+  function loadImg(src) {
+    return new Promise(function (res, rej) { var im = new Image(); im.crossOrigin = 'anonymous'; im.onload = function () { res(im); }; im.onerror = rej; im.src = src; });
+  }
+  function drawCard(title, cover) {
+    var W = 1200, H = 630, c = document.createElement('canvas'); c.width = W; c.height = H;
+    var g = c.getContext('2d'), when = londonNow(), pal = PALETTES[when.getUTCMonth()];
+    // the month's ground and glows, as the calendar's CSS draws them (share_pages.py ground())
+    var img = g.createImageData(W, H), d = img.data, bg = rgb(pal[0]), vmax = Math.max(W, H);
+    var layers = [[pal[3], .7, 34, 28, 8, 10], [pal[4], .85, 38, 30, 96, 102], [pal[3], 1, 52, 40, 2, 98], [pal[2], .85, 40, 32, 30, 40], [pal[1], 1, 54, 42, 92, 4]]
+      .map(function (l) { return { c: rgb(l[0]), k: l[1], rx: l[2] / 100 * vmax, ry: l[3] / 100 * vmax, cx: l[4] / 100 * W, cy: l[5] / 100 * H }; });
+    for (var y = 0; y < H; y++) for (var x = 0; x < W; x++) {
+      var r = bg[0], gg = bg[1], b = bg[2];
+      for (var i = 0; i < 5; i++) {
+        var L = layers[i], dx = (x - L.cx) / L.rx, dy = (y - L.cy) / L.ry, a = Math.max(0, Math.min(1, 1 - Math.sqrt(dx * dx + dy * dy) / .72)) * L.k;
+        r = r * (1 - a) + L.c[0] * a; gg = gg * (1 - a) + L.c[1] * a; b = b * (1 - a) + L.c[2] * a;
+      }
+      var p = (y * W + x) * 4; d[p] = r; d[p + 1] = gg; d[p + 2] = b; d[p + 3] = 255;
+    }
+    g.putImageData(img, 0, 0);
+    // the cover, with its record half out of the sleeve
+    var size = 400, cx = 70, cy = (H - size) / 2, rd = size - 16, rx = cx + size - rd / 2 + 12, ry = cy + 8;
+    g.save(); g.shadowColor = 'rgba(20, 6, 20, .43)'; g.shadowBlur = 36; g.shadowOffsetX = 6; g.shadowOffsetY = 14;
+    g.fillStyle = 'rgb(10, 9, 14)'; g.beginPath(); g.arc(rx + rd / 2, ry + rd / 2, rd / 2, 0, Math.PI * 2); g.fill();
+    g.shadowOffsetY = 16; g.fillStyle = 'rgba(20, 6, 20, .47)'; g.fillRect(cx, cy, size, size);
+    g.restore();
+    g.fillStyle = 'rgb(10, 9, 14)'; g.beginPath(); g.arc(rx + rd / 2, ry + rd / 2, rd / 2, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = 'rgb(30, 28, 38)'; g.lineWidth = 1;
+    for (var k = 8; k < rd / 2 - rd / 5; k += 3) { g.beginPath(); g.arc(rx + rd / 2, ry + rd / 2, rd / 2 - k, 0, Math.PI * 2); g.stroke(); }
+    var lab = Math.floor(rd * .38);
+    function square(im) { var sd = Math.min(im.naturalWidth, im.naturalHeight); return [(im.naturalWidth - sd) / 2, (im.naturalHeight - sd) / 2, sd, sd]; }
+    if (cover) {
+      var sq = square(cover);
+      g.save(); g.beginPath(); g.arc(rx + rd / 2, ry + rd / 2, lab / 2, 0, Math.PI * 2); g.clip();
+      g.drawImage(cover, sq[0], sq[1], sq[2], sq[3], rx + (rd - lab) / 2, ry + (rd - lab) / 2, lab, lab); g.restore();
+    }
+    g.fillStyle = pal[0]; g.beginPath(); g.arc(rx + rd / 2, ry + rd / 2, 4.5, 0, Math.PI * 2); g.fill();
+    if (cover) { var sq2 = square(cover); g.drawImage(cover, sq2[0], sq2[1], sq2[2], sq2[3], cx, cy, size, size); }
+    else { g.fillStyle = 'rgba(255, 250, 245, .14)'; g.fillRect(cx, cy, size, size); }
+    // the words: as a day's, with the invitation as the song
+    var x0 = rx + rd + 48, width = W - 64 - x0, INK = 'rgb(255, 250, 245)';
+    g.textBaseline = 'top';
+    function spaced(t, x, y, f, fill, tr) { g.font = f; g.fillStyle = fill; for (var i = 0; i < t.length; i++) { g.fillText(t[i], x, y); x += g.measureText(t[i]).width + tr; } }
+    function wrap(t, f) { g.font = f; var w = t.split(/\s+/), out = [], line = ''; w.forEach(function (x) { var tt = (line + ' ' + x).trim(); if (g.measureText(tt).width <= width || !line) line = tt; else { out.push(line); line = x; } }); if (line) out.push(line); return out; }
+    var tsize, lines, tf;
+    [68, 62, 56, 50, 45, 40, 36].some(function (sz) {
+      tsize = sz; tf = '500 ' + sz + 'px Newsreader'; lines = wrap(title, tf);
+      var widow = lines.length > 1 && lines[lines.length - 1].length <= 3;
+      g.font = tf;
+      return lines.length <= 3 && !widow && lines.every(function (l) { return g.measureText(l).width <= width; });
+    });
+    lines = lines.slice(0, 3);
+    var lh = Math.floor(tsize * 1.08), block = 19 + 26 + lines.length * lh + 22 + 22 + 30 + 30, y0 = Math.floor((H - block) / 2);
+    spaced('JOHN’S SONG OF THE DAY', x0, y0, '600 19px "Hanken Grotesk"', 'rgba(255, 250, 245, .9)', 3.2);
+    y0 += 19 + 26;
+    g.font = tf; g.fillStyle = INK;
+    lines.forEach(function (l) { g.fillText(l, x0, y0 - tsize * .08); y0 += lh; });
+    y0 += 22;
+    spaced('JOHN’S FAMILY', x0, y0, '600 22px "Hanken Grotesk"', 'rgba(255, 250, 245, .94)', 2.4);
+    y0 += 22 + 30;
+    g.font = 'italic 400 30px Newsreader'; g.fillStyle = 'rgba(255, 250, 245, .92)';
+    g.fillText(when.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).replace(',', ''), x0, y0);
+    return c.toDataURL('image/jpeg', 0.84);
+  }
+  function invTitle() { return (invFor ? invFor.split(' ')[0] : 'You') + (invFor ? ' is invited' : ' are invited'); }
+  function invBusy(on) {
+    $('invwait').hidden = !on;
+    [].forEach.call(document.querySelectorAll('#invdlg .invacts .btn'), function (b) { b.classList.toggle('off', on); });
+  }
+  function invMake() {   // the card drawn, then kept by the Worker with the page that shows it
+    var mine = ++INV.busy, title = invTitle(), pic = INV.pic || latestCover();
+    invBusy(true);
+    var fonts = document.fonts ? Promise.all(['500 68px Newsreader', 'italic 400 30px Newsreader', '600 19px "Hanken Grotesk"'].map(function (f) { return document.fonts.load(f); })) : Promise.resolve();
+    return fonts.then(function () { return pic ? loadImg(pic).catch(function () { return null; }) : null; }).then(function (im) {
+      if (mine !== INV.busy) return;
+      var card = drawCard(title, im);
+      $('invimg').src = card;
+      return api('/members/admin', { op: 'invitecard', id: INV.id, link: $('linktext').textContent, title: title, card: card, page: INV.page }).then(function (j) {
+        if (mine !== INV.busy) return;
+        if (!j.url) { toast(j.error || 'Couldn’t make the invitation’s page'); return; }
+        INV.page = j.page; INV.url = j.url;
+        var e = encodeURIComponent(j.url);
+        $('invsms').href = 'sms:?&body=' + e;
+        $('invwa').href = 'https://wa.me/?text=' + e;
+        $('invmail').href = 'mailto:?subject=' + encodeURIComponent(title) + '&body=' + e;
+        invBusy(false);
+      });
+    }).catch(function () { if (mine === INV.busy) toast('Couldn’t make the invitation'); });
   }
   function invOpen() {
-    $('invh').textContent = invFor ? 'Invite ' + invFor : 'Send the invitation';
-    $('invmsg').value = invText(); invLinks();
-    invPic(picNow());
-    var canFiles = false;
-    try { canFiles = !!(navigator.canShare && navigator.canShare({ files: [new File(['x'], 'x.jpg', { type: 'image/jpeg' })] })); } catch (e) {}
+    $('invh').textContent = invTitle();
+    try { INV.pic = localStorage.getItem(PIC_KEY) || ''; } catch (e) { INV.pic = ''; }
+    INV.page = ''; INV.url = ''; $('invimg').removeAttribute('src');
     $('invshare').hidden = !navigator.share;
-    $('invnote').textContent = navigator.share ? (canFiles ? 'Share… sends the picture with the words. The other buttons send the words only.' : 'Here the picture can’t go with the words: Share…, Messages, WhatsApp and Email send the words only.')
-      : 'This browser can’t share pictures: the buttons send the words only.';
     $('invdlg').showModal();
+    invMake();
   }
-  $('invmsg').addEventListener('input', invLinks);
   $('invx').addEventListener('click', function () { $('invdlg').close(); });
-  $('invdef').addEventListener('click', function () { picSet(DEF_PIC); });
-  $('invnone').addEventListener('click', function () { picSet(''); });
+  $('invdef').addEventListener('click', function () { INV.pic = ''; try { localStorage.removeItem(PIC_KEY); } catch (e) {} invMake(); });
   $('invfile').addEventListener('change', function () {
     var f = this.files && this.files[0]; this.value = '';
     if (!f) return;
-    var img = new Image(), url = URL.createObjectURL(f);
-    img.onload = function () {   // made a sensible size (1600px at most) so it sends quickly and can be kept here
-      var k = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight)), c = document.createElement('canvas');
-      c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
-      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    var url = URL.createObjectURL(f);
+    loadImg(url).then(function (im) {   // a square from its middle, 640px: what the card needs, small enough to keep here
+      var sd = Math.min(im.naturalWidth, im.naturalHeight), c = document.createElement('canvas'); c.width = c.height = 640;
+      c.getContext('2d').drawImage(im, (im.naturalWidth - sd) / 2, (im.naturalHeight - sd) / 2, sd, sd, 0, 0, 640, 640);
       URL.revokeObjectURL(url);
-      picSet(c.toDataURL('image/jpeg', 0.86));
-    };
-    img.onerror = function () { URL.revokeObjectURL(url); toast('That file isn’t a picture this browser can read'); };
-    img.src = url;
+      INV.pic = c.toDataURL('image/jpeg', 0.88);
+      try { localStorage.setItem(PIC_KEY, INV.pic); } catch (e) {}
+      invMake();
+    }).catch(function () { URL.revokeObjectURL(url); toast('That file isn’t a picture this browser can read'); });
   });
-  function picFile() {
-    if (!picThisTime) return Promise.resolve(null);
-    return fetch(picThisTime).then(function (r) { return r.blob(); }).then(function (b) { return new File([b], 'song-of-the-day.jpg', { type: b.type || 'image/jpeg' }); }).catch(function () { return null; });
-  }
   $('invshare').addEventListener('click', function () {
-    var t = $('invmsg').value;
-    picFile().then(function (file) {
-      var data = { text: t };
-      try { if (file && navigator.canShare && navigator.canShare({ files: [file], text: t })) data.files = [file]; } catch (e) {}
-      return navigator.share(data);
-    }).then(function () { toast('Invitation sent'); }).catch(function (e) { if (e && e.name !== 'AbortError') toast('Couldn’t share here: try Copy'); });
+    if (!INV.url) return;
+    navigator.share({ title: invTitle(), url: INV.url }).catch(function (e) { if (e && e.name !== 'AbortError') toast('Couldn’t share here: try Copy link'); });
   });
   $('invcopy').addEventListener('click', function () {
-    navigator.clipboard.writeText($('invmsg').value).then(function () { toast('Invitation copied'); }, function () { $('invmsg').select(); toast('Select it and copy'); });
+    if (!INV.url) return;
+    navigator.clipboard.writeText(INV.url).then(function () { toast('Link copied'); }, function () { toast(INV.url); });
   });
   // the page's own question, in place of the browser's confirm
   var askDone = null;

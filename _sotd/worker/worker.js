@@ -68,6 +68,7 @@ export default {
       if (url.pathname === '/facts/signoff') return await factsSignoff(request, env);
       if (url.pathname.startsWith('/members/')) return await members(request, url, env);
       if (url.pathname.startsWith('/m/')) return await mediaFile(request, url, env);
+      if (url.pathname.startsWith('/i/')) return await invitePage(url, env);
       if (url.pathname === '/covers.json' || url.pathname.startsWith('/c/')) return await ownCover(request, url, env);
       return page('Song of the Day', '<p>This service makes Spotify playlists from the Song of the Day calendar.</p>');
     } catch (e) {
@@ -468,6 +469,20 @@ async function members(request, url, env) {
       await env.SOTD.delete('mpl:' + body.id);   // their saved playlists go too
       return answer(200, { ok: true, members: listing() });
     }
+    case 'invitecard': {   // the invitation's link-preview page and picture (drawn on the members page)
+      const m = all[body.id];
+      if (!m) return answer(404, { error: 'No such member.' });
+      const link = String(body.link || '');
+      if (!link.startsWith(MEMBERS_JOIN)) return answer(400, { error: 'That isn’t an invitation link.' });
+      const b64 = String(body.card || '').replace(/^data:image\/jpeg;base64,/, '');
+      if (!b64 || b64.length > 2.5e6) return answer(400, { error: 'The picture is missing or too big.' });
+      const bytes = Uint8Array.from(atob(b64), ch => ch.charCodeAt(0));
+      const pid = /^[\w-]{16}$/.test(String(body.page || '')) && await env.SOTD.get('invpage:' + body.page) ? body.page : randomCode(12);
+      const ttl = INVITE_DAYS * 86400, at = Date.now();
+      await env.SOTD.put('invcard:' + pid, bytes, { expirationTtl: ttl });
+      await env.SOTD.put('invpage:' + pid, JSON.stringify({ link, title: String(body.title || (m.name + ' is invited')).slice(0, 120), at }), { expirationTtl: ttl });
+      return answer(200, { page: pid, url: new URL(request.url).origin + '/i/' + pid });
+    }
     case 'files': {
       if (!env.MEDIA) return answer(503, { error: 'No R2 bucket is bound to the Worker as MEDIA yet.' });
       const files = [];
@@ -614,6 +629,54 @@ async function memberMe(request, env, answer) {
     }
   }
   return answer(200, { name: m.name, exp, media });
+}
+
+// an invitation's link: a page that shows a proper card in a message (WhatsApp, iMessage...), like a day's share page,
+// and sends the person on to their invitation on the calendar. Kept for as long as the invitation lasts.
+const INVITE_BOTS = /bot|crawl|spider|preview|facebookexternalhit|facebot|whatsapp|telegram|slack|discord|linkedin|pinterest|embedly|iframely|skype|viber|signal|vkshare|redditbot|applebot|google|bing/i;
+async function invitePage(url, env) {
+  const m = /^\/i\/([\w-]{16})(\.jpg)?$/.exec(url.pathname);
+  const gone = () => new Response('<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>John\'s Song of the Day</title><p style="font-family:Georgia,serif;padding:24px">This invitation has run out. Ask John for a new one, or <a href="https://cooperking.github.io/songs/">open the calendar</a>.</p>', { status: 404, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+  if (!m) return gone();
+  if (m[2]) {
+    const img = await env.SOTD.get('invcard:' + m[1], 'arrayBuffer');
+    if (!img) return new Response('Not here.', { status: 404 });
+    return new Response(img, { headers: { 'Content-Type': 'image/jpeg', 'Cache-Control': 'public, max-age=3600' } });
+  }
+  const p = await env.SOTD.get('invpage:' + m[1], 'json');
+  if (!p) return gone();
+  const e = x => esc(String(x)), img = url.origin + '/i/' + m[1] + '.jpg?v=' + p.at, desc = 'John\'s Song of the Day';
+  return new Response(`<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${e(p.title)} · John's Song of the Day</title>
+<meta name="robots" content="noindex">
+<meta name="description" content="${e(desc)}">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="John's Song of the Day">
+<meta property="og:title" content="${e(p.title)}">
+<meta property="og:description" content="${e(desc)}">
+<meta property="og:url" content="${e(url.origin + url.pathname)}">
+<meta property="og:image" content="${e(img)}">
+<meta property="og:image:secure_url" content="${e(img)}">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="${e(p.title)}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="${e(p.title)}">
+<meta name="twitter:image" content="${e(img)}">
+<link rel="icon" type="image/png" sizes="96x96" href="https://cooperking.github.io/songs/favicon-96.png?v=2">
+<link rel="apple-touch-icon" sizes="180x180" href="https://cooperking.github.io/songs/apple-touch-icon.png?v=2">
+<script>if (!${INVITE_BOTS}.test(navigator.userAgent)) location.replace(${JSON.stringify(p.link)});</script>
+</head>
+<body style="font-family: Georgia, serif; padding: 24px;">
+<p><a href="${e(p.link)}">${e(p.title)}</a>: John's Song of the Day.</p>
+</body>
+</html>
+`, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } });
 }
 
 // a member's saved playlists, kept with their sign-in so every device of theirs has them (KV key mpl:<member id>).

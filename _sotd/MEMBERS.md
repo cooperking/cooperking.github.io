@@ -49,10 +49,13 @@ A member can keep John's recordings on a device and play them with no connection
 
 ## Invitations
 
-*Invite* (or *New link*) on the Members tab opens the invitation: a message written for them with their link (it can be
-changed), and a picture: the calendar's sharing picture, one John chooses (*Choose picture…*, kept on that device for
-next time) or none. *Share…* (on a phone) hands the words and the picture to the phone's share sheet; Messages,
-WhatsApp, Email and Copy send the words alone.
+*Invite* (or *New link*) on the Members tab opens the invitation, shared like a day's song: only a link is sent, and
+its preview (WhatsApp, iMessage...) is a card drawn on the members page exactly as a day's card is drawn
+(`share_pages.py` card()), with "<first name> is invited" as the song, JOHN'S FAMILY as the artist, today's date, and
+as the cover the picture John chose (*Choose picture…*, kept on that device for next time) or else the latest song's.
+The Worker keeps the card and its page (`/i/<id>`, KV `invcard:` and `invpage:`, for as long as the invitation lasts);
+the page sends a person on to their invitation on the calendar. *Share…* (on a phone), Messages, WhatsApp, Email and
+Copy link all send that link.
 
 ## Saved playlists
 
