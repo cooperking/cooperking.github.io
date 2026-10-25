@@ -401,6 +401,7 @@ dialog#sharesheet::backdrop { background: rgba(24, 8, 24, .35); -webkit-backdrop
 .appin h3 { margin: -4px 0 0; font-family: var(--serif); font-weight: 500; font-size: 34px; line-height: 1.05; color: var(--fg); }
 .app-t { margin: -8px 0 0; font-size: 15px; color: var(--muted); max-width: 30ch; }
 .app-acts { display: grid; gap: 10px; justify-items: center; }
+#appnot { justify-self: center; }   /* (.ac-out keeps to the left elsewhere) */
 .copy.big { padding: 15px 30px; font-size: 13px; justify-self: center; }
 .appsteps { display: grid; gap: 14px; justify-self: stretch; text-align: left; animation: appup .35s cubic-bezier(.2, .8, .2, 1); }
 .appsteps[hidden] { display: none; }
@@ -1242,7 +1243,6 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     </div>
     <div class="appicon" aria-hidden="true"><img src="icon-192.png?v=4" alt="" width="72" height="72"></div>
     <h3 id="apph">Get the app</h3>
-    <p class="app-t" id="appt">Song of the Day on your home screen: full screen, signed in, a tap away.</p>
     <div class="app-acts"><button class="copy big" id="appgo" type="button">Get the app</button><button class="ac-out" id="appnot" type="button">Not now</button></div>
     <div class="appsteps" id="appsteps" hidden></div>
   </div>
@@ -4584,7 +4584,6 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     document.getElementById('appsteps').hidden = true;
     document.getElementById('appnot').textContent = 'Not now';
     document.querySelector('#appdlg .app-acts').appendChild(document.getElementById('appnot'));
-    document.getElementById('appt').textContent = 'Song of the Day on your home screen: full screen, signed in, a tap away.';
     document.getElementById('appgo').hidden = false;
   }
   function appOffer() {
