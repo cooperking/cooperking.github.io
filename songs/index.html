@@ -413,11 +413,11 @@ dialog#sharesheet::backdrop { background: rgba(24, 8, 24, .35); -webkit-backdrop
 #appcode { margin: 8px 0 0; } #appcode b { font: 600 14px/1 ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: .1em; }
 .mock { border-radius: 14px; background: #f2f2f6; border: 1px solid #e2e2ea; font: 400 13px/1.2 -apple-system, "SF Pro Text", "Helvetica Neue", Arial, sans-serif; color: #1c1c1e; overflow: hidden; }
 .mock .hot { color: #0a84ff; position: relative; }
-.mock.bar { display: flex; align-items: center; gap: 10px; padding: 8px 12px; }
-.mock.bar .url { flex: 1; min-width: 0; padding: 6px 10px; border-radius: 9px; background: #fff; color: #6e6e73; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.mock.bar .ic { display: grid; place-items: center; width: 26px; height: 26px; color: #0a84ff; }
-.mock.bar .ic svg { width: 18px; height: 18px; }
-.mock.bar .ic.hot { border-radius: 50%; box-shadow: 0 0 0 2px #0a84ff; background: rgba(10, 132, 255, .1); animation: apppulse 1.6s ease-in-out infinite; }
+.mock.mbar { display: flex; align-items: center; gap: 10px; padding: 8px 12px; }
+.mock.mbar .url { flex: 1; min-width: 0; padding: 6px 10px; border-radius: 9px; background: #fff; color: #6e6e73; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mock.mbar .ic { display: grid; place-items: center; width: 26px; height: 26px; color: #0a84ff; }
+.mock.mbar .ic svg { width: 18px; height: 18px; }
+.mock.mbar .ic.hot { border-radius: 50%; box-shadow: 0 0 0 2px #0a84ff; background: rgba(10, 132, 255, .1); animation: apppulse 1.6s ease-in-out infinite; }
 .mock.menu { display: grid; background: #fff; }
 .mock.menu .row { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-top: 1px solid #ececf0; }
 .mock.menu .row:first-child { border-top: 0; }
@@ -426,8 +426,8 @@ dialog#sharesheet::backdrop { background: rgba(24, 8, 24, .35); -webkit-backdrop
 .mock.menu .row svg { width: 18px; height: 18px; }
 .mock.top { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: #fff; }
 .mock.top span { color: #0a84ff; }
-.mock.bar.top { border-radius: 14px; }
-.mock.bar .ic.dots { color: #1c1c1e; }
+.mock.mbar.top { border-radius: 14px; }
+.mock.mbar .ic.dots { color: #1c1c1e; }
 .mock.sheet { display: grid; background: #fff; }
 .mock.sheet .row { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-top: 1px solid #ececf0; }
 .mock.sheet .row:first-child { border-top: 0; }
@@ -436,6 +436,14 @@ dialog#sharesheet::backdrop { background: rgba(24, 8, 24, .35); -webkit-backdrop
 .mock.toggle { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: #fff; border-top: 1px solid #ececf0; }
 .mock.toggle i { width: 34px; height: 20px; border-radius: 10px; background: #34c759; position: relative; }
 .mock.toggle i::after { content: ""; position: absolute; right: 2px; top: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; }
+.mock.mbar .url.addr { display: flex; align-items: center; gap: 6px; padding: 4px 6px; text-align: left; }
+.mock.mbar .url.addr .u { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #1c1c1e; }
+.mock.mbar .url .ic { width: 24px; height: 24px; }
+.mock.icons { display: flex; gap: 8px; padding: 10px 12px; background: #fff; }
+.mock.icons .ib { flex: 1; display: grid; justify-items: center; gap: 4px; padding: 8px 4px; border-radius: 12px; background: #f2f2f6; color: #1c1c1e; }
+.mock.icons .ib svg { width: 20px; height: 20px; }
+.mock.icons .ib em { font-style: normal; font-size: 11px; }
+.mock.icons .ib.hot { background: rgba(10, 132, 255, .12); box-shadow: 0 0 0 2px #0a84ff; color: #0a84ff; animation: apppulse 1.6s ease-in-out infinite; }
 .mock-stack { display: grid; gap: 0; border-radius: 14px; overflow: hidden; border: 1px solid #e2e2ea; }
 .mock-stack .mock { border: 0; border-radius: 0; }
 .mock.top .hot { font-weight: 600; padding: 3px 8px; border-radius: 8px; box-shadow: 0 0 0 2px #0a84ff; animation: apppulse 1.6s ease-in-out infinite; }
@@ -4436,7 +4444,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var PLUS = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2.5" y="2.5" width="11" height="11" rx="2.5"/><path d="M8 5.5v5M5.5 8h5"/></svg>';
     var BACK = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M10 3 5 8l5 5"/></svg>';
     var URL_ = '<span class="url">cooperking.github.io</span>';
-    function bar(items, top) { return '<div class="mock bar' + (top ? ' top' : '') + '">' + items.join('') + '</div>'; }
+    function bar(items, top) { return '<div class="mock mbar' + (top ? ' top' : '') + '">' + items.join('') + '</div>'; }   // (mbar: .bar is the song's progress bar)
     function ic(svg, hot, cls) { return '<span class="ic' + (hot ? ' hot' : '') + (cls ? ' ' + cls : '') + '">' + svg + '</span>'; }
     function rows(list, hot) { return '<div class="mock sheet">' + list.map(function (r, i) { return '<span class="row' + (i === hot ? ' hot' : '') + '">' + r + '</span>'; }).join('') + '</div>'; }
     var addRows = rows(['Copy', 'Add to Reading List', PLUS + 'Add to Home Screen'], 2);
@@ -4462,9 +4470,13 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       steps.push({ t: 'Tap <b>Add to Home Screen</b> (scroll down for it)', m: addRows });
       steps.push({ t: 'Tap <b>Add</b>, top right', m: addTop, last: true });
     } else if (safari >= 26) {
-      // iOS 26: Safari's usual (Compact) layout keeps Share behind ••• at the bottom right
-      steps.push({ t: 'Tap <b>•••</b> at the bottom right of Safari <span class="q">(if you see Share <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 10V1.8M5.2 4.4 8 1.6l2.8 2.8"/><path d="M5.5 6.5H3.5v7.5h9V6.5h-2"/></svg> in the bar, tap that and skip to step 3)</span>', m: bar([ic(BACK), URL_, ic(DOTS, true, 'dots')]) });
-      steps.push({ t: 'Tap <b>Share</b>', m: rows([SHARE + 'Share', 'Add Bookmark', 'Add to Reading List'], 0) });
+      // iOS 26: in Safari's usual layout, Share is in the page menu, the ☰ at the left of the address bar
+      var MENU = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 4.5h10M3 8h10M3 11.5h6"/></svg>';
+      var RELOAD = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M12.5 8a4.5 4.5 0 1 1-1.3-3.2M12.5 2.5v2.8H9.7"/></svg>';
+      var TABS = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2.5" y="4.5" width="9" height="9" rx="2"/><path d="M5 2.5h6.5a2 2 0 0 1 2 2V11"/></svg>';
+      steps.push({ t: 'Tap <b>☰</b> at the left of the address bar, at the bottom of Safari <span class="q">(if you see Share <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 10V1.8M5.2 4.4 8 1.6l2.8 2.8"/><path d="M5.5 6.5H3.5v7.5h9V6.5h-2"/></svg> in the bar, tap that and skip to step 3)</span>',
+        m: '<div class="mock mbar">' + ic(BACK) + '<span class="url addr">' + '<span class="ic hot dots">' + MENU + '</span><span class="u">cooperking.github.io</span>' + '<span class="ic dots">' + RELOAD + '</span></span>' + ic(TABS, false, 'dots') + '</div>' });
+      steps.push({ t: 'Tap <b>Share</b>, at the left of the menu that opens', m: '<div class="mock icons">' + '<span class="ib hot">' + SHARE + '<em>Share</em></span><span class="ib">' + '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 2.5h8v11L8 10.5 4 13.5z"/></svg><em>Bookmark</em></span><span class="ib">' + '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="5" cy="10" r="2.5"/><circle cx="11" cy="10" r="2.5"/><path d="M7.5 10h1"/></svg><em>Reading List</em></span></div>' });
       steps.push({ t: 'Tap <b>Add to Home Screen</b> <span class="q">(tap <b>View More</b> if it isn’t showing)</span>', m: addRows });
       steps.push({ t: 'Leave <b>Open as Web App</b> on and tap <b>Add</b>, top right', m: '<div class="mock-stack">' + addTop + '<div class="mock toggle"><span>Open as Web App</span><i></i></div></div>', last: true });
     } else {
