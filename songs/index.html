@@ -678,7 +678,12 @@ html:not(.theatre) .vid.cover ~ .capdock .capbox .t { color: #1b1020; }
 .heart path { fill: none; stroke: currentColor; stroke-width: 1.6; }
 .is-fav .heart path, .heart.on path { fill: currentColor; }
 /* favourite: a heart; once picked, a small record (drawn like the day pop-up's) slides out beside it */
-.tracks li { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 6px; }
+.tracks li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 6px; }
+/* a member's download, beside a song in the month's list and in My playlist (when the whole song is there) */
+.rowdl { width: 32px; height: 32px; border: 0; background: none; }
+.tracks .rowdl { color: var(--fg); }
+.rowdl.off { display: none; }
+html.member .rowdl.off { display: inline-grid; visibility: hidden; pointer-events: none; }   /* a member: the space kept, so the hearts and crosses line up */
 .sharebtn { display: inline-grid; place-items: center; flex: 0 0 auto; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--fg); cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .sharebtn svg { width: 16px; height: 16px; }
 .sharebtn.ring { border: 1px solid var(--line); background: var(--pill-bg); }
@@ -848,7 +853,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
 .idx-list .dt { font-family: var(--sans); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--faint); }
 @media (hover: hover) { .idx-list .open:hover .tt { text-decoration: underline; text-underline-offset: 3px; } }
 .mine-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-.mine-list li { display: grid; grid-template-columns: 36px 44px minmax(0, 1fr) 36px; align-items: center; gap: 10px; padding: 6px; border-radius: 12px; background: var(--tile); position: relative; }
+.mine-list li { display: grid; grid-template-columns: 36px 44px minmax(0, 1fr) auto auto; align-items: center; gap: 10px; padding: 6px; border-radius: 12px; background: var(--tile); position: relative; }
 .mine-list li.dragging { z-index: 3; background: #fff; box-shadow: 0 12px 28px rgba(29, 11, 30, .22); }
 .mine-list li.settling { transition: transform .18s ease; }
 .mine-list .handle { width: 36px; height: 36px; border: 0; background: none; color: var(--muted); cursor: grab; touch-action: none; display: grid; place-items: center; border-radius: 8px; }
@@ -1430,6 +1435,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       b.addEventListener('click', function () { openDay(s.d); });
       b.setAttribute('data-day', s.d);
       li.appendChild(b);
+      li.appendChild(rowDl(s));
       li.appendChild(favButton(s));
       tracks.appendChild(li);
     });
@@ -2633,7 +2639,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       sh.addEventListener('click', function () { shareDay(iso, s, sh); });
       var icons = div('icons'); icons.appendChild(af); icons.appendChild(sh); icons.appendChild(ln);
       var dlb = document.createElement('button'); dlb.type = 'button'; dlb.className = 'iconbtn dlbtn';
-      dlb.addEventListener('click', function () { if (OFFL[s.track]) dlRemove(s.track).then(function () { toast('Removed from this device'); }); else dlSong(s).then(function (ok) { if (ok) toast('Downloaded: it plays with no connection'); }); });
+      dlb.addEventListener('click', function () { dlToggle(s); });
       dlButton(dlb, s); icons.insertBefore(dlb, ln);
       if (VIDS[s.track] || songSrc(s)) {   // full screen, for its video or the song (shown while either plays)
         var fsi = document.createElement('button'); fsi.type = 'button'; fsi.className = 'iconbtn fsicon';
@@ -3245,7 +3251,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       tx.addEventListener('click', function () { playMine(idx); });   // plays on through the playlist from this song
       var rm = document.createElement('button'); rm.type = 'button'; rm.className = 'rm'; rm.innerHTML = CROSS; rm.setAttribute('aria-label', 'Remove ' + s.title);
       rm.addEventListener('click', function () { toggleFav(s); renderMine(); });
-      li.appendChild(hd); li.appendChild(th); li.appendChild(tx); li.appendChild(rm);
+      li.appendChild(hd); li.appendChild(th); li.appendChild(tx); li.appendChild(rowDl(s)); li.appendChild(rm);
       minelist.appendChild(li);
       hd.addEventListener('keydown', function (e) {
         var to = e.key === 'ArrowUp' ? idx - 1 : e.key === 'ArrowDown' ? idx + 1 : -1;
@@ -3860,6 +3866,22 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   var DL_ICON = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2.5v7.5M4.8 7l3.2 3.2L11.2 7"/><path d="M3 13h10"/></svg>';
   var DONE_ICON = '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="currentColor"/><path d="M5.2 8.2 7.2 10l3.6-4" fill="none" stroke="var(--bg, #fff)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  // the same button beside a song in the month's list and in My playlist
+  var dlReady = false;
+  function rowDl(s) {
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'iconbtn dlbtn rowdl off'; b.setAttribute('data-dl', s.track);
+    b.addEventListener('click', function (e) { e.stopPropagation(); dlToggle(s); });
+    rowDlSync(b);
+    return b;
+  }
+  function rowDlSync(b) {   // (kept in its place when it's not there, so the hearts and crosses line up)
+    if (!dlReady) return; var s = byTrack[b.getAttribute('data-dl')]; if (!s) return;
+    dlButton(b, s); var off = b.hidden; b.hidden = false; b.classList.toggle('off', off); b.tabIndex = off ? -1 : 0;
+  }
+  function dlToggle(s) {
+    if (OFFL[s.track]) dlRemove(s.track).then(function () { toast('Removed from this device'); });
+    else dlSong(s).then(function (ok) { if (ok) toast('Downloaded: it plays with no connection'); });
+  }
   function dlButton(b, s) {   // a day's download button, as things stand
     var on = !!OFFL[s.track], busy = !!dlBusy[s.track];
     b.hidden = !canDl(s);
@@ -3868,8 +3890,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var l = on ? 'Downloaded: tap to remove ' + s.title + ' from this device' : busy ? 'Downloading ' + s.title : 'Download ' + s.title + ' to play with no connection';
     b.setAttribute('aria-label', l); b.title = on ? 'Downloaded (tap to remove)' : busy ? 'Downloading…' : 'Download';
   }
+  dlReady = true;
   function dlRefresh() {
     document.querySelectorAll('#picks .pick .dlbtn').forEach(function (b) { var p = b.closest('.pick'); if (p && p.sotd) dlButton(b, p.sotd.s); });
+    document.querySelectorAll('[data-dl]').forEach(rowDlSync);
     var any = Object.keys(OFFL).length, member = !!MEMBER;
     var md = document.getElementById('minedl'), ms = document.getElementById('dlsum'), mo = document.getElementById('monthdl');
     if (md) md.hidden = !member || !window.caches || !SWOK;
