@@ -274,10 +274,10 @@ html.theatre #sheet .thbtn { display: inline-flex; align-items: center; justify-
 .bar-top .signin.in .po { display: none; } .bar-top .signin.in .pf { display: inline; }
 .bar-top .signin.in, .bar-top .signin.in:hover { background: var(--fg); border-color: var(--fg); color: var(--bg); }
 /* signed in: a chip under the month's count saying who, so it shows at a glance on the front page */
-.who { display: inline-flex; align-items: center; gap: 6px; margin: -6px 0 0; padding: 5px 12px 5px 9px; border-radius: 999px; background: var(--fg); color: var(--bg); font: 600 11px/1.2 var(--sans); letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; cursor: pointer; border: 0; }
-.who svg { width: 13px; height: 13px; flex: none; }
-.who[hidden] { display: none; }
-html.big .who { margin: 0 auto 0 0; }
+.signedchip { display: inline-flex; align-items: center; gap: 6px; margin: -6px 0 0; padding: 5px 12px 5px 9px; border-radius: 999px; background: var(--fg); color: var(--bg); font: 600 11px/1.2 var(--sans); letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; cursor: pointer; border: 0; }
+.signedchip svg { width: 13px; height: 13px; flex: none; }
+.signedchip[hidden] { display: none; }
+html.big .signedchip { margin: 0 auto 0 0; }
 html.big.signedin .hsub { margin-right: 0; }
 .monthnav { display: flex; align-items: center; gap: 6px; max-width: 100%; padding: 4px; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); }
 .round { width: 38px; height: 38px; flex: 0 0 auto; border-radius: 50%; border: 1px solid var(--line); background: var(--glass); display: grid; place-items: center; cursor: pointer; color: var(--fg); }
@@ -938,7 +938,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   <header class="hero">
     <h1><span id="mname"></span> <em id="myr"></em></h1>
     <p class="hsub" id="count"></p>
-    <button class="who" id="who" type="button" hidden><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><circle cx="8" cy="5.2" r="3"/><path d="M2.5 14.5c.5-3.2 2.8-5 5.5-5s5 1.8 5.5 5z"/></svg><span id="whotext">Signed in</span></button>
+    <button class="signedchip" id="who" type="button" hidden><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><circle cx="8" cy="5.2" r="3"/><path d="M2.5 14.5c.5-3.2 2.8-5 5.5-5s5 1.8 5.5 5z"/></svg><span id="whotext">Signed in</span></button>
     <div class="monthnav">
       <button class="round" id="prev" type="button" aria-label="Previous month"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 3 5 8l5 5"/></svg></button>
       <nav class="strip" id="strip" aria-label="Months"></nav>
