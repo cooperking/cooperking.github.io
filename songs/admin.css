@@ -82,6 +82,9 @@ h1 em { font-style: italic; font-weight: 400; }
 .dock .stat { font-size: 12.5px; }
 .toast { position: fixed; left: 50%; bottom: calc(84px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 20; max-width: calc(100vw - 32px); padding: 10px 16px; border-radius: 999px; background: #1d0b1e; color: #fff; font-size: 14px; text-align: center; opacity: 0; transition: opacity .2s; pointer-events: none; }
 .toast.show { opacity: 1; }
+html.under-player .dock { bottom: calc(max(14px, env(safe-area-inset-bottom, 0px)) + 64px); }
+html.under-player .toast { bottom: calc(148px + env(safe-area-inset-bottom, 0px)); }
+html.under-player .wrap { padding-bottom: 190px; }
 
 /* pop-ups: white, as the calendar's; a sheet from the foot on a phone */
 dialog.pop { border: 0; padding: 0; width: min(480px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); overflow: auto; border-radius: 20px; background: #fff; color: var(--fg-2); box-shadow: 0 30px 80px rgba(24, 8, 24, .45); }

@@ -13,4 +13,6 @@
   var p = PALETTES[m] || PALETTES[0], st = document.documentElement.style;
   st.setProperty('--bg', p[0]); st.setProperty('--g1', p[1]); st.setProperty('--g2', p[2]); st.setProperty('--g3', p[3]); st.setProperty('--g4', p[4]);
   var tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.content = p[0];
+  // opened over the calendar while something plays (its player's box along the foot): the dock and toasts sit above it
+  try { if (window.top !== window && window.top.document.documentElement.classList.contains('site-on')) document.documentElement.classList.add('under-player'); } catch (e) {}
 })();

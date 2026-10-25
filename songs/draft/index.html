@@ -779,6 +779,13 @@ html.fab-on:not(.fab-under) .toast { bottom: calc(max(16px, env(safe-area-inset-
    My playlist's box shows what's playing (tap it for the song's page), with previous, play/pause, next and stop; a video
    plays on in a small picture above it */
 dialog#sheet.bgplay { visibility: hidden !important; pointer-events: none !important; }
+/* another of the site's pages (the admin page, the Fire TV guide), opened over the calendar while something plays, so
+   it plays on: My playlist's box (and a video's small picture) stay over it */
+.sitepage { position: fixed; inset: 0; z-index: 900; background: var(--bg, #111); }
+.sitepage iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; background: transparent; }
+html.site-on .fab { z-index: 901; }
+html.site-on .vidfloat.bgv { z-index: 902 !important; }
+html.site-on body { overflow: hidden; }
 .fab .fabnow, .fab .fabctl { display: none; }
 html.bgplay .fab .fabnow { display: inline-flex; align-items: center; gap: 8px; min-width: 0; padding: 0 2px 0 0; border: 0; background: none; color: inherit; cursor: pointer; text-align: left; }
 .fab .fabart { flex: none; width: 34px; height: 34px; border-radius: 50%; overflow: hidden; animation: spin 3.6s linear infinite; animation-play-state: paused; }
@@ -1032,6 +1039,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
 <div class="scrim" id="scrim" aria-hidden="true"></div>
 <div class="vidwrap" id="vidwrap"><div class="vid" id="vidspot" hidden></div><div class="capdock" id="capdock"><div class="capslide"><div class="vidcap capbox" id="vidcap" aria-live="polite"></div><div class="vidcap capbox adwhy" id="adwhy"><span class="in"><span class="k">Advert</span><span class="t"><a id="adwhylink" href="ads/" target="_blank" rel="noopener" tabindex="-1">Why am I seeing this ad?<span class="go" aria-hidden="true">→</span></a></span></span></div></div><div class="vidcap capbox capmeasure" id="capmeasure" aria-hidden="true"></div></div></div>
 <div class="vidfloat" id="vidfloat"><div id="vidslot"></div><button type="button" class="vidsound" id="vidsound" hidden><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z" fill="currentColor" stroke="none"/><path d="m23 9-6 6M17 9l6 6"/></svg><span>Tap for sound</span></button></div>
+<div class="sitepage" id="sitepage" hidden></div>
 <div class="fab" id="fabbox" hidden><button class="fabnow" id="fabnow" type="button" aria-label="Open the song that's playing"><span class="fabart" id="fabart"></span><span class="fabtx"><b id="fabt"></b><span id="faba"></span></span></button><button class="fabctl" id="fabprev" type="button" aria-label="Previous song"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M3 3h1.6v10H3zM14 3v10L5.5 8z"/></svg></button><button class="fabplay" id="fabplay" type="button" aria-label="Play My playlist"></button><button class="fabctl" id="fabnext" type="button" aria-label="Next song"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M11.4 3H13v10h-1.6zM2 3v10l8.5-5z"/></svg></button><button class="fabopen" id="fab" type="button" aria-haspopup="dialog"><svg class="heart" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 14s-5.5-3.3-5.5-7.4A3 3 0 0 1 8 4.6a3 3 0 0 1 5.5 2C13.5 10.7 8 14 8 14z"/></svg><span class="fabl" id="fabl">My playlist</span> <span class="n" id="fabn">0</span></button><button class="fabctl" id="fabstop" type="button" aria-label="Stop"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M2 2l8 8M10 2 2 10"/></svg></button></div>
 
 <dialog id="mine" aria-labelledby="mineh">
@@ -1322,7 +1330,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var fab = document.getElementById('fabbox');
     if (lastCount !== fav.length) {
       var entering = fav.length > 0 && fab.hidden;
-      fab.hidden = fav.length === 0 && !bgOn;
+      fab.hidden = fav.length === 0 && !bgOn && !RESUME;
       fab.classList.toggle('nofav', fav.length === 0);
       document.documentElement.classList.toggle('fab-on', !fab.hidden);
       if (!fab.hidden && lastCount !== -1) { fab.classList.remove('bump', 'enter'); void fab.offsetWidth; fab.classList.add(entering ? 'enter' : 'bump'); }
@@ -2410,6 +2418,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var v = vplay;
     if (!v || v.player !== e.target) return;
     if (e.data === 0) { playOn(v.el); return; }   // the video has finished
+    if (e.data === 1 && resumeAt && v.el.sotd && v.el.sotd.s.track === resumeFor) { var ra = resumeAt; resumeAt = 0; try { e.target.seekTo(ra, true); } catch (x) {} }   // carried on after a reload: from where it was
     if (e.data === 1 && !adLive(adState)) songStarted(v);
     v.on = e.data === 1 || e.data === 3;   // playing or buffering
     if (MS) try { MS.playbackState = e.data === 1 || e.data === 3 ? 'playing' : 'paused'; } catch (x) {}
@@ -2654,7 +2663,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     curDay = iso;
     if (!opts || !opts.keepQueue) queue = null;   // opened from the calendar: the playlist stops leading
     shownFacts = {};   // each fact shows once per day opened, across its preview and its video
-    try { history.replaceState(null, '', '#' + slugOf(iso)); } catch (e) {}
+    if (!(bgOn && opts && opts.keepQueue)) try { history.replaceState(null, '', '#' + slugOf(iso)); } catch (e) {}   // (out of sight: the address stays the calendar's)
     audio.pause();
     playing = null;
     document.getElementById('sdate').textContent = longDate(iso);
@@ -2748,6 +2757,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     });
     var bgKeep = bgOn && opts && opts.keepQueue;   // playing on with the day closed: the next song, still out of sight
     if (!bgKeep) {
+      if (RESUME) resumeOff();   // a day opened: what was playing before the reload gives way
       if (bgOn) stopVideos();   // another day opened while one played on out of sight: this one instead
       bgOff();
       if (mine.open) closeDialog(mine);
@@ -3455,6 +3465,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     sheet.classList.add('bgplay'); root.classList.add('bgplay');
     fabbox.hidden = false; root.classList.add('fab-on'); fabbox.classList.toggle('nofav', !fav.length);
     layersChanged(); bgDraw(); followFloat(400);
+    if (dayFromHash()) { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {} }   // a reload: the calendar, with it in My playlist's box
+    resumeSave();
   }
   function bgOff() {
     if (!bgOn) return;
@@ -3473,12 +3485,123 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     document.getElementById('fabnow').setAttribute('aria-label', cleanTitle(s.title) + ' by ' + s.artist + ': open its page');
     syncFloat();
   }
-  function bgShow() { bgOff(); openLayer(sheet); sheet.scrollTop = 0; syncFloat(); }   // the song's page again
-  document.getElementById('fabnow').addEventListener('click', bgShow);
-  document.getElementById('fabstop').addEventListener('click', function () { bgOff(); closeDialog(sheet, true); });
+  function bgShow() {   // the song's page again
+    if (siteOn()) siteClose();
+    bgOff(); openLayer(sheet); sheet.scrollTop = 0; syncFloat();
+    if (curDay) try { history.replaceState(history.state, '', '#' + slugOf(curDay)); } catch (e) {}
+  }
+  document.getElementById('fabnow').addEventListener('click', function () { if (RESUME) resumeGo(true); else bgShow(); });
+  document.getElementById('fabstop').addEventListener('click', function () { if (RESUME) { resumeOff(); resumeForget(); return; } bgOff(); closeDialog(sheet, true); resumeForget(); });
   // back and forward go as a swipe does: to the card on the left or the right (Play all, newest first: left is the day before)
-  document.getElementById('fabnext').addEventListener('click', function () { if (bgOn) goDay(1); });
-  document.getElementById('fabprev').addEventListener('click', function () { if (bgOn) goDay(-1); });
+  document.getElementById('fabnext').addEventListener('click', function () { if (RESUME) resumeGo(false, 1); else if (bgOn) goDay(1); });
+  document.getElementById('fabprev').addEventListener('click', function () { if (RESUME) resumeGo(false, -1); else if (bgOn) goDay(-1); });
+
+  // ---- what's playing, kept through a reload or a visit away from the calendar (members): saved as it plays; on the
+  // calendar's next opening My playlist's box shows it, paused where it was (a phone won't start sound by itself), and
+  // its play button carries on from there, the playlist or the days with it ----
+  var RES_KEY = 'sotd-resume', RESUME = null, resumeAt = 0, resumeFor = '';
+  function resumeSave() {
+    if (!MEMBER || TV || !vplay || !vplay.el || !vplay.el.sotd || !sheet.open) return;
+    var s = vplay.el.sotd.s, pos = 0;
+    try { pos = vplay.player && vplay.player.getCurrentTime ? vplay.player.getCurrentTime() : 0; } catch (e) {}
+    var st = { t: s.track, d: s.d, pos: Math.floor(pos || 0), at: Date.now(),
+      q: queue ? { list: queue.list, i: queue.i, name: queue.name, back: queue.back, order: queue.order } : null };
+    try { localStorage.setItem(RES_KEY, JSON.stringify(st)); } catch (e) {}
+  }
+  function resumeForget() { try { localStorage.removeItem(RES_KEY); } catch (e) {} }
+  setInterval(function () { if (vplay && vplay.on) resumeSave(); }, 4000);
+  window.addEventListener('pagehide', function () { if (vplay && (vplay.on || bgOn)) resumeSave(); });
+  document.addEventListener('visibilitychange', function () { if (document.hidden && vplay && vplay.on) resumeSave(); });
+  sheet.addEventListener('close', function () { if (!RESUME) resumeForget(); });   // closed, not playing on: nothing to carry on
+  function resumeInit() {
+    if (resumeInit.done || !MEMBER || TV) return;
+    resumeInit.done = true;
+    var st = null;
+    try { st = JSON.parse(localStorage.getItem(RES_KEY) || 'null'); } catch (e) {}
+    if (!st || !byTrack[st.t] || Date.now() - (st.at || 0) > 24 * 3600e3) { resumeForget(); return; }
+    if (sheet.open || bgOn) return;   // a day already opened (a shared link): that instead
+    RESUME = st;
+    var s = byTrack[st.t];
+    root.classList.add('bgplay'); root.classList.remove('bgon');
+    fabbox.hidden = false; root.classList.add('fab-on'); fabbox.classList.toggle('nofav', !fav.length);
+    fabbox.setAttribute('data-now', '');
+    var a = document.getElementById('fabart'); a.textContent = ''; a.appendChild(artEl(s));
+    document.getElementById('fabt').textContent = cleanTitle(s.title); document.getElementById('faba').textContent = s.artist;
+    document.getElementById('fabnow').setAttribute('aria-label', cleanTitle(s.title) + ' by ' + s.artist + ': open its page');
+    fabSync();
+  }
+  function resumeOff() {
+    if (!RESUME) return;
+    RESUME = null;
+    if (!bgOn) { root.classList.remove('bgplay', 'bgon'); fabbox.hidden = fav.length === 0; root.classList.toggle('fab-on', !fabbox.hidden); }
+  }
+  function resumeGo(show, step) {   // carry on: out of sight (the play button), or with the song's page (a tap on the song)
+    var st = RESUME; if (!st) return;
+    resumeOff();
+    var s = byTrack[st.t]; if (!s) return;
+    resumeAt = step ? 0 : st.pos || 0; resumeFor = st.t;
+    queue = null;
+    if (st.q && st.q.list) {
+      var list = st.q.list.filter(function (t) { return byTrack[t]; });
+      if (list.indexOf(st.t) >= 0) queue = { list: list, i: list.indexOf(st.t), name: st.q.name, back: st.q.back, order: (st.q.order || list).filter(function (t) { return byTrack[t]; }), heard: {} };
+    }
+    if (!show) {
+      bgOn = true; sheet.classList.add('bgplay'); root.classList.add('bgplay');
+      fabbox.hidden = false; root.classList.add('fab-on'); fabbox.classList.toggle('nofav', !fav.length);
+      openLayer(sheet);
+    }
+    openDay(s.d, { track: st.t, keepQueue: true });
+    if (!show) { layersChanged(); bgDraw(); followFloat(400); }
+    if (step && bgOn) goDay(step);
+  }
+
+  // ---- the site's other pages (the admin page, the Fire TV guide) while something plays: opened over the calendar in
+  // a frame, so it plays on, with My playlist's box over the page; a link back to the calendar there, or Back, puts it
+  // away. With nothing playing, they open as usual. ----
+  var siteEl = document.getElementById('sitepage'), siteFrame = null, sitePushed = false;
+  function siteOn() { return !siteEl.hidden; }
+  function calendarUrl(u) { var h = location.pathname.replace(/index\.html$/, ''); return u.origin === location.origin && (u.pathname === h || u.pathname === h + 'index.html'); }
+  function siteOpen(href) {
+    if (sheet.open && !bgOn && bgCan()) bgStart();   // the song playing in the day: on, out of sight
+    layers().forEach(function (d) { if (d !== sheet) closeDialog(d); });
+    // a new frame each time, its page set before it's put in: changing a frame's page would add to the browser's
+    // history, and Back would go back in the frame instead of putting it away
+    if (siteFrame) siteFrame.remove();
+    siteFrame = document.createElement('iframe'); siteFrame.title = 'John’s Song of the Day'; siteFrame.setAttribute('allow', 'web-share; clipboard-write *; autoplay');
+    siteFrame.src = href; siteFrame.addEventListener('load', siteLoaded); siteEl.appendChild(siteFrame);
+    siteEl.hidden = false; root.classList.add('site-on');
+    try { history.pushState({ sitepage: 1 }, '', location.href); sitePushed = true; } catch (e) {}
+    syncFloat();
+  }
+  function siteClose(fromPop) {
+    if (!siteOn()) return;
+    siteEl.hidden = true; root.classList.remove('site-on');
+    if (siteFrame) { siteFrame.remove(); siteFrame = null; }
+    if (sitePushed && !fromPop) { sitePushed = false; try { history.back(); } catch (e) {} }
+    sitePushed = false;
+    syncFloat();
+  }
+  window.addEventListener('popstate', function () { if (siteOn()) siteClose(true); });
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('a[href]');
+    if (!a || e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || (a.target && a.target !== '_self')) return;
+    var u; try { u = new URL(a.getAttribute('href'), location.href); } catch (x) { return; }
+    if (u.origin !== location.origin || calendarUrl(u) || !/^\/songs\//.test(u.pathname)) return;
+    var live = bgOn || (sheet.open && !!vplay && (vplay.on || (vplay.cover && !audio.paused)));
+    if (!MEMBER || TV || !live) return;   // nothing playing: the page opens as usual
+    e.preventDefault(); siteOpen(u.href);
+  }, true);
+  function siteLoaded() {   // links back to the calendar in there: the page put away
+    var d; try { d = siteFrame.contentDocument; } catch (x) { return; }
+    if (!d || !d.addEventListener) return;
+    d.addEventListener('click', function (e) {
+      var a = e.target.closest && e.target.closest('a[href]'); if (!a) return;
+      var u; try { u = new URL(a.getAttribute('href'), siteFrame.contentWindow.location.href); } catch (x) { return; }
+      if (!calendarUrl(u)) return;
+      e.preventDefault(); siteClose();
+    }, true);
+    try { if (d.title) siteFrame.title = d.title; } catch (x) {}
+  }
   window.addEventListener('resize', function () { if (bgOn) syncFloat(); });
   function fabSync() {
     bgDraw();
@@ -3490,6 +3613,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     b.setAttribute('aria-label', on ? 'Pause My playlist' : 'Play My playlist');
   }
   document.getElementById('fabplay').addEventListener('click', function () {
+    if (RESUME) { resumeGo(false); return; }   // what played before the reload: on from where it was
     if (bgOn) { vidToggle(); return; }   // what's playing on with the day closed
     var el = mineLeading();
     if (el) {
@@ -4261,7 +4385,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       return r.ok ? r.json() : null;
     }).then(function (j) {
       if (!j) return;
-      MEMBER = j; memberApply(); famSync();
+      MEMBER = j; memberApply(); famSync(); resumeInit();
       var mc = JSON.stringify(j.mycovers || {});   // John's own covers this member sees: the calendar drawn again with them
       if (mc !== OWNC_SIG) { OWNC_SIG = mc; render(); if (idx.open) renderIndex(); }
       memberLoad.t = setTimeout(memberLoad, Math.max(60e3, j.exp * 1000 - Date.now() - 30 * 60e3));
