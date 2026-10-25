@@ -137,7 +137,7 @@ def main():
     if s == 200 and 'json' in t:
         note('/songs.json: answers (%d songs)' % len(json.loads(b).get('songs', [])))
     else:
-        words = re.sub(r'\s+', ' ', re.sub(r'<[^>]+>', ' ', b.decode('utf-8', 'replace'))).strip()[:400]
+        words = re.sub(r'\s+', ' ', re.sub(r'<[^>]+>', ' ', re.sub(r'(?is)<(style|script)\b.*?</\1>', ' ', b.decode('utf-8', 'replace')))).strip()[:400]
         note('/songs.json FAILS (%s): %s' % (s, words), 'warning')
 
 
