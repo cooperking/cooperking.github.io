@@ -3978,9 +3978,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // the member's own sheet: their name, their saved playlists (tap one to open it as My playlist) and Sign out
   var acct = document.getElementById('acctsheet'), acOut = document.getElementById('acout');
   function acctDraw() {
-    // John's own: the admin page, on a device he's opened it on (it keeps its password here) or signed in as John
+    // John's own: the admin page, on his own devices (the Worker says which member is him) or one that has opened it
     var adminKey = ''; try { adminKey = localStorage.getItem('sotd-admin-key') || ''; } catch (e) {}
-    document.getElementById('acadmin').hidden = !(adminKey || (MEMBER && /^john\b/i.test(MEMBER.name || '')));
+    document.getElementById('acadmin').hidden = !(adminKey || (MEMBER && MEMBER.owner === true));
+    document.getElementById('acadmin').href = '/songs/admin.html?v=' + Date.now();   // always its newest version
     document.getElementById('acname').textContent = MEMBER && MEMBER.name ? MEMBER.name : 'Signed in';
     var ul = document.getElementById('aclist'), none = document.getElementById('acnone');
     ul.textContent = '';

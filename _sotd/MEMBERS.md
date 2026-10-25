@@ -11,7 +11,9 @@ he does).
   `a/<track>.mp3` (the song), `v/<track>.mp4` (its video), `c/<track>` (a sharing picture). The site's repository is
   public, so none of them are in it.
 - **Members page**: the Members tab of `songs/admin.html` (`songs/members-admin.html`), after the admin password: inviting,
-  codes and removing people. Each song's own recording, video and sharing picture are added on the Songs tab
+  codes and removing people, and *This is me* on John's own member: the Worker keeps which member is John (KV `owner`)
+  and tells only that member's devices (`/members/me` gives `owner: true`), whose Profile then has the Admin button
+  (as does any device that has opened the admin page with its password). Each song's own recording, video and sharing picture are added on the Songs tab
   (`songs/songs-admin.html`), with the rest of that song.
 - **The calendar** (`template.html`):
   - The device keeps its member token (`sotd-member` in local storage) and asks the Worker's `/members/me` for links to

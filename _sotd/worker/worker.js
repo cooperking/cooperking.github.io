@@ -432,12 +432,13 @@ async function members(request, url, env) {
   const body = await request.json().catch(() => ({}));
   const all = (await env.SOTD.get('members', 'json')) || {};
   const save = () => env.SOTD.put('members', JSON.stringify(all));
+  const owner = await env.SOTD.get('owner');   // the member who is John: only that member's devices are told so
   const invite = async (m) => {
     const code = randomCode(18);
     m.invite = { hash: await sha256hex(code), uses: 0, until: Date.now() + INVITE_DAYS * DAY };
     return MEMBERS_JOIN + code;
   };
-  const listing = () => Object.entries(all).map(([id, m]) => ({ id, name: m.name, created: m.created,
+  const listing = (own = owner) => Object.entries(all).map(([id, m]) => ({ id, name: m.name, created: m.created, owner: id === own,
     devices: Object.keys(m.devices || {}).length, seen: Math.max(0, ...Object.values(m.devices || {}).map(d => d.seen || 0)) || null,
     invite: m.invite ? { uses: m.invite.uses, left: Math.max(0, INVITE_USES - m.invite.uses), until: m.invite.until } : null }));
   switch (body.op) {
@@ -463,11 +464,17 @@ async function members(request, url, env) {
       await env.SOTD.put('tvcode:' + await sha256hex(code), body.id, { expirationTtl: TV_CODE_MINUTES * 60 });
       return answer(200, { code, minutes: TV_CODE_MINUTES, name: all[body.id].name });
     }
+    case 'owner': {   // "This is me": the member who is John (or nobody, with no id)
+      if (body.id && !all[body.id]) return answer(404, { error: 'No such member.' });
+      if (body.id) await env.SOTD.put('owner', body.id); else await env.SOTD.delete('owner');
+      return answer(200, { ok: true, members: listing(body.id || null) });
+    }
     case 'remove': {
       if (!all[body.id]) return answer(404, { error: 'No such member.' });
       delete all[body.id]; await save();
       await env.SOTD.delete('mpl:' + body.id);   // their saved playlists go too
-      return answer(200, { ok: true, members: listing() });
+      if (owner === body.id) await env.SOTD.delete('owner');
+      return answer(200, { ok: true, members: listing(owner === body.id ? null : owner) });
     }
     case 'invitecard': {   // the invitation's link-preview page and picture (drawn on the members page)
       const m = all[body.id];
@@ -628,7 +635,8 @@ async function memberMe(request, env, answer) {
       media[track] = one;
     }
   }
-  return answer(200, { name: m.name, exp, media });
+  const owner = (await env.SOTD.get('owner')) === id;   // John's own devices: the calendar shows them the way to the admin page
+  return answer(200, Object.assign({ name: m.name, exp, media }, owner ? { owner: true } : {}));
 }
 
 // an invitation's link: a page that shows a proper card in a message (WhatsApp, iMessage...), like a day's share page,

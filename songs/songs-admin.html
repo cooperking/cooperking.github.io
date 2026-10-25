@@ -54,6 +54,7 @@
 .facts { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
 .fact { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 8px; }
 .fact.gone textarea { text-decoration: line-through; opacity: .5; }
+.fact textarea { overflow: hidden; resize: none; min-height: 3em; }
 .tools { display: flex; flex-direction: column; gap: 4px; }
 .tool { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--line); background: #fff; color: var(--fg); cursor: pointer; font: 600 13px var(--sans); }
 .tool:disabled { opacity: .3; cursor: default; }
@@ -275,10 +276,12 @@
     if (w.video) { var va = el('a', 'link', 'Watch on YouTube ↗'); va.href = 'https://www.youtube.com/watch?v=' + w.video; va.target = '_blank'; va.rel = 'noopener'; kk.appendChild(va); }
     else kk.appendChild(el('span', null, 'No video'));
     sec.appendChild(kk);
-    var vr = el('div', 'vrow'), vi = el('input'); vi.type = 'url'; vi.placeholder = 'Paste a different YouTube link (or “none”)'; vi.setAttribute('aria-label', 'A different YouTube link for ' + s.title);
+    var vr = el('div', 'vrow'), vi = el('input'); vi.type = 'url'; vi.placeholder = 'Paste a YouTube link (or “none” for no video)';
+    if (w.video) vi.value = 'https://www.youtube.com/watch?v=' + w.video;
+    vi.addEventListener('focus', function () { vi.select(); }); vi.setAttribute('aria-label', 'A different YouTube link for ' + s.title);
     vi.addEventListener('change', function () {
-      var v = vi.value.trim(); if (!v) return;
-      if (/^none$/i.test(v)) { w.video = ''; commit(true); return; }
+      var v = vi.value.trim();
+      if (!v || /^none$/i.test(v)) { if (w.video) { w.video = ''; commit(true); } return; }
       var id = youtubeId(v);
       if (!id) { toast('That doesn’t look like a YouTube link'); return; }
       w.video = id; commit(true);
@@ -296,7 +299,7 @@
       var ta = el('textarea'); ta.value = f.t; ta.rows = 2; ta.setAttribute('aria-label', title + ', fact ' + (i + 1));
       var meta = el('div', 'fmeta'), wc = el('span');
       function count() { var n = words(ta.value); wc.textContent = n + ' words'; wc.className = n > 30 ? 'long' : ''; }
-      ta.addEventListener('input', function () { f.t = ta.value; count(); commit(); });
+      ta.addEventListener('input', function () { f.t = ta.value; count(); fit(ta); commit(); });
       count();
       var tools = el('div', 'tools');
       var up = el('button', 'tool', '↑'); up.type = 'button'; up.title = 'Move up'; up.disabled = i === 0;
@@ -406,7 +409,10 @@
     li.appendChild(body);
     return li;
   }
-  function redraw(s) { var old = list.querySelector('[data-id="' + s.id + '"]'); if (old) old.replaceWith(card(s)); }
+  function fit(ta) { ta.style.height = 'auto'; ta.style.height = (ta.scrollHeight + 2) + 'px'; }   // a fact's box as tall as its words
+  function fitAll(root) { [].forEach.call(root.querySelectorAll('textarea'), fit); }
+  window.addEventListener('resize', function () { fitAll(list); });
+  function redraw(s) { var old = list.querySelector('[data-id="' + s.id + '"]'); if (old) { var c = card(s); old.replaceWith(c); fitAll(c); } }
 
   // ---- the list ----
   function visible(s) {
@@ -422,6 +428,7 @@
     list.textContent = '';
     var shown = songs.filter(visible);
     shown.slice(0, LIMIT).forEach(function (s) { list.appendChild(card(s)); });
+    fitAll(list);
     if (shown.length > LIMIT) {
       var more = el('li', 'empty'), b = el('button', 'glassbtn', 'Show ' + Math.min(60, shown.length - LIMIT) + ' more'); b.type = 'button';
       b.addEventListener('click', function () { LIMIT += 60; render(); });

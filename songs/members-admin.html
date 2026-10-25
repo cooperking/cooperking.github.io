@@ -144,6 +144,7 @@
     MEMBERS.forEach(function (m) {
       var li = document.createElement('li'); li.className = 'card person';
       var who = document.createElement('span'); who.className = 'who'; who.textContent = m.name;
+      if (m.owner) { var you = document.createElement('span'); you.className = 'badge signed'; you.textContent = 'You'; you.style.marginLeft = '8px'; who.appendChild(you); }
       var st = document.createElement('span'); st.className = 'stat';
       st.textContent = (m.devices ? m.devices + (m.devices === 1 ? ' device' : ' devices') : 'not signed in yet') + (m.seen ? ' · last here ' + new Date(m.seen).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '')
         + (m.invite ? ' · link: ' + (m.invite.left && m.invite.until > Date.now() ? m.invite.left + ' more device' + (m.invite.left === 1 ? '' : 's') + ' until ' + new Date(m.invite.until).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : 'used up') : '');
@@ -153,7 +154,10 @@
         $('tvcode').textContent = j.code.slice(0, 3) + ' ' + j.code.slice(3); $('tvfor').textContent = j.name; $('tvmins').textContent = j.minutes; $('tvbox').hidden = false;
       }); });
       var rm = button('Remove', function () { ask('Members', 'Remove ' + m.name + '?', 'All their devices are signed out, and their saved playlists go.', 'Remove').then(function (yes) { if (!yes) return; api('/members/admin', { op: 'remove', id: m.id }).then(function (j) { if (j.members) { MEMBERS = j.members; people(); toast(m.name + ' removed'); } }); }); });
-      var acts = document.createElement('div'); acts.className = 'acts'; acts.appendChild(nl); acts.appendChild(tv); acts.appendChild(rm);
+      var me = button(m.owner ? 'Not me' : 'This is me', function () {   // the Admin button shows on this member's devices only
+        api('/members/admin', { op: 'owner', id: m.owner ? '' : m.id }).then(function (j) { if (j.members) { MEMBERS = j.members; people(); toast(m.owner ? 'Done' : 'Done: your Profile on the calendar now has the Admin button'); } else toast(j.error || 'Couldn’t'); });
+      });
+      var acts = document.createElement('div'); acts.className = 'acts'; acts.appendChild(nl); acts.appendChild(tv); acts.appendChild(me); acts.appendChild(rm);
       li.appendChild(who); li.appendChild(st); li.appendChild(acts); ul.appendChild(li);
     });
   }
