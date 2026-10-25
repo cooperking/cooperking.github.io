@@ -1640,14 +1640,20 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // player start with sound after a tap on the page, and later, with the screen locked, there's no tap to be had (a
   // video carrying on as its sound, or the next song after a video). Only while it's free.
   var BGV = !TV && (/iPad|iPhone|iPod|Android/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
-  var audioOk = false, SILENT = 'data:audio/wav;base64,UklGRrQBAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YZABAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA';
+  var audioOk = false, audioTries = 0, SILENT = 'data:audio/wav;base64,UklGRrQBAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YZABAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA';
   function audioBless() {
-    if (audioOk || coverOn || ownBg || !audio.paused || audio.getAttribute('src')) return;   // in use (or used: already allowed)
-    audioOk = true;
+    // never while anything's showing or playing: an iPhone plays one thing at a time, so even a moment of silence would
+    // stop a video that's playing (25 Oct 2026: a tap on Facts in full screen stopped the video, and every tap after
+    // did it again). Only on a tap with nothing on, which is also the tap that starts the first song or video.
+    if (audioOk || audioTries >= 3 || vplay || coverOn || ownBg || !audio.paused || audio.getAttribute('src')) return;   // in use (or used: already allowed)
+    if (ownVid && !ownVid.paused) return;
+    audioOk = true; audioTries++;
     audio.src = SILENT;
     var p = audio.play();
     function done() { if (audio.getAttribute('src') === SILENT) { audio.pause(); audio.removeAttribute('src'); try { audio.load(); } catch (x) {} } }
-    if (p && p.then) p.then(done, function () { audioOk = false; done(); }); else done();
+    // only a refusal means ask again on the next tap; cut short by what the tap started (the song or the video taking
+    // over) is fine: it was allowed
+    if (p && p.then) p.then(done, function (e) { if (e && e.name === 'NotAllowedError') audioOk = false; done(); }); else done();
   }
   if (BGV) ['touchend', 'click', 'keydown'].forEach(function (n) { document.addEventListener(n, audioBless, true); });
   var playing = null; // { s, el, bar, time }
