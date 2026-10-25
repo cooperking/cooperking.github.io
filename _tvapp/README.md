@@ -17,7 +17,7 @@ The app shows the live site only, never the draft. To see the draft as the TV la
 
 The screen stays on while something plays. Spotify and YouTube links open in their apps, if installed.
 
-**Install:** on the Fire TV, Settings → My Fire TV → Developer options → Install unknown apps → Downloader: on.
+**Install** (the steps for anyone, with pictures of where to go: `songs/tv/`): on the Fire TV, Settings → My Fire TV → Developer options → Install unknown apps → Downloader: on.
 In Downloader, go to `cooperking.github.io/songs/tv.apk` and install. New builds install over the old one.
 
 **Updates:** the site itself changes in the app straight away. For the app, each build writes its number to

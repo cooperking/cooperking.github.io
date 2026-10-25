@@ -348,7 +348,7 @@ public class MainActivity extends Activity {
     void menu() {
         final boolean yt = signedIn();
         String[] items = { yt ? "Sign out of YouTube" : "Sign in to YouTube (with Premium, no adverts)",
-            "Sign in (a TV code from John)", "Check for a new version" };
+            "Sign in with a code", "Check for a new version" };
         new AlertDialog.Builder(this)
             .setTitle("Song of the Day \u00b7 build " + myBuild() + (yt ? " \u00b7 signed in to YouTube" : ""))
             .setItems(items, new DialogInterface.OnClickListener() {
@@ -361,7 +361,7 @@ public class MainActivity extends Activity {
             .show();
     }
 
-    // a member's TV: John makes a short code on the members page (songs/members-admin.html), it's typed here, and
+    // a member's TV: a short code from their Profile on the calendar (or John's Members tab) is typed here, and
     // the page signs this TV in with it (sotdJoin), as an invite link does on a phone
     void memberSignIn() {
         final EditText code = new EditText(this);
@@ -375,7 +375,7 @@ public class MainActivity extends Activity {
         box.addView(code);
         new AlertDialog.Builder(this)
             .setTitle("Sign in")
-            .setMessage("Type the TV code from John's members page.")
+            .setMessage("Type the code from your Profile on the calendar (on your phone: tap your person icon, then Get a code).")
             .setView(box)
             .setPositiveButton("Sign in", new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface d, int w) {

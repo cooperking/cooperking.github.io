@@ -68,6 +68,12 @@ shares, and the site's own day cards, keep the album cover. *Remove this cover* 
 ({ <track>: { list: [{ id, at, who, share }] } }), R2 `c/<track>/<id>` (the cover) and `sc/<track>/<id>` (the card);
 `/members/me` gives each member the covers they see (`mycovers`).
 
+## Signing in another device
+
+A member's Profile has *Get a code*: the same one-use six-letter code John can make on the Members tab (30 minutes,
+`/members/tvcode`, a few an hour at most), to type on a Fire TV (☰ → Sign in with a code) or in the Home Screen app
+(Sign in at the top). *How to add the Fire TV app* links to `songs/tv/`, the steps for Downloader and the app.
+
 ## Saved playlists
 
 A member can save My playlist (*Save this playlist* in it, with a name) and keep several. They're kept by the Worker

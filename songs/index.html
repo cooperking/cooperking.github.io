@@ -387,6 +387,10 @@ dialog#sharesheet::backdrop { background: rgba(24, 8, 24, .35); -webkit-backdrop
 .ac-list .ct { flex: none; font: 500 12px/1.2 var(--sans); color: var(--muted); }
 .ac-list .on { flex: none; font: 600 10.5px/1.2 var(--sans); letter-spacing: .1em; text-transform: uppercase; padding: 3px 7px; border-radius: 999px; background: var(--fg); color: var(--bg); }
 .ac-none { margin: 0; font-size: 13px; color: var(--muted); }
+.ac-dev { display: grid; gap: 8px; }
+.ac-code { display: grid; gap: 4px; padding: 12px 14px; border-radius: 14px; background: var(--pill-bg); border: 1px solid var(--line); }
+.ac-code .code { font: 600 34px/1.1 ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: .14em; color: var(--fg); }
+.ac-acts .clear { text-decoration: underline; text-underline-offset: 3px; }
 .ac-acts { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 .ac-acts .copy[hidden] { display: none; }
 .ac-out { justify-self: start; padding: 10px 18px; border-radius: 999px; border: 1px solid var(--line); background: none; color: var(--fg); font: 600 12px/1.2 var(--sans); letter-spacing: .1em; text-transform: uppercase; cursor: pointer; }
@@ -1101,6 +1105,12 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       <p class="ac-h">Your playlists</p>
       <ul class="ac-list" id="aclist"></ul>
       <p class="ac-none" id="acnone" hidden></p>
+    </div>
+    <div class="ac-dev">
+      <p class="ac-h">Another device</p>
+      <p class="ac-none">Sign in a Fire TV or the Home Screen app with a code.</p>
+      <div class="ac-code" id="accode" hidden><span class="code" id="accodev"></span><p class="ac-none" id="accodet"></p></div>
+      <div class="ac-acts"><button class="copy ghost" id="acgetcode" type="button">Get a code</button><a class="clear" href="/songs/tv/">How to add the Fire TV app</a></div>
     </div>
     <div class="ac-acts"><a class="copy" id="acadmin" href="/songs/admin.html" hidden><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13" aria-hidden="true"><path d="M8 1.8l1.2 1.3 1.8-.3.4 1.8 1.6.9-.8 1.6.8 1.6-1.6.9-.4 1.8-1.8-.3L8 14.2l-1.2-1.3-1.8.3-.4-1.8-1.6-.9.8-1.6-.8-1.6 1.6-.9.4-1.8 1.8.3z"/><circle cx="8" cy="8" r="2.2"/></svg>Admin</a><button class="ac-out" id="acout" type="button">Sign out</button></div>
   </div>
@@ -4040,12 +4050,25 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     none.hidden = PL.lists.length > 0;
     none.textContent = !PL.loaded ? 'Loading…' : 'None saved yet. Add songs with the heart, then open My playlist and tap Save.';
     acOut.classList.remove('armed'); acOut.textContent = 'Sign out';
+    document.getElementById('accode').hidden = true; document.getElementById('acgetcode').textContent = 'Get a code';
   }
   function acctOpen() {
     acctDraw(); openLayer(acct);
     if (MEMBER && !PL.loaded) plLoad();
   }
   document.getElementById('acclose').addEventListener('click', function () { closeDialog(acct); });
+  // another of their devices (a Fire TV, the Home Screen app): a one-use code to type there
+  document.getElementById('acgetcode').addEventListener('click', function () {
+    var b = this, tok = ''; try { tok = localStorage.getItem(MKEY) || ''; } catch (e) {}
+    if (!tok || !MBASE) return;
+    b.disabled = true;
+    fetch(MBASE + '/members/tvcode', { method: 'POST', headers: { Authorization: 'Bearer ' + tok } }).then(function (r) { return r.json(); }).then(function (j) {
+      if (!j.code) { toast(j.error || 'Couldn’t make a code just now'); return; }
+      document.getElementById('accodev').textContent = j.code.slice(0, 3) + ' ' + j.code.slice(3);
+      document.getElementById('accodet').textContent = 'Type it once, within ' + j.minutes + ' minutes: on the Fire TV, press \u2630 on the remote, then Sign in with a code; in the Home Screen app, tap Sign in at the top.';
+      document.getElementById('accode').hidden = false; b.textContent = 'Get a new code';
+    }).catch(function () { toast('Couldn’t reach the site. Try again.'); }).then(function () { b.disabled = false; });
+  });
   acOut.addEventListener('click', function () {
     if (!acOut.classList.contains('armed')) { acOut.classList.add('armed'); acOut.textContent = 'Tap again to sign out'; return; }
     try { localStorage.removeItem(MKEY); } catch (e) {}
@@ -4112,7 +4135,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   if (famBtn) famBtn.addEventListener('click', function () {
     var tok = ''; try { tok = localStorage.getItem(MKEY) || ''; } catch (e) {}
     if (tok) { acctOpen(); return; }
-    ask({ h: 'Sign in', t: 'Type the six-letter code from John, or paste your invite link.', input: { placeholder: 'Code or link', caps: true }, ok: 'Sign in' }).then(function (c) {
+    ask({ h: 'Sign in', t: 'Type a sign-in code (from your Profile on another device, or from John), or paste your invite link.', input: { placeholder: 'Code or link', caps: true }, ok: 'Sign in' }).then(function (c) {
       c = c || ''; var m = /join=([\w-]+)/.exec(c);
       c = m ? m[1] : c.replace(/[\s-]+/g, '').toUpperCase();
       if (c) memberJoin(c);

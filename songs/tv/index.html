@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>The Fire TV app · John’s Song of the Day</title>
+<link rel="icon" href="/songs/favicon-96.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..600;1,6..72,400..600&family=Hanken+Grotesk:wght@400;600&display=swap">
+<style>
+:root { --bg: #ec135b; --ink: #1b1020; --muted: #5f4b63; --line: rgba(27, 16, 32, .14); --serif: "Newsreader", Georgia, serif; --sans: "Hanken Grotesk", Arial, sans-serif; }
+* { box-sizing: border-box; }
+html { background: var(--bg); scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body { margin: 0; min-height: 100vh; font: 17px/1.55 var(--serif); color: var(--ink);
+  background: radial-gradient(120% 80% at 10% 0%, #ff3344 0%, transparent 60%), radial-gradient(100% 80% at 100% 100%, #fc00b4 0%, transparent 60%), var(--bg);
+  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 48px max(16px, env(safe-area-inset-left)); }
+main { max-width: 720px; margin: 24px auto 0; background: #fffaf5; border-radius: 18px; padding: clamp(22px, 5vw, 44px); box-shadow: 0 20px 50px rgba(40, 0, 30, .25); }
+.back { display: inline-block; margin-bottom: 18px; font: 600 11px/1 var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); text-decoration: none; }
+.back:hover, .back:focus-visible { color: var(--ink); }
+h1 { margin: 0 0 14px; font-weight: 500; font-size: clamp(34px, 7vw, 52px); line-height: 1.02; letter-spacing: -.015em; }
+h2 { margin: 30px 0 8px; padding-top: 18px; border-top: 1px solid var(--line); font: 600 12px/1.2 var(--sans); letter-spacing: .14em; text-transform: uppercase; scroll-margin-top: 16px; }
+p { margin: 0 0 12px; }
+b { font-weight: 600; }
+blockquote { margin: 0 0 12px; padding: 2px 0 2px 16px; border-left: 3px solid var(--bg); font-style: italic; }
+a { color: inherit; text-underline-offset: .15em; }
+.path { font: 600 14px/1.4 var(--sans); }
+/* the index: one line per case; the reader's own browser marked */
+.index { margin: 18px 0 0; padding: 0; list-style: none; border-top: 1px solid var(--line); }
+.index li { border-bottom: 1px solid var(--line); }
+.index a { display: flex; align-items: baseline; gap: 10px; padding: 11px 2px; text-decoration: none; }
+.index a:hover .l, .index a:focus-visible .l { text-decoration: underline; }
+.index .g { font: 600 10.5px/1 var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); width: 7.6em; flex: none; white-space: nowrap; }
+.index .l { flex: 1; }
+.index .you { flex: none; font: 600 10.5px/1 var(--sans); letter-spacing: .12em; text-transform: uppercase; color: #fff; background: var(--bg); padding: 4px 7px 3px; border-radius: 999px; }
+.index .you[hidden] { display: none; }
+.up { display: inline-block; margin-top: 2px; font: 600 10.5px/1 var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); text-decoration: none; }
+/* something to type: a box with its own Copy button */
+.copy { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; max-width: 100%; padding: 4px 4px 4px 12px; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+.copy code { font: 500 15px/1.3 ui-monospace, "SF Mono", Menlo, Consolas, monospace; white-space: nowrap; user-select: all; -webkit-user-select: all; }
+@media (max-width: 420px) { .copy code { font-size: 13px; } .copy button { margin-left: 2px; padding: 7px 9px 6px; letter-spacing: .08em; } }
+.copy button { flex: none; margin-left: 6px; padding: 7px 12px 6px; border: 0; border-radius: 7px; background: var(--ink); color: #fff; font: 600 11px/1 var(--sans); letter-spacing: .12em; text-transform: uppercase; cursor: pointer; }
+.copy button.done { background: #1d7a3a; }
+.sources { margin-top: 30px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 14px; color: var(--muted); }
+.sources a { display: block; margin-top: 4px; }
+</style>
+<style>
+ol.steps { margin: 0 0 12px; padding-left: 1.3em; }
+ol.steps li { margin: 0 0 10px; padding-left: 4px; }
+.key { display: inline-block; min-width: 1.6em; padding: 1px 7px; border: 1px solid var(--line); border-radius: 6px; background: #fff; font: 600 13px/1.5 var(--sans); text-align: center; }
+</style>
+</head>
+<body>
+<main id="top">
+<a class="back" href="../">← John’s Song of the Day</a>
+<h1>Song of the Day on your Fire TV</h1>
+<p>The calendar has its own app for an Amazon Fire TV or Fire TV Stick: full screen, worked by the remote, with the videos as big as the TV. It isn’t in Amazon’s app store, so it goes on with a free app called Downloader. It takes about five minutes, once.</p>
+
+<h2>1 · Get Downloader</h2>
+<ol class="steps">
+<li>On the Fire TV’s home screen, go to <b>Find</b> (the magnifying glass) and search for <b>Downloader</b>.</li>
+<li>Choose <b>Downloader</b> (the orange icon, by AFTVnews) and press <b>Get</b> or <b>Download</b>.</li>
+</ol>
+
+<h2>2 · Let Downloader install apps</h2>
+<ol class="steps">
+<li>Go to <b>Settings</b> (the cog, far right) → <b>My Fire TV</b> → <b>Developer options</b>.</li>
+<li>Choose <b>Install unknown apps</b>, then <b>Downloader</b>, so it says <b>On</b>.</li>
+</ol>
+<p>No <b>Developer options</b>? In <b>My Fire TV</b>, choose <b>About</b>, then press <span class="key">OK</span> on the first line (your Fire TV’s name) seven times, until it says you’re a developer. Go back and it’s there.</p>
+
+<h2>3 · Install Song of the Day</h2>
+<ol class="steps">
+<li>Open <b>Downloader</b>. If it asks to get to your files, choose <b>Allow</b>.</li>
+<li>In the box on its <b>Home</b> page, type this and press <b>Go</b>:<br><span class="copy"><code>cooperking.github.io/songs/tv.apk</code></span></li>
+<li>When it has downloaded, press <b>Install</b>, then <b>Open</b>. (Downloader may offer to delete the file it downloaded: say <b>Delete</b>, it isn’t needed any more.)</li>
+</ol>
+<p>Afterwards it’s in your apps (the button with three squares on the home screen). To keep it on the home row, highlight it, press <span class="key">☰</span> on the remote and choose <b>Move to front</b>.</p>
+
+<h2>4 · Sign in</h2>
+<p>To hear John’s own recordings and see his videos on the TV, sign it in with a code:</p>
+<ol class="steps">
+<li>On your phone, open the calendar, tap your person icon at the top, and choose <b>Get a code</b>.</li>
+<li>On the TV, in Song of the Day, press <span class="key">☰</span> on the remote and choose <b>Sign in with a code</b>. Type the six letters (they work once, within 30 minutes).</li>
+</ol>
+<p>The same <span class="key">☰</span> menu has <b>Sign in to YouTube</b>: with YouTube Premium, the videos play with no adverts.</p>
+
+<h2>The remote</h2>
+<p><span class="key">OK</span> opens a day or presses a button; held down on a day, it adds the song to My playlist (or takes it off). <span class="key">Back</span> closes what’s open. <span class="key">⏯</span> plays or pauses. <span class="key">⏪</span> <span class="key">⏩</span> go to the day (or month) before or after.</p>
+
+<h2>Updates</h2>
+<p>The calendar inside the app is always the latest. When there’s a new version of the app itself, it offers it as it opens: choose <b>Install</b>. The first time, the TV asks to let Song of the Day install apps: turn it on, as for Downloader.</p>
+</main>
+</body>
+</html>

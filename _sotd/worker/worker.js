@@ -423,6 +423,7 @@ async function members(request, url, env) {
   if (route === 'join') return memberJoin(request, env, answer);
   if (route === 'me') return memberMe(request, env, answer);
   if (route === 'playlists') return memberPlaylists(request, env, answer);
+  if (route === 'tvcode') return memberTvCode(request, env, answer);
   if (!['admin', 'upload', 'cover'].includes(route)) return answer(404, { error: 'Not here.' });
   if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
   const no = await adminOk(request, env, answer);
@@ -671,7 +672,7 @@ async function memberJoin(request, env, answer) {
     m = id && all[id];
     if (!m) {
       await env.SOTD.put(failKey, String(fails + 1), { expirationTtl: 7200 });
-      return answer(403, { error: 'That code isn’t right, or it has run out. Ask John for a new one.' });
+      return answer(403, { error: 'That code isn’t right, or it has run out. Get a new one from your Profile, or ask John.' });
     }
   } else {
     const hash = await sha256hex(given);
@@ -763,6 +764,20 @@ async function invitePage(url, env) {
 </body>
 </html>
 `, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } });
+}
+
+// a member signing in another of their own devices (a Fire TV, a Home Screen icon): the same one-use code John can
+// make for them, from their own Profile (a few an hour at most)
+async function memberTvCode(request, env, answer) {
+  if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
+  const id = await memberFromToken(request, env);
+  if (!id) return answer(401, { error: 'Not a member (any more).' });
+  const rk = 'tvcodes:' + id + ':' + new Date().toISOString().slice(0, 13), n = Number(await env.SOTD.get(rk)) || 0;
+  if (n >= 10) return answer(429, { error: 'That’s a lot of codes this hour. Try again later.' });
+  await env.SOTD.put(rk, String(n + 1), { expirationTtl: 7200 });
+  const code = tvCode();
+  await env.SOTD.put('tvcode:' + await sha256hex(code), id, { expirationTtl: TV_CODE_MINUTES * 60 });
+  return answer(200, { code, minutes: TV_CODE_MINUTES });
 }
 
 // a member's saved playlists, kept with their sign-in so every device of theirs has them (KV key mpl:<member id>).
