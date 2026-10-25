@@ -648,6 +648,10 @@ html.offline #grid .day.has:not(.dl) { opacity: .4 !important; }   /* over the d
 .capspace { height: 0; transition: height .6s cubic-bezier(.3, .7, .2, 1); }
 .capspace.on { height: var(--caph, 0px); }
 @media (prefers-reduced-motion: reduce) { .capdock, .capslide, .capspace { transition: none; } }
+/* a song or preview (the record in the video's place): its facts black on white under it; full screen as a video's */
+html:not(.theatre) .vid.cover ~ .capdock .capslide { background: #fff; box-shadow: inset 0 0 0 1px rgba(29, 11, 30, .14); }
+html:not(.theatre) .vid.cover ~ .capdock .capbox .k { color: rgba(29, 11, 30, .62); }
+html:not(.theatre) .vid.cover ~ .capdock .capbox .t { color: #1b1020; }
 .songtags { margin: 0; display: flex; flex-wrap: wrap; gap: 6px; }
 /* a few facts about the song and its artists (facts.json), under the buttons */
 .facts { margin-top: 4px; padding-top: 16px; border-top: 1px solid var(--line); }
@@ -853,7 +857,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
 .mine-list .rm svg { width: 11px; height: 11px; }
 .mine-empty { margin: 0; padding: 18px 4px; font-family: var(--serif); font-style: italic; font-size: 17px; color: var(--muted); }
 .mine-foot { display: grid; gap: 10px; }
-.mine-sort { display: grid; justify-items: start; gap: 10px; }
+.mine-sort { display: flex; align-items: center; gap: 8px; }
+.mine-sort .sortrow { flex: 1 1 auto; min-width: 0; }
+.mine-sort > .iconlink { flex: none; }
 /* a member's saved playlists (kept with their sign-in, on all their devices) */
 .mine-saved { display: grid; gap: 8px; }
 .mine-saved[hidden] { display: none; }
@@ -863,6 +869,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
 .mine-saved .savedacts { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
 .mine-saved .savedacts [hidden] { display: none; }
 .mine-saved .plstat { font-size: 12px; color: var(--muted); }
+.copy.ghost { background: none; color: var(--fg); box-shadow: inset 0 0 0 1px var(--line); }
+.copy.ghost:hover { box-shadow: inset 0 0 0 1px var(--fg); }
+.copy[hidden] { display: none; }
 .sortrow { display: flex; flex-wrap: nowrap; gap: 6px; max-width: 100%; overflow-x: auto; scrollbar-width: none; }
 .sortrow::-webkit-scrollbar { display: none; }
 .sortrow .tchip { flex: 0 0 auto; }
@@ -986,19 +995,19 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     <div class="mine-saved" id="minesaved" hidden>
       <p class="savedh">Your saved playlists</p>
       <div class="savedrow" id="savedrow"></div>
-      <div class="savedacts"><button class="tchip" id="plsave" type="button">Save this playlist</button><button class="clear" id="pldel" type="button">Delete</button><span class="plstat" id="plstat" aria-live="polite"></span></div>
+      <div class="savedacts"><button class="clear" id="pldel" type="button">Delete</button><span class="plstat" id="plstat" aria-live="polite"></span></div>
     </div>
     <div class="mine-foot" id="minefoot">
       <label class="namefield" for="plname">Playlist name</label>
       <input class="nameinput" id="plname" type="text" maxlength="80" placeholder="Song of the Day picks" autocomplete="off" enterkeyhint="go" spellcheck="false">
       <div class="opens">
         <button class="copy" id="mineplay" type="button"><svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12" aria-hidden="true"><path d="M4 2.5v11l9.5-5.5z"/></svg>Play</button>
+        <button class="copy ghost" id="plsave" type="button" hidden><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" width="12" height="12" aria-hidden="true"><path d="M4 2.5h8v11L8 10.5 4 13.5z"/></svg>Save</button>
         <a class="iconlink" id="makebtn" href="#" target="_blank" rel="noopener" aria-label="Open in Spotify" title="Open in Spotify"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M6 12V3.5l7-1.5v8.5"/><circle cx="4.2" cy="12" r="1.8"/><circle cx="11.2" cy="10.5" r="1.8"/></svg></a>
         <span class="ytopen" id="mineyt"></span>
         <button class="iconlink" id="minedl" type="button" hidden aria-label="Download My playlist to play with no connection" title="Download"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2.5v7.5M4.8 7l3.2 3.2L11.2 7"/><path d="M3 13h10"/></svg></button>
       </div>
       <p class="dlsum" id="dlsum" hidden><span id="dlsumt"></span> <button class="clear" id="dlclear" type="button">Remove downloads</button></p>
-      </div>
     </div>
     <div class="mine-sort" id="minesort">
       <div class="sortrow">
@@ -3173,7 +3182,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     document.getElementById('minesort').hidden = fav.length < 2;
     setOrderButtons();
     document.getElementById('clearbtn').hidden = fav.length === 0;
-    clearArmed = false; document.getElementById('clearbtn').textContent = (typeof PL === 'object' && PL && PL.cur) ? 'Close playlist' : 'Clear playlist';
+    clearArmed = false; document.getElementById('clearbtn').textContent = (typeof PL === 'object' && PL && PL.cur) ? 'New playlist' : 'Clear playlist';
     setMakeLink();
     fav.forEach(function (t, idx) {
       var s = byTrack[t];
@@ -3860,6 +3869,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var box = document.getElementById('minesaved');
     if (!box) return;
     box.hidden = !(MEMBER && PL.loaded);
+    document.getElementById('plsave').hidden = box.hidden || !!PL.cur || !fav.length;
     if (box.hidden) return;
     var row = document.getElementById('savedrow'); row.textContent = '';
     PL.lists.forEach(function (l) {
@@ -3872,9 +3882,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       row.appendChild(b);
     });
     row.hidden = !PL.lists.length;
-    document.getElementById('plsave').hidden = !!PL.cur || !fav.length;
     document.getElementById('pldel').hidden = !PL.cur;
     if (!PL.lists.length && !fav.length) plStat('Add songs with the heart, then save them here.');
+    box.hidden = !PL.lists.length && !document.getElementById('plstat').textContent;
   }
   // open a saved playlist as My playlist (or, with null, an empty unsaved one)
   function plOpen(l, force) {   // a promise: true once it's open (false if they kept what's there)
@@ -3889,7 +3899,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     saveFav(); syncFav(); setTitles(); setMakeLink(); renderMine();
     PL.quiet = false;
     plStat('');
-    if (!l) toast('Playlist put away. It’s still saved.');
+    if (!l) toast('Saved playlist put away: add songs with the heart for a new one');
     return Promise.resolve(true);
   }
   function plSend() {
@@ -3979,7 +3989,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       li.appendChild(b); ul.appendChild(li);
     });
     none.hidden = PL.lists.length > 0;
-    none.textContent = !PL.loaded ? 'Loading…' : 'None saved yet. Add songs with the heart, then open My playlist and tap Save this playlist.';
+    none.textContent = !PL.loaded ? 'Loading…' : 'None saved yet. Add songs with the heart, then open My playlist and tap Save.';
     acOut.classList.remove('armed'); acOut.textContent = 'Sign out';
   }
   function acctOpen() {
