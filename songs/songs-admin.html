@@ -114,6 +114,7 @@
       <button type="button" data-show="none" aria-pressed="false">No facts<span class="n" id="n-none"></span></button>
       <button type="button" data-show="signed" aria-pressed="false">Signed off</button>
       <button type="button" data-show="files" aria-pressed="false">With your files</button>
+      <button type="button" data-show="still" aria-pressed="false">Still picture<span class="n" id="n-still"></span></button>
       <button type="button" data-show="noa" aria-pressed="false">No MP3<span class="n" id="n-noa"></span></button>
       <button type="button" data-show="nov" aria-pressed="false">No MP4<span class="n" id="n-nov"></span></button>
     </div>
@@ -462,7 +463,8 @@
     var st = state(s).st, q = $('q').value.trim().toLowerCase(), m = $('month').value, e = CAT[s.id] || {};
     if (show === 'check' && !toCheck(s)) return false;
     if (show === 'files' && !e.a && !e.v && !COVERS[s.id]) return false;
-    if ((show === 'noa' && e.a) || (show === 'nov' && e.v)) return false;   // songs with no recording or no video of yours up
+    if ((show === 'noa' && e.a) || (show === 'nov' && e.v)) return false;
+    if (show === 'still' && !stillPic(s)) return false;   // songs with no recording or no video of yours up
     if (['waiting', 'signed', 'none'].indexOf(show) >= 0 && st !== show) return false;
     if (m && dayOf(s.a).month !== m) return false;
     return !q || (s.title + ' ' + s.artist).toLowerCase().indexOf(q) >= 0;
@@ -489,10 +491,13 @@
     b.textContent = armed ? 'Tap again to sign off ' + ready.length : 'Sign off all ' + ready.length;
     $('dockn').textContent = armed ? 'Exactly as shown, with your changes' : 'Waiting or changed, shown here';
   }
+  // the day's YouTube video is only a still picture (an "Artist - Topic" upload or an official audio): the sound, no film
+  function stillPic(s) { var v = VIDS[s.id]; return !!(v && v.k === 'audio'); }
   function counts() {
     var c = { waiting: 0, signed: 0, old: 0, none: 0 }, chk = 0, files = 0, noa = 0, nov = 0;
     songs.forEach(function (s) { c[state(s).st]++; if (toCheck(s)) chk++; var e = CAT[s.id] || {}; if (e.a || e.v) files++; if (!e.a) noa++; if (!e.v) nov++; });
     $('n-noa').textContent = noa; $('n-nov').textContent = nov;
+    $('n-still').textContent = songs.filter(stillPic).length;
     $('n-waiting').textContent = c.waiting; $('n-check').textContent = chk; $('n-none').textContent = c.none;
     var n = Object.keys(edits).length;
     $('stat').innerHTML = songs.length + ' songs · <b>' + c.waiting + '</b> waiting for you' + (n ? ' · your changes on <b>' + n + '</b>' : '') + (files ? ' · your files on ' + files : '');
