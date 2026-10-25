@@ -776,22 +776,27 @@ html.fab-on:not(.fab-under) .toast { bottom: calc(max(16px, env(safe-area-inset-
 .fab .heart path { fill: currentColor; stroke: none; }
 .fab .n { min-width: 1.6em; padding: 1px 6px; border-radius: 999px; background: #1b1020; color: #fffaf5; text-align: center; font-variant-numeric: tabular-nums; letter-spacing: .04em; }
 .fab[hidden] { display: none; }
-/* a member's song still playing with the day closed: what it is, pause, stop; beside My playlist's button */
-.nowbox { position: fixed; z-index: 6; right: max(16px, env(safe-area-inset-right, 0px)); bottom: max(16px, env(safe-area-inset-bottom, 0px));
-  display: inline-flex; align-items: center; gap: 8px; padding: 4px; border-radius: 999px; max-width: calc(100vw - 32px);
-  background: #fffaf5; color: #1b1020; box-shadow: 0 10px 30px rgba(14, 6, 18, .35); }
-.nowbox[hidden] { display: none; }
-.nowbox .nowart { flex: none; width: 34px; height: 34px; border-radius: 50%; overflow: hidden; animation: spin 3.6s linear infinite; animation-play-state: paused; }
-.nowbox.on .nowart { animation-play-state: running; }
-.nowbox .nowart .art { display: block; width: 100%; height: 100%; }
-.nowbox .nowtx { min-width: 0; display: grid; line-height: 1.15; }
-.nowbox .nowtx b { font: 600 11px/1.2 var(--sans); letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.nowbox .nowtx span { font: 13px/1.2 var(--serif); color: rgba(27, 16, 32, .7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.nowbox button { flex: none; display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 0; border-radius: 50%; cursor: pointer; }
-.nowbox .nowpp { background: #1b1020; color: #fffaf5; }
-.nowbox .nowx { background: none; color: #1b1020; }
-.nowbox svg { width: 12px; height: 12px; }
-@media (prefers-reduced-motion: reduce) { .nowbox .nowart { animation: none; } }
+/* a member closing the day while something plays: it plays on (the whole playlist), the day kept out of sight, and
+   My playlist's box shows what's playing (tap it for the song's page), with previous, play/pause, next and stop; a video
+   plays on in a small picture above it */
+dialog#sheet.bgplay { visibility: hidden !important; pointer-events: none !important; }
+.fab .fabnow, .fab .fabctl { display: none; }
+html.bgplay .fab .fabnow { display: inline-flex; align-items: center; gap: 8px; min-width: 0; padding: 0 2px 0 0; border: 0; background: none; color: inherit; cursor: pointer; text-align: left; }
+.fab .fabart { flex: none; width: 34px; height: 34px; border-radius: 50%; overflow: hidden; animation: spin 3.6s linear infinite; animation-play-state: paused; }
+html.bgplay.bgon .fab .fabart { animation-play-state: running; }
+.fab .fabart .art { display: block; width: 100%; height: 100%; }
+.fab .fabtx { min-width: 0; max-width: 32vw; display: grid; line-height: 1.15; }
+.fab .fabtx b { font: 600 11px/1.2 var(--sans); letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fab .fabtx span { font: 13px/1.2 var(--serif); color: rgba(27, 16, 32, .7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html.bgplay .fab .fabctl { display: grid; place-items: center; flex: none; width: 32px; height: 34px; padding: 0; border: 0; border-radius: 50%; background: none; color: #1b1020; cursor: pointer; }
+.fab .fabctl svg { width: 13px; height: 13px; }
+html.bgplay .fab .fabl { display: none; }   /* no playlist name in here while it's showing what's playing */
+html.bgplay .fab .fabopen { padding: 8px 10px; }
+html.bgplay .fab.nofav .fabopen { display: none; }
+html.bgplay .vidfloat.bgv { border-radius: 10px; box-shadow: 0 12px 30px rgba(14, 6, 18, .45); cursor: pointer; }
+html.bgplay .vidfloat.bgv::after { content: ""; position: absolute; inset: 0; z-index: 5; }   /* a tap on it: the song's page, not the player */
+@media (prefers-reduced-motion: reduce) { .fab .fabart { animation: none; } }
+
 
 /* Pop-ups are ordinary page layers (opened with show(), not showModal()): the browser's top layer can't have
    anything placed above it before iOS 17, and the My playlist button has to stay on top of a day and A–Z / Moods.
@@ -1028,8 +1033,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
 <div class="scrim" id="scrim" aria-hidden="true"></div>
 <div class="vidwrap" id="vidwrap"><div class="vid" id="vidspot" hidden></div><div class="capdock" id="capdock"><div class="capslide"><div class="vidcap capbox" id="vidcap" aria-live="polite"></div><div class="vidcap capbox adwhy" id="adwhy"><span class="in"><span class="k">Advert</span><span class="t"><a id="adwhylink" href="ads/" target="_blank" rel="noopener" tabindex="-1">Why am I seeing this ad?<span class="go" aria-hidden="true">→</span></a></span></span></div></div><div class="vidcap capbox capmeasure" id="capmeasure" aria-hidden="true"></div></div></div>
 <div class="vidfloat" id="vidfloat"><div id="vidslot"></div><button type="button" class="vidsound" id="vidsound" hidden><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z" fill="currentColor" stroke="none"/><path d="m23 9-6 6M17 9l6 6"/></svg><span>Tap for sound</span></button></div>
-<div class="nowbox" id="nowbox" hidden role="region" aria-label="Playing"><span class="nowart" id="nowart"></span><span class="nowtx"><b id="nowt"></b><span id="nowa"></span></span><button class="nowpp" id="nowpp" type="button" aria-label="Pause"></button><button class="nowx" id="nowx" type="button" aria-label="Stop"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 2l8 8M10 2 2 10"/></svg></button></div>
-<div class="fab" id="fabbox" hidden><button class="fabplay" id="fabplay" type="button" aria-label="Play My playlist"></button><button class="fabopen" id="fab" type="button" aria-haspopup="dialog"><svg class="heart" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 14s-5.5-3.3-5.5-7.4A3 3 0 0 1 8 4.6a3 3 0 0 1 5.5 2C13.5 10.7 8 14 8 14z"/></svg><span class="fabl" id="fabl">My playlist</span> <span class="n" id="fabn">0</span></button></div>
+<div class="fab" id="fabbox" hidden><button class="fabnow" id="fabnow" type="button" aria-label="Open the song that's playing"><span class="fabart" id="fabart"></span><span class="fabtx"><b id="fabt"></b><span id="faba"></span></span></button><button class="fabctl" id="fabprev" type="button" aria-label="Previous song"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M3 3h1.6v10H3zM14 3v10L5.5 8z"/></svg></button><button class="fabplay" id="fabplay" type="button" aria-label="Play My playlist"></button><button class="fabctl" id="fabnext" type="button" aria-label="Next song"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M11.4 3H13v10h-1.6zM2 3v10l8.5-5z"/></svg></button><button class="fabopen" id="fab" type="button" aria-haspopup="dialog"><svg class="heart" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 14s-5.5-3.3-5.5-7.4A3 3 0 0 1 8 4.6a3 3 0 0 1 5.5 2C13.5 10.7 8 14 8 14z"/></svg><span class="fabl" id="fabl">My playlist</span> <span class="n" id="fabn">0</span></button><button class="fabctl" id="fabstop" type="button" aria-label="Stop"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M2 2l8 8M10 2 2 10"/></svg></button></div>
 
 <dialog id="mine" aria-labelledby="mineh">
   <div class="sheet-in">
@@ -1319,7 +1323,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var fab = document.getElementById('fabbox');
     if (lastCount !== fav.length) {
       var entering = fav.length > 0 && fab.hidden;
-      fab.hidden = fav.length === 0;
+      fab.hidden = fav.length === 0 && !bgOn;
+      fab.classList.toggle('nofav', fav.length === 0);
       document.documentElement.classList.toggle('fab-on', !fab.hidden);
       if (!fab.hidden && lastCount !== -1) { fab.classList.remove('bump', 'enter'); void fab.offsetWidth; fab.classList.add(entering ? 'enter' : 'bump'); }
       lastCount = fav.length;
@@ -1480,10 +1485,13 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
 
   var sheet = document.getElementById('sheet');
   var mine = document.getElementById('mine');
-  function closeDialog(d) { if (d.close) d.close(); else { d.removeAttribute('open'); d.dispatchEvent(new Event('close')); } }
+  function closeDialog(d, really) {
+    if (d === sheet && !really && bgCan()) { bgStart(); return; }   // a member's song or video plays on (bgStart)
+    if (d.close) d.close(); else { d.removeAttribute('open'); d.dispatchEvent(new Event('close')); }
+  }
   // the pop-ups as layers: each one opened goes above the last; the scrim sits just under the top one
   var layerZ = 50, scrimEl = document.getElementById('scrim'), pageEl = document.querySelector('.wrap');
-  function layers() { return [].slice.call(document.querySelectorAll('dialog')).filter(function (d) { return d.open; })
+  function layers() { return [].slice.call(document.querySelectorAll('dialog')).filter(function (d) { return d.open && !d.classList.contains('bgplay'); })
     .sort(function (a, b) { return (+a.style.zIndex || 0) - (+b.style.zIndex || 0); }); }
   function layersChanged() {
     var open = layers(), top = open[open.length - 1], root = document.documentElement;
@@ -2032,7 +2040,6 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (queue) setTimeout(function () { if (vplay && vplay.el === el && audio.paused) playOn(el); }, 1500);
   });
   function coverPlayer(s) {
-    bgEnd(false);
     if (ytPlayer) try { ytPlayer.stopVideo(); } catch (x) {}
     ownPlayer.off();
     coverBox.textContent = '';
@@ -2065,40 +2072,11 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     vidfloat.classList.remove('cover', 'spin'); vidspot.classList.remove('cover');
   };
   function coverVd(s) { return { cover: true, src: songSrc(s) }; }
-  // ---- a member's song carrying on with the day closed: the record's player let go, the song kept playing, and a
-  // small box in the corner (beside My playlist's button) saying what it is, with pause and stop ----
-  var bg = null, nowbox = document.getElementById('nowbox');
-  function bgKeep() {
-    var v = vplay, s = v.el.sotd.s;
-    clearInterval(v.timer); clearTimeout(v.check);
-    coverOn = false; vidfloat.classList.remove('cover', 'spin'); vidspot.classList.remove('cover');
-    vidspot.hidden = true; v.el.classList.remove('watching'); vplay = null;
-    adState = -1; adFlag(); dockShut(); syncFloat();
-    bg = { s: s };
-    document.getElementById('nowart').textContent = ''; document.getElementById('nowart').appendChild(artEl(s));
-    document.getElementById('nowt').textContent = s.title; document.getElementById('nowa').textContent = s.artist;
-    nowbox.hidden = false; bgSync(); bgPlace();
-  }
-  function bgSync() {
-    if (!bg) return;
-    var on = !audio.paused;
-    nowbox.classList.toggle('on', on);
-    var pp = document.getElementById('nowpp'); pp.innerHTML = on ? PAUSE_ICON : PLAY_ICON; pp.setAttribute('aria-label', on ? 'Pause ' + bg.s.title : 'Play ' + bg.s.title);
-  }
-  function bgPlace() {   // to the left of My playlist's button when it's there
-    var fb = document.getElementById('fabbox'), r = 16;
-    if (fb && !fb.hidden) r = window.innerWidth - fb.getBoundingClientRect().left + 8;
-    nowbox.style.right = r + 'px'; nowbox.style.maxWidth = Math.max(160, window.innerWidth - r - 16) + 'px';
-  }
-  function bgEnd(stop) { if (!bg) return; bg = null; nowbox.hidden = true; if (stop) audio.pause(); }
-  document.getElementById('nowpp').addEventListener('click', function () { if (!bg) return; if (audio.paused) { var p = audio.play(); if (p && p.catch) p.catch(function () {}); } else audio.pause(); });
-  document.getElementById('nowx').addEventListener('click', function () { bgEnd(true); });
-  ['play', 'pause'].forEach(function (n) { audio.addEventListener(n, bgSync); });
-  audio.addEventListener('ended', function () { bgEnd(false); });
-  window.addEventListener('resize', function () { if (bg) bgPlace(); });
+
   function isVideo(el) { return el.classList.contains('watching') && !!vplay && vplay.el === el && !vplay.cover; }
   // a tap on a member's own video or a song's record: only ever the page's own buttons (full screen), or play and pause
   vidfloat.addEventListener('click', function (e) {
+    if (bgOn) { e.preventDefault(); e.stopPropagation(); bgShow(); return; }   // the small picture: back to the song's page
     if (!vidfloat.classList.contains('own') && !vidfloat.classList.contains('cover')) return;
     e.preventDefault(); e.stopPropagation();
     if (theatre) { if (uiUp()) uiDrop(); else uiShow(); return; }
@@ -2283,6 +2261,16 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   function placeFloat() {
     floatRaf = 0;
+    if (bgOn) {   // playing on with the day closed: a video as a small picture above My playlist's box
+      if (!vplay || vplay.cover || vidspot.hidden) { vidfloat.style.visibility = 'hidden'; vidfloat.classList.remove('bgv'); return; }
+      var fbr = document.getElementById('fabbox').getBoundingClientRect(), bw = Math.min(240, window.innerWidth - 32), bh = Math.round(bw * 9 / 16);
+      vidfloat.classList.add('bgv');
+      vidfloat.style.left = (Math.min(window.innerWidth - 16, fbr.right) - bw) + 'px'; vidfloat.style.top = (fbr.top - bh - 10) + 'px';
+      vidfloat.style.width = bw + 'px'; vidfloat.style.height = bh + 'px'; vidfloat.style.clipPath = ''; vidfloat.style.zIndex = '7';
+      vidfloat.style.visibility = 'visible'; floatAt = 'bg';
+      return;
+    }
+    vidfloat.classList.remove('bgv');
     if (theatreSync()) {
       floatAt = 'full';
       thLayout();
@@ -2555,7 +2543,6 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     });
   }
   function watch(el, vd) {
-    bgEnd(true);   // a song still playing from a closed day stops for this one
     // no waiting for a sliding card: the player sits outside the card and only shows once the card has settled,
     // so the next video starts loading straight away
     if (el.classList.contains('watching')) {
@@ -2616,8 +2603,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     queue = null; showQueue();
     setTimeout(function () {
       if (!sheet.open || queue) return;
-      closeDialog(sheet);
-      if (back === 'mine' && fav.length) { renderMine(); openLayer(mine); mine.scrollTop = 0; }
+      var wasBg = bgOn;
+      closeDialog(sheet, true);
+      if (back === 'mine' && fav.length && !wasBg) { renderMine(); openLayer(mine); mine.scrollTop = 0; }
     }, 900);
   }
   function startQueue(list, name, back, from, mix) {
@@ -2635,14 +2623,13 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   function playOn(el) {
     if (!sheet.open || !el.isConnected) return;
-    var open = layers(); if (open[open.length - 1] !== sheet) return;   // something else is on top: stop there
+    var open = layers(); if (!bgOn && open[open.length - 1] !== sheet) return;   // something else is on top: stop there (not when playing on with the day closed)
     if (queue) { if (stepTarget(flip())) goDay(flip()); else endQueue(); return; }
     var all = [].slice.call(document.querySelectorAll('#picks .pick')), next = all[all.indexOf(el) + 1];
     if (next && next.sotd) { playPick(next); return; }
     if (dayStep(1)) goDay(1); else fullReset();   // the last day's last song over: out of full screen
   }
   function openDay(iso, opts) {
-    bgEnd(true);   // a day opening plays its own song
     var picks = byDate[iso] || [];
     curDay = iso;
     if (!opts || !opts.keepQueue) queue = null;   // opened from the calendar: the playlist stops leading
@@ -2739,10 +2726,15 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       box.appendChild(a);
       fillFacts(fx, s);
     });
-    if (mine.open) closeDialog(mine);
-    if (idx.open) { idxBack = idx.scrollTop; closeDialog(idx); }
+    var bgKeep = bgOn && opts && opts.keepQueue;   // playing on with the day closed: the next song, still out of sight
+    if (!bgKeep) {
+      if (bgOn) stopVideos();   // another day opened while one played on out of sight: this one instead
+      bgOff();
+      if (mine.open) closeDialog(mine);
+      if (idx.open) { idxBack = idx.scrollTop; closeDialog(idx); }
+    }
     var fresh = !sheet.open;
-    openLayer(sheet);
+    if (!bgKeep) openLayer(sheet);
     sheet.scrollTop = 0;
     if (fresh) swipeHint();
     syncFav();
@@ -2984,11 +2976,11 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   window.addEventListener('hashchange', openFromHash);
 
-  function closeSheet() { if (sheet.close) sheet.close(); else { sheet.removeAttribute('open'); audio.pause(); } }
+  function closeSheet() { closeDialog(sheet); }
   sheet.addEventListener('close', function () {
     fullReset();
-    if (MEMBER && vplay && vplay.cover && !audio.paused) bgKeep();   // a member's song carries on, shown in the corner
-    else audio.pause();
+    bgOff();
+    audio.pause();
     stopVideos();
     cardReset();
     queue = null;
@@ -3434,16 +3426,50 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     return [].filter.call(document.querySelectorAll('#picks .pick'), function (el) { return el.sotd && el.sotd.s.track === t; })[0] || null;
   }
   function sounding(el) { return (!!playing && playing.el === el && !audio.paused) || (!!vplay && vplay.el === el && vplay.on); }
+  // ---- playing on with the day closed (members): the day stays, out of sight, so the playlist (or the days) play on as
+  // they would with it open; My playlist's box shows what's playing ----
+  var bgOn = false, fabbox = document.getElementById('fabbox');
+  function bgCan() { return !!MEMBER && !TV && sheet.open && !bgOn && !!vplay && (vplay.on || (vplay.cover && !audio.paused)); }
+  function bgStart() {
+    bgOn = true; fullReset(); uiDrop();
+    sheet.classList.add('bgplay'); root.classList.add('bgplay');
+    fabbox.hidden = false; root.classList.add('fab-on'); fabbox.classList.toggle('nofav', !fav.length);
+    layersChanged(); bgDraw(); followFloat(400);
+  }
+  function bgOff() {
+    if (!bgOn) return;
+    bgOn = false; sheet.classList.remove('bgplay'); root.classList.remove('bgplay', 'bgon'); vidfloat.classList.remove('bgv');
+    fabbox.hidden = fav.length === 0; root.classList.toggle('fab-on', !fabbox.hidden);
+    syncFloat();
+  }
+  function bgDraw() {   // what's playing, in the box
+    if (!bgOn) return;
+    var s = vplay && vplay.el && vplay.el.sotd && vplay.el.sotd.s;
+    root.classList.toggle('bgon', !!(vplay && vplay.on));
+    if (!s || fabbox.getAttribute('data-now') === s.track) return;
+    fabbox.setAttribute('data-now', s.track);
+    var a = document.getElementById('fabart'); a.textContent = ''; a.appendChild(artEl(s));
+    document.getElementById('fabt').textContent = cleanTitle(s.title); document.getElementById('faba').textContent = s.artist;
+    document.getElementById('fabnow').setAttribute('aria-label', cleanTitle(s.title) + ' by ' + s.artist + ': open its page');
+    syncFloat();
+  }
+  function bgShow() { bgOff(); openLayer(sheet); sheet.scrollTop = 0; syncFloat(); }   // the song's page again
+  document.getElementById('fabnow').addEventListener('click', bgShow);
+  document.getElementById('fabstop').addEventListener('click', function () { bgOff(); closeDialog(sheet, true); });
+  document.getElementById('fabnext').addEventListener('click', function () { if (bgOn && vplay && vplay.el) playOn(vplay.el); });
+  document.getElementById('fabprev').addEventListener('click', function () { if (bgOn) goDay(-flip()); });
+  window.addEventListener('resize', function () { if (bgOn) syncFloat(); });
   function fabSync() {
-    if (typeof bgPlace === 'function' && bg) setTimeout(bgPlace, 0);
+    bgDraw();
     var b = document.getElementById('fabplay'); if (!b || !PLAY_ICON) return;   // (until the icons below are set up)
-    var el = mineLeading(), on = !!el && sounding(el), want = on ? 'pause' : 'play';
+    var el = mineLeading(), on = bgOn ? !!(vplay && vplay.on) : !!el && sounding(el), want = on ? 'pause' : 'play';
     if (b.getAttribute('data-icon') === want) return;
     b.setAttribute('data-icon', want);
     b.innerHTML = on ? PAUSE_ICON : PLAY_ICON;
     b.setAttribute('aria-label', on ? 'Pause My playlist' : 'Play My playlist');
   }
   document.getElementById('fabplay').addEventListener('click', function () {
+    if (bgOn) { vidToggle(); return; }   // what's playing on with the day closed
     var el = mineLeading();
     if (el) {
       if (vplay && vplay.el === el) vidToggle();
@@ -3565,7 +3591,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     renderMine();
   });
   document.getElementById('fab').addEventListener('click', function () {
-    if (sheet.open && !theatre) closeDialog(sheet);   // over a full-screen video, it opens on top and the video plays on
+    if (sheet.open && !theatre && !bgOn) closeDialog(sheet);   // over a full-screen video (or playing on out of sight), it opens on top and plays on
     renderMine();
     openLayer(mine);
     mine.scrollTop = 0;
