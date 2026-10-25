@@ -599,6 +599,15 @@
     live.src = live.src || []; live.songs = live.songs || {}; live.artists = live.artists || {}; pending.songs = pending.songs || {};
     var months = {}; songs.forEach(function (s) { months[dayOf(s.a).month] = 1; });
     Object.keys(months).sort().reverse().forEach(function (m) { var o = el('option', null, MONTHS[+m.slice(5) - 1] + ' ' + m.slice(0, 4)); o.value = m; $('month').appendChild(o); });
+    // moods and genres changed on the old Moods page and not yet sent: carried over as changes here
+    try {
+      var old = JSON.parse(read('sotd-admin-edits') || '{}') || {};
+      songs.forEach(function (s) {
+        var o = old[s.id]; if (!o || !Array.isArray(o.moods)) return;
+        var st = state(s), w = working(s, st); w.moods = o.moods.slice(0, 2); w.genres = (o.genres || []).slice(0, 2); edits[s.id] = w;
+      });
+      if (Object.keys(old).length) { saveEdits(); store('sotd-admin-edits'); }
+    } catch (e) {}
     var waiting = songs.filter(function (s) { return state(s).st === 'waiting'; });
     waiting.forEach(function (s) { OPEN[s.id] = true; });   // what's waiting comes open
     if (!waiting.length) { show = 'all'; [].forEach.call(document.querySelectorAll('[data-show]'), function (x) { x.setAttribute('aria-pressed', x.getAttribute('data-show') === 'all' ? 'true' : 'false'); }); }
