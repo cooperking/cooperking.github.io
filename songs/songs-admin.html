@@ -671,20 +671,30 @@
   // a whole folder: each file matched to its day by its name
   function norm(x) {
     return String(x).normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase()
-      .replace(/\.(mp3|mp4|m4v|m4a)$/, '').replace(/[\(\[][^\)\]]*(remaster|version|edit|mix|live|official|video|audio|lyric|hd|4k|bonus|mono|stereo|single|demo)[^\)\]]*[\)\]]/g, ' ')
+      .replace(/\.(mp3|mp4|m4v|m4a)$/, '').replace(/[\(\[][^\)\]]*(remaster|version|edit|mix|live|official|video|audio|lyric|hd|4k|bonus|mono|stereo|single|demo|from)[^\)\]]*[\)\]]/g, ' ')
       .replace(/\s[-–—]\s[^-–—]*(remaster|version|edit|mix|live|bonus|mono|stereo|single|demo)[^-–—]*$/, ' ')
       .replace(/\b(feat|ft|featuring)\b.*$/, ' ').replace(/['’‘`]/g, '').replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, ' ').replace(/\b(the|a|an)\b/g, ' ').replace(/\s+/g, ' ').trim();
   }
   function wordsOf(x) { return norm(x).split(' ').filter(Boolean); }
-  // how well a file's name fits a song: its title's words above all, the artist's if they're there too (a name with only
-  // the title still fits); track numbers and the like don't count against it
+  // how well a file's name fits a song. A name is either "Artist - Title" or just the title (John): so the title is
+  // matched against the whole name, and where there's a " - ", each side against the title and the other the artist;
+  // the best of those counts. A track number in front doesn't count.
+  function sim(x, y) {   // 1 the same words; else how many words the two share (Dice)
+    var a = wordsOf(x), b = wordsOf(y);
+    if (!a.length || !b.length) return 0;
+    if (a.join(' ') === b.join(' ')) return 1;
+    var set = {}, common = 0; b.forEach(function (w) { set[w] = (set[w] || 0) + 1; });
+    a.forEach(function (w) { if (set[w]) { set[w]--; common++; } });
+    return 2 * common / (a.length + b.length);
+  }
   function score(name, s) {
-    var fw = wordsOf(name).filter(function (w) { return !/^\d{1,3}$/.test(w); }), set = {}; fw.forEach(function (w) { set[w] = 1; });
-    var tw = wordsOf(s.title), aw = wordsOf(s.artist), tset = {}; tw.concat(aw).forEach(function (w) { tset[w] = 1; });
-    if (!tw.length || !fw.length) return 0;
-    var t = tw.filter(function (w) { return set[w]; }).length / tw.length, a = aw.length ? aw.filter(function (w) { return set[w]; }).length / aw.length : 0;
-    var extra = fw.filter(function (w) { return !tset[w]; }).length, whole = (' ' + fw.join(' ') + ' ').indexOf(' ' + tw.join(' ') + ' ') >= 0;
-    return (a > 0 ? t * 0.65 + a * 0.35 : t * 0.8) + (whole ? 0.1 : 0) - extra * 0.04;
+    var base = String(name).replace(/\.(mp3|mp4|m4v|m4a)$/i, '').replace(/^\s*\d{1,3}(\s*[-._)]\s*|\s+)/, ''), best = sim(base, s.title);
+    var parts = base.split(/\s+[-–—]\s+/);
+    for (var k = 1; k < parts.length; k++) {
+      var l = parts.slice(0, k).join(' - '), r = parts.slice(k).join(' - ');
+      best = Math.max(best, sim(r, s.title) * 0.6 + sim(l, s.artist) * 0.4, sim(l, s.title) * 0.6 + sim(r, s.artist) * 0.4);
+    }
+    return best;
   }
   var PLAN = [], SHOWSAME = false;
   // what a file is next to what's up already: new (nothing there), same (the same fingerprint, or from before fingerprints
@@ -731,7 +741,7 @@
       // otherwise the best guess, marked check this when it's weak or another song comes close
       var near = 0;
       if (!bs) songs.forEach(function (s) { var sc = score(f.name, s); if (sc > bs) { near = bs; bs = sc; best = s; } else if (sc > near) near = sc; });
-      return { f: f, kind: kind, s: bs >= 0.3 ? best : null, sure: bs >= 0.85 && bs - near > 0.05 };   // a best guess (marked check this) rather than none
+      return { f: f, kind: kind, s: bs >= 0.34 ? best : null, sure: bs >= 0.85 && bs - near > 0.05 };   // a best guess (marked check this) rather than none
     }).sort(function (x, y) { function r(p) { return !p.s ? 0 : !p.sure ? 1 : 2; } return r(x) - r(y) || x.f.name.localeCompare(y.f.name); });   // unmatched, then guesses to check, first
     if (!PLAN.length) { $('matchbox').hidden = true; toast('No MP3 or MP4 files in that folder'); return; }
     $('matchbox').hidden = false; $('matches').innerHTML = ''; $('upall').disabled = true; $('upstat').textContent = 'Checking which files are new or changed…';
