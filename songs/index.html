@@ -648,7 +648,7 @@ html.offline #grid .day.has:not(.dl) { opacity: .4 !important; }   /* over the d
 .capspace.on { height: var(--caph, 0px); }
 @media (prefers-reduced-motion: reduce) { .capdock, .capslide, .capspace { transition: none; } }
 /* a song or preview (the record in the video's place): its facts black on white under it; full screen as a video's */
-html:not(.theatre) .vid.cover ~ .capdock .capslide { background: #fff; box-shadow: inset 0 0 0 1px rgba(29, 11, 30, .14); }
+html:not(.theatre) .vid.cover ~ .capdock .capslide { background: #fff; }
 html:not(.theatre) .vid.cover ~ .capdock .capbox .k { color: rgba(29, 11, 30, .62); }
 html:not(.theatre) .vid.cover ~ .capdock .capbox .t { color: #1b1020; }
 .songtags { margin: 0; display: flex; flex-wrap: wrap; gap: 6px; }
@@ -1256,7 +1256,6 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       if (!fab.hidden && lastCount !== -1) { fab.classList.remove('bump', 'enter'); void fab.offsetWidth; fab.classList.add(entering ? 'enter' : 'bump'); }
       lastCount = fav.length;
     }
-    if (!fav.length && typeof plAny === 'function') { fab.hidden = !plAny(); document.documentElement.classList.toggle('fab-on', !fab.hidden); }
     document.querySelectorAll('[data-track]').forEach(function (el) {
       var on = fav.indexOf(el.getAttribute('data-track')) !== -1;
       el.classList.toggle('is-fav', on);
@@ -3174,14 +3173,14 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
 
   function renderMine() {
     if (typeof plRender === 'function') plRender();
-    if (!fav.length && mine.open && !(typeof plAny === 'function' && plAny())) { closeDialog(mine); return; }
+    if (!fav.length && mine.open) { closeDialog(mine); return; }
     minelist.textContent = '';
     document.getElementById('minec').textContent = fav.length + (fav.length === 1 ? ' song' : ' songs');
     document.getElementById('minefoot').hidden = fav.length === 0;
     document.getElementById('minesort').hidden = fav.length < 2;
     setOrderButtons();
     document.getElementById('clearbtn').hidden = fav.length === 0;
-    clearArmed = false; document.getElementById('clearbtn').textContent = (typeof PL === 'object' && PL && PL.cur) ? 'New playlist' : 'Clear playlist';
+    clearArmed = false; document.getElementById('clearbtn').textContent = (typeof PL === 'object' && PL && PL.cur) ? (plStashN() ? 'Back to My playlist' : 'New playlist') : 'Clear playlist';
     setMakeLink();
     fav.forEach(function (t, idx) {
       var s = byTrack[t];
@@ -3886,19 +3885,26 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     box.hidden = !PL.lists.length && !document.getElementById('plstat').textContent;
   }
   // open a saved playlist as My playlist (or, with null, an empty unsaved one)
-  function plOpen(l, force) {   // a promise: true once it's open (false if they kept what's there)
-    if (l && !force && !PL.cur && fav.length) return ask({ k: 'My playlist', h: 'Open “' + l.name + '”?', t: 'The ' + fav.length + (fav.length === 1 ? ' song' : ' songs') + ' in My playlist now aren’t saved. Opening “' + l.name + '” puts them away.', ok: 'Open it', no: 'Keep these' })
-      .then(function (yes) { return yes ? plOpen(l, true) : false; });
+  // the unsaved My playlist, kept aside while a saved one is open (sotd-plunsaved), and back when it's put away
+  function plStash(v) {
+    try { if (v === undefined) return JSON.parse(localStorage.getItem('sotd-plunsaved') || 'null'); if (v) localStorage.setItem('sotd-plunsaved', JSON.stringify(v)); else localStorage.removeItem('sotd-plunsaved'); } catch (e) {}
+    return null;
+  }
+  function plStashN() { var st = plStash(); return st && st.tracks ? st.tracks.filter(function (t) { return byTrack[t]; }).length : 0; }
+  function plOpen(l, quiet) {   // a saved playlist as My playlist; or, with null, the saved one put away and the unsaved one back
     PL.quiet = true;
     clearTimeout(PL.t);
+    if (l && !PL.cur) plStash({ tracks: fav.slice(), name: plname.value });
+    var back = !l ? plStash() || { tracks: [], name: '' } : null;
+    if (!l) plStash(null);
     plSetCur(l ? l.id : null); plAt(l ? l.at : 0);
-    fav = l ? l.tracks.filter(function (t) { return byTrack[t]; }) : [];
-    plname.value = l ? (l.name === 'My playlist' ? '' : l.name) : '';
+    fav = l ? l.tracks.filter(function (t) { return byTrack[t]; }) : back.tracks.filter(function (t) { return byTrack[t]; });
+    plname.value = l ? (l.name === 'My playlist' ? '' : l.name) : back.name || '';
     try { localStorage.setItem('sotd-plname', plname.value); } catch (e) {}
     saveFav(); syncFav(); setTitles(); setMakeLink(); renderMine();
     PL.quiet = false;
     plStat('');
-    if (!l) toast('Saved playlist put away: add songs with the heart for a new one');
+    if (!l && !quiet) toast(fav.length ? 'Back to My playlist' : 'A new playlist: add songs with the heart');
     return Promise.resolve(true);
   }
   function plSend() {
@@ -3923,18 +3929,18 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       if (j.status !== 200) return;
       PL.lists = j.lists || []; PL.loaded = true;
       var l = PL.cur && PL.lists.filter(function (x) { return x.id === PL.cur; })[0];
-      if (PL.cur && !l) plSetCur(null);   // deleted on another device: what's here stays, unsaved
+      if (PL.cur && !l) plOpen(null, true);   // deleted on another device: back to the unsaved one
       else if (l) {
         var mine_ = plAt();
         if (mine_ > l.at) plSend();   // changed here while offline
-        else if (l.at > mine_ || l.tracks.join() !== fav.join()) plOpen(l, true);   // changed on another device
+        else if (l.at > mine_ || l.tracks.join() !== fav.join()) plOpen(l);   // changed on another device
       }
       syncFav(); plRender();
     }).catch(function () {});
   }
   function plMember() {
     if (MEMBER) { if (!PL.loaded) plLoad(); }
-    else { PL.lists = []; PL.loaded = false; plSetCur(null); }
+    else { if (PL.cur) plOpen(null, true); PL.lists = []; PL.loaded = false; plSetCur(null); }
     syncFav(); plRender();
   }
   document.getElementById('plsave').addEventListener('click', function () {
@@ -3962,7 +3968,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (!yes) return;
     plApi({ op: 'delete', id: l.id }).then(function (j) {
       if (j.status !== 200) { plStat(j.error || 'Couldn’t delete just now'); return; }
-      PL.lists = j.lists; plSetCur(null); plStat('Deleted'); renderMine(); syncFav();
+      PL.lists = j.lists; plOpen(null, true); toast('“' + l.name + '” deleted'); syncFav();
     }).catch(function () { plStat('Couldn’t reach the site. Try again.'); });
     });
   });
@@ -3982,7 +3988,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         (l.id === PL.cur ? Promise.resolve(true) : plOpen(l)).then(function (ok) {
           if (!ok) return;   // they kept what's there
           closeDialog(acct);
-          if (fav.length || plAny()) { if (sheet.open && !theatre) closeDialog(sheet); renderMine(); openLayer(mine); mine.scrollTop = 0; }
+          if (fav.length) { if (sheet.open && !theatre) closeDialog(sheet); renderMine(); openLayer(mine); mine.scrollTop = 0; }
         });
       });
       li.appendChild(b); ul.appendChild(li);
@@ -3997,7 +4003,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   document.getElementById('acclose').addEventListener('click', function () { closeDialog(acct); });
   acOut.addEventListener('click', function () {
-    if (!acOut.classList.contains('armed')) { acOut.classList.add('armed'); acOut.textContent = 'Tap again to sign out (songs downloaded here go too)'; return; }
+    if (!acOut.classList.contains('armed')) { acOut.classList.add('armed'); acOut.textContent = 'Tap again to sign out'; return; }
     try { localStorage.removeItem(MKEY); } catch (e) {}
     closeDialog(acct);
     dlClear(); MEMBER = null; memberApply(); famSync(); toast('Signed out on this device');
