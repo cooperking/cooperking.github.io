@@ -4633,7 +4633,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   });
   acOut.addEventListener('click', function () {
     if (!acOut.classList.contains('armed')) { acOut.classList.add('armed'); acOut.textContent = 'Tap again to sign out'; return; }
-    try { localStorage.removeItem(MKEY); } catch (e) {}
+    var was = ''; try { was = localStorage.getItem(MKEY) || ''; localStorage.removeItem(MKEY); } catch (e) {}
+    if (was && MBASE) fetch(MBASE + '/members/signout', { method: 'POST', headers: { Authorization: 'Bearer ' + was } }).catch(function () {});   // off the members page too
     closeDialog(acct);
     dlClear(); MEMBER = null; memberApply(); famSync(); OWNC_SIG = '{}'; render(); toast('Signed out on this device');   // (the album covers back)
   });
@@ -4653,7 +4654,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     famSync();
     clearTimeout(memberLoad.t);
     if (!tok || !MBASE || !window.fetch) return;
-    fetch(MBASE + '/members/me', { headers: { Authorization: 'Bearer ' + tok }, cache: 'no-store' }).then(function (r) {
+    fetch(MBASE + '/members/me', { headers: { Authorization: 'Bearer ' + tok, 'X-Device': deviceId() }, cache: 'no-store' }).then(function (r) {
       if (r.status === 401) { try { localStorage.removeItem(MKEY); } catch (e) {} dlClear(); famSync(); if (MEMBER) { MEMBER = null; memberApply(); } return null; }
       return r.ok ? r.json() : null;
     }).then(function (j) {
@@ -4667,13 +4668,23 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   // joining: from an invite link (#join=<code>, the address then losing the code), or a TV code typed in the Fire TV
   // app's menu (the app calls sotdJoin)
+  // this phone, tablet, computer or TV's own id (kept here), so the members page counts devices, not sign-ins
+  function deviceId() {
+    var d = ''; try { d = localStorage.getItem('sotd-device') || ''; } catch (e) {}
+    if (!/^[A-Za-z0-9]{8,40}$/.test(d)) {
+      var a = new Uint8Array(12); (window.crypto || {}).getRandomValues ? crypto.getRandomValues(a) : a.forEach(function (x, i) { a[i] = Math.random() * 256; });
+      d = [].map.call(a, function (x) { return 'abcdefghijklmnopqrstuvwxyz0123456789'[x % 36]; }).join('');
+      try { localStorage.setItem('sotd-device', d); } catch (e) {}
+    }
+    return d;
+  }
   var appAfterJoin = false;
   function memberJoin(code, invite) {
     if (!MBASE || !window.fetch) return;
     var had = ''; try { had = localStorage.getItem(MKEY) || ''; } catch (e) {}
     if (invite && !had) appAfterJoin = true;   // a device joining from an invite, not signed in before: the app is offered
-    fetch(MBASE + '/members/join', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: code }) })
-      .then(function (r) { return r.json().then(function (j) { j.ok = r.ok; return j; }); })
+    fetch(MBASE + '/members/join', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: code, device: deviceId() }) })
+      .then(function (r) { return r.json().then(function (j) { j.ok = r.ok; return j; }); })   // (the device's own id: a sign-in here replaces the last)
       .then(function (j) {
         if (!j.ok || !j.token) { toast(j.error || 'That invite didn’t work. Ask John for a new one.'); memberLoad(); return; }
         try { localStorage.setItem(MKEY, j.token); } catch (e) {}

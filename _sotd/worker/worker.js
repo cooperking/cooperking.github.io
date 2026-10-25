@@ -306,7 +306,7 @@ async function songsJson(request, env, ctx) {
 
 function factsHeaders(origin) {
   return { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'Access-Control-Allow-Origin': origin || '*',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Authorization, Content-Type', 'Access-Control-Max-Age': '86400' };
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Authorization, Content-Type, X-Device', 'Access-Control-Max-Age': '86400' };
 }
 
 async function factsSigned(env) {
@@ -431,6 +431,7 @@ async function members(request, url, env) {
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: h });
   const route = url.pathname.slice('/members/'.length);
   if (route === 'join') return memberJoin(request, env, answer);
+  if (route === 'signout') return memberSignout(request, env, answer);
   if (route === 'me') return memberMe(request, env, answer);
   if (route === 'playlists') return memberPlaylists(request, env, answer);
   if (route === 'tvcode') return memberTvCode(request, env, answer);
@@ -450,7 +451,7 @@ async function members(request, url, env) {
     return MEMBERS_JOIN + code;
   };
   const listing = (own = owner) => Object.entries(all).map(([id, m]) => ({ id, name: m.name, created: m.created, owner: id === own,
-    devices: Object.keys(m.devices || {}).length, seen: Math.max(0, ...Object.values(m.devices || {}).map(d => d.seen || 0)) || null,
+    devices: Object.values(m.devices || {}).filter(d => d.did).length, seen: Math.max(0, ...Object.values(m.devices || {}).map(d => d.seen || 0)) || null,
     invite: m.invite ? { uses: m.invite.uses, left: Math.max(0, INVITE_USES - m.invite.uses), until: m.invite.until } : null }));
   switch (body.op) {
     case 'list': return answer(200, { members: listing(), catalog: await catalog(env), media: !!env.MEDIA, covers: await coversAll(env) });
@@ -678,6 +679,31 @@ async function memberShare(url, env, track, id, image) {
 `, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } });
 }
 
+// Each phone, tablet, computer or TV keeps an id of its own (X-Device, or device in a join): a sign-in there replaces
+// any earlier one from the same device, and the members page counts devices, not sign-ins. A sign-in from before the ids
+// counts once it has said which device it is (its next visit); old ones that never come back aren't counted, and go
+// after 30 days.
+function deviceId(x) { const d = String(x || ''); return /^[A-Za-z0-9]{8,40}$/.test(d) ? d : ''; }
+function deviceTidy(all, keepHash, did) {   // other sign-ins from this device go; long-gone ones without an id too
+  let changed = false;
+  for (const m of Object.values(all)) {
+    for (const [h, d] of Object.entries(m.devices || {})) {
+      if (h === keepHash) continue;
+      if ((did && d.did === did) || (!d.did && Date.now() - (d.seen || d.at || 0) > 30 * 864e5)) { delete m.devices[h]; changed = true; }
+    }
+  }
+  return changed;
+}
+async function memberSignout(request, env, answer) {   // this device's sign-in, gone from the members page too
+  if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
+  const token = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
+  if (!token) return answer(200, { ok: true });
+  const hash = await sha256hex(token), all = (await env.SOTD.get('members', 'json')) || {};
+  const id = Object.keys(all).find(k => all[k].devices && all[k].devices[hash]);
+  if (id) { delete all[id].devices[hash]; await kvSoft(env, 'members', JSON.stringify(all)); }
+  return answer(200, { ok: true });
+}
+
 async function memberJoin(request, env, answer) {
   if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
   const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
@@ -709,7 +735,9 @@ async function memberJoin(request, env, answer) {
   const token = randomCode(32);
   if (tvKey) await env.SOTD.delete(tvKey); else m.invite.uses++;
   m.devices = m.devices || {};
-  m.devices[await sha256hex(token)] = { at: Date.now(), seen: Date.now() };
+  const th = await sha256hex(token), did = deviceId(body.device);
+  m.devices[th] = Object.assign({ at: Date.now(), seen: Date.now() }, did ? { did } : {});
+  deviceTidy(all, th, did);
   await env.SOTD.put('members', JSON.stringify(all));
   return answer(200, { token, name: m.name });
 }
@@ -723,7 +751,11 @@ async function memberMe(request, env, answer) {
   const id = Object.keys(all).find(k => all[k].devices && all[k].devices[hash]);
   if (!id) return answer(401, { error: 'Not a member (any more).' });
   const m = all[id], dev = m.devices[hash];
-  if (Date.now() - (dev.seen || 0) > 6 * 3600e3) { dev.seen = Date.now(); await kvSoft(env, 'members', JSON.stringify(all)); }
+  const did = deviceId(request.headers.get('X-Device'));
+  let save = Date.now() - (dev.seen || 0) > 6 * 3600e3;
+  if (save) dev.seen = Date.now();
+  if (did && dev.did !== did) { dev.did = did; dev.seen = Date.now(); deviceTidy(all, hash, did); save = true; }   // says which device it is: earlier sign-ins there go
+  if (save) await kvSoft(env, 'members', JSON.stringify(all));
   const exp = Math.floor(Date.now() / 1000) + LINK_HOURS * 3600, base = new URL(request.url).origin, media = {};
   if (env.MEDIA && env.ADMIN_KEY) {
     for (const [track, e] of Object.entries(await catalog(env))) {
