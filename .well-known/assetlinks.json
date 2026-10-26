@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "io.github.cooperking.sotd",
+      "sha256_cert_fingerprints": [
+        "41:98:CB:FD:44:C8:E9:30:34:5F:DE:E1:4E:5E:E4:D8:CE:DD:9B:0E:21:B6:7D:4A:E6:76:C8:4C:0E:E0:18:C6"
+      ]
+    }
+  }
+]
