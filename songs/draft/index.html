@@ -827,6 +827,13 @@ html.member .rowdl.off { display: inline-grid; visibility: hidden; pointer-event
 .toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); z-index: 1002; max-width: calc(100vw - 32px); text-align: center; transform: translate(-50%, 8px); padding: 10px 16px; border-radius: 22px; background: rgba(16, 6, 16, .96); color: #fffaf5; font-family: var(--sans); font-size: 13px; letter-spacing: .04em; opacity: 0; pointer-events: none; transition: opacity .2s ease, transform .2s ease; }
 .toast.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }   /* above everything; a tap on it stays on it */
 html.fab-on:not(.fab-under) .toast { bottom: calc(max(16px, env(safe-area-inset-bottom, 0px)) + 54px); }   /* above the My playlist button */
+/* the Android app installed from the site: a new build to install */
+.appupd { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(24px + env(safe-area-inset-bottom, 0px)); z-index: 1003; display: flex; align-items: center; gap: 6px; width: max-content; max-width: calc(100vw - 32px); padding: 6px 6px 6px 16px; border-radius: 999px; background: rgba(16, 6, 16, .96); color: #fffaf5; font-family: var(--sans); font-size: 13px; letter-spacing: .02em; box-shadow: 0 10px 30px rgba(14, 6, 18, .35); }
+.appupd span { flex: 1 1 auto; }
+.appupd a, .appupd button { flex: none; border: 0; border-radius: 999px; padding: 9px 14px; font: 600 11px/1.2 var(--sans); letter-spacing: .12em; text-transform: uppercase; text-decoration: none; cursor: pointer; }
+.appupd a { background: var(--accent, #ec1a13); color: #fff; }
+.appupd button { background: transparent; color: inherit; }
+html.fab-on:not(.fab-under) .appupd { bottom: calc(max(16px, env(safe-area-inset-bottom, 0px)) + 54px); }
 /* pull down to refresh (home-screen app only): the page slides down and a record, labelled with today's cover,
    comes out from under the top bar into the gap; it turns as you pull and spins while the page reloads */
 .ptr { position: fixed; left: 50%; top: 0; z-index: 4; width: 40px; height: 40px; margin-left: -20px; pointer-events: none; opacity: 0; transform: translateY(-60px);
@@ -1743,7 +1750,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     });
     fabSync();
     // the Fire TV app keeps the screen on (no screensaver) while something plays
-    if (TV && window.SOTDTV) try { window.SOTDTV.playing((!!playing && !audio.paused) || (!!vplay && vplay.on)); } catch (e) {}
+    if (TV && window.SOTDTV && window.SOTDTV.playing) try { window.SOTDTV.playing((!!playing && !audio.paused) || (!!vplay && vplay.on)); } catch (e) {}
   }
   audio.addEventListener('timeupdate', paint);
   audio.addEventListener('play', setState);
@@ -4635,6 +4642,45 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   var NAT = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform() ? window.Capacitor : null;
   var NPUSH = NAT && NAT.Plugins && NAT.Plugins.PushNotifications ? NAT.Plugins.PushNotifications : null;
   if (NAT) document.documentElement.classList.add('in-app');
+  // ---- the Android app (a Trusted Web Activity: this page, in Chrome, full screen). Installed from songs/android.apk it
+  // can't update itself, so the page offers each new build. Its start address says which copy and build it is:
+  // ?app=android-apk&build=N (Google Play's copy says app=android, and Play updates that one), kept for this phone, since
+  // the app opened from a notification starts at that page instead; Chrome gives the app as the referrer either way.
+  // The first builds said nothing (taken as build 0). "In the app" is kept for the visit only (sessionStorage): Chrome's
+  // own tabs share the site's other storage. Like every call into an app, it does nothing unless it finds the app. ----
+  var APK = null;
+  (function () {
+    try {
+      var sp = new URLSearchParams(location.search), kind = sp.get('app');
+      if (kind === 'android' || kind === 'android-apk') {
+        localStorage.setItem('sotd-android', JSON.stringify({ kind: kind, build: parseInt(sp.get('build'), 10) || 0 }));
+        sessionStorage.setItem('sotd-app', '1');
+        sp.delete('app'); sp.delete('build');
+        var rest = sp.toString();
+        history.replaceState(history.state, '', location.pathname + (rest ? '?' + rest : '') + location.hash);
+      } else if (/^android-app:\/\/io\.github\.cooperking\.sotd/.test(document.referrer)) sessionStorage.setItem('sotd-app', '1');
+      if (sessionStorage.getItem('sotd-app')) APK = JSON.parse(localStorage.getItem('sotd-android') || 'null') || { kind: 'android-apk', build: 0 };
+    } catch (e) {}
+    if (!APK || APK.kind !== 'android-apk' || !window.fetch) return;
+    fetch('/songs/android.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
+      if (!j || !j.apk || !(j.build > APK.build)) return;
+      var later = null; try { later = JSON.parse(localStorage.getItem('sotd-apk-later') || 'null'); } catch (e) {}
+      if (later && later.build >= j.build && later.until > Date.now()) return;   // Later: again in three days
+      var bar = document.createElement('div'); bar.className = 'appupd'; bar.setAttribute('role', 'status');
+      var t = document.createElement('span'); t.textContent = 'A new version of the app is ready';
+      var go = document.createElement('a'); go.href = j.apk; go.setAttribute('download', ''); go.textContent = 'Update';   // (downloaded, not opened: the page stays)
+      var no = document.createElement('button'); no.type = 'button'; no.textContent = 'Later';
+      go.addEventListener('click', function () {
+        t.textContent = 'Downloading: open it when it’s done, then Update'; go.remove(); no.textContent = 'OK';
+      });
+      no.addEventListener('click', function () {
+        if (no.textContent === 'Later') try { localStorage.setItem('sotd-apk-later', JSON.stringify({ build: j.build, until: Date.now() + 3 * 864e5 })); } catch (e) {}
+        bar.remove();
+      });
+      bar.appendChild(t); bar.appendChild(go); bar.appendChild(no);
+      document.body.appendChild(bar);
+    }).catch(function () {});
+  })();
   function natToken() { try { return localStorage.getItem('sotd-apns') || ''; } catch (e) { return ''; } }
   function natSend(extra, tok) {
     return fetch(MBASE + '/members/push', { method: 'POST', headers: { Authorization: 'Bearer ' + (tok || plTok()), 'Content-Type': 'application/json' }, body: JSON.stringify(Object.assign({ apns: natToken() }, extra || {})) })

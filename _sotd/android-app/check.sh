@@ -1,6 +1,6 @@
 #!/bin/bash
 # Runs the Android app (songs/android.apk) on an emulated phone with Google Play and Chrome, as someone would: opens it,
-# presses Play all, turns the screen off and on. Saves screenshots, a screen recording, what Android says about the app's
+# presses Play all, turns the screen off and on. First, the build before (OLD_APK) to see the page offer this one. Saves screenshots, a screen recording, what Android says about the app's
 # link to the site, and the log, to _sotd/android-app/check/. Run by .github/workflows/android-check.yml.
 set -x
 OUT=_sotd/android-app/check; rm -rf "$OUT"; mkdir -p "$OUT"
@@ -52,4 +52,24 @@ adb shell pm get-app-links $PKG > "$OUT/app-links.txt" 2>&1
 adb shell dumpsys package d $PKG > "$OUT/domain-verification.txt" 2>&1 || true
 adb shell dumpsys package com.android.chrome | grep -m1 versionName > "$OUT/chrome-version.txt"
 adb logcat -d | grep -v "cr_CronetUrl\|NetworkMonitor\|Nearby\|HeterodyneSyncer\|AiAiEcho" > "$OUT/log.txt"
+offer() {   # is the page offering a newer build of the app? (Chrome's page, through accessibility)
+  adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1; adb pull /sdcard/ui.xml "$OUT/ui-$1.xml" >/dev/null 2>&1
+  if grep -qi "new version of the app" "$OUT/ui-$1.xml"; then echo "offered"; elif grep -qi "Song of the Day" "$OUT/ui-$1.xml"; then echo "not offered"; else echo "unknown (the page wasn't in the accessibility dump; see the screenshot)"; fi
+}
+# the update offer, last (so the checks above are of a first install): this build shouldn't be offered anything; the
+# build before it (OLD_APK, from git; android-check.yml) should be offered this one
+adb shell am force-stop $PKG; adb shell monkey -p $PKG -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1
+sleep 20; shot 5-this-build
+echo "this build: $(offer new)" > "$OUT/update-offer.txt"
+if [ -s "${OLD_APK:-}" ]; then
+  # (Chrome keeps the site's storage, which now says this build is installed: cleared, as on a phone that's only had the old one)
+  adb uninstall $PKG >/dev/null; adb shell pm clear com.android.chrome >/dev/null
+  adb install "$OLD_APK" >/dev/null && adb shell pm grant $PKG android.permission.POST_NOTIFICATIONS || true
+  adb shell monkey -p $PKG -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1
+  sleep 25; shot 6-previous-build
+  echo "the build before: $(offer old)" >> "$OUT/update-offer.txt"
+else
+  echo "the build before: not tried (no earlier build in git)" >> "$OUT/update-offer.txt"
+fi
+cat "$OUT/update-offer.txt"
 ls -la "$OUT"

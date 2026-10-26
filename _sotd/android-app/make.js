@@ -8,7 +8,9 @@ const { TwaManifest, TwaGenerator, ConsoleLog } = require('@bubblewrap/core');
   Object.assign(tm, {
     packageId: 'io.github.cooperking.sotd',
     name: 'John’s Song of the Day', launcherName: 'Song of the Day',
-    startUrl: '/songs/', enableNotifications: true, fallbackType: 'customtabs',
+    // the start address says which copy this is (android.yml: Play's app=android, the site's app=android-apk) and its
+    // build, so the page can offer the site's copy a newer build (Play updates its own)
+    startUrl: process.env.START_URL || '/songs/', enableNotifications: true, fallbackType: 'customtabs',
     appVersionCode: code, appVersionName: '1.' + code,
     signingKey: { path: process.env.KEYSTORE || 'upload.p12', alias: 'sotd' },
     enableSiteSettingsShortcut: true,   // (the helper library looks for its activity on every start: without it the app can't open)

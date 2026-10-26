@@ -36,6 +36,8 @@ jobs:
         working-directory: _sotd/android-app
         env:
           VERSION_CODE: ${{ github.run_number }}
+          # Play's copy; the site's APK says app=android-apk (below), so the page offers it newer builds
+          START_URL: /songs/?app=android&build=${{ github.run_number }}
         run: |
           npm install --no-audit --no-fund
           node make.js
@@ -51,7 +53,12 @@ jobs:
           echo "FP=$FP" >> "$GITHUB_ENV"
           cd _sotd/android-app/project
           chmod +x gradlew
-          ./gradlew --no-daemon -q bundleRelease assembleRelease
+          ./gradlew --no-daemon -q bundleRelease
+          # the site's APK: the same app, its start address saying it came from the site
+          grep -q "launchUrl: '/songs/?app=android&build=" app/build.gradle
+          sed -i "s#launchUrl: '/songs/?app=android&build=#launchUrl: '/songs/?app=android-apk\&build=#" app/build.gradle
+          grep "launchUrl: " app/build.gradle
+          ./gradlew --no-daemon -q assembleRelease
           BT="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)"
           mkdir -p "$RUNNER_TEMP/out"
           cp app/build/outputs/bundle/release/app-release.aab "$RUNNER_TEMP/out/sotd-android.aab"

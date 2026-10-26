@@ -17,5 +17,24 @@ song list copy in the page (the page fetches the live list from the Worker anywa
 
 The other pages in `songs/` (`admin.html`, `members-admin.html`, the share pages) are edited where they are.
 
+## The apps open this page
+
+The Fire TV app, the iPhone app and the Android app all open the live calendar (`/songs/`), so a change here reaches
+them the next time they open, with no new app. An app only needs a new build when its own part changes. Because an
+older app can meet a newer page, and an app with a feature can meet a page without it:
+
+- **Check before calling into an app**: the object and the method, every time (an older app may have the object but
+  not a newer method), and do nothing when they aren't there.
+- **Don't rename what the apps call in the page**: `sotdJoin(code)`, `sotdTV.key(k)`, `sotdTV.back()`. Add new names
+  beside them instead.
+
+What there is now:
+
+| App | The page finds it by | The page calls | The app calls in the page |
+| --- | --- | --- | --- |
+| Fire TV (`_tvapp`) | `SOTDTV/` in the user agent; `window.SOTDTV` | `SOTDTV.playing(on)`; `SOTDTV.advert()` (from the app's own hook) | `sotdJoin`, `sotdTV.key`, `sotdTV.back` (each checked first) |
+| iPhone (`_sotd/ios-app`) | `Capacitor.isNativePlatform()` (`NAT`) | `Capacitor.Plugins.PushNotifications` (`NPUSH`) | nothing |
+| Android (`_sotd/android-app`) | its start address `?app=android-apk&build=N` (Play's copy: `app=android`); first builds: the `android-app://io.github.cooperking.sotd` referrer | nothing: it reads `songs/android.json` and offers the site's APK a newer build | nothing |
+
 Put here on 26 Oct 2026, rebuilt from the live page; `--check` reproduced all four built files exactly. Until then the
 source lived only in each chat's own workspace, so one chat's copy could fall behind another's.
