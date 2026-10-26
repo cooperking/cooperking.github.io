@@ -3,7 +3,8 @@
 # signs it (Xcode's automatic, cloud-managed signing, through the App Store Connect API key) and sends it to App Store
 # Connect, where it turns up in TestFlight a few minutes later; without them it only checks that it builds.
 set -euo pipefail
-cd "$(dirname "$0")/ios/App"
+HERE="$(cd "$(dirname "$0")" && pwd)"
+cd "$HERE/ios/App"
 BUILD="${BUILD_NUMBER:-1}"
 if [ -z "${ASC_KEY_ID:-}" ] || [ -z "${ASC_ISSUER_ID:-}" ] || [ -z "${ASC_KEY_P8:-}" ] || [ -z "${APPLE_TEAM_ID:-}" ]; then
   echo "::warning title=iPhone app::No Apple keys yet (ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8, APPLE_TEAM_ID): built for the simulator only, to check it builds."
@@ -22,6 +23,9 @@ xcb() {
   tail -n 80 "$log"
   exit 65
 }
+# the key checked first, with Apple's API, so a wrong secret is named on the run's page (never its value)
+python3 -m venv "$RUNNER_TEMP/py" && "$RUNNER_TEMP/py/bin/pip" install --quiet pyjwt cryptography \
+  && "$RUNNER_TEMP/py/bin/python" "$HERE/asc_check.py"
 KEY="$RUNNER_TEMP/AuthKey_$ASC_KEY_ID.p8"
 printf '%s\n' "$ASC_KEY_P8" > "$KEY"
 AUTH=(-allowProvisioningUpdates -authenticationKeyPath "$KEY" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID")
