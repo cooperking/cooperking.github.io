@@ -33,7 +33,8 @@ REC=$!
 adb logcat -c
 adb shell cmd package resolve-activity --brief -c android.intent.category.LAUNCHER $PKG > "$OUT/launcher.txt" 2>&1
 adb shell am start -W -a android.intent.action.MAIN -c android.intent.category.LAUNCHER -n "$(tail -1 "$OUT/launcher.txt")" > "$OUT/start.txt" 2>&1
-sleep 8; shot 1-opening
+for i in 1 2 3 4; do sleep 2; shot "0-start-$i"; done
+sleep 1; shot 1-opening
 sleep 14; shot 2-opened
 adb shell dumpsys window | grep -E "mCurrentFocus|mFocusedApp" > "$OUT/focus.txt"
 tap_label "Play every song" play
@@ -45,5 +46,5 @@ adb shell input keyevent KEYCODE_WAKEUP; sleep 2; adb shell wm dismiss-keyguard;
 adb shell pm get-app-links $PKG > "$OUT/app-links.txt" 2>&1
 adb shell dumpsys package d $PKG > "$OUT/domain-verification.txt" 2>&1 || true
 adb shell dumpsys package com.android.chrome | grep -m1 versionName > "$OUT/chrome-version.txt"
-adb logcat -d | grep -iE "ActivityTaskManager|ActivityManager|AndroidRuntime|FATAL|sotd|cooperking|browserhelper|TrustedWeb|Twa|CustomTab|chrome" | grep -v "cr_CronetUrl" | tail -400 > "$OUT/log.txt"
+adb logcat -d | grep -v "cr_CronetUrl\|NetworkMonitor\|Nearby\|HeterodyneSyncer\|AiAiEcho" > "$OUT/log.txt"
 ls -la "$OUT"
