@@ -138,6 +138,13 @@ a quarter smaller, so songs stream and keep offline in less; the Worker plays th
 (the Worker starts it for that song), once a day, and by hand (all of them), with the same secrets as the TV copies. It
 never changes or deletes an MP3 (see *Deleting the originals*).
 
+## Converting before uploading
+
+`_sotd/convert/sotd_convert.py FOLDER` (on the Mac, with ffmpeg) writes `FOLDER/converted/`: songs as AAC 192 kbps `.m4a`,
+videos that need it as the TV's H.264 MP4, with the same settings and checks as the copies made after an upload; files
+already fine are copied as they are. Uploaded on the Songs tab, a `.m4a` goes straight to `l/<track>.m4a` (the song as it's
+played, replacing any MP3 of it), and an H.264 video needs no TV copy, so nothing is made and nothing needs deleting.
+
 ## Deleting the originals
 
 Once a song or video has its copy, the Worker plays the copy and the original isn't played. `.github/workflows/media-originals.yml`

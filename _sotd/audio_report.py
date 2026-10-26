@@ -7,7 +7,7 @@ For each MP3 it reads only the start of the file (the ID3 tag's size and the fir
 what ffprobe reads through a short-lived link: length, bitrate, sample rate, channels, any cover picture inside it.
 Then it sets each song's length beside its video's (_sotd/data/media-report.json), so the songs whose video is longer
 or shorter than the MP3 (an intro or a different ending) are listed. A song whose MP3 has been deleted
-(media_originals.py) is listed with its copy only. Nothing in the bucket is changed.
+(media_originals.py), or that was uploaded as AAC, is listed with its AAC only. Nothing in the bucket is changed.
 
 Streaming, briefly: a browser starts playing once it has the tag at the front of the file and the first frames, so a
 large tag (usually a cover picture) delays the start; a VBR file without its Xing header can't be seeked accurately
@@ -75,7 +75,7 @@ def main():
     songs = {}
     for key, size in sorted(keys):
         t = key[2:-4]
-        e = {'size': size} if size is not None else {'mp3': 'deleted'}
+        e = {'size': size} if size is not None else {'mp3': 'none'}
         try:
             if size is None:
                 raise LookupError
@@ -121,7 +121,7 @@ def main():
     ok = [e for e in songs.values() if 'err' not in e and 'mp3' not in e]   # the MP3s still there
     count = lambda f: sum(1 for e in ok if f(e))
     summary = {
-        'songs': len(songs), 'MP3 deleted, its copy kept': sum(1 for e in songs.values() if 'mp3' in e),
+        'songs': len(songs), 'no MP3, its AAC only': sum(1 for e in songs.values() if 'mp3' in e),
         'unreadable': sum(1 for e in songs.values() if 'err' in e),
         'total MB': round(sum(e['size'] for e in songs.values() if e.get('size')) / 1e6),
         'kbps': {k: count(lambda e, k=k: e.get('kbps') == k) for k in sorted({e.get('kbps') for e in ok})},

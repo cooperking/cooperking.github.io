@@ -418,6 +418,7 @@ const TV_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789', TV_CODE_MINUTES = 30;
 function tvCode() { return [...crypto.getRandomValues(new Uint8Array(6))].map(b => TV_CODE_CHARS[b % TV_CODE_CHARS.length]).join(''); }
 const MEDIA_KINDS = { a: { ext: 'mp3', type: 'audio/mpeg' }, v: { ext: 'mp4', type: 'video/mp4' } };
 const MEDIA_KEY_RE = /^(a\/[0-9A-Za-z]{22}\.mp3|v\/[0-9A-Za-z]{22}\.mp4)$/;
+const LIGHT_KEY_RE = /^l\/[0-9A-Za-z]{22}\.m4a$/;   // a song uploaded already as AAC (_sotd/convert/sotd_convert.py): put where its lighter copy goes
 
 function randomCode(bytes) { return b64url(crypto.getRandomValues(new Uint8Array(bytes))); }
 
@@ -607,9 +608,10 @@ async function memberUpload(request, url, env, answer) {
     if (done.length) await env.SOTD.put('mediaCatalog', JSON.stringify(c));
     return answer(200, { ok: true, marked: done });
   }
-  if (!MEDIA_KEY_RE.test(key)) return answer(400, { error: 'Not one of the files (a/<track>.mp3 or v/<track>.mp4).' });
+  const light = LIGHT_KEY_RE.test(key);
+  if (!MEDIA_KEY_RE.test(key) && !light) return answer(400, { error: 'Not one of the files (a/<track>.mp3, l/<track>.m4a or v/<track>.mp4).' });
   if (op === 'start') {
-    const up = await env.MEDIA.createMultipartUpload(key, { httpMetadata: { contentType: MEDIA_KINDS[key[0]].type } });
+    const up = await env.MEDIA.createMultipartUpload(key, { httpMetadata: { contentType: light ? 'audio/mp4' : MEDIA_KINDS[key[0]].type } });
     return answer(200, { uploadId: up.uploadId });
   }
   if (!id) return answer(400, { error: 'Which upload?' });
@@ -625,6 +627,11 @@ async function memberUpload(request, url, env, answer) {
     const parts = (Array.isArray(body.parts) ? body.parts : []).map(p => ({ partNumber: Number(p.partNumber), etag: String(p.etag) }));
     if (!parts.length) return answer(400, { error: 'No parts.' });
     const obj = await up.complete(parts);
+    if (light) {   // the song as it's played: in the catalog as the song, and an earlier MP3 of it replaced (no copy to make)
+      await catalogSet(env, 'a/' + key.slice(2, 24) + '.mp3', obj.size, typeof body.fp === 'string' ? body.fp.slice(0, 80) : '');
+      await env.MEDIA.delete('a/' + key.slice(2, 24) + '.mp3');
+      return answer(200, { ok: true, key, size: obj.size });
+    }
     await catalogSet(env, key, obj.size, typeof body.fp === 'string' ? body.fp.slice(0, 80) : '');
     if (key[0] === 'v') { await env.MEDIA.delete('h/' + key.slice(2)); await startTvCopy(env, key.slice(2, 24)); }   // a new video: its TV copy made again
     if (key[0] === 'a') { await env.MEDIA.delete('l/' + key.slice(2, 24) + '.m4a'); await startTvCopy(env, key.slice(2, 24), 'audio-light.yml'); }   // a new song: its lighter copy made again

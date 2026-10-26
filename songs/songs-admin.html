@@ -584,7 +584,7 @@
   function pick(s, kind) {
     picking = { s: s, kind: kind };
     var one = $('one'); one.value = '';
-    one.accept = kind === 'a' ? 'audio/mpeg,.mp3' : kind === 'v' ? 'video/mp4,.mp4,.m4v' : 'image/jpeg,image/png,image/webp';
+    one.accept = kind === 'a' ? 'audio/mpeg,.mp3,audio/mp4,.m4a' : kind === 'v' ? 'video/mp4,.mp4,.m4v' : 'image/jpeg,image/png,image/webp';
     one.click();
   }
   $('one').addEventListener('change', function () {
@@ -693,7 +693,7 @@
       .then(function (h) { return f.size + ':' + [].map.call(new Uint8Array(h).slice(0, 16), function (x) { return ('0' + x.toString(16)).slice(-2); }).join(''); });
   }
   function upload(s, kind, f, onPart, fp) {   // in parts (the Worker takes up to 100 MB at a time)
-    var k = kind + '/' + s.id + (kind === 'a' ? '.mp3' : '.mp4'), bar = list.querySelector('[data-bar="' + s.id + '"]');
+    var k = kind === 'a' && /\.m4a$/i.test(f.name || '') ? 'l/' + s.id + '.m4a' : kind + '/' + s.id + (kind === 'a' ? '.mp3' : '.mp4'), bar = list.querySelector('[data-bar="' + s.id + '"]');
     if (bar) { bar.hidden = false; bar.firstChild.style.width = '0%'; }
     var parts = [], n = Math.max(1, Math.ceil(f.size / PART)), id;
     function part(i) {
@@ -794,17 +794,17 @@
     upCount();
   }
   $('folder').addEventListener('change', function () {
-    var files = [].filter.call(this.files, function (f) { return /\.(mp3|mp4|m4v)$/i.test(f.name) && f.name.charAt(0) !== '.'; });
+    var files = [].filter.call(this.files, function (f) { return /\.(mp3|m4a|mp4|m4v)$/i.test(f.name) && f.name.charAt(0) !== '.'; });
     SHOWSAME = false;
     PLAN = files.map(function (f) {
-      var kind = /\.mp3$/i.test(f.name) ? 'a' : 'v', idm = /([0-9A-Za-z]{22})\.(mp3|mp4|m4v)$/.exec(f.name), best = null, bs = 0;
+      var kind = /\.(mp3|m4a)$/i.test(f.name) ? 'a' : 'v', idm = /([0-9A-Za-z]{22})\.(mp3|m4a|mp4|m4v)$/.exec(f.name), best = null, bs = 0;
       if (idm && songs.some(function (s) { return s.id === idm[1]; })) { best = songs.filter(function (s) { return s.id === idm[1]; })[0]; bs = 1; }
       // otherwise the best guess, marked check this when it's weak or another song comes close
       var near = 0;
       if (!bs) songs.forEach(function (s) { var sc = score(f.name, s); if (sc > bs) { near = bs; bs = sc; best = s; } else if (sc > near) near = sc; });
       return { f: f, kind: kind, s: bs >= 0.34 ? best : null, sure: bs >= 0.85 && bs - near > 0.05 };   // a best guess (marked check this) rather than none
     }).sort(function (x, y) { function r(p) { return !p.s ? 0 : !p.sure ? 1 : 2; } return r(x) - r(y) || x.f.name.localeCompare(y.f.name); });   // unmatched, then guesses to check, first
-    if (!PLAN.length) { $('matchbox').hidden = true; toast('No MP3 or MP4 files in that folder'); return; }
+    if (!PLAN.length) { $('matchbox').hidden = true; toast('No songs (MP3, M4A) or videos (MP4) in that folder'); return; }
     $('matchbox').hidden = false; $('matches').innerHTML = ''; $('upall').disabled = true; $('upstat').textContent = 'Checking which files are new or changed…';
     var i = 0;
     (function next() {   // one at a time, so a big folder doesn't fill the memory
