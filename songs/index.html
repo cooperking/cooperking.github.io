@@ -298,10 +298,18 @@ html.big .heroacts .hsub { margin: 0 6px 0 0; }
 .ac-inbox .hd .ac-h { margin: 0; }
 .ac-inbox .allread { border: 0; background: none; padding: 0; font: 600 11px/1.2 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
 .ac-msgs { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-.ac-msgs button { width: 100%; display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; align-items: start; padding: 10px 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--pill-bg); color: var(--fg); text-align: left; cursor: pointer; font: inherit; }
+.ac-msgs > li { border: 1px solid var(--line); border-radius: 14px; background: var(--pill-bg); overflow: hidden; }
+.ac-msgs > li.plain { border: 0; background: none; }
+.ac-msgs .open { width: 100%; display: grid; grid-template-columns: auto 1fr auto; gap: 2px 10px; align-items: start; padding: 10px 12px 4px; border: 0; background: none; color: var(--fg); text-align: left; cursor: pointer; font: inherit; }
 .ac-msgs .dot { grid-row: 1 / span 3; width: 8px; height: 8px; margin-top: 7px; border-radius: 50%; background: transparent; }
+.ac-msgs .cv { grid-column: 3; grid-row: 1 / span 3; width: 46px; height: 46px; border-radius: 6px; object-fit: cover; }
+.ac-msgs .pic { grid-column: 2 / span 2; margin-top: 6px; width: 100%; aspect-ratio: 1200 / 630; object-fit: cover; border-radius: 10px; display: block; background: var(--line); }
+.ac-msgs .acts2 { display: flex; justify-content: flex-end; gap: 14px; padding: 2px 12px 9px 30px; }
+.ac-msgs .acts2 button { border: 0; background: none; padding: 4px 0; font: 600 10.5px/1.2 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); cursor: pointer; }
+.ac-msgs .acts2 button:hover, .ac-msgs .acts2 button:focus-visible { color: var(--fg); }
 .ac-msgs .new .dot { background: #e23a6e; }
-.ac-msgs .t { font: 500 17px/1.2 var(--serif); }
+.ac-msgs .t { grid-column: 2; font: 500 17px/1.2 var(--serif); }
+.ac-msgs .b, .ac-msgs .w { grid-column: 2; }
 .ac-msgs .new .t { font-weight: 600; }
 .ac-msgs .b { font-size: 13.5px; line-height: 1.35; color: var(--fg); opacity: .85; }
 .ac-msgs .w { font-size: 11.5px; color: var(--muted); }
@@ -4646,22 +4654,42 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     ul.textContent = '';
     var items = INBOX.items;
     none.hidden = !(items && !items.length);
-    if (!items) { var w = document.createElement('li'); w.className = 'ac-none'; w.textContent = 'Loading…'; ul.appendChild(w); return; }
+    if (!items) { var w = document.createElement('li'); w.className = 'ac-none plain'; w.textContent = 'Loading…'; ul.appendChild(w); return; }
     items.slice(0, INBOX.shown).forEach(function (x) {
-      var li = document.createElement('li'), b = document.createElement('button'); b.type = 'button'; if (!x.r) b.className = 'new';
+      var li = document.createElement('li'), b = document.createElement('button'); b.type = 'button'; b.className = 'open' + (x.r ? '' : ' new');
       b.innerHTML = '<span class="dot"></span><span class="t"></span>' + (x.b ? '<span class="b"></span>' : '') + '<span class="w"></span>';
       b.querySelector('.t').textContent = x.t; if (x.b) b.querySelector('.b').textContent = x.b; b.querySelector('.w').textContent = ago(x.at);
       b.setAttribute('aria-label', (x.r ? '' : 'New: ') + x.t + (x.b ? '. ' + x.b : ''));
+      // its picture (shown here on every phone, though an iPhone's notification can't): the big one under the words,
+      // or else the cover beside them
+      if (x.i) { var pi = document.createElement('img'); pi.className = 'pic'; pi.alt = ''; pi.loading = 'lazy'; pi.src = x.i; pi.onerror = function () { pi.remove(); }; b.appendChild(pi); }
+      else if (x.c) { var cv = document.createElement('img'); cv.className = 'cv'; cv.alt = ''; cv.loading = 'lazy'; cv.src = x.c; cv.onerror = function () { cv.remove(); }; b.appendChild(cv); }
+      var acts = document.createElement('div'); acts.className = 'acts2';
+      var tg = document.createElement('button'); tg.type = 'button'; tg.textContent = x.r ? 'Mark unread' : 'Mark read';
+      tg.addEventListener('click', function () {
+        var was = !!x.r;
+        if (was) delete x.r; else x.r = Date.now();
+        unreadSet(INBOX.unread + (was ? 1 : -1)); inboxDraw();
+        inboxCall(was ? { unread: [x.id] } : { read: [x.id] }).catch(function () { toast('Couldn’t reach the site. Try again.'); });
+      });
+      var dl = document.createElement('button'); dl.type = 'button'; dl.textContent = 'Delete';
+      dl.addEventListener('click', function () {
+        INBOX.items = INBOX.items.filter(function (y) { return y !== x; });
+        if (!x.r) unreadSet(INBOX.unread - 1);
+        inboxDraw();
+        inboxCall({ del: [x.id] }).then(function () { toast('Deleted'); }).catch(function () { toast('Couldn’t reach the site. Try again.'); });
+      });
+      acts.appendChild(tg); acts.appendChild(dl);
       b.addEventListener('click', function () {
         var go = function () { if (x.u) { if (x.u.split('#')[0] === location.href.split('#')[0] || x.u.split('#')[0] === location.origin + location.pathname) { closeDialog(acct); location.hash = x.u.split('#')[1] || ''; } else location.href = x.u; } };
         if (x.r) { go(); return; }
         x.r = Date.now(); unreadSet(INBOX.unread - 1); inboxDraw();
         inboxCall({ read: [x.id] }).catch(function () {}).then(go);
       });
-      li.appendChild(b); ul.appendChild(li);
+      li.appendChild(b); li.appendChild(acts); ul.appendChild(li);
     });
     if (items.length > INBOX.shown) {
-      var li = document.createElement('li'), m = document.createElement('button'); m.type = 'button'; m.className = 'copy ghost more'; m.textContent = 'Show older';
+      var li = document.createElement('li'), m = document.createElement('button'); li.className = 'plain'; m.type = 'button'; m.className = 'copy ghost more'; m.textContent = 'Show older';
       m.addEventListener('click', function () { INBOX.shown += 20; inboxDraw(); });
       li.appendChild(m); ul.appendChild(li);
     }

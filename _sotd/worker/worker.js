@@ -71,6 +71,7 @@ export default {
       if (url.pathname === '/media/report') return await mediaReport(url, env);
       if (url.pathname === '/app.webmanifest') return appManifest(url);
       if (url.pathname.startsWith('/i/')) return await invitePage(url, env);
+      if (url.pathname.startsWith('/n/')) return await notePic(url, env);
       if (url.pathname === '/covers.json' || url.pathname.startsWith('/c/') || url.pathname.startsWith('/s/')) return await ownCover(request, url, env);
       return page('Song of the Day', '<p>This service makes Spotify playlists from the Song of the Day calendar.</p>');
     } catch (e) {
@@ -532,6 +533,14 @@ async function members(request, url, env) {
       if (pic(body.icon)) msg.icon = pic(body.icon);
       const r = await pushAll(env, msg, to);
       return answer(200, r);
+    }
+    case 'pushpic': {   // a picture for a notification (and the inbox), made small on the members page: kept in R2 at n/<id>.jpg
+      if (!env.MEDIA) return answer(503, { error: 'No R2 bucket is bound to the Worker as MEDIA yet.' });
+      const b64 = String(body.pic || '').replace(/^data:image\/jpeg;base64,/, '');
+      if (!b64 || b64.length > 2.5e6) return answer(400, { error: 'The picture is missing or too big.' });
+      const pid = randomCode(12);
+      await env.MEDIA.put('n/' + pid + '.jpg', Uint8Array.from(atob(b64), ch => ch.charCodeAt(0)), { httpMetadata: { contentType: 'image/jpeg' } });
+      return answer(200, { url: new URL(request.url).origin + '/n/' + pid + '.jpg' });
     }
     case 'invitecard': {   // the invitation's link-preview page and picture (drawn on the members page)
       const m = all[body.id];
@@ -1173,19 +1182,29 @@ async function inboxAdd(env, to, msg) {
   out[''] = item.id;   // (the message's own id, for marking it read from a tap on it)
   return out;
 }
-// /members/inbox: GET the inbox; POST { read: [ids] } or { read: 'all' } marks them read; either way the unread count
+// /members/inbox: GET the inbox; POST { read: [ids] | 'all' }, { unread: [ids] } or { del: [ids] }; each gives it back,
+// with the unread count
 async function memberInbox(request, env, answer) {
   const member = await memberFromToken(request, env);
   if (!member) return answer(401, { error: 'Not a member (any more).' });
   const key = 'inbox:' + member, box = (await env.SOTD.get(key, 'json')) || [];
   if (request.method === 'POST') {
     const body = await request.json().catch(() => ({}));
-    const want = body.read === 'all' ? null : new Set((Array.isArray(body.read) ? body.read : []).map(String));
+    const ids = v => new Set((Array.isArray(v) ? v : []).map(String));
     let changed = false;
-    box.forEach(x => { if (!x.r && (!want || want.has(x.id))) { x.r = Date.now(); changed = true; } });
+    if (body.read) { const want = body.read === 'all' ? null : ids(body.read); box.forEach(x => { if (!x.r && (!want || want.has(x.id))) { x.r = Date.now(); changed = true; } }); }
+    if (body.unread) { const want = ids(body.unread); box.forEach(x => { if (x.r && want.has(x.id)) { delete x.r; changed = true; } }); }
+    if (body.del) { const want = ids(body.del); for (let i = box.length - 1; i >= 0; i--) if (want.has(box[i].id)) { box.splice(i, 1); changed = true; } }
     if (changed) await env.SOTD.put(key, JSON.stringify(box));
   } else if (request.method !== 'GET') return answer(405, { error: 'Use GET or POST.' });
   return answer(200, { items: box, unread: box.filter(x => !x.r).length });
+}
+
+async function notePic(url, env) {   // a notification's picture: anyone with its (unguessable) address, as a phone fetches it unsigned
+  const m = /^\/n\/([\w-]{16})\.jpg$/.exec(url.pathname);
+  const o = m && env.MEDIA ? await env.MEDIA.get('n/' + m[1] + '.jpg') : null;
+  if (!o) return new Response('Not here.', { status: 404 });
+  return new Response(o.body, { headers: { 'Content-Type': 'image/jpeg', 'Cache-Control': 'public, max-age=31536000, immutable', 'Access-Control-Allow-Origin': '*' } });
 }
 
 async function pushCount(env) {
