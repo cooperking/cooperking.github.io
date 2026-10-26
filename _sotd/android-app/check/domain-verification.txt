@@ -1,6 +1,6 @@
 Domain verification status:
   com.google.android.youtube:
-    ID: 7ef99b3a-1ed9-4cee-8066-e41d3425622a
+    ID: c87a0f52-af02-4932-8caf-f6f73e753ed4
     Signatures: [3D:7A:12:23:01:9A:A3:9D:9E:A0:E3:43:6A:B7:C0:89:6B:FB:4F:B6:79:F4:DE:5F:E7:C2:3F:32:6C:8F:99:4A]
     Domain verification state:
       youtu.be: system_configured
@@ -16,7 +16,7 @@ Domain verification status:
           youtube.com
           www.youtube.com
   com.google.android.googlequicksearchbox:
-    ID: 94c384a8-8ece-4e2b-b57f-fd74b86ddb7a
+    ID: 29dea258-899f-452a-bf17-bfdbb5844ed2
     Signatures: [F0:FD:6C:5B:41:0F:25:CB:25:C3:B5:33:46:C8:97:2F:AE:30:F8:EE:74:11:DF:91:04:80:AD:6B:2D:60:DB:83]
     Domain verification state:
       assistant.google.com: system_configured
@@ -41,7 +41,7 @@ Domain verification status:
           podcasts.google.com
           smartlocktvsignin.google
   com.google.android.apps.messaging:
-    ID: 08711d5d-8819-44f6-be7d-ae3b8e1f5e4e
+    ID: d93a03d8-077e-4ea5-ac22-71b53649ae82
     Signatures: [CC:75:52:6D:6C:0F:80:AC:3B:3A:84:EB:44:83:84:40:DB:BE:6B:12:44:43:A7:C7:D7:BD:19:18:2A:C0:22:C9]
     Domain verification state:
       messages.google.com: verified
@@ -51,7 +51,7 @@ Domain verification status:
         Disabled:
           messages.google.com
   com.android.vending:
-    ID: 5b2a0b3b-52e3-46d1-8737-b5cfba84d37e
+    ID: 59df15b0-5b53-4af9-ad9d-1c992aa51929
     Signatures: [F0:FD:6C:5B:41:0F:25:CB:25:C3:B5:33:46:C8:97:2F:AE:30:F8:EE:74:11:DF:91:04:80:AD:6B:2D:60:DB:83]
     Domain verification state:
       play.google.com: system_configured
@@ -63,7 +63,7 @@ Domain verification status:
           play.google.com
           market.android.com
   io.github.cooperking.sotd:
-    ID: 011db3ff-a43a-44b9-b014-cc14fbc2a668
+    ID: 30813b4e-9dbd-461c-be88-fa6116d528ee
     Signatures: [41:98:CB:FD:44:C8:E9:30:34:5F:DE:E1:4E:5E:E4:D8:CE:DD:9B:0E:21:B6:7D:4A:E6:76:C8:4C:0E:E0:18:C6]
     Domain verification state:
       cooperking.github.io: verified
@@ -73,7 +73,7 @@ Domain verification status:
         Disabled:
           cooperking.github.io
   com.google.android.gm:
-    ID: 90b303c2-76d3-4058-aa8e-4493b918944c
+    ID: 01f7e745-41ff-430e-a16a-dd64b1785391
     Signatures: [F0:FD:6C:5B:41:0F:25:CB:25:C3:B5:33:46:C8:97:2F:AE:30:F8:EE:74:11:DF:91:04:80:AD:6B:2D:60:DB:83]
     Domain verification state:
       gmail.app.goo.gl: verified
@@ -105,7 +105,7 @@ Domain verification status:
           meet.google.com
           krahsc.google.com
   com.google.android.apps.docs:
-    ID: 3f785ad4-cd44-4892-90aa-6202bb6eba64
+    ID: c23cf9a5-bd10-43f0-8dbb-1c20c151b04f
     Signatures: [F0:FD:6C:5B:41:0F:25:CB:25:C3:B5:33:46:C8:97:2F:AE:30:F8:EE:74:11:DF:91:04:80:AD:6B:2D:60:DB:83]
     Domain verification state:
       docs.google.com: system_configured
@@ -125,7 +125,7 @@ Domain verification status:
           spreadsheets.google.com
           krahsc.google.com
   com.google.android.apps.maps:
-    ID: 6eec5467-6aca-4acd-ae4e-beb909bf7310
+    ID: 342ad22f-f375-450f-b2a9-74ae90013091
     Signatures: [F0:FD:6C:5B:41:0F:25:CB:25:C3:B5:33:46:C8:97:2F:AE:30:F8:EE:74:11:DF:91:04:80:AD:6B:2D:60:DB:83]
     Domain verification state:
       www.google.com.ag: system_configured
@@ -877,7 +877,7 @@ Domain verification status:
           maps.google.com
           local.google.com
   com.google.android.gms:
-    ID: 7028f097-57b6-4edc-b383-1f96051d3c0f
+    ID: acc5a45d-cd6e-422f-9310-fae40980cc49
     Signatures: [7C:E8:3C:1B:71:F3:D5:72:FE:D0:4C:8D:40:C5:CB:10:FF:75:E6:D8:7D:9D:F6:FB:D5:3F:04:68:C2:90:50:53]
     Domain verification state:
       digitalkeypairing.org: system_configured
@@ -916,7 +916,7 @@ Domain verification status:
           pay.google.com
           near.by
   com.google.android.apps.photos:
-    ID: ca6bd8a7-cbb8-4e7f-b6d9-0ec095e32391
+    ID: 1d0dc2d3-6ecf-48c1-a356-30793a2315a0
     Signatures: [3D:7A:12:23:01:9A:A3:9D:9E:A0:E3:43:6A:B7:C0:89:6B:FB:4F:B6:79:F4:DE:5F:E7:C2:3F:32:6C:8F:99:4A]
     Domain verification state:
       photos.google.com: system_configured
@@ -932,7 +932,7 @@ Domain verification status:
           crowdsource.google.com
           photos.app.goo.gl
   com.google.android.calendar:
-    ID: 280fc221-083b-43f3-9aa0-6cf6ba4522ba
+    ID: ff42bc6d-8abe-4ab8-b99b-53aa0a908ff3
     Signatures: [7C:E8:3C:1B:71:F3:D5:72:FE:D0:4C:8D:40:C5:CB:10:FF:75:E6:D8:7D:9D:F6:FB:D5:3F:04:68:C2:90:50:53]
     Domain verification state:
       www.google.com: system_configured
@@ -948,7 +948,7 @@ Domain verification status:
           client-side-encryption.google.com
           krahsc.google.com
   com.google.android.apps.wallpaper:
-    ID: 5ff667f8-da72-4534-aa69-527b31d1f362
+    ID: e49d9fae-effa-43ad-96e6-66f2e022fff2
     Signatures: [C9:91:98:9A:F9:0C:73:27:5D:CD:5A:60:30:4E:7A:A8:22:4C:50:70:B2:1C:52:DB:10:46:CF:B6:87:8A:C7:7E]
     Domain verification state:
       g.co: system_configured
@@ -958,7 +958,7 @@ Domain verification status:
         Disabled:
           g.co
   com.google.android.apps.youtube.music:
-    ID: 54b47485-bc61-4053-a4fb-ee02e69fcb3e
+    ID: 87f6bc0c-2731-48fd-a6e0-141715e90e64
     Signatures: [A2:A1:AD:7B:A7:F4:1D:FC:A4:51:4E:2A:FE:B9:06:91:71:9A:F6:D0:FD:BE:D4:B0:9B:BF:0E:D8:97:70:1C:EB]
     Domain verification state:
       music.youtube.com: system_configured
@@ -967,7 +967,7 @@ Domain verification status:
       Selection state:
         Disabled:
           music.youtube.com
-  com.google.android.inputmethod.latin f80c0b75-5105-4e01-ae84-152d833bd316:
+  com.google.android.inputmethod.latin 01864161-a352-4cf2-8870-a55bb03a3c5c:
     User all:
       Verification link handling allowed: true
       Selection state:
