@@ -163,7 +163,7 @@
   function key() { return read(KEYS) || ''; }
   function $(id) { return document.getElementById(id); }
   var tt = 0;
-  function toast(m) { var t = $('toast'); t.textContent = m; t.classList.add('show'); clearTimeout(tt); tt = setTimeout(function () { t.classList.remove('show'); }, 2600); }
+  function toast(m) { var t = $('toast'); t.textContent = m; t.classList.add('show'); clearTimeout(tt); tt = setTimeout(function () { t.classList.remove('show'); }, Math.max(2600, m.length * 60)); }   // (long enough to read)
   function api(path, body, raw, type) {
     var h = { Authorization: 'Bearer ' + key() };
     if (!raw) h['Content-Type'] = 'application/json'; else if (type) h['Content-Type'] = type;
@@ -399,7 +399,12 @@
     songPics(x).forEach(function (o) {
       var b = document.createElement('button'); b.type = 'button'; b.className = 'btn small' + (x.pic === o.k ? ' primary' : ''); b.textContent = o.t;
       b.setAttribute('aria-pressed', String(x.pic === o.k));
-      b.addEventListener('click', function () { x.pic = o.k; songPicDraw(); });
+      b.addEventListener('click', function () {
+        x.pic = o.k; songPicDraw();
+        // a photo of his own, and none chosen yet: the photo picker straight away (the Add a picture button is further
+        // down, out of sight in a short window, so the choice looked as if it did nothing)
+        if ((o.k === 'photo' || o.k === 'mine') && !NPIC) { $('npicfile').click(); $('npicbox').scrollIntoView({ block: 'nearest' }); }
+      });
       box.appendChild(b);
     });
     var o = songPics(x).filter(function (o) { return o.k === x.pic; })[0] || {};
@@ -454,7 +459,10 @@
       NPIC = c.toDataURL('image/jpeg', 0.85); $('npicimg').src = NPIC; picShow(true);
       if (NSONG) { NSONG.made = ''; if (NSONG.pic === 'photo') songCard(); else songPicDraw(); }
     };
-    img.onerror = function () { URL.revokeObjectURL(u); toast('That picture couldn’t be opened'); };
+    img.onerror = function () {   // (Chrome can't open an iPhone's HEIC photos; Safari can)
+      URL.revokeObjectURL(u);
+      toast(/hei[cf]/i.test(f.type + ' ' + f.name) ? 'That’s an HEIC photo, which this browser can’t open: export it as a JPEG (Photos: File › Export) and choose that' : 'That picture couldn’t be opened');
+    };
     img.src = u;
   });
   $('npicx').addEventListener('click', function () { NPIC = null; $('npicimg').removeAttribute('src'); picShow(false); });
