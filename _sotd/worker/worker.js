@@ -1068,9 +1068,9 @@ let jobDay = '';   // the London day this copy of the Worker saw a run include t
 // is gone (404/410) is dropped. Each message is encrypted for that device (RFC 8291, aes128gcm) and signed with this
 // Worker's own VAPID key (RFC 8292), made the first time it's needed and kept in KV (vapid); the calendar fetches the
 // public half. A new key would end every subscription, so it's never replaced.
-// The day's song goes out once, when a new song appears at the end of the playlist on its own day (UK time): the
-// cron looks every 10 minutes, and so does every fresh look at the playlist for songs.json. Its first look only notes
-// the song. John's own messages come from the members page (op 'push').
+// The day's song goes out once, when it's the newest on the playlist and John's MP3 and video for it are both up (the
+// cron looks every 10 minutes, and so does every fresh look at the playlist for songs.json). The very first look only
+// notes the song. John's own messages come from the members page (op 'push').
 const LIVE_ORIGIN = 'https://sotd-playlists.cooperking.workers.dev';
 const SITE_SONGS = 'https://cooperking.github.io/songs/';
 const PUSH_MAX = 300, PUSH_TTL = 20 * 3600;
@@ -1170,21 +1170,22 @@ async function memberPush(request, env, answer) {
   }
   return answer(200, { on: true });
 }
-let pushSeen = '';   // this Worker's own note of the last song looked at (so most looks don't read KV)
+let pushDone = '';   // this Worker's own note of the last song sent (so most looks don't read KV)
+// the day's song goes out once both of John's files for it are up (his MP3 and his video), while it's still the newest
+// song and no more than two days old (UK time); until then each look (every 10 minutes) checks again
 async function pushDaily(env, items) {
   const last = items[items.length - 1];
-  if (!last || !last.id || pushSeen === last.id) return;
-  const seen = await env.SOTD.get('pushLast');
-  pushSeen = last.id;
-  if (seen === last.id) return;
-  if (!await kvSoft(env, 'pushLast', last.id)) return;   // can't note it: don't send (it could go twice)
-  if (!seen) return;   // the first look: noted
-  if (londonDay(last.a) !== londonDay()) return;   // not today's (a song taken off the end, or the order changed)
-  const sentIds = (await env.SOTD.get('pushSent', 'json')) || [];
-  if (sentIds.includes(last.id)) return;
-  await kvSoft(env, 'pushSent', JSON.stringify(sentIds.concat(last.id).slice(-60)));
+  if (!last || !last.id || pushDone === last.id) return;
+  const sentRaw = await env.SOTD.get('pushSent', 'json');
+  if (!sentRaw) { await kvSoft(env, 'pushSent', JSON.stringify([last.id])); pushDone = last.id; return; }   // the very first look: noted, not sent
+  if (sentRaw.includes(last.id)) { pushDone = last.id; return; }
   const day = londonDay(last.a);
-  const r = await pushAll(env, { title: last.title, body: last.artist + ' \u00b7 today\u2019s Song of the Day', icon: last.img || '',
+  if ((Date.parse(londonDay()) - Date.parse(day)) / DAY > 2) { pushDone = last.id; return; }   // too old to be news
+  const files = (await catalog(env))[last.id] || {};
+  if (!files.a || !files.v) return;   // waiting for the MP3 and the video
+  if (!await kvSoft(env, 'pushSent', JSON.stringify(sentRaw.concat(last.id).slice(-60)))) return;   // can't note it: don't send (it could go twice)
+  pushDone = last.id;
+  const r = await pushAll(env, { title: last.title, body: last.artist + (day === londonDay() ? ' \u00b7 today\u2019s Song of the Day' : ' \u00b7 the latest Song of the Day'), icon: last.img || '',
     url: SITE_SONGS + '#' + day.slice(8, 10) + '-' + day.slice(5, 7) + '-' + day.slice(0, 4), tag: 'sotd-day' });
   console.log('pushDaily ' + last.id + ': ' + JSON.stringify(r));
 }
