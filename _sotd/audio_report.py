@@ -80,6 +80,17 @@ def main():
                       'art': '%sx%s %s' % (pic[0].get('width'), pic[0].get('height'), pic[0].get('codec_name')) if pic else ''})
         except Exception as x:
             e['err'] = str(x)[:160]
+        try:   # its lighter copy (audio_light.py), if it has one
+            lk = 'l/%s.m4a' % t
+            lsize = s3.head_object(Bucket=BUCKET, Key=lk)['ContentLength']
+            lurl = s3.generate_presigned_url('get_object', Params={'Bucket': BUCKET, 'Key': lk}, ExpiresIn=600)
+            li = json.loads(subprocess.run(['ffprobe', '-v', 'error', '-show_streams', '-show_format', '-of', 'json', lurl],
+                                           capture_output=True, text=True, timeout=120).stdout or '{}')
+            la = next((x for x in li.get('streams', []) if x.get('codec_type') == 'audio'), {})
+            e['light'] = {'size': lsize, 'codec': la.get('codec_name'), 'kbps': round(int(la.get('bit_rate') or 0) / 1000),
+                          'dur': round(float((li.get('format') or {}).get('duration') or 0), 2)}
+        except Exception:
+            pass
         songs[t] = e
         print(t, e, flush=True)
     # beside the videos' lengths
@@ -106,6 +117,10 @@ def main():
         'video 2 to 10 s different': count(lambda e: 'video' in e and 2 < abs(e['video']) <= 10),
         'video over 10 s different': count(lambda e: 'video' in e and abs(e['video']) > 10),
         'no video to compare': count(lambda e: 'video' not in e),
+        'lighter copies': count(lambda e: e.get('light')),
+        'lighter copies MB': round(sum(e['light']['size'] for e in ok if e.get('light')) / 1e6),
+        'their MP3s MB': round(sum(e['size'] for e in ok if e.get('light')) / 1e6),
+        'largest length difference, copy against MP3 (s)': max([abs(e['light']['dur'] - e['dur']) for e in ok if e.get('light')] or [0]),
     }
     json.dump({'at': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()), 'summary': summary, 'songs': songs},
               open(OUT, 'w'), indent=1)

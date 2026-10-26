@@ -98,11 +98,14 @@ def main(args):
                 print('made %s: %.1f MB -> %.1f MB' % (t, os.path.getsize(src) / 1e6, os.path.getsize(dst) / 1e6), flush=True)
             except Exception as e:
                 failed.append((t, str(e)[:200]))
+    note = lambda m: print(m + ('\n::notice title=Songs, lighter::' + m if os.environ.get('GITHUB_ACTIONS') else ''))   # (also on the run's page)
     if made:
-        print('%d copies made: %.0f MB of MP3s -> %.0f MB (%.0f%% smaller)' % (made, before / 1e6, after / 1e6, 100 - after / before * 100))
-    print('%d made, %d kept as MP3 only, %d failed' % (made, len(kept), len(failed)))
+        note('%d copies made: %.0f MB of MP3s -> %.0f MB (%.0f%% smaller)' % (made, before / 1e6, after / 1e6, 100 - after / before * 100))
+    note('%d made, %d kept as MP3 only, %d failed' % (made, len(kept), len(failed)))
+    for t, e in kept:
+        note('kept as MP3 only: %s (%s)' % (t, e))
     for t, e in failed:
-        print('failed', t, e)
+        note('failed: %s %s' % (t, e))
     if failed and not made:
         sys.exit(1)
 
