@@ -6,7 +6,7 @@ set -x
 OUT=_sotd/android-app/check; rm -rf "$OUT"; mkdir -p "$OUT"
 PKG=io.github.cooperking.sotd
 shot() { adb exec-out screencap -p > "$OUT/$1.png"; }
-media() { adb shell dumpsys media_session | grep -iE "package=|state=PlaybackState|metadata" | head -12 > "$OUT/$1.txt"; }
+media() { adb shell dumpsys media_session | grep -v -i bluetooth | grep -iE "package=|state=PlaybackState|metadata|description" | head -20 > "$OUT/$1.txt"; adb shell dumpsys audio | grep -iE "player piid|state:started|usage=USAGE_MEDIA" | head -10 >> "$OUT/$1.txt"; }
 tap_label() {   # tap the first thing on screen whose text or description contains $1 (Chrome's page, through accessibility)
   adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1; adb pull /sdcard/ui.xml "$OUT/ui-$2.xml" >/dev/null 2>&1
   python3 - "$OUT/ui-$2.xml" "$1" <<'PY' > "$OUT/tap-$2.txt"
@@ -38,6 +38,11 @@ sleep 1; shot 1-opening
 sleep 14; shot 2-opened
 adb shell dumpsys window | grep -E "mCurrentFocus|mFocusedApp" > "$OUT/focus.txt"
 tap_label "Play every song" play
+if [ ! -s "$OUT/tap-play.txt" ]; then   # Chrome's page not in the accessibility dump: Play all's place on a Pixel 6 (1080 x 2400)
+  SZ=$(adb shell wm size | grep -o '[0-9]*x[0-9]*' | tail -1); W=${SZ%x*}; H=${SZ#*x}
+  echo "$((W * 643 / 1000)) $((H * 261 / 1000)) (by position, screen $SZ)" > "$OUT/tap-play.txt"
+  adb shell input tap $((W * 643 / 1000)) $((H * 261 / 1000))
+fi
 sleep 12; shot 3-playing; media 3-media-playing
 wait $REC; adb pull /sdcard/opening.mp4 "$OUT/opening.mp4" >/dev/null 2>&1
 adb shell input keyevent KEYCODE_SLEEP
