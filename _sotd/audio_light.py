@@ -9,7 +9,8 @@ l/<track>.m4a in the same R2 bucket: AAC-LC at 192 kbps, the same sample rate, s
 192 kbps is heard as the same as the MP3 by practically everyone, and plays on everything the calendar runs on
 (browsers, iPhones, Android, the Fire TV, Alexa); it's about a quarter smaller, so a song kept offline takes about a
 quarter less room. The Worker plays the copy wherever there is one (/m/a/...), and drops it when a new MP3 is uploaded
-(this then makes a new one). The originals are never changed, so taking the copies away (deleting l/) goes back to them.
+(this then makes a new one). This never changes or deletes an MP3; media_originals.py (by hand) deletes the MP3s whose
+copy has been made, after which the copy is the song.
 
 Each copy is checked before it goes up: its length within a fifth of a second of the MP3's (the same place in the song
 stays the same place), and smaller than the MP3 (a song already below 192 kbps keeps its MP3 only).
@@ -51,7 +52,7 @@ def main(args):
         return
     import boto3
     from botocore.config import Config
-    s3 = boto3.client('s3', endpoint_url='https://%s.r2.cloudflarestorage.com' % ACCOUNT, aws_access_key_id=KEY_ID,
+    s3 = boto3.client('s3', endpoint_url=os.environ.get('R2_ENDPOINT') or 'https://%s.r2.cloudflarestorage.com' % ACCOUNT, aws_access_key_id=KEY_ID,
                       aws_secret_access_key=SECRET, region_name='auto', config=Config(signature_version='s3v4', retries={'max_attempts': 5}))
 
     def listing(prefix):
@@ -69,9 +70,8 @@ def main(args):
 
     originals, copies = listing('a/'), listing('l/')
     tracks = [k[2:24] for k in sorted(originals) if k.endswith('.mp3')]
-    for k in copies:   # a copy whose MP3 has gone: gone too
-        if 'a/%s.mp3' % k[2:24] not in originals:
-            s3.delete_object(Bucket=BUCKET, Key=k); print('removed', k, '(its MP3 is gone)')
+    # (a copy whose MP3 has gone stays: media_originals.py deletes the MP3s that have a copy, and the copy is then the song;
+    # taking a song away on the Songs tab takes its copy too, in the Worker)
     if args:
         tracks = [t for t in tracks if t in args]
     start, made, kept, failed, before, after = time.time(), 0, [], [], 0, 0

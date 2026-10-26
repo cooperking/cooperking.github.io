@@ -121,7 +121,7 @@ Not yet on a real iPhone or Fire TV.
 Many uploaded videos are AV1 or VP9 (YouTube's formats), some 4K, and glitch on a Fire TV Stick. `.github/workflows/video-tv.yml`
 (`_sotd/video_tv.py`) makes an H.264 copy (1080p at most, about 4–5 Mbps, faststart) of each that needs one at `h/<track>.mp4`
 in the R2 bucket; the Worker plays the copy wherever there is one. It runs after each video upload (the Worker starts it for
-that video), once a day, and by hand (all of them). The originals are kept as they are.
+that video), once a day, and by hand (all of them). It never changes or deletes an original (see *Deleting the originals*).
 
 It needs four repository secrets: `R2_ACCESS_KEY_ID` and `R2_SECRET_ACCESS_KEY` (an R2 API token: Cloudflare dashboard,
 R2, Manage R2 API Tokens, Create API token, Object Read & Write, applied to the bucket), `R2_BUCKET` (the bucket's name), and
@@ -134,5 +134,16 @@ The uploaded MP3s are VBR at about 255 kbps, 48 kHz (`_sotd/data/audio-report.js
 a quarter smaller, so songs stream and keep offline in less; the Worker plays the copy wherever there is one (as
 `audio/mp4`), and drops it when a new MP3 is uploaded or the MP3 is deleted. Each copy is checked first: its length within
 0.2 s of the MP3's, and smaller than it (a song already under 192 kbps keeps its MP3 only). It runs after each MP3 upload
-(the Worker starts it for that song), once a day, and by hand (all of them), with the same secrets as the TV copies. The
-MP3s are kept as they are: deleting `l/` goes back to them.
+(the Worker starts it for that song), once a day, and by hand (all of them), with the same secrets as the TV copies. It
+never changes or deletes an MP3 (see *Deleting the originals*).
+
+## Deleting the originals
+
+Once a song or video has its copy, the Worker plays the copy and the original isn't played. `.github/workflows/media-originals.yml`
+(`_sotd/media_originals.py`), by hand only, deletes those originals to save room in the bucket (R2 includes 10 GB a month).
+Run with the box empty it only says what it would delete; with `delete` typed in the box it deletes them. What it did shows
+at the top of the run's page. An original goes only if its copy is newer than it, opens as AAC (a song) or H.264 with sound
+(a video), and is as long as it (0.2 s for a song, 0.5 s for a video); one without a copy, or uploaded again during the run,
+is kept. The Worker's catalog keeps each deleted original's size and fingerprint, so the calendar plays the copy, the Songs
+tab shows the file as there, and a folder upload still knows it's already up. Uploading a song or video again puts a new
+original up and makes a new copy; run this again afterwards. A deleted original can't be got back from the bucket.

@@ -568,6 +568,13 @@ async function members(request, url, env) {
       } while (cursor);
       const c = {}, was = await catalog(env);   // the catalog again from what's really there (fingerprints kept where the size is the same)
       files.forEach(f => { if (MEDIA_KEY_RE.test(f.key)) { const t = f.key.slice(2, 24), k = f.key[0], e = (c[t] = c[t] || {}); e[k] = f.size; const o = was[t] || {}; if (o[k] === f.size && o['f' + k]) e['f' + k] = o['f' + k]; } });
+      files.forEach(f => {   // a song or video whose original has been deleted (media_originals.py) is there as its copy, with
+        const m = /^([lh])\/([0-9A-Za-z]{22})\.(m4a|mp4)$/.exec(f.key);   // the original's size and fingerprint kept
+        if (!m) return;
+        const k = m[1] === 'l' ? 'a' : 'v', t = m[2], e = (c[t] = c[t] || {}), o = was[t] || {};
+        if (e[k]) return;
+        e[k] = o[k] || f.size; if (o[k] && o['f' + k]) e['f' + k] = o['f' + k];
+      });
       await env.SOTD.put('mediaCatalog', JSON.stringify(c));
       return answer(200, { files, catalog: c });
     }
@@ -1029,11 +1036,13 @@ async function mediaReport(url, env) {
   let changed = false;
   for (const t of tracks.slice(from, from + n)) {
     const size = cat[t].v;
+    const hh = await env.MEDIA.head('h/' + t + '.mp4');   // its TV copy, if it has one
     if (!(keep[t] && keep[t].size === size && !keep[t].err)) {
-      try { keep[t] = await probeMp4(env, 'v/' + t + '.mp4', size); } catch (e) { keep[t] = { size, err: String(e && e.message || e).slice(0, 120) }; }
+      const gone = hh && !(await env.MEDIA.head('v/' + t + '.mp4'));   // the original deleted (media_originals.py): the copy it was
+      try { keep[t] = gone ? Object.assign(await probeMp4(env, 'h/' + t + '.mp4', hh.size), { size, copyOnly: true }) : await probeMp4(env, 'v/' + t + '.mp4', size); }
+      catch (e) { keep[t] = { size, err: String(e && e.message || e).slice(0, 120) }; }
       changed = true;
     }
-    const hh = await env.MEDIA.head('h/' + t + '.mp4');   // its TV copy too, if it has one
     if (!hh) { if (keep['h:' + t]) { delete keep['h:' + t]; changed = true; } continue; }
     if (keep['h:' + t] && keep['h:' + t].size === hh.size && !keep['h:' + t].err) continue;
     try { keep['h:' + t] = await probeMp4(env, 'h/' + t + '.mp4', hh.size); } catch (e) { keep['h:' + t] = { size: hh.size, err: String(e && e.message || e).slice(0, 120) }; }

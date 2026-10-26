@@ -9,7 +9,8 @@ Many uploads are AV1 or VP9 (YouTube's formats) and some are 4K: light files, bu
 so they glitch there. Each one that isn't already plain H.264 (1080p or less, 8 Mbps or less, 8-bit) gets a copy at
 h/<track>.mp4 in the same R2 bucket: H.264 High, 1080p at most, about 4 to 5 Mbps (CRF 21, at most 6 Mbps), AAC 160k,
 index first (faststart). The Worker plays the copy wherever there is one (/m/v/...), and drops it when a new video is
-uploaded (this then makes a new one). The originals are never changed, so the folder upload still knows them.
+uploaded (this then makes a new one). This never changes or deletes an original; media_originals.py (by hand) deletes the
+originals whose copy has been made, after which the copy is the video (the folder upload still knows it by the catalog).
 
 Reaches R2 through its S3 API: the repository secrets R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY (an R2 API token with
 Object Read & Write on the bucket), R2_BUCKET and CLOUDFLARE_ACCOUNT_ID. Without them it says so and does nothing.

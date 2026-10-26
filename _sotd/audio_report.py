@@ -6,7 +6,8 @@
 For each MP3 it reads only the start of the file (the ID3 tag's size and the first frame's Xing/Info/VBRI header) and
 what ffprobe reads through a short-lived link: length, bitrate, sample rate, channels, any cover picture inside it.
 Then it sets each song's length beside its video's (_sotd/data/media-report.json), so the songs whose video is longer
-or shorter than the MP3 (an intro or a different ending) are listed. Nothing in the bucket is changed.
+or shorter than the MP3 (an intro or a different ending) are listed. A song whose MP3 has been deleted
+(media_originals.py) is listed with its copy only. Nothing in the bucket is changed.
 
 Streaming, briefly: a browser starts playing once it has the tag at the front of the file and the first frames, so a
 large tag (usually a cover picture) delays the start; a VBR file without its Xing header can't be seeked accurately
@@ -47,7 +48,7 @@ def main():
         sys.exit('Not set up: the repository secrets R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET and CLOUDFLARE_ACCOUNT_ID.')
     import boto3
     from botocore.config import Config
-    s3 = boto3.client('s3', endpoint_url='https://%s.r2.cloudflarestorage.com' % ACCOUNT, aws_access_key_id=KEY_ID,
+    s3 = boto3.client('s3', endpoint_url=os.environ.get('R2_ENDPOINT') or 'https://%s.r2.cloudflarestorage.com' % ACCOUNT, aws_access_key_id=KEY_ID,
                       aws_secret_access_key=SECRET, region_name='auto', config=Config(signature_version='s3v4', retries={'max_attempts': 5}))
     keys, token = [], None
     while True:
@@ -59,11 +60,25 @@ def main():
         if not r.get('IsTruncated'):
             break
         token = r['NextContinuationToken']
+    copies, token = set(), None   # songs whose MP3 has been deleted (media_originals.py) are there as their copy only
+    while True:
+        kw = {'Bucket': BUCKET, 'Prefix': 'l/'}
+        if token:
+            kw['ContinuationToken'] = token
+        r = s3.list_objects_v2(**kw)
+        copies |= {o['Key'][2:-4] for o in r.get('Contents', []) if o['Key'].endswith('.m4a')}
+        if not r.get('IsTruncated'):
+            break
+        token = r['NextContinuationToken']
+    have = {k[2:-4] for k, _ in keys}
+    keys += [('a/%s.mp3' % t, None) for t in copies - have]
     songs = {}
     for key, size in sorted(keys):
         t = key[2:-4]
-        e = {'size': size}
+        e = {'size': size} if size is not None else {'mp3': 'deleted'}
         try:
+            if size is None:
+                raise LookupError
             head = s3.get_object(Bucket=BUCKET, Key=key, Range='bytes=0-9')['Body'].read()
             e['id3'] = id3_size(head)
             frame = s3.get_object(Bucket=BUCKET, Key=key, Range='bytes=%d-%d' % (e['id3'], e['id3'] + 255))['Body'].read()
@@ -78,6 +93,8 @@ def main():
                       'kbps': round(int(a.get('bit_rate') or fmt.get('bit_rate') or 0) / 1000),
                       'dur': round(float(fmt.get('duration') or a.get('duration') or 0), 1),
                       'art': '%sx%s %s' % (pic[0].get('width'), pic[0].get('height'), pic[0].get('codec_name')) if pic else ''})
+        except LookupError:
+            pass
         except Exception as x:
             e['err'] = str(x)[:160]
         try:   # its lighter copy (audio_light.py), if it has one
@@ -91,6 +108,8 @@ def main():
                           'dur': round(float((li.get('format') or {}).get('duration') or 0), 2)}
         except Exception:
             pass
+        if 'mp3' in e and e.get('light'):
+            e['dur'] = round(e['light']['dur'], 1)   # (for the length beside the video's)
         songs[t] = e
         print(t, e, flush=True)
     # beside the videos' lengths
@@ -99,11 +118,12 @@ def main():
         v = vids.get(t)
         if v and v.get('dur') and e.get('dur'):
             e['video'] = round(v['dur'] - e['dur'], 1)   # how much longer the video is (negative: shorter)
-    ok = [e for e in songs.values() if 'err' not in e]
+    ok = [e for e in songs.values() if 'err' not in e and 'mp3' not in e]   # the MP3s still there
     count = lambda f: sum(1 for e in ok if f(e))
     summary = {
-        'songs': len(songs), 'unreadable': len(songs) - len(ok),
-        'total MB': round(sum(e['size'] for e in songs.values()) / 1e6),
+        'songs': len(songs), 'MP3 deleted, its copy kept': sum(1 for e in songs.values() if 'mp3' in e),
+        'unreadable': sum(1 for e in songs.values() if 'err' in e),
+        'total MB': round(sum(e['size'] for e in songs.values() if e.get('size')) / 1e6),
         'kbps': {k: count(lambda e, k=k: e.get('kbps') == k) for k in sorted({e.get('kbps') for e in ok})},
         'sample rates': {k: count(lambda e, k=k: e.get('hz') == k) for k in sorted({e.get('hz') for e in ok})},
         'mono': count(lambda e: e.get('ch') == 1),
@@ -113,12 +133,12 @@ def main():
         'a cover picture inside': count(lambda e: e.get('art')),
         'tag over 300 KB at the front': count(lambda e: e.get('id3', 0) > 300_000),
         'largest tag KB': round(max([e.get('id3', 0) for e in ok] or [0]) / 1000),
-        'video within 2 s of the song': count(lambda e: 'video' in e and abs(e['video']) <= 2),
-        'video 2 to 10 s different': count(lambda e: 'video' in e and 2 < abs(e['video']) <= 10),
-        'video over 10 s different': count(lambda e: 'video' in e and abs(e['video']) > 10),
-        'no video to compare': count(lambda e: 'video' not in e),
-        'lighter copies': count(lambda e: e.get('light')),
-        'lighter copies MB': round(sum(e['light']['size'] for e in ok if e.get('light')) / 1e6),
+        'video within 2 s of the song': sum(1 for e in songs.values() if 'video' in e and abs(e['video']) <= 2),
+        'video 2 to 10 s different': sum(1 for e in songs.values() if 'video' in e and 2 < abs(e['video']) <= 10),
+        'video over 10 s different': sum(1 for e in songs.values() if 'video' in e and abs(e['video']) > 10),
+        'no video to compare': sum(1 for e in songs.values() if 'video' not in e),
+        'lighter copies': sum(1 for e in songs.values() if e.get('light')),
+        'lighter copies MB': round(sum(e['light']['size'] for e in songs.values() if e.get('light')) / 1e6),
         'their MP3s MB': round(sum(e['size'] for e in ok if e.get('light')) / 1e6),
         'largest length difference, copy against MP3 (s)': max([abs(e['light']['dur'] - e['dur']) for e in ok if e.get('light')] or [0]),
     }
