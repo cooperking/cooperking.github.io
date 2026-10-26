@@ -1,9 +1,10 @@
 {
- "at": "2026-10-26T14:41:08Z",
+ "at": "2026-10-26T16:04:11Z",
  "summary": {
   "songs": 259,
+  "MP3 deleted, its copy kept": 249,
   "unreadable": 0,
-  "total MB": 1773,
+  "total MB": 39,
   "kbps": {
    "153": 1,
    "169": 1,
@@ -12,187 +13,81 @@
    "174": 2,
    "175": 1,
    "184": 1,
-   "191": 1,
-   "195": 1,
-   "206": 2,
-   "211": 1,
-   "216": 1,
-   "218": 1,
-   "220": 3,
-   "221": 1,
-   "223": 1,
-   "224": 2,
-   "225": 1,
-   "227": 1,
-   "228": 2,
-   "229": 1,
-   "230": 1,
-   "231": 1,
-   "232": 1,
-   "233": 3,
-   "234": 3,
-   "236": 4,
-   "237": 4,
-   "238": 4,
-   "239": 4,
-   "240": 2,
-   "241": 4,
-   "242": 4,
-   "243": 4,
-   "244": 2,
-   "245": 1,
-   "246": 3,
-   "247": 5,
-   "248": 4,
-   "249": 2,
-   "250": 8,
-   "251": 10,
-   "252": 5,
-   "253": 4,
-   "254": 8,
-   "255": 8,
-   "256": 6,
-   "257": 6,
-   "258": 5,
-   "259": 4,
-   "260": 9,
-   "261": 11,
-   "262": 5,
-   "263": 5,
-   "264": 7,
-   "265": 3,
-   "266": 8,
-   "267": 6,
-   "268": 2,
-   "269": 5,
-   "270": 2,
-   "271": 3,
-   "272": 3,
-   "273": 8,
-   "274": 5,
-   "275": 4,
-   "276": 1,
-   "277": 1,
-   "278": 3,
-   "279": 3,
-   "281": 3,
-   "282": 3,
-   "284": 2,
-   "287": 1,
-   "288": 3,
-   "289": 1,
-   "290": 1,
-   "292": 2,
-   "303": 1
+   "191": 1
   },
   "sample rates": {
-   "48000": 259
+   "48000": 10
   },
   "mono": 0,
-  "VBR (Xing/VBRI)": 259,
+  "VBR (Xing/VBRI)": 10,
   "CBR with an Info header": 0,
   "no seek header": 0,
   "a cover picture inside": 0,
   "tag over 300 KB at the front": 0,
   "largest tag KB": 0,
-  "video within 2 s of the song": 257,
+  "video within 2 s of the song": 258,
   "video 2 to 10 s different": 1,
   "video over 10 s different": 0,
-  "no video to compare": 1,
+  "no video to compare": 0,
   "lighter copies": 249,
   "lighter copies MB": 1332,
-  "their MP3s MB": 1734,
-  "largest length difference, copy against MP3 (s)": 0.09999999999999432
+  "their MP3s MB": 0,
+  "largest length difference, copy against MP3 (s)": 0
  },
  "songs": {
   "007JQyyu6DrGza9XX6scAN": {
-   "size": 6103148,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 251,
-   "dur": 194.4,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4816637,
     "codec": "aac",
     "kbps": 197,
     "dur": 194.39
    },
+   "dur": 194.4,
    "video": 0.0
   },
   "00m7Q2wHED7wAbYq83XxOh": {
-   "size": 5626892,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 240,
-   "dur": 187.6,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4583639,
     "codec": "aac",
     "kbps": 194,
     "dur": 187.57
    },
+   "dur": 187.6,
    "video": 0.0
   },
   "05pizkWWDPXqvpUSwo1DMj": {
-   "size": 2655212,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 255,
-   "dur": 83.2,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 1995009,
     "codec": "aac",
     "kbps": 190,
     "dur": 83.12
    },
-   "video": 0.0
+   "dur": 83.1,
+   "video": 0.1
   },
   "06SgGRLn7xmwCz8wIxIx8U": {
-   "size": 6884684,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 255,
-   "dur": 216.4,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5112650,
     "codec": "aac",
     "kbps": 187,
     "dur": 216.38
    },
+   "dur": 216.4,
    "video": 0.0
   },
   "09IKRwPeAYjmX1iABuP6fn": {
-   "size": 11524412,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 269,
-   "dur": 343.2,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 8435713,
     "codec": "aac",
     "kbps": 195,
     "dur": 343.16
    },
+   "dur": 343.2,
    "video": 0.0
   },
   "0AQSOcvFfPGxofpNuK7zyA": {
@@ -208,651 +103,400 @@
    "video": 0.0
   },
   "0CxWbbbU0PB7ccm6CgHnrf": {
-   "size": 5129828,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 264,
-   "dur": 155.6,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 3717032,
     "codec": "aac",
     "kbps": 190,
     "dur": 155.6
    },
+   "dur": 155.6,
    "video": 0.0
   },
   "0Fjy4haCEoFaiJME5pvbgB": {
-   "size": 6956804,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 236,
-   "dur": 236.0,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5694482,
     "codec": "aac",
     "kbps": 191,
     "dur": 236.01
    },
+   "dur": 236.0,
    "video": 0.1
   },
   "0ISfH0HKPrQd3mWmzk76Ij": {
-   "size": 6169412,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 254,
-   "dur": 194.6,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4845327,
     "codec": "aac",
     "kbps": 198,
     "dur": 194.59
    },
+   "dur": 194.6,
    "video": 0.1
   },
   "0IVAlb0cFCH1cQ974iR1TU": {
-   "size": 6876332,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 246,
-   "dur": 223.6,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5804060,
     "codec": "aac",
     "kbps": 206,
     "dur": 223.55
    },
+   "dur": 223.6,
    "video": -0.1
   },
   "0Ib6SoU3oQTEgWEBVUF1IR": {
-   "size": 6318284,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 234,
-   "dur": 215.7,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5285261,
     "codec": "aac",
     "kbps": 195,
     "dur": 215.63
    },
-   "video": 0.0
+   "dur": 215.6,
+   "video": 0.1
   },
   "0IlYgHJnP4D8HWUCuyJnQW": {
-   "size": 8318324,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 274,
-   "dur": 243.3,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5925850,
     "codec": "aac",
     "kbps": 193,
     "dur": 243.23
    },
-   "video": -0.1
+   "dur": 243.2,
+   "video": 0.0
   },
   "0L2ljTJonS78v8qSlpxM0d": {
-   "size": 8085452,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 241,
-   "dur": 268.6,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 6556640,
     "codec": "aac",
     "kbps": 194,
     "dur": 268.53
    },
-   "video": -0.1
+   "dur": 268.5,
+   "video": 0.0
   },
   "0LS9j29qzv8vKFz2Hi3G8c": {
-   "size": 7387076,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 246,
-   "dur": 240.4,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5839413,
     "codec": "aac",
     "kbps": 193,
     "dur": 240.41
    },
+   "dur": 240.4,
    "video": 0.1
   },
   "0P7DoyGrr4Wp9w5TotEtUC": {
-   "size": 9040388,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 263,
-   "dur": 275.4,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 6718009,
     "codec": "aac",
     "kbps": 194,
     "dur": 275.4
    },
+   "dur": 275.4,
    "video": 0.0
   },
   "0PFVZNMRc3Z8TC3BVn2Dln": {
-   "size": 8124716,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 254,
-   "dur": 255.5,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 6241387,
     "codec": "aac",
     "kbps": 194,
     "dur": 255.49
    },
+   "dur": 255.5,
    "video": 0.0
   },
   "0S3izfZXcQAO6uoVN9mQvn": {
-   "size": 6250700,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 258,
-   "dur": 193.6,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4723992,
     "codec": "aac",
     "kbps": 194,
     "dur": 193.6
    },
+   "dur": 193.6,
    "video": 0.0
   },
   "0Shb2a6oTnJsIxEzn2SDLh": {
-   "size": 5600780,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 269,
-   "dur": 166.3,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 3990817,
     "codec": "aac",
     "kbps": 190,
     "dur": 166.32
    },
+   "dur": 166.3,
    "video": 0.0
   },
   "0SkrhXLkBeVy2QPCWi0Jxz": {
-   "size": 7093580,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 261,
-   "dur": 217.0,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5425948,
     "codec": "aac",
     "kbps": 198,
     "dur": 217.0
    },
+   "dur": 217.0,
    "video": 0.1
   },
   "0U0ldCRmgCqhVvD6ksG63j": {
-   "size": 8033708,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 250,
-   "dur": 256.9,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 6356995,
     "codec": "aac",
     "kbps": 196,
     "dur": 256.86
    },
+   "dur": 256.9,
    "video": 0.0
   },
   "0USF54f34DPnAn9nEmqNIN": {
-   "size": 6389180,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 243,
-   "dur": 210.6,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5014914,
     "codec": "aac",
     "kbps": 189,
     "dur": 210.52
    },
-   "video": 0.0
+   "dur": 210.5,
+   "video": 0.1
   },
   "0UV5zxRMz6AO4ZwUOZNIKI": {
-   "size": 7328516,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 250,
-   "dur": 234.8,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5685307,
     "codec": "aac",
     "kbps": 192,
     "dur": 234.76
    },
+   "dur": 234.8,
    "video": 0.0
   },
   "0WAEGVylZjbe2mQ6Or6HxY": {
-   "size": 7582940,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 247,
-   "dur": 245.4,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 6027964,
     "codec": "aac",
     "kbps": 195,
     "dur": 245.41
    },
+   "dur": 245.4,
    "video": 0.1
   },
   "0Z74CG8R6pWeh7NPnYubFP": {
-   "size": 6467780,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 253,
-   "dur": 204.6,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5047154,
     "codec": "aac",
     "kbps": 196,
     "dur": 204.58
    },
+   "dur": 204.6,
    "video": 0.0
   },
   "0Z7b5GlC70FAES1YduhhqQ": {
-   "size": 7149836,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 244,
-   "dur": 234.3,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5654982,
     "codec": "aac",
     "kbps": 192,
     "dur": 234.3
    },
+   "dur": 234.3,
    "video": 0.1
   },
   "0d7kxiTEwdtY0fAZP8buBC": {
-   "size": 5307548,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 276,
-   "dur": 154.1,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 3750187,
     "codec": "aac",
     "kbps": 193,
     "dur": 154.03
    },
-   "video": 0.0
+   "dur": 154.0,
+   "video": 0.1
   },
   "0fC0IMesoMAtirBH2VVjqm": {
-   "size": 8215196,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 260,
-   "dur": 253.0,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 6297961,
     "codec": "aac",
     "kbps": 198,
     "dur": 252.93
    },
-   "video": -0.1
+   "dur": 252.9,
+   "video": 0.0
   },
   "0fN65FwO4sNc07YBFFNDxt": {
-   "size": 5215628,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 258,
-   "dur": 161.9,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 3972368,
     "codec": "aac",
     "kbps": 195,
     "dur": 161.83
    },
-   "video": -0.1
+   "dur": 161.8,
+   "video": 0.0
   },
   "0g95vn2Szj5apK4CIOcyAZ": {
-   "size": 6460028,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 273,
-   "dur": 189.2,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4698842,
     "codec": "aac",
     "kbps": 197,
     "dur": 189.16
    },
+   "dur": 189.2,
    "video": 0.0
   },
   "0gjcEL2CTKu3fT9qMVVu2w": {
-   "size": 7574828,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 275,
-   "dur": 220.6,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5447912,
     "codec": "aac",
     "kbps": 196,
     "dur": 220.52
    },
-   "video": 0.0
+   "dur": 220.5,
+   "video": 0.1
   },
   "0iI3MhPi785gdx8SUySPay": {
-   "size": 5803052,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 228,
-   "dur": 203.6,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4984764,
     "codec": "aac",
     "kbps": 194,
     "dur": 203.6
    },
+   "dur": 203.6,
    "video": 0.1
   },
   "0jhDyfdBiRfMi3jh9z2S0U": {
-   "size": 6836252,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 238,
-   "dur": 230.2,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5748996,
     "codec": "aac",
     "kbps": 198,
     "dur": 230.2
    },
+   "dur": 230.2,
    "video": 0.1
   },
   "0lbPLoj61m0e7jPMdGF5yK": {
-   "size": 8050124,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 254,
-   "dur": 253.3,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 6359325,
     "codec": "aac",
     "kbps": 199,
     "dur": 253.22
    },
-   "video": 0.0
+   "dur": 253.2,
+   "video": 0.1
   },
   "0lsM3dkpJuMN2KYrGI1WLK": {
-   "size": 3177980,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 195,
-   "dur": 130.1,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 3118466,
     "codec": "aac",
     "kbps": 190,
     "dur": 130.07
    },
+   "dur": 130.1,
    "video": 0.0
   },
   "0pJW1Xw3aY4Eh6k5iuBkfI": {
-   "size": 10912220,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 252,
-   "dur": 346.3,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 8476875,
     "codec": "aac",
     "kbps": 194,
     "dur": 346.31
    },
+   "dur": 346.3,
    "video": 0.1
   },
   "0qgZruwLnh1ed7Z7ZXNMTc": {
-   "size": 8652380,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 242,
-   "dur": 285.5,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 6907579,
     "codec": "aac",
     "kbps": 192,
     "dur": 285.44
    },
-   "video": 0.0
+   "dur": 285.4,
+   "video": 0.1
   },
   "0vuZebTvcwkstUpoo82lpG": {
-   "size": 5359004,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 218,
-   "dur": 196.8,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4893596,
     "codec": "aac",
     "kbps": 197,
     "dur": 196.8
    },
+   "dur": 196.8,
    "video": 0.1
   },
   "0wTtJ4sR7OnlqB26YiNK56": {
-   "size": 8388620,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 257,
-   "dur": 261.0,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 6176837,
     "codec": "aac",
     "kbps": 188,
     "dur": 261.01
    },
+   "dur": 261.0,
    "video": 0.1
   },
   "0xTmJJm3wSlJ1877tW8GrL": {
-   "size": 6739172,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 272,
-   "dur": 197.9,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4832135,
     "codec": "aac",
     "kbps": 194,
     "dur": 197.87
-   }
+   },
+   "dur": 197.9,
+   "video": 0.0
   },
   "0yT9wIJek4ZuMCTZA61mUc": {
-   "size": 5882948,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 206,
-   "dur": 228.7,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5587880,
     "codec": "aac",
     "kbps": 194,
     "dur": 228.65
    },
+   "dur": 228.7,
    "video": 0.0
   },
   "13Mzsb8VzRSZ5w3pM48cn6": {
-   "size": 7086956,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 266,
-   "dur": 213.0,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5370886,
     "codec": "aac",
     "kbps": 200,
     "dur": 213.0
    },
+   "dur": 213.0,
    "video": 0.0
   },
   "13iTIQHlw3VHIdycCUcc3M": {
-   "size": 7203332,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 243,
-   "dur": 237.3,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5788634,
     "codec": "aac",
     "kbps": 194,
     "dur": 237.25
    },
-   "video": 0.2
+   "dur": 237.2,
+   "video": 0.3
   },
   "14I61w6cyYUHiV2n28IYdP": {
    "size": 4221692,
@@ -867,219 +511,135 @@
    "video": 0.1
   },
   "15EOCEksKtUd844TrW9Tjv": {
-   "size": 7080908,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 256,
-   "dur": 221.6,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5525684,
     "codec": "aac",
     "kbps": 198,
     "dur": 221.55
    },
+   "dur": 221.6,
    "video": 0.0
   },
   "1A2BT8JYVRjsKdswwvWXG6": {
-   "size": 8405612,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 224,
-   "dur": 300.3,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 7374668,
     "codec": "aac",
     "kbps": 195,
     "dur": 300.31
    },
+   "dur": 300.3,
    "video": 0.1
   },
   "1ABegtCPBMMJaMpfDyATjE": {
-   "size": 5581868,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 274,
-   "dur": 163.1,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4063243,
     "codec": "aac",
     "kbps": 198,
     "dur": 163.08
    },
+   "dur": 163.1,
    "video": 0.0
   },
   "1CPTAkaqBwFfe7xUjScKIr": {
-   "size": 6655436,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 275,
-   "dur": 193.3,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4745610,
     "codec": "aac",
     "kbps": 195,
     "dur": 193.32
    },
+   "dur": 193.3,
    "video": 0.0
   },
   "1FNS17AcgHo7Uol0Li9Xfx": {
-   "size": 8074892,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 266,
-   "dur": 243.1,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 6193075,
     "codec": "aac",
     "kbps": 202,
     "dur": 243.03
    },
-   "video": 0.0
+   "dur": 243.0,
+   "video": 0.1
   },
   "1Fem9jSJEleNWT1kgt70ST": {
-   "size": 6549500,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 251,
-   "dur": 208.5,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5131189,
     "codec": "aac",
     "kbps": 195,
     "dur": 208.46
    },
+   "dur": 208.5,
    "video": 0.0
   },
   "1G0ku3TLCGwrAHj9WPudKX": {
-   "size": 6453428,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 262,
-   "dur": 197.1,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4829021,
     "codec": "aac",
     "kbps": 195,
     "dur": 197.03
    },
-   "video": 0.0
+   "dur": 197.0,
+   "video": 0.1
   },
   "1G4aMGkzJV5yqF3XRHNqWL": {
-   "size": 5736716,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 241,
-   "dur": 190.4,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4708356,
     "codec": "aac",
     "kbps": 196,
     "dur": 190.39
    },
+   "dur": 190.4,
    "video": 0.1
   },
   "1GIV1YzfuFzYAoUjwx3r7W": {
-   "size": 5812316,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 263,
-   "dur": 176.6,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4306585,
     "codec": "aac",
     "kbps": 194,
     "dur": 176.6
    },
+   "dur": 176.6,
    "video": 0.0
   },
   "1LqHKAfYbUaAOlDVs9kqcf": {
-   "size": 8973908,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 251,
-   "dur": 286.5,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 7078366,
     "codec": "aac",
     "kbps": 196,
     "dur": 286.45
    },
-   "video": 0.0
+   "dur": 286.4,
+   "video": 0.1
   },
   "1P3S1DDr0qEENA8Zy3RLmG": {
-   "size": 4754468,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 256,
-   "dur": 148.7,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 3688377,
     "codec": "aac",
     "kbps": 197,
     "dur": 148.69
    },
+   "dur": 148.7,
    "video": 0.0
   },
   "1Ryxsiacu8pUXIMCVnIQ8J": {
-   "size": 7184684,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 282,
-   "dur": 203.6,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5030897,
     "codec": "aac",
     "kbps": 196,
     "dur": 203.55
    },
+   "dur": 203.6,
    "video": 0.0
   },
   "1SJvBv2vJnJqguLFD46pBK": {
@@ -1095,220 +655,136 @@
    "video": -0.1
   },
   "1SmzAbt4g7a1FfAIwovtwq": {
-   "size": 10582604,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 284,
-   "dur": 298.4,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 7437035,
     "codec": "aac",
     "kbps": 198,
     "dur": 298.38
    },
+   "dur": 298.4,
    "video": 0.0
   },
   "1Tq1uBzzuRywZEme8QijxT": {
-   "size": 7875980,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 251,
-   "dur": 251.0,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 6193895,
     "codec": "aac",
     "kbps": 196,
     "dur": 250.97
    },
+   "dur": 251.0,
    "video": 0.0
   },
   "1WFFonSzN8LuoIC3R8Ja53": {
-   "size": 4352972,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 236,
-   "dur": 147.6,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 3529495,
     "codec": "aac",
     "kbps": 190,
     "dur": 147.56
    },
+   "dur": 147.6,
    "video": 0.0
   },
   "1WaBuuaXGwrU4sFvxAjnkf": {
-   "size": 4007564,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 267,
-   "dur": 120.1,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 2905426,
     "codec": "aac",
     "kbps": 192,
     "dur": 120.07
    },
+   "dur": 120.1,
    "video": 0.0
   },
   "1XxRYmDKuABtbtCozx3pA2": {
-   "size": 6215828,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 233,
-   "dur": 213.7,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5255892,
     "codec": "aac",
     "kbps": 195,
     "dur": 213.71
    },
+   "dur": 213.7,
    "video": 0.1
   },
   "1acb8u70kClk6NjITaZyuG": {
-   "size": 6979484,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 265,
-   "dur": 211.0,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5038684,
     "codec": "aac",
     "kbps": 190,
     "dur": 210.97
    },
+   "dur": 211.0,
    "video": 0.0
   },
   "1aoFQBQrclXuxUTCldGNYh": {
-   "size": 5463452,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 250,
-   "dur": 174.8,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4265914,
     "codec": "aac",
     "kbps": 194,
     "dur": 174.8
    },
+   "dur": 174.8,
    "video": 0.0
   },
   "1cAHI9tJN6oHMdG4ghlQKY": {
-   "size": 5752916,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 260,
-   "dur": 176.8,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4345904,
     "codec": "aac",
     "kbps": 195,
     "dur": 176.76
    },
+   "dur": 176.8,
    "video": 0.0
   },
   "1g422OzRyFhcRH1yMWaW14": {
-   "size": 8454908,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 252,
-   "dur": 268.1,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 6553042,
     "codec": "aac",
     "kbps": 194,
     "dur": 268.08
    },
+   "dur": 268.1,
    "video": 0.0
   },
   "1kQToxrczVpLtYdssdOsrr": {
-   "size": 7157156,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 249,
-   "dur": 230.0,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5649861,
     "codec": "aac",
     "kbps": 195,
     "dur": 230.0
    },
+   "dur": 230.0,
    "video": 0.1
   },
   "1nGsq8KWsWVWnbhRkMaXGc": {
-   "size": 7702460,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 264,
-   "dur": 233.2,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5783784,
     "codec": "aac",
     "kbps": 197,
     "dur": 233.15
    },
+   "dur": 233.2,
    "video": 0.0
   },
   "1oar8gdDX5yHWzVstAHDav": {
-   "size": 5720780,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 252,
-   "dur": 181.3,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4456062,
     "codec": "aac",
     "kbps": 195,
     "dur": 181.23
    },
-   "video": -0.1
+   "dur": 181.2,
+   "video": 0.0
   },
   "1qRA5BS78u3gME0loMl9AA": {
    "size": 3040652,
@@ -1323,237 +799,146 @@
    "video": 0.0
   },
   "1qpt5uh3yuEM7fo4rNU688": {
-   "size": 7563692,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 223,
-   "dur": 271.6,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 6702058,
     "codec": "aac",
     "kbps": 196,
     "dur": 271.56
    },
+   "dur": 271.6,
    "video": 0.0
   },
   "1sN36lAQq4ElbU1dgNefol": {
-   "size": 6277676,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 255,
-   "dur": 197.3,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4873950,
     "codec": "aac",
     "kbps": 196,
     "dur": 197.27
    },
+   "dur": 197.3,
    "video": 0.0
   },
   "1uwTbud19jsbc5BkRmt5rN": {
-   "size": 8505884,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 278,
-   "dur": 245.0,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 6019037,
     "codec": "aac",
     "kbps": 195,
     "dur": 244.93
    },
-   "video": -0.1
+   "dur": 244.9,
+   "video": 0.0
   },
   "1x5r0EPkRhWLVbHQeyCiZE": {
-   "size": 5543780,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 239,
-   "dur": 185.6,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4143974,
     "codec": "aac",
     "kbps": 177,
     "dur": 185.58
    },
+   "dur": 185.6,
    "video": 0.0
   },
   "1yK9LISg5uBOOW5bT2Wm0i": {
-   "size": 8352236,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 239,
-   "dur": 279.4,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 6927517,
     "codec": "aac",
     "kbps": 197,
     "dur": 279.36
    },
+   "dur": 279.4,
    "video": 0.0
   },
   "1yw66ZPsfqblI4PFcEdIKe": {
-   "size": 10796540,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 263,
-   "dur": 328.9,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 8273781,
     "codec": "aac",
     "kbps": 200,
     "dur": 328.92
    },
+   "dur": 328.9,
    "video": 0.0
   },
   "20mUVwCxR1x2d5SuBRGW1F": {
-   "size": 5909564,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 237,
-   "dur": 199.4,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4837791,
     "codec": "aac",
     "kbps": 193,
     "dur": 199.33
    },
-   "video": 0.0
+   "dur": 199.3,
+   "video": 0.1
   },
   "21xq13U2jrLgDG5yWCqoGI": {
-   "size": 10517180,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 260,
-   "dur": 323.6,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 8051135,
     "codec": "aac",
     "kbps": 198,
     "dur": 323.53
    },
-   "video": 0.0
+   "dur": 323.5,
+   "video": 0.1
   },
   "23y2DjW3Ljd7o0ZcFnqRo9": {
-   "size": 6555548,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 253,
-   "dur": 207.0,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4984856,
     "codec": "aac",
     "kbps": 191,
     "dur": 206.93
    },
-   "video": 0.0
+   "dur": 206.9,
+   "video": 0.1
   },
   "29Fam5ByZMf0lKBdEnNfnR": {
-   "size": 7522604,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 264,
-   "dur": 227.9,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5644831,
     "codec": "aac",
     "kbps": 197,
     "dur": 227.81
    },
-   "video": -0.1
+   "dur": 227.8,
+   "video": 0.0
   },
   "29O9cSdpmLZKFcTRMlnqo2": {
-   "size": 10249484,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 261,
-   "dur": 314.2,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 7725918,
     "codec": "aac",
     "kbps": 195,
     "dur": 314.13
    },
-   "video": 0.0
+   "dur": 314.1,
+   "video": 0.1
   },
   "29U7stRjqHU6rMiS8BfaI9": {
-   "size": 4219652,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 243,
-   "dur": 138.8,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 3331218,
     "codec": "aac",
     "kbps": 191,
     "dur": 138.73
    },
-   "video": 0.0
+   "dur": 138.7,
+   "video": 0.1
   },
   "2AX1pP318rwvRa3lYZ3sJC": {
-   "size": 5874092,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 250,
-   "dur": 187.7,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4722670,
     "codec": "aac",
     "kbps": 200,
     "dur": 187.65
    },
+   "dur": 187.7,
    "video": 0.0
   },
   "2CwNOqVypdZfKA8lXQKSUb": {
@@ -1569,687 +954,421 @@
    "video": 0.0
   },
   "2DBlfjL5chsdeULzhTp5K8": {
-   "size": 5752556,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 266,
-   "dur": 173.3,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4276698,
     "codec": "aac",
     "kbps": 196,
     "dur": 173.27
    },
+   "dur": 173.3,
    "video": 0.0
   },
   "2FPcTfECQrZviBAarAHv1f": {
-   "size": 6326228,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 262,
-   "dur": 193.1,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4801426,
     "codec": "aac",
     "kbps": 197,
     "dur": 193.05
    },
+   "dur": 193.1,
    "video": 0.0
   },
   "2Fw4gGClr8zVFZVwIRjyWK": {
-   "size": 5553932,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 268,
-   "dur": 165.6,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4074222,
     "codec": "aac",
     "kbps": 195,
     "dur": 165.58
    },
+   "dur": 165.6,
    "video": 0.0
   },
   "2GORop0i2cyx8C0A3JzL44": {
-   "size": 6065324,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 269,
-   "dur": 180.5,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4438121,
     "codec": "aac",
     "kbps": 195,
     "dur": 180.48
    },
+   "dur": 180.5,
    "video": 0.0
   },
   "2KSwmLHkgjZCE49YFkgspo": {
-   "size": 6777452,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 261,
-   "dur": 207.6,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5179851,
     "codec": "aac",
     "kbps": 198,
     "dur": 207.61
    },
+   "dur": 207.6,
    "video": 0.0
   },
   "2KnfMlqUIr2RLFIRlCQzhw": {
-   "size": 6289388,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 270,
-   "dur": 186.5,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4662274,
     "codec": "aac",
     "kbps": 198,
     "dur": 186.47
    },
+   "dur": 186.5,
    "video": 0.0
   },
   "2OPh8c8b2jKTAp5WWpLSxd": {
-   "size": 6148724,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 241,
-   "dur": 204.5,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5148853,
     "codec": "aac",
     "kbps": 200,
     "dur": 204.48
    },
+   "dur": 204.5,
    "video": 0.1
   },
   "2R2sXZXyRcEMdoHxeYyBtF": {
-   "size": 8260916,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 253,
-   "dur": 261.0,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 6402750,
     "codec": "aac",
     "kbps": 195,
     "dur": 260.99
    },
+   "dur": 261.0,
    "video": 0.0
   },
   "2Tp3uEfVC5FNiIdGFWQxOC": {
-   "size": 9435212,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 274,
-   "dur": 275.3,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 6787667,
     "codec": "aac",
     "kbps": 196,
     "dur": 275.24
    },
-   "video": 0.0
+   "dur": 275.2,
+   "video": 0.1
   },
   "2YJgM8lj4u5YEZRSHSfL60": {
-   "size": 11023628,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 292,
-   "dur": 301.8,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 7367573,
     "codec": "aac",
     "kbps": 194,
     "dur": 301.72
    },
-   "video": -0.1
+   "dur": 301.7,
+   "video": 0.0
   },
   "2aBSFHjDOewbd4mdqhwTAb": {
-   "size": 6645188,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 245,
-   "dur": 217.1,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5297564,
     "codec": "aac",
     "kbps": 194,
     "dur": 217.05
    },
+   "dur": 217.1,
    "video": 0.0
   },
   "2aoHAxXJYM1sF71NT1cLg0": {
-   "size": 6559100,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 260,
-   "dur": 202.1,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4973078,
     "codec": "aac",
     "kbps": 195,
     "dur": 202.09
    },
+   "dur": 202.1,
    "video": 0.0
   },
   "2c4zwlPMc5dHS3Kg6oeUjk": {
-   "size": 7357844,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 232,
-   "dur": 253.7,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 6198313,
     "codec": "aac",
     "kbps": 194,
     "dur": 253.62
    },
-   "video": 0.0
+   "dur": 253.6,
+   "video": 0.1
   },
   "2cxRPp0Qlk7DtkZQnq3laf": {
-   "size": 6154844,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 236,
-   "dur": 208.5,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5094825,
     "codec": "aac",
     "kbps": 194,
     "dur": 208.43
    },
-   "video": 0.0
+   "dur": 208.4,
+   "video": 0.1
   },
   "2dpGNisIy8LNjpEGzDdtft": {
-   "size": 9406988,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 249,
-   "dur": 302.8,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 7327435,
     "codec": "aac",
     "kbps": 192,
     "dur": 302.75
    },
+   "dur": 302.8,
    "video": 0.0
   },
   "2eJogHu4qygT1BDhAve9Us": {
-   "size": 5244068,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 255,
-   "dur": 164.4,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4148669,
     "codec": "aac",
     "kbps": 200,
     "dur": 164.37
    },
+   "dur": 164.4,
    "video": 0.0
   },
   "2gOiPzXFWh2Rw5SdEECM4K": {
-   "size": 6957740,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 270,
-   "dur": 206.1,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5280605,
     "codec": "aac",
     "kbps": 203,
     "dur": 206.08
    },
+   "dur": 206.1,
    "video": 0.0
   },
   "2h9uCNUYH0mJkeEwQChtT8": {
-   "size": 6140996,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 243,
-   "dur": 202.6,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4876514,
     "codec": "aac",
     "kbps": 191,
     "dur": 202.53
    },
-   "video": -0.1
+   "dur": 202.5,
+   "video": 0.0
   },
   "2hPaiBndfRVCpYyIqv5zQG": {
-   "size": 7063964,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 259,
-   "dur": 218.4,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5154674,
     "codec": "aac",
     "kbps": 187,
     "dur": 218.35
    },
-   "video": 0.0
+   "dur": 218.3,
+   "video": 0.1
   },
   "2hq50hCUUknhUXZ9uL3wgq": {
-   "size": 4939916,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 269,
-   "dur": 146.7,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 3622976,
     "codec": "aac",
     "kbps": 196,
     "dur": 146.68
    },
+   "dur": 146.7,
    "video": 0.0
   },
   "2kIDECuRDbagrRqLOY3Mnm": {
-   "size": 4284812,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 256,
-   "dur": 134.1,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 3328540,
     "codec": "aac",
     "kbps": 197,
     "dur": 134.06
    },
+   "dur": 134.1,
    "video": 0.0
   },
   "2l0KF9ywMxglacqb7Nb6H0": {
-   "size": 6980252,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 257,
-   "dur": 217.7,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5385004,
     "codec": "aac",
     "kbps": 196,
     "dur": 217.66
    },
+   "dur": 217.7,
    "video": 0.0
   },
   "2mpFugcHYSOPZSVdTu5OUw": {
-   "size": 6095180,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 234,
-   "dur": 208.5,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5161475,
     "codec": "aac",
     "kbps": 196,
     "dur": 208.49
    },
+   "dur": 208.5,
    "video": 0.0
   },
   "2uEWM5lSQsl0ubzbxFd6U7": {
-   "size": 5163884,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 260,
-   "dur": 158.6,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 3929958,
     "codec": "aac",
     "kbps": 197,
     "dur": 158.6
    },
+   "dur": 158.6,
    "video": 0.1
   },
   "2w4yylkuKugYjEVhwKc0OD": {
-   "size": 6502556,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 269,
-   "dur": 193.4,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4764448,
     "codec": "aac",
     "kbps": 196,
     "dur": 193.37
    },
+   "dur": 193.4,
    "video": 0.0
   },
   "2wFdAZ7IgvRnTRZ4OOPdGS": {
-   "size": 7368668,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 272,
-   "dur": 216.6,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5451718,
     "codec": "aac",
     "kbps": 200,
     "dur": 216.59
    },
+   "dur": 216.6,
    "video": 0.0
   },
   "2yFRJ1eJjycB5auItpeT5S": {
-   "size": 5291228,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 255,
-   "dur": 166.1,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4088362,
     "codec": "aac",
     "kbps": 195,
     "dur": 166.04
    },
-   "video": 0.0
+   "dur": 166.0,
+   "video": 0.1
   },
   "2zhOjOH2DvARkRcCvCo7DC": {
-   "size": 6317804,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 237,
-   "dur": 212.9,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5236352,
     "codec": "aac",
     "kbps": 195,
     "dur": 212.84
    },
-   "video": -0.1
+   "dur": 212.8,
+   "video": 0.0
   },
   "30Wb4wrx78MZ8lAXfVb7wk": {
-   "size": 6202700,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 257,
-   "dur": 193.2,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4728670,
     "codec": "aac",
     "kbps": 194,
     "dur": 193.21
    },
+   "dur": 193.2,
    "video": 0.1
   },
   "30zaeAGK7hGe1N406m3pKL": {
-   "size": 9801068,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 264,
-   "dur": 296.9,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 7393255,
     "codec": "aac",
     "kbps": 198,
     "dur": 296.85
    },
+   "dur": 296.9,
    "video": 0.0
   },
   "31ijr2O0SsuzAPVDLnq3XV": {
-   "size": 7499612,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 292,
-   "dur": 205.4,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5031831,
     "codec": "aac",
     "kbps": 194,
     "dur": 205.35
    },
-   "video": 0.0
+   "dur": 205.3,
+   "video": 0.1
   },
   "3GWhvJNnbkhl3iMK1W4iQC": {
-   "size": 7657676,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 230,
-   "dur": 266.9,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 6522598,
     "codec": "aac",
     "kbps": 194,
     "dur": 266.86
    },
+   "dur": 266.9,
    "video": 0.0
   },
   "3K5VXelPukt6EXUcCeCS67": {
-   "size": 7248332,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 236,
-   "dur": 245.3,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 6006368,
     "codec": "aac",
     "kbps": 194,
     "dur": 245.25
    },
-   "video": 0.0
+   "dur": 245.2,
+   "video": 0.1
   },
   "3LTinH60rltyAZiMmHF7JH": {
-   "size": 5588492,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 279,
-   "dur": 160.5,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 3934422,
     "codec": "aac",
     "kbps": 195,
     "dur": 160.48
    },
+   "dur": 160.5,
    "video": 0.0
   },
   "3LXWz3LTASiVb63HWc7Wa7": {
-   "size": 8350292,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 244,
-   "dur": 273.8,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 6826108,
     "codec": "aac",
     "kbps": 198,
     "dur": 273.76
    },
+   "dur": 273.8,
    "video": 0.0
   },
   "3Nt1G38u1lalca5B2lm8Sd": {
-   "size": 9864188,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 237,
-   "dur": 333.0,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 8309029,
     "codec": "aac",
     "kbps": 198,
     "dur": 332.96
    },
+   "dur": 333.0,
    "video": 0.1
   },
   "3OZzMeazGgm3HnTQXRsXAk": {
-   "size": 6923084,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 242,
-   "dur": 229.0,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5623128,
     "codec": "aac",
     "kbps": 195,
     "dur": 229.01
    },
+   "dur": 229.0,
    "video": 0.1
   },
   "3POpqoO9i1UB6WzYZ0MvOC": {
-   "size": 8400620,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 265,
-   "dur": 253.4,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 6119451,
     "codec": "aac",
     "kbps": 192,
     "dur": 253.4
    },
+   "dur": 253.4,
    "video": 0.0
   },
   "3PtmCb2kQYekdoh3HB81yU": {
@@ -2265,39 +1384,25 @@
    "video": 0.0
   },
   "3PuzCzuFmDqVtCp6PWlUio": {
-   "size": 7124684,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 266,
-   "dur": 214.4,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5218499,
     "codec": "aac",
     "kbps": 193,
     "dur": 214.33
    },
-   "video": 0.0
+   "dur": 214.3,
+   "video": 0.1
   },
   "3QwbKe0s8TcNclzXAXHeHy": {
-   "size": 5611580,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 288,
-   "dur": 155.7,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 3760540,
     "codec": "aac",
     "kbps": 192,
     "dur": 155.66
    },
+   "dur": 155.7,
    "video": 0.0
   },
   "3SPcBPzvbmWLl8NU5efx4W": {
@@ -2313,111 +1418,69 @@
    "video": 0.0
   },
   "3TAJx9S2t0dH9Slo908D9t": {
-   "size": 9341804,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 284,
-   "dur": 263.3,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 6452299,
     "codec": "aac",
     "kbps": 195,
     "dur": 263.28
    },
+   "dur": 263.3,
    "video": 0.0
   },
   "3TMtoSysAJ61pUnvVPHlI5": {
-   "size": 7693124,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 233,
-   "dur": 263.8,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 6519273,
     "codec": "aac",
     "kbps": 196,
     "dur": 263.74
    },
-   "video": 0.0
+   "dur": 263.7,
+   "video": 0.1
   },
   "3UZRTwoPQhmD1KDqWmSdsy": {
-   "size": 8117996,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 251,
-   "dur": 258.8,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 6095308,
     "codec": "aac",
     "kbps": 187,
     "dur": 258.81
    },
+   "dur": 258.8,
    "video": 0.1
   },
   "3UjcwK0kMZYvAA8qVDF7Y7": {
-   "size": 7140668,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 233,
-   "dur": 244.8,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5955193,
     "codec": "aac",
     "kbps": 193,
     "dur": 244.77
    },
+   "dur": 244.8,
    "video": 0.0
   },
   "3V2jcyKqjtbuSffYQ63CZ0": {
-   "size": 6265244,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 275,
-   "dur": 182.2,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4416035,
     "codec": "aac",
     "kbps": 192,
     "dur": 182.13
    },
-   "video": -0.1
+   "dur": 182.1,
+   "video": 0.0
   },
   "3bdZcA30lsJeS61B6UBsWc": {
-   "size": 6604556,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 241,
-   "dur": 219.4,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5509710,
     "codec": "aac",
     "kbps": 199,
     "dur": 219.41
    },
+   "dur": 219.4,
    "video": 0.1
   },
   "3c2kMiSB86tVq1J4oULmvL": {
@@ -2433,1858 +1496,1137 @@
    "video": 0.0
   },
   "3d2oiHuHm3rftzRDPeL5LU": {
-   "size": 6366668,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 261,
-   "dur": 195.1,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4841351,
     "codec": "aac",
     "kbps": 197,
     "dur": 195.12
    },
+   "dur": 195.1,
    "video": 0.0
   },
   "3f3HHRPF5vAo90GwdpDMaQ": {
-   "size": 8145380,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 229,
-   "dur": 284.5,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 6897891,
     "codec": "aac",
     "kbps": 192,
     "dur": 284.48
    },
+   "dur": 284.5,
    "video": 0.0
   },
   "3frbUD4VMBZRMgxOGMVXSY": {
-   "size": 4923212,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 290,
-   "dur": 136.0,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 3306790,
     "codec": "aac",
     "kbps": 193,
     "dur": 135.93
    },
-   "video": -9.1
+   "dur": 135.9,
+   "video": -9.0
   },
   "3kJXrEVUCdPQ3e4e5k9OHC": {
-   "size": 6505004,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 263,
-   "dur": 198.1,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4779897,
     "codec": "aac",
     "kbps": 191,
     "dur": 198.11
    },
+   "dur": 198.1,
    "video": 0.0
   },
   "3lJ70fh0ENq6hzgtOfOGYZ": {
-   "size": 6549836,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 250,
-   "dur": 209.8,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5133005,
     "codec": "aac",
     "kbps": 194,
     "dur": 209.76
    },
+   "dur": 209.8,
    "video": 0.0
   },
   "3lrh0hthzUFsMNPH1mIiBT": {
-   "size": 3606428,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 261,
-   "dur": 110.4,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 2652572,
     "codec": "aac",
     "kbps": 191,
     "dur": 110.36
    },
+   "dur": 110.4,
    "video": 0.0
   },
   "3mW90BgmaWI8Do3taVesEj": {
-   "size": 6812372,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 268,
-   "dur": 203.0,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4930743,
     "codec": "aac",
     "kbps": 193,
     "dur": 202.95
    },
-   "video": 0.0
+   "dur": 202.9,
+   "video": 0.1
   },
   "3ssnFwx5lu6qxhLBR0vutB": {
-   "size": 6366812,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 261,
-   "dur": 195.5,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4788842,
     "codec": "aac",
     "kbps": 194,
     "dur": 195.43
    },
-   "video": 0.0
+   "dur": 195.4,
+   "video": 0.1
   },
   "3uPEZYXmeUgRFBywQCndKj": {
-   "size": 3015740,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 256,
-   "dur": 94.2,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 2286154,
     "codec": "aac",
     "kbps": 193,
     "dur": 94.16
    },
+   "dur": 94.2,
    "video": 0.0
   },
   "3zwxnzanbTdJhsrR8JvT3j": {
-   "size": 8320220,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 274,
-   "dur": 242.7,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 6043527,
     "codec": "aac",
     "kbps": 198,
     "dur": 242.69
    },
+   "dur": 242.7,
    "video": 0.0
   },
   "40IPlaLrR3YEPNkI7z3bYp": {
-   "size": 7593164,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 273,
-   "dur": 222.8,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5396897,
     "codec": "aac",
     "kbps": 192,
     "dur": 222.76
    },
+   "dur": 222.8,
    "video": 0.0
   },
   "43b1sAhXptGHyelc3knOOQ": {
-   "size": 5813516,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 247,
-   "dur": 188.6,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4645840,
     "codec": "aac",
     "kbps": 195,
     "dur": 188.61
    },
+   "dur": 188.6,
    "video": 0.1
   },
   "47wEx68K50IsPnpKoqCuzm": {
-   "size": 8214932,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 273,
-   "dur": 240.8,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5979489,
     "codec": "aac",
     "kbps": 197,
     "dur": 240.77
    },
+   "dur": 240.8,
    "video": 0.0
   },
   "49dxrmTySyejmAzmQxWjOu": {
-   "size": 6955100,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 220,
-   "dur": 253.0,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 6221214,
     "codec": "aac",
     "kbps": 195,
     "dur": 252.95
    },
-   "video": 0.0
+   "dur": 252.9,
+   "video": 0.1
   },
   "49mvGXitaWpfTwuwUQaN0c": {
-   "size": 7245884,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 240,
-   "dur": 242.0,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5927163,
     "codec": "aac",
     "kbps": 194,
     "dur": 241.96
    },
+   "dur": 242.0,
    "video": 0.0
   },
   "4AxAd49jPozjHMZyXI2Gzv": {
-   "size": 4699412,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 220,
-   "dur": 171.0,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4174368,
     "codec": "aac",
     "kbps": 194,
     "dur": 171.01
    },
+   "dur": 171.0,
    "video": 0.0
   },
   "4BVFVaa1fDo20Ud1q5Gd2N": {
-   "size": 6196748,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 252,
-   "dur": 196.8,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4656662,
     "codec": "aac",
     "kbps": 188,
     "dur": 196.78
    },
+   "dur": 196.8,
    "video": 0.0
   },
   "4C7GZbwKnoucpGdkBQ9iGt": {
-   "size": 7348868,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 282,
-   "dur": 208.4,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5105705,
     "codec": "aac",
     "kbps": 195,
     "dur": 208.33
    },
-   "video": -0.1
+   "dur": 208.3,
+   "video": 0.0
   },
   "4CSKUENltc2dGwvGGtDRgI": {
-   "size": 7842572,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 255,
-   "dur": 246.2,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5995991,
     "codec": "aac",
     "kbps": 193,
     "dur": 246.19
    },
+   "dur": 246.2,
    "video": 0.0
   },
   "4FGIHe2zLB3Y43mPybYdDa": {
-   "size": 10099820,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 261,
-   "dur": 310.1,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 7724260,
     "codec": "aac",
     "kbps": 198,
     "dur": 310.02
    },
-   "video": 0.0
+   "dur": 310.0,
+   "video": 0.1
   },
   "4FMsajq8hKiOmcJ7UzOhag": {
-   "size": 7378964,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 289,
-   "dur": 204.3,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5010334,
     "codec": "aac",
     "kbps": 195,
     "dur": 204.28
    },
+   "dur": 204.3,
    "video": 0.0
   },
   "4HCOHRCSQelz2GPX8iTamO": {
-   "size": 7400780,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 263,
-   "dur": 224.9,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5514066,
     "codec": "aac",
     "kbps": 195,
     "dur": 224.88
    },
+   "dur": 224.9,
    "video": 0.0
   },
   "4N8FB9gd4FjEi68O6eVJ4p": {
-   "size": 7690076,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 253,
-   "dur": 243.1,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5987830,
     "codec": "aac",
     "kbps": 195,
     "dur": 243.11
    },
+   "dur": 243.1,
    "video": 0.0
   },
   "4RAS6QT974bl5blsapzVGq": {
-   "size": 8668556,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 282,
-   "dur": 245.8,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 6027896,
     "codec": "aac",
     "kbps": 195,
     "dur": 245.8
    },
+   "dur": 245.8,
    "video": 0.0
   },
   "4S4dCACmtuPWbhvMSfDXqN": {
-   "size": 5987180,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 266,
-   "dur": 180.2,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4431943,
     "codec": "aac",
     "kbps": 195,
     "dur": 180.14
    },
-   "video": 0.0
+   "dur": 180.1,
+   "video": 0.1
   },
   "4U9ZjqhaGF9wl56899E4sW": {
-   "size": 7123388,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 261,
-   "dur": 218.0,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5301797,
     "codec": "aac",
     "kbps": 193,
     "dur": 218.0
    },
+   "dur": 218.0,
    "video": 0.1
   },
   "4WFNb2UhW5E5qxHGsgebuQ": {
-   "size": 6569468,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 258,
-   "dur": 204.1,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5069113,
     "codec": "aac",
     "kbps": 197,
     "dur": 204.04
    },
-   "video": 0.0
+   "dur": 204.0,
+   "video": 0.1
   },
   "4Yh1pyb3eGk32z6KeG0MPF": {
-   "size": 6276716,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 258,
-   "dur": 194.9,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4773584,
     "codec": "aac",
     "kbps": 194,
     "dur": 194.83
    },
-   "video": -0.1
+   "dur": 194.8,
+   "video": 0.0
   },
   "4a5VnoioMgv1e9R3EWAfYB": {
-   "size": 7966244,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 251,
-   "dur": 253.7,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 6234028,
     "codec": "aac",
     "kbps": 195,
     "dur": 253.63
    },
-   "video": 0.0
+   "dur": 253.6,
+   "video": 0.1
   },
   "4bhA5X3qMEcTycEoW6BvJ2": {
-   "size": 9485972,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 251,
-   "dur": 302.1,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 7128068,
     "codec": "aac",
     "kbps": 187,
     "dur": 302.03
    },
-   "video": 0.0
+   "dur": 302.0,
+   "video": 0.1
   },
   "4cHBP73V974hbCl66gvWsi": {
-   "size": 9317276,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 303,
-   "dur": 246.4,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 6078831,
     "codec": "aac",
     "kbps": 196,
     "dur": 246.36
    },
+   "dur": 246.4,
    "video": 0.0
   },
   "4cgmk2owigBlmlV4KsqRNs": {
-   "size": 6449708,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 247,
-   "dur": 208.5,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5098132,
     "codec": "aac",
     "kbps": 194,
     "dur": 208.48
    },
+   "dur": 208.5,
    "video": 0.0
   },
   "4clw6ilYxpOiBeoSkJJvSX": {
-   "size": 7012460,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 281,
-   "dur": 199.6,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4914927,
     "codec": "aac",
     "kbps": 195,
     "dur": 199.55
    },
+   "dur": 199.6,
    "video": 0.0
   },
   "4dRqYKhLVujxiBXcq50YzG": {
-   "size": 9786572,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 242,
-   "dur": 323.0,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 7901147,
     "codec": "aac",
     "kbps": 194,
     "dur": 323.01
    },
+   "dur": 323.0,
    "video": 0.1
   },
   "4fZgmYwkxfeSSIK9wTdg6N": {
-   "size": 7966748,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 256,
-   "dur": 249.3,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5782591,
     "codec": "aac",
     "kbps": 184,
     "dur": 249.26
    },
+   "dur": 249.3,
    "video": 0.0
   },
   "4ilmoz7rKBlE85HWzbGAPu": {
-   "size": 6387116,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 251,
-   "dur": 203.8,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4965276,
     "codec": "aac",
     "kbps": 193,
     "dur": 203.8
    },
+   "dur": 203.8,
    "video": 0.0
   },
   "4jV4ld7z4BrswF3uKqz8Ny": {
-   "size": 6261548,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 239,
-   "dur": 209.7,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5098044,
     "codec": "aac",
     "kbps": 193,
     "dur": 209.68
    },
+   "dur": 209.7,
    "video": 0.0
   },
   "4m5m7bonUvkScVaFExn6rR": {
-   "size": 7463948,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 248,
-   "dur": 240.8,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5944942,
     "codec": "aac",
     "kbps": 196,
     "dur": 240.8
    },
+   "dur": 240.8,
    "video": 0.0
   },
   "4mn30l2lxnohEGT3goNzUR": {
-   "size": 4083692,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 278,
-   "dur": 117.7,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 2910887,
     "codec": "aac",
     "kbps": 196,
     "dur": 117.67
    },
+   "dur": 117.7,
    "video": 0.0
   },
   "4oyQ6vDzJMFYhmO9p5qrjE": {
-   "size": 7522628,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 220,
-   "dur": 273.0,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 6739375,
     "codec": "aac",
     "kbps": 196,
     "dur": 273.02
    },
+   "dur": 273.0,
    "video": 0.1
   },
   "4x4ja0ulDFFtfjB1ygExa2": {
-   "size": 6495692,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 228,
-   "dur": 227.6,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5612932,
     "codec": "aac",
     "kbps": 196,
     "dur": 227.6
    },
+   "dur": 227.6,
    "video": 0.0
   },
   "4ymUJhziZLrUZJ2uQVL6kf": {
-   "size": 7827092,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 281,
-   "dur": 222.9,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5479416,
     "codec": "aac",
     "kbps": 195,
     "dur": 222.84
    },
-   "video": 0.0
+   "dur": 222.8,
+   "video": 0.1
   },
   "57fT0m2UMxuue7KhToRAIJ": {
-   "size": 3546524,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 259,
-   "dur": 109.4,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 2711937,
     "codec": "aac",
     "kbps": 197,
     "dur": 109.33
    },
-   "video": 0.0
+   "dur": 109.3,
+   "video": 0.1
   },
   "5Ay4ujNQ4xCrIxpDnk2SUC": {
-   "size": 7002092,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 237,
-   "dur": 236.2,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5735728,
     "codec": "aac",
     "kbps": 193,
     "dur": 236.21
    },
+   "dur": 236.2,
    "video": 0.1
   },
   "5Bv1HoYXGCICY3ymEIdpHF": {
-   "size": 6765764,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 260,
-   "dur": 208.2,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5170469,
     "codec": "aac",
     "kbps": 197,
     "dur": 208.13
    },
-   "video": 0.0
+   "dur": 208.1,
+   "video": 0.1
   },
   "5CBqLg9XdeEHcknJX0fZIJ": {
-   "size": 5835188,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 254,
-   "dur": 183.9,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4563608,
     "codec": "aac",
     "kbps": 197,
     "dur": 183.9
    },
+   "dur": 183.9,
    "video": 0.0
   },
   "5CNjsDtTDzqeqoxvL4jDiR": {
-   "size": 9407564,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 266,
-   "dur": 282.4,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 6803853,
     "codec": "aac",
     "kbps": 191,
     "dur": 282.37
    },
+   "dur": 282.4,
    "video": 0.0
   },
   "5ClqcvP4dYDDX6Zv3jPQD1": {
-   "size": 7080188,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 262,
-   "dur": 216.0,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5328158,
     "codec": "aac",
     "kbps": 196,
     "dur": 216.02
    },
+   "dur": 216.0,
    "video": 0.1
   },
   "5DMlvpclXTm1ptZyCfDvUy": {
-   "size": 7697612,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 248,
-   "dur": 248.5,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 6251326,
     "codec": "aac",
     "kbps": 200,
     "dur": 248.47
    },
+   "dur": 248.5,
    "video": 0.0
   },
   "5EG2jND3cGjpoh0YCOjQ9T": {
-   "size": 6622724,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 238,
-   "dur": 222.4,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5373523,
     "codec": "aac",
     "kbps": 192,
     "dur": 222.38
    },
+   "dur": 222.4,
    "video": 0.0
   },
   "5Ec7pcVTaHm5q7BGB35hiU": {
-   "size": 6986348,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 254,
-   "dur": 220.1,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5387742,
     "codec": "aac",
     "kbps": 194,
     "dur": 220.05
    },
+   "dur": 220.1,
    "video": 0.0
   },
   "5GTEB0XsQBwCaiJYaIRCgg": {
-   "size": 6919484,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 251,
-   "dur": 220.5,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5367329,
     "codec": "aac",
     "kbps": 193,
     "dur": 220.44
    },
-   "video": 0.0
+   "dur": 220.4,
+   "video": 0.1
   },
   "5IXTT9RvcVupmzLTFqIInj": {
-   "size": 4993436,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 221,
-   "dur": 181.1,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4255680,
     "codec": "aac",
     "kbps": 186,
     "dur": 181.1
    },
+   "dur": 181.1,
    "video": 0.1
   },
   "5MpZt5R522VJa8AxKxAD4H": {
-   "size": 7842908,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 274,
-   "dur": 228.9,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5622814,
     "codec": "aac",
     "kbps": 195,
     "dur": 228.89
    },
+   "dur": 228.9,
    "video": 0.0
   },
   "5NelxeQ8Yd4ytdhdGog8c5": {
-   "size": 5622116,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 248,
-   "dur": 181.3,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4395842,
     "codec": "aac",
     "kbps": 192,
     "dur": 181.27
    },
+   "dur": 181.3,
    "video": 0.0
   },
   "5O5u7dukzRu4iskuCTiaYj": {
-   "size": 6124652,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 279,
-   "dur": 175.6,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4369148,
     "codec": "aac",
     "kbps": 198,
     "dur": 175.53
    },
-   "video": 0.0
+   "dur": 175.5,
+   "video": 0.1
   },
   "5OuaAMBmGjjJMK7yXpaFAK": {
-   "size": 6672716,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 266,
-   "dur": 200.4,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5022600,
     "codec": "aac",
     "kbps": 199,
     "dur": 200.31
    },
-   "video": -0.1
+   "dur": 200.3,
+   "video": 0.0
   },
   "5QfsQPEqDbtZtU2zZkJ1kR": {
-   "size": 5464364,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 264,
-   "dur": 165.4,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4101501,
     "codec": "aac",
     "kbps": 197,
     "dur": 165.32
    },
-   "video": -0.1
+   "dur": 165.3,
+   "video": 0.0
   },
   "5RZNyJd4RJRWe6wKtXJVVj": {
-   "size": 6842060,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 271,
-   "dur": 201.7,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4969704,
     "codec": "aac",
     "kbps": 196,
     "dur": 201.7
    },
+   "dur": 201.7,
    "video": 0.0
   },
   "5Up7kKnSg7Z1YHRToUbZ1p": {
-   "size": 6614300,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 264,
-   "dur": 200.8,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4862067,
     "codec": "aac",
     "kbps": 192,
     "dur": 200.77
    },
+   "dur": 200.8,
    "video": 0.0
   },
   "5YdrHBh16li6d7U5mdTwUb": {
-   "size": 7480748,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 247,
-   "dur": 242.2,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5935702,
     "codec": "aac",
     "kbps": 195,
     "dur": 242.21
    },
+   "dur": 242.2,
    "video": 0.1
   },
   "5Zpy2HR2vYLjlTQVd81DLH": {
-   "size": 8030156,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 264,
-   "dur": 243.7,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5932344,
     "codec": "aac",
     "kbps": 193,
     "dur": 243.71
    },
+   "dur": 243.7,
    "video": 0.0
   },
   "5dE8s6uWRGNc1Ac7y8rULq": {
-   "size": 11984996,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 273,
-   "dur": 350.6,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 8649391,
     "codec": "aac",
     "kbps": 196,
     "dur": 350.57
    },
+   "dur": 350.6,
    "video": 0.0
   },
   "5dt9vV7sfjzS78y2MJUvZt": {
-   "size": 6930764,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 211,
-   "dur": 262.6,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 6462325,
     "codec": "aac",
     "kbps": 195,
     "dur": 262.57
    },
+   "dur": 262.6,
    "video": 0.0
   },
   "5ehBcancKNsR7lFRduET7R": {
-   "size": 4986356,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 262,
-   "dur": 152.1,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 3740141,
     "codec": "aac",
     "kbps": 195,
     "dur": 152.09
    },
+   "dur": 152.1,
    "video": 0.0
   },
   "5fXRPS1tp70DbqsBZVyG4e": {
-   "size": 6645836,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 288,
-   "dur": 184.7,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4531235,
     "codec": "aac",
     "kbps": 195,
     "dur": 184.65
    },
+   "dur": 184.7,
    "video": 0.0
   },
   "5gSwQihHUXvC5H4SBCo03D": {
-   "size": 6266204,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 238,
-   "dur": 210.8,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5105414,
     "codec": "aac",
     "kbps": 192,
     "dur": 210.75
    },
+   "dur": 210.8,
    "video": 0.0
   },
   "5hb92JsDZjB3PuysBhwTAS": {
-   "size": 4053068,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 281,
-   "dur": 115.2,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 2850002,
     "codec": "aac",
     "kbps": 196,
     "dur": 115.17
    },
+   "dur": 115.2,
    "video": 0.0
   },
   "5iYEFC545nN3zmNZXRIcki": {
-   "size": 6907004,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 273,
-   "dur": 202.2,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4997907,
     "codec": "aac",
     "kbps": 196,
     "dur": 202.12
    },
-   "video": -0.1
+   "dur": 202.1,
+   "video": 0.0
   },
   "5iaWq4djtfWZk8McqrtprO": {
-   "size": 7501484,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 272,
-   "dur": 221.0,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5427642,
     "codec": "aac",
     "kbps": 195,
     "dur": 220.98
    },
+   "dur": 221.0,
    "video": 0.0
   },
   "5lQxMlCMTzCj3j4vyzdl8T": {
-   "size": 6384572,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 271,
-   "dur": 188.3,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4511200,
     "codec": "aac",
     "kbps": 190,
     "dur": 188.29
    },
+   "dur": 188.3,
    "video": 0.0
   },
   "5lzZuwEPInxJRwYUQFqIlH": {
-   "size": 9302900,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 267,
-   "dur": 278.5,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 6884263,
     "codec": "aac",
     "kbps": 196,
     "dur": 278.51
    },
+   "dur": 278.5,
    "video": 0.0
   },
   "5mgCP62kIGit9ICUdaqIgq": {
-   "size": 6941996,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 273,
-   "dur": 203.7,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5087656,
     "codec": "aac",
     "kbps": 198,
     "dur": 203.69
    },
+   "dur": 203.7,
    "video": 0.0
   },
   "5qm0KiVKMXW1kq6VrnIhz5": {
-   "size": 8118476,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 260,
-   "dur": 249.8,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 6192482,
     "codec": "aac",
     "kbps": 197,
     "dur": 249.77
    },
+   "dur": 249.8,
    "video": 0.0
   },
   "5shcxlhR6ChgqDf5eBtpBW": {
-   "size": 7451708,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 216,
-   "dur": 276.0,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 6717710,
     "codec": "aac",
     "kbps": 193,
     "dur": 275.93
    },
-   "video": 0.0
+   "dur": 275.9,
+   "video": 0.1
   },
   "5wDEOCfVVAqkdjkrSwDwGJ": {
-   "size": 6817004,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 257,
-   "dur": 211.9,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5079618,
     "codec": "aac",
     "kbps": 190,
     "dur": 211.84
    },
-   "video": 0.0
+   "dur": 211.8,
+   "video": 0.1
   },
   "5xwmLfRd5kLb6XohkIqNV2": {
-   "size": 5343212,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 251,
-   "dur": 170.3,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4172013,
     "codec": "aac",
     "kbps": 194,
     "dur": 170.28
    },
+   "dur": 170.3,
    "video": 0.0
   },
   "60JI0WkwFt0zqnJw8KzNoE": {
-   "size": 5460284,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 262,
-   "dur": 166.9,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4067835,
     "codec": "aac",
     "kbps": 193,
     "dur": 166.89
    },
+   "dur": 166.9,
    "video": 0.0
   },
   "60WIrEOVESSiwBoYy9WIMC": {
-   "size": 8119532,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 242,
-   "dur": 268.9,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 6500616,
     "codec": "aac",
     "kbps": 192,
     "dur": 268.84
    },
-   "video": 0.0
+   "dur": 268.8,
+   "video": 0.1
   },
   "6208B8Utmd2fTqgGMjeNr6": {
-   "size": 5889836,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 254,
-   "dur": 185.8,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4549259,
     "codec": "aac",
     "kbps": 194,
     "dur": 185.71
    },
-   "video": 0.0
+   "dur": 185.7,
+   "video": 0.1
   },
   "62r1CS9zL1FL5Ilb7hLX7n": {
-   "size": 7234796,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 257,
-   "dur": 225.0,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5542395,
     "codec": "aac",
     "kbps": 196,
     "dur": 225.0
    },
+   "dur": 225.0,
    "video": 0.0
   },
   "63G27PTar9LZQgKU2BKjx9": {
-   "size": 7875020,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 267,
-   "dur": 235.7,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5772713,
     "codec": "aac",
     "kbps": 194,
     "dur": 235.65
    },
+   "dur": 235.7,
    "video": 0.0
   },
   "6ECyOXQ2622F9WpFgRfHeK": {
-   "size": 5667212,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 255,
-   "dur": 177.6,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4397252,
     "codec": "aac",
     "kbps": 197,
     "dur": 177.5
    },
-   "video": 0.0
+   "dur": 177.5,
+   "video": 0.1
   },
   "6EZYFQzGkmDhkYQRKZXOWb": {
-   "size": 7849052,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 254,
-   "dur": 247.6,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 6004611,
     "codec": "aac",
     "kbps": 193,
     "dur": 247.53
    },
-   "video": 0.0
+   "dur": 247.5,
+   "video": 0.1
   },
   "6KEWtSOGKpIXGw6l1uJgsR": {
-   "size": 5954300,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 224,
-   "dur": 212.2,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5135198,
     "codec": "aac",
     "kbps": 192,
     "dur": 212.17
    },
+   "dur": 212.2,
    "video": 0.0
   },
   "6Mnne5V9ZifNID59dswUcZ": {
-   "size": 8725964,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 256,
-   "dur": 272.4,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 6646341,
     "codec": "aac",
     "kbps": 194,
     "dur": 272.33
    },
-   "video": -0.1
+   "dur": 272.3,
+   "video": 0.0
   },
   "6OojY4NdPiEGWHV2EUSwHz": {
-   "size": 6601676,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 252,
-   "dur": 209.2,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4957126,
     "codec": "aac",
     "kbps": 188,
     "dur": 209.15
    },
+   "dur": 209.2,
    "video": 0.0
   },
   "6RgrpOgbTI3M2qvA8XIvTb": {
-   "size": 6478052,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 267,
-   "dur": 194.2,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4888323,
     "codec": "aac",
     "kbps": 200,
     "dur": 194.12
    },
-   "video": 0.0
+   "dur": 194.1,
+   "video": 0.1
   },
   "6SYwCFYNJo66SbnQKOXRUg": {
-   "size": 7042220,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 239,
-   "dur": 236.1,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5730237,
     "codec": "aac",
     "kbps": 193,
     "dur": 236.1
    },
+   "dur": 236.1,
    "video": 0.0
   },
   "6TOhXLevQUI4fjrxLL1nJE": {
-   "size": 10312508,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 287,
-   "dur": 287.1,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 7040474,
     "codec": "aac",
     "kbps": 195,
     "dur": 287.02
    },
-   "video": 0.0
+   "dur": 287.0,
+   "video": 0.1
   },
   "6XK6Zw6JkFsHXzAcMWNiIr": {
-   "size": 8712236,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 265,
-   "dur": 263.4,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 6447100,
     "codec": "aac",
     "kbps": 194,
     "dur": 263.33
    },
-   "video": -0.1
+   "dur": 263.3,
+   "video": 0.0
   },
   "6bqB7idfAnJVisSMQA1mZQ": {
-   "size": 3487724,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 206,
-   "dur": 135.5,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 3314023,
     "codec": "aac",
     "kbps": 194,
     "dur": 135.45
    },
-   "video": 0.0
+   "dur": 135.4,
+   "video": 0.1
   },
   "6eCWvDQXTITW534IANR5n1": {
-   "size": 5930300,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 225,
-   "dur": 211.1,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5184707,
     "codec": "aac",
     "kbps": 195,
     "dur": 211.01
    },
-   "video": 0.0
+   "dur": 211.0,
+   "video": 0.1
   },
   "6ebFwjg7AyBUjFdOTZLIU8": {
-   "size": 9170204,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 271,
-   "dur": 270.5,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 6555186,
     "codec": "aac",
     "kbps": 192,
     "dur": 270.48
    },
+   "dur": 270.5,
    "video": 0.0
   },
   "6hzEumHWNUVB0VWobDBT6x": {
-   "size": 6530060,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 250,
-   "dur": 208.9,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5133816,
     "codec": "aac",
     "kbps": 195,
     "dur": 208.85
    },
-   "video": 0.0
+   "dur": 208.8,
+   "video": 0.1
   },
   "6kblAEj0T0312fv5QWsXzo": {
-   "size": 7721708,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 266,
-   "dur": 232.3,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5804217,
     "codec": "aac",
     "kbps": 198,
     "dur": 232.28
    },
+   "dur": 232.3,
    "video": 0.0
   },
   "6kotXaSQaGYxE62hVpdHWu": {
-   "size": 6573452,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 260,
-   "dur": 202.0,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4983757,
     "codec": "aac",
     "kbps": 196,
     "dur": 202.0
    },
+   "dur": 202.0,
    "video": 0.1
   },
   "6nSt8n7r0bznM8PCvHEmPj": {
-   "size": 6952172,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 259,
-   "dur": 215.1,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5247045,
     "codec": "aac",
     "kbps": 194,
     "dur": 215.05
    },
+   "dur": 215.1,
    "video": 0.0
   },
   "6nTL1KhyjN3RzdRJFICZ81": {
-   "size": 6733676,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 254,
-   "dur": 212.0,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5231599,
     "codec": "aac",
     "kbps": 196,
     "dur": 211.96
    },
+   "dur": 212.0,
    "video": 0.0
   },
   "6nkMHXkhmvCzxtvewoOEJT": {
-   "size": 6325820,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 279,
-   "dur": 181.4,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4433444,
     "codec": "aac",
     "kbps": 194,
     "dur": 181.33
    },
-   "video": 0.0
+   "dur": 181.3,
+   "video": 0.1
   },
   "6oBVQQ4y3KkStoa0apQPrK": {
-   "size": 7519436,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 273,
-   "dur": 220.4,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5471557,
     "codec": "aac",
     "kbps": 197,
     "dur": 220.41
    },
+   "dur": 220.4,
    "video": 0.0
   },
   "6sSyiY3TuAYzlEh9CN1PBO": {
-   "size": 7018460,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 258,
-   "dur": 217.3,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5345064,
     "codec": "aac",
     "kbps": 195,
     "dur": 217.25
    },
-   "video": 0.0
+   "dur": 217.2,
+   "video": 0.1
   },
   "6vO5OZ18h33ZO40S9plFDx": {
-   "size": 6716348,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 277,
-   "dur": 194.3,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4871810,
     "codec": "aac",
     "kbps": 199,
     "dur": 194.23
    },
-   "video": -0.1
+   "dur": 194.2,
+   "video": 0.0
   },
   "6w09qyTrLgzCQP8gLMPEcd": {
    "size": 3620660,
@@ -4299,309 +2641,190 @@
    "video": 0.0
   },
   "6zNXjEQEhoEkLa4irSikDW": {
-   "size": 7964588,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 273,
-   "dur": 233.5,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5708568,
     "codec": "aac",
     "kbps": 194,
     "dur": 233.43
    },
-   "video": -0.1
+   "dur": 233.4,
+   "video": 0.0
   },
   "70Ao5L10SKV701DcOH68Jo": {
-   "size": 7274924,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 259,
-   "dur": 224.4,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5454044,
     "codec": "aac",
     "kbps": 193,
     "dur": 224.31
    },
-   "video": -0.1
+   "dur": 224.3,
+   "video": 0.0
   },
   "72PoJMDfdaw9gGECgA9kTZ": {
-   "size": 4887020,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 250,
-   "dur": 156.3,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 3821124,
     "codec": "aac",
     "kbps": 194,
     "dur": 156.28
    },
+   "dur": 156.3,
    "video": 0.0
   },
   "748yv6bb3l3CcKS45a6SZ8": {
-   "size": 8868884,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 278,
-   "dur": 255.4,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 6306923,
     "codec": "aac",
     "kbps": 196,
     "dur": 255.41
    },
+   "dur": 255.4,
    "video": 0.1
   },
   "76LVdwqMv86jglsB8MFEXE": {
-   "size": 6625340,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 231,
-   "dur": 229.3,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5640225,
     "codec": "aac",
     "kbps": 195,
     "dur": 229.31
    },
+   "dur": 229.3,
    "video": 0.1
   },
   "77h5SC6UU6kfKNSGQ9hZ4k": {
-   "size": 3191900,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 234,
-   "dur": 109.1,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 2693820,
     "codec": "aac",
     "kbps": 196,
     "dur": 109.03
    },
-   "video": -0.1
+   "dur": 109.0,
+   "video": 0.0
   },
   "7DH0ytUP9o7Crj8NM1Uabg": {
-   "size": 6983564,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 250,
-   "dur": 223.8,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5551621,
     "codec": "aac",
     "kbps": 197,
     "dur": 223.74
    },
-   "video": 0.0
+   "dur": 223.7,
+   "video": 0.1
   },
   "7GejAcJCqmZm7FAU4KHuyv": {
-   "size": 7518572,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 260,
-   "dur": 231.2,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5865412,
     "codec": "aac",
     "kbps": 201,
     "dur": 231.13
    },
-   "video": -0.1
+   "dur": 231.1,
+   "video": 0.0
   },
   "7Gk8IPlFTLUcoIH3mtASI0": {
-   "size": 5710316,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 257,
-   "dur": 177.8,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4332527,
     "codec": "aac",
     "kbps": 193,
     "dur": 177.81
    },
+   "dur": 177.8,
    "video": 0.1
   },
   "7IFEQiMBMLjfCRNisLdIRE": {
-   "size": 6898556,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 275,
-   "dur": 200.6,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4952344,
     "codec": "aac",
     "kbps": 196,
     "dur": 200.55
    },
+   "dur": 200.6,
    "video": 0.0
   },
   "7JVhqngi3ICalifdkpzaCp": {
-   "size": 6123068,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 248,
-   "dur": 197.4,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4867664,
     "codec": "aac",
     "kbps": 196,
     "dur": 197.31
    },
-   "video": 0.0
+   "dur": 197.3,
+   "video": 0.1
   },
   "7JsvW1GU2hbMnGETSyy7ig": {
-   "size": 6773636,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 227,
-   "dur": 238.6,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5801969,
     "codec": "aac",
     "kbps": 193,
     "dur": 238.57
    },
+   "dur": 238.6,
    "video": 0.0
   },
   "7KO4XNfwEKhTbSGo3O6qX5": {
-   "size": 6699428,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 267,
-   "dur": 200.9,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4866514,
     "codec": "aac",
     "kbps": 192,
     "dur": 200.85
    },
-   "video": 0.0
+   "dur": 200.8,
+   "video": 0.1
   },
   "7cDbqFvw45zdLHGltdb1g9": {
-   "size": 7092524,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 246,
-   "dur": 230.5,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5694491,
     "codec": "aac",
     "kbps": 196,
     "dur": 230.49
    },
+   "dur": 230.5,
    "video": 0.1
   },
   "7elJX0ZTRfmPeSDt18k0Ww": {
-   "size": 7057028,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 238,
-   "dur": 237.4,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 5759373,
     "codec": "aac",
     "kbps": 193,
     "dur": 237.4
    },
+   "dur": 237.4,
    "video": 0.0
   },
   "7f5D1QJXjVue8IA4i0DmwS": {
-   "size": 6500804,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 261,
-   "dur": 199.5,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4833348,
     "codec": "aac",
     "kbps": 192,
     "dur": 199.49
    },
+   "dur": 199.5,
    "video": 0.0
   },
   "7j2ExpvZTeURjspK443YKU": {
-   "size": 10040468,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 261,
-   "dur": 307.7,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 7549094,
     "codec": "aac",
     "kbps": 195,
     "dur": 307.7
    },
+   "dur": 307.7,
    "video": 0.1
   },
   "7kxMwCdLI8SOXjLA9tWVyF": {
@@ -4617,94 +2840,59 @@
    "video": 0.0
   },
   "7n3kGSVCx32nesO6xfSmrW": {
-   "size": 5784524,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 255,
-   "dur": 181.3,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4436444,
     "codec": "aac",
     "kbps": 194,
     "dur": 181.31
    },
+   "dur": 181.3,
    "video": 0.0
   },
   "7nOwuv3N6Cwo2N9xkXWUmI": {
-   "size": 8878940,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 267,
-   "dur": 266.2,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 6655866,
     "codec": "aac",
     "kbps": 198,
     "dur": 266.19
    },
+   "dur": 266.2,
    "video": 0.0
   },
   "7tJsTykoo4Jk5JguHTx9W7": {
-   "size": 5861996,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 288,
-   "dur": 163.1,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 3980680,
     "codec": "aac",
     "kbps": 194,
     "dur": 163.04
    },
-   "video": 0.0
+   "dur": 163.0,
+   "video": 0.1
   },
   "7uPmQttafLiJyju14JREY4": {
-   "size": 10249772,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 261,
-   "dur": 313.8,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 7758124,
     "codec": "aac",
     "kbps": 196,
     "dur": 313.71
    },
-   "video": -0.1
+   "dur": 313.7,
+   "video": 0.0
   },
   "7uhgdMtt4b4p35ehIYRqq6": {
-   "size": 6152564,
-   "id3": 44,
-   "seek": "Xing",
-   "codec": "mp3",
-   "hz": 48000,
-   "ch": 2,
-   "kbps": 247,
-   "dur": 199.3,
-   "art": "",
+   "mp3": "deleted",
    "light": {
     "size": 4903494,
     "codec": "aac",
     "kbps": 195,
     "dur": 199.25
    },
-   "video": 0.0
+   "dur": 199.2,
+   "video": 0.1
   }
  }
 }
