@@ -1161,7 +1161,8 @@ async function pushAll(env, msg, to) {   // to: only these members (else everyon
     gone.forEach(id => delete now[id]);
     await kvSoft(env, 'pushSubs', JSON.stringify(now));
   }
-  const res = { sent, gone: gone.length, failed, devices: ids.length - gone.length, errors: errors.slice(0, 5), at: Date.now(), title: msg.title };
+  const res = { sent, gone: gone.length, failed, devices: ids.length - gone.length, errors: errors.slice(0, 5), at: Date.now(), title: msg.title,
+    inboxes: Object.keys(unread).filter(k => k).length };   // inboxes: the members it went into (notifications on or not)
   await kvSoft(env, 'pushLastResult', JSON.stringify(res));   // the last send, for the members page
   return res;
 }
