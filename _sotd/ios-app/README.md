@@ -3,7 +3,9 @@
 The calendar (https://cooperking.github.io/songs/) inside an app, so it opens signed in and keeps playing like any music
 app. Built on one of GitHub's Macs by `.github/workflows/ios.yml` (Capacitor: `package.json`, `capacitor.config.json`;
 `customise.sh` adds background audio, App-Bound Domains for the offline downloads, Apple's notifications, the icon;
-`build.sh` signs it and sends it to App Store Connect). The site itself is the app's content, so changes to the
+`build.sh` signs it and sends it to App Store Connect, with a distribution certificate and App Store profile made for
+each build through the API by `signing.py`, so no device needs registering; `asc_check.py` checks both Apple keys first
+and names a wrong secret on the run's page). The site itself is the app's content, so changes to the
 calendar reach the app at once; only changes in this folder need a new build. A build is also made on the 1st of every
 second month, so testers always have one well inside TestFlight's 90 days.
 
