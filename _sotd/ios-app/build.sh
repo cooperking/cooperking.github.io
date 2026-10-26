@@ -23,9 +23,6 @@ xcb() {
   tail -n 80 "$log"
   exit 65
 }
-# the key checked first, with Apple's API, so a wrong secret is named on the run's page (never its value)
-python3 -m venv "$RUNNER_TEMP/py" && "$RUNNER_TEMP/py/bin/pip" install --quiet pyjwt cryptography \
-  && "$RUNNER_TEMP/py/bin/python" "$HERE/asc_check.py"
 KEY="$RUNNER_TEMP/AuthKey_$ASC_KEY_ID.p8"
 printf '%s\n' "$ASC_KEY_P8" > "$KEY"
 AUTH=(-allowProvisioningUpdates -authenticationKeyPath "$KEY" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID")

@@ -23,6 +23,17 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
+      - name: Check the Apple keys (says which secret is wrong, never its value)
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APNS_KEY_ID: ${{ secrets.APNS_KEY_ID }}
+          APNS_KEY_P8: ${{ secrets.APNS_KEY_P8 }}
+        run: |
+          python3 -m venv "$RUNNER_TEMP/py" && "$RUNNER_TEMP/py/bin/pip" install --quiet pyjwt cryptography
+          "$RUNNER_TEMP/py/bin/python" _sotd/ios-app/asc_check.py
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -39,7 +50,5 @@ jobs:
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          APNS_KEY_ID: ${{ secrets.APNS_KEY_ID }}   # (only to check the two keys weren't swapped: asc_check.py)
-          APNS_KEY_P8: ${{ secrets.APNS_KEY_P8 }}
           BUILD_NUMBER: ${{ github.run_number }}
         run: bash _sotd/ios-app/build.sh
