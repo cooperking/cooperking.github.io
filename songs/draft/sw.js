@@ -82,18 +82,18 @@ self.addEventListener('push', e => {
   let m = {};
   try { m = e.data ? e.data.json() : {}; } catch (err) { m = { title: 'Song of the Day', body: e.data ? e.data.text() : '' }; }
   const scope = self.registration.scope;
-  e.waitUntil(Promise.all([badge(1), self.registration.showNotification(m.title || 'Song of the Day', {
+  e.waitUntil(Promise.all([typeof m.unread === 'number' ? badge(null, m.unread) : badge(1), self.registration.showNotification(m.title || 'Song of the Day', {
     body: m.body || '', icon: m.icon || scope + 'icon-192.png', image: m.image || undefined,   // image: Android's big picture (an iPhone shows none)
-    tag: m.tag || 'sotd', data: { url: m.url || scope }
+    tag: m.tag || 'sotd', data: { url: m.url || scope, ib: m.ib || '' }
   })]));
 });
 
-// the number on the app's icon (an iPhone's Home Screen app, and installed apps on a computer): one more for each
-// notification not yet seen; back to none when the calendar's opened (the page clears it) or a notification is tapped
-async function badge(add) {
+// the number on the app's icon (an iPhone's Home Screen app, and installed apps on a computer): the member's unread
+// messages in their Profile's inbox, as the Worker counts them with each notification; the page sets it again as they're read
+async function badge(add, to) {   // add one, or (to) the member's unread count as the Worker gives it
   try {
     const c = await caches.open(BADGE), r = await c.match('n');
-    const n = add ? (r ? Number(await r.text()) || 0 : 0) + add : 0;
+    const n = typeof to === 'number' ? Math.max(0, to) : add ? (r ? Number(await r.text()) || 0 : 0) + add : 0;
     if (n) await c.put('n', new Response(String(n))); else await c.delete('n');
     if (self.navigator.setAppBadge) await (n ? self.navigator.setAppBadge(n) : self.navigator.clearAppBadge()).catch(() => {});
   } catch (err) {}
@@ -101,8 +101,8 @@ async function badge(add) {
 
 self.addEventListener('notificationclick', e => {
   e.notification.close();
-  e.waitUntil(badge(0));
-  const url = (e.notification.data && e.notification.data.url) || self.registration.scope;
+  const url = (e.notification.data && e.notification.data.url) || self.registration.scope, ib = e.notification.data && e.notification.data.ib;
+  if (ib) e.waitUntil(readLater(ib));
   e.waitUntil((async () => {
     const wins = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
     const here = wins.find(w => w.url.split('#')[0] === url.split('#')[0]) || wins.find(w => w.url.startsWith(self.registration.scope));
@@ -114,3 +114,12 @@ self.addEventListener('notificationclick', e => {
     await self.clients.openWindow(url);
   })());
 });
+
+// a tapped notification counts as read: noted here for the page, which tells the Worker (it has the member's sign-in)
+async function readLater(id) {
+  try {
+    const c = await caches.open(BADGE), r = await c.match('read'), list = r ? JSON.parse(await r.text()) : [];
+    if (!list.includes(id)) list.push(id);
+    await c.put('read', new Response(JSON.stringify(list.slice(-50))));
+  } catch (err) {}
+}

@@ -289,6 +289,24 @@ html.big .heroacts .hsub { margin: 0 6px 0 0; }
 .signedchip { display: inline-flex; align-items: center; gap: 6px; margin: -6px 0 0; padding: 5px 12px 5px 9px; border-radius: 999px; background: var(--fg); color: var(--bg); font: 600 11px/1.2 var(--sans); letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; cursor: pointer; border: 0; }
 .signedchip svg { width: 13px; height: 13px; flex: none; }
 .signedchip[hidden] { display: none; }
+/* unread messages in the Profile's inbox: a count on the Profile buttons */
+#famjoin { position: relative; }
+.inbn { position: absolute; top: -4px; right: -4px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: #e23a6e; color: #fff; font: 700 10.5px/18px var(--sans); letter-spacing: 0; text-align: center; box-shadow: 0 0 0 2px var(--bg); pointer-events: none; }
+.signedchip .inbn { position: static; display: inline-block; margin-left: 2px; box-shadow: none; }
+.inbn[hidden] { display: none; }
+.ac-inbox { display: grid; gap: 6px; }
+.ac-inbox .hd { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.ac-inbox .hd .ac-h { margin: 0; }
+.ac-inbox .allread { border: 0; background: none; padding: 0; font: 600 11px/1.2 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.ac-msgs { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.ac-msgs button { width: 100%; display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; align-items: start; padding: 10px 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--pill-bg); color: var(--fg); text-align: left; cursor: pointer; font: inherit; }
+.ac-msgs .dot { grid-row: 1 / span 3; width: 8px; height: 8px; margin-top: 7px; border-radius: 50%; background: transparent; }
+.ac-msgs .new .dot { background: #e23a6e; }
+.ac-msgs .t { font: 500 17px/1.2 var(--serif); }
+.ac-msgs .new .t { font-weight: 600; }
+.ac-msgs .b { font-size: 13.5px; line-height: 1.35; color: var(--fg); opacity: .85; }
+.ac-msgs .w { font-size: 11.5px; color: var(--muted); }
+.ac-msgs .more { justify-self: start; }
 html.big .signedchip { margin: 0 auto 0 0; }
 html.big.signedin .hsub { margin-right: 0; }
 .monthnav { display: flex; align-items: center; gap: 6px; max-width: 100%; padding: 4px; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); }
@@ -1063,7 +1081,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     <a class="pill follow" href="https://open.spotify.com/playlist/4zyegiBCapCQm8VWYYHhGo" target="_blank" rel="noopener" aria-label="Follow on Spotify" title="Follow on Spotify"><span class="long">Follow on Spotify</span><span class="short">Spotify</span> <svg class="go" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M1.5 6h9M7 2.5 10.5 6 7 9.5"/></svg><svg class="ext note" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M6 12V3.5l7-1.5v8.5"/><circle cx="4.2" cy="12" r="1.8"/><circle cx="11.2" cy="10.5" r="1.8"/></svg></a>
     <a class="pill follow ytfollow" id="ytfollow" href="#" target="_blank" rel="noopener" aria-label="The playlist on YouTube" title="The playlist on YouTube" hidden><span class="long">On YouTube</span><span class="short">YouTube</span> <svg class="go" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M1.5 6h9M7 2.5 10.5 6 7 9.5"/></svg><svg class="ext yt" viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="3.5" width="13" height="9" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.6 5.8v4.4L10.3 8z" fill="currentColor"/></svg></a>
     <button class="pill follow sharesite" id="siteshare" type="button" aria-label="Share John’s Song of the Day" title="Share the calendar"><span class="long">Share</span><span class="short">Share</span></button>
-    <button class="pill follow signin" id="famjoin" type="button" aria-label="Sign in" title="Sign in" hidden><span class="long">Sign in</span><span class="short">Sign in</span><svg class="ext pe" viewBox="0 0 16 16" aria-hidden="true"><g class="po" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="5.2" r="2.7"/><path d="M2.8 14c.6-2.9 2.7-4.4 5.2-4.4s4.6 1.5 5.2 4.4"/></g><g class="pf" fill="currentColor"><circle cx="8" cy="5.2" r="3"/><path d="M2.5 14.5c.5-3.2 2.8-5 5.5-5s5 1.8 5.5 5z"/></g></svg></button>
+    <button class="pill follow signin" id="famjoin" type="button" aria-label="Sign in" title="Sign in" hidden><span class="long">Sign in</span><span class="short">Sign in</span><svg class="ext pe" viewBox="0 0 16 16" aria-hidden="true"><g class="po" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="5.2" r="2.7"/><path d="M2.8 14c.6-2.9 2.7-4.4 5.2-4.4s4.6 1.5 5.2 4.4"/></g><g class="pf" fill="currentColor"><circle cx="8" cy="5.2" r="3"/><path d="M2.5 14.5c.5-3.2 2.8-5 5.5-5s5 1.8 5.5 5z"/></g></svg><span class="inbn" id="famn" hidden></span></button>
     </div>
   </div>
 
@@ -1074,7 +1092,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       <button class="heroplay" id="heroplay" type="button" aria-label="Play every song, the newest first" title="Play all"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M4.5 2.5v11l9.5-5.5z"/></svg></button>
       <button class="heroshuf" id="heroshuf" type="button" aria-label="Play every song, shuffled" title="Shuffle all"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 4.5h2.3c1.5 0 2.4.7 3.3 2l1.8 3c.8 1.3 1.8 2 3.3 2H14M2 11.5h2.3c1.3 0 2.1-.5 2.8-1.4M9.6 5.9c.7-.9 1.5-1.4 2.8-1.4H14M12.2 2.8 14 4.5l-1.8 1.7M12.2 9.8 14 11.5l-1.8 1.7"/></svg></button>
     </div>
-    <button class="signedchip" id="who" type="button" hidden><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><circle cx="8" cy="5.2" r="3"/><path d="M2.5 14.5c.5-3.2 2.8-5 5.5-5s5 1.8 5.5 5z"/></svg><span id="whotext">Signed in</span></button>
+    <button class="signedchip" id="who" type="button" hidden><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><circle cx="8" cy="5.2" r="3"/><path d="M2.5 14.5c.5-3.2 2.8-5 5.5-5s5 1.8 5.5 5z"/></svg><span id="whotext">Signed in</span><span class="inbn" id="whon" hidden></span></button>
     <div class="monthnav">
       <button class="round" id="prev" type="button" aria-label="Previous month"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 3 5 8l5 5"/></svg></button>
       <nav class="strip" id="strip" aria-label="Months"></nav>
@@ -1234,6 +1252,11 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     </div>
     <div class="ac-who">
       <h3 id="acname">Signed in</h3>
+    </div>
+    <div class="ac-inbox" id="acinbox" hidden>
+      <div class="hd"><p class="ac-h" id="acinh">Inbox</p><button class="allread" id="acallread" type="button" hidden>Mark all read</button></div>
+      <ul class="ac-msgs" id="acmsgs"></ul>
+      <p class="ac-none" id="acinnone" hidden>Nothing yet. Each new Song of the Day, and John’s notes, come here.</p>
     </div>
     <div class="ac-app" id="acapp" hidden>
       <p class="ac-h">The app</p>
@@ -4577,7 +4600,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     none.textContent = !PL.loaded ? 'Loading…' : 'None saved yet. Add songs with the heart, then open My playlist and tap Save.';
     acOut.classList.remove('armed'); acOut.textContent = 'Sign out';
     document.getElementById('accode').hidden = true; document.getElementById('acgetcode').textContent = 'Get a code';
-    appDraw(); noteDraw();
+    appDraw(); noteDraw(); inboxDraw();
   }
   // ---- notifications: each new Song of the Day as it goes up, and John's own now and then (sent by the Worker; the
   // service worker shows them). Turned on per device, here in the Profile: the phone asks permission, then the
@@ -4585,12 +4608,72 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // (iOS 16.4 on), so in Safari this says so. A device that has them on hands its subscription in again now and then
   // (a phone can change it), and turns them off when it signs out. ----
   var NOTE_OK = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
-  // the number on the app's icon (unseen notifications, kept by the service worker): gone once the calendar's in view
-  function badgeClear() {
-    try { if (navigator.clearAppBadge) navigator.clearAppBadge().catch(function () {}); } catch (e) {}
-    try { if (window.caches) caches.open('sotd-badge').then(function (c) { return c.delete('n'); }).catch(function () {}); } catch (e) {}
+  // ---- the inbox: everything sent to this member (the day's songs, John's notes), from the Worker, read or not. The
+  // unread count shows on the Profile buttons and the app's icon; a message tapped here (or its notification tapped)
+  // counts as read, on all their devices. ----
+  var INBOX = { items: null, unread: 0, shown: 8 };
+  function unreadSet(n) {
+    INBOX.unread = Math.max(0, n || 0);
+    ['whon', 'famn'].forEach(function (id) { var el = document.getElementById(id); if (!el) return; el.hidden = !INBOX.unread || !MEMBER; el.textContent = INBOX.unread > 99 ? '99+' : String(INBOX.unread); });
+    try { if (navigator.setAppBadge) (INBOX.unread && MEMBER ? navigator.setAppBadge(INBOX.unread) : navigator.clearAppBadge()).catch(function () {}); } catch (e) {}
+    try { if (window.caches) caches.open('sotd-badge').then(function (c) { return INBOX.unread ? c.put('n', new Response(String(INBOX.unread))) : c.delete('n'); }).catch(function () {}); } catch (e) {}
+    var h = document.getElementById('acinh'); if (h) h.textContent = INBOX.unread ? 'Inbox · ' + INBOX.unread + ' new' : 'Inbox';
+    var ar = document.getElementById('acallread'); if (ar) ar.hidden = !INBOX.unread;
   }
-  if (!TV) { badgeClear(); document.addEventListener('visibilitychange', function () { if (!document.hidden) badgeClear(); }); }
+  function inboxCall(body) {
+    var tok = plTok(); if (!tok || !MBASE) return Promise.reject();
+    return fetch(MBASE + '/members/inbox', body ? { method: 'POST', headers: { Authorization: 'Bearer ' + tok, 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
+      : { headers: { Authorization: 'Bearer ' + tok }, cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function (j) { INBOX.items = j.items || []; unreadSet(j.unread); if (acct.open) inboxDraw(); return j; });
+  }
+  function readTapped() {   // notifications tapped while the page was away: read now
+    if (!window.caches || !MEMBER) return Promise.resolve();
+    return caches.open('sotd-badge').then(function (c) {
+      return c.match('read').then(function (r) { return r ? r.json() : []; }).then(function (ids) {
+        if (!ids.length) return;
+        return inboxCall({ read: ids }).then(function () { return c.delete('read'); });
+      });
+    }).catch(function () {});
+  }
+  function ago(t) {
+    var d = (Date.now() - t) / 60000;
+    if (d < 1) return 'just now'; if (d < 60) return Math.round(d) + ' min ago'; if (d < 24 * 60) return Math.round(d / 60) + ' h ago';
+    return new Date(t).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+  }
+  function inboxDraw() {
+    var box = document.getElementById('acinbox'), ul = document.getElementById('acmsgs'), none = document.getElementById('acinnone');
+    box.hidden = !MEMBER || !MBASE;
+    if (box.hidden) return;
+    ul.textContent = '';
+    var items = INBOX.items;
+    none.hidden = !(items && !items.length);
+    if (!items) { var w = document.createElement('li'); w.className = 'ac-none'; w.textContent = 'Loading…'; ul.appendChild(w); return; }
+    items.slice(0, INBOX.shown).forEach(function (x) {
+      var li = document.createElement('li'), b = document.createElement('button'); b.type = 'button'; if (!x.r) b.className = 'new';
+      b.innerHTML = '<span class="dot"></span><span class="t"></span>' + (x.b ? '<span class="b"></span>' : '') + '<span class="w"></span>';
+      b.querySelector('.t').textContent = x.t; if (x.b) b.querySelector('.b').textContent = x.b; b.querySelector('.w').textContent = ago(x.at);
+      b.setAttribute('aria-label', (x.r ? '' : 'New: ') + x.t + (x.b ? '. ' + x.b : ''));
+      b.addEventListener('click', function () {
+        var go = function () { if (x.u) { if (x.u.split('#')[0] === location.href.split('#')[0] || x.u.split('#')[0] === location.origin + location.pathname) { closeDialog(acct); location.hash = x.u.split('#')[1] || ''; } else location.href = x.u; } };
+        if (x.r) { go(); return; }
+        x.r = Date.now(); unreadSet(INBOX.unread - 1); inboxDraw();
+        inboxCall({ read: [x.id] }).catch(function () {}).then(go);
+      });
+      li.appendChild(b); ul.appendChild(li);
+    });
+    if (items.length > INBOX.shown) {
+      var li = document.createElement('li'), m = document.createElement('button'); m.type = 'button'; m.className = 'copy ghost more'; m.textContent = 'Show older';
+      m.addEventListener('click', function () { INBOX.shown += 20; inboxDraw(); });
+      li.appendChild(m); ul.appendChild(li);
+    }
+  }
+  document.getElementById('acallread').addEventListener('click', function () {
+    (INBOX.items || []).forEach(function (x) { if (!x.r) x.r = Date.now(); });
+    unreadSet(0); inboxDraw();
+    inboxCall({ read: 'all' }).catch(function () {});
+  });
+  // back in view (the app reopened): what was read elsewhere, and what's come in
+  if (!TV) document.addEventListener('visibilitychange', function () { if (!document.hidden && MEMBER) readTapped().then(function () { return inboxCall(); }).catch(function () {}); });
   var noteKey = null;
   try { noteKey = localStorage.getItem('sotd-pushkey'); } catch (e) {}
   function noteReg() { return navigator.serviceWorker.ready; }
@@ -4917,6 +5000,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     (ev.userChoice || Promise.resolve({})).then(function () { appDraw(); });
   });
   function acctOpen() {
+    INBOX.shown = 8; inboxCall().catch(function () {});
     acctDraw(); openLayer(acct); appDraw();   // (again, open: the code goes into the address only while it's open)
     if (MEMBER && !PL.loaded) plLoad();
   }
@@ -4940,7 +5024,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (was) noteOff(was);
     if (was && MBASE) fetch(MBASE + '/members/signout', { method: 'POST', headers: { Authorization: 'Bearer ' + was } }).catch(function () {});   // off the members page too
     closeDialog(acct);
-    dlClear(); MEMBER = null; memberApply(); famSync(); OWNC_SIG = '{}'; render(); toast('Signed out on this device');   // (the album covers back)
+    dlClear(); MEMBER = null; memberApply(); famSync(); OWNC_SIG = '{}'; render(); unreadSet(0); INBOX.items = null; toast('Signed out on this device');   // (the album covers back)
   });
 
   function memberApply() {
@@ -4964,6 +5048,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     }).then(function (j) {
       if (!j) return;
       MEMBER = j; memberApply(); famSync(); resumeInit(); noteSync(); noteOffer();
+      if (!TV) { unreadSet(j.unread); readTapped(); }
       if (appAfterJoin) { appAfterJoin = false; if (appCan()) setTimeout(appOffer, 600); }
       var mc = JSON.stringify(j.mycovers || {});   // John's own covers this member sees: the calendar drawn again with them
       if (mc !== OWNC_SIG) { OWNC_SIG = mc; render(); if (idx.open) renderIndex(); }

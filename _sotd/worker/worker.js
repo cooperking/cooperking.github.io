@@ -459,6 +459,7 @@ async function members(request, url, env) {
   if (route === 'playlists') return memberPlaylists(request, env, answer);
   if (route === 'tvcode') return memberTvCode(request, env, answer);
   if (route === 'push') return memberPush(request, env, answer);
+  if (route === 'inbox') return memberInbox(request, env, answer);
   if (!['admin', 'upload', 'cover'].includes(route)) return answer(404, { error: 'Not here.' });
   if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
   const no = await adminOk(request, env, answer);
@@ -510,6 +511,7 @@ async function members(request, url, env) {
       delete all[body.id]; await save();
       await env.SOTD.delete('mpl:' + body.id);   // their saved playlists go too
       await pushForget(env, body.id);   // and their notifications
+      await env.SOTD.delete('inbox:' + body.id);
       if (owner === body.id) await env.SOTD.delete('owner');
       return answer(200, { ok: true, members: listing(owner === body.id ? null : owner) });
     }
@@ -815,7 +817,8 @@ async function memberMe(request, env, answer) {
     const x = coverFor(c.list, id);
     if (x) mycovers[track] = x.share ? { id: x.id, at: x.at, share: x.share.at } : { id: x.id, at: x.at };
   }
-  return answer(200, Object.assign({ name: m.name, exp, media, mycovers }, owner ? { owner: true } : {}));
+  const unread = ((await env.SOTD.get('inbox:' + id, 'json')) || []).filter(x => !x.r).length;   // the Profile's inbox: not yet read
+  return answer(200, Object.assign({ name: m.name, exp, media, mycovers, unread }, owner ? { owner: true } : {}));
 }
 
 // an invitation's link: a page that shows a proper card in a message (WhatsApp, iMessage...), like a day's share page,
@@ -1129,14 +1132,15 @@ function pushHost(endpoint) {   // whose push service: for John, in plain words
   const h = new URL(endpoint).host;
   return /apple\.com$/.test(h) ? 'Apple' : /googleapis\.com$/.test(h) ? 'Google' : /mozilla|services\.mozilla\.com$/.test(h) ? 'Mozilla' : /windows|notify\.windows\.com$/.test(h) ? 'Microsoft' : h;
 }
-async function pushAll(env, msg, to) {   // to: only these members' devices (else everyone's)
+async function pushAll(env, msg, to) {   // to: only these members (else everyone)
   const subs = (await env.SOTD.get('pushSubs', 'json')) || {}, k = await vapidKeys(env);
+  const unread = await inboxAdd(env, to, msg);   // into each one's inbox first (notifications on or not); their unread counts
   let sent = 0, failed = 0; const gone = [], errors = [];
   const ids = Object.keys(subs).filter(id => !to || to.includes(subs[id].m));
   for (let i = 0; i < ids.length; i += 20) {   // twenty at a time
     await Promise.all(ids.slice(i, i + 20).map(async id => {
       try {
-        const { st, why } = await pushOne(k, subs[id].sub, msg);
+        const { st, why } = await pushOne(k, subs[id].sub, Object.assign({ unread: unread[subs[id].m] || 1, ib: unread[''] }, msg));   // (the number on the app's icon)
         if (st >= 200 && st < 300) sent++;
         else if (st === 404 || st === 410) gone.push(id);
         else { failed++; errors.push({ to: pushHost(subs[id].sub.endpoint), status: st, why }); console.log('push ' + st + ' ' + pushHost(subs[id].sub.endpoint) + ': ' + why); }
@@ -1152,6 +1156,38 @@ async function pushAll(env, msg, to) {   // to: only these members' devices (els
   await kvSoft(env, 'pushLastResult', JSON.stringify(res));   // the last send, for the members page
   return res;
 }
+// ---------- each member's inbox: everything sent to them (the day's songs, John's own), newest first, read or not ----------
+// Kept per member (inbox:<member>), the newest 60; reading on one device counts for all of theirs. The count of unread
+// goes with each notification, for the number on the app's icon, and with /members/me.
+const INBOX_MAX = 60;
+async function inboxAdd(env, to, msg) {
+  const all = (await env.SOTD.get('members', 'json')) || {}, ids = (to || Object.keys(all)).filter(id => all[id]), out = {};
+  const item = { id: randomCode(8), at: Date.now(), t: msg.title, b: msg.body || '', u: msg.url || '' };
+  if (msg.image) item.i = msg.image; if (msg.icon) item.c = msg.icon;
+  await Promise.all(ids.map(async id => {
+    const box = (await env.SOTD.get('inbox:' + id, 'json')) || [];
+    box.unshift(item); box.length = Math.min(box.length, INBOX_MAX);
+    await kvSoft(env, 'inbox:' + id, JSON.stringify(box));
+    out[id] = box.filter(x => !x.r).length;
+  }));
+  out[''] = item.id;   // (the message's own id, for marking it read from a tap on it)
+  return out;
+}
+// /members/inbox: GET the inbox; POST { read: [ids] } or { read: 'all' } marks them read; either way the unread count
+async function memberInbox(request, env, answer) {
+  const member = await memberFromToken(request, env);
+  if (!member) return answer(401, { error: 'Not a member (any more).' });
+  const key = 'inbox:' + member, box = (await env.SOTD.get(key, 'json')) || [];
+  if (request.method === 'POST') {
+    const body = await request.json().catch(() => ({}));
+    const want = body.read === 'all' ? null : new Set((Array.isArray(body.read) ? body.read : []).map(String));
+    let changed = false;
+    box.forEach(x => { if (!x.r && (!want || want.has(x.id))) { x.r = Date.now(); changed = true; } });
+    if (changed) await env.SOTD.put(key, JSON.stringify(box));
+  } else if (request.method !== 'GET') return answer(405, { error: 'Use GET or POST.' });
+  return answer(200, { items: box, unread: box.filter(x => !x.r).length });
+}
+
 async function pushCount(env) {
   const subs = (await env.SOTD.get('pushSubs', 'json')) || {}, all = (await env.SOTD.get('members', 'json')) || {};
   const by = {}, ids = {};
@@ -1185,7 +1221,8 @@ async function memberPush(request, env, answer) {
   await env.SOTD.put('pushSubs', JSON.stringify(subs));
   if (body.test) {   // the first one, so they know it works (and if the push service says no, the calendar says why)
     let st = 0, why = '';
-    try { ({ st, why } = await pushOne(await vapidKeys(env), subs[id].sub, { title: 'Notifications are on', body: 'You’ll hear about each new Song of the Day as it goes up.', url: SITE_SONGS, tag: 'sotd-on' })); }
+    const unread = ((await env.SOTD.get('inbox:' + member, 'json')) || []).filter(x => !x.r).length;   // (not in the inbox: the icon keeps its number)
+    try { ({ st, why } = await pushOne(await vapidKeys(env), subs[id].sub, { title: 'Notifications are on', body: 'You’ll hear about each new Song of the Day as it goes up.', url: SITE_SONGS, tag: 'sotd-on', unread })); }
     catch (e) { why = String(e && e.message || e).slice(0, 160); }
     const res = { sent: st >= 200 && st < 300 ? 1 : 0, failed: st >= 200 && st < 300 ? 0 : 1, gone: 0, errors: st >= 200 && st < 300 ? [] : [{ to: pushHost(endpoint), status: st, why }], at: Date.now(), title: 'Notifications are on (test)' };
     await kvSoft(env, 'pushLastResult', JSON.stringify(res));
