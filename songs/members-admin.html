@@ -42,6 +42,11 @@
 .invpic, .invacts { display: flex; flex-wrap: wrap; gap: 8px; }
 .notify { padding: 16px; display: grid; gap: 10px; }
 .notify textarea { min-height: 70px; }
+.notify .to { display: flex; flex-wrap: wrap; gap: 6px; }
+.notify .who { display: flex; flex-wrap: wrap; gap: 6px; }
+.notify .who label { display: inline-flex; align-items: center; gap: 6px; padding: 7px 11px; border-radius: 999px; border: 1px solid var(--line); background: var(--chip); font: 500 14px/1.2 var(--sans); color: var(--fg); cursor: pointer; }
+.notify .who label.off { color: var(--muted); cursor: default; }
+.notify .who input { margin: 0; accent-color: var(--fg); }
 .notify .row select { flex: 1 1 180px; min-width: 0; border: 1px solid var(--line); background: var(--field); color: var(--fg); border-radius: 12px; padding: 10px 12px; font: 16px var(--sans); }
 </style>
 </head>
@@ -64,7 +69,12 @@
   </div>
   <div class="card notify">
     <div class="kicker">Send a notification</div>
-    <p class="stat" id="pushstat">Members turn notifications on in their Profile on the calendar. Each new song goes out by itself, once, when it’s added to the playlist.</p>
+    <p class="stat" id="pushstat">Members turn notifications on in their Profile on the calendar. Each new song goes out by itself, once, when its MP3 and video are both up.</p>
+    <div class="to" role="radiogroup" aria-label="Who it goes to">
+      <button class="btn small primary" id="ntoall" type="button" aria-pressed="true">Everyone</button>
+      <button class="btn small" id="ntosome" type="button" aria-pressed="false">Choose people…</button>
+    </div>
+    <div class="who" id="nwho" hidden></div>
     <input class="name" id="ntitle" placeholder="Title (e.g. A new playlist)" maxlength="80" autocomplete="off" aria-label="Title">
     <textarea id="ntext" placeholder="Message (optional)" maxlength="300" aria-label="Message"></textarea>
     <div class="row">
@@ -166,7 +176,8 @@
       if (m.owner) { var you = document.createElement('span'); you.className = 'badge signed'; you.textContent = 'You'; you.style.marginLeft = '8px'; who.appendChild(you); }
       var st = document.createElement('span'); st.className = 'stat';
       st.textContent = (m.devices ? m.devices + (m.devices === 1 ? ' device' : ' devices') : 'not signed in yet') + (m.seen ? ' · last here ' + new Date(m.seen).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '')
-        + (m.invite ? ' · link: ' + (m.invite.left && m.invite.until > Date.now() ? m.invite.left + ' more device' + (m.invite.left === 1 ? '' : 's') + ' until ' + new Date(m.invite.until).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : 'used up') : '');
+        + (m.invite ? ' · link: ' + (m.invite.left && m.invite.until > Date.now() ? m.invite.left + ' more device' + (m.invite.left === 1 ? '' : 's') + ' until ' + new Date(m.invite.until).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : 'used up') : '')
+        + ((PUSHON || {})[m.id] ? ' · notifications on' : '');
       var nl = button('New link', function () { api('/members/admin', { op: 'reinvite', id: m.id }).then(showLink); });
       var tv = button('Code', function () { api('/members/admin', { op: 'tvcode', id: m.id }).then(function (j) {
         if (!j.code) { toast(j.error || 'Couldn’t make a code'); return; }
@@ -176,7 +187,9 @@
       var me = button(m.owner ? 'Not me' : 'This is me', function () {   // the Admin button shows on this member's devices only
         api('/members/admin', { op: 'owner', id: m.owner ? '' : m.id }).then(function (j) { if (j.members) { MEMBERS = j.members; people(); toast(m.owner ? 'Done' : 'Done: your Profile on the calendar now has the Admin button'); } else toast(j.error || 'Couldn’t'); });
       });
-      var acts = document.createElement('div'); acts.className = 'acts'; acts.appendChild(nl); acts.appendChild(tv); acts.appendChild(me); acts.appendChild(rm);
+      var acts = document.createElement('div'); acts.className = 'acts';
+      if ((PUSHON || {})[m.id]) acts.appendChild(button('Notify', function () { notifyOne(m); }));   // a notification to just them
+      acts.appendChild(nl); acts.appendChild(tv); acts.appendChild(me); acts.appendChild(rm);
       li.appendChild(who); li.appendChild(st); li.appendChild(acts); ul.appendChild(li);
     });
   }
@@ -277,12 +290,35 @@
   $('share').addEventListener('click', invOpen);
 
   // ---- notifications: who has them on, and John's own message to all of them ----
+  var PUSHON = {}, PICK = null;   // PICK: the chosen members' ids (null: everyone)
+  function toDraw() {
+    $('ntoall').classList.toggle('primary', !PICK); $('ntoall').setAttribute('aria-pressed', String(!PICK));
+    $('ntosome').classList.toggle('primary', !!PICK); $('ntosome').setAttribute('aria-pressed', String(!!PICK));
+    var box = $('nwho'); box.hidden = !PICK; box.innerHTML = '';
+    if (!PICK) return;
+    MEMBERS.forEach(function (m) {
+      var n = PUSHON[m.id] || 0, l = document.createElement('label'), c = document.createElement('input');
+      c.type = 'checkbox'; c.checked = PICK.indexOf(m.id) >= 0; c.disabled = !n;
+      c.addEventListener('change', function () { var i = PICK.indexOf(m.id); if (c.checked && i < 0) PICK.push(m.id); if (!c.checked && i >= 0) PICK.splice(i, 1); });
+      l.className = n ? '' : 'off'; l.title = n ? n + (n === 1 ? ' device' : ' devices') + ' with notifications on' : 'Hasn’t turned notifications on';
+      l.appendChild(c); l.appendChild(document.createTextNode(m.name + (n ? '' : ' (off)')));
+      box.appendChild(l);
+    });
+  }
+  $('ntoall').addEventListener('click', function () { PICK = null; toDraw(); });
+  $('ntosome').addEventListener('click', function () { if (!PICK) PICK = []; toDraw(); });
+  function notifyOne(m) {   // a person's Notify button: the box, with just them chosen
+    PICK = [m.id]; toDraw();
+    var box = document.querySelector('.notify'); box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setTimeout(function () { $('ntitle').focus({ preventScroll: true }); }, 400);
+  }
   function pushStat() {
     api('/members/admin', { op: 'pushcount' }).then(function (j) {
       if (j.status !== 200) return;
+      PUSHON = j.ids || {}; toDraw(); people();
       var by = Object.keys(j.members || {}).map(function (n) { return n + (j.members[n] > 1 ? ' (' + j.members[n] + ')' : ''); });
-      $('pushstat').textContent = j.devices ? 'On for ' + j.devices + (j.devices === 1 ? ' device: ' : ' devices: ') + by.join(', ') + '. Each new song goes out by itself, once, when it’s added to the playlist.'
-        : 'Nobody has turned them on yet: members do that in their Profile on the calendar. Each new song goes out by itself, once, when it’s added.';
+      $('pushstat').textContent = j.devices ? 'On for ' + j.devices + (j.devices === 1 ? ' device: ' : ' devices: ') + by.join(', ') + '. Each new song goes out by itself, once, when its MP3 and video are both up.'
+        : 'Nobody has turned them on yet: members do that in their Profile on the calendar. Each new song goes out by itself, once, when its MP3 and video are both up.';
     });
   }
   $('nlink').addEventListener('change', function () { $('nurl').hidden = this.value !== 'other'; if (!$('nurl').hidden) $('nurl').focus(); });
@@ -291,13 +327,17 @@
     if (!title) { $('ntitle').focus(); return; }
     if (l === 'today') url = 'https://cooperking.github.io/songs/#today';
     if (l === 'other') { url = $('nurl').value.trim(); if (!/^https:\/\/cooperking\.github\.io\//.test(url)) { toast('The link has to be a page on the site'); $('nurl').focus(); return; } }
-    ask('Notification', 'Send “' + title + '”?', 'It goes to every device with notifications on, straight away.', 'Send').then(function (yes) {
+    var to = PICK ? PICK.slice() : null;
+    if (to && !to.length) { toast('Choose who it goes to'); return; }
+    var names = to ? MEMBERS.filter(function (m) { return to.indexOf(m.id) >= 0; }).map(function (m) { return m.name; }) : [];
+    var whom = to ? (names.length > 1 ? names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1] : names[0]) : '';
+    ask('Notification', 'Send “' + title + '”?', to ? 'It goes to ' + whom + ', straight away.' : 'It goes to every device with notifications on, straight away.', 'Send').then(function (yes) {
       if (!yes) return;
       var b = $('nsend'); b.disabled = true;
-      api('/members/admin', { op: 'push', title: title, text: text, url: url }).then(function (j) {
+      api('/members/admin', { op: 'push', title: title, text: text, url: url, to: to }).then(function (j) {
         b.disabled = false;
         if (j.status !== 200) { toast(j.error || 'Couldn’t send it'); return; }
-        toast(j.sent ? 'Sent to ' + j.sent + (j.sent === 1 ? ' device' : ' devices') + (j.failed ? ' (' + j.failed + ' didn’t take it)' : '') : 'Nobody has notifications on yet');
+        toast(j.sent ? 'Sent to ' + j.sent + (j.sent === 1 ? ' device' : ' devices') + (j.failed ? ' (' + j.failed + ' didn’t take it)' : '') : to ? 'They don’t have notifications on' : 'Nobody has notifications on yet');
         if (j.sent) { $('ntitle').value = ''; $('ntext').value = ''; }
         pushStat();
       }).catch(function () { b.disabled = false; toast('Couldn’t reach the Worker'); });

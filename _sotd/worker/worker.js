@@ -520,7 +520,9 @@ async function members(request, url, env) {
       const link = String(body.url || '').trim();
       if (!title) return answer(400, { error: 'Give it a title.' });
       if (link && !/^https:\/\/cooperking\.github\.io\//.test(link)) return answer(400, { error: 'The link has to be a page on the site (https://cooperking.github.io/…).' });
-      const r = await pushAll(env, { title, body: text, url: link || SITE_SONGS, tag: 'sotd-note-' + Date.now() });
+      const to = Array.isArray(body.to) ? body.to.map(String).filter(id => all[id]) : null;   // chosen members, or everyone
+      if (to && !to.length) return answer(400, { error: 'Choose who it goes to.' });
+      const r = await pushAll(env, { title, body: text, url: link || SITE_SONGS, tag: 'sotd-note-' + Date.now() }, to);
       return answer(200, r);
     }
     case 'invitecard': {   // the invitation's link-preview page and picture (drawn on the members page)
@@ -1117,10 +1119,10 @@ async function pushOne(k, sub, msg) {   // the push service's answer: 201 sent, 
     TTL: String(PUSH_TTL), Urgency: 'normal' } });
   return r.status;
 }
-async function pushAll(env, msg) {
+async function pushAll(env, msg, to) {   // to: only these members' devices (else everyone's)
   const subs = (await env.SOTD.get('pushSubs', 'json')) || {}, k = await vapidKeys(env);
   let sent = 0, failed = 0; const gone = [];
-  const ids = Object.keys(subs);
+  const ids = Object.keys(subs).filter(id => !to || to.includes(subs[id].m));
   for (let i = 0; i < ids.length; i += 20) {   // twenty at a time
     await Promise.all(ids.slice(i, i + 20).map(async id => {
       try {
@@ -1138,9 +1140,9 @@ async function pushAll(env, msg) {
 }
 async function pushCount(env) {
   const subs = (await env.SOTD.get('pushSubs', 'json')) || {}, all = (await env.SOTD.get('members', 'json')) || {};
-  const by = {};
-  Object.values(subs).forEach(x => { const n = (all[x.m] && all[x.m].name) || '?'; by[n] = (by[n] || 0) + 1; });
-  return { devices: Object.keys(subs).length, members: by };
+  const by = {}, ids = {};
+  Object.values(subs).forEach(x => { const n = (all[x.m] && all[x.m].name) || '?'; by[n] = (by[n] || 0) + 1; ids[x.m] = (ids[x.m] || 0) + 1; });
+  return { devices: Object.keys(subs).length, members: by, ids };   // ids: devices with them on, by member id
 }
 async function pushForget(env, member) {
   const subs = (await env.SOTD.get('pushSubs', 'json')) || {};
