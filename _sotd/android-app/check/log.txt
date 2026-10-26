@@ -1,200 +1,400 @@
-10-26 09:29:52.491  1320  1388 W bwft    : Succeeded but not registered: com.google.android.libraries.consentverifier#com.google.android.gms [CONTEXT service_id=51 ]
-10-26 09:29:53.374  3045  3484 I Finsky  : [69] VerifyInstalledPackagesTask.f(2): VerifyApps: Verifying installed packages (AutoScan)
-10-26 09:29:56.502  4843  4843 D nativeloader: InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
-10-26 09:29:57.842  3045  3365 I Finsky  : [50] qsh.a(73): Verifying key attestation.
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: Exception in upload method
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: com.google.android.apps.gsa.shared.r.d: Error code: 262182
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.android.apps.gsa.shared.ab.bk.d(PG:5)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.android.libraries.gsa.c.a.ar.d(PG:1)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.android.libraries.gsa.c.a.bo.b(PG:5)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.android.libraries.gsa.c.a.e.a(PG:2)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.android.libraries.gsa.c.a.a.run(PG:2)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.bf.execute(PG:1)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.i(PG:1)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.l(PG:12)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.cancel(PG:8)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.m(PG:2)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.j.a(PG:1)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.l(PG:3)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.cancel(PG:8)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.m(PG:2)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.j.a(PG:1)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.l(PG:3)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.cancel(PG:8)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.m(PG:2)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.j.a(PG:1)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.l(PG:3)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.cancel(PG:8)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.m(PG:2)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.j.a(PG:1)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.l(PG:3)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.cancel(PG:8)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.m(PG:2)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.c.a(PG:1)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.l(PG:3)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.cancel(PG:8)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.bu.cancel(PG:1)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.cancel(PG:17)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.android.apps.gsa.staticplugins.bk.b.h.run(PG:2)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.bf.execute(PG:1)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.i(PG:1)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.l(PG:12)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.cancel(PG:8)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.m(PG:2)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.j.a(PG:1)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.l(PG:3)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.cancel(PG:8)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.android.apps.gsa.shared.util.c.aj.a(PG:2)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.l(PG:3)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.cancel(PG:8)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.m(PG:2)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.c.a(PG:1)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.l(PG:3)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.cancel(PG:8)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.android.apps.gsa.s3.o.c(PG:2)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.android.apps.gsa.s3.r.a(PG:1)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.android.apps.gsa.staticplugins.dc.a.c.e(PG:2)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.android.apps.gsa.staticplugins.dc.a.c.c(PG:3)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.android.apps.gsa.staticplugins.dc.a.e.a(PG:5)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.android.apps.gsa.s3.n.hh(PG:1)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.cd.g.a.f.e(PG:2)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.android.apps.gsa.speech.k.a.g.d(PG:22)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.android.apps.gsa.speech.k.a.g.ks(PG:6)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.android.apps.gsa.s3.o.e(PG:14)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.android.apps.gsa.s3.p.run(PG:1)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:487)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at java.util.concurrent.FutureTask.run(FutureTask.java:264)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.android.apps.gsa.shared.util.c.a.e.run(PG:2)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.android.apps.gsa.shared.util.c.a.bi.run(PG:1)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.android.apps.gsa.shared.util.c.a.bi.run(PG:1)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at java.lang.Thread.run(Thread.java:1012)
-10-26 09:30:05.633  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.android.apps.gsa.shared.util.c.a.l.run(PG:5)
-10-26 09:30:10.266  4529  4635 I cr_CronetLibraryLoader: Cronet version: 113.0.5672.51, arch: x86_64
-10-26 09:30:10.301  1370  4773 I cr_CronetLibraryLoader: Cronet version: 113.0.5672.51, arch: x86_64
-10-26 09:30:10.542  2668  2967 I DialerCountryCodeProvider: com.android.dialer.businessvoice.verifiedcall.impl.i18n.CountryCodeProvider.getSimCountryCodeInternal:85 returning Redacted-2-chars
-10-26 09:30:10.543  2668  2967 I DialerCachedVerifiedNumberProvider: com.android.dialer.businessvoice.verifiedcall.impl.constellation.CachedVerifiedNumberProvider.refreshConstellationInfo:190 Retrieving constellation info and refreshing the cache.
-10-26 09:30:10.622  2668  2919 W DialerVerifiedNumberProvider: com.android.dialer.businessvoice.verifiedcall.impl.constellation.VerifiedNumberProvider.lambda$getConstellationResponse$1:155 Failed to get constellation token.
-10-26 09:30:10.622  2668  2919 W DialerVerifiedNumberProvider: nkq: 5005: 
-10-26 09:30:10.622  2668  2919 W DialerVerifiedNumberProvider: 	at nov.au(PG:1)
-10-26 09:30:10.622  2668  2919 W DialerVerifiedNumberProvider: 	at nnf.g(PG:2)
-10-26 09:30:10.622  2668  2919 W DialerVerifiedNumberProvider: 	at npo.a(Unknown Source:2)
-10-26 09:30:10.622  2668  2919 W DialerVerifiedNumberProvider: 	at npy.dm(PG:9)
-10-26 09:30:10.622  2668  2919 W DialerVerifiedNumberProvider: 	at ncz.onTransact(PG:4)
-10-26 09:30:10.622  2668  2919 W DialerVerifiedNumberProvider: 	at android.os.Binder.execTransactInternal(Binder.java:1344)
-10-26 09:30:10.622  2668  2919 W DialerVerifiedNumberProvider: 	at android.os.Binder.execTransact(Binder.java:1275)
-10-26 09:30:10.660  4529  5110 I cr_CronetUrlRequestContext: destroyNativeStreamLocked org.chromium.net.impl.CronetBidirectionalStream@d97a8f7
-10-26 09:30:10.702  4529  4635 I Bugle   : VerifiedSmsEnabledCheckerImpl: VSMS is disabled via Phenotype flag.
-10-26 09:30:10.707  4529  4610 I Bugle   : VerifiedSmsStartupTask: Checking if Verified SMS tasks should be enqueued. feature supported: false, feature enabled: false, eligible / has registered key: false, C11N: false
-10-26 09:30:10.707  4529  4610 I Bugle   : VerifiedSmsStartupTask: Not enqueuing VSMS periodic task, VSMS is disabled or not supported.
-10-26 09:30:10.707  4529  4615 I Bugle   : VerifiedSmsStartupTask: Not calling C11N to get phone numbers.
-10-26 09:30:10.952   996  1058 W SliceDataConverter: 	at com.android.settings.slices.SlicesDatabaseAccessor.verifyIndexing(SlicesDatabaseAccessor.java:194)
-10-26 09:30:10.959   996  1058 E HardwareInfoFeatureProviderImpl: 	at com.android.settings.slices.SlicesDatabaseAccessor.verifyIndexing(SlicesDatabaseAccessor.java:194)
-10-26 09:30:10.969   996  1058 W SliceDataConverter: 	at com.android.settings.slices.SlicesDatabaseAccessor.verifyIndexing(SlicesDatabaseAccessor.java:194)
-10-26 09:30:10.978   996  1058 E SystemServiceRegistry: 	at com.android.settings.slices.SlicesDatabaseAccessor.verifyIndexing(SlicesDatabaseAccessor.java:194)
-10-26 09:30:11.029   996  1058 W SliceDataConverter: 	at com.android.settings.slices.SlicesDatabaseAccessor.verifyIndexing(SlicesDatabaseAccessor.java:194)
-10-26 09:30:11.030   996  1058 W SliceDataConverter: 	at com.android.settings.slices.SlicesDatabaseAccessor.verifyIndexing(SlicesDatabaseAccessor.java:194)
-10-26 09:30:11.055   996  1058 W SliceDataConverter: 	at com.android.settings.slices.SlicesDatabaseAccessor.verifyIndexing(SlicesDatabaseAccessor.java:194)
-10-26 09:30:11.075   996  1058 W SliceDataConverter: 	at com.android.settings.slices.SlicesDatabaseAccessor.verifyIndexing(SlicesDatabaseAccessor.java:194)
-10-26 09:30:11.085   996  1058 W SliceDataConverter: 	at com.android.settings.slices.SlicesDatabaseAccessor.verifyIndexing(SlicesDatabaseAccessor.java:194)
-10-26 09:30:11.086   996  1058 W SliceDataConverter: 	at com.android.settings.slices.SlicesDatabaseAccessor.verifyIndexing(SlicesDatabaseAccessor.java:194)
-10-26 09:30:11.089   996  1058 W SliceDataConverter: 	at com.android.settings.slices.SlicesDatabaseAccessor.verifyIndexing(SlicesDatabaseAccessor.java:194)
-10-26 09:30:11.760  3045  3433 I Finsky  : [55] agkr.b(4): VerifyApps: Device wide non work profile PHA info updated
-10-26 09:30:11.764  3045  3525 I Finsky  : [74] aghq.a(4): Cleaning the verify apps datastore
-10-26 09:30:11.775  3045  3525 I Finsky  : [74] aghq.a(52): Finished cleaning the verify apps datastore
-10-26 09:30:11.778  3045  3045 I Finsky  : [2] afdw.a(13): VerifyApps: Done verifying installed packages (AutoScan)
-10-26 09:30:14.818  4529  4609 I SnapshotHandler: Unable to retrieve flag snapshot for com.google.android.libraries.consentverifier#com.google.android.apps.messaging, using defaults.
-10-26 09:30:17.105  1474  1583 I PhenotypeBackgroundRecv: Successfully updated snapshot for com.google.android.libraries.consentverifier#com.google.android.apps.wellbeing
-10-26 09:30:17.236  1320  1400 I HeterodyneSyncScheduler: Scheduling Phenotype for a PhenotypeSyncImmediately(6, org.chromium.net.cronet) one off with window [1, 2] in seconds [CONTEXT service_id=51 ]
-10-26 09:30:19.981  4740  4940 I PhenotypeBackgroundRecv: Successfully updated snapshot for com.google.android.libraries.consentverifier#com.google.android.googlequicksearchbox
-10-26 09:30:20.125  2794  3635 I PhenotypeBackgroundRecv: Successfully updated snapshot for com.google.android.libraries.consentverifier#com.google.android.tts
-10-26 09:30:21.414  4740  4940 I PhenotypeBackgroundRecv: Successfully updated snapshot for com.google.android.libraries.consentverifier#com.google.android.googlequicksearchbox
-10-26 09:30:21.553  1459  2590 I PhenotypeBackgroundRecv: Successfully updated snapshot for com.google.android.libraries.consentverifier#com.google.android.inputmethod.latin
-10-26 09:30:21.557  1459  2590 I PhenotypeBackgroundRecv: Successfully updated snapshot for com.google.android.libraries.consentverifier#com.google.android.inputmethod.latin
-10-26 09:30:27.410  1474  1583 I PhenotypeBackgroundRecv: Successfully updated snapshot for com.google.android.libraries.consentverifier#com.google.android.apps.wellbeing
-10-26 09:30:28.263  4529  4612 I PhenotypeBackgroundRecv: Successfully updated snapshot for com.google.android.libraries.consentverifier#com.google.android.apps.messaging
-10-26 09:30:28.771  5402  5402 I cr_WebViewApkApp: Launched version=113.0.5672.136 minSdkVersion=29 isBundle=false processName=com.google.android.webview
-10-26 09:30:29.358  1320  5331 W PhenotypeConfigurationU: Update for unknown DeviceConfig package com.google.android.libraries.consentverifier#com.google.android.gms [CONTEXT service_id=204 ]
-10-26 09:30:29.358  1320  5331 W PhenotypeConfigurationU: bwix: No package exists for config package: com.google.android.libraries.consentverifier#com.google.android.gms
-10-26 09:30:29.613  4129  5426 I PhenotypeBackgroundRecv: Successfully updated snapshot for com.google.android.libraries.consentverifier#com.google.android.projection.gearhead
-10-26 09:30:29.616  2794  3636 I PhenotypeBackgroundRecv: Successfully updated snapshot for com.google.android.libraries.consentverifier#com.google.android.tts
-10-26 09:30:29.816  3045  3886 I PhenotypeBackgroundRecv: Successfully updated snapshot for com.google.android.libraries.consentverifier#com.android.vending
-10-26 09:30:29.901  2668  2935 I PhenotypeBackgroundRecv: Successfully updated snapshot for com.google.android.libraries.consentverifier#com.google.android.dialer
-10-26 09:30:33.031  5502  5539 E bwfc    : bwdx: 29501: Stale snapshot for com.google.android.libraries.consentverifier#com.google.android.gms(change count changed - expected 1  but was 0)
-10-26 09:30:33.031  5502  5539 W AsyncOperation: OperationException[Status{statusCode=Stale snapshot for com.google.android.libraries.consentverifier#com.google.android.gms(change count changed - expected 1  but was 0), resolution=null}]
-10-26 09:30:33.032  5560  5655 W MobStoreFlagStore: Failed to commit due to stale snapshot for com.google.android.libraries.consentverifier#com.google.android.gms, triggering flag update. Experiments may be delayed til next app start.
-10-26 09:30:33.780  5560  5602 I cr_CronetLibraryLoader: Cronet version: 113.0.5672.51, arch: x86_64
-10-26 09:30:36.648  5560  5638 I DynamicModuleDownloader: Module certificate could not be verified from the app certificates.
-10-26 09:30:38.363  5560  5638 I DynamicModuleDownloader: Module certificate could not be verified from the app certificates.
-10-26 09:30:38.822  5560  5607 I DynamicModuleDownloader: Module certificate could not be verified from the app certificates.
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: Exception in upload method
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: com.google.android.apps.gsa.shared.r.d: Error code: 262182
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.android.apps.gsa.shared.ab.bk.d(PG:5)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.android.libraries.gsa.c.a.ar.d(PG:1)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.android.libraries.gsa.c.a.bo.b(PG:5)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.android.libraries.gsa.c.a.e.a(PG:2)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.android.libraries.gsa.c.a.a.run(PG:2)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.bf.execute(PG:1)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.i(PG:1)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.l(PG:12)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.cancel(PG:8)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.m(PG:2)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.j.a(PG:1)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.l(PG:3)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.cancel(PG:8)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.m(PG:2)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.j.a(PG:1)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.l(PG:3)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.cancel(PG:8)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.m(PG:2)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.j.a(PG:1)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.l(PG:3)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.cancel(PG:8)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.m(PG:2)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.j.a(PG:1)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.l(PG:3)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.cancel(PG:8)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.m(PG:2)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.c.a(PG:1)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.l(PG:3)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.cancel(PG:8)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.bu.cancel(PG:1)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.cancel(PG:17)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.android.apps.gsa.staticplugins.bk.b.h.run(PG:2)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.bf.execute(PG:1)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.i(PG:1)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.l(PG:12)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.cancel(PG:8)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.m(PG:2)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.j.a(PG:1)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.l(PG:3)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.cancel(PG:8)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.android.apps.gsa.shared.util.c.aj.a(PG:2)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.l(PG:3)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.cancel(PG:8)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.m(PG:2)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.c.a(PG:1)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.l(PG:3)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.common.util.concurrent.d.cancel(PG:8)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.android.apps.gsa.s3.o.c(PG:2)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.android.apps.gsa.s3.r.a(PG:1)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.android.apps.gsa.staticplugins.dc.a.c.e(PG:2)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.android.apps.gsa.staticplugins.dc.a.c.c(PG:3)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.android.apps.gsa.staticplugins.dc.a.e.a(PG:5)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.android.apps.gsa.s3.n.hh(PG:1)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.cd.g.a.f.e(PG:2)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.android.apps.gsa.speech.k.a.g.d(PG:22)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.android.apps.gsa.speech.k.a.g.ks(PG:6)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.android.apps.gsa.s3.o.e(PG:14)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.android.apps.gsa.s3.p.run(PG:1)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:487)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at java.util.concurrent.FutureTask.run(FutureTask.java:264)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.android.apps.gsa.shared.util.c.a.e.run(PG:2)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.android.apps.gsa.shared.util.c.a.bi.run(PG:1)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.android.apps.gsa.shared.util.c.a.bi.run(PG:1)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at java.lang.Thread.run(Thread.java:1012)
-10-26 09:30:40.685  1592  2168 E cr_CronetUrlRequestContext: 	at com.google.android.apps.gsa.shared.util.c.a.l.run(PG:5)
-10-26 09:30:42.474  5502  5540 I cr_CronetLibraryLoader: Cronet version: 113.0.5672.51, arch: x86_64
+10-26 09:42:17.250   500   528 W ActivityManager: Slow operation: 609ms so far, now at startProcess: done updating pids map
+10-26 09:42:17.612   500  1264 I ActivityManager: Flag disabled. Ignoring finishAttachApplication from uid: 10130. pid: 3031
+10-26 09:42:17.693   991   991 D CarrierSvcBindHelper: onPackageModified: io.github.cooperking.sotd
+10-26 09:42:17.870   991  1279 D ImsResolver: maybeAddedImsService, packageName: io.github.cooperking.sotd
+10-26 09:42:17.910  3383  3383 I cr_CommandLine: COMMAND-LINE FLAGS: [chrome, --disable-fre, --no-default-browser-check, --no-first-run] (from /data/local/tmp/chrome-command-line)
+10-26 09:42:17.934   500   581 D ActivityManager: freezing 2673 com.android.carrierdefaultapp
+10-26 09:42:18.066   500   575 I ActivityManager: PendingStartActivityUids startActivity to updateOomAdj delay:2679ms, uid:10160
+10-26 09:42:18.124  3383  3563 I cr_LibraryLoader: Loading monochrome_64 from within /data/app/~~Y5TD8_I6OyOljpov14anjg==/com.android.chrome-t1RSEruTC09TfAou-xQrtQ==/Chrome.apk
+10-26 09:42:18.127  3383  3563 I cr_Linker: loadLibraryImplLocked: monochrome_64, relroMode=1
+10-26 09:42:18.185   500  2099 I ActivityManager: Flag disabled. Ignoring finishAttachApplication from uid: 10142. pid: 3383
+10-26 09:42:18.408   500   581 D ActivityManager: freezing 1723 com.google.android.youtube
+10-26 09:42:18.409   500   581 D ActivityManager: Reschedule freeze for process 1723 com.google.android.youtube (outstanding txns), timeout=1000
+10-26 09:42:18.409   500  1323 I ActivityManager: Flag disabled. Ignoring finishAttachApplication from uid: 10082. pid: 3467
+10-26 09:42:18.481   500   513 I ActivityManager: Flag disabled. Ignoring finishAttachApplication from uid: 10131. pid: 2910
+10-26 09:42:18.546   500  2436 I ActivityManager: Flag disabled. Ignoring finishAttachApplication from uid: 10131. pid: 3452
+10-26 09:42:19.461   500   527 I ActivityManager: com.android.vending is exempt from freezer
+10-26 09:42:19.464   500   581 D ActivityManager: freezing 1601 com.google.android.apps.youtube.music
+10-26 09:42:19.465   500   581 D ActivityManager: Reschedule freeze for process 1601 com.google.android.apps.youtube.music (outstanding txns), timeout=2463
+10-26 09:42:19.467   500   517 W Looper  : Slow dispatch took 581ms android.ui h=com.android.server.am.ActivityManagerService$UiHandler c=null m=68
+10-26 09:42:19.467   500   581 D ActivityManager: freezing 1723 com.google.android.youtube
+10-26 09:42:19.468   500   517 W Looper  : Slow delivery took 550ms android.ui h=com.android.server.am.ActivityManagerService$UiHandler c=com.android.server.am.UidObserverController$$ExternalSyntheticLambda0@5dc540b m=0
+10-26 09:42:19.468   500   581 D ActivityManager: Kill app due to repeated failure to freeze binder: 1723 com.google.android.youtube
+10-26 09:42:19.469   500   527 I ActivityManager: Killing 1723:com.google.android.youtube/u0a137 (adj 915): excessive binder traffic during cached
+10-26 09:42:19.479   500   528 I ActivityManager: Start proc 3646:com.android.vending:background/u0a131 for broadcast {com.android.vending/com.google.android.finsky.packagemonitor.backgroundimpl.BackgroundPackageMonitorReceiverImpl$RegisteredReceiver}
+10-26 09:42:19.652   500   528 I ActivityManager: Start proc 3673:com.google.android.documentsui/u0a98 for broadcast {com.google.android.documentsui/com.android.documentsui.PreBootReceiver}
+10-26 09:42:20.685   945  3724 D NetworkMonitor/101: PROBE_HTTP http://connectivitycheck.gstatic.com/generate_204 time=54ms ret=204 request={Connection=[close], User-Agent=[Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.32 Safari/537.36]} headers={null=[HTTP/1.1 204 No Content], Connection=[close], Content-Length=[0], Cross-Origin-Resource-Policy=[cross-origin], Date=[Mon, 26 Oct 2026 09:42:20 GMT], X-Android-Received-Millis=[1793007740685], X-Android-Response-Source=[NETWORK 204], X-Android-Selected-Protocol=[http/1.1], X-Android-Sent-Millis=[1793007740677]}
+10-26 09:42:20.691   945  3723 D NetworkMonitor/101: PROBE_HTTPS https://www.google.com/generate_204 time=70ms ret=204 request={Connection=[close], User-Agent=[Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.32 Safari/537.36]} headers={null=[HTTP/1.1 204 No Content], Alt-Svc=[h3=":443"; ma=2592000,h3-29=":443"; ma=2592000], Connection=[close], Content-Length=[0], Cross-Origin-Resource-Policy=[cross-origin], Date=[Mon, 26 Oct 2026 09:42:20 GMT], X-Android-Received-Millis=[1793007740691], X-Android-Response-Source=[NETWORK 204], X-Android-Selected-Protocol=[http/1.1], X-Android-Sent-Millis=[1793007740683]}
+10-26 09:42:20.759   500   564 D ActivityManager: sync unfroze 2498 com.android.externalstorage for 7
+10-26 09:42:20.841   500   564 I ActivityManager: Flag disabled. Ignoring finishAttachApplication from uid: 10098. pid: 3673
+10-26 09:42:20.916   500   516 I ActivityManager: Posting BOOT_COMPLETED user #0
+10-26 09:42:20.942   500   527 D SystemServerTimingAsync: ssm.onUnlockedUser-0_com.android.server.wm.ActivityTaskManagerService$Lifecycle
+10-26 09:42:21.087   500   527 W SystemServiceManager: Service com.android.server.wm.ActivityTaskManagerService$Lifecycle took 144 ms in onUnlockedUser-0
+10-26 09:42:21.087   500   527 D SystemServerTimingAsync: ssm.onUnlockedUser-0_com.android.server.am.ActivityManagerService$Lifecycle
+10-26 09:42:21.104   500   528 I ActivityManager: Start proc 3813:com.android.traceur/u0a115 for broadcast {com.android.traceur/com.android.traceur.Receiver}
+10-26 09:42:21.716  2910  3162 D HeterodyneSyncer: updateFlag: com.google.android.finsky.regular, 83561110, 0, , EcChoice__ec_choice_min_chrome_version
+10-26 09:42:21.816  2910  3162 D HeterodyneSyncer: updateFlag: com.google.android.finsky.regular, 83561110, 3, , EcChoice__fake_chrome_not_system_app
+10-26 09:42:21.868   500   564 I ActivityManager: Flag disabled. Ignoring finishAttachApplication from uid: 10115. pid: 3813
+10-26 09:42:22.015   500   528 I ActivityManager: Start proc 3865:com.google.android.onetimeinitializer/u0a118 for broadcast {com.google.android.onetimeinitializer/com.google.android.onetimeinitializer.OneTimeInitializerReceiver}
+10-26 09:42:22.024  1378  3583 I SyncIntentOperation: Setting component enabled: com.google.android.gms.chromesync.sync.GcmBroadcastReceiver [CONTEXT service_id=80 ]
+10-26 09:42:22.048   500  2089 I ActivityManager: Flag disabled. Ignoring finishAttachApplication from uid: 10131. pid: 3646
+10-26 09:42:22.449  1517  1517 I AiAiEcho: AppFetcherImplV2 updateApps package:[io.github.cooperking.sotd], userId:[0], reason:[package is added.].
+10-26 09:42:22.553  1378  3511 I IntentFilterIntentOp: Verifying IntentFilter. verificationId:4 scheme:"https" hosts:"cooperking.github.io" package:"io.github.cooperking.sotd". [CONTEXT service_id=244 ]
+10-26 09:42:22.598   500  2107 I ActivityManager: Flag disabled. Ignoring finishAttachApplication from uid: 10118. pid: 3865
+10-26 09:42:22.800   500   528 I ActivityManager: Start proc 3927:com.android.camera2/u0a152 for broadcast {com.android.camera2/com.android.camera.SetActivitiesCameraReceiver}
+10-26 09:42:23.158   500   528 I ActivityManager: Start proc 3946:com.android.dynsystem/1000 for broadcast {com.android.dynsystem/com.android.dynsystem.BootCompletedReceiver}
+10-26 09:42:23.203   500  2099 I ActivityManager: Flag disabled. Ignoring finishAttachApplication from uid: 10152. pid: 3927
+10-26 09:42:23.231   500   528 I ActivityManager: Start proc 3964:com.android.intentresolver/u0a83 for broadcast {com.android.intentresolver/com.android.intentresolver.ChooserActivityReEnabler}
+10-26 09:42:23.373   500  2099 W ActivityManager: Slow operation: 114ms so far, now at finishAttachApplicationInner: after dispatching broadcasts
+10-26 09:42:23.374   500   517 W Looper  : Slow dispatch took 114ms android.ui h=com.android.server.am.ActivityManagerService$UiHandler c=com.android.server.am.UidObserverController$$ExternalSyntheticLambda0@5dc540b m=0
+10-26 09:42:23.378   500  2094 I ActivityManager: Flag disabled. Ignoring finishAttachApplication from uid: 1000. pid: 3946
+10-26 09:42:23.412   500   528 I ActivityManager: Start proc 3979:com.android.dynsystem:dynsystem/1000 for service {com.android.dynsystem/com.android.dynsystem.DynamicSystemInstallationService}
+10-26 09:42:23.424   500  1611 I ActivityManager: Flag disabled. Ignoring finishAttachApplication from uid: 10083. pid: 3964
+10-26 09:42:23.446   500   550 I ActivityManager: Killing 3964:com.android.intentresolver/u0a83 (adj 0): change com.android.intentresolver
+10-26 09:42:23.453   500   943 W ActivityManager: finishReceiver: no app for android.os.BinderProxy@1ae33af
+10-26 09:42:23.453   500   528 I ActivityManager: Start proc 3982:com.android.nfc/1027 for broadcast {com.android.nfc/com.android.nfc.NfcBootCompletedReceiver}
+10-26 09:42:23.471   500   565 V ActivityManager: Got obituary of 3964:com.android.intentresolver
+10-26 09:42:23.552   500   527 I ActivityManager: com.android.shell is exempt from freezer
+10-26 09:42:23.559   500   528 I ActivityManager: Start proc 4010:com.android.shell/2000 for broadcast {com.android.shell/com.android.shell.HeapDumpReceiver}
+10-26 09:42:23.662   500   783 I ActivityManager: Flag disabled. Ignoring finishAttachApplication from uid: 1000. pid: 3979
+10-26 09:42:23.739   500  2098 I ActivityManager: Flag disabled. Ignoring finishAttachApplication from uid: 1027. pid: 3982
+10-26 09:42:23.741   500   550 I ActivityManager: Killing 3982:com.android.nfc/1027 (adj 0): change com.android.nfc
+10-26 09:42:23.743   500   943 W ActivityManager: finishReceiver: no app for android.os.BinderProxy@fe5e508
+10-26 09:42:23.842   500  2107 V ActivityManager: Got obituary of 3982:com.android.nfc
+10-26 09:42:23.976  1333  3882 I Nearby  : is blocked device type false, isAuto=false, isIot=false, isLatchsky=false, isChinaWearable=false, isTv=false, isWearable=false (supportWearOs=false), isChromeOsDevice=false (supportChromeOs=false) [CONTEXT service_id=49 ]
+10-26 09:42:24.243   500   513 I ActivityManager: Background started FGS: Allowed [callingPackage: com.google.android.apps.wellbeing; callingUid: 10123; uidState: BTOP; uidBFSL: [BFSL]; intent: Intent { cmp=com.google.android.apps.wellbeing/com.google.apps.tiktok.concurrent.InternalForegroundService (has extras) }; code:BACKGROUND_ACTIVITY_PERMISSION; tempAllowListReason:<c26596a android.intent.action.BOOT_COMPLETED/u0,reasonCode:BOOT_COMPLETED,duration:20000,callingUid:1000>; targetSdkVersion:33; callerTargetSdkVersion:33; startForegroundCount:0; bindFromPackage:null: isBindService:false]
+10-26 09:42:24.434   500   528 W ActivityManager: Slow operation: 145ms so far, now at startProcess: returned from zygote!
+10-26 09:42:24.435   500   528 W ActivityManager: Slow operation: 145ms so far, now at startProcess: done updating battery stats
+10-26 09:42:24.435   500   528 W ActivityManager: Slow operation: 145ms so far, now at startProcess: building log message
+10-26 09:42:24.435   500   528 I ActivityManager: Start proc 4042:com.google.android.configupdater/u0a128 for broadcast {com.google.android.configupdater/com.google.android.configupdater.MainReceiver}
+10-26 09:42:24.435   500   528 W ActivityManager: Slow operation: 145ms so far, now at startProcess: starting to update pids map
+10-26 09:42:24.435   500   528 W ActivityManager: Slow operation: 145ms so far, now at startProcess: done updating pids map
+10-26 09:42:24.682   500  1603 I ActivityManager: Flag disabled. Ignoring finishAttachApplication from uid: 2000. pid: 4010
+10-26 09:42:24.987   500   513 I ActivityManager: Flag disabled. Ignoring finishAttachApplication from uid: 10128. pid: 4042
+10-26 09:42:25.233   500   528 W ActivityManager: Slow operation: 69ms so far, now at startProcess: done updating battery stats
+10-26 09:42:25.233   500   528 W ActivityManager: Slow operation: 69ms so far, now at startProcess: building log message
+10-26 09:42:25.233   500   528 I ActivityManager: Start proc 4095:com.google.android.rkpdapp/u0a186 for service {com.google.android.rkpdapp/com.android.rkpdapp.service.RemoteProvisioningService}
+10-26 09:42:25.233   500   528 W ActivityManager: Slow operation: 69ms so far, now at startProcess: starting to update pids map
+10-26 09:42:25.233   500   528 W ActivityManager: Slow operation: 70ms so far, now at startProcess: done updating pids map
+10-26 09:42:25.276  1378  3578 I Nearby  : is blocked device type false, isAuto=false, isIot=false, isLatchsky=false, isChinaWearable=false, isTv=false, isWearable=false (supportWearOs=false), isChromeOsDevice=false (supportChromeOs=false) [CONTEXT service_id=49 ]
+10-26 09:42:25.592   500   581 D ActivityManager: freezing 3383 com.android.chrome
+10-26 09:42:25.732   500   517 W Looper  : Slow dispatch took 150ms android.ui h=com.android.server.am.ActivityManagerService$UiHandler c=com.android.server.am.UidObserverController$$ExternalSyntheticLambda0@5dc540b m=0
+10-26 09:42:26.211   500   550 E ActivityManager: Unable to freeze binder for 2273: -11
+10-26 09:42:26.212   500  1264 I ActivityManager: Flag disabled. Ignoring finishAttachApplication from uid: 10186. pid: 4095
+10-26 09:42:26.213   500   550 I ActivityManager: Killing 2273:com.google.android.gm/u0a141 (adj 0): change com.google.android.gm
+10-26 09:42:26.219   500   550 W ActivityManager: Scheduling restart of crashed service com.google.android.gm/com.android.email.job.UpgradeJob$UpgradeJobService in 1000ms for connection
+10-26 09:42:26.221   500   550 W ActivityManager: Scheduling restart of crashed service com.google.android.gm/androidx.work.impl.background.systemjob.SystemJobService in 10999ms for connection
+10-26 09:42:26.225   500  2434 W ActivityManager: finishReceiver: no app for android.os.BinderProxy@3b8f5b8
+10-26 09:42:26.225   500   527 I ActivityManager: reportOnUserCompletedEvent(0): stored=10, eligible=111
+10-26 09:42:26.283   500   783 W ActivityManager: ProcessRecord{31e753e 0:com.google.android.gm/u0a141} is attached to a previous process 2273
+10-26 09:42:26.406   500  1611 V ActivityManager: Got obituary of 2273:com.google.android.gm
+10-26 09:42:26.408   500   528 W ActivityManager: Slow operation: 124ms so far, now at startProcess: asking zygote to start proc
+10-26 09:42:26.457   500   528 W ActivityManager: Slow operation: 173ms so far, now at startProcess: returned from zygote!
+10-26 09:42:26.457   500   528 W ActivityManager: Slow operation: 173ms so far, now at startProcess: done updating battery stats
+10-26 09:42:26.457   500   528 W ActivityManager: Slow operation: 174ms so far, now at startProcess: building log message
+10-26 09:42:26.457   500   528 I ActivityManager: Start proc 4179:com.google.android.gm/u0a141 for service {com.google.android.gm/com.android.email.job.MigrateDaJob$MigrateDaJobService}
+10-26 09:42:26.457   500   528 W ActivityManager: Slow operation: 174ms so far, now at startProcess: starting to update pids map
+10-26 09:42:26.457   500   528 W ActivityManager: Slow operation: 174ms so far, now at startProcess: done updating pids map
+10-26 09:42:26.566   500  4163 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.wm.ActivityTaskManagerService$Lifecycle
+10-26 09:42:26.566   500  4163 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.am.ActivityManagerService$Lifecycle
+10-26 09:42:26.583   500   527 D ActivityManager: sync unfroze 1899 com.google.android.partnersetup for 3
+10-26 09:42:26.604  1333  3663 I Nearby  : is blocked device type false, isAuto=false, isIot=false, isLatchsky=false, isChinaWearable=false, isTv=false, isWearable=false (supportWearOs=false), isChromeOsDevice=false (supportChromeOs=false) [CONTEXT service_id=49 ]
+10-26 09:42:26.671   500   528 I ActivityManager: Start proc 4200:com.google.android.projection.gearhead:shared/u0a121 for broadcast {com.google.android.projection.gearhead/com.google.android.apps.auto.components.app.fzero.FzeroReceiver}
+10-26 09:42:26.724  1517  1517 I AiAiEcho: AppFetcherImpl onPackageChanged io.github.cooperking.sotd.
+10-26 09:42:26.726  1517  2606 I AiAiEcho: AppIndexer Package:[io.github.cooperking.sotd] UserProfile:[0] Enabled:[true].
+10-26 09:42:26.726  1517  2606 I AiAiEcho: AppFetcherImplV2 updateApps package:[io.github.cooperking.sotd], userId:[0], reason:[package is updated.].
+10-26 09:42:26.925   500   783 W ActivityManager: Unable to start service Intent { act=com.google.android.gms.home.service.START pkg=com.google.android.gms } U=0: not found
+10-26 09:42:26.929   500  2089 W ActivityManager: Unbind failed: could not find connection for android.os.BinderProxy@263014f
+10-26 09:42:27.274   500   783 I ActivityManager: Flag disabled. Ignoring finishAttachApplication from uid: 10121. pid: 4200
+10-26 09:42:27.878  1333  4069 I Nearby  : is blocked device type false, isAuto=false, isIot=false, isLatchsky=false, isChinaWearable=false, isTv=false, isWearable=false (supportWearOs=false), isChromeOsDevice=false (supportChromeOs=false) [CONTEXT service_id=49 ]
+10-26 09:42:27.959   500   581 D ActivityManager: freezing 2678 com.google.android.webview:webview_service
+10-26 09:42:28.047   500  2100 I ActivityManager: Background started FGS: Allowed [callingPackage: com.google.android.apps.wellbeing; callingUid: 10123; uidState: BTOP; uidBFSL: [BFSL]; intent: Intent { cmp=com.google.android.apps.wellbeing/com.google.apps.tiktok.concurrent.InternalForegroundService (has extras) }; code:BACKGROUND_ACTIVITY_PERMISSION; tempAllowListReason:<c26596a android.intent.action.BOOT_COMPLETED/u0,reasonCode:BOOT_COMPLETED,duration:20000,callingUid:1000>; targetSdkVersion:33; callerTargetSdkVersion:33; startForegroundCount:0; bindFromPackage:null: isBindService:false]
+10-26 09:42:28.127   500   527 W ActivityManager: Slow operation: 53ms so far, now at startProcess: done starting proc!
+10-26 09:42:28.136   500   528 I ActivityManager: Start proc 4265:com.google.android.youtube/u0a137 for broadcast {com.google.android.youtube/com.google.android.libraries.notifications.entrypoints.restart.RestartReceiver}
+10-26 09:42:28.574   500   513 W ActivityManager: Slow operation: 83ms so far, now at finishAttachApplicationInner: after dispatching broadcasts
+10-26 09:42:28.683  1333  3663 I Nearby  : is blocked device type false, isAuto=false, isIot=false, isLatchsky=false, isChinaWearable=false, isTv=false, isWearable=false (supportWearOs=false), isChromeOsDevice=false (supportChromeOs=false) [CONTEXT service_id=49 ]
+10-26 09:42:28.784   500  1604 I ActivityManager: Flag disabled. Ignoring finishAttachApplication from uid: 10137. pid: 4265
+10-26 09:42:29.069   500   528 I ActivityManager: Start proc 4419:com.google.android.settings.intelligence/u0a122 for broadcast {com.google.android.settings.intelligence/com.google.android.settings.intelligence.modules.contextualcards.impl.JobBootBroadcastReceiver}
+10-26 09:42:29.729   500  2433 I ActivityManager: Flag disabled. Ignoring finishAttachApplication from uid: 10141. pid: 4179
+10-26 09:42:29.748  1333  4069 I Nearby  : is blocked device type false, isAuto=false, isIot=false, isLatchsky=false, isChinaWearable=false, isTv=false, isWearable=false (supportWearOs=false), isChromeOsDevice=false (supportChromeOs=false) [CONTEXT service_id=49 ]
+10-26 09:42:29.830   500   943 I ActivityManager: Flag disabled. Ignoring finishAttachApplication from uid: 10122. pid: 4419
+10-26 09:42:29.852   500   550 E ActivityManager: Unable to freeze binder for 4419: -11
+10-26 09:42:29.933   500   550 I ActivityManager: Killing 4419:com.google.android.settings.intelligence/u0a122 (adj 0): change com.google.android.settings.intelligence
+10-26 09:42:29.961   500  2089 W ActivityManager: finishReceiver: no app for android.os.BinderProxy@8271219
+10-26 09:42:30.009   500  2089 V ActivityManager: Got obituary of 4419:com.google.android.settings.intelligence
+10-26 09:42:30.029   500   528 I ActivityManager: Start proc 4513:com.google.android.settings.intelligence/u0a122 for broadcast {com.google.android.settings.intelligence/com.google.android.settings.intelligence.modules.batterywidget.impl.BatteryWidgetBootBroadcastReceiver}
+10-26 09:42:30.068   500   517 W Looper  : Slow dispatch took 136ms android.ui h=com.android.server.am.ActivityManagerService$UiHandler c=com.android.server.am.UidObserverController$$ExternalSyntheticLambda0@5dc540b m=0
+10-26 09:42:30.251   500  2100 I ActivityManager: Flag disabled. Ignoring finishAttachApplication from uid: 10122. pid: 4513
+10-26 09:42:30.651   500   528 I ActivityManager: Start proc 4561:com.google.android.googlequicksearchbox/u0a132 for broadcast {com.google.android.googlequicksearchbox/com.google.android.libraries.phenotype.client.stable.PhenotypeUpdateBackgroundBroadcastReceiver}
+10-26 09:42:30.911   500  2436 D ActivityManager: sync unfroze 3383 com.android.chrome for 6
+10-26 09:42:31.490   945  4640 D NetworkMonitor/101: PROBE_HTTP http://connectivitycheck.gstatic.com/generate_204 time=97ms ret=204 request={Connection=[close], User-Agent=[Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.32 Safari/537.36]} headers={null=[HTTP/1.1 204 No Content], Connection=[close], Content-Length=[0], Cross-Origin-Resource-Policy=[cross-origin], Date=[Mon, 26 Oct 2026 09:42:31 GMT], X-Android-Received-Millis=[1793007751489], X-Android-Response-Source=[NETWORK 204], X-Android-Selected-Protocol=[http/1.1], X-Android-Sent-Millis=[1793007751454]}
+10-26 09:42:31.668  3383  3465 W .android.chrome: Verification of bm du.a(android.content.Context, long) took 154.987ms (4542.31 bytecodes/s) (23840B approximate peak alloc)
+10-26 09:42:31.726   500   528 I ActivityManager: Start proc 4686:com.android.chrome:privileged_process0/u0a142 for service {com.android.chrome/org.chromium.content.app.PrivilegedProcessService0}
+10-26 09:42:31.727  3383  3383 I chromium: [INFO:policy_logger.cc(142)] :components/enterprise/browser/controller/chrome_browser_cloud_management_controller.cc(272) Deferring CBCM Controller Initialization until it is unblocked.
+10-26 09:42:31.862  3383  3465 W .android.chrome: Verification of java.nio.MappedByteBuffer at.b(java.io.FileInputStream) took 139.879ms (1243.93 bytecodes/s) (5264B approximate peak alloc)
+10-26 09:42:31.994   945  4634 D NetworkMonitor/101: PROBE_HTTPS https://www.google.com/generate_204 time=366ms ret=204 request={Connection=[close], User-Agent=[Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.32 Safari/537.36]} headers={null=[HTTP/1.1 204 No Content], Alt-Svc=[h3=":443"; ma=2592000,h3-29=":443"; ma=2592000], Connection=[close], Content-Length=[0], Cross-Origin-Resource-Policy=[cross-origin], Date=[Mon, 26 Oct 2026 09:42:32 GMT], X-Android-Received-Millis=[1793007751992], X-Android-Response-Source=[NETWORK 204], X-Android-Selected-Protocol=[http/1.1], X-Android-Sent-Millis=[1793007751980]}
+10-26 09:42:32.250  4686  4686 W ziparchive: Unable to open '/data/app/~~1oTo0TyEwZ4ud4p3gUXzjg==/com.google.android.trichromelibrary_567263637-DwaZdHcerxkARp6OGTndTg==/TrichromeLibrary.dm': No such file or directory
+10-26 09:42:32.250  4686  4686 W ziparchive: Unable to open '/data/app/~~1oTo0TyEwZ4ud4p3gUXzjg==/com.google.android.trichromelibrary_567263637-DwaZdHcerxkARp6OGTndTg==/TrichromeLibrary.dm': No such file or directory
+10-26 09:42:32.251  4686  4686 D nativeloader: Configuring clns-6 for other apk /data/app/~~1oTo0TyEwZ4ud4p3gUXzjg==/com.google.android.trichromelibrary_567263637-DwaZdHcerxkARp6OGTndTg==/TrichromeLibrary.apk. target_sdk_version=34, uses_libraries=ALL, library_path=/data/app/~~Y5TD8_I6OyOljpov14anjg==/com.android.chrome-t1RSEruTC09TfAou-xQrtQ==/lib/x86_64:/data/app/~~Y5TD8_I6OyOljpov14anjg==/com.android.chrome-t1RSEruTC09TfAou-xQrtQ==/Chrome.apk!/lib/x86_64:/data/app/~~1oTo0TyEwZ4ud4p3gUXzjg==/com.google.android.trichromelibrary_567263637-DwaZdHcerxkARp6OGTndTg==/TrichromeLibrary.apk!/lib/x86_64, permitted_path=/data:/mnt/expand:/data/user/0/com.android.chrome
+10-26 09:42:32.325  4686  4686 D nativeloader: Configuring clns-7 for other apk /data/app/~~Y5TD8_I6OyOljpov14anjg==/com.android.chrome-t1RSEruTC09TfAou-xQrtQ==/Chrome.apk. target_sdk_version=34, uses_libraries=, library_path=/data/app/~~Y5TD8_I6OyOljpov14anjg==/com.android.chrome-t1RSEruTC09TfAou-xQrtQ==/lib/x86_64:/data/app/~~Y5TD8_I6OyOljpov14anjg==/com.android.chrome-t1RSEruTC09TfAou-xQrtQ==/Chrome.apk!/lib/x86_64:/data/app/~~1oTo0TyEwZ4ud4p3gUXzjg==/com.google.android.trichromelibrary_567263637-DwaZdHcerxkARp6OGTndTg==/TrichromeLibrary.apk!/lib/x86_64, permitted_path=/data:/mnt/expand:/data/user/0/com.android.chrome
+10-26 09:42:32.442  2910  3161 D HeterodyneSyncer: updateFlag: com.google.android.finsky.stable, 83561110, 0, , InstallQueue__enable_giv2_for_trichrome
+10-26 09:42:32.546  2910  3161 D HeterodyneSyncer: updateFlag: com.google.android.finsky.stable, 83561110, 0, , MyAppsV3__enable_auto_hide_toolbar_on_chromebook
+10-26 09:42:32.656  2910  3161 D HeterodyneSyncer: updateFlag: com.google.android.finsky.stable, 83561110, 3, , ChromebookToDesktopMigration__enable_desktop_strings
+10-26 09:42:32.862  4686  4686 V GraphicsEnvironment: ANGLE GameManagerService for com.android.chrome: false
+10-26 09:42:32.862  4686  4686 V GraphicsEnvironment: com.android.chrome is not listed in per-application setting
+10-26 09:42:32.866  4686  4686 I LoadedApk: No resource references to update in package com.google.android.trichromelibrary
+10-26 09:42:32.867  4686  4686 I cr_SplitCompatApp: Launched version=113.0.5672.136 minSdkVersion=29 isBundle=true processName=com.android.chrome:privileged_process0 isIsolated=false
+10-26 09:42:32.950   500  1603 D ConnectivityService: requestNetwork for uid/pid:10142/3383 activeRequest: null callbackRequest: 123 [NetworkRequest [ REQUEST id=124, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10142 RequestorUid: 10142 RequestorPkg: com.android.chrome UnderlyingNetworks: Null] ]] callback flags: 0 order: 2147483647
+10-26 09:42:32.952   500   723 D WifiNetworkFactory: got request NetworkRequest [ REQUEST id=124, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10142 RequestorUid: 10142 RequestorPkg: com.android.chrome UnderlyingNetworks: Null] ]
+10-26 09:42:32.952   500   723 D UntrustedWifiNetworkFactory: got request NetworkRequest [ REQUEST id=124, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10142 RequestorUid: 10142 RequestorPkg: com.android.chrome UnderlyingNetworks: Null] ]
+10-26 09:42:32.952   500   723 D OemPaidWifiNetworkFactory: got request NetworkRequest [ REQUEST id=124, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10142 RequestorUid: 10142 RequestorPkg: com.android.chrome UnderlyingNetworks: Null] ]
+10-26 09:42:32.952   500   723 D MultiInternetWifiNetworkFactory: got request NetworkRequest [ REQUEST id=124, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10142 RequestorUid: 10142 RequestorPkg: com.android.chrome UnderlyingNetworks: Null] ]
+10-26 09:42:32.957   500   564 I ActivityManager: Flag disabled. Ignoring finishAttachApplication from uid: 10142. pid: 4686
+10-26 09:42:32.972   334   334 D Zygote  : mbuffer starts with 15, nice name is com.android.chrome_zygote, mEnd = 415, mNext = 199, mLinesLeft = 6, mFd = 5
+10-26 09:42:33.128  4749  4749 I d.chrome_zygote: Using CollectorTypeCC GC.
+10-26 09:42:33.143  4686  4741 I cr_LibraryLoader: Loading monochrome_64 from within /data/app/~~Y5TD8_I6OyOljpov14anjg==/com.android.chrome-t1RSEruTC09TfAou-xQrtQ==/Chrome.apk
+10-26 09:42:33.143  4686  4741 I cr_Linker: loadLibraryImplLocked: monochrome_64, relroMode=2
+10-26 09:42:33.169  4749  4749 I AppZygoteInit: Beginning application preload for com.android.chrome
+10-26 09:42:33.170  4749  4749 W ziparchive: Unable to open '/data/app/~~1oTo0TyEwZ4ud4p3gUXzjg==/com.google.android.trichromelibrary_567263637-DwaZdHcerxkARp6OGTndTg==/TrichromeLibrary.dm': No such file or directory
+10-26 09:42:33.170  4749  4749 W ziparchive: Unable to open '/data/app/~~1oTo0TyEwZ4ud4p3gUXzjg==/com.google.android.trichromelibrary_567263637-DwaZdHcerxkARp6OGTndTg==/TrichromeLibrary.dm': No such file or directory
+10-26 09:42:33.170  4749  4749 W d.chrome_zygote: Entry not found
+10-26 09:42:33.170  4749  4749 D nativeloader: Configuring clns-6 for other apk /data/app/~~1oTo0TyEwZ4ud4p3gUXzjg==/com.google.android.trichromelibrary_567263637-DwaZdHcerxkARp6OGTndTg==/TrichromeLibrary.apk. target_sdk_version=34, uses_libraries=ALL, library_path=/data/app/~~Y5TD8_I6OyOljpov14anjg==/com.android.chrome-t1RSEruTC09TfAou-xQrtQ==/lib/x86_64:/data/app/~~Y5TD8_I6OyOljpov14anjg==/com.android.chrome-t1RSEruTC09TfAou-xQrtQ==/Chrome.apk!/lib/x86_64:/data/app/~~1oTo0TyEwZ4ud4p3gUXzjg==/com.google.android.trichromelibrary_567263637-DwaZdHcerxkARp6OGTndTg==/TrichromeLibrary.apk!/lib/x86_64, permitted_path=/data:/mnt/expand
+10-26 09:42:33.174  4749  4749 D nativeloader: Configuring clns-7 for other apk /data/app/~~Y5TD8_I6OyOljpov14anjg==/com.android.chrome-t1RSEruTC09TfAou-xQrtQ==/Chrome.apk. target_sdk_version=34, uses_libraries=, library_path=/data/app/~~Y5TD8_I6OyOljpov14anjg==/com.android.chrome-t1RSEruTC09TfAou-xQrtQ==/lib/x86_64:/data/app/~~Y5TD8_I6OyOljpov14anjg==/com.android.chrome-t1RSEruTC09TfAou-xQrtQ==/Chrome.apk!/lib/x86_64:/data/app/~~1oTo0TyEwZ4ud4p3gUXzjg==/com.google.android.trichromelibrary_567263637-DwaZdHcerxkARp6OGTndTg==/TrichromeLibrary.apk!/lib/x86_64, permitted_path=/data:/mnt/expand
+10-26 09:42:33.194   500   862 I ActivityManager: Flag disabled. Ignoring finishAttachApplication from uid: 10132. pid: 4561
+10-26 09:42:33.232  4749  4749 I cr_LibraryLoader: Loading monochrome_64 from within /data/app/~~Y5TD8_I6OyOljpov14anjg==/com.android.chrome-t1RSEruTC09TfAou-xQrtQ==/Chrome.apk
+10-26 09:42:33.232  4749  4749 I cr_Linker: loadLibraryImplLocked: monochrome_64, relroMode=1
+10-26 09:42:33.426   500   528 W ActivityManager: Slow operation: 473ms so far, now at startProcess: returned from zygote!
+10-26 09:42:33.427   500   528 W ActivityManager: Slow operation: 473ms so far, now at startProcess: done updating battery stats
+10-26 09:42:33.427   500   528 W ActivityManager: Slow operation: 473ms so far, now at startProcess: building log message
+10-26 09:42:33.427   500   528 I ActivityManager: Start proc 4783:com.android.chrome:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0/u0ai0 for  {com.android.chrome/org.chromium.content.app.SandboxedProcessService0:0}
+10-26 09:42:33.427   500   528 W ActivityManager: Slow operation: 473ms so far, now at startProcess: starting to update pids map
+10-26 09:42:33.427   500   528 W ActivityManager: Slow operation: 473ms so far, now at startProcess: done updating pids map
+10-26 09:42:33.446  4686  4741 D vulkan  : searching for layers in '/data/app/~~Y5TD8_I6OyOljpov14anjg==/com.android.chrome-t1RSEruTC09TfAou-xQrtQ==/lib/x86_64'
+10-26 09:42:33.446  4686  4741 D vulkan  : searching for layers in '/data/app/~~Y5TD8_I6OyOljpov14anjg==/com.android.chrome-t1RSEruTC09TfAou-xQrtQ==/Chrome.apk!/lib/x86_64'
+10-26 09:42:33.448  4686  4741 D vulkan  : searching for layers in '/data/app/~~1oTo0TyEwZ4ud4p3gUXzjg==/com.google.android.trichromelibrary_567263637-DwaZdHcerxkARp6OGTndTg==/TrichromeLibrary.apk!/lib/x86_64'
+10-26 09:42:34.193   500   869 E ActivityManager: Sending non-protected broadcast com.android.settings.battery.action.PERIODIC_JOB_RECHECK from system 1008:com.android.settings/1000 pkg com.android.settings
+10-26 09:42:34.193   500   869 E ActivityManager: java.lang.Throwable
+10-26 09:42:34.193   500   869 E ActivityManager: 	at com.android.server.am.ActivityManagerService.checkBroadcastFromSystem(ActivityManagerService.java:14306)
+10-26 09:42:34.193   500   869 E ActivityManager: 	at com.android.server.am.ActivityManagerService.broadcastIntentLockedTraced(ActivityManagerService.java:15131)
+10-26 09:42:34.193   500   869 E ActivityManager: 	at com.android.server.am.ActivityManagerService.broadcastIntentLocked(ActivityManagerService.java:14370)
+10-26 09:42:34.193   500   869 E ActivityManager: 	at com.android.server.am.ActivityManagerService.broadcastIntentWithFeature(ActivityManagerService.java:15336)
+10-26 09:42:34.193   500   869 E ActivityManager: 	at android.app.IActivityManager$Stub.onTransact(IActivityManager.java:2653)
+10-26 09:42:34.193   500   869 E ActivityManager: 	at com.android.server.am.ActivityManagerService.onTransact(ActivityManagerService.java:2720)
+10-26 09:42:34.193   500   869 E ActivityManager: 	at android.os.Binder.execTransactInternal(Binder.java:1339)
+10-26 09:42:34.193   500   869 E ActivityManager: 	at android.os.Binder.execTransact(Binder.java:1275)
+10-26 09:42:34.304  4783  4783 I LoadedApk: No resource references to update in package com.google.android.trichromelibrary
+10-26 09:42:34.306  4783  4783 I cr_SplitCompatApp: Launched version=113.0.5672.136 minSdkVersion=29 isBundle=true processName=com.android.chrome:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0 isIsolated=true
+10-26 09:42:34.312   500   869 I ActivityManager: Flag disabled. Ignoring finishAttachApplication from uid: 90000. pid: 4783
+10-26 09:42:35.080  1378  3584 I BlockstoreStorage: Clearing Blockstore Data for package io.github.cooperking.sotd [CONTEXT service_id=258 ]
+10-26 09:42:35.691   500   581 D ActivityManager: freezing 1062 com.android.bluetooth
+10-26 09:42:35.933   500   787 D ConnectivityService: requestNetwork for uid/pid:10142/3383 activeRequest: null callbackRequest: 126 [NetworkRequest [ REQUEST id=127, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10142 RequestorUid: 10142 RequestorPkg: com.android.chrome UnderlyingNetworks: Null] ]] callback flags: 0 order: 2147483647
+10-26 09:42:35.936   500   723 D WifiNetworkFactory: got request NetworkRequest [ REQUEST id=127, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10142 RequestorUid: 10142 RequestorPkg: com.android.chrome UnderlyingNetworks: Null] ]
+10-26 09:42:35.936   500   723 D UntrustedWifiNetworkFactory: got request NetworkRequest [ REQUEST id=127, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10142 RequestorUid: 10142 RequestorPkg: com.android.chrome UnderlyingNetworks: Null] ]
+10-26 09:42:35.936   500   723 D OemPaidWifiNetworkFactory: got request NetworkRequest [ REQUEST id=127, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10142 RequestorUid: 10142 RequestorPkg: com.android.chrome UnderlyingNetworks: Null] ]
+10-26 09:42:35.936   500   723 D MultiInternetWifiNetworkFactory: got request NetworkRequest [ REQUEST id=127, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10142 RequestorUid: 10142 RequestorPkg: com.android.chrome UnderlyingNetworks: Null] ]
+10-26 09:42:38.395   500   528 I ActivityManager: Start proc 4918:com.android.emergency/u0a164 for content provider {com.android.emergency/com.android.emergency.EmergencySearchIndexablesProvider}
+10-26 09:42:38.428   500   528 I ActivityManager: Start proc 4921:com.google.android.apps.messaging/u0a129 for content provider {com.google.android.apps.messaging/com.google.android.apps.messaging.settings.search.MessagesSearchIndexablesProvider}
+10-26 09:42:38.465   500   528 I ActivityManager: Start proc 4928:com.google.android.gms.ui/u0a130 for content provider {com.google.android.gms/com.google.android.gms.accountsettings.content.SettingsSearchContentProvider}
+10-26 09:42:38.615   500   528 I ActivityManager: Start proc 4953:com.google.android.healthconnect.controller/u0a188 for content provider {com.google.android.healthconnect.controller/com.android.healthconnect.controller.searchindexables.HealthConnectSearchIndexablesProvider}
+10-26 09:42:39.214   500  1610 I ActivityManager: Flag disabled. Ignoring finishAttachApplication from uid: 10188. pid: 4953
+10-26 09:42:39.223   500   869 I ActivityManager: Flag disabled. Ignoring finishAttachApplication from uid: 10164. pid: 4918
+10-26 09:42:39.822   500  2061 I ActivityManager: Flag disabled. Ignoring finishAttachApplication from uid: 10130. pid: 4928
+10-26 09:42:39.930  5003  5003 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+10-26 09:42:39.935  5003  5003 I AndroidRuntime: Using default boot image
+10-26 09:42:39.935  5003  5003 I AndroidRuntime: Leaving lock profiling enabled
+10-26 09:42:39.974   500  1610 I ActivityManager: Flag disabled. Ignoring finishAttachApplication from uid: 10129. pid: 4921
+10-26 09:42:40.111  5003  5003 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+10-26 09:42:41.255  5003  5003 D AndroidRuntime: Shutting down VM
+10-26 09:42:41.611  4928  5020 I Nearby  : is blocked device type false, isAuto=false, isIot=false, isLatchsky=false, isChinaWearable=false, isTv=false, isWearable=false (supportWearOs=false), isChromeOsDevice=false (supportChromeOs=false) [CONTEXT service_id=49 ]
+10-26 09:42:41.753   500   581 D ActivityManager: freezing 2498 com.android.externalstorage
+10-26 09:42:42.987  1378  3580 I Nearby  : is blocked device type false, isAuto=false, isIot=false, isLatchsky=false, isChinaWearable=false, isTv=false, isWearable=false (supportWearOs=false), isChromeOsDevice=false (supportChromeOs=false) [CONTEXT service_id=49 ]
+10-26 09:42:43.454   500  2435 I ActivityManager: Background started FGS: Allowed [callingPackage: com.google.android.apps.messaging; callingUid: 10129; uidState: CEM ; uidBFSL: n/a; intent: Intent { cmp=com.google.android.apps.messaging/com.google.apps.tiktok.concurrent.InternalForegroundService (has extras) }; code:BACKGROUND_FGS_PERMISSION; tempAllowListReason:<null>; targetSdkVersion:34; callerTargetSdkVersion:34; startForegroundCount:0; bindFromPackage:null: isBindService:false]
+10-26 09:42:43.581   500   564 W ActivityManager: Foreground service started from background can not have location/camera/microphone access: service com.google.android.apps.messaging/com.google.apps.tiktok.concurrent.InternalForegroundService
+10-26 09:42:43.953   500   528 W ActivityManager: Slow operation: 98ms so far, now at startProcess: returned from zygote!
+10-26 09:42:43.977   500   528 W ActivityManager: Slow operation: 122ms so far, now at startProcess: done updating battery stats
+10-26 09:42:43.977   500   528 W ActivityManager: Slow operation: 122ms so far, now at startProcess: building log message
+10-26 09:42:43.977   500   528 I ActivityManager: Start proc 5118:com.android.chrome:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:1/u0ai1 for  {com.android.chrome/org.chromium.content.app.SandboxedProcessService0:1}
+10-26 09:42:43.977   500   528 W ActivityManager: Slow operation: 122ms so far, now at startProcess: starting to update pids map
+10-26 09:42:43.977   500   528 W ActivityManager: Slow operation: 122ms so far, now at startProcess: done updating pids map
+10-26 09:42:44.172   500   528 W ActivityManager: Slow operation: 139ms so far, now at startProcess: returned from zygote!
+10-26 09:42:44.174   500   528 W ActivityManager: Slow operation: 142ms so far, now at startProcess: done updating battery stats
+10-26 09:42:44.174   500   528 W ActivityManager: Slow operation: 142ms so far, now at startProcess: building log message
+10-26 09:42:44.174   500   528 I ActivityManager: Start proc 5130:com.android.chrome:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:2/u0ai2 for  {com.android.chrome/org.chromium.content.app.SandboxedProcessService0:2}
+10-26 09:42:44.174   500   528 W ActivityManager: Slow operation: 142ms so far, now at startProcess: starting to update pids map
+10-26 09:42:44.174   500   528 W ActivityManager: Slow operation: 142ms so far, now at startProcess: done updating pids map
+10-26 09:42:44.182   500   528 I ActivityManager: Start proc 5144:com.android.chrome:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:3/u0ai3 for  {com.android.chrome/org.chromium.content.app.SandboxedProcessService0:3}
+10-26 09:42:44.246  5130  5130 I LoadedApk: No resource references to update in package com.google.android.trichromelibrary
+10-26 09:42:44.246  5118  5118 I LoadedApk: No resource references to update in package com.google.android.trichromelibrary
+10-26 09:42:44.247  5144  5144 I LoadedApk: No resource references to update in package com.google.android.trichromelibrary
+10-26 09:42:44.248  5118  5118 I cr_SplitCompatApp: Launched version=113.0.5672.136 minSdkVersion=29 isBundle=true processName=com.android.chrome:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:1 isIsolated=true
+10-26 09:42:44.249  5130  5130 I cr_SplitCompatApp: Launched version=113.0.5672.136 minSdkVersion=29 isBundle=true processName=com.android.chrome:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:2 isIsolated=true
+10-26 09:42:44.266  5144  5144 I cr_SplitCompatApp: Launched version=113.0.5672.136 minSdkVersion=29 isBundle=true processName=com.android.chrome:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:3 isIsolated=true
+10-26 09:42:44.277  1333  3663 I Nearby  : is blocked device type false, isAuto=false, isIot=false, isLatchsky=false, isChinaWearable=false, isTv=false, isWearable=false (supportWearOs=false), isChromeOsDevice=false (supportChromeOs=false) [CONTEXT service_id=49 ]
+10-26 09:42:44.277   500  2435 I ActivityManager: Flag disabled. Ignoring finishAttachApplication from uid: 90001. pid: 5118
+10-26 09:42:44.298  1333  4069 I Nearby  : is blocked device type false, isAuto=false, isIot=false, isLatchsky=false, isChinaWearable=false, isTv=false, isWearable=false (supportWearOs=false), isChromeOsDevice=false (supportChromeOs=false) [CONTEXT service_id=49 ]
+10-26 09:42:44.300   500   787 I ActivityManager: Flag disabled. Ignoring finishAttachApplication from uid: 90003. pid: 5144
+10-26 09:42:44.303   500   513 I ActivityManager: Flag disabled. Ignoring finishAttachApplication from uid: 90002. pid: 5130
+10-26 09:42:44.504   500  2436 I ActivityManager: Process com.android.chrome:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:2 (pid 5130) has died: cch+5 CEM 
+10-26 09:42:44.505   500  2436 W ActivityManager: Scheduling restart of crashed service com.android.chrome/org.chromium.content.app.SandboxedProcessService0:2 in 1000ms for connection
+10-26 09:42:44.684   500  2435 W ActivityManager: Exception when unbinding service com.android.chrome/org.chromium.content.app.SandboxedProcessService0:1
+10-26 09:42:44.684   500  2435 W ActivityManager: android.os.DeadObjectException
+10-26 09:42:44.684   500  2435 W ActivityManager: 	at android.os.BinderProxy.transactNative(Native Method)
+10-26 09:42:44.684   500  2435 W ActivityManager: 	at android.os.BinderProxy.transact(BinderProxy.java:584)
+10-26 09:42:44.684   500  2435 W ActivityManager: 	at android.app.IApplicationThread$Stub$Proxy.scheduleUnbindService(IApplicationThread.java:1419)
+10-26 09:42:44.684   500  2435 W ActivityManager: 	at com.android.server.am.ActiveServices.removeConnectionLocked(ActiveServices.java:5896)
+10-26 09:42:44.684   500  2435 W ActivityManager: 	at com.android.server.am.ActiveServices.unbindServiceLocked(ActiveServices.java:3970)
+10-26 09:42:44.684   500  2435 W ActivityManager: 	at com.android.server.am.ActivityManagerService.unbindService(ActivityManagerService.java:13426)
+10-26 09:42:44.684   500  2435 W ActivityManager: 	at android.app.IActivityManager$Stub.onTransact(IActivityManager.java:2907)
+10-26 09:42:44.684   500  2435 W ActivityManager: 	at com.android.server.am.ActivityManagerService.onTransact(ActivityManagerService.java:2720)
+10-26 09:42:44.684   500  2435 W ActivityManager: 	at android.os.Binder.execTransactInternal(Binder.java:1339)
+10-26 09:42:44.684   500  2435 W ActivityManager: 	at android.os.Binder.execTransact(Binder.java:1275)
+10-26 09:42:44.686   500  2435 I ActivityManager: Killing 5118:com.android.chrome:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:1/u0a142i-8999 (adj 905): isolated not needed
+10-26 09:42:44.806   500  1604 I ActivityManager: Process com.android.chrome:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:3 (pid 5144) has died: cch+5 CEM 
+10-26 09:42:44.806   500  1604 W ActivityManager: Scheduling restart of crashed service com.android.chrome/org.chromium.content.app.SandboxedProcessService0:3 in 1000ms for connection
+10-26 09:42:50.130   500   581 D ActivityManager: freezing 3673 com.google.android.documentsui
+10-26 09:42:51.459   500  1563 I ActivityManager: Broadcasting: Intent { act=android.intent.action.MEDIA_SCANNER_SCAN_FILE dat=file:///... flg=0x400000 }
+10-26 09:42:51.462   500  1563 I ActivityManager: Enqueued broadcast Intent { act=android.intent.action.MEDIA_SCANNER_SCAN_FILE dat=file:///... flg=0x400000 }: 0
+10-26 09:42:52.511   500   581 D ActivityManager: freezing 3865 com.google.android.onetimeinitializer
+10-26 09:42:52.932   500   581 D ActivityManager: freezing 3927 com.android.camera2
+10-26 09:42:53.081   500   581 D ActivityManager: freezing 1859 com.android.imsserviceentitlement
+10-26 09:42:53.507   500   581 D ActivityManager: freezing 2142 com.android.providers.calendar
+10-26 09:42:55.104   500   581 D ActivityManager: freezing 3813 com.android.traceur
+10-26 09:42:55.134   500   581 D ActivityManager: freezing 1214 com.google.android.cellbroadcastreceiver
+10-26 09:42:55.386   500   581 D ActivityManager: freezing 4953 com.google.android.healthconnect.controller
+10-26 09:42:55.386   500   581 D ActivityManager: freezing 4918 com.android.emergency
+10-26 09:42:55.770   500   581 D ActivityManager: freezing 4042 com.google.android.configupdater
+10-26 09:42:56.095   500   516 I ActivityManager: Broadcast completed: result=0
+10-26 09:42:56.131   991   991 D CarrierSvcBindHelper: onPackageModified: com.android.chrome
+10-26 09:42:56.157   991  1279 D ImsResolver: maybeAddedImsService, packageName: com.android.chrome
+10-26 09:42:56.887   500   544 D ActivityTaskManager: Top Process State changed to PROCESS_STATE_TOP_SLEEPING
+10-26 09:42:57.102   500   581 D ActivityManager: freezing 4200 com.google.android.projection.gearhead:shared
+10-26 09:42:58.237   500   581 D ActivityManager: freezing 1008 com.android.settings
+10-26 09:42:58.238   500   581 D ActivityManager: freezing 3979 com.android.dynsystem:dynsystem
+10-26 09:42:58.238   500   581 D ActivityManager: freezing 3946 com.android.dynsystem
+10-26 09:42:58.238   500   581 D ActivityManager: freezing 2123 com.android.localtransport
+10-26 09:42:58.238   500   581 D ActivityManager: freezing 1714 com.android.keychain
+10-26 09:42:58.850   500   581 D ActivityManager: freezing 4783 com.android.chrome:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0
+10-26 09:42:58.851   500   581 D ActivityManager: freezing 4686 com.android.chrome:privileged_process0
+10-26 09:42:58.851   500   581 D ActivityManager: freezing 3383 com.android.chrome
+10-26 09:42:58.851   500   581 D ActivityManager: freezing 4265 com.google.android.youtube
+10-26 09:42:58.859   500   869 D ActivityManager: sync unfroze 3383 com.android.chrome for 4
+10-26 09:42:58.862   500   527 D ActivityManager: sync unfroze 4686 com.android.chrome:privileged_process0 for 3
+10-26 09:42:59.179   500  1610 W ActivityManager: Unable to start service Intent { cmp=com.google.android.apps.tachyon/.clientapi.ClientApiService } U=0: not found
+10-26 09:42:59.332   500  2092 I ActivityManager: Background started FGS: Allowed [callingPackage: com.google.android.googlequicksearchbox; callingUid: 10132; uidState: BFGS; uidBFSL: [BFSL]; intent: Intent { cmp=com.google.android.googlequicksearchbox/com.google.android.libraries.mdi.download.foreground.sting.ForegroundDownloadService (has extras) }; code:ACTIVITY_STARTER; tempAllowListReason:<c26596a android.intent.action.BOOT_COMPLETED/u0,reasonCode:BOOT_COMPLETED,duration:20000,callingUid:1000>; targetSdkVersion:31; callerTargetSdkVersion:31; startForegroundCount:0; bindFromPackage:null: isBindService:false]
+10-26 09:43:00.372   500   526 D ActivityManager: sync unfroze 1008 com.android.settings for 8
+10-26 09:43:00.463   500  1609 D ActivityManager: sync unfroze 4042 com.google.android.configupdater for 6
+10-26 09:43:01.058   500   581 D ActivityManager: freezing 1601 com.google.android.apps.youtube.music
+10-26 09:43:01.185   945  5420 D NetworkMonitor/101: PROBE_HTTP http://connectivitycheck.gstatic.com/generate_204 time=25ms ret=204 request={Connection=[close], User-Agent=[Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.32 Safari/537.36]} headers={null=[HTTP/1.1 204 No Content], Connection=[close], Content-Length=[0], Cross-Origin-Resource-Policy=[cross-origin], Date=[Mon, 26 Oct 2026 09:43:01 GMT], X-Android-Received-Millis=[1793007781185], X-Android-Response-Source=[NETWORK 204], X-Android-Selected-Protocol=[http/1.1], X-Android-Sent-Millis=[1793007781174]}
+10-26 09:43:01.195   945  5419 D NetworkMonitor/101: PROBE_HTTPS https://www.google.com/generate_204 time=35ms ret=204 request={Connection=[close], User-Agent=[Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.32 Safari/537.36]} headers={null=[HTTP/1.1 204 No Content], Alt-Svc=[h3=":443"; ma=2592000,h3-29=":443"; ma=2592000], Connection=[close], Content-Length=[0], Cross-Origin-Resource-Policy=[cross-origin], Date=[Mon, 26 Oct 2026 09:43:01 GMT], X-Android-Received-Millis=[1793007781194], X-Android-Response-Source=[NETWORK 204], X-Android-Selected-Protocol=[http/1.1], X-Android-Sent-Millis=[1793007781186]}
+10-26 09:43:02.640   500   581 D ActivityManager: freezing 4928 com.google.android.gms.ui
+10-26 09:43:02.880   500   527 D ActivityManager: sync unfroze 1601 com.google.android.apps.youtube.music for 3
+10-26 09:43:03.106   500   527 D ActivityManager: sync unfroze 4265 com.google.android.youtube for 3
+10-26 09:43:03.935   500  2436 I ActivityManager: Background started FGS: Allowed [callingPackage: com.google.android.inputmethod.latin; callingUid: 10154; uidState: IMPB; uidBFSL: n/a; intent: Intent { cmp=com.google.android.inputmethod.latin/com.google.android.apps.inputmethod.libs.dataservice.superpacks.SuperpacksForegroundTaskService }; code:CURRENT_INPUT_METHOD; tempAllowListReason:<null>; targetSdkVersion:33; callerTargetSdkVersion:33; startForegroundCount:0; bindFromPackage:null: isBindService:false]
+10-26 09:43:03.939   500  2436 W ActivityManager: Foreground service started from background can not have location/camera/microphone access: service com.google.android.inputmethod.latin/com.google.android.apps.inputmethod.libs.dataservice.superpacks.SuperpacksForegroundTaskService
+10-26 09:43:04.347   500   528 I ActivityManager: Start proc 5486:com.google.android.apps.messaging:rcs/u0a129 for service {com.google.android.apps.messaging/com.google.android.ims.service.JibeService}
+10-26 09:43:04.879   500   869 I ActivityManager: Flag disabled. Ignoring finishAttachApplication from uid: 10129. pid: 5486
+10-26 09:43:05.007   500   581 D ActivityManager: freezing 2311 com.google.android.apps.wallpaper
+10-26 09:43:05.929   500   526 D AppWidgetServiceImpl: Provider info from ComponentInfo{com.android.chrome/org.chromium.chrome.browser.quickactionsearchwidget.QuickActionSearchWidgetProvider$QuickActionSearchWidgetProviderSearch} won't be persisted.
+10-26 09:43:06.027   500   526 D AppWidgetServiceImpl: Provider info from ComponentInfo{com.android.chrome/org.chromium.chrome.browser.quickactionsearchwidget.QuickActionSearchWidgetProvider$QuickActionSearchWidgetProviderDino} won't be persisted.
+10-26 09:43:06.040   500   526 D AppWidgetServiceImpl: Provider info from ComponentInfo{com.android.chrome/com.google.android.apps.chrome.appwidget.bookmarks.BookmarkThumbnailWidgetProvider} won't be persisted.
+10-26 09:43:06.040   500   526 D AppWidgetServiceImpl: Provider info from ComponentInfo{com.android.chrome/org.chromium.chrome.browser.searchwidget.SearchWidgetProvider} won't be persisted.
+10-26 09:43:06.051   500   581 D ActivityManager: freezing 2054 com.google.android.contacts
+10-26 09:43:06.556  1517  1517 I AiAiEcho: AppFetcherImpl onPackageChanged com.android.chrome.
+10-26 09:43:06.563  1517  2606 I AiAiEcho: AppIndexer Package:[com.android.chrome] UserProfile:[0] Enabled:[true].
+10-26 09:43:06.563  1517  2606 I AiAiEcho: AppFetcherImplV2 updateApps package:[com.android.chrome], userId:[0], reason:[package is updated.].
+10-26 09:43:07.082   500   527 D ActivityManager: sync unfroze 2054 com.google.android.contacts for 3
+10-26 09:43:07.322   500   581 D ActivityManager: freezing 4095 com.google.android.rkpdapp
+10-26 09:43:08.217   500  1604 D ActivityManager: sync unfroze 4095 com.google.android.rkpdapp for 6
+10-26 09:43:08.896   500   581 D ActivityManager: freezing 3383 com.android.chrome
+10-26 09:43:08.897   500   581 D ActivityManager: freezing 4686 com.android.chrome:privileged_process0
+10-26 09:43:10.475   500   581 D ActivityManager: freezing 4042 com.google.android.configupdater
+10-26 09:43:11.028  1378  1418 I Icing   : updateResources: need to parse arkh{com.android.chrome}
+10-26 09:43:11.268   500   516 I ActivityManager: Finished processing BOOT_COMPLETED for u0
+10-26 09:43:11.509   500   527 D ActivityManager: sync unfroze 4042 com.google.android.configupdater for 3
+10-26 09:43:11.723   500   500 D ActivityManager: sync unfroze 1468 com.google.android.ext.services for 6
+10-26 09:43:11.773   500   869 E AppOps  : 	at com.android.server.wm.ActivityTaskManagerService.hasSystemAlertWindowPermission(ActivityTaskManagerService.java:1076)
+10-26 09:43:11.773   500   869 E AppOps  : 	at com.android.server.wm.ActivityTaskManagerService$LocalService.hasSystemAlertWindowPermission(ActivityTaskManagerService.java:7006)
+10-26 09:43:11.773   500   869 E AppOps  : 	at com.android.server.am.ActivityManagerService.bindServiceInstance(ActivityManagerService.java:13404)
+10-26 09:43:11.773   500   869 E AppOps  : 	at com.android.server.am.ActivityManagerService.bindServiceInstance(ActivityManagerService.java:13368)
+10-26 09:43:11.773   500   869 E AppOps  : 	at com.android.server.am.ActivityManagerService.bindServiceInstance(ActivityManagerService.java:13404)
+10-26 09:43:11.773   500   869 E AppOps  : 	at com.android.server.am.ActivityManagerService.bindServiceInstance(ActivityManagerService.java:13368)
+10-26 09:43:11.773   500   869 E AppOps  : 	at com.android.server.am.ActivityManagerService.bindServiceInstance(ActivityManagerService.java:13404)
+10-26 09:43:11.773   500   869 E AppOps  : 	at com.android.server.am.ActivityManagerService.bindServiceInstance(ActivityManagerService.java:13368)
+10-26 09:43:11.773   500   869 E AppOps  : 	at com.android.server.am.ActivityManagerService.bindServiceInstance(ActivityManagerService.java:13404)
+10-26 09:43:11.773   500   869 E AppOps  : 	at com.android.server.am.ActivityManagerService.bindServiceInstance(ActivityManagerService.java:13368)
+10-26 09:43:11.940  1378  1418 I Icing   : Not indexing corpus from package com.android.chrome as it has never connected
+10-26 09:43:11.941  1378  1418 I Icing   : Indexing done com.android.chrome-omnibox
+10-26 09:43:12.050   500   869 W ActivityManager: Unable to start service Intent { act=android.settings.hats.START_SERVICE pkg=com.google.android.settings.intelligence (has extras) } U=0: not found
+10-26 09:43:12.061   500   550 E ActivityManager: Unable to freeze binder for 4513: -11
+10-26 09:43:12.064   500   550 I ActivityManager: Killing 4513:com.google.android.settings.intelligence/u0a122 (adj 0): change com.google.android.settings.intelligence
+10-26 09:43:12.073   500   550 W ActivityManager: Scheduling restart of crashed service com.google.android.settings.intelligence/.modules.routines.impl.RoutinesJobIntentService in 1000ms for connection
+10-26 09:43:12.073   500   550 W ActivityManager: Scheduling restart of crashed service com.google.android.settings.intelligence/.modules.routines.impl.PruneDatabaseJobService in 11000ms for connection
+10-26 09:43:12.073   500   550 W ActivityManager: Scheduling restart of crashed service com.google.android.settings.intelligence/.modules.routines.impl.ComputeNewInferencesJobService in 21000ms for connection
+10-26 09:43:12.118   500  1610 V ActivityManager: Got obituary of 4513:com.google.android.settings.intelligence
+10-26 09:43:12.145   500   528 I ActivityManager: Start proc 5645:com.google.android.webview/u0a133 for broadcast {com.google.android.webview/com.google.android.libraries.phenotype.client.stable.PhenotypeUpdateBackgroundBroadcastReceiver}
+10-26 09:43:12.269  5645  5645 W ziparchive: Unable to open '/data/app/~~1oTo0TyEwZ4ud4p3gUXzjg==/com.google.android.trichromelibrary_567263637-DwaZdHcerxkARp6OGTndTg==/TrichromeLibrary.dm': No such file or directory
+10-26 09:43:12.269  5645  5645 W ziparchive: Unable to open '/data/app/~~1oTo0TyEwZ4ud4p3gUXzjg==/com.google.android.trichromelibrary_567263637-DwaZdHcerxkARp6OGTndTg==/TrichromeLibrary.dm': No such file or directory
+10-26 09:43:12.271  5645  5645 D nativeloader: Configuring clns-6 for other apk /data/app/~~1oTo0TyEwZ4ud4p3gUXzjg==/com.google.android.trichromelibrary_567263637-DwaZdHcerxkARp6OGTndTg==/TrichromeLibrary.apk. target_sdk_version=34, uses_libraries=ALL, library_path=/data/app/~~Ua97s8oF5Ja9HsiippZB-g==/com.google.android.webview-VuFDk4mIMo9ldmG0X8V-WQ==/lib/x86_64:/data/app/~~Ua97s8oF5Ja9HsiippZB-g==/com.google.android.webview-VuFDk4mIMo9ldmG0X8V-WQ==/WebViewGoogle.apk!/lib/x86_64:/data/app/~~1oTo0TyEwZ4ud4p3gUXzjg==/com.google.android.trichromelibrary_567263637-DwaZdHcerxkARp6OGTndTg==/TrichromeLibrary.apk!/lib/x86_64, permitted_path=/data:/mnt/expand:/data/user/0/com.google.android.webview
+10-26 09:43:12.276  5645  5645 D nativeloader: Configuring clns-7 for other apk /data/app/~~Ua97s8oF5Ja9HsiippZB-g==/com.google.android.webview-VuFDk4mIMo9ldmG0X8V-WQ==/WebViewGoogle.apk. target_sdk_version=34, uses_libraries=, library_path=/data/app/~~Ua97s8oF5Ja9HsiippZB-g==/com.google.android.webview-VuFDk4mIMo9ldmG0X8V-WQ==/lib/x86_64:/data/app/~~Ua97s8oF5Ja9HsiippZB-g==/com.google.android.webview-VuFDk4mIMo9ldmG0X8V-WQ==/WebViewGoogle.apk!/lib/x86_64:/data/app/~~1oTo0TyEwZ4ud4p3gUXzjg==/com.google.android.trichromelibrary_567263637-DwaZdHcerxkARp6OGTndTg==/TrichromeLibrary.apk!/lib/x86_64, permitted_path=/data:/mnt/expand:/data/user/0/com.google.android.webview
+10-26 09:43:12.307  5645  5645 I LoadedApk: No resource references to update in package com.google.android.trichromelibrary
+10-26 09:43:12.309   500  1264 I ActivityManager: Flag disabled. Ignoring finishAttachApplication from uid: 10133. pid: 5645
+10-26 09:43:13.127   500   527 D ActivityManager: sync unfroze 4200 com.google.android.projection.gearhead:shared for 3
+10-26 09:43:13.300   500   514 E AppOps  : 	at com.android.server.wm.ActivityTaskManagerService.hasSystemAlertWindowPermission(ActivityTaskManagerService.java:1076)
+10-26 09:43:13.300   500   514 E AppOps  : 	at com.android.server.wm.ActivityTaskManagerService$LocalService.hasSystemAlertWindowPermission(ActivityTaskManagerService.java:7006)
+10-26 09:43:13.300   500   514 E AppOps  : 	at com.android.server.am.ActivityManagerService.bindServiceInstance(ActivityManagerService.java:13404)
+10-26 09:43:13.300   500   514 E AppOps  : 	at com.android.server.am.ActivityManagerService.bindServiceInstance(ActivityManagerService.java:13368)
+10-26 09:43:13.300   500   514 E AppOps  : 	at com.android.server.am.ActivityManagerService.bindServiceInstance(ActivityManagerService.java:13404)
+10-26 09:43:13.300   500   514 E AppOps  : 	at com.android.server.am.ActivityManagerService.bindServiceInstance(ActivityManagerService.java:13368)
+10-26 09:43:13.300   500   514 E AppOps  : 	at com.android.server.am.ActivityManagerService.bindServiceInstance(ActivityManagerService.java:13404)
+10-26 09:43:13.300   500   514 E AppOps  : 	at com.android.server.am.ActivityManagerService.bindServiceInstance(ActivityManagerService.java:13368)
+10-26 09:43:13.300   500   514 E AppOps  : 	at com.android.server.am.ActivityManagerService.bindServiceInstance(ActivityManagerService.java:13404)
+10-26 09:43:13.300   500   514 E AppOps  : 	at com.android.server.am.ActivityManagerService.bindServiceInstance(ActivityManagerService.java:13368)
+10-26 09:43:13.577   500  2061 E AppOps  : 	at com.android.server.wm.ActivityTaskManagerService.hasSystemAlertWindowPermission(ActivityTaskManagerService.java:1076)
+10-26 09:43:13.577   500  2061 E AppOps  : 	at com.android.server.wm.ActivityTaskManagerService$LocalService.hasSystemAlertWindowPermission(ActivityTaskManagerService.java:7006)
+10-26 09:43:13.577   500  2061 E AppOps  : 	at com.android.server.am.ActivityManagerService.bindServiceInstance(ActivityManagerService.java:13404)
+10-26 09:43:13.577   500  2061 E AppOps  : 	at com.android.server.am.ActivityManagerService.bindServiceInstance(ActivityManagerService.java:13368)
+10-26 09:43:13.577   500  2061 E AppOps  : 	at com.android.server.am.ActivityManagerService.bindServiceInstance(ActivityManagerService.java:13404)
+10-26 09:43:13.577   500  2061 E AppOps  : 	at com.android.server.am.ActivityManagerService.bindServiceInstance(ActivityManagerService.java:13368)
+10-26 09:43:13.578   500  2061 E AppOps  : 	at com.android.server.am.ActivityManagerService.bindServiceInstance(ActivityManagerService.java:13404)
+10-26 09:43:13.578   500  2061 E AppOps  : 	at com.android.server.am.ActivityManagerService.bindServiceInstance(ActivityManagerService.java:13368)
+10-26 09:43:13.578   500  2061 E AppOps  : 	at com.android.server.am.ActivityManagerService.bindServiceInstance(ActivityManagerService.java:13404)
+10-26 09:43:13.578   500  2061 E AppOps  : 	at com.android.server.am.ActivityManagerService.bindServiceInstance(ActivityManagerService.java:13368)
+10-26 09:43:13.663   500   527 D ActivityManager: sync unfroze 4686 com.android.chrome:privileged_process0 for 3
+10-26 09:43:13.665   500   527 D ActivityManager: sync unfroze 3383 com.android.chrome for 3
+10-26 09:43:13.678  3383  3383 I PhenotypeBackgroundRecv: Skipping com.google.android.gms.clearcut_client#com.android.chrome which doesn't use ProcessStable flags.
+10-26 09:43:13.801  3383  5686 I PhenotypeBackgroundRecv: Successfully updated snapshot for com.google.android.libraries.search.rendering.xuikit.device#com.android.chrome
+10-26 09:43:13.802  3383  3383 I PhenotypeBackgroundRecv: Skipping com.google.android.libraries.surveys#com.android.chrome which doesn't use ProcessStable flags.
+10-26 09:43:13.803  3383  3383 I PhenotypeBackgroundRecv: Skipping com.google.android.partnersetup#com.android.chrome which doesn't use ProcessStable flags.
+10-26 09:43:14.826   500  1611 E AppOps  : 	at com.android.server.wm.ActivityTaskManagerService.hasSystemAlertWindowPermission(ActivityTaskManagerService.java:1076)
+10-26 09:43:14.826   500  1611 E AppOps  : 	at com.android.server.wm.ActivityTaskManagerService$LocalService.hasSystemAlertWindowPermission(ActivityTaskManagerService.java:7006)
+10-26 09:43:14.826   500  1611 E AppOps  : 	at com.android.server.am.ActivityManagerService.bindServiceInstance(ActivityManagerService.java:13404)
+10-26 09:43:14.826   500  1611 E AppOps  : 	at com.android.server.am.ActivityManagerService.bindServiceInstance(ActivityManagerService.java:13368)
+10-26 09:43:14.826   500  1611 E AppOps  : 	at com.android.server.am.ActivityManagerService.bindServiceInstance(ActivityManagerService.java:13404)
+10-26 09:43:14.826   500  1611 E AppOps  : 	at com.android.server.am.ActivityManagerService.bindServiceInstance(ActivityManagerService.java:13368)
+10-26 09:43:14.826   500  1611 E AppOps  : 	at com.android.server.am.ActivityManagerService.bindServiceInstance(ActivityManagerService.java:13404)
+10-26 09:43:14.826   500  1611 E AppOps  : 	at com.android.server.am.ActivityManagerService.bindServiceInstance(ActivityManagerService.java:13368)
+10-26 09:43:14.826   500  1611 E AppOps  : 	at com.android.server.am.ActivityManagerService.bindServiceInstance(ActivityManagerService.java:13404)
+10-26 09:43:14.826   500  1611 E AppOps  : 	at com.android.server.am.ActivityManagerService.bindServiceInstance(ActivityManagerService.java:13368)
+10-26 09:43:15.161   500  1264 E AppOps  : 	at com.android.server.wm.ActivityTaskManagerService.hasSystemAlertWindowPermission(ActivityTaskManagerService.java:1076)
+10-26 09:43:15.161   500  1264 E AppOps  : 	at com.android.server.wm.ActivityTaskManagerService$LocalService.hasSystemAlertWindowPermission(ActivityTaskManagerService.java:7006)
+10-26 09:43:15.161   500  1264 E AppOps  : 	at com.android.server.am.ActivityManagerService.bindServiceInstance(ActivityManagerService.java:13404)
+10-26 09:43:15.161   500  1264 E AppOps  : 	at com.android.server.am.ActivityManagerService.bindServiceInstance(ActivityManagerService.java:13368)
+10-26 09:43:15.162   500  1264 E AppOps  : 	at com.android.server.am.ActivityManagerService.bindServiceInstance(ActivityManagerService.java:13404)
+10-26 09:43:15.162   500  1264 E AppOps  : 	at com.android.server.am.ActivityManagerService.bindServiceInstance(ActivityManagerService.java:13368)
+10-26 09:43:15.162   500  1264 E AppOps  : 	at com.android.server.am.ActivityManagerService.bindServiceInstance(ActivityManagerService.java:13404)
+10-26 09:43:15.162   500  1264 E AppOps  : 	at com.android.server.am.ActivityManagerService.bindServiceInstance(ActivityManagerService.java:13368)
+10-26 09:43:15.162   500  1264 E AppOps  : 	at com.android.server.am.ActivityManagerService.bindServiceInstance(ActivityManagerService.java:13404)
+10-26 09:43:15.162   500  1264 E AppOps  : 	at com.android.server.am.ActivityManagerService.bindServiceInstance(ActivityManagerService.java:13368)
+10-26 09:43:15.804   500   565 I ActivityTaskManager: Activity reported stop, but no longer stopping: ActivityRecord{d8eec22 u0 com.google.android.apps.nexuslauncher/.NexusLauncherActivity t7} STOPPED
+10-26 09:43:16.297   945  5738 D NetworkMonitor/101: PROBE_HTTP http://connectivitycheck.gstatic.com/generate_204 time=53ms ret=204 request={Connection=[close], User-Agent=[Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.32 Safari/537.36]} headers={null=[HTTP/1.1 204 No Content], Connection=[close], Content-Length=[0], Cross-Origin-Resource-Policy=[cross-origin], Date=[Mon, 26 Oct 2026 09:43:16 GMT], X-Android-Received-Millis=[1793007796294], X-Android-Response-Source=[NETWORK 204], X-Android-Selected-Protocol=[http/1.1], X-Android-Sent-Millis=[1793007796285]}
+10-26 09:43:16.318   945  5737 D NetworkMonitor/101: PROBE_HTTPS https://www.google.com/generate_204 time=83ms ret=204 request={Connection=[close], User-Agent=[Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.32 Safari/537.36]} headers={null=[HTTP/1.1 204 No Content], Alt-Svc=[h3=":443"; ma=2592000,h3-29=":443"; ma=2592000], Connection=[close], Content-Length=[0], Cross-Origin-Resource-Policy=[cross-origin], Date=[Mon, 26 Oct 2026 09:43:16 GMT], X-Android-Received-Millis=[1793007796312], X-Android-Response-Source=[NETWORK 204], X-Android-Selected-Protocol=[http/1.1], X-Android-Sent-Millis=[1793007796293]}
+10-26 09:43:20.086   500   581 D ActivityManager: freezing 1899 com.google.android.partnersetup
+10-26 09:43:21.256   500   500 E ActivityManager: Cancel pending or running compactions as system is awake
+10-26 09:43:21.259   500   544 D ActivityTaskManager: Top Process State changed to PROCESS_STATE_TOP
+10-26 09:43:21.260   500   544 E ActivityTaskManager: setVisibility=true while transition is not collecting or finishing ActivityRecord{d8eec22 u0 com.google.android.apps.nexuslauncher/.NexusLauncherActivity t7} caller=com.android.server.wm.ActivityRecord.setVisibility:5287 com.android.server.wm.TaskFragment.resumeTopActivity:1393 com.android.server.wm.Task.resumeTopActivityInnerLocked:5044 com.android.server.wm.Task.resumeTopActivityUncheckedLocked:4974 com.android.server.wm.Task.resumeTopActivityUncheckedLocked:4993 com.android.server.wm.Task.resumeTopActivityUncheckedLocked:5025 com.android.server.wm.RootWindowContainer.lambda$applySleepTokens$20:2428 com.android.server.wm.RootWindowContainer.$r8$lambda$9xL80GDJRExKql35hTmQVg_ieD8:0 
+10-26 09:43:21.309   500   528 I ActivityManager: Start proc 5845:com.google.android.settings.intelligence/u0a122 for service {com.google.android.settings.intelligence/com.google.android.settings.intelligence.modules.routines.impl.RoutinesJobIntentService}
+10-26 09:43:22.332   500   581 D ActivityManager: freezing 5645 com.google.android.webview
+10-26 09:43:22.338   500  2434 I ActivityManager: Flag disabled. Ignoring finishAttachApplication from uid: 10122. pid: 5845
+10-26 09:43:23.664   500   581 D ActivityManager: freezing 4686 com.android.chrome:privileged_process0
+10-26 09:43:23.806   500   581 D ActivityManager: freezing 3383 com.android.chrome
+10-26 09:43:25.439   500   527 D ActivityManager: sync unfroze 3383 com.android.chrome for 3
