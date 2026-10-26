@@ -2321,7 +2321,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (vpMeta.content !== want) { vpMeta.content = want; onTurn(); }   // the page's size changes with it: laid out again as it settles
   }
   function theatreSync() {
-    var showing = sheet.open && !vidspot.hidden && vidspot.isConnected, th = fullPref && showing;
+    var showing = sheet.open && !bgOn && !vidspot.hidden && vidspot.isConnected, th = fullPref && showing;   // (not with the day closed, playing on)
     root.classList.toggle('vshow', showing);
     if (th === theatre) return th;
     theatre = th;
@@ -2489,6 +2489,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function placeFloat() {
     floatRaf = 0;
     if (bgOn) {   // playing on with the day closed: a video as a small picture above My playlist's box
+      theatreSync();   // out of full screen first (closed with the X while full screen: the black and the facts went on showing)
       if (!vplay || vplay.cover || vidspot.hidden) { vidfloat.style.visibility = 'hidden'; vidfloat.classList.remove('bgv'); return; }
       var fbr = document.getElementById('fabbox').getBoundingClientRect(), bw = Math.min(240, window.innerWidth - 32), bh = Math.round(bw * 9 / 16);
       vidfloat.classList.add('bgv');
