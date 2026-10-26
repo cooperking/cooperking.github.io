@@ -378,9 +378,9 @@ async function factsSignoff(request, env) {
   return answer(200, { ok: true, signed: n, at, job });
 }
 
-async function startTvCopy(env, track) {   // video-tv.yml for one video, just uploaded
+async function startTvCopy(env, track, job) {   // video-tv.yml for one video just uploaded (or audio-light.yml for one MP3)
   if (!env.GH_TOKEN) return 'The GH_TOKEN secret is not set.';
-  const r = await fetch('https://api.github.com/repos/' + REPO + '/actions/workflows/video-tv.yml/dispatches', {
+  const r = await fetch('https://api.github.com/repos/' + REPO + '/actions/workflows/' + (job || 'video-tv.yml') + '/dispatches', {
     method: 'POST',
     headers: { Authorization: 'Bearer ' + env.GH_TOKEN, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28',
       'User-Agent': 'SongOfTheDayWorker', 'Content-Type': 'application/json' },
@@ -576,6 +576,7 @@ async function members(request, url, env) {
       if (!MEDIA_KEY_RE.test(String(body.key || ''))) return answer(400, { error: 'Not one of the files.' });
       await env.MEDIA.delete(body.key); await catalogSet(env, body.key, 0);
       if (body.key[0] === 'v') await env.MEDIA.delete('h/' + body.key.slice(2));   // and its TV copy
+      if (body.key[0] === 'a') await env.MEDIA.delete('l/' + body.key.slice(2, 24) + '.m4a');   // and its lighter copy
       return answer(200, { ok: true });
     }
   }
@@ -619,6 +620,7 @@ async function memberUpload(request, url, env, answer) {
     const obj = await up.complete(parts);
     await catalogSet(env, key, obj.size, typeof body.fp === 'string' ? body.fp.slice(0, 80) : '');
     if (key[0] === 'v') { await env.MEDIA.delete('h/' + key.slice(2)); await startTvCopy(env, key.slice(2, 24)); }   // a new video: its TV copy made again
+    if (key[0] === 'a') { await env.MEDIA.delete('l/' + key.slice(2, 24) + '.m4a'); await startTvCopy(env, key.slice(2, 24), 'audio-light.yml'); }   // a new song: its lighter copy made again
     return answer(200, { ok: true, key, size: obj.size });
   }
   if (op === 'abort') { await up.abort(); return answer(200, { ok: true }); }
@@ -1050,14 +1052,16 @@ async function mediaFile(request, url, env) {
   if (request.method !== 'GET' && request.method !== 'HEAD') return plain(405, 'Use GET.');
   const exp = parseInt(url.searchParams.get('e'), 10), sig = url.searchParams.get('s') || '';
   if (!(exp > Date.now() / 1000) || sig !== await mediaSig(env, m[1], m[2], exp)) return plain(403, 'This link has run out or isn’t valid.');
-  // a video's TV-friendly copy (h/<track>.mp4, made by video-tv.yml) wherever there is one: it plays everywhere
-  let key = m[1] + '/' + m[2] + '.' + m[3], head = m[1] === 'v' ? await env.MEDIA.head('h/' + m[2] + '.mp4') : null;
-  if (head) key = 'h/' + m[2] + '.mp4'; else head = await env.MEDIA.head(key);
+  // a video's TV-friendly copy (h/<track>.mp4, made by video-tv.yml) wherever there is one: it plays everywhere; a song's
+  // lighter copy (l/<track>.m4a, AAC, made by audio-light.yml) the same way: it streams and keeps offline in less
+  const copy = m[1] === 'v' ? 'h/' + m[2] + '.mp4' : 'l/' + m[2] + '.m4a';
+  let key = m[1] + '/' + m[2] + '.' + m[3], head = await env.MEDIA.head(copy), type = MEDIA_KINDS[m[1]].type;
+  if (head) { key = copy; if (m[1] === 'a') type = 'audio/mp4'; } else head = await env.MEDIA.head(key);
   if (!head) return plain(404, 'Not here.');
-  const size = head.size, type = MEDIA_KINDS[m[1]].type;
+  const size = head.size;
   // a video can change under the same address (its TV copy arriving): browsers check before using what they kept
   // (no-cache), and a piece asked for against the old file (If-Range) gets the whole new one, not a piece of it
-  const hdrs = { 'Content-Type': type, 'Accept-Ranges': 'bytes', 'Cache-Control': m[1] === 'v' ? 'private, no-cache' : 'private, max-age=3600', 'ETag': head.httpEtag,
+  const hdrs = { 'Content-Type': type, 'Accept-Ranges': 'bytes', 'Cache-Control': 'private, no-cache', 'ETag': head.httpEtag,   // (a song's copy arrives under the same address too)
     // the calendar fetches a song to keep it on the device (a member's download)
     'Access-Control-Allow-Origin': MEMBERS_ORIGIN, 'Access-Control-Expose-Headers': 'Content-Length, Content-Range, Accept-Ranges, ETag' };
   if (request.headers.get('If-None-Match') === head.httpEtag) return new Response(null, { status: 304, headers: hdrs });

@@ -1,0 +1,39 @@
+name: Songs, lighter
+
+# A lighter copy (AAC, 192 kbps) of each of John's own songs that needs one (see _sotd/audio_light.py). Started by the
+# Worker after each MP3 upload (that one song), by hand (all of them), and once a day to catch anything missed.
+on:
+  workflow_dispatch:
+    inputs:
+      track:
+        description: "One song's track id (empty: every song that needs a copy)"
+        default: ""
+  schedule:
+    - cron: "47 3 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: audio-light-${{ inputs.track || 'all' }}
+  cancel-in-progress: false
+
+jobs:
+  copies:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tools
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg > /dev/null
+          pip install --quiet boto3
+      - name: Make the copies
+        env:
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          TRACK: ${{ inputs.track }}
+        run: |
+          if [ -n "$TRACK" ]; then python _sotd/audio_light.py "$TRACK"; else python _sotd/audio_light.py; fi

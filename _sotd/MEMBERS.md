@@ -126,3 +126,13 @@ that video), once a day, and by hand (all of them). The originals are kept as th
 It needs four repository secrets: `R2_ACCESS_KEY_ID` and `R2_SECRET_ACCESS_KEY` (an R2 API token: Cloudflare dashboard,
 R2, Manage R2 API Tokens, Create API token, Object Read & Write, applied to the bucket), `R2_BUCKET` (the bucket's name), and
 `CLOUDFLARE_ACCOUNT_ID` (already there).
+
+## Lighter copies of John's songs
+
+The uploaded MP3s are VBR at about 255 kbps, 48 kHz (`_sotd/data/audio-report.json`, from `audio-report.yml`, by hand).
+`.github/workflows/audio-light.yml` (`_sotd/audio_light.py`) makes an AAC copy at 192 kbps of each at `l/<track>.m4a`, about
+a quarter smaller, so songs stream and keep offline in less; the Worker plays the copy wherever there is one (as
+`audio/mp4`), and drops it when a new MP3 is uploaded or the MP3 is deleted. Each copy is checked first: its length within
+0.2 s of the MP3's, and smaller than it (a song already under 192 kbps keeps its MP3 only). It runs after each MP3 upload
+(the Worker starts it for that song), once a day, and by hand (all of them), with the same secrets as the TV copies. The
+MP3s are kept as they are: deleting `l/` goes back to them.
