@@ -4972,10 +4972,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     try { localStorage.setItem('sotd-noteask', String(Date.now())); } catch (e) {}
     if (NPUSH) return NPUSH.requestPermissions().then(function (p) {
       if (p.receive !== 'granted') { toast('Not turned on: Settings > Notifications > Song of the Day turns them on'); return; }
-      return natRegister().then(function () { return natSend({ test: true }); }).then(function (j) {
+      return natRegister().then(function () { return natSend(); }).then(function () {   // (no test notification: John, 26 Oct 2026)
         try { localStorage.setItem('sotd-pushat', String(Date.now())); } catch (e) {}
-        if (j && j.test && (j.test < 200 || j.test > 299)) { ask({ k: 'Notifications', h: 'Turned on, but the test didn’t arrive', t: 'Apple said ' + j.test + (j.why ? ': ' + j.why : '') + '. Tell John.', ok: 'OK', no: 'Close' }); return; }
-        toast('Notifications on: a test is on its way');
+        toast('Notifications on');
       });
     }).catch(function (e) { toast((e && e.message) || 'Couldn’t turn them on. Try again.'); });
     var asked = Notification.permission === 'granted' ? Promise.resolve('granted') : new Promise(function (res) {
@@ -4989,10 +4988,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         return reg.pushManager.getSubscription().then(function (old) {
           return old || reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(key) });
         });
-      }).then(function (sub) { return noteSend(sub, { test: true }); }).then(function (j) {
+      }).then(function (sub) { return noteSend(sub); }).then(function () {   // (no test notification: John, 26 Oct 2026)
         try { localStorage.setItem('sotd-pushat', String(Date.now())); } catch (e) {}
-        if (j && j.test && (j.test < 200 || j.test > 299)) { ask({ k: 'Notifications', h: 'Turned on, but the test didn’t arrive', t: (IOS ? 'Apple' : 'The push service') + ' said ' + j.test + (j.why ? ': ' + j.why : '') + '. Tell John.', ok: 'OK', no: 'Close' }); return; }
-        toast('Notifications on: a test is on its way');
+        toast('Notifications on');
       });
     }).catch(function () { toast('Couldn’t turn them on. Try again.'); });
   }
