@@ -18,7 +18,8 @@ function londonNow() {
 function loadImg(src) {
   return new Promise(function (res, rej) { var im = new Image(); im.crossOrigin = 'anonymous'; im.onload = function () { res(im); }; im.onerror = rej; im.src = src; });
 }
-function drawCard(o) {   // o: { title, line (in capitals), when (a Date at noon UTC), cover (an image or canvas) }
+function drawCard(o) {   // o: { title, line (in capitals), when (a Date at noon UTC), cover (an image or canvas), and if
+  // other words are wanted: top (in place of JOHN’S SONG OF THE DAY), date (in place of the day, written out) }
   var title = o.title, cover = o.cover;
   var W = 1200, H = 630, c = document.createElement('canvas'); c.width = W; c.height = H;
   var g = c.getContext('2d'), when = o.when || londonNow(), pal = PALETTES[when.getUTCMonth()];
@@ -68,7 +69,9 @@ function drawCard(o) {   // o: { title, line (in capitals), when (a Date at noon
   });
   lines = lines.slice(0, 3);
   var lh = Math.floor(tsize * 1.08), block = 19 + 26 + lines.length * lh + 22 + 22 + 30 + 30, y0 = Math.floor((H - block) / 2);
-  spaced('JOHN’S SONG OF THE DAY', x0, y0, '600 19px "Hanken Grotesk"', 'rgba(255, 250, 245, .9)', 3.2);
+  var top = String(o.top != null ? o.top : 'JOHN’S SONG OF THE DAY').toUpperCase(); g.font = '600 19px "Hanken Grotesk"';
+  while (g.measureText(top).width + top.length * 3.2 > width && top.length > 8) top = top.slice(0, -2).replace(/\s+$/, '') + '…';
+  spaced(top, x0, y0, '600 19px "Hanken Grotesk"', 'rgba(255, 250, 245, .9)', 3.2);
   y0 += 19 + 26;
   g.font = tf; g.fillStyle = INK;
   lines.forEach(function (l) { g.fillText(l, x0, y0 - tsize * .08); y0 += lh; });
@@ -78,12 +81,14 @@ function drawCard(o) {   // o: { title, line (in capitals), when (a Date at noon
   spaced(line, x0, y0, '600 22px "Hanken Grotesk"', 'rgba(255, 250, 245, .94)', 2.4);
   y0 += 22 + 30;
   g.font = 'italic 400 30px Newsreader'; g.fillStyle = 'rgba(255, 250, 245, .92)';
-  g.fillText(longDate(when), x0, y0);
+  var dl = o.date != null ? String(o.date) : longDate(when);
+  while (g.measureText(dl).width > width && dl.length > 8) dl = dl.slice(0, -2).replace(/\s+$/, '') + '…';
+  g.fillText(dl, x0, y0);
   return c.toDataURL('image/jpeg', 0.84);
 }
 // John's own picture made into an album cover: the photo, darkened at the foot and the head so the words read, with
 // the calendar's name across the top and the person's name set like the calendar's own heading (roman, then italic)
-function albumCover(im, o) {   // o: { big (roman, as big as fits), italic (under it), left and right (along the foot) }
+function albumCover(im, o) {   // o: { big (roman, as big as fits), italic (under it), left and right (along the foot), top }
   var N = 640, c = document.createElement('canvas'); c.width = c.height = N;
   var g = c.getContext('2d'), w = im.naturalWidth || im.width, h = im.naturalHeight || im.height, sd = Math.min(w, h);
   g.drawImage(im, (w - sd) / 2, (h - sd) / 2, sd, sd, 0, 0, N, N);
@@ -97,7 +102,7 @@ function albumCover(im, o) {   // o: { big (roman, as big as fits), italic (unde
   g.textBaseline = 'alphabetic'; g.fillStyle = ink;
   function tracked(t, x, y, f, tr) { g.font = f; for (var i = 0; i < t.length; i++) { g.fillText(t[i], x, y); x += g.measureText(t[i]).width + tr; } return x; }
   g.shadowColor = 'rgba(0, 0, 0, .35)'; g.shadowBlur = 12;
-  tracked('JOHN’S SONG OF THE DAY', m, m + 18, '600 21px "Hanken Grotesk"', 4);
+  tracked(String(o.top != null ? o.top : 'JOHN’S SONG OF THE DAY').toUpperCase(), m, m + 18, '600 21px "Hanken Grotesk"', 4);
   // the big words, as big as fits (two lines at most), then the italic line
   var words = o.big || '', size = 132, lines;
   for (; size >= 44; size -= 4) {

@@ -59,7 +59,9 @@
 .songnow .row { align-items: center; }
 .songnow .note { font-size: 12.5px; color: var(--muted); margin: 0; }
 .songnow .opt { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-.songnow .opt .lab { font: 600 10.5px/1.2 var(--sans); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); min-width: 76px; }
+.songnow .opt .lab, .songnow .words .lab { font: 600 10.5px/1.2 var(--sans); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); min-width: 76px; }
+.songnow .words { display: grid; gap: 6px; }
+.songnow .words input.name { padding: 8px 11px; font-size: 15px; }
 .npic { display: grid; gap: 8px; }
 .npic figure { margin: 0; border-radius: 10px; overflow: hidden; background: var(--tile); }
 .npic figure img { width: 100%; max-height: 260px; object-fit: contain; display: block; }
@@ -97,8 +99,16 @@
       <div class="songnow" id="nsongnow" hidden>
         <figure class="card-pic" id="nsongfig"><img id="nsongcard" alt=""></figure>
         <div class="opt" id="nsongpics"><span class="lab">Picture</span></div>
+        <div class="words" id="nwords" hidden>
+          <span class="lab">Words on the picture</span>
+          <input class="name" id="nwtop" maxlength="40" autocomplete="off" aria-label="Top line" placeholder="Top line (empty: none)">
+          <input class="name" id="nwtitle" maxlength="90" autocomplete="off" aria-label="Title" placeholder="Title (empty: the song’s)">
+          <input class="name" id="nwline" maxlength="80" autocomplete="off" aria-label="Second line" placeholder="Second line (empty: none)">
+          <input class="name" id="nwdate" maxlength="60" autocomplete="off" aria-label="Date line" placeholder="Date line (empty: none)">
+          <div class="row"><button class="btn small" id="nwreset" type="button" hidden>Back to the song’s words</button></div>
+        </div>
         <div class="opt" id="nsongmode"><span class="lab">Opens with</span><button class="btn small" type="button" data-mode="preview">Song</button><button class="btn small" type="button" data-mode="video">Video</button></div>
-        <p class="note">Sent as it’s shared: the picture goes with the notification on Android and computers, and in everyone’s inbox (an iPhone’s notification shows the title and words only). Change the words below if you like.</p>
+        <p class="note">Sent as it’s shared: the picture goes with the notification on Android and computers, and in everyone’s inbox (an iPhone’s notification shows the title and words only). The picture’s words are above; the notification’s title and message below.</p>
         <div class="row"><button class="btn small" id="nsongx" type="button">No song</button></div>
       </div>
     </div>
@@ -400,7 +410,7 @@
       var b = document.createElement('button'); b.type = 'button'; b.className = 'btn small' + (x.pic === o.k ? ' primary' : ''); b.textContent = o.t;
       b.setAttribute('aria-pressed', String(x.pic === o.k));
       b.addEventListener('click', function () {
-        x.pic = o.k; songPicDraw();
+        x.pic = o.k; wordsRedraw(x); songPicDraw();
         // a photo of his own, and none chosen yet: the photo picker straight away (the Add a picture button is further
         // down, out of sight in a short window, so the choice looked as if it did nothing)
         if ((o.k === 'photo' || o.k === 'mine') && !NPIC) { $('npicfile').click(); $('npicbox').scrollIntoView({ block: 'nearest' }); }
@@ -408,12 +418,15 @@
       box.appendChild(b);
     });
     var o = songPics(x).filter(function (o) { return o.k === x.pic; })[0] || {};
-    var card = $('nsongcard');
+    var card = $('nsongcard'), drawn = x.pic === 'photo' || ((x.pic === 'card' || x.pic === 'john') && edited(x));   // drawn here, not the site's card
     $('npicbox').hidden = x.pic !== 'mine' && x.pic !== 'photo';
-    $('nsongfig').hidden = x.pic === 'mine' || x.pic === 'none' || (x.pic === 'photo' && !x.made);
-    if (x.pic === 'photo') { $('npicfig').hidden = true; if (NPIC && !x.made) songCard(); }   // (the card, not the photo, is what's previewed)
+    $('nwords').hidden = x.pic !== 'card' && x.pic !== 'john' && x.pic !== 'photo';
+    $('nsongfig').hidden = x.pic === 'mine' || x.pic === 'none' || (drawn && !x.made);
+    if (x.pic === 'photo') { $('npicfig').hidden = true; if (NPIC && !x.made && !x.drawP) songCard(); }   // (the card, not the photo, is what's previewed)
     else if (x.pic === 'mine') $('npicfig').hidden = !NPIC;
-    if (x.pic === 'photo' && x.made) { card.onerror = null; card.src = x.made; }
+    else if (drawn && !x.made && !x.drawP) songWords();
+    if (drawn && x.made) { card.onerror = null; card.src = x.made; }
+    else if (drawn) { /* (being drawn) */ }
     else if (o.img) { card.onerror = function () { card.onerror = null; card.src = x.img || ''; x.broken = x.pic; }; x.broken = ''; card.src = o.img; }
     [].forEach.call($('nsongmode').querySelectorAll('button'), function (b) { var on = b.dataset.mode === x.mode; b.classList.toggle('primary', on); b.setAttribute('aria-pressed', String(on)); });
   }
@@ -421,16 +434,54 @@
   // the photo as the album cover, on the song's card: drawn here as the Songs tab draws John's own sharing pictures
   function songCard() {
     var x = NSONG; if (!x || !NPIC) return;
-    var when = new Date(x.d + 'T12:00:00Z');
-    Promise.all([loadImg(NPIC), C.fontsReady()]).then(function (r) {
-      if (NSONG !== x) return;
-      var cover = C.albumCover(r[0], { big: x.title, italic: x.artist, left: x.n ? 'No. ' + x.n : 'Song of the Day', right: when.getUTCDate() + ' ' + when.toLocaleDateString('en-GB', { month: 'short', timeZone: 'UTC' }) + ' ' + when.getUTCFullYear() });
-      x.made = C.drawCard({ title: x.title, line: x.artist, when: when, cover: cover });
+    var when = new Date(x.d + 'T12:00:00Z'), w = wordsNow(x), n = x.drawN;
+    x.drawP = Promise.all([loadImg(NPIC), C.fontsReady()]).then(function (r) {
+      if (NSONG !== x || n !== x.drawN) return;
+      var cover = C.albumCover(r[0], { top: w.top, big: w.title, italic: w.line, left: x.n ? 'No. ' + x.n : 'Song of the Day', right: when.getUTCDate() + ' ' + when.toLocaleDateString('en-GB', { month: 'short', timeZone: 'UTC' }) + ' ' + when.getUTCFullYear() });
+      x.made = C.drawCard({ title: w.title, line: w.line, when: when, cover: cover, top: w.top, date: w.date });
       songPicDraw();
-    }).catch(function (e) { toast('That photo couldn’t be made into a cover: ' + ((e && (e.name ? e.name + ': ' : '') + e.message) || e)); });
+    }).catch(function (e) { if (n === x.drawN) x.drawP = null; toast('That photo couldn’t be made into a cover: ' + ((e && (e.name ? e.name + ': ' : '') + e.message) || e)); });
   }
+  // the words on a song's picture, which John can change: the top line, the title, the second line (the artist) and the
+  // date line, as the site's card has them until he does. With other words, the album cover's card (or his own cover's)
+  // is drawn here, as the site draws it, and sent as a picture of its own.
+  var WTOP = 'JOHN’S SONG OF THE DAY', wordsT = null;
+  function wordsDefault(x) { return { top: WTOP, title: x.title, line: x.artist, date: fullDay(x.d) }; }
+  function edited(x) {
+    var d = wordsDefault(x), w = x.words || d;
+    return ['top', 'title', 'line', 'date'].some(function (k) { var a = String(w[k] || '').trim(), b = String(d[k] || '').trim(); return k === 'title' ? a !== b : a.toUpperCase() !== b.toUpperCase(); });
+  }
+  function wordsNow(x) {   // as drawn: an empty line left off, except the title (the song's)
+    var w = x.words || wordsDefault(x), t = function (k) { return String(w[k] || '').trim(); };
+    return { top: t('top'), title: t('title') || x.title, line: t('line'), date: t('date') };
+  }
+  function wordsFill(x) {
+    var w = x.words || wordsDefault(x);
+    $('nwtop').value = w.top; $('nwtitle').value = w.title; $('nwline').value = w.line; $('nwdate').value = w.date; $('nwreset').hidden = !edited(x);
+  }
+  function wordsRedraw(x) { x.made = ''; x.drawP = null; x.drawN = (x.drawN || 0) + 1; }
+  function songWords() {   // the album cover's card, or John's own cover's, with other words
+    var x = NSONG; if (!x) return;
+    var o = songPics(x).filter(function (o) { return o.k === x.pic; })[0] || {}, n = x.drawN, w = wordsNow(x);
+    var src = x.pic === 'card' ? String(x.img || '').replace('ab67616d00001e02', 'ab67616d0000b273') : o.icon;
+    var when = new Date(x.d + 'T12:00:00Z');
+    x.drawP = Promise.all([src ? C.loadImg(src) : null, C.fontsReady()]).then(function (r) {
+      if (NSONG !== x || n !== x.drawN) return;
+      x.made = C.drawCard({ title: w.title, line: w.line, when: when, cover: r[0], top: w.top, date: w.date });
+      songPicDraw();
+    }).catch(function (e) { if (n === x.drawN) x.drawP = null; toast('The picture couldn’t be drawn with those words: ' + ((e && (e.name ? e.name + ': ' : '') + e.message) || (e && e.type) || e)); });
+  }
+  ['nwtop', 'nwtitle', 'nwline', 'nwdate'].forEach(function (id) {
+    $(id).addEventListener('input', function () {
+      var x = NSONG; if (!x) return;
+      x.words = { top: $('nwtop').value, title: $('nwtitle').value, line: $('nwline').value, date: $('nwdate').value };
+      $('nwreset').hidden = !edited(x);
+      wordsRedraw(x); clearTimeout(wordsT); wordsT = setTimeout(function () { wordsT = null; songPicDraw(); }, 350);
+    });
+  });
+  $('nwreset').addEventListener('click', function () { var x = NSONG; if (!x) return; x.words = wordsDefault(x); wordsFill(x); wordsRedraw(x); songPicDraw(); });
   function songChoose(x) {
-    NSONG = x; x.pic = 'card'; x.made = ''; x.mode = (CAT[x.id] || {}).a ? 'preview' : 'video';
+    NSONG = x; x.pic = 'card'; x.words = wordsDefault(x); wordsRedraw(x); wordsFill(x); x.mode = (CAT[x.id] || {}).a ? 'preview' : 'video';
     $('nsongres').innerHTML = ''; $('nsong').value = ''; $('nsong').hidden = true;
     $('nsongnow').hidden = false; songPicDraw();
     $('ntitle').value = x.title;
@@ -457,7 +508,7 @@
         c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
         c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
         NPIC = c.toDataURL('image/jpeg', 0.85); $('npicimg').src = NPIC; picShow(true);
-        if (NSONG) { NSONG.made = ''; if (NSONG.pic === 'photo') songCard(); else songPicDraw(); }
+        if (NSONG) { wordsRedraw(NSONG); songPicDraw(); }
       } catch (e) { toast(usedWhy(e, f)); }
     }, function (e) { toast(C.fileWhy(e, f)); });
   });
@@ -479,12 +530,16 @@
     ask('Notification', 'Send “' + title + '”?', (to ? 'It goes to ' + whom : 'It goes to everyone') + ': into their inbox, and straight to their phone where notifications are on.', 'Send').then(function (yes) {
       if (!yes) return;
       var b = $('nsend'); b.disabled = true;
-      var pics = {};
-      if (NSONG) { var po = songPics(NSONG).filter(function (o) { return o.k === NSONG.pic; })[0] || {}; pics = { image: po.img && NSONG.broken !== NSONG.pic ? po.img : '', icon: po.icon || NSONG.img || '' }; }
-      if (NSONG && NSONG.pic === 'photo' && !NSONG.made) { b.disabled = false; toast('Choose the photo for the cover first'); return; }
-      var upPic = NSONG && NSONG.pic === 'photo' ? NSONG.made : NPIC;
-      var up = (!NSONG || NSONG.pic === 'mine' || NSONG.pic === 'photo') && upPic ? api('/members/admin', { op: 'pushpic', pic: upPic }).then(function (j) { if (!j.url) throw new Error(j.error || 'The picture didn’t go up'); pics.image = j.url; }) : Promise.resolve();
-      up.then(function () { return api('/members/admin', Object.assign({ op: 'push', title: title, text: text, url: url, to: to }, pics)); }).then(function (j) {
+      if (wordsT) { clearTimeout(wordsT); wordsT = null; songPicDraw(); }   // words just typed: drawn now
+      var x = NSONG, pics = {};
+      Promise.resolve(x && x.drawP).then(function () {
+        if (x) { var po = songPics(x).filter(function (o) { return o.k === x.pic; })[0] || {}; pics = { image: po.img && x.broken !== x.pic ? po.img : '', icon: po.icon || x.img || '' }; }
+        if (x && x.pic === 'photo' && !x.made) throw new Error('Choose the photo for the cover first');
+        var drawn = x && x.made && (x.pic === 'photo' || x.pic === 'card' || x.pic === 'john');
+        if (x && !drawn && (x.pic === 'card' || x.pic === 'john') && edited(x)) throw new Error('The picture with your words isn’t drawn yet: try again in a moment');
+        var upPic = drawn ? x.made : (!x || x.pic === 'mine') ? NPIC : null;
+        return upPic ? api('/members/admin', { op: 'pushpic', pic: upPic }).then(function (j) { if (!j.url) throw new Error(j.error || 'The picture didn’t go up'); pics.image = j.url; }) : null;
+      }).then(function () { return api('/members/admin', Object.assign({ op: 'push', title: title, text: text, url: url, to: to }, pics)); }).then(function (j) {
         b.disabled = false;
         if (j.status !== 200) { toast(j.error || 'Couldn’t send it'); return; }
         if (j.failed && !j.sent) { ask('Notification', 'It didn’t go', whyText(j.errors) || 'The push service said no.', 'OK'); pushStat(); return; }
