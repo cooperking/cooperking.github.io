@@ -4585,6 +4585,12 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // (iOS 16.4 on), so in Safari this says so. A device that has them on hands its subscription in again now and then
   // (a phone can change it), and turns them off when it signs out. ----
   var NOTE_OK = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+  // the number on the app's icon (unseen notifications, kept by the service worker): gone once the calendar's in view
+  function badgeClear() {
+    try { if (navigator.clearAppBadge) navigator.clearAppBadge().catch(function () {}); } catch (e) {}
+    try { if (window.caches) caches.open('sotd-badge').then(function (c) { return c.delete('n'); }).catch(function () {}); } catch (e) {}
+  }
+  if (!TV) { badgeClear(); document.addEventListener('visibilitychange', function () { if (!document.hidden) badgeClear(); }); }
   var noteKey = null;
   try { noteKey = localStorage.getItem('sotd-pushkey'); } catch (e) {}
   function noteReg() { return navigator.serviceWorker.ready; }

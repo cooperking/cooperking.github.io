@@ -4,8 +4,8 @@
 //   sotd-covers  album covers: once fetched, from here (a cover's address never changes)
 //   sotd-songs   members' downloaded songs, put there by the page at <folder>__offline/<track>.mp3; served from here,
 //                in ranges as phones ask for them (an iPhone won't play a song otherwise)
-const SHELL = 'sotd-shell-v1', COVERS = 'sotd-covers-v1', SONGS = 'sotd-songs';
-const KEEP = [SHELL, COVERS, SONGS];
+const SHELL = 'sotd-shell-v1', COVERS = 'sotd-covers-v1', SONGS = 'sotd-songs', BADGE = 'sotd-badge';
+const KEEP = [SHELL, COVERS, SONGS, BADGE];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(SHELL).then(c => c.add(new Request(self.registration.scope, { cache: 'reload' }))).catch(() => {}).then(() => self.skipWaiting()));
@@ -82,14 +82,26 @@ self.addEventListener('push', e => {
   let m = {};
   try { m = e.data ? e.data.json() : {}; } catch (err) { m = { title: 'Song of the Day', body: e.data ? e.data.text() : '' }; }
   const scope = self.registration.scope;
-  e.waitUntil(self.registration.showNotification(m.title || 'Song of the Day', {
+  e.waitUntil(Promise.all([badge(1), self.registration.showNotification(m.title || 'Song of the Day', {
     body: m.body || '', icon: m.icon || scope + 'icon-192.png', image: m.image || undefined,   // image: Android's big picture (an iPhone shows none)
     tag: m.tag || 'sotd', data: { url: m.url || scope }
-  }));
+  })]));
 });
+
+// the number on the app's icon (an iPhone's Home Screen app, and installed apps on a computer): one more for each
+// notification not yet seen; back to none when the calendar's opened (the page clears it) or a notification is tapped
+async function badge(add) {
+  try {
+    const c = await caches.open(BADGE), r = await c.match('n');
+    const n = add ? (r ? Number(await r.text()) || 0 : 0) + add : 0;
+    if (n) await c.put('n', new Response(String(n))); else await c.delete('n');
+    if (self.navigator.setAppBadge) await (n ? self.navigator.setAppBadge(n) : self.navigator.clearAppBadge()).catch(() => {});
+  } catch (err) {}
+}
 
 self.addEventListener('notificationclick', e => {
   e.notification.close();
+  e.waitUntil(badge(0));
   const url = (e.notification.data && e.notification.data.url) || self.registration.scope;
   e.waitUntil((async () => {
     const wins = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
