@@ -7,14 +7,14 @@ cd "$(dirname "$0")/ios/App"
 BUILD="${BUILD_NUMBER:-1}"
 if [ -z "${ASC_KEY_ID:-}" ] || [ -z "${ASC_ISSUER_ID:-}" ] || [ -z "${ASC_KEY_P8:-}" ] || [ -z "${APPLE_TEAM_ID:-}" ]; then
   echo "::warning title=iPhone app::No Apple keys yet (ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8, APPLE_TEAM_ID): built for the simulator only, to check it builds."
-  xcodebuild -project App.xcodeproj -scheme App -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+  xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
     CODE_SIGNING_ALLOWED=NO build | tail -n 25
   exit 0
 fi
 KEY="$RUNNER_TEMP/AuthKey_$ASC_KEY_ID.p8"
 printf '%s\n' "$ASC_KEY_P8" > "$KEY"
 AUTH=(-allowProvisioningUpdates -authenticationKeyPath "$KEY" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID")
-xcodebuild -project App.xcodeproj -scheme App -configuration Release -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/App.xcarchive" \
+xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/App.xcarchive" \
   DEVELOPMENT_TEAM="$APPLE_TEAM_ID" CODE_SIGN_STYLE=Automatic CODE_SIGN_ENTITLEMENTS=App/App.entitlements \
   PRODUCT_BUNDLE_IDENTIFIER=io.github.cooperking.sotd CURRENT_PROJECT_VERSION="$BUILD" MARKETING_VERSION=1.0 \
   "${AUTH[@]}" archive | tail -n 40

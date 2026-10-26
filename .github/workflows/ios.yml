@@ -30,7 +30,7 @@ jobs:
         working-directory: _sotd/ios-app
         run: |
           npm install --no-audit --no-fund
-          npx cap add ios --packagemanager SPM
+          npx cap add ios
           bash customise.sh
           npx cap sync ios
       - name: Build, and send to TestFlight when the Apple keys are there

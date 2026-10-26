@@ -9,6 +9,7 @@ CLOUDFLARE_ACCOUNT_ID. Without the token it does nothing.
 3. Uploads the code.
 4. Checks the Worker: /status still answers (the old part), /covers.json answers JSON (the members part).
    If /status fails, the version from step 2 is put back and the job fails.
+3b. Puts the iPhone app's APNs key on the Worker as secrets, when the repository has it (APNS_KEY_ID, APNS_KEY_P8, APPLE_TEAM_ID).
 5. Sets the Worker's timer (every 10 minutes, for the day's song notification) if it isn't already.
 """
 import re, json, os, shutil, subprocess, sys, tempfile, time, urllib.error, urllib.request, uuid
@@ -115,6 +116,17 @@ def main():
         b'--' + bnd.encode() + b'--\r\n'])
     cf('PUT', base + '/content', body, 'multipart/form-data; boundary=' + bnd)
     note('Uploaded worker.js (%d bytes).' % len(code))
+
+    # 3b. the iPhone app's notifications: John's APNs key, from the repository secrets, as the Worker's own secrets
+    for name, env_name in (('APNS_KEY_ID', 'APNS_KEY_ID'), ('APNS_KEY', 'APNS_KEY_P8'), ('APPLE_TEAM_ID', 'APPLE_TEAM_ID')):
+        val = os.environ.get(env_name, '').strip()
+        if not val:
+            continue
+        try:
+            cf('PUT', base + '/secrets', {'name': name, 'text': val, 'type': 'secret_text'})
+            note('Secret %s set on the Worker.' % name)
+        except Refused as e:
+            note('Couldn\'t set the secret %s: %s' % (name, e), 'warning')
 
     # 4. the Worker answers
     ok_status = ok_new = False

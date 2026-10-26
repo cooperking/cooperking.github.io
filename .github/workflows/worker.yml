@@ -26,4 +26,7 @@ jobs:
         env:
           CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          APNS_KEY_ID: ${{ secrets.APNS_KEY_ID }}
+          APNS_KEY_P8: ${{ secrets.APNS_KEY_P8 }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: python3 _sotd/worker_deploy.py

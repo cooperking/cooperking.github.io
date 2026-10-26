@@ -1138,10 +1138,41 @@ async function pushOne(k, sub, msg) {   // the push service's answer: { st: 201 
     TTL: String(PUSH_TTL), Urgency: 'normal' } });
   return { st: r.status, why: r.ok ? '' : ((await r.text().catch(() => '')) || '').replace(/\s+/g, ' ').slice(0, 160) };
 }
+function subHost(x) { return x.apns ? 'Apple (iPhone app)' : pushHost(x.sub.endpoint); }
 function pushHost(endpoint) {   // whose push service: for John, in plain words
   const h = new URL(endpoint).host;
   return /apple\.com$/.test(h) ? 'Apple' : /googleapis\.com$/.test(h) ? 'Google' : /mozilla|services\.mozilla\.com$/.test(h) ? 'Mozilla' : /windows|notify\.windows\.com$/.test(h) ? 'Microsoft' : h;
 }
+// ---- the iPhone app (TestFlight): Apple's own notifications (APNs), not Web Push. The app hands over its device token
+// (/members/push { apns }); each message goes to api.push.apple.com, signed with John's APNs key (the Worker secrets
+// APNS_KEY_ID, APNS_KEY: the .p8's text, and APPLE_TEAM_ID, put there by worker_deploy.py from the repository secrets).
+// The number on the app's icon comes with each one (and alone, when messages are read). ----
+const APP_ID = 'io.github.cooperking.sotd';
+let apnsJwt = null;
+async function apnsAuth(env) {
+  if (apnsJwt && Date.now() - apnsJwt.at < 45 * 60e3) return apnsJwt.t;
+  const pem = String(env.APNS_KEY || '').replace(/-----[^-]+-----/g, '').replace(/\s+/g, '');
+  const key = await crypto.subtle.importKey('pkcs8', Uint8Array.from(atob(pem), c => c.charCodeAt(0)), { name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign']);
+  const head = b64url(u8(JSON.stringify({ alg: 'ES256', kid: env.APNS_KEY_ID }))), claims = b64url(u8(JSON.stringify({ iss: env.APPLE_TEAM_ID, iat: Math.floor(Date.now() / 1000) })));
+  const t = head + '.' + claims + '.' + b64url(await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, key, u8(head + '.' + claims)));
+  apnsJwt = { t, at: Date.now() };
+  return t;
+}
+async function apnsOne(env, token, msg) {   // { st, why }, as pushOne
+  if (!env.APNS_KEY || !env.APNS_KEY_ID || !env.APPLE_TEAM_ID) return { st: 0, why: 'The APNs key isn’t on the Worker yet' };
+  const aps = msg.title ? { alert: { title: msg.title, body: msg.body || '' }, sound: 'default', 'thread-id': msg.tag && msg.tag.startsWith('sotd-day') ? 'songs' : 'notes' } : {};
+  if (typeof msg.unread === 'number') aps.badge = msg.unread;
+  const r = await fetch('https://api.push.apple.com/3/device/' + token, { method: 'POST', body: JSON.stringify(Object.assign({ aps }, msg.title ? { url: msg.url || SITE_SONGS, ib: msg.ib || '' } : {})), headers: {
+    authorization: 'bearer ' + await apnsAuth(env), 'apns-topic': APP_ID, 'apns-push-type': 'alert', 'apns-priority': msg.title ? '10' : '5', 'apns-expiration': String(Math.floor(Date.now() / 1000) + PUSH_TTL), 'content-type': 'application/json' } });
+  const why = r.ok ? '' : ((await r.text().catch(() => '')) || '').slice(0, 160);
+  return { st: r.status === 200 ? 201 : (r.status === 400 && /BadDeviceToken|DeviceTokenNotForTopic/.test(why)) ? 410 : r.status, why };
+}
+async function apnsBadge(env, member, unread) {   // read on one device: the number on the app's icon, on all their iPhones
+  const subs = (await env.SOTD.get('pushSubs', 'json')) || {};
+  await Promise.all(Object.values(subs).filter(x => x.m === member && x.apns).map(x => apnsOne(env, x.apns, { unread }).catch(() => {})));
+}
+async function pushTo(env, k, sub, msg) { return sub.apns ? apnsOne(env, sub.apns, msg) : pushOne(k, sub.sub, msg); }
+
 async function pushAll(env, msg, to) {   // to: only these members (else everyone)
   const subs = (await env.SOTD.get('pushSubs', 'json')) || {}, k = await vapidKeys(env);
   const unread = await inboxAdd(env, to, msg);   // into each one's inbox first (notifications on or not); their unread counts
@@ -1150,11 +1181,11 @@ async function pushAll(env, msg, to) {   // to: only these members (else everyon
   for (let i = 0; i < ids.length; i += 20) {   // twenty at a time
     await Promise.all(ids.slice(i, i + 20).map(async id => {
       try {
-        const { st, why } = await pushOne(k, subs[id].sub, Object.assign({ unread: unread[subs[id].m] || 1, ib: unread[''] }, msg));   // (the number on the app's icon)
+        const { st, why } = await pushTo(env, k, subs[id], Object.assign({ unread: unread[subs[id].m] || 1, ib: unread[''] }, msg));   // (the number on the app's icon)
         if (st >= 200 && st < 300) sent++;
         else if (st === 404 || st === 410) gone.push(id);
-        else { failed++; errors.push({ to: pushHost(subs[id].sub.endpoint), status: st, why }); console.log('push ' + st + ' ' + pushHost(subs[id].sub.endpoint) + ': ' + why); }
-      } catch (e) { failed++; errors.push({ to: pushHost(subs[id].sub.endpoint), status: 0, why: String(e && e.message || e).slice(0, 160) }); console.log('push: ' + (e && e.message)); }
+        else { failed++; errors.push({ to: subHost(subs[id]), status: st, why }); console.log('push ' + st + ' ' + subHost(subs[id]) + ': ' + why); }
+      } catch (e) { failed++; errors.push({ to: subHost(subs[id]), status: 0, why: String(e && e.message || e).slice(0, 160) }); console.log('push: ' + (e && e.message)); }
     }));
   }
   if (gone.length) {   // read again just before writing: a device may have turned them on meanwhile
@@ -1197,7 +1228,7 @@ async function memberInbox(request, env, answer) {
     if (body.read) { const want = body.read === 'all' ? null : ids(body.read); box.forEach(x => { if (!x.r && (!want || want.has(x.id))) { x.r = Date.now(); changed = true; } }); }
     if (body.unread) { const want = ids(body.unread); box.forEach(x => { if (x.r && want.has(x.id)) { delete x.r; changed = true; } }); }
     if (body.del) { const want = ids(body.del); for (let i = box.length - 1; i >= 0; i--) if (want.has(box[i].id)) { box.splice(i, 1); changed = true; } }
-    if (changed) await env.SOTD.put(key, JSON.stringify(box));
+    if (changed) { await env.SOTD.put(key, JSON.stringify(box)); await apnsBadge(env, member, box.filter(x => !x.r).length); }
   } else if (request.method !== 'GET') return answer(405, { error: 'Use GET or POST.' });
   return answer(200, { items: box, unread: box.filter(x => !x.r).length });
 }
@@ -1214,7 +1245,7 @@ async function pushCount(env) {
   const by = {}, ids = {};
   Object.values(subs).forEach(x => { const n = (all[x.m] && all[x.m].name) || '?'; by[n] = (by[n] || 0) + 1; ids[x.m] = (ids[x.m] || 0) + 1; });
   const kinds = {};
-  Object.values(subs).forEach(x => { const k = pushHost(x.sub.endpoint); kinds[k] = (kinds[k] || 0) + 1; });
+  Object.values(subs).forEach(x => { const k = subHost(x); kinds[k] = (kinds[k] || 0) + 1; });
   return { devices: Object.keys(subs).length, members: by, ids, kinds, last: await env.SOTD.get('pushLastResult', 'json') };   // ids: devices with them on, by member id
 }
 async function pushForget(env, member) {
@@ -1231,6 +1262,7 @@ async function memberPush(request, env, answer) {
   const member = await memberFromToken(request, env);
   if (!member) return answer(401, { error: 'Not a member (any more).' });
   const body = await request.json().catch(() => ({}));
+  if (body.apns) return memberApns(env, member, body, answer);
   const sub = body.sub || {}, endpoint = String(sub.endpoint || ''), keys = sub.keys || {};
   if (!/^https:\/\//.test(endpoint) || endpoint.length > 1000) return answer(400, { error: 'That isn’t a push subscription.' });
   const id = (await sha256hex(endpoint)).slice(0, 24);
@@ -1251,6 +1283,20 @@ async function memberPush(request, env, answer) {
   }
   return answer(200, { on: true });
 }
+async function memberApns(env, member, body, answer) {   // the iPhone app's device token: on, off, or a test
+  const token = String(body.apns || '').toLowerCase();
+  if (!/^[0-9a-f]{64,200}$/.test(token)) return answer(400, { error: 'That isn’t a device token.' });
+  const id = 'a' + (await sha256hex(token)).slice(0, 23), subs = (await env.SOTD.get('pushSubs', 'json')) || {};
+  if (body.off) { if (subs[id]) { delete subs[id]; await env.SOTD.put('pushSubs', JSON.stringify(subs)); } return answer(200, { on: false }); }
+  if (!subs[id] && Object.keys(subs).length >= PUSH_MAX) return answer(400, { error: 'Too many devices have notifications on.' });
+  if (!subs[id] || subs[id].m !== member) { subs[id] = { m: member, apns: token, at: Date.now() }; await env.SOTD.put('pushSubs', JSON.stringify(subs)); }
+  if (!body.test) return answer(200, { on: true });
+  const unread = ((await env.SOTD.get('inbox:' + member, 'json')) || []).filter(x => !x.r).length;
+  let st = 0, why = '';
+  try { ({ st, why } = await apnsOne(env, token, { title: 'Notifications are on', body: 'You’ll hear about each new Song of the Day as it goes up.', url: SITE_SONGS, tag: 'sotd-on', unread })); } catch (e) { why = String(e && e.message || e).slice(0, 160); }
+  return answer(200, { on: true, test: st, why });
+}
+
 let pushDone = '';   // this Worker's own note of the last song sent (so most looks don't read KV)
 // the day's song goes out once both of John's files for it are up (his MP3 and his video), while it's still the newest
 // song and no more than two days old (UK time); until then each look (every 10 minutes) checks again
