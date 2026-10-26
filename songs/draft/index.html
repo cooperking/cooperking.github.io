@@ -715,9 +715,8 @@ html.theatre .vidfloat > .vidctl, .vidfloat.bgv > .vidctl { display: none; }
    plays on), with a shade top and bottom so they read; YouTube's still make room, as nothing may cover its player */
 .vidfloat > .thshade { position: absolute; inset: 0; z-index: 5; pointer-events: none; opacity: 0; transition: opacity .25s; background: linear-gradient(rgba(0, 0, 0, .7), rgba(0, 0, 0, .3) 32%, rgba(0, 0, 0, .3) 60%, rgba(0, 0, 0, .75)); }
 html.theatre.tvui.thover .vidfloat > .thshade { opacity: 1; }
-html.theatre.thover #capdock { transition: opacity .25s; }
-html.theatre.tvui.thover #capdock { opacity: 0; }   /* the facts make way for the buttons while they're up */
 html.theatre.thover #sheet .sheet-head, html.theatre.thover #picks { text-shadow: 0 1px 3px rgba(0, 0, 0, .6); }
+html.theatre.thover:not(.turning) #sheet .capdock { transition: top .25s ease; }   /* lifted over the buttons, and back */
 .vidsound svg { width: 18px; height: 18px; flex: none; }
 .vidsound.hint { pointer-events: none; }
 .pick.watching .deck { display: none; }
@@ -2445,6 +2444,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       if (up) { topH = barTop; botH = barBot; }
     }
     var capW = Math.max(0, Math.min(aW - 2 * e, 1100)), capH = 0;
+    if (bar && over && land) capW = Math.max(0, Math.min(capW, aW - 2 * (arw + 2 * e)));   // lifted beside the arrows: between them
     if (capdock.style.width !== px(capW)) { capdock.style.width = px(capW); capShow.refit(); }   // the fact on screen re-broken for the new width
     if (capsOn && vplay && (!capDone || adLive(adState))) {
       capH = capNeed([capIntro(vplay.el.sotd.s)].concat(vplay.items || []));
@@ -2467,7 +2467,11 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     x = Math.round(x); y = Math.round(y); v.w = Math.round(v.w); v.h = Math.round(v.h);
     put4(vidfloat, x, y, v.w, v.h);
     if (vidfloat.style.clipPath) vidfloat.style.clipPath = '';
-    put4(capdock, ax + (aW - capW) / 2, y + v.h + 2, capW, capH);
+    // the facts under the video; with the buttons up over it, lifted clear of the bottom row (over the video's foot,
+    // which is shaded) rather than hidden
+    var capY = y + v.h + 2;
+    if (bar && over && capH) capY = Math.max(ay + barTop, Math.min(capY, ay + aH - barBot - capH));
+    put4(capdock, ax + (aW - capW) / 2, capY, capW, capH);
     // an iPhone's Tap for sound: under the facts; with the buttons up and no room there, above the video, else out of
     // the way until they go
     var sTop = y + v.h + capH + 10, sVis = '';
