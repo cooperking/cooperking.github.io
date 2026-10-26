@@ -297,6 +297,16 @@ html.big .heroacts .hsub { margin: 0 6px 0 0; }
 .ac-inbox { display: grid; gap: 6px; }
 .ac-inbox .hd { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
 .ac-inbox .hd .ac-h { margin: 0; }
+.ac-inbox .hdacts { display: inline-flex; gap: 14px; }
+.ac-inbox .selbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 12px; border-radius: 12px; background: var(--pill-bg); border: 1px solid var(--line); }
+.ac-inbox .selbar[hidden] { display: none; }
+.ac-inbox .selacts { display: inline-flex; gap: 14px; }
+.ac-inbox .allread:disabled { opacity: .4; cursor: default; }
+.ac-inbox .allread.del:not(:disabled) { color: #c2185b; }
+.ac-msgs .tick { grid-row: 1 / span 3; width: 20px; height: 20px; margin-top: 2px; border-radius: 50%; border: 1.5px solid var(--muted); display: grid; place-items: center; }
+.ac-msgs .chosen .tick { background: var(--fg); border-color: var(--fg); }
+.ac-msgs .chosen .tick::after { content: ""; width: 9px; height: 5px; margin-top: -2px; border: solid var(--bg); border-width: 0 0 2px 2px; transform: rotate(-45deg); }
+.ac-msgs > li.chosen { border-color: var(--fg); }
 .ac-inbox .allread { border: 0; background: none; padding: 0; font: 600 11px/1.2 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
 .ac-msgs { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .ac-msgs > li { border: 1px solid var(--line); border-radius: 14px; background: var(--pill-bg); overflow: hidden; }
@@ -1262,7 +1272,11 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       <h3 id="acname">Signed in</h3>
     </div>
     <div class="ac-inbox" id="acinbox" hidden>
-      <div class="hd"><p class="ac-h" id="acinh">Inbox</p><button class="allread" id="acallread" type="button" hidden>Mark all read</button></div>
+      <div class="hd"><p class="ac-h" id="acinh">Inbox</p><span class="hdacts"><button class="allread" id="acallread" type="button" hidden>Mark all read</button><button class="allread" id="acselect" type="button" hidden>Select</button></span></div>
+      <div class="selbar" id="acselbar" hidden>
+        <button class="allread" id="acselall" type="button">Select all</button>
+        <span class="selacts"><button class="allread" id="acselread" type="button" disabled>Read</button><button class="allread" id="acselunread" type="button" disabled>Unread</button><button class="allread del" id="acseldel" type="button" disabled>Delete</button></span>
+      </div>
       <ul class="ac-msgs" id="acmsgs"></ul>
       <p class="ac-none" id="acinnone" hidden>Nothing yet. Each new Song of the Day, and John’s notes, come here.</p>
     </div>
@@ -4626,7 +4640,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     try { if (navigator.setAppBadge) (INBOX.unread && MEMBER ? navigator.setAppBadge(INBOX.unread) : navigator.clearAppBadge()).catch(function () {}); } catch (e) {}
     try { if (window.caches) caches.open('sotd-badge').then(function (c) { return INBOX.unread ? c.put('n', new Response(String(INBOX.unread))) : c.delete('n'); }).catch(function () {}); } catch (e) {}
     var h = document.getElementById('acinh'); if (h) h.textContent = INBOX.unread ? 'Inbox · ' + INBOX.unread + ' new' : 'Inbox';
-    var ar = document.getElementById('acallread'); if (ar) ar.hidden = !INBOX.unread;
+    var ar = document.getElementById('acallread'); if (ar) ar.hidden = !INBOX.unread || !!INBOX.sel;
   }
   function inboxCall(body) {
     var tok = plTok(); if (!tok || !MBASE) return Promise.reject();
@@ -4656,9 +4670,21 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var items = INBOX.items;
     none.hidden = !(items && !items.length);
     if (!items) { var w = document.createElement('li'); w.className = 'ac-none plain'; w.textContent = 'Loading…'; ul.appendChild(w); return; }
-    items.slice(0, INBOX.shown).forEach(function (x) {
+    var sel = INBOX.sel;
+    document.getElementById('acselect').hidden = !items.length;
+    document.getElementById('acselect').textContent = sel ? 'Done' : 'Select';
+    document.getElementById('acallread').hidden = !!sel || !INBOX.unread;
+    document.getElementById('acselbar').hidden = !sel;
+    if (sel) {
+      var n = sel.size, all = items.length && items.every(function (x) { return sel.has(x.id); });
+      document.getElementById('acselall').textContent = all ? 'Select none' : 'Select all';
+      ['acselread', 'acselunread', 'acseldel'].forEach(function (id) { document.getElementById(id).disabled = !n; });
+      document.getElementById('acseldel').textContent = n ? 'Delete ' + n : 'Delete';
+    }
+    items.slice(0, sel ? items.length : INBOX.shown).forEach(function (x) {
       var li = document.createElement('li'), b = document.createElement('button'); b.type = 'button'; b.className = 'open' + (x.r ? '' : ' new');
-      b.innerHTML = '<span class="dot"></span><span class="t"></span>' + (x.b ? '<span class="b"></span>' : '') + '<span class="w"></span>';
+      if (sel && sel.has(x.id)) { li.className = 'chosen'; b.className += ' chosen'; }
+      b.innerHTML = (sel ? '<span class="tick"></span>' : '<span class="dot"></span>') + '<span class="t"></span>' + (x.b ? '<span class="b"></span>' : '') + '<span class="w"></span>';
       b.querySelector('.t').textContent = x.t; if (x.b) b.querySelector('.b').textContent = x.b; b.querySelector('.w').textContent = ago(x.at);
       b.setAttribute('aria-label', (x.r ? '' : 'New: ') + x.t + (x.b ? '. ' + x.b : ''));
       // its picture (shown here on every phone, though an iPhone's notification can't): the big one under the words,
@@ -4674,27 +4700,51 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         inboxCall(was ? { unread: [x.id] } : { read: [x.id] }).catch(function () { toast('Couldn’t reach the site. Try again.'); });
       });
       var dl = document.createElement('button'); dl.type = 'button'; dl.textContent = 'Delete';
-      dl.addEventListener('click', function () {
-        INBOX.items = INBOX.items.filter(function (y) { return y !== x; });
-        if (!x.r) unreadSet(INBOX.unread - 1);
-        inboxDraw();
-        inboxCall({ del: [x.id] }).then(function () { toast('Deleted'); }).catch(function () { toast('Couldn’t reach the site. Try again.'); });
-      });
+      dl.addEventListener('click', function () { inboxDelete([x.id]); });
       acts.appendChild(tg); acts.appendChild(dl);
       b.addEventListener('click', function () {
+        if (INBOX.sel) { if (INBOX.sel.has(x.id)) INBOX.sel.delete(x.id); else INBOX.sel.add(x.id); inboxDraw(); return; }   // selecting: ticked or not
         var go = function () { if (x.u) { if (x.u.split('#')[0] === location.href.split('#')[0] || x.u.split('#')[0] === location.origin + location.pathname) { closeDialog(acct); location.hash = x.u.split('#')[1] || ''; } else location.href = x.u; } };
         if (x.r) { go(); return; }
         x.r = Date.now(); unreadSet(INBOX.unread - 1); inboxDraw();
         inboxCall({ read: [x.id] }).catch(function () {}).then(go);
       });
-      li.appendChild(b); li.appendChild(acts); ul.appendChild(li);
+      if (sel) b.setAttribute('aria-pressed', String(sel.has(x.id)));
+      li.appendChild(b); if (!sel) li.appendChild(acts); ul.appendChild(li);
     });
-    if (items.length > INBOX.shown) {
+    if (!sel && items.length > INBOX.shown) {
       var li = document.createElement('li'), m = document.createElement('button'); li.className = 'plain'; m.type = 'button'; m.className = 'copy ghost more'; m.textContent = 'Show older';
       m.addEventListener('click', function () { INBOX.shown += 20; inboxDraw(); });
       li.appendChild(m); ul.appendChild(li);
     }
   }
+  // deleting asks first: they can't be brought back
+  function inboxDelete(ids) {
+    var n = ids.length, one = n === 1 && (INBOX.items || []).filter(function (x) { return x.id === ids[0]; })[0];
+    ask({ k: 'Inbox', h: n === 1 ? 'Delete this message?' : 'Delete ' + n + ' messages?', t: (one ? '“' + one.t + '”. ' : '') + 'Once deleted, ' + (n === 1 ? 'it' : 'they') + ' can’t be brought back.', ok: 'Delete', no: 'Keep' }).then(function (yes) {
+      if (!yes) return;
+      var gone = {}; ids.forEach(function (id) { gone[id] = true; });
+      var unreadGone = (INBOX.items || []).filter(function (x) { return gone[x.id] && !x.r; }).length;
+      INBOX.items = (INBOX.items || []).filter(function (x) { return !gone[x.id]; });
+      if (INBOX.sel) { INBOX.sel = INBOX.items.length ? new Set() : null; }
+      unreadSet(INBOX.unread - unreadGone); inboxDraw();
+      inboxCall({ del: ids }).then(function () { toast(n === 1 ? 'Deleted' : n + ' deleted'); }).catch(function () { toast('Couldn’t reach the site. Try again.'); inboxCall().catch(function () {}); });
+    });
+  }
+  document.getElementById('acselect').addEventListener('click', function () { INBOX.sel = INBOX.sel ? null : new Set(); inboxDraw(); });
+  document.getElementById('acselall').addEventListener('click', function () {
+    var items = INBOX.items || [], all = items.every(function (x) { return INBOX.sel.has(x.id); });
+    INBOX.sel = new Set(all ? [] : items.map(function (x) { return x.id; })); inboxDraw();
+  });
+  function selMark(read) {
+    var ids = Array.from(INBOX.sel), d = 0;
+    (INBOX.items || []).forEach(function (x) { if (!INBOX.sel.has(x.id)) return; if (read && !x.r) { x.r = Date.now(); d--; } else if (!read && x.r) { delete x.r; d++; } });
+    unreadSet(INBOX.unread + d); INBOX.sel = new Set(); inboxDraw();
+    inboxCall(read ? { read: ids } : { unread: ids }).catch(function () { toast('Couldn’t reach the site. Try again.'); });
+  }
+  document.getElementById('acselread').addEventListener('click', function () { selMark(true); });
+  document.getElementById('acselunread').addEventListener('click', function () { selMark(false); });
+  document.getElementById('acseldel').addEventListener('click', function () { if (INBOX.sel && INBOX.sel.size) inboxDelete(Array.from(INBOX.sel)); });
   document.getElementById('acallread').addEventListener('click', function () {
     (INBOX.items || []).forEach(function (x) { if (!x.r) x.r = Date.now(); });
     unreadSet(0); inboxDraw();
@@ -5028,7 +5078,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     (ev.userChoice || Promise.resolve({})).then(function () { appDraw(); });
   });
   function acctOpen() {
-    INBOX.shown = 8; inboxCall().catch(function () {});
+    INBOX.shown = 8; INBOX.sel = null; inboxCall().catch(function () {});
     acctDraw(); openLayer(acct); appDraw();   // (again, open: the code goes into the address only while it's open)
     if (MEMBER && !PL.loaded) plLoad();
   }
