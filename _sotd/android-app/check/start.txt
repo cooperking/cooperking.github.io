@@ -1,6 +1,7 @@
 Starting: Intent { act=android.intent.action.MAIN cat=[android.intent.category.LAUNCHER] cmp=io.github.cooperking.sotd/.LauncherActivity }
 Status: ok
-LaunchState: UNKNOWN (0)
+LaunchState: COLD
 Activity: io.github.cooperking.sotd/.LauncherActivity
-WaitTime: 1146
+TotalTime: 3592
+WaitTime: 3713
 Complete
