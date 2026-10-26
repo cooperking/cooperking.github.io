@@ -5469,11 +5469,11 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       document.querySelectorAll('#picks .pick .facts').forEach(function (fx) { if (fx._song) fillFacts(fx, fx._song); });
     }).catch(function () {});
   }
-  // a new song is held back from the live calendar until its facts are written and checked (by then its video's been
-  // looked for too): it's out once it's in facts.json. The draft shows every song. Days are worked out from the whole
-  // playlist first, so a held-back song doesn't move the day of the one before it.
+  // a new song is held back until its facts are written and checked (by then its video's been looked for too): it's out
+  // once it's in facts.json. The draft holds it back the same way (John, 26 Oct 2026: the live calendar and the draft
+  // exactly the same). Days are worked out from the whole playlist first, so a held-back song doesn't move the day of
+  // the one before it.
   function outOnly(list, fx) {
-    if (DRAFT) return list;
     return list.filter(function (s) { return fx ? !!((fx.songs && fx.songs[s.track]) || (fx.signed && fx.signed[s.track])) : !!byTrack[s.track]; });
   }
   if (DATA.live && window.fetch) {
