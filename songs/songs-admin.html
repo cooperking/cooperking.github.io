@@ -650,10 +650,10 @@
   $('picfile').addEventListener('change', function () {
     var f = this.files && this.files[0]; this.value = '';
     if (!f) return;
-    C.fileImage(f, function () { toast('Turning the HEIC photo into a JPEG…'); }).then(function (im) { PIC.photo = im; return picDraw(); }).catch(function (e) {
-      var what = (f.name || 'it') + (f.type ? ', ' + f.type : '');
-      toast(e && e.heic ? 'That HEIC photo couldn’t be turned into a JPEG (' + what + '): export it as a JPEG and choose that' : 'That picture couldn’t be opened (' + what + ')');
-    });
+    C.fileImage(f, function () { toast('Turning the HEIC photo into a JPEG…'); }).then(function (im) {
+      PIC.photo = im;
+      return Promise.resolve().then(picDraw).catch(function (e) { toast('That picture opened (' + (f.name || 'it') + ') but couldn’t be used: ' + ((e && (e.name ? e.name + ': ' : '') + e.message) || e)); });
+    }, function (e) { toast(C.fileWhy(e, f)); });
   });
   $('picorig').addEventListener('click', function () {
     var s = PIC.s, c = PIC.c; if (!c) return;

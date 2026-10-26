@@ -129,13 +129,7 @@ function fontsReady() {
 function longDate(d) { return d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).replace(',', ''); }
 // a chosen picture file as an image to draw: whatever the browser can open as it is; an iPhone's HEIC/HEIF photo, which
 // Chrome and Firefox can't open, turned into a JPEG here first (vendor/heic2any.min.js, fetched only then). Recognised by
-// its first bytes, not its name: some come named .jpeg. Rejects with err.heic set when it was HEIC and still failed.
-function isHeif(f) {
-  return f.slice(0, 16).arrayBuffer().then(function (b) {
-    var t = String.fromCharCode.apply(null, new Uint8Array(b));
-    return t.slice(4, 8) === 'ftyp' && /^(hei[cfmsx]|hev[cmsx]|mif1|msf1)$/.test(t.slice(8, 12));
-  }).catch(function () { return false; });
-}
+// its first bytes, not its name: some come named .jpeg.
 var heicLib = null;
 function heicJs() {
   if (!heicLib) heicLib = new Promise(function (res, rej) {
@@ -147,19 +141,50 @@ function heicJs() {
   });
   return heicLib;
 }
-function fileImage(f, converting) {
-  var u = URL.createObjectURL(f);
-  return loadImg(u).catch(function () {
-    URL.revokeObjectURL(u); u = '';
-    return isHeif(f).then(function (heif) {
-      if (!heif) throw new Error('not a picture this browser can open');
-      if (converting) converting();
-      return heicJs().then(function (h) { return h({ blob: f, toType: 'image/jpeg', quality: 0.92 }); }).then(function (b) {
-        u = URL.createObjectURL(Array.isArray(b) ? b[0] : b);
-        return loadImg(u);
-      }).catch(function (e) { var x = new Error('HEIC: ' + ((e && e.message) || e)); x.heic = true; throw x; });
-    });
-  }).then(function (im) { if (u) URL.revokeObjectURL(u); return im; });
+// Tried in turn, as a browser can refuse one way and not another: its address (blob:), the bytes decoded directly
+// (createImageBitmap), the bytes as a data: address, then HEIC. Rejects with err.kind: 'read' (the file's bytes couldn't
+// be read at all, e.g. a file in OneDrive or iCloud not on the computer yet), 'heic', or 'decode'; err.detail says what
+// it was and what each way said, for the message.
+function blobImg(b) {
+  var u = URL.createObjectURL(b);
+  return loadImg(u).then(function (im) { URL.revokeObjectURL(u); return im; }, function (e) { URL.revokeObjectURL(u); throw e; });
 }
-return { drawCard: drawCard, albumCover: albumCover, loadImg: loadImg, londonNow: londonNow, fontsReady: fontsReady, longDate: longDate, fileImage: fileImage };
+function fileImage(f, converting) {
+  var said = [], bytes = null;
+  var fail = function (way) { return function (e) { said.push(way + ': ' + ((e && (e.name && e.name !== 'Error' ? e.name + ' ' : '') + (e.message || '')) || (e && e.type) || 'failed').trim()); return null; }; };
+  return f.arrayBuffer().then(function (b) { bytes = b; }, function (e) {
+    var x = new Error('couldn’t be read'); x.kind = 'read'; x.detail = ((e && e.name) || '') + ' ' + ((e && e.message) || ''); throw x;
+  }).then(function () {
+    return blobImg(f).catch(fail('address'));
+  }).then(function (im) {
+    if (im || !window.createImageBitmap) return im;
+    return createImageBitmap(f).then(function (bm) {
+      var c = document.createElement('canvas'); c.width = bm.width; c.height = bm.height; c.getContext('2d').drawImage(bm, 0, 0);
+      c.naturalWidth = bm.width; c.naturalHeight = bm.height; if (bm.close) bm.close(); return c;
+    }).catch(fail('bytes'));
+  }).then(function (im) {
+    if (im) return im;
+    return new Promise(function (res, rej) { var r = new FileReader(); r.onload = function () { res(r.result); }; r.onerror = function () { rej(r.error); }; r.readAsDataURL(f); })
+      .then(loadImg).catch(fail('data'));
+  }).then(function (im) {
+    if (im) return im;
+    var head = new Uint8Array(bytes.slice(0, 12)), t = String.fromCharCode.apply(null, head);
+    var what = f.size + ' bytes, starting ' + [].map.call(head, function (n) { return (n < 16 ? '0' : '') + n.toString(16); }).join(' ');
+    if (!(t.slice(4, 8) === 'ftyp' && /^(hei[cfmsx]|hev[cmsx]|mif1|msf1)$/.test(t.slice(8, 12)))) {
+      var x = new Error('not a picture this browser can open'); x.kind = 'decode'; x.detail = what + '; ' + said.join('; '); throw x;
+    }
+    if (converting) converting();
+    return heicJs().then(function (h) { return h({ blob: f, toType: 'image/jpeg', quality: 0.92 }); }).then(function (b) {
+      return blobImg(Array.isArray(b) ? b[0] : b);
+    }).catch(function (e) { var x = new Error('HEIC: ' + ((e && e.message) || e)); x.heic = true; x.kind = 'heic'; x.detail = what; throw x; });
+  });
+}
+// what to tell John when fileImage fails, naming the file
+function fileWhy(e, f) {
+  var what = (f.name || 'it') + (f.type ? ', ' + f.type : '') + ', ' + Math.round((f.size || 0) / 1024) + ' KB';
+  if (e && e.kind === 'read') return 'Couldn’t read that file from the computer (' + what + '). If it’s in OneDrive or iCloud, open it once so it’s on this Mac, then choose it again. [' + String(e.detail || '').trim() + ']';
+  if (e && e.heic) return 'That HEIC photo couldn’t be turned into a JPEG (' + what + '): export it as a JPEG (Photos: File › Export) and choose that';
+  return 'That picture couldn’t be opened (' + what + ') [' + ((e && e.detail) || (e && e.message) || '') + ']';
+}
+return { drawCard: drawCard, albumCover: albumCover, loadImg: loadImg, londonNow: londonNow, fontsReady: fontsReady, longDate: longDate, fileImage: fileImage, fileWhy: fileWhy };
 })();

@@ -285,12 +285,14 @@
     var f = this.files && this.files[0]; this.value = '';
     if (!f) return;
     C.fileImage(f, function () { toast('Turning the HEIC photo into a JPEG…'); }).then(function (im) {   // a square from its middle, 640px: what the card needs, small enough to keep here
-      var sd = Math.min(im.naturalWidth, im.naturalHeight), c = document.createElement('canvas'); c.width = c.height = 640;
-      c.getContext('2d').drawImage(im, (im.naturalWidth - sd) / 2, (im.naturalHeight - sd) / 2, sd, sd, 0, 0, 640, 640);
-      INV.pic = c.toDataURL('image/jpeg', 0.88);
-      try { localStorage.setItem(PIC_KEY, INV.pic); } catch (e) {}
-      invMake();
-    }).catch(function (e) { toast(picWhy(e, f)); });
+      try {
+        var sd = Math.min(im.naturalWidth, im.naturalHeight), c = document.createElement('canvas'); c.width = c.height = 640;
+        c.getContext('2d').drawImage(im, (im.naturalWidth - sd) / 2, (im.naturalHeight - sd) / 2, sd, sd, 0, 0, 640, 640);
+        INV.pic = c.toDataURL('image/jpeg', 0.88);
+        try { localStorage.setItem(PIC_KEY, INV.pic); } catch (e) {}
+        invMake();
+      } catch (e) { toast(usedWhy(e, f)); }
+    }, function (e) { toast(C.fileWhy(e, f)); });
   });
   $('invshare').addEventListener('click', function () {
     if (!INV.url) return;
@@ -425,7 +427,7 @@
       var cover = C.albumCover(r[0], { big: x.title, italic: x.artist, left: x.n ? 'No. ' + x.n : 'Song of the Day', right: when.getUTCDate() + ' ' + when.toLocaleDateString('en-GB', { month: 'short', timeZone: 'UTC' }) + ' ' + when.getUTCFullYear() });
       x.made = C.drawCard({ title: x.title, line: x.artist, when: when, cover: cover });
       songPicDraw();
-    }).catch(function () { toast('That photo couldn’t be made into a cover'); });
+    }).catch(function (e) { toast('That photo couldn’t be made into a cover: ' + ((e && (e.name ? e.name + ': ' : '') + e.message) || e)); });
   }
   function songChoose(x) {
     NSONG = x; x.pic = 'card'; x.made = ''; x.mode = (CAT[x.id] || {}).a ? 'preview' : 'video';
@@ -450,17 +452,17 @@
     var f = this.files && this.files[0]; this.value = '';
     if (!f) return;
     C.fileImage(f, function () { toast('Turning the HEIC photo into a JPEG…'); }).then(function (img) {
-      var k = Math.min(1, 1200 / img.naturalWidth, 1200 / img.naturalHeight), c = document.createElement('canvas');
-      c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
-      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-      NPIC = c.toDataURL('image/jpeg', 0.85); $('npicimg').src = NPIC; picShow(true);
-      if (NSONG) { NSONG.made = ''; if (NSONG.pic === 'photo') songCard(); else songPicDraw(); }
-    }).catch(function (e) { toast(picWhy(e, f)); });
+      try {
+        var k = Math.min(1, 1200 / img.naturalWidth, 1200 / img.naturalHeight), c = document.createElement('canvas');
+        c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        NPIC = c.toDataURL('image/jpeg', 0.85); $('npicimg').src = NPIC; picShow(true);
+        if (NSONG) { NSONG.made = ''; if (NSONG.pic === 'photo') songCard(); else songPicDraw(); }
+      } catch (e) { toast(usedWhy(e, f)); }
+    }, function (e) { toast(C.fileWhy(e, f)); });
   });
-  function picWhy(e, f) {   // what went wrong with a chosen picture, and what it was
-    var what = (f.name || 'it') + (f.type ? ', ' + f.type : '');
-    return e && e.heic ? 'That HEIC photo couldn’t be turned into a JPEG (' + what + '): export it as a JPEG (Photos: File › Export) and choose that'
-      : 'That picture couldn’t be opened (' + what + ')';
+  function usedWhy(e, f) {   // it opened, then something after that went wrong
+    return 'That picture opened (' + (f.name || 'it') + ') but couldn’t be used: ' + ((e && (e.name ? e.name + ': ' : '') + e.message) || e);
   }
   $('npicx').addEventListener('click', function () { NPIC = null; $('npicimg').removeAttribute('src'); picShow(false); });
   $('nlink').addEventListener('change', function () { $('nurl').hidden = this.value !== 'other'; if (!$('nurl').hidden) $('nurl').focus(); });
