@@ -52,9 +52,26 @@ def main():
         return 0
     if st != 200:
         why = '; '.join('%s: %s' % (x.get('code', ''), x.get('detail', '')) for x in (j.get('errors') or []))[:400]
+        # what can be said without the values: whether the push key's ID or .p8 is in the ASC secrets, and short
+        # fingerprints (SHA-256) of the two IDs, to compare with the same fingerprints of the IDs on Apple's page
+        import hashlib
+        from cryptography.hazmat.primitives import serialization
+        fp = lambda v: hashlib.sha256(v.encode()).hexdigest()[:8]
+        def pub(t):
+            try:
+                k = serialization.load_pem_private_key(t.strip().encode(), None)
+                return k.public_key().public_bytes(serialization.Encoding.DER, serialization.PublicFormat.SubjectPublicKeyInfo)
+            except Exception:
+                return None
+        akid, ap8 = os.environ.get('APNS_KEY_ID', '').strip(), os.environ.get('APNS_KEY_P8', '')
+        more = ['Fingerprints: ASC_KEY_ID %s, ASC_ISSUER_ID %s.' % (fp(kid), fp(iss.lower()))]
+        if akid and akid == kid:
+            more.append('ASC_KEY_ID is the push key\'s ID (the same as APNS_KEY_ID).')
+        if ap8 and pub(ap8) and pub(ap8) == pub(p8):
+            more.append('ASC_KEY_P8 is the push key\'s .p8 (the same key as APNS_KEY_P8).')
         note('error', 'Apple refused the App Store Connect key (%d%s). It\'s the Key ID, the Issuer ID or the .p8 text: they must all be '
-                      'from the same Team key on Users and Access > Integrations > App Store Connect API (not the push key).%s'
-             % (st, ': ' + why if why else '', ('\n' + '\n'.join(shape)) if shape else ''))
+                      'from the same Team key on Users and Access > Integrations > App Store Connect API (not the push key).\n%s%s'
+             % (st, ': ' + why if why else '', '\n'.join(more), ('\n' + '\n'.join(shape)) if shape else ''))
         return 1
     apps = [a['attributes'].get('name') for a in j.get('data', [])]
     st2, b = get('/v1/bundleIds?filter[identifier]=%s' % BUNDLE)
