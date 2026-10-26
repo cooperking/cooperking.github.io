@@ -69,6 +69,7 @@ dialog:focus, dialog:focus-visible { outline: none; }   /* a sheet itself never 
 /* on a TV, where the remote's arrows move between buttons: a ring that shows on any ground */
 html.tv :focus { outline: 3px solid #fff !important; outline-offset: 3px !important; box-shadow: 0 0 0 7px rgba(20, 8, 24, .6) !important; }
 html.tv dialog:focus { outline: none !important; box-shadow: none !important; }
+html.tv .bar:focus i::after { opacity: 1; transform: scale(1.5); }   /* the song's bar on the remote: left and right move through it */
 /* on a TV, and a computer's screen (html.big), one screen and nothing to scroll: the bar along the top (Search, Play all, Add the month to My playlist);
    the month's name, its count and the months on one line; the calendar across the whole width below, each day's
    cover as tall as the row allows with its song beside it. A day is added to My playlist by holding OK on it. */
@@ -2671,6 +2672,24 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       else if (playing && playing.s === s && audio.duration) audio.currentTime = f * audio.duration;
     });
     bar.addEventListener('pointercancel', function () { on = null; bar.classList.remove('scrubbing'); });
+    // the remote (or a keyboard): on the bar, left and right go back or on 10 seconds, OK plays or pauses
+    bar.tabIndex = TV ? 0 : -1; bar.setAttribute('aria-label', 'Where you are in ' + s.title + ': left and right to move');
+    bar.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); seekBy(el, e.key === 'ArrowLeft' ? -10 : 10, e.repeat); }
+      else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); var pb = el.querySelector('.player .play'); if (pb && !e.repeat) pb.click(); }
+    });
+  }
+  // back or on by `secs` in the song or video playing in this day's pick; held down, a step every fifth of a second
+  function seekBy(el, secs, held) {
+    var now = Date.now();
+    if (held && now - (seekBy.at || 0) < 200) return;
+    seekBy.at = now;
+    if (vplay && vplay.el === el && vplay.player && vplay.player.getDuration) {
+      var d = 0, t = 0; try { d = vplay.player.getDuration() || 0; t = vplay.player.getCurrentTime() || 0; } catch (x) {}
+      if (d) vidSeek(Math.max(0, Math.min(d - 1, t + secs)) / d);
+    } else if (playing && playing.el === el && audio.duration) {
+      audio.currentTime = Math.max(0, Math.min(audio.duration - 0.5, audio.currentTime + secs)); paint();
+    }
   }
   function vidState(e) {
     var v = vplay;
@@ -5515,7 +5534,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     }
     // a day: its few buttons in a line, top to bottom
     function dayButtons() {
-      return [].filter.call(document.querySelectorAll('#qshuffle, #picks .pick .player .play, #picks .pick .pill.watch, #picks .pick .factsbtn, #picks .pick .addfav, #picks .pick .fsicon, #picks .pick .tag'), shown);
+      return [].filter.call(document.querySelectorAll('#qshuffle, #picks .pick .player .play, #picks .pick .player .bar, #picks .pick .pill.watch, #picks .pick .factsbtn, #picks .pick .addfav, #picks .pick .fsicon, #picks .pick .tag'), shown);
     }
     function dayFirst() { var l = dayButtons(); return l.filter(function (b) { return b.id !== 'qshuffle'; })[0] || l[0]; }
     function moveDay(dir) {
@@ -5542,6 +5561,14 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     // they go after 6 seconds untouched (not while the video's paused), or with Back. Left and right still go straight
     // to the song before or after; play/pause, rewind and fast-forward work as always.
     var uiSwallow = '';
+    function onBar() { var a = document.activeElement; return a && a.matches && a.matches('#picks .pick .player .bar') && shown(a) ? a : null; }
+    window.addEventListener('keydown', function (e) {   // first of the remote's handlers: the bar keeps left and right
+      var b = onBar();
+      if (!b || (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight')) return;
+      e.preventDefault(); e.stopImmediatePropagation();
+      if (theatreOn()) uiShow();
+      seekBy(b.closest('.pick'), e.key === 'ArrowLeft' ? -10 : 10, e.repeat);
+    }, true);
     function theatreOn() { return root.classList.contains('theatre') && topLayer() === sheet; }
     function tvShow(focus) {
       uiShow();
@@ -5652,6 +5679,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         }
         if (k === 'next' || k === 'prev') {
           var dir = k === 'next' ? 1 : -1;
+          var ob = onBar(); if (ob) { if (theatreOn()) uiShow(); seekBy(ob.closest('.pick'), dir * 10); return true; }   // on the bar: through the song
           if (topLayer() === sheet) { goDay(dir); setTimeout(settle, 700); }
           else if (!topLayer()) { if (canGo(dir)) { go(dir); last.cal = null; setTimeout(function () { put(homeOf('cal')); }, 650); } }
           return true;
