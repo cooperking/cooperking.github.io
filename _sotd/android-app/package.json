@@ -1,0 +1,6 @@
+{
+  "name": "sotd-android",
+  "private": true,
+  "description": "John's Song of the Day as an Android app: a Trusted Web Activity (the calendar in Chrome, full screen), made by Bubblewrap's library. Built by .github/workflows/android.yml.",
+  "dependencies": { "@bubblewrap/core": "1.27.0" }
+}

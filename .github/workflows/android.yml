@@ -1,0 +1,85 @@
+name: Android app
+# Builds the Android app (_sotd/android-app: a Trusted Web Activity of the calendar) and signs it with the upload key
+# (made the same every time from YT_CLIENT_SECRET, as the Fire TV app's is). Keeps:
+#   the .aab for Google Play (the run's artifact "sotd-android": upload it in Play Console),
+#   songs/android.apk on the site, to install directly,
+#   .well-known/assetlinks.json, which tells Chrome the app is the site's own (so it opens full screen).
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['_sotd/android-app/**', '.github/workflows/android.yml']
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-app
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Make the project
+        working-directory: _sotd/android-app
+        env:
+          VERSION_CODE: ${{ github.run_number }}
+        run: |
+          npm install --no-audit --no-fund
+          node make.js
+      - name: Build and sign
+        env:
+          SEED: ${{ secrets.YT_CLIENT_SECRET }}
+        run: |
+          set -euo pipefail
+          pip install --quiet "cryptography>=44" pycryptodome
+          export KS_PASS="$(openssl rand -hex 16)" KS="$RUNNER_TEMP/upload.p12"
+          FP=$(python _sotd/android-app/make_key.py "$KS")
+          echo "upload key SHA-256 $FP"
+          echo "FP=$FP" >> "$GITHUB_ENV"
+          cd _sotd/android-app/project
+          chmod +x gradlew
+          ./gradlew --no-daemon -q bundleRelease assembleRelease
+          BT="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)"
+          mkdir -p "$RUNNER_TEMP/out"
+          cp app/build/outputs/bundle/release/app-release.aab "$RUNNER_TEMP/out/sotd-android.aab"
+          jarsigner -keystore "$KS" -storetype PKCS12 -storepass "$KS_PASS" -sigalg SHA256withRSA -digestalg SHA-256 "$RUNNER_TEMP/out/sotd-android.aab" sotd > /dev/null
+          "$BT/zipalign" -p -f 4 app/build/outputs/apk/release/app-release-unsigned.apk "$RUNNER_TEMP/aligned.apk"
+          "$BT/apksigner" sign --ks "$KS" --ks-type PKCS12 --ks-pass env:KS_PASS --ks-key-alias sotd --out "$RUNNER_TEMP/out/sotd-android.apk" "$RUNNER_TEMP/aligned.apk"
+          "$BT/apksigner" verify --print-certs "$RUNNER_TEMP/out/sotd-android.apk" | head -3
+          rm -f "$KS"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sotd-android
+          path: ${{ runner.temp }}/out/
+      - name: Put it on the site, with the site's word that the app is its own
+        run: |
+          python3 - <<'PY'
+          import json, os
+          fps = [os.environ['FP']] + [l.strip().upper() for l in open('_sotd/android-app/play-fingerprints.txt') if l.strip() and not l.startswith('#')]
+          links = [{"relation": ["delegate_permission/common.handle_all_urls"],
+                    "target": {"namespace": "android_app", "package_name": "io.github.cooperking.sotd", "sha256_cert_fingerprints": fps}}]
+          os.makedirs('.well-known', exist_ok=True)
+          open('.well-known/assetlinks.json', 'w').write(json.dumps(links, indent=2) + '\n')
+          PY
+          cp "$RUNNER_TEMP/out/sotd-android.apk" songs/android.apk
+          printf '{"build": %s, "apk": "https://cooperking.github.io/songs/android.apk"}\n' "${{ github.run_number }}" > songs/android.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add .well-known/assetlinks.json songs/android.apk songs/android.json
+          if git diff --cached --quiet; then echo "nothing changed"; exit 0; fi
+          git commit -m "Android app, build ${{ github.run_number }}"
+          for i in 1 2 3 4 5; do git pull --rebase --quiet && git push && exit 0; sleep 5; done
+          exit 1

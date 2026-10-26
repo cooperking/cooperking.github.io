@@ -1,0 +1,3 @@
+# GitHub Pages (Jekyll) leaves out folders starting with a dot; the Android app needs this one
+# (.well-known/assetlinks.json: the site saying the app is its own, so it opens full screen)
+include: [".well-known"]
