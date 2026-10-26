@@ -30,7 +30,9 @@ adb shell am set-debug-app --persistent com.android.chrome
 adb shell pm get-app-links $PKG > "$OUT/app-links-before.txt" 2>&1
 adb shell screenrecord --time-limit 40 --bit-rate 2000000 /sdcard/opening.mp4 &
 REC=$!
-adb shell monkey -p $PKG -c android.intent.category.LAUNCHER 1
+adb logcat -c
+adb shell cmd package resolve-activity --brief -c android.intent.category.LAUNCHER $PKG > "$OUT/launcher.txt" 2>&1
+adb shell am start -W -a android.intent.action.MAIN -c android.intent.category.LAUNCHER -n "$(tail -1 "$OUT/launcher.txt")" > "$OUT/start.txt" 2>&1
 sleep 8; shot 1-opening
 sleep 14; shot 2-opened
 adb shell dumpsys window | grep -E "mCurrentFocus|mFocusedApp" > "$OUT/focus.txt"
@@ -43,5 +45,5 @@ adb shell input keyevent KEYCODE_WAKEUP; sleep 2; adb shell wm dismiss-keyguard;
 adb shell pm get-app-links $PKG > "$OUT/app-links.txt" 2>&1
 adb shell dumpsys package d $PKG > "$OUT/domain-verification.txt" 2>&1 || true
 adb shell dumpsys package com.android.chrome | grep -m1 versionName > "$OUT/chrome-version.txt"
-adb logcat -d | grep -iE "TrustedWebActivity|TwaLauncher|DigitalAssetLinks|Verif|cr_|chromium" | tail -200 > "$OUT/log.txt"
+adb logcat -d | grep -iE "ActivityTaskManager|ActivityManager|AndroidRuntime|FATAL|sotd|cooperking|browserhelper|TrustedWeb|Twa|CustomTab|chrome" | grep -v "cr_CronetUrl" | tail -400 > "$OUT/log.txt"
 ls -la "$OUT"
