@@ -11,13 +11,24 @@ if [ -z "${ASC_KEY_ID:-}" ] || [ -z "${ASC_ISSUER_ID:-}" ] || [ -z "${ASC_KEY_P8
     CODE_SIGNING_ALLOWED=NO build | tail -n 25
   exit 0
 fi
+# xcodebuild, its output kept; when it fails, its error lines (and its last lines) are put on the run's page, as the job's
+# own log can't always be read
+xcb() {
+  local log="$RUNNER_TEMP/xcodebuild-$1.log"; shift
+  if "$@" > "$log" 2>&1; then tail -n 40 "$log"; return 0; fi
+  local errs; errs=$(grep -E 'error:|error :|Error Domain|No profiles|provisioning profile|no devices|Signing for|requires a development team|certificate' "$log" | sed 's/^[[:space:]]*//' | awk '!seen[$0]++' | head -20 | cut -c1-300 | awk 'BEGIN{ORS="%0A"} {gsub(/%/,"%25"); print}')
+  echo "::error title=iPhone app (xcodebuild failed)::${errs:-no error lines}"
+  echo "::error title=iPhone app (its last lines)::$(tail -n 15 "$log" | cut -c1-300 | awk 'BEGIN{ORS="%0A"} {gsub(/%/,"%25"); print}')"
+  tail -n 80 "$log"
+  exit 65
+}
 KEY="$RUNNER_TEMP/AuthKey_$ASC_KEY_ID.p8"
 printf '%s\n' "$ASC_KEY_P8" > "$KEY"
 AUTH=(-allowProvisioningUpdates -authenticationKeyPath "$KEY" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID")
-xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/App.xcarchive" \
+xcb archive xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/App.xcarchive" \
   DEVELOPMENT_TEAM="$APPLE_TEAM_ID" CODE_SIGN_STYLE=Automatic CODE_SIGN_ENTITLEMENTS=App/App.entitlements \
   PRODUCT_BUNDLE_IDENTIFIER=io.github.cooperking.sotd CURRENT_PROJECT_VERSION="$BUILD" MARKETING_VERSION=1.0 \
-  "${AUTH[@]}" archive | tail -n 40
+  "${AUTH[@]}" archive
 cat > "$RUNNER_TEMP/ExportOptions.plist" <<X
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyLists-1.0.dtd">
@@ -30,6 +41,6 @@ cat > "$RUNNER_TEMP/ExportOptions.plist" <<X
   <key>manageAppVersionAndBuildNumber</key><false/>
 </dict></plist>
 X
-xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/App.xcarchive" -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" -exportPath "$RUNNER_TEMP/out" "${AUTH[@]}" | tail -n 40
+xcb export xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/App.xcarchive" -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" -exportPath "$RUNNER_TEMP/out" "${AUTH[@]}"
 rm -f "$KEY"
 echo "::notice title=iPhone app::Build $BUILD sent to App Store Connect: it shows in TestFlight once Apple has processed it (usually 5 to 15 minutes)."
