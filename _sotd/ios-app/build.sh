@@ -1,7 +1,7 @@
 #!/bin/bash
 # Builds the app. With the Apple keys (repository secrets ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8 and APPLE_TEAM_ID) it
-# signs it for the App Store with a certificate and profile made for this build through the App Store Connect API
-# (signing.py: no device needs registering, nothing is kept between builds) and sends it to App Store Connect, where it
+# signs it for the App Store with a distribution certificate and profile from the App Store Connect API (signing.py: no
+# device needs registering; the certificate is kept, encrypted, in R2 for the next builds) and sends it to App Store Connect, where it
 # turns up in TestFlight a few minutes later; without them it only checks that it builds.
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
@@ -30,7 +30,8 @@ AUTH=(-authenticationKeyPath "$KEY" -authenticationKeyID "$ASC_KEY_ID" -authenti
 
 # the certificate and profile (signing.py), into a keychain of this build's own
 SIGN="$RUNNER_TEMP/sign"; mkdir -p "$SIGN"
-[ -x "$RUNNER_TEMP/py/bin/python" ] || { python3 -m venv "$RUNNER_TEMP/py" && "$RUNNER_TEMP/py/bin/pip" install --quiet pyjwt cryptography; }
+[ -x "$RUNNER_TEMP/py/bin/python" ] || python3 -m venv "$RUNNER_TEMP/py"
+"$RUNNER_TEMP/py/bin/pip" install --quiet pyjwt cryptography boto3
 "$RUNNER_TEMP/py/bin/python" "$HERE/signing.py" "$SIGN"
 PROFILE_NAME=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['name'])" "$SIGN/out.json")
 PROFILE_UUID=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['uuid'])" "$SIGN/out.json")

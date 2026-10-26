@@ -53,4 +53,13 @@ print(open(p).read()[:1200])
 X
 
 cp icon-1024.png ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png
+
+# iOS 15 at least: App Store Connect warns about 14 (ITMS-90068, 26 Oct 2026) and from April 2027 refuses anything lower.
+# Only raised, never lowered (a later Capacitor may start higher); the Podfile changes before `cap sync` runs pod install.
+sed -i '' -E "s/platform :ios, '1[0-4](\.[0-9]+)?'/platform :ios, '15.0'/" ios/App/Podfile
+sed -i '' -E 's/IPHONEOS_DEPLOYMENT_TARGET = 1[0-4](\.[0-9]+)?;/IPHONEOS_DEPLOYMENT_TARGET = 15.0;/g' ios/App/App.xcodeproj/project.pbxproj
+if grep -Eq "platform :ios, '1[0-4]" ios/App/Podfile || grep -Eq 'IPHONEOS_DEPLOYMENT_TARGET = 1[0-4]' ios/App/App.xcodeproj/project.pbxproj; then
+  echo "::error title=iPhone app::The deployment target is still below iOS 15"; exit 1
+fi
+echo "iOS deployment target: $(grep -Eo "platform :ios, '[0-9.]+'" ios/App/Podfile)"
 echo "customised"
