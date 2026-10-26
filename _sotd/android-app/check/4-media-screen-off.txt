@@ -5,21 +5,16 @@
       metadata: null
       metadata: null
       package=com.google.android.youtube
-      state=PlaybackState {state=NONE(0), position=0, buffered position=0, speed=1.0, updated=34206, actions=8192, custom actions=[], active item id=-1, error=null}
+      state=PlaybackState {state=NONE(0), position=0, buffered position=0, speed=1.0, updated=38365, actions=8192, custom actions=[], active item id=-1, error=null}
       metadata: null
       package=com.google.android.googlequicksearchbox
-      state=PlaybackState {state=NONE(0), position=0, buffered position=0, speed=0.0, updated=34354, actions=2409991, custom actions=[Action:mName='Rewind 10 seconds, mIcon=2131234345, mExtras=null, Action:mName='Fast forward 30 second, mIcon=2131234125, mExtras=null, Action:mName='Skip to next episode, mIcon=2131234405, mExtras=null], active item id=-1, error=null}
+      state=PlaybackState {state=NONE(0), position=0, buffered position=0, speed=0.0, updated=46212, actions=2409991, custom actions=[Action:mName='Rewind 10 seconds, mIcon=2131234345, mExtras=null, Action:mName='Fast forward 30 second, mIcon=2131234125, mExtras=null, Action:mName='Skip to next episode, mIcon=2131234405, mExtras=null], active item id=-1, error=null}
       metadata: size=0, description=null, null, null
-      package=com.google.android.apps.youtube.music
-      state=PlaybackState {state=ERROR(7), position=0, buffered position=0, speed=1.0, updated=35694, actions=11828, custom actions=[], active item id=-1, error=Please sign in to YouTube Music.}
-      metadata: null
   muted player piids due to call/ring:
-10-26 10:21:56:007 new player piid:79 uid/pid:1000/496 type:android.media.SoundPool attr:AudioAttributes: usage=USAGE_ASSISTANCE_SONIFICATION content=CONTENT_TYPE_SONIFICATION flags=0x800 tags= bundle=null session:0
-10-26 10:21:57:023 new player piid:87 uid/pid:10163/793 type:android.media.SoundPool attr:AudioAttributes: usage=USAGE_ASSISTANCE_SONIFICATION content=CONTENT_TYPE_SONIFICATION flags=0x800 tags= bundle=null session:0
-10-26 10:22:24:929 new player piid:95 uid/pid:10126/4298 type:android.media.MediaPlayer attr:AudioAttributes: usage=USAGE_UNKNOWN content=CONTENT_TYPE_UNKNOWN flags=0x800 tags= bundle=null session:97
-10-26 10:22:40:218 new player piid:103 uid/pid:10163/793 type:android.media.MediaPlayer attr:AudioAttributes: usage=USAGE_UNKNOWN content=CONTENT_TYPE_UNKNOWN flags=0x800 tags= bundle=null session:105
-10-26 10:22:40:220 player piid:103 new AudioAttributes:AudioAttributes: usage=USAGE_NOTIFICATION content=CONTENT_TYPE_SONIFICATION flags=0x800 tags= bundle=null
-10-26 10:22:40:235 releasing player piid:103
-10-26 10:22:49:351 new player piid:111 uid/pid:10143/3486 type:AAudio attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN source=DEFAULT flags=0x0 tags= bundle=null session:-1
-10-26 10:22:49:353 port updated portId:15 mapped to player piid:111
-10-26 10:22:49:375 player piid:111 event:started
+10-26 11:08:18:088 new player piid:79 uid/pid:1000/494 type:android.media.SoundPool attr:AudioAttributes: usage=USAGE_ASSISTANCE_SONIFICATION content=CONTENT_TYPE_SONIFICATION flags=0x800 tags= bundle=null session:0
+10-26 11:08:19:361 new player piid:87 uid/pid:10162/792 type:android.media.SoundPool attr:AudioAttributes: usage=USAGE_ASSISTANCE_SONIFICATION content=CONTENT_TYPE_SONIFICATION flags=0x800 tags= bundle=null session:0
+10-26 11:08:27:021 new player piid:95 uid/pid:10126/2135 type:android.media.MediaPlayer attr:AudioAttributes: usage=USAGE_UNKNOWN content=CONTENT_TYPE_UNKNOWN flags=0x800 tags= bundle=null session:73
+10-26 11:09:26:056 new player piid:103 uid/pid:10162/792 type:android.media.MediaPlayer attr:AudioAttributes: usage=USAGE_UNKNOWN content=CONTENT_TYPE_UNKNOWN flags=0x800 tags= bundle=null session:105
+10-26 11:09:26:056 player piid:103 new AudioAttributes:AudioAttributes: usage=USAGE_NOTIFICATION content=CONTENT_TYPE_SONIFICATION flags=0x800 tags= bundle=null
+10-26 11:09:26:094 releasing player piid:103
+	AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0x800 tags= bundle=null forVolume: true stream: STREAM_MUSIC(3)
