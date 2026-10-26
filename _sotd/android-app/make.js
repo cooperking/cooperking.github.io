@@ -15,5 +15,9 @@ const { TwaManifest, TwaGenerator, ConsoleLog } = require('@bubblewrap/core');
     minSdkVersion: 24,   // (Android 7: the browser helper library needs it)
   });
   await new TwaGenerator().createTwaProject(__dirname + '/project', tm, new ConsoleLog('android'));
+  // no shrinking: R8 renames the classes the app finds by name (its notification service), and it then can't start
+  // ("Component class R.u does not exist", 26 Oct 2026 on an emulated Pixel); the app is small either way
+  const fs = require('fs'), g = __dirname + '/project/app/build.gradle';
+  fs.writeFileSync(g, fs.readFileSync(g, 'utf8').replace(/minifyEnabled\s+true/g, 'minifyEnabled false').replace(/shrinkResources\s+true/g, 'shrinkResources false'));
   console.log('project made: version ' + tm.appVersionName + ' (' + code + ')');
 })().catch(e => { console.error(e); process.exit(1); });
