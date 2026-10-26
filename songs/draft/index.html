@@ -1244,7 +1244,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     <div class="ac-dev" id="acnote" hidden>
       <p class="ac-h">Notifications</p>
       <p class="ac-none" id="acnotet"></p>
-      <div class="ac-acts"><button class="copy" id="acnotego" type="button" hidden>Turn on</button></div>
+      <div class="ac-acts"><button class="copy" id="acnotego" type="button" hidden>Turn on</button><button class="copy ghost" id="acnotetest" type="button" hidden>Send a test</button></div>
     </div>
     <div>
       <p class="ac-h">Your playlists</p>
@@ -4597,7 +4597,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function keyBytes(k) { var b = atob(k.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((k.length + 3) % 4)), a = new Uint8Array(b.length); for (var i = 0; i < b.length; i++) a[i] = b.charCodeAt(i); return a; }
   function noteSend(sub, extra, tok) {
     return fetch(MBASE + '/members/push', { method: 'POST', headers: { Authorization: 'Bearer ' + (tok || plTok()), 'Content-Type': 'application/json' },
-      body: JSON.stringify(Object.assign({ sub: sub.toJSON ? sub.toJSON() : sub }, extra || {})) }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); });
+      body: JSON.stringify(Object.assign({ sub: sub.toJSON ? sub.toJSON() : sub }, extra || {})) }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error('The site said ' + r.status + (j.error ? ': ' + j.error : '')); return j; });
+    });
   }
   function noteDraw() {
     var box = document.getElementById('acnote'), t = document.getElementById('acnotet'), b = document.getElementById('acnotego');
@@ -4613,6 +4615,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         : 'Hear about each new Song of the Day as it goes up, and the odd note from John.';
       b.textContent = on ? 'Turn off' : 'Turn on'; b.hidden = false; b.disabled = false;
       b.dataset.on = on ? '1' : '';
+      document.getElementById('acnotetest').hidden = !on;
     }).catch(function () { box.hidden = true; });
   }
   document.getElementById('acnotego').addEventListener('click', function () {
@@ -4627,6 +4630,21 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     }
     b.disabled = true;
     noteOn().then(noteDraw);
+  });
+  // Send a test: to this device, through the same path as the real ones; says plainly what the push service answered, and
+  // what to look at on the phone when it was accepted but nothing showed
+  document.getElementById('acnotetest').addEventListener('click', function () {
+    var b = this; b.disabled = true;
+    noteReg().then(function (reg) { return reg.pushManager.getSubscription(); }).then(function (sub) {
+      if (!sub) throw new Error('This device has no subscription (turn them off and on again)');
+      return noteSend(sub, { test: true });
+    }).then(function (j) {
+      var ok = j && j.test >= 200 && j.test < 300, who = IOS ? 'Apple' : 'The push service';
+      ask({ k: 'Notifications', h: ok ? 'Sent: it should be here in a moment' : 'It didn’t go',
+        t: ok ? who + ' took it (' + j.test + '). If nothing shows within a minute, check that a Focus (Sleep, Do Not Disturb) isn’t on, and ' + (IOS ? 'Settings > Notifications > Song of the Day: Allow Notifications, Lock Screen and Banners on.' : 'that this browser’s notifications are allowed in the phone’s settings.')
+          : who + ' said ' + ((j && j.test) || 'nothing') + (j && j.why ? ': ' + j.why : '') + '. Tell John.', ok: 'OK', no: 'Close' });
+    }).catch(function (e) { ask({ k: 'Notifications', h: 'It didn’t go', t: (e && e.message) || 'Couldn’t reach the site.', ok: 'OK', no: 'Close' }); })
+      .then(function () { b.disabled = false; });
   });
   function noteOn() {   // on: the phone's question first, straight from the tap (an iPhone asks only then)
     try { localStorage.setItem('sotd-noteask', String(Date.now())); } catch (e) {}
