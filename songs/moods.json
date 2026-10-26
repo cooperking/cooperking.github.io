@@ -840,8 +840,8 @@
    "moodFrom": "Claude (researched)",
    "sound": [
     "Energetic",
-    "Bittersweet",
-    "Dark"
+    "Dark",
+    "Bittersweet"
    ],
    "claude": [
     "Playful",
@@ -18760,8 +18760,8 @@
    "moodFrom": "Claude",
    "sound": [
     "Playful",
-    "Joyful",
-    "Energetic"
+    "Energetic",
+    "Joyful"
    ],
    "claude": [
     "Playful",
@@ -20202,8 +20202,8 @@
    ],
    "moodFrom": "Claude (researched)",
    "sound": [
-    "Joyful",
     "Energetic",
+    "Joyful",
     "Playful"
    ],
    "claude": [
@@ -20916,7 +20916,7 @@
    "sound": [
     "Playful",
     "Energetic",
-    "Joyful"
+    "Romantic"
    ],
    "claude": [
     "Playful"
@@ -25986,11 +25986,11 @@
      61
     ],
     [
-     "Joyful",
+     "Bittersweet",
      10
     ],
     [
-     "Bittersweet",
+     "Joyful",
      10
     ]
    ],
@@ -26010,11 +26010,11 @@
      40,
      [
       [
-       "Joyful",
+       "Bittersweet",
        24
       ],
       [
-       "Bittersweet",
+       "Joyful",
        24
       ],
       [
@@ -26026,8 +26026,8 @@
    ],
    "moodFrom": "Weighed up",
    "sound": [
-    "Joyful",
     "Bittersweet",
+    "Joyful",
     "Romantic"
    ],
    "listeners": "agree",
@@ -26261,6 +26261,117 @@
     "psychedelic pop",
     "rock",
     "wonky pop"
+   ],
+   "check": true
+  },
+  "0xTmJJm3wSlJ1877tW8GrL": {
+   "n": 259,
+   "title": "Here Comes the Night",
+   "artist": "KOLARS",
+   "moods": [
+    "Joyful"
+   ],
+   "moodMix": [
+    [
+     "Joyful",
+     46
+    ],
+    [
+     "Playful",
+     13
+    ],
+    [
+     "Dreamy",
+     12
+    ]
+   ],
+   "moodEvidence": [
+    [
+     "Audio",
+     100,
+     [
+      [
+       "Joyful",
+       46
+      ],
+      [
+       "Playful",
+       13
+      ],
+      [
+       "Dreamy",
+       12
+      ]
+     ]
+    ]
+   ],
+   "moodFrom": "Weighed up",
+   "sound": [
+    "Joyful",
+    "Playful",
+    "Dreamy"
+   ],
+   "listeners": "none",
+   "styles": [
+    "Synth-pop",
+    "Electro",
+    "EBM"
+   ],
+   "genres": [
+    "Indie"
+   ],
+   "genreFrom": "Weighed up",
+   "genreMix": [
+    [
+     "Indie",
+     51
+    ],
+    [
+     "Electronic",
+     21
+    ],
+    [
+     "Pop",
+     20
+    ]
+   ],
+   "genreEvidence": [
+    [
+     "Last.fm",
+     60,
+     [
+      [
+       "Indie",
+       81
+      ],
+      [
+       "Rock",
+       9
+      ],
+      [
+       "Pop",
+       5
+      ]
+     ]
+    ],
+    [
+     "Audio",
+     40,
+     [
+      [
+       "Electronic",
+       44
+      ],
+      [
+       "Pop",
+       43
+      ],
+      [
+       "Indie",
+       7
+      ]
+     ]
+    ]
    ],
    "check": true
   }
