@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Privacy – John’s Song of the Day</title>
-<meta name="description" content="What John’s Song of the Day keeps about you: nothing beyond your own browser.">
+<meta name="description" content="What John’s Song of the Day keeps about visitors and about the members John invites, and why.">
 <style>
   :root { --bg: #fffaf5; --fg: #1b1020; --muted: rgba(27, 16, 32, .72); --link: #b0174f; }
   @media (prefers-color-scheme: dark) { :root { --bg: #160c18; --fg: #fffaf5; --muted: rgba(255, 250, 245, .74); --link: #ff7aa8; } }
@@ -13,26 +13,63 @@
   h1 { font-weight: 500; font-size: 36px; line-height: 1.1; margin: 0 0 6px; }
   .sub { color: var(--muted); margin: 0 0 32px; font-style: italic; }
   h2 { font-weight: 500; font-size: 22px; margin: 32px 0 6px; }
-  p { margin: 0 0 12px; }
+  p, ul { margin: 0 0 12px; }
+  ul { padding-left: 22px; }
+  li { margin: 0 0 6px; }
   a { color: var(--link); }
 </style>
 </head>
 <body>
 <main>
   <h1>Privacy</h1>
-  <p class="sub">John’s Song of the Day · last updated 21 October 2026</p>
+  <p class="sub">John’s Song of the Day · last updated 26 October 2026</p>
 
-  <h2>The calendar</h2>
-  <p>The calendar at <a href="https://cooperking.github.io/songs/">cooperking.github.io/songs</a> has no accounts, sign-ins, adverts or tracking. The songs you add to “My playlist”, and the name you give it, are saved only in your own browser.</p>
+  <p>John’s Song of the Day is a personal calendar of songs, one for each day, made by John Griffiths. It’s on the web at
+  <a href="https://cooperking.github.io/songs/">cooperking.github.io/songs</a>, and the iPhone, Android and Fire TV apps
+  open that same calendar, so this page covers all of them. There are no adverts and no tracking or analytics.</p>
 
-  <h2>Other services the page uses</h2>
-  <p>Song previews play from Spotify. A song’s video plays in YouTube’s own player, from youtube-nocookie.com, and only after you press Video. Fonts come from Google Fonts. Opening a list “in Spotify” sends its songs’ Spotify IDs, and its name, to the site’s small playlist service, which makes the playlist on Spotify. Each of these services handles what it serves under its own privacy policy.</p>
+  <h2>Visitors</h2>
+  <p>Anyone can use the calendar without signing in. Nothing about you is kept by the calendar: the songs you add to
+  “My playlist”, and its name, are saved only on your own device.</p>
+
+  <h2>Members</h2>
+  <p>Members are people John invites, who sign in with an invite link or a one-use code. For them, the calendar’s small
+  service (on Cloudflare, at sotd-playlists.cooperking.workers.dev) keeps:</p>
+  <ul>
+    <li>your name, as John entered it when he invited you;</li>
+    <li>for each device you sign in on: a one-way scrambled copy of its sign-in key (the key itself stays on the device),
+    a random number the device made to tell itself apart, and when it signed in and was last used;</li>
+    <li>the playlists you save, with their names, so all your devices have them;</li>
+    <li>your inbox: the latest 60 messages sent to you (each day’s song, and John’s own), and which you’ve read;</li>
+    <li>if you turn notifications on: the address your device’s notification service gives for that device (Apple’s,
+    Google’s, Mozilla’s or Microsoft’s), through which each notification is delivered.</li>
+  </ul>
+  <p>Songs you download to play offline are kept only on your device. John can see members’ names, how many devices
+  each has signed in and when one was last used, and whether notifications are on; no one else can see any of this.</p>
+  <p>Signing out on a device removes its sign-in and its downloads. When John removes a member, their record, saved
+  playlists, inbox and notification addresses are deleted.</p>
+
+  <h2>Stopping misuse</h2>
+  <p>To stop guessing of codes, the service keeps the internet address of a device that enters wrong codes, for up to
+  two hours. To stop misuse of “Open in Spotify”, it counts the playlists made from each internet address, for an hour.</p>
+
+  <h2>The apps</h2>
+  <p>The iPhone app is shared through Apple’s TestFlight: Apple passes on crash reports, and any feedback you choose to
+  send, to John, under <a href="https://www.apple.com/legal/privacy/">Apple’s privacy policy</a>. Its notifications
+  come through Apple’s notification service. The Android and Fire TV apps keep nothing beyond what’s described above.</p>
+
+  <h2>Other services the calendar uses</h2>
+  <p>Song previews and album covers come from Spotify. A song’s video plays in YouTube’s own player, which is loaded only
+  once you play a video. Fonts come from Google Fonts. The site itself is served by GitHub Pages, and the members’ service
+  by Cloudflare. Opening a list “in Spotify” sends its songs’ Spotify IDs, and its name, to the calendar’s service, which
+  makes the playlist on Spotify. Each of these services handles what it serves under its own privacy policy.</p>
 
   <h2>The Song of the Day Google app</h2>
   <p>The “Song of the Day” app on Google is used only by John’s own automation. It searches YouTube for each day’s song and keeps the Song of the Day playlist on YouTube up to date. It acts only for the YouTube channel John signed in with, and reads or keeps no one else’s data.</p>
 
   <h2>Questions</h2>
-  <p>Ask John, through <a href="https://github.com/cooperking">github.com/cooperking</a>.</p>
+  <p>Ask John, through <a href="https://github.com/cooperking">github.com/cooperking</a>. A member can ask him to remove
+  them at any time.</p>
 </main>
 </body>
 </html>
