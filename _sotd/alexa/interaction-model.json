@@ -1,0 +1,43 @@
+{
+  "interactionModel": {
+    "languageModel": {
+      "invocationName": "john's song of the day",
+      "intents": [
+        { "name": "PlayTodayIntent", "slots": [], "samples": [
+          "play today's song", "play the song of the day", "play today's song of the day", "play the latest song", "play the newest song",
+          "what's today's song", "start", "play", "play all the songs", "play them all" ] },
+        { "name": "PlayDateIntent", "slots": [ { "name": "date", "type": "AMAZON.DATE" } ], "samples": [
+          "play the song from {date}", "play the song for {date}", "play the song of the day from {date}", "play {date}'s song",
+          "what was the song on {date}", "play the song on {date}", "go back to {date}" ] },
+        { "name": "PlaySongIntent", "slots": [ { "name": "song", "type": "AMAZON.SearchQuery" } ], "samples": [
+          "play the song {song}", "play the song called {song}", "find the song {song}", "find {song}", "play the track {song}", "put on {song}" ] },
+        { "name": "PlayArtistIntent", "slots": [ { "name": "artist", "type": "AMAZON.Musician" } ], "samples": [
+          "play songs by {artist}", "play the songs by {artist}", "play {artist} songs", "play something by {artist}", "play music by {artist}" ] },
+        { "name": "ShuffleIntent", "slots": [], "samples": [
+          "shuffle", "shuffle all the songs", "shuffle everything", "shuffle all songs", "play all the songs shuffled", "play everything in a random order", "play them in a random order" ] },
+        { "name": "WhatsPlayingIntent", "slots": [], "samples": [
+          "what's this song", "what song is this", "what's playing", "what is playing", "who is this", "who sings this", "what is this", "which song is this" ] },
+        { "name": "FactIntent", "slots": [], "samples": [
+          "tell me about this song", "tell me a fact", "give me a fact", "tell me something about this song", "tell me about it", "a fact", "tell me more" ] },
+        { "name": "WatchVideoIntent", "slots": [], "samples": [
+          "play the video", "watch the video", "show me the video", "show the video", "put the video on" ] },
+        { "name": "AMAZON.CancelIntent", "samples": [] },
+        { "name": "AMAZON.HelpIntent", "samples": [] },
+        { "name": "AMAZON.StopIntent", "samples": [] },
+        { "name": "AMAZON.NavigateHomeIntent", "samples": [] },
+        { "name": "AMAZON.FallbackIntent", "samples": [] },
+        { "name": "AMAZON.PauseIntent", "samples": [] },
+        { "name": "AMAZON.ResumeIntent", "samples": [] },
+        { "name": "AMAZON.NextIntent", "samples": [] },
+        { "name": "AMAZON.PreviousIntent", "samples": [] },
+        { "name": "AMAZON.StartOverIntent", "samples": [] },
+        { "name": "AMAZON.RepeatIntent", "samples": [] },
+        { "name": "AMAZON.ShuffleOnIntent", "samples": [] },
+        { "name": "AMAZON.ShuffleOffIntent", "samples": [] },
+        { "name": "AMAZON.LoopOnIntent", "samples": [] },
+        { "name": "AMAZON.LoopOffIntent", "samples": [] }
+      ],
+      "types": []
+    }
+  }
+}

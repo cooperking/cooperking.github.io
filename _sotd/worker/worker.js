@@ -72,6 +72,7 @@ export default {
       if (url.pathname === '/app.webmanifest') return appManifest(url);
       if (url.pathname.startsWith('/i/')) return await invitePage(url, env);
       if (url.pathname.startsWith('/n/')) return await notePic(url, env);
+      if (url.pathname === '/alexa') return await alexa(request, env, ctx);
       if (url.pathname === '/covers.json' || url.pathname.startsWith('/c/') || url.pathname.startsWith('/s/')) return await ownCover(request, url, env);
       return page('Song of the Day', '<p>This service makes Spotify playlists from the Song of the Day calendar.</p>');
     } catch (e) {
@@ -1270,6 +1271,197 @@ async function pushDaily(env, items) {
   const r = await pushAll(env, Object.assign({ title: last.title, body: last.artist + (day === londonDay() ? ' \u00b7 today\u2019s Song of the Day' : ' \u00b7 the latest Song of the Day'), icon: last.img || '',
     url: SITE_SONGS + '#' + slug, tag: 'sotd-day' }, hasCard ? { image: card } : {}));
   console.log('pushDaily ' + last.id + ': ' + JSON.stringify(r));
+}
+
+// ---------- Alexa: John's own Song of the Day skill ----------
+// The skill (set up by John in the Alexa developer console from _sotd/alexa/, its endpoint this Worker's /alexa) plays
+// his own recordings of the songs: today's first, then back a day at a time, as Play all does; a day, a song or an
+// artist asked for by name; shuffled; and says what's playing, with a fact about it. Each request is checked as Amazon's
+// (its signature, made with the certificate at Amazon's own address, and its time), and the first skill to call here is
+// the only one ever answered (KV alexaSkill), so nobody else's skill can be pointed at John's recordings.
+// What plays is said in each stream's token: <order>|<order's detail>|<loop 0/1>|<track>, the orders d (the days, newest
+// first), a (one artist's) and r (shuffled, the detail its seed).
+const ALEXA_CERTS = new Map();
+function derAt(b, i) {
+  let len = b[i + 1], p = i + 2;
+  if (len & 0x80) { const n = len & 0x7f; len = 0; for (let k = 0; k < n; k++) len = len * 256 + b[p++]; }
+  return { tag: b[i], start: i, cs: p, end: p + len };
+}
+function derKids(b, t) { const out = []; for (let p = t.cs; p < t.end;) { const k = derAt(b, p); out.push(k); p = k.end; } return out; }
+function derTime(b, t) {
+  const x = String.fromCharCode(...b.subarray(t.cs, t.end)), g = t.tag === 0x18;
+  const y = g ? +x.slice(0, 4) : (+x.slice(0, 2) < 50 ? 2000 : 1900) + +x.slice(0, 2), o = g ? 4 : 2;
+  return Date.UTC(y, +x.slice(o, o + 2) - 1, +x.slice(o + 2, o + 4), +x.slice(o + 4, o + 6), +x.slice(o + 6, o + 8), +x.slice(o + 8, o + 10) || 0);
+}
+async function alexaVerify(request, raw) {   // '' when it's Amazon's, else why not
+  const certUrl = request.headers.get('SignatureCertChainUrl') || '', sig = request.headers.get('Signature-256') || '';
+  if (!certUrl || !sig) return 'unsigned';
+  let u; try { u = new URL(certUrl); } catch (e) { return 'certificate address'; }
+  if (u.protocol !== 'https:' || u.hostname.toLowerCase() !== 's3.amazonaws.com' || (u.port && u.port !== '443') || !u.pathname.startsWith('/echo.api/')) return 'certificate address';
+  let c = ALEXA_CERTS.get(u.href);
+  if (!c) {
+    const pem = await fetch(u.href).then(r => r.ok ? r.text() : '');
+    const m = /-----BEGIN CERTIFICATE-----([\s\S]+?)-----END CERTIFICATE-----/.exec(pem);
+    if (!m) return 'no certificate';
+    const b = Uint8Array.from(atob(m[1].replace(/\s+/g, '')), ch => ch.charCodeAt(0));
+    const tbs = derKids(b, derAt(b, 0))[0], k = derKids(b, tbs), o = k[0].tag === 0xa0 ? 1 : 0;
+    const v = derKids(b, k[o + 3]), spki = b.slice(k[o + 5].start, k[o + 5].end);
+    const san = new TextDecoder('latin1').decode(b).includes('echo-api.amazon.com');
+    c = { from: derTime(b, v[0]), until: derTime(b, v[1]), san, key: await crypto.subtle.importKey('spki', spki, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['verify']) };
+    ALEXA_CERTS.set(u.href, c);
+  }
+  const now = Date.now();
+  if (!c.san || now < c.from || now > c.until) return 'certificate';
+  let ok = false;
+  try { ok = await crypto.subtle.verify('RSASSA-PKCS1-v1_5', c.key, Uint8Array.from(atob(sig), ch => ch.charCodeAt(0)), raw); } catch (e) {}
+  return ok ? '' : 'signature';
+}
+let alexaSite = null;   // the site's years and facts, kept for half an hour
+async function alexaSiteData() {
+  if (alexaSite && Date.now() - alexaSite.at < 30 * 60e3) return alexaSite;
+  const get = p => fetch(SITE_SONGS + p).then(r => r.ok ? r.json() : {}).catch(() => ({}));
+  const [y, f] = await Promise.all([get('years.json'), get('facts.json')]);
+  alexaSite = { at: Date.now(), years: y.years || {}, facts: f || {} };
+  return alexaSite;
+}
+function alexaDayBefore(iso) { const d = new Date(iso + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() - 1); return d.toISOString().slice(0, 10); }
+async function alexaSongs(env, ctx) {   // the songs John has recorded, newest first, each with its day (as the calendar works them out)
+  const j = await (await songsJson(new Request(LIVE_ORIGIN + '/songs.json'), env, ctx)).json();
+  const list = j.songs || [];
+  for (let i = list.length - 1, next = null; i >= 0; i--) { let d = londonDay(list[i].a); if (next && alexaDayBefore(next) < d) d = alexaDayBefore(next); list[i].d = d; next = d; }
+  const cat = await catalog(env);
+  return list.filter(x => cat[x.id] && cat[x.id].a).map(x => Object.assign(x, { hasV: !!cat[x.id].v })).reverse();
+}
+function fold(x) { return String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/['\u2018\u2019`]/g, '').replace(/&/g, ' and ').replace(/[^a-z0-9 ]+/g, ' ').replace(/\b(the|a|an)\b/g, ' ').replace(/\s+/g, ' ').trim(); }
+function fnv(x) { let h = 2166136261; for (let i = 0; i < x.length; i++) { h ^= x.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+function alexaOrder(list, mode, param) {
+  if (mode === 'a') return list.filter(x => fold(x.artist).includes(param));
+  if (mode === 'r') return list.slice().sort((x, y) => fnv(param + x.id) - fnv(param + y.id));
+  return list;
+}
+function alexaToken(mode, param, loop, track) { return [mode, param, loop ? 1 : 0, track].join('|'); }
+function alexaParse(token) { const p = String(token || '').split('|'); return p.length === 4 ? { mode: p[0], param: p[1], loop: p[2] === '1', track: p[3] } : null; }
+async function alexaPlay(env, x, at, behaviour, offset, previous) {
+  const exp = Math.floor(Date.now() / 1000) + 24 * 3600;
+  const stream = { url: LIVE_ORIGIN + '/m/a/' + x.id + '.mp3?e=' + exp + '&s=' + await mediaSig(env, 'a', x.id, exp), token: alexaToken(at.mode, at.param, at.loop, x.id), offsetInMilliseconds: offset || 0 };
+  if (previous) stream.expectedPreviousToken = previous;
+  const art = x.img ? { sources: [{ url: x.img }] } : undefined;
+  return { type: 'AudioPlayer.Play', playBehavior: behaviour, audioItem: { stream, metadata: { title: x.title, subtitle: x.artist + ' · ' + alexaDay(x.d), art, backgroundImage: art } } };
+}
+function alexaDay(iso) { return new Date(iso + 'T12:00:00Z').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }).replace(',', ''); }
+function alexaSay(text, end, extra) { return Object.assign({ outputSpeech: { type: 'PlainText', text } }, end === undefined ? {} : { shouldEndSession: end }, extra || {}); }
+async function alexa(request, env, ctx) {
+  const reply = (response) => new Response(JSON.stringify({ version: '1.0', response: response || {} }), { headers: { 'Content-Type': 'application/json;charset=UTF-8' } });
+  if (request.method !== 'POST') return new Response('The Song of the Day skill talks here.', { status: 405 });
+  const raw = new Uint8Array(await request.arrayBuffer());
+  const why = await alexaVerify(request, raw);
+  if (why) { console.log('alexa refused: ' + why); return new Response('Not Amazon (' + why + ').', { status: 400 }); }
+  let body; try { body = JSON.parse(new TextDecoder().decode(raw)); } catch (e) { return new Response('Bad request.', { status: 400 }); }
+  const rq = body.request || {}, cx = body.context || {};
+  if (Math.abs(Date.now() - Date.parse(rq.timestamp || 0)) > 150e3) return new Response('Too old.', { status: 400 });
+  const app = (cx.System && cx.System.application && cx.System.application.applicationId) || (body.session && body.session.application && body.session.application.applicationId) || '';
+  const mine = await env.SOTD.get('alexaSkill');
+  if (!mine && app) await env.SOTD.put('alexaSkill', app);   // the first one: John's
+  else if (mine !== app) return new Response('Not this skill.', { status: 403 });
+  if (!env.MEDIA || !env.ADMIN_KEY) return reply(alexaSay('The recordings aren’t set up yet.', true));
+  const type = rq.type || '', intent = (rq.intent && rq.intent.name) || '', slots = (rq.intent && rq.intent.slots) || {};
+  const slot = n => (slots[n] && slots[n].value) || '';
+  const playing = alexaParse(cx.AudioPlayer && cx.AudioPlayer.token), offset = (cx.AudioPlayer && cx.AudioPlayer.offsetInMilliseconds) || 0;
+  const audioEvent = type.startsWith('AudioPlayer.') || type.startsWith('PlaybackController.');
+  const list = await alexaSongs(env, ctx);
+  if (!list.length) return reply(audioEvent ? {} : alexaSay('There are no recordings to play yet.', true));
+  const now = (at) => { const ord = alexaOrder(list, at.mode, at.param); return { ord, i: ord.findIndex(x => x.id === at.track) }; };
+  const step = async (dir, behaviour, quiet) => {   // the next (or previous) one in what's playing
+    if (!playing) return quiet ? {} : alexaSay('Nothing’s playing. Say, play today’s song.', false);
+    const { ord, i } = now(playing);
+    let j = i + dir;
+    if (j >= ord.length || j < 0) { if (!playing.loop || !ord.length) return quiet ? {} : alexaSay(dir > 0 ? 'That was the last one.' : 'That’s the first one.', true); j = (j + ord.length) % ord.length; }
+    return { directives: [await alexaPlay(env, ord[j], playing, behaviour)], shouldEndSession: quiet ? undefined : true };
+  };
+  const start = async (x, at, say) => alexaSay(say, true, { directives: [await alexaPlay(env, x, Object.assign({ loop: playing ? playing.loop : false }, at, { track: x.id }), 'REPLACE_ALL')] });
+  const intro = x => x.title + ', by ' + x.artist + '.';
+  const current = playing && list.find(x => x.id === playing.track);
+
+  if (type === 'AudioPlayer.PlaybackNearlyFinished') {   // the next one queued up behind it
+    if (!playing) return reply({});
+    const { ord, i } = now(playing); let j = i + 1;
+    if (j >= ord.length) { if (!playing.loop) return reply({}); j = 0; }
+    return reply({ directives: [await alexaPlay(env, ord[j], playing, 'ENQUEUE', 0, cx.AudioPlayer.token)] });
+  }
+  if (type === 'AudioPlayer.PlaybackFailed') { console.log('alexa playback failed: ' + JSON.stringify(rq.error || {})); return reply(await step(1, 'REPLACE_ALL', true)); }
+  if (type === 'PlaybackController.NextCommandIssued') return reply(await step(1, 'REPLACE_ALL', true));
+  if (type === 'PlaybackController.PreviousCommandIssued') return reply(await step(-1, 'REPLACE_ALL', true));
+  if (type === 'PlaybackController.PauseCommandIssued') return reply({ directives: [{ type: 'AudioPlayer.Stop' }] });
+  if (type === 'PlaybackController.PlayCommandIssued') return reply(current ? { directives: [await alexaPlay(env, current, playing, 'REPLACE_ALL', offset)] } : {});
+  if (audioEvent || type === 'SessionEndedRequest' || type === 'System.ExceptionEncountered') return reply({});
+
+  const today = list[0];
+  if (type === 'LaunchRequest' || intent === 'PlayTodayIntent')
+    return reply(await start(today, { mode: 'd', param: '' }, (today.d === londonDay() ? 'Today’s Song of the Day: ' : 'The latest Song of the Day: ') + intro(today)));
+  switch (intent) {
+    case 'PlayDateIntent': {
+      const d = slot('date');
+      if (!/^\d{4}-\d\d-\d\d$/.test(d)) return reply(alexaSay('Which day? Say, for example, play the song from last Monday.', false));
+      const x = list.find(s => s.d === d) || list.find(s => s.d <= d);
+      if (!x) return reply(alexaSay('There’s no song of the day that far back.', true));
+      return reply(await start(x, { mode: 'd', param: '' }, (x.d === d ? 'The song for ' : 'There wasn’t one that day. The one before, for ') + alexaDay(x.d) + ': ' + intro(x)));
+    }
+    case 'PlaySongIntent': {
+      const q = fold(slot('song'));
+      if (!q) return reply(alexaSay('Which song?', false));
+      const words = q.split(' ');
+      const x = list.find(s => fold(s.title) === q) || list.find(s => fold(s.title).includes(q)) || list.find(s => words.every(w => fold(s.title + ' ' + s.artist).includes(w)));
+      if (!x) return reply(alexaSay('I couldn’t find ' + slot('song') + ' among the songs of the day.', true));
+      return reply(await start(x, { mode: 'd', param: '' }, intro(x)));
+    }
+    case 'PlayArtistIntent': {
+      const q = fold(slot('artist'));
+      const ord = q ? alexaOrder(list, 'a', q) : [];
+      if (!ord.length) return reply(alexaSay('I couldn’t find any songs by ' + (slot('artist') || 'them') + '.', true));
+      return reply(await start(ord[0], { mode: 'a', param: q }, ord.length === 1 ? 'There’s one song by ' + ord[0].artist + ': ' + ord[0].title + '.' : ord.length + ' songs by ' + ord[0].artist + ', starting with ' + ord[0].title + '.'));
+    }
+    case 'ShuffleIntent': {
+      const seed = randomCode(4), ord = alexaOrder(list, 'r', seed);
+      return reply(await start(ord[0], { mode: 'r', param: seed }, 'Shuffling all ' + list.length + ' songs. First, ' + intro(ord[0])));
+    }
+    case 'AMAZON.ShuffleOnIntent': case 'AMAZON.ShuffleOffIntent': case 'AMAZON.LoopOnIntent': case 'AMAZON.LoopOffIntent': {
+      if (!current) return reply(alexaSay('Nothing’s playing.', true));
+      const at = Object.assign({}, playing);
+      if (intent === 'AMAZON.ShuffleOnIntent') { at.mode = 'r'; at.param = randomCode(4); }
+      if (intent === 'AMAZON.ShuffleOffIntent') { at.mode = 'd'; at.param = ''; }
+      if (intent === 'AMAZON.LoopOnIntent') at.loop = true;
+      if (intent === 'AMAZON.LoopOffIntent') at.loop = false;
+      return reply({ directives: [await alexaPlay(env, current, at, 'REPLACE_ALL', offset)], shouldEndSession: true });   // the same song, carrying on, its order changed
+    }
+    case 'AMAZON.NextIntent': return reply(await step(1, 'REPLACE_ALL'));
+    case 'AMAZON.PreviousIntent': return reply(await step(-1, 'REPLACE_ALL'));
+    case 'AMAZON.StartOverIntent': case 'AMAZON.RepeatIntent': return reply(current ? { directives: [await alexaPlay(env, current, playing, 'REPLACE_ALL', 0)], shouldEndSession: true } : alexaSay('Nothing’s playing.', true));
+    case 'AMAZON.ResumeIntent': return reply(current ? { directives: [await alexaPlay(env, current, playing, 'REPLACE_ALL', offset)], shouldEndSession: true } : await start(today, { mode: 'd', param: '' }, 'Today’s Song of the Day: ' + intro(today)));
+    case 'AMAZON.PauseIntent': case 'AMAZON.StopIntent': case 'AMAZON.CancelIntent': return reply({ directives: [{ type: 'AudioPlayer.Stop' }], shouldEndSession: true });
+    case 'WhatsPlayingIntent': {
+      if (!current) return reply(alexaSay('Nothing’s playing. Say, play today’s song.', false));
+      const site = await alexaSiteData(), y = site.years[current.id];
+      return reply(alexaSay('This is ' + current.title + ', by ' + current.artist + (y ? ', from ' + y : '') + '. It was the Song of the Day on ' + alexaDay(current.d) + '.', true));
+    }
+    case 'FactIntent': {
+      const x = current || today, site = await alexaSiteData(), f = (site.facts.songs || {})[x.id];
+      const facts = []; if (f) { (f.s || []).forEach(t => facts.push(t[0])); (f.a || []).forEach(k => { const a = (site.facts.artists || {})[k]; if (a) a.f.forEach(t => facts.push(t[0])); }); }
+      if (!facts.length) return reply(alexaSay('I don’t have any facts about ' + x.title + ' yet.', true));
+      return reply(alexaSay((current ? '' : 'About today’s song, ' + x.title + '. ') + facts[Math.floor(Math.random() * facts.length)], true));
+    }
+    case 'WatchVideoIntent': {
+      const x = current || today, screen = cx.System && cx.System.device && cx.System.device.supportedInterfaces && cx.System.device.supportedInterfaces.VideoApp;
+      if (!screen) return reply(alexaSay('Videos play on an Echo with a screen. On this one, here’s the song: ' + intro(x), true, { directives: [await alexaPlay(env, x, playing || { mode: 'd', param: '', loop: false }, 'REPLACE_ALL')] }));
+      if (!x.hasV) return reply(alexaSay('There’s no video of ' + x.title + ' yet.', true));
+      const exp = Math.floor(Date.now() / 1000) + 24 * 3600;
+      return reply({ outputSpeech: { type: 'PlainText', text: x.title + ', by ' + x.artist + '.' }, directives: [{ type: 'VideoApp.Launch', videoItem: {
+        source: LIVE_ORIGIN + '/m/v/' + x.id + '.mp4?e=' + exp + '&s=' + await mediaSig(env, 'v', x.id, exp), metadata: { title: x.title, subtitle: x.artist } } }] });
+    }
+    case 'AMAZON.HelpIntent': case 'AMAZON.FallbackIntent': case 'AMAZON.NavigateHomeIntent':
+      return reply(alexaSay((intent === 'AMAZON.FallbackIntent' ? 'Sorry, I didn’t get that. ' : '') + 'You can say: play today’s song, play the song from last Friday, play songs by an artist, shuffle, what’s this song, or tell me about this song. What would you like?', false,
+        { reprompt: { outputSpeech: { type: 'PlainText', text: 'Say play today’s song, or shuffle.' } } }));
+  }
+  return reply(alexaSay('Sorry, I can’t do that yet.', true));
 }
 
 function londonDay(d) {
