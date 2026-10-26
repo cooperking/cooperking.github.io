@@ -382,13 +382,15 @@
   // its picture, as the share sheet offers: the song's card (album cover), John's own (his picture's card, where he has
   // one), a picture of his own from here, or none; and what the link opens with, the song or the video
   function songPics(x) {
-    var out = [{ k: 'card', t: 'Song card', img: 'https://cooperking.github.io/songs/' + slug(x.d) + '/card.jpg', icon: x.img || '' }];
+    var out = [{ k: 'card', t: 'Album cover', img: 'https://cooperking.github.io/songs/' + slug(x.d) + '/card.jpg', icon: x.img || '' }];
     var list = (COVERS[x.id] && COVERS[x.id].list) || [], own = list.filter(function (c) { return c.who === 'all'; })[0] || list[0];
     if (own) {
       var path = x.id + (own.id === '0' ? '' : '/' + own.id);
       out.push({ k: 'john', t: 'John’s', img: own.share ? WORKER + '/s/' + path + '.jpg?v=' + encodeURIComponent(own.share.at || '') : WORKER + '/c/' + path + '?v=' + encodeURIComponent(own.at || ''), icon: WORKER + '/c/' + path + '?v=' + encodeURIComponent(own.at || '') });
     }
-    out.push({ k: 'mine', t: 'Your own…' }); out.push({ k: 'none', t: 'None', icon: x.img || '' });
+    // a photo of John's, made into the album cover on the song's card (as his own sharing pictures are), or sent as it is
+    out.push({ k: 'photo', t: 'Your photo as the cover…', img: x.made || '', icon: x.img || '' });
+    out.push({ k: 'mine', t: 'Just your photo…' }); out.push({ k: 'none', t: 'None', icon: x.img || '' });
     return out;
   }
   function songPicDraw() {
@@ -402,14 +404,28 @@
     });
     var o = songPics(x).filter(function (o) { return o.k === x.pic; })[0] || {};
     var card = $('nsongcard');
-    $('npicbox').hidden = x.pic !== 'mine';
-    $('nsongfig').hidden = x.pic === 'mine' || x.pic === 'none';
-    if (o.img) { card.onerror = function () { card.onerror = null; card.src = x.img || ''; x.broken = x.pic; }; x.broken = ''; card.src = o.img; }
+    $('npicbox').hidden = x.pic !== 'mine' && x.pic !== 'photo';
+    $('nsongfig').hidden = x.pic === 'mine' || x.pic === 'none' || (x.pic === 'photo' && !x.made);
+    if (x.pic === 'photo') { $('npicfig').hidden = true; if (NPIC && !x.made) songCard(); }   // (the card, not the photo, is what's previewed)
+    else if (x.pic === 'mine') $('npicfig').hidden = !NPIC;
+    if (x.pic === 'photo' && x.made) { card.onerror = null; card.src = x.made; }
+    else if (o.img) { card.onerror = function () { card.onerror = null; card.src = x.img || ''; x.broken = x.pic; }; x.broken = ''; card.src = o.img; }
     [].forEach.call($('nsongmode').querySelectorAll('button'), function (b) { var on = b.dataset.mode === x.mode; b.classList.toggle('primary', on); b.setAttribute('aria-pressed', String(on)); });
   }
   [].forEach.call($('nsongmode').querySelectorAll('button'), function (b) { b.addEventListener('click', function () { if (NSONG) { NSONG.mode = b.dataset.mode; songPicDraw(); } }); });
+  // the photo as the album cover, on the song's card: drawn here as the Songs tab draws John's own sharing pictures
+  function songCard() {
+    var x = NSONG; if (!x || !NPIC) return;
+    var when = new Date(x.d + 'T12:00:00Z');
+    Promise.all([loadImg(NPIC), C.fontsReady()]).then(function (r) {
+      if (NSONG !== x) return;
+      var cover = C.albumCover(r[0], { big: x.title, italic: x.artist, left: x.n ? 'No. ' + x.n : 'Song of the Day', right: when.getUTCDate() + ' ' + when.toLocaleDateString('en-GB', { month: 'short', timeZone: 'UTC' }) + ' ' + when.getUTCFullYear() });
+      x.made = C.drawCard({ title: x.title, line: x.artist, when: when, cover: cover });
+      songPicDraw();
+    }).catch(function () { toast('That photo couldn’t be made into a cover'); });
+  }
   function songChoose(x) {
-    NSONG = x; x.pic = 'card'; x.mode = (CAT[x.id] || {}).a ? 'preview' : 'video';
+    NSONG = x; x.pic = 'card'; x.made = ''; x.mode = (CAT[x.id] || {}).a ? 'preview' : 'video';
     $('nsongres').innerHTML = ''; $('nsong').value = ''; $('nsong').hidden = true;
     $('nsongnow').hidden = false; songPicDraw();
     $('ntitle').value = x.title;
@@ -436,6 +452,7 @@
       c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
       c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(u);
       NPIC = c.toDataURL('image/jpeg', 0.85); $('npicimg').src = NPIC; picShow(true);
+      if (NSONG) { NSONG.made = ''; if (NSONG.pic === 'photo') songCard(); else songPicDraw(); }
     };
     img.onerror = function () { URL.revokeObjectURL(u); toast('That picture couldn’t be opened'); };
     img.src = u;
@@ -457,7 +474,9 @@
       var b = $('nsend'); b.disabled = true;
       var pics = {};
       if (NSONG) { var po = songPics(NSONG).filter(function (o) { return o.k === NSONG.pic; })[0] || {}; pics = { image: po.img && NSONG.broken !== NSONG.pic ? po.img : '', icon: po.icon || NSONG.img || '' }; }
-      var up = (!NSONG || NSONG.pic === 'mine') && NPIC ? api('/members/admin', { op: 'pushpic', pic: NPIC }).then(function (j) { if (!j.url) throw new Error(j.error || 'The picture didn’t go up'); pics.image = j.url; }) : Promise.resolve();
+      if (NSONG && NSONG.pic === 'photo' && !NSONG.made) { b.disabled = false; toast('Choose the photo for the cover first'); return; }
+      var upPic = NSONG && NSONG.pic === 'photo' ? NSONG.made : NPIC;
+      var up = (!NSONG || NSONG.pic === 'mine' || NSONG.pic === 'photo') && upPic ? api('/members/admin', { op: 'pushpic', pic: upPic }).then(function (j) { if (!j.url) throw new Error(j.error || 'The picture didn’t go up'); pics.image = j.url; }) : Promise.resolve();
       up.then(function () { return api('/members/admin', Object.assign({ op: 'push', title: title, text: text, url: url, to: to }, pics)); }).then(function (j) {
         b.disabled = false;
         if (j.status !== 200) { toast(j.error || 'Couldn’t send it'); return; }
@@ -471,7 +490,7 @@
   });
 
   fetch(WORKER + '/songs.json').then(function (r) { return r.json(); }).then(function (j) {
-    SONGS = withDays((j.songs || []).map(function (x) { return { id: x.id, title: x.title, artist: x.artist, img: x.img, a: x.a }; }));
+    SONGS = withDays((j.songs || []).map(function (x) { return { id: x.id, n: x.n, title: x.title, artist: x.artist, img: x.img, a: x.a }; }));
   }).catch(function () {});
   refresh();
 })();
