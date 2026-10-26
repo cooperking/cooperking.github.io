@@ -77,6 +77,15 @@ export default {
       if (e instanceof HttpError) return errorPage(e);
       return page('Something went wrong', '<p>The playlist could not be made. Please try again later.</p><p class="small">' + esc(e.message || String(e)) + '</p>', 500);
     }
+  },
+  // every 10 minutes (the Worker's cron, set by worker_deploy.py): a new song on the playlist today goes out as a
+  // notification to the members who've turned them on (see the notifications section)
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil((async () => {
+      const res = await songsJson(new Request(LIVE_ORIGIN + '/songs.json'), env, ctx);
+      const j = await res.json();
+      await pushDaily(env, (j.songs || []).map(x => ({ id: x.id, a: x.a, title: x.title, artist: x.artist, img: x.img })));
+    })().catch(e => console.log('scheduled: ' + (e && e.message))));
   }
 };
 
@@ -297,6 +306,7 @@ async function songsJson(request, env, ctx) {
     tags[it.id] && (tags[it.id].m || (tags[it.id].g || []).length) ? { tag: { m: tags[it.id].m, d: tags[it.id].d, g: tags[it.id].g } } : {}));
   if (items.some(it => !(it.id in pv))) ctx.waitUntil(fillPreviews(env, items, 6).catch(() => {}));
   ctx.waitUntil(afterLook(env, items).catch(e => console.log('afterLook: ' + (e && e.message))));
+  ctx.waitUntil(pushDaily(env, items).catch(e => console.log('pushDaily: ' + (e && e.message))));   // (the cron does this too)
   const res = new Response(JSON.stringify({ at: new Date().toISOString(), songs }), { headers: {
     'Content-Type': 'application/json; charset=utf-8', 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'public, max-age=600'
   } });
@@ -448,6 +458,7 @@ async function members(request, url, env) {
   if (route === 'me') return memberMe(request, env, answer);
   if (route === 'playlists') return memberPlaylists(request, env, answer);
   if (route === 'tvcode') return memberTvCode(request, env, answer);
+  if (route === 'push') return memberPush(request, env, answer);
   if (!['admin', 'upload', 'cover'].includes(route)) return answer(404, { error: 'Not here.' });
   if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
   const no = await adminOk(request, env, answer);
@@ -498,8 +509,19 @@ async function members(request, url, env) {
       if (!all[body.id]) return answer(404, { error: 'No such member.' });
       delete all[body.id]; await save();
       await env.SOTD.delete('mpl:' + body.id);   // their saved playlists go too
+      await pushForget(env, body.id);   // and their notifications
       if (owner === body.id) await env.SOTD.delete('owner');
       return answer(200, { ok: true, members: listing(owner === body.id ? null : owner) });
+    }
+    case 'pushcount': return answer(200, await pushCount(env));
+    case 'push': {   // John's own notification, to everyone who has them on
+      const title = String(body.title || '').replace(/\s+/g, ' ').trim().slice(0, 80);
+      const text = String(body.text || '').replace(/[ \t]+/g, ' ').trim().slice(0, 300);
+      const link = String(body.url || '').trim();
+      if (!title) return answer(400, { error: 'Give it a title.' });
+      if (link && !/^https:\/\/cooperking\.github\.io\//.test(link)) return answer(400, { error: 'The link has to be a page on the site (https://cooperking.github.io/…).' });
+      const r = await pushAll(env, { title, body: text, url: link || SITE_SONGS, tag: 'sotd-note-' + Date.now() });
+      return answer(200, r);
     }
     case 'invitecard': {   // the invitation's link-preview page and picture (drawn on the members page)
       const m = all[body.id];
@@ -1038,6 +1060,134 @@ async function mediaFile(request, url, env) {
 // After each look at the playlist: start the GitHub job if the playlist has changed since the job last started;
 // once a day, clean up old visitor playlists and tag songs the published tags don't have yet.
 let jobDay = '';   // the London day this copy of the Worker saw a run include that day's song: nothing more to do
+
+// ---------- notifications (Web Push) ----------
+// Members turn them on in their Profile: the phone asks permission, then hands the calendar a subscription (an address
+// at Apple's, Google's or Mozilla's push service, and two keys), which the calendar sends here (/members/push) with the
+// member's sign-in. Kept in KV under pushSubs, one per device, with the member it belongs to; one the push service says
+// is gone (404/410) is dropped. Each message is encrypted for that device (RFC 8291, aes128gcm) and signed with this
+// Worker's own VAPID key (RFC 8292), made the first time it's needed and kept in KV (vapid); the calendar fetches the
+// public half. A new key would end every subscription, so it's never replaced.
+// The day's song goes out once, when a new song appears at the end of the playlist on its own day (UK time): the
+// cron looks every 10 minutes, and so does every fresh look at the playlist for songs.json. Its first look only notes
+// the song. John's own messages come from the members page (op 'push').
+const LIVE_ORIGIN = 'https://sotd-playlists.cooperking.workers.dev';
+const SITE_SONGS = 'https://cooperking.github.io/songs/';
+const PUSH_MAX = 300, PUSH_TTL = 20 * 3600;
+const u8 = s => new TextEncoder().encode(s);
+function cat(...parts) { const n = parts.reduce((a, p) => a + p.length, 0), out = new Uint8Array(n); let i = 0; for (const p of parts) { out.set(p, i); i += p.length; } return out; }
+function unb64url(s) { const b = atob(String(s).replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((String(s).length + 3) % 4)); return Uint8Array.from(b, c => c.charCodeAt(0)); }
+async function vapidKeys(env) {
+  let k = await env.SOTD.get('vapid', 'json');
+  if (k && k.jwk && k.pub) return k;
+  const kp = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify']);
+  k = { jwk: await crypto.subtle.exportKey('jwk', kp.privateKey), pub: b64url(await crypto.subtle.exportKey('raw', kp.publicKey)), at: Date.now() };
+  await env.SOTD.put('vapid', JSON.stringify(k));
+  return k;
+}
+async function vapidAuth(k, endpoint) {   // the Authorization header for one push service
+  const head = b64url(u8(JSON.stringify({ typ: 'JWT', alg: 'ES256' })));
+  const claims = b64url(u8(JSON.stringify({ aud: new URL(endpoint).origin, exp: Math.floor(Date.now() / 1000) + 12 * 3600, sub: SITE_SONGS })));
+  const key = await crypto.subtle.importKey('jwk', k.jwk, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign']);
+  const sig = await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, key, u8(head + '.' + claims));
+  return 'vapid t=' + head + '.' + claims + '.' + b64url(sig) + ', k=' + k.pub;
+}
+async function hkdf(salt, ikm, info, bytes) {
+  const k = await crypto.subtle.importKey('raw', ikm, 'HKDF', false, ['deriveBits']);
+  return new Uint8Array(await crypto.subtle.deriveBits({ name: 'HKDF', hash: 'SHA-256', salt, info }, k, bytes * 8));
+}
+async function pushEncrypt(keys, plain) {   // RFC 8291: one aes128gcm record
+  const uaPub = unb64url(keys.p256dh), auth = unb64url(keys.auth);
+  const mine = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveBits']);
+  const asPub = new Uint8Array(await crypto.subtle.exportKey('raw', mine.publicKey));
+  const theirs = await crypto.subtle.importKey('raw', uaPub, { name: 'ECDH', namedCurve: 'P-256' }, false, []);
+  const shared = new Uint8Array(await crypto.subtle.deriveBits({ name: 'ECDH', public: theirs }, mine.privateKey, 256));
+  const ikm = await hkdf(auth, shared, cat(u8('WebPush: info\0'), uaPub, asPub), 32);
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const cek = await hkdf(salt, ikm, u8('Content-Encoding: aes128gcm\0'), 16);
+  const nonce = await hkdf(salt, ikm, u8('Content-Encoding: nonce\0'), 12);
+  const key = await crypto.subtle.importKey('raw', cek, 'AES-GCM', false, ['encrypt']);
+  const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv: nonce }, key, cat(plain, new Uint8Array([2]))));
+  const rs = new Uint8Array(4); new DataView(rs.buffer).setUint32(0, 4096);
+  return cat(salt, rs, new Uint8Array([asPub.length]), asPub, ct);
+}
+async function pushOne(k, sub, msg) {   // the push service's answer: 201 sent, 404/410 gone
+  const r = await fetch(sub.endpoint, { method: 'POST', body: await pushEncrypt(sub.keys, u8(JSON.stringify(msg))), headers: {
+    Authorization: await vapidAuth(k, sub.endpoint), 'Content-Encoding': 'aes128gcm', 'Content-Type': 'application/octet-stream',
+    TTL: String(PUSH_TTL), Urgency: 'normal' } });
+  return r.status;
+}
+async function pushAll(env, msg) {
+  const subs = (await env.SOTD.get('pushSubs', 'json')) || {}, k = await vapidKeys(env);
+  let sent = 0, failed = 0; const gone = [];
+  const ids = Object.keys(subs);
+  for (let i = 0; i < ids.length; i += 20) {   // twenty at a time
+    await Promise.all(ids.slice(i, i + 20).map(async id => {
+      try {
+        const st = await pushOne(k, subs[id].sub, msg);
+        if (st >= 200 && st < 300) sent++; else if (st === 404 || st === 410) gone.push(id); else { failed++; console.log('push ' + st + ' ' + new URL(subs[id].sub.endpoint).host); }
+      } catch (e) { failed++; console.log('push: ' + (e && e.message)); }
+    }));
+  }
+  if (gone.length) {   // read again just before writing: a device may have turned them on meanwhile
+    const now = (await env.SOTD.get('pushSubs', 'json')) || {};
+    gone.forEach(id => delete now[id]);
+    await kvSoft(env, 'pushSubs', JSON.stringify(now));
+  }
+  return { sent, gone: gone.length, failed, devices: ids.length - gone.length };
+}
+async function pushCount(env) {
+  const subs = (await env.SOTD.get('pushSubs', 'json')) || {}, all = (await env.SOTD.get('members', 'json')) || {};
+  const by = {};
+  Object.values(subs).forEach(x => { const n = (all[x.m] && all[x.m].name) || '?'; by[n] = (by[n] || 0) + 1; });
+  return { devices: Object.keys(subs).length, members: by };
+}
+async function pushForget(env, member) {
+  const subs = (await env.SOTD.get('pushSubs', 'json')) || {};
+  const ids = Object.keys(subs).filter(id => subs[id].m === member);
+  if (!ids.length) return;
+  ids.forEach(id => delete subs[id]);
+  await kvSoft(env, 'pushSubs', JSON.stringify(subs));
+}
+// /members/push: GET the public key; POST { sub } to turn them on for this device, { sub, off: true } to turn them off
+async function memberPush(request, env, answer) {
+  if (request.method === 'GET') return answer(200, { key: (await vapidKeys(env)).pub });
+  if (request.method !== 'POST') return answer(405, { error: 'Use GET or POST.' });
+  const member = await memberFromToken(request, env);
+  if (!member) return answer(401, { error: 'Not a member (any more).' });
+  const body = await request.json().catch(() => ({}));
+  const sub = body.sub || {}, endpoint = String(sub.endpoint || ''), keys = sub.keys || {};
+  if (!/^https:\/\//.test(endpoint) || endpoint.length > 1000) return answer(400, { error: 'That isn’t a push subscription.' });
+  const id = (await sha256hex(endpoint)).slice(0, 24);
+  const subs = (await env.SOTD.get('pushSubs', 'json')) || {};
+  if (body.off) { if (subs[id]) { delete subs[id]; await env.SOTD.put('pushSubs', JSON.stringify(subs)); } return answer(200, { on: false }); }
+  if (!keys.p256dh || !keys.auth || String(keys.p256dh).length > 200 || String(keys.auth).length > 100) return answer(400, { error: 'That subscription has no keys.' });
+  if (!subs[id] && Object.keys(subs).length >= PUSH_MAX) return answer(400, { error: 'Too many devices have notifications on.' });
+  subs[id] = { m: member, sub: { endpoint, keys: { p256dh: String(keys.p256dh), auth: String(keys.auth) } }, at: Date.now() };
+  await env.SOTD.put('pushSubs', JSON.stringify(subs));
+  if (body.test) {   // the first one, so they know it works
+    try { await pushOne(await vapidKeys(env), subs[id].sub, { title: 'Notifications are on', body: 'You’ll hear about each new Song of the Day as it goes up.', url: SITE_SONGS, tag: 'sotd-on' }); } catch (e) {}
+  }
+  return answer(200, { on: true });
+}
+let pushSeen = '';   // this Worker's own note of the last song looked at (so most looks don't read KV)
+async function pushDaily(env, items) {
+  const last = items[items.length - 1];
+  if (!last || !last.id || pushSeen === last.id) return;
+  const seen = await env.SOTD.get('pushLast');
+  pushSeen = last.id;
+  if (seen === last.id) return;
+  if (!await kvSoft(env, 'pushLast', last.id)) return;   // can't note it: don't send (it could go twice)
+  if (!seen) return;   // the first look: noted
+  if (londonDay(last.a) !== londonDay()) return;   // not today's (a song taken off the end, or the order changed)
+  const sentIds = (await env.SOTD.get('pushSent', 'json')) || [];
+  if (sentIds.includes(last.id)) return;
+  await kvSoft(env, 'pushSent', JSON.stringify(sentIds.concat(last.id).slice(-60)));
+  const day = londonDay(last.a);
+  const r = await pushAll(env, { title: last.title, body: last.artist + ' \u00b7 today\u2019s Song of the Day', icon: last.img || '',
+    url: SITE_SONGS + '#' + day.slice(8, 10) + '-' + day.slice(5, 7) + '-' + day.slice(0, 4), tag: 'sotd-day' });
+  console.log('pushDaily ' + last.id + ': ' + JSON.stringify(r));
+}
 
 function londonDay(d) {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(d ? new Date(d) : new Date());   // 2026-10-22

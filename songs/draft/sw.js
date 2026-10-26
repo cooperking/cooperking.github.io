@@ -74,3 +74,31 @@ async function song(req, url) {
   return new Response(blob.slice(start, end + 1, type), { status: 206,
     headers: Object.assign({ 'Content-Length': String(end - start + 1), 'Content-Range': 'bytes ' + start + '-' + end + '/' + size }, h) });
 }
+
+// ---- notifications (members who've turned them on): each new Song of the Day, and John's own messages. The Worker
+// sends { title, body, icon, url, tag }; a tap opens the calendar at that day (or the page given), in the window
+// already open if there is one ----
+self.addEventListener('push', e => {
+  let m = {};
+  try { m = e.data ? e.data.json() : {}; } catch (err) { m = { title: 'Song of the Day', body: e.data ? e.data.text() : '' }; }
+  const scope = self.registration.scope;
+  e.waitUntil(self.registration.showNotification(m.title || 'Song of the Day', {
+    body: m.body || '', icon: m.icon || scope + 'icon-192.png',
+    tag: m.tag || 'sotd', data: { url: m.url || scope }
+  }));
+});
+
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const url = (e.notification.data && e.notification.data.url) || self.registration.scope;
+  e.waitUntil((async () => {
+    const wins = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    const here = wins.find(w => w.url.split('#')[0] === url.split('#')[0]) || wins.find(w => w.url.startsWith(self.registration.scope));
+    if (here) {
+      await here.focus().catch(() => {});
+      if (here.url !== url) { try { await here.navigate(url); } catch (err) { here.postMessage({ sotdOpen: url }); } }
+      return;
+    }
+    await self.clients.openWindow(url);
+  })());
+});

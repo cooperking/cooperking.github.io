@@ -40,6 +40,9 @@
 .invcard img:not([src]) { visibility: hidden; }
 .invwait { position: absolute; inset: 0; display: grid; place-items: center; font-size: 13px; color: var(--muted); }
 .invpic, .invacts { display: flex; flex-wrap: wrap; gap: 8px; }
+.notify { padding: 16px; display: grid; gap: 10px; }
+.notify textarea { min-height: 70px; }
+.notify .row select { flex: 1 1 180px; min-width: 0; border: 1px solid var(--line); background: var(--field); color: var(--fg); border-radius: 12px; padding: 10px 12px; font: 16px var(--sans); }
 </style>
 </head>
 <body>
@@ -58,6 +61,21 @@
     </div>
     <div class="link" id="newlink" hidden><code id="linktext"></code><div class="row"><button class="btn small" id="copy" type="button">Copy the link</button><button class="btn small primary" id="share" type="button">Send the invitation…</button></div></div>
     <div class="link" id="tvbox" hidden><span class="stat">For <b id="tvfor"></b>, once, within <span id="tvmins"></span> minutes:</span><span class="tvcode" id="tvcode"></span></div>
+  </div>
+  <div class="card notify">
+    <div class="kicker">Send a notification</div>
+    <p class="stat" id="pushstat">Members turn notifications on in their Profile on the calendar. Each new song goes out by itself, once, when it’s added to the playlist.</p>
+    <input class="name" id="ntitle" placeholder="Title (e.g. A new playlist)" maxlength="80" autocomplete="off" aria-label="Title">
+    <textarea id="ntext" placeholder="Message (optional)" maxlength="300" aria-label="Message"></textarea>
+    <div class="row">
+      <select id="nlink" aria-label="Opens">
+        <option value="https://cooperking.github.io/songs/">Opens the calendar</option>
+        <option value="today">Opens today’s song</option>
+        <option value="other">Opens another page on the site…</option>
+      </select>
+      <button class="btn primary" id="nsend" type="button">Send</button>
+    </div>
+    <input type="url" id="nurl" placeholder="https://cooperking.github.io/songs/…" hidden aria-label="Link">
   </div>
   <div class="top" style="padding-bottom:4px"><div class="kicker" style="color:var(--ink-2)">People</div></div>
   <ul class="people" id="people"></ul>
@@ -132,7 +150,7 @@
     return api('/members/admin', { op: 'list' }).then(function (j) {
       if (j.status !== 200) { $('stat').textContent = j.error || 'Couldn’t reach the Worker'; return false; }
       MEMBERS = j.members || [];
-      people(); return true;
+      people(); pushStat(); return true;
     }).catch(function () { $('stat').textContent = 'Couldn’t reach the Worker'; return false; });
   }
 
@@ -257,6 +275,34 @@
   });
   $('copy').addEventListener('click', function () { navigator.clipboard.writeText($('linktext').textContent).then(function () { toast('Link copied'); }); });
   $('share').addEventListener('click', invOpen);
+
+  // ---- notifications: who has them on, and John's own message to all of them ----
+  function pushStat() {
+    api('/members/admin', { op: 'pushcount' }).then(function (j) {
+      if (j.status !== 200) return;
+      var by = Object.keys(j.members || {}).map(function (n) { return n + (j.members[n] > 1 ? ' (' + j.members[n] + ')' : ''); });
+      $('pushstat').textContent = j.devices ? 'On for ' + j.devices + (j.devices === 1 ? ' device: ' : ' devices: ') + by.join(', ') + '. Each new song goes out by itself, once, when it’s added to the playlist.'
+        : 'Nobody has turned them on yet: members do that in their Profile on the calendar. Each new song goes out by itself, once, when it’s added.';
+    });
+  }
+  $('nlink').addEventListener('change', function () { $('nurl').hidden = this.value !== 'other'; if (!$('nurl').hidden) $('nurl').focus(); });
+  $('nsend').addEventListener('click', function () {
+    var title = $('ntitle').value.trim(), text = $('ntext').value.trim(), l = $('nlink').value, url = l;
+    if (!title) { $('ntitle').focus(); return; }
+    if (l === 'today') url = 'https://cooperking.github.io/songs/#today';
+    if (l === 'other') { url = $('nurl').value.trim(); if (!/^https:\/\/cooperking\.github\.io\//.test(url)) { toast('The link has to be a page on the site'); $('nurl').focus(); return; } }
+    ask('Notification', 'Send “' + title + '”?', 'It goes to every device with notifications on, straight away.', 'Send').then(function (yes) {
+      if (!yes) return;
+      var b = $('nsend'); b.disabled = true;
+      api('/members/admin', { op: 'push', title: title, text: text, url: url }).then(function (j) {
+        b.disabled = false;
+        if (j.status !== 200) { toast(j.error || 'Couldn’t send it'); return; }
+        toast(j.sent ? 'Sent to ' + j.sent + (j.sent === 1 ? ' device' : ' devices') + (j.failed ? ' (' + j.failed + ' didn’t take it)' : '') : 'Nobody has notifications on yet');
+        if (j.sent) { $('ntitle').value = ''; $('ntext').value = ''; }
+        pushStat();
+      }).catch(function () { b.disabled = false; toast('Couldn’t reach the Worker'); });
+    });
+  });
 
   fetch(WORKER + '/songs.json').then(function (r) { return r.json(); }).then(function (j) {
     SONGS = withDays((j.songs || []).map(function (x) { return { id: x.id, title: x.title, artist: x.artist, img: x.img, a: x.a }; }));

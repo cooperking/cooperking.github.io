@@ -9,6 +9,7 @@ CLOUDFLARE_ACCOUNT_ID. Without the token it does nothing.
 3. Uploads the code.
 4. Checks the Worker: /status still answers (the old part), /covers.json answers JSON (the members part).
    If /status fails, the version from step 2 is put back and the job fails.
+5. Sets the Worker's timer (every 10 minutes, for the day's song notification) if it isn't already.
 """
 import re, json, os, shutil, subprocess, sys, tempfile, time, urllib.error, urllib.request, uuid
 
@@ -17,6 +18,7 @@ NAME = 'sotd-playlists'
 LIVE = os.environ.get('CF_LIVE', 'https://sotd-playlists.cooperking.workers.dev')
 SRC = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'worker', 'worker.js')
 TOKEN = os.environ.get('CF_TOKEN', '').strip()
+CRON = '*/10 * * * *'   # the Worker's timer (notifications)
 ACCOUNT = os.environ.get('CF_ACCOUNT', '').strip()
 
 
@@ -132,6 +134,18 @@ def main():
     if not ok_new:
         raise SystemExit('Uploaded, but the new code isn\'t answering yet (/covers.json).')
     note('Done: the Worker is running this code.')
+    # 5. its timer: every 10 minutes, for the day's song notification (the Worker's scheduled())
+    try:
+        want = [{'cron': CRON}]
+        have = [{'cron': x.get('cron')} for x in (cf('GET', base + '/schedules') or {}).get('schedules') or []]
+        if have != want:
+            cf('PUT', base + '/schedules', want)
+            note('Timer set: %s (was %s).' % (CRON, ', '.join(x['cron'] for x in have) or 'none'))
+        else:
+            note('Timer: %s.' % CRON)
+    except Refused as e:
+        note('Couldn\'t set the Worker\'s timer (%s): the day\'s notification then goes out when someone next opens the '
+             'calendar. Cloudflare: Workers & Pages > sotd-playlists > Settings > Trigger events > Add > Cron, */10 * * * *.' % e, 'warning')
     # the calendar's song list, from Spotify: said here, with the Worker's own words if it fails (not a reason to undo)
     s, t, b = get(LIVE + '/songs.json?check=' + str(int(time.time())))
     if s == 200 and 'json' in t:
