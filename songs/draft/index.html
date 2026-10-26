@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="4475cbe90fd8">
+<meta name="sotd-build" content="0743f126c1f4">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -229,13 +229,14 @@ html.theatre #sheet .thbtn { display: inline-flex; align-items: center; justify-
   max-width: 1000px; margin: 0 auto;
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
-  padding-block: 14px 56px;
+  padding-block: calc(14px + env(safe-area-inset-top, 0px)) 56px;   /* (under a status bar the page is drawn beneath, as in the
+     iPhone app and the Home Screen icon, everything starts below it, so the bar's place in the page is where it's shown) */
   display: grid; grid-template-columns: minmax(0, 1fr); gap: 34px;
 }
 
 /* glass bar */
 .bar-top {
-  position: sticky; top: max(12px, env(safe-area-inset-top, 0px)); z-index: 5;
+  position: sticky; top: calc(12px + env(safe-area-inset-top, 0px)); z-index: 5;
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
   padding: 10px 10px 10px 20px; border-radius: 999px;
   background: var(--glass); border: 1px solid var(--line);
