@@ -4,6 +4,10 @@ name: iPhone app
 # every second month, so the testers always have a build well inside TestFlight's 90 days.
 on:
   workflow_dispatch:
+    inputs:
+      testflight_only:
+        description: "A build number already uploaded: only hand that one to the testers (no new build)"
+        default: ""
   push:
     branches: [main]
     paths: ['_sotd/ios-app/**', '.github/workflows/ios.yml']
@@ -19,6 +23,7 @@ permissions:
 
 jobs:
   build:
+    if: ${{ !inputs.testflight_only }}
     runs-on: macos-15
     timeout-minutes: 60
     steps:
@@ -63,3 +68,22 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           BUILD_NUMBER: ${{ github.run_number }}
         run: bash _sotd/ios-app/build.sh
+
+  # the build handed to the testers once Apple has processed it: What to Test, the external group (the family's), and
+  # Beta App Review for them (_sotd/ios-app/testflight.py); on Linux, as it's mostly waiting
+  testflight:
+    needs: build
+    if: ${{ always() && (needs.build.result == 'success' || (needs.build.result == 'skipped' && inputs.testflight_only != '')) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Hand the build to the testers
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          BUILD: ${{ inputs.testflight_only || github.run_number }}
+        run: |
+          pip install --quiet pyjwt cryptography
+          python _sotd/ios-app/testflight.py "$BUILD"

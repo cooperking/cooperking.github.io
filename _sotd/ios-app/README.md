@@ -30,6 +30,13 @@ Notifications in the app are Apple's own (APNs), sent by the Worker with John's 
 7. Run Actions → **Worker** (puts the APNs key on the Worker) and Actions → **iPhone app** (the build). About 15 minutes
    after it finishes, the build is in App Store Connect → TestFlight.
 
+## Each new build to the testers by itself
+
+After each upload the workflow's second job (`testflight.py`, on Linux) waits until Apple has processed the build, gives
+it the What to Test notes, adds it to the external group (the family's, SOTD) and submits it for Beta App Review; the
+internal group gets it straight away. To do that for a build already uploaded: Actions > iPhone app > Run workflow,
+with its number in "testflight_only" (no new build is made).
+
 ## Testers
 
 - John: TestFlight → **Internal Testing** → add himself → the TestFlight app on the iPhone → Install.
