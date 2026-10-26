@@ -332,13 +332,18 @@
     var box = document.querySelector('.notify'); box.scrollIntoView({ behavior: 'smooth', block: 'start' });
     setTimeout(function () { $('ntitle').focus({ preventScroll: true }); }, 400);
   }
+  function whyText(errs) {   // what the push service said, as plainly as it allows
+    return (errs || []).map(function (e) { return e.to + ' said ' + (e.status || 'nothing') + (e.why ? ' (' + e.why + ')' : ''); }).join('; ');
+  }
   function pushStat() {
     api('/members/admin', { op: 'pushcount' }).then(function (j) {
       if (j.status !== 200) return;
       PUSHON = j.ids || {}; toDraw(); people();
       var by = Object.keys(j.members || {}).map(function (n) { return n + (j.members[n] > 1 ? ' (' + j.members[n] + ')' : ''); });
-      $('pushstat').textContent = j.devices ? 'On for ' + j.devices + (j.devices === 1 ? ' device: ' : ' devices: ') + by.join(', ') + '. Each new song goes out by itself, once, when its MP3 and video are both up.'
-        : 'Nobody has turned them on yet: members do that in their Profile on the calendar. Each new song goes out by itself, once, when its MP3 and video are both up.';
+      var kinds = Object.keys(j.kinds || {}).map(function (k) { return k + ' ' + j.kinds[k]; }).join(', ');
+      $('pushstat').textContent = (j.devices ? 'On for ' + j.devices + (j.devices === 1 ? ' device: ' : ' devices: ') + by.join(', ') + (kinds ? ' (' + kinds + ')' : '') + '. Each new song goes out by itself, once, when its MP3 and video are both up.'
+        : 'Nobody has turned them on yet: members do that in their Profile on the calendar. Each new song goes out by itself, once, when its MP3 and video are both up.')
+        + (j.last ? ' Last sent ' + new Date(j.last.at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) + ' (“' + j.last.title + '”): ' + j.last.sent + ' delivered' + (j.last.failed ? ', ' + j.last.failed + ' refused: ' + whyText(j.last.errors) : '') + '.' : '');
     });
   }
   // ---- a song, sent the way it's shared: "John's Song of the Day", its date, its title and artist; its share card ----
@@ -399,7 +404,8 @@
       api('/members/admin', Object.assign({ op: 'push', title: title, text: text, url: url, to: to }, pics)).then(function (j) {
         b.disabled = false;
         if (j.status !== 200) { toast(j.error || 'Couldn’t send it'); return; }
-        toast(j.sent ? 'Sent to ' + j.sent + (j.sent === 1 ? ' device' : ' devices') + (j.failed ? ' (' + j.failed + ' didn’t take it)' : '') : to ? 'They don’t have notifications on' : 'Nobody has notifications on yet');
+        if (j.failed && !j.sent) { ask('Notification', 'It didn’t go', whyText(j.errors) || 'The push service said no.', 'OK'); pushStat(); return; }
+        toast(j.sent ? 'Delivered to ' + j.sent + (j.sent === 1 ? ' device' : ' devices') + (j.failed ? ' (' + j.failed + ' refused it)' : '') : to ? 'They don’t have notifications on' : 'Nobody has notifications on yet');
         if (j.sent) { $('ntitle').value = ''; $('ntext').value = ''; if (NSONG) songClear(); }
         pushStat();
       }).catch(function () { b.disabled = false; toast('Couldn’t reach the Worker'); });

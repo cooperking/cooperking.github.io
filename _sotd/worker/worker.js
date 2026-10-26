@@ -1095,7 +1095,7 @@ async function vapidKeys(env) {
 }
 async function vapidAuth(k, endpoint) {   // the Authorization header for one push service
   const head = b64url(u8(JSON.stringify({ typ: 'JWT', alg: 'ES256' })));
-  const claims = b64url(u8(JSON.stringify({ aud: new URL(endpoint).origin, exp: Math.floor(Date.now() / 1000) + 12 * 3600, sub: SITE_SONGS })));
+  const claims = b64url(u8(JSON.stringify({ aud: new URL(endpoint).origin, exp: Math.floor(Date.now() / 1000) + 50 * 60, sub: SITE_SONGS })));
   const key = await crypto.subtle.importKey('jwk', k.jwk, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign']);
   const sig = await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, key, u8(head + '.' + claims));
   return 'vapid t=' + head + '.' + claims + '.' + b64url(sig) + ', k=' + k.pub;
@@ -1119,22 +1119,28 @@ async function pushEncrypt(keys, plain) {   // RFC 8291: one aes128gcm record
   const rs = new Uint8Array(4); new DataView(rs.buffer).setUint32(0, 4096);
   return cat(salt, rs, new Uint8Array([asPub.length]), asPub, ct);
 }
-async function pushOne(k, sub, msg) {   // the push service's answer: 201 sent, 404/410 gone
+async function pushOne(k, sub, msg) {   // the push service's answer: { st: 201 sent, 404/410 gone; why: its reason when it says no }
   const r = await fetch(sub.endpoint, { method: 'POST', body: await pushEncrypt(sub.keys, u8(JSON.stringify(msg))), headers: {
     Authorization: await vapidAuth(k, sub.endpoint), 'Content-Encoding': 'aes128gcm', 'Content-Type': 'application/octet-stream',
     TTL: String(PUSH_TTL), Urgency: 'normal' } });
-  return r.status;
+  return { st: r.status, why: r.ok ? '' : ((await r.text().catch(() => '')) || '').replace(/\s+/g, ' ').slice(0, 160) };
+}
+function pushHost(endpoint) {   // whose push service: for John, in plain words
+  const h = new URL(endpoint).host;
+  return /apple\.com$/.test(h) ? 'Apple' : /googleapis\.com$/.test(h) ? 'Google' : /mozilla|services\.mozilla\.com$/.test(h) ? 'Mozilla' : /windows|notify\.windows\.com$/.test(h) ? 'Microsoft' : h;
 }
 async function pushAll(env, msg, to) {   // to: only these members' devices (else everyone's)
   const subs = (await env.SOTD.get('pushSubs', 'json')) || {}, k = await vapidKeys(env);
-  let sent = 0, failed = 0; const gone = [];
+  let sent = 0, failed = 0; const gone = [], errors = [];
   const ids = Object.keys(subs).filter(id => !to || to.includes(subs[id].m));
   for (let i = 0; i < ids.length; i += 20) {   // twenty at a time
     await Promise.all(ids.slice(i, i + 20).map(async id => {
       try {
-        const st = await pushOne(k, subs[id].sub, msg);
-        if (st >= 200 && st < 300) sent++; else if (st === 404 || st === 410) gone.push(id); else { failed++; console.log('push ' + st + ' ' + new URL(subs[id].sub.endpoint).host); }
-      } catch (e) { failed++; console.log('push: ' + (e && e.message)); }
+        const { st, why } = await pushOne(k, subs[id].sub, msg);
+        if (st >= 200 && st < 300) sent++;
+        else if (st === 404 || st === 410) gone.push(id);
+        else { failed++; errors.push({ to: pushHost(subs[id].sub.endpoint), status: st, why }); console.log('push ' + st + ' ' + pushHost(subs[id].sub.endpoint) + ': ' + why); }
+      } catch (e) { failed++; errors.push({ to: pushHost(subs[id].sub.endpoint), status: 0, why: String(e && e.message || e).slice(0, 160) }); console.log('push: ' + (e && e.message)); }
     }));
   }
   if (gone.length) {   // read again just before writing: a device may have turned them on meanwhile
@@ -1142,13 +1148,17 @@ async function pushAll(env, msg, to) {   // to: only these members' devices (els
     gone.forEach(id => delete now[id]);
     await kvSoft(env, 'pushSubs', JSON.stringify(now));
   }
-  return { sent, gone: gone.length, failed, devices: ids.length - gone.length };
+  const res = { sent, gone: gone.length, failed, devices: ids.length - gone.length, errors: errors.slice(0, 5), at: Date.now(), title: msg.title };
+  await kvSoft(env, 'pushLastResult', JSON.stringify(res));   // the last send, for the members page
+  return res;
 }
 async function pushCount(env) {
   const subs = (await env.SOTD.get('pushSubs', 'json')) || {}, all = (await env.SOTD.get('members', 'json')) || {};
   const by = {}, ids = {};
   Object.values(subs).forEach(x => { const n = (all[x.m] && all[x.m].name) || '?'; by[n] = (by[n] || 0) + 1; ids[x.m] = (ids[x.m] || 0) + 1; });
-  return { devices: Object.keys(subs).length, members: by, ids };   // ids: devices with them on, by member id
+  const kinds = {};
+  Object.values(subs).forEach(x => { const k = pushHost(x.sub.endpoint); kinds[k] = (kinds[k] || 0) + 1; });
+  return { devices: Object.keys(subs).length, members: by, ids, kinds, last: await env.SOTD.get('pushLastResult', 'json') };   // ids: devices with them on, by member id
 }
 async function pushForget(env, member) {
   const subs = (await env.SOTD.get('pushSubs', 'json')) || {};
@@ -1173,8 +1183,13 @@ async function memberPush(request, env, answer) {
   if (!subs[id] && Object.keys(subs).length >= PUSH_MAX) return answer(400, { error: 'Too many devices have notifications on.' });
   subs[id] = { m: member, sub: { endpoint, keys: { p256dh: String(keys.p256dh), auth: String(keys.auth) } }, at: Date.now() };
   await env.SOTD.put('pushSubs', JSON.stringify(subs));
-  if (body.test) {   // the first one, so they know it works
-    try { await pushOne(await vapidKeys(env), subs[id].sub, { title: 'Notifications are on', body: 'You’ll hear about each new Song of the Day as it goes up.', url: SITE_SONGS, tag: 'sotd-on' }); } catch (e) {}
+  if (body.test) {   // the first one, so they know it works (and if the push service says no, the calendar says why)
+    let st = 0, why = '';
+    try { ({ st, why } = await pushOne(await vapidKeys(env), subs[id].sub, { title: 'Notifications are on', body: 'You’ll hear about each new Song of the Day as it goes up.', url: SITE_SONGS, tag: 'sotd-on' })); }
+    catch (e) { why = String(e && e.message || e).slice(0, 160); }
+    const res = { sent: st >= 200 && st < 300 ? 1 : 0, failed: st >= 200 && st < 300 ? 0 : 1, gone: 0, errors: st >= 200 && st < 300 ? [] : [{ to: pushHost(endpoint), status: st, why }], at: Date.now(), title: 'Notifications are on (test)' };
+    await kvSoft(env, 'pushLastResult', JSON.stringify(res));
+    return answer(200, { on: true, test: st, why });
   }
   return answer(200, { on: true });
 }
