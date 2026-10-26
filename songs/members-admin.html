@@ -284,15 +284,13 @@
   $('invfile').addEventListener('change', function () {
     var f = this.files && this.files[0]; this.value = '';
     if (!f) return;
-    var url = URL.createObjectURL(f);
-    loadImg(url).then(function (im) {   // a square from its middle, 640px: what the card needs, small enough to keep here
+    C.fileImage(f, function () { toast('Turning the HEIC photo into a JPEG…'); }).then(function (im) {   // a square from its middle, 640px: what the card needs, small enough to keep here
       var sd = Math.min(im.naturalWidth, im.naturalHeight), c = document.createElement('canvas'); c.width = c.height = 640;
       c.getContext('2d').drawImage(im, (im.naturalWidth - sd) / 2, (im.naturalHeight - sd) / 2, sd, sd, 0, 0, 640, 640);
-      URL.revokeObjectURL(url);
       INV.pic = c.toDataURL('image/jpeg', 0.88);
       try { localStorage.setItem(PIC_KEY, INV.pic); } catch (e) {}
       invMake();
-    }).catch(function () { URL.revokeObjectURL(url); toast('That file isn’t a picture this browser can read'); });
+    }).catch(function (e) { toast(picWhy(e, f)); });
   });
   $('invshare').addEventListener('click', function () {
     if (!INV.url) return;
@@ -451,20 +449,19 @@
   $('npicfile').addEventListener('change', function () {
     var f = this.files && this.files[0]; this.value = '';
     if (!f) return;
-    var img = new Image(), u = URL.createObjectURL(f);
-    img.onload = function () {
+    C.fileImage(f, function () { toast('Turning the HEIC photo into a JPEG…'); }).then(function (img) {
       var k = Math.min(1, 1200 / img.naturalWidth, 1200 / img.naturalHeight), c = document.createElement('canvas');
       c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
-      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(u);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
       NPIC = c.toDataURL('image/jpeg', 0.85); $('npicimg').src = NPIC; picShow(true);
       if (NSONG) { NSONG.made = ''; if (NSONG.pic === 'photo') songCard(); else songPicDraw(); }
-    };
-    img.onerror = function () {   // (Chrome can't open an iPhone's HEIC photos; Safari can)
-      URL.revokeObjectURL(u);
-      toast(/hei[cf]/i.test(f.type + ' ' + f.name) ? 'That’s an HEIC photo, which this browser can’t open: export it as a JPEG (Photos: File › Export) and choose that' : 'That picture couldn’t be opened');
-    };
-    img.src = u;
+    }).catch(function (e) { toast(picWhy(e, f)); });
   });
+  function picWhy(e, f) {   // what went wrong with a chosen picture, and what it was
+    var what = (f.name || 'it') + (f.type ? ', ' + f.type : '');
+    return e && e.heic ? 'That HEIC photo couldn’t be turned into a JPEG (' + what + '): export it as a JPEG (Photos: File › Export) and choose that'
+      : 'That picture couldn’t be opened (' + what + ')';
+  }
   $('npicx').addEventListener('click', function () { NPIC = null; $('npicimg').removeAttribute('src'); picShow(false); });
   $('nlink').addEventListener('change', function () { $('nurl').hidden = this.value !== 'other'; if (!$('nurl').hidden) $('nurl').focus(); });
   $('nsend').addEventListener('click', function () {

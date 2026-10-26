@@ -194,7 +194,7 @@
   function read(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
   try { edits = JSON.parse(read(EDITS) || '{}') || {}; } catch (e) { edits = {}; }
   function saveEdits() { store(EDITS, edits); }
-  function toast(msg) { var t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(function () { t.classList.remove('show'); }, 3200); }
+  function toast(msg) { var t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(function () { t.classList.remove('show'); }, Math.max(3200, msg.length * 60)); }
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
   function clone(x) { return JSON.parse(JSON.stringify(x)); }
   function words(t) { return (String(t).trim().match(/\S+/g) || []).length; }
@@ -650,8 +650,10 @@
   $('picfile').addEventListener('change', function () {
     var f = this.files && this.files[0]; this.value = '';
     if (!f) return;
-    var url = URL.createObjectURL(f);
-    C.loadImg(url).then(function (im) { PIC.photo = im; return picDraw(); }).catch(function () { toast('That file isn’t a picture this browser can read'); }).then(function () { URL.revokeObjectURL(url); });
+    C.fileImage(f, function () { toast('Turning the HEIC photo into a JPEG…'); }).then(function (im) { PIC.photo = im; return picDraw(); }).catch(function (e) {
+      var what = (f.name || 'it') + (f.type ? ', ' + f.type : '');
+      toast(e && e.heic ? 'That HEIC photo couldn’t be turned into a JPEG (' + what + '): export it as a JPEG and choose that' : 'That picture couldn’t be opened (' + what + ')');
+    });
   });
   $('picorig').addEventListener('click', function () {
     var s = PIC.s, c = PIC.c; if (!c) return;

@@ -127,5 +127,39 @@ function fontsReady() {
   return Promise.all(['500 68px Newsreader', 'italic 400 30px Newsreader', '600 19px "Hanken Grotesk"'].map(function (f) { return document.fonts.load(f); })).catch(function () {});
 }
 function longDate(d) { return d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).replace(',', ''); }
-return { drawCard: drawCard, albumCover: albumCover, loadImg: loadImg, londonNow: londonNow, fontsReady: fontsReady, longDate: longDate };
+// a chosen picture file as an image to draw: whatever the browser can open as it is; an iPhone's HEIC/HEIF photo, which
+// Chrome and Firefox can't open, turned into a JPEG here first (vendor/heic2any.min.js, fetched only then). Recognised by
+// its first bytes, not its name: some come named .jpeg. Rejects with err.heic set when it was HEIC and still failed.
+function isHeif(f) {
+  return f.slice(0, 16).arrayBuffer().then(function (b) {
+    var t = String.fromCharCode.apply(null, new Uint8Array(b));
+    return t.slice(4, 8) === 'ftyp' && /^(hei[cfmsx]|hev[cmsx]|mif1|msf1)$/.test(t.slice(8, 12));
+  }).catch(function () { return false; });
+}
+var heicLib = null;
+function heicJs() {
+  if (!heicLib) heicLib = new Promise(function (res, rej) {
+    if (window.heic2any) return res(window.heic2any);
+    var sc = document.createElement('script'); sc.src = '/songs/vendor/heic2any.min.js';
+    sc.onload = function () { if (window.heic2any) res(window.heic2any); else rej(new Error('no heic2any')); };
+    sc.onerror = function () { heicLib = null; rej(new Error('heic2any not loaded')); };
+    document.head.appendChild(sc);
+  });
+  return heicLib;
+}
+function fileImage(f, converting) {
+  var u = URL.createObjectURL(f);
+  return loadImg(u).catch(function () {
+    URL.revokeObjectURL(u); u = '';
+    return isHeif(f).then(function (heif) {
+      if (!heif) throw new Error('not a picture this browser can open');
+      if (converting) converting();
+      return heicJs().then(function (h) { return h({ blob: f, toType: 'image/jpeg', quality: 0.92 }); }).then(function (b) {
+        u = URL.createObjectURL(Array.isArray(b) ? b[0] : b);
+        return loadImg(u);
+      }).catch(function (e) { var x = new Error('HEIC: ' + ((e && e.message) || e)); x.heic = true; throw x; });
+    });
+  }).then(function (im) { if (u) URL.revokeObjectURL(u); return im; });
+}
+return { drawCard: drawCard, albumCover: albumCover, loadImg: loadImg, londonNow: londonNow, fontsReady: fontsReady, longDate: longDate, fileImage: fileImage };
 })();
