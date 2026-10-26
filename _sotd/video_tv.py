@@ -8,7 +8,8 @@
 Many uploads are AV1 or VP9 (YouTube's formats) and some are 4K: light files, but too hard for a Fire TV Stick to decode,
 so they glitch there. Each one that isn't already plain H.264 (1080p or less, 8 Mbps or less, 8-bit) gets a copy at
 h/<track>.mp4 in the same R2 bucket: H.264 High, 1080p at most, about 4 to 5 Mbps (CRF 21, at most 6 Mbps), AAC 160k,
-index first (faststart). The Worker plays the copy wherever there is one (/m/v/...), and drops it when a new video is
+index first (faststart). Each copy is checked before it goes up: H.264, with sound if the original has sound, and as long
+as it within half a second; one that isn't stays off and the original plays. The Worker plays the copy wherever there is one (/m/v/...), and drops it when a new video is
 uploaded (this then makes a new one). This never changes or deletes an original; media_originals.py (by hand) deletes the
 originals whose copy has been made, after which the copy is the video (the folder upload still knows it by the catalog).
 
@@ -48,7 +49,7 @@ def main(args):
         return
     import boto3
     from botocore.config import Config
-    s3 = boto3.client('s3', endpoint_url='https://%s.r2.cloudflarestorage.com' % ACCOUNT, aws_access_key_id=KEY_ID,
+    s3 = boto3.client('s3', endpoint_url=os.environ.get('R2_ENDPOINT') or 'https://%s.r2.cloudflarestorage.com' % ACCOUNT, aws_access_key_id=KEY_ID,
                       aws_secret_access_key=SECRET, region_name='auto', config=Config(signature_version='s3v4', retries={'max_attempts': 5}))
 
     def listing(prefix):
@@ -103,16 +104,40 @@ def main(args):
                        '-maxrate', '6M', '-bufsize', '12M', '-r', str(eval_fps(info)),
                        '-c:a', 'aac', '-b:a', '160k', '-ac', '2', '-movflags', '+faststart', dst]
                 subprocess.run(cmd, check=True, timeout=3600)
+                bad = copy_wrong(info, dst)
+                if bad:   # not put up: the original keeps playing (and an old copy, made from an earlier upload, goes)
+                    if h:
+                        s3.delete_object(Bucket=BUCKET, Key=h['Key'])
+                    failed.append((t, 'the copy came out wrong (%s), so the original plays' % bad))
+                    continue
                 s3.upload_file(dst, BUCKET, 'h/%s.mp4' % t, ExtraArgs={'ContentType': 'video/mp4'})
                 made.append((t, why, os.path.getsize(src), os.path.getsize(dst)))
                 print('made %s (%s): %.0f MB -> %.0f MB' % (t, why, os.path.getsize(src) / 1e6, os.path.getsize(dst) / 1e6), flush=True)
             except Exception as e:
                 failed.append((t, str(e)[:200]))
-    print('%d copies made, %d fine as they are, %d failed' % (len(made), fine, len(failed)))
+    note = lambda m: print(m + ('\n::notice title=Videos for the TV::' + m if os.environ.get('GITHUB_ACTIONS') else ''), flush=True)
+    note('%d copies made, %d fine as they are, %d failed' % (len(made), fine, len(failed)))
     for t, e in failed:
-        print('failed', t, e)
+        note('failed: %s %s' % (t, e))
     if failed and not made:
         sys.exit(1)
+
+
+def copy_wrong(info, dst):
+    """'' if the copy at dst can stand in for the original (ffprobe info): H.264, with sound if the original has sound,
+    and as long as it within half a second (the same checks media_originals.py makes before an original is deleted)."""
+    out = json.loads(subprocess.run(['ffprobe', '-v', 'error', '-show_streams', '-show_format', '-of', 'json', dst],
+                                    capture_output=True, text=True, timeout=120).stdout or '{}')
+    kind = lambda i, k: next((x for x in i.get('streams', []) if x.get('codec_type') == k and not (x.get('disposition') or {}).get('attached_pic')), None)
+    dur = lambda i: float((i.get('format') or {}).get('duration') or 0)
+    v = kind(out, 'video')
+    if not v or v.get('codec_name') != 'h264':
+        return 'not H.264'
+    if kind(info, 'audio') and not kind(out, 'audio'):
+        return 'no sound'
+    if not dur(info) or abs(dur(out) - dur(info)) > 0.5:
+        return '%.2f s long against %.2f s' % (dur(out), dur(info))
+    return ''
 
 
 def eval_fps(info):
