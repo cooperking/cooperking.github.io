@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="sotd-build" content="be15182d05c6">
+<meta name="sotd-build" content="c387cdb53443">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 259 so far">
 <meta name="theme-color" content="#ec135b">
@@ -1812,12 +1812,21 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var b = document.createElement('button'); b.type = 'button'; b.className = 'pill watch';
     watchLabel(el, b, false);
     b.addEventListener('click', function () {
-      if (!isVideo(el)) { setPlayMode('video'); watch(el, vd); return; }
+      var at = carryAt(el);   // the song to the video or back: on from the same place (the whole song only, not a preview)
+      if (!isVideo(el)) { setPlayMode('video'); watch(el, vd); carryTo(el, at); return; }
       if (!o.ui) { unwatch(el); return; }   // a song with no preview: the video just closes
-      setPlayMode('audio'); watch(el, coverVd(o.s));   // Play as preview: the preview now, and from here on (full screen stays)
+      setPlayMode('audio'); watch(el, coverVd(o.s)); carryTo(el, at);   // Play as preview: the preview now, and from here on (full screen stays)
     });
     if (o.player) o.player.appendChild(b); else o.acts.insertBefore(b, o.acts.firstChild);
   }
+  // where this day's song or video has got to, when the song is the whole song (a member's own, or downloaded): a preview is
+  // 30 seconds from somewhere in the song, so there's no same place to go on from
+  function carryAt(el) {
+    if (!vplay || vplay.el !== el || !vplay.player || !el.sotd || !whole(el.sotd.s)) return 0;
+    var t = 0; try { t = vplay.player.getCurrentTime() || 0; } catch (x) {}
+    return t > 3 ? t : 0;
+  }
+  function carryTo(el, t) { if (t) { resumeAt = t; resumeFor = el.sotd.s.track; } }   // (taken up as it starts playing: vidState)
   // the button's two states: Play as video, and while the video shows, Play as preview (Close video for a song with no preview)
   function watchLabel(el, b, on) {
     var s = el.sotd.s, pre = !!el.sotd.ui, whole = window.sotdWhole ? window.sotdWhole(s) : false;
@@ -1831,6 +1840,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (adPlaying()) t = 0;   // an advert's clock isn't the song's
     vplay.ui.bar.style.width = d ? Math.min(100, t / d * 100) + '%' : '0%';
     vplay.ui.time.textContent = fmt(t);
+    if (!vplay.heard && d && t >= Math.min(30, d - 2)) { vplay.heard = true; heardAdd(vplay.el.sotd.s.track); }   // (for Shuffle)
     capTick();
   }
   // the facts as captions while a song plays: song facts, then each artist's, one straight after another from
@@ -2725,7 +2735,11 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var v = vplay;
     if (!v || v.player !== e.target) return;
     if (e.data === 0) { playOn(v.el); return; }   // the video has finished
-    if (e.data === 1 && resumeAt && v.el.sotd && v.el.sotd.s.track === resumeFor) { var ra = resumeAt; resumeAt = 0; try { e.target.seekTo(ra, true); } catch (x) {} }   // carried on after a reload: from where it was
+    if (e.data === 1 && resumeAt && v.el.sotd && v.el.sotd.s.track === resumeFor) {   // carried on after a reload, or from the song to its video and back: from where it was
+      var ra = resumeAt, rd = 0; resumeAt = 0;
+      try { rd = e.target.getDuration() || 0; } catch (x) {}
+      if (!rd || ra < rd - 3) try { e.target.seekTo(ra, true); } catch (x) {}
+    }
     if (e.data === 1 && !adLive(adState)) songStarted(v);
     v.on = e.data === 1 || e.data === 3;   // playing or buffering
     if (MS) try { MS.playbackState = e.data === 1 || e.data === 3 ? 'playing' : 'paused'; } catch (x) {}
@@ -2926,6 +2940,21 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   var shuffleOn = false;
   try { shuffleOn = localStorage.getItem('sotd-shuffle') === '1'; } catch (e) {}
   function mixed(a) { a = a.slice(); for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), x = a[i]; a[i] = a[j]; a[j] = x; } return a; }
+  // Shuffle that gets round them all: the songs this device hasn't heard yet first, in a random order, then the rest, also
+  // random; once it's heard every one, it starts again. (Each Play all was a fresh shuffle of all of them, so some came up
+  // again and again and others not at all.) Heard: played 30 seconds or more (a preview: to its end), any way it was played.
+  var HEARD_KEY = 'sotd-heard';
+  function heardGet() { try { return JSON.parse(localStorage.getItem(HEARD_KEY) || '{}') || {}; } catch (e) { return {}; } }
+  function heardAdd(t) {
+    var h = heardGet(); if (h[t]) return;
+    h[t] = Date.now();
+    if (songs.every(function (x) { return h[x.track]; })) h = {};   // every one heard: round again
+    try { localStorage.setItem(HEARD_KEY, JSON.stringify(h)); } catch (e) {}
+  }
+  function mixedFair(list) {
+    var h = heardGet(), fresh = list.filter(function (t) { return !h[t]; });
+    return fresh.length ? mixed(fresh).concat(mixed(list.filter(function (t) { return h[t]; }))) : mixed(list);
+  }
   function playPick(p) {   // a song on the open day, as its video or its preview, whichever way is on
     var vd = playMode === 'video' && VIDS[p.sotd.s.track];
     // out of sight (a locked phone), where a video can't play: the song; one of John's own videos plays as its sound
@@ -2952,7 +2981,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     list = list.filter(function (t) { return byTrack[t]; });
     if (!list.length) return;
     var order = list;
-    if (mix) { list = mixed(list); at = list[0]; }
+    if (mix) { list = mixedFair(list); at = list[0]; }
     var i = Math.max(0, list.indexOf(at)), s = byTrack[list[i]];
     queue = { list: list, i: i, name: name, back: back, order: order, heard: {} };
     months.forEach(function (ym, i) { if (key(ym[0], ym[1]) === s.d.slice(0, 7)) cur = i; });
@@ -4017,7 +4046,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (typeof shufSync === 'function' && heroShuf) shufSync();
     if (queue && queue.back === 'all') {
       var now = queue.list[queue.i], heard = queue.heard;
-      if (shuffleOn) queue.list = queue.list.slice(0, queue.i + 1).concat(mixed(queue.order.filter(function (t) { return !heard[t]; })));
+      if (shuffleOn) queue.list = queue.list.slice(0, queue.i + 1).concat(mixedFair(queue.order.filter(function (t) { return !heard[t] && t !== now; })));
       else { queue.list = queue.order.slice(); queue.i = Math.max(0, queue.list.indexOf(now)); }
     }
     showQueue();
