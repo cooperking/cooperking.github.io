@@ -12,6 +12,7 @@ const { TwaManifest, TwaGenerator, ConsoleLog } = require('@bubblewrap/core');
     appVersionCode: code, appVersionName: '1.' + code,
     signingKey: { path: process.env.KEYSTORE || 'upload.p12', alias: 'sotd' },
     enableSiteSettingsShortcut: false,
+    minSdkVersion: 24,   // (Android 7: the browser helper library needs it)
   });
   await new TwaGenerator().createTwaProject(__dirname + '/project', tm, new ConsoleLog('android'));
   console.log('project made: version ' + tm.appVersionName + ' (' + code + ')');
