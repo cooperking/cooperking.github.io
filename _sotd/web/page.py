@@ -12,7 +12,7 @@ The page carries a copy of the song list (the sotd-data script) for its first pa
 the Worker. The build keeps each page's copy as it is, and keeps what the repository's jobs keep current in it: the
 song count in its description (share_pages.py) and the icons' ?v= (icons.py).
 """
-import os, re, sys
+import hashlib, os, re, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SONGS = os.path.join(os.path.dirname(os.path.dirname(HERE)), 'songs')
@@ -21,6 +21,7 @@ HEAD = """<!doctype html>
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
+<meta name="sotd-build" content="{build}">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="{desc}">
 <meta name="theme-color" content="#ec135b">
@@ -68,10 +69,11 @@ def build(draft):
     target = os.path.join(SONGS, 'draft' if draft else '', 'index.html')
     blob, desc, v = kept(target)
     tpl = open(os.path.join(HERE, 'template.html'), encoding='utf-8').read()
+    build = hashlib.sha1((tpl + ('draft' if draft else 'live')).encode()).hexdigest()[:12]   # the page's version: the apps reload when it changes
     assert tpl.count('/*DATA*/') == 1, 'template.html needs /*DATA*/ once'
     tpl = tpl.replace('/*DATA*/', blob).replace(PREVIEW_ONLY, '')
     cut = tpl.index('<div class="glow"')
-    html = HEAD.format(desc=desc, v=v) + tpl[:cut] + '</head>\n<body>\n' + tpl[cut:] + '\n</body>\n</html>\n'
+    html = HEAD.format(desc=desc, v=v, build=build) + tpl[:cut] + '</head>\n<body>\n' + tpl[cut:] + '\n</body>\n</html>\n'
     if draft:   # not indexed, titled and flagged as a draft, its own icons, the live site's data files one level up
         html = html.replace('<meta charset="utf-8">', '<meta charset="utf-8">\n<meta name="robots" content="noindex, nofollow">', 1)
         html = re.sub(r'<title>([^<]*)</title>', lambda m: '<title>Draft · ' + m.group(1) + '</title>', html, count=1)
