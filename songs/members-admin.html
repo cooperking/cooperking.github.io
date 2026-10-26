@@ -47,6 +47,17 @@
 .notify .who label { display: inline-flex; align-items: center; gap: 6px; padding: 7px 11px; border-radius: 999px; border: 1px solid var(--line); background: var(--chip); font: 500 14px/1.2 var(--sans); color: var(--fg); cursor: pointer; }
 .notify .who label.off { color: var(--muted); cursor: default; }
 .notify .who input { margin: 0; accent-color: var(--fg); }
+.songpick { position: relative; display: grid; gap: 6px; }
+.songres { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.songres button { width: 100%; display: flex; align-items: center; gap: 10px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 12px; background: var(--chip); color: var(--fg); text-align: left; cursor: pointer; font: 14px/1.25 var(--sans); }
+.songres img, .songnow img.cv { width: 38px; height: 38px; border-radius: 6px; object-fit: cover; flex: none; }
+.songres .t { font-family: var(--serif); font-size: 16px; }
+.songres .m { color: var(--muted); font-size: 12.5px; }
+.songnow { display: grid; gap: 8px; padding: 10px; border-radius: 12px; background: var(--chip); border: 1px dashed var(--line); }
+.songnow .card-pic { margin: 0; border-radius: 10px; overflow: hidden; aspect-ratio: 1200 / 630; background: var(--tile); }
+.songnow .card-pic img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.songnow .row { align-items: center; }
+.songnow .note { font-size: 12.5px; color: var(--muted); margin: 0; }
 .notify .row select { flex: 1 1 180px; min-width: 0; border: 1px solid var(--line); background: var(--field); color: var(--fg); border-radius: 12px; padding: 10px 12px; font: 16px var(--sans); }
 </style>
 </head>
@@ -75,6 +86,15 @@
       <button class="btn small" id="ntosome" type="button" aria-pressed="false">Choose people…</button>
     </div>
     <div class="who" id="nwho" hidden></div>
+    <div class="songpick">
+      <input class="name" id="nsong" placeholder="Send a song: search by title, artist or date" autocomplete="off" aria-label="Send a song">
+      <ul class="songres" id="nsongres"></ul>
+      <div class="songnow" id="nsongnow" hidden>
+        <figure class="card-pic"><img id="nsongcard" alt=""></figure>
+        <p class="note">Sent as it’s shared: its card as the picture (on Android and computers; an iPhone shows the title and words), and a tap opens the song. Change the words below if you like.</p>
+        <div class="row"><button class="btn small" id="nsongx" type="button">No song</button></div>
+      </div>
+    </div>
     <input class="name" id="ntitle" placeholder="Title (e.g. A new playlist)" maxlength="80" autocomplete="off" aria-label="Title">
     <textarea id="ntext" placeholder="Message (optional)" maxlength="300" aria-label="Message"></textarea>
     <div class="row">
@@ -321,11 +341,52 @@
         : 'Nobody has turned them on yet: members do that in their Profile on the calendar. Each new song goes out by itself, once, when its MP3 and video are both up.';
     });
   }
+  // ---- a song, sent the way it's shared: "John's Song of the Day", its date, its title and artist; its share card ----
+  var NSONG = null;
+  function fullDay(iso) { return new Date(iso + 'T12:00:00Z').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).replace(',', ''); }   // Wednesday 21 October 2026, as the share says
+  function slug(iso) { return iso.slice(8, 10) + '-' + iso.slice(5, 7) + '-' + iso.slice(0, 4); }
+  function fold(x) { return String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+  $('nsong').addEventListener('input', function () {
+    var q = fold(this.value.trim()), ul = $('nsongres'); ul.innerHTML = '';
+    if (q.length < 2) return;
+    var words = q.split(/\s+/);
+    SONGS.slice().reverse().filter(function (x) {
+      var hay = fold(x.title + ' ' + x.artist + ' ' + x.d + ' ' + fullDay(x.d) + ' ' + slug(x.d));
+      return words.every(function (w) { return hay.indexOf(w) >= 0; });
+    }).slice(0, 6).forEach(function (x) {
+      var li = document.createElement('li'), b = document.createElement('button'); b.type = 'button';
+      var im = document.createElement('img'); im.alt = ''; if (x.img) im.src = x.img;
+      var tx = document.createElement('span'); tx.innerHTML = '<span class="t"></span><br><span class="m"></span>';
+      tx.querySelector('.t').textContent = x.title; tx.querySelector('.m').textContent = x.artist + ' · ' + longDay(x.d);
+      b.appendChild(im); b.appendChild(tx); b.addEventListener('click', function () { songChoose(x); });
+      li.appendChild(b); ul.appendChild(li);
+    });
+  });
+  function songChoose(x) {
+    NSONG = x;
+    $('nsongres').innerHTML = ''; $('nsong').value = ''; $('nsong').hidden = true;
+    var card = $('nsongcard'), base = 'https://cooperking.github.io/songs/' + slug(x.d) + '/';
+    card.onerror = function () { card.onerror = null; card.src = x.img || ''; NSONG.noCard = true; };   // not made yet: its cover
+    card.src = base + 'card.jpg';
+    $('nsongnow').hidden = false;
+    $('ntitle').value = x.title;
+    $('ntext').value = x.artist + ' · John’s Song of the Day, ' + fullDay(x.d);
+    var o = $('nlink');   // (added and taken away: an iPhone shows a hidden option anyway)
+    if (!o.querySelector('option[value=song]')) { var op = document.createElement('option'); op.value = 'song'; op.textContent = 'Opens the song'; o.insertBefore(op, o.firstChild); }
+    o.value = 'song'; $('nurl').hidden = true;
+  }
+  function songClear() {
+    NSONG = null; $('nsongnow').hidden = true; $('nsong').hidden = false;
+    var o = $('nlink'), op = o.querySelector('option[value=song]'); if (op) o.removeChild(op); o.value = 'https://cooperking.github.io/songs/';
+    $('ntitle').value = ''; $('ntext').value = '';
+  }
+  $('nsongx').addEventListener('click', songClear);
   $('nlink').addEventListener('change', function () { $('nurl').hidden = this.value !== 'other'; if (!$('nurl').hidden) $('nurl').focus(); });
   $('nsend').addEventListener('click', function () {
     var title = $('ntitle').value.trim(), text = $('ntext').value.trim(), l = $('nlink').value, url = l;
     if (!title) { $('ntitle').focus(); return; }
     if (l === 'today') url = 'https://cooperking.github.io/songs/#today';
+    if (l === 'song') { if (!NSONG) { toast('Choose a song'); return; } url = 'https://cooperking.github.io/songs/' + slug(NSONG.d) + '/'; }
     if (l === 'other') { url = $('nurl').value.trim(); if (!/^https:\/\/cooperking\.github\.io\//.test(url)) { toast('The link has to be a page on the site'); $('nurl').focus(); return; } }
     var to = PICK ? PICK.slice() : null;
     if (to && !to.length) { toast('Choose who it goes to'); return; }
@@ -334,11 +395,12 @@
     ask('Notification', 'Send “' + title + '”?', to ? 'It goes to ' + whom + ', straight away.' : 'It goes to every device with notifications on, straight away.', 'Send').then(function (yes) {
       if (!yes) return;
       var b = $('nsend'); b.disabled = true;
-      api('/members/admin', { op: 'push', title: title, text: text, url: url, to: to }).then(function (j) {
+      var pics = NSONG ? { image: NSONG.noCard ? '' : 'https://cooperking.github.io/songs/' + slug(NSONG.d) + '/card.jpg', icon: NSONG.img || '' } : {};
+      api('/members/admin', Object.assign({ op: 'push', title: title, text: text, url: url, to: to }, pics)).then(function (j) {
         b.disabled = false;
         if (j.status !== 200) { toast(j.error || 'Couldn’t send it'); return; }
         toast(j.sent ? 'Sent to ' + j.sent + (j.sent === 1 ? ' device' : ' devices') + (j.failed ? ' (' + j.failed + ' didn’t take it)' : '') : to ? 'They don’t have notifications on' : 'Nobody has notifications on yet');
-        if (j.sent) { $('ntitle').value = ''; $('ntext').value = ''; }
+        if (j.sent) { $('ntitle').value = ''; $('ntext').value = ''; if (NSONG) songClear(); }
         pushStat();
       }).catch(function () { b.disabled = false; toast('Couldn’t reach the Worker'); });
     });

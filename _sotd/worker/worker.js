@@ -522,7 +522,13 @@ async function members(request, url, env) {
       if (link && !/^https:\/\/cooperking\.github\.io\//.test(link)) return answer(400, { error: 'The link has to be a page on the site (https://cooperking.github.io/…).' });
       const to = Array.isArray(body.to) ? body.to.map(String).filter(id => all[id]) : null;   // chosen members, or everyone
       if (to && !to.length) return answer(400, { error: 'Choose who it goes to.' });
-      const r = await pushAll(env, { title, body: text, url: link || SITE_SONGS, tag: 'sotd-note-' + Date.now() }, to);
+      // a song sent as it's shared: its card as the big picture (Android and computers; an iPhone shows neither) and
+      // its cover beside it, from the site or Spotify only
+      const pic = u => { const x = String(u || ''); return /^https:\/\/(cooperking\.github\.io|i\.scdn\.co|sotd-playlists\.cooperking\.workers\.dev)\//.test(x) && x.length < 600 ? x : ''; };
+      const msg = { title, body: text, url: link || SITE_SONGS, tag: 'sotd-note-' + Date.now() };
+      if (pic(body.image)) msg.image = pic(body.image);
+      if (pic(body.icon)) msg.icon = pic(body.icon);
+      const r = await pushAll(env, msg, to);
       return answer(200, r);
     }
     case 'invitecard': {   // the invitation's link-preview page and picture (drawn on the members page)
@@ -1187,8 +1193,10 @@ async function pushDaily(env, items) {
   if (!files.a || !files.v) return;   // waiting for the MP3 and the video
   if (!await kvSoft(env, 'pushSent', JSON.stringify(sentRaw.concat(last.id).slice(-60)))) return;   // can't note it: don't send (it could go twice)
   pushDone = last.id;
-  const r = await pushAll(env, { title: last.title, body: last.artist + (day === londonDay() ? ' \u00b7 today\u2019s Song of the Day' : ' \u00b7 the latest Song of the Day'), icon: last.img || '',
-    url: SITE_SONGS + '#' + day.slice(8, 10) + '-' + day.slice(5, 7) + '-' + day.slice(0, 4), tag: 'sotd-day' });
+  const slug = day.slice(8, 10) + '-' + day.slice(5, 7) + '-' + day.slice(0, 4), card = SITE_SONGS + slug + '/card.jpg';
+  const hasCard = await fetch(card, { method: 'HEAD' }).then(r => r.ok, () => false);   // the day's share card, once the site has made it
+  const r = await pushAll(env, Object.assign({ title: last.title, body: last.artist + (day === londonDay() ? ' \u00b7 today\u2019s Song of the Day' : ' \u00b7 the latest Song of the Day'), icon: last.img || '',
+    url: SITE_SONGS + '#' + slug, tag: 'sotd-day' }, hasCard ? { image: card } : {}));
   console.log('pushDaily ' + last.id + ': ' + JSON.stringify(r));
 }
 

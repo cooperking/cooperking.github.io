@@ -83,7 +83,7 @@ self.addEventListener('push', e => {
   try { m = e.data ? e.data.json() : {}; } catch (err) { m = { title: 'Song of the Day', body: e.data ? e.data.text() : '' }; }
   const scope = self.registration.scope;
   e.waitUntil(self.registration.showNotification(m.title || 'Song of the Day', {
-    body: m.body || '', icon: m.icon || scope + 'icon-192.png',
+    body: m.body || '', icon: m.icon || scope + 'icon-192.png', image: m.image || undefined,   // image: Android's big picture (an iPhone shows none)
     tag: m.tag || 'sotd', data: { url: m.url || scope }
   }));
 });
