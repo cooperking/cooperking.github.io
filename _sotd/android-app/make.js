@@ -11,7 +11,7 @@ const { TwaManifest, TwaGenerator, ConsoleLog } = require('@bubblewrap/core');
     startUrl: '/songs/', enableNotifications: true, fallbackType: 'customtabs',
     appVersionCode: code, appVersionName: '1.' + code,
     signingKey: { path: process.env.KEYSTORE || 'upload.p12', alias: 'sotd' },
-    enableSiteSettingsShortcut: false,
+    enableSiteSettingsShortcut: true,   // (the helper library looks for its activity on every start: without it the app can't open)
     minSdkVersion: 24,   // (Android 7: the browser helper library needs it)
   });
   await new TwaGenerator().createTwaProject(__dirname + '/project', tm, new ConsoleLog('android'));
