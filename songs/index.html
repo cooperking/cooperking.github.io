@@ -2787,7 +2787,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     vplay = { el: el, ui: o.ui, player: null, on: false, timer: 0, vid: vd.v, cover: !!vd.cover, started: false, startedAt: 0 };
     adState = -1; adOff = 0; adFlag(); capDone = false; clearTimeout(capWait); capWait = 0;   // any advert from the video before is over; this one's facts to come
     var np = document.getElementById('nowplaying'); np.textContent = o.s.title;
-    var npBy = document.createElement('span'); npBy.className = 'by'; npBy.textContent = o.s.artist; np.appendChild(npBy);
+    var npBy = document.createElement('span'); npBy.className = 'by'; npBy.textContent = o.s.artist + (yearOf(o.s) ? ' \u00b7 ' + yearOf(o.s) : ''); np.appendChild(npBy);   // full screen's top line: the song, the artist and the year
     vidSession++; deckShow(null);
     nowMeta(o.s);
     watchShared(el, vd, vplay);
