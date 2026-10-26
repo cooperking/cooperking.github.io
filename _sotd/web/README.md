@@ -38,9 +38,3 @@ What there is now:
 
 Put here on 26 Oct 2026, rebuilt from the live page; `--check` reproduced all four built files exactly. Until then the
 source lived only in each chat's own workspace, so one chat's copy could fall behind another's.
-
-## On the draft only, waiting for John's sign-off
-
-- The Android app's update offer (the `.appupd` bar, and the "the Android app" part of the script, 26 Oct 2026). The
-  live page was built without it on 26 Oct (the Fire TV bar went live then); a live build before John signs it off
-  needs it taken out the same way. Remove this line when it goes live.
