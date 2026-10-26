@@ -2,6 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
+<meta name="sotd-build" content="da0160c03d7b">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 259 so far">
 <meta name="theme-color" content="#ec135b">
@@ -4653,6 +4654,27 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   var NAT = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform() ? window.Capacitor : null;
   var NPUSH = NAT && NAT.Plugins && NAT.Plugins.PushNotifications ? NAT.Plugins.PushNotifications : null;
   if (NAT) document.documentElement.classList.add('in-app');
+  // ---- the apps (the Fire TV's, the iPhone's, Android's, a Home Screen icon) keep the page open for days. Coming back to
+  // one after half a minute or more away, the page reloads if the site has a newer page (its sotd-build, from page.py)
+  // or it's another day since it loaded (the songs anew); not while something's playing, nor with no connection. ----
+  var BUILD = (document.querySelector('meta[name="sotd-build"]') || {}).content || '', loadedOn = londonDay(new Date().toISOString()), awayAt = 0, freshAt = 0;
+  function busyNow() { return (!!playing && !audio.paused) || (!!vplay && vplay.on); }
+  function freshen() {
+    if (!awayAt || Date.now() - awayAt < 30e3) { awayAt = 0; return; }
+    awayAt = 0;
+    if (navigator.onLine === false || busyNow() || Date.now() - freshAt < 30e3) return;
+    freshAt = Date.now();
+    if (londonDay(new Date().toISOString()) !== loadedOn) { location.reload(); return; }
+    fetch(location.pathname, { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (h) {
+      var m = /<meta name="sotd-build" content="([^"]*)"/.exec(h);
+      if (m && m[1] !== BUILD && !busyNow()) location.reload();
+    }).catch(function () {});
+  }
+  if (TV || standalone || NAT) {
+    document.addEventListener('visibilitychange', function () { if (document.hidden) awayAt = awayAt || Date.now(); else freshen(); });
+    if (TV) window.addEventListener('keydown', function () { if (awayAt) freshen(); }, true);   // (the TV app says when it goes, with 'pause'; back, the first press of the remote)
+    window.addEventListener('pageshow', function (e) { if (e.persisted) { awayAt = awayAt || 1; freshen(); } });
+  }
   function natToken() { try { return localStorage.getItem('sotd-apns') || ''; } catch (e) { return ''; } }
   function natSend(extra, tok) {
     return fetch(MBASE + '/members/push', { method: 'POST', headers: { Authorization: 'Bearer ' + (tok || plTok()), 'Content-Type': 'application/json' }, body: JSON.stringify(Object.assign({ apns: natToken() }, extra || {})) })
@@ -5651,6 +5673,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
           return true;
         }
         if (k === 'pause') {   // the app going off the screen
+          awayAt = awayAt || Date.now();
           if (vplay && vplay.on) vidToggle();
           if (playing && !audio.paused) audio.pause();
           return true;
