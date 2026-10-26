@@ -1,0 +1,43 @@
+name: iPhone app
+# Builds the iPhone app (_sotd/ios-app) on one of GitHub's Macs and, with the Apple keys in place, sends it to
+# TestFlight. Run by hand (Actions > iPhone app > Run workflow), when the app's own files change, and on the 1st of
+# every second month, so the testers always have a build well inside TestFlight's 90 days.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['_sotd/ios-app/**', '.github/workflows/ios.yml']
+  schedule:
+    - cron: '23 4 1 */2 *'
+
+concurrency:
+  group: ios-app
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Make the Xcode project
+        working-directory: _sotd/ios-app
+        run: |
+          npm install --no-audit --no-fund
+          npx cap add ios --packagemanager SPM
+          bash customise.sh
+          npx cap sync ios
+      - name: Build, and send to TestFlight when the Apple keys are there
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          BUILD_NUMBER: ${{ github.run_number }}
+        run: bash _sotd/ios-app/build.sh

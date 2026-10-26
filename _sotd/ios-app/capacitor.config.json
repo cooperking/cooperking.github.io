@@ -1,0 +1,26 @@
+{
+  "appId": "io.github.cooperking.sotd",
+  "appName": "Song of the Day",
+  "webDir": "www",
+  "server": {
+    "url": "https://cooperking.github.io/songs/",
+    "allowNavigation": [
+      "cooperking.github.io",
+      "sotd-playlists.cooperking.workers.dev"
+    ]
+  },
+  "ios": {
+    "contentInset": "never",
+    "backgroundColor": "#1b1020",
+    "limitsNavigationsToAppBoundDomains": true
+  },
+  "plugins": {
+    "PushNotifications": {
+      "presentationOptions": [
+        "badge",
+        "sound",
+        "alert"
+      ]
+    }
+  }
+}
