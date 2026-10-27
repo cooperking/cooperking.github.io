@@ -850,9 +850,9 @@ async function memberMe(request, env, answer) {
 
 // an invitation's link: a page that shows a proper card in a message (WhatsApp, iMessage...), like a day's share page,
 // and sends the person on to their invitation on the calendar. Kept for as long as the invitation lasts.
-// the steps for getting the phone's own app (below): shown to everyone once John says so; until then only with ?try on the
-// end of an invitation's link, and everyone else goes straight on to the calendar, as before
-const INVITE_STEPS = false;
+// the steps for getting the phone's own app (below), for everyone (John, 27 Oct 2026); false shows them only with ?try on
+// the end of an invitation's link, everyone else going straight on to the calendar
+const INVITE_STEPS = true;
 const INVITE_BOTS = /bot|crawl|spider|preview|facebookexternalhit|facebot|whatsapp|telegram|slack|discord|linkedin|pinterest|embedly|iframely|skype|viber|signal|vkshare|redditbot|applebot|google|bing/i;
 async function invitePage(url, env) {
   const m = /^\/i\/([\w-]{16})(\.jpg|\.json)?$/.exec(url.pathname);
