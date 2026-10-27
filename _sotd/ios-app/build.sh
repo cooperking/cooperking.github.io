@@ -7,12 +7,6 @@ set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 cd "$HERE/ios/App"
 BUILD="${BUILD_NUMBER:-1}"
-if [ -z "${ASC_KEY_ID:-}" ] || [ -z "${ASC_ISSUER_ID:-}" ] || [ -z "${ASC_KEY_P8:-}" ] || [ -z "${APPLE_TEAM_ID:-}" ]; then
-  echo "::warning title=iPhone app::No Apple keys yet (ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8, APPLE_TEAM_ID): built for the simulator only, to check it builds."
-  xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
-    CODE_SIGNING_ALLOWED=NO build | tail -n 25
-  exit 0
-fi
 # xcodebuild, its output kept; when it fails, its error lines (and its last lines) are put on the run's page, as the job's
 # own log can't always be read
 xcb() {
@@ -24,6 +18,14 @@ xcb() {
   tail -n 80 "$log"
   exit 65
 }
+# only checking that it builds (SIMULATOR_ONLY, or no Apple keys yet): for the simulator, unsigned, nothing sent
+if [ -n "${SIMULATOR_ONLY:-}" ] || [ -z "${ASC_KEY_ID:-}" ] || [ -z "${ASC_ISSUER_ID:-}" ] || [ -z "${ASC_KEY_P8:-}" ] || [ -z "${APPLE_TEAM_ID:-}" ]; then
+  [ -n "${SIMULATOR_ONLY:-}" ] || echo "::warning title=iPhone app::No Apple keys yet (ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8, APPLE_TEAM_ID): built for the simulator only, to check it builds."
+  xcb simulator xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+    CODE_SIGNING_ALLOWED=NO build
+  echo "::notice title=iPhone app::It builds (for the simulator: nothing signed or sent)."
+  exit 0
+fi
 KEY="$RUNNER_TEMP/AuthKey_$ASC_KEY_ID.p8"
 printf '%s\n' "$ASC_KEY_P8" > "$KEY"
 AUTH=(-authenticationKeyPath "$KEY" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID")
@@ -51,33 +53,41 @@ security list-keychains -d user -s "$KC" $(security list-keychains -d user | tr 
 trap 'security delete-keychain "$KC" 2>/dev/null || true; rm -f "$KEY"; rm -rf "$SIGN"' EXIT
 echo "identities: $(security find-identity -v -p codesigning "$KC" | tail -n 1)"
 for d in "$HOME/Library/MobileDevice/Provisioning Profiles" "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"; do
-  mkdir -p "$d"; cp "$SIGN/profile.mobileprovision" "$d/$PROFILE_UUID.mobileprovision"
+  mkdir -p "$d"
+  python3 -c "import json,sys; [print(v['file'], v['uuid']) for v in json.load(open(sys.argv[1]))['profiles'].values()]" "$SIGN/out.json" |
+    while read -r f u; do cp "$SIGN/$f" "$d/$u.mobileprovision"; done
 done
-# the app's target signed by hand with them (in the project, so the Pods' own targets aren't given the profile)
-python3 - "$PROFILE_NAME" "$APPLE_TEAM_ID" <<'X'
-import re, sys
-name, team = sys.argv[1], sys.argv[2]
+# the app's targets (the app, the widget, the notifications' pictures) signed by hand, each with its own profile (in the
+# project, so the Pods' own targets aren't given one); the app's entitlements on the app only
+python3 - "$SIGN/out.json" "$APPLE_TEAM_ID" <<'X'
+import json, re, sys
+profiles, team = json.load(open(sys.argv[1]))['profiles'], sys.argv[2]
 p = 'App.xcodeproj/project.pbxproj'
 s = open(p).read()
 n = 0
 def fix(m):
     global n
     body = m.group(0)
-    if 'PRODUCT_BUNDLE_IDENTIFIER' not in body:
+    bid = re.search(r'PRODUCT_BUNDLE_IDENTIFIER = "?([^";]+)"?;', body)
+    if not bid:
         return body
+    if bid.group(1) not in profiles:
+        sys.exit('No profile for %s' % bid.group(1))
+    name = profiles[bid.group(1)]['name']
     n += 1
     for k in ('CODE_SIGN_STYLE', 'DEVELOPMENT_TEAM', 'CODE_SIGN_IDENTITY', '"CODE_SIGN_IDENTITY[sdk=iphoneos*]"', 'PROVISIONING_PROFILE_SPECIFIER',
               'PROVISIONING_PROFILE', 'CODE_SIGN_ENTITLEMENTS'):
         body = re.sub(r'\n\s*' + re.escape(k) + r' = [^;]*;', '', body)
     add = ('\n\t\t\t\tCODE_SIGN_STYLE = Manual;\n\t\t\t\tDEVELOPMENT_TEAM = %s;\n\t\t\t\tCODE_SIGN_IDENTITY = "Apple Distribution";'
-           '\n\t\t\t\t"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Distribution";\n\t\t\t\tPROVISIONING_PROFILE_SPECIFIER = "%s";'
-           '\n\t\t\t\tCODE_SIGN_ENTITLEMENTS = App/App.entitlements;' % (team, name))
+           '\n\t\t\t\t"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Distribution";\n\t\t\t\tPROVISIONING_PROFILE_SPECIFIER = "%s";' % (team, name))
+    if bid.group(1) == 'io.github.cooperking.sotd':
+        add += '\n\t\t\t\tCODE_SIGN_ENTITLEMENTS = App/App.entitlements;'
     return body.replace('buildSettings = {', 'buildSettings = {' + add, 1)
 s = re.sub(r'buildSettings = \{.*?\n\t\t\t\};', fix, s, flags=re.S)
 if not n:
     sys.exit('The app target\'s build settings weren\'t found in the project.')
 open(p, 'w').write(s)
-print('signing set on %d of the app\'s configurations' % n)
+print('signing set on %d configurations (the app and its add-ons)' % n)
 X
 xcb archive xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/App.xcarchive" \
   CURRENT_PROJECT_VERSION="$BUILD" MARKETING_VERSION=1.0 OTHER_CODE_SIGN_FLAGS="--keychain $KC" archive
@@ -90,7 +100,7 @@ cat > "$RUNNER_TEMP/ExportOptions.plist" <<X
   <key>teamID</key><string>$APPLE_TEAM_ID</string>
   <key>signingStyle</key><string>manual</string>
   <key>signingCertificate</key><string>Apple Distribution</string>
-  <key>provisioningProfiles</key><dict><key>io.github.cooperking.sotd</key><string>$PROFILE_NAME</string></dict>
+  <key>provisioningProfiles</key><dict>$(python3 -c "import json,sys; print(''.join('<key>%s</key><string>%s</string>' % (b, v['name']) for b, v in json.load(open(sys.argv[1]))['profiles'].items()))" "$SIGN/out.json")</dict>
   <key>uploadSymbols</key><true/>
   <key>manageAppVersionAndBuildNumber</key><false/>
 </dict></plist>

@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """What the build signs the app with, through the App Store Connect API (the upload key), so no device needs registering:
 
-    python signing.py OUTDIR      writes OUTDIR/key.pem, cert.pem, profile.mobileprovision and out.json ({"name", "uuid", "links"})
+    python signing.py OUTDIR      writes OUTDIR/key.pem, cert.pem, profile.mobileprovision (the app's), profile-widget.mobileprovision,
+    profile-notify.mobileprovision and out.json ({"name", "uuid", "links", "profiles": {bundle ID: {"name", "uuid", "file"}}})
 
   1. the certificate: the one an earlier build made, if it's still there and has at least 30 days left, else a new Apple
      Distribution certificate from a private key made here. Its key and certificate are kept between builds in the
@@ -12,8 +13,10 @@
   2. Associated Domains switched on for the app's ID, so an invitation's link opens the app (Apple's universal links: the
      entitlement customise.sh writes); if Apple won't, the build goes ahead without it (out.json's "links": false, and
      build.sh takes the entitlement out), with a note on the run's page;
-  3. the App Store provisioning profile for io.github.cooperking.sotd with that certificate: the one there already if it
-     has it, is active and carries Associated Domains, else a new one (deleting a profile doesn't touch uploaded builds).
+  3. the add-ons' own IDs (io.github.cooperking.sotd.widget, the Home Screen widget; .notify, the notifications'
+     pictures), registered the first time;
+  4. an App Store provisioning profile for each, with that certificate: the one there already if it has it and is
+     active (the app's: carrying Associated Domains too), else a new one (deleting a profile doesn't touch uploaded builds).
 
 Needs ASC_KEY_ID, ASC_ISSUER_ID and ASC_KEY_P8, and R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET and
 CLOUDFLARE_ACCOUNT_ID (without them nothing is kept, and each build makes a new certificate); PyJWT, cryptography, boto3.
@@ -22,6 +25,10 @@ import base64, datetime, hashlib, json, os, re, sys, time, urllib.error, urllib.
 
 BUNDLE = 'io.github.cooperking.sotd'
 PROFILE = 'SotD App Store (build)'
+EXTRAS = {   # the app's add-ons: their IDs, each with its profile's name and the ID's name
+    BUNDLE + '.widget': ('SotD Widget (build)', 'Song of the Day widget'),
+    BUNDLE + '.notify': ('SotD Notify (build)', 'Song of the Day pictures'),
+}
 KEPT = 'ci/ios-signing.bin'
 
 
@@ -159,30 +166,43 @@ def main(out):
             note('warning', 'Apple wouldn\'t switch on Associated Domains for %s (%d): this build goes without it, so invitations\' links '
                  'open in Safari, not the app. It can be ticked by hand: developer.apple.com > Identifiers > %s.' % (BUNDLE, e.code, BUNDLE))
 
-    # 3. the profile: the one there, if it has this certificate, is active and carries Associated Domains, else a new one
-    prof = None
-    for p in api('GET', '/v1/profiles?filter[name]=%s&include=certificates&limit=50' % urllib.parse.quote(PROFILE)).get('data', []):
-        if p['attributes'].get('name') != PROFILE:
-            continue
-        certs = [c['id'] for c in ((p.get('relationships') or {}).get('certificates') or {}).get('data') or []]
-        has = p['attributes'].get('profileContent') or ''
-        if (not prof and not switched and p['attributes'].get('profileState') == 'ACTIVE' and cert['id'] in certs and has
-                and (not links or b'com.apple.developer.associated-domains' in base64.b64decode(has))):
-            prof = p
-        else:
-            api('DELETE', '/v1/profiles/' + p['id'])
-    if not prof:
-        prof = api('POST', '/v1/profiles', {'data': {'type': 'profiles', 'attributes': {'name': PROFILE, 'profileType': 'IOS_APP_STORE'},
-                                                     'relationships': {'bundleId': {'data': {'type': 'bundleIds', 'id': bid[0]}},
-                                                                       'certificates': {'data': [{'type': 'certificates', 'id': cert['id']}]}}}})['data']
-    content = base64.b64decode(prof['attributes']['profileContent'])
-    open(os.path.join(out, 'profile.mobileprovision'), 'wb').write(content)
-    uuid = prof['attributes'].get('uuid') or re.search(rb'<key>UUID</key>\s*<string>([^<]+)</string>', content).group(1).decode()
-    note('notice', '%s distribution certificate (until %s)%s, and the App Store profile "%s".'
-         % ('A new' if made else 'The kept', (cert['attributes'].get('expirationDate') or '?')[:10],
-            '' if not made else (', kept for the next builds' if put else ' (not kept: no R2 secrets)'), PROFILE))
-    json.dump({'name': PROFILE, 'uuid': uuid, 'links': links}, open(os.path.join(out, 'out.json'), 'w'))
+    # 3. the add-ons' own IDs (the widget, the notifications' pictures): registered the first time
+    ids = {BUNDLE: bid[0]}
+    for b, (_, label) in EXTRAS.items():
+        have = [x['id'] for x in api('GET', '/v1/bundleIds?filter[identifier]=%s&limit=200' % b).get('data', []) if x['attributes'].get('identifier') == b]
+        if not have:
+            have = [api('POST', '/v1/bundleIds', {'data': {'type': 'bundleIds', 'attributes': {'identifier': b, 'name': label, 'platform': 'IOS'}}})['data']['id']]
+            note('notice', 'The ID %s registered (%s).' % (b, label))
+        ids[b] = have[0]
 
+    # 4. each one's profile: the one there, if it has this certificate and is active (the app's: carrying Associated
+    # Domains too), else a new one
+    profiles = {}
+    for b, name in [(BUNDLE, PROFILE)] + [(b, n) for b, (n, _) in EXTRAS.items()]:
+        prof = None
+        for p in api('GET', '/v1/profiles?filter[name]=%s&include=certificates&limit=50' % urllib.parse.quote(name)).get('data', []):
+            if p['attributes'].get('name') != name:
+                continue
+            certs = [c['id'] for c in ((p.get('relationships') or {}).get('certificates') or {}).get('data') or []]
+            has = p['attributes'].get('profileContent') or ''
+            if (not prof and not (switched and b == BUNDLE) and p['attributes'].get('profileState') == 'ACTIVE' and cert['id'] in certs and has
+                    and (b != BUNDLE or not links or b'com.apple.developer.associated-domains' in base64.b64decode(has))):
+                prof = p
+            else:
+                api('DELETE', '/v1/profiles/' + p['id'])
+        if not prof:
+            prof = api('POST', '/v1/profiles', {'data': {'type': 'profiles', 'attributes': {'name': name, 'profileType': 'IOS_APP_STORE'},
+                                                         'relationships': {'bundleId': {'data': {'type': 'bundleIds', 'id': ids[b]}},
+                                                                           'certificates': {'data': [{'type': 'certificates', 'id': cert['id']}]}}}})['data']
+        content = base64.b64decode(prof['attributes']['profileContent'])
+        file = 'profile.mobileprovision' if b == BUNDLE else 'profile-%s.mobileprovision' % b.rsplit('.', 1)[-1]
+        open(os.path.join(out, file), 'wb').write(content)
+        uuid = prof['attributes'].get('uuid') or re.search(rb'<key>UUID</key>\s*<string>([^<]+)</string>', content).group(1).decode()
+        profiles[b] = {'name': name, 'uuid': uuid, 'file': file}
+    note('notice', '%s distribution certificate (until %s)%s, and the App Store profiles: %s.'
+         % ('A new' if made else 'The kept', (cert['attributes'].get('expirationDate') or '?')[:10],
+            '' if not made else (', kept for the next builds' if put else ' (not kept: no R2 secrets)'), ', '.join('"%s"' % p['name'] for p in profiles.values())))
+    json.dump({'name': PROFILE, 'uuid': profiles[BUNDLE]['uuid'], 'links': links, 'profiles': profiles}, open(os.path.join(out, 'out.json'), 'w'))
 
 if __name__ == '__main__':
     main(sys.argv[1])
