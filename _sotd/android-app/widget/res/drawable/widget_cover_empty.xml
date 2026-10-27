@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- no cover yet: a soft square with a note -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="84dp" android:height="84dp" android:viewportWidth="84" android:viewportHeight="84">
+    <path android:fillColor="#2EFFFFFF" android:pathData="M12,0h60a12,12 0 0 1 12,12v60a12,12 0 0 1 -12,12h-60a12,12 0 0 1 -12,-12v-60a12,12 0 0 1 12,-12z" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M36,30v22.5a6,6 0 1 0 3,5.2V38h14v10.5a6,6 0 1 0 3,5.2V27z" />
+</vector>
