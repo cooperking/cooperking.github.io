@@ -1,0 +1,47 @@
+name: iPhone app, public link
+# Once Apple has approved a build for the family's TestFlight group (SOTD), turns on the group's public link and puts it in
+# songs/ios.json, where invitations find it (_sotd/ios-app/public_link.py). Hourly until then; once the link is in the
+# site, this turns itself off (Actions > iPhone app, public link > Enable workflow, to have it look again).
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '41 * * * *'
+
+concurrency:
+  group: ios-link
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  link:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: The public link, once Apple has approved a build
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          pip install --quiet pyjwt cryptography
+          python _sotd/ios-app/public_link.py songs/ios.json
+      - name: Into the site
+        run: |
+          if [ -n "$(git status --porcelain songs/ios.json)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+            git add songs/ios.json
+            git commit -m "iPhone app: TestFlight's public link, for invitations"
+            for i in 1 2 3 4 5; do git pull --rebase --quiet && git push && break; sleep 5; done
+          fi
+      - name: Done with once the link is in the site
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if grep -q '"testflight": "https://testflight.apple.com/join/' songs/ios.json 2>/dev/null; then
+            gh workflow disable ios-link.yml -R "$GITHUB_REPOSITORY" && echo "::notice title=iPhone app (public link)::The link is in the site: this workflow is off now."
+          fi
