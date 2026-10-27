@@ -71,6 +71,7 @@ export default {
       if (url.pathname === '/media/report') return await mediaReport(url, env);
       if (url.pathname === '/app.webmanifest') return appManifest(url);
       if (url.pathname.startsWith('/i/')) return await invitePage(url, env);
+      if (url.pathname === '/.well-known/apple-app-site-association') return appleLinks(env);
       if (url.pathname.startsWith('/n/')) return await notePic(url, env);
       if (url.pathname === '/alexa') return await alexa(request, env, ctx);
       if (url.pathname === '/covers.json' || url.pathname.startsWith('/c/') || url.pathname.startsWith('/s/')) return await ownCover(request, url, env);
@@ -555,7 +556,7 @@ async function members(request, url, env) {
       const pid = /^[\w-]{16}$/.test(String(body.page || '')) && await env.SOTD.get('invpage:' + body.page) ? body.page : randomCode(12);
       const ttl = INVITE_DAYS * 86400, at = Date.now();
       await env.SOTD.put('invcard:' + pid, bytes, { expirationTtl: ttl });
-      await env.SOTD.put('invpage:' + pid, JSON.stringify({ link, title: String(body.title || (m.name + ' is invited')).slice(0, 120), at }), { expirationTtl: ttl });
+      await env.SOTD.put('invpage:' + pid, JSON.stringify({ link, title: String(body.title || (m.name + ' is invited')).slice(0, 120), name: m.name, at }), { expirationTtl: ttl });
       return answer(200, { page: pid, url: new URL(request.url).origin + '/i/' + pid });
     }
     case 'files': {
@@ -849,19 +850,33 @@ async function memberMe(request, env, answer) {
 
 // an invitation's link: a page that shows a proper card in a message (WhatsApp, iMessage...), like a day's share page,
 // and sends the person on to their invitation on the calendar. Kept for as long as the invitation lasts.
+// the steps for getting the phone's own app (below): shown to everyone once John says so; until then only with ?try on the
+// end of an invitation's link, and everyone else goes straight on to the calendar, as before
+const INVITE_STEPS = false;
 const INVITE_BOTS = /bot|crawl|spider|preview|facebookexternalhit|facebot|whatsapp|telegram|slack|discord|linkedin|pinterest|embedly|iframely|skype|viber|signal|vkshare|redditbot|applebot|google|bing/i;
 async function invitePage(url, env) {
-  const m = /^\/i\/([\w-]{16})(\.jpg)?$/.exec(url.pathname);
+  const m = /^\/i\/([\w-]{16})(\.jpg|\.json)?$/.exec(url.pathname);
   const gone = () => new Response('<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>John\'s Song of the Day</title><p style="font-family:Georgia,serif;padding:24px">This invitation has run out. Ask John for a new one, or <a href="https://cooperking.github.io/songs/">open the calendar</a>.</p>', { status: 404, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
   if (!m) return gone();
-  if (m[2]) {
+  if (m[2] === '.jpg') {
     const img = await env.SOTD.get('invcard:' + m[1], 'arrayBuffer');
     if (!img) return new Response('Not here.', { status: 404 });
     return new Response(img, { headers: { 'Content-Type': 'image/jpeg', 'Cache-Control': 'public, max-age=3600' } });
   }
   const p = await env.SOTD.get('invpage:' + m[1], 'json');
+  if (m[2] === '.json') {   // the iPhone app, opened by this invitation's link (Apple's universal links): where it leads
+    const h = { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'Access-Control-Allow-Origin': '*' };
+    return new Response(JSON.stringify(p ? { link: p.link, title: p.title, name: p.name || '' } : { error: 'This invitation has run out.' }), { status: p ? 200 : 404, headers: h });
+  }
   if (!p) return gone();
+  // the apps, as the site says where they are: the iPhone app's TestFlight public link (songs/ios.json, once Apple has
+  // approved a build) and the Android app (songs/android.json)
+  const get = u => fetch(u, { cf: { cacheTtl: 300 } }).then(r => r.ok ? r.json() : {}).catch(() => ({}));
+  const [ios, android] = await Promise.all([get(SITE_SONGS + 'ios.json'), get(SITE_SONGS + 'android.json')]);
+  const tf = /^https:\/\/testflight\.apple\.com\/join\/\w+$/.test(ios.testflight || '') ? ios.testflight : '';
+  const apk = /^https:\/\/cooperking\.github\.io\//.test(android.apk || '') ? android.apk : '';
   const e = x => esc(String(x)), img = url.origin + '/i/' + m[1] + '.jpg?v=' + p.at, desc = 'John\'s Song of the Day';
+  const steps = INVITE_STEPS || url.searchParams.has('try'), own = url.origin + '/i/' + m[1];
   return new Response(`<!doctype html>
 <html lang="en">
 <head>
@@ -886,13 +901,85 @@ async function invitePage(url, env) {
 <meta name="twitter:image" content="${e(img)}">
 <link rel="icon" type="image/png" sizes="96x96" href="https://cooperking.github.io/songs/favicon-96.png?v=2">
 <link rel="apple-touch-icon" sizes="180x180" href="https://cooperking.github.io/songs/apple-touch-icon.png?v=2">
-<script>if (!${INVITE_BOTS}.test(navigator.userAgent)) location.replace(${JSON.stringify(p.link)});</script>
+<style>
+  :root { --fg: #fffaf5; --muted: rgba(255, 250, 245, .82); --ink: #1b1020; }
+  body { margin: 0; min-height: 100vh; color: var(--fg); font: 17px/1.5 Georgia, "Times New Roman", serif;
+    background: radial-gradient(60vmax 50vmax at 80% 0%, #ff4f7b, transparent 70%), radial-gradient(50vmax 50vmax at 0% 100%, #c41d8a, transparent 70%), #e2335f; }
+  main { max-width: 440px; margin: 0 auto; padding: max(28px, env(safe-area-inset-top)) 18px 40px; display: none; }
+  html.steps main { display: block; }
+  *, *::before, *::after { box-sizing: border-box; }
+  .card { width: 100%; height: auto; aspect-ratio: 1200 / 630; object-fit: cover; border-radius: 14px; box-shadow: 0 18px 50px rgba(24, 8, 24, .3); display: block; }
+  h1 { font-weight: 500; font-size: 30px; line-height: 1.1; margin: 22px 0 6px; }
+  p { margin: 0 0 14px; color: var(--muted); }
+  ol { list-style: none; margin: 22px 0 0; padding: 0; display: grid; gap: 14px; }
+  li { background: rgba(255, 255, 255, .14); border: 1px solid rgba(255, 255, 255, .24); border-radius: 16px; padding: 14px 16px; }
+  li b.n { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--fg); color: var(--ink); font: 600 13px/1 -apple-system, system-ui, sans-serif; margin-right: 8px; }
+  li p { margin: 8px 0 12px; font-size: 15px; }
+  .btn { display: block; text-align: center; text-decoration: none; padding: 13px 16px; border-radius: 999px; background: var(--fg); color: var(--ink); border: 0; width: 100%;
+    font: 600 13px/1 -apple-system, system-ui, sans-serif; letter-spacing: .1em; text-transform: uppercase; cursor: pointer; }
+  .btn.ghost { background: transparent; color: var(--fg); border: 1px solid rgba(255, 255, 255, .6); }
+  .small { font-size: 14px; margin-top: 18px; }
+  .small a { color: var(--fg); }
+</style>
+<script>
+(function () {
+  var ua = navigator.userAgent, link = ${JSON.stringify(p.link)};
+  if (${INVITE_BOTS}.test(ua)) return;
+  var iphone = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1), android = /Android/.test(ua);
+  // a phone with its own app to get: the steps; anything else, straight on to the calendar, as before
+  if (${JSON.stringify(steps)} && ((iphone && ${JSON.stringify(!!tf)}) || (android && ${JSON.stringify(!!apk)}))) { document.documentElement.classList.add('steps', iphone ? 'iphone' : 'android'); return; }
+  location.replace(link);
+})();
+</script>
 </head>
-<body style="font-family: Georgia, serif; padding: 24px;">
-<p><a href="${e(p.link)}">${e(p.title)}</a>: John's Song of the Day.</p>
+<body>
+<main>
+  <img class="card" src="${e(img)}" alt="" width="1200" height="630">
+  <h1>${e(p.title)}</h1>
+  <p>John’s Song of the Day: a song for every day, with John’s own recordings and videos for members.</p>
+  <ol id="steps"></ol>
+  <p class="small">Or <a href="${e(p.link)}">open the calendar here in the browser</a> instead.</p>
+</main>
+<script>
+(function () {
+  var html = document.documentElement; if (!html.classList.contains('steps')) return;
+  var iphone = html.classList.contains('iphone'), link = ${JSON.stringify(p.link)}, own = ${JSON.stringify(own)};
+  var steps = iphone ? [
+    { t: 'Get the iPhone app', p: 'Apple’s TestFlight app comes first, then Song of the Day. Your invitation is copied as you go: when the app opens, it offers to sign you in with it.', a: ${JSON.stringify(tf)}, copy: true },
+    { t: 'Open the app', p: 'If it doesn’t offer to sign you in, tap your invitation in the message again: it opens the app, signed in.' }
+  ] : [
+    { t: 'Get the Android app', p: 'Android asks to allow installing from your browser: allow it, then tap Install.', a: ${JSON.stringify(apk)} },
+    { t: 'Open your invitation', p: 'It opens in the app and signs you in.', a: link, ghost: true }
+  ];
+  var ol = document.getElementById('steps');
+  steps.forEach(function (st, i) {
+    var li = document.createElement('li');
+    li.innerHTML = '<b class="n">' + (i + 1) + '</b>' + st.t + '<p>' + st.p + '</p>';
+    if (st.a) {
+      var b = document.createElement('a'); b.className = 'btn' + (st.ghost ? ' ghost' : ''); b.href = st.a; b.textContent = st.t;
+      if (st.copy) b.addEventListener('click', function (ev) {   // the invitation on the clipboard first, for the app to find
+        if (!navigator.clipboard || !navigator.clipboard.writeText) return;
+        ev.preventDefault();
+        var go = function () { location.href = st.a; };
+        navigator.clipboard.writeText(own).then(go, go);   // (this page's own link: the app finds who it's for, and the invitation, from it)
+      });
+      li.appendChild(b);
+    }
+    ol.appendChild(li);
+  });
+})();
+</script>
 </body>
 </html>
 `, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } });
+}
+
+// Apple's universal links: an invitation's link (/i/<id>) tapped on an iPhone with the app opens the app, which signs in
+// with it (the app's entitlement: applinks:sotd-playlists.cooperking.workers.dev; its team ID is the Worker's secret)
+function appleLinks(env) {
+  const team = String(env.APPLE_TEAM_ID || '').trim();
+  const body = { applinks: { details: team ? [{ appIDs: [team + '.io.github.cooperking.sotd'], components: [{ '/': '/i/*', comment: 'invitations' }] }] : [] } };
+  return new Response(JSON.stringify(body), { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=3600' } });
 }
 
 // a member signing in another of their own devices (a Fire TV, a Home Screen icon): the same one-use code John can
