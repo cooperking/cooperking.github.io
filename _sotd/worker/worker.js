@@ -1142,7 +1142,8 @@ export class SotdNow {   // one member's note, and their open pages
       for (const ws of this.ctx.getWebSockets()) { try { ws.send(msg); } catch (e) {} }
       // the iPhone widgets told to look again, when what they show has changed (not for a jump within the song)
       const shown = r => r ? [r.dev, r.t, r.playing].join('|') : '';
-      if (shown(rec) !== shown(x.put || null)) { const p = this.widgetsTell().catch(() => {}); if (this.ctx.waitUntil) this.ctx.waitUntil(p); }
+      // (waited for, up to 4 seconds: work left running after the answer isn't sure to finish)
+      if (shown(rec) !== shown(x.put || null)) await Promise.race([this.widgetsTell().catch(() => {}), new Promise(r => setTimeout(r, 4000))]);
     }
     return json(x.out, x.status);
   }
