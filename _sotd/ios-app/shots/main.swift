@@ -22,6 +22,7 @@ func render<V: View, B: View>(_ out: String, _ name: String, _ w: CGFloat, _ h: 
 struct Shots {
     @MainActor
     static func main() async {
+        SotdLinks.plain = true
         let args = CommandLine.arguments
         let out = args.count > 1 ? args[1] : "out"
         try? FileManager.default.createDirectory(atPath: out, withIntermediateDirectories: true)

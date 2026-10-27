@@ -41,8 +41,11 @@ const SITE = 'https://cooperking.github.io/songs/', ICONS = process.env.ICON_BAS
   copy(__dirname + '/widget/res', main + '/res');
   const preview = process.env.WIDGET_PREVIEW === '1';
   if (preview) copy(__dirname + '/widget/preview', main + '/java/io/github/cooperking/sotd');
-  const mf = main + '/AndroidManifest.xml', m = fs.readFileSync(mf, 'utf8');
-  if (!m.includes('</application>')) throw new Error('The app\'s manifest has no </application>');
+  const mf = main + '/AndroidManifest.xml', m0 = fs.readFileSync(mf, 'utf8');
+  if (!m0.includes('</application>')) throw new Error('The app\'s manifest has no </application>');
+  // the widgets fetch the site's lists and covers themselves: the internet (Bubblewrap asks for none, as Chrome does
+  // the app's own loading; without it, build 10's widget never had its song)
+  const m = m0.includes('android.permission.INTERNET"') ? m0 : m0.replace(/<application\b/, '<uses-permission android:name="android.permission.INTERNET" />\n    <application');
   const widget = (cls, label, info) => `    <receiver android:name=".${cls}" android:exported="false" android:label="@string/${label}">
             <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/${info}" />

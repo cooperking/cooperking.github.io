@@ -5,6 +5,16 @@ import AppIntents
 // How the widgets look: the calendar's own colours (the month's ground with its glow top right), its serif titles and
 // small spaced capitals. Each view is drawn for a size (WSize); the widgets (SotdWidget.swift) give it their family.
 
+// a tap's address (a Link; drawn plainly for the pictures of the widgets, which can't draw a Link)
+struct Tap<Content: View>: View {
+    static var plain: Bool { return SotdLinks.plain }
+    let url: URL
+    @ViewBuilder let content: () -> Content
+    var body: some View {
+        if Tap.plain { content() } else { Link(destination: url) { content() } }
+    }
+}
+
 struct SotdBackground: View {
     let ground: Color
     let glow: Color
@@ -119,7 +129,7 @@ struct PlayView: View {
     }
 
     func pill(_ label: String, _ icon: String, _ url: URL) -> some View {
-        Link(destination: url) {
+        Tap(url: url) {
             HStack(spacing: 5) {
                 Image(systemName: icon).font(.system(size: 10, weight: .semibold))
                 Text(label).font(.system(size: 11, weight: .semibold)).lineLimit(1).minimumScaleFactor(0.8)
@@ -189,7 +199,7 @@ struct CalendarView: View {
 
     @ViewBuilder func cell(_ c: DayCell?) -> some View {
         if let c = c, c.song {
-            Link(destination: SotdLinks.playFrom(c.slug)) {
+            Tap(url: SotdLinks.playFrom(c.slug)) {
                 Color.clear.aspectRatio(1, contentMode: .fit)
                     .overlay(Art(cover: c.cover, radius: 6))
                     .overlay(alignment: .topLeading) {
@@ -221,7 +231,7 @@ struct CalendarView: View {
             }
             HStack(alignment: .top, spacing: 6) {
                 ForEach(Array(entry.week.enumerated()), id: \.offset) { _, c in
-                    Link(destination: SotdLinks.playFrom(c.slug)) {
+                    Tap(url: SotdLinks.playFrom(c.slug)) {
                         VStack(spacing: 4) {
                             Color.clear.aspectRatio(1, contentMode: .fit)
                                 .overlay(Art(cover: c.cover, radius: 6))
@@ -260,9 +270,9 @@ struct ElseView: View {
                 Image(systemName: "hifispeaker.2").font(.system(size: size == .small ? 22 : 26)).foregroundColor(.white.opacity(0.9))
                 Spacer(minLength: 0)
                 Caps(text: "Your other devices", size: 9)
-                Text(entry.state == .signedOut ? "Sign in on the calendar to see what’s playing on your other devices."
+                Text(entry.state == .signedOut ? "Sign in to see what’s playing on your other devices."
                                                : "Nothing’s playing on your other devices.")
-                    .font(.system(size: size == .small ? 13 : 15, design: .serif)).foregroundColor(.white).lineLimit(3)
+                    .font(.system(size: size == .small ? 13 : 15, design: .serif)).foregroundColor(.white).lineLimit(4).minimumScaleFactor(0.85)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         default:

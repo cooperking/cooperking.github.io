@@ -26,6 +26,7 @@ enum SotdLinks {
     static func act(_ a: String) -> URL { return URL(string: site + "?do=" + a)! }   // today, shuffle, mine, carry
     static func playFrom(_ slug: String) -> URL { return URL(string: site + "?do=all#" + slug)! }   // Play all from that day
     static let calendar = URL(string: site)!
+    static var plain = false   // (the pictures of the widgets: taps drawn without their Link)
 }
 
 extension Color {
