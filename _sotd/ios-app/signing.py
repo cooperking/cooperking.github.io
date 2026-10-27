@@ -142,9 +142,14 @@ def main(out):
            if b['attributes'].get('identifier') == BUNDLE]
     if not bid:
         raise SystemExit(note('error', 'The bundle ID %s isn\'t registered.' % BUNDLE) or 1)
-    caps = [c['attributes'].get('capabilityType') for c in api('GET', '/v1/bundleIds/%s/bundleIdCapabilities?limit=50' % bid[0]).get('data', [])]
-    links, switched = 'ASSOCIATED_DOMAINS' in caps, False
-    if not links:
+    try:   # (this list takes no limit)
+        caps = [c['attributes'].get('capabilityType') for c in api('GET', '/v1/bundleIds/%s/bundleIdCapabilities' % bid[0], soft=True).get('data', [])]
+    except Refused as e:
+        caps = None
+        note('warning', 'Apple wouldn\'t list the app ID\'s capabilities (%d): this build goes without Associated Domains, so invitations\' '
+             'links open in Safari, not the app.' % e.code)
+    links, switched = bool(caps) and 'ASSOCIATED_DOMAINS' in caps, False
+    if caps is not None and not links:
         try:
             api('POST', '/v1/bundleIdCapabilities', {'data': {'type': 'bundleIdCapabilities', 'attributes': {'capabilityType': 'ASSOCIATED_DOMAINS'},
                                                               'relationships': {'bundleId': {'data': {'type': 'bundleIds', 'id': bid[0]}}}}}, soft=True)
