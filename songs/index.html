@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="sotd-build" content="f08b48c4e0af">
+<meta name="sotd-build" content="674b7f25e419">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 259 so far">
 <meta name="theme-color" content="#ec135b">
@@ -2372,7 +2372,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   function setFull(on) {
     fullPref = on;
-    if (on && !TV && !fsEl()) {   // the browser's full screen too (not on an iPhone, which has none for a page)
+    var app = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();   // the iPhone app
+    if (on && !TV && !app && !fsEl()) {   // the browser's full screen too (not on an iPhone, which has none for a page; not in
+      // the iPhone app, which has no browser bars to hide, and where iOS puts up "... is in full screen mode" for it)
       var go = root.requestFullscreen || root.webkitRequestFullscreen;
       if (go) { try { var r = go.call(root, { navigationUI: 'hide' }); fsOurs = true; if (r && r.catch) r.catch(function () { fsOurs = false; }); } catch (e) { fsOurs = false; } }
     }
