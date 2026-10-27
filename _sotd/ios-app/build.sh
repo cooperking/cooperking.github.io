@@ -58,7 +58,7 @@ for d in "$HOME/Library/MobileDevice/Provisioning Profiles" "$HOME/Library/Devel
     while read -r f u; do cp "$SIGN/$f" "$d/$u.mobileprovision"; done
 done
 # the app's targets (the app, the widget, the notifications' pictures) signed by hand, each with its own profile (in the
-# project, so the Pods' own targets aren't given one); the app's entitlements on the app only
+# project, so the Pods' own targets aren't given one); the app's entitlements on the app, the widget's on the widget
 python3 - "$SIGN/out.json" "$APPLE_TEAM_ID" <<'X'
 import json, re, sys
 profiles, team = json.load(open(sys.argv[1]))['profiles'], sys.argv[2]
@@ -82,6 +82,8 @@ def fix(m):
            '\n\t\t\t\t"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Distribution";\n\t\t\t\tPROVISIONING_PROFILE_SPECIFIER = "%s";' % (team, name))
     if bid.group(1) == 'io.github.cooperking.sotd':
         add += '\n\t\t\t\tCODE_SIGN_ENTITLEMENTS = App/App.entitlements;'
+    if bid.group(1) == 'io.github.cooperking.sotd.widget':   # (the keychain it shares with the app: the member's sign-in)
+        add += '\n\t\t\t\tCODE_SIGN_ENTITLEMENTS = SotdWidget/SotdWidget.entitlements;'
     return body.replace('buildSettings = {', 'buildSettings = {' + add, 1)
 s = re.sub(r'buildSettings = \{.*?\n\t\t\t\};', fix, s, flags=re.S)
 if not n:

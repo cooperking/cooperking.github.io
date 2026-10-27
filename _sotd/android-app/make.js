@@ -1,7 +1,9 @@
 // The Android project, from the calendar's own web manifest: a Trusted Web Activity of https://cooperking.github.io/songs/
 // (Chrome, full screen, the site's notifications delegated to the app). Writes ./project. Run by .github/workflows/android.yml.
 // Added to Bubblewrap's project: the shortcuts (a long press on the app: today's song, shuffle, My playlist: the
-// calendar plays them from ?do=) and the Home Screen widget (widget/: TodayWidget, from the site's songs/today.json).
+// calendar plays them from ?do=), the Home Screen widgets (widget/: Song of the Day with its settings, Play, Calendar;
+// from the site's songs/today.json and songs/days.json) and the Quick Settings tile. With WIDGET_PREVIEW=1 (the
+// widgets' check), also a page showing them (widget/preview).
 const { TwaManifest, TwaGenerator, ConsoleLog } = require('@bubblewrap/core');
 const { ShortcutInfo } = require('@bubblewrap/core/dist/lib/ShortcutInfo');
 const SITE = 'https://cooperking.github.io/songs/', ICONS = process.env.ICON_BASE || SITE + 'shortcuts/';   // (ICON_BASE: a local copy, for testing)
@@ -30,19 +32,32 @@ const SITE = 'https://cooperking.github.io/songs/', ICONS = process.env.ICON_BAS
   // ("Component class R.u does not exist", 26 Oct 2026 on an emulated Pixel); the app is small either way
   const fs = require('fs'), g = __dirname + '/project/app/build.gradle';
   fs.writeFileSync(g, fs.readFileSync(g, 'utf8').replace(/minifyEnabled\s+true/g, 'minifyEnabled false').replace(/shrinkResources\s+true/g, 'shrinkResources false'));
-  // the Home Screen widget: its code and resources, and its receiver in the app's manifest
+  // the Home Screen widgets and the tile: their code and resources, and their entries in the app's manifest
   const path = require('path'), main = __dirname + '/project/app/src/main';
   const copy = (from, to) => { for (const f of fs.readdirSync(from)) { const a = path.join(from, f), b = path.join(to, f);
     if (fs.statSync(a).isDirectory()) { fs.mkdirSync(b, { recursive: true }); copy(a, b); } else fs.copyFileSync(a, b); } };
   fs.mkdirSync(main + '/java/io/github/cooperking/sotd', { recursive: true });
   copy(__dirname + '/widget/java', main + '/java/io/github/cooperking/sotd');
   copy(__dirname + '/widget/res', main + '/res');
+  const preview = process.env.WIDGET_PREVIEW === '1';
+  if (preview) copy(__dirname + '/widget/preview', main + '/java/io/github/cooperking/sotd');
   const mf = main + '/AndroidManifest.xml', m = fs.readFileSync(mf, 'utf8');
   if (!m.includes('</application>')) throw new Error('The app\'s manifest has no </application>');
-  fs.writeFileSync(mf, m.replace('</application>', `    <receiver android:name=".TodayWidget" android:exported="false" android:label="@string/widget_label">
+  const widget = (cls, label, info) => `    <receiver android:name=".${cls}" android:exported="false" android:label="@string/${label}">
             <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
-            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_today_info" />
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/${info}" />
         </receiver>
-    </application>`));
+`;
+  fs.writeFileSync(mf, m.replace('</application>', widget('TodayWidget', 'widget_label', 'widget_today_info') +
+    widget('PlayWidget', 'play_label', 'widget_play_info') + widget('CalendarWidget', 'calendar_label', 'widget_calendar_info') +
+    `        <activity android:name=".TodayConfig" android:exported="true" android:label="@string/widget_label" android:theme="@android:style/Theme.Material.Light.Dialog">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" /></intent-filter>
+        </activity>
+        <service android:name=".SotdTile" android:exported="true" android:icon="@drawable/widget_ic_note" android:label="@string/tile_label"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter><action android:name="android.service.quicksettings.action.QS_TILE" /></intent-filter>
+        </service>
+` + (preview ? `        <activity android:name=".WidgetPreview" android:exported="true" />
+` : '') + `    </application>`));
   console.log('project made: version ' + tm.appVersionName + ' (' + code + ')');
 })().catch(e => { console.error(e); process.exit(1); });

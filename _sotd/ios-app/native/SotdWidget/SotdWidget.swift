@@ -1,166 +1,296 @@
 import WidgetKit
 import SwiftUI
-import UIKit
+import AppIntents
 
-// The Home Screen widget: the latest Song of the Day (the site's songs/today.json, written with the share pages), its
-// cover, title, artist and day, on that month's colours. Tapping it opens the app at the day. It looks again every
-// 45 minutes, keeping the last one it had if the site can't be reached.
+// The app's widgets (the data in SotdModel.swift, the looks in SotdViews.swift):
+//  - Song of the Day (small, medium; and on the Lock Screen): the latest song. A tap plays all from it, on through the
+//    days before; from iOS 17 its settings (hold it, Edit Widget) choose Play all, Shuffle, My playlist or that day.
+//  - Calendar (large: this month's covers, a tap on a day plays all from it, arrows for other months from iOS 17;
+//    medium: the last seven days).
+//  - Play (medium): the latest song, with Play all, Shuffle and My playlist.
+//  - On your other device (small, medium): what the member is playing elsewhere (the Worker's note); a tap carries it
+//    on here.
+//  - From iOS 18, a control for Control Centre, the Lock Screen and the Action button: Song of the Day, plays all from
+//    the latest song.
+// Each opens the app at the calendar's own address saying what to play (?do=today, shuffle, mine, carry; ?do=all#day).
 
-struct SongEntry: TimelineEntry {
-    let date: Date
-    let title: String
-    let artist: String
-    let day: String
-    let url: URL?
-    let cover: UIImage?
-    let ground: Color
-    let glow: Color
-
-    static let sample = SongEntry(date: Date(), title: "Song of the Day", artist: "John’s Song of the Day", day: "",
-                                  url: URL(string: "https://cooperking.github.io/songs/"), cover: nil,
-                                  ground: Color(hex: "#652bee"), glow: Color(hex: "#ff2bb8"))
-}
-
-extension Color {
-    init(hex: String) {
-        let v = UInt64(hex.replacingOccurrences(of: "#", with: ""), radix: 16) ?? 0x652bee
-        self.init(red: Double((v >> 16) & 255) / 255, green: Double((v >> 8) & 255) / 255, blue: Double(v & 255) / 255)
-    }
-}
-
-enum Feed {
-    static let url = URL(string: "https://cooperking.github.io/songs/today.json")!
-
-    static func entry(_ data: Data, cover: Data?) -> SongEntry? {
-        guard let j = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any], let title = j["title"] as? String else { return nil }
-        let glow = (j["glow"] as? [String])?.first ?? "#ff2bb8"
-        return SongEntry(date: Date(), title: title, artist: j["artist"] as? String ?? "", day: j["day"] as? String ?? "",
-                         url: URL(string: j["url"] as? String ?? "https://cooperking.github.io/songs/"),
-                         cover: cover.flatMap { UIImage(data: $0) },
-                         ground: Color(hex: j["ground"] as? String ?? "#652bee"), glow: Color(hex: glow))
-    }
-
-    static func fetch(_ done: @escaping (SongEntry?) -> Void) {
-        let keep = UserDefaults.standard
-        func kept() -> SongEntry? { return keep.data(forKey: "feed").flatMap { entry($0, cover: keep.data(forKey: "cover")) } }
-        var rq = URLRequest(url: url)
-        rq.cachePolicy = .reloadIgnoringLocalCacheData
-        rq.timeoutInterval = 12
-        URLSession.shared.dataTask(with: rq) { data, resp, _ in
-            guard let data = data, (resp as? HTTPURLResponse)?.statusCode == 200,
-                  let j = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] else { done(kept()); return }
-            keep.set(data, forKey: "feed")
-            let c = (j["cover"] as? String).flatMap { URL(string: $0) }
-            if let c = c, keep.string(forKey: "coverURL") != c.absoluteString {
-                keep.removeObject(forKey: "cover")
-                URLSession.shared.dataTask(with: c) { img, _, _ in
-                    if let img = img, UIImage(data: img) != nil { keep.set(img, forKey: "cover"); keep.set(c.absoluteString, forKey: "coverURL") }
-                    done(kept())
-                }.resume()
-            } else {
-                done(kept())
-            }
-        }.resume()
-    }
-}
-
-struct Provider: TimelineProvider {
-    func placeholder(in context: Context) -> SongEntry { return .sample }
-
-    func getSnapshot(in context: Context, completion: @escaping (SongEntry) -> Void) {
-        Feed.fetch { completion($0 ?? .sample) }
-    }
-
-    func getTimeline(in context: Context, completion: @escaping (Timeline<SongEntry>) -> Void) {
-        Feed.fetch { e in
-            let next = Date().addingTimeInterval(e == nil ? 20 * 60 : 45 * 60)
-            completion(Timeline(entries: [e ?? .sample], policy: .after(next)))
-        }
-    }
-}
-
-struct TodayView: View {
-    @Environment(\.widgetFamily) var family
-    let entry: SongEntry
-
-    var body: some View {
-        content
-            .widgetURL(entry.url)
-            .sotdBackground(background)
-    }
-
-    var background: some View {
-        ZStack {
-            entry.ground
-            RadialGradient(gradient: Gradient(colors: [entry.glow.opacity(0.85), entry.glow.opacity(0)]),
-                           center: .topTrailing, startRadius: 0, endRadius: 240)
-        }
-    }
-
-    @ViewBuilder var content: some View {
-        if family == .systemSmall {
-            VStack(alignment: .leading, spacing: 4) {
-                art.frame(width: 62, height: 62)
-                Spacer(minLength: 0)
-                Text(entry.title).font(.system(size: 15, design: .serif)).foregroundColor(.white).lineLimit(2)
-                Text(entry.artist.uppercased()).font(.system(size: 9, weight: .semibold)).kerning(0.8)
-                    .foregroundColor(Color.white.opacity(0.8)).lineLimit(1)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-        } else {
-            HStack(spacing: 14) {
-                art.frame(width: 112, height: 112)
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(entry.day.uppercased()).font(.system(size: 10, weight: .semibold)).kerning(1)
-                        .foregroundColor(Color.white.opacity(0.75)).lineLimit(1)
-                    Text(entry.title).font(.system(size: 20, design: .serif)).foregroundColor(.white).lineLimit(2)
-                    Text(entry.artist.uppercased()).font(.system(size: 11, weight: .semibold)).kerning(1)
-                        .foregroundColor(Color.white.opacity(0.85)).lineLimit(1)
-                    Spacer(minLength: 0)
-                    Text("JOHN’S SONG OF THE DAY").font(.system(size: 9, weight: .semibold)).kerning(1.2)
-                        .foregroundColor(Color.white.opacity(0.6)).lineLimit(1)
+extension WSize {
+    init(_ f: WidgetFamily) {
+        switch f {
+        case .systemSmall: self = .small
+        case .systemLarge, .systemExtraLarge: self = .large
+        default:
+            if #available(iOSApplicationExtension 16.0, *) {
+                switch f {
+                case .accessoryRectangular: self = .rect
+                case .accessoryCircular: self = .circle
+                case .accessoryInline: self = .inline
+                default: self = .medium
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+            } else {
+                self = .medium
             }
         }
     }
-
-    @ViewBuilder var art: some View {
-        if let c = entry.cover {
-            Image(uiImage: c).resizable().aspectRatio(contentMode: .fill)
-                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-        } else {
-            RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Color.white.opacity(0.18))
-                .overlay(Image(systemName: "music.note").foregroundColor(.white))
-        }
-    }
+    var accessory: Bool { return self == .rect || self == .circle || self == .inline }
 }
 
 extension View {
-    // iOS 17's widget background (it asks for this), else a plain one with the margins it would have given
-    @ViewBuilder func sotdBackground<B: View>(_ b: B) -> some View {
+    // iOS 17's widget background (it asks for this), else a plain one with the margins it would have given; the Lock
+    // Screen's widgets keep the system's
+    @ViewBuilder func sotdBackground<B: View>(_ b: B, accessory: Bool = false) -> some View {
         if #available(iOSApplicationExtension 17.0, *) {
-            self.containerBackground(for: .widget) { b }
+            if accessory {
+                self.containerBackground(for: .widget) { Color.clear }
+            } else {
+                self.containerBackground(for: .widget) { b }
+            }
+        } else if accessory {
+            self
         } else {
             self.padding(16).background(b)
         }
     }
 }
 
-struct TodayWidget: Widget {
-    var body: some WidgetConfiguration {
-        StaticConfiguration(kind: "today", provider: Provider()) { entry in
-            TodayView(entry: entry)
-        }
-        .configurationDisplayName("Song of the Day")
-        .description("Today’s song: tap it to open its day.")
-        .supportedFamilies([.systemSmall, .systemMedium])
+// ---------- Song of the Day ----------
+struct TodayEntryView: View {
+    @Environment(\.widgetFamily) var family
+    let entry: SongEntry
+    var body: some View {
+        let size = WSize(family)
+        TodayView(entry: entry, size: size)
+            .widgetURL(entry.tap)
+            .sotdBackground(SotdBackground(ground: entry.ground, glow: entry.glow), accessory: size.accessory)
     }
 }
 
+enum TodayFamilies {
+    static var list: [WidgetFamily] {
+        if #available(iOSApplicationExtension 16.0, *) {
+            return [.systemSmall, .systemMedium, .accessoryRectangular, .accessoryCircular, .accessoryInline]
+        }
+        return [.systemSmall, .systemMedium]
+    }
+}
+
+struct TodayProvider: TimelineProvider {
+    func placeholder(in context: Context) -> SongEntry { return .sample }
+    func getSnapshot(in context: Context, completion: @escaping (SongEntry) -> Void) { Feed.fetch(tap: .playAll) { completion($0 ?? .sample) } }
+    func getTimeline(in context: Context, completion: @escaping (Timeline<SongEntry>) -> Void) {
+        Feed.fetch(tap: .playAll) { e in
+            completion(Timeline(entries: [e ?? .sample], policy: .after(Date().addingTimeInterval(e == nil ? 20 * 60 : 45 * 60))))
+        }
+    }
+}
+
+// before iOS 17: no settings, a tap plays all
+struct TodayWidget: Widget {
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: "today", provider: TodayProvider()) { TodayEntryView(entry: $0) }
+            .configurationDisplayName("Song of the Day")
+            .description("The latest song: tap it to play all from it, on through the days before.")
+            .supportedFamilies(TodayFamilies.list)
+    }
+}
+
+@available(iOSApplicationExtension 16.0, *)
+enum TapAction: String, AppEnum {
+    case playAll, shuffle, mine, day
+    static var typeDisplayRepresentation: TypeDisplayRepresentation = "Tap"
+    static var caseDisplayRepresentations: [TapAction: DisplayRepresentation] = [
+        .playAll: "Play all from the latest song", .shuffle: "Shuffle", .mine: "My playlist", .day: "Only the latest song"
+    ]
+    var choice: TapChoice { return TapChoice(rawValue: rawValue) ?? .playAll }
+}
+
+@available(iOSApplicationExtension 17.0, *)
+struct TodaySettings: WidgetConfigurationIntent {
+    static var title: LocalizedStringResource = "Song of the Day"
+    static var description = IntentDescription("Choose what a tap plays.")
+    @Parameter(title: "A tap plays", default: .playAll) var tap: TapAction
+}
+
+@available(iOSApplicationExtension 17.0, *)
+struct TodaySettingsProvider: AppIntentTimelineProvider {
+    func placeholder(in context: Context) -> SongEntry { return .sample }
+    func snapshot(for configuration: TodaySettings, in context: Context) async -> SongEntry { return await load(configuration.tap.choice) ?? .sample }
+    func timeline(for configuration: TodaySettings, in context: Context) async -> Timeline<SongEntry> {
+        let e = await load(configuration.tap.choice)
+        return Timeline(entries: [e ?? .sample], policy: .after(Date().addingTimeInterval(e == nil ? 20 * 60 : 45 * 60)))
+    }
+    func load(_ tap: TapChoice) async -> SongEntry? {
+        return await withCheckedContinuation { k in Feed.fetch(tap: tap) { k.resume(returning: $0) } }
+    }
+}
+
+// from iOS 17: its settings choose what a tap plays (the same kind, so a widget already there keeps its place)
+@available(iOSApplicationExtension 17.0, *)
+struct TodaySettingsWidget: Widget {
+    var body: some WidgetConfiguration {
+        AppIntentConfiguration(kind: "today", intent: TodaySettings.self, provider: TodaySettingsProvider()) { TodayEntryView(entry: $0) }
+            .configurationDisplayName("Song of the Day")
+            .description("The latest song. A tap plays all from it, on through the days before: hold it and choose Edit Widget for Shuffle, My playlist or only the song.")
+            .supportedFamilies(TodayFamilies.list)
+    }
+}
+
+// ---------- Play ----------
+struct PlayEntryView: View {
+    let entry: SongEntry
+    var body: some View {
+        PlayView(entry: entry)
+            .widgetURL(SotdLinks.act("today"))
+            .sotdBackground(SotdBackground(ground: entry.ground, glow: entry.glow))
+    }
+}
+
+struct PlayWidget: Widget {
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: "play", provider: TodayProvider()) { PlayEntryView(entry: $0) }
+            .configurationDisplayName("Play")
+            .description("The latest song, with Play all, Shuffle and My playlist.")
+            .supportedFamilies([.systemMedium])
+    }
+}
+
+// ---------- Calendar ----------
+struct CalendarProvider: TimelineProvider {
+    func placeholder(in context: Context) -> CalendarEntry { return .sample() }
+    func getSnapshot(in context: Context, completion: @escaping (CalendarEntry) -> Void) { load(completion) }
+    func getTimeline(in context: Context, completion: @escaping (Timeline<CalendarEntry>) -> Void) {
+        load { e in
+            // again in two hours, or just after midnight (a new day to mark), whichever comes first
+            let c = CalendarModel.cal
+            let midnight = c.date(byAdding: .day, value: 1, to: c.startOfDay(for: Date()))!.addingTimeInterval(120)
+            completion(Timeline(entries: [e], policy: .after(min(midnight, Date().addingTimeInterval(2 * 3600)))))
+        }
+    }
+    func load(_ done: @escaping (CalendarEntry) -> Void) {
+        var off = 0   // (no arrows before iOS 17: this month)
+        if #available(iOSApplicationExtension 17.0, *) { off = MonthPick.offset }
+        Days.fetch { days, pals in
+            Thumbs.fetch(CalendarModel.covers(days: days, offset: off)) {
+                done(CalendarModel.entry(days: days, palettes: pals, offset: off))
+            }
+        }
+    }
+}
+
+struct CalendarEntryView: View {
+    @Environment(\.widgetFamily) var family
+    let entry: CalendarEntry
+    var body: some View {
+        var arrows = false
+        if #available(iOSApplicationExtension 17.0, *) { arrows = true }
+        return CalendarView(entry: entry, size: WSize(family), arrows: arrows)
+            .widgetURL(SotdLinks.calendar)
+            .sotdBackground(SotdBackground(ground: entry.palette.ground, glow: entry.palette.glow))
+    }
+}
+
+struct CalendarWidget: Widget {
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: "calendar", provider: CalendarProvider()) { CalendarEntryView(entry: $0) }
+            .configurationDisplayName("Calendar")
+            .description("This month’s songs (or the last seven days): tap a day to play all from it, on through the days before.")
+            .supportedFamilies([.systemLarge, .systemMedium])
+    }
+}
+
+// ---------- On your other device ----------
+struct ElseProvider: TimelineProvider {
+    func placeholder(in context: Context) -> ElseEntry { return .sample }
+    func getSnapshot(in context: Context, completion: @escaping (ElseEntry) -> Void) {
+        if context.isPreview { completion(.sample); return }
+        load(completion)
+    }
+    func getTimeline(in context: Context, completion: @escaping (Timeline<ElseEntry>) -> Void) {
+        // again in 15 minutes (the app also tells it the moment another device's song changes, while the app is open)
+        load { completion(Timeline(entries: [$0], policy: .after(Date().addingTimeInterval(15 * 60)))) }
+    }
+    func load(_ done: @escaping (ElseEntry) -> Void) {
+        let m = SotdShared.load()
+        Elsewhere.fetch(token: m?["token"], device: m?["device"], done)
+    }
+}
+
+struct ElseEntryView: View {
+    @Environment(\.widgetFamily) var family
+    let entry: ElseEntry
+    var body: some View {
+        let v = ElseView(entry: entry, size: WSize(family))
+        return v.widgetURL(v.tap)
+            .sotdBackground(SotdBackground(ground: entry.palette.ground, glow: entry.palette.glow))
+    }
+}
+
+struct ElsewhereWidget: Widget {
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: "elsewhere", provider: ElseProvider()) { ElseEntryView(entry: $0) }
+            .configurationDisplayName("On your other device")
+            .description("What you’re playing on your other devices: tap to carry on here.")
+            .supportedFamilies([.systemSmall, .systemMedium])
+    }
+}
+
+// ---------- the control (Control Centre, the Lock Screen, the Action button) ----------
+@available(iOSApplicationExtension 18.0, *)
+struct PlaySongsIntent: AppIntent {
+    static var title: LocalizedStringResource = "Play Song of the Day"
+    static var description = IntentDescription("Plays the latest song, then the days before it.")
+    func perform() async throws -> some IntentResult & OpensIntent {
+        return .result(opensIntent: OpenURLIntent(SotdLinks.act("today")))
+    }
+}
+
+@available(iOSApplicationExtension 18.0, *)
+struct PlayControl: ControlWidget {
+    var body: some ControlWidgetConfiguration {
+        StaticControlConfiguration(kind: "io.github.cooperking.sotd.play") {
+            ControlWidgetButton(action: PlaySongsIntent()) {
+                Label("Song of the Day", systemImage: "music.note")
+            }
+        }
+        .displayName("Song of the Day")
+        .description("Plays the latest song, then the days before it.")
+    }
+}
+
+// ---------- all of them, as the iPhone's version allows ----------
 @main
 struct SotdWidgets: WidgetBundle {
     var body: some Widget {
+        if #available(iOSApplicationExtension 18.0, *) {
+            return widgets18
+        } else if #available(iOSApplicationExtension 17.0, *) {
+            return widgets17
+        } else {
+            return widgets15
+        }
+    }
+
+    @WidgetBundleBuilder var widgets15: some Widget {
         TodayWidget()
+        CalendarWidget()
+        PlayWidget()
+        ElsewhereWidget()
+    }
+
+    @available(iOSApplicationExtension 17.0, *)
+    @WidgetBundleBuilder var widgets17: some Widget {
+        TodaySettingsWidget()
+        CalendarWidget()
+        PlayWidget()
+        ElsewhereWidget()
+    }
+
+    @available(iOSApplicationExtension 18.0, *)
+    @WidgetBundleBuilder var widgets18: some Widget {
+        TodaySettingsWidget()
+        CalendarWidget()
+        PlayWidget()
+        ElsewhereWidget()
+        PlayControl()
     }
 }

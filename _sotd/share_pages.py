@@ -5,8 +5,10 @@ a proper card: the cover with its record, the title, the artist and the date, on
   songs/21-10-2026/index.html   one per day, sends the visitor on to songs/#21-10-2026
   songs/21-10-2026/card.jpg     1200 x 630 picture for link previews
   songs/today/index.html        the latest song, sends the visitor on to songs/#today
-  songs/today.json              the latest song for the iPhone app's Home Screen widget: its day, title, artist,
+  songs/today.json              the latest song for the apps' Home Screen widgets: its day, title, artist,
                                 cover, card, link and its month's colours
+  songs/days.json               every day out on the calendar (date, slug, title, artist, cover, track), oldest first, and
+                                each month's colours: the apps' calendar widgets
   songs/10-2026/index.html      one per month, with card.jpg: that month's covers
   songs/card.jpg                the whole calendar's picture (the site's own link preview uses it)
 
@@ -443,6 +445,10 @@ def main():
     pages += write(os.path.join(SONGS, 'today.json'), json.dumps({
         'date': d.strftime('%Y-%m-%d'), 'day': f'{d:%A} {d.day} {d:%B}', 'slug': sl, 'title': s['title'], 'artist': s['artist'],
         'cover': s.get('img') or '', 'card': image, 'url': f'{SITE}{sl}/', 'ground': pal[0], 'glow': list(pal[1:])}, ensure_ascii=False, indent=1) + '\n')
+    pages += write(os.path.join(SONGS, 'days.json'), json.dumps({
+        'days': [{'date': x.strftime('%Y-%m-%d'), 'slug': slug(x), 'title': y['title'], 'artist': y['artist'], 'cover': y.get('img') or '', 'track': y['id']}
+                 for x, y in dated],
+        'palettes': [{'ground': p[0], 'glow': list(p[1:])} for p in PALETTES]}, ensure_ascii=False, separators=(',', ':')) + '\n')
     print(f'{len(dated)} days: {pages} pages and {cards} cards written or changed; latest {d} {s["title"]}')
 
     # months: a page and a card of that month's covers

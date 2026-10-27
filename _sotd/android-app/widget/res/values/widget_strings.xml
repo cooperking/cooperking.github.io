@@ -1,5 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="widget_label">Song of the Day</string>
-    <string name="widget_description">Today’s song: tap it to open its day.</string>
+    <string name="widget_description">The latest song: a tap plays all from it, on through the days before (or, in its settings, Shuffle, My playlist or only the song).</string>
+    <string name="play_label">Play</string>
+    <string name="play_description">The latest song, with Play all, Shuffle and My playlist.</string>
+    <string name="calendar_label">Calendar</string>
+    <string name="calendar_description">This month’s songs by day: tap one to play all from it. Make it short for the last seven days.</string>
+    <string name="tile_label">Song of the Day</string>
+    <string name="play_all">Play all</string>
+    <string name="play_shuffle">Shuffle</string>
+    <string name="play_mine">My playlist</string>
+    <string name="this_month">This month</string>
+    <string name="month_before">The month before</string>
+    <string name="month_after">The month after</string>
+    <string name="latest_days">LATEST DAYS</string>
 </resources>
