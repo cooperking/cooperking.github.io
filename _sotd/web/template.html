@@ -3955,9 +3955,14 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   function resumeGo(show, step) {   // carry on: out of sight (the play button), or with the song's page (a tap on the song)
     var st = RESUME; if (!st) return;
-    if (NOW.from) {   // carrying on from another device: this one's playing now, from where that one has got to
+    if (NOW.from) {   // carrying on from another device: this one's playing now, from where that one has got to, its shuffle as there
       NOW.claim = true;
       if (st.live) st.pos = Math.floor((st.pos || 0) + Math.max(0, Date.now() - st.at) / 1000);
+      if (st.q && typeof st.q.sh === 'boolean' && st.q.sh !== shuffleOn) {
+        shuffleOn = st.q.sh;
+        try { localStorage.setItem('sotd-shuffle', shuffleOn ? '1' : '0'); } catch (e) {}
+        shufSync();
+      }
     }
     resumeOff();
     var s = byTrack[st.t]; if (!s) return;
@@ -4003,7 +4008,12 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var s = vplay.el.sotd.s, pos = 0;
     try { pos = vplay.player && vplay.player.getCurrentTime ? vplay.player.getCurrentTime() : 0; } catch (e) {}
     return { t: s.track, d: s.d, pos: Math.floor(pos || 0), playing: !!vplay.on, mode: playMode,
-      q: queue ? { list: queue.list, i: queue.i, name: queue.name, back: queue.back, order: queue.order && queue.order.join() !== queue.list.join() ? queue.order : undefined } : null };
+      q: queue ? { list: queue.list, i: queue.i, name: queue.name, back: queue.back, order: queue.order && queue.order.join() !== queue.list.join() ? queue.order : undefined, sh: shuffleOn }
+        : nowAll(s.track) };
+  }
+  function nowAll(t) {   // a day's song, no playlist: carried on as Play all from it (every song, newest first), so it goes on through the days before
+    var all = songs.slice().sort(function (a, b) { return b.n - a.n; }).map(function (x) { return x.track; });
+    return { list: all, i: Math.max(0, all.indexOf(t)), name: 'John\u2019s Song of the Day', back: 'all', sh: false };
   }
   function nowSend(body) {
     var tok = nowTok(); if (!tok || !MBASE || !window.fetch) return;
@@ -5082,19 +5092,21 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   // today's song (then the days before), shuffled, or My playlist: from Siri in the iPhone app (SotdSiri), and from the
   // Android app's shortcuts (a long press on its icon), which open the calendar with ?do=today, shuffle or mine
-  function doAction(a) {
+  function doAction(a, iso) {   // today, shuffle, mine; all: Play all from a day (iso), on through the days before
     var all = songs.slice().sort(function (x, y) { return y.n - x.n; }).map(function (x) { return x.track; });
-    if (a === 'today') startQueue(all, 'John\u2019s Song of the Day', 'all', 0, false);
+    if (a === 'all' && iso && byDate[iso] && byDate[iso].length) startQueue(all, 'John\u2019s Song of the Day', 'all', Math.max(0, all.indexOf(byDate[iso][0].track)), false);
+    else if (a === 'today' || a === 'all') startQueue(all, 'John\u2019s Song of the Day', 'all', 0, false);
     else if (a === 'shuffle') startQueue(all, 'John\u2019s Song of the Day', 'all', 0, true);
     else if (a === 'mine') { if (fav.length) document.getElementById('fabplay').click(); else toast('My playlist is empty: add songs with the heart'); }
   }
   (function () {
     var SIRI = TV ? null : natPlugin('SotdSiri');
     if (SIRI) SIRI.addListener('action', function (e) { var a = e && e.action; setTimeout(function () { doAction(a); }, 400); });
-    var m = TV ? null : /[?&]do=(today|shuffle|mine)(?:&|$)/.exec(location.search);
+    var m = TV ? null : /[?&]do=(today|shuffle|mine|all)(?:&|$)/.exec(location.search);
     if (!m) return;
+    var iso = m[1] === 'all' ? dayFromHash() : '';
     try { history.replaceState(history.state, '', location.pathname + location.search.replace(/([?&])do=[^&]*(&|$)/, function (x, p1, p2) { return p2 ? p1 : ''; }) + location.hash); } catch (e) {}
-    setTimeout(function () { doAction(m[1]); }, 600);
+    setTimeout(function () { doAction(m[1], iso); }, 600);
   })();
   // ---- the apps (the Fire TV's, the iPhone's, Android's, a Home Screen icon) keep the page open for days. Coming back to
   // one after half a minute or more away, the page reloads if the site has a newer page (its sotd-build, from page.py)
@@ -5840,8 +5852,15 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       }, function (e) { toast(e && e.said ? e.message : 'Couldn’t reach the site to join. Try again.'); });
     }
     function siteLink(u) {   // the calendar's own links (a day, a month, today, the calendar; the widget's too): opened here
-      var m = /^https:\/\/cooperking\.github\.io\/songs\/(?:(today|\d{2}-\d{2}-\d{4}|\d{2}-\d{4})\/?)?(?:\?([^#]*))?(?:#.*)?$/.exec(u);
+      var m = /^https:\/\/cooperking\.github\.io\/songs\/(?:(today|\d{2}-\d{2}-\d{4}|\d{2}-\d{4})\/?)?(?:\?([^#]*))?(?:#(.*))?$/.exec(u);
       if (!m) return false;
+      var dm = /(?:^|&)do=(today|shuffle|mine|all)(?:&|$)/.exec(m[2] || '');
+      if (dm) {   // a widget's (or a shortcut's) play: Play all from today, or from a day (its address or #day), shuffle, My playlist
+        var dd = /^\d{2}-\d{2}-\d{4}$/.test(m[1] || '') ? m[1] : /^\d{2}-\d{2}-\d{4}$/.test(m[3] || '') ? m[3] : '';
+        var iso = dd ? dd.slice(6) + '-' + dd.slice(3, 5) + '-' + dd.slice(0, 2) : '';
+        setTimeout(function () { doAction(dm[1], iso); }, 400);
+        return true;
+      }
       var q = /(?:^|&)play=(video|preview)\b/.exec(m[2] || ''), h = m[1] ? '#' + m[1] : '';
       if (q) location.replace(SITE + '?play=' + q[1] + h);
       else if (h && location.hash === h) openFromHash();

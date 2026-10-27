@@ -1056,7 +1056,7 @@ function nowApply(rec, b, now) {   // a device's note against the one kept: the 
   if (!ID_RE.test(String(b.t || ''))) return { status: 400, out: { error: 'Which song?' } };
   const ids = x => Array.isArray(x) ? x.map(String).filter(t => ID_RE.test(t)).slice(0, 2000) : undefined;
   const q = b.q && Array.isArray(b.q.list) ? { list: ids(b.q.list), i: Math.max(0, b.q.i | 0), name: String(b.q.name || '').slice(0, 120),
-    back: String(b.q.back || '').slice(0, 20), order: ids(b.q.order) } : null;
+    back: String(b.q.back || '').slice(0, 20), order: ids(b.q.order), sh: !!b.q.sh } : null;
   const put = { dev, label: String(b.label || 'other device').slice(0, 40), t: b.t, d: String(b.d || '').slice(0, 10), pos: Math.max(0, +b.pos || 0),
     playing: !!b.playing, mode: b.mode === 'video' ? 'video' : 'audio', q, at: now, since: rec && rec.dev === dev && !b.start ? rec.since : now };
   return { status: 200, out: { ok: true, now }, put };
