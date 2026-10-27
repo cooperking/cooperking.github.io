@@ -105,6 +105,7 @@ html.big .day .dcap .ta { font: 600 10.5px/1.2 var(--sans); letter-spacing: .08e
 html.big .day .sticker { bottom: auto; top: 4px; }
 html.tv .pick .icons .iconbtn:not(.addfav) { display: none; }   /* a day's Share and Spotify: not on a TV */
 html.big .bar-top .fab { position: static; margin: 0; box-shadow: none; }   /* My playlist joins the bar, off the calendar */
+html.tv.bgplay .bar-top .hold { display: none; }   /* a TV: the song in the bar (another device's, to carry on with) in its place */
 /* Full screen (html.theatre, set by the page): the video as large as the screen allows, with nothing ever drawn over
    any part of it (YouTube's rules for its player). Round it, on black: the facts in a strip just under it, only as
    tall as they need to read; when the buttons are wanted (html.tvui: a tap or the mouse off the video, the remote) the
@@ -3955,6 +3956,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   function resumeGo(show, step) {   // carry on: out of sight (the play button), or with the song's page (a tap on the song)
     var st = RESUME; if (!st) return;
+    if (TV) show = true;   // (a TV plays with the song's page, full screen: nothing plays out of sight there)
     if (NOW.from) {   // carrying on from another device: this one's playing now, from where that one has got to, its shuffle as there
       NOW.claim = true;
       if (st.live) st.pos = Math.floor((st.pos || 0) + Math.max(0, Date.now() - st.at) / 1000);
@@ -3979,7 +3981,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     }
     openDay(s.d, { track: st.t, keepQueue: true });
     if (!show) { layersChanged(); bgDraw(); followFloat(400); }
-    if (step && bgOn) goDay(step);
+    if (step && (bgOn || TV)) goDay(step);
   }
 
   // ---- carrying on on another device (members). The device playing notes what it's playing at the Worker
@@ -3991,7 +3993,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // another device, a device not playing always shows it in the box (over a day open here; in place of its own song
   // paused in the box; a paused one only if more recent than this device's own), looking every 30 seconds while in
   // sight; gone from there, gone from the box. The note is kept in the Worker's Durable Object, which tells the open
-  // pages down a live line the moment it changes (see nowLine). ----
+  // pages down a live line the moment it changes (see nowLine). On a Fire TV the box is in the top bar, where the
+  // remote goes; carrying on there opens the song's page, full screen, and a TV stopped by another device goes back to
+  // the calendar, the other's song in the bar. ----
   var NOW = { key: '', sent: null, taken: false, gesture: 0, from: '', claim: false, okAt: 0, checked: 0, lastOn: 0, pending: 0 };
   ['pointerdown', 'keydown', 'touchend'].forEach(function (n) { document.addEventListener(n, function () {
     NOW.gesture = Date.now();
@@ -4030,6 +4034,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     NOW.taken = true; NOW.key = ''; NOW.sent = null; NOW.okAt = 0;   // (a tap here to play again: noted, as new)
     if (vplay && vplay.on) try { vidToggle(); } catch (e) {}
     resumeForget();   // (this device's own place: not offered over the other's)
+    if (TV) layers().forEach(function (d) { closeDialog(d, true); });   // a TV: back to the calendar, the other's song in the bar
     toast('Playing on your ' + label + ' now');
     setTimeout(nowFetch, 1500);   // (then the other's song shown here, to carry on with)
   }
@@ -4053,7 +4058,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // sight. A look too on coming back to the page, as a phone's line is cut while it's put away.
   var NOWWS = { ws: null, open: false, tries: 0, timer: 0, pong: 0 };
   function nowLine() {
-    if (!MEMBER || TV || !MBASE || !window.WebSocket || NOWWS.ws) return;
+    if (!MEMBER || !MBASE || !window.WebSocket || NOWWS.ws) return;
     var tok = nowTok(); if (!/^[A-Za-z0-9_-]+$/.test(tok)) return;
     var ws; try { ws = new WebSocket(MBASE.replace(/^http/, 'ws') + '/members/now/ws', ['sotd', tok]); } catch (e) { return; }
     NOWWS.ws = ws; clearTimeout(NOWWS.timer);
@@ -4095,7 +4100,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     fabbox.style.zIndex = on ? String((+sheet.style.zIndex || 50) + 1) : '';
   }
   function nowFetch() {   // the note, asked for
-    if (!MEMBER || TV || !MBASE || !window.fetch) return;
+    if (!MEMBER || !MBASE || !window.fetch) return;
     var tok = nowTok(); if (!tok) return;
     NOW.checked = Date.now();
     fetch(MBASE + '/members/now', { headers: { Authorization: 'Bearer ' + tok }, cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
@@ -4129,7 +4134,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   document.addEventListener('visibilitychange', function () { if (!document.hidden) nowAppReload(true); });
   function nowGot(j) {   // the note (asked for, or told down the line): this device stopped, or the other's song shown here
-    if (!MEMBER || TV) return;
+    if (!MEMBER) return;
     var r = j.rec;
     if (busyNow()) {   // playing here: carried on on another device since this one's note?
       if (r && r.dev !== deviceId() && NOW.okAt && r.at > NOW.okAt && !NOW.pending && !NOW.taken && vplay && vplay.on) nowTaken(r.label);
@@ -4212,7 +4217,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   var miniOn = false;
   function miniSync() {
     var on = root.classList.contains('bgplay'), acts = document.querySelector('.bar-top .bar-actions');
-    if (on && bigOn && acts && fabbox.parentNode === acts) document.body.appendChild(fabbox);   // out of the bar to float
+    if (on && bigOn && acts && fabbox.parentNode === acts && !TV) document.body.appendChild(fabbox);   // out of the bar to float (not on a TV: it stays in the bar, where the remote goes)
     if (!on && bigOn && acts && fabbox.parentNode !== acts) acts.appendChild(fabbox);   // back into the bar
     if (on !== miniOn) { miniOn = on; miniPlace(); }
   }
