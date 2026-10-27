@@ -5,7 +5,11 @@ The page knows it's on a TV from the browser's name (`SOTDTV`) and then lays its
 between buttons with the arrows (`html.tv`, `window.sotdTV` in the page). The app passes on the other buttons:
 
 - OK: opens a day or presses a button; held down on a day, adds it to My playlist (or takes it off)
-- Back: closes the top pop-up; with none open, closes the app (on another page, like the advert help page, goes back)
+- Back: closes the top pop-up; with none open, closes the app (on another page, like the advert help page, goes back).
+  For a member, a song playing in a day plays on when the day's closed: in the top bar, with a video as a small
+  picture in the bottom corner (the page's draft first, then live)
+- Arrows: the calendar is three rows (the bar; the month's line, with Play, Shuffle and the months; the days); a day's
+  buttons come up in rows (Close; moods and genres; the song's bar; play and the buttons along the bottom)
 - Play/pause: the song or video playing, or the open day's first song
 - Rewind / fast-forward: the day before or after (or the month, on the calendar)
 - Menu: a menu with Sign in to YouTube (Google's sign-in, in the app; with Premium the videos have no adverts;

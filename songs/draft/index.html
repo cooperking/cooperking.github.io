@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="fc815bdc5f3f">
+<meta name="sotd-build" content="43dfa7085e7e">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -2661,7 +2661,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       var fbr = document.getElementById('fabbox').getBoundingClientRect(), bw = Math.min(240, window.innerWidth - 32), bh = Math.round(bw * 9 / 16);
       vidfloat.classList.add('bgv');
       var vtop = fbr.top - bh - 10; if (vtop < 8) vtop = Math.min(window.innerHeight - bh - 8, fbr.bottom + 10);   // (no room above the box: under it)
-      vidfloat.style.left = Math.max(8, Math.min(window.innerWidth - 16, fbr.right) - bw) + 'px'; vidfloat.style.top = vtop + 'px';
+      var vleft = Math.max(8, Math.min(window.innerWidth - 16, fbr.right) - bw);
+      if (TV) { vtop = window.innerHeight - bh - 16; vleft = window.innerWidth - bw - 16; }   // (a TV: the box is in the bar at the top; the picture in the corner below)
+      vidfloat.style.left = vleft + 'px'; vidfloat.style.top = vtop + 'px';
       vidfloat.style.width = bw + 'px'; vidfloat.style.height = bh + 'px'; vidfloat.style.clipPath = ''; vidfloat.style.zIndex = '7';
       vidfloat.style.visibility = 'visible'; floatAt = 'bg';
       return;
@@ -3896,9 +3898,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   function sounding(el) { return (!!playing && playing.el === el && !audio.paused) || (!!vplay && vplay.el === el && vplay.on); }
   // ---- playing on with the day closed (members): the day stays, out of sight, so the playlist (or the days) play on as
-  // they would with it open; My playlist's box shows what's playing ----
+  // they would with it open; My playlist's box shows what's playing (on a TV, in the top bar, with the video as a small
+  // picture in the bottom corner) ----
   var bgOn = false, fabbox = document.getElementById('fabbox');
-  function bgCan() { return !!MEMBER && !TV && sheet.open && !bgOn && !!vplay && (vplay.on || (vplay.cover && !audio.paused)); }
+  function bgCan() { return !!MEMBER && sheet.open && !bgOn && !!vplay && (vplay.on || (vplay.cover && !audio.paused)); }
   function bgStart() {
     bgOn = true; fullReset(); uiDrop();
     sheet.classList.add('bgplay'); root.classList.add('bgplay');
@@ -3906,12 +3909,14 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     layersChanged(); bgDraw(); followFloat(400);
     if (dayFromHash()) { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {} }   // a reload: the calendar, with it in My playlist's box
     resumeSave();
+    document.dispatchEvent(new Event('sotd-bg'));   // (a TV: the remote back onto the calendar)
   }
   function bgOff() {
     if (!bgOn) return;
     bgOn = false; sheet.classList.remove('bgplay'); root.classList.remove('bgplay', 'bgon'); vidfloat.classList.remove('bgv');
     fabbox.hidden = fav.length === 0; root.classList.toggle('fab-on', !fabbox.hidden);
     syncFloat();
+    document.dispatchEvent(new Event('sotd-bg'));
   }
   function bgDraw() {   // what's playing, in the box
     if (!bgOn) return;
@@ -3982,7 +3987,6 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   function resumeGo(show, step) {   // carry on: out of sight (the play button), or with the song's page (a tap on the song)
     var st = RESUME; if (!st) return;
-    if (TV) show = true;   // (a TV plays with the song's page, full screen: nothing plays out of sight there)
     if (NOW.from) {   // carrying on from another device: this one's playing now, from where that one has got to, its shuffle as there
       NOW.claim = true;
       if (st.live) st.pos = Math.floor((st.pos || 0) + Math.max(0, Date.now() - st.at) / 1000);
@@ -4007,7 +4011,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     }
     openDay(s.d, { track: st.t, keepQueue: true });
     if (!show) { layersChanged(); bgDraw(); followFloat(400); }
-    if (step && (bgOn || TV)) goDay(step);
+    if (step && bgOn) goDay(step);
   }
 
   // ---- carrying on on another device (members). The device playing notes what it's playing at the Worker
@@ -4020,13 +4024,16 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // paused in the box; a paused one only if more recent than this device's own), looking every 30 seconds while in
   // sight; gone from there, gone from the box. The note is kept in the Worker's Durable Object, which tells the open
   // pages down a live line the moment it changes (see nowLine). On a Fire TV the box is in the top bar, where the
-  // remote goes; carrying on there opens the song's page, full screen, and a TV stopped by another device goes back to
-  // the calendar, the other's song in the bar. ----
+  // remote goes (a TV stopped by another device goes back to the calendar, the other's song in the bar), and a press of
+  // the remote counts as a tap (nowGesture). ----
   var NOW = { key: '', sent: null, taken: false, gesture: 0, from: '', claim: false, okAt: 0, checked: 0, lastOn: 0, pending: 0 };
-  ['pointerdown', 'keydown', 'touchend'].forEach(function (n) { document.addEventListener(n, function () {
+  function nowGesture() {
     NOW.gesture = Date.now();
     if (MEMBER) setTimeout(function () { if (vplay) nowNote(false); }, 1500);   // (a play begun by the tap: noted now, not at the next look round)
-  }, true); });
+  }
+  // (the window's, ahead of the TV's remote handlers, which stop the keys they use; the TV app's own buttons, as
+  // Play/pause, come by window.sotdTV and say so there)
+  ['pointerdown', 'keydown', 'touchend'].forEach(function (n) { window.addEventListener(n, nowGesture, true); });
   function nowLabel() {
     var u = navigator.userAgent;
     return TV ? 'Fire TV' : /iPad/.test(u) || (/Macintosh/.test(u) && navigator.maxTouchPoints > 1) ? 'iPad' : /iPhone/.test(u) ? 'iPhone'
@@ -6023,12 +6030,15 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     }).catch(function () { if (linkWait) { linkWait = false; openFromHash(); } });
   }
 
-  // ---- on a TV, worked by the remote. The screen is in three rows: the bar, the month (its name and the months) and
-  // the calendar. Up and down go from row to row; in the calendar they go week to week. Left and right go along a row;
-  // in the calendar they go day to day, on into the month before or after. OK opens a day; holding OK on a day adds
-  // it to My playlist (or takes it off). In a day: up and down go through its few buttons (play, video or preview,
-  // facts, favourite, moods and genres), left and right go to the day before and after, Back closes it. Rewind and
-  // fast-forward: the day before and after (on the calendar, the month). The app passes those on (window.sotdTV). ----
+  // ---- on a TV, worked by the remote. The screen is in three rows: the bar (Search, the month to My playlist, and
+  // what's playing), the month's line (its name, Play, Shuffle, who's signed in, and the months) and the calendar. Up
+  // and down go from row to row, to what's most in line; in the calendar they go week to week. Left and right go along
+  // a row; in the calendar they go day to day, on into the month before or after. OK opens a day; holding OK on a day
+  // adds it to My playlist (or takes it off). In a day, full screen: left and right go to the day before and after; up,
+  // down or OK bring its buttons up, in rows (Close; the moods and genres; the song's bar; play and the buttons along
+  // the bottom), up and down from row to row, left and right along one (on the song's bar, through the song). Back
+  // puts the buttons away, then the day (a song playing plays on, in the bar). Rewind and fast-forward: the day before
+  // and after (on the calendar, the month). The app passes those on (window.sotdTV). ----
   // ---- the big-screen layout (html.big: a TV, or a computer's screen): the month's Add to My playlist and My playlist
   // join the bar, with how to add a single day; the month's Share goes by its count (a computer); the playlist line
   // goes along the top of a day. Put back if a computer's window is made narrow, and done again if it's widened. ----
@@ -6086,7 +6096,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
 
   if (TV) (function () {
     var SEL = 'button, a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
-    var ROWS = ['bar', 'hero', 'nav', 'cal'], PARTS = { bar: '.bar-top', hero: '.heroacts', nav: '.monthnav', cal: '#grid' };
+    var ROWS = ['bar', 'mid', 'cal'], PARTS = { bar: '.bar-top', mid: '.hero', cal: '#grid' };   // (the month's line: one row, though two parts on the screen)
     var last = {};
     function topLayer() { var o = layers(); return o.length ? o[o.length - 1] : null; }
     function shown(el) {
@@ -6128,9 +6138,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       });
       return best;
     }
-    function homeOf(k) {   // where a row starts: the day last on (else today), the month on show, the bar's first
+    function homeOf(k) {   // where a row starts: the day last on (else today), Play, the bar's first
       if (k === 'cal') return shown(last.cal) ? last.cal : today();
-      if (k === 'nav') return document.querySelector('#strip button[aria-current="true"]') || inPart('nav')[0];
+      if (k === 'mid') return shown(last.mid) ? last.mid : document.getElementById('heroplay');
       return shown(last[k]) ? last[k] : inPart(k)[0];
     }
     function toMonth(dir) {   // on into the month before or after, at its last or first day
@@ -6166,6 +6176,39 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       put(i < 0 ? dayFirst() : list[Math.max(0, Math.min(list.length - 1, i + (dir === 'down' ? 1 : -1)))]);
       return true;
     }
+    // a day's buttons over the video or the cover, in rows top to bottom: what's on one line together, the song's bar a
+    // row of its own just above the buttons on its line; the arrows either side left out (left and right do that with
+    // the buttons down, as do rewind and fast-forward)
+    function dayRows() {
+      var items = all(sheet).filter(function (el) { return el.id !== 'dayprev' && el.id !== 'daynext'; }).map(function (el) {
+        var r = el.getBoundingClientRect(); return { el: el, t: r.top, b: r.bottom, x: (r.left + r.right) / 2, bar: el.matches('.player .bar') };
+      });
+      var rows = [];
+      items.filter(function (i) { return !i.bar; }).sort(function (a, b) { return a.t - b.t; }).forEach(function (i) {
+        var row = rows.filter(function (r) { return i.t < r.b - 4 && i.b > r.t + 4; })[0];
+        if (row) { row.items.push(i); row.t = Math.min(row.t, i.t); row.b = Math.max(row.b, i.b); } else rows.push({ t: i.t, b: i.b, items: [i] });
+      });
+      rows.forEach(function (r) { r.key = r.t; });
+      items.filter(function (i) { return i.bar; }).forEach(function (i) {
+        var line = rows.filter(function (r) { return !r.bar && i.t < r.b - 4 && i.b > r.t + 4; })[0];
+        rows.push({ t: i.t, b: i.b, key: line ? line.key - 0.5 : i.t, bar: true, items: [i] });
+      });
+      rows.forEach(function (r) { r.items.sort(function (a, b) { return a.x - b.x; }); });
+      return rows.sort(function (a, b) { return a.key - b.key; });
+    }
+    function moveRows(dir) {
+      var rows = dayRows(), a = document.activeElement, ri = -1, ii = -1;
+      rows.forEach(function (r, k) { r.items.forEach(function (i, j) { if (i.el === a) { ri = k; ii = j; } }); });
+      if (ri < 0) {   // (nothing of the day's on: its play button)
+        var w = sheet.querySelector('.pick.watching'), f = w && (w.querySelector('.player .play') || w.querySelector('.pill.watch'));
+        return put(shown(f) ? f : rows.length ? rows[rows.length - 1].items[0].el : null);
+      }
+      if (dir === 'left' || dir === 'right') { var to = rows[ri].items[ii + (dir === 'left' ? -1 : 1)]; if (to) put(to.el); return true; }
+      var nr = rows[ri + (dir === 'up' ? -1 : 1)]; if (!nr) return true;
+      var x = rows[ri].items[ii].x, best = nr.items[0];
+      nr.items.forEach(function (i) { if (Math.abs(i.x - x) < Math.abs(best.x - x)) best = i; });
+      return put(best.el);
+    }
     // other pop-ups (search, My playlist): the nearest button that way
     function moveOther(d, dir) {
       var list = all(d), cur = document.activeElement;
@@ -6198,6 +6241,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       if (focus && uiUp()) { var w = sheet.querySelector('.pick.watching'), f = w && (w.querySelector('.player .play') || w.querySelector('.pill.watch')); put(shown(f) ? f : all(sheet)[0]); }
     }
     document.addEventListener('sotd-theatre', function () { if (!root.classList.contains('theatre')) setTimeout(settle, 60); });
+    document.addEventListener('sotd-bg', function () { setTimeout(settle, 80); });   // the day put away to play on, or back: the remote onto what's on screen
     // an advert: YouTube's Skip button is inside YouTube's player, where the page can't press it. So during one, Up,
     // Down or OK hand the remote to YouTube's player (its own arrows and OK reach Skip); Back, or the advert ending,
     // brings it back. Left and right, before that, still go to the song before or after.
@@ -6232,7 +6276,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       }
       if (k === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); uiDrop(); return; }
       uiShow();   // any key keeps them up
-      if (dir) { e.preventDefault(); e.stopImmediatePropagation(); moveOther(sheet, dir); }   // among the buttons on screen
+      if (dir) { e.preventDefault(); e.stopImmediatePropagation(); moveRows(dir); }   // among the buttons on screen, row by row
     }, true);
     window.addEventListener('keyup', function (e) {   // the OK that brought them up doesn't also press a button
       if (uiSwallow && e.key === uiSwallow) { uiSwallow = ''; e.preventDefault(); e.stopImmediatePropagation(); }
@@ -6281,6 +6325,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         var d = topLayer(); if (!d) return false; closeDialog(d); return true;
       },
       key: function (k) {
+        if (k !== 'pause') nowGesture();   // (a button pressed on the remote: as a tap; 'pause' is the app going off the screen)
         if (k === 'hold') {   // the app saw OK held down: on a day, My playlist; anywhere else, a press
           if (theatreOn() && adNow()) { handYT(); return true; }
           if (theatreOn() && !uiUp()) { tvShow(true); return true; }
