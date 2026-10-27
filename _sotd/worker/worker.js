@@ -1142,7 +1142,7 @@ export class SotdNow {   // one member's note, and their open pages
       for (const ws of this.ctx.getWebSockets()) { try { ws.send(msg); } catch (e) {} }
       // the iPhone widgets told to look again, when what they show has changed (not for a jump within the song)
       const shown = r => r ? [r.dev, r.t, r.playing].join('|') : '';
-      if (shown(rec) !== shown(x.put || null)) await this.widgetsWant(rec, x.put || null, now);
+      if (shown(rec) !== shown(x.put || null)) await this.widgetsWant();
     }
     return json(x.out, x.status);
   }
@@ -1166,28 +1166,12 @@ export class SotdNow {   // one member's note, and their open pages
     await this.ctx.storage.put('widgets', keep);
     return json({ ok: true, widgets: Object.keys(keep).length });
   }
-  // Apple rations widget pushes (it doesn't say how many), so they're kept for what matters most: another device, or
-  // playing, paused or stopped, told at once. A new song on the same device, playing on, waits until 10 minutes after
-  // the last push (an alarm), so an evening of Play all doesn't use them up. (Waited for, up to 4 seconds: work left
-  // running after the answer isn't sure to finish.)
-  async widgetsWant(old, cur, now) {
-    const gap = +this.env.WIDGET_GAP_MS || 10 * 60e3;   // (WIDGET_GAP_MS only for testing)
-    const big = !old || !cur || old.dev !== cur.dev || old.playing !== cur.playing;
-    const last = (await this.ctx.storage.get('wlast')) || 0;
-    if (big || now - last >= gap) {
-      await this.ctx.storage.put('wlast', now);
-      await this.ctx.storage.deleteAlarm();
-      await Promise.race([this.widgetsTell().catch(() => {}), new Promise(r => setTimeout(r, 4000))]);
-      return;
-    }
-    const at = last + gap, al = await this.ctx.storage.getAlarm();
-    if (!al || al > at) await this.ctx.storage.setAlarm(at);
+  // each change the widgets show (another device, a new song, playing, paused or stopped) told at once (waited for, up
+  // to 4 seconds: work left running after the answer isn't sure to finish). Apple rations them as it sees fit.
+  async widgetsWant() {
+    await Promise.race([this.widgetsTell().catch(() => {}), new Promise(r => setTimeout(r, 4000))]);
   }
-  async alarm() {   // the song changed since the last push, 10 minutes on: told now
-    if (!(await this.ctx.storage.get('widgets'))) return;
-    await this.ctx.storage.put('wlast', Date.now());
-    await this.widgetsTell();
-  }
+  async alarm() {}   // (none set now; one left from before does nothing)
   async widgetsTell() {
     const w = (await this.ctx.storage.get('widgets')) || {}, keys = Object.keys(w);
     if (!keys.length) return;
