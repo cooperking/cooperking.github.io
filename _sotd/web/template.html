@@ -4931,18 +4931,21 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     castDraw();
     try { if (localStorage.getItem('sotd-castok')) NCAST.start().then(ccStarted, function () {}); } catch (e) {}   // (allowed before: found as the app opens)
   }
-  (function () {   // Siri: today's song (then the days before), shuffled, or My playlist
+  // today's song (then the days before), shuffled, or My playlist: from Siri in the iPhone app (SotdSiri), and from the
+  // Android app's shortcuts (a long press on its icon), which open the calendar with ?do=today, shuffle or mine
+  function doAction(a) {
+    var all = songs.slice().sort(function (x, y) { return y.n - x.n; }).map(function (x) { return x.track; });
+    if (a === 'today') startQueue(all, 'John\u2019s Song of the Day', 'all', 0, false);
+    else if (a === 'shuffle') startQueue(all, 'John\u2019s Song of the Day', 'all', 0, true);
+    else if (a === 'mine') { if (fav.length) document.getElementById('fabplay').click(); else toast('My playlist is empty: add songs with the heart'); }
+  }
+  (function () {
     var SIRI = TV ? null : natPlugin('SotdSiri');
-    if (!SIRI) return;
-    SIRI.addListener('action', function (e) {
-      var a = e && e.action;
-      setTimeout(function () {
-        var all = songs.slice().sort(function (x, y) { return y.n - x.n; }).map(function (x) { return x.track; });
-        if (a === 'today') startQueue(all, 'John’s Song of the Day', 'all', 0, false);
-        else if (a === 'shuffle') startQueue(all, 'John’s Song of the Day', 'all', 0, true);
-        else if (a === 'mine') { if (fav.length) document.getElementById('fabplay').click(); else toast('My playlist is empty: add songs with the heart'); }
-      }, 400);
-    });
+    if (SIRI) SIRI.addListener('action', function (e) { var a = e && e.action; setTimeout(function () { doAction(a); }, 400); });
+    var m = TV ? null : /[?&]do=(today|shuffle|mine)(?:&|$)/.exec(location.search);
+    if (!m) return;
+    try { history.replaceState(history.state, '', location.pathname + location.search.replace(/([?&])do=[^&]*(&|$)/, function (x, p1, p2) { return p2 ? p1 : ''; }) + location.hash); } catch (e) {}
+    setTimeout(function () { doAction(m[1]); }, 600);
   })();
   // ---- the apps (the Fire TV's, the iPhone's, Android's, a Home Screen icon) keep the page open for days. Coming back to
   // one after half a minute or more away, the page reloads if the site has a newer page (its sotd-build, from page.py)
