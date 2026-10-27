@@ -8,6 +8,7 @@ PKG=io.github.cooperking.sotd
 shot() { adb exec-out screencap -p > "$OUT/$1.png"; echo "shot $1"; }
 adb install -r -g "$APK" | tail -1
 adb shell dumpsys package $PKG | grep -E "android.permission.INTERNET" | head -1 | sed 's/^ */permission: /' | tee "$OUT/internet.txt"
+adb shell am start -S -W -n $PKG/.WidgetPreview --ei page 1 ${DAYS:+--es days "$DAYS"} > /dev/null; sleep 15   # (once to warm up: a phone just started may not be online yet)
 adb shell am start -S -W -n $PKG/.WidgetPreview --ei page 1 ${DAYS:+--es days "$DAYS"} > /dev/null; sleep 15; shot widgets-1
 adb shell am start -S -W -n $PKG/.WidgetPreview --ei page 2 ${DAYS:+--es days "$DAYS"} > /dev/null; sleep 15; shot widgets-2
 adb shell am start -W -n $PKG/.TodayConfig --ei appWidgetId 7 > /dev/null; sleep 3; shot settings
