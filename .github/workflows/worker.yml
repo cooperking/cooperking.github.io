@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       add_now:
-        description: 'Add the NOW Durable Object (carrying on between a member\'s devices) to the Worker, if it isn\'t there'
+        description: "Add the NOW Durable Object (carrying on between a member's devices) to the Worker, if it isn't there"
         type: boolean
         default: false
 
