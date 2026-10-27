@@ -9,6 +9,10 @@ CLOUDFLARE_ACCOUNT_ID. Without the token it does nothing.
 3. Uploads the code.
 4. Checks the Worker: /status still answers (the old part), /covers.json answers JSON (the members part).
    If /status fails, the version from step 2 is put back and the job fails.
+   With ADD_NOW=true (the job run by hand with add_now), when the code has the Durable Object class SotdNow (carrying on
+   between a member's devices) and the Worker has no NOW binding, it's uploaded with that binding and its migration (the
+   Worker's other bindings and settings kept); if Cloudflare says no, the code goes up alone, and works on without it
+   (in KV). Without ADD_NOW, it's only said that the binding isn't there.
 3b. Puts the iPhone app's APNs key on the Worker as secrets, when the repository has it (APNS_KEY_ID, APNS_KEY_P8, APPLE_TEAM_ID).
 5. Sets the Worker's timer (every 10 minutes, for the day's song notification) if it isn't already.
 """
@@ -21,6 +25,7 @@ SRC = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'worker', 'worker
 TOKEN = os.environ.get('CF_TOKEN', '').strip()
 CRON = '*/10 * * * *'   # the Worker's timer (notifications)
 ACCOUNT = os.environ.get('CF_ACCOUNT', '').strip()
+NOW_TAG = 'now-v1'   # the Durable Object SotdNow's migration
 
 
 class Refused(Exception):
@@ -92,6 +97,7 @@ def main():
     except Refused as e:
         note('No list of versions, so no automatic undo: %s' % e, 'warning')
     note('Running now: ' + (', '.join('%s (%s%%)' % (v['version_id'], v['percentage']) for v in before) or 'unknown'))
+    settings, binds = None, {}
     try:
         settings = cf('GET', base + '/settings') or {}
         binds = {b.get('name'): b.get('type') for b in settings.get('bindings') or []}
@@ -107,6 +113,14 @@ def main():
 
     # 3. the code
     code = open(SRC, 'rb').read()
+    if b'export class SotdNow' in code and settings is not None and binds.get('NOW') != 'durable_object_namespace' and os.environ.get('ADD_NOW') != 'true':
+        note('No NOW Durable Object on the Worker: carrying on between devices is kept in KV. Run this job by hand with add_now to add it.')
+    elif b'export class SotdNow' in code and settings is not None and binds.get('NOW') != 'durable_object_namespace':
+        try:
+            upload_with_now(base, settings, code)
+            return after_upload(base, before, code)
+        except Refused as e:
+            note('Couldn\'t add the NOW Durable Object (%s): the code goes up alone, carrying on kept in KV.' % e, 'warning')
     bnd = uuid.uuid4().hex
     body = b''.join([
         b'--' + bnd.encode() + b'\r\nContent-Disposition: form-data; name="metadata"\r\nContent-Type: application/json\r\n\r\n',
@@ -116,7 +130,40 @@ def main():
         b'--' + bnd.encode() + b'--\r\n'])
     cf('PUT', base + '/content', body, 'multipart/form-data; boundary=' + bnd)
     note('Uploaded worker.js (%d bytes).' % len(code))
+    after_upload(base, before, code)
 
+
+def upload_with_now(base, settings, code):
+    """The code with the Durable Object NOW (class SotdNow, SQLite) and its migration, as wrangler would put it: the
+    Worker's other bindings kept by type, its settings passed on as they are."""
+    tag = None
+    try:
+        svc = cf('GET', '/accounts/%s/workers/services/%s' % (ACCOUNT, NAME)) or {}
+        tag = ((svc.get('default_environment') or {}).get('script') or {}).get('migration_tag')
+    except Refused as e:
+        note('Couldn\'t read the Worker\'s migration tag (%s): taken as none.' % e, 'warning')
+    types = sorted({b.get('type') for b in settings.get('bindings') or [] if b.get('type') and b.get('type') != 'durable_object_namespace'})
+    meta = {'main_module': 'worker.js', 'keep_bindings': types,
+            'bindings': [{'type': 'durable_object_namespace', 'name': 'NOW', 'class_name': 'SotdNow'}]}
+    if tag != NOW_TAG:
+        meta['migrations'] = dict({'new_tag': NOW_TAG, 'steps': [{'new_sqlite_classes': ['SotdNow']}]}, **({'old_tag': tag} if tag else {}))
+    for k in ('compatibility_date', 'compatibility_flags', 'usage_model', 'placement', 'observability', 'tail_consumers', 'logpush', 'limits'):
+        if settings.get(k):
+            meta[k] = settings[k]
+    bnd = uuid.uuid4().hex
+    body = b''.join([
+        b'--' + bnd.encode() + b'\r\nContent-Disposition: form-data; name="metadata"\r\nContent-Type: application/json\r\n\r\n',
+        json.dumps(meta).encode(), b'\r\n',
+        b'--' + bnd.encode() + b'\r\nContent-Disposition: form-data; name="worker.js"; filename="worker.js"\r\n'
+        b'Content-Type: application/javascript+module\r\n\r\n', code, b'\r\n',
+        b'--' + bnd.encode() + b'--\r\n'])
+    cf('PUT', base, body, 'multipart/form-data; boundary=' + bnd)
+    after = {b.get('name'): b.get('type') for b in (cf('GET', base + '/settings') or {}).get('bindings') or []}
+    note('Uploaded worker.js (%d bytes) with the Durable Object NOW (carrying on between a member\'s devices). Bindings now: %s'
+         % (len(code), ', '.join('%s (%s)' % kv for kv in sorted(after.items()))))
+
+
+def after_upload(base, before, code):
     # 3b. the iPhone app's notifications: John's APNs key, from the repository secrets, as the Worker's own secrets
     for name, env_name in (('APNS_KEY_ID', 'APNS_KEY_ID'), ('APNS_KEY', 'APNS_KEY_P8'), ('APPLE_TEAM_ID', 'APPLE_TEAM_ID')):
         val = os.environ.get(env_name, '').strip()

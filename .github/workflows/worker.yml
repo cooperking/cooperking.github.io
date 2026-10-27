@@ -6,6 +6,11 @@ on:
     branches: [main]
     paths: ['_sotd/worker/worker.js']
   workflow_dispatch:
+    inputs:
+      add_now:
+        description: 'Add the NOW Durable Object (carrying on between a member\'s devices) to the Worker, if it isn\'t there'
+        type: boolean
+        default: false
 
 concurrency:
   group: worker-deploy
@@ -29,4 +34,5 @@ jobs:
           APNS_KEY_ID: ${{ secrets.APNS_KEY_ID }}
           APNS_KEY_P8: ${{ secrets.APNS_KEY_P8 }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          ADD_NOW: ${{ inputs.add_now && 'true' || '' }}
         run: python3 _sotd/worker_deploy.py
