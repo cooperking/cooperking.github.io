@@ -260,10 +260,19 @@ struct PlayControl: ControlWidget {
 // ---------- all of them, as the iPhone's version allows ----------
 @main
 struct SotdWidgets: WidgetBundle {
-    var body: some Widget {
+    var body: some Widget { return widgets() }
+
+    // (one availability check to each: an opaque result can differ only across a single if #available ... else)
+    func widgets() -> some Widget {
         if #available(iOSApplicationExtension 18.0, *) {
             return widgets18
-        } else if #available(iOSApplicationExtension 17.0, *) {
+        } else {
+            return before18()
+        }
+    }
+
+    func before18() -> some Widget {
+        if #available(iOSApplicationExtension 17.0, *) {
             return widgets17
         } else {
             return widgets15

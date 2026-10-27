@@ -30,6 +30,12 @@ struct Art: View {
     }
 }
 
+extension View {   // the Lock Screen's accent colour on it (iOS 16 on)
+    @ViewBuilder func accent() -> some View {
+        if #available(iOS 16.0, macOS 13.0, *) { self.widgetAccentable() } else { self }
+    }
+}
+
 struct Caps: View {   // a small line in spaced capitals
     let text: String
     var size: CGFloat = 9
@@ -57,7 +63,7 @@ struct TodayView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         case .rect:
             VStack(alignment: .leading, spacing: 1) {
-                Text("SONG OF THE DAY").font(.system(size: 10, weight: .semibold)).kerning(0.8).widgetAccentable()
+                Text("SONG OF THE DAY").font(.system(size: 10, weight: .semibold)).kerning(0.8).accent()
                 Text(entry.title).font(.system(size: 15, weight: .semibold, design: .serif)).lineLimit(1)
                 Text(entry.artist).font(.system(size: 12)).lineLimit(1).opacity(0.8)
             }
