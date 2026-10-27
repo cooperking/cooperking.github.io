@@ -1,15 +1,15 @@
-  Pending saves: Num=0 Executor=java.util.concurrent.ThreadPoolExecutor@7737dd5[Running, pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 5]
+  Pending saves: Num=0 Executor=java.util.concurrent.ThreadPoolExecutor@a0a1438[Running, pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 14]
 
       Package: io.github.cooperking.sotd  UID: 10191
-        Calls: 0
-        Last known FG: 199302
-        Last reset: [1793098438877] 2026-10-27 10:53:58
+        Calls: 1
+        Last known FG: 150162
+        Last reset: [1793098813503] 2026-10-27 11:00:13
 
         PackageInfo:
           IsShadow: false (installed)
-          Version: 9
+          Version: 10
           Backup Allowed: true
-          Last package update time: 1793098579946
+          Last package update time: 1793098970020
 
         Shortcuts:
           ShortcutInfo {id=android.support.customtabs.action.SITE_SETTINGS_SHORTCUT, flags=0x85 [DynIc-rStr]
