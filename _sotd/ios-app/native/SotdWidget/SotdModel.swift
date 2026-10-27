@@ -87,7 +87,8 @@ enum Feed {
     static func entry(_ data: Data, cover: Data?, tap: TapChoice) -> SongEntry? {
         guard let j = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any], let title = j["title"] as? String else { return nil }
         let glow = (j["glow"] as? [String])?.first ?? "#ff2bb8"
-        let day = URL(string: j["url"] as? String ?? SotdLinks.site)
+        // the day's own address (from its slug: the feed's url may say Play all, for the widgets of builds before 19)
+        let day = (j["slug"] as? String).flatMap { URL(string: SotdLinks.site + $0 + "/") } ?? URL(string: j["url"] as? String ?? SotdLinks.site)
         return SongEntry(date: Date(), title: title, artist: j["artist"] as? String ?? "", day: j["day"] as? String ?? "", dayURL: day,
                          cover: cover.flatMap { Thumbs.image($0, side: 360) },
                          ground: Color(hex: j["ground"] as? String ?? "#652bee"), glow: Color(hex: glow), tap: tap.url(day: day))

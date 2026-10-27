@@ -58,7 +58,8 @@ public class TodayWidget extends AppWidgetProvider {
             v.setTextViewText(R.id.w_title, j.optString("title", "Song of the Day"));
             v.setTextViewText(R.id.w_artist, j.optString("artist", "").toUpperCase());
             v.setTextViewText(R.id.w_day, j.optString("day", "").toUpperCase());
-            day = j.optString("url", Sotd.SITE);
+            // the day's own address, from its slug (the feed's url may say Play all, for the widget of build 10)
+            day = j.optString("slug", "").isEmpty() ? j.optString("url", Sotd.SITE) : Sotd.SITE + j.optString("slug") + "/";
             ground = Sotd.parse(j.optString("ground", "#ec135b"), 0xFFEC135B);
         } else {
             v.setTextViewText(R.id.w_title, "Song of the Day");
