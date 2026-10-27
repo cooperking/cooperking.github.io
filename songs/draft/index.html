@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="021180da0612">
+<meta name="sotd-build" content="9de1eab7085a">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -5456,6 +5456,61 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   if (!joinFromHash()) memberLoad();
   window.addEventListener('hashchange', joinFromHash);
+  // the iPhone app (from build 14: its App and Clipboard plugins). An invitation's link tapped on an iPhone with the app
+  // opens the app with it (Apple's universal links: the Worker's /i/<id>), and the app signs in with it, as a browser
+  // does with #join=. And the first time the app opens not signed in, the invitation its page copied as the app was
+  // fetched is offered, once (iOS asks first whether the app may paste).
+  (function () {
+    function plug(n) { try { return NAT && NAT.isPluginAvailable && NAT.isPluginAvailable(n) ? NAT.Plugins[n] : null; } catch (e) { return null; } }
+    var APP = plug('App'), CLIP = plug('Clipboard');
+    if (!MBASE || !window.fetch || (!APP && !CLIP)) return;
+    var JOIN = /#join=([\w-]{16,}|[A-Za-z0-9]{6})(?![\w-])/, viaLink = false, lastLink = {};
+    function invId(s) {   // an invitation's own link (MBASE/i/<id>): its id
+      var m = /^(https:\/\/[^\/?#]+)\/i\/([\w-]{16})\/?(?:[?#].*)?$/.exec(s);
+      return m && m[1] === MBASE ? m[2] : null;
+    }
+    function signedIn() { var t = ''; try { t = localStorage.getItem(MKEY) || ''; } catch (e) {} return !!t; }
+    // what a link or copied text leads to: { code, name }, null if it isn't an invitation
+    function lookUp(s) {
+      s = String(s || '').trim();
+      var id = invId(s);
+      if (id) return fetch(MBASE + '/i/' + id + '.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
+        var c = JOIN.exec(j.link || '');
+        if (!c) { var x = new Error(j.error || 'That invitation didn’t work. Ask John for a new one.'); x.said = true; throw x; }
+        return { code: c[1], name: j.name || '' };
+      });
+      var m = JOIN.exec(s);
+      return Promise.resolve(m ? { code: m[1], name: '' } : null);
+    }
+    // signs in with it: straight away from a link (as a browser does), asked first for copied text or when this
+    // app is signed in already
+    function use(s, copied) {
+      return lookUp(s).then(function (v) {
+        if (!v) return;
+        var was = signedIn(), as = MEMBER && MEMBER.name;
+        if (was && as && v.name && as === v.name) { toast('Signed in as ' + as + ' already.'); return; }
+        if (!copied && !was) { memberJoin(v.code, true); return; }
+        return ask({ h: v.name ? 'Sign in as ' + v.name + '?' : 'Sign in with your invitation?',
+          t: was ? 'This app is signed in' + (as ? ' as ' + as : '') + ' now.' : 'With the invitation you copied from John’s message.',
+          ok: 'Sign in', no: 'Not now' }).then(function (y) { if (y) memberJoin(v.code, true); });
+      }, function (e) { toast(e && e.said ? e.message : 'Couldn’t reach the site to join. Try again.'); });
+    }
+    if (APP) APP.addListener('appUrlOpen', function (e) {   // (one the app was opened with is kept until this listens)
+      var u = e && e.url; if (!u) return;
+      viaLink = true;
+      if (Date.now() - (lastLink[u] || 0) < 5000) return;   // (the same tap twice)
+      lastLink[u] = Date.now();
+      use(u);
+    });
+    if (CLIP) setTimeout(function () {
+      if (viaLink || signedIn()) return;
+      try { if (localStorage.getItem('sotd-clipask')) return; localStorage.setItem('sotd-clipask', '1'); } catch (e) { return; }
+      CLIP.read().then(function (r) {
+        var v = String((r && r.value) || '').trim();
+        if (v.length < 400 && (invId(v) || JOIN.test(v))) use(v, true);
+      }, function () {});   // (nothing there, or not allowed to paste)
+    }, 1500);
+  })();
   // a link straight to a day opens it now, or once the live list arrives (a new song may not be in the page yet)
   (function () {
     var m = /[?&]play=(video|preview)\b/.exec(location.search);
