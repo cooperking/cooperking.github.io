@@ -463,6 +463,7 @@ async function members(request, url, env) {
   if (route === 'playlists') return memberPlaylists(request, env, answer);
   if (route === 'now') return memberNow(request, env, answer);
   if (route === 'now/ws') return memberNowSocket(request, env);
+  if (route === 'now/widget') return memberNowWidget(request, env, answer);
   if (route === 'tvcode') return memberTvCode(request, env, answer);
   if (route === 'push') return memberPush(request, env, answer);
   if (route === 'inbox') return memberInbox(request, env, answer);
@@ -518,6 +519,8 @@ async function members(request, url, env) {
       await env.SOTD.delete('mpl:' + body.id);   // their saved playlists go too
       await pushForget(env, body.id);   // and their notifications
       await env.SOTD.delete('inbox:' + body.id);
+      await env.SOTD.delete('now:' + body.id);   // and what they were playing (and their iPhone widgets' addresses)
+      if (env.NOW) await env.NOW.get(env.NOW.idFromName(body.id)).fetch('https://now/forget', { method: 'POST' }).catch(() => {});
       if (owner === body.id) await env.SOTD.delete('owner');
       return answer(200, { ok: true, members: listing(owner === body.id ? null : owner) });
     }
@@ -776,7 +779,9 @@ async function memberSignout(request, env, answer) {   // this device's sign-in,
   if (!token) return answer(200, { ok: true });
   const hash = await sha256hex(token), all = (await env.SOTD.get('members', 'json')) || {};
   const id = Object.keys(all).find(k => all[k].devices && all[k].devices[hash]);
+  const did = id && all[id].devices[hash].did;
   if (id) { delete all[id].devices[hash]; await kvSoft(env, 'members', JSON.stringify(all)); }
+  if (id && did && env.NOW) await env.NOW.get(env.NOW.idFromName(id)).fetch('https://now/widget', { method: 'DELETE', body: JSON.stringify({ dev: did }) }).catch(() => {});   // its iPhone widget no longer told
   return answer(200, { ok: true });
 }
 
@@ -1077,6 +1082,18 @@ async function memberNow(request, env, answer) {
   else if (x.del) await env.SOTD.delete(key);
   return answer(x.status, x.out);
 }
+// a member's iPhone widget ("On your other device", iOS 26), reachable by Apple's pushes: POST { push, dev } (its push
+// token, for that device; ten widgets a member at most, the newest), GET { widgets: how many }. Whenever what the
+// widget shows changes (another device's song, a pause or play, which device, stopped), each is told to look again
+// (apnsWidget). Kept with the member's note, in the Durable Object.
+async function memberNowWidget(request, env, answer) {
+  const id = await memberFromToken(request, env);
+  if (!id) return answer(401, { error: 'Not a member (any more).' });
+  if (!env.NOW) return answer(501, { error: 'Not set up here.' });
+  if (request.method !== 'GET' && request.method !== 'POST') return answer(405, { error: 'Use GET or POST.' });
+  const r = await env.NOW.get(env.NOW.idFromName(id)).fetch('https://now/widget', { method: request.method, body: request.method === 'POST' ? await request.text() : undefined });
+  return answer(r.status, await r.json());
+}
 async function memberNowSocket(request, env) {   // a page's live line: the member's token as the WebSocket's second protocol
   if (!env.NOW || request.headers.get('Upgrade') !== 'websocket') return new Response('Not here.', { status: 426 });
   const prot = (request.headers.get('Sec-WebSocket-Protocol') || '').split(',').map(x => x.trim());
@@ -1090,7 +1107,14 @@ export class SotdNow {   // one member's note, and their open pages
     try { ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair('ping', 'pong')); } catch (e) {}   // (a page's "still there?", answered without waking this)
   }
   async fetch(request) {
-    const now = Date.now();
+    const now = Date.now(), path = new URL(request.url).pathname;
+    const json = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json' } });
+    if (path === '/forget') {   // the member removed: their note and widgets gone, their open pages' lines closed
+      await this.ctx.storage.deleteAll();
+      for (const ws of this.ctx.getWebSockets()) { try { ws.close(1000, 'Bye'); } catch (e) {} }
+      return json({ ok: true });
+    }
+    if (path === '/widget') return this.widget(request, now, json);
     let rec = (await this.ctx.storage.get('rec')) || null;
     if (rec && now - rec.at > 7 * DAY) { rec = null; await this.ctx.storage.delete('rec'); }
     if (request.headers.get('Upgrade') === 'websocket') {
@@ -1099,7 +1123,6 @@ export class SotdNow {   // one member's note, and their open pages
       pair[1].send(JSON.stringify({ now, rec }));
       return new Response(null, { status: 101, webSocket: pair[0], headers: { 'Sec-WebSocket-Protocol': 'sotd' } });
     }
-    const json = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json' } });
     if (request.method === 'GET') return json({ now, rec });
     const x = nowApply(rec, await request.json().catch(() => ({})), now);
     if (x.put) await this.ctx.storage.put('rec', x.put);
@@ -1107,8 +1130,38 @@ export class SotdNow {   // one member's note, and their open pages
     if (x.put || x.del) {   // every open page told (the device that wrote it knows itself)
       const msg = JSON.stringify({ now, rec: x.put || null });
       for (const ws of this.ctx.getWebSockets()) { try { ws.send(msg); } catch (e) {} }
+      // the iPhone widgets told to look again, when what they show has changed (not for a jump within the song)
+      const shown = r => r ? [r.dev, r.t, r.playing].join('|') : '';
+      if (shown(rec) !== shown(x.put || null)) { const p = this.widgetsTell().catch(() => {}); if (this.ctx.waitUntil) this.ctx.waitUntil(p); }
     }
     return json(x.out, x.status);
+  }
+  async widget(request, now, json) {   // a widget's push token kept (POST), forgotten (DELETE: its device signed out), counted (GET)
+    const w = (await this.ctx.storage.get('widgets')) || {};
+    if (request.method === 'GET') return json({ widgets: Object.keys(w).length });
+    const b = await request.json().catch(() => ({}));
+    const dev = String(b.dev || '');
+    if (request.method === 'DELETE') {
+      if (w[dev]) { delete w[dev]; await this.ctx.storage.put('widgets', w); }
+      return json({ ok: true });
+    }
+    const push = String(b.push || '').toLowerCase();
+    if (!/^[0-9a-f]{32,200}$/.test(push)) return json({ error: 'Which widget?' }, 400);
+    for (const k of Object.keys(w)) if (w[k].push === push) delete w[k];
+    w[/^[A-Za-z0-9]{8,40}$/.test(dev) ? dev : 'w' + push.slice(0, 12)] = { push, at: now };
+    const keep = Object.fromEntries(Object.entries(w).sort((a, c) => c[1].at - a[1].at).slice(0, 10));
+    await this.ctx.storage.put('widgets', keep);
+    return json({ ok: true, widgets: Object.keys(keep).length });
+  }
+  async widgetsTell() {
+    const w = (await this.ctx.storage.get('widgets')) || {}, keys = Object.keys(w);
+    if (!keys.length) return;
+    let gone = false;
+    await Promise.all(keys.map(async k => {
+      const r = await apnsWidget(this.env, w[k].push).catch(() => ({ st: 0 }));
+      if (r.st === 410) { delete w[k]; gone = true; }   // (that widget's gone: the app deleted, or a new token since)
+    }));
+    if (gone) await this.ctx.storage.put('widgets', w);
   }
   async webSocketMessage(ws, msg) { if (msg === 'ping') ws.send('pong'); }
   async webSocketClose(ws, code) { try { ws.close(code === 1005 ? 1000 : code, 'Bye'); } catch (e) {} }
@@ -1362,6 +1415,16 @@ async function apnsOne(env, token, msg) {   // { st, why }, as pushOne
 async function apnsBadge(env, member, unread) {   // read on one device: the number on the app's icon, on all their iPhones
   const subs = (await env.SOTD.get('pushSubs', 'json')) || {};
   await Promise.all(Object.values(subs).filter(x => x.m === member && x.apns).map(x => apnsOne(env, x.apns, { unread }).catch(() => {})));
+}
+// an iPhone widget told to look again (iOS 26, WidgetKit's pushes): its own token and topic, nothing shown. Apple
+// delivers them as it sees fit (they're rationed). APNS_HOST only for testing (a stand-in for Apple's service).
+async function apnsWidget(env, token) {   // { st, why }, as apnsOne
+  if (!env.APNS_KEY || !env.APNS_KEY_ID || !env.APPLE_TEAM_ID) return { st: 0, why: 'The APNs key isn’t on the Worker yet' };
+  const r = await fetch((env.APNS_HOST || 'https://api.push.apple.com') + '/3/device/' + token, { method: 'POST', body: JSON.stringify({ aps: { 'content-changed': true } }), headers: {
+    authorization: 'bearer ' + await apnsAuth(env), 'apns-topic': APP_ID + '.push-type.widgets', 'apns-push-type': 'widgets',
+    'apns-expiration': String(Math.floor(Date.now() / 1000) + 3600), 'content-type': 'application/json' } });
+  const why = r.ok ? '' : ((await r.text().catch(() => '')) || '').slice(0, 160);
+  return { st: r.status === 200 ? 201 : (r.status === 410 || (r.status === 400 && /BadDeviceToken|DeviceTokenNotForTopic/.test(why))) ? 410 : r.status, why };
 }
 async function pushTo(env, k, sub, msg) { return sub.apns ? apnsOne(env, sub.apns, msg) : pushOne(k, sub.sub, msg); }
 

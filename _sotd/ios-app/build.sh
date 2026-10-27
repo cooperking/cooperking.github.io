@@ -41,6 +41,10 @@ PROFILE_UUID=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['
 if [ "$(python3 -c "import json,sys; print(json.load(open(sys.argv[1])).get('links', False))" "$SIGN/out.json")" != "True" ]; then
   /usr/libexec/PlistBuddy -c "Delete :com.apple.developer.associated-domains" App/App.entitlements 2>/dev/null || true
 fi
+# the widget's pushes (the Worker telling "On your other device" to look again): only when its ID has Push Notifications
+if [ "$(python3 -c "import json,sys; print(json.load(open(sys.argv[1])).get('widgetPush', False))" "$SIGN/out.json")" != "True" ]; then
+  /usr/libexec/PlistBuddy -c "Delete :aps-environment" SotdWidget/SotdWidget.entitlements 2>/dev/null || true
+fi
 KC="$RUNNER_TEMP/sotd.keychain-db"; KCPW=$(uuidgen)
 security create-keychain -p "$KCPW" "$KC"
 security set-keychain-settings -lut 21600 "$KC"
