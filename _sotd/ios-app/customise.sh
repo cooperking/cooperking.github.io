@@ -41,6 +41,10 @@ cat > ios/App/App/App.entitlements <<'X'
 		<string>applinks:sotd-playlists.cooperking.workers.dev</string>
 		<string>applinks:cooperking.github.io</string>
 	</array>
+	<key>keychain-access-groups</key>
+	<array>
+		<string>$(AppIdentifierPrefix)io.github.cooperking.sotd.shared</string>
+	</array>
 </dict>
 </plist>
 X
@@ -76,6 +80,7 @@ cp icon-1024.png ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.p
 cp native/App/*.swift ios/App/App/
 mkdir -p ios/App/SotdWidget ios/App/SotdNotify
 cp native/SotdWidget/* ios/App/SotdWidget/
+cp native/Shared/*.swift ios/App/App/ && cp native/Shared/*.swift ios/App/SotdWidget/   # (in both: the shared keychain)
 cp native/SotdNotify/* ios/App/SotdNotify/
 ruby -e "require 'xcodeproj'" 2>/dev/null || gem install --user-install --no-document xcodeproj
 ruby native/project.rb

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="6b8aa029f048">
+<meta name="sotd-build" content="3bc21707d971">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -4128,6 +4128,32 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       if (j) nowGot(j);
     }).catch(function () {});
   }
+  function nowCarry() {   // carry on here with what's playing on another device (once its note is in), or say there's nothing
+    NOW.carry = Date.now();
+    if (NOW.from && RESUME) { NOW.carry = 0; resumeGo(false); return; }
+    nowFetch();
+    setTimeout(function () { if (NOW.carry && Date.now() - NOW.carry < 9000) { NOW.carry = 0; if (!busyNow()) toast('Nothing playing on your other devices'); } }, 6000);
+  }
+  // the iPhone app's widgets: the member's sign-in (and this device's id) handed to the app for its "On your other
+  // device" widget, cleared on signing out; its widgets told to look again when another device's song changes (at most
+  // every 20 seconds) and when the app comes back (at most every 15 minutes). Earlier builds haven't these: nothing happens.
+  var NOWAPP = { tok: null, at: 0, back: 0 };
+  function nowApp() { var p = natPlugin('SotdSiri'); return p && typeof p.member === 'function' ? p : null; }
+  function nowAppMember() {
+    var p = nowApp(); if (!p) return;
+    var tok = MEMBER ? nowTok() : '';
+    if (tok === NOWAPP.tok) return;
+    NOWAPP.tok = tok;
+    try { var r = p.member(tok ? { token: tok, device: deviceId() } : {}); if (r && r.catch) r.catch(function () {}); } catch (e) {}
+  }
+  function nowAppReload(all) {
+    var p = nowApp(); if (!p || typeof p.reload !== 'function') return;
+    var now = Date.now();
+    if (all ? now - NOWAPP.back < 15 * 60e3 : now - NOWAPP.at < 20e3) return;
+    if (all) NOWAPP.back = now; NOWAPP.at = now;
+    try { var r = p.reload({ all: !!all }); if (r && r.catch) r.catch(function () {}); } catch (e) {}
+  }
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) nowAppReload(true); });
   function nowGot(j) {   // the note (asked for, or told down the line): this device stopped, or the other's song shown here
     if (!MEMBER || TV) return;
     var r = j.rec;
@@ -4136,7 +4162,12 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       return;
     }
     var age = r ? j.now - r.at : 0;
-    if (!r || r.dev === deviceId() || !byTrack[r.t] || age > 12 * 3600e3) { if (NOW.from) { resumeOff(); resumeForget(); } return; }   // (nothing there now)
+    if (r && r.dev !== deviceId() && (r.at !== NOW.seenAt)) { NOW.seenAt = r.at; nowAppReload(false); }
+    if (!r || r.dev === deviceId() || !byTrack[r.t] || age > 12 * 3600e3) {   // (nothing there now)
+      if (NOW.from) { resumeOff(); resumeForget(); }
+      if (NOW.carry) { NOW.carry = 0; toast('Nothing playing on your other devices'); }
+      return;
+    }
     var live = r.playing && age <= 20 * 60e3;   // (playing, and noted in the last 20 minutes: playing there now)
     if (!live && !NOW.from && Math.max(NOW.lastOn, RESUME ? RESUME.at || 0 : 0) > Date.now() - age) return;   // (paused there, and this device's own since: that)
     if (bgOn) { bgOff(); closeDialog(sheet, true); }   // (its own song paused in the box: the other's in its place)
@@ -4148,6 +4179,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var s = byTrack[r.t];
     document.getElementById('faba').textContent = (live ? 'On your ' + r.label + ' now' : 'From your ' + r.label) + ' · ' + s.artist;
     document.getElementById('fabnow').setAttribute('aria-label', cleanTitle(s.title) + ' by ' + s.artist + (live ? ', playing on your ' : ', paused on your ') + r.label + ': carry on here');
+    if (NOW.carry && Date.now() - NOW.carry < 9000) { NOW.carry = 0; resumeGo(false); }
   }
 
   // ---- the site's other pages (the admin page, the Fire TV guide) while something plays: opened over the calendar in
@@ -5124,11 +5156,12 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     else if (a === 'today' || a === 'all') startQueue(all, 'John\u2019s Song of the Day', 'all', 0, false);
     else if (a === 'shuffle') startQueue(all, 'John\u2019s Song of the Day', 'all', 0, true);
     else if (a === 'mine') { if (fav.length) document.getElementById('fabplay').click(); else toast('My playlist is empty: add songs with the heart'); }
+    else if (a === 'carry') nowCarry();   // the iPhone's "On your other device" widget: carry on here with what's playing there
   }
   (function () {
     var SIRI = TV ? null : natPlugin('SotdSiri');
     if (SIRI) SIRI.addListener('action', function (e) { var a = e && e.action; setTimeout(function () { doAction(a); }, 400); });
-    var m = TV ? null : /[?&]do=(today|shuffle|mine|all)(?:&|$)/.exec(location.search);
+    var m = TV ? null : /[?&]do=(today|shuffle|mine|all|carry)(?:&|$)/.exec(location.search);
     if (!m) return;
     var iso = m[1] === 'all' ? dayFromHash() : '';
     try { history.replaceState(history.state, '', location.pathname + location.search.replace(/([?&])do=[^&]*(&|$)/, function (x, p1, p2) { return p2 ? p1 : ''; }) + location.hash); } catch (e) {}
@@ -5745,6 +5778,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   });
 
   function memberApply() {
+    nowAppMember();
     if (!modeSaved && !modeLink) playMode = MEMBER ? 'audio' : 'video';   // not chosen yet: a member's songs, or the videos
     vidsMerge();
     root.classList.toggle('member', !!MEMBER);
@@ -5880,7 +5914,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     function siteLink(u) {   // the calendar's own links (a day, a month, today, the calendar; the widget's too): opened here
       var m = /^https:\/\/cooperking\.github\.io\/songs\/(?:(today|\d{2}-\d{2}-\d{4}|\d{2}-\d{4})\/?)?(?:\?([^#]*))?(?:#(.*))?$/.exec(u);
       if (!m) return false;
-      var dm = /(?:^|&)do=(today|shuffle|mine|all)(?:&|$)/.exec(m[2] || '');
+      var dm = /(?:^|&)do=(today|shuffle|mine|all|carry)(?:&|$)/.exec(m[2] || '');
       if (dm) {   // a widget's (or a shortcut's) play: Play all from today, or from a day (its address or #day), shuffle, My playlist
         var dd = /^\d{2}-\d{2}-\d{4}$/.test(m[1] || '') ? m[1] : /^\d{2}-\d{2}-\d{4}$/.test(m[3] || '') ? m[3] : '';
         var iso = dd ? dd.slice(6) + '-' + dd.slice(3, 5) + '-' + dd.slice(0, 2) : '';

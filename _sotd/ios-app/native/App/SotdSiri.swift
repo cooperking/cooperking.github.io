@@ -1,21 +1,40 @@
 import Foundation
 import Capacitor
 import AppIntents
+import WidgetKit
 
 // Siri and the Shortcuts app: "Hey Siri, play today's song in Song of the Day" (and shuffle, and My playlist). Each
 // opens the app and hands the calendar what to play, as an "action" event of window.Capacitor.Plugins.SotdSiri (kept
 // until the calendar listens, as it isn't loaded yet when Siri opens the app from closed).
+// It also takes the member's sign-in for the widgets (member: { token, device }, or {} on signing out; kept in the
+// shared keychain, SotdShared) and tells the widgets to look again (reload: { all }: every widget, or only "On your other
+// device").
 @objc(SotdSiriPlugin)
 public class SotdSiriPlugin: CAPPlugin, CAPBridgedPlugin {
     public let identifier = "SotdSiriPlugin"
     public let jsName = "SotdSiri"
-    public let pluginMethods: [CAPPluginMethod] = []
+    public let pluginMethods: [CAPPluginMethod] = [
+        CAPPluginMethod(name: "member", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "reload", returnType: CAPPluginReturnPromise)
+    ]
     static weak var shared: SotdSiriPlugin?
     static var pending: String?
 
     override public func load() {
         SotdSiriPlugin.shared = self
         if let a = SotdSiriPlugin.pending { SotdSiriPlugin.pending = nil; send(a) }
+    }
+
+    @objc func member(_ call: CAPPluginCall) {
+        let token = call.getString("token") ?? "", device = call.getString("device") ?? ""
+        SotdShared.save(token.isEmpty ? nil : ["token": token, "device": device])
+        WidgetCenter.shared.reloadTimelines(ofKind: "elsewhere")
+        call.resolve()
+    }
+
+    @objc func reload(_ call: CAPPluginCall) {
+        if call.getBool("all") ?? false { WidgetCenter.shared.reloadAllTimelines() } else { WidgetCenter.shared.reloadTimelines(ofKind: "elsewhere") }
+        call.resolve()
     }
 
     func send(_ action: String) { notifyListeners("action", data: ["action": action], retainUntilConsumed: true) }
