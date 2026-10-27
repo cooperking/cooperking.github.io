@@ -73,7 +73,10 @@ else
 fi
 cat "$OUT/update-offer.txt"
 # the widget and the shortcuts (from build 10): Android's own lists of them, then a shortcut opened as the launcher would
-adb install -r songs/android.apk >/dev/null 2>&1
+adb shell am force-stop $PKG
+adb install -r songs/android.apk > "$OUT/reinstall.txt" 2>&1 || { sleep 5; adb install -r songs/android.apk >> "$OUT/reinstall.txt" 2>&1; }
+adb shell dumpsys package $PKG | grep -m2 -E "versionCode|versionName" >> "$OUT/reinstall.txt"
+sleep 5
 adb shell dumpsys appwidget > "$OUT/appwidget.txt" 2>&1
 adb shell dumpsys shortcut > "$OUT/shortcut-all.txt" 2>&1
 { grep -q "io.github.cooperking.sotd/.TodayWidget" "$OUT/appwidget.txt" && echo "widget: Android lists it" || echo "widget: NOT listed"
