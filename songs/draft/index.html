@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="88299012ff40">
+<meta name="sotd-build" content="258ed6f4fbd5">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -710,6 +710,13 @@ html.theatre .vidfloat > .coverbox { --bg: #000; }
 /* a member's downloads: the day's button (a tick once it's here), a mark on the calendar, and with no connection the
    days that can't play greyed */
 .iconbtn.dlbtn[hidden] { display: none; }
+/* Play on a speaker (AirPlay; Chromecast in Chrome on Android): in each song's icons and My playlist's box, there only
+   while the phone can see a speaker; pink while one is playing */
+.iconbtn.castsong { display: none; }
+html.castable .iconbtn.castsong { display: inline-grid; }
+.iconbtn.castsong svg { width: 16px; height: 16px; }
+html.casting .iconbtn.castsong { background: #e23a6e; border-color: #e23a6e; color: #fff; }
+html.tv .iconbtn.castsong { display: none !important; }
 .iconbtn.dlbtn.done { color: var(--accent, #ec1a13); }
 .iconbtn.dlbtn.busy svg { animation: dlpulse 1s ease-in-out infinite; }
 @keyframes dlpulse { 50% { opacity: .3; } }
@@ -925,6 +932,10 @@ html.bgplay.bgon .fab .fabart { animation-play-state: running; }
 .fab .fabtx span { font: 13px/1.2 var(--serif); color: rgba(27, 16, 32, .7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 html.bgplay .fab .fabctl { display: grid; place-items: center; flex: none; width: 32px; height: 34px; padding: 0; border: 0; border-radius: 50%; background: none; color: #1b1020; cursor: pointer; }
 .fab .fabctl svg { width: 13px; height: 13px; }
+.fab .fabctl[hidden] { display: none !important; }
+.fab .fabcast svg { width: 15px; height: 15px; }
+.fab .fabcast.on { color: #e23a6e; }
+.fab:has(.fabcast:not([hidden])) .fabtx { max-width: 24vw; }   /* (room for it on a phone) */
 html.bgplay .fab .fabl { display: none; }   /* no playlist name in here while it's showing what's playing */
 html.bgplay .fab .fabopen { padding: 8px 10px; }
 html.bgplay .fab.nofav .fabopen { display: none; }
@@ -1172,7 +1183,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
 <div class="vidwrap" id="vidwrap"><div class="vid" id="vidspot" hidden></div><div class="capdock" id="capdock"><div class="capslide"><div class="vidcap capbox" id="vidcap" aria-live="polite"></div><div class="vidcap capbox adwhy" id="adwhy"><span class="in"><span class="k">Advert</span><span class="t"><a id="adwhylink" href="ads/" target="_blank" rel="noopener" tabindex="-1">Why am I seeing this ad?<span class="go" aria-hidden="true">→</span></a></span></span></div></div><div class="vidcap capbox capmeasure" id="capmeasure" aria-hidden="true"></div></div></div>
 <div class="vidfloat" id="vidfloat"><div id="vidslot"></div><button type="button" class="vidsound" id="vidsound" hidden><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z" fill="currentColor" stroke="none"/><path d="m23 9-6 6M17 9l6 6"/></svg><span>Tap for sound</span></button></div>
 <div class="sitepage" id="sitepage" hidden></div>
-<div class="fab" id="fabbox" hidden><button class="fabnow" id="fabnow" type="button" aria-label="Open the song that's playing"><span class="fabart" id="fabart"></span><span class="fabtx"><b id="fabt"></b><span id="faba"></span></span></button><button class="fabctl" id="fabprev" type="button" aria-label="Previous song"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M3 3h1.6v10H3zM14 3v10L5.5 8z"/></svg></button><button class="fabplay" id="fabplay" type="button" aria-label="Play My playlist"></button><button class="fabctl" id="fabnext" type="button" aria-label="Next song"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M11.4 3H13v10h-1.6zM2 3v10l8.5-5z"/></svg></button><button class="fabopen" id="fab" type="button" aria-haspopup="dialog"><svg class="heart" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 14s-5.5-3.3-5.5-7.4A3 3 0 0 1 8 4.6a3 3 0 0 1 5.5 2C13.5 10.7 8 14 8 14z"/></svg><span class="fabl" id="fabl">My playlist</span> <span class="n" id="fabn">0</span></button><button class="fabctl" id="fabstop" type="button" aria-label="Stop"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M2 2l8 8M10 2 2 10"/></svg></button></div>
+<div class="fab" id="fabbox" hidden><button class="fabnow" id="fabnow" type="button" aria-label="Open the song that's playing"><span class="fabart" id="fabart"></span><span class="fabtx"><b id="fabt"></b><span id="faba"></span></span></button><button class="fabctl" id="fabprev" type="button" aria-label="Previous song"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M3 3h1.6v10H3zM14 3v10L5.5 8z"/></svg></button><button class="fabplay" id="fabplay" type="button" aria-label="Play My playlist"></button><button class="fabctl" id="fabnext" type="button" aria-label="Next song"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M11.4 3H13v10h-1.6zM2 3v10l8.5-5z"/></svg></button><button class="fabopen" id="fab" type="button" aria-haspopup="dialog"><svg class="heart" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 14s-5.5-3.3-5.5-7.4A3 3 0 0 1 8 4.6a3 3 0 0 1 5.5 2C13.5 10.7 8 14 8 14z"/></svg><span class="fabl" id="fabl">My playlist</span> <span class="n" id="fabn">0</span></button><button class="fabctl fabcast" id="fabcast" type="button" aria-label="Play on a speaker" title="Play on a speaker" aria-pressed="false" hidden><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="1.5" width="9" height="13" rx="2"/><circle cx="8" cy="9.6" r="2.4"/><circle cx="8" cy="4.6" r=".6" fill="currentColor"/></svg></button><button class="fabctl" id="fabstop" type="button" aria-label="Stop"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M2 2l8 8M10 2 2 10"/></svg></button></div>
 
 <dialog id="mine" aria-labelledby="mineh">
   <div class="sheet-in">
@@ -1730,7 +1741,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     // never while anything's showing or playing: an iPhone plays one thing at a time, so even a moment of silence would
     // stop a video that's playing (25 Oct 2026: a tap on Facts in full screen stopped the video, and every tap after
     // did it again). Only on a tap with nothing on, which is also the tap that starts the first song or video.
-    if (audioOk || audioTries >= 3 || vplay || coverOn || ownBg || !audio.paused || audio.getAttribute('src')) return;   // in use (or used: already allowed)
+    if (audioOk || audioTries >= 3 || vplay || coverOn || ownBg || castNow || !audio.paused || audio.getAttribute('src')) return;   // in use (or used: already allowed)
     if (ownVid && !ownVid.paused) return;
     audioOk = true; audioTries++;
     audio.src = SILENT;
@@ -1769,6 +1780,56 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     setState();
     if (was) playOn(was);
   });
+
+  // ---- other speakers: AirPlay (iPhone, iPad, Mac: HomePods, Apple TVs, AirPlay speakers) and Google Cast (Chrome on
+  // Android: Chromecasts, Nest and Cast speakers). The phone finds them; the speaker button (in each song's icons, and
+  // My playlist's box) opens the phone's own list, and is there only while it can see one. Songs go to the speaker (they
+  // play in the page's audio); videos stay on the screen. A Chromecast fetches the song itself, so a downloaded song is
+  // streamed while one is playing (songSrc). Not on a TV. ----
+  var castAvail = false, castNow = false;
+  var AIRPLAY = !!window.WebKitPlaybackTargetAvailabilityEvent && typeof audio.webkitShowPlaybackTargetPicker === 'function';
+  var RPLAY = !AIRPLAY && audio.remote && typeof audio.remote.prompt === 'function' ? audio.remote : null;
+  var SPK_ICON = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="1.5" width="9" height="13" rx="2"/><circle cx="8" cy="9.6" r="2.4"/><circle cx="8" cy="4.6" r=".6" fill="currentColor"/></svg>';
+  function castLabel(b) {
+    var t = castNow ? 'Playing on a speaker: change or stop' : 'Play on a speaker';
+    b.setAttribute('aria-label', t); b.title = t; b.setAttribute('aria-pressed', castNow ? 'true' : 'false');
+  }
+  function castDraw() {
+    var h = document.documentElement; h.classList.toggle('castable', castAvail || castNow); h.classList.toggle('casting', castNow);
+    var f = document.getElementById('fabcast'); f.hidden = !castAvail && !castNow; f.classList.toggle('on', castNow);
+    [f].concat([].slice.call(document.querySelectorAll('#picks .castsong'))).forEach(castLabel);
+  }
+  function castSwap() {   // a downloaded song playing as a speaker takes over: the same song streamed, from where it was
+    if (!castNow || !coverOn || !vplay || !vplay.cover || !vplay.el || !vplay.el.sotd) return;
+    var s = vplay.el.sotd.s, on = ownSong(s) || s.p;
+    if (!on || (audio.getAttribute('src') || '').indexOf('__offline/') < 0) return;
+    var t = audio.currentTime || 0, go = !audio.paused;
+    audio.src = on + (t > 0.5 ? '#t=' + t.toFixed(2) : '');
+    if (go) { var p = audio.play(); if (p && p.catch) p.catch(function () {}); }
+  }
+  function castSet(now) { var was = castNow; castNow = now; castDraw(); if (now && !was) { castSwap(); toast('Playing on the speaker'); } }
+  if (!TV && (AIRPLAY || RPLAY)) {
+    audio.hidden = true; document.body.appendChild(audio);   // (in the page, as the speakers' lists expect)
+    if (AIRPLAY) {
+      audio.setAttribute('x-webkit-airplay', 'allow');
+      audio.addEventListener('webkitplaybacktargetavailabilitychanged', function (e) { castAvail = e.availability === 'available'; castDraw(); });
+      audio.addEventListener('webkitcurrentplaybacktargetiswirelesschanged', function () { castSet(!!audio.webkitCurrentPlaybackTargetIsWireless); });
+    } else {
+      // (Chrome knows once a song's loaded: it asks whether a speaker can play that one; where it can't keep watching,
+      // an Android phone shows the button anyway and the list says if there's none)
+      RPLAY.watchAvailability(function (a) { castAvail = !!a; castDraw(); }).catch(function () { castAvail = /Android/.test(navigator.userAgent); castDraw(); });
+      ['connecting', 'connect', 'disconnect'].forEach(function (n) { RPLAY.addEventListener(n, function () { castSet(RPLAY.state !== 'disconnected'); }); });
+    }
+  }
+  function castPick() {
+    if (AIRPLAY) { try { audio.webkitShowPlaybackTargetPicker(); } catch (e) {} return; }
+    if (RPLAY) RPLAY.prompt().catch(function (e) {
+      var n = e && e.name;
+      if (n === 'NotFoundError') toast('No speakers found on this Wi-Fi');
+      else if (n === 'NotSupportedError' || n === 'InvalidStateError') toast('Play a song first, then choose the speaker');
+    });
+  }
+  document.getElementById('fabcast').addEventListener('click', castPick);
 
   function toggle(s, ui) {
     if (vplay && vplay.el === ui.el) { vidToggle(); return; }
@@ -3065,6 +3126,11 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       var dlb = document.createElement('button'); dlb.type = 'button'; dlb.className = 'iconbtn dlbtn';
       dlb.addEventListener('click', function () { dlToggle(s); });
       dlButton(dlb, s); icons.insertBefore(dlb, ln);
+      if (songSrc(s)) {   // play on a speaker (shown while the phone can see one)
+        var cs = document.createElement('button'); cs.type = 'button'; cs.className = 'iconbtn castsong';
+        cs.innerHTML = SPK_ICON; castLabel(cs); cs.addEventListener('click', castPick);
+        icons.appendChild(cs);
+      }
       if (VIDS[s.track] || songSrc(s)) {   // full screen, for its video or the song (shown while either plays)
         var fsi = document.createElement('button'); fsi.type = 'button'; fsi.className = 'iconbtn fsicon';
         fsi.setAttribute('aria-label', 'Watch full screen'); fsi.title = 'Full screen'; fsi.innerHTML = FS_ICON;
@@ -4459,7 +4525,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   var MEMBER = null, MKEY = 'sotd-member', MBASE = DATA.live ? String(DATA.live).replace(/\/songs\.json.*$/, '') : '';
   function ownSong(s) { return (MEMBER && MEMBER.media && MEMBER.media[s.track] && MEMBER.media[s.track].a) || ''; }
   function whole(s) { return !!(ownSong(s) || OFFL[s.track]); }   // a member's whole song: online, or downloaded here
-  function songSrc(s) { return OFFL[s.track] && SWOK ? offUrl(s.track) : ownSong(s) || s.p || ''; }
+  function songSrc(s) {   // (a downloaded song is streamed while a speaker's playing: a Chromecast fetches the song itself)
+    var on = ownSong(s) || s.p || '';
+    return OFFL[s.track] && SWOK && !(castNow && on) ? offUrl(s.track) : on;
+  }
   // ---- a member's downloads (songs and John's videos): fetched into the browser's storage (sotd-songs) and played from it by the
   // service worker (sw.js, this folder's) at <here>__offline/<track>.mp3 (and .mp4), with or without a connection, like Spotify's
   // downloads. Asked to be kept (navigator.storage.persist); all gone if the member is removed. ----
