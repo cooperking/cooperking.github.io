@@ -1,0 +1,32 @@
+name: Play listing - copy the .aab here
+# Copies the Android app's .aab (artifact "sotd-android" of the Android app run below) into this branch,
+# so it can be uploaded to the Play Console from a browser. This branch only holds files for the Play Console.
+on:
+  push:
+    branches: [play-listing]
+    paths: [.github/workflows/aab.yml]
+permissions:
+  contents: write
+  actions: read
+jobs:
+  copy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch the .aab
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN: '40561061115'
+        run: |
+          gh run download "$RUN" -R "$GITHUB_REPOSITORY" -n sotd-android -D /tmp/a
+          ls -la /tmp/a
+          cp /tmp/a/sotd-android.aab play-listing/sotd-android.aab
+          echo "run $RUN" > play-listing/sotd-android.txt
+          sha256sum play-listing/sotd-android.aab >> play-listing/sotd-android.txt
+      - name: Commit it
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add play-listing/sotd-android.aab play-listing/sotd-android.txt
+          git commit -m "The Android app's .aab (run 40561061115), for the Play Console"
+          git push
