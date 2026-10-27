@@ -461,6 +461,7 @@ async function members(request, url, env) {
   if (route === 'signout') return memberSignout(request, env, answer);
   if (route === 'me') return memberMe(request, env, answer);
   if (route === 'playlists') return memberPlaylists(request, env, answer);
+  if (route === 'now') return memberNow(request, env, answer);
   if (route === 'tvcode') return memberTvCode(request, env, answer);
   if (route === 'push') return memberPush(request, env, answer);
   if (route === 'inbox') return memberInbox(request, env, answer);
@@ -1032,6 +1033,35 @@ async function memberPlaylists(request, env, answer) {
   Object.assign(list, { name, tracks, at: Date.now() });
   await env.SOTD.put(key, JSON.stringify(lists));
   return answer(200, { list, lists: sorted() });
+}
+
+// ---------- what a member is playing, for carrying on on another of their devices (the calendar's /members/now) ----------
+// One record per member (KV now:<id>, kept a week), written by the device playing only when something changes: a new
+// song, a pause or play, a jump within the song, the calendar put away. Its position is where the song was when it was
+// written (at, the Worker's clock), so another device works out where it has got to. POST { dev, label, start, playing,
+// t, d, pos, q, mode }: start (a play begun on that device by a tap) makes it the device playing; without it, if another
+// device has taken over since, nothing is written and the answer says which ({ taken: label }), so that one stops.
+// POST { dev, stop: true } clears it (Stop). GET gives the record and the Worker's time.
+async function memberNow(request, env, answer) {
+  const id = await memberFromToken(request, env);
+  if (!id) return answer(401, { error: 'Not a member (any more).' });
+  const key = 'now:' + id, now = Date.now();
+  const rec = await env.SOTD.get(key, 'json');
+  if (request.method === 'GET') return answer(200, { now, rec: rec || null });
+  if (request.method !== 'POST') return answer(405, { error: 'Use GET or POST.' });
+  const b = await request.json().catch(() => ({}));
+  const dev = String(b.dev || '');
+  if (!/^[A-Za-z0-9]{8,40}$/.test(dev)) return answer(400, { error: 'Which device?' });
+  if (rec && rec.dev !== dev && !b.start) return answer(200, { taken: rec.label || 'other device', now });
+  if (b.stop) { if (rec) await env.SOTD.delete(key); return answer(200, { ok: true, now }); }
+  if (!ID_RE.test(String(b.t || ''))) return answer(400, { error: 'Which song?' });
+  const ids = x => Array.isArray(x) ? x.map(String).filter(t => ID_RE.test(t)).slice(0, 2000) : undefined;
+  const q = b.q && Array.isArray(b.q.list) ? { list: ids(b.q.list), i: Math.max(0, b.q.i | 0), name: String(b.q.name || '').slice(0, 120),
+    back: String(b.q.back || '').slice(0, 20), order: ids(b.q.order) } : null;
+  const r = { dev, label: String(b.label || 'other device').slice(0, 40), t: b.t, d: String(b.d || '').slice(0, 10), pos: Math.max(0, +b.pos || 0),
+    playing: !!b.playing, mode: b.mode === 'video' ? 'video' : 'audio', q, at: now, since: rec && rec.dev === dev && !b.start ? rec.since : now };
+  await env.SOTD.put(key, JSON.stringify(r), { expirationTtl: 7 * 86400 });
+  return answer(200, { ok: true, now });
 }
 
 // a member's file, by a signed link: in ranges, as audio and video players ask (a phone's won't play without)

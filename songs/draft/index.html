@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="dc1a92caffa8">
+<meta name="sotd-build" content="f45973be6988">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -3927,7 +3927,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (curDay) try { history.replaceState(history.state, '', '#' + slugOf(curDay)); } catch (e) {}
   }
   document.getElementById('fabnow').addEventListener('click', function () { if (RESUME) resumeGo(true); else bgShow(); });
-  document.getElementById('fabstop').addEventListener('click', function () { if (RESUME) { resumeOff(); resumeForget(); return; } bgOff(); closeDialog(sheet, true); resumeForget(); });
+  document.getElementById('fabstop').addEventListener('click', function () { if (RESUME) { resumeOff(); resumeForget(); return; } bgOff(); closeDialog(sheet, true); resumeForget(); nowStop(); });
   // back and forward go as a swipe does: to the card on the left or the right (Play all, newest first: left is the day before)
   document.getElementById('fabnext').addEventListener('click', function () { if (RESUME) resumeGo(false, 1); else if (bgOn) goDay(1); });
   document.getElementById('fabprev').addEventListener('click', function () { if (RESUME) resumeGo(false, -1); else if (bgOn) goDay(-1); });
@@ -3948,7 +3948,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   setInterval(function () { if (vplay && vplay.on) resumeSave(); }, 4000);
   window.addEventListener('pagehide', function () { if (vplay && (vplay.on || bgOn)) resumeSave(); });
   document.addEventListener('visibilitychange', function () { if (document.hidden && vplay && vplay.on) resumeSave(); });
-  sheet.addEventListener('close', function () { if (!RESUME) resumeForget(); });   // closed, not playing on: nothing to carry on
+  sheet.addEventListener('close', function () { if (!RESUME) { resumeForget(); nowStop(); } });   // closed, not playing on: nothing to carry on
   function resumeInit() {
     if (resumeInit.done || !MEMBER || TV) return;
     resumeInit.done = true;
@@ -3973,6 +3973,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   function resumeGo(show, step) {   // carry on: out of sight (the play button), or with the song's page (a tap on the song)
     var st = RESUME; if (!st) return;
+    if (NOW.from) {   // carrying on from another device: this one's playing now, from where that one has got to
+      NOW.claim = true; NOW.from = '';
+      if (st.live) st.pos = Math.floor((st.pos || 0) + Math.max(0, Date.now() - st.at) / 1000);
+    }
     resumeOff();
     var s = byTrack[st.t]; if (!s) return;
     resumeAt = step ? 0 : st.pos || 0; resumeFor = st.t;
@@ -3989,6 +3993,91 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     openDay(s.d, { track: st.t, keepQueue: true });
     if (!show) { layersChanged(); bgDraw(); followFloat(400); }
     if (step && bgOn) goDay(step);
+  }
+
+  // ---- carrying on on another device (members). The device playing notes what it's playing at the Worker
+  // (/members/now) only when that changes: a new song, a pause or play, a jump in the song, the calendar put away.
+  // Another of the member's devices, opening the calendar, offers it in My playlist's box ("On your iPhone"), paused
+  // where it has got to (worked out from the time of the note); its play button carries on there, and the first device
+  // stops ("Playing on your Mac now"): at its next note, or its look every 30 seconds while playing. A play begun by a
+  // tap makes that device the one playing. ----
+  var NOW = { key: '', sent: null, taken: false, gesture: 0, from: '', claim: false, okAt: 0 };
+  ['pointerdown', 'keydown', 'touchend'].forEach(function (n) { document.addEventListener(n, function () { NOW.gesture = Date.now(); }, true); });
+  function nowLabel() {
+    var u = navigator.userAgent;
+    return TV ? 'Fire TV' : /iPad/.test(u) || (/Macintosh/.test(u) && navigator.maxTouchPoints > 1) ? 'iPad' : /iPhone/.test(u) ? 'iPhone'
+      : /Android/.test(u) ? 'Android phone' : /Macintosh/.test(u) ? 'Mac' : /Windows/.test(u) ? 'Windows PC' : /CrOS/.test(u) ? 'Chromebook' : 'computer';
+  }
+  function nowTok() { try { return localStorage.getItem(MKEY) || ''; } catch (e) { return ''; } }
+  function nowState() {   // what's playing here (as resumeSave keeps it)
+    if (!MEMBER || !vplay || !vplay.el || !vplay.el.sotd || !sheet.open) return null;
+    var s = vplay.el.sotd.s, pos = 0;
+    try { pos = vplay.player && vplay.player.getCurrentTime ? vplay.player.getCurrentTime() : 0; } catch (e) {}
+    return { t: s.track, d: s.d, pos: Math.floor(pos || 0), playing: !!vplay.on, mode: playMode,
+      q: queue ? { list: queue.list, i: queue.i, name: queue.name, back: queue.back, order: queue.order && queue.order.join() !== queue.list.join() ? queue.order : undefined } : null };
+  }
+  function nowSend(body) {
+    var tok = nowTok(); if (!tok || !MBASE || !window.fetch) return;
+    body.dev = deviceId(); body.label = nowLabel();
+    fetch(MBASE + '/members/now', { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + tok }, body: JSON.stringify(body) })
+      .then(function (r) { return r.json(); }).then(function (j) {
+        if (j && j.taken && !body.stop) nowTaken(j.taken);
+        else if (j && j.ok) NOW.okAt = body.stop ? 0 : j.now;   // (the Worker's time of this device's note)
+      }).catch(function () {});
+  }
+  function nowTaken(label) {   // carried on on another device: this one stops, and says where it's playing
+    if (NOW.taken) return;
+    NOW.taken = true; NOW.key = ''; NOW.sent = null; NOW.okAt = 0;   // (a tap here to play again: noted, as new)
+    if (vplay && vplay.on) try { vidToggle(); } catch (e) {}
+    toast('Playing on your ' + label + ' now');
+  }
+  function nowNote(force) {   // a note, if something's changed since the last
+    var st = nowState(); if (!st) return;
+    var key = st.t + '|' + st.playing, was = NOW.sent;
+    var drift = was && was.playing && st.playing && was.t === st.t ? Math.abs(st.pos - (was.pos + (Date.now() - was.when) / 1000)) : 0;
+    if (!force && key === NOW.key && drift < 10) return;
+    var start = st.playing && (NOW.claim || Date.now() - NOW.gesture < 30000);   // (a tap here began it, or carrying on here)
+    if (NOW.taken && !start) return;   // (stopped by another device carrying on: quiet until a tap here)
+    if (start) { NOW.taken = false; NOW.claim = false; }
+    NOW.key = key; NOW.sent = { t: st.t, pos: st.pos, playing: st.playing, when: Date.now() };
+    if (start) st.start = true;
+    nowSend(st);
+  }
+  function nowStop() { if (MEMBER && NOW.key && !NOW.taken) { NOW.key = ''; NOW.sent = null; nowSend({ stop: true }); } }
+  setInterval(function () { if (MEMBER && vplay) nowNote(false); }, 4000);
+  function nowLook() {   // playing here: carried on on another device since this one's note? (a look, not a note)
+    if (!MEMBER || !NOW.okAt || NOW.taken || !vplay || !vplay.on || !MBASE || !window.fetch) return;
+    var tok = nowTok(), at = NOW.okAt; if (!tok) return;
+    fetch(MBASE + '/members/now', { headers: { Authorization: 'Bearer ' + tok }, cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+      var r = j && j.rec;
+      if (r && r.dev !== deviceId() && r.at > at && NOW.okAt === at && vplay && vplay.on) nowTaken(r.label);
+    }).catch(function () {});
+  }
+  setInterval(nowLook, 30000);
+  setInterval(function () { if (NOW.from && RESUME && !document.hidden) nowCheck(); }, 30000);   // (another device's song offered here: kept up with it)
+  window.addEventListener('pagehide', function () { if (MEMBER && vplay && vplay.on) nowNote(true); });
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) { if (MEMBER && vplay && vplay.on) nowNote(true); }
+    else if (MEMBER) { nowCheck(); nowLook(); }
+  });
+  function nowCheck() {   // another device's song, offered here
+    if (!MEMBER || TV || !MBASE || !window.fetch || sheet.open || bgOn) return;
+    var tok = nowTok(); if (!tok) return;
+    fetch(MBASE + '/members/now', { headers: { Authorization: 'Bearer ' + tok }, cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+      var r = j && j.rec;
+      if (!r || r.dev === deviceId() || !byTrack[r.t] || sheet.open || bgOn) return;
+      var age = j.now - r.at;
+      if (r.playing ? age > 20 * 60e3 : age > 12 * 3600e3) return;   // (one that stopped noting long ago: gone)
+      if (RESUME && !NOW.from && (RESUME.at || 0) > Date.now() - age) return;   // (this device's own, more recent: that)
+      var st = { t: r.t, d: r.d, pos: Math.floor(r.pos + (r.playing ? age / 1000 : 0)), at: Date.now(), q: r.q, live: r.playing };
+      try { localStorage.setItem(RES_KEY, JSON.stringify(st)); } catch (e) {}
+      resumeOff(); resumeInit.done = false; resumeInit();
+      if (!RESUME) return;
+      NOW.from = r.label;
+      var s = byTrack[r.t];
+      document.getElementById('faba').textContent = (r.playing ? 'On your ' + r.label + ' now' : 'From your ' + r.label) + ' \u00b7 ' + s.artist;
+      document.getElementById('fabnow').setAttribute('aria-label', cleanTitle(s.title) + ' by ' + s.artist + ', playing on your ' + r.label + ': carry on here');
+    }).catch(function () {});
   }
 
   // ---- the site's other pages (the admin page, the Fire TV guide) while something plays: opened over the calendar in
@@ -5603,7 +5692,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       return r.ok ? r.json() : null;
     }).then(function (j) {
       if (!j) return;
-      MEMBER = j; memberApply(); famSync(); resumeInit(); noteSync(); noteOffer();
+      MEMBER = j; memberApply(); famSync(); resumeInit(); nowCheck(); noteSync(); noteOffer();
       if (!TV) { unreadSet(j.unread); readTapped(); }
       if (appAfterJoin) { appAfterJoin = false; if (appCan()) setTimeout(appOffer, 600); }
       var mc = JSON.stringify(j.mycovers || {});   // John's own covers this member sees: the calendar drawn again with them
