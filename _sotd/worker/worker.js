@@ -462,6 +462,7 @@ async function members(request, url, env) {
   if (route === 'me') return memberMe(request, env, answer);
   if (route === 'playlists') return memberPlaylists(request, env, answer);
   if (route === 'now') return memberNow(request, env, answer);
+  if (route === 'now/ws') return memberNowSocket(request, env);
   if (route === 'tvcode') return memberTvCode(request, env, answer);
   if (route === 'push') return memberPush(request, env, answer);
   if (route === 'inbox') return memberInbox(request, env, answer);
@@ -1002,7 +1003,9 @@ async function memberTvCode(request, env, answer) {
 // replaces it, giving back { list, lists }; POST { op: 'delete', id } removes one.
 const PLAYLISTS_MAX = 50, PLAYLIST_TRACKS = 500, PLAYLIST_NAME = 80;
 async function memberFromToken(request, env) {
-  const token = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
+  return memberIdFor((request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, ''), env);
+}
+async function memberIdFor(token, env) {
   if (!token) return null;
   const hash = await sha256hex(token);
   const all = (await env.SOTD.get('members', 'json')) || {};
@@ -1036,32 +1039,80 @@ async function memberPlaylists(request, env, answer) {
 }
 
 // ---------- what a member is playing, for carrying on on another of their devices (the calendar's /members/now) ----------
-// One record per member (KV now:<id>, kept a week), written by the device playing only when something changes: a new
-// song, a pause or play, a jump within the song, the calendar put away. Its position is where the song was when it was
-// written (at, the Worker's clock), so another device works out where it has got to. POST { dev, label, start, playing,
-// t, d, pos, q, mode }: start (a play begun on that device by a tap) makes it the device playing; without it, if another
-// device has taken over since, nothing is written and the answer says which ({ taken: label }), so that one stops.
-// POST { dev, stop: true } clears it (Stop). GET gives the record and the Worker's time.
-async function memberNow(request, env, answer) {
-  const id = await memberFromToken(request, env);
-  if (!id) return answer(401, { error: 'Not a member (any more).' });
-  const key = 'now:' + id, now = Date.now();
-  const rec = await env.SOTD.get(key, 'json');
-  if (request.method === 'GET') return answer(200, { now, rec: rec || null });
-  if (request.method !== 'POST') return answer(405, { error: 'Use GET or POST.' });
-  const b = await request.json().catch(() => ({}));
+// One record per member, written by the device playing only when something changes: a new song, a pause or play, a jump
+// within the song, the calendar put away. Its position is where the song was when it was written (at, the Worker's
+// clock), so another device works out where it has got to. POST { dev, label, start, playing, t, d, pos, q, mode }:
+// start (a play begun on that device by a tap) makes it the device playing; without it, if another device has taken
+// over since, nothing is written and the answer says which ({ taken: label }), so that one stops. POST { dev, stop: true }
+// clears it (Stop). GET gives the record and the Worker's time.
+// Kept in a Durable Object (the class SotdNow below, bound as NOW, one per member): read straight after it's written,
+// from anywhere, and it tells the member's open pages the moment it changes (/members/now/ws, a WebSocket each). Without
+// that binding, in KV (now:<id>, a week), as at first: KV can be a minute or more behind, and there's no telling.
+function nowApply(rec, b, now) {   // a device's note against the one kept: the answer, and what to keep (put) or clear (del)
   const dev = String(b.dev || '');
-  if (!/^[A-Za-z0-9]{8,40}$/.test(dev)) return answer(400, { error: 'Which device?' });
-  if (rec && rec.dev !== dev && !b.start) return answer(200, { taken: rec.label || 'other device', now });
-  if (b.stop) { if (rec) await env.SOTD.delete(key); return answer(200, { ok: true, now }); }
-  if (!ID_RE.test(String(b.t || ''))) return answer(400, { error: 'Which song?' });
+  if (!/^[A-Za-z0-9]{8,40}$/.test(dev)) return { status: 400, out: { error: 'Which device?' } };
+  if (rec && rec.dev !== dev && !b.start) return { status: 200, out: { taken: rec.label || 'other device', now } };
+  if (b.stop) return { status: 200, out: { ok: true, now }, del: !!rec };
+  if (!ID_RE.test(String(b.t || ''))) return { status: 400, out: { error: 'Which song?' } };
   const ids = x => Array.isArray(x) ? x.map(String).filter(t => ID_RE.test(t)).slice(0, 2000) : undefined;
   const q = b.q && Array.isArray(b.q.list) ? { list: ids(b.q.list), i: Math.max(0, b.q.i | 0), name: String(b.q.name || '').slice(0, 120),
     back: String(b.q.back || '').slice(0, 20), order: ids(b.q.order) } : null;
-  const r = { dev, label: String(b.label || 'other device').slice(0, 40), t: b.t, d: String(b.d || '').slice(0, 10), pos: Math.max(0, +b.pos || 0),
+  const put = { dev, label: String(b.label || 'other device').slice(0, 40), t: b.t, d: String(b.d || '').slice(0, 10), pos: Math.max(0, +b.pos || 0),
     playing: !!b.playing, mode: b.mode === 'video' ? 'video' : 'audio', q, at: now, since: rec && rec.dev === dev && !b.start ? rec.since : now };
-  await env.SOTD.put(key, JSON.stringify(r), { expirationTtl: 7 * 86400 });
-  return answer(200, { ok: true, now });
+  return { status: 200, out: { ok: true, now }, put };
+}
+async function memberNow(request, env, answer) {
+  const id = await memberFromToken(request, env);
+  if (!id) return answer(401, { error: 'Not a member (any more).' });
+  if (request.method !== 'GET' && request.method !== 'POST') return answer(405, { error: 'Use GET or POST.' });
+  if (env.NOW) {
+    const r = await env.NOW.get(env.NOW.idFromName(id)).fetch('https://now/', { method: request.method, body: request.method === 'POST' ? await request.text() : undefined });
+    return answer(r.status, await r.json());
+  }
+  const key = 'now:' + id, now = Date.now();
+  const rec = await env.SOTD.get(key, 'json');
+  if (request.method === 'GET') return answer(200, { now, rec: rec || null });
+  const x = nowApply(rec, await request.json().catch(() => ({})), now);
+  if (x.put) await env.SOTD.put(key, JSON.stringify(x.put), { expirationTtl: 7 * 86400 });
+  else if (x.del) await env.SOTD.delete(key);
+  return answer(x.status, x.out);
+}
+async function memberNowSocket(request, env) {   // a page's live line: the member's token as the WebSocket's second protocol
+  if (!env.NOW || request.headers.get('Upgrade') !== 'websocket') return new Response('Not here.', { status: 426 });
+  const prot = (request.headers.get('Sec-WebSocket-Protocol') || '').split(',').map(x => x.trim());
+  const id = prot[0] === 'sotd' && prot[1] ? await memberIdFor(prot[1], env) : null;
+  if (!id) return new Response('Not a member (any more).', { status: 401 });
+  return env.NOW.get(env.NOW.idFromName(id)).fetch(request);
+}
+export class SotdNow {   // one member's note, and their open pages
+  constructor(ctx, env) {
+    this.ctx = ctx; this.env = env;
+    try { ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair('ping', 'pong')); } catch (e) {}   // (a page's "still there?", answered without waking this)
+  }
+  async fetch(request) {
+    const now = Date.now();
+    let rec = (await this.ctx.storage.get('rec')) || null;
+    if (rec && now - rec.at > 7 * DAY) { rec = null; await this.ctx.storage.delete('rec'); }
+    if (request.headers.get('Upgrade') === 'websocket') {
+      const pair = new WebSocketPair();
+      this.ctx.acceptWebSocket(pair[1]);
+      pair[1].send(JSON.stringify({ now, rec }));
+      return new Response(null, { status: 101, webSocket: pair[0], headers: { 'Sec-WebSocket-Protocol': 'sotd' } });
+    }
+    const json = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json' } });
+    if (request.method === 'GET') return json({ now, rec });
+    const x = nowApply(rec, await request.json().catch(() => ({})), now);
+    if (x.put) await this.ctx.storage.put('rec', x.put);
+    else if (x.del) await this.ctx.storage.delete('rec');
+    if (x.put || x.del) {   // every open page told (the device that wrote it knows itself)
+      const msg = JSON.stringify({ now, rec: x.put || null });
+      for (const ws of this.ctx.getWebSockets()) { try { ws.send(msg); } catch (e) {} }
+    }
+    return json(x.out, x.status);
+  }
+  async webSocketMessage(ws, msg) { if (msg === 'ping') ws.send('pong'); }
+  async webSocketClose(ws, code) { try { ws.close(code === 1005 ? 1000 : code, 'Bye'); } catch (e) {} }
+  async webSocketError(ws) { try { ws.close(1011, 'Error'); } catch (e) {} }
 }
 
 // a member's file, by a signed link: in ranges, as audio and video players ask (a phone's won't play without)

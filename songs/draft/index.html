@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="a7be0a03ad33">
+<meta name="sotd-build" content="6e1dea3da9e5">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -3953,7 +3953,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   setInterval(function () { if (vplay && vplay.on) resumeSave(); }, 4000);
   window.addEventListener('pagehide', function () { if (vplay && (vplay.on || bgOn)) resumeSave(); });
   document.addEventListener('visibilitychange', function () { if (document.hidden && vplay && vplay.on) resumeSave(); });
-  sheet.addEventListener('close', function () { if (!RESUME) { resumeForget(); nowStop(); setTimeout(nowCheck, 300); } });   // closed, not playing on: nothing to carry on here (another device's, if one's playing)
+  sheet.addEventListener('close', function () { if (!RESUME) { resumeForget(); nowStop(); setTimeout(nowFetch, 300); } });   // closed, not playing on: nothing to carry on here (another device's, if one's playing)
   function resumeInit() {
     if (resumeInit.done || !MEMBER || TV) return;
     resumeInit.done = true;
@@ -4011,8 +4011,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // while playing. A play begun by a tap makes that device the one playing. While something is playing or paused on
   // another device, a device not playing always shows it in the box (over a day open here; in place of its own song
   // paused in the box; a paused one only if more recent than this device's own), looking every 30 seconds while in
-  // sight; gone from there, gone from the box. ----
-  var NOW = { key: '', sent: null, taken: false, gesture: 0, from: '', claim: false, okAt: 0, checked: 0, lastOn: 0 };
+  // sight; gone from there, gone from the box. The note is kept in the Worker's Durable Object, which tells the open
+  // pages down a live line the moment it changes (see nowLine). ----
+  var NOW = { key: '', sent: null, taken: false, gesture: 0, from: '', claim: false, okAt: 0, checked: 0, lastOn: 0, pending: 0 };
   ['pointerdown', 'keydown', 'touchend'].forEach(function (n) { document.addEventListener(n, function () {
     NOW.gesture = Date.now();
     if (MEMBER) setTimeout(function () { if (vplay) nowNote(false); }, 1500);   // (a play begun by the tap: noted now, not at the next look round)
@@ -4033,11 +4034,12 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function nowSend(body) {
     var tok = nowTok(); if (!tok || !MBASE || !window.fetch) return;
     body.dev = deviceId(); body.label = nowLabel();
+    if (!body.stop) NOW.pending++;
     fetch(MBASE + '/members/now', { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + tok }, body: JSON.stringify(body) })
       .then(function (r) { return r.json(); }).then(function (j) {
         if (j && j.taken && !body.stop) nowTaken(j.taken);
         else if (j && j.ok) NOW.okAt = body.stop ? 0 : j.now;   // (the Worker's time of this device's note)
-      }).catch(function () {});
+      }).catch(function () {}).then(function () { if (!body.stop) NOW.pending--; });
   }
   function nowTaken(label) {   // carried on on another device: this one stops, and says where it's playing
     if (NOW.taken) return;
@@ -4045,7 +4047,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (vplay && vplay.on) try { vidToggle(); } catch (e) {}
     resumeForget();   // (this device's own place: not offered over the other's)
     toast('Playing on your ' + label + ' now');
-    setTimeout(nowCheck, 1500);   // (then the other's song shown here, to carry on with)
+    setTimeout(nowFetch, 1500);   // (then the other's song shown here, to carry on with)
   }
   function nowNote(force) {   // a note, if something's changed since the last
     var st = nowState(); if (!st) return;
@@ -4061,47 +4063,81 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   function nowStop() { if (MEMBER && NOW.key && !NOW.taken) { NOW.key = ''; NOW.sent = null; nowSend({ stop: true }); } }
   setInterval(function () { if (MEMBER && vplay) { if (vplay.on) NOW.lastOn = Date.now(); nowNote(false); } }, 4000);
-  function nowLook() {   // playing here: carried on on another device since this one's note? (a look, not a note)
-    if (!MEMBER || !NOW.okAt || NOW.taken || !vplay || !vplay.on || !MBASE || !window.fetch) return;
-    var tok = nowTok(), at = NOW.okAt; if (!tok) return;
-    fetch(MBASE + '/members/now', { headers: { Authorization: 'Bearer ' + tok }, cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
-      var r = j && j.rec;
-      if (r && r.dev !== deviceId() && r.at > at && NOW.okAt === at && vplay && vplay.on) nowTaken(r.label);
-    }).catch(function () {});
+
+  // the live line (a WebSocket to the Worker, while the page is open): told the moment the note changes, from any of the
+  // member's devices. Without it (refused, or not there yet), a look every 30 seconds: while playing here, and while in
+  // sight. A look too on coming back to the page, as a phone's line is cut while it's put away.
+  var NOWWS = { ws: null, open: false, tries: 0, timer: 0, pong: 0 };
+  function nowLine() {
+    if (!MEMBER || TV || !MBASE || !window.WebSocket || NOWWS.ws) return;
+    var tok = nowTok(); if (!/^[A-Za-z0-9_-]+$/.test(tok)) return;
+    var ws; try { ws = new WebSocket(MBASE.replace(/^http/, 'ws') + '/members/now/ws', ['sotd', tok]); } catch (e) { return; }
+    NOWWS.ws = ws; clearTimeout(NOWWS.timer);
+    ws.onopen = function () { if (NOWWS.ws !== ws) return; NOWWS.open = true; NOWWS.tries = 0; NOWWS.pong = Date.now(); };
+    ws.onmessage = function (e) {
+      if (NOWWS.ws !== ws) return;
+      NOWWS.pong = Date.now();
+      if (e.data === 'pong') return;
+      var j = null; try { j = JSON.parse(e.data); } catch (x) {}
+      if (j) nowGot(j);
+    };
+    ws.onclose = ws.onerror = function () {
+      if (NOWWS.ws !== ws) return;
+      NOWWS.ws = null; NOWWS.open = false;
+      clearTimeout(NOWWS.timer);
+      if (MEMBER && (!document.hidden || busyNow())) NOWWS.timer = setTimeout(nowLine, Math.min(60000, 2000 * Math.pow(2, NOWWS.tries++)));
+    };
   }
-  setInterval(function () { if (!MEMBER) return; if (busyNow()) nowLook(); else if (!document.hidden) nowCheck(); }, 30000);
+  function nowLineCut() { var ws = NOWWS.ws; NOWWS.ws = null; NOWWS.open = false; if (ws) try { ws.close(); } catch (e) {} }
+  setInterval(function () {
+    if (!MEMBER) { if (NOWWS.ws) nowLineCut(); return; }
+    if (NOWWS.open) {   // still there? (a line can die without saying)
+      if (Date.now() - NOWWS.pong > 75000) { nowLineCut(); nowLine(); } else try { NOWWS.ws.send('ping'); } catch (e) {}
+    } else {
+      if (!NOWWS.ws && !document.hidden) nowLine();
+      if (busyNow() || !document.hidden) nowFetch();
+    }
+  }, 30000);
   window.addEventListener('pagehide', function () { if (MEMBER && vplay && vplay.on) nowNote(true); });
   document.addEventListener('visibilitychange', function () {
     if (document.hidden) { if (MEMBER && vplay && vplay.on) nowNote(true); }
-    else if (MEMBER) { nowCheck(); nowLook(); }
+    else if (MEMBER) { nowLine(); nowFetch(); }
   });
-  window.addEventListener('focus', function () { if (MEMBER && Date.now() - NOW.checked > 5000) { nowCheck(); nowLook(); } });   // (a computer's window clicked back to: no visibilitychange)
-  window.addEventListener('pageshow', function (e) { if (e.persisted && MEMBER) { nowCheck(); nowLook(); } });
+  window.addEventListener('focus', function () { if (MEMBER && Date.now() - NOW.checked > 5000) { nowLine(); nowFetch(); } });   // (a computer's window clicked back to: no visibilitychange)
+  window.addEventListener('pageshow', function (e) { if (e.persisted && MEMBER) { nowLineCut(); nowLine(); nowFetch(); } });
   function nowLift() {   // the box over a day open here, while it shows another device's song
     if (!fabbox) return;
     var on = root.classList.contains('nowelse') && sheet.open && !bgOn && !root.classList.contains('site-on');
     fabbox.style.zIndex = on ? String((+sheet.style.zIndex || 50) + 1) : '';
   }
-  function nowCheck() {   // what's on the member's other devices, shown here in My playlist's box
-    if (!MEMBER || TV || !MBASE || !window.fetch || busyNow()) return;
+  function nowFetch() {   // the note, asked for
+    if (!MEMBER || TV || !MBASE || !window.fetch) return;
     var tok = nowTok(); if (!tok) return;
     NOW.checked = Date.now();
     fetch(MBASE + '/members/now', { headers: { Authorization: 'Bearer ' + tok }, cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
-      if (!j || busyNow()) return;
-      var r = j.rec, age = r ? j.now - r.at : 0;
-      if (!r || r.dev === deviceId() || !byTrack[r.t] || age > 12 * 3600e3) { if (NOW.from) { resumeOff(); resumeForget(); } return; }   // (nothing there now)
-      var live = r.playing && age <= 20 * 60e3;   // (playing, and noted in the last 20 minutes: playing there now)
-      if (!live && !NOW.from && Math.max(NOW.lastOn, RESUME ? RESUME.at || 0 : 0) > Date.now() - age) return;   // (paused there, and this device's own since: that)
-      if (bgOn) { bgOff(); closeDialog(sheet, true); }   // (its own song paused in the box: the other's in its place)
-      else if (RESUME && !NOW.from) resumeOff();
-      var st = { t: r.t, d: r.d, pos: Math.floor(r.pos + (live ? age / 1000 : 0)), at: Date.now(), q: r.q, live: live };
-      try { localStorage.setItem(RES_KEY, JSON.stringify(st)); } catch (e) {}
-      resumeInit.done = true; resumeShow(st);
-      NOW.from = r.label; root.classList.add('nowelse'); nowLift();
-      var s = byTrack[r.t];
-      document.getElementById('faba').textContent = (live ? 'On your ' + r.label + ' now' : 'From your ' + r.label) + ' \u00b7 ' + s.artist;
-      document.getElementById('fabnow').setAttribute('aria-label', cleanTitle(s.title) + ' by ' + s.artist + (live ? ', playing on your ' : ', paused on your ') + r.label + ': carry on here');
+      if (j) nowGot(j);
     }).catch(function () {});
+  }
+  function nowGot(j) {   // the note (asked for, or told down the line): this device stopped, or the other's song shown here
+    if (!MEMBER || TV) return;
+    var r = j.rec;
+    if (busyNow()) {   // playing here: carried on on another device since this one's note?
+      if (r && r.dev !== deviceId() && NOW.okAt && r.at > NOW.okAt && !NOW.pending && !NOW.taken && vplay && vplay.on) nowTaken(r.label);
+      return;
+    }
+    var age = r ? j.now - r.at : 0;
+    if (!r || r.dev === deviceId() || !byTrack[r.t] || age > 12 * 3600e3) { if (NOW.from) { resumeOff(); resumeForget(); } return; }   // (nothing there now)
+    var live = r.playing && age <= 20 * 60e3;   // (playing, and noted in the last 20 minutes: playing there now)
+    if (!live && !NOW.from && Math.max(NOW.lastOn, RESUME ? RESUME.at || 0 : 0) > Date.now() - age) return;   // (paused there, and this device's own since: that)
+    if (bgOn) { bgOff(); closeDialog(sheet, true); }   // (its own song paused in the box: the other's in its place)
+    else if (RESUME && !NOW.from) resumeOff();
+    var st = { t: r.t, d: r.d, pos: Math.floor(r.pos + (live ? age / 1000 : 0)), at: Date.now(), q: r.q, live: live };
+    try { localStorage.setItem(RES_KEY, JSON.stringify(st)); } catch (e) {}
+    resumeInit.done = true; resumeShow(st);
+    NOW.from = r.label; root.classList.add('nowelse'); nowLift();
+    var s = byTrack[r.t];
+    document.getElementById('faba').textContent = (live ? 'On your ' + r.label + ' now' : 'From your ' + r.label) + ' · ' + s.artist;
+    document.getElementById('fabnow').setAttribute('aria-label', cleanTitle(s.title) + ' by ' + s.artist + (live ? ', playing on your ' : ', paused on your ') + r.label + ': carry on here');
   }
 
   // ---- the site's other pages (the admin page, the Fire TV guide) while something plays: opened over the calendar in
@@ -5716,7 +5752,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       return r.ok ? r.json() : null;
     }).then(function (j) {
       if (!j) return;
-      MEMBER = j; memberApply(); famSync(); resumeInit(); nowCheck(); noteSync(); noteOffer();
+      MEMBER = j; memberApply(); famSync(); resumeInit(); nowFetch(); nowLine(); noteSync(); noteOffer();
       if (!TV) { unreadSet(j.unread); readTapped(); }
       if (appAfterJoin) { appAfterJoin = false; if (appCan()) setTimeout(appOffer, 600); }
       var mc = JSON.stringify(j.mycovers || {});   // John's own covers this member sees: the calendar drawn again with them
