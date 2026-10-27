@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="f45973be6988">
+<meta name="sotd-build" content="d83601480812">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -3927,7 +3927,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (curDay) try { history.replaceState(history.state, '', '#' + slugOf(curDay)); } catch (e) {}
   }
   document.getElementById('fabnow').addEventListener('click', function () { if (RESUME) resumeGo(true); else bgShow(); });
-  document.getElementById('fabstop').addEventListener('click', function () { if (RESUME) { resumeOff(); resumeForget(); return; } bgOff(); closeDialog(sheet, true); resumeForget(); nowStop(); });
+  document.getElementById('fabstop').addEventListener('click', function () {
+    if (RESUME) { if (NOW.from) { NOW.no = NOW.fromKey; NOW.from = ''; } resumeOff(); resumeForget(); return; }
+    bgOff(); closeDialog(sheet, true); resumeForget(); nowStop();
+  });
   // back and forward go as a swipe does: to the card on the left or the right (Play all, newest first: left is the day before)
   document.getElementById('fabnext').addEventListener('click', function () { if (RESUME) resumeGo(false, 1); else if (bgOn) goDay(1); });
   document.getElementById('fabprev').addEventListener('click', function () { if (RESUME) resumeGo(false, -1); else if (bgOn) goDay(-1); });
@@ -3937,7 +3940,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // its play button carries on from there, the playlist or the days with it ----
   var RES_KEY = 'sotd-resume', RESUME = null, resumeAt = 0, resumeFor = '';
   function resumeSave() {
-    if (!MEMBER || TV || !vplay || !vplay.el || !vplay.el.sotd || !sheet.open) return;
+    if (!MEMBER || TV || !vplay || !vplay.el || !vplay.el.sotd || !sheet.open || NOW.taken) return;
     var s = vplay.el.sotd.s, pos = 0;
     try { pos = vplay.player && vplay.player.getCurrentTime ? vplay.player.getCurrentTime() : 0; } catch (e) {}
     var st = { t: s.track, d: s.d, pos: Math.floor(pos || 0), at: Date.now(),
@@ -3948,7 +3951,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   setInterval(function () { if (vplay && vplay.on) resumeSave(); }, 4000);
   window.addEventListener('pagehide', function () { if (vplay && (vplay.on || bgOn)) resumeSave(); });
   document.addEventListener('visibilitychange', function () { if (document.hidden && vplay && vplay.on) resumeSave(); });
-  sheet.addEventListener('close', function () { if (!RESUME) { resumeForget(); nowStop(); } });   // closed, not playing on: nothing to carry on
+  sheet.addEventListener('close', function () { if (!RESUME) { resumeForget(); nowStop(); setTimeout(nowCheck, 300); } });   // closed, not playing on: nothing to carry on here (another device's, if one's playing)
   function resumeInit() {
     if (resumeInit.done || !MEMBER || TV) return;
     resumeInit.done = true;
@@ -3997,12 +4000,17 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
 
   // ---- carrying on on another device (members). The device playing notes what it's playing at the Worker
   // (/members/now) only when that changes: a new song, a pause or play, a jump in the song, the calendar put away.
-  // Another of the member's devices, opening the calendar, offers it in My playlist's box ("On your iPhone"), paused
-  // where it has got to (worked out from the time of the note); its play button carries on there, and the first device
-  // stops ("Playing on your Mac now"): at its next note, or its look every 30 seconds while playing. A play begun by a
-  // tap makes that device the one playing. ----
-  var NOW = { key: '', sent: null, taken: false, gesture: 0, from: '', claim: false, okAt: 0 };
-  ['pointerdown', 'keydown', 'touchend'].forEach(function (n) { document.addEventListener(n, function () { NOW.gesture = Date.now(); }, true); });
+  // Another of the member's devices, opened or come back to (its window, tab or app), offers it in My playlist's box
+  // ("On your iPhone now"), paused where it has got to (worked out from the time of the note); its play button carries
+  // on there, and the first device stops ("Playing on your Mac now"): at its next note, or its look every 30 seconds
+  // while playing. A play begun by a tap makes that device the one playing. A device not playing shows the other's
+  // song: in place of its own in the box, or of its day stopped by the other; a day open to read is left, and the
+  // song shown when it's closed. ----
+  var NOW = { key: '', sent: null, taken: false, gesture: 0, from: '', fromKey: '', no: '', claim: false, okAt: 0, checked: 0 };
+  ['pointerdown', 'keydown', 'touchend'].forEach(function (n) { document.addEventListener(n, function () {
+    NOW.gesture = Date.now();
+    if (MEMBER) setTimeout(function () { if (vplay) nowNote(false); }, 1500);   // (a play begun by the tap: noted now, not at the next look round)
+  }, true); });
   function nowLabel() {
     var u = navigator.userAgent;
     return TV ? 'Fire TV' : /iPad/.test(u) || (/Macintosh/.test(u) && navigator.maxTouchPoints > 1) ? 'iPad' : /iPhone/.test(u) ? 'iPhone'
@@ -4029,7 +4037,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (NOW.taken) return;
     NOW.taken = true; NOW.key = ''; NOW.sent = null; NOW.okAt = 0;   // (a tap here to play again: noted, as new)
     if (vplay && vplay.on) try { vidToggle(); } catch (e) {}
+    resumeForget();   // (this device's own place: not offered over the other's)
     toast('Playing on your ' + label + ' now');
+    setTimeout(nowCheck, 1500);   // (then the other's song shown here, to carry on with)
   }
   function nowNote(force) {   // a note, if something's changed since the last
     var st = nowState(); if (!st) return;
@@ -4060,20 +4070,28 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (document.hidden) { if (MEMBER && vplay && vplay.on) nowNote(true); }
     else if (MEMBER) { nowCheck(); nowLook(); }
   });
+  window.addEventListener('focus', function () { if (MEMBER && Date.now() - NOW.checked > 5000) { nowCheck(); nowLook(); } });   // (a computer's window clicked back to: no visibilitychange)
+  window.addEventListener('pageshow', function (e) { if (e.persisted && MEMBER) { nowCheck(); nowLook(); } });
+  function nowBusy() {   // busy with its own: playing here, or a day open to read (not one stopped by another device)
+    return busyNow() || (sheet.open && !bgOn && !NOW.taken);
+  }
   function nowCheck() {   // another device's song, offered here
-    if (!MEMBER || TV || !MBASE || !window.fetch || sheet.open || bgOn) return;
+    if (!MEMBER || TV || !MBASE || !window.fetch || nowBusy()) return;
     var tok = nowTok(); if (!tok) return;
+    NOW.checked = Date.now();
     fetch(MBASE + '/members/now', { headers: { Authorization: 'Bearer ' + tok }, cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
       var r = j && j.rec;
-      if (!r || r.dev === deviceId() || !byTrack[r.t] || sheet.open || bgOn) return;
-      var age = j.now - r.at;
+      if (!r || r.dev === deviceId() || !byTrack[r.t] || nowBusy()) return;
+      var age = j.now - r.at, key = r.dev + ':' + r.since;
       if (r.playing ? age > 20 * 60e3 : age > 12 * 3600e3) return;   // (one that stopped noting long ago: gone)
-      if (RESUME && !NOW.from && (RESUME.at || 0) > Date.now() - age) return;   // (this device's own, more recent: that)
+      if (NOW.no === key) return;   // (put away here with its X: not again until that device plays anew)
+      if (!r.playing && RESUME && !NOW.from && (RESUME.at || 0) > Date.now() - age) return;   // (paused there, and this device's own since: that)
+      if (sheet.open) { bgOff(); closeDialog(sheet, true); }   // (its own, paused, or its day stopped by the other: put away for it)
       var st = { t: r.t, d: r.d, pos: Math.floor(r.pos + (r.playing ? age / 1000 : 0)), at: Date.now(), q: r.q, live: r.playing };
       try { localStorage.setItem(RES_KEY, JSON.stringify(st)); } catch (e) {}
       resumeOff(); resumeInit.done = false; resumeInit();
       if (!RESUME) return;
-      NOW.from = r.label;
+      NOW.from = r.label; NOW.fromKey = key;
       var s = byTrack[r.t];
       document.getElementById('faba').textContent = (r.playing ? 'On your ' + r.label + ' now' : 'From your ' + r.label) + ' \u00b7 ' + s.artist;
       document.getElementById('fabnow').setAttribute('aria-label', cleanTitle(s.title) + ' by ' + s.artist + ', playing on your ' + r.label + ': carry on here');
