@@ -3,6 +3,8 @@
   "private": true,
   "description": "John's Song of the Day as an iPhone app (TestFlight): the calendar in the app's own browser, with background audio, offline downloads and Apple's notifications. Built by .github/workflows/ios.yml.",
   "dependencies": {
+    "@capacitor/app": "^7.0.0",
+    "@capacitor/clipboard": "^7.0.0",
     "@capacitor/core": "^7.4.0",
     "@capacitor/ios": "^7.4.0",
     "@capacitor/push-notifications": "^7.0.0"

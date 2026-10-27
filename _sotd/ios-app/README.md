@@ -13,6 +13,15 @@ second month, so testers always have one well inside TestFlight's 90 days.
 Notifications in the app are Apple's own (APNs), sent by the Worker with John's APNs key (see the Worker's
 "the iPhone app" part); the website's notifications carry on as before for everyone else.
 
+Invitations open the app: an invitation's link (`sotd-playlists.cooperking.workers.dev/i/<id>`) tapped on an iPhone with
+the app opens the app, which signs in with it (Apple's universal links: the Associated Domains entitlement in
+`customise.sh`, switched on for the app's ID by `signing.py`, and Apple's link file, which the Worker serves; the
+calendar listens with the App plugin). Without the app, the invitation's page shows an iPhone the steps for it
+(TestFlight's public link) and copies the invitation as they go; the first time the app opens not signed in, it offers
+to sign in with what was copied (the Clipboard plugin; iOS asks once whether it may paste). The public link goes into
+`songs/ios.json` by itself once Apple approves a build (`public_link.py`, run hourly by `.github/workflows/ios-link.yml`
+until it's there).
+
 ## Setting it up (once)
 
 1. Apple Developer Program (developer.apple.com/programs/enroll), as an individual: $99 a year; Apple can take a day or two.
@@ -42,5 +51,7 @@ with its number in "testflight_only" (no new build is made).
 - John: TestFlight → **Internal Testing** → add himself → the TestFlight app on the iPhone → Install.
 - Family: TestFlight → **External Testing** → a group (*Family*) → add the build. Test Information: a description,
   an email, and **Sign-in required** with an invite link (Members page: invite *App Review*, copy its link). Apple's
-  Beta App Review takes about a day the first time; then add their email addresses, or turn on the group's public link.
-- In the app, the first time: Profile (top right) → Sign in → their code or invite link.
+  Beta App Review takes about a day the first time; then add their email addresses. The group's public link is turned
+  on by `ios-link.yml` once a build is approved, and invitations offer it.
+- In the app, the first time: it offers to sign in with the invitation they came from; or Profile (top right) → Sign in →
+  their code or invite link.

@@ -3,6 +3,8 @@
 #  - background audio (a song carries on with the phone locked) and remote notifications
 #  - App-Bound Domains: the calendar's own sites, so its service worker (offline downloads) works in the app's browser
 #  - Apple's notifications: the entitlement, and the AppDelegate handing the device's token to the push plugin
+#  - Associated Domains: an invitation's link (sotd-playlists.cooperking.workers.dev/i/...) opens the app, which signs in
+#    with it (the Worker serves Apple's link file; build.sh takes the entitlement out if the app's ID hasn't got it)
 #  - no export-compliance question in App Store Connect (only standard HTTPS); the icon; the name under the icon
 set -euo pipefail
 cd "$(dirname "$0")"
@@ -24,6 +26,10 @@ cat > ios/App/App/App.entitlements <<'X'
 <dict>
 	<key>aps-environment</key>
 	<string>production</string>
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:sotd-playlists.cooperking.workers.dev</string>
+	</array>
 </dict>
 </plist>
 X
