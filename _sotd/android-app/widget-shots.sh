@@ -13,7 +13,9 @@ adb shell am start -S -W -n $PKG/.WidgetPreview --ei page 2 ${DAYS:+--es days "$
 adb shell am start -W -n $PKG/.TodayConfig --ei appWidgetId 7 > /dev/null; sleep 3; shot settings
 adb shell input keyevent KEYCODE_BACK
 adb shell settings put secure sysui_qs_tiles "custom($PKG/.SotdTile),internet,bt,flashlight,dnd,airplane"   # (its tile first)
-adb shell cmd statusbar expand-settings; sleep 4; shot tile
+adb shell cmd statusbar expand-settings; sleep 3
+for i in 1 2 3; do adb shell input swipe 150 800 950 800 250; sleep 1; done   # (to the first page of tiles)
+sleep 2; shot tile
 adb shell cmd statusbar collapse
 adb shell dumpsys appwidget > "$OUT/appwidget.txt" 2>&1
 { for w in TodayWidget PlayWidget CalendarWidget; do grep -q "$PKG/$PKG.$w" "$OUT/appwidget.txt" && echo "$w: Android lists it" || echo "$w: NOT listed"; done
