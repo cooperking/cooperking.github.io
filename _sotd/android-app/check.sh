@@ -79,9 +79,9 @@ adb shell dumpsys package $PKG | grep -m2 -E "versionCode|versionName" >> "$OUT/
 sleep 5
 adb shell dumpsys appwidget > "$OUT/appwidget.txt" 2>&1
 adb shell dumpsys shortcut > "$OUT/shortcut-all.txt" 2>&1
-{ grep -q "io.github.cooperking.sotd/.TodayWidget" "$OUT/appwidget.txt" && echo "widget: Android lists it" || echo "widget: NOT listed"
-  grep -c "do=today\|do=shuffle\|do=mine" "$OUT/shortcut-all.txt" | sed 's/^/shortcut addresses found: /'
-} > "$OUT/widget-shortcuts.txt"
+{ grep -q "io.github.cooperking.sotd/io.github.cooperking.sotd.TodayWidget" "$OUT/appwidget.txt" && echo "widget: Android lists it" || echo "widget: NOT listed"
+  grep -A40 "Package: $PKG" "$OUT/shortcut-all.txt" | grep -c "id=shortcut[0-9]" | sed 's/^/shortcuts Android lists from the app: /'
+} > "$OUT/widget-shortcuts.txt"   # (Android shortens addresses in its lists: the shortcuts by their ids)
 grep -B2 -A12 "Package: $PKG" "$OUT/shortcut-all.txt" | head -80 > "$OUT/shortcuts.txt"; rm -f "$OUT/shortcut-all.txt"
 adb shell am force-stop $PKG
 adb shell am start -W -a android.intent.action.VIEW -d "https://cooperking.github.io/songs/?do=today" -p $PKG > "$OUT/start-shortcut.txt" 2>&1
