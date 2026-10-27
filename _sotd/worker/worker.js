@@ -1269,7 +1269,11 @@ async function apnsOne(env, token, msg) {   // { st, why }, as pushOne
   if (!env.APNS_KEY || !env.APNS_KEY_ID || !env.APPLE_TEAM_ID) return { st: 0, why: 'The APNs key isn’t on the Worker yet' };
   const aps = msg.title ? { alert: { title: msg.title, body: msg.body || '' }, sound: 'default', 'thread-id': msg.tag && msg.tag.startsWith('sotd-day') ? 'songs' : 'notes' } : {};
   if (typeof msg.unread === 'number') aps.badge = msg.unread;
-  const r = await fetch('https://api.push.apple.com/3/device/' + token, { method: 'POST', body: JSON.stringify(Object.assign({ aps }, msg.title ? { url: msg.url || SITE_SONGS, ib: msg.ib || '' } : {})), headers: {
+  // the picture (the day's card, else the cover): the app's notification add-on (in builds after 16) fetches it and shows it
+  // with the notification; earlier builds show the words only
+  const pic = msg.title ? (msg.image || msg.icon || '') : '';
+  if (pic) aps['mutable-content'] = 1;
+  const r = await fetch('https://api.push.apple.com/3/device/' + token, { method: 'POST', body: JSON.stringify(Object.assign({ aps }, msg.title ? { url: msg.url || SITE_SONGS, ib: msg.ib || '' } : {}, pic ? { pic } : {})), headers: {
     authorization: 'bearer ' + await apnsAuth(env), 'apns-topic': APP_ID, 'apns-push-type': 'alert', 'apns-priority': msg.title ? '10' : '5', 'apns-expiration': String(Math.floor(Date.now() / 1000) + PUSH_TTL), 'content-type': 'application/json' } });
   const why = r.ok ? '' : ((await r.text().catch(() => '')) || '').slice(0, 160);
   return { st: r.status === 200 ? 201 : (r.status === 400 && /BadDeviceToken|DeviceTokenNotForTopic/.test(why)) ? 410 : r.status, why };

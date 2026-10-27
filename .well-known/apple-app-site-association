@@ -1,0 +1,59 @@
+{
+ "applinks": {
+  "details": [
+   {
+    "appIDs": [
+     "X5H954758M.io.github.cooperking.sotd"
+    ],
+    "components": [
+     {
+      "/": "/songs/draft/*",
+      "exclude": true,
+      "comment": "the draft"
+     },
+     {
+      "/": "/songs/tv/*",
+      "exclude": true,
+      "comment": "the Fire TV guide"
+     },
+     {
+      "/": "/songs/privacy/*",
+      "exclude": true,
+      "comment": "the privacy page"
+     },
+     {
+      "/": "/songs/ads/*",
+      "exclude": true,
+      "comment": "ads"
+     },
+     {
+      "/": "/songs/vendor/*",
+      "exclude": true,
+      "comment": "scripts"
+     },
+     {
+      "/": "/songs/*.*",
+      "exclude": true,
+      "comment": "files and the admin pages"
+     },
+     {
+      "/": "/songs/",
+      "comment": "the calendar"
+     },
+     {
+      "/": "/songs/today/*",
+      "comment": "the latest song"
+     },
+     {
+      "/": "/songs/??-??-????/*",
+      "comment": "a day"
+     },
+     {
+      "/": "/songs/??-????/*",
+      "comment": "a month"
+     }
+    ]
+   }
+  ]
+ }
+}
