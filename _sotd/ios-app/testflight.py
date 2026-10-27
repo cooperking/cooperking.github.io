@@ -125,7 +125,8 @@ def main(build):
                 done.append('submitted for Beta App Review (%s)' % (r.get('data', {}).get('attributes', {}).get('betaReviewState') or 'waiting'))
             except Refused as e:
                 why = '; '.join(x.get('detail') or x.get('title') or '' for x in (json.loads(e.text or '{}').get('errors') or []))[:300] if e.text.startswith('{') else e.text[:300]
-                note('warning', 'Build %s couldn\'t be submitted for Beta App Review (%d): %s' % (build, e.code, why))
+                note('warning', 'Build %s couldn\'t be submitted for Beta App Review (%d): %s. The hourly "iPhone app, public link" job '
+                     'submits the newest build once the one before is through.' % (build, e.code, why.rstrip('.')))
     note('notice', 'Build %s: %s.' % (build, ', '.join(done)))
     return 0
 

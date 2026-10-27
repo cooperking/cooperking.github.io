@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
-"""TestFlight's public link for the family's group, into the site, through the App Store Connect API (the upload key):
+"""The family's TestFlight group, looked after hourly through the App Store Connect API (the upload key):
 
     python public_link.py OUT      OUT: songs/ios.json
 
-Once Apple has approved a build for the external group (SOTD), turns on the group's public link (anyone with it can
-get the app, up to TestFlight's 10,000 testers; the calendar's members still sign in with their own invitation) and
-writes OUT as {"testflight": "https://testflight.apple.com/join/..."}. Invitations read it from there: an iPhone opening
-one is shown the steps for the app (the Worker's invitation page). Until a build is approved it says where the builds
-are with Apple's review, and changes nothing. A link that's on already is only written down.
+  1. the newest build in the external group (SOTD) goes to Beta App Review once nothing else is there (Apple takes one
+     build at a time; testflight.py's own submission is refused while an earlier build is in review);
+  2. once Apple has approved a build for the group, its public link is turned on (anyone with it can get the app, up to
+     TestFlight's 10,000 testers; the calendar's members still sign in with their own invitation) and OUT is written as
+     {"testflight": "https://testflight.apple.com/join/..."}. Invitations read it from there: an iPhone opening one is
+     shown the steps for the app (the Worker's invitation page).
+It says where the builds are with Apple's review. With GITHUB_OUTPUT set, it writes done=true there once the link is in
+OUT and the newest build has been submitted: nothing is left for it to do.
 
 Needs ASC_KEY_ID, ASC_ISSUER_ID and ASC_KEY_P8 in the environment, and PyJWT with cryptography.
 """
@@ -16,6 +19,7 @@ import json, os, re, sys, time, urllib.error, urllib.parse, urllib.request
 BUNDLE = 'io.github.cooperking.sotd'
 GROUP = 'SOTD'
 LINK_RE = re.compile(r'^https://testflight\.apple\.com/join/\w+$')
+BUSY = ('WAITING_FOR_REVIEW', 'IN_REVIEW')
 
 
 def note(level, m):
@@ -25,6 +29,13 @@ def note(level, m):
 class Refused(Exception):
     def __init__(self, code, text):
         super().__init__('%d %s' % (code, text[:500])); self.code, self.text = code, text
+
+
+def why(e):
+    try:
+        return '; '.join(x.get('detail') or x.get('title') or '' for x in json.loads(e.text).get('errors') or [])[:300]
+    except Exception:
+        return e.text[:300]
 
 
 def main(out):
@@ -47,20 +58,7 @@ def main(out):
         except urllib.error.HTTPError as e:
             raise Refused(e.code, e.read().decode('utf-8', 'replace'))
 
-    def write(link):
-        try:
-            have = json.load(open(out))
-        except Exception:
-            have = {}
-        if have.get('testflight') == link:
-            note('notice', 'The public link is on, and in %s already: %s' % (out, link))
-            return 0
-        have['testflight'] = link
-        with open(out, 'w') as f:
-            f.write(json.dumps(have) + '\n')
-        note('notice', 'The public link, into %s: %s' % (out, link))
-        return 0
-
+    said = []
     apps = api('GET', '/v1/apps?filter[bundleId]=%s' % urllib.parse.quote(BUNDLE)).get('data', [])
     app = next((a['id'] for a in apps if a['attributes'].get('bundleId') == BUNDLE), None)
     if not app:
@@ -71,38 +69,69 @@ def main(out):
     if not g:
         note('warning', 'No external group yet (TestFlight > External Testing > +).')
         return 0
-    a = g['attributes']
-    if a.get('publicLinkEnabled') and LINK_RE.match(a.get('publicLink') or ''):
-        return write(a['publicLink'])
 
-    # a build approved for the group: the public link can go on
+    # where the group's builds are with Apple's review
     builds = [b for b in api('GET', '/v1/betaGroups/%s/builds?limit=50' % g['id']).get('data', []) if not b['attributes'].get('expired')]
-    if not builds:
-        note('notice', 'No build in %s yet: no public link until one is there and approved.' % a.get('name'))
-        return 0
     num = {b['id']: b['attributes'].get('version') or '?' for b in builds}
+    order = sorted(num, key=lambda b: int(num[b]) if str(num[b]).isdigit() else 0)
     state = {}
-    for bid in num:
+    for bid in order:
         subs = api('GET', '/v1/betaAppReviewSubmissions?filter[build]=%s' % bid).get('data', [])
         if subs:
             state[bid] = subs[0]['attributes'].get('betaReviewState') or '?'
-    if not any(v == 'APPROVED' for v in state.values()):
-        said = ', '.join('build %s: %s' % (num[b], state.get(b, 'not submitted')) for b in sorted(num, key=lambda b: int(num[b]) if str(num[b]).isdigit() else 0))
-        note('notice', 'No build approved by Apple yet (%s): the public link waits.' % said)
-        return 0
-    try:
-        r = api('PATCH', '/v1/betaGroups/' + g['id'], {'data': {'type': 'betaGroups', 'id': g['id'], 'attributes': {'publicLinkEnabled': True}}})
-    except Refused as e:
-        note('error', 'Apple wouldn\'t turn the public link on (%d): %s' % (e.code, e.text[:300]))
-        return 1
-    link = ((r.get('data') or {}).get('attributes') or {}).get('publicLink') or ''
-    if not LINK_RE.match(link):   # (sometimes only there a moment later)
-        time.sleep(5)
-        link = (api('GET', '/v1/betaGroups/' + g['id'])['data']['attributes'].get('publicLink')) or ''
-    if not LINK_RE.match(link):
-        note('error', 'The public link is on, but Apple didn\'t say what it is (%r): run this again.' % link[:80])
-        return 1
-    return write(link)
+
+    # 1. the newest build to Beta App Review, once nothing else is there
+    newest = order[-1] if order else None
+    if newest and newest not in state:
+        if any(v in BUSY for v in state.values()):
+            said.append('build %s waits to go to review' % num[newest])
+        else:
+            try:
+                r = api('POST', '/v1/betaAppReviewSubmissions', {'data': {'type': 'betaAppReviewSubmissions',
+                                                                          'relationships': {'build': {'data': {'type': 'builds', 'id': newest}}}}})
+                state[newest] = (r.get('data') or {}).get('attributes', {}).get('betaReviewState') or 'WAITING_FOR_REVIEW'
+                said.append('build %s submitted for Beta App Review' % num[newest])
+            except Refused as e:
+                note('warning', 'Build %s couldn\'t be submitted for Beta App Review (%d): %s' % (num[newest], e.code, why(e)))
+    said.append(', '.join('build %s: %s' % (num[b], state.get(b, 'not submitted')) for b in order) or 'no build in %s yet' % GROUP)
+
+    # 2. the public link, once a build is approved
+    a = g['attributes']
+    link = a.get('publicLink') or '' if a.get('publicLinkEnabled') else ''
+    if not LINK_RE.match(link) and any(v == 'APPROVED' for v in state.values()):
+        try:
+            r = api('PATCH', '/v1/betaGroups/' + g['id'], {'data': {'type': 'betaGroups', 'id': g['id'], 'attributes': {'publicLinkEnabled': True}}})
+            link = ((r.get('data') or {}).get('attributes') or {}).get('publicLink') or ''
+            if not LINK_RE.match(link):   # (sometimes only there a moment later)
+                time.sleep(5)
+                link = api('GET', '/v1/betaGroups/' + g['id'])['data']['attributes'].get('publicLink') or ''
+            if LINK_RE.match(link):
+                said.append('the public link turned on')
+            else:
+                note('error', 'The public link is on, but Apple didn\'t say what it is (%r): it\'s looked at again next hour.' % link[:80])
+        except Refused as e:
+            note('error', 'Apple wouldn\'t turn the public link on (%d): %s' % (e.code, why(e)))
+    if LINK_RE.match(link):
+        try:
+            have = json.load(open(out))
+        except Exception:
+            have = {}
+        if have.get('testflight') != link:
+            have['testflight'] = link
+            with open(out, 'w') as f:
+                f.write(json.dumps(have) + '\n')
+            said.append('the public link put in %s: %s' % (out, link))
+        else:
+            said.append('the public link is in %s' % out)
+    else:
+        said.append('no public link until a build is approved')
+    note('notice', '; '.join(said) + '.')
+
+    done = LINK_RE.match(link) and (not newest or newest in state)
+    if os.environ.get('GITHUB_OUTPUT'):
+        with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+            f.write('done=%s\n' % ('true' if done else 'false'))
+    return 0
 
 
 if __name__ == '__main__':

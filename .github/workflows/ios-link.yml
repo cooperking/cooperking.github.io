@@ -1,7 +1,8 @@
 name: iPhone app, public link
-# Once Apple has approved a build for the family's TestFlight group (SOTD), turns on the group's public link and puts it in
-# songs/ios.json, where invitations find it (_sotd/ios-app/public_link.py). Hourly until then; once the link is in the
-# site, this turns itself off (Actions > iPhone app, public link > Enable workflow, to have it look again).
+# The family's TestFlight group (SOTD), hourly (_sotd/ios-app/public_link.py): the newest build goes to Beta App Review
+# once the one before is through, and once Apple has approved a build, the group's public link is turned on and put in
+# songs/ios.json, where invitations find it. Once both are done, this turns itself off (Actions > iPhone app, public
+# link > Enable workflow, to have it look again, e.g. after a new build).
 on:
   workflow_dispatch:
   schedule:
@@ -21,7 +22,8 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - name: The public link, once Apple has approved a build
+      - name: The newest build to review, and the public link once Apple has approved a build
+        id: link
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
@@ -38,10 +40,10 @@ jobs:
             git commit -m "iPhone app: TestFlight's public link, for invitations"
             for i in 1 2 3 4 5; do git pull --rebase --quiet && git push && break; sleep 5; done
           fi
-      - name: Done with once the link is in the site
+      - name: Off once there's nothing left to do
+        if: steps.link.outputs.done == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if grep -q '"testflight": "https://testflight.apple.com/join/' songs/ios.json 2>/dev/null; then
-            gh workflow disable ios-link.yml -R "$GITHUB_REPOSITORY" && echo "::notice title=iPhone app (public link)::The link is in the site: this workflow is off now."
-          fi
+          gh workflow disable ios-link.yml -R "$GITHUB_REPOSITORY" && echo "::notice title=iPhone app (public link)::The link is in the site and the newest build is with Apple: this workflow is off now."
+
