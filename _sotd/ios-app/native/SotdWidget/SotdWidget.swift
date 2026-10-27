@@ -9,7 +9,7 @@ import AppIntents
 //    medium: the last seven days).
 //  - Play (medium): the latest song, with Play all, Shuffle and My playlist.
 //  - On your other device (small, medium): what the member is playing elsewhere (the Worker's note); a tap carries it
-//    on here.
+//    on here. From iOS 26 the Worker tells it to look again the moment that changes (WidgetKit's pushes, below).
 //  - From iOS 18, a control for Control Centre, the Lock Screen and the Action button: Song of the Day, plays all from
 //    the latest song.
 // Each opens the app at the calendar's own address saying what to play (?do=today, shuffle, mine, carry; ?do=all#day).
@@ -211,7 +211,40 @@ struct ElseProvider: TimelineProvider {
     }
     func load(_ done: @escaping (ElseEntry) -> Void) {
         let m = SotdShared.load()
+        WidgetPush.register()   // (the Worker told where to reach this widget, if it isn't yet for this sign-in)
         Elsewhere.fetch(token: m?["token"], device: m?["device"], done)
+    }
+}
+
+// the Worker told where to reach this widget (iOS 26): Apple gives the widget a push token (ElsePushHandler), kept in the
+// shared keychain and handed to the Worker with the member's sign-in (POST /members/now/widget { push, dev }), once for
+// each sign-in. The Worker then tells the widget to look again whenever what it shows changes (another device's song, a
+// pause or play, stopped). Apple delivers those as it sees fit (they're rationed), so the look every 15 minutes stays.
+enum WidgetPush {
+    static func register() {
+        guard let p = SotdShared.loadPush(), let push = p["push"], !push.isEmpty,
+              let m = SotdShared.load(), let token = m["token"], !token.isEmpty,
+              let url = URL(string: SotdLinks.worker + "/members/now/widget") else { return }
+        let mark = String(token.prefix(12)) + ":" + push   // (already handed over with this sign-in)
+        if p["sent"] == mark { return }
+        var rq = URLRequest(url: url)
+        rq.httpMethod = "POST"
+        rq.setValue("Bearer " + token, forHTTPHeaderField: "Authorization")
+        rq.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        rq.httpBody = try? JSONSerialization.data(withJSONObject: ["push": push, "dev": m["device"] ?? ""])
+        rq.timeoutInterval = 10
+        URLSession.shared.dataTask(with: rq) { _, resp, _ in
+            if (resp as? HTTPURLResponse)?.statusCode == 200 { SotdShared.savePush(["push": push, "sent": mark]) }
+        }.resume()
+    }
+}
+
+@available(iOSApplicationExtension 26.0, *)
+struct ElsePushHandler: WidgetPushHandler {
+    func pushTokenDidChange(_ pushInfo: WidgetPushInfo, widgets: [WidgetInfo]) {
+        let push = pushInfo.token.map { String(format: "%02x", $0) }.joined()
+        if SotdShared.loadPush()?["push"] != push { SotdShared.savePush(["push": push]) }
+        WidgetPush.register()
     }
 }
 
@@ -231,6 +264,18 @@ struct ElsewhereWidget: Widget {
             .configurationDisplayName("On your other device")
             .description("What you’re playing on your other devices: tap to carry on here.")
             .supportedFamilies([.systemSmall, .systemMedium])
+    }
+}
+
+// from iOS 26: the same, told by the Worker when to look again (the same kind, so a widget already there keeps its place)
+@available(iOSApplicationExtension 26.0, *)
+struct ElsewhereWidget26: Widget {
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: "elsewhere", provider: ElseProvider()) { ElseEntryView(entry: $0) }
+            .configurationDisplayName("On your other device")
+            .description("What you’re playing on your other devices: tap to carry on here.")
+            .supportedFamilies([.systemSmall, .systemMedium])
+            .pushHandler(ElsePushHandler.self)
     }
 }
 
@@ -264,6 +309,14 @@ struct SotdWidgets: WidgetBundle {
 
     // (one availability check to each: an opaque result can differ only across a single if #available ... else)
     func widgets() -> some Widget {
+        if #available(iOSApplicationExtension 26.0, *) {
+            return widgets26
+        } else {
+            return before26()
+        }
+    }
+
+    func before26() -> some Widget {
         if #available(iOSApplicationExtension 18.0, *) {
             return widgets18
         } else {
@@ -300,6 +353,15 @@ struct SotdWidgets: WidgetBundle {
         CalendarWidget()
         PlayWidget()
         ElsewhereWidget()
+        PlayControl()
+    }
+
+    @available(iOSApplicationExtension 26.0, *)
+    @WidgetBundleBuilder var widgets26: some Widget {
+        TodaySettingsWidget()
+        CalendarWidget()
+        PlayWidget()
+        ElsewhereWidget26()
         PlayControl()
     }
 }

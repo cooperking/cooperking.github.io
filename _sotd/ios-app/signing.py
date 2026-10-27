@@ -14,9 +14,12 @@
      entitlement customise.sh writes); if Apple won't, the build goes ahead without it (out.json's "links": false, and
      build.sh takes the entitlement out), with a note on the run's page;
   3. the add-ons' own IDs (io.github.cooperking.sotd.widget, the Home Screen widget; .notify, the notifications'
-     pictures), registered the first time;
+     pictures), registered the first time; Push Notifications switched on for the widget's (from iOS 26 the Worker
+     tells the "On your other device" widget to look again, by Apple's pushes); if Apple won't, the build goes ahead
+     without it (out.json's "widgetPush": false, and build.sh takes the widget's aps-environment out), with a note;
   4. an App Store provisioning profile for each, with that certificate: the one there already if it has it and is
-     active (the app's: carrying Associated Domains too), else a new one (deleting a profile doesn't touch uploaded builds).
+     active (the app's: carrying Associated Domains too; the widget's: Push Notifications), else a new one (deleting a
+     profile doesn't touch uploaded builds).
 
 Needs ASC_KEY_ID, ASC_ISSUER_ID and ASC_KEY_P8, and R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET and
 CLOUDFLARE_ACCOUNT_ID (without them nothing is kept, and each build makes a new certificate); PyJWT, cryptography, boto3.
@@ -174,6 +177,18 @@ def main(out):
             have = [api('POST', '/v1/bundleIds', {'data': {'type': 'bundleIds', 'attributes': {'identifier': b, 'name': label, 'platform': 'IOS'}}})['data']['id']]
             note('notice', 'The ID %s registered (%s).' % (b, label))
         ids[b] = have[0]
+    wid, wpush, wswitched = ids[BUNDLE + '.widget'], False, False   # Push Notifications on the widget's ID
+    try:
+        wcaps = [c['attributes'].get('capabilityType') for c in api('GET', '/v1/bundleIds/%s/bundleIdCapabilities' % wid, soft=True).get('data', [])]
+        wpush = 'PUSH_NOTIFICATIONS' in wcaps
+        if not wpush:
+            api('POST', '/v1/bundleIdCapabilities', {'data': {'type': 'bundleIdCapabilities', 'attributes': {'capabilityType': 'PUSH_NOTIFICATIONS'},
+                                                              'relationships': {'bundleId': {'data': {'type': 'bundleIds', 'id': wid}}}}}, soft=True)
+            wpush = wswitched = True
+            note('notice', 'Push Notifications switched on for %s.widget (the Worker tells the "On your other device" widget to look again).' % BUNDLE)
+    except Refused as e:
+        note('warning', 'Apple wouldn\'t switch on Push Notifications for %s.widget (%d): this build goes without it, so the "On your other '
+             'device" widget looks again only every 15 minutes or so. It can be ticked by hand: developer.apple.com > Identifiers > %s.widget.' % (BUNDLE, e.code, BUNDLE))
 
     # 4. each one's profile: the one there, if it has this certificate and is active (the app's: carrying Associated
     # Domains too), else a new one
@@ -185,8 +200,10 @@ def main(out):
                 continue
             certs = [c['id'] for c in ((p.get('relationships') or {}).get('certificates') or {}).get('data') or []]
             has = p['attributes'].get('profileContent') or ''
-            if (not prof and not (switched and b == BUNDLE) and p['attributes'].get('profileState') == 'ACTIVE' and cert['id'] in certs and has
-                    and (b != BUNDLE or not links or b'com.apple.developer.associated-domains' in base64.b64decode(has))):
+            if (not prof and not (switched and b == BUNDLE) and not (wswitched and b == BUNDLE + '.widget')
+                    and p['attributes'].get('profileState') == 'ACTIVE' and cert['id'] in certs and has
+                    and (b != BUNDLE or not links or b'com.apple.developer.associated-domains' in base64.b64decode(has))
+                    and (b != BUNDLE + '.widget' or not wpush or b'aps-environment' in base64.b64decode(has))):
                 prof = p
             else:
                 api('DELETE', '/v1/profiles/' + p['id'])
@@ -202,7 +219,7 @@ def main(out):
     note('notice', '%s distribution certificate (until %s)%s, and the App Store profiles: %s.'
          % ('A new' if made else 'The kept', (cert['attributes'].get('expirationDate') or '?')[:10],
             '' if not made else (', kept for the next builds' if put else ' (not kept: no R2 secrets)'), ', '.join('"%s"' % p['name'] for p in profiles.values())))
-    json.dump({'name': PROFILE, 'uuid': profiles[BUNDLE]['uuid'], 'links': links, 'profiles': profiles}, open(os.path.join(out, 'out.json'), 'w'))
+    json.dump({'name': PROFILE, 'uuid': profiles[BUNDLE]['uuid'], 'links': links, 'widgetPush': wpush, 'profiles': profiles}, open(os.path.join(out, 'out.json'), 'w'))
 
 if __name__ == '__main__':
     main(sys.argv[1])
