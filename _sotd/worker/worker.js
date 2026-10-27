@@ -525,6 +525,16 @@ async function members(request, url, env) {
       return answer(200, { ok: true, members: listing(owner === body.id ? null : owner) });
     }
     case 'pushcount': return answer(200, await pushCount(env));
+    case 'widgets': {   // the members' iPhone widgets (iOS 26): how many each has, and how Apple took the last push to each ({ tell: true }: each told now)
+      if (!env.NOW) return answer(200, { widgets: null });
+      const out = [];
+      for (const [id, m] of Object.entries(all)) {
+        const r = await env.NOW.get(env.NOW.idFromName(id)).fetch('https://now/widget' + (body.tell ? '/tell' : ''), { method: body.tell ? 'POST' : 'GET' });
+        const j = await r.json().catch(() => ({}));
+        if (j.widgets) out.push(Object.assign({ name: m.name }, j));
+      }
+      return answer(200, { widgets: out });
+    }
     case 'push': {   // John's own notification, to everyone who has them on
       const title = String(body.title || '').replace(/\s+/g, ' ').trim().slice(0, 80);
       const text = String(body.text || '').replace(/[ \t]+/g, ' ').trim().slice(0, 300);
@@ -1114,7 +1124,7 @@ export class SotdNow {   // one member's note, and their open pages
       for (const ws of this.ctx.getWebSockets()) { try { ws.close(1000, 'Bye'); } catch (e) {} }
       return json({ ok: true });
     }
-    if (path === '/widget') return this.widget(request, now, json);
+    if (path === '/widget' || path === '/widget/tell') return this.widget(request, now, json);
     let rec = (await this.ctx.storage.get('rec')) || null;
     if (rec && now - rec.at > 7 * DAY) { rec = null; await this.ctx.storage.delete('rec'); }
     if (request.headers.get('Upgrade') === 'websocket') {
@@ -1137,8 +1147,11 @@ export class SotdNow {   // one member's note, and their open pages
     return json(x.out, x.status);
   }
   async widget(request, now, json) {   // a widget's push token kept (POST), forgotten (DELETE: its device signed out), counted (GET)
+    if (new URL(request.url).pathname === '/widget/tell') await this.widgetsTell();   // (John's check: each told now)
     const w = (await this.ctx.storage.get('widgets')) || {};
-    if (request.method === 'GET') return json({ widgets: Object.keys(w).length });
+    if (request.method === 'GET' || new URL(request.url).pathname === '/widget/tell') {   // how many, and how Apple took the last push to each (no tokens)
+      return json({ widgets: Object.keys(w).length, list: Object.keys(w).map(k => ({ at: w[k].at, sent: w[k].sent || 0, last: w[k].last || null })) });
+    }
     const b = await request.json().catch(() => ({}));
     const dev = String(b.dev || '');
     if (request.method === 'DELETE') {
@@ -1156,12 +1169,12 @@ export class SotdNow {   // one member's note, and their open pages
   async widgetsTell() {
     const w = (await this.ctx.storage.get('widgets')) || {}, keys = Object.keys(w);
     if (!keys.length) return;
-    let gone = false;
     await Promise.all(keys.map(async k => {
-      const r = await apnsWidget(this.env, w[k].push).catch(() => ({ st: 0 }));
-      if (r.st === 410) { delete w[k]; gone = true; }   // (that widget's gone: the app deleted, or a new token since)
+      const r = await apnsWidget(this.env, w[k].push).catch(e => ({ st: 0, why: String(e).slice(0, 120) }));
+      if (r.st === 410) delete w[k];   // (that widget's gone: the app deleted, or a new token since)
+      else { w[k].sent = (w[k].sent || 0) + 1; w[k].last = { at: Date.now(), st: r.st, why: r.why || '' }; }   // (kept for John's check)
     }));
-    if (gone) await this.ctx.storage.put('widgets', w);
+    await this.ctx.storage.put('widgets', w);
   }
   async webSocketMessage(ws, msg) { if (msg === 'ping') ws.send('pong'); }
   async webSocketClose(ws, code) { try { ws.close(code === 1005 ? 1000 : code, 'Bye'); } catch (e) {} }
