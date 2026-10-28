@@ -131,6 +131,7 @@
   // ticks"): each step of each song, the facts task's last call (when no song shows it), each notification sent, each job's
   // latest run, Spotify asking the Worker to wait, and anything that couldn't be read. Each says when, who or which run
   // did it (a run matched by its time says so), its status and why.
+  var itemN = 0;
   function ms(t) { return typeof t === 'number' ? t : (Date.parse(t || '') || 0); }   // (a notification's at is a number)
   var STEP_OK = { added: 'Added', job: 'Succeeded', yt: 'Added', ask: 'Started', facts: 'Done', files: 'Up', signed: 'Signed off', out: 'Out', sent: 'Sent' };
   function status(st, ack, okText) {   // [badge class, text]
@@ -156,7 +157,7 @@
     var r = el('span', 'r'); r.appendChild(el('span', 'badge ' + o.badge[0], o.badge[1]));
     if (o.url) r.appendChild(link(o.url, o.urlText || 'Open'));
     li.appendChild(r);
-    li._at = ms(o.at);
+    li._at = ms(o.at); li._i = ++itemN;   // (equal times: the later one first)
     return li;
   }
   function taskFix(t) {   // what to do when the facts task couldn't be started
@@ -171,25 +172,29 @@
     }
     return [f];
   }
-  function songItems(s, j, out) {
-    var done = s.steps.reduce(function (m, y) { return y.st !== 'wait' ? Math.max(m, ms(y.at)) : m; }, ms(s.added));
+  function songItems(s, j, out, notes) {
+    var done = s.steps.reduce(function (m, y) { return y.st !== 'wait' ? Math.max(m, ms(y.at)) : m; }, ms(s.added)), prev = ms(s.added);
     s.steps.forEach(function (x) {
+      if (x.note) notes[x.note] = 1;   // (its notification: listed here, not again)
+      var at = x.st === 'wait' ? done + 1 : ms(x.at) || prev;   // (waiting: above the song's latest change; a step with no time written down: with the one before it)
+      if (x.st !== 'wait') prev = Math.max(prev, at);
       if (x.st === 'wait' && (x.later || !x.say)) return;   // (steps still to come)
       var running = x.st === 'wait' && /running now/.test(x.say);
-      out.push(item({ at: x.at && x.st !== 'wait' ? x.at : x.st === 'wait' ? done : x.at || s.added, title: s.title + ': ' + x.t, by: x.by,
+      out.push(item({ at: at, title: s.title + ': ' + x.t, by: x.by,
         what: 'song ' + s.n, st: running ? 'going' : x.st, badge: status(running ? 'going' : x.st, x.ack, STEP_OK[x.k]), say: x.say,
         url: x.url, urlText: /claude\.ai/.test(x.url || '') ? 'Its session' : 'Open', more: x.task ? taskFix(j.task) : [], dealt: x }));
     });
   }
   function drawFeed(j) {
-    var ul = $('feed'), out = [], shown = {};
-    (j.songs || []).forEach(function (s) { shown[s.id] = 1; songItems(s, j, out); });
+    var ul = $('feed'), out = [], shown = {}, noted = {};
+    (j.songs || []).forEach(function (s) { shown[s.id] = 1; songItems(s, j, out, noted); });
     var t = j.task;
     if (t && !(t.songs || []).some(function (id) { return shown[id]; }))   // (otherwise it's that song's Facts task started)
       out.push(item({ at: t.at, title: 'Facts task', what: 'asked for ' + (t.songs || []).length + ' song' + ((t.songs || []).length === 1 ? '' : 's'), by: t.by,
         st: t.ok ? 'ok' : 'bad', badge: status(t.ok ? 'ok' : 'bad', t.ack, 'Started'), say: t.ok ? '' : 'It couldn’t be started: ' + t.said,
         url: t.ok ? t.session : '', urlText: 'Its session', more: taskFix(t), dealt: t }));
     (j.notes || []).forEach(function (e) {
+      if (noted[e.id]) return;
       var errs = (e.errors || []).map(function (x) { return el('span', 'err', x.to + ' said ' + (x.status || 'nothing') + (x.why ? ': ' + x.why : '')); });
       out.push(item({ at: e.at, title: e.title, what: e.kind === 'song' ? 'notification of the song' : 'your note', by: e.by,
         st: e.failed ? 'bad' : 'ok', badge: status(e.failed ? 'bad' : 'ok', e.ack, 'Sent'),
@@ -209,7 +214,7 @@
     (j.errors || []).forEach(function (e) {   // couldn't be read just now (tried again at the next check)
       out.push(item({ at: j.at, title: 'Couldn’t check everything', what: 'this check', st: 'bad', badge: ['bad', 'Couldn’t check'], say: e }));
     });
-    out.sort(function (a, b) { return b._at - a._at; });
+    out.sort(function (a, b) { return (b._at - a._at) || (b._i - a._i); });
     ul.textContent = '';
     out.forEach(function (li) { ul.appendChild(li); });
     if (!out.length) ul.appendChild(el('li', 'card item', 'Nothing to show.'));

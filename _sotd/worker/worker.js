@@ -603,7 +603,7 @@ function songSteps(it, d, now) {   // one song's way to the calendar: each step 
   // 8. the members' notification (pushDaily: the newest song, no more than two days old, as it comes out on the live
   // calendar)
   const sentE = log.find(e => e.track === id) || log.find(e => e.kind === 'song' && e.title === it.title && e.at >= added && e.at - added < 3 * DAY);
-  if (sentE || pushSent.includes(id)) step('sent', 'Sent to members', 'ok', sentE ? pushSay(sentE) : '', sentE ? { at: new Date(sentE.at).toISOString(), by: pushBy(sentE.via, all) } : {});
+  if (sentE || pushSent.includes(id)) step('sent', 'Sent to members', 'ok', sentE ? pushSay(sentE) : '', sentE ? { at: new Date(sentE.at).toISOString(), by: pushBy(sentE.via, all), note: sentE.id } : {});   // (note: the page lists it here, not again)
   else if (newest !== id) step('sent', 'Sent to members', 'wait', 'Not sent: a newer song came after it');
   else if ((Date.parse(londonDay()) - Date.parse(londonDay(it.a))) / DAY > 2) step('sent', 'Sent to members', 'wait', 'Not sent: more than two days old');
   else if (!out) step('sent', 'Sent to members', 'wait', 'Goes to members as it comes out on the calendar', { later: true });
