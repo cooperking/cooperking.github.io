@@ -84,10 +84,12 @@ when saved and last used; at most 10), checks each sign-in's signature with it (
 save, remove; `/members/passkey/signin`: anyone), and makes its challenges itself, signed with a key from `ADMIN_KEY`,
 good for 5 minutes and once (KV `wa:<hash>`). Removing a passkey, or the member, stops it; the page then asks the
 phone or computer to delete it (`signalAllAcceptedCredentials`, `signalUnknownCredential`, where the browser has them).
+A device that joins from an invitation is offered one once, a moment later (*Save a passkey?*), when the member
+has none yet; if something else is showing then, at its next visit; the notifications question waits for another visit.
 Not on the Fire TV. The iPhone app offers them from build 21, the first with `webcredentials:cooperking.github.io` in
 its Associated Domains (the site's `.well-known/apple-app-site-association` names the app for it). The members page
 shows how many each member has. Tests: `pk_worker_t.mjs` (the Worker, with ES256 and RS256 authenticators made in
-Node) and `pk_page_t.py` (the draft, with Chromium's virtual authenticator).
+Node) `pk_page_t.py` and `pk_offer_t.py` (the draft, with Chromium's virtual authenticator).
 
 ## Saved playlists
 

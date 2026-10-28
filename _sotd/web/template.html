@@ -1713,7 +1713,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // ask({ k: kicker, h: title, t: text, input: { value, placeholder }, ok: 'OK', no: 'Cancel', alt: { label, now } }) gives a promise of the
   // text typed (with input), true (without), or null if it's put away
   var askDlg = document.getElementById('askdlg'), askDone = null;
-  var askNow = null, askAlt = null;
+  var askNow = null, askAlt = null, askedNow = false;   // (askedNow: a question offered unasked this visit already)
   function ask(o) {
     if (askDone) askDone(null);
     document.getElementById('askk').textContent = o.k || '';
@@ -5490,7 +5490,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       if (seen0 || !MEMBER || !MBASE) return;
       setTimeout(function () {
         natPerm().then(function (p) {
-          if (!/^prompt/.test(p) || !MEMBER || layers().length || bgOn || (vplay && vplay.on)) return;
+          if (!/^prompt/.test(p) || !MEMBER || askedNow || layers().length || bgOn || (vplay && vplay.on)) return;
           try { localStorage.setItem('sotd-noteask', String(Date.now())); } catch (e) {}
           ask({ k: 'Notifications', h: 'Hear about each new song?', t: 'A notification when each day’s song goes up, and the odd note from John. You can turn them off in your Profile.', ok: 'Turn on', no: 'Not now', now: noteOn });
         }).catch(function () {});
@@ -5502,7 +5502,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (seen) return;
     noteKeyGet();
     setTimeout(function () {
-      if (!MEMBER || Notification.permission !== 'default' || layers().length || bgOn || (vplay && vplay.on)) return;   // busy: next time
+      if (!MEMBER || Notification.permission !== 'default' || askedNow || layers().length || bgOn || (vplay && vplay.on)) return;   // busy: next time
       noteReg().then(function (reg) { return reg.pushManager.getSubscription(); }).then(function (sub) {
         if (sub || layers().length) return;
         try { localStorage.setItem('sotd-noteask', String(Date.now())); } catch (e) {}
@@ -5849,8 +5849,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       pkDraw(); pkSignal();
     }).catch(function () {});
   }
-  document.getElementById('acpkadd').addEventListener('click', function () {
-    var b = this, tok = nowTok();
+  document.getElementById('acpkadd').addEventListener('click', function () { pkSave(this); });
+  function pkSave(b) {   // (straight from a tap: the Profile's button, or Save a passkey in the offer after joining)
+    var tok = nowTok();
     if (!tok || !PK.ok) return;
     function make(o) {
       return navigator.credentials.create({ publicKey: {
@@ -5859,7 +5860,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         excludeCredentials: (o.excludeCredentials || []).map(function (x) { return { type: 'public-key', id: pkB(x.id) }; }) } });
     }
     var o = pkTake('save');
-    b.disabled = true;
+    if (b) b.disabled = true;
     (o ? make(o) : pkBegin('save').then(make)).then(function (cred) {
       if (!cred) throw new Error('No passkey saved.');
       return pkCall('/members/passkey', { op: 'save', clientDataJSON: pkS(cred.response.clientDataJSON), attestationObject: pkS(cred.response.attestationObject), name: nowLabel() }, tok);
@@ -5867,8 +5868,32 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       if (!j.ok) { toast(j.error || 'Couldn’t save it. Try again.'); return; }
       PK.list = j.passkeys; pkDraw();
       toast('Passkey saved');
-    }).catch(function (e) { toast(pkWhy(e, true)); }).then(function () { b.disabled = false; pkReady('save'); });
-  });
+    }).catch(function (e) { toast(pkWhy(e, true)); }).then(function () { if (b) b.disabled = false; if (acct.open) pkReady('save'); });
+  }
+  // offered once, a moment after a device joins from an invitation (John's link, or the app opened by it), when the member
+  // has none yet: kept for the next visit if something else is showing then (the app's offer, a song playing). The
+  // notifications question waits for another visit, so there's one question at a time.
+  function pkOffer() {
+    var want = ''; try { want = localStorage.getItem('sotd-pkoffer') || ''; } catch (e) {}
+    if (!want || !MEMBER) return;
+    setTimeout(function () {
+      if (!MEMBER) return;
+      var done = function () { try { localStorage.removeItem('sotd-pkoffer'); } catch (e) {} };
+      if (!PK.ok) { done(); return; }   // (no passkeys here: a TV, an older browser or app)
+      if (layers().length || bgOn || (vplay && vplay.on)) return;   // busy: next time
+      PK.save = null;
+      Promise.all([pkCall('/members/passkey', null, nowTok()), pkBegin('save')]).then(function (r) {
+        if (!r[0].passkeys) return;
+        PK.list = r[0].passkeys; PK.rp = r[0].rpId; PK.user = r[0].user;
+        if (PK.list.length) { done(); return; }   // (they have one: their other devices share it)
+        if (!MEMBER || layers().length || bgOn || (vplay && vplay.on)) return;
+        PK.save = { o: r[1], at: Date.now() };
+        done(); askedNow = true;
+        ask({ k: 'Passkeys', h: 'Save a passkey?', t: 'Then you can sign in on a new phone or computer yourself, with Face ID, a fingerprint or the device’s lock. You can do it later in your Profile.',
+          ok: 'Save a passkey', no: 'Not now', now: function () { pkSave(null); } });
+      }).catch(function () {});
+    }, 3000);
+  }
   function pkRemove(p) {
     ask({ k: 'Passkeys', h: 'Remove this passkey?', t: 'The one from ' + p.name + ', saved ' + pkDay(p.at) + '. It won’t sign you in any more, and your phone or computer is asked to delete it.', ok: 'Remove' }).then(function (y) {
       if (!y) return;
@@ -5935,6 +5960,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       MEMBER = j; memberApply(); famSync(); resumeInit(); nowFetch(); nowLine(); noteSync(); noteOffer();
       if (!TV) { unreadSet(j.unread); readTapped(); }
       if (appAfterJoin) { appAfterJoin = false; if (appCan()) setTimeout(appOffer, 600); }
+      pkOffer();
       var mc = JSON.stringify(j.mycovers || {});   // John's own covers this member sees: the calendar drawn again with them
       if (mc !== OWNC_SIG) { OWNC_SIG = mc; render(); if (idx.open) renderIndex(); }
       memberLoad.t = setTimeout(memberLoad, Math.max(60e3, j.exp * 1000 - Date.now() - 30 * 60e3));
@@ -5957,6 +5983,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (!MBASE || !window.fetch) return;
     var had = ''; try { had = localStorage.getItem(MKEY) || ''; } catch (e) {}
     if (invite && !had) appAfterJoin = true;   // a device joining from an invite, not signed in before: the app is offered
+    if (invite && !had) try { localStorage.setItem('sotd-pkoffer', '1'); } catch (e) {}   // and a passkey (pkOffer)
     fetch(MBASE + '/members/join', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: code, device: deviceId() }) })
       .then(function (r) { return r.json().then(function (j) { j.ok = r.ok; return j; }); })   // (the device's own id: a sign-in here replaces the last)
       .then(function (j) {
