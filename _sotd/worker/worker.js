@@ -408,11 +408,28 @@ async function startFactsJob(env) {
 // its public files on GitHub (each song's sources, the facts asked for and how the last call to the facts task went,
 // the facts out on the calendar, the videos); the Worker's own start of the site job (KV job); and the latest run of
 // each GitHub job, with the step a failed one stopped at. Each new song's way to the calendar is a row of steps, each
-// done, waiting or failed (st: ok, wait, bad); `problems` counts the failed steps and failed jobs.
-const RAW = 'https://raw.githubusercontent.com/' + REPO + '/main/';
+// done, waiting or failed (st: ok, wait, bad); `problems` counts the failed steps, failed jobs and a failed call to the
+// facts task, less those John has marked as dealt with. The files are read as they are at main's latest commit (raw
+// files under the branch's name can be five minutes old); his sign-offs come from the Worker's own record (KV
+// factsSigned), so one shows as soon as he makes it.
+//
+// "Dealt with" (John, 28 Oct 2026): each failed thing has a key (a song's step, a job's run, a call to the facts task;
+// a song's failed call shares the call's key), and op 'statusack' { key, on } keeps or drops it in KV statusAck
+// ({ key: when }, each kept 30 days). A new run, call or song comes with a new key, so it shows again.
+const RAW = 'https://raw.githubusercontent.com/' + REPO + '/';
+const ACK_DAYS = 30;
 const STALL = { job: 20 * 60e3, ask: 20 * 60e3, facts: 60 * 60e3 };   // how long each step may take before it counts as stuck
-async function rawJson(path, empty) {
-  const r = await fetch(RAW + path + '?t=' + Date.now(), { headers: { 'User-Agent': 'SongOfTheDayWorker' } });
+async function mainSha(env) {   // main's latest commit, so the files read are the newest
+  if (env.GH_TOKEN) try {
+    const r = await fetch('https://api.github.com/repos/' + REPO + '/commits/main', { headers: { Authorization: 'Bearer ' + env.GH_TOKEN,
+      Accept: 'application/vnd.github.sha', 'X-GitHub-Api-Version': '2022-11-28', 'User-Agent': 'SongOfTheDayWorker' } });
+    const sha = r.ok ? (await r.text()).trim() : '';
+    if (/^[0-9a-f]{40}$/.test(sha)) return sha;
+  } catch (e) {}
+  return 'main';
+}
+async function rawJson(path, empty, ref) {
+  const r = await fetch(RAW + (ref || 'main') + '/' + path + (ref && ref !== 'main' ? '' : '?t=' + Date.now()), { headers: { 'User-Agent': 'SongOfTheDayWorker' } });
   if (r.status === 404 && empty !== undefined) return empty;
   if (!r.ok) throw new Error(path + ': GitHub answered ' + r.status);
   return r.json();
@@ -444,9 +461,9 @@ async function jobRuns(env) {   // the latest run of each GitHub job; a failed o
   return out;
 }
 function songSteps(it, d, now) {   // one song's way to the calendar
-  const { job, runs, S, asked, task, F, V } = d;
+  const { job, runs, S, asked, task, F, V, signedNow } = d;
   const added = Date.parse(it.a) || 0, id = it.id, steps = [];
-  const step = (k, t, st, say, extra) => steps.push(Object.assign({ k, t, st, say: say || '' }, extra || {}));
+  const step = (k, t, st, say, extra) => steps.push(Object.assign({ k, t, st, say: say || '' }, st === 'bad' ? { key: 's:' + id + ':' + k } : {}, extra || {}));
   const tags = runs.find(r => r.name === 'Song moods and genres') || null;
   const tagsRunning = !!tags && tags.st !== 'completed';
   const out = !!(F.songs && F.songs[id]) || !!(F.signed && F.signed[id]);
@@ -468,7 +485,7 @@ function songSteps(it, d, now) {   // one song's way to the calendar
   if (out) step('ask', 'Facts task started', 'ok', '');
   else if (askedAt) step('ask', 'Facts task started', 'ok', '', { at: asked[id], url: mine && mine.ok ? mine.session || '' : '' });
   else if (!src) step('ask', 'Facts task started', 'wait', '');
-  else if (mine && !mine.ok) step('ask', 'Facts task started', 'bad', 'It couldn’t be started: ' + mine.said, { at: mine.at });
+  else if (mine && !mine.ok) step('ask', 'Facts task started', 'bad', 'It couldn’t be started: ' + mine.said, { at: mine.at, key: 't:' + mine.at });   // (the call's own key)
   else if (tagsRunning) step('ask', 'Facts task started', 'wait', 'Asked for at the end of the site job');
   else if (tags && now - Date.parse(tags.end || tags.at) > STALL.ask) step('ask', 'Facts task started', 'bad', 'The site job didn’t ask for its facts', { url: tags.url });
   else step('ask', 'Facts task started', 'wait', '');
@@ -479,33 +496,48 @@ function songSteps(it, d, now) {   // one song's way to the calendar
   else step('facts', 'Facts written and checked', 'wait', '');
   // 5. John's sign-off
   if (F.signed && F.signed[id]) step('signed', 'Signed off by you', 'ok', '');
+  else if (signedNow[id]) step('signed', 'Signed off by you', 'ok', 'Going onto the calendar now', { at: signedNow[id].at });
   else step('signed', 'Signed off by you', 'wait', out ? 'Waiting for you on the Songs tab' : '');
   return { id, n: it.n, title: it.title, artist: it.artist, added: it.a, out, steps };
 }
 function ago(ms) { const m = Math.round(ms / 60e3); return m < 60 ? m + ' min' : Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + (m % 60) + ' min' : ''); }
 async function adminStatus(env) {
   const now = Date.now(), errors = [];
-  const job = (await env.SOTD.get('job', 'json')) || {};
+  const [job, ack, signedNow, ref] = await Promise.all([env.SOTD.get('job', 'json'), env.SOTD.get('statusAck', 'json'), env.SOTD.get('factsSigned', 'json'), mainSha(env)]);
+  const acked = ack || {};
   const soft = (p, f) => p.catch(e => { errors.push(String(e && e.message || e)); return f; });
   const [items, runs, sources, asked, task, F, V] = await Promise.all([
     soft(getToken(env).then(playlistItems), []),
     env.GH_TOKEN ? soft(jobRuns(env), []) : Promise.resolve([]),
-    soft(rawJson('_sotd/data/sources.json'), { songs: {} }),
-    soft(rawJson('_sotd/data/facts-asked.json', {}), {}),
-    soft(rawJson('_sotd/data/facts-task.json', null), null),
-    soft(rawJson('songs/facts.json'), { songs: {}, signed: {} }),
-    soft(rawJson('songs/videos.json'), { videos: {} })]);
+    soft(rawJson('_sotd/data/sources.json', undefined, ref), { songs: {} }),
+    soft(rawJson('_sotd/data/facts-asked.json', {}, ref), {}),
+    soft(rawJson('_sotd/data/facts-task.json', null, ref), null),
+    soft(rawJson('songs/facts.json', undefined, ref), { songs: {}, signed: {} }),
+    soft(rawJson('songs/videos.json', undefined, ref), { videos: {} })]);
   if (!env.GH_TOKEN) errors.push('The GH_TOKEN secret is not set, so the GitHub jobs can’t be read.');
-  const d = { job, runs, S: sources.songs || {}, asked, task, F, V: V.videos || {} };
+  const d = { job: job || {}, runs, S: sources.songs || {}, asked, task, F, V: V.videos || {}, signedNow: signedNow || {} };
   const list = items.map((it, i) => Object.assign({ n: i + 1 }, it)).sort((a, b) => (a.a < b.a ? 1 : -1));
   const isOut = it => !!(F.songs && F.songs[it.id]) || !!(F.signed && F.signed[it.id]);
   const show = list.filter(it => !isOut(it)).concat(list.filter(isOut).slice(0, 2)).sort((a, b) => (a.a < b.a ? 1 : -1));
   const songs = show.map(it => songSteps(it, d, now));
-  // (the last call to the facts task, failed: a problem until a call works, even once the song it was for is out, since the
-  // next song's call will fail the same way; counted once with a song's own failed step for it)
-  const taskBad = !!task && task.ok === false && !songs.some(x => x.steps.some(y => y.k === 'ask' && y.st === 'bad'));
-  const problems = songs.reduce((n, s) => n + s.steps.filter(x => x.st === 'bad').length, 0) + runs.filter(r => r.bad).length + (taskBad ? 1 : 0);
-  return { at: new Date(now).toISOString(), problems, songs, task, runs, job: { at: job.at || null, tried: job.tried || null, err: job.err || '' }, errors };
+  // what has failed, each once by its key (the last call to the facts task, failed, counts until a call works, even once
+  // the song it was for is out, since the next song's call would fail the same way), less what John has dealt with
+  const bad = {};
+  const mark = (o, key) => { o.key = key; o.ack = acked[key] || null; if (!o.ack) bad[key] = true; };
+  songs.forEach(x => x.steps.forEach(y => { if (y.st === 'bad') mark(y, y.key); }));
+  runs.forEach(r => { if (r.bad) mark(r, 'r:' + r.id); });
+  if (task && task.ok === false) mark(task, 't:' + task.at);
+  const jb = d.job;
+  return { at: new Date(now).toISOString(), problems: Object.keys(bad).length, songs, task, runs, ref,
+    job: { at: jb.at || null, tried: jb.tried || null, err: jb.err || '' }, errors };
+}
+async function statusAck(env, key, on) {   // "Dealt with" (on), or not after all
+  if (!/^[srt]:[\w:.+-]{1,120}$/.test(String(key || ''))) throw new HttpError(400, 'Not something the Status tab shows.');
+  const ack = (await env.SOTD.get('statusAck', 'json')) || {};
+  const old = Date.now() - ACK_DAYS * DAY;
+  for (const k of Object.keys(ack)) if (Date.parse(ack[k]) < old) delete ack[k];
+  if (on) ack[key] = new Date().toISOString(); else delete ack[key];
+  await env.SOTD.put('statusAck', JSON.stringify(ack));
 }
 
 // ---------- members: John and his family ----------
@@ -634,6 +666,10 @@ async function members(request, url, env) {
       return answer(200, { ok: true, members: listing(owner === body.id ? null : owner) });
     }
     case 'status': return answer(200, await adminStatus(env));   // the Status tab
+    case 'statusack': {   // the Status tab's Dealt with (on: true), and its Undo
+      try { await statusAck(env, body.key, body.on !== false); } catch (e) { return answer(e.status || 500, { error: e.message }); }
+      return answer(200, await adminStatus(env));
+    }
     case 'pushcount': return answer(200, await pushCount(env));
     case 'widgets': {   // the members' iPhone widgets (iOS 26): how many each has, and how Apple took the last push to each ({ tell: true }: each told now)
       if (!env.NOW) return answer(200, { widgets: null });

@@ -36,27 +36,36 @@
 .steps .ic svg { width: 11px; height: 11px; }
 .steps li.ok .ic { background: var(--ok); border-color: var(--ok); color: #fff; }
 .steps li.bad .ic { background: var(--warn); border-color: var(--warn); color: #fff; }
+.steps li.bad.acked .ic { background: var(--faint); border-color: var(--faint); }
 .steps .l { font-size: 14.5px; color: var(--fg); }
 .steps .l .w { font-size: 12.5px; color: var(--muted); margin-left: 6px; white-space: nowrap; }
 .steps .say { grid-column: 2; font-size: 13px; color: var(--muted); }
 .steps li.bad .say { color: var(--warn); font-weight: 500; }
+.steps li.bad.acked .say { color: var(--muted); font-weight: 400; }
 .steps li.wait .l { color: var(--muted); }
 .steps .say a, .run a, .fix a { color: var(--fg); }
+.dealt { grid-column: 2; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); margin-top: 3px; }
+.run .dealt, .fix .dealt { grid-column: 1 / -1; margin-top: 2px; }
 .run { padding: 11px 14px; display: grid; grid-template-columns: 1fr auto; gap: 3px 10px; align-items: center; }
 .run .nm { font-size: 14.5px; color: var(--fg); font-weight: 500; }
 .run .when { font-size: 12.5px; color: var(--muted); grid-column: 1; }
 .run .stop { font-size: 13px; color: var(--warn); grid-column: 1 / -1; }
+.run.acked .stop { color: var(--muted); }
 .run .r { grid-row: 1 / span 2; grid-column: 2; display: grid; justify-items: end; gap: 4px; font-size: 12.5px; }
 .badge.bad { background: var(--warn); border-color: var(--warn); color: #fff; }
+.run.acked .badge.bad { background: var(--faint); border-color: var(--faint); }
 .badge.ok { color: var(--ok); border-color: var(--ok); background: #fff; }
 .badge.going { color: #8a5a00; border-color: #e7b54a; background: #fff8e6; }
 .fix { padding: 14px 16px; display: grid; gap: 6px; font-size: 14px; color: var(--fg-2); }
 .fix b { color: var(--fg); }
 .fix.bad { box-shadow: 0 18px 50px rgba(24, 8, 24, .28), inset 4px 0 0 var(--warn); } .fix.bad b { color: var(--warn); }
+.fix.bad.acked { box-shadow: 0 18px 50px rgba(24, 8, 24, .28), inset 4px 0 0 var(--faint); } .fix.bad.acked b { color: var(--fg); }
 .errs { padding: 12px 16px; font-size: 13px; color: var(--warn); }
 .sub.good { color: #fff; } .sub.bad { color: #fff; font-weight: 600; }
 .sub .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; vertical-align: 1px; background: #8ff0b8; }
 .sub.bad .dot { background: #fff; box-shadow: 0 0 0 3px rgba(255, 255, 255, .35); }
+.sub .more { font-weight: 400; opacity: .8; }
+#again[aria-busy="true"] { opacity: .6; }
 </style>
 </head>
 <body>
@@ -65,7 +74,7 @@
   <header class="top">
     <h1>Status</h1>
     <p class="sub" id="sum">Checking…</p>
-    <p class="help">Each new song’s way to the calendar, and the site’s jobs on GitHub. Checked when this opens and every minute while it’s open. A step that fails, or takes much longer than it should, shows in red, and the Status tab shows how many.</p>
+    <p class="help">Each new song’s way to the calendar, and the site’s jobs on GitHub. Checked when this opens, every minute while it’s open, and after a sign-off. A step that fails, or takes much longer than it should, shows in red and counts on the Status tab until it works or you mark it Dealt with.</p>
     <div class="row"><button class="glassbtn" id="again" type="button">Check again</button><span class="stat" id="when" style="color: var(--ink-2)"></span></div>
   </header>
   <div class="card errs" id="errs" hidden></div>
@@ -87,9 +96,13 @@
   function key() { try { return localStorage.getItem('sotd-admin-key') || ''; } catch (e) { return ''; } }
   function $(id) { return document.getElementById(id); }
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
-  function uk(t) {   // 28 Oct 08:40, UK time
+  function uk(t, secs) {   // 28 Oct 08:40 (UK time); with secs, 11:08:32 today
     if (!t) return '';
-    try { return new Date(t).toLocaleString('en-GB', { timeZone: 'Europe/London', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).replace(',', ''); } catch (e) { return ''; }
+    try {
+      var o = { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit' };
+      if (secs) o.second = '2-digit'; else { o.day = 'numeric'; o.month = 'short'; }
+      return new Date(t).toLocaleString('en-GB', o).replace(',', '');
+    } catch (e) { return ''; }
   }
   function link(href, text) { var a = el('a', '', text); a.href = href; a.target = '_blank'; a.rel = 'noopener'; return a; }
   var ICON = { ok: '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 6.3 5 8.6l4.5-5"/></svg>',
@@ -97,6 +110,22 @@
   var RES = { success: ['ok', 'Succeeded'], failure: ['bad', 'Failed'], timed_out: ['bad', 'Timed out'], startup_failure: ['bad', 'Couldn’t start'],
     action_required: ['bad', 'Needs you'], cancelled: ['', 'Cancelled'], skipped: ['', 'Skipped'], neutral: ['', 'Done'] };
 
+  // Dealt with: a failed thing marked (the Worker keeps the mark; it's counted no more), or the mark taken off again
+  function dealt(o) {
+    var d = el('div', 'dealt');
+    if (o.ack) {
+      d.appendChild(el('span', '', 'Dealt with ' + uk(o.ack)));
+      var u = el('button', 'link', 'Undo'); u.type = 'button';
+      u.addEventListener('click', function () { mark(o.key, false, u); });
+      d.appendChild(u);
+    } else {
+      var b = el('button', 'btn small', 'Dealt with'); b.type = 'button';
+      b.title = 'Stop counting this. Something new that fails still shows.';
+      b.addEventListener('click', function () { mark(o.key, true, b); });
+      d.appendChild(b);
+    }
+    return d;
+  }
   function drawSongs(songs) {
     var ul = $('songs'); ul.textContent = '';
     if (!songs.length) { ul.appendChild(el('li', 'card song', 'No songs to show.')); return; }
@@ -107,7 +136,7 @@
       li.appendChild(head);
       var steps = el('ol', 'steps');
       s.steps.forEach(function (x) {
-        var r = el('li', x.st), ic = el('span', 'ic'); ic.innerHTML = ICON[x.st] || '';
+        var r = el('li', x.st + (x.ack ? ' acked' : '')), ic = el('span', 'ic'); ic.innerHTML = ICON[x.st] || '';
         r.appendChild(ic);
         var l = el('span', 'l', x.t); if (x.at) l.appendChild(el('span', 'w', uk(x.at)));
         r.appendChild(l);
@@ -116,6 +145,7 @@
           if (x.url) { say.appendChild(document.createTextNode(x.say ? ' · ' : '')); say.appendChild(link(x.url, /claude\.ai/.test(x.url) ? 'Open its session' : 'Open on GitHub')); }
           r.appendChild(say);
         }
+        if (x.st === 'bad' && x.key) r.appendChild(dealt(x));
         steps.appendChild(r);
       });
       li.appendChild(steps); ul.appendChild(li);
@@ -124,57 +154,73 @@
   function drawTask(t) {   // the last call to the facts task, and what to do when it couldn't start
     $('taskbox').hidden = !t;
     if (!t) return;
-    var box = $('task'); box.textContent = ''; box.className = 'card fix' + (t.ok ? '' : ' bad');
+    var box = $('task'); box.textContent = ''; box.className = 'card fix' + (t.ok ? '' : ' bad') + (t.ack ? ' acked' : '');
     var p = el('div');
     p.appendChild(el('b', '', uk(t.at) + ': ' + (t.ok ? 'started' : 'couldn’t be started')));
     p.appendChild(document.createTextNode(t.ok ? '' : ' (' + t.said + ')'));
     if (t.ok && t.session) { p.appendChild(document.createTextNode(' · ')); p.appendChild(link(t.session, 'Open its session')); }
     box.appendChild(p);
-    if (!t.ok && /\b401\b|revoked|token/i.test(t.said)) {
+    if (!t.ok && !t.ack && /\b401\b|revoked|token/i.test(t.said)) {
       var f = el('div', '', 'Its token no longer works. Make a new one on ');
       f.appendChild(link(TASK_PAGE, 'the task’s page')); f.appendChild(document.createTextNode(' (API trigger), put it in the SOTD_FACTS_TOKEN secret on '));
-      f.appendChild(link(SECRETS, 'GitHub')); f.appendChild(document.createTextNode(', then press Run on the task’s page for the songs waiting now.'));
+      f.appendChild(link(SECRETS, 'GitHub')); f.appendChild(document.createTextNode(', then press Run on the task’s page for any song still waiting. The next call that works clears this.'));
       box.appendChild(f);
-    } else if (!t.ok) {
-      var g = el('div', '', 'Press Run on '); g.appendChild(link(TASK_PAGE, 'the task’s page')); g.appendChild(document.createTextNode(' for the songs waiting now.'));
+    } else if (!t.ok && !t.ack) {
+      var g = el('div', '', 'Press Run on '); g.appendChild(link(TASK_PAGE, 'the task’s page')); g.appendChild(document.createTextNode(' for any song still waiting.'));
       box.appendChild(g);
     }
+    if (!t.ok && t.key) box.appendChild(dealt(t));
   }
   function drawRuns(runs) {
     var ul = $('runs'); ul.textContent = '';
-    runs.slice().sort(function (a, b) { return (b.bad - a.bad) || (a.at < b.at ? 1 : -1); }).forEach(function (r) {
-      var li = el('li', 'card run'), res = r.st !== 'completed' ? ['going', r.st === 'queued' ? 'Waiting' : 'Running'] : (RES[r.res] || ['', r.res || r.st]);
+    runs.slice().sort(function (a, b) { return ((b.bad && !b.ack) - (a.bad && !a.ack)) || (a.at < b.at ? 1 : -1); }).forEach(function (r) {
+      var li = el('li', 'card run' + (r.ack ? ' acked' : '')), res = r.st !== 'completed' ? ['going', r.st === 'queued' ? 'Waiting' : 'Running'] : (RES[r.res] || ['', r.res || r.st]);
       li.appendChild(el('span', 'nm', r.name));
       li.appendChild(el('span', 'when', uk(r.at) + ' · run ' + r.n));
       var right = el('span', 'r'); right.appendChild(el('span', 'badge ' + res[0], res[1])); right.appendChild(link(r.url, 'Open'));
       li.appendChild(right);
       if (r.bad && r.steps && r.steps.length) li.appendChild(el('span', 'stop', 'Stopped at: ' + r.steps.join(', ')));
+      if (r.bad && r.key) li.appendChild(dealt(r));
       ul.appendChild(li);
     });
     if (!runs.length) ul.appendChild(el('li', 'card run', 'No jobs to show.'));
   }
   function tell(n) { try { if (window.parent.SOTD_STATUS) window.parent.SOTD_STATUS(n); } catch (e) {} }
-  var busy = false;
-  function load() {
-    if (busy) return; busy = true; $('again').disabled = true;
-    fetch(WORKER + '/members/admin', { method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + key() }, body: '{"op":"status"}' })
+  function draw(j) {
+    var n = j.problems || 0, dealtN = 0, seen = {};
+    function count(o) { if (o && o.ack && o.key && !seen[o.key]) { seen[o.key] = 1; dealtN++; } }
+    (j.songs || []).forEach(function (s) { s.steps.forEach(count); }); (j.runs || []).forEach(count); count(j.task);
+    $('sum').className = 'sub ' + (n ? 'bad' : 'good');
+    $('sum').innerHTML = '<span class="dot"></span>';
+    $('sum').appendChild(document.createTextNode(n ? (n === 1 ? '1 thing has failed or is stuck' : n + ' things have failed or are stuck') : 'All well'));
+    if (dealtN) $('sum').appendChild(el('span', 'more', ' · ' + dealtN + ' dealt with'));
+    $('when').textContent = 'Checked ' + uk(j.at, true);
+    $('errs').hidden = !(j.errors && j.errors.length); $('errs').textContent = j.errors && j.errors.length ? 'Couldn’t read everything: ' + j.errors.join('; ') : '';
+    drawSongs(j.songs || []); drawTask(j.task); drawRuns(j.runs || []);
+    tell(n);
+  }
+  function call(body) {
+    return fetch(WORKER + '/members/admin', { method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + key() }, body: JSON.stringify(body) })
       .then(function (r) {
         if (r.status === 401) { try { window.parent.SOTD_ADMIN_LOCK(); } catch (e) {} throw new Error('The password has changed.'); }
         return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || 'The Worker answered ' + r.status); return j; });
-      })
-      .then(function (j) {
-        var n = j.problems || 0;
-        $('sum').className = 'sub ' + (n ? 'bad' : 'good');
-        $('sum').innerHTML = '<span class="dot"></span>';
-        $('sum').appendChild(document.createTextNode(n ? (n === 1 ? '1 thing has failed or is stuck' : n + ' things have failed or are stuck') : 'All well'));
-        $('when').textContent = 'Checked ' + uk(j.at);
-        $('errs').hidden = !(j.errors && j.errors.length); $('errs').textContent = j.errors && j.errors.length ? 'Couldn’t read everything: ' + j.errors.join('; ') : '';
-        drawSongs(j.songs || []); drawTask(j.task); drawRuns(j.runs || []);
-        tell(n);
-      })
-      .catch(function (e) { $('sum').className = 'sub bad'; $('sum').textContent = 'Couldn’t check: ' + (e.message || 'no answer from the Worker'); })
-      .then(function () { busy = false; $('again').disabled = false; });
+      });
   }
+  var busy = false, again = false;
+  function busyOn(on) { busy = on; $('again').setAttribute('aria-busy', String(on)); $('again').textContent = on ? 'Checking…' : 'Check again'; }
+  function load() {
+    if (busy) { again = true; return; }   // (one more once this one's back: what was asked for may have changed meanwhile)
+    busyOn(true);
+    call({ op: 'status' }).then(draw)
+      .catch(function (e) { $('sum').className = 'sub bad'; $('sum').textContent = 'Couldn’t check: ' + (e.message || 'no answer from the Worker'); })
+      .then(function () { busyOn(false); if (again) { again = false; load(); } });
+  }
+  function mark(k, on, btn) {
+    btn.disabled = true;
+    call({ op: 'statusack', key: k, on: on }).then(draw)
+      .catch(function (e) { btn.disabled = false; $('when').textContent = 'Couldn’t save that: ' + e.message; });
+  }
+  window.SOTD_REFRESH = load;   // (the admin page: when this tab is opened, and after a sign-off on the Songs tab)
   $('again').addEventListener('click', load);
   load();
   setInterval(function () { if (!document.hidden) load(); }, 60e3);

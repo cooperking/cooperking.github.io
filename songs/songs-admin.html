@@ -560,6 +560,7 @@
       toast(j.signed === 1 ? 'Done: live in a couple of minutes' : j.signed + ' songs done: live in a couple of minutes');
       if (j.job && j.job !== 'started') toast('Saved, but the site job didn’t start: ' + j.job);
       render();
+      try { if (window.parent.SOTD_STATUS_NOW) window.parent.SOTD_STATUS_NOW(); } catch (e) {}   // (the Status tab: signed off)
     }).catch(function () { toast('Couldn’t reach the Worker. Nothing was saved.'); });
   }
   [].forEach.call(document.querySelectorAll('[data-show]'), function (b) {

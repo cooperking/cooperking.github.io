@@ -24,7 +24,9 @@ SOTD_FACTS_TOKEN hold its address and token). The new song stays off the live ca
 call went is kept in `_sotd/data/facts-task.json` (started, with the task's session; or not, with what came back), and a
 call that fails fails that step of the job, so the run shows as failed. The admin page's Status tab
 (`songs/status-admin.html`, from the Worker's admin op `status`) shows each new song's steps to the calendar, that call,
-and the latest run of each GitHub job, with a count of what has failed or is stuck on its tab. When the task's token stops
+and the latest run of each GitHub job, with a count of what has failed or is stuck on its tab. It checks again when
+opened, every minute while open and after a sign-off; *Dealt with* on a failed thing stops it counting (KV statusAck,
+30 days), and anything new that fails shows again. When the task's token stops
 working ("OAuth access token has been revoked": 28 Oct 2026, after John changed his Google password), make a new one on
 the task's page and put it in the SOTD_FACTS_TOKEN secret; Run on the task's page writes the songs waiting meanwhile.
 

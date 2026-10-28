@@ -97,7 +97,9 @@ body { overflow: hidden; }
     }
   }
   function show(tab) {
+    var was = frames[tab] && !frames[tab].hidden;
     frame(tab);
+    if (tab === 'status' && !was) window.SOTD_STATUS_NOW();   // (opened: checked again now)
     Object.keys(frames).forEach(function (k) { frames[k].hidden = k !== tab; });
     document.querySelectorAll('.tabs button').forEach(function (b) { b.setAttribute('aria-selected', String(b.dataset.tab === tab)); });
     if (location.hash.slice(1) !== tab) history.replaceState(null, '', '#' + tab);
@@ -109,6 +111,8 @@ body { overflow: hidden; }
     show(tabNow());
     frame('status');   // (opened at once, out of sight: it puts the count of what has failed on its tab)
   }
+  // the Status tab checked again now (on opening it, and after a sign-off on the Songs tab)
+  window.SOTD_STATUS_NOW = function () { try { var w = frames.status && frames.status.contentWindow; if (w && w.SOTD_REFRESH) w.SOTD_REFRESH(); } catch (e) {} };
   // the Status tab's count: things that have failed or are stuck
   window.SOTD_STATUS = function (n) {
     $('stcount').hidden = !n; $('stcount').textContent = n || '';
