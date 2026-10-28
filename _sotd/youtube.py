@@ -318,11 +318,13 @@ def write_site(data):
                 out[tid]['s'] = e['secs']
         else:
             out.pop(tid, None)
+    import video_still   # p: whether each is only a still picture, from YouTube's own frames (video_still.py, run next)
+    video_still.mark(out)
     counts = {}
     for x in out.values():
         counts[x['k']] = counts.get(x['k'], 0) + 1
     print('playable on the calendar:', len(out), counts)
-    site = {'about': 'YouTube video for each song (Spotify track id: v video id, k video / live / lyric / audio (a still picture) / other, s its length in seconds); '
+    site = {'about': 'YouTube video for each song (Spotify track id: v video id, k video / live / lyric / audio / other, by the title; p 1 only a still picture, 0 not, from YouTube’s own frames of it; s its length in seconds); '
                      'playlist: the YouTube playlist of them all',
             'videos': out}
     pl = os.path.join(HERE, 'data', 'youtube-playlist.json')

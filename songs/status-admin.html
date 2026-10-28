@@ -71,6 +71,12 @@
 .fix .waits { margin: 2px 0 0; padding-left: 18px; display: grid; gap: 4px; font-size: 13.5px; }
 .fix .waits .w { color: var(--muted); font-size: 12px; white-space: nowrap; }
 .fix .note2 { font-size: 13px; color: var(--muted); }
+.fix .pubrow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 6px; }
+.fix .pubrow .hint { font-size: 13px; color: var(--muted); flex: 1 1 200px; }
+.fix .pubrow .hint.err { color: var(--warn); }
+.fix .pubrow .btn.armed { background: var(--warn); border-color: var(--warn); }
+.fix .going { font-size: 13.5px; color: #8a5a00; }
+.fix .going.done { color: var(--ok); } .fix .going.failed { color: var(--warn); font-weight: 500; }
 .errs { padding: 12px 16px; font-size: 13px; color: var(--warn); }
 .sub.good { color: #fff; } .sub.bad { color: #fff; font-weight: 600; }
 .sub .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; vertical-align: 1px; background: #8ff0b8; }
@@ -225,9 +231,42 @@
       var ul = el('ul', 'waits');
       x.list.forEach(function (c) { var li = el('li'); li.appendChild(link(c.url, c.t)); li.appendChild(el('span', 'w', ' ' + uk(c.at))); ul.appendChild(li); });
       box.appendChild(ul);
-      box.appendChild(el('div', 'note2', 'Say “put it live” when you’ve checked them on the draft.'));
     }
+    var g = x.going;
+    if (g) {   // Publish pressed: its run on GitHub
+      var gl = el('div', 'going ' + g.st);
+      gl.appendChild(document.createTextNode({ starting: 'Going live: starting (pressed ' + uk(g.at, true) + ')…', running: 'Going live now (pressed ' + uk(g.at, true) + ')…',
+        done: 'Gone live: GitHub Pages shows it within a minute or two.', failed: 'It didn’t go live: the job failed. ' }[g.st] || ''));
+      if (g.url) { gl.appendChild(document.createTextNode(' ')); gl.appendChild(link(g.url, 'The job ↗')); }
+      box.appendChild(gl);
+    }
+    if (x.publish) box.appendChild(publishRow(x));
+    if (x.st !== 'wait' && x.last) box.appendChild(el('div', 'note2', 'Last put live ' + uk(x.last.at) + '.'));
     if (x.st === 'bad' && x.key) box.appendChild(dealt(x));
+  }
+  // Publish: every change waiting on the draft goes live together (the live page is built whole from the template, as the
+  // draft is). Two taps, so a stray one doesn't put anything live.
+  var armed = 0;
+  function publishRow(x) {
+    var row = el('div', 'pubrow'), n = x.list.length;
+    var b = el('button', 'btn primary', 'Publish'); b.type = 'button';
+    var hint = el('span', 'hint', 'Once you’ve tried ' + (n === 1 ? 'it' : 'them') + ' on the draft: ' + (n === 1 ? 'it goes' : 'all ' + n + ' go') + ' live together.');
+    function arm(on) {
+      armed = on ? Date.now() : 0; b.classList.toggle('armed', on);
+      b.textContent = on ? 'Tap again to publish' : 'Publish';
+      hint.textContent = on ? 'The live calendar becomes the draft, for everyone.' : 'Once you’ve tried ' + (n === 1 ? 'it' : 'them') + ' on the draft: ' + (n === 1 ? 'it goes' : 'all ' + n + ' go') + ' live together.';
+    }
+    function later() { setTimeout(function () { if (armed && Date.now() - armed >= 6000) arm(false); }, 6100 - (Date.now() - armed)); }
+    if (armed && Date.now() - armed < 6000) { b.classList.add('armed'); b.textContent = 'Tap again to publish'; hint.textContent = 'The live calendar becomes the draft, for everyone.'; later(); }
+    else armed = 0;   // (still armed if the card is drawn again meanwhile)
+    b.addEventListener('click', function () {
+      if (!armed || Date.now() - armed > 6000) { arm(true); later(); return; }
+      armed = 0; b.disabled = true; b.textContent = 'Publishing…';
+      call({ op: 'publish' }).then(draw)
+        .catch(function (e) { b.disabled = false; arm(false); hint.textContent = 'It didn’t start: ' + e.message; hint.classList.add('err'); });
+    });
+    row.appendChild(b); row.appendChild(hint);
+    return row;
   }
   function tell(n) { try { if (window.parent.SOTD_STATUS) window.parent.SOTD_STATUS(n); } catch (e) {} }
   function draw(j) {

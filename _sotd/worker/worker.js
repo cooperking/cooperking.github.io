@@ -538,8 +538,8 @@ function pushSay(e) {   // how a notification went
 function ago(ms) { const m = Math.round(ms / 60e3); return m < 60 ? m + ' min' : Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + (m % 60) + ' min' : ''); }
 async function adminStatus(env) {
   const now = Date.now(), errors = [];
-  const [job, ack, signedNow, ref, log, pushSent, cat] = await Promise.all([env.SOTD.get('job', 'json'), env.SOTD.get('statusAck', 'json'),
-    env.SOTD.get('factsSigned', 'json'), mainSha(env), pushHistory(env), env.SOTD.get('pushSent', 'json'), catalog(env)]);
+  const [job, ack, signedNow, ref, log, pushSent, cat, golive] = await Promise.all([env.SOTD.get('job', 'json'), env.SOTD.get('statusAck', 'json'),
+    env.SOTD.get('factsSigned', 'json'), mainSha(env), pushHistory(env), env.SOTD.get('pushSent', 'json'), catalog(env), env.SOTD.get('golive', 'json')]);
   const acked = ack || {};
   const soft = (p, f) => p.catch(e => { errors.push(String(e && e.message || e)); return f; });
   const [items, runs, sources, asked, task, F, V, P, Y, pages, waitingLive] = await Promise.all([
@@ -572,12 +572,19 @@ async function adminStatus(env) {
   // sure that draft and live don't get out of synch")
   let site = null;
   if (pages) {
-    const wl = waitingLive || [];
+    const wl = (waitingLive && waitingLive.list) || [];
     site = !pages.draft ? { st: 'bad', say: 'The draft isn’t what the template builds: it wasn’t built again after a change.', key: 'p:draft' }
-      : pages.live ? { st: 'ok', say: 'The live calendar is the draft, signed off: nothing waiting.' }
-      : wl.length ? { st: 'wait', say: 'The draft has changes waiting for you to put live:', list: wl }
+      : pages.live ? { st: 'ok', say: 'The live calendar is the draft: nothing waiting.' }
+      : wl.length ? { st: 'wait', say: 'The draft has changes waiting to go live:', list: wl, publish: true }
       : { st: 'bad', say: 'The live calendar isn’t what the template builds, and nothing has changed in the template since it last went live.', key: 'p:live' };
     if (site.key) mark(site, site.key);
+    site.last = (waitingLive && waitingLive.last) || null;   // when it last went live
+    // Publish pressed: its run, until the draft is live (a failed run shows here, and under Jobs, and the button again)
+    if (golive && site.st === 'wait' && now - Date.parse(golive.at) < 30 * 60e3) {
+      const run = runs.find(r => r.name === GOLIVE_RUN && Date.parse(r.at) >= Date.parse(golive.at) - 60e3) || null;
+      site.going = { at: golive.at, st: !run ? 'starting' : run.st !== 'completed' ? 'running' : run.res === 'success' ? 'done' : 'failed', url: run ? run.url : '' };
+      if (site.going.st !== 'failed') site.publish = false;
+    }
   }
   const notes = d.log.slice(0, 12).map(e => Object.assign({}, e, { say: pushSay(e) }));   // the notifications sent, newest first
   notes.forEach(e => { if (e.failed) mark(e, 'n:' + e.id); });   // (one that some devices didn't get)
@@ -590,8 +597,30 @@ async function notLive(env) {   // the template's changes since the calendar las
   const last = (L || []).find(c => /^Live\b/.test((c.commit && c.commit.message) || ''));
   const since = last ? last.commit.committer.date : '';
   const T = await ghApi(env, '/commits?path=_sotd/web/template.html&per_page=30' + (since ? '&since=' + encodeURIComponent(since) : ''));
-  return (T || []).filter(c => !last || c.sha !== last.sha).map(c => ({ at: c.commit.committer.date, t: c.commit.message.split('\n')[0].slice(0, 160), url: c.html_url }))
+  const list = (T || []).filter(c => !last || c.sha !== last.sha).map(c => ({ at: c.commit.committer.date, t: c.commit.message.split('\n')[0].slice(0, 160), url: c.html_url }))
     .filter(c => !since || c.at > since);
+  return { list, last: last ? { at: since, url: last.html_url } : null };
+}
+// the Status tab's Publish (John, 28 Oct 2026: "Can I have a publish option on the status Draft and Live - one publish
+// button for all"): the draft calendar, as it is, becomes the live one. golive.yml builds the live page from the
+// template, as the draft is, so every waiting change goes live together; it won't if the draft isn't what the template
+// builds (then what he tried isn't what would go live). KV golive: when he last pressed it, for the card to follow.
+const GOLIVE_JOB = 'golive.yml', GOLIVE_RUN = 'Put the draft live';
+async function publishDraft(env) {
+  if (!env.GH_TOKEN) throw new HttpError(503, 'The GH_TOKEN secret is not set.');
+  const ref = await mainSha(env);
+  const [pages, nl] = await Promise.all([rawJson('_sotd/data/pages.json', null, ref), notLive(env)]);
+  if (pages && !pages.draft) throw new HttpError(409, 'The draft isn’t what the template builds, so what’s on it isn’t what would go live. Nothing changed.');
+  if (pages && pages.live) throw new HttpError(409, 'The live calendar is the draft already: nothing to put live.');
+  const say = nl.list.map(c => c.t.replace(/^Calendar \(draft\):\s*/i, '')).join('; ').slice(0, 400);
+  const r = await fetch('https://api.github.com/repos/' + REPO + '/actions/workflows/' + GOLIVE_JOB + '/dispatches', {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + env.GH_TOKEN, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28',
+      'User-Agent': 'SongOfTheDayWorker', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ref: 'main', inputs: { say } })
+  }).catch(e => ({ status: 0, text: async () => String(e) }));
+  if (r.status !== 204) throw new HttpError(502, 'GitHub didn’t start it: it answered ' + r.status + ' ' + (await r.text()).slice(0, 160));
+  await env.SOTD.put('golive', JSON.stringify({ at: new Date().toISOString(), n: nl.list.length }), { expirationTtl: 2 * DAY / 1000 });
 }
 async function statusAck(env, key, on) {   // "Dealt with" (on), or not after all
   if (!/^[srtnp]:[\w:.+-]{1,120}$/.test(String(key || ''))) throw new HttpError(400, 'Not something the Status tab shows.');
@@ -728,6 +757,10 @@ async function members(request, url, env) {
       return answer(200, { ok: true, members: listing(owner === body.id ? null : owner) });
     }
     case 'status': return answer(200, await adminStatus(env));   // the Status tab
+    case 'publish': {   // the Status tab's Publish: the draft calendar goes live as it is (golive.yml)
+      try { await publishDraft(env); } catch (e) { return answer(e.status || 500, { error: e.message }); }
+      return answer(200, await adminStatus(env));
+    }
     case 'statusack': {   // the Status tab's Dealt with (on: true), and its Undo
       try { await statusAck(env, body.key, body.on !== false); } catch (e) { return answer(e.status || 500, { error: e.message }); }
       return answer(200, await adminStatus(env));

@@ -534,8 +534,10 @@
     b.textContent = armed ? 'Tap again to sign off ' + ready.length : 'Sign off all ' + ready.length;
     $('dockn').textContent = armed ? 'Exactly as shown, with your changes' : 'Waiting or changed, shown here';
   }
-  // the day's YouTube video is only a still picture (an "Artist - Topic" upload or an official audio): the sound, no film
-  function stillPic(s) { var v = VIDS[s.id]; return !!(v && v.k === 'audio'); }
+  // the day's YouTube video is only a still picture: the sound, no film. p is from YouTube's own three frames of the
+  // video (_sotd/video_still.py: the same picture in all three); until those are looked at, the title says (k audio:
+  // an "Artist - Topic" upload or an official audio)
+  function stillPic(s) { var v = VIDS[s.id]; return !!v && (v.p != null ? v.p === 1 : v.k === 'audio'); }
   function counts() {
     var c = { waiting: 0, signed: 0, old: 0, none: 0 }, chk = 0, files = 0, noa = 0, nov = 0;
     songs.forEach(function (s) { c[state(s).st]++; if (toCheck(s)) chk++; var e = CAT[s.id] || {}; if (e.a || e.v) files++; if (!e.a) noa++; if (!e.v) nov++; });

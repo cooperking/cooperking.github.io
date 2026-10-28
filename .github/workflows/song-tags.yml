@@ -84,6 +84,13 @@ jobs:
           YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
         run: python _sotd/youtube.py
 
+      # whether each video is only a still picture, from YouTube's own three frames of it (the admin page's Still picture)
+      - name: Still pictures, from YouTube's own frames
+        continue-on-error: true   # tried again next run
+        run: |
+          pip install --quiet pillow
+          python _sotd/video_still.py
+
       - name: Keep the YouTube playlist in step
         env:
           YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}

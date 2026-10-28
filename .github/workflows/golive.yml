@@ -1,0 +1,59 @@
+name: Put the draft live
+
+# The live calendar (songs/index.html and songs/sw.js) built from the template, as the draft is: John's go-ahead, from
+# the Publish button on the admin page's Status tab ("Draft and live"). The Cloudflare Worker starts it (admin op
+# publish) when the draft is what the template builds and has changes waiting. One run puts every waiting change live
+# at once: the live page is built whole from the template, as the draft is (John, 28 Oct 2026: "one publish button for
+# all"). GitHub Pages then serves it within a minute or two.
+on:
+  workflow_dispatch:
+    inputs:
+      say:
+        description: "What goes live (for the commit message)"
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: golive
+  cancel-in-progress: false
+
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # each try starts again from the latest main, so a site job saving at the same moment doesn't clash with it
+      - name: Build the live calendar from the template and save it
+        env:
+          SAY: ${{ inputs.say }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          say=$(printf '%s' "$SAY" | tr '\n' ' ' | cut -c1-400)
+          [ -n "$say" ] || say="the draft’s changes"
+          for i in 1 2 3 4 5; do
+            git fetch --quiet origin main && git reset --quiet --hard origin/main
+            # what John tried on the draft is what goes live: the draft must be what the template builds now
+            chk=$(python _sotd/web/page.py --check || true)
+            if printf '%s\n' "$chk" | grep -q '^DIFFERS songs/draft/'; then
+              echo "::error::The draft isn't what the template builds, so what's on it isn't what would go live. Nothing changed."; exit 1
+            fi
+            python _sotd/web/page.py --live
+            python _sotd/web/pages_check.py
+            git add songs/index.html songs/sw.js _sotd/data/pages.json
+            if git diff --cached --quiet; then echo "the live calendar is the draft already: nothing to put live"; exit 0; fi
+            git commit --quiet -m "Live (John's go-ahead, from the Status tab): $say"
+            git push --quiet origin HEAD:main && { git log -1 --format='%h %s'; exit 0; }
+            sleep 5
+          done
+          exit 1

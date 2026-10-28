@@ -7,10 +7,11 @@
 Reads what the YouTube searches have already found (data/video-hunt.json, data/youtube.json) and writes
 songs/video-alts.json: {songs: {track: [{v, t: title, c: channel, s: seconds, k: kind}, ...]}}, best first, up to 8 a
 song. Kinds: video (a music video or promo), tv (a TV appearance), other, live, lyric, audio (another still picture).
-Uploads that other sites can't play, that look like another song, or are covers, remixes and the like are left out.
-Run by song-tags.yml after youtube.py, so it follows each day's videos.
+Kinds come from the title, except a still picture: from YouTube's own frames of each upload (video_still.py), as the
+songs' own videos are. Uploads that other sites can't play, that look like another song, or are covers, remixes and the
+like are left out. Run by song-tags.yml after youtube.py and video_still.py, so it follows each day's videos.
 """
-import json, os, re
+import json, os, re, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -24,6 +25,8 @@ LYRIC = re.compile(r'lyric|letra|legendado|tradu|subtitul|sub\.|visuali[sz]', re
 NOT_IT = re.compile(r'\bcover\b|remix|slowed|sped up|reverb|karaoke|instrumental|8d audio|nightcore|react|lesson|'
                     r'tutorial|how to play|guitar|piano|drum cover|bass cover|full album|extended', re.I)
 ORDER = {'video': 0, 'tv': 1, 'other': 2, 'live': 3, 'lyric': 4, 'audio': 5}
+sys.path.insert(0, HERE)
+import video_still   # noqa: E402
 
 
 def load(p, empty):
@@ -58,9 +61,9 @@ def main():
     found = load(os.path.join(HERE, 'data', 'youtube.json'), {}).get('songs', {})
     ms = load(os.path.join(HERE, 'data', 'links.json'), {}).get('ms', {})
     moods = load(os.path.join(ROOT, 'songs', 'moods.json'), {}).get('songs', {})
-    out = {}
+    out, rows_of = {}, {}
     for track, v in vids.items():
-        if v.get('k') != 'audio':
+        if not (v.get('p') == 1 if 'p' in v else v.get('k') == 'audio'):   # (the frames, else the title)
             continue
         song = hunt.get(track, {})
         title = re.sub(r'\s*[-(\[].*$', '', song.get('title') or '').strip().lower()
@@ -86,12 +89,22 @@ def main():
             secs = r.get('secs') or 0
             if spot and secs and (secs < spot * 0.6 or secs > spot * 1.6):
                 continue   # a snippet, or something much longer than the song
-            k = kind_of(t, c)
-            rows.append({'v': vid, 't': t[:120], 'c': c[:60], 's': secs, 'k': k,
-                         '_o': (ORDER[k], abs(secs - spot) if spot and secs else 99, -(r.get('score') or 0))})
-        rows.sort(key=lambda x: x['_o'])
+            rows.append({'v': vid, 't': t[:120], 'c': c[:60], 's': secs, 'k': kind_of(t, c),
+                         '_o': (abs(secs - spot) if spot and secs else 99, -(r.get('score') or 0))})
         if rows:
-            out[track] = [{k: x[k] for k in ('v', 't', 'c', 's', 'k')} for x in rows[:8]]
+            rows_of[track] = rows
+    # each upload a still picture or not, from its frames (fetched once each: data/video-still.json)
+    seen = video_still.check([x['v'] for rows in rows_of.values() for x in rows])
+    video_still.save(seen)
+    for track, rows in rows_of.items():
+        for x in rows:
+            p = video_still.still(x['v'], seen)
+            if p == 1:
+                x['k'] = 'audio'
+            elif p == 0 and x['k'] == 'audio':
+                x['k'] = 'other'   # called audio, but it moves
+        rows.sort(key=lambda x: (ORDER[x['k']],) + x['_o'])
+        out[track] = [{k: x[k] for k in ('v', 't', 'c', 's', 'k')} for x in rows[:8]]
     data = {'about': 'Other YouTube uploads for songs whose video is only a still picture, best first (see _sotd/video_alts.py). '
                      'k: video, tv, other, live, lyric or audio; s: length in seconds.', 'songs': out}
     with open(OUT, 'w', encoding='utf-8') as f:
