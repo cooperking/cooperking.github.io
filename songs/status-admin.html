@@ -188,8 +188,8 @@
   function drawFeed(j) {
     var ul = $('feed'), out = [], shown = {}, noted = {};
     (j.songs || []).forEach(function (s) { shown[s.id] = 1; songItems(s, j, out, noted); });
-    var t = j.task;
-    if (t && !(t.songs || []).some(function (id) { return shown[id]; }))   // (otherwise it's that song's Facts task started)
+    var t = j.task, asStep = (j.songs || []).some(function (s) { return s.steps.some(function (x) { return x.task; }); });
+    if (t && !(t.ok ? (t.songs || []).some(function (id) { return shown[id]; }) : asStep))   // (unless a song's Facts task started shows this call)
       out.push(item({ at: t.at, title: 'Facts task', what: 'asked for ' + (t.songs || []).length + ' song' + ((t.songs || []).length === 1 ? '' : 's'), by: t.by,
         st: t.ok ? 'ok' : 'bad', badge: status(t.ok ? 'ok' : 'bad', t.ack, 'Started'), say: t.ok ? '' : 'It couldn’t be started: ' + t.said,
         url: t.ok ? t.session : '', urlText: 'Its session', more: taskFix(t), dealt: t }));
