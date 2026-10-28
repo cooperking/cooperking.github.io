@@ -5,13 +5,12 @@
 // The Worker checks every track is on the Song of the Day playlist, creates a playlist with them in that
 // order on John's Spotify account, and redirects the visitor to it on open.spotify.com.
 //
-// Someone opening the calendar, or the Worker's timer (every 10 minutes; it reads Spotify only from 06:00 until the
-// day's song is in: see timerSongs). When the Worker reads the playlist for
-// /songs.json (at most every 10 minutes) and finds it changed, it starts the GitHub job (song-tags.yml) that
+// The Worker's timer (every 10 minutes) reads the playlist from Spotify, from 06:00 until the day's song is in (see
+// timerSongs); /songs.json is the list it last read. When the timer finds it changed, it starts the GitHub job (song-tags.yml) that
 // finds each new song's video, year and moods, keeps the YouTube playlist in step and makes the share pages.
 // Until a run has included the song for today (London time), every change to the playlist starts a run, so a
 // calendar that has fallen behind catches up; once one has, the Worker doesn't look again until tomorrow.
-// The same visit gives new songs a mood (ReccoBeats) and genres (MusicBrainz) until the job's own are out,
+// The same look gives new songs a mood (ReccoBeats) and genres (MusicBrainz) until the job's own are out,
 // and once a day removes the playlists made for visitors from John's library once they are KEEP_DAYS old.
 // Removing one makes its link stop working, but a visitor already playing it carries on to the next songs
 // (tested 23 Oct 2026) unless their Spotify app restarts; a day covers one listen.
@@ -159,7 +158,7 @@ async function status(env) {
   } while (cursor);
   waiting.sort((x, y) => (y.at || 0) - (x.at || 0));
   html += '<h2>Waiting to be removed</h2>' + (waiting.length
-    ? '<p>Playlists the Worker made for visitors. Each goes at the first calendar visit after it is ' + (KEEP_DAYS === 1 ? 'a day' : KEEP_DAYS + ' days') + ' old.</p><ul>' + waiting.map(m => '<li>' + plLine(m.name, m.n, m.id) + ', made ' + (m.at ? uk(m.at) : 'at an unknown time') + '</li>').join('') + '</ul>'
+    ? '<p>Playlists the Worker made for visitors. Each goes at the Worker’s first look at the playlist after it is ' + (KEEP_DAYS === 1 ? 'a day' : KEEP_DAYS + ' days') + ' old.</p><ul>' + waiting.map(m => '<li>' + plLine(m.name, m.n, m.id) + ', made ' + (m.at ? uk(m.at) : 'at an unknown time') + '</li>').join('') + '</ul>'
     : '<p>None.</p>');
 
   const removed = (await env.SOTD.get('removed', 'json')) || [];
@@ -273,6 +272,8 @@ async function playlistItems(token) {
 }
 
 async function allowedTracks(env, token, fresh) {
+  const kept = await env.SOTD.get('songsLast', 'json');   // the songs on the calendar (see songsJson): no need to ask Spotify
+  if (kept && kept.songs && kept.songs.length) return new Set(kept.songs.map(s => s.id));
   const cached = fresh ? null : await env.SOTD.get('allowed', 'json');
   if (cached && cached.at > Date.now() - 6 * 3600e3) return new Set(cached.ids);
   const ids = (await playlistItems(token)).map(i => i.id);
@@ -321,43 +322,59 @@ async function makePlaylist(request, url, env) {
 }
 
 // ---------- the playlist as it is now, for the website calendar ----------
+//
+// Only the Worker's timer reads the playlist from Spotify (readPlaylist, from timerSongs: from 06:00 until the day's song
+// is in). songs.json, for the calendar, the apps, the admin pages, the site job and the rest, is the list the timer last
+// read (KV songsLast), with the newest previews and moods (John, 28 Oct 2026: a calendar visit needn't read Spotify).
+// A change made to the playlist after the day's song is in shows the next morning. Only when nothing has been kept yet
+// does songs.json read Spotify itself.
 
-async function songsJson(request, env, ctx) {
-  const cacheKey = new Request(new URL('/songs.json?v=3', request.url).toString());   // bump to drop cached copies after a format change
-  const hit = await caches.default.match(cacheKey);
-  if (hit) return hit;
-  let items;
-  try {
-    items = await playlistItems(await getToken(env));
-  } catch (e) {   // Spotify says wait: the last list read, saying so (stale: since when, and until when Spotify said wait)
-    if (!(e instanceof HttpError && e.extra.spotify)) throw e;
-    ctx.waitUntil(noteSpotifyWait(env));
-    const last = await env.SOTD.get('songsLast', 'json');
-    if (!last) throw e;
-    const res = new Response(JSON.stringify({ at: last.at, stale: { since: last.at, until: new Date(spotifyUntil).toISOString() }, songs: last.songs }), { headers: {
-      'Content-Type': 'application/json; charset=utf-8', 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'public, max-age=300'
-    } });
-    ctx.waitUntil(caches.default.put(cacheKey, res.clone()));
-    return res;
-  }
+const SONG_FIELDS = ['a', 'id', 'title', 'artist', 'artists', 'aids', 'album', 'alid', 'img'];
+function composeSongs(items, pv, tags) {   // each song as songs.json gives it: n, the playlist's fields, p (preview), tag (moods)
+  return items.map((it, i) => {
+    const x = { n: i + 1 };
+    for (const k of SONG_FIELDS) if (it[k] !== undefined) x[k] = it[k];
+    if (pv[it.id] && pv[it.id] !== '-') x.p = 'https://p.scdn.co/mp3-preview/' + pv[it.id];
+    const t = tags[it.id];
+    if (t && (t.m || (t.g || []).length)) x.tag = { m: t.m, d: t.d, g: t.g };
+    return x;
+  });
+}
+async function readPlaylist(env, ctx) {   // Spotify's playlist now (the timer only); kept in KV songsLast; starts the site job when it changed
+  const items = await playlistItems(await getToken(env));
   let pv = Object.assign({}, pvMem, (await env.SOTD.get('previews', 'json')) || {});
   // a song added since the last look-up gets its preview now, so the calendar never shows it without one
   if (items.some(it => !(it.id in pv))) pv = await fillPreviews(env, items, 3, pv);
   const tags = (await env.SOTD.get('tags', 'json')) || {};
-  const songs = items.map((it, i) => Object.assign({ n: i + 1 }, it,
-    pv[it.id] && pv[it.id] !== '-' ? { p: 'https://p.scdn.co/mp3-preview/' + pv[it.id] } : {},
-    tags[it.id] && (tags[it.id].m || (tags[it.id].g || []).length) ? { tag: { m: tags[it.id].m, d: tags[it.id].d, g: tags[it.id].g } } : {}));
+  const songs = composeSongs(items, pv, tags);
   if (items.some(it => !(it.id in pv))) ctx.waitUntil(fillPreviews(env, items, 6).catch(() => {}));
   ctx.waitUntil(afterLook(env, items).catch(e => console.log('afterLook: ' + (e && e.message))));
   const at = new Date().toISOString();
-  const res = new Response(JSON.stringify({ at, songs }), { headers: {
+  await keepLast(env, at, songs);
+  return { at, songs };
+}
+async function songsJson(request, env, ctx) {
+  const cacheKey = new Request(new URL('/songs.json?v=3', request.url).toString());   // bump to drop cached copies after a format change
+  const hit = await caches.default.match(cacheKey);
+  if (hit) return hit;
+  const kept = await env.SOTD.get('songsLast', 'json');
+  let at, songs;
+  if (kept && kept.songs && kept.songs.length) {
+    const pv = Object.assign({}, pvMem, (await env.SOTD.get('previews', 'json')) || {});
+    const tags = (await env.SOTD.get('tags', 'json')) || {};
+    at = kept.at; songs = composeSongs(kept.songs, pv, tags);
+  } else {
+    ({ at, songs } = await readPlaylist(env, ctx));   // nothing kept yet
+  }
+  const body = { at, songs };
+  if (await spotifyWaiting(env)) body.stale = { since: at, until: new Date(spotifyUntil).toISOString() };   // (Spotify said wait)
+  const res = new Response(JSON.stringify(body), { headers: {
     'Content-Type': 'application/json; charset=utf-8', 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'public, max-age=600'
   } });
   ctx.waitUntil(caches.default.put(cacheKey, res.clone()));
-  ctx.waitUntil(keepLast(env, at, songs).catch(() => {}));
   return res;
 }
-async function keepLast(env, at, songs) {   // the list as last read, for when Spotify says wait (written only when it changes)
+async function keepLast(env, at, songs) {   // the list as last read (written only when it changes)
   const s = JSON.stringify(songs), old = await env.SOTD.get('songsLast', 'json');
   if (old && JSON.stringify(old.songs) === s) return;
   await kvSoft(env, 'songsLast', JSON.stringify({ at, songs }));
@@ -528,7 +545,7 @@ function songSteps(it, d, now) {   // one song's way to the calendar
     else if (jobAt >= added && tags && tags.bad) step('job', 'Found by the site job', 'bad', 'The site job failed: see Jobs below', { at: tags.at, url: tags.url });
     else if (jobAt >= added && now - jobAt > STALL.job) step('job', 'Found by the site job', 'bad', 'The site job started but didn’t save it', { at: job.at, url: tags && tags.url });
     else if (jobAt >= added) step('job', 'Found by the site job', 'wait', 'The site job has started', { at: job.at });
-    else step('job', 'Found by the site job', 'wait', 'The site job starts at the Worker’s next look (every 10 minutes from 06:00) or when someone opens the calendar');
+    else step('job', 'Found by the site job', 'wait', 'The site job starts at the Worker’s next look at the playlist (every 10 minutes from 06:00)');
   }
   // the YouTube playlist: a song joins as soon as it has a video, published or not (John, 28 Oct 2026; youtube_playlist.py)
   if (YT[id]) step('yt', 'On the YouTube playlist', 'ok', '');
@@ -2329,9 +2346,9 @@ function londonHour(d) {
 }
 // The timer's song list (John, 28 Oct 2026: "We don't need the worker's timer to run all day once a song is added -
 // there is no point checking for another song again until the next day. Start at 6am and stop it after a new song is
-// added"): from 06:00 UK time it reads the playlist as songs.json does (Spotify, unless a 10-minute copy is at hand),
+// added"): from 06:00 UK time it reads the playlist from Spotify,
 // until the list it kept (KV songsLast) has a song added today; before 06:00, and once the day's song is in, it uses
-// that kept list and asks Spotify nothing. (Calendar visits still read it as before.)
+// that kept list and asks Spotify nothing. Nothing else reads the playlist from Spotify (see songsJson).
 const TIMER_FROM_HOUR = 6;
 async function timerSongs(env, ctx, now) {
   const kept = await env.SOTD.get('songsLast', 'json');
@@ -2339,8 +2356,13 @@ async function timerSongs(env, ctx, now) {
   const newest = list.reduce((m, x) => (x.a > m ? x.a : m), '');
   const today = londonDay(now), haveToday = !!newest && londonDay(newest) === today;
   if (list.length && (haveToday || londonHour(now) < TIMER_FROM_HOUR)) return list;
-  const j = await (await songsJson(new Request(LIVE_ORIGIN + '/songs.json'), env, ctx)).json();
-  return j.songs || [];
+  try {
+    return (await readPlaylist(env, ctx)).songs;
+  } catch (e) {   // Spotify says wait: the kept list (for the notification), Spotify asked nothing more until the wait is over
+    if (!(e instanceof HttpError && e.extra.spotify) || !list.length) throw e;
+    await noteSpotifyWait(env);
+    return list;
+  }
 }
 
 async function afterLook(env, items) {
