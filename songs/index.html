@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="sotd-build" content="38dccae6574a">
+<meta name="sotd-build" content="bc4e2168417b">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 261 so far">
 <meta name="theme-color" content="#ec135b">
@@ -3960,29 +3960,37 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
 
   // ---- what's playing, kept through a reload or a visit away from the calendar (members): saved as it plays; on the
   // calendar's next opening My playlist's box shows it, paused where it was (a phone won't start sound by itself), and
-  // its play button carries on from there, the playlist or the days with it ----
-  var RES_KEY = 'sotd-resume', RESUME = null, resumeAt = 0, resumeFor = '';
+  // its play button carries on from there, the playlist or the days with it. A refresh while it plays (John, 28 Oct
+  // 2026: the Chrome app's window, refreshed, stopped the song and lost the box) carries straight on from where it was,
+  // with the day's page if that was showing: the sound starts by itself where the browser allows it (an installed app
+  // does), else the box shows it paused there. A song newer than the page's own copy of the list waits for the live
+  // list (before, it was taken for one that had gone, and forgotten). ----
+  var RES_KEY = 'sotd-resume', RESUME = null, resumeAt = 0, resumeFor = '', LIVE_IN = !(DATA.live && window.fetch && window.Intl);
+  var RELOADED = (function () { try { var n = performance.getEntriesByType('navigation')[0]; return !!n && n.type === 'reload'; } catch (e) { return false; } })();
+  function resumeCarry(st) { return RELOADED && !!st && !!st.playing && Date.now() - (st.at || 0) < 10 * 60e3; }
   function resumeSave() {
     if (!MEMBER || TV || !vplay || !vplay.el || !vplay.el.sotd || !sheet.open || NOW.taken) return;
     var s = vplay.el.sotd.s, pos = 0;
     try { pos = vplay.player && vplay.player.getCurrentTime ? vplay.player.getCurrentTime() : 0; } catch (e) {}
-    var st = { t: s.track, d: s.d, pos: Math.floor(pos || 0), at: Date.now(),
+    var st = { t: s.track, d: s.d, pos: Math.floor(pos || 0), at: Date.now(), playing: !!vplay.on, open: !bgOn,
       q: queue ? { list: queue.list, i: queue.i, name: queue.name, back: queue.back, order: queue.order } : null };
     try { localStorage.setItem(RES_KEY, JSON.stringify(st)); } catch (e) {}
   }
   function resumeForget() { try { localStorage.removeItem(RES_KEY); } catch (e) {} }
   setInterval(function () { if (vplay && vplay.on) resumeSave(); }, 4000);
-  window.addEventListener('pagehide', function () { if (vplay && (vplay.on || bgOn)) resumeSave(); });
+  window.addEventListener('pagehide', function () { if (vplay && vplay.el) resumeSave(); });   // (paused too: a refresh then doesn't start it)
   document.addEventListener('visibilitychange', function () { if (document.hidden && vplay && vplay.on) resumeSave(); });
   sheet.addEventListener('close', function () { if (!RESUME) { resumeForget(); nowStop(); setTimeout(nowFetch, 300); } });   // closed, not playing on: nothing to carry on here (another device's, if one's playing)
   function resumeInit() {
     if (resumeInit.done || !MEMBER || TV) return;
-    resumeInit.done = true;
     var st = null;
     try { st = JSON.parse(localStorage.getItem(RES_KEY) || 'null'); } catch (e) {}
+    if (st && !byTrack[st.t] && !LIVE_IN) return;   // (a newer song than the page's own list: the live list brings it)
+    resumeInit.done = true;
     if (!st || !byTrack[st.t] || Date.now() - (st.at || 0) > 24 * 3600e3) { resumeForget(); return; }
     if (sheet.open || bgOn) return;   // a day already opened (a shared link): that instead
     resumeShow(st);
+    if (resumeCarry(st)) resumeGo(!!st.open);   // a refresh while it played: on from where it was
   }
   function resumeShow(st) {   // My playlist's box showing it, paused, to carry on with
     RESUME = st;
@@ -6139,6 +6147,11 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     linkVideo = playMode === 'video';   // the videos list may not be here yet: start the video when it is
     if (m) try { history.replaceState(null, '', location.pathname + location.hash); } catch (e) {}
   })();
+  // a refresh while a day's song played: the day comes back playing from where it was (resumeInit), not from its start
+  (function () {
+    var st = null; try { st = JSON.parse(localStorage.getItem(RES_KEY) || 'null'); } catch (e) {}
+    if (nowTok() && !TV && resumeCarry(st) && st.open && dayFromHash() === st.d) try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+  })();
   var linkWait = !!(dayFromHash() || monthFromHash()) && !!DATA.live && !!window.fetch && !!window.Intl;
   if (monthFromHash()) { openFromHash(); }
   else if (dayFromHash() && !(linkWait && (location.hash === '#today' || !byDate[dayFromHash()]))) { openFromHash(); linkWait = false; }
@@ -6174,10 +6187,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       document.querySelectorAll('#picks .pick .facts').forEach(function (fx) { if (fx._song) fillFacts(fx, fx._song); });
     }).catch(function () {});
   }
-  // a new song is held back until its facts are written and checked (by then its video's been looked for too): it's out
-  // once it's in facts.json. The draft holds it back the same way (John, 26 Oct 2026: the live calendar and the draft
-  // exactly the same). Days are worked out from the whole playlist first, so a held-back song doesn't move the day of
-  // the one before it.
+  // a new song is held back until it's in facts.json, once John signs it off (John, 28 Oct 2026: he checks the facts and
+  // adds his own song and video first). The draft holds it back the same way (John, 26 Oct 2026: the live calendar and
+  // the draft exactly the same). Days are worked out from the whole playlist first, so a held-back song doesn't move the
+  // day of the one before it.
   function outOnly(list, fx) {
     return list.filter(function (s) { return fx ? !!((fx.songs && fx.songs[s.track]) || (fx.signed && fx.signed[s.track])) : !!byTrack[s.track]; });
   }
@@ -6193,7 +6206,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     Promise.all([fetch(DATA.live).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }),
       factsGot ? factsGot.catch(function () { return null; }) : null]).then(function (got) {
       var j = got[0];
-      if (!j.songs || !j.songs.length) return;
+      if (!j.songs || !j.songs.length) { LIVE_IN = true; resumeInit(); return; }
       var list = outOnly(liveSongs(j.songs), got[1]);
       var same = list.length === songs.length && list.every(function (s, i) { return s.track === songs[i].track && s.d === songs[i].d; });
       if (!same) {
@@ -6203,7 +6216,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         if (idx.open) renderIndex();
       }
       if (linkWait) { linkWait = false; openFromHash(); }
-    }).catch(function () { if (linkWait) { linkWait = false; openFromHash(); } });
+      LIVE_IN = true; resumeInit();   // (what played before a reload, if it's a song the live list has brought)
+    }).catch(function () { if (linkWait) { linkWait = false; openFromHash(); } LIVE_IN = true; resumeInit(); });
   }
 
   // ---- on a TV, worked by the remote. The screen is in three rows: the bar (Search, the month to My playlist, and
