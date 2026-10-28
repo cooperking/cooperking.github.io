@@ -5,13 +5,11 @@
  * A web app run as John, for anyone with its address and key. The Worker (sotd-playlists) sends
  * { key, to, subject, text } as JSON; the answer is { ok: true, left } or { error }.
  *
- * Set up once (John, with clasp, 28 Oct 2026):
- *   clasp create-script --type standalone --title "Song of the Day mailer"
- *   clasp push
- *   clasp open-script               then run setUp(): Google asks to let it send email as you; the log shows the key
- *   clasp create-deployment --description "Song of the Day mailer"
- * The web app's address is https://script.google.com/macros/s/<the deployment's id>/exec. Both go in the repository's
- * secrets, MAILER_URL and MAILER_KEY; the Worker's job (worker.yml) puts them on the Worker.
+ * Set up once with clasp, from this folder: sh setup.sh (it makes the project, pushes this code, deploys it as a web
+ * app, writes its address to mailer-url.txt and opens the editor). Then run setUp() there: Google asks to let it send
+ * email as you, and the log shows the key. The address and the key go in the site repository's secrets, MAILER_URL and
+ * MAILER_KEY; the Worker's job (worker.yml) puts them on the Worker. After a change here: clasp push -f, then
+ * clasp redeploy <the deployment's id> (the same address).
  */
 function doPost(e) {
   var b = {};
