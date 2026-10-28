@@ -26,10 +26,15 @@ call that fails fails that step of the job, so the run shows as failed. The admi
 (`songs/status-admin.html`, from the Worker's admin op `status`) shows each new song's steps to the calendar, that call,
 and the latest run of each GitHub job, with a count of what has failed or is stuck on its tab. It checks again when
 opened, every minute while open and after a sign-off; *Dealt with* on a failed thing stops it counting (KV statusAck,
-30 days), and anything new that fails shows again. The notifications sent are there too: each song's as its last step (sent, or what it's waiting
-for: John's MP3 and video), and the last 12 (KV pushLog, kept by `pushAll`), with how many devices took each. When the task's token stops
+30 days), and anything new that fails shows again. The notifications sent are there too: each song's as its last step (sent, or waiting for it to
+come out on the calendar), and the last 12 (KV pushLog, kept by `pushAll`), with how many devices took each. When the task's token stops
 working ("OAuth access token has been revoked": 28 Oct 2026, after John changed his Google password), make a new one on
 the task's page and put it in the SOTD_FACTS_TOKEN secret; Run on the task's page writes the songs waiting meanwhile.
+
+A new song's notification goes to the members as it comes out on the live calendar: the site job's last step
+(`_sotd/push_live.py`) waits for the live site's `songs/today.json` to name it, then asks the Worker (`/push/check`),
+which checks the live site itself and sends it once (the Worker's 10-minute look does the same, in case that call is
+lost). Before 28 Oct 2026 it waited for John's MP3 and video instead.
 
 1. `git pull` in the repository (cooperking/cooperking.github.io).
 2. `python3 _sotd/facts_todo.py <work folder>`. If it says 0 songs need facts, stop: nothing to report. A song only

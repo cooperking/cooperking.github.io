@@ -67,6 +67,7 @@ export default {
       if (url.pathname === '/facts/signed') return await factsSigned(env);
       if (url.pathname === '/facts/signoff') return await factsSignoff(request, env);
       if (url.pathname.startsWith('/members/')) return await members(request, url, env);
+      if (url.pathname === '/push/check') return await pushCheck(request, env, ctx);
       if (url.pathname.startsWith('/m/')) return await mediaFile(request, url, env);
       if (url.pathname === '/media/report') return await mediaReport(url, env);
       if (url.pathname === '/app.webmanifest') return appManifest(url);
@@ -81,8 +82,8 @@ export default {
       return page('Something went wrong', '<p>The playlist could not be made. Please try again later.</p><p class="small">' + esc(e.message || String(e)) + '</p>', 500);
     }
   },
-  // every 10 minutes (the Worker's cron, set by worker_deploy.py): a new song on the playlist today goes out as a
-  // notification to the members who've turned them on (see the notifications section)
+  // every 10 minutes (the Worker's cron, set by worker_deploy.py): the day's song, once it's out on the live calendar,
+  // goes to the members as a notification if the site job's call (/push/check) hasn't sent it already (see pushDaily)
   async scheduled(event, env, ctx) {
     ctx.waitUntil((async () => {
       const res = await songsJson(new Request(LIVE_ORIGIN + '/songs.json'), env, ctx);
@@ -309,7 +310,6 @@ async function songsJson(request, env, ctx) {
     tags[it.id] && (tags[it.id].m || (tags[it.id].g || []).length) ? { tag: { m: tags[it.id].m, d: tags[it.id].d, g: tags[it.id].g } } : {}));
   if (items.some(it => !(it.id in pv))) ctx.waitUntil(fillPreviews(env, items, 6).catch(() => {}));
   ctx.waitUntil(afterLook(env, items).catch(e => console.log('afterLook: ' + (e && e.message))));
-  ctx.waitUntil(pushDaily(env, items).catch(e => console.log('pushDaily: ' + (e && e.message))));   // (the cron does this too)
   const res = new Response(JSON.stringify({ at: new Date().toISOString(), songs }), { headers: {
     'Content-Type': 'application/json; charset=utf-8', 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'public, max-age=600'
   } });
@@ -464,7 +464,7 @@ async function jobRuns(env) {   // the latest run of each GitHub job; a failed o
   return out;
 }
 function songSteps(it, d, now) {   // one song's way to the calendar
-  const { job, runs, S, asked, task, F, V, signedNow, log, pushSent, cat, newest } = d;
+  const { job, runs, S, asked, task, F, V, signedNow, log, pushSent, newest } = d;
   const added = Date.parse(it.a) || 0, id = it.id, steps = [];
   const step = (k, t, st, say, extra) => steps.push(Object.assign({ k, t, st, say: say || '' }, st === 'bad' ? { key: 's:' + id + ':' + k } : {}, extra || {}));
   const tags = runs.find(r => r.name === 'Song moods and genres') || null;
@@ -501,15 +501,14 @@ function songSteps(it, d, now) {   // one song's way to the calendar
   if (F.signed && F.signed[id]) step('signed', 'Signed off by you', 'ok', '');
   else if (signedNow[id]) step('signed', 'Signed off by you', 'ok', 'Going onto the calendar now', { at: signedNow[id].at });
   else step('signed', 'Signed off by you', 'wait', out ? 'Waiting for you on the Songs tab' : '');
-  // 6. the members' notification (pushDaily: the newest song, no more than two days old, once John's MP3 and video are
-  // both up; the Worker looks every 10 minutes)
+  // 6. the members' notification (pushDaily: the newest song, no more than two days old, as it comes out on the live
+  // calendar)
   const sentE = log.find(e => e.track === id) || log.find(e => e.kind === 'song' && e.title === it.title && e.at >= added && e.at - added < 3 * DAY);
-  const files = cat[id] || {}, missing = [!files.a && 'your MP3', !files.v && 'your video'].filter(Boolean);
   if (sentE || pushSent.includes(id)) step('sent', 'Sent to members', 'ok', sentE ? pushSay(sentE) : '', sentE ? { at: new Date(sentE.at).toISOString() } : {});
   else if (newest !== id) step('sent', 'Sent to members', 'wait', 'Not sent: a newer song came after it');
   else if ((Date.parse(londonDay()) - Date.parse(londonDay(it.a))) / DAY > 2) step('sent', 'Sent to members', 'wait', 'Not sent: more than two days old');
-  else if (missing.length) step('sent', 'Sent to members', 'wait', 'Goes to members once ' + missing.join(' and ') + (missing.length > 1 ? ' are' : ' is') + ' up (the Songs tab)');
-  else step('sent', 'Sent to members', 'wait', 'Goes to members within 10 minutes');
+  else if (!out) step('sent', 'Sent to members', 'wait', 'Goes to members as it comes out on the calendar');
+  else step('sent', 'Sent to members', 'wait', 'Going to members as the calendar shows it (a minute or two)');
   return { id, n: it.n, title: it.title, artist: it.artist, added: it.a, out, steps };
 }
 function pushSay(e) {   // how a notification went
@@ -525,8 +524,8 @@ function pushSay(e) {   // how a notification went
 function ago(ms) { const m = Math.round(ms / 60e3); return m < 60 ? m + ' min' : Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + (m % 60) + ' min' : ''); }
 async function adminStatus(env) {
   const now = Date.now(), errors = [];
-  const [job, ack, signedNow, ref, log, pushSent, cat] = await Promise.all([env.SOTD.get('job', 'json'), env.SOTD.get('statusAck', 'json'),
-    env.SOTD.get('factsSigned', 'json'), mainSha(env), pushHistory(env), env.SOTD.get('pushSent', 'json'), catalog(env)]);
+  const [job, ack, signedNow, ref, log, pushSent] = await Promise.all([env.SOTD.get('job', 'json'), env.SOTD.get('statusAck', 'json'),
+    env.SOTD.get('factsSigned', 'json'), mainSha(env), pushHistory(env), env.SOTD.get('pushSent', 'json')]);
   const acked = ack || {};
   const soft = (p, f) => p.catch(e => { errors.push(String(e && e.message || e)); return f; });
   const [items, runs, sources, asked, task, F, V] = await Promise.all([
@@ -540,7 +539,7 @@ async function adminStatus(env) {
   if (!env.GH_TOKEN) errors.push('The GH_TOKEN secret is not set, so the GitHub jobs can’t be read.');
   const list = items.map((it, i) => Object.assign({ n: i + 1 }, it)).sort((a, b) => (a.a < b.a ? 1 : -1));
   const d = { job: job || {}, runs, S: sources.songs || {}, asked, task, F, V: V.videos || {}, signedNow: signedNow || {},
-    log: log || [], pushSent: pushSent || [], cat: cat || {}, newest: items.length ? items[items.length - 1].id : '' };
+    log: log || [], pushSent: pushSent || [], newest: items.length ? items[items.length - 1].id : '' };
   const isOut = it => !!(F.songs && F.songs[it.id]) || !!(F.signed && F.signed[it.id]);
   const show = list.filter(it => !isOut(it)).concat(list.filter(isOut).slice(0, 2)).sort((a, b) => (a.a < b.a ? 1 : -1));
   const songs = show.map(it => songSteps(it, d, now));
@@ -1715,9 +1714,9 @@ let jobDay = '';   // the London day this copy of the Worker saw a run include t
 // is gone (404/410) is dropped. Each message is encrypted for that device (RFC 8291, aes128gcm) and signed with this
 // Worker's own VAPID key (RFC 8292), made the first time it's needed and kept in KV (vapid); the calendar fetches the
 // public half. A new key would end every subscription, so it's never replaced.
-// The day's song goes out once, when it's the newest on the playlist and John's MP3 and video for it are both up (the
-// cron looks every 10 minutes, and so does every fresh look at the playlist for songs.json). The very first look only
-// notes the song. John's own messages come from the members page (op 'push').
+// The day's song goes out once, as it comes out on the live calendar (see pushDaily: the site job asks then, and the cron
+// looks every 10 minutes in case that's lost). The very first look only notes the song. John's own messages come from
+// the members page (op 'push').
 const LIVE_ORIGIN = 'https://sotd-playlists.cooperking.workers.dev';
 const SITE_SONGS = 'https://cooperking.github.io/songs/';
 const PUSH_MAX = 300, PUSH_TTL = 20 * 3600;
@@ -1964,33 +1963,54 @@ async function memberApns(env, member, body, answer) {   // the iPhone app's dev
 }
 
 let pushDone = '';   // this Worker's own note of the last song sent (so most looks don't read KV)
-// the day's song goes out once both of John's files for it are up (his MP3 and his video), while it's still the newest
-// song and no more than two days old (UK time); until then each look (every 10 minutes) checks again
+// The day's song goes to the members when it comes out on the live calendar (John, 28 Oct 2026: "can't a push just be
+// when a new song goes live?"; before, it waited for his MP3 and video). The site job asks as soon as the live site shows
+// it (_sotd/push_live.py, /push/check), and the 10-minute cron looks too, in case that call is lost; each checks the
+// live site itself (songs/today.json names the latest song out), and only the newest song, no more than two days old
+// (UK time), goes, once. Says what it did.
+async function liveToday() {   // the latest song the live calendar shows (written by share_pages.py with each release)
+  return fetch(SITE_SONGS + 'today.json?t=' + Date.now(), { headers: { 'User-Agent': 'SongOfTheDayWorker' }, cf: { cacheTtl: 0 } })
+    .then(r => r.ok ? r.json() : null).catch(() => null);
+}
 async function pushDaily(env, items) {
   const last = items[items.length - 1];
-  if (!last || !last.id || pushDone === last.id) return;
+  if (!last || !last.id) return 'no songs';
+  if (pushDone === last.id) return 'sent already';
   const sentRaw = await env.SOTD.get('pushSent', 'json');
-  if (!sentRaw) { await kvSoft(env, 'pushSent', JSON.stringify([last.id])); pushDone = last.id; return; }   // the very first look: noted, not sent
-  if (sentRaw.includes(last.id)) { pushDone = last.id; return; }
+  if (!sentRaw) { await kvSoft(env, 'pushSent', JSON.stringify([last.id])); pushDone = last.id; return 'first look: noted, not sent'; }
+  if (sentRaw.includes(last.id)) { pushDone = last.id; return 'sent already'; }
   const day = londonDay(last.a);
-  if ((Date.parse(londonDay()) - Date.parse(day)) / DAY > 2) { pushDone = last.id; return; }   // too old to be news
-  const files = (await catalog(env))[last.id] || {};
-  if (!files.a || !files.v) return;   // waiting for the MP3 and the video
+  if ((Date.parse(londonDay()) - Date.parse(day)) / DAY > 2) { pushDone = last.id; return 'too old to send'; }
+  const live = await liveToday();
+  if (!live || !(live.track ? live.track === last.id : live.title === last.title && live.date === day)) return 'not out on the calendar yet';
   // only one look sends it: two at the same moment (the cron and a visit) both found it unsent on 28 Oct 2026 and sent it
   // twice, 2 ms apart, since KV can't say who was first; the Durable Object can
   if (env.NOW) {
     const once = await env.NOW.get(env.NOW.idFromName('_once')).fetch('https://now/once', { method: 'POST', body: JSON.stringify({ key: 'push:' + last.id }) })
       .then(r => r.json()).catch(() => null);
-    if (!once) return;   // (couldn't ask: tried again at the next look)
-    if (!once.first) { pushDone = last.id; return; }   // another look is sending it
+    if (!once) return 'couldn’t check it wasn’t being sent: tried again at the next look';
+    if (!once.first) { pushDone = last.id; return 'being sent by another look'; }
   }
-  if (!await kvSoft(env, 'pushSent', JSON.stringify(sentRaw.concat(last.id).slice(-60)))) return;   // can't note it: don't send (it could go twice)
+  if (!await kvSoft(env, 'pushSent', JSON.stringify(sentRaw.concat(last.id).slice(-60)))) return 'couldn’t note it: not sent (it could go twice)';
   pushDone = last.id;
-  const slug = day.slice(8, 10) + '-' + day.slice(5, 7) + '-' + day.slice(0, 4), card = SITE_SONGS + slug + '/card.jpg';
-  const hasCard = await fetch(card, { method: 'HEAD' }).then(r => r.ok, () => false);   // the day's share card, once the site has made it
+  const slug = live.slug || day.slice(8, 10) + '-' + day.slice(5, 7) + '-' + day.slice(0, 4);
   const r = await pushAll(env, Object.assign({ title: last.title, body: last.artist + (day === londonDay() ? ' \u00b7 today\u2019s Song of the Day' : ' \u00b7 the latest Song of the Day'), icon: last.img || '',
-    url: SITE_SONGS + '#' + slug, tag: 'sotd-day' }, hasCard ? { image: card } : {}), null, { kind: 'song', track: last.id });
+    url: SITE_SONGS + '#' + slug, tag: 'sotd-day' }, live.card ? { image: live.card } : {}), null, { kind: 'song', track: last.id });   // (the day's share card, made with the release)
   console.log('pushDaily ' + last.id + ': ' + JSON.stringify(r));
+  return 'sent: ' + pushSay(Object.assign({}, r, { devices: r.devices + r.gone }));
+}
+// /push/check: the site job, as soon as the live site shows a new song (_sotd/push_live.py). Anyone may ask: it only ever
+// sends the newest song, once it's out on the live calendar, and only once (a few asks a minute at most).
+async function pushCheck(request, env, ctx) {
+  const h = { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' };
+  if (request.method !== 'POST') return new Response(JSON.stringify({ error: 'Use POST.' }), { status: 405, headers: h });
+  const k = 'pushcheck:' + new Date().toISOString().slice(0, 16), n = Number(await env.SOTD.get(k)) || 0;
+  if (n >= 6) return new Response(JSON.stringify({ error: 'Asked a lot this minute: the 10-minute look will do it.' }), { status: 429, headers: h });
+  await kvSoft(env, k, String(n + 1), { expirationTtl: 120 });
+  const res = await songsJson(new Request(LIVE_ORIGIN + '/songs.json'), env, ctx);
+  const j = await res.json();
+  const did = await pushDaily(env, (j.songs || []).map(x => ({ id: x.id, a: x.a, title: x.title, artist: x.artist, img: x.img })));
+  return new Response(JSON.stringify({ did }), { headers: h });
 }
 
 // ---------- Alexa: John's own Song of the Day skill ----------

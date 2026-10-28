@@ -137,3 +137,8 @@ jobs:
           fi
           if [ "$rc" != 0 ]; then echo "::error title=Facts task not started::$(python -c 'import json; print(json.load(open("_sotd/data/facts-task.json"))["said"])')"; fi
           exit "$rc"
+
+      # a song just out on the calendar: its notification to the members now, once the live site shows it (push_live.py)
+      - name: Tell the members' phones when a new song is out
+        if: ${{ !cancelled() }}
+        run: python _sotd/push_live.py
