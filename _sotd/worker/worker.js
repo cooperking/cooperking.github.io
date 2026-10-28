@@ -78,6 +78,7 @@ export default {
       if (url.pathname === '/covers.json' || url.pathname.startsWith('/c/') || url.pathname.startsWith('/s/')) return await ownCover(request, url, env);
       return page('Song of the Day', '<p>This service makes Spotify playlists from the Song of the Day calendar.</p>');
     } catch (e) {
+      if (e instanceof HttpError && e.extra.spotify) ctx.waitUntil(noteSpotifyWait(env));   // (Spotify said wait: kept for every request)
       if (e instanceof HttpError) return errorPage(e);
       return page('Something went wrong', '<p>The playlist could not be made. Please try again later.</p><p class="small">' + esc(e.message || String(e)) + '</p>', 500);
     }
@@ -188,6 +189,7 @@ async function kvSoft(env, key, value, opts) {
 // replace the refresh token each time, and losing the newest would mean signing in again
 let authMem = null;
 async function getToken(env) {
+  await spotifyWaiting(env);   // (then spotify() asks nothing until the wait is over)
   let auth = await env.SOTD.get('auth', 'json');
   if (authMem && (!auth || (authMem.expires_at || 0) > (auth.expires_at || 0))) auth = authMem;
   if (!auth) throw new HttpError(503, 'The playlist maker is not set up yet.');
@@ -213,13 +215,37 @@ async function getToken(env) {
   return next.access_token;
 }
 
+// Spotify can tell the Worker to wait: a 429 with Retry-After (on 28 Oct 2026, 1093 minutes). Until then the Worker asks
+// it nothing (KV spotifyWait, and in memory), and the song list is the last one it read (KV songsLast, see songsJson),
+// so the calendar, the site job and the Status tab carry on with that meanwhile.
+let spotifyUntil = 0;
+async function spotifyWaiting(env) {
+  const w = await env.SOTD.get('spotifyWait', 'json').catch(() => null);
+  if (w && w.until > spotifyUntil) spotifyUntil = w.until;
+  return spotifyUntil > Date.now();
+}
+async function noteSpotifyWait(env) {
+  if (spotifyUntil <= Date.now()) return;
+  const w = await env.SOTD.get('spotifyWait', 'json').catch(() => null);
+  if (!w || w.until < spotifyUntil)
+    await kvSoft(env, 'spotifyWait', JSON.stringify({ until: spotifyUntil, at: Date.now() }), { expirationTtl: Math.max(60, Math.ceil((spotifyUntil - Date.now()) / 1000) + 60) });
+}
+function spotifyBusy(retryAfter) {
+  return new HttpError(429, 'Spotify is busy right now.', { retryAfter, spotify: true });
+}
+
 async function spotify(token, path, method, body) {
+  if (spotifyUntil > Date.now()) throw spotifyBusy(String(Math.ceil((spotifyUntil - Date.now()) / 1000)));
   const r = await fetch(path.startsWith('http') ? path : API + path, {
     method: method || 'GET',
     headers: Object.assign({ Authorization: 'Bearer ' + token }, body ? { 'Content-Type': 'application/json' } : {}),
     body: body ? JSON.stringify(body) : undefined
   });
-  if (r.status === 429) throw new HttpError(429, 'Spotify is busy right now.', { retryAfter: r.headers.get('Retry-After') });
+  if (r.status === 429) {
+    const secs = parseInt(r.headers.get('Retry-After') || '', 10);
+    spotifyUntil = Math.max(spotifyUntil, Date.now() + (secs > 0 ? secs : 30) * 1000);
+    throw spotifyBusy(r.headers.get('Retry-After'));
+  }
   const j = r.status === 204 ? {} : await r.json().catch(() => ({}));
   if (!r.ok) throw new Error('Spotify ' + r.status + ': ' + ((j.error && (j.error.message || j.error)) || 'request failed'));
   return j;
@@ -299,8 +325,20 @@ async function songsJson(request, env, ctx) {
   const cacheKey = new Request(new URL('/songs.json?v=3', request.url).toString());   // bump to drop cached copies after a format change
   const hit = await caches.default.match(cacheKey);
   if (hit) return hit;
-  const token = await getToken(env);
-  const items = await playlistItems(token);
+  let items;
+  try {
+    items = await playlistItems(await getToken(env));
+  } catch (e) {   // Spotify says wait: the last list read, saying so (stale: since when, and until when Spotify said wait)
+    if (!(e instanceof HttpError && e.extra.spotify)) throw e;
+    ctx.waitUntil(noteSpotifyWait(env));
+    const last = await env.SOTD.get('songsLast', 'json');
+    if (!last) throw e;
+    const res = new Response(JSON.stringify({ at: last.at, stale: { since: last.at, until: new Date(spotifyUntil).toISOString() }, songs: last.songs }), { headers: {
+      'Content-Type': 'application/json; charset=utf-8', 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'public, max-age=300'
+    } });
+    ctx.waitUntil(caches.default.put(cacheKey, res.clone()));
+    return res;
+  }
   let pv = Object.assign({}, pvMem, (await env.SOTD.get('previews', 'json')) || {});
   // a song added since the last look-up gets its preview now, so the calendar never shows it without one
   if (items.some(it => !(it.id in pv))) pv = await fillPreviews(env, items, 3, pv);
@@ -310,11 +348,18 @@ async function songsJson(request, env, ctx) {
     tags[it.id] && (tags[it.id].m || (tags[it.id].g || []).length) ? { tag: { m: tags[it.id].m, d: tags[it.id].d, g: tags[it.id].g } } : {}));
   if (items.some(it => !(it.id in pv))) ctx.waitUntil(fillPreviews(env, items, 6).catch(() => {}));
   ctx.waitUntil(afterLook(env, items).catch(e => console.log('afterLook: ' + (e && e.message))));
-  const res = new Response(JSON.stringify({ at: new Date().toISOString(), songs }), { headers: {
+  const at = new Date().toISOString();
+  const res = new Response(JSON.stringify({ at, songs }), { headers: {
     'Content-Type': 'application/json; charset=utf-8', 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'public, max-age=600'
   } });
   ctx.waitUntil(caches.default.put(cacheKey, res.clone()));
+  ctx.waitUntil(keepLast(env, at, songs).catch(() => {}));
   return res;
+}
+async function keepLast(env, at, songs) {   // the list as last read, for when Spotify says wait (written only when it changes)
+  const s = JSON.stringify(songs), old = await env.SOTD.get('songsLast', 'json');
+  if (old && JSON.stringify(old.songs) === s) return;
+  await kvSoft(env, 'songsLast', JSON.stringify({ at, songs }));
 }
 
 // ---------- song facts John has signed off ----------
@@ -543,7 +588,8 @@ async function adminStatus(env) {
   const acked = ack || {};
   const soft = (p, f) => p.catch(e => { errors.push(String(e && e.message || e)); return f; });
   const [items, runs, sources, asked, task, F, V, P, Y, pages, waitingLive] = await Promise.all([
-    soft(getToken(env).then(playlistItems), []),
+    soft(songsJson(new Request(LIVE_ORIGIN + '/songs.json'), env, { waitUntil: p => { if (p && p.catch) p.catch(() => {}); } })
+      .then(r => r.json()).then(j => { if (j.stale) errors.push('Spotify has asked the Worker to wait until ' + uk(j.stale.until) + ', so these are the songs as it last read them, at ' + uk(j.stale.since) + '.'); return j.songs || []; }), []),
     env.GH_TOKEN ? soft(jobRuns(env), []) : Promise.resolve([]),
     soft(rawJson('_sotd/data/sources.json', undefined, ref), { songs: {} }),
     soft(rawJson('_sotd/data/facts-asked.json', {}, ref), {}),
@@ -755,6 +801,15 @@ async function members(request, url, env) {
       if (env.NOW) await env.NOW.get(env.NOW.idFromName(body.id)).fetch('https://now/forget', { method: 'POST' }).catch(() => {});
       if (owner === body.id) await env.SOTD.delete('owner');
       return answer(200, { ok: true, members: listing(owner === body.id ? null : owner) });
+    }
+    case 'songslast': {   // one-off, 28 Oct 2026: the Worker's own list from a browser's copy, while Spotify has it wait and before it kept one; refused once it has one
+      if (await env.SOTD.get('songsLast')) return answer(409, { error: 'The Worker has its own copy already.' });
+      const songs = body.songs;
+      const good = Array.isArray(songs) && songs.length >= 200 && songs.length <= 3000 && songs.every((x, i) => x && x.n === i + 1
+        && /^[0-9A-Za-z]{22}$/.test(String(x.id)) && typeof x.title === 'string' && typeof x.a === 'string') && !isNaN(Date.parse(body.at));
+      if (!good) return answer(400, { error: 'Not a song list.' });
+      await env.SOTD.put('songsLast', JSON.stringify({ at: new Date(Date.parse(body.at)).toISOString(), songs }));
+      return answer(200, { ok: true, n: songs.length });
     }
     case 'status': return answer(200, await adminStatus(env));   // the Status tab
     case 'publish': {   // the Status tab's Publish: the draft calendar goes live as it is (golive.yml)
