@@ -27,6 +27,7 @@
 <style>
 .sec { margin: 22px 0 10px; font: 600 11px/1.2 var(--sans); letter-spacing: .16em; text-transform: uppercase; color: var(--ink-2); }
 .list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+#feed { margin-top: 18px; }
 .song { padding: 14px 16px 12px; display: grid; gap: 10px; }
 .song .t { font-family: var(--serif); font-weight: 500; font-size: 22px; line-height: 1.15; color: var(--fg); }
 .song .a { font-size: 13px; color: var(--muted); }
@@ -92,7 +93,7 @@
   <header class="top">
     <h1>Status</h1>
     <p class="sub" id="sum">Checking…</p>
-    <p class="help">Each new song’s way to the calendar and to members’ phones, the notifications sent, and the site’s jobs on GitHub. Checked when this opens, every minute while it’s open, and after a sign-off. A step that fails, or takes much longer than it should, shows in red and counts on the Status tab until it works or you mark it Dealt with.</p>
+    <p class="help">What has changed, newest first: each new song’s way to the calendar and to members’ phones, the facts task, the notifications sent and the site’s jobs on GitHub. Changes waiting on the draft show at the top. Checked when this opens, every minute while it’s open, and after a sign-off. Anything that fails, or takes much longer than it should, shows in red and counts on the Status tab until it works or you mark it Dealt with.</p>
     <div class="row"><button class="glassbtn" id="again" type="button">Check again</button><span class="stat" id="when" style="color: var(--ink-2)"></span></div>
   </header>
   <div class="card errs" id="errs" hidden></div>
@@ -100,16 +101,7 @@
     <p class="sec">Draft and live</p>
     <div class="card fix" id="site"></div>
   </div>
-  <p class="sec">Songs</p>
-  <ul class="list" id="songs"></ul>
-  <div id="taskbox" hidden>
-    <p class="sec">Facts task</p>
-    <div class="card fix" id="task"></div>
-  </div>
-  <p class="sec">Notifications sent</p>
-  <ul class="list" id="notes"></ul>
-  <p class="sec">Jobs on GitHub</p>
-  <ul class="list" id="runs"></ul>
+  <ul class="list" id="feed"></ul>
 </div>
 <script>
 (function () {
@@ -150,10 +142,29 @@
     }
     return d;
   }
-  function drawSongs(songs) {
-    var ul = $('songs'); ul.textContent = '';
-    if (!songs.length) { ul.appendChild(el('li', 'card song', 'No songs to show.')); return; }
-    songs.forEach(function (s) {
+  // everything but the draft and live card, as one list, newest change first (John, 28 Oct 2026: "All other status should
+  // just be a list in order of change, doesn't need to be in different sections"): each song (by its latest step), the
+  // last call to the facts task, each notification sent and each job's latest run (by when it finished, or started)
+  function ms(t) { return typeof t === 'number' ? t : (Date.parse(t || '') || 0); }   // (a notification's at is a number)
+  function when(kind, x) {
+    if (kind === 'song') return x.steps.reduce(function (m, y) { return Math.max(m, ms(y.at)); }, ms(x.added));
+    if (kind === 'run') return ms(x.st === 'completed' ? x.end : x.at) || ms(x.at);
+    return ms(x.at);
+  }
+  function drawFeed(j) {
+    var ul = $('feed'), items = [];
+    (j.songs || []).forEach(function (x) { items.push(['song', x]); });
+    if (j.task) items.push(['task', j.task]);
+    (j.notes || []).forEach(function (x) { items.push(['note', x]); });
+    (j.runs || []).forEach(function (x) { items.push(['run', x]); });
+    items.forEach(function (it) { it.push(when(it[0], it[1])); });
+    items.sort(function (a, b) { return b[2] - a[2]; });
+    ul.textContent = '';
+    items.forEach(function (it) { ul.appendChild({ song: songItem, task: taskItem, note: noteItem, run: runItem }[it[0]](it[1], it[2])); });
+    if (!items.length) ul.appendChild(el('li', 'card run', 'Nothing to show.'));
+  }
+  function songItem(s) {
+    {
       var li = el('li', 'card song'), head = el('div');
       head.appendChild(el('div', 't', s.title));
       head.appendChild(el('div', 'a', s.artist + ' · song ' + s.n + ' · added ' + uk(s.added)));
@@ -172,15 +183,14 @@
         if (x.st === 'bad' && x.key) r.appendChild(dealt(x));
         steps.appendChild(r);
       });
-      li.appendChild(steps); ul.appendChild(li);
-    });
+      li.appendChild(steps);
+      return li;
+    }
   }
-  function drawTask(t) {   // the last call to the facts task, and what to do when it couldn't start
-    $('taskbox').hidden = !t;
-    if (!t) return;
-    var box = $('task'); box.textContent = ''; box.className = 'card fix' + (t.ok ? '' : ' bad') + (t.ack ? ' acked' : '');
+  function taskItem(t) {   // the last call to the facts task, and what to do when it couldn't start
+    var box = el('li', 'card fix task' + (t.ok ? '' : ' bad') + (t.ack ? ' acked' : ''));
     var p = el('div');
-    p.appendChild(el('b', '', uk(t.at) + ': ' + (t.ok ? 'started' : 'couldn’t be started')));
+    p.appendChild(el('b', '', 'Facts task, ' + uk(t.at) + ': ' + (t.ok ? 'started' : 'couldn’t be started')));
     p.appendChild(document.createTextNode(t.ok ? '' : ' (' + t.said + ')'));
     if (t.ok && t.session) { p.appendChild(document.createTextNode(' · ')); p.appendChild(link(t.session, 'Open its session')); }
     box.appendChild(p);
@@ -194,38 +204,33 @@
       box.appendChild(g);
     }
     if (!t.ok && t.key) box.appendChild(dealt(t));
+    return box;
   }
-  function drawRuns(runs) {
-    var ul = $('runs'); ul.textContent = '';
-    runs.slice().sort(function (a, b) { return ((b.bad && !b.ack) - (a.bad && !a.ack)) || (a.at < b.at ? 1 : -1); }).forEach(function (r) {
-      var li = el('li', 'card run' + (r.ack ? ' acked' : '')), res = r.st !== 'completed' ? ['going', r.st === 'queued' ? 'Waiting' : 'Running'] : (RES[r.res] || ['', r.res || r.st]);
-      li.appendChild(el('span', 'nm', r.name));
-      li.appendChild(el('span', 'when', uk(r.at) + ' · run ' + r.n));
-      var right = el('span', 'r'); right.appendChild(el('span', 'badge ' + res[0], res[1])); right.appendChild(link(r.url, 'Open'));
-      li.appendChild(right);
-      if (r.bad && r.steps && r.steps.length) li.appendChild(el('span', 'stop', 'Stopped at: ' + r.steps.join(', ')));
-      if (r.bad && r.key) li.appendChild(dealt(r));
-      ul.appendChild(li);
-    });
-    if (!runs.length) ul.appendChild(el('li', 'card run', 'No jobs to show.'));
+  function runItem(r, t) {   // a GitHub job's latest run
+    var li = el('li', 'card run' + (r.ack ? ' acked' : '')), res = r.st !== 'completed' ? ['going', r.st === 'queued' ? 'Waiting' : 'Running'] : (RES[r.res] || ['', r.res || r.st]);
+    li.appendChild(el('span', 'nm', r.name));
+    li.appendChild(el('span', 'when', uk(t) + ' · job on GitHub, run ' + r.n));
+    var right = el('span', 'r'); right.appendChild(el('span', 'badge ' + res[0], res[1])); right.appendChild(link(r.url, 'Open'));
+    li.appendChild(right);
+    if (r.bad && r.steps && r.steps.length) li.appendChild(el('span', 'stop', 'Stopped at: ' + r.steps.join(', ')));
+    if (r.bad && r.key) li.appendChild(dealt(r));
+    return li;
   }
-  function drawNotes(notes) {   // the notifications sent, newest first: when, what, to how many
-    var ul = $('notes'); ul.textContent = '';
-    notes.forEach(function (e) {
-      var li = el('li', 'card note' + (e.ack ? ' acked' : ''));
-      li.appendChild(el('span', 'nm', e.title));
-      li.appendChild(el('span', 'when', uk(e.at)));
-      var r = el('span', 'r'); r.appendChild(el('span', 'badge' + (e.failed ? ' bad' : ''), e.kind === 'song' ? 'Song' : 'Your note')); li.appendChild(r);
-      li.appendChild(el('span', 'how', (e.say || '') + (e.old && !e.devices ? (e.say ? ' · ' : '') + 'sent before devices were counted here' : '')));
-      (e.errors || []).forEach(function (x) { li.appendChild(el('span', 'err', x.to + ' said ' + (x.status || 'nothing') + (x.why ? ': ' + x.why : ''))); });
-      if (e.failed && e.key) li.appendChild(dealt(e));
-      ul.appendChild(li);
-    });
-    if (!notes.length) ul.appendChild(el('li', 'card note', 'None sent yet.'));
+  function noteItem(e) {   // a notification sent: when, what, to how many
+    var li = el('li', 'card note' + (e.ack ? ' acked' : ''));
+    li.appendChild(el('span', 'nm', e.title));
+    li.appendChild(el('span', 'when', uk(e.at) + ' · notification'));
+    var r = el('span', 'r'); r.appendChild(el('span', 'badge' + (e.failed ? ' bad' : ''), e.kind === 'song' ? 'Song' : 'Your note')); li.appendChild(r);
+    li.appendChild(el('span', 'how', (e.say || '') + (e.old && !e.devices ? (e.say ? ' · ' : '') + 'sent before devices were counted here' : '')));
+    (e.errors || []).forEach(function (x) { li.appendChild(el('span', 'err', x.to + ' said ' + (x.status || 'nothing') + (x.why ? ': ' + x.why : ''))); });
+    if (e.failed && e.key) li.appendChild(dealt(e));
+    return li;
   }
-  function drawSite(x) {   // the draft and the live calendar, against the template
-    $('sitebox').hidden = !x;
-    if (!x) return;
+  function drawSite(x) {   // the draft and the live calendar, against the template: shown only when there's a change
+    // waiting to go live, one going, or something wrong (John, 28 Oct 2026: "Draft and Live box should only show at the
+    // top of the Status screen when there is a change. Don't show it otherwise.")
+    $('sitebox').hidden = !x || x.st === 'ok';
+    if (!x || x.st === 'ok') return;
     var box = $('site'); box.textContent = ''; box.className = 'card fix' + (x.st === 'bad' ? ' bad' : '') + (x.ack ? ' acked' : '');
     box.appendChild(el(x.st === 'bad' ? 'b' : 'div', '', x.say));
     if (x.list && x.list.length) {
@@ -281,7 +286,7 @@
     if (dealtN) $('sum').appendChild(el('span', 'more', ' · ' + dealtN + ' dealt with'));
     $('when').textContent = 'Checked ' + uk(j.at, true);
     $('errs').hidden = !(j.errors && j.errors.length); $('errs').textContent = j.errors && j.errors.length ? 'Couldn’t read everything: ' + j.errors.join('; ') : '';
-    drawSite(j.site); drawSongs(j.songs || []); drawTask(j.task); drawNotes(j.notes || []); drawRuns(j.runs || []);
+    drawSite(j.site); drawFeed(j);
     tell(n);
   }
   function call(body) {
