@@ -802,15 +802,6 @@ async function members(request, url, env) {
       if (owner === body.id) await env.SOTD.delete('owner');
       return answer(200, { ok: true, members: listing(owner === body.id ? null : owner) });
     }
-    case 'songslast': {   // one-off, 28 Oct 2026: the Worker's own list from a browser's copy, while Spotify has it wait and before it kept one; refused once it has one
-      if (await env.SOTD.get('songsLast')) return answer(409, { error: 'The Worker has its own copy already.' });
-      const songs = body.songs;
-      const good = Array.isArray(songs) && songs.length >= 200 && songs.length <= 3000 && songs.every((x, i) => x && x.n === i + 1
-        && /^[0-9A-Za-z]{22}$/.test(String(x.id)) && typeof x.title === 'string' && typeof x.a === 'string') && !isNaN(Date.parse(body.at));
-      if (!good) return answer(400, { error: 'Not a song list.' });
-      await env.SOTD.put('songsLast', JSON.stringify({ at: new Date(Date.parse(body.at)).toISOString(), songs }));
-      return answer(200, { ok: true, n: songs.length });
-    }
     case 'status': return answer(200, await adminStatus(env));   // the Status tab
     case 'publish': {   // the Status tab's Publish: the draft calendar goes live as it is (golive.yml)
       try { await publishDraft(env); } catch (e) { return answer(e.status || 500, { error: e.message }); }
