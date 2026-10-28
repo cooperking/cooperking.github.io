@@ -44,5 +44,9 @@ What there is now:
 | iPhone (`_sotd/ios-app`) | `Capacitor.isNativePlatform()` (`NAT`) | `Capacitor.Plugins.PushNotifications` (`NPUSH`) | nothing |
 | Android (`_sotd/android-app`) | its start address `?app=android-apk&build=N` (Play's copy: `app=android`); first builds: the `android-app://io.github.cooperking.sotd` referrer | nothing: it reads `songs/android.json` and offers the site's APK a newer build | nothing |
 
+Every app, and the browser, also says which it is on `/members/me` (`X-App`: `play:<build>`, `apk:<build>`,
+`ios:<build>`, `tv`, `home`, `web`) for the admin page's Members and Apps tabs (`_sotd/MEMBERS.md`, Which app each device
+uses). The Worker must allow the header before a page sends it (it does from 28 Oct 2026).
+
 Put here on 26 Oct 2026, rebuilt from the live page; `--check` reproduced all four built files exactly. Until then the
 source lived only in each chat's own workspace, so one chat's copy could fall behind another's.
