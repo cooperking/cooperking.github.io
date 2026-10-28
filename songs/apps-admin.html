@@ -155,7 +155,13 @@ code { font-size: 12.5px; background: var(--chip); border: 1px solid var(--line)
     });
   }
   function site(f) { return fetch('/songs/' + f, { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; }); }
-  function day(t) { return new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }); }
+  function day(t) {   // today 21:55, yesterday 21:55, 26 Oct 21:15 (UK time)
+    var d = new Date(t), z = { timeZone: 'Europe/London' }, day = function (x) { return x.toLocaleDateString('en-GB', z); };
+    var hm = d.toLocaleTimeString('en-GB', Object.assign({ hour: '2-digit', minute: '2-digit' }, z));
+    if (day(d) === day(new Date())) return 'today ' + hm;
+    if (day(d) === day(new Date(Date.now() - 864e5))) return 'yesterday ' + hm;
+    return d.toLocaleDateString('en-GB', Object.assign({ day: 'numeric', month: 'short' }, z)) + ' ' + hm;
+  }
   function link(href, text) { var a = document.createElement('a'); a.href = href; a.target = '_blank'; a.rel = 'noopener'; a.textContent = text; return a; }
 
   var MEMBERS = [];

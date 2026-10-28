@@ -122,6 +122,12 @@ Mac...). The Members tab lists each member's devices that way; the Apps tab list
 Android app older than `songs/android.json`'s build. Devices say once the calendar with this (from 28 Oct 2026) is
 live; until then they show what they run on only.
 
+When each device was last active: any signed-in call from it (opening the calendar or coming back to it, its inbox,
+playlists, what's playing, notifications) writes the time to a KV key of its own, `seen:<sign-in hash>` (in the key's
+metadata; at most once every 5 minutes a device; gone after 400 days unused). The Members and Apps tabs show it with the
+time (today 21:55). Until 28 Oct 2026 it was in the members record, rewritten at most every 6 hours, since that one
+value holds every member and a visit rewriting it could put back a copy read before a change on the Members tab.
+
 ## Saved playlists
 
 A member can save My playlist (*Save this playlist* in it, with a name) and keep several. They're kept by the Worker

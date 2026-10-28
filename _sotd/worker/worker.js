@@ -826,8 +826,11 @@ async function members(request, url, env) {
     m.invite = { hash: await sha256hex(code), uses: 0, until: Date.now() + INVITE_DAYS * DAY };
     return MEMBERS_JOIN + code;
   };
+  // when each device was last active (seenTouch): read only for the ops that list the members (not the Status tab's)
+  const seenAt = ['list', 'people', 'invite', 'reinvite', 'email', 'owner', 'remove'].includes(body.op) ? await seenAll(env) : {};
   const listing = (own = owner) => Object.entries(all).map(([id, m]) => ({ id, name: m.name, created: m.created, owner: id === own, email: m.email || '', emailAt: m.emailAt || null,
-    devices: Object.values(m.devices || {}).filter(d => d.did).length, apps: deviceApps(m), passkeys: (m.passkeys || []).length, seen: Math.max(0, ...Object.values(m.devices || {}).map(d => d.seen || 0)) || null,
+    devices: Object.values(m.devices || {}).filter(d => d.did).length, apps: deviceApps(m, seenAt), passkeys: (m.passkeys || []).length,
+    seen: Math.max(0, ...Object.entries(m.devices || {}).map(([h, d]) => Math.max(seenAt[h] || 0, d.seen || 0))) || null,
     invite: m.invite ? { uses: m.invite.uses, left: Math.max(0, INVITE_USES - m.invite.uses), until: m.invite.until } : null }));
   switch (body.op) {
     case 'list': return answer(200, { members: listing(), catalog: await catalog(env), media: !!env.MEDIA, covers: await coversAll(env) });
@@ -1168,11 +1171,37 @@ function deviceSays(dev, request) {   // true when it changed
   if (os && dev.os !== os) { dev.os = os; changed = true; }
   return changed;
 }
-function deviceApps(m) {   // each counted device, the latest first: {app, build, os, seen}
-  return Object.values(m.devices || {}).filter(d => d.did).sort((x, y) => (y.seen || 0) - (x.seen || 0)).map(d => {
+function deviceApps(m, seenAt = {}) {   // each counted device, the latest active first: {app, build, os, seen}
+  return Object.entries(m.devices || {}).filter(([, d]) => d.did).map(([h, d]) => {
     const a = APP_RE.exec(d.app || '');
-    return { app: a ? a[1] : '', build: a && a[2] ? Number(a[2]) : null, os: d.os || '', seen: d.seen || null };
-  });
+    return { app: a ? a[1] : '', build: a && a[2] ? Number(a[2]) : null, os: d.os || '', seen: Math.max(seenAt[h] || 0, d.seen || 0) || null };
+  }).sort((x, y) => (y.seen || 0) - (x.seen || 0));
+}
+// When each device was last active: any signed-in call from it (opening the calendar or coming back to it, its inbox,
+// playlists, what's playing, notifications), at most once every 5 minutes a device, in a KV key of its own:
+// seen:<its sign-in's hash>, the time in the key's metadata (one list of seen: gives them all). Until 28 Oct 2026 it was
+// kept in the members record, rewritten at most every 6 hours: that one value holds every member, and a visit
+// rewriting it could put back a copy read before a change on the Members tab (KV keeps the last write; a read can be a
+// minute old).
+const SEEN_EVERY = 5 * 60e3, SEEN_DAYS = 400;
+const seenMem = new Map();   // (this Worker's own last writes, so a busy device isn't written every call)
+async function seenTouch(env, hash) {
+  const now = Date.now();
+  if (now - (seenMem.get(hash) || 0) < SEEN_EVERY) return;
+  seenMem.set(hash, now);
+  await kvSoft(env, 'seen:' + hash, '', { metadata: { t: now }, expirationTtl: SEEN_DAYS * 86400 });
+}
+async function seenAll(env) {   // { sign-in hash: when last active }
+  const out = {};
+  let cursor;
+  try {
+    do {
+      const r = await env.SOTD.list({ prefix: 'seen:', cursor });
+      for (const k of r.keys) if (k.metadata && k.metadata.t) out[k.name.slice(5)] = k.metadata.t;
+      cursor = r.list_complete ? null : r.cursor;
+    } while (cursor);
+  } catch (e) { console.log('seen: list failed: ' + (e && e.message)); }
+  return out;
 }
 function deviceTidy(all, keepHash, did) {   // other sign-ins from this device go; long-gone ones without an id too
   let changed = false;
@@ -1244,11 +1273,11 @@ async function memberMe(request, env, answer) {
   if (!id) return answer(401, { error: 'Not a member (any more).' });
   const m = all[id], dev = m.devices[hash];
   const did = deviceId(request.headers.get('X-Device'));
-  let save = Date.now() - (dev.seen || 0) > 6 * 3600e3;
-  if (save) dev.seen = Date.now();
-  if (did && dev.did !== did) { dev.did = did; dev.seen = Date.now(); deviceTidy(all, hash, did); save = true; }   // says which device it is: earlier sign-ins there go
+  let save = false;
+  if (did && dev.did !== did) { dev.did = did; deviceTidy(all, hash, did); save = true; }   // says which device it is: earlier sign-ins there go
   if (deviceSays(dev, request)) save = true;   // which app it is, and what it runs on
-  if (save) await kvSoft(env, 'members', JSON.stringify(all));
+  if (save) { dev.seen = Date.now(); await kvSoft(env, 'members', JSON.stringify(all)); }
+  await seenTouch(env, hash);   // (when it was last active: its own key, not the members record)
   const exp = Math.floor(Date.now() / 1000) + LINK_HOURS * 3600, base = new URL(request.url).origin, media = {};
   if (env.MEDIA && env.ADMIN_KEY) {
     for (const [track, e] of Object.entries(await catalog(env))) {
@@ -1792,7 +1821,9 @@ async function memberIdFor(token, env) {
   if (!token) return null;
   const hash = await sha256hex(token);
   const all = (await env.SOTD.get('members', 'json')) || {};
-  return Object.keys(all).find(k => all[k].devices && all[k].devices[hash]) || null;
+  const id = Object.keys(all).find(k => all[k].devices && all[k].devices[hash]) || null;
+  if (id) await seenTouch(env, hash);
+  return id;
 }
 async function memberPlaylists(request, env, answer) {
   const id = await memberFromToken(request, env);
