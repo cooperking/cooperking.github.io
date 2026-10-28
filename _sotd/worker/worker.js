@@ -464,7 +464,7 @@ async function jobRuns(env) {   // the latest run of each GitHub job; a failed o
   return out;
 }
 function songSteps(it, d, now) {   // one song's way to the calendar
-  const { job, runs, S, asked, task, F, V, signedNow, log, pushSent, newest, P, cat } = d;
+  const { job, runs, S, asked, task, F, V, signedNow, log, pushSent, newest, P, cat, YT } = d;
   const added = Date.parse(it.a) || 0, id = it.id, steps = [];
   const step = (k, t, st, say, extra) => steps.push(Object.assign({ k, t, st, say: say || '' }, st === 'bad' ? { key: 's:' + id + ':' + k } : {}, extra || {}));
   const tags = runs.find(r => r.name === 'Song moods and genres') || null;
@@ -484,6 +484,10 @@ function songSteps(it, d, now) {   // one song's way to the calendar
     else if (jobAt >= added) step('job', 'Found by the site job', 'wait', 'The site job has started', { at: job.at });
     else step('job', 'Found by the site job', 'wait', 'The site job starts when someone opens the calendar');
   }
+  // the YouTube playlist: a song joins as soon as it has a video, published or not (John, 28 Oct 2026; youtube_playlist.py)
+  if (YT[id]) step('yt', 'On the YouTube playlist', 'ok', '');
+  else if (!V[id]) step('yt', 'On the YouTube playlist', 'wait', 'When a video is found for it');
+  else step('yt', 'On the YouTube playlist', 'wait', 'Goes on at the site job’s next run (YouTube allows a few a day)');
   // 3. the facts task asked for this song's facts (by the site job, at its end)
   if (out || waiting) step('ask', 'Facts task started', 'ok', '', askedAt ? { at: asked[id] } : {});
   else if (askedAt) step('ask', 'Facts task started', 'ok', '', { at: asked[id], url: mine && mine.ok ? mine.session || '' : '' });
@@ -492,9 +496,9 @@ function songSteps(it, d, now) {   // one song's way to the calendar
   else if (tagsRunning) step('ask', 'Facts task started', 'wait', 'Asked for at the end of the site job');
   else if (tags && now - Date.parse(tags.end || tags.at) > STALL.ask) step('ask', 'Facts task started', 'bad', 'The site job didn’t ask for its facts', { url: tags.url });
   else step('ask', 'Facts task started', 'wait', '');
-  // 4. the facts written and checked: on the draft calendar from then, for John to check (P: facts-pending.json)
+  // 4. the facts written and checked: on the Songs tab from then, for John to check (P: facts-pending.json)
   if (out) step('facts', 'Facts written and checked', 'ok', '');
-  else if (waiting) step('facts', 'Facts written and checked', 'ok', 'On the draft calendar for you to check', P[id].written ? { at: P[id].written } : {});
+  else if (waiting) step('facts', 'Facts written and checked', 'ok', 'Ready for you to check on the Songs tab', P[id].written ? { at: P[id].written } : {});
   else if (askedAt && now - askedAt > STALL.facts) step('facts', 'Facts written and checked', 'bad', 'Nothing back from the facts task after ' + ago(now - askedAt) + ': open its session to see why', { url: mine && mine.ok ? mine.session || '' : '' });
   else if (askedAt) step('facts', 'Facts written and checked', 'wait', 'The facts task is writing them (it usually takes a few minutes)');
   else step('facts', 'Facts written and checked', 'wait', '');
@@ -538,7 +542,7 @@ async function adminStatus(env) {
     env.SOTD.get('factsSigned', 'json'), mainSha(env), pushHistory(env), env.SOTD.get('pushSent', 'json'), catalog(env)]);
   const acked = ack || {};
   const soft = (p, f) => p.catch(e => { errors.push(String(e && e.message || e)); return f; });
-  const [items, runs, sources, asked, task, F, V, P] = await Promise.all([
+  const [items, runs, sources, asked, task, F, V, P, Y] = await Promise.all([
     soft(getToken(env).then(playlistItems), []),
     env.GH_TOKEN ? soft(jobRuns(env), []) : Promise.resolve([]),
     soft(rawJson('_sotd/data/sources.json', undefined, ref), { songs: {} }),
@@ -546,11 +550,12 @@ async function adminStatus(env) {
     soft(rawJson('_sotd/data/facts-task.json', null, ref), null),
     soft(rawJson('songs/facts.json', undefined, ref), { songs: {}, signed: {} }),
     soft(rawJson('songs/videos.json', undefined, ref), { videos: {} }),
-    soft(rawJson('_sotd/data/facts-pending.json', { songs: {} }, ref), { songs: {} })]);
+    soft(rawJson('_sotd/data/facts-pending.json', { songs: {} }, ref), { songs: {} }),
+    soft(rawJson('_sotd/data/youtube-playlist.json', {}, ref), {})]);
   if (!env.GH_TOKEN) errors.push('The GH_TOKEN secret is not set, so the GitHub jobs can’t be read.');
   const list = items.map((it, i) => Object.assign({ n: i + 1 }, it)).sort((a, b) => (a.a < b.a ? 1 : -1));
   const d = { job: job || {}, runs, S: sources.songs || {}, asked, task, F, V: V.videos || {}, signedNow: signedNow || {},
-    log: log || [], pushSent: pushSent || [], newest: items.length ? items[items.length - 1].id : '', P: P.songs || {}, cat: cat || {} };
+    log: log || [], pushSent: pushSent || [], newest: items.length ? items[items.length - 1].id : '', P: P.songs || {}, cat: cat || {}, YT: (Y && Y.added) || {} };
   const isOut = it => !!(F.songs && F.songs[it.id]) || !!(F.signed && F.signed[it.id]);
   const show = list.filter(it => !isOut(it)).concat(list.filter(isOut).slice(0, 2)).sort((a, b) => (a.a < b.a ? 1 : -1));
   const songs = show.map(it => songSteps(it, d, now));

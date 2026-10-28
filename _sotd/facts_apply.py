@@ -13,8 +13,8 @@ Files:
                                      began); a new song comes out on the calendar when he signs it off (released.py)
     _sotd/data/facts-pending.json    written and checked, waiting for John: each fact with its source and supporting words
     songs/facts-pending.json         the same, for the sign-off page (the Songs tab of songs/admin.html)
-    songs/draft/facts.json           live with the waiting ones on top, for the draft calendar (songs/draft/), which so
-                                     shows a new song as soon as its facts are written, for John to check
+    songs/draft/facts.json           live with the waiting ones on top, for the draft calendar (songs/draft/): only for
+                                     songs already out, so the draft holds a new song back as the live calendar does
     _sotd/data/facts-quotes.json     each written fact's supporting words from its source (fact text: words), kept when
     songs/facts-quotes.json          it goes live, for the sign-off page's "Supporting words"
 A sign-off can also carry the day's moods, genres and YouTube video as John left them: where they differ from what the
@@ -164,10 +164,12 @@ def main(offline, promote=()):
     # a new song's checked facts wait for John: he checks them, adds his own recording and video for the members, and his
     # sign-off puts them live, and with them the song's day (released.py; John, 28 Oct 2026: "the site shouldn't publish
     # automatically for new song of the day as i'd like to check the facts and add videos and songs myself for members").
-    # From 24 to 28 Oct they went live as soon as they were checked. The draft shows them meanwhile.
+    # From 24 to 28 Oct they went live as soon as they were checked. The draft holds them back too (John, 26 Oct 2026:
+    # the live calendar and the draft exactly the same): it has the waiting facts only for songs already out.
     live = page_format(live)
     changed = [p for p, d, c in ((LIVE, live, True), (PENDING, pending, False), (PENDING_PUB, pending, True),
-                                 (DRAFT, page_format(live, pending['songs']), True), (QUOTES, quotes, False),
+                                 (DRAFT, page_format(live, {t: e for t, e in pending['songs'].items() if t in live.get('songs', {}) or t in live.get('signed', {})}), True),
+                                 (QUOTES, quotes, False),
                                  (QUOTES_PUB, quotes, True)) if write(p, d, c)]
     print(len(applied), 'songs signed off and put live;', len(pending['songs']), 'waiting;',
           'changed:', ', '.join(os.path.relpath(p, ROOT) for p in changed) or 'nothing')

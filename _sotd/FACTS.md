@@ -5,16 +5,17 @@ song's video or 30-second preview: one at a time, under a heading (the song's ti
 for an artist fact). A new song's facts are written and checked, then wait for John: he checks and edits them, adds
 his own recording and video for the members, and signs it off on the Songs tab, which puts it out on the live calendar
 and sends it to the members' phones (John, 28 Oct 2026: "the site shouldn't publish automatically for new song of the
-day as i'd like to check the facts and add videos and songs myself for members"). The draft calendar shows it as soon
-as its facts are written. (From 24 to 28 Oct 2026 the checked facts went live straight away.)
+day as i'd like to check the facts and add videos and songs myself for members"). The draft calendar holds it back the
+same way. The YouTube playlist doesn't wait: the song joins it as soon as it has a video. (From 24 to 28 Oct 2026 the
+checked facts went live straight away.)
 
 - `songs/facts.json`: live. Only `_sotd/facts_apply.py` changes it, with what John signs off (a new song's sign-off
-  brings it out on the live calendar, the share pages and the YouTube playlist: `_sotd/released.py`).
+  brings it out on the live calendar and the share pages: `_sotd/released.py`).
 - `_sotd/data/facts-pending.json`: written and checked, waiting for John's sign-off (not live meanwhile). Shown on the
-  draft calendar and on the sign-off page (the Songs tab of `songs/admin.html`, behind the admin password; the part page
+  sign-off page (the Songs tab of `songs/admin.html`, behind the admin password; the part page
   is `songs/songs-admin.html`, which only shows inside it), where he edits, removes, reorders, adds his own and
   signs off. The Cloudflare Worker keeps his sign-offs and starts `.github/workflows/facts.yml`, which runs
-  `facts_apply.py` to put them live.
+  `facts_apply.py` to put them live. (The draft calendar shows waiting facts only for songs already out, as rewrites.)
 - `_sotd/data/sources.json`: what the facts are written from first: the English Wikipedia articles on each song, album
   and artist, and MusicBrainz's details on each artist. The job song-tags.yml adds each new song's (`_sotd/about.py`).
 
@@ -47,15 +48,14 @@ lost). Before 28 Oct 2026 it waited for John's MP3 and video instead.
    of `written.json` and the work folder (for the saved pages), and have it write `<work folder>/verdicts.json`. Don't
    check your own facts.
 5. `python3 _sotd/facts_add.py <work folder>/written.json <work folder>/verdicts.json`, then
-   `python3 _sotd/facts_apply.py --offline` (which puts them on the draft calendar and the Songs tab, waiting for John;
-   not live).
+   `python3 _sotd/facts_apply.py --offline` (which puts them on the Songs tab, waiting for John; not live, and not on
+   the draft calendar either).
 6. Commit `songs/facts.json`, `_sotd/data/facts-pending.json`, `songs/facts-pending.json`, `songs/draft/facts.json`,
    `_sotd/data/facts-quotes.json` and `songs/facts-quotes.json` ("Song facts for <song>: written, waiting for John's
-   sign-off"), pull with rebase and push. (The song stays off the live calendar, the YouTube playlist and the share
-   pages until John signs it off; his sign-off starts song-tags.yml, which does those and sends the notification.)
+   sign-off"), pull with rebase and push. (The song stays off the calendar and the share pages until John signs it off;
+   his sign-off starts song-tags.yml, which makes its share page and sends the notification.)
 7. Tell John in one or two lines: which songs now wait for his check and sign-off on the Songs tab of
-   https://cooperking.github.io/songs/admin.html (and on the draft calendar), with how many facts each, and any that
-   fell short and why.
+   https://cooperking.github.io/songs/admin.html, with how many facts each, and any that fell short and why.
 
 Never edit `songs/facts.json` by hand or anything else on the live site; never run `facts_apply.py --promote`; never
 sign anything off.
