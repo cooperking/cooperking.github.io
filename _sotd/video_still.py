@@ -9,9 +9,10 @@ doing it".
     python3 _sotd/video_still.py ID ...     only these, saying what it finds (for trying it)
 
 Each frame is made 64x48 and grey. Two frames differ where a pixel's grey changes by more than 24 (of 255). A video is a
-still picture when no two of its frames differ in more than 0.5% of their pixels, and on average by under 3: of 35
-songs measured on 28 Oct 2026, the still pictures differed in 0% to 0.2% (the JPEG's own noise), lyric videos in 5% to
-72%, music videos in 29% to 74%.
+still picture when no two of its frames differ in more than 0.5% of their pixels. Of the songs' 261 videos on 28 Oct
+2026, the still pictures differed in 0% to 0.26% (each looked at by eye), and the next ones up, a still picture with
+words changing over it, in 2% and 2.5%; lyric videos went up to 72%, music videos 28% to 84%. (Among the other uploads
+offered, a few lyric videos with small words over a still picture differ in under 0.5%, so are called still pictures.)
 
 Kept in data/video-still.json, so each video is fetched once: v {video id: {p: 1 a still picture or 0 not, d: the most
 of the pixels two frames differ in, m: the most an average pixel differs}}; a video YouTube has no frames for:
@@ -31,7 +32,6 @@ SETS = (('hq1.jpg', 'hq2.jpg', 'hq3.jpg'), ('1.jpg', '2.jpg', '3.jpg'))
 SIZE = (64, 48)
 STEP = 24        # a pixel differs when its grey changes by more than this
 MOST = 0.005     # a still picture: no two frames differ in more than this share of the pixels
-MEAN = 3.0       # and on average by under this
 RETRY_DAYS = 7
 UA = 'SongOfTheDayCalendar/1.0 (+https://cooperking.github.io/songs/)'
 
@@ -59,7 +59,7 @@ def judge(frames):
             diff = [abs(x - y) for x, y in zip(frames[i], frames[j])]
             d = max(d, sum(1 for x in diff if x > STEP) / len(diff))
             m = max(m, sum(diff) / len(diff))
-    return {'p': 1 if d <= MOST and m < MEAN else 0, 'd': round(d, 4), 'm': round(m, 2)}
+    return {'p': 1 if d <= MOST else 0, 'd': round(d, 4), 'm': round(m, 2)}
 
 
 def look(vid):
@@ -79,7 +79,12 @@ def look(vid):
 def load():
     try:
         with open(OUT, encoding='utf-8') as f:
-            return json.load(f)
+            data = json.load(f)
+        for r in data.get('v', {}).values():   # (judged again by the rule above, which may have changed since)
+            if 'd' in r and r['p'] != (1 if r['d'] <= MOST else 0):
+                r['p'] = 1 - r['p']
+                data['changed'] = True
+        return data
     except (FileNotFoundError, ValueError):
         return {'about': 'Whether each YouTube video is only a still picture, from YouTube’s own three frames of it (see '
                          '_sotd/video_still.py): p 1 still, 0 not; d the most of the pixels two frames differ in; m the most '
@@ -157,8 +162,9 @@ def main(args):
     titled = sum(1 for x in vids.values() if x.get('k') == 'audio')
     print(len(vids), 'songs’ videos:', n[1], 'a still picture,', n[0], 'moving,', n[None], 'not known yet',
           '(by the title alone:', titled, 'a still picture)')
-    near = sorted(((r['d'], i) for i, r in data['v'].items() if 'd' in r and MOST / 3 < r['d'] <= MOST * 4), reverse=True)
-    for d, i in near:   # close to the line either way: worth a look
+    own = {x['v'] for x in vids.values()}
+    near = sorted(((r['d'], i) for i, r in data['v'].items() if i in own and 'd' in r and 0 < r['d'] <= MOST * 6), reverse=True)
+    for d, i in near:   # the songs' own videos close to the line, either way: worth a look
         print('  close to the line:', i, data['v'][i])
 
 
