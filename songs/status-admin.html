@@ -28,35 +28,22 @@
 .sec { margin: 22px 0 10px; font: 600 11px/1.2 var(--sans); letter-spacing: .16em; text-transform: uppercase; color: var(--ink-2); }
 .list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
 #feed { margin-top: 18px; }
-.song { padding: 14px 16px 12px; display: grid; gap: 10px; }
-.song .t { font-family: var(--serif); font-weight: 500; font-size: 22px; line-height: 1.15; color: var(--fg); }
-.song .a { font-size: 13px; color: var(--muted); }
-.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; }
-.steps li { display: grid; grid-template-columns: 22px 1fr; gap: 2px 8px; align-items: start; }
-.steps .ic { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; margin-top: 1px; border: 1.5px solid var(--line); color: var(--faint); }
-.steps .ic svg { width: 11px; height: 11px; }
-.steps li.ok .ic { background: var(--ok); border-color: var(--ok); color: #fff; }
-.steps li.bad .ic { background: var(--warn); border-color: var(--warn); color: #fff; }
-.steps li.bad.acked .ic { background: var(--faint); border-color: var(--faint); }
-.steps .l { font-size: 14.5px; color: var(--fg); }
-.steps .l .w { font-size: 12.5px; color: var(--muted); margin-left: 6px; white-space: nowrap; }
-.steps .say { grid-column: 2; font-size: 13px; color: var(--muted); }
-.steps li.bad .say { color: var(--warn); font-weight: 500; }
-.steps li.bad.acked .say { color: var(--muted); font-weight: 400; }
-.steps li.wait .l { color: var(--muted); }
-.steps .say a, .run a, .fix a { color: var(--fg); }
-.dealt { grid-column: 2; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); margin-top: 3px; }
-.run .dealt, .fix .dealt { grid-column: 1 / -1; margin-top: 2px; }
-.run { padding: 11px 14px; display: grid; grid-template-columns: 1fr auto; gap: 3px 10px; align-items: center; }
-.run .nm { font-size: 14.5px; color: var(--fg); font-weight: 500; }
-.run .when { font-size: 12.5px; color: var(--muted); grid-column: 1; }
-.run .stop { font-size: 13px; color: var(--warn); grid-column: 1 / -1; }
-.run.acked .stop { color: var(--muted); }
-.run .r { grid-row: 1 / span 2; grid-column: 2; display: grid; justify-items: end; gap: 4px; font-size: 12.5px; }
+.dealt { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); margin-top: 3px; }
+/* every status item looks the same (John, 28 Oct 2026): what, when and who or which job did it, its status, and why */
+.item { padding: 11px 14px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 3px 12px; align-items: start; }
+.item .main { min-width: 0; display: grid; gap: 3px; }
+.item .nm { font-size: 14.5px; color: var(--fg); font-weight: 500; overflow-wrap: anywhere; }
+.item .when { font-size: 12.5px; color: var(--muted); }
+.item .when a, .item .say a, .item .more a, .item .r a { color: var(--fg-2); }
+.item .say, .item .more { font-size: 13px; color: var(--fg-2); }
+.item.bad .say, .item .err { color: var(--warn); font-size: 13px; }   /* red, dealt with or not */
+.item .r { display: grid; justify-items: end; gap: 5px; font-size: 12.5px; padding-top: 1px; }
 .badge.bad { background: var(--warn); border-color: var(--warn); color: #fff; }
-.run.acked .badge.bad { background: var(--faint); border-color: var(--faint); }
+.badge.dealt { background: var(--faint); border-color: var(--faint); color: #fff; }
 .badge.ok { color: var(--ok); border-color: var(--ok); background: #fff; }
 .badge.going { color: #8a5a00; border-color: #e7b54a; background: #fff8e6; }
+.fix a { color: var(--fg); }
+.fix .dealt { margin-top: 2px; }
 .fix { padding: 14px 16px; display: grid; gap: 6px; font-size: 14px; color: var(--fg-2); }
 .fix b { color: var(--fg); }
 .fix.bad { box-shadow: 0 18px 50px rgba(24, 8, 24, .28), inset 4px 0 0 var(--warn); } .fix.bad b { color: var(--warn); }
@@ -79,7 +66,6 @@
 .fix .pubrow .btn.armed { background: var(--warn); border-color: var(--warn); }
 .fix .going { font-size: 13.5px; color: #8a5a00; }
 .fix .going.done { color: var(--ok); } .fix .going.failed { color: var(--warn); font-weight: 500; }
-.errs { padding: 12px 16px; font-size: 13px; color: var(--warn); }
 .sub.good { color: #fff; } .sub.bad { color: #fff; font-weight: 600; }
 .sub .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; vertical-align: 1px; background: #8ff0b8; }
 .sub.bad .dot { background: #fff; box-shadow: 0 0 0 3px rgba(255, 255, 255, .35); }
@@ -93,10 +79,9 @@
   <header class="top">
     <h1>Status</h1>
     <p class="sub" id="sum">Checking…</p>
-    <p class="help">What has changed, newest first: each new song’s way to the calendar and to members’ phones, the facts task, the notifications sent and the site’s jobs on GitHub. Changes waiting on the draft show at the top. Checked when this opens, every minute while it’s open, and after a sign-off. Anything that fails, or takes much longer than it should, shows in red and counts on the Status tab until it works or you mark it Dealt with.</p>
+    <p class="help">What has changed, newest first: each step of each new song’s way to the calendar and to members’ phones, with who or which job did it, the facts task, the notifications sent, the site’s jobs on GitHub and anything Spotify or GitHub said. Changes waiting on the draft show at the top. Checked when this opens, every minute while it’s open, and after a sign-off. Anything that fails, or takes much longer than it should, shows in red and counts on the Status tab until it works or you mark it Dealt with.</p>
     <div class="row"><button class="glassbtn" id="again" type="button">Check again</button><span class="stat" id="when" style="color: var(--ink-2)"></span></div>
   </header>
-  <div class="card errs" id="errs" hidden></div>
   <div id="sitebox" hidden>
     <p class="sec">Draft and live</p>
     <div class="card fix" id="site"></div>
@@ -121,8 +106,6 @@
     } catch (e) { return ''; }
   }
   function link(href, text) { var a = el('a', '', text); a.href = href; a.target = '_blank'; a.rel = 'noopener'; return a; }
-  var ICON = { ok: '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 6.3 5 8.6l4.5-5"/></svg>',
-    bad: '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3.5 3.5l5 5M8.5 3.5l-5 5"/></svg>', wait: '' };
   var RES = { success: ['ok', 'Succeeded'], failure: ['bad', 'Failed'], timed_out: ['bad', 'Timed out'], startup_failure: ['bad', 'Couldn’t start'],
     action_required: ['bad', 'Needs you'], cancelled: ['', 'Cancelled'], skipped: ['', 'Skipped'], neutral: ['', 'Done'] };
 
@@ -143,88 +126,93 @@
     return d;
   }
   // everything but the draft and live card, as one list, newest change first (John, 28 Oct 2026: "All other status should
-  // just be a list in order of change, doesn't need to be in different sections"): each song (by its latest step), the
-  // last call to the facts task, each notification sent and each job's latest run (by when it finished, or started)
+  // just be a list in order of change, doesn't need to be in different sections"; "Everything should have a status like
+  // succeeded - song jobs should be treated as separate status items. I need to know what job ran for it to get those
+  // ticks"): each step of each song, the facts task's last call (when no song shows it), each notification sent, each job's
+  // latest run, Spotify asking the Worker to wait, and anything that couldn't be read. Each says when, who or which run
+  // did it (a run matched by its time says so), its status and why.
   function ms(t) { return typeof t === 'number' ? t : (Date.parse(t || '') || 0); }   // (a notification's at is a number)
-  function when(kind, x) {
-    if (kind === 'song') return x.steps.reduce(function (m, y) { return Math.max(m, ms(y.at)); }, ms(x.added));
-    if (kind === 'run') return ms(x.st === 'completed' ? x.end : x.at) || ms(x.at);
-    return ms(x.at);
+  var STEP_OK = { added: 'Added', job: 'Succeeded', yt: 'Added', ask: 'Started', facts: 'Done', files: 'Up', signed: 'Signed off', out: 'Out', sent: 'Sent' };
+  function status(st, ack, okText) {   // [badge class, text]
+    if (st === 'bad') return ack ? ['dealt', 'Dealt with'] : ['bad', 'Failed'];
+    if (st === 'ok') return ['ok', okText || 'Succeeded'];
+    if (st === 'going') return ['going', 'Running'];
+    return ['', 'Waiting'];
   }
-  function drawFeed(j) {
-    var ul = $('feed'), items = [];
-    (j.songs || []).forEach(function (x) { items.push(['song', x]); });
-    if (j.task) items.push(['task', j.task]);
-    (j.notes || []).forEach(function (x) { items.push(['note', x]); });
-    (j.runs || []).forEach(function (x) { items.push(['run', x]); });
-    items.forEach(function (it) { it.push(when(it[0], it[1])); });
-    items.sort(function (a, b) { return b[2] - a[2]; });
-    ul.textContent = '';
-    items.forEach(function (it) { ul.appendChild({ song: songItem, task: taskItem, note: noteItem, run: runItem }[it[0]](it[1], it[2])); });
-    if (!items.length) ul.appendChild(el('li', 'card run', 'Nothing to show.'));
-  }
-  function songItem(s) {
-    {
-      var li = el('li', 'card song'), head = el('div');
-      head.appendChild(el('div', 't', s.title));
-      head.appendChild(el('div', 'a', s.artist + ' · song ' + s.n + ' · added ' + uk(s.added)));
-      li.appendChild(head);
-      var steps = el('ol', 'steps');
-      s.steps.forEach(function (x) {
-        var r = el('li', x.st + (x.ack ? ' acked' : '')), ic = el('span', 'ic'); ic.innerHTML = ICON[x.st] || '';
-        r.appendChild(ic);
-        var l = el('span', 'l', x.t); if (x.at) l.appendChild(el('span', 'w', uk(x.at)));
-        r.appendChild(l);
-        if (x.say || x.url) {
-          var say = el('span', 'say', x.say || '');
-          if (x.url) { say.appendChild(document.createTextNode(x.say ? ' · ' : '')); say.appendChild(link(x.url, /claude\.ai/.test(x.url) ? 'Open its session' : 'Open on GitHub')); }
-          r.appendChild(say);
-        }
-        if (x.st === 'bad' && x.key) r.appendChild(dealt(x));
-        steps.appendChild(r);
-      });
-      li.appendChild(steps);
-      return li;
+  function item(o) {   // o: at, title, what (what kind of thing), by {t, url, guess}, badge, st, say, url + urlText, more [nodes], dealt (the thing)
+    var li = el('li', 'card item' + (o.st === 'bad' ? ' bad' : '') + (o.dealt && o.dealt.ack ? ' acked' : '')), main = el('div', 'main');
+    main.appendChild(el('span', 'nm', o.title));
+    var w = el('span', 'when', [uk(o.at), o.what].filter(Boolean).join(' · '));
+    if (o.by) {
+      w.appendChild(document.createTextNode((w.textContent ? ' · ' : '') + 'by '));
+      w.appendChild(o.by.url ? link(o.by.url, o.by.t) : document.createTextNode(o.by.t));
+      if (o.by.guess) w.appendChild(document.createTextNode(' (matched by its time)'));
     }
+    main.appendChild(w);
+    if (o.say) main.appendChild(el('span', 'say', o.say));
+    (o.more || []).forEach(function (n) { main.appendChild(n); });
+    if (o.dealt && o.dealt.key && o.st === 'bad') main.appendChild(dealt(o.dealt));
+    li.appendChild(main);
+    var r = el('span', 'r'); r.appendChild(el('span', 'badge ' + o.badge[0], o.badge[1]));
+    if (o.url) r.appendChild(link(o.url, o.urlText || 'Open'));
+    li.appendChild(r);
+    li._at = ms(o.at);
+    return li;
   }
-  function taskItem(t) {   // the last call to the facts task, and what to do when it couldn't start
-    var box = el('li', 'card fix task' + (t.ok ? '' : ' bad') + (t.ack ? ' acked' : ''));
-    var p = el('div');
-    p.appendChild(el('b', '', 'Facts task, ' + uk(t.at) + ': ' + (t.ok ? 'started' : 'couldn’t be started')));
-    p.appendChild(document.createTextNode(t.ok ? '' : ' (' + t.said + ')'));
-    if (t.ok && t.session) { p.appendChild(document.createTextNode(' · ')); p.appendChild(link(t.session, 'Open its session')); }
-    box.appendChild(p);
-    if (!t.ok && !t.ack && /\b401\b|revoked|token/i.test(t.said)) {
-      var f = el('div', '', 'Its token no longer works. Make a new one on ');
+  function taskFix(t) {   // what to do when the facts task couldn't be started
+    if (!t || t.ok) return [];
+    var f;
+    if (/\b401\b|revoked|token/i.test(t.said || '')) {
+      f = el('span', 'more', 'Its token no longer works. Make a new one on ');
       f.appendChild(link(TASK_PAGE, 'the task’s page')); f.appendChild(document.createTextNode(' (API trigger), put it in the SOTD_FACTS_TOKEN secret on '));
       f.appendChild(link(SECRETS, 'GitHub')); f.appendChild(document.createTextNode(', then press Run on the task’s page for any song still waiting. The next call that works clears this.'));
-      box.appendChild(f);
-    } else if (!t.ok && !t.ack) {
-      var g = el('div', '', 'Press Run on '); g.appendChild(link(TASK_PAGE, 'the task’s page')); g.appendChild(document.createTextNode(' for any song still waiting.'));
-      box.appendChild(g);
+    } else {
+      f = el('span', 'more', 'Press Run on '); f.appendChild(link(TASK_PAGE, 'the task’s page')); f.appendChild(document.createTextNode(' for any song still waiting.'));
     }
-    if (!t.ok && t.key) box.appendChild(dealt(t));
-    return box;
+    return [f];
   }
-  function runItem(r, t) {   // a GitHub job's latest run
-    var li = el('li', 'card run' + (r.ack ? ' acked' : '')), res = r.st !== 'completed' ? ['going', r.st === 'queued' ? 'Waiting' : 'Running'] : (RES[r.res] || ['', r.res || r.st]);
-    li.appendChild(el('span', 'nm', r.name));
-    li.appendChild(el('span', 'when', uk(t) + ' · job on GitHub, run ' + r.n));
-    var right = el('span', 'r'); right.appendChild(el('span', 'badge ' + res[0], res[1])); right.appendChild(link(r.url, 'Open'));
-    li.appendChild(right);
-    if (r.bad && r.steps && r.steps.length) li.appendChild(el('span', 'stop', 'Stopped at: ' + r.steps.join(', ')));
-    if (r.bad && r.key) li.appendChild(dealt(r));
-    return li;
+  function songItems(s, j, out) {
+    var done = s.steps.reduce(function (m, y) { return y.st !== 'wait' ? Math.max(m, ms(y.at)) : m; }, ms(s.added));
+    s.steps.forEach(function (x) {
+      if (x.st === 'wait' && (x.later || !x.say)) return;   // (steps still to come)
+      var running = x.st === 'wait' && /running now/.test(x.say);
+      out.push(item({ at: x.at && x.st !== 'wait' ? x.at : x.st === 'wait' ? done : x.at || s.added, title: s.title + ': ' + x.t, by: x.by,
+        what: 'song ' + s.n, st: running ? 'going' : x.st, badge: status(running ? 'going' : x.st, x.ack, STEP_OK[x.k]), say: x.say,
+        url: x.url, urlText: /claude\.ai/.test(x.url || '') ? 'Its session' : 'Open', more: x.task ? taskFix(j.task) : [], dealt: x }));
+    });
   }
-  function noteItem(e) {   // a notification sent: when, what, to how many
-    var li = el('li', 'card note' + (e.ack ? ' acked' : ''));
-    li.appendChild(el('span', 'nm', e.title));
-    li.appendChild(el('span', 'when', uk(e.at) + ' · notification'));
-    var r = el('span', 'r'); r.appendChild(el('span', 'badge' + (e.failed ? ' bad' : ''), e.kind === 'song' ? 'Song' : 'Your note')); li.appendChild(r);
-    li.appendChild(el('span', 'how', (e.say || '') + (e.old && !e.devices ? (e.say ? ' · ' : '') + 'sent before devices were counted here' : '')));
-    (e.errors || []).forEach(function (x) { li.appendChild(el('span', 'err', x.to + ' said ' + (x.status || 'nothing') + (x.why ? ': ' + x.why : ''))); });
-    if (e.failed && e.key) li.appendChild(dealt(e));
-    return li;
+  function drawFeed(j) {
+    var ul = $('feed'), out = [], shown = {};
+    (j.songs || []).forEach(function (s) { shown[s.id] = 1; songItems(s, j, out); });
+    var t = j.task;
+    if (t && !(t.songs || []).some(function (id) { return shown[id]; }))   // (otherwise it's that song's Facts task started)
+      out.push(item({ at: t.at, title: 'Facts task', what: 'asked for ' + (t.songs || []).length + ' song' + ((t.songs || []).length === 1 ? '' : 's'), by: t.by,
+        st: t.ok ? 'ok' : 'bad', badge: status(t.ok ? 'ok' : 'bad', t.ack, 'Started'), say: t.ok ? '' : 'It couldn’t be started: ' + t.said,
+        url: t.ok ? t.session : '', urlText: 'Its session', more: taskFix(t), dealt: t }));
+    (j.notes || []).forEach(function (e) {
+      var errs = (e.errors || []).map(function (x) { return el('span', 'err', x.to + ' said ' + (x.status || 'nothing') + (x.why ? ': ' + x.why : '')); });
+      out.push(item({ at: e.at, title: e.title, what: e.kind === 'song' ? 'notification of the song' : 'your note', by: e.by,
+        st: e.failed ? 'bad' : 'ok', badge: status(e.failed ? 'bad' : 'ok', e.ack, 'Sent'),
+        say: (e.say || '') + (e.old && !e.devices ? (e.say ? ' · ' : '') + 'sent before devices were counted here' : ''), more: errs, dealt: e }));
+    });
+    (j.runs || []).forEach(function (r) {
+      var res = r.st !== 'completed' ? ['going', r.st === 'queued' ? 'Waiting' : 'Running'] : (RES[r.res] || ['', r.res || r.st]);
+      if (r.bad && r.ack) res = ['dealt', 'Dealt with'];
+      out.push(item({ at: r.st === 'completed' ? r.end || r.at : r.at, title: r.name, what: 'job on GitHub, run ' + r.n, st: r.bad ? 'bad' : res[0],
+        badge: res, say: r.bad && r.steps && r.steps.length ? 'Stopped at: ' + r.steps.join(', ') : '', url: r.url, dealt: r }));
+    });
+    var sp = j.spotify;   // Spotify asked the Worker to wait
+    if (sp) out.push(item({ at: sp.at, title: 'Spotify told the Worker to wait', what: 'Spotify', st: sp.active ? 'bad' : 'ok',
+      badge: sp.active ? (sp.ack ? ['dealt', 'Dealt with'] : ['bad', 'Blocked']) : ['ok', 'Over'],
+      say: sp.active ? 'Until ' + uk(sp.until) + '. Nothing asks Spotify until then: the calendar, the apps and the site job have the songs as at ' + uk(sp.since) + '.'
+        : 'Over at ' + uk(sp.until) + '.', dealt: sp }));
+    (j.errors || []).forEach(function (e) {   // couldn't be read just now (tried again at the next check)
+      out.push(item({ at: j.at, title: 'Couldn’t check everything', what: 'this check', st: 'bad', badge: ['bad', 'Couldn’t check'], say: e }));
+    });
+    out.sort(function (a, b) { return b._at - a._at; });
+    ul.textContent = '';
+    out.forEach(function (li) { ul.appendChild(li); });
+    if (!out.length) ul.appendChild(el('li', 'card item', 'Nothing to show.'));
   }
   function drawSite(x) {   // the draft and the live calendar, against the template: shown only when there's a change
     // waiting to go live, one going, or something wrong (John, 28 Oct 2026: "Draft and Live box should only show at the
@@ -279,13 +267,12 @@
   function draw(j) {
     var n = j.problems || 0, dealtN = 0, seen = {};
     function count(o) { if (o && o.ack && o.key && !seen[o.key]) { seen[o.key] = 1; dealtN++; } }
-    (j.songs || []).forEach(function (s) { s.steps.forEach(count); }); (j.runs || []).forEach(count); (j.notes || []).forEach(count); count(j.task); count(j.site);
+    (j.songs || []).forEach(function (s) { s.steps.forEach(count); }); (j.runs || []).forEach(count); (j.notes || []).forEach(count); count(j.task); count(j.site); count(j.spotify);
     $('sum').className = 'sub ' + (n ? 'bad' : 'good');
     $('sum').innerHTML = '<span class="dot"></span>';
     $('sum').appendChild(document.createTextNode(n ? (n === 1 ? '1 thing has failed or is stuck' : n + ' things have failed or are stuck') : 'All well'));
     if (dealtN) $('sum').appendChild(el('span', 'more', ' · ' + dealtN + ' dealt with'));
     $('when').textContent = 'Checked ' + uk(j.at, true);
-    $('errs').hidden = !(j.errors && j.errors.length); $('errs').textContent = j.errors && j.errors.length ? 'Couldn’t read everything: ' + j.errors.join('; ') : '';
     drawSite(j.site); drawFeed(j);
     tell(n);
   }

@@ -14,11 +14,12 @@ fills over a few days. What's been added is kept in data/youtube-playlist.json.
 Each run first reads what is actually in the playlist (1 unit per 50 songs), so songs added by hand on YouTube count as
 added, and anything that isn't one of the songs' videos (a video since replaced, or a song in twice) is taken out.
 Songs out of day order (say, added by hand at the end) are moved into place, 50 units a move."""
-import json, os, sys, urllib.parse, urllib.request
+import datetime, json, os, sys, urllib.parse, urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import ytapi   # noqa: E402
+import runinfo   # noqa: E402
 from ytapi import API, Quota   # noqa: E402
 
 OUT = os.path.join(HERE, 'data', 'youtube-playlist.json')
@@ -122,6 +123,9 @@ def main():
             vid = match.get(s['id'])
             if vid and spare.get(vid):
                 added[s['id']] = {'v': vid, 'item': spare[vid].pop(0)}
+                prev = state['added'].get(s['id']) or {}
+                if prev.get('v') == vid:   # when it went in, and the run that put it there (the Status tab)
+                    added[s['id']].update({k: prev[k] for k in ('at', 'run') if prev.get(k)})
         if added != state['added']:
             state['added'] = added
             changed = True
@@ -148,7 +152,9 @@ def main():
                 'resourceId': {'kind': 'youtube#video', 'videoId': vid}}}, token=token, units=50)
             adds += 1
             if j.get('id'):
-                state['added'][s['id']] = {'v': vid, 'item': j['id']}
+                state['added'][s['id']] = {'v': vid, 'item': j['id'], 'at': datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='seconds')}
+                if runinfo.this_run():
+                    state['added'][s['id']]['run'] = runinfo.this_run()
                 changed = True
                 print('added', s['n'], s['title'], '—', s['artist'])
             else:

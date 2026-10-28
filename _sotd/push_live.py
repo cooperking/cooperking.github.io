@@ -9,6 +9,7 @@ back "sent already". If the site isn't showing it in time, or the Worker can't b
 look sends it instead, so this never fails the job.
 """
 import json, os, sys, time, urllib.request
+import runinfo
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SITE = os.environ.get('SITE_TODAY', 'https://cooperking.github.io/songs/today.json')
@@ -44,7 +45,7 @@ def main():
         time.sleep(EVERY)
     print('out on the live calendar:', mine.get('title') or track)
     try:
-        req = urllib.request.Request(WORKER, data=b'{}', method='POST', headers={'Content-Type': 'application/json', 'User-Agent': 'SongOfTheDayCalendar/1.0'})
+        req = urllib.request.Request(WORKER, data=json.dumps({'run': runinfo.this_run()}).encode(), method='POST', headers={'Content-Type': 'application/json', 'User-Agent': 'SongOfTheDayCalendar/1.0'})
         with urllib.request.urlopen(req, timeout=60) as r:
             print('the Worker:', json.loads(r.read()).get('did'))
     except Exception as e:

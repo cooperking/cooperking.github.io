@@ -89,7 +89,7 @@ export default {
   async scheduled(event, env, ctx) {
     ctx.waitUntil((async () => {
       const songs = await timerSongs(env, ctx);
-      await pushDaily(env, songs.map(x => ({ id: x.id, a: x.a, title: x.title, artist: x.artist, img: x.img })));
+      await pushDaily(env, songs.map(x => ({ id: x.id, a: x.a, title: x.title, artist: x.artist, img: x.img })), { t: 'timer' });
     })().catch(e => console.log('scheduled: ' + (e && e.message))));
   }
 };
@@ -224,11 +224,11 @@ async function spotifyWaiting(env) {
   if (w && w.until > spotifyUntil) spotifyUntil = w.until;
   return spotifyUntil > Date.now();
 }
-async function noteSpotifyWait(env) {
+async function noteSpotifyWait(env) {   // KV spotifyWait {at: when Spotify first said wait, until}: kept after it's over too (the Status tab lists it)
   if (spotifyUntil <= Date.now()) return;
   const w = await env.SOTD.get('spotifyWait', 'json').catch(() => null);
   if (!w || w.until < spotifyUntil)
-    await kvSoft(env, 'spotifyWait', JSON.stringify({ until: spotifyUntil, at: Date.now() }), { expirationTtl: Math.max(60, Math.ceil((spotifyUntil - Date.now()) / 1000) + 60) });
+    await kvSoft(env, 'spotifyWait', JSON.stringify({ until: spotifyUntil, at: w && w.until > Date.now() - 60e3 ? w.at : Date.now() }));
 }
 function spotifyBusy(retryAfter) {
   return new HttpError(429, 'Spotify is busy right now.', { retryAfter, spotify: true });
@@ -526,67 +526,96 @@ async function jobRuns(env) {   // the latest run of each GitHub job; a failed o
   }));
   return out;
 }
-function songSteps(it, d, now) {   // one song's way to the calendar
-  const { job, runs, S, asked, task, F, V, signedNow, log, pushSent, newest, P, cat, YT } = d;
+async function runHistory(env, wf, n) {   // a job's recent runs, to say which run did each step of a song
+  const j = await ghApi(env, '/actions/workflows/' + wf + '/runs?per_page=' + n);
+  return (j.workflow_runs || []).map(r => ({ id: r.id, n: r.run_number, name: r.name, st: r.status, res: r.conclusion || '',
+    at: r.run_started_at || r.created_at, end: r.updated_at, url: r.html_url }));
+}
+function songSteps(it, d, now) {   // one song's way to the calendar: each step with when, and who or which run did it (by)
+  const { job, runs, S, asked, task, F, V, signedNow, log, pushSent, newest, P, cat, YT, siteRuns, factsRuns } = d;
   const added = Date.parse(it.a) || 0, id = it.id, steps = [];
   const step = (k, t, st, say, extra) => steps.push(Object.assign({ k, t, st, say: say || '' }, st === 'bad' ? { key: 's:' + id + ':' + k } : {}, extra || {}));
+  // which run: the one the job wrote down (runinfo.py, from 28 Oct 2026), else the run that fits by its time (guess)
+  const all = siteRuns.concat(factsRuns);
+  const runBy = (r, guess) => r ? { t: (r.name || r.job || 'Job on GitHub') + ', run ' + r.n, url: r.url || 'https://github.com/' + REPO + '/actions/runs/' + r.id, guess: !!guess } : null;
+  const recorded = rec => rec && rec.id ? runBy(Object.assign({ name: rec.job, n: rec.n, id: rec.id }, all.find(r => r.id === rec.id) || {})) : null;
+  const firstOk = (list, from, within) => list.filter(r => r.st === 'completed' && r.res === 'success' && Date.parse(r.at) >= from - 60e3
+    && Date.parse(r.at) <= from + within).sort((a, b) => (a.at < b.at ? -1 : 1))[0] || null;   // (none if the right one has gone from the list)
+  const during = (list, t) => list.find(r => Date.parse(r.at) <= t && t <= Date.parse(r.end) + 120e3) || null;
+  const iso = t => t ? new Date(t).toISOString() : undefined;
+  const siteFound = firstOk(siteRuns, added, 6 * 3600e3);
   const tags = runs.find(r => r.name === 'Song moods and genres') || null;
   const tagsRunning = !!tags && tags.st !== 'completed';
   const out = !!(F.songs && F.songs[id]) || !!(F.signed && F.signed[id]);
   const src = !!(S[id]), askedAt = asked[id] ? Date.parse(asked[id]) : 0, waiting = !!P[id];   // waiting: written and checked, not signed off
   const mine = task && (task.songs || []).includes(id) ? task : null;   // the last call to the facts task, if it was for this song
-  step('added', 'In the playlist', 'ok', '', { at: it.a });
+  step('added', 'In the playlist', 'ok', '', { at: it.a, by: { t: 'you, on Spotify' } });
   // 2. the site job (song-tags.yml): its video, year, moods and the sources its facts are written from
-  if (src || out) step('job', 'Found by the site job', 'ok', V[id] ? 'Video found' : 'No video found yet');
+  if (src || out) {
+    const rec = S[id] && S[id].run;
+    step('job', 'Found by the site job', 'ok', V[id] ? 'Video found' : 'No video found yet',
+      { at: (rec && rec.at) || (siteFound ? siteFound.end : undefined), by: recorded(rec) || runBy(siteFound, true) });
+  }
   else {
     const jobAt = Date.parse(job.at || '') || 0;
     if (job.err && (job.tried || 0) >= added) step('job', 'Found by the site job', 'bad', 'The Worker couldn’t start the site job: ' + job.err, { at: new Date(job.tried).toISOString() });
-    else if (tagsRunning) step('job', 'Found by the site job', 'wait', 'The site job is running now', { at: tags.at });
-    else if (jobAt >= added && tags && tags.bad) step('job', 'Found by the site job', 'bad', 'The site job failed: see Jobs below', { at: tags.at, url: tags.url });
-    else if (jobAt >= added && now - jobAt > STALL.job) step('job', 'Found by the site job', 'bad', 'The site job started but didn’t save it', { at: job.at, url: tags && tags.url });
+    else if (tagsRunning) step('job', 'Found by the site job', 'wait', 'The site job is running now', { at: tags.at, by: runBy(tags) });
+    else if (jobAt >= added && tags && tags.bad) step('job', 'Found by the site job', 'bad', 'The site job failed', { at: tags.end || tags.at, by: runBy(tags) });
+    else if (jobAt >= added && now - jobAt > STALL.job) step('job', 'Found by the site job', 'bad', 'The site job started but didn’t save it', { at: job.at, by: runBy(tags) });
     else if (jobAt >= added) step('job', 'Found by the site job', 'wait', 'The site job has started', { at: job.at });
     else step('job', 'Found by the site job', 'wait', 'The site job starts at the Worker’s next look at the playlist (every 10 minutes from 06:00)');
   }
   // the YouTube playlist: a song joins as soon as it has a video, published or not (John, 28 Oct 2026; youtube_playlist.py)
-  if (YT[id]) step('yt', 'On the YouTube playlist', 'ok', '');
+  if (YT[id]) step('yt', 'On the YouTube playlist', 'ok', '', { at: YT[id].at || (siteFound ? siteFound.end : undefined), by: recorded(YT[id].run) || runBy(siteFound, true) });
   else if (!V[id]) step('yt', 'On the YouTube playlist', 'wait', 'When a video is found for it');
   else step('yt', 'On the YouTube playlist', 'wait', 'Goes on at the site job’s next run (YouTube allows a few a day)');
   // 3. the facts task asked for this song's facts (by the site job, at its end)
-  if (out || waiting) step('ask', 'Facts task started', 'ok', '', askedAt ? { at: asked[id] } : {});
-  else if (askedAt) step('ask', 'Facts task started', 'ok', '', { at: asked[id], url: mine && mine.ok ? mine.session || '' : '' });
+  const askBy = recorded(mine && mine.run) || runBy(askedAt ? during(siteRuns, askedAt) : null, true);
+  if (out || waiting) step('ask', 'Facts task started', 'ok', '', Object.assign(askedAt ? { at: asked[id] } : {}, { by: askBy }));
+  else if (askedAt) step('ask', 'Facts task started', 'ok', '', { at: asked[id], url: mine && mine.ok ? mine.session || '' : '', by: askBy });
   else if (!src) step('ask', 'Facts task started', 'wait', '');
-  else if (mine && !mine.ok) step('ask', 'Facts task started', 'bad', 'It couldn’t be started: ' + mine.said, { at: mine.at, key: 't:' + mine.at });   // (the call's own key)
-  else if (tagsRunning) step('ask', 'Facts task started', 'wait', 'Asked for at the end of the site job');
-  else if (tags && now - Date.parse(tags.end || tags.at) > STALL.ask) step('ask', 'Facts task started', 'bad', 'The site job didn’t ask for its facts', { url: tags.url });
+  else if (mine && !mine.ok) step('ask', 'Facts task started', 'bad', 'It couldn’t be started: ' + mine.said,
+    { at: mine.at, key: 't:' + mine.at, task: true, by: recorded(mine.run) || runBy(during(siteRuns, Date.parse(mine.at)), true) });   // (the call's own key)
+  else if (tagsRunning) step('ask', 'Facts task started', 'wait', 'Asked for at the end of the site job', { by: runBy(tags) });
+  else if (tags && now - Date.parse(tags.end || tags.at) > STALL.ask) step('ask', 'Facts task started', 'bad', 'The site job didn’t ask for its facts', { at: tags.end || tags.at, by: runBy(tags) });
   else step('ask', 'Facts task started', 'wait', '');
   // 4. the facts written and checked: on the Songs tab from then, for John to check (P: facts-pending.json)
-  if (out) step('facts', 'Facts written and checked', 'ok', '');
-  else if (waiting) step('facts', 'Facts written and checked', 'ok', 'Ready for you to check on the Songs tab', P[id].written ? { at: P[id].written } : {});
+  const factsBy = { t: 'the facts task (Claude)', url: mine && mine.ok && mine.session || '' };
+  if (out) step('facts', 'Facts written and checked', 'ok', '', { by: factsBy });
+  else if (waiting) step('facts', 'Facts written and checked', 'ok', 'Ready for you to check on the Songs tab', Object.assign(P[id].written ? { at: P[id].written } : {}, { by: factsBy }));
   else if (askedAt && now - askedAt > STALL.facts) step('facts', 'Facts written and checked', 'bad', 'Nothing back from the facts task after ' + ago(now - askedAt) + ': open its session to see why', { url: mine && mine.ok ? mine.session || '' : '' });
-  else if (askedAt) step('facts', 'Facts written and checked', 'wait', 'The facts task is writing them (it usually takes a few minutes)');
-  else step('facts', 'Facts written and checked', 'wait', '');
+  else if (askedAt) step('facts', 'Facts written and checked', 'wait', 'The facts task is writing them (it usually takes a few minutes)', { by: factsBy });
+  else step('facts', 'Facts written and checked', 'wait', '', { later: true });
   // 5. his own recording and video, for the members (the Songs tab's uploads: the catalog)
   const files = cat[id] || {}, missing = [!files.a && 'your MP3', !files.v && 'your video'].filter(Boolean);
-  if (!missing.length) step('files', 'Your song and video for members', 'ok', '');
+  if (!missing.length) step('files', 'Your song and video for members', 'ok', '', { at: iso(Math.max(Date.parse(files.ta || '') || 0, Date.parse(files.tv || '') || 0)), by: { t: 'you' } });
   else step('files', 'Your song and video for members', 'wait', (missing.length > 1 ? 'Not up yet' : missing[0][0].toUpperCase() + missing[0].slice(1) + ' isn’t up yet')
     + (out ? ': members get the preview and YouTube’s video meanwhile' : ': add them on the Songs tab before you sign it off'));
   // 6. John's sign-off, which puts a new song on the calendar (John, 28 Oct 2026)
-  if (F.signed && F.signed[id]) step('signed', 'Signed off by you', 'ok', '');
-  else if (signedNow[id]) step('signed', 'Signed off by you', 'ok', '', { at: signedNow[id].at });
-  else step('signed', 'Signed off by you', 'wait', waiting || out ? 'Waiting for you on the Songs tab' : '');
+  const signedAt = (F.signed && typeof F.signed[id] === 'string' && F.signed[id]) || (signedNow[id] && signedNow[id].at) || '';
+  if ((F.signed && F.signed[id]) || signedNow[id]) step('signed', 'Signed off by you', 'ok', '', { at: signedAt || undefined, by: { t: 'you, on the Songs tab' } });
+  else step('signed', 'Signed off by you', 'wait', waiting || out ? 'Waiting for you on the Songs tab' : '', waiting || out ? {} : { later: true });
   // 7. out on the live calendar
-  if (out) step('out', 'Out on the calendar', 'ok', '');
+  const outRun = signedAt ? firstOk(factsRuns, Date.parse(signedAt), 3600e3) : null;
+  if (out) step('out', 'Out on the calendar', 'ok', '', { at: outRun ? outRun.end : undefined, by: runBy(outRun, true) });
   else if (signedNow[id]) step('out', 'Out on the calendar', 'wait', 'Going out now (a couple of minutes)');
-  else step('out', 'Out on the calendar', 'wait', 'When you sign it off');
+  else step('out', 'Out on the calendar', 'wait', 'When you sign it off', { later: true });
   // 8. the members' notification (pushDaily: the newest song, no more than two days old, as it comes out on the live
   // calendar)
   const sentE = log.find(e => e.track === id) || log.find(e => e.kind === 'song' && e.title === it.title && e.at >= added && e.at - added < 3 * DAY);
-  if (sentE || pushSent.includes(id)) step('sent', 'Sent to members', 'ok', sentE ? pushSay(sentE) : '', sentE ? { at: new Date(sentE.at).toISOString() } : {});
+  if (sentE || pushSent.includes(id)) step('sent', 'Sent to members', 'ok', sentE ? pushSay(sentE) : '', sentE ? { at: new Date(sentE.at).toISOString(), by: pushBy(sentE.via, all) } : {});
   else if (newest !== id) step('sent', 'Sent to members', 'wait', 'Not sent: a newer song came after it');
   else if ((Date.parse(londonDay()) - Date.parse(londonDay(it.a))) / DAY > 2) step('sent', 'Sent to members', 'wait', 'Not sent: more than two days old');
-  else if (!out) step('sent', 'Sent to members', 'wait', 'Goes to members as it comes out on the calendar');
+  else if (!out) step('sent', 'Sent to members', 'wait', 'Goes to members as it comes out on the calendar', { later: true });
   else step('sent', 'Sent to members', 'wait', 'Going to members as the calendar shows it (a minute or two)');
   return { id, n: it.n, title: it.title, artist: it.artist, added: it.a, out, steps };
+}
+function pushBy(via, runs) {   // who sent a notification (pushDaily's via, from 28 Oct 2026)
+  if (!via) return null;
+  if (via.t === 'timer') return { t: 'the Worker’s 10-minute timer' };
+  if (via.t === 'you') return { t: 'you, on the Members tab' };
+  const r = via.run && via.run.id ? Object.assign({ name: via.run.job || 'Song moods and genres', n: via.run.n }, (runs || []).find(x => x.id === via.run.id) || {}) : null;
+  return r ? { t: r.name + ', run ' + r.n, url: r.url || 'https://github.com/' + REPO + '/actions/runs/' + via.run.id } : { t: 'the site job' };
 }
 function pushSay(e) {   // how a notification went
   const parts = [];
@@ -601,13 +630,15 @@ function pushSay(e) {   // how a notification went
 function ago(ms) { const m = Math.round(ms / 60e3); return m < 60 ? m + ' min' : Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + (m % 60) + ' min' : ''); }
 async function adminStatus(env) {
   const now = Date.now(), errors = [];
-  const [job, ack, signedNow, ref, log, pushSent, cat, golive] = await Promise.all([env.SOTD.get('job', 'json'), env.SOTD.get('statusAck', 'json'),
-    env.SOTD.get('factsSigned', 'json'), mainSha(env), pushHistory(env), env.SOTD.get('pushSent', 'json'), catalog(env), env.SOTD.get('golive', 'json')]);
+  const [job, ack, signedNow, ref, log, pushSent, cat, golive, sw] = await Promise.all([env.SOTD.get('job', 'json'), env.SOTD.get('statusAck', 'json'),
+    env.SOTD.get('factsSigned', 'json'), mainSha(env), pushHistory(env), env.SOTD.get('pushSent', 'json'), catalog(env), env.SOTD.get('golive', 'json'),
+    env.SOTD.get('spotifyWait', 'json')]);
   const acked = ack || {};
   const soft = (p, f) => p.catch(e => { errors.push(String(e && e.message || e)); return f; });
-  const [items, runs, sources, asked, task, F, V, P, Y, pages, waitingLive] = await Promise.all([
+  let listAt = '';
+  const [items, runs, sources, asked, task, F, V, P, Y, pages, waitingLive, siteRuns, factsRuns] = await Promise.all([
     soft(songsJson(new Request(LIVE_ORIGIN + '/songs.json'), env, { waitUntil: p => { if (p && p.catch) p.catch(() => {}); } })
-      .then(r => r.json()).then(j => { if (j.stale) errors.push('Spotify has asked the Worker to wait until ' + uk(j.stale.until) + ', so these are the songs as it last read them, at ' + uk(j.stale.since) + '.'); return j.songs || []; }), []),
+      .then(r => r.json()).then(j => { listAt = j.at || ''; return j.songs || []; }), []),
     env.GH_TOKEN ? soft(jobRuns(env), []) : Promise.resolve([]),
     soft(rawJson('_sotd/data/sources.json', undefined, ref), { songs: {} }),
     soft(rawJson('_sotd/data/facts-asked.json', {}, ref), {}),
@@ -617,11 +648,14 @@ async function adminStatus(env) {
     soft(rawJson('_sotd/data/facts-pending.json', { songs: {} }, ref), { songs: {} }),
     soft(rawJson('_sotd/data/youtube-playlist.json', {}, ref), {}),
     soft(rawJson('_sotd/data/pages.json', null, ref), null),
-    env.GH_TOKEN ? soft(notLive(env), null) : Promise.resolve(null)]);
+    env.GH_TOKEN ? soft(notLive(env), null) : Promise.resolve(null),
+    env.GH_TOKEN ? soft(runHistory(env, JOB, 60), []) : Promise.resolve([]),
+    env.GH_TOKEN ? soft(runHistory(env, FACTS_JOB, 30), []) : Promise.resolve([])]);
   if (!env.GH_TOKEN) errors.push('The GH_TOKEN secret is not set, so the GitHub jobs can’t be read.');
   const list = items.map((it, i) => Object.assign({ n: i + 1 }, it)).sort((a, b) => (a.a < b.a ? 1 : -1));
   const d = { job: job || {}, runs, S: sources.songs || {}, asked, task, F, V: V.videos || {}, signedNow: signedNow || {},
-    log: log || [], pushSent: pushSent || [], newest: items.length ? items[items.length - 1].id : '', P: P.songs || {}, cat: cat || {}, YT: (Y && Y.added) || {} };
+    log: log || [], pushSent: pushSent || [], newest: items.length ? items[items.length - 1].id : '', P: P.songs || {}, cat: cat || {}, YT: (Y && Y.added) || {},
+    siteRuns: siteRuns || [], factsRuns: factsRuns || [] };
   const isOut = it => !!(F.songs && F.songs[it.id]) || !!(F.signed && F.signed[it.id]);
   const show = list.filter(it => !isOut(it)).concat(list.filter(isOut).slice(0, 2)).sort((a, b) => (a.a < b.a ? 1 : -1));
   const songs = show.map(it => songSteps(it, d, now));
@@ -632,6 +666,13 @@ async function adminStatus(env) {
   songs.forEach(x => x.steps.forEach(y => { if (y.st === 'bad') mark(y, y.key); }));
   runs.forEach(r => { if (r.bad) mark(r, 'r:' + r.id); });
   if (task && task.ok === false) mark(task, 't:' + task.at);
+  if (task) task.by = pushBy(task.run ? { t: 'site', run: task.run } : null, d.siteRuns.concat(d.factsRuns));   // (the run that called it)
+  // Spotify told the Worker to wait (KV spotifyWait): a problem while it lasts, listed for two days after
+  let spotify = null;
+  if (sw && sw.until && now - sw.until < 2 * DAY) {
+    spotify = { at: new Date(sw.at || now).toISOString(), until: new Date(sw.until).toISOString(), active: sw.until > now, since: listAt };
+    if (spotify.active) mark(spotify, 'w:' + (sw.at || 0));
+  }
   // the draft and the live calendar against the template (pages.json, from the site job; John, 28 Oct 2026: "how are we
   // sure that draft and live don't get out of synch")
   let site = null;
@@ -650,10 +691,10 @@ async function adminStatus(env) {
       if (site.going.st !== 'failed') site.publish = false;
     }
   }
-  const notes = d.log.slice(0, 12).map(e => Object.assign({}, e, { say: pushSay(e) }));   // the notifications sent, newest first
+  const notes = d.log.slice(0, 12).map(e => Object.assign({}, e, { say: pushSay(e), by: pushBy(e.via, d.siteRuns.concat(d.factsRuns)) }));   // the notifications sent, newest first
   notes.forEach(e => { if (e.failed) mark(e, 'n:' + e.id); });   // (one that some devices didn't get)
   const jb = d.job;
-  return { at: new Date(now).toISOString(), problems: Object.keys(bad).length, songs, task, runs, notes, site, ref,
+  return { at: new Date(now).toISOString(), problems: Object.keys(bad).length, songs, task, runs, notes, site, spotify, ref,
     job: { at: jb.at || null, tried: jb.tried || null, err: jb.err || '' }, errors };
 }
 async function notLive(env) {   // the template's changes since the calendar last went live (a commit starting "Live")
@@ -687,7 +728,7 @@ async function publishDraft(env) {
   await env.SOTD.put('golive', JSON.stringify({ at: new Date().toISOString(), n: nl.list.length }), { expirationTtl: 2 * DAY / 1000 });
 }
 async function statusAck(env, key, on) {   // "Dealt with" (on), or not after all
-  if (!/^[srtnp]:[\w:.+-]{1,120}$/.test(String(key || ''))) throw new HttpError(400, 'Not something the Status tab shows.');
+  if (!/^[srtnpw]:[\w:.+-]{1,120}$/.test(String(key || ''))) throw new HttpError(400, 'Not something the Status tab shows.');
   const ack = (await env.SOTD.get('statusAck', 'json')) || {};
   const old = Date.now() - ACK_DAYS * DAY;
   for (const k of Object.keys(ack)) if (Date.parse(ack[k]) < old) delete ack[k];
@@ -741,7 +782,8 @@ async function catalog(env) { return (await env.SOTD.get('mediaCatalog', 'json')
 async function catalogSet(env, key, size, fp) {   // which songs have which files: a and v, with their sizes (0: gone),
   const c = await catalog(env), kind = key[0], track = key.slice(2, 24);   // and fa, fv: each file's fingerprint, so a
   const e = c[track] || {};                                                // folder upload can skip what's already there
-  if (size) { e[kind] = size; if (fp) e['f' + kind] = fp; else delete e['f' + kind]; } else { delete e[kind]; delete e['f' + kind]; }
+  if (size) { e[kind] = size; e['t' + kind] = new Date().toISOString(); if (fp) e['f' + kind] = fp; else delete e['f' + kind]; }   // (t: when, for the Status tab)
+  else { delete e[kind]; delete e['f' + kind]; delete e['t' + kind]; }
   if (Object.keys(e).length) c[track] = e; else delete c[track];
   await env.SOTD.put('mediaCatalog', JSON.stringify(c));
 }
@@ -854,7 +896,7 @@ async function members(request, url, env) {
       const msg = { title, body: text, url: link || SITE_SONGS, tag: 'sotd-note-' + Date.now() };
       if (pic(body.image)) msg.image = pic(body.image);
       if (pic(body.icon)) msg.icon = pic(body.icon);
-      const r = await pushAll(env, msg, to, { kind: 'note' });
+      const r = await pushAll(env, msg, to, { kind: 'note', via: { t: 'you' } });
       return answer(200, r);
     }
     case 'pushpic': {   // a picture for a notification (and the inbox), made small on the members page: kept in R2 at n/<id>.jpg
@@ -1971,7 +2013,7 @@ async function pushAll(env, msg, to, meta) {   // to: only these members (else e
   await kvSoft(env, 'pushLastResult', JSON.stringify(res));   // the last send, for the members page
   // and the last 40, for the admin page's Status tab: when each went, to how many, and how the push services took it
   const log = await pushHistory(env);
-  log.unshift({ id: unread[''], at: res.at, title: msg.title, kind: (meta && meta.kind) || 'note', track: (meta && meta.track) || '',
+  log.unshift({ id: unread[''], at: res.at, title: msg.title, kind: (meta && meta.kind) || 'note', track: (meta && meta.track) || '', via: (meta && meta.via) || null,
     to: to ? to.length : 0, inboxes: res.inboxes, devices: ids.length, sent, failed, gone: gone.length, errors: errors.slice(0, 3) });
   log.length = Math.min(log.length, PUSH_LOG);
   await kvSoft(env, 'pushLog', JSON.stringify(log));
@@ -2106,7 +2148,7 @@ async function liveToday() {   // the latest song the live calendar shows (writt
   return fetch(SITE_SONGS + 'today.json?t=' + Date.now(), { headers: { 'User-Agent': 'SongOfTheDayWorker' }, cf: { cacheTtl: 0 } })
     .then(r => r.ok ? r.json() : null).catch(() => null);
 }
-async function pushDaily(env, items) {
+async function pushDaily(env, items, via) {   // via: who asked (the Status tab says): { t: 'timer' }, or { t: 'site', run }
   const last = items[items.length - 1];
   if (!last || !last.id) return 'no songs';
   if (pushDone === last.id) return 'sent already';
@@ -2129,7 +2171,7 @@ async function pushDaily(env, items) {
   pushDone = last.id;
   const slug = live.slug || day.slice(8, 10) + '-' + day.slice(5, 7) + '-' + day.slice(0, 4);
   const r = await pushAll(env, Object.assign({ title: last.title, body: last.artist + (day === londonDay() ? ' \u00b7 today\u2019s Song of the Day' : ' \u00b7 the latest Song of the Day'), icon: last.img || '',
-    url: SITE_SONGS + '#' + slug, tag: 'sotd-day' }, live.card ? { image: live.card } : {}), null, { kind: 'song', track: last.id });   // (the day's share card, made with the release)
+    url: SITE_SONGS + '#' + slug, tag: 'sotd-day' }, live.card ? { image: live.card } : {}), null, { kind: 'song', track: last.id, via: via || null });   // (the day's share card, made with the release)
   console.log('pushDaily ' + last.id + ': ' + JSON.stringify(r));
   return 'sent: ' + pushSay(Object.assign({}, r, { devices: r.devices + r.gone }));
 }
@@ -2141,9 +2183,11 @@ async function pushCheck(request, env, ctx) {
   const k = 'pushcheck:' + new Date().toISOString().slice(0, 16), n = Number(await env.SOTD.get(k)) || 0;
   if (n >= 6) return new Response(JSON.stringify({ error: 'Asked a lot this minute: the 10-minute look will do it.' }), { status: 429, headers: h });
   await kvSoft(env, k, String(n + 1), { expirationTtl: 120 });
+  const b = await request.json().catch(() => ({})), r = b && b.run;   // the site job's run (push_live.py), for the Status tab
+  const run = r && /^\d{1,15}$/.test(String(r.id)) ? { id: Number(r.id), n: Number(r.n) || 0, job: String(r.job || '').slice(0, 60) } : null;
   const res = await songsJson(new Request(LIVE_ORIGIN + '/songs.json'), env, ctx);
   const j = await res.json();
-  const did = await pushDaily(env, (j.songs || []).map(x => ({ id: x.id, a: x.a, title: x.title, artist: x.artist, img: x.img })));
+  const did = await pushDaily(env, (j.songs || []).map(x => ({ id: x.id, a: x.a, title: x.title, artist: x.artist, img: x.img })), { t: 'site', run });
   return new Response(JSON.stringify({ did }), { headers: h });
 }
 

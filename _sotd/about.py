@@ -10,6 +10,7 @@ and a song or album by its title among that artist's works. Nothing is guessed: 
 Wikipedia text is CC BY-SA 4.0: each page keeps its address and revision, and the calendar credits it.
 MusicBrainz and Wikidata data are CC0. One MusicBrainz request a second, as MusicBrainz asks."""
 import datetime, json, os, re, sys, time, urllib.parse, urllib.request
+import runinfo
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, 'data', 'sources.json')
@@ -248,6 +249,9 @@ def main():
             if pg:
                 data['pages'].setdefault(pg['title'], pg)
                 e['albumPage'] = pg['title']
+        e['run'] = (data['songs'].get(s['id']) or {}).get('run') or runinfo.this_run()   # the run that first found it (Status tab)
+        if not e['run']:
+            del e['run']
         data['songs'][s['id']] = e
         print(s['n'], s['title'], '—', s['artist'], '| song:', e['song'] or '-', '| album:', e['albumPage'] or '-')
 

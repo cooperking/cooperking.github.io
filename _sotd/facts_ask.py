@@ -14,6 +14,7 @@ that fails ends with exit code 1, so the job's run shows as failed on GitHub (an
 quietly carrying on (28 Oct 2026: the task's token had been revoked, and nothing said so).
 """
 import datetime, json, os, sys, urllib.request
+import runinfo
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -33,7 +34,7 @@ def load(p, empty):
 def said(ok, songs, text, session=''):   # how this call went, for the Status tab
     with open(TASK, 'w', encoding='utf-8') as f:
         json.dump({'at': datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='seconds'), 'ok': ok,
-                   'songs': [x[1] for x in songs], 'said': text, 'session': session}, f, ensure_ascii=False, indent=1)
+                   'songs': [x[1] for x in songs], 'said': text, 'session': session, 'run': runinfo.this_run()}, f, ensure_ascii=False, indent=1)
     return 0 if ok else 1
 
 
