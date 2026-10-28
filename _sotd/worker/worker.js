@@ -464,13 +464,13 @@ async function jobRuns(env) {   // the latest run of each GitHub job; a failed o
   return out;
 }
 function songSteps(it, d, now) {   // one song's way to the calendar
-  const { job, runs, S, asked, task, F, V, signedNow, log, pushSent, newest } = d;
+  const { job, runs, S, asked, task, F, V, signedNow, log, pushSent, newest, P, cat } = d;
   const added = Date.parse(it.a) || 0, id = it.id, steps = [];
   const step = (k, t, st, say, extra) => steps.push(Object.assign({ k, t, st, say: say || '' }, st === 'bad' ? { key: 's:' + id + ':' + k } : {}, extra || {}));
   const tags = runs.find(r => r.name === 'Song moods and genres') || null;
   const tagsRunning = !!tags && tags.st !== 'completed';
   const out = !!(F.songs && F.songs[id]) || !!(F.signed && F.signed[id]);
-  const src = !!(S[id]), askedAt = asked[id] ? Date.parse(asked[id]) : 0;
+  const src = !!(S[id]), askedAt = asked[id] ? Date.parse(asked[id]) : 0, waiting = !!P[id];   // waiting: written and checked, not signed off
   const mine = task && (task.songs || []).includes(id) ? task : null;   // the last call to the facts task, if it was for this song
   step('added', 'In the playlist', 'ok', '', { at: it.a });
   // 2. the site job (song-tags.yml): its video, year, moods and the sources its facts are written from
@@ -485,23 +485,33 @@ function songSteps(it, d, now) {   // one song's way to the calendar
     else step('job', 'Found by the site job', 'wait', 'The site job starts when someone opens the calendar');
   }
   // 3. the facts task asked for this song's facts (by the site job, at its end)
-  if (out) step('ask', 'Facts task started', 'ok', '');
+  if (out || waiting) step('ask', 'Facts task started', 'ok', '', askedAt ? { at: asked[id] } : {});
   else if (askedAt) step('ask', 'Facts task started', 'ok', '', { at: asked[id], url: mine && mine.ok ? mine.session || '' : '' });
   else if (!src) step('ask', 'Facts task started', 'wait', '');
   else if (mine && !mine.ok) step('ask', 'Facts task started', 'bad', 'It couldn’t be started: ' + mine.said, { at: mine.at, key: 't:' + mine.at });   // (the call's own key)
   else if (tagsRunning) step('ask', 'Facts task started', 'wait', 'Asked for at the end of the site job');
   else if (tags && now - Date.parse(tags.end || tags.at) > STALL.ask) step('ask', 'Facts task started', 'bad', 'The site job didn’t ask for its facts', { url: tags.url });
   else step('ask', 'Facts task started', 'wait', '');
-  // 4. the facts written and checked: out on the calendar from then
-  if (out) step('facts', 'Facts written and checked', 'ok', 'Out on the calendar');
+  // 4. the facts written and checked: on the draft calendar from then, for John to check (P: facts-pending.json)
+  if (out) step('facts', 'Facts written and checked', 'ok', '');
+  else if (waiting) step('facts', 'Facts written and checked', 'ok', 'On the draft calendar for you to check', P[id].written ? { at: P[id].written } : {});
   else if (askedAt && now - askedAt > STALL.facts) step('facts', 'Facts written and checked', 'bad', 'Nothing back from the facts task after ' + ago(now - askedAt) + ': open its session to see why', { url: mine && mine.ok ? mine.session || '' : '' });
   else if (askedAt) step('facts', 'Facts written and checked', 'wait', 'The facts task is writing them (it usually takes a few minutes)');
   else step('facts', 'Facts written and checked', 'wait', '');
-  // 5. John's sign-off
+  // 5. his own recording and video, for the members (the Songs tab's uploads: the catalog)
+  const files = cat[id] || {}, missing = [!files.a && 'your MP3', !files.v && 'your video'].filter(Boolean);
+  if (!missing.length) step('files', 'Your song and video for members', 'ok', '');
+  else step('files', 'Your song and video for members', 'wait', (missing.length > 1 ? 'Not up yet' : missing[0][0].toUpperCase() + missing[0].slice(1) + ' isn’t up yet')
+    + (out ? ': members get the preview and YouTube’s video meanwhile' : ': add them on the Songs tab before you sign it off'));
+  // 6. John's sign-off, which puts a new song on the calendar (John, 28 Oct 2026)
   if (F.signed && F.signed[id]) step('signed', 'Signed off by you', 'ok', '');
-  else if (signedNow[id]) step('signed', 'Signed off by you', 'ok', 'Going onto the calendar now', { at: signedNow[id].at });
-  else step('signed', 'Signed off by you', 'wait', out ? 'Waiting for you on the Songs tab' : '');
-  // 6. the members' notification (pushDaily: the newest song, no more than two days old, as it comes out on the live
+  else if (signedNow[id]) step('signed', 'Signed off by you', 'ok', '', { at: signedNow[id].at });
+  else step('signed', 'Signed off by you', 'wait', waiting || out ? 'Waiting for you on the Songs tab' : '');
+  // 7. out on the live calendar
+  if (out) step('out', 'Out on the calendar', 'ok', '');
+  else if (signedNow[id]) step('out', 'Out on the calendar', 'wait', 'Going out now (a couple of minutes)');
+  else step('out', 'Out on the calendar', 'wait', 'When you sign it off');
+  // 8. the members' notification (pushDaily: the newest song, no more than two days old, as it comes out on the live
   // calendar)
   const sentE = log.find(e => e.track === id) || log.find(e => e.kind === 'song' && e.title === it.title && e.at >= added && e.at - added < 3 * DAY);
   if (sentE || pushSent.includes(id)) step('sent', 'Sent to members', 'ok', sentE ? pushSay(sentE) : '', sentE ? { at: new Date(sentE.at).toISOString() } : {});
@@ -524,22 +534,23 @@ function pushSay(e) {   // how a notification went
 function ago(ms) { const m = Math.round(ms / 60e3); return m < 60 ? m + ' min' : Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + (m % 60) + ' min' : ''); }
 async function adminStatus(env) {
   const now = Date.now(), errors = [];
-  const [job, ack, signedNow, ref, log, pushSent] = await Promise.all([env.SOTD.get('job', 'json'), env.SOTD.get('statusAck', 'json'),
-    env.SOTD.get('factsSigned', 'json'), mainSha(env), pushHistory(env), env.SOTD.get('pushSent', 'json')]);
+  const [job, ack, signedNow, ref, log, pushSent, cat] = await Promise.all([env.SOTD.get('job', 'json'), env.SOTD.get('statusAck', 'json'),
+    env.SOTD.get('factsSigned', 'json'), mainSha(env), pushHistory(env), env.SOTD.get('pushSent', 'json'), catalog(env)]);
   const acked = ack || {};
   const soft = (p, f) => p.catch(e => { errors.push(String(e && e.message || e)); return f; });
-  const [items, runs, sources, asked, task, F, V] = await Promise.all([
+  const [items, runs, sources, asked, task, F, V, P] = await Promise.all([
     soft(getToken(env).then(playlistItems), []),
     env.GH_TOKEN ? soft(jobRuns(env), []) : Promise.resolve([]),
     soft(rawJson('_sotd/data/sources.json', undefined, ref), { songs: {} }),
     soft(rawJson('_sotd/data/facts-asked.json', {}, ref), {}),
     soft(rawJson('_sotd/data/facts-task.json', null, ref), null),
     soft(rawJson('songs/facts.json', undefined, ref), { songs: {}, signed: {} }),
-    soft(rawJson('songs/videos.json', undefined, ref), { videos: {} })]);
+    soft(rawJson('songs/videos.json', undefined, ref), { videos: {} }),
+    soft(rawJson('_sotd/data/facts-pending.json', { songs: {} }, ref), { songs: {} })]);
   if (!env.GH_TOKEN) errors.push('The GH_TOKEN secret is not set, so the GitHub jobs can’t be read.');
   const list = items.map((it, i) => Object.assign({ n: i + 1 }, it)).sort((a, b) => (a.a < b.a ? 1 : -1));
   const d = { job: job || {}, runs, S: sources.songs || {}, asked, task, F, V: V.videos || {}, signedNow: signedNow || {},
-    log: log || [], pushSent: pushSent || [], newest: items.length ? items[items.length - 1].id : '' };
+    log: log || [], pushSent: pushSent || [], newest: items.length ? items[items.length - 1].id : '', P: P.songs || {}, cat: cat || {} };
   const isOut = it => !!(F.songs && F.songs[it.id]) || !!(F.signed && F.signed[it.id]);
   const show = list.filter(it => !isOut(it)).concat(list.filter(isOut).slice(0, 2)).sort((a, b) => (a.a < b.a ? 1 : -1));
   const songs = show.map(it => songSteps(it, d, now));

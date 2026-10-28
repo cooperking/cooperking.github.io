@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="3fd9a1b3996b">
+<meta name="sotd-build" content="355129b72f63">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -6175,10 +6175,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       document.querySelectorAll('#picks .pick .facts').forEach(function (fx) { if (fx._song) fillFacts(fx, fx._song); });
     }).catch(function () {});
   }
-  // a new song is held back until its facts are written and checked (by then its video's been looked for too): it's out
-  // once it's in facts.json. The draft holds it back the same way (John, 26 Oct 2026: the live calendar and the draft
-  // exactly the same). Days are worked out from the whole playlist first, so a held-back song doesn't move the day of
-  // the one before it.
+  // a new song is held back until it's in facts.json: on the live calendar once John signs it off (John, 28 Oct 2026: he
+  // checks the facts and adds his own song and video first); the draft's facts.json has the ones waiting for him too, so
+  // the draft shows a new song as soon as its facts are written. Days are worked out from the whole playlist first, so a
+  // held-back song doesn't move the day of the one before it.
   function outOnly(list, fx) {
     return list.filter(function (s) { return fx ? !!((fx.songs && fx.songs[s.track]) || (fx.signed && fx.signed[s.track])) : !!byTrack[s.track]; });
   }

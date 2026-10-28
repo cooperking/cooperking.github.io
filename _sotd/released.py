@@ -1,10 +1,9 @@
 """Which songs are out on the live calendar.
 
-A new song is held back from the live calendar, the share pages and the YouTube playlist until its facts are written
-and checked (John, 24 Oct 2026: it can go live before he signs them off; he checks and edits them afterwards on
-the Songs tab of songs/admin.html). By then song-tags.yml has looked for its video too: the same run that saves the sources the
-facts are written from. A song is out once it's in songs/facts.json, where facts_apply.py puts checked facts straight
-away. The draft calendar (songs/draft/) holds songs back the same way (John, 26 Oct 2026).
+A new song is held back from the live calendar, the share pages and the YouTube playlist until John signs it off on the
+Songs tab of songs/admin.html (John, 28 Oct 2026: he checks its facts and adds his own song and video for the members
+first; from 24 to 28 Oct its checked facts put it out straight away). A song is out once it's in songs/facts.json, where
+facts_apply.py puts what he signs off. The draft calendar (songs/draft/) shows the ones waiting for him as well.
 """
 import json, os
 

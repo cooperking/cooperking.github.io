@@ -2,8 +2,9 @@ name: Song facts signed off
 
 # Puts what John has signed off on the Songs tab of songs/admin.html on the calendar: fetches it from the Cloudflare Worker,
 # which starts this job each time he signs off, and updates songs/facts.json, the draft's copy and the list still
-# waiting. Where he changed a day's moods, genres or video, they go into his own files (john.json, john-videos.json)
-# and this job starts song-tags.yml to rebuild the calendar's moods and videos from them.
+# waiting. Where he changed a day's moods, genres or video, they go into his own files (john.json, john-videos.json).
+# Then it starts song-tags.yml: a song signed off for the first time comes out on the calendar with this (its share page,
+# its place on the YouTube playlist, the members' notification), and his moods, genres and videos are rebuilt there.
 on:
   workflow_dispatch:
 
@@ -38,13 +39,14 @@ jobs:
           git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
           git add songs/facts.json songs/facts-pending.json songs/draft/facts.json songs/facts-quotes.json _sotd/data/facts-pending.json _sotd/data/facts-quotes.json _sotd/data/john.json _sotd/data/john-videos.json
           if git diff --cached --quiet; then echo "nothing changed"; exit 0; fi
-          if git diff --cached --name-only | grep -qE '_sotd/data/john(-videos)?\.json'; then echo "retag=true" >> "$GITHUB_OUTPUT"; fi
+          echo "changed=true" >> "$GITHUB_OUTPUT"
           git commit -m "Signed off by John: facts$(git diff --cached --name-only | grep -qE 'john(-videos)?\.json' && echo ', moods, genres or video')"
           for i in 1 2 3 4 5; do git pull --rebase --quiet && git push && exit 0; sleep 5; done
           exit 1
 
-      - name: Rebuild the calendar's moods and videos
-        if: steps.save.outputs.retag == 'true'
+      # (its own push, made with this job's token, doesn't start it)
+      - name: The site job (share pages, the YouTube playlist, the members' notification, moods and videos)
+        if: steps.save.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh workflow run song-tags.yml --ref main

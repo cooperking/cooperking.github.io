@@ -140,7 +140,7 @@
       <label class="glassbtn" for="folder"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M1.5 4.5v8h13v-6.5H8L6.5 4.5z"/></svg>Upload a folder of songs…</label>
       <input type="file" id="folder" webkitdirectory multiple hidden>
     </div>
-    <p class="help">Each song has everything in one place: its moods and genres, its video, its facts and your own recording, video and cover (heard and seen by members only). <b>Sign off</b> or <b>Save changes</b> puts exactly what you see live within a couple of minutes; files go up straight away.</p>
+    <p class="help">Each song has everything in one place: its moods and genres, its video, its facts and your own recording, video and cover (heard and seen by members only). <b>Sign off</b> or <b>Save changes</b> puts exactly what you see live within a couple of minutes; files go up straight away. A new song stays off the calendar (it’s on the draft) until you sign it off: <b>Sign off and publish</b> puts it out and sends it to members’ phones.</p>
     <div class="card matchbox" id="matchbox" hidden>
       <div class="kicker">Your files, matched to their days by name</div>
       <ul class="match" id="matches"></ul>
@@ -462,6 +462,7 @@
     meta.appendChild(dl);
     var label = { waiting: 'Waiting for you', signed: st.going ? 'Going live' : 'Signed off', old: 'Live', none: 'No facts yet' }[st.st];
     meta.appendChild(el('span', 'badge ' + st.st, label));
+    if (!isOut(s.id) && st.st !== 'none') meta.appendChild(el('span', 'badge', st.going ? 'Coming out' : 'Not out yet'));
     if (toCheck(s)) meta.appendChild(el('span', 'badge check', 'To check'));
     if (changed(s, st)) meta.appendChild(el('span', 'badge edited', 'Your changes'));
     h.appendChild(meta);
@@ -484,7 +485,7 @@
     Object.keys(w.a || {}).forEach(function (k) { body.appendChild(factSection(s, st, w, k, 'About ' + (w.a[k].name || 'the artist'))); });
     body.appendChild(fileSection(s));
     var foot = el('div', 'sfoot');
-    var go = el('button', 'btn primary', st.st === 'waiting' ? 'Sign off' : 'Save changes'); go.type = 'button';
+    var go = el('button', 'btn primary', st.st === 'waiting' ? (isOut(s.id) ? 'Sign off' : 'Sign off and publish') : 'Save changes'); go.type = 'button';
     go.addEventListener('click', function () { signoff([s]); });
     foot.appendChild(go);
     if (edits[s.id]) {
@@ -547,11 +548,22 @@
     var n = Object.keys(edits).length;
     $('stat').innerHTML = songs.length + ' songs · <b>' + c.waiting + '</b> waiting for you' + (n ? ' · your changes on <b>' + n + '</b>' : '') + (files ? ' · your files on ' + files : '');
   }
+  // a song out on the live calendar: in facts.json (signed off, or from before sign-off began); a new one comes out when
+  // John signs it off (John, 28 Oct 2026: he checks the facts and adds his song and video for the members first)
+  function isOut(tid) { return !!(live.songs[tid] || (live.signed || {})[tid]); }
   function signoff(list_) {
     var items = list_.map(function (s) { return payload(s, state(s)); });
     var long = items.filter(function (it) { return it.s.concat.apply(it.s, Object.keys(it.a).map(function (k) { return it.a[k].f; })).some(function (f) { return words(f.t) > 30; }); });
     if (long.length && !signoff.ok) { signoff.ok = true; toast('Some facts run over 30 words and may not fit the caption. Press again to go ahead.'); return; }
-    signoff.ok = false;
+    // publishing a new song without his own recording or video: once more to be sure (members would get the preview and YouTube's)
+    var bare = list_.filter(function (s) { var e = CAT[s.id] || {}; return !isOut(s.id) && (!e.a || !e.v); });
+    if (bare.length && !signoff.bare) {
+      signoff.bare = true;
+      var e0 = CAT[bare[0].id] || {}, what = !e0.a && !e0.v ? 'your song and video aren’t' : !e0.a ? 'your song isn’t' : 'your video isn’t';
+      toast((bare.length === 1 ? what[0].toUpperCase() + what.slice(1) : 'Your song or video isn’t') + ' up yet. Press again to publish anyway.');
+      return;
+    }
+    signoff.ok = false; signoff.bare = false;
     api('/facts/signoff', { items: items }).then(function (j) {
       if (j.status === 401) return;
       if (!j.ok) { toast(j.error || 'Not saved: the Worker said ' + j.status); return; }

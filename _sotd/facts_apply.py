@@ -6,15 +6,15 @@
     python3 _sotd/facts_apply.py --offline --promote TRACK...|all
                                              put waiting facts live without John's sign-off (only when he has said so:
                                              on 23 Oct 2026 he asked for the checked rewrite of every existing song to go
-                                             straight live; since 24 Oct every new song's checked facts go live anyway, and
-                                             stay waiting for his sign-off as well, so this is rarely needed)
+                                             straight live)
 
 Files:
-    songs/facts.json                 live: the facts the calendar shows (signed off by John, from before sign-off began,
-                                     or checked and waiting for him: those go live straight away, with the song's day)
+    songs/facts.json                 live: the facts the calendar shows, signed off by John (or from before sign-off
+                                     began); a new song comes out on the calendar when he signs it off (released.py)
     _sotd/data/facts-pending.json    written and checked, waiting for John: each fact with its source and supporting words
     songs/facts-pending.json         the same, for the sign-off page (the Songs tab of songs/admin.html)
-    songs/draft/facts.json           live with the waiting ones on top, for the draft calendar (songs/draft/)
+    songs/draft/facts.json           live with the waiting ones on top, for the draft calendar (songs/draft/), which so
+                                     shows a new song as soon as its facts are written, for John to check
     _sotd/data/facts-quotes.json     each written fact's supporting words from its source (fact text: words), kept when
     songs/facts-quotes.json          it goes live, for the sign-off page's "Supporting words"
 A sign-off can also carry the day's moods, genres and YouTube video as John left them: where they differ from what the
@@ -161,18 +161,10 @@ def main(offline, promote=()):
             for t in ids:
                 pending['songs'].pop(t)
             print(len(ids), 'waiting songs put live without sign-off')
-    # checked facts go on the calendar straight away, and with them the song's day (released.py; John, 24 Oct 2026); they
-    # stay waiting for him too, on the sign-off page, where he checks and edits them: his sign-off replaces them. An artist
-    # already on the calendar keeps the facts it has there until he signs the new ones off.
-    fresh = {t: e for t, e in pending['songs'].items() if t not in live.get('songs', {})}
-    if fresh:
-        have = {k for k, e in live.get('artists', {}).items() if e.get('f')}
-        live = page_format(live, {t: {'s': e.get('s', []), 'a': {k: v for k, v in e.get('a', {}).items() if k not in have}}
-                                  for t, e in fresh.items()})
-        for t, e in fresh.items():
-            live['songs'][t]['a'] = list(e.get('a', {}).keys())
-        print(len(fresh), 'checked songs put on the calendar, still waiting for John:',
-              ', '.join('%s %s' % (e.get('n'), e.get('title')) for e in fresh.values()))
+    # a new song's checked facts wait for John: he checks them, adds his own recording and video for the members, and his
+    # sign-off puts them live, and with them the song's day (released.py; John, 28 Oct 2026: "the site shouldn't publish
+    # automatically for new song of the day as i'd like to check the facts and add videos and songs myself for members").
+    # From 24 to 28 Oct they went live as soon as they were checked. The draft shows them meanwhile.
     live = page_format(live)
     changed = [p for p, d, c in ((LIVE, live, True), (PENDING, pending, False), (PENDING_PUB, pending, True),
                                  (DRAFT, page_format(live, pending['songs']), True), (QUOTES, quotes, False),
