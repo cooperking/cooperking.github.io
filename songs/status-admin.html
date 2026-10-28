@@ -71,6 +71,7 @@
 .fix .waits { margin: 2px 0 0; padding-left: 18px; display: grid; gap: 4px; font-size: 13.5px; }
 .fix .waits .w { color: var(--muted); font-size: 12px; white-space: nowrap; }
 .fix .note2 { font-size: 13px; color: var(--muted); }
+.fix .draftlink { font-size: 14px; font-weight: 500; }
 .fix .pubrow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 6px; }
 .fix .pubrow .hint { font-size: 13px; color: var(--muted); flex: 1 1 200px; }
 .fix .pubrow .hint.err { color: var(--warn); }
@@ -232,6 +233,7 @@
       x.list.forEach(function (c) { var li = el('li'); li.appendChild(link(c.url, c.t)); li.appendChild(el('span', 'w', ' ' + uk(c.at))); ul.appendChild(li); });
       box.appendChild(ul);
     }
+    var dl = el('div', 'draftlink'); dl.appendChild(link('/songs/draft/', 'Open the draft ↗')); box.appendChild(dl);   // (a new tab)
     var g = x.going;
     if (g) {   // Publish pressed: its run on GitHub
       var gl = el('div', 'going ' + g.st);
