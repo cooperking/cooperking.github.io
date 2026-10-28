@@ -79,22 +79,22 @@ code { font-size: 12.5px; background: var(--chip); border: 1px solid var(--line)
     <p class="now" id="andnow">On Google Play as a closed test, and on the website as an app to install directly.</p>
     <ul class="who" id="andwho"></ul>
     <div class="kicker">Google Play’s testers</div>
-    <p class="now">The closed test takes its testers from a Google Group, <b>Song of the Day testers</b> (Play Console: the track’s Testers, Google Groups). Google Groups has no CSV upload: it takes the addresses pasted in.</p>
+    <p class="now">The closed test’s testers come from its email list in Play Console, <b>Song of the Day testers</b>.</p>
     <ol class="steps">
-      <li><b>Copy the emails</b> (below): every member with an email address. Only a Google account’s address works on Google Play.</li>
-      <li><b>Open the group’s members</b> (below), then <b>Add</b>: paste them into Group members, tick <b>Directly add members</b>, and press the button at the foot. Unticked, it sends invitations instead, which each of them has to accept.</li>
+      <li><b>Download the emails</b> (below): every member with an email address, one a line. Only a Google account’s address works on Google Play.</li>
+      <li><b>Open the test’s testers in Play Console</b> (below). Under Email lists, the arrow by Song of the Day testers opens the list: <b>Upload CSV file</b>, then <b>Save changes</b>. (Or <b>Copy the emails</b> and paste them into Add email addresses.)</li>
+      <li>Email lists chosen (not Google Groups), the list <b>ticked</b>, then <b>Save</b>. Play says the change goes to Publishing overview, to send for review there.</li>
       <li>They join the test with the opt-in link, which their invitation gives them on Android.</li>
     </ol>
     <div class="csvrow">
-      <button class="btn small primary" id="mailcopy" type="button" disabled>Copy the emails</button>
-      <a class="btn small" href="https://groups.google.com/g/sotd-testers/members" target="_blank" rel="noopener">Open the group’s members</a>
+      <button class="btn small primary" id="csvget" type="button" disabled>Download the emails (CSV)</button>
+      <button class="btn small" id="mailcopy" type="button" disabled>Copy the emails</button>
       <a class="btn small" href="https://play.google.com/console/u/0/developers/8451769739116673252/app/4976369889723072066/tracks/4700226162460204904?tab=testers" target="_blank" rel="noopener">Open the test’s testers in Play Console</a>
       <span class="stat" id="csvstat"></span>
     </div>
-    <p class="stat">Or as a file: <button class="link" id="csvget" type="button" disabled>download the emails (CSV)</button>, one a line. Play Console takes a CSV only for an email list (the test’s testers › Create email list › Upload CSV file), and the track would then have to be switched from Google Groups to Email lists.</p>
     <ul class="links">
       <li><a href="https://play.google.com/console" target="_blank" rel="noopener">Play Console</a><span class="in">your own Google account, then the developer account John Griffiths (not Collabco’s)</span><span>Test and release › Testing › Closed testing: the releases and the testers (the button above goes straight to the testers). For production, Google first wants 12 testers opted in for 14 days in a row.</span></li>
-      <li><a href="https://play.google.com/apps/testing/io.github.cooperking.sotd" target="_blank" rel="noopener">Join the test (the link members open)</a><span>Works once they’re in the testers’ group. Invitations give it on Android to members with an email address.</span></li>
+      <li><a href="https://play.google.com/apps/testing/io.github.cooperking.sotd" target="_blank" rel="noopener">Join the test (the link members open)</a><span>Works once their email is on the test’s email list. Invitations give it on Android to members with an email address.</span></li>
       <li><a href="https://play.google.com/store/apps/details?id=io.github.cooperking.sotd" target="_blank" rel="noopener">The app on Google Play</a><span>Shows only for testers who have joined.</span></li>
       <li><a href="https://github.com/cooperking/cooperking.github.io/actions/workflows/android.yml" target="_blank" rel="noopener">GitHub: the “Android app” job</a><span>Builds the website’s app (<code>songs/android.apk</code>) and the bundle for Google Play: the run’s artifact <b>sotd-android</b> is the .aab to upload in Play Console as a new closed-testing release.</span></li>
       <li><a href="https://github.com/cooperking/cooperking.github.io/actions/workflows/android-check.yml" target="_blank" rel="noopener">GitHub: the “Android app check” job</a><span>Runs the app on an emulated phone and saves what it saw.</span></li>
@@ -187,7 +187,7 @@ code { font-size: 12.5px; background: var(--chip); border: 1px solid var(--line)
   }
 
   function withEmail() { return MEMBERS.filter(function (m) { return m.email; }); }
-  $('mailcopy').addEventListener('click', function () {   // for the group's Add members box
+  $('mailcopy').addEventListener('click', function () {   // for the email list's Add email addresses box
     var list = withEmail().map(function (m) { return m.email; });
     if (!list.length) return;
     var text = list.join(', ');

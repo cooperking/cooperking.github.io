@@ -102,13 +102,12 @@ run as him with MailApp: 100 a day; set up with clasp, its address and key in th
 or else Gmail's API with his sign-in (`GMAIL_REFRESH_TOKEN`). Each email sent is noted for the Status tab (KV
 `mailLog`); one that couldn't be sent counts there. *Send a test email* on the Members tab tries it.
 
-Google Play's closed test takes its testers from a Google Group, *Song of the Day testers* (`sotd-testers`, a
-googlegroups.com group John owns; Play Console: the track's Testers, Google Groups). Neither Play's API nor Google
-Groups' lets this fill it (Play's API sets only which groups; a consumer group's members can't be added by API), so John
-adds them: *Copy the emails* (on the Members and Apps tabs, comma-separated), then the group's Members › Add, *Directly
-add members*. *Download them (CSV)*, one a line, is for a Play Console email list instead (which would mean switching
-the track from Google Groups to Email lists). The Apps tab links straight to the group's members and the track's
-Testers. For a member with an email address, the invitation's page gives Android Google Play's steps: join the test
+Google Play's closed test takes its testers from its email list in Play Console, *Song of the Day testers* (John's
+choice, 28 Oct 2026; until then the track used a Google Group of the same name, `sotd-testers`). Play's API can't read
+or write email lists (it takes Google Groups only), so John adds the members: *Download the emails (CSV)*, one a line,
+on the Members and Apps tabs, then the track's Testers › Email lists › the list › Upload CSV file › Save changes
+(*Copy the emails*, comma-separated, is for its Add email addresses box). The Apps tab links straight to the track's
+Testers and has the steps. For a member with an email address, the invitation's page gives Android Google Play's steps: join the test
 (`play.google.com/apps/testing/io.github.cooperking.sotd`), get the app from Play, open the invitation; under them,
 should Play not have them yet, the website's app instead. Tests: `mail_t.mjs` (the Worker), `gs_t.js` (the mailer),
 `members_t.py` (the Members and Apps tabs), `signin_t.py` (the draft).
