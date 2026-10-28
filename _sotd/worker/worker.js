@@ -630,9 +630,9 @@ function pushSay(e) {   // how a notification went
 function ago(ms) { const m = Math.round(ms / 60e3); return m < 60 ? m + ' min' : Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + (m % 60) + ' min' : ''); }
 async function adminStatus(env) {
   const now = Date.now(), errors = [];
-  const [job, ack, signedNow, ref, log, pushSent, cat, golive, sw] = await Promise.all([env.SOTD.get('job', 'json'), env.SOTD.get('statusAck', 'json'),
+  const [job, ack, signedNow, ref, log, pushSent, cat, golive, sw, mailLog] = await Promise.all([env.SOTD.get('job', 'json'), env.SOTD.get('statusAck', 'json'),
     env.SOTD.get('factsSigned', 'json'), mainSha(env), pushHistory(env), env.SOTD.get('pushSent', 'json'), catalog(env), env.SOTD.get('golive', 'json'),
-    env.SOTD.get('spotifyWait', 'json')]);
+    env.SOTD.get('spotifyWait', 'json'), env.SOTD.get('mailLog', 'json')]);
   const acked = ack || {};
   const soft = (p, f) => p.catch(e => { errors.push(String(e && e.message || e)); return f; });
   let listAt = '';
@@ -691,10 +691,13 @@ async function adminStatus(env) {
       if (site.going.st !== 'failed') site.publish = false;
     }
   }
+  // the emails sent (codes to sign in, and tests) in the last two days; one that couldn't be sent is a problem
+  const mails = (mailLog || []).filter(e => now - e.at < 2 * DAY).map(e => Object.assign({}, e, { at: new Date(e.at).toISOString() }));
+  mails.forEach(e => { if (!e.ok) mark(e, 'm:' + e.id); });
   const notes = d.log.slice(0, 12).map(e => Object.assign({}, e, { say: pushSay(e), by: pushBy(e.via, d.siteRuns.concat(d.factsRuns)) }));   // the notifications sent, newest first
   notes.forEach(e => { if (e.failed) mark(e, 'n:' + e.id); });   // (one that some devices didn't get)
   const jb = d.job;
-  return { at: new Date(now).toISOString(), problems: Object.keys(bad).length, songs, task, runs, notes, site, spotify, ref,
+  return { at: new Date(now).toISOString(), problems: Object.keys(bad).length, songs, task, runs, notes, site, spotify, mails, ref,
     job: { at: jb.at || null, tried: jb.tried || null, err: jb.err || '' }, errors };
 }
 async function notLive(env) {   // the template's changes since the calendar last went live (a commit starting "Live")
@@ -728,7 +731,7 @@ async function publishDraft(env) {
   await env.SOTD.put('golive', JSON.stringify({ at: new Date().toISOString(), n: nl.list.length }), { expirationTtl: 2 * DAY / 1000 });
 }
 async function statusAck(env, key, on) {   // "Dealt with" (on), or not after all
-  if (!/^[srtnpw]:[\w:.+-]{1,120}$/.test(String(key || ''))) throw new HttpError(400, 'Not something the Status tab shows.');
+  if (!/^[srtnpwm]:[\w:.+-]{1,120}$/.test(String(key || ''))) throw new HttpError(400, 'Not something the Status tab shows.');
   const ack = (await env.SOTD.get('statusAck', 'json')) || {};
   const old = Date.now() - ACK_DAYS * DAY;
   for (const k of Object.keys(ack)) if (Date.parse(ack[k]) < old) delete ack[k];
@@ -803,6 +806,8 @@ async function members(request, url, env) {
   if (route === 'tvcode') return memberTvCode(request, env, answer);
   if (route === 'passkey') return memberPasskeys(request, env, answer);
   if (route === 'passkey/signin') return memberPasskeySignin(request, env, answer);
+  if (route === 'code') return memberMailCode(request, env, answer);
+  if (route === 'code/signin') return memberMailSignin(request, env, answer);
   if (route === 'push') return memberPush(request, env, answer);
   if (route === 'inbox') return memberInbox(request, env, answer);
   if (!['admin', 'upload', 'cover'].includes(route)) return answer(404, { error: 'Not here.' });
@@ -820,7 +825,7 @@ async function members(request, url, env) {
     m.invite = { hash: await sha256hex(code), uses: 0, until: Date.now() + INVITE_DAYS * DAY };
     return MEMBERS_JOIN + code;
   };
-  const listing = (own = owner) => Object.entries(all).map(([id, m]) => ({ id, name: m.name, created: m.created, owner: id === own,
+  const listing = (own = owner) => Object.entries(all).map(([id, m]) => ({ id, name: m.name, created: m.created, owner: id === own, email: m.email || '', tester: m.tester || null,
     devices: Object.values(m.devices || {}).filter(d => d.did).length, passkeys: (m.passkeys || []).length, seen: Math.max(0, ...Object.values(m.devices || {}).map(d => d.seen || 0)) || null,
     invite: m.invite ? { uses: m.invite.uses, left: Math.max(0, INVITE_USES - m.invite.uses), until: m.invite.until } : null }));
   switch (body.op) {
@@ -829,7 +834,10 @@ async function members(request, url, env) {
       const name = String(body.name || '').replace(/\s+/g, ' ').trim().slice(0, 60);
       if (!name) return answer(400, { error: 'Give their name.' });
       if (Object.keys(all).length >= MEMBERS_MAX) return answer(400, { error: 'That is the most members there can be.' });
-      const id = randomCode(6), m = { name, created: Date.now(), devices: {} };
+      const email = body.email ? cleanEmail(body.email) : '';
+      if (body.email && !email) return answer(400, { error: 'That doesn’t look like an email address.' });
+      if (email && Object.values(all).some(x => x.email === email)) return answer(400, { error: 'Another member has that email address.' });
+      const id = randomCode(6), m = Object.assign({ name, created: Date.now(), devices: {} }, email ? { email } : {});
       const link = await invite(m);
       all[id] = m; await save();
       return answer(200, { id, link, members: listing() });
@@ -839,6 +847,30 @@ async function members(request, url, env) {
       if (!m) return answer(404, { error: 'No such member.' });
       const link = await invite(m); await save();
       return answer(200, { id: body.id, link, members: listing() });
+    }
+    case 'email': {   // a member's email address ('' takes it away): for codes by email, and Play's test list
+      const m = all[body.id];
+      if (!m) return answer(404, { error: 'No such member.' });
+      const email = body.email ? cleanEmail(body.email) : '';
+      if (body.email && !email) return answer(400, { error: 'That doesn’t look like an email address.' });
+      if (email && Object.entries(all).some(([k, x]) => k !== body.id && x.email === email)) return answer(400, { error: 'Another member has that email address.' });
+      if (email !== (m.email || '')) { if (email) m.email = email; else delete m.email; delete m.tester; }   // (a new address isn't on Play's list yet)
+      await save();
+      return answer(200, { ok: true, members: listing() });
+    }
+    case 'tester': {   // on Play's test list (John has pasted their email there), or not
+      const ids = (Array.isArray(body.ids) ? body.ids : [body.id]).filter(k => all[k] && all[k].email);
+      if (!ids.length) return answer(400, { error: 'Nobody with an email address to mark.' });
+      ids.forEach(k => { if (body.on === false) delete all[k].tester; else all[k].tester = new Date().toISOString(); });
+      await save();
+      return answer(200, { ok: true, members: listing() });
+    }
+    case 'mailtest': {   // a test email, to check the Gmail sign-in works (to a member's address)
+      const m = all[body.id];
+      if (!m || !m.email) return answer(400, { error: 'Give them an email address first.' });
+      try { await sendMail(env, m.email, 'A test from John’s Song of the Day', 'This is a test email from John’s Song of the Day. Sign-in codes come from this address.', 'test'); }
+      catch (e) { return answer(e.status || 502, { error: e.message }); }
+      return answer(200, { ok: true });
     }
     case 'tvcode': {
       if (!all[body.id]) return answer(404, { error: 'No such member.' });
@@ -918,7 +950,7 @@ async function members(request, url, env) {
       const pid = /^[\w-]{16}$/.test(String(body.page || '')) && await env.SOTD.get('invpage:' + body.page) ? body.page : randomCode(12);
       const ttl = INVITE_DAYS * 86400, at = Date.now();
       await env.SOTD.put('invcard:' + pid, bytes, { expirationTtl: ttl });
-      await env.SOTD.put('invpage:' + pid, JSON.stringify({ link, title: String(body.title || (m.name + ' is invited')).slice(0, 120), name: m.name, at }), { expirationTtl: ttl });
+      await env.SOTD.put('invpage:' + pid, JSON.stringify({ link, title: String(body.title || (m.name + ' is invited')).slice(0, 120), name: m.name, id: body.id, at }), { expirationTtl: ttl });
       return answer(200, { page: pid, url: new URL(request.url).origin + '/i/' + pid });
     }
     case 'files': {
@@ -1209,7 +1241,7 @@ async function memberMe(request, env, answer) {
     if (x) mycovers[track] = x.share ? { id: x.id, at: x.at, share: x.share.at } : { id: x.id, at: x.at };
   }
   const unread = ((await env.SOTD.get('inbox:' + id, 'json')) || []).filter(x => !x.r).length;   // the Profile's inbox: not yet read
-  return answer(200, Object.assign({ name: m.name, exp, media, mycovers, unread }, owner ? { owner: true } : {}));
+  return answer(200, Object.assign({ name: m.name, email: m.email || '', exp, media, mycovers, unread }, owner ? { owner: true } : {}));
 }
 
 // an invitation's link: a page that shows a proper card in a message (WhatsApp, iMessage...), like a day's share page,
@@ -1217,6 +1249,8 @@ async function memberMe(request, env, answer) {
 // the steps for getting the phone's own app (below), for everyone (John, 27 Oct 2026); false shows them only with ?try on
 // the end of an invitation's link, everyone else going straight on to the calendar
 const INVITE_STEPS = true;
+const PLAY_PACKAGE = 'io.github.cooperking.sotd';   // the Android app on Google Play (closed testing from 28 Oct 2026)
+const PLAY_TEST = 'https://play.google.com/apps/testing/' + PLAY_PACKAGE, PLAY_APP = 'https://play.google.com/store/apps/details?id=' + PLAY_PACKAGE;
 const INVITE_BOTS = /bot|crawl|spider|preview|facebookexternalhit|facebot|whatsapp|telegram|slack|discord|linkedin|pinterest|embedly|iframely|skype|viber|signal|vkshare|redditbot|applebot|google|bing/i;
 async function invitePage(url, env) {
   const m = /^\/i\/([\w-]{16})(\.jpg|\.json)?$/.exec(url.pathname);
@@ -1239,6 +1273,8 @@ async function invitePage(url, env) {
   const [ios, android] = await Promise.all([get(SITE_SONGS + 'ios.json'), get(SITE_SONGS + 'android.json')]);
   const tf = /^https:\/\/testflight\.apple\.com\/join\/\w+$/.test(ios.testflight || '') ? ios.testflight : '';
   const apk = /^https:\/\/cooperking\.github\.io\//.test(android.apk || '') ? android.apk : '';
+  // on Play's test list (John has pasted their email there: the Members tab): Google Play's steps for them on Android
+  const who = p.id ? ((await env.SOTD.get('members', 'json')) || {})[p.id] : null, play = !!(who && who.tester && who.email);
   const e = x => esc(String(x)), img = url.origin + '/i/' + m[1] + '.jpg?v=' + p.at, desc = 'John\'s Song of the Day';
   const steps = INVITE_STEPS || url.searchParams.has('try'), own = url.origin + '/i/' + m[1];
   return new Response(`<!doctype html>
@@ -1291,7 +1327,7 @@ async function invitePage(url, env) {
   if (${INVITE_BOTS}.test(ua)) return;
   var iphone = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1), android = /Android/.test(ua);
   // a phone with its own app to get: the steps; anything else, straight on to the calendar, as before
-  if (${JSON.stringify(steps)} && ((iphone && ${JSON.stringify(!!tf)}) || (android && ${JSON.stringify(!!apk)}))) { document.documentElement.classList.add('steps', iphone ? 'iphone' : 'android'); return; }
+  if (${JSON.stringify(steps)} && ((iphone && ${JSON.stringify(!!tf)}) || (android && ${JSON.stringify(!!apk || play)}))) { document.documentElement.classList.add('steps', iphone ? 'iphone' : 'android'); return; }
   location.replace(link);
 })();
 </script>
@@ -1311,6 +1347,10 @@ async function invitePage(url, env) {
   var steps = iphone ? [
     { t: 'Get the iPhone app', p: 'Apple’s TestFlight app comes first, then Song of the Day. Your invitation is copied as you go: when the app opens, it offers to sign you in with it.', a: ${JSON.stringify(tf)}, copy: true },
     { t: 'Open the app', p: 'If it doesn’t offer to sign you in, tap your invitation in the message again: it opens the app, signed in.' }
+  ] : ${JSON.stringify(play)} ? [
+    { t: 'Join the test on Google Play', p: 'Make sure Google Play on this phone is signed in to the Google account John has for you, then tap Become a tester.', a: ${JSON.stringify(PLAY_TEST)} },
+    { t: 'Get the app from Google Play', p: 'If you have the app from the website already, uninstall that first: Google Play installs its own copy.', a: ${JSON.stringify(PLAY_APP)} },
+    { t: 'Open your invitation', p: 'It opens in the app and signs you in.', a: link, ghost: true }
   ] : [
     { t: 'Get the Android app', p: 'Android asks to allow installing from your browser: allow it, then tap Install.', a: ${JSON.stringify(apk)} },
     { t: 'Open your invitation', p: 'It opens in the app and signs you in.', a: link, ghost: true }
@@ -1543,6 +1583,115 @@ async function memberPasskeySignin(request, env, answer) {
   if (!ok) return fail(403, 'That passkey didn’t check out. Try again.');
   if ((pk.count || ad.count) && ad.count <= (pk.count || 0)) return fail(403, 'That passkey looks copied. Sign in with a code from your Profile on another device instead.');
   pk.count = ad.count; pk.used = Date.now();
+  const token = await newDevice(all, m, deviceId(body.device));
+  await env.SOTD.put('members', JSON.stringify(all));
+  return answer(200, { token, name: m.name });
+}
+
+// ---------- a code by email: the way back in when a passkey won't do (John, 28 Oct 2026: "it would be good to have
+// email codes to be sent as a back up in case passkeys fail") ----------
+//
+// John gives each member's email address on the Members tab. Sign in, then the member's email address: if it's a
+// member's, a 6-digit code goes to it from John's Gmail (Gmail's API, John's own sign-in: the Worker secrets
+// GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET, GMAIL_REFRESH_TOKEN, put there by worker_deploy.py from the repository's
+// secrets). The code works once, for MAIL_CODE_MINUTES, MAIL_CODE_TRIES tries; only its hash is kept (KV mailcode:<id>).
+// The answer is the same whether or not the address is a member's. Each email sent, and each that couldn't be, is
+// noted for the Status tab (KV mailLog, the last 20, the address shortened).
+const MAIL_CODE_MINUTES = 10, MAIL_CODE_TRIES = 5, MAIL_PER_HOUR = 5, MAIL_IP_PER_HOUR = 10;
+function cleanEmail(x) {
+  const e = String(x || '').trim().toLowerCase();
+  return e.length <= 254 && /^[^\s@<>()",;:]{1,64}@[a-z0-9.-]{1,190}\.[a-z]{2,24}$/.test(e) ? e : '';
+}
+function mailReady(env) { return !!(env.GMAIL_CLIENT_ID && env.GMAIL_CLIENT_SECRET && env.GMAIL_REFRESH_TOKEN); }
+function mailShort(e) { const [u, d] = String(e).split('@'); return (u || '').slice(0, 1) + '…@' + (d || ''); }
+let gmailMem = null;
+async function gmailToken(env) {
+  if (gmailMem && gmailMem.exp > Date.now() + 60e3) return gmailMem.tok;
+  const r = await fetch('https://oauth2.googleapis.com/token', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ client_id: env.GMAIL_CLIENT_ID, client_secret: env.GMAIL_CLIENT_SECRET, refresh_token: env.GMAIL_REFRESH_TOKEN, grant_type: 'refresh_token' }) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok || !j.access_token) throw new HttpError(502, 'Google wouldn’t let the Worker use your Gmail: ' + (j.error_description || j.error || 'it answered ' + r.status));
+  gmailMem = { tok: j.access_token, exp: Date.now() + (j.expires_in || 3600) * 1000 };
+  return gmailMem.tok;
+}
+function b64utf8(s) { const b = new TextEncoder().encode(s); let t = ''; for (let i = 0; i < b.length; i += 0x8000) t += String.fromCharCode.apply(null, b.subarray(i, i + 0x8000)); return btoa(t); }
+async function mailNote(env, e) {
+  const log = (await env.SOTD.get('mailLog', 'json')) || [];
+  log.unshift(e); log.length = Math.min(log.length, 20);
+  await kvSoft(env, 'mailLog', JSON.stringify(log));
+}
+async function sendMail(env, to, subject, text, what) {   // from John's Gmail (it puts his own name and address on it)
+  const note = { id: randomCode(6), at: Date.now(), what, to: mailShort(to) };
+  try {
+    if (!mailReady(env)) throw new HttpError(503, 'Emails aren’t set up yet: the Worker has no Gmail sign-in.');
+    const raw = ['To: ' + to, 'Subject: =?UTF-8?B?' + b64utf8(subject) + '?=', 'MIME-Version: 1.0', 'Content-Type: text/plain; charset=UTF-8',
+      'Content-Transfer-Encoding: base64', '', b64utf8(text).replace(/.{76}/g, '$&\r\n')].join('\r\n');
+    const send = async () => fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', { method: 'POST',
+      headers: { Authorization: 'Bearer ' + await gmailToken(env), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ raw: b64utf8(raw).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '') }) });
+    let r = await send();
+    if (r.status === 401) { gmailMem = null; r = await send(); }   // (its sign-in ran out early: a new one, once)
+    if (!r.ok) {
+      const j = await r.json().catch(() => ({}));
+      if (r.status === 401) gmailMem = null;
+      throw new HttpError(502, 'Gmail didn’t send it: ' + ((j.error && j.error.message) || 'it answered ' + r.status));
+    }
+    note.ok = true;
+  } catch (e) {
+    note.ok = false; note.err = String(e.message || e).slice(0, 200);
+    await mailNote(env, note);
+    throw e;
+  }
+  await mailNote(env, note);
+}
+async function memberMailCode(request, env, answer) {   // POST { email }: a code to it, if it's a member's
+  if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
+  const body = await request.json().catch(() => ({}));
+  const email = cleanEmail(body.email);
+  if (!email) return answer(400, { error: 'That doesn’t look like an email address.' });
+  if (!mailReady(env)) return answer(503, { error: 'Codes by email aren’t set up yet. Use a passkey, or ask John for a code.' });
+  const hour = new Date().toISOString().slice(0, 13), ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+  const ipKey = 'mailip:' + ip + ':' + hour, n = Number(await env.SOTD.get(ipKey)) || 0;
+  if (n >= MAIL_IP_PER_HOUR) return answer(429, { error: 'That’s a lot of codes from here this hour. Try again later.' });
+  await kvSoft(env, ipKey, String(n + 1), { expirationTtl: 7200 });
+  const all = (await env.SOTD.get('members', 'json')) || {};
+  const id = Object.keys(all).find(k => all[k].email === email);
+  if (id) {
+    const key = 'mailcode:' + id, old = await env.SOTD.get(key, 'json');
+    const sent = (old && old.hour === hour ? old.n : 0) || 0;
+    if (old && old.sent > Date.now() - 60e3) return answer(200, { ok: true, minutes: MAIL_CODE_MINUTES });   // (one a minute: the last is on its way)
+    if (sent >= MAIL_PER_HOUR) return answer(429, { error: 'That’s a lot of codes for that address this hour. Try again later.' });
+    const code = String(crypto.getRandomValues(new Uint32Array(1))[0] % 1e6).padStart(6, '0');
+    await env.SOTD.put(key, JSON.stringify({ h: await sha256hex(id + ':' + code), until: Date.now() + MAIL_CODE_MINUTES * 60e3, tries: 0,
+      sent: Date.now(), hour, n: sent + 1 }), { expirationTtl: MAIL_CODE_MINUTES * 60 + 3600 });
+    try {
+      await sendMail(env, email, 'Your Song of the Day code: ' + code,
+        'Your code to sign in to John’s Song of the Day is ' + code + '.\n\nType it where you asked for it, within ' + MAIL_CODE_MINUTES
+        + ' minutes. It works once.\n\nIf you didn’t ask for it, you can ignore this email: nobody can sign in without the code.\n', 'code');
+    } catch (e) { return answer(502, { error: 'The email couldn’t be sent just now. Use a passkey, or ask John for a code.' }); }
+  }
+  return answer(200, { ok: true, minutes: MAIL_CODE_MINUTES });
+}
+async function memberMailSignin(request, env, answer) {   // POST { email, code, device }: signed in, with the code from the email
+  if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
+  const body = await request.json().catch(() => ({}));
+  const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+  const failKey = 'joinfail:' + ip + ':' + new Date().toISOString().slice(0, 13);
+  const fails = Number(await env.SOTD.get(failKey)) || 0;
+  if (fails >= 20) return answer(429, { error: 'Too many tries from here this hour.' });
+  const fail = async (status, error) => { await env.SOTD.put(failKey, String(fails + 1), { expirationTtl: 7200 }); return answer(status, { error }); };
+  const email = cleanEmail(body.email), code = String(body.code || '').replace(/\D/g, '');
+  const all = (await env.SOTD.get('members', 'json')) || {};
+  const id = email ? Object.keys(all).find(k => all[k].email === email) : '';
+  const key = 'mailcode:' + id, rec = id ? await env.SOTD.get(key, 'json') : null;
+  if (!rec || !rec.h || rec.until < Date.now() || rec.tries >= MAIL_CODE_TRIES) return fail(400, 'That code has run out. Ask for a new one.');
+  if (code.length !== 6 || await sha256hex(id + ':' + code) !== rec.h) {
+    rec.tries++;
+    await env.SOTD.put(key, JSON.stringify(rec), { expirationTtl: 3600 });
+    return fail(403, rec.tries >= MAIL_CODE_TRIES ? 'That isn’t the code, and that was the last try. Ask for a new one.' : 'That isn’t the code. Check the email and try again.');
+  }
+  await env.SOTD.put(key, JSON.stringify({ hour: rec.hour, n: rec.n, sent: rec.sent }), { expirationTtl: 3600 });   // (used: the hour's count stays)
+  const m = all[id];
   const token = await newDevice(all, m, deviceId(body.device));
   await env.SOTD.put('members', JSON.stringify(all));
   return answer(200, { token, name: m.name });

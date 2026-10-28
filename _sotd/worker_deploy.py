@@ -13,7 +13,10 @@ CLOUDFLARE_ACCOUNT_ID. Without the token it does nothing.
    between a member's devices) and the Worker has no NOW binding, it's uploaded with that binding and its migration (the
    Worker's other bindings and settings kept); if Cloudflare says no, the code goes up alone, and works on without it
    (in KV). Without ADD_NOW, it's only said that the binding isn't there.
-3b. Puts the iPhone app's APNs key on the Worker as secrets, when the repository has it (APNS_KEY_ID, APNS_KEY_P8, APPLE_TEAM_ID).
+3b. Puts the iPhone app's APNs key on the Worker as secrets, when the repository has it (APNS_KEY_ID, APNS_KEY_P8, APPLE_TEAM_ID),
+   and John's Gmail sign-in for the members' codes by email, when the repository has GMAIL_REFRESH_TOKEN (with the
+   Song of the Day Cloud project's OAuth client, YT_CLIENT_ID and YT_CLIENT_SECRET): GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET,
+   GMAIL_REFRESH_TOKEN.
 5. Sets the Worker's timer (every 10 minutes, for the day's song notification) if it isn't already.
 """
 import re, json, os, shutil, subprocess, sys, tempfile, time, urllib.error, urllib.request, uuid
@@ -165,7 +168,10 @@ def upload_with_now(base, settings, code):
 
 def after_upload(base, before, code):
     # 3b. the iPhone app's notifications: John's APNs key, from the repository secrets, as the Worker's own secrets
-    for name, env_name in (('APNS_KEY_ID', 'APNS_KEY_ID'), ('APNS_KEY', 'APNS_KEY_P8'), ('APPLE_TEAM_ID', 'APPLE_TEAM_ID')):
+    gmail = (('GMAIL_CLIENT_ID', 'YT_CLIENT_ID'), ('GMAIL_CLIENT_SECRET', 'YT_CLIENT_SECRET'), ('GMAIL_REFRESH_TOKEN', 'GMAIL_REFRESH_TOKEN'))
+    if not all(os.environ.get(e, '').strip() for _n, e in gmail):
+        gmail = ()   # (all three, or none)
+    for name, env_name in (('APNS_KEY_ID', 'APNS_KEY_ID'), ('APNS_KEY', 'APNS_KEY_P8'), ('APPLE_TEAM_ID', 'APPLE_TEAM_ID')) + gmail:
         val = os.environ.get(env_name, '').strip()
         if not val:
             continue

@@ -206,6 +206,10 @@
       out.push(item({ at: r.st === 'completed' ? r.end || r.at : r.at, title: r.name, what: 'job on GitHub, run ' + r.n, st: r.bad ? 'bad' : res[0],
         badge: res, say: r.bad && r.steps && r.steps.length ? 'Stopped at: ' + r.steps.join(', ') : '', url: r.url, dealt: r }));
     });
+    (j.mails || []).forEach(function (e) {   // emails sent from your Gmail: sign-in codes, and tests
+      out.push(item({ at: e.at, title: e.what === 'code' ? 'Email: a sign-in code' : 'Email: a test', what: 'to ' + e.to, by: { t: 'your Gmail' },
+        st: e.ok ? 'ok' : 'bad', badge: status(e.ok ? 'ok' : 'bad', e.ack, 'Sent'), say: e.ok ? '' : e.err, dealt: e }));
+    });
     var sp = j.spotify;   // Spotify asked the Worker to wait
     if (sp) out.push(item({ at: sp.at, title: 'Spotify told the Worker to wait', what: 'Spotify', st: sp.active ? 'bad' : 'ok',
       badge: sp.active ? (sp.ack ? ['dealt', 'Dealt with'] : ['bad', 'Blocked']) : ['ok', 'Over'],
@@ -272,7 +276,7 @@
   function draw(j) {
     var n = j.problems || 0, dealtN = 0, seen = {};
     function count(o) { if (o && o.ack && o.key && !seen[o.key]) { seen[o.key] = 1; dealtN++; } }
-    (j.songs || []).forEach(function (s) { s.steps.forEach(count); }); (j.runs || []).forEach(count); (j.notes || []).forEach(count); count(j.task); count(j.site); count(j.spotify);
+    (j.songs || []).forEach(function (s) { s.steps.forEach(count); }); (j.runs || []).forEach(count); (j.notes || []).forEach(count); count(j.task); count(j.site); count(j.spotify); (j.mails || []).forEach(count);
     $('sum').className = 'sub ' + (n ? 'bad' : 'good');
     $('sum').innerHTML = '<span class="dot"></span>';
     $('sum').appendChild(document.createTextNode(n ? (n === 1 ? '1 thing has failed or is stuck' : n + ' things have failed or are stuck') : 'All well'));
