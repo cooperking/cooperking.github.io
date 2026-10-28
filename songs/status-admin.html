@@ -254,11 +254,12 @@
   function publishRow(x) {
     var row = el('div', 'pubrow'), n = x.list.length;
     var b = el('button', 'btn primary', 'Publish'); b.type = 'button';
-    var hint = el('span', 'hint', 'Once you’ve tried ' + (n === 1 ? 'it' : 'them') + ' on the draft: ' + (n === 1 ? 'it goes' : 'all ' + n + ' go') + ' live together.');
+    var calm = n === 1 ? 'Once you’ve tried it on the draft.' : 'Once you’ve tried them on the draft: all ' + n + ' go live together.';
+    var hint = el('span', 'hint', calm);
     function arm(on) {
       armed = on ? Date.now() : 0; b.classList.toggle('armed', on);
       b.textContent = on ? 'Tap again to publish' : 'Publish';
-      hint.textContent = on ? 'The live calendar becomes the draft, for everyone.' : 'Once you’ve tried ' + (n === 1 ? 'it' : 'them') + ' on the draft: ' + (n === 1 ? 'it goes' : 'all ' + n + ' go') + ' live together.';
+      hint.textContent = on ? 'The live calendar becomes the draft, for everyone.' : calm;
     }
     function later() { setTimeout(function () { if (armed && Date.now() - armed >= 6000) arm(false); }, 6100 - (Date.now() - armed)); }
     if (armed && Date.now() - armed < 6000) { b.classList.add('armed'); b.textContent = 'Tap again to publish'; hint.textContent = 'The live calendar becomes the draft, for everyone.'; later(); }
