@@ -1485,6 +1485,12 @@ export class SotdNow {   // one member's note, and their open pages
       return json({ ok: true });
     }
     if (path === '/widget' || path === '/widget/tell') return this.widget(request, now, json);
+    if (path === '/once') {   // (the instance named _once) the first to ask for a key gets first: true, everyone after it false
+      const key = 'once:' + String((await request.json().catch(() => ({}))).key || '').slice(0, 100);
+      if (await this.ctx.storage.get(key)) return json({ first: false });
+      await this.ctx.storage.put(key, now);   // (nothing else reaches this object between the look and the write)
+      return json({ first: true });
+    }
     let rec = (await this.ctx.storage.get('rec')) || null;
     if (rec && now - rec.at > 7 * DAY) { rec = null; await this.ctx.storage.delete('rec'); }
     if (request.headers.get('Upgrade') === 'websocket') {
@@ -1970,6 +1976,14 @@ async function pushDaily(env, items) {
   if ((Date.parse(londonDay()) - Date.parse(day)) / DAY > 2) { pushDone = last.id; return; }   // too old to be news
   const files = (await catalog(env))[last.id] || {};
   if (!files.a || !files.v) return;   // waiting for the MP3 and the video
+  // only one look sends it: two at the same moment (the cron and a visit) both found it unsent on 28 Oct 2026 and sent it
+  // twice, 2 ms apart, since KV can't say who was first; the Durable Object can
+  if (env.NOW) {
+    const once = await env.NOW.get(env.NOW.idFromName('_once')).fetch('https://now/once', { method: 'POST', body: JSON.stringify({ key: 'push:' + last.id }) })
+      .then(r => r.json()).catch(() => null);
+    if (!once) return;   // (couldn't ask: tried again at the next look)
+    if (!once.first) { pushDone = last.id; return; }   // another look is sending it
+  }
   if (!await kvSoft(env, 'pushSent', JSON.stringify(sentRaw.concat(last.id).slice(-60)))) return;   // can't note it: don't send (it could go twice)
   pushDone = last.id;
   const slug = day.slice(8, 10) + '-' + day.slice(5, 7) + '-' + day.slice(0, 4), card = SITE_SONGS + slug + '/card.jpg';
