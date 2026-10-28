@@ -37,5 +37,7 @@ jobs:
           YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
           YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
           GMAIL_REFRESH_TOKEN: ${{ secrets.GMAIL_REFRESH_TOKEN }}
+          MAILER_URL: ${{ secrets.MAILER_URL }}
+          MAILER_KEY: ${{ secrets.MAILER_KEY }}
           ADD_NOW: ${{ inputs.add_now && 'true' || '' }}
         run: python3 _sotd/worker_deploy.py

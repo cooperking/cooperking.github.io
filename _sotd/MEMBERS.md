@@ -91,6 +91,24 @@ its Associated Domains (the site's `.well-known/apple-app-site-association` name
 shows how many each member has. Tests: `pk_worker_t.mjs` (the Worker, with ES256 and RS256 authenticators made in
 Node) `pk_page_t.py` and `pk_offer_t.py` (the draft, with Chromium's virtual authenticator).
 
+## Email addresses, codes by email, and Google Play's test list
+
+John gives a member's email address on the Members tab (or with *Invite*); it's on their record (`email`, lower case,
+one member each). *Sign in* → their email address sends a 6-digit code to it from John's Google account
+(`/members/code`; the same answer for any address), typed in the next box (`/members/code/signin`): once, within 10
+minutes, 5 tries, 5 codes an address and 10 asks a place an hour; only its hash is kept (KV `mailcode:<id>`). The
+Profile's passkeys part names the address. The emails go through John's Apps Script mailer (`_sotd/mailer`, a web app
+run as him with MailApp: 100 a day; set up with clasp, its address and key in the secrets `MAILER_URL` and `MAILER_KEY`),
+or else Gmail's API with his sign-in (`GMAIL_REFRESH_TOKEN`). Each email sent is noted for the Status tab (KV
+`mailLog`); one that couldn't be sent counts there. *Send a test email* on the Members tab tries it.
+
+Google Play's closed test takes testers from an email list John keeps in Play Console (Google's API takes only Google
+Groups, and a Gmail-made group can't be filled by API). The Members tab lists the members with an email who aren't on
+it yet: *Copy their emails*, paste them in Play Console, *I've added them* (`tester` on their record, with when). For a
+member on it, the invitation's page gives Android Google Play's steps: join the test
+(`play.google.com/apps/testing/io.github.cooperking.sotd`), get the app from Play, open the invitation. Tests:
+`mail_t.mjs` (the Worker), `gs_t.js` (the mailer), `members_t.py` (the Members tab), `signin_t.py` (the draft).
+
 ## Saved playlists
 
 A member can save My playlist (*Save this playlist* in it, with a name) and keep several. They're kept by the Worker

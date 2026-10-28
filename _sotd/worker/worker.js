@@ -1592,9 +1592,9 @@ async function memberPasskeySignin(request, env, answer) {
 // email codes to be sent as a back up in case passkeys fail") ----------
 //
 // John gives each member's email address on the Members tab. Sign in, then the member's email address: if it's a
-// member's, a 6-digit code goes to it from John's Gmail (Gmail's API, John's own sign-in: the Worker secrets
-// GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET, GMAIL_REFRESH_TOKEN, put there by worker_deploy.py from the repository's
-// secrets). The code works once, for MAIL_CODE_MINUTES, MAIL_CODE_TRIES tries; only its hash is kept (KV mailcode:<id>).
+// member's, a 6-digit code goes to it from John's Google account: through his Apps Script mailer (_sotd/mailer, set up
+// with clasp; the Worker secrets MAILER_URL and MAILER_KEY), or else Gmail's API with his sign-in (GMAIL_CLIENT_ID,
+// GMAIL_CLIENT_SECRET, GMAIL_REFRESH_TOKEN); worker_deploy.py puts them there from the repository's secrets. The code works once, for MAIL_CODE_MINUTES, MAIL_CODE_TRIES tries; only its hash is kept (KV mailcode:<id>).
 // The answer is the same whether or not the address is a member's. Each email sent, and each that couldn't be, is
 // noted for the Status tab (KV mailLog, the last 20, the address shortened).
 const MAIL_CODE_MINUTES = 10, MAIL_CODE_TRIES = 5, MAIL_PER_HOUR = 5, MAIL_IP_PER_HOUR = 10;
@@ -1602,7 +1602,8 @@ function cleanEmail(x) {
   const e = String(x || '').trim().toLowerCase();
   return e.length <= 254 && /^[^\s@<>()",;:]{1,64}@[a-z0-9.-]{1,190}\.[a-z]{2,24}$/.test(e) ? e : '';
 }
-function mailReady(env) { return !!(env.GMAIL_CLIENT_ID && env.GMAIL_CLIENT_SECRET && env.GMAIL_REFRESH_TOKEN); }
+function mailScript(env) { return /^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(env.MAILER_URL || '') && !!env.MAILER_KEY; }
+function mailReady(env) { return mailScript(env) || !!(env.GMAIL_CLIENT_ID && env.GMAIL_CLIENT_SECRET && env.GMAIL_REFRESH_TOKEN); }
 function mailShort(e) { const [u, d] = String(e).split('@'); return (u || '').slice(0, 1) + '…@' + (d || ''); }
 let gmailMem = null;
 async function gmailToken(env) {
@@ -1620,10 +1621,19 @@ async function mailNote(env, e) {
   log.unshift(e); log.length = Math.min(log.length, 20);
   await kvSoft(env, 'mailLog', JSON.stringify(log));
 }
-async function sendMail(env, to, subject, text, what) {   // from John's Gmail (it puts his own name and address on it)
+async function sendMail(env, to, subject, text, what) {   // from John's Google account (his own address on it)
   const note = { id: randomCode(6), at: Date.now(), what, to: mailShort(to) };
   try {
-    if (!mailReady(env)) throw new HttpError(503, 'Emails aren’t set up yet: the Worker has no Gmail sign-in.');
+    if (!mailReady(env)) throw new HttpError(503, 'Emails aren’t set up yet: the Worker has no mailer.');
+    if (mailScript(env)) {   // the Apps Script mailer (MailApp, as John; 100 a day): it answers { ok, left } or { error }
+      const r = await fetch(env.MAILER_URL, { method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ key: env.MAILER_KEY, to, subject, text }) });
+      const j = await r.json().catch(() => null);
+      if (!j || !j.ok) throw new HttpError(502, 'The Apps Script mailer didn’t send it: ' + ((j && j.error) || 'it answered ' + r.status + (r.ok ? ' (not its JSON: is it deployed for anyone?)' : '')));
+      note.ok = true; note.left = j.left;
+      await mailNote(env, note);
+      return;
+    }
     const raw = ['To: ' + to, 'Subject: =?UTF-8?B?' + b64utf8(subject) + '?=', 'MIME-Version: 1.0', 'Content-Type: text/plain; charset=UTF-8',
       'Content-Transfer-Encoding: base64', '', b64utf8(text).replace(/.{76}/g, '$&\r\n')].join('\r\n');
     const send = async () => fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', { method: 'POST',
