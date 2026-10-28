@@ -319,13 +319,19 @@ html.big .heroacts .hsub { margin: 0 6px 0 0; }
 .snd textarea { width: 100%; box-sizing: border-box; min-height: 84px; padding: 11px 13px; border: 1px solid var(--line); border-radius: 10px; background: var(--pill-bg); color: var(--fg); font: 15px/1.4 var(--sans); resize: vertical; }
 .snd textarea::placeholder { color: var(--faint); }
 .snd .nameinput { margin-top: 0; box-sizing: border-box; }
-.snd-card { margin: 0; display: grid; gap: 8px; padding: 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--pill-bg); }
-.snd-card[hidden], .snd-pic[hidden] { display: none; }
-.snd-card img, .snd-pic img { width: 100%; display: block; border-radius: 8px; background: var(--tile); }
-.snd-card img { aspect-ratio: 1200 / 630; object-fit: cover; }
-.snd-pic img { max-height: 240px; object-fit: contain; }
-.snd-card .row, .snd-pic .row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.snd-card .ct { font: 500 16px/1.2 var(--serif); color: var(--fg); min-width: 0; }
+.snd-from { margin: -10px 0 0; font-size: 14px; color: var(--muted); }
+.snd-from b { color: var(--fg); font-weight: 600; }
+/* what's attached (a song, a month, the calendar): a small row, its picture as a thumbnail (height: auto, as the
+   picture's height="630" would otherwise make it 630px tall) */
+.snd-card { margin: 0; display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 12px; align-items: center; padding: 8px 12px 8px 8px; border: 1px solid var(--line); border-radius: 12px; background: var(--pill-bg); }
+.snd-card.noimg { grid-template-columns: minmax(0, 1fr); padding-left: 12px; }
+.snd-card .cw { display: grid; gap: 4px; justify-items: start; min-width: 0; }
+.snd-card[hidden], .snd-pic[hidden], .snd-card img[hidden] { display: none; }
+.snd-card img { width: 96px; height: auto; aspect-ratio: 1200 / 630; object-fit: cover; display: block; border-radius: 6px; background: var(--tile); }
+.snd-pic img { width: 100%; height: auto; max-height: 240px; object-fit: contain; display: block; border-radius: 8px; background: var(--tile); }
+@media (max-width: 360px) { .snd-card { grid-template-columns: 72px minmax(0, 1fr); gap: 10px; } .snd-card img { width: 72px; } }
+.snd-pic .row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.snd-card .ct { font: 500 16px/1.2 var(--serif); color: var(--fg); min-width: 0; overflow-wrap: anywhere; }
 .snd-card .ct span { display: block; font: 12.5px/1.3 var(--sans); color: var(--muted); margin-top: 2px; }
 .snd .x2 { flex: none; border: 0; background: none; padding: 4px 0; font: 600 10.5px/1.2 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
 .snd .snd-pic { margin: 0; display: grid; gap: 8px; }
@@ -1412,13 +1418,14 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       <button class="close" id="sndclose" type="button" aria-label="Close"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 2l10 10M12 2 2 12"/></svg></button>
     </div>
     <h3 id="sndh">A notification</h3>
+    <p class="snd-from" id="sndfrom"></p>
     <div class="snd-to">
       <span class="seg2" role="group" aria-label="Who it goes to"><button type="button" id="sndall" aria-pressed="true">Everyone</button><button type="button" id="sndsome" aria-pressed="false">Choose</button></span>
       <div class="snd-who" id="sndwho" role="group" aria-label="Members" hidden></div>
     </div>
     <figure class="snd-card" id="sndcard" hidden>
       <img id="sndcimg" alt="" width="1200" height="630">
-      <div class="row"><span class="ct" id="sndct"></span><button class="x2" id="sndcx" type="button">Take off</button></div>
+      <span class="cw"><span class="ct" id="sndct"></span><button class="x2" id="sndcx" type="button">Take off</button></span>
     </figure>
     <input class="nameinput" id="sndt" type="text" maxlength="80" placeholder="Title" aria-label="Title" autocomplete="off">
     <textarea id="sndb" maxlength="300" placeholder="Message (if you like)" aria-label="Message"></textarea>
@@ -1427,7 +1434,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       <div class="row"><span class="snd-note">Your picture</span><button class="x2" id="sndpicx" type="button">Take off</button></div>
     </figure>
     <div class="ac-acts"><label class="ac-out" for="sndfile" id="sndpicadd">Add a picture…</label><input type="file" id="sndfile" accept="image/*" hidden></div>
-    <p class="snd-note" id="sndnote">It goes into their inbox, and to their phone if notifications are on there, with your name on it.</p>
+    <p class="snd-note" id="sndnote">It goes into their inbox, and to their phone if notifications are on there.</p>
     <div class="ask-acts"><button class="copy" id="sndok" type="submit">Send</button><button class="ac-out" id="sndno" type="button">Cancel</button></div>
   </form>
 </dialog>
@@ -3470,6 +3477,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function sendOpen(pre) {
     if (!sendCan()) return;
     SND = { some: false, pick: [], att: pre && pre.url ? pre : null, pic: null };
+    var fr = document.getElementById('sndfrom'); fr.textContent = 'From ';   // (who they'll see it's from: the notification says "<name>: <title>", the inbox "From <name>")
+    var nb = document.createElement('b'); nb.textContent = MEMBER.name || 'you'; fr.appendChild(nb);
     document.getElementById('sndt').value = (pre && pre.title) || '';
     document.getElementById('sndb').value = (pre && pre.text) || '';
     sendDraw(); openLayer(sndDlg);
@@ -3488,7 +3497,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var card = document.getElementById('sndcard'), a = SND.att;
     card.hidden = !a;
     if (a) {
-      var ci = document.getElementById('sndcimg'); ci.onerror = function () { ci.hidden = true; }; ci.hidden = !a.image; if (a.image) ci.src = a.image;
+      var ci = document.getElementById('sndcimg'); ci.onerror = function () { ci.hidden = true; card.classList.add('noimg'); }; ci.hidden = !a.image; card.classList.toggle('noimg', !a.image); if (a.image) ci.src = a.image;
       var ct = document.getElementById('sndct'); ct.textContent = a.cardTitle || ''; var cs = document.createElement('span'); cs.textContent = a.cardSub || ''; ct.appendChild(cs);
     }
     document.getElementById('sndpicf').hidden = !SND.pic;
@@ -3529,7 +3538,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var to = SND.some ? SND.pick.slice() : 'all';
     if (to !== 'all' && !to.length) { toast('Choose who it goes to'); return; }
     var names = to === 'all' ? null : (MEMBER.others || []).filter(function (o) { return to.indexOf(o.id) >= 0; }).map(function (o) { return o.name; });
-    ask({ k: 'Send', h: 'Send “' + title + '”?', t: (names ? 'It goes to ' + andList(names) : 'It goes to everyone') + ': into their inbox, and to their phone where notifications are on, with your name on it.', ok: 'Send', no: 'Not yet' }).then(function (yes) {
+    ask({ k: 'Send', h: 'Send “' + title + '”?', t: (names ? 'It goes to ' + andList(names) : 'It goes to everyone') + ', from ' + (MEMBER.name || 'you') + ': into their inbox, and to their phone where notifications are on.', ok: 'Send', no: 'Not yet' }).then(function (yes) {
       if (!yes) return;
       var btn = document.getElementById('sndok'), a = SND.att, body = { title: title, text: text, url: a ? a.url : dayLink(''), to: to };
       if (a && a.image) body.image = a.image;
