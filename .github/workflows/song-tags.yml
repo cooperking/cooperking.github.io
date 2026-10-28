@@ -108,6 +108,10 @@ jobs:
       - name: The app icons in this month's colours (when the month changes)
         run: python _sotd/icons.py
 
+      # whether the draft and the live calendar are what the template builds (the admin page's Status tab shows it)
+      - name: Draft and live, against the template
+        run: python _sotd/web/pages_check.py
+
       - name: Save changes
         run: |
           git config user.name "github-actions[bot]"

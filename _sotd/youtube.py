@@ -63,8 +63,10 @@ def kind(title, channel):
         return 'audio'   # YouTube's own upload of the recording, over the album cover
     if re.search(r'official\s+(music\s+)?video|music\s+video|\(video\)|\[video\]|official\s+film|official\s+hd\s+video', t):
         return 'video'
-    if re.search(r'official\s+audio|\(audio\)|\[audio\]|visuali[sz]er|lyric', t):
-        return 'audio'
+    if re.search(r'official\s+audio|\(audio\)|\[audio\]', t):
+        return 'audio'   # the recording over a still picture
+    if re.search(r'visuali[sz]er|lyric', t):
+        return 'lyric'   # words or shapes that move: not a still picture (John, 28 Oct 2026)
     if re.search(r'\blive\b|session|performance|kexp|tiny desk', t):
         return 'live'
     return 'other'
@@ -94,7 +96,7 @@ def score(song, cand):
     k = kind(cand['title'], cand['channel'])
     if k == 'video':
         s += 20; why.append('official video')
-    elif k == 'audio':
+    elif k in ('audio', 'lyric'):
         s += 8
     elif k == 'live':
         s -= 15; why.append('live')
@@ -301,7 +303,7 @@ def write_site(data):
     out = {}
     for tid, e in data['songs'].items():
         if e.get('id') and e.get('embed'):
-            out[tid] = {'v': e['id'], 'k': e.get('kind', 'other')}
+            out[tid] = {'v': e['id'], 'k': kind(e['title'], e.get('channel')) if e.get('title') else e.get('kind', 'other')}   # (worked out again: kinds change)
             if e.get('secs'):
                 out[tid]['s'] = e['secs']   # its length: the calendar tells an advert from the video by it
     for tid, v in john.items():
@@ -311,7 +313,7 @@ def write_site(data):
         elif not (e.get('from') == 'John' and e.get('id') == v):
             out[tid] = {'v': v, 'k': 'video'}   # not looked up yet
         elif e.get('embed'):
-            out[tid] = {'v': v, 'k': e.get('kind', 'video')}
+            out[tid] = {'v': v, 'k': kind(e['title'], e.get('channel')) if e.get('title') else e.get('kind', 'video')}
             if e.get('secs'):
                 out[tid]['s'] = e['secs']
         else:
@@ -320,7 +322,7 @@ def write_site(data):
     for x in out.values():
         counts[x['k']] = counts.get(x['k'], 0) + 1
     print('playable on the calendar:', len(out), counts)
-    site = {'about': 'YouTube video for each song (Spotify track id: v video id, k video / live / audio / other, s its length in seconds); '
+    site = {'about': 'YouTube video for each song (Spotify track id: v video id, k video / live / lyric / audio (a still picture) / other, s its length in seconds); '
                      'playlist: the YouTube playlist of them all',
             'videos': out}
     pl = os.path.join(HERE, 'data', 'youtube-playlist.json')

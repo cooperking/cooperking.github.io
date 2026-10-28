@@ -126,8 +126,6 @@
       <button type="button" data-show="check" aria-pressed="false">To check<span class="n" id="n-check"></span></button>
       <button type="button" data-show="all" aria-pressed="false">All</button>
       <button type="button" data-show="none" aria-pressed="false">No facts<span class="n" id="n-none"></span></button>
-      <button type="button" data-show="signed" aria-pressed="false">Signed off</button>
-      <button type="button" data-show="files" aria-pressed="false">With your files</button>
       <button type="button" data-show="still" aria-pressed="false">Still picture<span class="n" id="n-still"></span></button>
       <button type="button" data-show="noa" aria-pressed="false">No MP3<span class="n" id="n-noa"></span></button>
       <button type="button" data-show="nov" aria-pressed="false">No MP4<span class="n" id="n-nov"></span></button>
@@ -140,7 +138,6 @@
       <label class="glassbtn" for="folder"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M1.5 4.5v8h13v-6.5H8L6.5 4.5z"/></svg>Upload a folder of songs…</label>
       <input type="file" id="folder" webkitdirectory multiple hidden>
     </div>
-    <p class="help">Each song has everything in one place: its moods and genres, its video, its facts and your own recording, video and cover (heard and seen by members only). <b>Sign off</b> or <b>Save changes</b> puts exactly what you see live within a couple of minutes; files go up straight away. A new song stays off the calendar until you sign it off: <b>Sign off and publish</b> puts it out and sends it to members’ phones. Its YouTube video goes on the playlist as soon as it’s found.</p>
     <div class="card matchbox" id="matchbox" hidden>
       <div class="kicker">Your files, matched to their days by name</div>
       <ul class="match" id="matches"></ul>
@@ -542,9 +539,12 @@
   function counts() {
     var c = { waiting: 0, signed: 0, old: 0, none: 0 }, chk = 0, files = 0, noa = 0, nov = 0;
     songs.forEach(function (s) { c[state(s).st]++; if (toCheck(s)) chk++; var e = CAT[s.id] || {}; if (e.a || e.v) files++; if (!e.a) noa++; if (!e.v) nov++; });
-    $('n-noa').textContent = noa; $('n-nov').textContent = nov;
-    $('n-still').textContent = songs.filter(stillPic).length;
-    $('n-waiting').textContent = c.waiting; $('n-check').textContent = chk; $('n-none').textContent = c.none;
+    var n0 = { noa: noa, nov: nov, still: songs.filter(stillPic).length, waiting: c.waiting, check: chk, none: c.none };
+    Object.keys(n0).forEach(function (k) {   // a list with nothing in it isn't shown (John, 28 Oct 2026); All is shown instead
+      $('n-' + k).textContent = n0[k];
+      var b = document.querySelector('[data-show="' + k + '"]'); b.hidden = !n0[k];
+      if (!n0[k] && show === k) { show = 'all'; [].forEach.call(document.querySelectorAll('[data-show]'), function (x) { x.setAttribute('aria-pressed', x.getAttribute('data-show') === 'all' ? 'true' : 'false'); }); if (songs.length) render(); }
+    });
     var n = Object.keys(edits).length;
     $('stat').innerHTML = songs.length + ' songs · <b>' + c.waiting + '</b> waiting for you' + (n ? ' · your changes on <b>' + n + '</b>' : '') + (files ? ' · your files on ' + files : '');
   }

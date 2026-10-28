@@ -68,6 +68,9 @@
 .note.acked .err { color: var(--muted); }
 .note .r { grid-row: 1 / span 2; grid-column: 2; }
 .note .dealt { grid-column: 1 / -1; margin-top: 2px; }
+.fix .waits { margin: 2px 0 0; padding-left: 18px; display: grid; gap: 4px; font-size: 13.5px; }
+.fix .waits .w { color: var(--muted); font-size: 12px; white-space: nowrap; }
+.fix .note2 { font-size: 13px; color: var(--muted); }
 .errs { padding: 12px 16px; font-size: 13px; color: var(--warn); }
 .sub.good { color: #fff; } .sub.bad { color: #fff; font-weight: 600; }
 .sub .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; vertical-align: 1px; background: #8ff0b8; }
@@ -86,6 +89,10 @@
     <div class="row"><button class="glassbtn" id="again" type="button">Check again</button><span class="stat" id="when" style="color: var(--ink-2)"></span></div>
   </header>
   <div class="card errs" id="errs" hidden></div>
+  <div id="sitebox" hidden>
+    <p class="sec">Draft and live</p>
+    <div class="card fix" id="site"></div>
+  </div>
   <p class="sec">Songs</p>
   <ul class="list" id="songs"></ul>
   <div id="taskbox" hidden>
@@ -209,18 +216,31 @@
     });
     if (!notes.length) ul.appendChild(el('li', 'card note', 'None sent yet.'));
   }
+  function drawSite(x) {   // the draft and the live calendar, against the template
+    $('sitebox').hidden = !x;
+    if (!x) return;
+    var box = $('site'); box.textContent = ''; box.className = 'card fix' + (x.st === 'bad' ? ' bad' : '') + (x.ack ? ' acked' : '');
+    box.appendChild(el(x.st === 'bad' ? 'b' : 'div', '', x.say));
+    if (x.list && x.list.length) {
+      var ul = el('ul', 'waits');
+      x.list.forEach(function (c) { var li = el('li'); li.appendChild(link(c.url, c.t)); li.appendChild(el('span', 'w', ' ' + uk(c.at))); ul.appendChild(li); });
+      box.appendChild(ul);
+      box.appendChild(el('div', 'note2', 'Say “put it live” when you’ve checked them on the draft.'));
+    }
+    if (x.st === 'bad' && x.key) box.appendChild(dealt(x));
+  }
   function tell(n) { try { if (window.parent.SOTD_STATUS) window.parent.SOTD_STATUS(n); } catch (e) {} }
   function draw(j) {
     var n = j.problems || 0, dealtN = 0, seen = {};
     function count(o) { if (o && o.ack && o.key && !seen[o.key]) { seen[o.key] = 1; dealtN++; } }
-    (j.songs || []).forEach(function (s) { s.steps.forEach(count); }); (j.runs || []).forEach(count); (j.notes || []).forEach(count); count(j.task);
+    (j.songs || []).forEach(function (s) { s.steps.forEach(count); }); (j.runs || []).forEach(count); (j.notes || []).forEach(count); count(j.task); count(j.site);
     $('sum').className = 'sub ' + (n ? 'bad' : 'good');
     $('sum').innerHTML = '<span class="dot"></span>';
     $('sum').appendChild(document.createTextNode(n ? (n === 1 ? '1 thing has failed or is stuck' : n + ' things have failed or are stuck') : 'All well'));
     if (dealtN) $('sum').appendChild(el('span', 'more', ' · ' + dealtN + ' dealt with'));
     $('when').textContent = 'Checked ' + uk(j.at, true);
     $('errs').hidden = !(j.errors && j.errors.length); $('errs').textContent = j.errors && j.errors.length ? 'Couldn’t read everything: ' + j.errors.join('; ') : '';
-    drawSongs(j.songs || []); drawTask(j.task); drawNotes(j.notes || []); drawRuns(j.runs || []);
+    drawSite(j.site); drawSongs(j.songs || []); drawTask(j.task); drawNotes(j.notes || []); drawRuns(j.runs || []);
     tell(n);
   }
   function call(body) {

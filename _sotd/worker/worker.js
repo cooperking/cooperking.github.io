@@ -542,7 +542,7 @@ async function adminStatus(env) {
     env.SOTD.get('factsSigned', 'json'), mainSha(env), pushHistory(env), env.SOTD.get('pushSent', 'json'), catalog(env)]);
   const acked = ack || {};
   const soft = (p, f) => p.catch(e => { errors.push(String(e && e.message || e)); return f; });
-  const [items, runs, sources, asked, task, F, V, P, Y] = await Promise.all([
+  const [items, runs, sources, asked, task, F, V, P, Y, pages, waitingLive] = await Promise.all([
     soft(getToken(env).then(playlistItems), []),
     env.GH_TOKEN ? soft(jobRuns(env), []) : Promise.resolve([]),
     soft(rawJson('_sotd/data/sources.json', undefined, ref), { songs: {} }),
@@ -551,7 +551,9 @@ async function adminStatus(env) {
     soft(rawJson('songs/facts.json', undefined, ref), { songs: {}, signed: {} }),
     soft(rawJson('songs/videos.json', undefined, ref), { videos: {} }),
     soft(rawJson('_sotd/data/facts-pending.json', { songs: {} }, ref), { songs: {} }),
-    soft(rawJson('_sotd/data/youtube-playlist.json', {}, ref), {})]);
+    soft(rawJson('_sotd/data/youtube-playlist.json', {}, ref), {}),
+    soft(rawJson('_sotd/data/pages.json', null, ref), null),
+    env.GH_TOKEN ? soft(notLive(env), null) : Promise.resolve(null)]);
   if (!env.GH_TOKEN) errors.push('The GH_TOKEN secret is not set, so the GitHub jobs can’t be read.');
   const list = items.map((it, i) => Object.assign({ n: i + 1 }, it)).sort((a, b) => (a.a < b.a ? 1 : -1));
   const d = { job: job || {}, runs, S: sources.songs || {}, asked, task, F, V: V.videos || {}, signedNow: signedNow || {},
@@ -566,14 +568,33 @@ async function adminStatus(env) {
   songs.forEach(x => x.steps.forEach(y => { if (y.st === 'bad') mark(y, y.key); }));
   runs.forEach(r => { if (r.bad) mark(r, 'r:' + r.id); });
   if (task && task.ok === false) mark(task, 't:' + task.at);
+  // the draft and the live calendar against the template (pages.json, from the site job; John, 28 Oct 2026: "how are we
+  // sure that draft and live don't get out of synch")
+  let site = null;
+  if (pages) {
+    const wl = waitingLive || [];
+    site = !pages.draft ? { st: 'bad', say: 'The draft isn’t what the template builds: it wasn’t built again after a change.', key: 'p:draft' }
+      : pages.live ? { st: 'ok', say: 'The live calendar is the draft, signed off: nothing waiting.' }
+      : wl.length ? { st: 'wait', say: 'The draft has changes waiting for you to put live:', list: wl }
+      : { st: 'bad', say: 'The live calendar isn’t what the template builds, and nothing has changed in the template since it last went live.', key: 'p:live' };
+    if (site.key) mark(site, site.key);
+  }
   const notes = d.log.slice(0, 12).map(e => Object.assign({}, e, { say: pushSay(e) }));   // the notifications sent, newest first
   notes.forEach(e => { if (e.failed) mark(e, 'n:' + e.id); });   // (one that some devices didn't get)
   const jb = d.job;
-  return { at: new Date(now).toISOString(), problems: Object.keys(bad).length, songs, task, runs, notes, ref,
+  return { at: new Date(now).toISOString(), problems: Object.keys(bad).length, songs, task, runs, notes, site, ref,
     job: { at: jb.at || null, tried: jb.tried || null, err: jb.err || '' }, errors };
 }
+async function notLive(env) {   // the template's changes since the calendar last went live (a commit starting "Live")
+  const L = await ghApi(env, '/commits?path=songs/index.html&per_page=30');
+  const last = (L || []).find(c => /^Live\b/.test((c.commit && c.commit.message) || ''));
+  const since = last ? last.commit.committer.date : '';
+  const T = await ghApi(env, '/commits?path=_sotd/web/template.html&per_page=30' + (since ? '&since=' + encodeURIComponent(since) : ''));
+  return (T || []).filter(c => !last || c.sha !== last.sha).map(c => ({ at: c.commit.committer.date, t: c.commit.message.split('\n')[0].slice(0, 160), url: c.html_url }))
+    .filter(c => !since || c.at > since);
+}
 async function statusAck(env, key, on) {   // "Dealt with" (on), or not after all
-  if (!/^[srtn]:[\w:.+-]{1,120}$/.test(String(key || ''))) throw new HttpError(400, 'Not something the Status tab shows.');
+  if (!/^[srtnp]:[\w:.+-]{1,120}$/.test(String(key || ''))) throw new HttpError(400, 'Not something the Status tab shows.');
   const ack = (await env.SOTD.get('statusAck', 'json')) || {};
   const old = Date.now() - ACK_DAYS * DAY;
   for (const k of Object.keys(ack)) if (Date.parse(ack[k]) < old) delete ack[k];
