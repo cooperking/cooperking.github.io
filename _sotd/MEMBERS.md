@@ -74,6 +74,21 @@ A member's Profile has *Get a code*: the same one-use six-letter code John can m
 `/members/tvcode`, a few an hour at most), to type on a Fire TV (☰ → Sign in with a code) or in the Home Screen app
 (Sign in at the top). *How to add the Fire TV app* links to `songs/tv/`, the steps for Downloader and the app.
 
+## Passkeys
+
+A member saves a passkey in their Profile (*Save a passkey*: Face ID, a fingerprint or the device's lock; iCloud
+Keychain or their Google account keeps it and gives it to their other devices). On a new device, or after signing out,
+*Sign in* → *Use a passkey* signs them in without John. The passkey belongs to `cooperking.github.io` (the draft and the
+live calendar alike). The Worker keeps each one's public key on the member's record (`passkeys`: id, key, count, name,
+when saved and last used; at most 10), checks each sign-in's signature with it (`/members/passkey`, signed in: list,
+save, remove; `/members/passkey/signin`: anyone), and makes its challenges itself, signed with a key from `ADMIN_KEY`,
+good for 5 minutes and once (KV `wa:<hash>`). Removing a passkey, or the member, stops it; the page then asks the
+phone or computer to delete it (`signalAllAcceptedCredentials`, `signalUnknownCredential`, where the browser has them).
+Not on the Fire TV. The iPhone app offers them from build 21, the first with `webcredentials:cooperking.github.io` in
+its Associated Domains (the site's `.well-known/apple-app-site-association` names the app for it). The members page
+shows how many each member has. Tests: `pk_worker_t.mjs` (the Worker, with ES256 and RS256 authenticators made in
+Node) and `pk_page_t.py` (the draft, with Chromium's virtual authenticator).
+
 ## Saved playlists
 
 A member can save My playlist (*Save this playlist* in it, with a name) and keep several. They're kept by the Worker

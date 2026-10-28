@@ -465,6 +465,8 @@ async function members(request, url, env) {
   if (route === 'now/ws') return memberNowSocket(request, env);
   if (route === 'now/widget') return memberNowWidget(request, env, answer);
   if (route === 'tvcode') return memberTvCode(request, env, answer);
+  if (route === 'passkey') return memberPasskeys(request, env, answer);
+  if (route === 'passkey/signin') return memberPasskeySignin(request, env, answer);
   if (route === 'push') return memberPush(request, env, answer);
   if (route === 'inbox') return memberInbox(request, env, answer);
   if (!['admin', 'upload', 'cover'].includes(route)) return answer(404, { error: 'Not here.' });
@@ -483,7 +485,7 @@ async function members(request, url, env) {
     return MEMBERS_JOIN + code;
   };
   const listing = (own = owner) => Object.entries(all).map(([id, m]) => ({ id, name: m.name, created: m.created, owner: id === own,
-    devices: Object.values(m.devices || {}).filter(d => d.did).length, seen: Math.max(0, ...Object.values(m.devices || {}).map(d => d.seen || 0)) || null,
+    devices: Object.values(m.devices || {}).filter(d => d.did).length, passkeys: (m.passkeys || []).length, seen: Math.max(0, ...Object.values(m.devices || {}).map(d => d.seen || 0)) || null,
     invite: m.invite ? { uses: m.invite.uses, left: Math.max(0, INVITE_USES - m.invite.uses), until: m.invite.until } : null }));
   switch (body.op) {
     case 'list': return answer(200, { members: listing(), catalog: await catalog(env), media: !!env.MEDIA, covers: await coversAll(env) });
@@ -1011,6 +1013,194 @@ async function memberTvCode(request, env, answer) {
   const code = tvCode();
   await env.SOTD.put('tvcode:' + await sha256hex(code), id, { expirationTtl: TV_CODE_MINUTES * 60 });
   return answer(200, { code, minutes: TV_CODE_MINUTES });
+}
+
+// ---------- passkeys: a member's own way back in ----------
+//
+// A signed-in member saves a passkey in their Profile: their phone's or computer's Face ID, fingerprint or screen lock,
+// kept by iCloud Keychain or their Google account (which give it to their other devices). A new device, or one signed
+// out, then signs in with it, without John. The passkey belongs to the calendar's site (WA_RP, cooperking.github.io);
+// the Worker keeps each one's public key on the member's record (m.passkeys) and checks each sign-in's signature with
+// it. Removing the member removes their passkeys too. A challenge is made here and signed (no storage), lasts 5
+// minutes and is used once. WA_RP and WA_ORIGIN (vars) are for testing on this computer only.
+const PASSKEYS_MAX = 10, PASSKEY_MS = 5 * 60e3;
+const waRp = env => env.WA_RP || 'cooperking.github.io';
+const waOrigin = env => env.WA_ORIGIN || 'https://cooperking.github.io';
+function cbor(b, p = 0) {   // just enough CBOR for WebAuthn (numbers, bytes, text, arrays, maps, true/false/null): [value, next]
+  const mt = b[p] >> 5, ai = b[p] & 31; p++;
+  let n = ai;
+  if (ai === 24) n = b[p++];
+  else if (ai === 25) { n = b[p] << 8 | b[p + 1]; p += 2; }
+  else if (ai === 26) { n = b[p] * 2 ** 24 + (b[p + 1] << 16 | b[p + 2] << 8 | b[p + 3]); p += 4; }
+  else if (ai > 26) throw new Error('cbor');
+  if (mt === 0) return [n, p];
+  if (mt === 1) return [-1 - n, p];
+  if (mt === 2) return [b.slice(p, p + n), p + n];
+  if (mt === 3) return [new TextDecoder().decode(b.slice(p, p + n)), p + n];
+  if (mt === 4) { const a = []; for (let i = 0; i < n; i++) { let v; [v, p] = cbor(b, p); a.push(v); } return [a, p]; }
+  if (mt === 5) { const o = new Map(); for (let i = 0; i < n; i++) { let k, v; [k, p] = cbor(b, p); [v, p] = cbor(b, p); o.set(k, v); } return [o, p]; }
+  if (mt === 7 && ai >= 20 && ai <= 22) return [ai === 21 ? true : ai === 20 ? false : null, p];
+  throw new Error('cbor');
+}
+function authData(ad) {   // the authenticator's data: its site's hash, flags, count and (when saving) the new passkey
+  if (ad.length < 37) throw new Error('short');
+  const out = { rp: ad.slice(0, 32), flags: ad[32], count: ((ad[33] << 24) >>> 0) + (ad[34] << 16 | ad[35] << 8 | ad[36]) };
+  if (ad[32] & 0x40) {
+    const len = ad[53] << 8 | ad[54];
+    out.cred = ad.slice(55, 55 + len);
+    out.cose = cbor(ad, 55 + len)[0];
+  }
+  return out;
+}
+function coseJwk(k) {   // a passkey's public key (COSE) as a JWK, with the signature it makes: ES256 (most) or RS256 (Windows)
+  if (!(k instanceof Map)) throw new Error('key');
+  if (k.get(1) === 2 && k.get(3) === -7 && k.get(-1) === 1) return { alg: -7, jwk: { kty: 'EC', crv: 'P-256', x: b64url(k.get(-2)), y: b64url(k.get(-3)) } };
+  if (k.get(1) === 3 && k.get(3) === -257) return { alg: -257, jwk: { kty: 'RSA', n: b64url(k.get(-1)), e: b64url(k.get(-2)) } };
+  throw new Error('That kind of passkey isn’t one this site can use.');
+}
+function derSig(der) {   // an ECDSA signature as WebAuthn gives it (DER) to r||s, as WebCrypto takes it
+  if (der[0] !== 0x30) throw new Error('sig');
+  let p = 2;
+  const int = () => {
+    if (der[p++] !== 2) throw new Error('sig');
+    const len = der[p++]; let v = der.slice(p, p + len); p += len;
+    while (v.length > 32 && v[0] === 0) v = v.slice(1);
+    if (v.length > 32) throw new Error('sig');
+    const o = new Uint8Array(32); o.set(v, 32 - v.length); return o;
+  };
+  const r = int(), s = int(), out = new Uint8Array(64); out.set(r); out.set(s, 32); return out;
+}
+async function pkVerify(pk, data, sig) {
+  if (pk.alg === -7) {
+    const key = await crypto.subtle.importKey('jwk', pk.jwk, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['verify']);
+    return crypto.subtle.verify({ name: 'ECDSA', hash: 'SHA-256' }, key, derSig(sig), data);
+  }
+  const key = await crypto.subtle.importKey('jwk', pk.jwk, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['verify']);
+  return crypto.subtle.verify('RSASSA-PKCS1-v1_5', key, sig, data);
+}
+async function waMac(env, msg) {
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode('sotd-passkey|' + env.ADMIN_KEY), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  return new Uint8Array(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(msg))).slice(0, 16);
+}
+async function waChallenge(env, purpose) {   // 16 random bytes, the time, and a signature over both and what it's for
+  const r = crypto.getRandomValues(new Uint8Array(16)), t = String(Date.now());
+  const head = b64url(r) + '.' + t;
+  return b64url(new TextEncoder().encode(head + '.' + b64url(await waMac(env, purpose + '|' + head))));
+}
+async function waChallengeOk(env, challenge, purpose) {   // made here, for this, in the last 5 minutes, not used before
+  let s = '';
+  try { s = new TextDecoder().decode(unb64url(challenge)); } catch (e) { return false; }
+  const [r, t, mac] = s.split('.');
+  if (!r || !t || !mac || Date.now() - Number(t) > PASSKEY_MS || Number(t) > Date.now() + 60e3) return false;
+  if (b64url(await waMac(env, purpose + '|' + r + '.' + t)) !== mac) return false;
+  const used = 'wa:' + await sha256hex(challenge);
+  if (await env.SOTD.get(used)) return false;
+  await env.SOTD.put(used, '1', { expirationTtl: 600 });
+  return true;
+}
+function waClient(body, type, env) {   // the browser's own account of the request: what it was, for which challenge, from where
+  let c;
+  try { c = JSON.parse(new TextDecoder().decode(unb64url(body.clientDataJSON))); } catch (e) { return null; }
+  return c && c.type === type && c.origin === waOrigin(env) && typeof c.challenge === 'string' ? c : null;
+}
+function passkeyList(m) { return (m.passkeys || []).map(p => ({ id: p.id, name: p.name, at: p.at, used: p.used || null, synced: !!p.synced })); }
+async function newDevice(all, m, did) {   // this device signed in as the member: its token (only its hash is kept)
+  const token = randomCode(32), th = await sha256hex(token);
+  m.devices = m.devices || {};
+  m.devices[th] = Object.assign({ at: Date.now(), seen: Date.now() }, did ? { did } : {});
+  deviceTidy(all, th, did);
+  return token;
+}
+
+// a signed-in member's own passkeys. GET: { passkeys: [{ id, name, at, used, synced }] }. POST { op: 'begin' }: what
+// the browser needs to make one; { op: 'save', clientDataJSON, attestationObject, name }: the new one checked and kept;
+// { op: 'remove', id }: one gone.
+async function memberPasskeys(request, env, answer) {
+  const token = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
+  const hash = token ? await sha256hex(token) : '';
+  const all = (await env.SOTD.get('members', 'json')) || {};
+  const id = hash && Object.keys(all).find(k => all[k].devices && all[k].devices[hash]);
+  if (!id) return answer(401, { error: 'Not a member (any more).' });
+  const m = all[id];
+  if (!env.ADMIN_KEY) return answer(503, { error: 'Passkeys aren’t set up yet.' });
+  if (request.method === 'GET') return answer(200, { passkeys: passkeyList(m), rpId: waRp(env), user: b64url(new TextEncoder().encode(id)) });
+  if (request.method !== 'POST') return answer(405, { error: 'Use GET or POST.' });
+  const body = await request.json().catch(() => ({}));
+  if (body.op === 'begin') {
+    return answer(200, { options: {
+      challenge: await waChallenge(env, 'save|' + id),
+      rp: { id: waRp(env), name: 'John’s Song of the Day' },
+      user: { id: b64url(new TextEncoder().encode(id)), name: m.name, displayName: m.name },
+      pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+      authenticatorSelection: { residentKey: 'required', requireResidentKey: true, userVerification: 'preferred' },
+      excludeCredentials: (m.passkeys || []).map(p => ({ type: 'public-key', id: p.id })),
+      attestation: 'none', timeout: PASSKEY_MS } });
+  }
+  if (body.op === 'remove') {
+    const before = (m.passkeys || []).length;
+    m.passkeys = (m.passkeys || []).filter(p => p.id !== body.id);
+    if (m.passkeys.length !== before) await env.SOTD.put('members', JSON.stringify(all));
+    return answer(200, { ok: true, passkeys: passkeyList(m) });
+  }
+  if (body.op !== 'save') return answer(400, { error: 'Say what to do.' });
+  const c = waClient(body, 'webauthn.create', env);
+  if (!c || !await waChallengeOk(env, c.challenge, 'save|' + id)) return answer(400, { error: 'That took too long, or didn’t come from the calendar. Try again.' });
+  let ad, key;
+  try {
+    const att = cbor(unb64url(body.attestationObject))[0];
+    ad = authData(att.get('authData'));
+    if (!ad.cred || !ad.cose) throw new Error('no passkey');
+    key = coseJwk(ad.cose);
+  } catch (e) { return answer(400, { error: /site can use/.test(e.message) ? e.message : 'That passkey couldn’t be read. Try again.' }); }
+  if (b64url(ad.rp) !== b64url(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(waRp(env)))) || !(ad.flags & 1))
+    return answer(400, { error: 'That passkey isn’t for this site.' });
+  const cid = b64url(ad.cred);
+  if (Object.values(all).some(x => (x.passkeys || []).some(p => p.id === cid))) return answer(409, { error: 'That passkey is saved already.' });
+  m.passkeys = m.passkeys || [];
+  if (m.passkeys.length >= PASSKEYS_MAX) return answer(400, { error: 'That’s ' + PASSKEYS_MAX + ' passkeys already. Remove one first.' });
+  const name = String(body.name || '').replace(/\s+/g, ' ').trim().slice(0, 40) || 'A passkey';
+  m.passkeys.unshift({ id: cid, alg: key.alg, jwk: key.jwk, count: ad.count, at: Date.now(), name, synced: !!(ad.flags & 0x10) });
+  await env.SOTD.put('members', JSON.stringify(all));
+  return answer(200, { ok: true, passkeys: passkeyList(m) });
+}
+
+// signing in with a passkey (anyone may ask). POST { op: 'begin' }: a challenge for the browser; { op: 'finish', id,
+// clientDataJSON, authenticatorData, signature, userHandle, device }: the signature checked with the passkey kept for
+// that member, and this device signed in: { token, name }. A passkey no member has (removed, or its member removed):
+// 404 with unknown: true, so the page can tell the phone to forget it.
+async function memberPasskeySignin(request, env, answer) {
+  if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
+  if (!env.ADMIN_KEY) return answer(503, { error: 'Passkeys aren’t set up yet.' });
+  const body = await request.json().catch(() => ({}));
+  if (body.op === 'begin') return answer(200, { options: { challenge: await waChallenge(env, 'signin'), rpId: waRp(env), userVerification: 'preferred', timeout: PASSKEY_MS } });
+  if (body.op !== 'finish') return answer(400, { error: 'Say what to do.' });
+  const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+  const failKey = 'joinfail:' + ip + ':' + new Date().toISOString().slice(0, 13);
+  const fails = Number(await env.SOTD.get(failKey)) || 0;
+  if (fails >= 20) return answer(429, { error: 'Too many tries from here this hour.' });
+  const fail = async (status, error, extra) => { await env.SOTD.put(failKey, String(fails + 1), { expirationTtl: 7200 }); return answer(status, Object.assign({ error }, extra || {})); };
+  const c = waClient(body, 'webauthn.get', env);
+  if (!c || !await waChallengeOk(env, c.challenge, 'signin')) return fail(400, 'That took too long, or didn’t come from the calendar. Try again.');
+  const all = (await env.SOTD.get('members', 'json')) || {};
+  let uid = '';
+  try { uid = new TextDecoder().decode(unb64url(body.userHandle)); } catch (e) {}
+  const id = all[uid] && (all[uid].passkeys || []).some(p => p.id === body.id) ? uid : Object.keys(all).find(k => (all[k].passkeys || []).some(p => p.id === body.id));
+  if (!id) return fail(404, 'This passkey has been taken off the calendar. Ask John for a new invitation, or use a code from your Profile on another device.', { unknown: true });
+  const m = all[id], pk = m.passkeys.find(p => p.id === body.id);
+  let ad, ok = false;
+  try {
+    const adb = unb64url(body.authenticatorData);
+    ad = authData(adb);
+    const cd = new Uint8Array(await crypto.subtle.digest('SHA-256', unb64url(body.clientDataJSON)));
+    const data = new Uint8Array(adb.length + 32); data.set(adb); data.set(cd, adb.length);
+    ok = b64url(ad.rp) === b64url(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(waRp(env)))) && !!(ad.flags & 1) && await pkVerify(pk, data, unb64url(body.signature));
+  } catch (e) { ok = false; }
+  if (!ok) return fail(403, 'That passkey didn’t check out. Try again.');
+  if ((pk.count || ad.count) && ad.count <= (pk.count || 0)) return fail(403, 'That passkey looks copied. Sign in with a code from your Profile on another device instead.');
+  pk.count = ad.count; pk.used = Date.now();
+  const token = await newDevice(all, m, deviceId(body.device));
+  await env.SOTD.put('members', JSON.stringify(all));
+  return answer(200, { token, name: m.name });
 }
 
 // a member's saved playlists, kept with their sign-in so every device of theirs has them (KV key mpl:<member id>).
