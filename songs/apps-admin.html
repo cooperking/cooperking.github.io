@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Apps · Song of the Day admin</title>
+<style id="admin-gate">html { visibility: hidden; }</style>
+<script>
+// Shown only inside the admin page (admin.html), once it has checked the password with the Worker; opened on its own
+// this page goes back there.
+(function () {
+  var ok = false;
+  try { ok = window.parent !== window && window.parent.SOTD_ADMIN_OK === true && /\/songs\/admin\.html$/.test(window.parent.location.pathname); } catch (e) {}
+  if (!ok) { location.replace('/songs/admin.html#apps'); return; }
+  document.documentElement.classList.add('in-admin');
+  document.getElementById('admin-gate').textContent = '';
+})();
+</script>
+<link rel="icon" type="image/png" sizes="96x96" href="/songs/favicon-96.png?v=4">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..600&family=Hanken+Grotesk:wght@400;500;600&display=swap">
+<meta name="theme-color" content="#ec135b">
+<script src="admin-theme.js"></script>
+<link rel="stylesheet" href="admin.css">
+<style>
+/* The Apps tab: where to sign in and look after each app, and the services behind them. This file is public (in the
+   repository), so it names accounts by what they are, never by their email address, and holds no keys. */
+.apps { display: grid; gap: 18px; }
+.app { padding: 18px 18px 16px; display: grid; gap: 12px; }
+.app h2 { margin-top: -6px; }
+.app .now { margin: 0; font-size: 14px; color: var(--fg-2); }
+.app .now a { color: var(--fg); }
+.who { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; font-size: 13.5px; color: var(--muted); }
+.who b { font-weight: 600; color: var(--fg); }
+.who .old { color: var(--warn); }
+.links { list-style: none; margin: 0; padding: 0; display: grid; border-top: 1px solid var(--line); }
+.links li { display: grid; gap: 2px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.links a { justify-self: start; font: 500 17px/1.25 var(--serif); color: var(--fg); text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
+.links a:hover { text-decoration-color: var(--fg); }
+.links a::after { content: " ↗"; font: 12px var(--sans); color: var(--muted); }
+.links span { font-size: 13.5px; color: var(--muted); }
+.links .in { color: var(--fg-2); }
+.links .in::before { content: "Sign in: "; font-weight: 600; color: var(--fg); }
+.steps { margin: 0; padding: 12px 14px 12px 34px; border-radius: 12px; background: var(--chip); border: 1px dashed var(--line); font-size: 14px; color: var(--fg-2); display: grid; gap: 6px; }
+.steps b { color: var(--fg); font-weight: 600; }
+.csvrow { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+code { font-size: 12.5px; background: var(--chip); border: 1px solid var(--line); border-radius: 6px; padding: 1px 5px; color: var(--fg); }
+</style>
+</head>
+<body>
+<div class="glow" aria-hidden="true"></div>
+<div class="wrap">
+  <header class="top">
+    <h1>Apps</h1>
+    <p class="sub" id="stat">Loading…</p>
+    <p class="help">Where to sign in and look after each app, and the services behind them. All three apps open the live calendar, so a change to the calendar reaches them with no new build; an app needs a new build only when its own part changes.</p>
+  </header>
+  <div class="apps">
+
+  <section class="card app" id="ios" aria-labelledby="iosh">
+    <div class="kicker">iPhone</div>
+    <h2 id="iosh">iPhone app</h2>
+    <p class="now" id="iosnow">On TestFlight. Each build lasts 90 days; the job makes a new one on the 1st of every second month.</p>
+    <ul class="who" id="ioswho"></ul>
+    <ul class="links">
+      <li><a href="https://appstoreconnect.apple.com/apps" target="_blank" rel="noopener">App Store Connect</a><span class="in">your Apple ID</span><span>The app → TestFlight: its builds, the family’s group (SOTD) and its public link, Beta App Review.</span></li>
+      <li><a href="https://appstoreconnect.apple.com/access/integrations/api" target="_blank" rel="noopener">App Store Connect: API keys</a><span class="in">your Apple ID</span><span>The key the jobs upload builds with (the secrets <code>ASC_KEY_ID</code>, <code>ASC_ISSUER_ID</code>, <code>ASC_KEY_P8</code>).</span></li>
+      <li><a href="https://developer.apple.com/account/resources/identifiers/list" target="_blank" rel="noopener">Apple Developer: Certificates, Identifiers &amp; Profiles</a><span class="in">your Apple ID</span><span>The app’s identifier (Associated Domains, push notifications), and under Keys the push key (<code>APNS_KEY_ID</code>, <code>APNS_KEY_P8</code>).</span></li>
+      <li><a href="https://github.com/cooperking/cooperking.github.io/actions/workflows/ios.yml" target="_blank" rel="noopener">GitHub: the “iPhone app” job</a><span>Builds the app on GitHub’s Mac and sends it to TestFlight. Run it by hand with Run workflow.</span></li>
+      <li><a href="https://github.com/cooperking/cooperking.github.io/actions/workflows/ios-link.yml" target="_blank" rel="noopener">GitHub: the “iPhone app, public link” job</a><span>Puts the newest build to Beta App Review and the public link in <code>songs/ios.json</code>, where invitations find it. Turns itself off when done: Enable workflow to have it look again after a new build.</span></li>
+    </ul>
+  </section>
+
+  <section class="card app" id="android" aria-labelledby="andh">
+    <div class="kicker">Android</div>
+    <h2 id="andh">Android app</h2>
+    <p class="now" id="andnow">On Google Play as a closed test, and on the website as an app to install directly.</p>
+    <ul class="who" id="andwho"></ul>
+    <div class="kicker">Google Play’s test list</div>
+    <ol class="steps">
+      <li><b>Download the emails</b> (below): every member with an email address, one a line. Only a Google account’s address works on Google Play.</li>
+      <li>In <b>Play Console</b>: Test and release › Testing › Closed testing › the track › <b>Testers</b>.</li>
+      <li>Under Email lists, open the list (or Create email list), <b>Upload CSV file</b>, then Save changes. The file has every member with an email, so it is the whole list either way.</li>
+      <li>Make sure the list is <b>ticked</b> for the track, and Save.</li>
+    </ol>
+    <div class="csvrow"><button class="btn small primary" id="csvget" type="button" disabled>Download the emails (CSV)</button><span class="stat" id="csvstat"></span></div>
+    <ul class="links">
+      <li><a href="https://play.google.com/console" target="_blank" rel="noopener">Play Console</a><span class="in">your own Google account, then the developer account John Griffiths (not Collabco’s)</span><span>Test and release › Testing › Closed testing: the releases and the testers. For production, Google first wants 12 testers opted in for 14 days in a row.</span></li>
+      <li><a href="https://play.google.com/apps/testing/io.github.cooperking.sotd" target="_blank" rel="noopener">Join the test (the link members open)</a><span>Works once their email is on the test’s list. Invitations give it on Android to members with an email address.</span></li>
+      <li><a href="https://play.google.com/store/apps/details?id=io.github.cooperking.sotd" target="_blank" rel="noopener">The app on Google Play</a><span>Shows only for testers who have joined.</span></li>
+      <li><a href="https://github.com/cooperking/cooperking.github.io/actions/workflows/android.yml" target="_blank" rel="noopener">GitHub: the “Android app” job</a><span>Builds the website’s app (<code>songs/android.apk</code>) and the bundle for Google Play: the run’s artifact <b>sotd-android</b> is the .aab to upload in Play Console as a new closed-testing release.</span></li>
+      <li><a href="https://github.com/cooperking/cooperking.github.io/actions/workflows/android-check.yml" target="_blank" rel="noopener">GitHub: the “Android app check” job</a><span>Runs the app on an emulated phone and saves what it saw.</span></li>
+    </ul>
+  </section>
+
+  <section class="card app" id="tv" aria-labelledby="tvh">
+    <div class="kicker">Fire TV</div>
+    <h2 id="tvh">Fire TV app</h2>
+    <p class="now" id="tvnow">Not in Amazon’s app store: installed with the Downloader app from <code>cooperking.github.io/songs/tv.apk</code>. On opening, it offers each newer build itself.</p>
+    <ul class="who" id="tvwho"></ul>
+    <ul class="links">
+      <li><a href="/songs/tv/" target="_blank" rel="noopener">How to install it (the page for members)</a><span>Downloader, the setting that lets it install apps, then signing in with a code.</span></li>
+      <li><a href="https://github.com/cooperking/cooperking.github.io/actions/workflows/tv-app.yml" target="_blank" rel="noopener">GitHub: the “Fire TV app” job</a><span>Builds the app and puts it on the website (<code>songs/tv.apk</code>, <code>songs/tv.json</code>).</span></li>
+      <li><a href="https://github.com/cooperking/cooperking.github.io/actions/workflows/tv-app-check.yml" target="_blank" rel="noopener">GitHub: the “Fire TV app check” job</a><span>Runs the app in an Android TV emulator and works it with the remote’s keys.</span></li>
+      <li><a href="https://developer.amazon.com/alexa/console/ask" target="_blank" rel="noopener">Alexa developer console</a><span class="in">the Amazon account the Echo uses</span><span>The Alexa skill, if it’s set up (the steps: <code>_sotd/alexa/README.md</code>). Its beta testers last 90 days.</span></li>
+    </ul>
+  </section>
+
+  <section class="card app" id="behind" aria-labelledby="behh">
+    <div class="kicker">Behind them</div>
+    <h2 id="behh">The services</h2>
+    <ul class="links">
+      <li><a href="https://dash.cloudflare.com/?to=/:account/workers-and-pages" target="_blank" rel="noopener">Cloudflare: Workers &amp; Pages</a><span class="in">your Cloudflare account</span><span><b>sotd-playlists</b>: the Worker behind members, sign-in, notifications and the song list. Its logs, settings and secrets; its KV store keeps the members.</span></li>
+      <li><a href="https://dash.cloudflare.com/?to=/:account/r2/overview" target="_blank" rel="noopener">Cloudflare: R2</a><span class="in">your Cloudflare account</span><span>Your recordings and videos for members.</span></li>
+      <li><a href="https://github.com/cooperking/cooperking.github.io" target="_blank" rel="noopener">GitHub: the site</a><span class="in">cooperking</span><span>The calendar (GitHub Pages) and every job.</span></li>
+      <li><a href="https://github.com/cooperking/cooperking.github.io/actions" target="_blank" rel="noopener">GitHub: Actions</a><span>The jobs and their runs (the Status tab lists the ones that matter).</span></li>
+      <li><a href="https://github.com/cooperking/cooperking.github.io/settings/secrets/actions" target="_blank" rel="noopener">GitHub: Secrets</a><span>The keys the jobs use. The Worker job copies its own onto the Worker on each deploy.</span></li>
+      <li><a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener">Google Cloud console</a><span class="in">your Google account</span><span>APIs &amp; Services › Credentials: the sign-in for YouTube and Gmail (<code>YT_CLIENT_ID</code>, <code>YT_CLIENT_SECRET</code>), and its consent screen.</span></li>
+      <li><a href="https://script.google.com/home" target="_blank" rel="noopener">Apps Script</a><span class="in">your Google account</span><span><b>Song of the Day mailer</b>: sends the sign-in codes, up to 100 emails a day. After a change, in its folder: <code>clasp push -f</code>, then <code>clasp redeploy</code> with its deployment id.</span></li>
+      <li><a href="https://studio.youtube.com" target="_blank" rel="noopener">YouTube Studio</a><span class="in">your Google account</span><span>The channel the songs’ playlist is on. The playlist gets each song as soon as its video is found.</span></li>
+      <li><a href="https://developer.spotify.com/dashboard" target="_blank" rel="noopener">Spotify for Developers</a><span class="in">your Spotify account</span><span>The app the Worker reads the playlist with (from 06:00 until the day’s song is in).</span></li>
+      <li><a href="https://open.spotify.com/playlist/4zyegiBCapCQm8VWYYHhGo" target="_blank" rel="noopener">The Spotify playlist</a><span>Where each new song starts.</span></li>
+      <li><a href="https://www.last.fm/api/accounts" target="_blank" rel="noopener">Last.fm: API accounts</a><span class="in">your Last.fm account</span><span>The key for the songs’ tags (<code>LASTFM_API_KEY</code>).</span></li>
+      <li><a href="https://claude.ai/code" target="_blank" rel="noopener">Claude Code</a><span class="in">your Claude account</span><span>Routines › the song facts task, which finds each new song’s facts.</span></li>
+    </ul>
+  </section>
+
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+(function () {
+  // ?worker=http://127.0.0.1:<port> only, for testing against a Worker run locally (never anywhere else: the page sends it the password)
+  var WORKER = /[?&]worker=(http%3A%2F%2F(127\.0\.0\.1|localhost)%3A\d+|http:\/\/(127\.0\.0\.1|localhost):\d+)(&|$)/.test(location.search) ? decodeURIComponent(RegExp.$1) : 'https://sotd-playlists.cooperking.workers.dev';
+  function key() { try { return localStorage.getItem('sotd-admin-key') || ''; } catch (e) { return ''; } }
+  function $(id) { return document.getElementById(id); }
+  var tt = 0;
+  function toast(m) { var t = $('toast'); t.textContent = m; t.classList.add('show'); clearTimeout(tt); tt = setTimeout(function () { t.classList.remove('show'); }, Math.max(2600, m.length * 60)); }
+  function api(body) {
+    return fetch(WORKER + '/members/admin', { method: 'POST', headers: { Authorization: 'Bearer ' + key(), 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (j) {
+        j.status = r.status;
+        if (r.status === 401) { try { if (window.parent.SOTD_ADMIN_LOCK) window.parent.SOTD_ADMIN_LOCK(); } catch (e) {} }
+        if (r.status >= 400 && !j.error) j.error = 'The Worker answered ' + r.status;
+        return j;
+      });
+    });
+  }
+  function site(f) { return fetch('/songs/' + f, { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; }); }
+  function day(t) { return new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }); }
+  function link(href, text) { var a = document.createElement('a'); a.href = href; a.target = '_blank'; a.rel = 'noopener'; a.textContent = text; return a; }
+
+  var MEMBERS = [];
+  // the members whose devices said they have this app (each device's latest word: see the Members tab)
+  function using(kind) {
+    var out = [];
+    MEMBERS.forEach(function (m) { (m.apps || []).forEach(function (a) { if (a.app === kind) out.push({ name: m.name, build: a.build, seen: a.seen }); }); });
+    return out;
+  }
+  function who(id, lines) { var ul = $(id); ul.innerHTML = ''; lines.forEach(function (li) { ul.appendChild(li); }); }
+  function whoLine(kind, label, newest) {
+    var list = using(kind);
+    var li = document.createElement('li');
+    if (!list.length) { li.textContent = label + ': nobody yet, as far as their devices have said.'; return li; }
+    li.appendChild(document.createTextNode(label + ': '));
+    list.forEach(function (x, i) {
+      if (i) li.appendChild(document.createTextNode(', '));
+      var b = document.createElement('b'); b.textContent = x.name; li.appendChild(b);
+      var bits = [];
+      if (x.build) bits.push('build ' + x.build);
+      if (x.seen) bits.push(day(x.seen));
+      if (bits.length) {
+        var s = document.createElement('span'); s.textContent = ' (' + bits.join(', ') + ')';
+        if (newest && x.build && x.build < newest) { s.className = 'old'; s.textContent = ' (build ' + x.build + ', not the newest' + (x.seen ? ', ' + day(x.seen) : '') + ')'; }
+        li.appendChild(s);
+      }
+    });
+    return li;
+  }
+
+  function withEmail() { return MEMBERS.filter(function (m) { return m.email; }); }
+  $('csvget').addEventListener('click', function () {
+    var list = withEmail().map(function (m) { return m.email; });
+    if (!list.length) return;
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([list.join('\n') + '\n'], { type: 'text/csv' }));
+    a.download = 'song-of-the-day-testers.csv'; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 10000);
+    toast(list.length === 1 ? '1 email downloaded' : list.length + ' emails downloaded');
+  });
+
+  function load() {
+    return Promise.all([api({ op: 'people' }), site('ios.json'), site('android.json'), site('tv.json')]).then(function (r) {
+      var j = r[0], ios = r[1], android = r[2], tv = r[3];
+      if (j.status === 200) {
+        MEMBERS = j.members || [];
+        var said = 0, devs = 0;
+        MEMBERS.forEach(function (m) { (m.apps || []).forEach(function (a) { devs++; if (a.app) said++; }); });
+        $('stat').textContent = devs ? devs + (devs === 1 ? ' device' : ' devices') + ' signed in, ' + (said === devs ? 'all of them' : said) + ' saying which app' : 'No devices signed in yet';
+      } else $('stat').textContent = j.error || 'Couldn’t reach the Worker';
+      // iPhone
+      var now = $('iosnow');
+      if (/^https:\/\/testflight\.apple\.com\//.test(ios.testflight || '')) {
+        now.textContent = 'On TestFlight, with the public link invitations give: ';
+        now.appendChild(link(ios.testflight, ios.testflight.replace('https://', '')));
+        now.appendChild(document.createTextNode('. Each build lasts 90 days; the job makes a new one on the 1st of every second month.'));
+      }
+      who('ioswho', [whoLine('ios', 'With the iPhone app')]);
+      // Android
+      if (android.build) {
+        now = $('andnow'); now.textContent = 'On Google Play as a closed test, and on the website as an app to install directly (';
+        now.appendChild(link(android.apk || '/songs/android.apk', 'build ' + android.build)); now.appendChild(document.createTextNode('), which offers each newer build itself.'));
+      }
+      who('andwho', [whoLine('play', 'From Google Play'), whoLine('apk', 'From the website', android.build)]);
+      var n = withEmail().length;
+      $('csvget').disabled = !n;
+      $('csvstat').textContent = j.status !== 200 ? '' : !n ? 'Nobody has an email address yet (the Members tab).' : (n === 1 ? '1 address' : n + ' addresses');
+      // Fire TV
+      if (tv.build) { now = $('tvnow'); now.textContent = 'Build ' + tv.build + '. Not in Amazon’s app store: installed with the Downloader app from '; var c = document.createElement('code'); c.textContent = 'cooperking.github.io/songs/tv.apk'; now.appendChild(c); now.appendChild(document.createTextNode('. On opening, it offers each newer build itself.')); }
+      who('tvwho', [whoLine('tv', 'With the Fire TV app')]);
+    });
+  }
+  window.SOTD_REFRESH = load;
+  load();
+})();
+</script>
+</body>
+</html>

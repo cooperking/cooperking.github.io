@@ -30,13 +30,15 @@
 .person { padding: 14px 16px; display: grid; gap: 8px; }
 .person .who { font-family: var(--serif); font-weight: 500; font-size: 24px; line-height: 1.1; color: var(--fg); }
 .person .acts { display: flex; flex-wrap: wrap; gap: 6px; }
-/* a member's email address (codes by email, Google Play's test list) */
+/* a member's email address (codes by email, Google Play's test list), and which app each of their devices is */
 .person .mail { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
 .person .mail input { flex: 1 1 220px; min-width: 0; border: 1px solid var(--line); background: var(--field); color: var(--fg); border-radius: 10px; padding: 8px 10px; font: 15px var(--sans); }
-.person .play { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
-.person .play.on { color: var(--ok); }
-.playbox { padding: 16px; display: grid; gap: 10px; }
-.playbox .stat a { color: var(--fg); }
+.person .apps { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; font-size: 13px; color: var(--muted); }
+.person .apps li { position: relative; padding-left: 13px; }
+.person .apps li::before { content: ""; position: absolute; left: 0; top: .6em; width: 6px; height: 6px; border-radius: 50%; background: var(--faint); }
+.person .apps li.play::before { background: var(--ok); }
+.person .apps b { font-weight: 600; color: var(--fg); }
+.csvbox { padding: 16px; display: grid; gap: 10px; }
 .invplay { font-size: 13.5px; color: var(--muted); margin: 0; }
 .inviter { padding: 16px; display: grid; gap: 10px; }
 .wrap > .card + .card { margin-top: 18px; }   /* (a gap between the invitation and the notifications) */
@@ -83,7 +85,7 @@
   <header class="top">
     <h1>Members</h1>
     <p class="sub" id="stat">Loading…</p>
-    <p class="help">Members hear your own recording of each song and see your own videos (added on the Songs tab), and can save their playlists. Invite someone and send them the invitation: opening it signs that phone or computer in (up to 5 devices, within 30 days). For a Fire TV or an iPhone Home Screen icon, use <b>Code</b>: six letters to type in once, within 30 minutes (on the TV: ≡ → Sign in; on the Home Screen icon: Sign in at the top). With their email address they can also sign in with a code sent to it from your Gmail, should a passkey fail; on Android it’s the Google account for Google Play’s test list.</p>
+    <p class="help">Members hear your own recording of each song and see your own videos (added on the Songs tab), and can save their playlists. Invite someone and send them the invitation: opening it signs that phone or computer in (up to 5 devices, within 30 days). For a Fire TV or an iPhone Home Screen icon, use <b>Code</b>: six letters to type in once, within 30 minutes (on the TV: ≡ → Sign in; on the Home Screen icon: Sign in at the top). With their email address they can also sign in with a code sent to it from your Gmail, should a passkey fail; for Android, Google Play’s test list takes the members’ emails (Download the emails, below). Under each member: which app each of their devices uses, as it last said.</p>
   </header>
   <div class="card inviter">
     <div class="kicker">Invite someone</div>
@@ -95,10 +97,10 @@
     <div class="link" id="newlink" hidden><code id="linktext"></code><div class="row"><button class="btn small" id="copy" type="button">Copy the link</button><button class="btn small primary" id="share" type="button">Send the invitation…</button></div></div>
     <div class="link" id="tvbox" hidden><span class="stat">For <b id="tvfor"></b>, once, within <span id="tvmins"></span> minutes:</span><span class="tvcode" id="tvcode"></span></div>
   </div>
-  <div class="card playbox" id="playbox" hidden>
+  <div class="card csvbox" id="csvbox" hidden>
     <div class="kicker">Google Play’s test list</div>
-    <p class="stat" id="playstat"></p>
-    <div class="row"><button class="btn small primary" id="playcopy" type="button">Copy their emails</button><button class="btn small" id="playdone" type="button" hidden>I’ve added them</button></div>
+    <p class="stat" id="csvstat"></p>
+    <div class="row"><button class="btn small primary" id="csvget" type="button">Download the emails (CSV)</button></div>
   </div>
   <div class="card notify">
     <div class="kicker">Send a notification</div>
@@ -249,9 +251,9 @@
       var acts = document.createElement('div'); acts.className = 'acts';
       acts.appendChild(button('Message', function () { notifyOne(m); }));   // to just them (their inbox, and their phone if notifications are on)
       acts.appendChild(nl); acts.appendChild(tv); acts.appendChild(me); acts.appendChild(rm);
-      li.appendChild(who); li.appendChild(st); li.appendChild(mailRow(m)); li.appendChild(playRow(m)); li.appendChild(acts); ul.appendChild(li);
+      li.appendChild(who); li.appendChild(st); if (m.apps && m.apps.length) li.appendChild(appsList(m)); li.appendChild(mailRow(m)); li.appendChild(acts); ul.appendChild(li);
     });
-    playBox();
+    csvBox();
   }
   // their email address: codes by email go to it, and it's the one for Google Play's test list (the Google account on
   // their Android phone)
@@ -271,51 +273,57 @@
     inp.addEventListener('input', function () { save.hidden = inp.value.trim().toLowerCase() === (m.email || ''); });
     inp.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !save.hidden) save.click(); });
     row.appendChild(inp); row.appendChild(save);
-    if (m.email && m.emailAt) { var by = document.createElement('span'); by.className = 'stat'; by.textContent = 'Given by them, ' + playDay(m.emailAt); row.appendChild(by); }
+    if (m.email && m.emailAt) { var by = document.createElement('span'); by.className = 'stat'; by.textContent = 'Given by them, ' + shortDay(m.emailAt); row.appendChild(by); }
     if (m.email) row.appendChild(button('Send a test email', function () {
       api('/members/admin', { op: 'mailtest', id: m.id }).then(function (j) { toast(j.ok ? 'Sent to ' + m.email : j.error || 'Couldn’t send it'); });
     }));
     return row;
   }
-  function playDay(t) { return new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }); }
-  function playRow(m) {   // on Google Play's test list (as far as John has said)
-    var row = document.createElement('div'); row.className = 'play' + (m.tester ? ' on' : '');
-    var t = document.createElement('span');
-    t.textContent = !m.email ? 'Google Play’s test list: add their email first' : m.tester ? 'On Google Play’s test list (added ' + playDay(m.tester) + ')' : 'Not on Google Play’s test list yet';
-    row.appendChild(t);
-    if (m.email) row.appendChild(button(m.tester ? 'Not on it' : 'Added to it', function () {
-      api('/members/admin', { op: 'tester', ids: [m.id], on: !m.tester }).then(function (j) { if (j.members) { MEMBERS = j.members; people(); } else toast(j.error || 'Couldn’t'); });
-    }));
-    return row;
-  }
-  var PLAY_CONSOLE = 'https://play.google.com/console';
-  function playNew() { return MEMBERS.filter(function (m) { return m.email && !m.tester; }); }
-  function playBox() {   // the emails to paste into Play's test list: members with one who aren't marked as on it
-    var news = playNew(), all = MEMBERS.filter(function (m) { return m.email; }).length;
-    $('playbox').hidden = !all;
-    if (!all) return;
-    var st = $('playstat'); st.textContent = '';
-    if (!news.length) { st.textContent = 'Everyone with an email address is on it (' + all + ').'; $('playcopy').hidden = true; $('playdone').hidden = true; return; }
-    st.appendChild(document.createTextNode(news.length + (news.length === 1 ? ' member isn’t' : ' members aren’t') + ' on it yet: ' + news.map(function (m) { return m.name; }).join(', ')
-      + '. Copy their emails, paste them into the closed test’s email list in '));
-    var a = document.createElement('a'); a.href = PLAY_CONSOLE; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'Play Console'; st.appendChild(a);
-    st.appendChild(document.createTextNode(' (Testing › Closed testing › Testers), save there, then say you’ve added them.'));
-    $('playcopy').hidden = false; $('playdone').hidden = true;
-  }
-  var playCopied = [];
-  $('playcopy').addEventListener('click', function () {
-    var news = playNew(); if (!news.length) return;
-    playCopied = news.map(function (m) { return m.id; });
-    var text = news.map(function (m) { return m.email; }).join(', ');
-    navigator.clipboard.writeText(text).then(function () { toast(news.length === 1 ? 'Email copied' : news.length + ' emails copied'); }, function () { toast(text); });
-    $('playdone').hidden = false;
-  });
-  $('playdone').addEventListener('click', function () {
-    if (!playCopied.length) return;
-    api('/members/admin', { op: 'tester', ids: playCopied, on: true }).then(function (j) {
-      if (!j.members) { toast(j.error || 'Couldn’t'); return; }
-      MEMBERS = j.members; playCopied = []; people(); toast('Marked as on Google Play’s test list');
+  function shortDay(t) { return new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }); }
+  // which app each of their devices uses (the calendar says, each visit: see deviceSays in the Worker), the latest first
+  function appsList(m) {
+    var ul = document.createElement('ul'); ul.className = 'apps';
+    m.apps.forEach(function (a) {
+      var li = document.createElement('li'); li.className = a.app === 'play' ? 'play' : '';
+      var b = document.createElement('b'); b.textContent = appName(a); li.appendChild(b);
+      li.appendChild(document.createTextNode((a.build ? ' · build ' + a.build : '') + (a.seen ? ' · ' + shortDay(a.seen) : '')));
+      ul.appendChild(li);
     });
+    return ul;
+  }
+  var OS_NAME = { Android: 'Android phone', Windows: 'Windows PC', Linux: 'Linux computer' };
+  function onOs(os) { var n = OS_NAME[os] || os; return n ? (/^(i|A|E|I|O|U)/.test(n) ? 'an ' : 'a ') + n : ''; }
+  function appName(a) {
+    var computer = /^(Mac|Windows|Linux|Chromebook)$/.test(a.os), on = a.os ? ' on ' + onOs(a.os) : '';
+    switch (a.app) {
+      case 'play': return 'Android app from Google Play';
+      case 'apk': return 'Android app from the website';
+      case 'ios': return 'iPhone app' + (a.os === 'iPad' ? ' on an iPad' : '');
+      case 'tv': return 'Fire TV app';
+      case 'home': return (computer ? 'Installed web app' : 'Home Screen icon') + on;
+      case 'web': return 'Browser' + on;
+    }
+    var d = a.os ? onOs(a.os) : 'a device';
+    return d.charAt(0).toUpperCase() + d.slice(1) + ', which app not known yet';
+  }
+  // ---- the emails for Google Play's test list: a CSV (one address a line) to upload to the closed test's email list in
+  // Play Console (the Apps tab has the steps). Play's API can't read or write that list (it takes Google Groups only).
+  function withEmail() { return MEMBERS.filter(function (m) { return m.email; }); }
+  function csvBox() {
+    var n = withEmail().length;
+    $('csvbox').hidden = !MEMBERS.length;
+    $('csvstat').textContent = !n ? 'Nobody has an email address yet.'
+      : (n === 1 ? '1 member has' : n + ' members have') + ' an email address. Download them and upload the file to the closed test’s email list in Play Console: the Apps tab has the steps.';
+    $('csvget').disabled = !n;
+  }
+  $('csvget').addEventListener('click', function () {
+    var list = withEmail().map(function (m) { return m.email; });
+    if (!list.length) return;
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([list.join('\n') + '\n'], { type: 'text/csv' }));
+    a.download = 'song-of-the-day-testers.csv'; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 10000);
+    toast(list.length === 1 ? '1 email downloaded' : list.length + ' emails downloaded');
   });
   function button(label, fn) { var b = document.createElement('button'); b.type = 'button'; b.className = 'btn small'; b.textContent = label; b.addEventListener('click', fn); return b; }
   var invFor = '', INV;
@@ -366,8 +374,8 @@
   function invOpen() {
     $('invh').textContent = invTitle();
     var im = (MEMBERS || []).filter(function (x) { return x.id === INV.id; })[0];
-    $('invplay').textContent = !im ? '' : im.tester ? 'On an Android phone: Google Play’s steps (they’re on its test list).'
-      : 'On an Android phone: the website’s app' + (im.email ? ' (they aren’t on Google Play’s test list yet).' : ' (no email for Google Play’s test list yet).');
+    $('invplay').textContent = !im ? '' : im.email ? 'On an Android phone: Google Play’s steps, with the website’s app should Play not have them yet (upload the emails to its test list first).'
+      : 'On an Android phone: the website’s app (no email address for Google Play’s test list).';
     try { INV.pic = localStorage.getItem(PIC_KEY) || ''; } catch (e) { INV.pic = ''; }
     INV.page = ''; INV.url = ''; $('invimg').removeAttribute('src');
     $('invshare').hidden = !navigator.share;

@@ -384,7 +384,7 @@ async function keepLast(env, at, songs) {   // the list as last read (written on
 
 function factsHeaders(origin) {
   return { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'Access-Control-Allow-Origin': origin || '*',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Authorization, Content-Type, X-Device', 'Access-Control-Max-Age': '86400' };
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Authorization, Content-Type, X-Device, X-App', 'Access-Control-Max-Age': '86400' };
 }
 
 async function factsSigned(env) {
@@ -826,11 +826,12 @@ async function members(request, url, env) {
     m.invite = { hash: await sha256hex(code), uses: 0, until: Date.now() + INVITE_DAYS * DAY };
     return MEMBERS_JOIN + code;
   };
-  const listing = (own = owner) => Object.entries(all).map(([id, m]) => ({ id, name: m.name, created: m.created, owner: id === own, email: m.email || '', emailAt: m.emailAt || null, tester: m.tester || null,
-    devices: Object.values(m.devices || {}).filter(d => d.did).length, passkeys: (m.passkeys || []).length, seen: Math.max(0, ...Object.values(m.devices || {}).map(d => d.seen || 0)) || null,
+  const listing = (own = owner) => Object.entries(all).map(([id, m]) => ({ id, name: m.name, created: m.created, owner: id === own, email: m.email || '', emailAt: m.emailAt || null,
+    devices: Object.values(m.devices || {}).filter(d => d.did).length, apps: deviceApps(m), passkeys: (m.passkeys || []).length, seen: Math.max(0, ...Object.values(m.devices || {}).map(d => d.seen || 0)) || null,
     invite: m.invite ? { uses: m.invite.uses, left: Math.max(0, INVITE_USES - m.invite.uses), until: m.invite.until } : null }));
   switch (body.op) {
     case 'list': return answer(200, { members: listing(), catalog: await catalog(env), media: !!env.MEDIA, covers: await coversAll(env) });
+    case 'people': return answer(200, { members: listing() });   // (the Apps tab: who has which app, and the emails for Google Play)
     case 'invite': {
       const name = String(body.name || '').replace(/\s+/g, ' ').trim().slice(0, 60);
       if (!name) return answer(400, { error: 'Give their name.' });
@@ -849,20 +850,13 @@ async function members(request, url, env) {
       const link = await invite(m); await save();
       return answer(200, { id: body.id, link, members: listing() });
     }
-    case 'email': {   // a member's email address ('' takes it away): for codes by email, and Play's test list
+    case 'email': {   // a member's email address ('' takes it away): for codes by email, and Google Play's test list (the CSV)
       const m = all[body.id];
       if (!m) return answer(404, { error: 'No such member.' });
       const email = body.email ? cleanEmail(body.email) : '';
       if (body.email && !email) return answer(400, { error: 'That doesn’t look like an email address.' });
       if (email && Object.entries(all).some(([k, x]) => k !== body.id && x.email === email)) return answer(400, { error: 'Another member has that email address.' });
-      if (email !== (m.email || '')) { if (email) m.email = email; else delete m.email; delete m.tester; delete m.emailAt; }   // (a new address isn't on Play's list yet; emailAt: one they gave themselves)
-      await save();
-      return answer(200, { ok: true, members: listing() });
-    }
-    case 'tester': {   // on Play's test list (John has pasted their email there), or not
-      const ids = (Array.isArray(body.ids) ? body.ids : [body.id]).filter(k => all[k] && all[k].email);
-      if (!ids.length) return answer(400, { error: 'Nobody with an email address to mark.' });
-      ids.forEach(k => { if (body.on === false) delete all[k].tester; else all[k].tester = new Date().toISOString(); });
+      if (email !== (m.email || '')) { if (email) m.email = email; else delete m.email; delete m.emailAt; }   // (emailAt: one they gave themselves)
       await save();
       return answer(200, { ok: true, members: listing() });
     }
@@ -1153,6 +1147,33 @@ async function memberShare(url, env, track, id, image) {
 // counts once it has said which device it is (its next visit); old ones that never come back aren't counted, and go
 // after 30 days.
 function deviceId(x) { const d = String(x || ''); return /^[A-Za-z0-9]{8,40}$/.test(d) ? d : ''; }
+// Which app each device is, for the Members and Apps tabs: the calendar page says (X-App on /members/me) play:<build>
+// Google Play's Android app, apk:<build> the website's Android app, ios:<build> the iPhone app, tv the Fire TV app, home
+// a Home Screen icon or installed web app, web a browser. What it runs on comes from its User-Agent (only the name is
+// kept: iPhone, Android, Mac...). Devices that haven't said yet (the page before 28 Oct 2026) have neither.
+const APP_RE = /^(play|apk|ios|tv|home|web)(?::(\d{1,5}))?$/;
+function deviceOs(ua) {
+  ua = String(ua || '');
+  return /SOTDTV|AFT[A-Z0-9]/.test(ua) ? 'Fire TV' : /iPhone/.test(ua) ? 'iPhone' : /iPad/.test(ua) ? 'iPad' : /Android/.test(ua) ? 'Android'
+    : /CrOS/.test(ua) ? 'Chromebook' : /Macintosh|Mac OS X/.test(ua) ? 'Mac' : /Windows/.test(ua) ? 'Windows' : /Linux/.test(ua) ? 'Linux' : '';
+}
+function deviceSays(dev, request) {   // true when it changed
+  const a = APP_RE.exec(request.headers.get('X-App') || ''), os = deviceOs(request.headers.get('User-Agent'));
+  let changed = false;
+  if (a) {
+    let v = a[0];
+    if (!a[2] && dev.app && dev.app.startsWith(a[1] + ':')) v = dev.app;   // (its build not known this time: the one it said before stays)
+    if (dev.app !== v) { dev.app = v; changed = true; }
+  }
+  if (os && dev.os !== os) { dev.os = os; changed = true; }
+  return changed;
+}
+function deviceApps(m) {   // each counted device, the latest first: {app, build, os, seen}
+  return Object.values(m.devices || {}).filter(d => d.did).sort((x, y) => (y.seen || 0) - (x.seen || 0)).map(d => {
+    const a = APP_RE.exec(d.app || '');
+    return { app: a ? a[1] : '', build: a && a[2] ? Number(a[2]) : null, os: d.os || '', seen: d.seen || null };
+  });
+}
 function deviceTidy(all, keepHash, did) {   // other sign-ins from this device go; long-gone ones without an id too
   let changed = false;
   for (const m of Object.values(all)) {
@@ -1226,6 +1247,7 @@ async function memberMe(request, env, answer) {
   let save = Date.now() - (dev.seen || 0) > 6 * 3600e3;
   if (save) dev.seen = Date.now();
   if (did && dev.did !== did) { dev.did = did; dev.seen = Date.now(); deviceTidy(all, hash, did); save = true; }   // says which device it is: earlier sign-ins there go
+  if (deviceSays(dev, request)) save = true;   // which app it is, and what it runs on
   if (save) await kvSoft(env, 'members', JSON.stringify(all));
   const exp = Math.floor(Date.now() / 1000) + LINK_HOURS * 3600, base = new URL(request.url).origin, media = {};
   if (env.MEDIA && env.ADMIN_KEY) {
@@ -1274,8 +1296,9 @@ async function invitePage(url, env) {
   const [ios, android] = await Promise.all([get(SITE_SONGS + 'ios.json'), get(SITE_SONGS + 'android.json')]);
   const tf = /^https:\/\/testflight\.apple\.com\/join\/\w+$/.test(ios.testflight || '') ? ios.testflight : '';
   const apk = /^https:\/\/cooperking\.github\.io\//.test(android.apk || '') ? android.apk : '';
-  // on Play's test list (John has pasted their email there: the Members tab): Google Play's steps for them on Android
-  const who = p.id ? ((await env.SOTD.get('members', 'json')) || {})[p.id] : null, play = !!(who && who.tester && who.email);
+  // with an email address (John puts the members' emails on Google Play's test list, from the CSV on the Members and Apps
+  // tabs): Google Play's steps for them on Android, with the website's app as the way round should Play not have them yet
+  const who = p.id ? ((await env.SOTD.get('members', 'json')) || {})[p.id] : null, play = !!(who && who.email);
   const e = x => esc(String(x)), img = url.origin + '/i/' + m[1] + '.jpg?v=' + p.at, desc = 'John\'s Song of the Day';
   const steps = INVITE_STEPS || url.searchParams.has('try'), own = url.origin + '/i/' + m[1];
   return new Response(`<!doctype html>
@@ -1339,6 +1362,7 @@ async function invitePage(url, env) {
   <h1>${e(p.title)}</h1>
   <p>John’s Song of the Day: a song for every day, with John’s own recordings and videos for members.</p>
   <ol id="steps"></ol>
+  ${play && apk ? `<p class="small" id="orapk" hidden>Google Play says you can’t join the test? John may not have added you to it yet: <a href="${e(apk)}">get the app from the website</a> instead (Android asks to allow installing from your browser: allow it, then tap Install).</p>` : ''}
   <p class="small">Or <a href="${e(p.link)}">open the calendar here in the browser</a> instead.</p>
 </main>
 <script>
@@ -1356,7 +1380,8 @@ async function invitePage(url, env) {
     { t: 'Get the Android app', p: 'Android asks to allow installing from your browser: allow it, then tap Install.', a: ${JSON.stringify(apk)} },
     { t: 'Open your invitation', p: 'It opens in the app and signs you in.', a: link, ghost: true }
   ];
-  var ol = document.getElementById('steps');
+  var ol = document.getElementById('steps'), orapk = document.getElementById('orapk');
+  if (orapk && !iphone) orapk.hidden = false;
   steps.forEach(function (st, i) {
     var li = document.createElement('li');
     li.innerHTML = '<b class="n">' + (i + 1) + '</b>' + st.t + '<p>' + st.p + '</p>';
@@ -1749,7 +1774,7 @@ async function memberEmail(request, env, answer) {
     }
     await env.SOTD.put(key, JSON.stringify({ hour: rec.hour, n: rec.n, sent: rec.sent }), { expirationTtl: 3600 });   // (used)
     if (Object.entries(all).some(([k, x]) => k !== id && x.email === rec.email)) return answer(400, { error: 'Another member has that address now. Ask John.' });
-    if (m.email !== rec.email) { m.email = rec.email; delete m.tester; m.emailAt = new Date().toISOString(); }
+    if (m.email !== rec.email) { m.email = rec.email; m.emailAt = new Date().toISOString(); }
     await env.SOTD.put('members', JSON.stringify(all));
     return answer(200, { ok: true, email: m.email });
   }

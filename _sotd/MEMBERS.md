@@ -103,11 +103,22 @@ or else Gmail's API with his sign-in (`GMAIL_REFRESH_TOKEN`). Each email sent is
 `mailLog`); one that couldn't be sent counts there. *Send a test email* on the Members tab tries it.
 
 Google Play's closed test takes testers from an email list John keeps in Play Console (Google's API takes only Google
-Groups, and a Gmail-made group can't be filled by API). The Members tab lists the members with an email who aren't on
-it yet: *Copy their emails*, paste them in Play Console, *I've added them* (`tester` on their record, with when). For a
-member on it, the invitation's page gives Android Google Play's steps: join the test
-(`play.google.com/apps/testing/io.github.cooperking.sotd`), get the app from Play, open the invitation. Tests:
-`mail_t.mjs` (the Worker), `gs_t.js` (the mailer), `members_t.py` (the Members tab), `signin_t.py` (the draft).
+Groups, and a Gmail-made group can't be filled by API, so nothing here reads or writes that list). *Download the
+emails (CSV)*, on the Members tab and on the Apps tab, gives every member's address, one a line, to upload to the list
+(the Apps tab has the steps). For a member with an email address, the invitation's page gives Android Google Play's
+steps: join the test (`play.google.com/apps/testing/io.github.cooperking.sotd`), get the app from Play, open the
+invitation; under them, should Play not have them yet, the website's app instead. Tests: `mail_t.mjs` (the Worker),
+`gs_t.js` (the mailer), `members_t.py` (the Members tab), `signin_t.py` (the draft).
+
+## Which app each device uses
+
+Each visit, the calendar says which app it is (`X-App` on `/members/me`): `play:<build>` Google Play's Android app,
+`apk:<build>` the website's, `ios:<build>` the iPhone app (its build from Capacitor's App plugin, kept on the phone),
+`tv` the Fire TV app, `home` a Home Screen icon or installed web app, `web` a browser. The Worker keeps it on the
+device's sign-in (`app`), with what the device runs on from its User-Agent (`os`: only the name, iPhone, Android,
+Mac...). The Members tab lists each member's devices that way; the Apps tab lists who has each app, and flags a website
+Android app older than `songs/android.json`'s build. Devices say once the calendar with this (from 28 Oct 2026) is
+live; until then they show what they run on only.
 
 ## Saved playlists
 

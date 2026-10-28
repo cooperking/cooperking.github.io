@@ -42,11 +42,18 @@ body { overflow: hidden; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .panes { flex: 1; position: relative; min-height: 0; }
 .panes iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: transparent; }
-@media (max-width: 480px) { .bar .name em { display: none; } .tabs button { padding: 8px 11px; } .bar { padding-left: 14px; } }
 .tabs button { white-space: nowrap; }
-@media (max-width: 430px) { .bar .name { display: none; } .bar .tabs { margin-left: auto; } .tabs button { padding: 8px 9px; letter-spacing: .06em; } .tabs .count { margin-left: 4px; } }
-@media (max-width: 400px) { .bar { gap: 5px; padding-right: 5px; } .tabs button { padding: 8px 7px; letter-spacing: .03em; } .out, .home { width: 34px; height: 34px; } }
-@media (max-width: 375px) { .bar { margin-left: 8px; margin-right: 8px; gap: 4px; } .tabs button { padding: 8px 6px; letter-spacing: 0; font-size: 11px; } .tabs .count { min-width: 15px; height: 15px; padding: 0 4px; } }
+@media (max-width: 720px) { .bar .name em { display: none; } }
+/* a phone: the tabs (four of them) get a row of their own under the bar, sharing its width */
+@media (max-width: 560px) {
+  .bar { flex-wrap: wrap; row-gap: 6px; border-radius: 26px; padding: 6px; }
+  .home { margin-left: 0; }
+  .bar .name { padding-left: 4px; }
+  .bar .name em { display: none; }
+  .bar .tabs { order: 9; flex: 1 0 100%; display: flex; }
+  .tabs button { flex: 1 1 auto; padding: 9px 6px; letter-spacing: .08em; }
+}
+@media (max-width: 360px) { .bar { margin-left: 8px; margin-right: 8px; } .tabs button { padding: 9px 3px; letter-spacing: .03em; font-size: 11px; } .tabs .count { margin-left: 4px; min-width: 15px; height: 15px; padding: 0 4px; } }
 </style>
 </head>
 <body>
@@ -69,6 +76,7 @@ body { overflow: hidden; }
     <div class="tabs" role="tablist">
       <button type="button" role="tab" data-tab="songs" aria-selected="false">Songs</button>
       <button type="button" role="tab" data-tab="members" aria-selected="false">Members</button>
+      <button type="button" role="tab" data-tab="apps" aria-selected="false">Apps</button>
       <button type="button" role="tab" data-tab="status" aria-selected="false">Status<span class="count" id="stcount" hidden></span></button>
     </div>
     <button class="out" id="reload" type="button" aria-label="Refresh" title="Refresh"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 8a5 5 0 1 1-1.46-3.54"/><path d="M13 2.6v2.9h-2.9"/></svg></button>
@@ -79,11 +87,11 @@ body { overflow: hidden; }
 <script>
 (function () {
   // Nothing of the admin side shows until the Worker accepts the password (the same ADMIN_KEY the facts and members
-  // parts use). The parts (songs-admin.html, members-admin.html, status-admin.html) only show inside this page, once
+  // parts use). The parts (songs-admin.html, members-admin.html, apps-admin.html, status-admin.html) only show inside this page, once
   // it has said the password is right (window.SOTD_ADMIN_OK); opened on their own they come back here.
   var WORKER = 'https://sotd-playlists.cooperking.workers.dev';
   var KEYS = 'sotd-admin-key';
-  var PAGES = { songs: 'songs-admin.html', members: 'members-admin.html', status: 'status-admin.html' };
+  var PAGES = { songs: 'songs-admin.html', members: 'members-admin.html', apps: 'apps-admin.html', status: 'status-admin.html' };
   var frames = {}, $ = function (id) { return document.getElementById(id); };
   function read() { try { return localStorage.getItem(KEYS) || ''; } catch (e) { return ''; } }
   function store(v) { try { if (v) localStorage.setItem(KEYS, v); else localStorage.removeItem(KEYS); } catch (e) {} }
