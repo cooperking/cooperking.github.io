@@ -401,6 +401,113 @@ async function startFactsJob(env) {
   return r.status === 204 ? 'started' : 'GitHub answered ' + r.status + ': ' + (await r.text()).slice(0, 200);
 }
 
+// ---------- the admin page's Status tab: where each new song has got to, and how the GitHub jobs went ----------
+//
+// John, 28 Oct 2026: "I need a way to see if something has failed in my admin page otherwise I'm just left waiting".
+// Worked out when the tab asks (admin op 'status'), nothing kept: the playlist (Spotify); the site's repository, from
+// its public files on GitHub (each song's sources, the facts asked for and how the last call to the facts task went,
+// the facts out on the calendar, the videos); the Worker's own start of the site job (KV job); and the latest run of
+// each GitHub job, with the step a failed one stopped at. Each new song's way to the calendar is a row of steps, each
+// done, waiting or failed (st: ok, wait, bad); `problems` counts the failed steps and failed jobs.
+const RAW = 'https://raw.githubusercontent.com/' + REPO + '/main/';
+const STALL = { job: 20 * 60e3, ask: 20 * 60e3, facts: 60 * 60e3 };   // how long each step may take before it counts as stuck
+async function rawJson(path, empty) {
+  const r = await fetch(RAW + path + '?t=' + Date.now(), { headers: { 'User-Agent': 'SongOfTheDayWorker' } });
+  if (r.status === 404 && empty !== undefined) return empty;
+  if (!r.ok) throw new Error(path + ': GitHub answered ' + r.status);
+  return r.json();
+}
+async function ghApi(env, path) {
+  const r = await fetch('https://api.github.com/repos/' + REPO + path, { headers: { Authorization: 'Bearer ' + env.GH_TOKEN,
+    Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', 'User-Agent': 'SongOfTheDayWorker' } });
+  if (!r.ok) throw new Error('GitHub answered ' + r.status + ' for ' + path.split('?')[0]);
+  return r.json();
+}
+const BAD_RUN = ['failure', 'timed_out', 'startup_failure', 'action_required'];
+async function jobRuns(env) {   // the latest run of each GitHub job; a failed one with the steps it failed at
+  const j = await ghApi(env, '/actions/runs?per_page=100');
+  const seen = {}, out = [];
+  for (const r of j.workflow_runs || []) {
+    if (seen[r.workflow_id]) continue;
+    seen[r.workflow_id] = true;
+    out.push({ id: r.id, name: r.name, st: r.status, res: r.conclusion || '', at: r.run_started_at || r.created_at, end: r.updated_at,
+      url: r.html_url, event: r.event, n: r.run_number, bad: r.status === 'completed' && BAD_RUN.includes(r.conclusion) });
+  }
+  await Promise.all(out.filter(r => r.bad).slice(0, 6).map(async r => {
+    try {
+      const jj = await ghApi(env, '/actions/runs/' + r.id + '/jobs');
+      r.steps = [];
+      for (const job of jj.jobs || []) for (const s of job.steps || []) if (BAD_RUN.includes(s.conclusion)) r.steps.push(s.name);
+      if (!r.steps.length) r.steps = (jj.jobs || []).filter(x => BAD_RUN.includes(x.conclusion)).map(x => x.name);
+    } catch (e) {}
+  }));
+  return out;
+}
+function songSteps(it, d, now) {   // one song's way to the calendar
+  const { job, runs, S, asked, task, F, V } = d;
+  const added = Date.parse(it.a) || 0, id = it.id, steps = [];
+  const step = (k, t, st, say, extra) => steps.push(Object.assign({ k, t, st, say: say || '' }, extra || {}));
+  const tags = runs.find(r => r.name === 'Song moods and genres') || null;
+  const tagsRunning = !!tags && tags.st !== 'completed';
+  const out = !!(F.songs && F.songs[id]) || !!(F.signed && F.signed[id]);
+  const src = !!(S[id]), askedAt = asked[id] ? Date.parse(asked[id]) : 0;
+  const mine = task && (task.songs || []).includes(id) ? task : null;   // the last call to the facts task, if it was for this song
+  step('added', 'In the playlist', 'ok', '', { at: it.a });
+  // 2. the site job (song-tags.yml): its video, year, moods and the sources its facts are written from
+  if (src || out) step('job', 'Found by the site job', 'ok', V[id] ? 'Video found' : 'No video found yet');
+  else {
+    const jobAt = Date.parse(job.at || '') || 0;
+    if (job.err && (job.tried || 0) >= added) step('job', 'Found by the site job', 'bad', 'The Worker couldn’t start the site job: ' + job.err, { at: new Date(job.tried).toISOString() });
+    else if (tagsRunning) step('job', 'Found by the site job', 'wait', 'The site job is running now', { at: tags.at });
+    else if (jobAt >= added && tags && tags.bad) step('job', 'Found by the site job', 'bad', 'The site job failed: see Jobs below', { at: tags.at, url: tags.url });
+    else if (jobAt >= added && now - jobAt > STALL.job) step('job', 'Found by the site job', 'bad', 'The site job started but didn’t save it', { at: job.at, url: tags && tags.url });
+    else if (jobAt >= added) step('job', 'Found by the site job', 'wait', 'The site job has started', { at: job.at });
+    else step('job', 'Found by the site job', 'wait', 'The site job starts when someone opens the calendar');
+  }
+  // 3. the facts task asked for this song's facts (by the site job, at its end)
+  if (out) step('ask', 'Facts task started', 'ok', '');
+  else if (askedAt) step('ask', 'Facts task started', 'ok', '', { at: asked[id], url: mine && mine.ok ? mine.session || '' : '' });
+  else if (!src) step('ask', 'Facts task started', 'wait', '');
+  else if (mine && !mine.ok) step('ask', 'Facts task started', 'bad', 'It couldn’t be started: ' + mine.said, { at: mine.at });
+  else if (tagsRunning) step('ask', 'Facts task started', 'wait', 'Asked for at the end of the site job');
+  else if (tags && now - Date.parse(tags.end || tags.at) > STALL.ask) step('ask', 'Facts task started', 'bad', 'The site job didn’t ask for its facts', { url: tags.url });
+  else step('ask', 'Facts task started', 'wait', '');
+  // 4. the facts written and checked: out on the calendar from then
+  if (out) step('facts', 'Facts written and checked', 'ok', 'Out on the calendar');
+  else if (askedAt && now - askedAt > STALL.facts) step('facts', 'Facts written and checked', 'bad', 'Nothing back from the facts task after ' + ago(now - askedAt) + ': open its session to see why', { url: mine && mine.ok ? mine.session || '' : '' });
+  else if (askedAt) step('facts', 'Facts written and checked', 'wait', 'The facts task is writing them (it usually takes a few minutes)');
+  else step('facts', 'Facts written and checked', 'wait', '');
+  // 5. John's sign-off
+  if (F.signed && F.signed[id]) step('signed', 'Signed off by you', 'ok', '');
+  else step('signed', 'Signed off by you', 'wait', out ? 'Waiting for you on the Songs tab' : '');
+  return { id, n: it.n, title: it.title, artist: it.artist, added: it.a, out, steps };
+}
+function ago(ms) { const m = Math.round(ms / 60e3); return m < 60 ? m + ' min' : Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + (m % 60) + ' min' : ''); }
+async function adminStatus(env) {
+  const now = Date.now(), errors = [];
+  const job = (await env.SOTD.get('job', 'json')) || {};
+  const soft = (p, f) => p.catch(e => { errors.push(String(e && e.message || e)); return f; });
+  const [items, runs, sources, asked, task, F, V] = await Promise.all([
+    soft(getToken(env).then(playlistItems), []),
+    env.GH_TOKEN ? soft(jobRuns(env), []) : Promise.resolve([]),
+    soft(rawJson('_sotd/data/sources.json'), { songs: {} }),
+    soft(rawJson('_sotd/data/facts-asked.json', {}), {}),
+    soft(rawJson('_sotd/data/facts-task.json', null), null),
+    soft(rawJson('songs/facts.json'), { songs: {}, signed: {} }),
+    soft(rawJson('songs/videos.json'), { videos: {} })]);
+  if (!env.GH_TOKEN) errors.push('The GH_TOKEN secret is not set, so the GitHub jobs can’t be read.');
+  const d = { job, runs, S: sources.songs || {}, asked, task, F, V: V.videos || {} };
+  const list = items.map((it, i) => Object.assign({ n: i + 1 }, it)).sort((a, b) => (a.a < b.a ? 1 : -1));
+  const isOut = it => !!(F.songs && F.songs[it.id]) || !!(F.signed && F.signed[it.id]);
+  const show = list.filter(it => !isOut(it)).concat(list.filter(isOut).slice(0, 2)).sort((a, b) => (a.a < b.a ? 1 : -1));
+  const songs = show.map(it => songSteps(it, d, now));
+  // (the last call to the facts task, failed: a problem until a call works, even once the song it was for is out, since the
+  // next song's call will fail the same way; counted once with a song's own failed step for it)
+  const taskBad = !!task && task.ok === false && !songs.some(x => x.steps.some(y => y.k === 'ask' && y.st === 'bad'));
+  const problems = songs.reduce((n, s) => n + s.steps.filter(x => x.st === 'bad').length, 0) + runs.filter(r => r.bad).length + (taskBad ? 1 : 0);
+  return { at: new Date(now).toISOString(), problems, songs, task, runs, job: { at: job.at || null, tried: job.tried || null, err: job.err || '' }, errors };
+}
+
 // ---------- members: John and his family ----------
 //
 // John's own recordings: a/<track>.mp3 (the song) and v/<track>.mp4 (its video) in the R2 bucket MEDIA. He invites
@@ -526,6 +633,7 @@ async function members(request, url, env) {
       if (owner === body.id) await env.SOTD.delete('owner');
       return answer(200, { ok: true, members: listing(owner === body.id ? null : owner) });
     }
+    case 'status': return answer(200, await adminStatus(env));   // the Status tab
     case 'pushcount': return answer(200, await pushCount(env));
     case 'widgets': {   // the members' iPhone widgets (iOS 26): how many each has, and how Apple took the last push to each ({ tell: true }: each told now)
       if (!env.NOW) return answer(200, { widgets: null });

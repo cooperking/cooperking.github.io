@@ -20,7 +20,13 @@ on the live calendar from then (John, 24 Oct 2026); John checks, edits and signs
 
 Claude's routine "Song facts for new songs (on demand)" (claude.ai/code/routines) does this. It has no timer: song-tags.yml starts it through the routine's API
 trigger at the end of the run that saves a new song's sources (`_sotd/facts_ask.py`; the secrets SOTD_FACTS_URL and
-SOTD_FACTS_TOKEN hold its address and token). The new song stays off the live calendar until this has run.
+SOTD_FACTS_TOKEN hold its address and token). The new song stays off the live calendar until this has run. How each
+call went is kept in `_sotd/data/facts-task.json` (started, with the task's session; or not, with what came back), and a
+call that fails fails that step of the job, so the run shows as failed. The admin page's Status tab
+(`songs/status-admin.html`, from the Worker's admin op `status`) shows each new song's steps to the calendar, that call,
+and the latest run of each GitHub job, with a count of what has failed or is stuck on its tab. When the task's token stops
+working ("OAuth access token has been revoked": 28 Oct 2026, after John changed his Google password), make a new one on
+the task's page and put it in the SOTD_FACTS_TOKEN secret; Run on the task's page writes the songs waiting meanwhile.
 
 1. `git pull` in the repository (cooperking/cooperking.github.io).
 2. `python3 _sotd/facts_todo.py <work folder>`. If it says 0 songs need facts, stop: nothing to report. A song only
