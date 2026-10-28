@@ -5,7 +5,8 @@
 // The Worker checks every track is on the Song of the Day playlist, creates a playlist with them in that
 // order on John's Spotify account, and redirects the visitor to it on open.spotify.com.
 //
-// No timers: everything follows from someone opening the calendar. When the Worker reads the playlist for
+// Someone opening the calendar, or the Worker's timer (every 10 minutes; it reads Spotify only from 06:00 until the
+// day's song is in: see timerSongs). When the Worker reads the playlist for
 // /songs.json (at most every 10 minutes) and finds it changed, it starts the GitHub job (song-tags.yml) that
 // finds each new song's video, year and moods, keeps the YouTube playlist in step and makes the share pages.
 // Until a run has included the song for today (London time), every change to the playlist starts a run, so a
@@ -83,13 +84,13 @@ export default {
       return page('Something went wrong', '<p>The playlist could not be made. Please try again later.</p><p class="small">' + esc(e.message || String(e)) + '</p>', 500);
     }
   },
-  // every 10 minutes (the Worker's cron, set by worker_deploy.py): the day's song, once it's out on the live calendar,
-  // goes to the members as a notification if the site job's call (/push/check) hasn't sent it already (see pushDaily)
+  // every 10 minutes (the Worker's cron, set by worker_deploy.py): looks for the day's new song (from 06:00 until it's
+  // in; see timerSongs), and the day's song, once it's out on the live calendar, goes to the members as a notification
+  // if the site job's call (/push/check) hasn't sent it already (see pushDaily)
   async scheduled(event, env, ctx) {
     ctx.waitUntil((async () => {
-      const res = await songsJson(new Request(LIVE_ORIGIN + '/songs.json'), env, ctx);
-      const j = await res.json();
-      await pushDaily(env, (j.songs || []).map(x => ({ id: x.id, a: x.a, title: x.title, artist: x.artist, img: x.img })));
+      const songs = await timerSongs(env, ctx);
+      await pushDaily(env, songs.map(x => ({ id: x.id, a: x.a, title: x.title, artist: x.artist, img: x.img })));
     })().catch(e => console.log('scheduled: ' + (e && e.message))));
   }
 };
@@ -527,7 +528,7 @@ function songSteps(it, d, now) {   // one song's way to the calendar
     else if (jobAt >= added && tags && tags.bad) step('job', 'Found by the site job', 'bad', 'The site job failed: see Jobs below', { at: tags.at, url: tags.url });
     else if (jobAt >= added && now - jobAt > STALL.job) step('job', 'Found by the site job', 'bad', 'The site job started but didn’t save it', { at: job.at, url: tags && tags.url });
     else if (jobAt >= added) step('job', 'Found by the site job', 'wait', 'The site job has started', { at: job.at });
-    else step('job', 'Found by the site job', 'wait', 'The site job starts when someone opens the calendar');
+    else step('job', 'Found by the site job', 'wait', 'The site job starts at the Worker’s next look (every 10 minutes from 06:00) or when someone opens the calendar');
   }
   // the YouTube playlist: a song joins as soon as it has a video, published or not (John, 28 Oct 2026; youtube_playlist.py)
   if (YT[id]) step('yt', 'On the YouTube playlist', 'ok', '');
@@ -2322,6 +2323,24 @@ async function alexa(request, env, ctx) {
 
 function londonDay(d) {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(d ? new Date(d) : new Date());   // 2026-10-22
+}
+function londonHour(d) {
+  return Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', hour: '2-digit', hourCycle: 'h23' }).format(d ? new Date(d) : new Date()));
+}
+// The timer's song list (John, 28 Oct 2026: "We don't need the worker's timer to run all day once a song is added -
+// there is no point checking for another song again until the next day. Start at 6am and stop it after a new song is
+// added"): from 06:00 UK time it reads the playlist as songs.json does (Spotify, unless a 10-minute copy is at hand),
+// until the list it kept (KV songsLast) has a song added today; before 06:00, and once the day's song is in, it uses
+// that kept list and asks Spotify nothing. (Calendar visits still read it as before.)
+const TIMER_FROM_HOUR = 6;
+async function timerSongs(env, ctx, now) {
+  const kept = await env.SOTD.get('songsLast', 'json');
+  const list = (kept && kept.songs) || [];
+  const newest = list.reduce((m, x) => (x.a > m ? x.a : m), '');
+  const today = londonDay(now), haveToday = !!newest && londonDay(newest) === today;
+  if (list.length && (haveToday || londonHour(now) < TIMER_FROM_HOUR)) return list;
+  const j = await (await songsJson(new Request(LIVE_ORIGIN + '/songs.json'), env, ctx)).json();
+  return j.songs || [];
 }
 
 async function afterLook(env, items) {
