@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="sotd-build" content="d6f3f5ef5a64">
+<meta name="sotd-build" content="ccaa635b1dfa">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 261 so far">
 <meta name="theme-color" content="#ec135b">
@@ -5170,6 +5170,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   var NAT = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform() ? window.Capacitor : null;
   var NPUSH = NAT && NAT.Plugins && NAT.Plugins.PushNotifications ? NAT.Plugins.PushNotifications : null;
   if (NAT) document.documentElement.classList.add('in-app');
+  // (the app's build, kept for the admin page's Members and Apps tabs: see appSays)
+  if (NAT) try { NAT.Plugins.App.getInfo().then(function (i) { var b = String(i && i.build); if (/^\d{1,5}$/.test(b)) try { localStorage.setItem('sotd-ios-build', b); } catch (e) {} }, function () {}); } catch (e) {}
   // ---- the iPhone app (from the build after 16): Chromecasts too, from Google's Cast kit (window.Capacitor.Plugins.
   // SotdCast). The speaker button opens the calendar's own list: this iPhone, the Chromecasts it finds (the first time,
   // the iPhone asks whether the app may look on the Wi-Fi) and AirPlay's own list. On a Chromecast, the page's audio
@@ -6080,13 +6082,22 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (sheet.open && curDay && !vplay && (!playing || audio.paused)) openDay(curDay, { keepQueue: true });   // its buttons for the whole song and own video
     else document.querySelectorAll('#picks .pick').forEach(addWatch);
   }
+  // which app this is, for the admin page's Members and Apps tabs (X-App on /members/me): play:<build> Google Play's
+  // Android app, apk:<build> the website's, ios:<build> the iPhone app, tv the Fire TV app, home a Home Screen icon or
+  // installed web app, web a browser
+  function appSays() {
+    if (APK) return (APK.kind === 'android' ? 'play' : 'apk') + (APK.build ? ':' + APK.build : '');
+    if (NAT) { var b = ''; try { b = localStorage.getItem('sotd-ios-build') || ''; } catch (e) {} return 'ios' + (/^\d{1,5}$/.test(b) ? ':' + b : ''); }
+    if (/SOTDTV/.test(navigator.userAgent)) return 'tv';
+    return standalone ? 'home' : 'web';
+  }
   function memberLoad() {
     var tok = '';
     try { tok = localStorage.getItem(MKEY) || ''; } catch (e) {}
     famSync();
     clearTimeout(memberLoad.t);
     if (!tok || !MBASE || !window.fetch) return;
-    fetch(MBASE + '/members/me', { headers: { Authorization: 'Bearer ' + tok, 'X-Device': deviceId() }, cache: 'no-store' }).then(function (r) {
+    fetch(MBASE + '/members/me', { headers: { Authorization: 'Bearer ' + tok, 'X-Device': deviceId(), 'X-App': appSays() }, cache: 'no-store' }).then(function (r) {
       if (r.status === 401) { try { localStorage.removeItem(MKEY); } catch (e) {} dlClear(); famSync(); if (MEMBER) { MEMBER = null; memberApply(); } return null; }
       return r.ok ? r.json() : null;
     }).then(function (j) {
