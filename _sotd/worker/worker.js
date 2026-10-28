@@ -614,6 +614,7 @@ function pushBy(via, runs) {   // who sent a notification (pushDaily's via, from
   if (!via) return null;
   if (via.t === 'timer') return { t: 'the Worker’s 10-minute timer' };
   if (via.t === 'you') return { t: 'you, on the Members tab' };
+  if (via.t === 'member') return { t: via.name || 'a member' };
   const r = via.run && via.run.id ? Object.assign({ name: via.run.job || 'Song moods and genres', n: via.run.n }, (runs || []).find(x => x.id === via.run.id) || {}) : null;
   return r ? { t: r.name + ', run ' + r.n, url: r.url || 'https://github.com/' + REPO + '/actions/runs/' + via.run.id } : { t: 'the site job' };
 }
@@ -811,6 +812,8 @@ async function members(request, url, env) {
   if (route === 'email') return memberEmail(request, env, answer);
   if (route === 'push') return memberPush(request, env, answer);
   if (route === 'inbox') return memberInbox(request, env, answer);
+  if (route === 'send') return memberSend(request, env, answer);
+  if (route === 'sendpic') return memberSendPic(request, env, answer);
   if (!['admin', 'upload', 'cover'].includes(route)) return answer(404, { error: 'Not here.' });
   if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
   const no = await adminOk(request, env, answer);
@@ -913,20 +916,11 @@ async function members(request, url, env) {
       return answer(200, { widgets: out });
     }
     case 'push': {   // John's own notification, to everyone who has them on
-      const title = String(body.title || '').replace(/\s+/g, ' ').trim().slice(0, 80);
-      const text = String(body.text || '').replace(/[ \t]+/g, ' ').trim().slice(0, 300);
-      const link = String(body.url || '').trim();
-      if (!title) return answer(400, { error: 'Give it a title.' });
-      if (link && !/^https:\/\/cooperking\.github\.io\//.test(link)) return answer(400, { error: 'The link has to be a page on the site (https://cooperking.github.io/…).' });
+      const note = noteMsg(body);
+      if (note.error) return answer(400, { error: note.error });
       const to = Array.isArray(body.to) ? body.to.map(String).filter(id => all[id]) : null;   // chosen members, or everyone
       if (to && !to.length) return answer(400, { error: 'Choose who it goes to.' });
-      // a song sent as it's shared: its card as the big picture (Android and computers; an iPhone shows neither) and
-      // its cover beside it, from the site or Spotify only
-      const pic = u => { const x = String(u || ''); return /^https:\/\/(cooperking\.github\.io|i\.scdn\.co|sotd-playlists\.cooperking\.workers\.dev)\//.test(x) && x.length < 600 ? x : ''; };
-      const msg = { title, body: text, url: link || SITE_SONGS, tag: 'sotd-note-' + Date.now() };
-      if (pic(body.image)) msg.image = pic(body.image);
-      if (pic(body.icon)) msg.icon = pic(body.icon);
-      const r = await pushAll(env, msg, to, { kind: 'note', via: { t: 'you' } });
+      const r = await pushAll(env, note.msg, to, { kind: 'note', via: { t: 'you' } });
       return answer(200, r);
     }
     case 'pushpic': {   // a picture for a notification (and the inbox), made small on the members page: kept in R2 at n/<id>.jpg
@@ -1293,7 +1287,8 @@ async function memberMe(request, env, answer) {
     if (x) mycovers[track] = x.share ? { id: x.id, at: x.at, share: x.share.at } : { id: x.id, at: x.at };
   }
   const unread = ((await env.SOTD.get('inbox:' + id, 'json')) || []).filter(x => !x.r).length;   // the Profile's inbox: not yet read
-  return answer(200, Object.assign({ name: m.name, email: m.email || '', exp, media, mycovers, unread }, owner ? { owner: true } : {}));
+  const others = Object.keys(all).filter(k => k !== id).map(k => ({ id: k, name: all[k].name })).sort((a, b) => a.name.localeCompare(b.name));   // (to send notifications to)
+  return answer(200, Object.assign({ name: m.name, email: m.email || '', exp, media, mycovers, unread, others }, owner ? { owner: true } : {}));
 }
 
 // an invitation's link: a page that shows a proper card in a message (WhatsApp, iMessage...), like a day's share page,
@@ -2252,7 +2247,77 @@ async function apnsWidget(env, token) {   // { st, why }, as apnsOne
 }
 async function pushTo(env, k, sub, msg) { return sub.apns ? apnsOne(env, sub.apns, msg) : pushOne(k, sub.sub, msg); }
 
-async function pushAll(env, msg, to, meta) {   // to: only these members (else everyone); meta: { kind: 'song' | 'note', track }
+// A notification's words, link and pictures, John's and members' alike: a title (80 at most), words (300), a link to a
+// page on the site (else the calendar), and a song sent as it's shared: its card as the big picture (Android and
+// computers; an iPhone shows neither) and its cover beside it, from the site, Spotify or this Worker only.
+function noteMsg(body) {
+  const title = String(body.title || '').replace(/\s+/g, ' ').trim().slice(0, 80);
+  const text = String(body.text || '').replace(/[ \t]+/g, ' ').trim().slice(0, 300);
+  const link = String(body.url || '').trim();
+  if (!title) return { error: 'Give it a title.' };
+  if (link && (!/^https:\/\/cooperking\.github\.io\//.test(link) || link.length > 600)) return { error: 'The link has to be a page on the site (https://cooperking.github.io/…).' };
+  const pic = u => { const x = String(u || ''); return /^https:\/\/(cooperking\.github\.io|i\.scdn\.co|sotd-playlists\.cooperking\.workers\.dev)\//.test(x) && x.length < 600 ? x : ''; };
+  const msg = { title, body: text, url: link || SITE_SONGS, tag: 'sotd-note-' + Date.now() };
+  if (pic(body.image)) msg.image = pic(body.image);
+  if (pic(body.icon)) msg.icon = pic(body.icon);
+  return { msg };
+}
+// ---------- members' own notifications (John, 28 Oct 2026: "I'd like users to have the ability to send notifications to
+// other users of the app, just as I can"). From the calendar (Profile › Inbox › Send, or a song's Share › Send to
+// members): POST /members/send { title, text, url, image, icon, to: [member ids] | 'all' } goes into the chosen members'
+// inboxes, or every other member's, and to their phones where notifications are on, as John's do. Its notification
+// says who sent it ("<name>: <title>"); the inbox shows "From <name>". SEND_DAY a day each. The admin page's Status tab
+// lists each, with who sent it to whom. POST /members/sendpic { pic } keeps a picture for one (made small on the
+// calendar) in R2 at n/<id>.jpg, as John's. /members/me gives the other members' names to choose from (others). ----------
+const SEND_DAY = 20, SENDPIC_DAY = 20;
+async function memberWho(request, env) {   // { id, all } for a signed-in member, else null
+  const token = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
+  if (!token) return null;
+  const hash = await sha256hex(token), all = (await env.SOTD.get('members', 'json')) || {};
+  const id = Object.keys(all).find(k => all[k].devices && all[k].devices[hash]);
+  if (!id) return null;
+  await seenTouch(env, hash);
+  return { id, all };
+}
+async function dayCount(env, key, most) {   // how many today (UTC), counted; false once there have been most
+  const k = key + ':' + new Date().toISOString().slice(0, 10), n = Number(await env.SOTD.get(k)) || 0;
+  if (n >= most) return false;
+  await kvSoft(env, k, String(n + 1), { expirationTtl: 2 * 86400 });
+  return n + 1;
+}
+async function memberSend(request, env, answer) {
+  if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
+  const who = await memberWho(request, env);
+  if (!who) return answer(401, { error: 'Not a member (any more).' });
+  const { id, all } = who, body = await request.json().catch(() => ({}));
+  const note = noteMsg(body);
+  if (note.error) return answer(400, { error: note.error });
+  const others = Object.keys(all).filter(k => k !== id);
+  const everyone = body.to === 'all';
+  const to = everyone ? others : Array.isArray(body.to) ? [...new Set(body.to.map(String))].filter(k => k !== id && all[k]) : [];
+  if (!to.length) return answer(400, { error: 'Choose who it goes to.' });
+  const n = await dayCount(env, 'sent:' + id, SEND_DAY);
+  if (!n) return answer(429, { error: 'That’s ' + SEND_DAY + ' sent today, the most for a day. You can send more tomorrow.' });
+  const name = all[id].name, msg = note.msg;
+  Object.assign(msg, { subject: msg.title, title: name + ': ' + msg.title, from: name, tag: 'sotd-from-' + id + '-' + Date.now() });
+  const r = await pushAll(env, msg, to, { kind: 'member', via: { t: 'member', id, name }, toNames: everyone ? null : to.map(k => all[k].name) });
+  return answer(200, { ok: true, inboxes: r.inboxes, sent: r.sent, devices: r.devices, left: SEND_DAY - n });
+}
+async function memberSendPic(request, env, answer) {
+  if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
+  const who = await memberWho(request, env);
+  if (!who) return answer(401, { error: 'Not a member (any more).' });
+  if (!env.MEDIA) return answer(503, { error: 'Pictures can’t be sent yet.' });
+  const body = await request.json().catch(() => ({}));
+  const b64 = String(body.pic || '').replace(/^data:image\/jpeg;base64,/, '');
+  if (!b64 || b64.length > 2.5e6 || !/^[A-Za-z0-9+/=]+$/.test(b64)) return answer(400, { error: 'The picture is missing or too big.' });
+  if (!await dayCount(env, 'sentpic:' + who.id, SENDPIC_DAY)) return answer(429, { error: 'That’s ' + SENDPIC_DAY + ' pictures today, the most for a day.' });
+  const pid = randomCode(12);
+  await env.MEDIA.put('n/' + pid + '.jpg', Uint8Array.from(atob(b64), ch => ch.charCodeAt(0)), { httpMetadata: { contentType: 'image/jpeg' } });
+  return answer(200, { url: new URL(request.url).origin + '/n/' + pid + '.jpg' });
+}
+
+async function pushAll(env, msg, to, meta) {   // to: only these members (else everyone); meta: { kind: 'song' | 'note' | 'member', track, via, toNames }
   const subs = (await env.SOTD.get('pushSubs', 'json')) || {}, k = await vapidKeys(env);
   const unread = await inboxAdd(env, to, msg);   // into each one's inbox first (notifications on or not); their unread counts
   let sent = 0, failed = 0; const gone = [], errors = [];
@@ -2274,10 +2339,11 @@ async function pushAll(env, msg, to, meta) {   // to: only these members (else e
   }
   const res = { sent, gone: gone.length, failed, devices: ids.length - gone.length, errors: errors.slice(0, 5), at: Date.now(), title: msg.title,
     inboxes: Object.keys(unread).filter(k => k).length };   // inboxes: the members it went into (notifications on or not)
-  await kvSoft(env, 'pushLastResult', JSON.stringify(res));   // the last send, for the members page
+  if (!meta || meta.kind !== 'member') await kvSoft(env, 'pushLastResult', JSON.stringify(res));   // the last send of John's, for the members page
   // and the last 40, for the admin page's Status tab: when each went, to how many, and how the push services took it
   const log = await pushHistory(env);
-  log.unshift({ id: unread[''], at: res.at, title: msg.title, kind: (meta && meta.kind) || 'note', track: (meta && meta.track) || '', via: (meta && meta.via) || null,
+  log.unshift({ id: unread[''], at: res.at, title: msg.subject || msg.title, kind: (meta && meta.kind) || 'note', track: (meta && meta.track) || '', via: (meta && meta.via) || null,
+    toNames: meta && meta.kind === 'member' ? meta.toNames || 'everyone' : undefined,
     to: to ? to.length : 0, inboxes: res.inboxes, devices: ids.length, sent, failed, gone: gone.length, errors: errors.slice(0, 3) });
   log.length = Math.min(log.length, PUSH_LOG);
   await kvSoft(env, 'pushLog', JSON.stringify(log));
@@ -2309,8 +2375,9 @@ async function pushHistory(env) {
 const INBOX_MAX = 60;
 async function inboxAdd(env, to, msg) {
   const all = (await env.SOTD.get('members', 'json')) || {}, ids = (to || Object.keys(all)).filter(id => all[id]), out = {};
-  const item = { id: randomCode(8), at: Date.now(), t: msg.title, b: msg.body || '', u: msg.url || '' };
+  const item = { id: randomCode(8), at: Date.now(), t: msg.subject || msg.title, b: msg.body || '', u: msg.url || '' };
   if (msg.image) item.i = msg.image; if (msg.icon) item.c = msg.icon;
+  if (msg.from) item.f = msg.from;   // (a member's: who sent it)
   await Promise.all(ids.map(async id => {
     const box = (await env.SOTD.get('inbox:' + id, 'json')) || [];
     box.unshift(item); box.length = Math.min(box.length, INBOX_MAX);

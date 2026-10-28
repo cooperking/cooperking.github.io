@@ -128,6 +128,18 @@ metadata; at most once every 5 minutes a device; gone after 400 days unused). Th
 time (today 21:55). Until 28 Oct 2026 it was in the members record, rewritten at most every 6 hours, since that one
 value holds every member and a visit rewriting it could put back a copy read before a change on the Members tab.
 
+## Members' own notifications
+
+A member can send a notification to other members, as John does from the Members tab (John, 28 Oct 2026): from their
+Profile's Inbox (*Send a notification*), or a song's, a month's or the calendar's *Share* › *Members*, which attaches
+that link, its card as the picture and the song's cover. To everyone else, or the members they choose (`/members/me`
+gives the other members' names: `others`); a title, words and a picture of their own (made small on the page, sent up
+first: `/members/sendpic`, R2 `n/<id>.jpg`). `/members/send` checks it as John's are checked (`noteMsg`: a title, a link
+on the site, pictures from the site, Spotify or the Worker) and puts it into their inboxes and on their phones where
+notifications are on (`pushAll`), the notification's title "<name>: <title>", the inbox "From <name>". 20 a day each,
+and 20 pictures (KV `sent:<id>:<date>`, `sentpic:<id>:<date>`). The admin page's Status tab lists each: "a member's note to
+Ann and Dad · by Mum". Not on the TV. Tests: `send_t.mjs` (the Worker), `send_page_t.py` (the draft), `status_page_t.py`.
+
 ## Saved playlists
 
 A member can save My playlist (*Save this playlist* in it, with a name) and keep several. They're kept by the Worker
