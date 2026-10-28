@@ -85,7 +85,7 @@
   <header class="top">
     <h1>Members</h1>
     <p class="sub" id="stat">Loading…</p>
-    <p class="help">Members hear your own recording of each song and see your own videos (added on the Songs tab), and can save their playlists. Invite someone and send them the invitation: opening it signs that phone or computer in (up to 5 devices, within 30 days). For a Fire TV or an iPhone Home Screen icon, use <b>Code</b>: six letters to type in once, within 30 minutes (on the TV: ≡ → Sign in; on the Home Screen icon: Sign in at the top). With their email address they can also sign in with a code sent to it from your Gmail, should a passkey fail; for Android, Google Play’s test list takes the members’ emails (Download the emails, below). Under each member: which app each of their devices uses, as it last said.</p>
+    <p class="help">Members hear your own recording of each song and see your own videos (added on the Songs tab), and can save their playlists. Invite someone and send them the invitation: opening it signs that phone or computer in (up to 5 devices, within 30 days). For a Fire TV or an iPhone Home Screen icon, use <b>Code</b>: six letters to type in once, within 30 minutes (on the TV: ≡ → Sign in; on the Home Screen icon: Sign in at the top). With their email address they can also sign in with a code sent to it from your Gmail, should a passkey fail; for Android, the testers’ Google Group takes the members’ emails (Copy the emails, below). Under each member: which app each of their devices uses, as it last said.</p>
   </header>
   <div class="card inviter">
     <div class="kicker">Invite someone</div>
@@ -100,7 +100,7 @@
   <div class="card csvbox" id="csvbox" hidden>
     <div class="kicker">Google Play’s test list</div>
     <p class="stat" id="csvstat"></p>
-    <div class="row"><button class="btn small primary" id="csvget" type="button">Download the emails (CSV)</button></div>
+    <div class="row"><button class="btn small primary" id="mailcopy" type="button">Copy the emails</button><a class="btn small" href="https://groups.google.com/g/sotd-testers/members" target="_blank" rel="noopener">Open the group’s members</a><button class="btn small" id="csvget" type="button">Download them (CSV)</button></div>
   </div>
   <div class="card notify">
     <div class="kicker">Send a notification</div>
@@ -313,9 +313,15 @@
     var n = withEmail().length;
     $('csvbox').hidden = !MEMBERS.length;
     $('csvstat').textContent = !n ? 'Nobody has an email address yet.'
-      : (n === 1 ? '1 member has' : n + ' members have') + ' an email address. Download them and upload the file to the closed test’s email list in Play Console: the Apps tab has the steps.';
-    $('csvget').disabled = !n;
+      : (n === 1 ? '1 member has' : n + ' members have') + ' an email address. The closed test takes its testers from the Google Group Song of the Day testers: copy the emails and add them there (the Apps tab has the steps and the links).';
+    $('csvget').disabled = !n; $('mailcopy').disabled = !n;
   }
+  $('mailcopy').addEventListener('click', function () {   // for the group's Add members box
+    var list = withEmail().map(function (m) { return m.email; });
+    if (!list.length) return;
+    var text = list.join(', ');
+    navigator.clipboard.writeText(text).then(function () { toast(list.length === 1 ? '1 email copied' : list.length + ' emails copied'); }, function () { toast(text); });
+  });
   $('csvget').addEventListener('click', function () {
     var list = withEmail().map(function (m) { return m.email; });
     if (!list.length) return;
@@ -374,7 +380,7 @@
   function invOpen() {
     $('invh').textContent = invTitle();
     var im = (MEMBERS || []).filter(function (x) { return x.id === INV.id; })[0];
-    $('invplay').textContent = !im ? '' : im.email ? 'On an Android phone: Google Play’s steps, with the website’s app should Play not have them yet (upload the emails to its test list first).'
+    $('invplay').textContent = !im ? '' : im.email ? 'On an Android phone: Google Play’s steps, with the website’s app should Play not have them yet (add their email to the testers’ group first).'
       : 'On an Android phone: the website’s app (no email address for Google Play’s test list).';
     try { INV.pic = localStorage.getItem(PIC_KEY) || ''; } catch (e) { INV.pic = ''; }
     INV.page = ''; INV.url = ''; $('invimg').removeAttribute('src');
