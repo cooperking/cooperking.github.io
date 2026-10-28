@@ -22,7 +22,7 @@
 <body>
 <main>
   <h1>Privacy</h1>
-  <p class="sub">John’s Song of the Day · last updated 27 October 2026</p>
+  <p class="sub">John’s Song of the Day · last updated 28 October 2026</p>
 
   <p>John’s Song of the Day is a personal calendar of songs, one for each day, made by John Griffiths. It’s on the web at
   <a href="https://cooperking.github.io/songs/">cooperking.github.io/songs</a>, and the iPhone, Android and Fire TV apps
@@ -33,7 +33,7 @@
   “My playlist”, and its name, are saved only on your own device.</p>
 
   <h2>Members</h2>
-  <p>Members are people John invites, who sign in with an invite link or a one-use code. For them, the calendar’s small
+  <p>Members are people John invites, who sign in with an invite link, a one-use code or a passkey. For them, the calendar’s small
   service (on Cloudflare, at sotd-playlists.cooperking.workers.dev) keeps:</p>
   <ul>
     <li>your name, as John entered it when he invited you;</li>
@@ -48,15 +48,19 @@
     Google’s, Mozilla’s or Microsoft’s), through which each notification is delivered;</li>
     <li>if you add the iPhone app’s “On your other device” widget (iOS 26 or later): the address Apple gives that widget,
     so the service can tell it to look again when what you’re playing changes. Nothing is shown by it. It’s forgotten
-    when that iPhone signs out.</li>
+    when that iPhone signs out;</li>
+    <li>if you save a passkey: its public half and its id (the private half stays with your phone’s or computer’s
+    passwords: iCloud Keychain, your Google account or another), which kind of device saved it, when it was saved and
+    last used, and the count of uses the device keeps. Your face or fingerprint never leaves your device: the device
+    checks it itself. Removing a passkey in your Profile deletes this.</li>
   </ul>
   <p>Songs you download to play offline are kept only on your device. John can see members’ names, how many devices
-  each has signed in and when one was last used, and whether notifications are on; no one else can see any of this.</p>
+  each has signed in and when one was last used, whether notifications are on, and how many passkeys each has saved; no one else can see any of this.</p>
   <p>Signing out on a device removes its sign-in and its downloads. When John removes a member, their record, saved
-  playlists, inbox, what they were playing and notification and widget addresses are deleted.</p>
+  playlists, inbox, what they were playing, notification and widget addresses and passkeys are deleted.</p>
 
   <h2>Stopping misuse</h2>
-  <p>To stop guessing of codes, the service keeps the internet address of a device that enters wrong codes, for up to
+  <p>To stop guessing of codes, the service keeps the internet address of a device that enters wrong codes or a passkey that doesn’t check out, for up to
   two hours. To stop misuse of “Open in Spotify”, it counts the playlists made from each internet address, for an hour.</p>
 
   <h2>The apps</h2>

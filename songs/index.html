@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="sotd-build" content="4c3d86cf3a58">
+<meta name="sotd-build" content="e6e97a9a5af4">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 260 so far">
 <meta name="theme-color" content="#ec135b">
@@ -513,6 +513,12 @@ dialog#sharesheet::backdrop { background: rgba(24, 8, 24, .35); -webkit-backdrop
 .ac-list .ct { flex: none; font: 500 12px/1.2 var(--sans); color: var(--muted); }
 .ac-list .on { flex: none; font: 600 10.5px/1.2 var(--sans); letter-spacing: .1em; text-transform: uppercase; padding: 3px 7px; border-radius: 999px; background: var(--fg); color: var(--bg); }
 .ac-none { margin: 0; font-size: 13px; color: var(--muted); }
+.ac-pks li { display: flex; align-items: center; gap: 10px; padding: 9px 8px 9px 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--pill-bg); color: var(--fg); }
+.ac-pks .pkw { flex: 1; min-width: 0; display: grid; gap: 3px; }
+.ac-pks .nm { font: 500 17px/1.2 var(--serif); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ac-list.ac-pks button.pkx { width: auto; flex: none; padding: 8px 12px; border-radius: 999px; background: none; font: 600 10.5px/1.2 var(--sans); letter-spacing: .1em; text-transform: uppercase; }
+.ac-pks[hidden], .askalt[hidden] { display: none; }
+.askalt { justify-self: start; }
 .ac-dev { display: grid; gap: 8px; }
 .ac-app { display: grid; gap: 8px; padding: 14px; border-radius: 16px; background: var(--pill-bg); border: 1px solid var(--line); }
 .ac-steps { margin: 0; padding-left: 20px; display: grid; gap: 6px; font-size: 14.5px; line-height: 1.4; color: var(--fg); }
@@ -1333,6 +1339,12 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       <ul class="ac-list" id="aclist"></ul>
       <p class="ac-none" id="acnone" hidden></p>
     </div>
+    <div class="ac-dev" id="acpk" hidden>
+      <p class="ac-h">Passkeys</p>
+      <p class="ac-none" id="acpkt"></p>
+      <ul class="ac-list ac-pks" id="acpklist" hidden></ul>
+      <div class="ac-acts"><button class="copy ghost" id="acpkadd" type="button">Save a passkey</button></div>
+    </div>
     <div class="ac-dev">
       <p class="ac-h">Another device</p>
       <p class="ac-none">Sign in a Fire TV or the Home Screen app with a code.</p>
@@ -1372,6 +1384,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       <button class="close" id="askclose" type="button" aria-label="Close"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 2l10 10M12 2 2 12"/></svg></button>
     </div>
     <h3 id="askh"></h3>
+    <button class="copy askalt" id="askalt" type="button" hidden></button>
     <p class="ask-t" id="askt"></p>
     <input class="nameinput" id="aski" type="text" autocomplete="off" spellcheck="false" maxlength="200">
     <div class="ask-acts"><button class="copy" id="askok" type="submit">OK</button><button class="ac-out" id="askno" type="button">Cancel</button></div>
@@ -1722,10 +1735,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     e.preventDefault(); closeDialog(o[o.length - 1]);
   });
   // the site's own question pop-up, in place of the browser's (never alert, confirm or prompt):
-  // ask({ k: kicker, h: title, t: text, input: { value, placeholder }, ok: 'OK', no: 'Cancel' }) gives a promise of the
+  // ask({ k: kicker, h: title, t: text, input: { value, placeholder }, ok: 'OK', no: 'Cancel', alt: { label, now } }) gives a promise of the
   // text typed (with input), true (without), or null if it's put away
   var askDlg = document.getElementById('askdlg'), askDone = null;
-  var askNow = null;
+  var askNow = null, askAlt = null;
   function ask(o) {
     if (askDone) askDone(null);
     document.getElementById('askk').textContent = o.k || '';
@@ -1736,10 +1749,12 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     inp.hidden = !o.input; inp.value = o.input ? o.input.value || '' : ''; inp.placeholder = o.input ? o.input.placeholder || '' : '';
     if (o.input && o.input.caps) inp.setAttribute('autocapitalize', 'characters'); else inp.removeAttribute('autocapitalize');
     askNow = o.now || null;   // run straight from the OK tap (a phone's permission question has to be)
+    var alt = document.getElementById('askalt');   // a second way, run straight from its tap too (Sign in: Use a passkey)
+    alt.hidden = !o.alt; alt.textContent = o.alt ? o.alt.label : ''; askAlt = o.alt ? o.alt.now : null;
     document.getElementById('askok').textContent = o.ok || 'OK';
     document.getElementById('askno').textContent = o.no || 'Cancel';
     openLayer(askDlg);
-    setTimeout(function () { try { (o.input ? inp : document.getElementById('askok')).focus({ preventScroll: true }); } catch (e) {} }, 60);
+    setTimeout(function () { try { (o.alt ? alt : o.input ? inp : document.getElementById('askok')).focus({ preventScroll: true }); } catch (e) {} }, 60);
     return new Promise(function (res) { askDone = function (v) { askDone = null; res(v); }; });
   }
   function askEnd(v) { var d = askDone; askDone = null; if (askDlg.open) closeDialog(askDlg); if (d) d(v); }
@@ -1751,6 +1766,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     askEnd(inp.hidden ? true : inp.value);
   });
   document.getElementById('askno').addEventListener('click', function () { askEnd(null); });
+  document.getElementById('askalt').addEventListener('click', function () { if (askAlt) askAlt(); });
   document.getElementById('askclose').addEventListener('click', function () { askEnd(null); });
   askDlg.addEventListener('close', function () { if (askDone) askEnd(null); });
 
@@ -5034,7 +5050,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     none.textContent = !PL.loaded ? 'Loading…' : 'None saved yet. Add songs with the heart, then open My playlist and tap Save.';
     acOut.classList.remove('armed'); acOut.textContent = 'Sign out';
     document.getElementById('accode').hidden = true; document.getElementById('acgetcode').textContent = 'Get a code';
-    appDraw(); noteDraw(); inboxDraw();
+    appDraw(); noteDraw(); inboxDraw(); pkDraw();
   }
   // ---- notifications: each new Song of the Day as it goes up, and John's own now and then (sent by the Worker; the
   // service worker shows them). Turned on per device, here in the Profile: the phone asks permission, then the
@@ -5762,7 +5778,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   });
   function acctOpen() {
     INBOX.shown = 8; INBOX.sel = null; inboxCall().catch(function () {});
-    acctDraw(); openLayer(acct); appDraw();   // (again, open: the code goes into the address only while it's open)
+    acctDraw(); openLayer(acct); appDraw(); pkLoad();   // (again, open: the code goes into the address only while it's open)
     if (MEMBER && !PL.loaded) plLoad();
   }
   document.getElementById('acclose').addEventListener('click', function () { closeDialog(acct); });
@@ -5778,10 +5794,142 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       document.getElementById('accode').hidden = false; b.textContent = 'Get a new code';
     }).catch(function () { toast('Couldn’t reach the site. Try again.'); }).then(function () { b.disabled = false; });
   });
+  // ---- passkeys: a member saves one here in the Profile (Face ID, a fingerprint or the screen lock; iCloud Keychain or
+  // their Google account keeps it and gives it to their other devices), then signs in with it on a new device, or after
+  // signing out, without John: Sign in, then Use a passkey. The Worker keeps its public key and checks each sign-in
+  // (/members/passkey). Not on a TV; in the iPhone app from build 21, the first tied to the site's passkeys (webcredentials
+  // in its Associated Domains). The passkey's own sheet has to open straight from the tap (Safari), so its challenge is
+  // fetched ahead: as the Profile or Sign in opens. ----
+  var PK = { ok: !TV && !!MBASE && !!window.fetch && !!(window.PublicKeyCredential && navigator.credentials && navigator.credentials.create && window.atob),
+    list: null, rp: '', user: '', save: null, signin: null };
+  if (PK.ok && NAT) {
+    PK.ok = false;
+    try { NAT.Plugins.App.getInfo().then(function (i) { PK.ok = Number(i && i.build) >= 21; if (acct.open) pkLoad(); }, function () {}); } catch (e) {}
+  }
+  function pkB(s) {   // base64url to bytes
+    s = String(s || '').replace(/-/g, '+').replace(/_/g, '/'); while (s.length % 4) s += '=';
+    var b = atob(s), a = new Uint8Array(b.length); for (var i = 0; i < b.length; i++) a[i] = b.charCodeAt(i);
+    return a.buffer;
+  }
+  function pkS(buf) {   // bytes to base64url
+    var a = new Uint8Array(buf), s = ''; for (var i = 0; i < a.length; i++) s += String.fromCharCode(a[i]);
+    return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+  function pkCall(path, body, tok) {
+    var h = { 'Content-Type': 'application/json' }; if (tok) h.Authorization = 'Bearer ' + tok;
+    return fetch(MBASE + path, { method: body ? 'POST' : 'GET', headers: h, body: body ? JSON.stringify(body) : undefined, cache: 'no-store' })
+      .then(function (r) { return r.json().then(function (j) { j.status = r.status; return j; }, function () { return { status: r.status }; }); });
+  }
+  function pkBegin(kind) {   // a fresh challenge for saving (signed in) or signing in
+    return pkCall(kind === 'save' ? '/members/passkey' : '/members/passkey/signin', { op: 'begin' }, kind === 'save' ? nowTok() : '').then(function (j) {
+      if (!j.options) throw new Error(j.error || 'Couldn’t reach the site. Try again.');
+      return j.options;
+    });
+  }
+  function pkReady(kind) { PK[kind] = null; pkBegin(kind).then(function (o) { PK[kind] = { o: o, at: Date.now() }; }, function () {}); }
+  function pkTake(kind) { var c = PK[kind]; PK[kind] = null; return c && Date.now() - c.at < 4 * 60e3 ? c.o : null; }
+  function pkWhy(e, saving) {
+    var n = e && e.name;
+    if (n === 'NotAllowedError' || n === 'AbortError') return saving ? 'No passkey saved.' : 'No passkey used. Or type a code.';
+    if (n === 'InvalidStateError') return 'This device has a passkey for you already.';
+    if (n === 'SecurityError') return 'Passkeys don’t work on this copy of the calendar.';
+    return (e && e.message) || 'That didn’t work. Try again.';
+  }
+  function pkSignal() {   // tells the phone's or computer's password manager which of the member's passkeys still work
+    try {
+      if (PK.list && PK.rp && PK.user && PublicKeyCredential.signalAllAcceptedCredentials)
+        PublicKeyCredential.signalAllAcceptedCredentials({ rpId: PK.rp, userId: PK.user, allAcceptedCredentialIds: PK.list.map(function (p) { return p.id; }) }).catch(function () {});
+    } catch (e) {}
+  }
+  function pkDay(t) { return new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }); }
+  function pkDraw() {
+    if (!PK) return;   // (the Profile drawn before this part of the page has run)
+    var box = document.getElementById('acpk');
+    box.hidden = !PK.ok || !MEMBER;
+    if (box.hidden) return;
+    var ul = document.getElementById('acpklist'), list = PK.list || [];
+    ul.textContent = ''; ul.hidden = !list.length;
+    list.forEach(function (p) {
+      var li = document.createElement('li'), w = document.createElement('span'), nm = document.createElement('span'), ct = document.createElement('span');
+      w.className = 'pkw'; nm.className = 'nm'; ct.className = 'ct';
+      nm.textContent = p.name;
+      ct.textContent = 'Saved ' + pkDay(p.at) + (p.used ? ' · last used ' + pkDay(p.used) : '') + (p.synced ? '' : ' · this device only');
+      w.appendChild(nm); w.appendChild(ct); li.appendChild(w);
+      var x = document.createElement('button'); x.type = 'button'; x.className = 'pkx'; x.textContent = 'Remove';
+      x.setAttribute('aria-label', 'Remove the passkey from ' + p.name);
+      x.addEventListener('click', function () { pkRemove(p); });
+      li.appendChild(x); ul.appendChild(li);
+    });
+    document.getElementById('acpkt').textContent = PK.list === null ? 'Loading…' : list.length
+      ? 'To sign in on a new phone or computer, or after signing out: Sign in, then Use a passkey.'
+      : 'Save one, and you can sign in on a new phone or computer yourself, with Face ID, a fingerprint or the device’s lock. iCloud Keychain or your Google account keeps it, so your other devices have it too.';
+    document.getElementById('acpkadd').textContent = list.length ? 'Save another passkey' : 'Save a passkey';
+  }
+  function pkLoad() {   // the Profile opened: the member's passkeys, and a challenge ready for saving one
+    if (!PK.ok || !MEMBER) { pkDraw(); return; }
+    pkDraw(); pkReady('save');
+    pkCall('/members/passkey', null, nowTok()).then(function (j) {
+      if (!j.passkeys) return;
+      PK.list = j.passkeys; PK.rp = j.rpId; PK.user = j.user;
+      pkDraw(); pkSignal();
+    }).catch(function () {});
+  }
+  document.getElementById('acpkadd').addEventListener('click', function () {
+    var b = this, tok = nowTok();
+    if (!tok || !PK.ok) return;
+    function make(o) {
+      return navigator.credentials.create({ publicKey: {
+        challenge: pkB(o.challenge), rp: o.rp, user: { id: pkB(o.user.id), name: o.user.name, displayName: o.user.displayName },
+        pubKeyCredParams: o.pubKeyCredParams, authenticatorSelection: o.authenticatorSelection, attestation: o.attestation, timeout: o.timeout,
+        excludeCredentials: (o.excludeCredentials || []).map(function (x) { return { type: 'public-key', id: pkB(x.id) }; }) } });
+    }
+    var o = pkTake('save');
+    b.disabled = true;
+    (o ? make(o) : pkBegin('save').then(make)).then(function (cred) {
+      if (!cred) throw new Error('No passkey saved.');
+      return pkCall('/members/passkey', { op: 'save', clientDataJSON: pkS(cred.response.clientDataJSON), attestationObject: pkS(cred.response.attestationObject), name: nowLabel() }, tok);
+    }).then(function (j) {
+      if (!j.ok) { toast(j.error || 'Couldn’t save it. Try again.'); return; }
+      PK.list = j.passkeys; pkDraw();
+      toast('Passkey saved');
+    }).catch(function (e) { toast(pkWhy(e, true)); }).then(function () { b.disabled = false; pkReady('save'); });
+  });
+  function pkRemove(p) {
+    ask({ k: 'Passkeys', h: 'Remove this passkey?', t: 'The one from ' + p.name + ', saved ' + pkDay(p.at) + '. It won’t sign you in any more, and your phone or computer is asked to delete it.', ok: 'Remove' }).then(function (y) {
+      if (!y) return;
+      pkCall('/members/passkey', { op: 'remove', id: p.id }, nowTok()).then(function (j) {
+        if (!j.ok) { toast(j.error || 'Couldn’t remove it. Try again.'); return; }
+        PK.list = j.passkeys; pkDraw(); pkSignal(); toast('Passkey removed');
+      }).catch(function () { toast('Couldn’t reach the site. Try again.'); });
+    });
+  }
+  function pkSignIn() {   // Use a passkey, in Sign in
+    if (!PK.ok) return;
+    var rp = '';
+    function get(o) {
+      rp = o.rpId;
+      return navigator.credentials.get({ publicKey: { challenge: pkB(o.challenge), rpId: o.rpId, userVerification: o.userVerification, timeout: o.timeout } });
+    }
+    var o = pkTake('signin');
+    (o ? get(o) : pkBegin('signin').then(get)).then(function (cred) {
+      if (!cred) throw new Error('No passkey used. Or type a code.');
+      var r = cred.response;
+      return pkCall('/members/passkey/signin', { op: 'finish', id: cred.id, clientDataJSON: pkS(r.clientDataJSON), authenticatorData: pkS(r.authenticatorData),
+        signature: pkS(r.signature), userHandle: r.userHandle ? pkS(r.userHandle) : '', device: deviceId() }).then(function (j) {
+        if (j.unknown) try { if (PublicKeyCredential.signalUnknownCredential) PublicKeyCredential.signalUnknownCredential({ rpId: rp, credentialId: cred.id }).catch(function () {}); } catch (e) {}
+        if (!j.token) { toast(j.error || 'That passkey didn’t work. Type a code instead.'); return; }
+        try { localStorage.setItem(MKEY, j.token); localStorage.removeItem('sotd-appcode'); } catch (e) {}
+        appCode = null;
+        askEnd(null);
+        toast('Signed in as ' + j.name);
+        memberLoad();
+      });
+    }).catch(function (e) { toast(pkWhy(e)); }).then(function () { pkReady('signin'); });
+  }
   acOut.addEventListener('click', function () {
     if (!acOut.classList.contains('armed')) { acOut.classList.add('armed'); acOut.textContent = 'Tap again to sign out'; return; }
     var was = ''; try { was = localStorage.getItem(MKEY) || ''; localStorage.removeItem(MKEY); localStorage.removeItem('sotd-appcode'); } catch (e) {}
-    appCode = null;
+    appCode = null; PK.list = null;
     if (was) noteOff(was);
     if (was && MBASE) fetch(MBASE + '/members/signout', { method: 'POST', headers: { Authorization: 'Bearer ' + was } }).catch(function () {});   // off the members page too
     closeDialog(acct);
@@ -5865,7 +6013,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   if (famBtn) famBtn.addEventListener('click', function () {
     var tok = ''; try { tok = localStorage.getItem(MKEY) || ''; } catch (e) {}
     if (tok) { acctOpen(); return; }
-    ask({ h: 'Sign in', t: 'Type a sign-in code (from your Profile on another device, or from John), or paste your invite link.', input: { placeholder: 'Code or link', caps: true }, ok: 'Sign in' }).then(function (c) {
+    if (PK.ok) pkReady('signin');
+    ask({ h: 'Sign in', t: (PK.ok ? 'Or type' : 'Type') + ' a sign-in code (from your Profile on another device, or from John), or paste your invite link.', input: { placeholder: 'Code or link', caps: true }, ok: 'Sign in',
+      alt: PK.ok ? { label: 'Use a passkey', now: pkSignIn } : null }).then(function (c) {
       c = c || ''; var m = /join=([\w-]+)/.exec(c);
       c = m ? m[1] : c.replace(/[\s-]+/g, '').toUpperCase();
       if (c) memberJoin(c);
