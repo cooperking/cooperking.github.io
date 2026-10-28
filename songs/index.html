@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="sotd-build" content="bc4e2168417b">
+<meta name="sotd-build" content="0140014bf2a9">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 261 so far">
 <meta name="theme-color" content="#ec135b">
@@ -1748,6 +1748,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var inp = document.getElementById('aski');
     inp.hidden = !o.input; inp.value = o.input ? o.input.value || '' : ''; inp.placeholder = o.input ? o.input.placeholder || '' : '';
     if (o.input && o.input.caps) inp.setAttribute('autocapitalize', 'characters'); else inp.removeAttribute('autocapitalize');
+    if (o.input && o.input.otp) { inp.setAttribute('inputmode', 'numeric'); inp.setAttribute('autocomplete', 'one-time-code'); }
+    else { inp.removeAttribute('inputmode'); inp.removeAttribute('autocomplete'); }
     askNow = o.now || null;   // run straight from the OK tap (a phone's permission question has to be)
     var alt = document.getElementById('askalt');   // a second way, run straight from its tap too (Sign in: Use a passkey)
     alt.hidden = !o.alt; alt.textContent = o.alt ? o.alt.label : ''; askAlt = o.alt ? o.alt.now : null;
@@ -5868,9 +5870,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       x.addEventListener('click', function () { pkRemove(p); });
       li.appendChild(x); ul.appendChild(li);
     });
-    document.getElementById('acpkt').textContent = PK.list === null ? 'Loading…' : list.length
+    var mail = MEMBER && MEMBER.email ? ' If a passkey won’t work: Sign in, then type ' + MEMBER.email + ' for a code by email.' : '';
+    document.getElementById('acpkt').textContent = PK.list === null ? 'Loading…' : (list.length
       ? 'To sign in on a new phone or computer, or after signing out: Sign in, then Use a passkey.'
-      : 'Save one, and you can sign in on a new phone or computer yourself, with Face ID, a fingerprint or the device’s lock. iCloud Keychain or your Google account keeps it, so your other devices have it too.';
+      : 'Save one, and you can sign in on a new phone or computer yourself, with Face ID, a fingerprint or the device’s lock. iCloud Keychain or your Google account keeps it, so your other devices have it too.') + mail;
     document.getElementById('acpkadd').textContent = list.length ? 'Save another passkey' : 'Save a passkey';
   }
   function pkLoad() {   // the Profile opened: the member's passkeys, and a challenge ready for saving one
@@ -5950,7 +5953,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       return pkCall('/members/passkey/signin', { op: 'finish', id: cred.id, clientDataJSON: pkS(r.clientDataJSON), authenticatorData: pkS(r.authenticatorData),
         signature: pkS(r.signature), userHandle: r.userHandle ? pkS(r.userHandle) : '', device: deviceId() }).then(function (j) {
         if (j.unknown) try { if (PublicKeyCredential.signalUnknownCredential) PublicKeyCredential.signalUnknownCredential({ rpId: rp, credentialId: cred.id }).catch(function () {}); } catch (e) {}
-        if (!j.token) { toast(j.error || 'That passkey didn’t work. Type a code instead.'); return; }
+        if (!j.token) { toast(j.error || 'That passkey didn’t work. Type your email address for a code instead.'); return; }
         try { localStorage.setItem(MKEY, j.token); localStorage.removeItem('sotd-appcode'); } catch (e) {}
         appCode = null;
         askEnd(null);
@@ -6049,13 +6052,40 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var tok = ''; try { tok = localStorage.getItem(MKEY) || ''; } catch (e) {}
     if (tok) { acctOpen(); return; }
     if (PK.ok) pkReady('signin');
-    ask({ h: 'Sign in', t: (PK.ok ? 'Or type' : 'Type') + ' a sign-in code (from your Profile on another device, or from John), or paste your invite link.', input: { placeholder: 'Code or link', caps: true }, ok: 'Sign in',
+    ask({ h: 'Sign in', t: (PK.ok ? 'Or type' : 'Type') + ' your email address for a code, a sign-in code (from your Profile on another device, or from John), or paste your invite link.', input: { placeholder: 'Email, code or link' }, ok: 'Sign in',
       alt: PK.ok ? { label: 'Use a passkey', now: pkSignIn } : null }).then(function (c) {
-      c = c || ''; var m = /join=([\w-]+)/.exec(c);
+      c = (c || '').trim();
+      if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c)) { mailCode(c); return; }
+      var m = /join=([\w-]+)/.exec(c);
       c = m ? m[1] : c.replace(/[\s-]+/g, '').toUpperCase();
       if (c) memberJoin(c);
     });
   });
+  // a code by email (John, 28 Oct 2026: "email codes to be sent as a back up in case passkeys fail"): to the address John
+  // has for the member, from his Gmail; it works for 10 minutes (the Worker: /members/code)
+  function mailCode(addr) {
+    if (!MBASE || !window.fetch) return;
+    var post = function (path, body) {
+      return fetch(MBASE + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+        .then(function (r) { return r.json().catch(function () { return {}; }); });
+    };
+    post('/members/code', { email: addr }).then(function (j) {
+      if (!j.ok) { toast(j.error || 'Couldn’t send a code just now. Try again.'); return; }
+      (function again(t) {
+        ask({ k: 'Sign in', h: 'Check your email', t: t, input: { placeholder: '6-digit code', otp: true }, ok: 'Sign in' }).then(function (c) {
+          c = (c || '').replace(/\D/g, '');
+          if (!c) return;
+          post('/members/code/signin', { email: addr, code: c, device: deviceId() }).then(function (k) {
+            if (!k.token) { if (/isn’t the code\. Check/.test(k.error || '')) again(k.error); else toast(k.error || 'That didn’t work. Ask for a new code.'); return; }
+            try { localStorage.setItem(MKEY, k.token); localStorage.removeItem('sotd-appcode'); } catch (e) {}
+            appCode = null;
+            toast('Signed in as ' + k.name);
+            memberLoad();
+          }).catch(function () { toast('Couldn’t reach the site. Try again.'); });
+        });
+      })('If ' + addr + ' is a member’s address, a code is on its way to it from John’s Gmail. Type it here within ' + (j.minutes || 10) + ' minutes.');
+    }).catch(function () { toast('Couldn’t reach the site. Try again.'); });
+  }
   function joinFromHash() {
     var m = /^#join=([\w-]{16,}|[A-Za-z0-9]{6})$/.exec(location.hash);
     if (!m) return false;
