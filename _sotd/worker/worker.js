@@ -413,8 +413,11 @@ async function startFactsJob(env) {
 // files under the branch's name can be five minutes old); his sign-offs come from the Worker's own record (KV
 // factsSigned), so one shows as soon as he makes it.
 //
-// "Dealt with" (John, 28 Oct 2026): each failed thing has a key (a song's step, a job's run, a call to the facts task;
-// a song's failed call shares the call's key), and op 'statusack' { key, on } keeps or drops it in KV statusAck
+// The notifications sent go with it (John, 28 Oct 2026: "can we see when push notifications were sent in Status?"): each
+// song's own as its last step, and the list of the last 12 (pushLog), one some devices didn't get counted as failed.
+//
+// "Dealt with" (John, 28 Oct 2026): each failed thing has a key (a song's step, a job's run, a call to the facts task,
+// a notification; a song's failed call shares the call's key), and op 'statusack' { key, on } keeps or drops it in KV statusAck
 // ({ key: when }, each kept 30 days). A new run, call or song comes with a new key, so it shows again.
 const RAW = 'https://raw.githubusercontent.com/' + REPO + '/';
 const ACK_DAYS = 30;
@@ -461,7 +464,7 @@ async function jobRuns(env) {   // the latest run of each GitHub job; a failed o
   return out;
 }
 function songSteps(it, d, now) {   // one song's way to the calendar
-  const { job, runs, S, asked, task, F, V, signedNow } = d;
+  const { job, runs, S, asked, task, F, V, signedNow, log, pushSent, cat, newest } = d;
   const added = Date.parse(it.a) || 0, id = it.id, steps = [];
   const step = (k, t, st, say, extra) => steps.push(Object.assign({ k, t, st, say: say || '' }, st === 'bad' ? { key: 's:' + id + ':' + k } : {}, extra || {}));
   const tags = runs.find(r => r.name === 'Song moods and genres') || null;
@@ -498,12 +501,32 @@ function songSteps(it, d, now) {   // one song's way to the calendar
   if (F.signed && F.signed[id]) step('signed', 'Signed off by you', 'ok', '');
   else if (signedNow[id]) step('signed', 'Signed off by you', 'ok', 'Going onto the calendar now', { at: signedNow[id].at });
   else step('signed', 'Signed off by you', 'wait', out ? 'Waiting for you on the Songs tab' : '');
+  // 6. the members' notification (pushDaily: the newest song, no more than two days old, once John's MP3 and video are
+  // both up; the Worker looks every 10 minutes)
+  const sentE = log.find(e => e.track === id) || log.find(e => e.kind === 'song' && e.title === it.title && e.at >= added && e.at - added < 3 * DAY);
+  const files = cat[id] || {}, missing = [!files.a && 'your MP3', !files.v && 'your video'].filter(Boolean);
+  if (sentE || pushSent.includes(id)) step('sent', 'Sent to members', 'ok', sentE ? pushSay(sentE) : '', sentE ? { at: new Date(sentE.at).toISOString() } : {});
+  else if (newest !== id) step('sent', 'Sent to members', 'wait', 'Not sent: a newer song came after it');
+  else if ((Date.parse(londonDay()) - Date.parse(londonDay(it.a))) / DAY > 2) step('sent', 'Sent to members', 'wait', 'Not sent: more than two days old');
+  else if (missing.length) step('sent', 'Sent to members', 'wait', 'Goes to members once ' + missing.join(' and ') + (missing.length > 1 ? ' are' : ' is') + ' up (the Songs tab)');
+  else step('sent', 'Sent to members', 'wait', 'Goes to members within 10 minutes');
   return { id, n: it.n, title: it.title, artist: it.artist, added: it.a, out, steps };
+}
+function pushSay(e) {   // how a notification went
+  const parts = [];
+  if (e.devices) parts.push('to ' + e.sent + ' of ' + e.devices + (e.devices === 1 ? ' device' : ' devices'));
+  else if (!e.old) parts.push('no devices have them on');
+  if (e.failed) parts.push(e.failed + ' failed');
+  if (e.gone) parts.push(e.gone + ' turned off since');
+  if (e.inboxes) parts.push('into ' + e.inboxes + (e.inboxes === 1 ? ' inbox' : ' inboxes'));
+  const t = parts.join(', ');
+  return t ? t[0].toUpperCase() + t.slice(1) : '';
 }
 function ago(ms) { const m = Math.round(ms / 60e3); return m < 60 ? m + ' min' : Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + (m % 60) + ' min' : ''); }
 async function adminStatus(env) {
   const now = Date.now(), errors = [];
-  const [job, ack, signedNow, ref] = await Promise.all([env.SOTD.get('job', 'json'), env.SOTD.get('statusAck', 'json'), env.SOTD.get('factsSigned', 'json'), mainSha(env)]);
+  const [job, ack, signedNow, ref, log, pushSent, cat] = await Promise.all([env.SOTD.get('job', 'json'), env.SOTD.get('statusAck', 'json'),
+    env.SOTD.get('factsSigned', 'json'), mainSha(env), pushHistory(env), env.SOTD.get('pushSent', 'json'), catalog(env)]);
   const acked = ack || {};
   const soft = (p, f) => p.catch(e => { errors.push(String(e && e.message || e)); return f; });
   const [items, runs, sources, asked, task, F, V] = await Promise.all([
@@ -515,8 +538,9 @@ async function adminStatus(env) {
     soft(rawJson('songs/facts.json', undefined, ref), { songs: {}, signed: {} }),
     soft(rawJson('songs/videos.json', undefined, ref), { videos: {} })]);
   if (!env.GH_TOKEN) errors.push('The GH_TOKEN secret is not set, so the GitHub jobs can’t be read.');
-  const d = { job: job || {}, runs, S: sources.songs || {}, asked, task, F, V: V.videos || {}, signedNow: signedNow || {} };
   const list = items.map((it, i) => Object.assign({ n: i + 1 }, it)).sort((a, b) => (a.a < b.a ? 1 : -1));
+  const d = { job: job || {}, runs, S: sources.songs || {}, asked, task, F, V: V.videos || {}, signedNow: signedNow || {},
+    log: log || [], pushSent: pushSent || [], cat: cat || {}, newest: items.length ? items[items.length - 1].id : '' };
   const isOut = it => !!(F.songs && F.songs[it.id]) || !!(F.signed && F.signed[it.id]);
   const show = list.filter(it => !isOut(it)).concat(list.filter(isOut).slice(0, 2)).sort((a, b) => (a.a < b.a ? 1 : -1));
   const songs = show.map(it => songSteps(it, d, now));
@@ -527,12 +551,14 @@ async function adminStatus(env) {
   songs.forEach(x => x.steps.forEach(y => { if (y.st === 'bad') mark(y, y.key); }));
   runs.forEach(r => { if (r.bad) mark(r, 'r:' + r.id); });
   if (task && task.ok === false) mark(task, 't:' + task.at);
+  const notes = d.log.slice(0, 12).map(e => Object.assign({}, e, { say: pushSay(e) }));   // the notifications sent, newest first
+  notes.forEach(e => { if (e.failed) mark(e, 'n:' + e.id); });   // (one that some devices didn't get)
   const jb = d.job;
-  return { at: new Date(now).toISOString(), problems: Object.keys(bad).length, songs, task, runs, ref,
+  return { at: new Date(now).toISOString(), problems: Object.keys(bad).length, songs, task, runs, notes, ref,
     job: { at: jb.at || null, tried: jb.tried || null, err: jb.err || '' }, errors };
 }
 async function statusAck(env, key, on) {   // "Dealt with" (on), or not after all
-  if (!/^[srt]:[\w:.+-]{1,120}$/.test(String(key || ''))) throw new HttpError(400, 'Not something the Status tab shows.');
+  if (!/^[srtn]:[\w:.+-]{1,120}$/.test(String(key || ''))) throw new HttpError(400, 'Not something the Status tab shows.');
   const ack = (await env.SOTD.get('statusAck', 'json')) || {};
   const old = Date.now() - ACK_DAYS * DAY;
   for (const k of Object.keys(ack)) if (Date.parse(ack[k]) < old) delete ack[k];
@@ -695,7 +721,7 @@ async function members(request, url, env) {
       const msg = { title, body: text, url: link || SITE_SONGS, tag: 'sotd-note-' + Date.now() };
       if (pic(body.image)) msg.image = pic(body.image);
       if (pic(body.icon)) msg.icon = pic(body.icon);
-      const r = await pushAll(env, msg, to);
+      const r = await pushAll(env, msg, to, { kind: 'note' });
       return answer(200, r);
     }
     case 'pushpic': {   // a picture for a notification (and the inbox), made small on the members page: kept in R2 at n/<id>.jpg
@@ -1781,7 +1807,7 @@ async function apnsWidget(env, token) {   // { st, why }, as apnsOne
 }
 async function pushTo(env, k, sub, msg) { return sub.apns ? apnsOne(env, sub.apns, msg) : pushOne(k, sub.sub, msg); }
 
-async function pushAll(env, msg, to) {   // to: only these members (else everyone)
+async function pushAll(env, msg, to, meta) {   // to: only these members (else everyone); meta: { kind: 'song' | 'note', track }
   const subs = (await env.SOTD.get('pushSubs', 'json')) || {}, k = await vapidKeys(env);
   const unread = await inboxAdd(env, to, msg);   // into each one's inbox first (notifications on or not); their unread counts
   let sent = 0, failed = 0; const gone = [], errors = [];
@@ -1804,7 +1830,33 @@ async function pushAll(env, msg, to) {   // to: only these members (else everyon
   const res = { sent, gone: gone.length, failed, devices: ids.length - gone.length, errors: errors.slice(0, 5), at: Date.now(), title: msg.title,
     inboxes: Object.keys(unread).filter(k => k).length };   // inboxes: the members it went into (notifications on or not)
   await kvSoft(env, 'pushLastResult', JSON.stringify(res));   // the last send, for the members page
+  // and the last 40, for the admin page's Status tab: when each went, to how many, and how the push services took it
+  const log = await pushHistory(env);
+  log.unshift({ id: unread[''], at: res.at, title: msg.title, kind: (meta && meta.kind) || 'note', track: (meta && meta.track) || '',
+    to: to ? to.length : 0, inboxes: res.inboxes, devices: ids.length, sent, failed, gone: gone.length, errors: errors.slice(0, 3) });
+  log.length = Math.min(log.length, PUSH_LOG);
+  await kvSoft(env, 'pushLog', JSON.stringify(log));
   return res;
+}
+// The notifications sent (KV pushLog, newest first). Before 28 Oct 2026 nothing kept them, so the first time it's read
+// it's made from the members' inboxes (every message goes into each one's inbox, under one id): when, what and how many
+// inboxes, and the push services' answer for the one the members page kept (pushLastResult); old: true marks those.
+const PUSH_LOG = 40;
+async function pushHistory(env) {
+  const have = await env.SOTD.get('pushLog', 'json');
+  if (have) return have;
+  const all = (await env.SOTD.get('members', 'json')) || {}, last = await env.SOTD.get('pushLastResult', 'json'), byId = {};
+  for (const id of Object.keys(all)) {
+    for (const x of (await env.SOTD.get('inbox:' + id, 'json')) || []) {
+      const e = byId[x.id] || (byId[x.id] = { id: x.id, at: x.at, title: x.t, kind: /#\d{2}-\d{2}-\d{4}$/.test(x.u || '') && /Song of the Day$/.test(x.b || '') ? 'song' : 'note', track: '', inboxes: 0, old: true });
+      e.inboxes++;
+    }
+  }
+  const log = Object.values(byId).sort((a, b) => b.at - a.at).slice(0, PUSH_LOG);
+  const m = last && log.find(e => e.title === last.title && Math.abs(e.at - last.at) < 120e3);
+  if (m) Object.assign(m, { devices: last.devices + (last.gone || 0), sent: last.sent, failed: last.failed, gone: last.gone || 0, errors: last.errors || [] });
+  await kvSoft(env, 'pushLog', JSON.stringify(log));
+  return log;
 }
 // ---------- each member's inbox: everything sent to them (the day's songs, John's own), newest first, read or not ----------
 // Kept per member (inbox:<member>), the newest 60; reading on one device counts for all of theirs. The count of unread
@@ -1923,7 +1975,7 @@ async function pushDaily(env, items) {
   const slug = day.slice(8, 10) + '-' + day.slice(5, 7) + '-' + day.slice(0, 4), card = SITE_SONGS + slug + '/card.jpg';
   const hasCard = await fetch(card, { method: 'HEAD' }).then(r => r.ok, () => false);   // the day's share card, once the site has made it
   const r = await pushAll(env, Object.assign({ title: last.title, body: last.artist + (day === londonDay() ? ' \u00b7 today\u2019s Song of the Day' : ' \u00b7 the latest Song of the Day'), icon: last.img || '',
-    url: SITE_SONGS + '#' + slug, tag: 'sotd-day' }, hasCard ? { image: card } : {}));
+    url: SITE_SONGS + '#' + slug, tag: 'sotd-day' }, hasCard ? { image: card } : {}), null, { kind: 'song', track: last.id });
   console.log('pushDaily ' + last.id + ': ' + JSON.stringify(r));
 }
 

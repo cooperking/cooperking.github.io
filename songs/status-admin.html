@@ -60,6 +60,14 @@
 .fix b { color: var(--fg); }
 .fix.bad { box-shadow: 0 18px 50px rgba(24, 8, 24, .28), inset 4px 0 0 var(--warn); } .fix.bad b { color: var(--warn); }
 .fix.bad.acked { box-shadow: 0 18px 50px rgba(24, 8, 24, .28), inset 4px 0 0 var(--faint); } .fix.bad.acked b { color: var(--fg); }
+.note { padding: 11px 14px; display: grid; grid-template-columns: 1fr auto; gap: 3px 10px; align-items: center; }
+.note .nm { font-size: 14.5px; color: var(--fg); font-weight: 500; min-width: 0; overflow-wrap: anywhere; }
+.note .when { font-size: 12.5px; color: var(--muted); grid-column: 1; }
+.note .how { font-size: 13px; color: var(--fg-2); grid-column: 1 / -1; }
+.note .err { font-size: 12.5px; color: var(--warn); grid-column: 1 / -1; }
+.note.acked .err { color: var(--muted); }
+.note .r { grid-row: 1 / span 2; grid-column: 2; }
+.note .dealt { grid-column: 1 / -1; margin-top: 2px; }
 .errs { padding: 12px 16px; font-size: 13px; color: var(--warn); }
 .sub.good { color: #fff; } .sub.bad { color: #fff; font-weight: 600; }
 .sub .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; vertical-align: 1px; background: #8ff0b8; }
@@ -74,7 +82,7 @@
   <header class="top">
     <h1>Status</h1>
     <p class="sub" id="sum">Checking…</p>
-    <p class="help">Each new song’s way to the calendar, and the site’s jobs on GitHub. Checked when this opens, every minute while it’s open, and after a sign-off. A step that fails, or takes much longer than it should, shows in red and counts on the Status tab until it works or you mark it Dealt with.</p>
+    <p class="help">Each new song’s way to the calendar and to members’ phones, the notifications sent, and the site’s jobs on GitHub. Checked when this opens, every minute while it’s open, and after a sign-off. A step that fails, or takes much longer than it should, shows in red and counts on the Status tab until it works or you mark it Dealt with.</p>
     <div class="row"><button class="glassbtn" id="again" type="button">Check again</button><span class="stat" id="when" style="color: var(--ink-2)"></span></div>
   </header>
   <div class="card errs" id="errs" hidden></div>
@@ -84,6 +92,8 @@
     <p class="sec">Facts task</p>
     <div class="card fix" id="task"></div>
   </div>
+  <p class="sec">Notifications sent</p>
+  <ul class="list" id="notes"></ul>
   <p class="sec">Jobs on GitHub</p>
   <ul class="list" id="runs"></ul>
 </div>
@@ -185,18 +195,32 @@
     });
     if (!runs.length) ul.appendChild(el('li', 'card run', 'No jobs to show.'));
   }
+  function drawNotes(notes) {   // the notifications sent, newest first: when, what, to how many
+    var ul = $('notes'); ul.textContent = '';
+    notes.forEach(function (e) {
+      var li = el('li', 'card note' + (e.ack ? ' acked' : ''));
+      li.appendChild(el('span', 'nm', e.title));
+      li.appendChild(el('span', 'when', uk(e.at)));
+      var r = el('span', 'r'); r.appendChild(el('span', 'badge' + (e.failed ? ' bad' : ''), e.kind === 'song' ? 'Song' : 'Your note')); li.appendChild(r);
+      li.appendChild(el('span', 'how', (e.say || '') + (e.old && !e.devices ? (e.say ? ' · ' : '') + 'sent before devices were counted here' : '')));
+      (e.errors || []).forEach(function (x) { li.appendChild(el('span', 'err', x.to + ' said ' + (x.status || 'nothing') + (x.why ? ': ' + x.why : ''))); });
+      if (e.failed && e.key) li.appendChild(dealt(e));
+      ul.appendChild(li);
+    });
+    if (!notes.length) ul.appendChild(el('li', 'card note', 'None sent yet.'));
+  }
   function tell(n) { try { if (window.parent.SOTD_STATUS) window.parent.SOTD_STATUS(n); } catch (e) {} }
   function draw(j) {
     var n = j.problems || 0, dealtN = 0, seen = {};
     function count(o) { if (o && o.ack && o.key && !seen[o.key]) { seen[o.key] = 1; dealtN++; } }
-    (j.songs || []).forEach(function (s) { s.steps.forEach(count); }); (j.runs || []).forEach(count); count(j.task);
+    (j.songs || []).forEach(function (s) { s.steps.forEach(count); }); (j.runs || []).forEach(count); (j.notes || []).forEach(count); count(j.task);
     $('sum').className = 'sub ' + (n ? 'bad' : 'good');
     $('sum').innerHTML = '<span class="dot"></span>';
     $('sum').appendChild(document.createTextNode(n ? (n === 1 ? '1 thing has failed or is stuck' : n + ' things have failed or are stuck') : 'All well'));
     if (dealtN) $('sum').appendChild(el('span', 'more', ' · ' + dealtN + ' dealt with'));
     $('when').textContent = 'Checked ' + uk(j.at, true);
     $('errs').hidden = !(j.errors && j.errors.length); $('errs').textContent = j.errors && j.errors.length ? 'Couldn’t read everything: ' + j.errors.join('; ') : '';
-    drawSongs(j.songs || []); drawTask(j.task); drawRuns(j.runs || []);
+    drawSongs(j.songs || []); drawTask(j.task); drawNotes(j.notes || []); drawRuns(j.runs || []);
     tell(n);
   }
   function call(body) {
