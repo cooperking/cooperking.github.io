@@ -38,11 +38,15 @@ body { overflow: hidden; }
 .tabs .count { display: inline-grid; place-items: center; min-width: 17px; height: 17px; margin-left: 6px; padding: 0 5px; border-radius: 999px; background: #fff; color: var(--warn, #c2185b); font: 700 10.5px/1 var(--sans); letter-spacing: 0; vertical-align: 1px; box-shadow: 0 0 0 2px var(--warn, #c2185b); }
 .out { width: 38px; height: 38px; flex: none; border-radius: 50%; border: 1px solid var(--glass-line); background: var(--glass); color: var(--ink); display: grid; place-items: center; cursor: pointer; }
 .out svg { width: 16px; height: 16px; }
+#reload.spin svg { animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
 .panes { flex: 1; position: relative; min-height: 0; }
 .panes iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: transparent; }
 @media (max-width: 480px) { .bar .name em { display: none; } .tabs button { padding: 8px 11px; } .bar { padding-left: 14px; } }
 .tabs button { white-space: nowrap; }
 @media (max-width: 430px) { .bar .name { display: none; } .bar .tabs { margin-left: auto; } .tabs button { padding: 8px 9px; letter-spacing: .06em; } .tabs .count { margin-left: 4px; } }
+@media (max-width: 400px) { .bar { gap: 5px; padding-right: 5px; } .tabs button { padding: 8px 7px; letter-spacing: .03em; } .out, .home { width: 34px; height: 34px; } }
+@media (max-width: 375px) { .bar { margin-left: 8px; margin-right: 8px; gap: 4px; } .tabs button { padding: 8px 6px; letter-spacing: 0; font-size: 11px; } .tabs .count { min-width: 15px; height: 15px; padding: 0 4px; } }
 </style>
 </head>
 <body>
@@ -67,6 +71,7 @@ body { overflow: hidden; }
       <button type="button" role="tab" data-tab="members" aria-selected="false">Members</button>
       <button type="button" role="tab" data-tab="status" aria-selected="false">Status<span class="count" id="stcount" hidden></span></button>
     </div>
+    <button class="out" id="reload" type="button" aria-label="Refresh" title="Refresh"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 8a5 5 0 1 1-1.46-3.54"/><path d="M13 2.6v2.9h-2.9"/></svg></button>
     <button class="out" id="out" type="button" aria-label="Sign out" title="Sign out"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 2.5h-3v11h3M10 5l3 3-3 3M13 8H6"/></svg></button>
   </div>
   <div class="panes" id="panes"></div>
@@ -129,6 +134,9 @@ body { overflow: hidden; }
   document.querySelectorAll('.tabs button').forEach(function (b) { b.addEventListener('click', function () { show(b.dataset.tab); }); });
   window.addEventListener('hashchange', function () { if (window.SOTD_ADMIN_OK) show(tabNow()); });
   $('out').addEventListener('click', function () { store(''); lock('Signed out.'); $('msg').className = 'stat'; });
+  // Refresh: the whole page again, on the tab that's open (the Chrome app's window and the iPhone's Home Screen have no
+  // reload button of their own; the password is kept, so it opens straight back)
+  $('reload').addEventListener('click', function () { $('reload').classList.add('spin'); location.reload(); });
   $('login').addEventListener('submit', function (e) {
     e.preventDefault();
     var pw = $('pw').value;
