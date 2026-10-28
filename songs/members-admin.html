@@ -271,6 +271,7 @@
     inp.addEventListener('input', function () { save.hidden = inp.value.trim().toLowerCase() === (m.email || ''); });
     inp.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !save.hidden) save.click(); });
     row.appendChild(inp); row.appendChild(save);
+    if (m.email && m.emailAt) { var by = document.createElement('span'); by.className = 'stat'; by.textContent = 'Given by them, ' + playDay(m.emailAt); row.appendChild(by); }
     if (m.email) row.appendChild(button('Send a test email', function () {
       api('/members/admin', { op: 'mailtest', id: m.id }).then(function (j) { toast(j.ok ? 'Sent to ' + m.email : j.error || 'Couldn’t send it'); });
     }));

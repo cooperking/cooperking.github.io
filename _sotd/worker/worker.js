@@ -808,6 +808,7 @@ async function members(request, url, env) {
   if (route === 'passkey/signin') return memberPasskeySignin(request, env, answer);
   if (route === 'code') return memberMailCode(request, env, answer);
   if (route === 'code/signin') return memberMailSignin(request, env, answer);
+  if (route === 'email') return memberEmail(request, env, answer);
   if (route === 'push') return memberPush(request, env, answer);
   if (route === 'inbox') return memberInbox(request, env, answer);
   if (!['admin', 'upload', 'cover'].includes(route)) return answer(404, { error: 'Not here.' });
@@ -825,7 +826,7 @@ async function members(request, url, env) {
     m.invite = { hash: await sha256hex(code), uses: 0, until: Date.now() + INVITE_DAYS * DAY };
     return MEMBERS_JOIN + code;
   };
-  const listing = (own = owner) => Object.entries(all).map(([id, m]) => ({ id, name: m.name, created: m.created, owner: id === own, email: m.email || '', tester: m.tester || null,
+  const listing = (own = owner) => Object.entries(all).map(([id, m]) => ({ id, name: m.name, created: m.created, owner: id === own, email: m.email || '', emailAt: m.emailAt || null, tester: m.tester || null,
     devices: Object.values(m.devices || {}).filter(d => d.did).length, passkeys: (m.passkeys || []).length, seen: Math.max(0, ...Object.values(m.devices || {}).map(d => d.seen || 0)) || null,
     invite: m.invite ? { uses: m.invite.uses, left: Math.max(0, INVITE_USES - m.invite.uses), until: m.invite.until } : null }));
   switch (body.op) {
@@ -854,7 +855,7 @@ async function members(request, url, env) {
       const email = body.email ? cleanEmail(body.email) : '';
       if (body.email && !email) return answer(400, { error: 'That doesn’t look like an email address.' });
       if (email && Object.entries(all).some(([k, x]) => k !== body.id && x.email === email)) return answer(400, { error: 'Another member has that email address.' });
-      if (email !== (m.email || '')) { if (email) m.email = email; else delete m.email; delete m.tester; }   // (a new address isn't on Play's list yet)
+      if (email !== (m.email || '')) { if (email) m.email = email; else delete m.email; delete m.tester; delete m.emailAt; }   // (a new address isn't on Play's list yet; emailAt: one they gave themselves)
       await save();
       return answer(200, { ok: true, members: listing() });
     }
@@ -1705,6 +1706,54 @@ async function memberMailSignin(request, env, answer) {   // POST { email, code,
   const token = await newDevice(all, m, deviceId(body.device));
   await env.SOTD.put('members', JSON.stringify(all));
   return answer(200, { token, name: m.name });
+}
+
+// a member's own email address, from their Profile (John, 28 Oct 2026: "can users add and edit their own email
+// addresses in their profile"): signed in, POST { op: 'begin', email } sends a code to the new address, to check it's
+// theirs (KV mailnew:<id>: the address and the code's hash; one a minute, MAIL_PER_HOUR an hour); { op: 'confirm', code }
+// saves it. A new address isn't on Google Play's test list yet: the Members tab shows John it's to be added.
+async function memberEmail(request, env, answer) {
+  if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
+  const id = await memberFromToken(request, env);
+  if (!id) return answer(401, { error: 'Not a member (any more).' });
+  const body = await request.json().catch(() => ({}));
+  const all = (await env.SOTD.get('members', 'json')) || {}, m = all[id];
+  if (!m) return answer(401, { error: 'Not a member (any more).' });
+  const key = 'mailnew:' + id, hour = new Date().toISOString().slice(0, 13);
+  if (body.op === 'begin') {
+    const email = cleanEmail(body.email);
+    if (!email) return answer(400, { error: 'That doesn’t look like an email address.' });
+    if (email === m.email) return answer(400, { error: 'That’s your address already.' });
+    if (Object.entries(all).some(([k, x]) => k !== id && x.email === email)) return answer(400, { error: 'Another member has that address. Ask John.' });
+    if (!mailReady(env)) return answer(503, { error: 'Emails aren’t set up yet. Ask John.' });
+    const old = await env.SOTD.get(key, 'json'), sent = (old && old.hour === hour ? old.n : 0) || 0;
+    if (old && old.sent > Date.now() - 60e3) return answer(429, { error: 'A code went a moment ago. Wait a minute, then ask again.' });
+    if (sent >= MAIL_PER_HOUR) return answer(429, { error: 'That’s a lot of codes this hour. Try again later.' });
+    const code = String(crypto.getRandomValues(new Uint32Array(1))[0] % 1e6).padStart(6, '0');
+    await env.SOTD.put(key, JSON.stringify({ email, h: await sha256hex(id + ':' + email + ':' + code), until: Date.now() + MAIL_CODE_MINUTES * 60e3,
+      tries: 0, sent: Date.now(), hour, n: sent + 1 }), { expirationTtl: MAIL_CODE_MINUTES * 60 + 3600 });
+    try {
+      await sendMail(env, email, 'Your Song of the Day code: ' + code,
+        'Your code to add this address to your Song of the Day profile is ' + code + '.\n\nType it in your Profile within ' + MAIL_CODE_MINUTES
+        + ' minutes. Codes to sign in will come here from then on.\n\nIf you didn’t ask for it, you can ignore this email.\n', 'confirm');
+    } catch (e) { return answer(502, { error: 'The email couldn’t be sent just now. Try again later, or ask John.' }); }
+    return answer(200, { ok: true, minutes: MAIL_CODE_MINUTES });
+  }
+  if (body.op === 'confirm') {
+    const rec = await env.SOTD.get(key, 'json'), code = String(body.code || '').replace(/\D/g, '');
+    if (!rec || !rec.h || rec.until < Date.now() || rec.tries >= MAIL_CODE_TRIES) return answer(400, { error: 'That code has run out. Ask for a new one.' });
+    if (code.length !== 6 || await sha256hex(id + ':' + rec.email + ':' + code) !== rec.h) {
+      rec.tries++;
+      await env.SOTD.put(key, JSON.stringify(rec), { expirationTtl: 3600 });
+      return answer(403, { error: rec.tries >= MAIL_CODE_TRIES ? 'That isn’t the code, and that was the last try. Ask for a new one.' : 'That isn’t the code. Check the email and try again.' });
+    }
+    await env.SOTD.put(key, JSON.stringify({ hour: rec.hour, n: rec.n, sent: rec.sent }), { expirationTtl: 3600 });   // (used)
+    if (Object.entries(all).some(([k, x]) => k !== id && x.email === rec.email)) return answer(400, { error: 'Another member has that address now. Ask John.' });
+    if (m.email !== rec.email) { m.email = rec.email; delete m.tester; m.emailAt = new Date().toISOString(); }
+    await env.SOTD.put('members', JSON.stringify(all));
+    return answer(200, { ok: true, email: m.email });
+  }
+  return answer(400, { error: 'Say what to do.' });
 }
 
 // a member's saved playlists, kept with their sign-in so every device of theirs has them (KV key mpl:<member id>).
