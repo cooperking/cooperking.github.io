@@ -41,10 +41,12 @@
 .csvbox { padding: 16px; display: grid; gap: 10px; }
 .inviter.dropping { box-shadow: 0 0 0 3px var(--fg), 0 18px 50px rgba(24, 8, 24, .28); }
 .pickc { display: grid; gap: 6px; }
-.person .seefiles { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
-.person .seefiles label { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border: 1px solid var(--line); border-radius: 999px; background: var(--chip); font: 600 12px/1.2 var(--sans); letter-spacing: .04em; color: var(--muted); cursor: pointer; }
-.person .seefiles label.on { border-color: var(--ok); color: var(--ok); background: #fff; }
-.person .seefiles input { margin: 0; accent-color: var(--ok); }
+.person .seefiles, .inviter .seefiles { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.person .seefiles label, .inviter .seefiles label { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border: 1px solid var(--line); border-radius: 999px; background: var(--chip); font: 600 12px/1.2 var(--sans); letter-spacing: .04em; color: var(--muted); cursor: pointer; }
+.person .seefiles label.on, .inviter .seefiles label.on { border-color: var(--ok); color: var(--ok); background: #fff; }
+.person .seefiles input, .inviter .seefiles input { margin: 0; accent-color: var(--ok); }
+.inviter .seen { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.inviter .seen p { margin: 0; flex-basis: 100%; }
 .person .seen { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
 .person .seen p { margin: 0; flex-basis: 100%; }
 .seenwho { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 6px; }
@@ -103,10 +105,12 @@
     <div class="row">
       <input class="name" id="newname" placeholder="Their name" autocomplete="off" aria-label="Their name">
       <input class="name" id="newmail" type="email" placeholder="Their email (for codes, and Google Play)" autocomplete="off" aria-label="Their email address">
-      <button class="btn primary" id="invite" type="button">Invite</button>
     </div>
     <div class="row fromc"><button class="btn small" id="fromc" type="button">From Contacts…</button><input type="file" id="vcf" accept=".vcf,text/vcard,text/x-vcard" hidden><span class="stat" id="fromcnote"></span></div>
     <div class="pickc" id="pickc" hidden><span class="stat" id="pickcq"></span><div class="row" id="pickcwho"></div></div>
+    <div class="seefiles" id="newsee"><span class="stat">Can see</span><label title="MP3s: your recordings"><input type="checkbox" id="newa">MP3s</label><label title="MP4s: your videos"><input type="checkbox" id="newv">MP4s</label></div>
+    <div class="seen" id="newseen"><span class="stat" id="newseent">Seen by every other member</span><button class="btn small" id="newseenx" type="button">Change</button><div class="seenwho" id="newseenwho" hidden></div><p class="stat" id="newseennote" hidden>Untick someone and the two are kept apart from the start: neither sees the other in their lists, nor can send to the other.</p></div>
+    <div class="row"><button class="btn primary" id="invite" type="button">Invite</button></div>
     <div class="link" id="newlink" hidden><code id="linktext"></code><div class="row"><button class="btn small" id="copy" type="button">Copy the link</button><button class="btn small primary" id="share" type="button">Send the invitation…</button></div></div>
     <div class="link" id="tvbox" hidden><span class="stat">For <b id="tvfor"></b>, once, within <span id="tvmins"></span> minutes:</span><span class="tvcode" id="tvcode"></span></div>
   </div>
@@ -267,7 +271,7 @@
       acts.appendChild(nl); acts.appendChild(tv); acts.appendChild(me); acts.appendChild(rm);
       li.appendChild(who); li.appendChild(st); if (m.apps && m.apps.length) li.appendChild(appsList(m)); li.appendChild(mailRow(m)); li.appendChild(seeRow(m)); if (!m.owner) li.appendChild(seenRow(m)); li.appendChild(acts); ul.appendChild(li);
     });
-    csvBox();
+    csvBox(); newSeeDraw();
   }
   // their email address: codes by email go to it, and it's the one for Google Play's test list (the Google account on
   // their Android phone)
@@ -497,9 +501,30 @@
   $('askno').addEventListener('click', function () { askEnd(false); });
   $('askx').addEventListener('click', function () { askEnd(false); });
   $('askdlg').addEventListener('close', function () { if (askDone) askEnd(false); });
+  // the Invite box's own Can see and Seen by (29 Oct 2026), as each card has them: set as they join
+  var NEW_APART = [];
+  function newSeeDraw() {
+    ['newa', 'newv'].forEach(function (id) { $(id).parentNode.className = $(id).checked ? 'on' : ''; });
+    var others = MEMBERS.filter(function (x) { return !x.owner; }), off = others.filter(function (x) { return NEW_APART.indexOf(x.id) >= 0; }).map(function (x) { return x.name; });
+    NEW_APART = NEW_APART.filter(function (id) { return others.some(function (x) { return x.id === id; }); });
+    $('newseen').hidden = !others.length;
+    $('newseent').textContent = 'Seen by ' + (!off.length ? 'every other member' : off.length === others.length ? 'no other member' : 'every other member but ' + andList(off));
+    var open = !$('newseenwho').hidden, box = $('newseenwho'); box.innerHTML = '';
+    $('newseenx').textContent = open ? 'Done' : 'Change'; $('newseennote').hidden = !open;
+    others.forEach(function (x) {
+      var l = document.createElement('label'), c = document.createElement('input'); c.type = 'checkbox'; c.checked = NEW_APART.indexOf(x.id) < 0;
+      c.addEventListener('change', function () { NEW_APART = NEW_APART.filter(function (id) { return id !== x.id; }).concat(c.checked ? [] : [x.id]); newSeeDraw(); });
+      l.appendChild(c); l.appendChild(document.createTextNode(x.name)); box.appendChild(l);
+    });
+  }
+  ['newa', 'newv'].forEach(function (id) { $(id).addEventListener('change', newSeeDraw); });
+  $('newseenx').addEventListener('click', function () { $('newseenwho').hidden = !$('newseenwho').hidden; newSeeDraw(); });
   $('invite').addEventListener('click', function () {
     var n = $('newname').value.trim(); if (!n) { $('newname').focus(); return; }
-    api('/members/admin', { op: 'invite', name: n, email: $('newmail').value.trim() }).then(function (j) { if (j.link) { $('newname').value = ''; $('newmail').value = ''; } showLink(j); });
+    api('/members/admin', { op: 'invite', name: n, email: $('newmail').value.trim(), see: { a: $('newa').checked, v: $('newv').checked }, apart: NEW_APART.slice() }).then(function (j) {
+      if (j.link) { $('newname').value = ''; $('newmail').value = ''; $('newa').checked = false; $('newv').checked = false; NEW_APART = []; $('newseenwho').hidden = true; }
+      showLink(j); newSeeDraw();
+    });
   });
   // ---- a new member's name and email from John's contacts (29 Oct 2026): Apple's contact picker in the iPhone app (its
   // SotdContacts plugin, build 22 on: this page is inside the admin page, which has the app's Capacitor), Chrome's on

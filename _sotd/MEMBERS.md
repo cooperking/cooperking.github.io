@@ -94,7 +94,8 @@ Node) `pk_page_t.py` and `pk_offer_t.py` (the draft, with Chromium's virtual aut
 ## Who gets John's files
 
 Each member's card on the Members tab has *Can see* MP3s (John's recordings) and MP4s (his videos), each ticked or
-not (29 Oct 2026; `see { a, v }` on their record, admin op `see`). Someone invited from then on starts with neither;
+not (29 Oct 2026; `see { a, v }` on their record, admin op `see`). The Invite box has the same Can see and Seen by,
+set as they're invited (`invite` with `see` and `apart`). Someone invited with neither ticked starts with neither;
 members from before keep both. `/members/me` signs links only for what they may have and says which (`see`), and the
 calendar then takes their downloads of the rest off that device (`dlPrune`, only on the Worker's word). A link already
 given lasts its 12 hours (`LINK_HOURS`). Up to 200 members (40 until then). The Alexa skill is separate: it plays John's

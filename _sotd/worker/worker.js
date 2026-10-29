@@ -852,7 +852,11 @@ async function members(request, url, env) {
       const email = body.email ? cleanEmail(body.email) : '';
       if (body.email && !email) return answer(400, { error: 'That doesn’t look like an email address.' });
       if (email && Object.values(all).some(x => x.email === email)) return answer(400, { error: 'Another member has that email address.' });
-      const id = randomCode(6), m = Object.assign({ name, created: Date.now(), devices: {}, see: { a: false, v: false } }, email ? { email } : {});   // (his files: none until he ticks them)
+      // his files: none unless he ticks them in the Invite box (see { a, v }); and the members they're kept apart from
+      // from the start (apart: [ids], on both records), as each card's Can see and Seen by set later
+      const see = body.see || {}, m = Object.assign({ name, created: Date.now(), devices: {}, see: { a: see.a === true, v: see.v === true } }, email ? { email } : {});
+      const id = randomCode(6), keep = [...new Set((Array.isArray(body.apart) ? body.apart : []).map(String))].filter(k => all[k] && k !== owner);
+      if (keep.length) { m.apart = keep; keep.forEach(k => { all[k].apart = (all[k].apart || []).filter(v => v !== id).concat(id); }); }
       const link = await invite(m);
       all[id] = m; await save();
       return answer(200, { id, link, members: listing() });
