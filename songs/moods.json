@@ -7195,7 +7195,7 @@
     "r&b",
     "soul"
    ],
-   "checkWhy": "Mellow, but the audio sounds livelier than 93% of the songs",
+   "checkWhy": "Mellow, but the audio sounds livelier than 94% of the songs",
    "check": true
   },
   "3lJ70fh0ENq6hzgtOfOGYZ": {
@@ -18760,8 +18760,8 @@
    "moodFrom": "Claude",
    "sound": [
     "Playful",
-    "Joyful",
-    "Energetic"
+    "Energetic",
+    "Joyful"
    ],
    "claude": [
     "Playful",
@@ -20202,9 +20202,9 @@
    ],
    "moodFrom": "Claude (researched)",
    "sound": [
+    "Energetic",
     "Joyful",
-    "Playful",
-    "Energetic"
+    "Playful"
    ],
    "claude": [
     "Playful",
@@ -20916,7 +20916,7 @@
    "sound": [
     "Playful",
     "Energetic",
-    "Joyful"
+    "Romantic"
    ],
    "claude": [
     "Playful"
@@ -22115,8 +22115,8 @@
    ],
    "moodFrom": "Claude (researched)",
    "sound": [
-    "Romantic",
     "Melancholy",
+    "Romantic",
     "Bittersweet"
    ],
    "claude": [
@@ -22827,8 +22827,8 @@
    ],
    "moodFrom": "Claude (researched)",
    "sound": [
-    "Uplifting",
     "Dreamy",
+    "Uplifting",
     "Joyful"
    ],
    "claude": [
@@ -24585,7 +24585,7 @@
    "sound": [
     "Mellow",
     "Melancholy",
-    "Uplifting"
+    "Dreamy"
    ],
    "claude": [
     "Mellow",
@@ -26134,7 +26134,7 @@
    "moodMix": [
     [
      "Dark",
-     68
+     69
     ],
     [
      "Melancholy",
@@ -26152,7 +26152,7 @@
      [
       [
        "Dark",
-       68
+       69
       ],
       [
        "Melancholy",
@@ -26282,7 +26282,7 @@
     ],
     [
      "Dreamy",
-     12
+     13
     ]
    ],
    "moodEvidence": [
@@ -26300,7 +26300,7 @@
       ],
       [
        "Dreamy",
-       12
+       13
       ]
      ]
     ]
@@ -26589,6 +26589,129 @@
       ]
      ]
     ]
+   ],
+   "check": true
+  },
+  "7LkJGGYfGAqPV04Kyhm2Ho": {
+   "n": 262,
+   "title": "Once in Awhile",
+   "artist": "Don't Stop or We'll Die",
+   "moods": [
+    "Playful",
+    "Joyful"
+   ],
+   "moodMix": [
+    [
+     "Playful",
+     33
+    ],
+    [
+     "Joyful",
+     31
+    ],
+    [
+     "Uplifting",
+     15
+    ]
+   ],
+   "moodEvidence": [
+    [
+     "Audio",
+     100,
+     [
+      [
+       "Playful",
+       33
+      ],
+      [
+       "Joyful",
+       31
+      ],
+      [
+       "Uplifting",
+       15
+      ]
+     ]
+    ]
+   ],
+   "moodFrom": "Weighed up",
+   "sound": [
+    "Playful",
+    "Joyful",
+    "Uplifting"
+   ],
+   "listeners": "none",
+   "styles": [
+    "Indie Rock",
+    "Pop Rock",
+    "Brit Pop"
+   ],
+   "genres": [
+    "Rock",
+    "Indie"
+   ],
+   "genreFrom": "Weighed up",
+   "genreMix": [
+    [
+     "Rock",
+     66
+    ],
+    [
+     "Indie",
+     26
+    ],
+    [
+     "Pop",
+     6
+    ]
+   ],
+   "genreEvidence": [
+    [
+     "MusicBrainz",
+     50,
+     [
+      [
+       "Rock",
+       100
+      ]
+     ]
+    ],
+    [
+     "Last.fm",
+     30,
+     [
+      [
+       "Indie",
+       57
+      ],
+      [
+       "Rock",
+       43
+      ]
+     ]
+    ],
+    [
+     "Audio",
+     20,
+     [
+      [
+       "Indie",
+       45
+      ],
+      [
+       "Pop",
+       32
+      ],
+      [
+       "Rock",
+       17
+      ]
+     ]
+    ]
+   ],
+   "musicbrainz": [
+    "geek rock",
+    "piano rock"
    ],
    "check": true
   }
