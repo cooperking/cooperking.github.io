@@ -179,7 +179,9 @@ tapped, it opens its link, as in the inbox. KV `outbox:<id>`, the newest 60, wri
 John's from the Members tab, into the member marked *This is me*); `GET /members/sent` gives them. None were kept before
 then, so the first read makes it from the Status tab's log (`pushLog`) and the inboxes the messages went into. The tab
 shows for members with someone to send to, or who have sent some. A message with no link of its own (just the
-calendar) tapped in the Inbox or Sent stays open (marked read); a day's opens that day on the page it's tapped on.
+calendar) tapped in the Inbox or Sent opens in a pop-up over the Profile (all its words, its whole picture, a GIF
+moving), and closing it marks it read (John, 29 Oct 2026); a day's opens that day on the page it's tapped on. The
+Inbox's and Sent's pictures show whole, not cropped.
 Tests: `sent_t.mjs` (the Worker), `sent_page_t.py`, `inbox_link_t.py` (the draft).
 
 A GIF chosen as a message's picture (John's on the Members tab, a member's in Send; 29 Oct 2026, "yes, in the inbox
