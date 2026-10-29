@@ -27,9 +27,14 @@ def note(level, m):
     print('::%s title=iPhone app (TestFlight)::%s' % (level, m.replace('%', '%25').replace('\n', '%0A')), flush=True)
 
 
-class Refused(Exception):
-    def __init__(self, code, text):
-        super().__init__('%d %s' % (code, text[:500])); self.code, self.text = code, text
+class Refused(Exception):   # (its message on one line: the request, Apple's code and what it said)
+    def __init__(self, code, text, what=''):
+        try:
+            said = '; '.join(' '.join(x for x in (e.get('code'), e.get('title'), e.get('detail')) if x) for e in json.loads(text).get('errors') or [])
+        except Exception:
+            said = ''
+        said = said or ' '.join((text or '').split())
+        super().__init__('%s%d: %s' % (what + ' ' if what else '', code, said[:400])); self.code, self.text = code, text
 
 
 def main(build):
@@ -48,15 +53,22 @@ def main(build):
         return made[1]
 
     def api(method, path, body=None):
-        rq = urllib.request.Request('https://api.appstoreconnect.apple.com' + path, method=method,
-                                    data=json.dumps(body).encode() if body is not None else None,
-                                    headers={'Authorization': 'Bearer ' + token(), 'Content-Type': 'application/json'})
-        try:
-            with urllib.request.urlopen(rq, timeout=60) as r:
-                t = r.read()
-                return json.loads(t) if t else {}
-        except urllib.error.HTTPError as e:
-            raise Refused(e.code, e.read().decode('utf-8', 'replace'))
+        # Apple's own errors (500, 502, 503: build 22's hand-over on 29 Oct 2026 had two 500s in a row) tried again, four
+        # times, a minute apart; anything else said at once
+        for tries in range(5):
+            rq = urllib.request.Request('https://api.appstoreconnect.apple.com' + path, method=method,
+                                        data=json.dumps(body).encode() if body is not None else None,
+                                        headers={'Authorization': 'Bearer ' + token(), 'Content-Type': 'application/json'})
+            try:
+                with urllib.request.urlopen(rq, timeout=60) as r:
+                    t = r.read()
+                    return json.loads(t) if t else {}
+            except urllib.error.HTTPError as e:
+                err = Refused(e.code, e.read().decode('utf-8', 'replace'), method + ' ' + path.split('?')[0])
+                if e.code < 500 or tries == 4:
+                    raise err
+                print('Apple said %s; trying again in a minute' % err, flush=True)
+                time.sleep(60)
 
     q = urllib.parse.quote
     apps = api('GET', '/v1/apps?filter[bundleId]=%s' % q(BUNDLE)).get('data', [])
