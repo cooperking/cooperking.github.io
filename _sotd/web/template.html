@@ -5954,6 +5954,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // on by default as far as a phone allows (it has to ask, and only after a tap): once, a little after a member's device
   // first loads the calendar (or the Home Screen app), a question; Turn on asks the phone straight away. Not over
   // anything else that's open, nor while the app's being offered; Not now leaves it to the Profile.
+  // the question, once a device (John's words, 29 Oct 2026)
+  var NOTE_ASK_H = 'Allow notifications?', NOTE_ASK_T = 'You can send them too! John says “please do this! It’s all part of the fun”';
   function noteOffer() {
     if (NPUSH) {   // the iPhone app: the same question, once, while Apple hasn't been asked
       var seen0 = 0; try { seen0 = Number(localStorage.getItem('sotd-noteask')) || 0; } catch (e) {}
@@ -5962,7 +5964,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         natPerm().then(function (p) {
           if (!/^prompt/.test(p) || !MEMBER || askedNow || layers().length || bgOn || (vplay && vplay.on)) return;
           try { localStorage.setItem('sotd-noteask', String(Date.now())); } catch (e) {}
-          ask({ k: 'Notifications', h: 'Hear about each new song?', t: 'A notification when each day’s song goes up, and the odd note from John. You can turn them off in your Profile.', ok: 'Turn on', no: 'Not now', now: noteOn });
+          ask({ k: 'Notifications', h: NOTE_ASK_H, t: NOTE_ASK_T, ok: 'Turn on', no: 'Not now', now: noteOn });
         }).catch(function () {});
       }, 6000);
       return;
@@ -5976,7 +5978,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       noteReg().then(function (reg) { return reg.pushManager.getSubscription(); }).then(function (sub) {
         if (sub || layers().length) return;
         try { localStorage.setItem('sotd-noteask', String(Date.now())); } catch (e) {}
-        ask({ k: 'Notifications', h: 'Hear about each new song?', t: 'A notification when each day’s song goes up, and the odd note from John. You can turn them off in your Profile.', ok: 'Turn on', no: 'Not now', now: noteOn });
+        ask({ k: 'Notifications', h: NOTE_ASK_H, t: NOTE_ASK_T, ok: 'Turn on', no: 'Not now', now: noteOn });
       }).catch(function () {});
     }, 6000);
   }
