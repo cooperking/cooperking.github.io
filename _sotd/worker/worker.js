@@ -973,13 +973,10 @@ async function members(request, url, env) {
       if (owner && all[owner]) await sentAdd(env, owner, msg, r, to ? to.map(k => all[k].name) : 'all');   // (his Profile › Sent)
       return answer(200, r);
     }
-    case 'pushpic': {   // a picture for a notification (and the inbox), made small on the members page: kept in R2 at n/<id>.jpg
+    case 'pushpic': {   // a picture for a notification (and the inbox), made small on the members page: kept in R2 at n/<id>.jpg (and a GIF as it is: picsUp)
       if (!env.MEDIA) return answer(503, { error: 'No R2 bucket is bound to the Worker as MEDIA yet.' });
-      const b64 = String(body.pic || '').replace(/^data:image\/jpeg;base64,/, '');
-      if (!b64 || b64.length > 2.5e6) return answer(400, { error: 'The picture is missing or too big.' });
-      const pid = randomCode(12);
-      await env.MEDIA.put('n/' + pid + '.jpg', Uint8Array.from(atob(b64), ch => ch.charCodeAt(0)), { httpMetadata: { contentType: 'image/jpeg' } });
-      return answer(200, { url: new URL(request.url).origin + '/n/' + pid + '.jpg' });
+      const up = await picsUp(env, new URL(request.url).origin, body);
+      return answer(up.error ? 400 : 200, up);
     }
     case 'invitecard': {   // the invitation's link-preview page and picture (drawn on the members page)
       const m = all[body.id];
@@ -2316,6 +2313,7 @@ function noteMsg(body) {
   const msg = { title, body: text, url: link || SITE_SONGS, tag: 'sotd-note-' + Date.now() };
   if (pic(body.image)) msg.image = pic(body.image);
   if (pic(body.icon)) msg.icon = pic(body.icon);
+  if (/^https:\/\/sotd-playlists\.cooperking\.workers\.dev\/n\/[\w-]{16}\.gif$/.test(String(body.gif || ''))) msg.gif = body.gif;   // (the inbox's, moving: one sent up here)
   return { msg };
 }
 // ---------- members' own notifications (John, 28 Oct 2026: "I'd like users to have the ability to send notifications to
@@ -2401,12 +2399,39 @@ async function memberSendPic(request, env, answer) {
   if (!who) return answer(401, { error: 'Not a member (any more).' });
   if (!env.MEDIA) return answer(503, { error: 'Pictures can’t be sent yet.' });
   const body = await request.json().catch(() => ({}));
-  const b64 = String(body.pic || '').replace(/^data:image\/jpeg;base64,/, '');
-  if (!b64 || b64.length > 2.5e6 || !/^[A-Za-z0-9+/=]+$/.test(b64)) return answer(400, { error: 'The picture is missing or too big.' });
+  const bad = picsBad(body);
+  if (bad) return answer(400, { error: bad });
   if (!await dayCount(env, 'sentpic:' + who.id, SENDPIC_DAY)) return answer(429, { error: 'That’s ' + SENDPIC_DAY + ' pictures today, the most for a day.' });
-  const pid = randomCode(12);
-  await env.MEDIA.put('n/' + pid + '.jpg', Uint8Array.from(atob(b64), ch => ch.charCodeAt(0)), { httpMetadata: { contentType: 'image/jpeg' } });
-  return answer(200, { url: new URL(request.url).origin + '/n/' + pid + '.jpg' });
+  const up = await picsUp(env, new URL(request.url).origin, body);
+  return answer(up.error ? 400 : 200, up);
+}
+
+// A notification's picture, sent up from the page (John's from the Members tab, op pushpic; a member's, /members/sendpic):
+// { pic } a JPEG made small there, kept in R2 at n/<id>.jpg, the notification's picture; and with it, for a GIF chosen,
+// { gif } the GIF as it is (5 MB at most), at n/<id>.gif, the picture in the inbox, where it moves (John, 29 Oct 2026:
+// "Can gifs be sent through the messages?" "yes, in the inbox please"). A notification shows a still picture at most.
+const GIF_MOST = 5 * 1024 * 1024;
+function picsBad(body) {   // what's wrong with them, or ''
+  const b64 = String(body.pic || '').replace(/^data:image\/jpeg;base64,/, '');
+  if (!b64 || b64.length > 2.5e6 || !/^[A-Za-z0-9+/=]+$/.test(b64)) return 'The picture is missing or too big.';
+  if (body.gif == null) return '';
+  const g64 = String(body.gif).replace(/^data:image\/gif;base64,/, '');
+  if (!g64 || !/^[A-Za-z0-9+/=]+$/.test(g64)) return 'That GIF couldn’t be read.';
+  if (g64.length > Math.ceil(GIF_MOST / 3) * 4) return 'That GIF is too big (5 MB at most).';
+  if (!/^R0lGODlh|^R0lGODdh/.test(g64)) return 'That isn’t a GIF.';   // (GIF89a / GIF87a)
+  return '';
+}
+async function picsUp(env, origin, body) {   // { url, gif? }, or { error }
+  const bad = picsBad(body);
+  if (bad) return { error: bad };
+  const bytes = b => { const s = atob(b), a = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) a[i] = s.charCodeAt(i); return a; };
+  const pid = randomCode(12), out = { url: origin + '/n/' + pid + '.jpg' };
+  await env.MEDIA.put('n/' + pid + '.jpg', bytes(String(body.pic).replace(/^data:image\/jpeg;base64,/, '')), { httpMetadata: { contentType: 'image/jpeg' } });
+  if (body.gif != null) {
+    await env.MEDIA.put('n/' + pid + '.gif', bytes(String(body.gif).replace(/^data:image\/gif;base64,/, '')), { httpMetadata: { contentType: 'image/gif' } });
+    out.gif = origin + '/n/' + pid + '.gif';
+  }
+  return out;
 }
 
 async function pushAll(env, msg, to, meta) {   // to: only these members (else everyone); meta: { kind: 'song' | 'note' | 'member', track, via, toNames }
@@ -2468,7 +2493,7 @@ const INBOX_MAX = 60;
 async function inboxAdd(env, to, msg) {
   const all = (await env.SOTD.get('members', 'json')) || {}, ids = (to || Object.keys(all)).filter(id => all[id]), out = {};
   const item = { id: randomCode(8), at: Date.now(), t: msg.subject || msg.title, b: msg.body || '', u: msg.url || '' };
-  if (msg.image) item.i = msg.image; if (msg.icon) item.c = msg.icon;
+  if (msg.gif || msg.image) item.i = msg.gif || msg.image; if (msg.icon) item.c = msg.icon;   // (a GIF sent: it, moving, in place of the still)
   if (msg.from) item.f = msg.from;   // (a member's: who sent it)
   await Promise.all(ids.map(async id => {
     const box = (await env.SOTD.get('inbox:' + id, 'json')) || [];
@@ -2530,7 +2555,7 @@ async function sentAdd(env, member, msg, r, to) {
   if (!member || !r || !r.id) return;
   const box = (await sentList(env, member, false)).filter(x => x.id !== r.id);   // (made from the log just now: it's there already)
   const it = { id: r.id, at: r.at || Date.now(), t: msg.subject || msg.title, b: msg.body || '', u: msg.url || '', to };
-  if (msg.image) it.i = msg.image; if (msg.icon) it.c = msg.icon;
+  if (msg.gif || msg.image) it.i = msg.gif || msg.image; if (msg.icon) it.c = msg.icon;
   box.unshift(it); box.length = Math.min(box.length, SENT_MAX);
   await kvSoft(env, 'outbox:' + member, JSON.stringify(box));
 }
@@ -2542,10 +2567,10 @@ async function memberSent(request, env, answer) {
 }
 
 async function notePic(url, env) {   // a notification's picture: anyone with its (unguessable) address, as a phone fetches it unsigned
-  const m = /^\/n\/([\w-]{16})\.jpg$/.exec(url.pathname);
-  const o = m && env.MEDIA ? await env.MEDIA.get('n/' + m[1] + '.jpg') : null;
+  const m = /^\/n\/([\w-]{16})\.(jpg|gif)$/.exec(url.pathname);
+  const o = m && env.MEDIA ? await env.MEDIA.get('n/' + m[1] + '.' + m[2]) : null;
   if (!o) return new Response('Not here.', { status: 404 });
-  return new Response(o.body, { headers: { 'Content-Type': 'image/jpeg', 'Cache-Control': 'public, max-age=31536000, immutable', 'Access-Control-Allow-Origin': '*' } });
+  return new Response(o.body, { headers: { 'Content-Type': m[2] === 'gif' ? 'image/gif' : 'image/jpeg', 'Cache-Control': 'public, max-age=31536000, immutable', 'Access-Control-Allow-Origin': '*' } });
 }
 
 async function pushCount(env) {

@@ -924,18 +924,30 @@
     $('ntitle').value = ''; $('ntext').value = '';
   }
   $('nsongx').addEventListener('click', songClear);
-  // ---- a picture of John's own, with a message: made small here (1200px wide at most, JPEG), sent up when it's sent ----
-  var NPIC = null;   // its data (data: URL), until sent
-  function picShow(on) { $('npicfig').hidden = !on; $('npicx').hidden = !on; $('npicnote').hidden = !on; $('npicadd').textContent = on ? 'Another picture…' : 'Add a picture…'; }
+  // ---- a picture of John's own, with a message: made small here (1200px wide at most, JPEG), sent up when it's sent; a
+  // GIF also as it is (5 MB at most), the picture in their inbox, where it moves (29 Oct 2026); the notification has the
+  // still made here ----
+  var NPIC = null, NGIF = null, GIF_MOST = 5 * 1024 * 1024;   // their data (data: URLs), until sent
+  var PICNOTE = $('npicnote').textContent;
+  function picShow(on) {
+    $('npicfig').hidden = !on; $('npicx').hidden = !on; $('npicnote').hidden = !on; $('npicadd').textContent = on ? 'Another picture…' : 'Add a picture…';
+    $('npicnote').textContent = NGIF ? 'A GIF: it moves in their inbox on every phone; the notification shows it still (on Android and computers; an iPhone’s notification can’t show a picture).' : PICNOTE;
+  }
+  function gifOf(f) {   // its data: URL, or null (not a GIF, or too big: said)
+    if (!f || !(/^image\/gif$/i.test(f.type || '') || /\.gif$/i.test(f.name || ''))) return Promise.resolve(null);
+    if (f.size > GIF_MOST) { toast('That GIF is over 5 MB, so it goes as a still picture'); return Promise.resolve(null); }
+    return new Promise(function (res) { var rd = new FileReader(); rd.onload = function () { res(/^data:image\/gif;base64,/.test(String(rd.result)) ? String(rd.result) : null); }; rd.onerror = function () { res(null); }; rd.readAsDataURL(f); });
+  }
   $('npicfile').addEventListener('change', function () {
     var f = this.files && this.files[0]; this.value = '';
     if (!f) return;
-    C.fileImage(f, function () { toast('Turning the HEIC photo into a JPEG…'); }).then(function (img) {
+    Promise.all([C.fileImage(f, function () { toast('Turning the HEIC photo into a JPEG…'); }), gifOf(f)]).then(function (r) {
+      var img = r[0];
       try {
         var k = Math.min(1, 1200 / img.naturalWidth, 1200 / img.naturalHeight), c = document.createElement('canvas');
         c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
         c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-        NPIC = c.toDataURL('image/jpeg', 0.85); $('npicimg').src = NPIC; picShow(true);
+        NPIC = c.toDataURL('image/jpeg', 0.85); NGIF = r[1]; $('npicimg').src = NGIF || NPIC; picShow(true);
         if (NSONG) { wordsRedraw(NSONG); songPicDraw(); }
       } catch (e) { toast(usedWhy(e, f)); }
     }, function (e) { toast(C.fileWhy(e, f)); });
@@ -943,7 +955,7 @@
   function usedWhy(e, f) {   // it opened, then something after that went wrong
     return 'That picture opened (' + (f.name || 'it') + ') but couldn’t be used: ' + ((e && (e.name ? e.name + ': ' : '') + e.message) || e);
   }
-  $('npicx').addEventListener('click', function () { NPIC = null; $('npicimg').removeAttribute('src'); picShow(false); });
+  $('npicx').addEventListener('click', function () { NPIC = null; NGIF = null; $('npicimg').removeAttribute('src'); picShow(false); });
   $('nlink').addEventListener('change', function () { $('nurl').hidden = this.value !== 'other'; if (!$('nurl').hidden) $('nurl').focus(); });
   $('nsend').addEventListener('click', function () {
     var title = $('ntitle').value.trim(), text = $('ntext').value.trim(), l = $('nlink').value, url = l;
@@ -965,15 +977,15 @@
         if (x && x.pic === 'photo' && !x.made) throw new Error('Choose the photo for the cover first');
         var drawn = x && x.made && (x.pic === 'photo' || x.pic === 'card' || x.pic === 'john');
         if (x && !drawn && (x.pic === 'card' || x.pic === 'john') && edited(x)) throw new Error('The picture with your words isn’t drawn yet: try again in a moment');
-        var upPic = drawn ? x.made : (!x || x.pic === 'mine') ? NPIC : null;
-        return upPic ? api('/members/admin', { op: 'pushpic', pic: upPic }).then(function (j) { if (!j.url) throw new Error(j.error || 'The picture didn’t go up'); pics.image = j.url; }) : null;
+        var upPic = drawn ? x.made : (!x || x.pic === 'mine') ? NPIC : null, upGif = !drawn && upPic === NPIC ? NGIF : null;
+        return upPic ? api('/members/admin', upGif ? { op: 'pushpic', pic: upPic, gif: upGif } : { op: 'pushpic', pic: upPic }).then(function (j) { if (!j.url) throw new Error(j.error || 'The picture didn’t go up'); pics.image = j.url; if (j.gif) pics.gif = j.gif; }) : null;
       }).then(function () { return api('/members/admin', Object.assign({ op: 'push', title: title, text: text, url: url, to: to }, pics)); }).then(function (j) {
         b.disabled = false;
         if (j.status !== 200) { toast(j.error || 'Couldn’t send it'); return; }
         if (j.failed && !j.sent) { ask('Notification', 'It didn’t go', whyText(j.errors) || 'The push service said no.', 'OK'); pushStat(); return; }
         var inb = j.inboxes ? 'In ' + j.inboxes + (j.inboxes === 1 ? ' inbox' : ' inboxes') : 'Sent';
         toast(inb + (j.sent ? ', and on ' + j.sent + (j.sent === 1 ? ' phone' : ' phones') : ' (no phones with notifications on)') + (j.failed ? '; ' + j.failed + ' refused it' : ''));
-        if (j.sent) { $('ntitle').value = ''; $('ntext').value = ''; if (NSONG) songClear(); NPIC = null; picShow(false); }
+        if (j.sent) { $('ntitle').value = ''; $('ntext').value = ''; if (NSONG) songClear(); NPIC = null; NGIF = null; picShow(false); }
         pushStat();
       }).catch(function (e) { b.disabled = false; toast((e && e.message) || 'Couldn’t reach the Worker'); });
     });

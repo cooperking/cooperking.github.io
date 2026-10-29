@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="1b3fc81d4374">
+<meta name="sotd-build" content="a7a13e80bf81">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -1506,7 +1506,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     <textarea id="sndb" maxlength="300" placeholder="Message (if you like)" aria-label="Message"></textarea>
     <figure class="snd-pic" id="sndpicf" hidden>
       <img id="sndpic" alt="Your picture">
-      <div class="row"><span class="snd-note">Your picture</span><button class="x2" id="sndpicx" type="button">Take off</button></div>
+      <div class="row"><span class="snd-note" id="sndpicn">Your picture</span><button class="x2" id="sndpicx" type="button">Take off</button></div>
     </figure>
     <div class="ac-acts" id="sndpicrow"><label class="ac-out" for="sndfile" id="sndpicadd">Add a picture…</label></div>
     <input type="file" id="sndfile" accept="image/*" hidden>
@@ -3637,7 +3637,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     document.getElementById('sndmlab').hidden = !g;   // (with a song, its picture's words above; these below)
     document.getElementById('sndpicrow').hidden = !!g;
     document.getElementById('sndpicf').hidden = !!g || !SND.pic;
-    if (SND.pic && !g) document.getElementById('sndpic').src = SND.pic;
+    if (SND.pic && !g) document.getElementById('sndpic').src = SND.gif || SND.pic;   // (a GIF moving here, as in their inbox)
+    document.getElementById('sndpicn').textContent = SND.gif ? 'Your GIF: it moves in their inbox (a notification shows it still)' : 'Your picture';
     document.getElementById('sndpicadd').textContent = SND.pic ? 'Another picture…' : a && a.image ? 'Your own picture…' : 'Add a picture…';
     if (!g) return;
     var box = document.getElementById('sndpics'); box.textContent = '';
@@ -3655,7 +3656,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     document.getElementById('sndwords').hidden = g.pic !== 'card' && g.pic !== 'john' && g.pic !== 'photo';
     document.getElementById('sndwreset').hidden = !sndEdited(g);
     var fig = document.getElementById('sndprevf'), im = document.getElementById('sndprev'), wait = document.getElementById('sndwait'), drawn = sndDrawn(g), src = '';
-    if (drawn) src = g.made; else if (g.pic === 'card') src = g.site; else if (g.pic === 'john') src = g.own.img; else if (g.pic === 'mine') src = SND.pic || '';
+    if (drawn) src = g.made; else if (g.pic === 'card') src = g.site; else if (g.pic === 'john') src = g.own.img; else if (g.pic === 'mine') src = SND.gif || SND.pic || '';
     fig.hidden = g.pic === 'none' || (g.pic === 'photo' && !SND.pic) || (g.pic === 'mine' && !SND.pic);
     fig.className = 'snd-prev ' + (g.pic === 'mine' ? 'photo' : 'card');
     wait.hidden = !(drawn && !g.made && g.drawP);
@@ -3665,8 +3666,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   document.getElementById('sndall').addEventListener('click', function () { SND.some = false; sendDraw(); });
   document.getElementById('sndsome').addEventListener('click', function () { SND.some = true; sendDraw(); });
   document.getElementById('sndcx').addEventListener('click', function () { SND.att = null; sendDraw(); });
-  document.getElementById('sndsongx').addEventListener('click', function () { SND.song = null; SND.att = null; SND.pic = null; sendDraw(); });
-  document.getElementById('sndpicx').addEventListener('click', function () { SND.pic = null; sendDraw(); });
+  document.getElementById('sndsongx').addEventListener('click', function () { SND.song = null; SND.att = null; SND.pic = null; SND.gif = null; sendDraw(); });
+  document.getElementById('sndpicx').addEventListener('click', function () { SND.pic = null; SND.gif = null; sendDraw(); });
   ['top', 'title', 'line', 'date'].forEach(function (k) {
     document.getElementById('sndw' + k).addEventListener('input', function () {
       var g = SND && SND.song; if (!g) return;
@@ -3682,15 +3683,23 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (sndDrawn(g)) sndDraw(); else { g.drawN++; g.made = ''; g.drawP = null; }
     sendDraw();
   });
+  // a GIF (29 Oct 2026, John: "Can gifs be sent through the messages?" "yes, in the inbox please"): sent up as it is too
+  // (5 MB at most), the picture in their inbox, where it moves; the notification has the still made here, as any picture
+  var GIF_MOST = 5 * 1024 * 1024;
+  function gifOf(f) {   // its data: URL, or null (not a GIF, or too big: said)
+    if (!f || !(/^image\/gif$/i.test(f.type || '') || /\.gif$/i.test(f.name || ''))) return Promise.resolve(null);
+    if (f.size > GIF_MOST) { toast('That GIF is over 5 MB, so it goes as a still picture'); return Promise.resolve(null); }
+    return new Promise(function (res) { var rd = new FileReader(); rd.onload = function () { res(/^data:image\/gif;base64,/.test(String(rd.result)) ? String(rd.result) : null); }; rd.onerror = function () { res(null); }; rd.readAsDataURL(f); });
+  }
   document.getElementById('sndfile').addEventListener('change', function () {
     var f = this.files && this.files[0]; this.value = '';
     if (!f) return;
     cardsJs().then(function (C) {
-      return C.fileImage(f, function () { toast('Turning the HEIC photo into a JPEG…'); }).then(function (img) {
-        var w = img.naturalWidth || img.width, h = img.naturalHeight || img.height, k = Math.min(1, 1200 / w, 1200 / h), c = document.createElement('canvas');
+      return Promise.all([C.fileImage(f, function () { toast('Turning the HEIC photo into a JPEG…'); }), gifOf(f)]).then(function (r) {
+        var img = r[0], w = img.naturalWidth || img.width, h = img.naturalHeight || img.height, k = Math.min(1, 1200 / w, 1200 / h), c = document.createElement('canvas');
         c.width = Math.round(w * k); c.height = Math.round(h * k);
         c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-        SND.pic = c.toDataURL('image/jpeg', 0.85);
+        SND.pic = c.toDataURL('image/jpeg', 0.85); SND.gif = r[1];
         var g = SND.song;
         if (g && g.pic === 'photo') sndDraw();
         sendDraw();
@@ -3701,8 +3710,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     return fetch(MBASE + path, { method: 'POST', headers: { Authorization: 'Bearer ' + plTok(), 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok && !j.error) j.error = 'The site said ' + r.status; return j; }); });
   }
-  function sendUp(data) {   // a picture made here, sent up first: its address
-    return sendPost('/members/sendpic', { pic: data }).then(function (j) { if (!j.url) throw new Error(j.error || 'The picture didn’t go up'); return j.url; });
+  function sendUp(data, gif) {   // a picture made here (and a GIF as it is), sent up first: { url, gif }
+    return sendPost('/members/sendpic', gif ? { pic: data, gif: gif } : { pic: data }).then(function (j) { if (!j.url) throw new Error(j.error || 'The picture didn’t go up'); return j; });
   }
   function sendClose() { if (sndDlg.open) closeDialog(sndDlg); }
   document.getElementById('sndclose').addEventListener('click', sendClose);
@@ -3726,13 +3735,13 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         if (sndDrawn(g)) {
           if (sndWordsT) { clearTimeout(sndWordsT); sndWordsT = null; sndDraw(); }
           if (!g.drawP) sndDraw();
-          pics = Promise.resolve(g.drawP).then(function () { if (!g.made) throw new Error('The picture isn’t drawn yet: try again in a moment'); return sendUp(g.made); }).then(function (u) { body.image = u; });
-        } else if (g.pic === 'mine') pics = sendUp(SND.pic).then(function (u) { body.image = u; });
+          pics = Promise.resolve(g.drawP).then(function () { if (!g.made) throw new Error('The picture isn’t drawn yet: try again in a moment'); return sendUp(g.made); }).then(function (u) { body.image = u.url; });
+        } else if (g.pic === 'mine') pics = sendUp(SND.pic, SND.gif).then(function (u) { body.image = u.url; if (u.gif) body.gif = u.gif; });
         else { if (g.pic === 'card') body.image = g.site; else if (g.pic === 'john') body.image = g.own.img; pics = Promise.resolve(); }
       } else {
         if (a && a.image) body.image = a.image;
         if (a && a.icon) body.icon = a.icon;
-        pics = SND.pic ? sendUp(SND.pic).then(function (u) { body.image = u; }) : Promise.resolve();
+        pics = SND.pic ? sendUp(SND.pic, SND.gif).then(function (u) { body.image = u.url; if (u.gif) body.gif = u.gif; }) : Promise.resolve();
       }
       pics.then(function () { return sendPost('/members/send', body); })
         .then(function (j) {

@@ -182,6 +182,13 @@ shows for members with someone to send to, or who have sent some. A message with
 calendar) tapped in the Inbox or Sent stays open (marked read); a day's opens that day on the page it's tapped on.
 Tests: `sent_t.mjs` (the Worker), `sent_page_t.py`, `inbox_link_t.py` (the draft).
 
+A GIF chosen as a message's picture (John's on the Members tab, a member's in Send; 29 Oct 2026, "yes, in the inbox
+please") goes up as it is with the still JPEG made on the page (`/members/sendpic` or op `pushpic` `{ pic, gif }`: R2
+`n/<id>.jpg` and `n/<id>.gif`, the GIF 5 MB at most and checked to be one; one picture for the day's count). The
+notification carries both (`image` the still, `gif` the GIF, only one of the Worker's own `n/*.gif`): the inbox and
+Sent show the GIF, moving; the notification itself shows the still (Android, computers) or no picture (iPhone). A GIF
+over 5 MB goes as the still. Tests: `gif_t.mjs` (the Worker), `gif_page_t.py` (the draft and the Members tab).
+
 ## Saved playlists
 
 A member can save My playlist (*Save this playlist* in it, with a name) and keep several. They're kept by the Worker
