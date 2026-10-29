@@ -136,7 +136,8 @@ that link, its card as the picture and the song's cover. To everyone else, or th
 gives the other members' names: `others`); a title, words and a picture of their own (made small on the page, sent up
 first: `/members/sendpic`, R2 `n/<id>.jpg`). `/members/send` checks it as John's are checked (`noteMsg`: a title, a link
 on the site, pictures from the site, Spotify or the Worker) and puts it into their inboxes and on their phones where
-notifications are on (`pushAll`), the notification's title "<name>: <title>", the inbox "From <name>". 20 a day each,
+notifications are on (`pushAll`), the notification's title "<name>: <title>", the inbox "From <name>". Everything but the daily song says who it's from (John, 29 Oct 2026): John's notes from the Members tab too, with
+the name of the member marked as him (*This is me*), else John. 20 a day each,
 and 20 pictures (KV `sent:<id>:<date>`, `sentpic:<id>:<date>`). The admin page's Status tab lists each: "a member's note to
 Ann and Dad · by Mum". Not on the TV. Tests: `send_t.mjs` (the Worker), `send_page_t.py` (the draft), `status_page_t.py`.
 

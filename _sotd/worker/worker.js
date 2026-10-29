@@ -920,7 +920,11 @@ async function members(request, url, env) {
       if (note.error) return answer(400, { error: note.error });
       const to = Array.isArray(body.to) ? body.to.map(String).filter(id => all[id]) : null;   // chosen members, or everyone
       if (to && !to.length) return answer(400, { error: 'Choose who it goes to.' });
-      const r = await pushAll(env, note.msg, to, { kind: 'note', via: { t: 'you' } });
+      // with his name on it, as members' are (John, 29 Oct 2026: everything says who it's from but the daily song): the
+      // member who is John (This is me), else John
+      const from = (owner && all[owner] && all[owner].name) || 'John', msg = note.msg;
+      Object.assign(msg, { subject: msg.title, title: from + ': ' + msg.title, from });
+      const r = await pushAll(env, msg, to, { kind: 'note', via: { t: 'you' } });
       return answer(200, r);
     }
     case 'pushpic': {   // a picture for a notification (and the inbox), made small on the members page: kept in R2 at n/<id>.jpg
@@ -2263,7 +2267,7 @@ function noteMsg(body) {
   return { msg };
 }
 // ---------- members' own notifications (John, 28 Oct 2026: "I'd like users to have the ability to send notifications to
-// other users of the app, just as I can"). From the calendar (Profile › Inbox › Send, or a song's Share › Send to
+// other users of the app, just as I can"). Everything but the daily song says who it's from, John's own too. From the calendar (Profile › Inbox › Send, or a song's Share › Send to
 // members): POST /members/send { title, text, url, image, icon, to: [member ids] | 'all' } goes into the chosen members'
 // inboxes, or every other member's, and to their phones where notifications are on, as John's do. Its notification
 // says who sent it ("<name>: <title>"); the inbox shows "From <name>". SEND_DAY a day each. The admin page's Status tab
@@ -2337,7 +2341,7 @@ async function pushAll(env, msg, to, meta) {   // to: only these members (else e
     gone.forEach(id => delete now[id]);
     await kvSoft(env, 'pushSubs', JSON.stringify(now));
   }
-  const res = { sent, gone: gone.length, failed, devices: ids.length - gone.length, errors: errors.slice(0, 5), at: Date.now(), title: msg.title,
+  const res = { sent, gone: gone.length, failed, devices: ids.length - gone.length, errors: errors.slice(0, 5), at: Date.now(), title: msg.subject || msg.title,
     inboxes: Object.keys(unread).filter(k => k).length };   // inboxes: the members it went into (notifications on or not)
   if (!meta || meta.kind !== 'member') await kvSoft(env, 'pushLastResult', JSON.stringify(res));   // the last send of John's, for the members page
   // and the last 40, for the admin page's Status tab: when each went, to how many, and how the push services took it
