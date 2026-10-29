@@ -56,6 +56,21 @@
 .inviter { padding: 16px; display: grid; gap: 10px; }
 .wrap > .card + .card { margin-top: 18px; }   /* (a gap between the invitation and the notifications) */
 .inviter .row input { flex: 1 1 180px; }
+.inviter.many .solo { display: none; }   /* (people from Contacts: their invitations in place of the one to type) */
+.drafts { display: grid; gap: 10px; }
+.drafts .dhead { justify-content: space-between; }
+.drafts .dall { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.drafts ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.draft { padding: 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--field); display: grid; gap: 8px; }
+.draft .who { font-family: var(--serif); font-weight: 500; font-size: 21px; line-height: 1.15; color: var(--fg); }
+.draft .or { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.draft .seefiles, .drafts .dall { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.draft .seefiles label, .drafts .dall label { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border: 1px solid var(--line); border-radius: 999px; background: var(--chip); font: 600 12px/1.2 var(--sans); letter-spacing: .04em; color: var(--muted); cursor: pointer; }
+.draft .seefiles label.on, .drafts .dall label.on { border-color: var(--ok); color: var(--ok); background: #fff; }
+.draft .seefiles input, .drafts .dall input { margin: 0; accent-color: var(--ok); }
+.draft .seen { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.draft .seen p { margin: 0; flex-basis: 100%; }
+.draft .err { color: var(--warn); }
 .link { display: grid; gap: 8px; padding: 12px; border-radius: 12px; background: var(--chip); border: 1px dashed var(--line); }
 .link code { font-size: 12.5px; overflow-wrap: anywhere; color: var(--fg); }
 .tvcode { font: 600 34px/1 ui-monospace, Menlo, monospace; letter-spacing: .14em; color: var(--fg); }
@@ -102,15 +117,20 @@
   </header>
   <div class="card inviter">
     <div class="kicker">Invite someone</div>
-    <div class="row">
+    <div class="row solo">
       <input class="name" id="newname" placeholder="Their name" autocomplete="off" aria-label="Their name">
       <input class="name" id="newmail" type="email" placeholder="Their email (for codes, and Google Play)" autocomplete="off" aria-label="Their email address">
     </div>
-    <div class="row fromc"><button class="btn small" id="fromc" type="button">From Contacts…</button><input type="file" id="vcf" accept=".vcf,text/vcard,text/x-vcard" hidden><span class="stat" id="fromcnote"></span></div>
+    <div class="row fromc"><button class="btn small" id="fromc" type="button">From Contacts…</button><input type="file" id="vcf" accept=".vcf,text/vcard,text/x-vcard" multiple hidden><span class="stat" id="fromcnote"></span></div>
     <div class="pickc" id="pickc" hidden><span class="stat" id="pickcq"></span><div class="row" id="pickcwho"></div></div>
-    <div class="seefiles" id="newsee"><span class="stat">Can see</span><label title="MP3s: your recordings"><input type="checkbox" id="newa">MP3s</label><label title="MP4s: your videos"><input type="checkbox" id="newv">MP4s</label></div>
-    <div class="seen" id="newseen"><span class="stat" id="newseent">Seen by every other member</span><button class="btn small" id="newseenx" type="button">Change</button><div class="seenwho" id="newseenwho" hidden></div><p class="stat" id="newseennote" hidden>Untick someone and the two are kept apart from the start: neither sees the other in their lists, nor can send to the other.</p></div>
-    <div class="row"><button class="btn primary" id="invite" type="button">Invite</button></div>
+    <div class="drafts" id="drafts" hidden>
+      <div class="row dhead"><span class="stat" id="draftsn"></span><span class="row"><button class="btn small primary" id="draftsgo" type="button">Invite all</button><button class="btn small" id="draftsx" type="button">Clear the list</button></span></div>
+      <div class="dall" id="dall"><span class="stat">Can see, for all of them</span><label title="MP3s: your recordings"><input type="checkbox" id="dalla">MP3s</label><label title="MP4s: your videos"><input type="checkbox" id="dallv">MP4s</label></div>
+      <ul id="draftlist"></ul>
+    </div>
+    <div class="seefiles solo" id="newsee"><span class="stat">Can see</span><label title="MP3s: your recordings"><input type="checkbox" id="newa">MP3s</label><label title="MP4s: your videos"><input type="checkbox" id="newv">MP4s</label></div>
+    <div class="seen solo" id="newseen"><span class="stat" id="newseent">Seen by every other member</span><button class="btn small" id="newseenx" type="button">Change</button><div class="seenwho" id="newseenwho" hidden></div><p class="stat" id="newseennote" hidden>Untick someone and the two are kept apart from the start: neither sees the other in their lists, nor can send to the other.</p></div>
+    <div class="row solo"><button class="btn primary" id="invite" type="button">Invite</button></div>
     <div class="link" id="newlink" hidden><code id="linktext"></code><div class="row"><button class="btn small" id="copy" type="button">Copy the link</button><button class="btn small primary" id="share" type="button">Send the invitation…</button></div></div>
     <div class="link" id="tvbox" hidden><span class="stat">For <b id="tvfor"></b>, once, within <span id="tvmins"></span> minutes:</span><span class="tvcode" id="tvcode"></span></div>
   </div>
@@ -271,7 +291,7 @@
       acts.appendChild(nl); acts.appendChild(tv); acts.appendChild(me); acts.appendChild(rm);
       li.appendChild(who); li.appendChild(st); if (m.apps && m.apps.length) li.appendChild(appsList(m)); li.appendChild(mailRow(m)); li.appendChild(seeRow(m)); if (!m.owner) li.appendChild(seenRow(m)); li.appendChild(acts); ul.appendChild(li);
     });
-    csvBox(); newSeeDraw();
+    csvBox(); newSeeDraw(); if (DRAFTS && DRAFTS.length) draftsDraw();
   }
   // their email address: codes by email go to it, and it's the one for Google Play's test list (the Google account on
   // their Android phone)
@@ -410,20 +430,21 @@
     toast(list.length === 1 ? '1 email downloaded' : list.length + ' emails downloaded');
   });
   function button(label, fn) { var b = document.createElement('button'); b.type = 'button'; b.className = 'btn small'; b.textContent = label; b.addEventListener('click', fn); return b; }
-  var invFor = '', INV;
+  var invFor = '', INV, LAST = null;   // LAST: the link under the Invite box (the one typed in, or a card's New link)
   function showLink(j) {
     if (!j.link) { toast(j.error || 'Couldn’t make a link'); return; }
     if (j.members) { MEMBERS = j.members; people(); }
     var m = (MEMBERS || []).filter(function (x) { return x.id === j.id; })[0];
-    invFor = m ? m.name : ''; INV.id = j.id;
+    LAST = { id: j.id, name: m ? m.name : '', link: j.link };
     $('linktext').textContent = j.link; $('newlink').hidden = false;
-    invOpen();
+    sendFor(LAST);
   }
+  function sendFor(o) { invFor = o.name; INV.id = o.id; INV.link = o.link; invOpen(); }   // the invitation's own card, to send
   // ---- the invitation: shared like a day's song. Its link opens a page on the Worker whose preview (WhatsApp,
   // iMessage...) is a card drawn here exactly as a day's card is drawn (_sotd/share_pages.py card()), with
   // "<name> is invited" as the song and John's chosen picture (or else the latest song's cover) as the cover; the
   // page sends them on to their invitation. Only the link is sent.
-  var PIC_KEY = 'sotd-invite-pic'; INV = { id: '', page: '', url: '', pic: '', busy: 0 };
+  var PIC_KEY = 'sotd-invite-pic'; INV = { id: '', link: '', page: '', url: '', pic: '', busy: 0 };
   var C = window.SOTDCards, loadImg = C.loadImg, londonNow = C.londonNow;
   function latestCover() {
     var s = SONGS.slice().sort(function (a, b) { return a.a < b.a ? 1 : -1; })[0];
@@ -443,7 +464,7 @@
       if (im && INV.pic) im = C.albumCover(im, { big: first || 'You', italic: first ? 'is invited' : 'are invited', left: 'An invitation', right: String(londonNow().getUTCFullYear()) });   // John's photo: an album cover
       var card = C.drawCard({ title: title, line: 'An invitation', cover: im });
       $('invimg').src = card;
-      return api('/members/admin', { op: 'invitecard', id: INV.id, link: $('linktext').textContent, title: title, card: card, page: INV.page }).then(function (j) {
+      return api('/members/admin', { op: 'invitecard', id: INV.id, link: INV.link, title: title, card: card, page: INV.page }).then(function (j) {
         if (mine !== INV.busy) return;
         if (!j.url) { toast(j.error || 'Couldn’t make the invitation’s page'); return; }
         INV.page = j.page; INV.url = j.url;
@@ -526,18 +547,20 @@
       showLink(j); newSeeDraw();
     });
   });
-  // ---- a new member's name and email from John's contacts (29 Oct 2026): Apple's contact picker in the iPhone app (its
-  // SotdContacts plugin, build 22 on: this page is inside the admin page, which has the app's Capacitor), Chrome's on
-  // Android (the Contact Picker API), or else a contact card (.vcf), chosen or dropped on the Invite box: Contacts on a
-  // Mac makes one when a person is dragged out of it, and Google Contacts exports them (Export › vCard). ----
+  // ---- new members' names and emails from John's contacts (29 Oct 2026): Apple's contact picker in the iPhone app (its
+  // SotdContacts plugin: this page is inside the admin page, which has the app's Capacitor; one person from build 22,
+  // several from 24), Chrome's on Android (the Contact Picker API, several at once), or else contact cards (.vcf), chosen
+  // or dropped on the Invite box: Contacts on a Mac makes one when people are dragged out of it, and Google Contacts
+  // exports them (Export › vCard). ----
   function natContacts() {
     try { var c = window.parent.Capacitor; return c && c.isNativePlatform && c.isNativePlatform() && c.Plugins && c.Plugins.SotdContacts ? c.Plugins.SotdContacts : null; } catch (e) { return null; }
   }
   var webContacts = !!(navigator.contacts && navigator.contacts.select);
   $('fromc').textContent = natContacts() || webContacts ? 'From Contacts…' : 'From a contact card…';
-  $('fromcnote').textContent = natContacts() || webContacts ? '' : 'A .vcf file, or drop one here: drag the person out of Contacts on a Mac; Google Contacts: Export › vCard.';
+  $('fromcnote').textContent = natContacts() || webContacts ? '' : 'A .vcf file, or drop one here: drag people out of Contacts on a Mac; in Google Contacts, tick them, then Export › vCard. Several people: an invitation for each, to check.';
+  function cleanMails(emails) { return (emails || []).map(function (e) { return String(e || '').trim().replace(/^mailto:/i, ''); }).filter(function (e, i, a) { return /@/.test(e) && a.map(function (x) { return x.toLowerCase(); }).indexOf(e.toLowerCase()) === i; }); }
   function fromPerson(name, emails) {   // into the Invite box; more than one address: which?
-    emails = (emails || []).map(function (e) { return String(e || '').trim(); }).filter(function (e, i, a) { return e && a.indexOf(e) === i; });
+    emails = cleanMails(emails);
     $('pickc').hidden = true;
     if (name) $('newname').value = name;
     $('newmail').value = emails.length === 1 ? emails[0] : '';
@@ -548,6 +571,137 @@
     $('pickcq').textContent = q; $('pickcwho').innerHTML = ''; $('pickc').hidden = false;
     opts.forEach(function (o) { $('pickcwho').appendChild(button(o.t, function () { $('pickc').hidden = true; o.go(); })); });
   }
+  // ---- several people at once (29 Oct 2026): an invitation for each, under the Invite box, to check and change before
+  // it's made: name, email (another of theirs a tap away), Can see and Seen by, as the Invite box has them. Each made
+  // on its own (Invite), or all in turn (Invite all), then each sent from its own card (Send the invitation…). One
+  // person, with no list showing: into the Invite box, as before. ----
+  var DRAFTS = [], DRAFT_N = 0, DRAFTS_MAX = 50;
+  function fromPeople(list) {
+    list = (list || []).map(function (c) { return { name: String((c && c.name) || '').replace(/\s+/g, ' ').trim(), emails: cleanMails(c && c.emails) }; })
+      .filter(function (c) { return c.name || c.emails.length; });
+    if (!list.length) return;
+    if (list.length === 1 && !DRAFTS.length) { fromPerson(list[0].name, list[0].emails); return; }
+    $('pickc').hidden = true;
+    var mine = {}, known = [], twice = 0, room = Math.max(0, DRAFTS_MAX - DRAFTS.filter(function (d) { return !d.link; }).length), over = 0;
+    (MEMBERS || []).forEach(function (m) { if (m.email) mine[m.email.toLowerCase()] = m.name; });
+    list.forEach(function (c) {
+      var at = c.emails.filter(function (e) { return mine[e.toLowerCase()]; })[0];
+      if (at) { known.push(mine[at.toLowerCase()]); return; }
+      if (DRAFTS.some(function (d) { return c.emails.length ? c.emails.indexOf(d.email) >= 0 || c.emails.some(function (e) { return d.emails.indexOf(e) >= 0; }) : d.name === c.name && !d.emails.length; })) { twice++; return; }
+      if (!room) { over++; return; }
+      room--;
+      DRAFTS.push({ n: ++DRAFT_N, name: c.name, email: c.emails[0] || '', emails: c.emails, see: { a: false, v: false }, apart: [], open: false, id: '', link: '', err: '', busy: false });
+    });
+    var said = [];
+    if (known.length) said.push((known.length === 1 ? 'Already a member: ' : 'Already members: ') + andList(known));
+    if (over) said.push(over + ' more than ' + DRAFTS_MAX + ' at a time left out');
+    if (twice) said.push(twice === 1 ? '1 already in the list' : twice + ' already in the list');
+    if (said.length) toast(said.join('. '));
+    draftsDraw();
+  }
+  function draftSee(d, k, on) { d.see[k] = on; }
+  function draftsDraw() {
+    var box = $('draftlist'), left = DRAFTS.filter(function (d) { return !d.link; });
+    $('drafts').hidden = !DRAFTS.length;
+    document.querySelector('.inviter').classList.toggle('many', !!DRAFTS.length);
+    if (!DRAFTS.length) { box.innerHTML = ''; return; }
+    var made = DRAFTS.length - left.length;
+    $('draftsn').textContent = !left.length ? (made === 1 ? 'Invited: send it from its card' : 'All ' + made + ' invited: send each from its card')
+      : left.length + (left.length === 1 ? ' invitation' : ' invitations') + ' to check' + (made ? ', ' + made + ' made' : '');
+    $('draftsgo').hidden = !left.length; $('draftsgo').textContent = left.length === 1 ? 'Invite' : 'Invite all ' + left.length;
+    $('draftsgo').classList.toggle('off', DRAFTS.some(function (d) { return d.busy; }));
+    $('draftsx').textContent = left.length ? 'Clear the list' : 'Done';
+    $('dall').hidden = left.length < 2;
+    ['a', 'v'].forEach(function (k) { var c = $('dall' + k); c.checked = left.length > 0 && left.every(function (d) { return d.see[k]; }); c.parentNode.className = c.checked ? 'on' : ''; });
+    var keep = {}; [].forEach.call(box.children, function (li) { keep[li.dataset.n] = li; });
+    box.innerHTML = '';
+    DRAFTS.forEach(function (d) { var li = keep[d.n] && keep[d.n].dataset.v === draftKey(d) ? keep[d.n] : draftRow(d); box.appendChild(li); });
+  }
+  function draftKey(d) { return [d.link ? 1 : 0, d.see.a, d.see.v, d.apart.join(','), d.open, d.err, d.busy, d.email, (MEMBERS || []).length].join('|'); }   // (redrawn only when it changed: typing isn't lost)
+  function draftRow(d) {
+    var li = document.createElement('li'); li.className = 'draft'; li.dataset.n = d.n; li.dataset.v = draftKey(d);
+    if (d.link) {
+      var w = document.createElement('div'); w.className = 'who'; w.textContent = d.name; li.appendChild(w);
+      var st = document.createElement('span'); st.className = 'stat good'; st.textContent = 'Invited' + (d.email ? ' · ' + d.email : ''); li.appendChild(st);
+      var r0 = document.createElement('div'); r0.className = 'row';
+      var sb = button('Send the invitation…', function () { sendFor({ id: d.id, name: d.name, link: d.link }); }); sb.classList.add('primary'); r0.appendChild(sb);
+      r0.appendChild(button('Copy the link', function () { navigator.clipboard.writeText(d.link).then(function () { toast('Link copied'); }, function () { toast(d.link); }); }));
+      li.appendChild(r0);
+      return li;
+    }
+    var r1 = document.createElement('div'); r1.className = 'row';
+    var nm = document.createElement('input'); nm.className = 'name'; nm.placeholder = 'Their name'; nm.autocomplete = 'off'; nm.setAttribute('aria-label', 'Their name'); nm.value = d.name;
+    nm.addEventListener('input', function () { d.name = nm.value; if (d.err) { d.err = ''; err.textContent = ''; } });
+    var em = document.createElement('input'); em.className = 'name'; em.type = 'email'; em.placeholder = 'Their email (for codes, and Google Play)'; em.autocomplete = 'off'; em.setAttribute('aria-label', 'Their email address'); em.value = d.email;
+    em.addEventListener('input', function () { d.email = em.value.trim(); if (d.err) { d.err = ''; err.textContent = ''; } });
+    r1.appendChild(nm); r1.appendChild(em); li.appendChild(r1);
+    var also = d.emails.filter(function (e) { return e !== d.email; });
+    if (also.length) {
+      var or = document.createElement('div'); or.className = 'or';
+      var ot = document.createElement('span'); ot.className = 'stat'; ot.textContent = d.email ? 'Or' : 'Their addresses'; or.appendChild(ot);
+      also.forEach(function (e) { var c = button(e, function () { d.email = e; draftsDraw(); }); c.className = 'chipb'; or.appendChild(c); });   // (an address as written, not in capitals)
+      li.appendChild(or);
+    }
+    var sf = document.createElement('div'); sf.className = 'seefiles';
+    var sl = document.createElement('span'); sl.className = 'stat'; sl.textContent = 'Can see'; sf.appendChild(sl);
+    [['a', 'MP3s', 'MP3s: your recordings'], ['v', 'MP4s', 'MP4s: your videos']].forEach(function (k) {
+      var l = document.createElement('label'), c = document.createElement('input'); c.type = 'checkbox'; c.checked = d.see[k[0]]; l.title = k[2]; l.className = c.checked ? 'on' : '';
+      c.addEventListener('change', function () { draftSee(d, k[0], c.checked); draftsDraw(); });
+      l.appendChild(c); l.appendChild(document.createTextNode(k[1])); sf.appendChild(l);
+    });
+    li.appendChild(sf);
+    var others = (MEMBERS || []).filter(function (x) { return !x.owner; });
+    d.apart = d.apart.filter(function (id) { return others.some(function (x) { return x.id === id; }); });
+    if (others.length) {
+      var sn = document.createElement('div'); sn.className = 'seen';
+      var off = others.filter(function (x) { return d.apart.indexOf(x.id) >= 0; }).map(function (x) { return x.name; });
+      var t = document.createElement('span'); t.className = 'stat';
+      t.textContent = 'Seen by ' + (!off.length ? 'every other member' : off.length === others.length ? 'no other member' : 'every other member but ' + andList(off));
+      sn.appendChild(t);
+      sn.appendChild(button(d.open ? 'Done' : 'Change', function () { d.open = !d.open; draftsDraw(); }));
+      if (d.open) {
+        var who = document.createElement('div'); who.className = 'seenwho';
+        others.forEach(function (x) {
+          var l = document.createElement('label'), c = document.createElement('input'); c.type = 'checkbox'; c.checked = d.apart.indexOf(x.id) < 0;
+          c.addEventListener('change', function () { d.apart = d.apart.filter(function (id) { return id !== x.id; }).concat(c.checked ? [] : [x.id]); draftsDraw(); });
+          l.appendChild(c); l.appendChild(document.createTextNode(x.name)); who.appendChild(l);
+        });
+        sn.appendChild(who);
+        var p = document.createElement('p'); p.className = 'stat'; p.textContent = 'Untick someone and the two are kept apart from the start: neither sees the other in their lists, nor can send to the other.'; sn.appendChild(p);
+      }
+      li.appendChild(sn);
+    }
+    var r2 = document.createElement('div'); r2.className = 'row';
+    var ib = button(d.busy ? 'Inviting…' : 'Invite', function () { draftInvite(d); }); ib.classList.add('primary'); if (d.busy) ib.classList.add('off'); r2.appendChild(ib);
+    r2.appendChild(button('Leave out', function () { DRAFTS = DRAFTS.filter(function (x) { return x !== d; }); draftsDraw(); }));
+    var err = document.createElement('span'); err.className = 'stat err'; err.textContent = d.err; r2.appendChild(err);
+    li.appendChild(r2);
+    return li;
+  }
+  function draftInvite(d) {   // its invitation made: true when it was
+    if (d.link || d.busy) return Promise.resolve(!!d.link);
+    d.name = d.name.replace(/\s+/g, ' ').trim();
+    if (!d.name) { d.err = 'Give their name'; draftsDraw(); var li = document.querySelector('#draftlist li[data-n="' + d.n + '"] input'); if (li) li.focus(); return Promise.resolve(false); }
+    d.busy = true; d.err = ''; draftsDraw();
+    return api('/members/admin', { op: 'invite', name: d.name, email: d.email, see: { a: d.see.a, v: d.see.v }, apart: d.apart.slice() }).then(function (j) {
+      d.busy = false;
+      if (!j.link) { d.err = j.error || 'Couldn’t make the invitation'; draftsDraw(); return false; }
+      d.id = j.id; d.link = j.link;
+      if (j.members) { MEMBERS = j.members; people(); newSeeDraw(); }
+      draftsDraw(); return true;
+    }, function () { d.busy = false; d.err = 'Couldn’t reach the Worker'; draftsDraw(); return false; });
+  }
+  $('draftsgo').addEventListener('click', function () {   // one after another (each invitation changes the members' list)
+    var list = DRAFTS.filter(function (d) { return !d.link; }), made = 0;
+    (function next(i) {
+      if (i >= list.length) { if (made) toast(made === 1 ? 'Invited: now send it from its card' : made + ' invited: now send each from its card'); return; }
+      draftInvite(list[i]).then(function (ok) { if (ok) { made++; next(i + 1); } else if (made) toast(made + ' invited; ' + (list[i].name || 'one') + ' wasn’t'); });
+    })(0);
+  });
+  $('draftsx').addEventListener('click', function () { DRAFTS = DRAFTS.filter(function (d) { return d.busy; }); draftsDraw(); });
+  ['a', 'v'].forEach(function (k) {
+    $('dall' + k).addEventListener('change', function () { var on = this.checked; DRAFTS.forEach(function (d) { if (!d.link) draftSee(d, k, on); }); draftsDraw(); });
+  });
   function vcards(text) {   // [{ name, emails }] from a contact card file (vCard 2.1, 3 or 4)
     var out = [], cur = null;
     String(text || '').replace(/\r\n?/g, '\n').replace(/\n[ \t]/g, '').split('\n').forEach(function (l) {
@@ -562,46 +716,48 @@
     });
     return out;
   }
-  function fromFile(f) {
-    if (!f) return;
-    if (!/\.vcf$/i.test(f.name || '') && !/vcard/i.test(f.type || '')) { toast('That isn’t a contact card (.vcf)'); return; }
-    f.text().then(function (t) {
-      var list = vcards(t).filter(function (c) { return c.name || c.emails.length; });
+  function fromFiles(files) {   // one or more contact card files: everyone in them
+    files = [].slice.call(files || []);
+    if (!files.length) return;
+    var cards = files.filter(function (f) { return /\.vcf$/i.test(f.name || '') || /vcard/i.test(f.type || ''); });
+    if (!cards.length) { toast(files.length === 1 ? 'That isn’t a contact card (.vcf)' : 'Those aren’t contact cards (.vcf)'); return; }
+    Promise.all(cards.map(function (f) { return f.text().then(vcards, function () { return null; }); })).then(function (all) {
+      if (all.every(function (x) { return x === null; })) { toast(cards.length === 1 ? 'That file couldn’t be read' : 'Those files couldn’t be read'); return; }
+      var list = [].concat.apply([], all.map(function (x) { return x || []; })).filter(function (c) { return c.name || c.emails.length; });
       if (!list.length) { toast('No one in that contact card'); return; }
-      if (list.length === 1) { fromPerson(list[0].name, list[0].emails); return; }
-      choose('Which person?', list.slice(0, 12).map(function (c) { return { t: c.name || c.emails[0], go: function () { fromPerson(c.name, c.emails); } }; }));
-    }, function () { toast('That file couldn’t be read'); });
+      fromPeople(list);
+    });
   }
   $('fromc').addEventListener('click', function () {
-    var nat = natContacts();
-    if (nat) {
-      nat.pick().then(function (r) { fromPerson(r && r.name, r && r.emails); }, function (e) { if (!/cancel/i.test(String(e && (e.message || e)))) toast('Contacts didn’t open: ' + ((e && e.message) || e)); });
+    var nat = natContacts(), quiet = function (e) { if (!/cancel/i.test(String(e && (e.message || e)))) toast('Contacts didn’t open: ' + ((e && e.message) || e)); };
+    if (nat) {   // Apple's picker: several at once from build 24 (pickMany), one at a time before
+      if (typeof nat.pickMany === 'function') nat.pickMany().then(function (r) { fromPeople(r && r.people); }, quiet);
+      else nat.pick().then(function (r) { fromPeople([{ name: r && r.name, emails: r && r.emails }]); }, quiet);
       return;
     }
     if (webContacts) {
-      navigator.contacts.select(['name', 'email'], { multiple: false }).then(function (list) {
-        var c = list && list[0]; if (!c) return;
-        fromPerson((c.name || [])[0] || '', c.email || []);
+      navigator.contacts.select(['name', 'email'], { multiple: true }).then(function (list) {
+        fromPeople((list || []).map(function (c) { return { name: (c.name || [])[0] || '', emails: c.email || [] }; }));
       }, function (e) { if (!e || e.name !== 'AbortError') toast('Contacts didn’t open: ' + ((e && e.message) || e)); });
       return;
     }
     $('vcf').click();
   });
-  $('vcf').addEventListener('change', function () { var f = this.files && this.files[0]; this.value = ''; fromFile(f); });
-  (function () {   // a contact card dropped on the Invite box
+  $('vcf').addEventListener('change', function () { var f = [].slice.call(this.files || []); this.value = ''; fromFiles(f); });
+  (function () {   // contact cards dropped on the Invite box
     var box = document.querySelector('.inviter'), n = 0;
     box.addEventListener('dragenter', function (e) { if (e.dataTransfer && [].indexOf.call(e.dataTransfer.types || [], 'Files') >= 0) { n++; box.classList.add('dropping'); e.preventDefault(); } });
     box.addEventListener('dragover', function (e) { if (box.classList.contains('dropping')) e.preventDefault(); });
     box.addEventListener('dragleave', function () { if (--n <= 0) { n = 0; box.classList.remove('dropping'); } });
     box.addEventListener('drop', function (e) {
       n = 0; box.classList.remove('dropping');
-      var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
-      if (!f) return;
-      e.preventDefault(); fromFile(f);
+      var f = e.dataTransfer && e.dataTransfer.files;
+      if (!f || !f.length) return;
+      e.preventDefault(); fromFiles(f);
     });
   })();
   $('copy').addEventListener('click', function () { navigator.clipboard.writeText($('linktext').textContent).then(function () { toast('Link copied'); }); });
-  $('share').addEventListener('click', invOpen);
+  $('share').addEventListener('click', function () { if (LAST) sendFor(LAST); });
 
   // ---- notifications: who has them on, and John's own message to all of them ----
   var PUSHON = {}, PICK = null;   // PICK: the chosen members' ids (null: everyone)

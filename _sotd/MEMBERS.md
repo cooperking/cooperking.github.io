@@ -103,11 +103,15 @@ MP3s and videos to whoever has the skill. Tests: `see_t.mjs` (the Worker), `prun
 
 ## A new member from John's contacts
 
-The Members tab's Invite box has *From Contacts…* (29 Oct 2026), which fills in the name and email: Apple's contact
-picker in the iPhone app (its own plugin, `SotdContacts`, build 22 on; the app sees only the person chosen), Chrome's
-Contact Picker on Android, and anywhere else *From a contact card…*: a .vcf file chosen or dropped on the Invite box
-(Contacts on a Mac makes one when a person is dragged out of it; Google Contacts: Export › vCard). More than one email:
-it asks which; more than one person in the card: it asks who. Tests: `contacts_t.py`.
+The Members tab's Invite box has *From Contacts…* (29 Oct 2026): Apple's contact picker in the iPhone app (its own
+plugin, `SotdContacts`: one person from build 22, several from build 24; the app sees only the people chosen), Chrome's
+Contact Picker on Android (several), and anywhere else *From a contact card…*: .vcf files chosen or dropped on the
+Invite box (Contacts on a Mac makes one when people are dragged out of it; Google Contacts: Export › vCard). One person
+fills in the Invite box's name and email (more than one email: it asks which). Several people (same day): an invitation
+for each under the Invite box, in place of its own fields, each with its name, email (their other addresses a tap
+away), Can see and Seen by to change; *Invite* makes one, *Invite all* makes them in turn (one at a time: each changes
+the members' list), and each is then sent from its own card. Anyone whose email is already a member's is left out (and
+named), as is anyone already in the list; at most 50 waiting at once. Tests: `contacts_t.py`, `contacts_many_t.py`.
 
 ## Email addresses, codes by email, and Google Play's testers
 
