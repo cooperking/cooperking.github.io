@@ -173,6 +173,15 @@ the name of the member marked as him (*This is me*), else John. 20 a day each,
 and 20 pictures (KV `sent:<id>:<date>`, `sentpic:<id>:<date>`). The admin page's Status tab lists each: "a member's note to
 Ann and Dad · by Mum". Not on the TV. Tests: `send_t.mjs` (the Worker), `send_page_t.py` (the draft), `status_page_t.py`.
 
+Each member sees their own sent notifications on their Profile's *Sent* tab (John, 29 Oct 2026; draft first): newest
+first, each with who they sent it to as they chose them ("To Dad and Ann", "To everyone"; not who took it) and when;
+tapped, it opens its link, as in the inbox. KV `outbox:<id>`, the newest 60, written by `/members/send` (and, for
+John's from the Members tab, into the member marked *This is me*); `GET /members/sent` gives them. None were kept before
+then, so the first read makes it from the Status tab's log (`pushLog`) and the inboxes the messages went into. The tab
+shows for members with someone to send to, or who have sent some. A message with no link of its own (just the
+calendar) tapped in the Inbox or Sent stays open (marked read); a day's opens that day on the page it's tapped on.
+Tests: `sent_t.mjs` (the Worker), `sent_page_t.py`, `inbox_link_t.py` (the draft).
+
 ## Saved playlists
 
 A member can save My playlist (*Save this playlist* in it, with a name) and keep several. They're kept by the Worker

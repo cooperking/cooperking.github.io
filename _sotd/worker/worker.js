@@ -828,6 +828,7 @@ async function members(request, url, env) {
   if (route === 'send') return memberSend(request, env, answer);
   if (route === 'sendpic') return memberSendPic(request, env, answer);
   if (route === 'prefs') return memberPrefs(request, env, answer);
+  if (route === 'sent') return memberSent(request, env, answer);
   if (!['admin', 'upload', 'cover'].includes(route)) return answer(404, { error: 'Not here.' });
   if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
   const no = await adminOk(request, env, answer);
@@ -933,6 +934,7 @@ async function members(request, url, env) {
       await env.SOTD.delete('mpl:' + body.id);   // their saved playlists go too
       await pushForget(env, body.id);   // and their notifications
       await env.SOTD.delete('inbox:' + body.id);
+      await env.SOTD.delete('outbox:' + body.id);   // (what they'd sent)
       await env.SOTD.delete('now:' + body.id);   // and what they were playing (and their iPhone widgets' addresses)
       if (env.NOW) await env.NOW.get(env.NOW.idFromName(body.id)).fetch('https://now/forget', { method: 'POST' }).catch(() => {});
       if (owner === body.id) await env.SOTD.delete('owner');
@@ -968,6 +970,7 @@ async function members(request, url, env) {
       const from = (owner && all[owner] && all[owner].name) || 'John', msg = note.msg;
       Object.assign(msg, { subject: msg.title, title: from + ': ' + msg.title, from });
       const r = await pushAll(env, msg, to, { kind: 'note', via: { t: 'you' } });
+      if (owner && all[owner]) await sentAdd(env, owner, msg, r, to ? to.map(k => all[k].name) : 'all');   // (his Profile › Sent)
       return answer(200, r);
     }
     case 'pushpic': {   // a picture for a notification (and the inbox), made small on the members page: kept in R2 at n/<id>.jpg
@@ -2368,6 +2371,8 @@ async function memberSend(request, env, answer) {
   const name = all[id].name, msg = note.msg;
   Object.assign(msg, { subject: msg.title, title: name + ': ' + msg.title, from: name, tag: 'sotd-from-' + id + '-' + Date.now() });
   const r = await pushAll(env, msg, to, { kind: 'member', via: { t: 'member', id, name }, toNames: everyone ? null : to.map(k => all[k].name) });
+  // their Profile › Sent: who they chose, as the calendar said when it went ("Sent to …"), not who took it
+  await sentAdd(env, id, msg, r, everyone ? 'all' : asked.filter(k => k !== id && all[k] && !apart(all, id, k)).map(k => all[k].name));
   return answer(200, { ok: true, inboxes: r.inboxes, sent: r.sent, devices: r.devices, left: SEND_DAY - n });
 }
 // POST /members/prefs { msgs: true | false, mute: [member ids] }: whether other members can send them notifications,
@@ -2424,7 +2429,7 @@ async function pushAll(env, msg, to, meta) {   // to: only these members (else e
     gone.forEach(id => delete now[id]);
     await kvSoft(env, 'pushSubs', JSON.stringify(now));
   }
-  const res = { sent, gone: gone.length, failed, devices: ids.length - gone.length, errors: errors.slice(0, 5), at: Date.now(), title: msg.subject || msg.title,
+  const res = { id: unread[''], sent, gone: gone.length, failed, devices: ids.length - gone.length, errors: errors.slice(0, 5), at: Date.now(), title: msg.subject || msg.title,
     inboxes: Object.keys(unread).filter(k => k).length };   // inboxes: the members it went into (notifications on or not)
   if (!meta || meta.kind !== 'member') await kvSoft(env, 'pushLastResult', JSON.stringify(res));   // the last send of John's, for the members page
   // and the last 40, for the admin page's Status tab: when each went, to how many, and how the push services took it
@@ -2490,6 +2495,50 @@ async function memberInbox(request, env, answer) {
     if (changed) { await env.SOTD.put(key, JSON.stringify(box)); await apnsBadge(env, member, box.filter(x => !x.r).length); }
   } else if (request.method !== 'GET') return answer(405, { error: 'Use GET or POST.' });
   return answer(200, { items: box, unread: box.filter(x => !x.r).length });
+}
+
+// ---------- each member's own sent notifications (John, 29 Oct 2026: "a sent message tab on a members profile, for them
+// to see only their sent notifications"): outbox:<member>, the newest 60, each as it went into the others' inboxes (its
+// id, words, link, pictures) with who it went to as they chose it (to: 'all' or their names then). John's from the
+// Members tab go into the member who is John (This is me). GET /members/sent gives them, for the calendar's Profile ›
+// Sent. None were kept before 29 Oct 2026, so the first time it's made from the Status tab's log (pushLog: which were
+// theirs, when, to whom) and the inboxes they went into (words and pictures; for John's to chosen people, whose
+// inboxes they're in). ----------
+const SENT_MAX = 60;
+async function sentList(env, member, keep = true) {   // keep: write what's made from the log (not when sentAdd writes next)
+  const have = await env.SOTD.get('outbox:' + member, 'json');
+  if (have) return have;
+  const owner = await env.SOTD.get('owner'), log = (await env.SOTD.get('pushLog', 'json')) || [];
+  const mine = log.filter(e => e.id && e.via && (e.via.t === 'member' ? e.via.id === member : e.via.t === 'you' && !!owner && owner === member));
+  const box = [];
+  if (mine.length) {
+    const all = (await env.SOTD.get('members', 'json')) || {}, want = new Set(mine.map(e => e.id)), got = {}, who = {};
+    for (const k of Object.keys(all)) {
+      for (const x of (await env.SOTD.get('inbox:' + k, 'json')) || []) if (want.has(x.id)) { got[x.id] = got[x.id] || x; (who[x.id] = who[x.id] || []).push(all[k].name); }
+    }
+    mine.forEach(e => {
+      const x = got[e.id] || {}, to = e.via.t === 'member' ? (Array.isArray(e.toNames) ? e.toNames : 'all') : e.to ? (who[e.id] || []) : 'all';
+      const it = { id: e.id, at: e.at, t: x.t || e.title || '', b: x.b || '', u: x.u || '', to };
+      if (x.i) it.i = x.i; if (x.c) it.c = x.c;
+      box.push(it);
+    });
+  }
+  if (keep) await kvSoft(env, 'outbox:' + member, JSON.stringify(box));   // (KV: one write a second to a key)
+  return box;
+}
+async function sentAdd(env, member, msg, r, to) {
+  if (!member || !r || !r.id) return;
+  const box = (await sentList(env, member, false)).filter(x => x.id !== r.id);   // (made from the log just now: it's there already)
+  const it = { id: r.id, at: r.at || Date.now(), t: msg.subject || msg.title, b: msg.body || '', u: msg.url || '', to };
+  if (msg.image) it.i = msg.image; if (msg.icon) it.c = msg.icon;
+  box.unshift(it); box.length = Math.min(box.length, SENT_MAX);
+  await kvSoft(env, 'outbox:' + member, JSON.stringify(box));
+}
+async function memberSent(request, env, answer) {
+  if (request.method !== 'GET') return answer(405, { error: 'Use GET.' });
+  const member = await memberFromToken(request, env);
+  if (!member) return answer(401, { error: 'Not a member (any more).' });
+  return answer(200, { items: await sentList(env, member) });
 }
 
 async function notePic(url, env) {   // a notification's picture: anyone with its (unguessable) address, as a phone fetches it unsigned
