@@ -1297,6 +1297,7 @@ async function memberJoin(request, env, answer) {
   const token = randomCode(32);
   if (tvKey) await env.SOTD.delete(tvKey); else m.invite.uses++;
   m.devices = m.devices || {};
+  if (!m.joined) m.joined = Date.now();   // (hasJoined)
   const th = await sha256hex(token), did = deviceId(body.device);
   m.devices[th] = Object.assign({ at: Date.now(), seen: Date.now() }, did ? { did } : {});
   deviceTidy(all, th, did);
@@ -1338,8 +1339,10 @@ async function memberMe(request, env, answer) {
   // the members they can send notifications to (others: not those kept apart from them, nor those not taking theirs;
   // John, everyone), and the members they can see, to choose whose they take (seen: not John, whose always come)
   const ownerId = await env.SOTD.get('owner'), byName = (a, b) => a.name.localeCompare(b.name);
-  const others = Object.keys(all).filter(k => k !== id && takesFrom(all, k, id, ownerId)).map(k => ({ id: k, name: all[k].name })).sort(byName);
-  const seen = Object.keys(all).filter(k => k !== id && k !== ownerId && !apart(all, id, k)).map(k => ({ id: k, name: all[k].name })).sort(byName);
+  // Only members who have joined (signed in at least once) in either (John, 29 Oct 2026: "Members who haven't accepted
+  // their invite shouldn't be visible in who you can send a message to"); a send to everyone still goes into theirs.
+  const others = Object.keys(all).filter(k => k !== id && hasJoined(all[k]) && takesFrom(all, k, id, ownerId)).map(k => ({ id: k, name: all[k].name })).sort(byName);
+  const seen = Object.keys(all).filter(k => k !== id && k !== ownerId && hasJoined(all[k]) && !apart(all, id, k)).map(k => ({ id: k, name: all[k].name })).sort(byName);
   return answer(200, Object.assign({ name: m.name, email: m.email || '', exp, media, see, mycovers, unread, others, seen, msgs: !m.nomsg,
     mute: (m.mute || []).filter(k => seen.some(x => x.id === k)) }, owner ? { owner: true } : {}));
 }
@@ -1595,6 +1598,7 @@ function passkeyList(m) { return (m.passkeys || []).map(p => ({ id: p.id, name: 
 async function newDevice(all, m, did) {   // this device signed in as the member: its token (only its hash is kept)
   const token = randomCode(32), th = await sha256hex(token);
   m.devices = m.devices || {};
+  if (!m.joined) m.joined = Date.now();   // (hasJoined)
   m.devices[th] = Object.assign({ at: Date.now(), seen: Date.now() }, did ? { did } : {});
   deviceTidy(all, th, did);
   return token;
@@ -2329,6 +2333,9 @@ const SEND_DAY = 20, SENDPIC_DAY = 20;
 // the other's lists and neither can send to the other. A member can turn other members' notifications off (nomsg), or
 // stop them from particular members (mute, their own list). John's (the member marked This is me) always reach
 // everyone and he sees everyone.
+// joined: signed in at least once (their invitation taken up): joined on their record from 29 Oct 2026, the time of their
+// first sign-in; before that, a device signed in, a passkey, or their invitation used
+function hasJoined(m) { return !!(m && (m.joined || Object.keys(m.devices || {}).length || (m.passkeys || []).length || (m.invite && m.invite.uses > 0))); }
 function apart(all, a, b) { return ((all[a] && all[a].apart) || []).includes(b) || ((all[b] && all[b].apart) || []).includes(a); }
 function takesFrom(all, to, from, ownerId) {   // whether member `to` takes a notification from member `from`
   if (!all[to] || to === from) return false;
