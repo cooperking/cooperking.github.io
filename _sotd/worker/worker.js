@@ -685,11 +685,18 @@ async function adminStatus(env) {
       : { st: 'bad', say: 'The live calendar isn’t what the template builds, and nothing has changed in the template since it last went live.', key: 'p:live' };
     if (site.key) mark(site, site.key);
     site.last = (waitingLive && waitingLive.last) || null;   // when it last went live
-    // Publish pressed: its run, until the draft is live (a failed run shows here, and under Jobs, and the button again)
+    // Publish pressed: its run, until the draft is live (a failed run shows here, and under Jobs, and the button again).
+    // Once that run has put the draft live, a change made since is a new one waiting: the press is history then, and
+    // Publish is offered again (29 Oct 2026: a change at 10:58 after the 10:54 Publish showed "Gone live" with the
+    // 10:54 job and no Publish button, for half an hour)
     if (golive && site.st === 'wait' && now - Date.parse(golive.at) < 30 * 60e3) {
       const run = runs.find(r => r.name === GOLIVE_RUN && Date.parse(r.at) >= Date.parse(golive.at) - 60e3) || null;
-      site.going = { at: golive.at, st: !run ? 'starting' : run.st !== 'completed' ? 'running' : run.res === 'success' ? 'done' : 'failed', url: run ? run.url : '' };
-      if (site.going.st !== 'failed') site.publish = false;
+      const st = !run ? 'starting' : run.st !== 'completed' ? 'running' : run.res === 'success' ? 'done' : 'failed';
+      const since = (site.list || []).some(c => Date.parse(c.at) > Date.parse(golive.at));
+      if (!(st === 'done' && since)) {
+        site.going = { at: golive.at, st, url: run ? run.url : '' };
+        if (st !== 'failed') site.publish = false;
+      }
     }
   }
   // the emails sent (codes to sign in, and tests) in the last two days; one that couldn't be sent is a problem
