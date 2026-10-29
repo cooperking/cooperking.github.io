@@ -3150,11 +3150,13 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     try { MS.metadata = new MediaMetadata({ title: s.title, artist: s.artist, album: s.album || 'John’s Song of the Day', artwork: art }); } catch (e) {}
   }
   if (MS) {
+    // (play, next and previous from the lock screen, headphones or a car: chosen on this device, as a tap is, so it's the
+    // one playing and the member's other device stops: nowGesture)
     var msAct = {
-      play: function () { var p = vplay && vplay.player; if (p) p.playVideo(); },
+      play: function () { nowGesture(); var p = vplay && vplay.player; if (p) p.playVideo(); },
       pause: function () { var p = vplay && vplay.player; if (p) p.pauseVideo(); },
-      nexttrack: function () { if (vplay) playOn(vplay.el); },
-      previoustrack: function () { if (stepTarget(-flip())) goDay(-flip()); }
+      nexttrack: function () { nowGesture(); if (vplay) playOn(vplay.el); },
+      previoustrack: function () { nowGesture(); if (stepTarget(-flip())) goDay(-flip()); }
     };
     Object.keys(msAct).forEach(function (k) { try { MS.setActionHandler(k, msAct[k]); } catch (e) {} });
   }
@@ -4439,7 +4441,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   function nowTaken(label) {   // carried on on another device: this one stops, and says where it's playing
     if (NOW.taken) return;
-    NOW.taken = true; NOW.key = ''; NOW.sent = null; NOW.okAt = 0;   // (a tap here to play again: noted, as new)
+    NOW.taken = true; NOW.takenAt = Date.now(); NOW.key = ''; NOW.sent = null; NOW.okAt = 0;   // (a tap here to play again: noted, as new)
     if (vplay && vplay.on) try { vidToggle(); } catch (e) {}
     resumeForget();   // (this device's own place: not offered over the other's)
     if (TV) layers().forEach(function (d) { closeDialog(d, true); });   // a TV: back to the calendar, the other's song in the bar
@@ -4451,8 +4453,11 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var key = st.t + '|' + st.playing, was = NOW.sent;
     var drift = was && was.playing && st.playing && was.t === st.t ? Math.abs(st.pos - (was.pos + (Date.now() - was.when) / 1000)) : 0;
     if (!force && key === NOW.key && drift < 10) return;
-    var start = st.playing && (NOW.claim || Date.now() - NOW.gesture < 30000);   // (a tap here began it, or carrying on here)
-    if (NOW.taken && !start) return;   // (stopped by another device carrying on: quiet until a tap here)
+    // a tap here began it, or carrying on here; or this device, stopped by another, playing again however it was started
+    // (John, 29 Oct 2026: "Playlist just started playing on two devices at once": a device stopped by another then
+    // played on, saying nothing, and both played): the newest to play is the one playing, and the other stops
+    var start = st.playing && (NOW.claim || Date.now() - NOW.gesture < 30000 || (NOW.taken && Date.now() - (NOW.takenAt || 0) > 5000));
+    if (NOW.taken && !start) return;   // (stopped by another device carrying on: quiet until it plays here again)
     if (start) { NOW.taken = false; NOW.claim = false; if (NOW.from) { resumeOff(); resumeForget(); } }
     NOW.key = key; NOW.sent = { t: st.t, pos: st.pos, playing: st.playing, when: Date.now() };
     if (start) st.start = true;
@@ -5659,6 +5664,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // today's song (then the days before), shuffled, or My playlist: from Siri in the iPhone app (SotdSiri), and from the
   // Android app's shortcuts (a long press on its icon), which open the calendar with ?do=today, shuffle or mine
   function doAction(a, iso) {   // today, shuffle, mine; all: Play all from a day (iso), on through the days before
+    nowGesture();   // (asked for on this device, as a tap: it's the one playing, the other device stops)
     var all = songs.slice().sort(function (x, y) { return y.n - x.n; }).map(function (x) { return x.track; });
     if (a === 'all' && iso && byDate[iso] && byDate[iso].length) startQueue(all, 'John\u2019s Song of the Day', 'all', Math.max(0, all.indexOf(byDate[iso][0].track)), false);
     else if (a === 'today' || a === 'all') startQueue(all, 'John\u2019s Song of the Day', 'all', 0, false);
