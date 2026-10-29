@@ -5875,15 +5875,18 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error('The site said ' + r.status + (j.error ? ': ' + j.error : '')); return j; });
     });
   }
+  // (on: just Turn off, no words; John, 29 Oct 2026: "Can we remove this message … On: you’ll hear about each new Song of
+  // the Day as it goes up, and the odd note from John.")
   function noteDraw() {
     var box = document.getElementById('acnote'), t = document.getElementById('acnotet'), b = document.getElementById('acnotego');
+    t.hidden = false;
     if (NPUSH) {   // the iPhone app
       box.hidden = !MEMBER || !MBASE;
       if (box.hidden) return;
       natPerm().then(function (p) {
         var on = p === 'granted' && !!natToken();
         if (p === 'denied') { t.textContent = 'Notifications are off for this app. Turn them on in Settings > Notifications > Song of the Day, then come back here.'; b.hidden = true; return; }
-        t.textContent = on ? 'On: you’ll hear about each new Song of the Day as it goes up, and the odd note from John.' : 'Hear about each new Song of the Day as it goes up, and the odd note from John.';
+        t.textContent = on ? '' : 'Hear about each new Song of the Day as it goes up, and the odd note from John.'; t.hidden = on;
         b.textContent = on ? 'Turn off' : 'Turn on'; b.hidden = false; b.disabled = false; b.dataset.on = on ? '1' : '';
        
       }).catch(function () { box.hidden = true; });
@@ -5897,8 +5900,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     noteKeyGet();
     noteReg().then(function (reg) { return reg.pushManager.getSubscription(); }).then(function (sub) {
       var on = !!sub && Notification.permission === 'granted';
-      t.textContent = on ? 'On: you’ll hear about each new Song of the Day as it goes up, and the odd note from John.'
-        : 'Hear about each new Song of the Day as it goes up, and the odd note from John.';
+      t.textContent = on ? '' : 'Hear about each new Song of the Day as it goes up, and the odd note from John.'; t.hidden = on;
       b.textContent = on ? 'Turn off' : 'Turn on'; b.hidden = false; b.disabled = false;
       b.dataset.on = on ? '1' : '';
      
