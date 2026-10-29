@@ -47,7 +47,7 @@ A member can keep John's recordings on a device and play them with no connection
 
 ## Invitations
 
-*Invite* (or *New link*) on the Members tab opens the invitation, shared like a day's song: only a link is sent, and
+*Add Member* (or *New link*) on the Members tab opens the invitation, shared like a day's song: only a link is sent, and
 its preview (WhatsApp, iMessage...) is a card drawn on the members page exactly as a day's card is drawn
 (`share_pages.py` card()), with "<first name> is invited" as the song, AN INVITATION as the artist, today's date, and
 as the cover the picture John chose, made into an album cover (the calendar's name across the top, "<name> is invited" at the foot; *Choose picture…*, kept on that device for next time) or else the latest song's.
@@ -107,15 +107,15 @@ The Members tab's Invite box has *From Contacts…* (29 Oct 2026): Apple's conta
 plugin, `SotdContacts`: one person from build 22, several from build 24; the app sees only the people chosen), Chrome's
 Contact Picker on Android (several), and anywhere else *From a contact card…*: .vcf files chosen or dropped on the
 Invite box (Contacts on a Mac makes one when people are dragged out of it; Google Contacts: Export › vCard). One person
-fills in the Invite box's name and email (more than one email: it asks which). Several people (same day): an invitation
+fills in the Invite box's name and email (more than one email: it asks which). Several people (same day): a card
 for each under the Invite box, in place of its own fields, each with its name, email (their other addresses a tap
-away), Can see and Seen by to change; *Invite* makes one, *Invite all* makes them in turn (one at a time: each changes
-the members' list), and each is then sent from its own card. Anyone whose email is already a member's is left out (and
+away), Can see and Seen by to change; *Add Member* adds one, *Add all* adds them in turn (one at a time: each changes
+the members' list), and each invitation is then sent from its own card (adding sends nothing). Anyone whose email is already a member's is left out (and
 named), as is anyone already in the list; at most 50 waiting at once. Tests: `contacts_t.py`, `contacts_many_t.py`.
 
 ## Email addresses, codes by email, and Google Play's testers
 
-John gives a member's email address on the Members tab (or with *Invite*); it's on their record (`email`, lower case,
+John gives a member's email address on the Members tab (or with *Add Member*); it's on their record (`email`, lower case,
 one member each). *Sign in* → their email address sends a 6-digit code to it from John's Google account
 (`/members/code`; the same answer for any address), typed in the next box (`/members/code/signin`): once, within 10
 minutes, 5 tries, 5 codes an address and 10 asks a place an hour; only its hash is kept (KV `mailcode:<id>`). The

@@ -124,13 +124,13 @@
     <div class="row fromc"><button class="btn small" id="fromc" type="button">From Contacts…</button><input type="file" id="vcf" accept=".vcf,text/vcard,text/x-vcard" multiple hidden><span class="stat" id="fromcnote"></span></div>
     <div class="pickc" id="pickc" hidden><span class="stat" id="pickcq"></span><div class="row" id="pickcwho"></div></div>
     <div class="drafts" id="drafts" hidden>
-      <div class="row dhead"><span class="stat" id="draftsn"></span><span class="row"><button class="btn small primary" id="draftsgo" type="button">Invite all</button><button class="btn small" id="draftsx" type="button">Clear the list</button></span></div>
+      <div class="row dhead"><span class="stat" id="draftsn"></span><span class="row"><button class="btn small primary" id="draftsgo" type="button">Add all</button><button class="btn small" id="draftsx" type="button">Clear the list</button></span></div>
       <div class="dall" id="dall"><span class="stat">Can see, for all of them</span><label title="MP3s: your recordings"><input type="checkbox" id="dalla">MP3s</label><label title="MP4s: your videos"><input type="checkbox" id="dallv">MP4s</label></div>
       <ul id="draftlist"></ul>
     </div>
     <div class="seefiles solo" id="newsee"><span class="stat">Can see</span><label title="MP3s: your recordings"><input type="checkbox" id="newa">MP3s</label><label title="MP4s: your videos"><input type="checkbox" id="newv">MP4s</label></div>
     <div class="seen solo" id="newseen"><span class="stat" id="newseent">Seen by every other member</span><button class="btn small" id="newseenx" type="button">Change</button><div class="seenwho" id="newseenwho" hidden></div><p class="stat" id="newseennote" hidden>Untick someone and the two are kept apart from the start: neither sees the other in their lists, nor can send to the other.</p></div>
-    <div class="row solo"><button class="btn primary" id="invite" type="button">Invite</button></div>
+    <div class="row solo"><button class="btn primary" id="invite" type="button">Add Member</button></div>
     <div class="link" id="newlink" hidden><code id="linktext"></code><div class="row"><button class="btn small" id="copy" type="button">Copy the link</button><button class="btn small primary" id="share" type="button">Send the invitation…</button></div></div>
     <div class="link" id="tvbox" hidden><span class="stat">For <b id="tvfor"></b>, once, within <span id="tvmins"></span> minutes:</span><span class="tvcode" id="tvcode"></span></div>
   </div>
@@ -557,7 +557,7 @@
   }
   var webContacts = !!(navigator.contacts && navigator.contacts.select);
   $('fromc').textContent = natContacts() || webContacts ? 'From Contacts…' : 'From a contact card…';
-  $('fromcnote').textContent = natContacts() || webContacts ? '' : 'A .vcf file, or drop one here: drag people out of Contacts on a Mac; in Google Contacts, tick them, then Export › vCard. Several people: an invitation for each, to check.';
+  $('fromcnote').textContent = natContacts() || webContacts ? '' : 'A .vcf file, or drop one here: drag people out of Contacts on a Mac; in Google Contacts, tick them, then Export › vCard. Several people: a card for each, to check.';
   function cleanMails(emails) { return (emails || []).map(function (e) { return String(e || '').trim().replace(/^mailto:/i, ''); }).filter(function (e, i, a) { return /@/.test(e) && a.map(function (x) { return x.toLowerCase(); }).indexOf(e.toLowerCase()) === i; }); }
   function fromPerson(name, emails) {   // into the Invite box; more than one address: which?
     emails = cleanMails(emails);
@@ -606,9 +606,9 @@
     document.querySelector('.inviter').classList.toggle('many', !!DRAFTS.length);
     if (!DRAFTS.length) { box.innerHTML = ''; return; }
     var made = DRAFTS.length - left.length;
-    $('draftsn').textContent = !left.length ? (made === 1 ? 'Invited: send it from its card' : 'All ' + made + ' invited: send each from its card')
-      : left.length + (left.length === 1 ? ' invitation' : ' invitations') + ' to check' + (made ? ', ' + made + ' made' : '');
-    $('draftsgo').hidden = !left.length; $('draftsgo').textContent = left.length === 1 ? 'Invite' : 'Invite all ' + left.length;
+    $('draftsn').textContent = !left.length ? (made === 1 ? 'Added: send the invitation from their card' : 'All ' + made + ' added: send each their invitation from their card')
+      : left.length + (left.length === 1 ? ' person' : ' people') + ' to check' + (made ? ', ' + made + ' added' : '');
+    $('draftsgo').hidden = !left.length; $('draftsgo').textContent = left.length === 1 ? 'Add Member' : 'Add all ' + left.length;
     $('draftsgo').classList.toggle('off', DRAFTS.some(function (d) { return d.busy; }));
     $('draftsx').textContent = left.length ? 'Clear the list' : 'Done';
     $('dall').hidden = left.length < 2;
@@ -622,7 +622,7 @@
     var li = document.createElement('li'); li.className = 'draft'; li.dataset.n = d.n; li.dataset.v = draftKey(d);
     if (d.link) {
       var w = document.createElement('div'); w.className = 'who'; w.textContent = d.name; li.appendChild(w);
-      var st = document.createElement('span'); st.className = 'stat good'; st.textContent = 'Invited' + (d.email ? ' · ' + d.email : ''); li.appendChild(st);
+      var st = document.createElement('span'); st.className = 'stat good'; st.textContent = 'Added' + (d.email ? ' · ' + d.email : ''); li.appendChild(st);
       var r0 = document.createElement('div'); r0.className = 'row';
       var sb = button('Send the invitation…', function () { sendFor({ id: d.id, name: d.name, link: d.link }); }); sb.classList.add('primary'); r0.appendChild(sb);
       r0.appendChild(button('Copy the link', function () { navigator.clipboard.writeText(d.link).then(function () { toast('Link copied'); }, function () { toast(d.link); }); }));
@@ -672,7 +672,7 @@
       li.appendChild(sn);
     }
     var r2 = document.createElement('div'); r2.className = 'row';
-    var ib = button(d.busy ? 'Inviting…' : 'Invite', function () { draftInvite(d); }); ib.classList.add('primary'); if (d.busy) ib.classList.add('off'); r2.appendChild(ib);
+    var ib = button(d.busy ? 'Adding…' : 'Add Member', function () { draftInvite(d); }); ib.classList.add('primary'); if (d.busy) ib.classList.add('off'); r2.appendChild(ib);
     r2.appendChild(button('Leave out', function () { DRAFTS = DRAFTS.filter(function (x) { return x !== d; }); draftsDraw(); }));
     var err = document.createElement('span'); err.className = 'stat err'; err.textContent = d.err; r2.appendChild(err);
     li.appendChild(r2);
@@ -685,7 +685,7 @@
     d.busy = true; d.err = ''; draftsDraw();
     return api('/members/admin', { op: 'invite', name: d.name, email: d.email, see: { a: d.see.a, v: d.see.v }, apart: d.apart.slice() }).then(function (j) {
       d.busy = false;
-      if (!j.link) { d.err = j.error || 'Couldn’t make the invitation'; draftsDraw(); return false; }
+      if (!j.link) { d.err = j.error || 'Couldn’t add them'; draftsDraw(); return false; }
       d.id = j.id; d.link = j.link;
       if (j.members) { MEMBERS = j.members; people(); newSeeDraw(); }
       draftsDraw(); return true;
@@ -694,8 +694,8 @@
   $('draftsgo').addEventListener('click', function () {   // one after another (each invitation changes the members' list)
     var list = DRAFTS.filter(function (d) { return !d.link; }), made = 0;
     (function next(i) {
-      if (i >= list.length) { if (made) toast(made === 1 ? 'Invited: now send it from its card' : made + ' invited: now send each from its card'); return; }
-      draftInvite(list[i]).then(function (ok) { if (ok) { made++; next(i + 1); } else if (made) toast(made + ' invited; ' + (list[i].name || 'one') + ' wasn’t'); });
+      if (i >= list.length) { if (made) toast(made === 1 ? 'Added: now send the invitation from their card' : made + ' added: now send each their invitation from their card'); return; }
+      draftInvite(list[i]).then(function (ok) { if (ok) { made++; next(i + 1); } else if (made) toast(made + ' added; ' + (list[i].name || 'one') + ' wasn’t'); });
     })(0);
   });
   $('draftsx').addEventListener('click', function () { DRAFTS = DRAFTS.filter(function (d) { return d.busy; }); draftsDraw(); });
