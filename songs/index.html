@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="sotd-build" content="c10ef1b36a1c">
+<meta name="sotd-build" content="659f75fbb0c6">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 262 so far">
 <meta name="theme-color" content="#ec135b">
@@ -331,6 +331,8 @@ html.big .heroacts .hsub { margin: 0 6px 0 0; }
 .ac-msgs .more { justify-self: start; }
 /* a member's own notification to other members (Profile › Inbox › Send a notification; Share › Members) */
 .ac-inbox .sendbtn { justify-self: start; margin-bottom: 6px; }
+.ac-from { display: grid; gap: 8px; margin-top: 8px; }
+.ac-from[hidden] { display: none; }
 .snd .snd-lab { margin: 0 0 -8px; font: 600 11px/1.2 var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
 .snd-to { display: grid; gap: 10px; justify-items: start; }
 .snd-who { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -1403,6 +1405,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       <div class="ac-dev" id="acmsg" hidden>
         <p class="ac-h">Notifications from other members</p>
         <p class="ac-none" id="acmsgt"></p>
+        <div class="ac-from" id="acmsgfrom" hidden><p class="ac-none">From these members (untick anyone whose you don’t want):</p><div class="snd-who" id="acmsgwho" role="group" aria-label="Members whose notifications you take"></div></div>
         <div class="ac-acts"><button class="copy ghost" id="acmsggo" type="button">Turn off</button></div>
       </div>
       <div class="ac-dev" id="acpk" hidden>
@@ -5438,18 +5441,36 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     document.getElementById('acmsgt').textContent = on ? 'Other members can send you notifications: into your inbox, and to your phone if notifications are on there.'
       : 'Off: other members can’t send you notifications. John’s still come, and each new song.';
     document.getElementById('acmsggo').textContent = on ? 'Turn off' : 'Turn on';
+    // whose they take: each member they can see, ticked unless they've stopped theirs (John's always come)
+    var from = document.getElementById('acmsgfrom'), who = document.getElementById('acmsgwho'), seen = MEMBER.seen || [], mute = MEMBER.mute || [];
+    from.hidden = !on || !seen.length; who.textContent = '';
+    if (from.hidden) return;
+    seen.forEach(function (o) {
+      var l = document.createElement('label'), c = document.createElement('input'); c.type = 'checkbox'; c.checked = mute.indexOf(o.id) < 0;
+      l.className = c.checked ? 'on' : '';
+      c.addEventListener('change', function () {
+        var want = (MEMBER.mute || []).filter(function (k) { return k !== o.id; }).concat(c.checked ? [] : [o.id]);
+        l.className = c.checked ? 'on' : '';
+        msgPrefs({ mute: want }).then(function (j) { toast(c.checked ? o.name + '’s notifications come to you again' : 'You won’t get ' + o.name + '’s notifications'); }, function () { c.checked = !c.checked; l.className = c.checked ? 'on' : ''; });
+      });
+      l.appendChild(c); l.appendChild(document.createTextNode(o.name)); who.appendChild(l);
+    });
   }
-  document.getElementById('acmsggo').addEventListener('click', function () {
-    var tok = plTok(); if (!tok || !MBASE || !MEMBER) return;
-    var want = MEMBER.msgs === false, b = this; b.disabled = true;
-    fetch(MBASE + '/members/prefs', { method: 'POST', headers: { Authorization: 'Bearer ' + tok, 'Content-Type': 'application/json' }, body: JSON.stringify({ msgs: want }) })
+  function msgPrefs(body) {   // saved; MEMBER as the Worker now has it
+    var tok = plTok(); if (!tok || !MBASE || !MEMBER) return Promise.reject();
+    return fetch(MBASE + '/members/prefs', { method: 'POST', headers: { Authorization: 'Bearer ' + tok, 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       .then(function (r) { return r.json().catch(function () { return {}; }); })
       .then(function (j) {
-        b.disabled = false;
-        if (!j.ok) { toast(j.error || 'Couldn’t change it just now. Try again.'); return; }
-        MEMBER.msgs = j.msgs; msgDraw();
-        toast(j.msgs ? 'Other members can send you notifications' : 'Other members can’t send you notifications now');
-      }).catch(function () { b.disabled = false; toast('Couldn’t reach the site. Try again.'); });
+        if (!j.ok) { toast(j.error || 'Couldn’t change it just now. Try again.'); throw new Error('not saved'); }
+        MEMBER.msgs = j.msgs; MEMBER.mute = j.mute || []; msgDraw(); return j;
+      }, function (e) { toast('Couldn’t reach the site. Try again.'); throw e; });
+  }
+  document.getElementById('acmsggo').addEventListener('click', function () {
+    if (!MEMBER) return;
+    var b = this; b.disabled = true;
+    msgPrefs({ msgs: MEMBER.msgs === false }).then(function (j) {
+      b.disabled = false; toast(j.msgs ? 'Other members can send you notifications' : 'Other members can’t send you notifications now');
+    }, function () { b.disabled = false; });
   });
   function mailDraw() {
     var box = document.getElementById('acmail');
