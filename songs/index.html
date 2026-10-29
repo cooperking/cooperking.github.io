@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="sotd-build" content="87f79f4d51f0">
+<meta name="sotd-build" content="c1aec02bdd83">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 262 so far">
 <meta name="theme-color" content="#ec135b">
@@ -328,6 +328,7 @@ html.big .heroacts .hsub { margin: 0 6px 0 0; }
 .ac-msgs .new .t { font-weight: 600; }
 .ac-msgs .b { font-size: 13.5px; line-height: 1.35; color: var(--fg); opacity: .85; }
 .ac-msgs .w { font-size: 11.5px; color: var(--muted); }
+.ac-msgs.sentl .open { padding-bottom: 10px; }   /* (Sent: no Mark read or Delete under each) */
 .ac-msgs .more { justify-self: start; }
 /* a member's own notification to other members (Profile › Inbox › Send a notification; Share › Members) */
 .ac-inbox .sendbtn { justify-self: start; margin-bottom: 6px; }
@@ -570,10 +571,11 @@ dialog#sharesheet::backdrop { background: rgba(24, 8, 24, .35); -webkit-backdrop
 .ac-dev { display: grid; gap: 8px; }
 /* the Profile's tabs (John, 28 Oct 2026: "can also their profile be tidied up into different tabs") */
 .ac-tabs { display: flex; width: 100%; min-width: 0; box-sizing: border-box; }   /* (min-width 0: the sheet stays its width on a phone) */
-.seg.ac-tabs button { flex: 1 1 0; min-width: 0; padding: 8px 2px; font-size: 11px; letter-spacing: .06em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.seg.ac-tabs button { flex: 1 1 auto; min-width: 0; padding: 8px 2px; font-size: 11px; letter-spacing: .06em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }   /* (each as wide as its name, the rest shared: five fit a phone, 29 Oct 2026) */
 .seg.ac-tabs button[hidden] { display: none; }
 .seg.ac-tabs .n { display: inline-block; min-width: 16px; margin-left: 5px; padding: 1px 4px; border-radius: 999px; background: #ec135b; color: #fff; font-size: 10px; letter-spacing: 0; line-height: 14px; vertical-align: 1px; }
-@media (max-width: 360px) { .seg.ac-tabs button { flex: 1 1 auto; padding: 8px 1px; font-size: 10px; letter-spacing: .02em; } }   /* (each as wide as its name) */
+@media (max-width: 400px) { .seg.ac-tabs button { padding: 8px 1px; font-size: 10px; letter-spacing: 0; } .seg.ac-tabs .n { margin-left: 3px; padding: 1px 3px; } }   /* (five tabs and "99+" new on a phone) */
+@media (max-width: 340px) { .seg.ac-tabs button { font-size: 9.5px; } }
 .ac-pane { display: grid; gap: 18px; align-content: start; }
 .ac-pane[hidden] { display: none; }
 .ac-app { display: grid; gap: 8px; padding: 14px; border-radius: 16px; background: var(--pill-bg); border: 1px solid var(--line); }
@@ -1373,6 +1375,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     </div>
     <div class="seg ac-tabs" id="actabs" role="tablist" aria-label="Profile">
       <button type="button" role="tab" id="actab-inbox" data-tab="inbox" aria-selected="true" aria-controls="acpane-inbox">Inbox<span class="n" id="actabn" hidden></span></button>
+      <button type="button" role="tab" id="actab-sent" data-tab="sent" aria-selected="false" aria-controls="acpane-sent">Sent</button>
       <button type="button" role="tab" id="actab-lists" data-tab="lists" aria-selected="false" aria-controls="acpane-lists">Playlists</button>
       <button type="button" role="tab" id="actab-signin" data-tab="signin" aria-selected="false" aria-controls="acpane-signin">Account</button>
       <button type="button" role="tab" id="actab-device" data-tab="device" aria-selected="false" aria-controls="acpane-device">Device</button>
@@ -1387,6 +1390,14 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         </div>
         <ul class="ac-msgs" id="acmsgs"></ul>
         <p class="ac-none" id="acinnone" hidden>Nothing yet. Each new Song of the Day, John’s notes and other members’ come here.</p>
+      </div>
+    </div>
+    <div class="ac-pane" id="acpane-sent" data-pane="sent" role="tabpanel" aria-labelledby="actab-sent" hidden>
+      <div class="ac-inbox" id="acsent" hidden>
+        <button class="copy ghost sendbtn" id="acsend2" type="button" hidden>Send a notification</button>
+        <div class="hd"><p class="ac-h">Sent</p></div>
+        <ul class="ac-msgs sentl" id="acsentl"></ul>
+        <p class="ac-none" id="acsentnone" hidden>Nothing sent yet. The notifications you send to other members come here, with who you sent each to.</p>
       </div>
     </div>
     <div class="ac-pane" id="acpane-lists" data-pane="lists" role="tabpanel" aria-labelledby="actab-lists" hidden>
@@ -3726,12 +3737,13 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         .then(function (j) {
           btn.disabled = false;
           if (!j.ok) { toast(j.error || 'Couldn’t send it'); return; }
-          sendClose();
+          sendClose(); if (SENT.items) sentCall().catch(function () {});   // (Profile › Sent)
           toast('Sent to ' + (names ? andList(names) : 'everyone') + (j.sent ? ' (on ' + j.sent + (j.sent === 1 ? ' phone' : ' phones') + ')' : '') + (j.left <= 3 ? '. ' + (j.left ? j.left + ' more today' : 'That’s all for today') : ''));
         }).catch(function (e) { btn.disabled = false; toast((e && e.message) || 'Couldn’t reach the site. Try again.'); });
     });
   });
   document.getElementById('acsend').addEventListener('click', function () { sendOpen(null); });
+  document.getElementById('acsend2').addEventListener('click', function () { sendOpen(null); });
   document.getElementById('shsend').addEventListener('click', function () {
     var o = shareNow; if (!o) return;
     closeShare();
@@ -5404,9 +5416,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     none.textContent = !PL.loaded ? 'Loading…' : 'None saved yet. Add songs with the heart, then open My playlist and tap Save.';
     acOut.classList.remove('armed'); acOut.textContent = 'Sign out';
     document.getElementById('accode').hidden = true; document.getElementById('acgetcode').textContent = 'Get a code';
-    appDraw(); noteDraw(); inboxDraw(); pkDraw(); mailDraw(); msgDraw(); acTabs();
+    appDraw(); noteDraw(); inboxDraw(); sentDraw(); pkDraw(); mailDraw(); msgDraw(); acTabs();
   }
-  // ---- the Profile's tabs: Inbox, Playlists, Account (email, other members' notifications, passkeys, another device; called Sign-in until 29 Oct 2026), Device (the app,
+  // ---- the Profile's tabs: Inbox, Sent (what they've sent other members), Playlists, Account (email, other members' notifications, passkeys, another device; called Sign-in until 29 Oct 2026), Device (the app,
   // notifications). A tab with nothing to show here (say Device on a computer with notifications blocked and no app
   // to get) isn't shown; the parts show and hide themselves, and the tabs follow. ----
   var AC_TAB = 'inbox';
@@ -5793,6 +5805,18 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (d < 1) return 'just now'; if (d < 60) return Math.round(d) + ' min ago'; if (d < 24 * 60) return Math.round(d / 60) + ' h ago';
     return new Date(t).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
   }
+  // a message's link, tapped (Inbox and Sent): a day here (the Profile closes and it opens), or another page; a message
+  // with no link of its own (it says just the calendar, as one sent without a link does) goes nowhere, and the Profile
+  // stays open (John, 29 Oct 2026: "a message in an inbox that isn't a link just immediately closes when you click on
+  // it, but it shouldn't")
+  function msgGo(u) {
+    if (!u) return;
+    var i = u.indexOf('#'), base = i < 0 ? u : u.slice(0, i), h = i < 0 ? '' : u.slice(i + 1);
+    var here = base === SITE || base === location.origin + location.pathname || base === location.href.split('#')[0];
+    if (here && !h) return;
+    if (here) { closeDialog(acct); location.hash = h; return; }
+    location.href = u;
+  }
   function inboxDraw() {
     var box = document.getElementById('acinbox'), ul = document.getElementById('acmsgs'), none = document.getElementById('acinnone');
     box.hidden = !MEMBER || !MBASE;
@@ -5836,7 +5860,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       acts.appendChild(tg); acts.appendChild(dl);
       b.addEventListener('click', function () {
         if (INBOX.sel) { if (INBOX.sel.has(x.id)) INBOX.sel.delete(x.id); else INBOX.sel.add(x.id); inboxDraw(); return; }   // selecting: ticked or not
-        var go = function () { if (x.u) { if (x.u.split('#')[0] === location.href.split('#')[0] || x.u.split('#')[0] === location.origin + location.pathname) { closeDialog(acct); location.hash = x.u.split('#')[1] || ''; } else location.href = x.u; } };
+        var go = function () { msgGo(x.u); };
         if (x.r) { go(); return; }
         x.r = Date.now(); unreadSet(INBOX.unread - 1); inboxDraw();
         inboxCall({ read: [x.id] }).catch(function () {}).then(go);
@@ -5847,6 +5871,46 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (!sel && items.length > INBOX.shown) {
       var li = document.createElement('li'), m = document.createElement('button'); li.className = 'plain'; m.type = 'button'; m.className = 'copy ghost more'; m.textContent = 'Show older';
       m.addEventListener('click', function () { INBOX.shown += 20; inboxDraw(); });
+      li.appendChild(m); ul.appendChild(li);
+    }
+  }
+  // ---- Profile › Sent (29 Oct 2026, John: "a sent message tab on a members profile, for them to see only their sent
+  // notifications"): what they've sent other members, newest first, each with who they sent it to (as they chose them)
+  // and when; tapped, it opens what it links to, as in the inbox. From the Worker (/members/sent); shown to members who
+  // can send (other members to send to), or who have sent some. John's from the Members tab are on his. ----
+  var SENT = { items: null, shown: 8 };
+  function sentCall() {
+    var tok = plTok(); if (!tok || !MBASE || TV) return Promise.reject();
+    return fetch(MBASE + '/members/sent', { headers: { Authorization: 'Bearer ' + tok }, cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function (j) { SENT.items = j.items || []; if (acct.open) { sentDraw(); acTabs(); } return j; });
+  }
+  function sentTo(to) {
+    if (!Array.isArray(to)) return 'To everyone';
+    if (!to.length) return 'To no one';
+    return 'To ' + (to.length > 4 ? to.slice(0, 3).join(', ') + ' and ' + (to.length - 3) + ' others' : andList(to));
+  }
+  function sentDraw() {
+    var box = document.getElementById('acsent'), ul = document.getElementById('acsentl'), none = document.getElementById('acsentnone'), items = SENT ? SENT.items : null;
+    box.hidden = !MEMBER || !MBASE || TV || !(sendCan() || (items && items.length));
+    if (box.hidden) return;
+    document.getElementById('acsend2').hidden = !sendCan();
+    ul.textContent = '';
+    none.hidden = !(items && !items.length);
+    if (!items) { var w = document.createElement('li'); w.className = 'ac-none plain'; w.textContent = 'Loading…'; ul.appendChild(w); return; }
+    items.slice(0, SENT.shown).forEach(function (x) {
+      var li = document.createElement('li'), b = document.createElement('button'); b.type = 'button'; b.className = 'open';
+      b.innerHTML = '<span class="dot"></span><span class="t"></span>' + (x.b ? '<span class="b"></span>' : '') + '<span class="w"></span>';
+      b.querySelector('.t').textContent = x.t; if (x.b) b.querySelector('.b').textContent = x.b;
+      b.querySelector('.w').textContent = sentTo(x.to) + ' · ' + ago(x.at);
+      b.setAttribute('aria-label', x.t + (x.b ? '. ' + x.b : '') + '. ' + sentTo(x.to) + ', ' + ago(x.at));
+      if (x.i) { var pi = document.createElement('img'); pi.className = 'pic'; pi.alt = ''; pi.loading = 'lazy'; pi.src = x.i; pi.onerror = function () { pi.remove(); }; b.appendChild(pi); }
+      else if (x.c) { var cv = document.createElement('img'); cv.className = 'cv'; cv.alt = ''; cv.loading = 'lazy'; cv.src = x.c; cv.onerror = function () { cv.remove(); }; b.appendChild(cv); }
+      b.addEventListener('click', function () { msgGo(x.u); });
+      li.appendChild(b); ul.appendChild(li);
+    });
+    if (items.length > SENT.shown) {
+      var li = document.createElement('li'), m = document.createElement('button'); li.className = 'plain'; m.type = 'button'; m.className = 'copy ghost more'; m.textContent = 'Show older';
+      m.addEventListener('click', function () { SENT.shown += 20; sentDraw(); });
       li.appendChild(m); ul.appendChild(li);
     }
   }
@@ -6251,6 +6315,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function acctOpen() {
     if (INBOX.unread) AC_TAB = 'inbox';   // (something new: the Inbox first; else the tab they had)
     INBOX.shown = 8; INBOX.sel = null; inboxCall().catch(function () {});
+    SENT.shown = 8; sentCall().catch(function () {});
     acctDraw(); openLayer(acct); appDraw(); pkLoad();   // (again, open: the code goes into the address only while it's open)
     if (MEMBER && !PL.loaded) plLoad();
   }
