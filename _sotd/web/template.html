@@ -5112,7 +5112,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     });
     caches.open(DLC).then(function (c) { return c.keys(); }).then(function (keys) {
       keys.forEach(function (k) { var m = /__offline\/([0-9A-Za-z]{22})\.(mp3|mp4)$/.exec(k.url); if (m) (m[2] === 'mp3' ? OFFL : OFFV)[m[1]] = true; });
-      vidsMerge(); dlRefresh();
+      vidsMerge(); dlRefresh(); dlPrune(MEMBER && MEMBER.see);
     }).catch(function () {});
   }
   function canDl(s) { return !!(window.caches && SWOK && (ownSong(s) || ownVidSrc(s) || OFFL[s.track] || OFFV[s.track])); }
@@ -5146,6 +5146,15 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       .then(function () { delete OFFL[t]; delete OFFV[t]; vidsMerge(); dlRefresh(); });
   }
   function dlClear() { if (window.caches) caches.delete(DLC).catch(function () {}); OFFL = {}; OFFV = {}; vidsMerge(); dlRefresh(); }
+  // John has taken their MP3s or MP4s away (the Members tab: /members/me says so, see): those downloads go from this
+  // device too. Only on the Worker's word (see.a or see.v false), never because a link is missing.
+  function dlPrune(see) {
+    if (!see || !window.caches) return;
+    var ta = see.a === false ? Object.keys(OFFL) : [], tv = see.v === false ? Object.keys(OFFV) : [];
+    if (!ta.length && !tv.length) return;
+    caches.open(DLC).then(function (c) { return Promise.all(ta.map(function (t) { return c.delete(offUrl(t)); }).concat(tv.map(function (t) { return c.delete(offVUrl(t)); }))); })
+      .then(function () { ta.forEach(function (t) { delete OFFL[t]; }); tv.forEach(function (t) { delete OFFV[t]; }); vidsMerge(); dlRefresh(); }).catch(function () {});
+  }
   function dlMany(list, what) {   // a month or My playlist: the days with John's recordings or videos, one after another
     var todo = list.filter(function (s) { return s && (ownSong(s) || ownVidSrc(s)) && !dlDone(s); }), i = 0, got = 0;
     if (!todo.length) { toast(list.some(function (s) { return s && (OFFL[s.track] || OFFV[s.track]); }) ? 'Already downloaded' : 'Nothing to download yet'); return; }
@@ -6426,7 +6435,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       return r.ok ? r.json() : null;
     }).then(function (j) {
       if (!j) return;
-      MEMBER = j; memberApply(); famSync(); resumeInit(); nowFetch(); nowLine(); noteSync(); noteOffer();
+      MEMBER = j; dlPrune(j.see); memberApply(); famSync(); resumeInit(); nowFetch(); nowLine(); noteSync(); noteOffer();
       if (!TV) { unreadSet(j.unread); readTapped(); }
       if (appAfterJoin) { appAfterJoin = false; if (appCan()) setTimeout(appOffer, 600); }
       pkOffer();
