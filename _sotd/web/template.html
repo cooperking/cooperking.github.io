@@ -330,6 +330,22 @@ html.big .heroacts .hsub { margin: 0 6px 0 0; }
 .snd-card img { width: 96px; height: auto; aspect-ratio: 1200 / 630; object-fit: cover; display: block; border-radius: 6px; background: var(--tile); }
 .snd-pic img { width: 100%; height: auto; max-height: 240px; object-fit: contain; display: block; border-radius: 8px; background: var(--tile); }
 @media (max-width: 360px) { .snd-card { grid-template-columns: 72px minmax(0, 1fr); gap: 10px; } .snd-card img { width: 72px; } }
+/* a song attached: the picture that goes with it (the site's card, John's, one drawn here with other words or a photo
+   as the cover, or a photo as it is), the choices, and the words on it */
+.snd-song { display: grid; gap: 10px; justify-items: stretch; }
+.snd-song[hidden], .snd-words[hidden], #sndmlab[hidden], .snd-prev[hidden], .snd-wait[hidden], .snd-song .x2[hidden], #sndpicrow[hidden] { display: none; }
+.snd-prev { margin: 0; position: relative; min-height: 60px; border-radius: 10px; overflow: hidden; background: var(--tile); }
+.snd-prev img { width: 100%; height: auto; display: block; }
+.snd-prev.card img { aspect-ratio: 1200 / 630; object-fit: cover; }
+.snd-prev.photo img { max-height: 260px; object-fit: contain; }
+.snd-wait { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(243, 238, 240, .85); font: 600 11px/1.2 var(--sans); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.snd-opts { display: flex; flex-wrap: wrap; gap: 6px; }
+.snd-opts button { padding: 7px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--pill-bg); font: 500 13px/1.2 var(--sans); color: var(--fg); cursor: pointer; }
+.snd-opts button[aria-pressed="true"] { background: var(--fg); border-color: var(--fg); color: #fffaf5; }
+.snd-words { display: grid; gap: 8px; justify-items: stretch; }
+.snd-words .x2 { justify-self: start; }
+.snd-song > .x2 { justify-self: start; }
+.snd .nameinput.sm { padding: 9px 12px; font-size: 16px; }
 .snd-pic .row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .snd-card .ct { font: 500 16px/1.2 var(--serif); color: var(--fg); min-width: 0; overflow-wrap: anywhere; }
 .snd-card .ct span { display: block; font: 12.5px/1.3 var(--sans); color: var(--muted); margin-top: 2px; }
@@ -1427,13 +1443,28 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       <img id="sndcimg" alt="" width="1200" height="630">
       <span class="cw"><span class="ct" id="sndct"></span><button class="x2" id="sndcx" type="button">Take off</button></span>
     </figure>
+    <div class="snd-song" id="sndsong" hidden>
+      <figure class="snd-prev" id="sndprevf"><img id="sndprev" alt="The picture that goes with it"><span class="snd-wait" id="sndwait" hidden>Drawing the picture…</span></figure>
+      <div class="snd-opts" id="sndpics" role="group" aria-label="Picture"></div>
+      <div class="snd-words" id="sndwords" hidden>
+        <p class="snd-lab">Words on the picture</p>
+        <input class="nameinput sm" id="sndwtop" maxlength="40" autocomplete="off" placeholder="Top line (empty: none)" aria-label="Top line">
+        <input class="nameinput sm" id="sndwtitle" maxlength="90" autocomplete="off" placeholder="Title (empty: the song’s)" aria-label="Title on the picture">
+        <input class="nameinput sm" id="sndwline" maxlength="80" autocomplete="off" placeholder="Second line (empty: none)" aria-label="Second line">
+        <input class="nameinput sm" id="sndwdate" maxlength="60" autocomplete="off" placeholder="Date line (empty: none)" aria-label="Date line">
+        <button class="x2" id="sndwreset" type="button" hidden>Back to the song’s words</button>
+      </div>
+      <button class="x2" id="sndsongx" type="button">Take the song off</button>
+    </div>
+    <p class="snd-lab" id="sndmlab" hidden>The notification’s own title and words</p>
     <input class="nameinput" id="sndt" type="text" maxlength="80" placeholder="Title" aria-label="Title" autocomplete="off">
     <textarea id="sndb" maxlength="300" placeholder="Message (if you like)" aria-label="Message"></textarea>
     <figure class="snd-pic" id="sndpicf" hidden>
       <img id="sndpic" alt="Your picture">
       <div class="row"><span class="snd-note">Your picture</span><button class="x2" id="sndpicx" type="button">Take off</button></div>
     </figure>
-    <div class="ac-acts"><label class="ac-out" for="sndfile" id="sndpicadd">Add a picture…</label><input type="file" id="sndfile" accept="image/*" hidden></div>
+    <div class="ac-acts" id="sndpicrow"><label class="ac-out" for="sndfile" id="sndpicadd">Add a picture…</label></div>
+    <input type="file" id="sndfile" accept="image/*" hidden>
     <p class="snd-note" id="sndnote">It goes into their inbox, and to their phone if notifications are on there.</p>
     <div class="ask-acts"><button class="copy" id="sndok" type="submit">Send</button><button class="ac-out" id="sndno" type="button">Cancel</button></div>
   </form>
@@ -3380,7 +3411,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     o.urlFor = function (m) { return o.pic === 'own' ? MBASE + '/s/' + ownPath(s, oc) + (m ? '?play=' + m : '') : dayLink(slug, m); };
     o.imageFor = function () { return o.pic === 'own' ? MBASE + '/s/' + ownPath(s, oc) + '.jpg?v=' + encodeURIComponent(oc.share) : SITE + slug + '/card.jpg'; };
     o.url = o.urlFor(mode); o.image = o.imageFor();
-    o.icon = s.u || ''; o.sendText = s.artist + ' \u00b7 John\u2019s Song of the Day, ' + longDate(iso);   // (sent to members: the cover beside it, and these words)
+    o.icon = s.u || ''; o.sendText = s.artist + ' \u00b7 John\u2019s Song of the Day, ' + longDate(iso); o.sendSong = { iso: iso, s: s };   // (sent to members: the cover beside it, these words, and the song for its picture)
     openShare(o);
   }
 
@@ -3470,19 +3501,76 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // a song's, a month's or the calendar's Share › Members (that link, its card as the picture and the song's cover).
   // Everyone else, or the members chosen (/members/me gives their names: others); a title, words and a picture of
   // their own (made small here, 1200px at most, sent up first: /members/sendpic). /members/send puts it into their
-  // inboxes and on their phones where notifications are on, with this member's name on it. Not on the TV. ----
-  var sndDlg = document.getElementById('senddlg'), SND = null;
+  // inboxes and on their phones where notifications are on, with this member's name on it. Not on the TV.
+  // A song sent is as John sends one from the Members tab (John, 29 Oct 2026: "It should be possible to add a photo as
+  // an album cover and change the words too - as I can"): its picture the site's card (the album cover), John's own
+  // where he has given the day one, a photo of theirs made into the album cover on the song's card, a photo as it is,
+  // or none; and the words on the card (top line, title, second line, date) theirs to change. A card with other words,
+  // or with their photo, is drawn here as the admin page draws it (songs/admin-cards.js, fetched only then). ----
+  var sndDlg = document.getElementById('senddlg'), SND = null, SND_TOP = 'JOHN’S SONG OF THE DAY', sndWordsT = null;
   function sendCan() { return !TV && !!MEMBER && !!MBASE && !!(MEMBER.others && MEMBER.others.length); }
   function andList(a) { return a.length > 1 ? a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1] : a[0] || ''; }
+  var cardsLib = null;
+  function cardsJs() {   // the admin page's card drawing (window.SOTDCards), fetched the first time it's wanted
+    if (!cardsLib) cardsLib = new Promise(function (res, rej) {
+      if (window.SOTDCards) return res(window.SOTDCards);
+      var sc = document.createElement('script'); sc.src = '/songs/admin-cards.js';
+      sc.onload = function () { if (window.SOTDCards) res(window.SOTDCards); else rej(new Error('the drawing didn’t load')); };
+      sc.onerror = function () { cardsLib = null; rej(new Error('the drawing couldn’t be fetched')); };
+      document.head.appendChild(sc);
+    });
+    return cardsLib;
+  }
   function sendOpen(pre) {
     if (!sendCan()) return;
-    SND = { some: false, pick: [], att: pre && pre.url ? pre : null, pic: null };
+    SND = { some: false, pick: [], att: pre && pre.url ? pre : null, pic: null, song: null };
+    if (pre && pre.song) {
+      var sg = pre.song.s, iso = pre.song.iso, oc = ownCover(sg), slug = slugOf(iso);
+      SND.song = { iso: iso, n: sg.n, title: cleanTitle(sg.title), artist: sg.artist, cover: sg.u || '', site: SITE + slug + '/card.jpg', drawN: 0, made: '', drawP: null,
+        own: oc && oc.at && MBASE ? { img: oc.share ? MBASE + '/s/' + ownPath(sg, oc) + '.jpg?v=' + encodeURIComponent(oc.share) : MBASE + '/c/' + ownPath(sg, oc) + '?v=' + encodeURIComponent(oc.at),
+          icon: MBASE + '/c/' + ownPath(sg, oc) + '?v=' + encodeURIComponent(oc.at) } : null };
+      SND.song.pic = pre.song.own && SND.song.own ? 'john' : 'card';
+      SND.song.words = sndWordsDefault(SND.song); sndWordsFill();
+    }
     var fr = document.getElementById('sndfrom'); fr.textContent = 'From ';   // (who they'll see it's from: the notification says "<name>: <title>", the inbox "From <name>")
     var nb = document.createElement('b'); nb.textContent = MEMBER.name || 'you'; fr.appendChild(nb);
     document.getElementById('sndt').value = (pre && pre.title) || '';
     document.getElementById('sndb').value = (pre && pre.text) || '';
     sendDraw(); openLayer(sndDlg);
     if (!touchy) setTimeout(function () { try { document.getElementById('sndt').focus({ preventScroll: true }); } catch (e) {} }, 60);
+  }
+  // the song's words, as the site's card has them, until they're changed; an empty line is left off, except the title
+  function sndWordsDefault(g) { return { top: SND_TOP, title: g.title, line: g.artist, date: longDate(g.iso) }; }
+  function sndEdited(g) {
+    var d = sndWordsDefault(g), w = g.words;
+    return ['top', 'title', 'line', 'date'].some(function (k) { var a = String(w[k] || '').trim(), b = String(d[k] || '').trim(); return k === 'title' ? a !== b : a.toUpperCase() !== b.toUpperCase(); });
+  }
+  function sndWordsNow(g) { var t = function (k) { return String(g.words[k] || '').trim(); }; return { top: t('top'), title: t('title') || g.title, line: t('line'), date: t('date') }; }
+  function sndWordsFill() { var w = SND.song.words; ['top', 'title', 'line', 'date'].forEach(function (k) { document.getElementById('sndw' + k).value = w[k]; }); }
+  function sndDrawn(g) { return g.pic === 'photo' || ((g.pic === 'card' || g.pic === 'john') && sndEdited(g)); }   // drawn here, not the site's own picture
+  function sndPics(g) {
+    var out = [{ k: 'card', t: 'Album cover' }];
+    if (g.own) out.push({ k: 'john', t: 'John’s' });
+    out.push({ k: 'photo', t: 'Your photo as the cover…' }, { k: 'mine', t: 'Just your photo…' }, { k: 'none', t: 'None' });
+    return out;
+  }
+  function sndDraw() {   // the card with other words, or with their photo as the album cover
+    var g = SND && SND.song; if (!g) return;
+    var n = ++g.drawN, w = sndWordsNow(g), when = new Date(g.iso + 'T12:00:00Z');
+    g.made = '';
+    if (g.pic === 'photo' && !SND.pic) { g.drawP = null; return; }
+    g.drawP = cardsJs().then(function (C) {
+      return Promise.all([C.loadImg(g.pic === 'photo' ? SND.pic : g.pic === 'john' ? g.own.icon : g.cover), C.fontsReady()]).then(function (r) {
+        if (!SND || SND.song !== g || n !== g.drawN) return;
+        var cover = r[0];
+        if (g.pic === 'photo') cover = C.albumCover(r[0], { top: w.top, big: w.title, italic: w.line, left: g.n ? 'No. ' + g.n : 'Song of the Day',
+          right: when.getUTCDate() + ' ' + when.toLocaleDateString('en-GB', { month: 'short', timeZone: 'UTC' }) + ' ' + when.getUTCFullYear() });
+        g.made = C.drawCard({ title: w.title, line: w.line, when: when, cover: cover, top: w.top, date: w.date });
+        sendDraw();
+      });
+    }).catch(function (e) {
+      if (SND && SND.song === g && n === g.drawN) { g.drawP = null; sendDraw(); toast('The picture couldn’t be drawn: ' + ((e && e.message) || e)); }
+    });
   }
   function sendDraw() {
     var all = document.getElementById('sndall'), some = document.getElementById('sndsome'), who = document.getElementById('sndwho');
@@ -3494,39 +3582,82 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       c.addEventListener('change', function () { var i = SND.pick.indexOf(o.id); if (c.checked && i < 0) SND.pick.push(o.id); if (!c.checked && i >= 0) SND.pick.splice(i, 1); l.className = c.checked ? 'on' : ''; });
       l.appendChild(c); l.appendChild(document.createTextNode(o.name)); who.appendChild(l);
     });
-    var card = document.getElementById('sndcard'), a = SND.att;
-    card.hidden = !a;
-    if (a) {
+    var g = SND.song, card = document.getElementById('sndcard'), a = SND.att;
+    card.hidden = !a || !!g;   // (a song has its own part below)
+    if (a && !g) {
       var ci = document.getElementById('sndcimg'); ci.onerror = function () { ci.hidden = true; card.classList.add('noimg'); }; ci.hidden = !a.image; card.classList.toggle('noimg', !a.image); if (a.image) ci.src = a.image;
       var ct = document.getElementById('sndct'); ct.textContent = a.cardTitle || ''; var cs = document.createElement('span'); cs.textContent = a.cardSub || ''; ct.appendChild(cs);
     }
-    document.getElementById('sndpicf').hidden = !SND.pic;
-    if (SND.pic) document.getElementById('sndpic').src = SND.pic;
+    document.getElementById('sndsong').hidden = !g;
+    document.getElementById('sndmlab').hidden = !g;   // (with a song, its picture's words above; these below)
+    document.getElementById('sndpicrow').hidden = !!g;
+    document.getElementById('sndpicf').hidden = !!g || !SND.pic;
+    if (SND.pic && !g) document.getElementById('sndpic').src = SND.pic;
     document.getElementById('sndpicadd').textContent = SND.pic ? 'Another picture…' : a && a.image ? 'Your own picture…' : 'Add a picture…';
+    if (!g) return;
+    var box = document.getElementById('sndpics'); box.textContent = '';
+    sndPics(g).forEach(function (o) {
+      var b = document.createElement('button'); b.type = 'button'; b.textContent = o.t; b.setAttribute('aria-pressed', String(g.pic === o.k)); b.setAttribute('data-pic', o.k);
+      b.addEventListener('click', function () {
+        g.pic = o.k;
+        // a photo of their own, and none chosen yet: the photo picker straight away
+        if ((o.k === 'photo' || o.k === 'mine') && !SND.pic) document.getElementById('sndfile').click();
+        if (sndDrawn(g)) sndDraw(); else { g.drawN++; g.made = ''; g.drawP = null; }
+        sendDraw();
+      });
+      box.appendChild(b);
+    });
+    document.getElementById('sndwords').hidden = g.pic !== 'card' && g.pic !== 'john' && g.pic !== 'photo';
+    document.getElementById('sndwreset').hidden = !sndEdited(g);
+    var fig = document.getElementById('sndprevf'), im = document.getElementById('sndprev'), wait = document.getElementById('sndwait'), drawn = sndDrawn(g), src = '';
+    if (drawn) src = g.made; else if (g.pic === 'card') src = g.site; else if (g.pic === 'john') src = g.own.img; else if (g.pic === 'mine') src = SND.pic || '';
+    fig.hidden = g.pic === 'none' || (g.pic === 'photo' && !SND.pic) || (g.pic === 'mine' && !SND.pic);
+    fig.className = 'snd-prev ' + (g.pic === 'mine' ? 'photo' : 'card');
+    wait.hidden = !(drawn && !g.made && g.drawP);
+    if (src) { im.hidden = false; if (im.getAttribute('src') !== src) { im.onerror = g.pic === 'card' && !drawn ? function () { im.onerror = null; if (g.cover) im.src = g.cover; } : null; im.src = src; } }
+    else im.hidden = !!(drawn && g.drawP);
   }
   document.getElementById('sndall').addEventListener('click', function () { SND.some = false; sendDraw(); });
   document.getElementById('sndsome').addEventListener('click', function () { SND.some = true; sendDraw(); });
   document.getElementById('sndcx').addEventListener('click', function () { SND.att = null; sendDraw(); });
+  document.getElementById('sndsongx').addEventListener('click', function () { SND.song = null; SND.att = null; SND.pic = null; sendDraw(); });
   document.getElementById('sndpicx').addEventListener('click', function () { SND.pic = null; sendDraw(); });
+  ['top', 'title', 'line', 'date'].forEach(function (k) {
+    document.getElementById('sndw' + k).addEventListener('input', function () {
+      var g = SND && SND.song; if (!g) return;
+      g.words[k] = this.value;
+      g.drawN++; g.made = ''; g.drawP = null;
+      clearTimeout(sndWordsT); sndWordsT = setTimeout(function () { sndWordsT = null; if (sndDrawn(g)) sndDraw(); sendDraw(); }, 350);
+      document.getElementById('sndwreset').hidden = !sndEdited(g);
+    });
+  });
+  document.getElementById('sndwreset').addEventListener('click', function () {
+    var g = SND && SND.song; if (!g) return;
+    g.words = sndWordsDefault(g); sndWordsFill();
+    if (sndDrawn(g)) sndDraw(); else { g.drawN++; g.made = ''; g.drawP = null; }
+    sendDraw();
+  });
   document.getElementById('sndfile').addEventListener('change', function () {
     var f = this.files && this.files[0]; this.value = '';
     if (!f) return;
-    var u = URL.createObjectURL(f), img = new Image();
-    img.onload = function () {
-      try {
-        var k = Math.min(1, 1200 / img.naturalWidth, 1200 / img.naturalHeight), c = document.createElement('canvas');
-        c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+    cardsJs().then(function (C) {
+      return C.fileImage(f, function () { toast('Turning the HEIC photo into a JPEG…'); }).then(function (img) {
+        var w = img.naturalWidth || img.width, h = img.naturalHeight || img.height, k = Math.min(1, 1200 / w, 1200 / h), c = document.createElement('canvas');
+        c.width = Math.round(w * k); c.height = Math.round(h * k);
         c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-        SND.pic = c.toDataURL('image/jpeg', 0.85); sendDraw();
-      } catch (e) { toast('That picture couldn’t be used'); }
-      URL.revokeObjectURL(u);
-    };
-    img.onerror = function () { URL.revokeObjectURL(u); toast('That picture couldn’t be opened' + (/hei[cf]/i.test((f.type || '') + (f.name || '')) ? ' (a HEIC photo: try a JPEG or PNG)' : '')); };
-    img.src = u;
+        SND.pic = c.toDataURL('image/jpeg', 0.85);
+        var g = SND.song;
+        if (g && g.pic === 'photo') sndDraw();
+        sendDraw();
+      }, function (e) { toast(C.fileWhy(e, f)); });
+    }).catch(function (e) { toast('That picture couldn’t be opened: ' + ((e && e.message) || e)); });
   });
   function sendPost(path, body) {
     return fetch(MBASE + path, { method: 'POST', headers: { Authorization: 'Bearer ' + plTok(), 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok && !j.error) j.error = 'The site said ' + r.status; return j; }); });
+  }
+  function sendUp(data) {   // a picture made here, sent up first: its address
+    return sendPost('/members/sendpic', { pic: data }).then(function (j) { if (!j.url) throw new Error(j.error || 'The picture didn’t go up'); return j.url; });
   }
   function sendClose() { if (sndDlg.open) closeDialog(sndDlg); }
   document.getElementById('sndclose').addEventListener('click', sendClose);
@@ -3537,15 +3668,28 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (!title) { toast('Give it a title'); tIn.focus(); return; }
     var to = SND.some ? SND.pick.slice() : 'all';
     if (to !== 'all' && !to.length) { toast('Choose who it goes to'); return; }
+    var g = SND.song;
+    if (g && (g.pic === 'photo' || g.pic === 'mine') && !SND.pic) { toast('Choose your photo first'); return; }
     var names = to === 'all' ? null : (MEMBER.others || []).filter(function (o) { return to.indexOf(o.id) >= 0; }).map(function (o) { return o.name; });
     ask({ k: 'Send', h: 'Send “' + title + '”?', t: (names ? 'It goes to ' + andList(names) : 'It goes to everyone') + ', from ' + (MEMBER.name || 'you') + ': into their inbox, and to their phone where notifications are on.', ok: 'Send', no: 'Not yet' }).then(function (yes) {
       if (!yes) return;
       var btn = document.getElementById('sndok'), a = SND.att, body = { title: title, text: text, url: a ? a.url : dayLink(''), to: to };
-      if (a && a.image) body.image = a.image;
-      if (a && a.icon) body.icon = a.icon;
       btn.disabled = true;
-      (SND.pic ? sendPost('/members/sendpic', { pic: SND.pic }).then(function (j) { if (!j.url) throw new Error(j.error || 'The picture didn’t go up'); body.image = j.url; }) : Promise.resolve())
-        .then(function () { return sendPost('/members/send', body); })
+      var pics;
+      if (g) {   // the song's picture, as chosen; its cover beside it
+        body.icon = g.pic === 'john' ? g.own.icon : g.cover;
+        if (sndDrawn(g)) {
+          if (sndWordsT) { clearTimeout(sndWordsT); sndWordsT = null; sndDraw(); }
+          if (!g.drawP) sndDraw();
+          pics = Promise.resolve(g.drawP).then(function () { if (!g.made) throw new Error('The picture isn’t drawn yet: try again in a moment'); return sendUp(g.made); }).then(function (u) { body.image = u; });
+        } else if (g.pic === 'mine') pics = sendUp(SND.pic).then(function (u) { body.image = u; });
+        else { if (g.pic === 'card') body.image = g.site; else if (g.pic === 'john') body.image = g.own.img; pics = Promise.resolve(); }
+      } else {
+        if (a && a.image) body.image = a.image;
+        if (a && a.icon) body.icon = a.icon;
+        pics = SND.pic ? sendUp(SND.pic).then(function (u) { body.image = u; }) : Promise.resolve();
+      }
+      pics.then(function () { return sendPost('/members/send', body); })
         .then(function (j) {
           btn.disabled = false;
           if (!j.ok) { toast(j.error || 'Couldn’t send it'); return; }
@@ -3558,7 +3702,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   document.getElementById('shsend').addEventListener('click', function () {
     var o = shareNow; if (!o) return;
     closeShare();
-    sendOpen({ url: o.url, image: o.image || '', icon: o.icon || '', title: o.title, text: o.sendText || o.sub, cardTitle: o.title, cardSub: o.sub });
+    sendOpen({ url: o.url, image: o.image || '', icon: o.icon || '', title: o.title, text: o.sendText || o.sub, cardTitle: o.title, cardSub: o.sub,
+      song: o.sendSong ? { iso: o.sendSong.iso, s: o.sendSong.s, own: o.pic === 'own' } : null });
   });
   document.getElementById('shmore').addEventListener('click', function () {
     if (!shareNow) return;
