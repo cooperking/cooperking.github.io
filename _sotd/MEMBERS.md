@@ -141,7 +141,11 @@ he has given the day one, their photo made into the album cover on the song's ca
 the words on the card (top line, title, second line, date) theirs to change. A card with other words or their photo is
 drawn on the page with `songs/admin-cards.js` (fetched only then), and sent up as their own picture. A member can turn other members' notifications off (Profile › Account › Notifications from other members;
 `/members/prefs { msgs }`, `nomsg` on their record): they're then left out of others' lists and sends, and the Members
-tab says so. John's still reach them, from the Members tab or from him on the calendar (the member marked *This is
+tab says so. With them on, they can untick particular members whose they don't want (`mute` on their record): left out
+of those members' lists and sends. John can keep two members apart on the Members tab (*Seen by … Change*; `apart` on
+both records, admin op `apart`): neither sees the other in their lists (to send to, or to choose whose they take) and
+neither can send to the other; a send by id to a member kept apart says only "Choose who it goes to." Removing a member
+takes them off others' `apart` and `mute`. John's still reach them, from the Members tab or from him on the calendar (the member marked *This is
 me*). The Profile's Account tab was called Sign-in until 29 Oct 2026. Everything but the daily song says who it's from (John, 29 Oct 2026): John's notes from the Members tab too, with
 the name of the member marked as him (*This is me*), else John. 20 a day each,
 and 20 pictures (KV `sent:<id>:<date>`, `sentpic:<id>:<date>`). The admin page's Status tab lists each: "a member's note to

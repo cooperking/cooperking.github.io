@@ -39,6 +39,11 @@
 .person .apps li.play::before { background: var(--ok); }
 .person .apps b { font-weight: 600; color: var(--fg); }
 .csvbox { padding: 16px; display: grid; gap: 10px; }
+.person .seen { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.person .seen p { margin: 0; flex-basis: 100%; }
+.seenwho { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 6px; }
+.seenwho label { display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; border: 1px solid var(--line); border-radius: 999px; background: var(--chip); font-size: 14px; color: var(--fg); cursor: pointer; }
+.seenwho label:has(input:checked) { border-color: var(--fg); }
 .invplay { font-size: 13.5px; color: var(--muted); margin: 0; }
 .inviter { padding: 16px; display: grid; gap: 10px; }
 .wrap > .card + .card { margin-top: 18px; }   /* (a gap between the invitation and the notifications) */
@@ -252,7 +257,7 @@
       var acts = document.createElement('div'); acts.className = 'acts';
       acts.appendChild(button('Message', function () { notifyOne(m); }));   // to just them (their inbox, and their phone if notifications are on)
       acts.appendChild(nl); acts.appendChild(tv); acts.appendChild(me); acts.appendChild(rm);
-      li.appendChild(who); li.appendChild(st); if (m.apps && m.apps.length) li.appendChild(appsList(m)); li.appendChild(mailRow(m)); li.appendChild(acts); ul.appendChild(li);
+      li.appendChild(who); li.appendChild(st); if (m.apps && m.apps.length) li.appendChild(appsList(m)); li.appendChild(mailRow(m)); if (!m.owner) li.appendChild(seenRow(m)); li.appendChild(acts); ul.appendChild(li);
     });
     csvBox();
   }
@@ -288,6 +293,39 @@
     return d.toLocaleDateString('en-GB', Object.assign({ day: 'numeric', month: 'short' }, z)) + ' ' + hm;
   }
   function shortDay(t) { return new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }); }
+  // who sees them (John, 29 Oct 2026: "so I can stop some people from even seeing that someone is a member"): the other
+  // members, ticked unless kept apart from them; kept apart, neither sees the other in their lists, nor can send to the
+  // other (on both records). You see everyone, and yours reach everyone.
+  var SEEN_OPEN = {};
+  function seenRow(m) {
+    var row = document.createElement('div'); row.className = 'seen';
+    var others = MEMBERS.filter(function (x) { return x.id !== m.id && !x.owner; }), apart = m.apart || [];
+    var off = others.filter(function (x) { return apart.indexOf(x.id) >= 0; }).map(function (x) { return x.name; });
+    var t = document.createElement('span'); t.className = 'stat';
+    t.textContent = !others.length ? '' : 'Seen by ' + (!off.length ? 'every other member' : off.length === others.length ? 'no other member' : 'every other member but ' + andList(off));
+    row.appendChild(t);
+    if (!others.length) return row;
+    var b = button(SEEN_OPEN[m.id] ? 'Done' : 'Change', function () { SEEN_OPEN[m.id] = !SEEN_OPEN[m.id]; people(); });
+    row.appendChild(b);
+    if (!SEEN_OPEN[m.id]) return row;
+    var box = document.createElement('div'); box.className = 'seenwho';
+    others.forEach(function (x) {
+      var l = document.createElement('label'), c = document.createElement('input'); c.type = 'checkbox'; c.checked = apart.indexOf(x.id) < 0;
+      c.addEventListener('change', function () {
+        var ids = others.filter(function (y) { return y.id === x.id ? !c.checked : apart.indexOf(y.id) >= 0; }).map(function (y) { return y.id; });
+        api('/members/admin', { op: 'apart', id: m.id, ids: ids }).then(function (j) {
+          if (!j.members) { toast(j.error || 'Couldn’t'); c.checked = !c.checked; return; }
+          MEMBERS = j.members; people(); toast(c.checked ? m.name + ' and ' + x.name + ' see each other' : m.name + ' and ' + x.name + ' are kept apart');
+        });
+      });
+      l.appendChild(c); l.appendChild(document.createTextNode(x.name)); box.appendChild(l);
+    });
+    row.appendChild(box);
+    var note = document.createElement('p'); note.className = 'stat'; note.textContent = 'Untick someone and the two are kept apart: neither sees the other in their lists, nor can send to the other. Yours still reach everyone.';
+    row.appendChild(note);
+    return row;
+  }
+  function andList(a) { return a.length > 1 ? a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1] : a[0] || ''; }
   // which app each of their devices uses (the calendar says, each visit: see deviceSays in the Worker), the latest first
   function appsList(m) {
     var ul = document.createElement('ul'); ul.className = 'apps';
