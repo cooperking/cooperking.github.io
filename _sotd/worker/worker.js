@@ -749,9 +749,15 @@ async function statusAck(env, key, on) {   // "Dealt with" (on), or not after al
 // /members/me for links to the files, signed for LINK_HOURS (a phone's audio and video players can't send a token, so
 // the files at /m/... are checked by their link's signature alone). Anyone else, and any song without its own file,
 // gets the preview and YouTube as before. Only hashes of invite codes and tokens are kept.
+// Which of them each member gets (John, 29 Oct 2026: "so I don't automatically turn on access to everything for
+// everyone"): see { a, v } on their record, set on the Members tab (MP3s: his recordings; MP4s: his videos). Someone
+// invited from then on starts with neither; members from before, with no see, keep both. /members/me signs links only
+// for what they may have, and says so (see), so the calendar takes their downloads of the rest off the device; a link
+// already given lasts its LINK_HOURS.
 const MEMBERS_ORIGIN = 'https://cooperking.github.io';
 const MEMBERS_JOIN = 'https://cooperking.github.io/songs/#join=';
-const INVITE_USES = 5, INVITE_DAYS = 30, LINK_HOURS = 12, MEMBERS_MAX = 40;
+const INVITE_USES = 5, INVITE_DAYS = 30, LINK_HOURS = 12, MEMBERS_MAX = 200;   // (40 until 29 Oct 2026)
+function mediaFor(m) { const s = (m && m.see) || {}; return { a: s.a !== false, v: s.v !== false }; }   // which of John's files a member gets
 // a TV can't open a link: John makes a short code for the member instead, typed in the Fire TV app's menu; one use,
 // for TV_CODE_MINUTES
 const TV_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789', TV_CODE_MINUTES = 30;
@@ -831,9 +837,9 @@ async function members(request, url, env) {
     return MEMBERS_JOIN + code;
   };
   // when each device was last active (seenTouch): read only for the ops that list the members (not the Status tab's)
-  const seenAt = ['list', 'people', 'invite', 'reinvite', 'email', 'owner', 'remove', 'apart'].includes(body.op) ? await seenAll(env) : {};
+  const seenAt = ['list', 'people', 'invite', 'reinvite', 'email', 'owner', 'remove', 'apart', 'see'].includes(body.op) ? await seenAll(env) : {};
   const listing = (own = owner) => Object.entries(all).map(([id, m]) => ({ id, name: m.name, created: m.created, owner: id === own, email: m.email || '', emailAt: m.emailAt || null,
-    devices: Object.values(m.devices || {}).filter(d => d.did).length, apps: deviceApps(m, seenAt), passkeys: (m.passkeys || []).length, nomsg: !!m.nomsg, apart: m.apart || [],
+    devices: Object.values(m.devices || {}).filter(d => d.did).length, apps: deviceApps(m, seenAt), passkeys: (m.passkeys || []).length, nomsg: !!m.nomsg, apart: m.apart || [], see: mediaFor(m),
     seen: Math.max(0, ...Object.entries(m.devices || {}).map(([h, d]) => Math.max(seenAt[h] || 0, d.seen || 0))) || null,
     invite: m.invite ? { uses: m.invite.uses, left: Math.max(0, INVITE_USES - m.invite.uses), until: m.invite.until } : null }));
   switch (body.op) {
@@ -846,7 +852,7 @@ async function members(request, url, env) {
       const email = body.email ? cleanEmail(body.email) : '';
       if (body.email && !email) return answer(400, { error: 'That doesn’t look like an email address.' });
       if (email && Object.values(all).some(x => x.email === email)) return answer(400, { error: 'Another member has that email address.' });
-      const id = randomCode(6), m = Object.assign({ name, created: Date.now(), devices: {} }, email ? { email } : {});
+      const id = randomCode(6), m = Object.assign({ name, created: Date.now(), devices: {}, see: { a: false, v: false } }, email ? { email } : {});   // (his files: none until he ticks them)
       const link = await invite(m);
       all[id] = m; await save();
       return answer(200, { id, link, members: listing() });
@@ -884,6 +890,14 @@ async function members(request, url, env) {
       if (body.id && !all[body.id]) return answer(404, { error: 'No such member.' });
       if (body.id) await env.SOTD.put('owner', body.id); else await env.SOTD.delete('owner');
       return answer(200, { ok: true, members: listing(body.id || null) });
+    }
+    case 'see': {   // which of John's files they get: { id, a: MP3s (his recordings), v: MP4s (his videos) }, either or both
+      const m = all[body.id];
+      if (!m) return answer(404, { error: 'No such member.' });
+      const now = mediaFor(m);
+      for (const k of ['a', 'v']) if (typeof body[k] === 'boolean') now[k] = body[k];
+      m.see = now; await save();
+      return answer(200, { ok: true, members: listing() });
     }
     case 'apart': {   // the members kept apart from this one (on both records): they don't see each other, and can't send to each other
       const m = all[body.id];
@@ -1295,10 +1309,11 @@ async function memberMe(request, env, answer) {
   if (save) { dev.seen = Date.now(); await kvSoft(env, 'members', JSON.stringify(all)); }
   await seenTouch(env, hash);   // (when it was last active: its own key, not the members record)
   const exp = Math.floor(Date.now() / 1000) + LINK_HOURS * 3600, base = new URL(request.url).origin, media = {};
-  if (env.MEDIA && env.ADMIN_KEY) {
+  const see = mediaFor(m);   // (only what John lets them have)
+  if (env.MEDIA && env.ADMIN_KEY && (see.a || see.v)) {
     for (const [track, e] of Object.entries(await catalog(env))) {
       const one = {};
-      for (const kind of Object.keys(MEDIA_KINDS)) if (e[kind]) one[kind] = base + '/m/' + kind + '/' + track + '.' + MEDIA_KINDS[kind].ext + '?e=' + exp + '&s=' + await mediaSig(env, kind, track, exp);
+      for (const kind of Object.keys(MEDIA_KINDS)) if (e[kind] && see[kind]) one[kind] = base + '/m/' + kind + '/' + track + '.' + MEDIA_KINDS[kind].ext + '?e=' + exp + '&s=' + await mediaSig(env, kind, track, exp);
       media[track] = one;
     }
   }
@@ -1314,7 +1329,7 @@ async function memberMe(request, env, answer) {
   const ownerId = await env.SOTD.get('owner'), byName = (a, b) => a.name.localeCompare(b.name);
   const others = Object.keys(all).filter(k => k !== id && takesFrom(all, k, id, ownerId)).map(k => ({ id: k, name: all[k].name })).sort(byName);
   const seen = Object.keys(all).filter(k => k !== id && k !== ownerId && !apart(all, id, k)).map(k => ({ id: k, name: all[k].name })).sort(byName);
-  return answer(200, Object.assign({ name: m.name, email: m.email || '', exp, media, mycovers, unread, others, seen, msgs: !m.nomsg,
+  return answer(200, Object.assign({ name: m.name, email: m.email || '', exp, media, see, mycovers, unread, others, seen, msgs: !m.nomsg,
     mute: (m.mute || []).filter(k => seen.some(x => x.id === k)) }, owner ? { owner: true } : {}));
 }
 

@@ -91,6 +91,15 @@ its Associated Domains (the site's `.well-known/apple-app-site-association` name
 shows how many each member has. Tests: `pk_worker_t.mjs` (the Worker, with ES256 and RS256 authenticators made in
 Node) `pk_page_t.py` and `pk_offer_t.py` (the draft, with Chromium's virtual authenticator).
 
+## Who gets John's files
+
+Each member's card on the Members tab has *Can see* MP3s (John's recordings) and MP4s (his videos), each ticked or
+not (29 Oct 2026; `see { a, v }` on their record, admin op `see`). Someone invited from then on starts with neither;
+members from before keep both. `/members/me` signs links only for what they may have and says which (`see`), and the
+calendar then takes their downloads of the rest off that device (`dlPrune`, only on the Worker's word). A link already
+given lasts its 12 hours (`LINK_HOURS`). Up to 200 members (40 until then). The Alexa skill is separate: it plays John's
+MP3s and videos to whoever has the skill. Tests: `see_t.mjs` (the Worker), `prune_t.py` (the draft), `members_t.py`.
+
 ## A new member from John's contacts
 
 The Members tab's Invite box has *From Contacts…* (29 Oct 2026), which fills in the name and email: Apple's contact

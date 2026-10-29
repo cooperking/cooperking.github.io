@@ -41,6 +41,10 @@
 .csvbox { padding: 16px; display: grid; gap: 10px; }
 .inviter.dropping { box-shadow: 0 0 0 3px var(--fg), 0 18px 50px rgba(24, 8, 24, .28); }
 .pickc { display: grid; gap: 6px; }
+.person .seefiles { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.person .seefiles label { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border: 1px solid var(--line); border-radius: 999px; background: var(--chip); font: 600 12px/1.2 var(--sans); letter-spacing: .04em; color: var(--muted); cursor: pointer; }
+.person .seefiles label.on { border-color: var(--ok); color: var(--ok); background: #fff; }
+.person .seefiles input { margin: 0; accent-color: var(--ok); }
 .person .seen { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
 .person .seen p { margin: 0; flex-basis: 100%; }
 .seenwho { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 6px; }
@@ -92,7 +96,7 @@
   <header class="top">
     <h1>Members</h1>
     <p class="sub" id="stat">Loading…</p>
-    <p class="help">Members hear your own recording of each song and see your own videos (added on the Songs tab), and can save their playlists. Invite someone and send them the invitation: opening it signs that phone or computer in (up to 5 devices, within 30 days). For a Fire TV or an iPhone Home Screen icon, use <b>Code</b>: six letters to type in once, within 30 minutes (on the TV: ≡ → Sign in; on the Home Screen icon: Sign in at the top). With their email address they can also sign in with a code sent to it from your Gmail, should a passkey fail; for Android, the closed test’s email list takes the members’ emails (Download the emails, below). Under each member: which app each of their devices uses, as it last said.</p>
+    <p class="help">Members you tick hear your own recordings (MP3s) and see your own videos (MP4s), added on the Songs tab: <b>Can see</b> on each card, neither for someone new until you tick it. Every member can save their playlists. Invite someone and send them the invitation: opening it signs that phone or computer in (up to 5 devices, within 30 days). For a Fire TV or an iPhone Home Screen icon, use <b>Code</b>: six letters to type in once, within 30 minutes (on the TV: ≡ → Sign in; on the Home Screen icon: Sign in at the top). With their email address they can also sign in with a code sent to it from your Gmail, should a passkey fail; for Android, the closed test’s email list takes the members’ emails (Download the emails, below). Under each member: which app each of their devices uses, as it last said.</p>
   </header>
   <div class="card inviter">
     <div class="kicker">Invite someone</div>
@@ -261,7 +265,7 @@
       var acts = document.createElement('div'); acts.className = 'acts';
       acts.appendChild(button('Message', function () { notifyOne(m); }));   // to just them (their inbox, and their phone if notifications are on)
       acts.appendChild(nl); acts.appendChild(tv); acts.appendChild(me); acts.appendChild(rm);
-      li.appendChild(who); li.appendChild(st); if (m.apps && m.apps.length) li.appendChild(appsList(m)); li.appendChild(mailRow(m)); if (!m.owner) li.appendChild(seenRow(m)); li.appendChild(acts); ul.appendChild(li);
+      li.appendChild(who); li.appendChild(st); if (m.apps && m.apps.length) li.appendChild(appsList(m)); li.appendChild(mailRow(m)); li.appendChild(seeRow(m)); if (!m.owner) li.appendChild(seenRow(m)); li.appendChild(acts); ul.appendChild(li);
     });
     csvBox();
   }
@@ -297,6 +301,26 @@
     return d.toLocaleDateString('en-GB', Object.assign({ day: 'numeric', month: 'short' }, z)) + ' ' + hm;
   }
   function shortDay(t) { return new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }); }
+  // which of your files they get (John, 29 Oct 2026: "so I don't automatically turn on access to everything for
+  // everyone"): MP3s (your recordings) and MP4s (your videos), each ticked or not; someone new has neither until ticked
+  function seeRow(m) {
+    var row = document.createElement('div'), see = m.see || { a: true, v: true };
+    row.className = 'seefiles';
+    var lab = document.createElement('span'); lab.className = 'stat'; lab.textContent = 'Can see'; row.appendChild(lab);
+    [['a', 'MP3s', 'your recordings'], ['v', 'MP4s', 'your videos']].forEach(function (k) {
+      var l = document.createElement('label'), c = document.createElement('input'); c.type = 'checkbox'; c.checked = !!see[k[0]];
+      l.title = k[1] + ': ' + k[2]; l.className = c.checked ? 'on' : '';
+      c.addEventListener('change', function () {
+        var body = { op: 'see', id: m.id }; body[k[0]] = c.checked;
+        api('/members/admin', body).then(function (j) {
+          if (!j.members) { toast(j.error || 'Couldn’t'); c.checked = !c.checked; return; }
+          MEMBERS = j.members; people(); toast(m.name + (c.checked ? ' can see your ' : ' can’t see your ') + k[1] + ' (' + k[2] + ')' + (c.checked ? '' : ': gone from their devices next time they open the calendar'));
+        });
+      });
+      l.appendChild(c); l.appendChild(document.createTextNode(k[1])); row.appendChild(l);
+    });
+    return row;
+  }
   // who sees them (John, 29 Oct 2026: "so I can stop some people from even seeing that someone is a member"): the other
   // members, ticked unless kept apart from them; kept apart, neither sees the other in their lists, nor can send to the
   // other (on both records). You see everyone, and yours reach everyone.
