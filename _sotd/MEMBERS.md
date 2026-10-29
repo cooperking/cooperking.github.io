@@ -139,7 +139,10 @@ on the site, pictures from the site, Spotify or the Worker) and puts it into the
 notifications are on (`pushAll`), the notification's title "<name>: <title>", the inbox "From <name>". A song sent is as John sends one from the Members tab (John, 29 Oct 2026): its picture the site's card, John's own where
 he has given the day one, their photo made into the album cover on the song's card, their photo as it is, or none; and
 the words on the card (top line, title, second line, date) theirs to change. A card with other words or their photo is
-drawn on the page with `songs/admin-cards.js` (fetched only then), and sent up as their own picture. Everything but the daily song says who it's from (John, 29 Oct 2026): John's notes from the Members tab too, with
+drawn on the page with `songs/admin-cards.js` (fetched only then), and sent up as their own picture. A member can turn other members' notifications off (Profile › Account › Notifications from other members;
+`/members/prefs { msgs }`, `nomsg` on their record): they're then left out of others' lists and sends, and the Members
+tab says so. John's still reach them, from the Members tab or from him on the calendar (the member marked *This is
+me*). The Profile's Account tab was called Sign-in until 29 Oct 2026. Everything but the daily song says who it's from (John, 29 Oct 2026): John's notes from the Members tab too, with
 the name of the member marked as him (*This is me*), else John. 20 a day each,
 and 20 pictures (KV `sent:<id>:<date>`, `sentpic:<id>:<date>`). The admin page's Status tab lists each: "a member's note to
 Ann and Dad · by Mum". Not on the TV. Tests: `send_t.mjs` (the Worker), `send_page_t.py` (the draft), `status_page_t.py`.

@@ -238,7 +238,8 @@
       st.textContent = (m.devices ? m.devices + (m.devices === 1 ? ' device' : ' devices') : 'not signed in yet') + (m.seen ? ' · last here ' + whenAt(m.seen) : '')
         + (m.invite ? ' · link: ' + (m.invite.left && m.invite.until > Date.now() ? m.invite.left + ' more device' + (m.invite.left === 1 ? '' : 's') + ' until ' + new Date(m.invite.until).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : 'used up') : '')
         + (m.passkeys ? ' · ' + m.passkeys + (m.passkeys === 1 ? ' passkey' : ' passkeys') : '')
-        + ((PUSHON || {})[m.id] ? ' · notifications on' : '');
+        + ((PUSHON || {})[m.id] ? ' · notifications on' : '')
+        + (m.nomsg ? ' · other members’ notifications off' : '');   // (theirs to choose, Profile › Account; yours still reach them)
       var nl = button('New link', function () { api('/members/admin', { op: 'reinvite', id: m.id }).then(showLink); });
       var tv = button('Code', function () { api('/members/admin', { op: 'tvcode', id: m.id }).then(function (j) {
         if (!j.code) { toast(j.error || 'Couldn’t make a code'); return; }

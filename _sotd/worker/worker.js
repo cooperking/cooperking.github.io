@@ -814,6 +814,7 @@ async function members(request, url, env) {
   if (route === 'inbox') return memberInbox(request, env, answer);
   if (route === 'send') return memberSend(request, env, answer);
   if (route === 'sendpic') return memberSendPic(request, env, answer);
+  if (route === 'prefs') return memberPrefs(request, env, answer);
   if (!['admin', 'upload', 'cover'].includes(route)) return answer(404, { error: 'Not here.' });
   if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
   const no = await adminOk(request, env, answer);
@@ -832,7 +833,7 @@ async function members(request, url, env) {
   // when each device was last active (seenTouch): read only for the ops that list the members (not the Status tab's)
   const seenAt = ['list', 'people', 'invite', 'reinvite', 'email', 'owner', 'remove'].includes(body.op) ? await seenAll(env) : {};
   const listing = (own = owner) => Object.entries(all).map(([id, m]) => ({ id, name: m.name, created: m.created, owner: id === own, email: m.email || '', emailAt: m.emailAt || null,
-    devices: Object.values(m.devices || {}).filter(d => d.did).length, apps: deviceApps(m, seenAt), passkeys: (m.passkeys || []).length,
+    devices: Object.values(m.devices || {}).filter(d => d.did).length, apps: deviceApps(m, seenAt), passkeys: (m.passkeys || []).length, nomsg: !!m.nomsg,
     seen: Math.max(0, ...Object.entries(m.devices || {}).map(([h, d]) => Math.max(seenAt[h] || 0, d.seen || 0))) || null,
     invite: m.invite ? { uses: m.invite.uses, left: Math.max(0, INVITE_USES - m.invite.uses), until: m.invite.until } : null }));
   switch (body.op) {
@@ -1291,8 +1292,9 @@ async function memberMe(request, env, answer) {
     if (x) mycovers[track] = x.share ? { id: x.id, at: x.at, share: x.share.at } : { id: x.id, at: x.at };
   }
   const unread = ((await env.SOTD.get('inbox:' + id, 'json')) || []).filter(x => !x.r).length;   // the Profile's inbox: not yet read
-  const others = Object.keys(all).filter(k => k !== id).map(k => ({ id: k, name: all[k].name })).sort((a, b) => a.name.localeCompare(b.name));   // (to send notifications to)
-  return answer(200, Object.assign({ name: m.name, email: m.email || '', exp, media, mycovers, unread, others }, owner ? { owner: true } : {}));
+  // the members they can send notifications to: not those who've turned off other members' (John can still)
+  const others = Object.keys(all).filter(k => k !== id && (owner || !all[k].nomsg)).map(k => ({ id: k, name: all[k].name })).sort((a, b) => a.name.localeCompare(b.name));
+  return answer(200, Object.assign({ name: m.name, email: m.email || '', exp, media, mycovers, unread, others, msgs: !m.nomsg }, owner ? { owner: true } : {}));
 }
 
 // an invitation's link: a page that shows a proper card in a message (WhatsApp, iMessage...), like a day's share page,
@@ -2296,16 +2298,32 @@ async function memberSend(request, env, answer) {
   const { id, all } = who, body = await request.json().catch(() => ({}));
   const note = noteMsg(body);
   if (note.error) return answer(400, { error: note.error });
-  const others = Object.keys(all).filter(k => k !== id);
+  // not to members who've turned off other members' notifications (Profile › Account), unless it's John's own
+  const mine = (await env.SOTD.get('owner')) === id, takes = k => k !== id && all[k] && (mine || !all[k].nomsg);
   const everyone = body.to === 'all';
-  const to = everyone ? others : Array.isArray(body.to) ? [...new Set(body.to.map(String))].filter(k => k !== id && all[k]) : [];
-  if (!to.length) return answer(400, { error: 'Choose who it goes to.' });
+  const asked = everyone ? Object.keys(all) : Array.isArray(body.to) ? [...new Set(body.to.map(String))] : [];
+  const to = asked.filter(takes);
+  if (!to.length) return answer(400, { error: asked.some(k => k !== id && all[k]) ? 'They’ve turned off notifications from other members.' : 'Choose who it goes to.' });
   const n = await dayCount(env, 'sent:' + id, SEND_DAY);
   if (!n) return answer(429, { error: 'That’s ' + SEND_DAY + ' sent today, the most for a day. You can send more tomorrow.' });
   const name = all[id].name, msg = note.msg;
   Object.assign(msg, { subject: msg.title, title: name + ': ' + msg.title, from: name, tag: 'sotd-from-' + id + '-' + Date.now() });
   const r = await pushAll(env, msg, to, { kind: 'member', via: { t: 'member', id, name }, toNames: everyone ? null : to.map(k => all[k].name) });
   return answer(200, { ok: true, inboxes: r.inboxes, sent: r.sent, devices: r.devices, left: SEND_DAY - n });
+}
+// POST /members/prefs { msgs: true | false }: whether other members can send them notifications (their Profile ›
+// Account, John 29 Oct 2026: "A user should be able to say if they want to receive messages from other members");
+// nomsg on their record when not. John's own still come, from the Members tab or from him on the calendar.
+async function memberPrefs(request, env, answer) {
+  if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
+  const who = await memberWho(request, env);
+  if (!who) return answer(401, { error: 'Not a member (any more).' });
+  const body = await request.json().catch(() => ({}));
+  if (typeof body.msgs !== 'boolean') return answer(400, { error: 'Say whether to take them (msgs: true or false).' });
+  const m = who.all[who.id];
+  if (body.msgs) delete m.nomsg; else m.nomsg = true;
+  await env.SOTD.put('members', JSON.stringify(who.all));
+  return answer(200, { ok: true, msgs: body.msgs });
 }
 async function memberSendPic(request, env, answer) {
   if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
