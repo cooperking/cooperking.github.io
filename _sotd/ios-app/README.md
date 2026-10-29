@@ -10,6 +10,11 @@ and names a wrong secret on the run's page). The site itself is the app's conten
 calendar reach the app at once; only changes in this folder need a new build. A build is also made on the 1st of every
 second month, so testers always have one well inside TestFlight's 90 days.
 
+Adding a member from John's contacts (build 22 on): the Members tab's *From Contacts…* calls the app's own plugin
+(`native/App/SotdContacts.swift`, `SotdContacts.pick()`), which shows Apple's contact picker and gives back the
+person's name and email addresses. The picker runs outside the app, so the app sees only the contact chosen and asks
+for no permission.
+
 Notifications in the app are Apple's own (APNs), sent by the Worker with John's APNs key (see the Worker's
 "the iPhone app" part); the website's notifications carry on as before for everyone else.
 

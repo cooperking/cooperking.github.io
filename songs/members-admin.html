@@ -39,6 +39,8 @@
 .person .apps li.play::before { background: var(--ok); }
 .person .apps b { font-weight: 600; color: var(--fg); }
 .csvbox { padding: 16px; display: grid; gap: 10px; }
+.inviter.dropping { box-shadow: 0 0 0 3px var(--fg), 0 18px 50px rgba(24, 8, 24, .28); }
+.pickc { display: grid; gap: 6px; }
 .person .seen { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
 .person .seen p { margin: 0; flex-basis: 100%; }
 .seenwho { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 6px; }
@@ -99,6 +101,8 @@
       <input class="name" id="newmail" type="email" placeholder="Their email (for codes, and Google Play)" autocomplete="off" aria-label="Their email address">
       <button class="btn primary" id="invite" type="button">Invite</button>
     </div>
+    <div class="row fromc"><button class="btn small" id="fromc" type="button">From Contacts…</button><input type="file" id="vcf" accept=".vcf,text/vcard,text/x-vcard" hidden><span class="stat" id="fromcnote"></span></div>
+    <div class="pickc" id="pickc" hidden><span class="stat" id="pickcq"></span><div class="row" id="pickcwho"></div></div>
     <div class="link" id="newlink" hidden><code id="linktext"></code><div class="row"><button class="btn small" id="copy" type="button">Copy the link</button><button class="btn small primary" id="share" type="button">Send the invitation…</button></div></div>
     <div class="link" id="tvbox" hidden><span class="stat">For <b id="tvfor"></b>, once, within <span id="tvmins"></span> minutes:</span><span class="tvcode" id="tvcode"></span></div>
   </div>
@@ -473,6 +477,80 @@
     var n = $('newname').value.trim(); if (!n) { $('newname').focus(); return; }
     api('/members/admin', { op: 'invite', name: n, email: $('newmail').value.trim() }).then(function (j) { if (j.link) { $('newname').value = ''; $('newmail').value = ''; } showLink(j); });
   });
+  // ---- a new member's name and email from John's contacts (29 Oct 2026): Apple's contact picker in the iPhone app (its
+  // SotdContacts plugin, build 22 on: this page is inside the admin page, which has the app's Capacitor), Chrome's on
+  // Android (the Contact Picker API), or else a contact card (.vcf), chosen or dropped on the Invite box: Contacts on a
+  // Mac makes one when a person is dragged out of it, and Google Contacts exports them (Export › vCard). ----
+  function natContacts() {
+    try { var c = window.parent.Capacitor; return c && c.isNativePlatform && c.isNativePlatform() && c.Plugins && c.Plugins.SotdContacts ? c.Plugins.SotdContacts : null; } catch (e) { return null; }
+  }
+  var webContacts = !!(navigator.contacts && navigator.contacts.select);
+  $('fromc').textContent = natContacts() || webContacts ? 'From Contacts…' : 'From a contact card…';
+  $('fromcnote').textContent = natContacts() || webContacts ? '' : 'A .vcf file, or drop one here: drag the person out of Contacts on a Mac; Google Contacts: Export › vCard.';
+  function fromPerson(name, emails) {   // into the Invite box; more than one address: which?
+    emails = (emails || []).map(function (e) { return String(e || '').trim(); }).filter(function (e, i, a) { return e && a.indexOf(e) === i; });
+    $('pickc').hidden = true;
+    if (name) $('newname').value = name;
+    $('newmail').value = emails.length === 1 ? emails[0] : '';
+    if (emails.length > 1) choose('Which email for ' + (name || 'them') + '?', emails.map(function (e) { return { t: e, go: function () { $('newmail').value = e; } }; }));
+    else if (!emails.length) toast((name || 'That contact') + ' has no email address: add one, or invite them without');
+  }
+  function choose(q, opts) {   // a question with a button for each answer, under the Invite box
+    $('pickcq').textContent = q; $('pickcwho').innerHTML = ''; $('pickc').hidden = false;
+    opts.forEach(function (o) { $('pickcwho').appendChild(button(o.t, function () { $('pickc').hidden = true; o.go(); })); });
+  }
+  function vcards(text) {   // [{ name, emails }] from a contact card file (vCard 2.1, 3 or 4)
+    var out = [], cur = null;
+    String(text || '').replace(/\r\n?/g, '\n').replace(/\n[ \t]/g, '').split('\n').forEach(function (l) {
+      if (/^BEGIN:VCARD/i.test(l)) { cur = { name: '', n: '', emails: [] }; return; }
+      if (/^END:VCARD/i.test(l)) { if (cur) out.push({ name: cur.name || cur.n, emails: cur.emails }); cur = null; return; }
+      var m = cur && /^(?:[\w-]+\.)?(FN|N|EMAIL)((?:;[^:]*)?):(.*)$/i.exec(l);
+      if (!m) return;
+      var v = m[3].replace(/\\([,;\\])/g, '$1').replace(/\\n/gi, ' ').trim(), k = m[1].toUpperCase();
+      if (k === 'FN') cur.name = v;
+      else if (k === 'N') { var p = m[3].split(';'); cur.n = [p[3], p[1], p[0]].filter(Boolean).join(' ').replace(/\\([,;\\])/g, '$1').trim(); }
+      else if (/@/.test(v)) cur.emails.push(v.replace(/^mailto:/i, ''));
+    });
+    return out;
+  }
+  function fromFile(f) {
+    if (!f) return;
+    if (!/\.vcf$/i.test(f.name || '') && !/vcard/i.test(f.type || '')) { toast('That isn’t a contact card (.vcf)'); return; }
+    f.text().then(function (t) {
+      var list = vcards(t).filter(function (c) { return c.name || c.emails.length; });
+      if (!list.length) { toast('No one in that contact card'); return; }
+      if (list.length === 1) { fromPerson(list[0].name, list[0].emails); return; }
+      choose('Which person?', list.slice(0, 12).map(function (c) { return { t: c.name || c.emails[0], go: function () { fromPerson(c.name, c.emails); } }; }));
+    }, function () { toast('That file couldn’t be read'); });
+  }
+  $('fromc').addEventListener('click', function () {
+    var nat = natContacts();
+    if (nat) {
+      nat.pick().then(function (r) { fromPerson(r && r.name, r && r.emails); }, function (e) { if (!/cancel/i.test(String(e && (e.message || e)))) toast('Contacts didn’t open: ' + ((e && e.message) || e)); });
+      return;
+    }
+    if (webContacts) {
+      navigator.contacts.select(['name', 'email'], { multiple: false }).then(function (list) {
+        var c = list && list[0]; if (!c) return;
+        fromPerson((c.name || [])[0] || '', c.email || []);
+      }, function (e) { if (!e || e.name !== 'AbortError') toast('Contacts didn’t open: ' + ((e && e.message) || e)); });
+      return;
+    }
+    $('vcf').click();
+  });
+  $('vcf').addEventListener('change', function () { var f = this.files && this.files[0]; this.value = ''; fromFile(f); });
+  (function () {   // a contact card dropped on the Invite box
+    var box = document.querySelector('.inviter'), n = 0;
+    box.addEventListener('dragenter', function (e) { if (e.dataTransfer && [].indexOf.call(e.dataTransfer.types || [], 'Files') >= 0) { n++; box.classList.add('dropping'); e.preventDefault(); } });
+    box.addEventListener('dragover', function (e) { if (box.classList.contains('dropping')) e.preventDefault(); });
+    box.addEventListener('dragleave', function () { if (--n <= 0) { n = 0; box.classList.remove('dropping'); } });
+    box.addEventListener('drop', function (e) {
+      n = 0; box.classList.remove('dropping');
+      var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+      if (!f) return;
+      e.preventDefault(); fromFile(f);
+    });
+  })();
   $('copy').addEventListener('click', function () { navigator.clipboard.writeText($('linktext').textContent).then(function () { toast('Link copied'); }); });
   $('share').addEventListener('click', invOpen);
 

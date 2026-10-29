@@ -91,6 +91,14 @@ its Associated Domains (the site's `.well-known/apple-app-site-association` name
 shows how many each member has. Tests: `pk_worker_t.mjs` (the Worker, with ES256 and RS256 authenticators made in
 Node) `pk_page_t.py` and `pk_offer_t.py` (the draft, with Chromium's virtual authenticator).
 
+## A new member from John's contacts
+
+The Members tab's Invite box has *From Contacts…* (29 Oct 2026), which fills in the name and email: Apple's contact
+picker in the iPhone app (its own plugin, `SotdContacts`, build 22 on; the app sees only the person chosen), Chrome's
+Contact Picker on Android, and anywhere else *From a contact card…*: a .vcf file chosen or dropped on the Invite box
+(Contacts on a Mac makes one when a person is dragged out of it; Google Contacts: Export › vCard). More than one email:
+it asks which; more than one person in the card: it asks who. Tests: `contacts_t.py`.
+
 ## Email addresses, codes by email, and Google Play's testers
 
 John gives a member's email address on the Members tab (or with *Invite*); it's on their record (`email`, lower case,

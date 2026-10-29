@@ -7,5 +7,6 @@ class SOTDViewController: CAPBridgeViewController {
     override func capacitorDidLoad() {
         bridge?.registerPluginInstance(SotdCastPlugin())
         bridge?.registerPluginInstance(SotdSiriPlugin())
+        bridge?.registerPluginInstance(SotdContactsPlugin())   // (Apple's contact picker, for the Members tab: build 22 on)
     }
 }
