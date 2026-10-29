@@ -1347,7 +1347,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     <div class="seg ac-tabs" id="actabs" role="tablist" aria-label="Profile">
       <button type="button" role="tab" id="actab-inbox" data-tab="inbox" aria-selected="true" aria-controls="acpane-inbox">Inbox<span class="n" id="actabn" hidden></span></button>
       <button type="button" role="tab" id="actab-lists" data-tab="lists" aria-selected="false" aria-controls="acpane-lists">Playlists</button>
-      <button type="button" role="tab" id="actab-signin" data-tab="signin" aria-selected="false" aria-controls="acpane-signin">Sign-in</button>
+      <button type="button" role="tab" id="actab-signin" data-tab="signin" aria-selected="false" aria-controls="acpane-signin">Account</button>
       <button type="button" role="tab" id="actab-device" data-tab="device" aria-selected="false" aria-controls="acpane-device">Device</button>
     </div>
     <div class="ac-pane" id="acpane-inbox" data-pane="inbox" role="tabpanel" aria-labelledby="actab-inbox">
@@ -1374,6 +1374,11 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         <p class="ac-h">Email</p>
         <p class="ac-none" id="acmailt"></p>
         <div class="ac-acts"><button class="copy ghost" id="acmailgo" type="button">Add your email</button></div>
+      </div>
+      <div class="ac-dev" id="acmsg" hidden>
+        <p class="ac-h">Notifications from other members</p>
+        <p class="ac-none" id="acmsgt"></p>
+        <div class="ac-acts"><button class="copy ghost" id="acmsggo" type="button">Turn off</button></div>
       </div>
       <div class="ac-dev" id="acpk" hidden>
         <p class="ac-h">Passkeys</p>
@@ -5362,9 +5367,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     none.textContent = !PL.loaded ? 'Loading…' : 'None saved yet. Add songs with the heart, then open My playlist and tap Save.';
     acOut.classList.remove('armed'); acOut.textContent = 'Sign out';
     document.getElementById('accode').hidden = true; document.getElementById('acgetcode').textContent = 'Get a code';
-    appDraw(); noteDraw(); inboxDraw(); pkDraw(); mailDraw(); acTabs();
+    appDraw(); noteDraw(); inboxDraw(); pkDraw(); mailDraw(); msgDraw(); acTabs();
   }
-  // ---- the Profile's tabs: Inbox, Playlists, Sign-in (email, passkeys, another device), Device (the app,
+  // ---- the Profile's tabs: Inbox, Playlists, Account (email, other members' notifications, passkeys, another device; called Sign-in until 29 Oct 2026), Device (the app,
   // notifications). A tab with nothing to show here (say Device on a computer with notifications blocked and no app
   // to get) isn't shown; the parts show and hide themselves, and the tabs follow. ----
   var AC_TAB = 'inbox';
@@ -5399,6 +5404,28 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // ---- their email address (John, 28 Oct 2026: "can users add and edit their own email addresses in their
   // profile"): codes to sign in go to it, and John uses it for Google Play's test list. A new one is checked with a
   // code sent to it (the Worker: /members/email). ----
+  // whether other members can send them notifications (John, 29 Oct 2026): on unless they turn it off; John's still come
+  function msgDraw() {
+    var box = document.getElementById('acmsg');
+    box.hidden = !MEMBER || !MBASE || TV;
+    if (box.hidden) return;
+    var on = MEMBER.msgs !== false;
+    document.getElementById('acmsgt').textContent = on ? 'Other members can send you notifications: into your inbox, and to your phone if notifications are on there.'
+      : 'Off: other members can’t send you notifications. John’s still come, and each new song.';
+    document.getElementById('acmsggo').textContent = on ? 'Turn off' : 'Turn on';
+  }
+  document.getElementById('acmsggo').addEventListener('click', function () {
+    var tok = plTok(); if (!tok || !MBASE || !MEMBER) return;
+    var want = MEMBER.msgs === false, b = this; b.disabled = true;
+    fetch(MBASE + '/members/prefs', { method: 'POST', headers: { Authorization: 'Bearer ' + tok, 'Content-Type': 'application/json' }, body: JSON.stringify({ msgs: want }) })
+      .then(function (r) { return r.json().catch(function () { return {}; }); })
+      .then(function (j) {
+        b.disabled = false;
+        if (!j.ok) { toast(j.error || 'Couldn’t change it just now. Try again.'); return; }
+        MEMBER.msgs = j.msgs; msgDraw();
+        toast(j.msgs ? 'Other members can send you notifications' : 'Other members can’t send you notifications now');
+      }).catch(function () { b.disabled = false; toast('Couldn’t reach the site. Try again.'); });
+  });
   function mailDraw() {
     var box = document.getElementById('acmail');
     box.hidden = !MEMBER || !MBASE || TV;
