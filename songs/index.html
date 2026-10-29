@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="sotd-build" content="91fbcae557a8">
+<meta name="sotd-build" content="5579b10a2103">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 262 so far">
 <meta name="theme-color" content="#ec135b">
@@ -5098,7 +5098,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // A–Z (songs or artists) and Moods share one sheet; each button opens it in its own mode
   var lastAZ = 'songs';
   function openIndexAs(kind) {
-    if (sheet.open && !theatre) closeDialog(sheet);   // over a full-screen video, Search and the moods open on top
+    if (sheet.open && !theatre && !bgOn) closeDialog(sheet);   // over a full-screen video, Search and the moods open on top; the mini player plays on (John, 29 Oct 2026: "nothing should stop the mini player, except stopping it yourself or starting a new song")
     if (mine.open) closeDialog(mine);
     idxKind = kind;
     renderIndex();
@@ -5435,7 +5435,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         (l.id === PL.cur ? Promise.resolve(true) : plOpen(l)).then(function (ok) {
           if (!ok) return;   // they kept what's there
           closeDialog(acct);
-          if (fav.length) { if (sheet.open && !theatre) closeDialog(sheet); renderMine(); openLayer(mine); mine.scrollTop = 0; }
+          if (fav.length) { if (sheet.open && !theatre && !bgOn) closeDialog(sheet); renderMine(); openLayer(mine); mine.scrollTop = 0; }   // (the mini player plays on)
         });
       });
       li.appendChild(b); ul.appendChild(li);
