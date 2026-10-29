@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="sotd-build" content="7fd7c1738bf1">
+<meta name="sotd-build" content="91fbcae557a8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 262 so far">
 <meta name="theme-color" content="#ec135b">
@@ -318,7 +318,14 @@ html.big .heroacts .hsub { margin: 0 6px 0 0; }
 .ac-msgs .open { width: 100%; display: grid; grid-template-columns: auto 1fr auto; gap: 2px 10px; align-items: start; padding: 10px 12px 4px; border: 0; background: none; color: var(--fg); text-align: left; cursor: pointer; font: inherit; }
 .ac-msgs .dot { grid-row: 1 / span 3; width: 8px; height: 8px; margin-top: 7px; border-radius: 50%; background: transparent; }
 .ac-msgs .cv { grid-column: 3; grid-row: 1 / span 3; width: 46px; height: 46px; border-radius: 6px; object-fit: cover; }
-.ac-msgs .pic { grid-column: 2 / span 2; margin-top: 6px; width: 100%; aspect-ratio: 1200 / 630; object-fit: cover; border-radius: 10px; display: block; background: var(--line); }
+.ac-msgs .pic { grid-column: 2 / span 2; justify-self: start; margin-top: 6px; width: auto; max-width: 100%; height: auto; max-height: 320px; border-radius: 10px; display: block; }   /* (the whole picture, as it is: John, 29 Oct 2026) */
+/* a message opened (one with no link of its own): all of it, its whole picture */
+.msgv h3 { margin: -4px 0 0; font-family: var(--serif); font-weight: 500; font-size: 30px; line-height: 1.1; color: var(--fg); overflow-wrap: anywhere; }
+.msgv .msgv-w { margin: -10px 0 0; font-size: 13px; color: var(--muted); }
+.msgv .msgv-b { margin: 0; font-size: 16px; line-height: 1.45; color: var(--fg); white-space: pre-line; overflow-wrap: anywhere; }
+.msgv .msgv-pic { margin: 0; }
+.msgv .msgv-pic img { display: block; max-width: 100%; max-height: calc(100dvh - 260px); height: auto; margin: 0 auto; border-radius: 12px; }
+.msgv .msgv-pic.cv img { width: 160px; height: 160px; object-fit: cover; margin: 0; }
 .ac-msgs .acts2 { display: flex; justify-content: flex-end; gap: 14px; padding: 2px 12px 9px 30px; }
 .ac-msgs .acts2 button { border: 0; background: none; padding: 4px 0; font: 600 10.5px/1.2 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); cursor: pointer; }
 .ac-msgs .acts2 button:hover, .ac-msgs .acts2 button:focus-visible { color: var(--fg); }
@@ -453,7 +460,7 @@ button.day:focus-visible .sleeve { box-shadow: 0 16px 34px var(--shadow), 0 0 0 
 .emptymsg { color: var(--muted); padding: 10px 0; font-family: var(--serif); font-style: italic; }
 
 /* day view */
-dialog#sheet, dialog#mine, dialog#index, dialog#acctsheet, dialog#askdlg, dialog#appdlg, dialog#castdlg, dialog#senddlg {
+dialog#sheet, dialog#mine, dialog#index, dialog#acctsheet, dialog#askdlg, dialog#appdlg, dialog#castdlg, dialog#senddlg, dialog#msgdlg {
   --bg: #ffffff; --fg: #1d0b1e; --fg-2: rgba(29, 11, 30, .9); --muted: rgba(29, 11, 30, .62); --faint: rgba(29, 11, 30, .45);
   --line: rgba(29, 11, 30, .14); --tile: #f3eef0; --chip-bg: rgba(29, 11, 30, .04); --pill-bg: rgba(29, 11, 30, .03); --pill-hover: rgba(29, 11, 30, .08);
   border: 0; padding: 0; color: var(--fg-2); background: var(--bg); color-scheme: light;
@@ -638,12 +645,12 @@ dialog#sharesheet::backdrop { background: rgba(24, 8, 24, .35); -webkit-backdrop
 }
 @keyframes shup { from { transform: translateY(100%); } to { transform: none; } }
 /* home-screen app: the page runs under the clock and the home bar, so the pop-ups keep clear of both */
-dialog#sheet, dialog#mine, dialog#index, dialog#acctsheet, dialog#askdlg, dialog#appdlg, dialog#castdlg, dialog#senddlg {
+dialog#sheet, dialog#mine, dialog#index, dialog#acctsheet, dialog#askdlg, dialog#appdlg, dialog#castdlg, dialog#senddlg, dialog#msgdlg {
   top: env(safe-area-inset-top, 0px); bottom: env(safe-area-inset-bottom, 0px);
   max-height: calc(100dvh - 32px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
 }
 dialog#sharesheet { top: env(safe-area-inset-top, 0px); max-height: calc(100dvh - 32px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
-dialog#sheet::backdrop, dialog#mine::backdrop, dialog#index::backdrop, dialog#acctsheet::backdrop, dialog#askdlg::backdrop, dialog#appdlg::backdrop, dialog#castdlg::backdrop, dialog#senddlg::backdrop { background: rgba(24, 8, 24, .3); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+dialog#sheet::backdrop, dialog#mine::backdrop, dialog#index::backdrop, dialog#acctsheet::backdrop, dialog#askdlg::backdrop, dialog#appdlg::backdrop, dialog#castdlg::backdrop, dialog#senddlg::backdrop, dialog#msgdlg::backdrop { background: rgba(24, 8, 24, .3); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
 .sheet-in { display: grid; gap: 18px; padding: 16px 18px 24px; }
 .sheet-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .sheet-head p { margin: 0; }
@@ -1025,7 +1032,7 @@ html.minidrag, html.minidrag * { cursor: grabbing !important; user-select: none;
 /* Pop-ups are ordinary page layers (opened with show(), not showModal()): the browser's top layer can't have
    anything placed above it before iOS 17, and the My playlist button has to stay on top of a day and A–Z / Moods.
    The site draws the dim background (the scrim) itself and keeps the page behind from being tapped. */
-dialog#sheet, dialog#mine, dialog#index, dialog#sharesheet, dialog#acctsheet, dialog#askdlg, dialog#appdlg, dialog#castdlg, dialog#senddlg { position: fixed; left: 0; right: 0; height: fit-content; margin: auto; z-index: 50; overscroll-behavior: contain; }
+dialog#sheet, dialog#mine, dialog#index, dialog#sharesheet, dialog#acctsheet, dialog#askdlg, dialog#appdlg, dialog#castdlg, dialog#senddlg, dialog#msgdlg { position: fixed; left: 0; right: 0; height: fit-content; margin: auto; z-index: 50; overscroll-behavior: contain; }
 dialog#index { height: calc(100dvh - 32px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
 .scrim { position: fixed; inset: 0; z-index: 49; display: none; background: rgba(24, 8, 24, .3); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); touch-action: none; }
 html.layer-open .scrim { display: block; }
@@ -1513,6 +1520,18 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     <div class="ask-acts"><button class="copy" id="sndok" type="submit">Send</button><button class="ac-out" id="sndno" type="button">Cancel</button></div>
   </form>
 </dialog>
+<dialog id="msgdlg" aria-labelledby="msgh">
+  <div class="sheet-in msgv">
+    <div class="sheet-head">
+      <p class="mine-top"><span class="chip" id="msgk">Message</span></p>
+      <button class="close" id="msgclose" type="button" aria-label="Close"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 2l10 10M12 2 2 12"/></svg></button>
+    </div>
+    <h3 id="msgh"></h3>
+    <p class="msgv-w" id="msgw"></p>
+    <p class="msgv-b" id="msgb"></p>
+    <figure class="msgv-pic" id="msgpicf" hidden><img id="msgpic" alt=""></figure>
+  </div>
+</dialog>
 <dialog id="askdlg" aria-labelledby="askh">
   <form class="sheet-in ask" id="askform" method="dialog">
     <div class="sheet-head">
@@ -1851,7 +1870,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var open = layers(), top = open[open.length - 1], root = document.documentElement;
     root.classList.toggle('layer-open', !!top);
     scrimEl.style.zIndex = top ? String((+top.style.zIndex || 50) - 1) : '';
-    var under = open.some(function (d) { return d.id === 'mine' || d.id === 'sharesheet' || d.id === 'acctsheet' || d.id === 'askdlg' || d.id === 'appdlg' || d.id === 'castdlg' || d.id === 'senddlg'; });
+    var under = open.some(function (d) { return d.id === 'mine' || d.id === 'sharesheet' || d.id === 'acctsheet' || d.id === 'askdlg' || d.id === 'appdlg' || d.id === 'castdlg' || d.id === 'senddlg' || d.id === 'msgdlg'; });
     root.classList.toggle('fab-under', under);
     if (top) pageEl.setAttribute('inert', ''); else pageEl.removeAttribute('inert');
     syncFloat();   // the floating video keeps to its day's place in the stack
@@ -5818,14 +5837,41 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // with no link of its own (it says just the calendar, as one sent without a link does) goes nowhere, and the Profile
   // stays open (John, 29 Oct 2026: "a message in an inbox that isn't a link just immediately closes when you click on
   // it, but it shouldn't")
-  function msgGo(u) {
-    if (!u) return;
+  function msgWhere(u) {   // { here, h }: a day here (h), another page (here false), or null: no link of its own
+    if (!u) return null;
     var i = u.indexOf('#'), base = i < 0 ? u : u.slice(0, i), h = i < 0 ? '' : u.slice(i + 1);
     var here = base === SITE || base === location.origin + location.pathname || base === location.href.split('#')[0];
-    if (here && !h) return;
-    if (here) { closeDialog(acct); location.hash = h; return; }
+    return here && !h ? null : { here: here, h: h };
+  }
+  function msgGo(u) {
+    var w = msgWhere(u);
+    if (!w) return;
+    if (w.here) { closeDialog(acct); location.hash = w.h; return; }
     location.href = u;
   }
+  // ---- a message with no link of its own, tapped (Inbox or Sent; John, 29 Oct 2026: "if no link could it actually
+  // open the full message in the same way other pages open. Closing will mark as read."): all of it in a pop-up over
+  // the Profile, its whole picture (a GIF moving); closing it marks it read ----
+  var msgDlg = document.getElementById('msgdlg'), MSG = null;
+  function msgOpen(x, sent) {
+    MSG = { x: x, sent: !!sent };
+    document.getElementById('msgk').textContent = sent ? 'Sent' : 'Message';
+    document.getElementById('msgh').textContent = x.t || '';
+    var when = new Date(x.at).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+    document.getElementById('msgw').textContent = (sent ? sentTo(x.to) + ' · ' : x.f ? 'From ' + x.f + ' · ' : '') + when;
+    var b = document.getElementById('msgb'); b.textContent = x.b || ''; b.hidden = !x.b;
+    var pic = x.i || x.c || '', f = document.getElementById('msgpicf'), im = document.getElementById('msgpic');
+    f.hidden = !pic; f.className = 'msgv-pic' + (x.i ? '' : ' cv');
+    if (pic) { im.onerror = function () { f.hidden = true; }; im.src = pic; } else im.removeAttribute('src');
+    openLayer(msgDlg);
+  }
+  msgDlg.addEventListener('close', function () {
+    var m = MSG; MSG = null;
+    if (!m || m.sent || m.x.r) return;
+    m.x.r = Date.now(); unreadSet(INBOX.unread - 1); inboxDraw();
+    inboxCall({ read: [m.x.id] }).catch(function () {});
+  });
+  document.getElementById('msgclose').addEventListener('click', function () { closeDialog(msgDlg); });
   function inboxDraw() {
     var box = document.getElementById('acinbox'), ul = document.getElementById('acmsgs'), none = document.getElementById('acinnone');
     box.hidden = !MEMBER || !MBASE;
@@ -5869,6 +5915,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       acts.appendChild(tg); acts.appendChild(dl);
       b.addEventListener('click', function () {
         if (INBOX.sel) { if (INBOX.sel.has(x.id)) INBOX.sel.delete(x.id); else INBOX.sel.add(x.id); inboxDraw(); return; }   // selecting: ticked or not
+        if (!msgWhere(x.u)) { msgOpen(x, false); return; }   // (no link of its own: opened; read when it's closed)
         var go = function () { msgGo(x.u); };
         if (x.r) { go(); return; }
         x.r = Date.now(); unreadSet(INBOX.unread - 1); inboxDraw();
@@ -5914,7 +5961,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       b.setAttribute('aria-label', x.t + (x.b ? '. ' + x.b : '') + '. ' + sentTo(x.to) + ', ' + ago(x.at));
       if (x.i) { var pi = document.createElement('img'); pi.className = 'pic'; pi.alt = ''; pi.loading = 'lazy'; pi.src = x.i; pi.onerror = function () { pi.remove(); }; b.appendChild(pi); }
       else if (x.c) { var cv = document.createElement('img'); cv.className = 'cv'; cv.alt = ''; cv.loading = 'lazy'; cv.src = x.c; cv.onerror = function () { cv.remove(); }; b.appendChild(cv); }
-      b.addEventListener('click', function () { msgGo(x.u); });
+      b.addEventListener('click', function () { if (msgWhere(x.u)) msgGo(x.u); else msgOpen(x, true); });
       li.appendChild(b); ul.appendChild(li);
     });
     if (items.length > SENT.shown) {
