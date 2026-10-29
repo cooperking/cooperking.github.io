@@ -10,6 +10,12 @@ and names a wrong secret on the run's page). The site itself is the app's conten
 calendar reach the app at once; only changes in this folder need a new build. A build is also made on the 1st of every
 second month, so testers always have one well inside TestFlight's 90 days.
 
+Away and playing (build 25 on, `native/App/SotdGuard.swift`): with the app in the background or the phone locked, iOS
+holds back the page, so it doesn't hear that another of the member's devices has begun playing. The app itself asks the
+Worker every 10 seconds while a song plays here (`GET /members/now`, with the sign-in the calendar hands over), and if
+another device has begun playing since the app went away it pauses the song (`pauseAllMediaPlayback`) and tells the
+page (`window.sotdTakenBy`). Never two devices playing at once (John, 29 Oct 2026).
+
 Adding members from John's contacts: the Members tab's *From Contacts…* calls the app's own plugin
 (`native/App/SotdContacts.swift`): `SotdContacts.pickMany()` from build 24 (a tick by each person, then Done: their
 names and email addresses, an invitation each to check), `SotdContacts.pick()` (one person) on build 22. The

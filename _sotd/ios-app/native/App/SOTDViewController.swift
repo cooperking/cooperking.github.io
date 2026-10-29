@@ -8,5 +8,6 @@ class SOTDViewController: CAPBridgeViewController {
         bridge?.registerPluginInstance(SotdCastPlugin())
         bridge?.registerPluginInstance(SotdSiriPlugin())
         bridge?.registerPluginInstance(SotdContactsPlugin())   // (Apple's contact picker, for the Members tab: build 22 on)
+        SotdGuard.shared.attach(bridge?.webView)   // (away, playing: stopped when another device begins: build 25 on)
     }
 }

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="c044eed48183">
+<meta name="sotd-build" content="73f328cbb7eb">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -4468,12 +4468,16 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function nowTaken(label) {   // carried on on another device: this one stops, and says where it's playing
     if (NOW.taken) return;
     NOW.taken = true; NOW.takenAt = Date.now(); NOW.key = ''; NOW.sent = null; NOW.okAt = 0;   // (a tap here to play again: noted, as new)
-    if (vplay && vplay.on) try { vidToggle(); } catch (e) {}
+    try { var vp = vplay && vplay.player; if (vp && vp.pauseVideo) vp.pauseVideo(); } catch (e) {}   // (paused, never toggled: it may be paused already)
+    try { if (playing && !audio.paused) audio.pause(); } catch (e) {}
     resumeForget();   // (this device's own place: not offered over the other's)
     if (TV) layers().forEach(function (d) { closeDialog(d, true); });   // a TV: back to the calendar, the other's song in the bar
     toast('Playing on your ' + label + ' now');
     setTimeout(nowFetch, 1500);   // (then the other's song shown here, to carry on with)
   }
+  // the iPhone app, away (build 25 on, SotdGuard): another of the member's devices began playing, and the app has paused
+  // the song here, as the page itself couldn't hear it while away
+  window.sotdTakenBy = function (label) { if (MEMBER) nowTaken(String(label || 'other device')); };
   function nowNote(force) {   // a note, if something's changed since the last
     var st = nowState(); if (!st) return;
     var key = st.t + '|' + st.playing, was = NOW.sent;

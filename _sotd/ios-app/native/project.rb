@@ -1,7 +1,8 @@
 # The app's own native parts, put into Capacitor's Xcode project (run by customise.sh, from _sotd/ios-app, after
 # `npx cap add ios` has made ios/ and the files have been copied into it):
 #  - into the App target: SOTDViewController.swift (the plugins), SotdCastPlugin.swift (Chromecast), SotdSiri.swift (Siri,
-#    and the widgets' sign-in), SotdContacts.swift (Apple's contact picker, for the Members tab), SotdShared.swift (the
+#    and the widgets' sign-in), SotdContacts.swift (Apple's contact picker, for the Members tab), SotdGuard.swift (away and playing: stops when
+#    another of the member's devices begins), SotdShared.swift (the
 #    keychain the app and its widgets share)
 #  - SotdWidget: the widgets and the control (io.github.cooperking.sotd.widget)
 #  - SotdNotify: the notifications' pictures (io.github.cooperking.sotd.notify)
@@ -15,7 +16,7 @@ app = proj.targets.find { |t| t.name == 'App' } or abort('No App target in the p
 
 # 1. the App target's own Swift files
 group = proj.main_group.children.find { |g| g.respond_to?(:path) && (g.path == 'App' || g.name == 'App') } or abort('No App group')
-%w[SOTDViewController.swift SotdCastPlugin.swift SotdSiri.swift SotdContacts.swift SotdShared.swift].each do |f|
+%w[SOTDViewController.swift SotdCastPlugin.swift SotdSiri.swift SotdContacts.swift SotdGuard.swift SotdShared.swift].each do |f|
   next if group.files.any? { |r| r.path == f }
   app.add_file_references([group.new_reference(f)])
 end
