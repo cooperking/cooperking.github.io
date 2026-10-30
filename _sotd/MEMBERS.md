@@ -275,7 +275,11 @@ still to come: facts, written for new songs and on request for older ones, check
   `#u=<id>`, and `#u=<id>&d=<day>` for a day). On another's calendar the hearts (My playlist), sharing and the YouTube
   link are put away, the Spotify link goes to their playlist, and playing My playlist goes back to John's calendar.
 - **New songs.** The songs on it when it's added are out from the start; each song added after waits for its owner,
-  who is told on their phone ("“…” waits for you to sign off") and sees its day marked with *Sign off*. Signed off, it's
+  who is told on their phone ("“…” waits for you to sign off"). They sign it off in any of three places (John, 30 Oct
+  2026: "I can’t see how a user would sign off a song"): Profile › Playlists, which opens first when something waits
+  (a count on its tab), lists each playlist's waiting songs with *Sign off* and *Open*; on a calendar, its day is
+  outlined and opens with *Sign off*; in a plain playlist's list it's marked, with *Sign off*. (`wait` on `pls`: the
+  newest 20.) Signed off, it's
   out for everyone, and goes to the members as a message from them only as they've chosen (Messages, below; "From
   Mum"; reactions and replies as any message; on their Sent too). 20 sign-offs a day at most.
 - **Kept.** KV `upls` (each playlist: owner, Spotify id and name, calendar or playlist, invite link, when added, whether
@@ -298,7 +302,7 @@ still to come: facts, written for new songs and on request for older ones, check
 - Worker: `/members/upl` (GET `?id=`; POST ops `add`, `mode`, `link`, `check`, `remove`, `signoff`, `dates`, `order`, `send`), `pls` on
   `/members/me`, admin ops `upls`, `uplcheck`, `uplremove`. Tests: `upl_t.mjs` (the Worker), `upl_page_t.py` (the
   draft), `upl_admin_t.py` (the Members tab), `upl_dates_t.mjs` (days and order), `upl_order_t.py` (the draft's order and
-  Days), `mine_drag_t.py` (My playlist's dragging, shared with them).
+  Days), `upl_wait_t.py` (where they sign off), `mine_drag_t.py` (My playlist's dragging, shared with them).
 
 ## Saved playlists
 

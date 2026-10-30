@@ -1403,7 +1403,7 @@ async function memberMe(request, env, answer) {
   const others = Object.keys(all).filter(k => k !== id && hasJoined(all[k]) && takesFrom(all, k, id, ownerId)).map(k => ({ id: k, name: all[k].name })).sort(byName);
   const seen = Object.keys(all).filter(k => k !== id && k !== ownerId && hasJoined(all[k]) && !apart(all, id, k)).map(k => ({ id: k, name: all[k].name })).sort(byName);
   const bell = bellView(all, id, await env.SOTD.get('bell:' + id, 'json')).unseen;   // reactions to their messages not yet seen
-  const pls = uplList(all, id, await uplAll(env));   // members' own playlists they can see, and their own
+  const U0 = await uplAll(env), pls = await uplMine(env, uplList(all, id, U0), U0);   // members' own playlists they can see, and their own (with the songs waiting for them)
   return answer(200, Object.assign({ name: m.name, email: m.email || '', exp, media, see, mycovers, unread, bell, pls, others, seen, msgs: !m.nomsg,
     mute: (m.mute || []).filter(k => seen.some(x => x.id === k)) }, owner ? { owner: true } : {}));
 }
@@ -2731,6 +2731,14 @@ function uplList(all, viewer, U) {   // the playlists a member can switch to (/m
     .map(([pid, r]) => Object.assign({ id: pid, n: uplName(all, r), t: uplTitle(all, r), o: all[r.o].name, mode: r.mode, cnt: r.cnt || 0, sp: r.sp }, r.yt ? { yt: r.yt } : {}, r.o === viewer ? { mine: true, st: r.st, err: r.err || '', dates: r.mode === 'list' ? null : Object.assign({ how: 'added' }, r.dates || {}), send: uplSendOf(r) } : {}))
     .sort((a, b) => (b.mine ? 1 : 0) - (a.mine ? 1 : 0) || a.o.localeCompare(b.o) || a.n.localeCompare(b.n));
 }
+async function uplMine(env, pls, U) {   // their own playlists' songs waiting for them to sign off (wait: the newest 20, oldest first)
+  for (const p of pls) {
+    if (!p.mine || p.st !== 'ok' || !U[p.id]) continue;
+    const rec = U[p.id], data = await uplSongs(env, p.id), days = uplDays(data.songs || [], rec);
+    p.wait = (data.songs || []).map((x, i) => uplWaiting(rec, data, x) ? { id: x.id, title: x.title, artist: x.artist, d: days[i].d, img: x.img || '' } : null).filter(Boolean).slice(-20);
+  }
+  return pls;
+}
 function uplAdmin(all, U) {   // the Members tab: every playlist, whose, and whether John has joined it
   return Object.entries(U).map(([pid, r]) => ({ id: pid, n: uplName(all, r), o: (all[r.o] && all[r.o].name) || '?', oid: r.o, mode: r.mode, st: r.st, err: r.err || '', link: r.link || '',
     sp: r.sp, at: r.at, read: r.read || null, cnt: r.cnt || 0 })).sort((a, b) => (a.st === 'join' ? 0 : 1) - (b.st === 'join' ? 0 : 1) || b.at - a.at);
@@ -2875,7 +2883,7 @@ async function memberUpl(request, url, env, answer) {
     return answer(200, await uplView(env, all, me, pid, rec));
   }
   if (request.method !== 'POST') return answer(405, { error: 'Use GET or POST.' });
-  const body = await request.json().catch(() => ({})), mine = () => answer(200, { ok: true, pls: uplList(all, me, U) });
+  const body = await request.json().catch(() => ({})), mine = async () => answer(200, { ok: true, pls: await uplMine(env, uplList(all, me, U), U) });
   const own = pid => U[pid] && U[pid].o === me ? U[pid] : null;
   if (body.op === 'add') {
     const sp = uplSpId(body.link);
@@ -2889,7 +2897,7 @@ async function memberUpl(request, url, env, answer) {
     U[pid] = rec; await uplPut(env, U);
     await uplRead(env, pid, rec, U);
     if (rec.st === 'join') await uplAskJohn(env, all, me, rec);
-    return answer(200, { ok: true, id: pid, st: rec.st, pls: uplList(all, me, U) });
+    return answer(200, { ok: true, id: pid, st: rec.st, pls: await uplMine(env, uplList(all, me, U), U) });
   }
   const pid = String(body.id || ''), rec = own(pid);
   if (!rec) return answer(404, { error: 'No such playlist of yours.' });
@@ -2905,7 +2913,7 @@ async function memberUpl(request, url, env, answer) {
   if (body.op === 'check') {
     if (Date.now() - (rec.tried || 0) < UPL_CHECK_GAP) return answer(429, { error: 'Looked a moment ago. Try again in a minute.' });
     await uplRead(env, pid, rec, U);
-    return answer(200, Object.assign({ ok: true, st: rec.st, pls: uplList(all, me, U) }, rec.st === 'ok' ? { view: await uplView(env, all, me, pid, rec) } : {}));
+    return answer(200, Object.assign({ ok: true, st: rec.st, pls: await uplMine(env, uplList(all, me, U), U) }, rec.st === 'ok' ? { view: await uplView(env, all, me, pid, rec) } : {}));
   }
   if (body.op === 'signoff') {
     const data = await uplSongs(env, pid), x = (data.songs || []).find(y => y.id === String(body.track || ''));
@@ -2919,7 +2927,7 @@ async function memberUpl(request, url, env, answer) {
     if (now) { data.ann = data.ann || {}; data.ann[x.id] = Date.now(); }
     await env.SOTD.put('upl:' + pid, JSON.stringify(data));
     const sent = now ? await uplSend(env, all, me, pid, rec, x, cd) : null;
-    return answer(200, Object.assign({ ok: true, sent, view: await uplView(env, all, me, pid, rec) }, snd.on && !now ? { on: d, at: snd.at } : {}));
+    return answer(200, Object.assign({ ok: true, sent, view: await uplView(env, all, me, pid, rec), pls: await uplMine(env, uplList(all, me, U), U) }, snd.on && !now ? { on: d, at: snd.at } : {}));
   }
   if (body.op === 'dates') {
     if (rec.mode === 'list') return answer(400, { error: 'A playlist has no days: make it a calendar first.' });
@@ -2933,7 +2941,7 @@ async function memberUpl(request, url, env, answer) {
     }
     delete rec.annDay;   // (today's song looked at again)
     await uplPut(env, U);
-    return answer(200, { ok: true, pls: uplList(all, me, U), view: await uplView(env, all, me, pid, rec) });
+    return answer(200, { ok: true, pls: await uplMine(env, uplList(all, me, U), U), view: await uplView(env, all, me, pid, rec) });
   }
   if (body.op === 'send') {
     const at = String(body.at || '08:00');
@@ -2941,7 +2949,7 @@ async function memberUpl(request, url, env, answer) {
     rec.send = { on: !!body.on, at };
     delete rec.annDay;
     await uplPut(env, U);
-    return answer(200, { ok: true, pls: uplList(all, me, U), view: await uplView(env, all, me, pid, rec) });
+    return answer(200, { ok: true, pls: await uplMine(env, uplList(all, me, U), U), view: await uplView(env, all, me, pid, rec) });
   }
   if (body.op === 'order') {
     if (rec.mode !== 'list') return answer(400, { error: 'A calendar’s order is its days.' });
