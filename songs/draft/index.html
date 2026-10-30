@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="b8754ab7e07c">
+<meta name="sotd-build" content="3cbb26ccca1c">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -330,7 +330,20 @@ html.big .heroacts .hsub { margin: 0 6px 0 0; }
 .msgv .ask-acts[hidden] { display: none; }
 .ac-msgs .acts2 { display: flex; justify-content: flex-end; gap: 14px; padding: 0 10px 5px 26px; }
 .ac-msgs .acts2 button { border: 0; background: none; padding: 3px 0; font: 600 10px/1.2 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); cursor: pointer; }
-.ac-msgs .acts2 .reply { margin-right: auto; color: var(--fg); }
+.ac-msgs .acts2 .reply { color: var(--fg); }
+.ac-msgs .acts2 { flex-wrap: wrap; align-items: center; }
+.ac-msgs .rxrow { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-right: auto; }
+.ac-msgs .acts2 .rxc, .msgv .rxc { padding: 0 7px; border: 1px solid var(--line); border-radius: 999px; background: var(--bg); font: 500 12px/16px var(--sans); letter-spacing: 0; text-transform: none; color: var(--fg); cursor: pointer; }
+.ac-msgs .acts2 .rxc.me, .msgv .rxc.me { border-color: #e23a6e; background: rgba(226, 58, 110, .08); }
+.ac-msgs .acts2 .rxadd { display: inline-grid; place-items: center; width: 28px; height: 18px; padding: 0; color: var(--muted); }
+.ac-msgs .acts2 .rxadd svg { width: 16px; height: 16px; }
+.rxpick { display: flex; flex-wrap: wrap; gap: 2px; padding: 0 10px 8px 22px; }
+.rxpick button { border: 0; background: none; border-radius: 8px; padding: 2px 5px; font-size: 20px; line-height: 1.2; cursor: pointer; }
+.rxpick button.me { background: rgba(226, 58, 110, .14); }
+.msgv .msgrx { display: grid; gap: 8px; }
+.msgv .msgrx[hidden] { display: none; }
+.msgv .msgrx .rxpick { padding: 0; }
+.msgv .rxchips { display: flex; flex-wrap: wrap; gap: 6px; }
 .ac-msgs .acts2 button:hover, .ac-msgs .acts2 button:focus-visible { color: var(--fg); }
 .ac-msgs .new .dot { background: #e23a6e; }
 .ac-msgs .t { grid-column: 2; font: 500 15.5px/1.2 var(--serif); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
@@ -1535,6 +1548,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     <p class="msgv-w" id="msgw"></p>
     <p class="msgv-b" id="msgb"></p>
     <figure class="msgv-pic" id="msgpicf" hidden><img id="msgpic" alt=""></figure>
+    <div class="msgrx" id="msgrx" hidden><div class="rxchips" id="msgrxc"></div><div class="rxpick" id="msgrxp" role="group" aria-label="React"></div></div>
     <div class="ask-acts" id="msgacts" hidden><button class="copy" id="msgreply" type="button">Reply</button></div>
   </div>
 </dialog>
@@ -5879,6 +5893,45 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     return 'to ' + (n.length > 4 ? n.slice(0, 3).join(', ') + ' and ' + (n.length - 3) + ' others' : andList(n));
   }
   function fromLine(x) { return [x.f ? 'From ' + x.f : '', toText(x.to)].filter(Boolean).join(' · '); }
+  // reactions: an emoji on a message from someone, one each (the same again takes it away); a chip for each emoji with
+  // how many, tapped: who
+  var REACTS = ['👍', '❤️', '😂', '😮', '😢', '🙏', '🎉', '🔥'];
+  var RX_FACE = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" aria-hidden="true"><circle cx="7" cy="8.5" r="5.5"/><path d="M4.9 10.2c.6.8 1.3 1.2 2.1 1.2s1.5-.4 2.1-1.2"/><path d="M5.2 7h.01M8.8 7h.01"/><path d="M13 1.5v4M11 3.5h4"/></svg>';
+  function rxMine(x) { var m = (x.rx || []).filter(function (r) { return r.me; })[0]; return m ? m.e : ''; }
+  function rxWho(r) { var t = andList(r.n); return r.e + ' ' + t.charAt(0).toUpperCase() + t.slice(1); }
+  function rxChips(x, box) {
+    (x.rx || []).forEach(function (r) {
+      var c = document.createElement('button'); c.type = 'button'; c.className = 'rxc' + (r.me ? ' me' : '');
+      c.textContent = r.e + ' ' + r.n.length; c.setAttribute('aria-label', r.e + ' from ' + andList(r.n));
+      c.addEventListener('click', function (ev) { ev.stopPropagation(); toast(rxWho(r)); });
+      box.appendChild(c);
+    });
+  }
+  function rxPicker(x, box) {
+    var mine = rxMine(x);
+    REACTS.forEach(function (e) {
+      var b = document.createElement('button'); b.type = 'button'; b.textContent = e; b.className = e === mine ? 'me' : '';
+      b.setAttribute('aria-label', (e === mine ? 'Take away ' : 'React ') + e); b.setAttribute('aria-pressed', String(e === mine));
+      b.addEventListener('click', function () { rxSend(x, e); });
+      box.appendChild(b);
+    });
+  }
+  function rxSend(x, e) {
+    var want = rxMine(x) === e ? '' : e;
+    INBOX.pick = null;
+    sendPost('/members/react', { id: x.id, e: want }).then(function (j) {
+      if (!j.ok) { toast(j.error || 'Couldn’t react just now'); return; }
+      x.rx = j.rx; inboxDraw(); if (MSG && MSG.x === x) msgRx(x);
+    }).catch(function () { toast('Couldn’t reach the site. Try again.'); });
+  }
+  function msgRx(x) {   // the message opened: its reactions, and the emoji to react with (one received from someone)
+    var box = document.getElementById('msgrx'), chips = document.getElementById('msgrxc'), pick = document.getElementById('msgrxp'), mayReact = !MSG.sent && !!x.f && !!MEMBER;
+    chips.textContent = ''; pick.textContent = '';
+    rxChips(x, chips);
+    if (mayReact) rxPicker(x, pick);
+    pick.hidden = !mayReact;
+    box.hidden = !mayReact && !(x.rx || []).length;
+  }
   // a reply: the same people (the sender and the others it went to, or everyone), as far as this member can send to them
   function replyCan(x) { return !!(x && x.f && sendCan()); }
   function replyTo(x) {
@@ -5897,6 +5950,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var who = sent ? sentTo(x.to) : fromLine(x);
     document.getElementById('msgw').textContent = (who ? who + ' · ' : '') + when;
     document.getElementById('msgacts').hidden = sent || !replyCan(x);
+    msgRx(x);
     var b = document.getElementById('msgb'); b.textContent = x.b || ''; b.hidden = !x.b;
     var pic = x.i || x.c || '', f = document.getElementById('msgpicf'), im = document.getElementById('msgpic');
     f.hidden = !pic; f.className = 'msgv-pic' + (x.i ? '' : ' cv');
@@ -5952,6 +6006,14 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       var dl = document.createElement('button'); dl.type = 'button'; dl.textContent = 'Delete';
       dl.addEventListener('click', function () { inboxDelete([x.id]); });
       if (replyCan(x)) { var rp = document.createElement('button'); rp.type = 'button'; rp.className = 'reply'; rp.textContent = 'Reply'; rp.addEventListener('click', function () { replyTo(x); }); acts.appendChild(rp); }
+      var pickRow = null;
+      if (x.f) {
+        var row = document.createElement('span'); row.className = 'rxrow'; rxChips(x, row);
+        var add = document.createElement('button'); add.type = 'button'; add.className = 'rxadd'; add.innerHTML = RX_FACE; add.setAttribute('aria-label', 'React'); add.setAttribute('aria-expanded', String(INBOX.pick === x.id));
+        add.addEventListener('click', function () { INBOX.pick = INBOX.pick === x.id ? null : x.id; inboxDraw(); });
+        row.appendChild(add); acts.appendChild(row);
+        if (INBOX.pick === x.id) { pickRow = document.createElement('div'); pickRow.className = 'rxpick'; pickRow.setAttribute('role', 'group'); pickRow.setAttribute('aria-label', 'React'); rxPicker(x, pickRow); }
+      }
       acts.appendChild(tg); acts.appendChild(dl);
       b.addEventListener('click', function () {
         if (INBOX.sel) { if (INBOX.sel.has(x.id)) INBOX.sel.delete(x.id); else INBOX.sel.add(x.id); inboxDraw(); return; }   // selecting: ticked or not
@@ -5962,7 +6024,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         inboxCall({ read: [x.id] }).catch(function () {}).then(go);
       });
       if (sel) b.setAttribute('aria-pressed', String(sel.has(x.id)));
-      li.appendChild(b); if (!sel) li.appendChild(acts); ul.appendChild(li);
+      li.appendChild(b); if (!sel) { li.appendChild(acts); if (pickRow) li.appendChild(pickRow); } ul.appendChild(li);
     });
     if (!sel && items.length > INBOX.shown) {
       var li = document.createElement('li'), m = document.createElement('button'); li.className = 'plain'; m.type = 'button'; m.className = 'copy ghost more'; m.textContent = 'Show more';
@@ -6002,7 +6064,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       if (x.i) { var pi = document.createElement('img'); pi.className = 'pic'; pi.alt = ''; pi.loading = 'lazy'; pi.src = x.i; pi.onerror = function () { pi.remove(); }; b.appendChild(pi); }
       else if (x.c) { var cv = document.createElement('img'); cv.className = 'cv'; cv.alt = ''; cv.loading = 'lazy'; cv.src = x.c; cv.onerror = function () { cv.remove(); }; b.appendChild(cv); }
       b.addEventListener('click', function () { if (msgWhere(x.u)) msgGo(x.u); else msgOpen(x, true); });
-      li.appendChild(b); ul.appendChild(li);
+      li.appendChild(b);
+      if ((x.rx || []).length) { var ra = document.createElement('div'); ra.className = 'acts2'; var rr = document.createElement('span'); rr.className = 'rxrow'; rxChips(x, rr); ra.appendChild(rr); li.appendChild(ra); }
+      ul.appendChild(li);
     });
     if (items.length > SENT.shown) {
       var li = document.createElement('li'), m = document.createElement('button'); li.className = 'plain'; m.type = 'button'; m.className = 'copy ghost more'; m.textContent = 'Show more';
@@ -6410,7 +6474,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   });
   function acctOpen() {
     if (INBOX.unread) AC_TAB = 'inbox';   // (something new: the Inbox first; else the tab they had)
-    INBOX.shown = 5; INBOX.sel = null; inboxCall().catch(function () {});
+    INBOX.shown = 5; INBOX.sel = null; INBOX.pick = null; inboxCall().catch(function () {});
     SENT.shown = 5; sentCall().catch(function () {});
     acctDraw(); openLayer(acct); appDraw(); pkLoad();   // (again, open: the code goes into the address only while it's open)
     if (MEMBER && !PL.loaded) plLoad();

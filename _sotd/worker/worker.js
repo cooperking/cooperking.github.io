@@ -831,6 +831,7 @@ async function members(request, url, env) {
   if (route === 'sendpic') return memberSendPic(request, env, answer);
   if (route === 'prefs') return memberPrefs(request, env, answer);
   if (route === 'sent') return memberSent(request, env, answer);
+  if (route === 'react') return memberReact(request, env, answer);
   if (!['admin', 'upload', 'cover'].includes(route)) return answer(404, { error: 'Not here.' });
   if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
   const no = await adminOk(request, env, answer);
@@ -2572,7 +2573,41 @@ async function memberInbox(request, env, answer) {
     if (body.del) { const want = ids(body.del); for (let i = box.length - 1; i >= 0; i--) if (want.has(box[i].id)) { box.splice(i, 1); changed = true; } }
     if (changed) { await env.SOTD.put(key, JSON.stringify(box)); await apnsBadge(env, member, box.filter(x => !x.r).length); }
   } else if (request.method !== 'GET') return answer(405, { error: 'Use GET or POST.' });
-  return answer(200, { items: box, unread: box.filter(x => !x.r).length });
+  return answer(200, { items: await withReactions(env, member, box, x => !!x.f), unread: box.filter(x => !x.r).length });
+}
+
+// ---------- reactions: an emoji on a message from someone, by anyone it went to (from their inbox). Kept per message
+// (KV react:<message id>: { <member id>: { e, at } }, one emoji each); each member sees them on the message in their inbox,
+// and its sender on Sent, as rx: [{ e, n: [names, "you" for their own], me }], leaving out anyone kept apart from them.
+// POST /members/react { id, e } sets theirs (e '' takes it away) and gives back the message's rx. ----------
+const REACTS = ['👍', '❤️', '😂', '😮', '😢', '🙏', '🎉', '🔥'], REACT_DAYS = 400;
+function rxView(all, viewer, r) {
+  const by = {};
+  for (const [k, v] of Object.entries(r || {})) {
+    if (!all[k] || !REACTS.includes(v.e) || (k !== viewer && apart(all, viewer, k))) continue;
+    (by[v.e] = by[v.e] || []).push({ k, n: all[k].name, at: v.at || 0 });
+  }
+  return REACTS.filter(e => by[e]).map(e => ({ e, n: by[e].sort((a, b) => a.at - b.at).map(p => p.k === viewer ? 'you' : p.n), me: by[e].some(p => p.k === viewer) }));
+}
+async function withReactions(env, viewer, items, has) {
+  const want = items.filter(has);
+  if (!want.length) return items;
+  const all = (await env.SOTD.get('members', 'json')) || {}, got = {};
+  await Promise.all(want.map(async x => { const r = await env.SOTD.get('react:' + x.id, 'json'); if (r) got[x.id] = rxView(all, viewer, r); }));
+  return items.map(x => got[x.id] && got[x.id].length ? Object.assign({}, x, { rx: got[x.id] }) : x);
+}
+async function memberReact(request, env, answer) {
+  if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
+  const who = await memberWho(request, env);
+  if (!who) return answer(401, { error: 'Not a member (any more).' });
+  const body = await request.json().catch(() => ({})), id = String(body.id || ''), e = String(body.e || '');
+  if (e && !REACTS.includes(e)) return answer(400, { error: 'That emoji isn’t one of these: ' + REACTS.join(' ') });
+  const box = (await env.SOTD.get('inbox:' + who.id, 'json')) || [];
+  if (!id || !box.some(x => x.id === id && x.f)) return answer(404, { error: 'No such message in your inbox.' });
+  const key = 'react:' + id, r = (await env.SOTD.get(key, 'json')) || {};
+  if (e) r[who.id] = { e, at: Date.now() }; else delete r[who.id];
+  if (Object.keys(r).length) await env.SOTD.put(key, JSON.stringify(r), { expirationTtl: REACT_DAYS * 86400 }); else await env.SOTD.delete(key);
+  return answer(200, { ok: true, rx: rxView(who.all, who.id, r) });
 }
 
 // ---------- each member's own sent notifications (John, 29 Oct 2026: "a sent message tab on a members profile, for them
@@ -2616,7 +2651,7 @@ async function memberSent(request, env, answer) {
   if (request.method !== 'GET') return answer(405, { error: 'Use GET.' });
   const member = await memberFromToken(request, env);
   if (!member) return answer(401, { error: 'Not a member (any more).' });
-  return answer(200, { items: await sentList(env, member) });
+  return answer(200, { items: await withReactions(env, member, await sentList(env, member), () => true) });
 }
 
 async function notePic(url, env) {   // a notification's picture: anyone with its (unguessable) address, as a phone fetches it unsigned

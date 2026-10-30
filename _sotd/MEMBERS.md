@@ -213,6 +213,14 @@ notification carries both (`image` the still, `gif` the GIF, only one of the Wor
 Sent show the GIF, moving; the notification itself shows the still (Android, computers) or no picture (iPhone). A GIF
 over 5 MB goes as the still. Tests: `gif_t.mjs` (the Worker), `gif_page_t.py` (the draft and the Members tab).
 
+Reactions (John, 30 Oct 2026; draft first): anyone a message from someone went to can react to it with one emoji
+(👍 ❤️ 😂 😮 😢 🙏 🎉 🔥), from the face button beside *Reply* in the Inbox or in the message opened; the same emoji again
+takes theirs away, another changes it. Each message shows a chip per emoji with how many ("❤️ 2"); tapping a chip says
+who ("❤️ Dad and you"). The sender sees them on Sent. Anyone kept apart from the person looking is left out of the
+count and the names. KV `react:<message id>` `{ <member id>: { e, at } }`, kept 400 days; `POST /members/react
+{ id, e }` (`e` '' takes it away; only for a message in their own inbox from someone, not the day's song); the inbox
+and Sent give each message's `rx` `[{ e, n, me }]`. Tests: `react_t.mjs` (the Worker), `react_page_t.py` (the draft).
+
 ## Saved playlists
 
 A member can save My playlist (*Save this playlist* in it, with a name) and keep several. They're kept by the Worker
