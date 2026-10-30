@@ -55,6 +55,15 @@ The Worker keeps the card and its page (`/i/<id>`, KV `invcard:` and `invpage:`,
 the page sends a person on to their invitation on the calendar. *Share…* (on a phone), Messages, WhatsApp, Email and
 Copy link all send that link.
 
+An invitation works on up to 5 devices within 30 days (`INVITE_USES`, `INVITE_DAYS`; the 12 hours, `LINK_HOURS`, are
+the links to John's MP3s and MP4s, not invitations). Once it has run out (30 Oct 2026), opening it on the calendar says
+so in a pop-up ("Your invitation has run out", when, or that it's been used on 5 devices) with *Ask John for a new one*:
+`POST /members/ask { code }` puts "<name> asks for a new invitation" into John's inbox and onto his phones (the member
+marked *This is me*), at most once in 12 hours (`ASK_HOURS`), and notes when on their record (`invite.asked`). The
+Members tab shows "Invitation ran out" or "Asks for a new invitation" on a member not signed in anywhere, and on each
+member "invitation: N more devices until …", "invitation ran out on …" or "invitation used on all its devices";
+*New link* sends a new one (and clears the asking). Tests: `invite_gone_t.mjs`, `invite_gone_page_t.py`.
+
 ## A day's own covers (members only)
 
 On the Songs tab, under a song's *Members only*: *Add your cover* (then *Add another cover*), and *Change* on each.

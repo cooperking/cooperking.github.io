@@ -262,6 +262,13 @@
   }
 
   // ---- people ----
+  // a member's invitation: how much is left, or that it has run out (its 30 days, or its 5 devices), and when they asked for a new one
+  function dayShort(t) { return new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }); }
+  function inviteGone(v) { return !!v && (v.until <= Date.now() || !v.left); }
+  function inviteSays(v) {
+    if (!inviteGone(v)) return 'invitation: ' + v.left + ' more device' + (v.left === 1 ? '' : 's') + ' until ' + dayShort(v.until);
+    return (v.until <= Date.now() ? 'invitation ran out on ' + dayShort(v.until) : 'invitation used on all its devices') + (v.asked ? ' · asked for a new one on ' + dayShort(v.asked) : '');
+  }
   function people() {
     var ul = $('people'); ul.innerHTML = '';
     var on = MEMBERS.filter(function (m) { return m.devices; }).length;
@@ -271,9 +278,10 @@
       var li = document.createElement('li'); li.className = 'card person';
       var who = document.createElement('span'); who.className = 'who'; who.textContent = m.name;
       if (m.owner) { var you = document.createElement('span'); you.className = 'badge signed'; you.textContent = 'You'; you.style.marginLeft = '8px'; who.appendChild(you); }
+      if (!m.devices && inviteGone(m.invite)) { var gn = document.createElement('span'); gn.className = 'badge check'; gn.textContent = m.invite.asked ? 'Asks for a new invitation' : 'Invitation ran out'; gn.style.marginLeft = '8px'; gn.title = 'New link sends them a new one'; who.appendChild(gn); }
       var st = document.createElement('span'); st.className = 'stat';
       st.textContent = (m.devices ? m.devices + (m.devices === 1 ? ' device' : ' devices') : 'not signed in yet') + (m.seen ? ' · last here ' + whenAt(m.seen) : '')
-        + (m.invite ? ' · link: ' + (m.invite.left && m.invite.until > Date.now() ? m.invite.left + ' more device' + (m.invite.left === 1 ? '' : 's') + ' until ' + new Date(m.invite.until).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : 'used up') : '')
+        + (m.invite ? ' · ' + inviteSays(m.invite) : '')
         + (m.passkeys ? ' · ' + m.passkeys + (m.passkeys === 1 ? ' passkey' : ' passkeys') : '')
         + ((PUSHON || {})[m.id] ? ' · notifications on' : '')
         + (m.nomsg ? ' · other members’ notifications off' : '');   // (theirs to choose, Profile › Account; yours still reach them)

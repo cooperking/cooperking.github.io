@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="b1f8c002f491">
+<meta name="sotd-build" content="b8754ab7e07c">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -6655,6 +6655,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     fetch(MBASE + '/members/join', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: code, device: deviceId() }) })
       .then(function (r) { return r.json().then(function (j) { j.ok = r.ok; return j; }); })   // (the device's own id: a sign-in here replaces the last)
       .then(function (j) {
+        if (j.gone) { appAfterJoin = false; inviteGoneAsk(code, j); memberLoad(); return; }
         if (!j.ok || !j.token) { toast(j.error || 'That invite didn’t work. Ask John for a new one.'); memberLoad(); return; }
         try { localStorage.setItem(MKEY, j.token); localStorage.removeItem('sotd-appcode'); } catch (e) {}   // (a code kept for the app was the last member's)
         appCode = null;
@@ -6662,6 +6663,18 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       }).catch(function () { toast('Couldn’t reach the site to join. Try again.'); });
   }
   window.sotdJoin = memberJoin;
+  // an invitation that has run out (its 30 days, or its 5 devices): said in a pop-up, with a way to ask John for a new
+  // one (the Worker tells him in his inbox and on his phones)
+  function inviteGoneAsk(code, j) {
+    var asked = j.asked ? ' You asked for a new one on ' + new Date(j.asked).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' }) + '.' : '';
+    ask({ k: 'Invitation', h: 'Your invitation has run out', t: (j.error || '').replace(/ Ask John for a new one\.$/, '') + asked + ' Ask John for a new one: he’ll send you another.', ok: 'Ask John for a new one', no: 'Not now' }).then(function (yes) {
+      if (!yes) return;
+      fetch(MBASE + '/members/ask', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: code }) })
+        .then(function (r) { return r.json().then(function (x) { x.ok = r.ok && x.ok; return x; }); })
+        .then(function (x) { toast(x.ok ? 'Asked: John will send you a new invitation' : x.error || 'Couldn’t ask just now. Try again.'); })
+        .catch(function () { toast('Couldn’t reach the site. Try again.'); });
+    });
+  }
   // Sign in, in the bar (not on a TV: the Fire TV app has it in its menu): a member types the code John makes on
   // his members page (the same one-use code as the TV's), or pastes the invite link. A Home Screen app keeps its own
   // storage (an iPhone copies only cookies from Safari, and the token isn't one), so it signs in on its own. Signed in,

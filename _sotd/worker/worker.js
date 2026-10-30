@@ -615,6 +615,7 @@ function pushBy(via, runs) {   // who sent a notification (pushDaily's via, from
   if (via.t === 'timer') return { t: 'the Worker’s 10-minute timer' };
   if (via.t === 'you') return { t: 'you, on the Members tab' };
   if (via.t === 'member') return { t: via.name || 'a member' };
+  if (via.t === 'ask') return { t: (via.name || 'someone') + ', whose invitation ran out' };
   const r = via.run && via.run.id ? Object.assign({ name: via.run.job || 'Song moods and genres', n: via.run.n }, (runs || []).find(x => x.id === via.run.id) || {}) : null;
   return r ? { t: r.name + ', run ' + r.n, url: r.url || 'https://github.com/' + REPO + '/actions/runs/' + via.run.id } : { t: 'the site job' };
 }
@@ -811,6 +812,7 @@ async function members(request, url, env) {
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: h });
   const route = url.pathname.slice('/members/'.length);
   if (route === 'join') return memberJoin(request, env, answer);
+  if (route === 'ask') return memberAsk(request, env, answer);
   if (route === 'signout') return memberSignout(request, env, answer);
   if (route === 'me') return memberMe(request, env, answer);
   if (route === 'playlists') return memberPlaylists(request, env, answer);
@@ -849,7 +851,7 @@ async function members(request, url, env) {
   const listing = (own = owner) => Object.entries(all).map(([id, m]) => ({ id, name: m.name, created: m.created, owner: id === own, email: m.email || '', emailAt: m.emailAt || null,
     devices: Object.values(m.devices || {}).filter(d => d.did).length, apps: deviceApps(m, seenAt), passkeys: (m.passkeys || []).length, nomsg: !!m.nomsg, apart: m.apart || [], see: mediaFor(m),
     seen: Math.max(0, ...Object.entries(m.devices || {}).map(([h, d]) => Math.max(seenAt[h] || 0, d.seen || 0))) || null,
-    invite: m.invite ? { uses: m.invite.uses, left: Math.max(0, INVITE_USES - m.invite.uses), until: m.invite.until } : null }));
+    invite: m.invite ? Object.assign({ uses: m.invite.uses, left: Math.max(0, INVITE_USES - m.invite.uses), until: m.invite.until }, m.invite.asked ? { asked: m.invite.asked } : {}) : null }));
   switch (body.op) {
     case 'list': return answer(200, { members: listing(), catalog: await catalog(env), media: !!env.MEDIA, covers: await coversAll(env) });
     case 'people': return answer(200, { members: listing() });   // (the Apps tab: who has which app, and the emails for Google Play)
@@ -1266,6 +1268,41 @@ async function memberSignout(request, env, answer) {   // this device's sign-in,
   return answer(200, { ok: true });
 }
 
+// whether a member's invitation has run out: { why: 'time' (past its INVITE_DAYS) or 'used' (on INVITE_USES devices), say }
+function inviteGone(m) {
+  const v = m && m.invite;
+  if (!v) return null;
+  if (v.until < Date.now()) return { why: 'time', say: 'Your invitation ran out on ' + new Date(v.until).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', timeZone: 'Europe/London' }) + '.' };
+  if (v.uses >= INVITE_USES) return { why: 'used', say: 'Your invitation has been used on ' + INVITE_USES + ' devices, the most it can be.' };
+  return null;
+}
+// POST /members/ask { code }: someone whose invitation has run out asks John for a new one. John is told in his inbox and
+// on his phones (the member marked This is me), at most once in ASK_HOURS for the same invitation; the Members tab shows
+// when they asked (invite.asked).
+const ASK_HOURS = 12;
+async function memberAsk(request, env, answer) {
+  if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
+  const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+  const failKey = 'joinfail:' + ip + ':' + new Date().toISOString().slice(0, 13);
+  const fails = Number(await env.SOTD.get(failKey)) || 0;
+  if (fails >= 20) return answer(429, { error: 'Too many tries from here this hour.' });
+  const body = await request.json().catch(() => ({}));
+  const all = (await env.SOTD.get('members', 'json')) || {}, hash = await sha256hex(String(body.code || ''));
+  const id = Object.keys(all).find(k => all[k].invite && all[k].invite.hash === hash), m = id && all[id];
+  if (!m) { await env.SOTD.put(failKey, String(fails + 1), { expirationTtl: 7200 }); return answer(404, { error: 'This invitation isn’t valid.' }); }
+  const gone = inviteGone(m);
+  if (!gone) return answer(400, { error: 'Your invitation still works: open it again.' });
+  if (m.invite.asked && Date.now() - m.invite.asked < ASK_HOURS * 3600e3) return answer(200, { ok: true, asked: m.invite.asked, again: true });
+  m.invite.asked = Date.now();
+  await env.SOTD.put('members', JSON.stringify(all));
+  const owner = await env.SOTD.get('owner');
+  if (owner && all[owner]) {
+    const msg = { title: m.name + ' asks for a new invitation', body: gone.say.replace(/^Your invitation/, 'Their invitation') + ' Send a new one from the Members tab: New link.',
+      url: SITE_SONGS + 'admin.html#members', tag: 'sotd-ask-' + id };
+    await pushAll(env, msg, [owner], { kind: 'ask', via: { t: 'ask', name: m.name } });
+  }
+  return answer(200, { ok: true, asked: m.invite.asked });
+}
 async function memberJoin(request, env, answer) {
   if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
   const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
@@ -1289,10 +1326,12 @@ async function memberJoin(request, env, answer) {
     const hash = await sha256hex(given);
     id = Object.keys(all).find(k => all[k].invite && all[k].invite.hash === hash);
     m = id && all[id];
-    if (!m || m.invite.until < Date.now() || m.invite.uses >= INVITE_USES) {
-      if (!m) await env.SOTD.put(failKey, String(fails + 1), { expirationTtl: 7200 });
-      return answer(403, { error: m ? 'This invite has run out. Ask John for a new one.' : 'This invite isn’t valid. Ask John for a new one.' });
+    if (!m) {
+      await env.SOTD.put(failKey, String(fails + 1), { expirationTtl: 7200 });
+      return answer(403, { error: 'This invitation isn’t valid. Ask John for a new one.' });
     }
+    const gone = inviteGone(m);
+    if (gone) return answer(403, Object.assign({ error: gone.say + ' Ask John for a new one.', gone: gone.why, name: m.name, until: m.invite.until }, m.invite.asked ? { asked: m.invite.asked } : {}));
   }
   const token = randomCode(32);
   if (tvKey) await env.SOTD.delete(tvKey); else m.invite.uses++;
@@ -2464,7 +2503,7 @@ async function pushAll(env, msg, to, meta) {   // to: only these members (else e
   }
   const res = { id: unread[''], sent, gone: gone.length, failed, devices: ids.length - gone.length, errors: errors.slice(0, 5), at: Date.now(), title: msg.subject || msg.title,
     inboxes: Object.keys(unread).filter(k => k).length };   // inboxes: the members it went into (notifications on or not)
-  if (!meta || meta.kind !== 'member') await kvSoft(env, 'pushLastResult', JSON.stringify(res));   // the last send of John's, for the members page
+  if (!meta || (meta.kind !== 'member' && meta.kind !== 'ask')) await kvSoft(env, 'pushLastResult', JSON.stringify(res));   // the last send of John's, for the members page
   // and the last 40, for the admin page's Status tab: when each went, to how many, and how the push services took it
   const log = await pushHistory(env);
   log.unshift({ id: unread[''], at: res.at, title: msg.subject || msg.title, kind: (meta && meta.kind) || 'note', track: (meta && meta.track) || '', via: (meta && meta.via) || null,
