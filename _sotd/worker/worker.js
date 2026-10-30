@@ -2548,6 +2548,7 @@ async function inboxAdd(env, to, msg, meta) {
   if (msg.gif || msg.image) item.i = msg.gif || msg.image; if (msg.icon) item.c = msg.icon;
   if (msg.from) item.f = msg.from;
   const m = meta || {};
+  if (m.kind === 'song') item.s = 1;
   if (msg.from && m.fromId) item.fi = m.fromId;
   const toFor = id => m.toIds === 'all' ? 'all' : Array.isArray(m.toIds)
     ? m.toIds.filter(k => k !== id && all[k] && !apart(all, id, k)).map(k => ({ i: k, n: all[k].name })) : undefined;
@@ -2575,7 +2576,8 @@ async function memberInbox(request, env, answer) {
     if (body.del) { const want = ids(body.del); for (let i = box.length - 1; i >= 0; i--) if (want.has(box[i].id)) { box.splice(i, 1); changed = true; } }
     if (changed) { await env.SOTD.put(key, JSON.stringify(box)); await apnsBadge(env, member, box.filter(x => !x.r).length); }
   } else if (request.method !== 'GET') return answer(405, { error: 'Use GET or POST.' });
-  return answer(200, { items: await withReactions(env, member, box, x => !!x.f), unread: box.filter(x => !x.r).length });
+  const items = box.map(x => !x.s && rxSong(x) ? Object.assign({}, x, { s: 1 }) : x);
+  return answer(200, { items: await withReactions(env, member, items, rxCan), unread: box.filter(x => !x.r).length });
 }
 
 // ---------- reactions: an emoji on a message from someone, by anyone it went to (from their inbox). Kept per message
@@ -2583,6 +2585,10 @@ async function memberInbox(request, env, answer) {
 // and its sender on Sent, as rx: [{ e, n: [names, "you" for their own], me }], leaving out anyone kept apart from them.
 // POST /members/react { id, e } sets theirs (e '' takes it away) and gives back the message's rx. ----------
 const REACTS = ['👍', '❤️', '😂', '😮', '😢', '🙏', '🎉', '🔥'], REACT_DAYS = 400;
+// a message that takes reactions: one from someone, or the day's song (s; one sent before s was kept: its day's link and
+// "… Song of the Day" words)
+function rxSong(x) { return !!(x && !x.f && (x.s || (/#\d{1,2}-\d{1,2}-\d{4}$/.test(x.u || '') && /Song of the Day$/.test(x.b || '')))); }
+function rxCan(x) { return !!(x && (x.f || rxSong(x))); }
 function rxView(all, viewer, r) {
   const by = {};
   for (const [k, v] of Object.entries(r || {})) {
@@ -2605,31 +2611,34 @@ async function memberReact(request, env, answer) {
   const body = await request.json().catch(() => ({})), id = String(body.id || ''), e = String(body.e || '');
   if (e && !REACTS.includes(e)) return answer(400, { error: 'That emoji isn’t one of these: ' + REACTS.join(' ') });
   const box = (await env.SOTD.get('inbox:' + who.id, 'json')) || [];
-  const x = id && box.find(y => y.id === id && y.f);
+  const x = id && box.find(y => y.id === id && rxCan(y));
   if (!x) return answer(404, { error: 'No such message in your inbox.' });
   const key = 'react:' + id, r = (await env.SOTD.get(key, 'json')) || {};
   if (e) r[who.id] = { e, at: Date.now() }; else delete r[who.id];
   if (Object.keys(r).length) await env.SOTD.put(key, JSON.stringify(r), { expirationTtl: REACT_DAYS * 86400 }); else await env.SOTD.delete(key);
-  if (x.fi && who.all[x.fi]) {
-    await bellNote(env, x.fi, id, x.t, who.id, e);
-    if (e && takesFrom(who.all, x.fi, who.id, await env.SOTD.get('owner'))) await bellPush(env, x.fi, who.all[who.id].name, e, x.t, id, who.id);
+  // the bell: the sender's, or for the day's song John's (the member marked This is me)
+  const ownerId = await env.SOTD.get('owner'), song = rxSong(x), to = song ? ownerId : x.fi;
+  if (to && who.all[to]) {
+    await bellNote(env, to, id, x.t, who.id, e, song ? x.u : '');
+    if (e && takesFrom(who.all, to, who.id, ownerId)) await bellPush(env, to, who.all[who.id].name, e, x.t, id, who.id, song);
   }
   return answer(200, { ok: true, rx: rxView(who.all, who.id, r) });
 }
 
-// ---------- the bell: reactions to a member's own messages, newest first. KV bell:<member>: { seen, items: [{ id, k, e,
-// at, t }] }: one item per message and member reacting (a new emoji replaces theirs and comes to the top, taking it away
-// removes it), the newest 50. GET /members/bell gives { items: [{ id, n, e, at, t }], unseen, seen }, leaving out anyone
-// kept apart from them; POST /members/bell { seen: true } marks them all seen. ----------
+// ---------- the bell: reactions to a member's own messages, and John's to the day's songs, newest first. KV
+// bell:<member>: { seen, items: [{ id, k, e, at, t, u }] } (u: the day's link, for a song): one item per message and member
+// reacting (a new emoji replaces theirs and comes to the top, taking it away removes it), the newest 50. GET /members/bell
+// gives { items: [{ id, n, e, at, t, u }], unseen, seen }, leaving out anyone kept apart from them; POST /members/bell
+// { seen: true } marks them all seen. ----------
 const BELL_MAX = 50, RX_PUSH_DAY = 40;
-// a reaction also goes to the sender's devices with notifications on, unless they've turned off other members' messages
-// or the reactor's: "Dad reacted 🎉 to your message", the message's title, the calendar's bell (#bell); one a message and
+// a reaction also goes to the bell's member's devices with notifications on, unless they've turned off other members'
+// messages or the reactor's: "Dad reacted 🎉 to your message" ("… to the Song of the Day"), the message's title, the calendar's bell (#bell); one a message and
 // reactor on a device (its tag); RX_PUSH_DAY a day from each reactor; not in the inbox, so the app's icon keeps its number
-async function bellPush(env, to, name, e, title, msgId, from) {
+async function bellPush(env, to, name, e, title, msgId, from, song) {
   const subs = (await env.SOTD.get('pushSubs', 'json')) || {}, ids = Object.keys(subs).filter(k => subs[k].m === to);
   if (!ids.length || !await dayCount(env, 'rxpush:' + from, RX_PUSH_DAY)) return;
   const unread = ((await env.SOTD.get('inbox:' + to, 'json')) || []).filter(y => !y.r).length;
-  const msg = { title: name + ' reacted ' + e + ' to your message', body: '“' + (title || '') + '”', url: SITE_SONGS + '#bell', tag: 'sotd-rx-' + msgId + '-' + from, unread };
+  const msg = { title: name + ' reacted ' + e + (song ? ' to the Song of the Day' : ' to your message'), body: '“' + (title || '') + '”', url: SITE_SONGS + '#bell', tag: 'sotd-rx-' + msgId + '-' + from, unread };
   const k = await vapidKeys(env), gone = [];
   await Promise.all(ids.map(async id => {
     try { const { st } = await pushTo(env, k, subs[id], msg); if (st === 404 || st === 410) gone.push(id); } catch (err) { console.log('rx push: ' + (err && err.message)); }
@@ -2640,17 +2649,17 @@ async function bellPush(env, to, name, e, title, msgId, from) {
     await kvSoft(env, 'pushSubs', JSON.stringify(now));
   }
 }
-async function bellNote(env, to, msgId, title, from, e) {
+async function bellNote(env, to, msgId, title, from, e, u) {
   if (to === from) return;
   const key = 'bell:' + to, b = (await env.SOTD.get(key, 'json')) || { seen: 0, items: [] };
   b.items = (b.items || []).filter(y => !(y.id === msgId && y.k === from));
-  if (e) b.items.unshift({ id: msgId, k: from, e, at: Date.now(), t: title || '' });
+  if (e) b.items.unshift(Object.assign({ id: msgId, k: from, e, at: Date.now(), t: title || '' }, u ? { u } : {}));
   b.items.length = Math.min(b.items.length, BELL_MAX);
   await kvSoft(env, key, JSON.stringify(b));
 }
 function bellView(all, member, b) {
   const seen = (b && b.seen) || 0;
-  const items = ((b && b.items) || []).filter(y => all[y.k] && !apart(all, member, y.k)).map(y => ({ id: y.id, n: all[y.k].name, e: y.e, at: y.at, t: y.t }));
+  const items = ((b && b.items) || []).filter(y => all[y.k] && !apart(all, member, y.k)).map(y => Object.assign({ id: y.id, n: all[y.k].name, e: y.e, at: y.at, t: y.t }, y.u ? { u: y.u } : {}));
   return { items, unseen: items.filter(y => y.at > seen).length, seen };
 }
 async function memberBell(request, env, answer) {

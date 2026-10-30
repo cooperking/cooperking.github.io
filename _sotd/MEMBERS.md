@@ -220,7 +220,11 @@ takes theirs away, another changes it. Each message shows a chip per emoji with 
 who ("❤️ Dad and you"). The sender sees them on Sent. Anyone kept apart from the person looking is left out of the
 count and the names. KV `react:<message id>` `{ <member id>: { e, at } }`, kept 400 days; `POST /members/react
 { id, e }` (`e` '' takes it away; only for a message in their own inbox from someone, not the day's song); the inbox
-and Sent give each message's `rx` `[{ e, n, me }]`. Tests: `react_t.mjs` (the Worker), `react_page_t.py` (the draft).
+and Sent give each message's `rx` `[{ e, n, me }]`. The day's song takes reactions too (John, 30 Oct 2026: "as the song message of the day technically doesn't come from me,
+can it still get emojis?"): marked `s` in each inbox (one sent before then: its day's link and "… Song of the Day"
+words), everyone it went to sees them, and they go on John's bell (the member marked *This is me*) as "Dad reacted ❤️ to
+the Song of the Day", tapped: that day. A message's reactions take a line of their own above its actions; with none, the
+face sits beside *Reply*. Tests: `react_t.mjs` (the Worker), `react_page_t.py` (the draft).
 
 The bell (John, 30 Oct 2026; draft first): reactions to a member's own messages. A bell with the count not yet seen
 shows on the Profile button ("Signed in as …"), and a bell in the Profile's top corner (with that count) opens the list,

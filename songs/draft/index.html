@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="c78445506cb5">
+<meta name="sotd-build" content="3df000fb9d94">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -342,11 +342,15 @@ html.big .heroacts .hsub { margin: 0 6px 0 0; }
 .ac-msgs .acts2 button { border: 0; background: none; padding: 3px 0; font: 600 10px/1.2 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); cursor: pointer; }
 .ac-msgs .acts2 .reply { color: var(--fg); }
 .ac-msgs .acts2 { flex-wrap: wrap; align-items: center; }
-.ac-msgs .rxrow { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-right: auto; }
-.ac-msgs .acts2 .rxc, .msgv .rxc { padding: 0 7px; border: 1px solid var(--line); border-radius: 999px; background: var(--bg); font: 500 12px/16px var(--sans); letter-spacing: 0; text-transform: none; color: var(--fg); cursor: pointer; }
-.ac-msgs .acts2 .rxc.me, .msgv .rxc.me { border-color: #e23a6e; background: rgba(226, 58, 110, .08); }
-.ac-msgs .acts2 .rxadd { display: inline-grid; place-items: center; width: 28px; height: 18px; padding: 0; color: var(--muted); }
-.ac-msgs .acts2 .rxadd svg { width: 16px; height: 16px; }
+.ac-msgs .rxrow { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.ac-msgs .acts2 .rxrow { margin-right: auto; }
+.ac-msgs .acts2 .rxend { display: inline-flex; gap: 14px; margin-left: auto; }
+.ac-msgs .rxline { padding: 0 10px 3px 26px; }   /* a message's reactions, when it has some: a line of their own above its actions */
+.ac-msgs .acts2 .rxc, .ac-msgs .rxline .rxc, .msgv .rxc { padding: 0 7px; border: 1px solid var(--line); border-radius: 999px; background: var(--bg); font: 500 12px/16px var(--sans); letter-spacing: 0; text-transform: none; color: var(--fg); cursor: pointer; }
+.ac-msgs .acts2 .rxc.me, .ac-msgs .rxline .rxc.me, .msgv .rxc.me { border-color: #e23a6e; background: rgba(226, 58, 110, .08); }
+.ac-msgs .acts2 .rxadd, .ac-msgs .rxline .rxadd { display: inline-grid; place-items: center; width: 28px; height: 18px; padding: 0; border: 0; background: none; color: var(--muted); cursor: pointer; }
+.ac-msgs .rxadd svg { width: 16px; height: 16px; }
+.ac-msgs .rxline .rxadd:hover, .ac-msgs .rxline .rxadd:focus-visible { color: var(--fg); }
 .rxpick { display: flex; flex-wrap: wrap; gap: 2px; padding: 0 10px 8px 22px; }
 .rxpick button { border: 0; background: none; border-radius: 8px; padding: 2px 5px; font-size: 20px; line-height: 1.2; cursor: pointer; }
 .rxpick button.me { background: rgba(226, 58, 110, .14); }
@@ -5914,8 +5918,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     return 'to ' + (n.length > 4 ? n.slice(0, 3).join(', ') + ' and ' + (n.length - 3) + ' others' : andList(n));
   }
   function fromLine(x) { return [x.f ? 'From ' + x.f : '', toText(x.to)].filter(Boolean).join(' · '); }
-  // reactions: an emoji on a message from someone, one each (the same again takes it away); a chip for each emoji with
-  // how many, tapped: who
+  // reactions: an emoji on a message from someone or the day's song (s), one each (the same again takes it away); a chip
+  // for each emoji with how many, tapped: who
   var REACTS = ['👍', '❤️', '😂', '😮', '😢', '🙏', '🎉', '🔥'];
   var RX_FACE = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" aria-hidden="true"><circle cx="7" cy="8.5" r="5.5"/><path d="M4.9 10.2c.6.8 1.3 1.2 2.1 1.2s1.5-.4 2.1-1.2"/><path d="M5.2 7h.01M8.8 7h.01"/><path d="M13 1.5v4M11 3.5h4"/></svg>';
   function rxMine(x) { var m = (x.rx || []).filter(function (r) { return r.me; })[0]; return m ? m.e : ''; }
@@ -5946,7 +5950,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     }).catch(function () { toast('Couldn’t reach the site. Try again.'); });
   }
   function msgRx(x) {   // the message opened: its reactions, and the emoji to react with (one received from someone)
-    var box = document.getElementById('msgrx'), chips = document.getElementById('msgrxc'), pick = document.getElementById('msgrxp'), mayReact = !MSG.sent && !!x.f && !!MEMBER;
+    var box = document.getElementById('msgrx'), chips = document.getElementById('msgrxc'), pick = document.getElementById('msgrxp'), mayReact = !MSG.sent && !!(x.f || x.s) && !!MEMBER;
     chips.textContent = ''; pick.textContent = '';
     rxChips(x, chips);
     if (mayReact) rxPicker(x, pick);
@@ -6027,15 +6031,16 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       var dl = document.createElement('button'); dl.type = 'button'; dl.textContent = 'Delete';
       dl.addEventListener('click', function () { inboxDelete([x.id]); });
       if (replyCan(x)) { var rp = document.createElement('button'); rp.type = 'button'; rp.className = 'reply'; rp.textContent = 'Reply'; rp.addEventListener('click', function () { replyTo(x); }); acts.appendChild(rp); }
-      var pickRow = null;
-      if (x.f) {
+      var pickRow = null, rxLine = null;
+      if (x.f || x.s) {
         var row = document.createElement('span'); row.className = 'rxrow'; rxChips(x, row);
         var add = document.createElement('button'); add.type = 'button'; add.className = 'rxadd'; add.innerHTML = RX_FACE; add.setAttribute('aria-label', 'React'); add.setAttribute('aria-expanded', String(INBOX.pick === x.id));
         add.addEventListener('click', function () { INBOX.pick = INBOX.pick === x.id ? null : x.id; inboxDraw(); });
-        row.appendChild(add); acts.appendChild(row);
+        row.appendChild(add);
+        if ((x.rx || []).length) { rxLine = document.createElement('div'); rxLine.className = 'rxline'; rxLine.appendChild(row); } else acts.appendChild(row);
         if (INBOX.pick === x.id) { pickRow = document.createElement('div'); pickRow.className = 'rxpick'; pickRow.setAttribute('role', 'group'); pickRow.setAttribute('aria-label', 'React'); rxPicker(x, pickRow); }
       }
-      acts.appendChild(tg); acts.appendChild(dl);
+      var end = document.createElement('span'); end.className = 'rxend'; end.appendChild(tg); end.appendChild(dl); acts.appendChild(end);
       b.addEventListener('click', function () {
         if (INBOX.sel) { if (INBOX.sel.has(x.id)) INBOX.sel.delete(x.id); else INBOX.sel.add(x.id); inboxDraw(); return; }   // selecting: ticked or not
         if (!msgWhere(x.u)) { msgOpen(x, false); return; }   // (no link of its own: opened; read when it's closed)
@@ -6045,7 +6050,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         inboxCall({ read: [x.id] }).catch(function () {}).then(go);
       });
       if (sel) b.setAttribute('aria-pressed', String(sel.has(x.id)));
-      li.appendChild(b); if (!sel) { li.appendChild(acts); if (pickRow) li.appendChild(pickRow); } ul.appendChild(li);
+      li.appendChild(b); if (!sel) { if (rxLine) li.appendChild(rxLine); li.appendChild(acts); if (pickRow) li.appendChild(pickRow); } ul.appendChild(li);
     });
     if (!sel && items.length > INBOX.shown) {
       var li = document.createElement('li'), m = document.createElement('button'); li.className = 'plain'; m.type = 'button'; m.className = 'copy ghost more'; m.textContent = 'Show more';
@@ -6053,8 +6058,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       li.appendChild(m); ul.appendChild(li);
     }
   }
-  // ---- the bell: reactions to this member's own messages, newest first; a count of those not yet seen on the Profile
-  // button and the Profile's bell; opening the bell marks them seen; one tapped opens that message from Sent ----
+  // ---- the bell: reactions to this member's own messages (and John's to the day's songs), newest first; a count of
+  // those not yet seen on the Profile button and the Profile's bell; opening the bell marks them seen; one tapped opens
+  // that message from Sent, or the song's day ----
   var BELL = { items: null, unseen: 0, mark: 0 }, bellDlg = document.getElementById('belldlg');
   function bellSet(n) {
     BELL.unseen = Math.max(0, n || 0);
@@ -6081,16 +6087,18 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       var li = document.createElement('li'), b = document.createElement('button'), fresh = x.at > BELL.mark;
       b.type = 'button'; b.className = 'open' + (fresh ? ' new' : '');
       b.innerHTML = '<span class="dot"></span><span class="t"></span><span class="b"></span><span class="w"></span>';
-      b.querySelector('.t').textContent = x.e + ' ' + x.n + ' reacted to your message';
+      b.querySelector('.t').textContent = x.e + ' ' + x.n + (x.u ? ' reacted to the Song of the Day' : ' reacted to your message');
       b.querySelector('.b').textContent = '“' + x.t + '”';
       b.querySelector('.w').textContent = ago(x.at);
-      b.setAttribute('aria-label', (fresh ? 'New: ' : '') + x.n + ' reacted ' + x.e + ' to your message ' + x.t + ', ' + ago(x.at));
-      b.addEventListener('click', function () { bellGo(x.id); });
+      b.setAttribute('aria-label', (fresh ? 'New: ' : '') + x.n + ' reacted ' + x.e + (x.u ? ' to the Song of the Day ' : ' to your message ') + x.t + ', ' + ago(x.at));
+      b.addEventListener('click', function () { bellGo(x); });
       li.appendChild(b); ul.appendChild(li);
     });
   }
-  function bellGo(id) {
+  function bellGo(x) {
     closeDialog(bellDlg);
+    if (x.u) { msgGo(x.u); return; }   // the day's song: its day
+    var id = x.id;
     AC_TAB = 'sent'; acTabs();
     var find = function () { return (SENT.items || []).filter(function (y) { return y.id === id; })[0]; };
     var open = function () { var y = find(); if (y && !msgWhere(y.u)) msgOpen(y, true); };
