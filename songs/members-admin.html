@@ -39,6 +39,14 @@
 .person .apps li.play::before { background: var(--ok); }
 .person .apps b { font-weight: 600; color: var(--fg); }
 .csvbox { padding: 16px; display: grid; gap: 10px; }
+/* members' own Spotify playlists: the ones waiting for John to join them as a collaborator first */
+.uplbox { padding: 16px; display: grid; gap: 10px; }
+.upls { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.upls li { display: grid; gap: 6px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--chip); }
+.upls li.join { border-color: #e23a6e; }
+.upls .nm { font-family: var(--serif); font-weight: 500; font-size: 19px; line-height: 1.15; color: var(--fg); overflow-wrap: anywhere; }
+.upls .st { font-size: 13px; color: var(--muted); }
+.upls .acts { display: flex; flex-wrap: wrap; gap: 6px; }
 .inviter.dropping { box-shadow: 0 0 0 3px var(--fg), 0 18px 50px rgba(24, 8, 24, .28); }
 .pickc { display: grid; gap: 6px; }
 .person .seefiles, .inviter .seefiles { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
@@ -183,6 +191,11 @@
     </div>
     <input type="url" id="nurl" placeholder="https://cooperking.github.io/songs/…" hidden aria-label="Link">
   </div>
+  <div class="card uplbox" id="uplbox" hidden>
+    <div class="kicker">Members’ Spotify playlists</div>
+    <p class="stat" id="uplstat"></p>
+    <ul class="upls" id="upls"></ul>
+  </div>
   <div class="top" style="padding-bottom:4px"><div class="kicker" style="color:var(--ink-2)">People</div></div>
   <ul class="people" id="people"></ul>
   <p class="empty" id="nobody" hidden>Nobody yet.</p>
@@ -257,8 +270,49 @@
     return api('/members/admin', { op: 'list' }).then(function (j) {
       if (j.status !== 200) { $('stat').textContent = j.error || 'Couldn’t reach the Worker'; return false; }
       MEMBERS = j.members || []; CAT = j.catalog || {}; COVERS = j.covers || {};
-      people(); pushStat(); return true;
+      people(); pushStat(); uplLoad(); return true;
     }).catch(function () { $('stat').textContent = 'Couldn’t reach the Worker'; return false; });
+  }
+
+  // ---- members' own Spotify playlists: Spotify lets the calendar read only playlists John's account owns or
+  // collaborates on, so each waits here until he opens its invite link (signed in to Spotify as cooperking), joins it, and
+  // taps Check; then every member can see it. Remove takes it off the calendar (not off Spotify). ----
+  var UPLS = [];
+  function uplLoad() { return api('/members/admin', { op: 'upls' }).then(function (j) { if (j.status === 200) { UPLS = j.upls || []; uplDraw(); } }).catch(function () {}); }
+  function uplDraw() {
+    var box = $('uplbox'), ul = $('upls'); box.hidden = !UPLS.length; ul.innerHTML = '';
+    var wait = UPLS.filter(function (u) { return u.st === 'join'; }).length;
+    $('uplstat').textContent = wait ? wait + (wait === 1 ? ' waits' : ' wait') + ' for you to join as a collaborator: open its invite link signed in to Spotify as cooperking, tap Join, then Check.'
+      : 'Each one is read from Spotify every half hour from 06:00, and its owner signs off each new song.';
+    UPLS.forEach(function (u) {
+      var li = document.createElement('li'); if (u.st === 'join') li.className = 'join';
+      var nm = document.createElement('div'); nm.className = 'nm'; nm.textContent = u.n; li.appendChild(nm);
+      var st = document.createElement('div'); st.className = 'st';
+      st.textContent = u.o + '’s · ' + (u.mode === 'list' ? 'playlist' : 'calendar') + ' · ' + (u.st === 'join' ? (u.link ? 'waiting for you to join it' : 'waiting for you to join it; no invite link from them yet') : u.st === 'err' ? (u.err || 'can’t be read') : u.cnt + (u.cnt === 1 ? ' song' : ' songs') + (u.read ? ' · read ' + new Date(u.read).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''));
+      li.appendChild(st);
+      var acts = document.createElement('div'); acts.className = 'acts';
+      if (u.link && u.st !== 'ok') { var a = document.createElement('a'); a.className = 'btn small primary'; a.href = u.link; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'Open the invite ↗'; acts.appendChild(a); }
+      else if (u.st !== 'ok') { var a2 = document.createElement('a'); a2.className = 'btn small'; a2.href = 'https://open.spotify.com/playlist/' + u.sp; a2.target = '_blank'; a2.rel = 'noopener'; a2.textContent = 'The playlist ↗'; acts.appendChild(a2); }
+      acts.appendChild(button(u.st === 'ok' ? 'Check now' : 'I’ve joined: check', function () {
+        api('/members/admin', { op: 'uplcheck', id: u.id }).then(function (j) {
+          if (j.status !== 200) { toast(j.error || 'Couldn’t check'); return; }
+          UPLS = j.upls || []; uplDraw();
+          var now = UPLS.filter(function (x) { return x.id === u.id; })[0];
+          toast(now && now.st === 'ok' ? '“' + u.n + '”: read, ' + now.cnt + ' songs; every member can see it' : 'Spotify still won’t let your account read it: join it first');
+        });
+      }));
+      acts.appendChild(button('Remove', function () {
+        if (!confirmTwice(this, 'Remove? Tap again')) return;
+        api('/members/admin', { op: 'uplremove', id: u.id }).then(function (j) { if (j.status === 200) { UPLS = j.upls || []; uplDraw(); toast('Removed from the calendar'); } });
+      }));
+      li.appendChild(acts); ul.appendChild(li);
+    });
+  }
+  function confirmTwice(b, say) {   // two taps, so a stray one does nothing
+    if (b._armed) { b._armed = false; return true; }
+    var was = b.textContent; b._armed = true; b.textContent = say;
+    setTimeout(function () { b._armed = false; b.textContent = was; }, 4000);
+    return false;
   }
 
   // ---- people ----

@@ -197,7 +197,7 @@
       if (noted[e.id]) return;
       var errs = (e.errors || []).map(function (x) { return el('span', 'err', x.to + ' said ' + (x.status || 'nothing') + (x.why ? ': ' + x.why : '')); });
       var whom = Array.isArray(e.toNames) ? (e.toNames.length > 1 ? e.toNames.slice(0, -1).join(', ') + ' and ' + e.toNames[e.toNames.length - 1] : e.toNames[0]) : 'everyone';
-      out.push(item({ at: e.at, title: e.title, what: e.kind === 'song' ? 'notification of the song' : e.kind === 'member' ? 'a member’s note to ' + whom : e.kind === 'ask' ? 'a request to you for a new invitation' : 'your note', by: e.by,
+      out.push(item({ at: e.at, title: e.title, what: e.kind === 'song' ? 'notification of the song' : e.kind === 'member' ? 'a member’s note to ' + whom : e.kind === 'ask' ? 'a request to you for a new invitation' : e.kind === 'upl' ? 'a request to you to join a member’s Spotify playlist' : 'your note', by: e.by,
         st: e.failed ? 'bad' : 'ok', badge: status(e.failed ? 'bad' : 'ok', e.ack, 'Sent'),
         say: (e.say || '') + (e.old && !e.devices ? (e.say ? ' · ' : '') + 'sent before devices were counted here' : ''), more: errs, dealt: e }));
     });

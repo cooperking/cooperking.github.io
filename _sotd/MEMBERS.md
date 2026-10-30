@@ -239,6 +239,38 @@ to your message", the message's title as its words, opening the calendar at `#be
 put in the inbox, so the app's icon keeps its count; one per message and reactor on a device (tag `sotd-rx-<id>-<member>`);
 at most 40 a day from one member (`rxpush:<member>:<day>`). Tests: `bell_t.mjs` (the Worker), `bell_page_t.py` (the draft).
 
+## Members' own Spotify playlists
+
+A member can add their own Spotify playlists (John, 30 Oct 2026: "users to have the ability to add their own spotify
+playlists which run exactly the same way as mine does"), up to 5, each a calendar like John's (a song on each day it
+was added, the same rule for missed days) or a plain playlist (its songs, newest first). Phase 1 (the Worker, the
+draft calendar, the Members tab); still to come: the site job's videos, moods, years and YouTube copies for their songs
+(phase 2), and facts, written for new songs and on request for older ones, checked and signed off by their owner (phase 3).
+
+- **Reading them.** Spotify lets John's app read the songs only of playlists his account owns or collaborates on
+  (Spotify's February 2026 rules for Development Mode apps; for anyone else's, even public, only its name). So the
+  member turns on collaboration and pastes the invite link (Profile › Playlists › *Add a Spotify playlist*, then
+  *Calendar* or *Playlist*); John gets a message in his inbox, opens the link from the Members tab's *Members' Spotify
+  playlists* signed in to Spotify as cooperking, joins it, and taps *I've joined: check*. The Worker also looks every
+  10 minutes for its first day, then hourly. Once readable it's read every 30 minutes from 06:00 to 23:00, and when its
+  owner taps *Check now* (once a minute at most).
+- **Who sees them.** Every member except anyone kept apart from its owner, once John has joined it; its owner from the
+  start. The calendar's title (top left) chooses whose calendar shows: John's, or a member's (the address then has
+  `#u=<id>`, and `#u=<id>&d=<day>` for a day). On another's calendar the hearts (My playlist), sharing and the YouTube
+  link are put away, the Spotify link goes to their playlist, and playing My playlist goes back to John's calendar.
+- **New songs.** The songs on it when it's added are out from the start; each song added after waits for its owner,
+  who is told on their phone ("“…” waits for you to sign off") and sees its day marked with *Sign off*. Signed off, it's
+  out for everyone and goes to the members as a message from them ("From Mum"; reactions and replies as any message),
+  to those who take theirs; on their Sent too. 20 sign-offs a day at most.
+- **Kept.** KV `upls` (each playlist: owner, Spotify id and name, calendar or playlist, invite link, when added, whether
+  readable, last read, count) and `upl:<id>` (its songs as last read, and when each was signed off). Previews and moods
+  come the same way as John's (KV `previews`, `tags`). *Open in Spotify* takes their songs too. Removing a member
+  removes their playlists; *Remove* (theirs, or John's on the Members tab with two taps) takes one off the calendar,
+  not off Spotify.
+- Worker: `/members/upl` (GET `?id=`; POST ops `add`, `mode`, `link`, `check`, `remove`, `signoff`), `pls` on
+  `/members/me`, admin ops `upls`, `uplcheck`, `uplremove`. Tests: `upl_t.mjs` (the Worker), `upl_page_t.py` (the
+  draft), `upl_admin_t.py` (the Members tab).
+
 ## Saved playlists
 
 A member can save My playlist (*Save this playlist* in it, with a name) and keep several. They're kept by the Worker
