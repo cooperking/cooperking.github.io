@@ -6367,7 +6367,7 @@
    "sound": [
     "Uplifting",
     "Joyful",
-    "Playful"
+    "Dreamy"
    ],
    "claude": [
     "Romantic",
@@ -10413,7 +10413,7 @@
    "sound": [
     "Energetic",
     "Joyful",
-    "Dark"
+    "Uplifting"
    ],
    "claude": [
     "Energetic"
@@ -17828,8 +17828,8 @@
    ],
    "moodFrom": "Claude",
    "sound": [
-    "Energetic",
     "Joyful",
+    "Energetic",
     "Playful"
    ],
    "claude": [
@@ -18760,8 +18760,8 @@
    "moodFrom": "Claude",
    "sound": [
     "Playful",
-    "Energetic",
-    "Joyful"
+    "Joyful",
+    "Energetic"
    ],
    "claude": [
     "Playful",
@@ -20202,9 +20202,9 @@
    ],
    "moodFrom": "Claude (researched)",
    "sound": [
-    "Energetic",
     "Joyful",
-    "Playful"
+    "Playful",
+    "Energetic"
    ],
    "claude": [
     "Playful",
@@ -21418,8 +21418,8 @@
    "moodFrom": "Claude (researched)",
    "sound": [
     "Joyful",
-    "Energetic",
-    "Mellow"
+    "Mellow",
+    "Energetic"
    ],
    "claude": [
     "Romantic"
@@ -22931,7 +22931,7 @@
    "sound": [
     "Joyful",
     "Playful",
-    "Energetic"
+    "Romantic"
    ],
    "claude": [
     "Playful",
@@ -26134,7 +26134,7 @@
    "moodMix": [
     [
      "Dark",
-     69
+     68
     ],
     [
      "Melancholy",
@@ -26152,7 +26152,7 @@
      [
       [
        "Dark",
-       69
+       68
       ],
       [
        "Melancholy",
@@ -26390,7 +26390,7 @@
     ],
     [
      "Energetic",
-     21
+     20
     ],
     [
      "Dark",
@@ -26408,7 +26408,7 @@
       ],
       [
        "Energetic",
-       21
+       20
       ],
       [
        "Dark",
@@ -26712,6 +26712,148 @@
    "musicbrainz": [
     "geek rock",
     "piano rock"
+   ],
+   "check": true
+  },
+  "2ecGPldVM5eUVloJCNRf5w": {
+   "n": 263,
+   "title": "Wave Goodnight to Me",
+   "artist": "Jeff Rosenstock",
+   "moods": [
+    "Energetic"
+   ],
+   "moodMix": [
+    [
+     "Energetic",
+     77
+    ],
+    [
+     "Dark",
+     15
+    ],
+    [
+     "Playful",
+     3
+    ]
+   ],
+   "moodEvidence": [
+    [
+     "Audio",
+     100,
+     [
+      [
+       "Energetic",
+       77
+      ],
+      [
+       "Dark",
+       15
+      ],
+      [
+       "Playful",
+       3
+      ]
+     ]
+    ]
+   ],
+   "moodFrom": "Weighed up",
+   "sound": [
+    "Energetic",
+    "Dark",
+    "Playful"
+   ],
+   "listeners": "none",
+   "styles": [
+    "Punk",
+    "Alternative Rock",
+    "Indie Rock"
+   ],
+   "genres": [
+    "Rock",
+    "Indie"
+   ],
+   "genreFrom": "Weighed up",
+   "genreMix": [
+    [
+     "Rock",
+     59
+    ],
+    [
+     "Indie",
+     25
+    ],
+    [
+     "Pop",
+     7
+    ]
+   ],
+   "genreEvidence": [
+    [
+     "MusicBrainz",
+     50,
+     [
+      [
+       "Rock",
+       58
+      ],
+      [
+       "Indie",
+       24
+      ],
+      [
+       "Folk",
+       8
+      ]
+     ]
+    ],
+    [
+     "Last.fm",
+     30,
+     [
+      [
+       "Rock",
+       68
+      ],
+      [
+       "Indie",
+       15
+      ],
+      [
+       "Pop",
+       14
+      ]
+     ]
+    ],
+    [
+     "Audio",
+     20,
+     [
+      [
+       "Rock",
+       49
+      ],
+      [
+       "Indie",
+       44
+      ],
+      [
+       "Pop",
+       7
+      ]
+     ]
+    ]
+   ],
+   "musicbrainz": [
+    "acoustic rock",
+    "alternative punk",
+    "ambient",
+    "anarcho-punk",
+    "dream pop",
+    "electropunk",
+    "emo",
+    "experimental rock",
+    "folk",
+    "folk punk"
    ],
    "check": true
   }
