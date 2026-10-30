@@ -184,8 +184,9 @@ Ann and Dad · by Mum". Not on the TV. Tests: `send_t.mjs` (the Worker), `send_p
 
 Only members who have joined (signed in at least once: `joined` on their record from 29 Oct 2026, the time of their
 first sign-in; before that a device, a passkey or their invitation used) are offered to send to (`others`) or to choose
-whose to take (`seen`) (John, 29 Oct 2026). A send to everyone still goes into the inbox of someone yet to join, for
-when they do. Tests: `joined_t.mjs`.
+whose to take (`seen`) (John, 29 Oct 2026). A member's send to everyone goes only to these: members who have joined,
+not kept apart from them, and taking theirs (30 Oct 2026); someone who joins later doesn't get it. John's to everyone from
+the Members tab still goes into every member's inbox. Tests: `joined_t.mjs`, `bell_t.mjs`.
 
 A message from someone (a member's, or John's from the Members tab) says in the inbox who it went to as well as who
 from ("From Dad · to you and Ann", "to everyone"): `fi` the sender's id and `to` ('all', or the others chosen as
@@ -220,6 +221,15 @@ who ("❤️ Dad and you"). The sender sees them on Sent. Anyone kept apart from
 count and the names. KV `react:<message id>` `{ <member id>: { e, at } }`, kept 400 days; `POST /members/react
 { id, e }` (`e` '' takes it away; only for a message in their own inbox from someone, not the day's song); the inbox
 and Sent give each message's `rx` `[{ e, n, me }]`. Tests: `react_t.mjs` (the Worker), `react_page_t.py` (the draft).
+
+The bell (John, 30 Oct 2026; draft first): reactions to a member's own messages. A bell with the count not yet seen
+shows on the Profile button ("Signed in as …"), and a bell in the Profile's top corner (with that count) opens the list,
+newest first: "🎉 Dad reacted to your message", the message's title and when, new ones marked. Opening it marks them all
+seen; one tapped opens that message from Sent. KV `bell:<member>` `{ seen, items: [{ id, k, e, at, t }] }`, one item per
+message and member reacting (a change replaces theirs and counts as new, taking it away removes it), the newest 50;
+written by `/members/react` for the message's sender (`fi`). `GET /members/bell` gives `{ items: [{ id, n, e, at, t }],
+unseen, seen }`, leaving out anyone kept apart; `POST /members/bell { seen: true }`; `/members/me` gives `bell`, the count
+not yet seen. Not a phone notification. Tests: `bell_t.mjs` (the Worker), `bell_page_t.py` (the draft).
 
 ## Saved playlists
 

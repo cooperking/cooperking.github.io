@@ -832,6 +832,7 @@ async function members(request, url, env) {
   if (route === 'prefs') return memberPrefs(request, env, answer);
   if (route === 'sent') return memberSent(request, env, answer);
   if (route === 'react') return memberReact(request, env, answer);
+  if (route === 'bell') return memberBell(request, env, answer);
   if (!['admin', 'upload', 'cover'].includes(route)) return answer(404, { error: 'Not here.' });
   if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
   const no = await adminOk(request, env, answer);
@@ -1379,11 +1380,11 @@ async function memberMe(request, env, answer) {
   // the members they can send notifications to (others: not those kept apart from them, nor those not taking theirs;
   // John, everyone), and the members they can see, to choose whose they take (seen: not John, whose always come)
   const ownerId = await env.SOTD.get('owner'), byName = (a, b) => a.name.localeCompare(b.name);
-  // Only members who have joined (signed in at least once) in either (John, 29 Oct 2026: "Members who haven't accepted
-  // their invite shouldn't be visible in who you can send a message to"); a send to everyone still goes into theirs.
+  // only members who have joined (signed in at least once) in either; a send to everyone goes to these others only
   const others = Object.keys(all).filter(k => k !== id && hasJoined(all[k]) && takesFrom(all, k, id, ownerId)).map(k => ({ id: k, name: all[k].name })).sort(byName);
   const seen = Object.keys(all).filter(k => k !== id && k !== ownerId && hasJoined(all[k]) && !apart(all, id, k)).map(k => ({ id: k, name: all[k].name })).sort(byName);
-  return answer(200, Object.assign({ name: m.name, email: m.email || '', exp, media, see, mycovers, unread, others, seen, msgs: !m.nomsg,
+  const bell = bellView(all, id, await env.SOTD.get('bell:' + id, 'json')).unseen;   // reactions to their messages not yet seen
+  return answer(200, Object.assign({ name: m.name, email: m.email || '', exp, media, see, mycovers, unread, bell, others, seen, msgs: !m.nomsg,
     mute: (m.mute || []).filter(k => seen.some(x => x.id === k)) }, owner ? { owner: true } : {}));
 }
 
@@ -2408,7 +2409,7 @@ async function memberSend(request, env, answer) {
   // notifications or theirs (Profile › Account); John's always go
   const ownerId = await env.SOTD.get('owner'), takes = k => takesFrom(all, k, id, ownerId);
   const everyone = body.to === 'all';
-  const asked = everyone ? Object.keys(all) : Array.isArray(body.to) ? [...new Set(body.to.map(String))] : [];
+  const asked = everyone ? Object.keys(all).filter(k => hasJoined(all[k])) : Array.isArray(body.to) ? [...new Set(body.to.map(String))] : [];
   const to = asked.filter(takes);
   if (!to.length) return answer(400, { error: asked.some(k => k !== id && all[k] && !apart(all, id, k)) ? 'They’ve turned off notifications from other members.' : 'Choose who it goes to.' });
   const n = await dayCount(env, 'sent:' + id, SEND_DAY);
@@ -2603,11 +2604,42 @@ async function memberReact(request, env, answer) {
   const body = await request.json().catch(() => ({})), id = String(body.id || ''), e = String(body.e || '');
   if (e && !REACTS.includes(e)) return answer(400, { error: 'That emoji isn’t one of these: ' + REACTS.join(' ') });
   const box = (await env.SOTD.get('inbox:' + who.id, 'json')) || [];
-  if (!id || !box.some(x => x.id === id && x.f)) return answer(404, { error: 'No such message in your inbox.' });
+  const x = id && box.find(y => y.id === id && y.f);
+  if (!x) return answer(404, { error: 'No such message in your inbox.' });
   const key = 'react:' + id, r = (await env.SOTD.get(key, 'json')) || {};
   if (e) r[who.id] = { e, at: Date.now() }; else delete r[who.id];
   if (Object.keys(r).length) await env.SOTD.put(key, JSON.stringify(r), { expirationTtl: REACT_DAYS * 86400 }); else await env.SOTD.delete(key);
+  if (x.fi && who.all[x.fi]) await bellNote(env, x.fi, id, x.t, who.id, e);
   return answer(200, { ok: true, rx: rxView(who.all, who.id, r) });
+}
+
+// ---------- the bell: reactions to a member's own messages, newest first. KV bell:<member>: { seen, items: [{ id, k, e,
+// at, t }] }: one item per message and member reacting (a new emoji replaces theirs and comes to the top, taking it away
+// removes it), the newest 50. GET /members/bell gives { items: [{ id, n, e, at, t }], unseen, seen }, leaving out anyone
+// kept apart from them; POST /members/bell { seen: true } marks them all seen. ----------
+const BELL_MAX = 50;
+async function bellNote(env, to, msgId, title, from, e) {
+  if (to === from) return;
+  const key = 'bell:' + to, b = (await env.SOTD.get(key, 'json')) || { seen: 0, items: [] };
+  b.items = (b.items || []).filter(y => !(y.id === msgId && y.k === from));
+  if (e) b.items.unshift({ id: msgId, k: from, e, at: Date.now(), t: title || '' });
+  b.items.length = Math.min(b.items.length, BELL_MAX);
+  await kvSoft(env, key, JSON.stringify(b));
+}
+function bellView(all, member, b) {
+  const seen = (b && b.seen) || 0;
+  const items = ((b && b.items) || []).filter(y => all[y.k] && !apart(all, member, y.k)).map(y => ({ id: y.id, n: all[y.k].name, e: y.e, at: y.at, t: y.t }));
+  return { items, unseen: items.filter(y => y.at > seen).length, seen };
+}
+async function memberBell(request, env, answer) {
+  const who = await memberWho(request, env);
+  if (!who) return answer(401, { error: 'Not a member (any more).' });
+  const key = 'bell:' + who.id, b = (await env.SOTD.get(key, 'json')) || { seen: 0, items: [] };
+  if (request.method === 'POST') {
+    const body = await request.json().catch(() => ({}));
+    if (body.seen) { b.seen = Date.now(); await kvSoft(env, key, JSON.stringify(b)); }
+  } else if (request.method !== 'GET') return answer(405, { error: 'Use GET or POST.' });
+  return answer(200, bellView(who.all, who.id, b));
 }
 
 // ---------- each member's own sent notifications (John, 29 Oct 2026: "a sent message tab on a members profile, for them

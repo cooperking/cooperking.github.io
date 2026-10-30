@@ -275,6 +275,16 @@ html.big .heroacts .hsub { margin: 0 6px 0 0; }
 .inbn { position: absolute; top: -4px; right: -4px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: #e23a6e; color: #fff; font: 700 10.5px/18px var(--sans); letter-spacing: 0; text-align: center; box-shadow: 0 0 0 2px var(--bg); pointer-events: none; }
 .signedchip .inbn { position: static; display: inline-block; margin-left: 2px; box-shadow: none; }
 .inbn[hidden] { display: none; }
+/* the bell: reactions to the member's own messages not yet seen, on the Profile button and in the Profile */
+.signedchip .whobell { display: inline-flex; align-items: center; gap: 2px; margin-left: 2px; }
+.signedchip .whobell svg { width: 13px; height: 13px; }
+.signedchip .whobell[hidden] { display: none; }
+.head-r { display: inline-flex; align-items: center; gap: 8px; }
+.bellbtn { position: relative; }
+.bellbtn svg { width: 16px; height: 16px; }
+.bellbtn[hidden] { display: none; }
+.belll .t { font-size: 14.5px; }
+.belll .open { padding-bottom: 8px; }
 .ac-inbox { display: grid; gap: 6px; }
 .ac-inbox .hd { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
 .ac-inbox .hd .ac-h { margin: 0; }
@@ -452,7 +462,7 @@ button.day:focus-visible .sleeve { box-shadow: 0 16px 34px var(--shadow), 0 0 0 
 .emptymsg { color: var(--muted); padding: 10px 0; font-family: var(--serif); font-style: italic; }
 
 /* day view */
-dialog#sheet, dialog#mine, dialog#index, dialog#acctsheet, dialog#askdlg, dialog#appdlg, dialog#castdlg, dialog#senddlg, dialog#msgdlg {
+dialog#sheet, dialog#mine, dialog#index, dialog#acctsheet, dialog#askdlg, dialog#appdlg, dialog#castdlg, dialog#senddlg, dialog#msgdlg, dialog#belldlg {
   --bg: #ffffff; --fg: #1d0b1e; --fg-2: rgba(29, 11, 30, .9); --muted: rgba(29, 11, 30, .62); --faint: rgba(29, 11, 30, .45);
   --line: rgba(29, 11, 30, .14); --tile: #f3eef0; --chip-bg: rgba(29, 11, 30, .04); --pill-bg: rgba(29, 11, 30, .03); --pill-hover: rgba(29, 11, 30, .08);
   border: 0; padding: 0; color: var(--fg-2); background: var(--bg); color-scheme: light;
@@ -637,12 +647,12 @@ dialog#sharesheet::backdrop { background: rgba(24, 8, 24, .35); -webkit-backdrop
 }
 @keyframes shup { from { transform: translateY(100%); } to { transform: none; } }
 /* home-screen app: the page runs under the clock and the home bar, so the pop-ups keep clear of both */
-dialog#sheet, dialog#mine, dialog#index, dialog#acctsheet, dialog#askdlg, dialog#appdlg, dialog#castdlg, dialog#senddlg, dialog#msgdlg {
+dialog#sheet, dialog#mine, dialog#index, dialog#acctsheet, dialog#askdlg, dialog#appdlg, dialog#castdlg, dialog#senddlg, dialog#msgdlg, dialog#belldlg {
   top: env(safe-area-inset-top, 0px); bottom: env(safe-area-inset-bottom, 0px);
   max-height: calc(100dvh - 32px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
 }
 dialog#sharesheet { top: env(safe-area-inset-top, 0px); max-height: calc(100dvh - 32px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
-dialog#sheet::backdrop, dialog#mine::backdrop, dialog#index::backdrop, dialog#acctsheet::backdrop, dialog#askdlg::backdrop, dialog#appdlg::backdrop, dialog#castdlg::backdrop, dialog#senddlg::backdrop, dialog#msgdlg::backdrop { background: rgba(24, 8, 24, .3); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+dialog#sheet::backdrop, dialog#mine::backdrop, dialog#index::backdrop, dialog#acctsheet::backdrop, dialog#askdlg::backdrop, dialog#appdlg::backdrop, dialog#castdlg::backdrop, dialog#senddlg::backdrop, dialog#msgdlg::backdrop, dialog#belldlg::backdrop { background: rgba(24, 8, 24, .3); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
 .sheet-in { display: grid; gap: 18px; padding: 16px 18px 24px; }
 #sheet .sheet-in { grid-template-columns: minmax(0, 1fr); }   /* (the day never wider than its pop-up: on a phone narrower than about 375, the date's line made it 320 wide, and the video and its facts ran off the side; the date shortens instead) */
 @media (max-width: 380px) { #sheet .sheet-in { padding-left: 12px; padding-right: 12px; } #sheet .daynav #sdate { letter-spacing: .1em; padding-inline: 7px; } }   /* (a small phone: the day about as wide as it was, inside its pop-up now; the date a touch tighter, so it's whole) */
@@ -1026,7 +1036,7 @@ html.minidrag, html.minidrag * { cursor: grabbing !important; user-select: none;
 /* Pop-ups are ordinary page layers (opened with show(), not showModal()): the browser's top layer can't have
    anything placed above it before iOS 17, and the My playlist button has to stay on top of a day and A–Z / Moods.
    The site draws the dim background (the scrim) itself and keeps the page behind from being tapped. */
-dialog#sheet, dialog#mine, dialog#index, dialog#sharesheet, dialog#acctsheet, dialog#askdlg, dialog#appdlg, dialog#castdlg, dialog#senddlg, dialog#msgdlg { position: fixed; left: 0; right: 0; height: fit-content; margin: auto; z-index: 50; overscroll-behavior: contain; }
+dialog#sheet, dialog#mine, dialog#index, dialog#sharesheet, dialog#acctsheet, dialog#askdlg, dialog#appdlg, dialog#castdlg, dialog#senddlg, dialog#msgdlg, dialog#belldlg { position: fixed; left: 0; right: 0; height: fit-content; margin: auto; z-index: 50; overscroll-behavior: contain; }
 dialog#index { height: calc(100dvh - 32px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
 .scrim { position: fixed; inset: 0; z-index: 49; display: none; background: rgba(24, 8, 24, .3); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); touch-action: none; }
 html.layer-open .scrim { display: block; }
@@ -1210,7 +1220,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       <button class="heroplay" id="heroplay" type="button" aria-label="Play every song, the newest first" title="Play all"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M4.5 2.5v11l9.5-5.5z"/></svg></button>
       <button class="heroshuf" id="heroshuf" type="button" aria-label="Play every song, shuffled" title="Shuffle all"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 4.5h2.3c1.5 0 2.4.7 3.3 2l1.8 3c.8 1.3 1.8 2 3.3 2H14M2 11.5h2.3c1.3 0 2.1-.5 2.8-1.4M9.6 5.9c.7-.9 1.5-1.4 2.8-1.4H14M12.2 2.8 14 4.5l-1.8 1.7M12.2 9.8 14 11.5l-1.8 1.7"/></svg></button>
     </div>
-    <button class="signedchip" id="who" type="button" hidden><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><circle cx="8" cy="5.2" r="3"/><path d="M2.5 14.5c.5-3.2 2.8-5 5.5-5s5 1.8 5.5 5z"/></svg><span id="whotext">Signed in</span><span class="inbn" id="whon" hidden></span></button>
+    <button class="signedchip" id="who" type="button" hidden><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><circle cx="8" cy="5.2" r="3"/><path d="M2.5 14.5c.5-3.2 2.8-5 5.5-5s5 1.8 5.5 5z"/></svg><span id="whotext">Signed in</span><span class="inbn" id="whon" hidden></span><span class="whobell" id="whobell" hidden><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M8 2.2c-2.3 0-3.9 1.8-3.9 4v2.6L2.8 11h10.4l-1.3-2.2V6.2c0-2.2-1.6-4-3.9-4z"/><path d="M6.4 13.1c.3.6.9 1 1.6 1s1.3-.4 1.6-1"/></svg><span class="inbn" id="whobelln"></span></span></button>
     <div class="monthnav">
       <button class="round" id="prev" type="button" aria-label="Previous month"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 3 5 8l5 5"/></svg></button>
       <nav class="strip" id="strip" aria-label="Months"></nav>
@@ -1367,7 +1377,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   <div class="sheet-in">
     <div class="sheet-head">
       <p class="mine-top"><span class="chip">Profile</span></p>
-      <button class="close" id="acclose" type="button" aria-label="Close" autofocus><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 2l10 10M12 2 2 12"/></svg></button>
+      <span class="head-r"><button class="close bellbtn" id="acbell" type="button" aria-label="Reactions to your messages" hidden><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M8 2.2c-2.3 0-3.9 1.8-3.9 4v2.6L2.8 11h10.4l-1.3-2.2V6.2c0-2.2-1.6-4-3.9-4z"/><path d="M6.4 13.1c.3.6.9 1 1.6 1s1.3-.4 1.6-1"/></svg><span class="inbn" id="acbelln" hidden></span></button><button class="close" id="acclose" type="button" aria-label="Close" autofocus><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 2l10 10M12 2 2 12"/></svg></button></span>
     </div>
     <div class="ac-who">
       <h3 id="acname">Signed in</h3>
@@ -1524,6 +1534,17 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     <figure class="msgv-pic" id="msgpicf" hidden><img id="msgpic" alt=""></figure>
     <div class="msgrx" id="msgrx" hidden><div class="rxchips" id="msgrxc"></div><div class="rxpick" id="msgrxp" role="group" aria-label="React"></div></div>
     <div class="ask-acts" id="msgacts" hidden><button class="copy" id="msgreply" type="button">Reply</button></div>
+  </div>
+</dialog>
+<dialog id="belldlg" aria-labelledby="bellh">
+  <div class="sheet-in msgv">
+    <div class="sheet-head">
+      <p class="mine-top"><span class="chip">Reactions</span></p>
+      <button class="close" id="bellclose" type="button" aria-label="Close"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 2l10 10M12 2 2 12"/></svg></button>
+    </div>
+    <h3 id="bellh">To your messages</h3>
+    <ul class="ac-msgs belll" id="belll"></ul>
+    <p class="ac-none" id="bellnone" hidden>No reactions yet. When someone reacts to a message you sent, it shows here.</p>
   </div>
 </dialog>
 <dialog id="askdlg" aria-labelledby="askh">
@@ -1864,7 +1885,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var open = layers(), top = open[open.length - 1], root = document.documentElement;
     root.classList.toggle('layer-open', !!top);
     scrimEl.style.zIndex = top ? String((+top.style.zIndex || 50) - 1) : '';
-    var under = open.some(function (d) { return d.id === 'mine' || d.id === 'sharesheet' || d.id === 'acctsheet' || d.id === 'askdlg' || d.id === 'appdlg' || d.id === 'castdlg' || d.id === 'senddlg' || d.id === 'msgdlg'; });
+    var under = open.some(function (d) { return d.id === 'mine' || d.id === 'sharesheet' || d.id === 'acctsheet' || d.id === 'askdlg' || d.id === 'appdlg' || d.id === 'castdlg' || d.id === 'senddlg' || d.id === 'msgdlg' || d.id === 'belldlg'; });
     root.classList.toggle('fab-under', under);
     if (top) pageEl.setAttribute('inert', ''); else pageEl.removeAttribute('inert');
     syncFloat();   // the floating video keeps to its day's place in the stack
@@ -6006,6 +6027,58 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       li.appendChild(m); ul.appendChild(li);
     }
   }
+  // ---- the bell: reactions to this member's own messages, newest first; a count of those not yet seen on the Profile
+  // button and the Profile's bell; opening the bell marks them seen; one tapped opens that message from Sent ----
+  var BELL = { items: null, unseen: 0, mark: 0 }, bellDlg = document.getElementById('belldlg');
+  function bellSet(n) {
+    BELL.unseen = Math.max(0, n || 0);
+    var t = BELL.unseen > 99 ? '99+' : String(BELL.unseen);
+    var w = document.getElementById('whobell'); w.hidden = !BELL.unseen || !MEMBER;
+    document.getElementById('whobelln').textContent = t;
+    w.setAttribute('aria-label', BELL.unseen + (BELL.unseen === 1 ? ' new reaction' : ' new reactions'));
+    var b = document.getElementById('acbell'); b.hidden = !MEMBER || !MBASE || TV;
+    b.setAttribute('aria-label', 'Reactions to your messages' + (BELL.unseen ? ', ' + BELL.unseen + ' new' : ''));
+    var bn = document.getElementById('acbelln'); bn.hidden = !BELL.unseen; bn.textContent = t;
+  }
+  function bellCall(body) {
+    var tok = plTok(); if (!tok || !MBASE || TV) return Promise.reject();
+    return fetch(MBASE + '/members/bell', body ? { method: 'POST', headers: { Authorization: 'Bearer ' + tok, 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
+      : { headers: { Authorization: 'Bearer ' + tok }, cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function (j) { BELL.items = j.items || []; bellSet(j.unseen); return j; });
+  }
+  function bellDraw() {
+    var ul = document.getElementById('belll'), items = BELL.items;
+    ul.textContent = '';
+    document.getElementById('bellnone').hidden = !(items && !items.length);
+    if (!items) { var w = document.createElement('li'); w.className = 'ac-none plain'; w.textContent = 'Loading…'; ul.appendChild(w); return; }
+    items.forEach(function (x) {
+      var li = document.createElement('li'), b = document.createElement('button'), fresh = x.at > BELL.mark;
+      b.type = 'button'; b.className = 'open' + (fresh ? ' new' : '');
+      b.innerHTML = '<span class="dot"></span><span class="t"></span><span class="b"></span><span class="w"></span>';
+      b.querySelector('.t').textContent = x.e + ' ' + x.n + ' reacted to your message';
+      b.querySelector('.b').textContent = '“' + x.t + '”';
+      b.querySelector('.w').textContent = ago(x.at);
+      b.setAttribute('aria-label', (fresh ? 'New: ' : '') + x.n + ' reacted ' + x.e + ' to your message ' + x.t + ', ' + ago(x.at));
+      b.addEventListener('click', function () { bellGo(x.id); });
+      li.appendChild(b); ul.appendChild(li);
+    });
+  }
+  function bellGo(id) {
+    closeDialog(bellDlg);
+    AC_TAB = 'sent'; acTabs();
+    var find = function () { return (SENT.items || []).filter(function (y) { return y.id === id; })[0]; };
+    var open = function () { var y = find(); if (y && !msgWhere(y.u)) msgOpen(y, true); };
+    if (find()) open(); else sentCall().then(open).catch(function () {});
+  }
+  function bellOpen() {
+    BELL.mark = Infinity; bellDraw(); openLayer(bellDlg);
+    bellCall().then(function (j) {
+      BELL.mark = j.seen || 0; if (bellDlg.open) bellDraw();
+      if (j.unseen) return bellCall({ seen: true });
+    }).catch(function () { if (!BELL.items) { BELL.items = []; bellDraw(); } toast('Couldn’t reach the site. Try again.'); });
+  }
+  document.getElementById('acbell').addEventListener('click', bellOpen);
+  document.getElementById('bellclose').addEventListener('click', function () { closeDialog(bellDlg); });
   // ---- Profile › Sent (29 Oct 2026, John: "a sent message tab on a members profile, for them to see only their sent
   // notifications"): what they've sent other members, newest first, each with who they sent it to (as they chose them)
   // and when; tapped, it opens what it links to, as in the inbox. From the Worker (/members/sent); shown to members who
@@ -6450,6 +6523,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (INBOX.unread) AC_TAB = 'inbox';   // (something new: the Inbox first; else the tab they had)
     INBOX.shown = 5; INBOX.sel = null; INBOX.pick = null; inboxCall().catch(function () {});
     SENT.shown = 5; sentCall().catch(function () {});
+    bellSet(BELL.unseen); bellCall().catch(function () {});
     acctDraw(); openLayer(acct); appDraw(); pkLoad();   // (again, open: the code goes into the address only while it's open)
     if (MEMBER && !PL.loaded) plLoad();
   }
@@ -6630,7 +6704,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (was) noteOff(was);
     if (was && MBASE) fetch(MBASE + '/members/signout', { method: 'POST', headers: { Authorization: 'Bearer ' + was } }).catch(function () {});   // off the members page too
     closeDialog(acct);
-    dlClear(); MEMBER = null; memberApply(); famSync(); OWNC_SIG = '{}'; render(); unreadSet(0); INBOX.items = null; toast('Signed out on this device');   // (the album covers back)
+    dlClear(); MEMBER = null; memberApply(); famSync(); OWNC_SIG = '{}'; render(); unreadSet(0); INBOX.items = null; BELL.items = null; bellSet(0); toast('Signed out on this device');   // (the album covers back)
   });
 
   function memberApply() {
@@ -6664,7 +6738,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     }).then(function (j) {
       if (!j) return;
       MEMBER = j; dlPrune(j.see); memberApply(); famSync(); resumeInit(); nowFetch(); nowLine(); noteSync(); noteOffer();
-      if (!TV) { unreadSet(j.unread); readTapped(); }
+      if (!TV) { unreadSet(j.unread); readTapped(); bellSet(j.bell); }
       if (appAfterJoin) { appAfterJoin = false; if (appCan()) setTimeout(appOffer, 600); }
       pkOffer();
       var mc = JSON.stringify(j.mycovers || {});   // John's own covers this member sees: the calendar drawn again with them
