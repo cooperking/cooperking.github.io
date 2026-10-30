@@ -26861,32 +26861,78 @@
    "n": 100001,
    "title": "Stasera mi butto",
    "artist": "Rocky Roberts",
-   "moods": [],
+   "moods": [
+    "Playful",
+    "Joyful"
+   ],
+   "moodMix": [
+    [
+     "Playful",
+     42
+    ],
+    [
+     "Joyful",
+     25
+    ],
+    [
+     "Energetic",
+     24
+    ]
+   ],
+   "moodEvidence": [
+    [
+     "Audio",
+     100,
+     [
+      [
+       "Playful",
+       42
+      ],
+      [
+       "Joyful",
+       25
+      ],
+      [
+       "Energetic",
+       24
+      ]
+     ]
+    ]
+   ],
    "moodFrom": "Weighed up",
+   "sound": [
+    "Playful",
+    "Joyful",
+    "Energetic"
+   ],
    "listeners": "none",
+   "styles": [
+    "Beat",
+    "Mod",
+    "Rock & Roll"
+   ],
    "genres": [
-    "Rock",
-    "Pop"
+    "Rock"
    ],
    "genreFrom": "Weighed up",
    "genreMix": [
     [
      "Rock",
-     52
+     56
     ],
     [
      "Pop",
-     27
+     24
     ],
     [
      "Soul & R&B",
-     22
+     20
     ]
    ],
    "genreEvidence": [
     [
      "MusicBrainz",
-     62,
+     50,
      [
       [
        "Pop",
@@ -26904,7 +26950,7 @@
     ],
     [
      "Last.fm",
-     38,
+     30,
      [
       [
        "Rock",
@@ -26913,6 +26959,24 @@
       [
        "Soul & R&B",
        10
+      ]
+     ]
+    ],
+    [
+     "Audio",
+     20,
+     [
+      [
+       "Rock",
+       72
+      ],
+      [
+       "Soul & R&B",
+       15
+      ],
+      [
+       "Pop",
+       12
       ]
      ]
     ]
@@ -26929,9 +26993,56 @@
    "n": 100002,
    "title": "Love the One You're With",
    "artist": "Stephen Stills",
-   "moods": [],
+   "moods": [
+    "Uplifting",
+    "Dark"
+   ],
+   "moodMix": [
+    [
+     "Uplifting",
+     26
+    ],
+    [
+     "Dark",
+     20
+    ],
+    [
+     "Energetic",
+     13
+    ]
+   ],
+   "moodEvidence": [
+    [
+     "Audio",
+     100,
+     [
+      [
+       "Uplifting",
+       26
+      ],
+      [
+       "Dark",
+       20
+      ],
+      [
+       "Energetic",
+       13
+      ]
+     ]
+    ]
+   ],
    "moodFrom": "Weighed up",
+   "sound": [
+    "Uplifting",
+    "Dark",
+    "Energetic"
+   ],
    "listeners": "none",
+   "styles": [
+    "Pop Rock",
+    "Classic Rock",
+    "Folk Rock"
+   ],
    "genres": [
     "Rock",
     "Folk"
@@ -26940,21 +27051,21 @@
    "genreMix": [
     [
      "Rock",
-     48
+     49
     ],
     [
      "Folk",
-     29
+     26
     ],
     [
-     "Soul & R&B",
-     10
+     "Pop",
+     8
     ]
    ],
    "genreEvidence": [
     [
      "MusicBrainz",
-     62,
+     50,
      [
       [
        "Rock",
@@ -26972,7 +27083,7 @@
     ],
     [
      "Last.fm",
-     38,
+     30,
      [
       [
        "Folk",
@@ -26985,6 +27096,24 @@
       [
        "Country",
        2
+      ]
+     ]
+    ],
+    [
+     "Audio",
+     20,
+     [
+      [
+       "Rock",
+       56
+      ],
+      [
+       "Pop",
+       22
+      ],
+      [
+       "Folk",
+       14
       ]
      ]
     ]
@@ -27007,9 +27136,56 @@
    "n": 100003,
    "title": "Pass Out",
    "artist": "Tinie Tempah",
-   "moods": [],
+   "moods": [
+    "Energetic",
+    "Playful"
+   ],
+   "moodMix": [
+    [
+     "Energetic",
+     36
+    ],
+    [
+     "Playful",
+     27
+    ],
+    [
+     "Dark",
+     16
+    ]
+   ],
+   "moodEvidence": [
+    [
+     "Audio",
+     100,
+     [
+      [
+       "Energetic",
+       36
+      ],
+      [
+       "Playful",
+       27
+      ],
+      [
+       "Dark",
+       16
+      ]
+     ]
+    ]
+   ],
    "moodFrom": "Weighed up",
+   "sound": [
+    "Energetic",
+    "Playful",
+    "Dark"
+   ],
    "listeners": "none",
+   "styles": [
+    "Gangsta",
+    "Thug Rap",
+    "Crunk"
+   ],
    "genres": [
     "Hip-hop"
    ],
@@ -27017,21 +27193,21 @@
    "genreMix": [
     [
      "Hip-hop",
-     70
+     75
     ],
     [
      "Pop",
-     16
+     12
     ],
     [
      "Electronic",
-     14
+     11
     ]
    ],
    "genreEvidence": [
     [
      "MusicBrainz",
-     62,
+     50,
      [
       [
        "Hip-hop",
@@ -27049,7 +27225,7 @@
     ],
     [
      "Last.fm",
-     38,
+     30,
      [
       [
        "Hip-hop",
@@ -27058,6 +27234,20 @@
       [
        "Electronic",
        13
+      ]
+     ]
+    ],
+    [
+     "Audio",
+     20,
+     [
+      [
+       "Hip-hop",
+       94
+      ],
+      [
+       "Soul & R&B",
+       6
       ]
      ]
     ]
