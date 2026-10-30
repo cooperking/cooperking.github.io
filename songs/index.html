@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="sotd-build" content="08cfffec6835">
+<meta name="sotd-build" content="fbd0ba157cd7">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 263 so far">
 <meta name="theme-color" content="#ec135b">
@@ -341,11 +341,15 @@ html.big .heroacts .hsub { margin: 0 6px 0 0; }
 .ac-msgs .acts2 button { border: 0; background: none; padding: 3px 0; font: 600 10px/1.2 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); cursor: pointer; }
 .ac-msgs .acts2 .reply { color: var(--fg); }
 .ac-msgs .acts2 { flex-wrap: wrap; align-items: center; }
-.ac-msgs .rxrow { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-right: auto; }
-.ac-msgs .acts2 .rxc, .msgv .rxc { padding: 0 7px; border: 1px solid var(--line); border-radius: 999px; background: var(--bg); font: 500 12px/16px var(--sans); letter-spacing: 0; text-transform: none; color: var(--fg); cursor: pointer; }
-.ac-msgs .acts2 .rxc.me, .msgv .rxc.me { border-color: #e23a6e; background: rgba(226, 58, 110, .08); }
-.ac-msgs .acts2 .rxadd { display: inline-grid; place-items: center; width: 28px; height: 18px; padding: 0; color: var(--muted); }
-.ac-msgs .acts2 .rxadd svg { width: 16px; height: 16px; }
+.ac-msgs .rxrow { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.ac-msgs .acts2 .rxrow { margin-right: auto; }
+.ac-msgs .acts2 .rxend { display: inline-flex; gap: 14px; margin-left: auto; }
+.ac-msgs .rxline { padding: 0 10px 3px 26px; }   /* a message's reactions, when it has some: a line of their own above its actions */
+.ac-msgs .acts2 .rxc, .ac-msgs .rxline .rxc, .msgv .rxc { padding: 0 7px; border: 1px solid var(--line); border-radius: 999px; background: var(--bg); font: 500 12px/16px var(--sans); letter-spacing: 0; text-transform: none; color: var(--fg); cursor: pointer; }
+.ac-msgs .acts2 .rxc.me, .ac-msgs .rxline .rxc.me, .msgv .rxc.me { border-color: #e23a6e; background: rgba(226, 58, 110, .08); }
+.ac-msgs .acts2 .rxadd, .ac-msgs .rxline .rxadd { display: inline-grid; place-items: center; width: 28px; height: 18px; padding: 0; border: 0; background: none; color: var(--muted); cursor: pointer; }
+.ac-msgs .rxadd svg { width: 16px; height: 16px; }
+.ac-msgs .rxline .rxadd:hover, .ac-msgs .rxline .rxadd:focus-visible { color: var(--fg); }
 .rxpick { display: flex; flex-wrap: wrap; gap: 2px; padding: 0 10px 8px 22px; }
 .rxpick button { border: 0; background: none; border-radius: 8px; padding: 2px 5px; font-size: 20px; line-height: 1.2; cursor: pointer; }
 .rxpick button.me { background: rgba(226, 58, 110, .14); }
@@ -362,7 +366,7 @@ html.big .heroacts .hsub { margin: 0 6px 0 0; }
 .ac-msgs .w { font-size: 11px; color: var(--muted); }
 .ac-msgs.sentl .open { padding-bottom: 8px; }   /* Sent: no Reply, Mark read or Delete under each */
 .ac-msgs .more { justify-self: start; }
-/* a member's own notification to other members (Profile › Inbox › Send a notification; Share › Members) */
+/* a member's own message to other members (Profile › Inbox › Send a message; Share › Members) */
 .ac-inbox .sendbtn { justify-self: start; margin-bottom: 6px; }
 .ac-from { display: grid; gap: 8px; margin-top: 8px; }
 .ac-from[hidden] { display: none; }
@@ -1416,7 +1420,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     </div>
     <div class="ac-pane" id="acpane-inbox" data-pane="inbox" role="tabpanel" aria-labelledby="actab-inbox">
       <div class="ac-inbox" id="acinbox" hidden>
-        <button class="copy ghost sendbtn" id="acsend" type="button" hidden>Send a notification</button>
+        <button class="copy ghost sendbtn" id="acsend" type="button" hidden>Send a message</button>
         <div class="hd"><p class="ac-h" id="acinh">Inbox</p><span class="hdacts"><button class="allread" id="acallread" type="button" hidden>Mark all read</button><button class="allread" id="acselect" type="button" hidden>Select</button></span></div>
         <div class="selbar" id="acselbar" hidden>
           <button class="allread" id="acselall" type="button">Select all</button>
@@ -1428,10 +1432,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     </div>
     <div class="ac-pane" id="acpane-sent" data-pane="sent" role="tabpanel" aria-labelledby="actab-sent" hidden>
       <div class="ac-inbox" id="acsent" hidden>
-        <button class="copy ghost sendbtn" id="acsend2" type="button" hidden>Send a notification</button>
+        <button class="copy ghost sendbtn" id="acsend2" type="button" hidden>Send a message</button>
         <div class="hd"><p class="ac-h">Sent</p></div>
         <ul class="ac-msgs sentl" id="acsentl"></ul>
-        <p class="ac-none" id="acsentnone" hidden>Nothing sent yet. The notifications you send to other members come here, with who you sent each to.</p>
+        <p class="ac-none" id="acsentnone" hidden>Nothing sent yet. The messages you send to other members come here, with who you sent each to.</p>
       </div>
     </div>
     <div class="ac-pane" id="acpane-lists" data-pane="lists" role="tabpanel" aria-labelledby="actab-lists" hidden>
@@ -1448,9 +1452,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         <div class="ac-acts"><button class="copy ghost" id="acmailgo" type="button">Add your email</button></div>
       </div>
       <div class="ac-dev" id="acmsg" hidden>
-        <p class="ac-h">Notifications from other members</p>
+        <p class="ac-h">Messages from other members</p>
         <p class="ac-none" id="acmsgt"></p>
-        <div class="ac-from" id="acmsgfrom" hidden><p class="ac-none">From these members (untick anyone whose you don’t want):</p><div class="snd-who" id="acmsgwho" role="group" aria-label="Members whose notifications you take"></div></div>
+        <div class="ac-from" id="acmsgfrom" hidden><p class="ac-none">From these members (untick anyone whose you don’t want):</p><div class="snd-who" id="acmsgwho" role="group" aria-label="Members whose messages you take"></div></div>
         <div class="ac-acts"><button class="copy ghost" id="acmsggo" type="button">Turn off</button></div>
       </div>
       <div class="ac-dev" id="acpk" hidden>
@@ -1511,7 +1515,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       <p class="mine-top"><span class="chip">Send</span></p>
       <button class="close" id="sndclose" type="button" aria-label="Close"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 2l10 10M12 2 2 12"/></svg></button>
     </div>
-    <h3 id="sndh">A notification</h3>
+    <h3 id="sndh">A message</h3>
     <p class="snd-from" id="sndfrom"></p>
     <div class="snd-to">
       <span class="seg2" role="group" aria-label="Who it goes to"><button type="button" id="sndall" aria-pressed="true">Everyone</button><button type="button" id="sndsome" aria-pressed="false">Choose</button></span>
@@ -1534,7 +1538,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       </div>
       <button class="x2" id="sndsongx" type="button">Take the song off</button>
     </div>
-    <p class="snd-lab" id="sndmlab" hidden>The notification’s own title and words</p>
+    <p class="snd-lab" id="sndmlab" hidden>The message’s own title and words</p>
     <input class="nameinput" id="sndt" type="text" maxlength="80" placeholder="Title" aria-label="Title" autocomplete="off">
     <textarea id="sndb" maxlength="300" placeholder="Message (if you like)" aria-label="Message"></textarea>
     <figure class="snd-pic" id="sndpicf" hidden>
@@ -3602,7 +3606,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         .then(function () { toast('Picture copied: paste it into your message'); }, function () { toast('Could not copy the picture'); });
     } catch (e) { toast('Could not copy the picture'); }
   });
-  // ---- a member's own notification to other members (John, 28 Oct 2026): from Profile › Inbox › Send a notification, or
+  // ---- a member's own message to other members (John, 28 Oct 2026): from Profile › Inbox › Send a message, or
   // a song's, a month's or the calendar's Share › Members (that link, its card as the picture and the song's cover).
   // Everyone else, or the members chosen (/members/me gives their names: others); a title, words and a picture of
   // their own (made small here, 1200px at most, sent up first: /members/sendpic). /members/send puts it into their
@@ -3630,7 +3634,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (!sendCan()) return;
     SND = { some: false, pick: [], att: pre && pre.url ? pre : null, pic: null, song: null };
     if (pre && pre.reply) { SND.some = pre.reply.to !== 'all'; SND.pick = pre.reply.to === 'all' ? [] : pre.reply.to.slice(); }   // a reply: to the same people, changeable
-    document.getElementById('sndh').textContent = pre && pre.reply ? 'A reply' : 'A notification';
+    document.getElementById('sndh').textContent = pre && pre.reply ? 'A reply' : 'A message';
     if (pre && pre.song) {
       var sg = pre.song.s, iso = pre.song.iso, oc = ownCover(sg), slug = slugOf(iso);
       SND.song = { iso: iso, n: sg.n, title: cleanTitle(sg.title), artist: sg.artist, cover: sg.u || '', site: SITE + slug + '/card.jpg', drawN: 0, made: '', drawP: null,
@@ -5538,8 +5542,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     box.hidden = !MEMBER || !MBASE || TV;
     if (box.hidden) return;
     var on = MEMBER.msgs !== false;
-    document.getElementById('acmsgt').textContent = on ? 'Other members can send you notifications: into your inbox, and to your phone if notifications are on there.'
-      : 'Off: other members can’t send you notifications. John’s still come, and each new song.';
+    document.getElementById('acmsgt').textContent = on ? 'Other members can send you messages: into your inbox, and to your phone if notifications are on there.'
+      : 'Off: other members can’t send you messages. John’s still come, and each new song.';
     document.getElementById('acmsggo').textContent = on ? 'Turn off' : 'Turn on';
     // whose they take: each member they can see, ticked unless they've stopped theirs (John's always come)
     var from = document.getElementById('acmsgfrom'), who = document.getElementById('acmsgwho'), seen = MEMBER.seen || [], mute = MEMBER.mute || [];
@@ -5551,7 +5555,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       c.addEventListener('change', function () {
         var want = (MEMBER.mute || []).filter(function (k) { return k !== o.id; }).concat(c.checked ? [] : [o.id]);
         l.className = c.checked ? 'on' : '';
-        msgPrefs({ mute: want }).then(function (j) { toast(c.checked ? o.name + '’s notifications come to you again' : 'You won’t get ' + o.name + '’s notifications'); }, function () { c.checked = !c.checked; l.className = c.checked ? 'on' : ''; });
+        msgPrefs({ mute: want }).then(function (j) { toast(c.checked ? o.name + '’s messages come to you again' : 'You won’t get ' + o.name + '’s messages'); }, function () { c.checked = !c.checked; l.className = c.checked ? 'on' : ''; });
       });
       l.appendChild(c); l.appendChild(document.createTextNode(o.name)); who.appendChild(l);
     });
@@ -5569,7 +5573,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (!MEMBER) return;
     var b = this; b.disabled = true;
     msgPrefs({ msgs: MEMBER.msgs === false }).then(function (j) {
-      b.disabled = false; toast(j.msgs ? 'Other members can send you notifications' : 'Other members can’t send you notifications now');
+      b.disabled = false; toast(j.msgs ? 'Other members can send you messages' : 'Other members can’t send you messages now');
     }, function () { b.disabled = false; });
   });
   function mailDraw() {
@@ -5913,8 +5917,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     return 'to ' + (n.length > 4 ? n.slice(0, 3).join(', ') + ' and ' + (n.length - 3) + ' others' : andList(n));
   }
   function fromLine(x) { return [x.f ? 'From ' + x.f : '', toText(x.to)].filter(Boolean).join(' · '); }
-  // reactions: an emoji on a message from someone, one each (the same again takes it away); a chip for each emoji with
-  // how many, tapped: who
+  // reactions: an emoji on a message from someone or the day's song (s), one each (the same again takes it away); a chip
+  // for each emoji with how many, tapped: who
   var REACTS = ['👍', '❤️', '😂', '😮', '😢', '🙏', '🎉', '🔥'];
   var RX_FACE = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" aria-hidden="true"><circle cx="7" cy="8.5" r="5.5"/><path d="M4.9 10.2c.6.8 1.3 1.2 2.1 1.2s1.5-.4 2.1-1.2"/><path d="M5.2 7h.01M8.8 7h.01"/><path d="M13 1.5v4M11 3.5h4"/></svg>';
   function rxMine(x) { var m = (x.rx || []).filter(function (r) { return r.me; })[0]; return m ? m.e : ''; }
@@ -5945,7 +5949,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     }).catch(function () { toast('Couldn’t reach the site. Try again.'); });
   }
   function msgRx(x) {   // the message opened: its reactions, and the emoji to react with (one received from someone)
-    var box = document.getElementById('msgrx'), chips = document.getElementById('msgrxc'), pick = document.getElementById('msgrxp'), mayReact = !MSG.sent && !!x.f && !!MEMBER;
+    var box = document.getElementById('msgrx'), chips = document.getElementById('msgrxc'), pick = document.getElementById('msgrxp'), mayReact = !MSG.sent && !!(x.f || x.s) && !!MEMBER;
     chips.textContent = ''; pick.textContent = '';
     rxChips(x, chips);
     if (mayReact) rxPicker(x, pick);
@@ -6026,15 +6030,16 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       var dl = document.createElement('button'); dl.type = 'button'; dl.textContent = 'Delete';
       dl.addEventListener('click', function () { inboxDelete([x.id]); });
       if (replyCan(x)) { var rp = document.createElement('button'); rp.type = 'button'; rp.className = 'reply'; rp.textContent = 'Reply'; rp.addEventListener('click', function () { replyTo(x); }); acts.appendChild(rp); }
-      var pickRow = null;
-      if (x.f) {
+      var pickRow = null, rxLine = null;
+      if (x.f || x.s) {
         var row = document.createElement('span'); row.className = 'rxrow'; rxChips(x, row);
         var add = document.createElement('button'); add.type = 'button'; add.className = 'rxadd'; add.innerHTML = RX_FACE; add.setAttribute('aria-label', 'React'); add.setAttribute('aria-expanded', String(INBOX.pick === x.id));
         add.addEventListener('click', function () { INBOX.pick = INBOX.pick === x.id ? null : x.id; inboxDraw(); });
-        row.appendChild(add); acts.appendChild(row);
+        row.appendChild(add);
+        if ((x.rx || []).length) { rxLine = document.createElement('div'); rxLine.className = 'rxline'; rxLine.appendChild(row); } else acts.appendChild(row);
         if (INBOX.pick === x.id) { pickRow = document.createElement('div'); pickRow.className = 'rxpick'; pickRow.setAttribute('role', 'group'); pickRow.setAttribute('aria-label', 'React'); rxPicker(x, pickRow); }
       }
-      acts.appendChild(tg); acts.appendChild(dl);
+      var end = document.createElement('span'); end.className = 'rxend'; end.appendChild(tg); end.appendChild(dl); acts.appendChild(end);
       b.addEventListener('click', function () {
         if (INBOX.sel) { if (INBOX.sel.has(x.id)) INBOX.sel.delete(x.id); else INBOX.sel.add(x.id); inboxDraw(); return; }   // selecting: ticked or not
         if (!msgWhere(x.u)) { msgOpen(x, false); return; }   // (no link of its own: opened; read when it's closed)
@@ -6044,7 +6049,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         inboxCall({ read: [x.id] }).catch(function () {}).then(go);
       });
       if (sel) b.setAttribute('aria-pressed', String(sel.has(x.id)));
-      li.appendChild(b); if (!sel) { li.appendChild(acts); if (pickRow) li.appendChild(pickRow); } ul.appendChild(li);
+      li.appendChild(b); if (!sel) { if (rxLine) li.appendChild(rxLine); li.appendChild(acts); if (pickRow) li.appendChild(pickRow); } ul.appendChild(li);
     });
     if (!sel && items.length > INBOX.shown) {
       var li = document.createElement('li'), m = document.createElement('button'); li.className = 'plain'; m.type = 'button'; m.className = 'copy ghost more'; m.textContent = 'Show more';
@@ -6052,8 +6057,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       li.appendChild(m); ul.appendChild(li);
     }
   }
-  // ---- the bell: reactions to this member's own messages, newest first; a count of those not yet seen on the Profile
-  // button and the Profile's bell; opening the bell marks them seen; one tapped opens that message from Sent ----
+  // ---- the bell: reactions to this member's own messages (and John's to the day's songs), newest first; a count of
+  // those not yet seen on the Profile button and the Profile's bell; opening the bell marks them seen; one tapped opens
+  // that message from Sent, or the song's day ----
   var BELL = { items: null, unseen: 0, mark: 0 }, bellDlg = document.getElementById('belldlg');
   function bellSet(n) {
     BELL.unseen = Math.max(0, n || 0);
@@ -6080,16 +6086,18 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       var li = document.createElement('li'), b = document.createElement('button'), fresh = x.at > BELL.mark;
       b.type = 'button'; b.className = 'open' + (fresh ? ' new' : '');
       b.innerHTML = '<span class="dot"></span><span class="t"></span><span class="b"></span><span class="w"></span>';
-      b.querySelector('.t').textContent = x.e + ' ' + x.n + ' reacted to your message';
+      b.querySelector('.t').textContent = x.e + ' ' + x.n + (x.u ? ' reacted to the Song of the Day' : ' reacted to your message');
       b.querySelector('.b').textContent = '“' + x.t + '”';
       b.querySelector('.w').textContent = ago(x.at);
-      b.setAttribute('aria-label', (fresh ? 'New: ' : '') + x.n + ' reacted ' + x.e + ' to your message ' + x.t + ', ' + ago(x.at));
-      b.addEventListener('click', function () { bellGo(x.id); });
+      b.setAttribute('aria-label', (fresh ? 'New: ' : '') + x.n + ' reacted ' + x.e + (x.u ? ' to the Song of the Day ' : ' to your message ') + x.t + ', ' + ago(x.at));
+      b.addEventListener('click', function () { bellGo(x); });
       li.appendChild(b); ul.appendChild(li);
     });
   }
-  function bellGo(id) {
+  function bellGo(x) {
     closeDialog(bellDlg);
+    if (x.u) { msgGo(x.u); return; }   // the day's song: its day
+    var id = x.id;
     AC_TAB = 'sent'; acTabs();
     var find = function () { return (SENT.items || []).filter(function (y) { return y.id === id; })[0]; };
     var open = function () { var y = find(); if (y && !msgWhere(y.u)) msgOpen(y, true); };
@@ -6103,6 +6111,21 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     }).catch(function () { if (!BELL.items) { BELL.items = []; bellDraw(); } toast('Couldn’t reach the site. Try again.'); });
   }
   document.getElementById('acbell').addEventListener('click', bellOpen);
+  // a reaction's notification tapped: the calendar's #bell, the Profile and its bell opened once they're signed in
+  var bellWant = false;
+  function bellFromHash() {
+    if (location.hash !== '#bell') return;
+    try { history.replaceState(history.state, '', location.pathname + location.search); } catch (e) {}
+    bellWant = true; bellWanted();
+  }
+  function bellWanted() {
+    if (!bellWant || !MEMBER || TV) return;
+    bellWant = false;
+    if (!acct.open) acctOpen();
+    bellOpen();
+  }
+  window.addEventListener('hashchange', bellFromHash);
+  bellFromHash();
   document.getElementById('bellclose').addEventListener('click', function () { closeDialog(bellDlg); });
   // ---- Profile › Sent (29 Oct 2026, John: "a sent message tab on a members profile, for them to see only their sent
   // notifications"): what they've sent other members, newest first, each with who they sent it to (as they chose them)
@@ -6276,7 +6299,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // first loads the calendar (or the Home Screen app), a question; Turn on asks the phone straight away. Not over
   // anything else that's open, nor while the app's being offered; Not now leaves it to the Profile.
   // the question, once a device (John's words, 29 Oct 2026)
-  var NOTE_ASK_H = 'Allow notifications? You can send them too!', NOTE_ASK_T = 'John says “please do this! It’s all part of the fun”';
+  var NOTE_ASK_H = 'Allow notifications? You can send messages too!', NOTE_ASK_T = 'John says “please do this! It’s all part of the fun”';
   function noteOffer() {
     if (NPUSH) {   // the iPhone app: the same question, once, while Apple hasn't been asked
       var seen0 = 0; try { seen0 = Number(localStorage.getItem('sotd-noteask')) || 0; } catch (e) {}
@@ -6763,7 +6786,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     }).then(function (j) {
       if (!j) return;
       MEMBER = j; dlPrune(j.see); memberApply(); famSync(); resumeInit(); nowFetch(); nowLine(); noteSync(); noteOffer();
-      if (!TV) { unreadSet(j.unread); readTapped(); bellSet(j.bell); }
+      if (!TV) { unreadSet(j.unread); readTapped(); bellSet(j.bell); bellWanted(); }
       if (appAfterJoin) { appAfterJoin = false; if (appCan()) setTimeout(appOffer, 600); }
       pkOffer();
       var mc = JSON.stringify(j.mycovers || {});   // John's own covers this member sees: the calendar drawn again with them
