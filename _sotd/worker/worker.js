@@ -939,6 +939,7 @@ async function members(request, url, env) {
       await pushForget(env, body.id);   // and their notifications
       await env.SOTD.delete('inbox:' + body.id);
       await env.SOTD.delete('outbox:' + body.id);   // (what they'd sent)
+      await env.SOTD.delete('bell:' + body.id);   // the reactions to their messages
       await env.SOTD.delete('now:' + body.id);   // and what they were playing (and their iPhone widgets' addresses)
       if (env.NOW) await env.NOW.get(env.NOW.idFromName(body.id)).fetch('https://now/forget', { method: 'POST' }).catch(() => {});
       if (owner === body.id) await env.SOTD.delete('owner');
