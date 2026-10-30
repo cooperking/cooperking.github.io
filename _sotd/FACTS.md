@@ -17,9 +17,11 @@ checked facts went live straight away.)
   signs off. The Cloudflare Worker keeps his sign-offs and starts `.github/workflows/facts.yml`, which runs
   `facts_apply.py` to put them live. (The draft calendar shows waiting facts only for songs already out, as rewrites.)
   A new song whose facts haven't reached the site yet shows "No facts yet" there, and the Songs tab looks for them every
-  20 seconds and puts them on its card as they come (into John's changes too, his moods, genres and video kept); signing
+  10 minutes and puts them on its card as they come (into John's changes too, his moods, genres and video kept); signing
   off a new song with no facts asks once more (John, 30 Oct 2026: signed off 10 seconds before the facts reached the
   site, it came out with none, and the written ones were dropped; they were put back as waiting).
+  There's no word limit at sign-off (no warning since 30 Oct 2026): the calendar makes room for a long fact (the panel
+  under the video is as tall as its longest fact, and on the narrowest phones the day now stays inside its pop-up).
 - `_sotd/data/sources.json`: what the facts are written from first: the English Wikipedia articles on each song, album
   and artist, and MusicBrainz's details on each artist. The job song-tags.yml adds each new song's (`_sotd/about.py`).
 

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="73f328cbb7eb">
+<meta name="sotd-build" content="4e0a5eb9902f">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -653,6 +653,8 @@ dialog#sheet, dialog#mine, dialog#index, dialog#acctsheet, dialog#askdlg, dialog
 dialog#sharesheet { top: env(safe-area-inset-top, 0px); max-height: calc(100dvh - 32px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
 dialog#sheet::backdrop, dialog#mine::backdrop, dialog#index::backdrop, dialog#acctsheet::backdrop, dialog#askdlg::backdrop, dialog#appdlg::backdrop, dialog#castdlg::backdrop, dialog#senddlg::backdrop, dialog#msgdlg::backdrop { background: rgba(24, 8, 24, .3); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
 .sheet-in { display: grid; gap: 18px; padding: 16px 18px 24px; }
+#sheet .sheet-in { grid-template-columns: minmax(0, 1fr); }   /* (the day never wider than its pop-up: on a phone narrower than about 375, the date's line made it 320 wide, and the video and its facts ran off the side; the date shortens instead) */
+@media (max-width: 380px) { #sheet .sheet-in { padding-left: 12px; padding-right: 12px; } #sheet .daynav #sdate { letter-spacing: .1em; padding-inline: 7px; } }   /* (a small phone: the day about as wide as it was, inside its pop-up now; the date a touch tighter, so it's whole) */
 .sheet-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .sheet-head p { margin: 0; }
 .daynav { display: flex; align-items: center; gap: 6px; min-width: 0; }
@@ -726,12 +728,12 @@ dialog#sheet::backdrop, dialog#mine::backdrop, dialog#index::backdrop, dialog#ac
   @keyframes pull { from { transform: translateX(0); } to { transform: translateX(53%); } }
   @keyframes spin { to { transform: rotate(360deg); } }
 }
-.player { display: flex; align-items: center; gap: 12px; }
+.player { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }   /* (on the narrowest phones Play as preview goes onto a line of its own rather than pushing the day wider than the screen) */
 .play { width: 46px; height: 46px; flex: 0 0 auto; border-radius: 50%; border: 0; background: var(--fg); color: var(--bg); display: grid; place-items: center; cursor: pointer; }
 .play svg { width: 15px; height: 15px; }
 .play .i-pause, .pick.playing .play .i-play { display: none; }
 .pick.playing .play .i-pause { display: block; }
-.bar { position: relative; flex: 1; height: 34px; cursor: pointer; touch-action: none; -webkit-tap-highlight-color: transparent; }
+.bar { position: relative; flex: 1 1 40px; height: 34px; cursor: pointer; touch-action: none; -webkit-tap-highlight-color: transparent; }
 .bar::before { content: ""; position: absolute; left: 0; right: 0; top: 16px; height: 2px; background: var(--line); }
 .bar i { position: absolute; left: 0; top: 16px; height: 2px; width: 0; background: var(--fg); box-shadow: 0 0 10px color-mix(in srgb, var(--g2) 85%, transparent); }
 .bar i::after { content: ""; position: absolute; right: -6px; top: -5px; width: 12px; height: 12px; border-radius: 50%; background: var(--fg); opacity: 0; transition: opacity .2s ease, transform .15s ease; }
@@ -2909,7 +2911,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         var vidH = vidspot.getBoundingClientRect().height;
         var other = sheet.scrollHeight - vidH;   // everything in the day apart from the video (with the facts panel's room)
         var room = pick.querySelector('.pick-media').clientWidth;
-        var w = Math.floor(Math.max(320, Math.min(room, (maxH - other - 2) * 16 / 9)));
+        var w = Math.floor(Math.min(room, Math.max(320, (maxH - other - 2) * 16 / 9)));   // (never wider than the day: on a phone narrower than about 375 it was 320 regardless, and the video and its facts ran off the side)
         var now = parseFloat(sheet.style.getPropertyValue('--vidw')) || 0;
         if (Math.abs(now - w) < 2) break;
         sheet.style.setProperty('--vidw', w + 'px');

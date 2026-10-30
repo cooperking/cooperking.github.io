@@ -74,7 +74,6 @@
 .tool { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--line); background: #fff; color: var(--fg); cursor: pointer; font: 600 13px var(--sans); }
 .tool:disabled { opacity: .3; cursor: default; }
 .fmeta { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--muted); }
-.fmeta .long { color: var(--warn); font-weight: 600; }
 .fmeta .pv { color: var(--accent); font-weight: 600; }
 .fmeta a { color: var(--fg); }
 .fact blockquote { grid-column: 1 / -1; margin: 0; padding: 8px 12px; border-left: 3px solid var(--line); font: italic 14px/1.45 var(--serif); color: var(--fg-2); background: var(--chip); border-radius: 0 8px 8px 0; }
@@ -373,7 +372,7 @@
       var li = el('li', 'fact' + (f.gone ? ' gone' : ''));
       var ta = el('textarea'); ta.value = f.t; ta.rows = 2; ta.setAttribute('aria-label', title + ', fact ' + (i + 1));
       var meta = el('div', 'fmeta'), wc = el('span');
-      function count() { var n = words(ta.value); wc.textContent = n + ' words'; wc.className = n > 30 ? 'long' : ''; }
+      function count() { var n = words(ta.value); wc.textContent = n + ' words'; }   // (no longer red over 30: a long fact gets the room it needs)
       ta.addEventListener('input', function () { f.t = ta.value; count(); fit(ta); commit(); });
       count();
       var tools = el('div', 'tools');
@@ -476,7 +475,7 @@
     li.appendChild(h);
     if (!open) return li;
     var body = el('div', 'sbody');
-    if (factsDue(s)) body.appendChild(el('p', 'stat due', 'No facts yet: they’re written within a few minutes of a new song. This page looks every 20 seconds and puts them here as they come; your changes stay.'));
+    if (factsDue(s)) body.appendChild(el('p', 'stat due', 'No facts yet: they’re written within a few minutes of a new song. This page looks every 10 minutes and puts them here as they come; your changes stay.'));
     body.appendChild(tagSection(s, w));
     body.appendChild(videoSection(s, w));
     body.appendChild(factSection(s, st, w, 's', 'About the song'));
@@ -553,8 +552,9 @@
   }
   // ---- a new song's facts, still on their way (John, 30 Oct 2026: "Facts didn't seem to run again this morning": they
   // had, but reached the site 10 seconds after this page loaded and he signed the song off without them). While a song
-  // not out yet has none, the waiting facts are looked at again every 20 seconds; any that come go onto its card, into
-  // his changes too where he has made some (his moods, genres and video kept). ----
+  // not out yet has none, the waiting facts are looked at again every 10 minutes (John: "checking every ten minutes is
+  // fine"); any that come go onto its card, into his changes too where he has made some (his moods, genres and video
+  // kept). ----
   function noFacts(w) { return !(w.s || []).length && !Object.keys(w.a || {}).some(function (k) { return (w.a[k].f || []).length; }); }
   function factsDue(s) { return !isOut(s.id) && state(s).st === 'none' && !signedW[s.id]; }
   setInterval(function () {
@@ -573,7 +573,7 @@
       if (typing) { came.forEach(redraw); counts(); bulkLabel(); } else render();   // (not mid-word: just those cards)
       toast(came.length === 1 ? 'The facts for “' + came[0].title + '” are here' : 'The facts for ' + came.length + ' songs are here');
     }).catch(function () {});
-  }, 20000);
+  }, window.SOTD_DUE_EVERY || 600000);   // (SOTD_DUE_EVERY: the tests' shorter wait)
   // a song out on the live calendar: in facts.json (signed off, or from before sign-off began); a new one comes out when
   // John signs it off (John, 28 Oct 2026: he checks the facts and adds his song and video for the members first)
   function isOut(tid) { return !!(live.songs[tid] || (live.signed || {})[tid]); }
@@ -587,8 +587,6 @@
       toast((nofacts.length === 1 ? '“' + nofacts[0].title + '” has' : nofacts.length + ' songs have') + ' no facts yet: they’re usually written within a few minutes of a new song. Press again to publish without them.');
       return;
     }
-    var long = items.filter(function (it) { return it.s.concat.apply(it.s, Object.keys(it.a).map(function (k) { return it.a[k].f; })).some(function (f) { return words(f.t) > 30; }); });
-    if (long.length && !signoff.ok) { signoff.ok = true; toast('Some facts run over 30 words and may not fit the caption. Press again to go ahead.'); return; }
     // publishing a new song without his own recording or video: once more to be sure (members would get the preview and YouTube's)
     var bare = list_.filter(function (s) { var e = CAT[s.id] || {}; return !isOut(s.id) && (!e.a || !e.v); });
     if (bare.length && !signoff.bare) {
@@ -597,7 +595,7 @@
       toast((bare.length === 1 ? what[0].toUpperCase() + what.slice(1) : 'Your song or video isn’t') + ' up yet. Press again to publish anyway.');
       return;
     }
-    signoff.ok = false; signoff.bare = false; signoff.nofacts = false;
+    signoff.bare = false; signoff.nofacts = false;   // (no word limit: the calendar makes room for a long fact, John, 30 Oct 2026)
     api('/facts/signoff', { items: items }).then(function (j) {
       if (j.status === 401) return;
       if (!j.ok) { toast(j.error || 'Not saved: the Worker said ' + j.status); return; }
