@@ -2411,7 +2411,7 @@ async function memberSend(request, env, answer) {
   const everyone = body.to === 'all';
   const asked = everyone ? Object.keys(all).filter(k => hasJoined(all[k])) : Array.isArray(body.to) ? [...new Set(body.to.map(String))] : [];
   const to = asked.filter(takes);
-  if (!to.length) return answer(400, { error: asked.some(k => k !== id && all[k] && !apart(all, id, k)) ? 'They’ve turned off notifications from other members.' : 'Choose who it goes to.' });
+  if (!to.length) return answer(400, { error: asked.some(k => k !== id && all[k] && !apart(all, id, k)) ? 'They’ve turned off messages from other members.' : 'Choose who it goes to.' });
   const n = await dayCount(env, 'sent:' + id, SEND_DAY);
   if (!n) return answer(429, { error: 'That’s ' + SEND_DAY + ' sent today, the most for a day. You can send more tomorrow.' });
   const name = all[id].name, msg = note.msg;
@@ -2609,7 +2609,10 @@ async function memberReact(request, env, answer) {
   const key = 'react:' + id, r = (await env.SOTD.get(key, 'json')) || {};
   if (e) r[who.id] = { e, at: Date.now() }; else delete r[who.id];
   if (Object.keys(r).length) await env.SOTD.put(key, JSON.stringify(r), { expirationTtl: REACT_DAYS * 86400 }); else await env.SOTD.delete(key);
-  if (x.fi && who.all[x.fi]) await bellNote(env, x.fi, id, x.t, who.id, e);
+  if (x.fi && who.all[x.fi]) {
+    await bellNote(env, x.fi, id, x.t, who.id, e);
+    if (e && takesFrom(who.all, x.fi, who.id, await env.SOTD.get('owner'))) await bellPush(env, x.fi, who.all[who.id].name, e, x.t, id, who.id);
+  }
   return answer(200, { ok: true, rx: rxView(who.all, who.id, r) });
 }
 
@@ -2617,7 +2620,25 @@ async function memberReact(request, env, answer) {
 // at, t }] }: one item per message and member reacting (a new emoji replaces theirs and comes to the top, taking it away
 // removes it), the newest 50. GET /members/bell gives { items: [{ id, n, e, at, t }], unseen, seen }, leaving out anyone
 // kept apart from them; POST /members/bell { seen: true } marks them all seen. ----------
-const BELL_MAX = 50;
+const BELL_MAX = 50, RX_PUSH_DAY = 40;
+// a reaction also goes to the sender's devices with notifications on, unless they've turned off other members' messages
+// or the reactor's: "Dad reacted 🎉 to your message", the message's title, the calendar's bell (#bell); one a message and
+// reactor on a device (its tag); RX_PUSH_DAY a day from each reactor; not in the inbox, so the app's icon keeps its number
+async function bellPush(env, to, name, e, title, msgId, from) {
+  const subs = (await env.SOTD.get('pushSubs', 'json')) || {}, ids = Object.keys(subs).filter(k => subs[k].m === to);
+  if (!ids.length || !await dayCount(env, 'rxpush:' + from, RX_PUSH_DAY)) return;
+  const unread = ((await env.SOTD.get('inbox:' + to, 'json')) || []).filter(y => !y.r).length;
+  const msg = { title: name + ' reacted ' + e + ' to your message', body: '“' + (title || '') + '”', url: SITE_SONGS + '#bell', tag: 'sotd-rx-' + msgId + '-' + from, unread };
+  const k = await vapidKeys(env), gone = [];
+  await Promise.all(ids.map(async id => {
+    try { const { st } = await pushTo(env, k, subs[id], msg); if (st === 404 || st === 410) gone.push(id); } catch (err) { console.log('rx push: ' + (err && err.message)); }
+  }));
+  if (gone.length) {
+    const now = (await env.SOTD.get('pushSubs', 'json')) || {};
+    gone.forEach(id => delete now[id]);
+    await kvSoft(env, 'pushSubs', JSON.stringify(now));
+  }
+}
 async function bellNote(env, to, msgId, title, from, e) {
   if (to === from) return;
   const key = 'bell:' + to, b = (await env.SOTD.get(key, 'json')) || { seen: 0, items: [] };

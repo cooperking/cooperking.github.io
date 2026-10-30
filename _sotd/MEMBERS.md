@@ -159,10 +159,10 @@ metadata; at most once every 5 minutes a device; gone after 400 days unused). Th
 time (today 21:55). Until 28 Oct 2026 it was in the members record, rewritten at most every 6 hours, since that one
 value holds every member and a visit rewriting it could put back a copy read before a change on the Members tab.
 
-## Members' own notifications
+## Members' own messages
 
-A member can send a notification to other members, as John does from the Members tab (John, 28 Oct 2026): from their
-Profile's Inbox (*Send a notification*), or a song's, a month's or the calendar's *Share* › *Members*, which attaches
+A member can send a message to other members, as John does from the Members tab (John, 28 Oct 2026; called a
+notification until 30 Oct 2026): from their Profile's Inbox (*Send a message*), or a song's, a month's or the calendar's *Share* › *Members*, which attaches
 that link, its card as the picture and the song's cover. To everyone else, or the members they choose (`/members/me`
 gives the other members' names: `others`); a title, words and a picture of their own (made small on the page, sent up
 first: `/members/sendpic`, R2 `n/<id>.jpg`). `/members/send` checks it as John's are checked (`noteMsg`: a title, a link
@@ -229,7 +229,11 @@ seen; one tapped opens that message from Sent. KV `bell:<member>` `{ seen, items
 message and member reacting (a change replaces theirs and counts as new, taking it away removes it), the newest 50;
 written by `/members/react` for the message's sender (`fi`). `GET /members/bell` gives `{ items: [{ id, n, e, at, t }],
 unseen, seen }`, leaving out anyone kept apart; `POST /members/bell { seen: true }`; `/members/me` gives `bell`, the count
-not yet seen. Not a phone notification. Tests: `bell_t.mjs` (the Worker), `bell_page_t.py` (the draft).
+not yet seen. A reaction also goes as a notification to the sender's devices with notifications on (not when it's
+taken away, nor when they've turned off other members' messages or muted the reactor; John's always go): "Dad reacted 🎉
+to your message", the message's title as its words, opening the calendar at `#bell` (the Profile and its bell). It isn't
+put in the inbox, so the app's icon keeps its count; one per message and reactor on a device (tag `sotd-rx-<id>-<member>`);
+at most 40 a day from one member (`rxpush:<member>:<day>`). Tests: `bell_t.mjs` (the Worker), `bell_page_t.py` (the draft).
 
 ## Saved playlists
 

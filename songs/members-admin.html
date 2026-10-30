@@ -140,7 +140,7 @@
     <div class="row"><button class="btn small primary" id="csvget" type="button">Download the emails (CSV)</button><button class="btn small" id="mailcopy" type="button">Copy the emails</button></div>
   </div>
   <div class="card notify">
-    <div class="kicker">Send a notification</div>
+    <div class="kicker">Send a message</div>
     <p class="stat" id="pushstat">Members turn notifications on in their Profile on the calendar. Each new song goes out by itself, once, as it comes out on the calendar.</p>
     <div class="to" role="radiogroup" aria-label="Who it goes to">
       <button class="btn small primary" id="ntoall" type="button" aria-pressed="true">Everyone</button>
@@ -284,7 +284,7 @@
         + (m.invite ? ' · ' + inviteSays(m.invite) : '')
         + (m.passkeys ? ' · ' + m.passkeys + (m.passkeys === 1 ? ' passkey' : ' passkeys') : '')
         + ((PUSHON || {})[m.id] ? ' · notifications on' : '')
-        + (m.nomsg ? ' · other members’ notifications off' : '');   // (theirs to choose, Profile › Account; yours still reach them)
+        + (m.nomsg ? ' · other members’ messages off' : '');   // (theirs to choose, Profile › Account; yours still reach them)
       var nl = button('New link', function () { api('/members/admin', { op: 'reinvite', id: m.id }).then(showLink); });
       var tv = button('Code', function () { api('/members/admin', { op: 'tvcode', id: m.id }).then(function (j) {
         if (!j.code) { toast(j.error || 'Couldn’t make a code'); return; }
@@ -975,7 +975,7 @@
     if (to && !to.length) { toast('Choose who it goes to'); return; }
     var names = to ? MEMBERS.filter(function (m) { return to.indexOf(m.id) >= 0; }).map(function (m) { return m.name; }) : [];
     var whom = to ? (names.length > 1 ? names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1] : names[0]) : '';
-    ask('Notification', 'Send “' + title + '”?', (to ? 'It goes to ' + whom : 'It goes to everyone') + ': into their inbox, and straight to their phone where notifications are on.', 'Send').then(function (yes) {
+    ask('Message', 'Send “' + title + '”?', (to ? 'It goes to ' + whom : 'It goes to everyone') + ': into their inbox, and straight to their phone where notifications are on.', 'Send').then(function (yes) {
       if (!yes) return;
       var b = $('nsend'); b.disabled = true;
       if (wordsT) { clearTimeout(wordsT); wordsT = null; songPicDraw(); }   // words just typed: drawn now
@@ -990,7 +990,7 @@
       }).then(function () { return api('/members/admin', Object.assign({ op: 'push', title: title, text: text, url: url, to: to }, pics)); }).then(function (j) {
         b.disabled = false;
         if (j.status !== 200) { toast(j.error || 'Couldn’t send it'); return; }
-        if (j.failed && !j.sent) { ask('Notification', 'It didn’t go', whyText(j.errors) || 'The push service said no.', 'OK'); pushStat(); return; }
+        if (j.failed && !j.sent) { ask('Message', 'It didn’t go', whyText(j.errors) || 'The push service said no.', 'OK'); pushStat(); return; }
         var inb = j.inboxes ? 'In ' + j.inboxes + (j.inboxes === 1 ? ' inbox' : ' inboxes') : 'Sent';
         toast(inb + (j.sent ? ', and on ' + j.sent + (j.sent === 1 ? ' phone' : ' phones') : ' (no phones with notifications on)') + (j.failed ? '; ' + j.failed + ' refused it' : ''));
         if (j.sent) { $('ntitle').value = ''; $('ntext').value = ''; if (NSONG) songClear(); NPIC = null; NGIF = null; picShow(false); }
