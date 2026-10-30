@@ -2728,7 +2728,7 @@ function uplCan(all, viewer, rec) {   // whether a member sees this playlist: th
 }
 function uplList(all, viewer, U) {   // the playlists a member can switch to (/members/me pls)
   return Object.entries(U).filter(([, r]) => uplCan(all, viewer, r))
-    .map(([pid, r]) => Object.assign({ id: pid, n: uplName(all, r), t: uplTitle(all, r), o: all[r.o].name, mode: r.mode, cnt: r.cnt || 0, sp: r.sp }, r.yt ? { yt: r.yt } : {}, r.o === viewer ? { mine: true, st: r.st, err: r.err || '', dates: r.mode === 'list' ? null : Object.assign({ how: 'added' }, r.dates || {}) } : {}))
+    .map(([pid, r]) => Object.assign({ id: pid, n: uplName(all, r), t: uplTitle(all, r), o: all[r.o].name, mode: r.mode, cnt: r.cnt || 0, sp: r.sp }, r.yt ? { yt: r.yt } : {}, r.o === viewer ? { mine: true, st: r.st, err: r.err || '', dates: r.mode === 'list' ? null : Object.assign({ how: 'added' }, r.dates || {}), send: uplSendOf(r) } : {}))
     .sort((a, b) => (b.mine ? 1 : 0) - (a.mine ? 1 : 0) || a.o.localeCompare(b.o) || a.n.localeCompare(b.n));
 }
 function uplAdmin(all, U) {   // the Members tab: every playlist, whose, and whether John has joined it
@@ -2806,7 +2806,7 @@ async function uplLook(env) {   // the timer: playlists due a read (UPL_LOOK_MOS
     .sort((a, b) => (a[1].tried || 0) - (b[1].tried || 0)).slice(0, UPL_LOOK_MOST);
   for (const [pid, r] of due) await uplRead(env, pid, r, U).catch(e => console.log('upl ' + pid + ': ' + (e && e.message)));
   const today = londonDay();
-  if (h >= 8) await uplAnnounce(env, U, today).catch(e => console.log('uplAnnounce: ' + (e && e.message)));
+  await uplAnnounce(env, U, today).catch(e => console.log('uplAnnounce: ' + (e && e.message)));
   if (h >= 7 && Object.values(U).some(r => r.st === 'ok') && (await env.SOTD.get('uplJobDay')) !== today && await kvSoft(env, 'uplJobDay', today))
     await startJob(env, null, null, 0, null, true).catch(() => {});   // each day's 5 more of their older songs
 }
@@ -2858,12 +2858,13 @@ async function uplView(env, all, viewer, pid, rec) {   // a playlist as the cale
     songs = songs.filter(x => x.id in at).sort((a, b) => at[a.id] - at[b.id]).concat(songs.filter(x => !(x.id in at)));
   }
   return { id: pid, n: uplName(all, rec), t: uplTitle(all, rec), o: all[rec.o].name, mine, mode: rec.mode, sp: rec.sp, yt: rec.yt || '', st: rec.st, at: data.at || null,
-    dates: rec.mode === 'list' ? null : Object.assign({ how: 'added' }, rec.dates || {}), songs };
+    dates: rec.mode === 'list' ? null : Object.assign({ how: 'added' }, rec.dates || {}), send: mine ? uplSendOf(rec) : undefined, songs };
 }
 // /members/upl: GET ?id= one playlist to show; POST { op: 'add', link, mode } | { op: 'mode', id, mode } | { op: 'remove', id }
 // | { op: 'check', id } | { op: 'signoff', id, track } | { op: 'dates', id, how: 'added' | 'fwd' | 'back', day } (a calendar:
 // by the day each was added on Spotify; a song a day forwards from day, the first song on it; or back from day, the
 // newest song now on it and the ones after it on the days after) | { op: 'order', id, order: [track ids] } (a playlist)
+// | { op: 'send', id, on, at: 'HH:MM' } (whether its songs go to the members as messages, and when)
 async function memberUpl(request, url, env, answer) {
   const who = await memberWho(request, env);
   if (!who) return answer(401, { error: 'Not a member (any more).' });
@@ -2892,7 +2893,7 @@ async function memberUpl(request, url, env, answer) {
   }
   const pid = String(body.id || ''), rec = own(pid);
   if (!rec) return answer(404, { error: 'No such playlist of yours.' });
-  if (body.op === 'mode') { rec.mode = body.mode === 'list' ? 'list' : 'cal'; await uplPut(env, U); return mine(); }
+  if (body.op === 'mode') { rec.mode = body.mode === 'list' ? 'list' : 'cal'; delete rec.annDay; await uplPut(env, U); return mine(); }
   if (body.op === 'link') {   // the collaboration invite link, sent again
     const link = uplInvite(body.link);
     if (!link || uplSpId(link) !== rec.sp) return answer(400, { error: 'That isn’t this playlist’s invite link.' });
@@ -2912,12 +2913,13 @@ async function memberUpl(request, url, env, answer) {
     if (!uplWaiting(rec, data, x)) return answer(400, { error: 'That song is out already.' });
     if (!await dayCount(env, 'uplsign:' + me, UPL_SIGNOFF_DAY)) return answer(429, { error: 'That’s ' + UPL_SIGNOFF_DAY + ' today, the most for a day.' });
     data.rel = data.rel || {}; data.rel[x.id] = Date.now();
-    const d = uplDays(data.songs, rec).find(y => y.id === x.id).d;
-    let sent = null;
-    if (d <= londonDay()) { data.ann = data.ann || {}; data.ann[x.id] = Date.now(); }   // out now; a day still to come goes out on its day (uplAnnounce)
+    data.reld = data.reld || {}; data.reld[x.id] = londonDay();   // (the day it was signed off: a playlist's song goes to the members that day)
+    const today = londonDay(), snd = uplSendOf(rec), cd = uplDays(data.songs, rec).find(y => y.id === x.id).d, d = rec.mode === 'list' ? today : cd;
+    const now = snd.on && (d < today || (d === today && uplHM() >= snd.at));   // its time has come: now; else uplAnnounce at its time
+    if (now) { data.ann = data.ann || {}; data.ann[x.id] = Date.now(); }
     await env.SOTD.put('upl:' + pid, JSON.stringify(data));
-    if (d <= londonDay()) sent = await uplSend(env, all, me, pid, rec, x, d);
-    return answer(200, Object.assign({ ok: true, sent, view: await uplView(env, all, me, pid, rec) }, sent ? {} : { on: d }));
+    const sent = now ? await uplSend(env, all, me, pid, rec, x, cd) : null;
+    return answer(200, Object.assign({ ok: true, sent, view: await uplView(env, all, me, pid, rec) }, snd.on && !now ? { on: d, at: snd.at } : {}));
   }
   if (body.op === 'dates') {
     if (rec.mode === 'list') return answer(400, { error: 'A playlist has no days: make it a calendar first.' });
@@ -2930,6 +2932,14 @@ async function memberUpl(request, url, env, answer) {
       rec.dates = !songs.length ? { how, day } : how === 'fwd' ? { how, day, at: songs[0].id, n: 1 } : { how, day, at: songs[songs.length - 1].id, n: songs.length };
     }
     delete rec.annDay;   // (today's song looked at again)
+    await uplPut(env, U);
+    return answer(200, { ok: true, pls: uplList(all, me, U), view: await uplView(env, all, me, pid, rec) });
+  }
+  if (body.op === 'send') {
+    const at = String(body.at || '08:00');
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(at)) return answer(400, { error: 'Choose a time.' });
+    rec.send = { on: !!body.on, at };
+    delete rec.annDay;
     await uplPut(env, U);
     return answer(200, { ok: true, pls: uplList(all, me, U), view: await uplView(env, all, me, pid, rec) });
   }
@@ -2950,20 +2960,28 @@ async function uplAskJohn(env, all, me, rec) {   // John: a playlist for him to 
     url: SITE_SONGS + 'admin.html#members', tag: 'sotd-upljoin-' + rec.sp };
   await pushAll(env, msg, [owner], { kind: 'upl', via: { t: 'upl', name: all[me].name } });
 }
-async function uplAnnounce(env, U, today) {   // a calendar with its own days (dates fwd or back): the song whose day it is, out, to the members once
+// Messages: only when its owner chooses (send { on, at }: off unless they turn it on, at the time they choose, UK time).
+// A calendar's song goes on its day; a playlist's on the day its owner signs it off; at that time, or at the sign-off
+// when that's later.
+function uplHM(d) { return new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(d ? new Date(d) : new Date()); }
+function uplSendOf(rec) { return Object.assign({ on: false, at: '08:00' }, rec.send || {}); }
+function uplSongDay(rec, data, days, i) { const t = data.songs[i].id; return rec.mode === 'list' ? (data.reld || {})[t] || ((data.rel || {})[t] ? londonDay(data.rel[t]) : '') : days[i].d; }
+async function uplAnnounce(env, U, today) {   // the songs whose day it is, out, to the members once, at their owner's time
   let all = null;
+  const hm = uplHM();
   for (const [pid, rec] of Object.entries(U)) {
-    if (rec.st !== 'ok' || rec.mode === 'list' || !rec.dates || (rec.annDay === today)) continue;
+    const snd = uplSendOf(rec);
+    if (rec.st !== 'ok' || !snd.on || hm < snd.at || rec.annDay === today) continue;
     const data = await uplSongs(env, pid), days = uplDays(data.songs || [], rec);
     data.ann = data.ann || {};
-    const due = days.filter((x, i) => x.d === today && !data.ann[x.id] && !uplWaiting(rec, data, data.songs[i]));
+    const due = days.filter((x, i) => uplSongDay(rec, data, days, i) === today && !data.ann[x.id] && !uplWaiting(rec, data, data.songs[i]));
     rec.annDay = today; await uplPut(env, U);
     if (!due.length) continue;
     all = all || (await env.SOTD.get('members', 'json')) || {};
     if (!all[rec.o]) continue;
     for (const x of due) data.ann[x.id] = Date.now();
     await env.SOTD.put('upl:' + pid, JSON.stringify(data));
-    for (const x of due) await uplSend(env, all, rec.o, pid, rec, x, today);
+    for (const x of due) await uplSend(env, all, rec.o, pid, rec, x, x.d);
   }
 }
 async function uplSend(env, all, me, pid, rec, x, d) {   // a song signed off: to the members, as a message from its owner

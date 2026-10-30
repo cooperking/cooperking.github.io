@@ -259,9 +259,12 @@ still to come: facts, written for new songs and on request for older ones, check
   each song is added on Spotify (John's rule, a day with no song taking the next); forwards from a day (the first song on
   it, then a song a day); or back from a day (the newest song now on it, each one before a day earlier). Either of the
   last two keeps its anchor (the first, or the newest then: `dates { how, day, at, n }` on its record), so new songs
-  follow on a day each. A day still to come is hidden from the others (its owner sees it dimmed); on its day, from
-  08:00, its song goes to the members as a message from its owner, once (`ann` in `upl:<id>`); a new song signed off
-  for a day still to come goes then. Moving the anchor looks at today's song again.
+  follow on a day each. A day still to come is hidden from the others (its owner sees it dimmed). Moving the anchor looks at today's song again.
+- **Messages** (John, 30 Oct 2026: "Songs shouldn’t automatically go out as a message unless the user chooses and
+  should be able to choose the time too"; Profile › Playlists › *Messages*): off unless its owner turns it on, at the
+  time they choose (UK time; `send { on, at }` on its record). On: a calendar's song goes to the members on its day, a
+  playlist's on the day its owner signs it off, at that time, or at the sign-off when that's later; once each (`ann`
+  in `upl:<id>`), as a message from its owner, to those who take theirs. The Worker's 10-minute look sends them.
 - **A plain playlist's order** (John, 30 Oct 2026: "orderable in exactly the same way as a normal playlist"): listed as
   My playlist lists songs; its owner moves them by the handle (or the up and down arrow keys) or orders them with My
   playlist's buttons (First day, Song A–Z, Artist A–Z, Oldest, each the other way on a second tap; Shuffle), saved for
@@ -273,8 +276,8 @@ still to come: facts, written for new songs and on request for older ones, check
   link are put away, the Spotify link goes to their playlist, and playing My playlist goes back to John's calendar.
 - **New songs.** The songs on it when it's added are out from the start; each song added after waits for its owner,
   who is told on their phone ("“…” waits for you to sign off") and sees its day marked with *Sign off*. Signed off, it's
-  out for everyone and goes to the members as a message from them ("From Mum"; reactions and replies as any message),
-  to those who take theirs; on their Sent too. 20 sign-offs a day at most.
+  out for everyone, and goes to the members as a message from them only as they've chosen (Messages, below; "From
+  Mum"; reactions and replies as any message; on their Sent too). 20 sign-offs a day at most.
 - **Kept.** KV `upls` (each playlist: owner, Spotify id and name, calendar or playlist, invite link, when added, whether
   readable, last read, count) and `upl:<id>` (its songs as last read, and when each was signed off). Previews and moods
   come the same way as John's (KV `previews`, `tags`). *Open in Spotify* takes their songs too. Removing a member
@@ -292,7 +295,7 @@ still to come: facts, written for new songs and on request for older ones, check
   The site job gets the playlists from the Worker's `/upl/sync` with its own GITHUB_TOKEN (the Worker checks with GitHub
   that it's a token for this repository alone), and sends back the YouTube copies. The Worker starts the site job when a
   member's playlist changes, and once a day from 07:00 for the day's 5 more. Tests: `upl_py_t.py`.
-- Worker: `/members/upl` (GET `?id=`; POST ops `add`, `mode`, `link`, `check`, `remove`, `signoff`, `dates`, `order`), `pls` on
+- Worker: `/members/upl` (GET `?id=`; POST ops `add`, `mode`, `link`, `check`, `remove`, `signoff`, `dates`, `order`, `send`), `pls` on
   `/members/me`, admin ops `upls`, `uplcheck`, `uplremove`. Tests: `upl_t.mjs` (the Worker), `upl_page_t.py` (the
   draft), `upl_admin_t.py` (the Members tab), `upl_dates_t.mjs` (days and order), `upl_order_t.py` (the draft's order and
   Days), `mine_drag_t.py` (My playlist's dragging, shared with them).
