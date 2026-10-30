@@ -969,7 +969,7 @@ async function members(request, url, env) {
       // member who is John (This is me), else John
       const from = (owner && all[owner] && all[owner].name) || 'John', msg = note.msg;
       Object.assign(msg, { subject: msg.title, title: from + ': ' + msg.title, from });
-      const r = await pushAll(env, msg, to, { kind: 'note', via: { t: 'you' } });
+      const r = await pushAll(env, msg, to, { kind: 'note', via: { t: 'you' }, fromId: owner && all[owner] ? owner : '', toIds: to || 'all' });
       if (owner && all[owner]) await sentAdd(env, owner, msg, r, to ? to.map(k => all[k].name) : 'all');   // (his Profile › Sent)
       return answer(200, r);
     }
@@ -2375,7 +2375,8 @@ async function memberSend(request, env, answer) {
   if (!n) return answer(429, { error: 'That’s ' + SEND_DAY + ' sent today, the most for a day. You can send more tomorrow.' });
   const name = all[id].name, msg = note.msg;
   Object.assign(msg, { subject: msg.title, title: name + ': ' + msg.title, from: name, tag: 'sotd-from-' + id + '-' + Date.now() });
-  const r = await pushAll(env, msg, to, { kind: 'member', via: { t: 'member', id, name }, toNames: everyone ? null : to.map(k => all[k].name) });
+  const r = await pushAll(env, msg, to, { kind: 'member', via: { t: 'member', id, name }, toNames: everyone ? null : to.map(k => all[k].name),
+    fromId: id, toIds: everyone ? 'all' : asked.filter(k => k !== id && all[k]) });
   // their Profile › Sent: who they chose, as the calendar said when it went ("Sent to …"), not who took it
   await sentAdd(env, id, msg, r, everyone ? 'all' : asked.filter(k => k !== id && all[k] && !apart(all, id, k)).map(k => all[k].name));
   return answer(200, { ok: true, inboxes: r.inboxes, sent: r.sent, devices: r.devices, left: SEND_DAY - n });
@@ -2441,9 +2442,9 @@ async function picsUp(env, origin, body) {   // { url, gif? }, or { error }
   return out;
 }
 
-async function pushAll(env, msg, to, meta) {   // to: only these members (else everyone); meta: { kind: 'song' | 'note' | 'member', track, via, toNames }
+async function pushAll(env, msg, to, meta) {   // to: only these members (else everyone); meta: { kind: 'song' | 'note' | 'member', track, via, toNames, fromId, toIds }
   const subs = (await env.SOTD.get('pushSubs', 'json')) || {}, k = await vapidKeys(env);
-  const unread = await inboxAdd(env, to, msg);   // into each one's inbox first (notifications on or not); their unread counts
+  const unread = await inboxAdd(env, to, msg, meta);   // into each one's inbox first (notifications on or not); their unread counts
   let sent = 0, failed = 0; const gone = [], errors = [];
   const ids = Object.keys(subs).filter(id => !to || to.includes(subs[id].m));
   for (let i = 0; i < ids.length; i += 20) {   // twenty at a time
@@ -2497,14 +2498,20 @@ async function pushHistory(env) {
 // Kept per member (inbox:<member>), the newest 60; reading on one device counts for all of theirs. The count of unread
 // goes with each notification, for the number on the app's icon, and with /members/me.
 const INBOX_MAX = 60;
-async function inboxAdd(env, to, msg) {
+// A message from someone also says who sent it (fi, their id, for a reply) and who it went to: to 'all', or the others
+// chosen (to: [{ i, n }], each one's id and name), leaving out anyone kept apart from the member whose inbox it is.
+async function inboxAdd(env, to, msg, meta) {
   const all = (await env.SOTD.get('members', 'json')) || {}, ids = (to || Object.keys(all)).filter(id => all[id]), out = {};
   const item = { id: randomCode(8), at: Date.now(), t: msg.subject || msg.title, b: msg.body || '', u: msg.url || '' };
-  if (msg.gif || msg.image) item.i = msg.gif || msg.image; if (msg.icon) item.c = msg.icon;   // (a GIF sent: it, moving, in place of the still)
-  if (msg.from) item.f = msg.from;   // (a member's: who sent it)
+  if (msg.gif || msg.image) item.i = msg.gif || msg.image; if (msg.icon) item.c = msg.icon;
+  if (msg.from) item.f = msg.from;
+  const m = meta || {};
+  if (msg.from && m.fromId) item.fi = m.fromId;
+  const toFor = id => m.toIds === 'all' ? 'all' : Array.isArray(m.toIds)
+    ? m.toIds.filter(k => k !== id && all[k] && !apart(all, id, k)).map(k => ({ i: k, n: all[k].name })) : undefined;
   await Promise.all(ids.map(async id => {
-    const box = (await env.SOTD.get('inbox:' + id, 'json')) || [];
-    box.unshift(item); box.length = Math.min(box.length, INBOX_MAX);
+    const box = (await env.SOTD.get('inbox:' + id, 'json')) || [], mine = msg.from && m.toIds ? Object.assign({}, item, { to: toFor(id) }) : item;
+    box.unshift(mine); box.length = Math.min(box.length, INBOX_MAX);
     await kvSoft(env, 'inbox:' + id, JSON.stringify(box));
     out[id] = box.filter(x => !x.r).length;
   }));

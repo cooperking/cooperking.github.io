@@ -292,10 +292,10 @@ html.big .heroacts .hsub { margin: 0 6px 0 0; }
 .ac-msgs { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .ac-msgs > li { border: 1px solid var(--line); border-radius: 14px; background: var(--pill-bg); overflow: hidden; }
 .ac-msgs > li.plain { border: 0; background: none; }
-.ac-msgs .open { width: 100%; display: grid; grid-template-columns: auto 1fr auto; gap: 2px 10px; align-items: start; padding: 10px 12px 4px; border: 0; background: none; color: var(--fg); text-align: left; cursor: pointer; font: inherit; }
+.ac-msgs .open { width: 100%; display: grid; grid-template-columns: auto 1fr auto; gap: 1px 9px; align-items: start; padding: 8px 10px 2px; border: 0; background: none; color: var(--fg); text-align: left; cursor: pointer; font: inherit; }
 .ac-msgs .dot { grid-row: 1 / span 3; width: 8px; height: 8px; margin-top: 7px; border-radius: 50%; background: transparent; }
-.ac-msgs .cv { grid-column: 3; grid-row: 1 / span 3; width: 46px; height: 46px; border-radius: 6px; object-fit: cover; }
-.ac-msgs .pic { grid-column: 2 / span 2; justify-self: start; margin-top: 6px; width: auto; max-width: 100%; height: auto; max-height: 320px; border-radius: 10px; display: block; }   /* (the whole picture, as it is: John, 29 Oct 2026) */
+.ac-msgs .cv { grid-column: 3; grid-row: 1 / span 3; width: 40px; height: 40px; border-radius: 6px; object-fit: cover; }
+.ac-msgs .pic { grid-column: 3; grid-row: 1 / span 3; width: auto; max-width: 64px; height: auto; max-height: 56px; border-radius: 6px; display: block; }   /* the whole picture, small, beside the words */
 /* a message opened (one with no link of its own): all of it, its whole picture */
 .msgv h3 { margin: -4px 0 0; font-family: var(--serif); font-weight: 500; font-size: 30px; line-height: 1.1; color: var(--fg); overflow-wrap: anywhere; }
 .msgv .msgv-w { margin: -10px 0 0; font-size: 13px; color: var(--muted); }
@@ -303,16 +303,18 @@ html.big .heroacts .hsub { margin: 0 6px 0 0; }
 .msgv .msgv-pic { margin: 0; }
 .msgv .msgv-pic img { display: block; max-width: 100%; max-height: calc(100dvh - 260px); height: auto; margin: 0 auto; border-radius: 12px; }
 .msgv .msgv-pic.cv img { width: 160px; height: 160px; object-fit: cover; margin: 0; }
-.ac-msgs .acts2 { display: flex; justify-content: flex-end; gap: 14px; padding: 2px 12px 9px 30px; }
-.ac-msgs .acts2 button { border: 0; background: none; padding: 4px 0; font: 600 10.5px/1.2 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); cursor: pointer; }
+.msgv .ask-acts[hidden] { display: none; }
+.ac-msgs .acts2 { display: flex; justify-content: flex-end; gap: 14px; padding: 0 10px 5px 26px; }
+.ac-msgs .acts2 button { border: 0; background: none; padding: 3px 0; font: 600 10px/1.2 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); cursor: pointer; }
+.ac-msgs .acts2 .reply { margin-right: auto; color: var(--fg); }
 .ac-msgs .acts2 button:hover, .ac-msgs .acts2 button:focus-visible { color: var(--fg); }
 .ac-msgs .new .dot { background: #e23a6e; }
-.ac-msgs .t { grid-column: 2; font: 500 17px/1.2 var(--serif); }
+.ac-msgs .t { grid-column: 2; font: 500 15.5px/1.2 var(--serif); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
 .ac-msgs .b, .ac-msgs .w { grid-column: 2; }
 .ac-msgs .new .t { font-weight: 600; }
-.ac-msgs .b { font-size: 13.5px; line-height: 1.35; color: var(--fg); opacity: .85; }
-.ac-msgs .w { font-size: 11.5px; color: var(--muted); }
-.ac-msgs.sentl .open { padding-bottom: 10px; }   /* (Sent: no Mark read or Delete under each) */
+.ac-msgs .b { font-size: 13px; line-height: 1.3; color: var(--fg); opacity: .85; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
+.ac-msgs .w { font-size: 11px; color: var(--muted); }
+.ac-msgs.sentl .open { padding-bottom: 8px; }   /* Sent: no Reply, Mark read or Delete under each */
 .ac-msgs .more { justify-self: start; }
 /* a member's own notification to other members (Profile › Inbox › Send a notification; Share › Members) */
 .ac-inbox .sendbtn { justify-self: start; margin-bottom: 6px; }
@@ -1507,6 +1509,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     <p class="msgv-w" id="msgw"></p>
     <p class="msgv-b" id="msgb"></p>
     <figure class="msgv-pic" id="msgpicf" hidden><img id="msgpic" alt=""></figure>
+    <div class="ask-acts" id="msgacts" hidden><button class="copy" id="msgreply" type="button">Reply</button></div>
   </div>
 </dialog>
 <dialog id="askdlg" aria-labelledby="askh">
@@ -3566,6 +3569,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function sendOpen(pre) {
     if (!sendCan()) return;
     SND = { some: false, pick: [], att: pre && pre.url ? pre : null, pic: null, song: null };
+    if (pre && pre.reply) { SND.some = pre.reply.to !== 'all'; SND.pick = pre.reply.to === 'all' ? [] : pre.reply.to.slice(); }   // a reply: to the same people, changeable
+    document.getElementById('sndh').textContent = pre && pre.reply ? 'A reply' : 'A notification';
     if (pre && pre.song) {
       var sg = pre.song.s, iso = pre.song.iso, oc = ownCover(sg), slug = slugOf(iso);
       SND.song = { iso: iso, n: sg.n, title: cleanTitle(sg.title), artist: sg.artist, cover: sg.u || '', site: SITE + slug + '/card.jpg', drawN: 0, made: '', drawP: null,
@@ -5790,7 +5795,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // ---- the inbox: everything sent to this member (the day's songs, John's notes), from the Worker, read or not. The
   // unread count shows on the Profile buttons and the app's icon; a message tapped here (or its notification tapped)
   // counts as read, on all their devices. ----
-  var INBOX = { items: null, unread: 0, shown: 8 };
+  var INBOX = { items: null, unread: 0, shown: 5 };
   function unreadSet(n) {
     INBOX.unread = Math.max(0, n || 0);
     ['whon'].forEach(function (id) { var el = document.getElementById(id); if (!el) return; el.hidden = !INBOX.unread || !MEMBER; el.textContent = INBOX.unread > 99 ? '99+' : String(INBOX.unread); });
@@ -5840,12 +5845,32 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // open the full message in the same way other pages open. Closing will mark as read."): all of it in a pop-up over
   // the Profile, its whole picture (a GIF moving); closing it marks it read ----
   var msgDlg = document.getElementById('msgdlg'), MSG = null;
+  // who a message in the inbox went to: everyone, or this member and the others chosen
+  function toText(to) {
+    if (to === 'all') return 'to everyone';
+    if (!Array.isArray(to)) return '';
+    var n = ['you'].concat(to.map(function (p) { return p.n; }));
+    return 'to ' + (n.length > 4 ? n.slice(0, 3).join(', ') + ' and ' + (n.length - 3) + ' others' : andList(n));
+  }
+  function fromLine(x) { return [x.f ? 'From ' + x.f : '', toText(x.to)].filter(Boolean).join(' · '); }
+  // a reply: the same people (the sender and the others it went to, or everyone), as far as this member can send to them
+  function replyCan(x) { return !!(x && x.f && sendCan()); }
+  function replyTo(x) {
+    var others = MEMBER.others || [], can = others.map(function (o) { return o.id; });
+    var from = x.fi || (others.filter(function (o) { return o.name === x.f; })[0] || {}).id;
+    var to = x.to === 'all' ? 'all' : [from].concat((x.to || []).map(function (p) { return p.i; }))
+      .filter(function (v, i, a) { return v && a.indexOf(v) === i && can.indexOf(v) >= 0; });
+    var t = String(x.t || '');
+    sendOpen({ title: (/^re:/i.test(t) ? t : 'Re: ' + t).slice(0, 80), reply: { to: to } });
+  }
   function msgOpen(x, sent) {
     MSG = { x: x, sent: !!sent };
     document.getElementById('msgk').textContent = sent ? 'Sent' : 'Message';
     document.getElementById('msgh').textContent = x.t || '';
     var when = new Date(x.at).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
-    document.getElementById('msgw').textContent = (sent ? sentTo(x.to) + ' · ' : x.f ? 'From ' + x.f + ' · ' : '') + when;
+    var who = sent ? sentTo(x.to) : fromLine(x);
+    document.getElementById('msgw').textContent = (who ? who + ' · ' : '') + when;
+    document.getElementById('msgacts').hidden = sent || !replyCan(x);
     var b = document.getElementById('msgb'); b.textContent = x.b || ''; b.hidden = !x.b;
     var pic = x.i || x.c || '', f = document.getElementById('msgpicf'), im = document.getElementById('msgpic');
     f.hidden = !pic; f.className = 'msgv-pic' + (x.i ? '' : ' cv');
@@ -5859,6 +5884,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     inboxCall({ read: [m.x.id] }).catch(function () {});
   });
   document.getElementById('msgclose').addEventListener('click', function () { closeDialog(msgDlg); });
+  document.getElementById('msgreply').addEventListener('click', function () { var m = MSG; closeDialog(msgDlg); if (m) replyTo(m.x); });
   function inboxDraw() {
     var box = document.getElementById('acinbox'), ul = document.getElementById('acmsgs'), none = document.getElementById('acinnone');
     box.hidden = !MEMBER || !MBASE;
@@ -5883,10 +5909,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       var li = document.createElement('li'), b = document.createElement('button'); b.type = 'button'; b.className = 'open' + (x.r ? '' : ' new');
       if (sel && sel.has(x.id)) { li.className = 'chosen'; b.className += ' chosen'; }
       b.innerHTML = (sel ? '<span class="tick"></span>' : '<span class="dot"></span>') + '<span class="t"></span>' + (x.b ? '<span class="b"></span>' : '') + '<span class="w"></span>';
-      b.querySelector('.t').textContent = x.t; if (x.b) b.querySelector('.b').textContent = x.b; b.querySelector('.w').textContent = (x.f ? 'From ' + x.f + ' · ' : '') + ago(x.at);
-      b.setAttribute('aria-label', (x.r ? '' : 'New: ') + (x.f ? 'from ' + x.f + ': ' : '') + x.t + (x.b ? '. ' + x.b : ''));
-      // its picture (shown here on every phone, though an iPhone's notification can't): the big one under the words,
-      // or else the cover beside them
+      var fl = fromLine(x);
+      b.querySelector('.t').textContent = x.t; if (x.b) b.querySelector('.b').textContent = x.b; b.querySelector('.w').textContent = (fl ? fl + ' · ' : '') + ago(x.at);
+      b.setAttribute('aria-label', (x.r ? '' : 'New: ') + (fl ? fl + ': ' : '') + x.t + (x.b ? '. ' + x.b : ''));
+      // its picture, or else the song's cover, small beside the words
       if (x.i) { var pi = document.createElement('img'); pi.className = 'pic'; pi.alt = ''; pi.loading = 'lazy'; pi.src = x.i; pi.onerror = function () { pi.remove(); }; b.appendChild(pi); }
       else if (x.c) { var cv = document.createElement('img'); cv.className = 'cv'; cv.alt = ''; cv.loading = 'lazy'; cv.src = x.c; cv.onerror = function () { cv.remove(); }; b.appendChild(cv); }
       var acts = document.createElement('div'); acts.className = 'acts2';
@@ -5899,6 +5925,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       });
       var dl = document.createElement('button'); dl.type = 'button'; dl.textContent = 'Delete';
       dl.addEventListener('click', function () { inboxDelete([x.id]); });
+      if (replyCan(x)) { var rp = document.createElement('button'); rp.type = 'button'; rp.className = 'reply'; rp.textContent = 'Reply'; rp.addEventListener('click', function () { replyTo(x); }); acts.appendChild(rp); }
       acts.appendChild(tg); acts.appendChild(dl);
       b.addEventListener('click', function () {
         if (INBOX.sel) { if (INBOX.sel.has(x.id)) INBOX.sel.delete(x.id); else INBOX.sel.add(x.id); inboxDraw(); return; }   // selecting: ticked or not
@@ -5912,8 +5939,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       li.appendChild(b); if (!sel) li.appendChild(acts); ul.appendChild(li);
     });
     if (!sel && items.length > INBOX.shown) {
-      var li = document.createElement('li'), m = document.createElement('button'); li.className = 'plain'; m.type = 'button'; m.className = 'copy ghost more'; m.textContent = 'Show older';
-      m.addEventListener('click', function () { INBOX.shown += 20; inboxDraw(); });
+      var li = document.createElement('li'), m = document.createElement('button'); li.className = 'plain'; m.type = 'button'; m.className = 'copy ghost more'; m.textContent = 'Show more';
+      m.addEventListener('click', function () { INBOX.shown += 5; inboxDraw(); });
       li.appendChild(m); ul.appendChild(li);
     }
   }
@@ -5921,7 +5948,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // notifications"): what they've sent other members, newest first, each with who they sent it to (as they chose them)
   // and when; tapped, it opens what it links to, as in the inbox. From the Worker (/members/sent); shown to members who
   // can send (other members to send to), or who have sent some. John's from the Members tab are on his. ----
-  var SENT = { items: null, shown: 8 };
+  var SENT = { items: null, shown: 5 };
   function sentCall() {
     var tok = plTok(); if (!tok || !MBASE || TV) return Promise.reject();
     return fetch(MBASE + '/members/sent', { headers: { Authorization: 'Bearer ' + tok }, cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
@@ -5952,8 +5979,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       li.appendChild(b); ul.appendChild(li);
     });
     if (items.length > SENT.shown) {
-      var li = document.createElement('li'), m = document.createElement('button'); li.className = 'plain'; m.type = 'button'; m.className = 'copy ghost more'; m.textContent = 'Show older';
-      m.addEventListener('click', function () { SENT.shown += 20; sentDraw(); });
+      var li = document.createElement('li'), m = document.createElement('button'); li.className = 'plain'; m.type = 'button'; m.className = 'copy ghost more'; m.textContent = 'Show more';
+      m.addEventListener('click', function () { SENT.shown += 5; sentDraw(); });
       li.appendChild(m); ul.appendChild(li);
     }
   }
@@ -6357,8 +6384,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   });
   function acctOpen() {
     if (INBOX.unread) AC_TAB = 'inbox';   // (something new: the Inbox first; else the tab they had)
-    INBOX.shown = 8; INBOX.sel = null; inboxCall().catch(function () {});
-    SENT.shown = 8; sentCall().catch(function () {});
+    INBOX.shown = 5; INBOX.sel = null; inboxCall().catch(function () {});
+    SENT.shown = 5; sentCall().catch(function () {});
     acctDraw(); openLayer(acct); appDraw(); pkLoad();   // (again, open: the code goes into the address only while it's open)
     if (MEMBER && !PL.loaded) plLoad();
   }

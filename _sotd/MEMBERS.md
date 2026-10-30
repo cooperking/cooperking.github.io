@@ -178,6 +178,14 @@ first sign-in; before that a device, a passkey or their invitation used) are off
 whose to take (`seen`) (John, 29 Oct 2026). A send to everyone still goes into the inbox of someone yet to join, for
 when they do. Tests: `joined_t.mjs`.
 
+A message from someone (a member's, or John's from the Members tab) says in the inbox who it went to as well as who
+from ("From Dad · to you and Ann", "to everyone"): `fi` the sender's id and `to` ('all', or the others chosen as
+`{ i, n }`, leaving out anyone kept apart from that inbox's member), from 30 Oct 2026. Each has *Reply*, in the list and
+in the message opened: the send dialog as "A reply", its title "Re: <title>", to the same people (the sender and the
+others, or everyone), as far as the member can send to them, changeable with Everyone or Choose. The Inbox and Sent
+show 5 at a time, compact (two lines of words at most, the picture small beside them; the whole message opens from
+one with no link), with *Show more* for 5 more. Tests: `reply_t.mjs` (the Worker), `reply_page_t.py` (the draft).
+
 Each member sees their own sent notifications on their Profile's *Sent* tab (John, 29 Oct 2026; draft first): newest
 first, each with who they sent it to as they chose them ("To Dad and Ann", "To everyone"; not who took it) and when;
 tapped, it opens its link, as in the inbox. KV `outbox:<id>`, the newest 60, written by `/members/send` (and, for
