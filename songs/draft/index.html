@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="23a3c1c8035a">
+<meta name="sotd-build" content="7a5ace84ad4c">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -328,6 +328,24 @@ html.upl-list #cal, html.upl-list .monthnav { display: none; }
 .ac-upls .acts button:hover, .ac-upls .acts button:focus-visible { color: var(--fg); }
 .ac-upls .acts button.go { color: var(--fg); }
 .ac-upls .acts button.x { color: #c2185b; }
+.upld-opts { display: grid; gap: 8px; }
+.upld-opts label { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--pill-bg); cursor: pointer; font-size: 13px; line-height: 1.35; color: var(--muted); }
+.upld-opts label:has(input:checked) { border-color: var(--fg); }
+.upld-opts input { margin: 2px 0 0; accent-color: #e23a6e; flex: none; }
+.upld-opts b { display: block; font: 500 16px/1.2 var(--serif); color: var(--fg); margin-bottom: 2px; }
+.upld-day { display: flex; align-items: center; gap: 10px; font: 600 10.5px/1.2 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.upld-day input { flex: 1; min-width: 0; padding: 9px 11px; border: 1px solid var(--line); border-radius: 10px; background: var(--pill-bg); color: var(--fg); font: 16px var(--sans); }
+.upld-day[hidden] { display: none; }
+/* a member's plain playlist: its songs as My playlist lists them, put in order by its owner */
+html.upl-list #tracks { display: none; }
+html.big.upl-list .side { display: grid; align-content: start; overflow-y: auto; min-height: 0; }   /* (a computer: the playlist in place of the calendar, scrolling in its place) */
+#upllist, #uplsort { display: none; }
+html.upl-list #upllist { display: grid; }
+html.upl-list.upl-mine #uplsort { display: flex; margin: 0 0 10px; }
+.mine-list.upl-ro li { grid-template-columns: 44px minmax(0, 1fr) auto; }
+.mine-list .tx { cursor: pointer; }
+.day.has.soon .sleeve { opacity: .55; }
+.uplwait.soon { border-color: var(--line); background: var(--pill-bg); }
 .belll .open { padding-bottom: 8px; }
 .ac-inbox { display: grid; gap: 6px; }
 .ac-inbox .hd { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
@@ -510,7 +528,7 @@ button.day:focus-visible .sleeve { box-shadow: 0 16px 34px var(--shadow), 0 0 0 
 .emptymsg { color: var(--muted); padding: 10px 0; font-family: var(--serif); font-style: italic; }
 
 /* day view */
-dialog#sheet, dialog#mine, dialog#index, dialog#acctsheet, dialog#askdlg, dialog#appdlg, dialog#castdlg, dialog#senddlg, dialog#msgdlg, dialog#belldlg, dialog#upldlg {
+dialog#sheet, dialog#mine, dialog#index, dialog#acctsheet, dialog#askdlg, dialog#appdlg, dialog#castdlg, dialog#senddlg, dialog#msgdlg, dialog#belldlg, dialog#upldlg, dialog#upldates {
   --bg: #ffffff; --fg: #1d0b1e; --fg-2: rgba(29, 11, 30, .9); --muted: rgba(29, 11, 30, .62); --faint: rgba(29, 11, 30, .45);
   --line: rgba(29, 11, 30, .14); --tile: #f3eef0; --chip-bg: rgba(29, 11, 30, .04); --pill-bg: rgba(29, 11, 30, .03); --pill-hover: rgba(29, 11, 30, .08);
   border: 0; padding: 0; color: var(--fg-2); background: var(--bg); color-scheme: light;
@@ -695,12 +713,12 @@ dialog#sharesheet::backdrop { background: rgba(24, 8, 24, .35); -webkit-backdrop
 }
 @keyframes shup { from { transform: translateY(100%); } to { transform: none; } }
 /* home-screen app: the page runs under the clock and the home bar, so the pop-ups keep clear of both */
-dialog#sheet, dialog#mine, dialog#index, dialog#acctsheet, dialog#askdlg, dialog#appdlg, dialog#castdlg, dialog#senddlg, dialog#msgdlg, dialog#belldlg, dialog#upldlg {
+dialog#sheet, dialog#mine, dialog#index, dialog#acctsheet, dialog#askdlg, dialog#appdlg, dialog#castdlg, dialog#senddlg, dialog#msgdlg, dialog#belldlg, dialog#upldlg, dialog#upldates {
   top: env(safe-area-inset-top, 0px); bottom: env(safe-area-inset-bottom, 0px);
   max-height: calc(100dvh - 32px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
 }
 dialog#sharesheet { top: env(safe-area-inset-top, 0px); max-height: calc(100dvh - 32px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
-dialog#sheet::backdrop, dialog#mine::backdrop, dialog#index::backdrop, dialog#acctsheet::backdrop, dialog#askdlg::backdrop, dialog#appdlg::backdrop, dialog#castdlg::backdrop, dialog#senddlg::backdrop, dialog#msgdlg::backdrop, dialog#belldlg, dialog#upldlg::backdrop { background: rgba(24, 8, 24, .3); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+dialog#sheet::backdrop, dialog#mine::backdrop, dialog#index::backdrop, dialog#acctsheet::backdrop, dialog#askdlg::backdrop, dialog#appdlg::backdrop, dialog#castdlg::backdrop, dialog#senddlg::backdrop, dialog#msgdlg::backdrop, dialog#belldlg, dialog#upldlg::backdrop, dialog#upldates::backdrop { background: rgba(24, 8, 24, .3); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
 .sheet-in { display: grid; gap: 18px; padding: 16px 18px 24px; }
 #sheet .sheet-in { grid-template-columns: minmax(0, 1fr); }   /* (the day never wider than its pop-up: on a phone narrower than about 375, the date's line made it 320 wide, and the video and its facts ran off the side; the date shortens instead) */
 @media (max-width: 380px) { #sheet .sheet-in { padding-left: 12px; padding-right: 12px; } #sheet .daynav #sdate { letter-spacing: .1em; padding-inline: 7px; } }   /* (a small phone: the day about as wide as it was, inside its pop-up now; the date a touch tighter, so it's whole) */
@@ -1084,7 +1102,7 @@ html.minidrag, html.minidrag * { cursor: grabbing !important; user-select: none;
 /* Pop-ups are ordinary page layers (opened with show(), not showModal()): the browser's top layer can't have
    anything placed above it before iOS 17, and the My playlist button has to stay on top of a day and A–Z / Moods.
    The site draws the dim background (the scrim) itself and keeps the page behind from being tapped. */
-dialog#sheet, dialog#mine, dialog#index, dialog#sharesheet, dialog#acctsheet, dialog#askdlg, dialog#appdlg, dialog#castdlg, dialog#senddlg, dialog#msgdlg, dialog#belldlg, dialog#upldlg { position: fixed; left: 0; right: 0; height: fit-content; margin: auto; z-index: 50; overscroll-behavior: contain; }
+dialog#sheet, dialog#mine, dialog#index, dialog#sharesheet, dialog#acctsheet, dialog#askdlg, dialog#appdlg, dialog#castdlg, dialog#senddlg, dialog#msgdlg, dialog#belldlg, dialog#upldlg, dialog#upldates { position: fixed; left: 0; right: 0; height: fit-content; margin: auto; z-index: 50; overscroll-behavior: contain; }
 dialog#index { height: calc(100dvh - 32px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
 .scrim { position: fixed; inset: 0; z-index: 49; display: none; background: rgba(24, 8, 24, .3); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); touch-action: none; }
 html.layer-open .scrim { display: block; }
@@ -1293,6 +1311,16 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       </div>
     </div>
     <ol class="tracks" id="tracks"></ol>
+    <div class="mine-sort" id="uplsort">
+      <div class="sortrow">
+        <button class="tchip" type="button" data-order="date">First day</button>
+        <button class="tchip" type="button" data-order="title">Song A–Z</button>
+        <button class="tchip" type="button" data-order="artist">Artist A–Z</button>
+        <button class="tchip" type="button" data-order="year">Oldest</button>
+      </div>
+      <button class="iconlink" type="button" data-order="shuffle" aria-label="Shuffle the order" title="Shuffle the order"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 4.5h2.2c1.5 0 2.3.7 3 2l1.6 3c.7 1.3 1.5 2 3 2H14"/><path d="M2 11.5h2.2c1.1 0 1.9-.4 2.5-1.2M9.3 5.7c.6-.8 1.4-1.2 2.5-1.2H14"/><path d="m12.2 2.7 1.8 1.8-1.8 1.8M12.2 9.7l1.8 1.8-1.8 1.8"/></svg></button>
+    </div>
+    <ol class="mine-list" id="upllist"></ol>
   </section>
 </div>
 
@@ -1613,6 +1641,22 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     <ul class="ac-list" id="upll"></ul>
   </div>
 </dialog>
+<dialog id="upldates" aria-labelledby="upldh">
+  <form class="sheet-in msgv" id="upldform" method="dialog">
+    <div class="sheet-head">
+      <p class="mine-top"><span class="chip" id="upldk">Your Song of the Day</span></p>
+      <button class="close" id="upldclose" type="button" aria-label="Close"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 2l10 10M12 2 2 12"/></svg></button>
+    </div>
+    <h3 id="upldh">Which day each song is on</h3>
+    <div class="upld-opts" role="radiogroup" aria-labelledby="upldh">
+      <label><input type="radio" name="upldhow" value="added" checked><span><b>The day you add it on Spotify</b>A day with no song takes the next one, as John’s does.</span></label>
+      <label><input type="radio" name="upldhow" value="fwd"><span><b>Forwards from a day</b>The first song on that day, then a song a day; each shows on its day, and new songs follow on.</span></label>
+      <label><input type="radio" name="upldhow" value="back"><span><b>Back from a day</b>The newest song on that day, each one before it a day earlier; new songs follow on, a day each.</span></label>
+    </div>
+    <label class="upld-day" id="uplddayl" hidden><span>The day</span><input type="date" id="upldday"></label>
+    <div class="ask-acts"><button class="copy" id="upldok" type="submit">Save</button><button class="ac-out" id="upldno" type="button">Cancel</button></div>
+  </form>
+</dialog>
 <dialog id="askdlg" aria-labelledby="askh">
   <form class="sheet-in ask" id="askform" method="dialog">
     <div class="sheet-head">
@@ -1885,7 +1929,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       if (picks) {
         cell = document.createElement('button');
         cell.type = 'button';
-        cell.className = 'day has' + (picks.some(function (p) { return p.w; }) ? ' wait' : '');
+        cell.className = 'day has' + (picks.some(function (p) { return p.w; }) ? ' wait' : '') + (picks.every(function (p) { return p.f; }) ? ' soon' : '');
         var sl = div('sleeve'); sl.appendChild(artEl(picks[0])); cell.appendChild(sl);
         cell.setAttribute('aria-label', longDate(iso) + ': ' + picks.map(function (s) { return s.title + ' by ' + s.artist; }).join('; '));
         (function (iso2) { cell.addEventListener('click', function () { openDay(iso2); }); })(iso);
@@ -1907,7 +1951,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     }
 
     var listMode = uplListMode();
-    if (listMode) { monthSongs = songs.slice().reverse(); document.getElementById('mname').textContent = UPL.view.n; document.getElementById('myr').textContent = ''; }
+    if (listMode) { monthSongs = uplOrdered(); document.getElementById('mname').textContent = UPL.view.n; document.getElementById('myr').textContent = ''; }
     var cnt = document.getElementById('count'), tot = document.createElement('em');
     cnt.textContent = monthSongs.length + (monthSongs.length === 1 ? ' song' : ' songs') + (listMode ? '' : ' \u00b7 ');
     if (!listMode) { tot.textContent = songs.length + ' total'; cnt.appendChild(tot); }
@@ -1939,6 +1983,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       tracks.appendChild(li);
     });
     syncFav();
+    if (listMode) uplListDraw();
   }
 
   var sheet = document.getElementById('sheet');
@@ -1955,7 +2000,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var open = layers(), top = open[open.length - 1], root = document.documentElement;
     root.classList.toggle('layer-open', !!top);
     scrimEl.style.zIndex = top ? String((+top.style.zIndex || 50) - 1) : '';
-    var under = open.some(function (d) { return d.id === 'mine' || d.id === 'sharesheet' || d.id === 'acctsheet' || d.id === 'askdlg' || d.id === 'appdlg' || d.id === 'castdlg' || d.id === 'senddlg' || d.id === 'msgdlg' || d.id === 'belldlg' || d.id === 'upldlg'; });
+    var under = open.some(function (d) { return d.id === 'mine' || d.id === 'sharesheet' || d.id === 'acctsheet' || d.id === 'askdlg' || d.id === 'appdlg' || d.id === 'castdlg' || d.id === 'senddlg' || d.id === 'msgdlg' || d.id === 'belldlg' || d.id === 'upldlg' || d.id === 'upldates'; });
     root.classList.toggle('fab-under', under);
     if (top) pageEl.setAttribute('inert', ''); else pageEl.removeAttribute('inert');
     syncFloat();   // the floating video keeps to its day's place in the stack
@@ -3366,6 +3411,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     picks.forEach(function (s) {
       var a = document.createElement('article'); a.className = 'pick';
       if (s.w && UPL.on && UPL.view && UPL.view.mine) a.appendChild(uplWaitBox(s));
+      else if (s.f && UPL.on && UPL.view && UPL.view.mine) { var sn = document.createElement('div'); sn.className = 'uplwait soon'; sn.textContent = 'Its day is still to come: the other members see it then.'; a.appendChild(sn); }
       var deck = div('deck');
       var slide = div('slide'), disc = div('disc'), label = div('label');
       label.appendChild(artEl(s)); disc.appendChild(label); slide.appendChild(disc);
@@ -4318,16 +4364,18 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     b.addEventListener('click', function () { orderFav(b.getAttribute('data-order')); });
   });
 
-  function startDrag(e, li, from) {
+  function startDrag(e, li, from, o) {
     if (e.button !== undefined && e.button !== 0) return;
     e.preventDefault();
-    var items = [].slice.call(minelist.children);
+    o = o || { list: minelist, box: mine, move: moveFav, draw: renderMine };
+    var box = o.box || document.scrollingElement || document.documentElement, page = !o.box;
+    var items = [].slice.call(o.list.children);
     var step = items.length > 1 ? items[1].getBoundingClientRect().top - items[0].getBoundingClientRect().top : li.getBoundingClientRect().height;
-    var startY = e.clientY, startScroll = mine.scrollTop, to = from, lastY = e.clientY, raf = 0;
+    var startY = e.clientY, startScroll = box.scrollTop, to = from, lastY = e.clientY, raf = 0;
     li.classList.add('dragging');
     try { e.target.setPointerCapture(e.pointerId); } catch (err) {}
     function layout() {
-      var dy = lastY - startY + (mine.scrollTop - startScroll);
+      var dy = lastY - startY + (box.scrollTop - startScroll);
       li.style.transform = 'translateY(' + dy + 'px)';
       to = Math.max(0, Math.min(items.length - 1, from + Math.round(dy / step)));
       items.forEach(function (it, i) {
@@ -4340,9 +4388,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       });
     }
     function edgeScroll() {
-      var r = mine.getBoundingClientRect(), v = 0;
+      var r = page ? { top: 0, bottom: window.innerHeight } : box.getBoundingClientRect(), v = 0;
       if (lastY < r.top + 70) v = -8; else if (lastY > r.bottom - 70) v = 8;
-      if (v) { mine.scrollTop += v; layout(); }
+      if (v) { box.scrollTop += v; layout(); }
       raf = requestAnimationFrame(edgeScroll);
     }
     raf = requestAnimationFrame(edgeScroll);
@@ -4352,9 +4400,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       document.removeEventListener('pointermove', onMove);
       document.removeEventListener('pointerup', onUp);
       document.removeEventListener('pointercancel', onUp);
-      if (to !== from) moveFav(from, to);
-      renderMine();
-      var h = minelist.children[to] && minelist.children[to].querySelector('.handle');
+      if (to !== from) o.move(from, to);
+      o.draw();
+      var h = o.list.children[to] && o.list.children[to].querySelector('.handle');
       if (h) h.focus({ preventScroll: true });
     }
     document.addEventListener('pointermove', onMove);
@@ -6197,7 +6245,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   function uplSongsOf(view) {   // the Worker's list as the calendar takes it (each song's day worked out there)
     return view.songs.map(function (x) {
-      return { n: x.n, tag: x.tag, a: londonDay(x.a), d: x.d, title: x.title, artist: x.artist, as: x.artists && x.artists.length > 1 || /, /.test(x.artist) ? x.artists : undefined, album: x.album, track: x.id, u: x.img, p: x.p, w: x.w ? 1 : 0 };
+      return { n: x.n, tag: x.tag, a: londonDay(x.a), d: x.d, title: x.title, artist: x.artist, as: x.artists && x.artists.length > 1 || /, /.test(x.artist) ? x.artists : undefined, album: x.album, track: x.id, u: x.img, p: x.p, w: x.w ? 1 : 0, f: x.f ? 1 : 0 };
     });
   }
   function uplApply(view, opts) {
@@ -6210,7 +6258,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (sheet.open && !keep) closeDialog(sheet, true);
     setSongs(list, keep);
     var root = document.documentElement;
-    root.classList.add('upl'); root.classList.toggle('upl-list', view.mode === 'list');
+    root.classList.add('upl'); root.classList.toggle('upl-list', view.mode === 'list'); root.classList.toggle('upl-mine', !!view.mine);
+    UPL.order = view.mode === 'list' ? view.songs.map(function (x) { return x.id; }) : null; UPL.sorted = null;
     document.getElementById('spfollow').setAttribute('href', 'https://open.spotify.com/playlist/' + view.sp);
     var yf = document.getElementById('ytfollow');
     if (!UPL.johnYt) UPL.johnYt = { href: yf.getAttribute('href'), hidden: yf.hidden };
@@ -6232,7 +6281,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var list = UPL.john; UPL.on = null; UPL.view = null; UPL.john = null;
     if (sheet.open && !quiet) closeDialog(sheet, true);
     setSongs(list, false);
-    var root = document.documentElement; root.classList.remove('upl'); root.classList.remove('upl-list'); root.classList.remove('upl-noyt');
+    var root = document.documentElement; root.classList.remove('upl'); root.classList.remove('upl-list'); root.classList.remove('upl-noyt'); root.classList.remove('upl-mine');
+    clearTimeout(UPL.saveT); if (UPL.dirty) uplOrderSave(); UPL.order = null;
     document.getElementById('spfollow').setAttribute('href', JOHN_SP);
     if (UPL.johnYt) { var yf = document.getElementById('ytfollow'); yf.setAttribute('href', UPL.johnYt.href); yf.hidden = UPL.johnYt.hidden; UPL.johnYt = null; }
     uplMark(); render(); if (idx.open) renderIndex();
@@ -6290,7 +6340,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
           if (j.status !== 200) { toast(j.error || 'Couldn’t sign it off just now'); return; }
           var day = s.d; uplApply(j.view, { keep: true });
           if (sheet.open && byDate[day]) openDay(day);
-          toast(j.sent && j.sent.inboxes ? 'Out: sent to ' + j.sent.inboxes + (j.sent.inboxes === 1 ? ' member' : ' members') : 'Out on your calendar');
+          toast(j.on ? 'Signed off: it goes out on ' + longDate(j.on) : j.sent && j.sent.inboxes ? 'Out: sent to ' + j.sent.inboxes + (j.sent.inboxes === 1 ? ' member' : ' members') : 'Out on your calendar');
         }).catch(function () { b.disabled = false; toast('Couldn’t reach the site. Try again.'); });
       });
     });
@@ -6301,7 +6351,12 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function uplStatus(p) {
     if (p.st === 'join') return 'Waiting for John to join it as a collaborator. He has your link on his page; it shows for everyone once he has.';
     if (p.st === 'err') return p.err || 'The calendar can’t read it just now.';
-    return (p.mode === 'list' ? 'A playlist' : 'A calendar') + ' · ' + p.cnt + (p.cnt === 1 ? ' song' : ' songs');
+    return (p.mode === 'list' ? 'A playlist' : 'A calendar') + ' · ' + p.cnt + (p.cnt === 1 ? ' song' : ' songs') + (p.mode === 'list' ? '' : ' · ' + uplDatesSay(p.dates));
+  }
+  function uplDatesSay(d) {
+    if (!d || d.how === 'added' || !d.day) return 'by the day each is added';
+    var day = new Date(d.day + 'T12:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    return d.how === 'fwd' ? 'a song a day from ' + day : 'back from ' + day;
   }
   function uplDrawAcct() {
     var box = document.getElementById('acupl'), ul = document.getElementById('acupll');
@@ -6318,6 +6373,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       function act(label, cls, fn) { var b = document.createElement('button'); b.type = 'button'; b.textContent = label; if (cls) b.className = cls; b.addEventListener('click', fn); acts.appendChild(b); return b; }
       if (p.st === 'ok') act(UPL.on === p.id ? 'Showing' : 'Open', 'go', function () { closeDialog(acct); if (UPL.on !== p.id) uplShow(p.id); });
       if (p.st === 'join') act('Send the invite link again', '', function () { uplLinkAgain(p); });
+      if (p.mode !== 'list') act('Days', '', function () { uplDatesOpen(p); });
       act(p.mode === 'list' ? 'Make it a calendar' : 'Make it a playlist', '', function () { uplOp({ op: 'mode', id: p.id, mode: p.mode === 'list' ? 'cal' : 'list' }, p.mode === 'list' ? 'A calendar now' : 'A playlist now'); });
       act('Check now', '', function () { uplOp({ op: 'check', id: p.id }, null, function (j) { toast(j.st === 'ok' ? 'Read from Spotify: ' + (j.view ? j.view.songs.length : 0) + ' songs' : 'John hasn’t joined it yet'); }); });
       act('Remove', 'x', function () {
@@ -6339,6 +6395,98 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       if (then) then(j);
     }).catch(function () { toast('Couldn’t reach the site. Try again.'); });
   }
+  // a calendar's days: by the day each is added on Spotify, a song a day forwards from a day, or back from a day
+  var upldDlg = document.getElementById('upldates'), upldFor = null;
+  function uplDatesShow() {
+    var how = (document.querySelector('input[name="upldhow"]:checked') || {}).value || 'added';
+    document.getElementById('uplddayl').hidden = how === 'added';
+  }
+  function uplDatesOpen(p) {
+    upldFor = p;
+    var d = p.dates || { how: 'added' };
+    [].forEach.call(document.querySelectorAll('input[name="upldhow"]'), function (r) { r.checked = r.value === (d.how || 'added'); });
+    document.getElementById('upldday').value = d.day || todayIso;
+    uplDatesShow(); openLayer(upldDlg);
+  }
+  [].forEach.call(document.querySelectorAll('input[name="upldhow"]'), function (r) { r.addEventListener('change', uplDatesShow); });
+  document.getElementById('upldno').addEventListener('click', function () { closeDialog(upldDlg); });
+  document.getElementById('upldclose').addEventListener('click', function () { closeDialog(upldDlg); });
+  document.getElementById('upldform').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var p = upldFor, how = (document.querySelector('input[name="upldhow"]:checked') || {}).value || 'added', day = document.getElementById('upldday').value;
+    if (!p) return;
+    if (how !== 'added' && !/^\d{4}-\d{2}-\d{2}$/.test(day)) { document.getElementById('upldday').focus(); return; }
+    uplCall({ op: 'dates', id: p.id, how: how, day: day }).then(function (j) {
+      if (j.status !== 200) { toast(j.error || 'Couldn’t change its days just now'); return; }
+      closeDialog(upldDlg);
+      MEMBER.pls = j.pls; if (acct.open) uplDrawAcct();
+      if (UPL.on === p.id && j.view) uplApply(j.view, { keep: true });
+      toast(how === 'added' ? 'Each song on the day you add it' : how === 'fwd' ? 'A song a day from ' + longDate(day) : 'Back from ' + longDate(day));
+    }).catch(function () { toast('Couldn’t reach the site. Try again.'); });
+  });
+  // a plain playlist: its songs listed as My playlist lists them, in its owner's order; its owner moves them (the
+  // handle, or the up and down arrow keys) or orders them (the same buttons as My playlist), saved for everyone
+  var uplListEl = document.getElementById('upllist');
+  function uplOrdered() { return (UPL.order || []).map(function (t) { return songs.filter(function (s) { return s.track === t; })[0]; }).filter(Boolean); }
+  function uplMove(from, to) { var t = UPL.order.splice(from, 1)[0]; UPL.order.splice(to, 0, t); UPL.sorted = null; uplOrderChanged(); }
+  function uplOrderChanged() { UPL.dirty = true; clearTimeout(UPL.saveT); UPL.saveT = setTimeout(uplOrderSave, 700); }
+  function uplOrderSave() {
+    if (!UPL.dirty || !UPL.on || !UPL.order) return;
+    UPL.dirty = false;
+    uplCall({ op: 'order', id: UPL.on, order: UPL.order.slice() }).then(function (j) { if (j.status !== 200) toast(j.error || 'Couldn’t save the order just now'); }).catch(function () { toast('Couldn’t save the order: no connection'); });
+  }
+  function uplListDraw() {
+    var mineOwn = !!(UPL.view && UPL.view.mine), list = uplOrdered();
+    uplListEl.textContent = ''; uplListEl.classList.toggle('upl-ro', !mineOwn);
+    list.forEach(function (s, idx) {
+      var li = document.createElement('li');
+      if (mineOwn) {
+        var hd = document.createElement('button'); hd.type = 'button'; hd.className = 'handle'; hd.innerHTML = GRIP;
+        hd.setAttribute('aria-label', 'Move ' + s.title + ' (position ' + (idx + 1) + ' of ' + list.length + '). Drag, or use the up and down arrow keys.');
+        hd.addEventListener('keydown', function (e) {
+          var to = e.key === 'ArrowUp' ? idx - 1 : e.key === 'ArrowDown' ? idx + 1 : -1;
+          if (to < 0 || to >= list.length) return;
+          e.preventDefault(); uplMove(idx, to); render(); uplListEl.children[to].querySelector('.handle').focus();
+        });
+        hd.addEventListener('pointerdown', function (e) { startDrag(e, li, idx, { list: uplListEl, box: document.documentElement.classList.contains('big') ? document.querySelector('.side') : null, move: uplMove, draw: render }); });
+        li.appendChild(hd);
+      }
+      var th = document.createElement('span'); th.className = 'thumb'; th.appendChild(artEl(s));
+      var tx = document.createElement('span'); tx.className = 'tx';
+      var tt = document.createElement('span'); tt.className = 'tt'; tt.textContent = s.title;
+      var ta = document.createElement('span'); ta.className = 'ta'; ta.textContent = s.artist + (yearOf(s) ? ' · ' + yearOf(s) : '');
+      tx.appendChild(tt); tx.appendChild(ta);
+      tx.setAttribute('role', 'button'); tx.tabIndex = 0; tx.setAttribute('aria-label', 'Play from ' + s.title + ' by ' + s.artist);
+      tx.addEventListener('click', function () { startQueue(UPL.order.slice(), UPL.view.n, null, idx); });   // plays on through the playlist from this song
+      tx.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tx.click(); } });
+      li.appendChild(th); li.appendChild(tx); li.appendChild(rowDl(s));
+      uplListEl.appendChild(li);
+    });
+    var on = UPL.sorted && UPL.sorted.sig === UPL.order.join() ? UPL.sorted : null;
+    [].forEach.call(document.querySelectorAll('#uplsort [data-order]'), function (b) {
+      var how = b.getAttribute('data-order'); if (!ORDER_LABEL[how]) return;
+      var active = on && on.how === how;
+      b.setAttribute('aria-pressed', active ? 'true' : 'false');
+      b.textContent = ORDER_LABEL[how][active && on.desc ? 1 : 0];
+    });
+  }
+  function uplOrderBy(how) {   // as My playlist's buttons: one way, then the other way on a second tap; Shuffle reshuffles
+    var o = UPL.order; if (!o) return;
+    if (how === 'shuffle') {
+      for (var i = o.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), x = o[i]; o[i] = o[j]; o[j] = x; }
+      UPL.sorted = null;
+    } else {
+      var desc = !!(UPL.sorted && UPL.sorted.sig === o.join() && UPL.sorted.how === how && !UPL.sorted.desc);
+      o.sort(function (a, b) {
+        if (how === 'year') { var ya = yearOf(byTrack[a]), yb = yearOf(byTrack[b]); if (!ya !== !yb) return ya ? -1 : 1; }
+        var ka = orderKey(how, a), kb = orderKey(how, b), c = ka < kb ? -1 : ka > kb ? 1 : 0; return desc ? -c : c;
+      });
+      UPL.sorted = { how: how, desc: desc, sig: o.join() };
+    }
+    uplOrderChanged(); render();
+  }
+  [].forEach.call(document.querySelectorAll('#uplsort [data-order]'), function (b) { b.addEventListener('click', function () { uplOrderBy(b.getAttribute('data-order')); }); });
+  window.addEventListener('pagehide', uplOrderSave);
   var UPL_HOW = 'In Spotify, open your playlist, tap ••• then Invite collaborators, and copy the link. John joins it once as a collaborator, so the calendar can read it; it stays yours, and you add songs in Spotify as before.';
   function uplLinkAgain(p) {
     ask({ k: 'Your Spotify playlists', h: 'The invite link', t: UPL_HOW, input: { placeholder: 'https://open.spotify.com/playlist/…' }, ok: 'Send' }).then(function (v) {
@@ -6358,6 +6506,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         if (j.status !== 200) { toast(j.error || 'Couldn’t add it just now'); return; }
         MEMBER.pls = j.pls; uplMark(); if (acct.open) uplDrawAcct();
         toast(j.st === 'ok' ? 'Added: everyone can see it now' : 'Added: it shows for everyone once John has joined it');
+        var np = uplPls().filter(function (x) { return x.id === j.id; })[0];
+        if (np && np.mode !== 'list') uplDatesOpen(np);
       }).catch(function () { toast('Couldn’t reach the site. Try again.'); });
     });
   });

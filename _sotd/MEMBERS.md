@@ -255,6 +255,18 @@ still to come: facts, written for new songs and on request for older ones, check
   playlists* signed in to Spotify as cooperking, joins it, and taps *I've joined: check*. The Worker also looks every
   10 minutes for its first day, then hourly. Once readable it's read every 30 minutes from 06:00 to 23:00, and when its
   owner taps *Check now* (once a minute at most).
+- **A calendar's days** (John, 30 Oct 2026; Profile › Playlists › *Days*, and straight after adding one): by the day
+  each song is added on Spotify (John's rule, a day with no song taking the next); forwards from a day (the first song on
+  it, then a song a day); or back from a day (the newest song now on it, each one before a day earlier). Either of the
+  last two keeps its anchor (the first, or the newest then: `dates { how, day, at, n }` on its record), so new songs
+  follow on a day each. A day still to come is hidden from the others (its owner sees it dimmed); on its day, from
+  08:00, its song goes to the members as a message from its owner, once (`ann` in `upl:<id>`); a new song signed off
+  for a day still to come goes then. Moving the anchor looks at today's song again.
+- **A plain playlist's order** (John, 30 Oct 2026: "orderable in exactly the same way as a normal playlist"): listed as
+  My playlist lists songs; its owner moves them by the handle (or the up and down arrow keys) or orders them with My
+  playlist's buttons (First day, Song A–Z, Artist A–Z, Oldest, each the other way on a second tap; Shuffle), saved for
+  everyone (`order` in `upl:<id>`); songs added on Spotify since go after, as Spotify has them. A song tapped plays on
+  through it from there. On a computer it fills the calendar's place. Its YouTube copy keeps Spotify's order.
 - **Who sees them.** Every member except anyone kept apart from its owner, once John has joined it; its owner from the
   start. The calendar's title (top left) chooses whose calendar shows: John's, or a member's (the address then has
   `#u=<id>`, and `#u=<id>&d=<day>` for a day). On another's calendar the hearts (My playlist), sharing and the YouTube
@@ -280,9 +292,10 @@ still to come: facts, written for new songs and on request for older ones, check
   The site job gets the playlists from the Worker's `/upl/sync` with its own GITHUB_TOKEN (the Worker checks with GitHub
   that it's a token for this repository alone), and sends back the YouTube copies. The Worker starts the site job when a
   member's playlist changes, and once a day from 07:00 for the day's 5 more. Tests: `upl_py_t.py`.
-- Worker: `/members/upl` (GET `?id=`; POST ops `add`, `mode`, `link`, `check`, `remove`, `signoff`), `pls` on
+- Worker: `/members/upl` (GET `?id=`; POST ops `add`, `mode`, `link`, `check`, `remove`, `signoff`, `dates`, `order`), `pls` on
   `/members/me`, admin ops `upls`, `uplcheck`, `uplremove`. Tests: `upl_t.mjs` (the Worker), `upl_page_t.py` (the
-  draft), `upl_admin_t.py` (the Members tab).
+  draft), `upl_admin_t.py` (the Members tab), `upl_dates_t.mjs` (days and order), `upl_order_t.py` (the draft's order and
+  Days), `mine_drag_t.py` (My playlist's dragging, shared with them).
 
 ## Saved playlists
 
