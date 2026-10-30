@@ -459,7 +459,7 @@
     meta.appendChild(dl);
     var label = { waiting: 'Waiting for you', signed: st.going ? 'Going live' : 'Signed off', old: 'Live', none: 'No facts yet' }[st.st];
     meta.appendChild(el('span', 'badge ' + st.st, label));
-    if (!isOut(s.id) && st.st !== 'none') meta.appendChild(el('span', 'badge', st.going ? 'Coming out' : 'Not out yet'));
+    if (!isOut(s.id)) meta.appendChild(el('span', 'badge', st.going ? 'Coming out' : 'Not out yet'));
     if (toCheck(s)) meta.appendChild(el('span', 'badge check', 'To check'));
     if (changed(s, st)) meta.appendChild(el('span', 'badge edited', 'Your changes'));
     h.appendChild(meta);
@@ -476,13 +476,14 @@
     li.appendChild(h);
     if (!open) return li;
     var body = el('div', 'sbody');
+    if (factsDue(s)) body.appendChild(el('p', 'stat due', 'No facts yet: they’re written within a few minutes of a new song. This page looks every 20 seconds and puts them here as they come; your changes stay.'));
     body.appendChild(tagSection(s, w));
     body.appendChild(videoSection(s, w));
     body.appendChild(factSection(s, st, w, 's', 'About the song'));
     Object.keys(w.a || {}).forEach(function (k) { body.appendChild(factSection(s, st, w, k, 'About ' + (w.a[k].name || 'the artist'))); });
     body.appendChild(fileSection(s));
     var foot = el('div', 'sfoot');
-    var go = el('button', 'btn primary', st.st === 'waiting' ? (isOut(s.id) ? 'Sign off' : 'Sign off and publish') : 'Save changes'); go.type = 'button';
+    var go = el('button', 'btn primary', !isOut(s.id) ? 'Sign off and publish' : st.st === 'waiting' ? 'Sign off' : 'Save changes'); go.type = 'button';
     go.addEventListener('click', function () { signoff([s]); });
     foot.appendChild(go);
     if (edits[s.id]) {
@@ -550,11 +551,42 @@
     var n = Object.keys(edits).length;
     $('stat').innerHTML = songs.length + ' songs · <b>' + c.waiting + '</b> waiting for you' + (n ? ' · your changes on <b>' + n + '</b>' : '') + (files ? ' · your files on ' + files : '');
   }
+  // ---- a new song's facts, still on their way (John, 30 Oct 2026: "Facts didn't seem to run again this morning": they
+  // had, but reached the site 10 seconds after this page loaded and he signed the song off without them). While a song
+  // not out yet has none, the waiting facts are looked at again every 20 seconds; any that come go onto its card, into
+  // his changes too where he has made some (his moods, genres and video kept). ----
+  function noFacts(w) { return !(w.s || []).length && !Object.keys(w.a || {}).some(function (k) { return (w.a[k].f || []).length; }); }
+  function factsDue(s) { return !isOut(s.id) && state(s).st === 'none' && !signedW[s.id]; }
+  setInterval(function () {
+    if (!songs.length || !songs.some(factsDue) || document.hidden) return;
+    getJSON('facts-pending.json').then(function (p) {
+      var came = songs.filter(function (s) { return factsDue(s) && p.songs && p.songs[s.id]; });
+      if (!came.length) return;
+      pending = p; pending.songs = pending.songs || {};
+      came.forEach(function (s) {
+        var e = pending.songs[s.id], ed = edits[s.id];
+        if (ed && noFacts(ed)) { ed.s = clone(e.s || []); ed.a = clone(e.a || {}); }
+        OPEN[s.id] = true;
+      });
+      saveEdits();
+      var typing = document.activeElement && /^(TEXTAREA|INPUT)$/.test(document.activeElement.tagName) && list.contains(document.activeElement);
+      if (typing) { came.forEach(redraw); counts(); bulkLabel(); } else render();   // (not mid-word: just those cards)
+      toast(came.length === 1 ? 'The facts for “' + came[0].title + '” are here' : 'The facts for ' + came.length + ' songs are here');
+    }).catch(function () {});
+  }, 20000);
   // a song out on the live calendar: in facts.json (signed off, or from before sign-off began); a new one comes out when
   // John signs it off (John, 28 Oct 2026: he checks the facts and adds his song and video for the members first)
   function isOut(tid) { return !!(live.songs[tid] || (live.signed || {})[tid]); }
   function signoff(list_) {
     var items = list_.map(function (s) { return payload(s, state(s)); });
+    // a new song with no facts yet: once more to be sure (John, 30 Oct 2026: signed off 10 seconds before its facts
+    // reached the site, it came out with none, and the written ones went)
+    var nofacts = list_.filter(function (s, i) { var it = items[i]; return !isOut(s.id) && !it.s.length && !Object.keys(it.a).some(function (k) { return it.a[k].f.length; }); });
+    if (nofacts.length && !signoff.nofacts) {
+      signoff.nofacts = true;
+      toast((nofacts.length === 1 ? '“' + nofacts[0].title + '” has' : nofacts.length + ' songs have') + ' no facts yet: they’re usually written within a few minutes of a new song. Press again to publish without them.');
+      return;
+    }
     var long = items.filter(function (it) { return it.s.concat.apply(it.s, Object.keys(it.a).map(function (k) { return it.a[k].f; })).some(function (f) { return words(f.t) > 30; }); });
     if (long.length && !signoff.ok) { signoff.ok = true; toast('Some facts run over 30 words and may not fit the caption. Press again to go ahead.'); return; }
     // publishing a new song without his own recording or video: once more to be sure (members would get the preview and YouTube's)
@@ -565,7 +597,7 @@
       toast((bare.length === 1 ? what[0].toUpperCase() + what.slice(1) : 'Your song or video isn’t') + ' up yet. Press again to publish anyway.');
       return;
     }
-    signoff.ok = false; signoff.bare = false;
+    signoff.ok = false; signoff.bare = false; signoff.nofacts = false;
     api('/facts/signoff', { items: items }).then(function (j) {
       if (j.status === 401) return;
       if (!j.ok) { toast(j.error || 'Not saved: the Worker said ' + j.status); return; }
