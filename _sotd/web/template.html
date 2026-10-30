@@ -5911,7 +5911,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       b.innerHTML = (sel ? '<span class="tick"></span>' : '<span class="dot"></span>') + '<span class="t"></span>' + (x.b ? '<span class="b"></span>' : '') + '<span class="w"></span>';
       var fl = fromLine(x);
       b.querySelector('.t').textContent = x.t; if (x.b) b.querySelector('.b').textContent = x.b; b.querySelector('.w').textContent = (fl ? fl + ' · ' : '') + ago(x.at);
-      b.setAttribute('aria-label', (x.r ? '' : 'New: ') + (fl ? fl + ': ' : '') + x.t + (x.b ? '. ' + x.b : ''));
+      b.setAttribute('aria-label', (x.r ? '' : 'New: ') + (fl ? fl.charAt(0).toLowerCase() + fl.slice(1) + ': ' : '') + x.t + (x.b ? '. ' + x.b : ''));
       // its picture, or else the song's cover, small beside the words
       if (x.i) { var pi = document.createElement('img'); pi.className = 'pic'; pi.alt = ''; pi.loading = 'lazy'; pi.src = x.i; pi.onerror = function () { pi.remove(); }; b.appendChild(pi); }
       else if (x.c) { var cv = document.createElement('img'); cv.className = 'cv'; cv.alt = ''; cv.loading = 'lazy'; cv.src = x.c; cv.onerror = function () { cv.remove(); }; b.appendChild(cv); }
