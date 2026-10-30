@@ -438,7 +438,7 @@ async function factsSignoff(request, env) {
     n++;
   }
   await env.SOTD.put('factsSigned', JSON.stringify(signed));
-  const job = await startFactsJob(env);
+  const job = await startFactsJob(env, at);
   return answer(200, { ok: true, signed: n, at, job });
 }
 
@@ -453,13 +453,13 @@ async function startTvCopy(env, track, job) {   // video-tv.yml for one video ju
   return r.status === 204 ? 'started' : 'GitHub answered ' + r.status;
 }
 
-async function startFactsJob(env) {
+async function startFactsJob(env, at) {   // at: the sign-off's time, which the job waits to see in /facts/signed
   if (!env.GH_TOKEN) return 'The GH_TOKEN secret is not set.';
   const r = await fetch('https://api.github.com/repos/' + REPO + '/actions/workflows/' + FACTS_JOB + '/dispatches', {
     method: 'POST',
     headers: { Authorization: 'Bearer ' + env.GH_TOKEN, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28',
       'User-Agent': 'SongOfTheDayWorker', 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ref: 'main' })
+    body: JSON.stringify(at ? { ref: 'main', inputs: { at } } : { ref: 'main' })
   }).catch(e => ({ status: 0, text: async () => String(e) }));
   return r.status === 204 ? 'started' : 'GitHub answered ' + r.status + ': ' + (await r.text()).slice(0, 200);
 }

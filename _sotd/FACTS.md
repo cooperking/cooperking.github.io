@@ -16,6 +16,10 @@ checked facts went live straight away.)
   is `songs/songs-admin.html`, which only shows inside it), where he edits, removes, reorders, adds his own and
   signs off. The Cloudflare Worker keeps his sign-offs and starts `.github/workflows/facts.yml`, which runs
   `facts_apply.py` to put them live. (The draft calendar shows waiting facts only for songs already out, as rewrites.)
+  The Worker passes the sign-off's time to the job (input `at`), and the job looks at `/facts/signed` again every 10
+  seconds, for up to 2 minutes, until it shows that sign-off: the Worker's store can take up to a minute to show a new
+  sign-off elsewhere (30 Oct 2026: a second sign-off of the day's song, 48 seconds after the first, reached the job as
+  the first, so nothing changed and the Songs tab said "Going live" all day).
   A new song whose facts haven't reached the site yet shows "No facts yet" there, and the Songs tab looks for them every
   10 minutes and puts them on its card as they come (into John's changes too, his moods, genres and video kept); signing
   off a new song with no facts asks once more (John, 30 Oct 2026: signed off 10 seconds before the facts reached the

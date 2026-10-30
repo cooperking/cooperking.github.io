@@ -7,6 +7,11 @@ name: Song facts signed off
 # its place on the YouTube playlist, the members' notification), and his moods, genres and videos are rebuilt there.
 on:
   workflow_dispatch:
+    inputs:
+      at:
+        description: "The sign-off's time (from the Worker): the job waits until /facts/signed has it"
+        type: string
+        default: ''
 
 permissions:
   contents: write
@@ -30,6 +35,8 @@ jobs:
           python-version: "3.12"
 
       - name: Put the signed-off facts live
+        env:
+          SOTD_FACTS_AT: ${{ inputs.at }}
         run: python _sotd/facts_apply.py
 
       - name: Save changes

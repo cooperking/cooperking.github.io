@@ -24,7 +24,7 @@ over everything, and the job (facts.yml) then starts song-tags.yml to rebuild th
 A sign-off replaces everything live for that song and its artists with exactly what John signed: his edits, his own
 facts (marked by John) and his order. Run by .github/workflows/facts.yml, which the Worker starts on each sign-off.
 """
-import copy, json, os, sys, urllib.request
+import copy, json, os, sys, time, urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -139,8 +139,16 @@ def main(offline, promote=()):
             if f.get('q'):
                 quotes[f['t']] = f['q']
     if not offline:
-        with urllib.request.urlopen(urllib.request.Request(SIGNED_URL, headers={'User-Agent': 'SongOfTheDayCalendar/1.0'}), timeout=30) as r:
-            signed = json.loads(r.read())
+        want = os.environ.get('SOTD_FACTS_AT', '').strip()   # the sign-off that started this job
+        for tries in range(13):   # until /facts/signed shows that sign-off: up to 2 minutes, 10 seconds apart
+            with urllib.request.urlopen(urllib.request.Request(SIGNED_URL, headers={'User-Agent': 'SongOfTheDayCalendar/1.0'}), timeout=30) as r:
+                signed = json.loads(r.read())
+            if not want or any(str(e.get('at', '')) >= want for e in signed.values()):
+                break
+            print('The sign-off of', want, 'isn’t in /facts/signed yet; looking again in 10 seconds')
+            time.sleep(10)
+        else:
+            print('The sign-off of', want, 'never showed in /facts/signed; putting live what it has')
         done = live.setdefault('signed', {})
         news = {tid: e for tid, e in signed.items() if done.get(tid) != e.get('at')}
         if news:
