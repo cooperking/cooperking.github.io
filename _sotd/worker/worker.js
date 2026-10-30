@@ -60,6 +60,7 @@ export default {
     const url = new URL(request.url);
     try {
       if (url.pathname === '/songs.json') return await songsJson(request, env, ctx);
+      if (url.pathname === '/upl/sync') return await uplSync(request, env);
       if (url.pathname === '/login') return await login(url);
       if (url.pathname === '/callback') return await callback(request, url, env);
       if (url.pathname === '/p') return await makePlaylist(request, url, env);
@@ -2719,6 +2720,7 @@ async function uplTracks(env) {   // every track on members' playlists (for Open
 }
 function uplWaiting(rec, data, x) { return Date.parse(x.a) > (rec.base || 0) && !(data.rel || {})[x.id]; }
 function uplName(all, rec) { return rec.n || ((all[rec.o] && all[rec.o].name) || 'A member') + '’s playlist'; }
+function uplTitle(all, rec) { return rec.mode === 'list' ? uplName(all, rec) : ((all[rec.o] && all[rec.o].name) || 'A member') + '’s Song of the Day'; }   // what the calendar calls it
 function uplCan(all, viewer, rec) {   // whether a member sees this playlist: theirs, or another's that's readable, not kept apart
   if (!rec || !all[rec.o]) return false;
   if (rec.o === viewer) return true;
@@ -2726,7 +2728,7 @@ function uplCan(all, viewer, rec) {   // whether a member sees this playlist: th
 }
 function uplList(all, viewer, U) {   // the playlists a member can switch to (/members/me pls)
   return Object.entries(U).filter(([, r]) => uplCan(all, viewer, r))
-    .map(([pid, r]) => Object.assign({ id: pid, n: uplName(all, r), o: all[r.o].name, mode: r.mode, cnt: r.cnt || 0, sp: r.sp }, r.o === viewer ? { mine: true, st: r.st, err: r.err || '' } : {}))
+    .map(([pid, r]) => Object.assign({ id: pid, n: uplName(all, r), t: uplTitle(all, r), o: all[r.o].name, mode: r.mode, cnt: r.cnt || 0, sp: r.sp }, r.yt ? { yt: r.yt } : {}, r.o === viewer ? { mine: true, st: r.st, err: r.err || '' } : {}))
     .sort((a, b) => (b.mine ? 1 : 0) - (a.mine ? 1 : 0) || a.o.localeCompare(b.o) || a.n.localeCompare(b.n));
 }
 function uplAdmin(all, U) {   // the Members tab: every playlist, whose, and whether John has joined it
@@ -2766,7 +2768,8 @@ async function uplRead(env, pid, rec, U) {   // reads it from Spotify; keeps wha
   }
   const data = await uplSongs(env, pid), had = new Set((data.songs || []).map(x => x.id));
   const fresh = items.filter(x => !had.has(x.id) && Date.parse(x.a) > (rec.base || 0) && !(data.rel || {})[x.id]);
-  if (JSON.stringify(items) !== JSON.stringify(data.songs)) {
+  const changed = JSON.stringify(items) !== JSON.stringify(data.songs);
+  if (changed) {
     data.songs = items; data.at = new Date(now).toISOString(); data.rel = data.rel || {};
     await env.SOTD.put('upl:' + pid, JSON.stringify(data));
   }
@@ -2775,6 +2778,7 @@ async function uplRead(env, pid, rec, U) {   // reads it from Spotify; keeps wha
   await fillPreviews(env, items, 6).catch(() => null);
   await tagNewSongs(env, items, 3).catch(() => {});
   if (was === 'ok' && fresh.length) await uplTellOwner(env, pid, rec, fresh);
+  if (changed && items.length) await startJob(env, null, null, 0, null, true).catch(() => {});   // the site job: their songs' videos, moods, years and YouTube copy
   return true;
 }
 async function uplTellOwner(env, pid, rec, fresh) {   // a new song on their playlist: to the owner's devices, waiting for their sign-off
@@ -2782,7 +2786,7 @@ async function uplTellOwner(env, pid, rec, fresh) {   // a new song on their pla
   if (!ids.length) return;
   const x = fresh[fresh.length - 1], d = uplDays([x])[0].d, slug = d.slice(8, 10) + '-' + d.slice(5, 7) + '-' + d.slice(0, 4);
   const unread = ((await env.SOTD.get('inbox:' + rec.o, 'json')) || []).filter(y => !y.r).length;
-  const msg = { title: (fresh.length > 1 ? fresh.length + ' new songs wait' : '“' + x.title + '” waits') + ' for you to sign off', body: rec.n || 'Your playlist',
+  const msg = { title: (fresh.length > 1 ? fresh.length + ' new songs wait' : '“' + x.title + '” waits') + ' for you to sign off', body: rec.mode === 'list' ? rec.n || 'Your playlist' : 'Your Song of the Day',
     url: SITE_SONGS + '#u=' + pid + '&d=' + slug, tag: 'sotd-uplnew-' + pid, unread };
   if (x.img) msg.icon = x.img;
   const k = await vapidKeys(env);
@@ -2793,6 +2797,45 @@ async function uplLook(env) {   // the timer: playlists due a read (UPL_LOOK_MOS
   const due = Object.entries(U).filter(([, r]) => (r.st === 'ok' || r.st === 'err') ? (h >= 6 && h < 23 && now - (r.tried || 0) >= UPL_EVERY) : now - (r.tried || 0) >= (now - r.at < DAY ? UPL_JOIN_EVERY : 6 * UPL_JOIN_EVERY))
     .sort((a, b) => (a[1].tried || 0) - (b[1].tried || 0)).slice(0, UPL_LOOK_MOST);
   for (const [pid, r] of due) await uplRead(env, pid, r, U).catch(e => console.log('upl ' + pid + ': ' + (e && e.message)));
+  const today = londonDay();
+  if (h >= 7 && Object.values(U).some(r => r.st === 'ok') && (await env.SOTD.get('uplJobDay')) !== today && await kvSoft(env, 'uplJobDay', today))
+    await startJob(env, null, null, 0, null, true).catch(() => {});   // each day's 5 more of their older songs
+}
+// /upl/sync, for the site job only (its own GITHUB_TOKEN, checked with GitHub: a token for this repository alone): GET
+// the readable playlists with their songs (as songs.json gives them), its calendar title and YouTube copy; POST { yt: {
+// <pid>: <YouTube playlist id> } } keeps the YouTube copies the job made, for the calendar's On YouTube.
+const ghOk = new Map();
+async function ghJob(request) {
+  const tok = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
+  if (!tok || tok.length > 400) return false;
+  const h = await sha256hex(tok), t = ghOk.get(h);
+  if (t && t > Date.now()) return true;
+  const r = await fetch('https://api.github.com/installation/repositories?per_page=5', { headers: { Authorization: 'Bearer ' + tok, Accept: 'application/vnd.github+json',
+    'X-GitHub-Api-Version': '2022-11-28', 'User-Agent': 'SongOfTheDayWorker' } }).catch(() => null);
+  if (!r || !r.ok) return false;
+  const j = await r.json().catch(() => ({}));
+  const ok = j.total_count === 1 && (j.repositories || []).some(x => x.full_name === REPO);
+  if (ok) ghOk.set(h, Date.now() + 3600e3);
+  return ok;
+}
+async function uplSync(request, env) {
+  const answer = (status, body) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' } });
+  if (!await ghJob(request)) return answer(401, { error: 'For the site job only.' });
+  const U = await uplAll(env), all = (await env.SOTD.get('members', 'json')) || {};
+  if (request.method === 'POST') {
+    const body = await request.json().catch(() => ({})), yt = body.yt || {};
+    let n = 0;
+    for (const [pid, id] of Object.entries(yt)) if (U[pid] && /^PL[\w-]{10,60}$/.test(String(id))) { U[pid].yt = String(id); n++; }
+    if (n) await uplPut(env, U);
+    return answer(200, { ok: true, kept: n });
+  }
+  const pv = Object.assign({}, pvMem, (await env.SOTD.get('previews', 'json')) || {}), tags = (await env.SOTD.get('tags', 'json')) || {}, out = {};
+  for (const [pid, rec] of Object.entries(U)) {
+    if (rec.st !== 'ok' || !all[rec.o]) continue;
+    const data = await uplSongs(env, pid);
+    out[pid] = { title: uplTitle(all, rec), mode: rec.mode, base: rec.base || 0, yt: rec.yt || '', songs: composeSongs(data.songs || [], pv, tags) };
+  }
+  return answer(200, { playlists: out });
 }
 async function uplView(env, all, viewer, pid, rec) {   // a playlist as the calendar takes it: its songs (out ones; its owner, all, the waiting marked w)
   const data = await uplSongs(env, pid), mine = rec.o === viewer;
@@ -2801,7 +2844,7 @@ async function uplView(env, all, viewer, pid, rec) {   // a playlist as the cale
   const days = uplDays(data.songs || []);
   const songs = composeSongs(data.songs || [], pv, tags).map((x, i) => Object.assign(x, { d: days[i].d }, uplWaiting(rec, data, data.songs[i]) ? { w: 1 } : {}))
     .filter(x => mine || !x.w);
-  return { id: pid, n: uplName(all, rec), o: all[rec.o].name, mine, mode: rec.mode, sp: rec.sp, st: rec.st, at: data.at || null, songs };
+  return { id: pid, n: uplName(all, rec), t: uplTitle(all, rec), o: all[rec.o].name, mine, mode: rec.mode, sp: rec.sp, yt: rec.yt || '', st: rec.st, at: data.at || null, songs };
 }
 // /members/upl: GET ?id= one playlist to show; POST { op: 'add', link, mode } | { op: 'mode', id, mode } | { op: 'remove', id }
 // | { op: 'check', id } | { op: 'signoff', id, track }
@@ -2870,7 +2913,7 @@ async function uplSend(env, all, me, pid, rec, x, d) {   // a song signed off: t
   const ownerId = await env.SOTD.get('owner');
   const to = Object.keys(all).filter(k => hasJoined(all[k]) && takesFrom(all, k, me, ownerId));
   if (!to.length) return { inboxes: 0, sent: 0 };
-  const name = all[me].name, slug = d.slice(8, 10) + '-' + d.slice(5, 7) + '-' + d.slice(0, 4), pl = uplName(all, rec);
+  const name = all[me].name, slug = d.slice(8, 10) + '-' + d.slice(5, 7) + '-' + d.slice(0, 4), pl = uplTitle(all, rec);
   const msg = { title: name + ': ' + x.title, subject: x.title, body: x.artist + ' · ' + pl, from: name, url: SITE_SONGS + '#u=' + pid + '&d=' + slug, tag: 'sotd-upl-' + pid + '-' + x.id };
   if (x.img) msg.icon = x.img;
   const r = await pushAll(env, msg, to, { kind: 'member', via: { t: 'member', id: me, name }, toNames: null, fromId: me, toIds: 'all' });

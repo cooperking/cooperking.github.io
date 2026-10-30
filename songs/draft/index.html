@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="649c9616bf8a">
+<meta name="sotd-build" content="23a3c1c8035a">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -313,7 +313,7 @@ html.big .heroacts .hsub { margin: 0 6px 0 0; }
 .mark.can .caret { width: 10px; height: 10px; flex: none; opacity: .65; }
 .mark.can:hover .caret, .mark.can:focus-visible .caret { opacity: 1; }
 .mark .mtx { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-html.upl .favbtn, html.upl .addfav, html.upl #monthadd, html.upl #monthshare, html.upl #monthdl, html.upl #siteshare, html.upl #ytfollow, html.upl #picks .iconbtn.share { display: none !important; }
+html.upl .favbtn, html.upl .addfav, html.upl #monthadd, html.upl #monthshare, html.upl #monthdl, html.upl #siteshare, html.upl-noyt #ytfollow, html.upl #picks .iconbtn.share { display: none !important; }
 html.upl-list #cal, html.upl-list .monthnav { display: none; }
 .day.has.wait .sleeve { outline: 2px dashed #e23a6e; outline-offset: 2px; }
 .uplwait { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 10px; padding: 9px 12px; border-radius: 12px; border: 1px solid rgba(226, 58, 110, .45); background: rgba(226, 58, 110, .09); font: 500 13px/1.35 var(--sans); color: var(--fg); }
@@ -6189,10 +6189,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   function uplMark() {   // the title: whose calendar shows, and (with others to choose) the way to choose
     var mk = document.getElementById('mark'), can = !!MEMBER && !TV && uplPls().some(function (p) { return !p.mine || p.st === 'ok'; });
-    document.getElementById('marktx').textContent = UPL.on && UPL.view ? UPL.view.n : 'John’s Song of the Day';
+    document.getElementById('marktx').textContent = UPL.on && UPL.view ? UPL.view.t || UPL.view.n : 'John’s Song of the Day';
     mk.classList.toggle('can', can);
     var c = mk.querySelector('.caret'); if (can && !c) mk.insertAdjacentHTML('beforeend', CARET); else if (!can && c) c.remove();
-    if (can) { mk.setAttribute('role', 'button'); mk.tabIndex = 0; mk.setAttribute('aria-haspopup', 'dialog'); mk.setAttribute('aria-label', (UPL.on && UPL.view ? UPL.view.n + ', ' + UPL.view.o + '’s' : 'John’s Song of the Day') + ': choose whose calendar to show'); }
+    if (can) { mk.setAttribute('role', 'button'); mk.tabIndex = 0; mk.setAttribute('aria-haspopup', 'dialog'); mk.setAttribute('aria-label', (UPL.on && UPL.view ? UPL.view.t || UPL.view.n : 'John’s Song of the Day') + ': choose whose calendar to show'); }
     else { mk.removeAttribute('role'); mk.removeAttribute('tabindex'); mk.removeAttribute('aria-haspopup'); mk.removeAttribute('aria-label'); }
   }
   function uplSongsOf(view) {   // the Worker's list as the calendar takes it (each song's day worked out there)
@@ -6212,6 +6212,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var root = document.documentElement;
     root.classList.add('upl'); root.classList.toggle('upl-list', view.mode === 'list');
     document.getElementById('spfollow').setAttribute('href', 'https://open.spotify.com/playlist/' + view.sp);
+    var yf = document.getElementById('ytfollow');
+    if (!UPL.johnYt) UPL.johnYt = { href: yf.getAttribute('href'), hidden: yf.hidden };
+    root.classList.toggle('upl-noyt', !view.yt);
+    if (view.yt) { yf.href = 'https://www.youtube.com/playlist?list=' + view.yt; yf.hidden = false; }
     uplMark(); render(); if (idx.open) renderIndex();
     if (!keep) try { history.replaceState(null, '', location.pathname + location.search + '#u=' + view.id); } catch (e) {}
     if (opts.day) { var iso = byDate[opts.day] ? opts.day : null; if (iso) openDay(iso); }
@@ -6228,15 +6232,16 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var list = UPL.john; UPL.on = null; UPL.view = null; UPL.john = null;
     if (sheet.open && !quiet) closeDialog(sheet, true);
     setSongs(list, false);
-    var root = document.documentElement; root.classList.remove('upl'); root.classList.remove('upl-list');
+    var root = document.documentElement; root.classList.remove('upl'); root.classList.remove('upl-list'); root.classList.remove('upl-noyt');
     document.getElementById('spfollow').setAttribute('href', JOHN_SP);
+    if (UPL.johnYt) { var yf = document.getElementById('ytfollow'); yf.setAttribute('href', UPL.johnYt.href); yf.hidden = UPL.johnYt.hidden; UPL.johnYt = null; }
     uplMark(); render(); if (idx.open) renderIndex();
     if (/^#u=/.test(location.hash)) try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
   }
   function uplChooser() {
     var ul = document.getElementById('upll'); ul.textContent = '';
     var rows = [{ id: null, n: 'John’s Song of the Day', ct: 'John’s calendar' }].concat(uplPls().filter(function (p) { return !p.mine || p.st === 'ok'; }).map(function (p) {
-      return { id: p.id, n: p.n, ct: (p.mine ? 'Yours' : p.o + '’s') + ' · ' + (p.mode === 'list' ? 'playlist' : 'calendar') + ' · ' + p.cnt + (p.cnt === 1 ? ' song' : ' songs') };
+      return { id: p.id, n: p.mode === 'list' ? p.n : p.t || p.n, ct: (p.mode === 'list' ? (p.mine ? 'Your playlist' : p.o + '’s playlist') : p.n) + ' · ' + p.cnt + (p.cnt === 1 ? ' song' : ' songs') };
     }));
     rows.forEach(function (r) {
       var li = document.createElement('li'), b = document.createElement('button'); b.type = 'button';
@@ -7223,7 +7228,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   if (DATA.live && window.fetch) {
     fetch('../videos.json', { cache: 'no-cache' }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).then(function (j) {
       VIDS_YT = j.videos || {}; vidsMerge();
-      if (j.playlist) { var yf = document.getElementById('ytfollow'); yf.href = j.playlist; yf.hidden = false; }
+      if (j.playlist) { var yf = document.getElementById('ytfollow'); if (UPL.on && UPL.johnYt) UPL.johnYt = { href: j.playlist, hidden: false }; else { yf.href = j.playlist; yf.hidden = false; } }
       document.querySelectorAll('#picks .pick').forEach(addWatch);   // a day opened from a link before this arrived
       if (linkVideo && sheet.open) {   // a link that opens with the video
         var pk = [].filter.call(document.querySelectorAll('#picks .pick'), function (el) { return el.sotd && VIDS[el.sotd.s.track]; })[0];

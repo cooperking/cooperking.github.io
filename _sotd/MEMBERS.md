@@ -243,9 +243,10 @@ at most 40 a day from one member (`rxpush:<member>:<day>`). Tests: `bell_t.mjs` 
 
 A member can add their own Spotify playlists (John, 30 Oct 2026: "users to have the ability to add their own spotify
 playlists which run exactly the same way as mine does"), up to 5, each a calendar like John's (a song on each day it
-was added, the same rule for missed days) or a plain playlist (its songs, newest first). Phase 1 (the Worker, the
-draft calendar, the Members tab); still to come: the site job's videos, moods, years and YouTube copies for their songs
-(phase 2), and facts, written for new songs and on request for older ones, checked and signed off by their owner (phase 3).
+was added, the same rule for missed days) or a plain playlist (its songs, newest first). A calendar is called
+"<their name>’s Song of the Day" on the calendar (John, 30 Oct 2026), a plain playlist by its Spotify name. Phases 1
+(the Worker, the draft calendar, the Members tab) and 2 (their songs' videos, moods, years and YouTube copies) are in;
+still to come: facts, written for new songs and on request for older ones, checked and signed off by their owner.
 
 - **Reading them.** Spotify lets John's app read the songs only of playlists his account owns or collaborates on
   (Spotify's February 2026 rules for Development Mode apps; for anyone else's, even public, only its name). So the
@@ -267,6 +268,18 @@ draft calendar, the Members tab); still to come: the site job's videos, moods, y
   come the same way as John's (KV `previews`, `tags`). *Open in Spotify* takes their songs too. Removing a member
   removes their playlists; *Remove* (theirs, or John's on the Members tab with two taps) takes one off the calendar,
   not off Spotify.
+- **Videos, moods, years, YouTube copies** (the site job, song-tags.yml): `_sotd/upl_sync.py` takes in each playlist's
+  10 newest songs when it's first seen, then 5 more a day (newest first), and every song added after it was added
+  straight away (John, 30 Oct 2026: "It should add their last ten songs in the playlist to a new YouTube playlist after
+  that 5 a day or less if there isn't capacity"); kept in `_sotd/data/upl.json`. The steps finding videos (youtube.py),
+  listening to previews, Last.fm, MusicBrainz, years and moods (make_tags.py) then work through John's songs and those
+  (numbered from 100001, marked `upl`); John's songs keep their order and the searches kept for his newest, and moods
+  are measured on John's songs alone, so his don't change. `_sotd/youtube_upl.py` (after John's YouTube playlist) makes
+  each one's unlisted YouTube copy on the same channel, titled as the calendar calls it, and adds the songs taken in that
+  have a video, in order, stopping with 1,000 of the day's units left for John's; the calendar's *On YouTube* goes to it.
+  The site job gets the playlists from the Worker's `/upl/sync` with its own GITHUB_TOKEN (the Worker checks with GitHub
+  that it's a token for this repository alone), and sends back the YouTube copies. The Worker starts the site job when a
+  member's playlist changes, and once a day from 07:00 for the day's 5 more. Tests: `upl_py_t.py`.
 - Worker: `/members/upl` (GET `?id=`; POST ops `add`, `mode`, `link`, `check`, `remove`, `signoff`), `pls` on
   `/members/me`, admin ops `upls`, `uplcheck`, `uplremove`. Tests: `upl_t.mjs` (the Worker), `upl_page_t.py` (the
   draft), `upl_admin_t.py` (the Members tab).

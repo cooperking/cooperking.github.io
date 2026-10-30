@@ -112,8 +112,9 @@ def picks_dist(picks):
     return dict(zip(picks, [0.65, 0.35])) if len(picks) > 1 else ({picks[0]: 1.0} if picks else {})
 
 
-def sound_moods(audio):
-    """Each song's sound-model mood shares, scored against the rest of the collection."""
+def sound_moods(audio, base=None):
+    """Each song's sound-model mood shares, scored against the rest of the collection (base: the songs the scale is
+    taken from, John's; every song in audio.json is scored on it)."""
     classes = audio.get('moodthemeClasses', [])
     feats = {}
     for tid, a in audio.get('songs', {}).items():
@@ -122,10 +123,11 @@ def sound_moods(audio):
         feats[tid] = f
     if len(feats) < 10:
         return {}
-    keys = {k for f in feats.values() for k in f}
+    ref = {t: f for t, f in feats.items() if base is None or t in base} or feats
+    keys = {k for f in ref.values() for k in f}
     stats = {}
     for k in keys:
-        v = [f[k] for f in feats.values() if k in f]
+        v = [f[k] for f in ref.values() if k in f]
         m = sum(v) / len(v)
         sd = math.sqrt(sum((x - m) ** 2 for x in v) / len(v)) or 1
         stats[k] = (m, sd)
@@ -134,12 +136,12 @@ def sound_moods(audio):
         raw[tid] = {}
         for mood, w in SOUND.items():
             tot = sum(abs(x) for x in w.values())
-            raw[tid][mood] = sum(x * (f[k] - stats[k][0]) / stats[k][1] for k, x in w.items() if k in f) / tot
+            raw[tid][mood] = sum(x * (f[k] - stats[k][0]) / stats[k][1] for k, x in w.items() if k in f and k in stats) / tot
     # put the moods on the same footing, then turn scores into shares
     out = {}
     mstats = {}
     for mood in MOODS:
-        v = [r[mood] for r in raw.values()]
+        v = [r[mood] for t, r in raw.items() if t in ref]
         m = sum(v) / len(v)
         mstats[mood] = (m, math.sqrt(sum((x - m) ** 2 for x in v) / len(v)) or 1)
     for tid, r in raw.items():
@@ -168,9 +170,10 @@ def main():
     claude = load(os.path.join(DATA, 'claude.json'), {}).get('songs', {})
     john = load(os.path.join(DATA, 'john.json'), {})
     lfm = load(LASTFM, {})
-    sound = sound_moods(audio)
+    base = {s['id'] for s in songs if not s.get('upl')}   # John's songs: the scale members' songs are measured on too
+    sound = sound_moods(audio, base)
     # how lively each clip sounds against the rest (DEAM arousal, the dimension audio models judge best)
-    ar = sorted(a['arousal'] for a in audio.get('songs', {}).values() if 'arousal' in a)
+    ar = sorted(a['arousal'] for t, a in audio.get('songs', {}).items() if 'arousal' in a and t in base)
     energy_pct = {tid: round(100 * sum(1 for v in ar if v <= a['arousal']) / len(ar))
                   for tid, a in audio.get('songs', {}).items() if 'arousal' in a} if ar else {}
     out, stats = {}, Counter()

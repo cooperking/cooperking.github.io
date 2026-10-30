@@ -39,8 +39,20 @@ jobs:
         with:
           python-version: "3.12"
 
+      # members' own Spotify playlists: which of their songs this run takes in (each one's 10 newest at first, then 5
+      # a day, new ones at once), and the list the steps finding videos, moods and years work through (John's, then theirs)
+      - name: Members' playlists, their songs this run
+        continue-on-error: true   # without it those steps take John's songs alone
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python _sotd/upl_sync.py "$RUNNER_TEMP/songs-all.json"
+          echo "SOTD_ALL=file://$RUNNER_TEMP/songs-all.json" >> "$GITHUB_ENV"
+
       - name: Any songs to listen to?
         id: check
+        env:
+          SOTD_SONGS_URL: ${{ env.SOTD_ALL || 'https://sotd-playlists.cooperking.workers.dev/songs.json' }}
         run: python _sotd/analyze_audio.py --check ${{ inputs.redo && '--all' || '' }}
 
       - name: Cache the Essentia models
@@ -56,6 +68,8 @@ jobs:
 
       - name: Listen to the previews
         if: steps.check.outputs.todo != '0'
+        env:
+          SOTD_SONGS_URL: ${{ env.SOTD_ALL || 'https://sotd-playlists.cooperking.workers.dev/songs.json' }}
         run: python _sotd/analyze_audio.py ${{ inputs.redo && '--all' || '' }}
 
       - name: Cache the Last.fm tags (kept out of the repo)
@@ -68,9 +82,12 @@ jobs:
       - name: Listener tags from Last.fm
         env:
           LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
+          SOTD_SONGS_URL: ${{ env.SOTD_ALL || 'https://sotd-playlists.cooperking.workers.dev/songs.json' }}
         run: python _sotd/lastfm.py
 
       - name: Genres from MusicBrainz
+        env:
+          SOTD_SONGS_URL: ${{ env.SOTD_ALL || 'https://sotd-playlists.cooperking.workers.dev/songs.json' }}
         run: python _sotd/musicbrainz.py
 
       - name: Sources for the song facts (Wikipedia, Wikidata, MusicBrainz)
@@ -82,6 +99,7 @@ jobs:
           YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
           YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
           YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+          SOTD_SONGS_URL: ${{ env.SOTD_ALL || 'https://sotd-playlists.cooperking.workers.dev/songs.json' }}
         run: python _sotd/youtube.py
 
       # whether each video is only a still picture, from YouTube's own three frames of it (the admin page's Still picture)
@@ -98,13 +116,27 @@ jobs:
           YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
         run: python _sotd/youtube_playlist.py
 
+      # a YouTube copy of each member's playlist, after John's, keeping 1,000 of the day's units for his
+      - name: Members' playlists on YouTube
+        continue-on-error: true
+        env:
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: if [ -f "$RUNNER_TEMP/upl-playlists.json" ]; then python _sotd/youtube_upl.py "$RUNNER_TEMP/upl-playlists.json"; fi
+
       - name: Other uploads to offer for still-picture videos (admin page)
         run: python _sotd/video_alts.py
 
       - name: The year each song first came out
+        env:
+          SOTD_SONGS_URL: ${{ env.SOTD_ALL || 'https://sotd-playlists.cooperking.workers.dev/songs.json' }}
         run: python _sotd/years.py
 
       - name: Weigh up moods and genres
+        env:
+          SOTD_SONGS_URL: ${{ env.SOTD_ALL || 'https://sotd-playlists.cooperking.workers.dev/songs.json' }}
         run: python _sotd/make_tags.py
 
       - name: A page and a picture per day for sharing links
