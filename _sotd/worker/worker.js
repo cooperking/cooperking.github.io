@@ -967,10 +967,19 @@ async function members(request, url, env) {
     }
     case 'pushcount': return answer(200, await pushCount(env));
     case 'upls': return answer(200, { upls: uplAdmin(all, await uplAll(env)) });   // members' own playlists, for the Members tab
+    case 'uplsongs': {   // every song out on members' playlists, for Send a song: each with its day, its calendar and who sees it
+      const U = await uplAll(env), out = [];
+      for (const [pid, rec] of Object.entries(U)) {
+        if (rec.st !== 'ok' || !all[rec.o]) continue;
+        const v = await uplView(env, all, null, pid, rec);
+        for (const x of v.songs) out.push({ id: x.id, title: x.title, artist: x.artist, img: x.img || '', d: x.d, pid, t: v.t, n: v.n, mode: v.mode, sh: v.sh, o: v.o });
+      }
+      return answer(200, { songs: out });
+    }
     case 'uplcheck': {   // a member's playlist read from Spotify now (once John has joined it)
       const U = await uplAll(env), rec = U[body.id];
       if (!rec) return answer(404, { error: 'No such playlist.' });
-      await uplRead(env, body.id, rec, U);
+      if (rec.src !== 'mpl') await uplRead(env, body.id, rec, U);   // (a saved playlist's follows it)
       return answer(200, { upls: uplAdmin(all, await uplAll(env)) });
     }
     case 'uplremove': {
@@ -2029,7 +2038,7 @@ async function memberPlaylists(request, env, answer) {
   const body = await request.json().catch(() => ({}));
   if (body.op === 'delete') {
     const i = lists.findIndex(l => l.id === body.id);
-    if (i >= 0) { lists.splice(i, 1); await env.SOTD.put(key, JSON.stringify(lists)); }
+    if (i >= 0) { const [l] = lists.splice(i, 1); await env.SOTD.put(key, JSON.stringify(lists)); await uplListSaved(env, id, l, true); }
     return answer(200, { ok: true, lists: sorted() });
   }
   if (body.op !== 'save') return answer(400, { error: 'Say save or delete.' });
@@ -2042,6 +2051,7 @@ async function memberPlaylists(request, env, answer) {
   }
   Object.assign(list, { name, tracks, at: Date.now() });
   await env.SOTD.put(key, JSON.stringify(lists));
+  await uplListSaved(env, id, list);
   return answer(200, { list, lists: sorted() });
 }
 
@@ -2795,12 +2805,54 @@ function uplInvite(link) {   // the link as pasted, when it's Spotify's own (the
 }
 async function uplAll(env) { return (await env.SOTD.get('upls', 'json')) || {}; }
 async function uplSongs(env, pid) { return (await env.SOTD.get('upl:' + pid, 'json')) || { songs: [], rel: {} }; }
+// a saved playlist made a calendar or shared playlist (src 'mpl', pl: the saved playlist's id): its songs follow it.
+// New ones are added as they're saved (a: then); one taken out is kept, deleted (del), so its day stays empty; one put
+// back is out again on its day; data.order is the saved playlist's order (a shared playlist's).
+async function uplTrackMeta(env, ids) {   // each track's fields, from John's songs or members' playlists
+  const want = new Set(ids), out = {};
+  if (!want.size) return out;
+  const pick = x => { if (x && want.has(x.id) && !out[x.id]) { const y = {}; for (const k of SONG_FIELDS) if (k !== 'a' && x[k] !== undefined) y[k] = x[k]; out[x.id] = y; } };
+  (((await env.SOTD.get('songsLast', 'json')) || {}).songs || []).forEach(pick);
+  for (const pid of Object.keys(await uplAll(env))) {
+    if (Object.keys(out).length >= want.size) break;
+    ((await uplSongs(env, pid)).songs || []).forEach(pick);
+  }
+  return out;
+}
+async function uplListSync(env, pid, rec, l, now) {   // its songs as the saved playlist has them now (rec.chg: changed, for the site job)
+  const data = await uplSongs(env, pid), want = (l.tracks || []).map(String);
+  data.songs = data.songs || []; data.del = data.del || {};
+  const have = new Map(data.songs.map(x => [x.id, x])), meta = await uplTrackMeta(env, want.filter(t => !have.has(t)));
+  let changed = false;
+  for (const t of want) {
+    const x = have.get(t);
+    if (x) { if (data.del[t] === x.a) { delete data.del[t]; changed = true; } continue; }
+    if (!meta[t]) continue;
+    const y = Object.assign(meta[t], { a: new Date(now).toISOString() });
+    data.songs.push(y); have.set(t, y); changed = true;
+  }
+  const inList = new Set(want);
+  for (const x of data.songs) if (!inList.has(x.id) && data.del[x.id] !== x.a) { data.del[x.id] = x.a; changed = true; }
+  const order = want.filter(t => have.has(t));
+  if (JSON.stringify(order) !== JSON.stringify(data.order || [])) { data.order = order; changed = true; }
+  if (changed) { data.at = new Date(now).toISOString(); await env.SOTD.put('upl:' + pid, JSON.stringify(data)); rec.chg = 1; }
+  Object.assign(rec, { n: String(l.name || '').slice(0, 80), cnt: order.length, read: now });
+  return changed;
+}
+async function uplListSaved(env, member, l, gone) {   // a saved playlist saved (or deleted: gone): its calendar with it
+  const U = await uplAll(env), e = Object.entries(U).find(([, r]) => r.o === member && r.src === 'mpl' && r.pl === l.id);
+  if (!e) return;
+  if (gone) { await uplDrop(env, [e[0]]); return; }
+  await uplListSync(env, e[0], e[1], l, Date.now());
+  await uplPut(env, U);
+}
 async function uplTracks(env) {   // every track on members' playlists (for Open in Spotify)
   const U = await uplAll(env), out = [];
   for (const pid of Object.keys(U)) for (const x of (await uplSongs(env, pid)).songs) out.push(x.id);
   return out;
 }
-function uplWaiting(rec, data, x) { return Date.parse(x.a) > (rec.base || 0) && !(data.rel || {})[x.id]; }
+function uplWaiting(rec, data, x) { return rec.src !== 'mpl' && Date.parse(x.a) > (rec.base || 0) && !(data.rel || {})[x.id]; }   // (a saved playlist's: out as its owner adds them)
+function uplGone(data, x) { const d = (data.del || {})[x.id]; return !!d && d === x.a; }   // taken off by its owner (that adding of it): its day left empty
 function uplName(all, rec) { return rec.title || rec.n || ((all[rec.o] && all[rec.o].name) || 'A member') + '’s playlist'; }   // (title: its owner's; n: Spotify's)
 function uplTitle(all, rec) { return rec.mode === 'list' ? uplName(all, rec) : ((all[rec.o] && all[rec.o].name) || 'A member') + '’s Song of the Day'; }   // what the calendar calls it
 const UPL_SHARES = ['public', 'members', 'some', 'private'];
@@ -2816,19 +2868,19 @@ function uplCan(all, viewer, rec) {   // whether someone sees this playlist (vie
 }
 function uplList(all, viewer, U) {   // the playlists a member can switch to (/members/me pls)
   return Object.entries(U).filter(([, r]) => uplCan(all, viewer, r))
-    .map(([pid, r]) => Object.assign({ id: pid, n: uplName(all, r), t: uplTitle(all, r), o: all[r.o].name, mode: r.mode, cnt: r.cnt || 0, sp: r.sp, sh: uplShareOf(r) }, r.yt ? { yt: r.yt } : {}, r.o === viewer ? { mine: true, st: r.st, err: r.err || '', sn: r.n || '', to: uplShareOf(r) === 'some' ? r.to || [] : [], dates: r.mode === 'list' ? null : Object.assign({ how: 'added' }, r.dates || {}), send: uplSendOf(r) } : {}))
+    .map(([pid, r]) => Object.assign({ id: pid, n: uplName(all, r), t: uplTitle(all, r), o: all[r.o].name, mode: r.mode, cnt: r.cnt || 0, sp: r.sp, src: r.src === 'mpl' ? 'mpl' : 'sp', sh: uplShareOf(r) }, r.yt ? { yt: r.yt } : {}, r.o === viewer ? { mine: true, pl: r.pl || '', st: r.st, err: r.err || '', sn: r.n || '', to: uplShareOf(r) === 'some' ? r.to || [] : [], dates: r.mode === 'list' ? null : Object.assign({ how: 'added' }, r.dates || {}), send: uplSendOf(r) } : {}))
     .sort((a, b) => (b.mine ? 1 : 0) - (a.mine ? 1 : 0) || a.o.localeCompare(b.o) || a.n.localeCompare(b.n));
 }
 async function uplMine(env, pls, U) {   // their own playlists' songs waiting for them to sign off (wait: the newest 20, oldest first)
   for (const p of pls) {
     if (!p.mine || p.st !== 'ok' || !U[p.id]) continue;
     const rec = U[p.id], data = await uplSongs(env, p.id), days = uplDays(data.songs || [], rec);
-    p.wait = (data.songs || []).map((x, i) => uplWaiting(rec, data, x) ? { id: x.id, title: x.title, artist: x.artist, d: days[i].d, img: x.img || '' } : null).filter(Boolean).slice(-20);
+    p.wait = (data.songs || []).map((x, i) => uplWaiting(rec, data, x) && !uplGone(data, x) ? { id: x.id, title: x.title, artist: x.artist, d: days[i].d, img: x.img || '' } : null).filter(Boolean).slice(-20);
   }
   return pls;
 }
 function uplAdmin(all, U) {   // the Members tab: every playlist, whose, and whether John has joined it
-  return Object.entries(U).map(([pid, r]) => ({ id: pid, n: uplName(all, r), o: (all[r.o] && all[r.o].name) || '?', oid: r.o, mode: r.mode, st: r.st, err: r.err || '', link: r.link || '',
+  return Object.entries(U).map(([pid, r]) => ({ id: pid, n: uplName(all, r), o: (all[r.o] && all[r.o].name) || '?', oid: r.o, mode: r.mode, src: r.src === 'mpl' ? 'mpl' : 'sp', st: r.st, err: r.err || '', link: r.link || '',
     sp: r.sp, at: r.at, read: r.read || null, cnt: r.cnt || 0, sh: uplShareOf(r), shn: uplShareOf(r) === 'some' ? (r.to || []).length : 0 })).sort((a, b) => (a.st === 'join' ? 0 : 1) - (b.st === 'join' ? 0 : 1) || b.at - a.at);
 }
 async function uplPut(env, U) { await env.SOTD.put('upls', JSON.stringify(U)); }
@@ -2882,7 +2934,7 @@ async function uplRead(env, pid, rec, U) {   // reads it from Spotify; keeps wha
     data.songs = items; data.at = new Date(now).toISOString(); data.rel = data.rel || {};
     await env.SOTD.put('upl:' + pid, JSON.stringify(data));
   }
-  Object.assign(rec, { st: 'ok', err: '', read: now, tried: now, cnt: items.length });
+  Object.assign(rec, { st: 'ok', err: '', read: now, tried: now, cnt: items.filter(x => !uplGone(data, x)).length });
   if (rec.dates && !rec.dates.at && items.length) Object.assign(rec.dates, rec.dates.how === 'fwd' ? { at: items[0].id, n: 1 } : { at: items[items.length - 1].id, n: items.length });   // (chosen before it could be read)
   U[pid] = rec; await uplPut(env, U);
   await fillPreviews(env, items, 6).catch(() => null);
@@ -2915,12 +2967,17 @@ async function uplPreviews(env, U) {   // their songs' previews not looked up ye
 }
 async function uplLook(env) {   // the timer: playlists due a read (UPL_LOOK_MOST each time)
   const U = await uplAll(env), now = Date.now(), h = londonHour();
-  const due = Object.entries(U).filter(([, r]) => (r.st === 'ok' || r.st === 'err') ? (h >= 6 && h < 23 && now - (r.tried || 0) >= UPL_EVERY) : now - (r.tried || 0) >= (now - r.at < DAY ? UPL_JOIN_EVERY : 6 * UPL_JOIN_EVERY))
+  const due = Object.entries(U).filter(([, r]) => r.src !== 'mpl').filter(([, r]) => (r.st === 'ok' || r.st === 'err') ? (h >= 6 && h < 23 && now - (r.tried || 0) >= UPL_EVERY) : now - (r.tried || 0) >= (now - r.at < DAY ? UPL_JOIN_EVERY : 6 * UPL_JOIN_EVERY))
     .sort((a, b) => (a[1].tried || 0) - (b[1].tried || 0)).slice(0, UPL_LOOK_MOST);
   for (const [pid, r] of due) await uplRead(env, pid, r, U).catch(e => console.log('upl ' + pid + ': ' + (e && e.message)));
   await uplPreviews(env, U).catch(e => console.log('uplPreviews: ' + (e && e.message)));
   const today = londonDay();
   await uplAnnounce(env, U, today).catch(e => console.log('uplAnnounce: ' + (e && e.message)));
+  if (Object.values(U).some(r => r.chg)) {   // a saved playlist's calendar changed since: the site job (its videos and YouTube copy)
+    for (const r of Object.values(U)) delete r.chg;
+    await uplPut(env, U);
+    await startJob(env, null, null, 0, null, true).catch(() => {});
+  }
   if (h >= 7 && Object.values(U).some(r => r.st === 'ok') && (await env.SOTD.get('uplJobDay')) !== today && await kvSoft(env, 'uplJobDay', today))
     await startJob(env, null, null, 0, null, true).catch(() => {});   // each day's 5 more of their older songs
 }
@@ -2957,7 +3014,8 @@ async function uplSync(request, env) {
     if (rec.st !== 'ok' || !all[rec.o]) continue;
     const data = await uplSongs(env, pid);
     const ed = data.ed || {};   // (ov: its owner's video for a song, '' none)
-    out[pid] = { title: uplTitle(all, rec), mode: rec.mode, base: rec.base || 0, yt: rec.yt || '', share: uplShareOf(rec), songs: composeSongs(data.songs || [], pv, tags).map(x => ed[x.id] && 'v' in ed[x.id] ? Object.assign(x, { ov: ed[x.id].v }) : x) };
+    const gone = new Set((data.songs || []).filter(x => uplGone(data, x)).map(x => x.id));
+    out[pid] = { title: uplTitle(all, rec), mode: rec.mode, base: rec.base || 0, yt: rec.yt || '', share: uplShareOf(rec), songs: composeSongs(data.songs || [], pv, tags).filter(x => !gone.has(x.id)).map(x => ed[x.id] && 'v' in ed[x.id] ? Object.assign(x, { ov: ed[x.id].v }) : x) };
     if (uplShareOf(rec) === 'public') {   // its songs out, each with its day and cover: the cards for its links (share_pages.py)
       const v = await uplView(env, all, null, pid, rec);
       out[pid].pub = { t: v.t, n: v.n, songs: v.songs.map(x => ({ id: x.id, d: x.d, title: x.title, artist: x.artist, artists: x.artists, img: x.img || '' })) };
@@ -2998,7 +3056,7 @@ async function uplData(request, env) {
 const UPL_FACTS_FIRST = 10;   // a public one's newest songs from before it was added that get facts
 function uplFactsWanted(rec, data) {   // a public one's songs wanting facts: added since it was added, its 10 newest from before, or asked for
   if (uplShareOf(rec) !== 'public') return [];
-  const songs = data.songs || [], base = rec.base || 0, ask = data.fask || {};
+  const songs = (data.songs || []).filter(x => !uplGone(data, x)), base = rec.base || 0, ask = data.fask || {};
   const first = new Set(songs.filter(x => Date.parse(x.a) <= base).slice(-UPL_FACTS_FIRST).map(x => x.id));
   return songs.filter(x => Date.parse(x.a) > base || first.has(x.id) || ask[x.id]).map(x => x.id);
 }
@@ -3035,8 +3093,9 @@ async function uplView(env, all, viewer, pid, rec) {   // a playlist as the cale
   const days = uplDays(data.songs || [], rec);
   const meta = (await env.SOTD.get('uplmeta', 'json')) || {}, facts = (await env.SOTD.get('ufacts:' + pid, 'json')) || {}, wanted = new Set(uplShareOf(rec) === 'public' ? uplFactsWanted(rec, data) : []);
   const ed = data.ed || {}, files = data.files || {}, see = mine ? { a: true, v: true } : viewer && all[viewer] ? mediaFor(all[viewer]) : { a: false, v: false }, exp = Math.floor(Date.now() / 1000) + LINK_HOURS * 3600;
+  const gone = new Set((data.songs || []).filter(x => uplGone(data, x)).map(x => x.id));
   let songs = composeSongs(data.songs || [], pv, tags).map((x, i) => Object.assign(x, { d: days[i].d }, uplWaiting(rec, data, data.songs[i]) ? { w: 1 } : {}, days[i].d > today ? { f: 1 } : {}))
-    .filter(x => mine || (!x.w && !x.f));
+    .filter(x => !gone.has(x.id) && (mine || (!x.w && !x.f)));
   for (const x of songs) {   // what the site job found (vid: the video, mt: moods and genres, yr: the year), its owner's choices (ov: the video, '' none; tg: moods and genres), files (ma, mv; own: theirs, with sizes) and cover (uc)
     const e = ed[x.id], f = files[x.id], m = meta[x.id];
     if (m) { if (m.vid) x.vid = m.vid; if (m.mt) x.mt = m.mt; if (m.yr) x.yr = m.yr; }
@@ -3055,7 +3114,7 @@ async function uplView(env, all, viewer, pid, rec) {   // a playlist as the cale
     const at = {}; data.order.forEach((t, i) => { at[t] = i; });
     songs = songs.filter(x => x.id in at).sort((a, b) => at[a.id] - at[b.id]).concat(songs.filter(x => !(x.id in at)));
   }
-  return { id: pid, n: uplName(all, rec), t: uplTitle(all, rec), o: all[rec.o].name, mine, mode: rec.mode, sp: rec.sp, yt: rec.yt || '', st: rec.st, at: data.at || null, sh: uplShareOf(rec),
+  return { id: pid, n: uplName(all, rec), t: uplTitle(all, rec), o: all[rec.o].name, mine, mode: rec.mode, sp: rec.sp, src: rec.src === 'mpl' ? 'mpl' : 'sp', yt: rec.yt || '', st: rec.st, at: data.at || null, sh: uplShareOf(rec),
     dates: rec.mode === 'list' ? null : Object.assign({ how: 'added' }, rec.dates || {}), send: mine ? uplSendOf(rec) : undefined, songs };
 }
 // /members/upl: GET ?id= one playlist to show; POST { op: 'add', link, mode } | { op: 'mode', id, mode } | { op: 'remove', id }
@@ -3096,9 +3155,32 @@ async function memberUpl(request, url, env, answer) {
     if (rec.st === 'join') await uplAskJohn(env, all, me, rec);
     return answer(200, { ok: true, id: pid, st: rec.st, pls: await uplMine(env, uplList(all, me, U), U) });
   }
+  if (body.op === 'fromlist') {   // one of their saved playlists as its own calendar or playlist
+    const lists = (await env.SOTD.get('mpl:' + me, 'json')) || [], l = lists.find(x => x.id === String(body.list || ''));
+    if (!l) return answer(404, { error: 'No such playlist of yours.' });
+    if (Object.values(U).some(r => r.o === me && r.src === 'mpl' && r.pl === l.id)) return answer(400, { error: 'It’s on the calendar already.' });
+    if (Object.values(U).filter(r => r.o === me && r.src === 'mpl').length >= UPL_MAX) return answer(400, { error: 'That’s ' + UPL_MAX + ' of your playlists on the calendar, the most.' });
+    const pid = randomCode(10), now = Date.now(), rec = { o: me, src: 'mpl', pl: l.id, n: l.name, mode: body.mode === 'list' ? 'list' : 'cal', at: now, base: now, st: 'ok', read: now, tried: now };
+    U[pid] = rec;
+    await uplListSync(env, pid, rec, l, now);
+    delete rec.chg; await uplPut(env, U);
+    await startJob(env, null, null, 0, null, true).catch(() => {});   // the site job: its videos, moods, years and YouTube copy
+    return answer(200, { ok: true, id: pid, st: 'ok', pls: await uplMine(env, uplList(all, me, U), U), view: await uplView(env, all, me, pid, rec) });
+  }
   const pid = String(body.id || ''), rec = own(pid);
   if (!rec) return answer(404, { error: 'No such playlist of yours.' });
-  if (body.op === 'mode') { rec.mode = body.mode === 'list' ? 'list' : 'cal'; delete rec.annDay; await uplPut(env, U); return mine(); }
+  if (rec.src === 'mpl' && ['link', 'check', 'signoff', 'order', 'title', 'del'].includes(body.op)) return answer(400, { error: 'That’s done in the playlist itself.' });
+  if (body.op === 'del') {   // a song off its calendar or playlist (not off Spotify): its day left empty
+    const data = await uplSongs(env, pid), x = (data.songs || []).find(y => y.id === String(body.track || '') && !uplGone(data, y));
+    if (!x) return answer(404, { error: 'That song isn’t on this playlist.' });
+    data.del = data.del || {}; data.del[x.id] = x.a;
+    if (data.order) data.order = data.order.filter(t => t !== x.id);
+    await env.SOTD.put('upl:' + pid, JSON.stringify(data));
+    rec.cnt = (data.songs || []).filter(y => !uplGone(data, y)).length; await uplPut(env, U);
+    await startJob(env, null, null, 0, null, true).catch(() => {});   // (its cards, and its YouTube copy)
+    return answer(200, { ok: true, pls: await uplMine(env, uplList(all, me, U), U), view: await uplView(env, all, me, pid, rec) });
+  }
+  if (body.op === 'mode') { rec.mode = body.mode === 'list' ? 'list' : 'cal'; delete rec.annDay; await uplPut(env, U); return answer(200, { ok: true, pls: await uplMine(env, uplList(all, me, U), U), view: await uplView(env, all, me, pid, rec) }); }
   if (body.op === 'link') {   // the collaboration invite link, sent again
     const link = uplInvite(body.link);
     if (!link || uplSpId(link) !== rec.sp) return answer(400, { error: 'That isn’t this playlist’s invite link.' });
@@ -3113,7 +3195,7 @@ async function memberUpl(request, url, env, answer) {
     return answer(200, Object.assign({ ok: true, st: rec.st, pls: await uplMine(env, uplList(all, me, U), U) }, rec.st === 'ok' ? { view: await uplView(env, all, me, pid, rec) } : {}));
   }
   if (body.op === 'signoff') {
-    const data = await uplSongs(env, pid), x = (data.songs || []).find(y => y.id === String(body.track || ''));
+    const data = await uplSongs(env, pid), x = (data.songs || []).find(y => y.id === String(body.track || '') && !uplGone(data, y));
     if (!x) return answer(404, { error: 'That song isn’t on this playlist.' });
     if (!uplWaiting(rec, data, x)) return answer(400, { error: 'That song is out already.' });
     if (!await dayCount(env, 'uplsign:' + me, UPL_SIGNOFF_DAY)) return answer(429, { error: 'That’s ' + UPL_SIGNOFF_DAY + ' today, the most for a day.' });
@@ -3228,7 +3310,12 @@ async function uplAskJohn(env, all, me, rec) {   // John: a playlist for him to 
 // when that's later.
 function uplHM(d) { return new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(d ? new Date(d) : new Date()); }
 function uplSendOf(rec) { return Object.assign({ on: false, at: '08:00' }, rec.send || {}); }
-function uplSongDay(rec, data, days, i) { const t = data.songs[i].id; return rec.mode === 'list' ? (data.reld || {})[t] || ((data.rel || {})[t] ? londonDay(data.rel[t]) : '') : days[i].d; }
+function uplSongDay(rec, data, days, i) {   // the day its song goes to the members: a calendar's, its day; a playlist's, the day it was signed off (a saved playlist's: added)
+  const t = data.songs[i].id;
+  if (rec.mode !== 'list') return days[i].d;
+  if (rec.src === 'mpl') return Date.parse(data.songs[i].a) > (rec.base || 0) ? londonDay(data.songs[i].a) : '';
+  return (data.reld || {})[t] || ((data.rel || {})[t] ? londonDay(data.rel[t]) : '');
+}
 // ---------- a member's own for their playlist's songs: the video, moods and
 // genres (ed in upl:<pid>, the op edit), their own recording and video (R2 ua/<pid>/<track>.mp3, uv/<pid>/<track>.mp4,
 // up in parts as John's are: /members/uplup), heard and seen by the members John lets have his own (see on their
@@ -3335,7 +3422,7 @@ async function uplAnnounce(env, U, today) {   // the songs whose day it is, out,
     if (rec.st !== 'ok' || !snd.on || hm < snd.at || rec.annDay === today) continue;
     const data = await uplSongs(env, pid), days = uplDays(data.songs || [], rec);
     data.ann = data.ann || {};
-    const due = days.filter((x, i) => uplSongDay(rec, data, days, i) === today && !data.ann[x.id] && !uplWaiting(rec, data, data.songs[i]));
+    const due = days.filter((x, i) => uplSongDay(rec, data, days, i) === today && !data.ann[x.id] && !uplWaiting(rec, data, data.songs[i]) && !uplGone(data, data.songs[i]));
     rec.annDay = today; await uplPut(env, U);
     if (!due.length) continue;
     all = all || (await env.SOTD.get('members', 'json')) || {};

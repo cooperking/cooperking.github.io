@@ -252,7 +252,7 @@
   function keyStat(ok) { if (!ok) { try { if (window.parent.SOTD_ADMIN_LOCK) window.parent.SOTD_ADMIN_LOCK(); } catch (e) {} } }
 
   // ---- the songs and their days, as the calendar works them out ----
-  var SONGS = [], CAT = {}, COVERS = {}, MEMBERS = [];
+  var SONGS = [], MSONGS = [], CAT = {}, COVERS = {}, MEMBERS = [];   // (MSONGS: those on members' playlists)
   function londonDay(iso) {
     var o = {}; new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date(iso)).forEach(function (x) { o[x.type] = x.value; });
     return o.year + '-' + o.month + '-' + o.day;
@@ -270,7 +270,7 @@
     return api('/members/admin', { op: 'list' }).then(function (j) {
       if (j.status !== 200) { $('stat').textContent = j.error || 'Couldn’t reach the Worker'; return false; }
       MEMBERS = j.members || []; CAT = j.catalog || {}; COVERS = j.covers || {};
-      people(); pushStat(); uplLoad(); return true;
+      people(); pushStat(); uplLoad(); msongsLoad(); return true;
     }).catch(function () { $('stat').textContent = 'Couldn’t reach the Worker'; return false; });
   }
 
@@ -278,22 +278,23 @@
   // collaborates on, so each waits here until he opens its invite link (signed in to Spotify as cooperking), joins it, and
   // taps Check; then every member can see it. Remove takes it off the calendar (not off Spotify). ----
   var UPLS = [];
+  function msongsLoad() { return api('/members/admin', { op: 'uplsongs' }).then(function (j) { if (j.status === 200) MSONGS = (j.songs || []).sort(function (a, b) { return a.d < b.d ? -1 : a.d > b.d ? 1 : 0; }); }).catch(function () {}); }   // (oldest first, as SONGS)
   function uplLoad() { return api('/members/admin', { op: 'upls' }).then(function (j) { if (j.status === 200) { UPLS = j.upls || []; uplDraw(); } }).catch(function () {}); }
   function uplDraw() {
     var box = $('uplbox'), ul = $('upls'); box.hidden = !UPLS.length; ul.innerHTML = '';
     var wait = UPLS.filter(function (u) { return u.st === 'join'; }).length;
     $('uplstat').textContent = wait ? wait + (wait === 1 ? ' waits' : ' wait') + ' for you to join as a collaborator: open its invite link signed in to Spotify as cooperking, tap Join, then Check.'
-      : 'Each one is read from Spotify every half hour from 06:00, and its owner signs off each new song.';
+      : 'Each Spotify one is read every half hour from 06:00, and its owner signs off each new song; one made on the calendar follows its playlist.';
     UPLS.forEach(function (u) {
       var li = document.createElement('li'); if (u.st === 'join') li.className = 'join';
       var nm = document.createElement('div'); nm.className = 'nm'; nm.textContent = u.n; li.appendChild(nm);
       var st = document.createElement('div'); st.className = 'st';
-      st.textContent = u.o + '’s · ' + (u.mode === 'list' ? 'playlist' : 'calendar') + ' · ' + (u.sh === 'public' ? 'public' : u.sh === 'private' ? 'private' : u.sh === 'some' ? 'for ' + u.shn + (u.shn === 1 ? ' member' : ' members') : 'every member') + ' · ' + (u.st === 'join' ? (u.link ? 'waiting for you to join it' : 'waiting for you to join it; no invite link from them yet') : u.st === 'err' ? (u.err || 'can’t be read') : u.cnt + (u.cnt === 1 ? ' song' : ' songs') + (u.read ? ' · read ' + new Date(u.read).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''));
+      st.textContent = u.o + '’s · ' + (u.mode === 'list' ? 'playlist' : 'calendar') + (u.src === 'mpl' ? ' from a playlist made on the calendar' : '') + ' · ' + (u.sh === 'public' ? 'public' : u.sh === 'private' ? 'private' : u.sh === 'some' ? 'for ' + u.shn + (u.shn === 1 ? ' member' : ' members') : 'every member') + ' · ' + (u.st === 'join' ? (u.link ? 'waiting for you to join it' : 'waiting for you to join it; no invite link from them yet') : u.st === 'err' ? (u.err || 'can’t be read') : u.cnt + (u.cnt === 1 ? ' song' : ' songs') + (u.read ? ' · read ' + new Date(u.read).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''));
       li.appendChild(st);
       var acts = document.createElement('div'); acts.className = 'acts';
       if (u.link && u.st !== 'ok') { var a = document.createElement('a'); a.className = 'btn small primary'; a.href = u.link; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'Open the invite ↗'; acts.appendChild(a); }
       else if (u.st !== 'ok') { var a2 = document.createElement('a'); a2.className = 'btn small'; a2.href = 'https://open.spotify.com/playlist/' + u.sp; a2.target = '_blank'; a2.rel = 'noopener'; a2.textContent = 'The playlist ↗'; acts.appendChild(a2); }
-      acts.appendChild(button(u.st === 'ok' ? 'Check now' : 'I’ve joined: check', function () {
+      if (u.src !== 'mpl') acts.appendChild(button(u.st === 'ok' ? 'Check now' : 'I’ve joined: check', function () {
         api('/members/admin', { op: 'uplcheck', id: u.id }).then(function (j) {
           if (j.status !== 200) { toast(j.error || 'Couldn’t check'); return; }
           UPLS = j.upls || []; uplDraw();
@@ -867,21 +868,27 @@
     var q = fold(this.value.trim()), ul = $('nsongres'); ul.innerHTML = '';
     if (q.length < 2) return;
     var words = q.split(/\s+/);
-    SONGS.slice().reverse().filter(function (x) {
-      var hay = fold(x.title + ' ' + x.artist + ' ' + x.d + ' ' + fullDay(x.d) + ' ' + slug(x.d));
+    SONGS.slice().reverse().concat(MSONGS.slice().reverse()).filter(function (x) {   // John's, then those on members' playlists
+      var hay = fold(x.title + ' ' + x.artist + ' ' + x.d + ' ' + fullDay(x.d) + ' ' + slug(x.d) + (x.pid ? ' ' + x.t + ' ' + x.n + ' ' + x.o : ''));
       return words.every(function (w) { return hay.indexOf(w) >= 0; });
-    }).slice(0, 6).forEach(function (x) {
+    }).slice(0, 8).forEach(function (x) {
       var li = document.createElement('li'), b = document.createElement('button'); b.type = 'button';
       var im = document.createElement('img'); im.alt = ''; if (x.img) im.src = x.img;
       var tx = document.createElement('span'); tx.innerHTML = '<span class="t"></span><br><span class="m"></span>';
-      tx.querySelector('.t').textContent = x.title; tx.querySelector('.m').textContent = x.artist + ' · ' + longDay(x.d);
+      tx.querySelector('.t').textContent = x.title; tx.querySelector('.m').textContent = x.artist + ' · ' + (x.pid ? mDay(x) + ' · ' + mWho(x) : longDay(x.d));
       b.appendChild(im); b.appendChild(tx); b.addEventListener('click', function () { songChoose(x); });
       li.appendChild(b); ul.appendChild(li);
     });
   });
+  // a song on a member's playlist: its calendar (or playlist) and day, and who can open it
+  function mDay(x) { return x.mode === 'list' ? x.n : x.t + ', ' + longDay(x.d); }
+  function mWho(x) { return x.sh === 'public' ? 'anyone can open it' : x.sh === 'members' ? 'every member can open it' : x.sh === 'some' ? 'only the members ' + x.o + ' chose can open it' : 'private: only ' + x.o + ' can open it'; }
+  function mCover(x) { return String(x.img || '').replace('ab67616d00001e02', 'ab67616d0000b273'); }
   // its picture, as the share sheet offers: the song's card (album cover), John's own (his picture's card, where he has
   // one), a picture of his own from here, or none; and what the link opens with, the song or the video
   function songPics(x) {
+    if (x.pid) return [{ k: 'card', t: 'Album cover', img: x.sh === 'public' && x.mode !== 'list' ? 'https://cooperking.github.io/songs/u/' + x.pid + '/' + slug(x.d) + '/card.jpg' : mCover(x), icon: x.img || '' },
+      { k: 'photo', t: 'Your photo as the cover…', img: x.made || '', icon: x.img || '' }, { k: 'mine', t: 'Just your photo…' }, { k: 'none', t: 'None', icon: x.img || '' }];   // (a member's: its public card, or the album cover)
     var out = [{ k: 'card', t: 'Album cover', img: 'https://cooperking.github.io/songs/' + slug(x.d) + '/card.jpg', icon: x.img || '' }];
     var list = (COVERS[x.id] && COVERS[x.id].list) || [], own = list.filter(function (c) { return c.who === 'all'; })[0] || list[0];
     if (own) {
@@ -936,7 +943,7 @@
   // date line, as the site's card has them until he does. With other words, the album cover's card (or his own cover's)
   // is drawn here, as the site draws it, and sent as a picture of its own.
   var WTOP = 'JOHN’S SONG OF THE DAY', wordsT = null;
-  function wordsDefault(x) { return { top: WTOP, title: x.title, line: x.artist, date: fullDay(x.d) }; }
+  function wordsDefault(x) { return { top: x.pid ? (x.mode === 'list' ? x.n : x.t).toUpperCase() : WTOP, title: x.title, line: x.artist, date: fullDay(x.d) }; }
   function edited(x) {
     var d = wordsDefault(x), w = x.words || d;
     return ['top', 'title', 'line', 'date'].some(function (k) { var a = String(w[k] || '').trim(), b = String(d[k] || '').trim(); return k === 'title' ? a !== b : a.toUpperCase() !== b.toUpperCase(); });
@@ -971,11 +978,12 @@
   });
   $('nwreset').addEventListener('click', function () { var x = NSONG; if (!x) return; x.words = wordsDefault(x); wordsFill(x); wordsRedraw(x); songPicDraw(); });
   function songChoose(x) {
-    NSONG = x; x.pic = 'card'; x.words = wordsDefault(x); wordsRedraw(x); wordsFill(x); x.mode = (CAT[x.id] || {}).a ? 'preview' : 'video';
+    x = Object.assign({}, x); NSONG = x; x.pic = 'card'; x.words = wordsDefault(x); wordsRedraw(x); wordsFill(x); x.mode = x.pid ? 'preview' : (CAT[x.id] || {}).a ? 'preview' : 'video';
     $('nsongres').innerHTML = ''; $('nsong').value = ''; $('nsong').hidden = true;
     $('nsongnow').hidden = false; songPicDraw();
     $('ntitle').value = x.title;
-    $('ntext').value = x.artist + ' · John’s Song of the Day, ' + fullDay(x.d);
+    $('ntext').value = x.artist + ' · ' + (x.pid ? (x.mode === 'list' ? x.n : x.t + ', ' + fullDay(x.d)) : 'John’s Song of the Day, ' + fullDay(x.d));
+    if (x.pid && x.sh !== 'public' && x.sh !== 'members') toast('Only ' + (x.sh === 'some' ? 'the members ' + x.o + ' chose' : x.o) + ' can open it');
     var o = $('nlink');   // (added and taken away: an iPhone shows a hidden option anyway)
     if (!o.querySelector('option[value=song]')) { var op = document.createElement('option'); op.value = 'song'; op.textContent = 'Opens the song'; o.insertBefore(op, o.firstChild); }
     o.value = 'song'; $('nurl').hidden = true;
@@ -1023,7 +1031,11 @@
     var title = $('ntitle').value.trim(), text = $('ntext').value.trim(), l = $('nlink').value, url = l;
     if (!title) { $('ntitle').focus(); return; }
     if (l === 'today') url = 'https://cooperking.github.io/songs/#today';
-    if (l === 'song') { if (!NSONG) { toast('Choose a song'); return; } url = 'https://cooperking.github.io/songs/' + slug(NSONG.d) + '/' + (NSONG.mode ? '?play=' + NSONG.mode : ''); }
+    if (l === 'song') {
+      if (!NSONG) { toast('Choose a song'); return; }
+      url = NSONG.pid ? 'https://cooperking.github.io/songs/' + (NSONG.mode ? '?play=' + NSONG.mode : '') + '#u=' + NSONG.pid + '&d=' + slug(NSONG.d)   // (a member's: its day on their calendar)
+        : 'https://cooperking.github.io/songs/' + slug(NSONG.d) + '/' + (NSONG.mode ? '?play=' + NSONG.mode : '');
+    }
     if (l === 'other') { url = $('nurl').value.trim(); if (!/^https:\/\/cooperking\.github\.io\//.test(url)) { toast('The link has to be a page on the site'); $('nurl').focus(); return; } }
     var to = PICK ? PICK.slice() : null;
     if (to && !to.length) { toast('Choose who it goes to'); return; }

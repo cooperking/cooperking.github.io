@@ -12,8 +12,9 @@ he does).
   public, so none of them are in it.
 - **Members page**: the Members tab of `songs/admin.html` (`songs/members-admin.html`), after the admin password: inviting,
   codes and removing people; and *This is me* on John's own member: the Worker keeps which member is John (KV `owner`)
-  and tells only that member's devices (`/members/me` gives `owner: true`), whose Profile then has the Admin button
-  (as does any device that has opened the admin page with its password). Each song's own recording, video and sharing picture are added on the Songs tab
+  and tells only that member's devices (`/members/me` gives `owner: true`), which then have the Admin button at the top,
+  beside Profile (John, 31 Oct 2026: "Can the Admin button for me be moved up to the top of the page next to
+  Profile"), as does any device that has opened the admin page with its password. Each song's own recording, video and sharing picture are added on the Songs tab
   (`songs/songs-admin.html`), with the rest of that song.
 - **The calendar** (`template.html`):
   - The device keeps its member token (`sotd-member` in local storage) and asks the Worker's `/members/me` for links to
@@ -246,10 +247,10 @@ playlists which run exactly the same way as mine does"), up to 5, each a calenda
 was added, the same rule for missed days) or a plain playlist (its songs, newest first). A calendar is called
 "<their name>’s Song of the Day" on the calendar (John, 30 Oct 2026), with its title above the month; a plain playlist
 goes by its title. Its title is Spotify's name for it until its owner changes it (John, 31 Oct 2026: "default to the
-spotify name when imported but let them change it"; Profile › Playlists › *Title*, *Use Spotify's* to go back;
+spotify name when imported but let them change it"; the pop-up's *Playlist name*, empty for Spotify's again;
 `title` on its record, `n` Spotify's); its YouTube copy is renamed with it. Phases 1
-(the Worker, the draft calendar, the Members tab) and 2 (their songs' videos, moods, years and YouTube copies) are in;
-still to come: facts, written for new songs and on request for older ones, checked and signed off by their owner.
+(the Worker, the draft calendar, the Members tab), 2 (their songs' videos, moods, years and YouTube copies) and 3
+(facts for public ones' songs) are in.
 
 - **Reading them.** Spotify lets John's app read the songs only of playlists his account owns or collaborates on
   (Spotify's February 2026 rules for Development Mode apps; for anyone else's, even public, only its name). So the
@@ -258,13 +259,13 @@ still to come: facts, written for new songs and on request for older ones, check
   playlists* signed in to Spotify as cooperking, joins it, and taps *I've joined: check*. The Worker also looks every
   10 minutes for its first day, then hourly. Once readable it's read every 30 minutes from 06:00 to 23:00, and when its
   owner taps *Check now* (once a minute at most).
-- **A calendar's days** (John, 30 Oct 2026; Profile › Playlists › *Days*, and straight after adding one): by the day
+- **A calendar's days** (John, 30 Oct 2026; the pop-up's *Setup*, and straight after adding one): by the day
   each song is added on Spotify (John's rule, a day with no song taking the next); forwards from a day (the first song on
   it, then a song a day); or back from a day (the newest song now on it, each one before a day earlier). Either of the
   last two keeps its anchor (the first, or the newest then: `dates { how, day, at, n }` on its record), so new songs
   follow on a day each. A day still to come is hidden on the calendar (its owner sees it in the pop-up, "to come"). Moving the anchor looks at today's song again.
-- **Messages** (John, 30 Oct 2026: "Songs shouldn’t automatically go out as a message unless the user chooses and
-  should be able to choose the time too"; Profile › Playlists › *Messages*): off unless its owner turns it on, at the
+- **Notifications** (John, 30 Oct 2026: "Songs shouldn’t automatically go out as a message unless the user chooses and
+  should be able to choose the time too"; the pop-up's *Setup*): off unless its owner turns it on, at the
   time they choose (UK time; `send { on, at }` on its record). On: a calendar's song goes to the members on its day, a
   playlist's on the day its owner signs it off, at that time, or at the sign-off when that's later; once each (`ann`
   in `upl:<id>`), as a message from its owner, to those who take theirs. The Worker's 10-minute look sends them.
@@ -274,9 +275,13 @@ still to come: facts, written for new songs and on request for older ones, check
   other users"): their own Spotify playlists are among their playlists' badges there (A–Z with the saved ones), and
   open there from a badge or Profile › Playlists › *Open*: all its songs (the waiting ones, marked, with *Sign off*;
   a calendar's days to come, "to come"; each with its day for a calendar), the pencil on each (its video, moods,
-  files and cover), *Play*, *Open in Spotify*, YouTube, and its settings (*Show* its calendar as the others see it,
-  *Title*, *Who sees it*, *Days*, *Messages*, the kind, *Check now*, *Remove*); *Back to My playlist* (or another
-  badge) leaves it. The calendar and a plain playlist's list show it as the others see it, for its owner too: no
+  files and cover), *Delete* on each, *Play*, *Open in Spotify*, YouTube, its title in the *Playlist name* field as a
+  saved playlist's name is (John, 31 Oct 2026: "title should just be the way a normal playlist edits a name"; empty:
+  Spotify's), *Show* its calendar as the others see it, *Notifications On* (red) or *Off*, *Check now*, *Remove*, and
+  its *Setup* below its songs (John, 31 Oct 2026: "When you edit a calendar playlist in the playlist popup there's no
+  way to change the setup of how it goes in the calendar. Make that part of the popup"): a calendar or a playlist,
+  which day each song is on, who sees it and notifications, each saved as it's chosen. *Back to My playlist* (or
+  another badge) leaves it. The calendar and a plain playlist's list show it as the others see it, for its owner too: no
   waiting songs or days to come, no Sign off or Edit. A link to a waiting song (its owner's notification) opens it in
   the pop-up.
 - **A plain playlist's order** (John, 30 Oct 2026: "orderable in exactly the same way as a normal playlist"): in the
@@ -286,7 +291,7 @@ still to come: facts, written for new songs and on request for older ones, check
   listed in that order; a song tapped plays on through it from there. On a computer it fills the calendar's place.
   Its YouTube copy keeps Spotify's order.
 - **Who sees them** (John, 31 Oct 2026: "Members should be able to choose, public, private, or choose members to share
-  with in playlist set up"; asked straight after adding one, and Profile › Playlists › *Who sees it*; `share` and `to`
+  with in playlist set up"; asked straight after adding one, and the pop-up's *Setup*; `share` and `to`
   on its record): *Public* (every member, and anyone with its link, signed in or not), *Every member* (the first
   setting, and the one before 31 Oct), *Members you choose* (ticked; `to`), or *Private* (just its owner). Never anyone
   kept apart from its owner, and only once John has joined it; its owner from the start. Its messages go only to those
@@ -313,14 +318,39 @@ still to come: facts, written for new songs and on request for older ones, check
   back to John's; one that isn't public says "That calendar is for members." and shows John's.
 - **The Profile's Playlists** (John, 31 Oct 2026: "can there not be a distinction between Spotify Playlists and
   Playlists on the user profile - just list them all, alphabetically"): one list, A–Z, of those saved from My playlist
-  (*Open*) and their Spotify ones (*Open*: the My playlist pop-up; *Title*, *Who sees it*, *Days*, *Messages*, the
-  kind, *Check now*, *Remove*), then *Add a Spotify playlist*.
+  and their Spotify ones, each with *Open* (John, 31 Oct 2026: "Playlists in the members section should just say open
+  like other playlists, editing should be inside the edit box"), and for one on the calendar *Notifications On* (red)
+  or *Off* (John, 31 Oct 2026: "Rather than Members, on both screens it should say Notifications On, in red. Clicking
+  on it goes into the options"), which opens its pop-up at its notifications; a Spotify one John hasn't joined yet,
+  *Send the invite link again* and *Remove*. Then *Add a Spotify playlist*.
+- **Deleting a song** (John, 31 Oct 2026: "Members should have the ability to delete a song from the playlist/
+  calendar. Deleting it from a day will leave a gap in the calendar. Put a confirm check on before they delete"; asked
+  whether off Spotify too: "Calendar only"): *Delete* on a song in the pop-up asks first, then takes it off for
+  everyone (op `del`; `del { <track>: its added time }` in `upl:<id>`), not off Spotify. Its day stays empty: days are
+  worked out with it still there. It's left out of the view, the site job's list (so its YouTube copy loses it), the
+  facts wanted, the notifications and the Members tab's songs. Taken off Spotify and added again, it's a new song.
+- **A saved playlist on the calendar** (John, 31 Oct 2026: "They also should have the option to turn normal playlists
+  from the site into their own calendar with the same options. Everything can be shared and notified in the same
+  way"; asked how its days go: "Same 3 as Spotify"): a saved playlist's pop-up has the same *Setup*, starting at *Not
+  on it*; *A calendar* or *A playlist* puts it on the calendar (op `fromlist`; a record with `src: 'mpl'` and `pl`, its
+  saved playlist's id; 5 at most), with the same days, who sees it, notifications, sharing, links, cards and YouTube
+  copy as a Spotify one. Its songs follow the saved playlist (`uplListSync`, each time it's saved): one added is out
+  at once, with no sign-off, `a` the time it was saved (those in it when it went on, then; by John's rule they run
+  back a day each from that day); one taken out is deleted (asked first: "Delete “…”?") and leaves its day empty; one
+  put back is on its day again; a playlist's order is the saved one's. Its name is the saved playlist's. The Worker's
+  10-minute look starts the site job when one has changed (`chg`). *Not on it* takes it off again (asked first); the
+  saved playlist stays. Deleting the saved playlist takes it off too. Its calendar has no Spotify link; the Members
+  tab marks it "from a playlist made on the calendar", with no *Check now*.
+- **A plain playlist's page** (John, 31 Oct 2026: "Can it say 27 Songs on AABBCC or whatever the playlist is called -
+  then it doesn't need the big header too. The 27 Songs subheader can go too, and move the play button down into the
+  bar next to the other shuffle"): no big name or count at the top; its bar says "<n> songs on <its name>", with Play
+  (its order, or shuffled) and Shuffle.
 - **New songs.** The songs on it when it's added are out from the start; each song added after waits for its owner,
   who is told on their phone ("“…” waits for you to sign off"). They sign it off in any of three places (John, 30 Oct
   2026: "I can’t see how a user would sign off a song"): Profile › Playlists, which opens first when something waits
   (a count on its tab), lists each playlist's waiting songs with *Sign off* and *Open* (the pop-up, at it); in the
   pop-up it's marked, with *Sign off*. (`wait` on `pls`: the newest 20.) Signed off, it's
-  out for everyone, and goes to the members as a message from them only as they've chosen (Messages, below; "From
+  out for everyone, and goes to the members as a message from them only as they've chosen (Notifications, above; "From
   Mum"; reactions and replies as any message; on their Sent too). 20 sign-offs a day at most.
 - **Kept.** KV `upls` (each playlist: owner, Spotify id and name, calendar or playlist, invite link, when added, whether
   readable, last read, count) and `upl:<id>` (its songs as last read, and when each was signed off). Previews and moods
@@ -383,11 +413,16 @@ still to come: facts, written for new songs and on request for older ones, check
   `signoff`, `dates`, `order`, `send`, `edit`, `title`, `share`, `facts`, `askfacts`), `/upl/sync`, `/upl/data` and `/upl/facts`
   (the site job's), `/members/songs?ids=`, `/s/u/<id>[/<month or day>]` (a public
   one's link pages), `/members/uplup` (`?id&track&kind=a|v&op=start|part|done|abort|drop`), `/members/uplcover` (`?id&track`,
-  `{ pic }`, or `&op=drop`), `pls` on `/members/me`, admin ops `upls`, `uplcheck`, `uplremove`. Tests: `upl_t.mjs` (the
+  `{ pic }`, or `&op=drop`), `pls` on `/members/me`, admin ops `upls`, `uplcheck`, `uplremove`, `uplsongs` (every song
+  out on members' playlists: the Members tab's *Send a song* finds them too, by title, artist, day or calendar, each
+  saying who can open it; sent, its link is its day on that calendar, its words that calendar's: John, 31 Oct 2026:
+  "Could Songs in my Members list include all songs from every playlist"). Ops `del` and `fromlist` too. Tests: `upl_t.mjs` (the
   Worker), `upl_page_t.py` (the draft), `upl_pv_t.mjs` (previews), `upl_admin_t.py` (the Members tab), `upl_dates_t.mjs` (days and order),
   `upl_order_t.py` (the draft's order and Days), `upl_share_t.mjs` and `upl_share_page_t.py` (titles, who sees them,
   sharing, the Profile's one list), `share_upl_t.py` (their cards), `upl_fav_t.py` (hearts and My playlist), `upl_pop_t.py` (the pop-up), `upl_wait_t.py` (where they sign off), `mine_drag_t.py` (My playlist's
-  dragging, shared with them), `upl_edit_t.mjs` and `upl_edit_page_t.py` (their own for each song).
+  dragging, shared with them), `upl_edit_t.mjs` and `upl_edit_page_t.py` (their own for each song), `upl_del_t.mjs`
+  (deleting, saved playlists on the calendar, the Members tab's songs), `upl_saved_page_t.py` (the Setup, saved ones on
+  the calendar, deleting, the Admin button), `upl_sendsong_t.py` (Send a song).
 
 ## Saved playlists
 
@@ -396,7 +431,8 @@ with their sign-in (`/members/playlists`, KV key `mpl:<member id>`), so every de
 Tapping one opens it as My playlist; changes to an open saved playlist save themselves (a device that was offline sends
 its changes when it's back; one that wasn't takes the newer copy). *Close playlist* puts it away (still saved) for an
 empty one; *Delete* removes it from the saved ones (its songs stay on that device). Up to 50 playlists of 500 songs.
-Removing a member removes their saved playlists. Visitors keep the single My playlist on their device, as before.
+Removing a member removes their saved playlists. Visitors keep the single My playlist on their device, as before. A
+saved playlist can be put on the calendar as its own calendar or playlist (see *A saved playlist on the calendar*).
 
 ## Setting it up (once)
 

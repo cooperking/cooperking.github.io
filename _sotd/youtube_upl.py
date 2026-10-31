@@ -109,6 +109,12 @@ def main(path):
             own = {x['id']: x['ov'] for x in pl['songs'] if 'ov' in x}
             vid_of = lambda t: own[t] if t in own else match.get(t)
             adds = 0
+            for t in [t for t in added if t not in order]:   # taken off its calendar or playlist: out of the copy too
+                j = call('DELETE', API + 'playlistItems?' + urllib.parse.urlencode({'id': added[t]['item']}), token=token, units=50)
+                if '_status' in j and j['_status'] != 404:
+                    print(pl['title'] + ': could not take out', t, j.get('_status'), j.get('_text', '')[:160])
+                    continue
+                added.pop(t)
             for pos, t in enumerate(order):
                 vid = vid_of(t)
                 if t not in wanted or (added.get(t) or {}).get('v') == vid or (not vid and t not in added):
