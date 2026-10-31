@@ -159,6 +159,10 @@ body { overflow: hidden; }
   // a parts page whose password stops working (changed on the Worker) sends everyone back to the password screen
   window.SOTD_ADMIN_LOCK = function () { store(''); lock('The password has changed. Type the new one.'); };
 
+  // a file dropped outside a tab's page doesn't open in place of the admin page (the Songs tab takes drops itself)
+  document.addEventListener('dragover', function (e) { e.preventDefault(); });
+  document.addEventListener('drop', function (e) { e.preventDefault(); });
+
   var saved = read();
   if (!saved) { lock(); return; }
   $('msg').textContent = 'Checking…';

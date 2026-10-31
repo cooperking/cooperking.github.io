@@ -408,9 +408,12 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   on every playlist with it, and its YouTube copies (John: "Mine wins"); their editor shows them as "Chosen by John",
   not to change (`jo` on the song in its owner's view). Its facts are its public playlist's, as written for it (John:
   "Public ones; I can sign off"): waiting ones are in Waiting, and his *Sign off* puts them out as he left them (admin
-  op `uplfacts`), as its owner's would; one on no public playlist says it has none. The folder upload matches files to
-  member songs too, reads them on the computer first (nothing goes up until *Upload*), and leaves a file it can't match
-  unticked and not uploaded unless a song is picked for it. From admin op `uplsongs` (each song's playlists, whose,
+  op `uplfacts`), as its owner's would; one on no public playlist says it has none. *Match songs and videos…* (it was
+  *Upload a folder of songs…*: a folder picker makes the browser ask "Upload 30 files to this site?" before the page
+  can read them; John, 31 Oct 2026: "this does sound like its being uploaded") takes files chosen together (⌘A in a
+  folder) or a folder dropped on the page, its folders read through, with no browser prompt; it matches them to his
+  songs and member songs, reads them on the computer first (nothing goes up until *Upload*), and leaves a file it can't
+  match unticked and not uploaded unless a song is picked for it. From admin op `uplsongs` (each song's playlists, whose,
   `oj` for John's own member, its finds, its facts, and John's choices). Test: `songs_members_t.py`.
 - **Facts, for public playlists' songs** (John, 31 Oct 2026, asked which: "Public playlists only"): written and checked
   by John's facts task as his are (`_sotd/FACTS.md`), for the songs on a playlist set to Public that were added after it
