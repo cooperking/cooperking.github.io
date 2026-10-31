@@ -279,14 +279,26 @@ still to come: facts, written for new songs and on request for older ones, check
   setting, and the one before 31 Oct), *Members you choose* (ticked; `to`), or *Private* (just its owner). Never anyone
   kept apart from its owner, and only once John has joined it; its owner from the start. Its messages go only to those
   who see it. The calendar's title (top left) chooses whose calendar shows: John's, or a member's (the address then has
-  `#u=<id>`, and `#u=<id>&d=<day>` for a day). On another's calendar the hearts (My playlist) and the YouTube link are
-  put away, the Spotify link goes to their playlist, and playing My playlist goes back to John's calendar.
-- **Sharing.** Share on a member's calendar and on each of its days, as its owner chose: public, the Worker's page
-  `/s/u/<id>` (or `/s/u/<id>/<yyyy-mm-dd>`), with its title, the song and its cover for the link's preview, which then
-  opens the calendar there; every member or chosen members, the calendar's own link, which opens for those who see it
-  (signed in; for chosen members, not offered to send to the members); private, no Share. Someone not signed in opening
-  a public one's link sees it, with the title's chooser to go back to John's; one that isn't public says "That calendar
-  is for members." and shows John's.
+  `#u=<id>`, `#u=<id>&d=<day>` for a day, `#u=<id>&m=<mm-yyyy>` for a month). On another's calendar the Spotify and
+  YouTube links go to their playlist and its copy, and playing My playlist goes back to John's calendar.
+- **Hearts** (John, 31 Oct 2026: "You should be able to favourite songs and add to your own playlists"): on members'
+  calendars as on John's (each song, and a month's at once). A member's song in My playlist or a saved playlist is kept
+  on the device with what's needed to show and play it on any calendar (`sotd-songx`: its calendar too), brought up to
+  date whenever its calendar shows, and fetched from the Worker (`/members/songs?ids=`, only from the playlists the
+  person sees) for a saved playlist opened on another device. Played from My playlist on John's calendar, it opens on
+  its own (its day, its owner's video and cover, and its own address, `#u=<id>&d=<day>`).
+- **Sharing** (John, 31 Oct 2026: "Sharing options should be exactly the same as the main playlist"): Share on a
+  member's calendar, its month and each of its days, as on John's: Video or Preview (Song for an owner's own MP3), the
+  picture, WhatsApp, Messages, Email, Copy link, Copy picture, More, Send to members. As its owner chose: public, the
+  Worker's pages (`/s/u/<id>`, `/s/u/<id>/<yyyy-mm>`, `/s/u/<id>/<yyyy-mm-dd>`, with `?play=` passed on, and `?draft=1`
+  from the draft), each with its card, as John's day pages: the site job draws them (`share_pages.py`,
+  `songs/u/<id>/…/card.jpg`, from `/upl/sync`'s `pub`, with the calendar's name at the top), and until a new day's is
+  drawn the page and the share sheet show the cover; the site job runs when a public one's song is signed off or it's
+  made public or not public (a playlist no longer public loses its cards). Every member or chosen members: the
+  calendar's own link, which opens for those who see it, the share sheet saying so; for chosen members, Send to members
+  only to them and only by its owner. Private: no Share. A song sent to the members has its card drawn on the page,
+  with its calendar's name. Someone not signed in opening a public one's link sees it, with the title's chooser to go
+  back to John's; one that isn't public says "That calendar is for members." and shows John's.
 - **The Profile's Playlists** (John, 31 Oct 2026: "can there not be a distinction between Spotify Playlists and
   Playlists on the user profile - just list them all, alphabetically"): one list, A–Z, of those saved from My playlist
   (*Open*) and their Spotify ones (*Open*, *Title*, *Who sees it*, *Days*, *Messages*, the kind, *Check now*,
@@ -333,11 +345,12 @@ still to come: facts, written for new songs and on request for older ones, check
   video goes into the YouTube copy (one changed since has its old one taken out; with none, taken out) and the site job
   doesn't search for it. Removing the playlist (or the member) removes its files.
 - Worker: `/members/upl` (GET `?id=`, with no sign-in for a public one; POST ops `add`, `mode`, `link`, `check`, `remove`,
-  `signoff`, `dates`, `order`, `send`, `edit`, `title`, `share`), `/s/u/<id>[/<day>]` (a public one's link page), `/members/uplup` (`?id&track&kind=a|v&op=start|part|done|abort|drop`), `/members/uplcover` (`?id&track`,
+  `signoff`, `dates`, `order`, `send`, `edit`, `title`, `share`), `/members/songs?ids=`, `/s/u/<id>[/<month or day>]` (a public
+  one's link pages), `/members/uplup` (`?id&track&kind=a|v&op=start|part|done|abort|drop`), `/members/uplcover` (`?id&track`,
   `{ pic }`, or `&op=drop`), `pls` on `/members/me`, admin ops `upls`, `uplcheck`, `uplremove`. Tests: `upl_t.mjs` (the
   Worker), `upl_page_t.py` (the draft), `upl_pv_t.mjs` (previews), `upl_admin_t.py` (the Members tab), `upl_dates_t.mjs` (days and order),
   `upl_order_t.py` (the draft's order and Days), `upl_share_t.mjs` and `upl_share_page_t.py` (titles, who sees them,
-  sharing, the Profile's one list), `upl_wait_t.py` (where they sign off), `mine_drag_t.py` (My playlist's
+  sharing, the Profile's one list), `share_upl_t.py` (their cards), `upl_fav_t.py` (hearts and My playlist), `upl_wait_t.py` (where they sign off), `mine_drag_t.py` (My playlist's
   dragging, shared with them), `upl_edit_t.mjs` and `upl_edit_page_t.py` (their own for each song).
 
 ## Saved playlists

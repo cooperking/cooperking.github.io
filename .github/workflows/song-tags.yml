@@ -140,6 +140,8 @@ jobs:
         run: python _sotd/make_tags.py
 
       - name: A page and a picture per day for sharing links
+        env:
+          SOTD_UPL_PLAYLISTS: ${{ runner.temp }}/upl-playlists.json
         run: |
           pip install --quiet pillow numpy
           python _sotd/share_pages.py

@@ -289,7 +289,7 @@ html.big .heroacts .hsub { margin: 0 6px 0 0; }
 .mark.can .caret { width: 10px; height: 10px; flex: none; opacity: .65; }
 .mark.can:hover .caret, .mark.can:focus-visible .caret { opacity: 1; }
 .mark .mtx { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-html.upl .favbtn, html.upl .addfav, html.upl #monthadd, html.upl #monthshare, html.upl #monthdl, html.upl-noshare #siteshare, html.upl-noyt #ytfollow, html.upl-noshare #picks .iconbtn.share { display: none !important; }
+html.upl #monthdl, html.upl-noshare #siteshare, html.upl-noshare #monthshare, html.upl-noyt #ytfollow, html.upl-noshare #picks .iconbtn.share { display: none !important; }
 .uplkick { margin: 0 0 -8px; font: 600 11px/1.3 var(--sans); letter-spacing: .16em; text-transform: uppercase; color: var(--fg-2); overflow-wrap: anywhere; }
 .uplkick[hidden] { display: none; }
 .uplw-list { display: grid; gap: 6px; padding: 2px 2px 0; }
@@ -364,6 +364,8 @@ html.big.upl-list .side { display: grid; align-content: start; overflow-y: auto;
 html.upl-list #upllist { display: grid; }
 html.upl-list.upl-mine #uplsort { display: flex; margin: 0 0 10px; }
 .mine-list.upl-ro li { grid-template-columns: 44px minmax(0, 1fr) auto; }
+.mine-list .rowfav { width: 32px; height: 32px; padding: 0; border: 0; background: none; color: var(--fg); cursor: pointer; display: grid; place-items: center; }
+.mine-list .rowfav .heart { width: 17px; height: 17px; }
 .mine-list .tx { cursor: pointer; }
 .day.has.soon .sleeve { opacity: .55; }
 .uplwait.soon { border-color: var(--line); background: var(--pill-bg); }
@@ -1780,6 +1782,22 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // songs, the lookups built from them, the months shown and the month on screen
   var songs, byDate, byTrack, months, cur;
   var UPL = { on: null, view: null, john: null, want: null };   // the member's playlist showing in place of John's (see members' own Spotify playlists)
+  // songs from members' playlists in My playlist and saved playlists: kept here (sotd-songx) with what's needed to show
+  // and play them on any calendar; refreshed from their calendars and the Worker's /members/songs (which also gives
+  // this visit's links to their owners' own files)
+  var SONGX = {}, SONGX_KEY = 'sotd-songx', SNAP = ['n', 'tag', 'a', 'd', 'title', 'artist', 'as', 'album', 'track', 'u', 'p', 'ov', 'tg', 'uc', 'upl', 'ut', 'un', 'ush'];
+  try { SONGX = JSON.parse(localStorage.getItem(SONGX_KEY) || '{}') || {}; } catch (e) {}
+  function songOf(t) { return byTrack[t] || SONGX[t] || null; }   // a song by its track: on the calendar showing, or kept
+  function songxKeep(s, quiet) {
+    if (!s || !s.upl) return;
+    var o = {}; SNAP.concat(['ma', 'mv']).forEach(function (k) { if (s[k] !== undefined) o[k] = s[k]; });
+    SONGX[s.track] = o;
+    if (!quiet) songxSave();
+  }
+  function songxSave() {
+    var o = {}; Object.keys(SONGX).forEach(function (t) { var x = Object.assign({}, SONGX[t]); delete x.ma; delete x.mv; o[t] = x; });   // (the links to own files: this visit's)
+    try { localStorage.setItem(SONGX_KEY, JSON.stringify(o)); } catch (e) {}
+  }
   function setSongs(list, keepMonth) {
     var was = months && months[cur] ? key(months[cur][0], months[cur][1]) : null;
     songs = list; byDate = {}; byTrack = {};
@@ -1887,13 +1905,13 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
 
   var HEART = '<svg class="heart" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 14s-5.5-3.3-5.5-7.4A3 3 0 0 1 8 4.6a3 3 0 0 1 5.5 2C13.5 10.7 8 14 8 14z"/></svg>';
-  function readFav() { try { return JSON.parse(localStorage.getItem('sotd-playlist') || '[]').filter(function (t) { return byTrack[t]; }); } catch (e) { return []; } }
+  function readFav() { try { return JSON.parse(localStorage.getItem('sotd-playlist') || '[]').filter(function (t) { return songOf(t); }); } catch (e) { return []; } }
   var fav = readFav();
   function saveFav() { try { localStorage.setItem('sotd-playlist', JSON.stringify(fav)); } catch (e) {} if (typeof plChanged === 'function') plChanged(); }
   function isFav(s) { return fav.indexOf(s.track) !== -1; }
   function toggleFav(s) {
     var i = fav.indexOf(s.track);
-    if (i === -1) fav.push(s.track); else fav.splice(i, 1);
+    if (i === -1) { fav.push(s.track); songxKeep(s); } else fav.splice(i, 1);
     saveFav();
     syncFav();
   }
@@ -3469,11 +3487,11 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function startQueue(list, name, back, from, mix) {
     if (UPL.on && list.some(function (t) { return !songs.some(function (s) { return s.track === t; }); })) uplBack(true);   // (songs from John's calendar)
     var at = from ? list[from] : list[0];
-    list = list.filter(function (t) { return byTrack[t]; });
+    list = list.filter(function (t) { return songOf(t); });
     if (!list.length) return;
     var order = list;
     if (mix) { list = mixedFair(list); at = list[0]; }
-    var i = Math.max(0, list.indexOf(at)), s = byTrack[list[i]];
+    var i = Math.max(0, list.indexOf(at)), s = songOf(list[i]);
     queue = { list: list, i: i, name: name, back: back, order: order, heard: {} };
     months.forEach(function (ym, i) { if (key(ym[0], ym[1]) === s.d.slice(0, 7)) cur = i; });
     render();
@@ -3490,10 +3508,12 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   function openDay(iso, opts) {
     var picks = byDate[iso] || [];
+    if (opts && opts.track && !picks.some(function (x) { return x.track === opts.track; }) && songOf(opts.track)) picks = [songOf(opts.track)];   // a song from another calendar (My playlist's): just it
+    var cal = picks.length === 1 && picks[0].upl && picks[0].upl !== UPL.on ? picks[0].upl : UPL.on;
     curDay = iso;
     if (!opts || !opts.keepQueue) queue = null;   // opened from the calendar: the playlist stops leading
     shownFacts = {};   // each fact shows once per day opened, across its preview and its video
-    if (!(bgOn && opts && opts.keepQueue)) try { history.replaceState(null, '', '#' + (UPL.on ? 'u=' + UPL.on + '&d=' : '') + slugOf(iso)); } catch (e) {}   // (out of sight: the address stays the calendar's)
+    if (!(bgOn && opts && opts.keepQueue)) try { history.replaceState(null, '', '#' + (cal ? 'u=' + cal + '&d=' : '') + slugOf(iso)); } catch (e) {}   // (out of sight: the address stays the calendar's)
     audio.pause();
     playing = null;
     document.getElementById('sdate').textContent = longDate(iso);
@@ -3695,7 +3715,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   function modeNow() { return playMode === 'video' ? 'video' : 'preview'; }   // how the calendar is playing songs now
   function shareDay(iso, s, btn) {
-    if (UPL.on && UPL.view) { uplShare(iso, s); return; }
+    var uc = uplCalOf(s); if (uc) { uplShareDay(iso, s, uc, btn); return; }   // a member's song
     var slug = slugOf(iso), t = cleanTitle(s.title), hasVid = !!VIDS[s.track], hasPre = !!s.p;
     var pick = btn && btn.closest ? btn.closest('.pick') : null;
     var watching = !!(pick && pick.classList.contains('watching'));
@@ -3738,7 +3758,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     document.getElementById('shsub').textContent = o.sub;
     var card = document.getElementById('shcard'), img = document.getElementById('shimg');
     card.hidden = false;
-    img.onerror = function () { card.hidden = true; };   // a brand-new day's picture may not be drawn yet
+    img.onerror = function () { if (o.imageAlt && img.getAttribute('src') !== o.imageAlt) img.src = o.imageAlt; else card.hidden = true; };   // a brand-new day's picture may not be drawn yet (a member's: its cover)
     img.src = o.image;
     document.getElementById('shwa').href = 'https://wa.me/?text=' + encodeURIComponent(msg);
     document.getElementById('shurl').value = o.url;
@@ -3820,7 +3840,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   function sendOpen(pre) {
     if (!sendCan()) return;
-    SND = { some: false, pick: [], att: pre && pre.url ? pre : null, pic: null, song: null };
+    SND = { some: false, pick: [], att: pre && pre.url ? pre : null, pic: null, song: null, only: pre && pre.only ? pre.only.slice() : null };
+    if (SND.only) { SND.some = true; SND.pick = SND.only.slice(); }   // (a member's playlist shared with some: just them)
     if (pre && pre.reply) { SND.some = pre.reply.to !== 'all'; SND.pick = pre.reply.to === 'all' ? [] : pre.reply.to.slice(); }   // a reply: to the same people, changeable
     document.getElementById('sndh').textContent = pre && pre.reply ? 'A reply' : 'A message';
     if (pre && pre.song) {
@@ -3828,8 +3849,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       SND.song = { iso: iso, n: sg.n, title: cleanTitle(sg.title), artist: sg.artist, cover: sg.u || '', site: SITE + slug + '/card.jpg', drawN: 0, made: '', drawP: null,
         own: oc && oc.at && MBASE ? { img: oc.share ? MBASE + '/s/' + ownPath(sg, oc) + '.jpg?v=' + encodeURIComponent(oc.share) : MBASE + '/c/' + ownPath(sg, oc) + '?v=' + encodeURIComponent(oc.at),
           icon: MBASE + '/c/' + ownPath(sg, oc) + '?v=' + encodeURIComponent(oc.at) } : null };
+      if (pre.song.cal) { SND.song.top = String(pre.song.cal.t || '').toUpperCase(); SND.song.site = ''; SND.song.own = null; SND.song.local = true; }   // a member's song: its card drawn here, with its calendar's name
       SND.song.pic = pre.song.own && SND.song.own ? 'john' : 'card';
       SND.song.words = sndWordsDefault(SND.song); sndWordsFill();
+      if (SND.song.local) sndDraw();
     }
     var fr = document.getElementById('sndfrom'); fr.textContent = 'From ';   // (who they'll see it's from: the notification says "<name>: <title>", the inbox "From <name>")
     var nb = document.createElement('b'); nb.textContent = MEMBER.name || 'you'; fr.appendChild(nb);
@@ -3839,14 +3862,14 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (!touchy) setTimeout(function () { try { document.getElementById('sndt').focus({ preventScroll: true }); } catch (e) {} }, 60);
   }
   // the song's words, as the site's card has them, until they're changed; an empty line is left off, except the title
-  function sndWordsDefault(g) { return { top: SND_TOP, title: g.title, line: g.artist, date: longDate(g.iso) }; }
+  function sndWordsDefault(g) { return { top: g.top || SND_TOP, title: g.title, line: g.artist, date: longDate(g.iso) }; }
   function sndEdited(g) {
     var d = sndWordsDefault(g), w = g.words;
     return ['top', 'title', 'line', 'date'].some(function (k) { var a = String(w[k] || '').trim(), b = String(d[k] || '').trim(); return k === 'title' ? a !== b : a.toUpperCase() !== b.toUpperCase(); });
   }
   function sndWordsNow(g) { var t = function (k) { return String(g.words[k] || '').trim(); }; return { top: t('top'), title: t('title') || g.title, line: t('line'), date: t('date') }; }
   function sndWordsFill() { var w = SND.song.words; ['top', 'title', 'line', 'date'].forEach(function (k) { document.getElementById('sndw' + k).value = w[k]; }); }
-  function sndDrawn(g) { return g.pic === 'photo' || ((g.pic === 'card' || g.pic === 'john') && sndEdited(g)); }   // drawn here, not the site's own picture
+  function sndDrawn(g) { return g.pic === 'photo' || ((g.pic === 'card' || g.pic === 'john') && (sndEdited(g) || !!g.local)); }   // drawn here, not the site's own picture
   function sndPics(g) {
     var out = [{ k: 'card', t: 'Album cover' }];
     if (g.own) out.push({ k: 'john', t: 'John’s' });
@@ -3874,8 +3897,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function sendDraw() {
     var all = document.getElementById('sndall'), some = document.getElementById('sndsome'), who = document.getElementById('sndwho');
     all.setAttribute('aria-pressed', String(!SND.some)); some.setAttribute('aria-pressed', String(SND.some));
-    who.hidden = !SND.some; who.textContent = '';
-    if (SND.some) (MEMBER.others || []).forEach(function (o) {
+    who.hidden = !SND.some; who.textContent = ''; all.hidden = !!SND.only;
+    if (SND.some) (MEMBER.others || []).filter(function (o) { return !SND.only || SND.only.indexOf(o.id) !== -1; }).forEach(function (o) {
       var l = document.createElement('label'), c = document.createElement('input'); c.type = 'checkbox'; c.checked = SND.pick.indexOf(o.id) >= 0;
       l.className = c.checked ? 'on' : '';
       c.addEventListener('change', function () { var i = SND.pick.indexOf(o.id); if (c.checked && i < 0) SND.pick.push(o.id); if (!c.checked && i >= 0) SND.pick.splice(i, 1); l.className = c.checked ? 'on' : ''; });
@@ -4011,8 +4034,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   document.getElementById('shsend').addEventListener('click', function () {
     var o = shareNow; if (!o) return;
     closeShare();
-    sendOpen({ url: o.url, image: o.image || '', icon: o.icon || '', title: o.title, text: o.sendText || o.sub, cardTitle: o.title, cardSub: o.sub,
-      song: o.sendSong ? { iso: o.sendSong.iso, s: o.sendSong.s, own: o.pic === 'own' } : null });
+    sendOpen({ url: o.url, image: o.image || '', icon: o.icon || '', title: o.title, text: o.sendText || o.sub, cardTitle: o.title, cardSub: o.sub, only: o.sendOnly || null,
+      song: o.sendSong ? { iso: o.sendSong.iso, s: o.sendSong.s, own: o.pic === 'own', cal: o.sendSong.cal || null } : null });
   });
   document.getElementById('shmore').addEventListener('click', function () {
     if (!shareNow) return;
@@ -4024,13 +4047,14 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   var siteBtn = document.getElementById('siteshare'), monthBtn = document.getElementById('monthshare');
   siteBtn.insertAdjacentHTML('beforeend', SHARE_ICON.replace('<svg ', '<svg class="ext sh" ')); monthBtn.innerHTML = SHARE_ICON;
   siteBtn.addEventListener('click', function () {
-    if (UPL.on && UPL.view) { uplShare(null, null); return; }
+    if (UPL.on && UPL.view) { uplShareCal(uplCalOf(null)); return; }
     var sub = 'A song a day, ' + songs.length + ' so far';
     var mode = modeNow();
     openShare({ lines: ['John\u2019s Song of the Day', sub], url: dayLink('', mode), image: SITE + 'card.jpg', title: 'John\u2019s Song of the Day', sub: sub,
       mode: mode, modes: true, urlFor: function (m) { return dayLink('', m); } });
   });
   monthBtn.addEventListener('click', function () {
+    if (UPL.on && UPL.view) { uplShareMonth(uplCalOf(null)); return; }
     var y = months[cur][0], m = months[cur][1];
     var n = songs.filter(function (x) { return x.d.slice(0, 7) === key(y, m); }).length;
     var songsN = n + (n === 1 ? ' song' : ' songs'), slug = pad(m + 1) + '-' + y;
@@ -4101,7 +4125,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // without a playlist; a swipe, the arrows and the keys go by what's on each side, and a finished song moves left
   function flip() { return queue && queue.back === 'all' && !shuffleOn ? -1 : 1; }   // shuffled, the usual way round
   function stepTarget(dir) {   // where a swipe, an arrow or a finished song goes: the card to the left (-1) or right (1)
-    if (queue) { var tr = queue.list[queue.i + dir * flip()], s = tr && byTrack[tr]; return s ? { day: s.d, track: tr } : null; }
+    if (queue) { var tr = queue.list[queue.i + dir * flip()], s = tr && songOf(tr); return s ? { day: s.d, track: tr } : null; }
     var d = dayStep(dir);
     return d ? { day: d } : null;
   }
@@ -4121,7 +4145,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (!tg) { if (!theatre) cardAt(0, 280); return; }
     var to = tg.day;
     if (queue) queue.i += dir * flip();
-    if (to === curDay && tg.track) {   // the playlist's next song is on the same day
+    if (to === curDay && tg.track && pickFor(tg.track)) {   // the playlist's next song is on the same day
       var p = pickFor(tg.track);
       if (p) { stopVideos(); audio.pause(); playPick(p); }
       showQueue();
@@ -4398,7 +4422,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     clearArmed = false; document.getElementById('clearbtn').textContent = (typeof PL === 'object' && PL && PL.cur) ? (plStashN() ? 'Back to My playlist' : 'New playlist') : 'Clear playlist';
     setMakeLink();
     fav.forEach(function (t, idx) {
-      var s = byTrack[t];
+      var s = songOf(t);
       var li = document.createElement('li');
       var hd = document.createElement('button'); hd.type = 'button'; hd.className = 'handle'; hd.innerHTML = GRIP;
       hd.setAttribute('aria-label', 'Move ' + s.title + ' (position ' + (idx + 1) + ' of ' + fav.length + '). Drag, or use the up and down arrow keys.');
@@ -4425,7 +4449,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   var ORDER_LABEL = { date: ['First day', 'Last day'], title: ['Song A\u2013Z', 'Song Z\u2013A'], artist: ['Artist A\u2013Z', 'Artist Z\u2013A'], year: ['Oldest', 'Newest'] };
   var sorted = null;   // { how, desc, sig } while the list is still in that order
   function orderKey(how, t) {
-    var s = byTrack[t];
+    var s = songOf(t);
     if (how === 'date') return s.d + '\u0000' + String(1e4 + s.n);
     if (how === 'year') return (yearOf(s) || '') + '\u0000' + s.d + '\u0000' + String(1e4 + s.n);
     if (how === 'artist') return sortKey(s.artist) + '\u0000' + sortKey(s.title);
@@ -4442,7 +4466,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       var desc = !!(sorted && sorted.sig === fav.join() && sorted.how === how && !sorted.desc);
       fav.sort(function (a, b) {
         if (how === 'year') {   // a song with no year yet goes last either way
-          var ya = yearOf(byTrack[a]), yb = yearOf(byTrack[b]);
+          var ya = yearOf(songOf(a)), yb = yearOf(songOf(b));
           if (!ya !== !yb) return ya ? -1 : 1;
         }
         var ka = orderKey(how, a), kb = orderKey(how, b), c = ka < kb ? -1 : ka > kb ? 1 : 0; return desc ? -c : c;
@@ -4517,7 +4541,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function setMakeLink() {
     var n = plname.value.replace(/\s+/g, ' ').trim();
     document.getElementById('makebtn').href = MAKER + '/p?t=' + fav.join(',') + (n ? '&n=' + encodeURIComponent(n) : '');
-    ytOpen(document.getElementById('mineyt'), fav.map(function (t) { return byTrack[t]; }).filter(Boolean), n || plname.placeholder);
+    ytOpen(document.getElementById('mineyt'), fav.map(function (t) { return songOf(t); }).filter(Boolean), n || plname.placeholder);
   }
   // Play: the playlist's songs in this order, each opening its day as it comes, playing as the day pop-up does
   // the play button on My playlist (bottom right): plays it from the top; while it's playing, pauses and carries on
@@ -5054,11 +5078,11 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (e.key === 'Enter') { e.preventDefault(); setMakeLink(); document.getElementById('makebtn').click(); }
   });
   document.getElementById('monthadd').addEventListener('click', function () {
-    monthList.forEach(function (s) { if (fav.indexOf(s.track) === -1) fav.push(s.track); });
-    saveFav(); syncFav();
+    monthList.forEach(function (s) { if (fav.indexOf(s.track) === -1) { fav.push(s.track); songxKeep(s, true); } });
+    songxSave(); saveFav(); syncFav();
   });
   document.getElementById('monthdl').addEventListener('click', function () { dlMany(monthList.slice(), document.getElementById('sideh').textContent || 'this month'); });
-  document.getElementById('minedl').addEventListener('click', function () { dlMany(fav.map(function (t) { return byTrack[t]; }), 'My playlist'); });
+  document.getElementById('minedl').addEventListener('click', function () { dlMany(fav.map(function (t) { return songOf(t); }).filter(Boolean), 'My playlist'); });
   document.getElementById('dlclear').addEventListener('click', function () {
     var b = this;
     if (!b.dataset.armed) { b.dataset.armed = '1'; b.textContent = 'Tap again to remove them'; setTimeout(function () { delete b.dataset.armed; b.textContent = 'Remove downloads'; }, 4000); return; }
@@ -5534,10 +5558,12 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     Object.keys(VIDS_YT).forEach(function (t) { v[t] = VIDS_YT[t]; });
     if (MEMBER && MEMBER.media) Object.keys(MEMBER.media).forEach(function (t) { if (MEMBER.media[t].v) v[t] = Object.assign({}, VIDS_YT[t] || {}, { own: MEMBER.media[t].v }); });
     if (SWOK) Object.keys(OFFV).forEach(function (t) { v[t] = Object.assign({}, VIDS_YT[t] || {}, { own: offVUrl(t) }); });   // downloaded: from this device
-    if (UPL.on && songs) songs.forEach(function (s) {   // a member's calendar: its owner's video ('' none) and their own MP4
+    var ownChoice = function (s) {
       if ('ov' in s) { if (s.ov) v[s.track] = { v: s.ov, k: 'video' }; else delete v[s.track]; }
       if (s.mv) v[s.track] = Object.assign({}, v[s.track] || {}, { own: s.mv });
-    });
+    };
+    Object.keys(SONGX).forEach(function (t) { if (!byTrack[t] || byTrack[t].upl) ownChoice(SONGX[t]); });   // members' songs in My playlist, wherever they're played
+    if (UPL.on && songs) songs.forEach(ownChoice);   // a member's calendar: its owner's video ('' none) and their own MP4
     VIDS = v;
   }
   // ---- a member's saved playlists: kept by the Worker with their sign-in (/members/playlists), so all their devices
@@ -5584,7 +5610,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     try { if (v === undefined) return JSON.parse(localStorage.getItem('sotd-plunsaved') || 'null'); if (v) localStorage.setItem('sotd-plunsaved', JSON.stringify(v)); else localStorage.removeItem('sotd-plunsaved'); } catch (e) {}
     return null;
   }
-  function plStashN() { var st = plStash(); return st && st.tracks ? st.tracks.filter(function (t) { return byTrack[t]; }).length : 0; }
+  function plStashN() { var st = plStash(); return st && st.tracks ? st.tracks.filter(function (t) { return songOf(t); }).length : 0; }
   function plOpen(l, quiet) {   // a saved playlist as My playlist; or, with null, the saved one put away and the unsaved one back
     PL.quiet = true;
     clearTimeout(PL.t);
@@ -5592,7 +5618,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var back = !l ? plStash() || { tracks: [], name: '' } : null;
     if (!l) plStash(null);
     plSetCur(l ? l.id : null); plAt(l ? l.at : 0);
-    fav = l ? l.tracks.filter(function (t) { return byTrack[t]; }) : back.tracks.filter(function (t) { return byTrack[t]; });
+    fav = l ? l.tracks.filter(function (t) { return songOf(t); }) : back.tracks.filter(function (t) { return songOf(t); });
     plname.value = l ? (l.name === 'My playlist' ? '' : l.name) : back.name || '';
     try { localStorage.setItem('sotd-plname', plname.value); } catch (e) {}
     saveFav(); syncFav(); setTitles(); setMakeLink(); renderMine();
@@ -5621,6 +5647,12 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (!MEMBER || !MBASE) return;
     plApi(null).then(function (j) {
       if (j.status !== 200) return;
+      var want = [];
+      (j.lists || []).forEach(function (l) { l.tracks.forEach(function (t) { if (!byTrack[t] && want.indexOf(t) === -1) want.push(t); }); });
+      fav.forEach(function (t) { if (!byTrack[t] && want.indexOf(t) === -1) want.push(t); });
+      return songxFetch(want).then(function () { return j; }, function () { return j; });
+    }).then(function (j) {
+      if (!j || j.status !== 200) return;
       PL.lists = j.lists || []; PL.loaded = true;
       var l = PL.cur && PL.lists.filter(function (x) { return x.id === PL.cur; })[0];
       if (PL.cur && !l) plOpen(null, true);   // deleted on another device: back to the unsaved one
@@ -6330,11 +6362,22 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     else { mk.removeAttribute('role'); mk.removeAttribute('tabindex'); mk.removeAttribute('aria-haspopup'); mk.removeAttribute('aria-label'); }
   }
   function uplSongsOf(view) {   // the Worker's list as the calendar takes it (each song's day worked out there)
-    return view.songs.map(function (x) {
-      var o = { n: x.n, tag: x.tag, a: londonDay(x.a), d: x.d, title: x.title, artist: x.artist, as: x.artists && x.artists.length > 1 || /, /.test(x.artist) ? x.artists : undefined, album: x.album, track: x.id, u: x.img, p: x.p, w: x.w ? 1 : 0, f: x.f ? 1 : 0 };
-      if ('ov' in x) o.ov = x.ov;   // its owner's: the video ('' none), moods and genres, their MP3 and MP4, cover; their files' sizes (theirs)
-      if (x.tg) o.tg = x.tg; if (x.ma) o.ma = x.ma; if (x.mv) o.mv = x.mv; if (x.uc) o.uc = 1; if (x.own) o.own = x.own;
-      return o;
+    return view.songs.map(function (x) { return uplSongMap(x, view); });
+  }
+  function uplSongMap(x, view) {   // one of a member's songs, and which calendar it's from (upl, ut its title at the top, un its own, ush who sees it)
+    var o = { upl: view.id, ut: view.t, un: view.n, ush: view.sh || 'members', n: x.n, tag: x.tag, a: londonDay(x.a), d: x.d, title: x.title, artist: x.artist, as: x.artists && x.artists.length > 1 || /, /.test(x.artist) ? x.artists : undefined, album: x.album, track: x.id, u: x.img, p: x.p, w: x.w ? 1 : 0, f: x.f ? 1 : 0 };
+    if ('ov' in x) o.ov = x.ov;   // its owner's: the video ('' none), moods and genres, their MP3 and MP4, cover; their files' sizes (theirs)
+    if (x.tg) o.tg = x.tg; if (x.ma) o.ma = x.ma; if (x.mv) o.mv = x.mv; if (x.uc) o.uc = 1; if (x.own) o.own = x.own;
+    return o;
+  }
+  function songxFetch(tracks) {   // members' songs not kept here yet (or to refresh): from the Worker, for those this visitor sees
+    tracks = (tracks || []).filter(function (t) { return /^[0-9A-Za-z]{22}$/.test(t); }).slice(0, 200);
+    if (!tracks.length || !MBASE || !window.fetch) return Promise.resolve();
+    var tok = plTok();
+    return fetch(MBASE + '/members/songs?ids=' + tracks.join(','), { headers: tok ? { Authorization: 'Bearer ' + tok } : {}, cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : { songs: {} }; }).then(function (j) {
+      var got = j.songs || {}, n = 0;
+      Object.keys(got).forEach(function (t) { var x = got[t]; songxKeep(uplSongMap(x, { id: x.upl, t: x.ut, n: x.un, sh: x.ush }), true); n++; });
+      if (n) { songxSave(); vidsMerge(); syncFav(); if (mine.open) renderMine(); }
     });
   }
   function uplApply(view, opts) {
@@ -6345,6 +6388,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var keep = UPL.on === view.id && !!opts.keep;
     UPL.on = view.id; UPL.view = view;
     if (sheet.open && !keep) closeDialog(sheet, true);
+    var kept = 0; list.forEach(function (x) { if (SONGX[x.track]) { songxKeep(x, true); kept++; } }); if (kept) songxSave();
     setSongs(list, keep); vidsMerge();
     var root = document.documentElement;
     root.classList.add('upl'); root.classList.toggle('upl-list', view.mode === 'list'); root.classList.toggle('upl-mine', !!view.mine); root.classList.toggle('upl-noshare', view.sh === 'private');
@@ -6358,8 +6402,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     uplMark(); render(); if (idx.open) renderIndex();
     if (!keep) try { history.replaceState(null, '', location.pathname + location.search + '#u=' + view.id); } catch (e) {}
     if (opts.day) { var iso = byDate[opts.day] ? opts.day : null; if (iso) openDay(iso); }
+    else if (opts.month) uplMonth(opts.month);
     return true;
   }
+  function uplMonth(ym) { months.forEach(function (x, i) { if (key(x[0], x[1]) === ym) cur = i; }); render(); }
   function uplShow(pid, opts) {
     return uplCall(null, '?id=' + encodeURIComponent(pid)).then(function (j) {
       if (j.status !== 200) { toast(j.error || 'Couldn’t open that calendar'); return false; }
@@ -6405,17 +6451,17 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   document.getElementById('uplclose').addEventListener('click', function () { closeDialog(uplDlg); });
   // #u=<playlist>, or #u=<playlist>&d=<day> (a member's song, from its message): that calendar, once signed in
   function uplFromHash() {
-    var m = /^#u=(\w+)(?:&d=(\d{1,2}-\d{1,2}-\d{4}))?$/.exec(location.hash);
+    var m = /^#u=(\w+)(?:&d=(\d{1,2}-\d{1,2}-\d{4})|&m=(\d{1,2})-(\d{4}))?$/.exec(location.hash);
     if (!m) return;
     var d = m[2] ? m[2].split('-') : null;
-    UPL.want = { id: m[1], day: d ? d[2] + '-' + pad(+d[1]) + '-' + pad(+d[0]) : null };
+    UPL.want = { id: m[1], day: d ? d[2] + '-' + pad(+d[1]) + '-' + pad(+d[0]) : null, month: m[3] ? m[4] + '-' + pad(+m[3]) : null };
     uplWanted();
   }
   function uplWanted() {
     if (!UPL.want || TV || (!MEMBER && plTok())) return;   // (signed in: once they're known; not signed in: a public one)
     var w = UPL.want; UPL.want = null;
-    if (w.id === UPL.on && UPL.view) { if (w.day && byDate[w.day]) openDay(w.day); return; }
-    uplShow(w.id, { day: w.day });
+    if (w.id === UPL.on && UPL.view) { if (w.day && byDate[w.day]) openDay(w.day); else if (w.month) uplMonth(w.month); return; }
+    uplShow(w.id, { day: w.day, month: w.month });
   }
   window.addEventListener('hashchange', uplFromHash);
   uplFromHash();
@@ -6623,16 +6669,58 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       closeDialog(upledDlg); upledView(j.view, ed); toast('Saved');
     }).catch(function () { ok.disabled = false; toast('Couldn’t reach the site. Try again.'); });
   });
-  // sharing a member's calendar or one of its days, as its owner chose: public, a link anyone can open (the Worker's
-  // /s/u/ page, with its title, song and cover for the preview); otherwise the calendar's own link, which opens for the
-  // members who see it (a chosen few: not offered to send to the members)
-  function uplShare(iso, s) {
-    var v = UPL.view, newest = songs[songs.length - 1], cover = (s || newest || {}).u || '';
-    var pub = v.sh === 'public', note = pub ? '' : v.sh === 'some' ? 'Opens for the members it’s shared with' : 'Opens for members, signed in';
-    var url = pub ? MBASE + '/s/u/' + v.id + (iso ? '/' + iso : '') : SITE + '#u=' + v.id + (iso ? '&d=' + slugOf(iso) : '');
-    var o = iso ? { lines: [v.t, longDate(iso), '', cleanTitle(s.title), s.artist], title: cleanTitle(s.title), sub: s.artist + ' · ' + longDate(iso) + (note ? ' · ' + note : ''), sendText: s.artist + ' · ' + v.t + ', ' + longDate(iso) }
-      : { lines: [v.t, v.n + ' · ' + songs.length + (songs.length === 1 ? ' song' : ' songs')], title: v.t, sub: v.n + ' · ' + songs.length + (songs.length === 1 ? ' song' : ' songs') + (note ? ' · ' + note : '') };
-    o.url = url; o.image = cover; o.icon = cover; o.mode = ''; o.modes = false; o.pics = false; o.noSend = v.sh === 'some';
+  // sharing a member's calendar, a month of it or one of its days, as John's are shared (Video or Preview, the
+  // picture, WhatsApp, Messages, Copy, More, Send to members), as its owner chose: public, links anyone can open (the
+  // Worker's /s/u/ pages, with the cards the site job draws: songs/u/<id>/…; the cover until a new day's is drawn);
+  // every member or chosen members, the calendar's own link, which opens for those who see it (chosen members: sent
+  // only to them, by its owner); private, no Share. v: its calendar ({ id, t, n, sh, mode, mine, to })
+  function uplLinkFor(v, frag, page, m) {   // frag: the calendar's #u=…; page: the Worker's /s/u/ path after the id
+    var q = m ? 'play=' + m : '';
+    if (v.sh === 'public') return MBASE + '/s/u/' + v.id + (page ? '/' + page : '') + (q || DRAFT ? '?' + [q, DRAFT ? 'draft=1' : ''].filter(Boolean).join('&') : '');
+    return (DRAFT ? location.origin + '/songs/draft/' : SITE) + (q ? '?' + q : '') + '#' + frag;
+  }
+  function uplCalOf(s) {   // the calendar a song is from: the one showing, or (a song from My playlist) its own
+    if (UPL.on && UPL.view && (!s || !s.upl || s.upl === UPL.on)) return Object.assign({ to: (uplPls().filter(function (p) { return p.id === UPL.on; })[0] || {}).to || [] }, UPL.view);
+    return s && s.upl ? { id: s.upl, t: s.ut, n: s.un, sh: s.ush || 'members', mine: uplPls().some(function (p) { return p.id === s.upl && p.mine; }), to: (uplPls().filter(function (p) { return p.id === s.upl; })[0] || {}).to || [] } : null;
+  }
+  function uplShareSend(o, v) {   // who Send to members goes to: every member; for chosen members, only them, and only from its owner
+    if (v.sh === 'some') { if (v.mine) o.sendOnly = v.to || []; else o.noSend = true; }
+    if (v.sh === 'private') o.noSend = true;
+    o.note = v.sh === 'public' ? '' : v.sh === 'some' ? 'Opens for the members it’s shared with' : 'Opens for members, signed in';
+  }
+  function uplShareDay(iso, s, v, btn) {
+    var slug = slugOf(iso), t = cleanTitle(s.title), hasVid = !!VIDS[s.track], hasPre = !!songSrc(s);
+    var pick = btn && btn.closest ? btn.closest('.pick') : null, watching = !!(pick && pick.classList.contains('watching'));
+    var mode = hasVid && (watching || !hasPre || playMode === 'video') ? 'video' : hasPre ? 'preview' : '';
+    var o = { lines: [v.t, longDate(iso), '', t, s.artist], title: t, sub: s.artist + ' · ' + longDate(iso), mode: mode, modes: hasVid && hasPre, pics: false, song: whole(s) };
+    o.urlFor = function (m) { return uplLinkFor(v, 'u=' + v.id + '&d=' + slug, iso, m); };
+    o.url = o.urlFor(mode);
+    o.image = v.sh === 'public' ? SITE + 'u/' + v.id + '/' + slug + '/card.jpg' : s.u || ''; o.imageAlt = s.u || '';
+    o.icon = s.u || ''; o.sendText = s.artist + ' · ' + v.t + ', ' + longDate(iso); o.sendSong = { iso: iso, s: s, cal: v };
+    uplShareSend(o, v);
+    if (o.note) o.sub += ' · ' + o.note;
+    openShare(o);
+  }
+  function uplShareMonth(v) {
+    var y = months[cur][0], m = months[cur][1], n = songs.filter(function (x) { return x.d.slice(0, 7) === key(y, m); }).length;
+    var songsN = n + (n === 1 ? ' song' : ' songs'), ms = pad(m + 1) + '-' + y, mode = modeNow();
+    var o = { lines: [v.t, MONTHS[m] + ' ' + y + ': ' + songsN], title: MONTHS[m] + ' ' + y, sub: songsN + ' for each day', mode: mode, modes: true };
+    o.urlFor = function (md) { return uplLinkFor(v, 'u=' + v.id + '&m=' + ms, key(y, m), md); };
+    o.url = o.urlFor(mode);
+    var last = songs.filter(function (x) { return x.d.slice(0, 7) === key(y, m); }).slice(-1)[0];
+    o.image = v.sh === 'public' ? SITE + 'u/' + v.id + '/' + ms + '/card.jpg' : (last && last.u) || ''; o.imageAlt = (last && last.u) || '';
+    uplShareSend(o, v);
+    if (o.note) o.sub += ' · ' + o.note;
+    openShare(o);
+  }
+  function uplShareCal(v) {
+    var n = songs.length, sub = v.mode === 'list' ? v.n + ' · ' + n + (n === 1 ? ' song' : ' songs') : 'A song a day, ' + n + ' so far', mode = modeNow(), last = songs[n - 1];
+    var o = { lines: [v.t, sub], title: v.t, sub: sub, mode: mode, modes: true };
+    o.urlFor = function (md) { return uplLinkFor(v, 'u=' + v.id, '', md); };
+    o.url = o.urlFor(mode);
+    o.image = v.sh === 'public' ? SITE + 'u/' + v.id + '/card.jpg' : (last && last.u) || ''; o.imageAlt = (last && last.u) || '';
+    uplShareSend(o, v);
+    if (o.note) o.sub += ' · ' + o.note;
     openShare(o);
   }
   // the Profile's Playlists tab: their own
@@ -6873,6 +6961,12 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       tx.addEventListener('click', function () { startQueue(UPL.order.slice(), UPL.view.n, null, idx); });   // plays on through the playlist from this song
       tx.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tx.click(); } });
       li.appendChild(th); li.appendChild(tx);
+      if (!(s.w && mineOwn)) {   // (a song still waiting: its Sign off instead)
+        var hf = document.createElement('button'); hf.type = 'button'; hf.className = 'favbtn rowfav' + (isFav(s) ? ' is-fav' : ''); hf.setAttribute('data-track', s.track);
+        hf.setAttribute('aria-label', 'Add ' + s.title + ' to my playlist'); hf.setAttribute('aria-pressed', isFav(s) ? 'true' : 'false'); hf.innerHTML = HEART;
+        hf.addEventListener('click', function (e) { e.stopPropagation(); toggleFav(s); });
+        li.appendChild(hf);
+      }
       if (s.w && mineOwn) {
         li.className = 'uplw';
         var so = document.createElement('button'); so.type = 'button'; so.className = 'copy wso'; so.textContent = 'Sign off';
@@ -6884,7 +6978,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         eb.title = 'Edit'; eb.setAttribute('aria-label', 'Edit ' + s.title + ': its video, moods and genres, your own files and cover');
         eb.addEventListener('click', function (e) { e.stopPropagation(); upledOpen(s); });
         li.appendChild(eb);
-      } else li.appendChild(rowDl(s));
+      }
       uplListEl.appendChild(li);
     });
     var on = UPL.sorted && UPL.sorted.sig === UPL.order.join() ? UPL.sorted : null;
@@ -6903,7 +6997,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     } else {
       var desc = !!(UPL.sorted && UPL.sorted.sig === o.join() && UPL.sorted.how === how && !UPL.sorted.desc);
       o.sort(function (a, b) {
-        if (how === 'year') { var ya = yearOf(byTrack[a]), yb = yearOf(byTrack[b]); if (!ya !== !yb) return ya ? -1 : 1; }
+        if (how === 'year') { var ya = yearOf(songOf(a)), yb = yearOf(songOf(b)); if (!ya !== !yb) return ya ? -1 : 1; }
         var ka = orderKey(how, a), kb = orderKey(how, b), c = ka < kb ? -1 : ka > kb ? 1 : 0; return desc ? -c : c;
       });
       UPL.sorted = { how: how, desc: desc, sig: o.join() };

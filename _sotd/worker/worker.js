@@ -840,6 +840,7 @@ async function members(request, url, env) {
   if (route === 'upl') return memberUpl(request, url, env, answer);
   if (route === 'uplup') return memberUplUp(request, url, env, answer);
   if (route === 'uplcover') return memberUplCover(request, url, env, answer);
+  if (route === 'songs') return memberSongs(request, url, env, answer);
   if (!['admin', 'upload', 'cover'].includes(route)) return answer(404, { error: 'Not here.' });
   if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
   const no = await adminOk(request, env, answer);
@@ -1161,7 +1162,7 @@ async function coverSet(request, url, env, answer) {
 async function ownCover(request, url, env) {
   const h = { 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'public, max-age=300' };
   if (url.pathname === '/covers.json') return new Response('{}', { headers: Object.assign({ 'Content-Type': 'application/json; charset=utf-8' }, h) });   // (members are told theirs by /members/me)
-  const um = /^\/s\/u\/([\w-]{6,24})(?:\/(\d{4}-\d{2}-\d{2}))?$/.exec(url.pathname);
+  const um = /^\/s\/u\/([\w-]{6,24})(?:\/(\d{4}-\d{2}(?:-\d{2})?))?$/.exec(url.pathname);
   if (um) return uplSharePage(url, env, um[1], um[2] || '');
   const sm = /^\/s\/([0-9A-Za-z]{22})(?:\/([\w-]{8}))?(\.jpg)?$/.exec(url.pathname);
   if (sm) return memberShare(url, env, sm[1], sm[2] || '0', !!sm[3]);
@@ -1214,31 +1215,69 @@ async function memberShare(url, env, track, id, image) {
 `, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } });
 }
 
-async function uplSharePage(url, env, pid, day) {   // a public member's calendar (or one of its days) for links: its title, song and cover, then the calendar there
-  const U = await uplAll(env), rec = U[pid], all = (await env.SOTD.get('members', 'json')) || {}, home = 'https://cooperking.github.io/songs/';
-  if (!uplCan(all, null, rec)) return Response.redirect(home, 302);
-  const v = await uplView(env, all, null, pid, rec), s = day ? v.songs.find(x => x.d === day) : v.songs[v.songs.length - 1];
-  const to = home + '#u=' + pid + (day && s ? '&d=' + day.slice(8, 10) + '-' + day.slice(5, 7) + '-' + day.slice(0, 4) : '');
-  if (!s) return Response.redirect(to, 302);
-  const e = x => esc(String(x)), when = alexaDay(s.d) + ' ' + s.d.slice(0, 4);
-  const title = day ? s.title + ' · ' + s.artist : v.t, desc = day ? v.t + ', ' + when : v.n + ' · ' + v.songs.length + (v.songs.length === 1 ? ' song' : ' songs'), img = s.img || '';
+async function memberSongs(request, url, env, answer) {   // GET ?ids=a,b: songs from members' playlists that whoever asks sees (My playlist's and saved playlists', played anywhere)
+  const who = await memberWho(request, env), all = who ? who.all : ((await env.SOTD.get('members', 'json')) || {}), me = who ? who.id : null;
+  const ids = new Set(String(url.searchParams.get('ids') || '').split(',').filter(t => ID_RE.test(t)).slice(0, 200)), out = {};
+  if (!ids.size) return answer(200, { songs: out });
+  for (const [pid, rec] of Object.entries(await uplAll(env))) {
+    if (!uplCan(all, me, rec) || !((await uplSongs(env, pid)).songs || []).some(x => ids.has(x.id))) continue;
+    const v = await uplView(env, all, me, pid, rec);
+    for (const x of v.songs) if (ids.has(x.id) && !out[x.id]) out[x.id] = Object.assign(x, { upl: pid, ut: v.t, un: v.n, ush: v.sh });
+  }
+  return answer(200, { songs: out });
+}
+const uplCards = new Map();   // a public one's card pictures on the site (made by the site job): whether each is there, for 10 minutes
+async function uplCardThere(u) {
+  const k = uplCards.get(u); if (k && k.until > Date.now()) return k.ok;
+  const r = await fetch(u, { method: 'HEAD' }).catch(() => null), ok = !!(r && r.ok);
+  uplCards.set(u, { ok, until: Date.now() + 600e3 });
+  return ok;
+}
+async function uplSharePage(url, env, pid, when) {   // a public member's calendar, one of its months (yyyy-mm) or days (yyyy-mm-dd), for links as John's own
+  // day pages are: its card (the site job's, songs/u/<id>/…/card.jpg; the cover until it's there), its title and song, then the calendar there,
+  // with the link's ?play= (and ?draft=1: the draft calendar)
+  const U = await uplAll(env), rec = U[pid], all = (await env.SOTD.get('members', 'json')) || {}, site = 'https://cooperking.github.io/songs/';
+  const q = new URLSearchParams(url.search), draft = q.get('draft') === '1'; q.delete('draft');
+  const home = site + (draft ? 'draft/' : '') + (q.toString() ? '?' + q.toString() : '');
+  if (!uplCan(all, null, rec)) return Response.redirect(site, 302);
+  const v = await uplView(env, all, null, pid, rec), month = /^\d{4}-\d{2}$/.test(when) ? when : '', day = month ? '' : when;
+  const s = day ? v.songs.find(x => x.d === day) : null, inMonth = month ? v.songs.filter(x => x.d.slice(0, 7) === month) : [];
+  const slugD = d => d.slice(8, 10) + '-' + d.slice(5, 7) + '-' + d.slice(0, 4), slugM = m => m.slice(5, 7) + '-' + m.slice(0, 4);
+  if ((day && !s) || (month && !inMonth.length) || !v.songs.length) return Response.redirect(home + '#u=' + pid, 302);
+  const to = home + '#u=' + pid + (s ? '&d=' + slugD(day) : month ? '&m=' + slugM(month) : '');
+  const cardUrl = site + 'u/' + pid + '/' + (s ? slugD(day) + '/' : month ? slugM(month) + '/' : '') + 'card.jpg', card = await uplCardThere(cardUrl);
+  const newest = (month ? inMonth : v.songs)[(month ? inMonth : v.songs).length - 1], img = card ? cardUrl : ((s || newest).img || '');
+  const e = x => esc(String(x)), n = (month ? inMonth : v.songs).length, songsN = n + (n === 1 ? ' song' : ' songs');
+  const monthName = month ? new Date(month + '-15T12:00:00Z').toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' }) : '';
+  const title = s ? s.title : month ? monthName : v.t;
+  const desc = s ? (s.artists && s.artists.length ? s.artists.join(', ') : s.artist) + ' · ' + v.t + ', ' + alexaDay(day) + ' ' + day.slice(0, 4)
+    : month ? songsN + ' for each day' : rec.mode === 'list' ? songsN : 'A song a day, ' + n + ' so far';
+  const alt = s ? s.title + ' by ' + s.artist : month ? 'Covers of the songs for ' + monthName : 'Covers of ' + v.t;
   return new Response(`<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${e(title)}</title>
+<title>${e(title)} · ${e(v.t)}</title>
 <meta name="description" content="${e(desc)}">
-<meta property="og:type" content="${day ? 'music.song' : 'website'}">
+<meta property="og:type" content="${s ? 'music.song' : 'website'}">
 <meta property="og:site_name" content="${e(v.t)}">
 <meta property="og:title" content="${e(title)}">
 <meta property="og:description" content="${e(desc)}">
 <meta property="og:url" content="${e(url.origin + url.pathname)}">
 ${img ? `<meta property="og:image" content="${e(img)}">
-<meta property="og:image:alt" content="${e(s.title)}">
-<meta name="twitter:image" content="${e(img)}">` : ''}
-<meta name="twitter:card" content="summary">
+<meta property="og:image:secure_url" content="${e(img)}">
+<meta property="og:image:type" content="image/jpeg">
+${card ? `<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+` : ''}<meta property="og:image:alt" content="${e(alt)}">
+<meta name="twitter:image" content="${e(img)}">
+` : ''}<meta name="twitter:card" content="${card ? 'summary_large_image' : 'summary'}">
+<meta name="twitter:title" content="${e(title)}">
+<meta name="twitter:description" content="${e(desc)}">
 <link rel="icon" type="image/png" sizes="96x96" href="https://cooperking.github.io/songs/favicon-96.png?v=2">
+<link rel="icon" type="image/png" sizes="192x192" href="https://cooperking.github.io/songs/icon-192.png?v=2">
+<link rel="apple-touch-icon" sizes="180x180" href="https://cooperking.github.io/songs/apple-touch-icon.png?v=2">
 <script>if (!${INVITE_BOTS}.test(navigator.userAgent)) location.replace(${JSON.stringify(to)});</script>
 </head>
 <body style="font-family: Georgia, serif; padding: 24px;">
@@ -2916,7 +2955,11 @@ async function uplSync(request, env) {
     if (rec.st !== 'ok' || !all[rec.o]) continue;
     const data = await uplSongs(env, pid);
     const ed = data.ed || {};   // (ov: its owner's video for a song, '' none)
-    out[pid] = { title: uplTitle(all, rec), mode: rec.mode, base: rec.base || 0, yt: rec.yt || '', songs: composeSongs(data.songs || [], pv, tags).map(x => ed[x.id] && 'v' in ed[x.id] ? Object.assign(x, { ov: ed[x.id].v }) : x) };
+    out[pid] = { title: uplTitle(all, rec), mode: rec.mode, base: rec.base || 0, yt: rec.yt || '', share: uplShareOf(rec), songs: composeSongs(data.songs || [], pv, tags).map(x => ed[x.id] && 'v' in ed[x.id] ? Object.assign(x, { ov: ed[x.id].v }) : x) };
+    if (uplShareOf(rec) === 'public') {   // its songs out, each with its day and cover: the cards for its links (share_pages.py)
+      const v = await uplView(env, all, null, pid, rec);
+      out[pid].pub = { t: v.t, n: v.n, songs: v.songs.map(x => ({ id: x.id, d: x.d, title: x.title, artist: x.artist, artists: x.artists, img: x.img || '' })) };
+    }
   }
   return answer(200, { playlists: out });
 }
@@ -2951,7 +2994,7 @@ async function uplView(env, all, viewer, pid, rec) {   // a playlist as the cale
 // newest song now on it and the ones after it on the days after) | { op: 'order', id, order: [track ids] } (a playlist)
 // | { op: 'send', id, on, at: 'HH:MM' } (whether its songs go to the members as messages, and when)
 // | { op: 'edit', id, track, v, m, g } (a song's video, moods and genres) | { op: 'title', id, title } | { op: 'share', id,
-// share, to }; GET ?id= with no sign-in: a public one
+// share, to }; GET ?id= with no sign-in: a public one. /members/songs?ids=: songs from the playlists whoever asks sees
 async function memberUpl(request, url, env, answer) {
   const who = await memberWho(request, env);
   if (!who && request.method === 'GET') {   // not signed in: a public one
@@ -3011,6 +3054,7 @@ async function memberUpl(request, url, env, answer) {
     if (now) { data.ann = data.ann || {}; data.ann[x.id] = Date.now(); }
     await env.SOTD.put('upl:' + pid, JSON.stringify(data));
     const sent = now ? await uplSend(env, all, me, pid, rec, x, cd) : null;
+    if (uplShareOf(rec) === 'public') await startJob(env, null, null, 0, null, true).catch(() => {});   // (its card for links)
     return answer(200, Object.assign({ ok: true, sent, view: await uplView(env, all, me, pid, rec), pls: await uplMine(env, uplList(all, me, U), U) }, snd.on && !now ? { on: d, at: snd.at } : {}));
   }
   if (body.op === 'dates') {
@@ -3047,8 +3091,10 @@ async function memberUpl(request, url, env, answer) {
     if (!UPL_SHARES.includes(body.share)) return answer(400, { error: 'Public, members, some or private?' });
     const to = body.share === 'some' ? [...new Set((Array.isArray(body.to) ? body.to : []).map(String))].filter(k => all[k] && k !== me) : [];
     if (body.share === 'some' && !to.length) return answer(400, { error: 'Choose at least one member.' });
+    const was = uplShareOf(rec);
     rec.share = body.share; if (to.length) rec.to = to; else delete rec.to;
     await uplPut(env, U);
+    if (was !== body.share && (was === 'public' || body.share === 'public') && rec.st === 'ok') await startJob(env, null, null, 0, null, true).catch(() => {});   // (its cards for links made, or taken off the site)
     return answer(200, { ok: true, pls: await uplMine(env, uplList(all, me, U), U), view: rec.st === 'ok' ? await uplView(env, all, me, body.id, rec) : null });
   }
   if (body.op === 'edit') {   // a song's video (v: a YouTube id, '' none, null the one found), moods and genres (m, g: up to two each, [] none, null the ones worked out)

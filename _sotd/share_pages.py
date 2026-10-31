@@ -12,6 +12,9 @@ a proper card: the cover with its record, the title, the artist and the date, on
                                 each month's colours: the apps' calendar widgets
   songs/10-2026/index.html      one per month, with card.jpg: that month's covers
   songs/card.jpg                the whole calendar's picture (the site's own link preview uses it)
+  songs/u/<id>/…                 the same pictures for each member's public playlist (its days, months and the whole
+                                of it), for the Worker's /s/u/ link pages; a playlist no longer public loses them. Its
+                                songs come from upl_sync.py's upl-playlists.json (SOTD_UPL_PLAYLISTS).
 
 Days follow the calendar's rule: a song's day is when it was added (London time), and when two
 were added on one day the earlier one moves back to the day before.
@@ -31,6 +34,7 @@ SONGS_URL = os.environ.get('SOTD_SONGS_URL', 'https://sotd-playlists.cooperking.
 # John's own pictures for sharing links, set on songs/members-admin.html (the Worker keeps them): a day with one gets
 # it on its card instead of the album cover
 OWN_URL = os.environ.get('SOTD_OWN_URL', 'https://sotd-playlists.cooperking.workers.dev/')
+UPL = os.environ.get('SOTD_UPL_PLAYLISTS', '')
 COVERS = os.environ.get('SOTD_COVERS')   # a local folder of covers by image id, for testing without the network
 LONDON = ZoneInfo('Europe/London')
 CARD_VERSION = '1'   # bump to redraw every day's card
@@ -140,7 +144,7 @@ def spaced(draw, xy, text, f, fill, tracking):
     return x
 
 
-def card(d, s, cover):
+def card(d, s, cover, kicker="JOHN'S SONG OF THE DAY"):
     from PIL import Image, ImageDraw, ImageFilter
     img = ground(d.month - 1).convert('RGBA')
     size, cx, cy = 400, 70, (H - 400) // 2
@@ -192,7 +196,7 @@ def card(d, s, cover):
     lh = int(tsize * 1.08)
     block = 19 + 26 + len(lines) * lh + 22 + 22 + 30 + 30
     y = (H - block) // 2
-    spaced(dr, (x0, y), "JOHN'S SONG OF THE DAY", small, INK + (230,), 3.2)
+    spaced(dr, (x0, y), kicker, small, INK + (230,), 3.2)
     y += 19 + 26
     for l in lines:
         dr.text((x0, y), l, font=tf, fill=INK)
@@ -499,5 +503,61 @@ def main():
             print('calendar description:', desc)
 
 
+def member_cards():
+    """The cards for members' public playlists: songs/u/<id>/<day>/card.jpg, <month>/card.jpg and card.jpg."""
+    import shutil
+    try:
+        with open(UPL, encoding='utf-8') as f:
+            plays = json.load(f)
+    except (OSError, ValueError):
+        plays = None
+    root = os.path.join(SONGS, 'u')
+    if plays is None:
+        print('members’ playlists: none this run (their cards stay as they are)')
+        return
+    public = {pid: pl['pub'] for pid, pl in plays.items() if pl.get('share') == 'public' and pl.get('pub')}
+    if os.path.isdir(root):
+        for pid in os.listdir(root):
+            if pid not in public:
+                shutil.rmtree(os.path.join(root, pid), ignore_errors=True)
+                print('a member’s playlist no longer public: its cards taken off the site', pid)
+    small = {}
+    def covers(items):
+        out = []
+        for _, x in items:
+            if x['id'] not in small:
+                try:
+                    small[x['id']] = cover_bytes(x, small=True)
+                except Exception:
+                    small[x['id']] = None
+            if small[x['id']]:
+                out.append(small[x['id']])
+        return out
+    for pid, pub in public.items():
+        title = pub['t']
+        kick = title.replace('’', "'").upper()
+        dated = sorted(((datetime.strptime(x['d'], '%Y-%m-%d').date(), x) for x in pub['songs']), key=lambda y: y[0])
+        if not dated:
+            continue
+        for d, s in dated:
+            stamp = hashlib.sha1(f"{CARD_VERSION} {kick} {s['id']} {s.get('img')} {s['title']} {s['artist']}".encode()).hexdigest()[:12]
+            refresh_card(os.path.join(root, pid, slug(d), 'card.jpg'), stamp, lambda d=d, s=s: card(d, s, cover_bytes(s), kick))
+        by_month = {}
+        for d, s in dated:
+            by_month.setdefault((d.year, d.month), []).append((d, s))
+        for (y, m), items in sorted(by_month.items()):
+            count = f"{len(items)} {'song' if len(items) == 1 else 'songs'}"
+            stamp = hashlib.sha1((GRID_VERSION + ' ' + kick + ' ' + ' '.join(x['id'] + str(x.get('img')) for _, x in items)).encode()).hexdigest()[:12]
+            refresh_card(os.path.join(root, pid, f'{m:02d}-{y}', 'card.jpg'), stamp,
+                         lambda m=m, y=y, items=items, count=count: grid_card(m - 1, f"{items[0][0]:%B}", str(y), kick, count.upper(), covers(items)))
+        latest = dated[-12:][::-1]
+        roman, italic = (title[:-len(' of the Day')], 'of the Day') if title.endswith(' of the Day') else (title, '')
+        stamp = hashlib.sha1((GRID_VERSION + f' {title} {len(dated)} ' + ' '.join(x['id'] for _, x in latest)).encode()).hexdigest()[:12]
+        refresh_card(os.path.join(root, pid, 'card.jpg'), stamp,
+                     lambda: grid_card(dated[-1][0].month - 1, roman, italic, 'A SONG A DAY' if italic else 'A PLAYLIST', f'{len(dated)} SO FAR', covers(latest)))
+        print(f'{title} ({pid}): {len(dated)} days, cards for its days, {len(by_month)} months and the whole of it')
+
+
 if __name__ == '__main__':
     main()
+    member_cards()

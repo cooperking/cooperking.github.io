@@ -114,8 +114,9 @@ def main(out):
             json.dump(state, f, ensure_ascii=False, indent=1, sort_keys=True)
     with open(out, 'w', encoding='utf-8') as f:
         json.dump(dict(john, songs=songs), f, ensure_ascii=False)
-    with open(os.path.join(os.path.dirname(os.path.abspath(out)), 'upl-playlists.json'), 'w', encoding='utf-8') as f:
-        json.dump({pid: dict(pl, **{'in': sorted(state['playlists'][pid]['in'])}) for pid, pl in (plays or {}).items()}, f, ensure_ascii=False)
+    if plays is not None:   # (none: the steps after leave members' YouTube copies and cards as they are)
+        with open(os.path.join(os.path.dirname(os.path.abspath(out)), 'upl-playlists.json'), 'w', encoding='utf-8') as f:
+            json.dump({pid: dict(pl, **{'in': sorted(state['playlists'][pid]['in'])}) for pid, pl in plays.items()}, f, ensure_ascii=False)
     print(len(john['songs']), 'of John’s songs,', len(songs) - len(john['songs']), 'from members’ playlists')
 
 
