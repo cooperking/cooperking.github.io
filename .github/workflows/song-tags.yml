@@ -41,12 +41,18 @@ jobs:
 
       # members' own Spotify playlists: which of their songs this run takes in (each one's 10 newest at first, then 5
       # a day, new ones at once), and the list the steps finding videos, moods and years work through (John's, then theirs)
+      # what was found for their songs is kept in the Worker, not in this repository (upl_private.py): back in first;
+      # without it, their songs are left out this run
       - name: Members' playlists, their songs this run
         continue-on-error: true   # without it those steps take John's songs alone
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
-          python _sotd/upl_sync.py "$RUNNER_TEMP/songs-all.json"
+          if python _sotd/upl_private.py load; then
+            python _sotd/upl_sync.py "$RUNNER_TEMP/songs-all.json"
+          else
+            GITHUB_TOKEN= python _sotd/upl_sync.py "$RUNNER_TEMP/songs-all.json"
+          fi
           echo "SOTD_ALL=file://$RUNNER_TEMP/songs-all.json" >> "$GITHUB_ENV"
 
       - name: Any songs to listen to?
@@ -152,6 +158,11 @@ jobs:
       # whether the draft and the live calendar are what the template builds (the admin page's Status tab shows it)
       - name: Draft and live, against the template
         run: python _sotd/web/pages_check.py
+
+      - name: Members' songs out of the repository, to the Worker
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python _sotd/upl_private.py save
 
       - name: Save changes
         run: |

@@ -61,6 +61,7 @@ export default {
     try {
       if (url.pathname === '/songs.json') return await songsJson(request, env, ctx);
       if (url.pathname === '/upl/sync') return await uplSync(request, env);
+    if (url.pathname === '/upl/data') return await uplData(request, env);
       if (url.pathname === '/login') return await login(url);
       if (url.pathname === '/callback') return await callback(request, url, env);
       if (url.pathname === '/p') return await makePlaylist(request, url, env);
@@ -2963,16 +2964,42 @@ async function uplSync(request, env) {
   }
   return answer(200, { playlists: out });
 }
+// /upl/data, for the site job only (as /upl/sync): what it found for members' songs, kept here and not in the repository
+// (upl_private.py): GET gives it back (R2 site/upl-data.json; 404 none yet); POST keeps it, and each song's video, moods
+// and genres, and year in KV uplmeta { <track>: { vid, mt: { m, g }, yr } }, for their calendars (uplView).
+async function uplData(request, env) {
+  const answer = (status, body) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' } });
+  if (!await ghJob(request)) return answer(401, { error: 'For the site job only.' });
+  if (!env.MEDIA) return answer(503, { error: 'Not set up.' });
+  if (request.method === 'GET') {
+    const o = await env.MEDIA.get('site/upl-data.json');
+    return o ? new Response(o.body, { headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' } }) : answer(404, { none: true });
+  }
+  if (request.method !== 'POST') return answer(405, { error: 'Use GET or POST.' });
+  const text = await request.text();
+  if (text.length > 40e6) return answer(413, { error: 'Too big.' });
+  let b; try { b = JSON.parse(text); } catch (e) { return answer(400, { error: 'Not JSON.' }); }
+  if (!b || typeof b.files !== 'object') return answer(400, { error: 'No files.' });
+  await env.MEDIA.put('site/upl-data.json', text, { httpMetadata: { contentType: 'application/json' } });
+  const f = b.files, meta = {}, at = t => (meta[t] = meta[t] || {});
+  for (const [t, v] of Object.entries((f['songs/videos.json'] || {}).videos || {})) if (v && v.v) at(t).vid = v;
+  for (const [t, x] of Object.entries((f['songs/moods.json'] || {}).songs || {})) if (x && ((x.moods || []).length || (x.genres || []).length)) at(t).mt = { m: x.moods || [], g: x.genres || [] };
+  for (const [t, y] of Object.entries((f['songs/years.json'] || {}).years || {})) if (y) at(t).yr = y;
+  await env.SOTD.put('uplmeta', JSON.stringify(meta));
+  return answer(200, { ok: true, songs: Object.keys(meta).length });
+}
 async function uplView(env, all, viewer, pid, rec) {   // a playlist as the calendar takes it: its songs (out ones; its owner, all, the waiting marked w and the days to come f)
   const data = await uplSongs(env, pid), mine = !!viewer && rec.o === viewer, today = londonDay();
   const pv = Object.assign({}, pvMem, (await env.SOTD.get('previews', 'json')) || {});
   const tags = (await env.SOTD.get('tags', 'json')) || {};
   const days = uplDays(data.songs || [], rec);
+  const meta = (await env.SOTD.get('uplmeta', 'json')) || {};
   const ed = data.ed || {}, files = data.files || {}, see = mine ? { a: true, v: true } : viewer && all[viewer] ? mediaFor(all[viewer]) : { a: false, v: false }, exp = Math.floor(Date.now() / 1000) + LINK_HOURS * 3600;
   let songs = composeSongs(data.songs || [], pv, tags).map((x, i) => Object.assign(x, { d: days[i].d }, uplWaiting(rec, data, data.songs[i]) ? { w: 1 } : {}, days[i].d > today ? { f: 1 } : {}))
     .filter(x => mine || (!x.w && !x.f));
-  for (const x of songs) {   // its owner's choices (ov: the video, '' none; tg: moods and genres), files (ma, mv; own: theirs, with sizes) and cover (uc)
-    const e = ed[x.id], f = files[x.id];
+  for (const x of songs) {   // what the site job found (vid: the video, mt: moods and genres, yr: the year), its owner's choices (ov: the video, '' none; tg: moods and genres), files (ma, mv; own: theirs, with sizes) and cover (uc)
+    const e = ed[x.id], f = files[x.id], m = meta[x.id];
+    if (m) { if (m.vid) x.vid = m.vid; if (m.mt) x.mt = m.mt; if (m.yr) x.yr = m.yr; }
     if (e && 'v' in e) x.ov = e.v;
     if (e && (e.m || e.g)) x.tg = { m: e.m || null, g: e.g || null };   // (null: the ones worked out)
     if (f) {

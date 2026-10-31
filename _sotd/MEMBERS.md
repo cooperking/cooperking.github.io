@@ -328,6 +328,15 @@ still to come: facts, written for new songs and on request for older ones, check
   are measured on John's songs alone, so his don't change. `_sotd/youtube_upl.py` (after John's YouTube playlist) makes
   each one's unlisted YouTube copy on the same channel, titled as the calendar calls it, and adds the songs taken in that
   have a video, in order, stopping with 1,000 of the day's units left for John's; the calendar's *On YouTube* goes to it.
+  None of it for members' songs is kept in this repository or on the site (John, 31 Oct 2026: "Why does any of that
+  have to be public at all?"): `_sotd/upl_private.py load` puts last run's part for their songs back into the files
+  before the steps (from the Worker's `/upl/data`, R2 `site/upl-data.json`), and `save` takes every song on a member's
+  playlist that isn't John's out of them again before they're committed (`_sotd/data/audio.json`, `musicbrainz.json`,
+  `years.json`, `youtube.json`, `songs/moods.json`, `songs/videos.json`, `songs/years.json`, and `_sotd/data/upl.json`
+  whole) and sends it there. The Worker keeps each song's video, moods and genres, and year (KV `uplmeta`) and gives
+  them with its calendar (`vid`, `mt`, `yr` on each song), to those who see it; without an answer from the Worker the
+  job leaves their songs out that run. Only a public playlist's cards are on the site (`songs/u/`). Tests:
+  `upl_private_t.py`, `upl_data_t.mjs`.
   The site job gets the playlists from the Worker's `/upl/sync` with its own GITHUB_TOKEN (the Worker checks with GitHub
   that it's a token for this repository alone), and sends back the YouTube copies. The Worker starts the site job when a
   member's playlist changes, and once a day from 07:00 for the day's 5 more. Tests: `upl_py_t.py`.
