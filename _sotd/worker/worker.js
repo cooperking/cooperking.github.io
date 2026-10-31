@@ -972,7 +972,7 @@ async function members(request, url, env) {
       for (const [pid, rec] of Object.entries(U)) {
         if (rec.st !== 'ok' || !all[rec.o]) continue;
         const v = await uplView(env, all, null, pid, rec);
-        for (const x of v.songs) out.push({ id: x.id, title: x.title, artist: x.artist, img: x.img || '', d: x.d, pid, t: v.t, n: v.n, mode: v.mode, sh: v.sh, o: v.o });
+        for (const x of v.songs) out.push({ id: x.id, title: x.title, artist: x.artist, img: x.img || '', p: x.p || '', d: x.d, pid, t: v.t, n: v.n, mode: v.mode, sh: v.sh, o: v.o });
       }
       return answer(200, { songs: out });
     }

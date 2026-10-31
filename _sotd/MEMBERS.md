@@ -397,7 +397,12 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   for (the Songs tab's) plays his, for those he lets have them; its owner can't add their own of that kind (John, 31
   Oct 2026: "if I already have the song, they can't upload one of their own"): the editor says "Already uploaded", and
   to John shows it as the Songs tab does ("Song · 4.2 MB"), from `jf` on the song in its owner's view. One they added
-  before John's isn't given while his is there, and is again if he takes his away.
+  before John's isn't given while his is there, and is again if he takes his away. The Songs tab lists the songs out on
+  members' playlists too (John, 31 Oct 2026: "I still can't see newly published songs in my songs section in admin"),
+  those that aren't his, each once, among his by day (newest first), under All and *Members’*, and in *No MP3* and *No
+  MP4*: each card says where it is (its calendar and day, or its playlist, each a link), plays its preview, and has
+  *Add song (MP3)* and *Add video (MP4)*, uploaded as his own are (`a/<track>.mp3`, `v/<track>.mp4`); no covers, which
+  are for his days. From admin op `uplsongs`. Test: `songs_members_t.py`.
 - **Facts, for public playlists' songs** (John, 31 Oct 2026, asked which: "Public playlists only"): written and checked
   by John's facts task as his are (`_sotd/FACTS.md`), for the songs on a playlist set to Public that were added after it
   was added to the calendar, the 10 newest from before that (John, 31 Oct 2026, offered the same 10 its

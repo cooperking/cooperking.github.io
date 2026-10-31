@@ -124,6 +124,7 @@
       <button type="button" data-show="waiting" aria-pressed="true">Waiting<span class="n" id="n-waiting"></span></button>
       <button type="button" data-show="check" aria-pressed="false">To check<span class="n" id="n-check"></span></button>
       <button type="button" data-show="all" aria-pressed="false">All</button>
+      <button type="button" data-show="members" aria-pressed="false">Members’<span class="n" id="n-members"></span></button>
       <button type="button" data-show="none" aria-pressed="false">No facts<span class="n" id="n-none"></span></button>
       <button type="button" data-show="still" aria-pressed="false">Still picture<span class="n" id="n-still"></span></button>
       <button type="button" data-show="noa" aria-pressed="false">No MP3<span class="n" id="n-noa"></span></button>
@@ -182,7 +183,7 @@
   var GENRES = ['Soul & R&B', 'Rock', 'Indie', 'Folk', 'Pop', 'Electronic', 'Hip-hop', 'Country', 'World'];
   var PLAY = '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M4 2.5v11l9.5-5.5z"/></svg>', PAUSE = '<svg viewBox="0 0 16 16" fill="currentColor"><rect x="3.5" y="2.5" width="3" height="11"/><rect x="9.5" y="2.5" width="3" height="11"/></svg>';
   var CHEV = '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2.5 4.5 6 8l3.5-3.5"/></svg>';
-  var songs = [], live = { src: [], songs: {}, artists: {} }, pending = { songs: {} }, signedW = {}, edits = {}, show = 'waiting', armed = false;
+  var MSONGS = [], songs = [], live = { src: [], songs: {}, artists: {} }, pending = { songs: {} }, signedW = {}, edits = {}, show = 'waiting', armed = false;
   var ALTS = {}, TAGS = {}, VIDS = {}, QUOTES = {}, CAT = {}, COVERS = {}, MEMBERS = [], OPEN = {}, DAYS = {}, media = true;
   var list = document.getElementById('list'), audio = document.getElementById('audio'), playingBtn = null;
   function $(id) { return document.getElementById(id); }
@@ -404,7 +405,7 @@
     sec.appendChild(add);
     return sec;
   }
-  function fileSection(s) {
+  function fileSection(s, theirs) {   // (theirs: a song on members' playlists: no covers, which are for John's days)
     var sec = el('div', 'sec'), e = CAT[s.id] || {};
     var kk = el('div', 'kicker'); kk.appendChild(el('span', null, 'Members only: your own')); sec.appendChild(kk);
     if (!media) { sec.appendChild(el('p', 'stat', 'The Worker has no storage for files yet.')); return sec; }
@@ -412,6 +413,11 @@
     row.appendChild(fileBtn(e.a ? 'Song · ' + mb(e.a) : 'Add song (MP3)', !!e.a, function () { pick(s, 'a'); }, e.a && function () { drop(s, 'a'); }));
     row.appendChild(fileBtn(e.v ? 'Video · ' + mb(e.v) : 'Add video (MP4)', !!e.v, function () { pick(s, 'v'); }, e.v && function () { drop(s, 'v'); }));
     sec.appendChild(row);
+    if (theirs) {
+      var bar0 = el('div', 'upbar'); bar0.hidden = true; bar0.appendChild(el('i')); bar0.setAttribute('data-bar', s.id); sec.appendChild(bar0);
+      sec.appendChild(el('p', 'stat', 'On their calendars your song and video play in place of the preview and YouTube, for the members who can see yours; they can’t add their own while yours is there.'));
+      return sec;
+    }
     var cl = el('div', 'covers');
     covList(s).forEach(function (c) {
       var r = el('div', 'coverrow'), im = el('img'); im.alt = ''; im.loading = 'lazy'; im.src = WORKER + '/c/' + covPath(s, c) + '?v=' + encodeURIComponent(c.at || ''); r.appendChild(im);
@@ -438,6 +444,7 @@
     return w;
   }
   function card(s) {
+    if (s.m) return mcard(s);
     var st = state(s), w = working(s, st), d = dayOf(s.a), open = !!OPEN[s.id], e = CAT[s.id] || {};
     var li = el('li', 'card song' + (open ? ' open' : '')); li.setAttribute('data-id', s.id);
     var h = el('div', 'shead'); h.setAttribute('role', 'button'); h.tabIndex = 0; h.setAttribute('aria-expanded', open ? 'true' : 'false');
@@ -496,6 +503,51 @@
     li.appendChild(body);
     return li;
   }
+  // a song out on members' playlists (not one of John's): where it is, its preview, and his own MP3 and MP4 for it (which
+  // play on their calendars in place of theirs; they can't add their own while his is there)
+  function slugOf(iso) { return iso.slice(8, 10) + '-' + iso.slice(5, 7) + '-' + iso.slice(0, 4); }
+  function isoLabel(iso) { return (+iso.slice(8, 10)) + ' ' + MONTHS[+iso.slice(5, 7) - 1].slice(0, 3) + ' ' + iso.slice(0, 4); }
+  function calSay(c) { return c.mode === 'list' ? c.o + '’s ' + c.n : c.t + ' · ' + isoLabel(c.d); }
+  function mcard(s) {
+    var open = !!OPEN[s.id], e = CAT[s.id] || {};
+    var li = el('li', 'card song' + (open ? ' open' : '')); li.setAttribute('data-id', s.id);
+    var h = el('div', 'shead'); h.setAttribute('role', 'button'); h.tabIndex = 0; h.setAttribute('aria-expanded', open ? 'true' : 'false');
+    var cov = el('div', 'cov'), img = el('img'); img.alt = ''; img.loading = 'lazy'; img.src = s.img || ''; cov.appendChild(img);
+    var pb = el('button', 'pp'); pb.type = 'button'; pb.innerHTML = PLAY; pb.setAttribute('aria-label', 'Play the preview of ' + s.title); pb.disabled = !s.p;
+    pb.addEventListener('click', function (ev) {
+      ev.stopPropagation();
+      if (playingBtn === pb && !audio.paused) { audio.pause(); return; }
+      if (playingBtn) playingBtn.innerHTML = PLAY;
+      audio.src = s.p; audio.play().catch(function () {}); playingBtn = pb; pb.innerHTML = PAUSE;
+    });
+    cov.appendChild(pb); h.appendChild(cov);
+    var meta = el('div', 'smeta'), c0 = s.cals[0];
+    var dl = el('a', null, calSay(c0)); dl.href = './' + '#u=' + c0.pid + (c0.mode === 'list' ? '' : '&d=' + slugOf(c0.d)); dl.target = '_blank'; dl.style.color = 'inherit'; dl.style.textDecoration = 'none';
+    dl.addEventListener('click', function (ev) { ev.stopPropagation(); });
+    meta.appendChild(dl);
+    meta.appendChild(el('span', 'badge', 'Members’'));
+    h.appendChild(meta);
+    var ch = el('span', 'chev'); ch.innerHTML = CHEV; h.appendChild(ch);
+    h.appendChild(el('div', 'stitle', s.title));
+    h.appendChild(el('div', 'sartist', s.artist));
+    var sum = [s.cals.length > 1 ? 'on ' + s.cals.length + ' members’ playlists' : 'on ' + c0.o + '’s'];
+    if (e.a || e.v) sum.push('your ' + [e.a && 'song', e.v && 'video'].filter(Boolean).join(' and '));
+    h.appendChild(el('div', 'ssum', sum.join(' · ')));
+    function toggle() { OPEN[s.id] = !OPEN[s.id]; redraw(s); }
+    h.addEventListener('click', toggle);
+    h.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); toggle(); } });
+    li.appendChild(h);
+    if (!open) return li;
+    var body = el('div', 'sbody');
+    if (s.cals.length > 1) {
+      var wh = el('div', 'sec'), kk = el('div', 'kicker'); kk.appendChild(el('span', null, 'On')); wh.appendChild(kk);
+      s.cals.forEach(function (c) { var a = el('a', null, calSay(c)); a.href = './#u=' + c.pid + (c.mode === 'list' ? '' : '&d=' + slugOf(c.d)); a.target = '_blank'; a.style.display = 'block'; a.style.color = 'inherit'; a.style.margin = '2px 0'; wh.appendChild(a); });
+      body.appendChild(wh);
+    }
+    body.appendChild(fileSection(s, true));
+    li.appendChild(body);
+    return li;
+  }
   function fit(ta) { ta.style.height = 'auto'; ta.style.height = (ta.scrollHeight + 2) + 'px'; }   // a fact's box as tall as its words
   function fitAll(root) { [].forEach.call(root.querySelectorAll('textarea'), fit); }
   window.addEventListener('resize', function () { fitAll(list); });
@@ -503,6 +555,13 @@
 
   // ---- the list ----
   function visible(s) {
+    if (s.m) {   // a members' song: in All, Members' and the No MP3 and No MP4 lists
+      var me = CAT[s.id] || {}, mq = $('q').value.trim().toLowerCase(), mm = $('month').value;
+      if (['all', 'members', 'noa', 'nov'].indexOf(show) < 0 || (show === 'noa' && me.a) || (show === 'nov' && me.v)) return false;
+      if (mm && s.d.slice(0, 7) !== mm) return false;
+      return !mq || (s.title + ' ' + s.artist + ' ' + s.cals.map(function (c) { return c.o + ' ' + c.t + ' ' + c.n; }).join(' ')).toLowerCase().indexOf(mq) >= 0;
+    }
+    if (show === 'members') return false;
     var st = state(s).st, q = $('q').value.trim().toLowerCase(), m = $('month').value, e = CAT[s.id] || {};
     if (show === 'check' && !toCheck(s)) return false;
     if (show === 'files' && !e.a && !e.v && !COVERS[s.id]) return false;
@@ -515,7 +574,7 @@
   var LIMIT = 60;
   function render() {
     list.textContent = '';
-    var shown = songs.filter(visible);
+    var shown = rows().filter(visible);
     shown.slice(0, LIMIT).forEach(function (s) { list.appendChild(card(s)); });
     fitAll(list);
     if (shown.length > LIMIT) {
@@ -527,8 +586,16 @@
     armed = false; bulkLabel(shown);
     counts();
   }
+  function rows() {   // John's songs and those on members' playlists, newest day first (John's first on the same day)
+    if (!MSONGS.length) return songs;
+    var out = [], i = 0, j = 0, dayJ = function (s) { return (DAYS[s.id] || dayOf(s.a).slug).split('-').reverse().join('-'); };
+    while (i < songs.length || j < MSONGS.length) {
+      if (j >= MSONGS.length || (i < songs.length && dayJ(songs[i]) >= MSONGS[j].d)) out.push(songs[i++]); else out.push(MSONGS[j++]);
+    }
+    return out;
+  }
   function bulkLabel(shown) {
-    shown = shown || songs.filter(visible);
+    shown = (shown || songs.filter(visible)).filter(function (s) { return !s.m; });
     var dock = $('dock'), b = $('bulk'), ready = shown.filter(function (s) { var st = state(s); return st.st === 'waiting' || changed(s, st); });
     dock.hidden = ready.length < 2;
     b.textContent = armed ? 'Tap again to sign off ' + ready.length : 'Sign off all ' + ready.length;
@@ -541,14 +608,15 @@
   function counts() {
     var c = { waiting: 0, signed: 0, old: 0, none: 0 }, chk = 0, files = 0, noa = 0, nov = 0;
     songs.forEach(function (s) { c[state(s).st]++; if (toCheck(s)) chk++; var e = CAT[s.id] || {}; if (e.a || e.v) files++; if (!e.a) noa++; if (!e.v) nov++; });
-    var n0 = { noa: noa, nov: nov, still: songs.filter(stillPic).length, waiting: c.waiting, check: chk, none: c.none };
+    MSONGS.forEach(function (s) { var e = CAT[s.id] || {}; if (!e.a) noa++; if (!e.v) nov++; });
+    var n0 = { noa: noa, nov: nov, still: songs.filter(stillPic).length, waiting: c.waiting, check: chk, none: c.none, members: MSONGS.length };
     Object.keys(n0).forEach(function (k) {   // a list with nothing in it isn't shown (John, 28 Oct 2026); All is shown instead
       $('n-' + k).textContent = n0[k];
       var b = document.querySelector('[data-show="' + k + '"]'); b.hidden = !n0[k];
       if (!n0[k] && show === k) { show = 'all'; [].forEach.call(document.querySelectorAll('[data-show]'), function (x) { x.setAttribute('aria-pressed', x.getAttribute('data-show') === 'all' ? 'true' : 'false'); }); if (songs.length) render(); }
     });
     var n = Object.keys(edits).length;
-    $('stat').innerHTML = songs.length + ' songs · <b>' + c.waiting + '</b> waiting for you' + (n ? ' · your changes on <b>' + n + '</b>' : '') + (files ? ' · your files on ' + files : '');
+    $('stat').innerHTML = songs.length + ' songs' + (MSONGS.length ? ' and ' + MSONGS.length + ' on members’ playlists' : '') + ' · <b>' + c.waiting + '</b> waiting for you' + (n ? ' · your changes on <b>' + n + '</b>' : '') + (files ? ' · your files on ' + files : '');
   }
   // ---- a new song's facts, still on their way (John, 30 Oct 2026: "Facts didn't seem to run again this morning": they
   // had, but reached the site 10 seconds after this page loaded and he signed the song off without them). While a song
@@ -889,18 +957,27 @@
     getJSON('videos.json').catch(function () { return {}; }),
     getJSON('facts-quotes.json').catch(function () { return {}; }),
     api('/members/admin', { op: 'list' }).catch(function () { return {}; }),
-    getJSON('video-alts.json').catch(function () { return {}; })
+    getJSON('video-alts.json').catch(function () { return {}; }),
+    api('/members/admin', { op: 'uplsongs' }).catch(function () { return {}; })
   ]).then(function (r) {
     ALTS = (r[8] && r[8].songs) || {};
     var asc = (r[0].songs || []).slice(), next = null;
     for (var di = asc.length - 1; di >= 0; di--) { var dd = dayOf(asc[di].a), iso = dd.slug.split('-').reverse().join('-');
       if (next && next <= iso) { var nd = new Date(next + 'T12:00:00Z'); nd.setUTCDate(nd.getUTCDate() - 1); iso = nd.toISOString().slice(0, 10); }
       DAYS[asc[di].id] = iso.split('-').reverse().join('-'); next = iso; }
-    songs = (r[0].songs || []).slice().reverse(); live = r[1]; pending = r[2]; signedW = r[3] || {};
+    songs = (r[0].songs || []).slice().reverse(); live = r[1];
+    var johns = {}, by = {}; songs.forEach(function (s) { johns[s.id] = 1; });
+    ((r[9] && r[9].songs) || []).forEach(function (x) {   // the songs out on members' playlists that aren't John's: each once, with every calendar it's on
+      if (johns[x.id]) return;
+      var m = by[x.id] = by[x.id] || { m: true, id: x.id, title: x.title, artist: x.artist, img: x.img, p: x.p, d: x.d, cals: [] };
+      m.cals.push({ pid: x.pid, t: x.t, n: x.n, mode: x.mode, o: x.o, d: x.d, sh: x.sh });
+      if (x.d > m.d) m.d = x.d;
+    });
+    MSONGS = Object.keys(by).map(function (k) { var m = by[k]; m.cals.sort(function (a, b) { return a.d < b.d ? 1 : -1; }); return m; }).sort(function (a, b) { return a.d < b.d ? 1 : a.d > b.d ? -1 : 0; }); pending = r[2]; signedW = r[3] || {};
     TAGS = (r[4] && r[4].songs) || {}; VIDS = (r[5] && r[5].videos) || {}; QUOTES = r[6] || {};
     CAT = r[7].catalog || {}; media = r[7].media !== false; COVERS = r[7].covers || {}; MEMBERS = r[7].members || [];
     live.src = live.src || []; live.songs = live.songs || {}; live.artists = live.artists || {}; pending.songs = pending.songs || {};
-    var months = {}; songs.forEach(function (s) { months[dayOf(s.a).month] = 1; });
+    var months = {}; songs.forEach(function (s) { months[dayOf(s.a).month] = 1; }); MSONGS.forEach(function (s) { months[s.d.slice(0, 7)] = 1; });
     Object.keys(months).sort().reverse().forEach(function (m) { var o = el('option', null, MONTHS[+m.slice(5) - 1] + ' ' + m.slice(0, 4)); o.value = m; $('month').appendChild(o); });
     // moods and genres changed on the old Moods page and not yet sent: carried over as changes here
     try {
