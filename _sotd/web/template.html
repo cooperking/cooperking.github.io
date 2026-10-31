@@ -6453,7 +6453,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function uplSongMap(x, view) {   // one of a member's songs, and which calendar it's from (upl, ut its title at the top, un its own, ush who sees it)
     var o = { upl: view.id, ut: view.t, un: view.n, ush: view.sh || 'members', n: x.n, tag: x.tag, a: londonDay(x.a), d: x.d, title: x.title, artist: x.artist, as: x.artists && x.artists.length > 1 || /, /.test(x.artist) ? x.artists : undefined, album: x.album, track: x.id, u: x.img, p: x.p, w: x.w ? 1 : 0, f: x.f ? 1 : 0 };
     if ('ov' in x) o.ov = x.ov;   // its owner's: the video ('' none), moods and genres, their MP3 and MP4, cover; their files' sizes (theirs)
-    if (x.tg) o.tg = x.tg; if (x.ma) o.ma = x.ma; if (x.mv) o.mv = x.mv; if (x.uc) o.uc = 1; if (x.own) o.own = x.own;
+    if (x.tg) o.tg = x.tg; if (x.ma) o.ma = x.ma; if (x.mv) o.mv = x.mv; if (x.uc) o.uc = 1; if (x.own) o.own = x.own; if (x.jf) o.jf = x.jf;   // (jf: John’s own for it, its owner’s editor)
     if (x.vid) o.vid = x.vid; if (x.mt) o.mt = x.mt; if (x.yr) o.yr = x.yr;   // what the site job found: its video, moods and genres, year
     if (x.fx) o.fx = x.fx; if (x.fxw) o.fxw = x.fxw; if (x.fxs) o.fxs = x.fxs;   // its facts (fx: signed off; its owner's: fxw waiting, fxs how they stand)
     return o;
@@ -6637,13 +6637,17 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     UED.m = (t.m || []).filter(function (x) { return MOOD_NAMES.indexOf(x) !== -1; }); UED.g = (t.g || []).slice(); UED.tags = 'back';
     upledChips();
   });
-  function upledFiles() {   // their files and cover, as they stand (john: John's own for the same song, which plays when they have none)
-    var s = UED.s, own = s.own || {}, john = (MEMBER && MEMBER.media && MEMBER.media[s.track]) || {};
+  function upledFiles() {   // their files and cover, as they stand (jf: John's own for the song, from the Songs tab: theirs of that kind can't be added)
+    var s = UED.s, own = s.own || {}, jf = s.jf || {};
     ['a', 'v'].forEach(function (k) {
       var busy = UED['busy' + k], most = k === 'a' ? '80 MB at most' : '1.5 GB at most';
-      document.getElementById('upledst' + k).textContent = busy != null ? 'Going up… ' + busy + '%' : own[k] ? 'Added · ' + upledMB(own[k])
-        : john[k] ? (MEMBER.owner === true ? 'Yours from the Songs tab plays now (the same song is on your calendar). One added here would play in its place (' + most + ').'
-          : 'John’s plays now: the same song is on his calendar. Yours would play in its place (' + most + ').') : 'None yet (' + most + ')';
+      if (jf[k]) {   // (John sees it as the Songs tab shows it)
+        document.getElementById('upledst' + k).textContent = MEMBER && MEMBER.owner === true ? (k === 'a' ? 'Song · ' : 'Video · ') + (jf[k] >= 1e9 ? (jf[k] / 1e9).toFixed(1) + ' GB' : (jf[k] / 1e6).toFixed(jf[k] < 1e7 ? 1 : 0) + ' MB') : 'Already uploaded';
+        document.getElementById('upledadd' + k).hidden = true; document.getElementById('upleddrop' + k).hidden = true; document.getElementById('upledbar' + k).hidden = true;
+        return;
+      }
+      document.getElementById('upledadd' + k).hidden = false;
+      document.getElementById('upledst' + k).textContent = busy != null ? 'Going up… ' + busy + '%' : own[k] ? 'Added · ' + upledMB(own[k]) : 'None yet (' + most + ')';
       var add = document.getElementById('upledadd' + k); add.textContent = own[k] ? 'Replace' : 'Add'; add.disabled = busy != null;
       document.getElementById('upleddrop' + k).hidden = !own[k] || busy != null;
       var bar = document.getElementById('upledbar' + k); bar.hidden = busy == null; bar.firstChild.style.width = (busy || 0) + '%';

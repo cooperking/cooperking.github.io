@@ -3092,6 +3092,7 @@ async function uplView(env, all, viewer, pid, rec) {   // a playlist as the cale
   const tags = (await env.SOTD.get('tags', 'json')) || {};
   const days = uplDays(data.songs || [], rec);
   const meta = (await env.SOTD.get('uplmeta', 'json')) || {}, facts = (await env.SOTD.get('ufacts:' + pid, 'json')) || {}, wanted = new Set(uplShareOf(rec) === 'public' ? uplFactsWanted(rec, data) : []);
+  const cat = await catalog(env);   // John's own (the Songs tab's): a song's that he has, its owner's of that kind aren't used
   const ed = data.ed || {}, files = data.files || {}, see = mine ? { a: true, v: true } : viewer && all[viewer] ? mediaFor(all[viewer]) : { a: false, v: false }, exp = Math.floor(Date.now() / 1000) + LINK_HOURS * 3600;
   const gone = new Set((data.songs || []).filter(x => uplGone(data, x)).map(x => x.id));
   let songs = composeSongs(data.songs || [], pv, tags).map((x, i) => Object.assign(x, { d: days[i].d }, uplWaiting(rec, data, data.songs[i]) ? { w: 1 } : {}, days[i].d > today ? { f: 1 } : {}))
@@ -3104,8 +3105,10 @@ async function uplView(env, all, viewer, pid, rec) {   // a playlist as the cale
     if (mine) { if (fx && fx.w) x.fxw = fx.w; x.fxs = fx && fx.w ? 'wait' : fx && fx.ok ? 'ok' : fx && fx.none ? 'nil' : wanted.has(x.id) ? 'asked' : uplShareOf(rec) === 'public' ? 'none' : 'off'; }
     if (e && 'v' in e) x.ov = e.v;
     if (e && (e.m || e.g)) x.tg = { m: e.m || null, g: e.g || null };   // (null: the ones worked out)
+    const jc = cat[x.id] || {};
+    if (mine && (jc.a || jc.v)) x.jf = { a: jc.a || 0, v: jc.v || 0 };   // (its owner's editor: John's, with their sizes)
     if (f) {
-      for (const k of ['a', 'v']) if (f[k] && see[k] && env.ADMIN_KEY) x['m' + k] = LIVE_ORIGIN + '/m/u' + k + '/' + pid + '/' + x.id + '.' + MEDIA_KINDS[k].ext + '?e=' + exp + '&s=' + await mediaSig(env, 'u' + k + '/' + pid, x.id, exp);
+      for (const k of ['a', 'v']) if (f[k] && !jc[k] && see[k] && env.ADMIN_KEY) x['m' + k] = LIVE_ORIGIN + '/m/u' + k + '/' + pid + '/' + x.id + '.' + MEDIA_KINDS[k].ext + '?e=' + exp + '&s=' + await mediaSig(env, 'u' + k + '/' + pid, x.id, exp);
       if (f.c) { x.img = LIVE_ORIGIN + '/uc/' + pid + '/' + x.id + '.jpg?v=' + f.c; x.uc = 1; }
       if (mine) x.own = { a: f.a || 0, v: f.v || 0, c: f.c ? 1 : 0 };
     }
@@ -3348,7 +3351,10 @@ async function memberUplUp(request, url, env, answer) {   // ?id&track&kind=a|v&
   if (!MEDIA_KINDS[kind]) return answer(400, { error: 'An MP3 (a) or an MP4 (v)?' });
   const key = 'u' + kind + '/' + o.pid + '/' + o.track + '.' + MEDIA_KINDS[kind].ext;
   if (op === 'drop') { await env.MEDIA.delete(key); await uplFilesSet(env, o.pid, o.track, kind, 0); return answer(200, { ok: true, view: await uplView(env, o.who.all, o.who.id, o.pid, o.rec) }); }
-  if (op === 'start') return answer(200, { uploadId: (await env.MEDIA.createMultipartUpload(key, { httpMetadata: { contentType: MEDIA_KINDS[kind].type } })).uploadId });
+  if (op === 'start') {
+    if ((await catalog(env))[o.track] && (await catalog(env))[o.track][kind]) return answer(400, { error: 'Already uploaded.' });   // (John's, from the Songs tab)
+    return answer(200, { uploadId: (await env.MEDIA.createMultipartUpload(key, { httpMetadata: { contentType: MEDIA_KINDS[kind].type } })).uploadId });
+  }
   if (!uid) return answer(400, { error: 'Which upload?' });
   const up = env.MEDIA.resumeMultipartUpload(key, uid);
   if (op === 'part') {
