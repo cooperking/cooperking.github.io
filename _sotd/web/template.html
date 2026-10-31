@@ -6498,8 +6498,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (view.sp) document.getElementById('spfollow').setAttribute('href', 'https://open.spotify.com/playlist/' + view.sp);   // (a saved playlist's calendar has none)
     var yf = document.getElementById('ytfollow');
     if (!UPL.johnYt) UPL.johnYt = { href: yf.getAttribute('href'), hidden: yf.hidden };
-    root.classList.toggle('upl-noyt', !view.yt);
-    if (view.yt) { yf.href = 'https://www.youtube.com/playlist?list=' + view.yt; yf.hidden = false; }
+    var yl = view.mode === 'list' ? list.slice() : list.slice().sort(function (p, q) { return p.d < q.d ? 1 : p.d > q.d ? -1 : 0; });   // its songs as a list on YouTube: newest day first (a playlist: in its order), up to 50
+    var yids = yl.map(songYt).filter(Boolean).slice(0, 50);
+    root.classList.toggle('upl-noyt', !yids.length);
+    if (yids.length) { yf.href = 'https://www.youtube.com/watch_videos?video_ids=' + yids.join(',') + '&title=' + encodeURIComponent(view.n); yf.hidden = false; }
     uplMark(); render(); if (idx.open) renderIndex();
     if (!keep) try { history.replaceState(null, '', location.pathname + location.search + '#u=' + view.id); } catch (e) {}
     if (opts.day) { if (byDate[opts.day]) openDay(opts.day); else if (view.mine) mineUplShow(view, { day: opts.day }); }   // (one of theirs not out yet: in the pop-up)

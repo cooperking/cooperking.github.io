@@ -1,19 +1,17 @@
 #!/usr/bin/env python3
-"""Members' own Spotify playlists, for the site job: which of their songs this run takes in for their YouTube copies,
-and the song list that the steps finding videos, moods and years work through (John's songs, then theirs).
+"""Members' own Spotify playlists, for the site job: the song list that the steps finding videos, moods and years work
+through (John's songs, then theirs).
 
     python3 _sotd/upl_sync.py OUT.json
 
 Reads the playlists the calendar can read from the Worker (/upl/sync, with this job's GITHUB_TOKEN). All of a
-playlist's songs are in from when it's first seen, and each one added to it straight away; youtube_upl.py adds each to
-its YouTube copy once its video is found, as many as the day's YouTube allowance leaves room for. Videos, moods and years
-are found for all its songs (look: kept from before all were in). What's in and what's looked at are kept in
-_sotd/data/upl.json (for each playlist, in and look: each song's track id and the day; youtube_upl.py keeps its YouTube
-copy there too).
+playlist's songs are in from when it's first seen, and each one added to it straight away (look: kept from before all
+were in). What's in and what's looked at are kept in _sotd/data/upl.json (for each playlist, in and look: each song's
+track id and the day).
 
 Writes OUT.json: John's songs.json, then the songs in or looked at from members' playlists that aren't his (numbered
 from 100001, with upl: the playlist's id), and beside it upl-playlists.json (each playlist's title, kind, songs in order
-and which are in) for youtube_upl.py, and songs-facts.json: John's songs and the songs on members' public playlists
+and which are in) for share_pages.py and upl_facts.py, and songs-facts.json: John's songs and the songs on members' public playlists
 that want facts (facts: new since it was added, its 10 newest from before, or asked for by its owner), for about.py's sources and so John's facts
 task. Without the token, or an answer from the Worker, OUT.json is John's songs alone (and neither of the others).
 """
@@ -93,7 +91,7 @@ def main(out):
             rec = state['playlists'].setdefault(pid, {})
             came = take_in(rec, pl, today)
             looked = look_at(rec, pl, today)
-            print(pl['title'] + ':', len(pl['songs']), 'songs,', len(rec['in']), 'in its YouTube copy so far' + (', ' + str(len(came)) + ' new this run' if came else '')
+            print(pl['title'] + ':', len(pl['songs']), 'songs,', len(rec['in']), 'taken in so far' + (', ' + str(len(came)) + ' new this run' if came else '')
                   + (', ' + str(looked) + ' more to find videos, moods and years for' if looked else ''))
             for x in pl['songs']:
                 if (x['id'] in rec['in'] or x['id'] in rec['look']) and x['id'] not in have:
@@ -116,7 +114,7 @@ def main(out):
                     have.add(x['id'])
         with open(os.path.join(os.path.dirname(os.path.abspath(out)), 'songs-facts.json'), 'w', encoding='utf-8') as f:
             json.dump(dict(john, songs=fs), f, ensure_ascii=False)
-    if plays is not None:   # (none: the steps after leave members' YouTube copies and cards as they are)
+    if plays is not None:   # (none: the steps after leave members' cards and facts as they are)
         with open(os.path.join(os.path.dirname(os.path.abspath(out)), 'upl-playlists.json'), 'w', encoding='utf-8') as f:
             json.dump({pid: dict(pl, **{'in': sorted(state['playlists'][pid]['in'])}) for pid, pl in plays.items()}, f, ensure_ascii=False)
     print(len(john['songs']), 'of John’s songs,', len(songs) - len(john['songs']), 'from members’ playlists')

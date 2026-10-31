@@ -248,7 +248,7 @@ was added, the same rule for missed days) or a plain playlist (its songs, newest
 "<their name>’s Song of the Day" on the calendar (John, 30 Oct 2026), with its title above the month; a plain playlist
 goes by its title. Its title is Spotify's name for it until its owner changes it (John, 31 Oct 2026: "default to the
 spotify name when imported but let them change it"; the pop-up's *Playlist name*, empty for Spotify's again;
-`title` on its record, `n` Spotify's); its YouTube copy is renamed with it. Phases 1
+`title` on its record, `n` Spotify's). Phases 1
 (the Worker, the draft calendar, the Members tab), 2 (their songs' videos, moods, years and YouTube copies) and 3
 (facts for public ones' songs) are in.
 
@@ -289,15 +289,15 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   playlist's buttons (First day, Song A–Z, Artist A–Z, Oldest, each the other way on a second tap; Shuffle), saved for
   everyone (`order` in `upl:<id>`); songs added on Spotify since go after, as Spotify has them. On the page it's
   listed in that order; a song tapped plays on through it from there. On a computer it fills the calendar's place.
-  Its YouTube copy keeps Spotify's order.
+  *On YouTube* lists them in that order.
 - **Who sees them** (John, 31 Oct 2026: "Members should be able to choose, public, private, or choose members to share
   with in playlist set up"; asked straight after adding one, and the pop-up's *Setup*; `share` and `to`
   on its record): *Public* (every member, and anyone with its link, signed in or not), *Every member* (the first
   setting, and the one before 31 Oct), *Members you choose* (ticked; `to`), or *Private* (just its owner). Never anyone
   kept apart from its owner, and only once John has joined it; its owner from the start. Its messages go only to those
   who see it. The calendar's title (top left) chooses whose calendar shows: John's, or a member's (the address then has
-  `#u=<id>`, `#u=<id>&d=<day>` for a day, `#u=<id>&m=<mm-yyyy>` for a month). On another's calendar the Spotify and
-  YouTube links go to their playlist and its copy, and playing My playlist goes back to John's calendar.
+  `#u=<id>`, `#u=<id>&d=<day>` for a day, `#u=<id>&m=<mm-yyyy>` for a month). On another's calendar the Spotify link goes to
+  their playlist and *On YouTube* lists its songs (below), and playing My playlist goes back to John's calendar.
 - **Hearts** (John, 31 Oct 2026: "You should be able to favourite songs and add to your own playlists"): on members'
   calendars as on John's (each song, and a month's at once). A member's song in My playlist or a saved playlist is kept
   on the device with what's needed to show and play it on any calendar (`sotd-songx`: its calendar too), brought up to
@@ -327,14 +327,14 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   calendar. Deleting it from a day will leave a gap in the calendar. Put a confirm check on before they delete"; asked
   whether off Spotify too: "Calendar only"): *Delete* on a song in the pop-up asks first, then takes it off for
   everyone (op `del`; `del { <track>: its added time }` in `upl:<id>`), not off Spotify. Its day stays empty: days are
-  worked out with it still there. It's left out of the view, the site job's list (so its YouTube copy loses it), the
+  worked out with it still there. It's left out of the view, the site job's list, *On YouTube*, the
   facts wanted, the notifications and the Members tab's songs. Taken off Spotify and added again, it's a new song.
 - **A saved playlist on the calendar** (John, 31 Oct 2026: "They also should have the option to turn normal playlists
   from the site into their own calendar with the same options. Everything can be shared and notified in the same
   way"; asked how its days go: "Same 3 as Spotify"): a saved playlist's pop-up has the same *Setup*, starting at *Not
   on it*; *A calendar* or *A playlist* puts it on the calendar (op `fromlist`; a record with `src: 'mpl'` and `pl`, its
-  saved playlist's id; 5 at most), with the same days, who sees it, notifications, sharing, links, cards and YouTube
-  copy as a Spotify one. Its songs follow the saved playlist (`uplListSync`, each time it's saved): one added is out
+  saved playlist's id; 5 at most), with the same days, who sees it, notifications, sharing, links, cards and *On YouTube*
+  as a Spotify one. Its songs follow the saved playlist (`uplListSync`, each time it's saved): one added is out
   at once, with no sign-off, `a` the time it was saved (those in it when it went on, then; by John's rule they run
   back a day each from that day); one taken out is deleted (asked first: "Delete “…”?") and leaves its day empty; one
   put back is on its day again; a playlist's order is the saved one's. Its name is the saved playlist's. The Worker's
@@ -346,6 +346,13 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   the playlist's opened from (`songYt`: the one the calendar has, else a member's song's owner's choice or the one
   found, from its calendar or what's kept with it); before, a member's songs only had theirs while their own calendar
   showed. Test: `upl_yt_t.py`.
+- **On YouTube on a member's calendar** (John, 31 Oct 2026: "the playlist or calendar for another person doesn't need
+  my account. We can just make a YouTube playlist the same way we do with normal playlists"): the calendar's *On
+  YouTube* opens its songs' videos as a list on YouTube (`watch_videos`, as My playlist's YouTube button; `songYt` for
+  each), newest day first (a playlist: in its order), the first 50; hidden when none has a video. Nothing is made on
+  John's channel: the site job no longer runs `_sotd/youtube_upl.py`, and the unlisted copies it made before stay on
+  his channel until he deletes them (each one's id is `yt` in `_sotd/data/upl.json`, kept in the Worker). Tests:
+  `upl_page_t.py`, `upl_order_t.py`.
 - **A plain playlist's page** (John, 31 Oct 2026: "Can it say 27 Songs on AABBCC or whatever the playlist is called -
   then it doesn't need the big header too. The 27 Songs subheader can go too, and move the play button down into the
   bar next to the other shuffle"): no big name or count at the top; its bar says "<n> songs on <its name>", with Play
@@ -363,8 +370,8 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   30 more of any not looked up yet, at any hour. *Open in Spotify* takes their songs too. Removing a member
   removes their playlists; *Remove* (theirs, or John's on the Members tab with two taps) takes one off the calendar,
   not off Spotify.
-- **Videos, moods, years, YouTube copies** (the site job, song-tags.yml): `_sotd/upl_sync.py` takes in all of each
-  playlist's songs for its YouTube copy when it's first seen, and each one added after straight away (John, 31 Oct
+- **Videos, moods, years** (the site job, song-tags.yml): `_sotd/upl_sync.py` takes in all of each
+  playlist's songs when it's first seen, and each one added after straight away (John, 31 Oct
   2026: "It should actually hold every song straight away"; before, its 10 newest, then 5 more a day: John, 30 Oct
   2026: "It should add their last ten songs in the playlist to a new YouTube playlist after that 5 a day or less if
   there isn't capacity"); kept in `_sotd/data/upl.json` (`in`). Each goes into the copy once its video is found, as many
@@ -373,9 +380,9 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   aren't being added"). The steps finding videos (youtube.py, within its 95 searches a day),
   listening to previews, Last.fm, MusicBrainz, years and moods (make_tags.py) then work through John's songs and those
   (numbered from 100001, marked `upl`); John's songs keep their order and the searches kept for his newest, and moods
-  are measured on John's songs alone, so his don't change. `_sotd/youtube_upl.py` (after John's YouTube playlist) makes
-  each one's unlisted YouTube copy on the same channel, titled as the calendar calls it, and adds its songs that have a
-  video, in order, stopping with 1,000 of the day's units left for John's; the calendar's *On YouTube* goes to it.
+  are measured on John's songs alone, so his don't change. Until 31 Oct 2026 `_sotd/youtube_upl.py` (after John's
+  YouTube playlist) also made each one an unlisted YouTube copy on his channel (see *On YouTube on a member's
+  calendar*).
   None of it for members' songs is kept in this repository or on the site (John, 31 Oct 2026: "Why does any of that
   have to be public at all?"): `_sotd/upl_private.py load` puts last run's part for their songs back into the files
   before the steps (from the Worker's `/upl/data`, R2 `site/upl-data.json`), and `save` takes every song on a member's
@@ -386,8 +393,8 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   job leaves their songs out that run. Only a public playlist's cards are on the site (`songs/u/`). Tests:
   `upl_private_t.py`, `upl_data_t.mjs`.
   The site job gets the playlists from the Worker's `/upl/sync` with its own GITHUB_TOKEN (the Worker checks with GitHub
-  that it's a token for this repository alone), and sends back the YouTube copies. The Worker starts the site job when a
-  member's playlist changes, and once a day from 07:00 for the day's 5 more. Tests: `upl_py_t.py`.
+  that it's a token for this repository alone). The Worker starts the site job when a
+  member's playlist changes, and once a day from 07:00 for videos, moods and years not found yet. Tests: `upl_py_t.py`.
 - **Their own for each song** (John, 31 Oct 2026: "there doesn't seem to be anywhere to see the youtube links, the mp3s
   moods or anything else that I get in my option on the admin page"): its owner taps the pencil on the song in the
   pop-up, any time, before or after sign-off. *Its video*: the one found on YouTube, a YouTube
@@ -399,8 +406,7 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   cropped square to 640 pixels on the page (R2 `uc/<id>/<track>.jpg`, served at `/uc/…` for everyone who sees the
   calendar). The files and the cover go up as soon as they're chosen, and *Take off* asks first. Sizes in `files` in
   `upl:<id>`. On their calendar each song shows its owner's choices; downloads are for John's calendar only. Their
-  video goes into the YouTube copy (one changed since has its old one taken out; with none, taken out) and the site job
-  doesn't search for it. Removing the playlist (or the member) removes its files. A song John has his own MP3 or MP4
+  video is the one in *On YouTube* and the site job doesn't search for it. Removing the playlist (or the member) removes its files. A song John has his own MP3 or MP4
   for (the Songs tab's) plays his, for those he lets have them; its owner can't add their own of that kind (John, 31
   Oct 2026: "if I already have the song, they can't upload one of their own"): the editor says "Already uploaded", and
   to John shows it as the Songs tab does ("Song · 4.2 MB"), from `jf` on the song in its owner's view. One they added
@@ -417,7 +423,7 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   whose and where ("Mum’s Sunday Picks · 28 Oct 2026", "Member: Mum"; his own member's "Your …", "Member: you"), lists
   every playlist it's on, and has the same sections as his: moods and genres, video, facts, his own MP3, MP4 and
   covers. His moods, genres and video (only those he changed; admin op `upledit`, KV `uplJohn`) win over its members'
-  on every playlist with it, and its YouTube copies (John: "Mine wins"); their editor shows them as "Chosen by John",
+  on every playlist with it, and in *On YouTube* (John: "Mine wins"); their editor shows them as "Chosen by John",
   not to change (`jo` on the song in its owner's view). Its facts are its public playlist's, as written for it (John:
   "Public ones; I can sign off"): waiting ones are in Waiting, and his *Sign off* puts them out as he left them (admin
   op `uplfacts`), as its owner's would; one on no public playlist says it has none. *Match songs and videos…* (it was

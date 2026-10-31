@@ -10,7 +10,7 @@ choice, ov, '' for none; else the calendar's, songs/videos.json) goes in, in the
 whose video has changed since has its old one taken out first (50 more), and one with none now, taken out. John's
 playlist goes first (its step runs before this), and this stops with RESERVE units of the day left, so what doesn't fit waits for the next run. What's in each is
 kept in _sotd/data/upl.json (yt: the YouTube playlist, added: each song's video and playlist item), and the YouTube
-playlists are sent to the Worker (/upl/sync, with this job's GITHUB_TOKEN) for the calendar's On YouTube.
+playlists are sent to the Worker (/upl/sync, with this job's GITHUB_TOKEN).
 """
 import datetime, json, os, sys, urllib.parse, urllib.request
 

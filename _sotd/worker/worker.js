@@ -3021,17 +3021,17 @@ async function uplLook(env) {   // the timer: playlists due a read (UPL_LOOK_MOS
   await uplPreviews(env, U).catch(e => console.log('uplPreviews: ' + (e && e.message)));
   const today = londonDay();
   await uplAnnounce(env, U, today).catch(e => console.log('uplAnnounce: ' + (e && e.message)));
-  if (Object.values(U).some(r => r.chg)) {   // a saved playlist's calendar changed since: the site job (its videos and YouTube copy)
+  if (Object.values(U).some(r => r.chg)) {   // a saved playlist's calendar changed since: the site job (its songs' videos, moods and years)
     for (const r of Object.values(U)) delete r.chg;
     await uplPut(env, U);
     await startJob(env, null, null, 0, null, true).catch(() => {});
   }
   if (h >= 7 && Object.values(U).some(r => r.st === 'ok') && (await env.SOTD.get('uplJobDay')) !== today && await kvSoft(env, 'uplJobDay', today))
-    await startJob(env, null, null, 0, null, true).catch(() => {});   // once a day: their songs' videos found since, into their YouTube copies
+    await startJob(env, null, null, 0, null, true).catch(() => {});   // once a day: their songs' videos, moods and years not found yet
 }
 // /upl/sync, for the site job only (its own GITHUB_TOKEN, checked with GitHub: a token for this repository alone): GET
 // the readable playlists with their songs (as songs.json gives them), its calendar title and YouTube copy; POST { yt: {
-// <pid>: <YouTube playlist id> } } keeps the YouTube copies the job made, for the calendar's On YouTube.
+// <pid>: <YouTube playlist id> } } keeps the YouTube copies youtube_upl.py made (yt on the calendar's view).
 const ghOk = new Map();
 async function ghJob(request) {
   const tok = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
