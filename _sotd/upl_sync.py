@@ -4,10 +4,10 @@ and the song list that the steps finding videos, moods and years work through (J
 
     python3 _sotd/upl_sync.py OUT.json
 
-Reads the playlists the calendar can read from the Worker (/upl/sync, with this job's GITHUB_TOKEN). A playlist's songs
-come in a few at a time: its 10 newest when it's first seen, then 5 more a day (newest first), and each song added to it
-after it was added to the calendar straight away; youtube_upl.py adds those to its YouTube copy. Videos, moods and years
-are found for all its songs: those in, and the rest LOOK a run (newest first). What's in and what's looked at are kept in
+Reads the playlists the calendar can read from the Worker (/upl/sync, with this job's GITHUB_TOKEN). All of a
+playlist's songs are in from when it's first seen, and each one added to it straight away; youtube_upl.py adds each to
+its YouTube copy once its video is found, as many as the day's YouTube allowance leaves room for. Videos, moods and years
+are found for all its songs (look: kept from before all were in). What's in and what's looked at are kept in
 _sotd/data/upl.json (for each playlist, in and look: each song's track id and the day; youtube_upl.py keeps its YouTube
 copy there too).
 
@@ -24,7 +24,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 STATE = os.path.join(HERE, 'data', 'upl.json')
 SONGS_URL = os.environ.get('SOTD_JOHN_SONGS_URL', 'https://sotd-playlists.cooperking.workers.dev/songs.json')
 SYNC_URL = os.environ.get('SOTD_UPL_URL', 'https://sotd-playlists.cooperking.workers.dev/upl/sync')
-FIRST, DAILY, LOOK, BASE_N = 10, 5, 40, 100000
+LOOK, BASE_N = 40, 100000
 UA = {'User-Agent': 'SongOfTheDayCalendar/1.0 (https://cooperking.github.io/songs/)'}
 
 
@@ -46,26 +46,14 @@ def added_ms(iso):
 
 
 def take_in(rec, pl, today):
-    """The playlist's songs to have in now: kept in rec['in'] (track id: the day it came in)."""
-    songs, base = pl['songs'], pl.get('base') or 0
-    first = 'in' not in rec
+    """The playlist's songs to have in now: every one, newest first (kept in rec['in']: track id, the day it came in)."""
     rec.setdefault('in', {})
-    rec.setdefault('days', {})
+    rec.pop('days', None)
     came = []
-    for x in songs:   # added after it was added to the calendar: in straight away
-        if x['id'] not in rec['in'] and added_ms(x['a']) > base:
+    for x in reversed(pl['songs']):
+        if x['id'] not in rec['in']:
             rec['in'][x['id']] = today
             came.append(x['id'])
-    older = [x for x in reversed(songs) if added_ms(x['a']) <= base and x['id'] not in rec['in']]   # newest first
-    room = FIRST if first else max(0, DAILY - rec['days'].get(today, 0))
-    for x in older[:room]:
-        rec['in'][x['id']] = today
-        came.append(x['id'])
-    if first:
-        rec['days'][today] = DAILY   # (the first 10 are that day's)
-    elif older[:room]:
-        rec['days'][today] = rec['days'].get(today, 0) + len(older[:room])
-    rec['days'] = {d: n for d, n in rec['days'].items() if d >= (datetime.date.fromisoformat(today) - datetime.timedelta(days=7)).isoformat()}
     return came
 
 

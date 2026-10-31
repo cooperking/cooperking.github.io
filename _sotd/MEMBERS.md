@@ -363,17 +363,19 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   30 more of any not looked up yet, at any hour. *Open in Spotify* takes their songs too. Removing a member
   removes their playlists; *Remove* (theirs, or John's on the Members tab with two taps) takes one off the calendar,
   not off Spotify.
-- **Videos, moods, years, YouTube copies** (the site job, song-tags.yml): `_sotd/upl_sync.py` takes in each playlist's
-  10 newest songs for its YouTube copy when it's first seen, then 5 more a day (newest first), and every song added after
-  it was added straight away (John, 30 Oct 2026: "It should add their last ten songs in the playlist to a new YouTube
-  playlist after that 5 a day or less if there isn't capacity"); kept in `_sotd/data/upl.json` (`in`). Videos, moods and
-  years are found for all its songs: those in, and 40 more a run, newest first (`look`; John, 31 Oct 2026: "youtube or
-  previews aren't being added"). The steps finding videos (youtube.py, within its 95 searches a day),
+- **Videos, moods, years, YouTube copies** (the site job, song-tags.yml): `_sotd/upl_sync.py` takes in all of each
+  playlist's songs for its YouTube copy when it's first seen, and each one added after straight away (John, 31 Oct
+  2026: "It should actually hold every song straight away"; before, its 10 newest, then 5 more a day: John, 30 Oct
+  2026: "It should add their last ten songs in the playlist to a new YouTube playlist after that 5 a day or less if
+  there isn't capacity"); kept in `_sotd/data/upl.json` (`in`). Each goes into the copy once its video is found, as many
+  a run as the day's YouTube allowance leaves room for (50 units each, 1,000 kept for John's: about 150 songs a day
+  across all the copies). Videos, moods and years are found for all its songs (John, 31 Oct 2026: "youtube or previews
+  aren't being added"). The steps finding videos (youtube.py, within its 95 searches a day),
   listening to previews, Last.fm, MusicBrainz, years and moods (make_tags.py) then work through John's songs and those
   (numbered from 100001, marked `upl`); John's songs keep their order and the searches kept for his newest, and moods
   are measured on John's songs alone, so his don't change. `_sotd/youtube_upl.py` (after John's YouTube playlist) makes
-  each one's unlisted YouTube copy on the same channel, titled as the calendar calls it, and adds the songs taken in that
-  have a video, in order, stopping with 1,000 of the day's units left for John's; the calendar's *On YouTube* goes to it.
+  each one's unlisted YouTube copy on the same channel, titled as the calendar calls it, and adds its songs that have a
+  video, in order, stopping with 1,000 of the day's units left for John's; the calendar's *On YouTube* goes to it.
   None of it for members' songs is kept in this repository or on the site (John, 31 Oct 2026: "Why does any of that
   have to be public at all?"): `_sotd/upl_private.py load` puts last run's part for their songs back into the files
   before the steps (from the Worker's `/upl/data`, R2 `site/upl-data.json`), and `save` takes every song on a member's
@@ -432,8 +434,8 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   `oj` for John's own member, its finds, its facts, and John's choices). Tests: `songs_members_t.py`, `songs_replace_t.py`, `songs_publish_t.py`, `upl_jfiles_page_t.py`.
 - **Facts, for public playlists' songs** (John, 31 Oct 2026, asked which: "Public playlists only"): written and checked
   by John's facts task as his are (`_sotd/FACTS.md`), for the songs on a playlist set to Public that were added after it
-  was added to the calendar, the 10 newest from before that (John, 31 Oct 2026, offered the same 10 its
-  YouTube copy starts with: "let's do that"), and any other when its owner taps *Ask for facts* in its editor (10 a day; `fask` in
+  was added to the calendar, the 10 newest from before that (John, 31 Oct 2026, offered the 10 its
+  YouTube copy then started with: "let's do that"), and any other when its owner taps *Ask for facts* in its editor (10 a day; `fask` in
   `upl:<id>`). The Worker's
   `/upl/sync` lists them (`facts`); `_sotd/upl_sync.py` writes them with John's songs into `songs-facts.json`, which
   about.py gathers sources for (each marked `upl`), so `facts_todo.py` and `facts_ask.py` take each once. `facts_add.py`

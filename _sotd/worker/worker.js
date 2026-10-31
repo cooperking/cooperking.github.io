@@ -3027,7 +3027,7 @@ async function uplLook(env) {   // the timer: playlists due a read (UPL_LOOK_MOS
     await startJob(env, null, null, 0, null, true).catch(() => {});
   }
   if (h >= 7 && Object.values(U).some(r => r.st === 'ok') && (await env.SOTD.get('uplJobDay')) !== today && await kvSoft(env, 'uplJobDay', today))
-    await startJob(env, null, null, 0, null, true).catch(() => {});   // each day's 5 more of their older songs
+    await startJob(env, null, null, 0, null, true).catch(() => {});   // once a day: their songs' videos found since, into their YouTube copies
 }
 // /upl/sync, for the site job only (its own GITHUB_TOKEN, checked with GitHub: a token for this repository alone): GET
 // the readable playlists with their songs (as songs.json gives them), its calendar title and YouTube copy; POST { yt: {

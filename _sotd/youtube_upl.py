@@ -4,8 +4,8 @@ titled as the calendar calls it ("Mum's Song of the Day", or a plain playlist's 
 
     python3 _sotd/youtube_upl.py PLAYLISTS.json
 
-PLAYLISTS.json is upl_sync.py's upl-playlists.json: each playlist's songs in order and the ones taken in so far (its 10
-newest first, then 5 more a day, and each new song straight away). Each song taken in that has a video (its owner's
+PLAYLISTS.json is upl_sync.py's upl-playlists.json: each playlist's songs in order and the ones taken in (all of them,
+each new one straight away). Each song taken in that has a video (its owner's
 choice, ov, '' for none; else the calendar's, songs/videos.json) goes in, in the playlist's order, 50 units each; a song
 whose video has changed since has its old one taken out first (50 more), and one with none now, taken out. John's
 playlist goes first (its step runs before this), and this stops with RESERVE units of the day left, so what doesn't fit waits for the next run. What's in each is
