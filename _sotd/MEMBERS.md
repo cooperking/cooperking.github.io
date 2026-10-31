@@ -262,17 +262,29 @@ still to come: facts, written for new songs and on request for older ones, check
   each song is added on Spotify (John's rule, a day with no song taking the next); forwards from a day (the first song on
   it, then a song a day); or back from a day (the newest song now on it, each one before a day earlier). Either of the
   last two keeps its anchor (the first, or the newest then: `dates { how, day, at, n }` on its record), so new songs
-  follow on a day each. A day still to come is hidden from the others (its owner sees it dimmed). Moving the anchor looks at today's song again.
+  follow on a day each. A day still to come is hidden on the calendar (its owner sees it in the pop-up, "to come"). Moving the anchor looks at today's song again.
 - **Messages** (John, 30 Oct 2026: "Songs shouldn’t automatically go out as a message unless the user chooses and
   should be able to choose the time too"; Profile › Playlists › *Messages*): off unless its owner turns it on, at the
   time they choose (UK time; `send { on, at }` on its record). On: a calendar's song goes to the members on its day, a
   playlist's on the day its owner signs it off, at that time, or at the sign-off when that's later; once each (`ann`
   in `upl:<id>`), as a message from its owner, to those who take theirs. The Worker's 10-minute look sends them.
-- **A plain playlist's order** (John, 30 Oct 2026: "orderable in exactly the same way as a normal playlist"): listed as
-  My playlist lists songs; its owner moves them by the handle (or the up and down arrow keys) or orders them with My
+- **In the My playlist pop-up** (John, 31 Oct 2026: "spotify playlists should be treated in most ways like another
+  playlist - you need to be able to get to them from the playlists badge on another playlist, and open them to edit
+  them in the same way, as a popup to reorder and edit - editing should be done from the popup, not the page shown to
+  other users"): their own Spotify playlists are among their playlists' badges there (A–Z with the saved ones), and
+  open there from a badge or Profile › Playlists › *Open*: all its songs (the waiting ones, marked, with *Sign off*;
+  a calendar's days to come, "to come"; each with its day for a calendar), the pencil on each (its video, moods,
+  files and cover), *Play*, *Open in Spotify*, YouTube, and its settings (*Show* its calendar as the others see it,
+  *Title*, *Who sees it*, *Days*, *Messages*, the kind, *Check now*, *Remove*); *Back to My playlist* (or another
+  badge) leaves it. The calendar and a plain playlist's list show it as the others see it, for its owner too: no
+  waiting songs or days to come, no Sign off or Edit. A link to a waiting song (its owner's notification) opens it in
+  the pop-up.
+- **A plain playlist's order** (John, 30 Oct 2026: "orderable in exactly the same way as a normal playlist"): in the
+  pop-up, as My playlist: its owner moves them by the handle (or the up and down arrow keys) or orders them with My
   playlist's buttons (First day, Song A–Z, Artist A–Z, Oldest, each the other way on a second tap; Shuffle), saved for
-  everyone (`order` in `upl:<id>`); songs added on Spotify since go after, as Spotify has them. A song tapped plays on
-  through it from there. On a computer it fills the calendar's place. Its YouTube copy keeps Spotify's order.
+  everyone (`order` in `upl:<id>`); songs added on Spotify since go after, as Spotify has them. On the page it's
+  listed in that order; a song tapped plays on through it from there. On a computer it fills the calendar's place.
+  Its YouTube copy keeps Spotify's order.
 - **Who sees them** (John, 31 Oct 2026: "Members should be able to choose, public, private, or choose members to share
   with in playlist set up"; asked straight after adding one, and Profile › Playlists › *Who sees it*; `share` and `to`
   on its record): *Public* (every member, and anyone with its link, signed in or not), *Every member* (the first
@@ -301,14 +313,13 @@ still to come: facts, written for new songs and on request for older ones, check
   back to John's; one that isn't public says "That calendar is for members." and shows John's.
 - **The Profile's Playlists** (John, 31 Oct 2026: "can there not be a distinction between Spotify Playlists and
   Playlists on the user profile - just list them all, alphabetically"): one list, A–Z, of those saved from My playlist
-  (*Open*) and their Spotify ones (*Open*, *Title*, *Who sees it*, *Days*, *Messages*, the kind, *Check now*,
-  *Remove*), then *Add a Spotify playlist*.
+  (*Open*) and their Spotify ones (*Open*: the My playlist pop-up; *Title*, *Who sees it*, *Days*, *Messages*, the
+  kind, *Check now*, *Remove*), then *Add a Spotify playlist*.
 - **New songs.** The songs on it when it's added are out from the start; each song added after waits for its owner,
   who is told on their phone ("“…” waits for you to sign off"). They sign it off in any of three places (John, 30 Oct
   2026: "I can’t see how a user would sign off a song"): Profile › Playlists, which opens first when something waits
-  (a count on its tab), lists each playlist's waiting songs with *Sign off* and *Open*; on a calendar, its day is
-  outlined and opens with *Sign off*; in a plain playlist's list it's marked, with *Sign off*. (`wait` on `pls`: the
-  newest 20.) Signed off, it's
+  (a count on its tab), lists each playlist's waiting songs with *Sign off* and *Open* (the pop-up, at it); in the
+  pop-up it's marked, with *Sign off*. (`wait` on `pls`: the newest 20.) Signed off, it's
   out for everyone, and goes to the members as a message from them only as they've chosen (Messages, below; "From
   Mum"; reactions and replies as any message; on their Sent too). 20 sign-offs a day at most.
 - **Kept.** KV `upls` (each playlist: owner, Spotify id and name, calendar or playlist, invite link, when added, whether
@@ -341,8 +352,8 @@ still to come: facts, written for new songs and on request for older ones, check
   that it's a token for this repository alone), and sends back the YouTube copies. The Worker starts the site job when a
   member's playlist changes, and once a day from 07:00 for the day's 5 more. Tests: `upl_py_t.py`.
 - **Their own for each song** (John, 31 Oct 2026: "there doesn't seem to be anywhere to see the youtube links, the mp3s
-  moods or anything else that I get in my option on the admin page"): its owner taps *Edit* on the song's day (or the
-  pencil on a plain playlist's row), any time, before or after sign-off. *Its video*: the one found on YouTube, a YouTube
+  moods or anything else that I get in my option on the admin page"): its owner taps the pencil on the song in the
+  pop-up, any time, before or after sign-off. *Its video*: the one found on YouTube, a YouTube
   link of theirs, or none (`ed { <track>: { v } }` in `upl:<id>`; `''` none). *Moods* and *Genres*: up to two each, or
   back to the ones worked out (`m`, `g`; `[]` none). These are kept with *Save*. *Your own files*: an MP3 (80 MB at most)
   and an MP4 (1.5 GB at most), up in 10 MB parts or more (R2 `ua/<id>/<track>.mp3`, `uv/<id>/<track>.mp4`), playing
@@ -359,7 +370,7 @@ still to come: facts, written for new songs and on request for older ones, check
   `{ pic }`, or `&op=drop`), `pls` on `/members/me`, admin ops `upls`, `uplcheck`, `uplremove`. Tests: `upl_t.mjs` (the
   Worker), `upl_page_t.py` (the draft), `upl_pv_t.mjs` (previews), `upl_admin_t.py` (the Members tab), `upl_dates_t.mjs` (days and order),
   `upl_order_t.py` (the draft's order and Days), `upl_share_t.mjs` and `upl_share_page_t.py` (titles, who sees them,
-  sharing, the Profile's one list), `share_upl_t.py` (their cards), `upl_fav_t.py` (hearts and My playlist), `upl_wait_t.py` (where they sign off), `mine_drag_t.py` (My playlist's
+  sharing, the Profile's one list), `share_upl_t.py` (their cards), `upl_fav_t.py` (hearts and My playlist), `upl_pop_t.py` (the pop-up), `upl_wait_t.py` (where they sign off), `mine_drag_t.py` (My playlist's
   dragging, shared with them), `upl_edit_t.mjs` and `upl_edit_page_t.py` (their own for each song).
 
 ## Saved playlists
