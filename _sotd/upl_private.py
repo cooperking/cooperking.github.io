@@ -51,6 +51,10 @@ def call(method, body=None):
         raise
 
 
+def note(text):   # a line in the log, and in the run's notes on GitHub (an annotation) when it runs there
+    print(('::notice::' if os.environ.get('GITHUB_ACTIONS') else '') + text)
+
+
 def read(path):
     with open(os.path.join(ROOT, path), encoding='utf-8') as f:
         return json.load(f)
@@ -87,7 +91,7 @@ def load():
         write(STATE, got['upl'], {'ensure_ascii': False, 'indent': 1, 'sort_keys': True})
     with open(BASE, 'w', encoding='utf-8') as f:
         json.dump(got, f, ensure_ascii=False)
-    print(f'members’ songs: {n} entries back from the Worker' if got else 'members’ songs: none kept in the Worker yet')
+    note(f'members’ songs: {n} entries back from the Worker' if got else 'members’ songs: none kept in the Worker yet')
 
 
 def save():
@@ -130,7 +134,7 @@ def save():
     print(f'members’ songs: {len(theirs)} songs out of {moved} files and {STATE}')
     try:
         r = call('POST', out)
-        print('members’ songs: kept in the Worker,', r.get('songs'), 'with a video, moods or a year')
+        note(f"members’ songs: {len(theirs)} kept in the Worker, {r.get('songs')} with a video, moods or a year")
     except Exception as e:   # (the job stops here: nothing is committed, and the next run starts from what was kept before)
         print('members’ songs: the Worker didn’t take them (' + str(e) + ')')
         sys.exit(1)

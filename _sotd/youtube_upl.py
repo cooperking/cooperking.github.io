@@ -94,7 +94,7 @@ def main(path):
                     print(pl['title'] + ': could not make its YouTube copy:', j.get('_status'), j.get('_text', '')[:160])
                     continue
                 rec['yt'], rec['added'], rec['title'] = j['id'], {}, pl['title']
-                print(pl['title'] + ': made its YouTube copy (unlisted) https://www.youtube.com/playlist?list=' + j['id'])
+                print(('::notice::' if os.environ.get('GITHUB_ACTIONS') else '') + pl['title'] + ': made its YouTube copy (unlisted) https://www.youtube.com/playlist?list=' + j['id'])
             elif rec.setdefault('title', pl['title']) != pl['title']:   # renamed since: its YouTube copy's title too
                 j = call('PUT', API + 'playlists?part=snippet', {'id': rec['yt'], 'snippet': {'title': pl['title'][:150], 'description': ABOUT}}, token=token, units=50)
                 if j.get('id'):
