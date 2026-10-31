@@ -244,7 +244,10 @@ at most 40 a day from one member (`rxpush:<member>:<day>`). Tests: `bell_t.mjs` 
 A member can add their own Spotify playlists (John, 30 Oct 2026: "users to have the ability to add their own spotify
 playlists which run exactly the same way as mine does"), up to 5, each a calendar like John's (a song on each day it
 was added, the same rule for missed days) or a plain playlist (its songs, newest first). A calendar is called
-"<their name>’s Song of the Day" on the calendar (John, 30 Oct 2026), a plain playlist by its Spotify name. Phases 1
+"<their name>’s Song of the Day" on the calendar (John, 30 Oct 2026), with its title above the month; a plain playlist
+goes by its title. Its title is Spotify's name for it until its owner changes it (John, 31 Oct 2026: "default to the
+spotify name when imported but let them change it"; Profile › Playlists › *Title*, *Use Spotify's* to go back;
+`title` on its record, `n` Spotify's); its YouTube copy is renamed with it. Phases 1
 (the Worker, the draft calendar, the Members tab) and 2 (their songs' videos, moods, years and YouTube copies) are in;
 still to come: facts, written for new songs and on request for older ones, checked and signed off by their owner.
 
@@ -270,10 +273,24 @@ still to come: facts, written for new songs and on request for older ones, check
   playlist's buttons (First day, Song A–Z, Artist A–Z, Oldest, each the other way on a second tap; Shuffle), saved for
   everyone (`order` in `upl:<id>`); songs added on Spotify since go after, as Spotify has them. A song tapped plays on
   through it from there. On a computer it fills the calendar's place. Its YouTube copy keeps Spotify's order.
-- **Who sees them.** Every member except anyone kept apart from its owner, once John has joined it; its owner from the
-  start. The calendar's title (top left) chooses whose calendar shows: John's, or a member's (the address then has
-  `#u=<id>`, and `#u=<id>&d=<day>` for a day). On another's calendar the hearts (My playlist), sharing and the YouTube
-  link are put away, the Spotify link goes to their playlist, and playing My playlist goes back to John's calendar.
+- **Who sees them** (John, 31 Oct 2026: "Members should be able to choose, public, private, or choose members to share
+  with in playlist set up"; asked straight after adding one, and Profile › Playlists › *Who sees it*; `share` and `to`
+  on its record): *Public* (every member, and anyone with its link, signed in or not), *Every member* (the first
+  setting, and the one before 31 Oct), *Members you choose* (ticked; `to`), or *Private* (just its owner). Never anyone
+  kept apart from its owner, and only once John has joined it; its owner from the start. Its messages go only to those
+  who see it. The calendar's title (top left) chooses whose calendar shows: John's, or a member's (the address then has
+  `#u=<id>`, and `#u=<id>&d=<day>` for a day). On another's calendar the hearts (My playlist) and the YouTube link are
+  put away, the Spotify link goes to their playlist, and playing My playlist goes back to John's calendar.
+- **Sharing.** Share on a member's calendar and on each of its days, as its owner chose: public, the Worker's page
+  `/s/u/<id>` (or `/s/u/<id>/<yyyy-mm-dd>`), with its title, the song and its cover for the link's preview, which then
+  opens the calendar there; every member or chosen members, the calendar's own link, which opens for those who see it
+  (signed in; for chosen members, not offered to send to the members); private, no Share. Someone not signed in opening
+  a public one's link sees it, with the title's chooser to go back to John's; one that isn't public says "That calendar
+  is for members." and shows John's.
+- **The Profile's Playlists** (John, 31 Oct 2026: "can there not be a distinction between Spotify Playlists and
+  Playlists on the user profile - just list them all, alphabetically"): one list, A–Z, of those saved from My playlist
+  (*Open*) and their Spotify ones (*Open*, *Title*, *Who sees it*, *Days*, *Messages*, the kind, *Check now*,
+  *Remove*), then *Add a Spotify playlist*.
 - **New songs.** The songs on it when it's added are out from the start; each song added after waits for its owner,
   who is told on their phone ("“…” waits for you to sign off"). They sign it off in any of three places (John, 30 Oct
   2026: "I can’t see how a user would sign off a song"): Profile › Playlists, which opens first when something waits
@@ -315,11 +332,12 @@ still to come: facts, written for new songs and on request for older ones, check
   `upl:<id>`. On their calendar each song shows its owner's choices; downloads are for John's calendar only. Their
   video goes into the YouTube copy (one changed since has its old one taken out; with none, taken out) and the site job
   doesn't search for it. Removing the playlist (or the member) removes its files.
-- Worker: `/members/upl` (GET `?id=`; POST ops `add`, `mode`, `link`, `check`, `remove`, `signoff`, `dates`, `order`, `send`,
-  `edit`), `/members/uplup` (`?id&track&kind=a|v&op=start|part|done|abort|drop`), `/members/uplcover` (`?id&track`,
+- Worker: `/members/upl` (GET `?id=`, with no sign-in for a public one; POST ops `add`, `mode`, `link`, `check`, `remove`,
+  `signoff`, `dates`, `order`, `send`, `edit`, `title`, `share`), `/s/u/<id>[/<day>]` (a public one's link page), `/members/uplup` (`?id&track&kind=a|v&op=start|part|done|abort|drop`), `/members/uplcover` (`?id&track`,
   `{ pic }`, or `&op=drop`), `pls` on `/members/me`, admin ops `upls`, `uplcheck`, `uplremove`. Tests: `upl_t.mjs` (the
   Worker), `upl_page_t.py` (the draft), `upl_pv_t.mjs` (previews), `upl_admin_t.py` (the Members tab), `upl_dates_t.mjs` (days and order),
-  `upl_order_t.py` (the draft's order and Days), `upl_wait_t.py` (where they sign off), `mine_drag_t.py` (My playlist's
+  `upl_order_t.py` (the draft's order and Days), `upl_share_t.mjs` and `upl_share_page_t.py` (titles, who sees them,
+  sharing, the Profile's one list), `upl_wait_t.py` (where they sign off), `mine_drag_t.py` (My playlist's
   dragging, shared with them), `upl_edit_t.mjs` and `upl_edit_page_t.py` (their own for each song).
 
 ## Saved playlists

@@ -288,7 +288,7 @@
       var li = document.createElement('li'); if (u.st === 'join') li.className = 'join';
       var nm = document.createElement('div'); nm.className = 'nm'; nm.textContent = u.n; li.appendChild(nm);
       var st = document.createElement('div'); st.className = 'st';
-      st.textContent = u.o + '’s · ' + (u.mode === 'list' ? 'playlist' : 'calendar') + ' · ' + (u.st === 'join' ? (u.link ? 'waiting for you to join it' : 'waiting for you to join it; no invite link from them yet') : u.st === 'err' ? (u.err || 'can’t be read') : u.cnt + (u.cnt === 1 ? ' song' : ' songs') + (u.read ? ' · read ' + new Date(u.read).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''));
+      st.textContent = u.o + '’s · ' + (u.mode === 'list' ? 'playlist' : 'calendar') + ' · ' + (u.sh === 'public' ? 'public' : u.sh === 'private' ? 'private' : u.sh === 'some' ? 'for ' + u.shn + (u.shn === 1 ? ' member' : ' members') : 'every member') + ' · ' + (u.st === 'join' ? (u.link ? 'waiting for you to join it' : 'waiting for you to join it; no invite link from them yet') : u.st === 'err' ? (u.err || 'can’t be read') : u.cnt + (u.cnt === 1 ? ' song' : ' songs') + (u.read ? ' · read ' + new Date(u.read).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''));
       li.appendChild(st);
       var acts = document.createElement('div'); acts.className = 'acts';
       if (u.link && u.st !== 'ok') { var a = document.createElement('a'); a.className = 'btn small primary'; a.href = u.link; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'Open the invite ↗'; acts.appendChild(a); }

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """A YouTube playlist for each member's Spotify playlist on the calendar, on the same channel as John's, unlisted,
-titled as the calendar calls it ("Mum's Song of the Day", or a plain playlist's own name).
+titled as the calendar calls it ("Mum's Song of the Day", or a plain playlist's own name), and renamed with it.
 
     python3 _sotd/youtube_upl.py PLAYLISTS.json
 
@@ -93,8 +93,15 @@ def main(path):
                 if not j.get('id'):
                     print(pl['title'] + ': could not make its YouTube copy:', j.get('_status'), j.get('_text', '')[:160])
                     continue
-                rec['yt'], rec['added'] = j['id'], {}
+                rec['yt'], rec['added'], rec['title'] = j['id'], {}, pl['title']
                 print(pl['title'] + ': made its YouTube copy (unlisted) https://www.youtube.com/playlist?list=' + j['id'])
+            elif rec.setdefault('title', pl['title']) != pl['title']:   # renamed since: its YouTube copy's title too
+                j = call('PUT', API + 'playlists?part=snippet', {'id': rec['yt'], 'snippet': {'title': pl['title'][:150], 'description': ABOUT}}, token=token, units=50)
+                if j.get('id'):
+                    rec['title'] = pl['title']
+                    print(pl['title'] + ': its YouTube copy renamed')
+                else:
+                    print(pl['title'] + ': could not rename its YouTube copy:', j.get('_status'), j.get('_text', '')[:160])
             made[pid] = rec['yt']
             added = rec.setdefault('added', {})
             wanted = set(pl.get('in') or [])

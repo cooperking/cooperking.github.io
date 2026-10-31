@@ -289,7 +289,14 @@ html.big .heroacts .hsub { margin: 0 6px 0 0; }
 .mark.can .caret { width: 10px; height: 10px; flex: none; opacity: .65; }
 .mark.can:hover .caret, .mark.can:focus-visible .caret { opacity: 1; }
 .mark .mtx { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-html.upl .favbtn, html.upl .addfav, html.upl #monthadd, html.upl #monthshare, html.upl #monthdl, html.upl #siteshare, html.upl-noyt #ytfollow, html.upl #picks .iconbtn.share { display: none !important; }
+html.upl .favbtn, html.upl .addfav, html.upl #monthadd, html.upl #monthshare, html.upl #monthdl, html.upl-noshare #siteshare, html.upl-noyt #ytfollow, html.upl-noshare #picks .iconbtn.share { display: none !important; }
+.uplkick { margin: 0 0 -8px; font: 600 11px/1.3 var(--sans); letter-spacing: .16em; text-transform: uppercase; color: var(--fg-2); overflow-wrap: anywhere; }
+.uplkick[hidden] { display: none; }
+.uplw-list { display: grid; gap: 6px; padding: 2px 2px 0; }
+.uplw-list[hidden] { display: none; }
+.uplw-list label { display: flex; align-items: center; gap: 10px; font: 500 16px/1.2 var(--serif); color: var(--fg); cursor: pointer; }
+.uplw-list input { width: 18px; height: 18px; margin: 0; accent-color: #e23a6e; flex: none; }
+.uplw-list p { margin: 0; font-size: 13px; color: var(--muted); }
 html.upl-list #cal, html.upl-list .monthnav { display: none; }
 .day.has.wait .sleeve { outline: 2px dashed #e23a6e; outline-offset: 2px; }
 .uplwait { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 10px; padding: 9px 12px; border-radius: 12px; border: 1px solid rgba(226, 58, 110, .45); background: rgba(226, 58, 110, .09); font: 500 13px/1.35 var(--sans); color: var(--fg); }
@@ -542,7 +549,7 @@ button.day:focus-visible .sleeve { box-shadow: 0 16px 34px var(--shadow), 0 0 0 
 .emptymsg { color: var(--muted); padding: 10px 0; font-family: var(--serif); font-style: italic; }
 
 /* day view */
-dialog#sheet, dialog#mine, dialog#index, dialog#acctsheet, dialog#askdlg, dialog#appdlg, dialog#castdlg, dialog#senddlg, dialog#msgdlg, dialog#belldlg, dialog#upldlg, dialog#upldates, dialog#uplsend, dialog#upled {
+dialog#sheet, dialog#mine, dialog#index, dialog#acctsheet, dialog#askdlg, dialog#appdlg, dialog#castdlg, dialog#senddlg, dialog#msgdlg, dialog#belldlg, dialog#upldlg, dialog#upldates, dialog#uplsend, dialog#upled, dialog#uplwho {
   --bg: #ffffff; --fg: #1d0b1e; --fg-2: rgba(29, 11, 30, .9); --muted: rgba(29, 11, 30, .62); --faint: rgba(29, 11, 30, .45);
   --line: rgba(29, 11, 30, .14); --tile: #f3eef0; --chip-bg: rgba(29, 11, 30, .04); --pill-bg: rgba(29, 11, 30, .03); --pill-hover: rgba(29, 11, 30, .08);
   border: 0; padding: 0; color: var(--fg-2); background: var(--bg); color-scheme: light;
@@ -727,12 +734,12 @@ dialog#sharesheet::backdrop { background: rgba(24, 8, 24, .35); -webkit-backdrop
 }
 @keyframes shup { from { transform: translateY(100%); } to { transform: none; } }
 /* home-screen app: the page runs under the clock and the home bar, so the pop-ups keep clear of both */
-dialog#sheet, dialog#mine, dialog#index, dialog#acctsheet, dialog#askdlg, dialog#appdlg, dialog#castdlg, dialog#senddlg, dialog#msgdlg, dialog#belldlg, dialog#upldlg, dialog#upldates, dialog#uplsend, dialog#upled {
+dialog#sheet, dialog#mine, dialog#index, dialog#acctsheet, dialog#askdlg, dialog#appdlg, dialog#castdlg, dialog#senddlg, dialog#msgdlg, dialog#belldlg, dialog#upldlg, dialog#upldates, dialog#uplsend, dialog#upled, dialog#uplwho {
   top: env(safe-area-inset-top, 0px); bottom: env(safe-area-inset-bottom, 0px);
   max-height: calc(100dvh - 32px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
 }
 dialog#sharesheet { top: env(safe-area-inset-top, 0px); max-height: calc(100dvh - 32px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
-dialog#sheet::backdrop, dialog#mine::backdrop, dialog#index::backdrop, dialog#acctsheet::backdrop, dialog#askdlg::backdrop, dialog#appdlg::backdrop, dialog#castdlg::backdrop, dialog#senddlg::backdrop, dialog#msgdlg::backdrop, dialog#belldlg::backdrop, dialog#upldlg::backdrop, dialog#upldates::backdrop, dialog#uplsend::backdrop, dialog#upled::backdrop { background: rgba(24, 8, 24, .3); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+dialog#sheet::backdrop, dialog#mine::backdrop, dialog#index::backdrop, dialog#acctsheet::backdrop, dialog#askdlg::backdrop, dialog#appdlg::backdrop, dialog#castdlg::backdrop, dialog#senddlg::backdrop, dialog#msgdlg::backdrop, dialog#belldlg::backdrop, dialog#upldlg::backdrop, dialog#upldates::backdrop, dialog#uplsend::backdrop, dialog#upled::backdrop, dialog#uplwho::backdrop { background: rgba(24, 8, 24, .3); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
 .sheet-in { display: grid; gap: 18px; padding: 16px 18px 24px; }
 #sheet .sheet-in { grid-template-columns: minmax(0, 1fr); }   /* (the day never wider than its pop-up: on a phone narrower than about 375, the date's line made it 320 wide, and the video and its facts ran off the side; the date shortens instead) */
 @media (max-width: 380px) { #sheet .sheet-in { padding-left: 12px; padding-right: 12px; } #sheet .daynav #sdate { letter-spacing: .1em; padding-inline: 7px; } }   /* (a small phone: the day about as wide as it was, inside its pop-up now; the date a touch tighter, so it's whole) */
@@ -1116,7 +1123,7 @@ html.minidrag, html.minidrag * { cursor: grabbing !important; user-select: none;
 /* Pop-ups are ordinary page layers (opened with show(), not showModal()): the browser's top layer can't have
    anything placed above it before iOS 17, and the My playlist button has to stay on top of a day and A–Z / Moods.
    The site draws the dim background (the scrim) itself and keeps the page behind from being tapped. */
-dialog#sheet, dialog#mine, dialog#index, dialog#sharesheet, dialog#acctsheet, dialog#askdlg, dialog#appdlg, dialog#castdlg, dialog#senddlg, dialog#msgdlg, dialog#belldlg, dialog#upldlg, dialog#upldates, dialog#uplsend, dialog#upled { position: fixed; left: 0; right: 0; height: fit-content; margin: auto; z-index: 50; overscroll-behavior: contain; }
+dialog#sheet, dialog#mine, dialog#index, dialog#sharesheet, dialog#acctsheet, dialog#askdlg, dialog#appdlg, dialog#castdlg, dialog#senddlg, dialog#msgdlg, dialog#belldlg, dialog#upldlg, dialog#upldates, dialog#uplsend, dialog#upled, dialog#uplwho { position: fixed; left: 0; right: 0; height: fit-content; margin: auto; z-index: 50; overscroll-behavior: contain; }
 dialog#index { height: calc(100dvh - 32px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
 .scrim { position: fixed; inset: 0; z-index: 49; display: none; background: rgba(24, 8, 24, .3); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); touch-action: none; }
 html.layer-open .scrim { display: block; }
@@ -1296,6 +1303,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   </div>
 
   <header class="hero">
+    <p class="uplkick" id="uplkick" hidden></p>
     <h1><span id="mname"></span> <em id="myr"></em></h1>
     <div class="heroacts" id="heroacts">
       <p class="hsub" id="count"></p>
@@ -1502,15 +1510,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       </div>
     </div>
     <div class="ac-pane" id="acpane-lists" data-pane="lists" role="tabpanel" aria-labelledby="actab-lists" hidden>
-      <div>
-        <p class="ac-h">Your playlists</p>
-        <ul class="ac-list" id="aclist"></ul>
-        <p class="ac-none" id="acnone" hidden></p>
-      </div>
       <div class="ac-dev" id="acupl" hidden>
-        <p class="ac-h">Your Spotify playlists</p>
+        <p class="ac-h">Your playlists</p>
         <ul class="ac-upls" id="acupll"></ul>
-        <p class="ac-none" id="acuplnone">Add one of your own Spotify playlists: every member can see it, as a calendar like John’s (a song on each day you add one) or as a playlist. Each new song waits for you to sign it off.</p>
+        <p class="ac-none" id="acuplnone">None yet. Save one from My playlist (add songs with the heart, then Save), or add one of your own Spotify playlists, as a calendar like John’s (a song on each day you add one) or as a playlist, for the members you choose. Each new song waits for you to sign it off.</p>
         <div class="ac-acts"><button class="copy ghost" id="acupladd" type="button">Add a Spotify playlist</button></div>
       </div>
     </div>
@@ -1684,6 +1687,23 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     </div>
     <label class="upld-day" id="uplsatl" hidden><span>At</span><input type="time" id="uplsat" value="08:00"></label>
     <div class="ask-acts"><button class="copy" id="uplsok" type="submit">Save</button><button class="ac-out" id="uplsno" type="button">Cancel</button></div>
+  </form>
+</dialog>
+<dialog id="uplwho" aria-labelledby="uplwh">
+  <form class="sheet-in msgv" id="uplwform" method="dialog">
+    <div class="sheet-head">
+      <p class="mine-top"><span class="chip" id="uplwk">Your Song of the Day</span></p>
+      <button class="close" id="uplwclose" type="button" aria-label="Close"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 2l10 10M12 2 2 12"/></svg></button>
+    </div>
+    <h3 id="uplwh">Who sees it</h3>
+    <div class="upld-opts" role="radiogroup" aria-labelledby="uplwh">
+      <label><input type="radio" name="uplwho" value="public"><span><b>Public</b>Every member, and anyone you share its link with.</span></label>
+      <label><input type="radio" name="uplwho" value="members" checked><span><b>Every member</b>Everyone signed in to the calendar.</span></label>
+      <label><input type="radio" name="uplwho" value="some"><span><b>Members you choose</b>Only the ones you tick.</span></label>
+      <label><input type="radio" name="uplwho" value="private"><span><b>Private</b>Just you.</span></label>
+    </div>
+    <div class="uplw-list" id="uplwl" hidden></div>
+    <div class="ask-acts"><button class="copy" id="uplwok" type="submit">Save</button><button class="ac-out" id="uplwno" type="button">Cancel</button></div>
   </form>
 </dialog>
 <dialog id="upled" aria-labelledby="upleh">
@@ -2071,7 +2091,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var open = layers(), top = open[open.length - 1], root = document.documentElement;
     root.classList.toggle('layer-open', !!top);
     scrimEl.style.zIndex = top ? String((+top.style.zIndex || 50) - 1) : '';
-    var under = open.some(function (d) { return d.id === 'mine' || d.id === 'sharesheet' || d.id === 'acctsheet' || d.id === 'askdlg' || d.id === 'appdlg' || d.id === 'castdlg' || d.id === 'senddlg' || d.id === 'msgdlg' || d.id === 'belldlg' || d.id === 'upldlg' || d.id === 'upldates' || d.id === 'uplsend' || d.id === 'upled'; });
+    var under = open.some(function (d) { return d.id === 'mine' || d.id === 'sharesheet' || d.id === 'acctsheet' || d.id === 'askdlg' || d.id === 'appdlg' || d.id === 'castdlg' || d.id === 'senddlg' || d.id === 'msgdlg' || d.id === 'belldlg' || d.id === 'upldlg' || d.id === 'upldates' || d.id === 'uplsend' || d.id === 'upled' || d.id === 'uplwho'; });
     root.classList.toggle('fab-under', under);
     if (top) pageEl.setAttribute('inert', ''); else pageEl.removeAttribute('inert');
     syncFloat();   // the floating video keeps to its day's place in the stack
@@ -3675,6 +3695,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   function modeNow() { return playMode === 'video' ? 'video' : 'preview'; }   // how the calendar is playing songs now
   function shareDay(iso, s, btn) {
+    if (UPL.on && UPL.view) { uplShare(iso, s); return; }
     var slug = slugOf(iso), t = cleanTitle(s.title), hasVid = !!VIDS[s.track], hasPre = !!s.p;
     var pick = btn && btn.closest ? btn.closest('.pick') : null;
     var watching = !!(pick && pick.classList.contains('watching'));
@@ -3728,7 +3749,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     sms.href = 'sms:?&body=' + encodeURIComponent(macMessages ? o.url : msg); sms.hidden = !hasSms;
     document.getElementById('shpic').hidden = !(navigator.clipboard && navigator.clipboard.write && window.ClipboardItem);
     document.getElementById('shmore').hidden = !navigator.share || inFrame();
-    document.getElementById('shsend').hidden = !sendCan();
+    document.getElementById('shsend').hidden = !sendCan() || !!o.noSend;
   }
   [].forEach.call(document.querySelectorAll('#shpicmode button'), function (b) {
     b.addEventListener('click', function () {
@@ -4003,6 +4024,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   var siteBtn = document.getElementById('siteshare'), monthBtn = document.getElementById('monthshare');
   siteBtn.insertAdjacentHTML('beforeend', SHARE_ICON.replace('<svg ', '<svg class="ext sh" ')); monthBtn.innerHTML = SHARE_ICON;
   siteBtn.addEventListener('click', function () {
+    if (UPL.on && UPL.view) { uplShare(null, null); return; }
     var sub = 'A song a day, ' + songs.length + ' so far';
     var mode = modeNow();
     openShare({ lines: ['John\u2019s Song of the Day', sub], url: dayLink('', mode), image: SITE + 'card.jpg', title: 'John\u2019s Song of the Day', sub: sub,
@@ -5653,24 +5675,6 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     document.getElementById('acadmin').hidden = !(adminKey || (MEMBER && MEMBER.owner === true));
     document.getElementById('acadmin').href = '/songs/admin.html?v=' + Date.now();   // always its newest version
     document.getElementById('acname').textContent = MEMBER && MEMBER.name ? MEMBER.name : 'Signed in';
-    var ul = document.getElementById('aclist'), none = document.getElementById('acnone');
-    ul.textContent = '';
-    PL.lists.forEach(function (l) {
-      var li = document.createElement('li'), b = document.createElement('button'); b.type = 'button';
-      var nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = l.name; b.appendChild(nm);
-      if (l.id === PL.cur) { var on = document.createElement('span'); on.className = 'on'; on.textContent = 'Open'; b.appendChild(on); }
-      var ct = document.createElement('span'); ct.className = 'ct'; ct.textContent = l.tracks.length + (l.tracks.length === 1 ? ' song' : ' songs'); b.appendChild(ct);
-      b.addEventListener('click', function () {
-        (l.id === PL.cur ? Promise.resolve(true) : plOpen(l)).then(function (ok) {
-          if (!ok) return;   // they kept what's there
-          closeDialog(acct);
-          if (fav.length) { if (sheet.open && !theatre && !bgOn) closeDialog(sheet); renderMine(); openLayer(mine); mine.scrollTop = 0; }   // (the mini player plays on)
-        });
-      });
-      li.appendChild(b); ul.appendChild(li);
-    });
-    none.hidden = PL.lists.length > 0;
-    none.textContent = !PL.loaded ? 'Loading…' : 'None saved yet. Add songs with the heart, then open My playlist and tap Save.';
     acOut.classList.remove('armed'); acOut.textContent = 'Sign out';
     document.getElementById('accode').hidden = true; document.getElementById('acgetcode').textContent = 'Get a code';
     appDraw(); noteDraw(); inboxDraw(); sentDraw(); pkDraw(); mailDraw(); msgDraw(); uplDrawAcct(); acTabs();
@@ -6312,13 +6316,13 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   var JOHN_SP = document.getElementById('spfollow').getAttribute('href');
   function uplPls() { return (MEMBER && MEMBER.pls) || []; }
   function uplListMode() { return !!(UPL.on && UPL.view && UPL.view.mode === 'list'); }
-  function uplCall(body, q) {
-    var tok = plTok(); if (!tok || !MBASE) return Promise.reject(new Error('signed out'));
+  function uplCall(body, q) {   // (a GET with no sign-in: a public one)
+    var tok = plTok(); if (!MBASE || (!tok && body)) return Promise.reject(new Error('signed out'));
     return fetch(MBASE + '/members/upl' + (q || ''), body ? { method: 'POST', headers: { Authorization: 'Bearer ' + tok, 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
-      : { headers: { Authorization: 'Bearer ' + tok }, cache: 'no-store' }).then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { j.status = r.status; return j; }); });
+      : { headers: tok ? { Authorization: 'Bearer ' + tok } : {}, cache: 'no-store' }).then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { j.status = r.status; return j; }); });
   }
   function uplMark() {   // the title: whose calendar shows, and (with others to choose) the way to choose
-    var mk = document.getElementById('mark'), can = !!MEMBER && !TV && uplPls().some(function (p) { return !p.mine || p.st === 'ok'; });
+    var mk = document.getElementById('mark'), can = !TV && (!!UPL.on || (!!MEMBER && uplPls().some(function (p) { return !p.mine || p.st === 'ok'; })));
     document.getElementById('marktx').textContent = UPL.on && UPL.view ? UPL.view.t || UPL.view.n : 'John’s Song of the Day';
     mk.classList.toggle('can', can);
     var c = mk.querySelector('.caret'); if (can && !c) mk.insertAdjacentHTML('beforeend', CARET); else if (!can && c) c.remove();
@@ -6343,7 +6347,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (sheet.open && !keep) closeDialog(sheet, true);
     setSongs(list, keep); vidsMerge();
     var root = document.documentElement;
-    root.classList.add('upl'); root.classList.toggle('upl-list', view.mode === 'list'); root.classList.toggle('upl-mine', !!view.mine);
+    root.classList.add('upl'); root.classList.toggle('upl-list', view.mode === 'list'); root.classList.toggle('upl-mine', !!view.mine); root.classList.toggle('upl-noshare', view.sh === 'private');
+    var kick = document.getElementById('uplkick'); kick.textContent = view.mode === 'list' ? '' : view.n; kick.hidden = view.mode === 'list';
     UPL.order = view.mode === 'list' ? view.songs.map(function (x) { return x.id; }) : null; UPL.sorted = null;
     document.getElementById('spfollow').setAttribute('href', 'https://open.spotify.com/playlist/' + view.sp);
     var yf = document.getElementById('ytfollow');
@@ -6366,7 +6371,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var list = UPL.john; UPL.on = null; UPL.view = null; UPL.john = null;
     if (sheet.open && !quiet) closeDialog(sheet, true);
     setSongs(list, false); vidsMerge();
-    var root = document.documentElement; root.classList.remove('upl'); root.classList.remove('upl-list'); root.classList.remove('upl-noyt'); root.classList.remove('upl-mine');
+    var root = document.documentElement; root.classList.remove('upl'); root.classList.remove('upl-list'); root.classList.remove('upl-noyt'); root.classList.remove('upl-mine'); root.classList.remove('upl-noshare');
+    document.getElementById('uplkick').hidden = true;
     clearTimeout(UPL.saveT); if (UPL.dirty) uplOrderSave(); UPL.order = null;
     document.getElementById('spfollow').setAttribute('href', JOHN_SP);
     if (UPL.johnYt) { var yf = document.getElementById('ytfollow'); yf.setAttribute('href', UPL.johnYt.href); yf.hidden = UPL.johnYt.hidden; UPL.johnYt = null; }
@@ -6375,7 +6381,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   function uplChooser() {
     var ul = document.getElementById('upll'); ul.textContent = '';
-    var rows = [{ id: null, n: 'John’s Song of the Day', ct: 'John’s calendar' }].concat(uplPls().filter(function (p) { return !p.mine || p.st === 'ok'; }).map(function (p) {
+    var pls = uplPls().filter(function (p) { return !p.mine || p.st === 'ok'; });
+    if (UPL.on && UPL.view && !pls.some(function (p) { return p.id === UPL.on; })) pls.push({ id: UPL.view.id, n: UPL.view.n, t: UPL.view.t, o: UPL.view.o, mode: UPL.view.mode, cnt: UPL.view.songs.length });   // (a public one, not signed in)
+    var rows = [{ id: null, n: 'John’s Song of the Day', ct: 'John’s calendar' }].concat(pls.map(function (p) {
       return { id: p.id, n: p.mode === 'list' ? p.n : p.t || p.n, ct: (p.mode === 'list' ? (p.mine ? 'Your playlist' : p.o + '’s playlist') : p.n) + ' · ' + p.cnt + (p.cnt === 1 ? ' song' : ' songs') };
     }));
     rows.forEach(function (r) {
@@ -6404,7 +6412,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     uplWanted();
   }
   function uplWanted() {
-    if (!UPL.want || !MEMBER || TV) return;
+    if (!UPL.want || TV || (!MEMBER && plTok())) return;   // (signed in: once they're known; not signed in: a public one)
     var w = UPL.want; UPL.want = null;
     if (w.id === UPL.on && UPL.view) { if (w.day && byDate[w.day]) openDay(w.day); return; }
     uplShow(w.id, { day: w.day });
@@ -6615,67 +6623,150 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       closeDialog(upledDlg); upledView(j.view, ed); toast('Saved');
     }).catch(function () { ok.disabled = false; toast('Couldn’t reach the site. Try again.'); });
   });
+  // sharing a member's calendar or one of its days, as its owner chose: public, a link anyone can open (the Worker's
+  // /s/u/ page, with its title, song and cover for the preview); otherwise the calendar's own link, which opens for the
+  // members who see it (a chosen few: not offered to send to the members)
+  function uplShare(iso, s) {
+    var v = UPL.view, newest = songs[songs.length - 1], cover = (s || newest || {}).u || '';
+    var pub = v.sh === 'public', note = pub ? '' : v.sh === 'some' ? 'Opens for the members it’s shared with' : 'Opens for members, signed in';
+    var url = pub ? MBASE + '/s/u/' + v.id + (iso ? '/' + iso : '') : SITE + '#u=' + v.id + (iso ? '&d=' + slugOf(iso) : '');
+    var o = iso ? { lines: [v.t, longDate(iso), '', cleanTitle(s.title), s.artist], title: cleanTitle(s.title), sub: s.artist + ' · ' + longDate(iso) + (note ? ' · ' + note : ''), sendText: s.artist + ' · ' + v.t + ', ' + longDate(iso) }
+      : { lines: [v.t, v.n + ' · ' + songs.length + (songs.length === 1 ? ' song' : ' songs')], title: v.t, sub: v.n + ' · ' + songs.length + (songs.length === 1 ? ' song' : ' songs') + (note ? ' · ' + note : '') };
+    o.url = url; o.image = cover; o.icon = cover; o.mode = ''; o.modes = false; o.pics = false; o.noSend = v.sh === 'some';
+    openShare(o);
+  }
   // the Profile's Playlists tab: their own
   function uplStatus(p) {
     if (p.st === 'join') return 'Waiting for John to join it as a collaborator. He has your link on his page; it shows for everyone once he has.';
     if (p.st === 'err') return p.err || 'The calendar can’t read it just now.';
     return (p.mode === 'list' ? 'A playlist' : 'A calendar') + ' · ' + p.cnt + (p.cnt === 1 ? ' song' : ' songs') + (p.mode === 'list' ? '' : ' · ' + uplDatesSay(p.dates))
-      + ' · ' + (p.send && p.send.on ? 'messages at ' + p.send.at : 'no messages');
+      + ' · ' + uplWhoSay(p) + ' · ' + (p.send && p.send.on ? 'messages at ' + p.send.at : 'no messages');
   }
+  function uplWhoSay(p) {   // who sees it, in a few words
+    if (p.sh === 'public') return 'public';
+    if (p.sh === 'private') return 'private';
+    if (p.sh !== 'some') return 'every member';
+    var names = ((MEMBER && MEMBER.others) || []).filter(function (m) { return (p.to || []).indexOf(m.id) !== -1; }).map(function (m) { return m.name; });
+    return 'for ' + (names.length > 3 ? names.slice(0, 2).join(', ') + ' and ' + (names.length - 2) + ' others' : andList(names) || (p.to || []).length + ' members');
+  }
+  // who sees it: public (anyone with its link, and every member), every member, the members they choose, or just them
+  var uplwDlg = document.getElementById('uplwho'), uplwFor = null, uplwThen = null;
+  function uplWhoShow() { document.getElementById('uplwl').hidden = ((document.querySelector('input[name="uplwho"]:checked') || {}).value || '') !== 'some'; }
+  function uplWhoOpen(p, then) {
+    uplwFor = p; uplwThen = then || null;
+    [].forEach.call(document.querySelectorAll('input[name="uplwho"]'), function (r) { r.checked = r.value === (p.sh || 'members'); });
+    var box = document.getElementById('uplwl'), others = ((MEMBER && MEMBER.others) || []).slice().sort(function (a, b) { return a.name.localeCompare(b.name); });
+    box.textContent = '';
+    if (!others.length) { var n = document.createElement('p'); n.textContent = 'No other members yet.'; box.appendChild(n); }
+    others.forEach(function (m) {
+      var l = document.createElement('label'), c = document.createElement('input'); c.type = 'checkbox'; c.value = m.id; c.checked = (p.to || []).indexOf(m.id) !== -1;
+      var t = document.createElement('span'); t.textContent = m.name; l.appendChild(c); l.appendChild(t); box.appendChild(l);
+    });
+    document.getElementById('uplwk').textContent = p.n;
+    uplWhoShow(); openLayer(uplwDlg);
+  }
+  [].forEach.call(document.querySelectorAll('input[name="uplwho"]'), function (r) { r.addEventListener('change', uplWhoShow); });
+  uplwDlg.addEventListener('close', function () { var t = uplwThen; uplwThen = null; if (t) setTimeout(t, 60); });   // (the next step of adding one)
+  document.getElementById('uplwno').addEventListener('click', function () { closeDialog(uplwDlg); });
+  document.getElementById('uplwclose').addEventListener('click', function () { closeDialog(uplwDlg); });
+  document.getElementById('uplwform').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var p = uplwFor, sh = (document.querySelector('input[name="uplwho"]:checked') || {}).value || 'members';
+    var to = [].filter.call(document.querySelectorAll('#uplwl input:checked'), function () { return true; }).map(function (c) { return c.value; });
+    if (!p) return;
+    if (sh === 'some' && !to.length) { toast('Tick at least one member'); return; }
+    var ok = document.getElementById('uplwok'); ok.disabled = true;
+    uplCall({ op: 'share', id: p.id, share: sh, to: to }).then(function (j) {
+      ok.disabled = false;
+      if (j.status !== 200) { toast(j.error || 'Couldn’t change that just now'); return; }
+      MEMBER.pls = j.pls; uplMark(); uplWaitCount(); if (acct.open) uplDrawAcct();
+      if (UPL.on === p.id && j.view) uplApply(j.view, { keep: true });
+      closeDialog(uplwDlg);
+      toast(sh === 'public' ? 'Public: anyone with its link sees it' : sh === 'private' ? 'Private: just you' : sh === 'some' ? 'Shared with ' + to.length + (to.length === 1 ? ' member' : ' members') : 'Every member sees it');
+    }).catch(function () { ok.disabled = false; toast('Couldn’t reach the site. Try again.'); });
+  });
   function uplDatesSay(d) {
     if (!d || d.how === 'added' || !d.day) return 'by the day each is added';
     var day = new Date(d.day + 'T12:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
     return d.how === 'fwd' ? 'a song a day from ' + day : 'back from ' + day;
   }
-  function uplDrawAcct() {
-    var box = document.getElementById('acupl'), ul = document.getElementById('acupll');
+  function uplDrawAcct() {   // all their playlists, A–Z: those saved from My playlist, and their Spotify ones
+    var box = document.getElementById('acupl'), ul = document.getElementById('acupll'), none = document.getElementById('acuplnone');
     box.hidden = !MEMBER || !MBASE || TV;
     if (box.hidden) return;
-    var mine = uplPls().filter(function (p) { return p.mine; });
+    var rows = PL.lists.map(function (l) { return { n: l.name, l: l }; }).concat(uplPls().filter(function (p) { return p.mine; }).map(function (p) { return { n: p.n, p: p }; }))
+      .sort(function (a, b) { return a.n.localeCompare(b.n, 'en-GB', { sensitivity: 'base', numeric: true }); });
     ul.textContent = '';
-    document.getElementById('acuplnone').hidden = mine.length > 0;
-    mine.forEach(function (p) {
-      var li = document.createElement('li');
-      var nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = p.n; li.appendChild(nm);
-      var st = document.createElement('span'); st.className = 'st' + (p.st === 'err' ? ' warn' : ''); st.textContent = uplStatus(p); li.appendChild(st);
-      if ((p.wait || []).length) {
-        var wb = document.createElement('div'); wb.className = 'waits';
-        var wh = document.createElement('p'); wh.textContent = (p.wait.length === 1 ? '1 song waits' : p.wait.length + ' songs wait') + ' for you to sign off'; wb.appendChild(wh);
-        var wl = document.createElement('ul');
-        p.wait.forEach(function (w) {
-          var wi = document.createElement('li');
-          var wt = document.createElement('span'); wt.className = 'wt'; wt.textContent = w.title; wi.appendChild(wt);
-          var wa = document.createElement('span'); wa.className = 'wa'; wa.textContent = w.artist + (p.mode === 'list' ? '' : ' · ' + longDate(w.d)); wi.appendChild(wa);
-          var bs = document.createElement('span'); bs.className = 'wb';
-          var so = document.createElement('button'); so.type = 'button'; so.className = 'copy'; so.textContent = 'Sign off';
-          so.addEventListener('click', function () { uplSignoff(p, { track: w.id, title: w.title, d: w.d }, so); });
-          var op = document.createElement('button'); op.type = 'button'; op.className = 'copy ghost'; op.textContent = 'Open';
-          op.setAttribute('aria-label', 'Open ' + w.title);
-          op.addEventListener('click', function () {   // its day (a calendar), or the playlist with it marked in the list
-            closeDialog(acct);
-            var show = function () { var r = [].filter.call(uplListEl.children, function (li) { return li._track === w.id; })[0]; if (r) r.scrollIntoView({ block: 'center' }); };
-            if (p.mode === 'list') { if (UPL.on === p.id) show(); else uplShow(p.id).then(show); }
-            else if (UPL.on === p.id && byDate[w.d]) openDay(w.d); else uplShow(p.id, { day: w.d });
-          });
-          bs.appendChild(so); bs.appendChild(op); wi.appendChild(bs); wl.appendChild(wi);
-        });
-        wb.appendChild(wl); li.appendChild(wb);
-      }
-      var acts = document.createElement('div'); acts.className = 'acts';
-      function act(label, cls, fn) { var b = document.createElement('button'); b.type = 'button'; b.textContent = label; if (cls) b.className = cls; b.addEventListener('click', fn); acts.appendChild(b); return b; }
-      if (p.st === 'ok') act(UPL.on === p.id ? 'Showing' : 'Open', 'go', function () { closeDialog(acct); if (UPL.on !== p.id) uplShow(p.id); });
-      if (p.st === 'join') act('Send the invite link again', '', function () { uplLinkAgain(p); });
-      if (p.mode !== 'list') act('Days', '', function () { uplDatesOpen(p); });
-      act('Messages', '', function () { uplSendOpen(p); });
-      act(p.mode === 'list' ? 'Make it a calendar' : 'Make it a playlist', '', function () { uplOp({ op: 'mode', id: p.id, mode: p.mode === 'list' ? 'cal' : 'list' }, p.mode === 'list' ? 'A calendar now' : 'A playlist now'); });
-      act('Check now', '', function () { uplOp({ op: 'check', id: p.id }, null, function (j) { toast(j.st === 'ok' ? 'Read from Spotify: ' + (j.view ? j.view.songs.length : 0) + ' songs' : 'John hasn’t joined it yet'); }); });
-      act('Remove', 'x', function () {
-        ask({ k: 'Your Spotify playlists', h: 'Remove “' + p.n + '”?', t: 'It goes from the calendar for everyone. It stays on Spotify.', ok: 'Remove', no: 'Keep it' }).then(function (yes) {
-          if (yes) uplOp({ op: 'remove', id: p.id }, '“' + p.n + '” removed');
-        });
+    none.hidden = rows.length > 0 || !PL.loaded;
+    if (!rows.length && !PL.loaded) { var ld = document.createElement('li'); ld.className = 'ac-none plain'; ld.textContent = 'Loading…'; ul.appendChild(ld); }
+    rows.forEach(function (r) { ul.appendChild(r.p ? uplAcctRow(r.p) : plAcctRow(r.l)); });
+  }
+  function plAcctRow(l) {   // one saved from My playlist: Open makes it My playlist
+    var li = document.createElement('li');
+    var nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = l.name; li.appendChild(nm);
+    var st = document.createElement('span'); st.className = 'st'; st.textContent = 'A playlist · ' + l.tracks.length + (l.tracks.length === 1 ? ' song' : ' songs') + (l.id === PL.cur ? ' · open as My playlist' : ''); li.appendChild(st);
+    var acts = document.createElement('div'); acts.className = 'acts';
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'go'; b.textContent = 'Open'; b.setAttribute('aria-label', 'Open ' + l.name + ' as My playlist');
+    b.addEventListener('click', function () {
+      (l.id === PL.cur ? Promise.resolve(true) : plOpen(l)).then(function (ok) {
+        if (!ok) return;   // they kept what's there
+        closeDialog(acct);
+        if (fav.length) { if (sheet.open && !theatre && !bgOn) closeDialog(sheet); renderMine(); openLayer(mine); mine.scrollTop = 0; }   // (the mini player plays on)
       });
-      li.appendChild(acts); ul.appendChild(li);
     });
+    acts.appendChild(b); li.appendChild(acts);
+    return li;
+  }
+  function uplAcctRow(p) {   // one of their Spotify playlists
+    var li = document.createElement('li');
+    var nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = p.n; li.appendChild(nm);
+    var st = document.createElement('span'); st.className = 'st' + (p.st === 'err' ? ' warn' : ''); st.textContent = uplStatus(p); li.appendChild(st);
+    if ((p.wait || []).length) {
+      var wb = document.createElement('div'); wb.className = 'waits';
+      var wh = document.createElement('p'); wh.textContent = (p.wait.length === 1 ? '1 song waits' : p.wait.length + ' songs wait') + ' for you to sign off'; wb.appendChild(wh);
+      var wl = document.createElement('ul');
+      p.wait.forEach(function (w) {
+        var wi = document.createElement('li');
+        var wt = document.createElement('span'); wt.className = 'wt'; wt.textContent = w.title; wi.appendChild(wt);
+        var wa = document.createElement('span'); wa.className = 'wa'; wa.textContent = w.artist + (p.mode === 'list' ? '' : ' · ' + longDate(w.d)); wi.appendChild(wa);
+        var bs = document.createElement('span'); bs.className = 'wb';
+        var so = document.createElement('button'); so.type = 'button'; so.className = 'copy'; so.textContent = 'Sign off';
+        so.addEventListener('click', function () { uplSignoff(p, { track: w.id, title: w.title, d: w.d }, so); });
+        var op = document.createElement('button'); op.type = 'button'; op.className = 'copy ghost'; op.textContent = 'Open';
+        op.setAttribute('aria-label', 'Open ' + w.title);
+        op.addEventListener('click', function () {   // its day (a calendar), or the playlist with it marked in the list
+          closeDialog(acct);
+          var show = function () { var r = [].filter.call(uplListEl.children, function (li) { return li._track === w.id; })[0]; if (r) r.scrollIntoView({ block: 'center' }); };
+          if (p.mode === 'list') { if (UPL.on === p.id) show(); else uplShow(p.id).then(show); }
+          else if (UPL.on === p.id && byDate[w.d]) openDay(w.d); else uplShow(p.id, { day: w.d });
+        });
+        bs.appendChild(so); bs.appendChild(op); wi.appendChild(bs); wl.appendChild(wi);
+      });
+      wb.appendChild(wl); li.appendChild(wb);
+    }
+    var acts = document.createElement('div'); acts.className = 'acts';
+    function act(label, cls, fn) { var b = document.createElement('button'); b.type = 'button'; b.textContent = label; if (cls) b.className = cls; b.addEventListener('click', fn); acts.appendChild(b); return b; }
+    if (p.st === 'ok') act(UPL.on === p.id ? 'Showing' : 'Open', 'go', function () { closeDialog(acct); if (UPL.on !== p.id) uplShow(p.id); });
+    if (p.st === 'join') act('Send the invite link again', '', function () { uplLinkAgain(p); });
+    act('Title', '', function () {
+      ask({ k: p.n, h: 'Its title', t: 'On the calendar, and on its YouTube copy. Spotify calls it “' + (p.sn || p.n) + '”.', input: { value: p.n, placeholder: p.sn || '' }, ok: 'Save',
+        alt: p.sn && p.n !== p.sn ? { label: 'Use Spotify’s', now: function () { askEnd(''); } } : null }).then(function (v) {
+        if (v === null || v === undefined || v === false) return;
+        uplOp({ op: 'title', id: p.id, title: String(v).trim() }, String(v).trim() ? 'Called “' + String(v).trim() + '” now' : 'Spotify’s name again');
+      });
+    });
+    act('Who sees it', '', function () { uplWhoOpen(p); });
+    if (p.mode !== 'list') act('Days', '', function () { uplDatesOpen(p); });
+    act('Messages', '', function () { uplSendOpen(p); });
+    act(p.mode === 'list' ? 'Make it a calendar' : 'Make it a playlist', '', function () { uplOp({ op: 'mode', id: p.id, mode: p.mode === 'list' ? 'cal' : 'list' }, p.mode === 'list' ? 'A calendar now' : 'A playlist now'); });
+    act('Check now', '', function () { uplOp({ op: 'check', id: p.id }, null, function (j) { toast(j.st === 'ok' ? 'Read from Spotify: ' + (j.view ? j.view.songs.length : 0) + ' songs' : 'John hasn’t joined it yet'); }); });
+    act('Remove', 'x', function () {
+      ask({ k: 'Your playlists', h: 'Remove “' + p.n + '”?', t: 'It goes from the calendar for everyone. It stays on Spotify.', ok: 'Remove', no: 'Keep it' }).then(function (yes) {
+        if (yes) uplOp({ op: 'remove', id: p.id }, '“' + p.n + '” removed');
+      });
+    });
+    li.appendChild(acts);
+    return li;
   }
   function uplOp(body, said, then) {
     return uplCall(body).then(function (j) {
@@ -6683,6 +6774,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       if (j.pls) { MEMBER.pls = j.pls; uplMark(); uplWaitCount(); }
       if (UPL.on && !uplPls().some(function (p) { return p.id === UPL.on; })) uplBack();
       else if (UPL.on === body.id && body.op === 'mode') uplShow(UPL.on, { keep: true });
+      else if (UPL.on === body.id && j.view) uplApply(j.view, { keep: true });
       if (acct.open) uplDrawAcct();
       if (said) toast(said);
       if (then) then(j);
@@ -6726,7 +6818,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     [].forEach.call(document.querySelectorAll('input[name="uplson"]'), function (r) { r.checked = r.value === (snd.on ? '1' : '0'); });
     document.getElementById('uplsat').value = snd.at || '08:00';
     document.getElementById('uplsonb').textContent = p.mode === 'list' ? 'Send each song you sign off' : 'Send each day’s song';
-    document.getElementById('uplsont').textContent = p.mode === 'list' ? 'To the members as a message from you, on the day you sign it off, at the time you choose.' : 'To the members as a message from you, on its day, at the time you choose.';
+    document.getElementById('uplsont').textContent = p.mode === 'list' ? 'To the members who see it, as a message from you, on the day you sign it off, at the time you choose.' : 'To the members who see it, as a message from you, on its day, at the time you choose.';
     document.getElementById('uplsk').textContent = p.mode === 'list' ? p.n : 'Your Song of the Day';
     uplSendShow(); openLayer(uplsDlg);
   }
@@ -6822,25 +6914,25 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   window.addEventListener('pagehide', uplOrderSave);
   var UPL_HOW = 'In Spotify, open your playlist, tap ••• then Invite collaborators, and copy the link. John joins it once as a collaborator, so the calendar can read it; it stays yours, and you add songs in Spotify as before.';
   function uplLinkAgain(p) {
-    ask({ k: 'Your Spotify playlists', h: 'The invite link', t: UPL_HOW, input: { placeholder: 'https://open.spotify.com/playlist/…' }, ok: 'Send' }).then(function (v) {
+    ask({ k: 'Your playlists', h: 'The invite link', t: UPL_HOW, input: { placeholder: 'https://open.spotify.com/playlist/…' }, ok: 'Send' }).then(function (v) {
       if (v) uplOp({ op: 'link', id: p.id, link: v.trim() }, 'Sent: John has it on his page');
     });
   }
   document.getElementById('acupladd').addEventListener('click', function () {
     var link = '';
-    ask({ k: 'Your Spotify playlists', h: 'Add a Spotify playlist', t: UPL_HOW, input: { placeholder: 'https://open.spotify.com/playlist/…' }, ok: 'Next' }).then(function (v) {
+    ask({ k: 'Your playlists', h: 'Add a Spotify playlist', t: UPL_HOW, input: { placeholder: 'https://open.spotify.com/playlist/…' }, ok: 'Next' }).then(function (v) {
       if (!v) return null;
       link = v.trim();
-      return ask({ k: 'Your Spotify playlists', h: 'A calendar or a playlist?', t: 'A calendar puts each song on the day you add it, like John’s. A playlist is just its songs, newest first. You can change it later.',
+      return ask({ k: 'Your playlists', h: 'A calendar or a playlist?', t: 'A calendar puts each song on the day you add it, like John’s. A playlist is just its songs, newest first. You can change it later.',
         ok: 'Calendar', alt: { label: 'Playlist', now: function () { askEnd('list'); } } });
     }).then(function (mode) {
       if (!mode) return;
       uplCall({ op: 'add', link: link, mode: mode === 'list' ? 'list' : 'cal' }).then(function (j) {
         if (j.status !== 200) { toast(j.error || 'Couldn’t add it just now'); return; }
         MEMBER.pls = j.pls; uplMark(); uplWaitCount(); if (acct.open) uplDrawAcct();
-        toast(j.st === 'ok' ? 'Added: everyone can see it now' : 'Added: it shows for everyone once John has joined it');
+        toast(j.st === 'ok' ? 'Added' : 'Added: it shows once John has joined it');
         var np = uplPls().filter(function (x) { return x.id === j.id; })[0];
-        if (np && np.mode !== 'list') uplDatesOpen(np);
+        if (np) uplWhoOpen(np, np.mode !== 'list' ? function () { var q = uplPls().filter(function (x) { return x.id === j.id; })[0]; if (q) uplDatesOpen(q); } : null);
       }).catch(function () { toast('Couldn’t reach the site. Try again.'); });
     });
   });
