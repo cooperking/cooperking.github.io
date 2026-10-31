@@ -70,6 +70,7 @@ export default {
       if (url.pathname.startsWith('/members/')) return await members(request, url, env);
       if (url.pathname === '/push/check') return await pushCheck(request, env, ctx);
       if (url.pathname.startsWith('/m/')) return await mediaFile(request, url, env);
+      if (url.pathname.startsWith('/uc/')) return await uplCoverGet(url, env);
       if (url.pathname === '/media/report') return await mediaReport(url, env);
       if (url.pathname === '/app.webmanifest') return appManifest(url);
       if (url.pathname.startsWith('/i/')) return await invitePage(url, env);
@@ -837,6 +838,8 @@ async function members(request, url, env) {
   if (route === 'react') return memberReact(request, env, answer);
   if (route === 'bell') return memberBell(request, env, answer);
   if (route === 'upl') return memberUpl(request, url, env, answer);
+  if (route === 'uplup') return memberUplUp(request, url, env, answer);
+  if (route === 'uplcover') return memberUplCover(request, url, env, answer);
   if (!['admin', 'upload', 'cover'].includes(route)) return answer(404, { error: 'Not here.' });
   if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
   const no = await adminOk(request, env, answer);
@@ -2219,8 +2222,10 @@ async function mediaReport(url, env) {
 }
 
 async function mediaFile(request, url, env) {
-  const m = /^\/m\/([av])\/([0-9A-Za-z]{22})\.(mp3|mp4)$/.exec(url.pathname);
   const plain = (status, text) => new Response(text, { status, headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' } });
+  const u = /^\/m\/u([av])\/([\w-]{10,20})\/([0-9A-Za-z]{22})\.(mp3|mp4)$/.exec(url.pathname);   // a member's own (ua/<pid>/<track>.mp3, uv/…mp4)
+  if (u && MEDIA_KINDS[u[1]].ext === u[4]) return uplFile(request, url, env, u, plain);
+  const m = /^\/m\/([av])\/([0-9A-Za-z]{22})\.(mp3|mp4)$/.exec(url.pathname);
   if (!m || MEDIA_KINDS[m[1]].ext !== m[3]) return plain(404, 'Not here.');
   if (!env.MEDIA || !env.ADMIN_KEY) return plain(503, 'Not set up.');
   if (request.method !== 'GET' && request.method !== 'HEAD') return plain(405, 'Use GET.');
@@ -2746,7 +2751,13 @@ function uplAdmin(all, U) {   // the Members tab: every playlist, whose, and whe
 async function uplPut(env, U) { await env.SOTD.put('upls', JSON.stringify(U)); }
 async function uplDrop(env, pids) {
   const U = await uplAll(env);
-  for (const pid of pids) { delete U[pid]; await env.SOTD.delete('upl:' + pid); }
+  for (const pid of pids) {
+    delete U[pid]; await env.SOTD.delete('upl:' + pid);
+    if (env.MEDIA) for (const k of ['ua', 'uv', 'uc']) {   // its owner's own files and covers
+      const l = await env.MEDIA.list({ prefix: k + '/' + pid + '/' }).catch(() => ({ objects: [] }));
+      for (const o of l.objects || []) await env.MEDIA.delete(o.key);
+    }
+  }
   await uplPut(env, U);
 }
 async function uplDropOwner(env, member) {
@@ -2850,7 +2861,8 @@ async function uplSync(request, env) {
   for (const [pid, rec] of Object.entries(U)) {
     if (rec.st !== 'ok' || !all[rec.o]) continue;
     const data = await uplSongs(env, pid);
-    out[pid] = { title: uplTitle(all, rec), mode: rec.mode, base: rec.base || 0, yt: rec.yt || '', songs: composeSongs(data.songs || [], pv, tags) };
+    const ed = data.ed || {};   // (ov: its owner's video for a song, '' none)
+    out[pid] = { title: uplTitle(all, rec), mode: rec.mode, base: rec.base || 0, yt: rec.yt || '', songs: composeSongs(data.songs || [], pv, tags).map(x => ed[x.id] && 'v' in ed[x.id] ? Object.assign(x, { ov: ed[x.id].v }) : x) };
   }
   return answer(200, { playlists: out });
 }
@@ -2859,8 +2871,19 @@ async function uplView(env, all, viewer, pid, rec) {   // a playlist as the cale
   const pv = Object.assign({}, pvMem, (await env.SOTD.get('previews', 'json')) || {});
   const tags = (await env.SOTD.get('tags', 'json')) || {};
   const days = uplDays(data.songs || [], rec);
+  const ed = data.ed || {}, files = data.files || {}, see = mine ? { a: true, v: true } : mediaFor(all[viewer]), exp = Math.floor(Date.now() / 1000) + LINK_HOURS * 3600;
   let songs = composeSongs(data.songs || [], pv, tags).map((x, i) => Object.assign(x, { d: days[i].d }, uplWaiting(rec, data, data.songs[i]) ? { w: 1 } : {}, days[i].d > today ? { f: 1 } : {}))
     .filter(x => mine || (!x.w && !x.f));
+  for (const x of songs) {   // its owner's choices (ov: the video, '' none; tg: moods and genres), files (ma, mv; own: theirs, with sizes) and cover (uc)
+    const e = ed[x.id], f = files[x.id];
+    if (e && 'v' in e) x.ov = e.v;
+    if (e && (e.m || e.g)) x.tg = { m: e.m || null, g: e.g || null };   // (null: the ones worked out)
+    if (f) {
+      for (const k of ['a', 'v']) if (f[k] && see[k] && env.ADMIN_KEY) x['m' + k] = LIVE_ORIGIN + '/m/u' + k + '/' + pid + '/' + x.id + '.' + MEDIA_KINDS[k].ext + '?e=' + exp + '&s=' + await mediaSig(env, 'u' + k + '/' + pid, x.id, exp);
+      if (f.c) { x.img = LIVE_ORIGIN + '/uc/' + pid + '/' + x.id + '.jpg?v=' + f.c; x.uc = 1; }
+      if (mine) x.own = { a: f.a || 0, v: f.v || 0, c: f.c ? 1 : 0 };
+    }
+  }
   if (rec.mode === 'list' && (data.order || []).length) {   // its owner's order; songs since, after, as Spotify has them
     const at = {}; data.order.forEach((t, i) => { at[t] = i; });
     songs = songs.filter(x => x.id in at).sort((a, b) => at[a.id] - at[b.id]).concat(songs.filter(x => !(x.id in at)));
@@ -2873,6 +2896,7 @@ async function uplView(env, all, viewer, pid, rec) {   // a playlist as the cale
 // by the day each was added on Spotify; a song a day forwards from day, the first song on it; or back from day, the
 // newest song now on it and the ones after it on the days after) | { op: 'order', id, order: [track ids] } (a playlist)
 // | { op: 'send', id, on, at: 'HH:MM' } (whether its songs go to the members as messages, and when)
+// | { op: 'edit', id, track, v, m, g } (a song's video, moods and genres)
 async function memberUpl(request, url, env, answer) {
   const who = await memberWho(request, env);
   if (!who) return answer(401, { error: 'Not a member (any more).' });
@@ -2951,6 +2975,24 @@ async function memberUpl(request, url, env, answer) {
     await uplPut(env, U);
     return answer(200, { ok: true, pls: await uplMine(env, uplList(all, me, U), U), view: await uplView(env, all, me, pid, rec) });
   }
+  if (body.op === 'edit') {   // a song's video (v: a YouTube id, '' none, null the one found), moods and genres (m, g: up to two each, [] none, null the ones worked out)
+    const data = await uplSongs(env, pid), t = String(body.track || '');
+    if (!(data.songs || []).some(y => y.id === t)) return answer(404, { error: 'That song isn’t on this playlist.' });
+    data.ed = data.ed || {};
+    const e = data.ed[t] || {};
+    if ('v' in body) {
+      if (body.v === null) delete e.v;
+      else if (body.v === '' || /^[\w-]{11}$/.test(String(body.v))) e.v = String(body.v);
+      else return answer(400, { error: 'That isn’t a YouTube video.' });
+    }
+    for (const [k, list] of [['m', MOOD_LIST], ['g', GENRE_LIST]]) {
+      if (body[k] === null) delete e[k];
+      else if (Array.isArray(body[k])) e[k] = body[k].filter(x => list.includes(x)).slice(0, 2);
+    }
+    if (Object.keys(e).length) data.ed[t] = e; else delete data.ed[t];
+    await env.SOTD.put('upl:' + pid, JSON.stringify(data));
+    return answer(200, { ok: true, view: await uplView(env, all, me, pid, rec) });
+  }
   if (body.op === 'order') {
     if (rec.mode !== 'list') return answer(400, { error: 'A calendar’s order is its days.' });
     const data = await uplSongs(env, pid), have = new Set((data.songs || []).map(x => x.id));
@@ -2974,6 +3016,104 @@ async function uplAskJohn(env, all, me, rec) {   // John: a playlist for him to 
 function uplHM(d) { return new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(d ? new Date(d) : new Date()); }
 function uplSendOf(rec) { return Object.assign({ on: false, at: '08:00' }, rec.send || {}); }
 function uplSongDay(rec, data, days, i) { const t = data.songs[i].id; return rec.mode === 'list' ? (data.reld || {})[t] || ((data.rel || {})[t] ? londonDay(data.rel[t]) : '') : days[i].d; }
+// ---------- a member's own for their playlist's songs: the video, moods and
+// genres (ed in upl:<pid>, the op edit), their own recording and video (R2 ua/<pid>/<track>.mp3, uv/<pid>/<track>.mp4,
+// up in parts as John's are: /members/uplup), heard and seen by the members John lets have his own (see on their
+// records) and by them, and their own cover (uc/<pid>/<track>.jpg, made small on the page: /members/uplcover; for
+// everyone who sees the playlist). files in upl:<pid>: { <track>: { a, v: sizes, c: when } }. ----------
+const UPL_FILE_MAX = { a: 80e6, v: 1500e6 }, UPL_PARTS_MAX = { a: 10, v: 40 }, UPL_COVER_MAX = 1.5e6;   // (the page sends parts of 10 MB or more, 38 at most)
+function uplTooBig(kind) { return 'That’s too big: ' + (kind === 'a' ? 'an MP3' : 'an MP4') + ' can be ' + Math.round(UPL_FILE_MAX[kind] / 1e6) + ' MB at most.'; }
+async function uplOwnSong(request, url, env, answer) {   // the owner's playlist and song, or the answer to give
+  const who = await memberWho(request, env);
+  if (!who) return { no: answer(401, { error: 'Not a member (any more).' }) };
+  if (!env.MEDIA) return { no: answer(503, { error: 'Files can’t be added yet.' }) };
+  const U = await uplAll(env), pid = url.searchParams.get('id') || '', rec = U[pid], track = url.searchParams.get('track') || '';
+  if (!rec || rec.o !== who.id) return { no: answer(404, { error: 'No such playlist of yours.' }) };
+  const data = await uplSongs(env, pid);
+  if (!(data.songs || []).some(y => y.id === track)) return { no: answer(404, { error: 'That song isn’t on this playlist.' }) };
+  return { who, U, pid, rec, track, data };
+}
+async function uplFilesSet(env, pid, track, k, v) {
+  const data = await uplSongs(env, pid);
+  data.files = data.files || {};
+  const f = data.files[track] || {};
+  if (v) f[k] = v; else delete f[k];
+  if (Object.keys(f).length) data.files[track] = f; else delete data.files[track];
+  await env.SOTD.put('upl:' + pid, JSON.stringify(data));
+}
+async function memberUplUp(request, url, env, answer) {   // ?id&track&kind=a|v&op=start | part (n) | done | abort | drop
+  const o = await uplOwnSong(request, url, env, answer);
+  if (o.no) return o.no;
+  const kind = url.searchParams.get('kind'), op = url.searchParams.get('op'), uid = url.searchParams.get('uploadId') || '';
+  if (!MEDIA_KINDS[kind]) return answer(400, { error: 'An MP3 (a) or an MP4 (v)?' });
+  const key = 'u' + kind + '/' + o.pid + '/' + o.track + '.' + MEDIA_KINDS[kind].ext;
+  if (op === 'drop') { await env.MEDIA.delete(key); await uplFilesSet(env, o.pid, o.track, kind, 0); return answer(200, { ok: true, view: await uplView(env, o.who.all, o.who.id, o.pid, o.rec) }); }
+  if (op === 'start') return answer(200, { uploadId: (await env.MEDIA.createMultipartUpload(key, { httpMetadata: { contentType: MEDIA_KINDS[kind].type } })).uploadId });
+  if (!uid) return answer(400, { error: 'Which upload?' });
+  const up = env.MEDIA.resumeMultipartUpload(key, uid);
+  if (op === 'part') {
+    const n = parseInt(url.searchParams.get('n'), 10);
+    if (!(n >= 1 && n <= UPL_PARTS_MAX[kind]) || !request.body) return answer(400, { error: n > UPL_PARTS_MAX[kind] ? uplTooBig(kind) : 'Which part?' });
+    const part = await up.uploadPart(n, request.body);
+    return answer(200, { partNumber: part.partNumber, etag: part.etag });
+  }
+  if (op === 'done') {
+    const body = await request.json().catch(() => ({}));
+    const parts = (Array.isArray(body.parts) ? body.parts : []).map(p => ({ partNumber: Number(p.partNumber), etag: String(p.etag) }));
+    if (!parts.length) return answer(400, { error: 'No parts.' });
+    const obj = await up.complete(parts);
+    if (obj.size > UPL_FILE_MAX[kind]) { await env.MEDIA.delete(key); return answer(400, { error: uplTooBig(kind) }); }
+    await uplFilesSet(env, o.pid, o.track, kind, obj.size);
+    return answer(200, { ok: true, size: obj.size, view: await uplView(env, o.who.all, o.who.id, o.pid, o.rec) });
+  }
+  if (op === 'abort') { await up.abort(); return answer(200, { ok: true }); }
+  return answer(400, { error: 'Unknown step.' });
+}
+async function memberUplCover(request, url, env, answer) {   // POST ?id&track { pic: a JPEG made small on the page } | ?op=drop
+  if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
+  const o = await uplOwnSong(request, url, env, answer);
+  if (o.no) return o.no;
+  const key = 'uc/' + o.pid + '/' + o.track + '.jpg';
+  if (url.searchParams.get('op') === 'drop') { await env.MEDIA.delete(key); await uplFilesSet(env, o.pid, o.track, 'c', 0); }
+  else {
+    const body = await request.json().catch(() => ({})), b64 = String(body.pic || '').replace(/^data:image\/jpeg;base64,/, '');
+    if (!b64 || b64.length > UPL_COVER_MAX * 4 / 3 || !/^[A-Za-z0-9+/=]+$/.test(b64)) return answer(400, { error: 'The picture is missing or too big.' });
+    await env.MEDIA.put(key, Uint8Array.from(atob(b64), ch => ch.charCodeAt(0)), { httpMetadata: { contentType: 'image/jpeg' } });
+    await uplFilesSet(env, o.pid, o.track, 'c', Date.now());
+  }
+  return answer(200, { ok: true, view: await uplView(env, o.who.all, o.who.id, o.pid, o.rec) });
+}
+async function uplCoverGet(url, env) {   // a member's own cover: anyone with its address, as the calendar shows it
+  const m = /^\/uc\/([\w-]{10,20})\/([0-9A-Za-z]{22})\.jpg$/.exec(url.pathname);
+  const o = m && env.MEDIA ? await env.MEDIA.get('uc/' + m[1] + '/' + m[2] + '.jpg') : null;
+  if (!o) return new Response('Not here.', { status: 404 });
+  return new Response(o.body, { headers: { 'Content-Type': 'image/jpeg', 'Cache-Control': 'public, max-age=31536000, immutable', 'Access-Control-Allow-Origin': '*' } });
+}
+async function uplFile(request, url, env, u, plain) {   // a member's own MP3 or MP4, its signed link checked as John's are; ranges for seeking
+  if (!env.MEDIA || !env.ADMIN_KEY) return plain(503, 'Not set up.');
+  if (request.method !== 'GET' && request.method !== 'HEAD') return plain(405, 'Use GET.');
+  const exp = parseInt(url.searchParams.get('e'), 10), sig = url.searchParams.get('s') || '';
+  if (!(exp > Date.now() / 1000) || sig !== await mediaSig(env, 'u' + u[1] + '/' + u[2], u[3], exp)) return plain(403, 'This link has run out or isn’t valid.');
+  const key = 'u' + u[1] + '/' + u[2] + '/' + u[3] + '.' + u[4], head = await env.MEDIA.head(key);
+  if (!head) return plain(404, 'Not here.');
+  const size = head.size, hdrs = { 'Content-Type': MEDIA_KINDS[u[1]].type, 'Accept-Ranges': 'bytes', 'Cache-Control': 'private, no-cache', 'ETag': head.httpEtag,
+    'Access-Control-Allow-Origin': MEMBERS_ORIGIN, 'Access-Control-Expose-Headers': 'Content-Length, Content-Range, Accept-Ranges, ETag' };
+  if (request.headers.get('If-None-Match') === head.httpEtag) return new Response(null, { status: 304, headers: hdrs });
+  let start = 0, end = size - 1, partial = false;
+  const rg = /^bytes=(\d*)-(\d*)$/.exec(request.headers.get('Range') || '');
+  if (rg && (rg[1] || rg[2])) {
+    if (rg[1]) { start = parseInt(rg[1], 10); if (rg[2]) end = Math.min(size - 1, parseInt(rg[2], 10)); }
+    else start = Math.max(0, size - parseInt(rg[2], 10));
+    if (start >= size || start > end) return new Response(null, { status: 416, headers: Object.assign(hdrs, { 'Content-Range': 'bytes */' + size }) });
+    partial = true;
+  }
+  hdrs['Content-Length'] = String(end - start + 1);
+  if (partial) hdrs['Content-Range'] = 'bytes ' + start + '-' + end + '/' + size;
+  if (request.method === 'HEAD') return new Response(null, { status: partial ? 206 : 200, headers: hdrs });
+  const obj = await env.MEDIA.get(key, partial ? { range: { offset: start, length: end - start + 1 } } : {});
+  if (!obj) return plain(404, 'Not here.');
+  return new Response(obj.body, { status: partial ? 206 : 200, headers: hdrs });
+}
 async function uplAnnounce(env, U, today) {   // the songs whose day it is, out, to the members once, at their owner's time
   let all = null;
   const hm = uplHM();

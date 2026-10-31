@@ -5,9 +5,10 @@ titled as the calendar calls it ("Mum's Song of the Day", or a plain playlist's 
     python3 _sotd/youtube_upl.py PLAYLISTS.json
 
 PLAYLISTS.json is upl_sync.py's upl-playlists.json: each playlist's songs in order and the ones taken in so far (its 10
-newest first, then 5 more a day, and each new song straight away). Each song taken in that has a video (the calendar's,
-songs/videos.json) goes in, in the playlist's order, 50 units each. John's playlist goes first (its step runs before
-this), and this stops with RESERVE units of the day left, so what doesn't fit waits for the next run. What's in each is
+newest first, then 5 more a day, and each new song straight away). Each song taken in that has a video (its owner's
+choice, ov, '' for none; else the calendar's, songs/videos.json) goes in, in the playlist's order, 50 units each; a song
+whose video has changed since has its old one taken out first (50 more), and one with none now, taken out. John's
+playlist goes first (its step runs before this), and this stops with RESERVE units of the day left, so what doesn't fit waits for the next run. What's in each is
 kept in _sotd/data/upl.json (yt: the YouTube playlist, added: each song's video and playlist item), and the YouTube
 playlists are sent to the Worker (/upl/sync, with this job's GITHUB_TOKEN) for the calendar's On YouTube.
 """
@@ -98,11 +99,21 @@ def main(path):
             added = rec.setdefault('added', {})
             wanted = set(pl.get('in') or [])
             order = [x['id'] for x in pl['songs']]
+            own = {x['id']: x['ov'] for x in pl['songs'] if 'ov' in x}
+            vid_of = lambda t: own[t] if t in own else match.get(t)
             adds = 0
             for pos, t in enumerate(order):
-                vid = match.get(t)
-                if t not in wanted or not vid or (added.get(t) or {}).get('v') == vid:
+                vid = vid_of(t)
+                if t not in wanted or (added.get(t) or {}).get('v') == vid or (not vid and t not in added):
                     continue
+                if t in added:   # its video changed, or it has none now: the old one out
+                    j = call('DELETE', API + 'playlistItems?' + urllib.parse.urlencode({'id': added[t]['item']}), token=token, units=50)
+                    if '_status' in j and j['_status'] != 404:
+                        print(pl['title'] + ': could not take out', t, j.get('_status'), j.get('_text', '')[:160])
+                        continue
+                    added.pop(t)
+                    if not vid:
+                        continue
                 at = sum(1 for x in order[:pos] if x in added)   # in the playlist's order: just after the songs before it already in
                 j = call('POST', API + 'playlistItems?part=snippet', {'snippet': {'playlistId': rec['yt'], 'position': at,
                          'resourceId': {'kind': 'youtube#video', 'videoId': vid}}}, token=token, units=50)
@@ -111,7 +122,7 @@ def main(path):
                     adds += 1
                 else:
                     print(pl['title'] + ': could not add', t, vid, j.get('_status'), j.get('_text', '')[:160])
-            waiting = sum(1 for t in order if t in wanted and match.get(t) and t not in added)
+            waiting = sum(1 for t in order if t in wanted and vid_of(t) and t not in added)
             print(pl['title'] + ':', adds, 'added this run,', len(added), 'in its YouTube copy' + (', ' + str(waiting) + ' waiting' if waiting else ''))
     except Quota:
         print('the day’s YouTube allowance for members’ copies is used up (', RESERVE, 'units kept for John’s ); the rest wait for the next run')

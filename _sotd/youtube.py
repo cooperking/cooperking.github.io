@@ -371,7 +371,7 @@ def main():
         done += from_links(songs, data, links, tok, ms)
     except ytapi.Quota:
         print("today's YouTube allowance is used up")
-    todo = [s for s in songs if s['id'] not in data['songs'] or due(data['songs'][s['id']])]
+    todo = [s for s in songs if 'ov' not in s and (s['id'] not in data['songs'] or due(data['songs'][s['id']]))]   # (ov: a member's own choice for their song)
     newest = max((s['n'] for s in songs if not s.get('upl')), default=None)
     todo.sort(key=lambda s: (bool(s.get('upl')), -s['n']))   # today's song first, and it may use the searches kept back for it; members' songs after John's
     print(f'{len(todo)} songs to search YouTube for; {ytapi.ledger()["used"]} units used today')

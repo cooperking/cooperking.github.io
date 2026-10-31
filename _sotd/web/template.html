@@ -322,6 +322,34 @@ html.upl-list #cal, html.upl-list .monthnav { display: none; }
 .upld-day { display: flex; align-items: center; gap: 10px; font: 600 10.5px/1.2 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
 .upld-day input { flex: 1; min-width: 0; padding: 9px 11px; border: 1px solid var(--line); border-radius: 10px; background: var(--pill-bg); color: var(--fg); font: 16px var(--sans); }
 .upld-day[hidden] { display: none; }
+/* a member's own for a song on their playlist (the editor) */
+.chip.edbtn { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; font: inherit; font-family: var(--sans); font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--fg); }
+.chip.edbtn svg { width: 11px; height: 11px; flex: none; }
+.upled-by { margin: -12px 0 0; color: var(--muted); font-size: 14px; }
+.upled-sec { display: grid; gap: 10px; }
+.upled-sec h4 { margin: 0; font: 600 10.5px/1.2 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.upled-sec h4 span { letter-spacing: 0; text-transform: none; font-weight: 400; }
+.upled-note { margin: -4px 0 0; font-size: 13px; line-height: 1.4; color: var(--muted); }
+.upled-yt { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+.upled-yt img { width: 96px; height: 54px; object-fit: cover; border-radius: 6px; background: var(--tile); flex: none; }
+.upled-yt a { color: var(--fg); }
+.upled-yt[hidden] { display: none; }
+.upled-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.upled-chips button { padding: 7px 11px; border-radius: 999px; border: 1px solid var(--line); background: var(--pill-bg); color: var(--fg); font: 500 13px/1 var(--sans); cursor: pointer; }
+.upled-chips button[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.upled-back { justify-self: start; padding: 0; border: 0; background: none; color: var(--muted); font: 13px var(--sans); text-decoration: underline; cursor: pointer; }
+.upled-back[hidden] { display: none; }
+.upled-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--pill-bg); }
+.upled-row .nm { flex: 1 1 120px; min-width: 0; display: grid; gap: 2px; font-size: 13px; color: var(--muted); }
+.upled-row .nm b { font: 500 16px/1.2 var(--serif); color: var(--fg); }
+.upled-row .acts { display: flex; gap: 6px; flex-wrap: wrap; }
+.upled-row .ac-out { padding: 8px 13px; font-size: 11px; }
+.upled-row .ac-out[hidden] { display: none; }
+.upled-art { position: relative; width: 48px; height: 48px; border-radius: 6px; overflow: hidden; flex: none; background: var(--tile); }
+.upled-art .art.fallback { font-size: 14px; }
+.upled-row .bar { flex: 1 0 100%; height: 3px; border-radius: 2px; background: var(--line); overflow: hidden; }
+.upled-row .bar i { display: block; height: 100%; width: 0; background: #e23a6e; transition: width .2s; }
+.upled-row .bar[hidden] { display: none; }
 /* a member's plain playlist: its songs as My playlist lists them, put in order by its owner */
 html.upl-list #tracks { display: none; }
 html.big.upl-list .side { display: grid; align-content: start; overflow-y: auto; min-height: 0; }   /* (a computer: the playlist in place of the calendar, scrolling in its place) */
@@ -514,7 +542,7 @@ button.day:focus-visible .sleeve { box-shadow: 0 16px 34px var(--shadow), 0 0 0 
 .emptymsg { color: var(--muted); padding: 10px 0; font-family: var(--serif); font-style: italic; }
 
 /* day view */
-dialog#sheet, dialog#mine, dialog#index, dialog#acctsheet, dialog#askdlg, dialog#appdlg, dialog#castdlg, dialog#senddlg, dialog#msgdlg, dialog#belldlg, dialog#upldlg, dialog#upldates, dialog#uplsend {
+dialog#sheet, dialog#mine, dialog#index, dialog#acctsheet, dialog#askdlg, dialog#appdlg, dialog#castdlg, dialog#senddlg, dialog#msgdlg, dialog#belldlg, dialog#upldlg, dialog#upldates, dialog#uplsend, dialog#upled {
   --bg: #ffffff; --fg: #1d0b1e; --fg-2: rgba(29, 11, 30, .9); --muted: rgba(29, 11, 30, .62); --faint: rgba(29, 11, 30, .45);
   --line: rgba(29, 11, 30, .14); --tile: #f3eef0; --chip-bg: rgba(29, 11, 30, .04); --pill-bg: rgba(29, 11, 30, .03); --pill-hover: rgba(29, 11, 30, .08);
   border: 0; padding: 0; color: var(--fg-2); background: var(--bg); color-scheme: light;
@@ -699,12 +727,12 @@ dialog#sharesheet::backdrop { background: rgba(24, 8, 24, .35); -webkit-backdrop
 }
 @keyframes shup { from { transform: translateY(100%); } to { transform: none; } }
 /* home-screen app: the page runs under the clock and the home bar, so the pop-ups keep clear of both */
-dialog#sheet, dialog#mine, dialog#index, dialog#acctsheet, dialog#askdlg, dialog#appdlg, dialog#castdlg, dialog#senddlg, dialog#msgdlg, dialog#belldlg, dialog#upldlg, dialog#upldates, dialog#uplsend {
+dialog#sheet, dialog#mine, dialog#index, dialog#acctsheet, dialog#askdlg, dialog#appdlg, dialog#castdlg, dialog#senddlg, dialog#msgdlg, dialog#belldlg, dialog#upldlg, dialog#upldates, dialog#uplsend, dialog#upled {
   top: env(safe-area-inset-top, 0px); bottom: env(safe-area-inset-bottom, 0px);
   max-height: calc(100dvh - 32px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
 }
 dialog#sharesheet { top: env(safe-area-inset-top, 0px); max-height: calc(100dvh - 32px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
-dialog#sheet::backdrop, dialog#mine::backdrop, dialog#index::backdrop, dialog#acctsheet::backdrop, dialog#askdlg::backdrop, dialog#appdlg::backdrop, dialog#castdlg::backdrop, dialog#senddlg::backdrop, dialog#msgdlg::backdrop, dialog#belldlg, dialog#upldlg::backdrop, dialog#upldates::backdrop, dialog#uplsend::backdrop { background: rgba(24, 8, 24, .3); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+dialog#sheet::backdrop, dialog#mine::backdrop, dialog#index::backdrop, dialog#acctsheet::backdrop, dialog#askdlg::backdrop, dialog#appdlg::backdrop, dialog#castdlg::backdrop, dialog#senddlg::backdrop, dialog#msgdlg::backdrop, dialog#belldlg::backdrop, dialog#upldlg::backdrop, dialog#upldates::backdrop, dialog#uplsend::backdrop, dialog#upled::backdrop { background: rgba(24, 8, 24, .3); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
 .sheet-in { display: grid; gap: 18px; padding: 16px 18px 24px; }
 #sheet .sheet-in { grid-template-columns: minmax(0, 1fr); }   /* (the day never wider than its pop-up: on a phone narrower than about 375, the date's line made it 320 wide, and the video and its facts ran off the side; the date shortens instead) */
 @media (max-width: 380px) { #sheet .sheet-in { padding-left: 12px; padding-right: 12px; } #sheet .daynav #sdate { letter-spacing: .1em; padding-inline: 7px; } }   /* (a small phone: the day about as wide as it was, inside its pop-up now; the date a touch tighter, so it's whole) */
@@ -1088,7 +1116,7 @@ html.minidrag, html.minidrag * { cursor: grabbing !important; user-select: none;
 /* Pop-ups are ordinary page layers (opened with show(), not showModal()): the browser's top layer can't have
    anything placed above it before iOS 17, and the My playlist button has to stay on top of a day and A–Z / Moods.
    The site draws the dim background (the scrim) itself and keeps the page behind from being tapped. */
-dialog#sheet, dialog#mine, dialog#index, dialog#sharesheet, dialog#acctsheet, dialog#askdlg, dialog#appdlg, dialog#castdlg, dialog#senddlg, dialog#msgdlg, dialog#belldlg, dialog#upldlg, dialog#upldates, dialog#uplsend { position: fixed; left: 0; right: 0; height: fit-content; margin: auto; z-index: 50; overscroll-behavior: contain; }
+dialog#sheet, dialog#mine, dialog#index, dialog#sharesheet, dialog#acctsheet, dialog#askdlg, dialog#appdlg, dialog#castdlg, dialog#senddlg, dialog#msgdlg, dialog#belldlg, dialog#upldlg, dialog#upldates, dialog#uplsend, dialog#upled { position: fixed; left: 0; right: 0; height: fit-content; margin: auto; z-index: 50; overscroll-behavior: contain; }
 dialog#index { height: calc(100dvh - 32px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
 .scrim { position: fixed; inset: 0; z-index: 49; display: none; background: rgba(24, 8, 24, .3); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); touch-action: none; }
 html.layer-open .scrim { display: block; }
@@ -1188,6 +1216,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
 .mine-list .ta { font-family: var(--serif); font-size: 15px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mine-list .rm { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--line); background: none; color: var(--fg); cursor: pointer; display: grid; place-items: center; }
 .mine-list .rm svg { width: 11px; height: 11px; }
+.mine-list .rowed { width: 32px; height: 32px; padding: 0; border-radius: 50%; border: 1px solid var(--line); background: none; color: var(--fg); cursor: pointer; display: grid; place-items: center; }
+.mine-list .rowed svg { width: 14px; height: 14px; }
 .mine-empty { margin: 0; padding: 18px 4px; font-family: var(--serif); font-style: italic; font-size: 17px; color: var(--muted); }
 .mine-foot { display: grid; gap: 10px; }
 .mine-sort { display: flex; align-items: center; gap: 8px; }
@@ -1656,6 +1686,46 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     <div class="ask-acts"><button class="copy" id="uplsok" type="submit">Save</button><button class="ac-out" id="uplsno" type="button">Cancel</button></div>
   </form>
 </dialog>
+<dialog id="upled" aria-labelledby="upleh">
+  <form class="sheet-in msgv" id="upledform" method="dialog">
+    <div class="sheet-head">
+      <p class="mine-top"><span class="chip" id="upledk">Your Song of the Day</span></p>
+      <button class="close" id="upledclose" type="button" aria-label="Close"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 2l10 10M12 2 2 12"/></svg></button>
+    </div>
+    <h3 id="upleh"></h3>
+    <p class="upled-by" id="upledby"></p>
+    <section class="upled-sec" aria-labelledby="upledvh">
+      <h4 id="upledvh">Its video</h4>
+      <div class="upld-opts" role="radiogroup" aria-labelledby="upledvh">
+        <label><input type="radio" name="upledv" value="found" checked><span><b>The one found on YouTube</b><span id="upledfound"></span></span></label>
+        <label><input type="radio" name="upledv" value="link"><span><b>A YouTube link</b>One you choose: paste its link.</span></label>
+        <label><input type="radio" name="upledv" value="none"><span><b>No video</b>Just the song.</span></label>
+      </div>
+      <label class="upld-day" id="upledlinkl" hidden><span>Link</span><input type="url" id="upledlink" inputmode="url" autocomplete="off" placeholder="https://youtu.be/…"></label>
+      <div class="upled-yt" id="upledyt" hidden><img id="upledyti" alt=""><a id="upledyta" target="_blank" rel="noopener">Watch it on YouTube ↗</a></div>
+    </section>
+    <section class="upled-sec" aria-labelledby="upledmh">
+      <h4 id="upledmh">Moods <span>· up to two</span></h4>
+      <div class="upled-chips" id="upledm"></div>
+      <h4 id="upledgh">Genres <span>· up to two</span></h4>
+      <div class="upled-chips" id="upledg"></div>
+      <button class="upled-back" id="upledtb" type="button">Back to the ones worked out</button>
+    </section>
+    <div class="ask-acts"><button class="copy" id="upledok" type="submit">Save</button><button class="ac-out" id="upledno" type="button">Cancel</button></div>
+    <section class="upled-sec" aria-labelledby="upledfh">
+      <h4 id="upledfh">Your own files</h4>
+      <p class="upled-note">In place of the preview and the YouTube video, for you and the members John lets have his own. Each goes up as soon as you choose it.</p>
+      <div class="upled-row"><span class="nm"><b>The song (MP3)</b><span id="upledsta"></span></span><span class="acts"><button class="ac-out" id="upledadda" type="button">Add</button><button class="ac-out" id="upleddropa" type="button">Take off</button></span><span class="bar" id="upledbara" hidden><i></i></span></div>
+      <div class="upled-row"><span class="nm"><b>A video (MP4)</b><span id="upledstv"></span></span><span class="acts"><button class="ac-out" id="upledaddv" type="button">Add</button><button class="ac-out" id="upleddropv" type="button">Take off</button></span><span class="bar" id="upledbarv" hidden><i></i></span></div>
+      <input type="file" id="upledfa" accept=".mp3,audio/mpeg" hidden><input type="file" id="upledfv" accept=".mp4,video/mp4" hidden>
+    </section>
+    <section class="upled-sec" aria-labelledby="upledch">
+      <h4 id="upledch">Its cover</h4>
+      <div class="upled-row"><span class="upled-art" id="upledart"></span><span class="nm"><b id="upledcn"></b><span id="upledct"></span></span><span class="acts"><button class="ac-out" id="upledaddc" type="button">Choose a picture</button><button class="ac-out" id="upleddropc" type="button">Take off</button></span></div>
+      <input type="file" id="upledfc" accept="image/*" hidden>
+    </section>
+  </form>
+</dialog>
 <dialog id="askdlg" aria-labelledby="askh">
   <form class="sheet-in ask" id="askform" method="dialog">
     <div class="sheet-head">
@@ -1741,8 +1811,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   var MOOD_NAMES = ['Joyful', 'Uplifting', 'Energetic', 'Playful', 'Mellow', 'Dreamy', 'Romantic', 'Bittersweet', 'Melancholy', 'Dark'];
   var MOOD_INFO = { Joyful: 'happy and bright', Uplifting: 'hopeful and rousing', Energetic: 'driving and high-energy', Playful: 'fun, cheeky or quirky', Mellow: 'calm and laid-back', Dreamy: 'hazy, floating, atmospheric', Romantic: 'love and longing', Bittersweet: 'happy-sad, nostalgic', Melancholy: 'sad or lonely', Dark: 'brooding, tense or angry' };
   // a song's moods (up to two) and genres, from moods.json; a song too new for it takes the live feed's genres only
+  function tagBase(s) { return TAGS[s.track] || (s.tag ? { m: [], g: s.tag.g } : null); }
   function tagOf(s) {
-    var t = TAGS[s.track] || (s.tag ? { m: [], g: s.tag.g } : null);
+    var t = tagBase(s);
+    if (s.tg) t = { m: s.tg.m || (t && t.m) || [], g: s.tg.g || (t && t.g) || [] };   // a member's own for a song on their playlist (null: the ones worked out)
     if (!t) return null;
     var m = (t.m || []).filter(function (x) { return MOOD_NAMES.indexOf(x) !== -1; });
     var g = t.g || [];
@@ -1764,7 +1836,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     return el;
   }
   function artEl(s, small) {
-    var own = ownArt(s); if (own) return own;   // a member: John's own cover for the day, wherever the album's would be
+    var own = !s.uc && ownArt(s); if (own) return own;   // a member: John's own cover for the day, wherever the album's would be (uc: a member's own for their song, in s.u)
     var el = document.createElement('span');
     el.className = 'art';
     el.setAttribute('role', 'img');
@@ -1999,7 +2071,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var open = layers(), top = open[open.length - 1], root = document.documentElement;
     root.classList.toggle('layer-open', !!top);
     scrimEl.style.zIndex = top ? String((+top.style.zIndex || 50) - 1) : '';
-    var under = open.some(function (d) { return d.id === 'mine' || d.id === 'sharesheet' || d.id === 'acctsheet' || d.id === 'askdlg' || d.id === 'appdlg' || d.id === 'castdlg' || d.id === 'senddlg' || d.id === 'msgdlg' || d.id === 'belldlg' || d.id === 'upldlg' || d.id === 'upldates' || d.id === 'uplsend'; });
+    var under = open.some(function (d) { return d.id === 'mine' || d.id === 'sharesheet' || d.id === 'acctsheet' || d.id === 'askdlg' || d.id === 'appdlg' || d.id === 'castdlg' || d.id === 'senddlg' || d.id === 'msgdlg' || d.id === 'belldlg' || d.id === 'upldlg' || d.id === 'upldates' || d.id === 'uplsend' || d.id === 'upled'; });
     root.classList.toggle('fab-under', under);
     if (top) pageEl.setAttribute('inert', ''); else pageEl.removeAttribute('inert');
     syncFloat();   // the floating video keeps to its day's place in the stack
@@ -2182,6 +2254,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // in the record's place. While it's showing, the round play button, the bar and the time work the video. ----
   var VIDS = {}, VIDS_YT = {};   // VIDS: YouTube's (videos.json), with a member's own videos in their place (vidsMerge)
   var NOTE_ICON = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M6 12V3.5l7-1.5v8.5"/><circle cx="4.2" cy="12" r="1.8"/><circle cx="11.2" cy="10.5" r="1.8"/></svg>';
+  var PEN_ICON = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="M10.6 2.6l2.8 2.8-7.6 7.6-3.4.6.6-3.4z"/><path d="M9 4.2l2.8 2.8"/></svg>';
   var VIDEO_ICON = '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="3.5" width="13" height="9" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.6 5.8v4.4L10.3 8z" fill="currentColor"/></svg>';
   var vplay = null;   // { el, ui, player, on, timer }
   var ytWait = null;
@@ -3443,6 +3516,12 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       fb2.title = 'Show facts about the song while it plays'; fb2.setAttribute('aria-pressed', capsOn ? 'true' : 'false'); fb2.hidden = true;
       fb2.addEventListener('click', toggleCaps);
       price.appendChild(fb2);
+      if (UPL.on && UPL.view && UPL.view.mine) {   // their own song: its video, moods and genres, their files and cover
+        var eb = document.createElement('button'); eb.type = 'button'; eb.className = 'chip edbtn'; eb.innerHTML = PEN_ICON + 'Edit';
+        eb.title = 'Its video, moods and genres, your own files and cover'; eb.setAttribute('aria-label', 'Edit ' + s.title + ': its video, moods and genres, your own files and cover');
+        eb.addEventListener('click', function () { upledOpen(s); });
+        price.appendChild(eb);
+      }
       var h = document.createElement('h3'); h.textContent = s.title;
       var by = document.createElement('p'); by.className = 'by'; by.textContent = s.artist; by._song = s; setYear(by, s);
       var al = document.createElement('p'); al.className = 'alb'; al.textContent = s.album;
@@ -5296,7 +5375,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // Anyone else, and any day without them, gets the preview and YouTube as before. The Worker's links to the files last
   // 12 hours, so they're fetched again before then. ----
   var MEMBER = null, MKEY = 'sotd-member', MBASE = DATA.live ? String(DATA.live).replace(/\/songs\.json.*$/, '') : '';
-  function ownSong(s) { return (MEMBER && MEMBER.media && MEMBER.media[s.track] && MEMBER.media[s.track].a) || ''; }
+  function ownSong(s) { return s.ma || (MEMBER && MEMBER.media && MEMBER.media[s.track] && MEMBER.media[s.track].a) || ''; }   // (ma: a member's own for their song)
   function whole(s) { return !!(ownSong(s) || OFFL[s.track]); }   // a member's whole song: online, or downloaded here
   function songSrc(s) {   // (a downloaded song is streamed while a speaker's playing: a Chromecast fetches the song itself)
     var on = ownSong(s) || s.p || '';
@@ -5308,7 +5387,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   var offBase = location.pathname.replace(/[^\/]*$/, '') + '__offline/';
   function offUrl(t) { return offBase + t + '.mp3'; }
   function offVUrl(t) { return offBase + t + '.mp4'; }
-  function ownVidSrc(s) { return (MEMBER && MEMBER.media && MEMBER.media[s.track] && MEMBER.media[s.track].v) || ''; }
+  function ownVidSrc(s) { return s.mv || (MEMBER && MEMBER.media && MEMBER.media[s.track] && MEMBER.media[s.track].v) || ''; }
   // all of a day's files of John's that there are (the song, the video) are on this device
   function dlDone(s) { var a = ownSong(s) || OFFL[s.track], v = ownVidSrc(s) || OFFV[s.track]; return !!(a || v) && (!a || !!OFFL[s.track]) && (!v || !!OFFV[s.track]); }
   window.sotdWhole = whole;
@@ -5326,7 +5405,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       vidsMerge(); dlRefresh(); dlPrune(MEMBER && MEMBER.see);
     }).catch(function () {});
   }
-  function canDl(s) { return !!(window.caches && SWOK && (ownSong(s) || ownVidSrc(s) || OFFL[s.track] || OFFV[s.track])); }
+  function canDl(s) { return !UPL.on && !!(window.caches && SWOK && (ownSong(s) || ownVidSrc(s) || OFFL[s.track] || OFFV[s.track])); }   // (John's calendar's)
   function dlFile(src, key, type) {   // one file into the downloads, streamed where the browser can (a video can be big)
     return fetch(src, { mode: 'cors' }).then(function (r) {
       if (!r.ok) throw new Error(r.status);
@@ -5433,6 +5512,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     Object.keys(VIDS_YT).forEach(function (t) { v[t] = VIDS_YT[t]; });
     if (MEMBER && MEMBER.media) Object.keys(MEMBER.media).forEach(function (t) { if (MEMBER.media[t].v) v[t] = Object.assign({}, VIDS_YT[t] || {}, { own: MEMBER.media[t].v }); });
     if (SWOK) Object.keys(OFFV).forEach(function (t) { v[t] = Object.assign({}, VIDS_YT[t] || {}, { own: offVUrl(t) }); });   // downloaded: from this device
+    if (UPL.on && songs) songs.forEach(function (s) {   // a member's calendar: its owner's video ('' none) and their own MP4
+      if ('ov' in s) { if (s.ov) v[s.track] = { v: s.ov, k: 'video' }; else delete v[s.track]; }
+      if (s.mv) v[s.track] = Object.assign({}, v[s.track] || {}, { own: s.mv });
+    });
     VIDS = v;
   }
   // ---- a member's saved playlists: kept by the Worker with their sign-in (/members/playlists), so all their devices
@@ -6244,7 +6327,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   function uplSongsOf(view) {   // the Worker's list as the calendar takes it (each song's day worked out there)
     return view.songs.map(function (x) {
-      return { n: x.n, tag: x.tag, a: londonDay(x.a), d: x.d, title: x.title, artist: x.artist, as: x.artists && x.artists.length > 1 || /, /.test(x.artist) ? x.artists : undefined, album: x.album, track: x.id, u: x.img, p: x.p, w: x.w ? 1 : 0, f: x.f ? 1 : 0 };
+      var o = { n: x.n, tag: x.tag, a: londonDay(x.a), d: x.d, title: x.title, artist: x.artist, as: x.artists && x.artists.length > 1 || /, /.test(x.artist) ? x.artists : undefined, album: x.album, track: x.id, u: x.img, p: x.p, w: x.w ? 1 : 0, f: x.f ? 1 : 0 };
+      if ('ov' in x) o.ov = x.ov;   // its owner's: the video ('' none), moods and genres, their MP3 and MP4, cover; their files' sizes (theirs)
+      if (x.tg) o.tg = x.tg; if (x.ma) o.ma = x.ma; if (x.mv) o.mv = x.mv; if (x.uc) o.uc = 1; if (x.own) o.own = x.own;
+      return o;
     });
   }
   function uplApply(view, opts) {
@@ -6255,7 +6341,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var keep = UPL.on === view.id && !!opts.keep;
     UPL.on = view.id; UPL.view = view;
     if (sheet.open && !keep) closeDialog(sheet, true);
-    setSongs(list, keep);
+    setSongs(list, keep); vidsMerge();
     var root = document.documentElement;
     root.classList.add('upl'); root.classList.toggle('upl-list', view.mode === 'list'); root.classList.toggle('upl-mine', !!view.mine);
     UPL.order = view.mode === 'list' ? view.songs.map(function (x) { return x.id; }) : null; UPL.sorted = null;
@@ -6279,7 +6365,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (!UPL.on) return;
     var list = UPL.john; UPL.on = null; UPL.view = null; UPL.john = null;
     if (sheet.open && !quiet) closeDialog(sheet, true);
-    setSongs(list, false);
+    setSongs(list, false); vidsMerge();
     var root = document.documentElement; root.classList.remove('upl'); root.classList.remove('upl-list'); root.classList.remove('upl-noyt'); root.classList.remove('upl-mine');
     clearTimeout(UPL.saveT); if (UPL.dirty) uplOrderSave(); UPL.order = null;
     document.getElementById('spfollow').setAttribute('href', JOHN_SP);
@@ -6357,6 +6443,178 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     box.appendChild(t); box.appendChild(b);
     return box;
   }
+  // ---- a member's own for a song on their playlist (its owner, any time): its video (the one found on YouTube, one of
+  // theirs, or none), moods and genres (two of each at most), their own MP3 and MP4 (for them and the members John lets
+  // have his own) and their own cover (cropped square; for everyone). The video, moods and genres are kept with Save;
+  // the files and the cover go up as soon as they're chosen. ----
+  var upledDlg = document.getElementById('upled'), UED = null;   // UED: { p: their playlist, s: the song, m, g: the moods and genres chosen, tags: changed ('back': the ones worked out) }
+  var UPL_PART = 10 << 20;
+  function ytIdOf(x) {   // a YouTube video's id, from its link (or the id itself)
+    x = String(x || '').trim();
+    if (/^[\w-]{11}$/.test(x)) return x;
+    var m = /(?:youtu\.be\/|[?&]v=|\/(?:shorts|embed|live|v)\/)([\w-]{11})(?![\w-])/.exec(x);
+    return m ? m[1] : '';
+  }
+  function upledMB(n) { return n >= 1e9 ? (n / 1e9).toFixed(2) + ' GB' : (n / 1e6).toFixed(n < 1e7 ? 1 : 0) + ' MB'; }
+  function upledOpen(s) {
+    var p = uplOwnRec(), t = tagOf(s) || { m: [], g: [] };
+    UED = { p: p, s: s, m: t.m.slice(), g: t.g.slice(), tags: false };
+    document.getElementById('upledk').textContent = p.mode === 'list' ? p.n : 'Your Song of the Day';
+    document.getElementById('upleh').textContent = s.title;
+    document.getElementById('upledby').textContent = s.artist;
+    var how = !('ov' in s) ? 'found' : s.ov ? 'link' : 'none';
+    [].forEach.call(document.querySelectorAll('input[name="upledv"]'), function (r) { r.checked = r.value === how; });
+    document.getElementById('upledlink').value = s.ov ? 'https://youtu.be/' + s.ov : '';
+    upledVid(); upledChips(); upledFiles();
+    openLayer(upledDlg); upledDlg.scrollTop = 0;
+  }
+  function upledVid() {   // the video chosen, to look at
+    var how = (document.querySelector('input[name="upledv"]:checked') || {}).value, found = UED && VIDS_YT[UED.s.track];
+    document.getElementById('upledfound').textContent = found ? 'The calendar’s own find.' : 'None found yet: the calendar looks each day.';
+    document.getElementById('upledlinkl').hidden = how !== 'link';
+    var id = how === 'found' ? found && found.v : how === 'link' ? ytIdOf(document.getElementById('upledlink').value) : '';
+    var box = document.getElementById('upledyt'); box.hidden = !id;
+    if (id) { document.getElementById('upledyti').src = 'https://i.ytimg.com/vi/' + id + '/mqdefault.jpg'; document.getElementById('upledyta').href = 'https://www.youtube.com/watch?v=' + id; }
+  }
+  [].forEach.call(document.querySelectorAll('input[name="upledv"]'), function (r) { r.addEventListener('change', function () { upledVid(); if (r.value === 'link' && r.checked) document.getElementById('upledlink').focus(); }); });
+  document.getElementById('upledlink').addEventListener('input', upledVid);
+  function upledChips() {
+    [['upledm', MOOD_NAMES, 'm'], ['upledg', GENRE_NAMES, 'g']].forEach(function (r) {
+      var box = document.getElementById(r[0]); box.textContent = '';
+      r[1].forEach(function (x) {
+        var b = document.createElement('button'); b.type = 'button'; b.textContent = x;
+        b.setAttribute('aria-pressed', UED[r[2]].indexOf(x) !== -1 ? 'true' : 'false');
+        if (r[2] === 'm' && MOOD_INFO[x]) b.title = MOOD_INFO[x];
+        b.addEventListener('click', function () {
+          var l = UED[r[2]], i = l.indexOf(x);
+          if (i !== -1) l.splice(i, 1);
+          else if (l.length >= 2) { toast('Two at most: take one off first'); return; }
+          else l.push(x);
+          UED.tags = true; upledChips();
+        });
+        box.appendChild(b);
+      });
+    });
+    document.getElementById('upledtb').hidden = UED.tags === 'back' || (!UED.s.tg && !UED.tags);
+  }
+  document.getElementById('upledtb').addEventListener('click', function () {
+    var t = tagBase(UED.s) || {};
+    UED.m = (t.m || []).filter(function (x) { return MOOD_NAMES.indexOf(x) !== -1; }); UED.g = (t.g || []).slice(); UED.tags = 'back';
+    upledChips();
+  });
+  function upledFiles() {   // their files and cover, as they stand
+    var s = UED.s, own = s.own || {};
+    ['a', 'v'].forEach(function (k) {
+      var busy = UED['busy' + k];
+      document.getElementById('upledst' + k).textContent = busy != null ? 'Going up… ' + busy + '%' : own[k] ? 'Added · ' + upledMB(own[k]) : k === 'a' ? 'None yet (80 MB at most)' : 'None yet (1.5 GB at most)';
+      var add = document.getElementById('upledadd' + k); add.textContent = own[k] ? 'Replace' : 'Add'; add.disabled = busy != null;
+      document.getElementById('upleddrop' + k).hidden = !own[k] || busy != null;
+      var bar = document.getElementById('upledbar' + k); bar.hidden = busy == null; bar.firstChild.style.width = (busy || 0) + '%';
+    });
+    var art = document.getElementById('upledart'); art.textContent = ''; art.appendChild(artEl(s, true));
+    document.getElementById('upledcn').textContent = own.c ? 'Your picture' : 'The album’s cover';
+    document.getElementById('upledct').textContent = UED.busyc ? 'Going up…' : own.c ? 'For everyone who sees your calendar.' : 'Or a picture of your own, cropped square.';
+    var ac = document.getElementById('upledaddc'); ac.textContent = own.c ? 'Change' : 'Choose a picture'; ac.disabled = !!UED.busyc;
+    document.getElementById('upleddropc').hidden = !own.c || !!UED.busyc;
+  }
+  function upledView(view, ed) {   // the playlist again with the change: the day open again, the editor's song
+    if (!view || UPL.on !== view.id) return;
+    var day = sheet.open ? curDay : null, t = ed.s.track;
+    uplApply(view, { keep: true });
+    if (day && byDate[day]) openDay(day, { track: t });
+    if (byTrack[t]) ed.s = byTrack[t];
+    if (UED === ed && upledDlg.open) { upledFiles(); openLayer(upledDlg); }   // (still above the day)
+  }
+  function upledPost(path, body) {
+    return fetch(MBASE + '/members/' + path, { method: 'POST', headers: { Authorization: 'Bearer ' + plTok(), 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { j.status = r.status; return j; }); });
+  }
+  function upledUp(k, f) {   // their MP3 or MP4, in parts
+    var ed = UED, s = ed.s, max = k === 'a' ? 80e6 : 1500e6;
+    if (!(k === 'a' ? /\.mp3$/i.test(f.name || '') || f.type === 'audio/mpeg' : /\.mp4$/i.test(f.name || '') || f.type === 'video/mp4')) { toast(k === 'a' ? 'That isn’t an MP3' : 'That isn’t an MP4'); return; }
+    if (f.size > max) { toast('That’s too big: ' + (k === 'a' ? 'an MP3 can be 80 MB' : 'an MP4 can be 1.5 GB') + ' at most'); return; }
+    var part = Math.max(UPL_PART, Math.ceil(f.size / 38 / (1 << 20)) * (1 << 20)), n = Math.max(1, Math.ceil(f.size / part)), parts = [], uid = '';
+    var q = function (op, more) { return 'uplup?id=' + encodeURIComponent(ed.p.id) + '&track=' + s.track + '&kind=' + k + '&op=' + op + (uid ? '&uploadId=' + encodeURIComponent(uid) : '') + (more || ''); };
+    var shown = function (pc) { ed['busy' + k] = pc; if (UED === ed && upledDlg.open) upledFiles(); };
+    var sendPart = function (i) {
+      return new Promise(function (res, rej) {
+        var x = new XMLHttpRequest(); x.open('POST', MBASE + '/members/' + q('part', '&n=' + i)); x.setRequestHeader('Authorization', 'Bearer ' + plTok());
+        x.upload.onprogress = function (e) { if (e.lengthComputable) shown(Math.min(99, Math.round(100 * ((i - 1) * part + e.loaded) / f.size))); };
+        x.onload = function () { var j = {}; try { j = JSON.parse(x.responseText); } catch (e) {} if (x.status === 200 && j.etag) res(j); else rej(new Error(j.error || 'a part didn’t go up')); };
+        x.onerror = function () { rej(new Error('the connection dropped')); };
+        x.send(f.slice((i - 1) * part, Math.min(f.size, i * part)));
+      });
+    };
+    var go = function (i) { return i > n ? upledPost(q('done'), { parts: parts }) : sendPart(i).then(function (j) { parts.push({ partNumber: j.partNumber, etag: j.etag }); return go(i + 1); }); };
+    shown(0);
+    upledPost(q('start')).then(function (j) {
+      if (!j.uploadId) throw new Error(j.error || 'it couldn’t start');
+      uid = j.uploadId; return go(1);
+    }).then(function (j) {
+      if (!j.ok) throw new Error(j.error || 'it couldn’t finish');
+      ed['busy' + k] = null; upledView(j.view, ed);
+      toast(k === 'a' ? 'Your MP3 is on: it plays in place of the preview' : 'Your MP4 is on: it plays in place of the YouTube video');
+    }).catch(function (e) {
+      if (uid) upledPost(q('abort')).catch(function () {});
+      shown(null); toast('Couldn’t add it: ' + ((e && e.message) || e));
+    });
+  }
+  function upledDrop(k) {
+    var ed = UED, what = k === 'a' ? 'your MP3' : k === 'v' ? 'your MP4' : 'your picture';
+    ask({ k: ed.s.title, h: 'Take off ' + what + '?', t: k === 'c' ? 'The album’s cover shows again.' : k === 'a' ? 'The preview plays again.' : 'The YouTube video plays again, if there is one.', ok: 'Take it off', no: 'Keep it' }).then(function (yes) {
+      if (!yes) return;
+      upledPost(k === 'c' ? 'uplcover?id=' + encodeURIComponent(ed.p.id) + '&track=' + ed.s.track + '&op=drop' : 'uplup?id=' + encodeURIComponent(ed.p.id) + '&track=' + ed.s.track + '&kind=' + k + '&op=drop').then(function (j) {
+        if (j.status !== 200) { toast(j.error || 'Couldn’t take it off just now'); return; }
+        upledView(j.view, ed); toast('Taken off');
+      }).catch(function () { toast('Couldn’t reach the site. Try again.'); });
+    });
+  }
+  function upledCover(f) {   // their own picture: cropped square, 640 pixels at most, as a JPEG
+    var ed = UED;
+    cardsJs().then(function (C) {
+      return C.fileImage(f, function () { toast('Turning the HEIC photo into a JPEG…'); }).then(function (img) {
+        var w = img.naturalWidth || img.width, h = img.naturalHeight || img.height, side = Math.min(w, h), out = Math.min(640, side), c = document.createElement('canvas');
+        c.width = c.height = out;
+        c.getContext('2d').drawImage(img, (w - side) / 2, (h - side) / 2, side, side, 0, 0, out, out);
+        return c.toDataURL('image/jpeg', 0.85);
+      }, function (e) { throw new Error(C.fileWhy(e, f)); });
+    }).then(function (pic) {
+      ed.busyc = true; if (UED === ed && upledDlg.open) upledFiles();
+      return upledPost('uplcover?id=' + encodeURIComponent(ed.p.id) + '&track=' + ed.s.track, { pic: pic });
+    }).then(function (j) {
+      ed.busyc = false;
+      if (j.status !== 200) throw new Error(j.error || 'it couldn’t go up');
+      upledView(j.view, ed); toast('Your picture is on');
+    }).catch(function (e) { ed.busyc = false; if (UED === ed && upledDlg.open) upledFiles(); toast('That picture couldn’t be used: ' + ((e && e.message) || e)); });
+  }
+  ['a', 'v', 'c'].forEach(function (k) {
+    var inp = document.getElementById('upledf' + k);
+    document.getElementById('upledadd' + k).addEventListener('click', function () { inp.click(); });
+    inp.addEventListener('change', function () { var f = this.files && this.files[0]; this.value = ''; if (f && UED) { if (k === 'c') upledCover(f); else upledUp(k, f); } });
+    document.getElementById('upleddrop' + k).addEventListener('click', function () { upledDrop(k); });
+  });
+  document.getElementById('upledno').addEventListener('click', function () { closeDialog(upledDlg); });
+  document.getElementById('upledclose').addEventListener('click', function () { closeDialog(upledDlg); });
+  document.getElementById('upledform').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var ed = UED; if (!ed) return;
+    var s = ed.s, how = (document.querySelector('input[name="upledv"]:checked') || {}).value, body = { op: 'edit', id: ed.p.id, track: s.track };
+    if (how === 'found') { if ('ov' in s) body.v = null; }
+    else if (how === 'none') { if (s.ov !== '') body.v = ''; }
+    else {
+      var id = ytIdOf(document.getElementById('upledlink').value);
+      if (!id) { toast('That isn’t a YouTube link'); document.getElementById('upledlink').focus(); return; }
+      if (s.ov !== id) body.v = id;
+    }
+    if (ed.tags === 'back') { body.m = null; body.g = null; } else if (ed.tags) { body.m = ed.m; body.g = ed.g; }
+    if (!('v' in body) && !('m' in body)) { closeDialog(upledDlg); return; }
+    var ok = document.getElementById('upledok'); ok.disabled = true;
+    uplCall(body).then(function (j) {
+      ok.disabled = false;
+      if (j.status !== 200) { toast(j.error || 'Couldn’t save it just now'); return; }
+      closeDialog(upledDlg); upledView(j.view, ed); toast('Saved');
+    }).catch(function () { ok.disabled = false; toast('Couldn’t reach the site. Try again.'); });
+  });
   // the Profile's Playlists tab: their own
   function uplStatus(p) {
     if (p.st === 'join') return 'Waiting for John to join it as a collaborator. He has your link on his page; it shows for everyone once he has.';
@@ -6529,6 +6787,11 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         so.setAttribute('aria-label', 'Sign off ' + s.title + ': it waits for you');
         so.addEventListener('click', function () { uplSignoff(uplOwnRec(), s, so); });
         li.appendChild(so);
+      } else if (mineOwn) {
+        var eb = document.createElement('button'); eb.type = 'button'; eb.className = 'iconbtn rowed'; eb.innerHTML = PEN_ICON;
+        eb.title = 'Edit'; eb.setAttribute('aria-label', 'Edit ' + s.title + ': its video, moods and genres, your own files and cover');
+        eb.addEventListener('click', function (e) { e.stopPropagation(); upledOpen(s); });
+        li.appendChild(eb);
       } else li.appendChild(rowDl(s));
       uplListEl.appendChild(li);
     });

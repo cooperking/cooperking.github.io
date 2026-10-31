@@ -299,10 +299,25 @@ still to come: facts, written for new songs and on request for older ones, check
   The site job gets the playlists from the Worker's `/upl/sync` with its own GITHUB_TOKEN (the Worker checks with GitHub
   that it's a token for this repository alone), and sends back the YouTube copies. The Worker starts the site job when a
   member's playlist changes, and once a day from 07:00 for the day's 5 more. Tests: `upl_py_t.py`.
-- Worker: `/members/upl` (GET `?id=`; POST ops `add`, `mode`, `link`, `check`, `remove`, `signoff`, `dates`, `order`, `send`), `pls` on
-  `/members/me`, admin ops `upls`, `uplcheck`, `uplremove`. Tests: `upl_t.mjs` (the Worker), `upl_page_t.py` (the
-  draft), `upl_admin_t.py` (the Members tab), `upl_dates_t.mjs` (days and order), `upl_order_t.py` (the draft's order and
-  Days), `upl_wait_t.py` (where they sign off), `mine_drag_t.py` (My playlist's dragging, shared with them).
+- **Their own for each song** (John, 31 Oct 2026: "there doesn't seem to be anywhere to see the youtube links, the mp3s
+  moods or anything else that I get in my option on the admin page"): its owner taps *Edit* on the song's day (or the
+  pencil on a plain playlist's row), any time, before or after sign-off. *Its video*: the one found on YouTube, a YouTube
+  link of theirs, or none (`ed { <track>: { v } }` in `upl:<id>`; `''` none). *Moods* and *Genres*: up to two each, or
+  back to the ones worked out (`m`, `g`; `[]` none). These are kept with *Save*. *Your own files*: an MP3 (80 MB at most)
+  and an MP4 (1.5 GB at most), up in 10 MB parts or more (R2 `ua/<id>/<track>.mp3`, `uv/<id>/<track>.mp4`), playing
+  in place of the preview and the YouTube video for them and for the members John lets have his own (the MP3 and MP4
+  ticks on their Members card), by links signed as his are (`/m/ua/…`, `/m/uv/…`, 12 hours). *Its cover*: a picture,
+  cropped square to 640 pixels on the page (R2 `uc/<id>/<track>.jpg`, served at `/uc/…` for everyone who sees the
+  calendar). The files and the cover go up as soon as they're chosen, and *Take off* asks first. Sizes in `files` in
+  `upl:<id>`. On their calendar each song shows its owner's choices; downloads are for John's calendar only. Their
+  video goes into the YouTube copy (one changed since has its old one taken out; with none, taken out) and the site job
+  doesn't search for it. Removing the playlist (or the member) removes its files.
+- Worker: `/members/upl` (GET `?id=`; POST ops `add`, `mode`, `link`, `check`, `remove`, `signoff`, `dates`, `order`, `send`,
+  `edit`), `/members/uplup` (`?id&track&kind=a|v&op=start|part|done|abort|drop`), `/members/uplcover` (`?id&track`,
+  `{ pic }`, or `&op=drop`), `pls` on `/members/me`, admin ops `upls`, `uplcheck`, `uplremove`. Tests: `upl_t.mjs` (the
+  Worker), `upl_page_t.py` (the draft), `upl_admin_t.py` (the Members tab), `upl_dates_t.mjs` (days and order),
+  `upl_order_t.py` (the draft's order and Days), `upl_wait_t.py` (where they sign off), `mine_drag_t.py` (My playlist's
+  dragging, shared with them), `upl_edit_t.mjs` and `upl_edit_page_t.py` (their own for each song).
 
 ## Saved playlists
 
