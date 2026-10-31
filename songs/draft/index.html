@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="16242dae0973">
+<meta name="sotd-build" content="fcfe80bb996e">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -6663,11 +6663,13 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     UED.m = (t.m || []).filter(function (x) { return MOOD_NAMES.indexOf(x) !== -1; }); UED.g = (t.g || []).slice(); UED.tags = 'back';
     upledChips();
   });
-  function upledFiles() {   // their files and cover, as they stand
-    var s = UED.s, own = s.own || {};
+  function upledFiles() {   // their files and cover, as they stand (john: John's own for the same song, which plays when they have none)
+    var s = UED.s, own = s.own || {}, john = (MEMBER && MEMBER.media && MEMBER.media[s.track]) || {};
     ['a', 'v'].forEach(function (k) {
-      var busy = UED['busy' + k];
-      document.getElementById('upledst' + k).textContent = busy != null ? 'Going up… ' + busy + '%' : own[k] ? 'Added · ' + upledMB(own[k]) : k === 'a' ? 'None yet (80 MB at most)' : 'None yet (1.5 GB at most)';
+      var busy = UED['busy' + k], most = k === 'a' ? '80 MB at most' : '1.5 GB at most';
+      document.getElementById('upledst' + k).textContent = busy != null ? 'Going up… ' + busy + '%' : own[k] ? 'Added · ' + upledMB(own[k])
+        : john[k] ? (MEMBER.owner === true ? 'Yours from the Songs tab plays now (the same song is on your calendar). One added here would play in its place (' + most + ').'
+          : 'John’s plays now: the same song is on his calendar. Yours would play in its place (' + most + ').') : 'None yet (' + most + ')';
       var add = document.getElementById('upledadd' + k); add.textContent = own[k] ? 'Replace' : 'Add'; add.disabled = busy != null;
       document.getElementById('upleddrop' + k).hidden = !own[k] || busy != null;
       var bar = document.getElementById('upledbar' + k); bar.hidden = busy == null; bar.firstChild.style.width = (busy || 0) + '%';
@@ -6755,7 +6757,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     UED.fxDirty = false;
     document.getElementById('upledxn').textContent = st === 'wait' ? 'Written and checked, waiting for you: change any, take any out, then sign them off. They show on your calendar as captions once you have.'
       : st === 'ok' ? 'On your calendar, as captions while it plays. Still yours to change.' : st === 'asked' ? 'Asked for: they’re written within the day, then wait here for you.'
-      : st === 'none' ? 'None yet. Ask, and they’re written for you to check, as John’s are.' : st === 'nil' ? 'None could be found for it.' : 'Facts are written for songs on public playlists (Who sees it › Public).';
+      : st === 'none' ? 'None yet. Ask, and they’re written for you to check, as John’s are.' : st === 'nil' ? 'None could be found for it.' : 'Facts are written for songs on public playlists (Setup › Who sees it › Public).';
     box.textContent = '';
     if (f) {
       var group = function (head, rows, key) {

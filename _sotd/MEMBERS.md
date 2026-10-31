@@ -393,7 +393,10 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   calendar). The files and the cover go up as soon as they're chosen, and *Take off* asks first. Sizes in `files` in
   `upl:<id>`. On their calendar each song shows its owner's choices; downloads are for John's calendar only. Their
   video goes into the YouTube copy (one changed since has its old one taken out; with none, taken out) and the site job
-  doesn't search for it. Removing the playlist (or the member) removes its files.
+  doesn't search for it. Removing the playlist (or the member) removes its files. A song that's also on John's
+  calendar with his own MP3 or MP4 (the Songs tab's) plays his, for those he lets have them, until its owner adds their
+  own; the editor says so ("John’s plays now", or to John "Yours from the Songs tab plays now"; John, 31 Oct 2026: "in
+  the edit playlist it doesn't show that it already has files").
 - **Facts, for public playlists' songs** (John, 31 Oct 2026, asked which: "Public playlists only"): written and checked
   by John's facts task as his are (`_sotd/FACTS.md`), for the songs on a playlist set to Public that were added after it
   was added to the calendar, the 10 newest from before that (John, 31 Oct 2026, offered the same 10 its
@@ -422,7 +425,7 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   sharing, the Profile's one list), `share_upl_t.py` (their cards), `upl_fav_t.py` (hearts and My playlist), `upl_pop_t.py` (the pop-up), `upl_wait_t.py` (where they sign off), `mine_drag_t.py` (My playlist's
   dragging, shared with them), `upl_edit_t.mjs` and `upl_edit_page_t.py` (their own for each song), `upl_del_t.mjs`
   (deleting, saved playlists on the calendar, the Members tab's songs), `upl_saved_page_t.py` (the Setup, saved ones on
-  the calendar, deleting, the Admin button), `upl_sendsong_t.py` (Send a song).
+  the calendar, deleting, the Admin button), `upl_sendsong_t.py` (Send a song), `upl_edit_john_t.py` (John's files in the editor).
 
 ## Saved playlists
 
