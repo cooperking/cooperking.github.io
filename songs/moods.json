@@ -7908,7 +7908,7 @@
    "sound": [
     "Romantic",
     "Playful",
-    "Energetic"
+    "Mellow"
    ],
    "claude": [
     "Melancholy",
@@ -9861,7 +9861,7 @@
    "sound": [
     "Uplifting",
     "Bittersweet",
-    "Joyful"
+    "Melancholy"
    ],
    "claude": [
     "Dreamy",
@@ -15400,7 +15400,7 @@
     "pop",
     "synth-pop"
    ],
-   "checkWhy": "Mellow, but the audio sounds livelier than 87% of the songs",
+   "checkWhy": "Mellow, but the audio sounds livelier than 88% of the songs",
    "check": true
   },
   "748yv6bb3l3CcKS45a6SZ8": {
@@ -25986,11 +25986,11 @@
      61
     ],
     [
-     "Joyful",
+     "Bittersweet",
      10
     ],
     [
-     "Bittersweet",
+     "Joyful",
      10
     ]
    ],
@@ -26010,11 +26010,11 @@
      40,
      [
       [
-       "Joyful",
+       "Bittersweet",
        24
       ],
       [
-       "Bittersweet",
+       "Joyful",
        24
       ],
       [
@@ -26026,8 +26026,8 @@
    ],
    "moodFrom": "Weighed up",
    "sound": [
-    "Joyful",
     "Bittersweet",
+    "Joyful",
     "Romantic"
    ],
    "listeners": "agree",
@@ -26274,14 +26274,14 @@
    "moodMix": [
     [
      "Joyful",
-     46
-    ],
-    [
-     "Playful",
-     13
+     45
     ],
     [
      "Dreamy",
+     13
+    ],
+    [
+     "Playful",
      13
     ]
    ],
@@ -26292,14 +26292,14 @@
      [
       [
        "Joyful",
-       46
-      ],
-      [
-       "Playful",
-       13
+       45
       ],
       [
        "Dreamy",
+       13
+      ],
+      [
+       "Playful",
        13
       ]
      ]
@@ -26308,8 +26308,8 @@
    "moodFrom": "Weighed up",
    "sound": [
     "Joyful",
-    "Playful",
-    "Dreamy"
+    "Dreamy",
+    "Playful"
    ],
    "listeners": "none",
    "styles": [
@@ -26725,7 +26725,7 @@
    "moodMix": [
     [
      "Energetic",
-     77
+     76
     ],
     [
      "Dark",
@@ -26743,7 +26743,7 @@
      [
       [
        "Energetic",
-       77
+       76
       ],
       [
        "Dark",
@@ -26857,6 +26857,132 @@
    ],
    "check": true
   },
+  "5OGfBbWmRRkDiZiJbu5WIr": {
+   "n": 264,
+   "title": "Blank Generation - 2013 Remaster",
+   "artist": "Richard Hell",
+   "moods": [
+    "Energetic",
+    "Joyful"
+   ],
+   "moodMix": [
+    [
+     "Energetic",
+     52
+    ],
+    [
+     "Joyful",
+     28
+    ],
+    [
+     "Playful",
+     9
+    ]
+   ],
+   "moodEvidence": [
+    [
+     "Audio",
+     100,
+     [
+      [
+       "Energetic",
+       52
+      ],
+      [
+       "Joyful",
+       28
+      ],
+      [
+       "Playful",
+       9
+      ]
+     ]
+    ]
+   ],
+   "moodFrom": "Weighed up",
+   "sound": [
+    "Energetic",
+    "Joyful",
+    "Playful"
+   ],
+   "listeners": "none",
+   "styles": [
+    "Mod",
+    "Power Pop",
+    "Punk"
+   ],
+   "genres": [
+    "Rock"
+   ],
+   "genreFrom": "Weighed up",
+   "genreMix": [
+    [
+     "Rock",
+     84
+    ],
+    [
+     "Indie",
+     10
+    ],
+    [
+     "Pop",
+     6
+    ]
+   ],
+   "genreEvidence": [
+    [
+     "MusicBrainz",
+     50,
+     [
+      [
+       "Rock",
+       80
+      ],
+      [
+       "Indie",
+       20
+      ]
+     ]
+    ],
+    [
+     "Last.fm",
+     30,
+     [
+      [
+       "Rock",
+       99
+      ],
+      [
+       "Indie",
+       1
+      ]
+     ]
+    ],
+    [
+     "Audio",
+     20,
+     [
+      [
+       "Rock",
+       70
+      ],
+      [
+       "Pop",
+       30
+      ]
+     ]
+    ]
+   ],
+   "musicbrainz": [
+    "alternative rock",
+    "garage rock",
+    "post-punk",
+    "punk",
+    "punk rock",
+    "rock"
+   ],
+   "check": true
+  },
   "66XJPU1jxxBNqTk1KapuBN": {
    "n": 100001,
    "title": "Suddenly",
@@ -26872,7 +26998,7 @@
     ],
     [
      "Melancholy",
-     22
+     23
     ],
     [
      "Dark",
@@ -26890,7 +27016,7 @@
       ],
       [
        "Melancholy",
-       22
+       23
       ],
       [
        "Dark",
@@ -27124,7 +27250,7 @@
     ],
     [
      "Playful",
-     15
+     14
     ],
     [
      "Energetic",
@@ -27142,7 +27268,7 @@
       ],
       [
        "Playful",
-       15
+       14
       ],
       [
        "Energetic",
@@ -27338,7 +27464,7 @@
    "moodMix": [
     [
      "Energetic",
-     70
+     69
     ],
     [
      "Joyful",
@@ -27346,7 +27472,7 @@
     ],
     [
      "Dark",
-     6
+     7
     ]
    ],
    "moodEvidence": [
@@ -27356,7 +27482,7 @@
      [
       [
        "Energetic",
-       70
+       69
       ],
       [
        "Joyful",
@@ -27364,7 +27490,7 @@
       ],
       [
        "Dark",
-       6
+       7
       ]
      ]
     ]
@@ -28534,7 +28660,7 @@
    "moodMix": [
     [
      "Dark",
-     92
+     93
     ],
     [
      "Energetic",
@@ -28552,7 +28678,7 @@
      [
       [
        "Dark",
-       92
+       93
       ],
       [
        "Energetic",
@@ -29208,7 +29334,7 @@
    "moodMix": [
     [
      "Energetic",
-     36
+     35
     ],
     [
      "Playful",
@@ -29226,7 +29352,7 @@
      [
       [
        "Energetic",
-       36
+       35
       ],
       [
        "Playful",
@@ -29460,11 +29586,11 @@
      33
     ],
     [
-     "Energetic",
+     "Dark",
      11
     ],
     [
-     "Dark",
+     "Energetic",
      11
     ]
    ],
@@ -29478,11 +29604,11 @@
        33
       ],
       [
-       "Energetic",
+       "Dark",
        11
       ],
       [
-       "Dark",
+       "Energetic",
        11
       ]
      ]
@@ -29491,8 +29617,8 @@
    "moodFrom": "Weighed up",
    "sound": [
     "Playful",
-    "Energetic",
-    "Dark"
+    "Dark",
+    "Energetic"
    ],
    "listeners": "none",
    "styles": [
