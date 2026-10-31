@@ -364,8 +364,22 @@ still to come: facts, written for new songs and on request for older ones, check
   `upl:<id>`. On their calendar each song shows its owner's choices; downloads are for John's calendar only. Their
   video goes into the YouTube copy (one changed since has its old one taken out; with none, taken out) and the site job
   doesn't search for it. Removing the playlist (or the member) removes its files.
+- **Facts, for public playlists' songs** (John, 31 Oct 2026, asked which: "Public playlists only"): written and checked
+  by John's facts task as his are (`_sotd/FACTS.md`), for the songs on a playlist set to Public that were added after it
+  was, and an older one when its owner taps *Ask for facts* in its editor (10 a day; `fask` in `upl:<id>`). The Worker's
+  `/upl/sync` lists them (`facts`); `_sotd/upl_sync.py` writes them with John's songs into `songs-facts.json`, which
+  about.py gathers sources for (each marked `upl`), so `facts_todo.py` and `facts_ask.py` take each once. `facts_add.py`
+  puts them in `_sotd/data/upl-facts.json`, not John's waiting list, and the site job sends that to the Worker
+  (`_sotd/upl_facts.py send`, `/upl/facts`), where each waits for its owner (KV `ufacts:<id>`). The editor's *Its facts*
+  shows them: change any, take any out, then *Sign off the facts*; the pop-up's row says *facts wait for you* until
+  then. Signed off, they show on that calendar for everyone who sees it (`fx` on the song): captions while it plays,
+  listed under it when it can't play; still its owner's to change (*Save*). One with none found says so. A playlist
+  that stops being public gets no more, and the site job takes its songs out of `_sotd/data/sources.json` and
+  `upl-facts.json` before committing (`upl_facts.py tidy`); those signed off before stay on its calendar. Tests:
+  `upl_facts_t.mjs` (the Worker), `upl_facts_py_t.py` (the site job), `upl_facts_page_t.py` (the draft).
 - Worker: `/members/upl` (GET `?id=`, with no sign-in for a public one; POST ops `add`, `mode`, `link`, `check`, `remove`,
-  `signoff`, `dates`, `order`, `send`, `edit`, `title`, `share`), `/members/songs?ids=`, `/s/u/<id>[/<month or day>]` (a public
+  `signoff`, `dates`, `order`, `send`, `edit`, `title`, `share`, `facts`, `askfacts`), `/upl/sync`, `/upl/data` and `/upl/facts`
+  (the site job's), `/members/songs?ids=`, `/s/u/<id>[/<month or day>]` (a public
   one's link pages), `/members/uplup` (`?id&track&kind=a|v&op=start|part|done|abort|drop`), `/members/uplcover` (`?id&track`,
   `{ pic }`, or `&op=drop`), `pls` on `/members/me`, admin ops `upls`, `uplcheck`, `uplremove`. Tests: `upl_t.mjs` (the
   Worker), `upl_page_t.py` (the draft), `upl_pv_t.mjs` (previews), `upl_admin_t.py` (the Members tab), `upl_dates_t.mjs` (days and order),

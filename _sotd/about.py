@@ -249,6 +249,8 @@ def main():
             if pg:
                 data['pages'].setdefault(pg['title'], pg)
                 e['albumPage'] = pg['title']
+        if s.get('upl'):
+            e['upl'] = s['upl']   # (a member's public playlist's song: its facts go to them, facts_add.py)
         e['run'] = (data['songs'].get(s['id']) or {}).get('run') or runinfo.this_run()   # the run that first found it (Status tab)
         if not e['run']:
             del e['run']

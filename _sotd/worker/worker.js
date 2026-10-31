@@ -62,6 +62,7 @@ export default {
       if (url.pathname === '/songs.json') return await songsJson(request, env, ctx);
       if (url.pathname === '/upl/sync') return await uplSync(request, env);
     if (url.pathname === '/upl/data') return await uplData(request, env);
+    if (url.pathname === '/upl/facts') return await uplFactsIn(request, env);
       if (url.pathname === '/login') return await login(url);
       if (url.pathname === '/callback') return await callback(request, url, env);
       if (url.pathname === '/p') return await makePlaylist(request, url, env);
@@ -2834,7 +2835,7 @@ async function uplPut(env, U) { await env.SOTD.put('upls', JSON.stringify(U)); }
 async function uplDrop(env, pids) {
   const U = await uplAll(env);
   for (const pid of pids) {
-    delete U[pid]; await env.SOTD.delete('upl:' + pid);
+    delete U[pid]; await env.SOTD.delete('upl:' + pid); await env.SOTD.delete('ufacts:' + pid);
     if (env.MEDIA) for (const k of ['ua', 'uv', 'uc']) {   // its owner's own files and covers
       const l = await env.MEDIA.list({ prefix: k + '/' + pid + '/' }).catch(() => ({ objects: [] }));
       for (const o of l.objects || []) await env.MEDIA.delete(o.key);
@@ -2960,6 +2961,7 @@ async function uplSync(request, env) {
     if (uplShareOf(rec) === 'public') {   // its songs out, each with its day and cover: the cards for its links (share_pages.py)
       const v = await uplView(env, all, null, pid, rec);
       out[pid].pub = { t: v.t, n: v.n, songs: v.songs.map(x => ({ id: x.id, d: x.d, title: x.title, artist: x.artist, artists: x.artists, img: x.img || '' })) };
+      out[pid].facts = uplFactsWanted(rec, data);   // (written by the facts task as John's are: songs added since, and those its owner asks for)
     }
   }
   return answer(200, { playlists: out });
@@ -2988,18 +2990,56 @@ async function uplData(request, env) {
   await env.SOTD.put('uplmeta', JSON.stringify(meta));
   return answer(200, { ok: true, songs: Object.keys(meta).length });
 }
+// ---------- facts for the songs on members' public playlists: written and checked by John's facts task as his are
+// (FACTS.md; their sources from the site job, about.py, for the songs this gives it), into _sotd/data/upl-facts.json,
+// which the site job sends here (/upl/facts); each waits for its owner (the Edit pop-up: edit, Sign off), then shows
+// on their calendar. KV ufacts:<pid> { <track>: { w: written, waiting, ok: signed off, none: none could be found, at, sat } }, each { s: [song
+// facts], a: [{ id, n: the artist's name, f: [facts] }] }. ----------
+function uplFactsWanted(rec, data) {   // a public one's songs wanting facts: added since it was added, or asked for
+  if (uplShareOf(rec) !== 'public') return [];
+  return (data.songs || []).filter(x => Date.parse(x.a) > (rec.base || 0) || (data.fask || {})[x.id]).map(x => x.id);
+}
+async function uplFactsIn(request, env) {   // POST the facts task's _sotd/data/upl-facts.json (the site job's token): each new one waits for its owner
+  const answer = (status, body) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' } });
+  if (!await ghJob(request)) return answer(401, { error: 'For the site job only.' });
+  if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
+  const body = await request.json().catch(() => ({})), U = await uplAll(env), by = {};
+  for (const [t, e] of Object.entries(body.songs || {})) {
+    const pid = String(e.upl || '');
+    if (!U[pid] || !e.written) continue;
+    (by[pid] = by[pid] || {})[t] = e;
+  }
+  let n = 0;
+  for (const [pid, songs] of Object.entries(by)) {
+    const kept = (await env.SOTD.get('ufacts:' + pid, 'json')) || {};
+    let changed = false;
+    for (const [t, e] of Object.entries(songs)) {
+      if (kept[t] && kept[t].at === e.written) continue;   // (had: as its owner left it)
+      const txt = l => (l || []).map(x => String((x && x.t) || x || '').trim()).filter(Boolean);
+      const w = { s: txt(e.s), a: Object.entries(e.a || {}).map(([id, a]) => ({ id, n: a.name || '', f: txt(a.f) })) };
+      if (w.s.length || w.a.some(a => a.f.length)) kept[t] = Object.assign({}, kept[t] || {}, { w, at: e.written });
+      else if (!kept[t] || !kept[t].ok) kept[t] = { none: 1, at: e.written };   // (none could be found)
+      changed = true; n++;
+    }
+    if (changed) await env.SOTD.put('ufacts:' + pid, JSON.stringify(kept));
+  }
+  return answer(200, { ok: true, added: n });
+}
 async function uplView(env, all, viewer, pid, rec) {   // a playlist as the calendar takes it: its songs (out ones; its owner, all, the waiting marked w and the days to come f)
   const data = await uplSongs(env, pid), mine = !!viewer && rec.o === viewer, today = londonDay();
   const pv = Object.assign({}, pvMem, (await env.SOTD.get('previews', 'json')) || {});
   const tags = (await env.SOTD.get('tags', 'json')) || {};
   const days = uplDays(data.songs || [], rec);
-  const meta = (await env.SOTD.get('uplmeta', 'json')) || {};
+  const meta = (await env.SOTD.get('uplmeta', 'json')) || {}, facts = (await env.SOTD.get('ufacts:' + pid, 'json')) || {}, wanted = new Set(uplShareOf(rec) === 'public' ? uplFactsWanted(rec, data) : []);
   const ed = data.ed || {}, files = data.files || {}, see = mine ? { a: true, v: true } : viewer && all[viewer] ? mediaFor(all[viewer]) : { a: false, v: false }, exp = Math.floor(Date.now() / 1000) + LINK_HOURS * 3600;
   let songs = composeSongs(data.songs || [], pv, tags).map((x, i) => Object.assign(x, { d: days[i].d }, uplWaiting(rec, data, data.songs[i]) ? { w: 1 } : {}, days[i].d > today ? { f: 1 } : {}))
     .filter(x => mine || (!x.w && !x.f));
   for (const x of songs) {   // what the site job found (vid: the video, mt: moods and genres, yr: the year), its owner's choices (ov: the video, '' none; tg: moods and genres), files (ma, mv; own: theirs, with sizes) and cover (uc)
     const e = ed[x.id], f = files[x.id], m = meta[x.id];
     if (m) { if (m.vid) x.vid = m.vid; if (m.mt) x.mt = m.mt; if (m.yr) x.yr = m.yr; }
+    const fx = facts[x.id];   // its facts: signed off by its owner (fx), for everyone; theirs too: written and waiting (fxw), and how it stands (fxs)
+    if (fx && fx.ok) x.fx = fx.ok;
+    if (mine) { if (fx && fx.w) x.fxw = fx.w; x.fxs = fx && fx.w ? 'wait' : fx && fx.ok ? 'ok' : fx && fx.none ? 'nil' : wanted.has(x.id) ? 'asked' : uplShareOf(rec) === 'public' ? 'none' : 'off'; }
     if (e && 'v' in e) x.ov = e.v;
     if (e && (e.m || e.g)) x.tg = { m: e.m || null, g: e.g || null };   // (null: the ones worked out)
     if (f) {
@@ -3021,7 +3061,7 @@ async function uplView(env, all, viewer, pid, rec) {   // a playlist as the cale
 // newest song now on it and the ones after it on the days after) | { op: 'order', id, order: [track ids] } (a playlist)
 // | { op: 'send', id, on, at: 'HH:MM' } (whether its songs go to the members as messages, and when)
 // | { op: 'edit', id, track, v, m, g } (a song's video, moods and genres) | { op: 'title', id, title } | { op: 'share', id,
-// share, to }; GET ?id= with no sign-in: a public one. /members/songs?ids=: songs from the playlists whoever asks sees
+// share, to } | { op: 'facts', id, track, s, a, sign } | { op: 'askfacts', id, track }; GET ?id= with no sign-in: a public one. /members/songs?ids=: songs from the playlists whoever asks sees
 async function memberUpl(request, url, env, answer) {
   const who = await memberWho(request, env);
   if (!who && request.method === 'GET') {   // not signed in: a public one
@@ -3123,6 +3163,27 @@ async function memberUpl(request, url, env, answer) {
     await uplPut(env, U);
     if (was !== body.share && (was === 'public' || body.share === 'public') && rec.st === 'ok') await startJob(env, null, null, 0, null, true).catch(() => {});   // (its cards for links made, or taken off the site)
     return answer(200, { ok: true, pls: await uplMine(env, uplList(all, me, U), U), view: rec.st === 'ok' ? await uplView(env, all, me, body.id, rec) : null });
+  }
+  if (body.op === 'facts') {   // a song's facts: s (about the song), a { <artist id>: [...] } (about each artist), as edited; sign: out for everyone
+    const data = await uplSongs(env, pid), t = String(body.track || '');
+    if (!(data.songs || []).some(y => y.id === t)) return answer(404, { error: 'That song isn’t on this playlist.' });
+    const all_ = (await env.SOTD.get('ufacts:' + pid, 'json')) || {}, e = all_[t];
+    if (!e || !(e.w || e.ok)) return answer(404, { error: 'No facts for it yet.' });
+    const was = e.w || e.ok, clean = l => (Array.isArray(l) ? l : []).map(x => String(x || '').replace(/\s+/g, ' ').trim().slice(0, 400)).filter(Boolean).slice(0, 8);
+    const got = { s: clean(body.s), a: (was.a || []).map(x => ({ id: x.id, n: x.n, f: clean(((body.a || {})[x.id])) })) };
+    if (body.sign) { e.ok = got; delete e.w; e.sat = Date.now(); } else if (e.w) e.w = got; else e.ok = got;
+    all_[t] = e; await env.SOTD.put('ufacts:' + pid, JSON.stringify(all_));
+    return answer(200, { ok: true, view: await uplView(env, all, me, pid, rec) });
+  }
+  if (body.op === 'askfacts') {   // facts for one of its older songs (a public one's), written as the new ones' are
+    if (uplShareOf(rec) !== 'public') return answer(400, { error: 'Facts are written for public playlists’ songs.' });
+    const data = await uplSongs(env, pid), t = String(body.track || '');
+    if (!(data.songs || []).some(y => y.id === t)) return answer(404, { error: 'That song isn’t on this playlist.' });
+    if (!await dayCount(env, 'uplfacts:' + me, 10)) return answer(429, { error: 'That’s 10 asked for today, the most for a day.' });
+    data.fask = data.fask || {}; data.fask[t] = Date.now();
+    await env.SOTD.put('upl:' + pid, JSON.stringify(data));
+    await startJob(env, null, null, 0, null, true).catch(() => {});
+    return answer(200, { ok: true, view: await uplView(env, all, me, pid, rec) });
   }
   if (body.op === 'edit') {   // a song's video (v: a YouTube id, '' none, null the one found), moods and genres (m, g: up to two each, [] none, null the ones worked out)
     const data = await uplSongs(env, pid), t = String(body.track || '');

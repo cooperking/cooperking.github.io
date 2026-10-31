@@ -4,7 +4,8 @@
     python3 _sotd/facts_todo.py OUTDIR
 
 A song needs facts when it isn't in the live facts at all (one there with none found isn't tried again) and has none
-waiting for John. For each, writes into OUTDIR:
+waiting for John; a song from a member's public playlist (upl in sources.json) when it's not in
+_sotd/data/upl-facts.json yet (written once; its owner checks them). For each, writes into OUTDIR:
 todo.md (each song with its album, year, credited artists, MusicBrainz details and the saved Wikipedia pages to read)
 and pages/*.txt (those pages' text). Prints how many songs need facts; 0 means nothing to do.
 """
@@ -40,17 +41,18 @@ def main(out):
     live = load(os.path.join(ROOT, 'songs', 'facts.json'), {'songs': {}, 'artists': {}})
     pending = load(os.path.join(HERE, 'data', 'facts-pending.json'), {'songs': {}})
     years = load(os.path.join(HERE, 'data', 'years.json'), {'songs': {}})['songs']
+    theirs = load(os.path.join(HERE, 'data', 'upl-facts.json'), {'songs': {}})['songs']
 
     def has_live(tid):   # on the calendar already, even with no facts (nothing could be found): not tried again
         return tid in live['songs'] or tid in live.get('signed', {})
-    todo = sorted((s for tid, s in S['songs'].items() if not has_live(tid) and tid not in pending['songs']), key=lambda s: s['n'])
+    todo = sorted((s for tid, s in S['songs'].items() if (tid not in theirs if s.get('upl') else not has_live(tid) and tid not in pending['songs'])), key=lambda s: s['n'])
     os.makedirs(os.path.join(out, 'pages'), exist_ok=True)
     lines = []
     for s in todo:
         tid = next(k for k, v in S['songs'].items() if v is s)
         y = years.get(tid, {})
         yr = min([v for v in (y.get('mb'), y.get('sp')) if v] or ['?'])
-        lines.append('## Song %d: “%s” by %s   [track: %s]' % (s['n'], s['title'], s['artist'], tid))
+        lines.append('## Song %d: “%s” by %s   [track: %s]' % (s['n'], s['title'], s['artist'], tid) + ('   (a member’s playlist’s: its owner checks them)' if s.get('upl') else ''))
         lines.append('Album (Spotify): %s · first released: %s' % (s.get('album'), yr))
         saved = []
         for label, t in (('song article', s.get('song')), ('album article', s.get('albumPage'))):

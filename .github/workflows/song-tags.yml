@@ -54,6 +54,8 @@ jobs:
             GITHUB_TOKEN= python _sotd/upl_sync.py "$RUNNER_TEMP/songs-all.json"
           fi
           echo "SOTD_ALL=file://$RUNNER_TEMP/songs-all.json" >> "$GITHUB_ENV"
+          if [ -f "$RUNNER_TEMP/songs-facts.json" ]; then echo "SOTD_FACTS=file://$RUNNER_TEMP/songs-facts.json" >> "$GITHUB_ENV"; fi
+          python _sotd/upl_facts.py send
 
       - name: Any songs to listen to?
         id: check
@@ -98,6 +100,8 @@ jobs:
 
       - name: Sources for the song facts (Wikipedia, Wikidata, MusicBrainz)
         continue-on-error: true   # the facts can wait for the next run; the rest still saves
+        env:   # (John's songs, and those on members' public playlists wanting facts)
+          SOTD_SONGS_URL: ${{ env.SOTD_FACTS || 'https://sotd-playlists.cooperking.workers.dev/songs.json' }}
         run: python _sotd/about.py
 
       - name: A YouTube video for each song
@@ -162,7 +166,9 @@ jobs:
       - name: Members' songs out of the repository, to the Worker
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        run: python _sotd/upl_private.py save
+        run: |
+          python _sotd/upl_facts.py tidy "$RUNNER_TEMP/upl-playlists.json"
+          python _sotd/upl_private.py save
 
       - name: Save changes
         run: |

@@ -13,7 +13,9 @@ copy there too).
 
 Writes OUT.json: John's songs.json, then the songs in or looked at from members' playlists that aren't his (numbered
 from 100001, with upl: the playlist's id), and beside it upl-playlists.json (each playlist's title, kind, songs in order
-and which are in) for youtube_upl.py. Without the token, or an answer from the Worker, OUT.json is John's songs alone.
+and which are in) for youtube_upl.py, and songs-facts.json: John's songs and the songs on members' public playlists
+that want facts (facts: new since it was added, or asked for by its owner), for about.py's sources and so John's facts
+task. Without the token, or an answer from the Worker, OUT.json is John's songs alone (and neither of the others).
 """
 import datetime, json, os, sys, urllib.request
 from zoneinfo import ZoneInfo
@@ -114,6 +116,18 @@ def main(out):
             json.dump(state, f, ensure_ascii=False, indent=1, sort_keys=True)
     with open(out, 'w', encoding='utf-8') as f:
         json.dump(dict(john, songs=songs), f, ensure_ascii=False)
+    if plays is not None:   # the songs on public playlists wanting facts, with John's (about.py's list)
+        fs, have = list(john['songs']), {s['id'] for s in john['songs']}
+        n = BASE_N
+        for pid, pl in plays.items():
+            want = set(pl.get('facts') or [])
+            for x in pl['songs']:
+                if x['id'] in want and x['id'] not in have:
+                    n += 1
+                    fs.append(dict(x, n=n, upl=pid))
+                    have.add(x['id'])
+        with open(os.path.join(os.path.dirname(os.path.abspath(out)), 'songs-facts.json'), 'w', encoding='utf-8') as f:
+            json.dump(dict(john, songs=fs), f, ensure_ascii=False)
     if plays is not None:   # (none: the steps after leave members' YouTube copies and cards as they are)
         with open(os.path.join(os.path.dirname(os.path.abspath(out)), 'upl-playlists.json'), 'w', encoding='utf-8') as f:
             json.dump({pid: dict(pl, **{'in': sorted(state['playlists'][pid]['in'])}) for pid, pl in plays.items()}, f, ensure_ascii=False)

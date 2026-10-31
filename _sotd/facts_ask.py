@@ -44,8 +44,9 @@ def main():
     S = load(os.path.join(HERE, 'data', 'sources.json'), {'songs': {}})
     live = load(os.path.join(ROOT, 'songs', 'facts.json'), {'songs': {}})
     pending = load(os.path.join(HERE, 'data', 'facts-pending.json'), {'songs': {}})
+    theirs = load(os.path.join(HERE, 'data', 'upl-facts.json'), {'songs': {}})['songs']   # (members' public playlists' songs: written once)
     need = sorted((s['n'], tid, s['title'], s['artist']) for tid, s in S['songs'].items()
-                  if tid not in live.get('songs', {}) and tid not in live.get('signed', {}) and tid not in pending['songs'])
+                  if (tid not in theirs if s.get('upl') else tid not in live.get('songs', {}) and tid not in live.get('signed', {}) and tid not in pending['songs']))
     asked = load(ASKED, {})
     now = datetime.datetime.now(datetime.timezone.utc)
     fresh = [x for x in need if not (x[1] in asked and now - datetime.datetime.fromisoformat(asked[x[1]]) < AGAIN_AFTER)]

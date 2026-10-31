@@ -6,13 +6,16 @@
 written.json: {"songs": {track: {"facts": [{t, u, src, q}, ...]}}, "artists": {artist id: {"name", "facts": [...]}}}
 verdicts.json: {"<anything>:s:<track>:<i>" or "<anything>:a:<artist id>:<i>": {"v": "keep"|"fix"|"drop", "t": fixed text}}
 from the independent check. Only facts with a keep or fix verdict are added. A song is added with its credited artists
-(from _sotd/data/sources.json) and their facts; one already waiting is replaced. Then run facts_apply.py --offline.
+(from _sotd/data/sources.json) and their facts; one already waiting is replaced. A song from a member's public playlist
+(upl in sources.json) goes into _sotd/data/upl-facts.json instead, for its owner to check (the site job sends it to
+the Worker). Then run facts_apply.py --offline.
 """
 import datetime, json, os, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 PENDING = os.path.join(HERE, 'data', 'facts-pending.json')
 SOURCES = os.path.join(HERE, 'data', 'sources.json')
+THEIRS = os.path.join(HERE, 'data', 'upl-facts.json')
 
 
 def checked(table, kind, verdicts):
@@ -32,6 +35,7 @@ def checked(table, kind, verdicts):
 def main(args):
     S = json.load(open(SOURCES, encoding='utf-8'))
     pending = json.load(open(PENDING, encoding='utf-8')) if os.path.exists(PENDING) else {'songs': {}}
+    theirs = json.load(open(THEIRS, encoding='utf-8')) if os.path.exists(THEIRS) else {'songs': {}}
     today = datetime.date.today().isoformat()
     added = []
     for wpath, vpath in zip(args[0::2], args[1::2]):
@@ -44,10 +48,17 @@ def main(args):
                 continue
             a = {k: {'name': (artists.get(k) or {}).get('name') or S['artists'].get(k, {}).get('name', ''),
                      'f': (artists.get(k) or {}).get('f', [])} for k in s['artists']}
-            pending['songs'][tid] = {'n': s['n'], 'title': s['title'], 'artist': s['artist'], 'written': today, 's': e['f'], 'a': a}
-            added.append('%d %s: %d song facts, %s' % (s['n'], s['title'], len(e['f']), ', '.join('%s %d' % (x['name'], len(x['f'])) for x in a.values())))
+            if s.get('upl'):
+                theirs['songs'][tid] = {'upl': s['upl'], 'title': s['title'], 'artist': s['artist'], 'written': today, 's': e['f'], 'a': a}
+            else:
+                pending['songs'][tid] = {'n': s['n'], 'title': s['title'], 'artist': s['artist'], 'written': today, 's': e['f'], 'a': a}
+            added.append('%d %s: %d song facts, %s' % (s['n'], s['title'], len(e['f']), ', '.join('%s %d' % (x['name'], len(x['f'])) for x in a.values()))
+                         + (' (a member’s: waiting for its owner)' if s.get('upl') else ''))
     with open(PENDING, 'w', encoding='utf-8') as f:
         json.dump(pending, f, ensure_ascii=False, indent=1)
+    if theirs['songs']:
+        with open(THEIRS, 'w', encoding='utf-8') as f:
+            json.dump(theirs, f, ensure_ascii=False, indent=1)
     print('\n'.join(added))
     print(len(added), 'songs added;', len(pending['songs']), 'waiting')
 

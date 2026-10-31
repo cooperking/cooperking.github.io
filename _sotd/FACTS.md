@@ -28,6 +28,13 @@ checked facts went live straight away.)
   under the video is as tall as its longest fact, and on the narrowest phones the day now stays inside its pop-up).
 - `_sotd/data/sources.json`: what the facts are written from first: the English Wikipedia articles on each song, album
   and artist, and MusicBrainz's details on each artist. The job song-tags.yml adds each new song's (`_sotd/about.py`).
+- `_sotd/data/upl-facts.json`: facts for songs on members' public playlists (John, 31 Oct 2026: public playlists only,
+  as the repository is public), written and checked the same way: new songs (added after the playlist was) and older
+  ones their owner asks for. Their sources carry `upl` (the playlist) in `sources.json`, `todo.md` marks them, and
+  `facts_add.py` puts them here instead of `facts-pending.json`. The site job sends them to the Worker
+  (`_sotd/upl_facts.py send`), where each waits for its owner, who edits and signs them off in the calendar's Edit
+  pop-up; they show only on that playlist's calendar. A playlist no longer public loses them and its sources here
+  (`upl_facts.py tidy`).
 
 ## The facts task: facts for new songs
 
@@ -61,11 +68,12 @@ lost). Before 28 Oct 2026 it waited for John's MP3 and video instead.
    `python3 _sotd/facts_apply.py --offline` (which puts them on the Songs tab, waiting for John; not live, and not on
    the draft calendar either).
 6. Commit `songs/facts.json`, `_sotd/data/facts-pending.json`, `songs/facts-pending.json`, `songs/draft/facts.json`,
-   `_sotd/data/facts-quotes.json` and `songs/facts-quotes.json` ("Song facts for <song>: written, waiting for John's
-   sign-off"), pull with rebase and push. (The song stays off the calendar and the share pages until John signs it off;
+   `_sotd/data/facts-quotes.json`, `songs/facts-quotes.json` and `_sotd/data/upl-facts.json` ("Song facts for <song>:
+   written, waiting for John's sign-off", or for a member's song "…, waiting for its owner"), pull with rebase and push. (The song stays off the calendar and the share pages until John signs it off;
    his sign-off starts song-tags.yml, which makes its share page and sends the notification.)
 7. Tell John in one or two lines: which songs now wait for his check and sign-off on the Songs tab of
-   https://cooperking.github.io/songs/admin.html, with how many facts each, and any that fell short and why.
+   https://cooperking.github.io/songs/admin.html, with how many facts each, and any that fell short and why; and how
+   many members' songs were written (they wait for their owners, not him).
 
 Never edit `songs/facts.json` by hand or anything else on the live site; never run `facts_apply.py --promote`; never
 sign anything off.

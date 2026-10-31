@@ -357,6 +357,14 @@ html.upl-list #cal, html.upl-list .monthnav { display: none; }
 .upled-row .bar { flex: 1 0 100%; height: 3px; border-radius: 2px; background: var(--line); overflow: hidden; }
 .upled-row .bar i { display: block; height: 100%; width: 0; background: #e23a6e; transition: width .2s; }
 .upled-row .bar[hidden] { display: none; }
+.upled-fx { display: grid; gap: 8px; }
+.upled-fx h5 { margin: 6px 0 0; font: 500 16px/1.2 var(--serif); color: var(--fg); }
+.upled-fx .fxi { display: grid; grid-template-columns: minmax(0, 1fr) 32px; gap: 6px; align-items: start; }
+.upled-fx textarea { width: 100%; min-height: 64px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--pill-bg); color: var(--fg); font: 15px/1.35 var(--serif); resize: vertical; box-sizing: border-box; }
+.upled-fx .fxx { width: 32px; height: 32px; padding: 0; border-radius: 50%; border: 1px solid var(--line); background: none; color: var(--fg); cursor: pointer; display: grid; place-items: center; }
+.upled-fx .fxx svg { width: 10px; height: 10px; }
+#upledxa [hidden] { display: none; }
+#upledxa[hidden] { display: none; }
 /* a member's plain playlist: its songs as My playlist lists them, put in order by its owner */
 html.upl-list #tracks { display: none; }
 html.big.upl-list .side { display: grid; align-content: start; overflow-y: auto; min-height: 0; }   /* (a computer: the playlist in place of the calendar, scrolling in its place) */
@@ -1745,6 +1753,12 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       <div class="upled-row"><span class="upled-art" id="upledart"></span><span class="nm"><b id="upledcn"></b><span id="upledct"></span></span><span class="acts"><button class="ac-out" id="upledaddc" type="button">Choose a picture</button><button class="ac-out" id="upleddropc" type="button">Take off</button></span></div>
       <input type="file" id="upledfc" accept="image/*" hidden>
     </section>
+    <section class="upled-sec" aria-labelledby="upledxh">
+      <h4 id="upledxh">Its facts</h4>
+      <p class="upled-note" id="upledxn"></p>
+      <div class="upled-fx" id="upledxl"></div>
+      <div class="ask-acts" id="upledxa"><button class="copy" id="upledxsign" type="button">Sign off the facts</button><button class="ac-out" id="upledxsave" type="button">Save</button><button class="ac-out" id="upledxask" type="button">Ask for facts</button></div>
+    </section>
   </form>
 </dialog>
 <dialog id="askdlg" aria-labelledby="askh">
@@ -1784,7 +1798,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // songs from members' playlists in My playlist and saved playlists: kept here (sotd-songx) with what's needed to show
   // and play them on any calendar; refreshed from their calendars and the Worker's /members/songs (which also gives
   // this visit's links to their owners' own files)
-  var SONGX = {}, SONGX_KEY = 'sotd-songx', SNAP = ['n', 'tag', 'a', 'd', 'title', 'artist', 'as', 'album', 'track', 'u', 'p', 'ov', 'tg', 'uc', 'vid', 'mt', 'yr', 'upl', 'ut', 'un', 'ush'];
+  var SONGX = {}, SONGX_KEY = 'sotd-songx', SNAP = ['n', 'tag', 'a', 'd', 'title', 'artist', 'as', 'album', 'track', 'u', 'p', 'ov', 'tg', 'uc', 'vid', 'mt', 'yr', 'fx', 'upl', 'ut', 'un', 'ush'];
   try { SONGX = JSON.parse(localStorage.getItem(SONGX_KEY) || '{}') || {}; } catch (e) {}
   // one of their own Spotify playlists open in the My playlist pop-up (its songs to order, edit and sign off)
   var MUPL = { id: null, view: null, map: {}, list: [], order: null, sorted: null, dirty: false, saveT: 0 };
@@ -1834,7 +1848,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var btn = pick && pick.querySelector('.factsbtn');
     if (btn) btn.hidden = !(plays && items.length);
     if (!items.length || plays) return;   // they show as captions while it plays; a song that can't play here lists them
-    var f = FACTS.songs[s.track];
+    var f = s.fx ? { s: (s.fx.s || []).map(function (t) { return [t]; }), a: [] } : FACTS.songs[s.track];
     function list(head, rows) {
       if (!rows || !rows.length) return;
       var h = document.createElement('h4'); h.textContent = head; box.appendChild(h);
@@ -1843,6 +1857,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       box.appendChild(ul);
     }
     list('About the song', f.s);
+    if (s.fx) (s.fx.a || []).forEach(function (a) { list('About ' + a.n, (a.f || []).map(function (t) { return [t]; })); });
     (f.a || []).forEach(function (k) { var ar = FACTS.artists && FACTS.artists[k]; if (ar) list('About ' + ar.name, ar.f); });
   }
   // mood and genre per song (tags.json); new songs may carry their own from the live feed
@@ -2364,6 +2379,11 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   function capItems(s) {
     var f = FACTS && FACTS.songs && FACTS.songs[s.track], out = [];
+    if (s.fx) {   // a member's song: its facts, as its owner signed them off
+      (s.fx.s || []).forEach(function (t) { out.push({ k: s.title, t: t, song: true }); });
+      (s.fx.a || []).forEach(function (a) { (a.f || []).forEach(function (t) { out.push({ k: a.n, t: t }); }); });
+      return out;
+    }
     if (!f) return out;
     (f.s || []).forEach(function (x) { out.push({ k: s.title, t: x[0], song: true }); });
     (f.a || []).forEach(function (k) { var ar = FACTS.artists && FACTS.artists[k]; if (ar) ar.f.forEach(function (x) { out.push({ k: ar.name, t: x[0] }); }); });
@@ -6377,6 +6397,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if ('ov' in x) o.ov = x.ov;   // its owner's: the video ('' none), moods and genres, their MP3 and MP4, cover; their files' sizes (theirs)
     if (x.tg) o.tg = x.tg; if (x.ma) o.ma = x.ma; if (x.mv) o.mv = x.mv; if (x.uc) o.uc = 1; if (x.own) o.own = x.own;
     if (x.vid) o.vid = x.vid; if (x.mt) o.mt = x.mt; if (x.yr) o.yr = x.yr;   // what the site job found: its video, moods and genres, year
+    if (x.fx) o.fx = x.fx; if (x.fxw) o.fxw = x.fxw; if (x.fxs) o.fxs = x.fxs;   // its facts (fx: signed off; its owner's: fxw waiting, fxs how they stand)
     return o;
   }
   function songxFetch(tracks) {   // members' songs not kept here yet (or to refresh): from the Worker, for those this visitor sees
@@ -6521,7 +6542,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var how = !('ov' in s) ? 'found' : s.ov ? 'link' : 'none';
     [].forEach.call(document.querySelectorAll('input[name="upledv"]'), function (r) { r.checked = r.value === how; });
     document.getElementById('upledlink').value = s.ov ? 'https://youtu.be/' + s.ov : '';
-    upledVid(); upledChips(); upledFiles();
+    upledVid(); upledChips(); upledFiles(); upledFacts();
     openLayer(upledDlg); upledDlg.scrollTop = 0;
   }
   function upledVid() {   // the video chosen, to look at
@@ -6579,7 +6600,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (MUPL.id === view.id) { mineUplSet(view); if (mine.open) renderMine(); }
     if (UPL.on === view.id) { var day = sheet.open ? curDay : null; uplApply(view, { keep: true }); if (day && byDate[day]) openDay(day, { track: t }); }
     ed.s = MUPL.map[t] || byTrack[t] || ed.s;
-    if (UED === ed && upledDlg.open) { upledFiles(); openLayer(upledDlg); }   // (still above the day)
+    if (UED === ed && upledDlg.open) { upledFiles(); if (!UED.fxDirty) upledFacts(); openLayer(upledDlg); }   // (still above the day; facts being changed kept)
   }
   function upledPost(path, body) {
     return fetch(MBASE + '/members/' + path, { method: 'POST', headers: { Authorization: 'Bearer ' + plTok(), 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) })
@@ -6643,6 +6664,57 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       upledView(j.view, ed); toast('Your picture is on');
     }).catch(function (e) { ed.busyc = false; if (UED === ed && upledDlg.open) upledFiles(); toast('That picture couldn’t be used: ' + ((e && e.message) || e)); });
   }
+  // its facts (a public playlist's songs: written by John's facts task, FACTS.md): waiting for them to check (edit, take
+  // out, Sign off), out on their calendar (still theirs to edit), asked for, or none yet (Ask for facts)
+  function upledFacts() {
+    var s = UED.s, st = s.fxs || 'off', f = st === 'wait' ? s.fxw : st === 'ok' ? s.fx : null, box = document.getElementById('upledxl');
+    UED.fxDirty = false;
+    document.getElementById('upledxn').textContent = st === 'wait' ? 'Written and checked, waiting for you: change any, take any out, then sign them off. They show on your calendar as captions once you have.'
+      : st === 'ok' ? 'On your calendar, as captions while it plays. Still yours to change.' : st === 'asked' ? 'Asked for: they’re written within the day, then wait here for you.'
+      : st === 'none' ? 'None yet. Ask, and they’re written for you to check, as John’s are.' : st === 'nil' ? 'None could be found for it.' : 'Facts are written for songs on public playlists (Who sees it › Public).';
+    box.textContent = '';
+    if (f) {
+      var group = function (head, rows, key) {
+        var h = document.createElement('h5'); h.textContent = head; box.appendChild(h);
+        (rows || []).forEach(function (t) {
+          var it = document.createElement('div'); it.className = 'fxi';
+          var ta = document.createElement('textarea'); ta.value = t; ta.setAttribute('data-fx', key); ta.setAttribute('aria-label', head + ': a fact');
+          ta.addEventListener('input', function () { UED.fxDirty = true; });
+          var x = document.createElement('button'); x.type = 'button'; x.className = 'fxx'; x.innerHTML = CROSS; x.setAttribute('aria-label', 'Take this fact out');
+          x.addEventListener('click', function () { it.remove(); UED.fxDirty = true; });
+          it.appendChild(ta); it.appendChild(x); box.appendChild(it);
+        });
+      };
+      group('About the song', f.s, 's');
+      (f.a || []).forEach(function (a) { group('About ' + a.n, a.f, 'a:' + a.id); });
+    }
+    document.getElementById('upledxa').hidden = !(st === 'wait' || st === 'ok' || st === 'none');
+    document.getElementById('upledxsign').hidden = st !== 'wait';
+    document.getElementById('upledxsave').hidden = !(st === 'wait' || st === 'ok');
+    document.getElementById('upledxask').hidden = st !== 'none';
+  }
+  function upledFactsSend(sign) {
+    var ed = UED, body = { op: 'facts', id: ed.p.id, track: ed.s.track, s: [], a: {}, sign: !!sign };
+    [].forEach.call(document.querySelectorAll('#upledxl textarea'), function (ta) {
+      var k = ta.getAttribute('data-fx'), t = ta.value.replace(/\s+/g, ' ').trim(); if (!t) return;
+      if (k === 's') body.s.push(t); else { var id = k.slice(2); (body.a[id] = body.a[id] || []).push(t); }
+    });
+    uplCall(body).then(function (j) {
+      if (j.status !== 200) { toast(j.error || 'Couldn’t save them just now'); return; }
+      UED.fxDirty = false; upledView(j.view, ed); if (UED === ed) upledFacts();
+      toast(sign ? 'Its facts are out on your calendar' : 'Saved');
+    }).catch(function () { toast('Couldn’t reach the site. Try again.'); });
+  }
+  document.getElementById('upledxsign').addEventListener('click', function () { upledFactsSend(true); });
+  document.getElementById('upledxsave').addEventListener('click', function () { upledFactsSend(false); });
+  document.getElementById('upledxask').addEventListener('click', function () {
+    var ed = UED;
+    uplCall({ op: 'askfacts', id: ed.p.id, track: ed.s.track }).then(function (j) {
+      if (j.status !== 200) { toast(j.error || 'Couldn’t ask just now'); return; }
+      upledView(j.view, ed); if (UED === ed) upledFacts();
+      toast('Asked: they’re written within the day');
+    }).catch(function () { toast('Couldn’t reach the site. Try again.'); });
+  });
   ['a', 'v', 'c'].forEach(function (k) {
     var inp = document.getElementById('upledf' + k);
     document.getElementById('upledadd' + k).addEventListener('click', function () { inp.click(); });
@@ -6820,7 +6892,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       var tx = document.createElement('span'); tx.className = 'tx';
       var tt = document.createElement('span'); tt.className = 'tt'; tt.textContent = x.title;
       var ta = document.createElement('span'); ta.className = 'ta';
-      ta.textContent = x.artist + (isList ? '' : ' · ' + uplDayShort(x.d)) + (x.w ? ' · waits for you' : x.f ? ' · to come' : '');
+      ta.textContent = x.artist + (isList ? '' : ' · ' + uplDayShort(x.d)) + (x.w ? ' · waits for you' : x.f ? ' · to come' : '') + (x.fxs === 'wait' ? ' · facts wait for you' : '');
       tx.appendChild(tt); tx.appendChild(ta);
       tx.addEventListener('click', function () { mineUplPlay(idx); });   // plays on through it from this song
       li.appendChild(th); li.appendChild(tx);
