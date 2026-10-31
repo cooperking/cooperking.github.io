@@ -469,9 +469,12 @@ saved playlist can be put on the calendar as its own calendar or playlist (see *
 
 ## Adding the real files later
 
-Songs tab of the admin page → *Upload a folder of songs…* → the folder with the MP3s and MP4s → check each match (fix any with its menu) →
-*Upload*. Files up to any size go up in 50 MB parts; one that's already there is replaced. Videos should be H.264 MP4
-(what phones, computers and the Fire TV all play).
+Songs tab of the admin page → *Match songs and videos…* (choose the MP3s and MP4s, ⌘A in their folder) or drop the folder
+on the page → check each match (fix any with its menu) → *Upload*. Files up to any size go up in 50 MB parts. One the
+same as what's up is skipped; one different from a file already there starts unticked ("yours … stays: tick to replace
+it"), and only replaces it when ticked (John, 31 Oct 2026: "if it finds one that's already it says it will overwrite it,
+but I can't untick it"); the Upload button says how many would replace his. Videos should be H.264 MP4 (what phones,
+computers and the Fire TV all play).
 
 ## Tested
 

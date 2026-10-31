@@ -888,19 +888,20 @@ body.dropping::after { content: 'Drop to match them (nothing goes up yet)'; posi
     if (f) return f === p.fp ? 'same' : 'changed';
     return was === p.f.size ? 'same' : 'changed';
   }
-  function planState(p) { p.st = p.s ? sameAs(p) : ''; p.on = !!p.s && p.st !== 'same'; }
+  function planState(p) { p.st = p.s ? sameAs(p) : ''; p.on = !!p.s && p.st === 'new'; }   // (one that would replace a file of his: not ticked until he ticks it)
   function drawPlan() {
     var ul = $('matches'); ul.innerHTML = '';
     var same = PLAN.filter(function (p) { return p.st === 'same'; }).length;
     PLAN.forEach(function (p) {
       if (p.st === 'same' && !SHOWSAME && !p.on) return;
-      var li = el('li', p.st === 'same' && !p.on ? 'same' : null), e = p.s && CAT[p.s.id] && CAT[p.s.id][p.kind];
+      var li = el('li', (p.st === 'same' || p.st === 'changed') && !p.on ? 'same' : null), e = p.s && CAT[p.s.id] && CAT[p.s.id][p.kind];
       var f = el('label', 'f'), cb = el('input'); cb.type = 'checkbox'; cb.checked = p.on; cb.disabled = !p.s;
-      cb.addEventListener('change', function () { p.on = cb.checked; li.classList.toggle('same', p.st === 'same' && !p.on); upCount(); });
+      cb.addEventListener('change', function () { p.on = cb.checked; drawPlan(); });
       f.appendChild(cb);
-      var txt = el('span', null, p.f.name + ' · ' + mb(p.f.size) + ' · ' + (p.kind === 'a' ? 'song' : 'video') + (p.s && !p.sure ? ' · check this' : '') + (p.st === 'changed' && e ? ' · replaces ' + mb(e) : ''));
+      var txt = el('span', null, p.f.name + ' · ' + mb(p.f.size) + ' · ' + (p.kind === 'a' ? 'song' : 'video') + (p.s && !p.sure ? ' · check this' : '')
+        + (p.st === 'changed' && e ? (p.on ? ' · replaces yours (' + mb(e) + ')' : ' · yours (' + mb(e) + ') stays: tick to replace it') : ''));
       f.appendChild(txt);
-      if (p.st) f.appendChild(el('span', 'st' + (p.st === 'new' ? ' new' : p.st === 'changed' ? ' chg' : ''), p.st === 'same' ? 'Already up' : p.st === 'new' ? 'New' : 'Changed'));
+      if (p.st) f.appendChild(el('span', 'st' + (p.st === 'new' ? ' new' : p.st === 'changed' && p.on ? ' chg' : ''), p.st === 'same' ? 'Already up' : p.st === 'new' ? 'New' : p.on ? 'Replaces yours' : 'Yours stays'));
       li.appendChild(f);
       var sel = el('select');
       sel.appendChild(el('option', null, '— not matched: pick its song, or leave it (not uploaded) —')).value = '';
@@ -970,7 +971,10 @@ body.dropping::after { content: 'Drop to match them (nothing goes up yet)'; posi
       fingerprint(p.f).then(function (fp) { p.fp = fp; }, function () { p.fp = ''; }).then(next);
     })();
   }
-  function upCount() { var n = PLAN.filter(function (p) { return p.s && p.on; }).length; $('upall').textContent = n ? 'Upload ' + n + ' file' + (n === 1 ? '' : 's') : 'Nothing new to upload'; $('upall').disabled = !n; }
+  function upCount() {
+    var on = PLAN.filter(function (p) { return p.s && p.on; }), n = on.length, rep = on.filter(function (p) { return p.st !== 'new'; }).length;
+    $('upall').textContent = n ? 'Upload ' + n + ' file' + (n === 1 ? '' : 's') + (rep ? ' (' + rep + ' replacing yours)' : '') : 'Nothing new to upload'; $('upall').disabled = !n;
+  }
   $('cancel').addEventListener('click', function () { PLAN = []; $('matchbox').hidden = true; $('folder').value = ''; });
   $('upall').addEventListener('click', function () {
     var todo = PLAN.filter(function (p) { return p.s && p.on; }), done = 0, failed = 0, i = 0, total = todo.reduce(function (t, p) { return t + p.f.size; }, 0), sent = 0;
