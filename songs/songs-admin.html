@@ -95,7 +95,6 @@
 .upbar i { display: block; height: 100%; width: 0; background: var(--fg); transition: width .2s; }
 .sfoot { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; padding-top: 16px; border-top: 1px solid var(--line); }
 /* a folder's files matched to their days; a folder dropped on the page */
-.droptip { flex: 1 1 260px; }
 body.dropping::after { content: 'Drop to match them (nothing goes up yet)'; position: fixed; inset: 10px; display: grid; place-items: center; border: 2px dashed var(--fg); border-radius: 22px;
   background: rgba(255, 255, 255, .55); font: 600 13px/1.3 var(--sans); letter-spacing: .12em; text-transform: uppercase; color: var(--fg); z-index: 60; pointer-events: none; }
 .matchbox { padding: 16px; display: grid; gap: 12px; }
@@ -140,7 +139,6 @@ body.dropping::after { content: 'Drop to match them (nothing goes up yet)'; posi
     <div class="row">
       <label class="glassbtn" for="folder"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M1.5 4.5v8h13v-6.5H8L6.5 4.5z"/></svg>Match songs and videos…</label>
       <input type="file" id="folder" multiple accept="audio/mpeg,.mp3,audio/mp4,.m4a,video/mp4,.mp4,.m4v" hidden>
-      <span class="stat droptip">Choose them (⌘A in a folder takes them all), or drop a folder here. They’re matched first; nothing goes up until you press Upload.</span>
     </div>
     <div class="card matchbox" id="matchbox" hidden>
       <div class="kicker">Your files, matched to their songs by name (yours and member songs)</div>
