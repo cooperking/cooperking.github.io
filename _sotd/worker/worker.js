@@ -3162,6 +3162,7 @@ async function uplView(env, all, viewer, pid, rec) {   // a playlist as the cale
     }
     const jc = cat[x.id] || {};
     if (mine && (jc.a || jc.v)) x.jf = { a: jc.a || 0, v: jc.v || 0 };   // (its owner's editor: John's, with their sizes)
+    if (mine && env.ADMIN_KEY) for (const k of ['a', 'v']) if (jc[k]) x['m' + k] = LIVE_ORIGIN + '/m/' + k + '/' + x.id + '.' + MEDIA_KINDS[k].ext + '?e=' + exp + '&s=' + await mediaSig(env, k, x.id, exp);   // (John's, for its owner on their own playlist, whatever he lets them have elsewhere)
     if (f) {
       for (const k of ['a', 'v']) if (f[k] && !jc[k] && see[k] && env.ADMIN_KEY) x['m' + k] = LIVE_ORIGIN + '/m/u' + k + '/' + pid + '/' + x.id + '.' + MEDIA_KINDS[k].ext + '?e=' + exp + '&s=' + await mediaSig(env, 'u' + k + '/' + pid, x.id, exp);
       if (f.c) { x.img = LIVE_ORIGIN + '/uc/' + pid + '/' + x.id + '.jpg?v=' + f.c; x.uc = 1; }

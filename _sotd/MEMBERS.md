@@ -397,8 +397,10 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   for (the Songs tab's) plays his, for those he lets have them; its owner can't add their own of that kind (John, 31
   Oct 2026: "if I already have the song, they can't upload one of their own"): the editor says "Already uploaded", and
   to John shows it as the Songs tab does ("Song · 4.2 MB"), from `jf` on the song in its owner's view. One they added
-  before John's isn't given while his is there, and is again if he takes his away. His MP4 plays even where its owner chose a YouTube video
-  or none. A calendar left open asks the Worker again when it's come back to after a minute or more (`memberAgain`:
+  before John's isn't given while his is there, and is again if he takes his away. On their own playlist (private or not) its owner always gets
+  his MP3 and MP4 for its songs, whether or not he lets them have his files elsewhere (John, 31 Oct 2026: "If
+  playlists are private it should still play mp3 and mp4 to the user themselves"). His MP4 plays even where its owner
+  chose a YouTube video or none. A calendar left open asks the Worker again when it's come back to after a minute or more (`memberAgain`:
   `/members/me`, and the member's calendar showing), so his files added since play without a reload (John: "I upload
   files and it still shows their YouTube and preview").
 - **Member Songs on the Songs tab** (John, 31 Oct 2026: "I still can't see newly published songs in my songs section
