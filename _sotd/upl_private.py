@@ -11,7 +11,8 @@ load reads the Worker's /upl/data (with this job's GITHUB_TOKEN) and puts each s
 _sotd/data/upl.json, so the steps don't do again what they've done. It keeps what it read in
 $RUNNER_TEMP/upl-private-base.json; without an answer it exits 3, and the job leaves members' songs out this run
 (save then does nothing). save takes out of FILES every song that's on a member's playlist and not John's (this run's,
-from $RUNNER_TEMP/songs-all.json, and those kept before), with _sotd/data/upl.json, and sends them to the Worker.
+from $RUNNER_TEMP/songs-all.json, and those kept before), with _sotd/data/upl.json, and sends them to the Worker;
+if the Worker doesn't take them it exits 1, so nothing is committed that run.
 """
 import json, os, sys, urllib.error, urllib.request
 
@@ -123,15 +124,16 @@ def save():
             data[key] = {t: e for t, e in data[key].items() if t not in theirs}
             moved += 1
             write(path, data, how)
-    try:
-        r = call('POST', out)
-        print('members’ songs: kept in the Worker,', r.get('songs'), 'with a video, moods or a year')
-    except Exception as e:
-        print('members’ songs: the Worker didn’t take them (' + str(e) + '); out of the files all the same')
     p = os.path.join(ROOT, STATE)
     if os.path.exists(p):
         os.remove(p)
     print(f'members’ songs: {len(theirs)} songs out of {moved} files and {STATE}')
+    try:
+        r = call('POST', out)
+        print('members’ songs: kept in the Worker,', r.get('songs'), 'with a video, moods or a year')
+    except Exception as e:   # (the job stops here: nothing is committed, and the next run starts from what was kept before)
+        print('members’ songs: the Worker didn’t take them (' + str(e) + ')')
+        sys.exit(1)
 
 
 if __name__ == '__main__':
