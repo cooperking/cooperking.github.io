@@ -2707,7 +2707,7 @@ async function memberBell(request, env, answer) {
 // then it looks every UPL_JOIN_EVERY for a day, then hourly). A
 // song added after it was added waits for its owner to sign it off; then it's out for everyone and goes to the
 // members as a message from them. ----------
-const UPL_MAX = 5, UPL_EVERY = 30 * 60e3, UPL_JOIN_EVERY = 10 * 60e3, UPL_CHECK_GAP = 60e3, UPL_SIGNOFF_DAY = 20, UPL_LOOK_MOST = 4;
+const UPL_MAX = 5, UPL_EVERY = 30 * 60e3, UPL_JOIN_EVERY = 10 * 60e3, UPL_CHECK_GAP = 60e3, UPL_SIGNOFF_DAY = 20, UPL_LOOK_MOST = 4, UPL_PV_MOST = 30;
 function uplSpId(link) {   // a playlist's Spotify id from its link (open.spotify.com/playlist/<id>…, spotify:playlist:<id>) or the id
   const m = /(?:open\.spotify\.com\/(?:intl-[\w-]+\/)?playlist\/|spotify:playlist:)([0-9A-Za-z]{22})/.exec(String(link || '')) || /^\s*([0-9A-Za-z]{22})\s*$/.exec(String(link || ''));
   return m ? m[1] : '';
@@ -2819,11 +2819,23 @@ async function uplTellOwner(env, pid, rec, fresh, days) {   // a new song on the
   const k = await vapidKeys(env);
   await Promise.all(ids.map(id => pushTo(env, k, subs[id], msg).catch(() => {})));
 }
+async function uplPreviews(env, U) {   // their songs' previews not looked up yet: UPL_PV_MOST each time, any hour
+  let pv = null, left = UPL_PV_MOST;
+  for (const [pid, r] of Object.entries(U)) {
+    if (r.st !== 'ok' || left <= 0) continue;
+    pv = pv || Object.assign({}, pvMem, (await env.SOTD.get('previews', 'json')) || {});
+    const miss = ((await uplSongs(env, pid)).songs || []).filter(x => !(x.id in pv));
+    if (!miss.length) continue;
+    pv = await fillPreviews(env, miss, left, pv);
+    left -= Math.min(left, miss.length);
+  }
+}
 async function uplLook(env) {   // the timer: playlists due a read (UPL_LOOK_MOST each time)
   const U = await uplAll(env), now = Date.now(), h = londonHour();
   const due = Object.entries(U).filter(([, r]) => (r.st === 'ok' || r.st === 'err') ? (h >= 6 && h < 23 && now - (r.tried || 0) >= UPL_EVERY) : now - (r.tried || 0) >= (now - r.at < DAY ? UPL_JOIN_EVERY : 6 * UPL_JOIN_EVERY))
     .sort((a, b) => (a[1].tried || 0) - (b[1].tried || 0)).slice(0, UPL_LOOK_MOST);
   for (const [pid, r] of due) await uplRead(env, pid, r, U).catch(e => console.log('upl ' + pid + ': ' + (e && e.message)));
+  await uplPreviews(env, U).catch(e => console.log('uplPreviews: ' + (e && e.message)));
   const today = londonDay();
   await uplAnnounce(env, U, today).catch(e => console.log('uplAnnounce: ' + (e && e.message)));
   if (h >= 7 && Object.values(U).some(r => r.st === 'ok') && (await env.SOTD.get('uplJobDay')) !== today && await kvSoft(env, 'uplJobDay', today))

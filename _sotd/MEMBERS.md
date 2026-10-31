@@ -284,13 +284,16 @@ still to come: facts, written for new songs and on request for older ones, check
   Mum"; reactions and replies as any message; on their Sent too). 20 sign-offs a day at most.
 - **Kept.** KV `upls` (each playlist: owner, Spotify id and name, calendar or playlist, invite link, when added, whether
   readable, last read, count) and `upl:<id>` (its songs as last read, and when each was signed off). Previews and moods
-  come the same way as John's (KV `previews`, `tags`). *Open in Spotify* takes their songs too. Removing a member
+  come the same way as John's (KV `previews`, `tags`): 6 previews with each read, and the Worker's 10-minute look takes
+  30 more of any not looked up yet, at any hour. *Open in Spotify* takes their songs too. Removing a member
   removes their playlists; *Remove* (theirs, or John's on the Members tab with two taps) takes one off the calendar,
   not off Spotify.
 - **Videos, moods, years, YouTube copies** (the site job, song-tags.yml): `_sotd/upl_sync.py` takes in each playlist's
-  10 newest songs when it's first seen, then 5 more a day (newest first), and every song added after it was added
-  straight away (John, 30 Oct 2026: "It should add their last ten songs in the playlist to a new YouTube playlist after
-  that 5 a day or less if there isn't capacity"); kept in `_sotd/data/upl.json`. The steps finding videos (youtube.py),
+  10 newest songs for its YouTube copy when it's first seen, then 5 more a day (newest first), and every song added after
+  it was added straight away (John, 30 Oct 2026: "It should add their last ten songs in the playlist to a new YouTube
+  playlist after that 5 a day or less if there isn't capacity"); kept in `_sotd/data/upl.json` (`in`). Videos, moods and
+  years are found for all its songs: those in, and 40 more a run, newest first (`look`; John, 31 Oct 2026: "youtube or
+  previews aren't being added"). The steps finding videos (youtube.py, within its 95 searches a day),
   listening to previews, Last.fm, MusicBrainz, years and moods (make_tags.py) then work through John's songs and those
   (numbered from 100001, marked `upl`); John's songs keep their order and the searches kept for his newest, and moods
   are measured on John's songs alone, so his don't change. `_sotd/youtube_upl.py` (after John's YouTube playlist) makes
@@ -315,7 +318,7 @@ still to come: facts, written for new songs and on request for older ones, check
 - Worker: `/members/upl` (GET `?id=`; POST ops `add`, `mode`, `link`, `check`, `remove`, `signoff`, `dates`, `order`, `send`,
   `edit`), `/members/uplup` (`?id&track&kind=a|v&op=start|part|done|abort|drop`), `/members/uplcover` (`?id&track`,
   `{ pic }`, or `&op=drop`), `pls` on `/members/me`, admin ops `upls`, `uplcheck`, `uplremove`. Tests: `upl_t.mjs` (the
-  Worker), `upl_page_t.py` (the draft), `upl_admin_t.py` (the Members tab), `upl_dates_t.mjs` (days and order),
+  Worker), `upl_page_t.py` (the draft), `upl_pv_t.mjs` (previews), `upl_admin_t.py` (the Members tab), `upl_dates_t.mjs` (days and order),
   `upl_order_t.py` (the draft's order and Days), `upl_wait_t.py` (where they sign off), `mine_drag_t.py` (My playlist's
   dragging, shared with them), `upl_edit_t.mjs` and `upl_edit_page_t.py` (their own for each song).
 
