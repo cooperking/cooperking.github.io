@@ -63,6 +63,8 @@ export default {
       if (url.pathname === '/upl/sync') return await uplSync(request, env);
     if (url.pathname === '/upl/data') return await uplData(request, env);
     if (url.pathname === '/upl/facts') return await uplFactsIn(request, env);
+    if (url.pathname === '/upl/links') return await uplLinks(request, env);
+    if (url.pathname.startsWith('/yt/')) return await ytList(request, url, env);
       if (url.pathname === '/login') return await login(url);
       if (url.pathname === '/callback') return await callback(request, url, env);
       if (url.pathname === '/p') return await makePlaylist(request, url, env);
@@ -3028,6 +3030,58 @@ async function uplLook(env) {   // the timer: playlists due a read (UPL_LOOK_MOS
   }
   if (h >= 7 && Object.values(U).some(r => r.st === 'ok') && (await env.SOTD.get('uplJobDay')) !== today && await kvSoft(env, 'uplJobDay', today))
     await startJob(env, null, null, 0, null, true).catch(() => {});   // once a day: their songs' videos, moods and years not found yet
+}
+// /yt/<pid>?s=<signature>: a member's playlist on YouTube, a link that stays the same as songs are added (signed with
+// the Worker's ADMIN_KEY, so it can't be made from the playlist's id). Its songs as the others see them, each with its
+// video as the calendar picks it (songYt: John's calendar's, else John's or its owner's choice, else the one found),
+// newest day first (a playlist: in its order). Opened: YouTube's list of the first 50. With &f=json: { t: its name,
+// songs: [{ id: track, v: video, a: artist, t: title }] }, every one with a video (Playlist push, the download scripts).
+// /upl/links (Authorization: Bearer ADMIN_KEY): { links: [{ id, t, o, link }] }, each member playlist's /yt/ link and
+// its name (with its owner's after it, in brackets, when another member's has the same name).
+const YT_JOHN = { at: 0, v: {} };
+async function ytSig(env, pid) {
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode('sotd-yt|' + env.ADMIN_KEY), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  return b64url(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(pid))).slice(0, 32);
+}
+async function ytJohnVids() {   // John's calendar's videos (songs/videos.json), read again after 10 minutes
+  if (Date.now() - YT_JOHN.at > 600e3) {
+    const j = await rawJson('songs/videos.json', { videos: {} }).catch(() => null);
+    if (j) { YT_JOHN.v = j.videos || {}; YT_JOHN.at = Date.now(); }
+  }
+  return YT_JOHN.v;
+}
+async function ytList(request, url, env) {
+  const answer = (status, body) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' } });
+  if (!env.ADMIN_KEY) return answer(503, { error: 'The ADMIN_KEY secret is not set on the Worker.' });
+  const pid = url.pathname.slice(4), sig = url.searchParams.get('s') || '';
+  if (!/^[\w-]{6,40}$/.test(pid) || sig !== await ytSig(env, pid)) return answer(404, { error: 'No such playlist.' });
+  const U = await uplAll(env), all = (await env.SOTD.get('members', 'json')) || {}, rec = U[pid];
+  if (!rec || !all[rec.o]) return answer(404, { error: 'This playlist is no longer on the calendar.' });
+  const view = await uplView(env, all, null, pid, rec), J = await ytJohnVids();
+  let songs = view.songs;
+  if (rec.mode !== 'list') songs = songs.slice().sort((p, q) => p.d < q.d ? 1 : p.d > q.d ? -1 : 0);
+  const out = [];
+  for (const x of songs) {
+    const v = (J[x.id] && J[x.id].v) || ('ov' in x ? x.ov : (x.vid && x.vid.v)) || '';
+    if (v) out.push({ id: x.id, v, a: x.artist || '', t: x.title || '' });
+  }
+  if (url.searchParams.get('f') === 'json') return answer(200, { t: view.n, songs: out });
+  if (!out.length) return new Response('No videos on “' + view.n + '” yet.', { status: 404, headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' } });
+  return new Response(null, { status: 302, headers: { 'Cache-Control': 'no-store', Location: 'https://www.youtube.com/watch_videos?video_ids=' + out.slice(0, 50).map(x => x.v).join(',') + '&title=' + encodeURIComponent(view.n) } });
+}
+async function uplLinks(request, env) {
+  const answer = (status, body) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' } });
+  const bad = await adminOk(request, env, answer);
+  if (bad) return bad;
+  const U = await uplAll(env), all = (await env.SOTD.get('members', 'json')) || {};
+  const recs = Object.entries(U).filter(([, r]) => all[r.o]), names = {};
+  for (const [, r] of recs) { const n = uplName(all, r).toLowerCase(); names[n] = (names[n] || 0) + 1; }
+  const links = [];
+  for (const [pid, r] of recs) {
+    const n = uplName(all, r);
+    links.push({ id: pid, t: names[n.toLowerCase()] > 1 ? n + ' (' + all[r.o].name + ')' : n, o: all[r.o].name, link: LIVE_ORIGIN + '/yt/' + pid + '?s=' + await ytSig(env, pid) });
+  }
+  return answer(200, { links });
 }
 // /upl/sync, for the site job only (its own GITHUB_TOKEN, checked with GitHub: a token for this repository alone): GET
 // the readable playlists with their songs (as songs.json gives them), its calendar title and YouTube copy; POST { yt: {
