@@ -1,10 +1,10 @@
 {
  "about": "How the last Last.fm fetch went (counts only; the tags themselves stay out of the repo).",
- "at": "2026-10-31T16:46:19Z",
- "songs": 290,
- "fetched": 0,
- "cached": 290,
- "withTrackTags": 15,
+ "at": "2026-10-31T17:01:22Z",
+ "songs": 301,
+ "fetched": 11,
+ "cached": 301,
+ "withTrackTags": 17,
  "songNumbersWithTrackTags": [
   27,
   32,
@@ -20,9 +20,13 @@
   257,
   100013,
   100015,
-  100016
+  100016,
+  100029,
+  100036
  ],
- "withArtistTags": 285,
- "trackTagsFrom": {},
+ "withArtistTags": 296,
+ "trackTagsFrom": {
+  "from getTopTags": 2
+ },
  "problems": {}
 }
