@@ -25,6 +25,10 @@ def load(p, empty):
         return empty
 
 
+def note(text):   # a line in the log, and in the run's notes on GitHub (an annotation) when it runs there
+    print(('::notice::' if os.environ.get('GITHUB_ACTIONS') else '') + text)
+
+
 def send():
     theirs = load(THEIRS, {'songs': {}})
     tok = os.environ.get('GITHUB_TOKEN', '').strip()
@@ -35,9 +39,9 @@ def send():
                                  headers={'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json', 'User-Agent': UA})
     try:
         with urllib.request.urlopen(req, timeout=60) as r:
-            print('members’ facts: sent;', json.loads(r.read()).get('added'), 'new for their owners')
+            note('members’ facts: %d sent, %s new for their owners' % (len(theirs['songs']), json.loads(r.read()).get('added')))
     except Exception as e:
-        print('members’ facts: the Worker didn’t take them (' + str(e) + '); the next run sends them again')
+        note('members’ facts: the Worker didn’t take them (' + str(e) + '); the next run sends them again')
 
 
 def tidy(path):
@@ -60,7 +64,7 @@ def tidy(path):
             del S['songs'][t]
         with open(SOURCES, 'w', encoding='utf-8') as f:
             json.dump(S, f, ensure_ascii=False, indent=0, separators=(',', ':'))
-    print(f'members’ facts: {len(gone)} written and {len(out)} sources taken out (their playlists not public)')
+    (note if gone or out else print)(f'members’ facts: {len(gone)} written and {len(out)} sources taken out (their playlists not public)')
 
 
 if __name__ == '__main__':
