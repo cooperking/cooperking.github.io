@@ -26861,9 +26861,56 @@
    "n": 100001,
    "title": "Suddenly",
    "artist": "Angry Anderson",
-   "moods": [],
+   "moods": [
+    "Energetic",
+    "Melancholy"
+   ],
+   "moodMix": [
+    [
+     "Energetic",
+     26
+    ],
+    [
+     "Melancholy",
+     22
+    ],
+    [
+     "Dark",
+     11
+    ]
+   ],
+   "moodEvidence": [
+    [
+     "Audio",
+     100,
+     [
+      [
+       "Energetic",
+       26
+      ],
+      [
+       "Melancholy",
+       22
+      ],
+      [
+       "Dark",
+       11
+      ]
+     ]
+    ]
+   ],
    "moodFrom": "Weighed up",
+   "sound": [
+    "Energetic",
+    "Melancholy",
+    "Dark"
+   ],
    "listeners": "none",
+   "styles": [
+    "Arena Rock",
+    "Hard Rock",
+    "AOR"
+   ],
    "genres": [
     "Rock"
    ],
@@ -26871,17 +26918,17 @@
    "genreMix": [
     [
      "Rock",
-     88
+     82
     ],
     [
      "Pop",
-     12
+     18
     ]
    ],
    "genreEvidence": [
     [
      "MusicBrainz",
-     62,
+     50,
      [
       [
        "Rock",
@@ -26895,11 +26942,25 @@
     ],
     [
      "Last.fm",
-     38,
+     30,
      [
       [
        "Rock",
        100
+      ]
+     ]
+    ],
+    [
+     "Audio",
+     20,
+     [
+      [
+       "Rock",
+       62
+      ],
+      [
+       "Pop",
+       38
       ]
      ]
     ]
@@ -26915,9 +26976,56 @@
    "n": 100002,
    "title": "Sexting",
    "artist": "Bo Burnham",
-   "moods": [],
+   "moods": [
+    "Uplifting",
+    "Bittersweet"
+   ],
+   "moodMix": [
+    [
+     "Uplifting",
+     24
+    ],
+    [
+     "Bittersweet",
+     18
+    ],
+    [
+     "Romantic",
+     14
+    ]
+   ],
+   "moodEvidence": [
+    [
+     "Audio",
+     100,
+     [
+      [
+       "Uplifting",
+       24
+      ],
+      [
+       "Bittersweet",
+       18
+      ],
+      [
+       "Romantic",
+       14
+      ]
+     ]
+    ]
+   ],
    "moodFrom": "Weighed up",
+   "sound": [
+    "Uplifting",
+    "Bittersweet",
+    "Romantic"
+   ],
    "listeners": "none",
+   "styles": [
+    "Indie Rock",
+    "Dream Pop",
+    "Indie Pop"
+   ],
    "genres": [
     "Rock",
     "Folk"
@@ -26926,21 +27034,21 @@
    "genreMix": [
     [
      "Rock",
-     40
+     33
     ],
     [
      "Folk",
-     35
+     28
     ],
     [
      "Pop",
-     19
+     20
     ]
    ],
    "genreEvidence": [
     [
      "MusicBrainz",
-     62,
+     50,
      [
       [
        "Rock",
@@ -26958,7 +27066,7 @@
     ],
     [
      "Last.fm",
-     38,
+     30,
      [
       [
        "Folk",
@@ -26971,6 +27079,24 @@
       [
        "Rock",
        12
+      ]
+     ]
+    ],
+    [
+     "Audio",
+     20,
+     [
+      [
+       "Indie",
+       70
+      ],
+      [
+       "Pop",
+       24
+      ],
+      [
+       "Rock",
+       6
       ]
      ]
     ]
@@ -26987,20 +27113,150 @@
    "n": 100003,
    "title": "BLAME IT ON THE MOON",
    "artist": "Cat Cohen",
-   "moods": [],
+   "moods": [
+    "Dark",
+    "Playful"
+   ],
+   "moodMix": [
+    [
+     "Dark",
+     23
+    ],
+    [
+     "Playful",
+     15
+    ],
+    [
+     "Energetic",
+     13
+    ]
+   ],
+   "moodEvidence": [
+    [
+     "Audio",
+     100,
+     [
+      [
+       "Dark",
+       23
+      ],
+      [
+       "Playful",
+       15
+      ],
+      [
+       "Energetic",
+       13
+      ]
+     ]
+    ]
+   ],
    "moodFrom": "Weighed up",
+   "sound": [
+    "Dark",
+    "Playful",
+    "Energetic"
+   ],
    "listeners": "none",
-   "genres": [],
-   "genreFrom": "none",
+   "styles": [
+    "Electroclash",
+    "Synth-pop",
+    "Indie Pop"
+   ],
+   "genres": [
+    "Electronic",
+    "Pop"
+   ],
+   "genreFrom": "Weighed up",
+   "genreMix": [
+    [
+     "Electronic",
+     54
+    ],
+    [
+     "Pop",
+     37
+    ],
+    [
+     "Indie",
+     10
+    ]
+   ],
+   "genreEvidence": [
+    [
+     "Audio",
+     100,
+     [
+      [
+       "Electronic",
+       54
+      ],
+      [
+       "Pop",
+       37
+      ],
+      [
+       "Indie",
+       10
+      ]
+     ]
+    ]
+   ],
    "check": true
   },
   "17MXoU0jFQnhpf05xqDc8P": {
    "n": 100004,
    "title": "Change Your Life (You Can Do It)",
    "artist": "Dan Deacon",
-   "moods": [],
+   "moods": [
+    "Playful"
+   ],
+   "moodMix": [
+    [
+     "Playful",
+     66
+    ],
+    [
+     "Energetic",
+     12
+    ],
+    [
+     "Joyful",
+     7
+    ]
+   ],
+   "moodEvidence": [
+    [
+     "Audio",
+     100,
+     [
+      [
+       "Playful",
+       66
+      ],
+      [
+       "Energetic",
+       12
+      ],
+      [
+       "Joyful",
+       7
+      ]
+     ]
+    ]
+   ],
    "moodFrom": "Weighed up",
+   "sound": [
+    "Playful",
+    "Energetic",
+    "Joyful"
+   ],
    "listeners": "none",
+   "styles": [
+    "Synth-pop",
+    "Electroclash",
+    "Techno"
+   ],
    "genres": [
     "Electronic"
    ],
@@ -27008,17 +27264,21 @@
    "genreMix": [
     [
      "Electronic",
-     84
+     82
     ],
     [
      "Indie",
-     16
+     13
+    ],
+    [
+     "Pop",
+     5
     ]
    ],
    "genreEvidence": [
     [
      "MusicBrainz",
-     62,
+     50,
      [
       [
        "Electronic",
@@ -27032,7 +27292,7 @@
     ],
     [
      "Last.fm",
-     38,
+     30,
      [
       [
        "Electronic",
@@ -27041,6 +27301,20 @@
       [
        "Indie",
        21
+      ]
+     ]
+    ],
+    [
+     "Audio",
+     20,
+     [
+      [
+       "Electronic",
+       77
+      ],
+      [
+       "Pop",
+       23
       ]
      ]
     ]
@@ -27058,9 +27332,55 @@
    "n": 100005,
    "title": "Real Muthaphuckkin G's",
    "artist": "Eazy-E",
-   "moods": [],
+   "moods": [
+    "Energetic"
+   ],
+   "moodMix": [
+    [
+     "Energetic",
+     70
+    ],
+    [
+     "Joyful",
+     15
+    ],
+    [
+     "Dark",
+     6
+    ]
+   ],
+   "moodEvidence": [
+    [
+     "Audio",
+     100,
+     [
+      [
+       "Energetic",
+       70
+      ],
+      [
+       "Joyful",
+       15
+      ],
+      [
+       "Dark",
+       6
+      ]
+     ]
+    ]
+   ],
    "moodFrom": "Weighed up",
+   "sound": [
+    "Energetic",
+    "Joyful",
+    "Dark"
+   ],
    "listeners": "none",
+   "styles": [
+    "Gangsta",
+    "G-Funk",
+    "Bounce"
+   ],
    "genres": [
     "Hip-hop"
    ],
@@ -27068,17 +27388,17 @@
    "genreMix": [
     [
      "Hip-hop",
-     89
+     88
     ],
     [
      "Soul & R&B",
-     11
+     12
     ]
    ],
    "genreEvidence": [
     [
      "MusicBrainz",
-     62,
+     50,
      [
       [
        "Hip-hop",
@@ -27092,7 +27412,7 @@
     ],
     [
      "Last.fm",
-     38,
+     30,
      [
       [
        "Hip-hop",
@@ -27101,6 +27421,20 @@
       [
        "Soul & R&B",
        1
+      ]
+     ]
+    ],
+    [
+     "Audio",
+     20,
+     [
+      [
+       "Hip-hop",
+       80
+      ],
+      [
+       "Soul & R&B",
+       20
       ]
      ]
     ]
@@ -27123,9 +27457,56 @@
    "n": 100006,
    "title": "fuck u",
    "artist": "Frances Forever",
-   "moods": [],
+   "moods": [
+    "Mellow",
+    "Dreamy"
+   ],
+   "moodMix": [
+    [
+     "Mellow",
+     30
+    ],
+    [
+     "Dreamy",
+     15
+    ],
+    [
+     "Melancholy",
+     14
+    ]
+   ],
+   "moodEvidence": [
+    [
+     "Audio",
+     100,
+     [
+      [
+       "Mellow",
+       30
+      ],
+      [
+       "Dreamy",
+       15
+      ],
+      [
+       "Melancholy",
+       14
+      ]
+     ]
+    ]
+   ],
    "moodFrom": "Weighed up",
+   "sound": [
+    "Mellow",
+    "Dreamy",
+    "Melancholy"
+   ],
    "listeners": "none",
+   "styles": [
+    "Beatdown",
+    "Downtempo",
+    "Trip Hop"
+   ],
    "genres": [
     "Indie",
     "Pop"
@@ -27134,17 +27515,21 @@
    "genreMix": [
     [
      "Indie",
-     66
+     53
     ],
     [
      "Pop",
-     34
+     28
+    ],
+    [
+     "Electronic",
+     19
     ]
    ],
    "genreEvidence": [
     [
      "MusicBrainz",
-     62,
+     50,
      [
       [
        "Indie",
@@ -27158,7 +27543,7 @@
     ],
     [
      "Last.fm",
-     38,
+     30,
      [
       [
        "Indie",
@@ -27167,6 +27552,20 @@
       [
        "Pop",
        23
+      ]
+     ]
+    ],
+    [
+     "Audio",
+     20,
+     [
+      [
+       "Electronic",
+       94
+      ],
+      [
+       "Pop",
+       6
       ]
      ]
     ]
@@ -27185,9 +27584,56 @@
    "n": 100007,
    "title": "Push",
    "artist": "Gabe Gurnsey",
-   "moods": [],
+   "moods": [
+    "Playful",
+    "Dreamy"
+   ],
+   "moodMix": [
+    [
+     "Playful",
+     46
+    ],
+    [
+     "Dreamy",
+     26
+    ],
+    [
+     "Energetic",
+     12
+    ]
+   ],
+   "moodEvidence": [
+    [
+     "Audio",
+     100,
+     [
+      [
+       "Playful",
+       46
+      ],
+      [
+       "Dreamy",
+       26
+      ],
+      [
+       "Energetic",
+       12
+      ]
+     ]
+    ]
+   ],
    "moodFrom": "Weighed up",
+   "sound": [
+    "Playful",
+    "Dreamy",
+    "Energetic"
+   ],
    "listeners": "none",
+   "styles": [
+    "House",
+    "Electro",
+    "Techno"
+   ],
    "genres": [
     "Electronic"
    ],
@@ -27195,21 +27641,21 @@
    "genreMix": [
     [
      "Electronic",
-     74
+     75
     ],
     [
      "Pop",
-     19
+     17
     ],
     [
      "Indie",
-     7
+     5
     ]
    ],
    "genreEvidence": [
     [
      "MusicBrainz",
-     62,
+     50,
      [
       [
        "Electronic",
@@ -27223,7 +27669,7 @@
     ],
     [
      "Last.fm",
-     38,
+     30,
      [
       [
        "Electronic",
@@ -27236,6 +27682,24 @@
       [
        "Rock",
        1
+      ]
+     ]
+    ],
+    [
+     "Audio",
+     20,
+     [
+      [
+       "Electronic",
+       80
+      ],
+      [
+       "Pop",
+       12
+      ],
+      [
+       "Soul & R&B",
+       8
       ]
      ]
     ]
@@ -27255,31 +27719,78 @@
    "n": 100008,
    "title": "Milk For Flowers",
    "artist": "H. Hawkline",
-   "moods": [],
+   "moods": [
+    "Bittersweet"
+   ],
+   "moodMix": [
+    [
+     "Bittersweet",
+     56
+    ],
+    [
+     "Melancholy",
+     22
+    ],
+    [
+     "Uplifting",
+     8
+    ]
+   ],
+   "moodEvidence": [
+    [
+     "Audio",
+     100,
+     [
+      [
+       "Bittersweet",
+       56
+      ],
+      [
+       "Melancholy",
+       22
+      ],
+      [
+       "Uplifting",
+       8
+      ]
+     ]
+    ]
+   ],
    "moodFrom": "Weighed up",
+   "sound": [
+    "Bittersweet",
+    "Melancholy",
+    "Uplifting"
+   ],
    "listeners": "none",
+   "styles": [
+    "Indie Rock",
+    "Alternative Rock",
+    "Brit Pop"
+   ],
    "genres": [
-    "Rock"
+    "Rock",
+    "Indie"
    ],
    "genreFrom": "Weighed up",
    "genreMix": [
     [
      "Rock",
-     41
-    ],
-    [
-     "Folk",
-     20
+     33
     ],
     [
      "Indie",
-     19
+     26
+    ],
+    [
+     "Pop",
+     20
     ]
    ],
    "genreEvidence": [
     [
      "MusicBrainz",
-     62,
+     50,
      [
       [
        "Rock",
@@ -27297,7 +27808,7 @@
     ],
     [
      "Last.fm",
-     38,
+     30,
      [
       [
        "Folk",
@@ -27310,6 +27821,24 @@
       [
        "Indie",
        16
+      ]
+     ]
+    ],
+    [
+     "Audio",
+     20,
+     [
+      [
+       "Indie",
+       52
+      ],
+      [
+       "Pop",
+       42
+      ],
+      [
+       "Folk",
+       6
       ]
      ]
     ]
