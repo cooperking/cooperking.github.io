@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="sotd-build" content="821092dd6f1a">
+<meta name="sotd-build" content="8e44d64679fa">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 264 so far">
 <meta name="theme-color" content="#ec135b">
@@ -5670,8 +5670,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (MEMBER && MEMBER.media) Object.keys(MEMBER.media).forEach(function (t) { if (MEMBER.media[t].v) v[t] = Object.assign({}, VIDS_YT[t] || {}, { own: MEMBER.media[t].v }); });
     if (SWOK) Object.keys(OFFV).forEach(function (t) { v[t] = Object.assign({}, VIDS_YT[t] || {}, { own: offVUrl(t) }); });   // downloaded: from this device
     var ownChoice = function (s) {   // a member's song: the video found for it (vid, with its calendar), or its owner's choice
+      var own = v[s.track] && v[s.track].own;   // (John's own MP4 for it: kept whatever its video)
       if (s.vid && !v[s.track]) v[s.track] = s.vid;
       if ('ov' in s) { if (s.ov) v[s.track] = { v: s.ov, k: 'video' }; else delete v[s.track]; }
+      if (own && !s.mv) v[s.track] = Object.assign({}, v[s.track] || {}, { own: own });
       if (s.mv) v[s.track] = Object.assign({}, v[s.track] || {}, { own: s.mv });
     };
     Object.keys(SONGX).forEach(function (t) { if (!byTrack[t] || byTrack[t].upl) ownChoice(SONGX[t]); });   // members' songs in My playlist, wherever they're played
@@ -8055,8 +8057,18 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       var mc = JSON.stringify(j.mycovers || {});   // John's own covers this member sees: the calendar drawn again with them
       if (mc !== OWNC_SIG) { OWNC_SIG = mc; render(); if (idx.open) renderIndex(); }
       memberLoad.t = setTimeout(memberLoad, Math.max(60e3, j.exp * 1000 - Date.now() - 30 * 60e3));
+      memberLoad.at = Date.now();
     }).catch(function () {});
   }
+  // back to the calendar after a minute or more: the member's again (John's own files and covers added since play now)
+  function memberAgain() {
+    if (document.hidden || !MEMBER || Date.now() - (memberLoad.at || 0) <= 60e3) return;
+    memberLoad();
+    var pid = UPL.on;   // (a member's calendar showing: it again, unless a song's playing on it)
+    if (pid && !(sheet.open && (vplay || (playing && !audio.paused)))) uplCall(null, '?id=' + encodeURIComponent(pid)).then(function (j) { if (j.status === 200 && UPL.on === pid) uplApply(j, { keep: true }); }).catch(function () {});
+  }
+  document.addEventListener('visibilitychange', memberAgain);
+  window.addEventListener('focus', memberAgain);
   // joining: from an invite link (#join=<code>, the address then losing the code), or a TV code typed in the Fire TV
   // app's menu (the app calls sotdJoin)
   // this phone, tablet, computer or TV's own id (kept here), so the members page counts devices, not sign-ins
