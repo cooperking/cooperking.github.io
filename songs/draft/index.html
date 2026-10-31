@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="6bb45c038d56">
+<meta name="sotd-build" content="df6892b95029">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -5132,9 +5132,15 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // "Open in YouTube": the songs' videos, in the same order, as YouTube's own list (50 at most per list)
   var YT_ICON = '<svg class="yt" viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="3.5" width="13" height="9" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.6 5.8v4.4L10.3 8z" fill="currentColor"/></svg>';
   var ytOpenParts = false;   // the parts stay open while the list is redrawn (typing a name, sorting)
+  function songYt(s) {   // a song's YouTube video: the one the calendar has for it, else (a member's song, from any calendar) its owner's choice or the one found
+    var v = VIDS[s.track]; if (v && v.v) return v.v;
+    var x = s.upl || !SONGX[s.track] ? s : SONGX[s.track];
+    if ('ov' in x) return x.ov || '';
+    return (x.vid && x.vid.v) || '';
+  }
   function ytOpen(box, list, name) {
     box.textContent = '';
-    var ids = list.map(function (s) { var v = VIDS[s.track]; return v && v.v; }).filter(Boolean);
+    var ids = list.map(songYt).filter(Boolean);
     var parts = Math.ceil(ids.length / 50);
     var ARROW = ' <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4" width="12" height="12" aria-hidden="true"><path d="M1.5 6h9M7 2.5 10.5 6 7 9.5"/></svg>';
     function link(i, label) {

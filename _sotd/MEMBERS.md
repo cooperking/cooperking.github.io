@@ -341,6 +341,11 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   10-minute look starts the site job when one has changed (`chg`). *Not on it* takes it off again (asked first); the
   saved playlist stays. Deleting the saved playlist takes it off too. Its calendar has no Spotify link; the Members
   tab marks it "from a playlist made on the calendar", with no *Check now*.
+- **YouTube from the pop-up** (John, 31 Oct 2026: "when you click on the youtube playlist for a playlist made of songs
+  uploaded by another member it only opened the first song"): the YouTube button lists every song's video wherever
+  the playlist's opened from (`songYt`: the one the calendar has, else a member's song's owner's choice or the one
+  found, from its calendar or what's kept with it); before, a member's songs only had theirs while their own calendar
+  showed. Test: `upl_yt_t.py`.
 - **A plain playlist's page** (John, 31 Oct 2026: "Can it say 27 Songs on AABBCC or whatever the playlist is called -
   then it doesn't need the big header too. The 27 Songs subheader can go too, and move the play button down into the
   bar next to the other shuffle"): no big name or count at the top; its bar says "<n> songs on <its name>", with Play
