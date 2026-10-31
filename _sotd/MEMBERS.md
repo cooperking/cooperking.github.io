@@ -397,7 +397,10 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   for (the Songs tab's) plays his, for those he lets have them; its owner can't add their own of that kind (John, 31
   Oct 2026: "if I already have the song, they can't upload one of their own"): the editor says "Already uploaded", and
   to John shows it as the Songs tab does ("Song · 4.2 MB"), from `jf` on the song in its owner's view. One they added
-  before John's isn't given while his is there, and is again if he takes his away.
+  before John's isn't given while his is there, and is again if he takes his away. His MP4 plays even where its owner chose a YouTube video
+  or none. A calendar left open asks the Worker again when it's come back to after a minute or more (`memberAgain`:
+  `/members/me`, and the member's calendar showing), so his files added since play without a reload (John: "I upload
+  files and it still shows their YouTube and preview").
 - **Member Songs on the Songs tab** (John, 31 Oct 2026: "I still can't see newly published songs in my songs section
   in admin"; "Change Members' to Member Songs. Say who the Member is - make sure songs have all the same options as my
   songs"; "All should be all songs including playlists"): the songs out on members' playlists that aren't his, each
@@ -413,8 +416,13 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   can read them; John, 31 Oct 2026: "this does sound like its being uploaded") takes files chosen together (⌘A in a
   folder) or a folder dropped on the page, its folders read through, with no browser prompt; it matches them to his
   songs and member songs, reads them on the computer first (nothing goes up until *Upload*), and leaves a file it can't
-  match unticked and not uploaded unless a song is picked for it. From admin op `uplsongs` (each song's playlists, whose,
-  `oj` for John's own member, its finds, its facts, and John's choices). Test: `songs_members_t.py`.
+  match unticked and not uploaded unless a song is picked for it. Member songs still waiting for their member to publish
+  them are listed too (John, 31 Oct 2026: "If I upload files on behalf of someone I need a quick way to publish all on
+  their behalf"): in Waiting, "Not out: waits for Mum", with *Publish for Mum* (his own member's: *Publish*), which
+  publishes it as its member's sign-off would (out, and to the members as they chose: admin op `uplsignoff`, as
+  `uplSignoffDo` does for theirs); *Sign off all* takes his songs and member songs shown at once. From admin op
+  `uplsongs` (each song's playlists, whose,
+  `oj` for John's own member, its finds, its facts, and John's choices). Tests: `songs_members_t.py`, `songs_replace_t.py`, `songs_publish_t.py`, `upl_jfiles_page_t.py`.
 - **Facts, for public playlists' songs** (John, 31 Oct 2026, asked which: "Public playlists only"): written and checked
   by John's facts task as his are (`_sotd/FACTS.md`), for the songs on a playlist set to Public that were added after it
   was added to the calendar, the 10 newest from before that (John, 31 Oct 2026, offered the same 10 its

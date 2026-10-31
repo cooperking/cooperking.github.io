@@ -971,10 +971,11 @@ async function members(request, url, env) {
       const U = await uplAll(env), out = [], owner = await env.SOTD.get('owner'), meta = (await env.SOTD.get('uplmeta', 'json')) || {};
       for (const [pid, rec] of Object.entries(U)) {
         if (rec.st !== 'ok' || !all[rec.o]) continue;
-        const v = await uplView(env, all, null, pid, rec), fx = (await env.SOTD.get('ufacts:' + pid, 'json')) || {};
+        const v = await uplView(env, all, rec.o, pid, rec), fx = (await env.SOTD.get('ufacts:' + pid, 'json')) || {};   // (as its owner sees it: those waiting for them too)
         for (const x of v.songs) {
           const m = meta[x.id] || {}, f = fx[x.id];
           out.push(Object.assign({ id: x.id, title: x.title, artist: x.artist, artists: x.artists, aids: x.aids, img: x.img || '', p: x.p || '', d: x.d, pid, t: v.t, n: v.n, mode: v.mode, sh: v.sh, o: v.o, oj: !!owner && rec.o === owner },
+            x.w ? { w: 1 } : {}, x.f ? { f: 1 } : {},
             m.vid ? { vid: m.vid } : {}, m.mt ? { mt: m.mt } : {}, m.yr ? { yr: m.yr } : {}, f && (f.w || f.ok) ? { fx: f.w ? { st: 'wait', f: f.w } : { st: 'ok', f: f.ok, at: f.sat || 0 } } : f && f.none ? { fx: { st: 'nil' } } : {}));
         }
       }
@@ -996,6 +997,18 @@ async function members(request, url, env) {
       await env.SOTD.put('uplJohn', JSON.stringify(J));
       if ('v' in body) await startJob(env, null, null, 0, null, true).catch(() => {});   // (their YouTube copies)
       return answer(200, { ok: true, john: J });
+    }
+    case 'uplsignoff': {   // a member's waiting songs signed off by John for them (items: [{ pid, track }]): out, and to the members as its owner chose
+      const U = await uplAll(env), done = [];
+      for (const it of (Array.isArray(body.items) ? body.items : []).slice(0, 200)) {
+        const pid = String(it.pid || ''), rec = U[pid];
+        if (!rec || rec.st !== 'ok' || !all[rec.o]) continue;
+        const data = await uplSongs(env, pid), x = (data.songs || []).find(y => y.id === String(it.track || '') && !uplGone(data, y));
+        if (!x || !uplWaiting(rec, data, x)) continue;
+        await uplSignoffDo(env, all, pid, rec, data, x);
+        done.push({ pid, track: x.id });
+      }
+      return answer(200, { ok: true, done });
     }
     case 'uplfacts': {   // a public playlist's song's facts, edited (and signed off: sign) by John, as its owner can
       const U = await uplAll(env), pid = String(body.pid || ''), t = String(body.track || '');
@@ -3244,15 +3257,8 @@ async function memberUpl(request, url, env, answer) {
     if (!x) return answer(404, { error: 'That song isn’t on this playlist.' });
     if (!uplWaiting(rec, data, x)) return answer(400, { error: 'That song is out already.' });
     if (!await dayCount(env, 'uplsign:' + me, UPL_SIGNOFF_DAY)) return answer(429, { error: 'That’s ' + UPL_SIGNOFF_DAY + ' today, the most for a day.' });
-    data.rel = data.rel || {}; data.rel[x.id] = Date.now();
-    data.reld = data.reld || {}; data.reld[x.id] = londonDay();   // (the day it was signed off: a playlist's song goes to the members that day)
-    const today = londonDay(), snd = uplSendOf(rec), cd = uplDays(data.songs, rec).find(y => y.id === x.id).d, d = rec.mode === 'list' ? today : cd;
-    const now = snd.on && (d < today || (d === today && uplHM() >= snd.at));   // its time has come: now; else uplAnnounce at its time
-    if (now) { data.ann = data.ann || {}; data.ann[x.id] = Date.now(); }
-    await env.SOTD.put('upl:' + pid, JSON.stringify(data));
-    const sent = now ? await uplSend(env, all, me, pid, rec, x, cd) : null;
-    if (uplShareOf(rec) === 'public') await startJob(env, null, null, 0, null, true).catch(() => {});   // (its card for links)
-    return answer(200, Object.assign({ ok: true, sent, view: await uplView(env, all, me, pid, rec), pls: await uplMine(env, uplList(all, me, U), U) }, snd.on && !now ? { on: d, at: snd.at } : {}));
+    const r = await uplSignoffDo(env, all, pid, rec, data, x);
+    return answer(200, Object.assign({ ok: true, sent: r.sent, view: await uplView(env, all, me, pid, rec), pls: await uplMine(env, uplList(all, me, U), U) }, r.on ? { on: r.on, at: r.at } : {}));
   }
   if (body.op === 'dates') {
     if (rec.mode === 'list') return answer(400, { error: 'A playlist has no days: make it a calendar first.' });
@@ -3461,6 +3467,17 @@ async function uplFile(request, url, env, u, plain) {   // a member's own MP3 or
   const obj = await env.MEDIA.get(key, partial ? { range: { offset: start, length: end - start + 1 } } : {});
   if (!obj) return plain(404, 'Not here.');
   return new Response(obj.body, { status: partial ? 206 : 200, headers: hdrs });
+}
+async function uplSignoffDo(env, all, pid, rec, data, x) {   // a waiting song signed off (by its owner, or John for them): out, and to the members as its owner chose
+  data.rel = data.rel || {}; data.rel[x.id] = Date.now();
+  data.reld = data.reld || {}; data.reld[x.id] = londonDay();   // (the day it was signed off: a playlist's song goes to the members that day)
+  const today = londonDay(), snd = uplSendOf(rec), cd = uplDays(data.songs, rec).find(y => y.id === x.id).d, d = rec.mode === 'list' ? today : cd;
+  const now = snd.on && (d < today || (d === today && uplHM() >= snd.at));   // its time has come: now; else uplAnnounce at its time
+  if (now) { data.ann = data.ann || {}; data.ann[x.id] = Date.now(); }
+  await env.SOTD.put('upl:' + pid, JSON.stringify(data));
+  const sent = now ? await uplSend(env, all, rec.o, pid, rec, x, cd) : null;
+  if (uplShareOf(rec) === 'public') await startJob(env, null, null, 0, null, true).catch(() => {});   // (its card for links)
+  return { sent, on: snd.on && !now ? d : null, at: snd.at };
 }
 async function uplAnnounce(env, U, today) {   // the songs whose day it is, out, to the members once, at their owner's time
   let all = null;

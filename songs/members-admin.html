@@ -278,7 +278,7 @@
   // collaborates on, so each waits here until he opens its invite link (signed in to Spotify as cooperking), joins it, and
   // taps Check; then every member can see it. Remove takes it off the calendar (not off Spotify). ----
   var UPLS = [];
-  function msongsLoad() { return api('/members/admin', { op: 'uplsongs' }).then(function (j) { if (j.status === 200) MSONGS = (j.songs || []).sort(function (a, b) { return a.d < b.d ? -1 : a.d > b.d ? 1 : 0; }); }).catch(function () {}); }   // (oldest first, as SONGS)
+  function msongsLoad() { return api('/members/admin', { op: 'uplsongs' }).then(function (j) { if (j.status === 200) MSONGS = (j.songs || []).filter(function (x) { return !x.w && !x.f; }).sort(function (a, b) { return a.d < b.d ? -1 : a.d > b.d ? 1 : 0; }); }).catch(function () {}); }   // (oldest first, as SONGS)
   function uplLoad() { return api('/members/admin', { op: 'upls' }).then(function (j) { if (j.status === 200) { UPLS = j.upls || []; uplDraw(); } }).catch(function () {}); }
   function uplDraw() {
     var box = $('uplbox'), ul = $('upls'); box.hidden = !UPLS.length; ul.innerHTML = '';

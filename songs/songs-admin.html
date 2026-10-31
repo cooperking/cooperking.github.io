@@ -245,7 +245,8 @@ body.dropping::after { content: 'Drop to match them (nothing goes up yet)'; posi
       (f.f.a || []).forEach(function (a) { base.a[a.id] = { name: a.n, f: (a.f || []).map(function (t) { return { t: t, w: 1 }; }) }; });
     }
     base.moods = (J.m || mt.m || []).slice(); base.genres = (J.g || mt.g || []).slice(); base.video = 'v' in J ? J.v : ((s.vid || {}).v || '');
-    return { st: f && f.st === 'wait' ? 'waiting' : f && f.st === 'ok' ? 'signed' : 'mnone', at: f && f.at, base: base, m: true };
+    var held = s.cals.filter(function (c) { return c.w; });   // the playlists it waits on, for its member to publish it
+    return { st: held.length || (f && f.st === 'wait') ? 'waiting' : f && f.st === 'ok' ? 'signed' : 'mnone', at: f && f.at, base: base, m: true, held: held, fxw: !!(f && f.st === 'wait') };
   }
   function state(s) {
     if (s.m) return mstate(s);
@@ -475,7 +476,10 @@ body.dropping::after { content: 'Drop to match them (nothing goes up yet)'; posi
     dl.addEventListener('click', function (ev) { ev.stopPropagation(); });
     meta.appendChild(dl);
     if (s.m) meta.appendChild(el('span', 'badge member', 'Member: ' + (c0.oj ? 'you' : c0.o) + (s.cals.length > 1 ? ' and ' + (s.cals.length - 1) + ' more' : '')));
-    var label = { waiting: 'Waiting for you', signed: st.going ? 'Going live' : 'Signed off', old: 'Live', none: 'No facts yet' }[st.st];
+    var label = s.m ? (st.held.length ? null : st.fxw ? 'Waiting for you' : st.st === 'signed' ? 'Signed off' : null) : { waiting: 'Waiting for you', signed: st.going ? 'Going live' : 'Signed off', old: 'Live', none: 'No facts yet' }[st.st];
+    if (s.m && st.held.length) meta.appendChild(el('span', 'badge waiting', 'Not out: waits for ' + heldWho(st.held)));
+    if (s.m && st.held.length && st.fxw) meta.appendChild(el('span', 'badge', 'Facts wait'));
+    if (s.m && !st.held.length && s.cals.some(function (c) { return c.f; })) meta.appendChild(el('span', 'badge', 'Day to come'));
     if (label) meta.appendChild(el('span', 'badge ' + st.st, label));
     if (!s.m && !isOut(s.id)) meta.appendChild(el('span', 'badge', st.going ? 'Coming out' : 'Not out yet'));
     if (toCheck(s)) meta.appendChild(el('span', 'badge check', 'To check'));
@@ -510,8 +514,8 @@ body.dropping::after { content: 'Drop to match them (nothing goes up yet)'; posi
     }
     body.appendChild(fileSection(s));
     var foot = el('div', 'sfoot');
-    var go = el('button', 'btn primary', !s.m && !isOut(s.id) ? 'Sign off and publish' : st.st === 'waiting' ? 'Sign off' : 'Save changes'); go.type = 'button';
-    go.addEventListener('click', function () { if (s.m) msignoff(s); else signoff([s]); });
+    var go = el('button', 'btn primary', s.m && st.held.length ? (st.held.every(function (c) { return c.oj; }) ? 'Publish' : 'Publish for ' + heldWho(st.held)) : !s.m && !isOut(s.id) ? 'Sign off and publish' : st.st === 'waiting' ? 'Sign off' : 'Save changes'); go.type = 'button';
+    go.addEventListener('click', function () { if (s.m) msignoff([s]); else signoff([s]); });
     foot.appendChild(go);
     if (edits[s.id]) {
       var undo = el('button', 'btn', 'Discard changes'); undo.type = 'button';
@@ -529,6 +533,7 @@ body.dropping::after { content: 'Drop to match them (nothing goes up yet)'; posi
   function isoLabel(iso) { return (+iso.slice(8, 10)) + ' ' + MONTHS[+iso.slice(5, 7) - 1].slice(0, 3) + ' ' + iso.slice(0, 4); }
   function whose(c) { return c.oj ? 'yours' : c.o + '’s'; }
   function calSay(c) { return (c.oj ? 'Your ' : c.o + '’s ') + c.n + (c.mode === 'list' ? '' : ' · ' + isoLabel(c.d)); }
+  function heldWho(held) { var n = held.map(function (c) { return c.oj ? 'you' : c.o; }).filter(function (x, i, a) { return a.indexOf(x) === i; }); return n.length > 1 ? n.slice(0, -1).join(', ') + ' and ' + n[n.length - 1] : n[0]; }
   function calHref(c) { return './#u=' + c.pid + (c.mode === 'list' ? '' : '&d=' + slugOf(c.d)); }
   function fit(ta) { ta.style.height = 'auto'; ta.style.height = (ta.scrollHeight + 2) + 'px'; }   // a fact's box as tall as its words
   function fitAll(root) { [].forEach.call(root.querySelectorAll('textarea'), fit); }
@@ -579,7 +584,7 @@ body.dropping::after { content: 'Drop to match them (nothing goes up yet)'; posi
     return out;
   }
   function bulkLabel(shown) {
-    shown = (shown || songs.filter(visible)).filter(function (s) { return !s.m; });
+    shown = shown || rows().filter(visible);
     var dock = $('dock'), b = $('bulk'), ready = shown.filter(function (s) { var st = state(s); return st.st === 'waiting' || changed(s, st); });
     dock.hidden = ready.length < 2;
     b.textContent = armed ? 'Tap again to sign off ' + ready.length : 'Sign off all ' + ready.length;
@@ -660,27 +665,44 @@ body.dropping::after { content: 'Drop to match them (nothing goes up yet)'; posi
       try { if (window.parent.SOTD_STATUS_NOW) window.parent.SOTD_STATUS_NOW(); } catch (e) {}   // (the Status tab: signed off)
     }).catch(function () { toast('Couldn’t reach the Worker. Nothing was saved.'); });
   }
-  function msignoff(s) {   // a member song: John's moods, genres and video (what he changed: his, over its members'), its facts signed off
+  function mcalls(s) {   // a member song's saves: John's moods, genres and video (what he changed: his, over its members'), its facts signed off
     var st = state(s), w = working(s, st), b = st.base, ed = {}, calls = [];
     if (JSON.stringify(w.moods) !== JSON.stringify(b.moods)) ed.m = w.moods.slice();
     if (JSON.stringify(w.genres) !== JSON.stringify(b.genres)) ed.g = w.genres.slice();
     if ((w.video || '') !== (b.video || '')) ed.v = w.video || '';
-    if (Object.keys(ed).length) calls.push(api('/members/admin', Object.assign({ op: 'upledit', track: s.id }, ed)).then(function (j) { if (j.john) JOHN = j.john; return j; }));
+    if (Object.keys(ed).length) calls.push(function () { return api('/members/admin', Object.assign({ op: 'upledit', track: s.id }, ed)).then(function (j) { if (j.john) JOHN = j.john; return j; }); });
     var f = s.fx;
     if (f && f.f) {
       var keep = function (x) { return !x.gone && String(x.t || '').trim(); }, a = {};
       Object.keys(w.a || {}).forEach(function (k) { a[k] = w.a[k].f.filter(keep).map(function (x) { return x.t.trim(); }); });
       var fs = (w.s || []).filter(keep).map(function (x) { return x.t.trim(); });
-      if (st.st === 'waiting' || JSON.stringify([fs, a]) !== JSON.stringify([(b.s || []).map(function (x) { return x.t; }), Object.keys(b.a).reduce(function (o, k) { o[k] = b.a[k].f.map(function (x) { return x.t; }); return o; }, {})]))
-        calls.push(api('/members/admin', { op: 'uplfacts', pid: f.pid, track: s.id, s: fs, a: a, sign: true }).then(function (j) { if (j.fx) s.fx = Object.assign({ pid: f.pid }, j.fx); return j; }));
+      if (st.fxw || JSON.stringify([fs, a]) !== JSON.stringify([(b.s || []).map(function (x) { return x.t; }), Object.keys(b.a).reduce(function (o, k) { o[k] = b.a[k].f.map(function (x) { return x.t; }); return o; }, {})]))
+        calls.push(function () { return api('/members/admin', { op: 'uplfacts', pid: f.pid, track: s.id, s: fs, a: a, sign: true }).then(function (j) { if (j.fx) s.fx = Object.assign({ pid: f.pid }, j.fx); return j; }); });
     }
-    if (!calls.length) { toast('Nothing changed'); return; }
-    Promise.all(calls).then(function (rs) {
+    return calls;
+  }
+  function msignoff(list_) {   // member songs: published for their members (those waiting), and their changes and facts saved; one or several
+    list_ = [].concat(list_);
+    var items = [], calls = [];
+    list_.forEach(function (s) { state(s).held.forEach(function (c) { items.push({ pid: c.pid, track: s.id }); }); calls = calls.concat(mcalls(s)); });
+    if (!items.length && !calls.length) { toast('Nothing changed'); return Promise.resolve(false); }
+    var pub = items.length ? api('/members/admin', { op: 'uplsignoff', items: items }).then(function (j) {
+      if (!j.ok) return j;
+      (j.done || []).forEach(function (d) { list_.forEach(function (s) { if (s.id === d.track) s.cals.forEach(function (c) { if (c.pid === d.pid) c.w = false; }); }); });
+      return j;
+    }) : Promise.resolve({ ok: true, done: [] });
+    return pub.then(function (j) {
+      if (!j.ok) return [j];
+      return calls.reduce(function (p, c) { return p.then(function (rs) { return c().then(function (r) { return rs.concat([r]); }); }); }, Promise.resolve([j]));
+    }).then(function (rs) {
       var bad = rs.filter(function (j) { return !j.ok; })[0];
-      if (bad) { toast(bad.error || 'Not all of it saved'); return; }
-      delete edits[s.id]; saveEdits();
-      toast('Saved: on their calendars now'); redraw(s); counts(); bulkLabel();
-    }).catch(function () { toast('Couldn’t reach the Worker. Nothing was saved.'); });
+      if (bad) { toast(bad.error || 'Not all of it saved'); render(); return false; }
+      list_.forEach(function (s) { delete edits[s.id]; }); saveEdits();
+      var n = (rs[0].done || []).length;
+      toast(n ? (n === 1 ? 'Published: out on their calendar now' : n + ' published: out on their calendars now') : 'Saved: on their calendars now');
+      render();
+      return true;
+    }).catch(function () { toast('Couldn’t reach the Worker. Nothing more was saved.'); render(); return false; });
   }
   [].forEach.call(document.querySelectorAll('[data-show]'), function (b) {
     b.addEventListener('click', function () {
@@ -692,9 +714,11 @@ body.dropping::after { content: 'Drop to match them (nothing goes up yet)'; posi
   $('q').addEventListener('input', function () { LIMIT = 60; render(); });
   $('month').addEventListener('change', function () { LIMIT = 60; render(); });
   $('bulk').addEventListener('click', function () {
-    var ready = songs.filter(visible).filter(function (s) { var st = state(s); return st.st === 'waiting' || changed(s, st); });
+    var ready = rows().filter(visible).filter(function (s) { var st = state(s); return st.st === 'waiting' || changed(s, st); });
     if (!armed) { armed = true; bulkLabel(); clearTimeout(bulkLabel.t); bulkLabel.t = setTimeout(function () { armed = false; bulkLabel(); }, 6000); return; }
-    armed = false; signoff(ready);
+    armed = false;
+    var mine = ready.filter(function (s) { return !s.m; }), theirs = ready.filter(function (s) { return s.m; });
+    (theirs.length ? msignoff(theirs) : Promise.resolve(true)).then(function () { if (mine.length) signoff(mine); });
   });
   audio.addEventListener('ended', function () { if (playingBtn) playingBtn.innerHTML = PLAY; });
   audio.addEventListener('pause', function () { if (playingBtn) playingBtn.innerHTML = PLAY; });
@@ -1008,7 +1032,7 @@ body.dropping::after { content: 'Drop to match them (nothing goes up yet)'; posi
     ((r[9] && r[9].songs) || []).forEach(function (x) {   // the songs out on members' playlists that aren't John's: each once, with every calendar it's on
       if (johns[x.id]) return;
       var m = by[x.id] = by[x.id] || { m: true, id: x.id, title: x.title, artist: x.artist, artists: x.artists || [], aids: x.aids || [], img: x.img, p: x.p, d: x.d, cals: [] };
-      m.cals.push({ pid: x.pid, t: x.t, n: x.n, mode: x.mode, o: x.o, oj: !!x.oj, d: x.d, sh: x.sh });
+      m.cals.push({ pid: x.pid, t: x.t, n: x.n, mode: x.mode, o: x.o, oj: !!x.oj, d: x.d, sh: x.sh, w: !!x.w, f: !!x.f });
       if (x.d > m.d) m.d = x.d;
       if (x.vid && !m.vid) m.vid = x.vid; if (x.mt && !m.mt) m.mt = x.mt; if (x.yr && !m.yr) m.yr = x.yr;
       if (x.fx && (!m.fx || x.fx.st === 'wait')) m.fx = Object.assign({ pid: x.pid }, x.fx);   // (its facts: those of the public playlist that has them)
