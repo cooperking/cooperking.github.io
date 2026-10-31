@@ -967,14 +967,46 @@ async function members(request, url, env) {
     }
     case 'pushcount': return answer(200, await pushCount(env));
     case 'upls': return answer(200, { upls: uplAdmin(all, await uplAll(env)) });   // members' own playlists, for the Members tab
-    case 'uplsongs': {   // every song out on members' playlists, for Send a song: each with its day, its calendar and who sees it
-      const U = await uplAll(env), out = [];
+    case 'uplsongs': {   // every song out on members' playlists (Send a song, and the Songs tab): each with its day, its calendar, whose (oj: John's own), who sees it, what was found for it (vid, mt, yr), its facts (fx: its playlist's, written or signed off), and John's choices
+      const U = await uplAll(env), out = [], owner = await env.SOTD.get('owner'), meta = (await env.SOTD.get('uplmeta', 'json')) || {};
       for (const [pid, rec] of Object.entries(U)) {
         if (rec.st !== 'ok' || !all[rec.o]) continue;
-        const v = await uplView(env, all, null, pid, rec);
-        for (const x of v.songs) out.push({ id: x.id, title: x.title, artist: x.artist, img: x.img || '', p: x.p || '', d: x.d, pid, t: v.t, n: v.n, mode: v.mode, sh: v.sh, o: v.o });
+        const v = await uplView(env, all, null, pid, rec), fx = (await env.SOTD.get('ufacts:' + pid, 'json')) || {};
+        for (const x of v.songs) {
+          const m = meta[x.id] || {}, f = fx[x.id];
+          out.push(Object.assign({ id: x.id, title: x.title, artist: x.artist, artists: x.artists, aids: x.aids, img: x.img || '', p: x.p || '', d: x.d, pid, t: v.t, n: v.n, mode: v.mode, sh: v.sh, o: v.o, oj: !!owner && rec.o === owner },
+            m.vid ? { vid: m.vid } : {}, m.mt ? { mt: m.mt } : {}, m.yr ? { yr: m.yr } : {}, f && (f.w || f.ok) ? { fx: f.w ? { st: 'wait', f: f.w } : { st: 'ok', f: f.ok, at: f.sat || 0 } } : f && f.none ? { fx: { st: 'nil' } } : {}));
+        }
       }
-      return answer(200, { songs: out });
+      return answer(200, { songs: out, john: await uplJohnAll(env) });
+    }
+    case 'upledit': {   // John's choices for a song on members' playlists: v (a YouTube id, '' none, null theirs again), m and g (up to two each, null theirs again)
+      const t = String(body.track || ''), J = await uplJohnAll(env), e = J[t] || {};
+      if (!ID_RE.test(t)) return answer(400, { error: 'Which song?' });
+      if ('v' in body) {
+        if (body.v === null) delete e.v;
+        else if (body.v === '' || /^[\w-]{11}$/.test(String(body.v))) e.v = String(body.v);
+        else return answer(400, { error: 'That isn’t a YouTube video.' });
+      }
+      for (const [k, list] of [['m', MOOD_LIST], ['g', GENRE_LIST]]) {
+        if (body[k] === null) delete e[k];
+        else if (Array.isArray(body[k])) e[k] = body[k].filter(x => list.includes(x)).slice(0, 2);
+      }
+      if (Object.keys(e).length) J[t] = e; else delete J[t];
+      await env.SOTD.put('uplJohn', JSON.stringify(J));
+      if ('v' in body) await startJob(env, null, null, 0, null, true).catch(() => {});   // (their YouTube copies)
+      return answer(200, { ok: true, john: J });
+    }
+    case 'uplfacts': {   // a public playlist's song's facts, edited (and signed off: sign) by John, as its owner can
+      const U = await uplAll(env), pid = String(body.pid || ''), t = String(body.track || '');
+      if (!U[pid]) return answer(404, { error: 'No such playlist.' });
+      const fx = (await env.SOTD.get('ufacts:' + pid, 'json')) || {}, e = fx[t];
+      if (!e || !(e.w || e.ok)) return answer(404, { error: 'No facts for it yet.' });
+      const was = e.w || e.ok, clean = l => (Array.isArray(l) ? l : []).map(x => String(x || '').replace(/\s+/g, ' ').trim().slice(0, 400)).filter(Boolean).slice(0, 8);
+      const got = { s: clean(body.s), a: (was.a || []).map(x => ({ id: x.id, n: x.n, f: clean((body.a || {})[x.id]) })) };
+      if (body.sign) { e.ok = got; delete e.w; e.sat = Date.now(); e.by = 'John'; } else if (e.w) e.w = got; else e.ok = got;
+      fx[t] = e; await env.SOTD.put('ufacts:' + pid, JSON.stringify(fx));
+      return answer(200, { ok: true, fx: e.w ? { st: 'wait', f: e.w } : { st: 'ok', f: e.ok, at: e.sat || 0 } });
     }
     case 'uplcheck': {   // a member's playlist read from Spotify now (once John has joined it)
       const U = await uplAll(env), rec = U[body.id];
@@ -2846,6 +2878,9 @@ async function uplListSaved(env, member, l, gone) {   // a saved playlist saved 
   await uplListSync(env, e[0], e[1], l, Date.now());
   await uplPut(env, U);
 }
+// John's own choices for a song on members' playlists (the Songs tab): its video (v: a YouTube id, '' none), moods (m)
+// and genres (g), on every playlist with it, over its owner's (KV uplJohn { <track>: { v, m, g } })
+async function uplJohnAll(env) { return (await env.SOTD.get('uplJohn', 'json')) || {}; }
 async function uplTracks(env) {   // every track on members' playlists (for Open in Spotify)
   const U = await uplAll(env), out = [];
   for (const pid of Object.keys(U)) for (const x of (await uplSongs(env, pid)).songs) out.push(x.id);
@@ -3009,13 +3044,14 @@ async function uplSync(request, env) {
     if (n) await uplPut(env, U);
     return answer(200, { ok: true, kept: n });
   }
-  const pv = Object.assign({}, pvMem, (await env.SOTD.get('previews', 'json')) || {}), tags = (await env.SOTD.get('tags', 'json')) || {}, out = {};
+  const pv = Object.assign({}, pvMem, (await env.SOTD.get('previews', 'json')) || {}), tags = (await env.SOTD.get('tags', 'json')) || {}, out = {}, J = await uplJohnAll(env);
   for (const [pid, rec] of Object.entries(U)) {
     if (rec.st !== 'ok' || !all[rec.o]) continue;
     const data = await uplSongs(env, pid);
     const ed = data.ed || {};   // (ov: its owner's video for a song, '' none)
     const gone = new Set((data.songs || []).filter(x => uplGone(data, x)).map(x => x.id));
-    out[pid] = { title: uplTitle(all, rec), mode: rec.mode, base: rec.base || 0, yt: rec.yt || '', share: uplShareOf(rec), songs: composeSongs(data.songs || [], pv, tags).filter(x => !gone.has(x.id)).map(x => ed[x.id] && 'v' in ed[x.id] ? Object.assign(x, { ov: ed[x.id].v }) : x) };
+    out[pid] = { title: uplTitle(all, rec), mode: rec.mode, base: rec.base || 0, yt: rec.yt || '', share: uplShareOf(rec), songs: composeSongs(data.songs || [], pv, tags).filter(x => !gone.has(x.id))
+      .map(x => J[x.id] && 'v' in J[x.id] ? Object.assign(x, { ov: J[x.id].v }) : ed[x.id] && 'v' in ed[x.id] ? Object.assign(x, { ov: ed[x.id].v }) : x) };   // (John's video over its owner's)
     if (uplShareOf(rec) === 'public') {   // its songs out, each with its day and cover: the cards for its links (share_pages.py)
       const v = await uplView(env, all, null, pid, rec);
       out[pid].pub = { t: v.t, n: v.n, songs: v.songs.map(x => ({ id: x.id, d: x.d, title: x.title, artist: x.artist, artists: x.artists, img: x.img || '' })) };
@@ -3092,7 +3128,7 @@ async function uplView(env, all, viewer, pid, rec) {   // a playlist as the cale
   const tags = (await env.SOTD.get('tags', 'json')) || {};
   const days = uplDays(data.songs || [], rec);
   const meta = (await env.SOTD.get('uplmeta', 'json')) || {}, facts = (await env.SOTD.get('ufacts:' + pid, 'json')) || {}, wanted = new Set(uplShareOf(rec) === 'public' ? uplFactsWanted(rec, data) : []);
-  const cat = await catalog(env);   // John's own (the Songs tab's): a song's that he has, its owner's of that kind aren't used
+  const cat = await catalog(env), J = await uplJohnAll(env);   // John's own (the Songs tab's): a song's that he has, its owner's of that kind aren't used
   const ed = data.ed || {}, files = data.files || {}, see = mine ? { a: true, v: true } : viewer && all[viewer] ? mediaFor(all[viewer]) : { a: false, v: false }, exp = Math.floor(Date.now() / 1000) + LINK_HOURS * 3600;
   const gone = new Set((data.songs || []).filter(x => uplGone(data, x)).map(x => x.id));
   let songs = composeSongs(data.songs || [], pv, tags).map((x, i) => Object.assign(x, { d: days[i].d }, uplWaiting(rec, data, data.songs[i]) ? { w: 1 } : {}, days[i].d > today ? { f: 1 } : {}))
@@ -3105,6 +3141,12 @@ async function uplView(env, all, viewer, pid, rec) {   // a playlist as the cale
     if (mine) { if (fx && fx.w) x.fxw = fx.w; x.fxs = fx && fx.w ? 'wait' : fx && fx.ok ? 'ok' : fx && fx.none ? 'nil' : wanted.has(x.id) ? 'asked' : uplShareOf(rec) === 'public' ? 'none' : 'off'; }
     if (e && 'v' in e) x.ov = e.v;
     if (e && (e.m || e.g)) x.tg = { m: e.m || null, g: e.g || null };   // (null: the ones worked out)
+    const jo = J[x.id];   // John's, over theirs (jo, for its owner's editor: which are his)
+    if (jo) {
+      if ('v' in jo) x.ov = jo.v;
+      if (jo.m || jo.g) x.tg = { m: jo.m || (x.tg && x.tg.m) || null, g: jo.g || (x.tg && x.tg.g) || null };
+      if (mine) x.jo = { v: 'v' in jo ? 1 : 0, m: jo.m ? 1 : 0, g: jo.g ? 1 : 0 };
+    }
     const jc = cat[x.id] || {};
     if (mine && (jc.a || jc.v)) x.jf = { a: jc.a || 0, v: jc.v || 0 };   // (its owner's editor: John's, with their sizes)
     if (f) {

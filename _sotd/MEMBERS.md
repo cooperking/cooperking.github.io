@@ -397,12 +397,21 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   for (the Songs tab's) plays his, for those he lets have them; its owner can't add their own of that kind (John, 31
   Oct 2026: "if I already have the song, they can't upload one of their own"): the editor says "Already uploaded", and
   to John shows it as the Songs tab does ("Song · 4.2 MB"), from `jf` on the song in its owner's view. One they added
-  before John's isn't given while his is there, and is again if he takes his away. The Songs tab lists the songs out on
-  members' playlists too (John, 31 Oct 2026: "I still can't see newly published songs in my songs section in admin"),
-  those that aren't his, each once, among his by day (newest first), under All and *Members’*, and in *No MP3* and *No
-  MP4*: each card says where it is (its calendar and day, or its playlist, each a link), plays its preview, and has
-  *Add song (MP3)* and *Add video (MP4)*, uploaded as his own are (`a/<track>.mp3`, `v/<track>.mp4`); no covers, which
-  are for his days. From admin op `uplsongs`. Test: `songs_members_t.py`.
+  before John's isn't given while his is there, and is again if he takes his away.
+- **Member Songs on the Songs tab** (John, 31 Oct 2026: "I still can't see newly published songs in my songs section
+  in admin"; "Change Members' to Member Songs. Say who the Member is - make sure songs have all the same options as my
+  songs"; "All should be all songs including playlists"): the songs out on members' playlists that aren't his, each
+  once, among his by day in All, under *Member Songs*, and in Waiting, Still picture, No MP3 and No MP4. Each card says
+  whose and where ("Mum’s Sunday Picks · 28 Oct 2026", "Member: Mum"; his own member's "Your …", "Member: you"), lists
+  every playlist it's on, and has the same sections as his: moods and genres, video, facts, his own MP3, MP4 and
+  covers. His moods, genres and video (only those he changed; admin op `upledit`, KV `uplJohn`) win over its members'
+  on every playlist with it, and its YouTube copies (John: "Mine wins"); their editor shows them as "Chosen by John",
+  not to change (`jo` on the song in its owner's view). Its facts are its public playlist's, as written for it (John:
+  "Public ones; I can sign off"): waiting ones are in Waiting, and his *Sign off* puts them out as he left them (admin
+  op `uplfacts`), as its owner's would; one on no public playlist says it has none. The folder upload matches files to
+  member songs too, reads them on the computer first (nothing goes up until *Upload*), and leaves a file it can't match
+  unticked and not uploaded unless a song is picked for it. From admin op `uplsongs` (each song's playlists, whose,
+  `oj` for John's own member, its finds, its facts, and John's choices). Test: `songs_members_t.py`.
 - **Facts, for public playlists' songs** (John, 31 Oct 2026, asked which: "Public playlists only"): written and checked
   by John's facts task as his are (`_sotd/FACTS.md`), for the songs on a playlist set to Public that were added after it
   was added to the calendar, the 10 newest from before that (John, 31 Oct 2026, offered the same 10 its
