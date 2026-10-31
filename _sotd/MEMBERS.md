@@ -366,7 +366,9 @@ still to come: facts, written for new songs and on request for older ones, check
   doesn't search for it. Removing the playlist (or the member) removes its files.
 - **Facts, for public playlists' songs** (John, 31 Oct 2026, asked which: "Public playlists only"): written and checked
   by John's facts task as his are (`_sotd/FACTS.md`), for the songs on a playlist set to Public that were added after it
-  was, and an older one when its owner taps *Ask for facts* in its editor (10 a day; `fask` in `upl:<id>`). The Worker's
+  was added to the calendar, the 10 newest from before that (John, 31 Oct 2026, offered the same 10 its
+  YouTube copy starts with: "let's do that"), and any other when its owner taps *Ask for facts* in its editor (10 a day; `fask` in
+  `upl:<id>`). The Worker's
   `/upl/sync` lists them (`facts`); `_sotd/upl_sync.py` writes them with John's songs into `songs-facts.json`, which
   about.py gathers sources for (each marked `upl`), so `facts_todo.py` and `facts_ask.py` take each once. `facts_add.py`
   puts them in `_sotd/data/upl-facts.json`, not John's waiting list, and the site job sends that to the Worker

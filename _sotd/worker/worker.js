@@ -2995,9 +2995,12 @@ async function uplData(request, env) {
 // which the site job sends here (/upl/facts); each waits for its owner (the Edit pop-up: edit, Sign off), then shows
 // on their calendar. KV ufacts:<pid> { <track>: { w: written, waiting, ok: signed off, none: none could be found, at, sat } }, each { s: [song
 // facts], a: [{ id, n: the artist's name, f: [facts] }] }. ----------
-function uplFactsWanted(rec, data) {   // a public one's songs wanting facts: added since it was added, or asked for
+const UPL_FACTS_FIRST = 10;   // a public one's newest songs from before it was added that get facts
+function uplFactsWanted(rec, data) {   // a public one's songs wanting facts: added since it was added, its 10 newest from before, or asked for
   if (uplShareOf(rec) !== 'public') return [];
-  return (data.songs || []).filter(x => Date.parse(x.a) > (rec.base || 0) || (data.fask || {})[x.id]).map(x => x.id);
+  const songs = data.songs || [], base = rec.base || 0, ask = data.fask || {};
+  const first = new Set(songs.filter(x => Date.parse(x.a) <= base).slice(-UPL_FACTS_FIRST).map(x => x.id));
+  return songs.filter(x => Date.parse(x.a) > base || first.has(x.id) || ask[x.id]).map(x => x.id);
 }
 async function uplFactsIn(request, env) {   // POST the facts task's _sotd/data/upl-facts.json (the site job's token): each new one waits for its owner
   const answer = (status, body) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' } });

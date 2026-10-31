@@ -14,7 +14,7 @@ copy there too).
 Writes OUT.json: John's songs.json, then the songs in or looked at from members' playlists that aren't his (numbered
 from 100001, with upl: the playlist's id), and beside it upl-playlists.json (each playlist's title, kind, songs in order
 and which are in) for youtube_upl.py, and songs-facts.json: John's songs and the songs on members' public playlists
-that want facts (facts: new since it was added, or asked for by its owner), for about.py's sources and so John's facts
+that want facts (facts: new since it was added, its 10 newest from before, or asked for by its owner), for about.py's sources and so John's facts
 task. Without the token, or an answer from the Worker, OUT.json is John's songs alone (and neither of the others).
 """
 import datetime, json, os, sys, urllib.request

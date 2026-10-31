@@ -29,8 +29,8 @@ checked facts went live straight away.)
 - `_sotd/data/sources.json`: what the facts are written from first: the English Wikipedia articles on each song, album
   and artist, and MusicBrainz's details on each artist. The job song-tags.yml adds each new song's (`_sotd/about.py`).
 - `_sotd/data/upl-facts.json`: facts for songs on members' public playlists (John, 31 Oct 2026: public playlists only,
-  as the repository is public), written and checked the same way: new songs (added after the playlist was) and older
-  ones their owner asks for. Their sources carry `upl` (the playlist) in `sources.json`, `todo.md` marks them, and
+  as the repository is public), written and checked the same way: new songs (added after the playlist was added to the
+  calendar), its 10 newest from before that, and older ones their owner asks for. Their sources carry `upl` (the playlist) in `sources.json`, `todo.md` marks them, and
   `facts_add.py` puts them here instead of `facts-pending.json`. The site job sends them to the Worker
   (`_sotd/upl_facts.py send`), where each waits for its owner, who edits and signs them off in the calendar's Edit
   pop-up; they show only on that playlist's calendar. A playlist no longer public loses them and its sources here
