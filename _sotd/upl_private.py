@@ -108,17 +108,24 @@ def save():
         with open(ALL, encoding='utf-8') as f:
             songs = json.load(f)['songs']
         john = {s['id'] for s in songs if not s.get('upl')}
-        theirs = {s['id'] for s in songs if s.get('upl')} | kept
+        theirs = {s['id'] for s in songs if s.get('upl')}
         for rec in (state.get('playlists') or {}).values():
             theirs |= set(rec.get('in') or {}) | set(rec.get('look') or {}) | set(rec.get('added') or {})
         theirs -= john
+        # songs kept before that are on no member's playlist now (its playlist deleted, or taken off it) and aren't
+        # John's: gone from the files and from the Worker (John, 1 Nov 2026: "AaBbCc and Potench playlists have been
+        # deleted now so the songs should be deleted fully")
+        gone = kept - theirs - john
     except (OSError, ValueError, KeyError):   # no song list this run: just those kept before (all that load put back)
-        theirs = kept
+        theirs, gone = kept, set()
     out, moved = {'files': {}, 'upl': state}, 0
     for path, key, how in FILES:
         if not os.path.exists(os.path.join(ROOT, path)):
             continue
         data = read(path)
+        if gone and any(t in gone for t in data.get(key) or {}):
+            data[key] = {t: e for t, e in data[key].items() if t not in gone}
+            write(path, data, how)
         part = {t: e for t, e in (data.get(key) or {}).items() if t in theirs}
         for t, e in (((base.get('files') or {}).get(path) or {}).get(key) or {}).items():   # (kept before, not in the file now)
             if t in theirs and t not in part:
@@ -131,7 +138,7 @@ def save():
     p = os.path.join(ROOT, STATE)
     if os.path.exists(p):
         os.remove(p)
-    print(f'members’ songs: {len(theirs)} songs out of {moved} files and {STATE}')
+    print(f'members’ songs: {len(theirs)} songs out of {moved} files and {STATE}' + (f'; {len(gone)} on no member’s playlist now, deleted' if gone else ''))
     try:
         r = call('POST', out)
         note(f"members’ songs: {len(theirs)} kept in the Worker, {r.get('songs')} with a video, moods or a year")

@@ -508,6 +508,20 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   marked `f: 1` to come and `w: 1` waiting; opened in a browser it's still only those out. An import switched for
   another keeps its old link working (`prev` on the new one). The Members tab has *Copy push link* on each playlist
   (from `/upl/links`), for a row in the sheet.
+- **A deleted playlist goes fully** (John, 1 Nov 2026: "AaBbCc and Potench playlists have been deleted now so the songs
+  should be deleted fully. And part of the process of deleting a playlist should be to remove it from the csv"):
+  - The Worker (as before, `uplDrop`): its songs, days, facts, picture, and its owner's MP3s, MP4s and covers.
+  - What the site job found for its songs (videos, moods, years, listening, searches): a song on no member's playlist
+    now and not John's is deleted from the files and from the Worker's store (`upl_private.py save`, `gone`). Before,
+    that store kept every song it had ever seen.
+  - Its YouTube copy (`rec.yt`): queued in KV `ytdrop` (`/upl/ytdrop`, for the site job) and deleted on John's channel
+    by `youtube_upl_drop.py`, in the YouTube playlist step.
+  - The previews and covers kept here (`sp/`): a copy no song uses any more is deleted by the timer (`spKeep`, 200
+    looked at a run; only once John's songs and the previews have been read).
+  - The Playlist push sheet (John's Google Drive; its Apps Script "Playlist push" emails him and starts the
+    `cooperking/playlist-r2` downloads from the sheet's published CSV): it added rows and never took any out.
+    `_sotd/playlist-push/remove-gone-rows.gs` is the change for it, pasted in by John: a member playlist's row comes
+    out once the Worker stops listing it, and a YouTube playlist's once it's gone from YouTube.
 - **Songs still to come on its owner's calendar** (John, 1 Nov 2026: "Can the whole playlist be added as normal but the
   clickable playlist on the screen only show the current playlist"): every song is still sent to the site job for its
   video, moods and year, days to come too, and shows (faded) on its owner's calendar to move; but what plays or lists

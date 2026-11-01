@@ -64,6 +64,7 @@ export default {
     if (url.pathname === '/upl/data') return await uplData(request, env);
     if (url.pathname === '/upl/facts') return await uplFactsIn(request, env);
     if (url.pathname === '/upl/links') return await uplLinks(request, env);
+    if (url.pathname === '/upl/ytdrop') return await uplYtDrop(request, env);
     if (url.pathname.startsWith('/yt/')) return await ytList(request, url, env);
       if (url.pathname === '/login') return await login(url);
       if (url.pathname === '/callback') return await callback(request, url, env);
@@ -346,7 +347,8 @@ async function makePlaylist(request, url, env) {
 // being downloaded and not streamed from Spotify"): songs give this Worker's /sp/p/<id>.mp3 and /sp/c/<id>.jpg, which
 // serve R2's copy (sp/p/, sp/c/), fetching it from Spotify and keeping it the first time it's asked for. The timer
 // copies the ones not asked for yet, a few each run (spKeep; KV spkept: which are kept). A cover asked for at another
-// size than any kept is served at one that is, once Spotify has none. ----------
+// size than any kept is served at one that is, once Spotify has none. Copies no song uses any more are deleted by the
+// timer too, 200 looked at a run. ----------
 const SP_SIZES = ['ab67616d0000b273', 'ab67616d00001e02', 'ab67616d00004851'];
 function keptPreview(id) { return LIVE_ORIGIN + '/sp/p/' + id + '.mp3'; }
 function keptCover(u) { const m = /^https:\/\/i\.scdn\.co\/image\/([0-9a-f]{40})$/.exec(u || ''); return m ? LIVE_ORIGIN + '/sp/c/' + m[1] + '.jpg' : u; }
@@ -385,20 +387,39 @@ async function spCopy(env, kind, id) {   // Spotify's copy into R2: its bytes, o
   return b;
 }
 const SP_KEEP_RUN = 20;   // (copies a timer run: well inside a run's requests)
-async function spKeep(env) {   // the previews and covers not kept yet, from John's songs and every member's playlist
+async function spKeep(env) {   // the previews and covers not kept yet, from John's songs and every member's playlist; and copies no song uses, deleted
   if (!env.MEDIA) return;
   const kept = (await env.SOTD.get('spkept', 'json')) || {}, pv = Object.assign({}, pvMem, (await env.SOTD.get('previews', 'json')) || {});
-  const now = Date.now(), want = [], seen = new Set(), add = (k, id) => { const key = k + id, e = kept[key]; if (e !== 1 && !(e < 0 && now + e < 7 * 864e5) && !seen.has(key)) { seen.add(key); want.push([k, id]); } };   // (1 kept; -when: Spotify had none then, asked again a week on)
+  const now = Date.now(), want = [], seen = new Set(), used = new Set();   // used: every preview id, and every cover by its picture (any size)
+  const add = (k, id) => { const key = k + id, e = kept[key]; if (e !== 1 && !(e < 0 && now + e < 7 * 864e5) && !seen.has(key)) { seen.add(key); want.push([k, id]); } };   // (1 kept; -when: Spotify had none then, asked again a week on)
+  let songsSeen = 0;
   const take = x => {
-    if (pv[x.id] && pv[x.id] !== '-') add('p', pv[x.id]);
-    const m = /\/image\/([0-9a-f]{40})$/.exec(x.img || ''); if (m) add('c', m[1]);
+    songsSeen++;
+    if (pv[x.id] && pv[x.id] !== '-') { add('p', pv[x.id]); used.add('p' + pv[x.id]); }
+    const m = /\/image\/([0-9a-f]{40})$/.exec(x.img || ''); if (m) { add('c', m[1]); used.add('c' + m[1].slice(16)); }
   };
   for (const pid of Object.keys(await uplAll(env))) ((await uplSongs(env, pid)).songs || []).forEach(take);   // (members' first: theirs can't be had again)
-  (((await env.SOTD.get('songsLast', 'json')) || {}).songs || []).forEach(take);
+  const last = (((await env.SOTD.get('songsLast', 'json')) || {}).songs || []);
+  last.forEach(take);
   let n = 0;
   for (const [k, id] of want.slice(0, SP_KEEP_RUN)) {
     const there = await env.MEDIA.head('sp/' + k + '/' + id + (k === 'p' ? '.mp3' : '.jpg')).catch(() => null);
     kept[k + id] = there || await spCopy(env, k, id) ? 1 : -now; n++;
+  }
+  // copies no song uses any more (its playlist deleted, or the song taken off): a page of R2's sp/ a run, on from where
+  // the last stopped (KV spcursor). Only with John's songs read, so a failed read never empties it.
+  if (last.length && songsSeen >= last.length && Object.keys(pv).length) {   // (and the previews read: else a song's preview copy would look unused)
+    const cur = (await env.SOTD.get('spcursor')) || undefined;
+    const l = await env.MEDIA.list({ prefix: 'sp/', cursor: cur, limit: 200 }).catch(() => null);
+    if (l) {
+      for (const o of l.objects || []) {
+        const m = /^sp\/(p|c)\/([0-9a-f]+)\.(mp3|jpg)$/.exec(o.key); if (!m) continue;
+        const ref = m[1] === 'p' ? 'p' + m[2] : 'c' + m[2].slice(16);
+        if (used.has(ref)) continue;
+        await env.MEDIA.delete(o.key).catch(() => {}); delete kept[m[1] + m[2]]; n++;
+      }
+      if (l.truncated && l.cursor) await env.SOTD.put('spcursor', l.cursor); else await env.SOTD.delete('spcursor');
+    }
   }
   if (n) await env.SOTD.put('spkept', JSON.stringify(kept));
 }
@@ -3139,6 +3160,8 @@ function uplAdmin(all, U) {   // the Members tab: every playlist, whose, and whe
 async function uplPut(env, U) { await env.SOTD.put('upls', JSON.stringify(U)); }
 async function uplDrop(env, pids) {
   const U = await uplAll(env);
+  const yt = pids.map(pid => U[pid] && U[pid].yt).filter(Boolean);
+  if (yt.length) { const q = (await env.SOTD.get('ytdrop', 'json')) || []; await env.SOTD.put('ytdrop', JSON.stringify([...new Set(q.concat(yt))])); }   // (its YouTube copy: deleted by the site job, youtube_upl_drop.py)
   for (const pid of pids) {
     delete U[pid]; await env.SOTD.delete('upl:' + pid); await env.SOTD.delete('ufacts:' + pid);
     if (env.MEDIA) await env.MEDIA.delete('up/' + pid + '.jpg').catch(() => {});   // (its picture)
@@ -3310,6 +3333,19 @@ async function ytList(request, url, env) {
   if (json) return answer(200, { t: view.n, songs: out });
   if (!out.length) return new Response('No videos on “' + view.n + '” yet.', { status: 404, headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' } });
   return new Response(null, { status: 302, headers: { 'Cache-Control': 'no-store', Location: 'https://www.youtube.com/watch_videos?video_ids=' + out.slice(0, 50).map(x => x.v).join(',') + '&title=' + encodeURIComponent(view.n) } });
+}
+// /upl/ytdrop, for the site job only: the YouTube copies of playlists taken off the calendar, to delete (John, 1 Nov
+// 2026: "AaBbCc and Potench playlists have been deleted now so the songs should be deleted fully"). GET { ids };
+// POST { done: [ids] } takes those off the list.
+async function uplYtDrop(request, env) {
+  const answer = (status, body) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' } });
+  if (!await ghJob(request)) return answer(401, { error: 'For the site job only.' });
+  const q = (await env.SOTD.get('ytdrop', 'json')) || [];
+  if (request.method === 'GET') return answer(200, { ids: q });
+  const b = await request.json().catch(() => ({})), done = new Set(Array.isArray(b.done) ? b.done.map(String) : []);
+  const left = q.filter(x => !done.has(x));
+  if (left.length !== q.length) await env.SOTD.put('ytdrop', JSON.stringify(left));
+  return answer(200, { ok: true, left: left.length });
 }
 async function uplLinks(request, env) {
   const answer = (status, body) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' } });

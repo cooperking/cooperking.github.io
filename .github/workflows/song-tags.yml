@@ -140,7 +140,10 @@ jobs:
           YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
           YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
           YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
-        run: python _sotd/youtube_playlist.py
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python _sotd/youtube_playlist.py
+          python _sotd/youtube_upl_drop.py || echo "deleted playlists' YouTube copies: left for the next run"
 
       - name: Other uploads to offer for still-picture videos (admin page)
         run: python _sotd/video_alts.py
