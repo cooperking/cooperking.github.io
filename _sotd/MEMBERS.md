@@ -533,6 +533,14 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   every calendar and playlist they can see, John's and `otherLoad`'s, tapped to add; saved as one of their saved
   playlists, on all their devices), Import from Spotify, and Select: tick any or Select all, then Delete (saved
   playlists deleted, calendar ones removed, after asking). Not on the TV.
+- **Edit happens on the page** (John, 1 Nov 2026: "I want all the edit actions on the playlist popup to actually happen
+  directly on the page when you click edit. It needs to be more obvious ... where you can edit things and how to
+  setup"): Edit opens a panel at the top of the calendar or playlist (`#pageedit`, `peOn`/`peOff`/`peDraw`), not the
+  pop-up: its name in a box to type in, its picture (Add or Change, Use its covers), its setup as cards to tap (the
+  pop-up's `#mineset`, moved onto the page while editing, saving as before: calendar or playlist, which day each song
+  is on, who sees it, notifications), its songs (each with edit and take off; a playlist's with up and down), and
+  Update from Exportify or Check now, and Remove it. A calendar's days are editable on the calendar itself meanwhile
+  (drag, or hold to take off). Done (on the panel or the days bar) puts it all back. The pop-up keeps its own Setup.
 - **Edit, on their own calendar or playlist** (John, 1 Nov 2026: "Could there be a noticeable edit button on my
   playlists. it shows all the edit options for the calendar from the calendar too, same with if it's a playlist"): a
   filled Edit button by the calendar (a playlist: above its list), for its owner, in place of Edit days. It opens its
