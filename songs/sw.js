@@ -19,6 +19,7 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   const req = e.request;
+  if (req.method === 'POST' && new URL(req.url).pathname === new URL(self.registration.scope).pathname + 'share-target') { e.respondWith(shared(req)); return; }
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.origin === location.origin && url.pathname.includes('/__offline/')) { e.respondWith(song(req, url)); return; }
@@ -122,4 +123,17 @@ async function readLater(id) {
     if (!list.includes(id)) list.push(id);
     await c.put('read', new Response(JSON.stringify(list.slice(-50))));
   } catch (err) {}
+}
+
+// A file shared to the app (Android's share sheet: the manifest's share_target): an Exportify .zip or .csv, kept for the
+// page, which then opens with ?shared=1 and takes it into Import from Spotify.
+async function shared(req) {
+  try {
+    const f = (await req.formData()).get('file');
+    if (f && f.size) {
+      const c = await caches.open('sotd-shared');
+      await c.put('/songs/shared-file', new Response(f, { headers: { 'Content-Type': f.type || 'application/octet-stream', 'X-Name': encodeURIComponent(f.name || 'playlists.zip') } }));
+    }
+  } catch (x) {}
+  return Response.redirect(self.registration.scope + '?shared=1', 303);
 }
