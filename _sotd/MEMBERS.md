@@ -304,7 +304,9 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   (from Capacitor's App plugin: `appUrlOpen` or `getLaunchUrl`). Either way it opens Import from Spotify at its
   playlists. Tests: `csv_t.mjs` (the Worker), `zip_t.js` (the draft: both kinds of zip, the picker, update, switch, one
   CSV, a shared file).
-- **The Calendars page** (John, 1 Nov 2026: "Rather than the drop down could we have a click that opens a page and shows
+- **The Calendars and Playlists page**, each card but John's titled by its playlist's name (John, 1 Nov 2026: "Can the
+  Calendars section be called Calendars and Playlists and, apart from the original, each one just be titled by the
+  playlist name") (John, 1 Nov 2026: "Rather than the drop down could we have a click that opens a page and shows
   them nicely. Could they have an image that they choose for it, with a default if there isn't"): tapping the
   calendar's name at the top opens a page of cards: John's first (the app's icon in the month's colours), then the
   member's own, then the others they see; each with its picture, name, whose it is and its songs, the one showing
@@ -422,7 +424,9 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   only to them and only by its owner. Private: no Share. A song sent to the members has its card drawn on the page,
   with its calendar's name. Someone not signed in opening a public one's link sees it, with the title's chooser to go
   back to John's; one that isn't public says "That calendar is for members." and shows John's.
-- **The Profile's Playlists** (John, 31 Oct 2026: "can there not be a distinction between Spotify Playlists and
+- **The Profile's Playlists**: each a box that opens it, tapped anywhere, its *Notifications* above it (John, 1 Nov 2026:
+  "Can a playlist just be opened by clicking on the whole playlist not just the small open button notifications can be
+  above each box"; until then an *Open* button) (John, 31 Oct 2026: "can there not be a distinction between Spotify Playlists and
   Playlists on the user profile - just list them all, alphabetically"): one list, A–Z, of those saved from My playlist
   and their Spotify ones, each with *Open* (John, 31 Oct 2026: "Playlists in the members section should just say open
   like other playlists, editing should be inside the edit box"), and for one on the calendar *Notifications On* (red)

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="f1e7c36da7f5">
+<meta name="sotd-build" content="5df5cf0cb1fa">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -404,7 +404,14 @@ html.upl-list .side-acts .listbtn { display: inline-grid; }
 .uplwait { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 10px; padding: 9px 12px; border-radius: 12px; border: 1px solid rgba(226, 58, 110, .45); background: rgba(226, 58, 110, .09); font: 500 13px/1.35 var(--sans); color: var(--fg); }
 .uplwait .copy { flex: none; }
 .ac-upls { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
-.ac-upls > li { border: 1px solid var(--line); border-radius: 14px; background: var(--pill-bg); padding: 10px 14px; display: grid; gap: 4px; }
+.ac-upls > li { display: grid; gap: 4px; }
+.ac-upls .box { border: 1px solid var(--line); border-radius: 14px; background: var(--pill-bg); padding: 10px 14px; display: grid; gap: 4px; }
+.ac-upls .box.opens { cursor: pointer; transition: border-color .15s, background .15s; }
+.ac-upls .box.opens:hover, .ac-upls .box.opens:focus-visible { border-color: var(--fg); outline: none; }
+.ac-upls .box.opens .nm::after { content: " ›"; color: var(--muted); }
+.ac-upls .above { display: flex; justify-content: flex-end; margin-bottom: -2px; }
+.ac-upls .above .ntf { border: 0; background: none; padding: 2px 2px 0; font: 600 10.5px/1.2 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); cursor: pointer; }
+.ac-upls .above .ntf.ntf-on { color: #c2185b; }
 .ac-upls .nm { font: 500 17px/1.2 var(--serif); overflow-wrap: anywhere; }
 .ac-upls .st { font-size: 12.5px; line-height: 1.35; color: var(--muted); }
 .ac-upls .st.warn { color: #c2185b; }
@@ -1901,10 +1908,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
 <dialog id="upldlg" aria-labelledby="uplh">
   <div class="sheet-in msgv">
     <div class="sheet-head">
-      <p class="mine-top"><span class="chip">Calendars</span></p>
+      <p class="mine-top"><span class="chip">Calendars and Playlists</span></p>
       <button class="close" id="uplclose" type="button" aria-label="Close"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 2l10 10M12 2 2 12"/></svg></button>
     </div>
-    <h3 id="uplh">Calendars</h3>
+    <h3 id="uplh">Calendars and Playlists</h3>
     <p class="msgv-w">Choose whose to show.</p>
     <div class="cal-grid" id="upll" role="list"></div>
     <input type="file" id="uplpicin" accept="image/*,.heic,.heif" hidden>
@@ -6995,7 +7002,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     uplMark(); render(); if (idx.open) renderIndex();
     if (/^#u=/.test(location.hash)) try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
   }
-  // ---- the Calendars page (John, 1 Nov 2026: "Rather than the drop down could we have a click that opens a page and
+  // ---- the Calendars and Playlists page, each but John's titled by its playlist's name (John, 1 Nov 2026: "Rather than the drop down could we have a click that opens a page and
   // shows them nicely. Could they have an image that they choose for it, with a default if there isn't"): John's first
   // (the app's icon in the month's colours), then their own, then the others they see; each with its owner's picture,
   // or else its newest four covers (from the Worker: ?cards=1). Its owner changes it here: a photo, cropped square. ----
@@ -7040,7 +7047,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var pls = uplPls().filter(function (p) { return !p.mine || p.st === 'ok'; });
     if (UPL.on && UPL.view && !pls.some(function (p) { return p.id === UPL.on; })) pls.push({ id: UPL.view.id, n: UPL.view.n, t: UPL.view.t, o: UPL.view.o, mode: UPL.view.mode, cnt: UPL.view.songs.length });   // (a public one, not signed in)
     var rows = [{ id: null, n: 'John’s Song of the Day', ct: 'John’s calendar · ' + songs.length + ' songs', pic: 'icon-512.png' }].concat(pls.map(function (p) {
-      return { id: p.id, n: p.mode === 'list' ? p.n : p.t || p.n, ct: (p.mode === 'list' ? (p.mine ? 'Your playlist' : p.o + '’s playlist') : (p.mine ? 'Your calendar' : p.o + '’s calendar')) + ' · ' + p.cnt + (p.cnt === 1 ? ' song' : ' songs'), pic: p.pic || '', mine: !!p.mine, p: p };
+      return { id: p.id, n: p.n, ct: (p.mode === 'list' ? (p.mine ? 'Your playlist' : p.o + '’s playlist') : (p.mine ? 'Your calendar' : p.o + '’s calendar')) + ' · ' + p.cnt + (p.cnt === 1 ? ' song' : ' songs'), pic: p.pic || '', mine: !!p.mine, p: p };
     }));
     if (UPL.john && !UPL.on) rows[0].ct = 'John’s calendar · ' + songs.length + ' songs';
     else if (UPL.john) rows[0].ct = 'John’s calendar · ' + UPL.john.length + ' songs';
@@ -7619,17 +7626,26 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (!rows.length && !PL.loaded) { var ld = document.createElement('li'); ld.className = 'ac-none plain'; ld.textContent = 'Loading…'; ul.appendChild(ld); }
     rows.forEach(function (r) { ul.appendChild(r.p ? uplAcctRow(r.p) : plAcctRow(r.l)); });
   }
-  function plAcctRow(l) {   // one saved from My playlist: Open makes it My playlist
-    var li = document.createElement('li');
-    var nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = l.name; li.appendChild(nm);
-    var pc = plOnCal(l), st = document.createElement('span'); st.className = 'st';
-    st.textContent = (pc ? uplStatus(pc) : 'A playlist · ' + l.tracks.length + (l.tracks.length === 1 ? ' song' : ' songs')) + (l.id === PL.cur ? ' · open as My playlist' : ''); li.appendChild(st);
-    var acts = document.createElement('div'); acts.className = 'acts';
-    var b = document.createElement('button'); b.type = 'button'; b.className = 'go'; b.textContent = 'Open'; b.setAttribute('aria-label', 'Open ' + l.name + ' as My playlist');
-    b.addEventListener('click', function () { plOpenPop(l); });
-    acts.appendChild(b);
-    if (pc) ntfButton(pc, acts, function () { plOpenPop(l, 'send'); });
-    li.appendChild(acts);
+  // each playlist a box that opens it, tapped anywhere (John, 1 Nov 2026: "Can a playlist just be opened by clicking on
+  // the whole playlist not just the small open button notifications can be above each box"); its Notifications above it
+  function acBox(li, label, open) {
+    var box = document.createElement('div'); box.className = 'box';
+    if (open) {
+      box.classList.add('opens'); box.setAttribute('role', 'button'); box.tabIndex = 0; box.setAttribute('aria-label', label);
+      box.addEventListener('click', function (e) { if (e.target.closest('button, a, input')) return; open(); });   // (its own buttons do their own thing)
+      box.addEventListener('keydown', function (e) { if (e.target === box && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); open(); } });
+    }
+    li.appendChild(box);
+    return box;
+  }
+  function acAbove(li, p, go) { var ab = document.createElement('div'); ab.className = 'above'; ntfButton(p, ab, go); li.appendChild(ab); }
+  function plAcctRow(l) {   // one saved from My playlist: it opens as My playlist
+    var li = document.createElement('li'), pc = plOnCal(l);
+    if (pc) acAbove(li, pc, function () { plOpenPop(l, 'send'); });
+    var box = acBox(li, 'Open ' + l.name + ' as My playlist', function () { plOpenPop(l); });
+    var nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = l.name; box.appendChild(nm);
+    var st = document.createElement('span'); st.className = 'st';
+    st.textContent = (pc ? uplStatus(pc) : 'A playlist · ' + l.tracks.length + (l.tracks.length === 1 ? ' song' : ' songs')) + (l.id === PL.cur ? ' · open as My playlist' : ''); box.appendChild(st);
     return li;
   }
   function plOpenPop(l, set) {   // a saved playlist opened as My playlist, in the pop-up (set: its setup's part to show)
@@ -7640,10 +7656,12 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       if (fav.length || set) { if (sheet.open && !theatre && !bgOn) closeDialog(sheet); renderMine(); openLayer(mine); mine.scrollTop = 0; if (set) setTimeout(function () { setGo(set); }, 80); }   // (the mini player plays on)
     });
   }
-  function uplAcctRow(p) {   // one of their Spotify playlists
+  function uplAcctRow(p) {   // one of their Spotify playlists (imported, or shared with John): it opens in the pop-up
     var li = document.createElement('li');
-    var nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = p.n; li.appendChild(nm);
-    var st = document.createElement('span'); st.className = 'st' + (p.st === 'err' ? ' warn' : ''); st.textContent = uplStatus(p); li.appendChild(st);
+    if (p.st === 'ok') acAbove(li, p, function () { mineUplOpen(p.id, { set: 'send' }); });
+    var box = acBox(li, 'Open ' + p.n, p.st === 'ok' ? function () { mineUplOpen(p.id); } : null);
+    var nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = p.n; box.appendChild(nm);
+    var st = document.createElement('span'); st.className = 'st' + (p.st === 'err' ? ' warn' : ''); st.textContent = uplStatus(p); box.appendChild(st);
     if ((p.wait || []).length) {
       var wb = document.createElement('div'); wb.className = 'waits';
       var wh = document.createElement('p'); wh.textContent = (p.wait.length === 1 ? '1 song waits' : p.wait.length + ' songs wait') + ' for you to sign off'; wb.appendChild(wh);
@@ -7660,11 +7678,11 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         op.addEventListener('click', function () { mineUplOpen(p.id, { track: w.id }); });   // (the playlist in the pop-up, at it)
         bs.appendChild(so); bs.appendChild(op); wi.appendChild(bs); wl.appendChild(wi);
       });
-      wb.appendChild(wl); li.appendChild(wb);
+      wb.appendChild(wl); box.appendChild(wb);
     }
     var acts = document.createElement('div'); acts.className = 'acts';
     uplActs(p, acts, false);
-    li.appendChild(acts);
+    if (acts.childNodes.length) box.appendChild(acts);
     return li;
   }
   function ntfButton(p, acts, go) {   // Notifications On (red) or Off; it opens their options
@@ -7675,10 +7693,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   function uplActs(p, acts, pop) {   // one of their playlists on the calendar (pop: in the My playlist pop-up; else Profile › Playlists)
     function act(label, cls, fn) { var b = document.createElement('button'); b.type = 'button'; b.textContent = label; if (cls) b.className = cls; b.addEventListener('click', fn); acts.appendChild(b); return b; }
-    if (!pop) {
-      if (p.st === 'ok') act('Open', 'go', function () { mineUplOpen(p.id); });   // (in the My playlist pop-up: its songs and its setup)
+    if (!pop) {   // (the box itself opens it, and its Notifications are above it: uplAcctRow)
       if (p.st === 'join') act('Send the invite link again', '', function () { uplLinkAgain(p); });
-      if (p.st === 'ok') ntfButton(p, acts, function () { mineUplOpen(p.id, { set: 'send' }); });
       if (p.src === 'csv') act('Update', '', function () { impOpen(); });
       if (p.st !== 'ok') act('Remove', 'x', function () { uplRemoveAsk(p); });
       return;
