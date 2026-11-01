@@ -26,6 +26,16 @@ checked facts went live straight away.)
   site, it came out with none, and the written ones were dropped; they were put back as waiting).
   There's no word limit at sign-off (no warning since 30 Oct 2026): the calendar makes room for a long fact (the panel
   under the video is as tall as its longest fact, and on the narrowest phones the day now stays inside its pop-up).
+- **A song out with no facts, or its facts to be redone** (John, 1 Nov 2026: "I published today's song before facts came
+  through. Now I can't see any facts. Could facts still be added to the facts section in admin, so they can be
+  republished"): a song signed off before its facts were written counts as out with none (`facts_todo.py` doesn't try a
+  song that's out again). On its card, *Write facts again* (the Worker's `/facts/redo`) starts song-tags.yml with
+  `facts_redo`: `facts_redo.py` puts it in `_sotd/data/facts-redo.json` and forgets its last ask, `facts_todo.py` and
+  `facts_ask.py` treat it as needing facts, and the job's last step starts the facts task; its facts come to the card
+  waiting for John (the card looks every 10 minutes for 3 hours), and `facts_add.py` takes it out of `facts-redo.json`.
+  He can also add his own on the card meanwhile (*+ Add your own*). The cards' buttons say what they do: *Sign off and
+  publish* (a song not out, or facts waiting), *Publish changes* (a song out), each "Goes live on the calendar within
+  about 2 minutes" (until then *Sign off* and *Save changes*, which published just the same).
 - `_sotd/data/sources.json`: what the facts are written from first: the English Wikipedia articles on each song, album
   and artist, and MusicBrainz's details on each artist. The job song-tags.yml adds each new song's (`_sotd/about.py`).
 - `_sotd/data/upl-facts.json`: facts for songs on members' public playlists (John, 31 Oct 2026: public playlists only,
@@ -67,7 +77,7 @@ lost). Before 28 Oct 2026 it waited for John's MP3 and video instead.
 5. `python3 _sotd/facts_add.py <work folder>/written.json <work folder>/verdicts.json`, then
    `python3 _sotd/facts_apply.py --offline` (which puts them on the Songs tab, waiting for John; not live, and not on
    the draft calendar either).
-6. Commit `songs/facts.json`, `_sotd/data/facts-pending.json`, `songs/facts-pending.json`, `songs/draft/facts.json`,
+6. Commit `songs/facts.json`, `_sotd/data/facts-pending.json`, `_sotd/data/facts-redo.json`, `songs/facts-pending.json`, `songs/draft/facts.json`,
    `_sotd/data/facts-quotes.json`, `songs/facts-quotes.json` and `_sotd/data/upl-facts.json` ("Song facts for <song>:
    written, waiting for John's sign-off", or for a member's song "…, waiting for its owner"), pull with rebase and push. (The song stays off the calendar and the share pages until John signs it off;
    his sign-off starts song-tags.yml, which makes its share page and sends the notification.)

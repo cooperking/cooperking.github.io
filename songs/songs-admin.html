@@ -514,13 +514,28 @@ body.dropping::after { content: 'Drop to match them (nothing goes up yet)'; posi
     }
     body.appendChild(fileSection(s));
     var foot = el('div', 'sfoot');
-    var go = el('button', 'btn primary', s.m && st.held.length ? (st.held.every(function (c) { return c.oj; }) ? 'Publish' : 'Publish for ' + heldWho(st.held)) : !s.m && !isOut(s.id) ? 'Sign off and publish' : st.st === 'waiting' ? 'Sign off' : 'Save changes'); go.type = 'button';
+    var go = el('button', 'btn primary', s.m && st.held.length ? (st.held.every(function (c) { return c.oj; }) ? 'Publish' : 'Publish for ' + heldWho(st.held)) : !s.m && !isOut(s.id) ? 'Sign off and publish' : st.st === 'waiting' ? 'Sign off and publish' : s.m ? 'Save changes' : 'Publish changes')   // (John, 1 Nov 2026: "It's not clear if Save changes means they are immediately published"); go.type = 'button';
     go.addEventListener('click', function () { if (s.m) msignoff([s]); else signoff([s]); });
     foot.appendChild(go);
     if (edits[s.id]) {
       var undo = el('button', 'btn', 'Discard changes'); undo.type = 'button';
       undo.addEventListener('click', function () { delete edits[s.id]; saveEdits(); redraw(s); counts(); });
       foot.appendChild(undo);
+    }
+    if (!s.m) foot.appendChild(el('span', 'stat', 'Goes live on the calendar within about 2 minutes.'));
+    if (!s.m && isOut(s.id) && st.st !== 'waiting') {   // out already: its facts written again (John, 1 Nov 2026: published before they came, it had none)
+      var asked = REDO[s.id] && Date.now() - REDO[s.id] < 3 * 3600e3;
+      var rw = el('button', 'btn', asked ? 'Facts asked for' : 'Write facts again'); rw.type = 'button'; rw.disabled = !!asked;
+      rw.addEventListener('click', function () {
+        rw.disabled = true; rw.textContent = 'Asking…';
+        api('/facts/redo', { track: s.id }).then(function (j) {
+          if (j.status !== 200) { rw.disabled = false; rw.textContent = 'Write facts again'; toast(j.error || 'Couldn’t ask just now'); return; }
+          REDO[s.id] = Date.now(); try { localStorage.setItem('sotd-facts-redo', JSON.stringify(REDO)); } catch (x) {}
+          toast('Asked: they’re written in about 15 minutes and come here to sign off'); redraw(s);
+        }).catch(function () { rw.disabled = false; rw.textContent = 'Write facts again'; toast('Couldn’t reach the Worker. Try again.'); });
+      });
+      foot.appendChild(rw);
+      if (asked) foot.appendChild(el('span', 'stat', 'Asked ' + new Date(REDO[s.id]).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) + ': they come here, waiting for you, in about 15 minutes. Your facts so far stay as they are until you sign the new ones off.'));
     }
     if (st.st === 'signed') foot.appendChild(el('span', 'stat', 'Signed off ' + new Date(st.at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })));
     if (st.st === 'waiting' && st.written) foot.appendChild(el('span', 'stat', 'Written ' + st.written));
@@ -614,7 +629,8 @@ body.dropping::after { content: 'Drop to match them (nothing goes up yet)'; posi
   // fine"); any that come go onto its card, into his changes too where he has made some (his moods, genres and video
   // kept). ----
   function noFacts(w) { return !(w.s || []).length && !Object.keys(w.a || {}).some(function (k) { return (w.a[k].f || []).length; }); }
-  function factsDue(s) { return !isOut(s.id) && state(s).st === 'none' && !signedW[s.id]; }
+  var REDO = {}; try { REDO = JSON.parse(localStorage.getItem('sotd-facts-redo') || '{}') || {}; } catch (e) {}   // (songs out whose facts John asked for again: when)
+  function factsDue(s) { return (!isOut(s.id) && state(s).st === 'none' && !signedW[s.id]) || (!s.m && REDO[s.id] && Date.now() - REDO[s.id] < 3 * 3600e3 && state(s).st !== 'waiting'); }
   setInterval(function () {
     if (!songs.length || !songs.some(factsDue) || document.hidden) return;
     getJSON('facts-pending.json').then(function (p) {

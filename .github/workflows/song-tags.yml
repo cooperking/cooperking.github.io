@@ -7,6 +7,9 @@ name: Song moods and genres
 on:
   workflow_dispatch:
     inputs:
+      facts_redo:
+        description: "A song already out (its Spotify track id): have its facts written again (the Songs tab's Write facts again)"
+        default: ""
       redo:
         description: "Re-analyse every song's audio"
         type: boolean
@@ -43,6 +46,11 @@ jobs:
       # a day, new ones at once), and the list the steps finding videos, moods and years work through (John's, then theirs)
       # what was found for their songs is kept in the Worker, not in this repository (upl_private.py): back in first;
       # without it, their songs are left out this run
+      - name: Facts asked for again (a song already out)
+        if: ${{ inputs.facts_redo != '' && inputs.facts_redo != null }}
+        env:
+          REDO: ${{ inputs.facts_redo }}
+        run: python _sotd/facts_redo.py "$REDO"
       - name: Members' playlists, their songs this run
         continue-on-error: true   # without it those steps take John's songs alone
         env:

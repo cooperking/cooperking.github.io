@@ -56,6 +56,13 @@ def main(args):
                          + (' (a member’s: waiting for its owner)' if s.get('upl') else ''))
     with open(PENDING, 'w', encoding='utf-8') as f:
         json.dump(pending, f, ensure_ascii=False, indent=1)
+    redo_p = os.path.join(HERE, 'data', 'facts-redo.json')   # (asked for again and now written: done with)
+    if os.path.exists(redo_p):
+        redo = json.load(open(redo_p, encoding='utf-8'))
+        left = {k: v for k, v in redo.items() if k not in pending['songs']}
+        if left != redo:
+            with open(redo_p, 'w', encoding='utf-8') as f:
+                json.dump(left, f, indent=1)
     if theirs['songs']:
         with open(THEIRS, 'w', encoding='utf-8') as f:
             json.dump(theirs, f, ensure_ascii=False, indent=1)

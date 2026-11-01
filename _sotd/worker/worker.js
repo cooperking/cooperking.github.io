@@ -71,6 +71,7 @@ export default {
       if (url.pathname === '/status') return await status(env);
       if (url.pathname === '/facts/signed') return await factsSigned(env);
       if (url.pathname === '/facts/signoff') return await factsSignoff(request, env);
+      if (url.pathname === '/facts/redo') return await factsRedo(request, env);
       if (url.pathname.startsWith('/members/')) return await members(request, url, env);
       if (url.pathname === '/push/check') return await pushCheck(request, env, ctx);
       if (url.pathname.startsWith('/m/')) return await mediaFile(request, url, env);
@@ -408,6 +409,28 @@ function cleanFact(f) {
   return u ? { t, u, src: String(f.src || '').slice(0, 200) } : { t, by: 'John' };
 }
 
+// POST /facts/redo { track } (John's admin password): a song of his already out, its facts written again (John, 1 Nov 2026:
+// "I published today's song before facts came through. Now I can't see any facts"): song-tags.yml with facts_redo
+// puts it in _sotd/data/facts-redo.json and starts the facts task, whose facts then wait on the Songs tab as a new song's.
+async function factsRedo(request, env) {
+  const h = factsHeaders(ADMIN_ORIGIN);
+  const answer = (status, body) => new Response(JSON.stringify(body), { status, headers: h });
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: h });
+  if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
+  if (!env.ADMIN_KEY) return answer(503, { error: 'The ADMIN_KEY secret is not set on the Worker.' });
+  const given = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
+  if (!given || await sha256hex(given) !== await sha256hex(env.ADMIN_KEY)) return answer(401, { error: 'Wrong password.' });
+  const body = await request.json().catch(() => ({})), track = String((body && body.track) || '');
+  if (!ID_RE.test(track)) return answer(400, { error: 'Which song?' });
+  if (!env.GH_TOKEN) return answer(503, { error: 'The GH_TOKEN secret is not set.' });
+  const r = await fetch('https://api.github.com/repos/' + REPO + '/actions/workflows/' + JOB + '/dispatches', {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + env.GH_TOKEN, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', 'User-Agent': 'SongOfTheDayWorker', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ref: 'main', inputs: { facts_redo: track } })
+  }).catch(e => ({ status: 0, text: async () => String(e) }));
+  if (r.status !== 204) return answer(502, { error: 'GitHub answered ' + r.status + ': ' + (await r.text()).slice(0, 160) });
+  return answer(200, { ok: true });
+}
 async function factsSignoff(request, env) {
   const h = factsHeaders(ADMIN_ORIGIN);
   const answer = (status, body) => new Response(JSON.stringify(body), { status, headers: h });

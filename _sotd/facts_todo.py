@@ -43,8 +43,10 @@ def main(out):
     years = load(os.path.join(HERE, 'data', 'years.json'), {'songs': {}})['songs']
     theirs = load(os.path.join(HERE, 'data', 'upl-facts.json'), {'songs': {}})['songs']
 
-    def has_live(tid):   # on the calendar already, even with no facts (nothing could be found): not tried again
-        return tid in live['songs'] or tid in live.get('signed', {})
+    redo = load(os.path.join(HERE, 'data', 'facts-redo.json'), {})   # (out already, asked for again by John: facts_redo.py)
+
+    def has_live(tid):   # on the calendar already, even with no facts (nothing could be found): not tried again, unless John asks
+        return (tid in live['songs'] or tid in live.get('signed', {})) and tid not in redo
     todo = sorted((s for tid, s in S['songs'].items() if (tid not in theirs if s.get('upl') else not has_live(tid) and tid not in pending['songs'])), key=lambda s: s['n'])
     os.makedirs(os.path.join(out, 'pages'), exist_ok=True)
     lines = []
