@@ -1,8 +1,8 @@
 name: iPhone app, public link
 # The family's TestFlight group (SOTD), hourly (_sotd/ios-app/public_link.py): the newest build goes to Beta App Review
 # once the one before is through, and once Apple has approved a build, the group's public link is turned on and put in
-# songs/ios.json, where invitations find it. Once both are done, this turns itself off (Actions > iPhone app, public
-# link > Enable workflow, to have it look again, e.g. after a new build).
+# songs/ios.json, where invitations find it, with the newest approved build (the calendar and the Worker tell older apps).
+# Once the newest build is through review, this turns itself off; ios.yml turns it on again after each new build.
 on:
   workflow_dispatch:
   schedule:
@@ -37,7 +37,7 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
             git add songs/ios.json
-            git commit -m "iPhone app: TestFlight's public link, for invitations"
+            git commit -m "iPhone app: TestFlight's public link and newest approved build"
             for i in 1 2 3 4 5; do git pull --rebase --quiet && git push && break; sleep 5; done
           fi
       - name: Off once there's nothing left to do

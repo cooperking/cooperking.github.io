@@ -33,6 +33,12 @@ to sign in with what was copied (the Clipboard plugin; iOS asks once whether it 
 `songs/ios.json` by itself once Apple approves a build (`public_link.py`, run hourly by `.github/workflows/ios-link.yml`
 until it's there).
 
+The icon in each month's colours (from build 29): `customise.sh` has `icons.py --ios` draw the twelve months' icons
+into the asset catalog (AppIcon-M01 to M12, the Home Screen web app's design), `project.rb` builds them in as
+alternate icons, and the calendar asks the app's own plugin (`native/App/SotdIcon.swift`) for the month's a few seconds
+after it opens, when it isn't that already. iOS shows its small "You have changed the icon" message each time (once a
+month). Without the icons (if drawing them fails), the app keeps its one icon.
+
 Import from Spotify (`_sotd/MEMBERS.md`) opens exportify.app in the app's own browser, a sheet over the app with Done
 (the Browser plugin, `@capacitor/browser`, from the first build after 1 Nov 2026); on older builds the page sends it
 to Safari instead.

@@ -98,6 +98,7 @@ export default {
       await pushDaily(env, songs.map(x => ({ id: x.id, a: x.a, title: x.title, artist: x.artist, img: x.img })), { t: 'timer' });
       await uplLook(env).catch(e => console.log('uplLook: ' + (e && e.message)));
     })().catch(e => console.log('scheduled: ' + (e && e.message))));
+    ctx.waitUntil(appUpdates(env).catch(e => console.log('appUpdates: ' + (e && e.message))));   // (on its own: it needs nothing from Spotify)
   }
 };
 
@@ -2503,6 +2504,35 @@ async function apnsWidget(env, token) {   // { st, why }, as apnsOne
   const why = r.ok ? '' : ((await r.text().catch(() => '')) || '').slice(0, 160);
   return { st: r.status === 200 ? 201 : (r.status === 410 || (r.status === 400 && /BadDeviceToken|DeviceTokenNotForTopic/.test(why))) ? 410 : r.status, why };
 }
+// A newer build of an app (John, 1 Nov 2026: "Is there some way to notify users (who have each app) that there's an
+// update to it"): once an hour, 09:00 to 21:00 UK time, each device with notifications on whose app is older than the
+// newest build is told once (upd: the build it was told of). The website's Android app: songs/android.json; the iPhone
+// app: songs/ios.json's build (the newest Apple has approved for TestFlight's testers). Google Play's app updates itself,
+// the Fire TV app offers its own, and the calendar shows the same offer in the app when it opens.
+async function appUpdates(env) {
+  const h = londonHour(), hr = new Date().toISOString().slice(0, 13);
+  if (h < 9 || h >= 21 || (await env.SOTD.get('appUpdHour')) === hr) return;
+  await kvSoft(env, 'appUpdHour', hr);
+  const [a, i] = await Promise.all([rawJson('songs/android.json', {}).catch(() => ({})), rawJson('songs/ios.json', {}).catch(() => ({}))]);
+  const latest = { apk: Number(a.build) || 0, ios: Number(i.build) || 0 };
+  if (!latest.apk && !latest.ios) return;
+  const subs = (await env.SOTD.get('pushSubs', 'json')) || {}, todo = [];
+  for (const [id, s] of Object.entries(subs)) {
+    const m = APP_RE.exec(s.app || ''), kind = m && m[1], b = m && m[2] ? Number(m[2]) : 0, want = latest[kind] || 0;
+    if (b && want > b && (s.upd || 0) < want) todo.push([id, s, kind, want]);
+  }
+  if (!todo.length) return;
+  const k = await vapidKeys(env);
+  for (const [id, s, kind, want] of todo.slice(0, 50)) {
+    const msg = { title: 'A new version of the app', body: kind === 'ios' ? 'Song of the Day ' + want + ' is ready in TestFlight. Tap to update.' : 'A new Song of the Day app for Android is ready. Tap to get it.',
+      url: SITE_SONGS + '?do=update', tag: 'sotd-appupdate' };
+    await pushTo(env, k, s, msg).catch(() => {});
+    subs[id].upd = want;
+  }
+  const now = (await env.SOTD.get('pushSubs', 'json')) || {};   // (as it is now: only the told ones marked)
+  for (const [id, , , want] of todo.slice(0, 50)) if (now[id]) now[id].upd = want;
+  await kvSoft(env, 'pushSubs', JSON.stringify(now));
+}
 async function pushTo(env, k, sub, msg) { return sub.apns ? apnsOne(env, sub.apns, msg) : pushOne(k, sub.sub, msg); }
 
 // A notification's words, link and pictures, John's and members' alike: a title (80 at most), words (300), a link to a
@@ -2842,7 +2872,7 @@ async function memberBell(request, env, answer) {
 // then it looks every UPL_JOIN_EVERY for a day, then hourly). A
 // song added after it was added waits for its owner to sign it off; then it's out for everyone and goes to the
 // members as a message from them. ----------
-const UPL_MAX = 5, UPL_EVERY = 30 * 60e3, UPL_JOIN_EVERY = 10 * 60e3, UPL_CHECK_GAP = 60e3, UPL_SIGNOFF_DAY = 20, UPL_LOOK_MOST = 4, UPL_PV_MOST = 30;
+const UPL_MAX = 5, UPL_EVERY = 30 * 60e3, UPL_JOIN_EVERY = 10 * 60e3, UPL_CHECK_GAP = 60e3, UPL_SIGNOFF_DAY = 20, UPL_LOOK_MOST = 4, UPL_PV_MOST = 60;
 function uplSpId(link) {   // a playlist's Spotify id from its link (open.spotify.com/playlist/<id>…, spotify:playlist:<id>) or the id
   const m = /(?:open\.spotify\.com\/(?:intl-[\w-]+\/)?playlist\/|spotify:playlist:)([0-9A-Za-z]{22})/.exec(String(link || '')) || /^\s*([0-9A-Za-z]{22})\s*$/.exec(String(link || ''));
   return m ? m[1] : '';
@@ -2873,6 +2903,12 @@ function uplCsvSongs(list) {   // the songs as the page sends them, made safe: [
   return out;
 }
 function uplFileKey(f) { return String(f || '').toLowerCase().replace(/\.csv$/, '').replace(/\s*\(\d+\)$/, '').replace(/[^\p{L}\p{N}]+/gu, '_').replace(/^_+|_+$/g, '').slice(0, 120); }   // Exportify's file for it (road_trip.csv): a fresh export's same file is the same playlist
+async function uplCsvPreviews(env, list) {   // the preview Exportify gives a song (pv: p.scdn.co's id for it), kept as a looked-up one is
+  const pv = Object.assign({}, pvMem, (await env.SOTD.get('previews', 'json')) || {});
+  let n = 0;
+  for (const x of (Array.isArray(list) ? list : []).slice(0, UPL_CSV_MOST)) if (x && SP_ID.test(String(x.id || '')) && /^[0-9a-f]{20,64}$/.test(String(x.pv || '')) && !(pv[x.id] && pv[x.id] !== '-')) { pv[x.id] = x.pv; n++; }
+  if (n) { Object.assign(pvMem, pv); await kvSoft(env, 'previews', JSON.stringify(pv)); }
+}
 async function uplAll(env) { return (await env.SOTD.get('upls', 'json')) || {}; }
 async function uplSongs(env, pid) { return (await env.SOTD.get('upl:' + pid, 'json')) || { songs: [], rel: {} }; }
 // a saved playlist made a calendar or shared playlist (src 'mpl', pl: the saved playlist's id): its songs follow it.
@@ -3010,6 +3046,7 @@ async function uplTake(env, pid, rec, U, items, was, now, quiet) {   // its song
   if (changed) {
     data.songs = items; data.at = new Date(now).toISOString(); data.rel = data.rel || {};
     await env.SOTD.put('upl:' + pid, JSON.stringify(data));
+    rec.ch = now;   // (the site job comes back hourly for a while: uplLook)
   }
   Object.assign(rec, { st: 'ok', err: '', read: now, tried: now, cnt: items.filter(x => !uplGone(data, x)).length });
   if (rec.dates && !rec.dates.at && items.length) Object.assign(rec.dates, rec.dates.how === 'fwd' ? { at: items[0].id, n: 1 } : { at: items[items.length - 1].id, n: items.length });   // (chosen before it could be read)
@@ -3055,7 +3092,10 @@ async function uplLook(env) {   // the timer: playlists due a read (UPL_LOOK_MOS
     await uplPut(env, U);
     await startJob(env, null, null, 0, null, true).catch(() => {});
   }
-  if (h >= 7 && Object.values(U).some(r => r.st === 'ok') && (await env.SOTD.get('uplJobDay')) !== today && await kvSoft(env, 'uplJobDay', today))
+  const hr = new Date(now).toISOString().slice(0, 13);   // a playlist changed in the last two days: the site job hourly, to finish its songs' videos, moods and years (it takes so many a run)
+  if (Object.values(U).some(r => r.st === 'ok' && r.src !== 'mpl' && now - (r.ch || 0) < 2 * DAY) && (await env.SOTD.get('uplJobHour')) !== hr && await kvSoft(env, 'uplJobHour', hr))
+    await startJob(env, null, null, 0, null, true).catch(() => {});
+  else if (h >= 7 && Object.values(U).some(r => r.st === 'ok') && (await env.SOTD.get('uplJobDay')) !== today && await kvSoft(env, 'uplJobDay', today))
     await startJob(env, null, null, 0, null, true).catch(() => {});   // once a day: their songs' videos, moods and years not found yet
 }
 // /yt/<pid>?s=<signature>: a member's playlist on YouTube, a link that stays the same as songs are added (signed with
@@ -3254,8 +3294,14 @@ async function uplView(env, all, viewer, pid, rec) {   // a playlist as the cale
     const at = {}; data.order.forEach((t, i) => { at[t] = i; });
     songs = songs.filter(x => x.id in at).sort((a, b) => at[a.id] - at[b.id]).concat(songs.filter(x => !(x.id in at)));
   }
+  let prog;
+  if (mine) {   // (its owner: how far the calendar has got with its songs: previews looked up and found, videos, moods, years; job: the site job still to come back to it)
+    const all2 = (data.songs || []).filter(x => !gone.has(x.id));
+    prog = { n: all2.length, pq: all2.filter(x => !(x.id in pv)).length, p: all2.filter(x => pv[x.id] && pv[x.id] !== '-').length,
+      v: songs.filter(x => x.vid || x.ov).length, m: songs.filter(x => x.mt || x.tag).length, y: songs.filter(x => x.yr).length, ch: rec.ch || rec.at || 0 };
+  }
   return { id: pid, n: uplName(all, rec), t: uplTitle(all, rec), o: all[rec.o].name, mine, mode: rec.mode, sp: rec.sp, src: uplSrc(rec), yt: rec.yt || '', st: rec.st, at: data.at || null, sh: uplShareOf(rec),
-    dates: rec.mode === 'list' ? null : Object.assign({ how: 'added' }, rec.dates || {}), send: mine ? uplSendOf(rec) : undefined, songs };
+    dates: rec.mode === 'list' ? null : Object.assign({ how: 'added' }, rec.dates || {}), send: mine ? uplSendOf(rec) : undefined, prog, songs };
 }
 // /members/upl: GET ?id= one playlist to show; POST { op: 'add', link, mode } | { op: 'csv', name, mode, songs } (from an
 // Exportify file, see uplCsvSongs) | { op: 'csvup', id, songs } (a fresh export of it) | { op: 'mode', id, mode } | { op: 'remove', id }
@@ -3277,6 +3323,7 @@ async function memberUpl(request, url, env, answer) {
   if (request.method === 'GET') {
     const pid = url.searchParams.get('id') || '', rec = U[pid];
     if (!uplCan(all, me, rec)) return answer(404, { error: 'No such playlist.' });
+    if (rec.o === me && url.searchParams.get('fill') === '1') await fillPreviews(env, (await uplSongs(env, pid)).songs || [], UPL_PV_FILL, Object.assign({}, pvMem, (await env.SOTD.get('previews', 'json')) || {})).catch(() => null);   // (its owner watching it fill: the next previews now)
     return answer(200, await uplView(env, all, me, pid, rec));
   }
   if (request.method !== 'POST') return answer(405, { error: 'Use GET or POST.' });
@@ -3296,6 +3343,7 @@ async function memberUpl(request, url, env, answer) {
     if (rec.st === 'join') await uplAskJohn(env, all, me, rec);
     return answer(200, { ok: true, id: pid, st: rec.st, pls: await uplMine(env, uplList(all, me, U), U) });
   }
+  if (body.op === 'csv' || body.op === 'csvup') await uplCsvPreviews(env, body.songs).catch(() => null);   // (any previews Exportify gave)
   if (body.op === 'csv') {   // one of their Spotify playlists from an Exportify file
     const items = uplCsvSongs(body.songs);
     if (!items || !items.length) return answer(400, { error: 'No songs in that file. Choose the file Exportify saved for your playlist.' });
@@ -3713,7 +3761,7 @@ async function memberPush(request, env, answer) {
   if (body.off) { if (subs[id]) { delete subs[id]; await env.SOTD.put('pushSubs', JSON.stringify(subs)); } return answer(200, { on: false }); }
   if (!keys.p256dh || !keys.auth || String(keys.p256dh).length > 200 || String(keys.auth).length > 100) return answer(400, { error: 'That subscription has no keys.' });
   if (!subs[id] && Object.keys(subs).length >= PUSH_MAX) return answer(400, { error: 'Too many devices have notifications on.' });
-  subs[id] = { m: member, sub: { endpoint, keys: { p256dh: String(keys.p256dh), auth: String(keys.auth) } }, at: Date.now() };
+  subs[id] = Object.assign({ m: member, sub: { endpoint, keys: { p256dh: String(keys.p256dh), auth: String(keys.auth) } }, at: Date.now() }, APP_RE.test(String(body.app || '')) ? { app: String(body.app) } : {}, subs[id] && subs[id].upd ? { upd: subs[id].upd } : {});
   await env.SOTD.put('pushSubs', JSON.stringify(subs));
   if (body.test) {   // the first one, so they know it works (and if the push service says no, the calendar says why)
     let st = 0, why = '';
@@ -3732,7 +3780,8 @@ async function memberApns(env, member, body, answer) {   // the iPhone app's dev
   const id = 'a' + (await sha256hex(token)).slice(0, 23), subs = (await env.SOTD.get('pushSubs', 'json')) || {};
   if (body.off) { if (subs[id]) { delete subs[id]; await env.SOTD.put('pushSubs', JSON.stringify(subs)); } return answer(200, { on: false }); }
   if (!subs[id] && Object.keys(subs).length >= PUSH_MAX) return answer(400, { error: 'Too many devices have notifications on.' });
-  if (!subs[id] || subs[id].m !== member) { subs[id] = { m: member, apns: token, at: Date.now() }; await env.SOTD.put('pushSubs', JSON.stringify(subs)); }
+  const app = APP_RE.test(String(body.app || '')) ? String(body.app) : '';   // (which app and build it is: for telling it of a newer build, appUpdates)
+  if (!subs[id] || subs[id].m !== member || (app && subs[id].app !== app)) { subs[id] = Object.assign({ m: member, apns: token, at: Date.now() }, app ? { app } : {}, subs[id] && subs[id].m === member && subs[id].upd ? { upd: subs[id].upd } : {}); await env.SOTD.put('pushSubs', JSON.stringify(subs)); }
   if (!body.test) return answer(200, { on: true });
   const unread = ((await env.SOTD.get('inbox:' + member, 'json')) || []).filter(x => !x.r).length;
   let st = 0, why = '';
@@ -4069,17 +4118,20 @@ async function startJob(env, sig, job, songs, newest, justRun) {
 // The Web API no longer gives preview links, but each song's Spotify embed page carries one.
 // Looks up at most `limit` songs per run, newest first; '-' marks a song with no preview.
 const pvMem = {};   // previews found, kept between requests too (for when KV can't take them: see kvSoft)
+const PV_AT_ONCE = 6, UPL_PV_FILL = 18;   // previews asked for together; and for an owner watching their playlist fill (GET ?fill=1), each time
 async function fillPreviews(env, items, limit, known) {
   const pv = known || (await env.SOTD.get('previews', 'json')) || {};
   const todo = items.filter(it => !(it.id in pv)).reverse().slice(0, limit);
-  let changed = false;
-  for (const it of todo) {
-    const r = await fetch('https://open.spotify.com/embed/track/' + it.id, { headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0 Safari/537.36', 'Accept-Language': 'en-GB' } });
-    if (!r.ok) break;
+  let changed = false, stop = false;
+  const one = async it => {   // (Spotify's embed page for the song carries its 30-second preview)
+    if (stop) return;
+    const r = await fetch('https://open.spotify.com/embed/track/' + it.id, { headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0 Safari/537.36', 'Accept-Language': 'en-GB' } }).catch(() => null);
+    if (!r || !r.ok) { stop = true; return; }
     const m = (await r.text()).match(/https:\/\/p\.scdn\.co\/mp3-preview\/([0-9a-f]{20,})/);
     pv[it.id] = m ? m[1] : '-';
     changed = true;
-  }
+  };
+  for (let i = 0; i < todo.length && !stop; i += PV_AT_ONCE) await Promise.all(todo.slice(i, i + PV_AT_ONCE).map(one));   // six at a time
   if (changed) { Object.assign(pvMem, pv); await kvSoft(env, 'previews', JSON.stringify(pv)); }
   return pv;
 }

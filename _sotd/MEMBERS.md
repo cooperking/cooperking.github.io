@@ -144,6 +144,18 @@ Testers and has the steps. For a member with an email address, the invitation's 
 should Play not have them yet, the website's app instead. Tests: `mail_t.mjs` (the Worker), `gs_t.js` (the mailer),
 `members_t.py` (the Members and Apps tabs), `signin_t.py` (the draft).
 
+## Telling apps of a new build
+
+(John, 1 Nov 2026: "Is there some way to notify users (who have each app) that there's an update to it".) Each app's
+calendar says which app and build it is when it hands in its notifications (`app` on `/members/push`, again whenever
+the build changes; kept on `pushSubs`). Once an hour, 09:00 to 21:00 UK time, the Worker (`appUpdates`) tells each
+device whose app is older than the newest build, once a build (`upd`): the website's Android app from
+`songs/android.json`, the iPhone app from `songs/ios.json`'s `build` (the newest Apple has approved for TestFlight's
+testers, written by `public_link.py`, whose workflow `ios.yml` turns on again after each build). The notification opens
+`?do=update`; the calendar itself offers the update when an older app opens (the Android one as before; the iPhone one
+with Update to TestFlight, Later: three days). Google Play's app updates itself, and the Fire TV app offers its own.
+Tests: `upd_t.mjs`.
+
 ## Which app each device uses
 
 Each visit, the calendar says which app it is (`X-App` on `/members/me`): `play:<build>` Google Play's Android app,
@@ -287,6 +299,16 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   (from Capacitor's App plugin: `appUrlOpen` or `getLaunchUrl`). Either way it opens Import from Spotify at its
   playlists. Tests: `csv_t.mjs` (the Worker), `zip_t.js` (the draft: both kinds of zip, the picker, update, switch, one
   CSV, a shared file).
+- **Getting an import ready, and its progress** (John, 1 Nov 2026: "it gives the option to play while still importing
+  and a user can see any progress of whether the songs or previews can be found... Can we add progress info to the
+  playlist page"): after importing, the calendar opens on it straight away. Its owner sees a panel under the month
+  (`uplprog`): previews, videos, moods and years, each "N of all", with what's still to come. While previews are
+  missing the page asks every few seconds with `?fill=1`, and the Worker looks the next 18 up then (six at a time, from
+  Spotify's embed page), so songs become playable within seconds; previews Exportify gives (its preview column, where
+  Spotify still has one) are kept at once. Then each minute for the site job's videos, moods and years: after a change a
+  playlist's songs are worked on by the job hourly for two days (`rec.ch`; uplLook), not only once a day. The Worker's
+  view gives its owner `prog { n, p, pq, v, m, y, ch }`. The panel goes once all's done or two days have passed; the ×
+  hides it for that change. Tests: `prog_t.mjs` (the Worker), `prog_page_t.mjs` (the draft against the real Worker code).
 - **Their own MP3s and MP4s: on 366 songs at most** (John, 1 Nov 2026: "theoretically they can have 366 MP3s and 366
   mp4s. But it's limited to 366 songs total. So if they have a track with an mp3 they can also add an mp4"): counted
   across all their playlists, a song once whether it has an MP3, an MP4 or both (covers don't count). Taking both files

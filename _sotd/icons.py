@@ -4,6 +4,8 @@
     python3 _sotd/icons.py            this month's (London time), only if the month has changed since last time
     python3 _sotd/icons.py --month 6  that month's (1-12), whatever's there
     python3 _sotd/icons.py --all DIR  all twelve months into DIR, to look at
+    python3 _sotd/icons.py --ios DIR  the iPhone app's: twelve icon sets in its asset catalog DIR (AppIcon-M01 to M12),
+                                      switched to each month by the app (SotdIcon); run by ios-app/customise.sh
 
 Draws the sleeve and record icon (JOHN'S Song of the Day, A SONG A DAY) on the month's ground and glows, then writes
 songs/favicon-96.png, icon-192.png, icon-512.png, icon-maskable-512.png (the design inside Android's safe circle) and
@@ -110,6 +112,17 @@ def bump(v, month):   # the icons' ?v= in the manifest and both calendars, so th
 
 
 def main(args):
+    if '--ios' in args:   # (no transparency: Apple refuses an app icon with it)
+        import json
+        out = args[args.index('--ios') + 1]
+        for m in range(12):
+            d = os.path.join(out, 'AppIcon-M%02d.appiconset' % (m + 1))
+            os.makedirs(d, exist_ok=True)
+            icon(m, 1024).convert('RGB').save(os.path.join(d, 'icon.png'))
+            with open(os.path.join(d, 'Contents.json'), 'w') as f:
+                json.dump({'images': [{'filename': 'icon.png', 'idiom': 'universal', 'platform': 'ios', 'size': '1024x1024'}], 'info': {'author': 'xcode', 'version': 1}}, f, indent=2)
+        print('iPhone app: twelve monthly icons in', out)
+        return
     if '--all' in args:
         out = args[args.index('--all') + 1]
         os.makedirs(out, exist_ok=True)

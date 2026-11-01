@@ -98,6 +98,15 @@ mkdir -p ios/App/SotdWidget ios/App/SotdNotify
 cp native/SotdWidget/* ios/App/SotdWidget/
 cp native/Shared/*.swift ios/App/App/ && cp native/Shared/*.swift ios/App/SotdWidget/   # (in both: the shared keychain)
 cp native/SotdNotify/* ios/App/SotdNotify/
+# the icon in each month's colours, as the calendar and the Home Screen web app change (SotdIcon switches to the month's;
+# from build 29): twelve alternate icons drawn by icons.py into the asset catalog. Without them the app keeps its one icon.
+V="${TMPDIR:-/tmp}/sotd-icons-py"
+if python3 -m venv "$V" && "$V/bin/pip" install --quiet pillow numpy && "$V/bin/python" ../icons.py --ios ios/App/App/Assets.xcassets; then
+  echo "monthly icons made"
+else
+  rm -rf ios/App/App/Assets.xcassets/AppIcon-M*.appiconset
+  echo "::warning title=iPhone app::The monthly icons couldn't be made; the app keeps its one icon"
+fi
 ruby -e "require 'xcodeproj'" 2>/dev/null || gem install --user-install --no-document xcodeproj
 ruby native/project.rb
 python3 - <<'Y'

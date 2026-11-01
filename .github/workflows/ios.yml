@@ -24,6 +24,7 @@ concurrency:
 
 permissions:
   contents: read
+  actions: write   # (to turn the public link workflow on again after a build)
 
 jobs:
   build:
@@ -92,3 +93,8 @@ jobs:
         run: |
           pip install --quiet pyjwt cryptography
           python _sotd/ios-app/testflight.py "$BUILD"
+      - name: Watch for Apple's approval (the public link workflow, hourly, writes the approved build to songs/ios.json)
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow enable ios-link.yml -R "$GITHUB_REPOSITORY"

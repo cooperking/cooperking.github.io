@@ -8,7 +8,10 @@
   2. once Apple has approved a build for the group, its public link is turned on (anyone with it can get the app, up to
      TestFlight's 10,000 testers; the calendar's members still sign in with their own invitation) and OUT is written as
      {"testflight": "https://testflight.apple.com/join/..."}. Invitations read it from there: an iPhone opening one is
-     shown the steps for the app (the Worker's invitation page).
+     shown the steps for the app (the Worker's invitation page);
+  3. OUT's "build": the newest build Apple has approved for the group, which testers can have now. The calendar offers
+     it in an older app, and the Worker tells those iPhones once (John, 1 Nov 2026: "notify users... that there's an
+     update"). It keeps looking (hourly) until the newest build is approved; ios.yml turns it on again after each build.
 It says where the builds are with Apple's review. With GITHUB_OUTPUT set, it writes done=true there once the link is in
 OUT and the newest build has been submitted: nothing is left for it to do.
 
@@ -111,11 +114,17 @@ def main(out):
                 note('error', 'The public link is on, but Apple didn\'t say what it is (%r): it\'s looked at again next hour.' % link[:80])
         except Refused as e:
             note('error', 'Apple wouldn\'t turn the public link on (%d): %s' % (e.code, why(e)))
+    try:
+        have = json.load(open(out))
+    except Exception:
+        have = {}
+    ok = [int(num[b]) for b in order if state.get(b) == 'APPROVED' and str(num[b]).isdigit()]
+    if ok and max(ok) != have.get('build'):
+        have['build'] = max(ok)
+        with open(out, 'w') as f:
+            f.write(json.dumps(have) + '\n')
+        said.append('build %d approved: in %s for the calendar' % (max(ok), out))
     if LINK_RE.match(link):
-        try:
-            have = json.load(open(out))
-        except Exception:
-            have = {}
         if have.get('testflight') != link:
             have['testflight'] = link
             with open(out, 'w') as f:
@@ -127,7 +136,7 @@ def main(out):
         said.append('no public link until a build is approved')
     note('notice', '; '.join(said) + '.')
 
-    done = LINK_RE.match(link) and (not newest or newest in state)
+    done = LINK_RE.match(link) and (not newest or state.get(newest) in ('APPROVED', 'REJECTED'))   # (the newest through review: nothing more to come)
     if os.environ.get('GITHUB_OUTPUT'):
         with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
             f.write('done=%s\n' % ('true' if done else 'false'))
