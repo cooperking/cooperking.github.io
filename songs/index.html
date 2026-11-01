@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="sotd-build" content="fb33a9d75005">
+<meta name="sotd-build" content="c6cfb35b7608">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 265 so far">
 <meta name="theme-color" content="#ec135b">
@@ -316,8 +316,31 @@ html.big .heroacts .hsub { margin: 0 6px 0 0; }
 html.upl #monthdl, html.upl-noshare #siteshare, html.upl-noshare #monthshare, html.upl-noyt #ytfollow, html.upl-noshare #picks .iconbtn.share { display: none !important; }
 .uplkick { margin: 0 0 -8px; font: 600 11px/1.3 var(--sans); letter-spacing: .16em; text-transform: uppercase; color: var(--fg-2); overflow-wrap: anywhere; }
 .uplkick[hidden] { display: none; }
+/* editing a calendar's days: its owner drags a song (or taps it, then a day) */
+.upleditbtn { height: 40px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--pill-bg); box-shadow: inset 0 0 0 1px var(--line); color: var(--fg); font: 600 11px/1 var(--sans); letter-spacing: .12em; text-transform: uppercase; cursor: pointer; }
+.upleditbtn:hover { box-shadow: inset 0 0 0 1px var(--fg); }
+.upleditbtn[hidden] { display: none; }
+html.upl-editing #grid .day { touch-action: none; -webkit-user-select: none; user-select: none; }
+html.upl-editing #grid .day.has { cursor: grab; }
+html.upl-editing #grid .day.has .sleeve { animation: uplwig 2.4s ease-in-out infinite; }
+html.upl-editing #grid .day.has:nth-child(2n) .sleeve { animation-delay: -1.2s; }
+@keyframes uplwig { 0%, 100% { transform: rotate(-1.2deg); } 50% { transform: rotate(1.2deg); } }
+@media (prefers-reduced-motion: reduce) { html.upl-editing #grid .day.has .sleeve { animation: none; } }
+html.upl-editing #grid .day.edit-sel .sleeve { animation: none; outline: 3px solid var(--fg); outline-offset: 2px; }
+html.upl-editing #grid .day.drop .sleeve { outline: 3px dashed var(--fg); outline-offset: 2px; }
+html.upl-editing #grid .day.dragfrom .sleeve { opacity: .35; }
+.dragghost { position: fixed; z-index: 120; width: 72px; height: 72px; margin: -36px 0 0 -36px; border-radius: 10px; overflow: hidden; pointer-events: none; box-shadow: 0 14px 32px rgba(14, 6, 18, .45); transform: scale(1.08) rotate(-3deg); }
+.dragghost img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.upledbar { position: fixed; z-index: 45; left: 16px; right: 16px; bottom: max(16px, env(safe-area-inset-bottom, 0px)); max-width: 560px; margin: 0 auto; display: grid; gap: 10px; padding: 14px 16px; border-radius: 18px; background: #1b1020; color: #fffaf5; box-shadow: 0 16px 40px rgba(14, 6, 18, .45); }
+.upledbar[hidden] { display: none; }
+html.upl-editing .wrap { padding-bottom: 150px; }   /* (the bar never covers a day) */
+html.upl-editing .toast { bottom: calc(max(16px, env(safe-area-inset-bottom, 0px)) + 150px); }   /* (messages above the bar) */
+.upledbar p { margin: 0; font-size: 14px; line-height: 1.4; }
+.upledbar-acts { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; }
+.upledbar .copy { background: #fffaf5; color: #1b1020; }
+.upledbar .ac-out { color: #fffaf5; border-color: rgba(255, 250, 245, .35); }
 /* a member's own playlist, still being got ready: its previews, videos, moods and years so far */
-.uplprog { display: grid; gap: 8px; max-width: 420px; padding: 12px 14px; border-radius: 16px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line); color: var(--fg); }
+.uplprog { text-align: left; justify-self: center; width: 100%; display: grid; gap: 8px; max-width: 420px; padding: 12px 14px; border-radius: 16px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line); color: var(--fg); }
 .uplprog[hidden] { display: none; }
 .uplprog-h { display: flex; align-items: center; gap: 8px; font: 600 11px/1.3 var(--sans); letter-spacing: .12em; text-transform: uppercase; }
 .uplprog-h b { flex: 1; font-weight: 600; }
@@ -327,10 +350,33 @@ html.upl #monthdl, html.upl-noshare #siteshare, html.upl-noshare #monthshare, ht
 @media (prefers-reduced-motion: reduce) { .uplprog-dot { animation: none; } }
 .uplprog-x { width: 26px; height: 26px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--fg); cursor: pointer; }
 .uplprog-x svg { width: 12px; height: 12px; }
-.uplprog-rows { display: grid; grid-template-columns: auto 1fr auto; gap: 6px 10px; align-items: center; font-size: 13px; }
-.uplprog-rows .bar { height: 6px; border-radius: 3px; background: var(--empty-bg); overflow: hidden; }
-.uplprog-rows .bar i { display: block; height: 100%; border-radius: 3px; background: var(--fg); transition: width .6s; }
-.uplprog-rows .ct { font-variant-numeric: tabular-nums; color: var(--fg-2); font-size: 12px; }
+.uplprog-rows { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
+.uplprog-rows .st { display: grid; grid-template-columns: 22px 1fr auto; gap: 2px 10px; align-items: center; padding: 6px 0; border-top: 1px solid var(--line); }
+.uplprog-rows .st:first-child { border-top: 0; }
+.uplprog-rows .st > .tx, .uplprog-rows .st > .bar, .uplprog-rows .st > .fl { grid-column: 2 / -1; }
+.uplprog-rows .ic { width: 18px; height: 18px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--line); display: grid; place-items: center; }
+.uplprog-rows .done .ic { background: var(--fg); box-shadow: none; }
+.uplprog-rows .done .ic::after { content: ""; width: 7px; height: 4px; margin-top: -2px; border: solid var(--bg); border-width: 0 0 2px 2px; transform: rotate(-45deg); }
+.uplprog-rows .now .ic { box-shadow: inset 0 0 0 2px var(--fg); }
+.uplprog-rows .now .ic::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--fg); animation: uplpulse 1.2s infinite; }
+.uplprog-rows .files .ic { box-shadow: none; background: none; }
+.uplprog-rows .files .ic::after { content: "♪"; font: 14px/1 var(--serif); color: var(--fg); }
+.uplprog-rows b { font: 600 13px/1.3 var(--sans); }
+.uplprog-rows .wait b, .uplprog-rows .wait .ct { opacity: .55; }
+.uplprog-rows .ct { font-size: 12px; font-variant-numeric: tabular-nums; color: var(--fg-2); }
+.uplprog-rows .now .ct { font-weight: 600; color: var(--fg); }
+.uplprog-rows .tx { font-size: 12px; line-height: 1.4; color: var(--fg-2); }
+.uplprog-rows .bar { display: flex; height: 8px; margin: 4px 0 2px; border-radius: 4px; background: var(--empty-bg); overflow: hidden; }
+.uplprog-rows .bar i { display: block; height: 100%; background: var(--fg); transition: width .6s; }
+.uplprog-rows .bar i.none { background: var(--fg); opacity: .35; }
+.uplprog-rows .now .bar { position: relative; }
+.uplprog-rows .now .bar::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .45), transparent); transform: translateX(-100%); animation: uplshine 1.6s infinite; }
+@keyframes uplshine { to { transform: translateX(100%); } }
+@media (prefers-reduced-motion: reduce) { .uplprog-rows .now .bar::after, .uplprog-rows .now .ic::after { animation: none; } }
+.uplprog-rows .bar.sm { height: 5px; margin: 0; }
+.uplprog-rows .fl { display: grid; grid-template-columns: 44px 1fr auto; gap: 8px; align-items: center; font-size: 12px; color: var(--fg-2); }
+.uplprog-rows .fl .n { font-variant-numeric: tabular-nums; }
+.uplprog-t[hidden] { display: none; }
 .uplprog-t { margin: 0; font-size: 12px; line-height: 1.4; color: var(--fg-2); }
 .uplw-list { display: grid; gap: 6px; padding: 2px 2px 0; }
 .uplw-list[hidden] { display: none; }
@@ -494,6 +540,8 @@ html.upl-list #upllist { display: grid; }
 .mine-list .rowfav .heart { width: 17px; height: 17px; }
 .mine-list .tx { cursor: pointer; }
 .day.has.soon .sleeve { opacity: .55; }
+.day.has.soon::after { content: "To come"; position: absolute; left: 50%; top: 4px; transform: translateX(-50%); padding: 1px 5px; border-radius: 999px; background: rgba(16, 6, 16, .75); color: #fffaf5; font: 600 8px/1.4 var(--sans); letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; pointer-events: none; }
+html.big .day.has.soon::after { font-size: 10px; top: 6px; }
 .uplwait.soon { border-color: var(--line); background: var(--pill-bg); }
 .belll .open { padding-bottom: 8px; }
 .ac-inbox { display: grid; gap: 6px; }
@@ -787,9 +835,11 @@ dialog#sharesheet::backdrop { background: rgba(24, 8, 24, .35); -webkit-backdrop
 .cal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 16px 12px; }
 .cal-item { display: grid; gap: 6px; align-content: start; }
 .cal-card { display: grid; gap: 6px; align-content: start; padding: 0; border: 0; background: none; color: var(--fg); text-align: left; cursor: pointer; font: inherit; }
-.cal-pic { position: relative; display: grid; grid-template-columns: 1fr 1fr; aspect-ratio: 1; border-radius: 14px; overflow: hidden; background: var(--tile); box-shadow: 0 6px 18px var(--shadow); transition: transform .15s, box-shadow .15s; }
+.cal-pic { position: relative; display: block; border-radius: 14px; overflow: hidden; background: var(--tile); box-shadow: 0 6px 18px var(--shadow); transition: transform .15s, box-shadow .15s; }
+.cal-pic::before { content: ""; display: block; padding-top: 100%; }   /* (square without aspect-ratio, which the Fire TV's browser may not have) */
+.cal-pic .in { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: 1fr 1fr; }
 .cal-pic img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.cal-pic.one { grid-template-columns: 1fr; }
+.cal-pic.one .in { grid-template-columns: 1fr; }
 .cal-pic.none::after { content: "♪"; position: absolute; inset: 0; display: grid; place-items: center; font: 40px var(--serif); color: var(--fg); opacity: .55; }
 .cal-card:hover .cal-pic, .cal-card:focus-visible .cal-pic { transform: translateY(-2px); box-shadow: 0 12px 26px var(--shadow); }
 .cal-card:focus-visible { outline: none; }
@@ -1460,10 +1510,11 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       <p class="hsub" id="count"></p>
       <button class="heroplay" id="heroplay" type="button" aria-label="Play every song, the newest first" title="Play all"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M4.5 2.5v11l9.5-5.5z"/></svg></button>
       <button class="heroshuf" id="heroshuf" type="button" aria-label="Play every song, shuffled" title="Shuffle all"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 4.5h2.3c1.5 0 2.4.7 3.3 2l1.8 3c.8 1.3 1.8 2 3.3 2H14M2 11.5h2.3c1.3 0 2.1-.5 2.8-1.4M9.6 5.9c.7-.9 1.5-1.4 2.8-1.4H14M12.2 2.8 14 4.5l-1.8 1.7M12.2 9.8 14 11.5l-1.8 1.7"/></svg></button>
+      <button class="upleditbtn" id="upleditbtn" type="button" hidden>Edit days</button>
     </div>
     <div class="uplprog" id="uplprog" hidden>
       <div class="uplprog-h"><span class="uplprog-dot" aria-hidden="true"></span><b id="uplprogh">Getting your playlist ready</b><button class="uplprog-x" id="uplprogx" type="button" aria-label="Hide this"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 3l8 8M11 3 3 11"/></svg></button></div>
-      <div class="uplprog-rows" id="uplprogr" aria-live="polite"></div>
+      <ol class="uplprog-rows" id="uplprogr" aria-live="polite"></ol>
       <p class="uplprog-t" id="uplprogt"></p>
     </div>
     <button class="signedchip" id="who" type="button" hidden><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><circle cx="8" cy="5.2" r="3"/><path d="M2.5 14.5c.5-3.2 2.8-5 5.5-5s5 1.8 5.5 5z"/></svg><span id="whotext">Signed in</span><span class="inbn" id="whon" hidden></span><span class="whobell" id="whobell" hidden><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M8 2.2c-2.3 0-3.9 1.8-3.9 4v2.6L2.8 11h10.4l-1.3-2.2V6.2c0-2.2-1.6-4-3.9-4z"/><path d="M6.4 13.1c.3.6.9 1 1.6 1s1.3-.4 1.6-1"/></svg><span class="inbn" id="whobelln"></span></span></button>
@@ -1990,6 +2041,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   </form>
 </dialog>
 
+<div class="upledbar" id="upledbar" role="region" aria-label="Editing the days" hidden>
+  <p id="upledbart"></p>
+  <div class="upledbar-acts"><button class="ac-out" id="upledbarreset" type="button" hidden>Back to the setup’s days</button><button class="copy" id="upledbardone" type="button">Done</button></div>
+</div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div class="ptr" id="ptr" aria-hidden="true"><span class="ptr-turn"><span class="ptr-disc"><span class="ptr-lab"></span></span></span></div>
 
@@ -2290,6 +2345,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       } else {
         cell = div('day empty');
         cell.appendChild(div('sleeve'));
+        cell.setAttribute('data-day', iso);   // (somewhere to move a song to, editing a calendar's days)
       }
       if (iso === todayIso) cell.classList.add('today');
       cell.style.setProperty('--i', lead + d);
@@ -2300,6 +2356,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       grid.appendChild(cell);
     }
 
+    if (typeof ED !== 'undefined' && ED && ED.on) editMarks();   // (the page's first drawing comes before ED)
     var listMode = uplListMode();
     if (listMode) { monthSongs = uplOrdered(); document.getElementById('mname').textContent = UPL.view.n; document.getElementById('myr').textContent = ''; }
     var cnt = document.getElementById('count'), tot = document.createElement('em');
@@ -6679,7 +6736,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   function uplApply(view, opts) {
     opts = opts || {};
-    var list = uplSongsOf(view).filter(function (x) { return !x.w && !x.f; });   // (as the others see it: its owner's waiting songs and days to come are in the pop-up)
+    var list = uplSongsOf(view).filter(function (x) { return !x.w && (!x.f || view.mine); });   // (as the others see it, but its owner sees its songs still to come too, faded, to move them: John, 1 Nov 2026; waiting songs are in the pop-up)
     if (!list.length) { if (view.mine) mineUplShow(view, { day: opts.day }); else toast('Nothing on “' + view.n + '” yet'); return false; }
     if (!UPL.on) UPL.john = songs;
     var keep = UPL.on === view.id && !!opts.keep;
@@ -6704,6 +6761,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (opts.day) { if (byDate[opts.day]) openDay(opts.day); else if (view.mine) mineUplShow(view, { day: opts.day }); }   // (one of theirs not out yet: in the pop-up)
     else if (opts.month) uplMonth(opts.month);
     uplProg(view);
+    if (ED.on && !uplEditCan()) uplEditOff(); else uplEditSync();
     return true;
   }
   function uplMonth(ym) { months.forEach(function (x, i) { if (key(x[0], x[1]) === ym) cur = i; }); render(); }
@@ -6717,22 +6775,55 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function uplProg(view) {
     var box = document.getElementById('uplprog'), g = view && view.mine && view.prog;
     clearTimeout(PROG.t); PROG.t = 0;
-    var recent = g && Date.now() - (g.ch || 0) < 2 * 864e5, more = g && (g.pq > 0 || (recent && (g.v < g.n || g.m < g.n || g.y < g.n)));
+    var recent = g && Date.now() - (g.ch || 0) < 2 * 864e5, left = function (f, nn) { return Math.max(0, g.n - (g[f] || 0) - (g[nn] || 0)); };   // (still to look at: neither found nor looked at with none)
+    var more = g && (g.pq > 0 || (recent && (left('v', 'vn') || left('m', 'mn') || left('y', 'yn'))));
     box.hidden = !g || !g.n || !(more || PROG.id === view.id) || uplProgHidden(view.id + ':' + g.ch);
     if (box.hidden) { PROG.id = null; return; }
     PROG.id = view.id;
-    var rows = [['Previews', g.p, g.pq ? 'looking' : ''], ['Videos', g.v], ['Moods', g.m], ['Years', g.y]], r = document.getElementById('uplprogr'); r.textContent = '';
-    rows.forEach(function (x) {
-      var l = document.createElement('span'); l.textContent = x[0];
-      var b = document.createElement('span'); b.className = 'bar'; var i = document.createElement('i'); i.style.width = Math.round(100 * x[1] / g.n) + '%'; b.appendChild(i);
-      var c = document.createElement('span'); c.className = 'ct'; c.textContent = x[1] + ' of ' + g.n;
-      r.appendChild(l); r.appendChild(b); r.appendChild(c);
+    // the parts in turn (John, 1 Nov 2026: "Could the different import parts show one at a time and it give the
+    // information as it comes with the bar highlighting... Could mp3 and mp4 progress be added too"): done ones ticked
+    // with what they found, the one under way highlighted with its bar and counts, the rest waiting; then their files
+    var N = g.n, pl = function (k, w) { return k + ' ' + (k === 1 ? w : w + 's'); };
+    var steps = [
+      { k: 'Songs', done: true, sum: pl(N, 'song') + ' in' },
+      { k: 'Previews', f: g.p, none: g.pn || 0, left: g.pq, sum: g.p + ' can play their preview' + (g.pn ? ' · ' + pl(g.pn, 'song') + ' with none on Spotify' : ''), now: 'Looking each song up on Spotify: ' + (N - g.pq) + ' of ' + N + ' so far. Songs play as soon as theirs is here.' },
+      { k: 'Videos', f: g.v, none: g.vn || 0, left: left('v', 'vn'), sum: pl(g.v, 'video') + ' found' + (g.vn ? ' · ' + g.vn + ' with none (they play their preview)' : ''), now: 'Finding a YouTube video for each: ' + g.v + ' found' + (g.vn ? ', ' + g.vn + ' with none' : '') + ', ' + left('v', 'vn') + ' still to look for. A batch at a time, over the next hour or two.' },
+      { k: 'Moods', f: g.m, none: g.mn || 0, left: left('m', 'mn'), sum: g.m + ' with moods and genres' + (g.mn ? ' · ' + g.mn + ' with none found' : ''), now: 'Listening to each preview and reading what listeners say: ' + g.m + ' done, ' + left('m', 'mn') + ' to go.' },
+      { k: 'Years', f: g.y, none: g.yn || 0, left: left('y', 'yn'), sum: g.y + ' with the year they came out' + (g.yn ? ' · ' + g.yn + ' not known' : ''), now: 'Finding when each first came out: ' + g.y + ' found, ' + left('y', 'yn') + ' to go.' }
+    ];
+    steps.forEach(function (x) { if (!x.done) x.done = !x.left; });
+    var cur = steps.filter(function (x) { return !x.done; })[0];
+    var r = document.getElementById('uplprogr'); r.textContent = '';
+    steps.forEach(function (x) {
+      var li = document.createElement('li'); li.className = 'st' + (x.done ? ' done' : x === cur ? ' now' : ' wait');
+      var ic = document.createElement('span'); ic.className = 'ic'; ic.setAttribute('aria-hidden', 'true'); li.appendChild(ic);
+      var nm = document.createElement('b'); nm.textContent = x.k; li.appendChild(nm);
+      var ct = document.createElement('span'); ct.className = 'ct'; ct.textContent = x.done ? '' : x === cur ? Math.round(100 * (N - x.left) / Math.max(1, N)) + '%' : (x.f ? x.f + ' so far' : 'Waiting'); li.appendChild(ct);
+      if (x.done || x === cur) { var t = document.createElement('span'); t.className = 'tx'; t.textContent = x.done ? x.sum : x.now; li.appendChild(t); }
+      if (x === cur) {
+        var bar = document.createElement('span'); bar.className = 'bar'; bar.setAttribute('role', 'progressbar'); bar.setAttribute('aria-valuemin', '0'); bar.setAttribute('aria-valuemax', String(N)); bar.setAttribute('aria-valuenow', String(N - x.left)); bar.setAttribute('aria-label', x.k);
+        var f = document.createElement('i'); f.style.width = (100 * x.f / Math.max(1, N)) + '%'; bar.appendChild(f);
+        if (x.none) { var nn = document.createElement('i'); nn.className = 'none'; nn.style.width = (100 * x.none / Math.max(1, N)) + '%'; bar.appendChild(nn); }
+        li.appendChild(bar);
+      }
+      r.appendChild(li);
     });
+    var own = document.createElement('li'); own.className = 'st files';   // their own MP3s and MP4s (from the song editor; John's too)
+    var oi = document.createElement('span'); oi.className = 'ic'; oi.setAttribute('aria-hidden', 'true'); own.appendChild(oi);
+    var on = document.createElement('b'); on.textContent = 'MP3s and MP4s'; own.appendChild(on);
+    var oc = document.createElement('span'); oc.className = 'ct'; own.appendChild(oc);
+    [['MP3', g.fa || 0], ['MP4', g.fv || 0]].forEach(function (x) {
+      var row = document.createElement('span'); row.className = 'fl';
+      var l = document.createElement('span'); l.textContent = x[0] + 's'; row.appendChild(l);
+      var b = document.createElement('span'); b.className = 'bar sm'; var i = document.createElement('i'); i.style.width = (100 * x[1] / Math.max(1, N)) + '%'; b.appendChild(i); row.appendChild(b);
+      var c = document.createElement('span'); c.className = 'n'; c.textContent = x[1] + ' of ' + N; row.appendChild(c);
+      own.appendChild(row);
+    });
+    r.appendChild(own);
     box.classList.toggle('done', !more);
     document.getElementById('uplprogh').textContent = more ? 'Getting your playlist ready' : 'Your playlist is ready';
-    document.getElementById('uplprogt').textContent = g.pq ? 'Previews are coming in now: songs play as soon as theirs is here. Videos, moods and years follow over the next hour or two.'
-      : more ? 'Every preview Spotify has is here. Videos, moods and years come in over the next hour or two (some songs may have none).'
-      : 'Everything that could be found is in. Songs without a video play their preview.';
+    document.getElementById('uplprogt').textContent = more ? '' : 'Everything that could be found is in. Add your own MP3s and MP4s from each song’s ••• menu.';
+    document.getElementById('uplprogt').hidden = more;
     if (!more) return;
     PROG.t = setTimeout(function () {   // (the next look: soon while previews come in, else each minute)
       if (UPL.on !== view.id || document.hidden) { if (UPL.on === view.id) PROG.t = setTimeout(function () { uplProg(UPL.view); }, 5000); return; }
@@ -6748,6 +6839,100 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     try { var o = JSON.parse(localStorage.getItem('sotd-proghide') || '{}'); o[v.id + ':' + v.prog.ch] = 1; localStorage.setItem('sotd-proghide', JSON.stringify(o)); } catch (e) {}
     clearTimeout(PROG.t); document.getElementById('uplprog').hidden = true;
   });
+  // ---- editing a calendar's days (John, 1 Nov 2026: "Can there be an edit mode on calendar playlists where you can drag
+  // and drop to different dates"): its owner's Edit days; then a song dragged onto another day (or tapped, then the day
+  // tapped: across months too) moves there, and one already there takes its old day (the Worker's op move; Back to the
+  // setup's days: unmove). Its songs still to come show while editing. Not on the TV. ----
+  var ED = { on: false, sel: null, drag: null, noClick: false };
+  function uplEditCan() { return !!(UPL.on && UPL.view && UPL.view.mine && UPL.view.mode !== 'list' && !TV); }
+  function uplEditSync() {
+    document.getElementById('upleditbtn').hidden = !uplEditCan() || ED.on;
+    var me = uplPls().filter(function (p) { return p.id === UPL.on; })[0];
+    document.getElementById('upledbarreset').hidden = !(me && me.moved);
+  }
+  function uplEditText(t) {
+    document.getElementById('upledbart').textContent = t || (ED.sel ? 'Now tap the day to move “' + ED.sel.title + '” to (change month if you like), or tap it again to keep it.'
+      : 'Drag a song to another day, or tap it and then the day. A song already on that day swaps with it.');
+  }
+  function uplEditOff() {
+    if (!ED.on) return;
+    ED.on = false; ED.sel = null;
+    document.documentElement.classList.remove('upl-editing');
+    document.getElementById('upledbar').hidden = true;
+    uplEditSync();
+  }
+  function uplEditOn() {
+    if (!uplEditCan()) return;
+    ED.on = true; ED.sel = null;
+    document.documentElement.classList.add('upl-editing');
+    document.getElementById('upledbar').hidden = false;
+    uplEditText();
+    uplApply(UPL.view, { keep: true });   // (its songs to come, too)
+  }
+  function editMarks() {
+    [].forEach.call(grid.querySelectorAll('.day'), function (c) {
+      var d = c.getAttribute('data-day'), picks = d && byDate[d];
+      c.classList.toggle('edit-sel', !!(ED.sel && picks && picks.some(function (p) { return p.track === ED.sel.track; })));
+    });
+  }
+  function uplMove(track, day) {
+    var was = ED.sel; ED.sel = null; editMarks(); uplEditText('Moving…');
+    uplOp({ op: 'move', id: UPL.on, track: track, day: day }, null, function (j) {
+      uplEditText();
+      toast(j.swapped ? 'Swapped with “' + j.swapped.title + '”' : 'Moved to ' + longDate(day));
+      if (ED.on) uplApply(UPL.view, { keep: true });
+    }).then(function () { if (document.getElementById('upledbart').textContent === 'Moving…') { ED.sel = was; uplEditText(); editMarks(); } });
+  }
+  document.getElementById('upleditbtn').addEventListener('click', uplEditOn);
+  document.getElementById('upledbardone').addEventListener('click', function () { uplEditOff(); if (UPL.view) uplApply(UPL.view, { keep: true }); });
+  document.getElementById('upledbarreset').addEventListener('click', function () {
+    ask({ k: 'Editing the days', h: 'Back to the setup’s days?', t: 'Every song you’ve moved goes back to the day its setup gives it.', ok: 'Put them back', no: 'Keep them' }).then(function (yes) {
+      if (yes) uplOp({ op: 'unmove', id: UPL.on }, 'Every song on its setup’s day again', function () { uplEditSync(); if (ED.on) uplApply(UPL.view, { keep: true }); });
+    });
+  });
+  grid.addEventListener('click', function (e) {   // editing: a tap picks a song, then its day
+    if (!ED.on) return;
+    var c = e.target.closest && e.target.closest('.day[data-day]');
+    e.preventDefault(); e.stopImmediatePropagation();
+    if (!c || ED.noClick) return;
+    var day = c.getAttribute('data-day'), picks = byDate[day];
+    if (ED.sel) {
+      if (picks && picks.some(function (p) { return p.track === ED.sel.track; })) ED.sel = null;
+      else { uplMove(ED.sel.track, day); return; }
+    } else if (picks) ED.sel = { track: picks[0].track, title: picks[0].title };
+    editMarks(); uplEditText();
+  }, true);
+  grid.addEventListener('pointerdown', function (e) {   // editing: a song dragged to a day
+    if (!ED.on || e.button > 0) return;
+    var c = e.target.closest && e.target.closest('.day.has[data-day]');
+    if (!c) return;
+    var picks = byDate[c.getAttribute('data-day')]; if (!picks) return;
+    ED.drag = { x: e.clientX, y: e.clientY, cell: c, track: picks[0].track, img: (c.querySelector('img') || {}).src || '', on: false, over: null, id: e.pointerId };
+  });
+  document.addEventListener('pointermove', function (e) {
+    var g = ED.drag; if (!g || e.pointerId !== g.id) return;
+    if (!g.on) {
+      if (Math.abs(e.clientX - g.x) + Math.abs(e.clientY - g.y) < 8) return;
+      g.on = true; ED.sel = null; editMarks();
+      g.ghost = document.createElement('div'); g.ghost.className = 'dragghost';
+      if (g.img) { var im = document.createElement('img'); im.src = g.img; im.alt = ''; g.ghost.appendChild(im); } else g.ghost.style.background = 'var(--tile)';
+      document.body.appendChild(g.ghost); g.cell.classList.add('dragfrom');
+    }
+    g.ghost.style.left = e.clientX + 'px'; g.ghost.style.top = e.clientY + 'px';
+    var el = document.elementFromPoint(e.clientX, e.clientY), over = el && el.closest ? el.closest('#grid .day[data-day]') : null;
+    if (over !== g.over) { if (g.over) g.over.classList.remove('drop'); if (over && over !== g.cell) over.classList.add('drop'); g.over = over; }
+    if (e.cancelable) e.preventDefault();
+  }, { passive: false });
+  function dragEnd(e) {
+    var g = ED.drag; if (!g || (e && e.pointerId !== g.id)) return;
+    ED.drag = null;
+    if (!g.on) return;
+    if (g.ghost) g.ghost.remove(); g.cell.classList.remove('dragfrom'); if (g.over) g.over.classList.remove('drop');
+    ED.noClick = true; setTimeout(function () { ED.noClick = false; }, 50);
+    if (e && e.type === 'pointerup' && g.over && g.over !== g.cell) uplMove(g.track, g.over.getAttribute('data-day'));
+  }
+  document.addEventListener('pointerup', dragEnd);
+  document.addEventListener('pointercancel', dragEnd);
   function uplShow(pid, opts) {
     opts = opts || {};
     return uplCall(null, '?id=' + encodeURIComponent(pid)).then(function (j) {
@@ -6764,6 +6949,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var root = document.documentElement; root.classList.remove('upl'); root.classList.remove('upl-list'); root.classList.remove('upl-nosp'); root.classList.remove('upl-noyt'); root.classList.remove('upl-mine'); root.classList.remove('upl-noshare');
     document.getElementById('uplkick').hidden = true;
     clearTimeout(PROG.t); PROG.id = null; document.getElementById('uplprog').hidden = true;
+    uplEditOff();
     UPL.order = null;
     document.getElementById('spfollow').setAttribute('href', JOHN_SP);
     if (UPL.johnYt) { var yf = document.getElementById('ytfollow'); yf.setAttribute('href', UPL.johnYt.href); yf.hidden = UPL.johnYt.hidden; UPL.johnYt = null; }
@@ -6775,10 +6961,11 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // (the app's icon in the month's colours), then their own, then the others they see; each with its owner's picture,
   // or else its newest four covers (from the Worker: ?cards=1). Its owner changes it here: a photo, cropped square. ----
   var CARDS = {}, PICFOR = null;
-  function calMos(el, urls) {
+  function calMos(el, urls) {   // (pictures load at once: a lazy one in a pop-up may never load on the Fire TV)
     el.textContent = '';
     el.classList.toggle('one', urls.length > 0 && urls.length < 4); el.classList.toggle('none', !urls.length);
-    (urls.length >= 4 ? urls.slice(0, 4) : urls.slice(0, 1)).forEach(function (u) { var im = document.createElement('img'); im.alt = ''; im.loading = 'lazy'; im.src = u; im.onerror = function () { im.style.visibility = 'hidden'; }; el.appendChild(im); });
+    var inn = document.createElement('span'); inn.className = 'in'; el.appendChild(inn);
+    (urls.length >= 4 ? urls.slice(0, 4) : urls.slice(0, 1)).forEach(function (u) { var im = document.createElement('img'); im.alt = ''; im.src = u; im.onerror = function () { im.style.visibility = 'hidden'; }; inn.appendChild(im); });
   }
   function calCard(r) {
     var it = document.createElement('div'); it.className = 'cal-item'; it.setAttribute('role', 'listitem');
@@ -7388,6 +7575,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var rows = PL.lists.map(function (l) { return { n: l.name, l: l }; }).concat(uplPls().filter(function (p) { return p.mine && p.src !== 'mpl'; }).map(function (p) { return { n: p.n, p: p }; }))
       .sort(function (a, b) { return a.n.localeCompare(b.n, 'en-GB', { sensitivity: 'base', numeric: true }); });
     ul.textContent = '';
+    document.getElementById('acupladd').hidden = TV;   // (no importing on the Fire TV: John, 1 Nov 2026)
     none.hidden = rows.length > 0 || !PL.loaded;
     if (!rows.length && !PL.loaded) { var ld = document.createElement('li'); ld.className = 'ac-none plain'; ld.textContent = 'Loading…'; ul.appendChild(ld); }
     rows.forEach(function (r) { ul.appendChild(r.p ? uplAcctRow(r.p) : plAcctRow(r.l)); });
@@ -9013,7 +9201,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     document.addEventListener('pointerdown', function (e) {
       var el = dayAt(e);
       pressStop(); pressHeld = false;
-      if (!el || e.button > 0) return;
+      if (!el || e.button > 0 || ED.on) return;
       pressAt = { x: e.clientX, y: e.clientY };
       pressT = setTimeout(function () { pressAt = null; pressHeld = true; holdDay(el); }, 600);
     });
