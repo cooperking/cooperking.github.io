@@ -5,6 +5,10 @@
  * playlist the Worker no longer lists, or a YouTube playlist that no longer exists), so it leaves the published CSV too
  * (1 Nov 2026).
  *
+ * Where it runs: the Apps Script project's Code.gs is Loader.gs (beside this file), which reads this file from the
+ * repository's main branch each run and runs its check(); so a change here reaches the project with a commit. (Pasted
+ * into the project by itself it works too.)
+ *
  * Setup: add the YouTube Data API v3 service, set TO, then run setup() once and allow the permissions it asks for.
  * For members' playlists, the script property sotdKey holds the Song of the Day Worker's admin password.
  * setup() creates the Playlists sheet (its link is in the log) with FIRST_PLAYLIST in it, moves the earlier
