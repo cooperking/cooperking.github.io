@@ -271,9 +271,18 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   *A playlist*. The Worker keeps it as `src: 'csv'` (op `csv`, `UPL_CSV_MOST` 2,000 songs; the songs checked by
   `uplCsvSongs`), readable at once; days, sign-off, sharing and the rest are as a Spotify one's. It's a snapshot: *Update*
   (Profile) or *Update from Exportify* (the pop-up) takes a fresh export (op `csvup`): new songs wait for sign-off, the
-  others keep their days, and songs gone from it go from the calendar. No *Open in Spotify* (the file doesn't say which
+  others keep their days, and songs gone from it go from the calendar. One import at a time (John, 1 Nov 2026): with one already, *Import from Spotify* offers
+  *Update it* or *Remove it* (and the Worker refuses a second). Step 1 says where Exportify opens: over the calendar in
+  the apps and from the Home Screen icon, a small window on a computer, a new tab in a phone's browser (a website can't
+  show another site, with Spotify's sign-in, over itself; opening it in the same tab would leave Back going through
+  Spotify's sign-in pages). No *Open in Spotify* (the file doesn't say which
   playlist it is) and no *Check now*. The collaboration way stays, under the steps ("Or keep it in step with Spotify by
   itself"). Tests: `csv_t.mjs` (the Worker), `imp_page_t.js` (the draft).
+- **Their own MP3s and MP4s: 366 at most** (John, 1 Nov 2026: "Members can add 366 mp3 and mp4 uploads total, via any
+  method"): counted across all their playlists (each MP3 and each MP4 one; covers don't count; replacing one doesn't
+  count again; taking one off, or removing its playlist, frees it). The Worker refuses the 367th as it starts and again
+  as it finishes (`UPL_OWN_FILES`, `uplFileCount`); `/members/me` and each upload's answer give `fu { n, max }`, which
+  the song editor shows under *Your own files*.
 - **A calendar's days** (John, 30 Oct 2026; the pop-up's *Setup*, and straight after adding one): by the day
   each song is added on Spotify (John's rule, a day with no song taking the next); forwards from a day (the first song on
   it, then a song a day); or back from a day (the newest song now on it, each one before a day earlier). Either of the

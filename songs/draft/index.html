@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="81c2214f998f">
+<meta name="sotd-build" content="3427436bf4cf">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -1842,6 +1842,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       <p class="upled-note">In place of the preview and the YouTube video, for you and the members John lets have his own. Each goes up as soon as you choose it.</p>
       <div class="upled-row"><span class="nm"><b>The song (MP3)</b><span id="upledsta"></span></span><span class="acts"><button class="ac-out" id="upledadda" type="button">Add</button><button class="ac-out" id="upleddropa" type="button">Take off</button></span><span class="bar" id="upledbara" hidden><i></i></span></div>
       <div class="upled-row"><span class="nm"><b>A video (MP4)</b><span id="upledstv"></span></span><span class="acts"><button class="ac-out" id="upledaddv" type="button">Add</button><button class="ac-out" id="upleddropv" type="button">Take off</button></span><span class="bar" id="upledbarv" hidden><i></i></span></div>
+      <p class="upled-note" id="upledfu" hidden></p>
       <input type="file" id="upledfa" accept=".mp3,audio/mpeg" hidden><input type="file" id="upledfv" accept=".mp4,video/mp4" hidden>
     </section>
     <section class="upled-sec" aria-labelledby="upledch">
@@ -1866,7 +1867,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     <h3 id="uplih">Import from Spotify</h3>
     <p class="msgv-w" id="uplit"></p>
     <ol class="imp-steps" id="uplisteps">
-      <li class="imp-step now" id="upli1"><span class="n" aria-hidden="true">1</span><b>Get your playlist</b><p>Exportify opens over the calendar. Sign in with Spotify, then tap <i>Export</i> next to your playlist. Close it once the file has saved.</p><button class="copy" id="upligo" type="button">Open Exportify</button></li>
+      <li class="imp-step now" id="upli1"><span class="n" aria-hidden="true">1</span><b>Get your playlist</b><p id="upli1t"></p><button class="copy" id="upligo" type="button">Open Exportify</button></li>
       <li class="imp-step later" id="upli2"><span class="n" aria-hidden="true">2</span><b>Add the file</b><p>The .csv file Exportify saved, in your Downloads.</p><button class="copy ghost" id="uplifile" type="button">Choose the file</button><input type="file" id="uplifin" accept=".csv,text/csv,text/comma-separated-values" hidden></li>
     </ol>
     <div class="imp-got" id="upligot" hidden>
@@ -6743,6 +6744,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       document.getElementById('upleddrop' + k).hidden = !own[k] || busy != null;
       var bar = document.getElementById('upledbar' + k); bar.hidden = busy == null; bar.firstChild.style.width = (busy || 0) + '%';
     });
+    var fu = MEMBER && MEMBER.fu, fe = document.getElementById('upledfu');   // their own MP3s and MP4s across all their playlists, and the most (366)
+    fe.hidden = !(fu && fu.max) || !!(jf.a && jf.v);
+    if (fu && fu.max) fe.textContent = fu.n >= fu.max ? 'You’ve added ' + fu.max + ' of your own MP3s and MP4s, the most. Take one off a song to add another.' : fu.n + ' of your ' + fu.max + ' MP3s and MP4s added, across all your playlists.';
     var art = document.getElementById('upledart'); art.textContent = ''; art.appendChild(artEl(s, true));
     document.getElementById('upledcn').textContent = own.c ? 'Your picture' : 'The album’s cover';
     document.getElementById('upledct').textContent = UED.busyc ? 'Going up…' : own.c ? 'For everyone who sees your calendar.' : 'Or a picture of your own, cropped square.';
@@ -6784,7 +6788,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       uid = j.uploadId; return go(1);
     }).then(function (j) {
       if (!j.ok) throw new Error(j.error || 'it couldn’t finish');
-      ed['busy' + k] = null; upledView(j.view, ed);
+      ed['busy' + k] = null; if (j.fu && MEMBER) MEMBER.fu = j.fu; upledView(j.view, ed);
       toast(k === 'a' ? 'Your MP3 is on: it plays in place of the preview' : 'Your MP4 is on: it plays in place of the YouTube video');
     }).catch(function (e) {
       if (uid) upledPost(q('abort')).catch(function () {});
@@ -6797,7 +6801,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       if (!yes) return;
       upledPost(k === 'c' ? 'uplcover?id=' + encodeURIComponent(ed.p.id) + '&track=' + ed.s.track + '&op=drop' : 'uplup?id=' + encodeURIComponent(ed.p.id) + '&track=' + ed.s.track + '&kind=' + k + '&op=drop').then(function (j) {
         if (j.status !== 200) { toast(j.error || 'Couldn’t take it off just now'); return; }
-        upledView(j.view, ed); toast('Taken off');
+        if (j.fu && MEMBER) MEMBER.fu = j.fu; upledView(j.view, ed); toast('Taken off');
       }).catch(function () { toast('Couldn’t reach the site. Try again.'); });
     });
   }
@@ -7431,7 +7435,12 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       if (v) uplOp({ op: 'link', id: p.id, link: v.trim() }, 'Sent: John has it on his page');
     });
   }
-  document.getElementById('acupladd').addEventListener('click', function () { impOpen(null); });
+  document.getElementById('acupladd').addEventListener('click', function () {   // one import at a time (John, 1 Nov 2026): theirs already, to update or remove
+    var had = uplPls().filter(function (p) { return p.mine && p.src === 'csv'; })[0];
+    if (!had) { impOpen(null); return; }
+    ask({ k: 'Your playlists', h: 'One import at a time', t: 'You’ve imported “' + had.n + '” already. Update it with a fresh export, or remove it to import another playlist.', ok: 'Update it', no: 'Cancel',
+      alt: { label: 'Remove it', now: function () { askEnd(null); uplRemoveAsk(had); } } }).then(function (yes) { if (yes) impOpen(had); });
+  });
   function uplAddCollab() {   // one of their Spotify playlists shared with John as a collaborator: read from Spotify by itself
     var link = '';
     ask({ k: 'Your playlists', h: 'Add a Spotify playlist', t: UPL_HOW, input: { placeholder: 'https://open.spotify.com/playlist/…' }, ok: 'Next' }).then(function (v) {
@@ -7514,6 +7523,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     document.getElementById('uplih').textContent = up ? 'Update “' + up.n + '”' : 'Import from Spotify';
     document.getElementById('uplit').textContent = up ? 'Export it again and add the new file. New songs wait for you to sign off; the rest keep their days.'
       : 'Any of your Spotify playlists, private ones too, as a calendar or a playlist. Nothing to share with John.';
+    var B = NAT && NAT.Plugins && NAT.Plugins.Browser, sheetish = (B && typeof B.open === 'function') || APK || standalone, computer = window.matchMedia && matchMedia('(pointer: fine)').matches && screen.width >= 900;
+    document.getElementById('upli1t').innerHTML = sheetish ? 'Exportify opens over the calendar. Sign in with Spotify, then tap <i>Export</i> next to your playlist. Close it once the file has saved.'
+      : computer ? 'Exportify opens in a small window. Sign in with Spotify, then click <i>Export</i> next to your playlist. Close the window once the file has saved.'
+      : 'Exportify opens in a new tab. Sign in with Spotify, then tap <i>Export</i> next to your playlist. Once the file has saved, come back to this tab.';
     impStep(step || 1);
     openLayer(impDlg);
     setTimeout(function () { try { document.getElementById(step === 2 ? 'uplifile' : 'upligo').focus({ preventScroll: true }); } catch (e) {} }, 60);

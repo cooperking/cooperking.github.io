@@ -1540,7 +1540,8 @@ async function memberMe(request, env, answer) {
   const seen = Object.keys(all).filter(k => k !== id && k !== ownerId && hasJoined(all[k]) && !apart(all, id, k)).map(k => ({ id: k, name: all[k].name })).sort(byName);
   const bell = bellView(all, id, await env.SOTD.get('bell:' + id, 'json')).unseen;   // reactions to their messages not yet seen
   const U0 = await uplAll(env), pls = await uplMine(env, uplList(all, id, U0), U0);   // members' own playlists they can see, and their own (with the songs waiting for them)
-  return answer(200, Object.assign({ name: m.name, email: m.email || '', exp, media, see, mycovers, unread, bell, pls, others, seen, msgs: !m.nomsg,
+  const fu = { n: await uplFileCount(env, id, U0), max: UPL_OWN_FILES };   // their own MP3s and MP4s, and the most they can have
+  return answer(200, Object.assign({ name: m.name, email: m.email || '', exp, media, see, mycovers, unread, bell, pls, fu, others, seen, msgs: !m.nomsg,
     mute: (m.mute || []).filter(k => seen.some(x => x.id === k)) }, owner ? { owner: true } : {}));
 }
 
@@ -3296,6 +3297,7 @@ async function memberUpl(request, url, env, answer) {
   if (body.op === 'csv') {   // one of their Spotify playlists from an Exportify file
     const items = uplCsvSongs(body.songs);
     if (!items || !items.length) return answer(400, { error: 'No songs in that file. Choose the file Exportify saved for your playlist.' });
+    if (Object.values(U).some(r => r.o === me && r.src === 'csv')) return answer(400, { error: 'You have an import already. Update it, or remove it to import another.' });   // (one at a time: John, 1 Nov 2026)
     if (Object.values(U).filter(r => r.o === me && r.src !== 'mpl').length >= UPL_MAX) return answer(400, { error: 'That’s ' + UPL_MAX + ' playlists, the most you can add.' });
     const now = Date.now(), newest = Math.max.apply(null, items.map(x => Date.parse(x.a)));
     const pid = randomCode(10), rec = { o: me, src: 'csv', sp: '', n: String(body.name || '').replace(/\s+/g, ' ').trim().slice(0, 80) || 'My playlist', mode: body.mode === 'list' ? 'list' : 'cal', at: now, base: Math.max(newest, 0), st: 'ok' };
@@ -3470,6 +3472,15 @@ function uplSongDay(rec, data, days, i) {   // the day its song goes to the memb
 // up in parts as John's are: /members/uplup), heard and seen by the members John lets have his own (see on their
 // records) and by them, and their own cover (uc/<pid>/<track>.jpg, made small on the page: /members/uplcover; for
 // everyone who sees the playlist). files in upl:<pid>: { <track>: { a, v: sizes, c: when } }. ----------
+// A member has UPL_OWN_FILES of their own MP3s and MP4s at most, across all their playlists (John, 1 Nov 2026: "Members
+// can add 366 mp3 and mp4 uploads total, via any method"); replacing one doesn't count again, taking one off frees it.
+const UPL_OWN_FILES = 366;
+async function uplFileCount(env, member, U) {
+  let n = 0;
+  for (const pid of Object.keys(U)) if (U[pid].o === member) for (const f of Object.values((await uplSongs(env, pid)).files || {})) n += (f.a ? 1 : 0) + (f.v ? 1 : 0);
+  return n;
+}
+function uplFilesFull() { return 'That’s ' + UPL_OWN_FILES + ' of your own MP3s and MP4s, the most. Take one off a song to add another.'; }
 const UPL_FILE_MAX = { a: 80e6, v: 1500e6 }, UPL_PARTS_MAX = { a: 10, v: 40 }, UPL_COVER_MAX = 1.5e6;   // (the page sends parts of 10 MB or more, 38 at most)
 function uplTooBig(kind) { return 'That’s too big: ' + (kind === 'a' ? 'an MP3' : 'an MP4') + ' can be ' + Math.round(UPL_FILE_MAX[kind] / 1e6) + ' MB at most.'; }
 async function uplOwnSong(request, url, env, answer) {   // the owner's playlist and song, or the answer to give
@@ -3496,9 +3507,12 @@ async function memberUplUp(request, url, env, answer) {   // ?id&track&kind=a|v&
   const kind = url.searchParams.get('kind'), op = url.searchParams.get('op'), uid = url.searchParams.get('uploadId') || '';
   if (!MEDIA_KINDS[kind]) return answer(400, { error: 'An MP3 (a) or an MP4 (v)?' });
   const key = 'u' + kind + '/' + o.pid + '/' + o.track + '.' + MEDIA_KINDS[kind].ext;
-  if (op === 'drop') { await env.MEDIA.delete(key); await uplFilesSet(env, o.pid, o.track, kind, 0); return answer(200, { ok: true, view: await uplView(env, o.who.all, o.who.id, o.pid, o.rec) }); }
+  const fu = async () => ({ n: await uplFileCount(env, o.who.id, await uplAll(env)), max: UPL_OWN_FILES });
+  const isNew = async () => !(((await uplSongs(env, o.pid)).files || {})[o.track] || {})[kind];
+  if (op === 'drop') { await env.MEDIA.delete(key); await uplFilesSet(env, o.pid, o.track, kind, 0); return answer(200, { ok: true, fu: await fu(), view: await uplView(env, o.who.all, o.who.id, o.pid, o.rec) }); }
   if (op === 'start') {
     if ((await catalog(env))[o.track] && (await catalog(env))[o.track][kind]) return answer(400, { error: 'Already uploaded.' });   // (John's, from the Songs tab)
+    if (await isNew() && (await fu()).n >= UPL_OWN_FILES) return answer(400, { error: uplFilesFull() });
     return answer(200, { uploadId: (await env.MEDIA.createMultipartUpload(key, { httpMetadata: { contentType: MEDIA_KINDS[kind].type } })).uploadId });
   }
   if (!uid) return answer(400, { error: 'Which upload?' });
@@ -3515,8 +3529,9 @@ async function memberUplUp(request, url, env, answer) {   // ?id&track&kind=a|v&
     if (!parts.length) return answer(400, { error: 'No parts.' });
     const obj = await up.complete(parts);
     if (obj.size > UPL_FILE_MAX[kind]) { await env.MEDIA.delete(key); return answer(400, { error: uplTooBig(kind) }); }
+    if (await isNew() && (await fu()).n >= UPL_OWN_FILES) { await env.MEDIA.delete(key); return answer(400, { error: uplFilesFull() }); }   // (others went up meanwhile)
     await uplFilesSet(env, o.pid, o.track, kind, obj.size);
-    return answer(200, { ok: true, size: obj.size, view: await uplView(env, o.who.all, o.who.id, o.pid, o.rec) });
+    return answer(200, { ok: true, size: obj.size, fu: await fu(), view: await uplView(env, o.who.all, o.who.id, o.pid, o.rec) });
   }
   if (op === 'abort') { await up.abort(); return answer(200, { ok: true }); }
   return answer(400, { error: 'Unknown step.' });
