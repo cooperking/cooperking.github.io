@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="4643ef571286">
+<meta name="sotd-build" content="93e5c17ea925">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -7322,13 +7322,14 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   document.getElementById('mark').addEventListener('keydown', function (e) { if (this.classList.contains('can') && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); uplChooser(); } });
   document.getElementById('uplclose').addEventListener('click', function () { closeDialog(uplDlg); });
   // #u=<playlist>, or #u=<playlist>&d=<day> (a member's song, from its message): that calendar, once signed in
+  // (ids are letters, digits, _ and -: one with a hyphen was never read back, so a reload or its link lost it, John, 1 Nov 2026)
   // With no address of its own (a refresh that lost it, or the app opened again), the calendar this device was last on
   // (sotd-cal, kept until John's own is chosen again: John, 1 Nov 2026: "Could it always stay on the chosen one").
   function uplFromHash() {
-    var m = /^#u=(\w+)(?:&d=(\d{1,2}-\d{1,2}-\d{4})|&m=(\d{1,2})-(\d{4}))?$/.exec(location.hash);
+    var m = /^#u=([\w-]+)(?:&d=(\d{1,2}-\d{1,2}-\d{4})|&m=(\d{1,2})-(\d{4}))?$/.exec(location.hash);
     if (!m) {
       var was = null; try { was = localStorage.getItem('sotd-cal'); } catch (e) {}
-      if (was && /^\w{6,40}$/.test(was) && (!location.hash || location.hash === '#') && !UPL.on) { UPL.want = { id: was, quiet: true }; uplWanted(); }
+      if (was && /^[\w-]{6,40}$/.test(was) && (!location.hash || location.hash === '#') && !UPL.on) { UPL.want = { id: was, quiet: true }; uplWanted(); }
       return;
     }
     var d = m[2] ? m[2].split('-') : null;
