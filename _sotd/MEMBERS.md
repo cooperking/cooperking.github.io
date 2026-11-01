@@ -514,6 +514,11 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   release date (`rd`: from Spotify's read, or Exportify's Album Release Date column), which years.py uses as it uses
   John's export, so they have a year at once (MusicBrainz's earlier first release still wins). A Spotify playlist
   whose only change is the dates gains them quietly; an Exportify playlist gains them with a fresh file.
+- **As many Exportify imports as they like** (John, 1 Nov 2026: an Exportify playlist said "this will take the place of
+  your … playlist"): the one-at-a-time rule is gone. Each playlist in a download is matched to their own import from the
+  same file (`impMineOf`, by its file's name): one of theirs says Update (its new songs), any other New, beside theirs.
+  A download of several opens on the picker, theirs first, marked On the calendar. The Worker's op `csv` takes another
+  one's place only when asked (`replace`). The allowance still counts every playlist of theirs.
 - **The playlist tiles are in Songs › Member Songs** (John, 1 Nov 2026: "the members playlist tiles should be in the
   members songs section in songs"): at the top of Member Songs, each with its picture, whose, its state, Importing and
   its progress while it comes in, and its buttons (Open, the invite, Copy push link, Check now, Remove); a tap shows

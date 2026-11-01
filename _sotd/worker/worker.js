@@ -3697,9 +3697,9 @@ async function memberUpl(request, url, env, answer) {
   if (body.op === 'csv') {   // one of their Spotify playlists from an Exportify file
     const items = uplCsvSongs(body.songs);
     if (!items || !items.length) return answer(400, { error: 'No songs in that file. Choose the file Exportify saved for your playlist.' });
-    // one at a time (John, 1 Nov 2026): another playlist takes the place of theirs (replace: its id), keeping who sees it and its notifications
-    const had = Object.entries(U).find(([, r]) => r.o === me && r.src === 'csv');
-    if (had && String(body.replace || '') !== had[0]) return answer(400, { error: 'You have an import already. Choose it to update it, or another to take its place.' });
+    // as many as they like (John, 1 Nov 2026: an Exportify playlist said it would "take the place of" theirs; the one-at-a-time
+    // rule is gone): replace (an id of theirs) still takes one's place, keeping who sees it and its notifications
+    const had = body.replace ? Object.entries(U).find(([pid, r]) => pid === String(body.replace) && r.o === me && r.src === 'csv') : null;
     const keep = had ? { share: had[1].share, to: had[1].to, send: had[1].send, prev: (had[1].prev || []).concat(had[0]).slice(-10) } : {};   // (prev: the ids it had, for its /yt/ link)
     if (had) { await uplDrop(env, [had[0]]); delete U[had[0]]; }
     if (Object.values(U).filter(r => r.o === me && r.src !== 'mpl').length >= UPL_MAX) return answer(400, { error: 'That’s ' + UPL_MAX + ' playlists, the most you can add.' });

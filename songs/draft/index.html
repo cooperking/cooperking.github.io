@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="4c2d41139e5c">
+<meta name="sotd-build" content="a8c8bd096b0b">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -8571,7 +8571,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var n = String(file || '').split('/').pop().replace(/\.csv$/i, '').replace(/\s*\(\d+\)$/, '').replace(/-\d+$/, '').replace(/_+/g, ' ').trim();
     return n ? n.charAt(0).toUpperCase() + n.slice(1) : '';
   }
-  function impMine(l) { var h = IMP.had; return !!h && !!l && (h.fk ? h.fk === l.key : impKey(h.sn || h.n) === l.key); }   // (theirs on the calendar: the same Exportify file)
+  // their own import from the same Exportify file, if they have one (as many imports as they like: John, 1 Nov 2026)
+  function impMineOf(l) { return l ? uplPls().filter(function (p) { return p.mine && p.src === 'csv' && (p.fk ? p.fk === l.key : impKey(p.sn || p.n) === l.key); })[0] || null : null; }
+  function impMine(l) { return !!impMineOf(l); }   // (theirs on the calendar: the same Exportify file)
   function impCovers(songs) {   // the newest four different covers, at 300 pixels
     var out = [];
     for (var i = songs.length - 1; i >= 0 && out.length < 4; i--) { var c = (songs[i].img || '').replace('ab67616d0000b273', 'ab67616d00001e02'); if (c && out.indexOf(c) === -1) out.push(c); }
@@ -8597,14 +8599,12 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     impShow('steps');
   }
   function impOpen(step) {   // step: 2 when coming back from Exportify
-    IMP.had = uplPls().filter(function (p) { return p.mine && p.src === 'csv'; })[0] || null;
-    IMP.lists = null; IMP.pick = null;
-    var h = IMP.had;
-    document.getElementById('uplih').textContent = h ? 'Update or switch' : 'Import from Spotify';
-    document.getElementById('uplit').textContent = h ? 'Export your playlists again and add the download.' : 'Any of your Spotify playlists, private ones too, as a calendar or a playlist. Nothing to share with John.';
+    IMP.had = null; IMP.lists = null; IMP.pick = null;
+    var h = uplPls().some(function (p) { return p.mine && p.src === 'csv'; });   // (any imports of theirs already)
+    document.getElementById('uplih').textContent = 'Import from Spotify';
+    document.getElementById('uplit').textContent = 'Any of your Spotify playlists, private ones too, as a calendar or a playlist. Nothing to share with John.';
     var mine = document.getElementById('uplimine'); mine.hidden = !h;
-    if (h) mine.textContent = 'Choose “' + h.n + '” again to bring in its new songs, or another playlist to put on the calendar in its place.';
-    document.getElementById('uplicollab').hidden = !!h;
+    if (h) mine.textContent = 'Choose one you’ve imported before to bring in its new songs, or any other to add it as well.';
     var B = NAT && NAT.Plugins && NAT.Plugins.Browser, sheetish = (B && typeof B.open === 'function') || APK || standalone, computer = window.matchMedia && matchMedia('(pointer: fine)').matches && screen.width >= 900;
     var how = ' Sign in with Spotify, then tap <i>Export all</i> (or <i>Export</i> next to one playlist).';
     document.getElementById('upli1t').innerHTML = sheetish ? 'Exportify opens over the calendar.' + how + ' Close it once the download has saved.'
@@ -8685,8 +8685,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       if (!lists.length) { toast(files.length ? 'No Spotify playlists in that file. Choose what Exportify saved.' : 'That isn’t a download from Exportify. Choose the .zip or .csv it saved.'); impStep(2); return; }
       lists.sort(function (a, b) { return (impMine(b) ? 1 : 0) - (impMine(a) ? 1 : 0) || (b.yours ? 1 : 0) - (a.yours ? 1 : 0) || (b.last > a.last ? 1 : b.last < a.last ? -1 : 0); });   // (theirs on the calendar first, then their own, then those they follow; each the most lately added to first)
       IMP.lists = lists; impForget(); impKeep(lists);
-      var mineL = lists.filter(impMine)[0];
-      if (lists.length === 1 || mineL) { impGot(mineL || lists[0]); return; }   // (theirs on the calendar in it: its update, Choose another for the rest)
+      if (lists.length === 1) { impGot(lists[0]); return; }   // (one playlist: straight to it; several: the picker, theirs first, marked On the calendar)
       impPick();
     }).catch(function () { toast(typeof DecompressionStream === 'undefined' ? 'This browser can’t open that zip. Unzip it, then choose one playlist’s .csv.' : 'Couldn’t read that file'); impStep(2); });
   }
@@ -8727,7 +8726,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   function impPick() {   // the download's playlists, to choose from
     var lists = IMP.lists, grid = document.getElementById('upligrid'), q = document.getElementById('uplisearch');
-    document.getElementById('uplipickt').textContent = lists.length + (lists.length === 1 ? ' playlist' : ' playlists') + ' in your download' + (IMP.had && !lists.some(impMine) ? '. “' + IMP.had.n + '” isn’t one of them.' : '');
+    document.getElementById('uplipickt').textContent = lists.length + (lists.length === 1 ? ' playlist' : ' playlists') + ' in your download';
     document.getElementById('uplisearchl').hidden = lists.length <= 6;
     var kept = IMP.saved && IMP.saved.lists === lists;
     document.getElementById('uplikept').hidden = !kept;
@@ -8757,7 +8756,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   });
   function impGot(l) {   // the playlist chosen: what happens to it
     IMP.pick = l;
-    var h = IMP.had, up = impMine(l), swap = !!h && !up, last = l.songs[l.songs.length - 1];
+    var h = impMineOf(l), up = !!h, swap = false, last = l.songs[l.songs.length - 1];   // (theirs from the same file: Update; any other: New, beside theirs)
     impMos(document.getElementById('uplimos'), l.songs);
     document.getElementById('uplikind').textContent = up ? 'Update' : swap ? 'Switch' : 'New';
     document.getElementById('uplisumh').textContent = up ? h.n : l.name;
@@ -8799,10 +8798,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   document.getElementById('uplifin').addEventListener('change', function () { impTake(this.files && this.files[0]); });
   document.getElementById('upliok').addEventListener('click', function () {
     var l = IMP.pick; if (!l || IMP.busy) return;
-    var b = this, h = IMP.had, up = impMine(l), mode = (document.querySelector('input[name="uplimode"]:checked') || {}).value, label = b.textContent;
+    var b = this, h = impMineOf(l), up = !!h, mode = (document.querySelector('input[name="uplimode"]:checked') || {}).value, label = b.textContent;
     IMP.busy = true; b.disabled = true; b.textContent = up ? 'Updating…' : 'Importing…';
     uplCall(up ? { op: 'csvup', id: h.id, songs: l.songs, file: l.file }
-      : { op: 'csv', name: document.getElementById('upliname').value.replace(/\s+/g, ' ').trim() || l.name, file: l.file, mode: mode === 'list' ? 'list' : 'cal', songs: l.songs, replace: h ? h.id : undefined }).then(function (j) {
+      : { op: 'csv', name: document.getElementById('upliname').value.replace(/\s+/g, ' ').trim() || l.name, file: l.file, mode: mode === 'list' ? 'list' : 'cal', songs: l.songs }).then(function (j) {
       IMP.busy = false; b.disabled = false; b.textContent = label;
       if (j.status !== 200) { toast(j.error || 'Couldn’t import it just now'); return; }
       impForget(); MEMBER.pls = j.pls; uplMark(); uplWaitCount(); if (acct.open) uplDrawAcct();
