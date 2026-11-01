@@ -356,7 +356,8 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
 - **Moving songs to other days** (John, 1 Nov 2026: "Can there be an edit mode on calendar playlists where you can drag
   and drop to different dates"): on their own calendar, its owner's *Edit days* (beside Play and Shuffle; not on the TV).
   The songs wiggle; one dragged onto another day moves there, or one tapped and then a day tapped (in any month); a song
-  already on that day takes the moved one's old day. Its songs still to come show while editing; a day isn't opened by
+  already on that day takes the moved one's old day. Its owner sees its songs still to come on their calendar, faded with
+  *To come* (John, 1 Nov 2026: "Can they be shown just to the owner for editing"; others see each on its day); a day isn't opened by
   a tap meanwhile. A bar at the foot says how, with *Back to the setup's days* (once some are moved) and *Done*. The
   Worker keeps each moved song's day (`dd` on the playlist's record, over the setup's way: `uplDays`), op `move`
   (`{ id, track, day }`, gives `swapped`) and `unmove`; choosing a new way in *Setup* starts afresh. Tests: `move_t.mjs`

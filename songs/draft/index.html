@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="32d31a6f5df7">
+<meta name="sotd-build" content="229756504391">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -541,6 +541,8 @@ html.upl-list #upllist { display: grid; }
 .mine-list .rowfav .heart { width: 17px; height: 17px; }
 .mine-list .tx { cursor: pointer; }
 .day.has.soon .sleeve { opacity: .55; }
+.day.has.soon::after { content: "To come"; position: absolute; left: 50%; top: 4px; transform: translateX(-50%); padding: 1px 5px; border-radius: 999px; background: rgba(16, 6, 16, .75); color: #fffaf5; font: 600 8px/1.4 var(--sans); letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; pointer-events: none; }
+html.big .day.has.soon::after { font-size: 10px; top: 6px; }
 .uplwait.soon { border-color: var(--line); background: var(--pill-bg); }
 .belll .open { padding-bottom: 8px; }
 .ac-inbox { display: grid; gap: 6px; }
@@ -6735,7 +6737,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   function uplApply(view, opts) {
     opts = opts || {};
-    var list = uplSongsOf(view).filter(function (x) { return !x.w && (!x.f || (ED.on && view.mine)); });   // (as the others see it: its owner's waiting songs and days to come are in the pop-up; editing its days, those to come show too)
+    var list = uplSongsOf(view).filter(function (x) { return !x.w && (!x.f || view.mine); });   // (as the others see it, but its owner sees its songs still to come too, faded, to move them: John, 1 Nov 2026; waiting songs are in the pop-up)
     if (!list.length) { if (view.mine) mineUplShow(view, { day: opts.day }); else toast('Nothing on “' + view.n + '” yet'); return false; }
     if (!UPL.on) UPL.john = songs;
     var keep = UPL.on === view.id && !!opts.keep;
