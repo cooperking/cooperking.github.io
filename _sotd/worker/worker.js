@@ -815,8 +815,8 @@ async function adminStatus(env) {
   if (pages) {
     const wl = (waitingLive && waitingLive.list) || [];
     site = !pages.draft ? { st: 'bad', say: 'The draft isn’t what the template builds: it wasn’t built again after a change.', key: 'p:draft' }
+      : wl.length ? { st: 'wait', say: 'The draft has changes waiting to go live:', list: wl, publish: true }   // (template changes since the last go-live: waiting, whatever pages.json says, as the job that writes it can be cancelled by the next push: John, 1 Nov 2026, "there's no option to publish")
       : pages.live ? { st: 'ok', say: 'The live calendar is the draft: nothing waiting.' }
-      : wl.length ? { st: 'wait', say: 'The draft has changes waiting to go live:', list: wl, publish: true }
       : { st: 'bad', say: 'The live calendar isn’t what the template builds, and nothing has changed in the template since it last went live.', key: 'p:live' };
     if (site.key) mark(site, site.key);
     site.last = (waitingLive && waitingLive.last) || null;   // when it last went live
