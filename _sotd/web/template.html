@@ -469,6 +469,8 @@ html.upl-list .side-acts .listbtn { display: inline-grid; }
 .imp-mos.one { grid-template-columns: 1fr; }
 .imp-mos.none::after { content: "♪"; position: absolute; inset: 0; display: grid; place-items: center; font: 34px var(--serif); color: var(--fg); opacity: .6; }
 .imp-mos.big { width: 104px; flex: none; }
+.imp-kept { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin: -4px 0 0; padding: 10px 12px; border-radius: 12px; background: var(--pill-bg); font-size: 13px; line-height: 1.4; color: var(--fg); }
+.imp-kept[hidden] { display: none; }
 .imp-none { margin: 0; font-size: 13px; color: var(--muted); }
 .imp-top { display: flex; gap: 14px; align-items: center; }
 .imp-what { display: grid; gap: 4px; min-width: 0; }
@@ -2028,6 +2030,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     <div class="imp-pane" id="uplipick" hidden>
       <h3>Choose a playlist</h3>
       <p class="msgv-w" id="uplipickt"></p>
+      <div class="imp-kept" id="uplikept" hidden><span id="uplikeptt"></span><button class="imp-alt" id="upliupd" type="button">Update the file</button></div>
       <label class="imp-search" id="uplisearchl" hidden><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3 3"/></svg><input id="uplisearch" type="search" placeholder="Find a playlist" autocomplete="off" spellcheck="false" aria-label="Find a playlist"></label>
       <div class="imp-grid" id="upligrid" role="list"></div>
       <p class="imp-none" id="uplipicknone" hidden>No playlist by that name.</p>
@@ -3154,7 +3157,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   audio.addEventListener('waiting', function () { if (coverOn) coverState(3); });
   audio.addEventListener('ended', function () { if (coverOn) coverState(0); });
   audio.addEventListener('error', function () {   // no connection and not downloaded: stopped, and said so
-    if (coverOn && vplay && vplay.cover && navigator.onLine !== false && audio.src.indexOf('p.scdn.co/mp3-preview/') >= 0) { deadPreview(vplay.el); return; }   // (online: the preview's gone)
+    if (coverOn && vplay && vplay.cover && navigator.onLine !== false && /p\.scdn\.co\/mp3-preview\/|\/sp\/p\/[0-9a-f]+\.mp3/.test(audio.src)) { deadPreview(vplay.el); return; }   // (online: the preview's gone)
     if (!coverOn || !vplay || !vplay.cover || navigator.onLine !== false) return;
     var el = vplay.el; if (OFFL[el.sotd.s.track]) return;
     coverState(2); toast('That one isn’t downloaded: it needs a connection');
@@ -3924,7 +3927,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       price.appendChild(fb2);
       var h = document.createElement('h3'); h.textContent = s.title;
       var by = document.createElement('p'); by.className = 'by'; by.textContent = s.artist; by._song = s; setYear(by, s);
-      var al = document.createElement('p'); al.className = 'alb'; al.textContent = s.album;
+      var al = document.createElement('p'); al.className = 'alb'; al.textContent = s.album + (s.sx ? (s.album ? ' · ' : '') + 'No longer on Spotify' : '');   // (gone from Spotify since it came in: kept here, John, 1 Nov 2026)
       // the song's buttons, as icons at the end of its number's row: add to my playlist, share, open in Spotify
       var ln = document.createElement('a'); ln.className = 'iconbtn'; ln.href = 'https://open.spotify.com/track/' + s.track; ln.target = '_blank'; ln.rel = 'noopener';
       ln.setAttribute('aria-label', 'Open ' + s.title + ' in Spotify'); ln.title = 'Open in Spotify';
@@ -3936,10 +3939,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       sh.setAttribute('aria-label', 'Share ' + s.title); sh.title = 'Share';
       sh.innerHTML = SHARE_ICON;
       sh.addEventListener('click', function () { shareDay(iso, s, sh); });
-      var icons = div('icons'); icons.appendChild(af); icons.appendChild(sh); icons.appendChild(ln);
+      var icons = div('icons'); icons.appendChild(af); icons.appendChild(sh); if (!s.sx) icons.appendChild(ln);
       var dlb = document.createElement('button'); dlb.type = 'button'; dlb.className = 'iconbtn dlbtn';
       dlb.addEventListener('click', function () { dlToggle(s); });
-      dlButton(dlb, s); icons.insertBefore(dlb, ln);
+      dlButton(dlb, s); if (ln.parentNode) icons.insertBefore(dlb, ln); else icons.appendChild(dlb);
       if (songSrc(s)) {   // play on a speaker (shown while the phone can see one)
         var cs = document.createElement('button'); cs.type = 'button'; cs.className = 'iconbtn castsong';
         cs.innerHTML = SPK_ICON; castLabel(cs); cs.addEventListener('click', castPick);
@@ -6832,7 +6835,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     return view.songs.map(function (x) { return uplSongMap(x, view); });
   }
   function uplSongMap(x, view) {   // one of a member's songs, and which calendar it's from (upl, ut its title at the top, un its own, ush who sees it)
-    var o = { upl: view.id, ut: view.t, un: view.n, ush: view.sh || 'members', n: x.n, tag: x.tag, a: londonDay(x.a), d: x.d, title: x.title, artist: x.artist, as: x.artists && x.artists.length > 1 || /, /.test(x.artist) ? x.artists : undefined, album: x.album, track: x.id, u: x.img, p: x.p, w: x.w ? 1 : 0, f: x.f ? 1 : 0 };
+    var o = { upl: view.id, ut: view.t, un: view.n, ush: view.sh || 'members', n: x.n, tag: x.tag, a: londonDay(x.a), d: x.d, title: x.title, artist: x.artist, as: x.artists && x.artists.length > 1 || /, /.test(x.artist) ? x.artists : undefined, album: x.album, track: x.id, u: x.img, p: x.p, w: x.w ? 1 : 0, f: x.f ? 1 : 0, sx: x.sx ? 1 : 0 };
     if ('ov' in x) o.ov = x.ov;   // its owner's: the video ('' none), moods and genres, their MP3 and MP4, cover; their files' sizes (theirs)
     if (x.tg) o.tg = x.tg; if (x.ma) o.ma = x.ma; if (x.mv) o.mv = x.mv; if (x.uc) o.uc = 1; if (x.own) o.own = x.own; if (x.jf) o.jf = x.jf; if (x.jo) o.jo = x.jo;   // (jf: John’s own for it, its owner’s editor)
     if (x.vid) o.vid = x.vid; if (x.mt) o.mt = x.mt; if (x.yr) o.yr = x.yr;   // what the site job found: its video, moods and genres, year
@@ -8258,8 +8261,23 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       : 'Exportify opens in a new tab.' + how + ' Once the download has saved, come back to this tab.';
     document.getElementById('upli2t').textContent = 'The .zip Exportify saved (or one playlist’s .csv), in your Downloads.' + (APK || impFilesOk() ? ' Or open it with Song of the Day straight from your Downloads.' : '');
     impStep(step || 1);
+    if (!step) impSaved(function () { if (impDlg.open && !IMP.lists && !IMP.away && IMP.saved && IMP.saved.lists) { IMP.lists = IMP.saved.lists; IMP.fromSaved = true; impPick(); } });   // (the download they loaded last: its playlists straight away)
     openLayer(impDlg);
     setTimeout(function () { try { document.getElementById(step === 2 ? 'uplifile' : 'upligo').focus({ preventScroll: true }); } catch (e) {} }, 60);
+  }
+  // the download they loaded last, kept for them (John, 1 Nov 2026: "Once a zip or csv file is loaded in, can it stay in
+  // memory. With a way to update the file if necessary"): the Worker's /members/impfile, on every device of theirs.
+  // Import from Spotify opens on its playlists; Update the file goes through Exportify again, and the new one is kept.
+  function impSaved(then) {
+    if (IMP.saved !== undefined) { then(); return; }
+    var tok = plTok(); if (!tok || !MBASE || !window.fetch) { IMP.saved = null; then(); return; }
+    fetch(MBASE + '/members/impfile', { headers: { Authorization: 'Bearer ' + tok }, cache: 'no-store' }).then(function (r) { return r.status === 200 ? r.json() : null; })
+      .then(function (j) { IMP.saved = j && j.lists && j.lists.length ? j : null; then(); }, function () { IMP.saved = null; then(); });
+  }
+  function impKeep(lists) {
+    IMP.saved = { at: Date.now(), lists: lists }; IMP.fromSaved = false;
+    var tok = plTok(); if (!tok || !MBASE || !window.fetch) return;
+    fetch(MBASE + '/members/impfile', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + tok }, body: JSON.stringify({ lists: lists }) }).catch(function () {});
   }
   function impFilesOk() { var F = NAT && NAT.Plugins && NAT.Plugins.SotdFiles; return !!(F && typeof F.read === 'function'); }
   function impAway() {   // Exportify, over the calendar
@@ -8315,8 +8333,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       impWhose(lists);
       if (!lists.length) { toast(files.length ? 'No Spotify playlists in that file. Choose what Exportify saved.' : 'That isn’t a download from Exportify. Choose the .zip or .csv it saved.'); impStep(2); return; }
       lists.sort(function (a, b) { return (impMine(b) ? 1 : 0) - (impMine(a) ? 1 : 0) || (b.yours ? 1 : 0) - (a.yours ? 1 : 0) || (b.last > a.last ? 1 : b.last < a.last ? -1 : 0); });   // (theirs on the calendar first, then their own, then those they follow; each the most lately added to first)
-      IMP.lists = lists; impForget();
-      if (lists.length === 1) { impGot(lists[0]); return; }
+      IMP.lists = lists; impForget(); impKeep(lists);
+      var mineL = lists.filter(impMine)[0];
+      if (lists.length === 1 || mineL) { impGot(mineL || lists[0]); return; }   // (theirs on the calendar in it: its update, Choose another for the rest)
       impPick();
     }).catch(function () { toast(typeof DecompressionStream === 'undefined' ? 'This browser can’t open that zip. Unzip it, then choose one playlist’s .csv.' : 'Couldn’t read that file'); impStep(2); });
   }
@@ -8357,8 +8376,12 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   function impPick() {   // the download's playlists, to choose from
     var lists = IMP.lists, grid = document.getElementById('upligrid'), q = document.getElementById('uplisearch');
-    document.getElementById('uplipickt').textContent = lists.length + ' playlists in your download' + (IMP.had && !lists.some(impMine) ? '. “' + IMP.had.n + '” isn’t one of them.' : '');
+    document.getElementById('uplipickt').textContent = lists.length + (lists.length === 1 ? ' playlist' : ' playlists') + ' in your download' + (IMP.had && !lists.some(impMine) ? '. “' + IMP.had.n + '” isn’t one of them.' : '');
     document.getElementById('uplisearchl').hidden = lists.length <= 6;
+    var kept = IMP.saved && IMP.saved.lists === lists;
+    document.getElementById('uplikept').hidden = !kept;
+    if (kept) document.getElementById('uplikeptt').textContent = 'From the download you added ' + (londonDay(new Date(IMP.saved.at).toISOString()) === todayIso ? 'today' : 'on ' + new Date(IMP.saved.at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })) + '.';
+    document.getElementById('uplipickback').textContent = kept ? 'Choose a file' : 'Another file';
     q.value = '';
     grid.textContent = '';
     lists.forEach(function (l) {
@@ -8404,6 +8427,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   document.getElementById('upligo').addEventListener('click', impAway);
   document.getElementById('uplicollab').addEventListener('click', function () { closeDialog(impDlg); uplAddCollab(); });
   document.getElementById('uplifile').addEventListener('click', function () { var f = document.getElementById('uplifin'); f.value = ''; f.click(); });
+  document.getElementById('upliupd').addEventListener('click', function () { IMP.lists = null; impStep(1); try { document.getElementById('upligo').focus({ preventScroll: true }); } catch (e) {} });
   document.getElementById('uplipickback').addEventListener('click', function () { IMP.lists = null; impStep(2); document.getElementById('uplifile').click(); });
   document.getElementById('uplino').addEventListener('click', function () { if (IMP.lists && IMP.lists.length > 1) impPick(); else { IMP.lists = null; impStep(2); document.getElementById('uplifile').click(); } });
   document.getElementById('uplifin').addEventListener('change', function () { impTake(this.files && this.files[0]); });

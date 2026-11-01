@@ -23,7 +23,7 @@ self.addEventListener('fetch', e => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.origin === location.origin && url.pathname.includes('/__offline/')) { e.respondWith(song(req, url)); return; }
-  if (url.hostname === 'i.scdn.co') { e.respondWith(cover(req)); return; }
+  if (url.hostname === 'i.scdn.co' || (/\.workers\.dev$/.test(url.hostname) && url.pathname.startsWith('/sp/c/'))) { e.respondWith(cover(req)); return; }   // (covers: Spotify's, or the copies the Worker keeps)
   const home = new URL(self.registration.scope).pathname;
   if (req.mode === 'navigate' && url.origin === location.origin && (url.pathname === home || url.pathname === home + 'index.html')) {
     e.respondWith(fresh(req, new Request(self.registration.scope))); return;   // the calendar itself (not the day pages or others here)

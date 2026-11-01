@@ -76,6 +76,7 @@ export default {
       if (url.pathname === '/push/check') return await pushCheck(request, env, ctx);
       if (url.pathname.startsWith('/m/')) return await mediaFile(request, url, env);
       if (url.pathname.startsWith('/uc/')) return await uplCoverGet(url, env);
+      if (url.pathname.startsWith('/sp/')) return await spKept(request, url, env);
       if (url.pathname.startsWith('/up/')) return await uplPicGet(url, env);
       if (url.pathname === '/media/report') return await mediaReport(url, env);
       if (url.pathname === '/app.webmanifest') return appManifest(url);
@@ -101,6 +102,7 @@ export default {
       await uplLook(env).catch(e => console.log('uplLook: ' + (e && e.message)));
     })().catch(e => console.log('scheduled: ' + (e && e.message))));
     ctx.waitUntil(appUpdates(env).catch(e => console.log('appUpdates: ' + (e && e.message))));   // (on its own: it needs nothing from Spotify)
+    ctx.waitUntil(spKeep(env).catch(e => console.log('spKeep: ' + (e && e.message))));   // (previews and covers copied here, a few a run)
   }
 };
 
@@ -339,12 +341,76 @@ async function makePlaylist(request, url, env) {
 // A change made to the playlist after the day's song is in shows the next morning. Only when nothing has been kept yet
 // does songs.json read Spotify itself.
 
+// ---- previews and covers kept here, not streamed from Spotify (John, 1 Nov 2026: "Once a song is fully in a calendar
+// or playlist, deleting the song from Spotify should never have any effect on it... such a preview and album art always
+// being downloaded and not streamed from Spotify"): songs give this Worker's /sp/p/<id>.mp3 and /sp/c/<id>.jpg, which
+// serve R2's copy (sp/p/, sp/c/), fetching it from Spotify and keeping it the first time it's asked for. The timer
+// copies the ones not asked for yet, a few each run (spKeep; KV spkept: which are kept). A cover asked for at another
+// size than any kept is served at one that is, once Spotify has none. ----------
+const SP_SIZES = ['ab67616d0000b273', 'ab67616d00001e02', 'ab67616d00004851'];
+function keptPreview(id) { return LIVE_ORIGIN + '/sp/p/' + id + '.mp3'; }
+function keptCover(u) { const m = /^https:\/\/i\.scdn\.co\/image\/([0-9a-f]{40})$/.exec(u || ''); return m ? LIVE_ORIGIN + '/sp/c/' + m[1] + '.jpg' : u; }
+async function spKept(request, url, env) {
+  const m = /^\/sp\/(p|c)\/([0-9a-f]{20,64})\.(mp3|jpg)$/.exec(url.pathname);
+  if (!m || (m[1] === 'p') !== (m[3] === 'mp3')) return new Response('Not here.', { status: 404 });
+  const kind = m[1], id = m[2], src = kind === 'p' ? 'https://p.scdn.co/mp3-preview/' + id : 'https://i.scdn.co/image/' + id;
+  if (!env.MEDIA) return Response.redirect(src, 302);
+  const type = kind === 'p' ? 'audio/mpeg' : 'image/jpeg', key = 'sp/' + kind + '/' + id + '.' + m[3];
+  const head = { 'Content-Type': type, 'Cache-Control': 'public, max-age=31536000, immutable', 'Access-Control-Allow-Origin': '*', 'Accept-Ranges': 'bytes' };
+  const serve = async k => {
+    const range = request.headers.get('Range');
+    const o = await env.MEDIA.get(k, range ? { range: request.headers } : undefined).catch(() => null);
+    if (!o || !o.body) return null;
+    if (range && o.range && o.range.length !== undefined) {
+      const st = o.range.offset || 0, len = o.range.length;
+      return new Response(o.body, { status: 206, headers: Object.assign({}, head, { 'Content-Range': 'bytes ' + st + '-' + (st + len - 1) + '/' + o.size, 'Content-Length': String(len) }) });
+    }
+    return new Response(o.body, { headers: Object.assign({}, head, { 'Content-Length': String(o.size) }) });
+  };
+  const had = await serve(key); if (had) return had;
+  const got = await spCopy(env, kind, id);
+  if (got) return (await serve(key)) || new Response(got, { headers: head });
+  if (kind === 'c') for (const z of SP_SIZES) {   // (gone from Spotify: the same picture at a size that's kept)
+    if (!id.startsWith(z)) continue;
+    for (const z2 of SP_SIZES) if (z2 !== z) { const r = await serve('sp/c/' + z2 + id.slice(16) + '.jpg'); if (r) return r; }
+  }
+  return new Response('Not here.', { status: 404, headers: { 'Access-Control-Allow-Origin': '*' } });
+}
+async function spCopy(env, kind, id) {   // Spotify's copy into R2: its bytes, or null (not there)
+  const r = await fetch(kind === 'p' ? 'https://p.scdn.co/mp3-preview/' + id : 'https://i.scdn.co/image/' + id).catch(() => null);
+  if (!r || !r.ok) return null;
+  const b = await r.arrayBuffer();
+  if (!b.byteLength || b.byteLength > 5e6) return null;
+  await env.MEDIA.put('sp/' + kind + '/' + id + (kind === 'p' ? '.mp3' : '.jpg'), b, { httpMetadata: { contentType: kind === 'p' ? 'audio/mpeg' : 'image/jpeg' } }).catch(() => {});
+  return b;
+}
+const SP_KEEP_RUN = 20;   // (copies a timer run: well inside a run's requests)
+async function spKeep(env) {   // the previews and covers not kept yet, from John's songs and every member's playlist
+  if (!env.MEDIA) return;
+  const kept = (await env.SOTD.get('spkept', 'json')) || {}, pv = Object.assign({}, pvMem, (await env.SOTD.get('previews', 'json')) || {});
+  const now = Date.now(), want = [], seen = new Set(), add = (k, id) => { const key = k + id, e = kept[key]; if (e !== 1 && !(e < 0 && now + e < 7 * 864e5) && !seen.has(key)) { seen.add(key); want.push([k, id]); } };   // (1 kept; -when: Spotify had none then, asked again a week on)
+  const take = x => {
+    if (pv[x.id] && pv[x.id] !== '-') add('p', pv[x.id]);
+    const m = /\/image\/([0-9a-f]{40})$/.exec(x.img || ''); if (m) add('c', m[1]);
+  };
+  for (const pid of Object.keys(await uplAll(env))) ((await uplSongs(env, pid)).songs || []).forEach(take);   // (members' first: theirs can't be had again)
+  (((await env.SOTD.get('songsLast', 'json')) || {}).songs || []).forEach(take);
+  let n = 0;
+  for (const [k, id] of want.slice(0, SP_KEEP_RUN)) {
+    const there = await env.MEDIA.head('sp/' + k + '/' + id + (k === 'p' ? '.mp3' : '.jpg')).catch(() => null);
+    kept[k + id] = there || await spCopy(env, k, id) ? 1 : -now; n++;
+  }
+  if (n) await env.SOTD.put('spkept', JSON.stringify(kept));
+}
+
 const SONG_FIELDS = ['a', 'id', 'title', 'artist', 'artists', 'aids', 'album', 'alid', 'img'];
 function composeSongs(items, pv, tags) {   // each song as songs.json gives it: n, the playlist's fields, p (preview), tag (moods)
   return items.map((it, i) => {
     const x = { n: i + 1 };
     for (const k of SONG_FIELDS) if (it[k] !== undefined) x[k] = it[k];
-    if (pv[it.id] && pv[it.id] !== '-') x.p = 'https://p.scdn.co/mp3-preview/' + pv[it.id];
+    if (pv[it.id] && pv[it.id] !== '-') x.p = keptPreview(pv[it.id]);
+    if (x.img) x.img = keptCover(x.img);
+    if (it.sx) x.sx = 1;   // (gone from Spotify since: kept here)
     const t = tags[it.id];
     if (t && (t.m || (t.g || []).length)) x.tag = { m: t.m, d: t.d, g: t.g };
     return x;
@@ -364,7 +430,7 @@ async function readPlaylist(env, ctx) {   // Spotify's playlist now (the timer o
   return { at, songs };
 }
 async function songsJson(request, env, ctx) {
-  const cacheKey = new Request(new URL('/songs.json?v=3', request.url).toString());   // bump to drop cached copies after a format change
+  const cacheKey = new Request(new URL('/songs.json?v=4', request.url).toString());   // bump to drop cached copies after a format change
   const hit = await caches.default.match(cacheKey);
   if (hit) return hit;
   const kept = await env.SOTD.get('songsLast', 'json');
@@ -872,6 +938,7 @@ async function members(request, url, env) {
   if (route === 'uplpic') return memberUplPic(request, url, env, answer);
   if (route === 'songs') return memberSongs(request, url, env, answer);
   if (route === 'spnames') return memberSpNames(request, url, env, answer);
+  if (route === 'impfile') return memberImpFile(request, env, answer);
   if (!['admin', 'upload', 'cover'].includes(route)) return answer(404, { error: 'Not here.' });
   if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
   const no = await adminOk(request, env, answer);
@@ -2937,6 +3004,30 @@ async function uplCsvPreviews(env, list) {   // the preview Exportify gives a so
   for (const x of (Array.isArray(list) ? list : []).slice(0, UPL_CSV_MOST)) if (x && SP_ID.test(String(x.id || '')) && /^[0-9a-f]{20,64}$/.test(String(x.pv || '')) && !(pv[x.id] && pv[x.id] !== '-')) { pv[x.id] = x.pv; n++; }
   if (n) { Object.assign(pvMem, pv); await kvSoft(env, 'previews', JSON.stringify(pv)); }
 }
+// /members/impfile: the Exportify download a member last loaded, kept for them (John, 1 Nov 2026: "Once a zip or csv
+// file is loaded in, can it stay in memory. With a way to update the file if necessary"): GET { at, lists } (404 none),
+// POST { lists } keeps it in place of the last (R2 imp/<member>.json; each list: name, key, file, songs, all, by, last),
+// POST { drop: true } forgets it. Import from Spotify opens on its playlists, with Update the file.
+async function memberImpFile(request, env, answer) {
+  const who = await memberWho(request, env);
+  if (!who) return answer(401, { error: 'Not a member (any more).' });
+  if (!env.MEDIA) return answer(503, { error: 'Not set up.' });
+  const key = 'imp/' + who.id + '.json';
+  if (request.method === 'GET') {
+    const o = await env.MEDIA.get(key);
+    return o ? new Response(o.body, { headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' } }) : answer(404, { none: true });
+  }
+  if (request.method !== 'POST') return answer(405, { error: 'Use GET or POST.' });
+  const text = await request.text();
+  if (text.length > 30e6) return answer(413, { error: 'That download is too big to keep.' });
+  let b; try { b = JSON.parse(text); } catch (e) { return answer(400, { error: 'Not JSON.' }); }
+  if (b && b.drop) { await env.MEDIA.delete(key); return answer(200, { ok: true }); }
+  const lists = Array.isArray(b && b.lists) ? b.lists.slice(0, 2000).filter(l => l && typeof l.name === 'string' && Array.isArray(l.songs)) : null;
+  if (!lists || !lists.length) return answer(400, { error: 'No playlists.' });
+  const at = Date.now();
+  await env.MEDIA.put(key, JSON.stringify({ at, lists }), { httpMetadata: { contentType: 'application/json' } });
+  return answer(200, { ok: true, at });
+}
 // /members/spnames?ids=a,b: Spotify users' names, for Import from Spotify's "By ..." (John, 1 Nov 2026: "show who the
 // playlist is by originally too as it shows all playlists followed as well as your own"): Exportify's files say which
 // Spotify account added each song (its id, spotify:user:<id>), not the name. From each user's public page (its title),
@@ -3059,6 +3150,7 @@ async function uplDrop(env, pids) {
   await uplPut(env, U);
 }
 async function uplDropOwner(env, member) {
+  if (env.MEDIA) await env.MEDIA.delete('imp/' + member + '.json').catch(() => {});   // (their kept Exportify download)
   const U = await uplAll(env), mine = Object.keys(U).filter(pid => U[pid].o === member);
   if (mine.length) await uplDrop(env, mine);
 }
@@ -3094,8 +3186,26 @@ async function uplRead(env, pid, rec, U) {   // reads it from Spotify; keeps wha
   }
   return uplTake(env, pid, rec, U, items, was, now);
 }
+// a song fully in (out, not waiting for its owner) that's gone from Spotify's playlist, or from a fresh Exportify file,
+// stays where it was (sx: when it went), its day and files as they were (John, 1 Nov 2026: "Once a song is fully in a
+// calendar or playlist, deleting the song from Spotify should never have any effect on it"). Its owner takes it off
+// with Delete. Ones still waiting for them go.
+function uplKeepGone(rec, data, items, now) {
+  const old = data.songs || [], inNew = new Set(items.map(x => x.id));
+  const keep = new Set(old.filter(x => !inNew.has(x.id) && !uplGone(data, x) && !uplWaiting(rec, data, x)).map(x => x.id));
+  if (!keep.size) return items;
+  const after = new Map(); let prev = null;   // each one after the song before it that's still there (the start: null)
+  for (const x of old) {
+    if (inNew.has(x.id)) prev = x.id;
+    else if (keep.has(x.id)) { if (!after.has(prev)) after.set(prev, []); after.get(prev).push(x.sx ? x : Object.assign({}, x, { sx: new Date(now).toISOString() })); }
+  }
+  const out = (after.get(null) || []).slice();
+  for (const y of items) { out.push(y); if (after.has(y.id)) out.push(...after.get(y.id)); }
+  return out;
+}
 async function uplTake(env, pid, rec, U, items, was, now, quiet) {   // its songs as read (or uploaded): keeps what changed (quiet: its owner is there, no message)
   const data = await uplSongs(env, pid), had = new Set((data.songs || []).map(x => x.id));
+  items = uplKeepGone(rec, data, items, now);
   const fresh = items.filter(x => !had.has(x.id) && Date.parse(x.a) > (rec.base || 0) && !(data.rel || {})[x.id]);
   const changed = JSON.stringify(items) !== JSON.stringify(data.songs);
   if (changed) {

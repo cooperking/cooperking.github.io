@@ -459,8 +459,8 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
 - **A song's files when it's taken off** (John, 1 Nov 2026: "When a song is deleted what happens to its files? They
   should be deleted too, unless they've been saved to a playlist elsewhere"): its owner's MP3, MP4 and cover for it
   (R2 `ua/`, `uv/`, `uc/<pid>/<track>`, and its `files` entry) are deleted when it comes off: op `del`, out of the
-  saved playlist a calendar follows (`uplListSync`), or gone from Spotify or a fresh Exportify file (`uplTake`), all
-  through `uplFilesGone`. Kept if the song is on any member's saved playlist (`mpl:<id>`, `uplTracksSaved`): it goes
+  saved playlist a calendar follows (`uplListSync`), or a song still waiting for sign-off that's gone from Spotify or
+  a fresh Exportify file (`uplTake`), all through `uplFilesGone`. (A song fully in stays: see below.) Kept if the song is on any member's saved playlist (`mpl:<id>`, `uplTracksSaved`): it goes
   on playing there with them (`memberSongs` asks `uplView` for it even though it's off). Once it's off every saved
   playlist (one saved again without it, or deleted), `uplSavedTidy` deletes the files then. Freed files count off the
   366 at once.
@@ -478,6 +478,24 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   are left* (`prog.left`), each song with *Stop looking* (op `skip`, `k` p/v/m/y; `skip { <track>: letters }` in
   `upl:<id>`): counted as none found, so the part can finish. A stopped video look goes to the site job as `ov: ''`
   (none), so it isn't searched; a stopped preview look is left out of `?fill=1`.
+- **Nothing taken off Spotify changes a song that's in** (John, 1 Nov 2026: "Once a song is fully in a calendar or
+  playlist, deleting the song from Spotify should never have any effect on it. If they are we need a plan to make
+  sure they're not, such a preview and album art always being downloaded and not streamed from Spotify"):
+  - A song out (not waiting) that's gone from the Spotify playlist, or from a fresh Exportify file, stays in its place
+    with its day, files and everything found for it (`uplKeepGone`, in `uplTake`; `sx`: when it went). Its day shows
+    "No longer on Spotify" instead of the Spotify link. Its owner takes it off with Delete. A song still waiting goes.
+  - Previews and covers (members' songs and John's) are given as this Worker's `/sp/p/<id>.mp3` and `/sp/c/<id>.jpg`
+    (`keptPreview`, `keptCover`, in `composeSongs`), served from R2 (`sp/p/`, `sp/c/`). The first ask fetches
+    Spotify's and keeps it; the timer copies the rest, 20 a run, members' first (`spKeep`; KV `spkept`: 1 kept,
+    -time Spotify had none, asked again a week on). A cover asked for at a size never kept is served at one that
+    was. The service worker keeps the covers for offline as it did Spotify's.
+  - The rest was already kept here: title, artists, album, added date (in `upl:<id>`), the videos, moods, years and
+    facts the site job found, and the member's own files.
+- **The Exportify download, kept** (John, 1 Nov 2026: "Once a zip or csv file is loaded in, can it stay in memory.
+  With a way to update the file if necessary"): the playlists read from the last .zip or .csv a member added are kept
+  for them (R2 `imp/<member id>.json`, `/members/impfile`; gone with the member). *Import from Spotify* opens on them
+  ("From the download you added …"), with *Update the file* (Exportify again) and *Choose a file*. A new file
+  replaces it; when it has the playlist on their calendar it goes straight to that playlist's update.
 - **Songs still to come on its owner's calendar** (John, 1 Nov 2026: "Can the whole playlist be added as normal but the
   clickable playlist on the screen only show the current playlist"): every song is still sent to the site job for its
   video, moods and year, days to come too, and shows (faded) on its owner's calendar to move; but what plays or lists
