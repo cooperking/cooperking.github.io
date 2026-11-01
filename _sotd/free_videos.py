@@ -185,3 +185,14 @@ def find(songs, data, tok, Y, ms=None):
         else:
             pending.add(s['id'])
     return found, pending
+
+
+if __name__ == '__main__':   # python free_videos.py --check: whether each free way answers, with a song they all know
+    import sys
+    if '--check' in sys.argv:
+        song = {'id': '4uLU6hMCjMI75M1A2tKUQC', 'title': 'Never Gonna Give You Up', 'artist': 'Rick Astley', 'artists': ['Rick Astley']}
+        plain = lambda t: re.sub(r'\s*[\(\[].*?[\)\]]', '', t).strip()
+        print('free ways check (Never Gonna Give You Up):')
+        print('  Wikidata:', wikidata([song]).get(song['id']) or 'nothing')
+        print('  MusicBrainz:', musicbrainz(song, plain) or 'nothing')
+        print('  Discogs:', (discogs(song, plain) or 'nothing') if DISCOGS_TOKEN else 'no DISCOGS_TOKEN secret')

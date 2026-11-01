@@ -104,6 +104,11 @@ jobs:
           SOTD_SONGS_URL: ${{ env.SOTD_FACTS || 'https://sotd-playlists.cooperking.workers.dev/songs.json' }}
         run: python _sotd/about.py
 
+      - name: The free ways to find videos, answering?
+        continue-on-error: true   # (only a look: the next step carries on either way)
+        env:
+          DISCOGS_TOKEN: ${{ secrets.DISCOGS_TOKEN }}
+        run: python _sotd/free_videos.py --check
       # members' songs: the free ways first (free_videos.py: Wikidata, MusicBrainz, then Discogs once John adds the
       # DISCOGS_TOKEN secret), so YouTube's search on his account goes on the songs those miss, after his own
       - name: A YouTube video for each song
