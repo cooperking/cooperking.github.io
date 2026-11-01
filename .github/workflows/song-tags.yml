@@ -65,6 +65,30 @@ jobs:
           if [ -f "$RUNNER_TEMP/songs-facts.json" ]; then echo "SOTD_FACTS=file://$RUNNER_TEMP/songs-facts.json" >> "$GITHUB_ENV"; fi
           python _sotd/upl_facts.py send
 
+      # the videos first, ahead of the listening, moods and years (slow), and members' sent to the Worker straight
+      # away, so each playlist's YouTube list (the Playlist push sheet) has them within minutes (John, 1 Nov 2026)
+      - name: The free ways to find videos, answering?
+        continue-on-error: true   # (only a look: the next step carries on either way)
+        env:
+          DISCOGS_TOKEN: ${{ secrets.DISCOGS_TOKEN }}
+        run: python _sotd/free_videos.py --check
+      # members' songs: the free ways first (free_videos.py: Wikidata, MusicBrainz, then Discogs once John adds the
+      # DISCOGS_TOKEN secret), so YouTube's search on his account goes on the songs those miss, after his own
+      - name: A YouTube video for each song
+        env:
+          DISCOGS_TOKEN: ${{ secrets.DISCOGS_TOKEN }}
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+          SOTD_SONGS_URL: ${{ env.SOTD_ALL || 'https://sotd-playlists.cooperking.workers.dev/songs.json' }}
+        run: python _sotd/youtube.py
+
+      - name: Members' videos to the Worker now
+        continue-on-error: true   # (the end of the run sends them anyway)
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python _sotd/upl_vids.py
+
       - name: Any songs to listen to?
         id: check
         env:
@@ -111,22 +135,6 @@ jobs:
         env:   # (John's songs, and those on members' public playlists wanting facts)
           SOTD_SONGS_URL: ${{ env.SOTD_FACTS || 'https://sotd-playlists.cooperking.workers.dev/songs.json' }}
         run: python _sotd/about.py
-
-      - name: The free ways to find videos, answering?
-        continue-on-error: true   # (only a look: the next step carries on either way)
-        env:
-          DISCOGS_TOKEN: ${{ secrets.DISCOGS_TOKEN }}
-        run: python _sotd/free_videos.py --check
-      # members' songs: the free ways first (free_videos.py: Wikidata, MusicBrainz, then Discogs once John adds the
-      # DISCOGS_TOKEN secret), so YouTube's search on his account goes on the songs those miss, after his own
-      - name: A YouTube video for each song
-        env:
-          DISCOGS_TOKEN: ${{ secrets.DISCOGS_TOKEN }}
-          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
-          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
-          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
-          SOTD_SONGS_URL: ${{ env.SOTD_ALL || 'https://sotd-playlists.cooperking.workers.dev/songs.json' }}
-        run: python _sotd/youtube.py
 
       # whether each video is only a still picture, from YouTube's own three frames of it (the admin page's Still picture)
       - name: Still pictures, from YouTube's own frames

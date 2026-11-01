@@ -66,6 +66,7 @@ export default {
     if (url.pathname === '/upl/links') return await uplLinks(request, env);
     if (url.pathname === '/upl/ytdrop') return await uplYtDrop(request, env);
     if (url.pathname === '/upl/wanted') return await uplWanted(request, env);
+    if (url.pathname === '/upl/vids') return await uplVids(request, env);
     if (url.pathname.startsWith('/yt/')) return await ytList(request, url, env);
       if (url.pathname === '/login') return await login(url);
       if (url.pathname === '/callback') return await callback(request, url, env);
@@ -3383,6 +3384,27 @@ async function ytList(request, url, env) {
   if (json) return answer(200, { t: view.n, songs: out });
   if (!out.length) return new Response('No videos on “' + view.n + '” yet.', { status: 404, headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' } });
   return new Response(null, { status: 302, headers: { 'Cache-Control': 'no-store', Location: 'https://www.youtube.com/watch_videos?video_ids=' + out.slice(0, 50).map(x => x.v).join(',') + '&title=' + encodeURIComponent(view.n) } });
+}
+// /upl/vids, for the site job only: members' songs' videos as soon as its YouTube step has found them, before the
+// rest of its run (listening, moods, years) is done (John, 1 Nov 2026: "The YouTube playlist can be made and added to
+// csv as soon as discovered, I think it's waiting for mood and years"). POST { vids: { <track>: { v, k, ... } },
+// looked: [tracks looked at, found or not] }: each video into KV uplmeta (as /upl/data puts it at the end), each looked
+// at into uplseen ('v'). So their /yt/ lists, the Playlist push sheet, the calendars and the progress have them now.
+async function uplVids(request, env) {
+  const answer = (status, body) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' } });
+  if (!await ghJob(request)) return answer(401, { error: 'For the site job only.' });
+  if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
+  const b = await request.json().catch(() => ({}));
+  const vids = b && typeof b.vids === 'object' ? b.vids : {}, looked = Array.isArray(b && b.looked) ? b.looked : [];
+  const meta = (await env.SOTD.get('uplmeta', 'json')) || {};
+  let n = 0;
+  for (const [t, v] of Object.entries(vids)) if (ID_RE.test(t) && v && typeof v.v === 'string' && (!meta[t] || !meta[t].vid || meta[t].vid.v !== v.v)) { meta[t] = Object.assign({}, meta[t] || {}, { vid: v }); n++; }
+  if (n) await env.SOTD.put('uplmeta', JSON.stringify(meta));
+  const seen = (await env.SOTD.get('uplseen', 'json')) || {};
+  let m = 0;
+  for (const t of looked) if (ID_RE.test(String(t)) && !(seen[t] || '').includes('v')) { seen[t] = (seen[t] || '') + 'v'; m++; }
+  if (m) await kvSoft(env, 'uplseen', JSON.stringify(seen));
+  return answer(200, { ok: true, vids: n, looked: m });
 }
 // /upl/wanted (Authorization: Bearer ADMIN_KEY): { at } when John last deleted one of the catalog's files on the admin
 // page (KV r2want), so Playlist push starts playlist-r2 then and a song whose files were wrong gets new ones at once,

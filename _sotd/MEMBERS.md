@@ -505,6 +505,11 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   tabs Inbox, Sent, Playlists, Account. Account starts with Notifications and ends with The app (both were the Device
   tab's). Sign out sits at the top beside Admin (John) or the bell, before the ×; tapped, it says Tap again. On a
   phone the Profile label gives way so the row fits.
+- **Videos as soon as they're found** (John, 1 Nov 2026: "The YouTube playlist can be made and added to csv as soon as
+  discovered, I think it's waiting for mood and years"): the site job looks for videos first, straight after reading
+  the members' playlists (ahead of the listening, moods and years), and `upl_vids.py` sends members' songs' videos to
+  the Worker then (`/upl/vids`: into `uplmeta` and `uplseen`). So each playlist's `/yt/` list, the Playlist push
+  sheet, the calendars and the progress have them within minutes; the rest still goes at the end (`upl_private.py save`).
 - **The Playlist push sheet gets every song** (John, 1 Nov 2026: "The To Come songs aren't getting their MP3s and
   mp4s because I'm not sure the csv on google is being updated with those playlists"): the sheet in John's Google
   Drive ("Playlist push – playlists") reads each playlist's `/yt/<id>?s=…&f=json`. That gave the songs as members see
