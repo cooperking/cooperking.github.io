@@ -359,14 +359,19 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   the search. Missed songs are tried the free ways again after 30 days. (Odesli was tried first: song.link closed its
   keyless API in October 2026, and its matches leave YouTube out.)
 - **Moving songs to other days** (John, 1 Nov 2026: "Can there be an edit mode on calendar playlists where you can drag
-  and drop to different dates"): on their own calendar, its owner's *Edit days* (beside Play and Shuffle; not on the TV).
-  The songs wiggle; one dragged onto another day moves there, or one tapped and then a day tapped (in any month); a song
-  already on that day takes the moved one's old day. Its owner sees its songs still to come on their calendar, faded with
-  *To come* (John, 1 Nov 2026: "Can they be shown just to the owner for editing"; others see each on its day); a day isn't opened by
-  a tap meanwhile. A bar at the foot says how, with *Back to the setup's days* (once some are moved) and *Done*. The
-  Worker keeps each moved song's day (`dd` on the playlist's record, over the setup's way: `uplDays`), op `move`
-  (`{ id, track, day }`, gives `swapped`) and `unmove`; choosing a new way in *Setup* starts afresh. Tests: `move_t.mjs`
-  (the Worker), `edit_t.mjs` (the draft against the real Worker code).
+  and drop to different dates", then "Can the edit days button be right by the calendar. Can songs move to the missing
+  place immediately (everything shifting to the day before and then save on drop) Could you press down to give option
+  to delete the song. Deleting a day will leave a gap in the calendar. Could swipe be disabled while in edit mode"): on
+  their own calendar, its owner's *Edit days*, just above the calendar (not on the TV). A song dragged to another day
+  goes there as the finger moves, the songs between shifting a day into the place it left (the day before when it
+  moves later, the day after when earlier; empty days stay empty), and it's all kept on letting go (op `place`: the
+  days of each song that moved). A song tapped, then a day tapped (in any month), does the same. Held down, a song
+  offers to come off (op `del`: its day left empty, a gap). Month swiping and pull-to-refresh are off while editing,
+  and a tap doesn't open a day. Its owner sees its songs still to come on their calendar, faded with *To come* (John,
+  1 Nov 2026: "Can they be shown just to the owner for editing"; others see each on its day). A bar at the foot says
+  how, with *Back to the setup's days* (once some are moved) and *Done*. The Worker keeps each moved song's day (`dd`
+  on the playlist's record, over the setup's way: `uplDays`), ops `place`, `move`, `unmove`; choosing a new way in
+  *Setup* starts afresh. Tests: `move_t.mjs` (the Worker), `edit2_t.mjs` (the draft against the real Worker code).
 - **A calendar's days** (John, 30 Oct 2026; the pop-up's *Setup*, and straight after adding one): by the day
   each song is added on Spotify (John's rule, a day with no song taking the next); forwards from a day (the first song on
   it, then a song a day); or back from a day (the newest song now on it, each one before a day earlier). Either of the

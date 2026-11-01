@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="5df5cf0cb1fa">
+<meta name="sotd-build" content="f1d74632dad8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -321,6 +321,10 @@ html.upl #monthdl, html.upl-noshare #siteshare, html.upl-noshare #monthshare, ht
 .upleditbtn { height: 40px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--pill-bg); box-shadow: inset 0 0 0 1px var(--line); color: var(--fg); font: 600 11px/1 var(--sans); letter-spacing: .12em; text-transform: uppercase; cursor: pointer; }
 .upleditbtn:hover { box-shadow: inset 0 0 0 1px var(--fg); }
 .upleditbtn[hidden] { display: none; }
+.caledit { display: none; justify-content: flex-end; }
+.cal.has-edit .caledit { display: flex; }
+html.big .cal.has-edit { grid-template-rows: auto auto minmax(0, 1fr); }
+.caledit .upleditbtn { height: 34px; margin: 0 0 10px; }
 html.upl-editing #grid .day { touch-action: none; -webkit-user-select: none; user-select: none; }
 html.upl-editing #grid .day.has { cursor: grab; }
 html.upl-editing #grid .day.has .sleeve { animation: uplwig 2.4s ease-in-out infinite; }
@@ -1527,7 +1531,6 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       <p class="hsub" id="count"></p>
       <button class="heroplay" id="heroplay" type="button" aria-label="Play every song, the newest first" title="Play all"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M4.5 2.5v11l9.5-5.5z"/></svg></button>
       <button class="heroshuf" id="heroshuf" type="button" aria-label="Play every song, shuffled" title="Shuffle all"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 4.5h2.3c1.5 0 2.4.7 3.3 2l1.8 3c.8 1.3 1.8 2 3.3 2H14M2 11.5h2.3c1.3 0 2.1-.5 2.8-1.4M9.6 5.9c.7-.9 1.5-1.4 2.8-1.4H14M12.2 2.8 14 4.5l-1.8 1.7M12.2 9.8 14 11.5l-1.8 1.7"/></svg></button>
-      <button class="upleditbtn" id="upleditbtn" type="button" hidden>Edit days</button>
     </div>
     <div class="uplprog" id="uplprog" hidden>
       <div class="uplprog-h"><span class="uplprog-dot" aria-hidden="true"></span><b id="uplprogh">Getting your playlist ready</b><button class="uplprog-x" id="uplprogx" type="button" aria-label="Hide this"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 3l8 8M11 3 3 11"/></svg></button></div>
@@ -1543,6 +1546,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   </header>
 
   <section class="cal" id="cal" aria-label="Month calendar">
+    <div class="caledit"><button class="upleditbtn" id="upleditbtn" type="button" hidden>Edit days</button></div>
     <div class="dow" aria-hidden="true"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
     <div class="grid" id="grid"></div>
   </section>
@@ -4610,7 +4614,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   var swX = null, swY = 0, swDX = 0, swMode = null, swT = 0;
   wrap.addEventListener('touchstart', function (e) {
     swX = null;
-    if (sliding || e.touches.length !== 1 || e.target.closest('.monthnav, .bar-top')) return;
+    if (sliding || e.touches.length !== 1 || e.target.closest('.monthnav, .bar-top') || (typeof ED !== 'undefined' && ED.on)) return;   // (not while editing a calendar's days)
     swX = e.touches[0].clientX; swY = e.touches[0].clientY; swDX = 0; swMode = null; swT = Date.now();
   }, { passive: true });
   wrap.addEventListener('touchmove', function (e) {
@@ -4670,7 +4674,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     };
     document.addEventListener('touchstart', function (e) {
       ptrY = null;
-      if (e.touches.length !== 1 || anyOpen() || ptr.classList.contains('spin') || (window.scrollY || document.documentElement.scrollTop) > 0) return;
+      if (e.touches.length !== 1 || anyOpen() || ptr.classList.contains('spin') || (window.scrollY || document.documentElement.scrollTop) > 0 || (typeof ED !== 'undefined' && ED.on)) return;
       ptrX = e.touches[0].clientX; ptrY = e.touches[0].clientY; ptrPull = 0; ptrMode = null;
       ptrBarBottom = ptrBar.getBoundingClientRect().bottom;
       ptrGap = Math.max(0, ptrBody[0].getBoundingClientRect().top - ptrBarBottom);
@@ -6886,19 +6890,24 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     clearTimeout(PROG.t); document.getElementById('uplprog').hidden = true;
   });
   // ---- editing a calendar's days (John, 1 Nov 2026: "Can there be an edit mode on calendar playlists where you can drag
-  // and drop to different dates"): its owner's Edit days; then a song dragged onto another day (or tapped, then the day
-  // tapped: across months too) moves there, and one already there takes its old day (the Worker's op move; Back to the
-  // setup's days: unmove). Its songs still to come show while editing. Not on the TV. ----
-  var ED = { on: false, sel: null, drag: null, noClick: false };
+  // and drop to different dates", then "Can songs move to the missing place immediately (everything shifting to the day
+  // before and then save on drop) Could you press down to give option to delete the song... Could swipe be disabled while
+  // in edit mode"): its owner's Edit days, by the calendar. A song dragged to another day goes there at once, as the
+  // calendar shows it while the finger moves: the songs between shift a day into the gap it leaves (to the day before
+  // when it moves later, the day after when it moves earlier; days with no song stay empty), and the lot is kept when
+  // it's let go (the Worker's op place). A tap, then a day, does the same. Held down, a song offers to come off the
+  // calendar (op del: its day left empty). Swiping months and pulling to refresh are off meanwhile. Not on the TV. ----
+  var ED = { on: false, sel: null, drag: null, noClick: false, base: null };
   function uplEditCan() { return !!(UPL.on && UPL.view && UPL.view.mine && UPL.view.mode !== 'list' && !TV); }
   function uplEditSync() {
     document.getElementById('upleditbtn').hidden = !uplEditCan() || ED.on;
+    document.getElementById('cal').classList.toggle('has-edit', uplEditCan() && !ED.on);   // (its row only when it's there)
     var me = uplPls().filter(function (p) { return p.id === UPL.on; })[0];
     document.getElementById('upledbarreset').hidden = !(me && me.moved);
   }
   function uplEditText(t) {
-    document.getElementById('upledbart').textContent = t || (ED.sel ? 'Now tap the day to move “' + ED.sel.title + '” to (change month if you like), or tap it again to keep it.'
-      : 'Drag a song to another day, or tap it and then the day. A song already on that day swaps with it.');
+    document.getElementById('upledbart').textContent = t || (ED.sel ? 'Now tap the day for “' + ED.sel.title + '” (change month if you like), or tap it again to leave it.'
+      : 'Drag a song to another day: the songs between shift a day to fill its place. Or tap it, then the day. Hold one down to take it off.');
   }
   function uplEditOff() {
     if (!ED.on) return;
@@ -6913,21 +6922,51 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     document.documentElement.classList.add('upl-editing');
     document.getElementById('upledbar').hidden = false;
     uplEditText();
-    uplApply(UPL.view, { keep: true });   // (its songs to come, too)
+    uplApply(UPL.view, { keep: true });
   }
   function editMarks() {
     [].forEach.call(grid.querySelectorAll('.day'), function (c) {
       var d = c.getAttribute('data-day'), picks = d && byDate[d];
       c.classList.toggle('edit-sel', !!(ED.sel && picks && picks.some(function (p) { return p.track === ED.sel.track; })));
+      c.classList.toggle('dragfrom', !!(ED.drag && ED.drag.on && picks && picks.some(function (p) { return p.track === ED.drag.track; })));
     });
   }
-  function uplMove(track, day) {
-    var was = ED.sel; ED.sel = null; editMarks(); uplEditText('Moving…');
-    uplOp({ op: 'move', id: UPL.on, track: track, day: day }, null, function (j) {
-      uplEditText();
-      toast(j.swapped ? 'Swapped with “' + j.swapped.title + '”' : 'Moved to ' + longDate(day));
-      if (ED.on) uplApply(UPL.view, { keep: true });
-    }).then(function () { if (document.getElementById('upledbart').textContent === 'Moving…') { ED.sel = was; uplEditText(); editMarks(); } });
+  function edShift(list, track, to) {   // { track: day } for each song that moves: `track` to `to`, the ones between shifting a day into its place
+    var me = list.filter(function (s) { return s.track === track; })[0]; if (!me || me.d === to) return {};
+    var from = me.d, res = {}, step;
+    var mid = list.filter(function (s) { return s.track !== track && (to > from ? s.d > from && s.d <= to : s.d >= to && s.d < from); })
+      .sort(function (a, b) { return a.d < b.d ? -1 : a.d > b.d ? 1 : 0; });
+    if (to < from) mid.reverse();
+    step = from;
+    mid.forEach(function (s) { if (res[s.track]) return; res[s.track] = step; step = s.d; });   // (each takes the day of the one before it in line)
+    res[track] = to;
+    return res;
+  }
+  function edShow(res) {   // the calendar as it would be (not kept yet)
+    var list = ED.base.map(function (s) { return res[s.track] ? Object.assign({}, s, { d: res[s.track] }) : s; })
+      .sort(function (a, b) { return a.d < b.d ? -1 : a.d > b.d ? 1 : 0; });
+    setSongs(list, true); render();
+  }
+  function edBack() { if (ED.base) { setSongs(ED.base, true); render(); } }
+  function edSave(res, said) {
+    var n = Object.keys(res).length; if (!n) return;
+    uplEditText('Saving…');
+    uplCall({ op: 'place', id: UPL.on, days: res }).then(function (j) {
+      if (j.status !== 200) { edBack(); toast(j.error || 'Couldn’t move it just now'); uplEditText(); return; }
+      MEMBER.pls = j.pls; uplEditText(); uplEditSync();
+      if (j.view) uplApply(j.view, { keep: true });
+      toast(said + (n > 1 ? ' · ' + (n - 1) + (n === 2 ? ' other shifted a day' : ' others shifted a day') : ''));
+    }).catch(function () { edBack(); uplEditText(); toast('Couldn’t reach the site. Try again.'); });
+  }
+  function edMove(track, to, title) {   // tap, then a day: the same as a drop
+    ED.base = songs.slice();
+    var res = edShift(ED.base, track, to);
+    ED.sel = null; edShow(res); edSave(res, 'Moved “' + title + '” to ' + longDate(to));
+  }
+  function edDelete(s) {   // held down: off the calendar, its day left empty
+    ask({ k: 'Editing the days', h: 'Take “' + s.title + '” off?', t: 'It comes off this calendar and its day is left empty. It stays on Spotify.', ok: 'Take it off', no: 'Keep it' }).then(function (yes) {
+      if (yes) uplOp({ op: 'del', id: UPL.on, track: s.track }, '“' + s.title + '” taken off', function () { if (ED.on && UPL.view) uplApply(UPL.view, { keep: true }); });
+    });
   }
   document.getElementById('upleditbtn').addEventListener('click', uplEditOn);
   document.getElementById('upledbardone').addEventListener('click', function () { uplEditOff(); if (UPL.view) uplApply(UPL.view, { keep: true }); });
@@ -6944,38 +6983,55 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var day = c.getAttribute('data-day'), picks = byDate[day];
     if (ED.sel) {
       if (picks && picks.some(function (p) { return p.track === ED.sel.track; })) ED.sel = null;
-      else { uplMove(ED.sel.track, day); return; }
+      else { edMove(ED.sel.track, day, ED.sel.title); return; }
     } else if (picks) ED.sel = { track: picks[0].track, title: picks[0].title };
     editMarks(); uplEditText();
   }, true);
-  grid.addEventListener('pointerdown', function (e) {   // editing: a song dragged to a day
+  grid.addEventListener('pointerdown', function (e) {   // editing: a song dragged to a day, or held down
     if (!ED.on || e.button > 0) return;
     var c = e.target.closest && e.target.closest('.day.has[data-day]');
     if (!c) return;
     var picks = byDate[c.getAttribute('data-day')]; if (!picks) return;
-    ED.drag = { x: e.clientX, y: e.clientY, cell: c, track: picks[0].track, img: (c.querySelector('img') || {}).src || '', on: false, over: null, id: e.pointerId };
+    var s = picks[0];
+    ED.drag = { x: e.clientX, y: e.clientY, track: s.track, title: s.title, img: (c.querySelector('img') || {}).src || '', on: false, to: null, res: null, id: e.pointerId };
+    ED.drag.hold = setTimeout(function () {   // held without moving: take it off?
+      var g = ED.drag; if (!g || g.on) return;
+      ED.drag = null; ED.noClick = true; setTimeout(function () { ED.noClick = false; }, 400);
+      if (navigator.vibrate) try { navigator.vibrate(15); } catch (x) {}
+      edDelete(s);
+    }, 550);
   });
   document.addEventListener('pointermove', function (e) {
     var g = ED.drag; if (!g || e.pointerId !== g.id) return;
     if (!g.on) {
       if (Math.abs(e.clientX - g.x) + Math.abs(e.clientY - g.y) < 8) return;
-      g.on = true; ED.sel = null; editMarks();
+      clearTimeout(g.hold);
+      g.on = true; ED.sel = null; ED.base = songs.slice();
       g.ghost = document.createElement('div'); g.ghost.className = 'dragghost';
       if (g.img) { var im = document.createElement('img'); im.src = g.img; im.alt = ''; g.ghost.appendChild(im); } else g.ghost.style.background = 'var(--tile)';
-      document.body.appendChild(g.ghost); g.cell.classList.add('dragfrom');
+      document.body.appendChild(g.ghost); editMarks();
     }
     g.ghost.style.left = e.clientX + 'px'; g.ghost.style.top = e.clientY + 'px';
-    var el = document.elementFromPoint(e.clientX, e.clientY), over = el && el.closest ? el.closest('#grid .day[data-day]') : null;
-    if (over !== g.over) { if (g.over) g.over.classList.remove('drop'); if (over && over !== g.cell) over.classList.add('drop'); g.over = over; }
+    var el = document.elementFromPoint(e.clientX, e.clientY), over = el && el.closest ? el.closest('#grid .day[data-day]') : null, to = over ? over.getAttribute('data-day') : null;
+    if (to !== g.to) {   // a new day under the finger: the calendar as it would be
+      g.to = to;
+      g.res = to ? edShift(ED.base, g.track, to) : null;
+      if (g.res && Object.keys(g.res).length) edShow(g.res); else edBack();
+      [].forEach.call(grid.querySelectorAll('.day.drop'), function (c) { c.classList.remove('drop'); });
+      var tc = to && grid.querySelector('.day[data-day="' + to + '"]'); if (tc) tc.classList.add('drop');
+      editMarks();
+    }
     if (e.cancelable) e.preventDefault();
   }, { passive: false });
   function dragEnd(e) {
     var g = ED.drag; if (!g || (e && e.pointerId !== g.id)) return;
-    ED.drag = null;
+    ED.drag = null; clearTimeout(g.hold);
     if (!g.on) return;
-    if (g.ghost) g.ghost.remove(); g.cell.classList.remove('dragfrom'); if (g.over) g.over.classList.remove('drop');
+    if (g.ghost) g.ghost.remove();
+    [].forEach.call(grid.querySelectorAll('.day.drop, .day.dragfrom'), function (c) { c.classList.remove('drop'); c.classList.remove('dragfrom'); });
     ED.noClick = true; setTimeout(function () { ED.noClick = false; }, 50);
-    if (e && e.type === 'pointerup' && g.over && g.over !== g.cell) uplMove(g.track, g.over.getAttribute('data-day'));
+    if (e && e.type === 'pointerup' && g.res && Object.keys(g.res).length) edSave(g.res, 'Moved “' + g.title + '” to ' + longDate(g.to));
+    else edBack();
   }
   document.addEventListener('pointerup', dragEnd);
   document.addEventListener('pointercancel', dragEnd);
@@ -6995,7 +7051,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var root = document.documentElement; root.classList.remove('upl'); root.classList.remove('upl-list'); root.classList.remove('upl-nosp'); root.classList.remove('upl-noyt'); root.classList.remove('upl-mine'); root.classList.remove('upl-noshare');
     document.getElementById('uplkick').hidden = true;
     clearTimeout(PROG.t); PROG.id = null; document.getElementById('uplprog').hidden = true;
-    uplEditOff();
+    uplEditOff(); uplEditSync();
     UPL.order = null;
     document.getElementById('spfollow').setAttribute('href', JOHN_SP);
     if (UPL.johnYt) { var yf = document.getElementById('ytfollow'); yf.setAttribute('href', UPL.johnYt.href); yf.hidden = UPL.johnYt.hidden; UPL.johnYt = null; }

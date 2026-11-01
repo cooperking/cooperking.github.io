@@ -3458,6 +3458,19 @@ async function memberUpl(request, url, env, answer) {
     const r = await uplSignoffDo(env, all, pid, rec, data, x);
     return answer(200, Object.assign({ ok: true, sent: r.sent, view: await uplView(env, all, me, pid, rec), pls: await uplMine(env, uplList(all, me, U), U) }, r.on ? { on: r.on, at: r.at } : {}));
   }
+  if (body.op === 'place') {   // several songs' days at once (a drag: the one moved, and those shifting a day into its gap), by its owner
+    if (rec.mode === 'list') return answer(400, { error: 'A playlist has no days: make it a calendar first.' });
+    const data = await uplSongs(env, pid), live = new Set((data.songs || []).filter(x => !uplGone(data, x)).map(x => x.id)), want = body.days && typeof body.days === 'object' ? body.days : {};
+    const pairs = Object.entries(want).filter(([t, d]) => live.has(t) && /^\d{4}-\d{2}-\d{2}$/.test(String(d)) && !isNaN(Date.parse(d + 'T12:00:00Z')));
+    if (!pairs.length) return answer(400, { error: 'Nothing to move.' });
+    rec.dd = rec.dd || {};
+    if (Object.keys(rec.dd).length + pairs.length > UPL_CSV_MOST) return answer(400, { error: 'That’s as many songs moved as a calendar can have.' });
+    for (const [t, d] of pairs) rec.dd[t] = d;
+    delete rec.annDay;
+    await uplPut(env, U);
+    await startJob(env, null, null, 0, null, true).catch(() => {});
+    return answer(200, { ok: true, moved: pairs.length, pls: await uplMine(env, uplList(all, me, U), U), view: await uplView(env, all, me, pid, rec) });
+  }
   if (body.op === 'move' || body.op === 'unmove') {   // a song to another day, by its owner (John, 1 Nov 2026: "an edit mode on calendar playlists where you can drag and drop to different dates"); one there already takes its day; unmove: every song back to the setup's day
     if (rec.mode === 'list') return answer(400, { error: 'A playlist has no days: make it a calendar first.' });
     if (body.op === 'unmove') { delete rec.dd; delete rec.annDay; await uplPut(env, U); return answer(200, { ok: true, pls: await uplMine(env, uplList(all, me, U), U), view: await uplView(env, all, me, pid, rec) }); }
