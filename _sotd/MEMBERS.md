@@ -259,6 +259,21 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   playlists* signed in to Spotify as cooperking, joins it, and taps *I've joined: check*. The Worker also looks every
   10 minutes for its first day, then hourly. Once readable it's read every 30 minutes from 06:00 to 23:00, and when its
   owner taps *Check now* (once a minute at most).
+- **Importing one from Exportify, no collaboration** (John, 1 Nov 2026: "find a way to import playlists from users
+  without collaborating on an individual playlist", and "a way for the exportify to look less like leaving the app"):
+  Profile › Playlists › *Import from Spotify* opens two steps. *Open Exportify* shows exportify.app over the calendar
+  (the iPhone app's own browser sheet, Capacitor's Browser plugin, from the first build with it; the Android app's own
+  view, coming back to the page; a pop-up window on a computer; else a tab). The member signs in to Spotify there, which
+  reads the playlist with their own sign-in (so private ones too), and taps *Export*: a CSV file. Coming back moves on to
+  *Choose the file* (within 30 minutes, a page opened again comes back to it: `sotd-imp` in local storage). The page reads
+  the file (`csvSongs`: the columns found by what's in them, as Exportify's headings follow the member's language; local
+  files and episodes left out), shows how many songs and the latest, then a name (from the file's) and *A calendar* or
+  *A playlist*. The Worker keeps it as `src: 'csv'` (op `csv`, `UPL_CSV_MOST` 2,000 songs; the songs checked by
+  `uplCsvSongs`), readable at once; days, sign-off, sharing and the rest are as a Spotify one's. It's a snapshot: *Update*
+  (Profile) or *Update from Exportify* (the pop-up) takes a fresh export (op `csvup`): new songs wait for sign-off, the
+  others keep their days, and songs gone from it go from the calendar. No *Open in Spotify* (the file doesn't say which
+  playlist it is) and no *Check now*. The collaboration way stays, under the steps ("Or keep it in step with Spotify by
+  itself"). Tests: `csv_t.mjs` (the Worker), `imp_page_t.js` (the draft).
 - **A calendar's days** (John, 30 Oct 2026; the pop-up's *Setup*, and straight after adding one): by the day
   each song is added on Spotify (John's rule, a day with no song taking the next); forwards from a day (the first song on
   it, then a song a day); or back from a day (the newest song now on it, each one before a day earlier). Either of the

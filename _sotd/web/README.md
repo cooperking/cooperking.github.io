@@ -41,7 +41,7 @@ What there is now:
 | App | The page finds it by | The page calls | The app calls in the page |
 | --- | --- | --- | --- |
 | Fire TV (`_tvapp`) | `SOTDTV/` in the user agent; `window.SOTDTV` | `SOTDTV.playing(on)`; `SOTDTV.advert()` (from the app's own hook) | `sotdJoin`, `sotdTV.key`, `sotdTV.back` (each checked first) |
-| iPhone (`_sotd/ios-app`) | `Capacitor.isNativePlatform()` (`NAT`) | `Capacitor.Plugins.PushNotifications` (`NPUSH`) | nothing |
+| iPhone (`_sotd/ios-app`) | `Capacitor.isNativePlatform()` (`NAT`) | `Capacitor.Plugins.PushNotifications` (`NPUSH`); `Capacitor.Plugins.Browser` (Exportify over the app, Import from Spotify; checked first, Safari without it) | nothing |
 | Android (`_sotd/android-app`) | its start address `?app=android-apk&build=N` (Play's copy: `app=android`); first builds: the `android-app://io.github.cooperking.sotd` referrer | nothing: it reads `songs/android.json` and offers the site's APK a newer build | nothing |
 
 Every app, and the browser, also says which it is on `/members/me` (`X-App`: `play:<build>`, `apk:<build>`,

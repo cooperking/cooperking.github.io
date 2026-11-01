@@ -33,6 +33,10 @@ to sign in with what was copied (the Clipboard plugin; iOS asks once whether it 
 `songs/ios.json` by itself once Apple approves a build (`public_link.py`, run hourly by `.github/workflows/ios-link.yml`
 until it's there).
 
+Import from Spotify (`_sotd/MEMBERS.md`) opens exportify.app in the app's own browser, a sheet over the app with Done
+(the Browser plugin, `@capacitor/browser`, from the first build after 1 Nov 2026); on older builds the page sends it
+to Safari instead.
+
 ## Setting it up (once)
 
 1. Apple Developer Program (developer.apple.com/programs/enroll), as an individual: $99 a year; Apple can take a day or two.

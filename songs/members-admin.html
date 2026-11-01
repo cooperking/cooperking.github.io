@@ -289,12 +289,12 @@
       var li = document.createElement('li'); if (u.st === 'join') li.className = 'join';
       var nm = document.createElement('div'); nm.className = 'nm'; nm.textContent = u.n; li.appendChild(nm);
       var st = document.createElement('div'); st.className = 'st';
-      st.textContent = u.o + '’s · ' + (u.mode === 'list' ? 'playlist' : 'calendar') + (u.src === 'mpl' ? ' from a playlist made on the calendar' : '') + ' · ' + (u.sh === 'public' ? 'public' : u.sh === 'private' ? 'private' : u.sh === 'some' ? 'for ' + u.shn + (u.shn === 1 ? ' member' : ' members') : 'every member') + ' · ' + (u.st === 'join' ? (u.link ? 'waiting for you to join it' : 'waiting for you to join it; no invite link from them yet') : u.st === 'err' ? (u.err || 'can’t be read') : u.cnt + (u.cnt === 1 ? ' song' : ' songs') + (u.read ? ' · read ' + new Date(u.read).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''));
+      st.textContent = u.o + '’s · ' + (u.mode === 'list' ? 'playlist' : 'calendar') + (u.src === 'mpl' ? ' from a playlist made on the calendar' : u.src === 'csv' ? ' from Exportify (their uploads)' : '') + ' · ' + (u.sh === 'public' ? 'public' : u.sh === 'private' ? 'private' : u.sh === 'some' ? 'for ' + u.shn + (u.shn === 1 ? ' member' : ' members') : 'every member') + ' · ' + (u.st === 'join' ? (u.link ? 'waiting for you to join it' : 'waiting for you to join it; no invite link from them yet') : u.st === 'err' ? (u.err || 'can’t be read') : u.cnt + (u.cnt === 1 ? ' song' : ' songs') + (u.read ? ' · read ' + new Date(u.read).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''));
       li.appendChild(st);
       var acts = document.createElement('div'); acts.className = 'acts';
       if (u.link && u.st !== 'ok') { var a = document.createElement('a'); a.className = 'btn small primary'; a.href = u.link; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'Open the invite ↗'; acts.appendChild(a); }
       else if (u.st !== 'ok') { var a2 = document.createElement('a'); a2.className = 'btn small'; a2.href = 'https://open.spotify.com/playlist/' + u.sp; a2.target = '_blank'; a2.rel = 'noopener'; a2.textContent = 'The playlist ↗'; acts.appendChild(a2); }
-      if (u.src !== 'mpl') acts.appendChild(button(u.st === 'ok' ? 'Check now' : 'I’ve joined: check', function () {
+      if (u.src === 'sp') acts.appendChild(button(u.st === 'ok' ? 'Check now' : 'I’ve joined: check', function () {
         api('/members/admin', { op: 'uplcheck', id: u.id }).then(function (j) {
           if (j.status !== 200) { toast(j.error || 'Couldn’t check'); return; }
           UPLS = j.upls || []; uplDraw();

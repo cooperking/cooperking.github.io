@@ -1026,7 +1026,7 @@ async function members(request, url, env) {
     case 'uplcheck': {   // a member's playlist read from Spotify now (once John has joined it)
       const U = await uplAll(env), rec = U[body.id];
       if (!rec) return answer(404, { error: 'No such playlist.' });
-      if (rec.src !== 'mpl') await uplRead(env, body.id, rec, U);   // (a saved playlist's follows it)
+      if (uplSrc(rec) === 'sp') await uplRead(env, body.id, rec, U);   // (a saved playlist's follows it; an Exportify one is its owner's uploads)
       return answer(200, { upls: uplAdmin(all, await uplAll(env)) });
     }
     case 'uplremove': {
@@ -2850,6 +2850,26 @@ function uplInvite(link) {   // the link as pasted, when it's Spotify's own (the
   const x = String(link || '').trim();
   return /^https:\/\/open\.spotify\.com\/[\w\-/?=&%.]+$/.test(x) && x.length <= 400 ? x : '';
 }
+// A member's playlist from Exportify (exportify.app: they sign in to Spotify there and export it as a CSV file, which
+// the calendar reads and sends here as songs): no collaboration needed, as Exportify reads it with their own Spotify
+// sign-in. A snapshot: they upload a fresh export to bring in new songs (op csvup). UPL_CSV_MOST songs at most.
+const UPL_CSV_MOST = 2000, SP_ID = /^[0-9A-Za-z]{22}$/;
+function uplCsvSongs(list) {   // the songs as the page sends them, made safe: [{ a, id, title, artist, artists, aids, album, alid, img }] in the playlist's order
+  if (!Array.isArray(list)) return null;
+  const out = [], seen = new Set(), txt = (v, n) => String(v == null ? '' : v).replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, n);
+  for (const x of list.slice(0, UPL_CSV_MOST)) {
+    if (!x || !SP_ID.test(String(x.id || '')) || seen.has(x.id)) continue;
+    const at = Date.parse(x.a);
+    if (isNaN(at)) continue;
+    const artists = (Array.isArray(x.artists) ? x.artists : []).map(a => txt(a, 120)).filter(Boolean).slice(0, 12);
+    const aids = (Array.isArray(x.aids) ? x.aids : []).map(String).filter(a => SP_ID.test(a)).slice(0, 12);
+    const img = /^https:\/\/i\.scdn\.co\/image\/[0-9a-f]{20,60}$/.test(String(x.img || '')) ? String(x.img).replace('ab67616d0000b273', 'ab67616d00001e02') : '';   // (the 300-pixel cover, as Spotify's reads give)
+    seen.add(x.id);
+    out.push({ a: new Date(at).toISOString().replace('.000Z', 'Z'), id: x.id, title: txt(x.title, 200) || 'Untitled', artist: artists.join(', ') || txt(x.artist, 300), artists, aids,
+      album: txt(x.album, 200), alid: SP_ID.test(String(x.alid || '')) ? x.alid : '', img });
+  }
+  return out;
+}
 async function uplAll(env) { return (await env.SOTD.get('upls', 'json')) || {}; }
 async function uplSongs(env, pid) { return (await env.SOTD.get('upl:' + pid, 'json')) || { songs: [], rel: {} }; }
 // a saved playlist made a calendar or shared playlist (src 'mpl', pl: the saved playlist's id): its songs follow it.
@@ -2901,6 +2921,7 @@ async function uplTracks(env) {   // every track on members' playlists (for Open
   for (const pid of Object.keys(U)) for (const x of (await uplSongs(env, pid)).songs) out.push(x.id);
   return out;
 }
+function uplSrc(r) { return r.src === 'mpl' || r.src === 'csv' ? r.src : 'sp'; }   // sp: read from Spotify; mpl: a saved playlist's; csv: from an Exportify file its owner uploads
 function uplWaiting(rec, data, x) { return rec.src !== 'mpl' && Date.parse(x.a) > (rec.base || 0) && !(data.rel || {})[x.id]; }   // (a saved playlist's: out as its owner adds them)
 function uplGone(data, x) { const d = (data.del || {})[x.id]; return !!d && d === x.a; }   // taken off by its owner (that adding of it): its day left empty
 function uplName(all, rec) { return rec.title || rec.n || ((all[rec.o] && all[rec.o].name) || 'A member') + '’s playlist'; }   // (title: its owner's; n: Spotify's)
@@ -2918,7 +2939,7 @@ function uplCan(all, viewer, rec) {   // whether someone sees this playlist (vie
 }
 function uplList(all, viewer, U) {   // the playlists a member can switch to (/members/me pls)
   return Object.entries(U).filter(([, r]) => uplCan(all, viewer, r))
-    .map(([pid, r]) => Object.assign({ id: pid, n: uplName(all, r), t: uplTitle(all, r), o: all[r.o].name, mode: r.mode, cnt: r.cnt || 0, sp: r.sp, src: r.src === 'mpl' ? 'mpl' : 'sp', sh: uplShareOf(r) }, r.yt ? { yt: r.yt } : {}, r.o === viewer ? { mine: true, pl: r.pl || '', st: r.st, err: r.err || '', sn: r.n || '', to: uplShareOf(r) === 'some' ? r.to || [] : [], dates: r.mode === 'list' ? null : Object.assign({ how: 'added' }, r.dates || {}), send: uplSendOf(r) } : {}))
+    .map(([pid, r]) => Object.assign({ id: pid, n: uplName(all, r), t: uplTitle(all, r), o: all[r.o].name, mode: r.mode, cnt: r.cnt || 0, sp: r.sp, src: uplSrc(r), sh: uplShareOf(r) }, r.yt ? { yt: r.yt } : {}, r.o === viewer ? { mine: true, pl: r.pl || '', st: r.st, err: r.err || '', sn: r.n || '', to: uplShareOf(r) === 'some' ? r.to || [] : [], dates: r.mode === 'list' ? null : Object.assign({ how: 'added' }, r.dates || {}), send: uplSendOf(r) } : {}))
     .sort((a, b) => (b.mine ? 1 : 0) - (a.mine ? 1 : 0) || a.o.localeCompare(b.o) || a.n.localeCompare(b.n));
 }
 async function uplMine(env, pls, U) {   // their own playlists' songs waiting for them to sign off (wait: the newest 20, oldest first)
@@ -2930,7 +2951,7 @@ async function uplMine(env, pls, U) {   // their own playlists' songs waiting fo
   return pls;
 }
 function uplAdmin(all, U) {   // the Members tab: every playlist, whose, and whether John has joined it
-  return Object.entries(U).map(([pid, r]) => ({ id: pid, n: uplName(all, r), o: (all[r.o] && all[r.o].name) || '?', oid: r.o, mode: r.mode, src: r.src === 'mpl' ? 'mpl' : 'sp', st: r.st, err: r.err || '', link: r.link || '',
+  return Object.entries(U).map(([pid, r]) => ({ id: pid, n: uplName(all, r), o: (all[r.o] && all[r.o].name) || '?', oid: r.o, mode: r.mode, src: uplSrc(r), st: r.st, err: r.err || '', link: r.link || '',
     sp: r.sp, at: r.at, read: r.read || null, cnt: r.cnt || 0, sh: uplShareOf(r), shn: uplShareOf(r) === 'some' ? (r.to || []).length : 0 })).sort((a, b) => (a.st === 'join' ? 0 : 1) - (b.st === 'join' ? 0 : 1) || b.at - a.at);
 }
 async function uplPut(env, U) { await env.SOTD.put('upls', JSON.stringify(U)); }
@@ -2977,6 +2998,9 @@ async function uplRead(env, pid, rec, U) {   // reads it from Spotify; keeps wha
     U[pid] = rec; await uplPut(env, U);
     return false;
   }
+  return uplTake(env, pid, rec, U, items, was, now);
+}
+async function uplTake(env, pid, rec, U, items, was, now, quiet) {   // its songs as read (or uploaded): keeps what changed (quiet: its owner is there, no message)
   const data = await uplSongs(env, pid), had = new Set((data.songs || []).map(x => x.id));
   const fresh = items.filter(x => !had.has(x.id) && Date.parse(x.a) > (rec.base || 0) && !(data.rel || {})[x.id]);
   const changed = JSON.stringify(items) !== JSON.stringify(data.songs);
@@ -2989,9 +3013,9 @@ async function uplRead(env, pid, rec, U) {   // reads it from Spotify; keeps wha
   U[pid] = rec; await uplPut(env, U);
   await fillPreviews(env, items, 6).catch(() => null);
   await tagNewSongs(env, items, 3).catch(() => {});
-  if (was === 'ok' && fresh.length) await uplTellOwner(env, pid, rec, fresh, uplDays(items, rec));
+  if (was === 'ok' && fresh.length && !quiet) await uplTellOwner(env, pid, rec, fresh, uplDays(items, rec));
   if (changed && items.length) await startJob(env, null, null, 0, null, true).catch(() => {});   // the site job: their songs' videos, moods, years and YouTube copy
-  return true;
+  return { fresh: fresh.length };
 }
 async function uplTellOwner(env, pid, rec, fresh, days) {   // a new song on their playlist: to the owner's devices, waiting for their sign-off
   const subs = (await env.SOTD.get('pushSubs', 'json')) || {}, ids = Object.keys(subs).filter(k => subs[k].m === rec.o);
@@ -3017,7 +3041,7 @@ async function uplPreviews(env, U) {   // their songs' previews not looked up ye
 }
 async function uplLook(env) {   // the timer: playlists due a read (UPL_LOOK_MOST each time)
   const U = await uplAll(env), now = Date.now(), h = londonHour();
-  const due = Object.entries(U).filter(([, r]) => r.src !== 'mpl').filter(([, r]) => (r.st === 'ok' || r.st === 'err') ? (h >= 6 && h < 23 && now - (r.tried || 0) >= UPL_EVERY) : now - (r.tried || 0) >= (now - r.at < DAY ? UPL_JOIN_EVERY : 6 * UPL_JOIN_EVERY))
+  const due = Object.entries(U).filter(([, r]) => uplSrc(r) === 'sp').filter(([, r]) => (r.st === 'ok' || r.st === 'err') ? (h >= 6 && h < 23 && now - (r.tried || 0) >= UPL_EVERY) : now - (r.tried || 0) >= (now - r.at < DAY ? UPL_JOIN_EVERY : 6 * UPL_JOIN_EVERY))
     .sort((a, b) => (a[1].tried || 0) - (b[1].tried || 0)).slice(0, UPL_LOOK_MOST);
   for (const [pid, r] of due) await uplRead(env, pid, r, U).catch(e => console.log('upl ' + pid + ': ' + (e && e.message)));
   await uplPreviews(env, U).catch(e => console.log('uplPreviews: ' + (e && e.message)));
@@ -3227,10 +3251,11 @@ async function uplView(env, all, viewer, pid, rec) {   // a playlist as the cale
     const at = {}; data.order.forEach((t, i) => { at[t] = i; });
     songs = songs.filter(x => x.id in at).sort((a, b) => at[a.id] - at[b.id]).concat(songs.filter(x => !(x.id in at)));
   }
-  return { id: pid, n: uplName(all, rec), t: uplTitle(all, rec), o: all[rec.o].name, mine, mode: rec.mode, sp: rec.sp, src: rec.src === 'mpl' ? 'mpl' : 'sp', yt: rec.yt || '', st: rec.st, at: data.at || null, sh: uplShareOf(rec),
+  return { id: pid, n: uplName(all, rec), t: uplTitle(all, rec), o: all[rec.o].name, mine, mode: rec.mode, sp: rec.sp, src: uplSrc(rec), yt: rec.yt || '', st: rec.st, at: data.at || null, sh: uplShareOf(rec),
     dates: rec.mode === 'list' ? null : Object.assign({ how: 'added' }, rec.dates || {}), send: mine ? uplSendOf(rec) : undefined, songs };
 }
-// /members/upl: GET ?id= one playlist to show; POST { op: 'add', link, mode } | { op: 'mode', id, mode } | { op: 'remove', id }
+// /members/upl: GET ?id= one playlist to show; POST { op: 'add', link, mode } | { op: 'csv', name, mode, songs } (from an
+// Exportify file, see uplCsvSongs) | { op: 'csvup', id, songs } (a fresh export of it) | { op: 'mode', id, mode } | { op: 'remove', id }
 // | { op: 'check', id } | { op: 'signoff', id, track } | { op: 'dates', id, how: 'added' | 'fwd' | 'back', day } (a calendar:
 // by the day each was added on Spotify; a song a day forwards from day, the first song on it; or back from day, the
 // newest song now on it and the ones after it on the days after) | { op: 'order', id, order: [track ids] } (a playlist)
@@ -3268,6 +3293,16 @@ async function memberUpl(request, url, env, answer) {
     if (rec.st === 'join') await uplAskJohn(env, all, me, rec);
     return answer(200, { ok: true, id: pid, st: rec.st, pls: await uplMine(env, uplList(all, me, U), U) });
   }
+  if (body.op === 'csv') {   // one of their Spotify playlists from an Exportify file
+    const items = uplCsvSongs(body.songs);
+    if (!items || !items.length) return answer(400, { error: 'No songs in that file. Choose the file Exportify saved for your playlist.' });
+    if (Object.values(U).filter(r => r.o === me && r.src !== 'mpl').length >= UPL_MAX) return answer(400, { error: 'That’s ' + UPL_MAX + ' playlists, the most you can add.' });
+    const now = Date.now(), newest = Math.max.apply(null, items.map(x => Date.parse(x.a)));
+    const pid = randomCode(10), rec = { o: me, src: 'csv', sp: '', n: String(body.name || '').replace(/\s+/g, ' ').trim().slice(0, 80) || 'My playlist', mode: body.mode === 'list' ? 'list' : 'cal', at: now, base: Math.max(newest, 0), st: 'ok' };
+    U[pid] = rec;
+    await uplTake(env, pid, rec, U, items, 'new', now, true);
+    return answer(200, { ok: true, id: pid, st: 'ok', pls: await uplMine(env, uplList(all, me, U), U), view: await uplView(env, all, me, pid, rec) });
+  }
   if (body.op === 'fromlist') {   // one of their saved playlists as its own calendar or playlist
     const lists = (await env.SOTD.get('mpl:' + me, 'json')) || [], l = lists.find(x => x.id === String(body.list || ''));
     if (!l) return answer(404, { error: 'No such playlist of yours.' });
@@ -3283,6 +3318,7 @@ async function memberUpl(request, url, env, answer) {
   const pid = String(body.id || ''), rec = own(pid);
   if (!rec) return answer(404, { error: 'No such playlist of yours.' });
   if (rec.src === 'mpl' && ['link', 'check', 'signoff', 'order', 'title', 'del'].includes(body.op)) return answer(400, { error: 'That’s done in the playlist itself.' });
+  if (rec.src === 'csv' && ['link', 'check'].includes(body.op)) return answer(400, { error: 'Upload a fresh export from Exportify instead.' });
   if (body.op === 'del') {   // a song off its calendar or playlist (not off Spotify): its day left empty
     const data = await uplSongs(env, pid), x = (data.songs || []).find(y => y.id === String(body.track || '') && !uplGone(data, y));
     if (!x) return answer(404, { error: 'That song isn’t on this playlist.' });
@@ -3292,6 +3328,13 @@ async function memberUpl(request, url, env, answer) {
     rec.cnt = (data.songs || []).filter(y => !uplGone(data, y)).length; await uplPut(env, U);
     await startJob(env, null, null, 0, null, true).catch(() => {});   // (its cards, and its YouTube copy)
     return answer(200, { ok: true, pls: await uplMine(env, uplList(all, me, U), U), view: await uplView(env, all, me, pid, rec) });
+  }
+  if (body.op === 'csvup') {   // a fresh export of it: new songs wait for them to sign off, the rest keep their days
+    if (rec.src !== 'csv') return answer(400, { error: 'That one is read from Spotify by itself.' });
+    const items = uplCsvSongs(body.songs);
+    if (!items || !items.length) return answer(400, { error: 'No songs in that file. Choose the file Exportify saved for your playlist.' });
+    const r = await uplTake(env, pid, rec, U, items, rec.st, Date.now(), true);
+    return answer(200, { ok: true, fresh: r.fresh, cnt: rec.cnt, pls: await uplMine(env, uplList(all, me, U), U), view: await uplView(env, all, me, pid, rec) });
   }
   if (body.op === 'mode') { rec.mode = body.mode === 'list' ? 'list' : 'cal'; delete rec.annDay; await uplPut(env, U); return answer(200, { ok: true, pls: await uplMine(env, uplList(all, me, U), U), view: await uplView(env, all, me, pid, rec) }); }
   if (body.op === 'link') {   // the collaboration invite link, sent again
