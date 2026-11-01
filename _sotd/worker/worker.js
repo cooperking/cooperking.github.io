@@ -65,6 +65,7 @@ export default {
     if (url.pathname === '/upl/facts') return await uplFactsIn(request, env);
     if (url.pathname === '/upl/links') return await uplLinks(request, env);
     if (url.pathname === '/upl/ytdrop') return await uplYtDrop(request, env);
+    if (url.pathname === '/upl/wanted') return await uplWanted(request, env);
     if (url.pathname.startsWith('/yt/')) return await ytList(request, url, env);
       if (url.pathname === '/login') return await login(url);
       if (url.pathname === '/callback') return await callback(request, url, env);
@@ -1257,6 +1258,7 @@ async function members(request, url, env) {
       await env.MEDIA.delete(body.key); await catalogSet(env, body.key, 0);
       if (body.key[0] === 'v') await env.MEDIA.delete('h/' + body.key.slice(2));   // and its TV copy
       if (body.key[0] === 'a') await env.MEDIA.delete('l/' + body.key.slice(2, 24) + '.m4a');   // and its lighter copy
+      await env.SOTD.put('r2want', JSON.stringify({ at: Date.now(), key: body.key }));   // (playlist-r2 gets it again: /upl/wanted, for Playlist push)
       return answer(200, { ok: true });
     }
   }
@@ -3371,6 +3373,17 @@ async function ytList(request, url, env) {
   if (json) return answer(200, { t: view.n, songs: out });
   if (!out.length) return new Response('No videos on “' + view.n + '” yet.', { status: 404, headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' } });
   return new Response(null, { status: 302, headers: { 'Cache-Control': 'no-store', Location: 'https://www.youtube.com/watch_videos?video_ids=' + out.slice(0, 50).map(x => x.v).join(',') + '&title=' + encodeURIComponent(view.n) } });
+}
+// /upl/wanted (Authorization: Bearer ADMIN_KEY): { at } when John last deleted one of the catalog's files on the admin
+// page (KV r2want), so Playlist push starts playlist-r2 then and a song whose files were wrong gets new ones at once,
+// not at its daily run (John, 1 Nov 2026: "A song was wrong and so I removed and replace the files. It won't get new
+// files unless a request is put in somewhere").
+async function uplWanted(request, env) {
+  const answer = (status, body) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' } });
+  const bad = await adminOk(request, env, answer);
+  if (bad) return bad;
+  const w = (await env.SOTD.get('r2want', 'json')) || {};
+  return answer(200, { at: w.at || 0, key: w.key || '' });
 }
 // /upl/ytdrop, for the site job only: the YouTube copies of playlists taken off the calendar, to delete (John, 1 Nov
 // 2026: "AaBbCc and Potench playlists have been deleted now so the songs should be deleted fully"). GET { ids };

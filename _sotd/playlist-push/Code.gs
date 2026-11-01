@@ -34,6 +34,8 @@
  * Each playlist's video IDs are kept in the script's properties under "<playlist ID>:", split into 8,000-character
  * pieces. Records of playlists no longer watched are deleted.
  *
+ * When a song's MP3 or MP4 has been deleted on the admin page since its last look (the Worker's /upl/wanted), it starts
+ * that workflow too, so the song gets new files within minutes.
  * Whenever it emails, it also starts the "Download playlists to R2" workflow in GITHUB_REPO with a repository_dispatch
  * event "playlist-new", using the GitHub token in the script property GITHUB_TOKEN. Without that property it only emails.
  */
@@ -288,6 +290,26 @@ function check() {
     MailApp.sendEmail(TO, SUBJECT, news.join('\n\n\n'));
     startDownloads(props);
   }
+  // files deleted on the admin page since the last look (a song's were wrong): the downloads start now, so it gets new
+  // ones within minutes rather than at the daily run
+  try {
+    const w = filesWanted();
+    if (w > Number(props.getProperty('wantedAt') || 0)) {
+      props.setProperty('wantedAt', String(w));
+      if (!news.length) startDownloads(props);
+    }
+  } catch (e) {
+    console.log('Deleted files not read: ' + e.message);
+  }
+}
+
+/** When a file was last deleted on the admin page (the Worker's /upl/wanted), or 0; 0 without the sotdKey property. */
+function filesWanted() {
+  const k = PropertiesService.getScriptProperties().getProperty('sotdKey');
+  if (!k) return 0;
+  const r = UrlFetchApp.fetch(SOTD + '/upl/wanted', { headers: { Authorization: 'Bearer ' + k }, muteHttpExceptions: true });
+  if (r.getResponseCode() !== 200) throw new Error('the Worker answered ' + r.getResponseCode());
+  return Number(JSON.parse(r.getContentText()).at) || 0;
 }
 
 /** Moves the single-playlist record (keys seenParts, seen0…, count, fullAt) to FIRST_PLAYLIST's keys. */

@@ -518,6 +518,10 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
     by `youtube_upl_drop.py`, in the YouTube playlist step.
   - The previews and covers kept here (`sp/`): a copy no song uses any more is deleted by the timer (`spKeep`, 200
     looked at a run; only once John's songs and the previews have been read).
+  - A song's files deleted on the admin page (its video was wrong) are got again at once (John, 1 Nov 2026: "It won't
+    get new files unless a request is put in somewhere"): the Worker notes it (KV `r2want`, `/upl/wanted`), and
+    Playlist push, at its next 5-minute look, starts playlist-r2, which fills what's missing (from the song's video
+    as it is now). Before, that waited for playlist-r2's daily run at 04:17.
   - The MP3s and MP4s in the catalog (`a/`, `v/`, with TV copies `h/` and lighter copies `l/`): John's uploads,
     and what `cooperking/playlist-r2` downloads for the playlists in the Playlist push sheet (it sends them through
     `/members/upload` as the Mac uploader does, under the song's Spotify id). A song on none of John's calendar, any
