@@ -304,6 +304,18 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   (from Capacitor's App plugin: `appUrlOpen` or `getLaunchUrl`). Either way it opens Import from Spotify at its
   playlists. Tests: `csv_t.mjs` (the Worker), `zip_t.js` (the draft: both kinds of zip, the picker, update, switch, one
   CSV, a shared file).
+- **The Calendars page** (John, 1 Nov 2026: "Rather than the drop down could we have a click that opens a page and shows
+  them nicely. Could they have an image that they choose for it, with a default if there isn't"): tapping the
+  calendar's name at the top opens a page of cards: John's first (the app's icon in the month's colours), then the
+  member's own, then the others they see; each with its picture, name, whose it is and its songs, the one showing
+  outlined. A playlist's picture is its owner's (*Add a picture* / *Change picture* on their own card: a photo, cropped
+  square on the page; R2 `up/<pid>.jpg`, `pic` on its record, served at `/up/<pid>.jpg`; *Use its covers* takes it
+  off), else its newest four covers (`/members/upl?cards=1`). Test: `cal_t.mjs` (the draft against the real Worker code).
+- **Staying on a calendar** (John, 1 Nov 2026: "Could it always stay on the chosen one"): besides its address (`#u=`),
+  each device keeps the calendar it was last on (`sotd-cal` in local storage) and goes back to it when the page opens
+  with no address of its own (the app opened again, or an address that lost it), until John's is chosen again; one
+  gone or no longer shared is let go quietly. Going back to a day from the mini player keeps the calendar in the
+  address. Test: `refresh_t.mjs`.
 - **Getting an import ready, and its progress** (John, 1 Nov 2026: "it gives the option to play while still importing
   and a user can see any progress of whether the songs or previews can be found... Can we add progress info to the
   playlist page"): after importing, the calendar opens on it straight away. Its owner sees a panel under the month
