@@ -382,11 +382,21 @@ async function spKept(request, url, env) {
 }
 async function spCopy(env, kind, id) {   // Spotify's copy into R2: its bytes, or null (not there)
   const r = await fetch(kind === 'p' ? 'https://p.scdn.co/mp3-preview/' + id : 'https://i.scdn.co/image/' + id).catch(() => null);
+  if (r && kind === 'p' && [400, 403, 404, 410].includes(r.status)) await pvDead(env, id);   // (gone from Spotify, never kept: the song has no preview now)
   if (!r || !r.ok) return null;
   const b = await r.arrayBuffer();
   if (!b.byteLength || b.byteLength > 5e6) return null;
   await env.MEDIA.put('sp/' + kind + '/' + id + (kind === 'p' ? '.mp3' : '.jpg'), b, { httpMetadata: { contentType: kind === 'p' ? 'audio/mpeg' : 'image/jpeg' } }).catch(() => {});
   return b;
+}
+// a preview Spotify no longer has, with no copy kept here: its songs are marked as having none (previews: '-'), so the
+// calendar shows them as video only and plays their video in its place (John, 1 Nov 2026: a song taken off Spotify
+// kept its preview link, so the mini player "doesn't recognise it's missing - nothing happens at all when play is pressed")
+async function pvDead(env, id) {
+  const pv = (await env.SOTD.get('previews', 'json')) || {};
+  let n = 0;
+  for (const t of Object.keys(pv)) if (pv[t] === id) { pv[t] = '-'; pvMem[t] = '-'; n++; }
+  if (n) await kvSoft(env, 'previews', JSON.stringify(pv));
 }
 const SP_KEEP_RUN = 20;   // (copies a timer run: well inside a run's requests)
 async function spKeep(env) {   // the previews and covers not kept yet, from John's songs and every member's playlist; and copies no song uses, deleted

@@ -489,6 +489,10 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
     Spotify's and keeps it; the timer copies the rest, 20 a run, members' first (`spKeep`; KV `spkept`: 1 kept,
     -time Spotify had none, asked again a week on). A cover asked for at a size never kept is served at one that
     was. The service worker keeps the covers for offline as it did Spotify's.
+  - A preview Spotify no longer has (it answers 404) and never kept here: its songs are marked as having none
+    (`pvDead`: previews `-`), so the calendar shows them as video only and plays the video in its place, the mini
+    player too (John, 1 Nov 2026: Parentheses by The Blow kept its preview link and "nothing happens at all when play
+    is pressed"). A Spotify outage marks nothing.
   - The rest was already kept here: title, artists, album, added date (in `upl:<id>`), the videos, moods, years and
     facts the site job found, and the member's own files.
 - **The Exportify download, kept** (John, 1 Nov 2026: "Once a zip or csv file is loaded in, can it stay in memory.
