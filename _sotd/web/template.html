@@ -6895,7 +6895,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var box = document.getElementById('uplprog'), g = view && view.mine && view.prog;
     clearTimeout(PROG.t); PROG.t = 0;
     var recent = g && Date.now() - (g.ch || 0) < 2 * 864e5, left = function (f, nn) { return Math.max(0, g.n - (g[f] || 0) - (g[nn] || 0)); };   // (still to look at: neither found nor looked at with none)
-    var more = g && (g.pq > 0 || (recent && (left('v', 'vn') || left('y', 'yn'))));   // (moods aren't waited for: they're worked out last, John, 1 Nov 2026)
+    var more = g && (g.pq > 0 || (recent && left('v', 'vn')));   // (the previews, the videos and their files: years and moods aren't waited for or shown, John, 1 Nov 2026)
     box.hidden = !g || !g.n || !(more || PROG.id === view.id) || uplProgHidden(view.id + ':' + g.ch);
     if (box.hidden) { PROG.id = null; return; }
     PROG.id = view.id;
@@ -6906,8 +6906,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var steps = [
       { k: 'Songs', done: true, sum: pl(N, 'song') + ' in' },
       { k: 'Previews', w: 'p', tip: 'These have no preview on Spotify (some have been taken off it), so they play their video if one is found, or nothing until you add your own MP3: tap one to add it.', f: g.p, none: g.pn || 0, left: g.pq, sum: g.p + ' can play their preview' + (g.pn ? ' · ' + pl(g.pn, 'song') + ' with none on Spotify' : ''), now: 'Looking each song up on Spotify: ' + (N - g.pq) + ' of ' + N + ' so far. Songs play as soon as theirs is here.' },
-      { k: 'Videos', w: 'v', tip: 'No video was found for these: tap one to give it a YouTube link or your own MP4.', f: g.v, none: g.vn || 0, left: left('v', 'vn'), sum: pl(g.v, 'video') + ' found' + (g.vn ? ' · ' + g.vn + ' with none (they play their preview)' : ''), now: 'Finding a YouTube video for each: ' + g.v + ' found' + (g.vn ? ', ' + g.vn + ' with none' : '') + ', ' + left('v', 'vn') + ' still to look for. A batch at a time, over the next hour or two.' },
-      { k: 'Years', w: 'y', tip: 'No release date came with these. Tap one to open it.', f: g.y, none: g.yn || 0, left: left('y', 'yn'), sum: (g.y === N ? (N === 1 ? 'Its year is in' : 'All ' + N + ' have their year') : pl(g.y, 'song') + (g.y === 1 ? ' has its year' : ' have their year')) + (g.yn ? ' · ' + g.yn + ' unknown' : ''), now: 'Finding each song’s year: ' + g.y + ' so far, ' + left('y', 'yn') + ' to go.' }
+      { k: 'Videos', w: 'v', tip: 'No video was found for these: tap one to give it a YouTube link or your own MP4.', f: g.v, none: g.vn || 0, left: left('v', 'vn'), sum: pl(g.v, 'video') + ' found' + (g.vn ? ' · ' + g.vn + ' with none' : ''), now: 'Finding a YouTube video for each: ' + g.v + ' found' + (g.vn ? ', ' + g.vn + ' with none' : '') + ', ' + left('v', 'vn') + ' still to look for. A batch at a time, over the next hour or two.' },
     ];
     steps.forEach(function (x) { if (!x.done) x.done = !x.left; });
     var cur = steps.filter(function (x) { return !x.done; })[0];

@@ -520,7 +520,7 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   moment it's in (`uplView`), and `years.py` takes it with no MusicBrainz lookup (the same song's earlier year, from
   another release, still wins over a remaster's). The years step runs straight after the videos, and `upl_vids.py`
   sends both then (`/upl/vids`: `years`, `ylooked`); the listening, Last.fm, MusicBrainz and moods come after. The
-  progress shows Songs, Previews, Videos, Years and the MP3s and MP4s; "Your playlist is ready" doesn't wait for moods.
+  progress shows Songs, Previews, Videos and the MP3s and MP4s (John: "Just don't show years as part of the progress"); "Your playlist is ready" waits for neither years nor moods.
 - **A song the site has already, recognised at once** (John, 1 Nov 2026: "Werewolves of London was already in the song
   catalogue, so it should have immediately recognised it and not needed it for any searches but it kept searching
   anyway"): a member's song that's one of John's (the same track) has always shared his data in the job, but the
