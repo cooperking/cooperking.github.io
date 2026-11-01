@@ -18,12 +18,9 @@ Nothing is downloaded: the calendar plays the video in YouTube's own player.
 YouTube allows 100 searches a day, so a long backlog takes a few days; songs not done yet wait for the next run.
 Songs with no good match are tried again after 30 days.
 
-Members' songs go to Odesli (song.link) first, when the ODESLI_KEY secret is set (John, 1 Nov 2026: their songs' search
-apart from his account): it matches the Spotify track to its YouTube upload, with no YouTube search spent (song.link
-closed its keyless API in October 2026, so it needs a key: developers@song.link). One 1-unit lookup then checks 50 of
-its videos (title, channel, length, whether other sites may play them), and each is scored as a search's would be. One
-it has no video for, or one that doesn't look like the song, waits for YouTube's search, after John's songs as before.
-Each is asked once in RETRY_DAYS (odesli: the day). John's own picks (data/john-videos.json "videos":
+Members' songs are tried the free ways first (free_videos.py: Wikidata, MusicBrainz, Discogs), stopping at the first
+match, so the searches on John's account go on the songs those miss; members' songs then take turns for the searches
+left after John's (a playlist's newest, then the next playlist's newest, and so on). John's own picks (data/john-videos.json "videos":
 {track id: video id, or "" for none}) win over everything."""
 import datetime, json, os, re, sys, unicodedata
 
@@ -257,110 +254,6 @@ def from_links(songs, data, links, tok, ms=None):
     return took
 
 
-ODESLI_KEY = os.environ.get('ODESLI_KEY', '').strip()
-ODESLI_URL = 'https://api.song.link/v1-alpha.1/links'
-ODESLI_MOST = 1500   # a run's most (60 a minute with a key: about 25 minutes)
-ODESLI_GAP = 1.05    # seconds between asks
-
-
-def odesli_video(track):
-    """Odesli's YouTube video id for a Spotify track: an id, '' (none), or None (it couldn't say: try again later).
-    Raises PermissionError when the key is refused."""
-    import time, urllib.error, urllib.parse, urllib.request
-    q = urllib.parse.urlencode({'url': 'https://open.spotify.com/track/' + track, 'userCountry': 'GB', 'key': ODESLI_KEY})
-    for attempt in range(3):
-        try:
-            with urllib.request.urlopen(urllib.request.Request(ODESLI_URL + '?' + q, headers={'User-Agent': ytapi.UA}), timeout=30) as r:
-                j = json.loads(r.read())
-            break
-        except urllib.error.HTTPError as e:
-            if e.code in (401, 403):
-                raise PermissionError(e.read()[:200].decode('utf-8', 'replace'))
-            if e.code == 404:
-                return ''
-            if e.code == 429:
-                time.sleep(min(90, int(e.headers.get('Retry-After') or 60)))
-                continue
-            return None
-        except (OSError, ValueError):
-            time.sleep(5)
-    else:
-        return None
-    links = j.get('linksByPlatform') or {}
-    for k in ('youtube', 'youtubeMusic'):
-        m = re.search(r'[?&]v=([\w-]{11})', (links.get(k) or {}).get('url') or '')
-        if m:
-            return m.group(1)
-    return ''
-
-
-def from_odesli(songs, data, tok, ms=None):
-    """Members' songs not matched yet: Odesli's video for each, checked and scored (see the top)."""
-    import time
-    if not ODESLI_KEY:
-        return 0
-    today = datetime.date.today()
-
-    def asked_lately(e):
-        try:
-            return (today - datetime.date.fromisoformat(e.get('odesli', '2000-01-01'))).days < RETRY_DAYS
-        except ValueError:
-            return False
-    todo = [s for s in songs if s.get('upl') and 'ov' not in s and (s['id'] not in data['songs'] or due(data['songs'][s['id']]))
-            and not asked_lately(data['songs'].get(s['id'], {}))]
-    todo.sort(key=lambda s: -s['n'])
-    found, done = {}, 0
-    print(f'{len(todo)} members\' songs to ask Odesli for')
-    try:
-        for i, s in enumerate(todo[:ODESLI_MOST]):
-            if i:
-                time.sleep(ODESLI_GAP)
-            v = odesli_video(s['id'])
-            if v is None:
-                continue   # (asked again next run)
-            if v:
-                found[s['id']] = v
-            else:
-                e = data['songs'].get(s['id']) or {'n': s['n'], 'checked': '2000-01-01'}
-                e['odesli'] = today.isoformat(); data['songs'][s['id']] = e   # (none: YouTube's search, after John's)
-    except PermissionError as x:
-        print('Odesli refused the key:', x)
-    by = {s['id']: s for s in songs}
-    ids = list(found)
-    for k in range(0, len(ids), 50):
-        part = ids[k:k + 50]
-        try:
-            st = ytapi.get('videos', {'part': 'snippet,status,contentDetails', 'id': ','.join(found[t] for t in part)}, tok, units=1)
-        except ytapi.Quota:
-            print("no allowance left today to check Odesli's videos")
-            break
-        info = {it['id']: it for it in st.get('items', [])}
-        for t in part:
-            s, vid = by[t], found[t]
-            it = info.get(vid)
-            prev = data['songs'].get(t) or {'n': s['n'], 'checked': '2000-01-01'}
-            if not it:
-                prev['odesli'] = today.isoformat(); data['songs'][t] = prev   # (gone or private: YouTube's search)
-                continue
-            sn = it.get('snippet') or {}
-            c = {'id': vid, 'title': unescape(sn.get('title', '')), 'channel': sn.get('channelTitle', '')}
-            c['score'], c['why'], c['kind'] = score(s, c)
-            c['secs'] = iso_secs((it.get('contentDetails') or {}).get('duration'))
-            c['embed'] = bool((it.get('status') or {}).get('embeddable') and (it.get('status') or {}).get('privacyStatus') == 'public')
-            length_off(c, (ms or {}).get(t) or s.get('ms'))
-            if c['score'] < GOOD or not c['embed']:
-                prev['odesli'] = today.isoformat(); prev['odesliId'] = vid; data['songs'][t] = prev   # (not the song, or not playable here: YouTube's search)
-                continue
-            e = {'n': s['n'], 'checked': today.isoformat(), 'from': 'Odesli', 'odesli': today.isoformat(), 'id': vid, 'title': c['title'],
-                 'channel': c['channel'], 'kind': c['kind'], 'score': c['score'], 'why': c['why'], 'embed': c['embed']}
-            if c['secs'] is not None:
-                e['secs'] = c['secs']
-            data['songs'][t] = e
-            done += 1
-            print(s['n'], s['title'], '—', s['artist'], '→ Odesli', vid, '|', c['channel'], '|', c['title'], c['score'])
-    return done
-
-
 def johns_picks(songs, data, john, tok):
     """John's own video for a song: looked up once (title, channel, whether other sites may play it) and always used."""
     by = {s['id']: s for s in songs}
@@ -480,12 +373,22 @@ def main():
     try:
         done += johns_picks(songs, data, john, tok)
         done += from_links(songs, data, links, tok, ms)
-        done += from_odesli(songs, data, tok, ms)
     except ytapi.Quota:
         print("today's YouTube allowance is used up")
-    todo = [s for s in songs if 'ov' not in s and (s['id'] not in data['songs'] or due(data['songs'][s['id']]))]   # (ov: a member's own choice for their song)
+    pending = set()
+    try:
+        import free_videos
+        got, pending = free_videos.find(songs, data, tok, sys.modules[__name__], ms)
+        done += got
+    except Exception as x:   # (the free ways can wait for the next run; the search goes on)
+        print('the free ways failed this run:', x)
+        pending = {s['id'] for s in songs if s.get('upl')}
+    todo = [s for s in songs if 'ov' not in s and s['id'] not in pending and (s['id'] not in data['songs'] or due(data['songs'][s['id']]))]   # (ov: a member's own choice for their song)
     newest = max((s['n'] for s in songs if not s.get('upl')), default=None)
-    todo.sort(key=lambda s: (bool(s.get('upl')), -s['n']))   # today's song first, and it may use the searches kept back for it; members' songs after John's
+    turn, seen = {}, {}
+    for s in sorted((s for s in todo if s.get('upl')), key=lambda s: -s['n']):   # members' songs take turns: each playlist's newest, then each one's next
+        seen[s['upl']] = seen.get(s['upl'], 0) + 1; turn[s['id']] = seen[s['upl']]
+    todo.sort(key=lambda s: (bool(s.get('upl')), turn.get(s['id'], 0), -s['n']))   # today's song first, and it may use the searches kept back for it; members' songs after John's
     print(f'{len(todo)} songs to search YouTube for; {ytapi.ledger()["used"]} units used today')
     try:
         for s in todo:

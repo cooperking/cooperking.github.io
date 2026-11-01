@@ -284,11 +284,15 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   off a song, or removing its playlist, frees it. The Worker refuses a file for a 367th song as it starts and again as
   it finishes (`UPL_OWN_FILES`, `uplFileSongs`); `/members/me` and each upload's answer give `fu { n, max }`, which the
   song editor shows under *Your own files*.
-- **Their songs' videos from Odesli** (John, 1 Nov 2026: keep their songs' search apart from his YouTube account): the
-  site job's `youtube.py` asks Odesli (song.link) for each member song's YouTube upload first, then checks 50 at a time
-  with one 1-unit YouTube lookup and scores them as a search's; no YouTube search is spent. It needs the `ODESLI_KEY`
-  secret (song.link closed its keyless API in October 2026; a key from developers@song.link). Without the key, and for
-  songs it can't match, YouTube's search on John's account as before, after his songs.
+- **Their songs' videos, the free ways first** (John, 1 Nov 2026: "try multiple different free ways and stop when we
+  find a match"): the site job's `youtube.py` tries each member song in `free_videos.py`, stopping at the first match:
+  Wikidata (by Spotify track id, 200 a query), MusicBrainz (the recording's YouTube links), then Discogs (its releases'
+  videos; only with the `DISCOGS_TOKEN` secret, free from discogs.com › Settings › Developers). Each video is checked as
+  a search's would be (title, channel, length, playable on other sites; 50 to a 1-unit lookup). Only songs every way
+  misses go to YouTube's search on John's account, after his songs, the members' taking turns (each playlist's newest,
+  then each one's next). Songs not reached yet (150 a run for MusicBrainz and Discogs) wait for the next run, never
+  the search. Missed songs are tried the free ways again after 30 days. (Odesli was tried first: song.link closed its
+  keyless API in October 2026, and its matches leave YouTube out.)
 - **A calendar's days** (John, 30 Oct 2026; the pop-up's *Setup*, and straight after adding one): by the day
   each song is added on Spotify (John's rule, a day with no song taking the next); forwards from a day (the first song on
   it, then a song a day); or back from a day (the newest song now on it, each one before a day earlier). Either of the
