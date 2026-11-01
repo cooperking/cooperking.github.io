@@ -505,6 +505,15 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   tabs Inbox, Sent, Playlists, Account. Account starts with Notifications and ends with The app (both were the Device
   tab's). Sign out sits at the top beside Admin (John) or the bell, before the ×; tapped, it says Tap again. On a
   phone the Profile label gives way so the row fits.
+- **The same song on another release, and years straight away** (John, 1 Nov 2026: "Moods and years can take a very
+  long time and it's odd what it can't find sometimes like Werewolves of London, which is an extremely famous song"):
+  John's copy had moods and a year; a member's copy was another Spotify track (a remaster) with neither. `twins.py`
+  matches tracks of the same song (title without brackets or " - " parts, and first artist); `years.py` and
+  `make_tags.py` give a song its twin's year and voices (Claude's picks, the listening, Last.fm, MusicBrainz) for any
+  it hasn't, without waiting for its own lookups (moods.json says `sameAs`). And members' songs now keep their album's
+  release date (`rd`: from Spotify's read, or Exportify's Album Release Date column), which years.py uses as it uses
+  John's export, so they have a year at once (MusicBrainz's earlier first release still wins). A Spotify playlist
+  whose only change is the dates gains them quietly; an Exportify playlist gains them with a fresh file.
 - **Videos as soon as they're found** (John, 1 Nov 2026: "The YouTube playlist can be made and added to csv as soon as
   discovered, I think it's waiting for mood and years"): the site job looks for videos first, straight after reading
   the members' playlists (ahead of the listening, moods and years), and `upl_vids.py` sends members' songs' videos to

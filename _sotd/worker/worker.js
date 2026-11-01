@@ -280,7 +280,8 @@ async function playlistItems(token, sp) {   // sp: a playlist's Spotify id (John
       const imgs = (t.album && t.album.images) || [];
       const img = imgs.find(i => i.width === 300) || imgs[1] || imgs[0];
       out.push({ a: it.added_at, id: t.id, title: t.name, artist: (t.artists || []).map(x => x.name).join(', '), artists: (t.artists || []).map(x => x.name),
-        aids: (t.artists || []).map(x => x.id), album: t.album ? t.album.name : '', alid: t.album ? t.album.id : '', img: img ? img.url : '' });   // aids, alid: Spotify ids, for finding the song facts' sources
+        aids: (t.artists || []).map(x => x.id), album: t.album ? t.album.name : '', alid: t.album ? t.album.id : '', img: img ? img.url : '',
+        rd: t.album && /^\d{4}(-\d\d){0,2}$/.test(t.album.release_date || '') ? t.album.release_date : undefined });   // rd: its album's release date (a year for it straight away: years.py)   // aids, alid: Spotify ids, for finding the song facts' sources
     }
     next = j.next;
   }
@@ -437,7 +438,7 @@ async function spKeep(env) {   // the previews and covers not kept yet, from Joh
   if (n) await env.SOTD.put('spkept', JSON.stringify(kept));
 }
 
-const SONG_FIELDS = ['a', 'id', 'title', 'artist', 'artists', 'aids', 'album', 'alid', 'img'];
+const SONG_FIELDS = ['a', 'id', 'title', 'artist', 'artists', 'aids', 'album', 'alid', 'img', 'rd'];   // (rd: the album's release date, where Spotify or Exportify gave it)
 function composeSongs(items, pv, tags) {   // each song as songs.json gives it: n, the playlist's fields, p (preview), tag (moods)
   return items.map((it, i) => {
     const x = { n: i + 1 };
@@ -3065,7 +3066,7 @@ function uplCsvSongs(list) {   // the songs as the page sends them, made safe: [
     const img = /^https:\/\/i\.scdn\.co\/image\/[0-9a-f]{20,60}$/.test(String(x.img || '')) ? String(x.img).replace('ab67616d0000b273', 'ab67616d00001e02') : '';   // (the 300-pixel cover, as Spotify's reads give)
     seen.add(x.id);
     out.push({ a: new Date(at).toISOString().replace('.000Z', 'Z'), id: x.id, title: txt(x.title, 200) || 'Untitled', artist: artists.join(', ') || txt(x.artist, 300), artists, aids,
-      album: txt(x.album, 200), alid: SP_ID.test(String(x.alid || '')) ? x.alid : '', img });
+      album: txt(x.album, 200), alid: SP_ID.test(String(x.alid || '')) ? x.alid : '', img, rd: /^\d{4}(-\d\d){0,2}$/.test(String(x.rd || '')) ? String(x.rd) : undefined });   // (rd: Exportify's album release date)
   }
   return out;
 }
@@ -3281,7 +3282,9 @@ async function uplTake(env, pid, rec, U, items, was, now, quiet) {   // its song
   const data = await uplSongs(env, pid), had = new Set((data.songs || []).map(x => x.id));
   items = uplKeepGone(rec, data, items, now);
   const fresh = items.filter(x => !had.has(x.id) && Date.parse(x.a) > (rec.base || 0) && !(data.rel || {})[x.id]);
-  const changed = JSON.stringify(items) !== JSON.stringify(data.songs);
+  const bare = l => JSON.stringify((l || []).map(x => { const y = Object.assign({}, x); delete y.rd; return y; }));
+  const changed = bare(items) !== bare(data.songs);
+  if (!changed && JSON.stringify(items) !== JSON.stringify(data.songs)) { data.songs = items; await env.SOTD.put('upl:' + pid, JSON.stringify(data)); }   // (only the release dates new: kept quietly, nothing to look at again)
   if (changed) {
     const keep = new Set(items.map(x => x.id)), off = (data.songs || []).map(x => x.id).filter(t => !keep.has(t));
     data.songs = items; data.at = new Date(now).toISOString(); data.rel = data.rel || {};

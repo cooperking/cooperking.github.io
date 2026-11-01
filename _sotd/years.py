@@ -3,12 +3,17 @@
 
 Two sources, and the earlier year wins:
   MusicBrainz  the recording's first release date (data CC0), from recordings with the song's title by the same artist;
-  Spotify      the album's release date, from John's playlist export (data/spotify-dates.json), which gives the
+  Spotify      the album's release date, from John's playlist export (data/spotify-dates.json), or for a member's song
+               the date Spotify's read or Exportify's file gave with it (rd), which gives the
                reissue year for remasters and compilations, so on its own it can be late.
 When MusicBrainz has no recording under the song's title, it tries the title without any bracketed or " - " part
 ("(Bonus Track)", "- Instrumental"), then the album's first release. A song MusicBrainz doesn't know keeps Spotify's year. John's corrections (data/john-years.json: {track id: year})
-win over both. MusicBrainz asks for at most one request a second."""
+win over both. MusicBrainz asks for at most one request a second.
+The same song under another track id (a remaster, a compilation's copy: twins.py) takes its twin's year, without
+waiting for MusicBrainz; so does a song with no year of its own (1 Nov 2026)."""
 import datetime, json, os, re, sys, time, unicodedata, urllib.parse, urllib.request
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import twins   # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, 'data', 'years.json')
@@ -125,8 +130,18 @@ def main():
         sys.exit('could not read the song list')
     today = datetime.date.today()
     done = 0
+
+    def year_of(t):   # the year a track has now (John's correction, else the earlier of MusicBrainz and Spotify)
+        if john.get(t):
+            return int(john[t])
+        e = data['songs'].get(t) or {}
+        ys = [y for y in (e.get('mb'), e.get('sp')) if y and y > 1900]
+        return min(ys) if ys else None
+    twin = twins.finder(feed['songs'], lambda t: bool(year_of(t)))
     for s in feed['songs']:
         e = data['songs'].get(s['id'])
+        if not year_of(s['id']) and twin(s['id']):   # the same song's year is known already: no lookup needed
+            continue
         # look again: a song with no year at all (a new song MusicBrainz may list soon), one an earlier version
         # couldn't find, and every 60 days one MusicBrainz didn't know
         if e and (e.get('mb') or (e.get('sp') and e.get('v', 1) >= VERSION
@@ -135,7 +150,7 @@ def main():
         mb, note = mb_year(s)
         if note == 'no answer':   # MusicBrainz didn't answer: try again next run
             continue
-        spy = int(sp[s['id']][:4]) if sp.get(s['id']) else None
+        spy = int(sp[s['id']][:4]) if sp.get(s['id']) else int(s['rd'][:4]) if re.match(r'\d{4}', s.get('rd') or '') else None   # (a member's song: its album's date from Spotify's read or Exportify's file)
         e = {'n': s['n'], 'checked': today.isoformat(), 'mb': mb, 'mbNote': note, 'sp': spy, 'v': VERSION}
         data['songs'][s['id']] = e
         done += 1
@@ -151,6 +166,14 @@ def main():
     for t, y in john.items():
         if y:
             out[t] = int(y)
+    lent = 0
+    for s in feed['songs']:   # no year of its own: its twin's (the same song, another release)
+        if s['id'] not in out:
+            tw = twin(s['id'])
+            if tw and tw in out:
+                out[s['id']] = out[tw]; lent += 1
+    if lent:
+        print(lent, 'songs with their year from the same song on another release')
     print(done, 'looked up;', len(out), 'songs with a year')
     new = json.dumps({'about': 'Year each song first came out (Spotify track id: year)', 'years': out}, separators=(',', ':'), sort_keys=True)
     if not os.path.exists(SITE) or open(SITE).read() != new:

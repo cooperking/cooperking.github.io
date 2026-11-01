@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="a30f7faff4d5">
+<meta name="sotd-build" content="aae0bdf3218a">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -8208,6 +8208,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       return -1;
     }
     var tu = col(/^spotify:(track|local|episode):/), au = col(/^spotify:artist:/), al = col(/^spotify:album:/), im = col(/^https:\/\/i\.scdn\.co\/image\//), at = col(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/), pc = col(/^https:\/\/p\.scdn\.co\/mp3-preview\//), ab = col(/^spotify:user:/);
+    var rdc = col(/^\d{4}(-\d{2}(-\d{2})?)?$/);   // the album's release date (1978, 1978-01, 1978-01-23): a year for the song straight away
     if (tu < 0 || at < 0) return null;
     function names(v) { return String(v || '').replace(/\\,/g, '\u0001').split(', ').map(function (x) { return x.replace(/\u0001/g, ',').trim(); }).filter(Boolean); }   // (Exportify writes a comma in a name as \,)
     var out = [], seen = {}, by = {};
@@ -8219,7 +8220,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       if (ab >= 0 && /^spotify:user:/.test(r[ab] || '')) { var u = r[ab].slice(13); by[u] = (by[u] || 0) + 1; }
       out.push({ id: m[1], a: r[at], title: r[tu + 1] || '', artists: au >= 0 ? names(r[au + 1]) : [], aids: au >= 0 ? names(r[au]).map(function (x) { return x.replace('spotify:artist:', ''); }) : [],
         album: al >= 0 ? r[al + 1] || '' : '', alid: al >= 0 ? String(r[al] || '').replace('spotify:album:', '') : '', img: im >= 0 ? r[im] || '' : '',
-        pv: pc >= 0 ? ((/mp3-preview\/([0-9a-f]{20,64})/.exec(r[pc] || '') || [])[1] || '') : '' });   // (its preview, where Spotify still gives Exportify one)
+        pv: pc >= 0 ? ((/mp3-preview\/([0-9a-f]{20,64})/.exec(r[pc] || '') || [])[1] || '') : '', rd: rdc >= 0 ? r[rdc] || '' : '' });   // (its preview, where Spotify still gives Exportify one)
     });
     return out;
   }

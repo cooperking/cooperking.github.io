@@ -11,6 +11,10 @@ with Claude's corrections and then John's on top.
 
 A song is marked "check" unless Claude knows or has researched it (and listeners and audio don't both disagree), or
 checked it thoroughly (claude.json "checked"; those picks stand as given).
+
+The same song under another track id (a remaster, a compilation's copy: twins.py) takes its twin's voices for any it
+has none of (Claude's picks, the listening, Last.fm, MusicBrainz), so a member's copy of a song John has needn't wait
+for (or miss) its own (1 Nov 2026); John's corrections stay each track's own. The song says which it took (sameAs).
 """
 import json, math, os, sys, urllib.request
 from collections import Counter
@@ -18,6 +22,7 @@ from collections import Counter
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 from genres import GENRES, bucket, dist, discogs_bucket   # noqa: E402
+import twins   # noqa: E402
 
 DATA = os.path.join(HERE, 'data')
 OUT = os.environ.get('SOTD_OUT') or os.path.join(HERE, '..', 'songs', 'moods.json')
@@ -177,10 +182,25 @@ def main():
     energy_pct = {tid: round(100 * sum(1 for v in ar if v <= a['arousal']) / len(ar))
                   for tid, a in audio.get('songs', {}).items() if 'arousal' in a} if ar else {}
     out, stats = {}, Counter()
+    # a voice a song hasn't, its twin's (in memory only: the files keep each track's own)
+    au = audio.setdefault('songs', {})
+    voices_of = (claude, au, lfm, mbz, sound, energy_pct)
+    twin = twins.finder(songs, lambda t: any(t in d for d in voices_of))
+    lent = {}
+    for s in songs:
+        tw = twin(s['id'])
+        if tw:
+            for d in voices_of:
+                if s['id'] not in d and tw in d:
+                    d[s['id']] = d[tw]; lent[s['id']] = tw
+    if lent:
+        print(len(lent), 'songs took what was known for the same song on another release')
 
     for s in songs:
         tid = s['id']
         rec = {'n': s['n'], 'title': s['title'], 'artist': s['artist']}
+        if tid in lent:
+            rec['sameAs'] = lent[tid]
         c = claude.get(tid, {})
         j = john.get(tid, {})
         a = audio.get('songs', {}).get(tid)
