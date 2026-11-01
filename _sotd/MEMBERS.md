@@ -526,7 +526,7 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
     least 50, and the saved playlists have been read).
   - The Playlist push sheet (John's Google Drive; its Apps Script "Playlist push" emails him and starts the
     `cooperking/playlist-r2` downloads from the sheet's published CSV): it added rows and never took any out.
-    `_sotd/playlist-push/Code.gs` is the whole script with the change; the project itself holds `Loader.gs` (pasted in by John once), which reads `Code.gs` from main each run (the last copy kept in its properties), so a commit changes it: a member playlist's row comes
+    `_sotd/playlist-push/Code.gs` is the whole script with the change; the project itself holds `Loader.gs` (pasted in by John once), which reads `Code.gs` from main each run (the last copy kept in its properties), so a commit changes it (Loader.gs itself went in with clasp, `clasp push` of a folder holding it as Code.js beside the project's appsscript.json, script id 1DomY4Pb3e8LNfLLbp3zWIrufc0jiMz_Hu5MZeZDnAKVDg0dFB9rmu8m0; signing clasp in needs John's Google account): a member playlist's row comes
     out once the Worker stops listing it, and a YouTube playlist's once it's gone from YouTube.
 - **Songs still to come on its owner's calendar** (John, 1 Nov 2026: "Can the whole playlist be added as normal but the
   clickable playlist on the screen only show the current playlist"): every song is still sent to the site job for its
