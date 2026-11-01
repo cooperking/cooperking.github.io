@@ -28,6 +28,11 @@
 <style>
 /* each song: a white card; tap its head to open everything about it */
 .songs { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 12px; }
+.songs .pgroup { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; align-items: center; margin-top: 14px; padding: 4px 2px 6px; border-bottom: 1px solid rgba(255, 255, 255, .28); }
+.songs .pgroup:first-child { margin-top: 0; }
+.songs .pgname { font: 500 22px/1.15 var(--serif, Georgia, serif); overflow-wrap: anywhere; }
+.songs .pgcount { grid-column: 1; font-size: 12px; opacity: .85; }
+.songs .pglink { grid-row: 1 / span 2; grid-column: 2; color: inherit; font: 600 11px/1 var(--sans, sans-serif); letter-spacing: .1em; text-transform: uppercase; text-decoration: underline; text-underline-offset: 3px; }
 .song { overflow: hidden; }
 .shead { display: grid; grid-template-columns: 72px minmax(0, 1fr) auto; gap: 2px 14px; align-items: center; padding: 12px; cursor: pointer; }
 .cov { position: relative; grid-row: span 3; width: 72px; height: 72px; border-radius: 6px; overflow: hidden; background: var(--tile); box-shadow: 4px 8px 18px rgba(29, 11, 30, .2); }
@@ -579,6 +584,7 @@ body.dropping::after { content: 'Drop to match them (nothing goes up yet)'; posi
   function render() {
     list.textContent = '';
     var shown = rows().filter(visible);
+    if (show === 'members') renderByPlaylist(shown); else
     shown.slice(0, LIMIT).forEach(function (s) { list.appendChild(card(s)); });
     fitAll(list);
     if (shown.length > LIMIT) {
@@ -589,6 +595,27 @@ body.dropping::after { content: 'Drop to match them (nothing goes up yet)'; posi
     $('none').hidden = !!shown.length;
     armed = false; bulkLabel(shown);
     counts();
+  }
+  // Member Songs: under each playlist they're on (John, 1 Nov 2026: "In Admin can members songs be shown by the playlist
+  // they're in"): his own first, then by member and playlist; each newest day first (a plain playlist: in its order). A
+  // song on more than one is under each.
+  function renderByPlaylist(shown) {
+    var by = {};
+    shown.forEach(function (s) { (s.cals || []).forEach(function (c) {
+      var g = by[c.pid] = by[c.pid] || { c: c, list: [] };
+      g.list.push({ s: s, d: c.d || '' });
+    }); });
+    var groups = Object.keys(by).map(function (k) { return by[k]; }).sort(function (a, b) {
+      return (b.c.oj ? 1 : 0) - (a.c.oj ? 1 : 0) || String(a.c.o).localeCompare(String(b.c.o)) || String(a.c.n).localeCompare(String(b.c.n));
+    });
+    var left = LIMIT;
+    groups.forEach(function (g) {
+      var head = el('li', 'pgroup'), hn = el('div', 'pgname', (g.c.oj ? 'Your ' : g.c.o + '’s ') + g.c.n), hc = el('div', 'pgcount', (g.c.mode === 'list' ? 'Playlist' : 'Calendar') + ' · ' + g.list.length + (g.list.length === 1 ? ' song' : ' songs'));
+      var a = el('a', 'pglink', 'Open'); a.href = './#u=' + g.c.pid; a.target = '_blank';
+      head.appendChild(hn); head.appendChild(hc); head.appendChild(a); list.appendChild(head);
+      g.list.sort(function (x, y) { return x.d < y.d ? 1 : x.d > y.d ? -1 : 0; });
+      g.list.forEach(function (x) { if (left-- > 0) list.appendChild(card(x.s)); });
+    });
   }
   function rows() {   // John's songs and those on members' playlists, newest day first (John's first on the same day)
     if (!MSONGS.length) return songs;
