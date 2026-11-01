@@ -514,6 +514,13 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   release date (`rd`: from Spotify's read, or Exportify's Album Release Date column), which years.py uses as it uses
   John's export, so they have a year at once (MusicBrainz's earlier first release still wins). A Spotify playlist
   whose only change is the dates gains them quietly; an Exportify playlist gains them with a fresh file.
+- **Years from the release date; moods last, and not in the progress** (John, 1 Nov 2026: "Exportify has a release date
+  so don't need musicbrainz at all for that. Moods should be a last check and doesn't need to be part of the 'getting
+  your playlist ready' section at all"): a member's song with its album's release date (`rd`) has that as its year the
+  moment it's in (`uplView`), and `years.py` takes it with no MusicBrainz lookup (the same song's earlier year, from
+  another release, still wins over a remaster's). The years step runs straight after the videos, and `upl_vids.py`
+  sends both then (`/upl/vids`: `years`, `ylooked`); the listening, Last.fm, MusicBrainz and moods come after. The
+  progress shows Songs, Previews, Videos, Years and the MP3s and MP4s; "Your playlist is ready" doesn't wait for moods.
 - **A song the site has already, recognised at once** (John, 1 Nov 2026: "Werewolves of London was already in the song
   catalogue, so it should have immediately recognised it and not needed it for any searches but it kept searching
   anyway"): a member's song that's one of John's (the same track) has always shared his data in the job, but the

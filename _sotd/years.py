@@ -10,7 +10,8 @@ When MusicBrainz has no recording under the song's title, it tries the title wit
 ("(Bonus Track)", "- Instrumental"), then the album's first release. A song MusicBrainz doesn't know keeps Spotify's year. John's corrections (data/john-years.json: {track id: year})
 win over both. MusicBrainz asks for at most one request a second.
 The same song under another track id (a remaster, a compilation's copy: twins.py) takes its twin's year, without
-waiting for MusicBrainz; so does a song with no year of its own (1 Nov 2026)."""
+waiting for MusicBrainz, when it has none of its own or its own is later (1 Nov 2026). A member's song with its album's
+release date (rd: Exportify's file, Spotify's read) takes that, with no MusicBrainz lookup at all."""
 import datetime, json, os, re, sys, time, unicodedata, urllib.parse, urllib.request
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import twins   # noqa: E402
@@ -140,6 +141,14 @@ def main():
     twin = twins.finder(feed['songs'], lambda t: bool(year_of(t)))
     for s in feed['songs']:
         e = data['songs'].get(s['id'])
+        # a member's song with its album's release date (Exportify's file, Spotify's read): that's its year, with no
+        # MusicBrainz at all (John, 1 Nov 2026: "Exportify has a release date so don't need musicbrainz at all for that")
+        rdy = int(s['rd'][:4]) if s.get('upl') and re.match(r'\d{4}', s.get('rd') or '') else None
+        if rdy and rdy > 1900:
+            if not e or e.get('sp') != rdy:
+                data['songs'][s['id']] = dict(e or {}, n=s['n'], checked=today.isoformat(), sp=rdy, v=VERSION, mbNote=(e or {}).get('mbNote') or 'its release date')
+                done += 1
+            continue
         if not year_of(s['id']) and twin(s['id']):   # the same song's year is known already: no lookup needed
             continue
         # look again: a song with no year at all (a new song MusicBrainz may list soon), one an earlier version
@@ -167,11 +176,12 @@ def main():
         if y:
             out[t] = int(y)
     lent = 0
-    for s in feed['songs']:   # no year of its own: its twin's (the same song, another release)
-        if s['id'] not in out:
-            tw = twin(s['id'])
-            if tw and tw in out:
-                out[s['id']] = out[tw]; lent += 1
+    for s in feed['songs']:   # no year of its own, or a later one (a remaster's, a compilation's): its twin's, the same song on another release
+        if s['id'] in john:
+            continue
+        tw = twin(s['id'])
+        if tw and tw in out and (s['id'] not in out or out[tw] < out[s['id']]):
+            out[s['id']] = out[tw]; lent += 1
     if lent:
         print(lent, 'songs with their year from the same song on another release')
     print(done, 'looked up;', len(out), 'songs with a year')

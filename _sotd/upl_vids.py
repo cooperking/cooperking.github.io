@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Members' songs' videos to the Worker as soon as the YouTube step has found them (John, 1 Nov 2026: "The YouTube
+"""Members' songs' videos (and years) to the Worker as soon as the YouTube and years steps have found them (John, 1 Nov 2026: "The YouTube
 playlist can be made and added to csv as soon as discovered, I think it's waiting for mood and years"). The rest of
 what the job finds for them (moods, years, the listening) still goes at the end (upl_private.py save), with these again.
 
@@ -37,14 +37,18 @@ def main():
     theirs = {s['id'] for s in songs if s.get('upl')} - {s['id'] for s in songs if not s.get('upl')}
     videos = load(os.path.join(ROOT, 'songs', 'videos.json'), 'videos')
     looked = load(os.path.join(HERE, 'data', 'youtube.json'), 'songs')
+    years = load(os.path.join(ROOT, 'songs', 'years.json'), 'years')
+    ylooked = load(os.path.join(HERE, 'data', 'years.json'), 'songs')
     body = {'vids': {t: v for t, v in videos.items() if t in theirs and isinstance(v, dict) and v.get('v')},
-            'looked': sorted(t for t in looked if t in theirs)}
+            'looked': sorted(t for t in looked if t in theirs),
+            'years': {t: y for t, y in years.items() if t in theirs and y},
+            'ylooked': sorted(t for t in set(ylooked) | set(years) if t in theirs)}
     req = urllib.request.Request(URL, data=json.dumps(body).encode(), method='POST',
                                  headers={'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json', 'User-Agent': UA})
     try:
         with urllib.request.urlopen(req, timeout=60) as r:
             j = json.loads(r.read())
-        print(f"members’ videos: {len(body['vids'])} sent now ({j.get('vids')} new), {len(body['looked'])} looked at")
+        print(f"members’ videos: {len(body['vids'])} sent now ({j.get('vids')} new), {len(body['looked'])} looked at; years: {len(body['years'])} ({j.get('years')} new)")
     except Exception as e:
         print('members’ videos: the Worker didn’t take them now (' + str(e) + '); the end of the run sends them')
 

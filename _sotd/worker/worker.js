@@ -3407,15 +3407,19 @@ async function uplVids(request, env) {
   if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
   const b = await request.json().catch(() => ({}));
   const vids = b && typeof b.vids === 'object' ? b.vids : {}, looked = Array.isArray(b && b.looked) ? b.looked : [];
+  const yrs = b && typeof b.years === 'object' ? b.years : {}, ylooked = Array.isArray(b && b.ylooked) ? b.ylooked : [];
   const meta = (await env.SOTD.get('uplmeta', 'json')) || {};
   let n = 0;
   for (const [t, v] of Object.entries(vids)) if (ID_RE.test(t) && v && typeof v.v === 'string' && (!meta[t] || !meta[t].vid || meta[t].vid.v !== v.v)) { meta[t] = Object.assign({}, meta[t] || {}, { vid: v }); n++; }
-  if (n) await env.SOTD.put('uplmeta', JSON.stringify(meta));
+  let ny = 0;
+  for (const [t, y] of Object.entries(yrs)) if (ID_RE.test(t) && Number.isInteger(y) && y > 1900 && (!meta[t] || meta[t].yr !== y)) { meta[t] = Object.assign({}, meta[t] || {}, { yr: y }); ny++; }   // (and the years, as soon as found)
+  if (n || ny) await env.SOTD.put('uplmeta', JSON.stringify(meta));
   const seen = (await env.SOTD.get('uplseen', 'json')) || {};
   let m = 0;
   for (const t of looked) if (ID_RE.test(String(t)) && !(seen[t] || '').includes('v')) { seen[t] = (seen[t] || '') + 'v'; m++; }
+  for (const t of ylooked) if (ID_RE.test(String(t)) && !(seen[t] || '').includes('y')) { seen[t] = (seen[t] || '') + 'y'; m++; }
   if (m) await kvSoft(env, 'uplseen', JSON.stringify(seen));
-  return answer(200, { ok: true, vids: n, looked: m });
+  return answer(200, { ok: true, vids: n, years: ny, looked: m });
 }
 // /upl/wanted (Authorization: Bearer ADMIN_KEY): { at } when John last deleted one of the catalog's files on the admin
 // page (KV r2want), so Playlist push starts playlist-r2 then and a song whose files were wrong gets new ones at once,
@@ -3583,6 +3587,7 @@ async function uplView(env, all, viewer, pid, rec, also) {   // (also: tracks wa
     if (m) { if (m.vid) x.vid = m.vid; if (m.mt) x.mt = m.mt; if (m.yr) x.yr = m.yr; }
     if (!x.vid && JV[x.id] && JV[x.id].v) x.vid = JV[x.id];
     if (!x.yr && JY[x.id]) x.yr = JY[x.id];
+    if (!x.yr && /^\d{4}/.test(x.rd || '') && +x.rd.slice(0, 4) > 1900) x.yr = +x.rd.slice(0, 4);   // (its album's release date, from the file or Spotify: a year the moment it's in)
     const fx = facts[x.id];   // its facts: signed off by its owner (fx), for everyone; theirs too: written and waiting (fxw), and how it stands (fxs)
     if (fx && fx.ok) x.fx = fx.ok;
     if (mine) { if (fx && fx.w) x.fxw = fx.w; x.fxs = fx && fx.w ? 'wait' : fx && fx.ok ? 'ok' : fx && fx.none ? 'nil' : wanted.has(x.id) ? 'asked' : uplShareOf(rec) === 'public' ? 'none' : 'off'; }
