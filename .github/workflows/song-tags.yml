@@ -104,8 +104,11 @@ jobs:
           SOTD_SONGS_URL: ${{ env.SOTD_FACTS || 'https://sotd-playlists.cooperking.workers.dev/songs.json' }}
         run: python _sotd/about.py
 
+      # members' songs: Odesli's match first, once John adds the ODESLI_KEY secret (from developers@song.link), so their
+      # songs don't use the YouTube searches on his account; without it, or for songs it can't match, the search as before
       - name: A YouTube video for each song
         env:
+          ODESLI_KEY: ${{ secrets.ODESLI_KEY }}
           YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
           YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
           YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
