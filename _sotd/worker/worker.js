@@ -1134,7 +1134,7 @@ async function members(request, url, env) {
       return answer(200, await adminStatus(env));
     }
     case 'pushcount': return answer(200, await pushCount(env));
-    case 'upls': return answer(200, { upls: uplAdmin(all, await uplAll(env)) });   // members' own playlists, for the Members tab
+    case 'upls': return answer(200, { upls: await uplAdminFull(env, all, await uplAll(env)) });   // members' own playlists, for the Members tab
     case 'uplsongs': {   // every song out on members' playlists (Send a song, and the Songs tab): each with its day, its calendar, whose (oj: John's own), who sees it, what was found for it (vid, mt, yr), its facts (fx: its playlist's, written or signed off), and John's choices
       const U = await uplAll(env), out = [], owner = await env.SOTD.get('owner'), meta = (await env.SOTD.get('uplmeta', 'json')) || {};
       for (const [pid, rec] of Object.entries(U)) {
@@ -1193,13 +1193,13 @@ async function members(request, url, env) {
       const U = await uplAll(env), rec = U[body.id];
       if (!rec) return answer(404, { error: 'No such playlist.' });
       if (uplSrc(rec) === 'sp') await uplRead(env, body.id, rec, U);   // (a saved playlist's follows it; an Exportify one is its owner's uploads)
-      return answer(200, { upls: uplAdmin(all, await uplAll(env)) });
+      return answer(200, { upls: await uplAdminFull(env, all, await uplAll(env)) });
     }
     case 'uplremove': {
       const U = await uplAll(env);
       if (!U[body.id]) return answer(404, { error: 'No such playlist.' });
       await uplDrop(env, [body.id]);
-      return answer(200, { upls: uplAdmin(all, await uplAll(env)) });
+      return answer(200, { upls: await uplAdminFull(env, all, await uplAll(env)) });
     }
     case 'widgets': {   // the members' iPhone widgets (iOS 26): how many each has, and how Apple took the last push to each ({ tell: true }: each told now)
       if (!env.NOW) return answer(200, { widgets: null });
@@ -3209,6 +3209,25 @@ async function uplMine(env, pls, U) {   // their own playlists' songs waiting fo
 function uplAdmin(all, U) {   // the Members tab: every playlist, whose, and whether John has joined it
   return Object.entries(U).map(([pid, r]) => ({ id: pid, n: uplName(all, r), o: (all[r.o] && all[r.o].name) || '?', oid: r.o, mode: r.mode, src: uplSrc(r), st: r.st, err: r.err || '', link: r.link || '',
     sp: r.sp, at: r.at, read: r.read || null, cnt: r.cnt || 0, sh: uplShareOf(r), shn: uplShareOf(r) === 'some' ? (r.to || []).length : 0 })).sort((a, b) => (a.st === 'join' ? 0 : 1) - (b.st === 'join' ? 0 : 1) || b.at - a.at);
+}
+// the Members tab, as the calendar's Calendars page shows them (John, 1 Nov 2026: "Can my admin view of members playlists
+// be like the picture view from the calendar"): each one's picture (pic: its owner's, else cv: its newest four covers),
+// and, while one is still coming in (changed in the last two days, as its owner's progress shows it), its progress
+// ("a similar progress only admin for currently importing playlists"): prog { n, pq, p, pn, v, vn, fa, fv, ch }
+async function uplAdminFull(env, all, U) {
+  const list = uplAdmin(all, U), now = Date.now();
+  for (const u of list) {
+    const r = U[u.id]; if (!r) continue;
+    if (r.pic) u.pic = LIVE_ORIGIN + '/up/' + u.id + '.jpg?v=' + r.pic;
+    const data = await uplSongs(env, u.id), cv = [];
+    for (const x of (data.songs || []).slice().reverse()) { if (cv.length >= 4) break; if (uplGone(data, x)) continue; const c = keptCover(String(x.img || '')); if (c && !cv.includes(c)) cv.push(c); }
+    u.cv = cv;
+    if (r.st === 'ok' && all[r.o] && now - (r.ch || r.at || 0) < 2 * 864e5) {
+      const v = await uplView(env, all, r.o, u.id, r).catch(() => null);
+      if (v && v.prog) { const g = v.prog; u.prog = { n: g.n, pq: g.pq, p: g.p, pn: g.pn, v: g.v, vn: g.vn, fa: g.fa, fv: g.fv, ch: g.ch }; }
+    }
+  }
+  return list;
 }
 async function uplPut(env, U) { await env.SOTD.put('upls', JSON.stringify(U)); }
 async function uplDrop(env, pids) {

@@ -514,6 +514,13 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   release date (`rd`: from Spotify's read, or Exportify's Album Release Date column), which years.py uses as it uses
   John's export, so they have a year at once (MusicBrainz's earlier first release still wins). A Spotify playlist
   whose only change is the dates gains them quietly; an Exportify playlist gains them with a fresh file.
+- **The Members tab, in pictures, with imports' progress** (John, 1 Nov 2026: "Can you add a similar progress only admin
+  for currently importing playlists on the members tab. Can my admin view of members playlists be like the picture view
+  from the calendar"): the members' playlists as cards like the calendar's Calendars and Playlists page (its owner's
+  picture, else its newest four covers), each with its name, whose, its state and its buttons. One still coming in
+  (changed in the last two days, with previews or videos to come) has an Importing badge and its previews, videos and
+  files, as its owner's progress shows them, looked at again each minute. `op: 'upls'` gives `pic`, `cv` and `prog`
+  (`uplAdminFull`).
 - **Each member's allowance, and the warning before an import** (John, 1 Nov 2026: "Can importing more than a members
   allocation warn them before import that there are more than their number maximum number of uploads. (Count how many
   they have left) and say that more will show as videos/ previews but not download"): the songs that can have MP3s and

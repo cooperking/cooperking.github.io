@@ -41,10 +41,23 @@
 .csvbox { padding: 16px; display: grid; gap: 10px; }
 /* members' own Spotify playlists: the ones waiting for John to join them as a collaborator first */
 .uplbox { padding: 16px; display: grid; gap: 10px; }
-.upls { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
-.upls li { display: grid; gap: 6px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--chip); }
-.upls li.join { border-color: #e23a6e; }
-.upls .nm { font-family: var(--serif); font-weight: 500; font-size: 19px; line-height: 1.15; color: var(--fg); overflow-wrap: anywhere; }
+.upls { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 18px 12px; }
+.upls li { display: grid; gap: 6px; align-content: start; }
+.upls .pic { position: relative; display: block; border-radius: 14px; overflow: hidden; background: var(--tile); box-shadow: 0 6px 18px rgba(0,0,0,.18); }
+.upls .pic::before { content: ""; display: block; padding-top: 100%; }
+.upls .pic .in { position: absolute; inset: 0; display: grid; grid-template-columns: 1fr 1fr; }
+.upls .pic.one .in { grid-template-columns: 1fr; }
+.upls .pic img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.upls .pic.none::after { content: "♪"; position: absolute; inset: 0; display: grid; place-items: center; font: 40px var(--serif); color: var(--muted); }
+.upls .badge { position: absolute; left: 8px; top: 8px; padding: 3px 8px; border-radius: 999px; background: #e23a6e; color: #fff; font: 600 10px/1.4 var(--sans, system-ui); letter-spacing: .1em; text-transform: uppercase; }
+.upls li.join .pic { outline: 3px solid #e23a6e; outline-offset: 2px; }
+.upls .nm { font-family: var(--serif); font-weight: 500; font-size: 17px; line-height: 1.2; color: var(--fg); overflow-wrap: anywhere; }
+.upls .prog { display: grid; gap: 5px; padding: 8px 10px; border-radius: 10px; background: var(--chip); font-size: 12px; color: var(--fg); }
+.upls .prog .r { display: grid; grid-template-columns: 54px 1fr auto; gap: 6px; align-items: center; }
+.upls .prog .bar { height: 5px; border-radius: 3px; background: var(--line); overflow: hidden; display: flex; }
+.upls .prog .bar i { display: block; height: 100%; background: var(--fg); }
+.upls .prog .bar i.none { background: var(--muted); opacity: .5; }
+.upls .prog .n { color: var(--muted); font-variant-numeric: tabular-nums; }
 .upls .st { font-size: 13px; color: var(--muted); }
 .upls .acts { display: flex; flex-wrap: wrap; gap: 6px; }
 .inviter.dropping { box-shadow: 0 0 0 3px var(--fg), 0 18px 50px rgba(24, 8, 24, .28); }
@@ -289,9 +302,36 @@
     var wait = UPLS.filter(function (u) { return u.st === 'join'; }).length;
     $('uplstat').textContent = wait ? wait + (wait === 1 ? ' waits' : ' wait') + ' for you to join as a collaborator: open its invite link signed in to Spotify as cooperking, tap Join, then Check.'
       : 'Each Spotify one is read every half hour from 06:00, and its owner signs off each new song; one made on the calendar follows its playlist.';
+    var busy = false;
     UPLS.forEach(function (u) {
       var li = document.createElement('li'); if (u.st === 'join') li.className = 'join';
+      // its picture, as the calendar's Calendars and Playlists page shows it (John, 1 Nov 2026): its owner's, else its newest four covers
+      var pic = document.createElement('span'), urls = u.pic ? [u.pic] : (u.cv || []);
+      pic.className = 'pic' + (!urls.length ? ' none' : urls.length < 4 ? ' one' : '');
+      var inn = document.createElement('span'); inn.className = 'in'; pic.appendChild(inn);
+      (urls.length >= 4 ? urls.slice(0, 4) : urls.slice(0, 1)).forEach(function (x) { var im = document.createElement('img'); im.alt = ''; im.loading = 'lazy'; im.src = x; im.onerror = function () { im.style.visibility = 'hidden'; }; inn.appendChild(im); });
+      var g = u.prog, left = function (f, nn) { return g ? Math.max(0, g.n - (g[f] || 0) - (g[nn] || 0)) : 0; }, coming = !!(g && g.n && (g.pq > 0 || left('v', 'vn') > 0));
+      if (coming) { busy = true; var bd = document.createElement('span'); bd.className = 'badge'; bd.textContent = 'Importing'; pic.appendChild(bd); }
+      else if (u.st === 'join') { var bj = document.createElement('span'); bj.className = 'badge'; bj.textContent = 'Join it'; pic.appendChild(bj); }
+      li.appendChild(pic);
       var nm = document.createElement('div'); nm.className = 'nm'; nm.textContent = u.n; li.appendChild(nm);
+      if (coming) {   // still coming in: its progress, as its owner sees it ("a similar progress only admin for currently importing playlists")
+        var pr = document.createElement('div'); pr.className = 'prog'; pr.setAttribute('aria-label', 'Getting it ready');
+        var row = function (k, f, none, n) {
+          var r = document.createElement('div'); r.className = 'r';
+          var l = document.createElement('span'); l.textContent = k; r.appendChild(l);
+          var b = document.createElement('span'); b.className = 'bar';
+          var i1 = document.createElement('i'); i1.style.width = (100 * f / Math.max(1, g.n)) + '%'; b.appendChild(i1);
+          if (none) { var i2 = document.createElement('i'); i2.className = 'none'; i2.style.width = (100 * none / Math.max(1, g.n)) + '%'; b.appendChild(i2); }
+          r.appendChild(b);
+          var c = document.createElement('span'); c.className = 'n'; c.textContent = n; r.appendChild(c);
+          pr.appendChild(r);
+        };
+        row('Previews', g.p || 0, g.pn || 0, (g.n - (g.pq || 0)) + '/' + g.n);
+        row('Videos', g.v || 0, g.vn || 0, (g.v || 0) + (g.vn ? ' · ' + g.vn + ' none' : '') + ' · ' + left('v', 'vn') + ' left');
+        row('Files', Math.max(g.fa || 0, g.fv || 0), 0, (g.fa || 0) + ' MP3 · ' + (g.fv || 0) + ' MP4');
+        li.appendChild(pr);
+      }
       var st = document.createElement('div'); st.className = 'st';
       st.textContent = u.o + '’s · ' + (u.mode === 'list' ? 'playlist' : 'calendar') + (u.src === 'mpl' ? ' from a playlist made on the calendar' : u.src === 'csv' ? ' from Exportify (their uploads)' : '') + ' · ' + (u.sh === 'public' ? 'public' : u.sh === 'private' ? 'private' : u.sh === 'some' ? 'for ' + u.shn + (u.shn === 1 ? ' member' : ' members') : 'every member') + ' · ' + (u.st === 'join' ? (u.link ? 'waiting for you to join it' : 'waiting for you to join it; no invite link from them yet') : u.st === 'err' ? (u.err || 'can’t be read') : u.cnt + (u.cnt === 1 ? ' song' : ' songs') + (u.read ? ' · read ' + new Date(u.read).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''));
       li.appendChild(st);
@@ -313,6 +353,8 @@
       }));
       li.appendChild(acts); ul.appendChild(li);
     });
+    clearTimeout(uplDraw.t);
+    if (busy) uplDraw.t = setTimeout(function () { if (!document.hidden) uplLoad(); else uplDraw.t = setTimeout(uplLoad, 60000); }, 60000);   // (one coming in: its progress again each minute)
   }
   function confirmTwice(b, say) {   // two taps, so a stray one does nothing
     if (b._armed) { b._armed = false; return true; }
