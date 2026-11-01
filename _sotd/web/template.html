@@ -2449,8 +2449,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var k = key(y, m);
     document.getElementById('mname').textContent = MONTHS[m];
     document.getElementById('myr').textContent = y;
-    document.getElementById('prev').disabled = cur === 0;
-    document.getElementById('next').disabled = cur === months.length - 1;
+    document.getElementById('prev').disabled = !canGo(-1);   // (no month with a song that way)
+    document.getElementById('next').disabled = !canGo(1);
 
     var strip = document.getElementById('strip');
     strip.textContent = '';
@@ -4735,16 +4735,28 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       el.style.opacity = op == null ? '' : String(op);
     });
   }
-  function canGo(dir) { var n = cur + dir; return n >= 0 && n < months.length; }
+  // the next month that way with a song in it, passing empty ones (John, 1 Nov 2026: on Camilla's calendar "I can't swipe
+  // back to songs, perhaps because they're empty months"), stopping at this month too; -1 if none. The months' strip
+  // still goes to any month.
+  var MH;   // (made on first use: render can come before this line has run)
+  function monthTo(dir) {
+    if (!MH) MH = { songs: null, have: {} };
+    if (MH.songs !== songs) { MH.songs = songs; MH.have = {}; songs.forEach(function (s) { MH.have[s.d.slice(0, 7)] = 1; }); }
+    var have = MH.have, nowK = key(now.getFullYear(), now.getMonth());
+    for (var n = cur + dir; n >= 0 && n < months.length; n += dir) { var k = key(months[n][0], months[n][1]); if (have[k] || k === nowK) return n; }
+    return -1;
+  }
+  function canGo(dir) { return monthTo(dir) !== -1; }
   function go(dir) {
     if (sliding) return;
-    if (!canGo(dir)) { shift(0, null, 260); return; }
-    if (reduceMotion) { cur += dir; render(); return; }
+    var to = monthTo(dir);
+    if (to === -1) { shift(0, null, 260); return; }
+    if (reduceMotion) { cur = to; render(); return; }
     sliding = true;
     var w = Math.min(window.innerWidth, 1000) * 0.4;
     shift(-dir * w, 0, 170);
     setTimeout(function () {
-      cur += dir;
+      cur = to;
       grid.classList.add('paging');
       render();
       shift(dir * w, 0, 0);

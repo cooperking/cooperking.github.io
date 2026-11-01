@@ -20,7 +20,9 @@ on:
         default: false
   push:
     branches: [main]
-    paths: ["_sotd/**", ".github/workflows/song-tags.yml"]
+    # (not the calendar page, the Worker, the notes or the Playlist push script: those don't need it, and a push of one
+    # bumped the run waiting to start, so members' playlists went unprepared: John, 1 Nov 2026)
+    paths: ["_sotd/**", ".github/workflows/song-tags.yml", "!_sotd/web/**", "!_sotd/worker/**", "!_sotd/*.md", "!_sotd/playlist-push/**"]
 
 permissions:
   contents: write
