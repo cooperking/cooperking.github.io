@@ -514,6 +514,13 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   release date (`rd`: from Spotify's read, or Exportify's Album Release Date column), which years.py uses as it uses
   John's export, so they have a year at once (MusicBrainz's earlier first release still wins). A Spotify playlist
   whose only change is the dates gains them quietly; an Exportify playlist gains them with a fresh file.
+- **Edit, on their own calendar or playlist** (John, 1 Nov 2026: "Could there be a noticeable edit button on my
+  playlists. it shows all the edit options for the calendar from the calendar too, same with if it's a playlist"): a
+  filled Edit button by the calendar (a playlist: above its list), for its owner, in place of Edit days. It opens its
+  pop-up, which has everything: its name, Edit days (a calendar), its picture (Add or Change, Use its covers), the
+  notifications, its setup (calendar or playlist, which days, who sees it), Update from Exportify or Check now,
+  Remove, and each song's edit. And a reload or a link now keeps a calendar whose id has a hyphen (the address was read
+  as letters, digits and _ only: those always went back to John's).
 - **Years from the release date; moods last, and not in the progress** (John, 1 Nov 2026: "Exportify has a release date
   so don't need musicbrainz at all for that. Moods should be a last check and doesn't need to be part of the 'getting
   your playlist ready' section at all"): a member's song with its album's release date (`rd`) has that as its year the
