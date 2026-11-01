@@ -26,19 +26,25 @@ MB_GAP, DISCOGS_GAP = 1.1, 1.05
 VID = re.compile(r'(?:[?&]v=|youtu\.be/|/embed/|/shorts/)([\w-]{11})')
 
 
+LAST = {}   # how the last request went (for --check): status, or the error
+
+
 def http(url, headers=None, data=None):
     """JSON from url, or None (not there, refused, or the connection failed after a few tries). Waits out a 429."""
+    LAST.clear()
     for i in range(4):
         try:
             req = urllib.request.Request(url, data=data, headers=dict({'User-Agent': UA, 'Accept': 'application/json'}, **(headers or {})))
             with urllib.request.urlopen(req, timeout=40) as r:
                 return json.loads(r.read())
         except urllib.error.HTTPError as e:
+            LAST['status'] = e.code
             if e.code == 429 or e.code >= 500:
                 time.sleep(min(60, int(e.headers.get('Retry-After') or 5 * (i + 1))))
                 continue
             return None
-        except (OSError, ValueError):
+        except (OSError, ValueError) as e:
+            LAST['error'] = str(e)[:120]
             time.sleep(3 * (i + 1))
     return None
 
@@ -192,7 +198,14 @@ if __name__ == '__main__':   # python free_videos.py --check: whether each free 
     if '--check' in sys.argv:
         song = {'id': '4uLU6hMCjMI75M1A2tKUQC', 'title': 'Never Gonna Give You Up', 'artist': 'Rick Astley', 'artists': ['Rick Astley']}
         plain = lambda t: re.sub(r'\s*[\(\[].*?[\)\]]', '', t).strip()
+        how = lambda: ('error ' + str(LAST.get('status') or LAST.get('error'))) if LAST else 'answered'
         print('free ways check (Never Gonna Give You Up):')
-        print('  Wikidata:', wikidata([song]).get(song['id']) or 'nothing')
-        print('  MusicBrainz:', musicbrainz(song, plain) or 'nothing')
-        print('  Discogs:', (discogs(song, plain) or 'nothing') if DISCOGS_TOKEN else 'no DISCOGS_TOKEN secret')
+        w = wikidata([song]).get(song['id'])
+        print('  Wikidata:', w or 'no video for it', '(' + how() + ')')
+        q = 'recording:%s AND artist:%s' % (mb_q(song['title']), mb_q(song['artist']))
+        j = http(MB + 'recording?' + urllib.parse.urlencode({'query': q, 'limit': 5, 'fmt': 'json'}))
+        recs = (j or {}).get('recordings') or []
+        print('  MusicBrainz search:', len(recs), 'recordings, best scores', [r.get('score') for r in recs[:5]], '(' + how() + ')')
+        time.sleep(MB_GAP)
+        print('  MusicBrainz:', musicbrainz(song, plain) or 'no video for it', '(' + how() + ')')
+        print('  Discogs:', (discogs(song, plain) or 'no video for it') if DISCOGS_TOKEN else 'no DISCOGS_TOKEN secret', '(' + how() + ')' if DISCOGS_TOKEN else '')
