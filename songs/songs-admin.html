@@ -119,6 +119,32 @@ body.dropping::after { content: 'Drop to match them (nothing goes up yet)'; posi
   .stitle { font-size: 20px; }
   .sbody { padding: 0 12px 14px; }
 }
+/* Member Songs: their playlists as tiles, as the calendar's Calendars and Playlists page shows them, at the top; a tap
+   shows just that one's songs (John, 1 Nov 2026: "the members playlist tiles should be in the members songs section") */
+.ptiles { list-style: none; margin: 0 0 18px; padding: 0 16px; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 18px 12px; }
+.ptiles[hidden] { display: none; }
+.ptiles li { display: grid; gap: 6px; align-content: start; }
+.ptiles .tile { display: grid; gap: 6px; padding: 0; border: 0; background: none; color: inherit; text-align: left; cursor: pointer; font: inherit; }
+.ptiles .pic { position: relative; display: block; border-radius: 14px; overflow: hidden; background: var(--tile, #f3eef0); box-shadow: 0 6px 18px rgba(0,0,0,.18); }
+.ptiles .pic::before { content: ""; display: block; padding-top: 100%; }
+.ptiles .pic .in { position: absolute; inset: 0; display: grid; grid-template-columns: 1fr 1fr; }
+.ptiles .pic.one .in { grid-template-columns: 1fr; }
+.ptiles .pic img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ptiles .pic.none::after { content: "♪"; position: absolute; inset: 0; display: grid; place-items: center; font: 40px var(--serif); color: var(--muted); }
+.ptiles li.sel .pic { outline: 3px solid var(--fg, #1d0b1e); outline-offset: 3px; }
+.ptiles .badge { position: absolute; left: 8px; top: 8px; padding: 3px 8px; border-radius: 999px; background: #e23a6e; color: #fff; font: 600 10px/1.4 var(--sans); letter-spacing: .1em; text-transform: uppercase; }
+.ptiles li.join .pic { outline: 3px solid #e23a6e; outline-offset: 2px; }
+.ptiles .nm { font-family: var(--serif); font-weight: 500; font-size: 17px; line-height: 1.2; overflow-wrap: anywhere; }
+.ptiles .st { font-size: 12.5px; line-height: 1.35; color: var(--muted); }
+.ptiles .prog { display: grid; gap: 5px; padding: 8px 10px; border-radius: 10px; background: var(--chip, rgba(29,11,30,.04)); font-size: 12px; }
+.ptiles .prog .r { display: grid; grid-template-columns: 54px 1fr auto; gap: 6px; align-items: center; }
+.ptiles .prog .bar { height: 5px; border-radius: 3px; background: var(--line); overflow: hidden; display: flex; }
+.ptiles .prog .bar i { display: block; height: 100%; background: var(--fg, #1d0b1e); }
+.ptiles .prog .bar i.none { background: var(--muted); opacity: .5; }
+.ptiles .prog .n { color: var(--muted); font-variant-numeric: tabular-nums; }
+.ptiles .acts { display: flex; flex-wrap: wrap; gap: 4px 10px; }
+.ptiles .acts button, .ptiles .acts a { padding: 0; border: 0; background: none; color: inherit; font: 600 10.5px/1.7 var(--sans); letter-spacing: .08em; text-transform: uppercase; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.ptiles .acts .x { color: #e23a6e; }
 </style>
 </head>
 <body>
@@ -151,6 +177,7 @@ body.dropping::after { content: 'Drop to match them (nothing goes up yet)'; posi
       <div class="row"><button class="btn primary" id="upall" type="button">Upload</button><button class="btn" id="cancel" type="button">Cancel</button><span class="stat" id="upstat"></span></div>
     </div>
   </header>
+  <ul class="ptiles" id="ptiles" hidden></ul>
   <ol class="songs" id="list"></ol>
   <p class="empty" id="none" hidden>Nothing here.</p>
 </div>
@@ -581,8 +608,62 @@ body.dropping::after { content: 'Drop to match them (nothing goes up yet)'; posi
     return !q || (s.title + ' ' + s.artist).toLowerCase().indexOf(q) >= 0;
   }
   var LIMIT = 60;
+  // ---- Member Songs' playlist tiles (moved here from the Members tab: John, 1 Nov 2026): each one's picture (its owner's,
+  // else its newest four covers), whose, its state; one still coming in, Importing with its previews, videos and files;
+  // its buttons; a tap shows only its songs below (again: all of them). ----
+  var UPLS = [], PUSH = {}, PSEL = null, ptilesT = 0;
+  function uplLoad() {
+    return api('/members/admin', { op: 'upls' }).then(function (j) { if (j.status === 200) { UPLS = j.upls || []; if (show === 'members') ptilesDraw(); } }).catch(function () {});
+  }
+  function pushLoad() { return api('/upl/links', {}).then(function (j) { if (j.status === 200) { PUSH = {}; (j.links || []).forEach(function (l) { PUSH[l.id] = l.link; }); if (show === 'members') ptilesDraw(); } }).catch(function () {}); }
+  function twice(b, say) { if (b._armed) { b._armed = false; return true; } var was = b.textContent; b._armed = true; b.textContent = say; setTimeout(function () { b._armed = false; b.textContent = was; }, 4000); return false; }
+  function ptilesDraw() {
+    var ul = $('ptiles'); ul.hidden = show !== 'members' || !UPLS.length; ul.textContent = '';
+    if (ul.hidden) return;
+    var busy = false;
+    UPLS.forEach(function (u) {
+      var li = el('li', (u.st === 'join' ? 'join' : '') + (PSEL === u.id ? ' sel' : ''));
+      var tile = el('button', 'tile'); tile.type = 'button'; tile.setAttribute('aria-pressed', PSEL === u.id ? 'true' : 'false');
+      var pic = el('span'), urls = u.pic ? [u.pic] : (u.cv || []);
+      pic.className = 'pic' + (!urls.length ? ' none' : urls.length < 4 ? ' one' : '');
+      var inn = el('span', 'in'); pic.appendChild(inn);
+      (urls.length >= 4 ? urls.slice(0, 4) : urls.slice(0, 1)).forEach(function (x) { var im = el('img'); im.alt = ''; im.loading = 'lazy'; im.src = x; im.onerror = function () { im.style.visibility = 'hidden'; }; inn.appendChild(im); });
+      var g = u.prog, left = function (f, nn) { return g ? Math.max(0, g.n - (g[f] || 0) - (g[nn] || 0)) : 0; }, coming = !!(g && g.n && (g.pq > 0 || left('v', 'vn') > 0));
+      if (coming) { busy = true; pic.appendChild(el('span', 'badge', 'Importing')); }
+      else if (u.st === 'join') pic.appendChild(el('span', 'badge', 'Join it'));
+      tile.appendChild(pic);
+      tile.appendChild(el('span', 'nm', u.n));
+      tile.appendChild(el('span', 'st', u.o + '’s ' + (u.mode === 'list' ? 'playlist' : 'calendar') + ' · ' + (u.cnt || 0) + (u.cnt === 1 ? ' song' : ' songs') + ' · ' + (u.sh === 'public' ? 'public' : u.sh === 'private' ? 'private' : u.sh === 'some' ? u.shn + ' chosen' : 'every member') + (u.src === 'csv' ? ' · Exportify' : u.src === 'mpl' ? ' · made on the calendar' : '')));
+      tile.addEventListener('click', function () { PSEL = PSEL === u.id ? null : u.id; LIMIT = 60; render(); });
+      li.appendChild(tile);
+      if (coming) {
+        var pr = el('div', 'prog');
+        var row = function (k, f, none, n) {
+          var r = el('div', 'r'); r.appendChild(el('span', '', k));
+          var b = el('span', 'bar'), i1 = el('i'); i1.style.width = (100 * f / Math.max(1, g.n)) + '%'; b.appendChild(i1);
+          if (none) { var i2 = el('i', 'none'); i2.style.width = (100 * none / Math.max(1, g.n)) + '%'; b.appendChild(i2); }
+          r.appendChild(b); r.appendChild(el('span', 'n', n)); pr.appendChild(r);
+        };
+        row('Previews', g.p || 0, g.pn || 0, (g.n - (g.pq || 0)) + '/' + g.n);
+        row('Videos', g.v || 0, g.vn || 0, (g.v || 0) + (g.vn ? ' · ' + g.vn + ' none' : '') + ' · ' + left('v', 'vn') + ' left');
+        row('Files', Math.max(g.fa || 0, g.fv || 0), 0, (g.fa || 0) + ' MP3 · ' + (g.fv || 0) + ' MP4');
+        li.appendChild(pr);
+      }
+      var acts = el('div', 'acts');
+      var op = el('a', '', 'Open ↗'); op.href = './#u=' + u.id; op.target = '_blank'; op.rel = 'noopener'; acts.appendChild(op);
+      if (u.link && u.st !== 'ok') { var inv = el('a', '', 'The invite ↗'); inv.href = u.link; inv.target = '_blank'; inv.rel = 'noopener'; acts.appendChild(inv); }
+      if (PUSH[u.id] && u.st === 'ok') { var cp = el('button', '', 'Copy push link'); cp.type = 'button'; cp.addEventListener('click', function () { navigator.clipboard.writeText(PUSH[u.id]).then(function () { toast('Push link copied: paste it into the Playlist push sheet'); }, function () { toast(PUSH[u.id]); }); }); acts.appendChild(cp); }
+      if (u.src === 'sp') { var ck = el('button', '', u.st === 'ok' ? 'Check now' : 'I’ve joined: check'); ck.type = 'button'; ck.addEventListener('click', function () { api('/members/admin', { op: 'uplcheck', id: u.id }).then(function (j) { if (j.status !== 200) { toast(j.error || 'Couldn’t check'); return; } UPLS = j.upls || []; ptilesDraw(); var now = UPLS.filter(function (x) { return x.id === u.id; })[0]; toast(now && now.st === 'ok' ? '“' + u.n + '”: read, ' + now.cnt + ' songs' : 'Spotify still won’t let your account read it: join it first'); }); }); acts.appendChild(ck); }
+      var rm = el('button', 'x', 'Remove'); rm.type = 'button'; rm.addEventListener('click', function () { if (!twice(rm, 'Remove? Tap again')) return; api('/members/admin', { op: 'uplremove', id: u.id }).then(function (j) { if (j.status === 200) { UPLS = j.upls || []; if (PSEL === u.id) PSEL = null; ptilesDraw(); toast('Removed from the calendar'); } }); }); acts.appendChild(rm);
+      li.appendChild(acts);
+      ul.appendChild(li);
+    });
+    clearTimeout(ptilesT);
+    if (busy) ptilesT = setTimeout(function () { if (show === 'members' && !document.hidden) uplLoad(); }, 60000);   // (one coming in: its progress again each minute)
+  }
   function render() {
     list.textContent = '';
+    ptilesDraw();
     var shown = rows().filter(visible);
     if (show === 'members') renderByPlaylist(shown); else
     shown.slice(0, LIMIT).forEach(function (s) { list.appendChild(card(s)); });
@@ -605,7 +686,7 @@ body.dropping::after { content: 'Drop to match them (nothing goes up yet)'; posi
       var g = by[c.pid] = by[c.pid] || { c: c, list: [] };
       g.list.push({ s: s, d: c.d || '' });
     }); });
-    var groups = Object.keys(by).map(function (k) { return by[k]; }).sort(function (a, b) {
+    var groups = Object.keys(by).map(function (k) { return by[k]; }).filter(function (g) { return !PSEL || g.c.pid === PSEL; }).sort(function (a, b) {   // (a tile tapped: just its songs)
       return (b.c.oj ? 1 : 0) - (a.c.oj ? 1 : 0) || String(a.c.o).localeCompare(String(b.c.o)) || String(a.c.n).localeCompare(String(b.c.n));
     });
     var left = LIMIT;
@@ -1065,6 +1146,7 @@ body.dropping::after { content: 'Drop to match them (nothing goes up yet)'; posi
     getJSON('video-alts.json').catch(function () { return {}; }),
     api('/members/admin', { op: 'uplsongs' }).catch(function () { return {}; })
   ]).then(function (r) {
+    uplLoad(); pushLoad();   // (Member Songs' playlist tiles)
     ALTS = (r[8] && r[8].songs) || {};
     var asc = (r[0].songs || []).slice(), next = null;
     for (var di = asc.length - 1; di >= 0; di--) { var dd = dayOf(asc[di].a), iso = dd.slug.split('-').reverse().join('-');

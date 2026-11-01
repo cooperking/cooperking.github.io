@@ -514,6 +514,12 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   release date (`rd`: from Spotify's read, or Exportify's Album Release Date column), which years.py uses as it uses
   John's export, so they have a year at once (MusicBrainz's earlier first release still wins). A Spotify playlist
   whose only change is the dates gains them quietly; an Exportify playlist gains them with a fresh file.
+- **The playlist tiles are in Songs › Member Songs** (John, 1 Nov 2026: "the members playlist tiles should be in the
+  members songs section in songs"): at the top of Member Songs, each with its picture, whose, its state, Importing and
+  its progress while it comes in, and its buttons (Open, the invite, Copy push link, Check now, Remove); a tap shows
+  just its songs below, again all of them. The Members tab keeps only the ones waiting for John (to join, or that
+  Spotify won't let him read). And the Status tab's Publish now shows whenever the template has changed since it last
+  went live (pages.json had stayed at live because each newer push cancelled the job that updates it).
 - **The Members tab, in pictures, with imports' progress** (John, 1 Nov 2026: "Can you add a similar progress only admin
   for currently importing playlists on the members tab. Can my admin view of members playlists be like the picture view
   from the calendar"): the members' playlists as cards like the calendar's Calendars and Playlists page (its owner's

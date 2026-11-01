@@ -298,12 +298,15 @@
   var PUSH = {};
   function pushLinks() { return api('/upl/links', {}).then(function (j) { if (j.status === 200) { PUSH = {}; (j.links || []).forEach(function (l) { PUSH[l.id] = l.link; }); uplDraw(); } }).catch(function () {}); }
   function uplDraw() {
-    var box = $('uplbox'), ul = $('upls'); box.hidden = !UPLS.length; ul.innerHTML = '';
+    // (their playlists, as tiles with their progress, are in Songs › Member Songs now: John, 1 Nov 2026; here, only the ones
+    // waiting for him to join them, or that Spotify won't let him read)
+    var need = UPLS.filter(function (u) { return u.st !== 'ok'; });
+    var box = $('uplbox'), ul = $('upls'); box.hidden = !need.length; ul.innerHTML = '';
     var wait = UPLS.filter(function (u) { return u.st === 'join'; }).length;
     $('uplstat').textContent = wait ? wait + (wait === 1 ? ' waits' : ' wait') + ' for you to join as a collaborator: open its invite link signed in to Spotify as cooperking, tap Join, then Check.'
-      : 'Each Spotify one is read every half hour from 06:00, and its owner signs off each new song; one made on the calendar follows its playlist.';
+      : 'Spotify won’t let your account read these. The members’ playlists, with how each import is getting on, are in Songs › Member Songs.';
     var busy = false;
-    UPLS.forEach(function (u) {
+    need.forEach(function (u) {
       var li = document.createElement('li'); if (u.st === 'join') li.className = 'join';
       // its picture, as the calendar's Calendars and Playlists page shows it (John, 1 Nov 2026): its owner's, else its newest four covers
       var pic = document.createElement('span'), urls = u.pic ? [u.pic] : (u.cv || []);
