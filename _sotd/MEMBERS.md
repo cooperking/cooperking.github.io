@@ -328,7 +328,14 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   Spotify still has one) are kept at once. Then each minute for the site job's videos, moods and years: after a change a
   playlist's songs are worked on by the job hourly for two days (`rec.ch`; uplLook), not only once a day. The Worker's
   view gives its owner `prog { n, p, pq, v, m, y, ch }`. The panel goes once all's done or two days have passed; the ×
-  hides it for that change. Tests: `prog_t.mjs` (the Worker), `prog_page_t.mjs` (the draft against the real Worker code).
+  hides it for that change. It shows the parts in turn (John, 1 Nov 2026: "Could the different import parts show one at a
+  time and it give the information as it comes with the bar highlighting... Could mp3 and mp4 progress be added too"):
+  Songs, Previews, Videos, Moods, Years, each ticked with what it found once done, the one under way highlighted (its
+  bar moving, found and none in it, and its counts as they come), the rest waiting; then MP3s and MP4s (songs with
+  their own or John's file). A song looked at with none found is done, not waiting (a preview Spotify hasn't got: the
+  calendar was stuck at "38 of 39"): the Worker keeps which songs the site job has looked at (KV `uplseen`, from
+  `/upl/data`) and gives `pn`, `vn`, `mn`, `yn` and `fa`, `fv` with the others. Tests: `prog_t.mjs` (the Worker),
+  `prog_page_t.mjs` and `stage_t.mjs` (the draft against the real Worker code).
 - **Their own MP3s and MP4s: on 366 songs at most**, except John's own playlists (no limit: "The 366 limit shouldn't
   apply to my own playlists"; the member marked *This is me*, KV `owner`; `fu.max` 0, so the editor says nothing) (John, 1 Nov 2026: "theoretically they can have 366 MP3s and 366
   mp4s. But it's limited to 366 songs total. So if they have a track with an mp3 they can also add an mp4"): counted

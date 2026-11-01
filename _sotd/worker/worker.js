@@ -3242,6 +3242,11 @@ async function uplData(request, env) {
   for (const [t, x] of Object.entries((f['songs/moods.json'] || {}).songs || {})) if (x && ((x.moods || []).length || (x.genres || []).length)) at(t).mt = { m: x.moods || [], g: x.genres || [] };
   for (const [t, y] of Object.entries((f['songs/years.json'] || {}).years || {})) if (y) at(t).yr = y;
   await env.SOTD.put('uplmeta', JSON.stringify(meta));
+  // which songs the job has looked at, found or not (v: a video, m: moods, y: a year), for a playlist's progress: a song
+  // looked at with none found is done, not waiting (KV uplseen { <track>: 'vmy' })
+  const seen = {}, mark = (o, c) => { for (const t of Object.keys(o || {})) seen[t] = (seen[t] || '') + c; };
+  mark((f['_sotd/data/youtube.json'] || {}).songs, 'v'); mark((f['songs/moods.json'] || {}).songs, 'm'); mark((f['_sotd/data/years.json'] || {}).songs, 'y');
+  await kvSoft(env, 'uplseen', JSON.stringify(seen));
   return answer(200, { ok: true, songs: Object.keys(meta).length });
 }
 // ---------- facts for the songs on members' public playlists: written and checked by John's facts task as his are
@@ -3321,10 +3326,13 @@ async function uplView(env, all, viewer, pid, rec) {   // a playlist as the cale
     songs = songs.filter(x => x.id in at).sort((a, b) => at[a.id] - at[b.id]).concat(songs.filter(x => !(x.id in at)));
   }
   let prog;
-  if (mine) {   // (its owner: how far the calendar has got with its songs: previews looked up and found, videos, moods, years; job: the site job still to come back to it)
-    const all2 = (data.songs || []).filter(x => !gone.has(x.id));
-    prog = { n: all2.length, pq: all2.filter(x => !(x.id in pv)).length, p: all2.filter(x => pv[x.id] && pv[x.id] !== '-').length,
-      v: songs.filter(x => x.vid || x.ov).length, m: songs.filter(x => x.mt || x.tag).length, y: songs.filter(x => x.yr).length, ch: rec.ch || rec.at || 0 };
+  if (mine) {   // (its owner: how far the calendar has got with its songs: each part found (p, v, m, y), looked at with none (pn, vn, mn, yn), and their own files (fa, fv: songs with an MP3, an MP4))
+    const all2 = (data.songs || []).filter(x => !gone.has(x.id)), seen = (await env.SOTD.get('uplseen', 'json')) || {};
+    const has = (x, k) => k === 'v' ? !!(x.vid || x.ov) : k === 'm' ? !!(x.mt || x.tag) : !!x.yr;
+    const none = k => songs.filter(x => !has(x, k) && ((seen[x.id] || '').includes(k) || (k === 'v' && x.ov === ''))).length;
+    prog = { n: all2.length, pq: all2.filter(x => !(x.id in pv)).length, p: all2.filter(x => pv[x.id] && pv[x.id] !== '-').length, pn: all2.filter(x => pv[x.id] === '-').length,
+      v: songs.filter(x => has(x, 'v')).length, vn: none('v'), m: songs.filter(x => has(x, 'm')).length, mn: none('m'), y: songs.filter(x => has(x, 'y')).length, yn: none('y'),
+      fa: songs.filter(x => x.ma || (x.own && x.own.a) || (x.jf && x.jf.a)).length, fv: songs.filter(x => x.mv || (x.own && x.own.v) || (x.jf && x.jf.v)).length, ch: rec.ch || rec.at || 0 };
   }
   return { id: pid, n: uplName(all, rec), t: uplTitle(all, rec), o: all[rec.o].name, mine, mode: rec.mode, sp: rec.sp, src: uplSrc(rec), yt: rec.yt || '', st: rec.st, at: data.at || null, sh: uplShareOf(rec),
     dates: rec.mode === 'list' ? null : Object.assign({ how: 'added' }, rec.dates || {}), send: mine ? uplSendOf(rec) : undefined, prog, songs };

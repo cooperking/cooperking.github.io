@@ -294,7 +294,7 @@ html.upl #monthdl, html.upl-noshare #siteshare, html.upl-noshare #monthshare, ht
 .uplkick { margin: 0 0 -8px; font: 600 11px/1.3 var(--sans); letter-spacing: .16em; text-transform: uppercase; color: var(--fg-2); overflow-wrap: anywhere; }
 .uplkick[hidden] { display: none; }
 /* a member's own playlist, still being got ready: its previews, videos, moods and years so far */
-.uplprog { display: grid; gap: 8px; max-width: 420px; padding: 12px 14px; border-radius: 16px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line); color: var(--fg); }
+.uplprog { text-align: left; justify-self: center; width: 100%; display: grid; gap: 8px; max-width: 420px; padding: 12px 14px; border-radius: 16px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line); color: var(--fg); }
 .uplprog[hidden] { display: none; }
 .uplprog-h { display: flex; align-items: center; gap: 8px; font: 600 11px/1.3 var(--sans); letter-spacing: .12em; text-transform: uppercase; }
 .uplprog-h b { flex: 1; font-weight: 600; }
@@ -304,10 +304,33 @@ html.upl #monthdl, html.upl-noshare #siteshare, html.upl-noshare #monthshare, ht
 @media (prefers-reduced-motion: reduce) { .uplprog-dot { animation: none; } }
 .uplprog-x { width: 26px; height: 26px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--fg); cursor: pointer; }
 .uplprog-x svg { width: 12px; height: 12px; }
-.uplprog-rows { display: grid; grid-template-columns: auto 1fr auto; gap: 6px 10px; align-items: center; font-size: 13px; }
-.uplprog-rows .bar { height: 6px; border-radius: 3px; background: var(--empty-bg); overflow: hidden; }
-.uplprog-rows .bar i { display: block; height: 100%; border-radius: 3px; background: var(--fg); transition: width .6s; }
-.uplprog-rows .ct { font-variant-numeric: tabular-nums; color: var(--fg-2); font-size: 12px; }
+.uplprog-rows { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
+.uplprog-rows .st { display: grid; grid-template-columns: 22px 1fr auto; gap: 2px 10px; align-items: center; padding: 6px 0; border-top: 1px solid var(--line); }
+.uplprog-rows .st:first-child { border-top: 0; }
+.uplprog-rows .st > .tx, .uplprog-rows .st > .bar, .uplprog-rows .st > .fl { grid-column: 2 / -1; }
+.uplprog-rows .ic { width: 18px; height: 18px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--line); display: grid; place-items: center; }
+.uplprog-rows .done .ic { background: var(--fg); box-shadow: none; }
+.uplprog-rows .done .ic::after { content: ""; width: 7px; height: 4px; margin-top: -2px; border: solid var(--bg); border-width: 0 0 2px 2px; transform: rotate(-45deg); }
+.uplprog-rows .now .ic { box-shadow: inset 0 0 0 2px var(--fg); }
+.uplprog-rows .now .ic::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--fg); animation: uplpulse 1.2s infinite; }
+.uplprog-rows .files .ic { box-shadow: none; background: none; }
+.uplprog-rows .files .ic::after { content: "♪"; font: 14px/1 var(--serif); color: var(--fg); }
+.uplprog-rows b { font: 600 13px/1.3 var(--sans); }
+.uplprog-rows .wait b, .uplprog-rows .wait .ct { opacity: .55; }
+.uplprog-rows .ct { font-size: 12px; font-variant-numeric: tabular-nums; color: var(--fg-2); }
+.uplprog-rows .now .ct { font-weight: 600; color: var(--fg); }
+.uplprog-rows .tx { font-size: 12px; line-height: 1.4; color: var(--fg-2); }
+.uplprog-rows .bar { display: flex; height: 8px; margin: 4px 0 2px; border-radius: 4px; background: var(--empty-bg); overflow: hidden; }
+.uplprog-rows .bar i { display: block; height: 100%; background: var(--fg); transition: width .6s; }
+.uplprog-rows .bar i.none { background: var(--fg); opacity: .35; }
+.uplprog-rows .now .bar { position: relative; }
+.uplprog-rows .now .bar::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .45), transparent); transform: translateX(-100%); animation: uplshine 1.6s infinite; }
+@keyframes uplshine { to { transform: translateX(100%); } }
+@media (prefers-reduced-motion: reduce) { .uplprog-rows .now .bar::after, .uplprog-rows .now .ic::after { animation: none; } }
+.uplprog-rows .bar.sm { height: 5px; margin: 0; }
+.uplprog-rows .fl { display: grid; grid-template-columns: 44px 1fr auto; gap: 8px; align-items: center; font-size: 12px; color: var(--fg-2); }
+.uplprog-rows .fl .n { font-variant-numeric: tabular-nums; }
+.uplprog-t[hidden] { display: none; }
 .uplprog-t { margin: 0; font-size: 12px; line-height: 1.4; color: var(--fg-2); }
 .uplw-list { display: grid; gap: 6px; padding: 2px 2px 0; }
 .uplw-list[hidden] { display: none; }
@@ -1438,7 +1461,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     </div>
     <div class="uplprog" id="uplprog" hidden>
       <div class="uplprog-h"><span class="uplprog-dot" aria-hidden="true"></span><b id="uplprogh">Getting your playlist ready</b><button class="uplprog-x" id="uplprogx" type="button" aria-label="Hide this"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 3l8 8M11 3 3 11"/></svg></button></div>
-      <div class="uplprog-rows" id="uplprogr" aria-live="polite"></div>
+      <ol class="uplprog-rows" id="uplprogr" aria-live="polite"></ol>
       <p class="uplprog-t" id="uplprogt"></p>
     </div>
     <button class="signedchip" id="who" type="button" hidden><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><circle cx="8" cy="5.2" r="3"/><path d="M2.5 14.5c.5-3.2 2.8-5 5.5-5s5 1.8 5.5 5z"/></svg><span id="whotext">Signed in</span><span class="inbn" id="whon" hidden></span><span class="whobell" id="whobell" hidden><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M8 2.2c-2.3 0-3.9 1.8-3.9 4v2.6L2.8 11h10.4l-1.3-2.2V6.2c0-2.2-1.6-4-3.9-4z"/><path d="M6.4 13.1c.3.6.9 1 1.6 1s1.3-.4 1.6-1"/></svg><span class="inbn" id="whobelln"></span></span></button>
@@ -6692,22 +6715,55 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function uplProg(view) {
     var box = document.getElementById('uplprog'), g = view && view.mine && view.prog;
     clearTimeout(PROG.t); PROG.t = 0;
-    var recent = g && Date.now() - (g.ch || 0) < 2 * 864e5, more = g && (g.pq > 0 || (recent && (g.v < g.n || g.m < g.n || g.y < g.n)));
+    var recent = g && Date.now() - (g.ch || 0) < 2 * 864e5, left = function (f, nn) { return Math.max(0, g.n - (g[f] || 0) - (g[nn] || 0)); };   // (still to look at: neither found nor looked at with none)
+    var more = g && (g.pq > 0 || (recent && (left('v', 'vn') || left('m', 'mn') || left('y', 'yn'))));
     box.hidden = !g || !g.n || !(more || PROG.id === view.id) || uplProgHidden(view.id + ':' + g.ch);
     if (box.hidden) { PROG.id = null; return; }
     PROG.id = view.id;
-    var rows = [['Previews', g.p, g.pq ? 'looking' : ''], ['Videos', g.v], ['Moods', g.m], ['Years', g.y]], r = document.getElementById('uplprogr'); r.textContent = '';
-    rows.forEach(function (x) {
-      var l = document.createElement('span'); l.textContent = x[0];
-      var b = document.createElement('span'); b.className = 'bar'; var i = document.createElement('i'); i.style.width = Math.round(100 * x[1] / g.n) + '%'; b.appendChild(i);
-      var c = document.createElement('span'); c.className = 'ct'; c.textContent = x[1] + ' of ' + g.n;
-      r.appendChild(l); r.appendChild(b); r.appendChild(c);
+    // the parts in turn (John, 1 Nov 2026: "Could the different import parts show one at a time and it give the
+    // information as it comes with the bar highlighting... Could mp3 and mp4 progress be added too"): done ones ticked
+    // with what they found, the one under way highlighted with its bar and counts, the rest waiting; then their files
+    var N = g.n, pl = function (k, w) { return k + ' ' + (k === 1 ? w : w + 's'); };
+    var steps = [
+      { k: 'Songs', done: true, sum: pl(N, 'song') + ' in' },
+      { k: 'Previews', f: g.p, none: g.pn || 0, left: g.pq, sum: g.p + ' can play their preview' + (g.pn ? ' · ' + pl(g.pn, 'song') + ' with none on Spotify' : ''), now: 'Looking each song up on Spotify: ' + (N - g.pq) + ' of ' + N + ' so far. Songs play as soon as theirs is here.' },
+      { k: 'Videos', f: g.v, none: g.vn || 0, left: left('v', 'vn'), sum: pl(g.v, 'video') + ' found' + (g.vn ? ' · ' + g.vn + ' with none (they play their preview)' : ''), now: 'Finding a YouTube video for each: ' + g.v + ' found' + (g.vn ? ', ' + g.vn + ' with none' : '') + ', ' + left('v', 'vn') + ' still to look for. A batch at a time, over the next hour or two.' },
+      { k: 'Moods', f: g.m, none: g.mn || 0, left: left('m', 'mn'), sum: g.m + ' with moods and genres' + (g.mn ? ' · ' + g.mn + ' with none found' : ''), now: 'Listening to each preview and reading what listeners say: ' + g.m + ' done, ' + left('m', 'mn') + ' to go.' },
+      { k: 'Years', f: g.y, none: g.yn || 0, left: left('y', 'yn'), sum: g.y + ' with the year they came out' + (g.yn ? ' · ' + g.yn + ' not known' : ''), now: 'Finding when each first came out: ' + g.y + ' found, ' + left('y', 'yn') + ' to go.' }
+    ];
+    steps.forEach(function (x) { if (!x.done) x.done = !x.left; });
+    var cur = steps.filter(function (x) { return !x.done; })[0];
+    var r = document.getElementById('uplprogr'); r.textContent = '';
+    steps.forEach(function (x) {
+      var li = document.createElement('li'); li.className = 'st' + (x.done ? ' done' : x === cur ? ' now' : ' wait');
+      var ic = document.createElement('span'); ic.className = 'ic'; ic.setAttribute('aria-hidden', 'true'); li.appendChild(ic);
+      var nm = document.createElement('b'); nm.textContent = x.k; li.appendChild(nm);
+      var ct = document.createElement('span'); ct.className = 'ct'; ct.textContent = x.done ? '' : x === cur ? Math.round(100 * (N - x.left) / Math.max(1, N)) + '%' : (x.f ? x.f + ' so far' : 'Waiting'); li.appendChild(ct);
+      if (x.done || x === cur) { var t = document.createElement('span'); t.className = 'tx'; t.textContent = x.done ? x.sum : x.now; li.appendChild(t); }
+      if (x === cur) {
+        var bar = document.createElement('span'); bar.className = 'bar'; bar.setAttribute('role', 'progressbar'); bar.setAttribute('aria-valuemin', '0'); bar.setAttribute('aria-valuemax', String(N)); bar.setAttribute('aria-valuenow', String(N - x.left)); bar.setAttribute('aria-label', x.k);
+        var f = document.createElement('i'); f.style.width = (100 * x.f / Math.max(1, N)) + '%'; bar.appendChild(f);
+        if (x.none) { var nn = document.createElement('i'); nn.className = 'none'; nn.style.width = (100 * x.none / Math.max(1, N)) + '%'; bar.appendChild(nn); }
+        li.appendChild(bar);
+      }
+      r.appendChild(li);
     });
+    var own = document.createElement('li'); own.className = 'st files';   // their own MP3s and MP4s (from the song editor; John's too)
+    var oi = document.createElement('span'); oi.className = 'ic'; oi.setAttribute('aria-hidden', 'true'); own.appendChild(oi);
+    var on = document.createElement('b'); on.textContent = 'MP3s and MP4s'; own.appendChild(on);
+    var oc = document.createElement('span'); oc.className = 'ct'; own.appendChild(oc);
+    [['MP3', g.fa || 0], ['MP4', g.fv || 0]].forEach(function (x) {
+      var row = document.createElement('span'); row.className = 'fl';
+      var l = document.createElement('span'); l.textContent = x[0] + 's'; row.appendChild(l);
+      var b = document.createElement('span'); b.className = 'bar sm'; var i = document.createElement('i'); i.style.width = (100 * x[1] / Math.max(1, N)) + '%'; b.appendChild(i); row.appendChild(b);
+      var c = document.createElement('span'); c.className = 'n'; c.textContent = x[1] + ' of ' + N; row.appendChild(c);
+      own.appendChild(row);
+    });
+    r.appendChild(own);
     box.classList.toggle('done', !more);
     document.getElementById('uplprogh').textContent = more ? 'Getting your playlist ready' : 'Your playlist is ready';
-    document.getElementById('uplprogt').textContent = g.pq ? 'Previews are coming in now: songs play as soon as theirs is here. Videos, moods and years follow over the next hour or two.'
-      : more ? 'Every preview Spotify has is here. Videos, moods and years come in over the next hour or two (some songs may have none).'
-      : 'Everything that could be found is in. Songs without a video play their preview.';
+    document.getElementById('uplprogt').textContent = more ? '' : 'Everything that could be found is in. Add your own MP3s and MP4s from each song’s ••• menu.';
+    document.getElementById('uplprogt').hidden = more;
     if (!more) return;
     PROG.t = setTimeout(function () {   // (the next look: soon while previews come in, else each minute)
       if (UPL.on !== view.id || document.hidden) { if (UPL.on === view.id) PROG.t = setTimeout(function () { uplProg(UPL.view); }, 5000); return; }
