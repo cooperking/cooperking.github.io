@@ -501,6 +501,13 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   tabs Inbox, Sent, Playlists, Account. Account starts with Notifications and ends with The app (both were the Device
   tab's). Sign out sits at the top beside Admin (John) or the bell, before the ×; tapped, it says Tap again. On a
   phone the Profile label gives way so the row fits.
+- **The Playlist push sheet gets every song** (John, 1 Nov 2026: "The To Come songs aren't getting their MP3s and
+  mp4s because I'm not sure the csv on google is being updated with those playlists"): the sheet in John's Google
+  Drive ("Playlist push – playlists") reads each playlist's `/yt/<id>?s=…&f=json`. That gave the songs as members see
+  them, so songs still to come (and those waiting for sign-off) were left out. It now gives every song with a video,
+  marked `f: 1` to come and `w: 1` waiting; opened in a browser it's still only those out. An import switched for
+  another keeps its old link working (`prev` on the new one). The Members tab has *Copy push link* on each playlist
+  (from `/upl/links`), for a row in the sheet.
 - **Songs still to come on its owner's calendar** (John, 1 Nov 2026: "Can the whole playlist be added as normal but the
   clickable playlist on the screen only show the current playlist"): every song is still sent to the site job for its
   video, moods and year, days to come too, and shows (faded) on its owner's calendar to move; but what plays or lists

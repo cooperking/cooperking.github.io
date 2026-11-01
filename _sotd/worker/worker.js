@@ -3268,8 +3268,10 @@ async function uplLook(env) {   // the timer: playlists due a read (UPL_LOOK_MOS
 // /yt/<pid>?s=<signature>: a member's playlist on YouTube, a link that stays the same as songs are added (signed with
 // the Worker's ADMIN_KEY, so it can't be made from the playlist's id). Its songs as the others see them, each with its
 // video as the calendar picks it (songYt: John's calendar's, else John's or its owner's choice, else the one found),
-// newest day first (a playlist: in its order). Opened: YouTube's list of the first 50. With &f=json: { t: its name,
-// songs: [{ id: track, v: video, a: artist, t: title }] }, every one with a video (Playlist push, the download scripts).
+// newest day first (a playlist: in its order). Opened: YouTube's list of the first 50 out. With &f=json: { t: its name,
+// songs: [{ id: track, v: video, a: artist, t: title, f: 1 still to come, w: 1 waiting for its owner }] }, every one
+// with a video, to come and waiting too (Playlist push, the download scripts). An import's link goes on working after
+// it's switched for another (prev).
 // /upl/links (Authorization: Bearer ADMIN_KEY): { links: [{ id, t, o, link }] }, each member playlist's /yt/ link and
 // its name (with its owner's after it, in brackets, when another member's has the same name).
 const YT_JOHN = { at: 0, v: {} };
@@ -3289,17 +3291,23 @@ async function ytList(request, url, env) {
   if (!env.ADMIN_KEY) return answer(503, { error: 'The ADMIN_KEY secret is not set on the Worker.' });
   const pid = url.pathname.slice(4), sig = url.searchParams.get('s') || '';
   if (!/^[\w-]{6,40}$/.test(pid) || sig !== await ytSig(env, pid)) return answer(404, { error: 'No such playlist.' });
-  const U = await uplAll(env), all = (await env.SOTD.get('members', 'json')) || {}, rec = U[pid];
+  const U = await uplAll(env), all = (await env.SOTD.get('members', 'json')) || {};
+  let id = pid, rec = U[pid];
+  if (!rec) { const e = Object.entries(U).find(([, r]) => (r.prev || []).includes(pid)); if (e) [id, rec] = e; }   // (an import switched for another since: the one in its place, so a link kept in the Playlist push sheet goes on working)
   if (!rec || !all[rec.o]) return answer(404, { error: 'This playlist is no longer on the calendar.' });
-  const view = await uplView(env, all, null, pid, rec), J = await ytJohnVids();
+  // f=json (Playlist push, the download scripts): every song, those still to come and those waiting for its owner too, so
+  // their MP3s and MP4s are got ahead of their day (John, 1 Nov 2026: "The To Come songs aren't getting their MP3s and
+  // mp4s"); each to come marked f: 1, each waiting w: 1. Opened in a browser: only the songs out, as members see them.
+  const json = url.searchParams.get('f') === 'json';
+  const view = await uplView(env, all, json ? rec.o : null, id, rec), J = await ytJohnVids();
   let songs = view.songs;
   if (rec.mode !== 'list') songs = songs.slice().sort((p, q) => p.d < q.d ? 1 : p.d > q.d ? -1 : 0);
   const out = [];
   for (const x of songs) {
     const v = (J[x.id] && J[x.id].v) || ('ov' in x ? x.ov : (x.vid && x.vid.v)) || '';
-    if (v) out.push({ id: x.id, v, a: x.artist || '', t: x.title || '' });
+    if (v) out.push(Object.assign({ id: x.id, v, a: x.artist || '', t: x.title || '' }, x.f ? { f: 1 } : {}, x.w ? { w: 1 } : {}));
   }
-  if (url.searchParams.get('f') === 'json') return answer(200, { t: view.n, songs: out });
+  if (json) return answer(200, { t: view.n, songs: out });
   if (!out.length) return new Response('No videos on “' + view.n + '” yet.', { status: 404, headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' } });
   return new Response(null, { status: 302, headers: { 'Cache-Control': 'no-store', Location: 'https://www.youtube.com/watch_videos?video_ids=' + out.slice(0, 50).map(x => x.v).join(',') + '&title=' + encodeURIComponent(view.n) } });
 }
@@ -3533,7 +3541,7 @@ async function memberUpl(request, url, env, answer) {
     // one at a time (John, 1 Nov 2026): another playlist takes the place of theirs (replace: its id), keeping who sees it and its notifications
     const had = Object.entries(U).find(([, r]) => r.o === me && r.src === 'csv');
     if (had && String(body.replace || '') !== had[0]) return answer(400, { error: 'You have an import already. Choose it to update it, or another to take its place.' });
-    const keep = had ? { share: had[1].share, to: had[1].to, send: had[1].send } : {};
+    const keep = had ? { share: had[1].share, to: had[1].to, send: had[1].send, prev: (had[1].prev || []).concat(had[0]).slice(-10) } : {};   // (prev: the ids it had, for its /yt/ link)
     if (had) { await uplDrop(env, [had[0]]); delete U[had[0]]; }
     if (Object.values(U).filter(r => r.o === me && r.src !== 'mpl').length >= UPL_MAX) return answer(400, { error: 'That’s ' + UPL_MAX + ' playlists, the most you can add.' });
     const now = Date.now(), newest = Math.max.apply(null, items.map(x => Date.parse(x.a)));
