@@ -3988,8 +3988,12 @@ async function uplSend(env, all, me, pid, rec, x, d) {   // a song signed off: t
   const name = all[me].name, slug = d.slice(8, 10) + '-' + d.slice(5, 7) + '-' + d.slice(0, 4), pl = uplTitle(all, rec);
   const msg = { title: name + ': ' + x.title, subject: x.title, body: x.artist + ' · ' + pl, from: name, url: SITE_SONGS + '#u=' + pid + '&d=' + slug, tag: 'sotd-upl-' + pid + '-' + x.id };
   if (x.img) msg.icon = x.img;
-  const r = await pushAll(env, msg, to, { kind: 'member', via: { t: 'member', id: me, name }, toNames: null, fromId: me, toIds: 'all' });
-  await sentAdd(env, me, msg, r, 'all');
+  // who it went to, by name: only those the playlist is shared with (to, above), never 'all' (John, 1 Nov 2026: his
+  // Sent said everyone for a song on a playlist shared with one person; it had gone to that one alone)
+  const names = to.filter(k => k !== me).map(k => all[k].name);
+  const every = ['members', 'public'].includes(uplShareOf(rec));   // ('all' only when it's shared with every member)
+  const r = await pushAll(env, msg, to, { kind: 'member', via: { t: 'member', id: me, name }, toNames: every ? null : names, fromId: me, toIds: every ? 'all' : to });
+  await sentAdd(env, me, msg, r, every ? 'all' : names);
   return { inboxes: r.inboxes, sent: r.sent };
 }
 
@@ -4034,7 +4038,33 @@ async function memberSent(request, env, answer) {
   if (request.method !== 'GET') return answer(405, { error: 'Use GET.' });
   const member = await memberFromToken(request, env);
   if (!member) return answer(401, { error: 'Not a member (any more).' });
-  return answer(200, { items: await withReactions(env, member, await sentList(env, member), () => true) });
+  return answer(200, { items: await withReactions(env, member, await sentFixUpl(env, member, await sentList(env, member)), () => true) });
+}
+// a playlist's new song sent before 1 Nov 2026 was kept as sent to 'all' whoever it went to (it only ever went to the
+// members the playlist was shared with). Each such one is put right from the inboxes it's actually in: in the Sent
+// list, in those inboxes, and in the Status tab's log. Once each; kept marked fx.
+async function sentFixUpl(env, member, box) {
+  const U = await uplAll(env);
+  const bad = box.filter(x => x.to === 'all' && !x.fx && (m => m && U[m[1]] && !['members', 'public'].includes(uplShareOf(U[m[1]])))(/#u=([\w-]{10,20})&d=/.exec(x.u || '')));
+  if (!bad.length) return box;
+  const all = (await env.SOTD.get('members', 'json')) || {}, want = new Set(bad.map(x => x.id)), who = {};
+  const boxes = {};
+  for (const k of Object.keys(all)) {   // who has each in their inbox: who it went to
+    const ib = boxes[k] = (await env.SOTD.get('inbox:' + k, 'json')) || [];
+    for (const x of ib) if (want.has(x.id) && k !== member) (who[x.id] = who[x.id] || []).push(k);
+  }
+  for (const k of Object.keys(all)) {   // each inbox's copy: who else it went to (as toFor gives), not everyone
+    let ch = false;
+    for (const x of boxes[k]) if (want.has(x.id) && x.to === 'all') { x.to = (who[x.id] || []).filter(i => i !== k && all[i]).map(i => ({ i, n: all[i].name })); ch = true; }
+    if (ch) await env.SOTD.put('inbox:' + k, JSON.stringify(boxes[k]));
+  }
+  for (const x of bad) { x.to = (who[x.id] || []).filter(i => all[i]).map(i => all[i].name); x.fx = 1; }
+  await kvSoft(env, 'outbox:' + member, JSON.stringify(box));
+  const log = (await env.SOTD.get('pushLog', 'json')) || [];
+  let lc = false;
+  for (const e of log) if (want.has(e.id) && e.kind === 'member') { e.toNames = (who[e.id] || []).filter(i => all[i]).map(i => all[i].name); lc = true; }
+  if (lc) await kvSoft(env, 'pushLog', JSON.stringify(log));
+  return box;
 }
 
 async function notePic(url, env) {   // a notification's picture: anyone with its (unguessable) address, as a phone fetches it unsigned
