@@ -12,9 +12,9 @@ he does).
   public, so none of them are in it.
 - **Members page**: the Members tab of `songs/admin.html` (`songs/members-admin.html`), after the admin password: inviting,
   codes and removing people; and *This is me* on John's own member: the Worker keeps which member is John (KV `owner`)
-  and tells only that member's devices (`/members/me` gives `owner: true`), which then have the Admin button at the top,
-  beside Profile (John, 31 Oct 2026: "Can the Admin button for me be moved up to the top of the page next to
-  Profile"), as does any device that has opened the admin page with its password. Each song's own recording, video and sharing picture are added on the Songs tab
+  and tells only that member's devices (`/members/me` gives `owner: true`), which then have *Admin* at the top of their
+  Profile, beside its bell (John, 1 Nov 2026: "move the admin icon back into my profile and have it at the top just
+  saying admin"; from 31 Oct until then it was in the bar beside Profile), as does any device that has opened the admin page with its password. Each song's own recording, video and sharing picture are added on the Songs tab
   (`songs/songs-admin.html`), with the rest of that song.
 - **The calendar** (`template.html`):
   - The device keeps its member token (`sotd-member` in local storage) and asks the Worker's `/members/me` for links to
@@ -283,7 +283,12 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   with no library (`unzip`: stored files, or squeezed ones with the browser's DecompressionStream), each CSV's songs by
   what's in its columns (`csvSongs`: Exportify's headings follow the member's language; local files, episodes and saved
   albums left out). A zip's playlists show as cards to choose from (a mosaic of their newest covers, name, song count;
-  a search over six), theirs on the calendar first and marked, then the most lately added to; one playlist goes straight
+  a search over six), theirs on the calendar first and marked, then their own, then those they follow, each the most
+  lately added to first. Each says whose it is (John, 1 Nov 2026: "show who the playlist is by originally too as it
+  shows all playlists followed as well as your own"): Exportify's files say who added each song, not whose the
+  playlist is, so the one who added most of its songs is taken as its maker and the one who added most across the
+  download as the member (*Yours*, *Yours, with others*, *By Anna*, *By Anna and others*, *By Spotify*); names from
+  Spotify's public user pages (the Worker's `/members/spnames`, kept 30 days); one playlist goes straight
   to what happens. **One at a time, no warning**: choosing theirs again (the same Exportify file, `fk` on its record)
   says *Update* (op `csvup`: new songs wait for sign-off, the others keep their days, songs gone from it go); choosing
   another says *Switch* and that it takes the place of theirs (op `csv` with `replace`: the old one goes, with its own

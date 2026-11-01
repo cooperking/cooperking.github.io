@@ -846,6 +846,7 @@ async function members(request, url, env) {
   if (route === 'uplup') return memberUplUp(request, url, env, answer);
   if (route === 'uplcover') return memberUplCover(request, url, env, answer);
   if (route === 'songs') return memberSongs(request, url, env, answer);
+  if (route === 'spnames') return memberSpNames(request, url, env, answer);
   if (!['admin', 'upload', 'cover'].includes(route)) return answer(404, { error: 'Not here.' });
   if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
   const no = await adminOk(request, env, answer);
@@ -2908,6 +2909,28 @@ async function uplCsvPreviews(env, list) {   // the preview Exportify gives a so
   let n = 0;
   for (const x of (Array.isArray(list) ? list : []).slice(0, UPL_CSV_MOST)) if (x && SP_ID.test(String(x.id || '')) && /^[0-9a-f]{20,64}$/.test(String(x.pv || '')) && !(pv[x.id] && pv[x.id] !== '-')) { pv[x.id] = x.pv; n++; }
   if (n) { Object.assign(pvMem, pv); await kvSoft(env, 'previews', JSON.stringify(pv)); }
+}
+// /members/spnames?ids=a,b: Spotify users' names, for Import from Spotify's "By ..." (John, 1 Nov 2026: "show who the
+// playlist is by originally too as it shows all playlists followed as well as your own"): Exportify's files say which
+// Spotify account added each song (its id, spotify:user:<id>), not the name. From each user's public page (its title),
+// kept 30 days (KV spname:<id>, '' none); 20 at a time, for members.
+async function memberSpNames(request, url, env, answer) {
+  if (!await memberWho(request, env)) return answer(401, { error: 'Not a member (any more).' });
+  const ids = String(url.searchParams.get('ids') || '').split(',').map(x => x.trim()).filter(x => /^[\w.\-]{1,64}$/.test(x)).slice(0, 20), out = {};
+  await Promise.all(ids.map(async id => {
+    const k = 'spname:' + id, had = await env.SOTD.get(k);
+    if (had !== null) { out[id] = had; return; }
+    let n = '';
+    const r = await fetch('https://open.spotify.com/user/' + encodeURIComponent(id), { headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0 Safari/537.36', 'Accept-Language': 'en-GB' } }).catch(() => null);
+    if (r && r.ok) {
+      const h = await r.text(), m = /<meta property="og:title" content="([^"]{1,120})"/.exec(h) || /<title>([^<]{1,120})<\/title>/.exec(h);
+      n = m ? m[1].replace(/&amp;/g, '&').replace(/&#x27;|&#39;/g, '’').replace(/&quot;/g, '"').replace(/\s*\|\s*Spotify\s*$/i, '').trim() : '';
+      if (/^(spotify – web player|spotify)$/i.test(n)) n = '';
+    } else if (!r || r.status >= 500 || r.status === 429) { out[id] = ''; return; }   // (not kept: asked again next time)
+    out[id] = n.slice(0, 80);
+    await kvSoft(env, k, out[id], { expirationTtl: 30 * 86400 });
+  }));
+  return answer(200, { names: out });
 }
 async function uplAll(env) { return (await env.SOTD.get('upls', 'json')) || {}; }
 async function uplSongs(env, pid) { return (await env.SOTD.get('upl:' + pid, 'json')) || { songs: [], rel: {} }; }
