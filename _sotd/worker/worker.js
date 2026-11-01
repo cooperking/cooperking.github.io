@@ -2853,8 +2853,9 @@ function uplInvite(link) {   // the link as pasted, when it's Spotify's own (the
 }
 // A member's playlist from Exportify (exportify.app: they sign in to Spotify there and export it as a CSV file, which
 // the calendar reads and sends here as songs): no collaboration needed, as Exportify reads it with their own Spotify
-// sign-in. A snapshot: they upload a fresh export to bring in new songs (op csvup). UPL_CSV_MOST songs at most.
-const UPL_CSV_MOST = 2000, SP_ID = /^[0-9A-Za-z]{22}$/;
+// sign-in. A snapshot: they upload a fresh export to bring in new songs (op csvup). UPL_CSV_MOST songs at most (Spotify's own
+// most for a playlist): members can have as many songs as they like; only songs with their own files are limited.
+const UPL_CSV_MOST = 10000, SP_ID = /^[0-9A-Za-z]{22}$/;
 function uplCsvSongs(list) {   // the songs as the page sends them, made safe: [{ a, id, title, artist, artists, aids, album, alid, img }] in the playlist's order
   if (!Array.isArray(list)) return null;
   const out = [], seen = new Set(), txt = (v, n) => String(v == null ? '' : v).replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, n);

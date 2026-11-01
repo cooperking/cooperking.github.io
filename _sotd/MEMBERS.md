@@ -268,7 +268,7 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   *Choose the file* (within 30 minutes, a page opened again comes back to it: `sotd-imp` in local storage). The page reads
   the file (`csvSongs`: the columns found by what's in them, as Exportify's headings follow the member's language; local
   files and episodes left out), shows how many songs and the latest, then a name (from the file's) and *A calendar* or
-  *A playlist*. The Worker keeps it as `src: 'csv'` (op `csv`, `UPL_CSV_MOST` 2,000 songs; the songs checked by
+  *A playlist*. The Worker keeps it as `src: 'csv'` (op `csv`, `UPL_CSV_MOST` 10,000 songs, Spotify's own most for a playlist: no other limit on songs, only on songs with their own files; the songs checked by
   `uplCsvSongs`), readable at once; days, sign-off, sharing and the rest are as a Spotify one's. It's a snapshot: *Update*
   (Profile) or *Update from Exportify* (the pop-up) takes a fresh export (op `csvup`): new songs wait for sign-off, the
   others keep their days, and songs gone from it go from the calendar. One import at a time (John, 1 Nov 2026): with one already, *Import from Spotify* offers

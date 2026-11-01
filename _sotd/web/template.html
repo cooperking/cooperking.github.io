@@ -7443,7 +7443,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // pop-up window on a computer, else a tab; coming back moves on to step 2 (sotd-imp in local storage: within 30
   // minutes, a page opened again comes back to it). ----
   var EXPORTIFY = 'https://exportify.app/', IMP = { up: null, songs: null, name: '', away: false, win: null, poll: 0, busy: false, bl: false };
-  var impDlg = document.getElementById('uplimp'), IMP_MOST = 2000;
+  var impDlg = document.getElementById('uplimp'), IMP_MOST = 10000;   // (Spotify's own most for a playlist)
   function csvRows(text) {   // a CSV file's rows (RFC 4180: quoted fields, "" for a quote, line breaks inside quotes)
     var rows = [], row = [], f = '', q = false, i = text.charCodeAt(0) === 0xfeff ? 1 : 0, n = text.length, c;
     for (; i < n; i++) {
@@ -7555,7 +7555,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   document.getElementById('uplino').addEventListener('click', function () { IMP.songs = null; impStep(2); document.getElementById('uplifile').click(); });
   document.getElementById('uplifin').addEventListener('change', function () {
     var f = this.files && this.files[0]; if (!f) return;
-    if (f.size > 10e6) { toast('That file is too big for a playlist'); return; }
+    if (f.size > 30e6) { toast('That file is too big for a playlist'); return; }
     var rd = new FileReader();
     rd.onerror = function () { toast('Couldn’t read that file'); };
     rd.onload = function () {
