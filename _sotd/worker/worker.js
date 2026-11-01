@@ -3071,12 +3071,9 @@ function uplDaysBy(songs, rec) {
     if (i < 0) i = dt.how === 'fwd' ? 0 : Math.min(songs.length, dt.n || songs.length) - 1;
     return songs.map((x, k) => Object.assign({}, x, { d: uplAddDays(dt.day, k - i) }));
   }
-  const out = songs.map(x => Object.assign({}, x, { d: londonDay(x.a) }));   // its UK added day, or the day before the next song's day if that is earlier
-  for (let i = out.length - 1, next = null; i >= 0; i--) {
-    if (next) { const b = new Date(next + 'T12:00:00Z'); b.setUTCDate(b.getUTCDate() - 1); const before = b.toISOString().slice(0, 10); if (before < out[i].d) out[i].d = before; }
-    next = out[i].d;
-  }
-  return out;
+  // its UK added day: songs added the same day share it (John, 1 Nov 2026: "can we have the calendar icon split to show
+  // multiple songs, so they keep their original day"; until then each earlier one went back a day)
+  return songs.map(x => Object.assign({}, x, { d: londonDay(x.a) }));
 }
 async function uplRead(env, pid, rec, U) {   // reads it from Spotify; keeps what changed; says whether it's readable
   const was = rec.st, now = Date.now();

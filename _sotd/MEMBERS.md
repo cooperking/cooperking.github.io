@@ -363,6 +363,12 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   then each one's next). Songs not reached yet (150 a run for MusicBrainz and Discogs) wait for the next run, never
   the search. Missed songs are tried the free ways again after 30 days. (Odesli was tried first: song.link closed its
   keyless API in October 2026, and its matches leave YouTube out.)
+- **Several songs on one day** (John, 1 Nov 2026: "can we have the calendar icon split to show multiple songs, so they
+  keep their original day, and clicking on them opens a box showing each. Clicking on the song icon will then open the
+  usual song page. There should be an option to change date for them there too, for the member who added it"): the
+  day's tile is split between them (two side by side, three or four in quarters) with how many in its corner; tapped,
+  a box lists each (its cover, title and artist), and each opens its song page; on their own calendar its owner has
+  *Change date* on each (a day picker, then *Move it*: op `place`, that song alone). Test: `sameday_t.mjs`.
 - **Moving songs to other days** (John, 1 Nov 2026: "Can there be an edit mode on calendar playlists where you can drag
   and drop to different dates", then "Can the edit days button be right by the calendar. Can songs move to the missing
   place immediately (everything shifting to the day before and then save on drop) Could you press down to give option
@@ -378,7 +384,8 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   on the playlist's record, over the setup's way: `uplDays`), ops `place`, `move`, `unmove`; choosing a new way in
   *Setup* starts afresh. Tests: `move_t.mjs` (the Worker), `edit2_t.mjs` (the draft against the real Worker code).
 - **A calendar's days** (John, 30 Oct 2026; the pop-up's *Setup*, and straight after adding one): by the day
-  each song is added on Spotify (John's rule, a day with no song taking the next); forwards from a day (the first song on
+  each song is added on Spotify (songs added the same day share it: John, 1 Nov 2026; until then each earlier one went
+  back a day, as on John's own); forwards from a day (the first song on
   it, then a song a day); or back from a day (the newest song now on it, each one before a day earlier). Either of the
   last two keeps its anchor (the first, or the newest then: `dates { how, day, at, n }` on its record), so new songs
   follow on a day each. A day still to come is hidden on the calendar (its owner sees it in the pop-up, "to come"). Moving the anchor looks at today's song again.
