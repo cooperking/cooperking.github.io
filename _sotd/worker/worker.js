@@ -3334,9 +3334,11 @@ async function uplView(env, all, viewer, pid, rec) {   // a playlist as the cale
   if (mine) {   // (its owner: how far the calendar has got with its songs: each part found (p, v, m, y), looked at with none (pn, vn, mn, yn), and their own files (fa, fv: songs with an MP3, an MP4))
     const all2 = (data.songs || []).filter(x => !gone.has(x.id)), seen = (await env.SOTD.get('uplseen', 'json')) || {};
     const has = (x, k) => k === 'v' ? !!(x.vid || x.ov) : k === 'm' ? !!(x.mt || x.tag) : !!x.yr;
-    const none = k => songs.filter(x => !has(x, k) && ((seen[x.id] || '').includes(k) || (k === 'v' && x.ov === ''))).length;
+    const noneOf = k => songs.filter(x => !has(x, k) && ((seen[x.id] || '').includes(k) || (k === 'v' && x.ov === ''))), none = k => noneOf(k).length;
+    const ids = l => l.slice(0, 200).map(x => x.id);   // (which ones, for its owner: John, 1 Nov 2026: "can we have it say which ones they are")
     prog = { n: all2.length, pq: all2.filter(x => !(x.id in pv)).length, p: all2.filter(x => pv[x.id] && pv[x.id] !== '-').length, pn: all2.filter(x => pv[x.id] === '-').length,
       v: songs.filter(x => has(x, 'v')).length, vn: none('v'), m: songs.filter(x => has(x, 'm')).length, mn: none('m'), y: songs.filter(x => has(x, 'y')).length, yn: none('y'),
+      which: { p: ids(all2.filter(x => pv[x.id] === '-')), v: ids(noneOf('v')), m: ids(noneOf('m')), y: ids(noneOf('y')) },
       fa: songs.filter(x => x.ma || (x.own && x.own.a) || (x.jf && x.jf.a)).length, fv: songs.filter(x => x.mv || (x.own && x.own.v) || (x.jf && x.jf.v)).length, ch: rec.ch || rec.at || 0 };
   }
   return { id: pid, n: uplName(all, rec), t: uplTitle(all, rec), o: all[rec.o].name, mine, mode: rec.mode, sp: rec.sp, src: uplSrc(rec), yt: rec.yt || '', st: rec.st, at: data.at || null, sh: uplShareOf(rec),

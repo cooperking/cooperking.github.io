@@ -335,7 +335,10 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   bar moving, found and none in it, and its counts as they come), the rest waiting; then MP3s and MP4s (songs with
   their own or John's file). A song looked at with none found is done, not waiting (a preview Spotify hasn't got: the
   calendar was stuck at "38 of 39"): the Worker keeps which songs the site job has looked at (KV `uplseen`, from
-  `/upl/data`) and gives `pn`, `vn`, `mn`, `yn` and `fa`, `fv` with the others. Tests: `prog_t.mjs` (the Worker),
+  `/upl/data`) and gives `pn`, `vn`, `mn`, `yn` and `fa`, `fv` with the others. A part with none found for some has *Show
+  which* (John, 1 Nov 2026: "When something can't be found... can we have it say which ones they are"): those songs
+  (`which { p, v, m, y }`, their ids, 200 at most), with what can be done, each opening its editor (its own MP3, a video,
+  moods; a year: the song). Tests: `prog_t.mjs` (the Worker),
   `prog_page_t.mjs` and `stage_t.mjs` (the draft against the real Worker code).
 - **Their own MP3s and MP4s: on 366 songs at most**, except John's own playlists (no limit: "The 366 limit shouldn't
   apply to my own playlists"; the member marked *This is me*, KV `owner`; `fu.max` 0, so the editor says nothing) (John, 1 Nov 2026: "theoretically they can have 366 MP3s and 366
