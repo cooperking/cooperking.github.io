@@ -6624,7 +6624,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       : { headers: tok ? { Authorization: 'Bearer ' + tok } : {}, cache: 'no-store' }).then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { j.status = r.status; return j; }); });
   }
   function uplMark() {   // the title: whose calendar shows, and (with others to choose) the way to choose
-    var mk = document.getElementById('mark'), can = !TV && (!!UPL.on || (!!MEMBER && uplPls().some(function (p) { return !p.mine || p.st === 'ok'; })));
+    var mk = document.getElementById('mark'), can = !!UPL.on || (!!MEMBER && uplPls().some(function (p) { return !p.mine || p.st === 'ok'; }));   // (the TV too, from its remote: John, 1 Nov 2026)
     document.getElementById('marktx').textContent = UPL.on && UPL.view ? UPL.view.t || UPL.view.n : 'John’s Song of the Day';
     mk.classList.toggle('can', can);
     var c = mk.querySelector('.caret'); if (can && !c) mk.insertAdjacentHTML('beforeend', CARET); else if (!can && c) c.remove();
@@ -6770,7 +6770,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       if (r.id) uplShow(r.id); else uplBack();
     });
     it.appendChild(b);
-    if (r.mine) {   // their own: its picture
+    if (r.mine && !TV) {   // their own: its picture (not on the TV, which can't choose a photo)
       var acts = document.createElement('div'); acts.className = 'cal-acts';
       var ch = document.createElement('button'); ch.type = 'button'; ch.textContent = r.pic ? 'Change picture' : 'Add a picture';
       ch.addEventListener('click', function () { PICFOR = r.p; var f = document.getElementById('uplpicin'); f.value = ''; f.click(); });
@@ -6838,7 +6838,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     uplWanted();
   }
   function uplWanted() {
-    if (!UPL.want || TV || (!MEMBER && plTok())) return;   // (signed in: once they're known; not signed in: a public one)
+    if (!UPL.want || (!MEMBER && plTok())) return;   // (signed in: once they're known; not signed in: a public one)
     var w = UPL.want; UPL.want = null;
     if (w.id === UPL.on && UPL.view) { if (w.day && byDate[w.day]) openDay(w.day); else if (w.month) uplMonth(w.month); return; }
     uplShow(w.id, { day: w.day, month: w.month, quiet: w.quiet });

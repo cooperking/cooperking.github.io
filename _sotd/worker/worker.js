@@ -1544,7 +1544,7 @@ async function memberMe(request, env, answer) {
   const seen = Object.keys(all).filter(k => k !== id && k !== ownerId && hasJoined(all[k]) && !apart(all, id, k)).map(k => ({ id: k, name: all[k].name })).sort(byName);
   const bell = bellView(all, id, await env.SOTD.get('bell:' + id, 'json')).unseen;   // reactions to their messages not yet seen
   const U0 = await uplAll(env), pls = await uplMine(env, uplList(all, id, U0), U0);   // members' own playlists they can see, and their own (with the songs waiting for them)
-  const fu = { n: await uplFileCount(env, id, U0), max: UPL_OWN_FILES };   // the songs with their own MP3 or MP4, and the most
+  const fu = { n: await uplFileCount(env, id, U0), max: (await env.SOTD.get('owner')) === id ? 0 : UPL_OWN_FILES };   // the songs with their own MP3 or MP4, and the most (0: John's, no limit)
   return answer(200, Object.assign({ name: m.name, email: m.email || '', exp, media, see, mycovers, unread, bell, pls, fu, others, seen, msgs: !m.nomsg,
     mute: (m.mute || []).filter(k => seen.some(x => x.id === k)) }, owner ? { owner: true } : {}));
 }
@@ -3555,7 +3555,7 @@ function uplSongDay(rec, data, days, i) {   // the day its song goes to the memb
 // up in parts as John's are: /members/uplup), heard and seen by the members John lets have his own (see on their
 // records) and by them, and their own cover (uc/<pid>/<track>.jpg, made small on the page: /members/uplcover; for
 // everyone who sees the playlist). files in upl:<pid>: { <track>: { a, v: sizes, c: when } }. ----------
-// A member's own MP3s and MP4s go on UPL_OWN_FILES songs at most, across all their playlists (John, 1 Nov 2026: "it's
+// A member's own MP3s and MP4s go on UPL_OWN_FILES songs at most (not John: KV owner), across all their playlists (John, 1 Nov 2026: "it's
 // limited to 366 songs total. So if they have a track with an mp3 they can also add an mp4"): a song counts once, with
 // an MP3, an MP4 or both, on any of their playlists; taking its files off, or removing its playlist, frees it.
 const UPL_OWN_FILES = 366;
@@ -3592,8 +3592,9 @@ async function memberUplUp(request, url, env, answer) {   // ?id&track&kind=a|v&
   const kind = url.searchParams.get('kind'), op = url.searchParams.get('op'), uid = url.searchParams.get('uploadId') || '';
   if (!MEDIA_KINDS[kind]) return answer(400, { error: 'An MP3 (a) or an MP4 (v)?' });
   const key = 'u' + kind + '/' + o.pid + '/' + o.track + '.' + MEDIA_KINDS[kind].ext;
-  const fu = async () => ({ n: await uplFileCount(env, o.who.id, await uplAll(env)), max: UPL_OWN_FILES });
-  const over = async () => { const had = await uplFileSongs(env, o.who.id, await uplAll(env)); return !had.has(o.track) && had.size >= UPL_OWN_FILES; };   // (a song with one of theirs already takes the other freely)
+  const fu = async () => ({ n: await uplFileCount(env, o.who.id, await uplAll(env)), max: john ? 0 : UPL_OWN_FILES });   // (max 0: no limit, and the editor says nothing)
+  const john = (await env.SOTD.get('owner')) === o.who.id;   // (John's own playlists have no limit: John, 1 Nov 2026)
+  const over = async () => { if (john) return false; const had = await uplFileSongs(env, o.who.id, await uplAll(env)); return !had.has(o.track) && had.size >= UPL_OWN_FILES; };   // (a song with one of theirs already takes the other freely)
   if (op === 'drop') { await env.MEDIA.delete(key); await uplFilesSet(env, o.pid, o.track, kind, 0); return answer(200, { ok: true, fu: await fu(), view: await uplView(env, o.who.all, o.who.id, o.pid, o.rec) }); }
   if (op === 'start') {
     if ((await catalog(env))[o.track] && (await catalog(env))[o.track][kind]) return answer(400, { error: 'Already uploaded.' });   // (John's, from the Songs tab)

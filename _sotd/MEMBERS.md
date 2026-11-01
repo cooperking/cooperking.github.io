@@ -310,7 +310,10 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   member's own, then the others they see; each with its picture, name, whose it is and its songs, the one showing
   outlined. A playlist's picture is its owner's (*Add a picture* / *Change picture* on their own card: a photo, cropped
   square on the page; R2 `up/<pid>.jpg`, `pic` on its record, served at `/up/<pid>.jpg`; *Use its covers* takes it
-  off), else its newest four covers (`/members/upl?cards=1`). Test: `cal_t.mjs` (the draft against the real Worker code).
+  off), else its newest four covers (`/members/upl?cards=1`). On the Fire TV too (John, 1 Nov 2026: "You can't tab to the
+  John's song of the day on fire stick with a remote"): the calendar's name is the first thing up from the month, OK
+  opens the page, the arrows move between cards (no picture buttons there). Tests: `cal_t.mjs` (the draft against the
+  real Worker code), `cal_tv_t.mjs` (the same as the Fire TV, by its remote).
 - **Staying on a calendar** (John, 1 Nov 2026: "Could it always stay on the chosen one"): besides its address (`#u=`),
   each device keeps the calendar it was last on (`sotd-cal` in local storage) and goes back to it when the page opens
   with no address of its own (the app opened again, or an address that lost it), until John's is chosen again; one
@@ -326,7 +329,8 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   playlist's songs are worked on by the job hourly for two days (`rec.ch`; uplLook), not only once a day. The Worker's
   view gives its owner `prog { n, p, pq, v, m, y, ch }`. The panel goes once all's done or two days have passed; the ×
   hides it for that change. Tests: `prog_t.mjs` (the Worker), `prog_page_t.mjs` (the draft against the real Worker code).
-- **Their own MP3s and MP4s: on 366 songs at most** (John, 1 Nov 2026: "theoretically they can have 366 MP3s and 366
+- **Their own MP3s and MP4s: on 366 songs at most**, except John's own playlists (no limit: "The 366 limit shouldn't
+  apply to my own playlists"; the member marked *This is me*, KV `owner`; `fu.max` 0, so the editor says nothing) (John, 1 Nov 2026: "theoretically they can have 366 MP3s and 366
   mp4s. But it's limited to 366 songs total. So if they have a track with an mp3 they can also add an mp4"): counted
   across all their playlists, a song once whether it has an MP3, an MP4 or both (covers don't count). Taking both files
   off a song, or removing its playlist, frees it. The Worker refuses a file for a 367th song as it starts and again as
