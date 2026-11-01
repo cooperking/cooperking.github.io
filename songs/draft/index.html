@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="dd64efc4860f">
+<meta name="sotd-build" content="1dbbda564d80">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -295,6 +295,10 @@ html.big .heroacts .hsub { margin: 0 6px 0 0; }
 .signedchip { display: inline-flex; align-items: center; gap: 6px; margin: -6px 0 0; padding: 5px 12px 5px 9px; border-radius: 999px; background: var(--fg); color: var(--bg); font: 600 11px/1.2 var(--sans); letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; cursor: pointer; border: 0; }
 .signedchip svg { width: 13px; height: 13px; flex: none; }
 .signedchip[hidden] { display: none; }
+.whorow { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px; margin: -6px 0 0; }
+.whorow .signedchip { margin: 0; }
+.signedchip.mk { background: none; color: var(--fg); box-shadow: inset 0 0 0 1.5px var(--fg); }   /* (Create playlist, beside Signed in as: John, 1 Nov 2026) */
+html.big .whorow { justify-content: flex-start; }
 /* unread messages in the Profile's inbox: a count on the Profile buttons */
 #famjoin { position: relative; }
 .inbn { position: absolute; top: -4px; right: -4px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: #e23a6e; color: #fff; font: 700 10.5px/18px var(--sans); letter-spacing: 0; text-align: center; box-shadow: 0 0 0 2px var(--bg); pointer-events: none; }
@@ -502,6 +506,35 @@ html.upl-list .side-acts .listbtn { display: inline-grid; }
 .imp-what h3 { margin: 0; font-size: 26px; }
 .imp-kind { justify-self: start; padding: 2px 9px; border-radius: 999px; background: var(--fg); color: #e23a6e; font: 600 10px/1.6 var(--sans); letter-spacing: .1em; text-transform: uppercase; }
 .imp-sum { margin: 0; font-size: 13px; line-height: 1.4; color: var(--muted); overflow-wrap: anywhere; }
+.imp-note.warn { border-left-color: #e23a6e; }
+/* Your playlists (Create playlist): their playlists, New playlist (songs picked from the calendars), Import, Select */
+.plp-pane { display: grid; gap: 12px; }
+.plp-pane[hidden], .plp-selbar[hidden] { display: none; }
+.plp-acts { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+#plpage .allread { border: 0; background: none; padding: 4px 0; font: 600 11px/1.2 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--fg); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+#plpage .allread:disabled { opacity: .4; cursor: default; }
+#plpage .allread.del:not(:disabled) { color: #e23a6e; }
+.plp-acts .allread { margin-left: auto; }
+.plp-selbar { display: flex; justify-content: space-between; gap: 8px; }
+#plpl.selecting .box { cursor: pointer; }
+#plpl .selbox { display: none; width: 22px; height: 22px; flex: none; border-radius: 6px; box-shadow: inset 0 0 0 1.5px var(--line); place-items: center; }
+#plpl.selecting .selbox { display: grid; }
+#plpl li.sel .selbox { background: var(--fg); box-shadow: none; }
+#plpl li.sel .selbox::after { content: ""; width: 10px; height: 5px; margin-top: -3px; border: solid var(--bg); border-width: 0 0 2px 2px; transform: rotate(-45deg); }
+#plpl.selecting .above, #plpl.selecting .acts, #plpl.selecting .waits { display: none; }
+#plpl.selecting > li { display: flex; align-items: center; gap: 10px; }
+#plpl.selecting > li > .box { flex: 1; min-width: 0; }
+.plp-name { display: grid; gap: 6px; font-size: 12px; color: var(--muted); }
+.plp-name input { padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--pill-bg); color: var(--fg); font: 16px var(--sans); }
+.plp-n { margin: 0; font-size: 13px; color: var(--muted); }
+.plp-songs { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; max-height: min(50vh, 460px); overflow-y: auto; overscroll-behavior: contain; }
+.plp-songs button { width: 100%; display: grid; grid-template-columns: 40px 1fr 26px; gap: 10px; align-items: center; padding: 6px 10px 6px 6px; border: 0; border-radius: 10px; background: var(--pill-bg); color: var(--fg); text-align: left; cursor: pointer; font: inherit; }
+.plp-songs img, .plp-songs .noimg { width: 40px; height: 40px; border-radius: 6px; object-fit: cover; background: var(--tile); }
+.plp-songs .t { display: grid; gap: 1px; min-width: 0; }
+.plp-songs .t b { font: 600 13px/1.3 var(--sans); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.plp-songs .t span { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.plp-songs .on { width: 24px; height: 24px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--line); display: grid; place-items: center; font: 600 16px/1 var(--sans); }
+.plp-songs button[aria-pressed="true"] .on { background: var(--fg); color: var(--bg); box-shadow: none; }
 .imp-note { margin: 0; padding: 10px 12px; border-left: 3px solid var(--fg); border-radius: 4px 10px 10px 4px; background: var(--pill-bg); font-size: 13px; line-height: 1.4; color: var(--fg); }
 #mine.upl-pop.upl-nosp #makebtn { display: none; }
 /* a member's own for a song on their playlist (the editor) */
@@ -777,7 +810,7 @@ button.day:focus-visible .sleeve { box-shadow: 0 16px 34px var(--shadow), 0 0 0 
 .emptymsg { color: var(--muted); padding: 10px 0; font-family: var(--serif); font-style: italic; }
 
 /* day view */
-dialog#sheet, dialog#mine, dialog#index, dialog#acctsheet, dialog#askdlg, dialog#appdlg, dialog#castdlg, dialog#senddlg, dialog#msgdlg, dialog#belldlg, dialog#upldlg, dialog#upldates, dialog#upled, dialog#uplwho, dialog#uplimp, dialog#daypick {
+dialog#sheet, dialog#mine, dialog#index, dialog#acctsheet, dialog#askdlg, dialog#appdlg, dialog#castdlg, dialog#senddlg, dialog#msgdlg, dialog#belldlg, dialog#upldlg, dialog#plpage, dialog#upldates, dialog#upled, dialog#uplwho, dialog#uplimp, dialog#daypick {
   --bg: #ffffff; --fg: #1d0b1e; --fg-2: rgba(29, 11, 30, .9); --muted: rgba(29, 11, 30, .62); --faint: rgba(29, 11, 30, .45);
   --line: rgba(29, 11, 30, .14); --tile: #f3eef0; --chip-bg: rgba(29, 11, 30, .04); --pill-bg: rgba(29, 11, 30, .03); --pill-hover: rgba(29, 11, 30, .08);
   border: 0; padding: 0; color: var(--fg-2); background: var(--bg); color-scheme: light;
@@ -990,12 +1023,12 @@ dialog#sharesheet::backdrop { background: rgba(24, 8, 24, .35); -webkit-backdrop
 }
 @keyframes shup { from { transform: translateY(100%); } to { transform: none; } }
 /* home-screen app: the page runs under the clock and the home bar, so the pop-ups keep clear of both */
-dialog#sheet, dialog#mine, dialog#index, dialog#acctsheet, dialog#askdlg, dialog#appdlg, dialog#castdlg, dialog#senddlg, dialog#msgdlg, dialog#belldlg, dialog#upldlg, dialog#upldates, dialog#upled, dialog#uplwho, dialog#uplimp, dialog#daypick {
+dialog#sheet, dialog#mine, dialog#index, dialog#acctsheet, dialog#askdlg, dialog#appdlg, dialog#castdlg, dialog#senddlg, dialog#msgdlg, dialog#belldlg, dialog#upldlg, dialog#plpage, dialog#upldates, dialog#upled, dialog#uplwho, dialog#uplimp, dialog#daypick {
   top: env(safe-area-inset-top, 0px); bottom: env(safe-area-inset-bottom, 0px);
   max-height: calc(100dvh - 32px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
 }
 dialog#sharesheet { top: env(safe-area-inset-top, 0px); max-height: calc(100dvh - 32px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
-dialog#sheet::backdrop, dialog#mine::backdrop, dialog#index::backdrop, dialog#acctsheet::backdrop, dialog#askdlg::backdrop, dialog#appdlg::backdrop, dialog#castdlg::backdrop, dialog#senddlg::backdrop, dialog#msgdlg::backdrop, dialog#belldlg::backdrop, dialog#upldlg::backdrop, dialog#upldates::backdrop, dialog#upled::backdrop, dialog#uplwho::backdrop, dialog#uplimp::backdrop, dialog#daypick::backdrop { background: rgba(24, 8, 24, .3); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+dialog#sheet::backdrop, dialog#mine::backdrop, dialog#index::backdrop, dialog#acctsheet::backdrop, dialog#askdlg::backdrop, dialog#appdlg::backdrop, dialog#castdlg::backdrop, dialog#senddlg::backdrop, dialog#msgdlg::backdrop, dialog#belldlg::backdrop, dialog#upldlg::backdrop, dialog#plpage::backdrop, dialog#upldates::backdrop, dialog#upled::backdrop, dialog#uplwho::backdrop, dialog#uplimp::backdrop, dialog#daypick::backdrop { background: rgba(24, 8, 24, .3); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
 .sheet-in { display: grid; gap: 18px; padding: 16px 18px 24px; }
 #sheet .sheet-in { grid-template-columns: minmax(0, 1fr); }   /* (the day never wider than its pop-up: on a phone narrower than about 375, the date's line made it 320 wide, and the video and its facts ran off the side; the date shortens instead) */
 @media (max-width: 380px) { #sheet .sheet-in { padding-left: 12px; padding-right: 12px; } #sheet .daynav #sdate { letter-spacing: .1em; padding-inline: 7px; } }   /* (a small phone: the day about as wide as it was, inside its pop-up now; the date a touch tighter, so it's whole) */
@@ -1379,7 +1412,7 @@ html.minidrag, html.minidrag * { cursor: grabbing !important; user-select: none;
 /* Pop-ups are ordinary page layers (opened with show(), not showModal()): the browser's top layer can't have
    anything placed above it before iOS 17, and the My playlist button has to stay on top of a day and A–Z / Moods.
    The site draws the dim background (the scrim) itself and keeps the page behind from being tapped. */
-dialog#sheet, dialog#mine, dialog#index, dialog#sharesheet, dialog#acctsheet, dialog#askdlg, dialog#appdlg, dialog#castdlg, dialog#senddlg, dialog#msgdlg, dialog#belldlg, dialog#upldlg, dialog#upldates, dialog#upled, dialog#uplwho, dialog#uplimp, dialog#daypick { position: fixed; left: 0; right: 0; height: fit-content; margin: auto; z-index: 50; overscroll-behavior: contain; }
+dialog#sheet, dialog#mine, dialog#index, dialog#sharesheet, dialog#acctsheet, dialog#askdlg, dialog#appdlg, dialog#castdlg, dialog#senddlg, dialog#msgdlg, dialog#belldlg, dialog#upldlg, dialog#plpage, dialog#upldates, dialog#upled, dialog#uplwho, dialog#uplimp, dialog#daypick { position: fixed; left: 0; right: 0; height: fit-content; margin: auto; z-index: 50; overscroll-behavior: contain; }
 dialog#index { height: calc(100dvh - 32px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
 .scrim { position: fixed; inset: 0; z-index: 49; display: none; background: rgba(24, 8, 24, .3); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); touch-action: none; }
 html.layer-open .scrim { display: block; }
@@ -1573,7 +1606,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       <ol class="uplprog-rows" id="uplprogr" aria-live="polite"></ol>
       <p class="uplprog-t" id="uplprogt"></p>
     </div>
+    <div class="whorow">
     <button class="signedchip" id="who" type="button" hidden><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><circle cx="8" cy="5.2" r="3"/><path d="M2.5 14.5c.5-3.2 2.8-5 5.5-5s5 1.8 5.5 5z"/></svg><span id="whotext">Signed in</span><span class="inbn" id="whon" hidden></span><span class="whobell" id="whobell" hidden><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M8 2.2c-2.3 0-3.9 1.8-3.9 4v2.6L2.8 11h10.4l-1.3-2.2V6.2c0-2.2-1.6-4-3.9-4z"/><path d="M6.4 13.1c.3.6.9 1 1.6 1s1.3-.4 1.6-1"/></svg><span class="inbn" id="whobelln"></span></span></button>
+    <button class="signedchip mk" id="plnew" type="button" hidden><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg><span>Create playlist</span></button>
+    </div>
     <div class="monthnav">
       <button class="round" id="prev" type="button" aria-label="Previous month"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 3 5 8l5 5"/></svg></button>
       <nav class="strip" id="strip" aria-label="Months"></nav>
@@ -1954,6 +1990,29 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     <input type="file" id="uplpicin" accept="image/*,.heic,.heif" hidden>
   </div>
 </dialog>
+<dialog id="plpage" aria-labelledby="plph">
+  <div class="sheet-in msgv">
+    <div class="sheet-head">
+      <p class="mine-top"><span class="chip">Your playlists</span></p>
+      <button class="close" id="plpclose" type="button" aria-label="Close"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 2l10 10M12 2 2 12"/></svg></button>
+    </div>
+    <div class="plp-pane" id="plplist">
+      <h3 id="plph">Playlists</h3>
+      <div class="plp-acts"><button class="copy" id="plpnew" type="button">New playlist</button><button class="copy ghost" id="plpimp" type="button">Import from Spotify</button><button class="allread" id="plpsel" type="button">Select</button></div>
+      <div class="plp-selbar" id="plpselbar" hidden><button class="allread" id="plpselall" type="button">Select all</button><button class="allread del" id="plpseldel" type="button" disabled>Delete</button></div>
+      <ul class="ac-upls" id="plpl"></ul>
+      <p class="ac-none" id="plpnone" hidden>No playlists yet. Make one from the songs here, or import one of yours from Spotify.</p>
+    </div>
+    <div class="plp-pane" id="plpmake" hidden>
+      <h3>New playlist</h3>
+      <label class="plp-name"><span>Its name</span><input id="plpname" type="text" maxlength="80" placeholder="e.g. Sunday morning" autocomplete="off"></label>
+      <label class="imp-search"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3 3"/></svg><input id="plpq" type="search" placeholder="Find songs to add" autocomplete="off" spellcheck="false" aria-label="Find songs to add"></label>
+      <p class="plp-n" id="plpn"></p>
+      <ul class="plp-songs" id="plps"></ul>
+      <div class="ask-acts"><button class="copy" id="plpsave" type="button" disabled>Save playlist</button><button class="ac-out" id="plpback" type="button">Back</button></div>
+    </div>
+  </div>
+</dialog>
 <dialog id="upldates" aria-labelledby="upldh">
   <form class="sheet-in msgv" id="upldform" method="dialog">
     <div class="sheet-head">
@@ -2078,6 +2137,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         <label><input type="radio" name="uplimode" value="list"><span><b>A playlist</b>Just its songs, newest first.</span></label>
       </div>
       <p class="imp-note" id="uplinote" hidden></p>
+      <p class="imp-note warn" id="uplicap" hidden></p>
       <div class="ask-acts"><button class="copy" id="upliok" type="button">Import</button><button class="ac-out" id="uplino" type="button">Choose another</button></div>
     </div>
   </div>
@@ -2484,7 +2544,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var open = layers(), top = open[open.length - 1], root = document.documentElement;
     root.classList.toggle('layer-open', !!top);
     scrimEl.style.zIndex = top ? String((+top.style.zIndex || 50) - 1) : '';
-    var under = open.some(function (d) { return d.id === 'mine' || d.id === 'sharesheet' || d.id === 'acctsheet' || d.id === 'askdlg' || d.id === 'appdlg' || d.id === 'castdlg' || d.id === 'senddlg' || d.id === 'msgdlg' || d.id === 'belldlg' || d.id === 'upldlg' || d.id === 'upldates' || d.id === 'upled' || d.id === 'uplwho' || d.id === 'uplimp' || d.id === 'daypick'; });
+    var under = open.some(function (d) { return d.id === 'mine' || d.id === 'sharesheet' || d.id === 'acctsheet' || d.id === 'askdlg' || d.id === 'appdlg' || d.id === 'castdlg' || d.id === 'senddlg' || d.id === 'msgdlg' || d.id === 'belldlg' || d.id === 'upldlg' || d.id === 'plpage' || d.id === 'upldates' || d.id === 'upled' || d.id === 'uplwho' || d.id === 'uplimp' || d.id === 'daypick'; });
     root.classList.toggle('fab-under', under);
     if (top) pageEl.setAttribute('inert', ''); else pageEl.removeAttribute('inert');
     syncFloat();   // the floating video keeps to its day's place in the stack
@@ -7883,6 +7943,133 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (!rows.length && !PL.loaded) { var ld = document.createElement('li'); ld.className = 'ac-none plain'; ld.textContent = 'Loading…'; ul.appendChild(ld); }
     rows.forEach(function (r) { ul.appendChild(r.p ? uplAcctRow(r.p) : plAcctRow(r.l)); });
   }
+  // ---- Your playlists (John, 1 Nov 2026: "Can there be a create playlist button right next to the centre signed in profile
+  // (for members). It takes them to a new playlist page (similar to the one in profile page, showing playlists, import
+  // Spotify, and a search button where they can pick current songs for a new playlist too. Can there be a select
+  // function on playlists, to select all or multiple to delete"): their playlists as on the Profile, New playlist (a
+  // name, and songs found from every calendar and playlist they can see, tapped to add), Import from Spotify, and Select
+  // (tick any, or all, then Delete). ----
+  var plPage = document.getElementById('plpage'), PLP = { sel: false, pick: [] };
+  function plpRows() {
+    return PL.lists.map(function (l) { return { n: l.name, l: l }; }).concat(uplPls().filter(function (p) { return p.mine && p.src !== 'mpl'; }).map(function (p) { return { n: p.n, p: p }; }))
+      .sort(function (a, b) { return a.n.localeCompare(b.n, 'en-GB', { sensitivity: 'base', numeric: true }); });
+  }
+  function plpOpen() {
+    if (!MEMBER || TV) return;
+    PLP.sel = false; plpShow('list'); plpList();
+    if (acct.open) closeDialog(acct);
+    openLayer(plPage); plPage.scrollTop = 0;
+    otherLoad(); if (!PL.loaded) plLoad();
+  }
+  function plpShow(k) { document.getElementById('plplist').hidden = k !== 'list'; document.getElementById('plpmake').hidden = k !== 'make'; plPage.scrollTop = 0; }
+  function plpList() {
+    var ul = document.getElementById('plpl'), rows = plpRows();
+    ul.textContent = ''; ul.classList.toggle('selecting', PLP.sel);
+    rows.forEach(function (r) {
+      var li = r.p ? uplAcctRow(r.p) : plAcctRow(r.l);
+      li._it = r.p ? { k: 'p', id: r.p.id, n: r.p.n } : { k: 'l', id: r.l.id, n: r.l.name, cal: !!plOnCal(r.l) };
+      var sb = document.createElement('span'); sb.className = 'selbox'; sb.setAttribute('aria-hidden', 'true'); li.insertBefore(sb, li.firstChild);
+      ul.appendChild(li);
+    });
+    document.getElementById('plpnone').hidden = rows.length > 0;
+    var sel = document.getElementById('plpsel'); sel.hidden = !rows.length; sel.textContent = PLP.sel ? 'Done' : 'Select';
+    document.getElementById('plpselbar').hidden = !PLP.sel;
+    plpSelCount();
+  }
+  function plpSelCount() {
+    var ul = document.getElementById('plpl'), all = ul.querySelectorAll('li'), n = ul.querySelectorAll('li.sel').length, del = document.getElementById('plpseldel');
+    del.disabled = !n; del.textContent = n ? 'Delete (' + n + ')' : 'Delete';
+    document.getElementById('plpselall').textContent = all.length && n === all.length ? 'Select none' : 'Select all';
+  }
+  document.getElementById('plpl').addEventListener('click', function (e) {   // selecting: a tap ticks it (nothing opens)
+    if (!PLP.sel) { if (e.target.closest('.box.opens, .above button, .acts button, .waits button')) setTimeout(function () { if (plPage.open && layers().indexOf(plPage) !== layers().length - 1) closeDialog(plPage); }, 400); return; }   // (opened: this page makes way)
+    var li = e.target.closest('#plpl > li'); if (!li || !li._it) return;
+    e.preventDefault(); e.stopPropagation();
+    li.classList.toggle('sel'); li.setAttribute('aria-selected', li.classList.contains('sel') ? 'true' : 'false'); plpSelCount();
+  }, true);
+  document.getElementById('plpsel').addEventListener('click', function () { PLP.sel = !PLP.sel; plpList(); });
+  document.getElementById('plpselall').addEventListener('click', function () {
+    var ul = document.getElementById('plpl'), all = ul.querySelectorAll('li'), on = ul.querySelectorAll('li.sel').length !== all.length;
+    [].forEach.call(all, function (li) { li.classList.toggle('sel', on); }); plpSelCount();
+  });
+  document.getElementById('plpseldel').addEventListener('click', function () {
+    var items = [].map.call(document.getElementById('plpl').querySelectorAll('li.sel'), function (li) { return li._it; });
+    if (!items.length) return;
+    var one = items.length === 1;
+    ask({ k: 'Your playlists', h: one ? 'Delete “' + items[0].n + '”?' : 'Delete these ' + items.length + ' playlists?', t: (one ? 'It goes' : 'They go') + ' for good, from the calendar for everyone who sees ' + (one ? 'it' : 'them') + ', with your own MP3s and MP4s on ' + (one ? 'it' : 'them') + '. Spotify keeps its own.', ok: 'Delete', no: 'Keep ' + (one ? 'it' : 'them') }).then(function (yes) {
+      if (!yes) return;
+      var done = 0, failed = 0, chain = Promise.resolve();
+      items.forEach(function (it) {
+        chain = chain.then(function () {
+          if (it.k === 'l') return plApi({ op: 'delete', id: it.id }).then(function (j) { if (j.status !== 200) { failed++; return; } PL.lists = j.lists; if (PL.cur === it.id) plOpen(null, true); done++; });
+          return uplCall({ op: 'remove', id: it.id }).then(function (j) { if (j.status !== 200) { failed++; return; } if (j.pls) MEMBER.pls = j.pls; if (MUPL.id === it.id) mineUplExit(); done++; });
+        }).catch(function () { failed++; });
+      });
+      chain.then(function () {
+        if (UPL.on && !uplPls().some(function (p) { return p.id === UPL.on; })) uplBack(true);
+        uplMark(); uplWaitCount(); syncFav(); plRender(); if (acct.open) uplDrawAcct();
+        PLP.sel = false; plpList();
+        toast(failed ? done + ' deleted; ' + failed + ' couldn’t be just now' : one ? '“' + items[0].n + '” deleted' : done + ' playlists deleted');
+      });
+    });
+  });
+  // a new playlist: its name, then songs from every calendar and playlist they can see (John's, and the members' they
+  // see: otherLoad), found by title or artist and tapped to add; saved as one of their playlists (on all their devices)
+  function plpPool() {
+    var out = [], seen = {};
+    function add(x) { if (x.id && !seen[x.id]) { seen[x.id] = 1; out.push(x); } }
+    (UPL.on ? UPL.john || [] : songs).slice().reverse().forEach(function (s) { add({ id: s.track, title: s.title, artist: s.artist, img: s.u || '', from: 'John’s Song of the Day' }); });
+    (OTHER.list || []).forEach(function (x) { add({ id: x.id, title: x.title, artist: x.artist || (x.artists || []).join(', '), img: x.img || '', from: x.n || '' }); });
+    if (UPL.on && UPL.view) songs.forEach(function (s) { add({ id: s.track, title: s.title, artist: s.artist, img: s.u || '', from: UPL.view.n }); });
+    return out;
+  }
+  function plpMake() { PLP.pick = []; document.getElementById('plpname').value = ''; document.getElementById('plpq').value = ''; plpShow('make'); plpSongs(); otherLoad(); }
+  function plpSongs() {
+    var q = fold(document.getElementById('plpq').value.trim()), ul = document.getElementById('plps'), pool = plpPool();
+    var picked = pool.filter(function (x) { return PLP.pick.indexOf(x.id) !== -1; });
+    var hits = pool.filter(function (x) { return PLP.pick.indexOf(x.id) === -1 && (!q || fold(x.title + ' ' + x.artist).indexOf(q) !== -1); });
+    var list = (q ? [] : picked).concat(hits).slice(0, 200);
+    ul.textContent = '';
+    list.forEach(function (x) {
+      var li = document.createElement('li'), b = document.createElement('button'); b.type = 'button';
+      var on = PLP.pick.indexOf(x.id) !== -1; b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      if (x.img) { var im = document.createElement('img'); im.alt = ''; im.loading = 'lazy'; im.src = x.img; im.onerror = function () { im.style.visibility = 'hidden'; }; b.appendChild(im); } else { var ni = document.createElement('span'); ni.className = 'noimg'; b.appendChild(ni); }
+      var t = document.createElement('span'); t.className = 't';
+      var tb = document.createElement('b'); tb.textContent = x.title; t.appendChild(tb);
+      var ta = document.createElement('span'); ta.textContent = [x.artist, x.from].filter(Boolean).join(' · '); t.appendChild(ta);
+      b.appendChild(t);
+      var o = document.createElement('span'); o.className = 'on'; o.textContent = on ? '\u2713' : '+'; b.appendChild(o);
+      b.setAttribute('aria-label', (on ? 'Take ' : 'Add ') + x.title + ' by ' + x.artist);
+      b.addEventListener('click', function () {
+        var i = PLP.pick.indexOf(x.id);
+        if (i === -1) PLP.pick.push(x.id); else PLP.pick.splice(i, 1);
+        plpSongs();
+      });
+      li.appendChild(b); ul.appendChild(li);
+    });
+    var n = PLP.pick.length;
+    document.getElementById('plpn').textContent = (n ? n + (n === 1 ? ' song' : ' songs') + ' in it' : 'Tap songs to add them') + (q ? ' · ' + hits.length + (hits.length === 1 ? ' found' : ' found') : '');
+    document.getElementById('plpsave').disabled = !n;
+  }
+  document.getElementById('plpq').addEventListener('input', plpSongs);
+  document.getElementById('plpsave').addEventListener('click', function () {
+    var b = this, n = document.getElementById('plpname').value.replace(/\s+/g, ' ').trim() || 'My playlist', tracks = PLP.pick.slice();
+    if (!tracks.length) return;
+    b.disabled = true; b.textContent = 'Saving…';
+    plApi({ op: 'save', name: n, tracks: tracks }).then(function (j) {
+      b.disabled = false; b.textContent = 'Save playlist';
+      if (j.status !== 200) { toast(j.error || 'Couldn’t save it just now'); return; }
+      PL.lists = j.lists;
+      songxFetch(tracks.filter(function (t) { return !byTrack[t]; })).catch(function () {}).then(function () { syncFav(); plRender(); });
+      toast('Saved “' + n + '”: it’s on all your devices');
+      plpShow('list'); plpList();
+    }).catch(function () { b.disabled = false; b.textContent = 'Save playlist'; toast('Couldn’t reach the site. Try again.'); });
+  });
+  document.getElementById('plpnew').addEventListener('click', plpMake);
+  document.getElementById('plpback').addEventListener('click', function () { plpShow('list'); plpList(); });
+  document.getElementById('plpimp').addEventListener('click', function () { closeDialog(plPage); impOpen(); });
+  document.getElementById('plpclose').addEventListener('click', function () { closeDialog(plPage); });
+  document.getElementById('plnew').addEventListener('click', plpOpen);
   // each playlist a box that opens it, tapped anywhere (John, 1 Nov 2026: "Can a playlist just be opened by clicking on
   // the whole playlist not just the small open button notifications can be above each box"); its Notifications above it
   function acBox(li, label, open) {
@@ -8466,6 +8653,21 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     note.hidden = !(up || swap);
     if (up) note.textContent = 'Its new songs wait for you to sign them off; the rest keep their days.';
     if (swap) note.textContent = 'It takes the place of “' + h.n + '” on the calendar, with the same people seeing it and the same notifications.' + (MEMBER && MEMBER.fu && MEMBER.fu.n ? ' Your own MP3s and MP4s on “' + h.n + '” go with it.' : '');
+    // more than their allowance (John, 1 Nov 2026: "warn them before import that there are more than their maximum number
+    // of uploads. (Count how many they have left) and say that more will show as videos/ previews but not download"):
+    // the songs that can have MP3s and MP4s across all their playlists (fu.max, 366; fu.u used, from the Worker's plan)
+    var fu = MEMBER && MEMBER.fu, cap = document.getElementById('uplicap');
+    cap.hidden = true;
+    if (fu && fu.max && typeof fu.u === 'number') {
+      var used = Math.max(0, fu.u - (swap ? Math.min(h.cnt || 0, fu.u) : 0)), left = Math.max(0, fu.max - used);   // (a switch frees the songs of the one it replaces)
+      var need = up ? Math.max(0, l.all - (h.cnt || 0)) : Math.min(l.all, IMP_MOST);
+      if (need > left) {
+        cap.hidden = false;
+        cap.textContent = (left ? 'You have ' + left + ' of your ' + fu.max + ' songs with MP3s and MP4s left' : 'You’ve used all ' + fu.max + ' of your songs with MP3s and MP4s')
+          + (up ? ', and this brings in ' + need.toLocaleString('en-GB') + ' new songs. ' : '. This playlist has ' + need.toLocaleString('en-GB') + ' songs. ')
+          + (left ? 'The newest ' + left + ' get their files; the rest' : 'Its songs') + ' still play, as their video or preview, but won’t have MP3s or MP4s to download.';
+      }
+    }
     document.getElementById('upliok').textContent = up ? 'Update it' : swap ? 'Switch to this one' : 'Import';
     document.getElementById('uplino').textContent = IMP.lists && IMP.lists.length > 1 ? 'Choose another' : 'Another file';
     impShow('got');
@@ -9281,6 +9483,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     document.documentElement.classList.toggle('signedin', !!tok);
     var who = document.getElementById('who');
     if (who) { who.hidden = !tok; document.getElementById('whotext').textContent = lab; who.title = lab + ': your playlists, and Sign out'; }
+    var mk = document.getElementById('plnew'); if (mk) mk.hidden = !tok || TV;   // (Create playlist: members, not on the TV)
   }
   var whoBtn = document.getElementById('who');
   if (whoBtn) whoBtn.addEventListener('click', function () { famBtn.click(); });

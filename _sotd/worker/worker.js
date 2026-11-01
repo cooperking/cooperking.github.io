@@ -1707,7 +1707,8 @@ async function memberMe(request, env, answer) {
   const seen = Object.keys(all).filter(k => k !== id && k !== ownerId && hasJoined(all[k]) && !apart(all, id, k)).map(k => ({ id: k, name: all[k].name })).sort(byName);
   const bell = bellView(all, id, await env.SOTD.get('bell:' + id, 'json')).unseen;   // reactions to their messages not yet seen
   const U0 = await uplAll(env), pls = await uplMine(env, uplList(all, id, U0), U0);   // members' own playlists they can see, and their own (with the songs waiting for them)
-  const fu = { n: await uplFileCount(env, id, U0), max: (await env.SOTD.get('owner')) === id ? 0 : UPL_OWN_FILES };   // the songs with their own MP3 or MP4, and the most (0: John's, no limit)
+  const fu = { n: await uplFileCount(env, id, U0), max: (await env.SOTD.get('owner')) === id ? 0 : UPL_OWN_FILES };
+  if (fu.max) { const plan = await uplDlPlan(env, id, U0); if (plan) fu.u = plan.u; }   // (u: their songs with files, or to have them: the allowance used)   // the songs with their own MP3 or MP4, and the most (0: John's, no limit)
   return answer(200, Object.assign({ name: m.name, email: m.email || '', exp, media, see, mycovers, unread, bell, pls, fu, others, seen, msgs: !m.nomsg,
     mute: (m.mute || []).filter(k => seen.some(x => x.id === k)) }, owner ? { owner: true } : {}));
 }
@@ -3385,12 +3386,13 @@ async function ytList(request, url, env) {
   // mp4s"); each to come marked f: 1, each waiting w: 1. Opened in a browser: only the songs out, as members see them.
   const json = url.searchParams.get('f') === 'json';
   const view = await uplView(env, all, json ? rec.o : null, id, rec), J = await ytJohnVids();
+  const plan = json ? await uplDlPlan(env, rec.o, U) : null;   // (beyond its owner's allowance: dl 0, played as video or preview, not downloaded)
   let songs = view.songs;
   if (rec.mode !== 'list') songs = songs.slice().sort((p, q) => p.d < q.d ? 1 : p.d > q.d ? -1 : 0);
   const out = [];
   for (const x of songs) {
     const v = (J[x.id] && J[x.id].v) || ('ov' in x ? x.ov : (x.vid && x.vid.v)) || '';
-    if (v) out.push(Object.assign({ id: x.id, v, a: x.artist || '', t: x.title || '' }, x.f ? { f: 1 } : {}, x.w ? { w: 1 } : {}));
+    if (v) out.push(Object.assign({ id: x.id, v, a: x.artist || '', t: x.title || '' }, x.f ? { f: 1 } : {}, x.w ? { w: 1 } : {}, plan && !plan.allowed.has(x.id) && !plan.john.has(x.id) ? { dl: 0 } : {}));
   }
   if (json) return answer(200, { t: view.n, songs: out });
   if (!out.length) return new Response('No videos on “' + view.n + '” yet.', { status: 404, headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' } });
@@ -3909,6 +3911,24 @@ async function uplFileSongs(env, member, U) {   // the songs they have their own
   return out;
 }
 async function uplFileCount(env, member, U) { return (await uplFileSongs(env, member, U)).size; }
+// which of a member's songs have MP3s and MP4s, or get them (John, 1 Nov 2026: importing more than their allowance
+// "more will show as videos/ previews but not download"): UPL_OWN_FILES songs across all their playlists (not John's
+// songs, which have his), those with files already (their own, or the catalog's from playlist-r2) first, then the
+// newest added. The rest play as their video or preview. { u: how many that is, allowed: Set, john: Set }; null for John.
+async function uplDlPlan(env, member, U) {
+  if ((await env.SOTD.get('owner')) === member) return null;
+  const john = new Set((((await env.SOTD.get('songsLast', 'json')) || {}).songs || []).map(x => x.id));
+  const cat = await catalog(env), own = await uplFileSongs(env, member, U), at = new Map();
+  for (const pid of Object.keys(U)) {
+    if (U[pid].o !== member) continue;
+    const d = await uplSongs(env, pid);
+    for (const x of d.songs || []) if (!uplGone(d, x) && !john.has(x.id) && !at.has(x.id)) at.set(x.id, Date.parse(x.a) || 0);
+  }
+  const ids = [...at.keys()], has = ids.filter(t => own.has(t) || (cat[t] && (cat[t].a || cat[t].v)));
+  const hs = new Set(has), rest = ids.filter(t => !hs.has(t)).sort((a, b) => at.get(b) - at.get(a));
+  const allowed = new Set(has.concat(rest.slice(0, Math.max(0, UPL_OWN_FILES - has.length))));
+  return { u: Math.min(UPL_OWN_FILES, ids.length), allowed, john };
+}
 function uplFilesFull() { return 'That’s ' + UPL_OWN_FILES + ' songs with your own MP3 or MP4, the most. Take the files off a song to add another.'; }
 const UPL_FILE_MAX = { a: 80e6, v: 1500e6 }, UPL_PARTS_MAX = { a: 10, v: 40 }, UPL_COVER_MAX = 1.5e6;   // (the page sends parts of 10 MB or more, 38 at most)
 function uplTooBig(kind) { return 'That’s too big: ' + (kind === 'a' ? 'an MP3' : 'an MP4') + ' can be ' + Math.round(UPL_FILE_MAX[kind] / 1e6) + ' MB at most.'; }

@@ -514,6 +514,18 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   release date (`rd`: from Spotify's read, or Exportify's Album Release Date column), which years.py uses as it uses
   John's export, so they have a year at once (MusicBrainz's earlier first release still wins). A Spotify playlist
   whose only change is the dates gains them quietly; an Exportify playlist gains them with a fresh file.
+- **Each member's allowance, and the warning before an import** (John, 1 Nov 2026: "Can importing more than a members
+  allocation warn them before import that there are more than their number maximum number of uploads. (Count how many
+  they have left) and say that more will show as videos/ previews but not download"): the songs that can have MP3s and
+  MP4s are `UPL_OWN_FILES` (366) across all a member's playlists, not counting John's songs (`uplDlPlan`: those with
+  files already, their own or the catalog's, first, then the newest added). `/yt/<id>?f=json` marks the rest `dl: 0`,
+  which playlist-r2 doesn't download; they play as their video or preview. `/members/me` gives `fu.u` (how many that
+  is), and Import from Spotify warns when a playlist would go over: how many they have left, and what happens to the rest.
+- **Create playlist, beside Signed in as** (John, 1 Nov 2026): members' Your playlists page (`#plpage`): their
+  playlists as on the Profile (each opens as before), New playlist (a name, and songs found by title or artist from
+  every calendar and playlist they can see, John's and `otherLoad`'s, tapped to add; saved as one of their saved
+  playlists, on all their devices), Import from Spotify, and Select: tick any or Select all, then Delete (saved
+  playlists deleted, calendar ones removed, after asking). Not on the TV.
 - **Edit, on their own calendar or playlist** (John, 1 Nov 2026: "Could there be a noticeable edit button on my
   playlists. it shows all the edit options for the calendar from the calendar too, same with if it's a playlist"): a
   filled Edit button by the calendar (a playlist: above its list), for its owner, in place of Edit days. It opens its
