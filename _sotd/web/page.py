@@ -86,6 +86,25 @@ def build(draft):
     return target, html
 
 
+SHARE_ACCEPT = ['.zip', '.csv', 'application/zip', 'application/x-zip-compressed', 'text/csv', 'text/comma-separated-values']
+
+
+def share_target(folder):
+    """The calendar's manifest gets the share sheet's way in (an Exportify .zip or .csv, for Import from Spotify: sw.js
+    takes it), written with the page it goes with, so the live calendar's only once it's published."""
+    import json
+    path = os.path.join(folder, 'manifest.webmanifest')
+    if not os.path.exists(path):
+        return
+    s = open(path, encoding='utf-8').read()
+    m = json.loads(s)
+    want = {'action': m.get('scope', '/songs/') + 'share-target', 'method': 'POST', 'enctype': 'multipart/form-data',
+            'params': {'title': 'name', 'files': [{'name': 'file', 'accept': SHARE_ACCEPT}]}}
+    if m.get('share_target') != want:
+        m['share_target'] = want
+        open(path, 'w', encoding='utf-8').write(json.dumps(m, indent=2, ensure_ascii=False) + '\n')
+
+
 def main(args):
     sw = open(os.path.join(HERE, 'sw.js'), encoding='utf-8').read()
     if '--check' in args:
@@ -101,6 +120,7 @@ def main(args):
     target, html = build('--live' not in args)
     open(target, 'w', encoding='utf-8').write(html)
     open(os.path.join(os.path.dirname(target), 'sw.js'), 'w', encoding='utf-8').write(sw)
+    share_target(os.path.dirname(target))
     print('wrote', os.path.relpath(target, os.path.dirname(SONGS)), '(%d KB)' % (len(html) // 1024), 'and its sw.js')
 
 

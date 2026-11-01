@@ -2872,6 +2872,7 @@ function uplCsvSongs(list) {   // the songs as the page sends them, made safe: [
   }
   return out;
 }
+function uplFileKey(f) { return String(f || '').toLowerCase().replace(/\.csv$/, '').replace(/\s*\(\d+\)$/, '').replace(/[^\p{L}\p{N}]+/gu, '_').replace(/^_+|_+$/g, '').slice(0, 120); }   // Exportify's file for it (road_trip.csv): a fresh export's same file is the same playlist
 async function uplAll(env) { return (await env.SOTD.get('upls', 'json')) || {}; }
 async function uplSongs(env, pid) { return (await env.SOTD.get('upl:' + pid, 'json')) || { songs: [], rel: {} }; }
 // a saved playlist made a calendar or shared playlist (src 'mpl', pl: the saved playlist's id): its songs follow it.
@@ -2941,7 +2942,7 @@ function uplCan(all, viewer, rec) {   // whether someone sees this playlist (vie
 }
 function uplList(all, viewer, U) {   // the playlists a member can switch to (/members/me pls)
   return Object.entries(U).filter(([, r]) => uplCan(all, viewer, r))
-    .map(([pid, r]) => Object.assign({ id: pid, n: uplName(all, r), t: uplTitle(all, r), o: all[r.o].name, mode: r.mode, cnt: r.cnt || 0, sp: r.sp, src: uplSrc(r), sh: uplShareOf(r) }, r.yt ? { yt: r.yt } : {}, r.o === viewer ? { mine: true, pl: r.pl || '', st: r.st, err: r.err || '', sn: r.n || '', to: uplShareOf(r) === 'some' ? r.to || [] : [], dates: r.mode === 'list' ? null : Object.assign({ how: 'added' }, r.dates || {}), send: uplSendOf(r) } : {}))
+    .map(([pid, r]) => Object.assign({ id: pid, n: uplName(all, r), t: uplTitle(all, r), o: all[r.o].name, mode: r.mode, cnt: r.cnt || 0, sp: r.sp, src: uplSrc(r), sh: uplShareOf(r) }, r.yt ? { yt: r.yt } : {}, r.o === viewer ? { mine: true, pl: r.pl || '', fk: r.fk || '', st: r.st, err: r.err || '', sn: r.n || '', to: uplShareOf(r) === 'some' ? r.to || [] : [], dates: r.mode === 'list' ? null : Object.assign({ how: 'added' }, r.dates || {}), send: uplSendOf(r) } : {}))
     .sort((a, b) => (b.mine ? 1 : 0) - (a.mine ? 1 : 0) || a.o.localeCompare(b.o) || a.n.localeCompare(b.n));
 }
 async function uplMine(env, pls, U) {   // their own playlists' songs waiting for them to sign off (wait: the newest 20, oldest first)
@@ -3298,10 +3299,15 @@ async function memberUpl(request, url, env, answer) {
   if (body.op === 'csv') {   // one of their Spotify playlists from an Exportify file
     const items = uplCsvSongs(body.songs);
     if (!items || !items.length) return answer(400, { error: 'No songs in that file. Choose the file Exportify saved for your playlist.' });
-    if (Object.values(U).some(r => r.o === me && r.src === 'csv')) return answer(400, { error: 'You have an import already. Update it, or remove it to import another.' });   // (one at a time: John, 1 Nov 2026)
+    // one at a time (John, 1 Nov 2026): another playlist takes the place of theirs (replace: its id), keeping who sees it and its notifications
+    const had = Object.entries(U).find(([, r]) => r.o === me && r.src === 'csv');
+    if (had && String(body.replace || '') !== had[0]) return answer(400, { error: 'You have an import already. Choose it to update it, or another to take its place.' });
+    const keep = had ? { share: had[1].share, to: had[1].to, send: had[1].send } : {};
+    if (had) { await uplDrop(env, [had[0]]); delete U[had[0]]; }
     if (Object.values(U).filter(r => r.o === me && r.src !== 'mpl').length >= UPL_MAX) return answer(400, { error: 'That’s ' + UPL_MAX + ' playlists, the most you can add.' });
     const now = Date.now(), newest = Math.max.apply(null, items.map(x => Date.parse(x.a)));
-    const pid = randomCode(10), rec = { o: me, src: 'csv', sp: '', n: String(body.name || '').replace(/\s+/g, ' ').trim().slice(0, 80) || 'My playlist', mode: body.mode === 'list' ? 'list' : 'cal', at: now, base: Math.max(newest, 0), st: 'ok' };
+    const pid = randomCode(10), rec = { o: me, src: 'csv', sp: '', n: String(body.name || '').replace(/\s+/g, ' ').trim().slice(0, 80) || 'My playlist', fk: uplFileKey(body.file), mode: body.mode === 'list' ? 'list' : 'cal', at: now, base: Math.max(newest, 0), st: 'ok' };
+    for (const k of Object.keys(keep)) if (keep[k] !== undefined) rec[k] = keep[k];
     U[pid] = rec;
     await uplTake(env, pid, rec, U, items, 'new', now, true);
     return answer(200, { ok: true, id: pid, st: 'ok', pls: await uplMine(env, uplList(all, me, U), U), view: await uplView(env, all, me, pid, rec) });
@@ -3336,6 +3342,7 @@ async function memberUpl(request, url, env, answer) {
     if (rec.src !== 'csv') return answer(400, { error: 'That one is read from Spotify by itself.' });
     const items = uplCsvSongs(body.songs);
     if (!items || !items.length) return answer(400, { error: 'No songs in that file. Choose the file Exportify saved for your playlist.' });
+    if (body.file) rec.fk = uplFileKey(body.file);
     const r = await uplTake(env, pid, rec, U, items, rec.st, Date.now(), true);
     return answer(200, { ok: true, fresh: r.fresh, cnt: rec.cnt, pls: await uplMine(env, uplList(all, me, U), U), view: await uplView(env, all, me, pid, rec) });
   }

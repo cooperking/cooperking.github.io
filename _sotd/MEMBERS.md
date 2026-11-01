@@ -259,25 +259,34 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   playlists* signed in to Spotify as cooperking, joins it, and taps *I've joined: check*. The Worker also looks every
   10 minutes for its first day, then hourly. Once readable it's read every 30 minutes from 06:00 to 23:00, and when its
   owner taps *Check now* (once a minute at most).
-- **Importing one from Exportify, no collaboration** (John, 1 Nov 2026: "find a way to import playlists from users
-  without collaborating on an individual playlist", and "a way for the exportify to look less like leaving the app"):
-  Profile › Playlists › *Import from Spotify* opens two steps. *Open Exportify* shows exportify.app over the calendar
-  (the iPhone app's own browser sheet, Capacitor's Browser plugin, from the first build with it; the Android app's own
-  view, coming back to the page; a pop-up window on a computer; else a tab). The member signs in to Spotify there, which
-  reads the playlist with their own sign-in (so private ones too), and taps *Export*: a CSV file. Coming back moves on to
-  *Choose the file* (within 30 minutes, a page opened again comes back to it: `sotd-imp` in local storage). The page reads
-  the file (`csvSongs`: the columns found by what's in them, as Exportify's headings follow the member's language; local
-  files and episodes left out), shows how many songs and the latest, then a name (from the file's) and *A calendar* or
-  *A playlist*. The Worker keeps it as `src: 'csv'` (op `csv`, `UPL_CSV_MOST` 10,000 songs, Spotify's own most for a playlist: no other limit on songs, only on songs with their own files; the songs checked by
-  `uplCsvSongs`), readable at once; days, sign-off, sharing and the rest are as a Spotify one's. It's a snapshot: *Update*
-  (Profile) or *Update from Exportify* (the pop-up) takes a fresh export (op `csvup`): new songs wait for sign-off, the
-  others keep their days, and songs gone from it go from the calendar. One import at a time (John, 1 Nov 2026): with one already, *Import from Spotify* offers
-  *Update it* or *Remove it* (and the Worker refuses a second). Step 1 says where Exportify opens: over the calendar in
-  the apps and from the Home Screen icon, a small window on a computer, a new tab in a phone's browser (a website can't
-  show another site, with Spotify's sign-in, over itself; opening it in the same tab would leave Back going through
-  Spotify's sign-in pages). No *Open in Spotify* (the file doesn't say which
-  playlist it is) and no *Check now*. The collaboration way stays, under the steps ("Or keep it in step with Spotify by
-  itself"). Tests: `csv_t.mjs` (the Worker), `imp_page_t.js` (the draft).
+- **Importing from Exportify, no collaboration** (John, 1 Nov 2026: "find a way to import playlists from users without
+  collaborating on an individual playlist", "a way for the exportify to look less like leaving the app", then "it comes
+  as a zip. Can we add the ability to upload the zip. The user then selects their playlist... make it look appealing"):
+  Profile › Playlists › *Import from Spotify* opens two steps. *Open Exportify* shows exportify.app over the calendar (the
+  iPhone app's own browser sheet, Capacitor's Browser plugin; the Android app's own view, coming back to the page; a
+  pop-up window on a computer; a new tab in a phone's browser, which can't show another site with Spotify's sign-in over
+  itself). There the member signs in to Spotify, which reads their playlists with their own sign-in (private ones too),
+  and taps *Export all* (a .zip of CSV files) or *Export* by one (a .csv). Coming back moves on to *Choose the file*
+  (within 30 minutes, a page opened again comes back to it: `sotd-imp` in local storage). The page reads either: a zip
+  with no library (`unzip`: stored files, or squeezed ones with the browser's DecompressionStream), each CSV's songs by
+  what's in its columns (`csvSongs`: Exportify's headings follow the member's language; local files, episodes and saved
+  albums left out). A zip's playlists show as cards to choose from (a mosaic of their newest covers, name, song count;
+  a search over six), theirs on the calendar first and marked, then the most lately added to; one playlist goes straight
+  to what happens. **One at a time, no warning**: choosing theirs again (the same Exportify file, `fk` on its record)
+  says *Update* (op `csvup`: new songs wait for sign-off, the others keep their days, songs gone from it go); choosing
+  another says *Switch* and that it takes the place of theirs (op `csv` with `replace`: the old one goes, with its own
+  files, and the new one keeps who sees it and its notifications); with none, *New* (a name and calendar or playlist).
+  The Worker keeps it as `src: 'csv'` (`UPL_CSV_MOST` 10,000 songs, Spotify's own most for a playlist: no other limit on
+  songs, only on songs with their own files; the songs checked by `uplCsvSongs`). No *Open in Spotify* (the file doesn't
+  say which playlist it is) and no *Check now*. The collaboration way stays under the steps, for a member with no import.
+  **Opening the download with the apps**: Android (the Play and website apps, and the calendar installed from Chrome)
+  lists Song of the Day in the share sheet for .zip and .csv (the manifest's `share_target`, written by `page.py` with
+  each calendar, so the live one's only once published; the service worker keeps the file and opens `?shared=1`; the
+  Android app needs a build after that, Bubblewrap taking it from the live manifest). The iPhone app (build 28 on) is in
+  Open in for them (`CFBundleDocumentTypes` in `customise.sh`), and its `SotdFiles` plugin reads the file iOS hands it
+  (from Capacitor's App plugin: `appUrlOpen` or `getLaunchUrl`). Either way it opens Import from Spotify at its
+  playlists. Tests: `csv_t.mjs` (the Worker), `zip_t.js` (the draft: both kinds of zip, the picker, update, switch, one
+  CSV, a shared file).
 - **Their own MP3s and MP4s: on 366 songs at most** (John, 1 Nov 2026: "theoretically they can have 366 MP3s and 366
   mp4s. But it's limited to 366 songs total. So if they have a track with an mp3 they can also add an mp4"): counted
   across all their playlists, a song once whether it has an MP3, an MP4 or both (covers don't count). Taking both files

@@ -9,6 +9,7 @@
 #  - no export-compliance question in App Store Connect (only standard HTTPS); the icon; the name under the icon
 #  - the app's own native parts (native/): Chromecast (Google's Cast kit, which asks once for the local network), Siri,
 #    the Home Screen widget and the notifications' pictures, put into the project by native/project.rb
+#  - Open in for .zip and .csv files (Exportify's download, for Import from Spotify)
 #  - light status bar text, on the calendar's dark colours
 set -euo pipefail
 cd "$(dirname "$0")"
@@ -29,6 +30,19 @@ pb "Delete :NSLocalNetworkUsageDescription" 2>/dev/null || true
 pb "Add :NSLocalNetworkUsageDescription string Song of the Day looks on your Wi-Fi for Chromecasts and Google speakers, so you can play songs on them."
 pb "Delete :NSBonjourServices" 2>/dev/null || true
 pb "Add :NSBonjourServices array"; pb "Add :NSBonjourServices:0 string _googlecast._tcp"; pb "Add :NSBonjourServices:1 string _CC1AD845._googlecast._tcp"
+# Open in: the app is listed for .zip and .csv files (Exportify's download, for Import from Spotify; SotdFiles reads it).
+# A copy comes to the app (not opened in place).
+pb "Delete :CFBundleDocumentTypes" 2>/dev/null || true
+pb "Add :CFBundleDocumentTypes array"
+pb "Add :CFBundleDocumentTypes:0 dict"
+pb "Add :CFBundleDocumentTypes:0:CFBundleTypeName string Spotify playlists from Exportify"
+pb "Add :CFBundleDocumentTypes:0:CFBundleTypeRole string Viewer"
+pb "Add :CFBundleDocumentTypes:0:LSHandlerRank string Alternate"
+pb "Add :CFBundleDocumentTypes:0:LSItemContentTypes array"
+pb "Add :CFBundleDocumentTypes:0:LSItemContentTypes:0 string public.zip-archive"
+pb "Add :CFBundleDocumentTypes:0:LSItemContentTypes:1 string public.comma-separated-values-text"
+pb "Delete :LSSupportsOpeningDocumentsInPlace" 2>/dev/null || true
+pb "Add :LSSupportsOpeningDocumentsInPlace bool false"
 
 cat > ios/App/App/App.entitlements <<'X'
 <?xml version="1.0" encoding="UTF-8"?>
