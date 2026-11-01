@@ -80,6 +80,7 @@ def main():
     songs = get(SONGS_URL, {'User-Agent': UA['User-Agent']})['songs']
     twin = twins.finder(songs, lambda t: t in data['songs'])
     todo = [s for s in songs if s['id'] not in data['songs'] and not (s.get('upl') and twin(s['id']))]   # (a member's copy of a song looked up already: make_tags.py uses that)
+    todo = [s for s in todo if not s.get('upl')] + [s for s in todo if s.get('upl')][:150]   # (members' songs a run at most, John's always: a big playlist done over several runs, each one saving, not one run for hours: John, 1 Nov 2026)
     print(f'{len(todo)} songs to look up on MusicBrainz')
     for s in todo:
         e = lookup(s)

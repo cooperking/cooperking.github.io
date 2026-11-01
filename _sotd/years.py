@@ -139,6 +139,7 @@ def main():
         ys = [y for y in (e.get('mb'), e.get('sp')) if y and y > 1900]
         return min(ys) if ys else None
     twin = twins.finder(feed['songs'], lambda t: bool(year_of(t)))
+    MEMBERS_RUN, mlooked = 150, 0   # (members' songs a run at most, John's always: a big playlist done over several runs, each one saving, not one run for hours: John, 1 Nov 2026)
     for s in feed['songs']:
         e = data['songs'].get(s['id'])
         # a member's song with its album's release date (Exportify's file, Spotify's read): that's its year, with no
@@ -156,6 +157,10 @@ def main():
         if e and (e.get('mb') or (e.get('sp') and e.get('v', 1) >= VERSION
                                   and (today - datetime.date.fromisoformat(e.get('checked', '2000-01-01'))).days < RETRY_DAYS)):
             continue
+        if s.get('upl'):
+            if mlooked >= MEMBERS_RUN:
+                continue
+            mlooked += 1
         mb, note = mb_year(s)
         if note == 'no answer':   # MusicBrainz didn't answer: try again next run
             continue

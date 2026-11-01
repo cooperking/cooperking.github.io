@@ -97,6 +97,7 @@ def main():
     todo = [s for s in songs if now - cache.get(s['id'], {}).get('at', 0) > (MAX_AGE if cache.get(s['id'], {}).get('track') else MAX_AGE / 4)]
     twin = twins.finder(songs, lambda t: bool(cache.get(t, {}).get('track')))
     todo = [s for s in todo if not (s.get('upl') and s['id'] not in cache and twin(s['id']))]   # (a member's copy of a song with tags already: make_tags.py uses those)
+    todo = [s for s in todo if not s.get('upl')] + [s for s in todo if s.get('upl')][:300]   # (members' songs a run at most, John's always: a big playlist done over several runs, each one saving, not one run for hours: John, 1 Nov 2026)
     print(f'{len(todo)} songs to fetch listener tags for')
     artists = {}
     for s in todo:

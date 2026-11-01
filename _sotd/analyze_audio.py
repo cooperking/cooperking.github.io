@@ -94,6 +94,7 @@ def main():
     twin = twins.finder(songs, lambda t: t in done)
     todo = [s for s in songs if redo or s['id'] not in done or done[s['id']].get('preview') != s['preview']]
     todo = [s for s in todo if redo or not (s.get('upl') and s['id'] not in done and twin(s['id']))]   # (a member's copy of a song listened to already: make_tags.py uses that)
+    todo = [s for s in todo if not s.get('upl')] + [s for s in todo if s.get('upl')][:150]   # (members' songs a run at most, John's always: a big playlist done over several runs, each one saving, not one run for hours: John, 1 Nov 2026)
     print(f'{len(songs)} songs with previews, {len(todo)} to analyse')
     if '--check' in sys.argv:
         gh = os.environ.get('GITHUB_OUTPUT')

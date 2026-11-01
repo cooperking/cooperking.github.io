@@ -617,6 +617,11 @@ body.dropping::after { content: 'Drop to match them (nothing goes up yet)'; posi
   }
   function pushLoad() { return api('/upl/links', {}).then(function (j) { if (j.status === 200) { PUSH = {}; (j.links || []).forEach(function (l) { PUSH[l.id] = l.link; }); if (show === 'members') ptilesDraw(); } }).catch(function () {}); }
   function twice(b, say) { if (b._armed) { b._armed = false; return true; } var was = b.textContent; b._armed = true; b.textContent = say; setTimeout(function () { b._armed = false; b.textContent = was; }, 4000); return false; }
+  function dayRule(d) {   // which day each song is on, as its owner chose (so John can see why its calendar looks as it does)
+    if (!d) return '';
+    var day = d.day ? new Date(d.day + 'T12:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+    return d.how === 'fwd' ? ' · a song a day from ' + day : d.how === 'back' ? ' · a song a day back from ' + day : ' · each on the day it was added';
+  }
   function ptilesDraw() {
     var ul = $('ptiles'); ul.hidden = show !== 'members' || !UPLS.length; ul.textContent = '';
     if (ul.hidden) return;
@@ -633,7 +638,7 @@ body.dropping::after { content: 'Drop to match them (nothing goes up yet)'; posi
       else if (u.st === 'join') pic.appendChild(el('span', 'badge', 'Join it'));
       tile.appendChild(pic);
       tile.appendChild(el('span', 'nm', u.n));
-      tile.appendChild(el('span', 'st', u.o + '’s ' + (u.mode === 'list' ? 'playlist' : 'calendar') + ' · ' + (u.cnt || 0) + (u.cnt === 1 ? ' song' : ' songs') + ' · ' + (u.sh === 'public' ? 'public' : u.sh === 'private' ? 'private' : u.sh === 'some' ? u.shn + ' chosen' : 'every member') + (u.src === 'csv' ? ' · Exportify' : u.src === 'mpl' ? ' · made on the calendar' : '')));
+      tile.appendChild(el('span', 'st', u.o + '’s ' + (u.mode === 'list' ? 'playlist' : 'calendar') + ' · ' + (u.cnt || 0) + (u.cnt === 1 ? ' song' : ' songs') + ' · ' + (u.sh === 'public' ? 'public' : u.sh === 'private' ? 'private' : u.sh === 'some' ? u.shn + ' chosen' : 'every member') + (u.src === 'csv' ? ' · Exportify' : u.src === 'mpl' ? ' · made on the calendar' : '') + dayRule(u.dates)));
       tile.addEventListener('click', function () { PSEL = PSEL === u.id ? null : u.id; LIMIT = 60; render(); });
       li.appendChild(tile);
       if (coming) {

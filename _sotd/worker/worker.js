@@ -3208,7 +3208,7 @@ async function uplMine(env, pls, U) {   // their own playlists' songs waiting fo
 }
 function uplAdmin(all, U) {   // the Members tab: every playlist, whose, and whether John has joined it
   return Object.entries(U).map(([pid, r]) => ({ id: pid, n: uplName(all, r), o: (all[r.o] && all[r.o].name) || '?', oid: r.o, mode: r.mode, src: uplSrc(r), st: r.st, err: r.err || '', link: r.link || '',
-    sp: r.sp, at: r.at, read: r.read || null, cnt: r.cnt || 0, sh: uplShareOf(r), shn: uplShareOf(r) === 'some' ? (r.to || []).length : 0 })).sort((a, b) => (a.st === 'join' ? 0 : 1) - (b.st === 'join' ? 0 : 1) || b.at - a.at);
+    sp: r.sp, at: r.at, read: r.read || null, cnt: r.cnt || 0, sh: uplShareOf(r), shn: uplShareOf(r) === 'some' ? (r.to || []).length : 0, dates: r.mode === 'list' ? null : Object.assign({ how: 'added' }, r.dates || {}) })).sort((a, b) => (a.st === 'join' ? 0 : 1) - (b.st === 'join' ? 0 : 1) || b.at - a.at);
 }
 // the Members tab, as the calendar's Calendars page shows them (John, 1 Nov 2026: "Can my admin view of members playlists
 // be like the picture view from the calendar"): each one's picture (pic: its owner's, else cv: its newest four covers),
@@ -3601,8 +3601,9 @@ async function uplView(env, all, viewer, pid, rec, also) {   // (also: tracks wa
   const JV = await ytJohnVids(), JY = await johnYears();   // (a song John's calendar has too: its video and year from there, found already, never looked for again: John, 1 Nov 2026)
   const ed = data.ed || {}, files = data.files || {}, see = mine ? { a: true, v: true } : viewer && all[viewer] ? mediaFor(all[viewer]) : { a: false, v: false }, exp = Math.floor(Date.now() / 1000) + LINK_HOURS * 3600;
   const gone = new Set((data.songs || []).filter(x => uplGone(data, x) && !(also && also.has(x.id))).map(x => x.id));
+  const adm = !mine && !!viewer && (await env.SOTD.get('owner')) === viewer;
   let songs = composeSongs(data.songs || [], pv, tags).map((x, i) => Object.assign(x, { d: days[i].d }, uplWaiting(rec, data, data.songs[i]) ? { w: 1 } : {}, days[i].d > today ? { f: 1 } : {}))
-    .filter(x => !gone.has(x.id) && (mine || (!x.w && !x.f)));
+    .filter(x => !gone.has(x.id) && (mine || adm ? (mine || !x.w) : (!x.w && !x.f)));   // (John, the site's owner: its songs still to come too, faded, as its owner sees them: John, 1 Nov 2026)
   for (const x of songs) {   // what the site job found (vid: the video, mt: moods and genres, yr: the year), its owner's choices (ov: the video, '' none; tg: moods and genres), files (ma, mv; own: theirs, with sizes) and cover (uc)
     const e = ed[x.id], f = files[x.id], m = meta[x.id];
     if (m) { if (m.vid) x.vid = m.vid; if (m.mt) x.mt = m.mt; if (m.yr) x.yr = m.yr; }
@@ -3648,7 +3649,7 @@ async function uplView(env, all, viewer, pid, rec, also) {   // (also: tracks wa
       left: { p: ids(all2.filter(pvLeft)), v: ids(leftOf('v')), m: ids(leftOf('m')), y: ids(leftOf('y')) },   // (still to look for: which, each one's look can be stopped)
       fa: songs.filter(x => x.ma || (x.own && x.own.a) || (x.jf && x.jf.a)).length, fv: songs.filter(x => x.mv || (x.own && x.own.v) || (x.jf && x.jf.v)).length, ch: rec.ch || rec.at || 0 };
   }
-  return { id: pid, n: uplName(all, rec), t: uplTitle(all, rec), o: all[rec.o].name, mine, mode: rec.mode, sp: rec.sp, src: uplSrc(rec), yt: rec.yt || '', st: rec.st, at: data.at || null, sh: uplShareOf(rec),
+  return { id: pid, n: uplName(all, rec), t: uplTitle(all, rec), o: all[rec.o].name, mine, admin: adm || undefined, mode: rec.mode, sp: rec.sp, src: uplSrc(rec), yt: rec.yt || '', st: rec.st, at: data.at || null, sh: uplShareOf(rec),
     dates: rec.mode === 'list' ? null : Object.assign({ how: 'added' }, rec.dates || {}), send: mine ? uplSendOf(rec) : undefined, prog, songs };
 }
 // /members/upl: GET ?id= one playlist to show; POST { op: 'add', link, mode } | { op: 'csv', name, mode, songs } (from an

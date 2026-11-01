@@ -514,11 +514,15 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   release date (`rd`: from Spotify's read, or Exportify's Album Release Date column), which years.py uses as it uses
   John's export, so they have a year at once (MusicBrainz's earlier first release still wins). A Spotify playlist
   whose only change is the dates gains them quietly; an Exportify playlist gains them with a fresh file.
-- **Swiping over empty months** (John, 1 Nov 2026, Camilla's calendar: "I can't swipe back to songs, perhaps because
-  they're empty months"): a swipe and the arrows go to the next month that way with a song in it (`monthTo`), stopping
-  at this month too; the months' strip still goes to any. And song-tags.yml no longer starts on a push of only the
-  calendar page, the Worker, the notes or the Playlist push script: those don't need it, and each such push bumped the
-  run waiting to start, so members' playlists went unprepared for an evening.
+- **Every month swiped, John sees the whole of a member's calendar, and big playlists in batches** (John, 1 Nov 2026,
+  Camilla's calendar: "I don't want it to skip empty months, just to be able to swipe through each month to the start of
+  the playlist"; "there's no way it's just those two months"): a swipe and the arrows go month by month again, empty ones
+  too, back to its first month. John (the site's owner) sees a member's songs still to come, faded and marked To come,
+  as its owner does (`uplView` `adm`, `view.admin`). The Songs tab's tiles say each one's day rule (each on the day
+  added; a song a day from or back from a day). And a big import no longer holds a site job for hours: members' songs
+  are looked up in batches a run (years and MusicBrainz genres 150, the listening 150, Last.fm 300; John's always), so
+  each run finishes and saves, and the hourly runs work through the rest. song-tags.yml also no longer starts on a push
+  of only the page, the Worker, the notes or the Playlist push script.
 - **As many Exportify imports as they like** (John, 1 Nov 2026: an Exportify playlist said "this will take the place of
   your … playlist"): the one-at-a-time rule is gone. Each playlist in a download is matched to their own import from the
   same file (`impMineOf`, by its file's name): one of theirs says Update (its new songs), any other New, beside theirs.
