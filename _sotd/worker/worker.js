@@ -1306,7 +1306,7 @@ async function memberSongs(request, url, env, answer) {   // GET ?ids=a,b: songs
   if (!ids.size) return answer(200, { songs: out });
   for (const [pid, rec] of Object.entries(await uplAll(env))) {
     if (!uplCan(all, me, rec) || !((await uplSongs(env, pid)).songs || []).some(x => ids.has(x.id))) continue;
-    const v = await uplView(env, all, me, pid, rec);
+    const v = await uplView(env, all, me, pid, rec, ids);
     for (const x of v.songs) if (ids.has(x.id) && !out[x.id]) out[x.id] = Object.assign(x, { upl: pid, ut: v.t, un: v.n, ush: v.sh });
   }
   return answer(200, { songs: out });
@@ -2113,7 +2113,7 @@ async function memberPlaylists(request, env, answer) {
   const body = await request.json().catch(() => ({}));
   if (body.op === 'delete') {
     const i = lists.findIndex(l => l.id === body.id);
-    if (i >= 0) { const [l] = lists.splice(i, 1); await env.SOTD.put(key, JSON.stringify(lists)); await uplListSaved(env, id, l, true); }
+    if (i >= 0) { const [l] = lists.splice(i, 1); await env.SOTD.put(key, JSON.stringify(lists)); await uplListSaved(env, id, l, true); await uplSavedTidy(env, l.tracks || []); }
     return answer(200, { ok: true, lists: sorted() });
   }
   if (body.op !== 'save') return answer(400, { error: 'Say save or delete.' });
@@ -2124,9 +2124,11 @@ async function memberPlaylists(request, env, answer) {
     if (lists.length >= PLAYLISTS_MAX) return answer(400, { error: 'That’s the most playlists you can keep (' + PLAYLISTS_MAX + '). Delete one first.' });
     list = { id: randomCode(9) }; lists.push(list);
   }
+  const was = list.tracks || [];
   Object.assign(list, { name, tracks, at: Date.now() });
   await env.SOTD.put(key, JSON.stringify(lists));
   await uplListSaved(env, id, list);
+  await uplSavedTidy(env, was.filter(t => !tracks.includes(t)));   // (songs taken off it: files kept only for it, on playlists they've gone from, deleted)
   return answer(200, { list, lists: sorted() });
 }
 
@@ -2986,7 +2988,9 @@ async function uplListSync(env, pid, rec, l, now) {   // its songs as the saved 
     data.songs.push(y); have.set(t, y); changed = true;
   }
   const inList = new Set(want);
-  for (const x of data.songs) if (!inList.has(x.id) && data.del[x.id] !== x.a) { data.del[x.id] = x.a; changed = true; }
+  const off = [];
+  for (const x of data.songs) if (!inList.has(x.id) && data.del[x.id] !== x.a) { data.del[x.id] = x.a; off.push(x.id); changed = true; }
+  if (off.length) await uplFilesGone(env, pid, data, off);   // (their files too, unless saved to a playlist elsewhere)
   const order = want.filter(t => have.has(t));
   if (JSON.stringify(order) !== JSON.stringify(data.order || [])) { data.order = order; changed = true; }
   if (changed) { data.at = new Date(now).toISOString(); await env.SOTD.put('upl:' + pid, JSON.stringify(data)); rec.chg = 1; }
@@ -3095,7 +3099,9 @@ async function uplTake(env, pid, rec, U, items, was, now, quiet) {   // its song
   const fresh = items.filter(x => !had.has(x.id) && Date.parse(x.a) > (rec.base || 0) && !(data.rel || {})[x.id]);
   const changed = JSON.stringify(items) !== JSON.stringify(data.songs);
   if (changed) {
+    const keep = new Set(items.map(x => x.id)), off = (data.songs || []).map(x => x.id).filter(t => !keep.has(t));
     data.songs = items; data.at = new Date(now).toISOString(); data.rel = data.rel || {};
+    if (off.length) await uplFilesGone(env, pid, data, off);   // (songs no longer on it: their files too, unless saved to a playlist elsewhere)
     await env.SOTD.put('upl:' + pid, JSON.stringify(data));
     rec.ch = now;   // (the site job comes back hourly for a while: uplLook)
   }
@@ -3312,7 +3318,7 @@ async function uplFactsIn(request, env) {   // POST the facts task's _sotd/data/
   }
   return answer(200, { ok: true, added: n });
 }
-async function uplView(env, all, viewer, pid, rec) {   // a playlist as the calendar takes it: its songs (out ones; its owner, all, the waiting marked w and the days to come f)
+async function uplView(env, all, viewer, pid, rec, also) {   // (also: tracks wanted even if taken off, for memberSongs: saved to a playlist elsewhere)   // a playlist as the calendar takes it: its songs (out ones; its owner, all, the waiting marked w and the days to come f)
   const data = await uplSongs(env, pid), mine = !!viewer && rec.o === viewer, today = londonDay();
   const pv = Object.assign({}, pvMem, (await env.SOTD.get('previews', 'json')) || {});
   const tags = (await env.SOTD.get('tags', 'json')) || {};
@@ -3320,7 +3326,7 @@ async function uplView(env, all, viewer, pid, rec) {   // a playlist as the cale
   const meta = (await env.SOTD.get('uplmeta', 'json')) || {}, facts = (await env.SOTD.get('ufacts:' + pid, 'json')) || {}, wanted = new Set(uplShareOf(rec) === 'public' ? uplFactsWanted(rec, data) : []);
   const cat = await catalog(env), J = await uplJohnAll(env);   // John's own (the Songs tab's): a song's that he has, its owner's of that kind aren't used
   const ed = data.ed || {}, files = data.files || {}, see = mine ? { a: true, v: true } : viewer && all[viewer] ? mediaFor(all[viewer]) : { a: false, v: false }, exp = Math.floor(Date.now() / 1000) + LINK_HOURS * 3600;
-  const gone = new Set((data.songs || []).filter(x => uplGone(data, x)).map(x => x.id));
+  const gone = new Set((data.songs || []).filter(x => uplGone(data, x) && !(also && also.has(x.id))).map(x => x.id));
   let songs = composeSongs(data.songs || [], pv, tags).map((x, i) => Object.assign(x, { d: days[i].d }, uplWaiting(rec, data, data.songs[i]) ? { w: 1 } : {}, days[i].d > today ? { f: 1 } : {}))
     .filter(x => !gone.has(x.id) && (mine || (!x.w && !x.f)));
   for (const x of songs) {   // what the site job found (vid: the video, mt: moods and genres, yr: the year), its owner's choices (ov: the video, '' none; tg: moods and genres), files (ma, mv; own: theirs, with sizes) and cover (uc)
@@ -3444,6 +3450,7 @@ async function memberUpl(request, url, env, answer) {
     if (!x) return answer(404, { error: 'That song isn’t on this playlist.' });
     data.del = data.del || {}; data.del[x.id] = x.a;
     if (data.order) data.order = data.order.filter(t => t !== x.id);
+    await uplFilesGone(env, pid, data, [x.id]);   // (its files too, unless it's saved to a playlist elsewhere)
     await env.SOTD.put('upl:' + pid, JSON.stringify(data));
     rec.cnt = (data.songs || []).filter(y => !uplGone(data, y)).length; await uplPut(env, U);
     await startJob(env, null, null, 0, null, true).catch(() => {});   // (its cards, and its YouTube copy)
@@ -3653,6 +3660,43 @@ async function uplFilesSet(env, pid, track, k, v) {
   if (v) f[k] = v; else delete f[k];
   if (Object.keys(f).length) data.files[track] = f; else delete data.files[track];
   await env.SOTD.put('upl:' + pid, JSON.stringify(data));
+}
+// a song taken off a playlist (its owner's del, or out of the saved playlist a calendar follows): its owner's MP3, MP4
+// and cover for it there are deleted too, unless the song is saved to a playlist elsewhere (any member's saved
+// playlists, mpl:<id>), where it goes on playing with them (memberSongs) (John, 1 Nov 2026: "When a song is deleted
+// what happens to its files? They should be deleted too, unless they've been saved to a playlist elsewhere").
+async function uplTracksSaved(env, tracks) {   // which of these tracks are on a member's saved playlist
+  const want = new Set(tracks), out = new Set();
+  if (!want.size) return out;
+  let cursor;
+  do {
+    const l = await env.SOTD.list({ prefix: 'mpl:', cursor }).catch(() => ({ keys: [], list_complete: true }));
+    for (const k of l.keys || []) for (const pl of (await env.SOTD.get(k.name, 'json')) || []) for (const t of pl.tracks || []) if (want.has(t)) out.add(t);
+    cursor = l.list_complete ? null : l.cursor;
+  } while (cursor && out.size < want.size);
+  return out;
+}
+async function uplFilesGone(env, pid, data, tracks) {   // tracks just taken off pid: their files deleted unless saved elsewhere; true if data.files changed
+  const files = data.files || {}, have = tracks.filter(t => files[t]);
+  if (!have.length || !env.MEDIA) return false;
+  const saved = await uplTracksSaved(env, have);
+  let changed = false;
+  for (const t of have) {
+    if (saved.has(t)) continue;
+    const f = files[t];
+    for (const k of ['a', 'v']) if (f[k]) await env.MEDIA.delete('u' + k + '/' + pid + '/' + t + '.' + MEDIA_KINDS[k].ext).catch(() => {});
+    if (f.c) await env.MEDIA.delete('uc/' + pid + '/' + t + '.jpg').catch(() => {});
+    delete files[t]; changed = true;
+  }
+  return changed;
+}
+async function uplSavedTidy(env, tracks) {   // tracks just taken off a saved playlist: files kept only for them, on playlists they're gone from, deleted now
+  tracks = [...new Set(tracks)]; if (!tracks.length || !env.MEDIA) return;
+  for (const pid of Object.keys(await uplAll(env))) {
+    const data = await uplSongs(env, pid), files = data.files || {};
+    const off = tracks.filter(t => files[t] && (data.songs || []).some(x => x.id === t && uplGone(data, x)));
+    if (off.length && await uplFilesGone(env, pid, data, off)) await env.SOTD.put('upl:' + pid, JSON.stringify(data));
+  }
 }
 async function memberUplUp(request, url, env, answer) {   // ?id&track&kind=a|v&op=start | part (n) | done | abort | drop
   const o = await uplOwnSong(request, url, env, answer);

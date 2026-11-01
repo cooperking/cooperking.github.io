@@ -2110,6 +2110,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var o = {}; Object.keys(SONGX).forEach(function (t) { var x = Object.assign({}, SONGX[t]); delete x.ma; delete x.mv; o[t] = x; });   // (the links to own files: this visit's)
     try { localStorage.setItem(SONGX_KEY, JSON.stringify(o)); } catch (e) {}
   }
+  // the songs out so far: on its owner's own calendar the songs still to come are on it too (faded, to move), but
+  // the lists that play or show songs (Play all, shuffle, the index, On YouTube, the counts) take only the ones out
+  // (John, 1 Nov 2026: "the clickable playlist on the screen only show the current playlist")
+  function outSongs() { return songs.filter(function (s) { return !s.f; }); }
   function setSongs(list, keepMonth) {
     var was = months && months[cur] ? key(months[cur][0], months[cur][1]) : null;
     songs = list; byDate = {}; byTrack = {};
@@ -2394,7 +2398,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (listMode) { monthSongs = uplOrdered(); document.getElementById('mname').textContent = UPL.view.n; document.getElementById('myr').textContent = ''; }
     var cnt = document.getElementById('count'), tot = document.createElement('em');
     cnt.textContent = monthSongs.length + (monthSongs.length === 1 ? ' song' : ' songs') + (listMode ? '' : ' \u00b7 ');
-    if (!listMode) { tot.textContent = songs.length + ' total'; cnt.appendChild(tot); }
+    if (!listMode) { tot.textContent = outSongs().length + ' total'; cnt.appendChild(tot); }
     var sideh = document.getElementById('sideh'), sem = document.createElement('em');
     sideh.textContent = monthSongs.length + (monthSongs.length === 1 ? ' song ' : ' songs ');
     sem.textContent = listMode ? 'on ' + UPL.view.n : 'in ' + MONTHS[m]; sideh.appendChild(sem);
@@ -4378,7 +4382,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   siteBtn.insertAdjacentHTML('beforeend', SHARE_ICON.replace('<svg ', '<svg class="ext sh" ')); monthBtn.innerHTML = SHARE_ICON;
   siteBtn.addEventListener('click', function () {
     if (UPL.on && UPL.view) { uplShareCal(uplCalOf(null)); return; }
-    var sub = 'A song a day, ' + songs.length + ' so far';
+    var sub = 'A song a day, ' + outSongs().length + ' so far';
     var mode = modeNow();
     openShare({ lines: ['John\u2019s Song of the Day', sub], url: dayLink('', mode), image: SITE + 'card.jpg', title: 'John\u2019s Song of the Day', sub: sub,
       mode: mode, modes: true, urlFor: function (m) { return dayLink('', m); } });
@@ -4399,7 +4403,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function slugOf(iso) { return iso.slice(8, 10) + '-' + iso.slice(5, 7) + '-' + iso.slice(0, 4); }
   function dayFromHash() {
     var h = decodeURIComponent(location.hash.slice(1)).toLowerCase();
-    if (h === 'today') return songs[songs.length - 1].d;
+    if (h === 'today') { var o = outSongs(); return (o[o.length - 1] || songs[songs.length - 1]).d; }
     if (/^\d{4}-\d{2}-\d{2}$/.test(h)) return h;
     var m = /^(\d{1,2})-(\d{1,2}|[a-z]+)-(\d{4})$/.exec(h);
     if (!m) return null;
@@ -5048,7 +5052,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         : nowAll(s.track) };
   }
   function nowAll(t) {   // a day's song, no playlist: carried on as Play all from it (every song, newest first), so it goes on through the days before
-    var all = songs.slice().sort(function (a, b) { return b.n - a.n; }).map(function (x) { return x.track; });
+    var all = outSongs().sort(function (a, b) { return b.n - a.n; }).map(function (x) { return x.track; });
+    if (all.indexOf(t) < 0 && byTrack[t]) all.unshift(t);   // (one still to come, played by its owner: then on through the ones out)
     return { list: all, i: Math.max(0, all.indexOf(t)), name: 'John\u2019s Song of the Day', back: 'all', sh: false };
   }
   function nowSend(body) {
@@ -5343,7 +5348,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // Play all (under the month, and in the bar on a TV or a computer): every song, the newest first, the way songs
   // are playing (a member's songs, or the videos, until they choose)
   document.getElementById('playall').addEventListener('click', function () {
-    var all = songs.slice().sort(function (a, b) { return b.n - a.n; }).map(function (s) { return s.track; });
+    var all = outSongs().sort(function (a, b) { return b.n - a.n; }).map(function (s) { return s.track; });
     startQueue(all, 'John\u2019s Song of the Day', 'all', 0, shuffleOn);
   });
   // Shuffle, while Play all plays: on, the songs not yet heard come in a random order after the one playing; off, the
@@ -5470,7 +5475,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function shortDate(iso) { var d = new Date(iso + 'T12:00:00'); return d.getDate() + ' ' + MONTHS[d.getMonth()].slice(0, 3); }
   function indexRows() {
     var rows = [];
-    songs.forEach(function (s) {
+    outSongs().forEach(function (s) {
       if (idxKind === 'songs') rows.push({ s: s, main: s.title, sub: s.artist, key: sortKey(s.title) });
       else if (idxKind === 'years') rows.push({ s: s, main: s.title, sub: s.artist, key: sortKey(s.title), y: yearOf(s) });
       else (s.as || [s.artist]).forEach(function (a) { rows.push({ s: s, main: a, sub: s.title, key: sortKey(a) }); });
@@ -5538,7 +5543,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // how many songs a chip would leave if it were picked too (or leaves now, if it is)
   function countWith(pick, x) {
     var had = pick[x]; pick[x] = 1;
-    var n = songs.filter(matches).length;
+    var n = outSongs().filter(matches).length;
     if (!had) delete pick[x];
     return n;
   }
@@ -5560,7 +5565,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function anyPick() { return Object.keys(pickM).length + Object.keys(pickG).length + Object.keys(pickD).length > 0; }
   // a song the lists show: it has a picked mood and a picked genre (when any are picked), and matches the search
   function shown(s, q) { return (!anyPick() || matches(s)) && (!q || matchQ(s, q)); }
-  function mixList() { return anyPick() ? songs.filter(function (s) { return matches(s); }) : songs.slice(); }
+  function mixList() { return anyPick() ? outSongs().filter(function (s) { return matches(s); }) : outSongs(); }
   // the moods and genres picked but not on the tab in view, as a line of chips that take them off again
   function showFilters() {
     var box = document.getElementById('activef'); box.textContent = '';
@@ -5599,7 +5604,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     }
     box.appendChild(grp);
     var mq = fold(idxq.value.trim());
-    var list = songs.filter(function (s) { return shown(s, mq); });
+    var list = outSongs().filter(function (s) { return shown(s, mq); });
     document.getElementById('idxc').textContent = list.length + (list.length === 1 ? ' song' : ' songs');
     document.getElementById('idxnone').hidden = (!anyPick() && !mq) || list.length > 0;
     setAdd();
@@ -5635,8 +5640,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // the songs the list shows as a selection: the moods picked, or what the search has found
   function selection() {
     var q = fold(idxq.value.trim());
-    if (!q && !anyPick()) return songs.slice().sort(function (a, b) { return a.n - b.n; });   // nothing searched or picked: the whole playlist, day by day
-    if (isTagTab()) return songs.filter(function (s) { return shown(s, q); });
+    if (!q && !anyPick()) return outSongs().sort(function (a, b) { return a.n - b.n; });   // nothing searched or picked: the whole playlist, day by day
+    if (isTagTab()) return outSongs().filter(function (s) { return shown(s, q); });
     var seen = {}, out = [];
     indexRows().forEach(function (r) { if (shown(r.s, q) && !seen[r.s.track]) { seen[r.s.track] = 1; out.push(r.s); } });
     return out;
@@ -5655,12 +5660,12 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (isTagTab()) return renderTags();
     var q = fold(idxq.value.trim());
     var rows = indexRows().filter(function (r) { return shown(r.s, q); });
-    var names = {};
-    songs.forEach(function (s) { (s.as || [s.artist]).forEach(function (a) { names[a] = 1; }); });
-    var ys = songs.map(yearOf).filter(Boolean).sort(function (a, b) { return a - b; });
+    var names = {}, outs = outSongs();
+    outs.forEach(function (s) { (s.as || [s.artist]).forEach(function (a) { names[a] = 1; }); });
+    var ys = outs.map(yearOf).filter(Boolean).sort(function (a, b) { return a - b; });
     var found = {}; rows.forEach(function (r) { found[r.s.track] = 1; }); found = Object.keys(found).length;
     document.getElementById('idxc').textContent = q || anyPick() ? found + (found === 1 ? ' song' : ' songs')   // narrowed: how many it shows
-      : idxKind === 'songs' ? songs.length + ' songs' : idxKind === 'years' ? (ys.length ? ys[0] + '\u2013' + ys[ys.length - 1] : songs.length + ' songs') : Object.keys(names).length + ' artists';
+      : idxKind === 'songs' ? outs.length + ' songs' : idxKind === 'years' ? (ys.length ? ys[0] + '\u2013' + ys[ys.length - 1] : outs.length + ' songs') : Object.keys(names).length + ' artists';
     if (thumbs) thumbs.disconnect();
     idxlist.textContent = '';
     var have = {}, ul = null, at = null;
@@ -6357,7 +6362,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // Android app's shortcuts (a long press on its icon), which open the calendar with ?do=today, shuffle or mine
   function doAction(a, iso) {   // today, shuffle, mine; all: Play all from a day (iso), on through the days before
     nowGesture();   // (asked for on this device, as a tap: it's the one playing, the other device stops)
-    var all = songs.slice().sort(function (x, y) { return y.n - x.n; }).map(function (x) { return x.track; });
+    var all = outSongs().sort(function (x, y) { return y.n - x.n; }).map(function (x) { return x.track; });
     if (a === 'all' && iso && byDate[iso] && byDate[iso].length) startQueue(all, 'John\u2019s Song of the Day', 'all', Math.max(0, all.indexOf(byDate[iso][0].track)), false);
     else if (a === 'today' || a === 'all') startQueue(all, 'John\u2019s Song of the Day', 'all', 0, false);
     else if (a === 'shuffle') startQueue(all, 'John\u2019s Song of the Day', 'all', 0, true);
@@ -6836,7 +6841,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (view.sp) document.getElementById('spfollow').setAttribute('href', 'https://open.spotify.com/playlist/' + view.sp);   // (a saved playlist's calendar has none)
     var yf = document.getElementById('ytfollow');
     if (!UPL.johnYt) UPL.johnYt = { href: yf.getAttribute('href'), hidden: yf.hidden };
-    var yl = view.mode === 'list' ? list.slice() : list.slice().sort(function (p, q) { return p.d < q.d ? 1 : p.d > q.d ? -1 : 0; });   // its songs as a list on YouTube: newest day first (a playlist: in its order), up to 50
+    var yl = view.mode === 'list' ? list.slice() : list.filter(function (x) { return !x.f; }).sort(function (p, q) { return p.d < q.d ? 1 : p.d > q.d ? -1 : 0; });   // its songs as a list on YouTube: newest day first (a playlist: in its order), up to 50
     var yids = yl.map(songYt).filter(Boolean).slice(0, 50);
     root.classList.toggle('upl-noyt', !yids.length);
     if (yids.length) { yf.href = 'https://www.youtube.com/watch_videos?video_ids=' + yids.join(',') + '&title=' + encodeURIComponent(view.n); yf.hidden = false; }
@@ -7572,7 +7577,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     openShare(o);
   }
   function uplShareCal(v) {
-    var n = songs.length, sub = v.mode === 'list' ? v.n + ' · ' + n + (n === 1 ? ' song' : ' songs') : 'A song a day, ' + n + ' so far', mode = modeNow(), last = songs[n - 1];
+    var n = outSongs().length, sub = v.mode === 'list' ? v.n + ' · ' + n + (n === 1 ? ' song' : ' songs') : 'A song a day, ' + n + ' so far', mode = modeNow(), last = songs[n - 1];
     var o = { lines: [v.t, sub], title: v.t, sub: sub, mode: mode, modes: true };
     o.urlFor = function (md) { return uplLinkFor(v, 'u=' + v.id, '', md); };
     o.url = o.urlFor(mode);

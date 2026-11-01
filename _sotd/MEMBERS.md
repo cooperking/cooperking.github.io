@@ -456,6 +456,19 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   everyone (op `del`; `del { <track>: its added time }` in `upl:<id>`), not off Spotify. Its day stays empty: days are
   worked out with it still there. It's left out of the view, the site job's list, *On YouTube*, the
   facts wanted, the notifications and the Members tab's songs. Taken off Spotify and added again, it's a new song.
+- **A song's files when it's taken off** (John, 1 Nov 2026: "When a song is deleted what happens to its files? They
+  should be deleted too, unless they've been saved to a playlist elsewhere"): its owner's MP3, MP4 and cover for it
+  (R2 `ua/`, `uv/`, `uc/<pid>/<track>`, and its `files` entry) are deleted when it comes off: op `del`, out of the
+  saved playlist a calendar follows (`uplListSync`), or gone from Spotify or a fresh Exportify file (`uplTake`), all
+  through `uplFilesGone`. Kept if the song is on any member's saved playlist (`mpl:<id>`, `uplTracksSaved`): it goes
+  on playing there with them (`memberSongs` asks `uplView` for it even though it's off). Once it's off every saved
+  playlist (one saved again without it, or deleted), `uplSavedTidy` deletes the files then. Freed files count off the
+  366 at once.
+- **Songs still to come on its owner's calendar** (John, 1 Nov 2026: "Can the whole playlist be added as normal but the
+  clickable playlist on the screen only show the current playlist"): every song is still sent to the site job for its
+  video, moods and year, days to come too, and shows (faded) on its owner's calendar to move; but what plays or lists
+  songs takes only the ones out (`outSongs`): Play all and shuffle, Search's list and counts, *On YouTube*, the total
+  and the share text.
 - **A saved playlist on the calendar** (John, 31 Oct 2026: "They also should have the option to turn normal playlists
   from the site into their own calendar with the same options. Everything can be shared and notified in the same
   way"; asked how its days go: "Same 3 as Spotify"): a saved playlist's pop-up has the same *Setup*, starting at *Not
