@@ -862,7 +862,7 @@ async function publishDraft(env) {
   const ref = await mainSha(env);
   const [pages, nl] = await Promise.all([rawJson('_sotd/data/pages.json', null, ref), notLive(env)]);
   if (pages && !pages.draft) throw new HttpError(409, 'The draft isn’t what the template builds, so what’s on it isn’t what would go live. Nothing changed.');
-  if (pages && pages.live) throw new HttpError(409, 'The live calendar is the draft already: nothing to put live.');
+  if (!nl.list.length && pages && pages.live) throw new HttpError(409, 'The live calendar is the draft already: nothing to put live.');   // (as the Status card decides: the template's changes since it last went live, which pages.json may not have caught up with: John, 1 Nov 2026)
   const say = nl.list.map(c => c.t.replace(/^Calendar \(draft\):\s*/i, '')).join('; ').slice(0, 400);
   const r = await fetch('https://api.github.com/repos/' + REPO + '/actions/workflows/' + GOLIVE_JOB + '/dispatches', {
     method: 'POST',
