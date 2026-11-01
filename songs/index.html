@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="sotd-build" content="0cd4d013126e">
+<meta name="sotd-build" content="ffcd3e04e408">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 265 so far">
 <meta name="theme-color" content="#ec135b">
@@ -318,8 +318,9 @@ html.upl #monthdl, html.upl-noshare #siteshare, html.upl-noshare #monthshare, ht
 .uplkick[hidden] { display: none; }
 .idx-letter.idx-other { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; }
 /* editing a calendar's days: its owner drags a song (or taps it, then a day) */
-.upleditbtn { height: 40px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--pill-bg); box-shadow: inset 0 0 0 1px var(--line); color: var(--fg); font: 600 11px/1 var(--sans); letter-spacing: .12em; text-transform: uppercase; cursor: pointer; }
-.upleditbtn:hover { box-shadow: inset 0 0 0 1px var(--fg); }
+.upleditbtn { display: inline-flex; align-items: center; gap: 8px; height: 42px; padding: 0 20px; border: 0; border-radius: 999px; background: var(--fg); color: var(--bg); box-shadow: 0 6px 18px var(--shadow); font: 600 12px/1 var(--sans); letter-spacing: .12em; text-transform: uppercase; cursor: pointer; }   /* (their own calendar or playlist's Edit: easy to see, John, 1 Nov 2026) */
+.upleditbtn svg { width: 15px; height: 15px; flex: none; }
+.upleditbtn:hover { filter: brightness(1.12); }
 .upleditbtn[hidden] { display: none; }
 .caledit { display: none; justify-content: flex-end; }
 .cal.has-edit .caledit { display: flex; }
@@ -544,6 +545,8 @@ html.upl-list .side-acts .listbtn { display: inline-grid; }
 html.upl-list #tracks { display: none; }
 html.big.upl-list .side { display: grid; align-content: start; overflow-y: auto; min-height: 0; }   /* (a computer: the playlist in place of the calendar, scrolling in its place) */
 #upllist { display: none; }
+.listedit { display: none; justify-content: flex-end; margin: 0 0 12px; }
+html.upl-list .listedit:not([hidden]) { display: flex; }   /* (their own playlist's Edit, above its list) */
 html.upl-list #upllist { display: grid; }
 #mine.upl-pop #plname, #mine.upl-pop #plsave, #mine.upl-pop #pldel, #mine.upl-pop #minedl, #mine.upl-pop #dlsum { display: none !important; }
 #mineupl { display: none; flex-wrap: wrap; gap: 6px 14px; }
@@ -1578,7 +1581,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   </header>
 
   <section class="cal" id="cal" aria-label="Month calendar">
-    <div class="caledit"><button class="upleditbtn" id="upleditbtn" type="button" hidden>Edit days</button></div>
+    <div class="caledit"><button class="upleditbtn" id="upleditbtn" type="button" hidden aria-label="Edit this calendar or playlist"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="M10.6 2.6l2.8 2.8-7.6 7.6-3.4.6.6-3.4z"/><path d="M9 4.2l2.8 2.8"/></svg><span>Edit</span></button></div>
     <div class="dow" aria-hidden="true"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
     <div class="grid" id="grid"></div>
   </section>
@@ -1595,6 +1598,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       </div>
     </div>
     <ol class="tracks" id="tracks"></ol>
+    <div class="listedit" id="listedit" hidden><button class="upleditbtn" id="upleditbtn2" type="button" aria-label="Edit this playlist"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="M10.6 2.6l2.8 2.8-7.6 7.6-3.4.6.6-3.4z"/><path d="M9 4.2l2.8 2.8"/></svg><span>Edit</span></button></div>
     <ol class="mine-list" id="upllist"></ol>
   </section>
 </div>
@@ -6920,7 +6924,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var box = document.getElementById('uplprog'), g = view && view.mine && view.prog;
     clearTimeout(PROG.t); PROG.t = 0;
     var recent = g && Date.now() - (g.ch || 0) < 2 * 864e5, left = function (f, nn) { return Math.max(0, g.n - (g[f] || 0) - (g[nn] || 0)); };   // (still to look at: neither found nor looked at with none)
-    var more = g && (g.pq > 0 || (recent && (left('v', 'vn') || left('m', 'mn') || left('y', 'yn'))));
+    var more = g && (g.pq > 0 || (recent && left('v', 'vn')));   // (the previews, the videos and their files: years and moods aren't waited for or shown, John, 1 Nov 2026)
     box.hidden = !g || !g.n || !(more || PROG.id === view.id) || uplProgHidden(view.id + ':' + g.ch);
     if (box.hidden) { PROG.id = null; return; }
     PROG.id = view.id;
@@ -6931,9 +6935,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var steps = [
       { k: 'Songs', done: true, sum: pl(N, 'song') + ' in' },
       { k: 'Previews', w: 'p', tip: 'These have no preview on Spotify (some have been taken off it), so they play their video if one is found, or nothing until you add your own MP3: tap one to add it.', f: g.p, none: g.pn || 0, left: g.pq, sum: g.p + ' can play their preview' + (g.pn ? ' · ' + pl(g.pn, 'song') + ' with none on Spotify' : ''), now: 'Looking each song up on Spotify: ' + (N - g.pq) + ' of ' + N + ' so far. Songs play as soon as theirs is here.' },
-      { k: 'Videos', w: 'v', tip: 'No video was found for these: tap one to give it a YouTube link or your own MP4.', f: g.v, none: g.vn || 0, left: left('v', 'vn'), sum: pl(g.v, 'video') + ' found' + (g.vn ? ' · ' + g.vn + ' with none (they play their preview)' : ''), now: 'Finding a YouTube video for each: ' + g.v + ' found' + (g.vn ? ', ' + g.vn + ' with none' : '') + ', ' + left('v', 'vn') + ' still to look for. A batch at a time, over the next hour or two.' },
-      { k: 'Moods', w: 'm', tip: 'Nothing was heard or said about these: tap one to choose its moods and genres.', f: g.m, none: g.mn || 0, left: left('m', 'mn'), sum: g.m + ' with moods and genres' + (g.mn ? ' · ' + g.mn + ' with none found' : ''), now: 'Listening to each preview and reading what listeners say: ' + g.m + ' done, ' + left('m', 'mn') + ' to go.' },
-      { k: 'Years', w: 'y', tip: 'Spotify and MusicBrainz don’t say when these first came out. Tap one to open it.', f: g.y, none: g.yn || 0, left: left('y', 'yn'), sum: g.y + ' with the year they came out' + (g.yn ? ' · ' + g.yn + ' not known' : ''), now: 'Finding when each first came out: ' + g.y + ' found, ' + left('y', 'yn') + ' to go.' }
+      { k: 'Videos', w: 'v', tip: 'No video was found for these: tap one to give it a YouTube link or your own MP4.', f: g.v, none: g.vn || 0, left: left('v', 'vn'), sum: pl(g.v, 'video') + ' found' + (g.vn ? ' · ' + g.vn + ' with none' : ''), now: 'Finding a YouTube video for each: ' + g.v + ' found' + (g.vn ? ', ' + g.vn + ' with none' : '') + ', ' + left('v', 'vn') + ' still to look for. A batch at a time, over the next hour or two.' },
     ];
     steps.forEach(function (x) { if (!x.done) x.done = !x.left; });
     var cur = steps.filter(function (x) { return !x.done; })[0];
@@ -7042,9 +7044,15 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // calendar (op del: its day left empty). Swiping months and pulling to refresh are off meanwhile. Not on the TV. ----
   var ED = { on: false, sel: null, drag: null, noClick: false, base: null };
   function uplEditCan() { return !!(UPL.on && UPL.view && UPL.view.mine && UPL.view.mode !== 'list' && !TV); }
+  // their own calendar or playlist: Edit, by it, opens everything about it (John, 1 Nov 2026: "Could there be a noticeable
+  // edit button on my playlists. it shows all the edit options for the calendar from the calendar too, same with if
+  // it's a playlist"): its pop-up, with its name, picture, setup (calendar or playlist, days, who sees it,
+  // notifications), its songs, and Edit days (a calendar)
+  function uplOwnCan() { return !!(UPL.on && UPL.view && UPL.view.mine && !TV); }
   function uplEditSync() {
-    document.getElementById('upleditbtn').hidden = !uplEditCan() || ED.on;
-    document.getElementById('cal').classList.toggle('has-edit', uplEditCan() && !ED.on);   // (its row only when it's there)
+    document.getElementById('upleditbtn').hidden = !uplOwnCan() || ED.on;
+    document.getElementById('cal').classList.toggle('has-edit', uplOwnCan() && !ED.on);   // (its row only when it's there)
+    document.getElementById('listedit').hidden = !uplOwnCan();   // (a playlist's, above its list)
     var me = uplPls().filter(function (p) { return p.id === UPL.on; })[0];
     document.getElementById('upledbarreset').hidden = !(me && me.moved);
   }
@@ -7111,7 +7119,13 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       if (yes) uplOp({ op: 'del', id: UPL.on, track: s.track }, '“' + s.title + '” taken off', function () { if (ED.on && UPL.view) uplApply(UPL.view, { keep: true }); });
     });
   }
-  document.getElementById('upleditbtn').addEventListener('click', uplEditOn);
+  document.getElementById('upleditbtn').addEventListener('click', function () { if (UPL.on) mineUplOpen(UPL.on); });
+  document.getElementById('upleditbtn2').addEventListener('click', function () { if (UPL.on) mineUplOpen(UPL.on); });
+  function uplEditDays(p) {   // from its pop-up: the calendar, in Edit days
+    if (mine.open) closeDialog(mine);
+    if (UPL.on === p.id && UPL.view) { uplEditOn(); return; }
+    uplShow(p.id); var n = 0, t = setInterval(function () { if (UPL.on === p.id && UPL.view) { clearInterval(t); uplEditOn(); } else if (++n > 40) clearInterval(t); }, 150);
+  }
   document.getElementById('upledbardone').addEventListener('click', function () { uplEditOff(); if (UPL.view) uplApply(UPL.view, { keep: true }); });
   document.getElementById('upledbarreset').addEventListener('click', function () {
     ask({ k: 'Editing the days', h: 'Back to the setup’s days?', t: 'Every song you’ve moved goes back to the day its setup gives it.', ok: 'Put them back', no: 'Keep them' }).then(function (yes) {
@@ -7323,13 +7337,14 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   document.getElementById('mark').addEventListener('keydown', function (e) { if (this.classList.contains('can') && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); uplChooser(); } });
   document.getElementById('uplclose').addEventListener('click', function () { closeDialog(uplDlg); });
   // #u=<playlist>, or #u=<playlist>&d=<day> (a member's song, from its message): that calendar, once signed in
+  // (ids are letters, digits, _ and -: one with a hyphen was never read back, so a reload or its link lost it, John, 1 Nov 2026)
   // With no address of its own (a refresh that lost it, or the app opened again), the calendar this device was last on
   // (sotd-cal, kept until John's own is chosen again: John, 1 Nov 2026: "Could it always stay on the chosen one").
   function uplFromHash() {
-    var m = /^#u=(\w+)(?:&d=(\d{1,2}-\d{1,2}-\d{4})|&m=(\d{1,2})-(\d{4}))?$/.exec(location.hash);
+    var m = /^#u=([\w-]+)(?:&d=(\d{1,2}-\d{1,2}-\d{4})|&m=(\d{1,2})-(\d{4}))?$/.exec(location.hash);
     if (!m) {
       var was = null; try { was = localStorage.getItem('sotd-cal'); } catch (e) {}
-      if (was && /^\w{6,40}$/.test(was) && (!location.hash || location.hash === '#') && !UPL.on) { UPL.want = { id: was, quiet: true }; uplWanted(); }
+      if (was && /^[\w-]{6,40}$/.test(was) && (!location.hash || location.hash === '#') && !UPL.on) { UPL.want = { id: was, quiet: true }; uplWanted(); }
       return;
     }
     var d = m[2] ? m[2].split('-') : null;
@@ -7941,6 +7956,11 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       return;
     }
     if (p.st === 'ok') act(UPL.on === p.id ? 'Showing' : 'Show', 'go', function () { closeDialog(mine); if (UPL.on !== p.id) uplShow(p.id); });   // (the calendar, as the others see it)
+    if (p.st === 'ok' && p.mode !== 'list' && !TV) act('Edit days', '', function () { uplEditDays(p); });   // (moving and taking off songs, on the calendar)
+    if (!TV) {   // its picture (the Calendars and Playlists page's)
+      act(p.pic ? 'Change picture' : 'Add a picture', '', function () { PICFOR = p; var f = document.getElementById('uplpicin'); f.value = ''; f.click(); });
+      if (p.pic) act('Use its covers', '', function (e) { e.currentTarget.disabled = true; uplPicSend(p, null); });
+    }
     ntfButton(p, acts, function () { setGo('send'); });
     act('Setup', '', function () { setGo('kind'); });
     if (p.src === 'csv') {
@@ -8207,6 +8227,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       return -1;
     }
     var tu = col(/^spotify:(track|local|episode):/), au = col(/^spotify:artist:/), al = col(/^spotify:album:/), im = col(/^https:\/\/i\.scdn\.co\/image\//), at = col(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/), pc = col(/^https:\/\/p\.scdn\.co\/mp3-preview\//), ab = col(/^spotify:user:/);
+    var rdc = col(/^\d{4}(-\d{2}(-\d{2})?)?$/);   // the album's release date (1978, 1978-01, 1978-01-23): a year for the song straight away
     if (tu < 0 || at < 0) return null;
     function names(v) { return String(v || '').replace(/\\,/g, '\u0001').split(', ').map(function (x) { return x.replace(/\u0001/g, ',').trim(); }).filter(Boolean); }   // (Exportify writes a comma in a name as \,)
     var out = [], seen = {}, by = {};
@@ -8218,7 +8239,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       if (ab >= 0 && /^spotify:user:/.test(r[ab] || '')) { var u = r[ab].slice(13); by[u] = (by[u] || 0) + 1; }
       out.push({ id: m[1], a: r[at], title: r[tu + 1] || '', artists: au >= 0 ? names(r[au + 1]) : [], aids: au >= 0 ? names(r[au]).map(function (x) { return x.replace('spotify:artist:', ''); }) : [],
         album: al >= 0 ? r[al + 1] || '' : '', alid: al >= 0 ? String(r[al] || '').replace('spotify:album:', '') : '', img: im >= 0 ? r[im] || '' : '',
-        pv: pc >= 0 ? ((/mp3-preview\/([0-9a-f]{20,64})/.exec(r[pc] || '') || [])[1] || '') : '' });   // (its preview, where Spotify still gives Exportify one)
+        pv: pc >= 0 ? ((/mp3-preview\/([0-9a-f]{20,64})/.exec(r[pc] || '') || [])[1] || '') : '', rd: rdc >= 0 ? r[rdc] || '' : '' });   // (its preview, where Spotify still gives Exportify one)
     });
     return out;
   }
