@@ -7,6 +7,7 @@ import json, os, re, sys, time, urllib.parse, urllib.request
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 from genres import bucket   # noqa: E402
+import twins   # noqa: E402
 
 OUT = os.path.join(HERE, 'data', 'musicbrainz.json')
 SONGS_URL = os.environ.get('SOTD_SONGS_URL', 'https://sotd-playlists.cooperking.workers.dev/songs.json')
@@ -77,7 +78,8 @@ def main():
         with open(OUT) as f:
             data = json.load(f)
     songs = get(SONGS_URL, {'User-Agent': UA['User-Agent']})['songs']
-    todo = [s for s in songs if s['id'] not in data['songs']]
+    twin = twins.finder(songs, lambda t: t in data['songs'])
+    todo = [s for s in songs if s['id'] not in data['songs'] and not (s.get('upl') and twin(s['id']))]   # (a member's copy of a song looked up already: make_tags.py uses that)
     print(f'{len(todo)} songs to look up on MusicBrainz')
     for s in todo:
         e = lookup(s)

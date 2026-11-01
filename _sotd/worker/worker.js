@@ -3356,6 +3356,14 @@ async function ytSig(env, pid) {
   const key = await crypto.subtle.importKey('raw', new TextEncoder().encode('sotd-yt|' + env.ADMIN_KEY), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
   return b64url(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(pid))).slice(0, 32);
 }
+const YR_JOHN = { at: 0, y: {} };
+async function johnYears() {   // John's calendar's years (songs/years.json), read again after 10 minutes
+  if (Date.now() - YR_JOHN.at > 600e3) {
+    const j = await rawJson('songs/years.json', { years: {} }).catch(() => null);
+    if (j) { YR_JOHN.y = j.years || {}; YR_JOHN.at = Date.now(); }
+  }
+  return YR_JOHN.y;
+}
 async function ytJohnVids() {   // John's calendar's videos (songs/videos.json), read again after 10 minutes
   if (Date.now() - YT_JOHN.at > 600e3) {
     const j = await rawJson('songs/videos.json', { videos: {} }).catch(() => null);
@@ -3565,6 +3573,7 @@ async function uplView(env, all, viewer, pid, rec, also) {   // (also: tracks wa
   const days = uplDays(data.songs || [], rec);
   const meta = (await env.SOTD.get('uplmeta', 'json')) || {}, facts = (await env.SOTD.get('ufacts:' + pid, 'json')) || {}, wanted = new Set(uplShareOf(rec) === 'public' ? uplFactsWanted(rec, data) : []);
   const cat = await catalog(env), J = await uplJohnAll(env);   // John's own (the Songs tab's): a song's that he has, its owner's of that kind aren't used
+  const JV = await ytJohnVids(), JY = await johnYears();   // (a song John's calendar has too: its video and year from there, found already, never looked for again: John, 1 Nov 2026)
   const ed = data.ed || {}, files = data.files || {}, see = mine ? { a: true, v: true } : viewer && all[viewer] ? mediaFor(all[viewer]) : { a: false, v: false }, exp = Math.floor(Date.now() / 1000) + LINK_HOURS * 3600;
   const gone = new Set((data.songs || []).filter(x => uplGone(data, x) && !(also && also.has(x.id))).map(x => x.id));
   let songs = composeSongs(data.songs || [], pv, tags).map((x, i) => Object.assign(x, { d: days[i].d }, uplWaiting(rec, data, data.songs[i]) ? { w: 1 } : {}, days[i].d > today ? { f: 1 } : {}))
@@ -3572,6 +3581,8 @@ async function uplView(env, all, viewer, pid, rec, also) {   // (also: tracks wa
   for (const x of songs) {   // what the site job found (vid: the video, mt: moods and genres, yr: the year), its owner's choices (ov: the video, '' none; tg: moods and genres), files (ma, mv; own: theirs, with sizes) and cover (uc)
     const e = ed[x.id], f = files[x.id], m = meta[x.id];
     if (m) { if (m.vid) x.vid = m.vid; if (m.mt) x.mt = m.mt; if (m.yr) x.yr = m.yr; }
+    if (!x.vid && JV[x.id] && JV[x.id].v) x.vid = JV[x.id];
+    if (!x.yr && JY[x.id]) x.yr = JY[x.id];
     const fx = facts[x.id];   // its facts: signed off by its owner (fx), for everyone; theirs too: written and waiting (fxw), and how it stands (fxs)
     if (fx && fx.ok) x.fx = fx.ok;
     if (mine) { if (fx && fx.w) x.fxw = fx.w; x.fxs = fx && fx.w ? 'wait' : fx && fx.ok ? 'ok' : fx && fx.none ? 'nil' : wanted.has(x.id) ? 'asked' : uplShareOf(rec) === 'public' ? 'none' : 'off'; }

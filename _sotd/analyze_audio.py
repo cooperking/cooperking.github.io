@@ -9,6 +9,8 @@ Models: Music Technology Group, Universitat Pompeu Fabra, https://essentia.upf.e
 (CC BY-NC-SA 4.0). This site is non-commercial and credits them on the calendar page.
 """
 import json, os, sys, tempfile, time, urllib.request
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import twins   # noqa: E402  (the same song on another release: its listening, tags are used, not fetched again)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, 'data', 'audio.json')
@@ -76,7 +78,7 @@ def load_songs():
     for s in songs:
         p = s.get('p') or ('https://p.scdn.co/mp3-preview/' + saved[s['id']] if s['id'] in saved else '')
         if p:
-            out.append({'id': s['id'], 'n': s['n'], 'title': s['title'], 'artist': s['artist'],
+            out.append({'id': s['id'], 'n': s['n'], 'title': s['title'], 'artist': s['artist'], 'artists': s.get('artists'), 'upl': s.get('upl'),
                         'preview': p.rsplit('/', 1)[-1], 'url': p})
     return out
 
@@ -89,7 +91,9 @@ def main():
             old = json.load(f)
     done = old.get('songs', {})
     songs = load_songs()
+    twin = twins.finder(songs, lambda t: t in done)
     todo = [s for s in songs if redo or s['id'] not in done or done[s['id']].get('preview') != s['preview']]
+    todo = [s for s in todo if redo or not (s.get('upl') and s['id'] not in done and twin(s['id']))]   # (a member's copy of a song listened to already: make_tags.py uses that)
     print(f'{len(songs)} songs with previews, {len(todo)} to analyse')
     if '--check' in sys.argv:
         gh = os.environ.get('GITHUB_OUTPUT')

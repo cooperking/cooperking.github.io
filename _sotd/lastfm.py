@@ -6,6 +6,8 @@ The raw tags are never committed or published: make_tags.py only uses them to we
 Needs the LASTFM_API_KEY secret; without it this does nothing. Tags are refreshed after 60 days.
 """
 import json, os, re, sys, time, urllib.parse, urllib.request
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import twins   # noqa: E402  (the same song on another release: its listening, tags are used, not fetched again)
 
 KEY = os.environ.get('LASTFM_API_KEY', '').strip()
 CACHE = os.path.expanduser(os.environ.get('LASTFM_CACHE', '~/.cache/lastfm/tags.json'))
@@ -93,6 +95,8 @@ def main():
     now = time.time()
     # refresh tags after 60 days, or after 14 when Last.fm had none for the song
     todo = [s for s in songs if now - cache.get(s['id'], {}).get('at', 0) > (MAX_AGE if cache.get(s['id'], {}).get('track') else MAX_AGE / 4)]
+    twin = twins.finder(songs, lambda t: bool(cache.get(t, {}).get('track')))
+    todo = [s for s in todo if not (s.get('upl') and s['id'] not in cache and twin(s['id']))]   # (a member's copy of a song with tags already: make_tags.py uses those)
     print(f'{len(todo)} songs to fetch listener tags for')
     artists = {}
     for s in todo:

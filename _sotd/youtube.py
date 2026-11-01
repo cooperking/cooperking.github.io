@@ -27,6 +27,7 @@ import datetime, json, os, re, sys, unicodedata
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import ytapi   # noqa: E402
+import twins   # noqa: E402
 
 ROOT = os.path.dirname(HERE)
 OUT = os.path.join(HERE, 'data', 'youtube.json')
@@ -375,6 +376,26 @@ def main():
         done += from_links(songs, data, links, tok, ms)
     except ytapi.Quota:
         print("today's YouTube allowance is used up")
+    # a member's song that's the same song as one with a video already (John's, or another release of it: twins.py)
+    # takes that video, with no search at all (John, 1 Nov 2026: "it was already in the song catalogue, so it should
+    # have immediately recognised it ... but it kept searching anyway")
+    twin = twins.finder(songs, lambda t: bool((data['songs'].get(t) or {}).get('id')) or bool(john.get(t)))
+    lent = 0
+    for s in songs:
+        if not s.get('upl') or 'ov' in s or (data['songs'].get(s['id']) or {}).get('id'):
+            continue
+        tw = twin(s['id'])
+        if tw:
+            e = dict(data['songs'].get(tw) or {})
+            if john.get(tw) and not e.get('id'):
+                e = {'id': john[tw], 'embed': True, 'title': '', 'kind': 'video'}
+            e.update({'n': s['n'], 'checked': datetime.date.today().isoformat(), 'from': 'same song', 'sameAs': tw}); e.setdefault('embed', True)
+            e.pop('alts', None)
+            data['songs'][s['id']] = e
+            lent += 1
+    if lent:
+        print(lent, 'members’ songs took the video of the same song on another release, with no search')
+        done += lent
     pending = set()
     try:
         import free_videos

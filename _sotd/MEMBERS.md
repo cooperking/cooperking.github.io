@@ -514,6 +514,14 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   release date (`rd`: from Spotify's read, or Exportify's Album Release Date column), which years.py uses as it uses
   John's export, so they have a year at once (MusicBrainz's earlier first release still wins). A Spotify playlist
   whose only change is the dates gains them quietly; an Exportify playlist gains them with a fresh file.
+- **A song the site has already, recognised at once** (John, 1 Nov 2026: "Werewolves of London was already in the song
+  catalogue, so it should have immediately recognised it and not needed it for any searches but it kept searching
+  anyway"): a member's song that's one of John's (the same track) has always shared his data in the job, but the
+  member's calendar read videos and years only from the members' store, so it showed none and its progress said
+  still looking. `uplView` now takes John's calendar's video and year for it (`songs/videos.json`, `songs/years.json`,
+  read every 10 minutes). And a member's copy of a song known under another track id (twins.py) is no longer looked
+  for at all: `youtube.py` gives it the known video (`from: 'same song'`), and the listening (`analyze_audio.py`),
+  Last.fm (`lastfm.py`) and MusicBrainz (`musicbrainz.py`) leave it out, `make_tags.py` using its twin's.
 - **Videos as soon as they're found** (John, 1 Nov 2026: "The YouTube playlist can be made and added to csv as soon as
   discovered, I think it's waiting for mood and years"): the site job looks for videos first, straight after reading
   the members' playlists (ahead of the listening, moods and years), and `upl_vids.py` sends members' songs' videos to
