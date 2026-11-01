@@ -6718,9 +6718,11 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       document.getElementById('upleddrop' + k).hidden = !own[k] || busy != null;
       var bar = document.getElementById('upledbar' + k); bar.hidden = busy == null; bar.firstChild.style.width = (busy || 0) + '%';
     });
-    var fu = MEMBER && MEMBER.fu, fe = document.getElementById('upledfu');   // their own MP3s and MP4s across all their playlists, and the most (366)
+    var fu = MEMBER && MEMBER.fu, fe = document.getElementById('upledfu');   // the songs with their own MP3 or MP4, across all their playlists, and the most (366)
     fe.hidden = !(fu && fu.max) || !!(jf.a && jf.v);
-    if (fu && fu.max) fe.textContent = fu.n >= fu.max ? 'You’ve added ' + fu.max + ' of your own MP3s and MP4s, the most. Take one off a song to add another.' : fu.n + ' of your ' + fu.max + ' MP3s and MP4s added, across all your playlists.';
+    var has = !!((s.own || {}).a || (s.own || {}).v);   // (this song counted already: its other file is free)
+    if (fu && fu.max) fe.textContent = fu.n >= fu.max && !has ? 'You have your own files on ' + fu.max + ' songs, the most. Take them off a song to add files to another.'
+      : 'Your own files are on ' + fu.n + ' of your ' + fu.max + ' songs, across all your playlists. A song can have an MP3 and an MP4.';
     var art = document.getElementById('upledart'); art.textContent = ''; art.appendChild(artEl(s, true));
     document.getElementById('upledcn').textContent = own.c ? 'Your picture' : 'The album’s cover';
     document.getElementById('upledct').textContent = UED.busyc ? 'Going up…' : own.c ? 'For everyone who sees your calendar.' : 'Or a picture of your own, cropped square.';
