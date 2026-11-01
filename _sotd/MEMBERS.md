@@ -518,6 +518,12 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
     by `youtube_upl_drop.py`, in the YouTube playlist step.
   - The previews and covers kept here (`sp/`): a copy no song uses any more is deleted by the timer (`spKeep`, 200
     looked at a run; only once John's songs and the previews have been read).
+  - The MP3s and MP4s in the catalog (`a/`, `v/`, with TV copies `h/` and lighter copies `l/`): John's uploads,
+    and what `cooperking/playlist-r2` downloads for the playlists in the Playlist push sheet (it sends them through
+    `/members/upload` as the Mac uploader does, under the song's Spotify id). A song on none of John's calendar, any
+    member's calendar or playlist (one its owner took off counts only while on a saved playlist) or any saved playlist
+    has its files deleted by the timer (`catalogTidy`, 40 a run, said in KV `catgone`; only once John's songs, at
+    least 50, and the saved playlists have been read).
   - The Playlist push sheet (John's Google Drive; its Apps Script "Playlist push" emails him and starts the
     `cooperking/playlist-r2` downloads from the sheet's published CSV): it added rows and never took any out.
     `_sotd/playlist-push/Code.gs` is the whole script with the change, pasted in by John: a member playlist's row comes

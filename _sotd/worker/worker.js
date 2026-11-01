@@ -103,7 +103,8 @@ export default {
       await uplLook(env).catch(e => console.log('uplLook: ' + (e && e.message)));
     })().catch(e => console.log('scheduled: ' + (e && e.message))));
     ctx.waitUntil(appUpdates(env).catch(e => console.log('appUpdates: ' + (e && e.message))));   // (on its own: it needs nothing from Spotify)
-    ctx.waitUntil(spKeep(env).catch(e => console.log('spKeep: ' + (e && e.message))));   // (previews and covers copied here, a few a run)
+    ctx.waitUntil(spKeep(env).catch(e => console.log('spKeep: ' + (e && e.message))));
+    ctx.waitUntil(catalogTidy(env).catch(e => console.log('catalogTidy: ' + (e && e.message))));   // (files for songs on no calendar or playlist)   // (previews and covers copied here, a few a run)
   }
 };
 
@@ -917,6 +918,43 @@ async function mediaSig(env, kind, track, exp) {
 
 async function catalog(env) { return (await env.SOTD.get('mediaCatalog', 'json')) || {}; }
 
+// ---- files for songs on no calendar or playlist any more, deleted (John, 1 Nov 2026: "AaBbCc and Potench playlists
+// have been deleted now so the songs should be deleted fully"): the MP3s and MP4s in the catalog (a/, v/, with their
+// TV copies h/ and lighter copies l/), which John uploads for his songs and playlist-r2 downloads for members' (from
+// the Playlist push sheet), once a song is on none of John's calendar, any member's calendar or playlist (a song its
+// owner took off counts only while it's on a saved playlist) or any member's saved playlist. On the timer, CAT_TIDY_RUN
+// songs a run, each said in KV catgone (the newest 200: track, title when known, when). Only once John's songs and the
+// members' playlists have been read (at least CAT_TIDY_MIN of John's), so a failed read never empties it. ----
+const CAT_TIDY_RUN = 40, CAT_TIDY_MIN = 50;
+async function catalogTidy(env) {
+  if (!env.MEDIA) return;
+  const last = ((await env.SOTD.get('songsLast', 'json')) || {}).songs || [];
+  if (last.length < CAT_TIDY_MIN) return;
+  const used = new Set(last.map(x => x.id)), U = await uplAll(env), titles = {};
+  const saved = new Set();
+  let cursor;
+  do {   // every member's saved playlists
+    const l = await env.SOTD.list({ prefix: 'mpl:', cursor }).catch(() => null);
+    if (!l) return;   // (couldn't tell: nothing deleted)
+    for (const k of l.keys || []) for (const pl of (await env.SOTD.get(k.name, 'json')) || []) for (const t of pl.tracks || []) saved.add(t);
+    cursor = l.list_complete ? null : l.cursor;
+  } while (cursor);
+  saved.forEach(t => used.add(t));
+  for (const pid of Object.keys(U)) {
+    const data = await uplSongs(env, pid);
+    for (const x of data.songs || []) { titles[x.id] = x.title; if (!uplGone(data, x) || saved.has(x.id)) used.add(x.id); }
+  }
+  const c = await catalog(env), gone = Object.keys(c).filter(t => !used.has(t)).slice(0, CAT_TIDY_RUN);
+  if (!gone.length) return;
+  for (const t of gone) {
+    for (const k of ['a/' + t + '.mp3', 'v/' + t + '.mp4', 'h/' + t + '.mp4', 'l/' + t + '.m4a']) await env.MEDIA.delete(k).catch(() => {});
+    delete c[t];
+  }
+  await env.SOTD.put('mediaCatalog', JSON.stringify(c));
+  const log = (await env.SOTD.get('catgone', 'json')) || [];
+  await env.SOTD.put('catgone', JSON.stringify(gone.map(t => ({ t, n: titles[t] || '', at: Date.now() })).concat(log).slice(0, 200)));
+  console.log('catalogTidy: ' + gone.length + ' songs on no calendar or playlist, their files deleted');
+}
 async function catalogSet(env, key, size, fp) {   // which songs have which files: a and v, with their sizes (0: gone),
   const c = await catalog(env), kind = key[0], track = key.slice(2, 24);   // and fa, fv: each file's fingerprint, so a
   const e = c[track] || {};                                                // folder upload can skip what's already there
