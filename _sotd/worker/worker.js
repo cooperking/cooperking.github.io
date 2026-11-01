@@ -3003,7 +3003,7 @@ function uplCan(all, viewer, rec) {   // whether someone sees this playlist (vie
 }
 function uplList(all, viewer, U) {   // the playlists a member can switch to (/members/me pls)
   return Object.entries(U).filter(([, r]) => uplCan(all, viewer, r))
-    .map(([pid, r]) => Object.assign({ id: pid, n: uplName(all, r), t: uplTitle(all, r), o: all[r.o].name, mode: r.mode, cnt: r.cnt || 0, sp: r.sp, src: uplSrc(r), sh: uplShareOf(r) }, r.yt ? { yt: r.yt } : {}, r.pic ? { pic: LIVE_ORIGIN + '/up/' + pid + '.jpg?v=' + r.pic } : {}, r.o === viewer ? { mine: true, pl: r.pl || '', fk: r.fk || '', st: r.st, err: r.err || '', sn: r.n || '', to: uplShareOf(r) === 'some' ? r.to || [] : [], dates: r.mode === 'list' ? null : Object.assign({ how: 'added' }, r.dates || {}), send: uplSendOf(r) } : {}))
+    .map(([pid, r]) => Object.assign({ id: pid, n: uplName(all, r), t: uplTitle(all, r), o: all[r.o].name, mode: r.mode, cnt: r.cnt || 0, sp: r.sp, src: uplSrc(r), sh: uplShareOf(r) }, r.yt ? { yt: r.yt } : {}, r.pic ? { pic: LIVE_ORIGIN + '/up/' + pid + '.jpg?v=' + r.pic } : {}, r.o === viewer ? { mine: true, pl: r.pl || '', fk: r.fk || '', moved: r.dd ? Object.keys(r.dd).length : 0, st: r.st, err: r.err || '', sn: r.n || '', to: uplShareOf(r) === 'some' ? r.to || [] : [], dates: r.mode === 'list' ? null : Object.assign({ how: 'added' }, r.dates || {}), send: uplSendOf(r) } : {}))
     .sort((a, b) => (b.mine ? 1 : 0) - (a.mine ? 1 : 0) || a.o.localeCompare(b.o) || a.n.localeCompare(b.n));
 }
 async function uplMine(env, pls, U) {   // their own playlists' songs waiting for them to sign off (wait: the newest 20, oldest first)
@@ -3036,7 +3036,12 @@ async function uplDropOwner(env, member) {
   if (mine.length) await uplDrop(env, mine);
 }
 function uplAddDays(iso, k) { const d = new Date(iso + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + k); return d.toISOString().slice(0, 10); }
-function uplDays(songs, rec) {   // each song's day: a calendar's chosen way (dates: a song a day from its anchor), else by when it was added
+function uplDays(songs, rec) {   // each song's day: one its owner moved it to (dd), else a calendar's chosen way (dates: a song a day from its anchor), else by when it was added
+  const out = uplDaysBy(songs, rec), dd = rec && rec.mode !== 'list' && rec.dd;
+  if (dd) for (const x of out) if (dd[x.id]) x.d = dd[x.id];
+  return out;
+}
+function uplDaysBy(songs, rec) {
   const dt = rec && rec.mode !== 'list' && rec.dates;
   if (dt && (dt.how === 'fwd' || dt.how === 'back') && songs.length) {
     let i = songs.findIndex(x => x.id === dt.at);
@@ -3451,8 +3456,27 @@ async function memberUpl(request, url, env, answer) {
     const r = await uplSignoffDo(env, all, pid, rec, data, x);
     return answer(200, Object.assign({ ok: true, sent: r.sent, view: await uplView(env, all, me, pid, rec), pls: await uplMine(env, uplList(all, me, U), U) }, r.on ? { on: r.on, at: r.at } : {}));
   }
+  if (body.op === 'move' || body.op === 'unmove') {   // a song to another day, by its owner (John, 1 Nov 2026: "an edit mode on calendar playlists where you can drag and drop to different dates"); one there already takes its day; unmove: every song back to the setup's day
+    if (rec.mode === 'list') return answer(400, { error: 'A playlist has no days: make it a calendar first.' });
+    if (body.op === 'unmove') { delete rec.dd; delete rec.annDay; await uplPut(env, U); return answer(200, { ok: true, pls: await uplMine(env, uplList(all, me, U), U), view: await uplView(env, all, me, pid, rec) }); }
+    const day = String(body.day || ''), data = await uplSongs(env, pid);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || isNaN(Date.parse(day + 'T12:00:00Z'))) return answer(400, { error: 'Choose a day.' });
+    const days = uplDays(data.songs || [], rec), live = days.filter(x => !uplGone(data, x)), x = live.find(y => y.id === String(body.track || ''));
+    if (!x) return answer(404, { error: 'That song isn’t on this calendar.' });
+    if (x.d === day) return answer(200, { ok: true, view: await uplView(env, all, me, pid, rec) });
+    const there = live.find(y => y.d === day && y.id !== x.id);
+    rec.dd = rec.dd || {};
+    if (Object.keys(rec.dd).length >= UPL_CSV_MOST) return answer(400, { error: 'That’s as many songs moved as a calendar can have.' });
+    rec.dd[x.id] = day;
+    if (there) rec.dd[there.id] = x.d;
+    delete rec.annDay;   // (today's song looked at again)
+    await uplPut(env, U);
+    await startJob(env, null, null, 0, null, true).catch(() => {});   // (its cards, and its YouTube list, follow)
+    return answer(200, { ok: true, swapped: there ? { id: there.id, title: there.title, d: x.d } : null, pls: await uplMine(env, uplList(all, me, U), U), view: await uplView(env, all, me, pid, rec) });
+  }
   if (body.op === 'dates') {
     if (rec.mode === 'list') return answer(400, { error: 'A playlist has no days: make it a calendar first.' });
+    delete rec.dd;   // (a new setup: its days, not the ones moved by hand)
     const how = ['added', 'fwd', 'back'].includes(body.how) ? body.how : '', day = String(body.day || '');
     if (!how) return answer(400, { error: 'Say how: added, fwd or back.' });
     if (how === 'added') delete rec.dates;

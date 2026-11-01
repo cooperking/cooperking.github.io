@@ -310,7 +310,8 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   member's own, then the others they see; each with its picture, name, whose it is and its songs, the one showing
   outlined. A playlist's picture is its owner's (*Add a picture* / *Change picture* on their own card: a photo, cropped
   square on the page; R2 `up/<pid>.jpg`, `pic` on its record, served at `/up/<pid>.jpg`; *Use its covers* takes it
-  off), else its newest four covers (`/members/upl?cards=1`). On the Fire TV too (John, 1 Nov 2026: "You can't tab to the
+  off), else its newest four covers (`/members/upl?cards=1`; pictures square without `aspect-ratio`, and loaded at once,
+  for the Fire TV's browser). On the Fire TV too (John, 1 Nov 2026: "You can't tab to the
   John's song of the day on fire stick with a remote"): the calendar's name is the first thing up from the month, OK
   opens the page, the arrows move between cards (no picture buttons there). Tests: `cal_t.mjs` (the draft against the
   real Worker code), `cal_tv_t.mjs` (the same as the Fire TV, by its remote).
@@ -352,6 +353,14 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   then each one's next). Songs not reached yet (150 a run for MusicBrainz and Discogs) wait for the next run, never
   the search. Missed songs are tried the free ways again after 30 days. (Odesli was tried first: song.link closed its
   keyless API in October 2026, and its matches leave YouTube out.)
+- **Moving songs to other days** (John, 1 Nov 2026: "Can there be an edit mode on calendar playlists where you can drag
+  and drop to different dates"): on their own calendar, its owner's *Edit days* (beside Play and Shuffle; not on the TV).
+  The songs wiggle; one dragged onto another day moves there, or one tapped and then a day tapped (in any month); a song
+  already on that day takes the moved one's old day. Its songs still to come show while editing; a day isn't opened by
+  a tap meanwhile. A bar at the foot says how, with *Back to the setup's days* (once some are moved) and *Done*. The
+  Worker keeps each moved song's day (`dd` on the playlist's record, over the setup's way: `uplDays`), op `move`
+  (`{ id, track, day }`, gives `swapped`) and `unmove`; choosing a new way in *Setup* starts afresh. Tests: `move_t.mjs`
+  (the Worker), `edit_t.mjs` (the draft against the real Worker code).
 - **A calendar's days** (John, 30 Oct 2026; the pop-up's *Setup*, and straight after adding one): by the day
   each song is added on Spotify (John's rule, a day with no song taking the next); forwards from a day (the first song on
   it, then a song a day); or back from a day (the newest song now on it, each one before a day earlier). Either of the
