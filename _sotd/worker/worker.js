@@ -3387,6 +3387,7 @@ async function memberUpl(request, url, env, answer) {
   if (request.method === 'GET') {
     const pid = url.searchParams.get('id') || '', rec = U[pid];
     if (url.searchParams.get('cards') === '1') return answer(200, { cards: await uplCardCovers(env, all, me, U) });
+    if (url.searchParams.get('songs') === '1') return answer(200, { songs: await uplAllSongs(env, all, me, U) });
     if (!uplCan(all, me, rec)) return answer(404, { error: 'No such playlist.' });
     if (rec.o === me && url.searchParams.get('fill') === '1') await fillPreviews(env, (await uplSongs(env, pid)).songs || [], UPL_PV_FILL, Object.assign({}, pvMem, (await env.SOTD.get('previews', 'json')) || {})).catch(() => null);   // (its owner watching it fill: the next previews now)
     return answer(200, await uplView(env, all, me, pid, rec));
@@ -3741,6 +3742,18 @@ async function uplCardCovers(env, all, viewer, U) {   // each playlist they see:
     const order = rec.mode === 'list' && (data.order || []).length ? data.order.map(t => out1.find(y => y.x.id === t)).filter(Boolean) : out1.slice().sort((a, b) => a.d < b.d ? 1 : a.d > b.d ? -1 : 0);
     for (const { x } of order) { if (cv.length >= 4) break; const c = String(x.img || ''); if (c && !cv.includes(c)) cv.push(c); }
     out[p.id] = { cv };
+  }
+  return out;
+}
+async function uplAllSongs(env, all, viewer, U) {   // every song on the playlists they see (out ones; their own, all), for the calendar's search (John, 1 Nov 2026: "Can search in the main section include all songs available to that member")
+  const out = [], today = londonDay();
+  for (const p of uplList(all, viewer, U)) {
+    const rec = U[p.id], data = await uplSongs(env, p.id), days = uplDays(data.songs || [], rec);
+    (data.songs || []).forEach((x, i) => {
+      if (out.length >= 5000 || uplGone(data, x)) return;
+      if (rec.o !== viewer && (uplWaiting(rec, data, x) || days[i].d > today)) return;
+      out.push({ id: x.id, title: x.title, artist: x.artist, img: x.img || '', d: days[i].d, pid: p.id, n: p.n, o: p.o, mine: !!p.mine, mode: rec.mode });
+    });
   }
   return out;
 }

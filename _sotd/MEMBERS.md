@@ -304,6 +304,11 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   (from Capacitor's App plugin: `appUrlOpen` or `getLaunchUrl`). Either way it opens Import from Spotify at its
   playlists. Tests: `csv_t.mjs` (the Worker), `zip_t.js` (the draft: both kinds of zip, the picker, update, switch, one
   CSV, a shared file).
+- **Search finds every song they can see** (John, 1 Nov 2026: "Can search in the main section include all songs available
+  to that member, not just John's Song of the Day"): with words typed, the calendar's search shows, after what it finds
+  on the calendar showing, *On other calendars and playlists*: the songs on every other one they see (from the
+  Worker's `/members/upl?songs=1`, kept 5 minutes), and John's own when another's shows; each says whose it's on, and
+  opens on it at its day. Test: `search_t.mjs`.
 - **The Calendars and Playlists page**, each card but John's titled by its playlist's name (John, 1 Nov 2026: "Can the
   Calendars section be called Calendars and Playlists and, apart from the original, each one just be titled by the
   playlist name") (John, 1 Nov 2026: "Rather than the drop down could we have a click that opens a page and shows
