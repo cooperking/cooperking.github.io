@@ -464,6 +464,20 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   on playing there with them (`memberSongs` asks `uplView` for it even though it's off). Once it's off every saved
   playlist (one saved again without it, or deleted), `uplSavedTidy` deletes the files then. Freed files count off the
   366 at once.
+- **A song with no preview, or one taken off Spotify** (John, 1 Nov 2026: "A song in a Spotify playlist might have been
+  removed from Spotify, so show no preview. However, if a YouTube video is found it should just give that as the
+  option... It should automatically play in a playlist as that version, as a fallback. It should continue with
+  preview/ song mode for the next song though"): Spotify's page for a song taken off it answers 404, which now counts
+  as no preview (`fillPreviews` marks it `-`; before, it stopped the lookup, so *Getting your playlist ready* never
+  finished). A preview that won't play in the browser (a dead one kept from an Exportify file) is dropped for that
+  song (`deadPreview`, page's `NOPV`). A song with no preview but a video shows only the video (no *Play as preview*,
+  no "No preview" line), and plays it whichever mode is on (`playPick`); the mode isn't changed, so the next song
+  plays as before.
+- **Still to look for, and stopping a look** (John, 1 Nov 2026: "When it says '4 still to look for' there's no way to
+  see which they are. You should be able to cancel a search for something too"): the part under way has *Show which
+  are left* (`prog.left`), each song with *Stop looking* (op `skip`, `k` p/v/m/y; `skip { <track>: letters }` in
+  `upl:<id>`): counted as none found, so the part can finish. A stopped video look goes to the site job as `ov: ''`
+  (none), so it isn't searched; a stopped preview look is left out of `?fill=1`.
 - **Songs still to come on its owner's calendar** (John, 1 Nov 2026: "Can the whole playlist be added as normal but the
   clickable playlist on the screen only show the current playlist"): every song is still sent to the site job for its
   video, moods and year, days to come too, and shows (faded) on its owner's calendar to move; but what plays or lists

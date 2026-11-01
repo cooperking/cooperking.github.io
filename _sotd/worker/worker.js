@@ -3242,7 +3242,7 @@ async function uplSync(request, env) {
     const ed = data.ed || {};   // (ov: its owner's video for a song, '' none)
     const gone = new Set((data.songs || []).filter(x => uplGone(data, x)).map(x => x.id));
     out[pid] = { title: uplTitle(all, rec), mode: rec.mode, base: rec.base || 0, yt: rec.yt || '', share: uplShareOf(rec), songs: composeSongs(data.songs || [], pv, tags).filter(x => !gone.has(x.id))
-      .map(x => J[x.id] && 'v' in J[x.id] ? Object.assign(x, { ov: J[x.id].v }) : ed[x.id] && 'v' in ed[x.id] ? Object.assign(x, { ov: ed[x.id].v }) : x) };   // (John's video over its owner's)
+      .map(x => J[x.id] && 'v' in J[x.id] ? Object.assign(x, { ov: J[x.id].v }) : ed[x.id] && 'v' in ed[x.id] ? Object.assign(x, { ov: ed[x.id].v }) : ((data.skip || {})[x.id] || '').includes('v') ? Object.assign(x, { ov: '' }) : x) };   // (its look for a video stopped by its owner: none, so the job doesn't search)   // (John's video over its owner's)
     if (uplShareOf(rec) === 'public') {   // its songs out, each with its day and cover: the cards for its links (share_pages.py)
       const v = await uplView(env, all, null, pid, rec);
       out[pid].pub = { t: v.t, n: v.n, songs: v.songs.map(x => ({ id: x.id, d: x.d, title: x.title, artist: x.artist, artists: x.artists, img: x.img || '' })) };
@@ -3358,13 +3358,17 @@ async function uplView(env, all, viewer, pid, rec, also) {   // (also: tracks wa
   }
   let prog;
   if (mine) {   // (its owner: how far the calendar has got with its songs: each part found (p, v, m, y), looked at with none (pn, vn, mn, yn), and their own files (fa, fv: songs with an MP3, an MP4))
-    const all2 = (data.songs || []).filter(x => !gone.has(x.id)), seen = (await env.SOTD.get('uplseen', 'json')) || {};
+    const all2 = (data.songs || []).filter(x => !gone.has(x.id)), seen = (await env.SOTD.get('uplseen', 'json')) || {}, skip = data.skip || {};
+    const off = (x, k) => (skip[x.id] || '').includes(k);   // (its owner stopped the look for it: John, 1 Nov 2026: "You should be able to cancel a search for something")
     const has = (x, k) => k === 'v' ? !!(x.vid || x.ov) : k === 'm' ? !!(x.mt || x.tag) : !!x.yr;
-    const noneOf = k => songs.filter(x => !has(x, k) && ((seen[x.id] || '').includes(k) || (k === 'v' && x.ov === ''))), none = k => noneOf(k).length;
+    const noneOf = k => songs.filter(x => !has(x, k) && ((seen[x.id] || '').includes(k) || (k === 'v' && x.ov === '') || off(x, k))), none = k => noneOf(k).length;
+    const leftOf = k => songs.filter(x => !has(x, k) && !(seen[x.id] || '').includes(k) && !(k === 'v' && x.ov === '') && !off(x, k));
+    const pvNone = x => pv[x.id] === '-' || (!(x.id in pv) && off(x, 'p')), pvLeft = x => !(x.id in pv) && !off(x, 'p');
     const ids = l => l.slice(0, 200).map(x => x.id);   // (which ones, for its owner: John, 1 Nov 2026: "can we have it say which ones they are")
-    prog = { n: all2.length, pq: all2.filter(x => !(x.id in pv)).length, p: all2.filter(x => pv[x.id] && pv[x.id] !== '-').length, pn: all2.filter(x => pv[x.id] === '-').length,
+    prog = { n: all2.length, pq: all2.filter(pvLeft).length, p: all2.filter(x => pv[x.id] && pv[x.id] !== '-').length, pn: all2.filter(pvNone).length,
       v: songs.filter(x => has(x, 'v')).length, vn: none('v'), m: songs.filter(x => has(x, 'm')).length, mn: none('m'), y: songs.filter(x => has(x, 'y')).length, yn: none('y'),
-      which: { p: ids(all2.filter(x => pv[x.id] === '-')), v: ids(noneOf('v')), m: ids(noneOf('m')), y: ids(noneOf('y')) },
+      which: { p: ids(all2.filter(pvNone)), v: ids(noneOf('v')), m: ids(noneOf('m')), y: ids(noneOf('y')) },
+      left: { p: ids(all2.filter(pvLeft)), v: ids(leftOf('v')), m: ids(leftOf('m')), y: ids(leftOf('y')) },   // (still to look for: which, each one's look can be stopped)
       fa: songs.filter(x => x.ma || (x.own && x.own.a) || (x.jf && x.jf.a)).length, fv: songs.filter(x => x.mv || (x.own && x.own.v) || (x.jf && x.jf.v)).length, ch: rec.ch || rec.at || 0 };
   }
   return { id: pid, n: uplName(all, rec), t: uplTitle(all, rec), o: all[rec.o].name, mine, mode: rec.mode, sp: rec.sp, src: uplSrc(rec), yt: rec.yt || '', st: rec.st, at: data.at || null, sh: uplShareOf(rec),
@@ -3392,7 +3396,7 @@ async function memberUpl(request, url, env, answer) {
     if (url.searchParams.get('cards') === '1') return answer(200, { cards: await uplCardCovers(env, all, me, U) });
     if (url.searchParams.get('songs') === '1') return answer(200, { songs: await uplAllSongs(env, all, me, U) });
     if (!uplCan(all, me, rec)) return answer(404, { error: 'No such playlist.' });
-    if (rec.o === me && url.searchParams.get('fill') === '1') await fillPreviews(env, (await uplSongs(env, pid)).songs || [], UPL_PV_FILL, Object.assign({}, pvMem, (await env.SOTD.get('previews', 'json')) || {})).catch(() => null);   // (its owner watching it fill: the next previews now)
+    if (rec.o === me && url.searchParams.get('fill') === '1') await fillPreviews(env, ((d0 => (d0.songs || []).filter(x => !((d0.skip || {})[x.id] || '').includes('p')))(await uplSongs(env, pid))), UPL_PV_FILL, Object.assign({}, pvMem, (await env.SOTD.get('previews', 'json')) || {})).catch(() => null);   // (its owner watching it fill: the next previews now)
     return answer(200, await uplView(env, all, me, pid, rec));
   }
   if (request.method !== 'POST') return answer(405, { error: 'Use GET or POST.' });
@@ -3445,6 +3449,15 @@ async function memberUpl(request, url, env, answer) {
   if (!rec) return answer(404, { error: 'No such playlist of yours.' });
   if (rec.src === 'mpl' && ['link', 'check', 'signoff', 'order', 'title', 'del'].includes(body.op)) return answer(400, { error: 'That’s done in the playlist itself.' });
   if (rec.src === 'csv' && ['link', 'check'].includes(body.op)) return answer(400, { error: 'Upload a fresh export from Exportify instead.' });
+  if (body.op === 'skip') {   // its owner stops the look for one song's preview (p), video (v), moods (m) or year (y): counted as none found
+    const k = String(body.k || ''), data = await uplSongs(env, pid), t = String(body.track || '');
+    if (!/^[pvmy]$/.test(k)) return answer(400, { error: 'Which look?' });
+    if (!(data.songs || []).some(y => y.id === t)) return answer(404, { error: 'That song isn’t on this playlist.' });
+    data.skip = data.skip || {};
+    if (!(data.skip[t] || '').includes(k)) data.skip[t] = (data.skip[t] || '') + k;
+    await env.SOTD.put('upl:' + pid, JSON.stringify(data));
+    return answer(200, { ok: true, view: await uplView(env, all, me, pid, rec) });
+  }
   if (body.op === 'del') {   // a song off its calendar or playlist (not off Spotify): its day left empty
     const data = await uplSongs(env, pid), x = (data.songs || []).find(y => y.id === String(body.track || '') && !uplGone(data, y));
     if (!x) return answer(404, { error: 'That song isn’t on this playlist.' });
@@ -4316,7 +4329,8 @@ async function fillPreviews(env, items, limit, known) {
   const one = async it => {   // (Spotify's embed page for the song carries its 30-second preview)
     if (stop) return;
     const r = await fetch('https://open.spotify.com/embed/track/' + it.id, { headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0 Safari/537.36', 'Accept-Language': 'en-GB' } }).catch(() => null);
-    if (!r || !r.ok) { stop = true; return; }
+    if (r && (r.status === 404 || r.status === 410 || r.status === 400)) { pv[it.id] = '-'; changed = true; return; }   // (taken off Spotify: no preview, and looked at, so a playlist's progress ends)
+    if (!r || !r.ok) { stop = true; return; }   // (refused or down: the rest wait for the next look)
     const m = (await r.text()).match(/https:\/\/p\.scdn\.co\/mp3-preview\/([0-9a-f]{20,})/);
     pv[it.id] = m ? m[1] : '-';
     changed = true;

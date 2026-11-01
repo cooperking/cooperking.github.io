@@ -368,6 +368,10 @@ html.upl-editing .toast { bottom: calc(max(16px, env(safe-area-inset-bottom, 0px
 .uplprog-rows .whichl li button:hover, .uplprog-rows .whichl li button:focus-visible { box-shadow: inset 0 0 0 1px var(--fg); outline: none; }
 .uplprog-rows .whichl li b { font: 600 13px/1.3 var(--sans); overflow-wrap: anywhere; }
 .uplprog-rows .whichl li span { font-size: 11.5px; color: var(--fg-2); }
+.uplprog-rows .whichl.left li { display: flex; gap: 6px; align-items: stretch; }
+.uplprog-rows .whichl.left li > button:first-child { flex: 1; min-width: 0; }
+.uplprog-rows .whichl li button.stop { width: auto; flex: none; display: block; align-self: center; padding: 6px 11px; border-radius: 999px; background: none; box-shadow: inset 0 0 0 1px var(--line); font: 600 12px/1.2 var(--sans); white-space: nowrap; }
+.uplprog-rows .whichl li button.stop:disabled { opacity: .55; cursor: default; }
 .uplprog-t { margin: 0; font-size: 12px; line-height: 1.4; color: var(--fg-2); }
 .uplw-list { display: grid; gap: 6px; padding: 2px 2px 0; }
 .uplw-list[hidden] { display: none; }
@@ -2627,6 +2631,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
 
   // ---- a song's video: found on YouTube by the GitHub Action (videos.json), played in YouTube's own player,
   // in the record's place. While it's showing, the round play button, the bar and the time work the video. ----
+  // NOPV: previews that wouldn't play here (a song taken off Spotify keeps a dead one): none from then on, so a song
+  // with a video shows only that (John, 1 Nov 2026: "if a YouTube video is found it should just give that as the option")
+  var NOPV = {};
   var VIDS = {}, VIDS_YT = {};   // VIDS: YouTube's (videos.json), with a member's own videos in their place (vidsMerge)
   var NOTE_ICON = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M6 12V3.5l7-1.5v8.5"/><circle cx="4.2" cy="12" r="1.8"/><circle cx="11.2" cy="10.5" r="1.8"/></svg>';
   var PEN_ICON = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="M10.6 2.6l2.8 2.8-7.6 7.6-3.4.6.6-3.4z"/><path d="M9 4.2l2.8 2.8"/></svg>';
@@ -3147,6 +3154,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   audio.addEventListener('waiting', function () { if (coverOn) coverState(3); });
   audio.addEventListener('ended', function () { if (coverOn) coverState(0); });
   audio.addEventListener('error', function () {   // no connection and not downloaded: stopped, and said so
+    if (coverOn && vplay && vplay.cover && navigator.onLine !== false && audio.src.indexOf('p.scdn.co/mp3-preview/') >= 0) { deadPreview(vplay.el); return; }   // (online: the preview's gone)
     if (!coverOn || !vplay || !vplay.cover || navigator.onLine !== false) return;
     var el = vplay.el; if (OFFL[el.sotd.s.track]) return;
     coverState(2); toast('That one isn’t downloaded: it needs a connection');
@@ -3812,7 +3820,24 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (vd && document.hidden && p.sotd.ui && !(vd.own && BGV)) vd = null;
     if (vd) { watch(p, vd); return true; }
     if (p.sotd.ui) { toggle(p.sotd.s, p.sotd.ui); return true; }
+    // no preview, but a video: that, this once, as a fallback; the next song plays as the mode says again (John, 1 Nov
+    // 2026: "It should automatically play in a playlist as that version... continue with preview/ song mode for the next")
+    var v0 = VIDS[p.sotd.s.track];
+    if (v0 && !(document.hidden && !(v0.own && BGV))) { watch(p, v0); return true; }
     return false;
+  }
+  function deadPreview(el) {   // its preview wouldn't play: gone for this song, and its video instead if it has one (else on to the next)
+    var o = el && el.sotd; if (!o || !o.s || ownSong(o.s) || OFFL[o.s.track] || !o.s.p) return false;
+    NOPV[o.s.track] = 1;
+    o.ui = null;
+    if (o.player) { o.player.style.display = 'none'; o.player = null; }   // (.player sets display: hidden alone wouldn't do)
+    var b = el.querySelector('.pill.watch');
+    if (b) { if (!o.acts.contains(b)) o.acts.insertBefore(b, o.acts.firstChild); watchLabel(el, b, false); }
+    var v = VIDS[o.s.track];
+    if (v) { setTimeout(function () { if (el.isConnected) { watch(el, v); if (b) watchLabel(el, b, true); } }, 0); return true; }
+    toast('“' + o.s.title + '” has no preview on Spotify now');
+    if (queue) setTimeout(function () { if (el.isConnected) playOn(el); }, 1200);
+    return true;
   }
   // when a song finishes: the playlist's next song, or else the day's next song or the next day (as if swiped)
   // the end of a playlist: back to My playlist (or to the calendar after Play all)
@@ -3887,6 +3912,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         if (!firstUi) firstUi = { s: s, ui: ui };
       } else {
         player = document.createElement('p'); player.className = 'nopreview'; player.textContent = 'No preview here yet. Open it in Spotify to listen.';
+        if (VIDS[s.track]) player.hidden = true;   // (its video is the one way to play it: only that, John, 1 Nov 2026)
       }
 
       var price = div('price');
@@ -5829,7 +5855,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function ownSong(s) { return s.ma || (MEMBER && MEMBER.media && MEMBER.media[s.track] && MEMBER.media[s.track].a) || ''; }   // (ma: a member's own for their song)
   function whole(s) { return !!(ownSong(s) || OFFL[s.track]); }   // a member's whole song: online, or downloaded here
   function songSrc(s) {   // (a downloaded song is streamed while a speaker's playing: a Chromecast fetches the song itself)
-    var on = ownSong(s) || s.p || '';
+    var on = ownSong(s) || (NOPV[s.track] ? '' : s.p) || '';   // (a preview that wouldn't play: none)
     return OFFL[s.track] && SWOK && !(castNow && on) ? offUrl(s.track) : on;
   }
   // ---- a member's downloads (songs and John's videos): fetched into the browser's storage (sotd-songs) and played from it by the
@@ -6875,7 +6901,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var N = g.n, pl = function (k, w) { return k + ' ' + (k === 1 ? w : w + 's'); };
     var steps = [
       { k: 'Songs', done: true, sum: pl(N, 'song') + ' in' },
-      { k: 'Previews', w: 'p', tip: 'These have no preview on Spotify, so they play nothing until you add your own MP3: tap one to add it.', f: g.p, none: g.pn || 0, left: g.pq, sum: g.p + ' can play their preview' + (g.pn ? ' · ' + pl(g.pn, 'song') + ' with none on Spotify' : ''), now: 'Looking each song up on Spotify: ' + (N - g.pq) + ' of ' + N + ' so far. Songs play as soon as theirs is here.' },
+      { k: 'Previews', w: 'p', tip: 'These have no preview on Spotify (some have been taken off it), so they play their video if one is found, or nothing until you add your own MP3: tap one to add it.', f: g.p, none: g.pn || 0, left: g.pq, sum: g.p + ' can play their preview' + (g.pn ? ' · ' + pl(g.pn, 'song') + ' with none on Spotify' : ''), now: 'Looking each song up on Spotify: ' + (N - g.pq) + ' of ' + N + ' so far. Songs play as soon as theirs is here.' },
       { k: 'Videos', w: 'v', tip: 'No video was found for these: tap one to give it a YouTube link or your own MP4.', f: g.v, none: g.vn || 0, left: left('v', 'vn'), sum: pl(g.v, 'video') + ' found' + (g.vn ? ' · ' + g.vn + ' with none (they play their preview)' : ''), now: 'Finding a YouTube video for each: ' + g.v + ' found' + (g.vn ? ', ' + g.vn + ' with none' : '') + ', ' + left('v', 'vn') + ' still to look for. A batch at a time, over the next hour or two.' },
       { k: 'Moods', w: 'm', tip: 'Nothing was heard or said about these: tap one to choose its moods and genres.', f: g.m, none: g.mn || 0, left: left('m', 'mn'), sum: g.m + ' with moods and genres' + (g.mn ? ' · ' + g.mn + ' with none found' : ''), now: 'Listening to each preview and reading what listeners say: ' + g.m + ' done, ' + left('m', 'mn') + ' to go.' },
       { k: 'Years', w: 'y', tip: 'Spotify and MusicBrainz don’t say when these first came out. Tap one to open it.', f: g.y, none: g.yn || 0, left: left('y', 'yn'), sum: g.y + ' with the year they came out' + (g.yn ? ' · ' + g.yn + ' not known' : ''), now: 'Finding when each first came out: ' + g.y + ' found, ' + left('y', 'yn') + ' to go.' }
@@ -6891,6 +6917,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       if (x.done || x === cur) { var t = document.createElement('span'); t.className = 'tx'; t.textContent = x.done ? x.sum : x.now; li.appendChild(t); }
       var wl = x.w && ((g.which || {})[x.w] || []);
       if (wl && wl.length && (x.done || x === cur)) uplWhich(li, x, wl);
+      var ll = x.w && ((g.left || {})[x.w] || []);
+      if (ll && ll.length && x === cur) uplWhich(li, x, ll, true);   // the ones still to look for, each one's look a tap from stopping
       if (x === cur) {
         var bar = document.createElement('span'); bar.className = 'bar'; bar.setAttribute('role', 'progressbar'); bar.setAttribute('aria-valuemin', '0'); bar.setAttribute('aria-valuemax', String(N)); bar.setAttribute('aria-valuenow', String(N - x.left)); bar.setAttribute('aria-label', x.k);
         var f = document.createElement('i'); f.style.width = (100 * x.f / Math.max(1, N)) + '%'; bar.appendChild(f);
@@ -6925,13 +6953,18 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       }).catch(function () { PROG.t = setTimeout(function () { uplProg(UPL.view); }, 15000); });
     }, g.pq ? 2500 : 60000);
   }
-  function uplWhich(li, x, ids) {   // the songs a part found nothing for, a tap away (John, 1 Nov 2026: "can we have it say which ones they are")
-    var open = !!PROG.open && PROG.open[x.w];
+  // left: the ones still to look for (John, 1 Nov 2026: "When it says '4 still to look for' there's no way to see which
+  // they are. You should be able to cancel a search for something too"): each with Stop looking (op skip: counted as
+  // none found, so the part can finish)
+  var STOP_TIP = { p: 'Still being looked up on Spotify. Stop looking for one to count it as having no preview.', v: 'Still to be searched for on YouTube. Stop looking for one to leave it without a video (you can still give it a link or an MP4).', m: 'Still to be listened to. Stop looking for one to leave it without moods and genres.', y: 'Still to be looked up. Stop looking for one to leave it without a year.' };
+  function uplWhich(li, x, ids, left) {   // the songs a part found nothing for, a tap away (John, 1 Nov 2026: "can we have it say which ones they are")
+    var key = x.w + (left ? 'l' : ''), open = !!PROG.open && PROG.open[key];
+    var label = function (o) { return (o ? 'Hide' : left ? 'Show which are left' : 'Show which') + (ids.length > 1 ? ' (' + ids.length + ')' : ''); };
     var b = document.createElement('button'); b.type = 'button'; b.className = 'which'; b.setAttribute('aria-expanded', open ? 'true' : 'false');
-    b.textContent = (open ? 'Hide' : 'Show which') + (ids.length > 1 ? ' (' + ids.length + ')' : '');
+    b.textContent = label(open);
     li.appendChild(b);
-    var box = document.createElement('div'); box.className = 'whichl'; box.hidden = !open;
-    var tip = document.createElement('p'); tip.textContent = x.tip; box.appendChild(tip);
+    var box = document.createElement('div'); box.className = 'whichl' + (left ? ' left' : ''); box.hidden = !open;
+    var tip = document.createElement('p'); tip.textContent = left ? STOP_TIP[x.w] : x.tip; box.appendChild(tip);
     var ul = document.createElement('ul'), vs = (UPL.view && UPL.view.songs) || [];
     ids.forEach(function (t) {
       var s = vs.filter(function (y) { return (y.id || y.track) === t; })[0]; if (!s) return;
@@ -6943,13 +6976,26 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         if (x.w !== 'y' && cs && cs.upl === UPL.on) { upledOpen(cs); return; }
         if (s.d && byDate[s.d] && byDate[s.d].some(function (p) { return p.track === t; })) openDay(s.d, { track: t }); else mineUplOpen(UPL.on, { track: t });
       });
-      it.appendChild(a); ul.appendChild(it);
+      it.appendChild(a);
+      if (left) {
+        var st = document.createElement('button'); st.type = 'button'; st.className = 'stop'; st.textContent = 'Stop looking';
+        st.setAttribute('aria-label', 'Stop looking for ' + s.title);
+        st.addEventListener('click', function () {
+          st.disabled = true; st.textContent = 'Stopping…';
+          uplCall({ op: 'skip', id: UPL.on, track: t, k: x.w }).then(function (j) {
+            if (j.status !== 200) { st.disabled = false; st.textContent = 'Stop looking'; toast(j.error || 'Couldn’t stop it just now'); return; }
+            if (j.view && UPL.on === j.view.id) { UPL.view = j.view; uplProg(j.view); }
+          }).catch(function () { st.disabled = false; st.textContent = 'Stop looking'; toast('Couldn’t reach the site. Try again.'); });
+        });
+        it.appendChild(st);
+      }
+      ul.appendChild(it);
     });
     box.appendChild(ul); li.appendChild(box);
     b.addEventListener('click', function () {
-      PROG.open = PROG.open || {}; PROG.open[x.w] = !PROG.open[x.w];
-      box.hidden = !PROG.open[x.w]; b.setAttribute('aria-expanded', PROG.open[x.w] ? 'true' : 'false');
-      b.textContent = (PROG.open[x.w] ? 'Hide' : 'Show which') + (ids.length > 1 ? ' (' + ids.length + ')' : '');
+      PROG.open = PROG.open || {}; PROG.open[key] = !PROG.open[key];
+      box.hidden = !PROG.open[key]; b.setAttribute('aria-expanded', PROG.open[key] ? 'true' : 'false');
+      b.textContent = label(PROG.open[key]);
     });
   }
   document.getElementById('uplprogx').addEventListener('click', function () {
