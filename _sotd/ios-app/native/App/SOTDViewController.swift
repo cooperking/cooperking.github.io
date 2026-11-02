@@ -12,6 +12,7 @@ class SOTDViewController: CAPBridgeViewController {
         bridge?.registerPluginInstance(SotdFilesPlugin())   // (a .zip or .csv opened with the app, for Import from Spotify: build 28 on)
         bridge?.registerPluginInstance(SotdExportifyPlugin())   // (Exportify inside the app, its download taken straight in)
         bridge?.registerPluginInstance(SotdSpotifyPlugin())   // (Spotify on this phone, woken through Spotify's iPhone toolkit: build 32 on)
+        bridge?.registerPluginInstance(SotdBgPlugin())   // (the app's own player for the hand-over from Spotify: build 41 on)
         SotdGuard.shared.attach(bridge?.webView)   // (away, playing: stopped when another device begins: build 25 on)
     }
 }

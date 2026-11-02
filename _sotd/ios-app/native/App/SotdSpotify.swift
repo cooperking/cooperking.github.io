@@ -100,7 +100,7 @@ public class SotdSpotifyPlugin: CAPPlugin, CAPBridgedPlugin, SPTAppRemoteDelegat
         let s = AVAudioSession.sharedInstance()
         if on {
             try? s.setCategory(.playback, mode: .default, options: [.mixWithOthers])
-            try? s.setActive(false, options: [.notifyOthersOnDeactivation])
+            try? s.setActive(true)   // (active but mixing: the app's silent copy plays without stopping Spotify; build 41)
         } else {
             try? s.setCategory(.playback, mode: .default, options: [])
             try? s.setActive(true)

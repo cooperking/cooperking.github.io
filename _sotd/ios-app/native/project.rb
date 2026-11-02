@@ -16,7 +16,7 @@ app = proj.targets.find { |t| t.name == 'App' } or abort('No App target in the p
 
 # 1. the App target's own Swift files
 group = proj.main_group.children.find { |g| g.respond_to?(:path) && (g.path == 'App' || g.name == 'App') } or abort('No App group')
-%w[SOTDViewController.swift SotdCastPlugin.swift SotdSiri.swift SotdContacts.swift SotdGuard.swift SotdShared.swift SotdFiles.swift SotdIcon.swift SotdExportify.swift SotdSpotify.swift].each do |f|
+%w[SOTDViewController.swift SotdCastPlugin.swift SotdSiri.swift SotdContacts.swift SotdGuard.swift SotdShared.swift SotdFiles.swift SotdIcon.swift SotdExportify.swift SotdSpotify.swift SotdBg.swift].each do |f|
   next if group.files.any? { |r| r.path == f }
   app.add_file_references([group.new_reference(f)])
 end
