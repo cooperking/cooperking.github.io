@@ -29,6 +29,9 @@
 .splogs details { margin: 6px 0; font-size: 14px; }
 .splogs summary { cursor: pointer; font-weight: 600; }
 .splogs pre { max-height: 300px; overflow: auto; white-space: pre-wrap; font: 12px/1.45 ui-monospace, Menlo, monospace; margin: 6px 0; }
+.spapps { margin: 6px 0; font-size: 14px; }
+.spapps summary { cursor: pointer; font-weight: 600; }
+.spapplist { list-style: none; margin: 6px 0; padding: 0; display: grid; gap: 2px; font-size: 13px; }
 .splist { list-style: none; margin: 6px 0 10px; padding: 0; display: grid; gap: 8px; }
 .splist li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; justify-content: space-between; font-size: 14px; }
 .people { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
@@ -169,9 +172,13 @@
     <div class="kicker">Spotify</div>
     <p class="stat" id="spstat"></p>
     <ul class="splist" id="splist"></ul>
-    <p class="stat" id="spapps"></p>
-    <div class="row"><textarea id="spnewapp" rows="2" placeholder="Another app’s Client ID, or a list of them" autocomplete="off" spellcheck="false" style="flex:1 1 220px;min-width:0"></textarea><button class="btn small primary" id="spaddapp" type="button">Add app</button></div>
+    <p class="stat" id="spappsum"></p>
     <div id="splogs"></div>
+    <details class="spapps"><summary>Show apps</summary>
+    <ul class="spapplist" id="spapps"></ul>
+    <p class="stat">To make room for more: in Spotify’s dashboard, Create app (any name), tick Web API and iOS, add both Redirect URIs (the button below, and sotdspotify://callback) and the iOS bundle ID io.github.cooperking.sotd; then paste its Client ID here.</p>
+    <div class="row"><textarea id="spnewapp" rows="2" placeholder="Another app’s Client ID, or a list of them" autocomplete="off" spellcheck="false" style="flex:1 1 220px;min-width:0"></textarea><button class="btn small primary" id="spaddapp" type="button">Add app</button></div>
+    </details>
     <div class="row"><a class="btn small" href="https://developer.spotify.com/dashboard" target="_blank" rel="noopener">Spotify’s dashboard ↗</a><button class="btn small" id="spcopyuri" type="button">Copy the Redirect URI</button></div>
   </div>
   <div class="card notify">
@@ -925,8 +932,10 @@
         : list.length ? list.length + (list.length === 1 ? ' member plays' : ' members play') + ' through their own Spotify.' : 'Nobody has connected Spotify yet.')
         + (j.quota && Date.now() - j.quota < 864e5 ? ' Spotify said the apps’ shared allowance of requests ran out on ' + new Date(j.quota).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) + ': songs played as previews for a while.' : '');
       var cnt = {}; list.forEach(function (x) { cnt[x.cid] = (cnt[x.cid] || 0) + 1; });
-      $('spapps').textContent = 'Apps (Spotify allows ' + per + ' people each): ' + apps.map(function (a, i) { return 'app ' + (i + 1) + (i ? '' : ' (Song of the Day)') + ' ' + (cnt[a] || 0) + '/' + per + ' · Client ID …' + a.slice(-6); }).join(' · ')
-        + '. To make room for more: in the dashboard, Create app (any name), tick Web API, and give it the Redirect URI below; then paste its Client ID here.';
+      var used = list.length, room = apps.length * per;
+      $('spappsum').textContent = apps.length + (apps.length === 1 ? ' Spotify app' : ' Spotify apps') + ' · ' + used + ' of ' + room + ' places used';
+      var ul2 = $('spapps'); ul2.textContent = '';
+      apps.forEach(function (a, i) { var li = document.createElement('li'); li.textContent = 'App ' + (i + 1) + (i ? '' : ' (Song of the Day)') + ' · ' + (cnt[a] || 0) + ' of ' + per + ' · …' + a.slice(-6); ul2.appendChild(li); });
       ul.textContent = '';
       list.sort(function (a, b) { return (b.blocked ? 1 : 0) - (a.blocked ? 1 : 0) || String(a.name).localeCompare(String(b.name)); }).forEach(function (x) {
         var li = document.createElement('li'), t = document.createElement('span');
