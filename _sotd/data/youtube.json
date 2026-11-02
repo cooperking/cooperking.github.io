@@ -6090,8 +6090,44 @@
 "n":266,
 "checked":"2026-11-02",
 "from":"YouTube search",
-"error":429,
-"detail":"{\n  \"error\": {\n    \"code\": 429,\n    \"message\": \"Quota exceeded for quota metric 'Search Queries' and limit 'Search Queries per day' of service 'youtube.googleapis.com' for consumer 'project_number:105"
+"alts":[
+{
+"id":"Xz3-AvEoSPw",
+"title":"Cheekface – We Need a Bigger Dumpster (lyric video)",
+"channel":"Cheekface",
+"score":103
+},
+{
+"id":"7erBt5WWDVI",
+"title":"Cheekface - We Need a Bigger Dumpster (AI Generated Music Video)",
+"channel":"BitBucket",
+"score":85
+},
+{
+"id":"tz7QW750MAg",
+"title":"Cheekface - We Need A Bigger Dumpster | Audiotree Far Out",
+"channel":"Audiotree",
+"score":65
+},
+{
+"id":"ArtftVb0w_c",
+"title":"Cheekface - \"We Need A Bigger Dumpster\" - Baby's All Right, Brooklyn, NY 10/23/2022",
+"channel":"Brian Reilly",
+"score":65
+}
+],
+"id":"7erBt5WWDVI",
+"title":"Cheekface - We Need a Bigger Dumpster (AI Generated Music Video)",
+"channel":"BitBucket",
+"kind":"video",
+"score":85,
+"why":[
+"title",
+"artist",
+"official video"
+],
+"embed":true,
+"secs":226
 }
 }
 }
