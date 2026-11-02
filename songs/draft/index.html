@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="ee17fc00f3ae">
+<meta name="sotd-build" content="edf5328c106a">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -8704,7 +8704,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function impForget() { try { localStorage.removeItem('sotd-imp'); } catch (e) {} }
   function impBack() {   // back from Exportify: on to the download
     IMP.away = false; impForget();
-    if (!impDlg.open || IMP.lists) return;
+    if (!impDlg.open || IMP.lists || IMP.taking) return;
     impStep(2);
     try { document.getElementById('uplifile').focus({ preventScroll: true }); } catch (e) {}
   }
@@ -8893,11 +8893,18 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }, 4000);
   function impNativeFile(url) {   // the iPhone app given a .zip or .csv (Open in, from Files or Safari's downloads)
     if (!url || !/^file:/i.test(url) || !/\.(zip|csv)$/i.test(url.split('?')[0]) || !impFilesOk() || !MEMBER) return false;
+    // (2 Nov 2026, John: "the box stays open so you can't see that it's worked": Exportify's sheet stayed over the app
+    // when its download was opened in Song of the Day; it's closed as the file comes in)
+    var B = NAT.Plugins.Browser;
+    IMP.taking = true; IMP.away = false; impForget();
+    if (B && typeof B.close === 'function') { try { B.close().catch(function () {}); } catch (e) {} }
+    toast('Got your Exportify file');
     NAT.Plugins.SotdFiles.read({ url: url }).then(function (r) {
+      IMP.taking = false;
       var bin = atob(r.data || ''), u8 = new Uint8Array(bin.length);
       for (var i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
       impTake(new File([u8], r.name || url.split('/').pop(), { type: /\.zip$/i.test(r.name || url) ? 'application/zip' : 'text/csv' }));
-    }).catch(function () { toast('Couldn’t open that file'); });
+    }).catch(function () { IMP.taking = false; toast('Couldn’t open that file'); });
     return true;
   }
   (function () {
