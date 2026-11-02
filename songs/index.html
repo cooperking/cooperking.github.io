@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="sotd-build" content="837074a81756">
+<meta name="sotd-build" content="f3b637f2d003">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 266 so far">
 <meta name="theme-color" content="#ec135b">
@@ -1951,7 +1951,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         <p class="ac-none" id="acspt"></p>
         <label class="ac-spon" id="acspon" hidden><input type="checkbox" id="acspchk"> <span>Play through Spotify</span></label>
         <div class="ac-spmail" id="acspmail" hidden><input type="email" id="acspemail" placeholder="The email of your Spotify account" autocomplete="email"><button class="copy" id="acspemailgo" type="button">Send to John</button></div>
-        <div class="ac-acts"><button class="copy" id="acspgo" type="button">Connect Spotify</button><button class="copy ghost" id="acspoff" type="button" hidden>Disconnect</button></div>
+        <div class="ac-acts"><button class="copy ghost" id="acspwhere" type="button" hidden>Where to play</button><button class="copy" id="acspgo" type="button">Connect Spotify</button><button class="copy ghost" id="acspoff" type="button" hidden>Disconnect</button></div>
       </div>
       <div class="ac-dev" id="acmail" hidden>
         <p class="ac-h">Email</p>
@@ -3424,9 +3424,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   spChip.setAttribute('aria-label', 'Where Spotify is playing: change'); spChip.innerHTML = '<i></i><span></span>';
   vidfloat.appendChild(spChip);
   function spxShowDev() {   // where it's playing: on the song (the record) and in the playing box
-    var on = !!(coverObj && coverObj.sp && SPX.dev && SPX.dev.name), t = on ? 'Spotify · ' + SPX.dev.name : '';
+    var on = !!(coverObj && coverObj.sp && SPX.dev && SPX.dev.name), t = on ? (SPX.dev.starting ? 'Starting on ' + SPX.dev.name + '…' : 'Spotify · ' + SPX.dev.name) : '';
     spChip.hidden = !on; spChip.querySelector('span').textContent = t;
-    var f = document.getElementById('fabsp'); f.hidden = !on; document.getElementById('fabspn').textContent = on ? SPX.dev.name : '';
+    var f = document.getElementById('fabsp'); f.hidden = !on; document.getElementById('fabspn').textContent = on ? (SPX.dev.starting ? 'Starting…' : SPX.dev.name) : '';
   }
   function spDevPick(devs, why, then, wake) {   // the list of their Spotify devices: one chosen plays there (and is kept for this visit); wake: a song to start in Spotify on this phone
     var dlg = document.getElementById('spdevdlg'), ul = document.getElementById('spdevlist');
@@ -3451,7 +3451,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         if (d.restricted) b.disabled = true;   // (Spotify doesn't let other apps control that one)
         b.textContent = (d.type === 'Smartphone' ? '📱 ' : d.type === 'Computer' ? '💻 ' : d.type === 'Tablet' ? '📱 ' : '🔊 ') + d.name;
         var sm = document.createElement('small'); sm.textContent = d.restricted ? 'can’t be controlled from here' : d.active ? 'playing now' : d.type === spKind() ? 'this kind of device' : ''; b.appendChild(sm);
-        b.addEventListener('click', function () { SPX.pick = d.id; try { sessionStorage.setItem('sotd-spdev', d.id); } catch (e) {} closeDialog(dlg); if (then) then(d); });
+        b.addEventListener('click', function () { SPX.pick = d.id; SPX.pickPhone = d.type === spKind(); try { sessionStorage.setItem('sotd-spdev', d.id); } catch (e) {} closeDialog(dlg); if (then) then(d); });
         li.appendChild(b); ul.appendChild(li);
       });
     };
@@ -3498,50 +3498,76 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     clearTimeout(SPX.pt);
     SPX.pt = setTimeout(function () { SPX.pt = 0; if (coverObj && coverObj.sp && coverOn && vplay && vplay.cover) return; spxStop(false); }, 700);
   }
+  // (2 Nov 2026, John: "I never want false information saying something is playing on the app when it's not"): a song sent
+  // to Spotify shows as starting ("Starting on …") until Spotify says it's playing that song; if it doesn't within a few
+  // seconds, it's paused there (in case it starts late) and the song's preview or MP3 plays instead, with why
+  function spxConfirm(id, dev, then) {
+    var n = 0, look = function () {
+      if (!coverObj.sp || SPX.track !== id) return;
+      spCall({ op: 'state' }).then(function (k) {
+        if (!coverObj.sp || SPX.track !== id) return;
+        if (k.status === 200 && k.playing && k.track === id) { then(true, k); return; }
+        if (++n < 7) { setTimeout(look, 1200); return; }
+        then(false, k);
+      }).catch(function () { if (++n < 7) setTimeout(look, 1200); else then(false, {}); });
+    };
+    setTimeout(look, 1000);
+  }
+  // the iPhone app (build 32 on): Spotify on this phone woken through Spotify's own toolkit (a moment in Spotify, then back),
+  // then the song and the ones after it sent to it as usual
+  function spxNative() { var N = NAT && NAT.Plugins && NAT.Plugins.SotdSpotify; return N && typeof N.wake === 'function' && SPM.st && SPM.st.cid && spKind() !== 'Computer' && (!SPX.pick || SPX.pickPhone) ? N : null; }
+  function spxWakeThen(id, why) {
+    var N = spxNative(); if (!N) return false;
+    SPX.track = id; SPX.dev = { name: 'this iPhone', starting: true }; spxShowDev(); coverState(3);
+    N.wake({ clientId: SPM.st.cid, uri: 'spotify:track:' + id }).then(function () {
+      if (!coverObj.sp || SPX.track !== id) return;
+      SPX.woke = id; SPX.track = ''; SPX.last = null;
+      setTimeout(function () { if (coverObj.sp && vplay && vplay.cover) spxLoad(id); }, 700);   // (now awake: the list from this song, through the Web API)
+    }).catch(function (e) {
+      if (!coverObj.sp || SPX.track !== id) return;
+      var m = String((e && e.message) || e || '');
+      spxFallback(id, m === 'notInstalled' ? 'The Spotify app isn’t on this phone: playing the preview' : /superseded/.test(m) ? '' : 'Spotify didn’t start on this phone (' + (m || why || 'try again') + '): playing the preview');
+    });
+    return true;
+  }
   function spxLoad(id) {
     clearTimeout(SPX.pt); SPX.pt = 0;
     clearInterval(SPX.poll);
     if (SPX.track === id && SPX.playing && SPX.list.indexOf(id) >= 0) { spxWatch(); coverState(1); return; }   // (Spotify's already on it, having moved on by itself)
-    SPX.track = id; SPX.list = spxUpcoming(id); SPX.pos = 0; SPX.at = Date.now(); SPX.dur = 0; SPX.playing = false; SPX.busy = true;
+    SPX.track = id; SPX.list = spxUpcoming(id); SPX.pos = 0; SPX.at = Date.now(); SPX.dur = 0; SPX.playing = false; SPX.busy = true; SPX.dev = null; spxShowDev();
     coverState(3);
     var ld = SPX.pick ? null : SPX.last;   // (the device that played this visit: straight to it again)
     spCall({ op: 'play', tracks: SPX.list, prefer: spKind(), device: SPX.pick || (ld && ld.id) || undefined, dname: ld && ld.name, dtype: ld && ld.type }).then(function (j) {
       SPX.busy = false;
       if (!coverObj.sp || SPX.track !== id) return;
-      if (j.status !== 200 && j.why === 'notHere') {   // Spotify isn't open on this device: asked where, rather than played elsewhere unseen
-        coverState(2);
-        spDevPick(j.devices || [], spKind() === 'Computer' ? 'Spotify isn’t open on this computer. Open it and play again, or choose one of these:' : 'Spotify is asleep or closed on this phone. Start the song in Spotify (then come back with “◀ Song of the Day” at the top, and it carries on through the list), or choose one of these:', function () { if (vplay && vplay.cover && coverObj.sp) { SPX.track = ''; spxLoad(id); } }, spKind() === 'Computer' ? null : id);
-        return;
-      }
+      if (j.status !== 200 && (j.why === 'notHere' || j.why === 'nodevice') && SPX.woke !== id && spxWakeThen(id, 'asleep')) return;
       if (j.status !== 200) {
         if (j.why === 'premium' || j.why === 'blocked') { if (SPM.st) { SPM.st.product = j.why === 'premium' ? 'free' : SPM.st.product; SPM.st.blocked = j.why === 'blocked'; } }
-        spxFallback(id, j.why === 'busy' ? 'Spotify is busy just now: previews for a while' : j.why === 'nodevice' ? 'Open the Spotify app once on this phone (it can stay in the background), then play again' : j.why === 'premium' ? 'Spotify needs Premium to play whole songs here' : j.why === 'blocked' ? 'Spotify needs John to add you first' : 'Spotify didn’t play it: ' + (j.error || 'try again'));
+        spxFallback(id, j.why === 'notHere' ? 'Spotify isn’t open on this ' + (spKind() === 'Computer' ? 'computer' : 'phone') + ': playing the preview. (Open Spotify here, or choose a speaker in Profile › Account › Spotify.)'
+          : j.why === 'busy' ? 'Spotify is busy just now: previews for a while' : j.why === 'nodevice' ? 'Spotify isn’t open on any of your devices: playing the preview' : j.why === 'premium' ? 'Spotify needs Premium to play whole songs here' : j.why === 'blocked' ? 'Spotify needs John to add you first' : 'Spotify didn’t play it (' + (j.error || 'try again') + '): playing the preview');
         return;
       }
-      SPX.playing = true; SPX.at = Date.now(); SPX.dev = { id: j.device, name: j.name || '' }; spxShowDev(); coverState(1); spxWatch();
-      // (2 Nov 2026, John: "It says it's playing through iphone but it's not"): a device that took the song but didn't start
-      // (an iPhone's Spotify asleep in the background) is found a few seconds on, and said so, rather than shown as playing
-      var tries = 0, check = function () {
-        if (!coverObj.sp || SPX.track !== id) return;
-        spCall({ op: 'state' }).then(function (k) {
-          if (!coverObj.sp || SPX.track !== id || k.status !== 200) return;
-          if (k.playing && k.track === id) { SPX.pos = k.pos; SPX.at = Date.now(); SPX.dur = k.dur || SPX.dur; SPX.last = { id: j.device, name: j.name || '', type: j.type || '' }; return; }   // (it's playing: in step, and this device kept for the next song)
-          if (++tries < 2) { setTimeout(check, 4000); return; }   // (slow to start: once more)
-          SPX.playing = false; coverState(2); if (SPX.last && SPX.last.id === j.device) SPX.last = null;
-          var phone = /Smartphone|Tablet/.test(j.type || '');
-          spDevPick(null, phone ? 'Spotify on ' + (j.name || 'this phone') + ' didn’t start: phones put Spotify to sleep in the background. Start the song in Spotify (then come back with “◀ Song of the Day” at the top, and it carries on through the list), or choose another device:'
-            : (j.name || 'That device') + ' didn’t start playing. Choose another device, or check Spotify there:', function () { if (vplay && vplay.cover && coverObj.sp) { SPX.track = ''; spxLoad(id); } }, phone ? id : null);
-        }).catch(function () {});
-      };
-      setTimeout(check, 1500);
-    }).catch(function () { SPX.busy = false; if (coverObj.sp && SPX.track === id) spxFallback(id, 'Couldn’t reach Spotify just now'); });
+      var dev = { id: j.device, name: j.name || 'Spotify', type: j.type || '' };
+      SPX.dev = { id: dev.id, name: dev.name, starting: true }; spxShowDev();
+      spxConfirm(id, dev, function (ok, k) {
+        if (ok) {
+          SPX.playing = true; SPX.pos = k.pos; SPX.at = Date.now(); SPX.dur = k.dur || 0; SPX.dev = { id: dev.id, name: k.device || dev.name }; SPX.last = dev;
+          spxShowDev(); coverState(1); spxWatch(); return;
+        }
+        if (SPX.last && SPX.last.id === dev.id) SPX.last = null;
+        spCall({ op: 'pause' }).catch(function () {});   // (so it can't start there late, beside the preview)
+        if (/Smartphone|Tablet/.test(dev.type) && SPX.woke !== id && spxWakeThen(id, 'asleep')) return;
+        spxFallback(id, 'Spotify didn’t start on ' + dev.name + (/Smartphone|Tablet/.test(dev.type) ? ' (phones put Spotify to sleep in the background)' : '') + ': playing the preview');
+      });
+    }).catch(function () { SPX.busy = false; if (coverObj.sp && SPX.track === id) spxFallback(id, 'Couldn’t reach Spotify just now: playing the preview'); });
   }
   function spxWatch() {   // every few seconds while in sight: where Spotify has got to
     clearInterval(SPX.poll);
     SPX.poll = setInterval(function () {
       if (!coverObj || !coverObj.sp || SPX.busy || document.hidden) return;
       spCall({ op: 'state' }).then(function (j) {
-        if (!coverObj.sp || SPX.busy || j.status !== 200 || j.none) return;
+        if (!coverObj.sp || SPX.busy || j.status !== 200) return;
+        if (j.none) { if (SPX.playing) { SPX.playing = false; SPX.other = true; coverState(2); } return; }   // (nothing playing anywhere now: shown as stopped)
         if (j.track && j.track !== SPX.track) {
           if (SPX.list.indexOf(j.track) > SPX.list.indexOf(SPX.track)) {   // Spotify moved on by itself: the page follows (its next song is this one)
             SPX.track = j.track; SPX.pos = j.pos; SPX.at = Date.now(); SPX.dur = j.dur; SPX.playing = j.playing;
@@ -3590,7 +3616,19 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       }).catch(function () {});
     }, 900);
   });
-  function spxDo(op, st) { SPX.pos = spxPos(); SPX.at = Date.now(); SPX.playing = op === 'resume'; coverState(st); spCall({ op: op }); }
+  function spxDo(op, st) {
+    SPX.pos = spxPos(); SPX.at = Date.now(); SPX.playing = false;
+    if (op !== 'resume') { coverState(st); spCall({ op: op }); return; }
+    coverState(3);   // (resumed: playing once Spotify says so)
+    var id = SPX.track;
+    spCall({ op: 'resume' }).then(function () {
+      spxConfirm(id, SPX.dev || {}, function (ok, k) {
+        if (ok) { SPX.playing = true; SPX.pos = k.pos; SPX.at = Date.now(); coverState(1); spxWatch(); return; }
+        coverState(2); toast('Spotify didn’t carry on' + (SPX.dev && SPX.dev.name ? ' on ' + SPX.dev.name : '') + ': press play to start the song again');
+        SPX.other = true;   // (the next Play sends the song again)
+      });
+    });
+  }
   function spxStop(quiet) { SPX.dev = null; setTimeout(spxShowDev, 0); clearInterval(SPX.poll); if (!quiet && SPX.playing) spCall({ op: 'pause' }); SPX.playing = false; SPX.track = ''; SPX.list = []; }
   function coverVd(s) { return { cover: true, src: spOn() ? 'spotify:track:' + s.track : songSrc(s) }; }   // (through their Spotify, when they've chosen it)
 
@@ -9434,6 +9472,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     else if (x.blocked) { t.textContent = x.email ? 'Waiting for John to add ' + x.email + ' on Spotify’s side. It plays through Spotify once he has.' : 'Nearly there: Spotify needs John to add you first. Give the email of your Spotify account:'; mail.hidden = !!x.email; }
     else if (x.product !== 'premium') t.textContent = 'Connected as ' + (x.name || 'you') + ', but Spotify only lets other apps play whole songs for Premium accounts. Songs play as previews.';
     else { t.textContent = 'Connected as ' + (x.name || 'you') + '. ' + (x.on ? 'Every song plays through your Spotify; videos stay videos.' : 'Songs play as previews, as before.'); on.hidden = false; chk.checked = !!x.on; }
+    document.getElementById('acspwhere').hidden = !spOn();
   }
   document.getElementById('acspgo').addEventListener('click', function () {
     var b = this; b.disabled = true;
@@ -9461,6 +9500,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   });
   document.getElementById('acspchk').addEventListener('change', function () {
     var c = this; spCall({ op: 'pref', on: c.checked }).then(function (j) { if (j.status === 200) { SPM.st = j; spDraw(); toast(j.on ? 'Songs play through Spotify' : 'Songs play as previews'); } });
+  });
+  document.getElementById('acspwhere').addEventListener('click', function () {
+    spDevPick(null, 'Choose where songs play this visit (on this device they play where Spotify is open here).', function (d) { toast('Songs play on ' + d.name + ' this visit'); if (coverObj && coverObj.sp && SPX.playing) spCall({ op: 'transfer', device: d.id }).then(function (j) { if (j.status === 200) { SPX.dev = { id: d.id, name: d.name }; spxShowDev(); } }); });
   });
   document.getElementById('acspoff').addEventListener('click', function () {
     var b = this; if (!b.dataset.sure) { b.dataset.sure = '1'; b.textContent = 'Disconnect? Tap again'; setTimeout(function () { delete b.dataset.sure; b.textContent = 'Disconnect'; }, 4000); return; }
