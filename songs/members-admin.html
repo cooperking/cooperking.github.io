@@ -26,6 +26,8 @@
 <link rel="stylesheet" href="admin.css">
 <script src="admin-cards.js"></script>
 <style>
+.splist { list-style: none; margin: 6px 0 10px; padding: 0; display: grid; gap: 8px; }
+.splist li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; justify-content: space-between; font-size: 14px; }
 .people { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
 .person { padding: 14px 16px; display: grid; gap: 8px; }
 .person .who { font-family: var(--serif); font-weight: 500; font-size: 24px; line-height: 1.1; color: var(--fg); }
@@ -160,6 +162,12 @@
     <p class="stat" id="csvstat"></p>
     <div class="row"><button class="btn small primary" id="csvget" type="button">Download the emails (CSV)</button><button class="btn small" id="mailcopy" type="button">Copy the emails</button></div>
   </div>
+  <div class="card spbox" id="spbox" hidden>
+    <div class="kicker">Spotify</div>
+    <p class="stat" id="spstat"></p>
+    <ul class="splist" id="splist"></ul>
+    <div class="row"><a class="btn small" href="https://developer.spotify.com/dashboard" target="_blank" rel="noopener">Spotify’s dashboard ↗</a></div>
+  </div>
   <div class="card notify">
     <div class="kicker">Send a message</div>
     <p class="stat" id="pushstat">Members turn notifications on in their Profile on the calendar. Each new song goes out by itself, once, as it comes out on the calendar.</p>
@@ -283,7 +291,7 @@
     return api('/members/admin', { op: 'list' }).then(function (j) {
       if (j.status !== 200) { $('stat').textContent = j.error || 'Couldn’t reach the Worker'; return false; }
       MEMBERS = j.members || []; CAT = j.catalog || {}; COVERS = j.covers || {};
-      people(); pushStat(); uplLoad(); pushLinks(); msongsLoad(); return true;
+      people(); pushStat(); spLoad(); uplLoad(); pushLinks(); msongsLoad(); return true;
     }).catch(function () { $('stat').textContent = 'Couldn’t reach the Worker'; return false; });
   }
 
@@ -897,6 +905,25 @@
   }
   function whyText(errs) {   // what the push service said, as plainly as it allows
     return (errs || []).map(function (e) { return e.to + ' said ' + (e.status || 'nothing') + (e.why ? ' (' + e.why + ')' : ''); }).join('; ');
+  }
+  // members playing through their own Spotify (John, 2 Nov 2026): who's connected; who Spotify wants added first (its
+  // dashboard: your app, User Management, their name and the email of their Spotify account; up to 25 people)
+  function spLoad() {
+    api('/members/admin', { op: 'splist' }).then(function (j) {
+      if (j.status !== 200) return;
+      var list = j.list || [], wait = list.filter(function (x) { return x.blocked; }), box = $('spbox'), ul = $('splist');
+      box.hidden = !list.length; if (!list.length) return;
+      $('spstat').textContent = wait.length ? wait.length + (wait.length === 1 ? ' member waits' : ' members wait') + ' for you to add them in Spotify’s dashboard: your app › User Management › Add user (name and the email of their Spotify account). Up to 25 people.'
+        : list.length + (list.length === 1 ? ' member plays' : ' members play') + ' through their own Spotify.';
+      ul.textContent = '';
+      list.sort(function (a, b) { return (b.blocked ? 1 : 0) - (a.blocked ? 1 : 0) || String(a.name).localeCompare(String(b.name)); }).forEach(function (x) {
+        var li = document.createElement('li'), t = document.createElement('span');
+        t.textContent = x.name + ' · ' + (x.blocked ? (x.email ? 'add ' + x.email : 'waiting for their Spotify email') : x.gone ? 'needs to connect again' : x.product !== 'premium' ? 'connected (' + (x.sname || 'Spotify') + '), not Premium' : 'connected as ' + (x.sname || 'them') + (x.on ? '' : ', turned off'));
+        li.appendChild(t);
+        if (x.blocked && x.email) { var c = document.createElement('button'); c.type = 'button'; c.className = 'btn small'; c.textContent = 'Copy email'; c.addEventListener('click', function () { navigator.clipboard.writeText(x.email).then(function () { toast('Copied: add it in Spotify’s dashboard'); }, function () { toast(x.email); }); }); li.appendChild(c); }
+        ul.appendChild(li);
+      });
+    }).catch(function () {});
   }
   function pushStat() {
     api('/members/admin', { op: 'pushcount' }).then(function (j) {

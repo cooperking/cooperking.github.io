@@ -70,6 +70,7 @@ export default {
     if (url.pathname === '/upl/vids') return await uplVids(request, env);
     if (url.pathname.startsWith('/yt/')) return await ytList(request, url, env);
       if (url.pathname === '/login') return await login(url);
+      if (url.pathname === '/splink') return await spLinkStart(url, env);
       if (url.pathname === '/callback') return await callback(request, url, env);
       if (url.pathname === '/p') return await makePlaylist(request, url, env);
       if (url.pathname === '/status') return await status(env);
@@ -132,6 +133,8 @@ async function login(url) {
 
 async function callback(request, url, env) {
   const code = url.searchParams.get('code'), state = url.searchParams.get('state');
+  const spk = (request.headers.get('Cookie') || '').match(/(?:^|;\s*)spkce=([\w-]+)\./);
+  if (spk && spk[1] === state) return spLinkDone(request, url, env);   // (a member connecting their own Spotify: its own cookie, not John's link)
   if (url.searchParams.get('error')) throw new HttpError(400, 'Spotify sign-in was cancelled (' + url.searchParams.get('error') + '). Start again at /login.');
   if (!code || !state) throw new HttpError(400, 'Spotify did not send a sign-in code. Start again at /login.');
   const m = (request.headers.get('Cookie') || '').match(/(?:^|;\s*)pkce=([\w-]+)\.([\w-]+)/);
@@ -1060,6 +1063,7 @@ async function members(request, url, env) {
   if (route === 'spnames') return memberSpNames(request, url, env, answer);
   if (route === 'impfile') return memberImpFile(request, env, answer);
   if (route === 'impdrop') return memberImpDrop(request, url, env, answer);
+  if (route === 'spotify') return memberSpotify(request, url, env, answer);
   if (!['admin', 'upload', 'cover'].includes(route)) return answer(404, { error: 'Not here.' });
   if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
   const no = await adminOk(request, env, answer);
@@ -1272,6 +1276,16 @@ async function members(request, url, env) {
       const r = await pushAll(env, msg, to, { kind: 'note', via: { t: 'you' }, fromId: owner && all[owner] ? owner : '', toIds: to || 'all' });
       if (owner && all[owner]) await sentAdd(env, owner, msg, r, to ? to.map(k => all[k].name) : 'all');   // (his Profile › Sent)
       return answer(200, r);
+    }
+    case 'splist': {   // members' Spotify (John, 2 Nov 2026): who's connected, and who Spotify wants added in its dashboard (User Management) first
+      const out = []; let cursor;
+      do {
+        const l = await env.SOTD.list({ prefix: 'spm:', cursor });
+        for (const k of l.keys) { const id = k.name.slice(4), r = await env.SOTD.get(k.name, 'json'); if (!r || !all[id]) continue;
+          out.push({ id, name: all[id].name, blocked: !!r.blocked, gone: !!r.gone, on: r.on !== false, product: r.product || '', sname: r.name || '', email: r.email || r.wemail || '', linked: r.linked || 0 }); }
+        cursor = l.list_complete ? null : l.cursor;
+      } while (cursor);
+      return answer(200, { list: out });
     }
     case 'pushpic': {   // a picture for a notification (and the inbox), made small on the members page: kept in R2 at n/<id>.jpg (and a GIF as it is: picsUp)
       if (!env.MEDIA) return answer(503, { error: 'No R2 bucket is bound to the Worker as MEDIA yet.' });
@@ -3180,6 +3194,134 @@ async function memberImpDrop(request, url, env, answer) {
   for (const o of old.objects || []) await env.MEDIA.delete(o.key);
   await env.MEDIA.put(key, buf, { httpMetadata: { contentType: /\.zip$/i.test(name) ? 'application/zip' : 'text/csv' }, customMetadata: { name } });
   return answer(200, { ok: true });
+}
+// ---------- a member's own Spotify (John, 2 Nov 2026: "an option they set up once on their account - if they choose play
+// through spotify there it will always play through spotify") ----------
+// They connect once (Profile › Account): /members/spotify start gives a one-time link to /splink, which sends them to
+// Spotify (PKCE, the same Spotify app and /callback as John's link, told apart by its state); back at /callback their
+// sign-in is kept (KV spm:<member>: tokens, who, Premium or not, their choice). Then the calendar plays each song by
+// telling their Spotify to (Spotify Connect: Premium, and Spotify open on one of their devices), from that song on
+// through the ones after it, so it carries on while the page sleeps. Spotify lets an app in development mode serve the
+// 25 people its owner adds in Spotify's dashboard (User Management): until John adds them, Spotify refuses and they're
+// listed for him (blocked), with the Spotify email they give.
+const SP_SCOPES = 'user-read-playback-state user-modify-playback-state user-read-currently-playing user-read-private user-read-email';
+async function spLinkStart(url, env) {
+  const n = String(url.searchParams.get('n') || '');
+  const want = /^[\w-]{20,60}$/.test(n) ? await env.SOTD.get('spn:' + n, 'json') : null;
+  if (!want) throw new HttpError(400, 'This link has run out. Go back to Song of the Day and tap Connect Spotify again.');
+  const verifier = b64url(crypto.getRandomValues(new Uint8Array(48)));
+  const challenge = b64url(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier)));
+  const state = 'm' + n;
+  const q = new URLSearchParams({ client_id: CLIENT_ID, response_type: 'code', redirect_uri: url.origin + '/callback',
+    code_challenge_method: 'S256', code_challenge: challenge, state, scope: SP_SCOPES });
+  return new Response(null, { status: 302, headers: { Location: 'https://accounts.spotify.com/authorize?' + q,
+    'Set-Cookie': 'spkce=' + state + '.' + verifier + '; Path=/callback; Max-Age=900; HttpOnly; Secure; SameSite=Lax', 'Cache-Control': 'no-store' } });
+}
+async function spLinkDone(request, url, env) {
+  const state = url.searchParams.get('state'), n = state.slice(1), code = url.searchParams.get('code');
+  const want = await env.SOTD.get('spn:' + n, 'json');
+  const back = want && /^https:\/\/cooperking\.github\.io\//.test(want.back || '') ? want.back : SITE_SONGS;
+  const done = (title, say, tag) => new Response('<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + esc(title) + '</title>'
+    + '<body style="font:17px/1.45 system-ui,sans-serif;margin:0;min-height:100vh;display:grid;place-items:center;background:#14806a;color:#fffaf5;text-align:center"><div style="padding:24px;max-width:420px">'
+    + '<h1 style="font:500 30px Georgia,serif;margin:0 0 10px">' + esc(title) + '</h1><p>' + say + '</p>'
+    + '<p><a href="' + esc(back + (back.includes('?') ? '&' : '?') + 'spotify=' + tag) + '" style="display:inline-block;margin-top:8px;padding:12px 22px;border-radius:999px;background:#fffaf5;color:#1b1020;text-decoration:none;font-weight:600">Back to Song of the Day</a></p>'
+    + '<p style="font-size:14px;opacity:.85">In the iPhone app: tap Done at the top.</p></div></body>', { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store',
+      'Set-Cookie': 'spkce=; Path=/callback; Max-Age=0; HttpOnly; Secure; SameSite=Lax' } });
+  if (!want) return done('That link ran out', 'Go back to Song of the Day and tap Connect Spotify again.', 'err');
+  if (url.searchParams.get('error')) return done('Not connected', 'Spotify said it was cancelled. You can try again from your profile.', 'err');
+  const m = (request.headers.get('Cookie') || '').match(/(?:^|;\s*)spkce=([\w-]+)\.([\w-]+)/);
+  if (!m || m[1] !== state || !code) return done('That link ran out', 'Go back to Song of the Day and tap Connect Spotify again.', 'err');
+  const r = await fetch('https://accounts.spotify.com/api/token', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ grant_type: 'authorization_code', code, redirect_uri: url.origin + '/callback', client_id: CLIENT_ID, code_verifier: m[2] }) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok || !j.refresh_token) return done('Not connected', 'Spotify didn’t confirm it (' + esc(j.error_description || j.error || String(r.status)) + '). Try again from your profile.', 'err');
+  await env.SOTD.delete('spn:' + n);
+  const rec = { rt: j.refresh_token, at: j.access_token, exp: Date.now() + (j.expires_in || 3600) * 1000, linked: Date.now(), on: true };
+  const me = await fetch(API + '/me', { headers: { Authorization: 'Bearer ' + j.access_token } });
+  if (me.ok) { const u = await me.json(); Object.assign(rec, { sid: u.id, name: u.display_name || u.id, email: u.email || '', product: u.product || '' }); }
+  else rec.blocked = true;   // (not added in Spotify's dashboard yet)
+  await env.SOTD.put('spm:' + want.id, JSON.stringify(rec));
+  if (rec.blocked) return done('Nearly there', 'Spotify needs John to add you first. Back in your profile, give the email address of your Spotify account, and it plays through Spotify once he has.', 'wait');
+  if (rec.product !== 'premium') return done('Connected', 'Spotify says your account isn’t Premium, which it needs to play whole songs for another app. Songs play as previews until it is.', 'nopremium');
+  return done('Connected', 'Songs play through your Spotify now (you can turn it off in your profile).', 'ok');
+}
+async function spToken(env, id, rec) {   // a member's Spotify access, refreshed as it runs out (PKCE: the refresh token may change)
+  if (rec.at && rec.exp > Date.now() + 60e3) return rec.at;
+  const r = await fetch('https://accounts.spotify.com/api/token', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: rec.rt, client_id: CLIENT_ID }) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) { if (j.error === 'invalid_grant') { rec.gone = true; await env.SOTD.put('spm:' + id, JSON.stringify(rec)); } throw new HttpError(401, 'Spotify needs connecting again.'); }
+  Object.assign(rec, { at: j.access_token, exp: Date.now() + (j.expires_in || 3600) * 1000, rt: j.refresh_token || rec.rt });
+  delete rec.gone;
+  await env.SOTD.put('spm:' + id, JSON.stringify(rec));
+  return rec.at;
+}
+async function spCall(env, id, rec, method, path, body) {   // { status, json, why }: why 'premium', 'nodevice', 'blocked', or ''
+  const tok = await spToken(env, id, rec);
+  const r = await fetch(API + path, { method, headers: Object.assign({ Authorization: 'Bearer ' + tok }, body ? { 'Content-Type': 'application/json' } : {}), body: body ? JSON.stringify(body) : undefined });
+  const text = await r.text(); let json = null; try { json = text ? JSON.parse(text) : null; } catch (e) {}
+  const msg = String((json && json.error && (json.error.message || json.error.reason)) || ''), reason = String((json && json.error && json.error.reason) || '');
+  let why = '';
+  if (r.status === 403 && (/PREMIUM/i.test(reason) || /premium/i.test(msg))) why = 'premium';
+  else if (r.status === 403 && /regist|dashboard/i.test(msg)) why = 'blocked';
+  else if (r.status === 404 && (/NO_ACTIVE_DEVICE/.test(reason) || /device/i.test(msg))) why = 'nodevice';
+  if (why === 'blocked' && !rec.blocked) { rec.blocked = true; await env.SOTD.put('spm:' + id, JSON.stringify(rec)); }
+  if (r.ok && rec.blocked && path === '/me') { delete rec.blocked; }
+  return { status: r.status, json, why, msg };
+}
+async function memberSpotify(request, url, env, answer) {
+  const who = await memberWho(request, env);
+  if (!who) return answer(401, { error: 'Not a member (any more).' });
+  if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
+  const b = await request.json().catch(() => ({})), key = 'spm:' + who.id;
+  let rec = await env.SOTD.get(key, 'json');
+  const pub = () => rec ? { linked: true, on: rec.on !== false, blocked: !!rec.blocked, gone: !!rec.gone, name: rec.name || '', product: rec.product || '', email: rec.email || rec.wemail || '' } : { linked: false };
+  if (b.op === 'start') {
+    const n = b64url(crypto.getRandomValues(new Uint8Array(24)));
+    const back = /^https:\/\/cooperking\.github\.io\//.test(String(b.back || '')) ? String(b.back) : SITE_SONGS;
+    await env.SOTD.put('spn:' + n, JSON.stringify({ id: who.id, back }), { expirationTtl: 900 });
+    return answer(200, { url: new URL(request.url).origin + '/splink?n=' + n });
+  }
+  if (!rec) return answer(200, pub());
+  if (b.op === 'status') {
+    if (rec.blocked || !rec.product) {   // (perhaps John has added them since: asked again)
+      const me = await spCall(env, who.id, rec, 'GET', '/me').catch(() => null);
+      if (me && me.status === 200 && me.json) { Object.assign(rec, { sid: me.json.id, name: me.json.display_name || me.json.id, email: me.json.email || rec.email || '', product: me.json.product || '' }); delete rec.blocked; await env.SOTD.put(key, JSON.stringify(rec)); }
+    }
+    return answer(200, pub());
+  }
+  if (b.op === 'pref') { rec.on = !!b.on; await env.SOTD.put(key, JSON.stringify(rec)); return answer(200, pub()); }
+  if (b.op === 'email') { const e = String(b.email || '').trim().slice(0, 120); if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)) return answer(400, { error: 'That isn’t an email address.' }); rec.wemail = e; await env.SOTD.put(key, JSON.stringify(rec)); return answer(200, pub()); }
+  if (b.op === 'off') { await env.SOTD.delete(key); return answer(200, { linked: false }); }
+  try {
+    if (b.op === 'devices') { const d = await spCall(env, who.id, rec, 'GET', '/me/player/devices'); return answer(d.status === 200 ? 200 : 502, d.status === 200 ? { devices: (d.json.devices || []).map(x => ({ id: x.id, name: x.name, type: x.type, active: !!x.is_active })) } : { error: d.msg || 'Spotify answered ' + d.status, why: d.why }); }
+    if (b.op === 'play') {   // these songs, from the first, on the device chosen (else the one playing, else this phone, else any)
+      const uris = (Array.isArray(b.tracks) ? b.tracks : []).map(String).filter(t => ID_RE.test(t)).slice(0, 100).map(t => 'spotify:track:' + t);
+      if (!uris.length) return answer(400, { error: 'Which songs?' });
+      let dev = String(b.device || '');
+      if (!dev) {
+        const d = await spCall(env, who.id, rec, 'GET', '/me/player/devices');
+        if (d.why) return answer(409, { why: d.why, error: d.msg });
+        const list = (d.json && d.json.devices) || [], pick = list.find(x => x.is_active) || list.find(x => x.type === 'Smartphone' && x.name === b.here) || list.find(x => x.type === 'Smartphone') || list[0];
+        if (!pick) return answer(409, { why: 'nodevice', error: 'Spotify isn’t open on any of your devices.' });
+        dev = pick.id;
+      }
+      const r = await spCall(env, who.id, rec, 'PUT', '/me/player/play?device_id=' + encodeURIComponent(dev), Object.assign({ uris }, b.ms ? { position_ms: Math.max(0, b.ms | 0) } : {}));
+      if (r.status >= 300) return answer(409, { why: r.why || 'other', error: r.msg || 'Spotify answered ' + r.status });
+      return answer(200, { ok: true, device: dev });
+    }
+    const simple = { pause: ['PUT', '/me/player/pause'], resume: ['PUT', '/me/player/play'], next: ['POST', '/me/player/next'], prev: ['POST', '/me/player/previous'] };
+    if (simple[b.op]) { const r = await spCall(env, who.id, rec, simple[b.op][0], simple[b.op][1]); return answer(r.status < 300 ? 200 : 409, r.status < 300 ? { ok: true } : { why: r.why || 'other', error: r.msg }); }
+    if (b.op === 'seek') { const r = await spCall(env, who.id, rec, 'PUT', '/me/player/seek?position_ms=' + Math.max(0, b.ms | 0)); return answer(r.status < 300 ? 200 : 409, r.status < 300 ? { ok: true } : { why: r.why || 'other', error: r.msg }); }
+    if (b.op === 'state') {
+      const r = await spCall(env, who.id, rec, 'GET', '/me/player');
+      if (r.status === 204 || !r.json) return answer(200, { none: true });
+      if (r.status !== 200) return answer(409, { why: r.why || 'other', error: r.msg });
+      const it = r.json.item || {};
+      return answer(200, { track: it.id || '', pos: r.json.progress_ms || 0, dur: it.duration_ms || 0, playing: !!r.json.is_playing, device: (r.json.device || {}).name || '' });
+    }
+  } catch (e) { return answer(e instanceof HttpError ? e.status : 502, { error: String(e && e.message || e) }); }
+  return answer(400, { error: 'What should it do?' });
 }
 // /members/spnames?ids=a,b: Spotify users' names, for Import from Spotify's "By ..." (John, 1 Nov 2026: "show who the
 // playlist is by originally too as it shows all playlists followed as well as your own"): Exportify's files say which

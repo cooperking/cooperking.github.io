@@ -867,3 +867,13 @@ WebView; a small script catches its download (a blob: link) and the screen sends
 (`/members/impdrop?c=`, R2 `drop/<member>/<code>`), then closes. The calendar, back in front, takes the file
 (`impDropTake`) and opens the import on its playlists. An older build: the link's fallback opens Exportify in Chrome,
 as before. Spotify's "Continue with Google" can't sign in inside the screen; the Chrome button opens Exportify there.
+
+## Playing through a member's own Spotify (2 Nov 2026)
+
+Profile › Account › Spotify: Connect Spotify (`/members/spotify` start → `/splink` → Spotify → `/callback`, told apart
+from John's link by its own `spkce` cookie; KV `spm:<member>`), then "Play through Spotify". With it on (and Premium),
+every song played as a song goes to their Spotify (Spotify Connect: `play` with the song and up to 99 after it, so it
+carries on while the page sleeps; the page checks `state` every 4 seconds while in sight and follows Spotify on to the
+next). Videos stay videos. Spotify not open on any device, no Premium, or not yet added by John: the preview/MP3 plays,
+with a word on why. Spotify's development mode serves only the people John adds in its dashboard (the app › User
+Management, up to 25): the Members tab's Spotify card lists who's waiting, with the email they gave.
