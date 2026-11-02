@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="98671e2f5e96">
+<meta name="sotd-build" content="b360ca793fba">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -8713,7 +8713,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function impAway() {   // Exportify, over the calendar
     try { localStorage.setItem('sotd-imp', JSON.stringify({ at: Date.now() })); } catch (e) {}
     var X = NAT && NAT.Plugins && NAT.Plugins.SotdExportify;
-    if (X && typeof X.open === 'function' && typeof X.addListener === 'function') {   // the iPhone app (2 Nov 2026 build on): Exportify in the app's own view, its download taken straight in (no share sheet)
+    if (X && typeof X.open === 'function' && typeof X.addListener === 'function') {   // the iPhone app (build 30 on): Exportify in the app's own view, its download taken straight in (no share sheet)
       if (!IMP.xl) {
         IMP.xl = true;
         try {

@@ -8687,7 +8687,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function impAway() {   // Exportify, over the calendar
     try { localStorage.setItem('sotd-imp', JSON.stringify({ at: Date.now() })); } catch (e) {}
     var X = NAT && NAT.Plugins && NAT.Plugins.SotdExportify;
-    if (X && typeof X.open === 'function' && typeof X.addListener === 'function') {   // the iPhone app (2 Nov 2026 build on): Exportify in the app's own view, its download taken straight in (no share sheet)
+    if (X && typeof X.open === 'function' && typeof X.addListener === 'function') {   // the iPhone app (build 30 on): Exportify in the app's own view, its download taken straight in (no share sheet)
       if (!IMP.xl) {
         IMP.xl = true;
         try {

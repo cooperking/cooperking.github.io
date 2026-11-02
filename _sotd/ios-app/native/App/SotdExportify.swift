@@ -7,7 +7,7 @@ import Capacitor
 // the top and Safari as a way out (Spotify's "Continue with Google" won't sign in inside an app). When Exportify saves
 // its .zip or .csv, the web view hands the download to the app instead of to Files: the screen closes and the page
 // hears "file" { name, data: the file in base64 }, for Import from Spotify. "closed" { file: true/false } as it goes.
-// The Spotify sign-in is kept (the default website data store), so it's asked for once. From the build after 2 Nov 2026.
+// The Spotify sign-in is kept (the default website data store), so it's asked for once. From build 30.
 @objc(SotdExportifyPlugin)
 public class SotdExportifyPlugin: CAPPlugin, CAPBridgedPlugin {
     public let identifier = "SotdExportifyPlugin"

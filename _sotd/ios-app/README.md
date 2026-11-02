@@ -77,7 +77,7 @@ with its number in "testflight_only" (no new build is made).
 - In the app, the first time: it offers to sign in with the invitation they came from; or Profile (top right) → Sign in →
   their code or invite link.
 
-Exportify inside the app (`native/App/SotdExportify.swift`, from the build after 2 Nov 2026): Import from Spotify opens
+Exportify inside the app (`native/App/SotdExportify.swift`, from build 30): Import from Spotify opens
 Exportify full screen in the app's own web view (Close, and a Safari button as a way out). When Exportify saves its .zip
 or .csv, the download comes straight to the app: the screen closes and the page imports it (`SotdExportify` "file"
 event), with no share sheet. The Spotify sign-in is kept between uses. Spotify's "Continue with Google" can't sign in
