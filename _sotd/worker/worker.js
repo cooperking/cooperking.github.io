@@ -43,6 +43,7 @@ const SCOPES = 'playlist-modify-public playlist-modify-private playlist-read-pri
 const API = 'https://api.spotify.com/v1';
 const ID_RE = /^[0-9A-Za-z]{22}$/;
 const DAY = 864e5;
+const R2_REPO = 'cooperking/playlist-r2';             // the files' copies into R2 (its jobs on the Status tab too: John, 2 Nov 2026)
 const REPO = 'cooperking/cooperking.github.io';         // the website, and the job that runs after a change
 const JOB = 'song-tags.yml';
 const FACTS_JOB = 'facts.yml';                          // puts signed-off facts on the site
@@ -633,25 +634,68 @@ async function rawJson(path, empty, ref) {
   if (!r.ok) throw new Error(path + ': GitHub answered ' + r.status);
   return r.json();
 }
-async function ghApi(env, path) {
-  const r = await fetch('https://api.github.com/repos/' + REPO + path, { headers: { Authorization: 'Bearer ' + env.GH_TOKEN,
+async function ghApi(env, path, repo) {
+  const r = await fetch('https://api.github.com/repos/' + (repo || REPO) + path, { headers: { Authorization: 'Bearer ' + env.GH_TOKEN,
     Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', 'User-Agent': 'SongOfTheDayWorker' } });
-  if (!r.ok) throw new Error('GitHub answered ' + r.status + ' for ' + path.split('?')[0]);
+  if (!r.ok) throw new Error(repo && repo !== REPO && (r.status === 404 || r.status === 403)
+    ? 'The jobs of ' + repo.split('/')[1] + ' can’t be read: the Worker’s GitHub key (GH_TOKEN) has no access to it. Give that key Actions: Read on ' + repo.split('/')[1] + ' too.'
+    : 'GitHub answered ' + r.status + ' for ' + path.split('?')[0]);
   return r.json();
 }
+// Cloudflare's own numbers for the Status tab (John, 2 Nov 2026: "what's happening in my cloudflare?"): the last 24
+// hours of the Worker (requests, errors, by how they ended; CPU), KV and R2 (operations; R2's storage), from Cloudflare's
+// GraphQL analytics with a read-only token (CF_STATS_TOKEN, Account Analytics: Read; CF_ACCOUNT its account), kept 10
+// minutes (KV cfstats). Each part by itself, so one Cloudflare won't give doesn't hide the others.
+async function cfStats(env) {
+  if (!env.CF_STATS_TOKEN || !env.CF_ACCOUNT) return { none: true };
+  const had = await env.SOTD.get('cfstats', 'json').catch(() => null);
+  if (had && Date.now() - had.got < 10 * 60e3) return had;
+  const end = new Date(), start = new Date(end - 864e5), day = start.toISOString().slice(0, 10);
+  const q = async (body) => {
+    const r = await fetch('https://api.cloudflare.com/client/v4/graphql', { method: 'POST', headers: { Authorization: 'Bearer ' + env.CF_STATS_TOKEN, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: 'query($a: String!, $s: Time!, $e: Time!, $d: Date!) { viewer { accounts(filter: { accountTag: $a }) { ' + body + ' } } }',
+        variables: { a: env.CF_ACCOUNT, s: start.toISOString(), e: end.toISOString(), d: day } }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || (j.errors && j.errors.length)) throw new Error((j.errors && j.errors[0] && j.errors[0].message) || 'Cloudflare answered ' + r.status);
+    return ((j.data && j.data.viewer && j.data.viewer.accounts) || [])[0] || {};
+  };
+  const out = { got: Date.now(), since: start.toISOString(), errs: [] };
+  const part = (k, p) => p.then(v => { out[k] = v; }).catch(e => { out.errs.push(k + ': ' + (e && e.message || e)); });
+  await Promise.all([
+    part('worker', q('w: workersInvocationsAdaptive(limit: 50, filter: { datetime_geq: $s, datetime_leq: $e }) { sum { requests errors subrequests } quantiles { cpuTimeP50 cpuTimeP99 } dimensions { scriptName status } }').then(a => {
+      const by = {}, t = { requests: 0, errors: 0, subrequests: 0, cpu50: 0, cpu99: 0, scripts: {} };
+      for (const g of a.w || []) {
+        const n = g.sum.requests || 0; t.requests += n; t.errors += g.sum.errors || 0; t.subrequests += g.sum.subrequests || 0;
+        by[g.dimensions.status] = (by[g.dimensions.status] || 0) + n; t.scripts[g.dimensions.scriptName] = (t.scripts[g.dimensions.scriptName] || 0) + n;
+        t.cpu50 = Math.max(t.cpu50, (g.quantiles && g.quantiles.cpuTimeP50) || 0); t.cpu99 = Math.max(t.cpu99, (g.quantiles && g.quantiles.cpuTimeP99) || 0);
+      }
+      t.by = by; return t;
+    })),
+    part('kv', q('k: kvOperationsAdaptiveGroups(limit: 50, filter: { datetime_geq: $s, datetime_leq: $e }) { sum { requests } dimensions { actionType } }').then(a => {
+      const by = {}; for (const g of a.k || []) by[g.dimensions.actionType] = (by[g.dimensions.actionType] || 0) + (g.sum.requests || 0); return by;
+    })),
+    part('r2ops', q('o: r2OperationsAdaptiveGroups(limit: 100, filter: { datetime_geq: $s, datetime_leq: $e }) { sum { requests } dimensions { actionType } }').then(a => {
+      const by = {}; for (const g of a.o || []) by[g.dimensions.actionType] = (by[g.dimensions.actionType] || 0) + (g.sum.requests || 0); return by;
+    })),
+    part('r2', q('r: r2StorageAdaptiveGroups(limit: 20, filter: { date_geq: $d }) { max { payloadSize metadataSize objectCount } dimensions { bucketName } }').then(a => {
+      const by = {}; for (const g of a.r || []) { const b = by[g.dimensions.bucketName] = by[g.dimensions.bucketName] || { bytes: 0, objects: 0 }; b.bytes = Math.max(b.bytes, (g.max.payloadSize || 0) + (g.max.metadataSize || 0)); b.objects = Math.max(b.objects, g.max.objectCount || 0); } return by;
+    }))]);
+  await env.SOTD.put('cfstats', JSON.stringify(out)).catch(() => {});
+  return out;
+}
 const BAD_RUN = ['failure', 'timed_out', 'startup_failure', 'action_required'];
-async function jobRuns(env) {   // the latest run of each GitHub job; a failed one with the steps it failed at
-  const j = await ghApi(env, '/actions/runs?per_page=100');
+async function jobRuns(env, repo) {   // the latest run of each GitHub job; a failed one with the steps it failed at (repo: another of John's, its name before each)
+  const j = await ghApi(env, '/actions/runs?per_page=100', repo), pre = repo && repo !== REPO ? repo.split('/')[1] + ': ' : '';
   const seen = {}, out = [];
   for (const r of j.workflow_runs || []) {
     if (seen[r.workflow_id]) continue;
     seen[r.workflow_id] = true;
-    out.push({ id: r.id, name: r.name, st: r.status, res: r.conclusion || '', at: r.run_started_at || r.created_at, end: r.updated_at,
+    out.push({ id: r.id, name: pre + r.name, repo: pre ? repo : undefined, st: r.status, res: r.conclusion || '', at: r.run_started_at || r.created_at, end: r.updated_at,
       url: r.html_url, event: r.event, n: r.run_number, bad: r.status === 'completed' && BAD_RUN.includes(r.conclusion) });
   }
   await Promise.all(out.filter(r => r.bad).slice(0, 6).map(async r => {
     try {
-      const jj = await ghApi(env, '/actions/runs/' + r.id + '/jobs');
+      const jj = await ghApi(env, '/actions/runs/' + r.id + '/jobs', repo);
       r.steps = [];
       for (const job of jj.jobs || []) for (const s of job.steps || []) if (BAD_RUN.includes(s.conclusion)) r.steps.push(s.name);
       if (!r.steps.length) r.steps = (jj.jobs || []).filter(x => BAD_RUN.includes(x.conclusion)).map(x => x.name);
@@ -775,7 +819,7 @@ async function adminStatus(env) {
   const [items, runs, sources, asked, task, F, V, P, Y, pages, waitingLive, siteRuns, factsRuns] = await Promise.all([
     soft(songsJson(new Request(LIVE_ORIGIN + '/songs.json'), env, { waitUntil: p => { if (p && p.catch) p.catch(() => {}); } })
       .then(r => r.json()).then(j => { listAt = j.at || ''; return j.songs || []; }), []),
-    env.GH_TOKEN ? soft(jobRuns(env), []) : Promise.resolve([]),
+    env.GH_TOKEN ? Promise.all([soft(jobRuns(env), []), soft(jobRuns(env, R2_REPO), [])]).then(a => a[0].concat(a[1])) : Promise.resolve([]),
     soft(rawJson('_sotd/data/sources.json', undefined, ref), { songs: {} }),
     soft(rawJson('_sotd/data/facts-asked.json', {}, ref), {}),
     soft(rawJson('_sotd/data/facts-task.json', null, ref), null),
@@ -840,7 +884,8 @@ async function adminStatus(env) {
   const notes = d.log.slice(0, 12).map(e => Object.assign({}, e, { say: pushSay(e), by: pushBy(e.via, d.siteRuns.concat(d.factsRuns)) }));   // the notifications sent, newest first
   notes.forEach(e => { if (e.failed) mark(e, 'n:' + e.id); });   // (one that some devices didn't get)
   const jb = d.job;
-  return { at: new Date(now).toISOString(), problems: Object.keys(bad).length, songs, task, runs, notes, site, spotify, mails, ref,
+  const cloudflare = await cfStats(env).catch(e => ({ errs: [String(e && e.message || e)] }));
+  return { at: new Date(now).toISOString(), problems: Object.keys(bad).length, songs, task, runs, notes, site, spotify, mails, ref, cloudflare,
     job: { at: jb.at || null, tried: jb.tried || null, err: jb.err || '' }, errors };
 }
 async function notLive(env) {   // the template's changes since the calendar last went live (a commit starting "Live")

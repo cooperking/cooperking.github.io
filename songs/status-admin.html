@@ -44,6 +44,10 @@
 .badge.going { color: #8a5a00; border-color: #e7b54a; background: #fff8e6; }
 .fix a { color: var(--fg); }
 .fix .dealt { margin-top: 2px; }
+.cfrows { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; margin: 0; }
+.cfrows dt { font-weight: 600; color: var(--fg); }
+.cfrows dd { margin: 0; }
+.cfrows .warn { color: #e23a6e; font-weight: 600; }
 .fix { padding: 14px 16px; display: grid; gap: 6px; font-size: 14px; color: var(--fg-2); }
 .fix b { color: var(--fg); }
 .fix.bad { box-shadow: 0 18px 50px rgba(24, 8, 24, .28), inset 4px 0 0 var(--warn); } .fix.bad b { color: var(--warn); }
@@ -84,6 +88,10 @@
   <div id="sitebox" hidden>
     <p class="sec">Draft and live</p>
     <div class="card fix" id="site"></div>
+  </div>
+  <div id="cfbox" hidden>
+    <p class="sec">Cloudflare · the last 24 hours</p>
+    <div class="card fix" id="cf"></div>
   </div>
   <ul class="list" id="feed"></ul>
 </div>
@@ -274,6 +282,43 @@
     return row;
   }
   function tell(n) { try { if (window.parent.SOTD_STATUS) window.parent.SOTD_STATUS(n); } catch (e) {} }
+  // Cloudflare (John, 2 Nov 2026: "what's happening in my cloudflare?"): the Worker, KV and R2 over the last day, against
+  // the free plan's allowances; without the read-only key, how to add it
+  function num(n) { return Math.round(n || 0).toLocaleString('en-GB'); }
+  function size(b) { return b >= 1e9 ? (b / 1e9).toFixed(2) + ' GB' : b >= 1e6 ? (b / 1e6).toFixed(1) + ' MB' : Math.round((b || 0) / 1e3) + ' KB'; }
+  function drawCf(c) {
+    var box = $('cf'); $('cfbox').hidden = !c; if (!c) return;
+    box.textContent = '';
+    if (c.none) {
+      box.appendChild(el('div', '', 'Not set up yet. In Cloudflare: My Profile › API Tokens › Create Token › Custom token, with Account › Account Analytics › Read. Add it to the website repository’s secrets as CLOUDFLARE_STATS_TOKEN; the next Worker update passes it on.'));
+      box.appendChild(link('https://dash.cloudflare.com/profile/api-tokens', 'Cloudflare’s API tokens ↗'));
+      box.appendChild(link(SECRETS, 'The repository’s secrets ↗'));
+      return;
+    }
+    var dl = el('dl', 'cfrows');
+    var row = function (k, v, warn) { dl.appendChild(el('dt', '', k)); dl.appendChild(el('dd', warn ? 'warn' : '', v)); };
+    var w = c.worker;
+    if (w) {
+      var bad = Object.keys(w.by || {}).filter(function (k) { return k !== 'success' && k !== 'clientDisconnected'; }).map(function (k) { return num(w.by[k]) + ' ' + k.replace(/([A-Z])/g, ' $1').toLowerCase(); });
+      row('Worker', num(w.requests) + ' requests (free plan: 100,000 a day)', w.requests > 90000);
+      row('Errors', w.errors ? num(w.errors) + (bad.length ? ': ' + bad.join(', ') : '') : 'None', w.errors > 0);
+      row('Work per request', 'CPU ' + (w.cpu50 / 1000).toFixed(1) + ' ms typical, ' + (w.cpu99 / 1000).toFixed(1) + ' ms slowest (free plan: 10 ms)', w.cpu99 > 10000);
+      row('Calls it made', num(w.subrequests));
+    }
+    if (c.kv) {
+      var rd = c.kv.read || 0, wr = (c.kv.write || 0) + (c.kv['delete'] || 0) + (c.kv.list || 0);
+      row('KV', num(rd) + ' reads (free: 100,000 a day) · ' + num(c.kv.write || 0) + ' writes, ' + num(c.kv['delete'] || 0) + ' deletes, ' + num(c.kv.list || 0) + ' lists (free: 1,000 a day each)', rd > 90000 || (c.kv.write || 0) > 900);
+    }
+    if (c.r2) Object.keys(c.r2).forEach(function (b) { row('R2 ' + b, size(c.r2[b].bytes) + ' in ' + num(c.r2[b].objects) + ' files (free: 10 GB)', c.r2[b].bytes > 9e9); });
+    if (c.r2ops) {
+      var A = ['PutObject', 'CopyObject', 'CompleteMultipartUpload', 'CreateMultipartUpload', 'UploadPart', 'ListObjects', 'ListBuckets', 'PutBucket', 'ListMultipartUploads', 'ListParts'], a = 0, b = 0;
+      Object.keys(c.r2ops).forEach(function (k) { if (A.indexOf(k) >= 0) a += c.r2ops[k]; else if (k !== 'DeleteObject' && k !== 'DeleteObjects') b += c.r2ops[k]; });
+      row('R2 use', num(a) + ' writes and lists · ' + num(b) + ' reads (free: 1 million and 10 million a month)');
+    }
+    box.appendChild(dl);
+    (c.errs || []).forEach(function (e) { box.appendChild(el('div', 'warn', 'Couldn’t read ' + e)); });
+    if (c.got) box.appendChild(el('div', '', 'From Cloudflare ' + uk(new Date(c.got).toISOString(), true)));
+  }
   function draw(j) {
     var n = j.problems || 0, dealtN = 0, seen = {};
     function count(o) { if (o && o.ack && o.key && !seen[o.key]) { seen[o.key] = 1; dealtN++; } }
@@ -283,7 +328,7 @@
     $('sum').appendChild(document.createTextNode(n ? (n === 1 ? '1 thing has failed or is stuck' : n + ' things have failed or are stuck') : 'All well'));
     if (dealtN) $('sum').appendChild(el('span', 'more', ' · ' + dealtN + ' dealt with'));
     $('when').textContent = 'Checked ' + uk(j.at, true);
-    drawSite(j.site); drawFeed(j);
+    drawSite(j.site); drawCf(j.cloudflare); drawFeed(j);
     tell(n);
   }
   function call(body) {
