@@ -805,6 +805,7 @@ function pushBy(via, runs) {   // who sent a notification (pushDaily's via, from
   if (via.t === 'member') return { t: via.name || 'a member' };
   if (via.t === 'ask') return { t: (via.name || 'someone') + ', whose invitation ran out' };
   if (via.t === 'upl') return { t: (via.name || 'a member') + ', adding a Spotify playlist' };
+  if (via.t === 'spotify') return { t: (via.name || 'a member') + ', connecting Spotify' };
   const r = via.run && via.run.id ? Object.assign({ name: via.run.job || 'Song moods and genres', n: via.run.n }, (runs || []).find(x => x.id === via.run.id) || {}) : null;
   return r ? { t: r.name + ', run ' + r.n, url: r.url || 'https://github.com/' + REPO + '/actions/runs/' + via.run.id } : { t: 'the site job' };
 }
@@ -1290,21 +1291,12 @@ async function members(request, url, env) {
           out.push({ id, name: all[id].name, blocked: !!r.blocked, gone: !!r.gone, on: r.on !== false, product: r.product || '', sname: r.name || '', email: r.email || r.wemail || '', linked: r.linked || 0, cid: r.cid || CLIENT_ID, asked: r.blocked ? await env.SOTD.get('spaskat:' + id, 'json') : null }); }
         cursor = l.list_complete ? null : l.cursor;
       } while (cursor);
-      return answer(200, { list: out, apps: await spApps(env), per: SP_PER_APP, redirect: new URL(request.url).origin + '/callback', quota: Number(await env.SOTD.get('spquota')) || 0, task: await spTask(env).then(t => t && { from: t.from, at: t.at, id: (t.url.match(/trig_[A-Za-z0-9]+/) || [''])[0] }) });
-    }
-    case 'sptask': {   // Claude's adding task: its address and key, pasted in Admin (clear: back to the Worker's own)
-      if (body.clear) { await env.SOTD.delete('sptask'); return answer(200, { ok: true }); }
-      const url = String(body.url || '').trim(), token = String(body.token || '').trim();
-      if (!/^https:\/\/api\.anthropic\.com\/v1\/[\w\/-]*trig_[A-Za-z0-9]+[\w\/-]*$/.test(url) || token.length < 20 || /\s/.test(token)) return answer(400, { error: 'That doesn’t look like the task’s address and key' });
-      await env.SOTD.put('sptask', JSON.stringify({ url, token, at: Date.now() }));
-      return answer(200, { ok: true });
+      return answer(200, { list: out, apps: await spApps(env), per: SP_PER_APP, redirect: new URL(request.url).origin + '/callback', quota: Number(await env.SOTD.get('spquota')) || 0 });
     }
     case 'spask': {   // Admin's "Ask Claude again" (John, 2 Nov 2026: the task ran while his Mac was offline, and doesn't ask twice by itself)
       const id = String(body.id || ''), r = all[id] && await env.SOTD.get('spm:' + id, 'json');
       if (!r || !r.blocked) return answer(400, { error: 'not waiting' });
-      await env.SOTD.delete('spask:' + id);
-      await spAskAdd(env, id, r);
-      return answer(200, { asked: await env.SOTD.get('spaskat:' + id, 'json') });
+      return answer(200, { asked: await spAskAdd(env, id, r, true) });
     }
     case 'splog': {   // each member's Spotify steps (their phone's log), for the Members tab
       const out = []; let cursor;
@@ -3312,31 +3304,36 @@ async function spToken(env, id, rec) {   // a member's Spotify access, refreshed
   await env.SOTD.put('spm:' + id, JSON.stringify(rec));
   return rec.at;
 }
-// Claude adds a waiting member in Spotify's dashboard (John, 2 Nov 2026: "I want claude to add it automatically when
-// added"): its on-demand task, started through its API trigger (Worker secrets SPOTIFY_USERS_URL and SPOTIFY_USERS_TOKEN),
-// once a member is waiting with a Spotify email; once per member and email (KV spask:<member>). Never stops the request.
-// the task's address and key: pasted in Admin (KV sptask; John, 2 Nov 2026: the task remade from the Mac so it can use its
-// browser), else the Worker secrets. The key is never sent back out.
-async function spTask(env) {
-  const k = await env.SOTD.get('sptask', 'json');
-  if (k && k.url && k.token) return { url: k.url, token: k.token, from: 'admin', at: k.at || 0 };
-  if (env.SPOTIFY_USERS_URL && env.SPOTIFY_USERS_TOKEN) return { url: env.SPOTIFY_USERS_URL, token: env.SPOTIFY_USERS_TOKEN, from: 'worker', at: 0 };
-  return null;
-}
-async function spAskAdd(env, id, rec) {
+// a member waiting to be added in Spotify's dashboard: an alert to John's phone at once, with everything to add them
+// (John, 2 Nov 2026: "instant alert with all the details and links needed"; a task on his Mac can't be started from
+// here). Once per member and email (KV spask:<member>); the time shown in Admin (spaskat). Tapping it opens Admin's
+// Members tab, where their row has Copy email and Open app N in Spotify.
+async function spAskAdd(env, id, rec, again) {
   const email = rec.email || rec.wemail || '';
-  const task = await spTask(env);
-  if (!email || !task) return;
+  if (!email) return null;
   try {
-    if ((await env.SOTD.get('spask:' + id)) === email) return;
-    const apps = await spApps(env), n = apps.indexOf(rec.cid || CLIENT_ID) + 1;
-    const r = await fetch(task.url, { method: 'POST', headers: { Authorization: 'Bearer ' + task.token,
-      'anthropic-version': '2023-06-01', 'anthropic-beta': 'experimental-cc-routine-2026-04-01', 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: 'A member is waiting to be added to Spotify app ' + (n || '?') + '.' }) });
-    if (r.ok) await env.SOTD.put('spask:' + id, email, { expirationTtl: 30 * 86400 });
-    else console.log('spAskAdd: the task said ' + r.status);
-    await env.SOTD.put('spaskat:' + id, JSON.stringify({ email, at: Date.now(), ok: r.ok, status: r.status }), { expirationTtl: 30 * 86400 });   // (shown in Admin's Members list)
-  } catch (e) { console.log('spAskAdd: ' + (e && e.message)); }
+    if (!again && (await env.SOTD.get('spask:' + id)) === email) return null;
+    const all = (await env.SOTD.get('members', 'json')) || {}, owner = await env.SOTD.get('owner');
+    if (!owner || !all[owner]) return null;
+    const apps = await spApps(env), n = apps.indexOf(rec.cid || CLIENT_ID) + 1, name = (all[id] && all[id].name) || 'A member';
+    const msg = { title: name + ' is waiting to be added to Spotify app ' + (n || '?'),
+      body: 'Add ' + name + ' (' + email + ') in Spotify’s dashboard: app ' + (n || '?') + ' › User Management › Add user. Tap for the email to copy and the link to that page.',
+      url: SITE_SONGS + 'admin.html#members', tag: 'sotd-spadd-' + id };
+    await pushAll(env, msg, [owner], { kind: 'member', via: { t: 'spotify', name } });
+    const at = { email, at: Date.now(), ok: true, status: 200 };
+    await env.SOTD.put('spask:' + id, email, { expirationTtl: 30 * 86400 });
+    await env.SOTD.put('spaskat:' + id, JSON.stringify(at), { expirationTtl: 30 * 86400 });
+    return at;
+  } catch (e) { console.log('spAskAdd: ' + (e && e.message)); return null; }
+}
+async function spAddedNote(env, id) {   // the member, added, now connected: John told (his inbox and phone)
+  try {
+    if (!(await env.SOTD.get('spask:' + id))) return;
+    await env.SOTD.delete('spask:' + id); await env.SOTD.delete('spaskat:' + id);
+    const all = (await env.SOTD.get('members', 'json')) || {}, owner = await env.SOTD.get('owner');
+    if (!owner || !all[owner] || !all[id]) return;
+    await pushAll(env, { title: all[id].name + ' is connected to Spotify', body: 'Their songs play through their own Spotify now.', url: SITE_SONGS + 'admin.html#members', tag: 'sotd-spadd-' + id }, [owner], { kind: 'member', via: { t: 'spotify', name: all[id].name } });
+  } catch (e) { console.log('spAddedNote: ' + (e && e.message)); }
 }
 async function spCall(env, id, rec, method, path, body) {   // { status, json, why }: why 'premium', 'nodevice', 'blocked', or ''
   const tok = await spToken(env, id, rec);
@@ -3349,7 +3346,7 @@ async function spCall(env, id, rec, method, path, body) {   // { status, json, w
   else if (r.status === 404 && (/NO_ACTIVE_DEVICE/.test(reason) || /device/i.test(msg))) why = 'nodevice';
   else if (r.status === 429) { why = 'busy'; if (/QUOTA_EXCEEDED/.test(reason) || /QUOTA_EXCEEDED/.test(text)) await env.SOTD.put('spquota', String(Date.now()), { expirationTtl: 86400 }).catch(() => {}); }   // (the apps' shared allowance used up: noted for Admin)
   if (why === 'blocked' && !rec.blocked) { rec.blocked = true; await env.SOTD.put('spm:' + id, JSON.stringify(rec)); await spAskAdd(env, id, rec); }
-  if (r.ok && rec.blocked && path === '/me') { delete rec.blocked; }
+  if (r.ok && rec.blocked && path === '/me') { delete rec.blocked; await spAddedNote(env, id); }
   return { status: r.status, json, why, msg };
 }
 // their Spotify devices: Spotify's list, with the one playing now added when the list leaves it out (an iPhone's Spotify
@@ -3387,7 +3384,7 @@ async function memberSpotify(request, url, env, answer) {
   if (b.op === 'status') {
     if (rec.blocked || !rec.product) {   // (perhaps John has added them since: asked again)
       const me = await spCall(env, who.id, rec, 'GET', '/me').catch(() => null);
-      if (me && me.status === 200 && me.json) { Object.assign(rec, { sid: me.json.id, name: me.json.display_name || me.json.id, email: me.json.email || rec.email || '', product: me.json.product || '' }); delete rec.blocked; await env.SOTD.put(key, JSON.stringify(rec)); }
+      if (me && me.status === 200 && me.json) { Object.assign(rec, { sid: me.json.id, name: me.json.display_name || me.json.id, email: me.json.email || rec.email || '', product: me.json.product || '' }); if (rec.blocked) await spAddedNote(env, who.id); delete rec.blocked; await env.SOTD.put(key, JSON.stringify(rec)); }
     }
     return answer(200, pub());
   }
