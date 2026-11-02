@@ -318,14 +318,25 @@ html.upl-editing #grid .day.drop .sleeve { outline: 3px dashed var(--fg); outlin
 html.upl-editing #grid .day.dragfrom .sleeve { opacity: .35; }
 .dragghost { position: fixed; z-index: 120; width: 72px; height: 72px; margin: -36px 0 0 -36px; border-radius: 10px; overflow: hidden; pointer-events: none; box-shadow: 0 14px 32px rgba(14, 6, 18, .45); transform: scale(1.08) rotate(-3deg); }
 .dragghost img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.upledbar { position: fixed; z-index: 45; left: 16px; right: 16px; bottom: max(16px, env(safe-area-inset-bottom, 0px)); max-width: 560px; margin: 0 auto; display: grid; gap: 10px; padding: 14px 16px; border-radius: 18px; background: #1b1020; color: #fffaf5; box-shadow: 0 16px 40px rgba(14, 6, 18, .45); }
-.upledbar[hidden] { display: none; }
-html.upl-editing .wrap { padding-bottom: 150px; }   /* (the bar never covers a day) */
-html.upl-editing .toast { bottom: calc(max(16px, env(safe-area-inset-bottom, 0px)) + 150px); }   /* (messages above the bar) */
-.upledbar p { margin: 0; font-size: 14px; line-height: 1.4; }
-.upledbar-acts { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; }
-.upledbar .copy { background: #fffaf5; color: #1b1020; }
-.upledbar .ac-out { color: #fffaf5; border-color: rgba(255, 250, 245, .35); }
+/* editing (John, 2 Nov 2026: "remove the pop up instructions and done in edit mode. Just have a finish editing button
+   where the playlist button normally is, fixed"): bottom right, with what can be done to the songs picked */
+.pedock { position: fixed; z-index: 45; left: 16px; right: max(16px, env(safe-area-inset-right, 0px)); bottom: max(16px, env(safe-area-inset-bottom, 0px)); display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 8px; pointer-events: none; }
+.pedock[hidden] { display: none; }
+.pedock button { pointer-events: auto; height: 42px; padding: 0 18px; border: 0; border-radius: 999px; background: #fffaf5; color: #1b1020; box-shadow: 0 10px 30px rgba(14, 6, 18, .35); font: 600 12px/1 var(--sans); letter-spacing: .1em; text-transform: uppercase; cursor: pointer; }
+.pedock button[hidden] { display: none; }
+.pedock .pd-fin { background: #1b1020; color: #fffaf5; box-shadow: 0 10px 30px rgba(14, 6, 18, .35), inset 0 0 0 1.5px rgba(255, 250, 245, .5); }
+.pedock .pd-del { color: #c2185b; }
+.pedock .pd-n { margin-right: auto; pointer-events: auto; padding: 8px 12px; border-radius: 999px; background: #1b1020; color: #fffaf5; font: 600 12px/1 var(--sans); }
+.pedock .pd-n[hidden] { display: none; }
+html.page-edit #fabbox { display: none !important; }
+html.page-edit .wrap { padding-bottom: 90px; }
+html.page-edit .toast { bottom: calc(max(16px, env(safe-area-inset-bottom, 0px)) + 60px); }
+.pe-settog { justify-self: start; display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--pill-bg); box-shadow: inset 0 0 0 1.5px var(--fg); color: var(--fg); font: 600 12px/1 var(--sans); letter-spacing: .1em; text-transform: uppercase; cursor: pointer; }
+.pe-settog svg { width: 12px; height: 12px; transition: transform .2s; }
+.pe-settog[aria-expanded="true"] svg { transform: rotate(180deg); }
+.pe-setg[hidden], #pe-songsg[hidden] { display: none; }
+.pe-songs li.sel { box-shadow: inset 0 0 0 2px var(--fg); }
+.pe-songs li.sel .thumb::after { content: "✓"; position: absolute; inset: 0; display: grid; place-items: center; background: rgba(27, 16, 32, .6); color: #fffaf5; font: 700 18px/1 var(--sans); }
 /* a member's own playlist, still being got ready: its previews, videos, moods and years so far */
 /* their own calendar or playlist, edited on the page itself (John, 1 Nov 2026: "I want all the edit actions on the
    playlist popup to actually happen directly on the page when you click edit") */
@@ -1616,11 +1627,11 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       <button class="heroshuf" id="heroshuf" type="button" aria-label="Play every song, shuffled" title="Shuffle all"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 4.5h2.3c1.5 0 2.4.7 3.3 2l1.8 3c.8 1.3 1.8 2 3.3 2H14M2 11.5h2.3c1.3 0 2.1-.5 2.8-1.4M9.6 5.9c.7-.9 1.5-1.4 2.8-1.4H14M12.2 2.8 14 4.5l-1.8 1.7M12.2 9.8 14 11.5l-1.8 1.7"/></svg></button>
     </div>
     <section class="pageedit" id="pageedit" hidden aria-labelledby="peh">
-      <div class="pe-head"><h2 id="peh">Editing</h2><button class="pe-done" id="pedone" type="button">Done</button></div>
+      <div class="pe-head"><h2 id="peh">Editing</h2></div>
       <div class="pe-g"><h3>Name</h3><div class="pe-name" id="pe-name"></div></div>
       <div class="pe-g"><h3>Picture</h3><div class="pe-pic"><span class="cal-pic" id="pe-picimg"></span><div class="pe-picacts" id="pe-picacts"></div></div></div>
-      <div class="pe-g pe-setg" id="pe-set"></div>
-      <div class="pe-g"><h3 id="pe-songsh">Songs</h3><p class="pe-tip" id="pe-songst"></p><ol class="pe-songs" id="pe-songs"></ol></div>
+      <div class="pe-g"><button class="pe-settog" id="pe-settog" type="button" aria-expanded="false" aria-controls="pe-set"><span id="pe-settogt">Calendar set-up</span><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5"/></svg></button><div class="pe-setg" id="pe-set" hidden></div></div>
+      <div class="pe-g" id="pe-songsg"><h3 id="pe-songsh">Songs</h3><ol class="pe-songs" id="pe-songs"></ol></div>
       <div class="pe-g"><h3>More</h3><div class="pe-more" id="pe-more"></div></div>
     </section>
     <div class="uplprog" id="uplprog" hidden>
@@ -2194,10 +2205,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   </form>
 </dialog>
 
-<div class="upledbar" id="upledbar" role="region" aria-label="Editing the days" hidden>
-  <p id="upledbart"></p>
-  <div class="upledbar-acts"><button class="ac-out" id="upledbarreset" type="button" hidden>Back to the setup’s days</button><button class="copy" id="upledbardone" type="button">Done</button></div>
-</div>
+<div class="pedock" id="pedock" role="region" aria-label="Editing" hidden><span class="pd-n" id="pdn" hidden></span><button class="pd-edit" id="pdedit" type="button" hidden>Edit song</button><button class="pd-del" id="pddel" type="button" hidden>Take off</button><button class="pd-clear" id="pdclear" type="button" hidden>Clear</button><button class="pd-fin" id="pdfin" type="button">Finish editing</button></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div class="ptr" id="ptr" aria-hidden="true"><span class="ptr-turn"><span class="ptr-disc"><span class="ptr-lab"></span></span></span></div>
 
@@ -7168,7 +7176,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // when it moves later, the day after when it moves earlier; days with no song stay empty), and the lot is kept when
   // it's let go (the Worker's op place). A tap, then a day, does the same. Held down, a song offers to come off the
   // calendar (op del: its day left empty). Swiping months and pulling to refresh are off meanwhile. Not on the TV. ----
-  var ED = { on: false, sel: null, drag: null, noClick: false, base: null };
+  var ED = { on: false, drag: null, noClick: false, base: null };
   function uplEditCan() { return !!(UPL.on && UPL.view && UPL.view.mine && UPL.view.mode !== 'list' && !TV); }
   // their own calendar or playlist: Edit, by it, opens everything about it (John, 1 Nov 2026: "Could there be a noticeable
   // edit button on my playlists. it shows all the edit options for the calendar from the calendar too, same with if
@@ -7180,31 +7188,24 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     document.getElementById('cal').classList.toggle('has-edit', uplOwnCan() && !ED.on);   // (its row only when it's there)
     document.getElementById('listedit').hidden = !uplOwnCan();   // (a playlist's, above its list)
     var me = uplPls().filter(function (p) { return p.id === UPL.on; })[0];
-    document.getElementById('upledbarreset').hidden = !(me && me.moved);
   }
-  function uplEditText(t) {
-    document.getElementById('upledbart').textContent = t || (ED.sel ? 'Now tap the day for “' + ED.sel.title + '” (change month if you like), or tap it again to leave it.'
-      : 'Drag a song to another day: the songs between shift a day to fill its place. Or tap it, then the day. Hold one down to take it off.');
-  }
+  function uplEditText() {}   // (2 Nov 2026: no instructions while editing)
   function uplEditOff() {
     if (!ED.on) return;
-    ED.on = false; ED.sel = null;
+    ED.on = false;
     document.documentElement.classList.remove('upl-editing');
-    document.getElementById('upledbar').hidden = true;
     uplEditSync();
   }
   function uplEditOn() {
     if (!uplEditCan()) return;
-    ED.on = true; ED.sel = null;
+    ED.on = true;
     document.documentElement.classList.add('upl-editing');
-    document.getElementById('upledbar').hidden = false;
-    uplEditText();
     uplApply(UPL.view, { keep: true });
   }
   function editMarks() {
     [].forEach.call(grid.querySelectorAll('.day'), function (c) {
       var d = c.getAttribute('data-day'), picks = d && byDate[d];
-      c.classList.toggle('edit-sel', !!(ED.sel && picks && picks.some(function (p) { return p.track === ED.sel.track; })));
+      c.classList.toggle('edit-sel', !!(picks && picks.some(function (p) { return PE.sel.indexOf(p.track) >= 0; })));
       c.classList.toggle('dragfrom', !!(ED.drag && ED.drag.on && picks && picks.some(function (p) { return p.track === ED.drag.track; })));
     });
   }
@@ -7238,7 +7239,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function edMove(track, to, title) {   // tap, then a day: the same as a drop
     ED.base = songs.slice();
     var res = edShift(ED.base, track, to);
-    ED.sel = null; edShow(res); edSave(res, 'Moved “' + title + '” to ' + longDate(to));
+    edShow(res); edSave(res, 'Moved “' + title + '” to ' + longDate(to));
   }
   function edDelete(s) {   // held down: off the calendar, its day left empty
     ask({ k: 'Editing the days', h: 'Take “' + s.title + '” off?', t: 'It comes off this calendar and its day is left empty. It stays on Spotify.', ok: 'Take it off', no: 'Keep it' }).then(function (yes) {
@@ -7254,7 +7255,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // notifications), its songs (each one's edit and taking off; a playlist's order), and Update or Check now and
   // Remove. A calendar's days are edited on the calendar itself meanwhile (drag a song to another day; hold one to take
   // it off). Done puts it all back. ----
-  var PE = { on: false, home: null };
+  var PE = { on: false, home: null, sel: [] };
   var PE_ICON = { edit: PEN_ICON, x: '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3 3l8 8M11 3 3 11"/></svg>',
     up: '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3 9l4-4 4 4"/></svg>', down: '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>' };
   function peOn() {
@@ -7265,15 +7266,17 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     document.getElementById('pe-name').appendChild(nameEl); document.getElementById('pe-set').appendChild(set);
     var p = uplOwnRec(); nameEl.value = p.n || ''; nameEl.placeholder = p.sn || 'Its name';
     nameEl.setAttribute('aria-label', 'Its name');
-    PE.on = true; document.documentElement.classList.add('page-edit');
-    document.getElementById('pageedit').hidden = false;
+    PE.on = true; PE.sel = []; document.documentElement.classList.add('page-edit');
+    document.getElementById('pageedit').hidden = false; document.getElementById('pedock').hidden = false;
+    peSetShow(false); peDock();
     setupDraw(); peDraw(); uplEditSync();
     if (uplEditCan()) uplEditOn();   // (a calendar: its days, on the calendar itself)
     setTimeout(function () { try { document.getElementById('pageedit').scrollIntoView({ block: 'start', behavior: 'smooth' }); } catch (e) {} }, 60);
   }
   function peOff() {
     if (!PE.on) return;
-    PE.on = false; document.documentElement.classList.remove('page-edit');
+    PE.on = false; PE.sel = []; document.documentElement.classList.remove('page-edit');
+    document.getElementById('pedock').hidden = true;
     var nameEl = document.getElementById('uplname'), set = document.getElementById('mineset');
     if (PE.home) { PE.home.name[0].insertBefore(nameEl, PE.home.name[1]); PE.home.set[0].insertBefore(set, PE.home.set[1]); }
     document.getElementById('pageedit').hidden = true;
@@ -7300,7 +7303,15 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     // its songs: each one's edit (its video, moods and genres, their MP3 and MP4, cover) and taking off; a playlist's order
     var ul = document.getElementById('pe-songs'), rows = list ? mineUplSongs() : MUPL.list.slice().sort(function (a, b) { return a.d < b.d ? 1 : a.d > b.d ? -1 : 0; });
     document.getElementById('pe-songsh').textContent = rows.length + (rows.length === 1 ? ' song' : ' songs');
-    document.getElementById('pe-songst').textContent = list ? '' : 'On the calendar, drag a song to another day, or hold one to take it off.';
+    document.getElementById('pe-settogt').textContent = list ? 'Playlist set-up' : 'Calendar set-up';
+    // (2 Nov 2026, John: "If it's a calendar we don't need the playlist style list of song to edit it unless we switch to
+    // that view": a calendar's songs are picked on the calendar)
+    document.getElementById('pe-songsg').hidden = !list;
+    if (!list && p.moved) btn(more, 'Back to the setup’s days', '', function () {
+      ask({ k: 'Editing the days', h: 'Back to the setup’s days?', t: 'Every song you’ve moved goes back to the day its setup gives it.', ok: 'Put them back', no: 'Keep them' }).then(function (yes) {
+        if (yes) uplOp({ op: 'unmove', id: UPL.on }, 'Every song on its setup’s day again', function () { uplEditSync(); if (ED.on) uplApply(UPL.view, { keep: true }); peDraw(); });
+      });
+    });
     ul.textContent = '';
     rows.forEach(function (x, i) {
       var li = document.createElement('li');
@@ -7309,6 +7320,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       var tt = document.createElement('span'); tt.className = 'tt'; tt.textContent = x.title; tx.appendChild(tt);
       var ta = document.createElement('span'); ta.className = 'ta'; ta.textContent = x.artist + (list ? '' : ' · ' + uplDayShort(x.d)) + (x.w ? ' · waits for you' : x.f ? ' · to come' : ''); tx.appendChild(ta);
       li.appendChild(tx);
+      if (PE.sel.indexOf(x.track) >= 0) li.classList.add('sel');
+      [th, tx].forEach(function (el) { el.style.cursor = 'pointer'; el.addEventListener('click', function () { peTog(x.track); li.classList.toggle('sel', PE.sel.indexOf(x.track) >= 0); }); });
       var bs = document.createElement('span'); bs.className = 'bs';
       var ib = function (icon, label, cls, fn, off) { var b = document.createElement('button'); b.type = 'button'; b.innerHTML = PE_ICON[icon]; b.setAttribute('aria-label', label); b.title = label; if (cls) b.className = cls; if (off) b.disabled = true; b.addEventListener('click', fn); bs.appendChild(b); };
       if (list) {
@@ -7320,29 +7333,46 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       li.appendChild(bs); ul.appendChild(li);
     });
   }
-  document.getElementById('pedone').addEventListener('click', peOff);
-  function uplEditDays(p) {   // from its pop-up: the calendar, in Edit days
-    if (mine.open) closeDialog(mine);
-    if (UPL.on === p.id && UPL.view) { uplEditOn(); return; }
-    uplShow(p.id); var n = 0, t = setInterval(function () { if (UPL.on === p.id && UPL.view) { clearInterval(t); uplEditOn(); } else if (++n > 40) clearInterval(t); }, 150);
+  function peTog(t) { var i = PE.sel.indexOf(t); if (i >= 0) PE.sel.splice(i, 1); else PE.sel.push(t); peDock(); }
+  function peSong(t) { return byTrack[t] || ((UPL.view && UPL.view.songs) || []).filter(function (y) { return (y.track || y.id) === t; })[0] || null; }
+  function peDock() {   // the fixed buttons: what can be done to the songs picked, then Finish editing
+    var n = PE.sel.length;
+    var c = document.getElementById('pdn'); c.hidden = !n; c.textContent = n + ' picked';
+    document.getElementById('pdedit').hidden = n !== 1;
+    var d = document.getElementById('pddel'); d.hidden = !n; d.textContent = n > 1 ? 'Take off ' + n : 'Take off';
+    document.getElementById('pdclear').hidden = !n;
   }
-  document.getElementById('upledbardone').addEventListener('click', function () { if (typeof PE !== 'undefined' && PE.on) { peOff(); return; } uplEditOff(); if (UPL.view) uplApply(UPL.view, { keep: true }); });
-  document.getElementById('upledbarreset').addEventListener('click', function () {
-    ask({ k: 'Editing the days', h: 'Back to the setup’s days?', t: 'Every song you’ve moved goes back to the day its setup gives it.', ok: 'Put them back', no: 'Keep them' }).then(function (yes) {
-      if (yes) uplOp({ op: 'unmove', id: UPL.on }, 'Every song on its setup’s day again', function () { uplEditSync(); if (ED.on) uplApply(UPL.view, { keep: true }); });
+  function peSetShow(on) {
+    document.getElementById('pe-set').hidden = !on;
+    document.getElementById('pe-settog').setAttribute('aria-expanded', on ? 'true' : 'false');
+  }
+  document.getElementById('pe-settog').addEventListener('click', function () { peSetShow(document.getElementById('pe-set').hidden); });
+  document.getElementById('pdfin').addEventListener('click', peOff);
+  document.getElementById('pdclear').addEventListener('click', function () { PE.sel = []; peDock(); editMarks(); peDraw(); });
+  document.getElementById('pdedit').addEventListener('click', function () { var s = PE.sel.length === 1 && peSong(PE.sel[0]); if (s) upledOpen(s); });
+  document.getElementById('pddel').addEventListener('click', function () {
+    var ts = PE.sel.slice(), n = ts.length; if (!n) return;
+    var one = n === 1 && peSong(ts[0]), cal = UPL.view && UPL.view.mode !== 'list';
+    ask({ k: 'Editing', h: one ? 'Take “' + one.title + '” off?' : 'Take these ' + n + ' songs off?', t: (n === 1 ? 'It comes' : 'They come') + ' off this ' + (cal ? 'calendar' : 'playlist') + (cal ? ' and ' + (n === 1 ? 'its day is' : 'their days are') + ' left empty.' : '.') + ' ' + (n === 1 ? 'It stays' : 'They stay') + ' on Spotify.', ok: 'Take ' + (n === 1 ? 'it' : 'them') + ' off', no: 'Keep' }).then(function (yes) {
+      if (!yes) return;
+      uplOp({ op: 'del', id: UPL.on, tracks: ts }, one ? '“' + one.title + '” taken off' : n + ' songs taken off', function () { PE.sel = []; peDock(); if (UPL.view) uplApply(UPL.view, { keep: true }); peDraw(); });
     });
   });
+  function uplEditDays(p) {   // from its pop-up: the calendar, in Edit days
+    if (mine.open) closeDialog(mine);
+    if (UPL.on === p.id && UPL.view) { peOn(); return; }
+    uplShow(p.id); var n = 0, t = setInterval(function () { if (UPL.on === p.id && UPL.view) { clearInterval(t); peOn(); } else if (++n > 40) clearInterval(t); }, 150);
+  }
   grid.addEventListener('click', function (e) {   // editing: a tap picks a song, then its day
     if (!ED.on) return;
     var c = e.target.closest && e.target.closest('.day[data-day]');
     e.preventDefault(); e.stopImmediatePropagation();
     if (!c || ED.noClick) return;
     var day = c.getAttribute('data-day'), picks = byDate[day];
-    if (ED.sel) {
-      if (picks && picks.some(function (p) { return p.track === ED.sel.track; })) ED.sel = null;
-      else { edMove(ED.sel.track, day, ED.sel.title); return; }
-    } else if (picks) ED.sel = { track: picks[0].track, title: picks[0].title };
-    editMarks(); uplEditText();
+    if (!picks) return;   // (2 Nov 2026, John: "How do you select multiple for delete?": a tap picks a day's songs, another tap leaves them)
+    var ts = picks.map(function (p) { return p.track; }), on = ts.some(function (t) { return PE.sel.indexOf(t) >= 0; });
+    PE.sel = PE.sel.filter(function (t) { return ts.indexOf(t) < 0; }); if (!on) PE.sel = PE.sel.concat(ts);
+    editMarks(); peDock();
   }, true);
   grid.addEventListener('pointerdown', function (e) {   // editing: a song dragged to a day, or held down
     if (!ED.on || e.button > 0) return;
@@ -7363,7 +7393,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (!g.on) {
       if (Math.abs(e.clientX - g.x) + Math.abs(e.clientY - g.y) < 8) return;
       clearTimeout(g.hold);
-      g.on = true; ED.sel = null; ED.base = songs.slice();
+      g.on = true; ED.base = songs.slice();
       g.ghost = document.createElement('div'); g.ghost.className = 'dragghost';
       if (g.img) { var im = document.createElement('img'); im.src = g.img; im.alt = ''; g.ghost.appendChild(im); } else g.ghost.style.background = 'var(--tile)';
       document.body.appendChild(g.ghost); editMarks();

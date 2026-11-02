@@ -3736,12 +3736,14 @@ async function memberUpl(request, url, env, answer) {
     await env.SOTD.put('upl:' + pid, JSON.stringify(data));
     return answer(200, { ok: true, view: await uplView(env, all, me, pid, rec) });
   }
-  if (body.op === 'del') {   // a song off its calendar or playlist (not off Spotify): its day left empty
-    const data = await uplSongs(env, pid), x = (data.songs || []).find(y => y.id === String(body.track || '') && !uplGone(data, y));
-    if (!x) return answer(404, { error: 'That song isn’t on this playlist.' });
-    data.del = data.del || {}; data.del[x.id] = x.a;
-    if (data.order) data.order = data.order.filter(t => t !== x.id);
-    await uplFilesGone(env, pid, data, [x.id]);   // (its files too, unless it's saved to a playlist elsewhere)
+  if (body.op === 'del') {   // songs off its calendar or playlist (not off Spotify): their days left empty (tracks: several at once)
+    const want = Array.isArray(body.tracks) ? body.tracks.slice(0, 2000).map(String) : [String(body.track || '')];
+    const data = await uplSongs(env, pid), xs = (data.songs || []).filter(y => want.includes(y.id) && !uplGone(data, y));
+    if (!xs.length) return answer(404, { error: want.length > 1 ? 'Those songs aren’t on this playlist.' : 'That song isn’t on this playlist.' });
+    const ids = xs.map(x => x.id);
+    data.del = data.del || {}; xs.forEach(x => { data.del[x.id] = x.a; });
+    if (data.order) data.order = data.order.filter(t => !ids.includes(t));
+    await uplFilesGone(env, pid, data, ids);   // (its files too, unless it's saved to a playlist elsewhere)
     await env.SOTD.put('upl:' + pid, JSON.stringify(data));
     rec.cnt = (data.songs || []).filter(y => !uplGone(data, y)).length; await uplPut(env, U);
     await startJob(env, null, null, 0, null, true).catch(() => {});   // (its cards, and its YouTube copy)
