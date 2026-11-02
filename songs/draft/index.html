@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="27348cc926d6">
+<meta name="sotd-build" content="f63a843004c2">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -3403,9 +3403,11 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         } var p = audio.play(); if (p && p.catch) p.catch(function () {}); },
       pauseVideo: function () { if (SPX.bg && spxNB()) { spxNB().pause(); SPX.bg.at += (Date.now() - SPX.bg.t0) / 1000 * (SPX.bg.playing ? 1 : 0); SPX.bg.t0 = Date.now(); SPX.bg.playing = false; coverState(2); return; } if (coverObj.sp) { spxDo('pause', 2); return; } audio.pause(); },
       stopVideo: function () { if (coverObj.sp) { spxSoon(); return; } audio.pause(); },
-      seekTo: function (sec) { if (coverObj.sp) { SPX.pos = sec * 1000; SPX.at = Date.now(); spxCmd('seek', { ms: Math.round(sec * 1000) }); spxShadowSync(); return; } try { audio.currentTime = sec; } catch (x) {} },
+      seekTo: function (sec) {
+        if (SPX.bg && spxNB()) { var B = spxNB(); if (typeof B.seek === 'function') { B.seek({ at: sec }).catch(function () {}); SPX.bg.at = sec; SPX.bg.t0 = Date.now(); } return; }   // (the app's own player has the song: the bar moves it)
+        if (coverObj.sp) { SPX.pos = sec * 1000; SPX.at = Date.now(); spxCmd('seek', { ms: Math.round(sec * 1000) }); spxShadowSync(); return; } try { audio.currentTime = sec; } catch (x) {} },
       getCurrentTime: function () { if (SPX.bg) return SPX.bg.at + (SPX.bg.playing ? (Date.now() - SPX.bg.t0) / 1000 : 0); return coverObj.sp ? spxPos() / 1000 : audio.currentTime || 0; },
-      getDuration: function () { return coverObj.sp ? (SPX.dur || 0) / 1000 : isFinite(audio.duration) ? audio.duration : 0; },
+      getDuration: function () { if (SPX.bg) return SPX.bg.dur || 0; return coverObj.sp ? (SPX.dur || 0) / 1000 : isFinite(audio.duration) ? audio.duration : 0; },
       getPlayerState: function () { return coverObj.state; },
       isMuted: function () { return audio.muted; },
       mute: function () { audio.muted = true; },
@@ -3609,7 +3611,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     clearInterval(SPX.poll); clearTimeout(SPX.endT);
     if (coverObj) coverObj.sp = false;
     SPX.playing = false; SPX.native = false; SPX.track = ''; SPX.dev = null; SPX.bgLoaded = ''; spxShowDev();
-    SPX.bg = { track: st.track, at: st.at || 0, t0: Date.now(), playing: !!st.playing, poll: 0 };
+    SPX.bg = { track: st.track, at: st.at || 0, t0: Date.now(), playing: !!st.playing, dur: st.dur || 0, poll: 0 };
     var so = songOf(st.track);
     if (so && !(vplay && vplay.el && vplay.el.sotd && vplay.el.sotd.s.track === st.track)) {
       if (queue) { var qi = queue.list.indexOf(st.track); if (qi >= 0) queue.i = qi; }
@@ -3617,7 +3619,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     }
     spLog('back: the app’s player has “' + (so ? so.title : st.track) + '” at ' + (st.at || 0).toFixed(0) + 's (' + (st.playing ? 'playing' : 'paused') + '); Spotify again from the next song');
     if (so) { var np = document.getElementById('nowplaying'); if (np) np.firstChild && (np.firstChild.textContent = so.title); }
-    SPX.bg.poll = setInterval(function () { if (!SPX.bg || !B) return; B.status().then(function (k) { if (!SPX.bg) return; SPX.bg.at = k.at || 0; SPX.bg.t0 = Date.now(); SPX.bg.playing = !!k.playing; if (coverObj && vplay && vplay.cover) coverState(k.playing ? 1 : 2); }).catch(function () {}); }, 2000);
+    SPX.bg.poll = setInterval(function () { if (!SPX.bg || !B) return; B.status().then(function (k) { if (!SPX.bg) return; SPX.bg.at = k.at || 0; SPX.bg.t0 = Date.now(); SPX.bg.playing = !!k.playing; if (k.dur) SPX.bg.dur = k.dur; if (coverObj && vplay && vplay.cover) coverState(k.playing ? 1 : 2); }).catch(function () {}); }, 2000);
     if (coverObj && vplay && vplay.cover) coverState(st.playing ? 1 : 2);
   }
   function spxBgListen() {   // the native player's song over while the app's in sight: the next song through Spotify (listened for once, as it's first loaded)

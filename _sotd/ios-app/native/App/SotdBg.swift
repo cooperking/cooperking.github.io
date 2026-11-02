@@ -9,7 +9,7 @@ import Capacitor
 // Spotify isn't stopped, kept in step by sync(). When the app goes to the background, iPhone tells this code directly (no
 // page needed): the song is turned up (a preview from its start), the phone's sound taken back (Spotify stops as it's
 // taken), and it plays on through the list, with the lock screen's controls. Back in the app, the page asks status(), shows
-// the song, and when that song ends ("ended" event) sends the next one to Spotify again. stop() ends it. From build 41.
+// the song, and when that song ends ("ended" event) sends the next one to Spotify again. stop() ends it. From build 41; seek() and the song's length (dur) in status() from build 42.
 @objc(SotdBgPlugin)
 public class SotdBgPlugin: CAPPlugin, CAPBridgedPlugin {
     public let identifier = "SotdBgPlugin"
@@ -20,7 +20,8 @@ public class SotdBgPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "stop", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "status", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "play", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "pause", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "pause", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "seek", returnType: CAPPluginReturnPromise)
     ]
     struct Item { let track: String; let url: URL; let full: Bool; let title: String; let artist: String }
     private var list: [Item] = []
@@ -146,6 +147,11 @@ public class SotdBgPlugin: CAPPlugin, CAPBridgedPlugin {
 
     @objc func stop(_ call: CAPPluginCall) { DispatchQueue.main.async { self.stopAll(); call.resolve() } }
 
+    // a place in the song (the bar, back in the app: build 42)
+    @objc func seek(_ call: CAPPluginCall) {
+        let at = call.getDouble("at") ?? 0
+        DispatchQueue.main.async { self.player?.seek(to: CMTime(seconds: max(0, at), preferredTimescale: 600)) { _ in self.nowPlaying() }; call.resolve() }
+    }
     @objc func play(_ call: CAPPluginCall) { DispatchQueue.main.async { self.player?.play(); self.nowPlaying(); call.resolve() } }
     @objc func pause(_ call: CAPPluginCall) { DispatchQueue.main.async { self.player?.pause(); self.nowPlaying(); call.resolve() } }
 
@@ -153,8 +159,8 @@ public class SotdBgPlugin: CAPPlugin, CAPBridgedPlugin {
         DispatchQueue.main.async {
             let p = self.player
             let t = self.index < self.list.count ? self.list[self.index].track : ""
-            let at = p?.currentTime().seconds ?? 0
-            call.resolve(["took": self.took, "armed": self.armed, "track": t, "at": at.isFinite ? at : 0,
+            let at = p?.currentTime().seconds ?? 0, dur = p?.currentItem?.duration.seconds ?? 0
+            call.resolve(["took": self.took, "armed": self.armed, "track": t, "at": at.isFinite ? at : 0, "dur": dur.isFinite ? dur : 0,
                           "playing": (p?.rate ?? 0) != 0, "volume": p?.volume ?? 0, "log": self.log])
             self.log = []
         }
