@@ -167,7 +167,7 @@
     <p class="stat" id="spstat"></p>
     <ul class="splist" id="splist"></ul>
     <p class="stat" id="spapps"></p>
-    <div class="row"><input id="spnewapp" type="text" placeholder="Another app’s Client ID" autocomplete="off" spellcheck="false" style="flex:1 1 220px;min-width:0"><button class="btn small primary" id="spaddapp" type="button">Add app</button></div>
+    <div class="row"><textarea id="spnewapp" rows="2" placeholder="Another app’s Client ID, or a list of them" autocomplete="off" spellcheck="false" style="flex:1 1 220px;min-width:0"></textarea><button class="btn small primary" id="spaddapp" type="button">Add app</button></div>
     <div class="row"><a class="btn small" href="https://developer.spotify.com/dashboard" target="_blank" rel="noopener">Spotify’s dashboard ↗</a><button class="btn small" id="spcopyuri" type="button">Copy the Redirect URI</button></div>
   </div>
   <div class="card notify">
@@ -935,9 +935,10 @@
   }
   var SPAPPS = [], SPURI = '';
   $('spaddapp').addEventListener('click', function () {
-    var v = $('spnewapp').value.trim().toLowerCase();
-    if (!/^[0-9a-f]{32}$/.test(v)) { toast('A Client ID is 32 letters and numbers, from the app’s page in Spotify’s dashboard'); return; }
-    api('/members/admin', { op: 'spapps', apps: SPAPPS.concat([v]) }).then(function (j) { if (j.status !== 200) { toast(j.error || 'Couldn’t add it'); return; } $('spnewapp').value = ''; toast('App added: room for 5 more'); spLoad(); });
+    // one Client ID, or a list pasted in (any 32-character IDs in it: a line each, a spreadsheet's column, a list)
+    var ids = ($('spnewapp').value.toLowerCase().match(/\b[0-9a-f]{32}\b/g) || []).filter(function (x, i, a) { return a.indexOf(x) === i && SPAPPS.indexOf(x) < 0; });
+    if (!ids.length) { toast('Paste a Client ID (32 letters and numbers, from the app’s page in Spotify’s dashboard), or a list of them'); return; }
+    api('/members/admin', { op: 'spapps', apps: SPAPPS.concat(ids) }).then(function (j) { if (j.status !== 200) { toast(j.error || 'Couldn’t add them'); return; } $('spnewapp').value = ''; var n = (j.apps || []).length - 1 - SPAPPS.length; toast(n === 1 ? 'App added: room for 5 more' : n + ' apps added: room for ' + n * 5 + ' more'); spLoad(); });
   });
   $('spcopyuri').addEventListener('click', function () { var u = SPURI || 'https://sotd-playlists.cooperking.workers.dev/callback'; navigator.clipboard.writeText(u).then(function () { toast('Copied: ' + u); }, function () { toast(u); }); });
   function pushStat() {
