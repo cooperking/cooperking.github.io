@@ -3317,7 +3317,7 @@ async function spAskAdd(env, id, rec, again) {
     if (!owner || !all[owner]) return null;
     const apps = await spApps(env), n = apps.indexOf(rec.cid || CLIENT_ID) + 1, name = (all[id] && all[id].name) || 'A member';
     const msg = { title: name + ' is waiting to be added to Spotify app ' + (n || '?'),
-      body: 'Add ' + name + ' (' + email + ') in Spotify’s dashboard: app ' + (n || '?') + ' › User Management › Add user. Tap for the email to copy and the link to that page.',
+      body: 'Add ' + name + ' (' + email + ') in Spotify’s dashboard: app ' + (n || '?') + ' › User Management › Add user. Tap for the email to copy and the link to that page, or Let Claude add them.',
       url: SITE_SONGS + 'admin.html#members', tag: 'sotd-spadd-' + id };
     await pushAll(env, msg, [owner], { kind: 'member', via: { t: 'spotify', name } });
     const at = { email, at: Date.now(), ok: true, status: 200 };

@@ -951,6 +951,11 @@
           var op = document.createElement('a'); op.className = 'btn small primary'; op.target = '_blank'; op.rel = 'noopener';
           op.href = 'https://developer.spotify.com/dashboard/' + x.cid + '/users'; op.textContent = 'Open app ' + appNo(x.cid) + ' in Spotify ↗';
           li.appendChild(op);
+          // Claude's task on John's Mac adds them in Spotify's dashboard itself: its page, Run now (the Worker can't start it)
+          var cl = document.createElement('a'); cl.className = 'btn small'; cl.target = '_blank'; cl.rel = 'noopener';
+          cl.href = 'https://claude.ai/code/routines/trig_01HjnEzR3YdmqcArosruN5fH'; cl.textContent = 'Let Claude add them ↗';
+          cl.title = 'Opens Claude’s task: tap Run now (needs the Claude app open on the Mac)';
+          li.appendChild(cl);
         }
         if (x.blocked && x.email) { var c = document.createElement('button'); c.type = 'button'; c.className = 'btn small'; c.textContent = 'Copy email'; c.addEventListener('click', function () { navigator.clipboard.writeText(x.email).then(function () { toast('Copied: add it in Spotify’s dashboard'); }, function () { toast(x.email); }); }); li.appendChild(c); }
         ul.appendChild(li);
