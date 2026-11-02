@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="5369cde72f2c">
+<meta name="sotd-build" content="5898541fe00c">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -3619,22 +3619,35 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       return;
     }
     coverObj.sp = false; SPX.playing = false; SPX.native = false; SPX.track = ''; SPX.dev = null; spxShowDev(); clearInterval(SPX.poll);
-    if (!src) { spxCmd('pause'); spxShare(false); coverState(0); return; }   // (nothing of its own to play: on to the next)
+    if (!src) { spLog('hand-over: nothing of its own to play (no MP3 or preview): on to the next'); spxCmd('pause'); spxShare(false); coverState(0); return; }   // (nothing of its own to play: on to the next)
     var full = whole(s);
+    spLog('hand-over: loading the ' + (full ? 'MP3 from ' + t.toFixed(1) + 's' : 'preview') + ' (no silent copy ready)');
     audio.src = src + (full && t > 1 ? '#t=' + t.toFixed(2) : '');
     var p = audio.play();   // (first, while the page may still start sound)
-    if (p && p.catch) p.catch(function (e) { coverState(2); SPX.handFail = String((e && e.name) || e); });
+    if (p && p.then) p.then(function () { spLog('hand-over: app playing'); }, function (e) { coverState(2); SPX.handFail = String((e && e.name) || e); spLog('hand-over: app couldn’t play: ' + ((e && (e.name + ' ' + (e.message || ''))) || e)); });
+    setTimeout(function () { spLog('2s later: app ' + (audio.paused ? 'PAUSED' : 'playing') + ' at ' + (audio.currentTime || 0).toFixed(1) + 's'); }, 2000);
     spxShare(false);   // (then the phone's sound taken back: Spotify stops as it's taken)
     var N = spxN(); if (N && N.pause) N.pause().catch(function () {});
   }
-  document.addEventListener('visibilitychange', function () { spLog(document.hidden ? 'app left the screen' : 'app back on screen'); if (document.hidden) spxHandOver(); });
+  var spAway = null;
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) {
+      spAway = { at: Date.now(), t: audio.currentTime || 0 };
+      spLog('app left the screen (Spotify ' + (coverObj && coverObj.sp ? (SPX.playing ? 'playing' : 'not playing') : 'not in use') + '; app audio ' + (audio.paused ? 'paused' : 'playing') + (audio.muted ? ', muted' : '') + ')');
+      spxHandOver();
+      return;
+    }
+    var a = spAway; spAway = null;
+    spLog('app back on screen' + (a ? ' after ' + Math.round((Date.now() - a.at) / 1000) + 's: app audio ' + (audio.paused ? 'paused' : 'playing') + (audio.muted ? ' (muted)' : '') + ', moved ' + ((audio.currentTime || 0) - a.t).toFixed(0) + 's' + (coverObj && coverObj.sp ? '; Spotify in use' : '') : ''));
+  });
   function spxShare(on) { var N = NAT && NAT.Plugins && NAT.Plugins.SotdSpotify; if (N && typeof N.share === 'function') N.share({ on: !!on }).catch(function () {}); }
   function spxFallback(id, why) {   // their Spotify can't play it: the song as before, this once
     spLog('fallback to the app' + (why ? ': ' + why : ''));
     coverObj.sp = false; spxStop(true); spxShare(false);
     if (why && Date.now() - SPX.warned > 60000) { SPX.warned = Date.now(); toast(why); }
     var s = songOf(id), src = s && songSrc(s);
-    if (src) { audio.src = src; var p = audio.play(); if (p && p.catch) p.catch(function () { coverState(2); }); return; }
+    if (src) { audio.src = src; var p = audio.play(); if (p && p.then) p.then(function () { spLog('app playing the ' + (whole(s) ? 'MP3' : 'preview')); }, function (e) { coverState(2); spLog('app couldn’t play the fallback: ' + ((e && e.name) || e)); }); return; }
+    spLog('fallback: nothing of its own to play: on to the next');
     coverState(0);   // (nothing else to play: on to the next)
   }
   function spxSoon() {   // stopped: paused in a moment, unless the next song starts first (it then just carries on)
@@ -3720,6 +3733,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     }).catch(function () { SPX.busy = false; if (coverObj.sp && SPX.track === id) spxFallback(id, 'Couldn’t reach Spotify just now: playing the preview'); });
   }
   audio.addEventListener('pause', function () { if (SPLOG.length) spLog('app audio paused' + (audio.muted ? ' (muted copy)' : '') + (document.hidden ? ' (in background)' : '')); });
+  audio.addEventListener('playing', function () { if (SPLOG.length && document.hidden) spLog('app audio playing in background' + (audio.muted ? ' (muted!)' : '')); });
+  audio.addEventListener('error', function () { if (SPLOG.length) spLog('app audio error' + (audio.error ? ' ' + audio.error.code : '') + (document.hidden ? ' (in background)' : '')); });
   audio.addEventListener('ended', function () { if (SPLOG.length) spLog('app audio ended' + (document.hidden ? ' (in background)' : '')); });
   function spxEndSoon() {   // a look just after this song should end (the phone's Spotify: then on to the next here)
     clearTimeout(SPX.endT);
