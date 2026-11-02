@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="sotd-build" content="7d1ba37cc2f1">
+<meta name="sotd-build" content="60cd257ff62e">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 265 so far">
 <meta name="theme-color" content="#ec135b">
@@ -7346,7 +7346,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       var ta = document.createElement('span'); ta.className = 'ta'; ta.textContent = x.artist + (list ? '' : ' · ' + uplDayShort(x.d)) + (x.w ? ' · waits for you' : x.f ? ' · to come' : ''); tx.appendChild(ta);
       li.appendChild(tx);
       if (PE.sel.indexOf(x.track) >= 0) li.classList.add('sel');
-      [th, tx].forEach(function (el) { el.style.cursor = 'pointer'; el.addEventListener('click', function () { peTog(x.track); li.classList.toggle('sel', PE.sel.indexOf(x.track) >= 0); }); });
+      li.setAttribute('data-track', x.track);
+      [th, tx].forEach(function (el) { el.style.cursor = 'pointer'; el.addEventListener('click', function () { if (PE.noTap && Date.now() < PE.noTap) return; peTog(x.track); li.classList.toggle('sel', PE.sel.indexOf(x.track) >= 0); }); });
       var bs = document.createElement('span'); bs.className = 'bs';
       var ib = function (icon, label, cls, fn, off) { var b = document.createElement('button'); b.type = 'button'; b.innerHTML = PE_ICON[icon]; b.setAttribute('aria-label', label); b.title = label; if (cls) b.className = cls; if (off) b.disabled = true; b.addEventListener('click', fn); bs.appendChild(b); };
       if (list) {
@@ -7358,6 +7359,36 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       li.appendChild(bs); ul.appendChild(li);
     });
   }
+  (function () {   // the playlist's list: held, then slid over more rows, picks them all
+    var ul = document.getElementById('pe-songs'), H = null;
+    var rowAt = function (e) { var el = document.elementFromPoint(e.clientX, e.clientY), li = el && el.closest ? el.closest('#pe-songs li[data-track]') : null; return li && !(el.closest && el.closest('.bs')) ? li : null; };
+    var paint = function (li) {
+      if (!li || H.seen[li.getAttribute('data-track')]) return;
+      var t = li.getAttribute('data-track'), i = PE.sel.indexOf(t); H.seen[t] = 1;
+      if (H.add && i < 0) PE.sel.push(t); if (!H.add && i >= 0) PE.sel.splice(i, 1);
+      li.classList.toggle('sel', PE.sel.indexOf(t) >= 0); peDock();
+    };
+    ul.addEventListener('pointerdown', function (e) {
+      var li = rowAt(e); if (!li || e.button > 0) return;
+      H = { id: e.pointerId, x: e.clientX, y: e.clientY, li: li, on: false, seen: {} };
+      H.t = setTimeout(function () {
+        if (!H) return; H.on = true; H.add = PE.sel.indexOf(li.getAttribute('data-track')) < 0;
+        if (navigator.vibrate) try { navigator.vibrate(15); } catch (x) {}
+        ul.style.touchAction = 'none'; paint(li);
+      }, 450);
+    });
+    document.addEventListener('pointermove', function (e) {
+      if (!H || e.pointerId !== H.id) return;
+      if (!H.on) { if (Math.abs(e.clientX - H.x) + Math.abs(e.clientY - H.y) > 10) { clearTimeout(H.t); H = null; } return; }   // (moved first: a scroll)
+      paint(rowAt(e)); if (e.cancelable) e.preventDefault();
+    }, { passive: false });
+    var end = function (e) {
+      if (!H || (e && e.pointerId !== H.id)) return;
+      clearTimeout(H.t); var was = H.on; H = null; ul.style.touchAction = '';
+      if (was) PE.noTap = Date.now() + 400;   // (the tap that ends a hold isn't a tap)
+    };
+    document.addEventListener('pointerup', end); document.addEventListener('pointercancel', end);
+  })();
   function peTog(t) { var i = PE.sel.indexOf(t); if (i >= 0) PE.sel.splice(i, 1); else PE.sel.push(t); peDock(); }
   function peSong(t) { return byTrack[t] || ((UPL.view && UPL.view.songs) || []).filter(function (y) { return (y.track || y.id) === t; })[0] || null; }
   function peDock() {   // the fixed buttons: what can be done to the songs picked, then Finish editing
@@ -7406,14 +7437,28 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var picks = byDate[c.getAttribute('data-day')]; if (!picks) return;
     var s = picks[0];
     ED.drag = { x: e.clientX, y: e.clientY, track: s.track, title: s.title, img: (c.querySelector('img') || {}).src || '', on: false, to: null, res: null, id: e.pointerId };
-    ED.drag.hold = setTimeout(function () {   // held without moving: take it off?
+    ED.drag.hold = setTimeout(function () {   // held without moving (John, 2 Nov 2026: "a quick way to select multiple in edit mode with a drag style select"): picking; slide over more days to pick those too
       var g = ED.drag; if (!g || g.on) return;
-      ED.drag = null; ED.noClick = true; setTimeout(function () { ED.noClick = false; }, 400);
+      ED.drag = null; ED.noClick = true;
       if (navigator.vibrate) try { navigator.vibrate(15); } catch (x) {}
-      edDelete(s);
-    }, 550);
+      var ts = picks.map(function (p) { return p.track; });
+      ED.paint = { id: g.id, add: !ts.some(function (t) { return PE.sel.indexOf(t) >= 0; }), seen: {} };
+      pePaint(c.getAttribute('data-day'));
+    }, 450);
   });
+  function pePaint(day) {   // a day passed over while picking: its songs picked (or unpicked, if the first was)
+    var P = ED.paint, picks = day && byDate[day]; if (!P || !picks || P.seen[day]) return;
+    P.seen[day] = 1;
+    picks.forEach(function (p) { var i = PE.sel.indexOf(p.track); if (P.add && i < 0) PE.sel.push(p.track); if (!P.add && i >= 0) PE.sel.splice(i, 1); });
+    editMarks(); peDock();
+  }
   document.addEventListener('pointermove', function (e) {
+    if (ED.paint && e.pointerId === ED.paint.id) {
+      var pe = document.elementFromPoint(e.clientX, e.clientY), pc = pe && pe.closest ? pe.closest('#grid .day[data-day]') : null;
+      if (pc) pePaint(pc.getAttribute('data-day'));
+      if (e.cancelable) e.preventDefault();
+      return;
+    }
     var g = ED.drag; if (!g || e.pointerId !== g.id) return;
     if (!g.on) {
       if (Math.abs(e.clientX - g.x) + Math.abs(e.clientY - g.y) < 8) return;
@@ -7436,6 +7481,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (e.cancelable) e.preventDefault();
   }, { passive: false });
   function dragEnd(e) {
+    if (ED.paint && (!e || e.pointerId === ED.paint.id)) { ED.paint = null; setTimeout(function () { ED.noClick = false; }, 60); return; }
     var g = ED.drag; if (!g || (e && e.pointerId !== g.id)) return;
     ED.drag = null; clearTimeout(g.hold);
     if (!g.on) return;
