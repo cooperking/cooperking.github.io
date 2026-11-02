@@ -3329,7 +3329,7 @@ async function memberSpotify(request, url, env, answer) {
   if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
   const b = await request.json().catch(() => ({})), key = 'spm:' + who.id;
   let rec = await env.SOTD.get(key, 'json');
-  const pub = () => rec ? { linked: true, on: rec.on !== false, blocked: !!rec.blocked, gone: !!rec.gone, name: rec.name || '', product: rec.product || '', email: rec.email || rec.wemail || '' } : { linked: false };
+  const pub = () => rec ? { linked: true, on: rec.on !== false, blocked: !!rec.blocked, gone: !!rec.gone, name: rec.name || '', product: rec.product || '', email: rec.email || rec.wemail || '', cid: rec.cid || CLIENT_ID } : { linked: false };   // (cid: their Spotify app, for the iPhone app's toolkit)
   if (b.op === 'start') {
     if (!await spAppFor(env, who.id)) return answer(409, { error: 'Spotify playback is full for now: Spotify lets each app have 5 people. Songs play as previews.', full: true });
     const n = b64url(crypto.getRandomValues(new Uint8Array(24)));

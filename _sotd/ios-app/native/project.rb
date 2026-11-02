@@ -16,9 +16,23 @@ app = proj.targets.find { |t| t.name == 'App' } or abort('No App target in the p
 
 # 1. the App target's own Swift files
 group = proj.main_group.children.find { |g| g.respond_to?(:path) && (g.path == 'App' || g.name == 'App') } or abort('No App group')
-%w[SOTDViewController.swift SotdCastPlugin.swift SotdSiri.swift SotdContacts.swift SotdGuard.swift SotdShared.swift SotdFiles.swift SotdIcon.swift SotdExportify.swift].each do |f|
+%w[SOTDViewController.swift SotdCastPlugin.swift SotdSiri.swift SotdContacts.swift SotdGuard.swift SotdShared.swift SotdFiles.swift SotdIcon.swift SotdExportify.swift SotdSpotify.swift].each do |f|
   next if group.files.any? { |r| r.path == f }
   app.add_file_references([group.new_reference(f)])
+end
+# Spotify's iPhone toolkit (customise.sh puts SpotifyiOS.xcframework in ios/App): linked, and embedded and signed with the
+# app (it's a dynamic framework), for SotdSpotify.swift
+if Dir.exist?('ios/App/SpotifyiOS.xcframework') && !app.frameworks_build_phase.files_references.any? { |r| r && r.path.to_s.end_with?('SpotifyiOS.xcframework') }
+  fref = proj.main_group.new_reference('SpotifyiOS.xcframework')
+  fref.source_tree = 'SOURCE_ROOT'
+  fref.last_known_file_type = 'wrapper.xcframework'
+  app.frameworks_build_phase.add_file_reference(fref)
+  embed = app.copy_files_build_phases.find { |p| p.name == 'Embed Frameworks' } || app.new_copy_files_build_phase('Embed Frameworks')
+  embed.symbol_dst_subfolder_spec = :frameworks
+  ebf = embed.add_file_reference(fref)
+  ebf.settings = { 'ATTRIBUTES' => ['CodeSignOnCopy', 'RemoveHeadersOnCopy'] }
+  app.build_configurations.each { |c| c.build_settings['LD_RUNPATH_SEARCH_PATHS'] = ['$(inherited)', '@executable_path/Frameworks'] }
+  puts 'added SpotifyiOS.xcframework'
 end
 # the monthly icons (customise.sh draws them into the asset catalog): built in as alternate icons, for SotdIcon
 months = (1..12).map { |m| format('AppIcon-M%02d', m) }

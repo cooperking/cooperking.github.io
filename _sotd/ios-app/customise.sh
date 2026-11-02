@@ -44,6 +44,23 @@ pb "Add :CFBundleDocumentTypes:0:LSItemContentTypes:1 string public.comma-separa
 pb "Delete :LSSupportsOpeningDocumentsInPlace" 2>/dev/null || true
 pb "Add :LSSupportsOpeningDocumentsInPlace bool false"
 
+# Spotify's iPhone toolkit (SotdSpotify: Spotify on this phone, woken for a member's songs; build 32 on): the way back from
+# Spotify's sign-in (sotdspotify://callback), Spotify's own scheme to look for, and the toolkit (SpotifyiOS.xcframework,
+# from Spotify's repository; native/project.rb embeds it)
+if ! /usr/libexec/PlistBuddy -c "Print :CFBundleURLTypes" "$P" >/dev/null 2>&1; then pb "Add :CFBundleURLTypes array"; fi
+n=$(/usr/libexec/PlistBuddy -c "Print :CFBundleURLTypes" "$P" | grep -c "^    Dict {" || true)
+pb "Add :CFBundleURLTypes:$n dict"
+pb "Add :CFBundleURLTypes:$n:CFBundleURLName string io.github.cooperking.sotd.spotify"
+pb "Add :CFBundleURLTypes:$n:CFBundleURLSchemes array"
+pb "Add :CFBundleURLTypes:$n:CFBundleURLSchemes:0 string sotdspotify"
+pb "Delete :LSApplicationQueriesSchemes" 2>/dev/null || true
+pb "Add :LSApplicationQueriesSchemes array"; pb "Add :LSApplicationQueriesSchemes:0 string spotify"
+rm -rf "${TMPDIR:-/tmp}/spotify-ios-sdk"
+git clone --quiet --depth 1 https://github.com/spotify/ios-sdk.git "${TMPDIR:-/tmp}/spotify-ios-sdk"
+rm -rf ios/App/SpotifyiOS.xcframework
+cp -R "${TMPDIR:-/tmp}/spotify-ios-sdk/SpotifyiOS.xcframework" ios/App/SpotifyiOS.xcframework
+echo "Spotify's iPhone toolkit: $(cd "${TMPDIR:-/tmp}/spotify-ios-sdk" && git log -1 --format='%h %cd')"
+
 cat > ios/App/App/App.entitlements <<'X'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyLists-1.0.dtd">

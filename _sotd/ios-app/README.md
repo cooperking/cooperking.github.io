@@ -83,3 +83,10 @@ or .csv, the download comes straight to the app: the screen closes and the page 
 event), with no share sheet. The Spotify sign-in is kept between uses. Spotify's "Continue with Google" can't sign in
 inside an app (Google refuses embedded views): email and password, or Apple, work; otherwise the Safari button and the
 old Open in route. Older builds keep the browser sheet (Capacitor's Browser plugin).
+
+Spotify on the phone itself (`native/App/SotdSpotify.swift`, from build 32): Spotify's iPhone toolkit (SpotifyiOS.xcframework,
+cloned from github.com/spotify/ios-sdk by customise.sh, embedded by native/project.rb) wakes Spotify on this phone for a
+member's song: straight away when connected, else through Spotify's own sign-in (a moment in Spotify, then back at
+`sotdspotify://callback`). The calendar then sends the song and the ones after it through the Web API to the phone, now
+awake, and shows it as playing only once Spotify says so. Each Song of the Day Spotify app needs, in Spotify's dashboard:
+iOS bundle ID `io.github.cooperking.sotd` and the Redirect URI `sotdspotify://callback` (beside the Worker's /callback).
