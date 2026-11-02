@@ -29,7 +29,7 @@ permissions:
 jobs:
   build:
     if: ${{ !inputs.testflight_only }}
-    runs-on: macos-15
+    runs-on: macos-26   # (2 Nov 2026: macos-15 machines stopped being handed out: three builds cancelled after 15 minutes waiting)
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
