@@ -9,9 +9,9 @@ import SpotifyiOS
 // own sign-in (authorizeAndPlayURI: a moment in Spotify, then back here at sotdspotify://callback). Then the calendar sends
 // the song and the ones after it through the Web API to this phone, which is awake now. available() says whether Spotify
 // is on the phone. Each of the Song of the Day Spotify apps needs this app's ID (io.github.cooperking.sotd) and the
-// Redirect URI sotdspotify://callback in Spotify's dashboard. From build 32; build 35 works the phone's player itself; build 38 gives up on a hanging connection after 4 seconds (state, enqueue, pause, resume, seek, skip); from build 34 the app's own sound shares with Spotify's (share()), so coming back here doesn't stop it.
+// Redirect URI sotdspotify://callback in Spotify's dashboard. From build 32; build 35 works the phone's player itself; build 38 gives up on a hanging connection after 4 seconds; build 39 keeps Spotify's latest state as it sends it and names each failure (state, enqueue, pause, resume, seek, skip); from build 34 the app's own sound shares with Spotify's (share()), so coming back here doesn't stop it.
 @objc(SotdSpotifyPlugin)
-public class SotdSpotifyPlugin: CAPPlugin, CAPBridgedPlugin, SPTAppRemoteDelegate {
+public class SotdSpotifyPlugin: CAPPlugin, CAPBridgedPlugin, SPTAppRemoteDelegate, SPTAppRemotePlayerStateDelegate {
     public let identifier = "SotdSpotifyPlugin"
     public let jsName = "SotdSpotify"
     public let pluginMethods: [CAPPluginMethod] = [
@@ -32,16 +32,26 @@ public class SotdSpotifyPlugin: CAPPlugin, CAPBridgedPlugin, SPTAppRemoteDelegat
     private var pending: CAPPluginCall?
     private var authorizing = false
     private var waiting: [(SPTAppRemotePlayerAPI?) -> Void] = []   // (calls made while it connects again)
+    private var last: [String: Any] = [:]   // (Spotify's latest state, as it sends it: used when asking for it fails; build 39)
+    private var lastAt = Date.distantPast
+    private var lastErr = ""
+    private func stateDict(_ st: SPTAppRemotePlayerState) -> [String: Any] {
+        let uri = st.track.uri
+        return ["track": uri.hasPrefix("spotify:track:") ? String(uri.dropFirst(14)) : "", "pos": st.playbackPosition, "dur": Int(st.track.duration), "playing": !st.isPaused]
+    }
+    public func playerStateDidChange(_ playerState: SPTAppRemotePlayerState) {
+        last = stateDict(playerState); lastAt = Date()
+    }
 
     // the player itself (build 35 on: John, 2 Nov 2026: songs sent through the Web API after waking still didn't play on
     // the phone, so the phone's own Spotify is worked from here): its state, the next songs queued, pause, resume, seek,
     // skip; reconnected first when the connection has dropped (it does while the app's in the background)
     private func withApi(_ call: CAPPluginCall, _ run: @escaping (SPTAppRemotePlayerAPI) -> Void) {
         DispatchQueue.main.async {
-            guard let r = self.remote else { call.reject("notConnected"); return }
+            guard let r = self.remote else { call.reject("noRemote: not woken yet"); return }
             if r.isConnected, let api = r.playerAPI { run(api); return }
-            guard r.connectionParameters.accessToken != nil else { call.reject("notConnected"); return }
-            self.waiting.append({ api in if let a = api { run(a) } else { call.reject("notConnected") } })
+            guard r.connectionParameters.accessToken != nil else { call.reject("noToken: not connected and no sign-in kept"); return }
+            self.waiting.append({ api in if let a = api { run(a) } else { call.reject("notConnected: " + (self.lastErr.isEmpty ? "connecting again failed" : self.lastErr)) } })
             if self.waiting.count == 1 {
                 r.connect()
                 DispatchQueue.main.asyncAfter(deadline: .now() + 4) { if !r.isConnected && !self.waiting.isEmpty { self.flushWaiting(false) } }   // (a connection that hangs: given up on, not left waiting)
@@ -56,9 +66,9 @@ public class SotdSpotifyPlugin: CAPPlugin, CAPBridgedPlugin, SPTAppRemoteDelegat
     @objc func state(_ call: CAPPluginCall) {
         withApi(call) { api in
             api.getPlayerState { res, err in
-                guard err == nil, let st = res as? SPTAppRemotePlayerState else { call.reject(err?.localizedDescription ?? "noState"); return }
-                let uri = st.track.uri
-                call.resolve(["track": uri.hasPrefix("spotify:track:") ? String(uri.dropFirst(14)) : "", "pos": st.playbackPosition, "dur": Int(st.track.duration), "playing": !st.isPaused])
+                if err == nil, let st = res as? SPTAppRemotePlayerState { let d = self.stateDict(st); self.last = d; self.lastAt = Date(); call.resolve(d); return }
+                if !self.last.isEmpty && Date().timeIntervalSince(self.lastAt) < 30 { var d = self.last; d["kept"] = true; call.resolve(d); return }   // (the latest it sent)
+                call.reject(err.map { "stateError: " + $0.localizedDescription } ?? "stateError: Spotify sent no state (\(type(of: res)))")
             }
         }
     }
@@ -178,17 +188,21 @@ public class SotdSpotifyPlugin: CAPPlugin, CAPBridgedPlugin, SPTAppRemoteDelegat
 
     public func appRemoteDidEstablishConnection(_ appRemote: SPTAppRemote) {
         SotdSpotifyPlugin.setShare(true)
+        lastErr = ""
+        appRemote.playerAPI?.delegate = self
+        appRemote.playerAPI?.subscribe(toPlayerState: { _, _ in })
         flushWaiting(true)
         if authorizing { authorizing = false; finish(error: nil) }   // (Spotify's already playing the song it was asked for)
         else if pending != nil { playNow() }
     }
 
     public func appRemote(_ appRemote: SPTAppRemote, didFailConnectionAttemptWithError error: Error?) {
+        lastErr = "connect failed: " + (error?.localizedDescription ?? "no reason")
         flushWaiting(false)
         if !authorizing && pending != nil { appRemote.connectionParameters.accessToken = nil; authorize(); return }   // (the token from before has run out: Spotify's sign-in again)
         authorizing = false
         finish(error: error?.localizedDescription ?? "notConnected")
     }
 
-    public func appRemote(_ appRemote: SPTAppRemote, didDisconnectWithError error: Error?) {}
+    public func appRemote(_ appRemote: SPTAppRemote, didDisconnectWithError error: Error?) { lastErr = "disconnected: " + (error?.localizedDescription ?? "no reason") }
 }

@@ -3508,7 +3508,12 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
           if (++n < 8) { setTimeout(look, 800); return; }
           spLog('Spotify not playing it after 6s (says: ' + (r.playing ? 'playing ' : 'paused ') + (r.track === id ? 'this song' : 'another song') + ')');
           spxFallback(id, 'Spotify didn’t start on this phone: playing the preview');
-        }, function () { if (++n < 8) setTimeout(look, 800); else spxFallback(id, 'Spotify didn’t answer on this phone: playing the preview'); });
+        }, function (e) {
+          var m = String((e && (e.message || e.code)) || e || 'no reason');
+          if (n === 0 || m !== SPX.lastErr) spLog('asking Spotify on the phone failed: ' + m);
+          SPX.lastErr = m;
+          if (++n < 8) setTimeout(look, 800); else spxFallback(id, 'Spotify didn’t answer on this phone (' + m + '): playing the preview');
+        });
       };
       setTimeout(look, 600);
     }).catch(function (e) {
