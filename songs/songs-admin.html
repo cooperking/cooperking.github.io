@@ -597,7 +597,7 @@ body.dropping::after { content: 'Drop to match them (nothing goes up yet)'; posi
   // a member song (out on members' playlists, not one of John's): whose it is and where
   function slugOf(iso) { return iso.slice(8, 10) + '-' + iso.slice(5, 7) + '-' + iso.slice(0, 4); }
   function isoLabel(iso) { return (+iso.slice(8, 10)) + ' ' + MONTHS[+iso.slice(5, 7) - 1].slice(0, 3) + ' ' + iso.slice(0, 4); }
-  function ownName(o, n) { o = String(o || ''); n = String(n || ''); return o && n.toLowerCase().indexOf(o.toLowerCase()) === 0 ? n : o + '’s ' + n; }   // (a name that already starts with theirs: once)
+  function ownName(o, n) { o = String(o || ''); n = String(n || ''); return o + '’s ' + n; }   // (always with whose it is, even when its name says so too: John, 2 Nov 2026)
   function whose(c) { return c.oj ? 'yours' : c.o + '’s'; }
   function calSay(c) { return (c.oj ? 'Your ' + c.n : ownName(c.o, c.n)) + (c.mode === 'list' ? '' : ' · ' + isoLabel(c.d)); }
   function heldWho(held) { var n = held.map(function (c) { return c.oj ? 'you' : c.o; }).filter(function (x, i, a) { return a.indexOf(x) === i; }); return n.length > 1 ? n.slice(0, -1).join(', ') + ' and ' + n[n.length - 1] : n[0]; }
