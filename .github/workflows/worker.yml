@@ -40,5 +40,7 @@ jobs:
           GMAIL_REFRESH_TOKEN: ${{ secrets.GMAIL_REFRESH_TOKEN }}
           MAILER_URL: ${{ secrets.MAILER_URL }}
           MAILER_KEY: ${{ secrets.MAILER_KEY }}
+          SPOTIFY_USERS_URL: ${{ secrets.SOTD_SPOTIFY_USERS_URL }}
+          SPOTIFY_USERS_TOKEN: ${{ secrets.SOTD_SPOTIFY_USERS_TOKEN }}
           ADD_NOW: ${{ inputs.add_now && 'true' || '' }}
         run: python3 _sotd/worker_deploy.py

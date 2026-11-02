@@ -177,7 +177,12 @@ def after_upload(base, before, code):
     # Cloudflare's own numbers for the Status tab (John, 2 Nov 2026: "what's happening in my cloudflare?"): a read-only
     # token (Account Analytics: Read), the repository secret CLOUDFLARE_STATS_TOKEN, with the account it reads
     stats = (('CF_STATS_TOKEN', 'CF_STATS_TOKEN'), ('CF_ACCOUNT', '=account')) if os.environ.get('CF_STATS_TOKEN', '').strip() else ()
-    for name, env_name in (('APNS_KEY_ID', 'APNS_KEY_ID'), ('APNS_KEY', 'APNS_KEY_P8'), ('APPLE_TEAM_ID', 'APPLE_TEAM_ID')) + gmail + stats:
+    # Claude's on-demand task that adds a waiting member in Spotify's dashboard (John, 2 Nov 2026): its API trigger's address
+    # and token, the repository secrets SOTD_SPOTIFY_USERS_URL and SOTD_SPOTIFY_USERS_TOKEN (both, or neither)
+    spusers = (('SPOTIFY_USERS_URL', 'SPOTIFY_USERS_URL'), ('SPOTIFY_USERS_TOKEN', 'SPOTIFY_USERS_TOKEN'))
+    if not all(os.environ.get(e, '').strip() for _n, e in spusers):
+        spusers = ()
+    for name, env_name in (('APNS_KEY_ID', 'APNS_KEY_ID'), ('APNS_KEY', 'APNS_KEY_P8'), ('APPLE_TEAM_ID', 'APPLE_TEAM_ID')) + gmail + stats + spusers:
         val = ACCOUNT if env_name == '=account' else os.environ.get(env_name, '').strip()
         if not val:
             continue
