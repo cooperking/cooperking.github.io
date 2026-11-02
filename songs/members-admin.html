@@ -26,6 +26,9 @@
 <link rel="stylesheet" href="admin.css">
 <script src="admin-cards.js"></script>
 <style>
+.splogs details { margin: 6px 0; font-size: 14px; }
+.splogs summary { cursor: pointer; font-weight: 600; }
+.splogs pre { max-height: 300px; overflow: auto; white-space: pre-wrap; font: 12px/1.45 ui-monospace, Menlo, monospace; margin: 6px 0; }
 .splist { list-style: none; margin: 6px 0 10px; padding: 0; display: grid; gap: 8px; }
 .splist li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; justify-content: space-between; font-size: 14px; }
 .people { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
@@ -168,6 +171,7 @@
     <ul class="splist" id="splist"></ul>
     <p class="stat" id="spapps"></p>
     <div class="row"><textarea id="spnewapp" rows="2" placeholder="Another app’s Client ID, or a list of them" autocomplete="off" spellcheck="false" style="flex:1 1 220px;min-width:0"></textarea><button class="btn small primary" id="spaddapp" type="button">Add app</button></div>
+    <div id="splogs"></div>
     <div class="row"><a class="btn small" href="https://developer.spotify.com/dashboard" target="_blank" rel="noopener">Spotify’s dashboard ↗</a><button class="btn small" id="spcopyuri" type="button">Copy the Redirect URI</button></div>
   </div>
   <div class="card notify">
@@ -293,7 +297,7 @@
     return api('/members/admin', { op: 'list' }).then(function (j) {
       if (j.status !== 200) { $('stat').textContent = j.error || 'Couldn’t reach the Worker'; return false; }
       MEMBERS = j.members || []; CAT = j.catalog || {}; COVERS = j.covers || {};
-      people(); pushStat(); spLoad(); uplLoad(); pushLinks(); msongsLoad(); return true;
+      people(); pushStat(); spLoad(); spLogs(); uplLoad(); pushLinks(); msongsLoad(); return true;
     }).catch(function () { $('stat').textContent = 'Couldn’t reach the Worker'; return false; });
   }
 
@@ -930,6 +934,22 @@
         li.appendChild(t);
         if (x.blocked && x.email) { var c = document.createElement('button'); c.type = 'button'; c.className = 'btn small'; c.textContent = 'Copy email'; c.addEventListener('click', function () { navigator.clipboard.writeText(x.email).then(function () { toast('Copied: add it in Spotify’s dashboard'); }, function () { toast(x.email); }); }); li.appendChild(c); }
         ul.appendChild(li);
+      });
+    }).catch(function () {});
+  }
+  // each member's Spotify steps, from their phone (newest last): to see what happened when playing through Spotify
+  function spLogs(clear) {
+    api('/members/admin', clear ? { op: 'splog', clear: clear } : { op: 'splog' }).then(function (j) {
+      var box = $('splogs'); box.className = 'splogs'; box.textContent = '';
+      (j.logs || []).forEach(function (x) {
+        var d = document.createElement('details'), sm = document.createElement('summary'); sm.textContent = 'What happened on ' + x.name + '’s device (' + x.lines.length + ' steps)';
+        var pre = document.createElement('pre'); pre.textContent = x.lines.join('\n'); var row = document.createElement('div'); row.className = 'row';
+        var cp = document.createElement('button'); cp.type = 'button'; cp.className = 'btn small'; cp.textContent = 'Copy'; cp.addEventListener('click', function () { navigator.clipboard.writeText(x.lines.join('\n')).then(function () { toast('Copied'); }, function () {}); });
+        var rf = document.createElement('button'); rf.type = 'button'; rf.className = 'btn small'; rf.textContent = 'Refresh'; rf.addEventListener('click', function () { spLogs(); });
+        var cl = document.createElement('button'); cl.type = 'button'; cl.className = 'btn small'; cl.textContent = 'Clear'; cl.addEventListener('click', function () { spLogs(x.id); });
+        row.appendChild(cp); row.appendChild(rf); row.appendChild(cl);
+        d.appendChild(sm); d.appendChild(pre); d.appendChild(row); box.appendChild(d);
+        if (d.parentNode.children.length === 1) d.open = true;
       });
     }).catch(function () {});
   }

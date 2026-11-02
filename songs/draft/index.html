@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="a5bfcd656596">
+<meta name="sotd-build" content="5369cde72f2c">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -3557,7 +3557,22 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // what happened, step by step (John, 2 Nov 2026: "Background doesn't work well"): the last 40 steps, shown in Where to
   // play with a Copy button, so what his phone did can be seen
   var SPLOG = [];
-  function spLog(m) { var d = new Date(); SPLOG.push(('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2) + ':' + ('0' + d.getSeconds()).slice(-2) + ' ' + m); if (SPLOG.length > 40) SPLOG.shift(); }
+  // each step also goes to the Worker (a few seconds' worth at once; straight away as the app leaves the screen), for Admin's
+  // Members tab: the page itself can't be reached once Spotify has taken over
+  var SPSEND = [], spSendT = 0;
+  function spSendNow() {
+    clearTimeout(spSendT); spSendT = 0;
+    if (!SPSEND.length || !MBASE || !plTok()) return;
+    var lines = SPSEND.splice(0, SPSEND.length);
+    try { fetch(MBASE + '/members/spotify', { method: 'POST', keepalive: true, headers: { Authorization: 'Bearer ' + plTok(), 'Content-Type': 'application/json' }, body: JSON.stringify({ op: 'log', lines: lines }) }).catch(function () {}); } catch (e) {}
+  }
+  function spLog(m) {
+    var d = new Date(), line = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2) + ':' + ('0' + d.getSeconds()).slice(-2) + ' ' + m;
+    SPLOG.push(line); if (SPLOG.length > 40) SPLOG.shift();
+    if (!SPSEND.length && !spSendT) SPSEND.push(d.toISOString().slice(0, 10) + ' · ' + (NAT ? 'iPhone app' : APK ? 'Android app' : 'browser') + ' · ' + navigator.userAgent.replace(/^.*?\(([^)]*)\).*$/, '$1').slice(0, 60));
+    SPSEND.push(line);
+    if (document.hidden) spSendNow(); else if (!spSendT) spSendT = setTimeout(spSendNow, 3000);
+  }
   function spxShadow(id, ms) {
     var s = songOf(id), src = s && songSrc(s); spxShadowOff(); if (!src) return;
     var full = whole(s);

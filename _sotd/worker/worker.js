@@ -1287,6 +1287,16 @@ async function members(request, url, env) {
       } while (cursor);
       return answer(200, { list: out, apps: await spApps(env), per: SP_PER_APP, redirect: new URL(request.url).origin + '/callback', quota: Number(await env.SOTD.get('spquota')) || 0 });
     }
+    case 'splog': {   // each member's Spotify steps (their phone's log), for the Members tab
+      const out = []; let cursor;
+      do {
+        const l = await env.SOTD.list({ prefix: 'splog:', cursor });
+        for (const k of l.keys) { const id = k.name.slice(6); const lines = (await env.SOTD.get(k.name, 'json')) || []; if (lines.length) out.push({ id, name: (all[id] && all[id].name) || id, lines }); }
+        cursor = l.list_complete ? null : l.cursor;
+      } while (cursor);
+      if (body.clear && all[body.clear]) await env.SOTD.delete('splog:' + body.clear);
+      return answer(200, { logs: out.filter(x => !(body.clear && x.id === body.clear)) });
+    }
     case 'spapps': {   // the extra Spotify apps' Client IDs (John's own app is always the first)
       const ids = (Array.isArray(body.apps) ? body.apps : []).map(x => String(x).trim().toLowerCase()).filter(x => /^[0-9a-f]{32}$/.test(x) && x !== CLIENT_ID);
       const used = new Set((await spMembers(env)).map(x => x.rec.cid).filter(Boolean)), keep = [...new Set(ids)].slice(0, 24);
@@ -3336,6 +3346,13 @@ async function memberSpotify(request, url, env, answer) {
     const back = /^https:\/\/cooperking\.github\.io\//.test(String(b.back || '')) ? String(b.back) : SITE_SONGS;
     await env.SOTD.put('spn:' + n, JSON.stringify({ id: who.id, back }), { expirationTtl: 900 });
     return answer(200, { url: new URL(request.url).origin + '/splink?n=' + n });
+  }
+  if (b.op === 'log') {   // the member's phone's steps with Spotify (John, 2 Nov 2026: to see them in Admin when the page can't be reached), the last 150
+    const lines = (Array.isArray(b.lines) ? b.lines : []).map(x => String(x).slice(0, 300)).slice(-60);
+    if (!lines.length) return answer(200, { ok: true });
+    const k = 'splog:' + who.id, had = (await env.SOTD.get(k, 'json')) || [];
+    await env.SOTD.put(k, JSON.stringify(had.concat(lines).slice(-150)), { expirationTtl: 14 * 86400 });
+    return answer(200, { ok: true });
   }
   if (!rec) return answer(200, b.op === 'status' ? { linked: false, full: !await spAppFor(env, who.id) } : pub());
   if (b.op === 'status') {
