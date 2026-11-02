@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="c56c0bc2d114">
+<meta name="sotd-build" content="7f893cd5207d">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -8778,7 +8778,26 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       X.open({ url: EXPORTIFY, color: '#ec135b' }).catch(function () { IMP.away = false; impAwayBrowser(); });
       return;
     }
+    var tok = plTok();
+    if (APK && tok && MBASE) {   // the Android app (2 Nov 2026 build on): Exportify in its own screen, which sends the download to the Worker for the page to take (an older build: Exportify in Chrome, as before)
+      var cs = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789', code = '', rnd = new Uint8Array(24);
+      try { crypto.getRandomValues(rnd); } catch (e) { for (var k = 0; k < 24; k++) rnd[k] = Math.floor(Math.random() * 256); }
+      for (var q = 0; q < 24; q++) code += cs[rnd[q] % cs.length];
+      IMP.drop = code; IMP.away = true;
+      location.href = 'intent://exportify#Intent;scheme=sotdapp;package=io.github.cooperking.sotd;S.c=' + code + ';S.k=' + encodeURIComponent(tok) + ';S.browser_fallback_url=' + encodeURIComponent(EXPORTIFY) + ';end';
+      return;
+    }
     impAwayBrowser();
+  }
+  function impDropTake() {   // back from the Android app's Exportify screen: its file, if it sent one (else on to step 2, as before)
+    var code = IMP.drop, tok = plTok(); if (!code || !tok) return false;
+    IMP.drop = null;
+    fetch(MBASE + '/members/impdrop?c=' + code, { headers: { Authorization: 'Bearer ' + tok }, cache: 'no-store' }).then(function (r) {
+      if (r.status !== 200) { impBack(); return; }
+      var name = 'playlists.zip'; try { name = decodeURIComponent(r.headers.get('X-Name') || name); } catch (e) {}
+      return r.blob().then(function (b) { IMP.away = false; impForget(); toast('Got your Exportify file'); impTake(new File([b], name, { type: b.type || (/\.zip$/i.test(name) ? 'application/zip' : 'text/csv') })); });
+    }).catch(function () { impBack(); });
+    return true;
   }
   function impAwayBrowser() {
     var B = NAT && NAT.Plugins && NAT.Plugins.Browser;
@@ -8807,7 +8826,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     impStep(2);
     try { document.getElementById('uplifile').focus({ preventScroll: true }); } catch (e) {}
   }
-  document.addEventListener('visibilitychange', function () { if (!document.hidden && IMP.away) setTimeout(function () { if (IMP.away) impBack(); }, 250); });
+  document.addEventListener('visibilitychange', function () { if (!document.hidden && IMP.away) setTimeout(function () { if (IMP.away && !impDropTake()) impBack(); }, 250); });
   function impResume() {   // the page opened again soon after going to Exportify (back to step 2), or with a file given to the app
     if (IMP.pendUrl && MEMBER) { var pu = IMP.pendUrl; IMP.pendUrl = null; impNativeFile(pu); }
     if (IMP.looked || !MEMBER) return;

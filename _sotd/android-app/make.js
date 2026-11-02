@@ -32,7 +32,8 @@ const SITE = 'https://cooperking.github.io/songs/', ICONS = process.env.ICON_BAS
   // ("Component class R.u does not exist", 26 Oct 2026 on an emulated Pixel); the app is small either way
   const fs = require('fs'), g = __dirname + '/project/app/build.gradle';
   fs.writeFileSync(g, fs.readFileSync(g, 'utf8').replace(/minifyEnabled\s+true/g, 'minifyEnabled false').replace(/shrinkResources\s+true/g, 'shrinkResources false'));
-  // the Home Screen widgets and the tile: their code and resources, and their entries in the app's manifest
+  // the Home Screen widgets and the tile, and Exportify's own screen (ExportifyActivity: Import from Spotify, its download
+  // taken straight in): their code and resources, and their entries in the app's manifest
   const path = require('path'), main = __dirname + '/project/app/src/main';
   const copy = (from, to) => { for (const f of fs.readdirSync(from)) { const a = path.join(from, f), b = path.join(to, f);
     if (fs.statSync(a).isDirectory()) { fs.mkdirSync(b, { recursive: true }); copy(a, b); } else fs.copyFileSync(a, b); } };
@@ -60,6 +61,11 @@ const SITE = 'https://cooperking.github.io/songs/', ICONS = process.env.ICON_BAS
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter><action android:name="android.service.quicksettings.action.QS_TILE" /></intent-filter>
         </service>
+        <activity android:name=".ExportifyActivity" android:exported="true" android:theme="@android:style/Theme.Material.Light.NoActionBar"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden" android:windowSoftInputMode="adjustResize">
+            <intent-filter><action android:name="android.intent.action.VIEW" /><category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" /><data android:scheme="sotdapp" android:host="exportify" /></intent-filter>
+        </activity>
 ` + (preview ? `        <activity android:name=".WidgetPreview" android:exported="true" />
 ` : '') + `    </application>`));
   console.log('project made: version ' + tm.appVersionName + ' (' + code + ')');

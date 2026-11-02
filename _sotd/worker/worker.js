@@ -1011,6 +1011,7 @@ async function members(request, url, env) {
   if (route === 'songs') return memberSongs(request, url, env, answer);
   if (route === 'spnames') return memberSpNames(request, url, env, answer);
   if (route === 'impfile') return memberImpFile(request, env, answer);
+  if (route === 'impdrop') return memberImpDrop(request, url, env, answer);
   if (!['admin', 'upload', 'cover'].includes(route)) return answer(404, { error: 'Not here.' });
   if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
   const no = await adminOk(request, env, answer);
@@ -3089,7 +3090,7 @@ async function memberImpFile(request, env, answer) {
   const key = 'imp/' + who.id + '.json';
   if (request.method === 'GET') {
     const o = await env.MEDIA.get(key);
-    return o ? new Response(o.body, { headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' } }) : answer(404, { none: true });
+    return o ? new Response(o.body, { headers: Object.assign(factsHeaders(MEMBERS_ORIGIN), { 'Content-Type': 'application/json; charset=utf-8' }) }) : answer(404, { none: true });   // (the page's own origin may read it)
   }
   if (request.method !== 'POST') return answer(405, { error: 'Use GET or POST.' });
   const text = await request.text();
@@ -3101,6 +3102,36 @@ async function memberImpFile(request, env, answer) {
   const at = Date.now();
   await env.MEDIA.put(key, JSON.stringify({ at, lists }), { httpMetadata: { contentType: 'application/json' } });
   return answer(200, { ok: true, at });
+}
+// /members/impdrop?c=<code>: Exportify's download, caught by the Android app's own Exportify screen (John, 2 Nov 2026:
+// Exportify inside the Android app too, as the iPhone's). The app is a Chrome app, so its screen can't give the file to
+// the page itself: it sends it here (POST, the file as it is, X-Name its name), signed in as the member the page said,
+// and the page, back from it, takes it (GET: the file once, then it's gone). R2 drop/<member>/<code>; 40 MB at most.
+async function memberImpDrop(request, url, env, answer) {
+  const who = await memberWho(request, env);
+  if (!who) return answer(401, { error: 'Not a member (any more).' });
+  if (!env.MEDIA) return answer(503, { error: 'Not set up.' });
+  const c = String(url.searchParams.get('c') || '');
+  if (!/^[A-Za-z0-9]{16,40}$/.test(c)) return answer(400, { error: 'Which file?' });
+  const key = 'drop/' + who.id + '/' + c;
+  if (request.method === 'GET') {
+    const o = await env.MEDIA.get(key);
+    if (!o) return answer(404, { none: true });
+    const body = await o.arrayBuffer(); await env.MEDIA.delete(key);
+    const name = (o.customMetadata && o.customMetadata.name) || 'playlists.zip';
+    return new Response(body, { headers: Object.assign(factsHeaders(MEMBERS_ORIGIN), { 'Content-Type': (o.httpMetadata && o.httpMetadata.contentType) || 'application/octet-stream', 'X-Name': encodeURIComponent(name), 'Access-Control-Expose-Headers': 'X-Name' }) });
+  }
+  if (request.method !== 'POST') return answer(405, { error: 'Use GET or POST.' });
+  const buf = await request.arrayBuffer();
+  if (!buf.byteLength) return answer(400, { error: 'No file.' });
+  if (buf.byteLength > 40e6) return answer(413, { error: 'That download is too big.' });
+  let name = ''; try { name = decodeURIComponent(request.headers.get('X-Name') || ''); } catch (e) {}
+  name = name.replace(/[\\/\u0000-\u001f]/g, '').slice(0, 120) || 'playlists.zip';
+  if (!/\.(zip|csv)$/i.test(name)) name += /^PK/.test(String.fromCharCode(...new Uint8Array(buf.slice(0, 2)))) ? '.zip' : '.csv';
+  const old = await env.MEDIA.list({ prefix: 'drop/' + who.id + '/' }).catch(() => ({ objects: [] }));   // (any left from before)
+  for (const o of old.objects || []) await env.MEDIA.delete(o.key);
+  await env.MEDIA.put(key, buf, { httpMetadata: { contentType: /\.zip$/i.test(name) ? 'application/zip' : 'text/csv' }, customMetadata: { name } });
+  return answer(200, { ok: true });
 }
 // /members/spnames?ids=a,b: Spotify users' names, for Import from Spotify's "By ..." (John, 1 Nov 2026: "show who the
 // playlist is by originally too as it shows all playlists followed as well as your own"): Exportify's files say which
@@ -3533,7 +3564,7 @@ async function uplData(request, env) {
   if (!env.MEDIA) return answer(503, { error: 'Not set up.' });
   if (request.method === 'GET') {
     const o = await env.MEDIA.get('site/upl-data.json');
-    return o ? new Response(o.body, { headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' } }) : answer(404, { none: true });
+    return o ? new Response(o.body, { headers: Object.assign(factsHeaders(MEMBERS_ORIGIN), { 'Content-Type': 'application/json; charset=utf-8' }) }) : answer(404, { none: true });   // (the page's own origin may read it)
   }
   if (request.method !== 'POST') return answer(405, { error: 'Use GET or POST.' });
   const text = await request.text();

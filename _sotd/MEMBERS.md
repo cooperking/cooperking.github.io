@@ -858,3 +858,12 @@ at the top of the run's page. An original goes only if its copy is newer than it
 is kept. The Worker's catalog keeps each deleted original's size and fingerprint, so the calendar plays the copy, the Songs
 tab shows the file as there, and a folder upload still knows it's already up. Uploading a song or video again puts a new
 original up and makes a new copy; run this again afterwards. A deleted original can't be got back from the bucket.
+
+## Exportify inside the Android app (2 Nov 2026)
+
+Import from Spotify, in the Android app (a Chrome app), opens `ExportifyActivity` (`_sotd/android-app/widget/java/`)
+with an `intent://exportify` link carrying a one-time code and the member's sign-in. Exportify runs in the screen's own
+WebView; a small script catches its download (a blob: link) and the screen sends the file to the Worker
+(`/members/impdrop?c=`, R2 `drop/<member>/<code>`), then closes. The calendar, back in front, takes the file
+(`impDropTake`) and opens the import on its playlists. An older build: the link's fallback opens Exportify in Chrome,
+as before. Spotify's "Continue with Google" can't sign in inside the screen; the Chrome button opens Exportify there.
