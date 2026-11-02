@@ -3313,6 +3313,16 @@ async function spCall(env, id, rec, method, path, body) {   // { status, json, w
   if (r.ok && rec.blocked && path === '/me') { delete rec.blocked; }
   return { status: r.status, json, why, msg };
 }
+// their Spotify devices: Spotify's list, with the one playing now added when the list leaves it out (an iPhone's Spotify
+// often isn't in the list though it's playing: John, 2 Nov 2026); each { id, name, type, active, restricted, vol, canVol }
+async function spDevices(env, id, rec) {
+  const d = await spCall(env, id, rec, 'GET', '/me/player/devices');
+  if (d.why) return { why: d.why, msg: d.msg, list: [] };
+  const raw = ((d.json && d.json.devices) || []).slice();
+  const p = await spCall(env, id, rec, 'GET', '/me/player').catch(() => null), now = p && p.status === 200 && p.json && p.json.device;
+  if (now && now.id && !raw.some(x => x.id === now.id)) raw.unshift(Object.assign({}, now, { is_active: true }));
+  return { list: raw.filter(x => x.id).map(x => ({ id: x.id, name: x.name, type: x.type, active: !!x.is_active, restricted: !!x.is_restricted, vol: typeof x.volume_percent === 'number' ? x.volume_percent : null, canVol: x.supports_volume !== false && typeof x.volume_percent === 'number' })) };
+}
 async function memberSpotify(request, url, env, answer) {
   const who = await memberWho(request, env);
   if (!who) return answer(401, { error: 'Not a member (any more).' });
@@ -3339,20 +3349,20 @@ async function memberSpotify(request, url, env, answer) {
   if (b.op === 'email') { const e = String(b.email || '').trim().slice(0, 120); if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)) return answer(400, { error: 'That isn’t an email address.' }); rec.wemail = e; await env.SOTD.put(key, JSON.stringify(rec)); if (rec.blocked) await spAskAdd(env, who.id, rec); return answer(200, pub()); }
   if (b.op === 'off') { await env.SOTD.delete(key); return answer(200, { linked: false }); }
   try {
-    if (b.op === 'devices') { const d = await spCall(env, who.id, rec, 'GET', '/me/player/devices'); return answer(d.status === 200 ? 200 : 502, d.status === 200 ? { devices: (d.json.devices || []).map(x => ({ id: x.id, name: x.name, type: x.type, active: !!x.is_active })) } : { error: d.msg || 'Spotify answered ' + d.status, why: d.why }); }
+    if (b.op === 'devices') { const d = await spDevices(env, who.id, rec); return answer(d.why ? 409 : 200, d.why ? { why: d.why, error: d.msg } : { devices: d.list }); }
+    if (b.op === 'volume') { const v = Math.max(0, Math.min(100, b.vol | 0)); const r = await spCall(env, who.id, rec, 'PUT', '/me/player/volume?volume_percent=' + v + (b.device ? '&device_id=' + encodeURIComponent(String(b.device)) : '')); return answer(r.status < 300 ? 200 : 409, r.status < 300 ? { ok: true, vol: v } : { why: r.why || 'other', error: r.msg || 'That device won’t let its volume be set from here.' }); }
     if (b.op === 'play') {   // these songs, from the first, on the device chosen (else the one playing, else this phone, else any)
       const uris = (Array.isArray(b.tracks) ? b.tracks : []).map(String).filter(t => ID_RE.test(t)).slice(0, 100).map(t => 'spotify:track:' + t);
       if (!uris.length) return answer(400, { error: 'Which songs?' });
       // which device (John, 2 Nov 2026: it played on a Chrome web player he couldn't see; "can the device it's on be chosen
       // by default"): the one asked for, else the kind they're on (prefer: Smartphone on a phone, Computer on a computer),
       // the active one of that kind first; none of that kind open: asked, with what is (notHere), never played elsewhere unasked
-      const d = await spCall(env, who.id, rec, 'GET', '/me/player/devices');
+      const d = await spDevices(env, who.id, rec);
       if (d.why) return answer(409, { why: d.why, error: d.msg });
-      const list = ((d.json && d.json.devices) || []).filter(x => x.id && !x.is_restricted), kind = String(b.prefer || '');
-      const brief = list.map(x => ({ id: x.id, name: x.name, type: x.type, active: !!x.is_active }));
+      const list = d.list.filter(x => !x.restricted), kind = String(b.prefer || ''), brief = d.list;
       let pick = b.device ? list.find(x => x.id === String(b.device)) : null;
-      if (!pick && kind) pick = list.find(x => x.type === kind && x.is_active) || list.find(x => x.type === kind);
-      if (!pick && !kind) pick = list.find(x => x.is_active) || list[0];
+      if (!pick && kind) pick = list.find(x => x.type === kind && x.active) || list.find(x => x.type === kind);
+      if (!pick && !kind) pick = list.find(x => x.active) || list[0];
       if (!pick) return answer(409, list.length ? { why: 'notHere', devices: brief, error: 'Spotify isn’t open on this device.' } : { why: 'nodevice', error: 'Spotify isn’t open on any of your devices.' });
       const r = await spCall(env, who.id, rec, 'PUT', '/me/player/play?device_id=' + encodeURIComponent(pick.id), Object.assign({ uris }, b.ms ? { position_ms: Math.max(0, b.ms | 0) } : {}));
       if (r.status >= 300) return answer(409, { why: r.why || 'other', error: r.msg || 'Spotify answered ' + r.status });
@@ -3370,7 +3380,9 @@ async function memberSpotify(request, url, env, answer) {
       if (r.status === 204 || !r.json) return answer(200, { none: true });
       if (r.status !== 200) return answer(409, { why: r.why || 'other', error: r.msg });
       const it = r.json.item || {};
-      return answer(200, { track: it.id || '', pos: r.json.progress_ms || 0, dur: it.duration_ms || 0, playing: !!r.json.is_playing, device: (r.json.device || {}).name || '', dtype: (r.json.device || {}).type || '', did: (r.json.device || {}).id || '' });
+      const dv = r.json.device || {};
+      return answer(200, { track: it.id || '', pos: r.json.progress_ms || 0, dur: it.duration_ms || 0, playing: !!r.json.is_playing, device: dv.name || '', dtype: dv.type || '', did: dv.id || '',
+        vol: typeof dv.volume_percent === 'number' ? dv.volume_percent : null, canVol: dv.supports_volume !== false && typeof dv.volume_percent === 'number' });
     }
   } catch (e) { return answer(e instanceof HttpError ? e.status : 502, { error: String(e && e.message || e) }); }
   return answer(400, { error: 'What should it do?' });

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="496f100d7bb8">
+<meta name="sotd-build" content="bb86eb324225">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -1453,6 +1453,11 @@ html.bgplay.bgon .fab .fabart { animation-play-state: running; }
 .spdevchip[hidden] { display: none; }
 .spdevchip i { flex: none; width: 8px; height: 8px; border-radius: 50%; background: #1ed760; }
 .spdevchip span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.spvol { display: flex; align-items: center; gap: 12px; margin: 12px 0 2px; font: 600 14px var(--sans); color: var(--fg); }
+.spvol[hidden] { display: none; }
+.spvol input { flex: 1; accent-color: #1ed760; }
+.spdev-list button:disabled { opacity: .5; cursor: default; }
+.spdev-tip { margin-top: 12px; font-size: 13px; }
 .spdev-list { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 8px; }
 .spdev-list button { width: 100%; display: flex; align-items: center; gap: 10px; padding: 12px 14px; border: 0; border-radius: 14px; background: var(--pill-bg); box-shadow: inset 0 0 0 1px var(--line); color: var(--fg); font: 600 15px/1.2 var(--sans); text-align: left; cursor: pointer; }
 .spdev-list button.on { box-shadow: inset 0 0 0 2px #1ed760; }
@@ -2250,7 +2255,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     </div>
     <h3 id="spdevh">Where to play</h3>
     <p class="ac-none" id="spdevt"></p>
+    <div class="spvol" id="spvolrow" hidden><span id="spvoll">Volume</span><input type="range" id="spvol" min="0" max="100" step="1" aria-label="Volume"></div>
     <ul class="spdev-list" id="spdevlist"></ul>
+    <p class="ac-none spdev-tip">Don’t see a device? Open Spotify on it. For a phone that’s missing, check Spotify’s Settings › Devices (Device broadcast status on, Local devices only off).</p>
   </div>
 </dialog>
 <dialog id="askdlg" aria-labelledby="askh">
@@ -3420,18 +3427,31 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       list.forEach(function (d) {
         var li = document.createElement('li'), b = document.createElement('button'); b.type = 'button';
         if ((SPX.dev && SPX.dev.id === d.id) || d.active) b.className = 'on';
+        if (d.restricted) b.disabled = true;   // (Spotify doesn't let other apps control that one)
         b.textContent = (d.type === 'Smartphone' ? '📱 ' : d.type === 'Computer' ? '💻 ' : d.type === 'Tablet' ? '📱 ' : '🔊 ') + d.name;
-        var sm = document.createElement('small'); sm.textContent = d.type === spKind() ? 'this kind of device' : d.active ? 'playing now' : ''; b.appendChild(sm);
+        var sm = document.createElement('small'); sm.textContent = d.restricted ? 'can’t be controlled from here' : d.active ? 'playing now' : d.type === spKind() ? 'this kind of device' : ''; b.appendChild(sm);
         b.addEventListener('click', function () { SPX.pick = d.id; try { sessionStorage.setItem('sotd-spdev', d.id); } catch (e) {} closeDialog(dlg); if (then) then(d); });
         li.appendChild(b); ul.appendChild(li);
       });
     };
-    if (devs) draw(devs); else { ul.textContent = ''; spCall({ op: 'devices' }).then(function (j) { draw(j.devices || []); }); }
+    var vol = function (list) {   // the volume of the one playing, where Spotify lets it be set from here (speakers, computers; seldom a phone)
+      var cur = list.filter(function (d) { return (SPX.dev && SPX.dev.id === d.id) || d.active; })[0], row = document.getElementById('spvolrow');
+      row.hidden = !(cur && cur.canVol && coverObj && coverObj.sp);
+      if (row.hidden) return;
+      document.getElementById('spvoll').textContent = 'Volume';
+      var r = document.getElementById('spvol'); r.value = cur.vol || 0; r.dataset.dev = cur.id;
+    };
+    document.getElementById('spvolrow').hidden = true;
+    if (devs) { draw(devs); vol(devs); } else { ul.textContent = ''; spCall({ op: 'devices' }).then(function (j) { draw(j.devices || []); vol(j.devices || []); }); }
     openLayer(dlg);
   }
   document.getElementById('spdevclose').addEventListener('click', function () { closeDialog(document.getElementById('spdevdlg')); });
+  (function () {   // the volume, sent as the slider settles
+    var r = document.getElementById('spvol'), t = 0;
+    r.addEventListener('input', function () { clearTimeout(t); t = setTimeout(function () { spCall({ op: 'volume', vol: +r.value, device: r.dataset.dev || undefined }).then(function (j) { if (j.status !== 200) toast(j.error || 'That device won’t let its volume be set from here'); }); }, 250); });
+  })();
   function spDevChange() {   // the chip tapped: move what's playing to another of their devices
-    spDevPick(null, 'Move what’s playing to another of your devices.', function (d) {
+    spDevPick(null, 'Playing on ' + ((SPX.dev && SPX.dev.name) || 'your Spotify') + '. Move it to another of your devices:', function (d) {
       if (!coverObj || !coverObj.sp) return;
       spCall({ op: 'transfer', device: d.id }).then(function (j) { if (j.status === 200) { SPX.dev = { id: d.id, name: d.name }; spxShowDev(); toast('Playing on ' + d.name); } else toast(j.error || 'Spotify didn’t move it'); });
     });
