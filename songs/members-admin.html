@@ -179,6 +179,12 @@
     <p class="stat">To make room for more: in Spotify’s dashboard, Create app (any name), tick Web API and iOS, add both Redirect URIs (the button below, and sotdspotify://callback) and the iOS bundle ID io.github.cooperking.sotd; then paste its Client ID here.</p>
     <div class="row"><textarea id="spnewapp" rows="2" placeholder="Another app’s Client ID, or a list of them" autocomplete="off" spellcheck="false" style="flex:1 1 220px;min-width:0"></textarea><button class="btn small primary" id="spaddapp" type="button">Add app</button></div>
     </details>
+    <details class="spapps"><summary>Claude’s adding task</summary>
+    <p class="stat" id="sptaskstat"></p>
+    <p class="stat">The task that adds waiting members in Spotify’s dashboard, using the browser on your Mac. Paste its API trigger’s address and key (from the task’s settings in the Claude app) to use that task.</p>
+    <div class="row"><input id="sptaskurl" type="url" placeholder="https://api.anthropic.com/v1/…/trig_…/fire" autocomplete="off" spellcheck="false" style="flex:1 1 220px;min-width:0"></div>
+    <div class="row"><input id="sptasktok" type="password" placeholder="Its key" autocomplete="off" spellcheck="false" style="flex:1 1 220px;min-width:0"><button class="btn small primary" id="sptasksave" type="button">Save</button></div>
+    </details>
     <div class="row"><a class="btn small" href="https://developer.spotify.com/dashboard" target="_blank" rel="noopener">Spotify’s dashboard ↗</a><button class="btn small" id="spcopyuri" type="button">Copy the Redirect URI</button></div>
   </div>
   <div class="card notify">
@@ -927,6 +933,7 @@
       var list = j.list || [], wait = list.filter(function (x) { return x.blocked; }), box = $('spbox'), ul = $('splist');
       var apps = j.apps || [], per = j.per || 5, appNo = function (cid) { var i = apps.indexOf(cid); return i < 0 ? '?' : String(i + 1); };
       SPAPPS = apps.slice(1); SPURI = j.redirect || '';
+      $('sptaskstat').textContent = !j.task ? 'No task set: nobody is added automatically.' : j.task.from === 'admin' ? 'Using the task pasted here ' + new Date(j.task.at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) + (j.task.id ? ' (' + j.task.id + ')' : '') + '.' : 'Using the Worker’s own task' + (j.task.id ? ' (' + j.task.id + ')' : '') + ': not linked to your Mac.';
       box.hidden = false;
       $('spstat').textContent = (wait.length ? wait.length + (wait.length === 1 ? ' member waits' : ' members wait') + ' for you to add them: in Spotify’s dashboard open the app named below › Settings › User Management › Add user (their name and the email of their Spotify account).'
         : list.length ? list.length + (list.length === 1 ? ' member plays' : ' members play') + ' through their own Spotify.' : 'Nobody has connected Spotify yet.')
@@ -971,6 +978,11 @@
     }).catch(function () {});
   }
   var SPAPPS = [], SPURI = '';
+  $('sptasksave').addEventListener('click', function () {
+    var url = $('sptaskurl').value.trim(), token = $('sptasktok').value.trim();
+    if (!url || !token) { toast('Paste the address and the key'); return; }
+    api('/members/admin', { op: 'sptask', url: url, token: token }).then(function (j) { if (j.status !== 200) { toast(j.error || 'Couldn’t save'); return; } $('sptaskurl').value = ''; $('sptasktok').value = ''; toast('Saved: new waiting members go to that task'); spLoad(); });
+  });
   $('spaddapp').addEventListener('click', function () {
     // one Client ID, or a list pasted in (any 32-character IDs in it: a line each, a spreadsheet's column, a list)
     var ids = ($('spnewapp').value.toLowerCase().match(/\b[0-9a-f]{32}\b/g) || []).filter(function (x, i, a) { return a.indexOf(x) === i && SPAPPS.indexOf(x) < 0; });

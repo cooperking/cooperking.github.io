@@ -1285,7 +1285,14 @@ async function members(request, url, env) {
           out.push({ id, name: all[id].name, blocked: !!r.blocked, gone: !!r.gone, on: r.on !== false, product: r.product || '', sname: r.name || '', email: r.email || r.wemail || '', linked: r.linked || 0, cid: r.cid || CLIENT_ID, asked: r.blocked ? await env.SOTD.get('spaskat:' + id, 'json') : null }); }
         cursor = l.list_complete ? null : l.cursor;
       } while (cursor);
-      return answer(200, { list: out, apps: await spApps(env), per: SP_PER_APP, redirect: new URL(request.url).origin + '/callback', quota: Number(await env.SOTD.get('spquota')) || 0 });
+      return answer(200, { list: out, apps: await spApps(env), per: SP_PER_APP, redirect: new URL(request.url).origin + '/callback', quota: Number(await env.SOTD.get('spquota')) || 0, task: await spTask(env).then(t => t && { from: t.from, at: t.at, id: (t.url.match(/trig_[A-Za-z0-9]+/) || [''])[0] }) });
+    }
+    case 'sptask': {   // Claude's adding task: its address and key, pasted in Admin (clear: back to the Worker's own)
+      if (body.clear) { await env.SOTD.delete('sptask'); return answer(200, { ok: true }); }
+      const url = String(body.url || '').trim(), token = String(body.token || '').trim();
+      if (!/^https:\/\/api\.anthropic\.com\/v1\/[\w\/-]*trig_[A-Za-z0-9]+[\w\/-]*$/.test(url) || token.length < 20 || /\s/.test(token)) return answer(400, { error: 'That doesn’t look like the task’s address and key' });
+      await env.SOTD.put('sptask', JSON.stringify({ url, token, at: Date.now() }));
+      return answer(200, { ok: true });
     }
     case 'spask': {   // Admin's "Ask Claude again" (John, 2 Nov 2026: the task ran while his Mac was offline, and doesn't ask twice by itself)
       const id = String(body.id || ''), r = all[id] && await env.SOTD.get('spm:' + id, 'json');
@@ -3303,13 +3310,22 @@ async function spToken(env, id, rec) {   // a member's Spotify access, refreshed
 // Claude adds a waiting member in Spotify's dashboard (John, 2 Nov 2026: "I want claude to add it automatically when
 // added"): its on-demand task, started through its API trigger (Worker secrets SPOTIFY_USERS_URL and SPOTIFY_USERS_TOKEN),
 // once a member is waiting with a Spotify email; once per member and email (KV spask:<member>). Never stops the request.
+// the task's address and key: pasted in Admin (KV sptask; John, 2 Nov 2026: the task remade from the Mac so it can use its
+// browser), else the Worker secrets. The key is never sent back out.
+async function spTask(env) {
+  const k = await env.SOTD.get('sptask', 'json');
+  if (k && k.url && k.token) return { url: k.url, token: k.token, from: 'admin', at: k.at || 0 };
+  if (env.SPOTIFY_USERS_URL && env.SPOTIFY_USERS_TOKEN) return { url: env.SPOTIFY_USERS_URL, token: env.SPOTIFY_USERS_TOKEN, from: 'worker', at: 0 };
+  return null;
+}
 async function spAskAdd(env, id, rec) {
   const email = rec.email || rec.wemail || '';
-  if (!email || !env.SPOTIFY_USERS_URL || !env.SPOTIFY_USERS_TOKEN) return;
+  const task = await spTask(env);
+  if (!email || !task) return;
   try {
     if ((await env.SOTD.get('spask:' + id)) === email) return;
     const apps = await spApps(env), n = apps.indexOf(rec.cid || CLIENT_ID) + 1;
-    const r = await fetch(env.SPOTIFY_USERS_URL, { method: 'POST', headers: { Authorization: 'Bearer ' + env.SPOTIFY_USERS_TOKEN,
+    const r = await fetch(task.url, { method: 'POST', headers: { Authorization: 'Bearer ' + task.token,
       'anthropic-version': '2023-06-01', 'anthropic-beta': 'experimental-cc-routine-2026-04-01', 'Content-Type': 'application/json' },
       body: JSON.stringify({ text: 'A member is waiting to be added to Spotify app ' + (n || '?') + '.' }) });
     if (r.ok) await env.SOTD.put('spask:' + id, email, { expirationTtl: 30 * 86400 });
