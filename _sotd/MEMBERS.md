@@ -514,6 +514,12 @@ spotify name when imported but let them change it"; the pop-up's *Playlist name*
   release date (`rd`: from Spotify's read, or Exportify's Album Release Date column), which years.py uses as it uses
   John's export, so they have a year at once (MusicBrainz's earlier first release still wins). A Spotify playlist
   whose only change is the dates gains them quietly; an Exportify playlist gains them with a fresh file.
+- **A member's calendar: its latest song first, and buttons to get about** (John, 2 Nov 2026: "Can the default view for
+  any calendar playlist be to show the day with the most recent song on it. With a today button ... a first song button
+  ... and a next and previous button to take you to the month with the next song"): it opens on the month of its most
+  recent song (up to today; `latestDay`), that day ringed; a row under Signed in (`#songnav`): First song, ‹ Songs and
+  Songs › (the nearest month with songs either way, `songMonth`), and Today (this month, songs or not). Swipes and the
+  arrows still go month by month.
 - **A calendar's songs in day order** (John, 2 Nov 2026, Camilla's: 843 songs from December 2015 to October 2026, but
   "It's still only showing 2 songs and I can't swipe back past October"): the calendar took its first and last songs as
   where it starts and ends, and a member's playlist comes in its own order (hers began with an October 2026 song). Its
