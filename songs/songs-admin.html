@@ -148,19 +148,19 @@ body.dropping::after { content: 'Drop to match them (nothing goes up yet)'; posi
 /* a tile tapped (John, 2 Nov 2026: "could the pictures disappear and just show the songs ... tabs to see what has files
    videos and previews of those songs with a way to dismiss and get back to the picture view", and a message to its
    member with its stats) */
-.pfocus { display: grid; gap: 12px; margin: 0 0 14px; padding: 14px 16px; border-radius: 16px; background: var(--card, #fff); color: var(--ink, #1d0b1e); box-shadow: 0 6px 18px rgba(0,0,0,.12); }
+.pfocus { display: grid; gap: 12px; margin: 0 0 14px; padding: 14px 16px; border-radius: 16px; background: #fffaf5; color: #1d0b1e; box-shadow: 0 6px 18px rgba(0,0,0,.12); }
 .pfocus[hidden] { display: none; }
 .pfocus .pf-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.pfocus .pf-back { padding: 8px 14px; border: 1px solid var(--line, rgba(0,0,0,.15)); border-radius: 999px; background: none; color: inherit; font: 600 11px/1 var(--sans); letter-spacing: .1em; text-transform: uppercase; cursor: pointer; }
+.pfocus .pf-back { padding: 8px 14px; border: 1px solid rgba(29,11,30,.25); border-radius: 999px; background: none; color: #1d0b1e; font: 600 11px/1 var(--sans); letter-spacing: .1em; text-transform: uppercase; cursor: pointer; }
 .pfocus .pf-name { flex: 1; min-width: 0; font: 500 22px/1.15 var(--serif, Georgia, serif); overflow-wrap: anywhere; }
-.pfocus .pf-sub { font-size: 13px; opacity: .75; }
+.pfocus .pf-sub { font-size: 13px; color: rgba(29,11,30,.7); }
 .pfocus .pf-tabs, .pfocus .pf-has { display: flex; flex-wrap: wrap; gap: 6px; }
-.pfocus .pf-tabs button, .pfocus .pf-has button { padding: 8px 12px; border: 1px solid var(--line, rgba(0,0,0,.15)); border-radius: 999px; background: none; color: inherit; font: 600 12px/1 var(--sans); cursor: pointer; }
+.pfocus .pf-tabs button, .pfocus .pf-has button { padding: 8px 12px; border: 1px solid rgba(29,11,30,.25); border-radius: 999px; background: none; color: #1d0b1e; font: 600 12px/1 var(--sans); cursor: pointer; }
 .pfocus .pf-tabs button[aria-pressed="true"], .pfocus .pf-has button[aria-pressed="true"] { background: #1d0b1e; border-color: #1d0b1e; color: #fff; }
 .pfocus .pf-tabs .n, .pfocus .pf-has .n { margin-left: 6px; opacity: .7; font-variant-numeric: tabular-nums; }
 .pfocus .pf-msg { display: grid; gap: 8px; }
 .pfocus .pf-msg[hidden] { display: none; }
-.pfocus .pf-msg input, .pfocus .pf-msg textarea { width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid var(--line, rgba(0,0,0,.15)); border-radius: 12px; background: var(--field, #fff); color: inherit; font: 15px/1.4 var(--sans); }
+.pfocus .pf-msg input, .pfocus .pf-msg textarea { width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid rgba(29,11,30,.25); border-radius: 12px; background: #fff; color: #1d0b1e; font: 15px/1.4 var(--sans); }
 .pfocus .pf-msg textarea { min-height: 120px; resize: vertical; }
 .pfocus .pf-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 </style>
@@ -597,8 +597,9 @@ body.dropping::after { content: 'Drop to match them (nothing goes up yet)'; posi
   // a member song (out on members' playlists, not one of John's): whose it is and where
   function slugOf(iso) { return iso.slice(8, 10) + '-' + iso.slice(5, 7) + '-' + iso.slice(0, 4); }
   function isoLabel(iso) { return (+iso.slice(8, 10)) + ' ' + MONTHS[+iso.slice(5, 7) - 1].slice(0, 3) + ' ' + iso.slice(0, 4); }
+  function ownName(o, n) { o = String(o || ''); n = String(n || ''); return o && n.toLowerCase().indexOf(o.toLowerCase()) === 0 ? n : o + '’s ' + n; }   // (a name that already starts with theirs: once)
   function whose(c) { return c.oj ? 'yours' : c.o + '’s'; }
-  function calSay(c) { return (c.oj ? 'Your ' : c.o + '’s ') + c.n + (c.mode === 'list' ? '' : ' · ' + isoLabel(c.d)); }
+  function calSay(c) { return (c.oj ? 'Your ' + c.n : ownName(c.o, c.n)) + (c.mode === 'list' ? '' : ' · ' + isoLabel(c.d)); }
   function heldWho(held) { var n = held.map(function (c) { return c.oj ? 'you' : c.o; }).filter(function (x, i, a) { return a.indexOf(x) === i; }); return n.length > 1 ? n.slice(0, -1).join(', ') + ' and ' + n[n.length - 1] : n[0]; }
   function calHref(c) { return './#u=' + c.pid + (c.mode === 'list' ? '' : '&d=' + slugOf(c.d)); }
   function fit(ta) { ta.style.height = 'auto'; ta.style.height = (ta.scrollHeight + 2) + 'px'; }   // a fact's box as tall as its words
@@ -710,7 +711,7 @@ body.dropping::after { content: 'Drop to match them (nothing goes up yet)'; posi
   function pfSong(x) { var j = null; for (var i = 0; i < songs.length; i++) if (songs[i].id === x.id) { j = songs[i]; break; } return j || MSONGS.filter(function (m) { return m.id === x.id; })[0] || null; }
   var PF = {
     files: function (x) { var e = CAT[x.id] || {}; return !!(e.a || e.v); },
-    vids: function (x) { var v = VIDS[x.id]; return /^[\w-]{11}$/.test(String(x.vid || (v && v.v) || v || '')); },
+    vids: function (x) { var o = x.vid || VIDS[x.id] || (JOHN[x.id] || {}).v, id = typeof o === 'string' ? o : o && o.v; return /^[\w-]{11}$/.test(String(id || '')); },   // (found: { v: its id, ... }; John's choice: its id)
     pvs: function (x) { var s = pfSong(x); return /^https?:/.test(String(x.p || (s && s.p) || '')); }
   };
   function pfStats(u, l) {
@@ -723,7 +724,7 @@ body.dropping::after { content: 'Drop to match them (nothing goes up yet)'; posi
     var box = $('pfocus'), keepMsg = box.querySelector('.pf-msg:not([hidden])'); box.textContent = '';
     var top = el('div', 'pf-top'), back = el('button', 'pf-back', '‹ All playlists'); back.type = 'button';
     back.addEventListener('click', function () { PSEL = null; LIMIT = 60; render(); });
-    top.appendChild(back); top.appendChild(el('div', 'pf-name', u.o + '’s ' + u.n)); box.appendChild(top);
+    top.appendChild(back); top.appendChild(el('div', 'pf-name', ownName(u.o, u.n))); box.appendChild(top);
     box.appendChild(el('div', 'pf-sub', st.n + (st.n === 1 ? ' song' : ' songs') + (st.soon ? ' (' + st.soon + ' to come)' : '') + ' · ' + st.pvs + ' previews · ' + st.vids + ' videos · ' + st.a + ' MP3 · ' + st.v + ' MP4'));
     var tabs = el('div', 'pf-tabs');
     [['all', 'All', st.n], ['files', 'Files', st.files], ['vids', 'Videos', st.vids], ['pvs', 'Previews', st.pvs]].forEach(function (t) {
@@ -782,7 +783,7 @@ body.dropping::after { content: 'Drop to match them (nothing goes up yet)'; posi
     });
     var left = LIMIT;
     groups.forEach(function (g) {
-      var head = el('li', 'pgroup'), hn = el('div', 'pgname', (g.c.oj ? 'Your ' : g.c.o + '’s ') + g.c.n), hc = el('div', 'pgcount', (g.c.mode === 'list' ? 'Playlist' : 'Calendar') + ' · ' + g.list.length + (g.list.length === 1 ? ' song' : ' songs'));
+      var head = el('li', 'pgroup'), hn = el('div', 'pgname', g.c.oj ? 'Your ' + g.c.n : ownName(g.c.o, g.c.n)), hc = el('div', 'pgcount', (g.c.mode === 'list' ? 'Playlist' : 'Calendar') + ' · ' + g.list.length + (g.list.length === 1 ? ' song' : ' songs'));
       var a = el('a', 'pglink', 'Open'); a.href = './#u=' + g.c.pid; a.target = '_blank';
       head.appendChild(hn); head.appendChild(hc); head.appendChild(a); list.appendChild(head);
       g.list.sort(function (x, y) { return x.d < y.d ? 1 : x.d > y.d ? -1 : 0; });
