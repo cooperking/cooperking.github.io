@@ -3458,10 +3458,19 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var r = document.getElementById('spvol'), t = 0;
     r.addEventListener('input', function () { clearTimeout(t); t = setTimeout(function () { spCall({ op: 'volume', vol: +r.value, device: r.dataset.dev || undefined }).then(function (j) { if (j.status !== 200) toast(j.error || 'That device won’t let its volume be set from here'); }); }, 250); });
   })();
+  // (2 Nov 2026, John: "make sure this only happens as a fix to the iPhone not when an external Spotify speaker plays"): moved
+  // to another device, the app's silent copy and its hand-over are off; Spotify there gets the whole list from the next song
+  function spxMovedTo(d) {
+    if (!d || /Smartphone|Tablet/.test(d.type || '') && d.type === spKind() && !d.other) return;
+    if (SPX.bgLoaded || SPX.bg || SPX.shadow) spxBgStop();
+    spxShadowOff();
+    SPX.native = false; SPX.pickPhone = false; SPX.list = [SPX.track];
+    spLog('moved to ' + d.name + ': no hand-over to the app');
+  }
   function spDevChange() {   // the chip tapped: move what's playing to another of their devices
     spDevPick(null, 'Playing on ' + ((SPX.dev && SPX.dev.name) || 'your Spotify') + '. Move it to another of your devices:', function (d) {
       if (!coverObj || !coverObj.sp) return;
-      spCall({ op: 'transfer', device: d.id }).then(function (j) { if (j.status === 200) { SPX.dev = { id: d.id, name: d.name }; spxShowDev(); toast('Playing on ' + d.name); } else toast(j.error || 'Spotify didn’t move it'); });
+      spCall({ op: 'transfer', device: d.id }).then(function (j) { if (j.status === 200) { SPX.dev = { id: d.id, name: d.name }; spxMovedTo(d); spxShowDev(); toast('Playing on ' + d.name); } else toast(j.error || 'Spotify didn’t move it'); });
     });
   }
   spChip.addEventListener('click', function (e) { e.stopPropagation(); spDevChange(); });
@@ -9758,7 +9767,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var c = this; spCall({ op: 'pref', on: c.checked }).then(function (j) { if (j.status === 200) { SPM.st = j; spDraw(); toast(j.on ? 'Songs play through Spotify' : 'Songs play as previews'); } });
   });
   document.getElementById('acspwhere').addEventListener('click', function () {
-    spDevPick(null, 'Choose where songs play this visit (on this device they play where Spotify is open here).', function (d) { toast('Songs play on ' + d.name + ' this visit'); if (coverObj && coverObj.sp && SPX.playing) spCall({ op: 'transfer', device: d.id }).then(function (j) { if (j.status === 200) { SPX.dev = { id: d.id, name: d.name }; spxShowDev(); } }); });
+    spDevPick(null, 'Choose where songs play this visit (on this device they play where Spotify is open here).', function (d) { toast('Songs play on ' + d.name + ' this visit'); if (coverObj && coverObj.sp && SPX.playing) spCall({ op: 'transfer', device: d.id }).then(function (j) { if (j.status === 200) { SPX.dev = { id: d.id, name: d.name }; spxMovedTo(d); spxShowDev(); } }); });
   });
   document.getElementById('acspoff').addEventListener('click', function () {
     var b = this; if (!b.dataset.sure) { b.dataset.sure = '1'; b.textContent = 'Disconnect? Tap again'; setTimeout(function () { delete b.dataset.sure; b.textContent = 'Disconnect'; }, 4000); return; }
