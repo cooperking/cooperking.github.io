@@ -2181,6 +2181,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         <span class="imp-mos big" id="uplimos" aria-hidden="true"></span>
         <div class="imp-what"><span class="imp-kind" id="uplikind"></span><h3 id="uplisumh"></h3><p class="imp-sum" id="uplisum"></p></div>
       </div>
+      <div class="upld-opts" role="radiogroup" aria-label="Where it goes" id="uplidest"></div>
+      <label class="upld-day" id="uplintol" hidden><span>Add to</span><select id="upliinto"></select></label>
       <label class="upld-day" id="uplinamel"><span>Name</span><input id="upliname" type="text" maxlength="80" autocomplete="off" spellcheck="false"></label>
       <div class="upld-opts" role="radiogroup" aria-label="A calendar or a playlist" id="uplimode">
         <label><input type="radio" name="uplimode" value="cal" checked><span><b>A calendar</b>Each song on the day you added it on Spotify, like John’s.</span></label>
@@ -9014,8 +9016,30 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       }
     }
     document.getElementById('upliok').textContent = up ? 'Update it' : swap ? 'Switch to this one' : 'Import';
+    // where it goes (John, 2 Nov 2026: "choose whether to import it into a new calendar/ playlist, or add it to an existing
+    // one"): theirs from the same file (Update), a new one, or added to another of their imported ones
+    var into = uplPls().filter(function (p) { return p.mine && p.src === 'csv' && (!h || p.id !== h.id); });
+    var dest = document.getElementById('uplidest'), sel = document.getElementById('upliinto');
+    dest.textContent = ''; sel.textContent = '';
+    into.forEach(function (p) { var o = document.createElement('option'); o.value = p.id; o.textContent = p.n + (p.mode === 'list' ? ' (playlist)' : ' (calendar)'); sel.appendChild(o); });
+    var opt = function (v, t, d) { var lb = document.createElement('label'), r = document.createElement('input'); r.type = 'radio'; r.name = 'uplidest'; r.value = v; r.checked = v === (up ? 'up' : 'new');
+      var sp = document.createElement('span'), bb = document.createElement('b'); bb.textContent = t; sp.appendChild(bb); sp.appendChild(document.createTextNode(d)); lb.appendChild(r); lb.appendChild(sp); dest.appendChild(lb); r.addEventListener('change', function () { impDest(l, h); }); };
+    if (up) opt('up', 'Update “' + h.n + '”', 'Its new songs come in; the rest keep their days.');
+    opt('new', up ? 'A new one' : 'A new calendar or playlist', 'Its own, beside your others.');
+    if (into.length) opt('add', 'Add to one of mine', 'Its songs join one you already have (any it has already are skipped).');
+    dest.hidden = !up && !into.length;
+    impDest(l, h);
     document.getElementById('uplino').textContent = IMP.lists && IMP.lists.length > 1 ? 'Choose another' : 'Another file';
     impShow('got');
+  }
+  function impDest(l, h) {   // what the choice of where it goes shows
+    var v = (document.querySelector('input[name="uplidest"]:checked') || {}).value || (h ? 'up' : 'new');
+    document.getElementById('uplintol').hidden = v !== 'add';
+    document.getElementById('uplinamel').hidden = v !== 'new';
+    document.getElementById('uplimode').hidden = v !== 'new';
+    var note = document.getElementById('uplinote');
+    note.hidden = v !== 'up'; if (v === 'up') note.textContent = 'Its new songs wait for you to sign them off; the rest keep their days.';
+    document.getElementById('upliok').textContent = v === 'up' ? 'Update it' : v === 'add' ? 'Add the songs' : 'Import';
   }
   impDlg.addEventListener('close', function () { IMP.away = false; IMP.lists = null; IMP.pick = null; clearInterval(IMP.poll); IMP.win = null; impForget(); });
   document.getElementById('upliclose').addEventListener('click', function () { closeDialog(impDlg); });
@@ -9028,7 +9052,23 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   document.getElementById('uplifin').addEventListener('change', function () { impTake(this.files && this.files[0]); });
   document.getElementById('upliok').addEventListener('click', function () {
     var l = IMP.pick; if (!l || IMP.busy) return;
-    var b = this, h = impMineOf(l), up = !!h, mode = (document.querySelector('input[name="uplimode"]:checked') || {}).value, label = b.textContent;
+    var b = this, h = impMineOf(l), mode = (document.querySelector('input[name="uplimode"]:checked') || {}).value, label = b.textContent;
+    var dv = (document.querySelector('input[name="uplidest"]:checked') || {}).value || (h ? 'up' : 'new'), up = dv === 'up' && !!h;
+    if (dv === 'new') h = null;
+    if (dv === 'add') {   // into another of theirs
+      var to = document.getElementById('upliinto').value, tp = uplPls().filter(function (p) { return p.id === to; })[0];
+      if (!to) return;
+      IMP.busy = true; b.disabled = true; b.textContent = 'Adding…';
+      uplCall({ op: 'csvadd', id: to, songs: l.songs, file: l.file }).then(function (j) {
+        IMP.busy = false; b.disabled = false; b.textContent = label;
+        if (j.status !== 200) { toast(j.error || 'Couldn’t add them just now'); return; }
+        impForget(); MEMBER.pls = j.pls; uplMark(); uplWaitCount(); if (acct.open) uplDrawAcct();
+        closeDialog(impDlg); if (acct.open) closeDialog(acct);
+        toast(j.added ? (j.added === 1 ? '1 song added' : j.added + ' songs added') + ' to “' + (tp ? tp.n : 'it') + '”' : 'It has all of those already');
+        if (UPL.on === to && j.view) uplRefreshViews(to, j.view); else uplShow(to);
+      }).catch(function () { IMP.busy = false; b.disabled = false; b.textContent = label; toast('Couldn’t reach the site. Try again.'); });
+      return;
+    }
     IMP.busy = true; b.disabled = true; b.textContent = up ? 'Updating…' : 'Importing…';
     uplCall(up ? { op: 'csvup', id: h.id, songs: l.songs, file: l.file }
       : { op: 'csv', name: document.getElementById('upliname').value.replace(/\s+/g, ' ').trim() || l.name, file: l.file, mode: mode === 'list' ? 'list' : 'cal', songs: l.songs }).then(function (j) {

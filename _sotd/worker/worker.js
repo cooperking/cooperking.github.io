@@ -3975,8 +3975,27 @@ async function memberUpl(request, url, env, answer) {
     const items = uplCsvSongs(body.songs);
     if (!items || !items.length) return answer(400, { error: 'No songs in that file. Choose the file Exportify saved for your playlist.' });
     if (body.file) rec.fk = uplFileKey(body.file);
+    const d0 = await uplSongs(env, pid);
+    if (d0.add) { const ids = new Set(items.map(x => x.id)); for (const x of d0.songs || []) if (d0.add[x.id] && !ids.has(x.id)) items.push(x); }   // (songs added to it from other playlists stay)
     const r = await uplTake(env, pid, rec, U, items, rec.st, Date.now(), true);
     return answer(200, { ok: true, fresh: r.fresh, cnt: rec.cnt, pls: await uplMine(env, uplList(all, me, U), U), view: await uplView(env, all, me, pid, rec) });
+  }
+  if (body.op === 'csvadd') {   // another playlist's songs added to this one (John, 2 Nov 2026: "choose whether to import it into a new calendar/ playlist, or add it to an existing one"): those it hasn't got, kept through its own updates (data.add)
+    if (rec.src !== 'csv') return answer(400, { error: rec.src === 'sp' ? 'That one is read from Spotify by itself: add songs to it in Spotify.' : 'Add songs to that one in the playlist itself.' });
+    const items = uplCsvSongs(body.songs);
+    if (!items || !items.length) return answer(400, { error: 'No songs in that file. Choose the file Exportify saved for your playlist.' });
+    const data = await uplSongs(env, pid), have = new Set((data.songs || []).map(x => x.id)), add = [], back = [];
+    for (const x of items) {
+      if (!have.has(x.id)) { add.push(x); have.add(x.id); }
+      else if (data.del && data.del[x.id]) back.push(x.id);   // (one taken off before: on again, as it was asked for)
+    }
+    if (!add.length && !back.length) return answer(200, { ok: true, added: 0, pls: await uplMine(env, uplList(all, me, U), U), view: await uplView(env, all, me, pid, rec) });
+    data.add = data.add || {}; for (const x of add) data.add[x.id] = 1;
+    for (const t of back) delete data.del[t];
+    if (data.order) data.order = add.map(x => x.id).concat(data.order);   // (a playlist: the new ones first, as its newest are)
+    await env.SOTD.put('upl:' + pid, JSON.stringify(data));
+    await uplTake(env, pid, rec, U, (data.songs || []).concat(add), rec.st, Date.now(), true);
+    return answer(200, { ok: true, added: add.length + back.length, pls: await uplMine(env, uplList(all, me, U), U), view: await uplView(env, all, me, pid, rec) });
   }
   if (body.op === 'mode') { rec.mode = body.mode === 'list' ? 'list' : 'cal'; delete rec.annDay; await uplPut(env, U); return answer(200, { ok: true, pls: await uplMine(env, uplList(all, me, U), U), view: await uplView(env, all, me, pid, rec) }); }
   if (body.op === 'link') {   // the collaboration invite link, sent again
