@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="acbeb42dea03">
+<meta name="sotd-build" content="952773af3574">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -1453,6 +1453,8 @@ html.bgplay.bgon .fab .fabart { animation-play-state: running; }
 .spdevchip[hidden] { display: none; }
 .spdevchip i { flex: none; width: 8px; height: 8px; border-radius: 50%; background: #1ed760; }
 .spdevchip span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.spsays { margin-top: 6px; font: 600 13px/1.4 var(--sans); color: var(--fg); }
+.spsays:empty { display: none; }
 .spwake { margin-top: 10px; background: #1ed760; color: #000; }
 .spwake[hidden] { display: none; }
 .spvol { display: flex; align-items: center; gap: 12px; margin: 12px 0 2px; font: 600 14px var(--sans); color: var(--fg); }
@@ -2257,6 +2259,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     </div>
     <h3 id="spdevh">Where to play</h3>
     <p class="ac-none" id="spdevt"></p>
+    <p class="ac-none spsays" id="spsays"></p>
     <button class="copy spwake" id="spwake" type="button" hidden>Start in Spotify on this phone</button>
     <div class="spvol" id="spvolrow" hidden><span id="spvoll">Volume</span><input type="range" id="spvol" min="0" max="100" step="1" aria-label="Volume"></div>
     <ul class="spdev-list" id="spdevlist"></ul>
@@ -3429,6 +3432,15 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function spDevPick(devs, why, then, wake) {   // the list of their Spotify devices: one chosen plays there (and is kept for this visit); wake: a song to start in Spotify on this phone
     var dlg = document.getElementById('spdevdlg'), ul = document.getElementById('spdevlist');
     var wb = document.getElementById('spwake'); wb.hidden = !wake;
+    // what Spotify says right now (John, 2 Nov 2026: "It says it's playing on the iphone but it's not. it's silent"): to tell
+    // a device that's really playing from one that only says so
+    var says = document.getElementById('spsays'); says.textContent = 'Asking Spotify…';
+    spCall({ op: 'state' }).then(function (k) {
+      if (k.status !== 200) { says.textContent = 'Spotify says: ' + (k.error || 'nothing'); return; }
+      if (k.none) { says.textContent = 'Spotify says: nothing is playing on any of your devices.'; return; }
+      var so = songOf(k.track);
+      says.textContent = 'Spotify says: ' + (k.playing ? 'playing' : 'paused') + (so ? ' “' + so.title + '”' : k.track ? ' a song not from here' : '') + ' at ' + fmt((k.pos || 0) / 1000) + (k.device ? ' on ' + k.device : '') + (typeof k.vol === 'number' ? ', volume ' + k.vol + '%' : '') + '.';
+    }).catch(function () { says.textContent = ''; });
     wb.onclick = wake ? function () { closeDialog(dlg); spxWake(wake); } : null;
     document.getElementById('spdevt').textContent = why || 'Songs play through your Spotify on the device you choose.';
     var draw = function (list) {
