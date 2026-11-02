@@ -9,7 +9,7 @@ import SpotifyiOS
 // own sign-in (authorizeAndPlayURI: a moment in Spotify, then back here at sotdspotify://callback). Then the calendar sends
 // the song and the ones after it through the Web API to this phone, which is awake now. available() says whether Spotify
 // is on the phone. Each of the Song of the Day Spotify apps needs this app's ID (io.github.cooperking.sotd) and the
-// Redirect URI sotdspotify://callback in Spotify's dashboard. From build 32; from build 34 the app's own sound shares with Spotify's (share()), so coming back here doesn't stop it.
+// Redirect URI sotdspotify://callback in Spotify's dashboard. From build 32; build 35 works the phone's player itself (state, enqueue, pause, resume, seek, skip); from build 34 the app's own sound shares with Spotify's (share()), so coming back here doesn't stop it.
 @objc(SotdSpotifyPlugin)
 public class SotdSpotifyPlugin: CAPPlugin, CAPBridgedPlugin, SPTAppRemoteDelegate {
     public let identifier = "SotdSpotifyPlugin"
@@ -17,7 +17,13 @@ public class SotdSpotifyPlugin: CAPPlugin, CAPBridgedPlugin, SPTAppRemoteDelegat
     public let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "available", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "wake", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "share", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "share", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "state", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "enqueue", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "pause", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "resume", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "seek", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "skip", returnType: CAPPluginReturnPromise)
     ]
     static let redirect = URL(string: "sotdspotify://callback")!
     private var remote: SPTAppRemote?
@@ -25,6 +31,50 @@ public class SotdSpotifyPlugin: CAPPlugin, CAPBridgedPlugin, SPTAppRemoteDelegat
     private var pendingUri = ""
     private var pending: CAPPluginCall?
     private var authorizing = false
+    private var waiting: [(SPTAppRemotePlayerAPI?) -> Void] = []   // (calls made while it connects again)
+
+    // the player itself (build 35 on: John, 2 Nov 2026: songs sent through the Web API after waking still didn't play on
+    // the phone, so the phone's own Spotify is worked from here): its state, the next songs queued, pause, resume, seek,
+    // skip; reconnected first when the connection has dropped (it does while the app's in the background)
+    private func withApi(_ call: CAPPluginCall, _ run: @escaping (SPTAppRemotePlayerAPI) -> Void) {
+        DispatchQueue.main.async {
+            guard let r = self.remote else { call.reject("notConnected"); return }
+            if r.isConnected, let api = r.playerAPI { run(api); return }
+            guard r.connectionParameters.accessToken != nil else { call.reject("notConnected"); return }
+            self.waiting.append({ api in if let a = api { run(a) } else { call.reject("notConnected") } })
+            if self.waiting.count == 1 { r.connect() }
+        }
+    }
+    private func flushWaiting(_ ok: Bool) {
+        let w = waiting; waiting = []
+        for f in w { f(ok ? remote?.playerAPI : nil) }
+    }
+    private func done(_ call: CAPPluginCall) -> SPTAppRemoteCallback { return { _, err in if let e = err { call.reject(e.localizedDescription) } else { call.resolve() } } }
+    @objc func state(_ call: CAPPluginCall) {
+        withApi(call) { api in
+            api.getPlayerState { res, err in
+                guard err == nil, let st = res as? SPTAppRemotePlayerState else { call.reject(err?.localizedDescription ?? "noState"); return }
+                let uri = st.track.uri
+                call.resolve(["track": uri.hasPrefix("spotify:track:") ? String(uri.dropFirst(14)) : "", "pos": st.playbackPosition, "dur": Int(st.track.duration), "playing": !st.isPaused])
+            }
+        }
+    }
+    @objc func enqueue(_ call: CAPPluginCall) {
+        let uris = (call.getArray("uris", String.self) ?? []).filter { $0.hasPrefix("spotify:track:") }
+        withApi(call) { api in
+            var left = uris
+            func next() {
+                guard !left.isEmpty else { call.resolve(); return }
+                let u = left.removeFirst()
+                api.enqueueTrackUri(u) { _, _ in next() }
+            }
+            next()
+        }
+    }
+    @objc func pause(_ call: CAPPluginCall) { withApi(call) { api in api.pause(self.done(call)) } }
+    @objc func resume(_ call: CAPPluginCall) { withApi(call) { api in api.resume(self.done(call)) } }
+    @objc func skip(_ call: CAPPluginCall) { withApi(call) { api in api.skip(toNext: self.done(call)) } }
+    @objc func seek(_ call: CAPPluginCall) { let ms = call.getInt("ms") ?? 0; withApi(call) { api in api.seek(toPosition: ms, callback: self.done(call)) } }
 
     override public func load() {
         NotificationCenter.default.addObserver(self, selector: #selector(opened(_:)), name: .capacitorOpenURL, object: nil)
@@ -121,11 +171,13 @@ public class SotdSpotifyPlugin: CAPPlugin, CAPBridgedPlugin, SPTAppRemoteDelegat
 
     public func appRemoteDidEstablishConnection(_ appRemote: SPTAppRemote) {
         SotdSpotifyPlugin.setShare(true)
+        flushWaiting(true)
         if authorizing { authorizing = false; finish(error: nil) }   // (Spotify's already playing the song it was asked for)
         else if pending != nil { playNow() }
     }
 
     public func appRemote(_ appRemote: SPTAppRemote, didFailConnectionAttemptWithError error: Error?) {
+        flushWaiting(false)
         if !authorizing && pending != nil { appRemote.connectionParameters.accessToken = nil; authorize(); return }   // (the token from before has run out: Spotify's sign-in again)
         authorizing = false
         finish(error: error?.localizedDescription ?? "notConnected")
