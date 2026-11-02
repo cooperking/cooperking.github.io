@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="5898541fe00c">
+<meta name="sotd-build" content="9b551774f93c">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -3510,7 +3510,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (!N) return spCall(Object.assign({ op: op }, extra || {}));
     var f = op === 'next' ? 'skip' : op; return (N[f] ? N[f](extra || {}) : Promise.reject()).then(function () { return { status: 200 }; }, function (e) { return { status: 0, error: String((e && e.message) || e) }; });
   }
-  function spxNativeLoad(id, from) {   // this phone's Spotify: the song (a moment in Spotify if it needs waking), confirmed by Spotify itself, then the next few queued
+  function spxNativeLoad(id, from, force) {   // this phone's Spotify: the song (a moment in Spotify if it needs waking), confirmed by Spotify itself
     var N = spxN();
     // (2 Nov 2026, John: "Shouldn't queue as that would be a bad user experience if any of the other tracks play"): just this
     // song; the next is sent when it ends, while the app's open (locked, the app takes over: spxHandOver)
@@ -3518,8 +3518,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     SPX.native = true; SPX.track = id; SPX.list = [id]; SPX.playing = false; SPX.skips = 0; SPX.queued = {};
     SPX.dev = { name: 'this iPhone', starting: true }; spxShowDev(); coverState(3); spxShare(true);
     var so = songOf(id); spLog('play “' + (so ? so.title : id) + '” on this iPhone');
-    N.wake({ clientId: SPM.st.cid, uri: 'spotify:track:' + id }).then(function () {
-      spLog('Spotify woken');
+    N.wake({ clientId: SPM.st.cid, uri: 'spotify:track:' + id, force: !!force }).then(function () {
+      spLog(force ? 'Spotify woken properly (through Spotify itself)' : 'Spotify woken');
       var n = 0, look = function () {
         if (!coverObj.sp || SPX.track !== id) return;
         N.state().then(function (r) {
@@ -3538,6 +3538,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
           var m = String((e && (e.message || e.code)) || e || 'no reason');
           if (n === 0 || m !== SPX.lastErr) spLog('asking Spotify on the phone failed: ' + m);
           SPX.lastErr = m;
+          if (!force && /stateError|notConnected|disconnected|connect failed/.test(m)) {   // (connected to a Spotify asleep in the background: woken properly, once)
+            spLog('waking Spotify properly (a moment in Spotify)');
+            spxNativeLoad(id, from, true); return;
+          }
           if (++n < 8) setTimeout(look, 800); else spxFallback(id, 'Spotify didn’t answer on this phone (' + m + '): playing the preview');
         });
       };
