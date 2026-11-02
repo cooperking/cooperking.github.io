@@ -3117,7 +3117,7 @@ async function memberImpDrop(request, url, env, answer) {
   if (request.method === 'GET') {
     const o = await env.MEDIA.get(key);
     if (!o) return answer(404, { none: true });
-    const body = await o.arrayBuffer(); await env.MEDIA.delete(key);
+    const body = await new Response(o.body).arrayBuffer(); await env.MEDIA.delete(key);
     const name = (o.customMetadata && o.customMetadata.name) || 'playlists.zip';
     return new Response(body, { headers: Object.assign(factsHeaders(MEMBERS_ORIGIN), { 'Content-Type': (o.httpMetadata && o.httpMetadata.contentType) || 'application/octet-stream', 'X-Name': encodeURIComponent(name), 'Access-Control-Expose-Headers': 'X-Name' }) });
   }

@@ -7,7 +7,7 @@ import Capacitor
 // the top and Safari as a way out (Spotify's "Continue with Google" won't sign in inside an app). When Exportify saves
 // its .zip or .csv, the web view hands the download to the app instead of to Files: the screen closes and the page
 // hears "file" { name, data: the file in base64 }, for Import from Spotify. "closed" { file: true/false } as it goes.
-// The Spotify sign-in is kept (the default website data store), so it's asked for once. From build 30.
+// The Spotify sign-in is kept (the default website data store), so it's asked for once. From build 30; from build 31 the file goes through the Worker (/members/impdrop) when the page gives a code and the sign-in.
 @objc(SotdExportifyPlugin)
 public class SotdExportifyPlugin: CAPPlugin, CAPBridgedPlugin {
     public let identifier = "SotdExportifyPlugin"
@@ -22,12 +22,21 @@ public class SotdExportifyPlugin: CAPPlugin, CAPBridgedPlugin {
         let s = call.getString("url") ?? "https://exportify.app/"
         guard let url = URL(string: s), url.scheme == "https" else { call.reject("not an https address"); return }
         let tint = call.getString("color")
+        let code = call.getString("code") ?? "", key = call.getString("key") ?? ""
         DispatchQueue.main.async {
             guard let host = self.bridge?.viewController else { call.reject("no view"); return }
             if self.shown != nil { call.resolve(); return }
             let c = SotdExportifyController(start: url, tint: tint)
-            c.onFile = { [weak self] name, data in
-                self?.notifyListeners("file", data: ["name": name, "data": data.base64EncodedString()])
+            // (2 Nov 2026: an "all playlists" zip given to the page in one piece restarted its web view, which looked like a
+            // crash; with a code and the member's sign-in it goes through the Worker instead, as the Android app's does,
+            // and the page fetches it: /members/impdrop?c=)
+            if code.range(of: "^[A-Za-z0-9]{16,40}$", options: .regularExpression) != nil && !key.isEmpty {
+                c.upload = { name, data, done in SotdExportifyPlugin.drop(code: code, key: key, name: name, data: data, done: done) }
+                c.onFile = { [weak self] name, _ in self?.notifyListeners("file", data: ["name": name, "code": code]) }
+            } else {
+                c.onFile = { [weak self] name, data in
+                    self?.notifyListeners("file", data: ["name": name, "data": data.base64EncodedString()])
+                }
             }
             c.onClose = { [weak self] got in self?.notifyListeners("closed", data: ["file": got]) }
             let nav = UINavigationController(rootViewController: c)
@@ -35,6 +44,20 @@ public class SotdExportifyPlugin: CAPPlugin, CAPBridgedPlugin {
             self.shown = c
             host.present(nav, animated: true) { call.resolve() }
         }
+    }
+
+    static func drop(code: String, key: String, name: String, data: Data, done: @escaping (Bool) -> Void) {
+        guard let url = URL(string: "https://sotd-playlists.cooperking.workers.dev/members/impdrop?c=" + code) else { done(false); return }
+        var r = URLRequest(url: url, timeoutInterval: 90)
+        r.httpMethod = "POST"
+        r.setValue("Bearer " + key, forHTTPHeaderField: "Authorization")
+        r.setValue(name.lowercased().hasSuffix(".zip") ? "application/zip" : "text/csv", forHTTPHeaderField: "Content-Type")
+        r.setValue(name.addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? "playlists.zip", forHTTPHeaderField: "X-Name")
+        r.setValue("ios-exportify", forHTTPHeaderField: "X-App")
+        URLSession.shared.uploadTask(with: r, from: data) { _, resp, err in
+            let ok = err == nil && (resp as? HTTPURLResponse)?.statusCode == 200
+            DispatchQueue.main.async { done(ok) }
+        }.resume()
     }
 
     @objc func close(_ call: CAPPluginCall) {
@@ -47,6 +70,7 @@ class SotdExportifyController: UIViewController, WKNavigationDelegate, WKUIDeleg
     let tint: UIColor?
     var web: WKWebView!
     var onFile: ((String, Data) -> Void)?
+    var upload: ((String, Data, @escaping (Bool) -> Void) -> Void)?
     var onClose: ((Bool) -> Void)?
     private var files: [ObjectIdentifier: URL] = [:]
     private var done = false
@@ -136,8 +160,17 @@ class SotdExportifyController: UIViewController, WKNavigationDelegate, WKUIDeleg
         guard let url = files.removeValue(forKey: ObjectIdentifier(download)) else { return }
         defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
         guard let data = try? Data(contentsOf: url), !data.isEmpty, data.count <= 80_000_000 else { warn("That file couldn’t be read. Try again."); return }
-        onFile?(url.lastPathComponent, data)
-        finish(got: true)
+        var name = url.lastPathComponent
+        let zip = data.count > 1 && data[data.startIndex] == 0x50 && data[data.startIndex + 1] == 0x4B   // ("PK": a zip, whatever it was called)
+        if zip && !name.lowercased().hasSuffix(".zip") { name = ((name as NSString).deletingPathExtension) + ".zip" }
+        guard let up = upload else { onFile?(name, data); finish(got: true); return }
+        spinner.startAnimating()
+        up(name, data) { [weak self] ok in
+            guard let self = self else { return }
+            self.spinner.stopAnimating()
+            if ok { self.onFile?(name, data); self.finish(got: true) }
+            else { self.warn("It didn’t reach Song of the Day. Check the connection and try again.") }
+        }
     }
     func download(_ download: WKDownload, didFailWithError error: Error, resumeData: Data?) {
         spinner.stopAnimating()
