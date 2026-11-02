@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="2d17a509b32f">
+<meta name="sotd-build" content="1c9ff8f4ce56">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -3359,11 +3359,13 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   coverBox.className = 'coverbox'; coverBox.setAttribute('aria-hidden', 'true');
   vidfloat.insertBefore(coverBox, vidfloat.firstChild);
   function coverState(st) { coverObj.state = st; vidfloat.classList.toggle('spin', st === 1); vidState({ data: st, target: coverObj }); }
-  audio.addEventListener('playing', function () { if (coverOn) coverState(1); });
-  audio.addEventListener('pause', function () { if (coverOn && !audio.ended) coverState(2); });
-  audio.addEventListener('waiting', function () { if (coverOn) coverState(3); });
-  audio.addEventListener('ended', function () { if (coverOn) coverState(0); });
+  function shadowing() { return !!(coverObj && coverObj.sp); }   // (the silent copy beside Spotify: its events aren't the player's)
+  audio.addEventListener('playing', function () { if (coverOn && !shadowing()) coverState(1); });
+  audio.addEventListener('pause', function () { if (coverOn && !audio.ended && !shadowing()) coverState(2); });
+  audio.addEventListener('waiting', function () { if (coverOn && !shadowing()) coverState(3); });
+  audio.addEventListener('ended', function () { if (coverOn && !shadowing()) coverState(0); });
   audio.addEventListener('error', function () {   // no connection and not downloaded: stopped, and said so
+    if (shadowing()) return;
     if (coverOn && vplay && vplay.cover && navigator.onLine !== false && /p\.scdn\.co\/mp3-preview\/|\/sp\/p\/[0-9a-f]+\.mp3/.test(audio.src)) { deadPreview(vplay.el); return; }   // (online: the preview's gone)
     if (!coverOn || !vplay || !vplay.cover || navigator.onLine !== false) return;
     var el = vplay.el; if (OFFL[el.sotd.s.track]) return;
@@ -3396,7 +3398,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         } var p = audio.play(); if (p && p.catch) p.catch(function () {}); },
       pauseVideo: function () { if (coverObj.sp) { spxDo('pause', 2); return; } audio.pause(); },
       stopVideo: function () { if (coverObj.sp) { spxSoon(); return; } audio.pause(); },
-      seekTo: function (sec) { if (coverObj.sp) { SPX.pos = sec * 1000; SPX.at = Date.now(); spxCmd('seek', { ms: Math.round(sec * 1000) }); return; } try { audio.currentTime = sec; } catch (x) {} },
+      seekTo: function (sec) { if (coverObj.sp) { SPX.pos = sec * 1000; SPX.at = Date.now(); spxCmd('seek', { ms: Math.round(sec * 1000) }); spxShadowSync(); return; } try { audio.currentTime = sec; } catch (x) {} },
       getCurrentTime: function () { return coverObj.sp ? spxPos() / 1000 : audio.currentTime || 0; },
       getDuration: function () { return coverObj.sp ? (SPX.dur || 0) / 1000 : isFinite(audio.duration) ? audio.duration : 0; },
       getPlayerState: function () { return coverObj.state; },
@@ -3506,6 +3508,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var N = spxN();
     // (2 Nov 2026, John: "Shouldn't queue as that would be a bad user experience if any of the other tracks play"): just this
     // song; the next is sent when it ends, while the app's open (locked, the app takes over: spxHandOver)
+    spxShadowOff();
     SPX.native = true; SPX.track = id; SPX.list = [id]; SPX.playing = false; SPX.skips = 0; SPX.queued = {};
     SPX.dev = { name: 'this iPhone', starting: true }; spxShowDev(); coverState(3); spxShare(true);
     N.wake({ clientId: SPM.st.cid, uri: 'spotify:track:' + id }).then(function () {
@@ -3516,6 +3519,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
           if (r.playing && r.track === id) {
             SPX.playing = true; SPX.pos = r.pos; SPX.at = Date.now(); SPX.dur = r.dur; SPX.dev = { name: 'this iPhone' }; spxShowDev(); coverState(1);
             if (from) N.seek({ ms: from }).catch(function () {});
+            spxShadow(id, from || r.pos);   // (the silent copy, ready to take over)
             spxWatch(); return;
           }
           if (++n < 8) { setTimeout(look, 800); return; }
@@ -3530,6 +3534,25 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       spxFallback(id, m === 'notInstalled' ? 'The Spotify app isn’t on this phone: playing the preview' : 'Spotify didn’t start on this phone (' + (m || 'try again') + '): playing the preview');
     });
   }
+  // (2 Nov 2026, John: "Go with silent copy handover"): while this phone's Spotify plays a song, the app plays the same song
+  // muted beside it (sharing the phone's sound, so Spotify isn't stopped): its MP3 in step with Spotify, or its preview on a
+  // loop. Leaving the app (or locking), the copy is turned up and Spotify paused: nothing to load, so it's at once, and the
+  // app, playing, carries on through the list as before; back in the app, the next song goes to Spotify again
+  function spxShadow(id, ms) {
+    var s = songOf(id), src = s && songSrc(s); spxShadowOff(); if (!src) return;
+    var full = whole(s);
+    SPX.shadow = { id: id, full: full };
+    audio.muted = true; audio.loop = !full;
+    audio.src = src + (full && ms > 1000 ? '#t=' + (ms / 1000).toFixed(2) : '');
+    var p = audio.play(); if (p && p.catch) p.catch(function () { SPX.shadow = null; });
+  }
+  function spxShadowOff() { if (!SPX.shadow) return; SPX.shadow = null; try { audio.pause(); } catch (e) {} audio.muted = false; audio.loop = false; }
+  function spxShadowSync() {   // the MP3 copy kept to Spotify's place (and paused with it)
+    var sh = SPX.shadow; if (!sh || sh.id !== SPX.track) return;
+    if (!SPX.playing) { if (!audio.paused) audio.pause(); return; }
+    if (audio.paused) { var p = audio.play(); if (p && p.catch) p.catch(function () {}); }
+    if (sh.full) { var t = spxPos() / 1000; if (Math.abs((audio.currentTime || 0) - t) > 1.5) try { audio.currentTime = t; } catch (e) {} }
+  }
   function spxTopUp() {   // the next three songs in Spotify's queue on this phone, topped up as each one plays
     var N = spxN(); if (!SPX.native || !N) return;
     var i = SPX.list.indexOf(SPX.track), want = SPX.list.slice(i + 1, i + 4).filter(function (t) { return !SPX.queued[t]; });
@@ -3543,8 +3566,20 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // song goes to Spotify again (coverVd)
   function spxHandOver() {
     if (!coverObj || !coverObj.sp || !SPX.native || !SPX.playing || !vplay || !vplay.cover) return;
-    var id = SPX.track, s = songOf(id), t = spxPos() / 1000, src = s && songSrc(s);
+    var id = SPX.track, s = songOf(id), t = spxPos() / 1000, src = s && songSrc(s), sh = SPX.shadow;
     clearTimeout(SPX.endT);
+    if (sh && sh.id === id && audio.getAttribute('src')) {   // the silent copy: turned up, at once
+      SPX.shadow = null; coverObj.sp = false; SPX.playing = false; SPX.native = false; SPX.track = ''; SPX.dev = null; spxShowDev(); clearInterval(SPX.poll);
+      audio.loop = false;
+      if (!sh.full) { try { audio.currentTime = 0; } catch (e) {} }   // (a preview: from its start)
+      else if (Math.abs((audio.currentTime || 0) - t) > 1) { try { audio.currentTime = t; } catch (e) {} }
+      audio.muted = false;
+      if (audio.paused) { var p0 = audio.play(); if (p0 && p0.catch) p0.catch(function () { coverState(2); }); }
+      coverState(1);
+      spxShare(false);   // (the phone's sound taken back: Spotify stops as it's taken)
+      var N0 = spxN(); if (N0 && N0.pause) N0.pause().catch(function () {});
+      return;
+    }
     coverObj.sp = false; SPX.playing = false; SPX.native = false; SPX.track = ''; SPX.dev = null; spxShowDev(); clearInterval(SPX.poll);
     if (!src) { spxCmd('pause'); spxShare(false); coverState(0); return; }   // (nothing of its own to play: on to the next)
     var full = whole(s);
@@ -3681,7 +3716,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         var was = SPX.playing;
         SPX.pos = j.pos; SPX.at = Date.now(); SPX.dur = j.dur || SPX.dur; SPX.playing = j.playing;
         if (!j.playing && (j.pos === 0 || (SPX.native && j.dur && j.pos >= j.dur - 1500)) && SPX.list[SPX.list.length - 1] === SPX.track) { SPX.playing = false; coverState(0); return; }   // (the last one over)
-        if (SPX.native) spxEndSoon();
+        if (SPX.native) { spxEndSoon(); spxShadowSync(); }
         if (was !== j.playing) coverState(j.playing ? 1 : 2);
       }).catch(function () {});
     }, 5000);   // (the Spotify apps share one allowance of requests: not too often)
@@ -3721,18 +3756,18 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   });
   function spxDo(op, st) {
     SPX.pos = spxPos(); SPX.at = Date.now(); SPX.playing = false;
-    if (op !== 'resume') { coverState(st); spxCmd(op); return; }
+    if (op !== 'resume') { coverState(st); spxCmd(op); spxShadowSync(); return; }
     coverState(3);   // (resumed: playing once Spotify says so)
     var id = SPX.track;
     spxCmd('resume').then(function () {
       spxConfirm(id, SPX.dev || {}, function (ok, k) {
-        if (ok) { SPX.playing = true; SPX.pos = k.pos; SPX.at = Date.now(); coverState(1); spxWatch(); return; }
+        if (ok) { SPX.playing = true; SPX.pos = k.pos; SPX.at = Date.now(); coverState(1); spxWatch(); spxShadowSync(); return; }
         coverState(2); toast('Spotify didn’t carry on' + (SPX.dev && SPX.dev.name ? ' on ' + SPX.dev.name : '') + ': press play to start the song again');
         SPX.other = true;   // (the next Play sends the song again)
       });
     });
   }
-  function spxStop(quiet) { SPX.dev = null; setTimeout(spxShowDev, 0); clearInterval(SPX.poll); if (!quiet && SPX.playing) spxCmd('pause'); SPX.playing = false; SPX.track = ''; SPX.list = []; }
+  function spxStop(quiet) { spxShadowOff(); SPX.dev = null; setTimeout(spxShowDev, 0); clearInterval(SPX.poll); if (!quiet && SPX.playing) spxCmd('pause'); SPX.playing = false; SPX.track = ''; SPX.list = []; }
   function coverVd(s) {   // (through their Spotify when they've chosen it; this phone's Spotify not while the phone's locked: the app plays it then)
     var here = spOn() && document.hidden && spxN() && spKind() !== 'Computer' && (!SPX.pick || SPX.pickPhone);
     return { cover: true, src: spOn() && !here ? 'spotify:track:' + s.track : songSrc(s) };
