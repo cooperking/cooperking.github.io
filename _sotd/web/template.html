@@ -8686,6 +8686,29 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function impFilesOk() { var F = NAT && NAT.Plugins && NAT.Plugins.SotdFiles; return !!(F && typeof F.read === 'function'); }
   function impAway() {   // Exportify, over the calendar
     try { localStorage.setItem('sotd-imp', JSON.stringify({ at: Date.now() })); } catch (e) {}
+    var X = NAT && NAT.Plugins && NAT.Plugins.SotdExportify;
+    if (X && typeof X.open === 'function' && typeof X.addListener === 'function') {   // the iPhone app (2 Nov 2026 build on): Exportify in the app's own view, its download taken straight in (no share sheet)
+      if (!IMP.xl) {
+        IMP.xl = true;
+        try {
+          X.addListener('file', function (r) {
+            IMP.away = false; impForget();
+            var bin = atob((r && r.data) || ''), u8 = new Uint8Array(bin.length);
+            for (var i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+            var nm = (r && r.name) || 'playlist.csv';
+            toast('Got your Exportify file');
+            impTake(new File([u8], nm, { type: /\.zip$/i.test(nm) ? 'application/zip' : 'text/csv' }));
+          });
+          X.addListener('closed', function (r) { if (!(r && r.file)) impBack(); });
+        } catch (e) {}
+      }
+      IMP.away = true;
+      X.open({ url: EXPORTIFY, color: '#ec135b' }).catch(function () { IMP.away = false; impAwayBrowser(); });
+      return;
+    }
+    impAwayBrowser();
+  }
+  function impAwayBrowser() {
     var B = NAT && NAT.Plugins && NAT.Plugins.Browser;
     if (B && typeof B.open === 'function') {   // the iPhone app: its own browser, as a sheet over the app; Done brings it back
       if (!IMP.bl && typeof B.addListener === 'function') { IMP.bl = true; try { B.addListener('browserFinished', impBack); } catch (e) {} }

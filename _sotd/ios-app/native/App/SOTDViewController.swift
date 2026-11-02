@@ -10,6 +10,7 @@ class SOTDViewController: CAPBridgeViewController {
         bridge?.registerPluginInstance(SotdContactsPlugin())   // (Apple's contact picker, for the Members tab: build 22 on)
         bridge?.registerPluginInstance(SotdIconPlugin())   // (the icon in the month's colours: build 29 on)
         bridge?.registerPluginInstance(SotdFilesPlugin())   // (a .zip or .csv opened with the app, for Import from Spotify: build 28 on)
+        bridge?.registerPluginInstance(SotdExportifyPlugin())   // (Exportify inside the app, its download taken straight in)
         SotdGuard.shared.attach(bridge?.webView)   // (away, playing: stopped when another device begins: build 25 on)
     }
 }
