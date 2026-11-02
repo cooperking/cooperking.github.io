@@ -3478,7 +3478,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   function spxNativeLoad(id, from) {   // this phone's Spotify: the song (a moment in Spotify if it needs waking), confirmed by Spotify itself, then the next few queued
     var N = spxN();
-    SPX.native = true; SPX.track = id; SPX.list = spxUpcoming(id); SPX.playing = false; SPX.skips = 0; SPX.queued = {};
+    // (2 Nov 2026, John: "Shouldn't queue as that would be a bad user experience if any of the other tracks play"): just this
+    // song; the next is sent when it ends, while the app's open (locked, the app takes over: spxHandOver)
+    SPX.native = true; SPX.track = id; SPX.list = [id]; SPX.playing = false; SPX.skips = 0; SPX.queued = {};
     SPX.dev = { name: 'this iPhone', starting: true }; spxShowDev(); coverState(3); spxShare(true);
     N.wake({ clientId: SPM.st.cid, uri: 'spotify:track:' + id }).then(function () {
       var n = 0, look = function () {
@@ -3488,7 +3490,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
           if (r.playing && r.track === id) {
             SPX.playing = true; SPX.pos = r.pos; SPX.at = Date.now(); SPX.dur = r.dur; SPX.dev = { name: 'this iPhone' }; spxShowDev(); coverState(1);
             if (from) N.seek({ ms: from }).catch(function () {});
-            spxTopUp(); spxWatch(); return;
+            spxWatch(); return;
           }
           if (++n < 8) { setTimeout(look, 800); return; }
           spxFallback(id, 'Spotify didn’t start on this phone: playing the preview');
@@ -3509,6 +3511,22 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     want.forEach(function (t) { SPX.queued[t] = 1; });
     N.enqueue({ uris: want.map(function (t) { return 'spotify:track:' + t; }) }).catch(function () {});
   }
+  // (2 Nov 2026, John: "Phone locked should just switch back to playing through my app until unlocked and then restart
+  // Spotify on the next track"): the phone locked while its Spotify plays: Spotify paused, and the song on in the app (its
+  // MP3 from the same second, else its preview), which carries on through the list as before; back in sight, the next
+  // song goes to Spotify again (coverVd)
+  function spxHandOver() {
+    if (!coverObj || !coverObj.sp || !SPX.native || !SPX.playing || !vplay || !vplay.cover) return;
+    var id = SPX.track, s = songOf(id), t = spxPos() / 1000, src = s && songSrc(s);
+    clearTimeout(SPX.endT); spxCmd('pause');
+    coverObj.sp = false; SPX.playing = false; SPX.native = false; SPX.track = ''; SPX.dev = null; spxShowDev(); clearInterval(SPX.poll);
+    spxShare(false);
+    if (!src) { coverState(0); return; }   // (nothing of its own to play: on to the next)
+    var full = whole(s);
+    audio.src = src + (full && t > 1 ? '#t=' + t.toFixed(2) : '');
+    var p = audio.play(); if (p && p.catch) p.catch(function () { coverState(2); });
+  }
+  document.addEventListener('visibilitychange', function () { if (document.hidden) spxHandOver(); });
   function spxShare(on) { var N = NAT && NAT.Plugins && NAT.Plugins.SotdSpotify; if (N && typeof N.share === 'function') N.share({ on: !!on }).catch(function () {}); }
   function spxFallback(id, why) {   // their Spotify can't play it: the song as before, this once
     coverObj.sp = false; spxStop(true); spxShare(false);
@@ -3599,8 +3617,22 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       });
     }).catch(function () { SPX.busy = false; if (coverObj.sp && SPX.track === id) spxFallback(id, 'Couldn’t reach Spotify just now: playing the preview'); });
   }
+  function spxEndSoon() {   // a look just after this song should end (the phone's Spotify: then on to the next here)
+    clearTimeout(SPX.endT);
+    if (!SPX.native || !SPX.playing || !SPX.dur) return;
+    var left = SPX.dur - spxPos(); if (left < 0 || left > 15 * 60e3) return;
+    SPX.endT = setTimeout(function () {
+      if (!coverObj || !coverObj.sp || !SPX.native || document.hidden) return;
+      var id = SPX.track;
+      spxState().then(function (j) {
+        if (!coverObj.sp || SPX.track !== id || j.status !== 200) return;
+        if (j.track !== id || (!j.playing && (j.pos === 0 || j.pos >= (j.dur || SPX.dur) - 1500))) { if (j.track !== id && j.playing) spxCmd('pause'); SPX.playing = false; coverState(0); return; }
+        SPX.pos = j.pos; SPX.at = Date.now(); spxEndSoon();
+      });
+    }, left + 400);
+  }
   function spxWatch() {   // every few seconds while in sight: where Spotify has got to
-    clearInterval(SPX.poll);
+    clearInterval(SPX.poll); spxEndSoon();
     SPX.poll = setInterval(function () {
       if (!coverObj || !coverObj.sp || SPX.busy || document.hidden) return;
       spxState().then(function (j) {
@@ -3620,7 +3652,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         if (j.device && (!SPX.dev || SPX.dev.name !== j.device)) { SPX.dev = { id: j.did || '', name: j.device }; spxShowDev(); }   // (moved in Spotify itself)
         var was = SPX.playing;
         SPX.pos = j.pos; SPX.at = Date.now(); SPX.dur = j.dur || SPX.dur; SPX.playing = j.playing;
-        if (!j.playing && j.pos === 0 && SPX.list[SPX.list.length - 1] === SPX.track) { coverState(0); return; }   // (the last one over)
+        if (!j.playing && (j.pos === 0 || (SPX.native && j.dur && j.pos >= j.dur - 1500)) && SPX.list[SPX.list.length - 1] === SPX.track) { SPX.playing = false; coverState(0); return; }   // (the last one over)
+        if (SPX.native) spxEndSoon();
         if (was !== j.playing) coverState(j.playing ? 1 : 2);
       }).catch(function () {});
     }, 5000);   // (the Spotify apps share one allowance of requests: not too often)
@@ -3672,7 +3705,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     });
   }
   function spxStop(quiet) { SPX.dev = null; setTimeout(spxShowDev, 0); clearInterval(SPX.poll); if (!quiet && SPX.playing) spxCmd('pause'); SPX.playing = false; SPX.track = ''; SPX.list = []; }
-  function coverVd(s) { return { cover: true, src: spOn() ? 'spotify:track:' + s.track : songSrc(s) }; }   // (through their Spotify, when they've chosen it)
+  function coverVd(s) {   // (through their Spotify when they've chosen it; this phone's Spotify not while the phone's locked: the app plays it then)
+    var here = spOn() && document.hidden && spxN() && spKind() !== 'Computer' && (!SPX.pick || SPX.pickPhone);
+    return { cover: true, src: spOn() && !here ? 'spotify:track:' + s.track : songSrc(s) };
+  }   // (through their Spotify, when they've chosen it)
 
   function isVideo(el) { return el.classList.contains('watching') && !!vplay && vplay.el === el && !vplay.cover; }
   // a tap on a member's own video or a song's record: only ever the page's own buttons (full screen), or play and pause
