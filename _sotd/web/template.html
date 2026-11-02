@@ -3380,7 +3380,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       if (!coverObj.sp || SPX.track !== id) return;
       if (j.status !== 200) {
         if (j.why === 'premium' || j.why === 'blocked') { if (SPM.st) { SPM.st.product = j.why === 'premium' ? 'free' : SPM.st.product; SPM.st.blocked = j.why === 'blocked'; } }
-        spxFallback(id, j.why === 'nodevice' ? 'Open the Spotify app once on this phone (it can stay in the background), then play again' : j.why === 'premium' ? 'Spotify needs Premium to play whole songs here' : j.why === 'blocked' ? 'Spotify needs John to add you first' : 'Spotify didn’t play it: ' + (j.error || 'try again'));
+        spxFallback(id, j.why === 'busy' ? 'Spotify is busy just now: previews for a while' : j.why === 'nodevice' ? 'Open the Spotify app once on this phone (it can stay in the background), then play again' : j.why === 'premium' ? 'Spotify needs Premium to play whole songs here' : j.why === 'blocked' ? 'Spotify needs John to add you first' : 'Spotify didn’t play it: ' + (j.error || 'try again'));
         return;
       }
       SPX.playing = true; SPX.at = Date.now(); coverState(1); spxWatch();
@@ -3404,7 +3404,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         if (!j.playing && j.pos === 0 && SPX.list[SPX.list.length - 1] === SPX.track) { coverState(0); return; }   // (the last one over)
         if (was !== j.playing) coverState(j.playing ? 1 : 2);
       }).catch(function () {});
-    }, 4000);
+    }, 8000);   // (the Spotify apps share one allowance of requests: not too often)
   }
   window.SOTD_SP = { on: function () { return spOn(); }, x: SPX, cover: function () { return coverObj && { sp: coverObj.sp, state: coverObj.state }; } };   // (for checking it, read-only)
   function spxDo(op, st) { SPX.pos = spxPos(); SPX.at = Date.now(); SPX.playing = op === 'resume'; coverState(st); spCall({ op: op }); }
@@ -9245,7 +9245,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var x = SPM.st || { linked: false }, t = document.getElementById('acspt'), go = document.getElementById('acspgo'), off = document.getElementById('acspoff');
     var on = document.getElementById('acspon'), chk = document.getElementById('acspchk'), mail = document.getElementById('acspmail');
     on.hidden = mail.hidden = true; off.hidden = !x.linked; go.hidden = x.linked && !x.gone; go.textContent = x.gone ? 'Connect again' : 'Connect Spotify';
-    if (!x.linked) t.textContent = 'Play whole songs through your own Spotify instead of previews, while you stay here. Needs Spotify Premium, and the Spotify app open on one of your devices.';
+    if (!x.linked && x.full) { t.textContent = 'Playing through Spotify is full for now (Spotify lets John’s apps have 5 people each). Songs play as previews.'; go.hidden = true; }
+    else if (!x.linked) t.textContent = 'Play whole songs through your own Spotify instead of previews, while you stay here. Needs Spotify Premium, and the Spotify app open on one of your devices.';
     else if (x.gone) t.textContent = 'Spotify needs connecting again.';
     else if (x.blocked) { t.textContent = x.email ? 'Waiting for John to add ' + x.email + ' on Spotify’s side. It plays through Spotify once he has.' : 'Nearly there: Spotify needs John to add you first. Give the email of your Spotify account:'; mail.hidden = !!x.email; }
     else if (x.product !== 'premium') t.textContent = 'Connected as ' + (x.name || 'you') + ', but Spotify only lets other apps play whole songs for Premium accounts. Songs play as previews.';

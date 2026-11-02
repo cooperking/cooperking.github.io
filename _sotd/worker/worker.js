@@ -1282,10 +1282,18 @@ async function members(request, url, env) {
       do {
         const l = await env.SOTD.list({ prefix: 'spm:', cursor });
         for (const k of l.keys) { const id = k.name.slice(4), r = await env.SOTD.get(k.name, 'json'); if (!r || !all[id]) continue;
-          out.push({ id, name: all[id].name, blocked: !!r.blocked, gone: !!r.gone, on: r.on !== false, product: r.product || '', sname: r.name || '', email: r.email || r.wemail || '', linked: r.linked || 0 }); }
+          out.push({ id, name: all[id].name, blocked: !!r.blocked, gone: !!r.gone, on: r.on !== false, product: r.product || '', sname: r.name || '', email: r.email || r.wemail || '', linked: r.linked || 0, cid: r.cid || CLIENT_ID }); }
         cursor = l.list_complete ? null : l.cursor;
       } while (cursor);
-      return answer(200, { list: out });
+      return answer(200, { list: out, apps: await spApps(env), per: SP_PER_APP, redirect: new URL(request.url).origin + '/callback', quota: Number(await env.SOTD.get('spquota')) || 0 });
+    }
+    case 'spapps': {   // the extra Spotify apps' Client IDs (John's own app is always the first)
+      const ids = (Array.isArray(body.apps) ? body.apps : []).map(x => String(x).trim().toLowerCase()).filter(x => /^[0-9a-f]{32}$/.test(x) && x !== CLIENT_ID);
+      const used = new Set((await spMembers(env)).map(x => x.rec.cid).filter(Boolean)), keep = [...new Set(ids)].slice(0, 24);
+      const lost = [...used].filter(c => c !== CLIENT_ID && !keep.includes(c));
+      if (lost.length) return answer(400, { error: 'Members are still in that app: move them first (they connect again).' });
+      await env.SOTD.put('spapps', JSON.stringify(keep));
+      return answer(200, { apps: [CLIENT_ID].concat(keep) });
     }
     case 'pushpic': {   // a picture for a notification (and the inbox), made small on the members page: kept in R2 at n/<id>.jpg (and a GIF as it is: picsUp)
       if (!env.MEDIA) return answer(503, { error: 'No R2 bucket is bound to the Worker as MEDIA yet.' });
@@ -3205,14 +3213,33 @@ async function memberImpDrop(request, url, env, answer) {
 // 25 people its owner adds in Spotify's dashboard (User Management): until John adds them, Spotify refuses and they're
 // listed for him (blocked), with the Spotify email they give.
 const SP_SCOPES = 'user-read-playback-state user-modify-playback-state user-read-currently-playing user-read-private user-read-email';
+// Spotify allows 5 people per app in development mode, and an account up to 25 apps (July 2026; the apps share one
+// request allowance): John's own app first, then the others he adds in Admin (KV spapps: [Client ID]); each member is put
+// in the app they're in already, else the first with room, and the Members tab says which app to add them to.
+const SP_PER_APP = 5;
+async function spApps(env) { const extra = (await env.SOTD.get('spapps', 'json')) || []; return [CLIENT_ID].concat(extra.filter(x => /^[0-9a-f]{32}$/.test(x) && x !== CLIENT_ID)); }
+async function spMembers(env) {   // [{ id, rec }] of every member who has connected
+  const out = []; let cursor;
+  do { const l = await env.SOTD.list({ prefix: 'spm:', cursor }); for (const k of l.keys) { const r = await env.SOTD.get(k.name, 'json'); if (r) out.push({ id: k.name.slice(4), rec: r }); } cursor = l.list_complete ? null : l.cursor; } while (cursor);
+  return out;
+}
+async function spAppFor(env, member) {   // the app this member is in, or the first with room ('' when all are full)
+  const apps = await spApps(env), all = await spMembers(env), mine = all.find(x => x.id === member);
+  if (mine && mine.rec.cid && apps.includes(mine.rec.cid)) return mine.rec.cid;
+  const n = {}; for (const x of all) if (x.id !== member) n[x.rec.cid || CLIENT_ID] = (n[x.rec.cid || CLIENT_ID] || 0) + 1;
+  return apps.find(a => (n[a] || 0) < SP_PER_APP) || '';
+}
 async function spLinkStart(url, env) {
   const n = String(url.searchParams.get('n') || '');
   const want = /^[\w-]{20,60}$/.test(n) ? await env.SOTD.get('spn:' + n, 'json') : null;
   if (!want) throw new HttpError(400, 'This link has run out. Go back to Song of the Day and tap Connect Spotify again.');
+  const cid = await spAppFor(env, want.id);
+  if (!cid) throw new HttpError(409, 'Spotify playback is full for now (Spotify lets each app have 5 people). Songs play as previews; John can make room.');
+  want.cid = cid; await env.SOTD.put('spn:' + n, JSON.stringify(want), { expirationTtl: 900 });
   const verifier = b64url(crypto.getRandomValues(new Uint8Array(48)));
   const challenge = b64url(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier)));
   const state = 'm' + n;
-  const q = new URLSearchParams({ client_id: CLIENT_ID, response_type: 'code', redirect_uri: url.origin + '/callback',
+  const q = new URLSearchParams({ client_id: cid, response_type: 'code', redirect_uri: url.origin + '/callback',
     code_challenge_method: 'S256', code_challenge: challenge, state, scope: SP_SCOPES });
   return new Response(null, { status: 302, headers: { Location: 'https://accounts.spotify.com/authorize?' + q,
     'Set-Cookie': 'spkce=' + state + '.' + verifier + '; Path=/callback; Max-Age=900; HttpOnly; Secure; SameSite=Lax', 'Cache-Control': 'no-store' } });
@@ -3232,11 +3259,11 @@ async function spLinkDone(request, url, env) {
   const m = (request.headers.get('Cookie') || '').match(/(?:^|;\s*)spkce=([\w-]+)\.([\w-]+)/);
   if (!m || m[1] !== state || !code) return done('That link ran out', 'Go back to Song of the Day and tap Connect Spotify again.', 'err');
   const r = await fetch('https://accounts.spotify.com/api/token', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ grant_type: 'authorization_code', code, redirect_uri: url.origin + '/callback', client_id: CLIENT_ID, code_verifier: m[2] }) });
+    body: new URLSearchParams({ grant_type: 'authorization_code', code, redirect_uri: url.origin + '/callback', client_id: want.cid || CLIENT_ID, code_verifier: m[2] }) });
   const j = await r.json().catch(() => ({}));
   if (!r.ok || !j.refresh_token) return done('Not connected', 'Spotify didn’t confirm it (' + esc(j.error_description || j.error || String(r.status)) + '). Try again from your profile.', 'err');
   await env.SOTD.delete('spn:' + n);
-  const rec = { rt: j.refresh_token, at: j.access_token, exp: Date.now() + (j.expires_in || 3600) * 1000, linked: Date.now(), on: true };
+  const rec = { rt: j.refresh_token, at: j.access_token, exp: Date.now() + (j.expires_in || 3600) * 1000, linked: Date.now(), on: true, cid: want.cid || CLIENT_ID };
   const me = await fetch(API + '/me', { headers: { Authorization: 'Bearer ' + j.access_token } });
   if (me.ok) { const u = await me.json(); Object.assign(rec, { sid: u.id, name: u.display_name || u.id, email: u.email || '', product: u.product || '' }); }
   else rec.blocked = true;   // (not added in Spotify's dashboard yet)
@@ -3248,7 +3275,7 @@ async function spLinkDone(request, url, env) {
 async function spToken(env, id, rec) {   // a member's Spotify access, refreshed as it runs out (PKCE: the refresh token may change)
   if (rec.at && rec.exp > Date.now() + 60e3) return rec.at;
   const r = await fetch('https://accounts.spotify.com/api/token', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: rec.rt, client_id: CLIENT_ID }) });
+    body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: rec.rt, client_id: rec.cid || CLIENT_ID }) });
   const j = await r.json().catch(() => ({}));
   if (!r.ok) { if (j.error === 'invalid_grant') { rec.gone = true; await env.SOTD.put('spm:' + id, JSON.stringify(rec)); } throw new HttpError(401, 'Spotify needs connecting again.'); }
   Object.assign(rec, { at: j.access_token, exp: Date.now() + (j.expires_in || 3600) * 1000, rt: j.refresh_token || rec.rt });
@@ -3265,6 +3292,7 @@ async function spCall(env, id, rec, method, path, body) {   // { status, json, w
   if (r.status === 403 && (/PREMIUM/i.test(reason) || /premium/i.test(msg))) why = 'premium';
   else if (r.status === 403 && /regist|dashboard/i.test(msg)) why = 'blocked';
   else if (r.status === 404 && (/NO_ACTIVE_DEVICE/.test(reason) || /device/i.test(msg))) why = 'nodevice';
+  else if (r.status === 429) { why = 'busy'; if (/QUOTA_EXCEEDED/.test(reason) || /QUOTA_EXCEEDED/.test(text)) await env.SOTD.put('spquota', String(Date.now()), { expirationTtl: 86400 }).catch(() => {}); }   // (the apps' shared allowance used up: noted for Admin)
   if (why === 'blocked' && !rec.blocked) { rec.blocked = true; await env.SOTD.put('spm:' + id, JSON.stringify(rec)); }
   if (r.ok && rec.blocked && path === '/me') { delete rec.blocked; }
   return { status: r.status, json, why, msg };
@@ -3277,12 +3305,13 @@ async function memberSpotify(request, url, env, answer) {
   let rec = await env.SOTD.get(key, 'json');
   const pub = () => rec ? { linked: true, on: rec.on !== false, blocked: !!rec.blocked, gone: !!rec.gone, name: rec.name || '', product: rec.product || '', email: rec.email || rec.wemail || '' } : { linked: false };
   if (b.op === 'start') {
+    if (!await spAppFor(env, who.id)) return answer(409, { error: 'Spotify playback is full for now: Spotify lets each app have 5 people. Songs play as previews.', full: true });
     const n = b64url(crypto.getRandomValues(new Uint8Array(24)));
     const back = /^https:\/\/cooperking\.github\.io\//.test(String(b.back || '')) ? String(b.back) : SITE_SONGS;
     await env.SOTD.put('spn:' + n, JSON.stringify({ id: who.id, back }), { expirationTtl: 900 });
     return answer(200, { url: new URL(request.url).origin + '/splink?n=' + n });
   }
-  if (!rec) return answer(200, pub());
+  if (!rec) return answer(200, b.op === 'status' ? { linked: false, full: !await spAppFor(env, who.id) } : pub());
   if (b.op === 'status') {
     if (rec.blocked || !rec.product) {   // (perhaps John has added them since: asked again)
       const me = await spCall(env, who.id, rec, 'GET', '/me').catch(() => null);
