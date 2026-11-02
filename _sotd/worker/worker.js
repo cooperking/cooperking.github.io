@@ -3361,6 +3361,10 @@ async function memberSpotify(request, url, env, answer) {
       if (d.why) return answer(409, { why: d.why, error: d.msg });
       const list = d.list.filter(x => !x.restricted), kind = String(b.prefer || ''), brief = d.list;
       let pick = b.device ? list.find(x => x.id === String(b.device)) : null;
+      if (!pick && b.device) {   // the one that played a moment ago, left out of Spotify's list (an iPhone, between songs): tried as it is
+        const t = await spCall(env, who.id, rec, 'PUT', '/me/player/play?device_id=' + encodeURIComponent(String(b.device)), Object.assign({ uris }, b.ms ? { position_ms: Math.max(0, b.ms | 0) } : {}));
+        if (t.status < 300) return answer(200, { ok: true, device: String(b.device), name: String(b.dname || ''), type: String(b.dtype || '') });
+      }
       if (!pick && kind) pick = list.find(x => x.type === kind && x.active) || list.find(x => x.type === kind);
       if (!pick && !kind) pick = list.find(x => x.active) || list[0];
       if (!pick) return answer(409, list.length ? { why: 'notHere', devices: brief, error: 'Spotify isn’t open on this device.' } : { why: 'nodevice', error: 'Spotify isn’t open on any of your devices.' });
