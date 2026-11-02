@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="fbb7c5a7b953">
+<meta name="sotd-build" content="3cfb0802d741">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -154,7 +154,7 @@ html.theatre:not(.tv) .vidfloat { transition: left .25s ease, top .25s ease, wid
 html.theatre.turning .vidfloat { transition: none !important; }
 /* the buttons: in the page's own order, the song's details that don't fit left out */
 html.theatre #sheet .sheet-in { visibility: hidden; box-sizing: border-box; height: 100%; display: flex; flex-direction: column; gap: 12px;
-  padding: max(var(--edge), env(safe-area-inset-top, 0px)) max(var(--edge), env(safe-area-inset-right, 0px)) max(var(--edge), env(safe-area-inset-bottom, 0px)) max(var(--edge), env(safe-area-inset-left, 0px)) !important; }
+  padding: max(var(--edge), env(safe-area-inset-top, 0px), var(--th-top, 0px)) max(var(--edge), env(safe-area-inset-right, 0px), var(--th-right, 0px)) max(var(--edge), env(safe-area-inset-bottom, 0px), var(--th-bottom, 0px)) max(var(--edge), env(safe-area-inset-left, 0px), var(--th-left, 0px)) !important; }
 html.theatre.tvui #sheet .sheet-in { visibility: visible; }
 html.theatre #sheet .sheet-head { flex-wrap: wrap; gap: 10px 12px; }
 html.theatre #sheet .daynav { flex: 0 1 auto; }
@@ -2878,14 +2878,14 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // where this day's song or video has got to, when the song is the whole song (a member's own, or downloaded): a preview is
   // 30 seconds from somewhere in the song, so there's no same place to go on from
   function carryAt(el) {
-    if (!vplay || vplay.el !== el || !vplay.player || !el.sotd || !whole(el.sotd.s)) return 0;
+    if (!vplay || vplay.el !== el || !vplay.player || !el.sotd || !(whole(el.sotd.s) || (typeof spOn === 'function' && spOn()))) return 0;   // (through Spotify: the whole song too)
     var t = 0; try { t = vplay.player.getCurrentTime() || 0; } catch (x) {}
     return t > 3 ? t : 0;
   }
   function carryTo(el, t) { if (t) { resumeAt = t; resumeFor = el.sotd.s.track; } }   // (taken up as it starts playing: vidState)
   // the button's two states: Play as video, and while the video shows, Play as preview (Close video for a song with no preview)
   function watchLabel(el, b, on) {
-    var s = el.sotd.s, pre = !!el.sotd.ui, whole = window.sotdWhole ? window.sotdWhole(s) : false;
+    var s = el.sotd.s, pre = !!el.sotd.ui, whole = (window.sotdWhole ? window.sotdWhole(s) : false) || (typeof spOn === 'function' && spOn() && !s.sx);
     var t = !on ? 'Play as video' : pre ? (whole ? 'Play the song' : 'Play as preview') : 'Close video';
     b.innerHTML = (on && pre ? NOTE_ICON : VIDEO_ICON) + '<span>' + t + '</span>';
     b.setAttribute('aria-label', !on ? 'Play ' + s.title + ' as a video' : pre ? 'Play ' + s.title + (whole ? '' : ' as a preview') : 'Close the video');
@@ -3547,7 +3547,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     SPX.track = id; SPX.list = spxUpcoming(id); SPX.pos = 0; SPX.at = Date.now(); SPX.dur = 0; SPX.playing = false; SPX.busy = true; SPX.dev = null; spxShowDev();
     coverState(3);
     var ld = SPX.pick ? null : SPX.last;   // (the device that played this visit: straight to it again)
-    spCall({ op: 'play', tracks: SPX.list, prefer: spKind(), device: SPX.pick || (ld && ld.id) || undefined, dname: ld && ld.name, dtype: ld && ld.type }).then(function (j) {
+    var from = resumeFor === id && resumeAt > 3 ? Math.round(resumeAt * 1000) : 0;   // (from the video, or a reload: on from the same place)
+    if (from) { resumeAt = 0; resumeFor = ''; SPX.pos = from; }
+    spCall({ op: 'play', tracks: SPX.list, prefer: spKind(), device: SPX.pick || (ld && ld.id) || undefined, dname: ld && ld.name, dtype: ld && ld.type, ms: from || undefined }).then(function (j) {
       SPX.busy = false;
       if (!coverObj.sp || SPX.track !== id) return;
       if (j.status !== 200 && (j.why === 'notHere' || j.why === 'nodevice') && SPX.woke !== id && spxWakeThen(id, 'asleep')) return;
@@ -3700,6 +3702,18 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var want = cover ? vpCover : vpCover.replace(/,?\s*viewport-fit=cover/, '');
     if (vpMeta.content !== want) { vpMeta.content = want; onTurn(); }   // the page's size changes with it: laid out again as it settles
   }
+  // (2 Nov 2026, John: "Full screen mode on vertical mode in the iphone has the area at the top blocked out by battery and
+  // clock, so you can't get out of it"): in the iPhone app the page fills the screen under the clock, and full screen's
+  // viewport change makes the phone report no safe area, so its buttons went under the clock; their room is measured
+  // first and kept (--th-*)
+  function thInsets() {
+    var pr = document.createElement('div');
+    pr.style.cssText = 'position:fixed;left:0;top:0;visibility:hidden;pointer-events:none;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)';
+    document.body.appendChild(pr);
+    var cs = getComputedStyle(pr);
+    ['top', 'right', 'bottom', 'left'].forEach(function (k) { var v = parseFloat(cs['padding' + k[0].toUpperCase() + k.slice(1)]) || 0; root.style.setProperty('--th-' + k, v + 'px'); });
+    pr.remove();
+  }
   function theatreSync() {
     var showing = sheet.open && !bgOn && !vidspot.hidden && vidspot.isConnected, th = fullPref && showing;   // (not with the day closed, playing on)
     root.classList.toggle('vshow', showing);
@@ -3707,6 +3721,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     theatre = th;
     root.classList.toggle('theatre', th);
     if (monthTint) barColour(th ? '#000000' : monthTint);   // Safari's bars black round a full-screen video
+    if (th && NAT) thInsets();   // (the app: the clock's and the corners' room, measured before full screen hides it)
     sides(!th);
     if (!th) { uiDrop(); thClear(); if (!fullPref || !sheet.open) fsLeave(); }
     if (th) { cardReset(); sheet.scrollTop = 0; thPlace(); }
@@ -4126,6 +4141,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       return;
     }
     coverPlayer.off();
+    if (typeof spxShare === 'function') spxShare(false);   // (a video: the app's own sound again)
     var quiet = quietStart();
     if (vd.own) {   // a member: John's own video, in the page's own player
       if (ytPlayer) try { ytPlayer.stopVideo(); } catch (x) {}
