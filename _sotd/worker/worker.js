@@ -3343,27 +3343,34 @@ async function memberSpotify(request, url, env, answer) {
     if (b.op === 'play') {   // these songs, from the first, on the device chosen (else the one playing, else this phone, else any)
       const uris = (Array.isArray(b.tracks) ? b.tracks : []).map(String).filter(t => ID_RE.test(t)).slice(0, 100).map(t => 'spotify:track:' + t);
       if (!uris.length) return answer(400, { error: 'Which songs?' });
-      let dev = String(b.device || '');
-      if (!dev) {
-        const d = await spCall(env, who.id, rec, 'GET', '/me/player/devices');
-        if (d.why) return answer(409, { why: d.why, error: d.msg });
-        const list = (d.json && d.json.devices) || [], pick = list.find(x => x.is_active) || list.find(x => x.type === 'Smartphone' && x.name === b.here) || list.find(x => x.type === 'Smartphone') || list[0];
-        if (!pick) return answer(409, { why: 'nodevice', error: 'Spotify isn’t open on any of your devices.' });
-        dev = pick.id;
-      }
-      const r = await spCall(env, who.id, rec, 'PUT', '/me/player/play?device_id=' + encodeURIComponent(dev), Object.assign({ uris }, b.ms ? { position_ms: Math.max(0, b.ms | 0) } : {}));
+      // which device (John, 2 Nov 2026: it played on a Chrome web player he couldn't see; "can the device it's on be chosen
+      // by default"): the one asked for, else the kind they're on (prefer: Smartphone on a phone, Computer on a computer),
+      // the active one of that kind first; none of that kind open: asked, with what is (notHere), never played elsewhere unasked
+      const d = await spCall(env, who.id, rec, 'GET', '/me/player/devices');
+      if (d.why) return answer(409, { why: d.why, error: d.msg });
+      const list = ((d.json && d.json.devices) || []).filter(x => x.id && !x.is_restricted), kind = String(b.prefer || '');
+      const brief = list.map(x => ({ id: x.id, name: x.name, type: x.type, active: !!x.is_active }));
+      let pick = b.device ? list.find(x => x.id === String(b.device)) : null;
+      if (!pick && kind) pick = list.find(x => x.type === kind && x.is_active) || list.find(x => x.type === kind);
+      if (!pick && !kind) pick = list.find(x => x.is_active) || list[0];
+      if (!pick) return answer(409, list.length ? { why: 'notHere', devices: brief, error: 'Spotify isn’t open on this device.' } : { why: 'nodevice', error: 'Spotify isn’t open on any of your devices.' });
+      const r = await spCall(env, who.id, rec, 'PUT', '/me/player/play?device_id=' + encodeURIComponent(pick.id), Object.assign({ uris }, b.ms ? { position_ms: Math.max(0, b.ms | 0) } : {}));
       if (r.status >= 300) return answer(409, { why: r.why || 'other', error: r.msg || 'Spotify answered ' + r.status });
-      return answer(200, { ok: true, device: dev });
+      return answer(200, { ok: true, device: pick.id, name: pick.name, type: pick.type });
     }
     const simple = { pause: ['PUT', '/me/player/pause'], resume: ['PUT', '/me/player/play'], next: ['POST', '/me/player/next'], prev: ['POST', '/me/player/previous'] };
     if (simple[b.op]) { const r = await spCall(env, who.id, rec, simple[b.op][0], simple[b.op][1]); return answer(r.status < 300 ? 200 : 409, r.status < 300 ? { ok: true } : { why: r.why || 'other', error: r.msg }); }
+    if (b.op === 'transfer') {   // what's playing, moved to another of their devices
+      const r = await spCall(env, who.id, rec, 'PUT', '/me/player', { device_ids: [String(b.device || '')], play: true });
+      return answer(r.status < 300 ? 200 : 409, r.status < 300 ? { ok: true } : { why: r.why || 'other', error: r.msg });
+    }
     if (b.op === 'seek') { const r = await spCall(env, who.id, rec, 'PUT', '/me/player/seek?position_ms=' + Math.max(0, b.ms | 0)); return answer(r.status < 300 ? 200 : 409, r.status < 300 ? { ok: true } : { why: r.why || 'other', error: r.msg }); }
     if (b.op === 'state') {
       const r = await spCall(env, who.id, rec, 'GET', '/me/player');
       if (r.status === 204 || !r.json) return answer(200, { none: true });
       if (r.status !== 200) return answer(409, { why: r.why || 'other', error: r.msg });
       const it = r.json.item || {};
-      return answer(200, { track: it.id || '', pos: r.json.progress_ms || 0, dur: it.duration_ms || 0, playing: !!r.json.is_playing, device: (r.json.device || {}).name || '' });
+      return answer(200, { track: it.id || '', pos: r.json.progress_ms || 0, dur: it.duration_ms || 0, playing: !!r.json.is_playing, device: (r.json.device || {}).name || '', dtype: (r.json.device || {}).type || '', did: (r.json.device || {}).id || '' });
     }
   } catch (e) { return answer(e instanceof HttpError ? e.status : 502, { error: String(e && e.message || e) }); }
   return answer(400, { error: 'What should it do?' });
