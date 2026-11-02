@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="sotd-build" content="fc114798ede4">
+<meta name="sotd-build" content="9c9b8860e69d">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 266 so far">
 <meta name="theme-color" content="#ec135b">
@@ -3402,9 +3402,11 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         } var p = audio.play(); if (p && p.catch) p.catch(function () {}); },
       pauseVideo: function () { if (SPX.bg && spxNB()) { spxNB().pause(); SPX.bg.at += (Date.now() - SPX.bg.t0) / 1000 * (SPX.bg.playing ? 1 : 0); SPX.bg.t0 = Date.now(); SPX.bg.playing = false; coverState(2); return; } if (coverObj.sp) { spxDo('pause', 2); return; } audio.pause(); },
       stopVideo: function () { if (coverObj.sp) { spxSoon(); return; } audio.pause(); },
-      seekTo: function (sec) { if (coverObj.sp) { SPX.pos = sec * 1000; SPX.at = Date.now(); spxCmd('seek', { ms: Math.round(sec * 1000) }); spxShadowSync(); return; } try { audio.currentTime = sec; } catch (x) {} },
+      seekTo: function (sec) {
+        if (SPX.bg && spxNB()) { var B = spxNB(); if (typeof B.seek === 'function') { B.seek({ at: sec }).catch(function () {}); SPX.bg.at = sec; SPX.bg.t0 = Date.now(); } return; }   // (the app's own player has the song: the bar moves it)
+        if (coverObj.sp) { SPX.pos = sec * 1000; SPX.at = Date.now(); spxCmd('seek', { ms: Math.round(sec * 1000) }); spxShadowSync(); return; } try { audio.currentTime = sec; } catch (x) {} },
       getCurrentTime: function () { if (SPX.bg) return SPX.bg.at + (SPX.bg.playing ? (Date.now() - SPX.bg.t0) / 1000 : 0); return coverObj.sp ? spxPos() / 1000 : audio.currentTime || 0; },
-      getDuration: function () { return coverObj.sp ? (SPX.dur || 0) / 1000 : isFinite(audio.duration) ? audio.duration : 0; },
+      getDuration: function () { if (SPX.bg) return SPX.bg.dur || 0; return coverObj.sp ? (SPX.dur || 0) / 1000 : isFinite(audio.duration) ? audio.duration : 0; },
       getPlayerState: function () { return coverObj.state; },
       isMuted: function () { return audio.muted; },
       mute: function () { audio.muted = true; },
@@ -3481,10 +3483,19 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var r = document.getElementById('spvol'), t = 0;
     r.addEventListener('input', function () { clearTimeout(t); t = setTimeout(function () { spCall({ op: 'volume', vol: +r.value, device: r.dataset.dev || undefined }).then(function (j) { if (j.status !== 200) toast(j.error || 'That device won’t let its volume be set from here'); }); }, 250); });
   })();
+  // (2 Nov 2026, John: "make sure this only happens as a fix to the iPhone not when an external Spotify speaker plays"): moved
+  // to another device, the app's silent copy and its hand-over are off; Spotify there gets the whole list from the next song
+  function spxMovedTo(d) {
+    if (!d || /Smartphone|Tablet/.test(d.type || '') && d.type === spKind() && !d.other) return;
+    if (SPX.bgLoaded || SPX.bg || SPX.shadow) spxBgStop();
+    spxShadowOff();
+    SPX.native = false; SPX.pickPhone = false; SPX.list = [SPX.track];
+    spLog('moved to ' + d.name + ': no hand-over to the app');
+  }
   function spDevChange() {   // the chip tapped: move what's playing to another of their devices
     spDevPick(null, 'Playing on ' + ((SPX.dev && SPX.dev.name) || 'your Spotify') + '. Move it to another of your devices:', function (d) {
       if (!coverObj || !coverObj.sp) return;
-      spCall({ op: 'transfer', device: d.id }).then(function (j) { if (j.status === 200) { SPX.dev = { id: d.id, name: d.name }; spxShowDev(); toast('Playing on ' + d.name); } else toast(j.error || 'Spotify didn’t move it'); });
+      spCall({ op: 'transfer', device: d.id }).then(function (j) { if (j.status === 200) { SPX.dev = { id: d.id, name: d.name }; spxMovedTo(d); spxShowDev(); toast('Playing on ' + d.name); } else toast(j.error || 'Spotify didn’t move it'); });
     });
   }
   spChip.addEventListener('click', function (e) { e.stopPropagation(); spDevChange(); });
@@ -3608,7 +3619,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     clearInterval(SPX.poll); clearTimeout(SPX.endT);
     if (coverObj) coverObj.sp = false;
     SPX.playing = false; SPX.native = false; SPX.track = ''; SPX.dev = null; SPX.bgLoaded = ''; spxShowDev();
-    SPX.bg = { track: st.track, at: st.at || 0, t0: Date.now(), playing: !!st.playing, poll: 0 };
+    SPX.bg = { track: st.track, at: st.at || 0, t0: Date.now(), playing: !!st.playing, dur: st.dur || 0, poll: 0 };
     var so = songOf(st.track);
     if (so && !(vplay && vplay.el && vplay.el.sotd && vplay.el.sotd.s.track === st.track)) {
       if (queue) { var qi = queue.list.indexOf(st.track); if (qi >= 0) queue.i = qi; }
@@ -3616,7 +3627,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     }
     spLog('back: the app’s player has “' + (so ? so.title : st.track) + '” at ' + (st.at || 0).toFixed(0) + 's (' + (st.playing ? 'playing' : 'paused') + '); Spotify again from the next song');
     if (so) { var np = document.getElementById('nowplaying'); if (np) np.firstChild && (np.firstChild.textContent = so.title); }
-    SPX.bg.poll = setInterval(function () { if (!SPX.bg || !B) return; B.status().then(function (k) { if (!SPX.bg) return; SPX.bg.at = k.at || 0; SPX.bg.t0 = Date.now(); SPX.bg.playing = !!k.playing; if (coverObj && vplay && vplay.cover) coverState(k.playing ? 1 : 2); }).catch(function () {}); }, 2000);
+    SPX.bg.poll = setInterval(function () { if (!SPX.bg || !B) return; B.status().then(function (k) { if (!SPX.bg) return; SPX.bg.at = k.at || 0; SPX.bg.t0 = Date.now(); SPX.bg.playing = !!k.playing; if (k.dur) SPX.bg.dur = k.dur; if (coverObj && vplay && vplay.cover) coverState(k.playing ? 1 : 2); }).catch(function () {}); }, 2000);
     if (coverObj && vplay && vplay.cover) coverState(st.playing ? 1 : 2);
   }
   function spxBgListen() {   // the native player's song over while the app's in sight: the next song through Spotify (listened for once, as it's first loaded)
@@ -9781,7 +9792,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var c = this; spCall({ op: 'pref', on: c.checked }).then(function (j) { if (j.status === 200) { SPM.st = j; spDraw(); toast(j.on ? 'Songs play through Spotify' : 'Songs play as previews'); } });
   });
   document.getElementById('acspwhere').addEventListener('click', function () {
-    spDevPick(null, 'Choose where songs play this visit (on this device they play where Spotify is open here).', function (d) { toast('Songs play on ' + d.name + ' this visit'); if (coverObj && coverObj.sp && SPX.playing) spCall({ op: 'transfer', device: d.id }).then(function (j) { if (j.status === 200) { SPX.dev = { id: d.id, name: d.name }; spxShowDev(); } }); });
+    spDevPick(null, 'Choose where songs play this visit (on this device they play where Spotify is open here).', function (d) { toast('Songs play on ' + d.name + ' this visit'); if (coverObj && coverObj.sp && SPX.playing) spCall({ op: 'transfer', device: d.id }).then(function (j) { if (j.status === 200) { SPX.dev = { id: d.id, name: d.name }; spxMovedTo(d); spxShowDev(); } }); });
   });
   document.getElementById('acspoff').addEventListener('click', function () {
     var b = this; if (!b.dataset.sure) { b.dataset.sure = '1'; b.textContent = 'Disconnect? Tap again'; setTimeout(function () { delete b.dataset.sure; b.textContent = 'Disconnect'; }, 4000); return; }
