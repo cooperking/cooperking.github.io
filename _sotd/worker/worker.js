@@ -72,6 +72,11 @@ export default {
       if (url.pathname === '/login') return await login(url);
       if (url.pathname === '/splink') return await spLinkStart(url, env);
       if (url.pathname === '/callback') return await callback(request, url, env);
+      if (url.pathname === '/members/spwaiting') {   // how many members wait to be added in Spotify's dashboard (a number only): the Mac task's cheap first look
+        let n = 0, cursor;
+        do { const l = await env.SOTD.list({ prefix: 'spm:', cursor }); for (const k of l.keys) { const r = await env.SOTD.get(k.name, 'json'); if (r && r.blocked && (r.email || r.wemail)) n++; } cursor = l.list_complete ? null : l.cursor; } while (cursor);
+        return new Response(JSON.stringify({ waiting: n }), { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'Access-Control-Allow-Origin': '*' } });
+      }
       if (url.pathname === '/p') return await makePlaylist(request, url, env);
       if (url.pathname === '/status') return await status(env);
       if (url.pathname === '/facts/signed') return await factsSigned(env);
