@@ -9,8 +9,8 @@ l/<track>.m4a in the same R2 bucket: AAC-LC at 192 kbps, the same sample rate, s
 192 kbps is heard as the same as the MP3 by practically everyone, and plays on everything the calendar runs on
 (browsers, iPhones, Android, the Fire TV, Alexa); it's about a quarter smaller, so a song kept offline takes about a
 quarter less room. The Worker plays the copy wherever there is one (/m/a/...), and drops it when a new MP3 is uploaded
-(this then makes a new one). This never changes or deletes an MP3; media_originals.py (by hand) deletes the MP3s whose
-copy has been made, after which the copy is the song.
+(this then makes a new one). Once a copy is up (whole) and the MP3 is still the one it was made from, the MP3 is deleted and the copy
+is the song (John, 2 Nov 2026: only the lighter copies kept); media_originals.py clears any made before that.
 
 Each copy is checked before it goes up: its length within a fifth of a second of the MP3's (the same place in the song
 stays the same place), and smaller than the MP3 (a song already below 192 kbps keeps its MP3 only).
@@ -74,7 +74,7 @@ def main(args):
     # taking a song away on the Songs tab takes its copy too, in the Worker)
     if args:
         tracks = [t for t in tracks if t in args]
-    start, made, kept, failed, before, after = time.time(), 0, [], [], 0, 0
+    start, made, kept, failed, before, after, dropped = time.time(), 0, [], [], 0, 0, 0
     for t in tracks:
         o, c = originals['a/%s.mp3' % t], copies.get('l/%s.m4a' % t)
         if c and c['LastModified'] >= o['LastModified']:
@@ -96,12 +96,18 @@ def main(args):
                 s3.upload_file(dst, BUCKET, 'l/%s.m4a' % t, ExtraArgs={'ContentType': 'audio/mp4'})
                 made += 1; before += os.path.getsize(src); after += os.path.getsize(dst)
                 print('made %s: %.1f MB -> %.1f MB' % (t, os.path.getsize(src) / 1e6, os.path.getsize(dst) / 1e6), flush=True)
+                # then the MP3 goes (John, 2 Nov 2026: "I only want the lighter copies kept"): once the copy is in the bucket
+                # whole, and only if the MP3 is still the one it was made from (one uploaded meanwhile stays, for next time)
+                up, now = s3.head_object(Bucket=BUCKET, Key='l/%s.m4a' % t), s3.head_object(Bucket=BUCKET, Key=o['Key'])
+                if up.get('ContentLength') == os.path.getsize(dst) and now.get('ETag') == o.get('ETag'):
+                    s3.delete_object(Bucket=BUCKET, Key=o['Key']); dropped += 1
+                    print('  the MP3 deleted: the copy is the song now', flush=True)
             except Exception as e:
                 failed.append((t, str(e)[:200]))
     note = lambda m: print(m + ('\n::notice title=Songs, lighter::' + m if os.environ.get('GITHUB_ACTIONS') else ''))   # (also on the run's page)
     if made:
         note('%d copies made: %.0f MB of MP3s -> %.0f MB (%.0f%% smaller)' % (made, before / 1e6, after / 1e6, 100 - after / before * 100))
-    note('%d made, %d kept as MP3 only, %d failed' % (made, len(kept), len(failed)))
+    note('%d made, %d kept as MP3 only, %d failed; %d MP3s deleted once their copy was up' % (made, len(kept), len(failed), dropped))
     for t, e in kept:
         note('kept as MP3 only: %s (%s)' % (t, e))
     for t, e in failed:
