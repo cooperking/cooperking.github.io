@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="9973dbdc8713">
+<meta name="sotd-build" content="2d17a509b32f">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -2728,7 +2728,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     // stop a video that's playing (25 Oct 2026: a tap on Facts in full screen stopped the video, and every tap after
     // did it again). Only on a tap with nothing on, which is also the tap that starts the first song or video.
     if (audioOk || audioTries >= 3 || vplay || coverOn || ownBg || castNow || !audio.paused || audio.getAttribute('src')) return;   // in use (or used: already allowed)
-    if (typeof spOn === 'function' && spOn()) return;   // (playing through Spotify: no sound of its own, which would stop Spotify on this phone)
+    if (typeof spxShare === 'function' && typeof spOn === 'function' && spOn()) spxShare(true);   // (playing through Spotify: its moment of silence shares the phone's sound, so Spotify isn't stopped; and the app can still start a song by itself when the phone locks)
     if (ownVid && !ownVid.paused) return;
     audioOk = true; audioTries++;
     audio.src = SILENT;
@@ -3544,13 +3544,15 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function spxHandOver() {
     if (!coverObj || !coverObj.sp || !SPX.native || !SPX.playing || !vplay || !vplay.cover) return;
     var id = SPX.track, s = songOf(id), t = spxPos() / 1000, src = s && songSrc(s);
-    clearTimeout(SPX.endT); spxCmd('pause');
+    clearTimeout(SPX.endT);
     coverObj.sp = false; SPX.playing = false; SPX.native = false; SPX.track = ''; SPX.dev = null; spxShowDev(); clearInterval(SPX.poll);
-    spxShare(false);
-    if (!src) { coverState(0); return; }   // (nothing of its own to play: on to the next)
+    if (!src) { spxCmd('pause'); spxShare(false); coverState(0); return; }   // (nothing of its own to play: on to the next)
     var full = whole(s);
     audio.src = src + (full && t > 1 ? '#t=' + t.toFixed(2) : '');
-    var p = audio.play(); if (p && p.catch) p.catch(function () { coverState(2); });
+    var p = audio.play();   // (first, while the page may still start sound)
+    if (p && p.catch) p.catch(function (e) { coverState(2); SPX.handFail = String((e && e.name) || e); });
+    spxShare(false);   // (then the phone's sound taken back: Spotify stops as it's taken)
+    var N = spxN(); if (N && N.pause) N.pause().catch(function () {});
   }
   document.addEventListener('visibilitychange', function () { if (document.hidden) spxHandOver(); });
   function spxShare(on) { var N = NAT && NAT.Plugins && NAT.Plugins.SotdSpotify; if (N && typeof N.share === 'function') N.share({ on: !!on }).catch(function () {}); }

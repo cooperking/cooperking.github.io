@@ -9,7 +9,7 @@ import SpotifyiOS
 // own sign-in (authorizeAndPlayURI: a moment in Spotify, then back here at sotdspotify://callback). Then the calendar sends
 // the song and the ones after it through the Web API to this phone, which is awake now. available() says whether Spotify
 // is on the phone. Each of the Song of the Day Spotify apps needs this app's ID (io.github.cooperking.sotd) and the
-// Redirect URI sotdspotify://callback in Spotify's dashboard. From build 32; build 35 works the phone's player itself (state, enqueue, pause, resume, seek, skip); from build 34 the app's own sound shares with Spotify's (share()), so coming back here doesn't stop it.
+// Redirect URI sotdspotify://callback in Spotify's dashboard. From build 32; build 35 works the phone's player itself; build 38 gives up on a hanging connection after 4 seconds (state, enqueue, pause, resume, seek, skip); from build 34 the app's own sound shares with Spotify's (share()), so coming back here doesn't stop it.
 @objc(SotdSpotifyPlugin)
 public class SotdSpotifyPlugin: CAPPlugin, CAPBridgedPlugin, SPTAppRemoteDelegate {
     public let identifier = "SotdSpotifyPlugin"
@@ -42,7 +42,10 @@ public class SotdSpotifyPlugin: CAPPlugin, CAPBridgedPlugin, SPTAppRemoteDelegat
             if r.isConnected, let api = r.playerAPI { run(api); return }
             guard r.connectionParameters.accessToken != nil else { call.reject("notConnected"); return }
             self.waiting.append({ api in if let a = api { run(a) } else { call.reject("notConnected") } })
-            if self.waiting.count == 1 { r.connect() }
+            if self.waiting.count == 1 {
+                r.connect()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 4) { if !r.isConnected && !self.waiting.isEmpty { self.flushWaiting(false) } }   // (a connection that hangs: given up on, not left waiting)
+            }
         }
     }
     private func flushWaiting(_ ok: Bool) {
@@ -125,7 +128,11 @@ public class SotdSpotifyPlugin: CAPPlugin, CAPBridgedPlugin, SPTAppRemoteDelegat
             self.pendingUri = uri
             let r = self.remoteFor(id)
             if r.isConnected { self.playNow(); return }
-            if r.connectionParameters.accessToken != nil { self.authorizing = false; r.connect(); return }   // (a token from before: tried first)
+            if r.connectionParameters.accessToken != nil {   // (a token from before: tried first, for 4 seconds; then Spotify's own sign-in, which wakes it)
+                self.authorizing = false; r.connect()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 4) { if self.pending === call && !r.isConnected && !self.authorizing { r.connectionParameters.accessToken = nil; self.authorize() } }
+                return
+            }
             self.authorize()
         }
     }
