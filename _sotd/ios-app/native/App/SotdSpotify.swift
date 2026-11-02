@@ -9,7 +9,7 @@ import SpotifyiOS
 // own sign-in (authorizeAndPlayURI: a moment in Spotify, then back here at sotdspotify://callback). Then the calendar sends
 // the song and the ones after it through the Web API to this phone, which is awake now. available() says whether Spotify
 // is on the phone. Each of the Song of the Day Spotify apps needs this app's ID (io.github.cooperking.sotd) and the
-// Redirect URI sotdspotify://callback in Spotify's dashboard. From build 32; from build 33 the app's own sound shares with Spotify's (share()), so coming back here doesn't stop it.
+// Redirect URI sotdspotify://callback in Spotify's dashboard. From build 32; from build 34 the app's own sound shares with Spotify's (share()), so coming back here doesn't stop it.
 @objc(SotdSpotifyPlugin)
 public class SotdSpotifyPlugin: CAPPlugin, CAPBridgedPlugin, SPTAppRemoteDelegate {
     public let identifier = "SotdSpotifyPlugin"
