@@ -1,4 +1,5 @@
 import UIKit
+import AVFoundation
 import Capacitor
 import SpotifyiOS
 
@@ -8,14 +9,15 @@ import SpotifyiOS
 // own sign-in (authorizeAndPlayURI: a moment in Spotify, then back here at sotdspotify://callback). Then the calendar sends
 // the song and the ones after it through the Web API to this phone, which is awake now. available() says whether Spotify
 // is on the phone. Each of the Song of the Day Spotify apps needs this app's ID (io.github.cooperking.sotd) and the
-// Redirect URI sotdspotify://callback in Spotify's dashboard. From build 32.
+// Redirect URI sotdspotify://callback in Spotify's dashboard. From build 32; from build 33 the app's own sound shares with Spotify's (share()), so coming back here doesn't stop it.
 @objc(SotdSpotifyPlugin)
 public class SotdSpotifyPlugin: CAPPlugin, CAPBridgedPlugin, SPTAppRemoteDelegate {
     public let identifier = "SotdSpotifyPlugin"
     public let jsName = "SotdSpotify"
     public let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "available", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "wake", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "wake", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "share", returnType: CAPPluginReturnPromise)
     ]
     static let redirect = URL(string: "sotdspotify://callback")!
     private var remote: SPTAppRemote?
@@ -26,6 +28,24 @@ public class SotdSpotifyPlugin: CAPPlugin, CAPBridgedPlugin, SPTAppRemoteDelegat
 
     override public func load() {
         NotificationCenter.default.addObserver(self, selector: #selector(opened(_:)), name: .capacitorOpenURL, object: nil)
+    }
+
+    // the app's own sound shares with Spotify's (John, 2 Nov 2026: Spotify woke, then went quiet as he came back: this app's
+    // audio, set up to take over the phone's sound for songs with the screen locked, took it back from Spotify). on: mixes
+    // with others and lets go of the sound; off: back to taking it over, for its own songs
+    static func setShare(_ on: Bool) {
+        let s = AVAudioSession.sharedInstance()
+        if on {
+            try? s.setCategory(.playback, mode: .default, options: [.mixWithOthers])
+            try? s.setActive(false, options: [.notifyOthersOnDeactivation])
+        } else {
+            try? s.setCategory(.playback, mode: .default, options: [])
+            try? s.setActive(true)
+        }
+    }
+    @objc func share(_ call: CAPPluginCall) {
+        let on = call.getBool("on") ?? true
+        DispatchQueue.main.async { SotdSpotifyPlugin.setShare(on); call.resolve() }
     }
 
     @objc func available(_ call: CAPPluginCall) {
@@ -49,6 +69,7 @@ public class SotdSpotifyPlugin: CAPPlugin, CAPBridgedPlugin, SPTAppRemoteDelegat
     @objc func wake(_ call: CAPPluginCall) {
         guard let id = call.getString("clientId"), id.count == 32, let uri = call.getString("uri"), uri.hasPrefix("spotify:track:") else { call.reject("clientId and uri needed"); return }
         DispatchQueue.main.async {
+            SotdSpotifyPlugin.setShare(true)   // (so coming back here doesn't stop Spotify)
             if let old = self.pending { old.reject("superseded") }
             self.pending = call
             self.pendingUri = uri
@@ -99,6 +120,7 @@ public class SotdSpotifyPlugin: CAPPlugin, CAPBridgedPlugin, SPTAppRemoteDelegat
     }
 
     public func appRemoteDidEstablishConnection(_ appRemote: SPTAppRemote) {
+        SotdSpotifyPlugin.setShare(true)
         if authorizing { authorizing = false; finish(error: nil) }   // (Spotify's already playing the song it was asked for)
         else if pending != nil { playNow() }
     }

@@ -2702,6 +2702,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     // stop a video that's playing (25 Oct 2026: a tap on Facts in full screen stopped the video, and every tap after
     // did it again). Only on a tap with nothing on, which is also the tap that starts the first song or video.
     if (audioOk || audioTries >= 3 || vplay || coverOn || ownBg || castNow || !audio.paused || audio.getAttribute('src')) return;   // in use (or used: already allowed)
+    if (typeof spOn === 'function' && spOn()) return;   // (playing through Spotify: no sound of its own, which would stop Spotify on this phone)
     if (ownVid && !ownVid.paused) return;
     audioOk = true; audioTries++;
     audio.src = SILENT;
@@ -3462,8 +3463,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var j = all.findIndex(function (x) { return x.track === id; }); if (j < 0) return [id];
     return all.slice(j, j + 100).map(function (x) { return x.track; });
   }
+  function spxShare(on) { var N = NAT && NAT.Plugins && NAT.Plugins.SotdSpotify; if (N && typeof N.share === 'function') N.share({ on: !!on }).catch(function () {}); }
   function spxFallback(id, why) {   // their Spotify can't play it: the song as before, this once
-    coverObj.sp = false; spxStop(true);
+    coverObj.sp = false; spxStop(true); spxShare(false);
     if (why && Date.now() - SPX.warned > 60000) { SPX.warned = Date.now(); toast(why); }
     var s = songOf(id), src = s && songSrc(s);
     if (src) { audio.src = src; var p = audio.play(); if (p && p.catch) p.catch(function () { coverState(2); }); return; }
@@ -3507,6 +3509,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   function spxLoad(id) {
     clearTimeout(SPX.pt); SPX.pt = 0;
+    spxShare(true);   // (the iPhone app's own sound lets Spotify keep the phone's sound)
     clearInterval(SPX.poll);
     if (SPX.track === id && SPX.playing && SPX.list.indexOf(id) >= 0) { spxWatch(); coverState(1); return; }   // (Spotify's already on it, having moved on by itself)
     SPX.track = id; SPX.list = spxUpcoming(id); SPX.pos = 0; SPX.at = Date.now(); SPX.dur = 0; SPX.playing = false; SPX.busy = true; SPX.dev = null; spxShowDev();
