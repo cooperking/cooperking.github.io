@@ -684,16 +684,19 @@ async function cfStats(env) {
   return out;
 }
 const BAD_RUN = ['failure', 'timed_out', 'startup_failure', 'action_required'];
-async function jobRuns(env, repo) {   // the latest run of each GitHub job; a failed one with the steps it failed at (repo: another of John's, its name before each)
+async function jobRuns(env, repo) {   // every run of the last two days (John, 2 Nov 2026: "every time a job runs, any failures on the jobs that do run"), and each job's latest however old; a failed one with the steps it failed at (repo: another of John's, its name before each)
   const j = await ghApi(env, '/actions/runs?per_page=100', repo), pre = repo && repo !== REPO ? repo.split('/')[1] + ': ' : '';
-  const seen = {}, out = [];
+  const seen = {}, out = [], since = Date.now() - 2 * 864e5;
   for (const r of j.workflow_runs || []) {
-    if (seen[r.workflow_id]) continue;
+    const latest = !seen[r.workflow_id], at = r.run_started_at || r.created_at;
     seen[r.workflow_id] = true;
-    out.push({ id: r.id, name: pre + r.name, repo: pre ? repo : undefined, st: r.status, res: r.conclusion || '', at: r.run_started_at || r.created_at, end: r.updated_at,
-      url: r.html_url, event: r.event, n: r.run_number, bad: r.status === 'completed' && BAD_RUN.includes(r.conclusion) });
+    if (!latest && Date.parse(at) < since) continue;
+    const failed = r.status === 'completed' && BAD_RUN.includes(r.conclusion);
+    // a problem while it's the job's latest run; an earlier failure is shown, with whether a later run worked
+    out.push({ id: r.id, name: pre + r.name, repo: pre ? repo : undefined, st: r.status, res: r.conclusion || '', at, end: r.updated_at,
+      url: r.html_url, event: r.event, n: r.run_number, bad: latest && failed, failed, later: !latest });
   }
-  await Promise.all(out.filter(r => r.bad).slice(0, 6).map(async r => {
+  await Promise.all(out.filter(r => r.failed).slice(0, 10).map(async r => {
     try {
       const jj = await ghApi(env, '/actions/runs/' + r.id + '/jobs', repo);
       r.steps = [];

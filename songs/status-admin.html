@@ -212,7 +212,7 @@
       var res = r.st !== 'completed' ? ['going', r.st === 'queued' ? 'Waiting' : 'Running'] : (RES[r.res] || ['', r.res || r.st]);
       if (r.bad && r.ack) res = ['dealt', 'Dealt with'];
       out.push(item({ at: r.st === 'completed' ? r.end || r.at : r.at, title: r.name, what: 'job on GitHub, run ' + r.n, st: r.bad ? 'bad' : res[0],
-        badge: res, say: r.bad && r.steps && r.steps.length ? 'Stopped at: ' + r.steps.join(', ') : '', url: r.url, dealt: r }));
+        badge: res, say: r.failed ? (r.steps && r.steps.length ? 'Stopped at: ' + r.steps.join(', ') : 'It failed') + (r.bad ? '' : ' · run again since (see its later run)') : '', url: r.url, dealt: r.bad ? r : null }));
     });
     (j.mails || []).forEach(function (e) {   // emails sent from your Gmail: sign-in codes, and tests
       out.push(item({ at: e.at, title: e.what === 'code' ? 'Email: a sign-in code' : 'Email: a test', what: 'to ' + e.to, by: { t: 'your Gmail' },
@@ -300,20 +300,23 @@
     var w = c.worker;
     if (w) {
       var bad = Object.keys(w.by || {}).filter(function (k) { return k !== 'success' && k !== 'clientDisconnected'; }).map(function (k) { return num(w.by[k]) + ' ' + k.replace(/([A-Z])/g, ' $1').toLowerCase(); });
-      row('Worker', num(w.requests) + ' requests (free plan: 100,000 a day)', w.requests > 90000);
+      row('Worker', num(w.requests) + ' requests · about ' + num(w.requests * 30) + ' a month (your $5 plan: 10 million a month)', w.requests * 30 > 9e6);
       row('Errors', w.errors ? num(w.errors) + (bad.length ? ': ' + bad.join(', ') : '') : 'None', w.errors > 0);
-      row('Work per request', 'CPU ' + (w.cpu50 / 1000).toFixed(1) + ' ms typical, ' + (w.cpu99 / 1000).toFixed(1) + ' ms slowest (free plan: 10 ms)', w.cpu99 > 10000);
+      row('Work per request', 'CPU ' + (w.cpu50 / 1000).toFixed(1) + ' ms typical, ' + (w.cpu99 / 1000).toFixed(1) + ' ms slowest (your plan: up to 30 seconds each; 30 million ms a month included)', w.cpu99 > 25e6);
       row('Calls it made', num(w.subrequests));
     }
     if (c.kv) {
       var rd = c.kv.read || 0, wr = (c.kv.write || 0) + (c.kv['delete'] || 0) + (c.kv.list || 0);
-      row('KV', num(rd) + ' reads (free: 100,000 a day) · ' + num(c.kv.write || 0) + ' writes, ' + num(c.kv['delete'] || 0) + ' deletes, ' + num(c.kv.list || 0) + ' lists (free: 1,000 a day each)', rd > 90000 || (c.kv.write || 0) > 900);
+      row('KV', num(rd) + ' reads · ' + num(c.kv.write || 0) + ' writes, ' + num(c.kv['delete'] || 0) + ' deletes, ' + num(c.kv.list || 0) + ' lists. A month at this rate: ' + num(rd * 30) + ' reads (plan: 10 million), ' + num(wr * 30) + ' writes, deletes and lists (plan: 1 million)', rd * 30 > 9e6 || wr * 30 > 9e5);
     }
-    if (c.r2) Object.keys(c.r2).forEach(function (b) { row('R2 ' + b, size(c.r2[b].bytes) + ' in ' + num(c.r2[b].objects) + ' files (free: 10 GB)', c.r2[b].bytes > 9e9); });
+    if (c.r2) {
+      var tot = 0; Object.keys(c.r2).forEach(function (b) { tot += c.r2[b].bytes; row('R2 ' + b, size(c.r2[b].bytes) + ' in ' + num(c.r2[b].objects) + ' files'); });
+      row('R2 storage', size(tot) + ' in all: 10 GB free, then about $0.015 per GB a month' + (tot > 10e9 ? ' · about $' + ((tot - 10e9) / 1e9 * 0.015).toFixed(2) + ' a month now' : ''));
+    }
     if (c.r2ops) {
       var A = ['PutObject', 'CopyObject', 'CompleteMultipartUpload', 'CreateMultipartUpload', 'UploadPart', 'ListObjects', 'ListBuckets', 'PutBucket', 'ListMultipartUploads', 'ListParts'], a = 0, b = 0;
       Object.keys(c.r2ops).forEach(function (k) { if (A.indexOf(k) >= 0) a += c.r2ops[k]; else if (k !== 'DeleteObject' && k !== 'DeleteObjects') b += c.r2ops[k]; });
-      row('R2 use', num(a) + ' writes and lists · ' + num(b) + ' reads (free: 1 million and 10 million a month)');
+      row('R2 use', num(a) + ' writes and lists · ' + num(b) + ' reads. A month at this rate: ' + num(a * 30) + ' and ' + num(b * 30) + ' (free: 1 million and 10 million a month)', a * 30 > 1e6 || b * 30 > 1e7);
     }
     box.appendChild(dl);
     (c.errs || []).forEach(function (e) { box.appendChild(el('div', 'warn', 'Couldn’t read ' + e)); });
