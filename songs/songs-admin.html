@@ -145,6 +145,24 @@ body.dropping::after { content: 'Drop to match them (nothing goes up yet)'; posi
 .ptiles .acts { display: flex; flex-wrap: wrap; gap: 4px 10px; }
 .ptiles .acts button, .ptiles .acts a { padding: 0; border: 0; background: none; color: inherit; font: 600 10.5px/1.7 var(--sans); letter-spacing: .08em; text-transform: uppercase; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .ptiles .acts .x { color: #e23a6e; }
+/* a tile tapped (John, 2 Nov 2026: "could the pictures disappear and just show the songs ... tabs to see what has files
+   videos and previews of those songs with a way to dismiss and get back to the picture view", and a message to its
+   member with its stats) */
+.pfocus { display: grid; gap: 12px; margin: 0 0 14px; padding: 14px 16px; border-radius: 16px; background: var(--card, #fff); color: var(--ink, #1d0b1e); box-shadow: 0 6px 18px rgba(0,0,0,.12); }
+.pfocus[hidden] { display: none; }
+.pfocus .pf-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.pfocus .pf-back { padding: 8px 14px; border: 1px solid var(--line, rgba(0,0,0,.15)); border-radius: 999px; background: none; color: inherit; font: 600 11px/1 var(--sans); letter-spacing: .1em; text-transform: uppercase; cursor: pointer; }
+.pfocus .pf-name { flex: 1; min-width: 0; font: 500 22px/1.15 var(--serif, Georgia, serif); overflow-wrap: anywhere; }
+.pfocus .pf-sub { font-size: 13px; opacity: .75; }
+.pfocus .pf-tabs, .pfocus .pf-has { display: flex; flex-wrap: wrap; gap: 6px; }
+.pfocus .pf-tabs button, .pfocus .pf-has button { padding: 8px 12px; border: 1px solid var(--line, rgba(0,0,0,.15)); border-radius: 999px; background: none; color: inherit; font: 600 12px/1 var(--sans); cursor: pointer; }
+.pfocus .pf-tabs button[aria-pressed="true"], .pfocus .pf-has button[aria-pressed="true"] { background: #1d0b1e; border-color: #1d0b1e; color: #fff; }
+.pfocus .pf-tabs .n, .pfocus .pf-has .n { margin-left: 6px; opacity: .7; font-variant-numeric: tabular-nums; }
+.pfocus .pf-msg { display: grid; gap: 8px; }
+.pfocus .pf-msg[hidden] { display: none; }
+.pfocus .pf-msg input, .pfocus .pf-msg textarea { width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid var(--line, rgba(0,0,0,.15)); border-radius: 12px; background: var(--field, #fff); color: inherit; font: 15px/1.4 var(--sans); }
+.pfocus .pf-msg textarea { min-height: 120px; resize: vertical; }
+.pfocus .pf-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 </style>
 </head>
 <body>
@@ -178,6 +196,7 @@ body.dropping::after { content: 'Drop to match them (nothing goes up yet)'; posi
     </div>
   </header>
   <ul class="ptiles" id="ptiles" hidden></ul>
+  <div class="pfocus" id="pfocus" hidden></div>
   <ol class="songs" id="list"></ol>
   <p class="empty" id="none" hidden>Nothing here.</p>
 </div>
@@ -611,7 +630,7 @@ body.dropping::after { content: 'Drop to match them (nothing goes up yet)'; posi
   // ---- Member Songs' playlist tiles (moved here from the Members tab: John, 1 Nov 2026): each one's picture (its owner's,
   // else its newest four covers), whose, its state; one still coming in, Importing with its previews, videos and files;
   // its buttons; a tap shows only its songs below (again: all of them). ----
-  var UPLS = [], PUSH = {}, PSEL = null, ptilesT = 0;
+  var UPLS = [], PUSH = {}, PSEL = null, ptilesT = 0, PL = {}, PTAB = 'all', PHAS = true;
   function uplLoad() {
     return api('/members/admin', { op: 'upls' }).then(function (j) { if (j.status === 200) { UPLS = j.upls || []; if (show === 'members') ptilesDraw(); } }).catch(function () {});
   }
@@ -623,7 +642,7 @@ body.dropping::after { content: 'Drop to match them (nothing goes up yet)'; posi
     return d.how === 'fwd' ? ' · a song a day from ' + day : d.how === 'back' ? ' · a song a day back from ' + day : ' · each on the day it was added';
   }
   function ptilesDraw() {
-    var ul = $('ptiles'); ul.hidden = show !== 'members' || !UPLS.length; ul.textContent = '';
+    var ul = $('ptiles'); ul.hidden = show !== 'members' || !UPLS.length || !!PSEL; ul.textContent = '';
     if (ul.hidden) return;
     var busy = false;
     UPLS.forEach(function (u) {
@@ -639,7 +658,7 @@ body.dropping::after { content: 'Drop to match them (nothing goes up yet)'; posi
       tile.appendChild(pic);
       tile.appendChild(el('span', 'nm', u.n));
       tile.appendChild(el('span', 'st', u.o + '’s ' + (u.mode === 'list' ? 'playlist' : 'calendar') + ' · ' + (u.cnt || 0) + (u.cnt === 1 ? ' song' : ' songs') + ' · ' + (u.sh === 'public' ? 'public' : u.sh === 'private' ? 'private' : u.sh === 'some' ? u.shn + ' chosen' : 'every member') + (u.src === 'csv' ? ' · Exportify' : u.src === 'mpl' ? ' · made on the calendar' : '') + dayRule(u.dates)));
-      tile.addEventListener('click', function () { PSEL = PSEL === u.id ? null : u.id; LIMIT = 60; render(); });
+      tile.addEventListener('click', function () { PSEL = u.id; PTAB = 'all'; PHAS = true; LIMIT = 60; render(); window.scrollTo(0, 0); });
       li.appendChild(tile);
       if (coming) {
         var pr = el('div', 'prog');
@@ -670,6 +689,8 @@ body.dropping::after { content: 'Drop to match them (nothing goes up yet)'; posi
     list.textContent = '';
     ptilesDraw();
     var shown = rows().filter(visible);
+    $('pfocus').hidden = !(show === 'members' && PSEL);
+    if (show === 'members' && PSEL) shown = renderFocus(); else
     if (show === 'members') renderByPlaylist(shown); else
     shown.slice(0, LIMIT).forEach(function (s) { list.appendChild(card(s)); });
     fitAll(list);
@@ -685,6 +706,71 @@ body.dropping::after { content: 'Drop to match them (nothing goes up yet)'; posi
   // Member Songs: under each playlist they're on (John, 1 Nov 2026: "In Admin can members songs be shown by the playlist
   // they're in"): his own first, then by member and playlist; each newest day first (a plain playlist: in its order). A
   // song on more than one is under each.
+  // one playlist's songs (a tile tapped): what has files (MP3 or MP4), a video, a preview; back to the pictures
+  function pfSong(x) { var j = null; for (var i = 0; i < songs.length; i++) if (songs[i].id === x.id) { j = songs[i]; break; } return j || MSONGS.filter(function (m) { return m.id === x.id; })[0] || null; }
+  var PF = {
+    files: function (x) { var e = CAT[x.id] || {}; return !!(e.a || e.v); },
+    vids: function (x) { var v = VIDS[x.id]; return /^[\w-]{11}$/.test(String(x.vid || (v && v.v) || v || '')); },
+    pvs: function (x) { var s = pfSong(x); return /^https?:/.test(String(x.p || (s && s.p) || '')); }
+  };
+  function pfStats(u, l) {
+    var n = l.length, c = function (k) { return l.filter(PF[k]).length; }, e = function (k) { return l.filter(function (x) { return (CAT[x.id] || {})[k]; }).length; };
+    return { n: n, files: c('files'), vids: c('vids'), pvs: c('pvs'), a: e('a'), v: e('v'), soon: l.filter(function (x) { return x.f; }).length };
+  }
+  function renderFocus() {
+    var u = UPLS.filter(function (x) { return x.id === PSEL; })[0] || { id: PSEL, n: 'This playlist', o: '?' };
+    var l = (PL[PSEL] || []).slice().sort(function (a, b) { return a.d < b.d ? 1 : a.d > b.d ? -1 : 0; }), st = pfStats(u, l);
+    var box = $('pfocus'), keepMsg = box.querySelector('.pf-msg:not([hidden])'); box.textContent = '';
+    var top = el('div', 'pf-top'), back = el('button', 'pf-back', '‹ All playlists'); back.type = 'button';
+    back.addEventListener('click', function () { PSEL = null; LIMIT = 60; render(); });
+    top.appendChild(back); top.appendChild(el('div', 'pf-name', u.o + '’s ' + u.n)); box.appendChild(top);
+    box.appendChild(el('div', 'pf-sub', st.n + (st.n === 1 ? ' song' : ' songs') + (st.soon ? ' (' + st.soon + ' to come)' : '') + ' · ' + st.pvs + ' previews · ' + st.vids + ' videos · ' + st.a + ' MP3 · ' + st.v + ' MP4'));
+    var tabs = el('div', 'pf-tabs');
+    [['all', 'All', st.n], ['files', 'Files', st.files], ['vids', 'Videos', st.vids], ['pvs', 'Previews', st.pvs]].forEach(function (t) {
+      var b = el('button', '', t[1]); b.type = 'button'; b.setAttribute('aria-pressed', PTAB === t[0] ? 'true' : 'false'); b.appendChild(el('span', 'n', t[0] === 'all' ? String(t[2]) : t[2] + '/' + st.n));
+      b.addEventListener('click', function () { PTAB = t[0]; PHAS = true; LIMIT = 60; render(); }); tabs.appendChild(b);
+    });
+    box.appendChild(tabs);
+    if (PTAB !== 'all') {
+      var has = el('div', 'pf-has'), hn = st[PTAB];
+      [[true, 'Have', hn], [false, 'Missing', st.n - hn]].forEach(function (t) {
+        var b = el('button', '', t[1]); b.type = 'button'; b.setAttribute('aria-pressed', PHAS === t[0] ? 'true' : 'false'); b.appendChild(el('span', 'n', String(t[2])));
+        b.addEventListener('click', function () { PHAS = t[0]; LIMIT = 60; render(); }); has.appendChild(b);
+      });
+      box.appendChild(has);
+    }
+    // a message to its member, with its stats (Members' Message: their inbox, and their phone where notifications are on)
+    var row = el('div', 'pf-row');
+    if (u.oid) { var mb = el('button', 'btn', 'Message ' + u.o); mb.type = 'button'; mb.addEventListener('click', function () { var m = box.querySelector('.pf-msg'); m.hidden = !m.hidden; if (!m.hidden) m.querySelector('input').focus(); }); row.appendChild(mb); }
+    var op = el('a', 'btn', 'Open ↗'); op.href = './#u=' + u.id; op.target = '_blank'; op.rel = 'noopener'; row.appendChild(op);
+    box.appendChild(row);
+    if (u.oid) {
+      var msg = el('div', 'pf-msg'); msg.hidden = !keepMsg;
+      var ti = el('input'); ti.maxLength = 80; ti.value = keepMsg ? keepMsg.querySelector('input').value : 'Your “' + u.n + '”';
+      var tx = el('textarea'); tx.maxLength = 300;
+      tx.value = keepMsg ? keepMsg.querySelector('textarea').value : st.n + (st.n === 1 ? ' song' : ' songs') + (st.soon ? ', ' + st.soon + ' still to come' : '') + '.\n' + st.pvs + ' with a preview, ' + st.vids + ' with a video.\n' + st.a + ' with the song as an MP3, ' + st.v + ' with the video as an MP4.';
+      var sr = el('div', 'pf-row'), sb = el('button', 'btn primary', 'Send'); sb.type = 'button';
+      var cb = el('button', 'btn', 'Cancel'); cb.type = 'button'; cb.addEventListener('click', function () { msg.hidden = true; });
+      sb.addEventListener('click', function () {
+        var title = ti.value.trim(); if (!title) { ti.focus(); return; }
+        ask('Message', 'Send “' + title + '” to ' + u.o + '?', 'Into their inbox, and to their phone if notifications are on. It opens this ' + (u.mode === 'list' ? 'playlist' : 'calendar') + '.', 'Send').then(function (yes) {
+          if (!yes) return;
+          sb.disabled = true;
+          api('/members/admin', { op: 'push', title: title, text: tx.value.trim(), url: 'https://cooperking.github.io/songs/#u=' + u.id, to: [u.oid] }).then(function (j) {
+            sb.disabled = false;
+            if (j.status !== 200) { toast(j.error || 'Couldn’t send it'); return; }
+            toast('Sent to ' + u.o + (j.sent ? ', and on their phone' : ' (in their inbox)')); msg.hidden = true; ti.value = ''; render();
+          }).catch(function () { sb.disabled = false; toast('Couldn’t reach the Worker'); });
+        });
+      });
+      sr.appendChild(sb); sr.appendChild(cb);
+      msg.appendChild(ti); msg.appendChild(tx); msg.appendChild(sr); box.appendChild(msg);
+    }
+    var q = $('q').value.trim().toLowerCase();
+    var out = l.filter(function (x) { return PTAB === 'all' || PF[PTAB](x) === PHAS; }).map(function (x) { return pfSong(x); }).filter(function (s) { return s && (!q || (s.title + ' ' + s.artist).toLowerCase().indexOf(q) >= 0); });
+    out.slice(0, LIMIT).forEach(function (s) { list.appendChild(card(s)); });
+    return out;
+  }
   function renderByPlaylist(shown) {
     var by = {};
     shown.forEach(function (s) { (s.cals || []).forEach(function (c) {
@@ -835,7 +921,7 @@ body.dropping::after { content: 'Drop to match them (nothing goes up yet)'; posi
   }
   [].forEach.call(document.querySelectorAll('[data-show]'), function (b) {
     b.addEventListener('click', function () {
-      show = b.getAttribute('data-show'); LIMIT = 60;
+      show = b.getAttribute('data-show'); LIMIT = 60; PSEL = null;
       [].forEach.call(document.querySelectorAll('[data-show]'), function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
       render();
     });
@@ -1158,9 +1244,11 @@ body.dropping::after { content: 'Drop to match them (nothing goes up yet)'; posi
       if (next && next <= iso) { var nd = new Date(next + 'T12:00:00Z'); nd.setUTCDate(nd.getUTCDate() - 1); iso = nd.toISOString().slice(0, 10); }
       DAYS[asc[di].id] = iso.split('-').reverse().join('-'); next = iso; }
     songs = (r[0].songs || []).slice().reverse(); live = r[1];
-    var johns = {}, by = {}; songs.forEach(function (s) { johns[s.id] = 1; });
+    var johns = {}, by = {}; PL = {}; songs.forEach(function (s) { johns[s.id] = 1; });
     ((r[9] && r[9].songs) || []).forEach(function (x) {   // the songs out on members' playlists that aren't John's: each once, with every calendar it's on
-      if (johns[x.id]) return;
+      var pl = PL[x.pid] = PL[x.pid] || [];
+      if (johns[x.id]) { pl.push({ id: x.id, d: x.d, f: !!x.f, w: !!x.w, p: x.p, vid: x.vid }); return; }
+      pl.push({ id: x.id, d: x.d, f: !!x.f, w: !!x.w, p: x.p, vid: x.vid });
       var m = by[x.id] = by[x.id] || { m: true, id: x.id, title: x.title, artist: x.artist, artists: x.artists || [], aids: x.aids || [], img: x.img, p: x.p, d: x.d, cals: [] };
       m.cals.push({ pid: x.pid, t: x.t, n: x.n, mode: x.mode, o: x.o, oj: !!x.oj, d: x.d, sh: x.sh, w: !!x.w, f: !!x.f });
       if (x.d > m.d) m.d = x.d;
