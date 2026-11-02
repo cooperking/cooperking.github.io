@@ -3320,7 +3320,7 @@ async function spDevices(env, id, rec) {
   if (d.why) return { why: d.why, msg: d.msg, list: [] };
   const raw = ((d.json && d.json.devices) || []).slice();
   const p = await spCall(env, id, rec, 'GET', '/me/player').catch(() => null), now = p && p.status === 200 && p.json && p.json.device;
-  if (now && now.id && !raw.some(x => x.id === now.id)) raw.unshift(Object.assign({}, now, { is_active: true }));
+  if (now && now.id && p.json.is_playing && !raw.some(x => x.id === now.id)) raw.unshift(Object.assign({}, now, { is_active: true }));   // (only while it's really playing: an iPhone asleep in the background stays the 'last device' but won't play)
   return { list: raw.filter(x => x.id).map(x => ({ id: x.id, name: x.name, type: x.type, active: !!x.is_active, restricted: !!x.is_restricted, vol: typeof x.volume_percent === 'number' ? x.volume_percent : null, canVol: x.supports_volume !== false && typeof x.volume_percent === 'number' })) };
 }
 async function memberSpotify(request, url, env, answer) {

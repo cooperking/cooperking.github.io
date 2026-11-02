@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="bb86eb324225">
+<meta name="sotd-build" content="e2201170a336">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -3497,6 +3497,19 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         return;
       }
       SPX.playing = true; SPX.at = Date.now(); SPX.dev = { id: j.device, name: j.name || '' }; spxShowDev(); coverState(1); spxWatch();
+      // (2 Nov 2026, John: "It says it's playing through iphone but it's not"): a device that took the song but didn't start
+      // (an iPhone's Spotify asleep in the background) is found a few seconds on, and said so, rather than shown as playing
+      setTimeout(function () {
+        if (!coverObj.sp || SPX.track !== id) return;
+        spCall({ op: 'state' }).then(function (k) {
+          if (!coverObj.sp || SPX.track !== id || k.status !== 200) return;
+          if (k.playing && k.track === id && k.pos > 300) return;   // (it's playing)
+          SPX.playing = false; coverState(2);
+          var phone = /Smartphone|Tablet/.test(j.type || '');
+          spDevPick(null, phone ? 'Spotify on ' + (j.name || 'this phone') + ' didn’t start: iPhones put Spotify to sleep in the background. Open the Spotify app for a moment (then come back), and play again, or choose another device:'
+            : (j.name || 'That device') + ' didn’t start playing. Choose another device, or check Spotify there:', function () { if (vplay && vplay.cover && coverObj.sp) { SPX.track = ''; spxLoad(id); } });
+        }).catch(function () {});
+      }, 3500);
     }).catch(function () { SPX.busy = false; if (coverObj.sp && SPX.track === id) spxFallback(id, 'Couldn’t reach Spotify just now'); });
   }
   function spxWatch() {   // every few seconds while in sight: where Spotify has got to
