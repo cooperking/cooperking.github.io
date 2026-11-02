@@ -1282,10 +1282,17 @@ async function members(request, url, env) {
       do {
         const l = await env.SOTD.list({ prefix: 'spm:', cursor });
         for (const k of l.keys) { const id = k.name.slice(4), r = await env.SOTD.get(k.name, 'json'); if (!r || !all[id]) continue;
-          out.push({ id, name: all[id].name, blocked: !!r.blocked, gone: !!r.gone, on: r.on !== false, product: r.product || '', sname: r.name || '', email: r.email || r.wemail || '', linked: r.linked || 0, cid: r.cid || CLIENT_ID }); }
+          out.push({ id, name: all[id].name, blocked: !!r.blocked, gone: !!r.gone, on: r.on !== false, product: r.product || '', sname: r.name || '', email: r.email || r.wemail || '', linked: r.linked || 0, cid: r.cid || CLIENT_ID, asked: r.blocked ? await env.SOTD.get('spaskat:' + id, 'json') : null }); }
         cursor = l.list_complete ? null : l.cursor;
       } while (cursor);
       return answer(200, { list: out, apps: await spApps(env), per: SP_PER_APP, redirect: new URL(request.url).origin + '/callback', quota: Number(await env.SOTD.get('spquota')) || 0 });
+    }
+    case 'spask': {   // Admin's "Ask Claude again" (John, 2 Nov 2026: the task ran while his Mac was offline, and doesn't ask twice by itself)
+      const id = String(body.id || ''), r = all[id] && await env.SOTD.get('spm:' + id, 'json');
+      if (!r || !r.blocked) return answer(400, { error: 'not waiting' });
+      await env.SOTD.delete('spask:' + id);
+      await spAskAdd(env, id, r);
+      return answer(200, { asked: await env.SOTD.get('spaskat:' + id, 'json') });
     }
     case 'splog': {   // each member's Spotify steps (their phone's log), for the Members tab
       const out = []; let cursor;
@@ -3307,6 +3314,7 @@ async function spAskAdd(env, id, rec) {
       body: JSON.stringify({ text: 'A member is waiting to be added to Spotify app ' + (n || '?') + '.' }) });
     if (r.ok) await env.SOTD.put('spask:' + id, email, { expirationTtl: 30 * 86400 });
     else console.log('spAskAdd: the task said ' + r.status);
+    await env.SOTD.put('spaskat:' + id, JSON.stringify({ email, at: Date.now(), ok: r.ok, status: r.status }), { expirationTtl: 30 * 86400 });   // (shown in Admin's Members list)
   } catch (e) { console.log('spAskAdd: ' + (e && e.message)); }
 }
 async function spCall(env, id, rec, method, path, body) {   // { status, json, why }: why 'premium', 'nodevice', 'blocked', or ''
