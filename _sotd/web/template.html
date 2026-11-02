@@ -9258,8 +9258,21 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       b.disabled = false; if (!j.url) { toast(j.error || 'Couldn’t start that'); return; }
       var B = NAT && NAT.Plugins && NAT.Plugins.Browser;
       if (B && typeof B.open === 'function') {   // the iPhone app: Spotify's sign-in in a sheet over the app; Done brings it back
-        if (!SPM.bl && typeof B.addListener === 'function') { SPM.bl = true; try { B.addListener('browserFinished', function () { spLoad(); }); } catch (e) {} }
-        B.open({ url: j.url, presentationStyle: 'popover', toolbarColor: '#14806a' }).catch(function () { location.href = j.url; });
+        if (!SPM.bl && typeof B.addListener === 'function') { SPM.bl = true; try { B.addListener('browserFinished', function () { clearInterval(SPM.wait); spLoad(); }); } catch (e) {} }
+        // (2 Nov 2026, John: "I connected spotify and clicked Back to Song of the Day but the window stayed open"): the
+        // sheet closes by itself once the Worker has their sign-in, without waiting for Done
+        var was = JSON.stringify(SPM.st || {}), t0 = Date.now();
+        clearInterval(SPM.wait);
+        SPM.wait = setInterval(function () {
+          if (Date.now() - t0 > 10 * 60e3) { clearInterval(SPM.wait); return; }
+          spCall({ op: 'status' }).then(function (x) {
+            if (x.status !== 200 || !x.linked || JSON.stringify(x) === was) return;
+            clearInterval(SPM.wait); SPM.st = x; spDraw();
+            try { B.close().catch(function () {}); } catch (e) {}
+            toast(x.blocked ? 'Nearly there: give your Spotify email below' : x.product !== 'premium' ? 'Connected, but Spotify needs Premium for whole songs' : 'Spotify connected: songs play through it now');
+          }).catch(function () {});
+        }, 3000);
+        B.open({ url: j.url, presentationStyle: 'popover', toolbarColor: '#14806a' }).catch(function () { clearInterval(SPM.wait); location.href = j.url; });
       } else location.href = j.url;
     }).catch(function () { b.disabled = false; toast('Couldn’t reach the site'); });
   });
