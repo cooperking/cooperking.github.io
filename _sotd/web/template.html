@@ -3456,12 +3456,13 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   spChip.addEventListener('click', function (e) { e.stopPropagation(); spDevChange(); });
   document.getElementById('fabsp').addEventListener('click', function (e) { e.stopPropagation(); spDevChange(); });
   function spxPos() { return Math.min(SPX.dur || Infinity, SPX.pos + (SPX.playing ? Date.now() - SPX.at : 0)); }
-  function spxUpcoming(id) {   // the song and those after it, in the order the page plays them (Spotify takes 100 at most)
-    var out = [];
-    if (queue) { var i = queue.list.indexOf(id), f = flip(); if (i < 0) return [id]; for (var k = i; k >= 0 && k < queue.list.length && out.length < 100; k += f) out.push(queue.list[k]); return out; }
+  function spxUpcoming(id) {   // the song and those after it, in the order the page plays them (Spotify takes 100 at most), up to (not including) one that's no longer on Spotify: that one plays here, as its MP3
+    var out = [], gone = function (t) { var so = songOf(t); return !!(so && so.sx); };
+    if (queue) { var i = queue.list.indexOf(id), f = flip(); if (i < 0) return [id]; for (var k = i; k >= 0 && k < queue.list.length && out.length < 100; k += f) { if (k !== i && gone(queue.list[k])) break; out.push(queue.list[k]); } return out; }
     var all = songs.filter(function (x) { return x.d && x.d <= todayIso; }).slice().sort(function (a, b) { return a.d < b.d ? -1 : a.d > b.d ? 1 : 0; });
     var j = all.findIndex(function (x) { return x.track === id; }); if (j < 0) return [id];
-    return all.slice(j, j + 100).map(function (x) { return x.track; });
+    for (var m = j; m < all.length && out.length < 100; m++) { if (m !== j && all[m].sx) break; out.push(all[m].track); }
+    return out;
   }
   function spxShare(on) { var N = NAT && NAT.Plugins && NAT.Plugins.SotdSpotify; if (N && typeof N.share === 'function') N.share({ on: !!on }).catch(function () {}); }
   function spxFallback(id, why) {   // their Spotify can't play it: the song as before, this once
@@ -3509,6 +3510,11 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   function spxLoad(id) {
     clearTimeout(SPX.pt); SPX.pt = 0;
+    var me = songOf(id);
+    if (me && me.sx) {   // no longer on Spotify: its MP3 (or preview) here, straight away; the next song goes back to Spotify
+      if (SPX.playing) spCall({ op: 'pause' }).catch(function () {});
+      spxFallback(id, ''); return;
+    }
     spxShare(true);   // (the iPhone app's own sound lets Spotify keep the phone's sound)
     clearInterval(SPX.poll);
     if (SPX.track === id && SPX.playing && SPX.list.indexOf(id) >= 0) { spxWatch(); coverState(1); return; }   // (Spotify's already on it, having moved on by itself)
@@ -3547,6 +3553,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         if (!coverObj.sp || SPX.busy || j.status !== 200) return;
         if (j.none) { if (SPX.playing) { SPX.playing = false; SPX.other = true; coverState(2); } return; }   // (nothing playing anywhere now: shown as stopped)
         if (j.track && j.track !== SPX.track) {
+          if (SPX.list.indexOf(j.track) < 0 && SPX.list[SPX.list.length - 1] === SPX.track) {   // (past the end of what it was given: Spotify's own picks; stopped, and on to the next song here)
+            spCall({ op: 'pause' }).catch(function () {}); SPX.playing = false; coverState(0); return;
+          }
           if (SPX.list.indexOf(j.track) > SPX.list.indexOf(SPX.track)) {   // Spotify moved on by itself: the page follows (its next song is this one)
             SPX.track = j.track; SPX.pos = j.pos; SPX.at = Date.now(); SPX.dur = j.dur; SPX.playing = j.playing;
             coverState(0); return;
