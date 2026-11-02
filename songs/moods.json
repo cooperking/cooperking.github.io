@@ -7,7 +7,7 @@
    3
   ],
   "audio": [
-   149,
+   150,
    257
   ],
   "artistTags": [
@@ -2116,7 +2116,7 @@
    "sound": [
     "Dreamy",
     "Joyful",
-    "Uplifting"
+    "Mellow"
    ],
    "claude": [
     "Bittersweet",
@@ -5684,8 +5684,8 @@
    ],
    "moodFrom": "Claude (researched)",
    "sound": [
-    "Romantic",
     "Mellow",
+    "Romantic",
     "Melancholy"
    ],
    "claude": [
@@ -7195,7 +7195,7 @@
     "r&b",
     "soul"
    ],
-   "checkWhy": "Mellow, but the audio sounds livelier than 94% of the songs",
+   "checkWhy": "Mellow, but the audio sounds livelier than 93% of the songs",
    "check": true
   },
   "3lJ70fh0ENq6hzgtOfOGYZ": {
@@ -9861,7 +9861,7 @@
    "sound": [
     "Uplifting",
     "Bittersweet",
-    "Joyful"
+    "Melancholy"
    ],
    "claude": [
     "Dreamy",
@@ -10413,7 +10413,7 @@
    "sound": [
     "Energetic",
     "Joyful",
-    "Uplifting"
+    "Dark"
    ],
    "claude": [
     "Energetic"
@@ -14157,8 +14157,8 @@
    "moodFrom": "Claude",
    "sound": [
     "Dark",
-    "Energetic",
-    "Melancholy"
+    "Melancholy",
+    "Energetic"
    ],
    "claude": [
     "Uplifting",
@@ -15400,7 +15400,7 @@
     "pop",
     "synth-pop"
    ],
-   "checkWhy": "Mellow, but the audio sounds livelier than 88% of the songs",
+   "checkWhy": "Mellow, but the audio sounds livelier than 87% of the songs",
    "check": true
   },
   "748yv6bb3l3CcKS45a6SZ8": {
@@ -17830,7 +17830,7 @@
    "sound": [
     "Joyful",
     "Energetic",
-    "Playful"
+    "Romantic"
    ],
    "claude": [
     "Romantic",
@@ -18138,8 +18138,8 @@
    ],
    "moodFrom": "Claude",
    "sound": [
-    "Mellow",
     "Dreamy",
+    "Mellow",
     "Melancholy"
    ],
    "claude": [
@@ -20202,8 +20202,8 @@
    ],
    "moodFrom": "Claude (researched)",
    "sound": [
-    "Joyful",
     "Playful",
+    "Joyful",
     "Energetic"
    ],
    "claude": [
@@ -26277,11 +26277,11 @@
      45
     ],
     [
-     "Playful",
+     "Dreamy",
      13
     ],
     [
-     "Dreamy",
+     "Playful",
      13
     ]
    ],
@@ -26295,11 +26295,11 @@
        45
       ],
       [
-       "Playful",
+       "Dreamy",
        13
       ],
       [
-       "Dreamy",
+       "Playful",
        13
       ]
      ]
@@ -26308,8 +26308,8 @@
    "moodFrom": "Weighed up",
    "sound": [
     "Joyful",
-    "Playful",
-    "Dreamy"
+    "Dreamy",
+    "Playful"
    ],
    "listeners": "none",
    "styles": [
@@ -26499,7 +26499,7 @@
     ],
     [
      "Romantic",
-     27
+     28
     ],
     [
      "Melancholy",
@@ -26517,7 +26517,7 @@
       ],
       [
        "Romantic",
-       27
+       28
       ],
       [
        "Melancholy",
@@ -26729,7 +26729,7 @@
     ],
     [
      "Dark",
-     15
+     16
     ],
     [
      "Playful",
@@ -26747,7 +26747,7 @@
       ],
       [
        "Dark",
-       15
+       16
       ],
       [
        "Playful",
@@ -27101,6 +27101,143 @@
    ],
    "musicbrainz": [
     "indie pop"
+   ],
+   "check": true
+  },
+  "37d8EPbS6y4PUjdrBeKO7k": {
+   "n": 266,
+   "title": "We Need a Bigger Dumpster",
+   "artist": "Cheekface",
+   "moods": [
+    "Joyful",
+    "Energetic"
+   ],
+   "moodMix": [
+    [
+     "Joyful",
+     37
+    ],
+    [
+     "Energetic",
+     37
+    ],
+    [
+     "Playful",
+     18
+    ]
+   ],
+   "moodEvidence": [
+    [
+     "Audio",
+     100,
+     [
+      [
+       "Joyful",
+       37
+      ],
+      [
+       "Energetic",
+       37
+      ],
+      [
+       "Playful",
+       18
+      ]
+     ]
+    ]
+   ],
+   "moodFrom": "Weighed up",
+   "sound": [
+    "Joyful",
+    "Energetic",
+    "Playful"
+   ],
+   "listeners": "none",
+   "styles": [
+    "Brit Pop",
+    "Indie Rock",
+    "Pop Rock"
+   ],
+   "genres": [
+    "Indie"
+   ],
+   "genreFrom": "Weighed up",
+   "genreMix": [
+    [
+     "Indie",
+     65
+    ],
+    [
+     "Rock",
+     18
+    ],
+    [
+     "Pop",
+     17
+    ]
+   ],
+   "genreEvidence": [
+    [
+     "MusicBrainz",
+     50,
+     [
+      [
+       "Indie",
+       83
+      ],
+      [
+       "Rock",
+       11
+      ],
+      [
+       "Pop",
+       6
+      ]
+     ]
+    ],
+    [
+     "Last.fm",
+     30,
+     [
+      [
+       "Indie",
+       50
+      ],
+      [
+       "Rock",
+       39
+      ],
+      [
+       "Pop",
+       11
+      ]
+     ]
+    ],
+    [
+     "Audio",
+     20,
+     [
+      [
+       "Pop",
+       52
+      ],
+      [
+       "Indie",
+       42
+      ],
+      [
+       "Rock",
+       6
+      ]
+     ]
+    ]
+   ],
+   "musicbrainz": [
+    "alternative rock",
+    "indie",
+    "indie rock",
+    "post-punk",
+    "power pop"
    ],
    "check": true
   }
