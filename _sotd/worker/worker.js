@@ -4660,7 +4660,11 @@ async function uplDlPlan(env, member, U) {
     for (const x of d.songs || []) if (!uplGone(d, x) && !john.has(x.id) && !at.has(x.id)) at.set(x.id, Date.parse(x.a) || 0);
   }
   const ids = [...at.keys()], has = ids.filter(t => own.has(t) || (cat[t] && (cat[t].a || cat[t].v)));
-  const hs = new Set(has), rest = ids.filter(t => !hs.has(t)).sort((a, b) => at.get(b) - at.get(a));
+  // the rest: songs with a video to download from first (newest first), then the others, so the allowance goes on songs
+  // that can have files now, not on new ones still waiting for a video (John, 3 Nov 2026: "I'd have expected her to have
+  // 366 mp3 and mp4s"; 212 of her newest 366 had no video yet while 269 older ones did)
+  const meta = (await env.SOTD.get('uplmeta', 'json')) || {}, JV = await ytJohnVids(), vid = t => !!((meta[t] && meta[t].vid) || (JV[t] && JV[t].v));
+  const hs = new Set(has), rest = ids.filter(t => !hs.has(t)).sort((a, b) => (vid(b) - vid(a)) || (at.get(b) - at.get(a)));
   const allowed = new Set(has.concat(rest.slice(0, Math.max(0, most - has.length))));
   return { u: Math.min(most, ids.length), allowed, john };
 }
