@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="0d7e454fb960">
+<meta name="sotd-build" content="92aa78dcca6d">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -480,6 +480,13 @@ html.big.page-edit .uplprog { right: calc(var(--pe-w) + 44px); }
 @keyframes uplshine { to { transform: translateX(100%); } }
 @media (prefers-reduced-motion: reduce) { .uplprog-rows .now .bar::after, .uplprog-rows .now .ic::after { animation: none; } }
 .uplprog-rows .bar.sm { height: 5px; margin: 0; }
+.uplprog-rows .jobline.bad .ic { background: #e23a6e; box-shadow: none; }
+.uplprog-rows .jobline.bad .ic::after { content: "!"; color: #fff; font: 700 11px/1 var(--sans); }
+.uplprog-rows .jobline.bad .ct { color: #ff8fb0; font-weight: 700; }
+.uplprog-rows .jobline .jobwhy { grid-column: 2 / -1; margin: 4px 0 0; padding: 8px 10px; border-radius: 8px; background: rgba(0, 0, 0, .25); font: 11px/1.4 ui-monospace, Menlo, monospace; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 140px; overflow-y: auto; }
+.uplprog-rows .jobline a.which { text-decoration: underline; }
+.missjob { list-style: none; margin: 0 0 10px; padding: 8px 12px; border-radius: 12px; background: var(--pill-bg); box-shadow: inset 0 0 0 1px var(--line); }
+.missjob[hidden] { display: none; }
 .uplprog-rows .fl { display: grid; grid-template-columns: 44px 1fr auto; gap: 8px; align-items: center; font-size: 12px; color: var(--fg-2); }
 .uplprog-rows .fl .n { font-variant-numeric: tabular-nums; }
 .uplprog-t[hidden] { display: none; }
@@ -2174,6 +2181,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     <div class="misstabs" id="misstabs" role="tablist"></div>
     <p class="misstip" id="misstip"></p>
     <div class="ask-acts" id="missretryl" hidden><button class="copy ghost" id="missretry" type="button">Look again</button></div>
+    <ul class="uplprog-rows missjob" id="missjob" hidden></ul>
     <ul class="missl" id="missl"></ul>
     <p class="missnone" id="missnone" hidden></p>
   </div>
@@ -7967,6 +7975,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       own.appendChild(row);
     });
     r.appendChild(own);
+    if (MEMBER && MEMBER.owner === true) { var jl = document.createElement('li'); jl.className = 'st jobline'; r.appendChild(jl); jobDraw(jl); }   // (John: the site job itself, running or how it ended)
     box.classList.toggle('done', !more);
     document.getElementById('uplprogh').textContent = more ? 'Getting your playlist ready' : 'Your playlist is ready';
     document.getElementById('uplprogt').textContent = more ? '' : 'Everything that could be found is in. Add your own MP3s and MP4s from each song’s ••• menu.';
@@ -7985,6 +7994,38 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // they are. You should be able to cancel a search for something too"): each with Stop looking (op skip: counted as
   // none found, so the part can finish)
   var STOP_TIP = { p: 'Still being looked up on Spotify. Stop looking for one to count it as having no preview.', v: 'Still to be searched for on YouTube. Stop looking for one to leave it without a video (you can still give it a link or an MP4).', m: 'Still to be listened to. Stop looking for one to leave it without moods and genres.', y: 'Still to be looked up. Stop looking for one to leave it without a year.' };
+  // the site job finding members' videos, years and moods, for John (John, 3 Nov 2026: "can I see some progress of the jobs
+  // running finding videos? If it fails i'd like to know why"): running at which step, or how its last run ended, and why
+  var JOBS = { at: 0, v: null, busy: false };
+  function jobLook(then) {
+    if (JOBS.busy) return; if (JOBS.v && Date.now() - JOBS.at < 50e3) { then(); return; }
+    JOBS.busy = true;
+    uplCall({ op: 'jobs', id: UPL.on || '' }).then(function (j) { JOBS.busy = false; JOBS.at = Date.now(); JOBS.v = j; then(); }, function () { JOBS.busy = false; });
+  }
+  function jobDraw(el) {
+    var draw = function () {
+      var v = JOBS.v, run = v && v.run; el.textContent = '';
+      var ic = document.createElement('span'); ic.className = 'ic'; ic.setAttribute('aria-hidden', 'true'); el.appendChild(ic);
+      var b = document.createElement('b'); b.textContent = 'Site job'; el.appendChild(b);
+      var ct = document.createElement('span'); ct.className = 'ct'; el.appendChild(ct);
+      var tx = document.createElement('span'); tx.className = 'tx'; el.appendChild(tx);
+      if (!v) { tx.textContent = 'Looking…'; return; }
+      if (!run) { tx.textContent = v.error ? 'Couldn’t see it: ' + v.error : 'No runs yet.'; return; }
+      var hm = function (t) { return t ? new Date(t).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : ''; };
+      var jobs = run.jobs || [], now = jobs.filter(function (j) { return j.st === 'in_progress'; })[0], bad = jobs.filter(function (j) { return j.bad && j.bad.length; });
+      if (run.st !== 'completed') {
+        el.classList.add('now'); ct.textContent = 'running';
+        tx.textContent = now ? now.name + ': ' + (now.step || 'starting') + (now.since ? ' (since ' + hm(now.since) + ')' : '') : 'Waiting to start (run ' + run.n + ', ' + hm(run.at) + ')';
+      } else if (bad.length) {
+        el.classList.add('bad'); ct.textContent = 'failed';
+        tx.textContent = 'Run ' + run.n + ' failed at ' + hm(run.end) + ': ' + bad.map(function (j) { return j.bad.join(', '); }).join('; ') + '.';
+        var why = [].concat.apply([], bad.map(function (j) { return j.why || []; }));
+        if (why.length) { var pre = document.createElement('pre'); pre.className = 'jobwhy'; pre.textContent = why.join('\n'); el.appendChild(pre); }
+      } else { el.classList.add('done'); ct.textContent = run.res === 'success' ? 'done' : run.res; tx.textContent = 'Run ' + run.n + ' ' + (run.res === 'success' ? 'finished' : 'ended: ' + run.res) + ' at ' + hm(run.end) + '. The next one starts as songs come in.'; }
+      var a = document.createElement('a'); a.className = 'which'; a.href = run.url; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'Open the run ↗'; el.appendChild(a);
+    };
+    draw(); jobLook(draw);
+  }
   function uplWhich(li, x, ids, left) {   // the songs a part found nothing for, a tap away (John, 1 Nov 2026: "can we have it say which ones they are")
     var key = x.w + (left ? 'l' : ''), open = !!PROG.open && PROG.open[key];
     var label = function (o) { return (o ? 'Hide' : left ? 'Show which are left' : 'Show which') + (ids.length > 1 ? ' (' + ids.length + ')' : ''); };
@@ -8092,6 +8133,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       tabs.appendChild(b);
     });
     var m = MISS_KINDS.filter(function (x) { return x.k === MISS.k; })[0], list = L[m.k];
+    var mj = document.getElementById('missjob'); mj.hidden = !(MEMBER && MEMBER.owner === true); if (!mj.hidden) { mj.textContent = ''; var jli = document.createElement('li'); jli.className = 'st jobline'; mj.appendChild(jli); jobDraw(jli); }
     var rb = document.getElementById('missretry'); document.getElementById('missretryl').hidden = !(MEMBER && MEMBER.owner === true) || !(m.k === 'p' || m.k === 'v') || !list.length;   // (John only)
     rb.textContent = m.k === 'p' ? 'Look again for previews' : 'Look again for videos'; rb.disabled = false;
     // still being looked for (previews and videos: the progress's left), apart from those with none found (John, 3 Nov 2026: "If it's still being looked up that needs to be seen")

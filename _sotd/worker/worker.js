@@ -4254,6 +4254,31 @@ async function memberUpl(request, url, env, answer) {
     await startJob(env, null, null, 0, null, true).catch(() => {});   // the site job: its videos, moods, years and YouTube copy
     return answer(200, { ok: true, id: pid, st: 'ok', pls: await uplMine(env, uplList(all, me, U), U), view: await uplView(env, all, me, pid, rec) });
   }
+  if (body.op === 'jobs') {   // John: the site job finding videos, years and moods for members' playlists: running (at which step), or how its last run ended and, failed, where and why (John, 3 Nov 2026: "If it fails i'd like to know why")
+    if (me !== (await env.SOTD.get('owner'))) return answer(403, { error: 'Only John can see that.' });
+    const hit = await env.SOTD.get('jobsee', 'json');
+    if (hit && Date.now() - hit.at < 45e3) return answer(200, hit.v);
+    try {
+      const runs = (await ghApi(env, '/actions/workflows/song-tags.yml/runs?per_page=5')).workflow_runs || [];
+      const r = runs.find(x => x.status !== 'completed') || runs[0];
+      if (!r) return answer(200, { run: null });
+      const jj = await ghApi(env, '/actions/runs/' + r.id + '/jobs'), out = { st: r.status, res: r.conclusion || '', at: r.run_started_at || r.created_at, end: r.updated_at, url: r.html_url, n: r.run_number, jobs: [] };
+      for (const j of jj.jobs || []) {
+        const now = (j.steps || []).find(x => x.status === 'in_progress'), bad = (j.steps || []).filter(x => BAD_RUN.includes(x.conclusion)).map(x => x.name);
+        const o = { name: j.name, st: j.status, res: j.conclusion || '', step: now ? now.name : '', since: now ? now.started_at : '', bad, url: j.html_url };
+        if (bad.length) {   // why: the last lines of its log that say what went wrong
+          try {
+            const lr = await fetch('https://api.github.com/repos/' + REPO + '/actions/jobs/' + j.id + '/logs', { headers: { Authorization: 'Bearer ' + env.GH_TOKEN, Accept: 'application/vnd.github+json', 'User-Agent': 'SongOfTheDayWorker' } });
+            if (lr.ok) { const lines = (await lr.text()).split('\n').map(l => l.replace(/^\S+Z\s/, '').trim()).filter(Boolean); const err = lines.filter(l => /error|fail|quota|denied|refused|exceeded|traceback|exception|not found|forbidden|timed out|429|403|500/i.test(l) && !/^##\[group\]|Post job/.test(l)); o.why = (err.length ? err : lines).slice(-6).map(l => l.slice(0, 300)); }
+          } catch (e) {}
+        }
+        out.jobs.push(o);
+      }
+      const v = { run: out };
+      await kvSoft(env, 'jobsee', JSON.stringify({ at: Date.now(), v }), { expirationTtl: 300 });
+      return answer(200, v);
+    } catch (e) { return answer(200, { run: null, error: String(e && e.message || e) }); }
+  }
   if (body.op === 'retry') {   // John's Look again, from Missing (John, 3 Nov 2026: "restart a job on any playlist that has missing items ... Only me"): its songs with no preview or video looked for again
     if (me !== (await env.SOTD.get('owner'))) return answer(403, { error: 'Only John can do that.' });
     const pid = String(body.id || ''), rec = U[pid]; if (!rec) return answer(404, { error: 'No such playlist.' });
