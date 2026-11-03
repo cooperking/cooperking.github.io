@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="4095829b0364">
+<meta name="sotd-build" content="1e2aa2b8744c">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -355,7 +355,8 @@ html.upl #monthdl, html.upl-noshare #siteshare, html.upl-noshare #monthshare, ht
 html.big .cal.has-edit { grid-template-rows: auto auto minmax(0, 1fr); }
 .caledit .upleditbtn { height: 34px; margin: 0 0 10px; }
 html.big .cal .caledit { display: flex; align-items: center; gap: 8px; }
-html.big .cal { grid-template-rows: auto auto minmax(0, 1fr); }   /* (its row always there on a computer: Add to My playlist) */   /* (a computer: the month's Add to My playlist always here, with Edit and Missing on their own) */
+html.big .cal { grid-template-rows: auto auto minmax(0, 1fr); }   /* (its row always there on a computer: Add to My playlist) */
+html.big.page-edit .cal { grid-template-rows: auto minmax(0, 1fr); }   /* (editing: that row's hidden, so the days get the room, not squashed to nothing: John, 3 Nov 2026) */   /* (a computer: the month's Add to My playlist always here, with Edit and Missing on their own) */
 html.big .caledit .monthadd { height: 34px; margin: 0 auto 10px 0; }
 html.big .caledit .monthadd[hidden] { display: none; }
 html.upl-editing #grid .day { touch-action: none; -webkit-user-select: none; user-select: none; }
@@ -583,6 +584,11 @@ html.upl-list .side-acts .listbtn { display: inline-grid; }
 .imp-card .ct { font-size: 12px; color: var(--muted); }
 .imp-card .by { margin-top: -3px; font-size: 12px; font-weight: 600; color: var(--fg); overflow-wrap: anywhere; }
 .imp-card .by[hidden] { display: none; }
+.imp-all { display: grid; gap: 8px; padding: 12px 14px; border-radius: 14px; background: var(--pill-bg); box-shadow: inset 0 0 0 1.5px var(--fg); }
+.imp-all[hidden] { display: none; }
+.imp-all p { margin: 0; font-size: 13px; line-height: 1.45; color: var(--fg); }
+.imp-all .copy { justify-self: start; }
+.imp-card.up .imp-mos { box-shadow: 0 0 0 2px var(--fg); }
 .imp-card .tag { justify-self: start; max-width: 100%; padding: 3px 9px; border-radius: 999px; background: var(--pill-bg); box-shadow: inset 0 0 0 1px var(--line); color: var(--fg); font: 600 10px/1.4 var(--sans); letter-spacing: .08em; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }   /* (quiet, as the rest of the pop-up: John, 3 Nov 2026) */
 .imp-mos { position: relative; display: grid; grid-template-columns: 1fr 1fr; aspect-ratio: 1; border-radius: 10px; overflow: hidden; background: var(--tile); box-shadow: 0 4px 14px var(--shadow); }
 .imp-mos img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -2314,6 +2320,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       <h3>Choose a playlist</h3>
       <p class="msgv-w" id="uplipickt"></p>
       <div class="imp-kept" id="uplikept" hidden><span id="uplikeptt"></span><button class="imp-alt" id="upliupd" type="button">Update the file</button></div>
+      <div class="imp-all" id="upliall" hidden><p id="upliallt"></p><button class="copy" id="upliallb" type="button"></button></div>
       <label class="imp-search" id="uplisearchl" hidden><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3 3"/></svg><input id="uplisearch" type="search" placeholder="Find a playlist" autocomplete="off" spellcheck="false" aria-label="Find a playlist"></label>
       <div class="imp-grid" id="upligrid" role="list"></div>
       <p class="imp-none" id="uplipicknone" hidden>No playlist by that name.</p>
@@ -9886,14 +9893,22 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     document.getElementById('uplipickback').textContent = kept ? 'Choose a file' : 'Another file';
     q.value = '';
     grid.textContent = '';
+    // theirs on the calendar from this file first, marked to update, and all of them updated with one tap (John, 3 Nov 2026)
+    lists = IMP.lists = lists.slice().sort(function (a, b) { return (impMineOf(b) ? 1 : 0) - (impMineOf(a) ? 1 : 0); });
+    var ups = lists.filter(function (l) { return impMineOf(l); }), all = document.getElementById('upliall');
+    all.hidden = !ups.length;
+    if (ups.length) {
+      document.getElementById('upliallt').textContent = (ups.length === 1 ? 'Yours on the calendar from this download: ' : ups.length + ' of yours on the calendar are in this download: ') + andList(ups.map(function (l) { return impPlName(impMineOf(l)); })) + '.';
+      document.getElementById('upliallb').textContent = ups.length === 1 ? 'Update it' : 'Update all ' + ups.length;
+    }
     lists.forEach(function (l) {
-      var b = document.createElement('button'); b.type = 'button'; b.className = 'imp-card'; b.setAttribute('role', 'listitem'); b._l = l;
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'imp-card' + (impMineOf(l) ? ' up' : ''); b.setAttribute('role', 'listitem'); b._l = l;
       var m = document.createElement('span'); m.className = 'imp-mos'; impMos(m, l.songs); b.appendChild(m);
       var nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = l.name; b.appendChild(nm);
       var by = document.createElement('span'); by.className = 'by'; by.textContent = impBy(l); by.hidden = !by.textContent; b.appendChild(by); b._by = by;
       var ct = document.createElement('span'); ct.className = 'ct'; ct.textContent = l.all.toLocaleString('en-GB') + (l.all === 1 ? ' song' : ' songs'); b.appendChild(ct);
       var tgt = impTarget(), mn = impMineOf(l);
-      var upd = mn && (!tgt || mn.id === tgt.id);   // (only the one it would update: John, 3 Nov 2026, not an Add to on every card)
+      var upd = !!mn;   // (only the ones it would update: John, 3 Nov 2026, not an Add to on every card)
       if (upd) { var t = document.createElement('span'); t.className = 'tag'; t.textContent = 'Update ' + impPlName(mn); b.appendChild(t); }
       b.setAttribute('aria-label', l.name + (by.textContent ? ', ' + by.textContent.replace(/^By/, 'by') : '') + ', ' + ct.textContent + (upd ? ', ' + t.textContent : ''));
       b.addEventListener('click', function () { impGot(l); });
@@ -9979,6 +9994,27 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   impDlg.addEventListener('close', function () { IMP.away = false; IMP.lists = null; IMP.pick = null; clearInterval(IMP.poll); IMP.win = null; impForget(); });
   document.getElementById('upliclose').addEventListener('click', function () { closeDialog(impDlg); });
   document.getElementById('upligo').addEventListener('click', impAway);
+  document.getElementById('upliallb').addEventListener('click', function () {   // every one of theirs in the file, updated in turn
+    var b = this, ups = (IMP.lists || []).filter(function (l) { return impMineOf(l); }); if (!ups.length || IMP.busy) return;
+    IMP.busy = true; b.disabled = true; var fresh = 0, done = 0, failed = [], last = null, label = b.textContent;
+    var next = function (i) {
+      if (i >= ups.length) {
+        IMP.busy = false; b.disabled = false; b.textContent = label;
+        if (last && last.pls) { MEMBER.pls = last.pls; uplMark(); uplWaitCount(); if (acct.open) uplDrawAcct(); }
+        if (UPL.on && last && last.view && last.view.id === UPL.on) uplRefreshViews(UPL.on, last.view); else if (UPL.on && ups.some(function (l) { return impMineOf(l) && impMineOf(l).id === UPL.on; })) uplShow(UPL.on);
+        impForget(); closeDialog(impDlg);
+        toast('Updated ' + done + (done === 1 ? '' : ' of ' + ups.length) + ': ' + (fresh ? (fresh === 1 ? '1 new song waits' : fresh + ' new songs wait') + ' for you to sign off' : 'no new songs') + (failed.length ? '. Not updated: ' + andList(failed) : ''));
+        return;
+      }
+      var l = ups[i], h = impMineOf(l);
+      b.textContent = 'Updating ' + (i + 1) + ' of ' + ups.length + '…';
+      uplCall({ op: 'csvup', id: h.id, songs: l.songs, file: l.file }).then(function (j) {
+        if (j.status === 200) { done++; fresh += j.fresh || 0; last = j; } else failed.push(impPlName(h));
+        next(i + 1);
+      }, function () { failed.push(impPlName(h)); next(i + 1); });
+    };
+    next(0);
+  });
   document.getElementById('uplilast').addEventListener('click', function () { var sv = IMP.saved; if (!sv || !sv.lists) return; IMP.away = false; IMP.lists = sv.lists; IMP.fromSaved = true; impPick(); });
   // (2 Nov 2026, John: "Remove the option of adding me as a collaborator. We won't do it that way": Import from Spotify only)
   document.getElementById('uplifile').addEventListener('click', function () { var f = document.getElementById('uplifin'); f.value = ''; f.click(); });
