@@ -565,6 +565,16 @@ html.upl-list .side-acts .listbtn { display: inline-grid; }
 .imp-all p { margin: 0; font-size: 13px; line-height: 1.45; color: var(--fg); }
 .imp-all .copy { justify-self: start; }
 .imp-card.up .imp-mos { box-shadow: 0 0 0 2px var(--fg); }
+.imp-card { position: relative; }
+.imp-card .tick { position: absolute; top: 8px; right: 8px; width: 26px; height: 26px; border-radius: 50%; background: rgba(255, 255, 255, .9); box-shadow: 0 0 0 1.5px var(--line), 0 2px 8px var(--shadow); display: grid; place-items: center; }
+.imp-card.sel .tick { background: var(--fg); box-shadow: 0 2px 8px var(--shadow); }
+.imp-card.sel .tick::after { content: ""; width: 10px; height: 5px; margin-top: -3px; border: solid var(--bg); border-width: 0 0 2.5px 2.5px; transform: rotate(-45deg); }
+.imp-card.sel .imp-mos { box-shadow: 0 0 0 3px var(--fg); }
+.imp-card.sel .nm { font-weight: 700; }
+.imp-selbar { position: sticky; bottom: 0; z-index: 2; display: grid; gap: 10px; margin: 6px -2px 0; padding: 12px 14px; border-radius: 16px; background: var(--bg); box-shadow: 0 -8px 24px var(--shadow), inset 0 0 0 1.5px var(--fg); }
+.imp-selbar[hidden] { display: none; }
+.imp-selbar p { margin: 0; font: 600 13px/1.4 var(--sans); color: var(--fg); }
+.imp-selbar .upld-opts[hidden] { display: none; }
 .imp-card .tag { justify-self: start; max-width: 100%; padding: 3px 9px; border-radius: 999px; background: var(--pill-bg); box-shadow: inset 0 0 0 1px var(--line); color: var(--fg); font: 600 10px/1.4 var(--sans); letter-spacing: .08em; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }   /* (quiet, as the rest of the pop-up: John, 3 Nov 2026) */
 .imp-mos { position: relative; display: grid; grid-template-columns: 1fr 1fr; aspect-ratio: 1; border-radius: 10px; overflow: hidden; background: var(--tile); box-shadow: 0 4px 14px var(--shadow); }
 .imp-mos img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -2298,6 +2308,15 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       <div class="imp-all" id="upliall" hidden><p id="upliallt"></p><button class="copy" id="upliallb" type="button"></button></div>
       <label class="imp-search" id="uplisearchl" hidden><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3 3"/></svg><input id="uplisearch" type="search" placeholder="Find a playlist" autocomplete="off" spellcheck="false" aria-label="Find a playlist"></label>
       <div class="imp-grid" id="upligrid" role="list"></div>
+      <div class="imp-selbar" id="uplisel" hidden>
+        <p id="uplisels"></p>
+        <label class="upld-day"><span>Where</span><select id="uplisdest"></select></label>
+        <div class="upld-opts" role="radiogroup" aria-label="A calendar or a playlist" id="uplismode">
+          <label><input type="radio" name="uplismode" value="cal" checked><span><b>Calendars</b>Each song on the day it was added on Spotify.</span></label>
+          <label><input type="radio" name="uplismode" value="list"><span><b>Playlists</b>Just their songs, newest first.</span></label>
+        </div>
+        <div class="ask-acts"><button class="copy" id="uplisgo" type="button"></button><button class="ac-out" id="uplisone" type="button" hidden>Name it and choose…</button><button class="ac-out" id="uplisclear" type="button">Clear</button></div>
+      </div>
       <p class="imp-none" id="uplipicknone" hidden>No playlist by that name.</p>
       <div class="ask-acts"><button class="ac-out" id="uplipickback" type="button">Another file</button></div>
     </div>
@@ -9871,6 +9890,31 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       }).catch(function () {});
     }
   }
+  function impToggle(l, b, quiet) {
+    var i = IMP.sel.indexOf(l);
+    if (i >= 0) IMP.sel.splice(i, 1); else IMP.sel.push(l);
+    b.classList.toggle('sel', i < 0); b.setAttribute('aria-pressed', i < 0 ? 'true' : 'false');
+    if (!quiet) impSelDraw();
+  }
+  function impSelDraw() {   // the bar: what's ticked, where it goes, and the button that does it
+    var bar = document.getElementById('uplisel'), sel = IMP.sel || [], dsel = document.getElementById('uplisdest'), tg = impTarget(), was = dsel.value;
+    bar.hidden = !sel.length; if (!sel.length) return;
+    document.getElementById('uplisels').textContent = (sel.length === 1 ? '1 ticked: ' : sel.length + ' ticked: ') + andList(sel.slice(0, 6).map(function (l) { return '“' + l.name + '”'; })) + (sel.length > 6 ? ' and ' + (sel.length - 6) + ' more' : '');
+    dsel.textContent = '';
+    var opt = function (v, t) { var o = document.createElement('option'); o.value = v; o.textContent = t; dsel.appendChild(o); };
+    var feeds = sel.filter(function (l) { return impFeeds(l).length; }).length;
+    if (feeds) opt('auto', feeds === sel.length ? 'Update the ones they went into' : 'Update the ones they went into, the rest as new ones');
+    opt('new', sel.length === 1 ? 'A new calendar or playlist' : 'A new calendar or playlist for each');
+    uplPls().filter(function (p) { return p.mine && p.src === 'csv'; }).forEach(function (p) { opt('into:' + p.id, 'All into “' + impPlName(p) + '”'); });
+    dsel.value = tg ? 'into:' + tg.id : [].some.call(dsel.options, function (o) { return o.value === was; }) ? was : feeds ? 'auto' : 'new';
+    impSelGo();
+  }
+  function impSelGo() {
+    var sel = IMP.sel || [], v = document.getElementById('uplisdest').value, anyNew = v === 'new' || (v === 'auto' && sel.some(function (l) { return !impFeeds(l).length; }));
+    document.getElementById('uplismode').hidden = !anyNew;
+    document.getElementById('uplisone').hidden = sel.length !== 1;
+    document.getElementById('uplisgo').textContent = v === 'new' ? 'Import ' + (sel.length === 1 ? 'it' : 'all ' + sel.length) : /^into:/.test(v) ? 'Add ' + (sel.length === 1 ? 'it' : 'all ' + sel.length) : 'Update' + (sel.length > 1 ? ' from all ' + sel.length : '');
+  }
   function impTarget() { return IMP.target ? uplPls().filter(function (p) { return p.id === IMP.target && p.mine; })[0] || null : null; }
   function impPick() {   // the download's playlists, to choose from
     var lists = IMP.lists, grid = document.getElementById('upligrid'), q = document.getElementById('uplisearch');
@@ -9902,10 +9946,17 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       var upd = fd.length > 0;   // (only the ones it goes into: John, 3 Nov 2026, not an Add to on every card)
       if (upd) { var t = document.createElement('span'); t.className = 'tag'; t.textContent = 'Goes into ' + andList(fd.map(function (f) { return impPlName(f.p); })); b.appendChild(t); }
       b.setAttribute('aria-label', l.name + (by.textContent ? ', ' + by.textContent.replace(/^By/, 'by') : '') + ', ' + ct.textContent + (upd ? ', ' + t.textContent : ''));
-      b.addEventListener('click', function () { impGot(l); });
+      b.setAttribute('aria-pressed', 'false');
+      b.addEventListener('click', function () { impToggle(l, b); });   // (several at once: John, 3 Nov 2026, ticked and shown so)
+      var tick = document.createElement('span'); tick.className = 'tick'; tick.setAttribute('aria-hidden', 'true'); b.appendChild(tick);
       grid.appendChild(b);
     });
     document.getElementById('uplipicknone').hidden = true;
+    IMP.sel = [];   // the ones ticked: those yours came from, to start with
+    var tg = impTarget();
+    [].forEach.call(grid.children, function (b) { var f = impFeeds(b._l); if (tg ? f.some(function (x) { return x.p.id === tg.id; }) : f.length) impToggle(b._l, b, true); });
+    document.getElementById('upliallb').hidden = true;   // (the bar below does it, for those ticked)
+    impSelDraw();
     impShow('pick');
     impNames(lists, function () { [].forEach.call(grid.children, function (b) { if (b._by) { b._by.textContent = impBy(b._l); b._by.hidden = !b._by.textContent; } }); });
   }
@@ -9986,6 +10037,40 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   impDlg.addEventListener('close', function () { IMP.away = false; IMP.lists = null; IMP.pick = null; clearInterval(IMP.poll); IMP.win = null; impForget(); });
   document.getElementById('upliclose').addEventListener('click', function () { closeDialog(impDlg); });
   document.getElementById('upligo').addEventListener('click', impAway);
+  document.getElementById('uplisdest').addEventListener('change', impSelGo);
+  document.getElementById('uplisclear').addEventListener('click', function () { IMP.sel = []; [].forEach.call(document.getElementById('upligrid').children, function (b) { b.classList.remove('sel'); b.setAttribute('aria-pressed', 'false'); }); impSelDraw(); });
+  document.getElementById('uplisone').addEventListener('click', function () { if ((IMP.sel || []).length === 1) impGot(IMP.sel[0]); });   // (one: its own page, to name it and choose)
+  document.getElementById('uplisgo').addEventListener('click', function () {   // the ticked ones, in turn: updated (where they went), added into one, or each a new one
+    var b = this, sel = (IMP.sel || []).slice(), v = document.getElementById('uplisdest').value, mode = (document.querySelector('input[name="uplismode"]:checked') || {}).value === 'list' ? 'list' : 'cal';
+    if (!sel.length || IMP.busy) return;
+    var jobs = [], into = /^into:/.test(v) ? v.slice(5) : '';
+    sel.forEach(function (l) {
+      var f = impFeeds(l);
+      if (into) { var m = f.filter(function (x) { return x.p.id === into && x.main; })[0]; jobs.push(m ? { l: l, op: 'csvup', id: into } : { l: l, op: 'csvadd', id: into }); }
+      else if (v === 'auto' && f.length) f.forEach(function (x) { jobs.push({ l: l, op: x.main ? 'csvup' : 'csvadd', id: x.p.id }); });
+      else jobs.push({ l: l, op: 'csv' });
+    });
+    jobs.sort(function (a, c) { return (a.op === 'csvup' ? 0 : 1) - (c.op === 'csvup' ? 0 : 1); });   // (an update before the adds into the same one)
+    IMP.busy = true; b.disabled = true; var label = b.textContent, fresh = 0, done = 0, failed = [], last = null, made = [];
+    var next = function (i) {
+      if (i >= jobs.length) {
+        IMP.busy = false; b.disabled = false; b.textContent = label;
+        if (last && last.pls) { MEMBER.pls = last.pls; uplMark(); uplWaitCount(); if (acct.open) uplDrawAcct(); }
+        impForget(); closeDialog(impDlg);
+        toast((made.length ? (made.length === 1 ? '1 imported' : made.length + ' imported') + (done > made.length ? ', ' : '') : '') + (done > made.length ? 'updated from ' + (done - made.length) + (done - made.length === 1 ? ' playlist' : ' playlists') + ': ' + (fresh ? (fresh === 1 ? '1 new song' : fresh + ' new songs') : 'no new songs') : '') + (failed.length ? '. Not done: ' + andList(failed) : ''));
+        var showId = made[0] || (jobs[0] && jobs[0].id);
+        if (showId) { if (acct.open) closeDialog(acct); if (UPL.on === showId && last && last.view && last.view.id === showId) uplRefreshViews(showId, last.view); else uplShow(showId); }
+        return;
+      }
+      var jb = jobs[i], l = jb.l;
+      b.textContent = (jobs.length > 1 ? (i + 1) + ' of ' + jobs.length + ': ' : '') + (jb.op === 'csv' ? 'importing' : jb.op === 'csvup' ? 'updating' : 'adding') + ' “' + l.name + '”…';
+      uplCall(jb.op === 'csv' ? { op: 'csv', name: l.name, file: l.file, mode: mode, songs: l.songs } : { op: jb.op, id: jb.id, songs: l.songs, file: l.file }).then(function (j) {
+        if (j.status === 200) { done++; last = j; if (jb.op === 'csv' && j.id) made.push(j.id); else fresh += (jb.op === 'csvup' ? j.fresh : j.added) || 0; } else failed.push('“' + l.name + '” (' + (j.error || 'not done') + ')');
+        next(i + 1);
+      }, function () { failed.push('“' + l.name + '”'); next(i + 1); });
+    };
+    next(0);
+  });
   document.getElementById('upliallb').addEventListener('click', function () {   // every one of theirs in the file, updated in turn
     var b = this, jobs = [];   // each of theirs: Update from the playlist it was imported from, then the new songs of those added to it
     (IMP.lists || []).forEach(function (l) { impFeeds(l).forEach(function (f) { jobs.push({ l: l, p: f.p, main: f.main }); }); });
