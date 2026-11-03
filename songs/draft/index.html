@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="753c2c111a63">
+<meta name="sotd-build" content="c2ca5e5d001e">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -4616,7 +4616,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   function playPick(p) {   // a song on the open day, as its video or its preview, whichever way is on
     var vd = playMode === 'video' && VIDS[p.sotd.s.track];
-    if (spOn() && !(vd && !document.hidden)) { watch(p, coverVd(p.sotd.s)); return true; }   // (through their Spotify: every song played as a song)
+    if (spOn() && ((PICK && PICK.force) || !(vd && !document.hidden))) { watch(p, coverVd(p.sotd.s)); return true; }   // (picked up from Spotify: as a song, never a video beside it)   // (through their Spotify: every song played as a song)
     // out of sight (a locked phone), where a video can't play: the song; one of John's own videos plays as its sound
     // (and is there as the video when the phone's unlocked)
     if (vd && document.hidden && p.sotd.ui && !(vd.own && BGV)) vd = null;
@@ -9971,7 +9971,36 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     return fetch(MBASE + '/members/spotify', { method: 'POST', headers: { Authorization: 'Bearer ' + plTok(), 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { j.status = r.status; return j; }); });
   }
-  function spLoad() { if (!MEMBER || !MBASE || TV) return Promise.resolve(); return spCall({ op: 'status' }).then(function (j) { if (j.status === 200) { SPM.st = j; spDraw(); } }).catch(function () {}); }
+  function spLoad() { if (!MEMBER || !MBASE || TV) return Promise.resolve(); return spCall({ op: 'status' }).then(function (j) { if (j.status === 200) { SPM.st = j; spDraw(); spPickUp('open'); } }).catch(function () {}); }
+  // picking up what Spotify's playing (John, 3 Nov 2026: "add the mini player functionality"): the page opened afresh (the
+  // phone closed the app while away, say) or back without following it, and Spotify is playing one of the calendar's songs
+  // on a speaker or a computer: My playlist's box shows it, playing, and the page follows on from it (pause, next, the
+  // songs after it to Spotify), sending nothing to Spotify until asked. Only what Spotify says is playing; nothing else.
+  var PICK = { at: 0 };
+  function spPickUp(why) {
+    if (!spOn() || TV || Date.now() - PICK.at < 60e3) return;
+    if (bgOn || sheet.open || (coverObj && coverObj.sp && SPX.track) || busyNow()) return;   // (playing or open here already)
+    PICK.at = Date.now();
+    spCall({ op: 'state' }).then(function (k) {
+      if (k.status !== 200 || k.none || !k.playing || !k.track || !byTrack[k.track]) return;
+      if (NAT && /Smartphone|Tablet/.test(k.dtype || '')) return;   // (this phone's own Spotify: its own way, not picked up here)
+      if (bgOn || sheet.open || (coverObj && coverObj.sp && SPX.track)) return;
+      var st0 = RESUME || (function () { try { return JSON.parse(localStorage.getItem(RES_KEY) || 'null'); } catch (e) { return null; } })();
+      var q = st0 && st0.q && st0.q.list && st0.q.list.indexOf(k.track) >= 0 ? st0.q : null;   // (the list it was playing, if this song's in it: on through that)
+      RESUME = { t: k.track, pos: Math.floor((k.pos || 0) / 1000), at: Date.now(), q: q };
+      queue = null;
+      if (q) { var ql = q.list.filter(function (t) { return byTrack[t]; }); queue = { list: ql, i: ql.indexOf(k.track), name: q.name, back: q.back, order: (q.order || ql).filter(function (t) { return byTrack[t]; }), heard: {} }; }
+      SPX.list = spxUpcoming(k.track); SPX.track = k.track; SPX.catchUp = k.track; SPX.native = false;
+      SPX.playing = true; SPX.pos = k.pos || 0; SPX.at = Date.now(); SPX.dur = k.dur || 0; SPX.other = false;
+      SPX.dev = { id: k.did || '', name: k.device || 'Spotify' }; SPX.last = { id: k.did || '', name: k.device || '', type: k.dtype || '' };
+      spLog('picked up (' + why + '): Spotify playing “' + (byTrack[k.track].title || k.track) + '” on ' + (k.device || 'a device') + ', ' + SPX.list.length + ' in its list');
+      PICK.force = true;
+      try { resumeGo(false); } finally { PICK.force = false; }   // (out of sight: My playlist's box, playing; the song's spxLoad finds it playing and follows)
+      resumeAt = 0; resumeFor = '';
+      spxShowDev();
+    }).catch(function () {});
+  }
+  document.addEventListener('visibilitychange', function () { if (!document.hidden && SPM.st) setTimeout(function () { spPickUp('back'); }, 1500); });
   function spDraw() {
     var box = document.getElementById('acsp'); box.hidden = !MEMBER || !MBASE || TV; if (box.hidden) return;
     var x = SPM.st || { linked: false }, t = document.getElementById('acspt'), go = document.getElementById('acspgo'), off = document.getElementById('acspoff');
