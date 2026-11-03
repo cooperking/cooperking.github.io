@@ -9697,7 +9697,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // memory. With a way to update the file if necessary"): the Worker's /members/impfile, on every device of theirs.
   // Import from Spotify opens on its playlists; Update the file goes through Exportify again, and the new one is kept.
   function impSaved(then) {
-    if (IMP.saved !== undefined) { then(); return; }
+    if (IMP.saved !== undefined) { setTimeout(then, 0); return; }   // (kept already: after the pop-up has opened, as when it's fetched: John, 3 Nov 2026, the second time it looked as if there were none)
     var tok = plTok(); if (!tok || !MBASE || !window.fetch) { IMP.saved = null; then(); return; }
     fetch(MBASE + '/members/impfile', { headers: { Authorization: 'Bearer ' + tok }, cache: 'no-store' }).then(function (r) {
       if (r.status !== 200) return null;
