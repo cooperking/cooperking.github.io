@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="sotd-build" content="45d4ced64022">
+<meta name="sotd-build" content="e63b8820bf2c">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 267 so far">
 <meta name="theme-color" content="#ec135b">
@@ -10014,7 +10014,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       l.yours = !!me && (l.maker === me || (top === undefined && /^liked/.test(l.key)));
     });
   }
-  function impWho(u) { return SPN[u] || (/^[a-z0-9._-]{2,24}$/i.test(u) && !/^[0-9a-z]{25,}$/i.test(u) ? u : 'another Spotify user'); }   // (an old-style user name reads as a name; a long code doesn't)
+  function impWho(u) { return SPN[u] || u; }   // their name where Spotify or the members list gives one, otherwise their Spotify username (John, 3 Nov 2026: "just link the names you can and put the username for the others")
   function impOthers(l) {   // the others who added to it, by name, up to five (John, 3 Nov 2026: "list those members, unless it's more than 5")
     var o = l.otherIds || []; if (!o.length) return '';
     return o.length > 5 ? o.length + ' others' : andList(o.map(impWho).filter(function (x, i, a) { return a.indexOf(x) === i; }));
