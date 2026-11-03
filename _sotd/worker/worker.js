@@ -2328,7 +2328,7 @@ async function memberEmail(request, env, answer) {
 // a member's saved playlists, kept with their sign-in so every device of theirs has them (KV key mpl:<member id>).
 // GET: { lists: [{ id, name, tracks, at }] }, the newest first. POST { op: 'save', id?, name, tracks } adds one (no id) or
 // replaces it, giving back { list, lists }; POST { op: 'delete', id } removes one.
-const PLAYLISTS_MAX = 50, PLAYLIST_TRACKS = 500, PLAYLIST_NAME = 80;
+const PLAYLISTS_MAX = 500, PLAYLIST_TRACKS = 500, PLAYLIST_NAME = 80;
 async function memberFromToken(request, env) {
   return memberIdFor((request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, ''), env);
 }
@@ -3287,7 +3287,7 @@ async function memberBell(request, env, answer) {
 // then it looks every UPL_JOIN_EVERY for a day, then hourly). A
 // song added after it was added waits for its owner to sign it off; then it's out for everyone and goes to the
 // members as a message from them. ----------
-const UPL_MAX = 5, UPL_EVERY = 30 * 60e3, UPL_JOIN_EVERY = 10 * 60e3, UPL_CHECK_GAP = 60e3, UPL_SIGNOFF_DAY = 20, UPL_LOOK_MOST = 4, UPL_PV_MOST = 60;
+const UPL_EVERY = 30 * 60e3, UPL_JOIN_EVERY = 10 * 60e3, UPL_CHECK_GAP = 60e3, UPL_SIGNOFF_DAY = 20, UPL_LOOK_MOST = 4, UPL_PV_MOST = 60;
 function uplSpId(link) {   // a playlist's Spotify id from its link (open.spotify.com/playlist/<id>…, spotify:playlist:<id>) or the id
   const m = /(?:open\.spotify\.com\/(?:intl-[\w-]+\/)?playlist\/|spotify:playlist:)([0-9A-Za-z]{22})/.exec(String(link || '')) || /^\s*([0-9A-Za-z]{22})\s*$/.exec(String(link || ''));
   return m ? m[1] : '';
@@ -4217,7 +4217,6 @@ async function memberUpl(request, url, env, answer) {
     const sp = uplSpId(body.link);
     if (!sp) return answer(400, { error: 'That isn’t a Spotify playlist link. In Spotify, open the playlist, tap ••• then Share, Copy link.' });
     if (Object.values(U).some(r => r.o === me && r.sp === sp)) return answer(400, { error: 'You’ve added that playlist already.' });
-    if (Object.values(U).filter(r => r.o === me).length >= UPL_MAX) return answer(400, { error: 'That’s ' + UPL_MAX + ' playlists, the most you can add.' });
     let meta;
     try { meta = await spotify(await getToken(env), '/playlists/' + sp + '?fields=name,owner(display_name)'); }
     catch (e) { return answer(400, { error: /Spotify 404/.test(String(e && e.message)) ? 'Spotify has no playlist at that link.' : 'Couldn’t reach Spotify just now. Try again in a minute.' }); }
@@ -4236,7 +4235,6 @@ async function memberUpl(request, url, env, answer) {
     const had = body.replace ? Object.entries(U).find(([pid, r]) => pid === String(body.replace) && r.o === me && r.src === 'csv') : null;
     const keep = had ? { share: had[1].share, to: had[1].to, send: had[1].send, prev: (had[1].prev || []).concat(had[0]).slice(-10) } : {};   // (prev: the ids it had, for its /yt/ link)
     if (had) { await uplDrop(env, [had[0]]); delete U[had[0]]; }
-    if (Object.values(U).filter(r => r.o === me && r.src !== 'mpl').length >= UPL_MAX) return answer(400, { error: 'That’s ' + UPL_MAX + ' playlists, the most you can add.' });
     const now = Date.now(), newest = Math.max.apply(null, items.map(x => Date.parse(x.a)));
     const pid = randomCode(10), rec = { o: me, src: 'csv', sp: '', n: String(body.name || '').replace(/\s+/g, ' ').trim().slice(0, 80) || 'My playlist', fk: uplFileKey(body.file), mode: body.mode === 'list' ? 'list' : 'cal', at: now, base: Math.max(newest, 0), st: 'ok' };
     for (const k of Object.keys(keep)) if (keep[k] !== undefined) rec[k] = keep[k];
@@ -4248,7 +4246,6 @@ async function memberUpl(request, url, env, answer) {
     const lists = (await env.SOTD.get('mpl:' + me, 'json')) || [], l = lists.find(x => x.id === String(body.list || ''));
     if (!l) return answer(404, { error: 'No such playlist of yours.' });
     if (Object.values(U).some(r => r.o === me && r.src === 'mpl' && r.pl === l.id)) return answer(400, { error: 'It’s on the calendar already.' });
-    if (Object.values(U).filter(r => r.o === me && r.src === 'mpl').length >= UPL_MAX) return answer(400, { error: 'That’s ' + UPL_MAX + ' of your playlists on the calendar, the most.' });
     const pid = randomCode(10), now = Date.now(), rec = { o: me, src: 'mpl', pl: l.id, n: l.name, mode: body.mode === 'list' ? 'list' : 'cal', at: now, base: now, st: 'ok', read: now, tried: now };
     U[pid] = rec;
     await uplListSync(env, pid, rec, l, now);
