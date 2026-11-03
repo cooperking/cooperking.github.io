@@ -1094,7 +1094,7 @@ async function members(request, url, env) {
   const listing = (own = owner) => Object.entries(all).map(([id, m]) => ({ id, name: m.name, created: m.created, owner: id === own, email: m.email || '', emailAt: m.emailAt || null,
     devices: Object.values(m.devices || {}).filter(d => d.did).length, apps: deviceApps(m, seenAt), passkeys: (m.passkeys || []).length, nomsg: !!m.nomsg, apart: m.apart || [], see: mediaFor(m),
     seen: Math.max(0, ...Object.entries(m.devices || {}).map(([h, d]) => Math.max(seenAt[h] || 0, d.seen || 0))) || null,
-    invite: m.invite ? Object.assign({ uses: m.invite.uses, left: Math.max(0, INVITE_USES - m.invite.uses), until: m.invite.until }, m.invite.asked ? { asked: m.invite.asked } : {}) : null }));
+    fmax: filesMax(m), fset: Number.isInteger(m.fmax), invite: m.invite ? Object.assign({ uses: m.invite.uses, left: Math.max(0, INVITE_USES - m.invite.uses), until: m.invite.until }, m.invite.asked ? { asked: m.invite.asked } : {}) : null }));
   switch (body.op) {
     case 'list': return answer(200, { members: listing(), catalog: await catalog(env), media: !!env.MEDIA, covers: await coversAll(env) });
     case 'people': return answer(200, { members: listing() });   // (the Apps tab: who has which app, and the emails for Google Play)
@@ -1143,6 +1143,14 @@ async function members(request, url, env) {
       const code = tvCode();
       await env.SOTD.put('tvcode:' + await sha256hex(code), body.id, { expirationTtl: TV_CODE_MINUTES * 60 });
       return answer(200, { code, minutes: TV_CODE_MINUTES, name: all[body.id].name });
+    }
+    case 'fmax': {   // a member's allowance of songs with MP3s and MP4s: a number, 'none' (no limit) or 'default'
+      const m = all[body.id]; if (!m) return answer(404, { error: 'No such member.' });
+      if (body.n === 'default') delete m.fmax;
+      else if (body.n === 'none') m.fmax = FILES_NO_LIMIT;
+      else { const n = Math.floor(Number(body.n)); if (!(n >= 0 && n < FILES_NO_LIMIT)) return answer(400, { error: 'A number of songs, please.' }); m.fmax = n; }
+      await env.SOTD.put('members', JSON.stringify(all));
+      return answer(200, { members: listing() });
     }
     case 'owner': {   // "This is me": the member who is John (or nobody, with no id)
       if (body.id && !all[body.id]) return answer(404, { error: 'No such member.' });
@@ -1804,7 +1812,7 @@ async function memberMe(request, env, answer) {
   const seen = Object.keys(all).filter(k => k !== id && k !== ownerId && hasJoined(all[k]) && !apart(all, id, k)).map(k => ({ id: k, name: all[k].name })).sort(byName);
   const bell = bellView(all, id, await env.SOTD.get('bell:' + id, 'json')).unseen;   // reactions to their messages not yet seen
   const U0 = await uplAll(env), pls = await uplMine(env, uplList(all, id, U0), U0);   // members' own playlists they can see, and their own (with the songs waiting for them)
-  const fu = { n: await uplFileCount(env, id, U0), max: (await env.SOTD.get('owner')) === id ? 0 : UPL_OWN_FILES };
+  const fu = { n: await uplFileCount(env, id, U0), max: (await env.SOTD.get('owner')) === id || filesMax(m) >= FILES_NO_LIMIT ? 0 : filesMax(m) };
   if (fu.max) { const plan = await uplDlPlan(env, id, U0); if (plan) fu.u = plan.u; }   // (u: their songs with files, or to have them: the allowance used)   // the songs with their own MP3 or MP4, and the most (0: John's, no limit)
   return answer(200, Object.assign({ name: m.name, email: m.email || '', mailme: mailMode(m), exp, media, see, mycovers, unread, bell, pls, fu, others, seen, msgs: !m.nomsg,
     mute: (m.mute || []).filter(k => seen.some(x => x.id === k)) }, owner ? { owner: true } : {}));
@@ -4627,6 +4635,11 @@ function uplSongDay(rec, data, days, i) {   // the day its song goes to the memb
 // limited to 366 songs total. So if they have a track with an mp3 they can also add an mp4"): a song counts once, with
 // an MP3, an MP4 or both, on any of their playlists; taking its files off, or removing its playlist, frees it.
 const UPL_OWN_FILES = 366;
+// John can set a member's own allowance on his Members page (John, 3 Nov 2026: "the option to override that limit, myself
+// on their member page"): m.fmax, a number of songs (FILES_NO_LIMIT: no limit); without it, UPL_OWN_FILES
+const FILES_NO_LIMIT = 100000;
+function filesMax(m) { const v = m && m.fmax; return Number.isInteger(v) && v >= 0 ? v : UPL_OWN_FILES; }
+async function filesMaxOf(env, id) { return filesMax(((await env.SOTD.get('members', 'json')) || {})[id]); }
 async function uplFileSongs(env, member, U) {   // the songs they have their own MP3 or MP4 on
   const out = new Set();
   for (const pid of Object.keys(U)) if (U[pid].o === member) for (const [t, f] of Object.entries((await uplSongs(env, pid)).files || {})) if (f.a || f.v) out.add(t);
@@ -4640,7 +4653,7 @@ async function uplFileCount(env, member, U) { return (await uplFileSongs(env, me
 async function uplDlPlan(env, member, U) {
   if ((await env.SOTD.get('owner')) === member) return null;
   const john = new Set((((await env.SOTD.get('songsLast', 'json')) || {}).songs || []).map(x => x.id));
-  const cat = await catalog(env), own = await uplFileSongs(env, member, U), at = new Map();
+  const cat = await catalog(env), own = await uplFileSongs(env, member, U), at = new Map(), most = await filesMaxOf(env, member);
   for (const pid of Object.keys(U)) {
     if (U[pid].o !== member) continue;
     const d = await uplSongs(env, pid);
@@ -4648,10 +4661,10 @@ async function uplDlPlan(env, member, U) {
   }
   const ids = [...at.keys()], has = ids.filter(t => own.has(t) || (cat[t] && (cat[t].a || cat[t].v)));
   const hs = new Set(has), rest = ids.filter(t => !hs.has(t)).sort((a, b) => at.get(b) - at.get(a));
-  const allowed = new Set(has.concat(rest.slice(0, Math.max(0, UPL_OWN_FILES - has.length))));
-  return { u: Math.min(UPL_OWN_FILES, ids.length), allowed, john };
+  const allowed = new Set(has.concat(rest.slice(0, Math.max(0, most - has.length))));
+  return { u: Math.min(most, ids.length), allowed, john };
 }
-function uplFilesFull() { return 'That’s ' + UPL_OWN_FILES + ' songs with your own MP3 or MP4, the most. Take the files off a song to add another.'; }
+function uplFilesFull(n) { return 'That’s ' + (n || UPL_OWN_FILES) + ' songs with your own MP3 or MP4, the most. Take the files off a song to add another.'; }
 const UPL_FILE_MAX = { a: 80e6, v: 1500e6 }, UPL_PARTS_MAX = { a: 10, v: 40 }, UPL_COVER_MAX = 1.5e6;   // (the page sends parts of 10 MB or more, 38 at most)
 function uplTooBig(kind) { return 'That’s too big: ' + (kind === 'a' ? 'an MP3' : 'an MP4') + ' can be ' + Math.round(UPL_FILE_MAX[kind] / 1e6) + ' MB at most.'; }
 async function uplOwnSong(request, url, env, answer) {   // the owner's playlist and song, or the answer to give
@@ -4715,13 +4728,14 @@ async function memberUplUp(request, url, env, answer) {   // ?id&track&kind=a|v&
   const kind = url.searchParams.get('kind'), op = url.searchParams.get('op'), uid = url.searchParams.get('uploadId') || '';
   if (!MEDIA_KINDS[kind]) return answer(400, { error: 'An MP3 (a) or an MP4 (v)?' });
   const key = 'u' + kind + '/' + o.pid + '/' + o.track + '.' + MEDIA_KINDS[kind].ext;
-  const fu = async () => ({ n: await uplFileCount(env, o.rec.o, await uplAll(env)), max: john ? 0 : UPL_OWN_FILES });   // (its owner's allowance, whoever adds it)   // (max 0: no limit, and the editor says nothing)
+  const most = await filesMaxOf(env, o.rec.o);
+  const fu = async () => ({ n: await uplFileCount(env, o.rec.o, await uplAll(env)), max: john || most >= FILES_NO_LIMIT ? 0 : most });   // (its owner's allowance, whoever adds it)   // (max 0: no limit, and the editor says nothing)
   const john = (await env.SOTD.get('owner')) === o.rec.o;   // (John's own playlists have no limit: John, 1 Nov 2026)
-  const over = async () => { if (john) return false; const had = await uplFileSongs(env, o.rec.o, await uplAll(env)); return !had.has(o.track) && had.size >= UPL_OWN_FILES; };   // (a song with one of theirs already takes the other freely)
+  const over = async () => { if (john) return false; const had = await uplFileSongs(env, o.rec.o, await uplAll(env)); return !had.has(o.track) && had.size >= most; };   // (a song with one of theirs already takes the other freely)
   if (op === 'drop') { await env.MEDIA.delete(key); await uplFilesSet(env, o.pid, o.track, kind, 0); return answer(200, { ok: true, fu: await fu(), view: await uplView(env, o.who.all, o.who.id, o.pid, o.rec) }); }
   if (op === 'start') {
     if ((await catalog(env))[o.track] && (await catalog(env))[o.track][kind]) return answer(400, { error: 'Already uploaded.' });   // (John's, from the Songs tab)
-    if (await over()) return answer(400, { error: uplFilesFull() });
+    if (await over()) return answer(400, { error: uplFilesFull(most) });
     return answer(200, { uploadId: (await env.MEDIA.createMultipartUpload(key, { httpMetadata: { contentType: MEDIA_KINDS[kind].type } })).uploadId });
   }
   if (!uid) return answer(400, { error: 'Which upload?' });
@@ -4738,7 +4752,7 @@ async function memberUplUp(request, url, env, answer) {   // ?id&track&kind=a|v&
     if (!parts.length) return answer(400, { error: 'No parts.' });
     const obj = await up.complete(parts);
     if (obj.size > UPL_FILE_MAX[kind]) { await env.MEDIA.delete(key); return answer(400, { error: uplTooBig(kind) }); }
-    if (await over()) { await env.MEDIA.delete(key); return answer(400, { error: uplFilesFull() }); }   // (others went up meanwhile)
+    if (await over()) { await env.MEDIA.delete(key); return answer(400, { error: uplFilesFull(most) }); }   // (others went up meanwhile)
     await uplFilesSet(env, o.pid, o.track, kind, obj.size);
     return answer(200, { ok: true, size: obj.size, fu: await fu(), view: await uplView(env, o.who.all, o.who.id, o.pid, o.rec) });
   }
