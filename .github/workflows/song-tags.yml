@@ -32,7 +32,138 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # John's own songs first, on their own (no members' playlists: the job's John-only way, as when the Worker can't
+  # be read), so a new song of his is ready to sign off within minutes, not after every member's songs (John, 3 Nov 2026:
+  # "Mine needs to always be the priority"). Then the members' run below, as before, which finds his already done.
+  john:
+    name: John's songs first
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Facts asked for again (a song already out)
+        if: ${{ inputs.facts_redo != '' && inputs.facts_redo != null }}
+        env:
+          REDO: ${{ inputs.facts_redo }}
+        run: python _sotd/facts_redo.py "$REDO"
+
+      - name: A YouTube video for each of John's songs
+        env:
+          DISCOGS_TOKEN: ${{ secrets.DISCOGS_TOKEN }}
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+        run: python _sotd/youtube.py
+
+      - name: The year each song first came out
+        run: python _sotd/years.py
+
+      - name: Any songs to listen to?
+        id: check
+        run: python _sotd/analyze_audio.py --check ${{ inputs.redo && '--all' || '' }}
+
+      - name: Cache the Essentia models
+        if: steps.check.outputs.todo != '0'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/essentia-models
+          key: essentia-models-v1
+
+      - name: Install Essentia
+        if: steps.check.outputs.todo != '0'
+        run: pip install --quiet "essentia-tensorflow==2.1b6.dev1389" numpy
+
+      - name: Listen to the previews
+        if: steps.check.outputs.todo != '0'
+        run: python _sotd/analyze_audio.py ${{ inputs.redo && '--all' || '' }}
+
+      - name: Cache the Last.fm tags (kept out of the repo)
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/lastfm
+          key: lastfm-v3-${{ github.run_id }}-john
+          restore-keys: lastfm-v3-
+
+      - name: Listener tags from Last.fm
+        env:
+          LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
+        run: python _sotd/lastfm.py
+
+      - name: Genres from MusicBrainz
+        run: python _sotd/musicbrainz.py
+
+      - name: Sources for the song facts (Wikipedia, Wikidata, MusicBrainz)
+        continue-on-error: true
+        run: python _sotd/about.py
+
+      - name: Still pictures, from YouTube's own frames
+        continue-on-error: true
+        run: |
+          pip install --quiet pillow
+          python _sotd/video_still.py
+
+      - name: Keep the YouTube playlist in step
+        continue-on-error: true   # (the members' run does it again)
+        env:
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python _sotd/youtube_playlist.py
+
+      - name: Other uploads to offer for still-picture videos (admin page)
+        run: python _sotd/video_alts.py
+
+      - name: Weigh up moods and genres
+        run: python _sotd/make_tags.py
+
+      - name: A page and a picture per day for sharing links
+        run: |   # (no members' playlists given: their cards stay as they are)
+          pip install --quiet pillow numpy
+          python _sotd/share_pages.py
+
+      - name: Save changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add -A _sotd/data songs
+          if git diff --cached --quiet; then echo "nothing changed"; exit 0; fi
+          git commit -m "Song moods and genres: John's songs first"
+          for i in 1 2 3; do git pull --rebase --quiet && git push && exit 0; sleep 5; done
+          exit 1
+
+      - name: Ask Claude for the new songs' facts
+        env:
+          FACTS_TASK_URL: ${{ secrets.SOTD_FACTS_URL }}
+          FACTS_TASK_TOKEN: ${{ secrets.SOTD_FACTS_TOKEN }}
+          FORCE: ${{ inputs.ask_facts }}
+        run: |
+          git pull --rebase --quiet || true
+          rc=0; python _sotd/facts_ask.py || rc=$?
+          git add _sotd/data/facts-asked.json _sotd/data/facts-task.json 2>/dev/null || true
+          if ! git diff --cached --quiet; then
+            if [ "$rc" = 0 ]; then git commit -m "Asked Claude for the new songs' facts"; else git commit -m "The facts task couldn't be started"; fi
+            pushed=0; for i in 1 2 3; do if git pull --rebase --quiet && git push; then pushed=1; break; fi; sleep 5; done
+            [ "$pushed" = 1 ] || exit 1
+          fi
+          if [ "$rc" != 0 ]; then echo "::error title=Facts task not started::$(python -c 'import json; print(json.load(open("_sotd/data/facts-task.json"))["said"])')"; fi
+          exit "$rc"
+
+      - name: Tell the members' phones when a new song is out
+        if: ${{ !cancelled() }}
+        run: python _sotd/push_live.py
+
   tags:
+    name: Then the members' playlists
+    needs: john
+    if: ${{ !cancelled() }}   # (even when John's run failed: as before, this one does his songs too)
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -48,11 +179,6 @@ jobs:
       # a day, new ones at once), and the list the steps finding videos, moods and years work through (John's, then theirs)
       # what was found for their songs is kept in the Worker, not in this repository (upl_private.py): back in first;
       # without it, their songs are left out this run
-      - name: Facts asked for again (a song already out)
-        if: ${{ inputs.facts_redo != '' && inputs.facts_redo != null }}
-        env:
-          REDO: ${{ inputs.facts_redo }}
-        run: python _sotd/facts_redo.py "$REDO"
       - name: Members' playlists, their songs this run
         continue-on-error: true   # without it those steps take John's songs alone
         env:
