@@ -2960,14 +2960,17 @@ function mailMode(m) { if (!m || !m.email) return ''; const v = m.mailme === und
 function mailWants(mode, cat) { return mode === 'all' || mode === 'day' || mode === cat; }   // cat: 'song', 'direct' or 'other'
 function mailEsc(t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 function mailImg(u) { return /^https:\/\/[^\s"'<>]+$/.test(String(u || '')) && !/\.gif(\?|$)/i.test(u) ? String(u) : ''; }   // (an https picture: the share card, a message's picture or a cover)
+// the month's colour, as the calendar's ground (its PALETTES' first colour), for the email's header and links (John, 3 Nov 2026)
+const MAIL_MONTH = ['#0c1445', '#652bee', '#11970c', '#b613ec', '#096a42', '#ec1a13', '#1346ec', '#d85a06', '#0b86d3', '#ec135b', '#09696d', '#ec13c1'];
+function mailTint() { return MAIL_MONTH[Number(londonDay().slice(5, 7)) - 1] || '#ec135b'; }
 function mailSettings() { return SITE_SONGS + '#emails'; }
 function mailFoot() { return '\n\n—\nYou can update your email notification settings at ' + mailSettings(); }
-function mailFootHtml() { return '<p style="margin:28px 0 0;padding-top:16px;border-top:1px solid #eadfe3;font:13px/1.5 Helvetica,Arial,sans-serif;color:#7a6a72">You can update your email notification settings at <a href="' + mailEsc(mailSettings()) + '" style="color:#ec135b">' + mailEsc(mailSettings().replace(/^https:\/\//, '')) + '</a></p>'; }
+function mailFootHtml() { return '<p style="margin:28px 0 0;padding-top:16px;border-top:1px solid #eadfe3;font:13px/1.5 Helvetica,Arial,sans-serif;color:#7a6a72">You can update your email notification settings at <a href="' + mailEsc(mailSettings()) + '" style="color:' + mailTint() + '">' + mailEsc(mailSettings().replace(/^https:\/\//, '')) + '</a></p>'; }
 function mailShell(inner) {   // the email's frame: the site's pink bar, a white card, the footer
   return '<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"></head><body style="margin:0;padding:0;background:#f6f0f2">'
     + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f0f2"><tr><td align="center" style="padding:24px 12px">'
     + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:18px;overflow:hidden">'
-    + '<tr><td style="background:#ec135b;padding:14px 24px;font:600 12px/1 Helvetica,Arial,sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#ffffff">John’s Song of the Day</td></tr>'
+    + '<tr><td style="background:' + mailTint() + ';padding:14px 24px;font:600 12px/1 Helvetica,Arial,sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#ffffff">John’s Song of the Day</td></tr>'
     + '<tr><td style="padding:24px">' + inner + mailFootHtml() + '</td></tr></table></td></tr></table></body></html>';
 }
 function mailItemHtml(x, big) {   // one notification: its picture (as shared), title, words and its link
