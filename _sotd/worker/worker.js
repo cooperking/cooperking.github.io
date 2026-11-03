@@ -3688,7 +3688,7 @@ function uplCan(all, viewer, rec) {   // whether someone sees this playlist (vie
 }
 function uplList(all, viewer, U) {   // the playlists a member can switch to (/members/me pls)
   return Object.entries(U).filter(([, r]) => uplCan(all, viewer, r))
-    .map(([pid, r]) => Object.assign({ id: pid, n: uplName(all, r), t: uplTitle(all, r), o: all[r.o].name, mode: r.mode, cnt: r.cnt || 0, sp: r.sp, src: uplSrc(r), sh: uplShareOf(r) }, r.yt ? { yt: r.yt } : {}, r.pic ? { pic: LIVE_ORIGIN + '/up/' + pid + '.jpg?v=' + r.pic } : {}, uplCo(r, viewer) ? { co: true } : {}, r.o === viewer ? { mine: true, cw: r.cw || [], pl: r.pl || '', fk: r.fk || '', moved: r.dd ? Object.keys(r.dd).length : 0, st: r.st, err: r.err || '', sn: r.n || '', to: uplShareOf(r) === 'some' ? r.to || [] : [], dates: r.mode === 'list' ? null : Object.assign({ how: 'added' }, r.dates || {}), send: uplSendOf(r) } : {}))
+    .map(([pid, r]) => Object.assign({ id: pid, n: uplName(all, r), t: uplTitle(all, r), o: all[r.o].name, mode: r.mode, cnt: r.cnt || 0, sp: r.sp, src: uplSrc(r), sh: uplShareOf(r) }, r.yt ? { yt: r.yt } : {}, r.pic ? { pic: LIVE_ORIGIN + '/up/' + pid + '.jpg?v=' + r.pic } : {}, uplCo(r, viewer) ? { co: true } : {}, r.o === viewer ? { mine: true, cw: r.cw || [], pl: r.pl || '', fk: r.fk || '', adds: r.adds || [], moved: r.dd ? Object.keys(r.dd).length : 0, st: r.st, err: r.err || '', sn: r.n || '', to: uplShareOf(r) === 'some' ? r.to || [] : [], dates: r.mode === 'list' ? null : Object.assign({ how: 'added' }, r.dates || {}), send: uplSendOf(r) } : {}))
     .sort((a, b) => (b.mine ? 2 : b.co ? 1 : 0) - (a.mine ? 2 : a.co ? 1 : 0) || a.o.localeCompare(b.o) || a.n.localeCompare(b.n));
 }
 async function uplMine(env, pls, U) {   // their own playlists' songs waiting for them to sign off (wait: the newest 20, oldest first)
@@ -4300,6 +4300,7 @@ async function memberUpl(request, url, env, answer) {
       if (!have.has(x.id)) { add.push(x); have.add(x.id); }
       else if (data.del && data.del[x.id]) back.push(x.id);   // (one taken off before: on again, as it was asked for)
     }
+    if (body.file) { const k = uplFileKey(body.file); if (k && k !== rec.fk) { rec.adds = [...new Set((rec.adds || []).concat(k))].slice(0, 30); await uplPut(env, U); } }   // (the playlists added to it, so a fresh download updates them too: John, 3 Nov 2026)
     if (!add.length && !back.length) return answer(200, { ok: true, added: 0, pls: await uplMine(env, uplList(all, me, U), U), view: await uplView(env, all, me, pid, rec) });
     data.add = data.add || {}; for (const x of add) data.add[x.id] = 1;
     for (const t of back) delete data.del[t];

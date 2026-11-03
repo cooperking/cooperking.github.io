@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="1e2aa2b8744c">
+<meta name="sotd-build" content="ba4bc8ce1864">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -9658,6 +9658,12 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // their own import from the same Exportify file, if they have one (as many imports as they like: John, 1 Nov 2026)
   function impMineOf(l) { return l ? uplPls().filter(function (p) { return p.mine && p.src === 'csv' && (p.fk ? p.fk === l.key : impKey(p.sn || p.n) === l.key); })[0] || null : null; }
   function impMine(l) { return !!impMineOf(l); }   // (theirs on the calendar: the same Exportify file)
+  function impFeeds(l) {   // the ones of theirs this download's playlist goes into: imported from it (main: Update), or added to one (Add its new songs)
+    return l ? uplPls().filter(function (p) { return p.mine && p.src === 'csv'; }).map(function (p) {
+      var main = p.fk ? p.fk === l.key : impKey(p.sn || p.n) === l.key;
+      return main || (p.adds || []).indexOf(l.key) >= 0 ? { p: p, main: main } : null;
+    }).filter(Boolean) : [];
+  }
   function impCovers(songs) {   // the newest four different covers, at 300 pixels
     var out = [];
     for (var i = songs.length - 1; i >= 0 && out.length < 4; i--) { var c = (songs[i].img || '').replace('ab67616d0000b273', 'ab67616d00001e02'); if (c && out.indexOf(c) === -1) out.push(c); }
@@ -9894,22 +9900,24 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     q.value = '';
     grid.textContent = '';
     // theirs on the calendar from this file first, marked to update, and all of them updated with one tap (John, 3 Nov 2026)
-    lists = IMP.lists = lists.slice().sort(function (a, b) { return (impMineOf(b) ? 1 : 0) - (impMineOf(a) ? 1 : 0); });
-    var ups = lists.filter(function (l) { return impMineOf(l); }), all = document.getElementById('upliall');
+    lists = IMP.lists = lists.slice().sort(function (a, b) { return (impFeeds(b).length ? 1 : 0) - (impFeeds(a).length ? 1 : 0); });
+    var ups = lists.filter(function (l) { return impFeeds(l).length; }), all = document.getElementById('upliall');
     all.hidden = !ups.length;
-    if (ups.length) {
-      document.getElementById('upliallt').textContent = (ups.length === 1 ? 'Yours on the calendar from this download: ' : ups.length + ' of yours on the calendar are in this download: ') + andList(ups.map(function (l) { return impPlName(impMineOf(l)); })) + '.';
-      document.getElementById('upliallb').textContent = ups.length === 1 ? 'Update it' : 'Update all ' + ups.length;
+    if (ups.length) {   // which of the download's playlists go into which of theirs (John, 3 Nov 2026: the playlists it came from, by their own names)
+      var into = {}; ups.forEach(function (l) { impFeeds(l).forEach(function (f) { (into[f.p.id] = into[f.p.id] || { p: f.p, names: [] }).names.push('“' + l.name + '”'); }); });
+      var parts = Object.keys(into).map(function (k) { return andList(into[k].names) + ' → ' + impPlName(into[k].p); });
+      document.getElementById('upliallt').textContent = 'From this download, the playlists yours came from: ' + parts.join('; ') + '.';
+      document.getElementById('upliallb').textContent = ups.length === 1 ? 'Update from it' : 'Update from all ' + ups.length;
     }
     lists.forEach(function (l) {
-      var b = document.createElement('button'); b.type = 'button'; b.className = 'imp-card' + (impMineOf(l) ? ' up' : ''); b.setAttribute('role', 'listitem'); b._l = l;
+      var fd = impFeeds(l), b = document.createElement('button'); b.type = 'button'; b.className = 'imp-card' + (fd.length ? ' up' : ''); b.setAttribute('role', 'listitem'); b._l = l;
       var m = document.createElement('span'); m.className = 'imp-mos'; impMos(m, l.songs); b.appendChild(m);
       var nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = l.name; b.appendChild(nm);
       var by = document.createElement('span'); by.className = 'by'; by.textContent = impBy(l); by.hidden = !by.textContent; b.appendChild(by); b._by = by;
       var ct = document.createElement('span'); ct.className = 'ct'; ct.textContent = l.all.toLocaleString('en-GB') + (l.all === 1 ? ' song' : ' songs'); b.appendChild(ct);
       var tgt = impTarget(), mn = impMineOf(l);
-      var upd = !!mn;   // (only the ones it would update: John, 3 Nov 2026, not an Add to on every card)
-      if (upd) { var t = document.createElement('span'); t.className = 'tag'; t.textContent = 'Update ' + impPlName(mn); b.appendChild(t); }
+      var upd = fd.length > 0;   // (only the ones it goes into: John, 3 Nov 2026, not an Add to on every card)
+      if (upd) { var t = document.createElement('span'); t.className = 'tag'; t.textContent = 'Goes into ' + andList(fd.map(function (f) { return impPlName(f.p); })); b.appendChild(t); }
       b.setAttribute('aria-label', l.name + (by.textContent ? ', ' + by.textContent.replace(/^By/, 'by') : '') + ', ' + ct.textContent + (upd ? ', ' + t.textContent : ''));
       b.addEventListener('click', function () { impGot(l); });
       grid.appendChild(b);
@@ -9956,10 +9964,11 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     // where it goes (John, 2 Nov 2026: "choose whether to import it into a new calendar/ playlist, or add it to an existing
     // one"): theirs from the same file (Update), a new one, or added to another of their imported ones
     var into = uplPls().filter(function (p) { return p.mine && p.src === 'csv' && (!h || p.id !== h.id); });
+    var defAdd = !up ? ((impFeeds(l).filter(function (f) { return !f.main; })[0] || {}).p || {}).id || '' : '';   // (one it was added to before: that, chosen already)
     var dest = document.getElementById('uplidest'), sel = document.getElementById('upliinto');
     dest.textContent = ''; sel.textContent = '';
     into.forEach(function (p) { var o = document.createElement('option'); o.value = p.id; o.textContent = 'Add to ' + impPlName(p) + (p.mode === 'list' ? ' (playlist)' : ' (calendar)'); sel.appendChild(o); });
-    var opt = function (v, t, d) { var lb = document.createElement('label'), r = document.createElement('input'); r.type = 'radio'; r.name = 'uplidest'; r.value = v; r.checked = v === (up ? 'up' : 'new');
+    var opt = function (v, t, d) { var lb = document.createElement('label'), r = document.createElement('input'); r.type = 'radio'; r.name = 'uplidest'; r.value = v; r.checked = v === (up ? 'up' : defAdd ? 'add:' + defAdd : 'new');
       var sp = document.createElement('span'), bb = document.createElement('b'); bb.textContent = t; sp.appendChild(bb); sp.appendChild(document.createTextNode(d)); lb.appendChild(r); lb.appendChild(sp); dest.appendChild(lb); r.addEventListener('change', function () { impDest(l, h); }); };
     var tgt = impTarget();
     if (tgt) {   // opened from one of theirs (Update from Exportify): into that one, nothing else to choose
@@ -9995,23 +10004,26 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   document.getElementById('upliclose').addEventListener('click', function () { closeDialog(impDlg); });
   document.getElementById('upligo').addEventListener('click', impAway);
   document.getElementById('upliallb').addEventListener('click', function () {   // every one of theirs in the file, updated in turn
-    var b = this, ups = (IMP.lists || []).filter(function (l) { return impMineOf(l); }); if (!ups.length || IMP.busy) return;
+    var b = this, jobs = [];   // each of theirs: Update from the playlist it was imported from, then the new songs of those added to it
+    (IMP.lists || []).forEach(function (l) { impFeeds(l).forEach(function (f) { jobs.push({ l: l, p: f.p, main: f.main }); }); });
+    jobs.sort(function (a, c) { return a.p.id < c.p.id ? -1 : a.p.id > c.p.id ? 1 : (c.main ? 1 : 0) - (a.main ? 1 : 0); });
+    var ups = jobs; if (!ups.length || IMP.busy) return;
     IMP.busy = true; b.disabled = true; var fresh = 0, done = 0, failed = [], last = null, label = b.textContent;
     var next = function (i) {
       if (i >= ups.length) {
         IMP.busy = false; b.disabled = false; b.textContent = label;
         if (last && last.pls) { MEMBER.pls = last.pls; uplMark(); uplWaitCount(); if (acct.open) uplDrawAcct(); }
-        if (UPL.on && last && last.view && last.view.id === UPL.on) uplRefreshViews(UPL.on, last.view); else if (UPL.on && ups.some(function (l) { return impMineOf(l) && impMineOf(l).id === UPL.on; })) uplShow(UPL.on);
+        if (UPL.on && last && last.view && last.view.id === UPL.on) uplRefreshViews(UPL.on, last.view); else if (UPL.on && ups.some(function (jb) { return jb.p.id === UPL.on; })) uplShow(UPL.on);
         impForget(); closeDialog(impDlg);
-        toast('Updated ' + done + (done === 1 ? '' : ' of ' + ups.length) + ': ' + (fresh ? (fresh === 1 ? '1 new song waits' : fresh + ' new songs wait') + ' for you to sign off' : 'no new songs') + (failed.length ? '. Not updated: ' + andList(failed) : ''));
+        toast('Updated from ' + done + (done === 1 ? ' playlist' : ' playlists') + ': ' + (fresh ? (fresh === 1 ? '1 new song' : fresh + ' new songs') : 'no new songs') + (failed.length ? '. Not updated: ' + andList(failed) : ''));
         return;
       }
-      var l = ups[i], h = impMineOf(l);
+      var jb = ups[i], l = jb.l, h = jb.p;
       b.textContent = 'Updating ' + (i + 1) + ' of ' + ups.length + '…';
-      uplCall({ op: 'csvup', id: h.id, songs: l.songs, file: l.file }).then(function (j) {
-        if (j.status === 200) { done++; fresh += j.fresh || 0; last = j; } else failed.push(impPlName(h));
+      uplCall(jb.main ? { op: 'csvup', id: h.id, songs: l.songs, file: l.file } : { op: 'csvadd', id: h.id, songs: l.songs, file: l.file }).then(function (j) {
+        if (j.status === 200) { done++; fresh += (jb.main ? j.fresh : j.added) || 0; last = j; } else failed.push('“' + l.name + '”');
         next(i + 1);
-      }, function () { failed.push(impPlName(h)); next(i + 1); });
+      }, function () { failed.push('“' + l.name + '”'); next(i + 1); });
     };
     next(0);
   });
