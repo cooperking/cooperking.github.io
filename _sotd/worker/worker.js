@@ -2188,21 +2188,24 @@ async function mailNote(env, e) {
   log.unshift(e); log.length = Math.min(log.length, 20);
   await kvSoft(env, 'mailLog', JSON.stringify(log));
 }
-async function sendMail(env, to, subject, text, what) {   // from John's Google account (his own address on it)
+async function sendMail(env, to, subject, text, what, html) {   // html: the formatted email (notifications), with text as its plain version   // from John's Google account (his own address on it)
   const note = { id: randomCode(6), at: Date.now(), what, to: mailShort(to) };
   try {
     if (!mailReady(env)) throw new HttpError(503, 'Emails aren’t set up yet: the Worker has no mailer.');
     if (mailScript(env)) {   // the Apps Script mailer (MailApp, as John; 100 a day): it answers { ok, left } or { error }
       const r = await fetch(env.MAILER_URL, { method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ key: env.MAILER_KEY, to, subject, text }) });
+        body: JSON.stringify(Object.assign({ key: env.MAILER_KEY, to, subject, text }, html ? { html } : {})) });
       const j = await r.json().catch(() => null);
       if (!j || !j.ok) throw new HttpError(502, 'The Apps Script mailer didn’t send it: ' + ((j && j.error) || 'it answered ' + r.status + (r.ok ? ' (not its JSON: is it deployed for anyone?)' : '')));
       note.ok = true; note.left = j.left;
       await mailNote(env, note);
       return;
     }
-    const raw = ['To: ' + to, 'Subject: =?UTF-8?B?' + b64utf8(subject) + '?=', 'MIME-Version: 1.0', 'Content-Type: text/plain; charset=UTF-8',
-      'Content-Transfer-Encoding: base64', '', b64utf8(text).replace(/.{76}/g, '$&\r\n')].join('\r\n');
+    const part = (type, body) => ['Content-Type: ' + type + '; charset=UTF-8', 'Content-Transfer-Encoding: base64', '', b64utf8(body).replace(/.{76}/g, '$&\r\n')].join('\r\n');
+    const bound = 'sotd' + randomCode(12);
+    const raw = (html ? ['To: ' + to, 'Subject: =?UTF-8?B?' + b64utf8(subject) + '?=', 'MIME-Version: 1.0', 'Content-Type: multipart/alternative; boundary="' + bound + '"', '',
+      '--' + bound, part('text/plain', text), '--' + bound, part('text/html', html), '--' + bound + '--', '']
+      : ['To: ' + to, 'Subject: =?UTF-8?B?' + b64utf8(subject) + '?=', 'MIME-Version: 1.0', part('text/plain', text)]).join('\r\n');
     const send = async () => fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', { method: 'POST',
       headers: { Authorization: 'Bearer ' + await gmailToken(env), 'Content-Type': 'application/json' },
       body: JSON.stringify({ raw: b64utf8(raw).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '') }) });
@@ -2885,10 +2888,11 @@ async function memberPrefs(request, env, answer) {
   if (!who) return answer(401, { error: 'Not a member (any more).' });
   const body = await request.json().catch(() => ({}));
   const hasMsgs = typeof body.msgs === 'boolean', hasMute = Array.isArray(body.mute), hasMail = typeof body.mailme === 'string';
-  if (hasMail) {   // notifications by email: '' none, 'each', 'day' (noteMail)
-    if (!['', 'each', 'day'].includes(body.mailme)) return answer(400, { error: 'Choose none, each one or once a day.' });
-    if (body.mailme && !who.all[who.id].email) return answer(400, { error: 'Add your email address first.' });
-    if (body.mailme) who.all[who.id].mailme = body.mailme; else { who.all[who.id].mailme = 'off'; await env.SOTD.delete('mdig:' + who.id); }
+  if (hasMail) {   // notifications by email: MAIL_MODES (noteMail)
+    const want = body.mailme || 'off';
+    if (!MAIL_MODES.includes(want)) return answer(400, { error: 'Choose off, everything, once a day, the Song of the Day or messages to you.' });
+    if (want !== 'off' && !who.all[who.id].email) return answer(400, { error: 'Add your email address first.' });
+    who.all[who.id].mailme = want; if (want !== 'day') await env.SOTD.delete('mdig:' + who.id);
     if (!hasMsgs && !hasMute) { await env.SOTD.put('members', JSON.stringify(who.all)); return answer(200, { ok: true, msgs: !who.all[who.id].nomsg, mute: who.all[who.id].mute || [], mailme: mailMode(who.all[who.id]) }); }
   }
   if (!hasMsgs && !hasMute) return answer(400, { error: 'Say whether to take them (msgs: true or false), or whose not to (mute).' });
@@ -2948,18 +2952,43 @@ async function picsUp(env, origin, body) {   // { url, gif? }, or { error }
 // codes need it), so each one goes as its own email up to MAIL_EACH_DAY a member and MAIL_ALL_DAY in all; the rest wait
 // for that day's email.
 const MAIL_EACH_DAY = 8, MAIL_ALL_DAY = 60, MAIL_DIG_MAX = 40;
-function mailMode(m) { return !m || !m.email ? '' : m.mailme === undefined ? 'each' : m.mailme === 'off' ? '' : m.mailme; }   // (on, each one, unless they choose otherwise: John, 3 Nov 2026 "Can it be set to on by default"; 'off' kept as their choice)
-function mailFoot() { return '\n\n—\nJohn’s Song of the Day: ' + SITE_SONGS + '\nYou get these because you asked for emails in your Profile on the calendar. To stop or change them: Profile › Notifications by email.'; }
-async function noteMail(env, to, msg) {
+// each member's choice (mailme; none chosen: all): 'off' none; 'all' each one as it comes; 'day' one email a day with them
+// all; 'song' just the Song of the Day; 'direct' just what's to them (messages sent to them, reactions, hearts) (John, 3 Nov
+// 2026: "more granular ... one email a day for everything. Just receive song of the day, just ... a direct message or reaction")
+const MAIL_MODES = ['off', 'all', 'day', 'song', 'direct'];
+function mailMode(m) { if (!m || !m.email) return ''; const v = m.mailme === undefined || m.mailme === 'each' ? 'all' : m.mailme; return v === 'off' || !MAIL_MODES.includes(v) ? '' : v; }
+function mailWants(mode, cat) { return mode === 'all' || mode === 'day' || mode === cat; }   // cat: 'song', 'direct' or 'other'
+function mailEsc(t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+function mailImg(u) { return /^https:\/\/[^\s"'<>]+$/.test(String(u || '')) && !/\.gif(\?|$)/i.test(u) ? String(u) : ''; }   // (an https picture: the share card, a message's picture or a cover)
+function mailSettings() { return SITE_SONGS + '#emails'; }
+function mailFoot() { return '\n\n—\nYou can update your email notification settings at ' + mailSettings(); }
+function mailFootHtml() { return '<p style="margin:28px 0 0;padding-top:16px;border-top:1px solid #eadfe3;font:13px/1.5 Helvetica,Arial,sans-serif;color:#7a6a72">You can update your email notification settings at <a href="' + mailEsc(mailSettings()) + '" style="color:#ec135b">' + mailEsc(mailSettings().replace(/^https:\/\//, '')) + '</a></p>'; }
+function mailShell(inner) {   // the email's frame: the site's pink bar, a white card, the footer
+  return '<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"></head><body style="margin:0;padding:0;background:#f6f0f2">'
+    + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f0f2"><tr><td align="center" style="padding:24px 12px">'
+    + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:18px;overflow:hidden">'
+    + '<tr><td style="background:#ec135b;padding:14px 24px;font:600 12px/1 Helvetica,Arial,sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#ffffff">John’s Song of the Day</td></tr>'
+    + '<tr><td style="padding:24px">' + inner + mailFootHtml() + '</td></tr></table></td></tr></table></body></html>';
+}
+function mailItemHtml(x, big) {   // one notification: its picture (as shared), title, words and its link
+  const img = mailImg(x.i), link = x.u || SITE_SONGS;
+  return (img ? '<a href="' + mailEsc(link) + '"><img src="' + mailEsc(img) + '" alt="" width="' + (big ? 512 : 120) + '" style="display:block;width:' + (big ? '100%' : '120px') + ';max-width:100%;height:auto;border:0;border-radius:' + (big ? 14 : 10) + 'px;margin:0 0 16px"></a>' : '')
+    + '<h1 style="margin:0 0 6px;font:500 ' + (big ? 26 : 19) + 'px/1.25 Georgia,\'Times New Roman\',serif;color:#1d0b1e">' + mailEsc(x.t) + '</h1>'
+    + (x.b ? '<p style="margin:0 0 18px;font:15px/1.5 Helvetica,Arial,sans-serif;color:#4a3a42">' + mailEsc(x.b) + '</p>' : '')
+    + '<a href="' + mailEsc(link) + '" style="display:inline-block;padding:12px 22px;border-radius:999px;background:#1d0b1e;color:#ffffff;font:600 13px/1 Helvetica,Arial,sans-serif;letter-spacing:.08em;text-transform:uppercase;text-decoration:none">' + mailEsc(x.cta || 'Open it') + '</a>';
+}
+function mailItem(msg) { return { t: msg.subject || msg.title || '', b: msg.body || '', u: msg.link || msg.url || SITE_SONGS, i: mailImg(msg.image) || mailImg(msg.icon), cta: msg.cta || '', at: Date.now() }; }
+async function noteMail(env, to, msg, cat) {   // cat: 'song' (the Song of the Day), 'direct' (to them: messages, reactions, hearts) or 'other'
   if (!mailReady(env)) return;
-  const all = (await env.SOTD.get('members', 'json')) || {}, ids = (to || Object.keys(all)).filter(id => all[id] && mailMode(all[id]));
+  cat = cat || 'other';
+  const all = (await env.SOTD.get('members', 'json')) || {}, ids = (to || Object.keys(all)).filter(id => all[id] && mailWants(mailMode(all[id]), cat));
   for (const id of ids) {
-    const m = all[id], item = { t: msg.subject || msg.title || '', b: msg.body || '', u: msg.url || SITE_SONGS, at: Date.now() };
+    const m = all[id], item = mailItem(msg), mode = mailMode(m);
     let sent = false;
-    if (mailMode(m) === 'each' && await dayCount(env, 'mailme:' + id, MAIL_EACH_DAY) && await dayCount(env, 'mailme-all', MAIL_ALL_DAY)) {
-      try { await sendMail(env, m.email, item.t, (item.b ? item.b + '\n\n' : '') + 'Open it: ' + item.u + mailFoot(), 'note'); sent = true; } catch (e) { console.log('noteMail: ' + (e && e.message)); }
+    if (mode !== 'day' && await dayCount(env, 'mailme:' + id, MAIL_EACH_DAY) && await dayCount(env, 'mailme-all', MAIL_ALL_DAY)) {
+      try { await sendMail(env, m.email, item.t, (item.b ? item.b + '\n\n' : '') + item.u + mailFoot(), 'note', mailShell(mailItemHtml(item, true))); sent = true; } catch (e) { console.log('noteMail: ' + (e && e.message)); }
     }
-    if (!sent) {   // (once a day, or past today's allowance: in today's email)
+    if (!sent) {   // (once a day, or past today's allowance: in tomorrow morning's email)
       const k = 'mdig:' + id, l = (await env.SOTD.get(k, 'json')) || [];
       l.push(item); while (l.length > MAIL_DIG_MAX) l.shift();
       await kvSoft(env, k, JSON.stringify(l), { expirationTtl: 3 * 86400 });
@@ -2980,7 +3009,9 @@ async function mailDigests(env) {   // the day's email for each member with noti
       await env.SOTD.delete(key.name);
       if (!mailMode(m) || !items.length) continue;
       const text = items.map(x => '• ' + x.t + (x.b ? '\n  ' + x.b : '') + '\n  ' + x.u).join('\n\n');
-      try { await sendMail(env, m.email, items.length === 1 ? items[0].t : items.length + ' notifications from Song of the Day', text + mailFoot(), 'notes'); }
+      const html = mailShell(items.length === 1 ? mailItemHtml(items[0], true)
+        : '<h1 style="margin:0 0 18px;font:500 24px/1.25 Georgia,serif;color:#1d0b1e">Your day on Song of the Day</h1>' + items.map(x => '<div style="padding:18px 0;border-top:1px solid #eadfe3">' + mailItemHtml(x, false) + '</div>').join(''));
+      try { await sendMail(env, m.email, items.length === 1 ? items[0].t : items.length + ' notifications from Song of the Day', text + mailFoot(), 'notes', html); }
       catch (e) { console.log('mailDigests: ' + (e && e.message)); }
     }
     cursor = l.list_complete ? null : l.cursor;
@@ -2989,7 +3020,8 @@ async function mailDigests(env) {   // the day's email for each member with noti
 async function pushAll(env, msg, to, meta) {   // to: only these members (else everyone); meta: { kind: 'song' | 'note' | 'member', track, via, toNames, fromId, toIds }
   const subs = (await env.SOTD.get('pushSubs', 'json')) || {}, k = await vapidKeys(env);
   const unread = await inboxAdd(env, to, msg, meta);   // into each one's inbox first (notifications on or not); their unread counts
-  await noteMail(env, to, msg).catch(e => console.log('noteMail: ' + (e && e.message)));   // (and by email, for those who asked)
+  const m0 = meta || {}, cat = m0.kind === 'song' ? 'song' : m0.direct || (m0.kind === 'member' && (m0.toNames || (m0.via && m0.via.t === 'spotify'))) ? 'direct' : 'other';   // (to them alone: direct)
+  await noteMail(env, to, Object.assign({ cta: cat === 'song' ? 'Listen' : '' }, msg), cat).catch(e => console.log('noteMail: ' + (e && e.message)));   // (and by email, for those who asked)
   let sent = 0, failed = 0; const gone = [], errors = [];
   const ids = Object.keys(subs).filter(id => !to || to.includes(subs[id].m));
   for (let i = 0; i < ids.length; i += 20) {   // twenty at a time
@@ -3142,7 +3174,7 @@ async function bellPush(env, to, name, e, title, msgId, from, song) {
   if (!await dayCount(env, 'rxpush:' + from, RX_PUSH_DAY)) return;
   const unread = ((await env.SOTD.get('inbox:' + to, 'json')) || []).filter(y => !y.r).length;
   const msg = { title: name + ' reacted ' + e + (song ? ' to the Song of the Day' : ' to your message'), body: '“' + (title || '') + '”', url: SITE_SONGS + '#bell', tag: 'sotd-rx-' + msgId + '-' + from, unread };
-  await noteMail(env, [to], msg).catch(() => {});
+  await noteMail(env, [to], msg, 'direct').catch(() => {});
   if (!ids.length) return;
   const k = await vapidKeys(env), gone = [];
   await Promise.all(ids.map(async id => {
@@ -3187,7 +3219,7 @@ async function memberHeart(request, env, answer) {   // POST { upl, songs: [{ tr
     const rec = (await uplAll(env))[pid];
     if (!rec || !uplCan(who.all, who.id, rec)) return answer(200, { ok: true });
     const have = {}; ((await uplSongs(env, pid)).songs || []).forEach(y => { have[y.id] = y; });
-    to = rec.o; list = asked.filter(x => have[x.track]).map(x => Object.assign(x, { title: have[x.track].title }));
+    to = rec.o; list = asked.filter(x => have[x.track]).map(x => Object.assign(x, { title: have[x.track].title, img: have[x.track].img || '' }));
   } else { to = ownerId; list = asked; }
   if (!to || !who.all[to] || to === who.id || !list.length) return answer(200, { ok: true });
   const fresh = [];
@@ -3205,7 +3237,7 @@ async function memberHeart(request, env, answer) {   // POST { upl, songs: [{ tr
   if (takesFrom(who.all, to, who.id, ownerId)) {
     const subs = (await env.SOTD.get('pushSubs', 'json')) || {}, ids = Object.keys(subs).filter(k => subs[k].m === to);
     const msg = { title: who.all[who.id].name + (one ? ' hearted your song ❤️' : ' hearted ' + n + ' of your songs ❤️'), body: one ? '“' + (title || 'Your song') + '”' : names, url: SITE_SONGS + '#bell', tag: 'sotd-heart-' + id + '-' + who.id };
-    await noteMail(env, [to], msg).catch(() => {});
+    await noteMail(env, [to], Object.assign({}, msg, { link: linkOf(fresh[0]), icon: fresh[0].img || '', cta: 'See it' }), 'direct').catch(() => {});
     if (ids.length) {
       const k = await vapidKeys(env);
       await Promise.all(ids.map(sid => pushTo(env, k, subs[sid], msg).catch(err => console.log('heart push: ' + (err && err.message)))));
@@ -4186,7 +4218,7 @@ async function memberUpl(request, url, env, answer) {
     const fresh = cw.filter(k => !(rec.cw || []).includes(k));
     if (cw.length) rec.cw = cw; else delete rec.cw;
     await uplPut(env, U);
-    if (fresh.length && rec.st === 'ok') await pushAll(env, { title: all[me].name + ' added you to “' + uplName(all, rec) + '”', body: 'You can edit it now: its songs, their pictures, details, videos and facts. Open it and tap Edit.', url: SITE_SONGS + '#u=' + pid, tag: 'sotd-collab-' + pid }, fresh, { kind: 'member', via: { t: 'member', name: all[me].name } }).catch(() => {});
+    if (fresh.length && rec.st === 'ok') await pushAll(env, { title: all[me].name + ' added you to “' + uplName(all, rec) + '”', body: 'You can edit it now: its songs, their pictures, details, videos and facts. Open it and tap Edit.', url: SITE_SONGS + '#u=' + pid, tag: 'sotd-collab-' + pid }, fresh, { kind: 'member', direct: true, via: { t: 'member', name: all[me].name } }).catch(() => {});
     return answer(200, { ok: true, pls: await uplMine(env, uplList(all, me, U), U), view: rec.st === 'ok' ? await uplView(env, all, me, pid, rec) : null });
   }
   if (rec.src === 'mpl' && ['link', 'check', 'signoff', 'order', 'title', 'del'].includes(body.op)) return answer(400, { error: 'That’s done in the playlist itself.' });

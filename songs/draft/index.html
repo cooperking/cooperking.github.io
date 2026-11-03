@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="c9ed2d4c2b36">
+<meta name="sotd-build" content="4ecfa6d6a25d">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -374,6 +374,13 @@ html.page-edit .toast { bottom: calc(max(16px, env(safe-area-inset-bottom, 0px))
 .pe-settog svg { width: 12px; height: 12px; transition: transform .2s; }
 .pe-settog[aria-expanded="true"] svg { transform: rotate(180deg); }
 .pe-setg[hidden], #pe-songsg[hidden], .pe-g[hidden] { display: none; }
+.acmm-opts { display: grid; gap: 6px; margin-top: 4px; }
+.acmm-opts button { display: grid; gap: 2px; padding: 10px 12px; border: 0; border-radius: 12px; background: var(--pill-bg); box-shadow: inset 0 0 0 1px var(--line); color: var(--fg); text-align: left; cursor: pointer; font: inherit; }
+.acmm-opts button b { font: 600 14px/1.3 var(--sans); }
+.acmm-opts button span { font-size: 12.5px; color: var(--muted); }
+.acmm-opts button[aria-checked="true"] { box-shadow: inset 0 0 0 2px var(--fg); }
+.acmm-opts button[aria-checked="true"] b::before { content: "✓ "; }
+.acmm-opts button:disabled { opacity: .45; cursor: default; }
 .pe-cwn { margin: 0; font-size: 13px; line-height: 1.45; color: var(--fg-2); }
 .pe-songs li.sel { box-shadow: inset 0 0 0 2px var(--fg); }
 .pe-songs li.sel .thumb::after { content: "✓"; position: absolute; inset: 0; display: grid; place-items: center; background: rgba(27, 16, 32, .6); color: #fffaf5; font: 700 18px/1 var(--sans); }
@@ -1994,7 +2001,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       <div class="ac-dev" id="acmm" hidden>
         <p class="ac-h">Notifications by email</p>
         <p class="ac-none" id="acmmt"></p>
-        <div class="misstabs" id="acmmb" role="radiogroup" aria-label="Notifications by email"><button type="button" role="radio" data-mm="">Off</button><button type="button" role="radio" data-mm="each">Each one</button><button type="button" role="radio" data-mm="day">Once a day</button></div>
+        <div class="acmm-opts" id="acmmb" role="radiogroup" aria-label="Notifications by email"><button type="button" role="radio" data-mm="all"><b>Everything</b><span>Each notification as it comes</span></button><button type="button" role="radio" data-mm="day"><b>One email a day</b><span>Everything, in one email each morning</span></button><button type="button" role="radio" data-mm="song"><b>Just the Song of the Day</b><span>Each new song, as it comes out</span></button><button type="button" role="radio" data-mm="direct"><b>Just messages to me</b><span>Messages sent to you, reactions and hearts</span></button><button type="button" role="radio" data-mm=""><b>Off</b><span>No emails</span></button></div>
       </div>
       <div class="ac-dev" id="acpk" hidden>
         <p class="ac-h">Passkeys</p>
@@ -7059,10 +7066,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     box.hidden = !MEMBER || !MBASE || TV;
     if (box.hidden) return;
     var v = MEMBER.mailme || '', e = MEMBER.email || '';
-    document.getElementById('acmmt').textContent = !e ? 'Add your email address (above), and your notifications can come by email too.'
-      : v === 'each' ? 'Each notification also comes to ' + e + ' (up to 8 a day; any more come in one email the next morning).'
-      : v === 'day' ? 'One email each morning to ' + e + ' with the day’s notifications, if there were any.'
-      : 'Your notifications can come to ' + e + ' too: each one, or one email a day with them all.';
+    document.getElementById('acmmt').textContent = !e ? 'Add your email address (above), and your notifications can come by email too.' : v ? 'To ' + e + '. Choose which:' : 'Your notifications can come to ' + e + ' too. Choose which:';
     [].forEach.call(document.querySelectorAll('#acmmb button'), function (b) {
       var on = b.getAttribute('data-mm') === v; b.setAttribute('aria-selected', on ? 'true' : 'false'); b.setAttribute('aria-checked', on ? 'true' : 'false'); b.disabled = !e && b.getAttribute('data-mm') !== '';
     });
@@ -7071,7 +7075,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     b.addEventListener('click', function () {
       if (!MEMBER) return;
       var v = b.getAttribute('data-mm'); if (v === (MEMBER.mailme || '')) return;
-      msgPrefs({ mailme: v }).then(function (j) { MEMBER.mailme = j.mailme || ''; mmDraw(); toast(!j.mailme ? 'No more emails' : j.mailme === 'each' ? 'Each notification comes by email too' : 'One email a day with your notifications'); }, function () {});
+      msgPrefs({ mailme: v }).then(function (j) { MEMBER.mailme = j.mailme || ''; mmDraw(); toast({ all: 'Every notification comes by email too', day: 'One email a day with your notifications', song: 'An email for each Song of the Day', direct: 'Emails for messages to you, reactions and hearts' }[j.mailme] || 'No more emails'); }, function () {});
     });
   });
   function mailDraw() {
@@ -7651,6 +7655,17 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (!acct.open) acctOpen();
     bellOpen();
   }
+  // the emails' settings link (#emails): the Profile, at Notifications by email
+  var mmWant = false;
+  function mmFromHash() { if (location.hash !== '#emails') return; try { history.replaceState(history.state, '', location.pathname + location.search); } catch (e) {} mmWant = true; mmWanted(); }
+  function mmWanted() {
+    if (!mmWant || !MEMBER || TV) return;
+    mmWant = false;
+    if (!acct.open) acctOpen();
+    setTimeout(function () { var b = document.getElementById('acmm'); if (b && !b.hidden) { var pane = b.closest('.ac-pane'); if (pane && typeof AC_TAB !== 'undefined') { AC_TAB = pane.getAttribute('data-pane'); acTabs(); } b.scrollIntoView({ block: 'center', behavior: 'smooth' }); } }, 300);
+  }
+  window.addEventListener('hashchange', mmFromHash);
+  mmFromHash();
   window.addEventListener('hashchange', bellFromHash);
   bellFromHash();
   document.getElementById('bellclose').addEventListener('click', function () { closeDialog(bellDlg); });
@@ -10570,7 +10585,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     }).then(function (j) {
       if (!j) return;
       MEMBER = j; dlPrune(j.see); memberApply(); impResume(); famSync(); resumeInit(); nowFetch(); nowLine(); noteSync(); noteOffer(); spLoad();
-      if (!TV) { unreadSet(j.unread); readTapped(); bellSet(j.bell); bellWanted(); }
+      if (!TV) { unreadSet(j.unread); readTapped(); bellSet(j.bell); bellWanted(); mmWanted(); }
       uplMark(); uplWaitCount(); if (UPL.on && !uplPls().some(function (p) { return p.id === UPL.on; })) uplBack(); uplWanted();
       if (appAfterJoin) { appAfterJoin = false; if (appCan()) setTimeout(appOffer, 600); }
       pkOffer();
