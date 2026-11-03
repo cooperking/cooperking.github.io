@@ -1803,7 +1803,7 @@ async function memberMe(request, env, answer) {
   const U0 = await uplAll(env), pls = await uplMine(env, uplList(all, id, U0), U0);   // members' own playlists they can see, and their own (with the songs waiting for them)
   const fu = { n: await uplFileCount(env, id, U0), max: (await env.SOTD.get('owner')) === id ? 0 : UPL_OWN_FILES };
   if (fu.max) { const plan = await uplDlPlan(env, id, U0); if (plan) fu.u = plan.u; }   // (u: their songs with files, or to have them: the allowance used)   // the songs with their own MP3 or MP4, and the most (0: John's, no limit)
-  return answer(200, Object.assign({ name: m.name, email: m.email || '', mailme: m.mailme || '', exp, media, see, mycovers, unread, bell, pls, fu, others, seen, msgs: !m.nomsg,
+  return answer(200, Object.assign({ name: m.name, email: m.email || '', mailme: mailMode(m), exp, media, see, mycovers, unread, bell, pls, fu, others, seen, msgs: !m.nomsg,
     mute: (m.mute || []).filter(k => seen.some(x => x.id === k)) }, owner ? { owner: true } : {}));
 }
 
@@ -2888,8 +2888,8 @@ async function memberPrefs(request, env, answer) {
   if (hasMail) {   // notifications by email: '' none, 'each', 'day' (noteMail)
     if (!['', 'each', 'day'].includes(body.mailme)) return answer(400, { error: 'Choose none, each one or once a day.' });
     if (body.mailme && !who.all[who.id].email) return answer(400, { error: 'Add your email address first.' });
-    if (body.mailme) who.all[who.id].mailme = body.mailme; else { delete who.all[who.id].mailme; await env.SOTD.delete('mdig:' + who.id); }
-    if (!hasMsgs && !hasMute) { await env.SOTD.put('members', JSON.stringify(who.all)); return answer(200, { ok: true, msgs: !who.all[who.id].nomsg, mute: who.all[who.id].mute || [], mailme: who.all[who.id].mailme || '' }); }
+    if (body.mailme) who.all[who.id].mailme = body.mailme; else { who.all[who.id].mailme = 'off'; await env.SOTD.delete('mdig:' + who.id); }
+    if (!hasMsgs && !hasMute) { await env.SOTD.put('members', JSON.stringify(who.all)); return answer(200, { ok: true, msgs: !who.all[who.id].nomsg, mute: who.all[who.id].mute || [], mailme: mailMode(who.all[who.id]) }); }
   }
   if (!hasMsgs && !hasMute) return answer(400, { error: 'Say whether to take them (msgs: true or false), or whose not to (mute).' });
   const all = who.all, m = all[who.id], ownerId = await env.SOTD.get('owner');
@@ -2899,7 +2899,7 @@ async function memberPrefs(request, env, answer) {
     if (mute.length) m.mute = mute; else delete m.mute;
   }
   await env.SOTD.put('members', JSON.stringify(all));
-  return answer(200, { ok: true, msgs: !m.nomsg, mute: m.mute || [], mailme: m.mailme || '' });
+  return answer(200, { ok: true, msgs: !m.nomsg, mute: m.mute || [], mailme: mailMode(m) });
 }
 async function memberSendPic(request, env, answer) {
   if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
@@ -2943,19 +2943,20 @@ async function picsUp(env, origin, body) {   // { url, gif? }, or { error }
 }
 
 // notifications by email too (John, 3 Nov 2026: "Can an email be sent to users when notifications are received too"):
-// each member chooses in their Profile (mailme on their record): '' none, 'each' an email for each one, 'day' one email a
+// each member chooses in their Profile (mailme on their record; none chosen: each one): 'off' none, 'each' an email for each one, 'day' one email a
 // day with them all (KV mdig:<member>, sent from 8am UK by the timer). John's mailer has a daily allowance (and sign-in
 // codes need it), so each one goes as its own email up to MAIL_EACH_DAY a member and MAIL_ALL_DAY in all; the rest wait
 // for that day's email.
 const MAIL_EACH_DAY = 8, MAIL_ALL_DAY = 60, MAIL_DIG_MAX = 40;
+function mailMode(m) { return !m || !m.email ? '' : m.mailme === undefined ? 'each' : m.mailme === 'off' ? '' : m.mailme; }   // (on, each one, unless they choose otherwise: John, 3 Nov 2026 "Can it be set to on by default"; 'off' kept as their choice)
 function mailFoot() { return '\n\n—\nJohn’s Song of the Day: ' + SITE_SONGS + '\nYou get these because you asked for emails in your Profile on the calendar. To stop or change them: Profile › Notifications by email.'; }
 async function noteMail(env, to, msg) {
   if (!mailReady(env)) return;
-  const all = (await env.SOTD.get('members', 'json')) || {}, ids = (to || Object.keys(all)).filter(id => all[id] && all[id].email && all[id].mailme);
+  const all = (await env.SOTD.get('members', 'json')) || {}, ids = (to || Object.keys(all)).filter(id => all[id] && mailMode(all[id]));
   for (const id of ids) {
     const m = all[id], item = { t: msg.subject || msg.title || '', b: msg.body || '', u: msg.url || SITE_SONGS, at: Date.now() };
     let sent = false;
-    if (m.mailme === 'each' && await dayCount(env, 'mailme:' + id, MAIL_EACH_DAY) && await dayCount(env, 'mailme-all', MAIL_ALL_DAY)) {
+    if (mailMode(m) === 'each' && await dayCount(env, 'mailme:' + id, MAIL_EACH_DAY) && await dayCount(env, 'mailme-all', MAIL_ALL_DAY)) {
       try { await sendMail(env, m.email, item.t, (item.b ? item.b + '\n\n' : '') + 'Open it: ' + item.u + mailFoot(), 'note'); sent = true; } catch (e) { console.log('noteMail: ' + (e && e.message)); }
     }
     if (!sent) {   // (once a day, or past today's allowance: in today's email)
@@ -2977,7 +2978,7 @@ async function mailDigests(env) {   // the day's email for each member with noti
     for (const key of l.keys) {
       const id = key.name.slice(5), m = all[id], items = (await env.SOTD.get(key.name, 'json')) || [];
       await env.SOTD.delete(key.name);
-      if (!m || !m.email || !m.mailme || !items.length) continue;
+      if (!mailMode(m) || !items.length) continue;
       const text = items.map(x => '• ' + x.t + (x.b ? '\n  ' + x.b : '') + '\n  ' + x.u).join('\n\n');
       try { await sendMail(env, m.email, items.length === 1 ? items[0].t : items.length + ' notifications from Song of the Day', text + mailFoot(), 'notes'); }
       catch (e) { console.log('mailDigests: ' + (e && e.message)); }
