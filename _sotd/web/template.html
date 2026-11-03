@@ -3828,6 +3828,15 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     SPX.native = false;
     clearInterval(SPX.poll);
     if (SPX.track === id && SPX.playing && SPX.list.indexOf(id) >= 0) { spxWatch(); coverState(1); return; }   // (Spotify's already on it, having moved on by itself)
+    if (Date.now() - NOW.gesture > 8000 && SPX.lookedFor !== id) {   // (not a tap here: Spotify asked first, so a song chosen on another device isn't put back)
+      SPX.lookedFor = id;
+      spCall({ op: 'state' }).then(function (k) {
+        if (k.status === 200 && k.playing && k.track && k.track !== id && byTrack[k.track]) { SPX.lookedFor = null; spxRefollow('playing something else already'); return; }
+        spxLoad(id);
+      }, function () { spxLoad(id); });
+      return;
+    }
+    SPX.lookedFor = null;
     SPX.track = id; SPX.list = spxUpcoming(id); SPX.pos = 0; SPX.at = Date.now(); SPX.dur = 0; SPX.playing = false; SPX.busy = true; SPX.dev = null; spxShowDev();
     coverState(3);
     var ld = SPX.pick ? null : SPX.last;   // (the device that played this visit: straight to it again)
@@ -3875,6 +3884,13 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       });
     }, left + 400);
   }
+  function spxRefollow(why) {   // Spotify changed elsewhere (another device, or Spotify itself): this page lets go and follows what it's playing now, sending nothing
+    spLog('Spotify changed elsewhere (' + why + '): following it here');
+    clearInterval(SPX.poll); SPX.catchUp = null;
+    if (coverObj) coverObj.sp = false; spxStop(true);
+    if (bgOn) bgOff(); if (sheet.open) closeDialog(sheet, true);
+    PICK.at = 0; setTimeout(function () { nowFetch(); spPickUp('changed elsewhere', true); }, 400);
+  }
   function spxWatch() {   // every few seconds while in sight: where Spotify has got to
     clearInterval(SPX.poll); spxEndSoon();
     SPX.poll = setInterval(function () {
@@ -3891,6 +3907,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
             SPX.catchUp = j.track; SPX.track = j.track; SPX.pos = j.pos; SPX.at = Date.now(); SPX.dur = j.dur; SPX.playing = j.playing; SPX.skips = 0;
             spxTopUp(); coverState(0); return;
           }
+          if (j.playing && byTrack[j.track]) { spxRefollow('another song of the calendar'); return; }   // (another device, say: followed, not fought)
           SPX.other = true; SPX.playing = false; clearInterval(SPX.poll); coverState(2); return;   // (something else chosen in Spotify itself: left playing, no longer followed; Play here sends this song again)
         }
         if (j.device && (!SPX.dev || SPX.dev.name !== j.device)) { SPX.dev = { id: j.did || '', name: j.device }; spxShowDev(); }   // (moved in Spotify itself)
@@ -3908,7 +3925,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     spxState().then(function (k) {
       if (k.status !== 200 || k.none || !coverObj.sp) return;
       if (k.track && k.track !== SPX.track && SPX.list.indexOf(k.track) > SPX.list.indexOf(SPX.track)) { spLog('back: Spotify moved on to song ' + (SPX.list.indexOf(k.track) + 1) + ' of the list while away: following'); SPX.catchUp = k.track; SPX.track = k.track; SPX.pos = k.pos; SPX.at = Date.now(); SPX.dur = k.dur; SPX.playing = k.playing; coverState(0); return; }
-      if (k.track === SPX.track) { SPX.pos = k.pos; SPX.at = Date.now(); SPX.dur = k.dur || SPX.dur; if (SPX.playing !== k.playing) { SPX.playing = k.playing; coverState(k.playing ? 1 : 2); } }
+      if (k.track === SPX.track) { SPX.pos = k.pos; SPX.at = Date.now(); SPX.dur = k.dur || SPX.dur; if (SPX.playing !== k.playing) { SPX.playing = k.playing; coverState(k.playing ? 1 : 2); } return; }
+      if (k.track && k.playing && byTrack[k.track] && !SPX.native) spxRefollow('back, another song playing');   // (changed on another device while away: followed, never put back)
     }).catch(function () {});
   });
   function spxWake(id) {   // Spotify asleep on this phone: opened playing this song; back here, the rest of the list follows from where it is
@@ -5794,7 +5812,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (!MEMBER || TV || !vplay || !vplay.el || !vplay.el.sotd || !sheet.open || NOW.taken) return;
     var s = vplay.el.sotd.s, pos = 0;
     try { pos = vplay.player && vplay.player.getCurrentTime ? vplay.player.getCurrentTime() : 0; } catch (e) {}
-    var st = { t: s.track, d: s.d, pos: Math.floor(pos || 0), at: Date.now(), playing: !!vplay.on, open: !bgOn,
+    var st = { t: s.track, d: s.d, pos: Math.floor(pos || 0), at: Date.now(), playing: !!vplay.on, open: !bgOn, sp: !!(coverObj && coverObj.sp),
       q: queue ? { list: queue.list, i: queue.i, name: queue.name, back: queue.back, order: queue.order } : null };
     try { localStorage.setItem(RES_KEY, JSON.stringify(st)); } catch (e) {}
   }
@@ -5812,7 +5830,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (!st || !byTrack[st.t] || Date.now() - (st.at || 0) > 24 * 3600e3) { resumeForget(); return; }
     if (sheet.open || bgOn) return;   // a day already opened (a shared link): that instead
     resumeShow(st);
-    if (resumeCarry(st)) resumeGo(!!st.open);   // a refresh while it played: on from where it was
+    if (resumeCarry(st) && !st.sp) resumeGo(!!st.open);   // a refresh while it played: on from where it was (through Spotify: not sent again; Spotify plays on, and is picked up where it is: John, 3 Nov 2026, the iPhone put back a song Chrome had changed)
   }
   function resumeShow(st) {   // My playlist's box showing it, paused, to carry on with
     RESUME = st;
@@ -6023,6 +6041,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   document.addEventListener('visibilitychange', function () { if (!document.hidden) nowAppReload(true); });
   function nowGot(j) {   // the note (asked for, or told down the line): this device stopped, or the other's song shown here
+    if (j && j.rec) NOW.rec = j.rec;   // (the latest, for picking up Spotify in the other device's order, its shuffle too)
     if (!MEMBER) return;
     var r = j.rec;
     if (busyNow()) {   // playing here: carried on on another device since this one's note?
@@ -9968,7 +9987,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       if (NAT && /Smartphone|Tablet/.test(k.dtype || '')) return false;   // (this phone's own Spotify: its own way, not picked up here)
       if (bgOn || sheet.open || (coverObj && coverObj.sp && SPX.track)) return false;
       var st0 = RESUME || (function () { try { return JSON.parse(localStorage.getItem(RES_KEY) || 'null'); } catch (e) { return null; } })();
-      var q = st0 && st0.q && st0.q.list && st0.q.list.indexOf(k.track) >= 0 ? st0.q : null;   // (the list it was playing, if this song's in it: on through that)
+      var nr = NOW.rec && NOW.rec.dev !== deviceId() && NOW.rec.q && NOW.rec.q.list && NOW.rec.q.list.indexOf(k.track) >= 0 ? NOW.rec.q : null;   // (the device working Spotify now: its list, shuffled or not)
+      var q = nr || (st0 && st0.q && st0.q.list && st0.q.list.indexOf(k.track) >= 0 ? st0.q : null);   // (else the list it was playing here, if this song's in it)
       RESUME = { t: k.track, pos: Math.floor((k.pos || 0) / 1000), at: Date.now(), q: q };
       queue = null;
       if (q) { var ql = q.list.filter(function (t) { return byTrack[t]; }); queue = { list: ql, i: ql.indexOf(k.track), name: q.name, back: q.back, order: (q.order || ql).filter(function (t) { return byTrack[t]; }), heard: {} }; }
