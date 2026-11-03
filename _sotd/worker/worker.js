@@ -3617,10 +3617,17 @@ function uplName(all, rec) { return rec.title || rec.n || ((all[rec.o] && all[re
 function uplTitle(all, rec) { return rec.mode === 'list' ? uplName(all, rec) : ((all[rec.o] && all[rec.o].name) || 'A member') + '’s Song of the Day'; }   // what the calendar calls it
 const UPL_SHARES = ['public', 'members', 'some', 'private'];
 function uplShareOf(rec) { return UPL_SHARES.includes(rec.share) ? rec.share : 'members'; }   // who its owner shares it with: anyone, every member, the members in to, or no one
+// collaborators (John, 3 Nov 2026: "Can we make playlists collaborative, so that different members can edit"): rec.cw,
+// the members its owner lets edit it. They see it whoever it's shared with, and edit its songs as its owner does (each
+// song's details, picture, video, files and facts; moving, taking off and signing off songs); its name, set-up, who
+// sees it, who edits it and removing it stay its owner's. Their files count against its owner's allowance.
+function uplCo(rec, id) { return !!(rec && id && (rec.cw || []).includes(id)); }
+const UPL_CO_OPS = ['skip', 'edit', 'facts', 'askfacts', 'order', 'signoff', 'del', 'move', 'unmove', 'place'];
 function uplCan(all, viewer, rec) {   // whether someone sees this playlist (viewer: a member's id, or none): theirs, or another's that's readable, shared with them and not kept apart
   if (!rec || !all[rec.o]) return false;
   if (viewer && rec.o === viewer) return true;
   if (rec.st !== 'ok') return false;
+  if (viewer && all[viewer] && uplCo(rec, viewer) && !apart(all, viewer, rec.o)) return true;
   const sh = uplShareOf(rec);
   if (!viewer || !all[viewer]) return sh === 'public';
   if (apart(all, viewer, rec.o)) return false;
@@ -3628,12 +3635,12 @@ function uplCan(all, viewer, rec) {   // whether someone sees this playlist (vie
 }
 function uplList(all, viewer, U) {   // the playlists a member can switch to (/members/me pls)
   return Object.entries(U).filter(([, r]) => uplCan(all, viewer, r))
-    .map(([pid, r]) => Object.assign({ id: pid, n: uplName(all, r), t: uplTitle(all, r), o: all[r.o].name, mode: r.mode, cnt: r.cnt || 0, sp: r.sp, src: uplSrc(r), sh: uplShareOf(r) }, r.yt ? { yt: r.yt } : {}, r.pic ? { pic: LIVE_ORIGIN + '/up/' + pid + '.jpg?v=' + r.pic } : {}, r.o === viewer ? { mine: true, pl: r.pl || '', fk: r.fk || '', moved: r.dd ? Object.keys(r.dd).length : 0, st: r.st, err: r.err || '', sn: r.n || '', to: uplShareOf(r) === 'some' ? r.to || [] : [], dates: r.mode === 'list' ? null : Object.assign({ how: 'added' }, r.dates || {}), send: uplSendOf(r) } : {}))
-    .sort((a, b) => (b.mine ? 1 : 0) - (a.mine ? 1 : 0) || a.o.localeCompare(b.o) || a.n.localeCompare(b.n));
+    .map(([pid, r]) => Object.assign({ id: pid, n: uplName(all, r), t: uplTitle(all, r), o: all[r.o].name, mode: r.mode, cnt: r.cnt || 0, sp: r.sp, src: uplSrc(r), sh: uplShareOf(r) }, r.yt ? { yt: r.yt } : {}, r.pic ? { pic: LIVE_ORIGIN + '/up/' + pid + '.jpg?v=' + r.pic } : {}, uplCo(r, viewer) ? { co: true } : {}, r.o === viewer ? { mine: true, cw: r.cw || [], pl: r.pl || '', fk: r.fk || '', moved: r.dd ? Object.keys(r.dd).length : 0, st: r.st, err: r.err || '', sn: r.n || '', to: uplShareOf(r) === 'some' ? r.to || [] : [], dates: r.mode === 'list' ? null : Object.assign({ how: 'added' }, r.dates || {}), send: uplSendOf(r) } : {}))
+    .sort((a, b) => (b.mine ? 2 : b.co ? 1 : 0) - (a.mine ? 2 : a.co ? 1 : 0) || a.o.localeCompare(b.o) || a.n.localeCompare(b.n));
 }
 async function uplMine(env, pls, U) {   // their own playlists' songs waiting for them to sign off (wait: the newest 20, oldest first)
   for (const p of pls) {
-    if (!p.mine || p.st !== 'ok' || !U[p.id]) continue;
+    if (!(p.mine || p.co) || p.st !== 'ok' || !U[p.id]) continue;
     const rec = U[p.id], data = await uplSongs(env, p.id), days = uplDays(data.songs || [], rec);
     p.wait = (data.songs || []).map((x, i) => uplWaiting(rec, data, x) && !uplGone(data, x) ? { id: x.id, title: x.title, artist: x.artist, d: days[i].d, img: x.img || '' } : null).filter(Boolean).slice(-20);
   }
@@ -4036,7 +4043,7 @@ async function uplFactsIn(request, env) {   // POST the facts task's _sotd/data/
   return answer(200, { ok: true, added: n });
 }
 async function uplView(env, all, viewer, pid, rec, also) {   // (also: tracks wanted even if taken off, for memberSongs: saved to a playlist elsewhere)   // a playlist as the calendar takes it: its songs (out ones; its owner, all, the waiting marked w and the days to come f)
-  const data = await uplSongs(env, pid), mine = !!viewer && rec.o === viewer, today = londonDay();
+  const data = await uplSongs(env, pid), mine = !!viewer && (rec.o === viewer || uplCo(rec, viewer)), today = londonDay();   // (mine: theirs to edit, its owner's or a collaborator's)
   const pv = Object.assign({}, pvMem, (await env.SOTD.get('previews', 'json')) || {});
   const tags = (await env.SOTD.get('tags', 'json')) || {};
   const days = uplDays(data.songs || [], rec);
@@ -4098,7 +4105,7 @@ async function uplView(env, all, viewer, pid, rec, also) {   // (also: tracks wa
       left: { p: ids(all2.filter(pvLeft)), v: ids(leftOf('v')), m: ids(leftOf('m')), y: ids(leftOf('y')) },   // (still to look for: which, each one's look can be stopped)
       fa: songs.filter(x => x.ma || (x.own && x.own.a) || (x.jf && x.jf.a)).length, fv: songs.filter(x => x.mv || (x.own && x.own.v) || (x.jf && x.jf.v)).length, ch: rec.ch || rec.at || 0 };
   }
-  return { id: pid, n: uplName(all, rec), t: uplTitle(all, rec), o: all[rec.o].name, mine, admin: adm || undefined, mode: rec.mode, sp: rec.sp, src: uplSrc(rec), yt: rec.yt || '', st: rec.st, at: data.at || null, sh: uplShareOf(rec),
+  return { id: pid, n: uplName(all, rec), t: uplTitle(all, rec), o: all[rec.o].name, mine, own: !!viewer && rec.o === viewer, co: uplCo(rec, viewer) || undefined, admin: adm || undefined, mode: rec.mode, sp: rec.sp, src: uplSrc(rec), yt: rec.yt || '', st: rec.st, at: data.at || null, sh: uplShareOf(rec),
     dates: rec.mode === 'list' ? null : Object.assign({ how: 'added' }, rec.dates || {}), send: mine ? uplSendOf(rec) : undefined, prog, songs };
 }
 // /members/upl: GET ?id= one playlist to show; POST { op: 'add', link, mode } | { op: 'csv', name, mode, songs } (from an
@@ -4172,8 +4179,16 @@ async function memberUpl(request, url, env, answer) {
     await startJob(env, null, null, 0, null, true).catch(() => {});   // the site job: its videos, moods, years and YouTube copy
     return answer(200, { ok: true, id: pid, st: 'ok', pls: await uplMine(env, uplList(all, me, U), U), view: await uplView(env, all, me, pid, rec) });
   }
-  const pid = String(body.id || ''), rec = own(pid);
+  const pid = String(body.id || ''), rec = own(pid) || (UPL_CO_OPS.includes(body.op) && U[pid] && uplCo(U[pid], me) && all[U[pid].o] && !apart(all, me, U[pid].o) ? U[pid] : null);   // (a collaborator: its songs)
   if (!rec) return answer(404, { error: 'No such playlist of yours.' });
+  if (body.op === 'collab') {   // who can edit it, its owner says: cw (member ids); the new ones told
+    const cw = [...new Set((Array.isArray(body.cw) ? body.cw : []).map(String))].filter(k => all[k] && k !== me && !apart(all, me, k)).slice(0, 20);
+    const fresh = cw.filter(k => !(rec.cw || []).includes(k));
+    if (cw.length) rec.cw = cw; else delete rec.cw;
+    await uplPut(env, U);
+    if (fresh.length && rec.st === 'ok') await pushAll(env, { title: all[me].name + ' added you to “' + uplName(all, rec) + '”', body: 'You can edit it now: its songs, their pictures, details, videos and facts. Open it and tap Edit.', url: SITE_SONGS + '#u=' + pid, tag: 'sotd-collab-' + pid }, fresh, { kind: 'member', via: { t: 'member', name: all[me].name } }).catch(() => {});
+    return answer(200, { ok: true, pls: await uplMine(env, uplList(all, me, U), U), view: rec.st === 'ok' ? await uplView(env, all, me, pid, rec) : null });
+  }
   if (rec.src === 'mpl' && ['link', 'check', 'signoff', 'order', 'title', 'del'].includes(body.op)) return answer(400, { error: 'That’s done in the playlist itself.' });
   if (rec.src === 'csv' && ['link', 'check'].includes(body.op)) return answer(400, { error: 'Upload a fresh export from Exportify instead.' });
   if (body.op === 'skip') {   // its owner stops the look for one song's preview (p), video (v), moods (m) or year (y): counted as none found
@@ -4431,7 +4446,7 @@ async function uplOwnSong(request, url, env, answer) {   // the owner's playlist
   if (!who) return { no: answer(401, { error: 'Not a member (any more).' }) };
   if (!env.MEDIA) return { no: answer(503, { error: 'Files can’t be added yet.' }) };
   const U = await uplAll(env), pid = url.searchParams.get('id') || '', rec = U[pid], track = url.searchParams.get('track') || '';
-  if (!rec || rec.o !== who.id) return { no: answer(404, { error: 'No such playlist of yours.' }) };
+  if (!rec || !(rec.o === who.id || (uplCo(rec, who.id) && !apart(who.all, who.id, rec.o)))) return { no: answer(404, { error: 'No such playlist of yours.' }) };   // (its owner's, or a collaborator's)
   const data = await uplSongs(env, pid);
   if (!(data.songs || []).some(y => y.id === track)) return { no: answer(404, { error: 'That song isn’t on this playlist.' }) };
   return { who, U, pid, rec, track, data };
@@ -4487,9 +4502,9 @@ async function memberUplUp(request, url, env, answer) {   // ?id&track&kind=a|v&
   const kind = url.searchParams.get('kind'), op = url.searchParams.get('op'), uid = url.searchParams.get('uploadId') || '';
   if (!MEDIA_KINDS[kind]) return answer(400, { error: 'An MP3 (a) or an MP4 (v)?' });
   const key = 'u' + kind + '/' + o.pid + '/' + o.track + '.' + MEDIA_KINDS[kind].ext;
-  const fu = async () => ({ n: await uplFileCount(env, o.who.id, await uplAll(env)), max: john ? 0 : UPL_OWN_FILES });   // (max 0: no limit, and the editor says nothing)
-  const john = (await env.SOTD.get('owner')) === o.who.id;   // (John's own playlists have no limit: John, 1 Nov 2026)
-  const over = async () => { if (john) return false; const had = await uplFileSongs(env, o.who.id, await uplAll(env)); return !had.has(o.track) && had.size >= UPL_OWN_FILES; };   // (a song with one of theirs already takes the other freely)
+  const fu = async () => ({ n: await uplFileCount(env, o.rec.o, await uplAll(env)), max: john ? 0 : UPL_OWN_FILES });   // (its owner's allowance, whoever adds it)   // (max 0: no limit, and the editor says nothing)
+  const john = (await env.SOTD.get('owner')) === o.rec.o;   // (John's own playlists have no limit: John, 1 Nov 2026)
+  const over = async () => { if (john) return false; const had = await uplFileSongs(env, o.rec.o, await uplAll(env)); return !had.has(o.track) && had.size >= UPL_OWN_FILES; };   // (a song with one of theirs already takes the other freely)
   if (op === 'drop') { await env.MEDIA.delete(key); await uplFilesSet(env, o.pid, o.track, kind, 0); return answer(200, { ok: true, fu: await fu(), view: await uplView(env, o.who.all, o.who.id, o.pid, o.rec) }); }
   if (op === 'start') {
     if ((await catalog(env))[o.track] && (await catalog(env))[o.track][kind]) return answer(400, { error: 'Already uploaded.' });   // (John's, from the Songs tab)
