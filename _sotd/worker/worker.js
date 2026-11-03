@@ -3759,7 +3759,7 @@ function uplCan(all, viewer, rec) {   // whether someone sees this playlist (vie
 }
 function uplList(all, viewer, U) {   // the playlists a member can switch to (/members/me pls)
   return Object.entries(U).filter(([, r]) => uplCan(all, viewer, r))
-    .map(([pid, r]) => Object.assign({ id: pid, n: uplName(all, r), t: uplTitle(all, r), o: all[r.o].name, mode: r.mode, cnt: r.cnt || 0, sp: r.sp, src: uplSrc(r), sh: uplShareOf(r) }, r.yt ? { yt: r.yt } : {}, r.pic ? { pic: LIVE_ORIGIN + '/up/' + pid + '.jpg?v=' + r.pic } : {}, uplCo(r, viewer) ? { co: true } : {}, r.o === viewer ? { mine: true, cw: r.cw || [], pl: r.pl || '', fk: r.fk || '', adds: r.adds || [], moved: r.dd ? Object.keys(r.dd).length : 0, st: r.st, err: r.err || '', sn: r.n || '', to: uplShareOf(r) === 'some' ? r.to || [] : [], dates: r.mode === 'list' ? null : Object.assign({ how: 'added' }, r.dates || {}), send: uplSendOf(r) } : {}))
+    .map(([pid, r]) => Object.assign({ id: pid, n: uplName(all, r), t: uplTitle(all, r), o: all[r.o].name, mode: r.mode, cnt: r.cnt || 0, sp: r.sp, src: uplSrc(r), sh: uplShareOf(r) }, r.yt ? { yt: r.yt } : {}, r.pic ? { pic: LIVE_ORIGIN + '/up/' + pid + '.jpg?v=' + r.pic } : {}, uplCo(r, viewer) ? { co: true } : {}, r.o === viewer ? { mine: true, auto: !!r.auto, cw: r.cw || [], pl: r.pl || '', fk: r.fk || '', adds: r.adds || [], moved: r.dd ? Object.keys(r.dd).length : 0, st: r.st, err: r.err || '', sn: r.n || '', to: uplShareOf(r) === 'some' ? r.to || [] : [], dates: r.mode === 'list' ? null : Object.assign({ how: 'added' }, r.dates || {}), send: uplSendOf(r) } : {}))
     .sort((a, b) => (b.mine ? 2 : b.co ? 1 : 0) - (a.mine ? 2 : a.co ? 1 : 0) || a.o.localeCompare(b.o) || a.n.localeCompare(b.n));
 }
 async function uplMine(env, pls, U) {   // their own playlists' songs waiting for them to sign off (wait: the newest 20, oldest first)
@@ -3923,11 +3923,58 @@ async function uplPreviews(env, U) {   // their songs' previews not looked up ye
     left -= Math.min(left, miss.length);
   }
 }
+// John's own imported playlists update by themselves (John, 3 Nov 2026: "could songs that I import not be treated in the same
+// way as other exportify playlists and update automatically"): his Spotify sign-in reads his own playlists (private and
+// collaborative too), so each of his Exportify imports is matched to the Spotify playlist of the same name (its file, fk,
+// and the ones added to it, adds) and read every UPL_EVERY from 06:00 to 23:00, as a fresh download would bring it in:
+// new songs wait for him to sign off, the rest keep their days, songs added from other playlists stay. Liked Songs needs
+// another Spotify permission, so that one still comes from Exportify.
+async function johnSpLists(env) {   // his Spotify playlists { key (as an Exportify file's): id }, kept six hours
+  const kept = await env.SOTD.get('johnpls', 'json');
+  if (kept && Date.now() - kept.at < 6 * 3600e3) return kept.map;
+  const tok = await getToken(env), map = {};
+  let next = '/me/playlists?limit=50';
+  for (let i = 0; next && i < 20; i++) {
+    const j = await spotify(tok, next);
+    for (const p of j.items || []) if (p && p.id && p.name) { const k = uplFileKey(p.name); if (k && !map[k]) map[k] = p.id; }
+    next = j.next ? j.next.replace('https://api.spotify.com/v1', '') : null;
+  }
+  await kvSoft(env, 'johnpls', JSON.stringify({ at: Date.now(), map }), { expirationTtl: 86400 });
+  return map;
+}
+async function uplJohnAuto(env, U, ownerId) {
+  const now = Date.now(), h = londonHour();
+  if (!ownerId || h < 6 || h >= 23) return;
+  const due = Object.entries(U).filter(([, r]) => r.o === ownerId && r.src === 'csv' && r.fk && now - (r.autoAt || 0) >= UPL_EVERY)
+    .sort((a, b) => (a[1].autoAt || 0) - (b[1].autoAt || 0)).slice(0, 2);
+  if (!due.length) return;
+  const map = await johnSpLists(env), tok = await getToken(env);
+  for (const [pid, rec] of due) {
+    rec.autoAt = now;
+    const main = map[rec.fk];
+    if (!main) { rec.auto = false; rec.autoErr = 'No playlist of yours on Spotify by that name'; continue; }
+    try {
+      const items = await playlistItems(tok, main), ids = new Set(items.map(x => x.id));
+      const data = await uplSongs(env, pid);
+      if (data.add) for (const x of data.songs || []) if (data.add[x.id] && !ids.has(x.id)) { items.push(x); ids.add(x.id); }   // (songs added to it from other playlists stay)
+      let addNew = false;
+      for (const k of rec.adds || []) {   // the playlists added to it: their new songs too
+        const sid = map[k]; if (!sid || sid === main) continue;
+        for (const x of await playlistItems(tok, sid)) if (!ids.has(x.id)) { items.push(x); ids.add(x.id); data.add = data.add || {}; data.add[x.id] = 1; addNew = true; }
+      }
+      if (addNew) await env.SOTD.put('upl:' + pid, JSON.stringify(data));
+      await uplTake(env, pid, rec, U, items, rec.st, now);
+      rec.auto = true; delete rec.autoErr;
+    } catch (e) { rec.autoErr = String(e && e.message || e).slice(0, 160); }
+  }
+  await uplPut(env, U);
+}
 async function uplLook(env) {   // the timer: playlists due a read (UPL_LOOK_MOST each time)
   const U = await uplAll(env), now = Date.now(), h = londonHour();
   const due = Object.entries(U).filter(([, r]) => uplSrc(r) === 'sp').filter(([, r]) => (r.st === 'ok' || r.st === 'err') ? (h >= 6 && h < 23 && now - (r.tried || 0) >= UPL_EVERY) : now - (r.tried || 0) >= (now - r.at < DAY ? UPL_JOIN_EVERY : 6 * UPL_JOIN_EVERY))
     .sort((a, b) => (a[1].tried || 0) - (b[1].tried || 0)).slice(0, UPL_LOOK_MOST);
   for (const [pid, r] of due) await uplRead(env, pid, r, U).catch(e => console.log('upl ' + pid + ': ' + (e && e.message)));
+  await uplJohnAuto(env, U, await env.SOTD.get('owner')).catch(e => console.log('uplJohnAuto: ' + (e && e.message)));
   await uplPreviews(env, U).catch(e => console.log('uplPreviews: ' + (e && e.message)));
   const today = londonDay();
   await uplAnnounce(env, U, today).catch(e => console.log('uplAnnounce: ' + (e && e.message)));
