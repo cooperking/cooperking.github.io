@@ -67,15 +67,23 @@ RETRY_DAYS = 30
 GOOD = 55    # lowest score taken as the song
 
 
-def fold(x):
+def fold(x):   # accents off, any alphabet kept (Кино, 강남스타일: they used to fold to nothing and never match)
     x = re.sub(r"['\u2019`]", '', x or '')   # straight and curly apostrophes alike
-    x = unicodedata.normalize('NFKD', x).encode('ascii', 'ignore').decode().lower()
+    x = ''.join(ch for ch in unicodedata.normalize('NFKD', x) if not unicodedata.combining(ch)).lower()
     x = x.replace('&', ' and ')
-    return re.sub(r'[^a-z0-9]+', ' ', x).strip()
+    return re.sub(r'[\W_]+', ' ', x).strip()
+
+
+SCORE_V = 2   # how songs are matched (2: brackets, "- From …", any alphabet; John, 3 Nov 2026: "some of the songs ... are
+              # trivially easy to find on youtube"). A song an older version found none for is matched again.
+
+
+VERSION = r'remaster|version|mix|edit|mono|stereo|single|live|demo|take|recording|anniversary|bonus|deluxe|expanded|from|soundtrack|acoustic|original'
 
 
 def clean_title(t):
-    t = re.sub(r'\s+-\s+.*(remaster|version|mix|edit|mono|stereo|single|live|demo|take|recording|anniversary|bonus).*$', '', t, flags=re.I)
+    t = re.sub(r'\s+-\s+.*(' + VERSION + r').*$', '', t, flags=re.I)
+    t = re.sub(r'\s*[(\[][^)\]]*\b(' + VERSION + r')\b[^)\]]*[)\]]', '', t, flags=re.I)   # (2017 Remaster), (From "Film"), [Radio Edit]
     t = re.sub(r'\s*[(\[](feat|with|ft)\.?[^)\]]*[)\]]', '', t, flags=re.I)
     t = re.sub(r'\s*\[[^\]]*\]', '', t)
     return t.strip() or t
@@ -90,7 +98,7 @@ def kind(title, channel):
     t = (title or '').lower()
     if (channel or '').endswith(' - Topic'):
         return 'audio'   # YouTube's own upload of the recording, over the album cover
-    if re.search(r'official\s+(music\s+)?video|music\s+video|\(video\)|\[video\]|official\s+film|official\s+hd\s+video', t):
+    if re.search(r'official\s+(?:[\w-]+\s+){0,2}video|music\s+video|\(video\)|\[video\]|official\s+film|\bm\s*/\s*v\b|clip\s+officiel|videoclip', t):
         return 'video'
     if re.search(r'official\s+audio|\(audio\)|\[audio\]', t):
         return 'audio'   # the recording over a still picture
@@ -108,8 +116,11 @@ def score(song, cand):
     cc_plain = re.sub(r' topic$', '', cc).replace(' ', '')
     s, why = 0, []
     words = [w for w in ft.split() if len(w) > 1] or ft.split()
+    main = fold(re.sub(r'\s*[(\[].*?[)\]]', '', title))   # the title without its brackets: Running Up That Hill (A Deal With God)
     if ft and re.search(r'\b' + re.escape(ft) + r'\b', ct):
         s += 40; why.append('title')
+    elif main and main != ft and re.search(r'\b' + re.escape(main) + r'\b', ct):
+        s += 36; why.append('title')
     elif words and sum(w in ct.split() for w in words) / len(words) >= .75:
         s += 25; why.append('most of the title')
     else:
@@ -127,9 +138,11 @@ def score(song, cand):
         s += 20; why.append('official video')
     elif k in ('audio', 'lyric'):
         s += 8
-    elif k == 'live':
-        s -= 15; why.append('live')
+    if 'artist' not in why and 'official channel' not in why:   # (Adele's Hello isn't Lionel Richie's: the artist somewhere, or it's another song)
+        s -= 30; why.append('not the artist')
     song_words = set(fold(song['title']).split()) | set(fold(song.get('album', '')).split())
+    if k == 'live' and 'live' not in song_words:   # (Live Forever is the song, not a live recording)
+        s -= 15; why.append('live')
     official = 'official channel' in why or re.search(r'\bofficial\b', ct)
     for w in WRONG:
         if w.startswith('lyric') and official:
@@ -166,6 +179,8 @@ def due(e):
         return True   # his link can't be used: search instead
     if e.get('error') or e.get('from') == 'song.link':
         return True   # the old song.link tries all failed: do them properly
+    if e.get('from') == 'YouTube search' and e.get('sv', 0) < SCORE_V:
+        return True   # none found when songs were matched less well: searched again (after the new songs)
     try:
         return (datetime.date.today() - datetime.date.fromisoformat(e.get('checked', '2000-01-01'))).days >= RETRY_DAYS
     except ValueError:
@@ -173,7 +188,7 @@ def due(e):
 
 
 def lookup(s, tok):
-    e = {'n': s['n'], 'checked': datetime.date.today().isoformat(), 'from': 'YouTube search'}
+    e = {'n': s['n'], 'checked': datetime.date.today().isoformat(), 'from': 'YouTube search', 'sv': SCORE_V}
     if s.get('listId'):
         e['listId'] = s['listId']   # his link was looked at already; don't look again
     q = clean_title(s['title']) + ' ' + (s.get('artists') or [s['artist']])[0]
@@ -277,6 +292,58 @@ def from_links(songs, data, links, tok, ms=None):
             print(s['n'], s['title'], '—', s['artist'], '→', e['from'], e.get('kind'), e['id'], '|', e.get('channel'), '|', e.get('title'),
                   '' if e.get('embed') else '(owner blocks other sites)')
     return took
+
+
+def rematch(songs, data, tok, ms):
+    """Songs an earlier search found none for, matched again against the uploads it saw (alts: no new search), with
+    today's matching; one that now passes is checked (playable on other sites, its length) 50 to a 1-unit lookup."""
+    want = {}
+    for s in songs:
+        e = data['songs'].get(s['id'])
+        if not e or e.get('id') or e.get('sv', 0) >= SCORE_V or not e.get('alts'):
+            continue
+        cs = []
+        for a in e['alts']:
+            c = {'id': a['id'], 'title': a.get('title', ''), 'channel': a.get('channel', '')}
+            c['score'], c['why'], c['kind'] = score(s, c)
+            if c['score'] >= GOOD:
+                cs.append(c)
+        if cs:
+            want[s['id']] = (s, cs)
+    if not want:
+        return 0
+    ids = sorted({c['id'] for _, cs in want.values() for c in cs})
+    info = {}
+    for k in range(0, len(ids), 50):
+        st = ytapi.get('videos', {'part': 'status,contentDetails', 'id': ','.join(ids[k:k + 50])}, tok, units=1)
+        for it in st.get('items', []):
+            info[it['id']] = it
+    n = 0
+    for t, (s, cs) in want.items():
+        for c in cs:
+            it = info.get(c['id'])
+            if not it:
+                c['score'] = -999; continue
+            c['secs'] = iso_secs((it.get('contentDetails') or {}).get('duration'))
+            c['embed'] = bool((it.get('status') or {}).get('embeddable') and (it.get('status') or {}).get('privacyStatus') == 'public')
+            length_off(c, ms.get(t) or s.get('ms'))
+        cs.sort(key=lambda c: -c['score'])
+        best = cs[0] if cs[0]['score'] >= GOOD else None
+        if not best:
+            continue
+        if best['kind'] != 'video':
+            v = next((c for c in cs[1:] if c['kind'] == 'video' and c['score'] >= max(GOOD, best['score'] - 25)), None)
+            best = v or best
+        e = data['songs'][t]
+        e.update({'id': best['id'], 'title': best['title'], 'channel': best['channel'], 'kind': best['kind'], 'score': best['score'],
+                  'why': best['why'], 'embed': best.get('embed'), 'sv': SCORE_V, 'checked': datetime.date.today().isoformat()})
+        if best.get('secs') is not None:
+            e['secs'] = best['secs']
+        n += 1
+        print(s['n'], s['title'], '—', s['artist'], '→ matched again from the earlier search:', best['id'], '|', best['channel'], '|', best['title'], best['score'])
+        progress('Matching earlier searches again', None, None, s['title'] + ' — ' + s['artist'], 'found: ' + best['title'])
+    print(n, 'songs an earlier search missed found among the uploads it saw, with no new search')
+    return n
 
 
 def johns_picks(songs, data, john, tok):
@@ -423,6 +490,10 @@ def main():
     if lent:
         print(lent, 'members’ songs took the video of the same song on another release, with no search')
         done += lent
+    try:
+        done += rematch(songs, data, tok, ms)
+    except ytapi.Quota:
+        print("no allowance left today to check the earlier searches' other uploads")
     pending = set()
     try:
         import free_videos
@@ -436,16 +507,17 @@ def main():
     turn, seen = {}, {}
     for s in sorted((s for s in todo if s.get('upl')), key=lambda s: -s['n']):   # members' songs take turns: each playlist's newest, then each one's next
         seen[s['upl']] = seen.get(s['upl'], 0) + 1; turn[s['id']] = seen[s['upl']]
-    todo.sort(key=lambda s: (bool(s.get('upl')), turn.get(s['id'], 0), -s['n']))   # today's song first, and it may use the searches kept back for it; members' songs after John's
+    again = lambda s: (data['songs'].get(s['id']) or {}).get('from') == 'YouTube search'   # (looked for before: after the new ones)
+    todo.sort(key=lambda s: (bool(s.get('upl')), again(s), turn.get(s['id'], 0), -s['n']))   # today's song first, and it may use the searches kept back for it; members' songs after John's
     print(f'{len(todo)} songs to search YouTube for; {ytapi.ledger()["used"]} units used today')
     try:
         for k, s in enumerate(todo):
             progress('Searching YouTube', k + 1, len(todo), s['title'] + ' — ' + s['artist'])
             prev = data['songs'].get(s['id'], {})
             e = lookup(dict(s, listId=prev.get('listId'), ms=ms.get(s['id']) or s.get('ms'), newest=s['n'] == newest), tok)
-            for k in ('listNote', 'listCheck'):
-                if k in prev:
-                    e[k] = prev[k]
+            for kk in ('listNote', 'listCheck', 'free', 'fv'):   # (the free ways tried it too: kept)
+                if kk in prev:
+                    e[kk] = prev[kk]
             data['songs'][s['id']] = e
             done += 1
             progress('Searching YouTube', k + 1, len(todo), s['title'] + ' — ' + s['artist'], ('error: ' + str(e['error'])) if e.get('error') else ('found: ' + (e.get('title') or e.get('id'))) if e.get('id') else 'no good match')

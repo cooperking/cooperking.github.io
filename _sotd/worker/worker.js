@@ -4084,10 +4084,10 @@ async function uplYtProg(request, env) {
 // a song's video looked for for good: found, or YouTube's search found none after the current free ways missed it too. One
 // only the free ways missed, or an older search missed before the newer free ways (fv 2: the artist's channel) had a go,
 // is still being looked for (John, 3 Nov 2026: "165 with none for videos ... searched for them before but with a different method")
-function ytLookDone(e) { return !!e && (!!e.id || (e.from === 'YouTube search' && !e.error && (e.fv || 0) >= 2)); }
+function ytLookDone(e) { return !!e && (!!e.id || (e.from === 'YouTube search' && !e.error && (e.fv || 0) >= 2 && (e.sv || 0) >= 2)); }   // (sv 2: matched as youtube.py's SCORE_V 2)
 async function uplReseen(env) {   // once: the 'v' marks put right from the last run's files, so the progress shows it now
-  if (!env.MEDIA || await env.SOTD.get('uplReseen2')) return;
-  await env.SOTD.put('uplReseen2', '1');
+  if (!env.MEDIA || await env.SOTD.get('uplReseen3')) return;
+  await env.SOTD.put('uplReseen3', '1');
   const o = await env.MEDIA.get('site/upl-data.json'); if (!o) return;
   const yt = ((((await o.json()) || {}).files || {})['_sotd/data/youtube.json'] || {}).songs || {};
   const seen = (await env.SOTD.get('uplseen', 'json')) || {}; let n = 0;
