@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="6883f1837df8">
+<meta name="sotd-build" content="b011f6e8f34e">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -2552,7 +2552,6 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var by = {};
     [].concat(list).forEach(function (s) {
       if (!s || !/^[0-9A-Za-z]{22}$/.test(s.track || '')) return;
-      if (!s.upl && MEMBER.owner === true) return;   // (John's own; a member's own song: the Worker leaves it)
       var k = s.upl || ''; (by[k] = by[k] || []).push({ track: s.track, title: s.title || '', d: /^\d{4}-\d{2}-\d{2}$/.test(s.d || '') ? s.d : '' });
     });
     Object.keys(by).forEach(function (k) { try { sendPost('/members/heart', { upl: k, songs: by[k] }).catch(function () {}); } catch (e) {} });
@@ -7703,7 +7702,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       var li = document.createElement('li'), b = document.createElement('button'), fresh = x.at > BELL.mark;
       b.type = 'button'; b.className = 'open' + (fresh ? ' new' : '');
       b.innerHTML = '<span class="dot"></span><span class="t"></span><span class="b"></span><span class="w"></span>';
-      b.querySelector('.t').textContent = x.e + ' ' + x.n + (x.h > 1 ? ' hearted ' + x.h + ' of your songs' : x.h ? ' hearted your song' : x.u ? ' reacted to the Song of the Day' : ' reacted to your message');
+      b.querySelector('.t').textContent = x.e + ' ' + (x.me ? 'You' : x.n) + (x.h > 1 ? ' hearted ' + x.h + ' of your songs' : x.h ? ' hearted your song' : x.u ? ' reacted to the Song of the Day' : ' reacted to your message');
       b.querySelector('.b').textContent = x.h > 1 ? x.t : '“' + x.t + '”';
       b.querySelector('.w').textContent = ago(x.at);
       b.setAttribute('aria-label', (fresh ? 'New: ' : '') + x.n + (x.h > 1 ? ' hearted ' + x.h + ' of your songs: ' : x.h ? ' hearted your song ' : ' reacted ' + x.e + (x.u ? ' to the Song of the Day ' : ' to your message ')) + x.t + ', ' + ago(x.at));

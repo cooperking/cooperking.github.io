@@ -3211,7 +3211,7 @@ async function bellNote(env, to, msgId, title, from, e, u) {
 }
 function bellView(all, member, b) {
   const seen = (b && b.seen) || 0;
-  const items = ((b && b.items) || []).filter(y => all[y.k] && !apart(all, member, y.k)).map(y => Object.assign({ id: y.id, n: all[y.k].name, e: y.e, at: y.at, t: y.t }, y.u ? { u: y.u } : {}, y.h ? { h: y.h } : {}));
+  const items = ((b && b.items) || []).filter(y => all[y.k] && !apart(all, member, y.k)).map(y => Object.assign({ id: y.id, n: all[y.k].name, e: y.e, at: y.at, t: y.t }, y.u ? { u: y.u } : {}, y.h ? { h: y.h } : {}, y.k === member ? { me: 1 } : {}));
   return { items, unseen: items.filter(y => y.at > seen).length, seen };
 }
 // a heart on someone's song (John, 3 Nov 2026: "Could a member get a notification when someone hearts their song"): POST
@@ -3236,7 +3236,7 @@ async function memberHeart(request, env, answer) {   // POST { upl, songs: [{ tr
     const have = {}; ((await uplSongs(env, pid)).songs || []).forEach(y => { have[y.id] = y; });
     to = rec.o; list = asked.filter(x => have[x.track]).map(x => Object.assign(x, { title: have[x.track].title, img: have[x.track].img || '' }));
   } else { to = ownerId; list = asked; }
-  if (!to || !who.all[to] || to === who.id || !list.length) return answer(200, { ok: true });
+  if (!to || !who.all[to] || !list.length) return answer(200, { ok: true });   // (their own songs too: John, 3 Nov 2026, "It shouldn't matter if it's from me, I'd like a notification")
   const fresh = [];
   for (const x of list) { const once = 'hearted:' + to + ':' + x.track + ':' + who.id; if (!(await env.SOTD.get(once))) { fresh.push(x); await env.SOTD.put(once, '1', { expirationTtl: 365 * 86400 }); } }
   if (!fresh.length || !await dayCount(env, 'heartday:' + who.id, HEART_DAY)) return answer(200, { ok: true });
@@ -3249,9 +3249,9 @@ async function memberHeart(request, env, answer) {   // POST { upl, songs: [{ tr
   b.items = [{ id, k: who.id, e: '❤️', h: one ? 1 : n, at: Date.now(), t: one ? title : names, u: linkOf(fresh[0]) }].concat((b.items || []).filter(y => !(y.id === id && y.k === who.id)));
   b.items.length = Math.min(b.items.length, BELL_MAX);
   await kvSoft(env, key, JSON.stringify(b));
-  if (takesFrom(who.all, to, who.id, ownerId)) {
+  if (to === who.id || takesFrom(who.all, to, who.id, ownerId)) {
     const subs = (await env.SOTD.get('pushSubs', 'json')) || {}, ids = Object.keys(subs).filter(k => subs[k].m === to);
-    const msg = { title: who.all[who.id].name + (one ? ' hearted your song ❤️' : ' hearted ' + n + ' of your songs ❤️'), body: one ? '“' + (title || 'Your song') + '”' : names, url: SITE_SONGS + '#bell', tag: 'sotd-heart-' + id + '-' + who.id };
+    const msg = { title: (to === who.id ? 'You' : who.all[who.id].name) + (one ? ' hearted your song ❤️' : ' hearted ' + n + ' of your songs ❤️'), body: one ? '“' + (title || 'Your song') + '”' : names, url: SITE_SONGS + '#bell', tag: 'sotd-heart-' + id + '-' + who.id };
     await noteMail(env, [to], Object.assign({}, msg, { link: linkOf(fresh[0]), icon: fresh[0].img || '', cta: 'See it' }), 'direct').catch(() => {});
     if (ids.length) {
       const k = await vapidKeys(env);
