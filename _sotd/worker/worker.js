@@ -2948,7 +2948,7 @@ async function picsUp(env, origin, body) {   // { url, gif? }, or { error }
 // codes need it), so each one goes as its own email up to MAIL_EACH_DAY a member and MAIL_ALL_DAY in all; the rest wait
 // for that day's email.
 const MAIL_EACH_DAY = 8, MAIL_ALL_DAY = 60, MAIL_DIG_MAX = 40;
-function mailFoot() { return '\n\n—\nJohn’s Song of the Day: ' + SITE_SONGS + '\nYou get these because you asked for emails in your Profile on the calendar. To stop or change them: Profile › Messages from other members › Emails.'; }
+function mailFoot() { return '\n\n—\nJohn’s Song of the Day: ' + SITE_SONGS + '\nYou get these because you asked for emails in your Profile on the calendar. To stop or change them: Profile › Notifications by email.'; }
 async function noteMail(env, to, msg) {
   if (!mailReady(env)) return;
   const all = (await env.SOTD.get('members', 'json')) || {}, ids = (to || Object.keys(all)).filter(id => all[id] && all[id].email && all[id].mailme);
