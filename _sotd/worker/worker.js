@@ -3883,8 +3883,8 @@ async function uplTake(env, pid, rec, U, items, was, now, quiet) {   // its song
   // a fresh export), and an update or John's own Spotify read never moves a song (John, 3 Nov 2026: "If we edit a playlist
   // date ... I don't want it automatically changed back via an import or my own spotify checks"). Days moved by hand (dd)
   // and the calendar's own setup (dates) are its owner's and no update touches them.
-  const was = new Map((data.songs || []).map(x => [x.id, x.a]));
-  items = items.map(x => was.get(x.id) && was.get(x.id) !== x.a ? Object.assign({}, x, { a: was.get(x.id) }) : x);
+  const was = new Map((data.songs || []).map(x => [x.id, x.a]));   // (not one its owner took off: put back on Spotify, it's back on its new day, as before)
+  items = items.map(x => was.get(x.id) && was.get(x.id) !== x.a && !(data.del || {})[x.id] ? Object.assign({}, x, { a: was.get(x.id) }) : x);
   items = uplKeepGone(rec, data, items, now);
   const fresh = items.filter(x => !had.has(x.id) && Date.parse(x.a) > (rec.base || 0) && !(data.rel || {})[x.id]);
   const bare = l => JSON.stringify((l || []).map(x => { const y = Object.assign({}, x); delete y.rd; return y; }));
