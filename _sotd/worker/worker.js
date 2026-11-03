@@ -3228,14 +3228,18 @@ async function memberHeart(request, env, answer) {   // POST { upl, songs: [{ tr
     .filter(x => /^[0-9A-Za-z]{22}$/.test(x.track));
   if (!asked.length) return answer(400, { error: 'Which song?' });
   const ownerId = await env.SOTD.get('owner');
-  let to, list;
+  let to, list, plName = '', adders = [], editors = [];
   if (pid) {
     const rec = (await uplAll(env))[pid];
     if (!rec || !uplCan(who.all, who.id, rec)) return answer(200, { ok: true });
     const have = {}; ((await uplSongs(env, pid)).songs || []).forEach(y => { have[y.id] = y; });
-    to = rec.o; list = asked.filter(x => have[x.track]).map(x => Object.assign(x, { title: have[x.track].title, img: have[x.track].img || '' }));
+    to = rec.o; list = asked.filter(x => have[x.track]).map(x => Object.assign(x, { title: have[x.track].title, img: have[x.track].img || '', ab: have[x.track].ab || '' }));
+    plName = uplName(who.all, rec); editors = (rec.cw || []).filter(k => who.all[k]);
+    const sids = await spWhoIds(env, who.all);   // (who added each on Spotify, where they're a member: told it's theirs too, John, 3 Nov 2026)
+    adders = [...new Set(list.map(x => sids[x.ab]).filter(k => k && who.all[k]))];
   } else { to = ownerId; list = asked; }
   if (!to || !who.all[to] || !list.length) return answer(200, { ok: true });   // (their own songs too: John, 3 Nov 2026, "It shouldn't matter if it's from me, I'd like a notification")
+  const tell = [...new Set([to].concat(adders, editors))];   // its owner, whoever added the songs, and those who edit it with them (a collaborative playlist)
   const fresh = list;   // (every heart, however many times: John, 3 Nov 2026, "it's fine to get a notification no matter how many times someone hearts a song"; HEART_DAY a day each keeps it sane)
   if (!fresh.length || !await dayCount(env, 'heartday:' + who.id, HEART_DAY)) return answer(200, { ok: true });
   const linkOf = x => pid ? SITE_SONGS + '#u=' + pid + (x.d ? '&d=' + x.d.slice(8, 10) + '-' + x.d.slice(5, 7) + '-' + x.d.slice(0, 4) : '')
@@ -3243,20 +3247,24 @@ async function memberHeart(request, env, answer) {   // POST { upl, songs: [{ tr
   const n = fresh.length, one = n === 1, title = one ? fresh[0].title : n + ' of your songs';
   const names = fresh.slice(0, 3).map(x => '“' + (x.title || 'a song') + '”').join(', ') + (n > 3 ? ' and ' + (n - 3) + ' more' : '');
   const id = one ? 'h:' + fresh[0].track : 'hb:' + Date.now().toString(36);
-  const key = 'bell:' + to, b = (await env.SOTD.get(key, 'json')) || { seen: 0, items: [] };
-  b.items = [{ id, k: who.id, e: '❤️', h: one ? 1 : n, at: Date.now(), t: one ? title : names, u: linkOf(fresh[0]) }].concat((b.items || []).filter(y => !(y.id === id && y.k === who.id)));
-  b.items.length = Math.min(b.items.length, BELL_MAX);
-  await kvSoft(env, key, JSON.stringify(b));
-  if (to === who.id || takesFrom(who.all, to, who.id, ownerId)) {
-    const subs = (await env.SOTD.get('pushSubs', 'json')) || {}, ids = Object.keys(subs).filter(k => subs[k].m === to);
-    const msg = { title: (to === who.id ? 'You' : who.all[who.id].name) + (one ? ' hearted your song ❤️' : ' hearted ' + n + ' of your songs ❤️'), body: one ? '“' + (title || 'Your song') + '”' : names, url: SITE_SONGS + '#bell', tag: 'sotd-heart-' + id + '-' + who.id };
-    await noteMail(env, [to], Object.assign({}, msg, { link: linkOf(fresh[0]), icon: fresh[0].img || '', cta: 'See it' }), 'direct').catch(() => {});
+  const subs = (await env.SOTD.get('pushSubs', 'json')) || {};
+  let vk = null;
+  for (const r of tell) {
+    const theirs = r === to || adders.includes(r), what = theirs ? (one ? ' hearted your song ❤️' : ' hearted ' + n + ' of your songs ❤️') : (one ? ' hearted a song on “' + plName + '” ❤️' : ' hearted ' + n + ' songs on “' + plName + '” ❤️');
+    const key = 'bell:' + r, b = (await env.SOTD.get(key, 'json')) || { seen: 0, items: [] };
+    b.items = [{ id, k: who.id, e: '❤️', h: one ? 1 : n, at: Date.now(), t: one ? title : names, u: linkOf(fresh[0]) }].concat((b.items || []).filter(y => !(y.id === id && y.k === who.id)));
+    b.items.length = Math.min(b.items.length, BELL_MAX);
+    await kvSoft(env, key, JSON.stringify(b));
+    if (!(r === who.id || takesFrom(who.all, r, who.id, ownerId))) continue;
+    const ids = Object.keys(subs).filter(k => subs[k].m === r);
+    const msg = { title: (r === who.id ? 'You' : who.all[who.id].name) + what, body: one ? '“' + (title || 'Your song') + '”' : names, url: SITE_SONGS + '#bell', tag: 'sotd-heart-' + id + '-' + who.id };
+    await noteMail(env, [r], Object.assign({}, msg, { link: linkOf(fresh[0]), icon: fresh[0].img || '', cta: 'See it' }), 'direct').catch(() => {});
     if (ids.length) {
-      const k = await vapidKeys(env);
-      await Promise.all(ids.map(sid => pushTo(env, k, subs[sid], msg).catch(err => console.log('heart push: ' + (err && err.message)))));
+      vk = vk || await vapidKeys(env);
+      await Promise.all(ids.map(sid => pushTo(env, vk, subs[sid], msg).catch(err => console.log('heart push: ' + (err && err.message)))));
     }
   }
-  return answer(200, { ok: true, n });
+  return answer(200, { ok: true, n, told: tell.length });
 }
 async function memberBell(request, env, answer) {
   const who = await memberWho(request, env);
@@ -3756,13 +3764,14 @@ function uplDaysBy(songs, rec) {
 let spWhoMem = null;
 async function spWho(env, all) {   // Spotify user id → member's name (theirs connected here, and John's own account), kept a few minutes
   if (spWhoMem && Date.now() - spWhoMem.at < 10 * 60e3) return spWhoMem.map;
-  const map = {}, owner = await env.SOTD.get('owner');
-  if (owner && all[owner]) map[OWNER_ID] = all[owner].name;
+  const map = {}, ids = {}, owner = await env.SOTD.get('owner');
+  if (owner && all[owner]) { map[OWNER_ID] = all[owner].name; ids[OWNER_ID] = owner; }
   let cursor;
-  do { const l = await env.SOTD.list({ prefix: 'spm:', cursor }); for (const k of l.keys) { const id = k.name.slice(4), r = await env.SOTD.get(k.name, 'json'); if (r && r.sid && all[id]) map[r.sid] = all[id].name; } cursor = l.list_complete ? null : l.cursor; } while (cursor);
-  spWhoMem = { at: Date.now(), map };
+  do { const l = await env.SOTD.list({ prefix: 'spm:', cursor }); for (const k of l.keys) { const id = k.name.slice(4), r = await env.SOTD.get(k.name, 'json'); if (r && r.sid && all[id]) { map[r.sid] = all[id].name; ids[r.sid] = id; } } cursor = l.list_complete ? null : l.cursor; } while (cursor);
+  spWhoMem = { at: Date.now(), map, ids };
   return map;
 }
+async function spWhoIds(env, all) { await spWho(env, all); return spWhoMem.ids || {}; }   // Spotify user id → member id
 function uplDated(x) { const t = Date.parse(x && x.a); return !isNaN(t) && t >= Date.UTC(2000, 0, 1); }
 async function uplRead(env, pid, rec, U) {   // reads it from Spotify; keeps what changed; says whether it's readable
   const was = rec.st, now = Date.now();
