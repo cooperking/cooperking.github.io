@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="sotd-build" content="5ebee7ae7b97">
+<meta name="sotd-build" content="8d08a8ec8e9e">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 267 so far">
 <meta name="theme-color" content="#ec135b">
@@ -9291,7 +9291,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   // the Profile's Playlists tab: their own
   function uplStatus(p) {
-    return (p.mode === 'list' ? 'A playlist' : 'A calendar') + ' · ' + p.cnt + (p.cnt === 1 ? ' song' : ' songs') + ' · ' + uplWhoSay(p) + (p.src === 'csv' ? ' · from Exportify' : '');
+    return (p.mode === 'list' ? 'A playlist' : 'A calendar') + ' · ' + p.cnt + (p.cnt === 1 ? ' song' : ' songs') + ' · ' + uplWhoSay(p) + (p.auto ? ' · updates from Spotify by itself' : p.src === 'csv' ? ' · from Exportify' : '');   // (John's own: read from his Spotify, John, 3 Nov 2026)
   }
   function uplWhoSay(p) {   // who sees it, in a few words
     if (p.sh === 'public') return 'public';
