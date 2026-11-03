@@ -328,6 +328,10 @@ html.upl #monthdl, html.upl-noshare #siteshare, html.upl-noshare #monthshare, ht
 .cal.has-edit .caledit { display: flex; }
 html.big .cal.has-edit { grid-template-rows: auto auto minmax(0, 1fr); }
 .caledit .upleditbtn { height: 34px; margin: 0 0 10px; }
+html.big .cal .caledit { display: flex; align-items: center; gap: 8px; }
+html.big .cal { grid-template-rows: auto auto minmax(0, 1fr); }   /* (its row always there on a computer: Add to My playlist) */   /* (a computer: the month's Add to My playlist always here, with Edit and Missing on their own) */
+html.big .caledit .monthadd { height: 34px; margin: 0 auto 10px 0; }
+html.big .caledit .monthadd[hidden] { display: none; }
 html.upl-editing #grid .day { touch-action: none; -webkit-user-select: none; user-select: none; }
 html.upl-editing #grid .day.has { cursor: grab; }
 html.upl-editing #grid .day.has .sleeve { animation: uplwig 2.4s ease-in-out infinite; }
@@ -11040,8 +11044,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var ids = ['monthshare', 'monthdl', 'monthadd', 'fabbox', 'qline'];   // put back in this order: each one's next neighbour is home first
     ids.forEach(function (id) { var el = document.getElementById(id); if (!bigHome[id]) bigHome[id] = [el.parentNode, el.nextSibling]; });
     if (on) {
-      var acts = document.querySelector('.bar-top .bar-actions');
-      acts.appendChild(document.getElementById('monthadd'));
+      var acts = document.querySelector('.bar-top .bar-actions'), ce = document.querySelector('.cal .caledit');
+      ce.insertBefore(document.getElementById('monthadd'), ce.firstChild);   // (by the calendar, its month's songs: not in the top bar, where it pushed Refresh off the end: John, 3 Nov 2026)
       acts.appendChild(document.getElementById('fabbox'));
       document.querySelector('.bar-top .mark').insertAdjacentElement('afterend', holdHint);
       if (!TV) { var c = document.getElementById('heroshuf'); c.parentNode.insertBefore(document.getElementById('monthshare'), c.nextSibling); c.parentNode.insertBefore(document.getElementById('monthdl'), document.getElementById('monthshare').nextSibling); }
