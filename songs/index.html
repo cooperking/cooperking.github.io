@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="sotd-build" content="82f61705a1a5">
+<meta name="sotd-build" content="68bf39fe5b05">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 267 so far">
 <meta name="theme-color" content="#ec135b">
@@ -588,6 +588,16 @@ html.upl-list .side-acts .listbtn { display: inline-grid; }
 .imp-all p { margin: 0; font-size: 13px; line-height: 1.45; color: var(--fg); }
 .imp-all .copy { justify-self: start; }
 .imp-card.up .imp-mos { box-shadow: 0 0 0 2px var(--fg); }
+.imp-card { position: relative; }
+.imp-card .tick { position: absolute; top: 8px; right: 8px; width: 26px; height: 26px; border-radius: 50%; background: rgba(255, 255, 255, .9); box-shadow: 0 0 0 1.5px var(--line), 0 2px 8px var(--shadow); display: grid; place-items: center; }
+.imp-card.sel .tick { background: var(--fg); box-shadow: 0 2px 8px var(--shadow); }
+.imp-card.sel .tick::after { content: ""; width: 10px; height: 5px; margin-top: -3px; border: solid var(--bg); border-width: 0 0 2.5px 2.5px; transform: rotate(-45deg); }
+.imp-card.sel .imp-mos { box-shadow: 0 0 0 3px var(--fg); }
+.imp-card.sel .nm { font-weight: 700; }
+.imp-selbar { position: sticky; bottom: 0; z-index: 2; display: grid; gap: 10px; margin: 6px -2px 0; padding: 12px 14px; border-radius: 16px; background: var(--bg); box-shadow: 0 -8px 24px var(--shadow), inset 0 0 0 1.5px var(--fg); }
+.imp-selbar[hidden] { display: none; }
+.imp-selbar p { margin: 0; font: 600 13px/1.4 var(--sans); color: var(--fg); }
+.imp-selbar .upld-opts[hidden] { display: none; }
 .imp-card .tag { justify-self: start; max-width: 100%; padding: 3px 9px; border-radius: 999px; background: var(--pill-bg); box-shadow: inset 0 0 0 1px var(--line); color: var(--fg); font: 600 10px/1.4 var(--sans); letter-spacing: .08em; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }   /* (quiet, as the rest of the pop-up: John, 3 Nov 2026) */
 .imp-mos { position: relative; display: grid; grid-template-columns: 1fr 1fr; aspect-ratio: 1; border-radius: 10px; overflow: hidden; background: var(--tile); box-shadow: 0 4px 14px var(--shadow); }
 .imp-mos img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -2157,6 +2167,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     <h3 id="missh">What’s missing</h3>
     <div class="misstabs" id="misstabs" role="tablist"></div>
     <p class="misstip" id="misstip"></p>
+    <div class="ask-acts" id="missretryl" hidden><button class="copy ghost" id="missretry" type="button">Look again</button></div>
     <ul class="missl" id="missl"></ul>
     <p class="missnone" id="missnone" hidden></p>
   </div>
@@ -2323,6 +2334,15 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       <div class="imp-all" id="upliall" hidden><p id="upliallt"></p><button class="copy" id="upliallb" type="button"></button></div>
       <label class="imp-search" id="uplisearchl" hidden><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3 3"/></svg><input id="uplisearch" type="search" placeholder="Find a playlist" autocomplete="off" spellcheck="false" aria-label="Find a playlist"></label>
       <div class="imp-grid" id="upligrid" role="list"></div>
+      <div class="imp-selbar" id="uplisel" hidden>
+        <p id="uplisels"></p>
+        <label class="upld-day"><span>Where</span><select id="uplisdest"></select></label>
+        <div class="upld-opts" role="radiogroup" aria-label="A calendar or a playlist" id="uplismode">
+          <label><input type="radio" name="uplismode" value="cal" checked><span><b>Calendars</b>Each song on the day it was added on Spotify.</span></label>
+          <label><input type="radio" name="uplismode" value="list"><span><b>Playlists</b>Just their songs, newest first.</span></label>
+        </div>
+        <div class="ask-acts"><button class="copy" id="uplisgo" type="button"></button><button class="ac-out" id="uplisone" type="button" hidden>Name it and choose…</button><button class="ac-out" id="uplisclear" type="button">Clear</button></div>
+      </div>
       <p class="imp-none" id="uplipicknone" hidden>No playlist by that name.</p>
       <div class="ask-acts"><button class="ac-out" id="uplipickback" type="button">Another file</button></div>
     </div>
@@ -2906,7 +2926,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     b.setAttribute('aria-label', t); b.title = t; b.setAttribute('aria-pressed', castNow ? 'true' : 'false');
   }
   function castDraw() {
-    var any = castAvail || castNow || !!NCAST;   // (the iPhone app with Chromecasts: always, as its list finds them)
+    var any = castAvail || castNow || !!NCAST || (typeof spOn === 'function' && spOn());   // (the iPhone app with Chromecasts: always, as its list finds them; their Spotify on: always, for its speakers)
     var h = document.documentElement; h.classList.toggle('castable', any); h.classList.toggle('casting', castNow);
     var f = document.getElementById('fabcast'); f.hidden = !any; f.classList.toggle('on', castNow);
     [f].concat([].slice.call(document.querySelectorAll('#picks .castsong'))).forEach(castLabel);
@@ -2934,6 +2954,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     }
   }
   function castPick() {
+    if (spOn() && !TV) { spSpeakers(); return; }   // (their Spotify on: its speakers here, with the phone's own AirPlay or Cast list: John, 3 Nov 2026, "with the speaker icon", not Profile)
+    castNative();
+  }
+  function castNative() {
     if (NCAST) { castSheet(); return; }   // the iPhone app: its own list (Chromecasts and AirPlay)
     if (AIRPLAY) { try { audio.webkitShowPlaybackTargetPicker(); } catch (e) {} return; }
     if (RPLAY) RPLAY.prompt().catch(function (e) {
@@ -3559,7 +3583,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     spChip.hidden = !on; spChip.querySelector('span').textContent = t;
     var f = document.getElementById('fabsp'); f.hidden = !on; document.getElementById('fabspn').textContent = on ? (SPX.dev.starting ? 'Starting…' : SPX.dev.name) : '';
   }
-  function spDevPick(devs, why, then, wake) {   // the list of their Spotify devices: one chosen plays there (and is kept for this visit); wake: a song to start in Spotify on this phone
+  function spDevPick(devs, why, then, wake, extra) {   // extra: other choices first (this device, AirPlay or Cast)   // the list of their Spotify devices: one chosen plays there (and is kept for this visit); wake: a song to start in Spotify on this phone
     var dlg = document.getElementById('spdevdlg'), ul = document.getElementById('spdevlist');
     var wb = document.getElementById('spwake'); wb.hidden = !wake;
     document.getElementById('splog').textContent = SPLOG.length ? SPLOG.join('\n') : 'Nothing yet: play a song through Spotify.';
@@ -3576,6 +3600,13 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     document.getElementById('spdevt').textContent = why || 'Songs play through your Spotify on the device you choose.';
     var draw = function (list) {
       ul.textContent = '';
+      (extra || []).forEach(function (x) {
+        var li = document.createElement('li'), b = document.createElement('button'); b.type = 'button';
+        b.textContent = (x.here ? '▶︎ ' : '📡 ') + x.name; if (x.here && !(coverObj && coverObj.sp)) b.className = 'on';
+        b.addEventListener('click', function () { closeDialog(dlg); if (then) then(x); });
+        li.appendChild(b); ul.appendChild(li);
+      });
+      if (!list.length && extra && extra.length) return;
       if (!list.length) { var li0 = document.createElement('li'); li0.className = 'ac-none'; li0.textContent = 'Spotify isn’t open on any of your devices. Open the Spotify app on this one (it can stay in the background).'; ul.appendChild(li0); return; }
       list.forEach(function (d) {
         var li = document.createElement('li'), b = document.createElement('button'); b.type = 'button';
@@ -3612,6 +3643,19 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     spxShadowOff();
     SPX.native = false; SPX.pickPhone = false; SPX.list = [SPX.track];
     spLog('moved to ' + d.name + ': no hand-over to the app');
+  }
+  function spSpeakers() {   // the speaker icon: where songs play: their Spotify devices (moved there now if playing), this device, or AirPlay or Cast
+    var playingSp = coverObj && coverObj.sp && SPX.playing;
+    spDevPick(null, playingSp ? 'Playing on ' + ((SPX.dev && SPX.dev.name) || 'your Spotify') + '. Play it on:' : 'Play songs on:', function (d) {
+      if (d.here) {   // this device, its own player: Spotify paused where it was, the song on here
+        SPX.pick = ''; SPX.pickPhone = false; try { sessionStorage.removeItem('sotd-spdev'); } catch (e) {}
+        if (playingSp) { var id = SPX.track; spCall({ op: 'pause' }).catch(function () {}); spxFallback(id, 'played here', true); }
+        toast('Playing on this ' + (spKind() === 'Computer' ? 'computer' : 'device')); return;
+      }
+      if (d.cast) { castNative(); return; }
+      if (playingSp) spCall({ op: 'transfer', device: d.id }).then(function (j) { if (j.status === 200) { SPX.dev = { id: d.id, name: d.name }; spxMovedTo(d); spxShowDev(); toast('Playing on ' + d.name); } else toast(j.error || 'Spotify didn’t move it'); });
+      else toast('Songs play on ' + d.name);
+    }, null, [{ here: true, name: 'This ' + (spKind() === 'Computer' ? 'computer' : spKind() === 'Tablet' ? 'tablet' : 'phone') + ' (the app itself)' }].concat(castAvail || NCAST ? [{ cast: true, name: AIRPLAY ? 'AirPlay speaker…' : 'Cast speaker…' }] : []));
   }
   function spDevChange() {   // the chip tapped: move what's playing to another of their devices
     spDevPick(null, 'Playing on ' + ((SPX.dev && SPX.dev.name) || 'your Spotify') + '. Move it to another of your devices:', function (d) {
@@ -3683,7 +3727,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       var m = String((e && e.message) || e || '');
       if (/superseded/.test(m)) return;
       spLog('Spotify wake failed: ' + m);
-      spxFallback(id, m === 'notInstalled' ? 'The Spotify app isn’t on this phone: playing the preview' : 'Spotify didn’t start on this phone (' + (m || 'try again') + '): playing the preview');
+      spxFallback(id, m === 'notInstalled' ? 'The Spotify app isn’t on this phone: playing here' : 'Spotify didn’t start on this phone (' + (m || 'try again') + '): playing here', true);
     });
   }
   // (2 Nov 2026, John: "Go with silent copy handover"): while this phone's Spotify plays a song, the app plays the same song
@@ -3838,10 +3882,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     spLog('app back on screen' + (a ? ' after ' + Math.round((Date.now() - a.at) / 1000) + 's: app audio ' + (audio.paused ? 'paused' : 'playing') + (audio.muted ? ' (muted)' : '') + ', moved ' + ((audio.currentTime || 0) - a.t).toFixed(0) + 's' + (coverObj && coverObj.sp ? '; Spotify in use' : '') : ''));
   });
   function spxShare(on) { var N = NAT && NAT.Plugins && NAT.Plugins.SotdSpotify; if (N && typeof N.share === 'function') N.share({ on: !!on }).catch(function () {}); }
-  function spxFallback(id, why) {   // their Spotify can't play it: the song as before, this once
+  function spxFallback(id, why, quiet) {   // their Spotify can't play it: the song as before, this once (quiet: Spotify just not there on this device: played here, no alert, John, 3 Nov 2026)
     spLog('fallback to the app' + (why ? ': ' + why : ''));
     coverObj.sp = false; spxStop(true); spxShare(false);
-    if (why && Date.now() - SPX.warned > 60000) { SPX.warned = Date.now(); toast(why); }
+    if (why && !quiet && Date.now() - SPX.warned > 60000) { SPX.warned = Date.now(); toast(why); }
     var s = songOf(id), src = s && songSrc(s);
     if (src) { audio.src = src; var p = audio.play(); if (p && p.then) p.then(function () { spLog('app playing the ' + (whole(s) ? 'MP3' : 'preview')); }, function (e) { coverState(2); spLog('app couldn’t play the fallback: ' + ((e && e.name) || e)); }); return; }
     spLog('fallback: nothing of its own to play: on to the next');
@@ -3879,7 +3923,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     }).catch(function (e) {
       if (!coverObj.sp || SPX.track !== id) return;
       var m = String((e && e.message) || e || '');
-      spxFallback(id, m === 'notInstalled' ? 'The Spotify app isn’t on this phone: playing the preview' : /superseded/.test(m) ? '' : 'Spotify didn’t start on this phone (' + (m || why || 'try again') + '): playing the preview');
+      spxFallback(id, m === 'notInstalled' ? 'The Spotify app isn’t on this phone: playing here' : /superseded/.test(m) ? '' : 'Spotify didn’t start on this phone (' + (m || why || 'try again') + '): playing here', true);
     });
     return true;
   }
@@ -3927,8 +3971,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       if (j.status !== 200 && (j.why === 'notHere' || j.why === 'nodevice') && SPX.woke !== id && spxWakeThen(id, 'asleep')) return;
       if (j.status !== 200) {
         if (j.why === 'premium' || j.why === 'blocked') { if (SPM.st) { SPM.st.product = j.why === 'premium' ? 'free' : SPM.st.product; SPM.st.blocked = j.why === 'blocked'; } }
-        spxFallback(id, j.why === 'notHere' ? 'Spotify isn’t open on this ' + (spKind() === 'Computer' ? 'computer' : 'phone') + ': playing the preview. (Open Spotify here, or choose a speaker in Profile › Account › Spotify.)'
-          : j.why === 'busy' ? 'Spotify is busy just now: previews for a while' : j.why === 'nodevice' ? 'Spotify isn’t open on any of your devices: playing the preview' : j.why === 'premium' ? 'Spotify needs Premium to play whole songs here' : j.why === 'blocked' ? 'Spotify needs John to add you first' : 'Spotify didn’t play it (' + (j.error || 'try again') + '): playing the preview');
+        spxFallback(id, j.why === 'notHere' ? 'Spotify isn’t open on this ' + (spKind() === 'Computer' ? 'computer' : 'phone') + ': playing here'
+          : j.why === 'busy' ? 'Spotify is busy just now: previews for a while' : j.why === 'nodevice' ? 'Spotify isn’t open on any of your devices: playing the preview' : j.why === 'premium' ? 'Spotify needs Premium to play whole songs here' : j.why === 'blocked' ? 'Spotify needs John to add you first' : 'Spotify didn’t play it (' + (j.error || 'try again') + '): playing the preview', j.why === 'notHere' || j.why === 'nodevice');
         return;
       }
       var dev = { id: j.device, name: j.name || 'Spotify', type: j.type || '' };
@@ -3941,7 +3985,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         if (SPX.last && SPX.last.id === dev.id) SPX.last = null;
         spCall({ op: 'pause' }).catch(function () {});   // (so it can't start there late, beside the preview)
         if (/Smartphone|Tablet/.test(dev.type) && SPX.woke !== id && spxWakeThen(id, 'asleep')) return;
-        spxFallback(id, 'Spotify didn’t start on ' + dev.name + (/Smartphone|Tablet/.test(dev.type) ? ' (phones put Spotify to sleep in the background)' : '') + ': playing the preview');
+        spxFallback(id, 'Spotify didn’t start on ' + dev.name + (/Smartphone|Tablet/.test(dev.type) ? ' (phones put Spotify to sleep in the background)' : '') + ': playing here', /Smartphone|Tablet/.test(dev.type));
       });
     }).catch(function () { SPX.busy = false; if (coverObj.sp && SPX.track === id) spxFallback(id, 'Couldn’t reach Spotify just now: playing the preview'); });
   }
@@ -7998,8 +8042,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function uplOwnCan() { return !!(UPL.on && UPL.view && UPL.view.mine && !TV); }
   function uplEditSync() {
     document.getElementById('upleditbtn').hidden = !uplOwnCan() || ED.on;
-    document.getElementById('cal').classList.toggle('has-edit', uplOwnCan() && !ED.on);   // (its row only when it's there)
-    document.getElementById('listedit').hidden = !uplOwnCan();   // (a playlist's, above its list)
+    var johnSee = !!(MEMBER && MEMBER.owner === true && UPL.on && UPL.view && !TV);   // (John: Missing on anyone's, to look again)
+    document.getElementById('cal').classList.toggle('has-edit', (uplOwnCan() || johnSee) && !ED.on);   // (its row only when it's there)
+    document.getElementById('listedit').hidden = !uplOwnCan() && !johnSee;   // (a playlist's, above its list)
+    document.getElementById('upleditbtn2').hidden = !uplOwnCan();
     missSync();
     var me = uplPls().filter(function (p) { return p.id === UPL.on; })[0];
   }
@@ -8021,7 +8067,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   function missSync() {
     if (!MISS_KINDS || !missDlg) return;   // (before they're set up: the first draw)
-    var can = uplOwnCan(), L = can && missLists();
+    var can = uplOwnCan() || !!(MEMBER && MEMBER.owner === true && UPL.on && UPL.view && !TV), L = can && missLists();   // (John: any playlist's, to look again)
     var any = L && MISS_KINDS.some(function (m) { return L[m.k].length; });
     [].forEach.call(document.querySelectorAll('.missbtn'), function (b) {
       b.hidden = !can || !L || !L.n || ED.on || !any;   // (only when something is missing: John, 3 Nov 2026)
@@ -8040,6 +8086,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       tabs.appendChild(b);
     });
     var m = MISS_KINDS.filter(function (x) { return x.k === MISS.k; })[0], list = L[m.k];
+    var rb = document.getElementById('missretry'); document.getElementById('missretryl').hidden = !(MEMBER && MEMBER.owner === true) || !(m.k === 'p' || m.k === 'v') || !list.length;   // (John only)
+    rb.textContent = m.k === 'p' ? 'Look again for previews' : 'Look again for videos'; rb.disabled = false;
     // still being looked for (previews and videos: the progress's left), apart from those with none found (John, 3 Nov 2026: "If it's still being looked up that needs to be seen")
     var lf = (m.k === 'p' || m.k === 'v') && v.prog && v.prog.left && v.prog.left[m.k] || [], looking = list.filter(function (x) { return lf.indexOf(x.id) >= 0; }), found = list.filter(function (x) { return lf.indexOf(x.id) < 0; });
     var tips = { p: 'No preview on Spotify: these play their video if they have one; add your own MP3 to play the whole song.', v: 'No YouTube video found. Tap one to give it a YouTube link or your own MP4.' };
@@ -8070,6 +8118,16 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     });
   });
   document.getElementById('missclose').addEventListener('click', function () { closeDialog(missDlg); });
+  document.getElementById('missretry').addEventListener('click', function () {   // John's Look again: its missing previews looked up now, its missing videos by the next run of the site job
+    var b = this, k = MISS.k; if (!UPL.on) return; b.disabled = true; b.textContent = 'Looking…';
+    uplCall({ op: 'retry', id: UPL.on, k: k }).then(function (j) {
+      b.disabled = false;
+      if (j.status !== 200) { toast(j.error || 'Couldn’t start it just now'); missDraw(); return; }
+      if (j.view) uplApply(j.view, { keep: true });
+      toast(k === 'p' ? 'Looked again: ' + (j.previews ? j.previews + ' looked up afresh' : 'the rest are still being looked up') : 'Asked again: the site job looks for ' + (j.videos === 1 ? '1 video' : (j.videos || 0) + ' videos') + ' in its next run (a few minutes)');
+      missDraw();
+    }).catch(function () { b.disabled = false; toast('Couldn’t reach the site. Try again.'); missDraw(); });
+  });
   // songs with no date (John, 3 Nov 2026): a member's calendar's songs Spotify gave no real added date (1970): listed
   // by themselves under the calendar, each a tap from playing (in the day pop-up, on no day)
   var nodateDlg = document.getElementById('nodatedlg');
@@ -9722,7 +9780,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // memory. With a way to update the file if necessary"): the Worker's /members/impfile, on every device of theirs.
   // Import from Spotify opens on its playlists; Update the file goes through Exportify again, and the new one is kept.
   function impSaved(then) {
-    if (IMP.saved !== undefined) { then(); return; }
+    if (IMP.saved !== undefined) { setTimeout(then, 0); return; }   // (kept already: after the pop-up has opened, as when it's fetched: John, 3 Nov 2026, the second time it looked as if there were none)
     var tok = plTok(); if (!tok || !MBASE || !window.fetch) { IMP.saved = null; then(); return; }
     fetch(MBASE + '/members/impfile', { headers: { Authorization: 'Bearer ' + tok }, cache: 'no-store' }).then(function (r) {
       if (r.status !== 200) return null;
@@ -9896,6 +9954,31 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       }).catch(function () {});
     }
   }
+  function impToggle(l, b, quiet) {
+    var i = IMP.sel.indexOf(l);
+    if (i >= 0) IMP.sel.splice(i, 1); else IMP.sel.push(l);
+    b.classList.toggle('sel', i < 0); b.setAttribute('aria-pressed', i < 0 ? 'true' : 'false');
+    if (!quiet) impSelDraw();
+  }
+  function impSelDraw() {   // the bar: what's ticked, where it goes, and the button that does it
+    var bar = document.getElementById('uplisel'), sel = IMP.sel || [], dsel = document.getElementById('uplisdest'), tg = impTarget(), was = dsel.value;
+    bar.hidden = !sel.length; if (!sel.length) return;
+    document.getElementById('uplisels').textContent = (sel.length === 1 ? '1 ticked: ' : sel.length + ' ticked: ') + andList(sel.slice(0, 6).map(function (l) { return '“' + l.name + '”'; })) + (sel.length > 6 ? ' and ' + (sel.length - 6) + ' more' : '');
+    dsel.textContent = '';
+    var opt = function (v, t) { var o = document.createElement('option'); o.value = v; o.textContent = t; dsel.appendChild(o); };
+    var feeds = sel.filter(function (l) { return impFeeds(l).length; }).length;
+    if (feeds) opt('auto', feeds === sel.length ? 'Update the ones they went into' : 'Update the ones they went into, the rest as new ones');
+    opt('new', sel.length === 1 ? 'A new calendar or playlist' : 'A new calendar or playlist for each');
+    uplPls().filter(function (p) { return p.mine && p.src === 'csv'; }).forEach(function (p) { opt('into:' + p.id, 'All into “' + impPlName(p) + '”'); });
+    dsel.value = tg ? 'into:' + tg.id : [].some.call(dsel.options, function (o) { return o.value === was; }) ? was : feeds ? 'auto' : 'new';
+    impSelGo();
+  }
+  function impSelGo() {
+    var sel = IMP.sel || [], v = document.getElementById('uplisdest').value, anyNew = v === 'new' || (v === 'auto' && sel.some(function (l) { return !impFeeds(l).length; }));
+    document.getElementById('uplismode').hidden = !anyNew;
+    document.getElementById('uplisone').hidden = sel.length !== 1;
+    document.getElementById('uplisgo').textContent = v === 'new' ? 'Import ' + (sel.length === 1 ? 'it' : 'all ' + sel.length) : /^into:/.test(v) ? 'Add ' + (sel.length === 1 ? 'it' : 'all ' + sel.length) : 'Update' + (sel.length > 1 ? ' from all ' + sel.length : '');
+  }
   function impTarget() { return IMP.target ? uplPls().filter(function (p) { return p.id === IMP.target && p.mine; })[0] || null : null; }
   function impPick() {   // the download's playlists, to choose from
     var lists = IMP.lists, grid = document.getElementById('upligrid'), q = document.getElementById('uplisearch');
@@ -9927,10 +10010,17 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       var upd = fd.length > 0;   // (only the ones it goes into: John, 3 Nov 2026, not an Add to on every card)
       if (upd) { var t = document.createElement('span'); t.className = 'tag'; t.textContent = 'Goes into ' + andList(fd.map(function (f) { return impPlName(f.p); })); b.appendChild(t); }
       b.setAttribute('aria-label', l.name + (by.textContent ? ', ' + by.textContent.replace(/^By/, 'by') : '') + ', ' + ct.textContent + (upd ? ', ' + t.textContent : ''));
-      b.addEventListener('click', function () { impGot(l); });
+      b.setAttribute('aria-pressed', 'false');
+      b.addEventListener('click', function () { impToggle(l, b); });   // (several at once: John, 3 Nov 2026, ticked and shown so)
+      var tick = document.createElement('span'); tick.className = 'tick'; tick.setAttribute('aria-hidden', 'true'); b.appendChild(tick);
       grid.appendChild(b);
     });
     document.getElementById('uplipicknone').hidden = true;
+    IMP.sel = [];   // the ones ticked: those yours came from, to start with
+    var tg = impTarget();
+    [].forEach.call(grid.children, function (b) { var f = impFeeds(b._l); if (tg ? f.some(function (x) { return x.p.id === tg.id; }) : f.length) impToggle(b._l, b, true); });
+    document.getElementById('upliallb').hidden = true;   // (the bar below does it, for those ticked)
+    impSelDraw();
     impShow('pick');
     impNames(lists, function () { [].forEach.call(grid.children, function (b) { if (b._by) { b._by.textContent = impBy(b._l); b._by.hidden = !b._by.textContent; } }); });
   }
@@ -10011,6 +10101,40 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   impDlg.addEventListener('close', function () { IMP.away = false; IMP.lists = null; IMP.pick = null; clearInterval(IMP.poll); IMP.win = null; impForget(); });
   document.getElementById('upliclose').addEventListener('click', function () { closeDialog(impDlg); });
   document.getElementById('upligo').addEventListener('click', impAway);
+  document.getElementById('uplisdest').addEventListener('change', impSelGo);
+  document.getElementById('uplisclear').addEventListener('click', function () { IMP.sel = []; [].forEach.call(document.getElementById('upligrid').children, function (b) { b.classList.remove('sel'); b.setAttribute('aria-pressed', 'false'); }); impSelDraw(); });
+  document.getElementById('uplisone').addEventListener('click', function () { if ((IMP.sel || []).length === 1) impGot(IMP.sel[0]); });   // (one: its own page, to name it and choose)
+  document.getElementById('uplisgo').addEventListener('click', function () {   // the ticked ones, in turn: updated (where they went), added into one, or each a new one
+    var b = this, sel = (IMP.sel || []).slice(), v = document.getElementById('uplisdest').value, mode = (document.querySelector('input[name="uplismode"]:checked') || {}).value === 'list' ? 'list' : 'cal';
+    if (!sel.length || IMP.busy) return;
+    var jobs = [], into = /^into:/.test(v) ? v.slice(5) : '';
+    sel.forEach(function (l) {
+      var f = impFeeds(l);
+      if (into) { var m = f.filter(function (x) { return x.p.id === into && x.main; })[0]; jobs.push(m ? { l: l, op: 'csvup', id: into } : { l: l, op: 'csvadd', id: into }); }
+      else if (v === 'auto' && f.length) f.forEach(function (x) { jobs.push({ l: l, op: x.main ? 'csvup' : 'csvadd', id: x.p.id }); });
+      else jobs.push({ l: l, op: 'csv' });
+    });
+    jobs.sort(function (a, c) { return (a.op === 'csvup' ? 0 : 1) - (c.op === 'csvup' ? 0 : 1); });   // (an update before the adds into the same one)
+    IMP.busy = true; b.disabled = true; var label = b.textContent, fresh = 0, done = 0, failed = [], last = null, made = [];
+    var next = function (i) {
+      if (i >= jobs.length) {
+        IMP.busy = false; b.disabled = false; b.textContent = label;
+        if (last && last.pls) { MEMBER.pls = last.pls; uplMark(); uplWaitCount(); if (acct.open) uplDrawAcct(); }
+        impForget(); closeDialog(impDlg);
+        toast((made.length ? (made.length === 1 ? '1 imported' : made.length + ' imported') + (done > made.length ? ', ' : '') : '') + (done > made.length ? 'updated from ' + (done - made.length) + (done - made.length === 1 ? ' playlist' : ' playlists') + ': ' + (fresh ? (fresh === 1 ? '1 new song' : fresh + ' new songs') : 'no new songs') : '') + (failed.length ? '. Not done: ' + andList(failed) : ''));
+        var showId = made[0] || (jobs[0] && jobs[0].id);
+        if (showId) { if (acct.open) closeDialog(acct); if (UPL.on === showId && last && last.view && last.view.id === showId) uplRefreshViews(showId, last.view); else uplShow(showId); }
+        return;
+      }
+      var jb = jobs[i], l = jb.l;
+      b.textContent = (jobs.length > 1 ? (i + 1) + ' of ' + jobs.length + ': ' : '') + (jb.op === 'csv' ? 'importing' : jb.op === 'csvup' ? 'updating' : 'adding') + ' “' + l.name + '”…';
+      uplCall(jb.op === 'csv' ? { op: 'csv', name: l.name, file: l.file, mode: mode, songs: l.songs } : { op: jb.op, id: jb.id, songs: l.songs, file: l.file }).then(function (j) {
+        if (j.status === 200) { done++; last = j; if (jb.op === 'csv' && j.id) made.push(j.id); else fresh += (jb.op === 'csvup' ? j.fresh : j.added) || 0; } else failed.push('“' + l.name + '” (' + (j.error || 'not done') + ')');
+        next(i + 1);
+      }, function () { failed.push('“' + l.name + '”'); next(i + 1); });
+    };
+    next(0);
+  });
   document.getElementById('upliallb').addEventListener('click', function () {   // every one of theirs in the file, updated in turn
     var b = this, jobs = [];   // each of theirs: Update from the playlist it was imported from, then the new songs of those added to it
     (IMP.lists || []).forEach(function (l) { impFeeds(l).forEach(function (f) { jobs.push({ l: l, p: f.p, main: f.main }); }); });
@@ -10277,7 +10401,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     else if (x.blocked) { t.textContent = x.email ? 'Waiting for John to add ' + x.email + ' on Spotify’s side. It plays through Spotify once he has.' : 'Nearly there: Spotify needs John to add you first. Give the email of your Spotify account:'; mail.hidden = !!x.email; }
     else if (x.product !== 'premium') t.textContent = 'Connected as ' + (x.name || 'you') + ', but Spotify only lets other apps play whole songs for Premium accounts. Songs play as previews.';
     else { t.textContent = 'Connected as ' + (x.name || 'you') + '. ' + (x.on ? 'Every song plays through your Spotify; videos stay videos.' : 'Songs play as previews, as before.'); on.hidden = false; chk.checked = !!x.on; }
-    document.getElementById('acspwhere').hidden = !spOn();
+    document.getElementById('acspwhere').hidden = true;   // (where songs play: the speaker icon, John, 3 Nov 2026)
+    if (typeof castDraw === 'function') castDraw();   // (the speaker icon, with their Spotify on)
   }
   document.getElementById('acspgo').addEventListener('click', function () {
     var b = this; b.disabled = true;
@@ -10306,6 +10431,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   document.getElementById('acspchk').addEventListener('change', function () {
     var c = this; spCall({ op: 'pref', on: c.checked }).then(function (j) { if (j.status === 200) { SPM.st = j; spDraw(); toast(j.on ? 'Songs play through Spotify' : 'Songs play as previews'); } });
   });
+  document.getElementById('acspwhere').hidden = true;   // (chosen with the speaker icon now: John, 3 Nov 2026)
   document.getElementById('acspwhere').addEventListener('click', function () {
     spDevPick(null, 'Choose where songs play this visit (on this device they play where Spotify is open here).', function (d) { toast('Songs play on ' + d.name + ' this visit'); if (coverObj && coverObj.sp && SPX.playing) spCall({ op: 'transfer', device: d.id }).then(function (j) { if (j.status === 200) { SPX.dev = { id: d.id, name: d.name }; spxMovedTo(d); spxShowDev(); } }); });
   });
