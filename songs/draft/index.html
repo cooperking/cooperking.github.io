@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="c7dbe68f594b">
+<meta name="sotd-build" content="cd9a5f36ca31">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -10280,12 +10280,13 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         toast((made.length ? (made.length === 1 ? '1 imported' : made.length + ' imported') + (done > made.length ? ', ' : '') : '') + (done > made.length ? 'updated from ' + (done - made.length) + (done - made.length === 1 ? ' playlist' : ' playlists') + ': ' + (fresh ? (fresh === 1 ? '1 new song' : fresh + ' new songs') : 'no new songs') : '') + (failed.length ? '. Not done: ' + andList(failed) : ''));
         var showId = made[0] || (jobs[0] && jobs[0].id);
         if (showId) { if (acct.open) closeDialog(acct); if (UPL.on === showId && last && last.view && last.view.id === showId) uplRefreshViews(showId, last.view); else uplShow(showId); }
+        impOffAsk(IMP.offs); IMP.offs = null;
         return;
       }
       var jb = jobs[i], l = jb.l;
       b.textContent = (jobs.length > 1 ? (i + 1) + ' of ' + jobs.length + ': ' : '') + (jb.op === 'csv' ? 'importing' : jb.op === 'csvup' ? 'updating' : 'adding') + ' “' + l.name + '”…';
       uplCall(jb.op === 'csv' ? { op: 'csv', name: l.name, file: l.file, mode: mode, songs: l.songs } : { op: jb.op, id: jb.id, songs: l.songs, file: l.file }).then(function (j) {
-        if (j.status === 200) { done++; last = j; if (jb.op === 'csv' && j.id) made.push(j.id); else fresh += (jb.op === 'csvup' ? j.fresh : j.added) || 0; } else failed.push('“' + l.name + '” (' + (j.error || 'not done') + ')');
+        if (j.status === 200) { done++; last = j; if (jb.op === 'csv' && j.id) made.push(j.id); else fresh += (jb.op === 'csvup' ? j.fresh : j.added) || 0; if (j.off) (IMP.offs = IMP.offs || []).push({ id: jb.id, name: (uplPls().filter(function (p) { return p.id === jb.id; })[0] || {}).n || l.name, n: j.off, songs: j.offSongs || [] }); } else failed.push('“' + l.name + '” (' + (j.error || 'not done') + ')');
         next(i + 1);
       }, function () { failed.push('“' + l.name + '”'); next(i + 1); });
     };
@@ -10304,12 +10305,13 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         if (UPL.on && last && last.view && last.view.id === UPL.on) uplRefreshViews(UPL.on, last.view); else if (UPL.on && ups.some(function (jb) { return jb.p.id === UPL.on; })) uplShow(UPL.on);
         impForget(); closeDialog(impDlg);
         toast('Updated from ' + done + (done === 1 ? ' playlist' : ' playlists') + ': ' + (fresh ? (fresh === 1 ? '1 new song' : fresh + ' new songs') : 'no new songs') + (failed.length ? '. Not updated: ' + andList(failed) : ''));
+        impOffAsk(IMP.offs); IMP.offs = null;
         return;
       }
       var jb = ups[i], l = jb.l, h = jb.p;
       b.textContent = 'Updating ' + (i + 1) + ' of ' + ups.length + '…';
       uplCall(jb.main ? { op: 'csvup', id: h.id, songs: l.songs, file: l.file } : { op: 'csvadd', id: h.id, songs: l.songs, file: l.file }).then(function (j) {
-        if (j.status === 200) { done++; fresh += (jb.main ? j.fresh : j.added) || 0; last = j; } else failed.push('“' + l.name + '”');
+        if (j.status === 200) { done++; fresh += (jb.main ? j.fresh : j.added) || 0; last = j; if (jb.main && j.off) (IMP.offs = IMP.offs || []).push({ id: h.id, name: h.n, n: j.off, songs: j.offSongs || [] }); } else failed.push('“' + l.name + '”');
         next(i + 1);
       }, function () { failed.push('“' + l.name + '”'); next(i + 1); });
     };
@@ -10352,7 +10354,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       if (h && !up && UPL.on === h.id) uplBack(true);   // (the one it replaced was showing)
       if (h && !up && MUPL.id === h.id) { mineUplExit(); if (mine.open) closeDialog(mine); }
       closeDialog(impDlg);
-      if (up) { toast(j.fresh ? (j.fresh === 1 ? '1 new song waits' : j.fresh + ' new songs wait') + ' for you to sign off' : 'Up to date: no new songs'); if (UPL.on === h.id) uplRefreshViews(h.id, j.view); else { if (acct.open) closeDialog(acct); uplShow(h.id); } return; }
+      if (up) { toast(j.fresh ? (j.fresh === 1 ? '1 new song waits' : j.fresh + ' new songs wait') + ' for you to sign off' : 'Up to date: no new songs'); impOffAsk([{ id: h.id, name: h.n, n: j.off || 0, songs: j.offSongs || [] }]); if (UPL.on === h.id) uplRefreshViews(h.id, j.view); else { if (acct.open) closeDialog(acct); uplShow(h.id); } return; }
       toast(h ? 'Switched to “' + l.name + '”' : 'Imported');
       if (acct.open) closeDialog(acct);
       uplShow(j.id);   // (on the calendar straight away: it fills in as they watch, and plays as previews come)
@@ -10363,6 +10365,26 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   });
   // a file given to the app: Android's share sheet (the service worker keeps it, then opens ?shared=1), or the iPhone
   // app's Open in (a file:// address, read by the app's own plugin, SotdFiles, from build 28)
+  // after an update: the songs in the download that were taken off the calendar, not put back; said so, with Put them back
+  // (John, 3 Nov 2026: "it should be flagged on import again, that it's not being put back")
+  function impOffAsk(offs) {   // offs: [{ id: playlist, name, n, songs: [{ id, title, artist }] }]
+    offs = (offs || []).filter(function (o) { return o.n > 0; }); if (!offs.length) return;
+    var o = offs[0], names = o.songs.slice(0, 6).map(function (x) { return '“' + x.title + '”' + (x.artist ? ' by ' + x.artist.split(',')[0] : ''); });
+    var more = o.n > names.length ? ' and ' + (o.n - names.length) + ' more' : '';
+    setTimeout(function () {
+      ask({ k: 'Not put back', h: o.n === 1 ? '1 song you took off isn’t put back' : o.n + ' songs you took off aren’t put back',
+        t: 'The download has ' + andList(names) + more + ', which you took off “' + o.name + '”. They stay off unless you put them back.',
+        ok: o.n === 1 ? 'Put it back' : 'Put them back', no: 'Leave them off' }).then(function (yes) {
+        var rest = function () { impOffAsk(offs.slice(1)); };
+        if (!yes) { rest(); return; }
+        uplCall({ op: 'undel', id: o.id, tracks: o.songs.map(function (x) { return x.id; }) }).then(function (j) {
+          if (j.status === 200) { if (j.pls) { MEMBER.pls = j.pls; uplMark(); } if (UPL.on === o.id && j.view) uplRefreshViews(o.id, j.view); toast(j.back === 1 ? 'Put back on its day' : j.back + ' put back on their days'); }
+          else toast(j.error || 'Couldn’t put them back');
+          rest();
+        }, rest);
+      });
+    }, 700);
+  }
   function impShared() {
     var sp; try { sp = new URLSearchParams(location.search); } catch (e) { return false; }
     if (!sp.has('shared') || !window.caches) return false;

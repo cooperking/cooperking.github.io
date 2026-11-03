@@ -4475,6 +4475,17 @@ async function memberUpl(request, url, env, answer) {
     await startJob(env, null, null, 0, null, true).catch(() => {});   // (its cards, and its YouTube copy)
     return answer(200, { ok: true, pls: await uplMine(env, uplList(all, me, U), U), view: await uplView(env, all, me, pid, rec) });
   }
+  if (body.op === 'undel') {   // songs taken off it put back on their days (from an update's "not put back")
+    const want = new Set((Array.isArray(body.tracks) ? body.tracks : []).slice(0, 2000).map(String));
+    const data = await uplSongs(env, pid); let n = 0;
+    for (const t of want) if (data.del && data.del[t]) { delete data.del[t]; n++; }
+    if (n) {
+      await env.SOTD.put('upl:' + pid, JSON.stringify(data));
+      rec.cnt = (data.songs || []).filter(y => !uplGone(data, y)).length; rec.ch = Date.now(); await uplPut(env, U);
+      await startJob(env, null, null, 0, null, true).catch(() => {});   // (their videos and files again)
+    }
+    return answer(200, { ok: true, back: n, pls: await uplMine(env, uplList(all, me, U), U), view: await uplView(env, all, me, pid, rec) });
+  }
   if (body.op === 'csvup') {   // a fresh export of it: new songs wait for them to sign off, the rest keep their days
     if (rec.src !== 'csv') return answer(400, { error: 'That one is read from Spotify by itself.' });
     const items = uplCsvSongs(body.songs);
@@ -4483,7 +4494,10 @@ async function memberUpl(request, url, env, answer) {
     const d0 = await uplSongs(env, pid);
     if (d0.add) { const ids = new Set(items.map(x => x.id)); for (const x of d0.songs || []) if (d0.add[x.id] && !ids.has(x.id)) items.push(x); }   // (songs added to it from other playlists stay)
     const r = await uplTake(env, pid, rec, U, items, rec.st, Date.now(), true);
-    return answer(200, { ok: true, fresh: r.fresh, cnt: rec.cnt, pls: await uplMine(env, uplList(all, me, U), U), view: await uplView(env, all, me, pid, rec) });
+    // songs in the download its owner took off the calendar: not put back, and said so (John, 3 Nov 2026: "it should be
+    // flagged on import again, that it's not being put back"), with Put them back (op undel) on the page
+    const d1 = await uplSongs(env, pid), inFile = new Set(items.map(x => x.id)), offKept = (d1.songs || []).filter(x => inFile.has(x.id) && uplGone(d1, x));
+    return answer(200, { ok: true, fresh: r.fresh, cnt: rec.cnt, off: offKept.length, offSongs: offKept.slice(0, 40).map(x => ({ id: x.id, title: x.title, artist: x.artist })), pls: await uplMine(env, uplList(all, me, U), U), view: await uplView(env, all, me, pid, rec) });
   }
   if (body.op === 'csvadd') {   // another playlist's songs added to this one (John, 2 Nov 2026: "choose whether to import it into a new calendar/ playlist, or add it to an existing one"): those it hasn't got, kept through its own updates (data.add)
     if (rec.src !== 'csv') return answer(400, { error: rec.src === 'sp' ? 'That one is read from Spotify by itself: add songs to it in Spotify.' : 'Add songs to that one in the playlist itself.' });
