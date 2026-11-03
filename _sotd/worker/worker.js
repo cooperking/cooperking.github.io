@@ -3620,7 +3620,23 @@ async function memberSpNames(request, url, env, answer) {
   }));
   return answer(200, { names: out });
 }
-async function uplAll(env) { return (await env.SOTD.get('upls', 'json')) || {}; }
+// the old way in, a Spotify playlist John's account joined as a collaborator and read hourly (src 'sp'), is gone (John,
+// 3 Nov 2026: "We should get rid of that method completely ... should look the same as if it was completely the member's
+// playlist"): any left become their owner's own, as an Exportify import is (src 'csv'), their songs as they are now,
+// updated from an Exportify download like the rest. Spotify isn't read for them any more.
+function uplRetireSp(U) {
+  let n = 0;
+  for (const r of Object.values(U)) {
+    if (r.src === 'mpl' || r.src === 'csv') continue;
+    r.src = 'csv'; r.st = 'ok'; delete r.link; delete r.err; delete r.tried; delete r.chw; n++;
+  }
+  return n;
+}
+async function uplAll(env) {
+  const U = (await env.SOTD.get('upls', 'json')) || {};
+  if (uplRetireSp(U)) await env.SOTD.put('upls', JSON.stringify(U));
+  return U;
+}
 async function uplSongs(env, pid) { return (await env.SOTD.get('upl:' + pid, 'json')) || { songs: [], rel: {} }; }
 // a saved playlist made a calendar or shared playlist (src 'mpl', pl: the saved playlist's id): its songs follow it.
 // New ones are added as they're saved (a: then); one taken out is kept, deleted (del), so its day stays empty; one put
@@ -4228,7 +4244,8 @@ async function memberUpl(request, url, env, answer) {
   if (request.method !== 'POST') return answer(405, { error: 'Use GET or POST.' });
   const body = await request.json().catch(() => ({})), mine = async () => answer(200, { ok: true, pls: await uplMine(env, uplList(all, me, U), U) });
   const own = pid => U[pid] && U[pid].o === me ? U[pid] : null;
-  if (body.op === 'add') {
+  if (body.op === 'add') return answer(400, { error: 'Bring playlists in from an Exportify download: Import from Spotify.' });   // (the collaborator way in: retired)
+  if (body.op === 'add-retired') {
     const sp = uplSpId(body.link);
     if (!sp) return answer(400, { error: 'That isn’t a Spotify playlist link. In Spotify, open the playlist, tap ••• then Share, Copy link.' });
     if (Object.values(U).some(r => r.o === me && r.sp === sp)) return answer(400, { error: 'You’ve added that playlist already.' });

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="24212882b8f5">
+<meta name="sotd-build" content="15e27dd13a84">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -8373,7 +8373,6 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (p.pic) btn(pa, 'Use its covers', '', function (e) { e.currentTarget.disabled = true; uplPicSend(p, null); });
     var more = document.getElementById('pe-more'); more.textContent = '';
     if (p.src === 'csv') btn(more, 'Update from Exportify', '', function () { impOpen(0, p.id); });
-    else if (p.src !== 'mpl') btn(more, 'Check now', '', function () { uplOp({ op: 'check', id: p.id }, null, function (j) { toast(j.st === 'ok' ? 'Read from Spotify: ' + (j.view ? j.view.songs.length : 0) + ' songs' : 'John hasn’t joined it yet'); }); });
     if (p.src !== 'mpl') btn(more, 'Remove it', 'x', function () { uplRemoveAsk(p); });
     // its songs: each one's edit (its video, moods and genres, their MP3 and MP4, cover) and taking off; a playlist's order
     var ul = document.getElementById('pe-songs'), rows = list ? mineUplSongs() : MUPL.list.slice().sort(function (a, b) { return a.d < b.d ? 1 : a.d > b.d ? -1 : 0; });
@@ -9154,7 +9153,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     uplActs(p, acts, true);
     var nf = document.querySelector('#minefoot .namefield'); nf.htmlFor = 'uplname'; nf.hidden = !document.getElementById('minefoot').contains(uplNameEl);   // (its name box away in Edit's panel: no label left on its own)
     if (document.activeElement !== uplNameEl) uplNameEl.value = v.n;
-    uplNameEl.placeholder = p.sn || v.n; uplNameEl.setAttribute('aria-label', 'Playlist name (' + (p.src === 'csv' ? 'imported as ' : 'Spotify calls it ') + (p.sn || v.n) + ')');
+    uplNameEl.placeholder = p.sn || v.n; uplNameEl.setAttribute('aria-label', 'Playlist name (' + (p.src === 'mpl' ? 'Spotify calls it ' : 'imported as ') + (p.sn || v.n) + ')');
     setupDraw();
     list.forEach(function (x, idx) {
       var li = document.createElement('li'); li._track = x.track; if (x.w) li.className = 'uplw';
@@ -9215,8 +9214,6 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   // the Profile's Playlists tab: their own
   function uplStatus(p) {
-    if (p.st === 'join') return 'Waiting for John to join it as a collaborator. He has your link on his page; it shows for everyone once he has.';
-    if (p.st === 'err') return p.err || 'The calendar can’t read it just now.';
     return (p.mode === 'list' ? 'A playlist' : 'A calendar') + ' · ' + p.cnt + (p.cnt === 1 ? ' song' : ' songs') + ' · ' + uplWhoSay(p) + (p.src === 'csv' ? ' · from Exportify' : '');
   }
   function uplWhoSay(p) {   // who sees it, in a few words
@@ -9492,7 +9489,6 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function uplActs(p, acts, pop) {   // one of their playlists on the calendar (pop: in the My playlist pop-up; else Profile › Playlists)
     function act(label, cls, fn) { var b = document.createElement('button'); b.type = 'button'; b.textContent = label; if (cls) b.className = cls; b.addEventListener('click', fn); acts.appendChild(b); return b; }
     if (!pop) {   // (the box itself opens it, and its Notifications are above it: uplAcctRow)
-      if (p.st === 'join') act('Send the invite link again', '', function () { uplLinkAgain(p); });
       if (p.st !== 'ok') act('Remove', 'x', function () { uplRemoveAsk(p); });
       return;
     }
@@ -9505,9 +9501,6 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     });
     if (p.src === 'csv') {
       act('Update from Exportify', '', function () { impOpen(0, p.id); });
-      act('Remove', 'x', function () { uplRemoveAsk(p); });
-    } else if (p.src !== 'mpl') {
-      act('Check now', '', function () { uplOp({ op: 'check', id: p.id }, null, function (j) { toast(j.st === 'ok' ? 'Read from Spotify: ' + (j.view ? j.view.songs.length : 0) + ' songs' : 'John hasn’t joined it yet'); }); });
       act('Remove', 'x', function () { uplRemoveAsk(p); });
     }
   }
@@ -9635,7 +9628,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var p = MUPL.id && uplPls().filter(function (x) { return x.id === MUPL.id; })[0]; if (!p) return;
     var t = uplNameEl.value.replace(/\s+/g, ' ').trim();
     if (t === p.n || (!t && p.n === p.sn)) return;
-    uplOp({ op: 'title', id: p.id, title: t }, t ? 'Called “' + t + '” now' : (p.src === 'csv' ? 'Its first name again' : 'Spotify’s name again'));
+    uplOp({ op: 'title', id: p.id, title: t }, t ? 'Called “' + t + '” now' : 'Its first name again');
   });
   function uplOp(body, said, then) {
     return uplCall(body).then(function (j) {
@@ -9704,31 +9697,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       uplListEl.appendChild(li);
     });
   }
-  var UPL_HOW = 'In Spotify, open your playlist, tap ••• then Invite collaborators, and copy the link. John joins it once as a collaborator, so the calendar can read it; it stays yours, and you add songs in Spotify as before.';
-  function uplLinkAgain(p) {
-    ask({ k: 'Your playlists', h: 'The invite link', t: UPL_HOW, input: { placeholder: 'https://open.spotify.com/playlist/…' }, ok: 'Send' }).then(function (v) {
-      if (v) uplOp({ op: 'link', id: p.id, link: v.trim() }, 'Sent: John has it on his page');
-    });
-  }
   document.getElementById('acupladd').addEventListener('click', function () { impOpen(); });
-  function uplAddCollab() {   // one of their Spotify playlists shared with John as a collaborator: read from Spotify by itself
-    var link = '';
-    ask({ k: 'Your playlists', h: 'Add a Spotify playlist', t: UPL_HOW, input: { placeholder: 'https://open.spotify.com/playlist/…' }, ok: 'Next' }).then(function (v) {
-      if (!v) return null;
-      link = v.trim();
-      return ask({ k: 'Your playlists', h: 'A calendar or a playlist?', t: 'A calendar puts each song on the day you add it, like John’s. A playlist is just its songs, newest first. You can change it later.',
-        ok: 'Calendar', alt: { label: 'Playlist', now: function () { askEnd('list'); } } });
-    }).then(function (mode) {
-      if (!mode) return;
-      uplCall({ op: 'add', link: link, mode: mode === 'list' ? 'list' : 'cal' }).then(function (j) {
-        if (j.status !== 200) { toast(j.error || 'Couldn’t add it just now'); return; }
-        MEMBER.pls = j.pls; uplMark(); uplWaitCount(); if (acct.open) uplDrawAcct();
-        toast(j.st === 'ok' ? 'Added' : 'Added: it shows once John has joined it');
-        var np = uplPls().filter(function (x) { return x.id === j.id; })[0];
-        if (np) uplWhoOpen(np, np.mode !== 'list' ? function () { var q = uplPls().filter(function (x) { return x.id === j.id; })[0]; if (q) uplDatesOpen(q); } : null);
-      }).catch(function () { toast('Couldn’t reach the site. Try again.'); });
-    });
-  }
   // ---- Import from Spotify (John, 1 Nov 2026: import members' playlists without collaborating, in a way that looks less
   // like leaving the app; then "it comes as a zip... the user then selects their playlist"). Exportify (exportify.app)
   // reads playlists with the member's own Spotify sign-in and saves them: Export all as a .zip of CSV files, or one as a
