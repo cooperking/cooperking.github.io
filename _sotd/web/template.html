@@ -5911,7 +5911,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function nowTaken(label) {   // carried on on another device: this one stops, and says where it's playing
     if (NOW.taken) return;
     NOW.taken = true; NOW.takenAt = Date.now(); NOW.key = ''; NOW.sent = null; NOW.okAt = 0;   // (a tap here to play again: noted, as new)
-    if (coverObj && coverObj.sp) { spLog('another device took over: stopped following Spotify here (not paused: it plays on there)'); coverObj.sp = false; spxStop(true); coverState(2); }   // (their Spotify is the same one, the other device working it now: not paused under it)
+    if (coverObj && coverObj.sp) { spLog('another device took over: stopped following Spotify here (not paused: it plays on there)'); coverObj.sp = false; spxStop(true); coverState(2); if (bgOn) bgOff(); if (sheet.open) closeDialog(sheet, true); PICK.at = 0; }   // (their Spotify is the same one, the other device working it now: not paused under it; then picked up again here as Spotify plays on (nowFetch below), so this device shows the speaker too)
     else try { var vp = vplay && vplay.player; if (vp && vp.pauseVideo) vp.pauseVideo(); } catch (e) {}   // (paused, never toggled: it may be paused already)
     try { if (playing && !audio.paused) audio.pause(); } catch (e) {}
     resumeForget();   // (this device's own place: not offered over the other's)
