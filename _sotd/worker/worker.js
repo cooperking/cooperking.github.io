@@ -4284,7 +4284,7 @@ async function uplView(env, all, viewer, pid, rec, also) {   // (also: tracks wa
     const fx = facts[x.id];   // its facts: signed off by its owner (fx), for everyone; theirs too: written and waiting (fxw), and how it stands (fxs)
     if (fx && fx.ok) x.fx = fx.ok;
     if (mine) { if (fx && fx.w) x.fxw = fx.w; if (fx && fx.w && fx.nw) x.fxn = fx.nw; x.fxs = fx && fx.w ? 'wait' : fx && fx.ok ? 'ok' : fx && fx.none ? 'nil' : wanted.has(x.id) ? 'asked' : uplShareOf(rec) === 'public' ? 'none' : 'off'; }
-    if (mine && x.ab) { x.abn = (await spWho(env, all))[x.ab] || x.ab; }   // (who added it on Spotify, for its owner's editor: a member's name where it's one of theirs: John, 3 Nov 2026)
+    if (x.ab) { const nm = (await spWho(env, all))[x.ab]; if (nm || mine || adm) x.abn = nm || x.ab; }   // (who added it on Spotify: a member's name for everyone, else the Spotify username for its owner and John: John, 3 Nov 2026)   // (who added it on Spotify, for its owner's editor: a member's name where it's one of theirs: John, 3 Nov 2026)
     if (e && 'v' in e) x.ov = e.v;
     if (e && (e.tt || e.ar)) {   // its owner's own title and artist, for everyone; theirs: Spotify's too (ot, oa), to go back to
       if (mine) { x.ot = x.title; x.oa = x.artist; }
