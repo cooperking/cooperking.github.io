@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <title>Members · Song of the Day admin</title>
-<style id="admin-gate">html { visibility: hidden; }</style>
+<style id="admin-gate">html { visibility: hidden; }.prog .why { margin: 0 0 6px; font-size: 12px; line-height: 1.4; opacity: .8; }
+</style>
 <script>
 // Shown only inside the admin page (admin.html), once it has checked the password with the Worker; opened on its own
 // this page goes back there.
@@ -318,6 +319,22 @@
   // to come too, so their MP3s and MP4s are got ahead of their day (John, 1 Nov 2026)
   var PUSH = {};
   function pushLinks() { return api('/upl/links', {}).then(function (j) { if (j.status === 200) { PUSH = {}; (j.links || []).forEach(function (l) { PUSH[l.id] = l.link; }); uplDraw(); } }).catch(function () {}); }
+  // what made a playlist show as coming in (John, 3 Nov 2026: "it suddenly said it was importing again and I'm not sure why")
+  function chgBadge(u) { return u.chg && !u.chg.fresh ? 'Updating' : 'Importing'; }
+  function chgLine(u) {
+    var c = u.chg; if (!c || !c.at) return '';
+    var when = new Date(c.at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+    if (c.fresh) return 'Imported ' + when + '. Its previews and videos are still being found.';
+    var what = c.k === 'retry' ? 'you tapped Look again in Missing' + (c.n ? ' (' + c.n + (c.n === 1 ? ' song' : ' songs') + ')' : '')
+      : [c.add ? c.add + (c.add === 1 ? ' song' : ' songs') + ' added' : '', c.off ? c.off + ' taken off' : ''].filter(Boolean).join(', ') || 'its songs changed';
+    var how = c.k === 'file' ? ' (' + u.o + ' updated it from Exportify)' : c.k === 'spotify' ? ' (on Spotify)' : c.k === 'saved' ? ' (' + u.o + ' changed it on the calendar)' : '';
+    return 'Changed ' + when + ': ' + what + (c.k === 'retry' ? '' : how) + '. Songs still without a video are being looked for.';
+  }
+  function removeAsk(u) {
+    return ask('Delete playlist', 'Delete “' + u.n + '” for good?',
+      'This deletes ' + u.o + '’s playlist from Song of the Day for everyone, ' + u.o + ' included: its songs, days and edits, its own facts, its picture, the MP3s and MP4s ' + u.o + ' uploaded for it, and its YouTube copy. It can’t be undone. Nothing changes on Spotify, and ' + u.o + ' isn’t told.',
+      'Delete for good');
+  }
   function uplDraw() {
     // (their playlists, as tiles with their progress, are in Songs › Member Songs now: John, 1 Nov 2026; here, only the ones
     // waiting for him to join them, or that Spotify won't let him read)
@@ -335,12 +352,13 @@
       var inn = document.createElement('span'); inn.className = 'in'; pic.appendChild(inn);
       (urls.length >= 4 ? urls.slice(0, 4) : urls.slice(0, 1)).forEach(function (x) { var im = document.createElement('img'); im.alt = ''; im.loading = 'lazy'; im.src = x; im.onerror = function () { im.style.visibility = 'hidden'; }; inn.appendChild(im); });
       var g = u.prog, left = function (f, nn) { return g ? Math.max(0, g.n - (g[f] || 0) - (g[nn] || 0)) : 0; }, coming = !!(g && g.n && (g.pq > 0 || left('v', 'vn') > 0));
-      if (coming) { busy = true; var bd = document.createElement('span'); bd.className = 'badge'; bd.textContent = 'Importing'; pic.appendChild(bd); }
+      if (coming) { busy = true; var bd = document.createElement('span'); bd.className = 'badge'; bd.textContent = chgBadge(u); pic.appendChild(bd); }
       else if (u.st === 'join') { var bj = document.createElement('span'); bj.className = 'badge'; bj.textContent = 'Join it'; pic.appendChild(bj); }
       li.appendChild(pic);
       var nm = document.createElement('div'); nm.className = 'nm'; nm.textContent = u.n; li.appendChild(nm);
       if (coming) {   // still coming in: its progress, as its owner sees it ("a similar progress only admin for currently importing playlists")
         var pr = document.createElement('div'); pr.className = 'prog'; pr.setAttribute('aria-label', 'Getting it ready');
+        if (chgLine(u)) { var wy = document.createElement('p'); wy.className = 'why'; wy.textContent = chgLine(u); pr.appendChild(wy); }
         var row = function (k, f, none, n) {
           var r = document.createElement('div'); r.className = 'r';
           var l = document.createElement('span'); l.textContent = k; r.appendChild(l);
@@ -371,9 +389,10 @@
           toast(now && now.st === 'ok' ? '“' + u.n + '”: read, ' + now.cnt + ' songs; every member can see it' : 'Spotify still won’t let your account read it: join it first');
         });
       }));
-      acts.appendChild(button('Remove', function () {
-        if (!confirmTwice(this, 'Remove? Tap again')) return;
-        api('/members/admin', { op: 'uplremove', id: u.id }).then(function (j) { if (j.status === 200) { UPLS = j.upls || []; uplDraw(); toast('Removed from the calendar'); } });
+      acts.appendChild(button('Delete…', function () {
+        removeAsk(u).then(function (yes) { if (!yes) return;
+          api('/members/admin', { op: 'uplremove', id: u.id }).then(function (j) { if (j.status === 200) { UPLS = j.upls || []; uplDraw(); toast('“' + u.n + '” deleted'); } });
+        });
       }));
       li.appendChild(acts); ul.appendChild(li);
     });

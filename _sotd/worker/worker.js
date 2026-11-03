@@ -3730,6 +3730,7 @@ async function uplAdminFull(env, all, U) {
     if (r.st === 'ok' && all[r.o] && now - (r.ch || r.at || 0) < 2 * 864e5) {
       const v = await uplView(env, all, r.o, u.id, r).catch(() => null);
       if (v && v.prog) { const g = v.prog; u.prog = { n: g.n, pq: g.pq, p: g.p, pn: g.pn, v: g.v, vn: g.vn, fa: g.fa, fv: g.fv, ch: g.ch }; }
+      u.chg = Object.assign({ at: r.ch || 0, fresh: now - (Number(r.at) || Date.parse(r.at) || 0) < 2 * 864e5 }, r.chw || {});   // (a first import, or what changed since)
     }
   }
   return list;
@@ -3829,6 +3830,7 @@ async function uplTake(env, pid, rec, U, items, was, now, quiet) {   // its song
     if (off.length) await uplFilesGone(env, pid, data, off);   // (songs no longer on it: their files too, unless saved to a playlist elsewhere)
     await env.SOTD.put('upl:' + pid, JSON.stringify(data));
     rec.ch = now;   // (the site job comes back hourly for a while: uplLook)
+    rec.chw = { k: rec.src === 'csv' ? 'file' : rec.src === 'mpl' ? 'saved' : 'spotify', add: items.filter(x => !had.has(x.id)).length, off: off.length };   // what changed, for John's tiles (John, 3 Nov 2026: "it suddenly said it was importing again and I'm not sure why")
   }
   Object.assign(rec, { st: 'ok', err: '', read: now, tried: now, cnt: items.filter(x => !uplGone(data, x)).length });
   if (rec.dates && !rec.dates.at && items.length) Object.assign(rec.dates, rec.dates.how === 'fwd' ? { at: items[0].id, n: 1 } : { at: items[items.length - 1].id, n: items.length });   // (chosen before it could be read)
@@ -4304,7 +4306,7 @@ async function memberUpl(request, url, env, answer) {
       if (data.skip) for (const x of noVid) if (data.skip[x.id]) { data.skip[x.id] = data.skip[x.id].replace('v', ''); if (!data.skip[x.id]) delete data.skip[x.id]; }
       await env.SOTD.put('upl:' + pid, JSON.stringify(data));
       const seen = (await env.SOTD.get('uplseen', 'json')) || {}; for (const x of noVid) if (seen[x.id]) seen[x.id] = seen[x.id].replace('v', ''); await kvSoft(env, 'uplseen', JSON.stringify(seen));
-      rec.ch = now; await uplPut(env, U);
+      rec.ch = now; rec.chw = { k: 'retry', n: nv }; await uplPut(env, U);
       await startJob(env, null, null, 0, null, true).catch(() => {});
     }
     return answer(200, { ok: true, previews: np, videos: nv, view: await uplView(env, all, me, pid, rec) });
