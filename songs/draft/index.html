@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="44bc4942aba0">
+<meta name="sotd-build" content="74904c6da387">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -2680,7 +2680,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         (function (iso2, many) { cell.addEventListener('click', function () { if (many) dayPick(iso2); else openDay(iso2); }); })(iso, picks.length > 1);
         cell.setAttribute('data-day', iso);
         if (picks.some(function (p) { return OFFL[p.track]; })) cell.classList.add('dl');
-        if (document.documentElement.classList.contains('big')) { var dc = div('dcap'), dt = document.createElement('span'), da = document.createElement('span'); dt.className = 'tt'; dt.textContent = cleanTitle(picks[0].title); da.className = 'ta'; da.textContent = picks[0].artist; dc.appendChild(dt); dc.appendChild(da); sl.appendChild(dc); }
+        if (document.documentElement.classList.contains('big')) { var dc = div('dcap'), dt = document.createElement('span'), da = document.createElement('span'); dt.className = 'tt'; dt.textContent = picks.length > 1 ? picks.length + ' songs' : cleanTitle(picks[0].title); da.className = 'ta'; da.textContent = picks.length > 1 ? '' : picks[0].artist; dc.appendChild(dt); if (picks.length < 2) dc.appendChild(da); sl.appendChild(dc); }   // (several on one day: how many, not the first one's name: John, 3 Nov 2026)
         monthSongs = monthSongs.concat(picks);
       } else {
         cell = div('day empty');
@@ -7773,7 +7773,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if ('ov' in x) o.ov = x.ov;   // its owner's: the video ('' none), moods and genres, their MP3 and MP4, cover; their files' sizes (theirs)
     if (x.tg) o.tg = x.tg; if (x.ma) o.ma = x.ma; if (x.mv) o.mv = x.mv; if (x.uc) o.uc = 1; if (x.own) o.own = x.own; if (x.jf) o.jf = x.jf; if (x.jo) o.jo = x.jo;   // (jf: John’s own for it, its owner’s editor)
     if (x.vid) o.vid = x.vid; if (x.mt) o.mt = x.mt; if (x.yr) o.yr = x.yr;   // what the site job found: its video, moods and genres, year
-    if (x.fx) o.fx = x.fx; if (x.fxw) o.fxw = x.fxw; if (x.fxs) o.fxs = x.fxs;   // its facts (fx: signed off; its owner's: fxw waiting, fxs how they stand)
+    if (x.fx) o.fx = x.fx; if (x.fxw) o.fxw = x.fxw; if (x.fxs) o.fxs = x.fxs;
+    if (view.mine) { o.at = x.a; if (x.abn) o.abn = x.abn; }   // (its owner's editor: when it was added on Spotify, to the minute, and by whom)   // its facts (fx: signed off; its owner's: fxw waiting, fxs how they stand)
     return o;
   }
   function songxFetch(tracks) {   // members' songs not kept here yet (or to refresh): from the Worker, for those this visitor sees
@@ -8551,6 +8552,12 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     return m ? m[1] : '';
   }
   function upledMB(n) { return n >= 1e9 ? (n / 1e9).toFixed(2) + ' GB' : (n / 1e6).toFixed(n < 1e7 ? 1 : 0) + ' MB'; }
+  function upledAdded(s) {   // when it was added on Spotify and by whom (John, 3 Nov 2026: to see a bulk copy at a glance)
+    var t = Date.parse(s.at || ''); if (isNaN(t)) return '';
+    if (t < Date.UTC(2000, 0, 1)) return 'Spotify kept no date for when it was added' + (s.abn ? ' (by ' + s.abn + ')' : '') + '.';
+    var d = new Date(t), when = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Europe/London' }) + ', ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' });
+    return 'Added on Spotify ' + when + (s.abn ? ' by ' + s.abn : '') + '.';
+  }
   function upledOpen(s, focus) {   // focus (from Missing): 'v' its video, 'a' or 'p' its MP3, 'mv' its MP4: scrolled to and lit
     var p = uplPls().filter(function (x) { return x.id === s.upl; })[0] || uplOwnRec(), t = tagOf(s) || { m: [], g: [] };
     UED = { p: p, s: s, m: t.m.slice(), g: t.g.slice(), tags: false };
@@ -8565,8 +8572,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     [].forEach.call(document.querySelectorAll('input[name="upledv"]'), function (r) { r.disabled = !!jo.v; });
     document.getElementById('upledlink').disabled = !!jo.v;
     document.getElementById('upledtt').value = s.title || ''; document.getElementById('upledar').value = s.artist || '';   // its details (John, 3 Nov 2026: "change details"): as shown; Spotify's kept (ot, oa) to go back to
-    var dn = document.getElementById('upleddn'); dn.hidden = !(s.ot || s.oa);
-    dn.textContent = s.ot || s.oa ? 'Spotify has it as “' + (s.ot || s.title) + '” by ' + (s.oa || s.artist) + '. Clear a box to go back to that.' : '';
+    var dn = document.getElementById('upleddn'), added = upledAdded(s); dn.hidden = !(s.ot || s.oa || added);
+    dn.textContent = (added ? added + (s.ot || s.oa ? ' ' : '') : '') + (s.ot || s.oa ? 'Spotify has it as “' + (s.ot || s.title) + '” by ' + (s.oa || s.artist) + '. Clear a box to go back to that.' : '');
     upledVid(); upledChips(); upledFiles(); upledFacts();
     openLayer(upledDlg); upledDlg.scrollTop = 0;
     if (focus) {
@@ -9546,7 +9553,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       if (ab >= 0 && /^spotify:user:/.test(r[ab] || '')) { var u = r[ab].slice(13); by[u] = (by[u] || 0) + 1; }
       out.push({ id: m[1], a: r[at], title: r[tu + 1] || '', artists: au >= 0 ? names(r[au + 1]) : [], aids: au >= 0 ? names(r[au]).map(function (x) { return x.replace('spotify:artist:', ''); }) : [],
         album: al >= 0 ? r[al + 1] || '' : '', alid: al >= 0 ? String(r[al] || '').replace('spotify:album:', '') : '', img: im >= 0 ? r[im] || '' : '',
-        pv: pc >= 0 ? ((/mp3-preview\/([0-9a-f]{20,64})/.exec(r[pc] || '') || [])[1] || '') : '', rd: rdc >= 0 ? r[rdc] || '' : '' });   // (its preview, where Spotify still gives Exportify one)
+        pv: pc >= 0 ? ((/mp3-preview\/([0-9a-f]{20,64})/.exec(r[pc] || '') || [])[1] || '') : '', rd: rdc >= 0 ? r[rdc] || '' : '', ab: ab >= 0 && /^spotify:user:/.test(r[ab] || '') ? r[ab].slice(13) : '' });   // (ab: who added it)   // (its preview, where Spotify still gives Exportify one)
     });
     return out;
   }

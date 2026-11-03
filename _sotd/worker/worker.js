@@ -289,7 +289,7 @@ async function playlistItems(token, sp) {   // sp: a playlist's Spotify id (John
       if (!t || !t.id) continue;
       const imgs = (t.album && t.album.images) || [];
       const img = imgs.find(i => i.width === 300) || imgs[1] || imgs[0];
-      out.push({ a: it.added_at, id: t.id, title: t.name, artist: (t.artists || []).map(x => x.name).join(', '), artists: (t.artists || []).map(x => x.name),
+      out.push({ a: it.added_at, ab: it.added_by && /^[\w.-]{1,64}$/.test(String(it.added_by.id || '')) ? it.added_by.id : undefined, id: t.id, title: t.name, artist: (t.artists || []).map(x => x.name).join(', '), artists: (t.artists || []).map(x => x.name),
         aids: (t.artists || []).map(x => x.id), album: t.album ? t.album.name : '', alid: t.album ? t.album.id : '', img: img ? img.url : '',
         rd: t.album && /^\d{4}(-\d\d){0,2}$/.test(t.album.release_date || '') ? t.album.release_date : undefined });   // rd: its album's release date (a year for it straight away: years.py)   // aids, alid: Spotify ids, for finding the song facts' sources
     }
@@ -3307,7 +3307,7 @@ function uplCsvSongs(list) {   // the songs as the page sends them, made safe: [
     const img = /^https:\/\/i\.scdn\.co\/image\/[0-9a-f]{20,60}$/.test(String(x.img || '')) ? String(x.img).replace('ab67616d0000b273', 'ab67616d00001e02') : '';   // (the 300-pixel cover, as Spotify's reads give)
     seen.add(x.id);
     out.push({ a: new Date(at).toISOString().replace('.000Z', 'Z'), id: x.id, title: txt(x.title, 200) || 'Untitled', artist: artists.join(', ') || txt(x.artist, 300), artists, aids,
-      album: txt(x.album, 200), alid: SP_ID.test(String(x.alid || '')) ? x.alid : '', img, rd: /^\d{4}(-\d\d){0,2}$/.test(String(x.rd || '')) ? String(x.rd) : undefined });   // (rd: Exportify's album release date)
+      album: txt(x.album, 200), alid: SP_ID.test(String(x.alid || '')) ? x.alid : '', img, rd: /^\d{4}(-\d\d){0,2}$/.test(String(x.rd || '')) ? String(x.rd) : undefined, ab: /^[\w.-]{1,64}$/.test(String(x.ab || '')) ? String(x.ab) : undefined });   // (ab: who added it, their Spotify user id)   // (rd: Exportify's album release date)
   }
   return out;
 }
@@ -3754,6 +3754,16 @@ function uplDaysBy(songs, rec) {
   // a song Spotify gives no real date (added before it kept them: 1 January 1970): no day, in the calendar's Songs with no date (John, 3 Nov 2026: "Definitely don't put something on 1 January 1970")
   return songs.map(x => Object.assign({}, x, { d: uplDated(x) ? londonDay(x.a) : '' }));
 }
+let spWhoMem = null;
+async function spWho(env, all) {   // Spotify user id → member's name (theirs connected here, and John's own account), kept a few minutes
+  if (spWhoMem && Date.now() - spWhoMem.at < 10 * 60e3) return spWhoMem.map;
+  const map = {}, owner = await env.SOTD.get('owner');
+  if (owner && all[owner]) map[OWNER_ID] = all[owner].name;
+  let cursor;
+  do { const l = await env.SOTD.list({ prefix: 'spm:', cursor }); for (const k of l.keys) { const id = k.name.slice(4), r = await env.SOTD.get(k.name, 'json'); if (r && r.sid && all[id]) map[r.sid] = all[id].name; } cursor = l.list_complete ? null : l.cursor; } while (cursor);
+  spWhoMem = { at: Date.now(), map };
+  return map;
+}
 function uplDated(x) { const t = Date.parse(x && x.a); return !isNaN(t) && t >= Date.UTC(2000, 0, 1); }
 async function uplRead(env, pid, rec, U) {   // reads it from Spotify; keeps what changed; says whether it's readable
   const was = rec.st, now = Date.now();
@@ -4113,6 +4123,7 @@ async function uplView(env, all, viewer, pid, rec, also) {   // (also: tracks wa
     const fx = facts[x.id];   // its facts: signed off by its owner (fx), for everyone; theirs too: written and waiting (fxw), and how it stands (fxs)
     if (fx && fx.ok) x.fx = fx.ok;
     if (mine) { if (fx && fx.w) x.fxw = fx.w; if (fx && fx.w && fx.nw) x.fxn = fx.nw; x.fxs = fx && fx.w ? 'wait' : fx && fx.ok ? 'ok' : fx && fx.none ? 'nil' : wanted.has(x.id) ? 'asked' : uplShareOf(rec) === 'public' ? 'none' : 'off'; }
+    if (mine && x.ab) { x.abn = (await spWho(env, all))[x.ab] || x.ab; }   // (who added it on Spotify, for its owner's editor: a member's name where it's one of theirs: John, 3 Nov 2026)
     if (e && 'v' in e) x.ov = e.v;
     if (e && (e.tt || e.ar)) {   // its owner's own title and artist, for everyone; theirs: Spotify's too (ot, oa), to go back to
       if (mine) { x.ot = x.title; x.oa = x.artist; }
