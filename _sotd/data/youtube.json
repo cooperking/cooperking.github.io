@@ -6128,6 +6128,13 @@
 ],
 "embed":true,
 "secs":226
+},
+"1b8nHdcnOwWnJhvgIUQaD7":{
+"n":267,
+"checked":"2026-11-03",
+"from":"YouTube search",
+"error":429,
+"detail":"{\n  \"error\": {\n    \"code\": 429,\n    \"message\": \"Quota exceeded for quota metric 'Search Queries' and limit 'Search Queries per day' of service 'youtube.googleapis.com' for consumer 'project_number:105"
 }
 }
 }
