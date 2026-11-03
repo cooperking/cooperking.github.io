@@ -3216,8 +3216,7 @@ function bellView(all, member, b) {
 }
 // a heart on someone's song (John, 3 Nov 2026: "Could a member get a notification when someone hearts their song"): POST
 // { track, upl, d } when a member adds a song to My playlist. The song's owner (the member whose calendar or playlist it's
-// on; John for his own) gets it in their bell and, if they take messages from them, on their phone. Once per member and
-// song (KV hearted:<owner>:<track>:<from>, a year), so taking it off and on again doesn't send it twice; HEART_DAY a day each.
+// on; John for his own) gets it in their bell and, if they take messages from them, on their phone. Every heart (HEART_DAY a day each).
 const HEART_DAY = 30;
 async function memberHeart(request, env, answer) {   // POST { upl, songs: [{ track, title, d }] } (or one: { track, title, d }): the songs of one calendar (John's: no upl) added together, one reaction and one notification (John, 3 Nov 2026: "Put a heart next to any 'add 20 to my playlist' and have that as one reaction and one notification")
   if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
@@ -3237,8 +3236,7 @@ async function memberHeart(request, env, answer) {   // POST { upl, songs: [{ tr
     to = rec.o; list = asked.filter(x => have[x.track]).map(x => Object.assign(x, { title: have[x.track].title, img: have[x.track].img || '' }));
   } else { to = ownerId; list = asked; }
   if (!to || !who.all[to] || !list.length) return answer(200, { ok: true });   // (their own songs too: John, 3 Nov 2026, "It shouldn't matter if it's from me, I'd like a notification")
-  const fresh = [];
-  for (const x of list) { const once = 'hearted:' + to + ':' + x.track + ':' + who.id; if (!(await env.SOTD.get(once))) { fresh.push(x); await env.SOTD.put(once, '1', { expirationTtl: 365 * 86400 }); } }
+  const fresh = list;   // (every heart, however many times: John, 3 Nov 2026, "it's fine to get a notification no matter how many times someone hearts a song"; HEART_DAY a day each keeps it sane)
   if (!fresh.length || !await dayCount(env, 'heartday:' + who.id, HEART_DAY)) return answer(200, { ok: true });
   const linkOf = x => pid ? SITE_SONGS + '#u=' + pid + (x.d ? '&d=' + x.d.slice(8, 10) + '-' + x.d.slice(5, 7) + '-' + x.d.slice(0, 4) : '')
     : SITE_SONGS + (x.d ? '#' + Number(x.d.slice(8, 10)) + '-' + Number(x.d.slice(5, 7)) + '-' + x.d.slice(0, 4) : '');
