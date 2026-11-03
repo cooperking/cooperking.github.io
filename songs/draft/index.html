@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="9d125d780bd7">
+<meta name="sotd-build" content="7ed277e09cbc">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -1389,6 +1389,8 @@ html.member .rowdl.off { display: inline-grid; visibility: hidden; pointer-event
 .sharebtn:focus-visible { outline: 2px solid var(--fg); outline-offset: 1px; }
 
 .toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); z-index: 1002; max-width: calc(100vw - 32px); text-align: center; transform: translate(-50%, 8px); padding: 10px 16px; border-radius: 22px; background: rgba(16, 6, 16, .96); color: #fffaf5; font-family: var(--sans); font-size: 13px; letter-spacing: .04em; opacity: 0; pointer-events: none; transition: opacity .2s ease, transform .2s ease; }
+.toast.show { pointer-events: auto; cursor: copy; }
+.toast[data-copied]::after { content: " · Copied"; opacity: .8; }
 .toast.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }   /* above everything; a tap on it stays on it */
 html.fab-on:not(.fab-under) .toast { bottom: calc(max(16px, env(safe-area-inset-bottom, 0px)) + 54px); }   /* above the My playlist button */
 /* the Android app installed from the site: a new build to install */
@@ -4855,6 +4857,11 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function flash(btn, text) { toast(text); }
   var toastEl = document.getElementById('toast');
   var stickyMsg = '', stickyTimer = 0;
+  toastEl.addEventListener('click', function () {   // a tap: its words copied (to send John), and it stays a moment longer
+    var t = toastEl.textContent; if (!t || !toastEl.classList.contains('show')) return;
+    clearTimeout(toast.t); toast.t = setTimeout(function () { if (!stickyMsg) toastEl.classList.remove('show'); }, 6000);
+    try { navigator.clipboard.writeText(t).then(function () { toastEl.setAttribute('data-copied', '1'); setTimeout(function () { toastEl.removeAttribute('data-copied'); }, 1500); }); } catch (e) {}
+  });
   function toast(msg) {
     var open = document.querySelectorAll('dialog[open]');
     var host = open.length ? open[open.length - 1] : document.body;   // the top-most open panel, so the note shows
@@ -4864,7 +4871,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     toast.t = setTimeout(function () {
       if (stickyMsg) toastEl.textContent = stickyMsg;   // a note that stays comes back after a passing one
       else toastEl.classList.remove('show');
-    }, 2200);
+    }, msg && String(msg).length > 70 ? 9000 : 2200);   // (a long one, an error's reason say, stays long enough to read, and a tap copies it: John, 3 Nov 2026)
   }
   // a note that stays until done() says it can go (checked every 400ms)
   function stickyToast(msg, done) {
@@ -5155,11 +5162,19 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // a GIF (29 Oct 2026, John: "Can gifs be sent through the messages?" "yes, in the inbox please"): sent up as it is too
   // (5 MB at most), the picture in their inbox, where it moves; the notification has the still made here, as any picture
   var GIF_MOST = 5 * 1024 * 1024;
-  function gifOf(f) {   // its data: URL, or null (not a GIF, or too big: said)
-    if (!f || !(/^image\/gif$/i.test(f.type || '') || /\.gif$/i.test(f.name || ''))) return Promise.resolve(null);
-    if (f.size > GIF_MOST) { toast('That GIF is over 5 MB, so it goes as a still picture'); return Promise.resolve(null); }
-    return new Promise(function (res) { var rd = new FileReader(); rd.onload = function () { res(/^data:image\/gif;base64,/.test(String(rd.result)) ? String(rd.result) : null); }; rd.onerror = function () { res(null); }; rd.readAsDataURL(f); });
+  function gifOf(f) {   // a moving picture's data: URL (a GIF, or an animated WebP: what many sites save "GIFs" as), or null (a still picture, or too big: said). Read by its bytes, not its name (John, 3 Nov 2026: a ".gif" that wasn't one was refused)
+    if (!f) return Promise.resolve(null);
+    return f.slice(0, 64 * 1024).arrayBuffer().then(function (head) {
+      var b = new Uint8Array(head), str = function (i, n) { return String.fromCharCode.apply(null, b.subarray(i, i + n)); };
+      var named = /^image\/gif$/i.test(f.type || '') || /\.gif$/i.test(f.name || '');
+      var kind = /^GIF8[79]a/.test(str(0, 6)) ? 'gif' : str(0, 4) === 'RIFF' && str(8, 4) === 'WEBP' ? (str(0, b.length).indexOf('ANIM') >= 0 ? 'webp' : 'still') : str(4, 4) === 'ftyp' ? 'video' : 'still';
+      if (kind === 'video') { if (named) toast('That “GIF” is really a video (MP4), so it can’t move here: save it as a GIF (or a WebP) and choose that'); return null; }
+      if (kind === 'still') { if (named) toast('That “GIF” is really a still picture, so it goes as one'); return null; }
+      if (f.size > GIF_MOST) { toast('That moving picture is over 5 MB, so it goes as a still picture'); return null; }
+      return new Promise(function (res) { var rd = new FileReader(); rd.onload = function () { res(String(rd.result)); }; rd.onerror = function () { res(null); }; rd.readAsDataURL(new Blob([f], { type: 'image/' + kind })); });
+    }, function () { return null; });
   }
+
   document.getElementById('sndfile').addEventListener('change', function () {
     var f = this.files && this.files[0]; this.value = '';
     if (!f) return;

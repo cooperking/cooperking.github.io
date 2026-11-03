@@ -1141,11 +1141,19 @@
     $('npicfig').hidden = !on; $('npicx').hidden = !on; $('npicnote').hidden = !on; $('npicadd').textContent = on ? 'Another picture…' : 'Add a picture…';
     $('npicnote').textContent = NGIF ? 'A GIF: it moves in their inbox on every phone; the notification shows it still (on Android and computers; an iPhone’s notification can’t show a picture).' : PICNOTE;
   }
-  function gifOf(f) {   // its data: URL, or null (not a GIF, or too big: said)
-    if (!f || !(/^image\/gif$/i.test(f.type || '') || /\.gif$/i.test(f.name || ''))) return Promise.resolve(null);
-    if (f.size > GIF_MOST) { toast('That GIF is over 5 MB, so it goes as a still picture'); return Promise.resolve(null); }
-    return new Promise(function (res) { var rd = new FileReader(); rd.onload = function () { res(/^data:image\/gif;base64,/.test(String(rd.result)) ? String(rd.result) : null); }; rd.onerror = function () { res(null); }; rd.readAsDataURL(f); });
+  function gifOf(f) {   // a moving picture's data: URL (a GIF, or an animated WebP: what many sites save "GIFs" as), or null (a still picture, or too big: said). Read by its bytes, not its name (John, 3 Nov 2026: a ".gif" that wasn't one was refused)
+    if (!f) return Promise.resolve(null);
+    return f.slice(0, 64 * 1024).arrayBuffer().then(function (head) {
+      var b = new Uint8Array(head), str = function (i, n) { return String.fromCharCode.apply(null, b.subarray(i, i + n)); };
+      var named = /^image\/gif$/i.test(f.type || '') || /\.gif$/i.test(f.name || '');
+      var kind = /^GIF8[79]a/.test(str(0, 6)) ? 'gif' : str(0, 4) === 'RIFF' && str(8, 4) === 'WEBP' ? (str(0, b.length).indexOf('ANIM') >= 0 ? 'webp' : 'still') : str(4, 4) === 'ftyp' ? 'video' : 'still';
+      if (kind === 'video') { if (named) toast('That “GIF” is really a video (MP4), so it can’t move here: save it as a GIF (or a WebP) and choose that'); return null; }
+      if (kind === 'still') { if (named) toast('That “GIF” is really a still picture, so it goes as one'); return null; }
+      if (f.size > GIF_MOST) { toast('That moving picture is over 5 MB, so it goes as a still picture'); return null; }
+      return new Promise(function (res) { var rd = new FileReader(); rd.onload = function () { res(String(rd.result)); }; rd.onerror = function () { res(null); }; rd.readAsDataURL(new Blob([f], { type: 'image/' + kind })); });
+    }, function () { return null; });
   }
+
   $('npicfile').addEventListener('change', function () {
     var f = this.files && this.files[0]; this.value = '';
     if (!f) return;

@@ -2814,7 +2814,7 @@ function noteMsg(body) {
   const msg = { title, body: text, url: link || SITE_SONGS, tag: 'sotd-note-' + Date.now() };
   if (pic(body.image)) msg.image = pic(body.image);
   if (pic(body.icon)) msg.icon = pic(body.icon);
-  if (/^https:\/\/sotd-playlists\.cooperking\.workers\.dev\/n\/[\w-]{16}\.gif$/.test(String(body.gif || ''))) msg.gif = body.gif;   // (the inbox's, moving: one sent up here)
+  if (/^https:\/\/sotd-playlists\.cooperking\.workers\.dev\/n\/[\w-]{16}\.(gif|webp)$/.test(String(body.gif || ''))) msg.gif = body.gif;   // (the inbox's, moving: one sent up here)
   return { msg };
 }
 // ---------- members' own notifications (John, 28 Oct 2026: "I'd like users to have the ability to send notifications to
@@ -2928,10 +2928,10 @@ function picsBad(body) {   // what's wrong with them, or ''
   const b64 = String(body.pic || '').replace(/^data:image\/jpeg;base64,/, '');
   if (!b64 || b64.length > 2.5e6 || !/^[A-Za-z0-9+/=]+$/.test(b64)) return 'The picture is missing or too big.';
   if (body.gif == null) return '';
-  const g64 = String(body.gif).replace(/^data:image\/gif;base64,/, '');
+  const webp = /^data:image\/webp;base64,/.test(String(body.gif)), g64 = String(body.gif).replace(/^data:image\/(gif|webp);base64,/, '');   // (an animated WebP too: what many sites save "GIFs" as, John, 3 Nov 2026)
   if (!g64 || !/^[A-Za-z0-9+/=]+$/.test(g64)) return 'That GIF couldn’t be read.';
   if (g64.length > Math.ceil(GIF_MOST / 3) * 4) return 'That GIF is too big (5 MB at most).';
-  if (!/^R0lGODlh|^R0lGODdh/.test(g64)) return 'That isn’t a GIF.';   // (GIF89a / GIF87a)
+  if (webp ? !/^UklGR/.test(g64) || atob(g64.slice(0, 16)).slice(8, 12) !== 'WEBP' : !/^R0lGODlh|^R0lGODdh/.test(g64)) return webp ? 'That isn’t a WebP picture.' : 'That isn’t a GIF.';   // (GIF89a / GIF87a; RIFF…WEBP)
   return '';
 }
 async function picsUp(env, origin, body) {   // { url, gif? }, or { error }
@@ -2941,8 +2941,9 @@ async function picsUp(env, origin, body) {   // { url, gif? }, or { error }
   const pid = randomCode(12), out = { url: origin + '/n/' + pid + '.jpg' };
   await env.MEDIA.put('n/' + pid + '.jpg', bytes(String(body.pic).replace(/^data:image\/jpeg;base64,/, '')), { httpMetadata: { contentType: 'image/jpeg' } });
   if (body.gif != null) {
-    await env.MEDIA.put('n/' + pid + '.gif', bytes(String(body.gif).replace(/^data:image\/gif;base64,/, '')), { httpMetadata: { contentType: 'image/gif' } });
-    out.gif = origin + '/n/' + pid + '.gif';
+    const ext = /^data:image\/webp;/.test(String(body.gif)) ? 'webp' : 'gif';
+    await env.MEDIA.put('n/' + pid + '.' + ext, bytes(String(body.gif).replace(/^data:image\/(gif|webp);base64,/, '')), { httpMetadata: { contentType: 'image/' + ext } });
+    out.gif = origin + '/n/' + pid + '.' + ext;
   }
   return out;
 }
@@ -2960,7 +2961,7 @@ const MAIL_MODES = ['off', 'all', 'day', 'song', 'direct'];
 function mailMode(m) { if (!m || !m.email) return ''; const v = m.mailme === undefined || m.mailme === 'each' ? 'all' : m.mailme; return v === 'off' || !MAIL_MODES.includes(v) ? '' : v; }
 function mailWants(mode, cat) { return mode === 'all' || mode === 'day' || mode === cat; }   // cat: 'song', 'direct' or 'other'
 function mailEsc(t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
-function mailImg(u) { return /^https:\/\/[^\s"'<>]+$/.test(String(u || '')) && !/\.gif(\?|$)/i.test(u) ? String(u) : ''; }   // (an https picture: the share card, a message's picture or a cover)
+function mailImg(u) { return /^https:\/\/[^\s"'<>]+$/.test(String(u || '')) && !/\.(gif|webp)(\?|$)/i.test(u) ? String(u) : ''; }   // (an https picture: the share card, a message's picture or a cover)
 // the month's colour, as the calendar's ground (its PALETTES' first colour), for the email's header and links (John, 3 Nov 2026)
 const MAIL_MONTH = ['#0c1445', '#652bee', '#11970c', '#b613ec', '#096a42', '#ec1a13', '#1346ec', '#d85a06', '#0b86d3', '#ec135b', '#09696d', '#ec13c1'];
 function mailMonthOf(u) {   // the month a link or picture is of: a day (#3-11-2026, &d=03-11-2026, songs/03-11-2026/, …/03-11-2026/card.jpg) or a month (songs/11-2026/)
@@ -4789,10 +4790,10 @@ async function sentFixUpl(env, member, box) {
 }
 
 async function notePic(url, env) {   // a notification's picture: anyone with its (unguessable) address, as a phone fetches it unsigned
-  const m = /^\/n\/([\w-]{16})\.(jpg|gif)$/.exec(url.pathname);
+  const m = /^\/n\/([\w-]{16})\.(jpg|gif|webp)$/.exec(url.pathname);
   const o = m && env.MEDIA ? await env.MEDIA.get('n/' + m[1] + '.' + m[2]) : null;
   if (!o) return new Response('Not here.', { status: 404 });
-  return new Response(o.body, { headers: { 'Content-Type': m[2] === 'gif' ? 'image/gif' : 'image/jpeg', 'Cache-Control': 'public, max-age=31536000, immutable', 'Access-Control-Allow-Origin': '*' } });
+  return new Response(o.body, { headers: { 'Content-Type': m[2] === 'gif' ? 'image/gif' : m[2] === 'webp' ? 'image/webp' : 'image/jpeg', 'Cache-Control': 'public, max-age=31536000, immutable', 'Access-Control-Allow-Origin': '*' } });
 }
 
 async function pushCount(env) {
