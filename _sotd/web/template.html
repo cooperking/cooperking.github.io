@@ -877,6 +877,11 @@ html.big.signedin .hsub { margin-right: 0; }
 dialog#sheet { touch-action: pan-y pinch-zoom; }
 /* a day with several songs: one at a time, the day's songs in a strip above it (John, 3 Nov 2026) */
 #picks.multi .pick.off { display: none; }
+.ds-list { margin-left: 10px; padding: 3px 10px; border: 0; border-radius: 999px; background: var(--pill-bg); box-shadow: inset 0 0 0 1px var(--line); color: var(--fg); font: 600 11px/1.4 var(--sans); letter-spacing: .04em; cursor: pointer; vertical-align: 1px; }
+.dp-ord { display: inline-flex; gap: 4px; margin: 4px 0 0; }
+.dp-ord button { width: 34px; height: 30px; border: 0; border-radius: 10px; background: var(--pill-bg); box-shadow: inset 0 0 0 1px var(--line); color: var(--fg); font: 600 15px/1 var(--sans); cursor: pointer; }
+.dp-ord button:disabled { opacity: .3; cursor: default; }
+.dp-ord.busy { opacity: .5; pointer-events: none; }
 .daystrip { margin: 0 0 14px; }
 .daystrip .ds-l { margin: 0 0 8px; font: 600 11px/1.2 var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); text-align: center; }
 .daystrip .ds-l b { color: var(--fg); }
@@ -2756,7 +2761,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         } else sl.appendChild(artEl(picks[0]));
         cell.appendChild(sl);
         cell.setAttribute('aria-label', longDate(iso) + ': ' + picks.map(function (s) { return s.title + ' by ' + s.artist; }).join('; '));
-        (function (iso2, many) { cell.addEventListener('click', function () { if (many) dayPick(iso2); else openDay(iso2); }); })(iso, picks.length > 1);
+        (function (iso2) { cell.addEventListener('click', function () { openDay(iso2); }); })(iso);   // (several songs: the first plays, the rest a swipe or a tap on the strip away; their list from the strip: John, 3 Nov 2026)
         cell.setAttribute('data-day', iso);
         if (picks.some(function (p) { return OFFL[p.track]; })) cell.classList.add('dl');
         if (document.documentElement.classList.contains('big')) { var dc = div('dcap'), dt = document.createElement('span'), da = document.createElement('span'); dt.className = 'tt'; dt.textContent = picks.length > 1 ? picks.length + ' songs' : cleanTitle(picks[0].title); da.className = 'ta'; da.textContent = picks.length > 1 ? '' : picks[0].artist; dc.appendChild(dt); if (picks.length < 2) dc.appendChild(da); sl.appendChild(dc); }   // (several on one day: how many, not the first one's name: John, 3 Nov 2026)
@@ -4840,6 +4845,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (picks.length > 1) {   // the day's songs, a tap apart: "Song 2 of 5 on this day"
       var strip = div('daystrip'), lab = document.createElement('p'); lab.className = 'ds-l';
       lab.innerHTML = 'Song <b class="ds-n">1</b> of ' + picks.length + ' on this day';
+      var dsl = document.createElement('button'); dsl.type = 'button'; dsl.className = 'ds-list';
+      dsl.textContent = UPL.on && UPL.view && (UPL.view.mine || UPL.view.co) && !TV ? 'List · reorder' : 'List';
+      dsl.addEventListener('click', function () { dayPick(iso); });
+      lab.appendChild(dsl);
       var row = div('ds-row');
       picks.forEach(function (s) {
         var b = document.createElement('button'); b.type = 'button'; b.className = 'ds-t'; b.title = s.title + ' · ' + s.artist;
@@ -8601,6 +8610,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function dayPick(iso) {
     var picks = byDate[iso] || []; if (picks.length < 2) { openDay(iso); return; }
     var own = !!(UPL.on && UPL.view && UPL.view.mine && UPL.view.mode !== 'list' && !TV);
+    var canOrder = !!(UPL.on && UPL.view && (UPL.view.mine || UPL.view.co) && UPL.view.mode !== 'list' && !TV);
     document.getElementById('dpk').textContent = longDate(iso);
     document.getElementById('dph').textContent = picks.length + ' songs on this day';
     var ul = document.getElementById('dplist'); ul.textContent = '';
@@ -8613,6 +8623,27 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       var go = function () { closeDialog(dpDlg); openDay(iso, { track: s.track }); };
       b.addEventListener('click', go); b.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
       li.appendChild(b);
+      if (canOrder) {   // up and down: the order they play in on this day (op dayorder)
+        var ord = document.createElement('div'); ord.className = 'dp-ord';
+        [['↑', -1, 'Earlier'], ['↓', 1, 'Later']].forEach(function (o) {
+          var k = picks.indexOf(s), to = k + o[1];
+          var ob = document.createElement('button'); ob.type = 'button'; ob.textContent = o[0]; ob.setAttribute('aria-label', o[2] + ': ' + s.title);
+          ob.disabled = to < 0 || to >= picks.length;
+          ob.addEventListener('click', function (e) {
+            e.stopPropagation();
+            var order = picks.map(function (x) { return x.track; }), t = order[k]; order[k] = order[to]; order[to] = t;
+            ord.classList.add('busy');
+            uplCall({ op: 'dayorder', id: UPL.on, day: iso, order: order }).then(function (j) {
+              if (j.status !== 200) { ord.classList.remove('busy'); toast(j.error || 'Couldn’t change the order just now'); return; }
+              if (j.pls) MEMBER.pls = j.pls;
+              if (j.view) uplApply(j.view, { keep: true });
+              dayPick(iso);   // (the list again, in its new order)
+            }).catch(function () { ord.classList.remove('busy'); toast('Couldn’t reach the site. Try again.'); });
+          });
+          ord.appendChild(ob);
+        });
+        li.appendChild(ord);
+      }
       if (own) {
         var mv = document.createElement('div'); mv.className = 'dp-move';
         var cb = document.createElement('button'); cb.type = 'button'; cb.textContent = 'Change date';

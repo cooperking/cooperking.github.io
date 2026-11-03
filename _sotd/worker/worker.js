@@ -3746,7 +3746,7 @@ function uplShareOf(rec) { return UPL_SHARES.includes(rec.share) ? rec.share : '
 // sees it, who edits it and removing it stay its owner's. Their files count against its owner's allowance.
 function uplCo(rec, id) { return !!(rec && id && (rec.cw || []).includes(id)); }
 const UPL_RETRY_FOR = 6 * 3600e3;   // (a song John asked to be looked for again: given to the job as retry for six hours)
-const UPL_CO_OPS = ['skip', 'edit', 'facts', 'askfacts', 'order', 'signoff', 'signoffall', 'del', 'move', 'unmove', 'place'];
+const UPL_CO_OPS = ['skip', 'edit', 'facts', 'askfacts', 'order', 'signoff', 'signoffall', 'del', 'move', 'unmove', 'place', 'dayorder'];
 function uplCan(all, viewer, rec) {   // whether someone sees this playlist (viewer: a member's id, or none): theirs, or another's that's readable, shared with them and not kept apart
   if (!rec || !all[rec.o]) return false;
   if (viewer && rec.o === viewer) return true;
@@ -4311,6 +4311,16 @@ async function uplView(env, all, viewer, pid, rec, also) {   // (also: tracks wa
     const at = {}; data.order.forEach((t, i) => { at[t] = i; });
     songs = songs.filter(x => x.id in at).sort((a, b) => at[a.id] - at[b.id]).concat(songs.filter(x => !(x.id in at)));
   }
+  if (rec.mode !== 'list' && rec.dord) {   // a day's songs in its owner's order (dord { day: [tracks] }; John, 3 Nov 2026: "there should be ability to reorder them too"), each in its own place among the rest
+    const slots = {};
+    songs.forEach((x, i) => { if (x.d && rec.dord[x.d]) (slots[x.d] = slots[x.d] || []).push(i); });
+    for (const [d, idx] of Object.entries(slots)) {
+      if (idx.length < 2) continue;
+      const at = {}; rec.dord[d].forEach((t, i) => { at[t] = i; });
+      const these = idx.map(i => songs[i]).sort((a, b) => (a.id in at ? at[a.id] : 1e6) - (b.id in at ? at[b.id] : 1e6));
+      idx.forEach((i, k) => { songs[i] = these[k]; });
+    }
+  }
   let prog;
   if (mine) {   // (its owner: how far the calendar has got with its songs: each part found (p, v, m, y), looked at with none (pn, vn, mn, yn), and their own files (fa, fv: songs with an MP3, an MP4))
     const all2 = (data.songs || []).filter(x => !gone.has(x.id)), seen = (await env.SOTD.get('uplseen', 'json')) || {}, skip = data.skip || {};
@@ -4549,6 +4559,15 @@ async function memberUpl(request, url, env, answer) {
     if (!await dayCount(env, 'uplsign:' + me, UPL_SIGNOFF_DAY)) return answer(429, { error: 'That’s ' + UPL_SIGNOFF_DAY + ' today, the most for a day.' });
     const r = await uplSignoffDo(env, all, pid, rec, data, x);
     return answer(200, Object.assign({ ok: true, sent: r.sent, view: await uplView(env, all, me, pid, rec), pls: await uplMine(env, uplList(all, me, U), U) }, r.on ? { on: r.on, at: r.at } : {}));
+  }
+  if (body.op === 'dayorder') {   // the order of one day's songs, by its owner (or a collaborator)
+    if (rec.mode === 'list') return answer(400, { error: 'A playlist has no days.' });
+    const day = String(body.day || ''), order = (Array.isArray(body.order) ? body.order : []).map(String).filter(t => ID_RE.test(t)).slice(0, 200);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || order.length < 2) return answer(400, { error: 'Which day, and its songs in order?' });
+    rec.dord = rec.dord || {}; rec.dord[day] = order;
+    const ks = Object.keys(rec.dord); if (ks.length > 400) for (const k of ks.sort().slice(0, ks.length - 400)) delete rec.dord[k];
+    await uplPut(env, U);
+    return answer(200, { ok: true, pls: await uplMine(env, uplList(all, me, U), U), view: await uplView(env, all, me, pid, rec) });
   }
   if (body.op === 'place') {   // several songs' days at once (a drag: the one moved, and those shifting a day into its gap), by its owner
     if (rec.mode === 'list') return answer(400, { error: 'A playlist has no days: make it a calendar first.' });
