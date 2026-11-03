@@ -2867,6 +2867,7 @@ async function memberSend(request, env, answer) {
   const everyone = body.to === 'all';
   const asked = everyone ? Object.keys(all).filter(k => hasJoined(all[k])) : Array.isArray(body.to) ? [...new Set(body.to.map(String))] : [];
   const to = asked.filter(takes);
+  if (body.me && all[id] && !to.includes(id)) to.push(id);   // themselves too (John, 3 Nov 2026: "Include myself in Send"): the same notification, inbox, phone and email
   if (!to.length) return answer(400, { error: asked.some(k => k !== id && all[k] && !apart(all, id, k)) ? 'They’ve turned off messages from other members.' : 'Choose who it goes to.' });
   const n = await dayCount(env, 'sent:' + id, SEND_DAY);
   if (!n) return answer(429, { error: 'That’s ' + SEND_DAY + ' sent today, the most for a day. You can send more tomorrow.' });

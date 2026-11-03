@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="bfbd3e86b579">
+<meta name="sotd-build" content="753c2c111a63">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -381,6 +381,8 @@ html.page-edit .toast { bottom: calc(max(16px, env(safe-area-inset-bottom, 0px))
 .acmm-opts button[aria-checked="true"] { box-shadow: inset 0 0 0 2px var(--fg); }
 .acmm-opts button[aria-checked="true"] b::before { content: "✓ "; }
 .acmm-opts button:disabled { opacity: .45; cursor: default; }
+.snd-me { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--fg); cursor: pointer; }
+.snd-me input { width: 18px; height: 18px; accent-color: var(--fg); }
 .pe-cwn { margin: 0; font-size: 13px; line-height: 1.45; color: var(--fg-2); }
 .pe-songs li.sel { box-shadow: inset 0 0 0 2px var(--fg); }
 .pe-songs li.sel .thumb::after { content: "✓"; position: absolute; inset: 0; display: grid; place-items: center; background: rgba(27, 16, 32, .6); color: #fffaf5; font: 700 18px/1 var(--sans); }
@@ -2058,6 +2060,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     <div class="snd-to">
       <span class="seg2" role="group" aria-label="Who it goes to"><button type="button" id="sndall" aria-pressed="true">Everyone</button><button type="button" id="sndsome" aria-pressed="false">Choose</button></span>
       <div class="snd-who" id="sndwho" role="group" aria-label="Members" hidden></div>
+      <label class="snd-me" id="sndmel"><input type="checkbox" id="sndme"> Send it to me too</label>
     </div>
     <figure class="snd-card" id="sndcard" hidden>
       <img id="sndcimg" alt="" width="1200" height="630">
@@ -5008,6 +5011,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (!sendCan()) return;
     SND = { some: false, pick: [], att: pre && pre.url ? pre : null, pic: null, song: null, only: pre && pre.only ? pre.only.slice() : null };
     if (SND.only) { SND.some = true; SND.pick = SND.only.slice(); }   // (a member's playlist shared with some: just them)
+    document.getElementById('sndme').checked = false;   // (themselves too: unticked each time)
     if (pre && pre.reply) { SND.some = pre.reply.to !== 'all'; SND.pick = pre.reply.to === 'all' ? [] : pre.reply.to.slice(); }   // a reply: to the same people, changeable
     document.getElementById('sndh').textContent = pre && pre.reply ? 'A reply' : 'A message';
     if (pre && pre.song) {
@@ -5163,14 +5167,15 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     e.preventDefault();
     var tIn = document.getElementById('sndt'), title = tIn.value.trim(), text = document.getElementById('sndb').value.trim();
     if (!title) { toast('Give it a title'); tIn.focus(); return; }
-    var to = SND.some ? SND.pick.slice() : 'all';
-    if (to !== 'all' && !to.length) { toast('Choose who it goes to'); return; }
+    var to = SND.some ? SND.pick.slice() : 'all', meToo = document.getElementById('sndme').checked;
+    if (to !== 'all' && !to.length && !meToo) { toast('Choose who it goes to'); return; }
     var g = SND.song;
     if (g && (g.pic === 'photo' || g.pic === 'mine') && !SND.pic) { toast('Choose your photo first'); return; }
     var names = to === 'all' ? null : (MEMBER.others || []).filter(function (o) { return to.indexOf(o.id) >= 0; }).map(function (o) { return o.name; });
+    if (meToo) names = (names || ['everyone']).concat('you');
     ask({ k: 'Send', h: 'Send “' + title + '”?', t: (names ? 'It goes to ' + andList(names) : 'It goes to everyone') + ', from ' + (MEMBER.name || 'you') + ': into their inbox, and to their phone where notifications are on.', ok: 'Send', no: 'Not yet' }).then(function (yes) {
       if (!yes) return;
-      var btn = document.getElementById('sndok'), a = SND.att, body = { title: title, text: text, url: a ? a.url : dayLink(''), to: to };
+      var btn = document.getElementById('sndok'), a = SND.att, body = { title: title, text: text, url: a ? a.url : dayLink(''), to: to, me: meToo || undefined };
       btn.disabled = true;
       var pics;
       if (g) {   // the song's picture, as chosen; its cover beside it
