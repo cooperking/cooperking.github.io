@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="sotd-build" content="2195bc883692">
+<meta name="sotd-build" content="09bbdfde94a3">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 267 so far">
 <meta name="theme-color" content="#ec135b">
@@ -351,6 +351,10 @@ html.upl #monthdl, html.upl-noshare #siteshare, html.upl-noshare #monthshare, ht
 .cal.has-edit .caledit { display: flex; }
 html.big .cal.has-edit { grid-template-rows: auto auto minmax(0, 1fr); }
 .caledit .upleditbtn { height: 34px; margin: 0 0 10px; }
+html.big .cal .caledit { display: flex; align-items: center; gap: 8px; }
+html.big .cal { grid-template-rows: auto auto minmax(0, 1fr); }   /* (its row always there on a computer: Add to My playlist) */   /* (a computer: the month's Add to My playlist always here, with Edit and Missing on their own) */
+html.big .caledit .monthadd { height: 34px; margin: 0 auto 10px 0; }
+html.big .caledit .monthadd[hidden] { display: none; }
 html.upl-editing #grid .day { touch-action: none; -webkit-user-select: none; user-select: none; }
 html.upl-editing #grid .day.has { cursor: grab; }
 html.upl-editing #grid .day.has .sleeve { animation: uplwig 2.4s ease-in-out infinite; }
@@ -518,7 +522,9 @@ html.upl-list .side-acts .listbtn { display: inline-grid; }
 .ac-upls .acts button.x { color: #c2185b; }
 .ac-upls .waits { display: grid; gap: 6px; margin: 4px 0 2px; padding: 9px 10px; border-radius: 12px; border: 1px solid rgba(226, 58, 110, .45); background: rgba(226, 58, 110, .07); }
 .ac-upls .waits > p { margin: 0; font: 600 10.5px/1.2 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: #c2185b; }
-.ac-upls .waits ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.ac-upls .waits ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-height: 300px; overflow-y: auto; overscroll-behavior: contain; }   /* (a hundred waiting: scrolled within, not the whole page: John, 3 Nov 2026) */
+.ac-upls .waits .wh { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 10px; }
+.ac-upls .waits .wh p { margin: 0; }
 .ac-upls .waits li { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 4px 10px; }
 .ac-upls .waits .wt { font: 500 15px/1.2 var(--serif); overflow-wrap: anywhere; }
 .ac-upls .waits .wa { grid-column: 1; font-size: 12px; color: var(--muted); }
@@ -574,7 +580,7 @@ html.upl-list .side-acts .listbtn { display: inline-grid; }
 .imp-card .ct { font-size: 12px; color: var(--muted); }
 .imp-card .by { margin-top: -3px; font-size: 12px; font-weight: 600; color: var(--fg); overflow-wrap: anywhere; }
 .imp-card .by[hidden] { display: none; }
-.imp-card .tag { justify-self: start; padding: 2px 8px; border-radius: 999px; background: var(--fg); color: #e23a6e; font: 600 10px/1.5 var(--sans); letter-spacing: .08em; text-transform: uppercase; }
+.imp-card .tag { justify-self: start; max-width: 100%; padding: 3px 9px; border-radius: 999px; background: var(--pill-bg); box-shadow: inset 0 0 0 1px var(--line); color: var(--fg); font: 600 10px/1.4 var(--sans); letter-spacing: .08em; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }   /* (quiet, as the rest of the pop-up: John, 3 Nov 2026) */
 .imp-mos { position: relative; display: grid; grid-template-columns: 1fr 1fr; aspect-ratio: 1; border-radius: 10px; overflow: hidden; background: var(--tile); box-shadow: 0 4px 14px var(--shadow); }
 .imp-mos img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .imp-mos.one { grid-template-columns: 1fr; }
@@ -2294,7 +2300,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       <p class="msgv-w" id="uplit"></p>
       <p class="imp-mine" id="uplimine" hidden></p>
       <ol class="imp-steps">
-        <li class="imp-step now" id="upli1"><span class="n" aria-hidden="true">1</span><b>Get your playlists</b><p id="upli1t"></p><button class="copy" id="upligo" type="button">Open Exportify</button></li>
+        <li class="imp-step now" id="upli1"><span class="n" aria-hidden="true">1</span><b>Get your playlists</b><p id="upli1t"></p><button class="copy" id="uplilast" type="button" hidden></button><button class="copy" id="upligo" type="button">Open Exportify</button></li>
         <li class="imp-step later" id="upli2"><span class="n" aria-hidden="true">2</span><b>Add the download</b><p id="upli2t">The .zip Exportify saved (or one playlist’s .csv), in your Downloads.</p><button class="copy ghost" id="uplifile" type="button">Choose the file</button><input type="file" id="uplifin" accept=".zip,.csv,application/zip,application/x-zip-compressed,text/csv,text/comma-separated-values" hidden></li>
       </ol>
     </div>
@@ -2545,7 +2551,6 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var by = {};
     [].concat(list).forEach(function (s) {
       if (!s || !/^[0-9A-Za-z]{22}$/.test(s.track || '')) return;
-      if (!s.upl && MEMBER.owner === true) return;   // (John's own; a member's own song: the Worker leaves it)
       var k = s.upl || ''; (by[k] = by[k] || []).push({ track: s.track, title: s.title || '', d: /^\d{4}-\d{2}-\d{2}$/.test(s.d || '') ? s.d : '' });
     });
     Object.keys(by).forEach(function (k) { try { sendPost('/members/heart', { upl: k, songs: by[k] }).catch(function () {}); } catch (e) {} });
@@ -7696,7 +7701,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       var li = document.createElement('li'), b = document.createElement('button'), fresh = x.at > BELL.mark;
       b.type = 'button'; b.className = 'open' + (fresh ? ' new' : '');
       b.innerHTML = '<span class="dot"></span><span class="t"></span><span class="b"></span><span class="w"></span>';
-      b.querySelector('.t').textContent = x.e + ' ' + x.n + (x.h > 1 ? ' hearted ' + x.h + ' of your songs' : x.h ? ' hearted your song' : x.u ? ' reacted to the Song of the Day' : ' reacted to your message');
+      b.querySelector('.t').textContent = x.e + ' ' + (x.me ? 'You' : x.n) + (x.h > 1 ? ' hearted ' + x.h + ' of your songs' : x.h ? ' hearted your song' : x.u ? ' reacted to the Song of the Day' : ' reacted to your message');
       b.querySelector('.b').textContent = x.h > 1 ? x.t : '“' + x.t + '”';
       b.querySelector('.w').textContent = ago(x.at);
       b.setAttribute('aria-label', (fresh ? 'New: ' : '') + x.n + (x.h > 1 ? ' hearted ' + x.h + ' of your songs: ' : x.h ? ' hearted your song ' : ' reacted ' + x.e + (x.u ? ' to the Song of the Day ' : ' to your message ')) + x.t + ', ' + ago(x.at));
@@ -8539,9 +8544,23 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       }).catch(function () { if (b) b.disabled = false; toast('Couldn’t reach the site. Try again.'); });
     });
   }
+  function uplSignoffAll(p, n, b) {
+    var snd = p.send || {};
+    return ask({ k: p.mode === 'list' ? p.n : p.t || p.n, h: 'Sign off all ' + n + ' songs?', t: 'They go out for everyone on your ' + (p.mode === 'list' ? 'playlist' : 'calendar, each on its day') + '.' + (snd.on ? ' The members get one message from you, for the newest, not one for each.' : ' No message goes to the members.'), ok: 'Sign off all', no: 'Not yet' }).then(function (yes) {
+      if (!yes) return;
+      if (b) b.disabled = true;
+      return uplCall({ op: 'signoffall', id: p.id }).then(function (j) {
+        if (b) b.disabled = false;
+        if (j.status !== 200) { toast(j.error || 'Couldn’t sign them off just now'); return; }
+        if (j.pls) { MEMBER.pls = j.pls; uplMark(); uplWaitCount(); if (acct.open) uplDrawAcct(); }
+        if (j.view) uplRefreshViews(p.id, j.view);
+        toast(j.n ? (j.n === 1 ? '1 song' : j.n + ' songs') + ' signed off: out for everyone' : 'Nothing left to sign off');
+      }).catch(function () { if (b) b.disabled = false; toast('Couldn’t reach the site. Try again.'); });
+    });
+  }
   function uplOwnRec() { return uplPls().filter(function (p) { return p.id === UPL.on; })[0] || Object.assign({ id: UPL.on }, UPL.view); }
   function uplWaitCount() {   // the songs waiting for them, on the Profile's Playlists tab
-    var n = uplPls().reduce(function (t, p) { return t + (p.mine && p.wait ? p.wait.length : 0); }, 0), el = document.getElementById('actabln');
+    var n = uplPls().reduce(function (t, p) { return t + ((p.mine || p.co) && p.wait ? p.waitN || p.wait.length : 0); }, 0), el = document.getElementById('actabln');
     if (el) { el.hidden = !n; el.textContent = !n ? '' : n > 99 ? '99+' : String(n); }
     return n;
   }
@@ -9241,7 +9260,14 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var st = document.createElement('span'); st.className = 'st' + (p.st === 'err' ? ' warn' : ''); st.textContent = uplStatus(p); box.appendChild(st);
     if ((p.wait || []).length) {
       var wb = document.createElement('div'); wb.className = 'waits';
-      var wh = document.createElement('p'); wh.textContent = (p.wait.length === 1 ? '1 song waits' : p.wait.length + ' songs wait') + ' for you to sign off'; wb.appendChild(wh);
+      var wn = p.waitN || p.wait.length, whr = document.createElement('div'); whr.className = 'wh';
+      var wh = document.createElement('p'); wh.textContent = (wn === 1 ? '1 song waits' : wn + ' songs wait') + ' for you to sign off' + (wn > p.wait.length ? ' (the newest ' + p.wait.length + ' below)' : ''); whr.appendChild(wh);
+      if (wn > 1) {   // all at once (John, 3 Nov 2026: "I can't sign them all off at once")
+        var sa = document.createElement('button'); sa.type = 'button'; sa.className = 'copy'; sa.textContent = 'Sign off all ' + wn;
+        sa.addEventListener('click', function () { uplSignoffAll(p, wn, sa); });
+        whr.appendChild(sa);
+      }
+      wb.appendChild(whr);
       var wl = document.createElement('ul');
       p.wait.forEach(function (w) {
         var wi = document.createElement('li');
@@ -9272,7 +9298,6 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     function act(label, cls, fn) { var b = document.createElement('button'); b.type = 'button'; b.textContent = label; if (cls) b.className = cls; b.addEventListener('click', fn); acts.appendChild(b); return b; }
     if (!pop) {   // (the box itself opens it, and its Notifications are above it: uplAcctRow)
       if (p.st === 'join') act('Send the invite link again', '', function () { uplLinkAgain(p); });
-      if (p.src === 'csv') act('Update', '', function () { impOpen(0, p.id); });
       if (p.st !== 'ok') act('Remove', 'x', function () { uplRemoveAsk(p); });
       return;
     }
@@ -9627,12 +9652,22 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (h) mine.textContent = 'Choose one you’ve imported before to bring in its new songs, or any other to add it as well.';
     var B = NAT && NAT.Plugins && NAT.Plugins.Browser, sheetish = (B && typeof B.open === 'function') || APK || standalone, computer = window.matchMedia && matchMedia('(pointer: fine)').matches && screen.width >= 900;
     var how = ' Sign in with Spotify, then tap <i>Export all</i> (or <i>Export</i> next to one playlist).';
-    document.getElementById('upli1t').innerHTML = sheetish ? 'Exportify opens over the calendar.' + how + ' Close it once the download has saved.'
+    var appComp = standalone && !NAT && !APK && window.matchMedia && matchMedia('(pointer: fine)').matches && screen.width >= 900;
+    document.getElementById('upli1t').innerHTML = appComp ? 'Exportify opens in Chrome.' + how.replace(/tap/, 'click') + ' Once the download has saved, come back to this window and choose it below.'
+      : sheetish ? 'Exportify opens over the calendar.' + how + ' Close it once the download has saved.'
       : computer ? 'Exportify opens in a small window.' + how.replace(/tap/, 'click') + ' Close the window once the download has saved.'
       : 'Exportify opens in a new tab.' + how + ' Once the download has saved, come back to this tab.';
     document.getElementById('upli2t').textContent = 'The .zip Exportify saved (or one playlist’s .csv), in your Downloads.' + (APK || impFilesOk() ? ' Or open it with Song of the Day straight from your Downloads.' : '');
     impStep(step || 1);
-    if (!step) impSaved(function () { if (impDlg.open && !IMP.lists && !IMP.away && IMP.saved && IMP.saved.lists) { IMP.lists = IMP.saved.lists; IMP.fromSaved = true; impPick(); } });   // (the download they loaded last: its playlists straight away)
+    if (IMP.saved === null) IMP.saved = undefined;   // (none last time: looked for again, as one may have come in on another device)
+    var last = document.getElementById('uplilast'); last.hidden = true;
+    impSaved(function () {   // the download they loaded last: its playlists straight away (or, back from Exportify, a button for it beside choosing the new one: John, 3 Nov 2026)
+      var sv = IMP.saved; if (!impDlg.open || IMP.lists || !sv || !sv.lists) return;
+      var when = londonDay(new Date(sv.at).toISOString()) === todayIso ? 'today' : 'on ' + new Date(sv.at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' });
+      last.textContent = 'Use the download from ' + when; last.hidden = false;
+      document.getElementById('upligo').className = 'copy ghost';
+      if (!step && !IMP.away) { IMP.lists = sv.lists; IMP.fromSaved = true; impPick(); }
+    });
     openLayer(impDlg);
     setTimeout(function () { try { document.getElementById(step === 2 ? 'uplifile' : 'upligo').focus({ preventScroll: true }); } catch (e) {} }, 60);
   }
@@ -9710,13 +9745,19 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       return;
     }
     if (APK || NAT) { location.href = EXPORTIFY; return; }   // the Android app shows it in its own view with a ✕, and the iPhone app without the plugin in Safari; the page comes back at step 2
-    var w = null;
-    if (window.matchMedia && matchMedia('(pointer: fine)').matches && screen.width >= 900) {   // a computer: a window over the page
+    var w = null, comp = window.matchMedia && matchMedia('(pointer: fine)').matches && screen.width >= 900;
+    if (standalone && comp) {   // the app installed on a computer (Chrome's): Exportify in Chrome itself, a tab of its own, never in the app's window, which it took over with no way back (John, 3 Nov 2026); the download is chosen here after
+      w = window.open(EXPORTIFY, '_blank', 'noopener,noreferrer');
+      IMP.away = false; impStep(2);
+      toast('Exportify opened in Chrome: once the download has saved, come back here and choose it');   // (noopener: Chrome gives no window back, so none is watched)
+      return;
+    }
+    if (comp) {   // a computer: a window over the page
       var W = 540, H = Math.min(820, screen.availHeight - 80);
       w = window.open(EXPORTIFY, 'exportify', 'popup,width=' + W + ',height=' + H + ',left=' + Math.round((screen.availWidth - W) / 2) + ',top=' + Math.round((screen.availHeight - H) / 2));
     }
     if (!w) w = window.open(EXPORTIFY, '_blank');
-    if (!w) { location.href = EXPORTIFY; return; }
+    if (!w) { if (comp) { toast('Your browser stopped Exportify opening: allow pop-ups for this site, or open exportify.app yourself'); impStep(2); return; } location.href = EXPORTIFY; return; }   // (a computer: never this page itself)
     try { w.opener = null; } catch (e) {}
     IMP.away = true; IMP.win = w; clearInterval(IMP.poll);
     IMP.poll = setInterval(function () { var x = IMP.win; if (!x || x.closed) { clearInterval(IMP.poll); IMP.win = null; if (IMP.away) impBack(); } }, 600);
@@ -9817,8 +9858,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       var by = document.createElement('span'); by.className = 'by'; by.textContent = impBy(l); by.hidden = !by.textContent; b.appendChild(by); b._by = by;
       var ct = document.createElement('span'); ct.className = 'ct'; ct.textContent = l.all.toLocaleString('en-GB') + (l.all === 1 ? ' song' : ' songs'); b.appendChild(ct);
       var tgt = impTarget(), mn = impMineOf(l);
-      if (tgt || mn) { var t = document.createElement('span'); t.className = 'tag'; t.textContent = tgt ? (mn && mn.id === tgt.id ? 'Update ' : 'Add to ') + impPlName(tgt) : 'Add to ' + impPlName(mn); b.appendChild(t); }   // (where its songs would go: John, 3 Nov 2026)
-      b.setAttribute('aria-label', l.name + (by.textContent ? ', ' + by.textContent.replace(/^By/, 'by') : '') + ', ' + ct.textContent + (tgt || mn ? ', ' + t.textContent : ''));
+      var upd = mn && (!tgt || mn.id === tgt.id);   // (only the one it would update: John, 3 Nov 2026, not an Add to on every card)
+      if (upd) { var t = document.createElement('span'); t.className = 'tag'; t.textContent = 'Update ' + impPlName(mn); b.appendChild(t); }
+      b.setAttribute('aria-label', l.name + (by.textContent ? ', ' + by.textContent.replace(/^By/, 'by') : '') + ', ' + ct.textContent + (upd ? ', ' + t.textContent : ''));
       b.addEventListener('click', function () { impGot(l); });
       grid.appendChild(b);
     });
@@ -9902,6 +9944,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   impDlg.addEventListener('close', function () { IMP.away = false; IMP.lists = null; IMP.pick = null; clearInterval(IMP.poll); IMP.win = null; impForget(); });
   document.getElementById('upliclose').addEventListener('click', function () { closeDialog(impDlg); });
   document.getElementById('upligo').addEventListener('click', impAway);
+  document.getElementById('uplilast').addEventListener('click', function () { var sv = IMP.saved; if (!sv || !sv.lists) return; IMP.away = false; IMP.lists = sv.lists; IMP.fromSaved = true; impPick(); });
   // (2 Nov 2026, John: "Remove the option of adding me as a collaborator. We won't do it that way": Import from Spotify only)
   document.getElementById('uplifile').addEventListener('click', function () { var f = document.getElementById('uplifin'); f.value = ''; f.click(); });
   document.getElementById('upliupd').addEventListener('click', function () { IMP.lists = null; impStep(1); try { document.getElementById('upligo').focus({ preventScroll: true }); } catch (e) {} });
@@ -11064,8 +11107,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var ids = ['monthshare', 'monthdl', 'monthadd', 'fabbox', 'qline'];   // put back in this order: each one's next neighbour is home first
     ids.forEach(function (id) { var el = document.getElementById(id); if (!bigHome[id]) bigHome[id] = [el.parentNode, el.nextSibling]; });
     if (on) {
-      var acts = document.querySelector('.bar-top .bar-actions');
-      acts.appendChild(document.getElementById('monthadd'));
+      var acts = document.querySelector('.bar-top .bar-actions'), ce = document.querySelector('.cal .caledit');
+      ce.insertBefore(document.getElementById('monthadd'), ce.firstChild);   // (by the calendar, its month's songs: not in the top bar, where it pushed Refresh off the end: John, 3 Nov 2026)
       acts.appendChild(document.getElementById('fabbox'));
       document.querySelector('.bar-top .mark').insertAdjacentElement('afterend', holdHint);
       if (!TV) { var c = document.getElementById('heroshuf'); c.parentNode.insertBefore(document.getElementById('monthshare'), c.nextSibling); c.parentNode.insertBefore(document.getElementById('monthdl'), document.getElementById('monthshare').nextSibling); }
