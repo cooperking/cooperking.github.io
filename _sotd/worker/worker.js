@@ -3751,8 +3751,10 @@ function uplDaysBy(songs, rec) {
   }
   // its UK added day: songs added the same day share it (John, 1 Nov 2026: "can we have the calendar icon split to show
   // multiple songs, so they keep their original day"; until then each earlier one went back a day)
-  return songs.map(x => Object.assign({}, x, { d: londonDay(x.a) }));
+  // a song Spotify gives no real date (added before it kept them: 1 January 1970): no day, in the calendar's Songs with no date (John, 3 Nov 2026: "Definitely don't put something on 1 January 1970")
+  return songs.map(x => Object.assign({}, x, { d: uplDated(x) ? londonDay(x.a) : '' }));
 }
+function uplDated(x) { const t = Date.parse(x && x.a); return !isNaN(t) && t >= Date.UTC(2000, 0, 1); }
 async function uplRead(env, pid, rec, U) {   // reads it from Spotify; keeps what changed; says whether it's readable
   const was = rec.st, now = Date.now();
   let items;
