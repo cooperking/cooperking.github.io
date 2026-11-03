@@ -6,8 +6,7 @@
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#ec135b">
 <title>Songs · Song of the Day admin</title>
-<style id="admin-gate">html { visibility: hidden; }.prog .why { margin: 0 0 6px; font-size: 12px; line-height: 1.4; opacity: .8; }
-</style>
+<style id="admin-gate">html { visibility: hidden; }</style>
 <script>
 // Shown only inside the admin page (admin.html), once it has checked the password with the Worker; opened on its own
 // this page goes back there.
@@ -122,30 +121,37 @@ body.dropping::after { content: 'Drop to match them (nothing goes up yet)'; posi
 }
 /* Member Songs: their playlists as tiles, as the calendar's Calendars and Playlists page shows them, at the top; a tap
    shows just that one's songs (John, 1 Nov 2026: "the members playlist tiles should be in the members songs section") */
-.ptiles { list-style: none; margin: 0 0 18px; padding: 0 16px; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 18px 12px; }
+.ptiles { list-style: none; margin: 0 0 22px; padding: 0 16px; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); gap: 16px; }
 .ptiles[hidden] { display: none; }
-.ptiles li { display: grid; gap: 6px; align-content: start; }
-.ptiles .tile { display: grid; gap: 6px; padding: 0; border: 0; background: none; color: inherit; text-align: left; cursor: pointer; font: inherit; }
-.ptiles .pic { position: relative; display: block; border-radius: 14px; overflow: hidden; background: var(--tile, #f3eef0); box-shadow: 0 6px 18px rgba(0,0,0,.18); }
+/* each playlist a card: its picture, name and details, how it's getting on, and its buttons along the bottom (John, 3 Nov 2026: "Can we make this look better") */
+.ptiles li { display: flex; flex-direction: column; gap: 10px; padding: 10px 10px 12px; border-radius: 20px; background: color-mix(in srgb, currentColor 7%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 14%, transparent); min-width: 0; }
+.ptiles .tile { display: grid; gap: 8px; padding: 0; border: 0; background: none; color: inherit; text-align: left; cursor: pointer; font: inherit; }
+.ptiles .pic { position: relative; display: block; border-radius: 14px; overflow: hidden; background: color-mix(in srgb, currentColor 10%, transparent); box-shadow: 0 8px 22px rgba(0,0,0,.22); }
 .ptiles .pic::before { content: ""; display: block; padding-top: 100%; }
 .ptiles .pic .in { position: absolute; inset: 0; display: grid; grid-template-columns: 1fr 1fr; }
 .ptiles .pic.one .in { grid-template-columns: 1fr; }
 .ptiles .pic img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.ptiles .pic.none::after { content: "♪"; position: absolute; inset: 0; display: grid; place-items: center; font: 40px var(--serif); color: var(--muted); }
-.ptiles li.sel .pic { outline: 3px solid var(--fg, #1d0b1e); outline-offset: 3px; }
-.ptiles .badge { position: absolute; left: 8px; top: 8px; padding: 3px 8px; border-radius: 999px; background: #e23a6e; color: #fff; font: 600 10px/1.4 var(--sans); letter-spacing: .1em; text-transform: uppercase; }
-.ptiles li.join .pic { outline: 3px solid #e23a6e; outline-offset: 2px; }
-.ptiles .nm { font-family: var(--serif); font-weight: 500; font-size: 17px; line-height: 1.2; overflow-wrap: anywhere; }
-.ptiles .st { font-size: 12.5px; line-height: 1.35; color: var(--muted); }
-.ptiles .prog { display: grid; gap: 5px; padding: 8px 10px; border-radius: 10px; background: var(--chip, rgba(29,11,30,.04)); font-size: 12px; }
-.ptiles .prog .r { display: grid; grid-template-columns: 54px 1fr auto; gap: 6px; align-items: center; }
-.ptiles .prog .bar { height: 5px; border-radius: 3px; background: var(--line); overflow: hidden; display: flex; }
-.ptiles .prog .bar i { display: block; height: 100%; background: var(--fg, #1d0b1e); }
-.ptiles .prog .bar i.none { background: var(--muted); opacity: .5; }
-.ptiles .prog .n { color: var(--muted); font-variant-numeric: tabular-nums; }
-.ptiles .acts { display: flex; flex-wrap: wrap; gap: 4px 10px; }
-.ptiles .acts button, .ptiles .acts a { padding: 0; border: 0; background: none; color: inherit; font: 600 10.5px/1.7 var(--sans); letter-spacing: .08em; text-transform: uppercase; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
-.ptiles .acts .x { color: #e23a6e; }
+.ptiles .pic.none::after { content: "♪"; position: absolute; inset: 0; display: grid; place-items: center; font: 44px var(--serif); opacity: .45; }
+.ptiles li.sel { box-shadow: inset 0 0 0 2px currentColor; }
+.ptiles .badge { position: absolute; left: 10px; top: 10px; padding: 4px 10px; border-radius: 999px; background: #e23a6e; color: #fff; font: 700 10px/1.4 var(--sans); letter-spacing: .12em; text-transform: uppercase; box-shadow: 0 2px 8px rgba(0,0,0,.25); }
+.ptiles .badge.up { background: rgba(20,10,24,.72); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+.ptiles li.join { box-shadow: inset 0 0 0 2px #e23a6e; }
+.ptiles .nm { font-family: var(--serif); font-weight: 500; font-size: 19px; line-height: 1.2; overflow-wrap: anywhere; padding: 0 2px; }
+.ptiles .st { font-size: 12.5px; line-height: 1.45; opacity: .78; padding: 0 2px; }
+.ptiles .prog { display: grid; gap: 8px; padding: 10px 12px; border-radius: 14px; background: color-mix(in srgb, currentColor 8%, transparent); font-size: 12.5px; }
+.ptiles .prog .why { margin: 0 0 2px; font-size: 12px; line-height: 1.4; opacity: .8; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.ptiles .prog .r { display: grid; grid-template-columns: 58px 1fr; grid-template-rows: auto auto; column-gap: 8px; row-gap: 3px; align-items: center; }
+.ptiles .prog .r > span:first-child { font-weight: 600; grid-row: 1 / span 2; }
+.ptiles .prog .bar { height: 6px; border-radius: 99px; background: color-mix(in srgb, currentColor 18%, transparent); overflow: hidden; display: flex; }
+.ptiles .prog .bar i { display: block; height: 100%; background: currentColor; border-radius: 99px; }
+.ptiles .prog .bar i.none { background: color-mix(in srgb, currentColor 45%, transparent); border-radius: 0; }
+.ptiles .prog .n { font-size: 11.5px; opacity: .75; font-variant-numeric: tabular-nums; }
+.ptiles .acts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: auto; padding: 2px 2px 0; }
+.ptiles .acts button, .ptiles .acts a { display: inline-flex; align-items: center; height: 30px; padding: 0 13px; border: 0; border-radius: 999px; background: color-mix(in srgb, currentColor 12%, transparent); color: inherit; font: 600 11px/1 var(--sans); letter-spacing: .08em; text-transform: uppercase; text-decoration: none; cursor: pointer; }
+.ptiles .acts a:first-child { background: currentColor; }
+.ptiles .acts a:first-child span { color: #14081a; }
+.ptiles .acts .x { margin-left: auto; background: none; box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 30%, transparent); opacity: .85; }
+.ptiles .acts .x:hover { opacity: 1; background: #e23a6e; box-shadow: none; color: #fff; }
 /* a tile tapped (John, 2 Nov 2026: "could the pictures disappear and just show the songs ... tabs to see what has files
    videos and previews of those songs with a way to dismiss and get back to the picture view", and a message to its
    member with its stats) */
@@ -671,7 +677,7 @@ body.dropping::after { content: 'Drop to match them (nothing goes up yet)'; posi
       var inn = el('span', 'in'); pic.appendChild(inn);
       (urls.length >= 4 ? urls.slice(0, 4) : urls.slice(0, 1)).forEach(function (x) { var im = el('img'); im.alt = ''; im.loading = 'lazy'; im.src = x; im.onerror = function () { im.style.visibility = 'hidden'; }; inn.appendChild(im); });
       var g = u.prog, left = function (f, nn) { return g ? Math.max(0, g.n - (g[f] || 0) - (g[nn] || 0)) : 0; }, coming = !!(g && g.n && (g.pq > 0 || left('v', 'vn') > 0));
-      if (coming) { busy = true; pic.appendChild(el('span', 'badge', chgBadge(u))); }
+      if (coming) { busy = true; pic.appendChild(el('span', 'badge' + (chgBadge(u) === 'Updating' ? ' up' : ''), chgBadge(u))); }
       else if (u.st === 'join') pic.appendChild(el('span', 'badge', 'Join it'));
       tile.appendChild(pic);
       tile.appendChild(el('span', 'nm', u.n));
@@ -693,7 +699,7 @@ body.dropping::after { content: 'Drop to match them (nothing goes up yet)'; posi
         li.appendChild(pr);
       }
       var acts = el('div', 'acts');
-      var op = el('a', '', 'Open ↗'); op.href = './#u=' + u.id; op.target = '_blank'; op.rel = 'noopener'; acts.appendChild(op);
+      var op = el('a', ''); op.appendChild(el('span', '', 'Open ↗')); op.href = './#u=' + u.id; op.target = '_blank'; op.rel = 'noopener'; acts.appendChild(op);
       if (u.link && u.st !== 'ok') { var inv = el('a', '', 'The invite ↗'); inv.href = u.link; inv.target = '_blank'; inv.rel = 'noopener'; acts.appendChild(inv); }
       if (PUSH[u.id] && u.st === 'ok') { var cp = el('button', '', 'Copy push link'); cp.type = 'button'; cp.addEventListener('click', function () { navigator.clipboard.writeText(PUSH[u.id]).then(function () { toast('Push link copied: paste it into the Playlist push sheet'); }, function () { toast(PUSH[u.id]); }); }); acts.appendChild(cp); }
       if (u.src === 'sp') { var ck = el('button', '', u.st === 'ok' ? 'Check now' : 'I’ve joined: check'); ck.type = 'button'; ck.addEventListener('click', function () { api('/members/admin', { op: 'uplcheck', id: u.id }).then(function (j) { if (j.status !== 200) { toast(j.error || 'Couldn’t check'); return; } UPLS = j.upls || []; ptilesDraw(); var now = UPLS.filter(function (x) { return x.id === u.id; })[0]; toast(now && now.st === 'ok' ? '“' + u.n + '”: read, ' + now.cnt + ' songs' : 'Spotify still won’t let your account read it: join it first'); }); }); acts.appendChild(ck); }
