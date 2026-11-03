@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="7fce65583931">
+<meta name="sotd-build" content="499380d4aaf4">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -575,7 +575,7 @@ html.upl-list .side-acts .listbtn { display: inline-grid; }
 .imp-card .ct { font-size: 12px; color: var(--muted); }
 .imp-card .by { margin-top: -3px; font-size: 12px; font-weight: 600; color: var(--fg); overflow-wrap: anywhere; }
 .imp-card .by[hidden] { display: none; }
-.imp-card .tag { justify-self: start; padding: 2px 8px; border-radius: 999px; background: var(--fg); color: #e23a6e; font: 600 10px/1.5 var(--sans); letter-spacing: .08em; text-transform: uppercase; }
+.imp-card .tag { justify-self: start; max-width: 100%; padding: 3px 9px; border-radius: 999px; background: var(--pill-bg); box-shadow: inset 0 0 0 1px var(--line); color: var(--fg); font: 600 10px/1.4 var(--sans); letter-spacing: .08em; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }   /* (quiet, as the rest of the pop-up: John, 3 Nov 2026) */
 .imp-mos { position: relative; display: grid; grid-template-columns: 1fr 1fr; aspect-ratio: 1; border-radius: 10px; overflow: hidden; background: var(--tile); box-shadow: 0 4px 14px var(--shadow); }
 .imp-mos img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .imp-mos.one { grid-template-columns: 1fr; }
@@ -9818,8 +9818,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       var by = document.createElement('span'); by.className = 'by'; by.textContent = impBy(l); by.hidden = !by.textContent; b.appendChild(by); b._by = by;
       var ct = document.createElement('span'); ct.className = 'ct'; ct.textContent = l.all.toLocaleString('en-GB') + (l.all === 1 ? ' song' : ' songs'); b.appendChild(ct);
       var tgt = impTarget(), mn = impMineOf(l);
-      if (tgt || mn) { var t = document.createElement('span'); t.className = 'tag'; t.textContent = tgt ? (mn && mn.id === tgt.id ? 'Update ' : 'Add to ') + impPlName(tgt) : 'Add to ' + impPlName(mn); b.appendChild(t); }   // (where its songs would go: John, 3 Nov 2026)
-      b.setAttribute('aria-label', l.name + (by.textContent ? ', ' + by.textContent.replace(/^By/, 'by') : '') + ', ' + ct.textContent + (tgt || mn ? ', ' + t.textContent : ''));
+      var upd = mn && (!tgt || mn.id === tgt.id);   // (only the one it would update: John, 3 Nov 2026, not an Add to on every card)
+      if (upd) { var t = document.createElement('span'); t.className = 'tag'; t.textContent = 'Update ' + impPlName(mn); b.appendChild(t); }
+      b.setAttribute('aria-label', l.name + (by.textContent ? ', ' + by.textContent.replace(/^By/, 'by') : '') + ', ' + ct.textContent + (upd ? ', ' + t.textContent : ''));
       b.addEventListener('click', function () { impGot(l); });
       grid.appendChild(b);
     });
