@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="15aff2a2bed9">
+<meta name="sotd-build" content="9d125d780bd7">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -112,6 +112,10 @@ html.big .bar-top .hold { margin-right: auto; margin-left: 18px; font: 500 12px/
 html.big .bar-top .hold b { font-weight: 600; color: var(--fg); }
 html.big .bar-top .monthadd { min-height: 38px; }
 html.big .hero { display: flex; align-items: center; gap: 18px; padding: 0 4px; text-align: left; }
+html.big .hero { flex-wrap: wrap; row-gap: 10px; }   /* (a member's calendar on a computer: its name over the month, the song buttons in a row, not squeezed into a column: John, 3 Nov 2026) */
+html.big .uplkick { flex: 0 0 100%; order: -1; margin: 0 0 -12px; overflow-wrap: normal; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html.big .songnav { flex: none; flex-wrap: nowrap; }
+.songnav button { white-space: nowrap; }
 html.big .hero h1 { font-size: 40px; white-space: nowrap; }
 html.big .hsub { margin: 0 auto 0 0; font-size: 21px; white-space: nowrap; }
 html.big .monthnav { min-width: 0; flex: 0 1 auto; }
