@@ -8150,7 +8150,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     btn(pa, p.pic ? 'Change picture' : 'Add a picture', '', function () { PICFOR = p; var f = document.getElementById('uplpicin'); f.value = ''; f.click(); });
     if (p.pic) btn(pa, 'Use its covers', '', function (e) { e.currentTarget.disabled = true; uplPicSend(p, null); });
     var more = document.getElementById('pe-more'); more.textContent = '';
-    if (p.src === 'csv') btn(more, 'Update from Exportify', '', function () { impOpen(); });
+    if (p.src === 'csv') btn(more, 'Update from Exportify', '', function () { impOpen(0, p.id); });
     else if (p.src !== 'mpl') btn(more, 'Check now', '', function () { uplOp({ op: 'check', id: p.id }, null, function (j) { toast(j.st === 'ok' ? 'Read from Spotify: ' + (j.view ? j.view.songs.length : 0) + ' songs' : 'John hasn’t joined it yet'); }); });
     if (p.src !== 'mpl') btn(more, 'Remove it', 'x', function () { uplRemoveAsk(p); });
     // its songs: each one's edit (its video, moods and genres, their MP3 and MP4, cover) and taking off; a playlist's order
@@ -9239,7 +9239,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     function act(label, cls, fn) { var b = document.createElement('button'); b.type = 'button'; b.textContent = label; if (cls) b.className = cls; b.addEventListener('click', fn); acts.appendChild(b); return b; }
     if (!pop) {   // (the box itself opens it, and its Notifications are above it: uplAcctRow)
       if (p.st === 'join') act('Send the invite link again', '', function () { uplLinkAgain(p); });
-      if (p.src === 'csv') act('Update', '', function () { impOpen(); });
+      if (p.src === 'csv') act('Update', '', function () { impOpen(0, p.id); });
       if (p.st !== 'ok') act('Remove', 'x', function () { uplRemoveAsk(p); });
       return;
     }
@@ -9252,7 +9252,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     ntfButton(p, acts, function () { setGo('send'); });
     act('Setup', '', function () { setGo('kind'); });
     if (p.src === 'csv') {
-      act('Update from Exportify', '', function () { impOpen(); });
+      act('Update from Exportify', '', function () { impOpen(0, p.id); });
       act('Remove', 'x', function () { uplRemoveAsk(p); });
     } else if (p.src !== 'mpl') {
       act('Check now', '', function () { uplOp({ op: 'check', id: p.id }, null, function (j) { toast(j.st === 'ok' ? 'Read from Spotify: ' + (j.view ? j.view.songs.length : 0) + ' songs' : 'John hasn’t joined it yet'); }); });
@@ -9582,10 +9582,13 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     document.getElementById('uplifile').className = 'copy' + (k === 2 ? '' : ' ghost');
     impShow('steps');
   }
-  function impOpen(step) {   // step: 2 when coming back from Exportify
+  function impOpen(step, target) {   // step: 2 when coming back from Exportify; target: the one of theirs it was opened from (Update from Exportify: its songs go into that one, nothing to choose: John, 3 Nov 2026)
+    if (target) IMP.target = target; else if (!step) IMP.target = null;
+    try { if (IMP.target) localStorage.setItem('sotd-imptarget', IMP.target); else if (!step) localStorage.removeItem('sotd-imptarget'); if (step && !IMP.target) IMP.target = localStorage.getItem('sotd-imptarget') || null; } catch (e) {}
     IMP.had = null; IMP.lists = null; IMP.pick = null;
     var h = uplPls().some(function (p) { return p.mine && p.src === 'csv'; });   // (any imports of theirs already)
-    document.getElementById('uplih').textContent = 'Import from Spotify';
+    var tg0 = impTarget();
+    document.getElementById('uplih').textContent = tg0 ? 'Add to “' + impPlName(tg0) + '”' : 'Import from Spotify';
     document.getElementById('uplit').textContent = 'Any of your Spotify playlists, private ones too, as a calendar or a playlist. Nothing to share with John.';
     var mine = document.getElementById('uplimine'); mine.hidden = !h;
     if (h) mine.textContent = 'Choose one you’ve imported before to bring in its new songs, or any other to add it as well.';
@@ -9734,21 +9737,27 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (lists.length < 2) me = '';   // (one playlist alone: can't tell which is them)
     lists.forEach(function (l) {
       var ids = Object.keys(l.by).sort(function (a, b) { return l.by[b] - l.by[a]; }), n = ids.reduce(function (t, u) { return t + l.by[u]; }, 0), top = ids[0];
-      l.others = ids.filter(function (u) { return u !== top && l.by[u] >= Math.max(1, n * .1); }).length > 0;
+      l.otherIds = ids.filter(function (u) { return u !== top && u !== 'spotify' && u !== ''; });   // (everyone else who added songs to it)
+      l.others = l.otherIds.length > 0;
       l.maker = top === undefined ? '' : top === 'spotify' ? '' : top;
       l.spotify = top === '' || top === 'spotify';
       l.yours = !!me && (l.maker === me || (top === undefined && /^liked/.test(l.key)));
     });
   }
-  function impBy(l) {   // "Yours", "By Anna", "By Spotify"
-    if (l.yours) return l.others ? 'Yours, with others' : 'Yours';
+  function impWho(u) { return SPN[u] || (/^[a-z0-9._-]{2,24}$/i.test(u) && !/^[0-9a-z]{25,}$/i.test(u) ? u : 'another Spotify user'); }   // (an old-style user name reads as a name; a long code doesn't)
+  function impOthers(l) {   // the others who added to it, by name, up to five (John, 3 Nov 2026: "list those members, unless it's more than 5")
+    var o = l.otherIds || []; if (!o.length) return '';
+    return o.length > 5 ? o.length + ' others' : andList(o.map(impWho).filter(function (x, i, a) { return a.indexOf(x) === i; }));
+  }
+  function impBy(l) {   // "Yours", "Yours, with Anna and Ben", "By Anna", "By Spotify"
+    if (l.yours) return l.others ? 'Yours, with ' + impOthers(l) : 'Yours';
     if (l.spotify) return 'By Spotify';
     if (!l.maker) return '';
-    var n = SPN[l.maker] || (/^[a-z0-9._-]{2,24}$/i.test(l.maker) && !/^[0-9a-z]{25,}$/i.test(l.maker) ? l.maker : 'another Spotify user');   // (an old-style user name reads as a name; a long code doesn't)
-    return 'By ' + n + (l.others ? ' and others' : '');
+    return 'By ' + impWho(l.maker) + (l.others ? (l.otherIds.length > 5 ? ' and ' : ', with ') + impOthers(l) : '');
   }
+  function impPlName(p) { return p && /^John[’']s Song of the Day$/.test(p.n || '') ? 'Main calendar' : (p && p.n) || 'it'; }   // (John's own: the Main calendar)
   function impNames(lists, then) {   // the makers' names, 20 at a time
-    var want = lists.map(function (l) { return !l.yours && !l.spotify && l.maker && !(l.maker in SPN) ? l.maker : null; }).filter(function (x, i, a) { return x && a.indexOf(x) === i; });
+    var want = [].concat.apply([], lists.map(function (l) { return (!l.yours && !l.spotify && l.maker ? [l.maker] : []).concat((l.otherIds || []).length <= 5 ? l.otherIds || [] : []); })).filter(function (x, i, a) { return x && !(x in SPN) && a.indexOf(x) === i; });   // (makers, and the others who added to theirs)
     var tok = plTok(); if (!want.length || !tok || !MBASE) return;
     for (var i = 0; i < want.length; i += 20) {
       fetch(MBASE + '/members/spnames?ids=' + encodeURIComponent(want.slice(i, i + 20).join(',')), { headers: { Authorization: 'Bearer ' + tok } }).then(function (r) { return r.json(); }).then(function (j) {
@@ -9757,6 +9766,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       }).catch(function () {});
     }
   }
+  function impTarget() { return IMP.target ? uplPls().filter(function (p) { return p.id === IMP.target && p.mine; })[0] || null : null; }
   function impPick() {   // the download's playlists, to choose from
     var lists = IMP.lists, grid = document.getElementById('upligrid'), q = document.getElementById('uplisearch');
     document.getElementById('uplipickt').textContent = lists.length + (lists.length === 1 ? ' playlist' : ' playlists') + ' in your download';
@@ -9773,8 +9783,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       var nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = l.name; b.appendChild(nm);
       var by = document.createElement('span'); by.className = 'by'; by.textContent = impBy(l); by.hidden = !by.textContent; b.appendChild(by); b._by = by;
       var ct = document.createElement('span'); ct.className = 'ct'; ct.textContent = l.all.toLocaleString('en-GB') + (l.all === 1 ? ' song' : ' songs'); b.appendChild(ct);
-      if (impMine(l)) { var t = document.createElement('span'); t.className = 'tag'; t.textContent = 'On the calendar'; b.appendChild(t); }
-      b.setAttribute('aria-label', l.name + (by.textContent ? ', ' + by.textContent.replace(/^By/, 'by') : '') + ', ' + ct.textContent + (impMine(l) ? ', on the calendar now' : ''));
+      var tgt = impTarget(), mn = impMineOf(l);
+      if (tgt || mn) { var t = document.createElement('span'); t.className = 'tag'; t.textContent = tgt ? (mn && mn.id === tgt.id ? 'Update ' : 'Add to ') + impPlName(tgt) : 'Add to ' + impPlName(mn); b.appendChild(t); }   // (where its songs would go: John, 3 Nov 2026)
+      b.setAttribute('aria-label', l.name + (by.textContent ? ', ' + by.textContent.replace(/^By/, 'by') : '') + ', ' + ct.textContent + (tgt || mn ? ', ' + t.textContent : ''));
       b.addEventListener('click', function () { impGot(l); });
       grid.appendChild(b);
     });
@@ -9822,12 +9833,24 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var into = uplPls().filter(function (p) { return p.mine && p.src === 'csv' && (!h || p.id !== h.id); });
     var dest = document.getElementById('uplidest'), sel = document.getElementById('upliinto');
     dest.textContent = ''; sel.textContent = '';
-    into.forEach(function (p) { var o = document.createElement('option'); o.value = p.id; o.textContent = p.n + (p.mode === 'list' ? ' (playlist)' : ' (calendar)'); sel.appendChild(o); });
+    into.forEach(function (p) { var o = document.createElement('option'); o.value = p.id; o.textContent = 'Add to ' + impPlName(p) + (p.mode === 'list' ? ' (playlist)' : ' (calendar)'); sel.appendChild(o); });
     var opt = function (v, t, d) { var lb = document.createElement('label'), r = document.createElement('input'); r.type = 'radio'; r.name = 'uplidest'; r.value = v; r.checked = v === (up ? 'up' : 'new');
       var sp = document.createElement('span'), bb = document.createElement('b'); bb.textContent = t; sp.appendChild(bb); sp.appendChild(document.createTextNode(d)); lb.appendChild(r); lb.appendChild(sp); dest.appendChild(lb); r.addEventListener('change', function () { impDest(l, h); }); };
-    if (up) opt('up', 'Update “' + h.n + '”', 'Its new songs come in; the rest keep their days.');
-    opt('new', up ? 'A new one' : 'A new calendar or playlist', 'Its own, beside your others.');
-    if (into.length) opt('add', 'Add to one of mine', 'Its songs join one you already have (any it has already are skipped).');
+    var tgt = impTarget();
+    if (tgt) {   // opened from one of theirs (Update from Exportify): into that one, nothing else to choose
+      if (h && h.id === tgt.id) opt('up', 'Update “' + impPlName(tgt) + '”', 'Its new songs come in; the rest keep their days.');
+      else { opt('add', 'Add to “' + impPlName(tgt) + '”', 'Its songs join it (any it has already are skipped).'); sel.value = tgt.id; if (sel.value !== tgt.id) { var o2 = document.createElement('option'); o2.value = tgt.id; o2.textContent = impPlName(tgt); sel.appendChild(o2); sel.value = tgt.id; } }
+      dest.querySelector('input').checked = true; dest.hidden = true;
+      document.getElementById('uplikind').textContent = h && h.id === tgt.id ? 'Update' : 'Add to';
+      document.getElementById('uplisumh').textContent = h && h.id === tgt.id ? impPlName(tgt) : l.name + ' → ' + impPlName(tgt);
+      impDest(l, h); document.getElementById('uplintol').hidden = true;
+      document.getElementById('upliok').textContent = h && h.id === tgt.id ? 'Update it' : 'Add the songs to “' + impPlName(tgt) + '”';
+      document.getElementById('uplino').textContent = IMP.lists && IMP.lists.length > 1 ? 'Choose another' : 'Another file';
+      impShow('got'); return;
+    }
+    if (up) opt('up', 'Update “' + impPlName(h) + '”', 'Its new songs come in; the rest keep their days.');
+    into.forEach(function (p) { opt('add:' + p.id, 'Add to “' + impPlName(p) + '”', (p.mode === 'list' ? 'Your playlist' : 'Your calendar') + ': its songs join it (any it has already are skipped).'); });   // (each of theirs by name: John, 3 Nov 2026)
+    opt('new', up || into.length ? 'A new calendar or playlist' : 'A new calendar or playlist', 'Its own, beside your others.');
     dest.hidden = !up && !into.length;
     impDest(l, h);
     document.getElementById('uplino').textContent = IMP.lists && IMP.lists.length > 1 ? 'Choose another' : 'Another file';
@@ -9835,7 +9858,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   function impDest(l, h) {   // what the choice of where it goes shows
     var v = (document.querySelector('input[name="uplidest"]:checked') || {}).value || (h ? 'up' : 'new');
-    document.getElementById('uplintol').hidden = v !== 'add';
+    if (/^add:/.test(v)) { document.getElementById('upliinto').value = v.slice(4); v = 'add'; }   // (one of theirs, chosen by name)
+    document.getElementById('uplintol').hidden = true;
     document.getElementById('uplinamel').hidden = v !== 'new';
     document.getElementById('uplimode').hidden = v !== 'new';
     var note = document.getElementById('uplinote');
@@ -9854,7 +9878,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   document.getElementById('upliok').addEventListener('click', function () {
     var l = IMP.pick; if (!l || IMP.busy) return;
     var b = this, h = impMineOf(l), mode = (document.querySelector('input[name="uplimode"]:checked') || {}).value, label = b.textContent;
-    var dv = (document.querySelector('input[name="uplidest"]:checked') || {}).value || (h ? 'up' : 'new'), up = dv === 'up' && !!h;
+    var dv = (document.querySelector('input[name="uplidest"]:checked') || {}).value || (h ? 'up' : 'new');
+    if (/^add:/.test(dv)) { document.getElementById('upliinto').value = dv.slice(4); dv = 'add'; }
+    var up = dv === 'up' && !!h;
     if (dv === 'new') h = null;
     if (dv === 'add') {   // into another of theirs
       var to = document.getElementById('upliinto').value, tp = uplPls().filter(function (p) { return p.id === to; })[0];
@@ -9865,7 +9891,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         if (j.status !== 200) { toast(j.error || 'Couldn’t add them just now'); return; }
         impForget(); MEMBER.pls = j.pls; uplMark(); uplWaitCount(); if (acct.open) uplDrawAcct();
         closeDialog(impDlg); if (acct.open) closeDialog(acct);
-        toast(j.added ? (j.added === 1 ? '1 song added' : j.added + ' songs added') + ' to “' + (tp ? tp.n : 'it') + '”' : 'It has all of those already');
+        toast(j.added ? (j.added === 1 ? '1 song added' : j.added + ' songs added') + ' to “' + impPlName(tp) + '”' : 'It has all of those already');
         if (UPL.on === to && j.view) uplRefreshViews(to, j.view); else uplShow(to);
       }).catch(function () { IMP.busy = false; b.disabled = false; b.textContent = label; toast('Couldn’t reach the site. Try again.'); });
       return;
