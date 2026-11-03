@@ -1061,6 +1061,7 @@ async function members(request, url, env) {
   if (route === 'sent') return memberSent(request, env, answer);
   if (route === 'react') return memberReact(request, env, answer);
   if (route === 'bell') return memberBell(request, env, answer);
+  if (route === 'heart') return memberHeart(request, env, answer);
   if (route === 'upl') return memberUpl(request, url, env, answer);
   if (route === 'uplup') return memberUplUp(request, url, env, answer);
   if (route === 'uplcover') return memberUplCover(request, url, env, answer);
@@ -3109,8 +3110,50 @@ async function bellNote(env, to, msgId, title, from, e, u) {
 }
 function bellView(all, member, b) {
   const seen = (b && b.seen) || 0;
-  const items = ((b && b.items) || []).filter(y => all[y.k] && !apart(all, member, y.k)).map(y => Object.assign({ id: y.id, n: all[y.k].name, e: y.e, at: y.at, t: y.t }, y.u ? { u: y.u } : {}));
+  const items = ((b && b.items) || []).filter(y => all[y.k] && !apart(all, member, y.k)).map(y => Object.assign({ id: y.id, n: all[y.k].name, e: y.e, at: y.at, t: y.t }, y.u ? { u: y.u } : {}, y.h ? { h: 1 } : {}));
   return { items, unseen: items.filter(y => y.at > seen).length, seen };
+}
+// a heart on someone's song (John, 3 Nov 2026: "Could a member get a notification when someone hearts their song"): POST
+// { track, upl, d } when a member adds a song to My playlist. The song's owner (the member whose calendar or playlist it's
+// on; John for his own) gets it in their bell and, if they take messages from them, on their phone. Once per member and
+// song (KV hearted:<owner>:<track>:<from>, a year), so taking it off and on again doesn't send it twice; HEART_DAY a day each.
+const HEART_DAY = 30;
+async function memberHeart(request, env, answer) {
+  if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
+  const who = await memberWho(request, env);
+  if (!who) return answer(401, { error: 'Not a member (any more).' });
+  const body = await request.json().catch(() => ({})), track = String(body.track || ''), pid = String(body.upl || ''), d = String(body.d || '');
+  if (!/^[0-9A-Za-z]{22}$/.test(track)) return answer(400, { error: 'Which song?' });
+  const ownerId = await env.SOTD.get('owner');
+  let to, title, url;
+  if (pid) {
+    const rec = (await uplAll(env))[pid];
+    if (!rec || !uplCan(who.all, who.id, rec)) return answer(200, { ok: true });
+    const x = ((await uplSongs(env, pid)).songs || []).find(y => y.id === track);
+    if (!x) return answer(200, { ok: true });
+    to = rec.o; title = x.title;
+    url = SITE_SONGS + '#u=' + pid + (/^\d{4}-\d{2}-\d{2}$/.test(d) ? '&d=' + d.slice(8, 10) + '-' + d.slice(5, 7) + '-' + d.slice(0, 4) : '');
+  } else {
+    to = ownerId; title = String(body.title || '').slice(0, 120);
+    url = SITE_SONGS + (/^\d{4}-\d{2}-\d{2}$/.test(d) ? '#' + Number(d.slice(8, 10)) + '-' + Number(d.slice(5, 7)) + '-' + d.slice(0, 4) : '');
+  }
+  if (!to || !who.all[to] || to === who.id) return answer(200, { ok: true });
+  const once = 'hearted:' + to + ':' + track + ':' + who.id;
+  if (await env.SOTD.get(once)) return answer(200, { ok: true });
+  if (!await dayCount(env, 'heartday:' + who.id, HEART_DAY)) return answer(200, { ok: true });
+  await env.SOTD.put(once, '1', { expirationTtl: 365 * 86400 });
+  const key = 'bell:' + to, b = (await env.SOTD.get(key, 'json')) || { seen: 0, items: [] };
+  b.items = [{ id: 'h:' + track, k: who.id, e: '❤️', h: 1, at: Date.now(), t: title || '', u: url }].concat((b.items || []).filter(y => !(y.id === 'h:' + track && y.k === who.id)));
+  b.items.length = Math.min(b.items.length, BELL_MAX);
+  await kvSoft(env, key, JSON.stringify(b));
+  if (takesFrom(who.all, to, who.id, ownerId)) {
+    const subs = (await env.SOTD.get('pushSubs', 'json')) || {}, ids = Object.keys(subs).filter(k => subs[k].m === to);
+    if (ids.length) {
+      const k = await vapidKeys(env), msg = { title: who.all[who.id].name + ' hearted your song ❤️', body: '“' + (title || 'Your song') + '”', url: SITE_SONGS + '#bell', tag: 'sotd-heart-' + track + '-' + who.id };
+      await Promise.all(ids.map(id => pushTo(env, k, subs[id], msg).catch(err => console.log('heart push: ' + (err && err.message)))));
+    }
+  }
+  return answer(200, { ok: true });
 }
 async function memberBell(request, env, answer) {
   const who = await memberWho(request, env);
