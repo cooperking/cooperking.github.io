@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="17687ddc2182">
+<meta name="sotd-build" content="111ccd168434">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -1216,6 +1216,9 @@ dialog#sheet::backdrop, dialog#mine::backdrop, dialog#index::backdrop, dialog#ac
 .pick .by { margin: 0; font-family: var(--sans); font-weight: 600; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--fg-2); }
 .pick .alb { margin: 0; font-family: var(--serif); font-style: italic; font-size: 16px; color: var(--muted); }
 .pick .pill { justify-self: start; }
+.monthadd { display: inline-flex; align-items: center; gap: 7px; }
+.monthadd .heart { width: 14px; height: 14px; flex: none; }
+.monthadd.is-fav .heart path { fill: #ff4d7d; stroke: #ff4d7d; }
 .pill.share { width: 40px; height: 40px; padding: 0; justify-content: center; }
 .pill.share svg { width: 16px; height: 16px; }
 /* a song's YouTube video, in YouTube's own player, in the record's place; the round play button and the bar work it */
@@ -1876,7 +1879,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       <p><span class="chip" id="idxc"></span></p>
     </div>
     <div class="mix-actions" id="mixact" hidden>
-      <button class="pill" id="mixadd" type="button">Add to My playlist</button>
+      <button class="pill monthadd" id="mixadd" type="button">Add to My playlist</button>
     </div>
     <div id="idxlist"></div>
     <p class="mine-empty" id="idxnone" hidden>Nothing matches that.</p>
@@ -2498,10 +2501,15 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   // a heart tells the song's owner (John, 3 Nov 2026): the member whose calendar or playlist it's on, or John for his own;
   // the Worker sends it once per member and song, to their bell and phone (not for their own songs)
-  function heartTell(s) {
-    if (!MEMBER || !MBASE || !s || !/^[0-9A-Za-z]{22}$/.test(s.track || '')) return;
-    if (!s.upl && MEMBER.owner === true) return;   // (John's own; a member's own song: the Worker leaves it)
-    try { sendPost('/members/heart', { track: s.track, upl: s.upl || '', d: /^\d{4}-\d{2}-\d{2}$/.test(s.d || '') ? s.d : '', title: s.title || '' }).catch(function () {}); } catch (e) {}
+  function heartTell(list) {   // list: a song, or several added together (Add 20 to My playlist): one heart per calendar they're from (John, 3 Nov 2026: "one reaction and one notification")
+    if (!MEMBER || !MBASE) return;
+    var by = {};
+    [].concat(list).forEach(function (s) {
+      if (!s || !/^[0-9A-Za-z]{22}$/.test(s.track || '')) return;
+      if (!s.upl && MEMBER.owner === true) return;   // (John's own; a member's own song: the Worker leaves it)
+      var k = s.upl || ''; (by[k] = by[k] || []).push({ track: s.track, title: s.title || '', d: /^\d{4}-\d{2}-\d{2}$/.test(s.d || '') ? s.d : '' });
+    });
+    Object.keys(by).forEach(function (k) { try { sendPost('/members/heart', { upl: k, songs: by[k] }).catch(function () {}); } catch (e) {} });
   }
   var lastCount = -1;
   // the month on screen: add all its songs to My playlist in one go
@@ -2511,7 +2519,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var fresh = monthList.filter(function (s) { return fav.indexOf(s.track) === -1; }).length;
     b.hidden = !monthList.length;
     b.disabled = !fresh;
-    b.textContent = !fresh ? 'All in My playlist' : fresh === monthList.length ? 'Add ' + fresh + ' to My playlist' : 'Add ' + fresh + ' more to My playlist';
+    var t = !fresh ? 'All in My playlist' : fresh === monthList.length ? 'Add ' + fresh + ' to My playlist' : 'Add ' + fresh + ' more to My playlist';
+    if (b.getAttribute('data-t') !== t) { b.setAttribute('data-t', t); b.innerHTML = HEART + '<span></span>'; b.lastChild.textContent = t; b.classList.toggle('is-fav', !fresh); }   // (a heart beside it: John, 3 Nov 2026)
   }
   function syncFav() {
     setMonthAdd();
@@ -6268,8 +6277,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (e.key === 'Enter') { e.preventDefault(); setMakeLink(); document.getElementById('makebtn').click(); }
   });
   document.getElementById('monthadd').addEventListener('click', function () {
-    monthList.forEach(function (s) { if (fav.indexOf(s.track) === -1) { fav.push(s.track); songxKeep(s, true); } });
+    var added = [];
+    monthList.forEach(function (s) { if (fav.indexOf(s.track) === -1) { fav.push(s.track); songxKeep(s, true); added.push(s); } });
     songxSave(); saveFav(); syncFav();
+    if (added.length) heartTell(added);   // (their owners told once each, for them all)
   });
   document.getElementById('monthdl').addEventListener('click', function () { dlMany(monthList.slice(), document.getElementById('sideh').textContent || 'this month'); });
   document.getElementById('minedl').addEventListener('click', function () { dlMany(fav.map(function (t) { return songOf(t); }).filter(Boolean), 'My playlist'); });
@@ -6456,8 +6467,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     }
   }
   document.getElementById('mixadd').addEventListener('click', function () {
-    selection().forEach(function (s) { if (fav.indexOf(s.track) === -1) fav.push(s.track); });
+    var added = [];
+    selection().forEach(function (s) { if (fav.indexOf(s.track) === -1) { fav.push(s.track); added.push(s); } });
     saveFav(); syncFav(); setAdd();
+    if (added.length) heartTell(added);
   });
 
   // a song found by the search: its title, artist, year, moods or genres; "80s", "'80s" or "1980s" finds the decade
@@ -6490,8 +6503,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     act.hidden = !list.length;
     if (!list.length) return;
     var fresh = list.filter(function (s) { return fav.indexOf(s.track) === -1; }).length;
-    add.textContent = !fresh ? 'All in My playlist' : fresh < list.length ? 'Add ' + fresh + ' more to My playlist'
+    var t = !fresh ? 'All in My playlist' : fresh < list.length ? 'Add ' + fresh + ' more to My playlist'
       : list.length === 1 ? 'Add to My playlist' : 'Add ' + list.length + ' to My playlist';
+    if (add.getAttribute('data-t') !== t) { add.setAttribute('data-t', t); add.innerHTML = HEART + '<span></span>'; add.lastChild.textContent = t; add.classList.toggle('is-fav', !fresh); }
     add.disabled = !fresh;
   }
   function renderIndex() {
@@ -7597,10 +7611,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       var li = document.createElement('li'), b = document.createElement('button'), fresh = x.at > BELL.mark;
       b.type = 'button'; b.className = 'open' + (fresh ? ' new' : '');
       b.innerHTML = '<span class="dot"></span><span class="t"></span><span class="b"></span><span class="w"></span>';
-      b.querySelector('.t').textContent = x.e + ' ' + x.n + (x.h ? ' hearted your song' : x.u ? ' reacted to the Song of the Day' : ' reacted to your message');
-      b.querySelector('.b').textContent = '“' + x.t + '”';
+      b.querySelector('.t').textContent = x.e + ' ' + x.n + (x.h > 1 ? ' hearted ' + x.h + ' of your songs' : x.h ? ' hearted your song' : x.u ? ' reacted to the Song of the Day' : ' reacted to your message');
+      b.querySelector('.b').textContent = x.h > 1 ? x.t : '“' + x.t + '”';
       b.querySelector('.w').textContent = ago(x.at);
-      b.setAttribute('aria-label', (fresh ? 'New: ' : '') + x.n + (x.h ? ' hearted your song ' : ' reacted ' + x.e + (x.u ? ' to the Song of the Day ' : ' to your message ')) + x.t + ', ' + ago(x.at));
+      b.setAttribute('aria-label', (fresh ? 'New: ' : '') + x.n + (x.h > 1 ? ' hearted ' + x.h + ' of your songs: ' : x.h ? ' hearted your song ' : ' reacted ' + x.e + (x.u ? ' to the Song of the Day ' : ' to your message ')) + x.t + ', ' + ago(x.at));
       b.addEventListener('click', function () { bellGo(x); });
       li.appendChild(b); ul.appendChild(li);
     });
@@ -10865,7 +10879,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var picks = byDate[cell.getAttribute('data-day')] || [];
     if (!picks.length) return;
     var add = !picks.every(isFav);
-    picks.forEach(function (s) { if (isFav(s) !== add) toggleFav(s); });
+    if (add) { var added = picks.filter(function (s) { return !isFav(s); }); added.forEach(function (s) { fav.push(s.track); songxKeep(s); }); saveFav(); syncFav(); heartTell(added); }
+    else picks.forEach(function (s) { if (isFav(s)) toggleFav(s); });
     toast(add ? 'Added to My playlist' : 'Taken off My playlist');
   }
   (function () {

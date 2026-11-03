@@ -3164,7 +3164,7 @@ async function bellNote(env, to, msgId, title, from, e, u) {
 }
 function bellView(all, member, b) {
   const seen = (b && b.seen) || 0;
-  const items = ((b && b.items) || []).filter(y => all[y.k] && !apart(all, member, y.k)).map(y => Object.assign({ id: y.id, n: all[y.k].name, e: y.e, at: y.at, t: y.t }, y.u ? { u: y.u } : {}, y.h ? { h: 1 } : {}));
+  const items = ((b && b.items) || []).filter(y => all[y.k] && !apart(all, member, y.k)).map(y => Object.assign({ id: y.id, n: all[y.k].name, e: y.e, at: y.at, t: y.t }, y.u ? { u: y.u } : {}, y.h ? { h: y.h } : {}));
   return { items, unseen: items.filter(y => y.at > seen).length, seen };
 }
 // a heart on someone's song (John, 3 Nov 2026: "Could a member get a notification when someone hearts their song"): POST
@@ -3172,44 +3172,46 @@ function bellView(all, member, b) {
 // on; John for his own) gets it in their bell and, if they take messages from them, on their phone. Once per member and
 // song (KV hearted:<owner>:<track>:<from>, a year), so taking it off and on again doesn't send it twice; HEART_DAY a day each.
 const HEART_DAY = 30;
-async function memberHeart(request, env, answer) {
+async function memberHeart(request, env, answer) {   // POST { upl, songs: [{ track, title, d }] } (or one: { track, title, d }): the songs of one calendar (John's: no upl) added together, one reaction and one notification (John, 3 Nov 2026: "Put a heart next to any 'add 20 to my playlist' and have that as one reaction and one notification")
   if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
   const who = await memberWho(request, env);
   if (!who) return answer(401, { error: 'Not a member (any more).' });
-  const body = await request.json().catch(() => ({})), track = String(body.track || ''), pid = String(body.upl || ''), d = String(body.d || '');
-  if (!/^[0-9A-Za-z]{22}$/.test(track)) return answer(400, { error: 'Which song?' });
+  const body = await request.json().catch(() => ({})), pid = String(body.upl || '');
+  const asked = (Array.isArray(body.songs) ? body.songs : [{ track: body.track, title: body.title, d: body.d }]).slice(0, 200)
+    .map(x => ({ track: String((x && x.track) || ''), title: String((x && x.title) || '').slice(0, 120), d: /^\d{4}-\d{2}-\d{2}$/.test(String((x && x.d) || '')) ? String(x.d) : '' }))
+    .filter(x => /^[0-9A-Za-z]{22}$/.test(x.track));
+  if (!asked.length) return answer(400, { error: 'Which song?' });
   const ownerId = await env.SOTD.get('owner');
-  let to, title, url;
+  let to, list;
   if (pid) {
     const rec = (await uplAll(env))[pid];
     if (!rec || !uplCan(who.all, who.id, rec)) return answer(200, { ok: true });
-    const x = ((await uplSongs(env, pid)).songs || []).find(y => y.id === track);
-    if (!x) return answer(200, { ok: true });
-    to = rec.o; title = x.title;
-    url = SITE_SONGS + '#u=' + pid + (/^\d{4}-\d{2}-\d{2}$/.test(d) ? '&d=' + d.slice(8, 10) + '-' + d.slice(5, 7) + '-' + d.slice(0, 4) : '');
-  } else {
-    to = ownerId; title = String(body.title || '').slice(0, 120);
-    url = SITE_SONGS + (/^\d{4}-\d{2}-\d{2}$/.test(d) ? '#' + Number(d.slice(8, 10)) + '-' + Number(d.slice(5, 7)) + '-' + d.slice(0, 4) : '');
-  }
-  if (!to || !who.all[to] || to === who.id) return answer(200, { ok: true });
-  const once = 'hearted:' + to + ':' + track + ':' + who.id;
-  if (await env.SOTD.get(once)) return answer(200, { ok: true });
-  if (!await dayCount(env, 'heartday:' + who.id, HEART_DAY)) return answer(200, { ok: true });
-  await env.SOTD.put(once, '1', { expirationTtl: 365 * 86400 });
+    const have = {}; ((await uplSongs(env, pid)).songs || []).forEach(y => { have[y.id] = y; });
+    to = rec.o; list = asked.filter(x => have[x.track]).map(x => Object.assign(x, { title: have[x.track].title }));
+  } else { to = ownerId; list = asked; }
+  if (!to || !who.all[to] || to === who.id || !list.length) return answer(200, { ok: true });
+  const fresh = [];
+  for (const x of list) { const once = 'hearted:' + to + ':' + x.track + ':' + who.id; if (!(await env.SOTD.get(once))) { fresh.push(x); await env.SOTD.put(once, '1', { expirationTtl: 365 * 86400 }); } }
+  if (!fresh.length || !await dayCount(env, 'heartday:' + who.id, HEART_DAY)) return answer(200, { ok: true });
+  const linkOf = x => pid ? SITE_SONGS + '#u=' + pid + (x.d ? '&d=' + x.d.slice(8, 10) + '-' + x.d.slice(5, 7) + '-' + x.d.slice(0, 4) : '')
+    : SITE_SONGS + (x.d ? '#' + Number(x.d.slice(8, 10)) + '-' + Number(x.d.slice(5, 7)) + '-' + x.d.slice(0, 4) : '');
+  const n = fresh.length, one = n === 1, title = one ? fresh[0].title : n + ' of your songs';
+  const names = fresh.slice(0, 3).map(x => '“' + (x.title || 'a song') + '”').join(', ') + (n > 3 ? ' and ' + (n - 3) + ' more' : '');
+  const id = one ? 'h:' + fresh[0].track : 'hb:' + Date.now().toString(36);
   const key = 'bell:' + to, b = (await env.SOTD.get(key, 'json')) || { seen: 0, items: [] };
-  b.items = [{ id: 'h:' + track, k: who.id, e: '❤️', h: 1, at: Date.now(), t: title || '', u: url }].concat((b.items || []).filter(y => !(y.id === 'h:' + track && y.k === who.id)));
+  b.items = [{ id, k: who.id, e: '❤️', h: one ? 1 : n, at: Date.now(), t: one ? title : names, u: linkOf(fresh[0]) }].concat((b.items || []).filter(y => !(y.id === id && y.k === who.id)));
   b.items.length = Math.min(b.items.length, BELL_MAX);
   await kvSoft(env, key, JSON.stringify(b));
   if (takesFrom(who.all, to, who.id, ownerId)) {
     const subs = (await env.SOTD.get('pushSubs', 'json')) || {}, ids = Object.keys(subs).filter(k => subs[k].m === to);
-    const msg = { title: who.all[who.id].name + ' hearted your song ❤️', body: '“' + (title || 'Your song') + '”', url: SITE_SONGS + '#bell', tag: 'sotd-heart-' + track + '-' + who.id };
+    const msg = { title: who.all[who.id].name + (one ? ' hearted your song ❤️' : ' hearted ' + n + ' of your songs ❤️'), body: one ? '“' + (title || 'Your song') + '”' : names, url: SITE_SONGS + '#bell', tag: 'sotd-heart-' + id + '-' + who.id };
     await noteMail(env, [to], msg).catch(() => {});
     if (ids.length) {
       const k = await vapidKeys(env);
-      await Promise.all(ids.map(id => pushTo(env, k, subs[id], msg).catch(err => console.log('heart push: ' + (err && err.message)))));
+      await Promise.all(ids.map(sid => pushTo(env, k, subs[sid], msg).catch(err => console.log('heart push: ' + (err && err.message)))));
     }
   }
-  return answer(200, { ok: true });
+  return answer(200, { ok: true, n });
 }
 async function memberBell(request, env, answer) {
   const who = await memberWho(request, env);
