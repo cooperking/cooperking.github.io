@@ -6133,8 +6133,44 @@
 "n":267,
 "checked":"2026-11-03",
 "from":"YouTube search",
-"error":429,
-"detail":"{\n  \"error\": {\n    \"code\": 429,\n    \"message\": \"Quota exceeded for quota metric 'Search Queries' and limit 'Search Queries per day' of service 'youtube.googleapis.com' for consumer 'project_number:105"
+"alts":[
+{
+"id":"rcsUznPopiE",
+"title":"Chuck Prophet - “Jesus Was a Social Drinker” (Official Audio)",
+"channel":"Chuck Prophet Official",
+"score":103
+},
+{
+"id":"TTiRNRvoG1s",
+"title":"Chuck Prophet - Jesus Was a Social Drinker (eTown webisode #1208)",
+"channel":"eTown",
+"score":65
+},
+{
+"id":"QDizGhGx0fM",
+"title":"Chuck Prophet Jesus Was A Social Drinker w/Bill Kirchen",
+"channel":"Craig Love",
+"score":65
+},
+{
+"id":"JSj_6jdn92s",
+"title":"Chuck Prophet. Jesus Was A Social Drinker",
+"channel":"Craig Love",
+"score":65
+}
+],
+"id":"rcsUznPopiE",
+"title":"Chuck Prophet - “Jesus Was a Social Drinker” (Official Audio)",
+"channel":"Chuck Prophet Official",
+"kind":"audio",
+"score":103,
+"why":[
+"title",
+"artist",
+"official channel"
+],
+"embed":true,
+"secs":295
 }
 }
 }
