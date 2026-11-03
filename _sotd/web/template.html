@@ -874,7 +874,18 @@ html.big.signedin .hsub { margin-right: 0; }
 .strip button[aria-current="true"] { color: var(--fg); border-color: var(--line); background: var(--pill-bg); }
 
 /* the month */
-dialog#sheet { touch-action: pan-y pinch-zoom; }   /* sideways drags are the day swipe, not the browser's */
+dialog#sheet { touch-action: pan-y pinch-zoom; }
+/* a day with several songs: one at a time, the day's songs in a strip above it (John, 3 Nov 2026) */
+#picks.multi .pick.off { display: none; }
+.daystrip { margin: 0 0 14px; }
+.daystrip .ds-l { margin: 0 0 8px; font: 600 11px/1.2 var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); text-align: center; }
+.daystrip .ds-l b { color: var(--fg); }
+.daystrip .ds-row { display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 6px; scrollbar-width: none; justify-content: safe center; overscroll-behavior-x: contain; touch-action: pan-x; }
+.daystrip .ds-row::-webkit-scrollbar { display: none; }
+.daystrip .ds-t { position: relative; flex: 0 0 auto; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 8px; overflow: hidden; background: var(--tile); cursor: pointer; opacity: .55; transition: opacity .15s, transform .15s; }
+.daystrip .ds-t.on { opacity: 1; box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--fg); transform: scale(1.04); }
+.daystrip .ds-t:hover { opacity: .9; }
+.daystrip .ds-t > * { position: absolute; inset: 0; width: 100%; height: 100%; }   /* sideways drags are the day swipe, not the browser's */
 .cal { display: grid; gap: 10px; touch-action: pan-y pinch-zoom; padding: 12px clamp(8px, 2.4vw, 18px) clamp(10px, 2.4vw, 18px); border-radius: 18px; background: var(--panel); border: 1px solid var(--line); }
 .dow, .grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: clamp(4px, 1.3vw, 12px); }
 .dow span { font-family: var(--sans); font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--faint); text-align: left; padding-left: 2px; }
@@ -1240,7 +1251,9 @@ dialog#sheet::backdrop, dialog#mine::backdrop, dialog#index::backdrop, dialog#ac
 .bar i::after { content: ""; position: absolute; right: -6px; top: -5px; width: 12px; height: 12px; border-radius: 50%; background: var(--fg); opacity: 0; transition: opacity .2s ease, transform .15s ease; }
 .pick.playing .bar i::after, .bar.scrubbing i::after { opacity: 1; }
 .bar.scrubbing i::after { transform: scale(1.35); }
-.time { font-family: var(--sans); font-size: 11px; letter-spacing: .08em; color: var(--muted); font-variant-numeric: tabular-nums; min-width: 2.6em; text-align: right; }
+.time { font-family: var(--sans); font-size: 11px; letter-spacing: .04em; color: var(--muted); font-variant-numeric: tabular-nums; min-width: 2.6em; text-align: right; white-space: nowrap; }
+.fabtime { display: block; font-size: 10px; letter-spacing: .04em; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.fabtime[hidden] { display: none; }
 .nopreview { margin: 0; font-family: var(--serif); font-style: italic; color: var(--muted); }
 .price { justify-self: stretch; display: flex; align-items: center; gap: 8px; }
 .price .icons { margin-left: auto; display: flex; gap: 6px; }
@@ -1279,6 +1292,11 @@ dialog#sheet::backdrop, dialog#mine::backdrop, dialog#index::backdrop, dialog#ac
    inside a scrolling pop-up out of place (moved by the box's own distance from the card's corner) while it loads */
 .vidfloat { position: fixed; left: 0; top: 0; width: 0; height: 0; z-index: 50; visibility: hidden; border-radius: 4px; overflow: hidden; background: #000; }
 .vidfloat iframe, .vidfloat > div { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #000; }
+/* touch screens: over the video (bar YouTube's own controls along the bottom) so a sideways swipe there changes song as on
+   the rest of the card; YouTube's frame would otherwise take the touch. A tap plays or pauses. (John, 3 Nov 2026) */
+.vidshield { display: none; position: absolute; left: 0; right: 0; top: 0; bottom: 52px; z-index: 2; touch-action: none; -webkit-tap-highlight-color: transparent; }
+@media (pointer: coarse) { .vidfloat:not(.own):not(.cover) .vidshield { display: block; } }
+html.theatre .vidshield { display: none !important; }
 .vidfloat video.ownvid { position: absolute; inset: 0; width: 100%; height: 100%; background: #000; object-fit: contain; z-index: 1; }
 .vidfloat video.ownvid[hidden] { display: none; }
 .vidfloat.own > iframe, .vidfloat.own > #vidslot, .vidfloat.cover > iframe, .vidfloat.cover > #vidslot { visibility: hidden; }
@@ -1545,6 +1563,8 @@ html.bgplay.bgon .fab .fabart { animation-play-state: running; }
 .fab .fabtx { min-width: 0; max-width: 32vw; display: grid; line-height: 1.15; }
 .fab .fabtx b { font: 600 11px/1.2 var(--sans); letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .fab .fabtx span { font: 13px/1.2 var(--serif); color: rgba(27, 16, 32, .7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fab .fabtx .fabtime { font: 600 10px/1.2 var(--sans); letter-spacing: .04em; font-variant-numeric: tabular-nums; color: rgba(27, 16, 32, .6); }
+.fab .fabtx .fabtime[hidden] { display: none; }
 html.bgplay .fab .fabctl { display: grid; place-items: center; flex: none; width: 32px; height: 34px; padding: 0; border: 0; border-radius: 50%; background: none; color: #1b1020; cursor: pointer; }
 .fab .fabctl svg { width: 13px; height: 13px; }
 .fab .fabctl[hidden] { display: none !important; }
@@ -1829,9 +1849,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
 
 <div class="scrim" id="scrim" aria-hidden="true"></div>
 <div class="vidwrap" id="vidwrap"><div class="vid" id="vidspot" hidden></div><div class="capdock" id="capdock"><div class="capslide"><div class="vidcap capbox" id="vidcap" aria-live="polite"></div><div class="vidcap capbox adwhy" id="adwhy"><span class="in"><span class="k">Advert</span><span class="t"><a id="adwhylink" href="ads/" target="_blank" rel="noopener" tabindex="-1">Why am I seeing this ad?<span class="go" aria-hidden="true">→</span></a></span></span></div></div><div class="vidcap capbox capmeasure" id="capmeasure" aria-hidden="true"></div></div></div>
-<div class="vidfloat" id="vidfloat"><div id="vidslot"></div><button type="button" class="vidsound" id="vidsound" hidden><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z" fill="currentColor" stroke="none"/><path d="m23 9-6 6M17 9l6 6"/></svg><span>Tap for sound</span></button></div>
+<div class="vidfloat" id="vidfloat"><div id="vidslot"></div><span class="vidshield" id="vidshield" aria-hidden="true"></span><button type="button" class="vidsound" id="vidsound" hidden><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z" fill="currentColor" stroke="none"/><path d="m23 9-6 6M17 9l6 6"/></svg><span>Tap for sound</span></button></div>
 <div class="sitepage" id="sitepage" hidden></div>
-<div class="fab" id="fabbox" hidden><button class="fabnow" id="fabnow" type="button" aria-label="Open the song that's playing"><span class="fabart" id="fabart"></span><span class="fabtx"><b id="fabt"></b><span id="faba"></span></span></button><button class="fabsp" id="fabsp" type="button" hidden aria-label="Where Spotify is playing: change"><i></i><span id="fabspn"></span></button><button class="fabctl" id="fabprev" type="button" aria-label="Previous song"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M3 3h1.6v10H3zM14 3v10L5.5 8z"/></svg></button><button class="fabplay" id="fabplay" type="button" aria-label="Play My playlist"></button><button class="fabctl" id="fabnext" type="button" aria-label="Next song"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M11.4 3H13v10h-1.6zM2 3v10l8.5-5z"/></svg></button><button class="fabopen" id="fab" type="button" aria-haspopup="dialog"><svg class="heart" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 14s-5.5-3.3-5.5-7.4A3 3 0 0 1 8 4.6a3 3 0 0 1 5.5 2C13.5 10.7 8 14 8 14z"/></svg><span class="fabl" id="fabl">My playlist</span> <span class="n" id="fabn">0</span></button><button class="fabctl fabcast" id="fabcast" type="button" aria-label="Play on a speaker" title="Play on a speaker" aria-pressed="false" hidden><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="1.5" width="9" height="13" rx="2"/><circle cx="8" cy="9.6" r="2.4"/><circle cx="8" cy="4.6" r=".6" fill="currentColor"/></svg></button><button class="fabctl" id="fabstop" type="button" aria-label="Stop"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M2 2l8 8M10 2 2 10"/></svg></button></div>
+<div class="fab" id="fabbox" hidden><button class="fabnow" id="fabnow" type="button" aria-label="Open the song that's playing"><span class="fabart" id="fabart"></span><span class="fabtx"><b id="fabt"></b><span id="faba"></span><span class="fabtime" id="fabtime" hidden></span></span></button><button class="fabsp" id="fabsp" type="button" hidden aria-label="Where Spotify is playing: change"><i></i><span id="fabspn"></span></button><button class="fabctl" id="fabprev" type="button" aria-label="Previous song"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M3 3h1.6v10H3zM14 3v10L5.5 8z"/></svg></button><button class="fabplay" id="fabplay" type="button" aria-label="Play My playlist"></button><button class="fabctl" id="fabnext" type="button" aria-label="Next song"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M11.4 3H13v10h-1.6zM2 3v10l8.5-5z"/></svg></button><button class="fabopen" id="fab" type="button" aria-haspopup="dialog"><svg class="heart" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 14s-5.5-3.3-5.5-7.4A3 3 0 0 1 8 4.6a3 3 0 0 1 5.5 2C13.5 10.7 8 14 8 14z"/></svg><span class="fabl" id="fabl">My playlist</span> <span class="n" id="fabn">0</span></button><button class="fabctl fabcast" id="fabcast" type="button" aria-label="Play on a speaker" title="Play on a speaker" aria-pressed="false" hidden><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="1.5" width="9" height="13" rx="2"/><circle cx="8" cy="9.6" r="2.4"/><circle cx="8" cy="4.6" r=".6" fill="currentColor"/></svg></button><button class="fabctl" id="fabstop" type="button" aria-label="Stop"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M2 2l8 8M10 2 2 10"/></svg></button></div>
 
 <dialog id="mine" aria-labelledby="mineh">
   <div class="sheet-in">
@@ -2892,11 +2912,15 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   var playing = null; // { s, el, bar, time }
 
   function fmt(sec) { sec = Math.max(0, Math.floor(sec || 0)); return Math.floor(sec / 60) + ':' + pad(sec % 60); }
+  // how far in, and how long it is (John, 3 Nov 2026: "the length of a song isn't visible in the players")
+  function clockOf(t, d) { return fmt(t) + (d && isFinite(d) && d > 1 ? ' / ' + fmt(d) : ''); }
+  function fabClock(t, d) { var c = document.getElementById('fabtime'); if (c) { c.textContent = d && isFinite(d) && d > 1 ? clockOf(t, d) : ''; c.hidden = !c.textContent; } }
   function paint() {
     if (!playing || playing.bar.parentNode.classList.contains('scrubbing')) return;
     var d = audio.duration || 30;
     playing.bar.style.width = Math.min(100, (audio.currentTime / d) * 100) + '%';
-    playing.time.textContent = fmt(audio.currentTime);
+    playing.time.textContent = clockOf(audio.currentTime, audio.duration);
+    fabClock(audio.currentTime, audio.duration);
     capTickAudio();
   }
   function setState() {
@@ -3049,7 +3073,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var d = vplay.player.getDuration() || 0, t = vplay.player.getCurrentTime() || 0;
     if (adPlaying()) t = 0;   // an advert's clock isn't the song's
     vplay.ui.bar.style.width = d ? Math.min(100, t / d * 100) + '%' : '0%';
-    vplay.ui.time.textContent = fmt(t);
+    vplay.ui.time.textContent = clockOf(t, adPlaying() ? 0 : d);
+    fabClock(t, adPlaying() ? 0 : d);
     if (!vplay.heard && d && t >= Math.min(30, d - 2)) { vplay.heard = true; heardAdd(vplay.el.sotd.s.track); }   // (for Shuffle)
     capTick();
   }
@@ -4736,6 +4761,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     return fresh.length ? mixed(fresh).concat(mixed(list.filter(function (t) { return h[t]; }))) : mixed(list);
   }
   function playPick(p) {   // a song on the open day, as its video or its preview, whichever way is on
+    showPick(p);
     var vd = playMode === 'video' && VIDS[p.sotd.s.track];
     if (spOn() && ((PICK && PICK.force) || !(vd && !document.hidden))) { watch(p, coverVd(p.sotd.s)); return true; }   // (picked up from Spotify: as a song, never a video beside it)   // (through their Spotify: every song played as a song)
     // out of sight (a locked phone), where a video can't play: the song; one of John's own videos plays as its sound
@@ -4810,6 +4836,20 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     document.getElementById('sdate').textContent = iso ? longDate(iso) : 'No date';
     var box = document.getElementById('picks');
     box.textContent = '';
+    box.classList.toggle('multi', picks.length > 1);
+    if (picks.length > 1) {   // the day's songs, a tap apart: "Song 2 of 5 on this day"
+      var strip = div('daystrip'), lab = document.createElement('p'); lab.className = 'ds-l';
+      lab.innerHTML = 'Song <b class="ds-n">1</b> of ' + picks.length + ' on this day';
+      var row = div('ds-row');
+      picks.forEach(function (s) {
+        var b = document.createElement('button'); b.type = 'button'; b.className = 'ds-t'; b.title = s.title + ' · ' + s.artist;
+        b.setAttribute('aria-label', s.title + ' by ' + s.artist);
+        b.appendChild(artEl(s, true));
+        b.addEventListener('click', function () { var p = pickFor(s.track); if (!p || !p.classList.contains('off')) return; stopVideos(); audio.pause(); playPick(p); showQueue(); });
+        row.appendChild(b);
+      });
+      strip.appendChild(lab); strip.appendChild(row); box.appendChild(strip);
+    }
     var firstUi = null;
     picks.forEach(function (s) {
       var a = document.createElement('article'); a.className = 'pick';
@@ -4922,6 +4962,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (fresh) swipeHint();
     syncFav();
     var target = (opts && opts.track && pickFor(opts.track)) || box.querySelector('.pick');
+    showPick(target);
     if (opts && opts.noplay) target = null;   // (shown, not played: the app's own player has it)
     if (target && !playPick(target)) {
       if (queue) setTimeout(function () { if (queue && curDay === iso) playOn(target); }, 1500);   // nothing to play: on to the next
@@ -4946,8 +4987,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     sh.setAttribute('aria-pressed', shuffleOn ? 'true' : 'false');
     var pv = document.getElementById('dayprev'), nx = document.getElementById('daynext');
     pv.disabled = !stepTarget(-1); nx.disabled = !stepTarget(1);
-    pv.setAttribute('aria-label', queue ? 'Previous song in the playlist' : 'Previous day');
-    nx.setAttribute('aria-label', queue ? 'Next song in the playlist' : 'Next day');
+    var tp = stepTarget(-1), tn = stepTarget(1), multi = (byDate[curDay] || []).length > 1;
+    pv.setAttribute('aria-label', queue ? 'Previous song in the playlist' : tp && (tp.day === curDay || multi) ? 'Previous song' : 'Previous day');
+    nx.setAttribute('aria-label', queue ? 'Next song in the playlist' : tn && (tn.day === curDay || multi) ? 'Next song' : 'Next day');
   }
   // ---- sharing a day: each day has its own page (songs/21-10-2026/) with a picture for link previews ----
   var SITE = 'https://cooperking.github.io/songs/';
@@ -5432,8 +5474,27 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function flip() { return queue && queue.back === 'all' && !shuffleOn ? -1 : 1; }   // shuffled, the usual way round
   function stepTarget(dir) {   // where a swipe, an arrow or a finished song goes: the card to the left (-1) or right (1)
     if (queue) { var tr = queue.list[queue.i + dir * flip()], s = tr && songOf(tr); return s ? { day: s.d, track: tr } : null; }
-    var d = dayStep(dir);
-    return d ? { day: d } : null;
+    // a day with several songs: each of its songs in turn, then the next day's first (or the day before's last) (John, 3 Nov
+    // 2026: "Users have lost the ability to swipe to the next or previous song")
+    var here = byDate[curDay] || [], at = dayShown();
+    if (here.length > 1 && at >= 0 && here[at + dir]) return { day: curDay, track: here[at + dir].track };
+    var d = dayStep(dir), there = d ? byDate[d] || [] : [];
+    return d ? { day: d, track: there.length > 1 ? there[dir > 0 ? 0 : there.length - 1].track : undefined } : null;
+  }
+  function dayShown() {   // which of the open day's songs is showing
+    var el = document.querySelector('#picks .pick:not(.off)'), here = byDate[curDay] || [];
+    if (!el || !el.sotd) return -1;
+    for (var i = 0; i < here.length; i++) if (here[i].track === el.sotd.s.track) return i;
+    return -1;
+  }
+  function showPick(el) {   // a day with several songs shows one at a time, its strip saying which
+    var box = document.getElementById('picks'); if (!el || el.parentNode !== box || !box.classList.contains('multi')) return;
+    var all = [].slice.call(box.querySelectorAll('.pick')), i = all.indexOf(el), was = box.querySelector('.pick:not(.off)');
+    all.forEach(function (p) { p.classList.toggle('off', p !== el); });
+    var st = box.querySelector('.daystrip'); if (!st) return;
+    st.querySelector('.ds-n').textContent = String(i + 1);
+    [].forEach.call(st.querySelectorAll('.ds-t'), function (b, k) { b.classList.toggle('on', k === i); b.setAttribute('aria-current', k === i ? 'true' : 'false'); if (k === i) { var row = b.parentNode; row.scrollLeft = Math.max(0, b.offsetLeft - (row.clientWidth - b.offsetWidth) / 2); } });
+    if (was && was !== el) sheet.scrollTop = 0;
   }
   function cardAt(dx, ms, ease) {
     ease = ease || 'cubic-bezier(.2, .8, .2, 1)';
@@ -5451,22 +5512,18 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (!tg) { if (!theatre) cardAt(0, 280); return; }
     var to = tg.day;
     if (queue) queue.i += dir * flip();
-    if (to === curDay && tg.track && pickFor(tg.track)) {   // the playlist's next song is on the same day
-      var p = pickFor(tg.track);
-      if (p) { stopVideos(); audio.pause(); playPick(p); }
-      showQueue();
-      return;
-    }
+    var same = to === curDay && tg.track && pickFor(tg.track);   // the next song is on the same day: it, in the same card
     dayBusy = true;
     var w = sheet.offsetWidth + 48;
     function arrive() {
       if (!sheet.open) { cardReset(); dayBusy = false; return; }
-      stopVideos();
+      stopVideos(); if (same) audio.pause();
       if (to.slice(0, 7) !== key(months[cur][0], months[cur][1])) {   // the calendar behind follows into the new month
         months.forEach(function (ym, i) { if (key(ym[0], ym[1]) === to.slice(0, 7)) cur = i; });
         render();
       }
-      openDay(to, { track: tg.track, keepQueue: true });
+      if (same) { var p = pickFor(tg.track); showPick(p); playPick(p); showQueue(); }
+      else openDay(to, { track: tg.track, keepQueue: true });
       if (calmer || theatre || document.hidden) { cardReset(); dayBusy = false; return; }
       cardAt(dir * w * 0.3, 0);
       void sheet.offsetWidth;
@@ -5481,7 +5538,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   var dsX = null, dsY = 0, dsDX = 0, dsMode = null, dsT = 0;
   sheet.addEventListener('touchstart', function (e) {
     dsX = null; hintOff = true;
-    if (theatre || dayBusy || e.touches.length !== 1 || e.target.closest('.bar, .vid, input, textarea')) return;
+    if (theatre || dayBusy || e.touches.length !== 1 || e.target.closest('.bar, .vid, input, textarea, .ds-row')) return;
     dsX = e.touches[0].clientX; dsY = e.touches[0].clientY; dsDX = 0; dsMode = null; dsT = Date.now();
   }, { passive: true });
   sheet.addEventListener('touchmove', function (e) {
@@ -5515,6 +5572,27 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     });
   });
   sheet.addEventListener('touchcancel', endDaySwipe);
+  (function () {   // the shield over the video: a sideways swipe moves the card as on the rest of it; a tap plays or pauses
+    var sh = document.getElementById('vidshield'), x0 = null, y0 = 0, dx = 0, mode = null, t0 = 0;
+    sh.addEventListener('touchstart', function (e) { hintOff = true; if (dayBusy || e.touches.length !== 1) { x0 = null; return; } x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; dx = 0; mode = null; t0 = Date.now(); }, { passive: true });
+    sh.addEventListener('touchmove', function (e) {
+      if (x0 === null) return;
+      var mx = e.touches[0].clientX - x0, my = e.touches[0].clientY - y0;
+      if (!mode) { if (Math.abs(mx) < 10 && Math.abs(my) < 10) return; mode = Math.abs(mx) > Math.abs(my) * 1.2 ? 'h' : 'v'; }
+      if (mode === 'v') { sheet.scrollTop -= my; y0 = e.touches[0].clientY; return; }   // (up and down: the card scrolls, as it would)
+      dx = stepTarget(mx < 0 ? 1 : -1) ? mx : mx * 0.25; cardAt(dx, 0);
+    }, { passive: true });
+    sh.addEventListener('touchend', function (e) {
+      if (x0 === null) return;
+      var m = mode; x0 = null; mode = null;
+      if (!m) { if (e.cancelable) e.preventDefault(); vidToggle(); return; }   // a tap
+      if (m !== 'h') return;
+      var dir = dx < 0 ? 1 : -1, speed = Math.abs(dx) / Math.max(1, Date.now() - t0);
+      if (stepTarget(dir) && (Math.abs(dx) > 80 || (speed > 0.45 && Math.abs(dx) > 24))) { hintCount(99); goDay(dir); }
+      else cardAt(0, 300);
+    });
+    sh.addEventListener('touchcancel', function () { if (x0 !== null && mode === 'h') cardAt(0, 300); x0 = null; mode = null; });
+  })();
   // trackpads: a two-finger sideways swipe; one swipe moves one day, however long its glide
   var whAcc = 0, whLocked = false, whQuiet = null;
   sheet.addEventListener('wheel', function (e) {
