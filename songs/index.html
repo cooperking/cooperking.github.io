@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="sotd-build" content="e67ab7078540">
+<meta name="sotd-build" content="9fc09093b5c1">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 267 so far">
 <meta name="theme-color" content="#ec135b">
@@ -342,6 +342,8 @@ html.upl #monthdl, html.upl-noshare #siteshare, html.upl-noshare #monthshare, ht
 .missl b { font: 600 14px/1.3 var(--sans); }
 .missl span { font-size: 12px; color: var(--fg-2); }
 .missnone { font-size: 14px; color: var(--fg-2); }
+.undated { display: flex; justify-content: center; margin-top: 14px; }
+.undated:has(> [hidden]) { display: none; }
 .upled-hl { animation: upledhl 2.4s ease-out; border-radius: 12px; }
 @keyframes upledhl { 0%, 30% { box-shadow: 0 0 0 3px var(--fg); } 100% { box-shadow: 0 0 0 3px transparent; } }
 @media (prefers-reduced-motion: reduce) { .upled-hl { animation: none; box-shadow: 0 0 0 3px var(--fg); } }
@@ -892,7 +894,7 @@ button.day:focus-visible .sleeve { box-shadow: 0 16px 34px var(--shadow), 0 0 0 
 .emptymsg { color: var(--muted); padding: 10px 0; font-family: var(--serif); font-style: italic; }
 
 /* day view */
-dialog#sheet, dialog#mine, dialog#index, dialog#acctsheet, dialog#askdlg, dialog#appdlg, dialog#castdlg, dialog#senddlg, dialog#msgdlg, dialog#belldlg, dialog#upldlg, dialog#plpage, dialog#upldates, dialog#upled, dialog#uplwho, dialog#uplimp, dialog#daypick, dialog#spdevdlg, dialog#missdlg {
+dialog#sheet, dialog#mine, dialog#index, dialog#acctsheet, dialog#askdlg, dialog#appdlg, dialog#castdlg, dialog#senddlg, dialog#msgdlg, dialog#belldlg, dialog#upldlg, dialog#plpage, dialog#upldates, dialog#upled, dialog#uplwho, dialog#uplimp, dialog#daypick, dialog#spdevdlg, dialog#missdlg, dialog#nodatedlg {
   --bg: #ffffff; --fg: #1d0b1e; --fg-2: rgba(29, 11, 30, .9); --muted: rgba(29, 11, 30, .62); --faint: rgba(29, 11, 30, .45);
   --line: rgba(29, 11, 30, .14); --tile: #f3eef0; --chip-bg: rgba(29, 11, 30, .04); --pill-bg: rgba(29, 11, 30, .03); --pill-hover: rgba(29, 11, 30, .08);
   border: 0; padding: 0; color: var(--fg-2); background: var(--bg); color-scheme: light;
@@ -1110,12 +1112,12 @@ dialog#sharesheet::backdrop { background: rgba(24, 8, 24, .35); -webkit-backdrop
 }
 @keyframes shup { from { transform: translateY(100%); } to { transform: none; } }
 /* home-screen app: the page runs under the clock and the home bar, so the pop-ups keep clear of both */
-dialog#sheet, dialog#mine, dialog#index, dialog#acctsheet, dialog#askdlg, dialog#appdlg, dialog#castdlg, dialog#senddlg, dialog#msgdlg, dialog#belldlg, dialog#upldlg, dialog#plpage, dialog#upldates, dialog#upled, dialog#uplwho, dialog#uplimp, dialog#daypick, dialog#spdevdlg, dialog#missdlg {
+dialog#sheet, dialog#mine, dialog#index, dialog#acctsheet, dialog#askdlg, dialog#appdlg, dialog#castdlg, dialog#senddlg, dialog#msgdlg, dialog#belldlg, dialog#upldlg, dialog#plpage, dialog#upldates, dialog#upled, dialog#uplwho, dialog#uplimp, dialog#daypick, dialog#spdevdlg, dialog#missdlg, dialog#nodatedlg {
   top: env(safe-area-inset-top, 0px); bottom: env(safe-area-inset-bottom, 0px);
   max-height: calc(100dvh - 32px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
 }
 dialog#sharesheet { top: env(safe-area-inset-top, 0px); max-height: calc(100dvh - 32px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
-dialog#sheet::backdrop, dialog#mine::backdrop, dialog#index::backdrop, dialog#acctsheet::backdrop, dialog#askdlg::backdrop, dialog#appdlg::backdrop, dialog#castdlg::backdrop, dialog#senddlg::backdrop, dialog#msgdlg::backdrop, dialog#belldlg::backdrop, dialog#upldlg::backdrop, dialog#plpage::backdrop, dialog#upldates::backdrop, dialog#upled::backdrop, dialog#uplwho::backdrop, dialog#uplimp::backdrop, dialog#daypick::backdrop, dialog#spdevdlg::backdrop, dialog#missdlg::backdrop { background: rgba(24, 8, 24, .3); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+dialog#sheet::backdrop, dialog#mine::backdrop, dialog#index::backdrop, dialog#acctsheet::backdrop, dialog#askdlg::backdrop, dialog#appdlg::backdrop, dialog#castdlg::backdrop, dialog#senddlg::backdrop, dialog#msgdlg::backdrop, dialog#belldlg::backdrop, dialog#upldlg::backdrop, dialog#plpage::backdrop, dialog#upldates::backdrop, dialog#upled::backdrop, dialog#uplwho::backdrop, dialog#uplimp::backdrop, dialog#daypick::backdrop, dialog#spdevdlg::backdrop, dialog#missdlg::backdrop, dialog#nodatedlg::backdrop { background: rgba(24, 8, 24, .3); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
 .sheet-in { display: grid; gap: 18px; padding: 16px 18px 24px; }
 #sheet .sheet-in { grid-template-columns: minmax(0, 1fr); }   /* (the day never wider than its pop-up: on a phone narrower than about 375, the date's line made it 320 wide, and the video and its facts ran off the side; the date shortens instead) */
 @media (max-width: 380px) { #sheet .sheet-in { padding-left: 12px; padding-right: 12px; } #sheet .daynav #sdate { letter-spacing: .1em; padding-inline: 7px; } }   /* (a small phone: the day about as wide as it was, inside its pop-up now; the date a touch tighter, so it's whole) */
@@ -1528,7 +1530,7 @@ html.minidrag, html.minidrag * { cursor: grabbing !important; user-select: none;
 /* Pop-ups are ordinary page layers (opened with show(), not showModal()): the browser's top layer can't have
    anything placed above it before iOS 17, and the My playlist button has to stay on top of a day and A–Z / Moods.
    The site draws the dim background (the scrim) itself and keeps the page behind from being tapped. */
-dialog#sheet, dialog#mine, dialog#index, dialog#sharesheet, dialog#acctsheet, dialog#askdlg, dialog#appdlg, dialog#castdlg, dialog#senddlg, dialog#msgdlg, dialog#belldlg, dialog#upldlg, dialog#plpage, dialog#upldates, dialog#upled, dialog#uplwho, dialog#uplimp, dialog#daypick, dialog#spdevdlg, dialog#missdlg { position: fixed; left: 0; right: 0; height: fit-content; margin: auto; z-index: 50; overscroll-behavior: contain; }
+dialog#sheet, dialog#mine, dialog#index, dialog#sharesheet, dialog#acctsheet, dialog#askdlg, dialog#appdlg, dialog#castdlg, dialog#senddlg, dialog#msgdlg, dialog#belldlg, dialog#upldlg, dialog#plpage, dialog#upldates, dialog#upled, dialog#uplwho, dialog#uplimp, dialog#daypick, dialog#spdevdlg, dialog#missdlg, dialog#nodatedlg { position: fixed; left: 0; right: 0; height: fit-content; margin: auto; z-index: 50; overscroll-behavior: contain; }
 dialog#index { height: calc(100dvh - 32px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
 .scrim { position: fixed; inset: 0; z-index: 49; display: none; background: rgba(24, 8, 24, .3); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); touch-action: none; }
 html.layer-open .scrim { display: block; }
@@ -1752,6 +1754,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     <div class="caledit"><button class="upleditbtn" id="upleditbtn" type="button" hidden aria-label="Edit this calendar or playlist"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="M10.6 2.6l2.8 2.8-7.6 7.6-3.4.6.6-3.4z"/><path d="M9 4.2l2.8 2.8"/></svg><span>Edit</span></button><button class="upleditbtn missbtn" type="button" hidden aria-label="Songs missing a preview, video or file"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="6"/><path d="M8 4.8v3.8M8 11v.2"/></svg><span>Missing</span></button></div>
     <div class="dow" aria-hidden="true"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
     <div class="grid" id="grid"></div>
+    <div class="undated"><button class="pill" id="undatedbtn" type="button" hidden></button></div>
   </section>
 
   <section class="side" aria-labelledby="sideh">
@@ -2133,6 +2136,17 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     <p class="misstip" id="misstip"></p>
     <ul class="missl" id="missl"></ul>
     <p class="missnone" id="missnone" hidden></p>
+  </div>
+</dialog>
+<dialog id="nodatedlg" aria-labelledby="nodateh">
+  <div class="sheet-in msgv">
+    <div class="sheet-head">
+      <p class="mine-top"><span class="chip" id="nodaten"></span></p>
+      <button class="close" id="nodateclose" type="button" aria-label="Close"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 2l10 10M12 2 2 12"/></svg></button>
+    </div>
+    <h3 id="nodateh">Songs with no date</h3>
+    <p class="misstip">Spotify kept no date for when these were added (songs added before about 2014), so they aren’t on a day. Tap one to play it.</p>
+    <ul class="missl" id="nodatel"></ul>
   </div>
 </dialog>
 <dialog id="upldlg" aria-labelledby="uplh">
@@ -2665,7 +2679,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         (function (iso2, many) { cell.addEventListener('click', function () { if (many) dayPick(iso2); else openDay(iso2); }); })(iso, picks.length > 1);
         cell.setAttribute('data-day', iso);
         if (picks.some(function (p) { return OFFL[p.track]; })) cell.classList.add('dl');
-        if (document.documentElement.classList.contains('big')) { var dc = div('dcap'), dt = document.createElement('span'), da = document.createElement('span'); dt.className = 'tt'; dt.textContent = cleanTitle(picks[0].title); da.className = 'ta'; da.textContent = picks[0].artist; dc.appendChild(dt); dc.appendChild(da); sl.appendChild(dc); }
+        if (document.documentElement.classList.contains('big')) { var dc = div('dcap'), dt = document.createElement('span'), da = document.createElement('span'); dt.className = 'tt'; dt.textContent = picks.length > 1 ? picks.length + ' songs' : cleanTitle(picks[0].title); da.className = 'ta'; da.textContent = picks.length > 1 ? '' : picks[0].artist; dc.appendChild(dt); if (picks.length < 2) dc.appendChild(da); sl.appendChild(dc); }   // (several on one day: how many, not the first one's name: John, 3 Nov 2026)
         monthSongs = monthSongs.concat(picks);
       } else {
         cell = div('day empty');
@@ -2735,7 +2749,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var open = layers(), top = open[open.length - 1], root = document.documentElement;
     root.classList.toggle('layer-open', !!top);
     scrimEl.style.zIndex = top ? String((+top.style.zIndex || 50) - 1) : '';
-    var under = open.some(function (d) { return d.id === 'mine' || d.id === 'sharesheet' || d.id === 'acctsheet' || d.id === 'askdlg' || d.id === 'appdlg' || d.id === 'castdlg' || d.id === 'senddlg' || d.id === 'msgdlg' || d.id === 'belldlg' || d.id === 'upldlg' || d.id === 'plpage' || d.id === 'upldates' || d.id === 'upled' || d.id === 'uplwho' || d.id === 'uplimp' || d.id === 'daypick' || d.id === 'missdlg'; });
+    var under = open.some(function (d) { return d.id === 'mine' || d.id === 'sharesheet' || d.id === 'acctsheet' || d.id === 'askdlg' || d.id === 'appdlg' || d.id === 'castdlg' || d.id === 'senddlg' || d.id === 'msgdlg' || d.id === 'belldlg' || d.id === 'upldlg' || d.id === 'plpage' || d.id === 'upldates' || d.id === 'upled' || d.id === 'uplwho' || d.id === 'uplimp' || d.id === 'daypick' || d.id === 'missdlg' || d.id === 'nodatedlg'; });
     root.classList.toggle('fab-under', under);
     if (top) pageEl.setAttribute('inert', ''); else pageEl.removeAttribute('inert');
     syncFloat();   // the floating video keeps to its day's place in the stack
@@ -4696,6 +4710,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (queue) { if (stepTarget(flip())) goDay(flip()); else endQueue(); return; }
     var all = [].slice.call(document.querySelectorAll('#picks .pick')), next = all[all.indexOf(el) + 1];
     if (next && next.sotd) { playPick(next); return; }
+    if (!curDay) { fullReset(); return; }   // (a song with no date: no day after it)
     if (dayStep(1)) goDay(1); else fullReset();   // the last day's last song over: out of full screen
   }
   function openDay(iso, opts) {
@@ -4705,10 +4720,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     curDay = iso;
     if (!opts || !opts.keepQueue) queue = null;   // opened from the calendar: the playlist stops leading
     shownFacts = {};   // each fact shows once per day opened, across its preview and its video
-    if (!(bgOn && opts && opts.keepQueue)) try { history.replaceState(null, '', '#' + (cal ? 'u=' + cal + '&d=' : '') + slugOf(iso)); } catch (e) {}   // (out of sight: the address stays the calendar's)
+    if (iso && !(bgOn && opts && opts.keepQueue)) try { history.replaceState(null, '', '#' + (cal ? 'u=' + cal + '&d=' : '') + slugOf(iso)); } catch (e) {}   // (a song with no date: the address as it is)   // (out of sight: the address stays the calendar's)
     audio.pause();
     playing = null;
-    document.getElementById('sdate').textContent = longDate(iso);
+    document.getElementById('sdate').textContent = iso ? longDate(iso) : 'No date';
     var box = document.getElementById('picks');
     box.textContent = '';
     var firstUi = null;
@@ -7757,7 +7772,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if ('ov' in x) o.ov = x.ov;   // its owner's: the video ('' none), moods and genres, their MP3 and MP4, cover; their files' sizes (theirs)
     if (x.tg) o.tg = x.tg; if (x.ma) o.ma = x.ma; if (x.mv) o.mv = x.mv; if (x.uc) o.uc = 1; if (x.own) o.own = x.own; if (x.jf) o.jf = x.jf; if (x.jo) o.jo = x.jo;   // (jf: John’s own for it, its owner’s editor)
     if (x.vid) o.vid = x.vid; if (x.mt) o.mt = x.mt; if (x.yr) o.yr = x.yr;   // what the site job found: its video, moods and genres, year
-    if (x.fx) o.fx = x.fx; if (x.fxw) o.fxw = x.fxw; if (x.fxs) o.fxs = x.fxs;   // its facts (fx: signed off; its owner's: fxw waiting, fxs how they stand)
+    if (x.fx) o.fx = x.fx; if (x.fxw) o.fxw = x.fxw; if (x.fxs) o.fxs = x.fxs;
+    if (view.mine) { o.at = x.a; if (x.abn) o.abn = x.abn; }   // (its owner's editor: when it was added on Spotify, to the minute, and by whom)   // its facts (fx: signed off; its owner's: fxw waiting, fxs how they stand)
     return o;
   }
   function songxFetch(tracks) {   // members' songs not kept here yet (or to refresh): from the Worker, for those this visitor sees
@@ -7774,6 +7790,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     opts = opts || {};
     var list = uplSongsOf(view).filter(function (x) { return !x.w && (!x.f || view.mine || view.admin); });   // (John, the site's owner, sees its songs to come too)
     if (view.mode !== 'list') list = list.map(function (x, i) { return [x, i]; }).sort(function (a, b) { return a[0].d < b[0].d ? -1 : a[0].d > b[0].d ? 1 : a[1] - b[1]; }).map(function (p) { return p[0]; });   // (a calendar's songs in day order: its playlist's own order isn't, and its first and last songs are where the calendar starts and ends: John, 2 Nov 2026, Camilla's went back to 2015 but showed from October)   // (as the others see it, but its owner sees its songs still to come too, faded, to move them: John, 1 Nov 2026; waiting songs are in the pop-up)
+    UPL.undated = view.mode !== 'list' ? list.filter(function (x) { return !x.d; }) : [];   // (no real date from Spotify: their own list, never 1 January 1970)
+    if (UPL.undated.length) list = list.filter(function (x) { return !!x.d; });
+    if (!list.length && UPL.undated.length) { UPL.view = view; undatedOpen(view); return false; }
     if (!list.length) { if (view.mine) mineUplShow(view, { day: opts.day }); else toast('Nothing on “' + view.n + '” yet'); return false; }
     if (!UPL.on) UPL.john = songs;
     var keep = UPL.on === view.id && !!opts.keep;
@@ -7782,6 +7801,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (sheet.open && !keep) closeDialog(sheet, true);
     var kept = 0; list.forEach(function (x) { if (SONGX[x.track]) { songxKeep(x, true); kept++; } }); if (kept) songxSave();
     setSongs(list, keep); vidsMerge();
+    UPL.undated.forEach(function (x) { if (!byTrack[x.track]) byTrack[x.track] = x; });   // (found to play, on no day)
+    undatedSync();
     var root = document.documentElement;
     root.classList.add('upl'); root.classList.toggle('upl-list', view.mode === 'list'); root.classList.toggle('upl-mine', !!view.mine); root.classList.toggle('upl-noshare', view.sh === 'private'); root.classList.toggle('upl-nosp', !view.sp);
     var kick = document.getElementById('uplkick'); kick.textContent = view.mode === 'list' ? '' : view.n; kick.hidden = view.mode === 'list';
@@ -8005,6 +8026,28 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     });
   });
   document.getElementById('missclose').addEventListener('click', function () { closeDialog(missDlg); });
+  // songs with no date (John, 3 Nov 2026): a member's calendar's songs Spotify gave no real added date (1970): listed
+  // by themselves under the calendar, each a tap from playing (in the day pop-up, on no day)
+  var nodateDlg = document.getElementById('nodatedlg');
+  function undatedSync() {
+    var b = document.getElementById('undatedbtn'), n = (UPL.on && UPL.undated) ? UPL.undated.length : 0;
+    b.hidden = !n; b.textContent = n ? n + (n === 1 ? ' song with no date' : ' songs with no date') : '';
+  }
+  function undatedOpen(view) {
+    var v = view || UPL.view, l = (UPL.undated || []).slice().sort(function (a, b) { return String(a.title).localeCompare(String(b.title)); }), ul = document.getElementById('nodatel');
+    document.getElementById('nodaten').textContent = (v && v.n) || 'This calendar';
+    ul.textContent = '';
+    l.forEach(function (x) {
+      var li = document.createElement('li'), b = document.createElement('button'); b.type = 'button';
+      var tt = document.createElement('b'); tt.textContent = x.title; b.appendChild(tt);
+      var ar = document.createElement('span'); ar.textContent = x.artist || ''; b.appendChild(ar);
+      b.addEventListener('click', function () { closeDialog(nodateDlg); if (!byTrack[x.track]) byTrack[x.track] = x; openDay('', { track: x.track }); });
+      li.appendChild(b); ul.appendChild(li);
+    });
+    openLayer(nodateDlg);
+  }
+  document.getElementById('undatedbtn').addEventListener('click', function () { undatedOpen(); });
+  document.getElementById('nodateclose').addEventListener('click', function () { closeDialog(nodateDlg); });
   function uplEditText() {}   // (2 Nov 2026: no instructions while editing)
   function uplEditOff() {
     if (!ED.on) return;
@@ -8132,7 +8175,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     btn(pa, p.pic ? 'Change picture' : 'Add a picture', '', function () { PICFOR = p; var f = document.getElementById('uplpicin'); f.value = ''; f.click(); });
     if (p.pic) btn(pa, 'Use its covers', '', function (e) { e.currentTarget.disabled = true; uplPicSend(p, null); });
     var more = document.getElementById('pe-more'); more.textContent = '';
-    if (p.src === 'csv') btn(more, 'Update from Exportify', '', function () { impOpen(); });
+    if (p.src === 'csv') btn(more, 'Update from Exportify', '', function () { impOpen(0, p.id); });
     else if (p.src !== 'mpl') btn(more, 'Check now', '', function () { uplOp({ op: 'check', id: p.id }, null, function (j) { toast(j.st === 'ok' ? 'Read from Spotify: ' + (j.view ? j.view.songs.length : 0) + ' songs' : 'John hasn’t joined it yet'); }); });
     if (p.src !== 'mpl') btn(more, 'Remove it', 'x', function () { uplRemoveAsk(p); });
     // its songs: each one's edit (its video, moods and genres, their MP3 and MP4, cover) and taking off; a playlist's order
@@ -8355,9 +8398,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function uplBack(quiet) {   // John's calendar again
     try { localStorage.removeItem('sotd-cal'); } catch (e) {}
     if (!UPL.on) return;
-    var list = UPL.john; UPL.on = null; UPL.view = null; UPL.john = null;
+    var list = UPL.john; UPL.on = null; UPL.view = null; UPL.john = null; UPL.undated = [];
     if (sheet.open && !quiet) closeDialog(sheet, true);
-    setSongs(list, false); vidsMerge();
+    setSongs(list, false); vidsMerge(); undatedSync();
     var root = document.documentElement; root.classList.remove('upl'); root.classList.remove('upl-list'); root.classList.remove('upl-nosp'); root.classList.remove('upl-noyt'); root.classList.remove('upl-mine'); root.classList.remove('upl-noshare');
     document.getElementById('uplkick').hidden = true;
     clearTimeout(PROG.t); PROG.id = null; document.getElementById('uplprog').hidden = true;
@@ -8508,6 +8551,12 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     return m ? m[1] : '';
   }
   function upledMB(n) { return n >= 1e9 ? (n / 1e9).toFixed(2) + ' GB' : (n / 1e6).toFixed(n < 1e7 ? 1 : 0) + ' MB'; }
+  function upledAdded(s) {   // when it was added on Spotify and by whom (John, 3 Nov 2026: to see a bulk copy at a glance)
+    var t = Date.parse(s.at || ''); if (isNaN(t)) return '';
+    if (t < Date.UTC(2000, 0, 1)) return 'Spotify kept no date for when it was added' + (s.abn ? ' (by ' + s.abn + ')' : '') + '.';
+    var d = new Date(t), when = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Europe/London' }) + ', ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' });
+    return 'Added on Spotify ' + when + (s.abn ? ' by ' + s.abn : '') + '.';
+  }
   function upledOpen(s, focus) {   // focus (from Missing): 'v' its video, 'a' or 'p' its MP3, 'mv' its MP4: scrolled to and lit
     var p = uplPls().filter(function (x) { return x.id === s.upl; })[0] || uplOwnRec(), t = tagOf(s) || { m: [], g: [] };
     UED = { p: p, s: s, m: t.m.slice(), g: t.g.slice(), tags: false };
@@ -8522,8 +8571,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     [].forEach.call(document.querySelectorAll('input[name="upledv"]'), function (r) { r.disabled = !!jo.v; });
     document.getElementById('upledlink').disabled = !!jo.v;
     document.getElementById('upledtt').value = s.title || ''; document.getElementById('upledar').value = s.artist || '';   // its details (John, 3 Nov 2026: "change details"): as shown; Spotify's kept (ot, oa) to go back to
-    var dn = document.getElementById('upleddn'); dn.hidden = !(s.ot || s.oa);
-    dn.textContent = s.ot || s.oa ? 'Spotify has it as “' + (s.ot || s.title) + '” by ' + (s.oa || s.artist) + '. Clear a box to go back to that.' : '';
+    var dn = document.getElementById('upleddn'), added = upledAdded(s); dn.hidden = !(s.ot || s.oa || added);
+    dn.textContent = (added ? added + (s.ot || s.oa ? ' ' : '') : '') + (s.ot || s.oa ? 'Spotify has it as “' + (s.ot || s.title) + '” by ' + (s.oa || s.artist) + '. Clear a box to go back to that.' : '');
     upledVid(); upledChips(); upledFiles(); upledFacts();
     openLayer(upledDlg); upledDlg.scrollTop = 0;
     if (focus) {
@@ -9215,7 +9264,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     function act(label, cls, fn) { var b = document.createElement('button'); b.type = 'button'; b.textContent = label; if (cls) b.className = cls; b.addEventListener('click', fn); acts.appendChild(b); return b; }
     if (!pop) {   // (the box itself opens it, and its Notifications are above it: uplAcctRow)
       if (p.st === 'join') act('Send the invite link again', '', function () { uplLinkAgain(p); });
-      if (p.src === 'csv') act('Update', '', function () { impOpen(); });
+      if (p.src === 'csv') act('Update', '', function () { impOpen(0, p.id); });
       if (p.st !== 'ok') act('Remove', 'x', function () { uplRemoveAsk(p); });
       return;
     }
@@ -9228,7 +9277,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     ntfButton(p, acts, function () { setGo('send'); });
     act('Setup', '', function () { setGo('kind'); });
     if (p.src === 'csv') {
-      act('Update from Exportify', '', function () { impOpen(); });
+      act('Update from Exportify', '', function () { impOpen(0, p.id); });
       act('Remove', 'x', function () { uplRemoveAsk(p); });
     } else if (p.src !== 'mpl') {
       act('Check now', '', function () { uplOp({ op: 'check', id: p.id }, null, function (j) { toast(j.st === 'ok' ? 'Read from Spotify: ' + (j.view ? j.view.songs.length : 0) + ' songs' : 'John hasn’t joined it yet'); }); });
@@ -9503,7 +9552,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       if (ab >= 0 && /^spotify:user:/.test(r[ab] || '')) { var u = r[ab].slice(13); by[u] = (by[u] || 0) + 1; }
       out.push({ id: m[1], a: r[at], title: r[tu + 1] || '', artists: au >= 0 ? names(r[au + 1]) : [], aids: au >= 0 ? names(r[au]).map(function (x) { return x.replace('spotify:artist:', ''); }) : [],
         album: al >= 0 ? r[al + 1] || '' : '', alid: al >= 0 ? String(r[al] || '').replace('spotify:album:', '') : '', img: im >= 0 ? r[im] || '' : '',
-        pv: pc >= 0 ? ((/mp3-preview\/([0-9a-f]{20,64})/.exec(r[pc] || '') || [])[1] || '') : '', rd: rdc >= 0 ? r[rdc] || '' : '' });   // (its preview, where Spotify still gives Exportify one)
+        pv: pc >= 0 ? ((/mp3-preview\/([0-9a-f]{20,64})/.exec(r[pc] || '') || [])[1] || '') : '', rd: rdc >= 0 ? r[rdc] || '' : '', ab: ab >= 0 && /^spotify:user:/.test(r[ab] || '') ? r[ab].slice(13) : '' });   // (ab: who added it)   // (its preview, where Spotify still gives Exportify one)
     });
     return out;
   }
@@ -9558,10 +9607,13 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     document.getElementById('uplifile').className = 'copy' + (k === 2 ? '' : ' ghost');
     impShow('steps');
   }
-  function impOpen(step) {   // step: 2 when coming back from Exportify
+  function impOpen(step, target) {   // step: 2 when coming back from Exportify; target: the one of theirs it was opened from (Update from Exportify: its songs go into that one, nothing to choose: John, 3 Nov 2026)
+    if (target) IMP.target = target; else if (!step) IMP.target = null;
+    try { if (IMP.target) localStorage.setItem('sotd-imptarget', IMP.target); else if (!step) localStorage.removeItem('sotd-imptarget'); if (step && !IMP.target) IMP.target = localStorage.getItem('sotd-imptarget') || null; } catch (e) {}
     IMP.had = null; IMP.lists = null; IMP.pick = null;
     var h = uplPls().some(function (p) { return p.mine && p.src === 'csv'; });   // (any imports of theirs already)
-    document.getElementById('uplih').textContent = 'Import from Spotify';
+    var tg0 = impTarget();
+    document.getElementById('uplih').textContent = tg0 ? 'Add to “' + impPlName(tg0) + '”' : 'Import from Spotify';
     document.getElementById('uplit').textContent = 'Any of your Spotify playlists, private ones too, as a calendar or a playlist. Nothing to share with John.';
     var mine = document.getElementById('uplimine'); mine.hidden = !h;
     if (h) mine.textContent = 'Choose one you’ve imported before to bring in its new songs, or any other to add it as well.';
@@ -9710,21 +9762,27 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (lists.length < 2) me = '';   // (one playlist alone: can't tell which is them)
     lists.forEach(function (l) {
       var ids = Object.keys(l.by).sort(function (a, b) { return l.by[b] - l.by[a]; }), n = ids.reduce(function (t, u) { return t + l.by[u]; }, 0), top = ids[0];
-      l.others = ids.filter(function (u) { return u !== top && l.by[u] >= Math.max(1, n * .1); }).length > 0;
+      l.otherIds = ids.filter(function (u) { return u !== top && u !== 'spotify' && u !== ''; });   // (everyone else who added songs to it)
+      l.others = l.otherIds.length > 0;
       l.maker = top === undefined ? '' : top === 'spotify' ? '' : top;
       l.spotify = top === '' || top === 'spotify';
       l.yours = !!me && (l.maker === me || (top === undefined && /^liked/.test(l.key)));
     });
   }
-  function impBy(l) {   // "Yours", "By Anna", "By Spotify"
-    if (l.yours) return l.others ? 'Yours, with others' : 'Yours';
+  function impWho(u) { return SPN[u] || (/^[a-z0-9._-]{2,24}$/i.test(u) && !/^[0-9a-z]{25,}$/i.test(u) ? u : 'another Spotify user'); }   // (an old-style user name reads as a name; a long code doesn't)
+  function impOthers(l) {   // the others who added to it, by name, up to five (John, 3 Nov 2026: "list those members, unless it's more than 5")
+    var o = l.otherIds || []; if (!o.length) return '';
+    return o.length > 5 ? o.length + ' others' : andList(o.map(impWho).filter(function (x, i, a) { return a.indexOf(x) === i; }));
+  }
+  function impBy(l) {   // "Yours", "Yours, with Anna and Ben", "By Anna", "By Spotify"
+    if (l.yours) return l.others ? 'Yours, with ' + impOthers(l) : 'Yours';
     if (l.spotify) return 'By Spotify';
     if (!l.maker) return '';
-    var n = SPN[l.maker] || (/^[a-z0-9._-]{2,24}$/i.test(l.maker) && !/^[0-9a-z]{25,}$/i.test(l.maker) ? l.maker : 'another Spotify user');   // (an old-style user name reads as a name; a long code doesn't)
-    return 'By ' + n + (l.others ? ' and others' : '');
+    return 'By ' + impWho(l.maker) + (l.others ? (l.otherIds.length > 5 ? ' and ' : ', with ') + impOthers(l) : '');
   }
+  function impPlName(p) { return p && /^John[’']s Song of the Day$/.test(p.n || '') ? 'Main calendar' : (p && p.n) || 'it'; }   // (John's own: the Main calendar)
   function impNames(lists, then) {   // the makers' names, 20 at a time
-    var want = lists.map(function (l) { return !l.yours && !l.spotify && l.maker && !(l.maker in SPN) ? l.maker : null; }).filter(function (x, i, a) { return x && a.indexOf(x) === i; });
+    var want = [].concat.apply([], lists.map(function (l) { return (!l.yours && !l.spotify && l.maker ? [l.maker] : []).concat((l.otherIds || []).length <= 5 ? l.otherIds || [] : []); })).filter(function (x, i, a) { return x && !(x in SPN) && a.indexOf(x) === i; });   // (makers, and the others who added to theirs)
     var tok = plTok(); if (!want.length || !tok || !MBASE) return;
     for (var i = 0; i < want.length; i += 20) {
       fetch(MBASE + '/members/spnames?ids=' + encodeURIComponent(want.slice(i, i + 20).join(',')), { headers: { Authorization: 'Bearer ' + tok } }).then(function (r) { return r.json(); }).then(function (j) {
@@ -9733,6 +9791,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       }).catch(function () {});
     }
   }
+  function impTarget() { return IMP.target ? uplPls().filter(function (p) { return p.id === IMP.target && p.mine; })[0] || null : null; }
   function impPick() {   // the download's playlists, to choose from
     var lists = IMP.lists, grid = document.getElementById('upligrid'), q = document.getElementById('uplisearch');
     document.getElementById('uplipickt').textContent = lists.length + (lists.length === 1 ? ' playlist' : ' playlists') + ' in your download';
@@ -9749,8 +9808,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       var nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = l.name; b.appendChild(nm);
       var by = document.createElement('span'); by.className = 'by'; by.textContent = impBy(l); by.hidden = !by.textContent; b.appendChild(by); b._by = by;
       var ct = document.createElement('span'); ct.className = 'ct'; ct.textContent = l.all.toLocaleString('en-GB') + (l.all === 1 ? ' song' : ' songs'); b.appendChild(ct);
-      if (impMine(l)) { var t = document.createElement('span'); t.className = 'tag'; t.textContent = 'On the calendar'; b.appendChild(t); }
-      b.setAttribute('aria-label', l.name + (by.textContent ? ', ' + by.textContent.replace(/^By/, 'by') : '') + ', ' + ct.textContent + (impMine(l) ? ', on the calendar now' : ''));
+      var tgt = impTarget(), mn = impMineOf(l);
+      if (tgt || mn) { var t = document.createElement('span'); t.className = 'tag'; t.textContent = tgt ? (mn && mn.id === tgt.id ? 'Update ' : 'Add to ') + impPlName(tgt) : 'Add to ' + impPlName(mn); b.appendChild(t); }   // (where its songs would go: John, 3 Nov 2026)
+      b.setAttribute('aria-label', l.name + (by.textContent ? ', ' + by.textContent.replace(/^By/, 'by') : '') + ', ' + ct.textContent + (tgt || mn ? ', ' + t.textContent : ''));
       b.addEventListener('click', function () { impGot(l); });
       grid.appendChild(b);
     });
@@ -9798,12 +9858,24 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var into = uplPls().filter(function (p) { return p.mine && p.src === 'csv' && (!h || p.id !== h.id); });
     var dest = document.getElementById('uplidest'), sel = document.getElementById('upliinto');
     dest.textContent = ''; sel.textContent = '';
-    into.forEach(function (p) { var o = document.createElement('option'); o.value = p.id; o.textContent = p.n + (p.mode === 'list' ? ' (playlist)' : ' (calendar)'); sel.appendChild(o); });
+    into.forEach(function (p) { var o = document.createElement('option'); o.value = p.id; o.textContent = 'Add to ' + impPlName(p) + (p.mode === 'list' ? ' (playlist)' : ' (calendar)'); sel.appendChild(o); });
     var opt = function (v, t, d) { var lb = document.createElement('label'), r = document.createElement('input'); r.type = 'radio'; r.name = 'uplidest'; r.value = v; r.checked = v === (up ? 'up' : 'new');
       var sp = document.createElement('span'), bb = document.createElement('b'); bb.textContent = t; sp.appendChild(bb); sp.appendChild(document.createTextNode(d)); lb.appendChild(r); lb.appendChild(sp); dest.appendChild(lb); r.addEventListener('change', function () { impDest(l, h); }); };
-    if (up) opt('up', 'Update “' + h.n + '”', 'Its new songs come in; the rest keep their days.');
-    opt('new', up ? 'A new one' : 'A new calendar or playlist', 'Its own, beside your others.');
-    if (into.length) opt('add', 'Add to one of mine', 'Its songs join one you already have (any it has already are skipped).');
+    var tgt = impTarget();
+    if (tgt) {   // opened from one of theirs (Update from Exportify): into that one, nothing else to choose
+      if (h && h.id === tgt.id) opt('up', 'Update “' + impPlName(tgt) + '”', 'Its new songs come in; the rest keep their days.');
+      else { opt('add', 'Add to “' + impPlName(tgt) + '”', 'Its songs join it (any it has already are skipped).'); sel.value = tgt.id; if (sel.value !== tgt.id) { var o2 = document.createElement('option'); o2.value = tgt.id; o2.textContent = impPlName(tgt); sel.appendChild(o2); sel.value = tgt.id; } }
+      dest.querySelector('input').checked = true; dest.hidden = true;
+      document.getElementById('uplikind').textContent = h && h.id === tgt.id ? 'Update' : 'Add to';
+      document.getElementById('uplisumh').textContent = h && h.id === tgt.id ? impPlName(tgt) : l.name + ' → ' + impPlName(tgt);
+      impDest(l, h); document.getElementById('uplintol').hidden = true;
+      document.getElementById('upliok').textContent = h && h.id === tgt.id ? 'Update it' : 'Add the songs to “' + impPlName(tgt) + '”';
+      document.getElementById('uplino').textContent = IMP.lists && IMP.lists.length > 1 ? 'Choose another' : 'Another file';
+      impShow('got'); return;
+    }
+    if (up) opt('up', 'Update “' + impPlName(h) + '”', 'Its new songs come in; the rest keep their days.');
+    into.forEach(function (p) { opt('add:' + p.id, 'Add to “' + impPlName(p) + '”', (p.mode === 'list' ? 'Your playlist' : 'Your calendar') + ': its songs join it (any it has already are skipped).'); });   // (each of theirs by name: John, 3 Nov 2026)
+    opt('new', up || into.length ? 'A new calendar or playlist' : 'A new calendar or playlist', 'Its own, beside your others.');
     dest.hidden = !up && !into.length;
     impDest(l, h);
     document.getElementById('uplino').textContent = IMP.lists && IMP.lists.length > 1 ? 'Choose another' : 'Another file';
@@ -9811,7 +9883,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   function impDest(l, h) {   // what the choice of where it goes shows
     var v = (document.querySelector('input[name="uplidest"]:checked') || {}).value || (h ? 'up' : 'new');
-    document.getElementById('uplintol').hidden = v !== 'add';
+    if (/^add:/.test(v)) { document.getElementById('upliinto').value = v.slice(4); v = 'add'; }   // (one of theirs, chosen by name)
+    document.getElementById('uplintol').hidden = true;
     document.getElementById('uplinamel').hidden = v !== 'new';
     document.getElementById('uplimode').hidden = v !== 'new';
     var note = document.getElementById('uplinote');
@@ -9830,7 +9903,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   document.getElementById('upliok').addEventListener('click', function () {
     var l = IMP.pick; if (!l || IMP.busy) return;
     var b = this, h = impMineOf(l), mode = (document.querySelector('input[name="uplimode"]:checked') || {}).value, label = b.textContent;
-    var dv = (document.querySelector('input[name="uplidest"]:checked') || {}).value || (h ? 'up' : 'new'), up = dv === 'up' && !!h;
+    var dv = (document.querySelector('input[name="uplidest"]:checked') || {}).value || (h ? 'up' : 'new');
+    if (/^add:/.test(dv)) { document.getElementById('upliinto').value = dv.slice(4); dv = 'add'; }
+    var up = dv === 'up' && !!h;
     if (dv === 'new') h = null;
     if (dv === 'add') {   // into another of theirs
       var to = document.getElementById('upliinto').value, tp = uplPls().filter(function (p) { return p.id === to; })[0];
@@ -9841,7 +9916,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         if (j.status !== 200) { toast(j.error || 'Couldn’t add them just now'); return; }
         impForget(); MEMBER.pls = j.pls; uplMark(); uplWaitCount(); if (acct.open) uplDrawAcct();
         closeDialog(impDlg); if (acct.open) closeDialog(acct);
-        toast(j.added ? (j.added === 1 ? '1 song added' : j.added + ' songs added') + ' to “' + (tp ? tp.n : 'it') + '”' : 'It has all of those already');
+        toast(j.added ? (j.added === 1 ? '1 song added' : j.added + ' songs added') + ' to “' + impPlName(tp) + '”' : 'It has all of those already');
         if (UPL.on === to && j.view) uplRefreshViews(to, j.view); else uplShow(to);
       }).catch(function () { IMP.busy = false; b.disabled = false; b.textContent = label; toast('Couldn’t reach the site. Try again.'); });
       return;
