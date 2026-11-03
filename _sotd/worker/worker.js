@@ -1243,9 +1243,9 @@ async function members(request, url, env) {
       if (!U[pid]) return answer(404, { error: 'No such playlist.' });
       const fx = (await env.SOTD.get('ufacts:' + pid, 'json')) || {}, e = fx[t];
       if (!e || !(e.w || e.ok)) return answer(404, { error: 'No facts for it yet.' });
-      const was = e.w || e.ok, clean = l => (Array.isArray(l) ? l : []).map(x => String(x || '').replace(/\s+/g, ' ').trim().slice(0, 400)).filter(Boolean).slice(0, 8);
+      const was = e.w || e.ok, clean = l => (Array.isArray(l) ? l : []).map(x => String(x || '').replace(/\s+/g, ' ').trim().slice(0, 400)).filter(Boolean).slice(0, 20);
       const got = { s: clean(body.s), a: (was.a || []).map(x => ({ id: x.id, n: x.n, f: clean((body.a || {})[x.id]) })) };
-      if (body.sign) { e.ok = got; delete e.w; e.sat = Date.now(); e.by = 'John'; } else if (e.w) e.w = got; else e.ok = got;
+      if (body.sign) { e.ok = got; delete e.w; delete e.nw; e.sat = Date.now(); e.by = 'John'; } else if (e.w) e.w = got; else e.ok = got;
       fx[t] = e; await env.SOTD.put('ufacts:' + pid, JSON.stringify(fx));
       return answer(200, { ok: true, fx: e.w ? { st: 'wait', f: e.w } : { st: 'ok', f: e.ok, at: e.sat || 0 } });
     }
@@ -3957,8 +3957,19 @@ async function uplFactsIn(request, env) {   // POST the facts task's _sotd/data/
     for (const [t, e] of Object.entries(songs)) {
       if (kept[t] && kept[t].at === e.written) continue;   // (had: as its owner left it)
       const txt = l => (l || []).map(x => String((x && x.t) || x || '').trim()).filter(Boolean);
-      const w = { s: txt(e.s), a: Object.entries(e.a || {}).map(([id, a]) => ({ id, n: a.name || '', f: txt(a.f) })) };
-      if (w.s.length || w.a.some(a => a.f.length)) kept[t] = Object.assign({}, kept[t] || {}, { w, at: e.written });
+      let w = { s: txt(e.s), a: Object.entries(e.a || {}).map(([id, a]) => ({ id, n: a.name || '', f: txt(a.f) })) };
+      const base = kept[t] && (kept[t].w || kept[t].ok);   // facts they have already (waiting or out, as they left them): kept, the new ones added after them, marked new (John, 3 Nov 2026: "don't overwrite any users current facts")
+      let nw = [];
+      if (base) {
+        const norm = x => String(x).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim(), had = new Set([].concat(base.s || [], ...(base.a || []).map(a => a.f || [])).map(norm));
+        const fresh = l => l.filter(x => !had.has(norm(x)));
+        const s2 = fresh(w.s), a2 = (base.a || []).map(a => ({ id: a.id, n: a.n, f: (a.f || []).concat(fresh(((w.a.find(b => b.id === a.id) || {}).f) || [])) }))
+          .concat(w.a.filter(b => !(base.a || []).some(a => a.id === b.id)).map(b => ({ id: b.id, n: b.n, f: fresh(b.f) })));
+        nw = s2.concat(...w.a.map(b => fresh(b.f)));
+        w = { s: (base.s || []).concat(s2), a: a2 };
+        if (!nw.length) { kept[t] = Object.assign({}, kept[t], { at: e.written }); changed = true; continue; }   // (nothing new: theirs as they are)
+      }
+      if (w.s.length || w.a.some(a => a.f.length)) kept[t] = Object.assign({}, kept[t] || {}, { w, at: e.written }, nw.length ? { nw: [...new Set([...(kept[t] && kept[t].nw) || [], ...nw])] } : {});
       else if (!kept[t] || !kept[t].ok) kept[t] = { none: 1, at: e.written };   // (none could be found)
       changed = true; n++;
     }
@@ -3987,8 +3998,13 @@ async function uplView(env, all, viewer, pid, rec, also) {   // (also: tracks wa
     if (!x.yr && /^\d{4}/.test(x.rd || '') && +x.rd.slice(0, 4) > 1900) x.yr = +x.rd.slice(0, 4);   // (its album's release date, from the file or Spotify: a year the moment it's in)
     const fx = facts[x.id];   // its facts: signed off by its owner (fx), for everyone; theirs too: written and waiting (fxw), and how it stands (fxs)
     if (fx && fx.ok) x.fx = fx.ok;
-    if (mine) { if (fx && fx.w) x.fxw = fx.w; x.fxs = fx && fx.w ? 'wait' : fx && fx.ok ? 'ok' : fx && fx.none ? 'nil' : wanted.has(x.id) ? 'asked' : uplShareOf(rec) === 'public' ? 'none' : 'off'; }
+    if (mine) { if (fx && fx.w) x.fxw = fx.w; if (fx && fx.w && fx.nw) x.fxn = fx.nw; x.fxs = fx && fx.w ? 'wait' : fx && fx.ok ? 'ok' : fx && fx.none ? 'nil' : wanted.has(x.id) ? 'asked' : uplShareOf(rec) === 'public' ? 'none' : 'off'; }
     if (e && 'v' in e) x.ov = e.v;
+    if (e && (e.tt || e.ar)) {   // its owner's own title and artist, for everyone; theirs: Spotify's too (ot, oa), to go back to
+      if (mine) { x.ot = x.title; x.oa = x.artist; }
+      if (e.tt) x.title = e.tt;
+      if (e.ar) { x.artist = e.ar; x.artists = [e.ar]; }
+    }
     if (e && (e.m || e.g)) x.tg = { m: e.m || null, g: e.g || null };   // (null: the ones worked out)
     const jo = J[x.id];   // John's, over theirs (jo, for its owner's editor: which are his)
     if (jo) {
@@ -4248,11 +4264,10 @@ async function memberUpl(request, url, env, answer) {
   if (body.op === 'facts') {   // a song's facts: s (about the song), a { <artist id>: [...] } (about each artist), as edited; sign: out for everyone
     const data = await uplSongs(env, pid), t = String(body.track || '');
     if (!(data.songs || []).some(y => y.id === t)) return answer(404, { error: 'That song isn’t on this playlist.' });
-    const all_ = (await env.SOTD.get('ufacts:' + pid, 'json')) || {}, e = all_[t];
-    if (!e || !(e.w || e.ok)) return answer(404, { error: 'No facts for it yet.' });
-    const was = e.w || e.ok, clean = l => (Array.isArray(l) ? l : []).map(x => String(x || '').replace(/\s+/g, ' ').trim().slice(0, 400)).filter(Boolean).slice(0, 8);
+    const all_ = (await env.SOTD.get('ufacts:' + pid, 'json')) || {}, e = all_[t] || {};   // (none yet: their own, added in the editor, John, 3 Nov 2026)
+    const was = e.w || e.ok || { s: [], a: [] }, clean = l => (Array.isArray(l) ? l : []).map(x => String(x || '').replace(/\s+/g, ' ').trim().slice(0, 400)).filter(Boolean).slice(0, 20);   // (20: theirs and new ones together)
     const got = { s: clean(body.s), a: (was.a || []).map(x => ({ id: x.id, n: x.n, f: clean(((body.a || {})[x.id])) })) };
-    if (body.sign) { e.ok = got; delete e.w; e.sat = Date.now(); } else if (e.w) e.w = got; else e.ok = got;
+    if (body.sign) { e.ok = got; delete e.w; delete e.nw; e.sat = Date.now(); } else if (e.w) e.w = got; else { e.ok = got; delete e.none; }
     all_[t] = e; await env.SOTD.put('ufacts:' + pid, JSON.stringify(all_));
     return answer(200, { ok: true, view: await uplView(env, all, me, pid, rec) });
   }
@@ -4279,6 +4294,11 @@ async function memberUpl(request, url, env, answer) {
     for (const [k, list] of [['m', MOOD_LIST], ['g', GENRE_LIST]]) {
       if (body[k] === null) delete e[k];
       else if (Array.isArray(body[k])) e[k] = body[k].filter(x => list.includes(x)).slice(0, 2);
+    }
+    for (const k of ['tt', 'ar']) {   // its title and artist as its owner wants them shown (John, 3 Nov 2026: "change details"); '' or null: Spotify's
+      if (!(k in body)) continue;
+      const v = String(body[k] || '').replace(/\s+/g, ' ').trim().slice(0, 200);
+      if (v) e[k] = v; else delete e[k];
     }
     if (Object.keys(e).length) data.ed[t] = e; else delete data.ed[t];
     await env.SOTD.put('upl:' + pid, JSON.stringify(data));
