@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="d81031eac411">
+<meta name="sotd-build" content="4095829b0364">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -2231,6 +2231,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       <label><input type="radio" name="uplwho" value="private"><span><b>Private</b>Just you.</span></label>
     </div>
     <div class="uplw-list" id="uplwl" hidden></div>
+    <h3 id="uplwch">Who can edit it with you</h3>
+    <p class="upled-note" id="uplwcn">Optional: they can change its songs as you can (pictures, details, videos, files and facts, moving or taking songs off). Its name and who sees it stay yours. You can change this later in Edit.</p>
+    <div class="uplw-list" id="uplwcw" role="group" aria-labelledby="uplwch"></div>
     <div class="ask-acts"><button class="copy" id="uplwok" type="submit">Save</button><button class="ac-out" id="uplwno" type="button">Cancel</button></div>
   </form>
 </dialog>
@@ -9077,6 +9080,12 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       var t = document.createElement('span'); t.textContent = m.name; l.appendChild(c); l.appendChild(t); box.appendChild(l);
     });
     document.getElementById('uplwk').textContent = p.n;
+    var cwb = document.getElementById('uplwcw'); cwb.textContent = '';   // who edits it with them (John, 3 Nov 2026: "an option to make it collaborative straight away")
+    document.getElementById('uplwch').hidden = document.getElementById('uplwcn').hidden = cwb.hidden = !others.length || !p.mine;
+    others.forEach(function (m) {
+      var l = document.createElement('label'), c = document.createElement('input'); c.type = 'checkbox'; c.value = m.id; c.checked = (p.cw || []).indexOf(m.id) !== -1;
+      var t = document.createElement('span'); t.textContent = m.name; l.appendChild(c); l.appendChild(t); cwb.appendChild(l);
+    });
     uplWhoShow(); openLayer(uplwDlg);
   }
   [].forEach.call(document.querySelectorAll('input[name="uplwho"]'), function (r) { r.addEventListener('change', uplWhoShow); });
@@ -9090,13 +9099,18 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (!p) return;
     if (sh === 'some' && !to.length) { toast('Tick at least one member'); return; }
     var ok = document.getElementById('uplwok'); ok.disabled = true;
+    var cw = [].filter.call(document.querySelectorAll('#uplwcw input:checked'), function () { return true; }).map(function (c) { return c.value; });
+    var cwChanged = p.mine && cw.slice().sort().join() !== (p.cw || []).slice().sort().join();
     uplCall({ op: 'share', id: p.id, share: sh, to: to }).then(function (j) {
+      if (j.status !== 200 || !cwChanged) return j;
+      return uplCall({ op: 'collab', id: p.id, cw: cw }).then(function (k) { return k.status === 200 ? Object.assign(k, { cwSaid: true }) : j; });
+    }).then(function (j) {
       ok.disabled = false;
       if (j.status !== 200) { toast(j.error || 'Couldn’t change that just now'); return; }
       MEMBER.pls = j.pls; uplMark(); uplWaitCount(); if (acct.open) uplDrawAcct();
-      uplRefreshViews(p.id, j.view);
+      if (j.view) uplRefreshViews(p.id, j.view);
       closeDialog(uplwDlg);
-      toast(sh === 'public' ? 'Public: anyone with its link sees it' : sh === 'private' ? 'Private: just you' : sh === 'some' ? 'Shared with ' + to.length + (to.length === 1 ? ' member' : ' members') : 'Every member sees it');
+      toast((sh === 'public' ? 'Public: anyone with its link sees it' : sh === 'private' ? 'Private: just you' : sh === 'some' ? 'Shared with ' + to.length + (to.length === 1 ? ' member' : ' members') : 'Every member sees it') + (j.cwSaid ? (cw.length ? '. ' + cw.length + (cw.length === 1 ? ' member edits' : ' members edit') + ' it with you' : '. Just you edit it') : ''));
     }).catch(function () { ok.disabled = false; toast('Couldn’t reach the site. Try again.'); });
   });
   function uplDatesSay(d) {
