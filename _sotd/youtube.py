@@ -18,7 +18,7 @@ Nothing is downloaded: the calendar plays the video in YouTube's own player.
 YouTube allows 100 searches a day, so a long backlog takes a few days; songs not done yet wait for the next run.
 Songs with no good match are tried again after 30 days.
 
-Members' songs are tried the free ways first (free_videos.py: Wikidata, MusicBrainz, Discogs), stopping at the first
+Members' songs are tried the free ways first (free_videos.py: Wikidata, the artist's own channel, MusicBrainz, Discogs), stopping at the first
 match, so the searches on John's account go on the songs those miss; members' songs then take turns for the searches
 left after John's (a playlist's newest, then the next playlist's newest, and so on). John's own picks (data/john-videos.json "videos":
 {track id: video id, or "" for none}) win over everything."""
