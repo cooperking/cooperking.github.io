@@ -4009,6 +4009,7 @@ async function uplVids(request, env) {
   const seen = (await env.SOTD.get('uplseen', 'json')) || {};
   let m = 0;
   for (const t of looked) if (ID_RE.test(String(t)) && !(seen[t] || '').includes('v')) { seen[t] = (seen[t] || '') + 'v'; m++; }
+  for (const t of (Array.isArray(b && b.unlooked) ? b.unlooked : [])) if (ID_RE.test(String(t)) && (seen[t] || '').includes('v')) { seen[t] = seen[t].replace('v', ''); if (!seen[t]) delete seen[t]; m++; }   // (only the free ways tried: still waiting for the search)
   for (const t of ylooked) if (ID_RE.test(String(t)) && !(seen[t] || '').includes('y')) { seen[t] = (seen[t] || '') + 'y'; m++; }
   if (m) await kvSoft(env, 'uplseen', JSON.stringify(seen));
   return answer(200, { ok: true, vids: n, years: ny, looked: m });
@@ -4131,7 +4132,8 @@ async function uplData(request, env) {
   // which songs the job has looked at, found or not (v: a video, m: moods, y: a year), for a playlist's progress: a song
   // looked at with none found is done, not waiting (KV uplseen { <track>: 'vmy' })
   const seen = {}, mark = (o, c) => { for (const t of Object.keys(o || {})) seen[t] = (seen[t] || '') + c; };
-  mark((f['_sotd/data/youtube.json'] || {}).songs, 'v'); mark((f['songs/moods.json'] || {}).songs, 'm'); mark((f['_sotd/data/years.json'] || {}).songs, 'y');
+  const ytDone = Object.fromEntries(Object.entries((f['_sotd/data/youtube.json'] || {}).songs || {}).filter(([, e]) => e && (e.id || (e.from === 'YouTube search' && !e.error))));   // (a video, or the search found none: one only the free ways missed still waits)
+  mark(ytDone, 'v'); mark((f['songs/moods.json'] || {}).songs, 'm'); mark((f['_sotd/data/years.json'] || {}).songs, 'y');
   await kvSoft(env, 'uplseen', JSON.stringify(seen));
   return answer(200, { ok: true, songs: Object.keys(meta).length });
 }

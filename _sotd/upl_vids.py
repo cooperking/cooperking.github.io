@@ -39,8 +39,12 @@ def main():
     looked = load(os.path.join(HERE, 'data', 'youtube.json'), 'songs')
     years = load(os.path.join(ROOT, 'songs', 'years.json'), 'years')
     ylooked = load(os.path.join(HERE, 'data', 'years.json'), 'songs')
+    # looked at for good: a video, or YouTube's search found none. One only the free ways missed still waits for the
+    # search, so it isn't "none" yet (John, 3 Nov 2026: "165 with none for videos")
+    done = lambda e: isinstance(e, dict) and (e.get('id') or (e.get('from') == 'YouTube search' and not e.get('error')))
     body = {'vids': {t: v for t, v in videos.items() if t in theirs and isinstance(v, dict) and v.get('v')},
-            'looked': sorted(t for t in looked if t in theirs),
+            'looked': sorted(t for t in looked if t in theirs and done(looked[t])),
+            'unlooked': sorted(t for t in looked if t in theirs and not done(looked[t]) and t not in videos),
             'years': {t: y for t, y in years.items() if t in theirs and y},
             'ylooked': sorted(t for t in set(ylooked) | set(years) if t in theirs)}
     req = urllib.request.Request(URL, data=json.dumps(body).encode(), method='POST',

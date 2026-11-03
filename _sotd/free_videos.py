@@ -30,6 +30,9 @@ ARTIST_MB_MOST = 60     # artists a run asked of MusicBrainz (two requests each,
 CH_PAGES = 8            # pages of 50 uploads read from a channel (its newest 400)
 CH_UNITS = 1500         # 1-unit reads a run for the artists' channels (of the day's 10,000)
 ARTIST_RETRY_DAYS = 60  # an artist with no channel found: asked again after this
+FREE_V = 2              # the free ways' version (2: the artist's channel). A song none of an older version found is asked
+                        # the new ones straight away, not after RETRY_DAYS (John, 3 Nov 2026: "it's searched for them before
+                        # but with a different method")
 FREE_MOST = 150      # songs a run for MusicBrainz and for Discogs (about 3 and 2 minutes at their rates)
 MB_GAP, DISCOGS_GAP = 1.1, 1.05
 VID = re.compile(r'(?:[?&]v=|youtu\.be/|/embed/|/shorts/)([\w-]{11})')
@@ -242,11 +245,14 @@ def find(songs, data, tok, Y, ms=None):
     today = datetime.date.today()
 
     def asked_lately(e):
+        if e.get('fv', 0) < FREE_V:
+            return False
         try:
             return (today - datetime.date.fromisoformat(e.get('free', '2000-01-01'))).days < Y.RETRY_DAYS
         except ValueError:
             return False
-    todo = [s for s in songs if s.get('upl') and 'ov' not in s and (s['id'] not in data['songs'] or Y.due(data['songs'][s['id']]))
+    newer = lambda e: not e.get('id') and e.get('fv', 0) < FREE_V   # (missed by an older way: the new ways now)
+    todo = [s for s in songs if s.get('upl') and 'ov' not in s and (s['id'] not in data['songs'] or Y.due(data['songs'][s['id']]) or newer(data['songs'][s['id']]))
             and not asked_lately(data['songs'].get(s['id'], {}))]
     todo.sort(key=lambda s: -s['n'])
     if not todo:
@@ -284,7 +290,7 @@ def find(songs, data, tok, Y, ms=None):
                 Y.length_off(c, (ms or {}).get(s['id']) or s.get('ms'))
                 if c['score'] < Y.GOOD or not c['embed']:
                     continue
-                e = {'n': s['n'], 'checked': today.isoformat(), 'from': via, 'free': today.isoformat(), 'id': v, 'title': c['title'],
+                e = {'n': s['n'], 'checked': today.isoformat(), 'from': via, 'free': today.isoformat(), 'fv': FREE_V, 'id': v, 'title': c['title'],
                      'channel': c['channel'], 'kind': c['kind'], 'score': c['score'], 'why': c['why'], 'embed': True}
                 if c['secs'] is not None:
                     e['secs'] = c['secs']
@@ -344,7 +350,7 @@ def find(songs, data, tok, Y, ms=None):
     for s in left:
         if s['id'] in reached:
             e = data['songs'].get(s['id']) or {'n': s['n'], 'checked': '2000-01-01'}
-            e['free'] = today.isoformat(); data['songs'][s['id']] = e
+            e['free'] = today.isoformat(); e['fv'] = FREE_V; data['songs'][s['id']] = e
         else:
             pending.add(s['id'])
     return found, pending
