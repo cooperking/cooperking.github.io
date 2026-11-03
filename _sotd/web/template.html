@@ -9627,7 +9627,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (h) mine.textContent = 'Choose one you’ve imported before to bring in its new songs, or any other to add it as well.';
     var B = NAT && NAT.Plugins && NAT.Plugins.Browser, sheetish = (B && typeof B.open === 'function') || APK || standalone, computer = window.matchMedia && matchMedia('(pointer: fine)').matches && screen.width >= 900;
     var how = ' Sign in with Spotify, then tap <i>Export all</i> (or <i>Export</i> next to one playlist).';
-    document.getElementById('upli1t').innerHTML = sheetish ? 'Exportify opens over the calendar.' + how + ' Close it once the download has saved.'
+    var appComp = standalone && !NAT && !APK && window.matchMedia && matchMedia('(pointer: fine)').matches && screen.width >= 900;
+    document.getElementById('upli1t').innerHTML = appComp ? 'Exportify opens in Chrome.' + how.replace(/tap/, 'click') + ' Once the download has saved, come back to this window and choose it below.'
+      : sheetish ? 'Exportify opens over the calendar.' + how + ' Close it once the download has saved.'
       : computer ? 'Exportify opens in a small window.' + how.replace(/tap/, 'click') + ' Close the window once the download has saved.'
       : 'Exportify opens in a new tab.' + how + ' Once the download has saved, come back to this tab.';
     document.getElementById('upli2t').textContent = 'The .zip Exportify saved (or one playlist’s .csv), in your Downloads.' + (APK || impFilesOk() ? ' Or open it with Song of the Day straight from your Downloads.' : '');
@@ -9710,13 +9712,19 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       return;
     }
     if (APK || NAT) { location.href = EXPORTIFY; return; }   // the Android app shows it in its own view with a ✕, and the iPhone app without the plugin in Safari; the page comes back at step 2
-    var w = null;
-    if (window.matchMedia && matchMedia('(pointer: fine)').matches && screen.width >= 900) {   // a computer: a window over the page
+    var w = null, comp = window.matchMedia && matchMedia('(pointer: fine)').matches && screen.width >= 900;
+    if (standalone && comp) {   // the app installed on a computer (Chrome's): Exportify in Chrome itself, a tab of its own, never in the app's window, which it took over with no way back (John, 3 Nov 2026); the download is chosen here after
+      w = window.open(EXPORTIFY, '_blank', 'noopener,noreferrer');
+      IMP.away = false; impStep(2);
+      toast('Exportify opened in Chrome: once the download has saved, come back here and choose it');   // (noopener: Chrome gives no window back, so none is watched)
+      return;
+    }
+    if (comp) {   // a computer: a window over the page
       var W = 540, H = Math.min(820, screen.availHeight - 80);
       w = window.open(EXPORTIFY, 'exportify', 'popup,width=' + W + ',height=' + H + ',left=' + Math.round((screen.availWidth - W) / 2) + ',top=' + Math.round((screen.availHeight - H) / 2));
     }
     if (!w) w = window.open(EXPORTIFY, '_blank');
-    if (!w) { location.href = EXPORTIFY; return; }
+    if (!w) { if (comp) { toast('Your browser stopped Exportify opening: allow pop-ups for this site, or open exportify.app yourself'); impStep(2); return; } location.href = EXPORTIFY; return; }   // (a computer: never this page itself)
     try { w.opener = null; } catch (e) {}
     IMP.away = true; IMP.win = w; clearInterval(IMP.poll);
     IMP.poll = setInterval(function () { var x = IMP.win; if (!x || x.closed) { clearInterval(IMP.poll); IMP.win = null; if (IMP.away) impBack(); } }, 600);
