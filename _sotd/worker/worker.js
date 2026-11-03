@@ -68,6 +68,7 @@ export default {
     if (url.pathname === '/upl/ytdrop') return await uplYtDrop(request, env);
     if (url.pathname === '/upl/wanted') return await uplWanted(request, env);
     if (url.pathname === '/upl/vids') return await uplVids(request, env);
+    if (url.pathname === '/upl/ytprog') return await uplYtProg(request, env);
     if (url.pathname.startsWith('/yt/')) return await ytList(request, url, env);
       if (url.pathname === '/login') return await login(url);
       if (url.pathname === '/splink') return await spLinkStart(url, env);
@@ -4014,6 +4015,17 @@ async function ghJob(request) {
   if (ok) ghOk.set(h, Date.now() + 3600e3);
   return ok;
 }
+// how the site job's video search is getting on (youtube.py's progress(), every few seconds): for John's job line (John, 3 Nov
+// 2026: "what youtube.py is doing and searching for and progress"). Kept a day.
+async function uplYtProg(request, env) {
+  const answer = (status, body) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' } });
+  if (request.method !== 'POST' || !await ghJob(request)) return answer(401, { error: 'For the site job only.' });
+  const b = await request.json().catch(() => ({})), str = (x, n) => String(x == null ? '' : x).slice(0, n), num = x => Number.isFinite(+x) && x !== null && x !== '' ? +x : null;
+  const v = { at: Date.now(), phase: str(b.phase, 200), i: num(b.i), n: num(b.n), song: str(b.song, 160), units: num(b.units),
+    last: (Array.isArray(b.last) ? b.last : []).slice(0, 6).map(x => ({ s: str(x && x.s, 160), r: str(x && x.r, 200) })) };
+  await kvSoft(env, 'ytprog', JSON.stringify(v), { expirationTtl: 86400 });
+  return answer(200, { ok: true });
+}
 async function uplSync(request, env) {
   const answer = (status, body) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' } });
   if (!await ghJob(request)) return answer(401, { error: 'For the site job only.' });
@@ -4256,8 +4268,8 @@ async function memberUpl(request, url, env, answer) {
   }
   if (body.op === 'jobs') {   // John: the site job finding videos, years and moods for members' playlists: running (at which step), or how its last run ended and, failed, where and why (John, 3 Nov 2026: "If it fails i'd like to know why")
     if (me !== (await env.SOTD.get('owner'))) return answer(403, { error: 'Only John can see that.' });
-    const hit = await env.SOTD.get('jobsee', 'json');
-    if (hit && Date.now() - hit.at < 45e3) return answer(200, hit.v);
+    const hit = await env.SOTD.get('jobsee', 'json'), yt = await env.SOTD.get('ytprog', 'json');
+    if (hit && Date.now() - hit.at < 45e3) return answer(200, Object.assign({}, hit.v, { yt }));
     try {
       const runs = (await ghApi(env, '/actions/workflows/song-tags.yml/runs?per_page=5')).workflow_runs || [];
       const r = runs.find(x => x.status !== 'completed') || runs[0];
@@ -4276,7 +4288,7 @@ async function memberUpl(request, url, env, answer) {
       }
       const v = { run: out };
       await kvSoft(env, 'jobsee', JSON.stringify({ at: Date.now(), v }), { expirationTtl: 300 });
-      return answer(200, v);
+      return answer(200, Object.assign({}, v, { yt }));
     } catch (e) { return answer(200, { run: null, error: String(e && e.message || e) }); }
   }
   if (body.op === 'retry') {   // John's Look again, from Missing (John, 3 Nov 2026: "restart a job on any playlist that has missing items ... Only me"): its songs with no preview or video looked for again

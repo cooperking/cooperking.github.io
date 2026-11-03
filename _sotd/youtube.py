@@ -27,6 +27,30 @@ import datetime, json, os, re, sys, unicodedata
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import ytapi   # noqa: E402
+import time as _time, urllib.request as _ureq   # noqa: E402
+
+# how the search is getting on, for John on the calendar (John, 3 Nov 2026: "what youtube.py is doing and searching for and
+# progress"): the step, how far through, the song now and the last few results, sent to the Worker every few seconds
+# (/upl/ytprog, this job's GITHUB_TOKEN). Never stops the search.
+_PROG = {'t': 0.0, 'last': []}
+WORKER = os.environ.get('SOTD_WORKER', 'https://sotd-playlists.cooperking.workers.dev')
+
+
+def progress(phase, i=None, n=None, song=None, result=None, force=False):
+    try:
+        if result and song:
+            _PROG['last'] = ([{'s': song[:120], 'r': str(result)[:160]}] + _PROG['last'])[:6]
+        now = _time.time()
+        if not force and now - _PROG['t'] < 6:
+            return
+        _PROG['t'] = now
+        tok = os.environ.get('GITHUB_TOKEN', '').strip()
+        if not tok:
+            return
+        body = json.dumps({'phase': phase, 'i': i, 'n': n, 'song': (song or '')[:120], 'last': _PROG['last'], 'units': ytapi.ledger().get('used')}).encode()
+        _ureq.urlopen(_ureq.Request(WORKER + '/upl/ytprog', data=body, headers={'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok, 'User-Agent': ytapi.UA}), timeout=8).read()
+    except Exception:
+        pass
 import twins   # noqa: E402
 
 ROOT = os.path.dirname(HERE)
@@ -415,7 +439,8 @@ def main():
     todo.sort(key=lambda s: (bool(s.get('upl')), turn.get(s['id'], 0), -s['n']))   # today's song first, and it may use the searches kept back for it; members' songs after John's
     print(f'{len(todo)} songs to search YouTube for; {ytapi.ledger()["used"]} units used today')
     try:
-        for s in todo:
+        for k, s in enumerate(todo):
+            progress('Searching YouTube', k + 1, len(todo), s['title'] + ' — ' + s['artist'])
             prev = data['songs'].get(s['id'], {})
             e = lookup(dict(s, listId=prev.get('listId'), ms=ms.get(s['id']) or s.get('ms'), newest=s['n'] == newest), tok)
             for k in ('listNote', 'listCheck'):
@@ -423,11 +448,13 @@ def main():
                     e[k] = prev[k]
             data['songs'][s['id']] = e
             done += 1
+            progress('Searching YouTube', k + 1, len(todo), s['title'] + ' — ' + s['artist'], ('error: ' + str(e['error'])) if e.get('error') else ('found: ' + (e.get('title') or e.get('id'))) if e.get('id') else 'no good match')
             print(s['n'], s['title'], '—', s['artist'], '→', e.get('kind', ''), e.get('id'), '|', e.get('channel', ''), '|',
                   e.get('title', ''), e.get('score', ''), '' if e.get('embed', True) else '(owner blocks other sites)',
                   ('error ' + str(e['error'])) if e.get('error') else '')
     except ytapi.Quota:
         print("today's search allowance is used up; the rest wait for tomorrow")
+        progress('Stopped: YouTube’s search allowance for today is used up; the rest wait for tomorrow', force=True)
     try:
         done += lengths(data, tok)
     except ytapi.Quota:
@@ -437,6 +464,7 @@ def main():
             json.dump(data, f, ensure_ascii=False, indent=0, separators=(',', ':'))
     left = sum(1 for s in songs if s['id'] not in data['songs'] or due(data['songs'][s['id']]))
     print(done, 'looked up this run;', left, 'still to do')
+    progress('Finished: ' + str(done) + ' looked up this run, ' + str(left) + ' still to do', force=True)
     write_site(data)
 
 

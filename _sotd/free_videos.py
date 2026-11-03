@@ -131,6 +131,8 @@ def find(songs, data, tok, Y, ms=None):
     if not todo:
         return 0, set()
     print(f"{len(todo)} members' songs to try the free ways for")
+    prog = getattr(Y, 'progress', lambda *a, **k: None)
+    prog('Free ways first (Wikidata, MusicBrainz, Discogs): ' + str(len(todo)) + ' songs', 0, len(todo), force=True)
     found = 0
     left = list(todo)
 
@@ -168,10 +170,12 @@ def find(songs, data, tok, Y, ms=None):
                 data['songs'][s['id']] = e
                 took.add(s['id']); found += 1
                 print(s['n'], s['title'], '—', s['artist'], '→', via, v, '|', c['channel'], '|', c['title'], c['score'])
+                prog('Checking what ' + via + ' found', None, None, s['title'] + ' — ' + s['artist'], 'found on ' + via + ': ' + c['title'])
                 break
         left = [s for s in left if s['id'] not in took]
         return True
 
+    prog('Asking Wikidata for ' + str(len(left)) + ' songs', None, len(left), force=True)
     if not check(wikidata(left), 'Wikidata'):
         return found, {s['id'] for s in left}
     # MusicBrainz and Discogs take the first FREE_MOST still left; the songs MusicBrainz misses stay at the front, so
@@ -180,7 +184,12 @@ def find(songs, data, tok, Y, ms=None):
     for via, fn in (('MusicBrainz', musicbrainz), ('Discogs', discogs)):
         if via == 'Discogs' and not DISCOGS_TOKEN:
             continue
-        if not check({s['id']: fn(s, Y.clean_title) for s in left[:FREE_MOST]}, via):
+        batch = left[:FREE_MOST]
+
+        def ask(k, s, fn=fn, via=via, batch=batch):
+            prog('Asking ' + via, k + 1, len(batch), s['title'] + ' — ' + s['artist'])
+            return fn(s, Y.clean_title)
+        if not check({s['id']: ask(k, s) for k, s in enumerate(batch)}, via):
             return found, {s['id'] for s in left}
     # every way tried and missed: YouTube's search, after John's songs
     pending = set()

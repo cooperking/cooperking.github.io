@@ -459,6 +459,16 @@ html.big.page-edit .uplprog { right: calc(var(--pe-w) + 44px); }
 .uplprog-rows .jobline.bad .ic { background: #e23a6e; box-shadow: none; }
 .uplprog-rows .jobline.bad .ic::after { content: "!"; color: #fff; font: 700 11px/1 var(--sans); }
 .uplprog-rows .jobline.bad .ct { color: #ff8fb0; font-weight: 700; }
+    .ytprog { grid-column: 2 / -1; flex-basis: 100%; margin-top: 6px; font-size: .86em; min-width: 0; }
+    .ytprog p { margin: 2px 0; }
+    .ytprog progress { width: 100%; height: 6px; accent-color: var(--accent, currentColor); }
+    .ytprog .ytsong { font-weight: 600; }
+    .ytprog .ytlast { list-style: none; margin: 4px 0 0; padding: 0; max-height: 9em; overflow: auto; }
+    .ytprog .ytlast li { margin: 1px 0; opacity: .85; overflow-wrap: anywhere; }
+    .ytprog .ytlast li.ok::before { content: '✓ '; }
+    .ytprog .ytlast li.miss::before { content: '– '; }
+    .ytprog .ytlast li.bad::before { content: '! '; }
+    .ytprog .ytunits { opacity: .7; }
 .uplprog-rows .jobline .jobwhy { grid-column: 2 / -1; margin: 4px 0 0; padding: 8px 10px; border-radius: 8px; background: rgba(0, 0, 0, .25); font: 11px/1.4 ui-monospace, Menlo, monospace; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 140px; overflow-y: auto; }
 .uplprog-rows .jobline a.which { text-decoration: underline; }
 .missjob { list-style: none; margin: 0 0 10px; padding: 8px 12px; border-radius: 12px; background: var(--pill-bg); box-shadow: inset 0 0 0 1px var(--line); }
@@ -7972,7 +7982,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // running finding videos? If it fails i'd like to know why"): running at which step, or how its last run ended, and why
   var JOBS = { at: 0, v: null, busy: false };
   function jobLook(then) {
-    if (JOBS.busy) return; if (JOBS.v && Date.now() - JOBS.at < 50e3) { then(); return; }
+    if (JOBS.busy) return; if (JOBS.v && Date.now() - JOBS.at < 15e3) { then(); return; }
     JOBS.busy = true;
     uplCall({ op: 'jobs', id: UPL.on || '' }).then(function (j) { JOBS.busy = false; JOBS.at = Date.now(); JOBS.v = j; then(); }, function () { JOBS.busy = false; });
   }
@@ -7996,9 +8006,34 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         var why = [].concat.apply([], bad.map(function (j) { return j.why || []; }));
         if (why.length) { var pre = document.createElement('pre'); pre.className = 'jobwhy'; pre.textContent = why.join('\n'); el.appendChild(pre); }
       } else { el.classList.add('done'); ct.textContent = run.res === 'success' ? 'done' : run.res; tx.textContent = 'Run ' + run.n + ' ' + (run.res === 'success' ? 'finished' : 'ended: ' + run.res) + ' at ' + hm(run.end) + '. The next one starts as songs come in.'; }
+      // what the video search is doing (youtube.py's progress): the step, how far, the song now, the last few results (John, 3 Nov 2026:
+      // "what youtube.py is doing and searching for and progress")
+      var yt = v.yt, fresh = yt && yt.at && (run.st !== 'completed' ? yt.at > Date.parse(run.at || 0) - 60e3 : Date.now() - yt.at < 6 * 3600e3);
+      if (fresh) {
+        var bx = document.createElement('div'); bx.className = 'ytprog';
+        var ph = document.createElement('p'); ph.className = 'ytph';
+        ph.textContent = yt.phase + (yt.n ? ' · ' + (yt.i ? yt.i + ' of ' + yt.n : yt.n + ' songs') : '') + (run.st !== 'completed' ? ' · ' + hm(yt.at) : '');
+        bx.appendChild(ph);
+        if (yt.n && yt.i) { var bar = document.createElement('progress'); bar.max = yt.n; bar.value = yt.i; bx.appendChild(bar); }
+        if (yt.song && run.st !== 'completed' && !/^(Finished|Stopped)/.test(yt.phase)) { var sg = document.createElement('p'); sg.className = 'ytsong'; sg.textContent = 'Now: ' + yt.song; bx.appendChild(sg); }
+        if ((yt.last || []).length) {
+          var ul = document.createElement('ul'); ul.className = 'ytlast';
+          yt.last.forEach(function (x) { var li = document.createElement('li'); li.className = /^found/.test(x.r) ? 'ok' : /^error/.test(x.r) ? 'bad' : 'miss'; var t = document.createElement('b'); t.textContent = x.s; li.appendChild(t); li.appendChild(document.createTextNode(' → ' + x.r)); ul.appendChild(li); });
+          bx.appendChild(ul);
+        }
+        if (yt.units != null) { var u = document.createElement('p'); u.className = 'ytunits'; u.textContent = 'YouTube allowance used today: ' + yt.units + ' of 10,000 units'; bx.appendChild(u); }
+        el.appendChild(bx);
+      }
       var a = document.createElement('a'); a.className = 'which'; a.href = run.url; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'Open the run ↗'; el.appendChild(a);
     };
     draw(); jobLook(draw);
+    // while it's on screen and running, again every 15 seconds (the search's progress)
+    clearInterval(JOBS.tick);
+    JOBS.tick = setInterval(function () {
+      if (!el.isConnected || document.hidden) { if (!el.isConnected) clearInterval(JOBS.tick); return; }
+      var run = JOBS.v && JOBS.v.run; if (run && run.st === 'completed' && Date.now() - JOBS.at < 120e3) return;
+      jobLook(draw);
+    }, 15e3);
   }
   function uplWhich(li, x, ids, left) {   // the songs a part found nothing for, a tap away (John, 1 Nov 2026: "can we have it say which ones they are")
     var key = x.w + (left ? 'l' : ''), open = !!PROG.open && PROG.open[key];
