@@ -27,9 +27,9 @@ on:
 permissions:
   contents: write
 
-concurrency:
-  group: song-tags
-  cancel-in-progress: false
+# (one at a time per job, not per run: a run's John's-songs job doesn't wait for the run before's members' playlists, so
+# his new song goes out, notifications and all, minutes after his sign-off: John, 3 Nov 2026, today's waited behind
+# members' videos and listening)
 
 jobs:
   # John's own songs first, on their own (no members' playlists: the job's John-only way, as when the Worker can't
@@ -38,6 +38,9 @@ jobs:
   john:
     name: John's songs first
     runs-on: ubuntu-latest
+    concurrency:
+      group: song-tags-john
+      cancel-in-progress: false
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -163,6 +166,9 @@ jobs:
   tags:
     name: Then the members' playlists
     needs: john
+    concurrency:
+      group: song-tags-members
+      cancel-in-progress: false
     if: ${{ !cancelled() }}   # (even when John's run failed: as before, this one does his songs too)
     runs-on: ubuntu-latest
     timeout-minutes: 90
