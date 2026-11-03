@@ -361,6 +361,9 @@ def main():
     import urllib.request
     with urllib.request.urlopen(urllib.request.Request(SONGS_URL, headers={'User-Agent': ytapi.UA}), timeout=30) as r:
         songs = json.loads(r.read())['songs']
+    for s in songs:   # John's Look again, from a playlist's Missing (the Worker marks them retry): searched again, not kept as none found
+        if s.get('retry') and not (data['songs'].get(s['id']) or {}).get('id'):
+            data['songs'].pop(s['id'], None)
     links, ms = {}, {}
     if os.path.exists(LINKS):
         with open(LINKS) as f:

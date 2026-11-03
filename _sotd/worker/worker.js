@@ -3684,6 +3684,7 @@ function uplShareOf(rec) { return UPL_SHARES.includes(rec.share) ? rec.share : '
 // song's details, picture, video, files and facts; moving, taking off and signing off songs); its name, set-up, who
 // sees it, who edits it and removing it stay its owner's. Their files count against its owner's allowance.
 function uplCo(rec, id) { return !!(rec && id && (rec.cw || []).includes(id)); }
+const UPL_RETRY_FOR = 6 * 3600e3;   // (a song John asked to be looked for again: given to the job as retry for six hours)
 const UPL_CO_OPS = ['skip', 'edit', 'facts', 'askfacts', 'order', 'signoff', 'signoffall', 'del', 'move', 'unmove', 'place'];
 function uplCan(all, viewer, rec) {   // whether someone sees this playlist (viewer: a member's id, or none): theirs, or another's that's readable, shared with them and not kept apart
   if (!rec || !all[rec.o]) return false;
@@ -4031,7 +4032,7 @@ async function uplSync(request, env) {
     const ed = data.ed || {};   // (ov: its owner's video for a song, '' none)
     const gone = new Set((data.songs || []).filter(x => uplGone(data, x)).map(x => x.id));
     out[pid] = { title: uplTitle(all, rec), mode: rec.mode, base: rec.base || 0, yt: rec.yt || '', share: uplShareOf(rec), songs: composeSongs(data.songs || [], pv, tags).filter(x => !gone.has(x.id))
-      .map(x => J[x.id] && 'v' in J[x.id] ? Object.assign(x, { ov: J[x.id].v }) : ed[x.id] && 'v' in ed[x.id] ? Object.assign(x, { ov: ed[x.id].v }) : ((data.skip || {})[x.id] || '').includes('v') ? Object.assign(x, { ov: '' }) : x) };   // (its look for a video stopped by its owner: none, so the job doesn't search)   // (John's video over its owner's)
+      .map(x => J[x.id] && 'v' in J[x.id] ? Object.assign(x, { ov: J[x.id].v }) : ed[x.id] && 'v' in ed[x.id] ? Object.assign(x, { ov: ed[x.id].v }) : ((data.skip || {})[x.id] || '').includes('v') ? Object.assign(x, { ov: '' }) : (data.retry || {})[x.id] > Date.now() - UPL_RETRY_FOR ? Object.assign(x, { retry: 1 }) : x) };   // (its look for a video stopped by its owner: none, so the job doesn't search; retry: John's Look again, looked for again by the job, youtube.py)   // (John's video over its owner's)
     if (uplShareOf(rec) === 'public') {   // its songs out, each with its day and cover: the cards for its links (share_pages.py)
       const v = await uplView(env, all, null, pid, rec);
       out[pid].pub = { t: v.t, n: v.n, songs: v.songs.map(x => ({ id: x.id, d: x.d, title: x.title, artist: x.artist, artists: x.artists, img: x.img || '' })) };
@@ -4252,6 +4253,24 @@ async function memberUpl(request, url, env, answer) {
     delete rec.chg; await uplPut(env, U);
     await startJob(env, null, null, 0, null, true).catch(() => {});   // the site job: its videos, moods, years and YouTube copy
     return answer(200, { ok: true, id: pid, st: 'ok', pls: await uplMine(env, uplList(all, me, U), U), view: await uplView(env, all, me, pid, rec) });
+  }
+  if (body.op === 'retry') {   // John's Look again, from Missing (John, 3 Nov 2026: "restart a job on any playlist that has missing items ... Only me"): its songs with no preview or video looked for again
+    if (me !== (await env.SOTD.get('owner'))) return answer(403, { error: 'Only John can do that.' });
+    const pid = String(body.id || ''), rec = U[pid]; if (!rec) return answer(404, { error: 'No such playlist.' });
+    const data = await uplSongs(env, pid), k = ['p', 'v'].includes(body.k) ? body.k : 'pv', meta = (await env.SOTD.get('uplmeta', 'json')) || {}, J = await uplJohnAll(env), ed = data.ed || {};
+    const pv = Object.assign({}, pvMem, (await env.SOTD.get('previews', 'json')) || {}), songs = (data.songs || []).filter(x => !uplGone(data, x));
+    const noPv = songs.filter(x => pv[x.id] === '-' || !(x.id in pv)), noVid = songs.filter(x => !(meta[x.id] && meta[x.id].vid) && !(J[x.id] && J[x.id].v) && !(ed[x.id] && ed[x.id].v));
+    let np = 0, nv = 0;
+    if (k.includes('p')) { for (const x of noPv) if (pv[x.id] === '-') { delete pv[x.id]; np++; } if (np) { for (const x of noPv) delete pvMem[x.id]; await kvSoft(env, 'previews', JSON.stringify(pv)); } await fillPreviews(env, noPv, UPL_PV_MOST, pv).catch(() => null); }
+    if (k.includes('v') && noVid.length) {
+      data.retry = data.retry || {}; const now = Date.now(); for (const x of noVid) { data.retry[x.id] = now; nv++; }
+      if (data.skip) for (const x of noVid) if (data.skip[x.id]) { data.skip[x.id] = data.skip[x.id].replace('v', ''); if (!data.skip[x.id]) delete data.skip[x.id]; }
+      await env.SOTD.put('upl:' + pid, JSON.stringify(data));
+      const seen = (await env.SOTD.get('uplseen', 'json')) || {}; for (const x of noVid) if (seen[x.id]) seen[x.id] = seen[x.id].replace('v', ''); await kvSoft(env, 'uplseen', JSON.stringify(seen));
+      rec.ch = now; await uplPut(env, U);
+      await startJob(env, null, null, 0, null, true).catch(() => {});
+    }
+    return answer(200, { ok: true, previews: np, videos: nv, view: await uplView(env, all, me, pid, rec) });
   }
   const pid = String(body.id || ''), rec = own(pid) || (UPL_CO_OPS.includes(body.op) && U[pid] && uplCo(U[pid], me) && all[U[pid].o] && !apart(all, me, U[pid].o) ? U[pid] : null);   // (a collaborator: its songs)
   if (!rec) return answer(404, { error: 'No such playlist of yours.' });

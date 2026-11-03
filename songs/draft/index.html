@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="a211e68aadd5">
+<meta name="sotd-build" content="1e9b26dcbce5">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -2168,6 +2168,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     <h3 id="missh">What’s missing</h3>
     <div class="misstabs" id="misstabs" role="tablist"></div>
     <p class="misstip" id="misstip"></p>
+    <div class="ask-acts" id="missretryl" hidden><button class="copy ghost" id="missretry" type="button">Look again</button></div>
     <ul class="missl" id="missl"></ul>
     <p class="missnone" id="missnone" hidden></p>
   </div>
@@ -8042,8 +8043,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function uplOwnCan() { return !!(UPL.on && UPL.view && UPL.view.mine && !TV); }
   function uplEditSync() {
     document.getElementById('upleditbtn').hidden = !uplOwnCan() || ED.on;
-    document.getElementById('cal').classList.toggle('has-edit', uplOwnCan() && !ED.on);   // (its row only when it's there)
-    document.getElementById('listedit').hidden = !uplOwnCan();   // (a playlist's, above its list)
+    var johnSee = !!(MEMBER && MEMBER.owner === true && UPL.on && UPL.view && !TV);   // (John: Missing on anyone's, to look again)
+    document.getElementById('cal').classList.toggle('has-edit', (uplOwnCan() || johnSee) && !ED.on);   // (its row only when it's there)
+    document.getElementById('listedit').hidden = !uplOwnCan() && !johnSee;   // (a playlist's, above its list)
+    document.getElementById('upleditbtn2').hidden = !uplOwnCan();
     missSync();
     var me = uplPls().filter(function (p) { return p.id === UPL.on; })[0];
   }
@@ -8065,7 +8068,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   function missSync() {
     if (!MISS_KINDS || !missDlg) return;   // (before they're set up: the first draw)
-    var can = uplOwnCan(), L = can && missLists();
+    var can = uplOwnCan() || !!(MEMBER && MEMBER.owner === true && UPL.on && UPL.view && !TV), L = can && missLists();   // (John: any playlist's, to look again)
     var any = L && MISS_KINDS.some(function (m) { return L[m.k].length; });
     [].forEach.call(document.querySelectorAll('.missbtn'), function (b) {
       b.hidden = !can || !L || !L.n || ED.on || !any;   // (only when something is missing: John, 3 Nov 2026)
@@ -8084,6 +8087,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       tabs.appendChild(b);
     });
     var m = MISS_KINDS.filter(function (x) { return x.k === MISS.k; })[0], list = L[m.k];
+    var rb = document.getElementById('missretry'); document.getElementById('missretryl').hidden = !(MEMBER && MEMBER.owner === true) || !(m.k === 'p' || m.k === 'v') || !list.length;   // (John only)
+    rb.textContent = m.k === 'p' ? 'Look again for previews' : 'Look again for videos'; rb.disabled = false;
     // still being looked for (previews and videos: the progress's left), apart from those with none found (John, 3 Nov 2026: "If it's still being looked up that needs to be seen")
     var lf = (m.k === 'p' || m.k === 'v') && v.prog && v.prog.left && v.prog.left[m.k] || [], looking = list.filter(function (x) { return lf.indexOf(x.id) >= 0; }), found = list.filter(function (x) { return lf.indexOf(x.id) < 0; });
     var tips = { p: 'No preview on Spotify: these play their video if they have one; add your own MP3 to play the whole song.', v: 'No YouTube video found. Tap one to give it a YouTube link or your own MP4.' };
@@ -8114,6 +8119,16 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     });
   });
   document.getElementById('missclose').addEventListener('click', function () { closeDialog(missDlg); });
+  document.getElementById('missretry').addEventListener('click', function () {   // John's Look again: its missing previews looked up now, its missing videos by the next run of the site job
+    var b = this, k = MISS.k; if (!UPL.on) return; b.disabled = true; b.textContent = 'Looking…';
+    uplCall({ op: 'retry', id: UPL.on, k: k }).then(function (j) {
+      b.disabled = false;
+      if (j.status !== 200) { toast(j.error || 'Couldn’t start it just now'); missDraw(); return; }
+      if (j.view) uplApply(j.view, { keep: true });
+      toast(k === 'p' ? 'Looked again: ' + (j.previews ? j.previews + ' looked up afresh' : 'the rest are still being looked up') : 'Asked again: the site job looks for ' + (j.videos === 1 ? '1 video' : (j.videos || 0) + ' videos') + ' in its next run (a few minutes)');
+      missDraw();
+    }).catch(function () { b.disabled = false; toast('Couldn’t reach the site. Try again.'); missDraw(); });
+  });
   // songs with no date (John, 3 Nov 2026): a member's calendar's songs Spotify gave no real added date (1970): listed
   // by themselves under the calendar, each a tap from playing (in the day pop-up, on no day)
   var nodateDlg = document.getElementById('nodatedlg');
