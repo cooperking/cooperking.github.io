@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="111ccd168434">
+<meta name="sotd-build" content="6c603e66ce35">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -1602,7 +1602,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
 @media (hover: hover) { .idx-list .open:hover .tt { text-decoration: underline; text-underline-offset: 3px; } }
 .mine-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .mine-list li { display: grid; grid-template-columns: 36px 44px minmax(0, 1fr) auto auto; align-items: center; gap: 10px; padding: 6px; border-radius: 12px; background: var(--tile); position: relative; }
-.mine-list li.dragging { z-index: 3; background: #fff; box-shadow: 0 12px 28px rgba(29, 11, 30, .22); }
+.mine-list li.dragging { z-index: 3; background: var(--bg); box-shadow: 0 12px 28px rgba(29, 11, 30, .22); }
 .mine-list li.settling { transition: transform .18s ease; }
 .mine-list .handle { width: 36px; height: 36px; border: 0; background: none; color: var(--muted); cursor: grab; touch-action: none; display: grid; place-items: center; border-radius: 8px; }
 .mine-list .handle:active { cursor: grabbing; }
@@ -1649,7 +1649,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
 .namefield { font-family: var(--sans); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
 .nameinput { width: 100%; margin-top: -4px; padding: 11px 13px; border: 1px solid var(--line); border-radius: 10px; background: var(--pill-bg); color: var(--fg); font-family: var(--serif); font-size: 18px; line-height: 1.2; }
 .nameinput::placeholder { color: var(--faint); font-style: italic; }
-.nameinput:focus { outline: none; border-color: var(--fg); background: #fff; }
+.nameinput:focus { outline: none; border-color: var(--fg); background: var(--pill-hover); }   /* (not white: on the calendar's own panels the text is light: John, 3 Nov 2026) */
 .copy { text-decoration: none; justify-self: start; display: inline-flex; align-items: center; gap: 8px; padding: 11px 18px; border-radius: 999px; border: 0; background: var(--fg); color: var(--bg); font-family: var(--sans); font-weight: 600; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; cursor: pointer; }
 .copy:disabled { opacity: .35; cursor: default; }
 .mine-top { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; }
