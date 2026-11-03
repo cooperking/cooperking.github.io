@@ -2962,16 +2962,19 @@ function mailEsc(t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').r
 function mailImg(u) { return /^https:\/\/[^\s"'<>]+$/.test(String(u || '')) && !/\.gif(\?|$)/i.test(u) ? String(u) : ''; }   // (an https picture: the share card, a message's picture or a cover)
 // the month's colour, as the calendar's ground (its PALETTES' first colour), for the email's header and links (John, 3 Nov 2026)
 const MAIL_MONTH = ['#0c1445', '#652bee', '#11970c', '#b613ec', '#096a42', '#ec1a13', '#1346ec', '#d85a06', '#0b86d3', '#ec135b', '#09696d', '#ec13c1'];
-function mailTint() { return MAIL_MONTH[Number(londonDay().slice(5, 7)) - 1] || '#ec135b'; }
+function mailTint(link) {   // the song's month (its day in the link: #3-11-2026, &d=03-11-2026), else this month (John, 3 Nov 2026: "the colour of the month of the song")
+  const m = String(link || '').match(/(?:#|&d=)(\d{1,2})-(\d{1,2})-\d{4}\b/);
+  return MAIL_MONTH[(m ? Number(m[2]) : Number(londonDay().slice(5, 7))) - 1] || '#ec135b';
+}
 function mailSettings() { return SITE_SONGS + '#emails'; }
 function mailFoot() { return '\n\n—\nYou can update your email notification settings at ' + mailSettings(); }
-function mailFootHtml() { return '<p style="margin:28px 0 0;padding-top:16px;border-top:1px solid #eadfe3;font:13px/1.5 Helvetica,Arial,sans-serif;color:#7a6a72">You can update your email notification settings at <a href="' + mailEsc(mailSettings()) + '" style="color:' + mailTint() + '">' + mailEsc(mailSettings().replace(/^https:\/\//, '')) + '</a></p>'; }
-function mailShell(inner) {   // the email's frame: the site's pink bar, a white card, the footer
+function mailFootHtml(tint) { return '<p style="margin:28px 0 0;padding-top:16px;border-top:1px solid #eadfe3;font:13px/1.5 Helvetica,Arial,sans-serif;color:#7a6a72">You can update your email notification settings at <a href="' + mailEsc(mailSettings()) + '" style="color:' + (tint || mailTint()) + '">' + mailEsc(mailSettings().replace(/^https:\/\//, '')) + '</a></p>'; }
+function mailShell(inner, link) {   // link: the song's, for its month's colour   // the email's frame: the site's pink bar, a white card, the footer
   return '<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"></head><body style="margin:0;padding:0;background:#f6f0f2">'
     + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f0f2"><tr><td align="center" style="padding:24px 12px">'
     + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:18px;overflow:hidden">'
-    + '<tr><td style="background:' + mailTint() + ';padding:14px 24px;font:600 12px/1 Helvetica,Arial,sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#ffffff">John’s Song of the Day</td></tr>'
-    + '<tr><td style="padding:24px">' + inner + mailFootHtml() + '</td></tr></table></td></tr></table></body></html>';
+    + '<tr><td style="background:' + mailTint(link) + ';padding:14px 24px;font:600 12px/1 Helvetica,Arial,sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#ffffff">John’s Song of the Day</td></tr>'
+    + '<tr><td style="padding:24px">' + inner + mailFootHtml(mailTint(link)) + '</td></tr></table></td></tr></table></body></html>';
 }
 function mailItemHtml(x, big) {   // one notification: its picture (as shared), title, words and its link
   const img = mailImg(x.i), link = x.u || SITE_SONGS;
@@ -2989,7 +2992,7 @@ async function noteMail(env, to, msg, cat) {   // cat: 'song' (the Song of the D
     const m = all[id], item = mailItem(msg), mode = mailMode(m);
     let sent = false;
     if (mode !== 'day' && await dayCount(env, 'mailme:' + id, MAIL_EACH_DAY) && await dayCount(env, 'mailme-all', MAIL_ALL_DAY)) {
-      try { await sendMail(env, m.email, item.t, (item.b ? item.b + '\n\n' : '') + item.u + mailFoot(), 'note', mailShell(mailItemHtml(item, true))); sent = true; } catch (e) { console.log('noteMail: ' + (e && e.message)); }
+      try { await sendMail(env, m.email, item.t, (item.b ? item.b + '\n\n' : '') + item.u + mailFoot(), 'note', mailShell(mailItemHtml(item, true), item.u)); sent = true; } catch (e) { console.log('noteMail: ' + (e && e.message)); }
     }
     if (!sent) {   // (once a day, or past today's allowance: in tomorrow morning's email)
       const k = 'mdig:' + id, l = (await env.SOTD.get(k, 'json')) || [];
@@ -3012,8 +3015,9 @@ async function mailDigests(env) {   // the day's email for each member with noti
       await env.SOTD.delete(key.name);
       if (!mailMode(m) || !items.length) continue;
       const text = items.map(x => '• ' + x.t + (x.b ? '\n  ' + x.b : '') + '\n  ' + x.u).join('\n\n');
+      const lead = (items.find(x => /(?:#|&d=)\d{1,2}-\d{1,2}-\d{4}\b/.test(x.u)) || items[0]).u;   // (the first song's month)
       const html = mailShell(items.length === 1 ? mailItemHtml(items[0], true)
-        : '<h1 style="margin:0 0 18px;font:500 24px/1.25 Georgia,serif;color:#1d0b1e">Your day on Song of the Day</h1>' + items.map(x => '<div style="padding:18px 0;border-top:1px solid #eadfe3">' + mailItemHtml(x, false) + '</div>').join(''));
+        : '<h1 style="margin:0 0 18px;font:500 24px/1.25 Georgia,serif;color:#1d0b1e">Your day on Song of the Day</h1>' + items.map(x => '<div style="padding:18px 0;border-top:1px solid #eadfe3">' + mailItemHtml(x, false) + '</div>').join(''), lead);
       try { await sendMail(env, m.email, items.length === 1 ? items[0].t : items.length + ' notifications from Song of the Day', text + mailFoot(), 'notes', html); }
       catch (e) { console.log('mailDigests: ' + (e && e.message)); }
     }
