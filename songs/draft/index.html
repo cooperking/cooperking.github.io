@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="2c59875a18c5">
+<meta name="sotd-build" content="9dfcdaca5439">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -2528,19 +2528,26 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function readFav() { try { return JSON.parse(localStorage.getItem('sotd-playlist') || '[]').filter(function (t) { return songOf(t); }); } catch (e) { return []; } }
   var fav = readFav();
   function saveFav() { try { localStorage.setItem('sotd-playlist', JSON.stringify(fav)); } catch (e) {} if (typeof plChanged === 'function') plChanged(); }
-  function isFav(s) { return fav.indexOf(s.track) !== -1; }
+  // hearts are always the unsaved My playlist (John, 3 Nov 2026: "heart automatically create a non-saved playlist - as soon as
+  // it's saved it shouldn't matter if the song has a heart or not"): with a saved playlist open, they're kept apart from
+  // it (the unsaved one, put aside: plStash), and that playlist changes only in its own list
+  function heartList() { if (typeof PL === 'object' && PL && PL.cur) { var st = plStash(); return (st && st.tracks) || []; } return fav; }
+  function heartSet(list) { var st = plStash() || { tracks: [], name: '' }; st.tracks = list; plStash(st); }
+  function isFav(s) { return heartList().indexOf(s.track) !== -1; }
+  function mineRemove(s) {   // the × in My playlist's list: off the list open there (a saved one: it, asked first if it's on a calendar; else My playlist's hearts)
+    if (!(typeof PL === 'object' && PL && PL.cur)) { toggleFav(s); renderMine(); return; }
+    var l = PL.lists.filter(function (x) { return x.id === PL.cur; })[0], pc = l && plOnCal(l);
+    var go = function () { var j = fav.indexOf(s.track); if (j === -1) return; fav.splice(j, 1); saveFav(); syncFav(); renderMine(); };
+    if (!pc) { go(); return; }
+    ask({ k: l.name, h: 'Delete “' + s.title + '”?', t: pc.mode === 'list' ? 'It comes off this playlist for everyone who sees it.' : 'It comes off the calendar for everyone, and its day is left empty.', ok: 'Delete', no: 'Keep it' }).then(function (yes) { if (yes) go(); });
+  }
   function toggleFav(s) {
-    var i = fav.indexOf(s.track);
-    var l = i !== -1 && typeof PL === 'object' && PL && PL.cur ? PL.lists.filter(function (x) { return x.id === PL.cur; })[0] : null, pc = l && plOnCal(l);
-    if (pc) {   // a saved playlist on the calendar: taking a song out deletes it there, so it's asked first
-      ask({ k: l.name, h: 'Delete “' + s.title + '”?', t: pc.mode === 'list' ? 'It comes off this playlist for everyone who sees it.' : 'It comes off the calendar for everyone, and its day is left empty.', ok: 'Delete', no: 'Keep it' }).then(function (yes) {
-        var j = fav.indexOf(s.track);
-        if (!yes || j === -1) return;
-        fav.splice(j, 1); saveFav(); syncFav();
-        if (mine.open) renderMine();
-      });
-      return;
+    if (typeof PL === 'object' && PL && PL.cur) {   // a saved playlist open: the heart is the unsaved My playlist's, the saved one untouched
+      var hl = heartList().slice(), k = hl.indexOf(s.track);
+      if (k === -1) { hl.push(s.track); songxKeep(s); heartTell(s); } else hl.splice(k, 1);
+      heartSet(hl); syncFav(); return;
     }
+    var i = fav.indexOf(s.track);
     if (i === -1) { fav.push(s.track); songxKeep(s); heartTell(s); } else fav.splice(i, 1);
     saveFav();
     syncFav();
@@ -2561,7 +2568,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   var monthList = [];
   function setMonthAdd() {
     var b = document.getElementById('monthadd'); if (!b) return;
-    var fresh = monthList.filter(function (s) { return fav.indexOf(s.track) === -1; }).length;
+    var hl = heartList(), fresh = monthList.filter(function (s) { return hl.indexOf(s.track) === -1; }).length;
     b.hidden = !monthList.length;
     b.disabled = !fresh;
     var t = !fresh ? 'All in My playlist' : fresh === monthList.length ? 'Add ' + fresh + ' to My playlist' : 'Add ' + fresh + ' more to My playlist';
@@ -2580,8 +2587,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       if (!fab.hidden && lastCount !== -1) { fab.classList.remove('bump', 'enter'); void fab.offsetWidth; fab.classList.add(entering ? 'enter' : 'bump'); }
       lastCount = fav.length;
     }
+    var hl = heartList();
     document.querySelectorAll('[data-track]').forEach(function (el) {
-      var on = fav.indexOf(el.getAttribute('data-track')) !== -1;
+      var on = hl.indexOf(el.getAttribute('data-track')) !== -1;
       el.classList.toggle('is-fav', on);
       if (el.classList.contains('favbtn')) el.setAttribute('aria-pressed', on ? 'true' : 'false');
       if (el.classList.contains('addfav')) { el.setAttribute('aria-pressed', on ? 'true' : 'false'); el.querySelector('.lbl').textContent = on ? 'In my playlist' : 'Add to my playlist'; el.title = on ? 'In my playlist' : 'Add to my playlist'; }
@@ -5704,7 +5712,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       tx.appendChild(tt); tx.appendChild(ta);
       tx.addEventListener('click', function () { playMine(idx); });   // plays on through the playlist from this song
       var rm = document.createElement('button'); rm.type = 'button'; rm.className = 'rm'; rm.innerHTML = CROSS; rm.setAttribute('aria-label', 'Remove ' + s.title);
-      rm.addEventListener('click', function () { toggleFav(s); renderMine(); });
+      rm.addEventListener('click', function () { mineRemove(s); });
       li.appendChild(hd); li.appendChild(th); li.appendChild(tx); li.appendChild(rowDl(s)); li.appendChild(rm);
       minelist.appendChild(li);
       hd.addEventListener('keydown', function (e) {
@@ -6371,9 +6379,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (e.key === 'Enter') { e.preventDefault(); setMakeLink(); document.getElementById('makebtn').click(); }
   });
   document.getElementById('monthadd').addEventListener('click', function () {
-    var added = [];
-    monthList.forEach(function (s) { if (fav.indexOf(s.track) === -1) { fav.push(s.track); songxKeep(s, true); added.push(s); } });
-    songxSave(); saveFav(); syncFav();
+    var added = [], hl = heartList().slice();
+    monthList.forEach(function (s) { if (hl.indexOf(s.track) === -1) { hl.push(s.track); songxKeep(s, true); added.push(s); } });
+    if (typeof PL === 'object' && PL && PL.cur) heartSet(hl); else { fav = hl; saveFav(); }
+    songxSave(); syncFav();
     if (added.length) heartTell(added);   // (their owners told once each, for them all)
   });
   document.getElementById('monthdl').addEventListener('click', function () { dlMany(monthList.slice(), document.getElementById('sideh').textContent || 'this month'); });
@@ -6561,9 +6570,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     }
   }
   document.getElementById('mixadd').addEventListener('click', function () {
-    var added = [];
-    selection().forEach(function (s) { if (fav.indexOf(s.track) === -1) { fav.push(s.track); added.push(s); } });
-    saveFav(); syncFav(); setAdd();
+    var added = [], hl = heartList().slice();
+    selection().forEach(function (s) { if (hl.indexOf(s.track) === -1) { hl.push(s.track); added.push(s); } });
+    if (typeof PL === 'object' && PL && PL.cur) heartSet(hl); else { fav = hl; saveFav(); }
+    syncFav(); setAdd();
     if (added.length) heartTell(added);
   });
 
@@ -6596,7 +6606,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var list = selection(), act = document.getElementById('mixact'), add = document.getElementById('mixadd');
     act.hidden = !list.length;
     if (!list.length) return;
-    var fresh = list.filter(function (s) { return fav.indexOf(s.track) === -1; }).length;
+    var hl0 = heartList(), fresh = list.filter(function (s) { return hl0.indexOf(s.track) === -1; }).length;
     var t = !fresh ? 'All in My playlist' : fresh < list.length ? 'Add ' + fresh + ' more to My playlist'
       : list.length === 1 ? 'Add to My playlist' : 'Add ' + list.length + ' to My playlist';
     if (add.getAttribute('data-t') !== t) { add.setAttribute('data-t', t); add.innerHTML = HEART + '<span></span>'; add.lastChild.textContent = t; add.classList.toggle('is-fav', !fresh); }
@@ -7046,8 +7056,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     plStat('Saving…');
     plApi({ op: 'save', name: n, tracks: fav.slice() }).then(function (j) {
       if (j.status !== 200) { plStat(j.error || 'Couldn’t save just now'); return; }
-      PL.lists = j.lists; plSetCur(j.list.id); plAt(j.list.at);
-      plStat('Saved. It’s on all your devices.'); renderMine();
+      PL.lists = j.lists; plStash({ tracks: fav.slice(), name: '' }); plSetCur(j.list.id); plAt(j.list.at);   // (the hearts carry on as the unsaved My playlist, apart from the saved one now)
+      plStat('Saved. It’s on all your devices.'); renderMine(); syncFav();
     }).catch(function () { plStat('Couldn’t reach the site. Try again.'); });
   }
   document.getElementById('pldel').addEventListener('click', function () {
@@ -11130,7 +11140,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var picks = byDate[cell.getAttribute('data-day')] || [];
     if (!picks.length) return;
     var add = !picks.every(isFav);
-    if (add) { var added = picks.filter(function (s) { return !isFav(s); }); added.forEach(function (s) { fav.push(s.track); songxKeep(s); }); saveFav(); syncFav(); heartTell(added); }
+    if (add) { var added = picks.filter(function (s) { return !isFav(s); }), hl = heartList().slice(); added.forEach(function (s) { hl.push(s.track); songxKeep(s); }); if (typeof PL === 'object' && PL && PL.cur) heartSet(hl); else { fav = hl; saveFav(); } syncFav(); heartTell(added); }
     else picks.forEach(function (s) { if (isFav(s)) toggleFav(s); });
     toast(add ? 'Added to My playlist' : 'Taken off My playlist');
   }
