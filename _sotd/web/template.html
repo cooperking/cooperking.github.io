@@ -499,7 +499,9 @@ html.upl-list .side-acts .listbtn { display: inline-grid; }
 .ac-upls .acts button.x { color: #c2185b; }
 .ac-upls .waits { display: grid; gap: 6px; margin: 4px 0 2px; padding: 9px 10px; border-radius: 12px; border: 1px solid rgba(226, 58, 110, .45); background: rgba(226, 58, 110, .07); }
 .ac-upls .waits > p { margin: 0; font: 600 10.5px/1.2 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: #c2185b; }
-.ac-upls .waits ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.ac-upls .waits ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-height: 300px; overflow-y: auto; overscroll-behavior: contain; }   /* (a hundred waiting: scrolled within, not the whole page: John, 3 Nov 2026) */
+.ac-upls .waits .wh { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 10px; }
+.ac-upls .waits .wh p { margin: 0; }
 .ac-upls .waits li { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 4px 10px; }
 .ac-upls .waits .wt { font: 500 15px/1.2 var(--serif); overflow-wrap: anywhere; }
 .ac-upls .waits .wa { grid-column: 1; font-size: 12px; color: var(--muted); }
@@ -8518,9 +8520,23 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       }).catch(function () { if (b) b.disabled = false; toast('Couldn’t reach the site. Try again.'); });
     });
   }
+  function uplSignoffAll(p, n, b) {
+    var snd = p.send || {};
+    return ask({ k: p.mode === 'list' ? p.n : p.t || p.n, h: 'Sign off all ' + n + ' songs?', t: 'They go out for everyone on your ' + (p.mode === 'list' ? 'playlist' : 'calendar, each on its day') + '.' + (snd.on ? ' The members get one message from you, for the newest, not one for each.' : ' No message goes to the members.'), ok: 'Sign off all', no: 'Not yet' }).then(function (yes) {
+      if (!yes) return;
+      if (b) b.disabled = true;
+      return uplCall({ op: 'signoffall', id: p.id }).then(function (j) {
+        if (b) b.disabled = false;
+        if (j.status !== 200) { toast(j.error || 'Couldn’t sign them off just now'); return; }
+        if (j.pls) { MEMBER.pls = j.pls; uplMark(); uplWaitCount(); if (acct.open) uplDrawAcct(); }
+        if (j.view) uplRefreshViews(p.id, j.view);
+        toast(j.n ? (j.n === 1 ? '1 song' : j.n + ' songs') + ' signed off: out for everyone' : 'Nothing left to sign off');
+      }).catch(function () { if (b) b.disabled = false; toast('Couldn’t reach the site. Try again.'); });
+    });
+  }
   function uplOwnRec() { return uplPls().filter(function (p) { return p.id === UPL.on; })[0] || Object.assign({ id: UPL.on }, UPL.view); }
   function uplWaitCount() {   // the songs waiting for them, on the Profile's Playlists tab
-    var n = uplPls().reduce(function (t, p) { return t + (p.mine && p.wait ? p.wait.length : 0); }, 0), el = document.getElementById('actabln');
+    var n = uplPls().reduce(function (t, p) { return t + ((p.mine || p.co) && p.wait ? p.waitN || p.wait.length : 0); }, 0), el = document.getElementById('actabln');
     if (el) { el.hidden = !n; el.textContent = !n ? '' : n > 99 ? '99+' : String(n); }
     return n;
   }
@@ -9220,7 +9236,14 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var st = document.createElement('span'); st.className = 'st' + (p.st === 'err' ? ' warn' : ''); st.textContent = uplStatus(p); box.appendChild(st);
     if ((p.wait || []).length) {
       var wb = document.createElement('div'); wb.className = 'waits';
-      var wh = document.createElement('p'); wh.textContent = (p.wait.length === 1 ? '1 song waits' : p.wait.length + ' songs wait') + ' for you to sign off'; wb.appendChild(wh);
+      var wn = p.waitN || p.wait.length, whr = document.createElement('div'); whr.className = 'wh';
+      var wh = document.createElement('p'); wh.textContent = (wn === 1 ? '1 song waits' : wn + ' songs wait') + ' for you to sign off' + (wn > p.wait.length ? ' (the newest ' + p.wait.length + ' below)' : ''); whr.appendChild(wh);
+      if (wn > 1) {   // all at once (John, 3 Nov 2026: "I can't sign them all off at once")
+        var sa = document.createElement('button'); sa.type = 'button'; sa.className = 'copy'; sa.textContent = 'Sign off all ' + wn;
+        sa.addEventListener('click', function () { uplSignoffAll(p, wn, sa); });
+        whr.appendChild(sa);
+      }
+      wb.appendChild(whr);
       var wl = document.createElement('ul');
       p.wait.forEach(function (w) {
         var wi = document.createElement('li');
@@ -9251,7 +9274,6 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     function act(label, cls, fn) { var b = document.createElement('button'); b.type = 'button'; b.textContent = label; if (cls) b.className = cls; b.addEventListener('click', fn); acts.appendChild(b); return b; }
     if (!pop) {   // (the box itself opens it, and its Notifications are above it: uplAcctRow)
       if (p.st === 'join') act('Send the invite link again', '', function () { uplLinkAgain(p); });
-      if (p.src === 'csv') act('Update', '', function () { impOpen(0, p.id); });
       if (p.st !== 'ok') act('Remove', 'x', function () { uplRemoveAsk(p); });
       return;
     }

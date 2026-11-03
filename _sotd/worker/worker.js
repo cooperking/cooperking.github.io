@@ -3669,7 +3669,7 @@ function uplShareOf(rec) { return UPL_SHARES.includes(rec.share) ? rec.share : '
 // song's details, picture, video, files and facts; moving, taking off and signing off songs); its name, set-up, who
 // sees it, who edits it and removing it stay its owner's. Their files count against its owner's allowance.
 function uplCo(rec, id) { return !!(rec && id && (rec.cw || []).includes(id)); }
-const UPL_CO_OPS = ['skip', 'edit', 'facts', 'askfacts', 'order', 'signoff', 'del', 'move', 'unmove', 'place'];
+const UPL_CO_OPS = ['skip', 'edit', 'facts', 'askfacts', 'order', 'signoff', 'signoffall', 'del', 'move', 'unmove', 'place'];
 function uplCan(all, viewer, rec) {   // whether someone sees this playlist (viewer: a member's id, or none): theirs, or another's that's readable, shared with them and not kept apart
   if (!rec || !all[rec.o]) return false;
   if (viewer && rec.o === viewer) return true;
@@ -3689,7 +3689,8 @@ async function uplMine(env, pls, U) {   // their own playlists' songs waiting fo
   for (const p of pls) {
     if (!(p.mine || p.co) || p.st !== 'ok' || !U[p.id]) continue;
     const rec = U[p.id], data = await uplSongs(env, p.id), days = uplDays(data.songs || [], rec);
-    p.wait = (data.songs || []).map((x, i) => uplWaiting(rec, data, x) && !uplGone(data, x) ? { id: x.id, title: x.title, artist: x.artist, d: days[i].d, img: x.img || '' } : null).filter(Boolean).slice(-20);
+    const w = (data.songs || []).map((x, i) => uplWaiting(rec, data, x) && !uplGone(data, x) ? { id: x.id, title: x.title, artist: x.artist, d: days[i].d, img: x.img || '' } : null).filter(Boolean);
+    p.waitN = w.length; p.wait = w.slice(-50);   // (how many in all, and the newest 50 to show: John, 3 Nov 2026)
   }
   return pls;
 }
@@ -4249,7 +4250,7 @@ async function memberUpl(request, url, env, answer) {
     if (fresh.length && rec.st === 'ok') await pushAll(env, { title: all[me].name + ' added you to “' + uplName(all, rec) + '”', body: 'You can edit it now: its songs, their pictures, details, videos and facts. Open it and tap Edit.', url: SITE_SONGS + '#u=' + pid, tag: 'sotd-collab-' + pid }, fresh, { kind: 'member', direct: true, via: { t: 'member', name: all[me].name } }).catch(() => {});
     return answer(200, { ok: true, pls: await uplMine(env, uplList(all, me, U), U), view: rec.st === 'ok' ? await uplView(env, all, me, pid, rec) : null });
   }
-  if (rec.src === 'mpl' && ['link', 'check', 'signoff', 'order', 'title', 'del'].includes(body.op)) return answer(400, { error: 'That’s done in the playlist itself.' });
+  if (rec.src === 'mpl' && ['link', 'check', 'signoff', 'signoffall', 'order', 'title', 'del'].includes(body.op)) return answer(400, { error: 'That’s done in the playlist itself.' });
   if (rec.src === 'csv' && ['link', 'check'].includes(body.op)) return answer(400, { error: 'Upload a fresh export from Exportify instead.' });
   if (body.op === 'skip') {   // its owner stops the look for one song's preview (p), video (v), moods (m) or year (y): counted as none found
     const k = String(body.k || ''), data = await uplSongs(env, pid), t = String(body.track || '');
@@ -4313,6 +4314,17 @@ async function memberUpl(request, url, env, answer) {
     if (Date.now() - (rec.tried || 0) < UPL_CHECK_GAP) return answer(429, { error: 'Looked a moment ago. Try again in a minute.' });
     await uplRead(env, pid, rec, U);
     return answer(200, Object.assign({ ok: true, st: rec.st, pls: await uplMine(env, uplList(all, me, U), U) }, rec.st === 'ok' ? { view: await uplView(env, all, me, pid, rec) } : {}));
+  }
+  if (body.op === 'signoffall') {   // every waiting song signed off at once (John, 3 Nov 2026: "I can't sign them all off at once"): out for everyone; one message to the members at most, for the newest, not one each
+    const data = await uplSongs(env, pid), wait = (data.songs || []).filter(y => uplWaiting(rec, data, y) && !uplGone(data, y));
+    if (!wait.length) return answer(200, { ok: true, n: 0, view: await uplView(env, all, me, pid, rec), pls: await uplMine(env, uplList(all, me, U), U) });
+    if (!await dayCount(env, 'uplsign:' + me, UPL_SIGNOFF_DAY)) return answer(429, { error: 'That’s ' + UPL_SIGNOFF_DAY + ' sign-offs today, the most for a day.' });
+    const last = wait[wait.length - 1];
+    data.rel = data.rel || {}; data.reld = data.reld || {}; data.ann = data.ann || {};
+    const now = Date.now(), today = londonDay();
+    for (const y of wait) if (y !== last) { data.rel[y.id] = now; data.reld[y.id] = today; data.ann[y.id] = now; }   // (out, with no message of their own)
+    const r = await uplSignoffDo(env, all, pid, rec, data, last);   // (the newest: as one sign-off, its message as its owner chose)
+    return answer(200, Object.assign({ ok: true, n: wait.length, sent: r.sent, view: await uplView(env, all, me, pid, rec), pls: await uplMine(env, uplList(all, me, U), U) }, r.on ? { on: r.on, at: r.at } : {}));
   }
   if (body.op === 'signoff') {
     const data = await uplSongs(env, pid), x = (data.songs || []).find(y => y.id === String(body.track || '') && !uplGone(data, y));
