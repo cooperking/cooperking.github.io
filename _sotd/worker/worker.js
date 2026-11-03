@@ -113,6 +113,7 @@ export default {
     })().catch(e => console.log('scheduled: ' + (e && e.message))));
     ctx.waitUntil(appUpdates(env).catch(e => console.log('appUpdates: ' + (e && e.message))));   // (on its own: it needs nothing from Spotify)
     ctx.waitUntil(spKeep(env).catch(e => console.log('spKeep: ' + (e && e.message))));
+    ctx.waitUntil(mailDigests(env).catch(e => console.log('mailDigests: ' + (e && e.message))));   // (notifications by email, once a day, for those who chose it)
     ctx.waitUntil(catalogTidy(env).catch(e => console.log('catalogTidy: ' + (e && e.message))));   // (files for songs on no calendar or playlist)   // (previews and covers copied here, a few a run)
   }
 };
@@ -1802,7 +1803,7 @@ async function memberMe(request, env, answer) {
   const U0 = await uplAll(env), pls = await uplMine(env, uplList(all, id, U0), U0);   // members' own playlists they can see, and their own (with the songs waiting for them)
   const fu = { n: await uplFileCount(env, id, U0), max: (await env.SOTD.get('owner')) === id ? 0 : UPL_OWN_FILES };
   if (fu.max) { const plan = await uplDlPlan(env, id, U0); if (plan) fu.u = plan.u; }   // (u: their songs with files, or to have them: the allowance used)   // the songs with their own MP3 or MP4, and the most (0: John's, no limit)
-  return answer(200, Object.assign({ name: m.name, email: m.email || '', exp, media, see, mycovers, unread, bell, pls, fu, others, seen, msgs: !m.nomsg,
+  return answer(200, Object.assign({ name: m.name, email: m.email || '', mailme: m.mailme || '', exp, media, see, mycovers, unread, bell, pls, fu, others, seen, msgs: !m.nomsg,
     mute: (m.mute || []).filter(k => seen.some(x => x.id === k)) }, owner ? { owner: true } : {}));
 }
 
@@ -2883,7 +2884,13 @@ async function memberPrefs(request, env, answer) {
   const who = await memberWho(request, env);
   if (!who) return answer(401, { error: 'Not a member (any more).' });
   const body = await request.json().catch(() => ({}));
-  const hasMsgs = typeof body.msgs === 'boolean', hasMute = Array.isArray(body.mute);
+  const hasMsgs = typeof body.msgs === 'boolean', hasMute = Array.isArray(body.mute), hasMail = typeof body.mailme === 'string';
+  if (hasMail) {   // notifications by email: '' none, 'each', 'day' (noteMail)
+    if (!['', 'each', 'day'].includes(body.mailme)) return answer(400, { error: 'Choose none, each one or once a day.' });
+    if (body.mailme && !who.all[who.id].email) return answer(400, { error: 'Add your email address first.' });
+    if (body.mailme) who.all[who.id].mailme = body.mailme; else { delete who.all[who.id].mailme; await env.SOTD.delete('mdig:' + who.id); }
+    if (!hasMsgs && !hasMute) { await env.SOTD.put('members', JSON.stringify(who.all)); return answer(200, { ok: true, msgs: !who.all[who.id].nomsg, mute: who.all[who.id].mute || [], mailme: who.all[who.id].mailme || '' }); }
+  }
   if (!hasMsgs && !hasMute) return answer(400, { error: 'Say whether to take them (msgs: true or false), or whose not to (mute).' });
   const all = who.all, m = all[who.id], ownerId = await env.SOTD.get('owner');
   if (hasMsgs) { if (body.msgs) delete m.nomsg; else m.nomsg = true; }
@@ -2892,7 +2899,7 @@ async function memberPrefs(request, env, answer) {
     if (mute.length) m.mute = mute; else delete m.mute;
   }
   await env.SOTD.put('members', JSON.stringify(all));
-  return answer(200, { ok: true, msgs: !m.nomsg, mute: m.mute || [] });
+  return answer(200, { ok: true, msgs: !m.nomsg, mute: m.mute || [], mailme: m.mailme || '' });
 }
 async function memberSendPic(request, env, answer) {
   if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
@@ -2935,9 +2942,53 @@ async function picsUp(env, origin, body) {   // { url, gif? }, or { error }
   return out;
 }
 
+// notifications by email too (John, 3 Nov 2026: "Can an email be sent to users when notifications are received too"):
+// each member chooses in their Profile (mailme on their record): '' none, 'each' an email for each one, 'day' one email a
+// day with them all (KV mdig:<member>, sent from 8am UK by the timer). John's mailer has a daily allowance (and sign-in
+// codes need it), so each one goes as its own email up to MAIL_EACH_DAY a member and MAIL_ALL_DAY in all; the rest wait
+// for that day's email.
+const MAIL_EACH_DAY = 8, MAIL_ALL_DAY = 60, MAIL_DIG_MAX = 40;
+function mailFoot() { return '\n\n—\nJohn’s Song of the Day: ' + SITE_SONGS + '\nYou get these because you asked for emails in your Profile on the calendar. To stop or change them: Profile › Messages from other members › Emails.'; }
+async function noteMail(env, to, msg) {
+  if (!mailReady(env)) return;
+  const all = (await env.SOTD.get('members', 'json')) || {}, ids = (to || Object.keys(all)).filter(id => all[id] && all[id].email && all[id].mailme);
+  for (const id of ids) {
+    const m = all[id], item = { t: msg.subject || msg.title || '', b: msg.body || '', u: msg.url || SITE_SONGS, at: Date.now() };
+    let sent = false;
+    if (m.mailme === 'each' && await dayCount(env, 'mailme:' + id, MAIL_EACH_DAY) && await dayCount(env, 'mailme-all', MAIL_ALL_DAY)) {
+      try { await sendMail(env, m.email, item.t, (item.b ? item.b + '\n\n' : '') + 'Open it: ' + item.u + mailFoot(), 'note'); sent = true; } catch (e) { console.log('noteMail: ' + (e && e.message)); }
+    }
+    if (!sent) {   // (once a day, or past today's allowance: in today's email)
+      const k = 'mdig:' + id, l = (await env.SOTD.get(k, 'json')) || [];
+      l.push(item); while (l.length > MAIL_DIG_MAX) l.shift();
+      await kvSoft(env, k, JSON.stringify(l), { expirationTtl: 3 * 86400 });
+    }
+  }
+}
+async function mailDigests(env) {   // the day's email for each member with notifications waiting: from 8am UK, once a day
+  if (!mailReady(env) || Number(uplHM().slice(0, 2)) < 8) return;
+  const day = londonDay(), done = 'mdigday:' + day;
+  if (await env.SOTD.get(done)) return;
+  await env.SOTD.put(done, '1', { expirationTtl: 2 * 86400 });
+  const all = (await env.SOTD.get('members', 'json')) || {};
+  let cursor;
+  do {
+    const l = await env.SOTD.list({ prefix: 'mdig:', cursor });
+    for (const key of l.keys) {
+      const id = key.name.slice(5), m = all[id], items = (await env.SOTD.get(key.name, 'json')) || [];
+      await env.SOTD.delete(key.name);
+      if (!m || !m.email || !m.mailme || !items.length) continue;
+      const text = items.map(x => '• ' + x.t + (x.b ? '\n  ' + x.b : '') + '\n  ' + x.u).join('\n\n');
+      try { await sendMail(env, m.email, items.length === 1 ? items[0].t : items.length + ' notifications from Song of the Day', text + mailFoot(), 'notes'); }
+      catch (e) { console.log('mailDigests: ' + (e && e.message)); }
+    }
+    cursor = l.list_complete ? null : l.cursor;
+  } while (cursor);
+}
 async function pushAll(env, msg, to, meta) {   // to: only these members (else everyone); meta: { kind: 'song' | 'note' | 'member', track, via, toNames, fromId, toIds }
   const subs = (await env.SOTD.get('pushSubs', 'json')) || {}, k = await vapidKeys(env);
   const unread = await inboxAdd(env, to, msg, meta);   // into each one's inbox first (notifications on or not); their unread counts
+  await noteMail(env, to, msg).catch(e => console.log('noteMail: ' + (e && e.message)));   // (and by email, for those who asked)
   let sent = 0, failed = 0; const gone = [], errors = [];
   const ids = Object.keys(subs).filter(id => !to || to.includes(subs[id].m));
   for (let i = 0; i < ids.length; i += 20) {   // twenty at a time
@@ -3087,9 +3138,11 @@ const BELL_MAX = 50, RX_PUSH_DAY = 40;
 // reactor on a device (its tag); RX_PUSH_DAY a day from each reactor; not in the inbox, so the app's icon keeps its number
 async function bellPush(env, to, name, e, title, msgId, from, song) {
   const subs = (await env.SOTD.get('pushSubs', 'json')) || {}, ids = Object.keys(subs).filter(k => subs[k].m === to);
-  if (!ids.length || !await dayCount(env, 'rxpush:' + from, RX_PUSH_DAY)) return;
+  if (!await dayCount(env, 'rxpush:' + from, RX_PUSH_DAY)) return;
   const unread = ((await env.SOTD.get('inbox:' + to, 'json')) || []).filter(y => !y.r).length;
   const msg = { title: name + ' reacted ' + e + (song ? ' to the Song of the Day' : ' to your message'), body: '“' + (title || '') + '”', url: SITE_SONGS + '#bell', tag: 'sotd-rx-' + msgId + '-' + from, unread };
+  await noteMail(env, [to], msg).catch(() => {});
+  if (!ids.length) return;
   const k = await vapidKeys(env), gone = [];
   await Promise.all(ids.map(async id => {
     try { const { st } = await pushTo(env, k, subs[id], msg); if (st === 404 || st === 410) gone.push(id); } catch (err) { console.log('rx push: ' + (err && err.message)); }
@@ -3148,8 +3201,10 @@ async function memberHeart(request, env, answer) {
   await kvSoft(env, key, JSON.stringify(b));
   if (takesFrom(who.all, to, who.id, ownerId)) {
     const subs = (await env.SOTD.get('pushSubs', 'json')) || {}, ids = Object.keys(subs).filter(k => subs[k].m === to);
+    const msg = { title: who.all[who.id].name + ' hearted your song ❤️', body: '“' + (title || 'Your song') + '”', url: SITE_SONGS + '#bell', tag: 'sotd-heart-' + track + '-' + who.id };
+    await noteMail(env, [to], msg).catch(() => {});
     if (ids.length) {
-      const k = await vapidKeys(env), msg = { title: who.all[who.id].name + ' hearted your song ❤️', body: '“' + (title || 'Your song') + '”', url: SITE_SONGS + '#bell', tag: 'sotd-heart-' + track + '-' + who.id };
+      const k = await vapidKeys(env);
       await Promise.all(ids.map(id => pushTo(env, k, subs[id], msg).catch(err => console.log('heart push: ' + (err && err.message)))));
     }
   }

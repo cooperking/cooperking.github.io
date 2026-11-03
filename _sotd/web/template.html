@@ -1960,6 +1960,11 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         <div class="ac-from" id="acmsgfrom" hidden><p class="ac-none">From these members (untick anyone whose you don’t want):</p><div class="snd-who" id="acmsgwho" role="group" aria-label="Members whose messages you take"></div></div>
         <div class="ac-acts"><button class="copy ghost" id="acmsggo" type="button">Turn off</button></div>
       </div>
+      <div class="ac-dev" id="acmm" hidden>
+        <p class="ac-h">Notifications by email</p>
+        <p class="ac-none" id="acmmt"></p>
+        <div class="misstabs" id="acmmb" role="radiogroup" aria-label="Notifications by email"><button type="button" role="radio" data-mm="">Off</button><button type="button" role="radio" data-mm="each">Each one</button><button type="button" role="radio" data-mm="day">Once a day</button></div>
+      </div>
       <div class="ac-dev" id="acpk" hidden>
         <p class="ac-h">Passkeys</p>
         <p class="ac-none" id="acpkt"></p>
@@ -6929,7 +6934,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     document.getElementById('acname').textContent = MEMBER && MEMBER.name ? MEMBER.name : 'Signed in';
     acOut.classList.remove('armed'); acOut.textContent = 'Sign out'; acOut.removeAttribute('aria-label');
     document.getElementById('accode').hidden = true; document.getElementById('acgetcode').textContent = 'Get a code';
-    appDraw(); noteDraw(); spDraw(); inboxDraw(); sentDraw(); pkDraw(); mailDraw(); msgDraw(); uplDrawAcct(); acTabs();
+    appDraw(); noteDraw(); spDraw(); inboxDraw(); sentDraw(); pkDraw(); mailDraw(); msgDraw(); mmDraw(); uplDrawAcct(); acTabs();
   }
   // ---- the Profile's tabs: Inbox, Sent (what they've sent other members), Playlists, Account (notifications, email, other members' messages, passkeys, another device, the app; called Sign-in until 29 Oct
   // 2026; the Device tab's notifications and app moved in, and Sign out to the top by Admin or the bell: John, 1 Nov 2026). A tab with nothing to show here (say Sent before they've sent anything, with no app
@@ -6996,7 +7001,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       .then(function (r) { return r.json().catch(function () { return {}; }); })
       .then(function (j) {
         if (!j.ok) { toast(j.error || 'Couldn’t change it just now. Try again.'); throw new Error('not saved'); }
-        MEMBER.msgs = j.msgs; MEMBER.mute = j.mute || []; msgDraw(); return j;
+        MEMBER.msgs = j.msgs; MEMBER.mute = j.mute || []; if ('mailme' in j) MEMBER.mailme = j.mailme; msgDraw(); mmDraw(); return j;
       }, function (e) { toast('Couldn’t reach the site. Try again.'); throw e; });
   }
   document.getElementById('acmsggo').addEventListener('click', function () {
@@ -7005,6 +7010,27 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     msgPrefs({ msgs: MEMBER.msgs === false }).then(function (j) {
       b.disabled = false; toast(j.msgs ? 'Other members can send you messages' : 'Other members can’t send you messages now');
     }, function () { b.disabled = false; });
+  });
+  // notifications by email (John, 3 Nov 2026): off, each one, or one email a day with them all
+  function mmDraw() {
+    var box = document.getElementById('acmm');
+    box.hidden = !MEMBER || !MBASE || TV;
+    if (box.hidden) return;
+    var v = MEMBER.mailme || '', e = MEMBER.email || '';
+    document.getElementById('acmmt').textContent = !e ? 'Add your email address (above), and your notifications can come by email too.'
+      : v === 'each' ? 'Each notification also comes to ' + e + ' (up to 8 a day; any more come in one email the next morning).'
+      : v === 'day' ? 'One email each morning to ' + e + ' with the day’s notifications, if there were any.'
+      : 'Your notifications can come to ' + e + ' too: each one, or one email a day with them all.';
+    [].forEach.call(document.querySelectorAll('#acmmb button'), function (b) {
+      var on = b.getAttribute('data-mm') === v; b.setAttribute('aria-selected', on ? 'true' : 'false'); b.setAttribute('aria-checked', on ? 'true' : 'false'); b.disabled = !e && b.getAttribute('data-mm') !== '';
+    });
+  }
+  [].forEach.call(document.querySelectorAll('#acmmb button'), function (b) {
+    b.addEventListener('click', function () {
+      if (!MEMBER) return;
+      var v = b.getAttribute('data-mm'); if (v === (MEMBER.mailme || '')) return;
+      msgPrefs({ mailme: v }).then(function (j) { MEMBER.mailme = j.mailme || ''; mmDraw(); toast(!j.mailme ? 'No more emails' : j.mailme === 'each' ? 'Each notification comes by email too' : 'One email a day with your notifications'); }, function () {});
+    });
   });
   function mailDraw() {
     var box = document.getElementById('acmail');
@@ -7034,7 +7060,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
             post({ op: 'confirm', code: c }).then(function (k) {
               if (!k.ok) { if (/isn’t the code\. Check/.test(k.error || '')) again(k.error); else toast(k.error || 'That didn’t work. Try again.'); return; }
               if (MEMBER) MEMBER.email = k.email;
-              mailDraw(); pkDraw(); toast('Email saved: ' + k.email);
+              mailDraw(); mmDraw(); pkDraw(); toast('Email saved: ' + k.email);
             }).catch(function () { toast('Couldn’t reach the site. Try again.'); });
           });
         })('A code is on its way to ' + addr + '. Type it here within ' + (j.minutes || 10) + ' minutes.');
