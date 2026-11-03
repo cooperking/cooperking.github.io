@@ -3332,20 +3332,29 @@ async function memberImpFile(request, env, answer) {
   const who = await memberWho(request, env);
   if (!who) return answer(401, { error: 'Not a member (any more).' });
   if (!env.MEDIA) return answer(503, { error: 'Not set up.' });
-  const key = 'imp/' + who.id + '.json';
+  const key = 'imp/' + who.id + '.json', gzKey = key + '.gz';   // (.gz: squeezed on the page, kept as it is: a whole download can be tens of MB as JSON: John, 3 Nov 2026, it wasn't kept)
   if (request.method === 'GET') {
+    const g = await env.MEDIA.get(gzKey);
+    if (g) return new Response(g.body, { headers: Object.assign(factsHeaders(MEMBERS_ORIGIN), { 'Content-Type': 'application/gzip', 'Access-Control-Expose-Headers': 'Content-Type' }) });
     const o = await env.MEDIA.get(key);
     return o ? new Response(o.body, { headers: Object.assign(factsHeaders(MEMBERS_ORIGIN), { 'Content-Type': 'application/json; charset=utf-8' }) }) : answer(404, { none: true });   // (the page's own origin may read it)
   }
   if (request.method !== 'POST') return answer(405, { error: 'Use GET or POST.' });
+  if (/gzip/.test(request.headers.get('Content-Type') || '')) {
+    const buf = await request.arrayBuffer();
+    if (!buf.byteLength || buf.byteLength > 60e6) return answer(413, { error: 'That download is too big to keep.' });
+    const u = new Uint8Array(buf, 0, 2); if (u[0] !== 0x1f || u[1] !== 0x8b) return answer(400, { error: 'Not squeezed.' });
+    await env.MEDIA.put(gzKey, buf, { httpMetadata: { contentType: 'application/gzip' } }); await env.MEDIA.delete(key);
+    return answer(200, { ok: true, at: Date.now() });
+  }
   const text = await request.text();
   if (text.length > 30e6) return answer(413, { error: 'That download is too big to keep.' });
   let b; try { b = JSON.parse(text); } catch (e) { return answer(400, { error: 'Not JSON.' }); }
-  if (b && b.drop) { await env.MEDIA.delete(key); return answer(200, { ok: true }); }
+  if (b && b.drop) { await env.MEDIA.delete(key); await env.MEDIA.delete(gzKey); return answer(200, { ok: true }); }
   const lists = Array.isArray(b && b.lists) ? b.lists.slice(0, 2000).filter(l => l && typeof l.name === 'string' && Array.isArray(l.songs)) : null;
   if (!lists || !lists.length) return answer(400, { error: 'No playlists.' });
   const at = Date.now();
-  await env.MEDIA.put(key, JSON.stringify({ at, lists }), { httpMetadata: { contentType: 'application/json' } });
+  await env.MEDIA.put(key, JSON.stringify({ at, lists }), { httpMetadata: { contentType: 'application/json' } }); await env.MEDIA.delete(gzKey);
   return answer(200, { ok: true, at });
 }
 // /members/impdrop?c=<code>: Exportify's download, caught by the Android app's own Exportify screen (John, 2 Nov 2026:
