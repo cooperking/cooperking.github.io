@@ -41,7 +41,7 @@ def main():
     ylooked = load(os.path.join(HERE, 'data', 'years.json'), 'songs')
     # looked at for good: a video, or YouTube's search found none. One only the free ways missed still waits for the
     # search, so it isn't "none" yet (John, 3 Nov 2026: "165 with none for videos")
-    done = lambda e: isinstance(e, dict) and (e.get('id') or (e.get('from') == 'YouTube search' and not e.get('error')))
+    done = lambda e: isinstance(e, dict) and bool(e.get('id') or (e.get('from') == 'YouTube search' and not e.get('error') and e.get('fv', 0) >= 2))   # (as the Worker's ytLookDone)
     body = {'vids': {t: v for t, v in videos.items() if t in theirs and isinstance(v, dict) and v.get('v')},
             'looked': sorted(t for t in looked if t in theirs and done(looked[t])),
             'unlooked': sorted(t for t in looked if t in theirs and not done(looked[t]) and t not in videos),

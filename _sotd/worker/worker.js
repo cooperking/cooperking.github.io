@@ -114,6 +114,7 @@ export default {
     })().catch(e => console.log('scheduled: ' + (e && e.message))));
     ctx.waitUntil(appUpdates(env).catch(e => console.log('appUpdates: ' + (e && e.message))));   // (on its own: it needs nothing from Spotify)
     ctx.waitUntil(spKeep(env).catch(e => console.log('spKeep: ' + (e && e.message))));
+    ctx.waitUntil(uplReseen(env).catch(e => console.log('uplReseen: ' + (e && e.message))));   // (once: the playlists' 'none' counts put right)
     ctx.waitUntil(mailDigests(env).catch(e => console.log('mailDigests: ' + (e && e.message))));   // (notifications by email, once a day, for those who chose it)
     ctx.waitUntil(catalogTidy(env).catch(e => console.log('catalogTidy: ' + (e && e.message))));   // (files for songs on no calendar or playlist)   // (previews and covers copied here, a few a run)
   }
@@ -4080,6 +4081,20 @@ async function uplYtProg(request, env) {
   await kvSoft(env, 'ytprog', JSON.stringify(v), { expirationTtl: 86400 });
   return answer(200, { ok: true });
 }
+// a song's video looked for for good: found, or YouTube's search found none after the current free ways missed it too. One
+// only the free ways missed, or an older search missed before the newer free ways (fv 2: the artist's channel) had a go,
+// is still being looked for (John, 3 Nov 2026: "165 with none for videos ... searched for them before but with a different method")
+function ytLookDone(e) { return !!e && (!!e.id || (e.from === 'YouTube search' && !e.error && (e.fv || 0) >= 2)); }
+async function uplReseen(env) {   // once: the 'v' marks put right from the last run's files, so the progress shows it now
+  if (!env.MEDIA || await env.SOTD.get('uplReseen2')) return;
+  await env.SOTD.put('uplReseen2', '1');
+  const o = await env.MEDIA.get('site/upl-data.json'); if (!o) return;
+  const yt = ((((await o.json()) || {}).files || {})['_sotd/data/youtube.json'] || {}).songs || {};
+  const seen = (await env.SOTD.get('uplseen', 'json')) || {}; let n = 0;
+  for (const [t, e] of Object.entries(yt)) if ((seen[t] || '').includes('v') && !ytLookDone(e)) { seen[t] = seen[t].replace('v', ''); if (!seen[t]) delete seen[t]; n++; }
+  await kvSoft(env, 'uplseen', JSON.stringify(seen));
+  console.log('uplReseen: ' + n + ' back to still being looked for');
+}
 async function uplSync(request, env) {
   const answer = (status, body) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' } });
   if (!await ghJob(request)) return answer(401, { error: 'For the site job only.' });
@@ -4132,7 +4147,7 @@ async function uplData(request, env) {
   // which songs the job has looked at, found or not (v: a video, m: moods, y: a year), for a playlist's progress: a song
   // looked at with none found is done, not waiting (KV uplseen { <track>: 'vmy' })
   const seen = {}, mark = (o, c) => { for (const t of Object.keys(o || {})) seen[t] = (seen[t] || '') + c; };
-  const ytDone = Object.fromEntries(Object.entries((f['_sotd/data/youtube.json'] || {}).songs || {}).filter(([, e]) => e && (e.id || (e.from === 'YouTube search' && !e.error))));   // (a video, or the search found none: one only the free ways missed still waits)
+  const ytDone = Object.fromEntries(Object.entries((f['_sotd/data/youtube.json'] || {}).songs || {}).filter(([, e]) => ytLookDone(e)));   // (a video, or the search found none: one only the free ways missed still waits)
   mark(ytDone, 'v'); mark((f['songs/moods.json'] || {}).songs, 'm'); mark((f['_sotd/data/years.json'] || {}).songs, 'y');
   await kvSoft(env, 'uplseen', JSON.stringify(seen));
   return answer(200, { ok: true, songs: Object.keys(meta).length });
