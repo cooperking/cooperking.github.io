@@ -1365,6 +1365,14 @@ async function members(request, url, env) {
       if ('v' in body) await startJob(env, null, null, 0, null, true).catch(() => {});   // (their YouTube copies)
       return answer(200, { ok: true, john: J });
     }
+    case 'mailmode': {   // a member's email notifications set by John, when they ask him (John, 4 Nov 2026: "turn emails back on myself if requested by a member"): all, day, song, direct or off
+      const m = all[body.id]; if (!m) return answer(404, { error: 'No such member.' });
+      const want = String(body.mode || ''); if (!MAIL_MODES.includes(want)) return answer(400, { error: 'Which setting?' });
+      if (!m.email) return answer(400, { error: m.name + ' has no email address yet: they add it in their Profile.' });
+      m.mailme = want; if (want !== 'day') await env.SOTD.delete('mdig:' + body.id);
+      await env.SOTD.put('members', JSON.stringify(all));
+      return answer(200, { members: listing() });
+    }
     case 'nfact': {   // the fact chosen at sign-off for a song's notification (text; '' none), kept 60 days
       const t = String(body.track || ''), f = String(body.text || '').replace(/\s+/g, ' ').trim().slice(0, 600);
       if (!ID_RE.test(t)) return answer(400, { error: 'Which song?' });

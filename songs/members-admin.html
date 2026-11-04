@@ -41,6 +41,8 @@
 .pinfo { display: flex; flex-wrap: wrap; gap: 6px; }
 .pinfo .pi { padding: 4px 10px; border-radius: 999px; background: var(--chip); font-size: 12.5px; line-height: 1.4; color: var(--muted); }
 .pinfo .pi.on { color: var(--fg); box-shadow: inset 0 0 0 1px var(--line); }
+.pinfo .pisel { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+.pinfo .pisel select { border: 0; background: transparent; color: inherit; font: inherit; padding: 0 2px; cursor: pointer; }
 .sp-t { margin: 0 0 10px; font-size: 13px; color: var(--muted); }
 .splists { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; max-height: min(62vh, 560px); overflow-y: auto; }
 .splists li { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 6px; border-radius: 12px; background: var(--chip); }
@@ -453,7 +455,20 @@
       // their email notifications and their Spotify, at a glance (John, 4 Nov 2026: "who has email notifications enabled ... who has connected Spotify and how they are using it")
       var MAILSAY = { all: 'each one', day: 'once a day', song: 'Song of the Day only', direct: 'messages to them only', off: 'off' };
       var info = el2('div', 'pinfo');
-      var ml = el2('span', 'pi' + (m.mail && m.mail !== 'off' ? ' on' : ''), 'Emails: ' + (!m.email ? 'no email address' : MAILSAY[m.mail] || m.mail));
+      var ml;
+      if (!m.email) ml = el2('span', 'pi', 'Emails: no email address');
+      else {   // (John can change it for them, when they ask: John, 4 Nov 2026)
+        ml = el2('label', 'pi pisel' + (m.mail && m.mail !== 'off' ? ' on' : '')); ml.appendChild(document.createTextNode('Emails: '));
+        var sel = document.createElement('select'); sel.setAttribute('aria-label', m.name + '’s email notifications');
+        ['all', 'day', 'song', 'direct', 'off'].forEach(function (k) { var o = document.createElement('option'); o.value = k; o.textContent = MAILSAY[k]; if (k === (m.mail || 'off')) o.selected = true; sel.appendChild(o); });
+        sel.addEventListener('change', function () {
+          var v = sel.value; sel.disabled = true;
+          api('/members/admin', { op: 'mailmode', id: m.id, mode: v }).then(function (j) {
+            if (j.members) { MEMBERS = j.members; people(); toast(m.name + '’s emails: ' + MAILSAY[v]); } else { sel.disabled = false; toast(j.error || 'Couldn’t change it'); }
+          });
+        });
+        ml.appendChild(sel);
+      }
       info.appendChild(ml);
       var sp = m.sp, spt = !sp ? 'not connected' : sp.gone ? 'needs to connect again' : sp.blocked ? 'waiting for you to add them on Spotify’s dashboard'
         : [sp.name ? 'as ' + sp.name : 'connected', sp.product === 'premium' ? 'Premium' : 'not Premium (previews only)', sp.on ? 'plays songs through Spotify' : 'Spotify playing off', sp.lists ? 'shares playlists' + (sp.auto ? ' (' + sp.auto + ' updating)' : '') : 'playlists not shared yet'].join(' · ');
