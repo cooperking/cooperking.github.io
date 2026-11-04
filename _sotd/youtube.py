@@ -74,7 +74,8 @@ def fold(x):   # accents off, any alphabet kept (Кино, 강남스타일: they
     return re.sub(r'[\W_]+', ' ', x).strip()
 
 
-SCORE_V = 2   # how songs are matched (2: brackets, "- From …", any alphabet; John, 3 Nov 2026: "some of the songs ... are
+SCORE_V = 3   # (3: part numbers, an artist named partly)
+# how songs are matched (2: brackets, "- From …", any alphabet; John, 3 Nov 2026: "some of the songs ... are
               # trivially easy to find on youtube"). A song an older version found none for is matched again.
 
 
@@ -116,7 +117,7 @@ def score(song, cand):
     cc_plain = re.sub(r' topic$', '', cc).replace(' ', '')
     s, why = 0, []
     words = [w for w in ft.split() if len(w) > 1] or ft.split()
-    main = fold(re.sub(r'\s*[(\[].*?[)\]]', '', title))   # the title without its brackets: Running Up That Hill (A Deal With God)
+    main = fold(re.sub(r'[\s,]*\b(pt|part)\.?\s*(\d+|one|two|i+)$', '', re.sub(r'\s*[(\[].*?[)\]]', '', title), flags=re.I))   # the title without its brackets or part number: Running Up That Hill (A Deal With God), Peppermint Twist, Pt. 1
     if ft and re.search(r'\b' + re.escape(ft) + r'\b', ct):
         s += 40; why.append('title')
     elif main and main != ft and re.search(r'\b' + re.escape(main) + r'\b', ct):
@@ -139,7 +140,11 @@ def score(song, cand):
     elif k in ('audio', 'lyric'):
         s += 8
     if 'artist' not in why and 'official channel' not in why:   # (Adele's Hello isn't Lionel Richie's: the artist somewhere, or it's another song)
-        s -= 30; why.append('not the artist')
+        aw = [w for w in lead.split() if len(w) > 2 and w not in ('the', 'and', 'band', 'feat', 'with')]
+        if aw and sum(1 for w in aw if re.search(r'\b' + re.escape(w) + r'\b', ct + ' ' + cc)) / len(aw) >= .5:
+            s += 15; why.append('some of the artist')   # (The Bonzo Dog Band is YouTube's Bonzo Dog Doo-Dah Band)
+        else:
+            s -= 30; why.append('not the artist')
     song_words = set(fold(song['title']).split()) | set(fold(song.get('album', '')).split())
     if k == 'live' and 'live' not in song_words:   # (Live Forever is the song, not a live recording)
         s -= 15; why.append('live')
