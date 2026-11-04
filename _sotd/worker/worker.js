@@ -1229,6 +1229,38 @@ async function members(request, url, env) {
       await env.SOTD.put('tvcode:' + await sha256hex(code), body.id, { expirationTtl: TV_CODE_MINUTES * 60 });
       return answer(200, { code, minutes: TV_CODE_MINUTES, name: all[body.id].name });
     }
+    case 'spfind': {   // a member's public Spotify playlists, for John to see (and bring one in for them): name, songs, cover, and which are on the calendar already (John, 4 Nov 2026: "How can I see other members public playlists?")
+      const m = all[body.id]; if (!m) return answer(404, { error: 'No such member.' });
+      const sp = await env.SOTD.get('spm:' + body.id, 'json'), sid = m.spu || (sp && sp.sid) || '';
+      if (!sid) return answer(200, { need: true });
+      const tok = await getToken(env), out = [], U = await uplAll(env), theirs = Object.entries(U).filter(([, r]) => r.o === body.id);
+      let next = '/users/' + encodeURIComponent(sid) + '/playlists?limit=50';
+      for (let i = 0; next && i < 6; i++) {
+        const j = await spotify(tok, next).catch(e => ({ _err: String(e && e.message || e) }));
+        if (j._err) return answer(200, { error: /Spotify 404/.test(j._err) ? 'Spotify has no one with the username ' + sid + '.' : 'Couldn’t reach Spotify just now.' });
+        for (const p of j.items || []) if (p && p.id && p.name) {
+          const on = theirs.find(([, r]) => r.spid === p.id || r.fk === uplFileKey(p.name));
+          out.push({ spid: p.id, name: p.name, n: ((p.tracks || p.items || {}).total) || 0, img: ((p.images || [])[0] || {}).url || '', owner: (p.owner && p.owner.display_name) || '', mine: !!(p.owner && p.owner.id === sid), on: on ? { id: on[0], n: uplName(all, on[1]), auto: !!on[1].auto || !!on[1].spid } : null });
+        }
+        next = j.next ? j.next.replace('https://api.spotify.com/v1', '') : null;
+      }
+      return answer(200, { user: sid, lists: out });
+    }
+    case 'spbring': {   // one of them brought in for the member, as their own import would (it then updates itself)
+      const m = all[body.id], spid = String(body.spid || ''); if (!m || !/^[0-9A-Za-z]{22}$/.test(spid)) return answer(400, { error: 'Which member and playlist?' });
+      const U = await uplAll(env);
+      if (Object.values(U).some(r => r.o === body.id && r.spid === spid)) return answer(400, { error: 'That one is on the calendar already.' });
+      const tok = await getToken(env), meta = await spotify(tok, '/playlists/' + spid + '?fields=name').catch(() => null), items = await playlistItems(tok, spid).catch(() => null);
+      if (!meta || !items || !items.length) return answer(400, { error: 'Spotify won’t let us read that playlist.' });
+      const songs = uplCsvSongs(items.slice(0, UPL_CSV_MOST)); if (!songs || !songs.length) return answer(400, { error: 'No songs in it.' });
+      await uplCsvPreviews(env, songs).catch(() => null);
+      const now = Date.now(), newest = Math.max.apply(null, songs.map(x => Date.parse(x.a)));
+      const pid = randomCode(10), rec = { o: body.id, src: 'csv', sp: '', spid, n: String(meta.name || '').slice(0, 80) || 'Playlist', fk: uplFileKey(meta.name), mode: body.mode === 'list' ? 'list' : 'cal', at: now, base: Math.max(newest, 0), st: 'ok', auto: true };
+      U[pid] = rec;
+      await uplTake(env, pid, rec, U, songs, 'new', now, true);
+      await startJob(env, null, null, 0, null, true).catch(() => {});
+      return answer(200, { ok: true, id: pid, n: songs.length });
+    }
     case 'spuser': {   // a member's Spotify username (John knows it: John, 4 Nov 2026), for their public playlists
       const m = all[body.id]; if (!m) return answer(404, { error: 'No such member.' });
       const u = spUserOf(body.u); if (body.u && !u) return answer(400, { error: 'That isn’t a Spotify username or profile link.' });

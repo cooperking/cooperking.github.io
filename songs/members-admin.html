@@ -38,6 +38,15 @@
 .person { padding: 14px 16px; display: grid; gap: 8px; }
 .person .who { font-family: var(--serif); font-weight: 500; font-size: 24px; line-height: 1.1; color: var(--fg); }
 .person .acts { display: flex; flex-wrap: wrap; gap: 6px; }
+.sp-t { margin: 0 0 10px; font-size: 13px; color: var(--muted); }
+.splists { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; max-height: min(62vh, 560px); overflow-y: auto; }
+.splists li { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 6px; border-radius: 12px; background: var(--chip); }
+.splists img, .splists .noimg { width: 52px; height: 52px; border-radius: 8px; object-fit: cover; background: var(--line); display: block; }
+.splists .t { min-width: 0; }
+.splists .t b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--fg); }
+.splists .t span { font-size: 12px; color: var(--muted); }
+.splists .t a { color: inherit; }
+.splists .go { display: grid; gap: 4px; justify-items: end; }
 /* a member's email address (codes by email, Google Play's test list), and which app each of their devices is */
 .person .mail { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
 .person .mail input { flex: 1 1 220px; min-width: 0; border: 1px solid var(--line); background: var(--field); color: var(--fg); border-radius: 10px; padding: 8px 10px; font: 15px var(--sans); }
@@ -257,6 +266,14 @@
     </div>
   </div>
 </dialog>
+<dialog class="pop" id="spdlg" aria-labelledby="sph">
+  <div class="pop-in">
+    <div class="pop-head"><span class="kicker">Public Spotify playlists</span><button class="x" id="spx" type="button" aria-label="Close"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 2l10 10M12 2 2 12"/></svg></button></div>
+    <h3 id="sph"></h3>
+    <p id="spt" class="sp-t"></p>
+    <ul class="splists" id="splists"></ul>
+  </div>
+</dialog>
 <dialog class="pop" id="askdlg" aria-labelledby="askh">
   <form class="pop-in" id="askform" method="dialog">
     <div class="pop-head"><span class="kicker" id="askk"></span><button class="x" id="askx" type="button" aria-label="Close"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 2l10 10M12 2 2 12"/></svg></button></div>
@@ -443,6 +460,7 @@
         });
       });
       // their Spotify username, so their public playlists can be imported and kept up to date without Exportify (John, 4 Nov 2026: "I can give you members Spotify usernames")
+      var spb = m.owner ? null : button('Public playlists', function () { spOpen(m); });
       var su = m.owner ? null : button('Spotify username', function () {
         var v = window.prompt(m.name + '’s Spotify username, or their profile link (Spotify › their name › ••• › Share › Copy link). Leave it empty to clear it.', m.spu || '');
         if (v == null) return;
@@ -461,7 +479,7 @@
       });
       var acts = document.createElement('div'); acts.className = 'acts';
       acts.appendChild(button('Message', function () { notifyOne(m); }));   // to just them (their inbox, and their phone if notifications are on)
-      acts.appendChild(nl); acts.appendChild(tv); if (su) acts.appendChild(su); if (fm) acts.appendChild(fm); acts.appendChild(me); acts.appendChild(rm);
+      acts.appendChild(nl); acts.appendChild(tv); if (spb) acts.appendChild(spb); if (su) acts.appendChild(su); if (fm) acts.appendChild(fm); acts.appendChild(me); acts.appendChild(rm);
       li.appendChild(who); li.appendChild(st); if (m.apps && m.apps.length) li.appendChild(appsList(m)); li.appendChild(mailRow(m)); li.appendChild(seeRow(m)); if (!m.owner) li.appendChild(seenRow(m)); li.appendChild(acts); ul.appendChild(li);
     });
     csvBox(); newSeeDraw(); if (DRAFTS && DRAFTS.length) draftsDraw();
@@ -950,6 +968,39 @@
   }
   $('ntoall').addEventListener('click', function () { PICK = null; toDraw(); });
   $('ntosome').addEventListener('click', function () { if (!PICK) PICK = []; toDraw(); });
+  // a member's public Spotify playlists (John, 4 Nov 2026: "How can I see other members public playlists?"): each with its
+  // songs and a link to it in Spotify; the ones on the calendar say so, the rest can be brought in for them
+  function spOpen(m) {
+    var d = $('spdlg'), ul = $('splists'); $('sph').textContent = m.name + '’s playlists'; $('spt').textContent = 'Looking on Spotify…'; ul.textContent = '';
+    if (!d.open) d.showModal();
+    api('/members/admin', { op: 'spfind', id: m.id }).then(function (j) {
+      if (j.need) { $('spt').textContent = 'No Spotify username for ' + m.name + ' yet: add it with Spotify username on their card.'; return; }
+      if (!j.lists) { $('spt').textContent = j.error || 'Couldn’t reach Spotify just now.'; return; }
+      $('spt').textContent = j.lists.length ? j.lists.length + ' public on spotify.com/user/' + j.user + '. Ones they follow are marked with who made them.' : 'No public playlists on spotify.com/user/' + j.user + '. Private ones only come in with Exportify.';
+      j.lists.forEach(function (l) {
+        var li = document.createElement('li');
+        var im = l.img ? document.createElement('img') : document.createElement('span'); if (l.img) { im.src = l.img; im.alt = ''; im.loading = 'lazy'; } else im.className = 'noimg'; li.appendChild(im);
+        var t = document.createElement('div'); t.className = 't';
+        var b = document.createElement('b'); b.textContent = l.name; t.appendChild(b);
+        var sp = document.createElement('span');
+        var a = document.createElement('a'); a.href = 'https://open.spotify.com/playlist/' + l.spid; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'Open in Spotify ↗';
+        sp.textContent = l.n + (l.n === 1 ? ' song' : ' songs') + (l.mine ? '' : ' · by ' + l.owner) + ' · '; sp.appendChild(a); t.appendChild(sp);
+        li.appendChild(t);
+        var go = document.createElement('div'); go.className = 'go';
+        if (l.on) { var on = document.createElement('span'); on.className = 'badge signed'; on.textContent = l.on.auto ? 'On the calendar · updates itself' : 'On the calendar'; go.appendChild(on); }
+        else go.appendChild(button('Bring in for them', function () {
+          var bt = this; ask('Members', 'Bring “' + l.name + '” in for ' + m.name + '?', 'It goes on the calendar as their own calendar, each song on the day it was added on Spotify, seen by every member, and updates itself from Spotify. They can change any of that in its Edit.', 'Bring it in').then(function (yes) {
+            if (!yes) return; bt.disabled = true; bt.textContent = 'Bringing it in…';
+            api('/members/admin', { op: 'spbring', id: m.id, spid: l.spid, mode: 'cal' }).then(function (k) {
+              if (k.ok) { toast('“' + l.name + '”: ' + k.n + ' songs on ' + m.name + '’s calendar'); spOpen(m); } else { bt.disabled = false; bt.textContent = 'Bring in for them'; toast(k.error || 'Couldn’t bring it in'); }
+            });
+          });
+        }));
+        li.appendChild(go); ul.appendChild(li);
+      });
+    });
+  }
+  $('spx').addEventListener('click', function () { $('spdlg').close(); });
   function notifyOne(m) {   // a person's Notify button: the box, with just them chosen
     PICK = [m.id]; toDraw();
     var box = document.querySelector('.notify'); box.scrollIntoView({ behavior: 'smooth', block: 'start' });
