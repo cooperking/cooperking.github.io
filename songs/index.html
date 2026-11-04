@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="sotd-build" content="3371e8c79123">
+<meta name="sotd-build" content="138b0a7f71f3">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 267 so far">
 <meta name="theme-color" content="#ec135b">
@@ -2385,7 +2385,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       <p class="imp-mine" id="uplimine" hidden></p>
       <div class="imp-sp" id="uplisp">
         <button class="copy" id="uplispgo" type="button">Choose from your Spotify playlists</button>
-        <p class="imp-sp-t" id="uplispt">Your public playlists, straight from Spotify. They keep themselves up to date.</p>
+        <p class="imp-sp-t" id="uplispt">Your playlists and Liked Songs, straight from your Spotify. They keep themselves up to date.</p>
         <label class="imp-sp-u" id="uplispul" hidden><span>Your Spotify profile link or username</span><input id="uplispu" type="text" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://open.spotify.com/user/…"><small>In Spotify: your name › ••• › Share › Copy link to profile.</small></label>
       </div>
       <p class="imp-or">Private playlists or Liked Songs? Use Exportify:</p>
@@ -10436,9 +10436,14 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // Spotify playlist so it updates itself from then on
   function impFromSpotify() {
     var b = document.getElementById('uplispgo'), ul = document.getElementById('uplispul'), u = document.getElementById('uplispu');
+    if (IMP.spConnect) { IMP.spConnect = false; document.getElementById('acspgo').click(); return; }   // (their Spotify sign-in, asking to read their playlists: the Profile's own Connect)
     if (IMP.busy) return; IMP.busy = true; b.disabled = true; var label = b.textContent; b.textContent = 'Reading your Spotify playlists…';
     uplCall({ op: 'splists', u: ul.hidden ? '' : u.value.trim() }).then(function (j) {
       IMP.busy = false; b.disabled = false; b.textContent = label;
+      if (j.connect) {   // (Spotify lets the site read only the playlists of the account signed in: theirs, through Connect Spotify)
+        document.getElementById('uplispt').textContent = 'Spotify lets the site see your playlists only once you sign in to Spotify here, and say yes to sharing them (if you’ve connected before, connect again: it asks for this now).';
+        b.textContent = 'Connect Spotify'; IMP.spConnect = true; return;
+      }
       if (j.need) { ul.hidden = false; b.textContent = 'Find my playlists'; if (j.error) toast(j.error); u.focus(); return; }
       if (j.status !== 200 || !j.lists) { toast(j.error || 'Couldn’t reach Spotify just now'); return; }
       var lists = j.lists.map(function (x) {
