@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="sotd-build" content="e2cd96d96bdf">
+<meta name="sotd-build" content="94da255993cb">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 268 so far">
 <meta name="theme-color" content="#ec135b">
@@ -10514,11 +10514,11 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   document.getElementById('uplispu').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); impFromSpotify(); } });
   if (VIEWAS) (function () {   // whose calendar this is, and back to his own
     var bar = document.createElement('div'); bar.className = 'viewasbar'; bar.setAttribute('role', 'status');
-    var t = document.createElement('span'); t.textContent = 'Seeing it as a member · view only'; bar.appendChild(t);
+    var t = document.createElement('span'); t.textContent = 'Signed in as a member for an hour'; bar.appendChild(t);
     var b = document.createElement('button'); b.type = 'button'; b.textContent = 'Back to me';
     b.addEventListener('click', function () { try { sessionStorage.removeItem('sotd-viewas'); localStorage.removeItem('sotd-member-viewas'); } catch (e) {} location.reload(); });
     bar.appendChild(b); document.body.appendChild(bar);
-    var named = setInterval(function () { if (MEMBER && MEMBER.name) { t.textContent = 'Seeing it as ' + MEMBER.name + ' · view only'; clearInterval(named); } }, 500);
+    var named = setInterval(function () { if (MEMBER && MEMBER.name) { t.textContent = 'Signed in as ' + MEMBER.name + ' for an hour'; clearInterval(named); } }, 500);
   })();
   function impShared() {
     var sp; try { sp = new URLSearchParams(location.search); } catch (e) { return false; }
