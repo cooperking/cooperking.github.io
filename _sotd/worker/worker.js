@@ -401,6 +401,10 @@ async function itunesFill(env, songs) {   // the songs Spotify gave no preview: 
   if (!todo.length) return 0;
   let n = 0;
   for (const x of todo) {
+    // Spotify's own first, again: its player page sometimes gives none for a song it has one for (John, 4 Nov 2026: Parentheses)
+    const sr = await fetch('https://open.spotify.com/embed/track/' + x.id).catch(() => null);
+    const sm = sr && sr.ok ? (await sr.text()).match(/https:\/\/p\.scdn\.co\/mp3-preview\/([0-9a-f]{20,})/) : null;
+    if (sm) { pv[x.id] = sm[1]; pvMem[x.id] = sm[1]; asked[x.id] = today; n++; continue; }
     const id = await itunesFind(x);
     if (id === null) break;   // (Apple busy: the rest next run)
     asked[x.id] = today;
