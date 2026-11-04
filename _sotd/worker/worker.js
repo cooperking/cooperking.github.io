@@ -1144,6 +1144,15 @@ function twinOf(TW, x, pid) {   // another copy of x with files (same title, an 
   const nm = songNames(x);
   return l.find(e => !(e.id === x.id && (!e.pid || e.pid === pid)) && sameArtist(nm, e.n || [])) || null;
 }
+// the download job's outcome for each song it couldn't get (playlist-r2/status.json in the bucket): why, and whether it can
+// (John, 4 Nov 2026: "when files have failed to download I need to know why and whether to try again or get the copy myself")
+let dlMem = null;
+async function dlStatus(env) {
+  if (dlMem && Date.now() - dlMem.at < 60e3) return dlMem.v;
+  let v = {};
+  try { const o = env.MEDIA && await env.MEDIA.get('playlist-r2/status.json'); if (o) v = (await o.json()).tracks || {}; } catch (e) {}
+  dlMem = { at: Date.now(), v }; return v;
+}
 async function twinFiles(env) {   // { title key: [{ id, n: artists }] of copies with files }, kept by the timer (spKeep)
   return (await env.SOTD.get('twinfiles', 'json')) || {};
 }
@@ -3990,7 +3999,7 @@ function uplShareOf(rec) { return UPL_SHARES.includes(rec.share) ? rec.share : '
 // sees it, who edits it and removing it stay its owner's. Their files count against its owner's allowance.
 function uplCo(rec, id) { return !!(rec && id && (rec.cw || []).includes(id)); }
 const UPL_RETRY_FOR = 6 * 3600e3;   // (a song John asked to be looked for again: given to the job as retry for six hours)
-const UPL_CO_OPS = ['skip', 'edit', 'facts', 'askfacts', 'order', 'signoff', 'signoffall', 'del', 'move', 'unmove', 'place', 'dayorder'];
+const UPL_CO_OPS = ['skip', 'edit', 'facts', 'askfacts', 'order', 'signoff', 'signoffall', 'del', 'move', 'unmove', 'place', 'dayorder', 'dltry'];
 function uplCan(all, viewer, rec) {   // whether someone sees this playlist (viewer: a member's id, or none): theirs, or another's that's readable, shared with them and not kept apart
   if (!rec || !all[rec.o]) return false;
   if (viewer && rec.o === viewer) return true;
@@ -4591,12 +4600,12 @@ async function uplView(env, all, viewer, pid, rec, also) {   // (also: tracks wa
   const tags = (await env.SOTD.get('tags', 'json')) || {};
   const days = uplDays(data.songs || [], rec);
   const meta = (await env.SOTD.get('uplmeta', 'json')) || {}, facts = (await env.SOTD.get('ufacts:' + pid, 'json')) || {}, wanted = new Set(uplShareOf(rec) === 'public' ? uplFactsWanted(rec, data) : []);
-  const cat = await catalog(env), J = await uplJohnAll(env), TW = await twinFiles(env);   // John's own (the Songs tab's): a song's that he has, its owner's of that kind aren't used
+  const cat = await catalog(env), J = await uplJohnAll(env), TW = await twinFiles(env), DLS = (mine || adm) ? await dlStatus(env) : {};   // John's own (the Songs tab's): a song's that he has, its owner's of that kind aren't used
   const JV = await ytJohnVids(), JY = await johnYears();   // (a song John's calendar has too: its video and year from there, found already, never looked for again: John, 1 Nov 2026)
   const ed = data.ed || {}, files = data.files || {}, see = mine ? { a: true, v: true } : viewer && all[viewer] ? mediaFor(all[viewer]) : { a: false, v: false }, exp = Math.floor(Date.now() / 1000) + LINK_HOURS * 3600;
   const gone = new Set((data.songs || []).filter(x => uplGone(data, x) && !(also && also.has(x.id))).map(x => x.id));
   const adm = !mine && !!viewer && (await env.SOTD.get('owner')) === viewer;
-  let songs = composeSongs(data.songs || [], pv, tags).map((x, i) => Object.assign(x, { d: days[i].d }, uplWaiting(rec, data, data.songs[i]) ? { w: 1 } : {}, days[i].d > today ? { f: 1 } : {}))
+  let songs = composeSongs(data.songs || [], pv, tags).map((x, i) => Object.assign(x, { d: days[i].d }, data.songs[i].ab ? { ab: data.songs[i].ab } : {}, uplWaiting(rec, data, data.songs[i]) ? { w: 1 } : {}, days[i].d > today ? { f: 1 } : {}))   // (ab: who added it on Spotify, kept by composeSongs' fields no more: John, 4 Nov 2026, "I also still can't see the spotify user who added a song")
     .filter(x => !gone.has(x.id) && (mine || adm ? (mine || !x.w) : (!x.w && !x.f)));   // (John, the site's owner: its songs still to come too, faded, as its owner sees them: John, 1 Nov 2026)
   for (const x of songs) {   // what the site job found (vid: the video, mt: moods and genres, yr: the year), its owner's choices (ov: the video, '' none; tg: moods and genres), files (ma, mv; own: theirs, with sizes) and cover (uc)
     const e = ed[x.id], f = files[x.id], m = meta[x.id];
@@ -4607,7 +4616,7 @@ async function uplView(env, all, viewer, pid, rec, also) {   // (also: tracks wa
     const fx = facts[x.id];   // its facts: signed off by its owner (fx), for everyone; theirs too: written and waiting (fxw), and how it stands (fxs)
     if (fx && fx.ok) x.fx = fx.ok;
     if (mine) { if (fx && fx.w) x.fxw = fx.w; if (fx && fx.w && fx.nw) x.fxn = fx.nw; x.fxs = fx && fx.w ? 'wait' : fx && fx.ok ? 'ok' : fx && fx.none ? 'nil' : wanted.has(x.id) ? 'asked' : uplShareOf(rec) === 'public' ? 'none' : 'off'; }
-    if (x.ab) { const nm = (await spWho(env, all))[x.ab]; if (nm || mine || adm) x.abn = nm || x.ab; }   // (who added it on Spotify: a member's name for everyone, else the Spotify username for its owner and John: John, 3 Nov 2026)   // (who added it on Spotify, for its owner's editor: a member's name where it's one of theirs: John, 3 Nov 2026)
+    if (x.ab) { const nm = (await spWho(env, all))[x.ab]; if (nm || mine || adm) x.abn = nm || x.ab; delete x.ab; }   // (the Spotify id itself not sent on)   // (who added it on Spotify: a member's name for everyone, else the Spotify username for its owner and John: John, 3 Nov 2026)   // (who added it on Spotify, for its owner's editor: a member's name where it's one of theirs: John, 3 Nov 2026)
     if (e && 'v' in e) x.ov = e.v;
     if (e && (e.tt || e.ar)) {   // its owner's own title and artist, for everyone; theirs: Spotify's too (ot, oa), to go back to
       if (mine) { x.ot = x.title; x.oa = x.artist; }
@@ -4626,6 +4635,7 @@ async function uplView(env, all, viewer, pid, rec, also) {   // (also: tracks wa
     if (!jc.a && !jc.v && !(f && (f.a || f.v))) { const tw = twinOf(TW, x, pid); if (tw && !tw.pid && cat[tw.id]) { jc = cat[tw.id]; jcId = tw.id; } else if (tw && tw.pid) twOwn = tw; }   // (another copy of the same song has them: those)
     if ((mine || adm) && (jc.a || jc.v)) x.jf = { a: jc.a || 0, v: jc.v || 0 };   // (John too, on anyone's: its Missing as its owner sees it, John, 3 Nov 2026)   // (its owner's editor: John's, with their sizes)
     if ((mine || adm) && env.ADMIN_KEY) for (const k of ['a', 'v']) if (jc[k]) x['m' + k] = LIVE_ORIGIN + '/m/' + k + '/' + jcId + '.' + MEDIA_KINDS[k].ext + '?e=' + exp + '&s=' + await mediaSig(env, k, jcId, exp);   // (John's, for its owner on their own playlist, whatever he lets them have elsewhere)
+    { const ds = DLS[x.id], have = k => !!(jc[k] || (f && f[k]) || (twOwn && twOwn[k])); if (ds && !(have('a') && have('v'))) x.dlx = { k: ds.kind, how: ds.how, why: ds.why, tries: ds.tries || 1, at: ds.at }; }   // (why its files didn't come, for its Missing)
     if (twOwn && env.ADMIN_KEY) {   // (another playlist's own uploads of the same song: played from there; counted as its files)
       for (const k of ['a', 'v']) if (twOwn[k] && (mine || see[k] || adm)) x['m' + k] = LIVE_ORIGIN + '/m/u' + k + '/' + twOwn.pid + '/' + twOwn.id + '.' + MEDIA_KINDS[k].ext + '?e=' + exp + '&s=' + await mediaSig(env, 'u' + k + '/' + twOwn.pid, twOwn.id, exp);
       if (mine || adm) x.jf = { a: twOwn.a ? 1 : 0, v: twOwn.v ? 1 : 0 };
@@ -4913,6 +4923,20 @@ async function memberUpl(request, url, env, answer) {
     if (!await dayCount(env, 'uplsign:' + me, UPL_SIGNOFF_DAY)) return answer(429, { error: 'That’s ' + UPL_SIGNOFF_DAY + ' today, the most for a day.' });
     const r = await uplSignoffDo(env, all, pid, rec, data, x);
     return answer(200, Object.assign({ ok: true, sent: r.sent, view: await uplView(env, all, me, pid, rec), pls: await uplMine(env, uplList(all, me, U), U) }, r.on ? { on: r.on, at: r.at } : {}));
+  }
+  if (body.op === 'dltry') {   // a song's files asked for again: off the download job's failed list and its outcome cleared, so its next run tries
+    const t = String(body.track || ''); if (!ID_RE.test(t) || !env.MEDIA) return answer(400, { error: 'Which song?' });
+    const so = await env.MEDIA.get('playlist-r2/status.json'), st = so ? await so.json().catch(() => ({})) : {}, e = (st.tracks || {})[t];
+    if (e) { delete st.tracks[t]; await env.MEDIA.put('playlist-r2/status.json', JSON.stringify(st), { httpMetadata: { contentType: 'application/json' } }); dlMem = null; }
+    if (e && e.v) {
+      const fo = await env.MEDIA.get('playlist-r2/failed.txt');
+      if (fo) {
+        const lines = (await fo.text()).split('\n'), keep = [];
+        for (const l of lines) { if (l.trim() === 'https://www.youtube.com/watch?v=' + e.v) { if (keep.length && keep[keep.length - 1].startsWith('#')) keep.pop(); continue; } keep.push(l); }
+        await env.MEDIA.put('playlist-r2/failed.txt', keep.join('\n'), { httpMetadata: { contentType: 'text/plain; charset=utf-8' } });
+      }
+    }
+    return answer(200, { ok: true, view: await uplView(env, all, me, pid, rec) });
   }
   if (body.op === 'dayorder') {   // the order of one day's songs, by its owner (or a collaborator)
     if (rec.mode === 'list') return answer(400, { error: 'A playlist has no days.' });
