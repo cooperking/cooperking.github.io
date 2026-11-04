@@ -4733,7 +4733,8 @@ async function memberUpl(request, url, env, answer) {
       const total = ((p.tracks || p.items || {}).total) || 0, img = ((p.images || [])[0] || {}).url || '', mine = p.id === 'liked' || !!(p.owner && p.owner.id === mr.sid) || !!p.collaborative;
       if (!total) continue;
       const base = { spid: p.id, name: p.name, owner: (p.owner && p.owner.display_name) || '', mine, img };
-      if (reads + Math.ceil(total / 100) > 400) { lists.push(Object.assign(base, { total, later: true })); continue; }
+      if (reads + Math.ceil(total / 100) > 30) {   // (a few read here, the rest by the page, one request each: a Worker's requests to Spotify are limited per request)
+       lists.push(Object.assign(base, { total, later: true })); continue; }
       reads += Math.ceil(total / 100);
       const items = await spReadList(mr.tok, p.id).catch(() => null);
       if (items && items.length) lists.push(Object.assign(base, { songs: items.slice(0, UPL_CSV_MOST) }));

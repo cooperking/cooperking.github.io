@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="091a45893ee3">
+<meta name="sotd-build" content="c6930f619316">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -10025,7 +10025,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     // straight to their Spotify playlists when Spotify can give them (John, 4 Nov 2026: "if that's an option, we don't need
     // to show any exportify"); Exportify folded away, open only coming back from it
     document.getElementById('uplixp').open = !!step;
-    if (!step && !TV) setTimeout(function () { if (impDlg.open && !IMP.lists) impFromSpotify(true); }, 50);
+    IMP.spAuto = !step && !TV;   // (Spotify first: the last Exportify download only if Spotify can't give them: John, 4 Nov 2026, "Spotify playlist still not being used for me")
+    if (IMP.spAuto) setTimeout(function () { if (impDlg.open && !IMP.lists) impFromSpotify(true); }, 50);
     if (IMP.saved === null) IMP.saved = undefined;   // (none last time: looked for again, as one may have come in on another device)
     var last = document.getElementById('uplilast'); last.hidden = true;
     impSaved(function () {   // the download they loaded last: its playlists straight away (or, back from Exportify, a button for it beside choosing the new one: John, 3 Nov 2026)
@@ -10033,7 +10034,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       var when = londonDay(new Date(sv.at).toISOString()) === todayIso ? 'today' : 'on ' + new Date(sv.at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' });
       last.textContent = 'Use the download from ' + when; last.hidden = false;
       document.getElementById('upligo').className = 'copy ghost';
-      if (!step && !IMP.away) { IMP.lists = sv.lists; IMP.fromSaved = true; impPick(); }
+      if (!step && !IMP.away && !IMP.spAuto) { IMP.lists = sv.lists; IMP.fromSaved = true; impPick(); }
     });
     openLayer(impDlg);
     setTimeout(function () { try { document.getElementById(step === 2 ? 'uplifile' : 'upligo').focus({ preventScroll: true }); } catch (e) {} }, 60);
@@ -10284,9 +10285,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       grid.appendChild(b);
     });
     document.getElementById('uplipicknone').hidden = true;
-    IMP.sel = [];   // the ones ticked: those yours came from, to start with
+    IMP.sel = [];   // none ticked to start with (John, 4 Nov 2026: the ones imported before kept coming back ticked); only the one an Update was opened from
     var tg = impTarget();
-    [].forEach.call(grid.children, function (b) { var f = impFeeds(b._l); if (tg ? f.some(function (x) { return x.p.id === tg.id; }) : f.length) impToggle(b._l, b, true); });
+    if (tg) [].forEach.call(grid.children, function (b) { if (impFeeds(b._l).some(function (x) { return x.p.id === tg.id; })) impToggle(b._l, b, true); });
     document.getElementById('upliallb').hidden = true;   // (the bar below does it, for those ticked)
     impSelDraw();
     impShow('pick');
@@ -10514,8 +10515,13 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (auto === true && IMP.spConnect) return;   // (opened again: their Connect button waits for them)
     if (IMP.spConnect) { IMP.spConnect = false; document.getElementById('acspgo').click(); return; }   // (their Spotify sign-in, asking to read their playlists: the Profile's own Connect)
     if (IMP.busy) return; IMP.busy = true; b.disabled = true; var label = b.textContent; b.textContent = 'Reading your Spotify playlists…';
+    var fall = function () {   // (Spotify couldn't give them, opening: the last Exportify download, if there is one)
+      if (auto !== true) return; IMP.spAuto = false; var sv = IMP.saved;
+      if (impDlg.open && !IMP.lists && sv && sv.lists) { IMP.lists = sv.lists; IMP.fromSaved = true; impPick(); }
+    };
     uplCall({ op: 'splists', u: ul.hidden ? '' : u.value.trim() }).then(function (j) {
       IMP.busy = false; b.disabled = false; b.textContent = label;
+      if (!(j.status === 200 && j.lists && j.lists.length) && !j.connect) setTimeout(fall, 0);
       if (j.connect) {   // (Spotify lets the site read only the playlists of the account signed in: theirs, through Connect Spotify)
         document.getElementById('uplispt').textContent = 'Spotify lets the site see your playlists only once you sign in to Spotify here, and say yes to sharing them (if you’ve connected before, connect again: it asks for this now).';
         b.textContent = 'Connect Spotify'; IMP.spConnect = true; return;   // (Exportify stays folded below for those Spotify can't take: 5 a Spotify app)
@@ -10536,7 +10542,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       });
       if (lists.length === 1) { impGot(lists[0]); return; }
       impPick();
-    }).catch(function () { IMP.busy = false; b.disabled = false; b.textContent = label; toast('Couldn’t reach the site. Try again.'); });
+    }).catch(function () { IMP.busy = false; b.disabled = false; b.textContent = label; if (auto === true) fall(); else toast('Couldn’t reach the site. Try again.'); });
   }
   document.getElementById('uplispgo').addEventListener('click', impFromSpotify);
   document.getElementById('uplispu').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); impFromSpotify(); } });
