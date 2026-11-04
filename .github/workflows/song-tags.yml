@@ -139,7 +139,7 @@ jobs:
           git add -A _sotd/data songs
           if git diff --cached --quiet; then echo "nothing changed"; exit 0; fi
           git commit -m "Song moods and genres: John's songs first"
-          for i in 1 2 3; do git pull --rebase --quiet && git push && exit 0; sleep 5; done
+          for i in 1 2 3; do git pull --rebase -X theirs --quiet || { git rebase --abort 2>/dev/null; false; } && git push && exit 0; sleep 5; done   # (where both jobs changed the same lines: John's own commit kept)
           exit 1
 
       - name: Ask Claude for the new songs' facts
@@ -331,7 +331,7 @@ jobs:
           git add -A _sotd/data songs
           if git diff --cached --quiet; then echo "nothing changed"; exit 0; fi
           git commit -m "Song moods and genres: update from the latest songs"
-          for i in 1 2 3; do git pull --rebase --quiet && git push && exit 0; sleep 5; done
+          for i in 1 2 3; do git pull --rebase -X ours --quiet || { git rebase --abort 2>/dev/null; false; } && git push && exit 0; sleep 5; done   # (where both jobs changed the same lines: John's job's, already in, kept; the members' songs are saved in the Worker a step before)
           exit 1
 
       # a new song's facts: Claude's facts task, started now (its sources are saved), not on a timer; the song shows on

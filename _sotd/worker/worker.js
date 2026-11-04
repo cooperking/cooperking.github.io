@@ -4396,7 +4396,7 @@ async function uplYtProg(request, env) {
   const answer = (status, body) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' } });
   if (request.method !== 'POST' || !await ghJob(request)) return answer(401, { error: 'For the site job only.' });
   const b = await request.json().catch(() => ({})), str = (x, n) => String(x == null ? '' : x).slice(0, n), num = x => Number.isFinite(+x) && x !== null && x !== '' ? +x : null;
-  const v = { at: Date.now(), phase: str(b.phase, 200), i: num(b.i), n: num(b.n), song: str(b.song, 160), units: num(b.units),
+  const v = { at: Date.now(), phase: str(b.phase, 200), i: num(b.i), n: num(b.n), song: str(b.song, 160), units: num(b.units), srch: num(b.srch), srchMax: num(b.srchMax),
     last: (Array.isArray(b.last) ? b.last : []).slice(0, 6).map(x => ({ s: str(x && x.s, 160), r: str(x && x.r, 200) })) };
   await kvSoft(env, 'ytprog', JSON.stringify(v), { expirationTtl: 86400 });
   return answer(200, { ok: true });

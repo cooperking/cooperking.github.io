@@ -47,7 +47,7 @@ def progress(phase, i=None, n=None, song=None, result=None, force=False):
         tok = os.environ.get('GITHUB_TOKEN', '').strip()
         if not tok:
             return
-        body = json.dumps({'phase': phase, 'i': i, 'n': n, 'song': (song or '')[:120], 'last': _PROG['last'], 'units': ytapi.ledger().get('used')}).encode()
+        body = json.dumps({'phase': phase, 'i': i, 'n': n, 'song': (song or '')[:120], 'last': _PROG['last'], 'units': ytapi.ledger().get('used'), 'srch': ytapi.ledger().get('searches'), 'srchMax': ytapi.SEARCH_LIMIT}).encode()
         _ureq.urlopen(_ureq.Request(WORKER + '/upl/ytprog', data=body, headers={'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok, 'User-Agent': ytapi.UA}), timeout=8).read()
     except Exception:
         pass
