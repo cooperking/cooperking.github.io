@@ -3722,13 +3722,14 @@ async function spDevices(env, id, rec) {
   if (now && now.id && p.json.is_playing && !raw.some(x => x.id === now.id)) raw.unshift(Object.assign({}, now, { is_active: true }));   // (only while it's really playing: an iPhone asleep in the background stays the 'last device' but won't play)
   return { list: raw.filter(x => x.id).map(x => ({ id: x.id, name: x.name, type: x.type, active: !!x.is_active, restricted: !!x.is_restricted, vol: typeof x.volume_percent === 'number' ? x.volume_percent : null, canVol: x.supports_volume !== false && typeof x.volume_percent === 'number' })) };
 }
+const SP_WHEN = ['all', 'nomp3', 'nofile'], SP_KINDS = ['phone', 'tablet', 'computer'];
 async function memberSpotify(request, url, env, answer) {
   const who = await memberWho(request, env);
   if (!who) return answer(401, { error: 'Not a member (any more).' });
   if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
   const b = await request.json().catch(() => ({})), key = 'spm:' + who.id;
   let rec = await env.SOTD.get(key, 'json');
-  const pub = () => rec ? { linked: true, on: rec.on !== false, blocked: !!rec.blocked, gone: !!rec.gone, name: rec.name || '', product: rec.product || '', email: rec.email || rec.wemail || '', cid: rec.cid || CLIENT_ID } : { linked: false };   // (cid: their Spotify app, for the iPhone app's toolkit)
+  const pub = () => rec ? { linked: true, on: rec.on !== false, when: SP_WHEN.includes(rec.when) ? rec.when : 'all', kinds: Array.isArray(rec.kinds) ? rec.kinds : SP_KINDS, blocked: !!rec.blocked, gone: !!rec.gone, name: rec.name || '', product: rec.product || '', email: rec.email || rec.wemail || '', cid: rec.cid || CLIENT_ID } : { linked: false };   // (cid: their Spotify app, for the iPhone app's toolkit)
   if (b.op === 'start') {
     if (!await spAppFor(env, who.id)) return answer(409, { error: 'Spotify playback is full for now: Spotify lets each app have 5 people. Songs play as previews.', full: true });
     const n = b64url(crypto.getRandomValues(new Uint8Array(24)));
@@ -3751,7 +3752,12 @@ async function memberSpotify(request, url, env, answer) {
     }
     return answer(200, pub());
   }
-  if (b.op === 'pref') { rec.on = !!b.on; await env.SOTD.put(key, JSON.stringify(rec)); return answer(200, pub()); }
+  if (b.op === 'pref') {   // on or off; and when (every song, or only those with no MP3, or no MP3 and no video) and on which kinds of device (John, 4 Nov 2026)
+    if ('on' in b) rec.on = !!b.on;
+    if (SP_WHEN.includes(b.when)) rec.when = b.when;
+    if (Array.isArray(b.kinds)) rec.kinds = SP_KINDS.filter(k => b.kinds.includes(k));
+    await env.SOTD.put(key, JSON.stringify(rec)); return answer(200, pub());
+  }
   if (b.op === 'email') { const e = String(b.email || '').trim().slice(0, 120); if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)) return answer(400, { error: 'That isn’t an email address.' }); rec.wemail = e; await env.SOTD.put(key, JSON.stringify(rec)); if (rec.blocked) await spAskAdd(env, who.id, rec); return answer(200, pub()); }
   if (b.op === 'off') { await env.SOTD.delete(key); return answer(200, { linked: false }); }
   try {
