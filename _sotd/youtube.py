@@ -672,10 +672,18 @@ def main():
             progress('Searching YouTube', k + 1, len(todo), s['title'] + ' — ' + s['artist'])
             prev = data['songs'].get(s['id'], {})
             s2 = dict(s, listId=prev.get('listId'), ms=ms.get(s['id']) or s.get('ms'), newest=s['n'] == newest)
-            e = web_lookup(s2, tok)   # (a web search first: no YouTube search spent when it finds it)
+            web_lately = False
+            try:
+                web_lately = (datetime.date.today() - datetime.date.fromisoformat(prev.get('web', '2000-01-01'))).days < 7
+            except ValueError:
+                pass
+            e = None if web_lately else web_lookup(s2, tok)   # (a web search first: no YouTube search spent when it finds it; one it missed this week: YouTube's search)
             if not (e and e.get('id')):
+                if e is not None and not web_lately:   # (the web searches missed it: not asked again for a week, so their allowance isn't spent on it every run)
+                    data['songs'][s['id']] = dict(prev, web=datetime.date.today().isoformat()) if prev else {'n': s['n'], 'checked': '2000-01-01', 'web': datetime.date.today().isoformat()}
+                    done += 1
                 if yt_out:
-                    if e is None and brave_left() <= 0:
+                    if e is None and not web_lately and brave_left() <= 0:
                         break   # (both searches used up: the rest wait)
                     continue    # (YouTube's searches gone: the web search alone; its misses wait for YouTube's tomorrow)
                 try:
