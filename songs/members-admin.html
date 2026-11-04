@@ -268,7 +268,7 @@
 </dialog>
 <dialog class="pop" id="spdlg" aria-labelledby="sph">
   <div class="pop-in">
-    <div class="pop-head"><span class="kicker">Public Spotify playlists</span><button class="x" id="spx" type="button" aria-label="Close"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 2l10 10M12 2 2 12"/></svg></button></div>
+    <div class="pop-head"><span class="kicker">Spotify playlists</span><button class="x" id="spx" type="button" aria-label="Close"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 2l10 10M12 2 2 12"/></svg></button></div>
     <h3 id="sph"></h3>
     <p id="spt" class="sp-t"></p>
     <ul class="splists" id="splists"></ul>
@@ -460,7 +460,7 @@
         });
       });
       // their Spotify username, so their public playlists can be imported and kept up to date without Exportify (John, 4 Nov 2026: "I can give you members Spotify usernames")
-      var spb = m.owner ? null : button('Public playlists', function () { spOpen(m); });
+      var spb = m.owner ? null : button('Spotify playlists', function () { spOpen(m); });
       var su = m.owner ? null : button('Spotify username', function () {
         var v = window.prompt(m.name + '’s Spotify username, or their profile link (Spotify › their name › ••• › Share › Copy link). Leave it empty to clear it.', m.spu || '');
         if (v == null) return;
@@ -974,9 +974,9 @@
     var d = $('spdlg'), ul = $('splists'); $('sph').textContent = m.name + '’s playlists'; $('spt').textContent = 'Looking on Spotify…'; ul.textContent = '';
     if (!d.open) d.showModal();
     api('/members/admin', { op: 'spfind', id: m.id }).then(function (j) {
-      if (j.need) { $('spt').textContent = 'No Spotify username for ' + m.name + ' yet: add it with Spotify username on their card.'; return; }
+      if (j.need || j.connect) { $('spt').textContent = 'Spotify only shows the site someone’s playlists through their own sign-in. ' + m.name + ' needs to tap Connect Spotify in their Profile (or Connect again, if they connected before) and say yes to sharing their playlists. Then they show here, private ones and Liked Songs too.'; return; }
       if (!j.lists) { $('spt').textContent = j.error || 'Couldn’t reach Spotify just now.'; return; }
-      $('spt').textContent = j.lists.length ? j.lists.length + ' public on spotify.com/user/' + j.user + '. Ones they follow are marked with who made them.' : 'No public playlists on spotify.com/user/' + j.user + '. Private ones only come in with Exportify.';
+      $('spt').textContent = j.lists.length ? j.lists.length + ' playlists on their Spotify (' + j.user + '). Ones they follow are marked with who made them.' : 'No playlists on their Spotify.';
       j.lists.forEach(function (l) {
         var li = document.createElement('li');
         var im = l.img ? document.createElement('img') : document.createElement('span'); if (l.img) { im.src = l.img; im.alt = ''; im.loading = 'lazy'; } else im.className = 'noimg'; li.appendChild(im);
@@ -984,7 +984,7 @@
         var b = document.createElement('b'); b.textContent = l.name; t.appendChild(b);
         var sp = document.createElement('span');
         var a = document.createElement('a'); a.href = 'https://open.spotify.com/playlist/' + l.spid; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'Open in Spotify ↗';
-        sp.textContent = l.n + (l.n === 1 ? ' song' : ' songs') + (l.mine ? '' : ' · by ' + l.owner) + ' · '; sp.appendChild(a); t.appendChild(sp);
+        sp.textContent = (l.spid === 'liked' ? 'Their Liked Songs' : l.n + (l.n === 1 ? ' song' : ' songs') + (l.mine ? '' : ' · by ' + l.owner) + (l.pub ? '' : ' · private')) + (l.spid === 'liked' ? '' : ' · '); if (l.spid !== 'liked') sp.appendChild(a); t.appendChild(sp);
         li.appendChild(t);
         var go = document.createElement('div'); go.className = 'go';
         if (l.on) { var on = document.createElement('span'); on.className = 'badge signed'; on.textContent = l.on.auto ? 'On the calendar · updates itself' : 'On the calendar'; go.appendChild(on); }

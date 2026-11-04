@@ -1229,28 +1229,24 @@ async function members(request, url, env) {
       await env.SOTD.put('tvcode:' + await sha256hex(code), body.id, { expirationTtl: TV_CODE_MINUTES * 60 });
       return answer(200, { code, minutes: TV_CODE_MINUTES, name: all[body.id].name });
     }
-    case 'spfind': {   // a member's public Spotify playlists, for John to see (and bring one in for them): name, songs, cover, and which are on the calendar already (John, 4 Nov 2026: "How can I see other members public playlists?")
+    case 'spfind': {   // a member's Spotify playlists, for John to see (and bring one in for them), through their own Spotify sign-in: name, songs, cover, and which are on the calendar already (John, 4 Nov 2026: "How can I see other members public playlists?")
       const m = all[body.id]; if (!m) return answer(404, { error: 'No such member.' });
-      const sp = await env.SOTD.get('spm:' + body.id, 'json'), sid = m.spu || (sp && sp.sid) || '';
-      if (!sid) return answer(200, { need: true });
-      const tok = await getToken(env), out = [], U = await uplAll(env), theirs = Object.entries(U).filter(([, r]) => r.o === body.id);
-      let next = '/users/' + encodeURIComponent(sid) + '/playlists?limit=50';
-      for (let i = 0; next && i < 6; i++) {
-        const j = await spotify(tok, next).catch(e => ({ _err: String(e && e.message || e) }));
-        if (j._err) return answer(200, { error: /Spotify 404/.test(j._err) ? 'Spotify has no one with the username ' + sid + '.' : 'Spotify didn’t give their playlists: ' + j._err.slice(0, 200) });
-        for (const p of j.items || []) if (p && p.id && p.name) {
-          const on = theirs.find(([, r]) => r.spid === p.id || r.fk === uplFileKey(p.name));
-          out.push({ spid: p.id, name: p.name, n: ((p.tracks || p.items || {}).total) || 0, img: ((p.images || [])[0] || {}).url || '', owner: (p.owner && p.owner.display_name) || '', mine: !!(p.owner && p.owner.id === sid), on: on ? { id: on[0], n: uplName(all, on[1]), auto: !!on[1].auto || !!on[1].spid } : null });
-        }
-        next = j.next ? j.next.replace('https://api.spotify.com/v1', '') : null;
+      const mr = await memberSpRead(env, body.id).catch(() => null);
+      if (!mr) return answer(200, { connect: true });
+      const pls = await myPlaylists(mr.tok).catch(() => null); if (!pls) return answer(200, { error: 'Spotify didn’t give their playlists just now.' });
+      const U = await uplAll(env), theirs = Object.entries(U).filter(([, r]) => r.o === body.id), out = [];
+      for (const p of (mr.liked ? [{ id: 'liked', name: 'Liked Songs', owner: { id: mr.sid }, tracks: { total: 0 }, images: [] }] : []).concat(pls)) {
+        const on = theirs.find(([, r]) => r.spid === p.id || r.fk === uplFileKey(p.name));
+        out.push({ spid: p.id, name: p.name, n: ((p.tracks || p.items || {}).total) || 0, img: ((p.images || [])[0] || {}).url || '', owner: (p.owner && p.owner.display_name) || '', mine: p.id === 'liked' || !!(p.owner && p.owner.id === mr.sid), pub: p.id === 'liked' ? false : !!p.public, on: on ? { id: on[0], n: uplName(all, on[1]), auto: !!on[1].auto || !!on[1].spid } : null });
       }
-      return answer(200, { user: sid, lists: out });
+      return answer(200, { user: mr.sid, lists: out });
     }
     case 'spbring': {   // one of them brought in for the member, as their own import would (it then updates itself)
-      const m = all[body.id], spid = String(body.spid || ''); if (!m || !/^[0-9A-Za-z]{22}$/.test(spid)) return answer(400, { error: 'Which member and playlist?' });
+      const m = all[body.id], spid = String(body.spid || ''); if (!m || !/^([0-9A-Za-z]{22}|liked)$/.test(spid)) return answer(400, { error: 'Which member and playlist?' });
+      const mr = await memberSpRead(env, body.id).catch(() => null); if (!mr) return answer(400, { error: m.name + ' hasn’t let Spotify share their playlists yet.' });
       const U = await uplAll(env);
       if (Object.values(U).some(r => r.o === body.id && r.spid === spid)) return answer(400, { error: 'That one is on the calendar already.' });
-      const tok = await getToken(env), meta = await spotify(tok, '/playlists/' + spid + '?fields=name').catch(() => null), items = await playlistItems(tok, spid).catch(() => null);
+      const meta = spid === 'liked' ? { name: 'Liked Songs' } : await spotify(mr.tok, '/playlists/' + spid + '?fields=name').catch(() => null), items = await spReadList(mr.tok, spid).catch(() => null);
       if (!meta || !items || !items.length) return answer(400, { error: 'Spotify won’t let us read that playlist.' });
       const songs = uplCsvSongs(items.slice(0, UPL_CSV_MOST)); if (!songs || !songs.length) return answer(400, { error: 'No songs in it.' });
       await uplCsvPreviews(env, songs).catch(() => null);
@@ -3565,7 +3561,7 @@ async function memberImpDrop(request, url, env, answer) {
 // through the ones after it, so it carries on while the page sleeps. Spotify lets an app in development mode serve the
 // 25 people its owner adds in Spotify's dashboard (User Management): until John adds them, Spotify refuses and they're
 // listed for him (blocked), with the Spotify email they give.
-const SP_SCOPES = 'user-read-playback-state user-modify-playback-state user-read-currently-playing user-read-private user-read-email';
+const SP_SCOPES = 'user-read-playback-state user-modify-playback-state user-read-currently-playing user-read-private user-read-email playlist-read-private playlist-read-collaborative user-library-read';   // (their playlists and Liked Songs too, to import and keep up to date: Spotify lets an app read only the playlists of whoever signed in, John, 4 Nov 2026)
 // Spotify allows 5 people per app in development mode, and an account up to 25 apps (July 2026; the apps share one
 // request allowance): John's own app first, then the others he adds in Admin (KV spapps: [Client ID]); each member is put
 // in the app they're in already, else the first with room, and the Members tab says which app to add them to.
@@ -3616,7 +3612,7 @@ async function spLinkDone(request, url, env) {
   const j = await r.json().catch(() => ({}));
   if (!r.ok || !j.refresh_token) return done('Not connected', 'Spotify didn’t confirm it (' + esc(j.error_description || j.error || String(r.status)) + '). Try again from your profile.', 'err');
   await env.SOTD.delete('spn:' + n);
-  const rec = { rt: j.refresh_token, at: j.access_token, exp: Date.now() + (j.expires_in || 3600) * 1000, linked: Date.now(), on: true, cid: want.cid || CLIENT_ID };
+  const rec = { rt: j.refresh_token, at: j.access_token, exp: Date.now() + (j.expires_in || 3600) * 1000, linked: Date.now(), on: true, cid: want.cid || CLIENT_ID, scope: String(j.scope || '') };
   const me = await fetch(API + '/me', { headers: { Authorization: 'Bearer ' + j.access_token } });
   if (me.ok) { const u = await me.json(); Object.assign(rec, { sid: u.id, name: u.display_name || u.id, email: u.email || '', product: u.product || '' }); }
   else rec.blocked = true;   // (not added in Spotify's dashboard yet)
@@ -4075,6 +4071,32 @@ async function johnSpLists(env) {   // his Spotify playlists { key (as an Export
 // a playlist owner's Spotify playlists { key (as an Exportify file's): Spotify id }: John's own list; a member's public
 // ones (their Spotify id from connecting it here), kept a day (KV spmap:<member>); else a public playlist of the
 // import's name whose owner has their first name
+// a member's own Spotify sign-in, when it may read their playlists (they connected, or connected again, since it asks):
+// { tok, sid }, else null. Spotify lets an app read only the playlists of the account signed in, so theirs is the way in
+async function memberSpRead(env, id) {
+  const sp = await env.SOTD.get('spm:' + id, 'json');
+  if (!sp || sp.gone || sp.blocked || !/playlist-read-private/.test(sp.scope || '')) return null;
+  return { tok: await spToken(env, id, sp), sid: sp.sid || '', liked: /user-library-read/.test(sp.scope || '') };
+}
+async function likedItems(token) {   // their Liked Songs, as playlistItems gives a playlist's (newest first, as Spotify keeps them)
+  const out = []; let next = '/me/tracks?limit=50';
+  for (let i = 0; next && i < 200; i++) {
+    const j = await spotify(token, next);
+    for (const it of j.items || []) {
+      const t = it.track; if (!t || !t.id) continue;
+      const imgs = (t.album && t.album.images) || [], img = imgs.find(x => x.width === 300) || imgs[1] || imgs[0];
+      out.push({ a: it.added_at, id: t.id, title: t.name, artist: (t.artists || []).map(x => x.name).join(', '), artists: (t.artists || []).map(x => x.name), aids: (t.artists || []).map(x => x.id), album: t.album ? t.album.name : '', alid: t.album ? t.album.id : '', img: img ? img.url : '', rd: t.album && /^\d{4}(-\d\d){0,2}$/.test(t.album.release_date || '') ? t.album.release_date : undefined });
+    }
+    next = j.next ? j.next.replace('https://api.spotify.com/v1', '') : null;
+  }
+  return out.reverse();   // (oldest first, as a playlist's)
+}
+async function spReadList(token, spid) { return spid === 'liked' ? likedItems(token) : playlistItems(token, spid); }
+async function myPlaylists(token) {   // the signed-in account's playlists (theirs, collaborative and followed)
+  const pls = []; let next = '/me/playlists?limit=50';
+  for (let i = 0; next && i < 10; i++) { const j = await spotify(token, next); for (const p of j.items || []) if (p && p.id && p.name) pls.push(p); next = j.next ? j.next.replace('https://api.spotify.com/v1', '') : null; }
+  return pls;
+}
 function spUserOf(u) {   // a Spotify username from a profile link (open.spotify.com/user/<id>), a spotify:user: address, or the name itself
   const t = String(u || '').trim(), m = /(?:open\.spotify\.com\/(?:[a-z-]+\/)?user\/|spotify:user:)([^/?#\s]+)/i.exec(t);
   const id = m ? decodeURIComponent(m[1]) : t;
@@ -4086,19 +4108,9 @@ async function uplSpMap(env, rec, ownerId, tok) {
   let map = kept && Date.now() - kept.at < 864e5 ? Object.assign({}, kept.map) : null;
   if (!map) {
     map = {};
-    const sp = await env.SOTD.get('spm:' + rec.o, 'json'), all0 = (await env.SOTD.get('members', 'json')) || {}, sid0 = (all0[rec.o] && all0[rec.o].spu) || (sp && sp.sid) || '';
-    let next = sid0 ? '/users/' + encodeURIComponent(sid0) + '/playlists?limit=50' : null;
-    for (let i = 0; next && i < 10; i++) {
-      const j = await spotify(tok, next).catch(() => null); if (!j) break;
-      for (const p of j.items || []) if (p && p.id && p.name) { const k = uplFileKey(p.name); if (k && !map[k]) map[k] = p.id; }
-      next = j.next ? j.next.replace('https://api.spotify.com/v1', '') : null;
-    }
+    const mr = await memberSpRead(env, rec.o).catch(() => null);
+    if (mr) { for (const p of await myPlaylists(mr.tok).catch(() => [])) { const k = uplFileKey(p.name); if (k && !map[k]) map[k] = p.id; } if (mr.liked) map.liked = map.liked || 'liked'; }
     await kvSoft(env, 'spmap:' + rec.o, JSON.stringify({ at: Date.now(), map }), { expirationTtl: 2 * 86400 });
-  }
-  if (!map[rec.fk]) {   // (no Spotify id for them, or not among theirs: a public playlist of that name whose owner has their name)
-    const all = (await env.SOTD.get('members', 'json')) || {}, who = itFold(((all[rec.o] || {}).name || '').split(' ')[0]);
-    const j = who ? await spotify(tok, '/search?' + new URLSearchParams({ q: rec.n || rec.fk.replace(/_/g, ' '), type: 'playlist', limit: '20' })).catch(() => null) : null;
-    for (const p of ((j && j.playlists && j.playlists.items) || [])) if (p && p.id && uplFileKey(p.name) === rec.fk && itFold((p.owner && p.owner.display_name) || '').includes(who)) { map[rec.fk] = p.id; break; }
   }
   return map;
 }
@@ -4113,17 +4125,19 @@ async function uplJohnAuto(env, U, ownerId) {   // every imported playlist whose
   const tok = await getToken(env);
   for (const [pid, rec] of due) {
     rec.autoAt = now;
-    const map = await uplSpMap(env, rec, ownerId, tok).catch(() => ({})), main = rec.spid || map[rec.fk];
-    if (!main) { rec.auto = false; rec.autoErr = 'No public Spotify playlist of theirs by that name'; continue; }   // (asked again a day later)
+    const mr = rec.o === ownerId ? null : await memberSpRead(env, rec.o).catch(() => null);
+    if (rec.o !== ownerId && !mr) { rec.auto = false; rec.autoErr = 'They haven’t let Spotify share their playlists (Connect Spotify in their Profile)'; continue; }
+    const rt = mr ? mr.tok : tok, map = await uplSpMap(env, rec, ownerId, tok).catch(() => ({})), main = rec.spid || map[rec.fk];
+    if (!main) { rec.auto = false; rec.autoErr = 'No Spotify playlist of theirs by that name'; continue; }   // (asked again a day later)
     try {
-      const items = await playlistItems(tok, main), ids = new Set(items.map(x => x.id));
+      const items = await spReadList(rt, main), ids = new Set(items.map(x => x.id));
       const data = await uplSongs(env, pid), have = (data.songs || []).filter(x => !(data.add || {})[x.id]).map(x => x.id), same = have.filter(t => ids.has(t)).length;
       if (have.length >= 5 && same < 0.5 * Math.min(have.length, items.length)) { rec.auto = false; rec.autoErr = 'The Spotify playlist of that name isn’t this one'; continue; }   // (another playlist with the same name: never its songs)
       if (data.add) for (const x of data.songs || []) if (data.add[x.id] && !ids.has(x.id)) { items.push(x); ids.add(x.id); }   // (songs added to it from other playlists stay)
       let addNew = false;
       for (const k of rec.adds || []) {   // the playlists added to it: their new songs too
         const sid = map[k]; if (!sid || sid === main) continue;
-        for (const x of await playlistItems(tok, sid)) if (!ids.has(x.id)) { items.push(x); ids.add(x.id); data.add = data.add || {}; data.add[x.id] = 1; addNew = true; }
+        for (const x of await spReadList(rt, sid)) if (!ids.has(x.id)) { items.push(x); ids.add(x.id); data.add = data.add || {}; data.add[x.id] = 1; addNew = true; }
       }
       if (addNew) await env.SOTD.put('upl:' + pid, JSON.stringify(data));
       await uplTake(env, pid, rec, U, items, rec.st, now);
@@ -4147,7 +4161,8 @@ async function uplAbFill(env, U, ownerId) {
     const by = {};
     for (const k of [rec.fk].concat(rec.adds || [])) {
       if (!map[k]) continue;
-      const items = await playlistItems(tok, map[k]).catch(() => []);
+      const mr2 = rec.o === ownerId ? null : await memberSpRead(env, rec.o).catch(() => null);
+      const items = await spReadList(mr2 ? mr2.tok : tok, map[k]).catch(() => []);
       for (const x of items) if (x.ab && !by[x.id]) by[x.id] = x.ab;
     }
     let n = 0;
@@ -4564,34 +4579,27 @@ async function memberUpl(request, url, env, answer) {
     if (rec.st === 'join') await uplAskJohn(env, all, me, rec);
     return answer(200, { ok: true, id: pid, st: rec.st, pls: await uplMine(env, uplList(all, me, U), U) });
   }
-  if (body.op === 'splists') {   // their public Spotify playlists, each with its songs, for the import picker (John, 4 Nov 2026: "Can't you just get users Spotify public playlists yourself?")
-    const m = all[me] || {}, given = spUserOf(body.u), sp = await env.SOTD.get('spm:' + me, 'json');
-    if (given && given !== m.spu) { m.spu = given; await env.SOTD.put('members', JSON.stringify(all)); }
-    const sid = given || m.spu || (sp && sp.sid) || '';
-    if (!sid) return answer(200, { need: true });
-    const tok = await getToken(env), lists = [];
-    let next = '/users/' + encodeURIComponent(sid) + '/playlists?limit=50', reads = 0;
-    const pls = [];
-    for (let i = 0; next && i < 6; i++) {
-      const j = await spotify(tok, next).catch(e => ({ _err: String(e && e.message || e) }));
-      if (j._err) return answer(200, /Spotify 404/.test(j._err) ? { need: true, error: 'Spotify has no one with that username.' } : { error: 'Spotify didn’t give your playlists (' + j._err.slice(0, 160) + '). Use Exportify below for now.' });
-      for (const p of j.items || []) if (p && p.id && p.name) pls.push(p);
-      next = j.next ? j.next.replace('https://api.spotify.com/v1', '') : null;
-    }
-    for (const p of pls) {
-      const total = ((p.tracks || p.items || {}).total) || 0;
+  if (body.op === 'splists') {   // their Spotify playlists and Liked Songs, each with its songs, for the import picker, through their own Spotify sign-in (Spotify lets an app read only the signed-in account's playlists)
+    const mr = await memberSpRead(env, me).catch(() => null);
+    if (!mr) return answer(200, { connect: true });
+    const lists = []; let reads = 0;
+    const pls = await myPlaylists(mr.tok).catch(() => null);
+    if (!pls) return answer(200, { error: 'Spotify didn’t give your playlists just now. Try again in a minute, or use Exportify below.' });
+    const want = (mr.liked ? [{ id: 'liked', name: 'Liked Songs', owner: { id: mr.sid }, images: [], tracks: { total: 1 } }] : []).concat(pls);
+    for (const p of want) {
+      const total = ((p.tracks || p.items || {}).total) || 0, img = ((p.images || [])[0] || {}).url || '', mine = p.id === 'liked' || !!(p.owner && p.owner.id === mr.sid) || !!p.collaborative;
       if (!total) continue;
-      if (reads + Math.ceil(total / 100) > 400) { lists.push({ spid: p.id, name: p.name, owner: (p.owner && p.owner.display_name) || '', img: ((p.images || [])[0] || {}).url || '', total, later: true }); continue; }
+      const base = { spid: p.id, name: p.name, owner: (p.owner && p.owner.display_name) || '', mine, img };
+      if (reads + Math.ceil(total / 100) > 400) { lists.push(Object.assign(base, { total, later: true })); continue; }
       reads += Math.ceil(total / 100);
-      const items = await playlistItems(tok, p.id).catch(() => null);
-      if (!items) continue;
-      lists.push({ spid: p.id, name: p.name, owner: (p.owner && p.owner.display_name) || '', mine: !!(p.owner && p.owner.id === sid), img: ((p.images || [])[0] || {}).url || '', songs: items.slice(0, UPL_CSV_MOST) });
+      const items = await spReadList(mr.tok, p.id).catch(() => null);
+      if (items && items.length) lists.push(Object.assign(base, { songs: items.slice(0, UPL_CSV_MOST) }));
     }
-    return answer(200, { user: sid, lists });
+    return answer(200, { user: mr.sid, lists });
   }
   if (body.op === 'splist') {   // one playlist's songs (one too big to bring with the rest)
-    const id = String(body.spid || ''); if (!/^[0-9A-Za-z]{22}$/.test(id)) return answer(400, { error: 'Which playlist?' });
-    const items = await playlistItems(await getToken(env), id).catch(() => null);
+    const id = String(body.spid || ''); if (!/^[0-9A-Za-z]{22}$/.test(id) && id !== 'liked') return answer(400, { error: 'Which playlist?' });
+    const mr = await memberSpRead(env, me).catch(() => null), items = mr ? await spReadList(mr.tok, id).catch(() => null) : null;
     return items ? answer(200, { songs: items.slice(0, UPL_CSV_MOST) }) : answer(200, { error: 'Spotify won’t let us read that playlist.' });
   }
   if (body.op === 'csv' || body.op === 'csvup') await uplCsvPreviews(env, body.songs).catch(() => null);   // (any previews Exportify gave)
@@ -4604,7 +4612,7 @@ async function memberUpl(request, url, env, answer) {
     const keep = had ? { share: had[1].share, to: had[1].to, send: had[1].send, prev: (had[1].prev || []).concat(had[0]).slice(-10) } : {};   // (prev: the ids it had, for its /yt/ link)
     if (had) { await uplDrop(env, [had[0]]); delete U[had[0]]; }
     const now = Date.now(), newest = Math.max.apply(null, items.map(x => Date.parse(x.a)));
-    const pid = randomCode(10), rec = { o: me, src: 'csv', sp: '', spid: /^[0-9A-Za-z]{22}$/.test(String(body.spid || '')) ? String(body.spid) : undefined, n: String(body.name || '').replace(/\s+/g, ' ').trim().slice(0, 80) || 'My playlist', fk: uplFileKey(body.file), mode: body.mode === 'list' ? 'list' : 'cal', at: now, base: Math.max(newest, 0), st: 'ok' };
+    const pid = randomCode(10), rec = { o: me, src: 'csv', sp: '', spid: /^([0-9A-Za-z]{22}|liked)$/.test(String(body.spid || '')) ? String(body.spid) : undefined, n: String(body.name || '').replace(/\s+/g, ' ').trim().slice(0, 80) || 'My playlist', fk: uplFileKey(body.file), mode: body.mode === 'list' ? 'list' : 'cal', at: now, base: Math.max(newest, 0), st: 'ok' };
     for (const k of Object.keys(keep)) if (keep[k] !== undefined) rec[k] = keep[k];
     U[pid] = rec;
     await uplTake(env, pid, rec, U, items, 'new', now, true);
@@ -4714,7 +4722,7 @@ async function memberUpl(request, url, env, answer) {
     const items = uplCsvSongs(body.songs);
     if (!items || !items.length) return answer(400, { error: 'No songs in that file. Choose the file Exportify saved for your playlist.' });
     if (body.file) rec.fk = uplFileKey(body.file);
-    if (/^[0-9A-Za-z]{22}$/.test(String(body.spid || ''))) rec.spid = String(body.spid);   // (from Spotify itself: read from it from now on)
+    if (/^([0-9A-Za-z]{22}|liked)$/.test(String(body.spid || ''))) rec.spid = String(body.spid);   // (from Spotify itself: read from it from now on)
     const d0 = await uplSongs(env, pid);
     if (d0.add) { const ids = new Set(items.map(x => x.id)); for (const x of d0.songs || []) if (d0.add[x.id] && !ids.has(x.id)) items.push(x); }   // (songs added to it from other playlists stay)
     const r = await uplTake(env, pid, rec, U, items, rec.st, Date.now(), true);
