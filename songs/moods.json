@@ -4,19 +4,19 @@
   "about": "For songs Claude knows: how often the three strongest moods from Last.fm listeners' track tags, from the artist's Last.fm tags, and from the audio models include Claude's first pick.",
   "listeners": [
    2,
-   4
+   3
   ],
   "audio": [
-   152,
-   259
+   150,
+   256
   ],
   "artistTags": [
    5,
    29
   ],
-  "songsWithListenerTags": 312,
-  "songsWithListenerMoodTags": 170,
-  "songsWhereListenersCount": 72
+  "songsWithListenerTags": 13,
+  "songsWithListenerMoodTags": 10,
+  "songsWhereListenersCount": 5
  },
  "moods": [
   "Joyful",
@@ -10512,7 +10512,7 @@
    "sound": [
     "Dark",
     "Bittersweet",
-    "Dreamy"
+    "Melancholy"
    ],
    "claude": [
     "Playful",
@@ -25593,7 +25593,7 @@
    "sound": [
     "Joyful",
     "Uplifting",
-    "Playful"
+    "Mellow"
    ],
    "claude": [
     "Romantic"
@@ -26011,7 +26011,7 @@
      [
       [
        "Bittersweet",
-       24
+       25
       ],
       [
        "Joyful",
@@ -26394,7 +26394,7 @@
     ],
     [
      "Dark",
-     12
+     13
     ]
    ],
    "moodEvidence": [
@@ -26412,7 +26412,7 @@
       ],
       [
        "Dark",
-       12
+       13
       ]
      ]
     ]
@@ -26499,7 +26499,7 @@
     ],
     [
      "Romantic",
-     28
+     27
     ],
     [
      "Melancholy",
@@ -26517,7 +26517,7 @@
       ],
       [
        "Romantic",
-       28
+       27
       ],
       [
        "Melancholy",
@@ -27380,6 +27380,166 @@
     "lo-fi",
     "pop",
     "pop rock"
+   ],
+   "check": true
+  },
+  "6pijLoLtiB2XVb4iNovLRq": {
+   "n": 268,
+   "title": "Losing You",
+   "artist": "Solange",
+   "moods": [
+    "Joyful"
+   ],
+   "moodMix": [
+    [
+     "Joyful",
+     66
+    ],
+    [
+     "Romantic",
+     11
+    ],
+    [
+     "Playful",
+     9
+    ]
+   ],
+   "moodEvidence": [
+    [
+     "Last.fm",
+     60,
+     [
+      [
+       "Joyful",
+       94
+      ],
+      [
+       "Energetic",
+       4
+      ],
+      [
+       "Romantic",
+       2
+      ]
+     ]
+    ],
+    [
+     "Audio",
+     40,
+     [
+      [
+       "Romantic",
+       25
+      ],
+      [
+       "Joyful",
+       23
+      ],
+      [
+       "Playful",
+       22
+      ]
+     ]
+    ]
+   ],
+   "moodFrom": "Weighed up",
+   "sound": [
+    "Romantic",
+    "Joyful",
+    "Playful"
+   ],
+   "listeners": "agree",
+   "styles": [
+    "K-pop",
+    "Soul",
+    "Contemporary R&B"
+   ],
+   "genres": [
+    "Soul & R&B",
+    "Pop"
+   ],
+   "genreFrom": "Weighed up",
+   "genreMix": [
+    [
+     "Soul & R&B",
+     48
+    ],
+    [
+     "Pop",
+     32
+    ],
+    [
+     "Electronic",
+     12
+    ]
+   ],
+   "genreEvidence": [
+    [
+     "MusicBrainz",
+     50,
+     [
+      [
+       "Soul & R&B",
+       48
+      ],
+      [
+       "Pop",
+       22
+      ],
+      [
+       "Electronic",
+       17
+      ]
+     ]
+    ],
+    [
+     "Last.fm",
+     30,
+     [
+      [
+       "Soul & R&B",
+       47
+      ],
+      [
+       "Pop",
+       42
+      ],
+      [
+       "Electronic",
+       6
+      ]
+     ]
+    ],
+    [
+     "Audio",
+     20,
+     [
+      [
+       "Soul & R&B",
+       47
+      ],
+      [
+       "Pop",
+       45
+      ],
+      [
+       "Electronic",
+       8
+      ]
+     ]
+    ]
+   ],
+   "musicbrainz": [
+    "alternative dance",
+    "alternative r&b",
+    "contemporary r&b",
+    "electronic",
+    "hip hop",
+    "neo soul",
+    "pop",
+    "r&b",
+    "rock",
+    "soul"
    ],
    "check": true
   }
