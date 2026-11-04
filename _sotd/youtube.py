@@ -345,8 +345,8 @@ def web_lookup(s, tok):
     to ask (YouTube's search then, as before). An entry with no id: it found nothing that passes."""
     lead = (s.get('artists') or [s['artist']])[0]
     q = clean_title(s['title']) + ' ' + lead
-    if s.get('again'):   # (worded differently: the artist first, both quoted, the title without brackets or part number)
-        q = '"' + lead + '" "' + re.sub(r'\s*[(\[].*?[)\]]', '', clean_title(s['title'])).strip() + '"'
+    if s.get('again'):   # (worded differently: the artist first, the title without brackets; not quoted, which found less)
+        q = lead + ' ' + re.sub(r'\s*[(\[].*?[)\]]', '', clean_title(s['title'])).strip()
     tried, miss = 0, None
     for name, key in web_ready():
         if tried >= 2:
