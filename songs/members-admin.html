@@ -430,6 +430,7 @@
         + (m.passkeys ? ' · ' + m.passkeys + (m.passkeys === 1 ? ' passkey' : ' passkeys') : '')
         + ((PUSHON || {})[m.id] ? ' · notifications on' : '')
         + (m.nomsg ? ' · other members’ messages off' : '');   // (theirs to choose, Profile › Account; yours still reach them)
+      if (!m.owner) st.textContent += ' · Spotify: ' + (m.spu || 'username not set');
       if (!m.owner) st.textContent += ' · MP3/MP4 songs: ' + (m.fmax >= 100000 ? 'no limit' : m.fmax) + (m.fset ? ' (set by you)' : '');
       var nl = button('New link', function () { api('/members/admin', { op: 'reinvite', id: m.id }).then(showLink); });
       // their allowance of songs with MP3s and MP4s, over the usual 366 (John, 3 Nov 2026: "the option to override that limit, myself on their member page")
@@ -439,6 +440,15 @@
         api('/members/admin', { op: 'fmax', id: m.id, n: v === 'none' || v === 'default' ? v : Number(v) }).then(function (j) {
           if (j.members) { MEMBERS = j.members; people(); toast(m.name + ': ' + (v === 'none' ? 'no limit on songs with files' : v === 'default' ? 'back to 366 songs with files' : v + ' songs with files') + '. The download job uses it from its next run.'); }
           else toast(j.error || 'Couldn’t change it');
+        });
+      });
+      // their Spotify username, so their public playlists can be imported and kept up to date without Exportify (John, 4 Nov 2026: "I can give you members Spotify usernames")
+      var su = m.owner ? null : button('Spotify username', function () {
+        var v = window.prompt(m.name + '’s Spotify username, or their profile link (Spotify › their name › ••• › Share › Copy link). Leave it empty to clear it.', m.spu || '');
+        if (v == null) return;
+        api('/members/admin', { op: 'spuser', id: m.id, u: v.trim() }).then(function (j) {
+          if (j.members) { MEMBERS = j.members; people(); toast(v.trim() ? m.name + '’s public Spotify playlists can be imported now' : 'Cleared'); }
+          else toast(j.error || 'Couldn’t save it');
         });
       });
       var tv = button('Code', function () { api('/members/admin', { op: 'tvcode', id: m.id }).then(function (j) {
@@ -451,7 +461,7 @@
       });
       var acts = document.createElement('div'); acts.className = 'acts';
       acts.appendChild(button('Message', function () { notifyOne(m); }));   // to just them (their inbox, and their phone if notifications are on)
-      acts.appendChild(nl); acts.appendChild(tv); if (fm) acts.appendChild(fm); acts.appendChild(me); acts.appendChild(rm);
+      acts.appendChild(nl); acts.appendChild(tv); if (su) acts.appendChild(su); if (fm) acts.appendChild(fm); acts.appendChild(me); acts.appendChild(rm);
       li.appendChild(who); li.appendChild(st); if (m.apps && m.apps.length) li.appendChild(appsList(m)); li.appendChild(mailRow(m)); li.appendChild(seeRow(m)); if (!m.owner) li.appendChild(seenRow(m)); li.appendChild(acts); ul.appendChild(li);
     });
     csvBox(); newSeeDraw(); if (DRAFTS && DRAFTS.length) draftsDraw();

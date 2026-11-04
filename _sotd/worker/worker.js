@@ -1179,7 +1179,7 @@ async function members(request, url, env) {
   const listing = (own = owner) => Object.entries(all).map(([id, m]) => ({ id, name: m.name, created: m.created, owner: id === own, email: m.email || '', emailAt: m.emailAt || null,
     devices: Object.values(m.devices || {}).filter(d => d.did).length, apps: deviceApps(m, seenAt), passkeys: (m.passkeys || []).length, nomsg: !!m.nomsg, apart: m.apart || [], see: mediaFor(m),
     seen: Math.max(0, ...Object.entries(m.devices || {}).map(([h, d]) => Math.max(seenAt[h] || 0, d.seen || 0))) || null,
-    fmax: filesMax(m), fset: Number.isInteger(m.fmax), invite: m.invite ? Object.assign({ uses: m.invite.uses, left: Math.max(0, INVITE_USES - m.invite.uses), until: m.invite.until }, m.invite.asked ? { asked: m.invite.asked } : {}) : null }));
+    fmax: filesMax(m), fset: Number.isInteger(m.fmax), spu: m.spu || '', invite: m.invite ? Object.assign({ uses: m.invite.uses, left: Math.max(0, INVITE_USES - m.invite.uses), until: m.invite.until }, m.invite.asked ? { asked: m.invite.asked } : {}) : null }));
   switch (body.op) {
     case 'list': return answer(200, { members: listing(), catalog: await catalog(env), media: !!env.MEDIA, covers: await coversAll(env) });
     case 'people': return answer(200, { members: listing() });   // (the Apps tab: who has which app, and the emails for Google Play)
@@ -1228,6 +1228,13 @@ async function members(request, url, env) {
       const code = tvCode();
       await env.SOTD.put('tvcode:' + await sha256hex(code), body.id, { expirationTtl: TV_CODE_MINUTES * 60 });
       return answer(200, { code, minutes: TV_CODE_MINUTES, name: all[body.id].name });
+    }
+    case 'spuser': {   // a member's Spotify username (John knows it: John, 4 Nov 2026), for their public playlists
+      const m = all[body.id]; if (!m) return answer(404, { error: 'No such member.' });
+      const u = spUserOf(body.u); if (body.u && !u) return answer(400, { error: 'That isn’t a Spotify username or profile link.' });
+      if (u) m.spu = u; else delete m.spu;
+      await env.SOTD.put('members', JSON.stringify(all)); await env.SOTD.delete('spmap:' + body.id);
+      return answer(200, { members: listing() });
     }
     case 'fmax': {   // a member's allowance of songs with MP3s and MP4s: a number, 'none' (no limit) or 'default'
       const m = all[body.id]; if (!m) return answer(404, { error: 'No such member.' });
@@ -4036,14 +4043,19 @@ async function johnSpLists(env) {   // his Spotify playlists { key (as an Export
 // a playlist owner's Spotify playlists { key (as an Exportify file's): Spotify id }: John's own list; a member's public
 // ones (their Spotify id from connecting it here), kept a day (KV spmap:<member>); else a public playlist of the
 // import's name whose owner has their first name
+function spUserOf(u) {   // a Spotify username from a profile link (open.spotify.com/user/<id>), a spotify:user: address, or the name itself
+  const t = String(u || '').trim(), m = /(?:open\.spotify\.com\/(?:[a-z-]+\/)?user\/|spotify:user:)([^/?#\s]+)/i.exec(t);
+  const id = m ? decodeURIComponent(m[1]) : t;
+  return /^[\w.-]{1,64}$/.test(id) ? id : '';
+}
 async function uplSpMap(env, rec, ownerId, tok) {
   if (rec.o === ownerId) return await johnSpLists(env);
   const kept = await env.SOTD.get('spmap:' + rec.o, 'json');
   let map = kept && Date.now() - kept.at < 864e5 ? Object.assign({}, kept.map) : null;
   if (!map) {
     map = {};
-    const sp = await env.SOTD.get('spm:' + rec.o, 'json');
-    let next = sp && sp.sid ? '/users/' + encodeURIComponent(sp.sid) + '/playlists?limit=50' : null;
+    const sp = await env.SOTD.get('spm:' + rec.o, 'json'), all0 = (await env.SOTD.get('members', 'json')) || {}, sid0 = (all0[rec.o] && all0[rec.o].spu) || (sp && sp.sid) || '';
+    let next = sid0 ? '/users/' + encodeURIComponent(sid0) + '/playlists?limit=50' : null;
     for (let i = 0; next && i < 10; i++) {
       const j = await spotify(tok, next).catch(() => null); if (!j) break;
       for (const p of j.items || []) if (p && p.id && p.name) { const k = uplFileKey(p.name); if (k && !map[k]) map[k] = p.id; }
@@ -4069,7 +4081,7 @@ async function uplJohnAuto(env, U, ownerId) {   // every imported playlist whose
   const tok = await getToken(env);
   for (const [pid, rec] of due) {
     rec.autoAt = now;
-    const map = await uplSpMap(env, rec, ownerId, tok).catch(() => ({})), main = map[rec.fk];
+    const map = await uplSpMap(env, rec, ownerId, tok).catch(() => ({})), main = rec.spid || map[rec.fk];
     if (!main) { rec.auto = false; rec.autoErr = 'No public Spotify playlist of theirs by that name'; continue; }   // (asked again a day later)
     try {
       const items = await playlistItems(tok, main), ids = new Set(items.map(x => x.id));
@@ -4520,6 +4532,36 @@ async function memberUpl(request, url, env, answer) {
     if (rec.st === 'join') await uplAskJohn(env, all, me, rec);
     return answer(200, { ok: true, id: pid, st: rec.st, pls: await uplMine(env, uplList(all, me, U), U) });
   }
+  if (body.op === 'splists') {   // their public Spotify playlists, each with its songs, for the import picker (John, 4 Nov 2026: "Can't you just get users Spotify public playlists yourself?")
+    const m = all[me] || {}, given = spUserOf(body.u), sp = await env.SOTD.get('spm:' + me, 'json');
+    if (given && given !== m.spu) { m.spu = given; await env.SOTD.put('members', JSON.stringify(all)); }
+    const sid = given || m.spu || (sp && sp.sid) || '';
+    if (!sid) return answer(200, { need: true });
+    const tok = await getToken(env), lists = [];
+    let next = '/users/' + encodeURIComponent(sid) + '/playlists?limit=50', reads = 0;
+    const pls = [];
+    for (let i = 0; next && i < 6; i++) {
+      const j = await spotify(tok, next).catch(e => ({ _err: String(e && e.message || e) }));
+      if (j._err) return answer(200, /Spotify 404/.test(j._err) ? { need: true, error: 'Spotify has no one with that username.' } : { error: 'Couldn’t reach Spotify just now. Try again in a minute.' });
+      for (const p of j.items || []) if (p && p.id && p.name) pls.push(p);
+      next = j.next ? j.next.replace('https://api.spotify.com/v1', '') : null;
+    }
+    for (const p of pls) {
+      const total = ((p.tracks || p.items || {}).total) || 0;
+      if (!total) continue;
+      if (reads + Math.ceil(total / 100) > 400) { lists.push({ spid: p.id, name: p.name, owner: (p.owner && p.owner.display_name) || '', img: ((p.images || [])[0] || {}).url || '', total, later: true }); continue; }
+      reads += Math.ceil(total / 100);
+      const items = await playlistItems(tok, p.id).catch(() => null);
+      if (!items) continue;
+      lists.push({ spid: p.id, name: p.name, owner: (p.owner && p.owner.display_name) || '', mine: !!(p.owner && p.owner.id === sid), img: ((p.images || [])[0] || {}).url || '', songs: items.slice(0, UPL_CSV_MOST) });
+    }
+    return answer(200, { user: sid, lists });
+  }
+  if (body.op === 'splist') {   // one playlist's songs (one too big to bring with the rest)
+    const id = String(body.spid || ''); if (!/^[0-9A-Za-z]{22}$/.test(id)) return answer(400, { error: 'Which playlist?' });
+    const items = await playlistItems(await getToken(env), id).catch(() => null);
+    return items ? answer(200, { songs: items.slice(0, UPL_CSV_MOST) }) : answer(200, { error: 'Spotify won’t let us read that playlist.' });
+  }
   if (body.op === 'csv' || body.op === 'csvup') await uplCsvPreviews(env, body.songs).catch(() => null);   // (any previews Exportify gave)
   if (body.op === 'csv') {   // one of their Spotify playlists from an Exportify file
     const items = uplCsvSongs(body.songs);
@@ -4530,7 +4572,7 @@ async function memberUpl(request, url, env, answer) {
     const keep = had ? { share: had[1].share, to: had[1].to, send: had[1].send, prev: (had[1].prev || []).concat(had[0]).slice(-10) } : {};   // (prev: the ids it had, for its /yt/ link)
     if (had) { await uplDrop(env, [had[0]]); delete U[had[0]]; }
     const now = Date.now(), newest = Math.max.apply(null, items.map(x => Date.parse(x.a)));
-    const pid = randomCode(10), rec = { o: me, src: 'csv', sp: '', n: String(body.name || '').replace(/\s+/g, ' ').trim().slice(0, 80) || 'My playlist', fk: uplFileKey(body.file), mode: body.mode === 'list' ? 'list' : 'cal', at: now, base: Math.max(newest, 0), st: 'ok' };
+    const pid = randomCode(10), rec = { o: me, src: 'csv', sp: '', spid: /^[0-9A-Za-z]{22}$/.test(String(body.spid || '')) ? String(body.spid) : undefined, n: String(body.name || '').replace(/\s+/g, ' ').trim().slice(0, 80) || 'My playlist', fk: uplFileKey(body.file), mode: body.mode === 'list' ? 'list' : 'cal', at: now, base: Math.max(newest, 0), st: 'ok' };
     for (const k of Object.keys(keep)) if (keep[k] !== undefined) rec[k] = keep[k];
     U[pid] = rec;
     await uplTake(env, pid, rec, U, items, 'new', now, true);
@@ -4640,6 +4682,7 @@ async function memberUpl(request, url, env, answer) {
     const items = uplCsvSongs(body.songs);
     if (!items || !items.length) return answer(400, { error: 'No songs in that file. Choose the file Exportify saved for your playlist.' });
     if (body.file) rec.fk = uplFileKey(body.file);
+    if (/^[0-9A-Za-z]{22}$/.test(String(body.spid || ''))) rec.spid = String(body.spid);   // (from Spotify itself: read from it from now on)
     const d0 = await uplSongs(env, pid);
     if (d0.add) { const ids = new Set(items.map(x => x.id)); for (const x of d0.songs || []) if (d0.add[x.id] && !ids.has(x.id)) items.push(x); }   // (songs added to it from other playlists stay)
     const r = await uplTake(env, pid, rec, U, items, rec.st, Date.now(), true);
