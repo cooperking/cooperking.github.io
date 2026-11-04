@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="sotd-build" content="e561ff989a5f">
+<meta name="sotd-build" content="0e926be2aad3">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 268 so far">
 <meta name="theme-color" content="#ec135b">
@@ -8193,7 +8193,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
           yt.last.forEach(function (x) { var li = document.createElement('li'); li.className = /^found/.test(x.r) ? 'ok' : /^error/.test(x.r) ? 'bad' : 'miss'; var t = document.createElement('b'); t.textContent = x.s; li.appendChild(t); li.appendChild(document.createTextNode(' → ' + x.r)); ul.appendChild(li); });
           bx.appendChild(ul);
         }
-        if (yt.units != null) { var u = document.createElement('p'); u.className = 'ytunits'; u.textContent = 'YouTube allowance used today: ' + yt.units + ' of 10,000 units'; bx.appendChild(u); }
+        if (yt.units != null) { var u = document.createElement('p'); u.className = 'ytunits'; u.textContent = (yt.srch != null ? 'YouTube searches today: ' + yt.srch + ' of ' + (yt.srchMax || 95) + ' (the limit that stops it) · ' : '') + 'other lookups: ' + yt.units + ' of 10,000 units'; bx.appendChild(u); }   // (searches have their own daily limit, apart from the units: John, 4 Nov 2026)
         el.appendChild(bx);
       }
       var a = document.createElement('a'); a.className = 'which'; a.href = run.url; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'Open the run ↗'; el.appendChild(a);
