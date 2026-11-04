@@ -3968,8 +3968,8 @@ async function uplTake(env, pid, rec, U, items, was, now, quiet) {   // its song
   // a fresh export), and an update or John's own Spotify read never moves a song (John, 3 Nov 2026: "If we edit a playlist
   // date ... I don't want it automatically changed back via an import or my own spotify checks"). Days moved by hand (dd)
   // and the calendar's own setup (dates) are its owner's and no update touches them.
-  const was = new Map((data.songs || []).map(x => [x.id, x.a]));   // (not one its owner took off: put back on Spotify, it's back on its new day, as before)
-  items = items.map(x => was.get(x.id) && was.get(x.id) !== x.a && !(data.del || {})[x.id] ? Object.assign({}, x, { a: was.get(x.id) }) : x);
+  const keptA = new Map((data.songs || []).map(x => [x.id, x.a]));   // (not one its owner took off: put back on Spotify, it's back on its new day, as before)
+  items = items.map(x => keptA.get(x.id) && keptA.get(x.id) !== x.a && !(data.del || {})[x.id] ? Object.assign({}, x, { a: keptA.get(x.id) }) : x);
   items = uplKeepGone(rec, data, items, now);
   const fresh = items.filter(x => !had.has(x.id) && Date.parse(x.a) > (rec.base || 0) && !(data.rel || {})[x.id]);
   const bare = l => JSON.stringify((l || []).map(x => { const y = Object.assign({}, x); delete y.rd; return y; }));
@@ -4525,7 +4525,7 @@ async function memberUpl(request, url, env, answer) {
     const pv = Object.assign({}, pvMem, (await env.SOTD.get('previews', 'json')) || {}), songs = (data.songs || []).filter(x => !uplGone(data, x));
     const noPv = songs.filter(x => pv[x.id] === '-' || !(x.id in pv)), noVid = songs.filter(x => !(meta[x.id] && meta[x.id].vid) && !(J[x.id] && J[x.id].v) && !(ed[x.id] && ed[x.id].v));
     let np = 0, nv = 0;
-    if (k.includes('p')) { for (const x of noPv) if (pv[x.id] === '-') { delete pv[x.id]; np++; } if (np) { for (const x of noPv) delete pvMem[x.id]; await kvSoft(env, 'previews', JSON.stringify(pv)); } { const ak = (await env.SOTD.get('pvit', 'json')) || {}; let c = 0; for (const x of noPv) if (ak[x.id]) { delete ak[x.id]; c++; } if (c) await kvSoft(env, 'pvit', JSON.stringify(ak)); }   // (Apple asked again too) await fillPreviews(env, noPv, UPL_PV_MOST, pv).catch(() => null); }
+    if (k.includes('p')) { for (const x of noPv) if (pv[x.id] === '-') { delete pv[x.id]; np++; } if (np) { for (const x of noPv) delete pvMem[x.id]; await kvSoft(env, 'previews', JSON.stringify(pv)); } { const ak = (await env.SOTD.get('pvit', 'json')) || {}; let c = 0; for (const x of noPv) if (ak[x.id]) { delete ak[x.id]; c++; } if (c) await kvSoft(env, 'pvit', JSON.stringify(ak)); }   /* (Apple asked again too) */ await fillPreviews(env, noPv, UPL_PV_MOST, pv).catch(() => null); }
     if (k.includes('v') && noVid.length) {
       data.retry = data.retry || {}; const now = Date.now(); for (const x of noVid) { data.retry[x.id] = now; nv++; }
       if (data.skip) for (const x of noVid) if (data.skip[x.id]) { data.skip[x.id] = data.skip[x.id].replace('v', ''); if (!data.skip[x.id]) delete data.skip[x.id]; }
