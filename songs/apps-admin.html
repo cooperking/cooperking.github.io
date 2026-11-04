@@ -47,6 +47,22 @@
 .steps b { color: var(--fg); font-weight: 600; }
 .csvrow { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
 code { font-size: 12.5px; background: var(--chip); border: 1px solid var(--line); border-radius: 6px; padding: 1px 5px; color: var(--fg); }
+.splogs details { margin: 6px 0; font-size: 14px; }
+.splogs summary { cursor: pointer; font-weight: 600; }
+.splogs pre { max-height: 300px; overflow: auto; white-space: pre-wrap; font: 12px/1.45 ui-monospace, Menlo, monospace; margin: 6px 0; }
+.spapps { margin: 6px 0; font-size: 14px; }
+.spapps summary { cursor: pointer; font-weight: 600; }
+.spapplist { list-style: none; margin: 6px 0; padding: 0; display: grid; gap: 2px; font-size: 13px; }
+.splist { list-style: none; margin: 6px 0 10px; padding: 0; display: grid; gap: 8px; }
+.splist li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; justify-content: space-between; font-size: 14px; }
+.splist li { display: grid; gap: 8px; padding: 10px 12px; border-radius: 12px; background: var(--chip); }
+.sp-who { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.sp-who b { font-size: 15px; color: var(--fg); }
+.sp-st { padding: 2px 10px; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--line); font-size: 12.5px; color: var(--fg); }
+.sp-st.wait { background: #e23a6e; color: #fff; box-shadow: none; }
+.sp-st.bad { color: #e23a6e; }
+.sp-app { font-size: 12px; color: var(--muted); margin-left: auto; }
+.splist li > :not(.sp-who) { justify-self: start; }
 </style>
 </head>
 <body>
@@ -114,6 +130,26 @@ code { font-size: 12.5px; background: var(--chip); border: 1px solid var(--line)
     </ul>
   </section>
 
+  <section class="card app" id="playtest" aria-labelledby="pth">
+    <div class="kicker">Android</div>
+    <h2 id="pth">Google Play’s test list</h2>
+    <p class="stat" id="csvstat"></p>
+    <div class="row"><button class="btn small primary" id="csvget" type="button">Download the emails (CSV)</button><button class="btn small" id="mailcopy" type="button">Copy the emails</button></div>
+  </section>
+  <section class="card app" id="spbox" aria-labelledby="sph2" hidden>
+    <div class="kicker">Spotify</div>
+    <h2 id="sph2">Members playing through Spotify</h2>
+    <p class="stat" id="spstat"></p>
+    <ul class="splist" id="splist"></ul>
+    <p class="stat" id="spappsum"></p>
+    <div id="splogs"></div>
+    <details class="spapps"><summary>Show apps</summary>
+    <ul class="spapplist" id="spapps"></ul>
+    <p class="stat">To make room for more: in Spotify’s dashboard, Create app (any name), tick Web API and iOS, add both Redirect URIs (the button below, and sotdspotify://callback) and the iOS bundle ID io.github.cooperking.sotd; then paste its Client ID here.</p>
+    <div class="row"><textarea id="spnewapp" rows="2" placeholder="Another app’s Client ID, or a list of them" autocomplete="off" spellcheck="false" style="flex:1 1 220px;min-width:0"></textarea><button class="btn small primary" id="spaddapp" type="button">Add app</button></div>
+    </details>
+    <div class="row"><a class="btn small" href="https://developer.spotify.com/dashboard" target="_blank" rel="noopener">Spotify’s dashboard ↗</a><button class="btn small" id="spcopyuri" type="button">Copy the Redirect URI</button></div>
+  </section>
   <section class="card app" id="behind" aria-labelledby="behh">
     <div class="kicker">Behind them</div>
     <h2 id="behh">The services</h2>
@@ -242,6 +278,105 @@ code { font-size: 12.5px; background: var(--chip); border: 1px solid var(--line)
   }
   window.SOTD_REFRESH = load;
   load();
+  // ---- moved from Members (John, 4 Nov 2026: "Members tab currently includes google play's test list and Spotify, which both should be in Apps tab")
+  var MEMBERS = [];
+  function button(label, fn) { var b = document.createElement('button'); b.type = 'button'; b.className = 'btn small'; b.textContent = label; b.addEventListener('click', fn); return b; }
+  // ---- the emails for Google Play's test list: a CSV (one address a line) to upload to the closed test's email list in
+  // Play Console (the Apps tab has the steps). Play's API can't read or write that list (it takes Google Groups only).
+  function withEmail() { return MEMBERS.filter(function (m) { return m.email; }); }
+  function csvBox() {
+    var n = withEmail().length;
+        $('csvstat').textContent = !n ? 'Nobody has an email address yet.'
+      : (n === 1 ? '1 member has' : n + ' members have') + ' an email address. Download them and upload the file to the closed test’s email list, Song of the Day testers, in Play Console (the Apps tab has the steps and the link).';
+    $('csvget').disabled = !n; $('mailcopy').disabled = !n;
+  }
+  $('mailcopy').addEventListener('click', function () {   // for the email list's Add email addresses box
+    var list = withEmail().map(function (m) { return m.email; });
+    if (!list.length) return;
+    var text = list.join(', ');
+    navigator.clipboard.writeText(text).then(function () { toast(list.length === 1 ? '1 email copied' : list.length + ' emails copied'); }, function () { toast(text); });
+  });
+  $('csvget').addEventListener('click', function () {
+    var list = withEmail().map(function (m) { return m.email; });
+    if (!list.length) return;
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([list.join('\n') + '\n'], { type: 'text/csv' }));
+    a.download = 'song-of-the-day-testers.csv'; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 10000);
+    toast(list.length === 1 ? '1 email downloaded' : list.length + ' emails downloaded');
+  });
+  // members playing through their own Spotify (John, 2 Nov 2026): who's connected; who Spotify wants added first (its
+  // dashboard: your app, User Management, their name and the email of their Spotify account; up to 25 people)
+  function spLoad() {
+    api('/members/admin', { op: 'splist' }).then(function (j) {
+      if (j.status !== 200) return;
+      var list = j.list || [], wait = list.filter(function (x) { return x.blocked; }), box = $('spbox'), ul = $('splist');
+      var apps = j.apps || [], per = j.per || 5, appNo = function (cid) { var i = apps.indexOf(cid); return i < 0 ? '?' : String(i + 1); };
+      SPAPPS = apps.slice(1); SPURI = j.redirect || '';
+      box.hidden = false;
+      $('spstat').textContent = (wait.length ? wait.length + (wait.length === 1 ? ' member waits' : ' members wait') + ' for you to add them: in Spotify’s dashboard open the app named below › Settings › User Management › Add user (their name and the email of their Spotify account).'
+        : list.length ? list.length + (list.length === 1 ? ' member plays' : ' members play') + ' through their own Spotify.' : 'Nobody has connected Spotify yet.')
+        + (j.quota && Date.now() - j.quota < 864e5 ? ' Spotify said the apps’ shared allowance of requests ran out on ' + new Date(j.quota).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) + ': songs played as previews for a while.' : '');
+      var cnt = {}; list.forEach(function (x) { cnt[x.cid] = (cnt[x.cid] || 0) + 1; });
+      var used = list.length, room = apps.length * per;
+      $('spappsum').textContent = apps.length + (apps.length === 1 ? ' Spotify app' : ' Spotify apps') + ' · ' + used + ' of ' + room + ' places used';
+      var ul2 = $('spapps'); ul2.textContent = '';
+      apps.forEach(function (a, i) { var li = document.createElement('li'); li.textContent = 'App ' + (i + 1) + (i ? '' : ' (Song of the Day)') + ' · ' + (cnt[a] || 0) + ' of ' + per + ' · …' + a.slice(-6); ul2.appendChild(li); });
+      ul.textContent = '';
+      list.sort(function (a, b) { return (b.blocked ? 1 : 0) - (a.blocked ? 1 : 0) || String(a.name).localeCompare(String(b.name)); }).forEach(function (x) {
+        var li = document.createElement('li'), t = document.createElement('div'); t.className = 'sp-who';   // (a row each: their name, how it stands, which app; buttons beneath: John, 4 Nov 2026, "badly formatted")
+        var nm = document.createElement('b'); nm.textContent = x.name; t.appendChild(nm);
+        var stt = x.blocked ? (x.email ? 'Add ' + x.email + ' on Spotify’s dashboard' : 'Waiting for their Spotify email') : x.gone ? 'Needs to connect again' : x.product !== 'premium' ? 'Connected as ' + (x.sname || 'them') + ' · not Premium' : 'Connected as ' + (x.sname || 'them') + (x.on ? '' : ' · playing through Spotify off');
+        var chip = document.createElement('span'); chip.className = 'sp-st' + (x.blocked ? ' wait' : x.gone ? ' bad' : ''); chip.textContent = stt; t.appendChild(chip);
+        var ap = document.createElement('span'); ap.className = 'sp-app'; ap.textContent = 'App ' + appNo(x.cid); t.appendChild(ap);
+        li.appendChild(t);
+        if (x.blocked && x.email) {   // when you were alerted, again, and the app's User Management page in Spotify's dashboard
+          var ak = document.createElement('span'); ak.style.cssText = 'font-size:12px;opacity:.7';
+          var akt = function (a) { ak.textContent = a && a.at ? 'Alert sent to you ' + new Date(a.at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'No alert sent yet'; };
+          akt(x.asked); li.appendChild(ak);
+          var ag = document.createElement('button'); ag.type = 'button'; ag.className = 'btn small'; ag.textContent = 'Alert me again';
+          ag.addEventListener('click', function () { ag.disabled = true; api('/members/admin', { op: 'spask', id: x.id }).then(function (r) { akt(r.asked); toast(r.asked ? 'Alert sent' : 'Couldn’t send the alert'); }, function () { toast('Couldn’t ask'); }).then(function () { ag.disabled = false; }); });
+          li.appendChild(ag);
+          var op = document.createElement('a'); op.className = 'btn small primary'; op.target = '_blank'; op.rel = 'noopener';
+          op.href = 'https://developer.spotify.com/dashboard/' + x.cid + '/users'; op.textContent = 'Open app ' + appNo(x.cid) + ' in Spotify ↗';
+          li.appendChild(op);
+          // Claude's task on John's Mac adds them in Spotify's dashboard itself: its page, Run now (the Worker can't start it)
+          var cl = document.createElement('a'); cl.className = 'btn small'; cl.target = '_blank'; cl.rel = 'noopener';
+          cl.href = 'https://claude.ai/code/routines/trig_01HjnEzR3YdmqcArosruN5fH'; cl.textContent = 'Let Claude add them ↗';
+          cl.title = 'Opens Claude’s task: tap Run now (needs the Claude app open on the Mac)';
+          li.appendChild(cl);
+        }
+        if (x.blocked && x.email) { var c = document.createElement('button'); c.type = 'button'; c.className = 'btn small'; c.textContent = 'Copy email'; c.addEventListener('click', function () { navigator.clipboard.writeText(x.email).then(function () { toast('Copied: add it in Spotify’s dashboard'); }, function () { toast(x.email); }); }); li.appendChild(c); }
+        ul.appendChild(li);
+      });
+    }).catch(function () {});
+  }
+  // each member's Spotify steps, from their phone (newest last): to see what happened when playing through Spotify
+  function spLogs(clear) {
+    api('/members/admin', clear ? { op: 'splog', clear: clear } : { op: 'splog' }).then(function (j) {
+      var box = $('splogs'); box.className = 'splogs'; box.textContent = '';
+      (j.logs || []).forEach(function (x) {
+        var d = document.createElement('details'), sm = document.createElement('summary'); sm.textContent = 'What happened on ' + x.name + '’s device (' + x.lines.length + ' steps)';
+        var pre = document.createElement('pre'); pre.textContent = x.lines.join('\n'); var row = document.createElement('div'); row.className = 'row';
+        var cp = document.createElement('button'); cp.type = 'button'; cp.className = 'btn small'; cp.textContent = 'Copy'; cp.addEventListener('click', function () { navigator.clipboard.writeText(x.lines.join('\n')).then(function () { toast('Copied'); }, function () {}); });
+        var rf = document.createElement('button'); rf.type = 'button'; rf.className = 'btn small'; rf.textContent = 'Refresh'; rf.addEventListener('click', function () { spLogs(); });
+        var cl = document.createElement('button'); cl.type = 'button'; cl.className = 'btn small'; cl.textContent = 'Clear'; cl.addEventListener('click', function () { spLogs(x.id); });
+        row.appendChild(cp); row.appendChild(rf); row.appendChild(cl);
+        d.appendChild(sm); d.appendChild(pre); d.appendChild(row); box.appendChild(d);
+        if (d.parentNode.children.length === 1) d.open = true;
+      });
+    }).catch(function () {});
+  }
+  var SPAPPS = [], SPURI = '';
+  $('spaddapp').addEventListener('click', function () {
+    // one Client ID, or a list pasted in (any 32-character IDs in it: a line each, a spreadsheet's column, a list)
+    var ids = ($('spnewapp').value.toLowerCase().match(/\b[0-9a-f]{32}\b/g) || []).filter(function (x, i, a) { return a.indexOf(x) === i && SPAPPS.indexOf(x) < 0; });
+    if (!ids.length) { toast('Paste a Client ID (32 letters and numbers, from the app’s page in Spotify’s dashboard), or a list of them'); return; }
+    api('/members/admin', { op: 'spapps', apps: SPAPPS.concat(ids) }).then(function (j) { if (j.status !== 200) { toast(j.error || 'Couldn’t add them'); return; } $('spnewapp').value = ''; var n = (j.apps || []).length - 1 - SPAPPS.length; toast(n === 1 ? 'App added: room for 5 more' : n + ' apps added: room for ' + n * 5 + ' more'); spLoad(); });
+  });
+  $('spcopyuri').addEventListener('click', function () { var u = SPURI || 'https://sotd-playlists.cooperking.workers.dev/callback'; navigator.clipboard.writeText(u).then(function () { toast('Copied: ' + u); }, function () { toast(u); }); });
+  api({ op: 'people' }).then(function (j) { MEMBERS = j.members || []; csvBox(); });
+  spLoad(); spLogs();
 })();
 </script>
 </body>
