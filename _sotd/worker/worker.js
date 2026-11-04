@@ -1237,7 +1237,7 @@ async function members(request, url, env) {
       let next = '/users/' + encodeURIComponent(sid) + '/playlists?limit=50';
       for (let i = 0; next && i < 6; i++) {
         const j = await spotify(tok, next).catch(e => ({ _err: String(e && e.message || e) }));
-        if (j._err) return answer(200, { error: /Spotify 404/.test(j._err) ? 'Spotify has no one with the username ' + sid + '.' : 'Couldn’t reach Spotify just now.' });
+        if (j._err) return answer(200, { error: /Spotify 404/.test(j._err) ? 'Spotify has no one with the username ' + sid + '.' : 'Spotify didn’t give their playlists: ' + j._err.slice(0, 200) });
         for (const p of j.items || []) if (p && p.id && p.name) {
           const on = theirs.find(([, r]) => r.spid === p.id || r.fk === uplFileKey(p.name));
           out.push({ spid: p.id, name: p.name, n: ((p.tracks || p.items || {}).total) || 0, img: ((p.images || [])[0] || {}).url || '', owner: (p.owner && p.owner.display_name) || '', mine: !!(p.owner && p.owner.id === sid), on: on ? { id: on[0], n: uplName(all, on[1]), auto: !!on[1].auto || !!on[1].spid } : null });
@@ -4574,7 +4574,7 @@ async function memberUpl(request, url, env, answer) {
     const pls = [];
     for (let i = 0; next && i < 6; i++) {
       const j = await spotify(tok, next).catch(e => ({ _err: String(e && e.message || e) }));
-      if (j._err) return answer(200, /Spotify 404/.test(j._err) ? { need: true, error: 'Spotify has no one with that username.' } : { error: 'Couldn’t reach Spotify just now. Try again in a minute.' });
+      if (j._err) return answer(200, /Spotify 404/.test(j._err) ? { need: true, error: 'Spotify has no one with that username.' } : { error: 'Spotify didn’t give your playlists (' + j._err.slice(0, 160) + '). Use Exportify below for now.' });
       for (const p of j.items || []) if (p && p.id && p.name) pls.push(p);
       next = j.next ? j.next.replace('https://api.spotify.com/v1', '') : null;
     }
