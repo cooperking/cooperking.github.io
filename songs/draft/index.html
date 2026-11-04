@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="a479f15a0c24">
+<meta name="sotd-build" content="d062071beaf2">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -600,6 +600,10 @@ html.upl-list .side-acts .listbtn { display: inline-grid; }
 .imp-sort[hidden] { display: none; }
 .imp-sort button { height: 28px; padding: 0 11px; border: 0; border-radius: 999px; background: var(--pill-bg); box-shadow: inset 0 0 0 1px var(--line); color: var(--fg); font: 600 12px/1 var(--sans); cursor: pointer; }
 .imp-sort button.on { background: var(--fg); color: var(--bg); box-shadow: none; }
+.imp-xp { margin: 4px 0 0; }
+.imp-xp > summary { cursor: pointer; text-align: center; font: 600 12px/1.6 var(--sans); letter-spacing: .06em; color: var(--muted); list-style: none; padding: 6px 0; }
+.imp-xp > summary::-webkit-details-marker { display: none; }
+.imp-xp[open] > summary { margin-bottom: 8px; }
 .imp-sp { display: grid; gap: 8px; justify-items: center; margin: 4px 0 14px; text-align: center; }
 .imp-sp-t { margin: 0; font-size: 13px; color: var(--muted); }
 .imp-sp-u { display: grid; gap: 6px; width: 100%; max-width: 420px; text-align: left; font-size: 13px; }
@@ -2401,11 +2405,12 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         <p class="imp-sp-t" id="uplispt">Your playlists and Liked Songs, straight from your Spotify. They keep themselves up to date.</p>
         <label class="imp-sp-u" id="uplispul" hidden><span>Your Spotify profile link or username</span><input id="uplispu" type="text" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://open.spotify.com/user/…"><small>In Spotify: your name › ••• › Share › Copy link to profile.</small></label>
       </div>
-      <p class="imp-or">Private playlists or Liked Songs? Use Exportify:</p>
+      <details class="imp-xp" id="uplixp"><summary>Or use Exportify instead</summary>
       <ol class="imp-steps">
         <li class="imp-step now" id="upli1"><span class="n" aria-hidden="true">1</span><b>Get your playlists</b><p id="upli1t"></p><button class="copy" id="uplilast" type="button" hidden></button><button class="copy" id="upligo" type="button">Open Exportify</button></li>
         <li class="imp-step later" id="upli2"><span class="n" aria-hidden="true">2</span><b>Add the download</b><p id="upli2t">The .zip Exportify saved (or one playlist’s .csv), in your Downloads.</p><button class="copy ghost" id="uplifile" type="button">Choose the file</button><input type="file" id="uplifin" accept=".zip,.csv,application/zip,application/x-zip-compressed,text/csv,text/comma-separated-values" hidden></li>
       </ol>
+      </details>
     </div>
     <div class="imp-pane" id="uplipick" hidden>
       <h3>Choose a playlist</h3>
@@ -9985,6 +9990,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       : 'Exportify opens in a new tab.' + how + ' Once the download has saved, come back to this tab.';
     document.getElementById('upli2t').textContent = 'The .zip Exportify saved (or one playlist’s .csv), in your Downloads.' + (APK || impFilesOk() ? ' Or open it with Song of the Day straight from your Downloads.' : '');
     impStep(step || 1);
+    // straight to their Spotify playlists when Spotify can give them (John, 4 Nov 2026: "if that's an option, we don't need
+    // to show any exportify"); Exportify folded away, open only coming back from it
+    document.getElementById('uplixp').open = !!step;
+    if (!step && !TV) setTimeout(function () { if (impDlg.open && !IMP.lists) impFromSpotify(true); }, 50);
     if (IMP.saved === null) IMP.saved = undefined;   // (none last time: looked for again, as one may have come in on another device)
     var last = document.getElementById('uplilast'); last.hidden = true;
     impSaved(function () {   // the download they loaded last: its playlists straight away (or, back from Exportify, a button for it beside choosing the new one: John, 3 Nov 2026)
@@ -10468,18 +10477,19 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // playlists yourself?"): their public playlists, read by the Worker with their Spotify username (John's Members page, their
   // connected Spotify, or the profile link they give here), into the same picker as a download's, each remembering its
   // Spotify playlist so it updates itself from then on
-  function impFromSpotify() {
+  function impFromSpotify(auto) {
     var b = document.getElementById('uplispgo'), ul = document.getElementById('uplispul'), u = document.getElementById('uplispu');
+    if (auto === true && IMP.spConnect) return;   // (opened again: their Connect button waits for them)
     if (IMP.spConnect) { IMP.spConnect = false; document.getElementById('acspgo').click(); return; }   // (their Spotify sign-in, asking to read their playlists: the Profile's own Connect)
     if (IMP.busy) return; IMP.busy = true; b.disabled = true; var label = b.textContent; b.textContent = 'Reading your Spotify playlists…';
     uplCall({ op: 'splists', u: ul.hidden ? '' : u.value.trim() }).then(function (j) {
       IMP.busy = false; b.disabled = false; b.textContent = label;
       if (j.connect) {   // (Spotify lets the site read only the playlists of the account signed in: theirs, through Connect Spotify)
         document.getElementById('uplispt').textContent = 'Spotify lets the site see your playlists only once you sign in to Spotify here, and say yes to sharing them (if you’ve connected before, connect again: it asks for this now).';
-        b.textContent = 'Connect Spotify'; IMP.spConnect = true; return;
+        b.textContent = 'Connect Spotify'; IMP.spConnect = true; return;   // (Exportify stays folded below for those Spotify can't take: 5 a Spotify app)
       }
       if (j.need) { ul.hidden = false; b.textContent = 'Find my playlists'; if (j.error) toast(j.error); u.focus(); return; }
-      if (j.status !== 200 || !j.lists) { toast(j.error || 'Couldn’t reach Spotify just now'); return; }
+      if (j.status !== 200 || !j.lists) { if (auto !== true) toast(j.error || 'Couldn’t reach Spotify just now'); document.getElementById('uplispt').textContent = (j.error || 'Couldn’t reach Spotify just now.') + ' Try again, or use Exportify below.'; return; }
       var lists = j.lists.map(function (x) {
         var songs = x.songs || [], by = {}; songs.forEach(function (y) { if (y.ab) by[y.ab] = (by[y.ab] || 0) + 1; });
         return { name: x.name, key: impKey(x.name), file: x.name + '.csv', spid: x.spid, songs: songs, all: songs.length || x.total || 0, by: by, owner: x.owner, sp: true, mine: !!x.mine, later: !!x.later,

@@ -4663,7 +4663,8 @@ async function memberUpl(request, url, env, answer) {
     return answer(200, { ok: true, id: pid, st: rec.st, pls: await uplMine(env, uplList(all, me, U), U) });
   }
   if (body.op === 'splists') {   // their Spotify playlists and Liked Songs, each with its songs, for the import picker, through their own Spotify sign-in (Spotify lets an app read only the signed-in account's playlists)
-    const mr = await memberSpRead(env, me).catch(() => null);
+    const ownerId0 = await env.SOTD.get('owner');
+    const mr = me === ownerId0 ? { tok: await getToken(env), sid: OWNER_ID, liked: false } : await memberSpRead(env, me).catch(() => null);   // (John: the site's own Spotify sign-in, his)
     if (!mr) return answer(200, { connect: true });
     const lists = []; let reads = 0;
     const pls = await myPlaylists(mr.tok).catch(() => null);
@@ -4682,7 +4683,7 @@ async function memberUpl(request, url, env, answer) {
   }
   if (body.op === 'splist') {   // one playlist's songs (one too big to bring with the rest)
     const id = String(body.spid || ''); if (!/^[0-9A-Za-z]{22}$/.test(id) && id !== 'liked') return answer(400, { error: 'Which playlist?' });
-    const mr = await memberSpRead(env, me).catch(() => null), items = mr ? await spReadList(mr.tok, id).catch(() => null) : null;
+    const mr = me === (await env.SOTD.get('owner')) ? { tok: await getToken(env) } : await memberSpRead(env, me).catch(() => null), items = mr ? await spReadList(mr.tok, id).catch(() => null) : null;
     return items ? answer(200, { songs: items.slice(0, UPL_CSV_MOST) }) : answer(200, { error: 'Spotify won’t let us read that playlist.' });
   }
   if (body.op === 'csv' || body.op === 'csvup') await uplCsvPreviews(env, body.songs).catch(() => null);   // (any previews Exportify gave)
