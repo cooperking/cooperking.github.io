@@ -14,7 +14,8 @@ $RUNNER_TEMP/upl-private-base.json; without an answer it exits 3, and the job le
 from $RUNNER_TEMP/songs-all.json, and those kept before), with _sotd/data/upl.json, and sends them to the Worker;
 if the Worker doesn't take them it exits 1, so nothing is committed that run.
 """
-import json, os, sys, urllib.error, urllib.request
+import json
+import time, os, sys, urllib.error, urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -42,13 +43,20 @@ def call(method, body=None):
         raise RuntimeError('no GITHUB_TOKEN')
     req = urllib.request.Request(URL, data=json.dumps(body, ensure_ascii=False).encode() if body is not None else None, method=method,
                                  headers={'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json', 'User-Agent': UA})
-    try:
-        with urllib.request.urlopen(req, timeout=60) as r:
-            return json.loads(r.read())
-    except urllib.error.HTTPError as e:
-        if e.code == 404 and method == 'GET' and b'"none"' in e.read():
-            return {}   # none kept yet
-        raise
+    for i in range(3):   # (the Worker is sometimes slow or briefly unavailable: tried 3 times, waiting longer each time, before the job stops)
+        try:
+            with urllib.request.urlopen(req, timeout=120) as r:
+                return json.loads(r.read())
+        except urllib.error.HTTPError as e:
+            if e.code == 404 and method == 'GET' and b'"none"' in e.read():
+                return {}   # none kept yet
+            if e.code < 500 or i == 2:
+                raise
+        except (TimeoutError, OSError):
+            if i == 2:
+                raise
+        print(f'members’ songs: the Worker didn’t answer, trying again in {15 * (i + 1)}s')
+        time.sleep(15 * (i + 1))
 
 
 def note(text):   # a line in the log, and in the run's notes on GitHub (an annotation) when it runs there
