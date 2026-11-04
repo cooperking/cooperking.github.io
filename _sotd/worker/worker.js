@@ -4723,11 +4723,15 @@ async function memberUpl(request, url, env, answer) {
   }
   if (body.op === 'splists') {   // their Spotify playlists and Liked Songs, each with its songs, for the import picker, through their own Spotify sign-in (Spotify lets an app read only the signed-in account's playlists)
     const ownerId0 = await env.SOTD.get('owner');
-    const mr = me === ownerId0 ? { tok: await getToken(env), sid: OWNER_ID, liked: false } : await memberSpRead(env, me).catch(() => null);   // (John: the site's own Spotify sign-in, his)
+    if (await spotifyWaiting(env)) return answer(200, { error: 'Spotify has asked the site to wait until ' + new Date(spotifyUntil).toLocaleTimeString('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit' }) + ' (too many requests)' });
+    let tokErr = '';
+    const mr = me === ownerId0 ? { tok: await getToken(env).catch(e => { tokErr = String(e && e.message || e).slice(0, 120); return null; }), sid: OWNER_ID, liked: false } : await memberSpRead(env, me).catch(() => null);
+    if (mr && !mr.tok) return answer(200, { error: 'the site’s Spotify sign-in didn’t work: ' + tokErr });   // (John: the site's own Spotify sign-in, his)
     if (!mr) return answer(200, { connect: true });
     const lists = []; let reads = 0;
-    const pls = await myPlaylists(mr.tok).catch(() => null);
-    if (!pls) return answer(200, { error: 'Spotify didn’t give your playlists just now. Try again in a minute, or use Exportify below.' });
+    let plErr = '';
+    const pls = await myPlaylists(mr.tok).catch(e => { plErr = String(e && e.message || e).slice(0, 120); return null; });
+    if (!pls) return answer(200, { error: 'Spotify didn’t give your playlists just now (' + plErr + '). Try again in a minute, or use Exportify below.' });
     const want = (mr.liked ? [{ id: 'liked', name: 'Liked Songs', owner: { id: mr.sid }, images: [], tracks: { total: 1 } }] : []).concat(pls);
     for (const p of want) {
       const total = ((p.tracks || p.items || {}).total) || 0, img = ((p.images || [])[0] || {}).url || '', mine = p.id === 'liked' || !!(p.owner && p.owner.id === mr.sid) || !!p.collaborative;

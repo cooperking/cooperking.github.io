@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="c6930f619316">
+<meta name="sotd-build" content="da142410ae03">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -602,6 +602,7 @@ html.upl-list .side-acts .listbtn { display: inline-grid; }
 .imp-sort button.on { background: var(--fg); color: var(--bg); box-shadow: none; }
 .viewasbar { position: fixed; z-index: 2147483000; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 8px); transform: translateX(-50%); display: flex; align-items: center; gap: 10px; padding: 6px 6px 6px 14px; border-radius: 999px; background: #e23a6e; color: #fff; font: 600 13px/1.2 var(--sans); box-shadow: 0 6px 20px rgba(0,0,0,.3); max-width: calc(100vw - 24px); }
 .viewasbar button { border: 0; border-radius: 999px; padding: 6px 12px; background: #fff; color: #1b1020; font: 600 12px var(--sans); cursor: pointer; white-space: nowrap; }
+.imp-why { margin: 0 0 10px; font-size: 13px; line-height: 1.45; color: #e23a6e; }
 .dlwhy { display: block; margin-top: 4px; font-size: 12.5px; line-height: 1.4; color: var(--muted); white-space: normal; }
 .dlwhy.gone, .dlwhy.blocked { color: #e23a6e; }
 .dlacts { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 8px; }
@@ -10007,6 +10008,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (target) IMP.target = target; else if (!step) IMP.target = null;
     try { if (IMP.target) localStorage.setItem('sotd-imptarget', IMP.target); else if (!step) localStorage.removeItem('sotd-imptarget'); if (step && !IMP.target) IMP.target = localStorage.getItem('sotd-imptarget') || null; } catch (e) {}
     IMP.had = null; IMP.lists = null; IMP.pick = null;
+    var why0 = document.getElementById('upliwhy'); if (why0) why0.hidden = true;
     var h = uplPls().some(function (p) { return p.mine && p.src === 'csv'; });   // (any imports of theirs already)
     var tg0 = impTarget();
     document.getElementById('uplih').textContent = tg0 ? 'Add to “' + impPlName(tg0) + '”' : 'Import from Spotify';
@@ -10515,13 +10517,18 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (auto === true && IMP.spConnect) return;   // (opened again: their Connect button waits for them)
     if (IMP.spConnect) { IMP.spConnect = false; document.getElementById('acspgo').click(); return; }   // (their Spotify sign-in, asking to read their playlists: the Profile's own Connect)
     if (IMP.busy) return; IMP.busy = true; b.disabled = true; var label = b.textContent; b.textContent = 'Reading your Spotify playlists…';
-    var fall = function () {   // (Spotify couldn't give them, opening: the last Exportify download, if there is one)
+    var fall = function (why) {   // (Spotify couldn't give them, opening: the last Exportify download, if there is one, saying why)
       if (auto !== true) return; IMP.spAuto = false; var sv = IMP.saved;
-      if (impDlg.open && !IMP.lists && sv && sv.lists) { IMP.lists = sv.lists; IMP.fromSaved = true; impPick(); }
+      if (impDlg.open && !IMP.lists && sv && sv.lists) {
+        IMP.lists = sv.lists; IMP.fromSaved = true; impPick();
+        var g = document.getElementById('upligrid'), n = document.getElementById('upliwhy');
+        if (!n) { n = document.createElement('p'); n.id = 'upliwhy'; n.className = 'imp-why'; g.parentNode.insertBefore(n, g); }
+        n.textContent = 'These are from your last Exportify download: Spotify didn’t give your playlists (' + (why || 'no answer') + ').'; n.hidden = false;
+      }
     };
     uplCall({ op: 'splists', u: ul.hidden ? '' : u.value.trim() }).then(function (j) {
       IMP.busy = false; b.disabled = false; b.textContent = label;
-      if (!(j.status === 200 && j.lists && j.lists.length) && !j.connect) setTimeout(fall, 0);
+      if (!(j.status === 200 && j.lists && j.lists.length) && !j.connect) setTimeout(function () { fall((j.status !== 200 ? 'error ' + j.status + ': ' : '') + (j.error || (j.need ? 'it asked for your Spotify username' : j.lists ? 'none came back' : 'nothing came back'))); }, 0);
       if (j.connect) {   // (Spotify lets the site read only the playlists of the account signed in: theirs, through Connect Spotify)
         document.getElementById('uplispt').textContent = 'Spotify lets the site see your playlists only once you sign in to Spotify here, and say yes to sharing them (if you’ve connected before, connect again: it asks for this now).';
         b.textContent = 'Connect Spotify'; IMP.spConnect = true; return;   // (Exportify stays folded below for those Spotify can't take: 5 a Spotify app)
@@ -10542,7 +10549,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       });
       if (lists.length === 1) { impGot(lists[0]); return; }
       impPick();
-    }).catch(function () { IMP.busy = false; b.disabled = false; b.textContent = label; if (auto === true) fall(); else toast('Couldn’t reach the site. Try again.'); });
+    }).catch(function () { IMP.busy = false; b.disabled = false; b.textContent = label; if (auto === true) fall('the site didn’t answer'); else toast('Couldn’t reach the site. Try again.'); });
   }
   document.getElementById('uplispgo').addEventListener('click', impFromSpotify);
   document.getElementById('uplispu').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); impFromSpotify(); } });
