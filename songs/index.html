@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="sotd-build" content="138b0a7f71f3">
+<meta name="sotd-build" content="ace7405d3864">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 267 so far">
 <meta name="theme-color" content="#ec135b">
@@ -6911,7 +6911,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     b.addEventListener('click', function () {
       closeDialog(idx);
       if (!x.pid) { uplBack(); setTimeout(function () { if (byDate[x.d]) openFromIndex(byTrack[x.id] || x.s); }, 50); return; }
-      uplShow(x.pid, x.mode === 'list' ? {} : { day: x.d });
+      uplShow(x.pid, x.mode === 'list' ? {} : { day: x.d, track: x.id });
     });
     li.appendChild(b);
     return li;
@@ -6919,7 +6919,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function openFromIndex(s) {
     months.forEach(function (ym, i) { if (key(ym[0], ym[1]) === s.d.slice(0, 7)) cur = i; });
     render();
-    openDay(s.d);
+    openDay(s.d, s.track ? { track: s.track } : undefined);   // (that song, on a day with several: John, 4 Nov 2026)
   }
   // A–Z (songs or artists) and Moods share one sheet; each button opens it in its own mode
   var lastAZ = 'songs';
@@ -8033,7 +8033,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (yids.length) { yf.href = 'https://www.youtube.com/watch_videos?video_ids=' + yids.join(',') + '&title=' + encodeURIComponent(view.n); yf.hidden = false; }
     uplMark(); render(); if (idx.open) renderIndex();
     if (!keep) try { history.replaceState(null, '', location.pathname + location.search + '#u=' + view.id); } catch (e) {}
-    if (opts.day) { if (byDate[opts.day]) openDay(opts.day); else if (view.mine) mineUplShow(view, { day: opts.day }); }   // (one of theirs not out yet: in the pop-up)
+    if (opts.day) { if (byDate[opts.day]) openDay(opts.day, opts.track ? { track: opts.track } : undefined); else if (view.mine) mineUplShow(view, { day: opts.day }); }   // (one of theirs not out yet: in the pop-up)
     else if (opts.month) uplMonth(opts.month);
     uplProg(view);
     if (ED.on && !uplEditCan()) uplEditOff(); else uplEditSync();
