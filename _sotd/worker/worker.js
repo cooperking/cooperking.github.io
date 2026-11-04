@@ -1407,6 +1407,11 @@ async function members(request, url, env) {
       if ('v' in body) await startJob(env, null, null, 0, null, true).catch(() => {});   // (their YouTube copies)
       return answer(200, { ok: true, john: J });
     }
+    case 'viewas': {   // see the calendar as a member (John, 4 Nov 2026: "log in as another member, so I can see what they see"): a pass for an hour, view only
+      const m = all[body.id]; if (!m) return answer(404, { error: 'No such member.' });
+      const t = randomCode(32); await env.SOTD.put('viewas:' + await sha256hex(t), JSON.stringify({ id: body.id, until: Date.now() + 3600e3 }), { expirationTtl: 3600 });
+      return answer(200, { token: t, name: m.name, url: SITE_SONGS + '?viewas=' + t });
+    }
     case 'mailmode': {   // a member's email notifications set by John, when they ask him (John, 4 Nov 2026: "turn emails back on myself if requested by a member"): all, day, song, direct or off
       const m = all[body.id]; if (!m) return answer(404, { error: 'No such member.' });
       const want = String(body.mode || ''); if (!MAIL_MODES.includes(want)) return answer(400, { error: 'Which setting?' });
@@ -3041,7 +3046,16 @@ async function memberWho(request, env) {   // { id, all } for a signed-in member
   if (!token) return null;
   const hash = await sha256hex(token), all = (await env.SOTD.get('members', 'json')) || {};
   const id = Object.keys(all).find(k => all[k].devices && all[k].devices[hash]);
-  if (!id) return null;
+  if (!id) {   // John seeing the calendar as a member (Members page, See as them: an hour, view only)
+    const va = await env.SOTD.get('viewas:' + hash, 'json');
+    if (!va || !all[va.id] || va.until < Date.now()) return null;
+    if (request.method !== 'GET' && request.method !== 'HEAD') {   // (changes off: only what reads)
+      const path = new URL(request.url).pathname, op = String(((await request.clone().json().catch(() => ({}))) || {}).op || '');
+      const reads = { '/members/upl': ['jobs', 'splists', 'splist'], '/members/spotify': ['status', 'devices', 'log'], '/members/heart': [], '/members/bell': [] };
+      if (!(reads[path] || []).includes(op)) throw new HttpError(403, 'You’re seeing this as ' + all[va.id].name + ': changes are off.', { ro: true });
+    }
+    return { id: va.id, all, viewAs: true };
+  }
   await seenTouch(env, hash);
   return { id, all };
 }
@@ -5926,6 +5940,7 @@ async function cleanup(env) {
 // ---------- helpers ----------
 
 function errorPage(e) {
+  if (e.extra && e.extra.ro) return new Response(JSON.stringify({ error: e.message, viewAs: true }), { status: 403, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'no-store' } });
   if (e.status === 429) {
     const mins = Math.max(1, Math.round((parseInt(e.extra.retryAfter || '600', 10)) / 60));
     return page('Try again later', '<p>' + esc(e.message) + ' Please try again in about ' + mins + (mins === 1 ? ' minute' : ' minutes') + '.</p>', 429);
