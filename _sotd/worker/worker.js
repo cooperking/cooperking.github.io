@@ -4033,20 +4033,48 @@ async function johnSpLists(env) {   // his Spotify playlists { key (as an Export
   await kvSoft(env, 'johnpls', JSON.stringify({ at: Date.now(), map }), { expirationTtl: 86400 });
   return map;
 }
-async function uplJohnAuto(env, U, ownerId) {
+// a playlist owner's Spotify playlists { key (as an Exportify file's): Spotify id }: John's own list; a member's public
+// ones (their Spotify id from connecting it here), kept a day (KV spmap:<member>); else a public playlist of the
+// import's name whose owner has their first name
+async function uplSpMap(env, rec, ownerId, tok) {
+  if (rec.o === ownerId) return await johnSpLists(env);
+  const kept = await env.SOTD.get('spmap:' + rec.o, 'json');
+  let map = kept && Date.now() - kept.at < 864e5 ? Object.assign({}, kept.map) : null;
+  if (!map) {
+    map = {};
+    const sp = await env.SOTD.get('spm:' + rec.o, 'json');
+    let next = sp && sp.sid ? '/users/' + encodeURIComponent(sp.sid) + '/playlists?limit=50' : null;
+    for (let i = 0; next && i < 10; i++) {
+      const j = await spotify(tok, next).catch(() => null); if (!j) break;
+      for (const p of j.items || []) if (p && p.id && p.name) { const k = uplFileKey(p.name); if (k && !map[k]) map[k] = p.id; }
+      next = j.next ? j.next.replace('https://api.spotify.com/v1', '') : null;
+    }
+    await kvSoft(env, 'spmap:' + rec.o, JSON.stringify({ at: Date.now(), map }), { expirationTtl: 2 * 86400 });
+  }
+  if (!map[rec.fk]) {   // (no Spotify id for them, or not among theirs: a public playlist of that name whose owner has their name)
+    const all = (await env.SOTD.get('members', 'json')) || {}, who = itFold(((all[rec.o] || {}).name || '').split(' ')[0]);
+    const j = who ? await spotify(tok, '/search?' + new URLSearchParams({ q: rec.n || rec.fk.replace(/_/g, ' '), type: 'playlist', limit: '20' })).catch(() => null) : null;
+    for (const p of ((j && j.playlists && j.playlists.items) || [])) if (p && p.id && uplFileKey(p.name) === rec.fk && itFold((p.owner && p.owner.display_name) || '').includes(who)) { map[rec.fk] = p.id; break; }
+  }
+  return map;
+}
+const UPL_MEMBER_EVERY = 60 * 60e3;   // (members' imported playlists: read from Spotify hourly, John's every half hour)
+async function uplJohnAuto(env, U, ownerId) {   // every imported playlist whose Spotify copy can be read: updated as a fresh download would (John, 4 Nov 2026: "can't you get any updated songs that way too?")
   const now = Date.now(), h = londonHour();
   if (!ownerId || h < 6 || h >= 23) return;
-  const due = Object.entries(U).filter(([, r]) => r.o === ownerId && r.src === 'csv' && r.fk && now - (r.autoAt || 0) >= UPL_EVERY)
+  const every = r => r.o === ownerId ? UPL_EVERY : UPL_MEMBER_EVERY;
+  const due = Object.entries(U).filter(([, r]) => r.src === 'csv' && r.fk && now - (r.autoAt || 0) >= (r.auto === false ? 864e5 : every(r)))
     .sort((a, b) => (a[1].autoAt || 0) - (b[1].autoAt || 0)).slice(0, 2);
   if (!due.length) return;
-  const map = await johnSpLists(env), tok = await getToken(env);
+  const tok = await getToken(env);
   for (const [pid, rec] of due) {
     rec.autoAt = now;
-    const main = map[rec.fk];
-    if (!main) { rec.auto = false; rec.autoErr = 'No playlist of yours on Spotify by that name'; continue; }
+    const map = await uplSpMap(env, rec, ownerId, tok).catch(() => ({})), main = map[rec.fk];
+    if (!main) { rec.auto = false; rec.autoErr = 'No public Spotify playlist of theirs by that name'; continue; }   // (asked again a day later)
     try {
       const items = await playlistItems(tok, main), ids = new Set(items.map(x => x.id));
-      const data = await uplSongs(env, pid);
+      const data = await uplSongs(env, pid), have = (data.songs || []).filter(x => !(data.add || {})[x.id]).map(x => x.id), same = have.filter(t => ids.has(t)).length;
+      if (have.length >= 5 && same < 0.5 * Math.min(have.length, items.length)) { rec.auto = false; rec.autoErr = 'The Spotify playlist of that name isn’t this one'; continue; }   // (another playlist with the same name: never its songs)
       if (data.add) for (const x of data.songs || []) if (data.add[x.id] && !ids.has(x.id)) { items.push(x); ids.add(x.id); }   // (songs added to it from other playlists stay)
       let addNew = false;
       for (const k of rec.adds || []) {   // the playlists added to it: their new songs too
@@ -4056,7 +4084,7 @@ async function uplJohnAuto(env, U, ownerId) {
       if (addNew) await env.SOTD.put('upl:' + pid, JSON.stringify(data));
       await uplTake(env, pid, rec, U, items, rec.st, now);
       rec.auto = true; delete rec.autoErr;
-    } catch (e) { rec.autoErr = String(e && e.message || e).slice(0, 160); }
+    } catch (e) { rec.auto = false; rec.autoErr = String(e && e.message || e).slice(0, 160); }
   }
   await uplPut(env, U);
 }
@@ -4071,22 +4099,7 @@ async function uplAbFill(env, U, ownerId) {
     rec.abDone = now;
     const data = await uplSongs(env, pid), missing = (data.songs || []).filter(x => !x.ab);
     if (!missing.length) { rec.abDone = 1; continue; }
-    const tok = await getToken(env); let map = {};
-    if (rec.o === ownerId) map = await johnSpLists(env);
-    else {
-      const sp = await env.SOTD.get('spm:' + rec.o, 'json');
-      if (!sp || !sp.sid) {   // (no Spotify id for them: a public playlist of that name whose owner has their name)
-        const all = (await env.SOTD.get('members', 'json')) || {}, who = itFold(((all[rec.o] || {}).name || '').split(' ')[0]);
-        const j = who ? await spotify(tok, '/search?' + new URLSearchParams({ q: rec.n || rec.fk.replace(/_/g, ' '), type: 'playlist', limit: '20' })).catch(() => null) : null;
-        for (const p of ((j && j.playlists && j.playlists.items) || [])) if (p && p.id && uplFileKey(p.name) === rec.fk && itFold((p.owner && p.owner.display_name) || '').includes(who)) { map[rec.fk] = p.id; break; }
-      }
-      let next = sp && sp.sid ? '/users/' + encodeURIComponent(sp.sid) + '/playlists?limit=50' : null;
-      for (let i = 0; next && i < 10; i++) {
-        const j = await spotify(tok, next).catch(() => null); if (!j) break;
-        for (const p of j.items || []) if (p && p.id && p.name) { const k = uplFileKey(p.name); if (k && !map[k]) map[k] = p.id; }
-        next = j.next ? j.next.replace('https://api.spotify.com/v1', '') : null;
-      }
-    }
+    const tok = await getToken(env), map = await uplSpMap(env, rec, ownerId, tok);
     const by = {};
     for (const k of [rec.fk].concat(rec.adds || [])) {
       if (!map[k]) continue;
