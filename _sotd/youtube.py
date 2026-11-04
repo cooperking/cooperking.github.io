@@ -226,10 +226,11 @@ def lookup(s, tok):
 # Every search is counted in the Worker before it's made (/upl/websearch, this job's GITHUB_TOKEN), and refused there once
 # a service is at its most, so a failed save or two jobs at once can't take one over its free allowance. Without the
 # Worker's answer, no web search at all.
+GOOGLE_CX = '83076d0101e1c488c'   # (John's Programmable Search Engine: its public ID, from its embed code)
 WEB = [   # (name, key, the most, per: 'day', 'month' or 'ever')
     ('Brave', os.environ.get('BRAVE_API_KEY', '').strip(), 950, 'month'),
     ('Tavily', os.environ.get('TAVILY_API_KEY', '').strip(), 950, 'month'),
-    ('Google', os.environ.get('GOOGLE_CSE_KEY', '').strip() and os.environ.get('GOOGLE_CSE_ID', '').strip() and os.environ['GOOGLE_CSE_KEY'].strip() + '|' + os.environ['GOOGLE_CSE_ID'].strip(), 90, 'day'),
+    ('Google', os.environ.get('GOOGLE_CSE_KEY', '').strip() and os.environ['GOOGLE_CSE_KEY'].strip() + '|' + (os.environ.get('GOOGLE_CSE_ID', '').strip() or GOOGLE_CX), 90, 'day'),
     ('Serper', os.environ.get('SERPER_API_KEY', '').strip(), 2400, 'ever'),
 ]
 WEB_URL = WORKER + '/upl/websearch'
