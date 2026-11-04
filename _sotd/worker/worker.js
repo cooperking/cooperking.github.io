@@ -445,8 +445,11 @@ async function itunesServe(request, env, id) {   // /sp/i/<id>.m4a: R2's copy, o
     return new Response(o.body, { headers: Object.assign({}, head, { 'Content-Length': String(o.size) }) });
   };
   const had = await serve(); if (had) return had;
-  const j = await (await fetch('https://itunes.apple.com/lookup?id=' + id).catch(() => null))?.json().catch(() => null);
-  const u = j && j.results && j.results[0] && j.results[0].previewUrl;
+  let u = '';   // (found in the UK store mostly: Apple's lookup asks the US store unless told, so the UK first)
+  for (const c of ['GB', 'US']) {
+    const j = await (await fetch('https://itunes.apple.com/lookup?id=' + id + '&country=' + c).catch(() => null))?.json().catch(() => null);
+    u = (j && j.results && j.results[0] && j.results[0].previewUrl) || ''; if (u) break;
+  }
   if (!u || !/^https:\/\/[\w.-]+\.(apple|mzstatic)\.com\//.test(u)) return new Response('Not here.', { status: 404, headers: { 'Access-Control-Allow-Origin': '*' } });
   const r = await fetch(u).catch(() => null); if (!r || !r.ok) return new Response('Not here.', { status: 404, headers: { 'Access-Control-Allow-Origin': '*' } });
   const b = await r.arrayBuffer(); if (!b.byteLength || b.byteLength > 5e6) return new Response('Not here.', { status: 404 });
