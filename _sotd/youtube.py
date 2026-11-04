@@ -74,7 +74,7 @@ def fold(x):   # accents off, any alphabet kept (Кино, 강남스타일: they
     return re.sub(r'[\W_]+', ' ', x).strip()
 
 
-SCORE_V = 3   # (3: part numbers, an artist named partly)
+SCORE_V = 4   # (4: a short artist named as an artist; 3: part numbers, an artist named partly)
 # how songs are matched (2: brackets, "- From …", any alphabet; John, 3 Nov 2026: "some of the songs ... are
               # trivially easy to find on youtube"). A song an older version found none for is matched again.
 
@@ -127,7 +127,14 @@ def score(song, cand):
     else:
         s -= 40; why.append('not the title')
     lead = fa[0]
-    if lead and (re.search(r'\b' + re.escape(lead) + r'\b', ct) or lead.replace(' ', '') in cc.replace(' ', '')):
+    # the artist in the upload's title as an artist is named there (Tree - God Like; God Like by Tree), not just the word
+    # somewhere in it (Entire God-Like Family Tree Of Darkseid: John, 4 Nov 2026); or in its channel
+    raw = (cand.get('title') or '').lower(); lead_raw = re.escape(re.sub(r"['\u2019`]", '', ((song.get('artists') or [song.get('artist', '')])[0] or '').lower()).strip())
+    named = bool(lead_raw) and bool(re.search(r'(^|[-–—|:•]\s*)' + lead_raw + r'\s*([-–—|:•]|$)|\bby\s+' + lead_raw + r'\b|^' + lead_raw + r'\s*[\'’]s\b|' + lead_raw + r'\s*(&|and|x|feat)\b', re.sub(r"['\u2019`](?!s\b)", '', raw)))
+    in_title = bool(lead) and bool(re.search(r'\b' + re.escape(lead) + r'\b', ct)) and (named or len(lead.split()) > 1 or len(lead) > 6)
+    if lead and (in_title or lead.replace(' ', '') in cc.replace(' ', '')):
+        s += 25; why.append('artist')
+    elif not lead and lead_raw and re.search(r'(^|\s)' + lead_raw + r'(\s|$)', (cand.get('channel') or '').lower()):   # (an artist of only symbols, !!!: in its channel's name as it's written)
         s += 25; why.append('artist')
     if lead and (cc_plain in (lead.replace(' ', ''), lead.replace(' ', '') + 'vevo', lead.replace(' ', '') + 'official')
                  or cc_plain.startswith(lead.replace(' ', ''))):
@@ -139,9 +146,9 @@ def score(song, cand):
         s += 20; why.append('official video')
     elif k in ('audio', 'lyric'):
         s += 8
-    if 'artist' not in why and 'official channel' not in why:   # (Adele's Hello isn't Lionel Richie's: the artist somewhere, or it's another song)
+    if 'artist' not in why and 'official channel' not in why and lead:   # (Adele's Hello isn't Lionel Richie's: the artist somewhere, or it's another song; an artist of only symbols, !!!, can't be looked for)
         aw = [w for w in lead.split() if len(w) > 2 and w not in ('the', 'and', 'band', 'feat', 'with')]
-        if aw and sum(1 for w in aw if re.search(r'\b' + re.escape(w) + r'\b', ct + ' ' + cc)) / len(aw) >= .5:
+        if len(aw) >= 2 and sum(1 for w in aw if re.search(r'\b' + re.escape(w) + r'\b', ct + ' ' + cc)) / len(aw) >= .5:   # (two words or more: one word alone, Tree, is too easily an ordinary word)
             s += 15; why.append('some of the artist')   # (The Bonzo Dog Band is YouTube's Bonzo Dog Doo-Dah Band)
         else:
             s -= 30; why.append('not the artist')
@@ -340,13 +347,17 @@ def web_lookup(s, tok):
     q = clean_title(s['title']) + ' ' + lead
     if s.get('again'):   # (worded differently: the artist first, both quoted, the title without brackets or part number)
         q = '"' + lead + '" "' + re.sub(r'\s*[(\[].*?[)\]]', '', clean_title(s['title'])).strip() + '"'
+    tried, miss = 0, None
     for name, key in web_ready():
+        if tried >= 2:
+            break
         most, per = next((m, p) for n, k, m, p in WEB if n == name)
         if not _web_take(name, most, per):   # (counted first; at its most: the next service)
             continue
         links = _web_ask(name, key, q)
         if links is None:
             continue
+        tried += 1
         ids = []
         for u in links:
             m = re.search(r'(?:[?&]v=|youtu\.be/|/shorts/|/embed/)([\w-]{11})', u or '')
@@ -356,7 +367,7 @@ def web_lookup(s, tok):
         if not ids:
             print(s['n'], s['title'], '—', s['artist'], '| web search (' + name + '): no YouTube links in its results')
             e['id'] = None
-            return e
+            miss = e; continue   # (the next service)
         st = ytapi.get('videos', {'part': 'snippet', 'id': ','.join(ids[:20])}, tok, units=1)
         cands = []
         for it in st.get('items', []):
@@ -368,8 +379,9 @@ def web_lookup(s, tok):
         if not e.get('id'):   # (why it missed, for the log: its best upload and what counted against it)
             b = sorted(cands, key=lambda c: -c['score'])[:1]
             print(s['n'], s['title'], '—', s['artist'], '| web search (' + name + '): none passed' + (' — best: ' + b[0]['title'] + ' | ' + b[0]['channel'] + ' | ' + str(b[0]['score']) + ' ' + ','.join(b[0]['why']) if b else ''))
+            miss = e; continue   # (the next service)
         return e
-    return None
+    return miss
 
 
 def choose(s, e, cands, tok):   # (the search's or the web search's uploads: the best that passes, checked as playable elsewhere, its length)
@@ -619,6 +631,16 @@ def main():
     import urllib.request
     with urllib.request.urlopen(urllib.request.Request(SONGS_URL, headers={'User-Agent': ytapi.UA}), timeout=30) as r:
         songs = json.loads(r.read())['songs']
+    undone = 0
+    for s in songs:   # videos a web search found that today's matching wouldn't take (God Like by Tree, as a Darkseid video): searched for again
+        e = data['songs'].get(s['id'])
+        if e and e.get('id') and str(e.get('from', '')).startswith('web search') and e.get('sv', 0) < SCORE_V and e.get('title'):
+            if score(s, {'title': e['title'], 'channel': e.get('channel', '')})[0] < GOOD:
+                data['songs'].pop(s['id'], None); undone += 1
+            else:
+                e['sv'] = SCORE_V
+    if undone:
+        print(undone, 'videos a web search found that no longer pass: looked for again')
     for s in songs:   # John's Look again, from a playlist's Missing (the Worker marks them retry): searched again, not kept as none found
         if s.get('retry') and not (data['songs'].get(s['id']) or {}).get('id'):
             data['songs'].pop(s['id'], None)
