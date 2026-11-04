@@ -366,9 +366,70 @@ async function makePlaylist(request, url, env) {
 // size than any kept is served at one that is, once Spotify has none. Copies no song uses any more are deleted by the
 // timer too, 200 looked at a run. ----------
 const SP_SIZES = ['ab67616d0000b273', 'ab67616d00001e02', 'ab67616d00004851'];
-function keptPreview(id) { return LIVE_ORIGIN + '/sp/p/' + id + '.mp3'; }
+function keptPreview(id) { return /^i\d+$/.test(id) ? LIVE_ORIGIN + '/sp/i/' + id.slice(1) + '.m4a' : LIVE_ORIGIN + '/sp/p/' + id + '.mp3'; }   // (i<id>: Apple's preview, below)
+// ---- Apple's preview, for a song Spotify gives none (John, 4 Nov 2026: Ride a White Swan, which Spotify won't preview,
+// "I found it easily here"): Apple's public iTunes Search finds the song by its title and artist, the match checked as
+// the video search's are (title, artist; not live, a cover or karaoke unless the song is), and the song keeps i<Apple's
+// track id> as its preview. /sp/i/<id>.m4a serves R2's copy (sp/i/), fetched from Apple the first time it's asked for.
+// Songs Spotify had none for are asked a few a timer run (ITUNES_RUN: Apple allows about 20 searches a minute), once
+// (KV pvit { track: day asked }), again after ITUNES_AGAIN days. ----
+const ITUNES_RUN = 8, ITUNES_AGAIN = 30;
+function itFold(t) { return String(t || '').normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase().replace(/&/g, ' and ').replace(/['\u2019`]/g, '').replace(/[^\p{L}\p{N}]+/gu, ' ').trim(); }
+function itMain(t) { return itFold(String(t || '').replace(/\s+-\s+.*$/, '').replace(/\s*[(\[].*?[)\]]/g, '')); }
+async function itunesFind(x) {   // { title, artist, artists }: Apple's track id with a preview for it, '' none, or null (Apple didn't answer)
+  const title = itMain(x.title), lead = itFold((x.artists && x.artists[0]) || String(x.artist || '').split(',')[0]);
+  if (!title || !lead) return '';
+  const odd = /\b(live|karaoke|cover|instrumental|tribute|remix|acoustic|demo)\b/;
+  for (const country of ['GB', 'US']) {
+    const r = await fetch('https://itunes.apple.com/search?' + new URLSearchParams({ term: title + ' ' + lead, entity: 'song', limit: '15', country })).catch(() => null);
+    if (!r || !r.ok) return null;
+    const j = await r.json().catch(() => null); if (!j) return null;
+    const ok = (j.results || []).filter(y => y.previewUrl && y.trackId && itFold(y.artistName).includes(lead) && (' ' + itFold(y.trackName) + ' ').includes(' ' + title + ' ')
+      && !(odd.test(itFold(y.trackName + ' ' + y.collectionName)) && !odd.test(itFold(x.title))));
+    const full = itFold(x.title), rank = y => itFold(y.trackName) === full ? 0 : itMain(y.trackName) === title ? 1 : 2;   // (the same version first: 'MARC' version, then the song itself)
+    ok.sort((a, b) => rank(a) - rank(b));
+    if (ok.length) return 'i' + ok[0].trackId;
+  }
+  return '';
+}
+async function itunesFill(env, songs) {   // the songs Spotify gave no preview: Apple's, ITUNES_RUN a run
+  const pv = Object.assign({}, pvMem, (await env.SOTD.get('previews', 'json')) || {}), asked = (await env.SOTD.get('pvit', 'json')) || {}, today = londonDay();
+  const due = t => !asked[t] || (Date.parse(today) - Date.parse(asked[t])) / 864e5 >= ITUNES_AGAIN;
+  const todo = [], seen = new Set();
+  for (const x of songs) if (x && x.id && pv[x.id] === '-' && !seen.has(x.id) && due(x.id)) { seen.add(x.id); todo.push(x); if (todo.length >= ITUNES_RUN) break; }
+  if (!todo.length) return 0;
+  let n = 0;
+  for (const x of todo) {
+    const id = await itunesFind(x);
+    if (id === null) break;   // (Apple busy: the rest next run)
+    asked[x.id] = today;
+    if (id) { pv[x.id] = id; pvMem[x.id] = id; n++; }
+  }
+  await kvSoft(env, 'pvit', JSON.stringify(asked));
+  if (n) await kvSoft(env, 'previews', JSON.stringify(pv));
+  return n;
+}
+async function itunesServe(request, env, id) {   // /sp/i/<id>.m4a: R2's copy, or Apple's fetched and kept
+  const head = { 'Content-Type': 'audio/mp4', 'Cache-Control': 'public, max-age=31536000, immutable', 'Access-Control-Allow-Origin': '*', 'Accept-Ranges': 'bytes' }, key = 'sp/i/' + id + '.m4a';
+  const serve = async () => {
+    if (!env.MEDIA) return null;
+    const range = request.headers.get('Range'), o = await env.MEDIA.get(key, range ? { range: request.headers } : undefined).catch(() => null);
+    if (!o || !o.body) return null;
+    if (range && o.range && o.range.length !== undefined) { const st = o.range.offset || 0, len = o.range.length; return new Response(o.body, { status: 206, headers: Object.assign({}, head, { 'Content-Range': 'bytes ' + st + '-' + (st + len - 1) + '/' + o.size, 'Content-Length': String(len) }) }); }
+    return new Response(o.body, { headers: Object.assign({}, head, { 'Content-Length': String(o.size) }) });
+  };
+  const had = await serve(); if (had) return had;
+  const j = await (await fetch('https://itunes.apple.com/lookup?id=' + id).catch(() => null))?.json().catch(() => null);
+  const u = j && j.results && j.results[0] && j.results[0].previewUrl;
+  if (!u || !/^https:\/\/[\w.-]+\.(apple|mzstatic)\.com\//.test(u)) return new Response('Not here.', { status: 404, headers: { 'Access-Control-Allow-Origin': '*' } });
+  const r = await fetch(u).catch(() => null); if (!r || !r.ok) return new Response('Not here.', { status: 404, headers: { 'Access-Control-Allow-Origin': '*' } });
+  const b = await r.arrayBuffer(); if (!b.byteLength || b.byteLength > 5e6) return new Response('Not here.', { status: 404 });
+  if (env.MEDIA) await env.MEDIA.put(key, b, { httpMetadata: { contentType: 'audio/mp4' } }).catch(() => {});
+  return (await serve()) || new Response(b, { headers: head });
+}
 function keptCover(u) { const m = /^https:\/\/i\.scdn\.co\/image\/([0-9a-f]{40})$/.exec(u || ''); return m ? LIVE_ORIGIN + '/sp/c/' + m[1] + '.jpg' : u; }
 async function spKept(request, url, env) {
+  const mi = /^\/sp\/i\/(\d{1,15})\.m4a$/.exec(url.pathname); if (mi) return await itunesServe(request, env, mi[1]);
   const m = /^\/sp\/(p|c)\/([0-9a-f]{20,64})\.(mp3|jpg)$/.exec(url.pathname);
   if (!m || (m[1] === 'p') !== (m[3] === 'mp3')) return new Response('Not here.', { status: 404 });
   const kind = m[1], id = m[2], src = kind === 'p' ? 'https://p.scdn.co/mp3-preview/' + id : 'https://i.scdn.co/image/' + id;
@@ -418,15 +479,17 @@ async function spKeep(env) {   // the previews and covers not kept yet, from Joh
   const kept = (await env.SOTD.get('spkept', 'json')) || {}, pv = Object.assign({}, pvMem, (await env.SOTD.get('previews', 'json')) || {});
   const now = Date.now(), want = [], seen = new Set(), used = new Set();   // used: every preview id, and every cover by its picture (any size)
   const add = (k, id) => { const key = k + id, e = kept[key]; if (e !== 1 && !(e < 0 && now + e < 7 * 864e5) && !seen.has(key)) { seen.add(key); want.push([k, id]); } };   // (1 kept; -when: Spotify had none then, asked again a week on)
-  let songsSeen = 0;
+  let songsSeen = 0; const nopv = [];
   const take = x => {
     songsSeen++;
-    if (pv[x.id] && pv[x.id] !== '-') { add('p', pv[x.id]); used.add('p' + pv[x.id]); }
+    if (pv[x.id] && pv[x.id] !== '-' && !/^i\d+$/.test(pv[x.id])) { add('p', pv[x.id]); used.add('p' + pv[x.id]); }   // (Apple's are fetched when first asked for)
+    if (pv[x.id] === '-') nopv.push(x);
     const m = /\/image\/([0-9a-f]{40})$/.exec(x.img || ''); if (m) { add('c', m[1]); used.add('c' + m[1].slice(16)); }
   };
   for (const pid of Object.keys(await uplAll(env))) ((await uplSongs(env, pid)).songs || []).forEach(take);   // (members' first: theirs can't be had again)
   const last = (((await env.SOTD.get('songsLast', 'json')) || {}).songs || []);
   last.forEach(take);
+  await itunesFill(env, nopv).catch(e => console.log('itunesFill: ' + (e && e.message)));   // (songs Spotify gives no preview: Apple's)
   let n = 0;
   for (const [k, id] of want.slice(0, SP_KEEP_RUN)) {
     const there = await env.MEDIA.head('sp/' + k + '/' + id + (k === 'p' ? '.mp3' : '.jpg')).catch(() => null);
@@ -4440,7 +4503,7 @@ async function memberUpl(request, url, env, answer) {
     const pv = Object.assign({}, pvMem, (await env.SOTD.get('previews', 'json')) || {}), songs = (data.songs || []).filter(x => !uplGone(data, x));
     const noPv = songs.filter(x => pv[x.id] === '-' || !(x.id in pv)), noVid = songs.filter(x => !(meta[x.id] && meta[x.id].vid) && !(J[x.id] && J[x.id].v) && !(ed[x.id] && ed[x.id].v));
     let np = 0, nv = 0;
-    if (k.includes('p')) { for (const x of noPv) if (pv[x.id] === '-') { delete pv[x.id]; np++; } if (np) { for (const x of noPv) delete pvMem[x.id]; await kvSoft(env, 'previews', JSON.stringify(pv)); } await fillPreviews(env, noPv, UPL_PV_MOST, pv).catch(() => null); }
+    if (k.includes('p')) { for (const x of noPv) if (pv[x.id] === '-') { delete pv[x.id]; np++; } if (np) { for (const x of noPv) delete pvMem[x.id]; await kvSoft(env, 'previews', JSON.stringify(pv)); } { const ak = (await env.SOTD.get('pvit', 'json')) || {}; let c = 0; for (const x of noPv) if (ak[x.id]) { delete ak[x.id]; c++; } if (c) await kvSoft(env, 'pvit', JSON.stringify(ak)); }   // (Apple asked again too) await fillPreviews(env, noPv, UPL_PV_MOST, pv).catch(() => null); }
     if (k.includes('v') && noVid.length) {
       data.retry = data.retry || {}; const now = Date.now(); for (const x of noVid) { data.retry[x.id] = now; nv++; }
       if (data.skip) for (const x of noVid) if (data.skip[x.id]) { data.skip[x.id] = data.skip[x.id].replace('v', ''); if (!data.skip[x.id]) delete data.skip[x.id]; }
