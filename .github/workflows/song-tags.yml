@@ -60,6 +60,7 @@ jobs:
       - name: A YouTube video for each of John's songs
         env:
           DISCOGS_TOKEN: ${{ secrets.DISCOGS_TOKEN }}
+          BRAVE_API_KEY: ${{ secrets.BRAVE_API_KEY }}   # (a web search for each song's video before YouTube's own; off without it)
           YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
           YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
           YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
@@ -205,6 +206,7 @@ jobs:
         continue-on-error: true   # (only a look: the next step carries on either way)
         env:
           DISCOGS_TOKEN: ${{ secrets.DISCOGS_TOKEN }}
+          BRAVE_API_KEY: ${{ secrets.BRAVE_API_KEY }}   # (a web search for each song's video before YouTube's own; off without it)
         run: python _sotd/free_videos.py --check
       # members' songs: the free ways first (free_videos.py: Wikidata, MusicBrainz, then Discogs once John adds the
       # DISCOGS_TOKEN secret), so YouTube's search on his account goes on the songs those miss, after his own
@@ -212,6 +214,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}   # (its progress to the Worker, for John on the calendar)
           DISCOGS_TOKEN: ${{ secrets.DISCOGS_TOKEN }}
+          BRAVE_API_KEY: ${{ secrets.BRAVE_API_KEY }}   # (a web search for each song's video before YouTube's own; off without it)
           YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
           YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
           YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}

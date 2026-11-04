@@ -211,6 +211,85 @@ def lookup(s, tok):
         c = {'id': vid, 'title': unescape(sn.get('title', '')), 'channel': sn.get('channelTitle', '')}
         c['score'], c['why'], c['kind'] = score(s, c)
         cands.append(c)
+    return choose(s, e, cands, tok)
+
+
+# ---- a web search for the song's YouTube upload, before YouTube's own (John, 4 Nov 2026: "you don't even need a youtube
+# search for these, any search engine search should find them almost immediately"): Brave's Search API (BRAVE_API_KEY, its
+# free plan: about 2,000 a month, one a second), "artist title" on youtube.com. Its results' videos are looked up on
+# YouTube (titles, channels: 1 unit for 50) and chosen as the search's are. None found: YouTube's search after, as before.
+BRAVE_KEY = os.environ.get('BRAVE_API_KEY', '').strip()
+BRAVE_LEDGER = os.path.join(HERE, 'data', 'brave.json')
+BRAVE_MONTH = 1950
+_brave_t = [0.0]
+
+
+def brave_left():
+    if not BRAVE_KEY:
+        return 0
+    m = datetime.date.today().strftime('%Y-%m')
+    try:
+        with open(BRAVE_LEDGER) as f:
+            j = json.load(f)
+    except (OSError, ValueError):
+        j = {}
+    return max(0, BRAVE_MONTH - (j.get('used', 0) if j.get('month') == m else 0))
+
+
+def brave_spend():
+    m = datetime.date.today().strftime('%Y-%m')
+    try:
+        with open(BRAVE_LEDGER) as f:
+            j = json.load(f)
+    except (OSError, ValueError):
+        j = {}
+    if j.get('month') != m:
+        j = {'month': m, 'used': 0}
+    j['used'] = j.get('used', 0) + 1
+    with open(BRAVE_LEDGER, 'w') as f:
+        json.dump(j, f)
+
+
+def web_lookup(s, tok):
+    """The song's video from a Brave web search, as lookup's entry; None when there's no key, none left this month, or Brave
+    didn't answer (YouTube's search then, as before). An entry with no id: Brave found nothing that passes."""
+    if brave_left() <= 0:
+        return None
+    import urllib.parse
+    q = clean_title(s['title']) + ' ' + (s.get('artists') or [s['artist']])[0] + ' site:youtube.com'
+    wait = 1.1 - (_time.time() - _brave_t[0])
+    if wait > 0:
+        _time.sleep(wait)
+    _brave_t[0] = _time.time()
+    try:
+        req = _ureq.Request('https://api.search.brave.com/res/v1/web/search?' + urllib.parse.urlencode({'q': q, 'count': 10, 'country': 'gb'}),
+                            headers={'Accept': 'application/json', 'X-Subscription-Token': BRAVE_KEY})
+        with _ureq.urlopen(req, timeout=20) as r:
+            j = json.loads(r.read())
+    except Exception as x:
+        print('  Brave didn’t answer:', str(x)[:120])
+        return None
+    brave_spend()
+    ids = []
+    for it in ((j.get('web') or {}).get('results') or []) + ((j.get('videos') or {}).get('results') or []):
+        m = re.search(r'(?:[?&]v=|youtu\.be/|/shorts/|/embed/)([\w-]{11})', it.get('url', ''))
+        if m and m.group(1) not in ids and m.group(1) != s.get('listId'):
+            ids.append(m.group(1))
+    e = {'n': s['n'], 'checked': datetime.date.today().isoformat(), 'from': 'web search', 'sv': SCORE_V}
+    if not ids:
+        e['id'] = None
+        return e
+    st = ytapi.get('videos', {'part': 'snippet', 'id': ','.join(ids[:20])}, tok, units=1)
+    cands = []
+    for it in st.get('items', []):
+        sn = it.get('snippet') or {}
+        c = {'id': it['id'], 'title': unescape(sn.get('title', '')), 'channel': sn.get('channelTitle', '')}
+        c['score'], c['why'], c['kind'] = score(s, c)
+        cands.append(c)
+    return choose(s, e, cands, tok)
+
+
+def choose(s, e, cands, tok):   # (the search's or the web search's uploads: the best that passes, checked as playable elsewhere, its length)
     cands.sort(key=lambda c: -c['score'])
     top = cands[:5]
     if top:
@@ -515,11 +594,26 @@ def main():
     again = lambda s: (data['songs'].get(s['id']) or {}).get('from') == 'YouTube search'   # (looked for before: after the new ones)
     todo.sort(key=lambda s: (bool(s.get('upl')), again(s), turn.get(s['id'], 0), -s['n']))   # today's song first, and it may use the searches kept back for it; members' songs after John's
     print(f'{len(todo)} songs to search YouTube for; {ytapi.ledger()["used"]} units used today')
+    yt_out = False
     try:
         for k, s in enumerate(todo):
             progress('Searching YouTube', k + 1, len(todo), s['title'] + ' — ' + s['artist'])
             prev = data['songs'].get(s['id'], {})
-            e = lookup(dict(s, listId=prev.get('listId'), ms=ms.get(s['id']) or s.get('ms'), newest=s['n'] == newest), tok)
+            s2 = dict(s, listId=prev.get('listId'), ms=ms.get(s['id']) or s.get('ms'), newest=s['n'] == newest)
+            e = web_lookup(s2, tok)   # (a web search first: no YouTube search spent when it finds it)
+            if not (e and e.get('id')):
+                if yt_out:
+                    if e is None and brave_left() <= 0:
+                        break   # (both searches used up: the rest wait)
+                    continue    # (YouTube's searches gone: the web search alone; its misses wait for YouTube's tomorrow)
+                try:
+                    e = lookup(s2, tok)
+                except ytapi.Quota:
+                    yt_out = True
+                    print("today's YouTube search allowance is used up; on with the web search alone" if brave_left() else "today's search allowance is used up; the rest wait for tomorrow")
+                    if not brave_left():
+                        raise
+                    continue
             for kk in ('listNote', 'listCheck', 'free', 'fv'):   # (the free ways tried it too: kept)
                 if kk in prev:
                     e[kk] = prev[kk]
