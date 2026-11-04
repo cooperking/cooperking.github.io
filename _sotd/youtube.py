@@ -215,78 +215,122 @@ def lookup(s, tok):
 
 
 # ---- a web search for the song's YouTube upload, before YouTube's own (John, 4 Nov 2026: "you don't even need a youtube
-# search for these, any search engine search should find them almost immediately"): Brave's Search API (BRAVE_API_KEY, its
-# free plan: about 2,000 a month, one a second), "artist title" on youtube.com. Its results' videos are looked up on
-# YouTube (titles, channels: 1 unit for 50) and chosen as the search's are. None found: YouTube's search after, as before.
-BRAVE_KEY = os.environ.get('BRAVE_API_KEY', '').strip()
-BRAVE_LEDGER = os.path.join(HERE, 'data', 'brave.json')
-BRAVE_MONTH = 1950
-_brave_t = [0.0]
+# search for these, any search engine search should find them almost immediately"; "there must be other free web search
+# apis"): each service's free allowance in turn, then YouTube's search as before. Each needs its key as a GitHub secret
+# (none: skipped), and keeps under its free allowance (data/websearch.json counts them):
+#   Brave Search API (BRAVE_API_KEY): $5 of free credit a month, about 1,000 searches; kept to 950 a month
+#   Tavily (TAVILY_API_KEY): about 1,000 free a month; kept to 950
+#   Serper, Google's results (SERPER_API_KEY): 2,500 free once; kept to 2,400 in all
+# The videos in their results are looked up on YouTube (titles, channels: 1 unit for 50) and chosen as the search's are.
+WEB_LEDGER = os.path.join(HERE, 'data', 'websearch.json')
+WEB = [   # (name, key, the most, per: 'month' or 'ever')
+    ('Brave', os.environ.get('BRAVE_API_KEY', '').strip(), 950, 'month'),
+    ('Tavily', os.environ.get('TAVILY_API_KEY', '').strip(), 950, 'month'),
+    ('Serper', os.environ.get('SERPER_API_KEY', '').strip(), 2400, 'ever'),
+]
+_web_t = [0.0]
+_web_off = set()   # (a service that refused its key this run: not asked again)
 
 
-def brave_left():
-    if not BRAVE_KEY:
-        return 0
-    m = datetime.date.today().strftime('%Y-%m')
+def _web_ledger():
     try:
-        with open(BRAVE_LEDGER) as f:
-            j = json.load(f)
+        with open(WEB_LEDGER) as f:
+            return json.load(f)
     except (OSError, ValueError):
-        j = {}
-    return max(0, BRAVE_MONTH - (j.get('used', 0) if j.get('month') == m else 0))
+        return {}
 
 
-def brave_spend():
-    m = datetime.date.today().strftime('%Y-%m')
+def _web_used(name, per):
+    e = _web_ledger().get(name) or {}
+    if per == 'ever':
+        return e.get('ever', 0)
+    return e.get('used', 0) if e.get('month') == datetime.date.today().strftime('%Y-%m') else 0
+
+
+def _web_spend(name):
+    j = _web_ledger(); e = j.get(name) or {}; m = datetime.date.today().strftime('%Y-%m')
+    if e.get('month') != m:
+        e['month'], e['used'] = m, 0
+    e['used'] = e.get('used', 0) + 1; e['ever'] = e.get('ever', 0) + 1
+    j[name] = e
+    with open(WEB_LEDGER, 'w') as f:
+        json.dump(j, f, indent=1)
+
+
+def web_ready():   # the services with a key and allowance left, in order
+    return [(n, k) for n, k, most, per in WEB if k and n not in _web_off and _web_used(n, per) < most]
+
+
+def brave_left():   # (any web search left: the name kept from when Brave was the only one)
+    return len(web_ready())
+
+
+def _web_ask(name, key, q):
+    """The result links for q from one service, or None (refused or down)."""
+    import urllib.parse
+    wait = 1.1 - (_time.time() - _web_t[0])
+    if wait > 0:
+        _time.sleep(wait)
+    _web_t[0] = _time.time()
     try:
-        with open(BRAVE_LEDGER) as f:
-            j = json.load(f)
-    except (OSError, ValueError):
-        j = {}
-    if j.get('month') != m:
-        j = {'month': m, 'used': 0}
-    j['used'] = j.get('used', 0) + 1
-    with open(BRAVE_LEDGER, 'w') as f:
-        json.dump(j, f)
+        if name == 'Brave':
+            req = _ureq.Request('https://api.search.brave.com/res/v1/web/search?' + urllib.parse.urlencode({'q': q + ' site:youtube.com', 'count': 10, 'country': 'gb'}),
+                                headers={'Accept': 'application/json', 'X-Subscription-Token': key})
+            with _ureq.urlopen(req, timeout=20) as r:
+                j = json.loads(r.read())
+            items = ((j.get('web') or {}).get('results') or []) + ((j.get('videos') or {}).get('results') or [])
+            return [it.get('url', '') for it in items]
+        if name == 'Tavily':
+            req = _ureq.Request('https://api.tavily.com/search', data=json.dumps({'query': q, 'max_results': 10, 'include_domains': ['youtube.com']}).encode(),
+                                headers={'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key})
+            with _ureq.urlopen(req, timeout=30) as r:
+                j = json.loads(r.read())
+            return [it.get('url', '') for it in j.get('results') or []]
+        if name == 'Serper':
+            req = _ureq.Request('https://google.serper.dev/videos', data=json.dumps({'q': q, 'gl': 'gb', 'num': 10}).encode(),
+                                headers={'Content-Type': 'application/json', 'X-API-KEY': key})
+            with _ureq.urlopen(req, timeout=20) as r:
+                j = json.loads(r.read())
+            return [it.get('link', '') for it in j.get('videos') or []]
+    except _ureq.HTTPError as x:
+        if x.code in (401, 402, 403):
+            _web_off.add(name); print('  ' + name + ' refused the key (' + str(x.code) + '): not asked again this run')
+        else:
+            print('  ' + name + ' didn’t answer:', x.code)
+        return None
+    except Exception as x:
+        print('  ' + name + ' didn’t answer:', str(x)[:120])
+        return None
+    return None
 
 
 def web_lookup(s, tok):
-    """The song's video from a Brave web search, as lookup's entry; None when there's no key, none left this month, or Brave
-    didn't answer (YouTube's search then, as before). An entry with no id: Brave found nothing that passes."""
-    if brave_left() <= 0:
-        return None
-    import urllib.parse
-    q = clean_title(s['title']) + ' ' + (s.get('artists') or [s['artist']])[0] + ' site:youtube.com'
-    wait = 1.1 - (_time.time() - _brave_t[0])
-    if wait > 0:
-        _time.sleep(wait)
-    _brave_t[0] = _time.time()
-    try:
-        req = _ureq.Request('https://api.search.brave.com/res/v1/web/search?' + urllib.parse.urlencode({'q': q, 'count': 10, 'country': 'gb'}),
-                            headers={'Accept': 'application/json', 'X-Subscription-Token': BRAVE_KEY})
-        with _ureq.urlopen(req, timeout=20) as r:
-            j = json.loads(r.read())
-    except Exception as x:
-        print('  Brave didn’t answer:', str(x)[:120])
-        return None
-    brave_spend()
-    ids = []
-    for it in ((j.get('web') or {}).get('results') or []) + ((j.get('videos') or {}).get('results') or []):
-        m = re.search(r'(?:[?&]v=|youtu\.be/|/shorts/|/embed/)([\w-]{11})', it.get('url', ''))
-        if m and m.group(1) not in ids and m.group(1) != s.get('listId'):
-            ids.append(m.group(1))
-    e = {'n': s['n'], 'checked': datetime.date.today().isoformat(), 'from': 'web search', 'sv': SCORE_V}
-    if not ids:
-        e['id'] = None
-        return e
-    st = ytapi.get('videos', {'part': 'snippet', 'id': ','.join(ids[:20])}, tok, units=1)
-    cands = []
-    for it in st.get('items', []):
-        sn = it.get('snippet') or {}
-        c = {'id': it['id'], 'title': unescape(sn.get('title', '')), 'channel': sn.get('channelTitle', '')}
-        c['score'], c['why'], c['kind'] = score(s, c)
-        cands.append(c)
-    return choose(s, e, cands, tok)
+    """The song's video from the first web search service with allowance left, as lookup's entry; None when there's none
+    to ask (YouTube's search then, as before). An entry with no id: it found nothing that passes."""
+    q = clean_title(s['title']) + ' ' + (s.get('artists') or [s['artist']])[0]
+    for name, key in web_ready():
+        links = _web_ask(name, key, q)
+        if links is None:
+            continue
+        _web_spend(name)
+        ids = []
+        for u in links:
+            m = re.search(r'(?:[?&]v=|youtu\.be/|/shorts/|/embed/)([\w-]{11})', u or '')
+            if m and m.group(1) not in ids and m.group(1) != s.get('listId'):
+                ids.append(m.group(1))
+        e = {'n': s['n'], 'checked': datetime.date.today().isoformat(), 'from': 'web search (' + name + ')', 'sv': SCORE_V}
+        if not ids:
+            e['id'] = None
+            return e
+        st = ytapi.get('videos', {'part': 'snippet', 'id': ','.join(ids[:20])}, tok, units=1)
+        cands = []
+        for it in st.get('items', []):
+            sn = it.get('snippet') or {}
+            c = {'id': it['id'], 'title': unescape(sn.get('title', '')), 'channel': sn.get('channelTitle', '')}
+            c['score'], c['why'], c['kind'] = score(s, c)
+            cands.append(c)
+        return choose(s, e, cands, tok)
+    return None
 
 
 def choose(s, e, cands, tok):   # (the search's or the web search's uploads: the best that passes, checked as playable elsewhere, its length)

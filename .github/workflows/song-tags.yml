@@ -61,6 +61,8 @@ jobs:
         env:
           DISCOGS_TOKEN: ${{ secrets.DISCOGS_TOKEN }}
           BRAVE_API_KEY: ${{ secrets.BRAVE_API_KEY }}   # (a web search for each song's video before YouTube's own; off without it)
+          TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
+          SERPER_API_KEY: ${{ secrets.SERPER_API_KEY }}
           YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
           YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
           YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
@@ -207,6 +209,8 @@ jobs:
         env:
           DISCOGS_TOKEN: ${{ secrets.DISCOGS_TOKEN }}
           BRAVE_API_KEY: ${{ secrets.BRAVE_API_KEY }}   # (a web search for each song's video before YouTube's own; off without it)
+          TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
+          SERPER_API_KEY: ${{ secrets.SERPER_API_KEY }}
         run: python _sotd/free_videos.py --check
       # members' songs: the free ways first (free_videos.py: Wikidata, MusicBrainz, then Discogs once John adds the
       # DISCOGS_TOKEN secret), so YouTube's search on his account goes on the songs those miss, after his own
@@ -215,6 +219,8 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}   # (its progress to the Worker, for John on the calendar)
           DISCOGS_TOKEN: ${{ secrets.DISCOGS_TOKEN }}
           BRAVE_API_KEY: ${{ secrets.BRAVE_API_KEY }}   # (a web search for each song's video before YouTube's own; off without it)
+          TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
+          SERPER_API_KEY: ${{ secrets.SERPER_API_KEY }}
           YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
           YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
           YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
