@@ -4594,13 +4594,14 @@ async function uplFactsIn(request, env) {   // POST the facts task's _sotd/data/
   }
   return answer(200, { ok: true, added: n });
 }
+async function uplAdm(env, viewer) { return !!viewer && (await env.SOTD.get('owner')) === viewer; }
 async function uplView(env, all, viewer, pid, rec, also) {   // (also: tracks wanted even if taken off, for memberSongs: saved to a playlist elsewhere)   // a playlist as the calendar takes it: its songs (out ones; its owner, all, the waiting marked w and the days to come f)
   const data = await uplSongs(env, pid), mine = !!viewer && (rec.o === viewer || uplCo(rec, viewer)), today = londonDay();   // (mine: theirs to edit, its owner's or a collaborator's)
   const pv = Object.assign({}, pvMem, (await env.SOTD.get('previews', 'json')) || {});
   const tags = (await env.SOTD.get('tags', 'json')) || {};
   const days = uplDays(data.songs || [], rec);
   const meta = (await env.SOTD.get('uplmeta', 'json')) || {}, facts = (await env.SOTD.get('ufacts:' + pid, 'json')) || {}, wanted = new Set(uplShareOf(rec) === 'public' ? uplFactsWanted(rec, data) : []);
-  const cat = await catalog(env), J = await uplJohnAll(env), TW = await twinFiles(env), DLS = (mine || adm) ? await dlStatus(env) : {};   // John's own (the Songs tab's): a song's that he has, its owner's of that kind aren't used
+  const cat = await catalog(env), J = await uplJohnAll(env), TW = await twinFiles(env), DLS = (mine || await uplAdm(env, viewer)) ? await dlStatus(env) : {};   // John's own (the Songs tab's): a song's that he has, its owner's of that kind aren't used
   const JV = await ytJohnVids(), JY = await johnYears();   // (a song John's calendar has too: its video and year from there, found already, never looked for again: John, 1 Nov 2026)
   const ed = data.ed || {}, files = data.files || {}, see = mine ? { a: true, v: true } : viewer && all[viewer] ? mediaFor(all[viewer]) : { a: false, v: false }, exp = Math.floor(Date.now() / 1000) + LINK_HOURS * 3600;
   const gone = new Set((data.songs || []).filter(x => uplGone(data, x) && !(also && also.has(x.id))).map(x => x.id));
