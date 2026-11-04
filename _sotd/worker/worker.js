@@ -4596,18 +4596,18 @@ async function uplFactsIn(request, env) {   // POST the facts task's _sotd/data/
 }
 async function uplAdm(env, viewer) { return !!viewer && (await env.SOTD.get('owner')) === viewer; }
 async function uplView(env, all, viewer, pid, rec, also) {   // (also: tracks wanted even if taken off, for memberSongs: saved to a playlist elsewhere)   // a playlist as the calendar takes it: its songs (out ones; its owner, all, the waiting marked w and the days to come f)
-  const data = await uplSongs(env, pid), mine = !!viewer && (rec.o === viewer || uplCo(rec, viewer)), today = londonDay();   // (mine: theirs to edit, its owner's or a collaborator's)
+  const site = await uplAdm(env, viewer), data = await uplSongs(env, pid), mine = !!viewer && (rec.o === viewer || uplCo(rec, viewer) || site), today = londonDay();   // (John, the site's owner: anyone's, as a collaborator, to put right what's missing: John, 4 Nov 2026, "I should be able to correct missing songs from another playlist")   // (mine: theirs to edit, its owner's or a collaborator's)
   const pv = Object.assign({}, pvMem, (await env.SOTD.get('previews', 'json')) || {});
   const tags = (await env.SOTD.get('tags', 'json')) || {};
   const days = uplDays(data.songs || [], rec);
   const meta = (await env.SOTD.get('uplmeta', 'json')) || {}, facts = (await env.SOTD.get('ufacts:' + pid, 'json')) || {}, wanted = new Set(uplShareOf(rec) === 'public' ? uplFactsWanted(rec, data) : []);
-  const cat = await catalog(env), J = await uplJohnAll(env), TW = await twinFiles(env), DLS = (mine || await uplAdm(env, viewer)) ? await dlStatus(env) : {};   // John's own (the Songs tab's): a song's that he has, its owner's of that kind aren't used
+  const cat = await catalog(env), J = await uplJohnAll(env), TW = await twinFiles(env), DLS = mine ? await dlStatus(env) : {};   // John's own (the Songs tab's): a song's that he has, its owner's of that kind aren't used
   const JV = await ytJohnVids(), JY = await johnYears();   // (a song John's calendar has too: its video and year from there, found already, never looked for again: John, 1 Nov 2026)
   const ed = data.ed || {}, files = data.files || {}, see = mine ? { a: true, v: true } : viewer && all[viewer] ? mediaFor(all[viewer]) : { a: false, v: false }, exp = Math.floor(Date.now() / 1000) + LINK_HOURS * 3600;
   const gone = new Set((data.songs || []).filter(x => uplGone(data, x) && !(also && also.has(x.id))).map(x => x.id));
-  const adm = !mine && !!viewer && (await env.SOTD.get('owner')) === viewer;
+  const adm = site;
   let songs = composeSongs(data.songs || [], pv, tags).map((x, i) => Object.assign(x, { d: days[i].d }, data.songs[i].ab ? { ab: data.songs[i].ab } : {}, uplWaiting(rec, data, data.songs[i]) ? { w: 1 } : {}, days[i].d > today ? { f: 1 } : {}))   // (ab: who added it on Spotify, kept by composeSongs' fields no more: John, 4 Nov 2026, "I also still can't see the spotify user who added a song")
-    .filter(x => !gone.has(x.id) && (mine || adm ? (mine || !x.w) : (!x.w && !x.f)));   // (John, the site's owner: its songs still to come too, faded, as its owner sees them: John, 1 Nov 2026)
+    .filter(x => !gone.has(x.id) && (mine ? (rec.o === viewer || uplCo(rec, viewer) || !x.w) : (!x.w && !x.f)));   // (John: not those still waiting for their owner)   // (John, the site's owner: its songs still to come too, faded, as its owner sees them: John, 1 Nov 2026)
   for (const x of songs) {   // what the site job found (vid: the video, mt: moods and genres, yr: the year), its owner's choices (ov: the video, '' none; tg: moods and genres), files (ma, mv; own: theirs, with sizes) and cover (uc)
     const e = ed[x.id], f = files[x.id], m = meta[x.id];
     if (m) { if (m.vid) x.vid = m.vid; if (m.mt) x.mt = m.mt; if (m.yr) x.yr = m.yr; }
@@ -4815,7 +4815,7 @@ async function memberUpl(request, url, env, answer) {
     }
     return answer(200, { ok: true, previews: np, videos: nv, view: await uplView(env, all, me, pid, rec) });
   }
-  const pid = String(body.id || ''), rec = own(pid) || (UPL_CO_OPS.includes(body.op) && U[pid] && uplCo(U[pid], me) && all[U[pid].o] && !apart(all, me, U[pid].o) ? U[pid] : null);   // (a collaborator: its songs)
+  const pid = String(body.id || ''), rec = own(pid) || (UPL_CO_OPS.includes(body.op) && U[pid] && all[U[pid].o] && ((uplCo(U[pid], me) && !apart(all, me, U[pid].o)) || await uplAdm(env, me)) ? U[pid] : null);   // (John: anyone's, as a collaborator)   // (a collaborator: its songs)
   if (!rec) return answer(404, { error: 'No such playlist of yours.' });
   if (body.op === 'collab') {   // who can edit it, its owner says: cw (member ids); the new ones told
     const cw = [...new Set((Array.isArray(body.cw) ? body.cw : []).map(String))].filter(k => all[k] && k !== me && !apart(all, me, k)).slice(0, 20);
@@ -5141,7 +5141,7 @@ async function uplOwnSong(request, url, env, answer) {   // the owner's playlist
   if (!who) return { no: answer(401, { error: 'Not a member (any more).' }) };
   if (!env.MEDIA) return { no: answer(503, { error: 'Files can’t be added yet.' }) };
   const U = await uplAll(env), pid = url.searchParams.get('id') || '', rec = U[pid], track = url.searchParams.get('track') || '';
-  if (!rec || !(rec.o === who.id || (uplCo(rec, who.id) && !apart(who.all, who.id, rec.o)))) return { no: answer(404, { error: 'No such playlist of yours.' }) };   // (its owner's, or a collaborator's)
+  if (!rec || !(rec.o === who.id || (uplCo(rec, who.id) && !apart(who.all, who.id, rec.o)) || await uplAdm(env, who.id))) return { no: answer(404, { error: 'No such playlist of yours.' }) };   // (its owner's, or a collaborator's)
   const data = await uplSongs(env, pid);
   if (!(data.songs || []).some(y => y.id === track)) return { no: answer(404, { error: 'That song isn’t on this playlist.' }) };
   return { who, U, pid, rec, track, data };

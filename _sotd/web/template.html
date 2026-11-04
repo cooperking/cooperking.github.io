@@ -8938,7 +8938,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function upledOpen(s, focus) {   // focus (from Missing): 'v' its video, 'a' or 'p' its MP3, 'mv' its MP4: scrolled to and lit
     var p = uplPls().filter(function (x) { return x.id === s.upl; })[0] || uplOwnRec(), t = tagOf(s) || { m: [], g: [] };
     UED = { p: p, s: s, m: t.m.slice(), g: t.g.slice(), tags: false };
-    document.getElementById('upledk').textContent = p.mode === 'list' ? p.n : 'Your Song of the Day';
+    document.getElementById('upledk').textContent = p.mode === 'list' ? p.n : UPL.view && UPL.view.own === false && UPL.view.o ? UPL.view.o + '’s Song of the Day' : 'Your Song of the Day';
     document.getElementById('upleh').textContent = s.title;
     document.getElementById('upledby').textContent = s.artist;
     var how = !('ov' in s) ? 'found' : s.ov ? 'link' : 'none';
