@@ -70,6 +70,7 @@ export default {
     if (url.pathname === '/upl/vids') return await uplVids(request, env);
     if (url.pathname === '/upl/ytprog') return await uplYtProg(request, env);
     if (url.pathname === '/upl/pvneed') return await uplPvNeed(request, env);
+    if (url.pathname === '/upl/websearch') return await uplWebSearch(request, env);
     if (url.pathname.startsWith('/yt/')) return await ytList(request, url, env);
       if (url.pathname === '/login') return await login(url);
       if (url.pathname === '/splink') return await spLinkStart(url, env);
@@ -424,6 +425,27 @@ async function itunesFill(env, songs) {   // the songs Spotify gave no preview: 
 }
 // every song with no preview at once, for the site's Apple previews job (apple_previews.py, its GITHUB_TOKEN; John, 4 Nov
 // 2026: "Can you go through every missing preview now"): GET the songs; POST { found: { track: 'i<id>' }, asked: [tracks] }
+// the web search services' counts, kept here so they're never lost with a failed save (John, 4 Nov 2026: "what assurance
+// do I have that free limit won't be used up"): GET the counts; POST { take: name, most, per: 'day' | 'month' | 'ever' }
+// takes one search if it's under its most (the answer says whether), so two jobs at once can't go over between them
+async function uplWebSearch(request, env) {
+  const answer = (status, body) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' } });
+  if (!await ghJob(request)) return answer(401, { error: 'For the site job only.' });
+  const now = new Date(), day = now.toISOString().slice(0, 10), month = day.slice(0, 7), j = (await env.SOTD.get('websearch', 'json')) || {};
+  const used = (e, per) => per === 'ever' ? (e.ever || 0) : per === 'day' ? (e.day === day ? e.dn || 0 : 0) : (e.month === month ? e.used || 0 : 0);
+  if (request.method === 'POST') {
+    const b = await request.json().catch(() => ({})), name = String(b.take || '').slice(0, 20), most = Math.max(0, Number(b.most) || 0), per = ['day', 'month', 'ever'].includes(b.per) ? b.per : 'month';
+    if (!name) return answer(400, { error: 'Which?' });
+    const e = j[name] || {};
+    if (used(e, per) >= most) return answer(200, { ok: false, used: used(e, per) });
+    if (e.month !== month) { e.month = month; e.used = 0; }
+    if (e.day !== day) { e.day = day; e.dn = 0; }
+    e.used = (e.used || 0) + 1; e.dn = (e.dn || 0) + 1; e.ever = (e.ever || 0) + 1;
+    j[name] = e; await env.SOTD.put('websearch', JSON.stringify(j));
+    return answer(200, { ok: true, used: used(e, per) });
+  }
+  return answer(200, { counts: j, day, month });
+}
 async function uplPvNeed(request, env) {
   const answer = (status, body) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' } });
   if (!await ghJob(request)) return answer(401, { error: 'For the site job only.' });

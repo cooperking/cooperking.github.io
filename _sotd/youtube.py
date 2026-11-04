@@ -222,39 +222,58 @@ def lookup(s, tok):
 #   Tavily (TAVILY_API_KEY): about 1,000 free a month; kept to 950
 #   Serper, Google's results (SERPER_API_KEY): 2,500 free once; kept to 2,400 in all
 # The videos in their results are looked up on YouTube (titles, channels: 1 unit for 50) and chosen as the search's are.
-WEB_LEDGER = os.path.join(HERE, 'data', 'websearch.json')
-WEB = [   # (name, key, the most, per: 'month' or 'ever')
+#   Google Programmable Search (GOOGLE_CSE_KEY and GOOGLE_CSE_ID): 100 free a day for those who have it; kept to 90 a day
+# Every search is counted in the Worker before it's made (/upl/websearch, this job's GITHUB_TOKEN), and refused there once
+# a service is at its most, so a failed save or two jobs at once can't take one over its free allowance. Without the
+# Worker's answer, no web search at all.
+WEB = [   # (name, key, the most, per: 'day', 'month' or 'ever')
     ('Brave', os.environ.get('BRAVE_API_KEY', '').strip(), 950, 'month'),
     ('Tavily', os.environ.get('TAVILY_API_KEY', '').strip(), 950, 'month'),
+    ('Google', os.environ.get('GOOGLE_CSE_KEY', '').strip() and os.environ.get('GOOGLE_CSE_ID', '').strip() and os.environ['GOOGLE_CSE_KEY'].strip() + '|' + os.environ['GOOGLE_CSE_ID'].strip(), 90, 'day'),
     ('Serper', os.environ.get('SERPER_API_KEY', '').strip(), 2400, 'ever'),
 ]
+WEB_URL = WORKER + '/upl/websearch'
 _web_t = [0.0]
 _web_off = set()   # (a service that refused its key this run: not asked again)
 
 
-def _web_ledger():
+def _web_worker(body=None):
+    tok = os.environ.get('GITHUB_TOKEN', '').strip()
+    if not tok:
+        return None
     try:
-        with open(WEB_LEDGER) as f:
-            return json.load(f)
-    except (OSError, ValueError):
-        return {}
+        req = _ureq.Request(WEB_URL, data=json.dumps(body).encode() if body is not None else None, method='POST' if body is not None else 'GET',
+                            headers={'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json', 'User-Agent': ytapi.UA})
+        with _ureq.urlopen(req, timeout=20) as r:
+            return json.loads(r.read())
+    except Exception:
+        return None
+
+
+def _web_take(name, most, per):   # one search counted in the Worker first; False when it's at its most, or the Worker didn't answer
+    j = _web_worker({'take': name, 'most': most, 'per': per})
+    if not j or not j.get('ok'):
+        _web_off.add(name)
+        return False
+    return True
+
+
+_web_counts = [None]
 
 
 def _web_used(name, per):
-    e = _web_ledger().get(name) or {}
+    if _web_counts[0] is None:
+        j = _web_worker()
+        _web_counts[0] = j if j and 'counts' in j else False
+    j = _web_counts[0]
+    if not j:
+        return 10 ** 9   # (the Worker didn't answer: none used, to be safe)
+    e = j['counts'].get(name) or {}
     if per == 'ever':
         return e.get('ever', 0)
-    return e.get('used', 0) if e.get('month') == datetime.date.today().strftime('%Y-%m') else 0
-
-
-def _web_spend(name):
-    j = _web_ledger(); e = j.get(name) or {}; m = datetime.date.today().strftime('%Y-%m')
-    if e.get('month') != m:
-        e['month'], e['used'] = m, 0
-    e['used'] = e.get('used', 0) + 1; e['ever'] = e.get('ever', 0) + 1
-    j[name] = e
-    with open(WEB_LEDGER, 'w') as f:
-        json.dump(j, f, indent=1)
+    if per == 'day':
+        return e.get('dn', 0) if e.get('day') == j['day'] else 0
+    return e.get('used', 0) if e.get('month') == j['month'] else 0
 
 
 def web_ready():   # the services with a key and allowance left, in order
@@ -286,6 +305,12 @@ def _web_ask(name, key, q):
             with _ureq.urlopen(req, timeout=30) as r:
                 j = json.loads(r.read())
             return [it.get('url', '') for it in j.get('results') or []]
+        if name == 'Google':
+            k, cx = key.split('|', 1)
+            req = _ureq.Request('https://www.googleapis.com/customsearch/v1?' + urllib.parse.urlencode({'key': k, 'cx': cx, 'q': q + ' site:youtube.com', 'num': 10, 'gl': 'uk'}), headers={'Accept': 'application/json'})
+            with _ureq.urlopen(req, timeout=20) as r:
+                j = json.loads(r.read())
+            return [it.get('link', '') for it in j.get('items') or []]
         if name == 'Serper':
             req = _ureq.Request('https://google.serper.dev/videos', data=json.dumps({'q': q, 'gl': 'gb', 'num': 10}).encode(),
                                 headers={'Content-Type': 'application/json', 'X-API-KEY': key})
@@ -309,10 +334,12 @@ def web_lookup(s, tok):
     to ask (YouTube's search then, as before). An entry with no id: it found nothing that passes."""
     q = clean_title(s['title']) + ' ' + (s.get('artists') or [s['artist']])[0]
     for name, key in web_ready():
+        most, per = next((m, p) for n, k, m, p in WEB if n == name)
+        if not _web_take(name, most, per):   # (counted first; at its most: the next service)
+            continue
         links = _web_ask(name, key, q)
         if links is None:
             continue
-        _web_spend(name)
         ids = []
         for u in links:
             m = re.search(r'(?:[?&]v=|youtu\.be/|/shorts/|/embed/)([\w-]{11})', u or '')
