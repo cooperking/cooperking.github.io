@@ -69,6 +69,7 @@ export default {
     if (url.pathname === '/upl/wanted') return await uplWanted(request, env);
     if (url.pathname === '/upl/vids') return await uplVids(request, env);
     if (url.pathname === '/upl/ytprog') return await uplYtProg(request, env);
+    if (url.pathname === '/upl/pvneed') return await uplPvNeed(request, env);
     if (url.pathname.startsWith('/yt/')) return await ytList(request, url, env);
       if (url.pathname === '/login') return await login(url);
       if (url.pathname === '/splink') return await spLinkStart(url, env);
@@ -408,6 +409,27 @@ async function itunesFill(env, songs) {   // the songs Spotify gave no preview: 
   await kvSoft(env, 'pvit', JSON.stringify(asked));
   if (n) await kvSoft(env, 'previews', JSON.stringify(pv));
   return n;
+}
+// every song with no preview at once, for the site's Apple previews job (apple_previews.py, its GITHUB_TOKEN; John, 4 Nov
+// 2026: "Can you go through every missing preview now"): GET the songs; POST { found: { track: 'i<id>' }, asked: [tracks] }
+async function uplPvNeed(request, env) {
+  const answer = (status, body) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' } });
+  if (!await ghJob(request)) return answer(401, { error: 'For the site job only.' });
+  const pv = Object.assign({}, pvMem, (await env.SOTD.get('previews', 'json')) || {});
+  if (request.method === 'POST') {
+    const b = await request.json().catch(() => ({})), asked = (await env.SOTD.get('pvit', 'json')) || {}, today = londonDay();
+    let n = 0;
+    for (const [t, v] of Object.entries(b.found || {})) if (ID_RE.test(t) && /^i\d{1,15}$/.test(String(v)) && (pv[t] === '-' || !(t in pv))) { pv[t] = v; pvMem[t] = v; n++; }
+    for (const t of (Array.isArray(b.asked) ? b.asked : []).concat(Object.keys(b.found || {}))) if (ID_RE.test(String(t))) asked[t] = today;
+    await kvSoft(env, 'pvit', JSON.stringify(asked));
+    if (n) await kvSoft(env, 'previews', JSON.stringify(pv));
+    return answer(200, { ok: true, set: n });
+  }
+  const out = [], seen = new Set();
+  const take = x => { if (x && x.id && pv[x.id] === '-' && !seen.has(x.id)) { seen.add(x.id); out.push({ id: x.id, title: x.title || '', artist: x.artist || '', artists: x.artists || [] }); } };
+  for (const pid of Object.keys(await uplAll(env))) ((await uplSongs(env, pid)).songs || []).forEach(take);
+  (((await env.SOTD.get('songsLast', 'json')) || {}).songs || []).forEach(take);
+  return answer(200, { songs: out });
 }
 async function itunesServe(request, env, id) {   // /sp/i/<id>.m4a: R2's copy, or Apple's fetched and kept
   const head = { 'Content-Type': 'audio/mp4', 'Cache-Control': 'public, max-age=31536000, immutable', 'Access-Control-Allow-Origin': '*', 'Accept-Ranges': 'bytes' }, key = 'sp/i/' + id + '.m4a';

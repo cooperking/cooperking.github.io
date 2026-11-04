@@ -1,0 +1,25 @@
+name: Apple previews for songs Spotify gives none
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: apple-previews
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  previews:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Look for each in Apple's iTunes Search
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 _sotd/apple_previews.py
