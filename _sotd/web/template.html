@@ -3069,7 +3069,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     b.addEventListener('click', function () {
       var at = carryAt(el);   // the song to the video or back: on from the same place (the whole song only, not a preview)
       if (!isVideo(el)) { setPlayMode('video'); watch(el, vd); carryTo(el, at); return; }
-      if (!o.ui) { unwatch(el); return; }   // a song with no preview: the video just closes
+      if (!o.ui || !coverVd(o.s).src) { unwatch(el); return; }   // a song with no preview (or only its video): the video just closes
       setPlayMode('audio'); watch(el, coverVd(o.s)); carryTo(el, at);   // Play as preview: the preview now, and from here on (full screen stays)
     });
     if (o.player) o.player.appendChild(b); else o.acts.insertBefore(b, o.acts.firstChild);
@@ -4896,7 +4896,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       deck.appendChild(slide); deck.appendChild(bs);
 
       var player;
-      if (songSrc(s) || spOn()) {   // (playing through Spotify: every song, MP3 or not)
+      if (songSrc(s) || spOn() || VIDS[s.track]) {   // (playing through Spotify: every song, MP3 or not; a song with only its video: the record too, its play button playing the video, John, 4 Nov 2026)
         player = div('player');
         var pb = document.createElement('button'); pb.type = 'button'; pb.className = 'play';
         pb.setAttribute('aria-label', whole(s) ? 'Play or pause ' + s.title : 'Play or pause the preview of ' + s.title);
