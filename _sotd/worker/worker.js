@@ -1365,8 +1365,15 @@ async function members(request, url, env) {
       if ('v' in body) await startJob(env, null, null, 0, null, true).catch(() => {});   // (their YouTube copies)
       return answer(200, { ok: true, john: J });
     }
-    case 'uplsignoff': {   // a member's waiting songs signed off by John for them (items: [{ pid, track }]): out, and to the members as its owner chose
+    case 'nfact': {   // the fact chosen at sign-off for a song's notification (text; '' none), kept 60 days
+      const t = String(body.track || ''), f = String(body.text || '').replace(/\s+/g, ' ').trim().slice(0, 600);
+      if (!ID_RE.test(t)) return answer(400, { error: 'Which song?' });
+      if (f) await env.SOTD.put('nfact:' + t, f, { expirationTtl: 60 * 86400 }); else await env.SOTD.delete('nfact:' + t);
+      return answer(200, { ok: true });
+    }
+    case 'uplsignoff': {   // a member's waiting songs signed off by John for them (items: [{ pid, track, nf: its notification's fact }]): out, and to the members as its owner chose
       const U = await uplAll(env), done = [];
+      for (const it0 of (Array.isArray(body.items) ? body.items : []).slice(0, 200)) if (ID_RE.test(String(it0.track || '')) && typeof it0.nf === 'string') { const f = it0.nf.replace(/\s+/g, ' ').trim().slice(0, 600); if (f) await env.SOTD.put('nfact:' + it0.track, f, { expirationTtl: 60 * 86400 }); else await env.SOTD.delete('nfact:' + it0.track); }
       for (const it of (Array.isArray(body.items) ? body.items : []).slice(0, 200)) {
         const pid = String(it.pid || ''), rec = U[pid];
         if (!rec || rec.st !== 'ok' || !all[rec.o]) continue;
@@ -3129,9 +3136,19 @@ function mailItemHtml(x, big) {   // one notification: its picture (as shared), 
   return (img ? '<a href="' + mailEsc(link) + '"><img src="' + mailEsc(img) + '" alt="" width="' + (big ? 512 : 120) + '" style="display:block;width:' + (big ? '100%' : '120px') + ';max-width:100%;height:auto;border:0;border-radius:' + (big ? 14 : 10) + 'px;margin:0 0 16px"></a>' : '')
     + '<h1 style="margin:0 0 6px;font:500 ' + (big ? 26 : 19) + 'px/1.25 Georgia,\'Times New Roman\',serif;color:#1d0b1e">' + mailEsc(x.t) + '</h1>'
     + (x.b ? '<p style="margin:0 0 18px;font:15px/1.5 Helvetica,Arial,sans-serif;color:#4a3a42">' + mailEsc(x.b) + '</p>' : '')
+    + (x.f ? mailFactHtml(x.f, mailTint(x.u, x.i), big) : '')
     + '<a href="' + mailEsc(link) + '" style="display:inline-block;padding:12px 22px;border-radius:999px;background:#1d0b1e;color:#ffffff;font:600 13px/1 Helvetica,Arial,sans-serif;letter-spacing:.08em;text-transform:uppercase;text-decoration:none">' + mailEsc(x.cta || 'Open it') + '</a>';
 }
-function mailItem(msg) { return Object.assign({ t: msg.subject || msg.title || '', b: msg.body || '', u: msg.link || msg.url || SITE_SONGS, i: mailImg(msg.image) || mailImg(msg.icon), cta: msg.cta || '', at: Date.now() }, msg.html ? { h: String(msg.html).slice(0, 12000), hs: String(msg.htmlSmall || '').slice(0, 6000) } : {}); }
+// the fact chosen at sign-off, in the email (John, 4 Nov 2026: "can the fact be put nicely in the emails"): a tinted card
+// with a small heading, the fact in the serif, set off from the button
+function mailFactHtml(f, tint, big) {
+  return '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px"><tr>'
+    + '<td width="4" style="width:4px;background:' + tint + ';border-radius:4px 0 0 4px"></td>'
+    + '<td style="padding:' + (big ? '16px 18px' : '12px 14px') + ';background:#f8f3f5;border-radius:0 12px 12px 0">'
+    + '<p style="margin:0 0 6px;font:700 11px/1 Helvetica,Arial,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:' + tint + '">Did you know?</p>'
+    + '<p style="margin:0;font:italic ' + (big ? 17 : 15) + 'px/1.5 Georgia,\'Times New Roman\',serif;color:#2a1a24">' + mailEsc(f) + '</p></td></tr></table>';
+}
+function mailItem(msg) { return Object.assign({ t: msg.subject || msg.title || '', b: msg.body || '', f: msg.fact ? String(msg.fact).slice(0, 600) : undefined, u: msg.link || msg.url || SITE_SONGS, i: mailImg(msg.image) || mailImg(msg.icon), cta: msg.cta || '', at: Date.now() }, msg.html ? { h: String(msg.html).slice(0, 12000), hs: String(msg.htmlSmall || '').slice(0, 6000) } : {}); }
 // a heart, by email (John, 3 Nov 2026: "include the album cover. Maybe even something a little more fun. I only want to send
 // a nice looking email ever"): a heart badge, who, the cover big (or four of them, for a batch), the song, a line, the button
 const HEART_LINES = ['Good taste travels fast.', 'That one landed.', 'Somebody’s humming it right now.', 'Turn it up.', 'One more reason to press play.', 'It’s officially a favourite.', 'Music to someone’s ears.', 'Consider it adored.'];
@@ -3168,7 +3185,7 @@ async function noteMail(env, to, msg, cat) {   // cat: 'song' (the Song of the D
     const m = all[id], item = mailItem(msg), mode = mailMode(m);
     let sent = false;
     if (mode !== 'day' && await dayCount(env, 'mailme:' + id, MAIL_EACH_DAY) && await dayCount(env, 'mailme-all', MAIL_ALL_DAY)) {
-      try { await sendMail(env, m.email, item.t, (item.b ? item.b + '\n\n' : '') + item.u + mailFoot(), 'note', mailShell(item.h || mailItemHtml(item, true), item.u, item.i)); sent = true; } catch (e) { console.log('noteMail: ' + (e && e.message)); }
+      try { await sendMail(env, m.email, item.t, (item.b ? item.b + '\n\n' : '') + (item.f ? 'Did you know? ' + item.f + '\n\n' : '') + item.u + mailFoot(), 'note', mailShell(item.h || mailItemHtml(item, true), item.u, item.i)); sent = true; } catch (e) { console.log('noteMail: ' + (e && e.message)); }
     }
     if (!sent) {   // (once a day, or past today's allowance: in tomorrow morning's email)
       const k = 'mdig:' + id, l = (await env.SOTD.get(k, 'json')) || [];
@@ -3201,10 +3218,13 @@ async function mailDigests(env) {   // the day's email for each member with noti
   } while (cursor);
 }
 async function pushAll(env, msg, to, meta) {   // to: only these members (else everyone); meta: { kind: 'song' | 'note' | 'member', track, via, toNames, fromId, toIds }
+  const mailMsg = msg;   // (the email: its fact as a block of its own)
+  if (msg.fact) msg = Object.assign({}, msg, { body: (msg.body ? msg.body + '\n' : '') + (msg.fact.length > 180 ? msg.fact.slice(0, 177).replace(/\s+\S*$/, '') + '…' : msg.fact) });   // (phones and inboxes: the fact under the song, John, 4 Nov 2026)
+  delete msg.fact;
   const subs = (await env.SOTD.get('pushSubs', 'json')) || {}, k = await vapidKeys(env);
   const unread = await inboxAdd(env, to, msg, meta);   // into each one's inbox first (notifications on or not); their unread counts
   const m0 = meta || {}, cat = m0.kind === 'song' ? 'song' : m0.direct || (m0.kind === 'member' && (m0.toNames || (m0.via && m0.via.t === 'spotify'))) ? 'direct' : 'other';   // (to them alone: direct)
-  await noteMail(env, to, Object.assign({ cta: cat === 'song' ? 'Listen' : '' }, msg), cat).catch(e => console.log('noteMail: ' + (e && e.message)));   // (and by email, for those who asked)
+  await noteMail(env, to, Object.assign({ cta: cat === 'song' ? 'Listen' : '' }, mailMsg), cat).catch(e => console.log('noteMail: ' + (e && e.message)));   // (and by email, for those who asked)
   let sent = 0, failed = 0; const gone = [], errors = [];
   const ids = Object.keys(subs).filter(id => !to || to.includes(subs[id].m));
   for (let i = 0; i < ids.length; i += 20) {   // twenty at a time
@@ -5202,6 +5222,7 @@ async function uplAnnounce(env, U, today) {   // the songs whose day it is, out,
     for (const x of due) await uplSend(env, all, rec.o, pid, rec, x, x.d);
   }
 }
+async function nfactOf(env, track) { return (await env.SOTD.get('nfact:' + track)) || ''; }   // the fact chosen at sign-off for a song's notification
 async function uplSend(env, all, me, pid, rec, x, d) {   // a song signed off: to the members, as a message from its owner
   const ownerId = await env.SOTD.get('owner');
   const to = Object.keys(all).filter(k => hasJoined(all[k]) && takesFrom(all, k, me, ownerId) && uplCan(all, k, rec));
@@ -5209,6 +5230,7 @@ async function uplSend(env, all, me, pid, rec, x, d) {   // a song signed off: t
   const name = all[me].name, slug = d.slice(8, 10) + '-' + d.slice(5, 7) + '-' + d.slice(0, 4), pl = uplTitle(all, rec);
   const msg = { title: name + ': ' + x.title, subject: x.title, body: x.artist + ' · ' + pl, from: name, url: SITE_SONGS + '#u=' + pid + '&d=' + slug, tag: 'sotd-upl-' + pid + '-' + x.id };
   if (x.img) msg.icon = x.img;
+  const nf = await nfactOf(env, x.id); if (nf) msg.fact = nf;
   // who it went to, by name: only those the playlist is shared with (to, above), never 'all' (John, 1 Nov 2026: his
   // Sent said everyone for a song on a playlist shared with one person; it had gone to that one alone)
   const names = to.filter(k => k !== me).map(k => all[k].name);
@@ -5385,8 +5407,9 @@ async function pushDaily(env, items, via) {   // via: who asked (the Status tab 
   if (!await kvSoft(env, 'pushSent', JSON.stringify(sentRaw.concat(last.id).slice(-60)))) return 'couldn’t note it: not sent (it could go twice)';
   pushDone = last.id;
   const slug = live.slug || day.slice(8, 10) + '-' + day.slice(5, 7) + '-' + day.slice(0, 4);
+  const nf = await nfactOf(env, last.id);
   const r = await pushAll(env, Object.assign({ title: last.title, body: last.artist + (day === londonDay() ? ' \u00b7 today\u2019s Song of the Day' : ' \u00b7 the latest Song of the Day'), icon: last.img || '',
-    url: SITE_SONGS + '#' + slug, tag: 'sotd-day' }, live.card ? { image: live.card } : {}), null, { kind: 'song', track: last.id, via: via || null });   // (the day's share card, made with the release)
+    url: SITE_SONGS + '#' + slug, tag: 'sotd-day' }, live.card ? { image: live.card } : {}, nf ? { fact: nf } : {}), null, { kind: 'song', track: last.id, via: via || null });   // (the day's share card, made with the release)
   console.log('pushDaily ' + last.id + ': ' + JSON.stringify(r));
   return 'sent: ' + pushSay(Object.assign({}, r, { devices: r.devices + r.gone }));
 }

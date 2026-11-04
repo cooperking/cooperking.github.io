@@ -180,6 +180,8 @@ body.dropping::after { content: 'Drop to match them (nothing goes up yet)'; posi
 .pfocus .pf-msg input, .pfocus .pf-msg textarea { width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid rgba(29,11,30,.25); border-radius: 12px; background: #fff; color: #1d0b1e; font: 15px/1.4 var(--sans); }
 .pfocus .pf-msg textarea { min-height: 120px; resize: vertical; }
 .pfocus .pf-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.nfbtn { padding: 2px 9px; border: 0; border-radius: 999px; background: none; box-shadow: inset 0 0 0 1px var(--line); color: var(--muted); font: 600 11px/1.6 var(--sans); cursor: pointer; }
+.nfbtn.on { background: var(--fg); color: var(--bg, #fff); box-shadow: none; }
 </style>
 </head>
 <body>
@@ -327,6 +329,14 @@ body.dropping::after { content: 'Drop to match them (nothing goes up yet)'; posi
   function working(s, st) { var w = edits[s.id] || clone(st.base); if (!('moods' in w)) { w.moods = clone(st.base.moods); w.genres = clone(st.base.genres); w.video = st.base.video; } return w; }
   function changed(s, st) { return !!edits[s.id] && JSON.stringify(edits[s.id]) !== JSON.stringify(st.base); }
   function toCheck(s) { var t = TAGS[s.id] || {}; return !!t.check && t.moodFrom !== 'John' && !signedW[s.id]; }
+  function nfChoice(s) {   // the fact chosen for its notification: the one picked, else its first fact about the song ('' none)
+    var w = working(s, state(s));
+    if (typeof w.nf === 'string') return w.nf;
+    var keep = function (f) { return !f.gone && String(f.t || '').trim(); };
+    var f = (w.s || []).filter(keep)[0] || [].concat.apply([], Object.keys(w.a || {}).map(function (k) { return (w.a[k].f || []).filter(keep); }))[0];
+    return f ? String(f.t).trim() : '';
+  }
+  function nfSave(list_) { list_.forEach(function (s) { api('/members/admin', { op: 'nfact', track: s.id, text: nfChoice(s) }).catch(function () {}); }); }
   function payload(s, st) {
     var w = working(s, st);
     function keep(f) { return !f.gone && String(f.t || '').trim(); }
@@ -466,6 +476,14 @@ body.dropping::after { content: 'Drop to match them (nothing goes up yet)'; posi
       li.appendChild(ta); li.appendChild(tools);
       var firstShown = arr.filter(function (x) { return !x.gone; })[0] === f, firstArtist = path === 's' || Object.keys(w.a)[0] === path;
       if (firstShown && firstArtist) meta.appendChild(el('span', 'pv', 'In the preview'));
+      // the one fact that goes in its notification and email (John, 4 Nov 2026: "Can the sign off for a song include choosing a fact to send in notifications too?")
+      if (!f.gone && String(f.t || '').trim()) {
+        var isNf = nfChoice(s) === String(f.t).trim();
+        var nb = el('button', 'nfbtn' + (isNf ? ' on' : ''), isNf ? '✉ In the notification' : 'Use in the notification'); nb.type = 'button';
+        nb.title = isNf ? 'Tap to send no fact' : 'Send this fact with its notification and email';
+        nb.addEventListener('click', function () { w.nf = isNf ? '' : String(f.t).trim(); commit(true); });
+        meta.appendChild(nb);
+      }
       meta.appendChild(wc);
       if (f.u) {
         var srcl = el('span', null, 'Source: '), a = el('a', null, (f.src || 'the page') + ' ↗'); a.href = f.u; a.target = '_blank'; a.rel = 'noopener'; a.title = f.u;
@@ -893,6 +911,7 @@ body.dropping::after { content: 'Drop to match them (nothing goes up yet)'; posi
   function isOut(tid) { return !!(live.songs[tid] || (live.signed || {})[tid]); }
   function signoff(list_) {
     var items = list_.map(function (s) { return payload(s, state(s)); });
+    nfSave(list_);   // (its notification's fact, for when it goes out)
     // a new song with no facts yet: once more to be sure (John, 30 Oct 2026: signed off 10 seconds before its facts
     // reached the site, it came out with none, and the written ones went)
     var nofacts = list_.filter(function (s, i) { var it = items[i]; return !isOut(s.id) && !it.s.length && !Object.keys(it.a).some(function (k) { return it.a[k].f.length; }); });
@@ -940,7 +959,7 @@ body.dropping::after { content: 'Drop to match them (nothing goes up yet)'; posi
   function msignoff(list_) {   // member songs: published for their members (those waiting), and their changes and facts saved; one or several
     list_ = [].concat(list_);
     var items = [], calls = [];
-    list_.forEach(function (s) { state(s).held.forEach(function (c) { items.push({ pid: c.pid, track: s.id }); }); calls = calls.concat(mcalls(s)); });
+    list_.forEach(function (s) { state(s).held.forEach(function (c) { items.push({ pid: c.pid, track: s.id, nf: nfChoice(s) }); }); calls = calls.concat(mcalls(s)); });
     if (!items.length && !calls.length) { toast('Nothing changed'); return Promise.resolve(false); }
     var pub = items.length ? api('/members/admin', { op: 'uplsignoff', items: items }).then(function (j) {
       if (!j.ok) return j;
