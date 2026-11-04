@@ -4,19 +4,19 @@
   "about": "For songs Claude knows: how often the three strongest moods from Last.fm listeners' track tags, from the artist's Last.fm tags, and from the audio models include Claude's first pick.",
   "listeners": [
    2,
-   4
+   3
   ],
   "audio": [
-   152,
-   259
+   150,
+   256
   ],
   "artistTags": [
    5,
    29
   ],
-  "songsWithListenerTags": 313,
-  "songsWithListenerMoodTags": 171,
-  "songsWhereListenersCount": 73
+  "songsWithListenerTags": 14,
+  "songsWithListenerMoodTags": 11,
+  "songsWhereListenersCount": 5
  },
  "moods": [
   "Joyful",
@@ -236,11 +236,11 @@
        96
       ],
       [
-       "Rock",
+       "Indie",
        2
       ],
       [
-       "Indie",
+       "Rock",
        2
       ]
      ]
@@ -2713,11 +2713,11 @@
    "genreMix": [
     [
      "Pop",
-     68
+     69
     ],
     [
      "Rock",
-     29
+     28
     ],
     [
      "Folk",
@@ -2745,11 +2745,11 @@
      [
       [
        "Pop",
-       71
+       72
       ],
       [
        "Rock",
-       29
+       28
       ]
      ]
     ],
@@ -5848,11 +5848,11 @@
      [
       [
        "Folk",
-       74
+       73
       ],
       [
        "Indie",
-       26
+       27
       ]
      ]
     ],
@@ -9545,15 +9545,15 @@
    "genreMix": [
     [
      "Rock",
-     79
-    ],
-    [
-     "Folk",
-     9
+     85
     ],
     [
      "Pop",
      8
+    ],
+    [
+     "Folk",
+     4
     ]
    ],
    "genreEvidence": [
@@ -9581,15 +9581,15 @@
      [
       [
        "Rock",
-       71
+       90
       ],
       [
        "Folk",
-       25
+       8
       ],
       [
        "Indie",
-       4
+       1
       ]
      ]
     ],
@@ -12106,7 +12106,7 @@
       ],
       [
        "Rock",
-       28
+       27
       ],
       [
        "Electronic",
@@ -12496,7 +12496,7 @@
     ],
     [
      "Indie",
-     15
+     14
     ]
    ],
    "genreEvidence": [
@@ -12524,7 +12524,7 @@
       ],
       [
        "Indie",
-       12
+       11
       ],
       [
        "Pop",
@@ -15691,7 +15691,7 @@
       ],
       [
        "Folk",
-       37
+       36
       ],
       [
        "Soul & R&B",
@@ -16893,7 +16893,11 @@
      [
       [
        "Electronic",
-       100
+       99
+      ],
+      [
+       "Pop",
+       1
       ]
      ]
     ],
@@ -16955,7 +16959,7 @@
    "genreMix": [
     [
      "Soul & R&B",
-     59
+     58
     ],
     [
      "Pop",
@@ -16991,11 +16995,11 @@
      [
       [
        "Soul & R&B",
-       83
+       82
       ],
       [
        "Electronic",
-       17
+       18
       ]
      ]
     ],
@@ -17377,11 +17381,11 @@
      [
       [
        "Indie",
-       85
+       84
       ],
       [
        "Pop",
-       13
+       14
       ],
       [
        "Folk",
@@ -17679,7 +17683,7 @@
      [
       [
        "Indie",
-       87
+       88
       ],
       [
        "Rock",
@@ -17780,11 +17784,11 @@
      [
       [
        "Folk",
-       67
+       68
       ],
       [
        "Indie",
-       33
+       32
       ]
      ]
     ],
@@ -24137,11 +24141,11 @@
      [
       [
        "Country",
-       72
+       73
       ],
       [
        "Pop",
-       28
+       27
       ]
      ]
     ],
@@ -25128,11 +25132,11 @@
    "genreMix": [
     [
      "Rock",
-     52
+     51
     ],
     [
      "Pop",
-     28
+     29
     ],
     [
      "Soul & R&B",
@@ -25146,11 +25150,11 @@
      [
       [
        "Rock",
-       61
+       60
       ],
       [
        "Pop",
-       39
+       40
       ]
      ]
     ],
@@ -25219,7 +25223,7 @@
     ],
     [
      "Indie",
-     12
+     11
     ]
    ],
    "genreEvidence": [
@@ -25247,11 +25251,11 @@
       ],
       [
        "Folk",
-       20
+       21
       ],
       [
        "Indie",
-       11
+       10
       ]
      ]
     ],
