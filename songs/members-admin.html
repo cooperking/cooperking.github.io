@@ -38,6 +38,9 @@
 .person { padding: 14px 16px; display: grid; gap: 8px; }
 .person .who { font-family: var(--serif); font-weight: 500; font-size: 24px; line-height: 1.1; color: var(--fg); }
 .person .acts { display: flex; flex-wrap: wrap; gap: 6px; }
+.pinfo { display: flex; flex-wrap: wrap; gap: 6px; }
+.pinfo .pi { padding: 4px 10px; border-radius: 999px; background: var(--chip); font-size: 12.5px; line-height: 1.4; color: var(--muted); }
+.pinfo .pi.on { color: var(--fg); box-shadow: inset 0 0 0 1px var(--line); }
 .sp-t { margin: 0 0 10px; font-size: 13px; color: var(--muted); }
 .splists { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; max-height: min(62vh, 560px); overflow-y: auto; }
 .splists li { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 6px; border-radius: 12px; background: var(--chip); }
@@ -447,7 +450,15 @@
         + (m.passkeys ? ' · ' + m.passkeys + (m.passkeys === 1 ? ' passkey' : ' passkeys') : '')
         + ((PUSHON || {})[m.id] ? ' · notifications on' : '')
         + (m.nomsg ? ' · other members’ messages off' : '');   // (theirs to choose, Profile › Account; yours still reach them)
-      if (!m.owner) st.textContent += ' · Spotify: ' + (m.spu || 'username not set');
+      // their email notifications and their Spotify, at a glance (John, 4 Nov 2026: "who has email notifications enabled ... who has connected Spotify and how they are using it")
+      var MAILSAY = { all: 'each one', day: 'once a day', song: 'Song of the Day only', direct: 'messages to them only', off: 'off' };
+      var info = el2('div', 'pinfo');
+      var ml = el2('span', 'pi' + (m.mail && m.mail !== 'off' ? ' on' : ''), 'Emails: ' + (!m.email ? 'no email address' : MAILSAY[m.mail] || m.mail));
+      info.appendChild(ml);
+      var sp = m.sp, spt = !sp ? 'not connected' : sp.gone ? 'needs to connect again' : sp.blocked ? 'waiting for you to add them on Spotify’s dashboard'
+        : [sp.name ? 'as ' + sp.name : 'connected', sp.product === 'premium' ? 'Premium' : 'not Premium (previews only)', sp.on ? 'plays songs through Spotify' : 'Spotify playing off', sp.lists ? 'shares playlists' + (sp.auto ? ' (' + sp.auto + ' updating)' : '') : 'playlists not shared yet'].join(' · ');
+      info.appendChild(el2('span', 'pi' + (sp && !sp.gone && !sp.blocked ? ' on' : ''), 'Spotify: ' + spt));
+
       if (!m.owner) st.textContent += ' · MP3/MP4 songs: ' + (m.fmax >= 100000 ? 'no limit' : m.fmax) + (m.fset ? ' (set by you)' : '');
       var nl = button('New link', function () { api('/members/admin', { op: 'reinvite', id: m.id }).then(showLink); });
       // their allowance of songs with MP3s and MP4s, over the usual 366 (John, 3 Nov 2026: "the option to override that limit, myself on their member page")
@@ -480,7 +491,7 @@
       var acts = document.createElement('div'); acts.className = 'acts';
       acts.appendChild(button('Message', function () { notifyOne(m); }));   // to just them (their inbox, and their phone if notifications are on)
       acts.appendChild(nl); acts.appendChild(tv); if (spb) acts.appendChild(spb); if (su) acts.appendChild(su); if (fm) acts.appendChild(fm); acts.appendChild(me); acts.appendChild(rm);
-      li.appendChild(who); li.appendChild(st); if (m.apps && m.apps.length) li.appendChild(appsList(m)); li.appendChild(mailRow(m)); li.appendChild(seeRow(m)); if (!m.owner) li.appendChild(seenRow(m)); li.appendChild(acts); ul.appendChild(li);
+      li.appendChild(who); li.appendChild(st); li.appendChild(info); if (m.apps && m.apps.length) li.appendChild(appsList(m)); li.appendChild(mailRow(m)); li.appendChild(seeRow(m)); if (!m.owner) li.appendChild(seenRow(m)); li.appendChild(acts); ul.appendChild(li);
     });
     csvBox(); newSeeDraw(); if (DRAFTS && DRAFTS.length) draftsDraw();
   }
@@ -1001,6 +1012,7 @@
     });
   }
   $('spx').addEventListener('click', function () { $('spdlg').close(); });
+  function el2(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
   function notifyOne(m) {   // a person's Notify button: the box, with just them chosen
     PICK = [m.id]; toDraw();
     var box = document.querySelector('.notify'); box.scrollIntoView({ behavior: 'smooth', block: 'start' });

@@ -1180,7 +1180,10 @@ async function members(request, url, env) {
   };
   // when each device was last active (seenTouch): read only for the ops that list the members (not the Status tab's)
   const seenAt = ['list', 'people', 'invite', 'reinvite', 'email', 'owner', 'remove', 'apart', 'see'].includes(body.op) ? await seenAll(env) : {};
-  const listing = (own = owner) => Object.entries(all).map(([id, m]) => ({ id, name: m.name, created: m.created, owner: id === own, email: m.email || '', emailAt: m.emailAt || null,
+  // each member's Spotify, as their card shows it (John, 4 Nov 2026: "who has connected Spotify and how they are using it"), and how many of their playlists update from it
+  const spInfo = {}; { let cursor; do { const l = await env.SOTD.list({ prefix: 'spm:', cursor }); for (const k of l.keys) { const r = await env.SOTD.get(k.name, 'json'); if (r) spInfo[k.name.slice(4)] = { name: r.name || '', product: r.product || '', on: r.on !== false, blocked: !!r.blocked, gone: !!r.gone, lists: /playlist-read-private/.test(r.scope || ''), linked: r.linked || 0, dev: r.dev || r.device || '' }; } cursor = l.list_complete ? null : l.cursor; } while (cursor); }
+  { const U0 = await uplAll(env); for (const r of Object.values(U0)) if (r.auto && spInfo[r.o]) spInfo[r.o].auto = (spInfo[r.o].auto || 0) + 1; }
+  const listing = (own = owner) => Object.entries(all).map(([id, m]) => ({ mail: m.email ? (mailMode(m) || 'off') : '', sp: spInfo[id] || null, id, name: m.name, created: m.created, owner: id === own, email: m.email || '', emailAt: m.emailAt || null,
     devices: Object.values(m.devices || {}).filter(d => d.did).length, apps: deviceApps(m, seenAt), passkeys: (m.passkeys || []).length, nomsg: !!m.nomsg, apart: m.apart || [], see: mediaFor(m),
     seen: Math.max(0, ...Object.entries(m.devices || {}).map(([h, d]) => Math.max(seenAt[h] || 0, d.seen || 0))) || null,
     fmax: filesMax(m), fset: Number.isInteger(m.fmax), spu: m.spu || '', invite: m.invite ? Object.assign({ uses: m.invite.uses, left: Math.max(0, INVITE_USES - m.invite.uses), until: m.invite.until }, m.invite.asked ? { asked: m.invite.asked } : {}) : null }));
