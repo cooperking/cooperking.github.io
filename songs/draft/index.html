@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="0d123d55cf94">
+<meta name="sotd-build" content="96144c55c9ba">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -4964,7 +4964,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       var media = div('pick-media'), info = div('pick-info');
       media.appendChild(deck); media.appendChild(player);
       info.appendChild(price); info.appendChild(h); info.appendChild(by); info.appendChild(al);
-      if (s.upl && s.abn) { var adb = document.createElement('p'); adb.className = 'addedby'; adb.textContent = 'Added by ' + s.abn + (s.at ? ' · ' + new Date(s.at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : ''); info.appendChild(adb); }   // (who added it on Spotify: John, 3 Nov 2026, "I can't see it")
+      if (s.upl && (s.abn || s.at)) { var adb = document.createElement('p'); adb.className = 'addedby'; var adw = s.at && Date.parse(s.at) > Date.UTC(2000, 0, 1) ? new Date(s.at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : ''; adb.textContent = s.abn ? 'Added by ' + s.abn + (adw ? ' · ' + adw : '') : adw ? 'Added on Spotify ' + adw : ''; if (adb.textContent) info.appendChild(adb); }   // (who added it on Spotify: John, 3 Nov 2026, "I can't see it")
       a.appendChild(media); a.appendChild(info);
       var tg = tagOf(s);
       if (tg) {

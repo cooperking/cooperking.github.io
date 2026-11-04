@@ -4060,12 +4060,53 @@ async function uplJohnAuto(env, U, ownerId) {
   }
   await uplPut(env, U);
 }
+// who added each song, for imported playlists brought in before Spotify's "added by" was kept (John, 4 Nov 2026: "I'd
+// still like to see who added the song on Spotify on imported playlists"): the owner's public Spotify playlists (their
+// Spotify id from connecting it here; John's own, his own list) matched by name to the import (fk, adds), read, and
+// each song without one given its adder (ab). One playlist a timer run; one not found is asked again after a week.
+async function uplAbFill(env, U, ownerId) {
+  const now = Date.now();
+  const due = Object.entries(U).filter(([, r]) => r.src === 'csv' && r.fk && !(r.abDone && (r.abDone === 1 || now - r.abDone < 7 * 864e5))).slice(0, 1);
+  for (const [pid, rec] of due) {
+    rec.abDone = now;
+    const data = await uplSongs(env, pid), missing = (data.songs || []).filter(x => !x.ab);
+    if (!missing.length) { rec.abDone = 1; continue; }
+    const tok = await getToken(env); let map = {};
+    if (rec.o === ownerId) map = await johnSpLists(env);
+    else {
+      const sp = await env.SOTD.get('spm:' + rec.o, 'json');
+      if (!sp || !sp.sid) {   // (no Spotify id for them: a public playlist of that name whose owner has their name)
+        const all = (await env.SOTD.get('members', 'json')) || {}, who = itFold(((all[rec.o] || {}).name || '').split(' ')[0]);
+        const j = who ? await spotify(tok, '/search?' + new URLSearchParams({ q: rec.n || rec.fk.replace(/_/g, ' '), type: 'playlist', limit: '20' })).catch(() => null) : null;
+        for (const p of ((j && j.playlists && j.playlists.items) || [])) if (p && p.id && uplFileKey(p.name) === rec.fk && itFold((p.owner && p.owner.display_name) || '').includes(who)) { map[rec.fk] = p.id; break; }
+      }
+      let next = sp && sp.sid ? '/users/' + encodeURIComponent(sp.sid) + '/playlists?limit=50' : null;
+      for (let i = 0; next && i < 10; i++) {
+        const j = await spotify(tok, next).catch(() => null); if (!j) break;
+        for (const p of j.items || []) if (p && p.id && p.name) { const k = uplFileKey(p.name); if (k && !map[k]) map[k] = p.id; }
+        next = j.next ? j.next.replace('https://api.spotify.com/v1', '') : null;
+      }
+    }
+    const by = {};
+    for (const k of [rec.fk].concat(rec.adds || [])) {
+      if (!map[k]) continue;
+      const items = await playlistItems(tok, map[k]).catch(() => []);
+      for (const x of items) if (x.ab && !by[x.id]) by[x.id] = x.ab;
+    }
+    let n = 0;
+    for (const x of data.songs || []) if (!x.ab && by[x.id]) { x.ab = by[x.id]; n++; }
+    if (n) await env.SOTD.put('upl:' + pid, JSON.stringify(data));
+    if (n && n >= missing.length) rec.abDone = 1;
+  }
+  if (due.length) await uplPut(env, U);
+}
 async function uplLook(env) {   // the timer: playlists due a read (UPL_LOOK_MOST each time)
   const U = await uplAll(env), now = Date.now(), h = londonHour();
   const due = Object.entries(U).filter(([, r]) => uplSrc(r) === 'sp').filter(([, r]) => (r.st === 'ok' || r.st === 'err') ? (h >= 6 && h < 23 && now - (r.tried || 0) >= UPL_EVERY) : now - (r.tried || 0) >= (now - r.at < DAY ? UPL_JOIN_EVERY : 6 * UPL_JOIN_EVERY))
     .sort((a, b) => (a[1].tried || 0) - (b[1].tried || 0)).slice(0, UPL_LOOK_MOST);
   for (const [pid, r] of due) await uplRead(env, pid, r, U).catch(e => console.log('upl ' + pid + ': ' + (e && e.message)));
   await uplJohnAuto(env, U, await env.SOTD.get('owner')).catch(e => console.log('uplJohnAuto: ' + (e && e.message)));
+  await uplAbFill(env, U, await env.SOTD.get('owner')).catch(e => console.log('uplAbFill: ' + (e && e.message)));
   await uplPreviews(env, U).catch(e => console.log('uplPreviews: ' + (e && e.message)));
   const today = londonDay();
   await uplAnnounce(env, U, today).catch(e => console.log('uplAnnounce: ' + (e && e.message)));
