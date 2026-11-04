@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="sotd-build" content="ace7405d3864">
+<meta name="sotd-build" content="5ff5af5668f3">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 267 so far">
 <meta name="theme-color" content="#ec135b">
@@ -3044,7 +3044,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
 
   function toggle(s, ui) {
     if (vplay && vplay.el === ui.el) { vidToggle(); return; }
-    watch(ui.el, coverVd(s)); return;   // in the video's place (below: the record playing it in the day, before)
+    var cv = coverVd(s);
+    if (!cv.src && VIDS[s.track]) { watch(ui.el, VIDS[s.track]); return; }   // (nothing to play as a song, not even through Spotify: its video)
+    watch(ui.el, cv); return;   // in the video's place (below: the record playing it in the day, before)
     stopVideos();
     if (playing && playing.s === s) {
       if (audio.paused) { var p0 = audio.play(); if (p0 && p0.catch) p0.catch(function () {}); } else audio.pause();
@@ -3963,6 +3965,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (why && !quiet && Date.now() - SPX.warned > 60000) { SPX.warned = Date.now(); toast(why); }
     var s = songOf(id), src = s && songSrc(s);
     if (src) { audio.src = src; var p = audio.play(); if (p && p.then) p.then(function () { spLog('app playing the ' + (whole(s) ? 'MP3' : 'preview')); }, function (e) { coverState(2); spLog('app couldn’t play the fallback: ' + ((e && e.name) || e)); }); return; }
+    // no MP3 or preview, but a video: that instead (John, 4 Nov 2026: Parentheses, "Nothing happens when you press play, video a black screen")
+    var v0 = VIDS[id], el0 = vplay && vplay.el;
+    if (v0 && el0 && el0.sotd && el0.sotd.s && el0.sotd.s.track === id && !(document.hidden && !(v0.own && BGV))) { spLog('fallback: its video'); watch(el0, v0); return; }
     spLog('fallback: nothing of its own to play: on to the next');
     coverState(0);   // (nothing else to play: on to the next)
   }
