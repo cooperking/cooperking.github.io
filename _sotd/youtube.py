@@ -234,11 +234,11 @@ def lookup(s, tok):
 # a service is at its most, so a failed save or two jobs at once can't take one over its free allowance. Without the
 # Worker's answer, no web search at all.
 GOOGLE_CX = '83076d0101e1c488c'   # (John's Programmable Search Engine: its public ID, from its embed code)
-WEB = [   # (name, key, the most, per: 'day', 'month' or 'ever')
-    ('Brave', os.environ.get('BRAVE_API_KEY', '').strip(), 950, 'month'),
-    ('Tavily', os.environ.get('TAVILY_API_KEY', '').strip(), 950, 'month'),
+WEB = [   # (name, key, the most, per: 'day', 'month' or 'ever'): Google's results first, as they find the most (John, 4 Nov 2026: "most come up first in a google search")
     ('Google', os.environ.get('GOOGLE_CSE_KEY', '').strip() and os.environ['GOOGLE_CSE_KEY'].strip() + '|' + (os.environ.get('GOOGLE_CSE_ID', '').strip() or GOOGLE_CX), 90, 'day'),
     ('Serper', os.environ.get('SERPER_API_KEY', '').strip(), 2400, 'ever'),
+    ('Brave', os.environ.get('BRAVE_API_KEY', '').strip(), 950, 'month'),
+    ('Tavily', os.environ.get('TAVILY_API_KEY', '').strip(), 950, 'month'),
 ]
 WEB_URL = WORKER + '/upl/websearch'
 _web_t = [0.0]
@@ -340,7 +340,7 @@ def _web_ask(name, key, q):
 WEB_AGAIN = os.environ.get('WEB_AGAIN', '').strip() == '1'   # (Run workflow: web_again: this week's misses searched again, worded differently)
 
 
-def web_lookup(s, tok):
+def web_lookup(s, tok, skip=()):
     """The song's video from the first web search service with allowance left, as lookup's entry; None when there's none
     to ask (YouTube's search then, as before). An entry with no id: it found nothing that passes."""
     lead = (s.get('artists') or [s['artist']])[0]
@@ -348,7 +348,10 @@ def web_lookup(s, tok):
     if s.get('again'):   # (worded differently: the artist first, the title without brackets; not quoted, which found less)
         q = lead + ' ' + re.sub(r'\s*[(\[].*?[)\]]', '', clean_title(s['title'])).strip()
     tried, miss = 0, None
+    names = []
     for name, key in web_ready():
+        if name in skip:
+            continue   # (it missed this song this week)
         if tried >= 2:
             break
         most, per = next((m, p) for n, k, m, p in WEB if n == name)
@@ -357,7 +360,7 @@ def web_lookup(s, tok):
         links = _web_ask(name, key, q)
         if links is None:
             continue
-        tried += 1
+        tried += 1; names.append(name)
         ids = []
         for u in links:
             m = re.search(r'(?:[?&]v=|youtu\.be/|/shorts/|/embed/)([\w-]{11})', u or '')
@@ -381,6 +384,8 @@ def web_lookup(s, tok):
             print(s['n'], s['title'], '—', s['artist'], '| web search (' + name + '): none passed' + (' — best: ' + b[0]['title'] + ' | ' + b[0]['channel'] + ' | ' + str(b[0]['score']) + ' ' + ','.join(b[0]['why']) if b else ''))
             miss = e; continue   # (the next service)
         return e
+    if miss is not None:
+        miss['webby'] = names   # (which missed it)
     return miss
 
 
@@ -705,18 +710,23 @@ def main():
             progress('Searching YouTube', k + 1, len(todo), s['title'] + ' — ' + s['artist'])
             prev = data['songs'].get(s['id'], {})
             s2 = dict(s, listId=prev.get('listId'), ms=ms.get(s['id']) or s.get('ms'), newest=s['n'] == newest)
-            web_lately = False
+            web_lately, missed_by = False, []
             if WEB_AGAIN:
                 s2['again'] = 1   # (asked to: every one still waiting, the web searches again, worded differently)
             else:
                 try:
-                    web_lately = (datetime.date.today() - datetime.date.fromisoformat(prev.get('web', '2000-01-01'))).days < 7
+                    if (datetime.date.today() - datetime.date.fromisoformat(prev.get('web', '2000-01-01'))).days < 7:
+                        missed_by = prev.get('webby') or [n for n, k in web_ready()]   # (before webby was kept: all of them)
+                        if prev.get('webby') is None and prev.get('web'):
+                            missed_by = ['Brave', 'Tavily']   # (the first week's misses: only Brave and Tavily were there)
+                        web_lately = all(n in missed_by for n, k in web_ready())
                 except ValueError:
                     pass
-            e = None if web_lately else web_lookup(s2, tok)   # (a web search first: no YouTube search spent when it finds it; one it missed this week: YouTube's search)
+            e = None if web_lately else web_lookup(s2, tok, missed_by)   # (a web search first: no YouTube search spent when it finds it; one it missed this week: YouTube's search)
             if not (e and e.get('id')):
                 if e is not None and not web_lately:   # (the web searches missed it: not asked again for a week, so their allowance isn't spent on it every run)
-                    data['songs'][s['id']] = dict(prev, web=datetime.date.today().isoformat()) if prev else {'n': s['n'], 'checked': '2000-01-01', 'web': datetime.date.today().isoformat()}
+                    by = sorted(set((prev.get('webby') or []) + (e.get('webby') or []))) if prev.get('web') else (e.get('webby') or [])
+                    data['songs'][s['id']] = dict(prev, web=datetime.date.today().isoformat(), webby=by) if prev else {'n': s['n'], 'checked': '2000-01-01', 'web': datetime.date.today().isoformat(), 'webby': by}
                     done += 1
                 if yt_out:
                     if e is None and not web_lately and brave_left() <= 0:
