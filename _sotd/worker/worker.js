@@ -550,7 +550,7 @@ async function spKeep(env) {   // the previews and covers not kept yet, from Joh
   let songsSeen = 0; const nopv = [], cat0 = await catalog(env), twins = {};
   const take = x => {
     songsSeen++;
-    { const c = cat0[x.id]; if (c && (c.a || c.v)) { const k = songKey(x); if (k && (!twins[k] || ((c.a ? 1 : 0) + (c.v ? 1 : 0)) > ((cat0[twins[k]].a ? 1 : 0) + (cat0[twins[k]].v ? 1 : 0)))) twins[k] = x.id; } }   // (the copy with the most files)
+    { const c = cat0[x.id]; if (c && (c.a || c.v)) { const k = songTitleKey(x); if (k) { const l = twins[k] = twins[k] || []; if (!l.some(e => e.id === x.id) && l.length < 8) { l.push({ id: x.id, n: songNames(x) }); l.sort((p, q) => ((cat0[q.id].a ? 1 : 0) + (cat0[q.id].v ? 1 : 0)) - ((cat0[p.id].a ? 1 : 0) + (cat0[p.id].v ? 1 : 0))); } } } }   // (each title's copies with files, the most files first)
     if (pv[x.id] && pv[x.id] !== '-' && !/^i\d+$/.test(pv[x.id])) { add('p', pv[x.id]); used.add('p' + pv[x.id]); }   // (Apple's are fetched when first asked for)
     if (pv[x.id] === '-') nopv.push(x);
     const m = /\/image\/([0-9a-f]{40})$/.exec(x.img || ''); if (m) { add('c', m[1]); used.add('c' + m[1].slice(16)); }
@@ -1131,7 +1131,19 @@ function songKey(x) {
   const t = f(String(x.title || '').replace(/\s+-\s+.*$/, '').replace(/\s*[(\[][^)\]]*[)\]]/g, '')), a = f(((x.artists && x.artists[0]) || String(x.artist || '')).split(/,\s*/)[0]);
   return t && a ? t + '|' + a : '';
 }
-async function twinFiles(env) {   // { song key: the track id whose files it can use }, kept by the timer (spKeep)
+function songTitleKey(x) { return songKey({ title: x.title, artist: 'x' }).replace(/\|x$/, ''); }
+function songNames(x) {   // every artist credited, folded ('Marc Bolan & T. Rex': marcbolan, trex)
+  const f = t => String(t || '').replace(/['’`]/g, '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+  const out = new Set(); for (const a of (x.artists && x.artists.length ? x.artists : [x.artist || ''])) for (const p of String(a).split(/,\s*|\s+(?:&|and|x|feat\.?|featuring|with)\s+/i)) { const n = f(p); if (n) out.add(n); }
+  return [...out];
+}
+function sameArtist(a, b) { return a.some(x => b.includes(x)) || a.some(x => b.some(y => x.length >= 4 && y.length >= 4 && (x.includes(y) || y.includes(x)))); }
+function twinOf(TW, x) {   // the track id of another copy of x with files (same title, an artist in common), or ''
+  const l = TW[songTitleKey(x)]; if (!Array.isArray(l)) return '';
+  const nm = songNames(x), hit = l.find(e => e.id !== x.id && sameArtist(nm, e.n || []));
+  return hit ? hit.id : '';
+}
+async function twinFiles(env) {   // { title key: [{ id, n: artists }] of copies with files }, kept by the timer (spKeep)
   return (await env.SOTD.get('twinfiles', 'json')) || {};
 }
 
@@ -4609,7 +4621,7 @@ async function uplView(env, all, viewer, pid, rec, also) {   // (also: tracks wa
       if (mine) x.jo = { v: 'v' in jo ? 1 : 0, m: jo.m ? 1 : 0, g: jo.g ? 1 : 0 };
     }
     let jcId = x.id, jc = cat[x.id] || {};
-    if (!jc.a && !jc.v) { const tw = TW[songKey(x)]; if (tw && tw !== x.id && cat[tw]) { jc = cat[tw]; jcId = tw; } }   // (another copy of the same song has them: those)
+    if (!jc.a && !jc.v) { const tw = twinOf(TW, x); if (tw && cat[tw]) { jc = cat[tw]; jcId = tw; } }   // (another copy of the same song has them: those)
     if ((mine || adm) && (jc.a || jc.v)) x.jf = { a: jc.a || 0, v: jc.v || 0 };   // (John too, on anyone's: its Missing as its owner sees it, John, 3 Nov 2026)   // (its owner's editor: John's, with their sizes)
     if ((mine || adm) && env.ADMIN_KEY) for (const k of ['a', 'v']) if (jc[k]) x['m' + k] = LIVE_ORIGIN + '/m/' + k + '/' + jcId + '.' + MEDIA_KINDS[k].ext + '?e=' + exp + '&s=' + await mediaSig(env, k, jcId, exp);   // (John's, for its owner on their own playlist, whatever he lets them have elsewhere)
     if (f) {

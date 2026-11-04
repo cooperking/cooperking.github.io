@@ -23,20 +23,43 @@ def key(s):
     return (t, a) if t and a else None
 
 
+def names(s):
+    """Every artist credited, folded, spaces not counting ('Marc Bolan & T. Rex' -> {'marcbolan', 'trex'})."""
+    out = set()
+    for a in (s.get('artists') or [s.get('artist') or '']):
+        for part in re.split(r',\s*|\s+(?:&|and|x|feat\.?|featuring|with)\s+', a or '', flags=re.I):
+            f = fold(part).replace(' ', '')
+            if f:
+                out.add(f)
+    return out
+
+
+def tkey(s):
+    """The title alone, as key() folds it."""
+    t = re.sub(r'\s+-\s+.*$', '', s.get('title') or '')
+    t = re.sub(r'\s*[(\[][^)\]]*[)\]]', '', t).strip()
+    return fold(t).replace(' ', '') or None
+
+
+def same_artist(a, b):   # any artist credited on both (John, 4 Nov 2026: Ride a White Swan by Marc Bolan & T. Rex is T. Rex's)
+    return bool(a & b) or any(len(x) >= 4 and len(y) >= 4 and (x in y or y in x) for x in a for y in b)
+
+
 def finder(songs, has):
-    """twin(track id) -> another track id of the same song for which has(id) is true (John's songs first), or None."""
-    by = {}
+    """twin(track id) -> another track id of the same song (its title, with brackets and " - ..." off, and an artist in
+    common) for which has(id) is true (John's songs first), or None."""
+    by, info = {}, {}
     john = {s['id'] for s in songs if not s.get('upl')}
     for s in songs:
-        k = key(s)
+        k = tkey(s)
         if k:
             by.setdefault(k, []).append(s['id'])
-    keys = {s['id']: key(s) for s in songs}
+            info[s['id']] = (k, names(s))
 
     def twin(tid):
-        ids = by.get(keys.get(tid)) or []
-        for t in sorted(ids, key=lambda t: t not in john):
-            if t != tid and has(t):
+        k, nm = info.get(tid, (None, set()))
+        for t in sorted(by.get(k) or [], key=lambda t: t not in john):
+            if t != tid and same_artist(nm, info[t][1]) and has(t):
                 return t
         return None
     return twin
