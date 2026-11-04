@@ -19,7 +19,7 @@ def key(s):
     t = re.sub(r'\s*[(\[][^)\]]*[)\]]', '', t).strip()
     a = (s.get('artists') or [s.get('artist') or ''])[0]
     a = re.split(r',\s*', a)[0]
-    t, a = fold(t), fold(a)
+    t, a = fold(t).replace(' ', ''), fold(a).replace(' ', '')   # (spaces don't count: Mother Fucking and Motherfucking are the same song, John, 4 Nov 2026)
     return (t, a) if t and a else None
 
 

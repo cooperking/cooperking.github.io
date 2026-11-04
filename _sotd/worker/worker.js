@@ -547,9 +547,10 @@ async function spKeep(env) {   // the previews and covers not kept yet, from Joh
   const kept = (await env.SOTD.get('spkept', 'json')) || {}, pv = Object.assign({}, pvMem, (await env.SOTD.get('previews', 'json')) || {});
   const now = Date.now(), want = [], seen = new Set(), used = new Set();   // used: every preview id, and every cover by its picture (any size)
   const add = (k, id) => { const key = k + id, e = kept[key]; if (e !== 1 && !(e < 0 && now + e < 7 * 864e5) && !seen.has(key)) { seen.add(key); want.push([k, id]); } };   // (1 kept; -when: Spotify had none then, asked again a week on)
-  let songsSeen = 0; const nopv = [];
+  let songsSeen = 0; const nopv = [], cat0 = await catalog(env), twins = {};
   const take = x => {
     songsSeen++;
+    { const c = cat0[x.id]; if (c && (c.a || c.v)) { const k = songKey(x); if (k && (!twins[k] || ((c.a ? 1 : 0) + (c.v ? 1 : 0)) > ((cat0[twins[k]].a ? 1 : 0) + (cat0[twins[k]].v ? 1 : 0)))) twins[k] = x.id; } }   // (the copy with the most files)
     if (pv[x.id] && pv[x.id] !== '-' && !/^i\d+$/.test(pv[x.id])) { add('p', pv[x.id]); used.add('p' + pv[x.id]); }   // (Apple's are fetched when first asked for)
     if (pv[x.id] === '-') nopv.push(x);
     const m = /\/image\/([0-9a-f]{40})$/.exec(x.img || ''); if (m) { add('c', m[1]); used.add('c' + m[1].slice(16)); }
@@ -557,7 +558,8 @@ async function spKeep(env) {   // the previews and covers not kept yet, from Joh
   for (const pid of Object.keys(await uplAll(env))) ((await uplSongs(env, pid)).songs || []).forEach(take);   // (members' first: theirs can't be had again)
   const last = (((await env.SOTD.get('songsLast', 'json')) || {}).songs || []);
   last.forEach(take);
-  await itunesFill(env, nopv).catch(e => console.log('itunesFill: ' + (e && e.message)));   // (songs Spotify gives no preview: Apple's)
+  await itunesFill(env, nopv).catch(e => console.log('itunesFill: ' + (e && e.message)));
+  if (songsSeen) await kvSoft(env, 'twinfiles', JSON.stringify(twins));   // (songs Spotify gives no preview: Apple's)
   let n = 0;
   for (const [k, id] of want.slice(0, SP_KEEP_RUN)) {
     const there = await env.MEDIA.head('sp/' + k + '/' + id + (k === 'p' ? '.mp3' : '.jpg')).catch(() => null);
@@ -1121,6 +1123,17 @@ async function mediaSig(env, kind, track, exp) {
 }
 
 async function catalog(env) { return (await env.SOTD.get('mediaCatalog', 'json')) || {}; }
+// the same song under another track id (a single and its album's, another release), as twins.py finds it: the title with
+// brackets and " - …" taken off, and the first artist, folded, spaces not counting (John, 4 Nov 2026: Bloody Mother
+// Fucking Asshole on one playlist with files, Bloody Motherfucking Asshole on another searched and downloaded again)
+function songKey(x) {
+  const f = t => String(t || '').replace(/['’`]/g, '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, '');
+  const t = f(String(x.title || '').replace(/\s+-\s+.*$/, '').replace(/\s*[(\[][^)\]]*[)\]]/g, '')), a = f(((x.artists && x.artists[0]) || String(x.artist || '')).split(/,\s*/)[0]);
+  return t && a ? t + '|' + a : '';
+}
+async function twinFiles(env) {   // { song key: the track id whose files it can use }, kept by the timer (spKeep)
+  return (await env.SOTD.get('twinfiles', 'json')) || {};
+}
 
 // ---- files for songs on no calendar or playlist any more, deleted (John, 1 Nov 2026: "AaBbCc and Potench playlists
 // have been deleted now so the songs should be deleted fully"): the MP3s and MP4s in the catalog (a/, v/, with their
@@ -4340,7 +4353,8 @@ async function ytList(request, url, env) {
   const out = [];
   for (const x of songs) {
     const v = (J[x.id] && J[x.id].v) || ('ov' in x ? x.ov : (x.vid && x.vid.v)) || '';
-    if (v) out.push(Object.assign({ id: x.id, v, a: x.artist || '', t: x.title || '' }, x.f ? { f: 1 } : {}, x.w ? { w: 1 } : {}, plan && !plan.allowed.has(x.id) && !plan.john.has(x.id) ? { dl: 0 } : {}));
+    const twinHas = x.jf && x.jf.a && x.jf.v;   // (files already, its own or another copy's of the same song: nothing to download)
+    if (v) out.push(Object.assign({ id: x.id, v, a: x.artist || '', t: x.title || '' }, x.f ? { f: 1 } : {}, x.w ? { w: 1 } : {}, twinHas || (plan && !plan.allowed.has(x.id) && !plan.john.has(x.id)) ? { dl: 0 } : {}));
   }
   if (json) return answer(200, { t: view.n, songs: out });
   if (!out.length) return new Response('No videos on “' + view.n + '” yet.', { status: 404, headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' } });
@@ -4564,7 +4578,7 @@ async function uplView(env, all, viewer, pid, rec, also) {   // (also: tracks wa
   const tags = (await env.SOTD.get('tags', 'json')) || {};
   const days = uplDays(data.songs || [], rec);
   const meta = (await env.SOTD.get('uplmeta', 'json')) || {}, facts = (await env.SOTD.get('ufacts:' + pid, 'json')) || {}, wanted = new Set(uplShareOf(rec) === 'public' ? uplFactsWanted(rec, data) : []);
-  const cat = await catalog(env), J = await uplJohnAll(env);   // John's own (the Songs tab's): a song's that he has, its owner's of that kind aren't used
+  const cat = await catalog(env), J = await uplJohnAll(env), TW = await twinFiles(env);   // John's own (the Songs tab's): a song's that he has, its owner's of that kind aren't used
   const JV = await ytJohnVids(), JY = await johnYears();   // (a song John's calendar has too: its video and year from there, found already, never looked for again: John, 1 Nov 2026)
   const ed = data.ed || {}, files = data.files || {}, see = mine ? { a: true, v: true } : viewer && all[viewer] ? mediaFor(all[viewer]) : { a: false, v: false }, exp = Math.floor(Date.now() / 1000) + LINK_HOURS * 3600;
   const gone = new Set((data.songs || []).filter(x => uplGone(data, x) && !(also && also.has(x.id))).map(x => x.id));
@@ -4594,9 +4608,10 @@ async function uplView(env, all, viewer, pid, rec, also) {   // (also: tracks wa
       if (jo.m || jo.g) x.tg = { m: jo.m || (x.tg && x.tg.m) || null, g: jo.g || (x.tg && x.tg.g) || null };
       if (mine) x.jo = { v: 'v' in jo ? 1 : 0, m: jo.m ? 1 : 0, g: jo.g ? 1 : 0 };
     }
-    const jc = cat[x.id] || {};
+    let jcId = x.id, jc = cat[x.id] || {};
+    if (!jc.a && !jc.v) { const tw = TW[songKey(x)]; if (tw && tw !== x.id && cat[tw]) { jc = cat[tw]; jcId = tw; } }   // (another copy of the same song has them: those)
     if ((mine || adm) && (jc.a || jc.v)) x.jf = { a: jc.a || 0, v: jc.v || 0 };   // (John too, on anyone's: its Missing as its owner sees it, John, 3 Nov 2026)   // (its owner's editor: John's, with their sizes)
-    if ((mine || adm) && env.ADMIN_KEY) for (const k of ['a', 'v']) if (jc[k]) x['m' + k] = LIVE_ORIGIN + '/m/' + k + '/' + x.id + '.' + MEDIA_KINDS[k].ext + '?e=' + exp + '&s=' + await mediaSig(env, k, x.id, exp);   // (John's, for its owner on their own playlist, whatever he lets them have elsewhere)
+    if ((mine || adm) && env.ADMIN_KEY) for (const k of ['a', 'v']) if (jc[k]) x['m' + k] = LIVE_ORIGIN + '/m/' + k + '/' + jcId + '.' + MEDIA_KINDS[k].ext + '?e=' + exp + '&s=' + await mediaSig(env, k, jcId, exp);   // (John's, for its owner on their own playlist, whatever he lets them have elsewhere)
     if (f) {
       for (const k of ['a', 'v']) if (f[k] && !jc[k] && (see[k] || adm) && env.ADMIN_KEY) x['m' + k] = LIVE_ORIGIN + '/m/u' + k + '/' + pid + '/' + x.id + '.' + MEDIA_KINDS[k].ext + '?e=' + exp + '&s=' + await mediaSig(env, 'u' + k + '/' + pid, x.id, exp);
       if (f.c) { x.img = LIVE_ORIGIN + '/uc/' + pid + '/' + x.id + '.jpg?v=' + f.c; x.uc = 1; }
