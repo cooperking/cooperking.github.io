@@ -389,9 +389,16 @@ async function itunesFind(x) {   // { title, artist, artists }: Apple's track id
       && !(odd.test(itFold(y.trackName + ' ' + y.collectionName)) && !odd.test(itFold(x.title))));
     const full = itFold(x.title), rank = y => itFold(y.trackName) === full ? 0 : itMain(y.trackName) === title ? 1 : 2;   // (the same version first: 'MARC' version, then the song itself)
     ok.sort((a, b) => rank(a) - rank(b));
-    if (ok.length) return 'i' + ok[0].trackId;
+    if (ok.length) { itLinks[ok[0].trackId] = ok[0].previewUrl; return 'i' + ok[0].trackId; }
   }
   return '';
+}
+const itLinks = {};   // (Apple's preview links found this run: kept in KV pvurl, as Apple refuses the Worker's own lookups)
+async function itLinkSave(env, add) {
+  const ok = Object.entries(add || {}).filter(([k, u]) => /^\d{1,15}$/.test(k) && /^https:\/\/[\w.-]+\.(apple|mzstatic)\.com\//.test(String(u)));
+  if (!ok.length) return 0;
+  const m = (await env.SOTD.get('pvurl', 'json')) || {}; for (const [k, u] of ok) m[k] = u;
+  await kvSoft(env, 'pvurl', JSON.stringify(m)); return ok.length;
 }
 async function itunesFill(env, songs) {   // the songs Spotify gave no preview: Apple's, ITUNES_RUN a run
   const pv = Object.assign({}, pvMem, (await env.SOTD.get('previews', 'json')) || {}), asked = (await env.SOTD.get('pvit', 'json')) || {}, today = londonDay();
@@ -412,6 +419,7 @@ async function itunesFill(env, songs) {   // the songs Spotify gave no preview: 
   }
   await kvSoft(env, 'pvit', JSON.stringify(asked));
   if (n) await kvSoft(env, 'previews', JSON.stringify(pv));
+  await itLinkSave(env, itLinks);
   return n;
 }
 // every song with no preview at once, for the site's Apple previews job (apple_previews.py, its GITHUB_TOKEN; John, 4 Nov
@@ -423,7 +431,12 @@ async function uplPvNeed(request, env) {
   if (request.method === 'POST') {
     const b = await request.json().catch(() => ({})), asked = (await env.SOTD.get('pvit', 'json')) || {}, today = londonDay();
     let n = 0;
-    for (const [t, v] of Object.entries(b.found || {})) if (ID_RE.test(t) && /^i\d{1,15}$/.test(String(v)) && (pv[t] === '-' || !(t in pv))) { pv[t] = v; pvMem[t] = v; n++; }
+    const links = Object.assign({}, b.links || {});
+    for (const [t, v0] of Object.entries(b.found || {})) {
+      const v = v0 && typeof v0 === 'object' ? v0.i : v0; if (v0 && typeof v0 === 'object' && v0.u) links[String(v).slice(1)] = v0.u;
+      if (ID_RE.test(t) && /^i\d{1,15}$/.test(String(v)) && (pv[t] === '-' || !(t in pv))) { pv[t] = v; pvMem[t] = v; n++; }
+    }
+    await itLinkSave(env, links);
     for (const t of (Array.isArray(b.asked) ? b.asked : []).concat(Object.keys(b.found || {}))) if (ID_RE.test(String(t))) asked[t] = today;
     await kvSoft(env, 'pvit', JSON.stringify(asked));
     if (n) await kvSoft(env, 'previews', JSON.stringify(pv));
@@ -433,7 +446,8 @@ async function uplPvNeed(request, env) {
   const take = x => { if (x && x.id && pv[x.id] === '-' && !seen.has(x.id)) { seen.add(x.id); out.push({ id: x.id, title: x.title || '', artist: x.artist || '', artists: x.artists || [] }); } };
   for (const pid of Object.keys(await uplAll(env))) ((await uplSongs(env, pid)).songs || []).forEach(take);
   (((await env.SOTD.get('songsLast', 'json')) || {}).songs || []).forEach(take);
-  return answer(200, { songs: out });
+  const kept = (await env.SOTD.get('pvurl', 'json')) || {}, nolink = [...new Set(Object.values(pv).filter(v => /^i\d+$/.test(v)).map(v => v.slice(1)))].filter(k => !kept[k]);
+  return answer(200, { songs: out, nolink });
 }
 async function itunesServe(request, env, id) {   // /sp/i/<id>.m4a: R2's copy, or Apple's fetched and kept
   const head = { 'Content-Type': 'audio/mp4', 'Cache-Control': 'public, max-age=31536000, immutable', 'Access-Control-Allow-Origin': '*', 'Accept-Ranges': 'bytes' }, key = 'sp/i/' + id + '.m4a';
@@ -445,8 +459,8 @@ async function itunesServe(request, env, id) {   // /sp/i/<id>.m4a: R2's copy, o
     return new Response(o.body, { headers: Object.assign({}, head, { 'Content-Length': String(o.size) }) });
   };
   const had = await serve(); if (had) return had;
-  let u = '', said = '';   // (Apple's lookup asks the US store unless told: the UK, then the US)
-  for (const c of ['GB', 'US']) {
+  let u = (((await env.SOTD.get('pvurl', 'json')) || {})[id]) || '', said = 'kept link ' + (u ? 'yes' : 'none') + '; ';   // (the link kept when it was found; else Apple's lookup, which often refuses the Worker)
+  if (!u) for (const c of ['GB', 'US']) {
     const lr = await fetch('https://itunes.apple.com/lookup?id=' + id + '&country=' + c, { headers: { Accept: 'application/json' } }).catch(e => ({ ok: false, status: String(e && e.message || e) }));
     said += c + ' ' + lr.status + '; ';
     const j = lr.ok ? await lr.json().catch(() => null) : null;

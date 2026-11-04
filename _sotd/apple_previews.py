@@ -66,14 +66,32 @@ def find(s):
               and not (ODD.search(fold(y.get('trackName', '') + ' ' + y.get('collectionName', ''))) and not ODD.search(fold(s['title'])))]
         ok.sort(key=lambda y: 0 if fold(y['trackName']) == full else 1 if main_title(y['trackName']) == title else 2)
         if ok:
-            return 'i%d' % ok[0]['trackId']
+            return {'i': 'i%d' % ok[0]['trackId'], 'u': ok[0]['previewUrl']}
     return ''
 
 
 def main():
     if not os.environ.get('GITHUB_TOKEN'):
         print('no GITHUB_TOKEN'); sys.exit(1)
-    songs = worker()['songs']
+    got0 = worker()
+    songs = got0['songs']
+    # Apple's links for the ones found before they were kept (the Worker can't ask Apple itself: it's refused)
+    links = {}
+    for k, aid in enumerate(got0.get('nolink') or [], 1):
+        for country in ('GB', 'US'):
+            time.sleep(GAP)
+            try:
+                with urllib.request.urlopen(urllib.request.Request('https://itunes.apple.com/lookup?id=%s&country=%s' % (aid, country), headers={'User-Agent': UA}), timeout=30) as r:
+                    res = json.loads(r.read()).get('results') or []
+            except (OSError, ValueError):
+                res = []
+            if res and res[0].get('previewUrl'):
+                links[aid] = res[0]['previewUrl']; break
+        if len(links) >= 25:
+            worker({'links': links}); links = {}
+    if links:
+        worker({'links': links})
+    print(len(got0.get('nolink') or []), 'earlier Apple previews given their links', flush=True)
     print(len(songs), 'songs with no preview from Spotify', flush=True)
     found, asked, got = {}, [], 0
     for k, s in enumerate(songs, 1):
@@ -83,7 +101,7 @@ def main():
             break
         if r:
             found[s['id']] = r; got += 1
-            print(k, s['title'], '—', s['artist'], '→', r, flush=True)
+            print(k, s['title'], '—', s['artist'], '→', r['i'], flush=True)
         else:
             asked.append(s['id'])
         if len(found) + len(asked) >= 25:
