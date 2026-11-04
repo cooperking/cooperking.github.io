@@ -330,10 +330,16 @@ def _web_ask(name, key, q):
     return None
 
 
+WEB_AGAIN = os.environ.get('WEB_AGAIN', '').strip() == '1'   # (Run workflow: web_again: this week's misses searched again, worded differently)
+
+
 def web_lookup(s, tok):
     """The song's video from the first web search service with allowance left, as lookup's entry; None when there's none
     to ask (YouTube's search then, as before). An entry with no id: it found nothing that passes."""
-    q = clean_title(s['title']) + ' ' + (s.get('artists') or [s['artist']])[0]
+    lead = (s.get('artists') or [s['artist']])[0]
+    q = clean_title(s['title']) + ' ' + lead
+    if s.get('again'):   # (worded differently: the artist first, both quoted, the title without brackets or part number)
+        q = '"' + lead + '" "' + re.sub(r'\s*[(\[].*?[)\]]', '', clean_title(s['title'])).strip() + '"'
     for name, key in web_ready():
         most, per = next((m, p) for n, k, m, p in WEB if n == name)
         if not _web_take(name, most, per):   # (counted first; at its most: the next service)
@@ -348,6 +354,7 @@ def web_lookup(s, tok):
                 ids.append(m.group(1))
         e = {'n': s['n'], 'checked': datetime.date.today().isoformat(), 'from': 'web search (' + name + ')', 'sv': SCORE_V}
         if not ids:
+            print(s['n'], s['title'], '—', s['artist'], '| web search (' + name + '): no YouTube links in its results')
             e['id'] = None
             return e
         st = ytapi.get('videos', {'part': 'snippet', 'id': ','.join(ids[:20])}, tok, units=1)
@@ -357,7 +364,11 @@ def web_lookup(s, tok):
             c = {'id': it['id'], 'title': unescape(sn.get('title', '')), 'channel': sn.get('channelTitle', '')}
             c['score'], c['why'], c['kind'] = score(s, c)
             cands.append(c)
-        return choose(s, e, cands, tok)
+        e = choose(s, e, cands, tok)
+        if not e.get('id'):   # (why it missed, for the log: its best upload and what counted against it)
+            b = sorted(cands, key=lambda c: -c['score'])[:1]
+            print(s['n'], s['title'], '—', s['artist'], '| web search (' + name + '): none passed' + (' — best: ' + b[0]['title'] + ' | ' + b[0]['channel'] + ' | ' + str(b[0]['score']) + ' ' + ','.join(b[0]['why']) if b else ''))
+        return e
     return None
 
 
@@ -673,10 +684,13 @@ def main():
             prev = data['songs'].get(s['id'], {})
             s2 = dict(s, listId=prev.get('listId'), ms=ms.get(s['id']) or s.get('ms'), newest=s['n'] == newest)
             web_lately = False
-            try:
-                web_lately = (datetime.date.today() - datetime.date.fromisoformat(prev.get('web', '2000-01-01'))).days < 7
-            except ValueError:
-                pass
+            if WEB_AGAIN:
+                s2['again'] = 1   # (asked to: every one still waiting, the web searches again, worded differently)
+            else:
+                try:
+                    web_lately = (datetime.date.today() - datetime.date.fromisoformat(prev.get('web', '2000-01-01'))).days < 7
+                except ValueError:
+                    pass
             e = None if web_lately else web_lookup(s2, tok)   # (a web search first: no YouTube search spent when it finds it; one it missed this week: YouTube's search)
             if not (e and e.get('id')):
                 if e is not None and not web_lately:   # (the web searches missed it: not asked again for a week, so their allowance isn't spent on it every run)
