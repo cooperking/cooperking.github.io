@@ -1409,7 +1409,10 @@ async function members(request, url, env) {
     }
     case 'viewas': {   // see the calendar as a member (John, 4 Nov 2026: "log in as another member, so I can see what they see"): a pass for an hour, view only
       const m = all[body.id]; if (!m) return answer(404, { error: 'No such member.' });
-      const t = randomCode(32); await env.SOTD.put('viewas:' + await sha256hex(t), JSON.stringify({ id: body.id, until: Date.now() + 3600e3 }), { expirationTtl: 3600 });
+      const t = randomCode(32), h = await sha256hex(t);   // (a sign-in as them for an hour, as theirs: John, "it doesn't need to be view only")
+      m.devices = m.devices || {}; m.devices[h] = { at: Date.now(), viewas: true, until: Date.now() + 3600e3 };
+      for (const [k, d] of Object.entries(m.devices)) if (d.viewas && d.until < Date.now()) delete m.devices[k];
+      await env.SOTD.put('members', JSON.stringify(all));
       return answer(200, { token: t, name: m.name, url: SITE_SONGS + '?viewas=' + t });
     }
     case 'mailmode': {   // a member's email notifications set by John, when they ask him (John, 4 Nov 2026: "turn emails back on myself if requested by a member"): all, day, song, direct or off
@@ -1971,7 +1974,8 @@ async function memberMe(request, env, answer) {
   const id = Object.keys(all).find(k => all[k].devices && all[k].devices[hash]);
   if (!id) return answer(401, { error: 'Not a member (any more).' });
   const m = all[id], dev = m.devices[hash];
-  const did = deviceId(request.headers.get('X-Device'));
+  if (dev.viewas && dev.until < Date.now()) { delete m.devices[hash]; await env.SOTD.put('members', JSON.stringify(all)); return answer(401, { error: 'That hour as them is over.' }); }
+  const did = dev.viewas ? '' : deviceId(request.headers.get('X-Device'));   // (See as them: not one of their devices)
   let save = false;
   if (did && dev.did !== did) { dev.did = did; deviceTidy(all, hash, did); save = true; }   // says which device it is: earlier sign-ins there go
   if (deviceSays(dev, request)) save = true;   // which app it is, and what it runs on
@@ -2538,8 +2542,9 @@ async function memberIdFor(token, env) {
   if (!token) return null;
   const hash = await sha256hex(token);
   const all = (await env.SOTD.get('members', 'json')) || {};
-  const id = Object.keys(all).find(k => all[k].devices && all[k].devices[hash]) || null;
-  if (id) await seenTouch(env, hash);
+  let id = Object.keys(all).find(k => all[k].devices && all[k].devices[hash]) || null;
+  if (id && all[id].devices[hash].viewas && all[id].devices[hash].until < Date.now()) id = null;   // (See as them: over after its hour)
+  else if (id && !all[id].devices[hash].viewas) await seenTouch(env, hash);
   return id;
 }
 async function memberPlaylists(request, env, answer) {
@@ -3046,15 +3051,11 @@ async function memberWho(request, env) {   // { id, all } for a signed-in member
   if (!token) return null;
   const hash = await sha256hex(token), all = (await env.SOTD.get('members', 'json')) || {};
   const id = Object.keys(all).find(k => all[k].devices && all[k].devices[hash]);
-  if (!id) {   // John seeing the calendar as a member (Members page, See as them: an hour, view only)
-    const va = await env.SOTD.get('viewas:' + hash, 'json');
-    if (!va || !all[va.id] || va.until < Date.now()) return null;
-    if (request.method !== 'GET' && request.method !== 'HEAD') {   // (changes off: only what reads)
-      const path = new URL(request.url).pathname, op = String(((await request.clone().json().catch(() => ({}))) || {}).op || '');
-      const reads = { '/members/upl': ['jobs', 'splists', 'splist'], '/members/spotify': ['status', 'devices', 'log'], '/members/heart': [], '/members/bell': [] };
-      if (!(reads[path] || []).includes(op)) throw new HttpError(403, 'You’re seeing this as ' + all[va.id].name + ': changes are off.', { ro: true });
-    }
-    return { id: va.id, all, viewAs: true };
+  if (!id) return null;
+  const dv = all[id].devices[hash];
+  if (dv.viewas) {   // John's See as them: an hour; not counted as them being here
+    if (dv.until < Date.now()) { delete all[id].devices[hash]; await env.SOTD.put('members', JSON.stringify(all)); return null; }
+    return { id, all, viewAs: true };
   }
   await seenTouch(env, hash);
   return { id, all };
@@ -5409,6 +5410,8 @@ async function memberPush(request, env, answer) {
   if (request.method !== 'POST') return answer(405, { error: 'Use GET or POST.' });
   const member = await memberFromToken(request, env);
   if (!member) return answer(401, { error: 'Not a member (any more).' });
+  { const t0 = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, ''), h0 = await sha256hex(t0), all0 = (await env.SOTD.get('members', 'json')) || {};
+    if (all0[member] && all0[member].devices && all0[member].devices[h0] && all0[member].devices[h0].viewas) return answer(200, { ok: true, viewAs: true }); }   // (See as them: John's device keeps his own notifications)
   const body = await request.json().catch(() => ({}));
   if (body.apns) return memberApns(env, member, body, answer);
   const sub = body.sub || {}, endpoint = String(sub.endpoint || ''), keys = sub.keys || {};
