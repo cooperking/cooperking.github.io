@@ -445,13 +445,16 @@ async function itunesServe(request, env, id) {   // /sp/i/<id>.m4a: R2's copy, o
     return new Response(o.body, { headers: Object.assign({}, head, { 'Content-Length': String(o.size) }) });
   };
   const had = await serve(); if (had) return had;
-  let u = '';   // (found in the UK store mostly: Apple's lookup asks the US store unless told, so the UK first)
+  let u = '', said = '';   // (Apple's lookup asks the US store unless told: the UK, then the US)
   for (const c of ['GB', 'US']) {
-    const j = await (await fetch('https://itunes.apple.com/lookup?id=' + id + '&country=' + c).catch(() => null))?.json().catch(() => null);
+    const lr = await fetch('https://itunes.apple.com/lookup?id=' + id + '&country=' + c, { headers: { Accept: 'application/json' } }).catch(e => ({ ok: false, status: String(e && e.message || e) }));
+    said += c + ' ' + lr.status + '; ';
+    const j = lr.ok ? await lr.json().catch(() => null) : null;
     u = (j && j.results && j.results[0] && j.results[0].previewUrl) || ''; if (u) break;
   }
-  if (!u || !/^https:\/\/[\w.-]+\.(apple|mzstatic)\.com\//.test(u)) return new Response('Not here.', { status: 404, headers: { 'Access-Control-Allow-Origin': '*' } });
-  const r = await fetch(u).catch(() => null); if (!r || !r.ok) return new Response('Not here.', { status: 404, headers: { 'Access-Control-Allow-Origin': '*' } });
+  const no = why => new Response('Not here (' + why + ').', { status: 404, headers: { 'Access-Control-Allow-Origin': '*' } });
+  if (!u || !/^https:\/\/[\w.-]+\.(apple|mzstatic)\.com\//.test(u)) return no('lookup: ' + said + (u ? 'odd address' : 'no preview'));
+  const r = await fetch(u).catch(() => null); if (!r || !r.ok) return no('preview ' + (r ? r.status : 'unreachable'));
   const b = await r.arrayBuffer(); if (!b.byteLength || b.byteLength > 5e6) return new Response('Not here.', { status: 404 });
   if (env.MEDIA) await env.MEDIA.put(key, b, { httpMetadata: { contentType: 'audio/mp4' } }).catch(() => {});
   return (await serve()) || new Response(b, { headers: head });
