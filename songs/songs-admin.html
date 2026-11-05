@@ -199,6 +199,8 @@ body.dropping::after { content: 'Drop to match them (nothing goes up yet)'; posi
       <button type="button" data-show="still" aria-pressed="false">Still picture<span class="n" id="n-still"></span></button>
       <button type="button" data-show="noa" aria-pressed="false">No MP3<span class="n" id="n-noa"></span></button>
       <button type="button" data-show="nov" aria-pressed="false">No MP4<span class="n" id="n-nov"></span></button>
+      <button type="button" data-show="noyt" aria-pressed="false">No video<span class="n" id="n-noyt"></span></button>
+      <button type="button" data-show="nopv" aria-pressed="false">No preview<span class="n" id="n-nopv"></span></button>
     </div>
     <div class="row">
       <input type="search" id="q" placeholder="Find a song" autocomplete="off" aria-label="Find a song or artist">
@@ -657,12 +659,15 @@ body.dropping::after { content: 'Drop to match them (nothing goes up yet)'; posi
   function redraw(s) { var old = list.querySelector('[data-id="' + s.id + '"]'); if (old) { var c = card(s); old.replaceWith(c); fitAll(c); } }
 
   // ---- the list ----
+  // no YouTube video, no preview (John, 5 Nov 2026: "I need other missing items here too"), his songs and members' alike
+  function hasYt(s) { return s.m ? !!((JOHN[s.id] && JOHN[s.id].v) || (s.vid && s.vid.v)) : !!(VIDS[s.id] || {}).v; }
+  function missing(s) { return (show === 'noyt' && hasYt(s)) || (show === 'nopv' && !!s.p); }
   function visible(s) {
     if (s.m) {   // a member song: in All, Member Songs, Waiting (its facts), Still picture, No MP3 and No MP4
       var me = CAT[s.id] || {}, mq = $('q').value.trim().toLowerCase(), mm = $('month').value;
       if (show === 'check' || show === 'none' || show === 'files') return false;
       if (show === 'waiting' && state(s).st !== 'waiting') return false;
-      if ((show === 'noa' && me.a) || (show === 'nov' && me.v) || (show === 'still' && !stillPic(s))) return false;
+      if ((show === 'noa' && me.a) || (show === 'nov' && me.v) || (show === 'still' && !stillPic(s)) || missing(s)) return false;
       if (mm && s.d.slice(0, 7) !== mm) return false;
       return !mq || (s.title + ' ' + s.artist + ' ' + s.cals.map(function (c) { return c.o + ' ' + c.t + ' ' + c.n + (c.oj ? ' you yours' : ''); }).join(' ')).toLowerCase().indexOf(mq) >= 0;
     }
@@ -670,7 +675,7 @@ body.dropping::after { content: 'Drop to match them (nothing goes up yet)'; posi
     var st = state(s).st, q = $('q').value.trim().toLowerCase(), m = $('month').value, e = CAT[s.id] || {};
     if (show === 'check' && !toCheck(s)) return false;
     if (show === 'files' && !e.a && !e.v && !COVERS[s.id]) return false;
-    if ((show === 'noa' && e.a) || (show === 'nov' && e.v)) return false;
+    if ((show === 'noa' && e.a) || (show === 'nov' && e.v) || missing(s)) return false;
     if (show === 'still' && !stillPic(s)) return false;   // songs with no recording or no video of yours up
     if (['waiting', 'signed', 'none'].indexOf(show) >= 0 && st !== show) return false;
     if (m && dayOf(s.a).month !== m) return false;
@@ -886,7 +891,8 @@ body.dropping::after { content: 'Drop to match them (nothing goes up yet)'; posi
     songs.forEach(function (s) { c[state(s).st]++; if (toCheck(s)) chk++; var e = CAT[s.id] || {}; if (e.a || e.v) files++; if (!e.a) noa++; if (!e.v) nov++; });
     var mwait = 0; MSONGS.forEach(function (s) { var e = CAT[s.id] || {}; if (!e.a) noa++; if (!e.v) nov++; if (state(s).st === 'waiting') mwait++; });
     c.waiting += mwait;
-    var n0 = { noa: noa, nov: nov, still: songs.filter(stillPic).length + MSONGS.filter(stillPic).length, waiting: c.waiting, check: chk, none: c.none, members: MSONGS.length };
+    var noyt = songs.concat(MSONGS).filter(function (s) { return !hasYt(s); }).length, nopv = songs.concat(MSONGS).filter(function (s) { return !s.p; }).length;
+    var n0 = { noa: noa, nov: nov, noyt: noyt, nopv: nopv, still: songs.filter(stillPic).length + MSONGS.filter(stillPic).length, waiting: c.waiting, check: chk, none: c.none, members: MSONGS.length };
     Object.keys(n0).forEach(function (k) {   // a list with nothing in it isn't shown (John, 28 Oct 2026); All is shown instead
       $('n-' + k).textContent = n0[k];
       var b = document.querySelector('[data-show="' + k + '"]'); b.hidden = !n0[k];
