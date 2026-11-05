@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="b5a6be900c50">
+<meta name="sotd-build" content="b952db8cf4c2">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -4120,7 +4120,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       spxConfirm(id, dev, function (ok, k) {
         if (ok) {
           SPX.playing = true; SPX.pos = k.pos; SPX.at = Date.now(); SPX.dur = k.dur || 0; SPX.dev = { id: dev.id, name: k.device || dev.name }; SPX.last = dev;
-          spxShowDev(); coverState(1); spxWatch(); return;
+          spxShowDev(); coverState(1); spxWatch(); spPickCheck(k.did || dev.id); return;
         }
         if (SPX.last && SPX.last.id === dev.id) SPX.last = null;
         spCall({ op: 'pause' }).catch(function () {});   // (so it can't start there late, beside the preview)
@@ -4173,7 +4173,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
           if (j.playing && byTrack[j.track]) { spxRefollow('another song of the calendar'); return; }   // (another device, say: followed, not fought)
           SPX.other = true; SPX.playing = false; clearInterval(SPX.poll); coverState(2); return;   // (something else chosen in Spotify itself: left playing, no longer followed; Play here sends this song again)
         }
-        if (j.device && (!SPX.dev || SPX.dev.name !== j.device)) { SPX.dev = { id: j.did || '', name: j.device }; spxShowDev(); }   // (moved in Spotify itself)
+        if (j.device && (!SPX.dev || SPX.dev.name !== j.device)) { SPX.dev = { id: j.did || '', name: j.device }; spxShowDev(); if (spPickCheck(j.did)) return; }   // (moved in Spotify itself)
         var was = SPX.playing;
         SPX.pos = j.pos; SPX.at = Date.now(); SPX.dur = j.dur || SPX.dur; SPX.playing = j.playing;
         if (!j.playing && (j.pos === 0 || (SPX.native && j.dur && j.pos >= j.dur - 1500)) && SPX.list[SPX.list.length - 1] === SPX.track) { SPX.playing = false; coverState(0); return; }   // (the last one over)
@@ -4236,6 +4236,17 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function spNo(id) { if (!id || SPNO[id]) return; SPNO[id] = Date.now(); try { localStorage.setItem('sotd-spno', JSON.stringify(SPNO)); } catch (e) {} }
   function devKind() { var u = navigator.userAgent || ''; return /iPad|Tablet/.test(u) || (/Macintosh/.test(u) && navigator.maxTouchPoints > 1) || (/Android/.test(u) && !/Mobi/.test(u)) ? 'tablet' : /Mobi|iPhone|Android/.test(u) ? 'phone' : 'computer'; }
   function spHere() { var x = SPM.st || {}; return spOn() && (!x.kinds || x.kinds.indexOf(devKind()) !== -1); }   // (on the kinds of device they chose: John, 4 Nov 2026, "only on certain devices")
+  // the speaker chosen no longer the one Spotify plays on (turned off, or moved to the phone in Spotify itself): back to
+  // their own setting, the song here from its file if that's what they chose (John, 5 Nov 2026: "It should revert to
+  // normal when a Spotify speaker isn't in use")
+  function spPickCheck(did) {
+    if (!SPX.pick || SPX.pickPhone || !did || did === SPX.pick) return false;
+    SPX.pick = ''; SPX.pickPhone = false; try { sessionStorage.removeItem('sotd-spdev'); } catch (e) {}
+    spLog('the chosen speaker isn’t playing any more: back to your own setting'); spkDraw();
+    var s = songOf(SPX.track);
+    if (coverObj && coverObj.sp && s && !spCan(s)) { var id = SPX.track; spCall({ op: 'pause' }).catch(function () {}); spxFallback(id, 'played here', true); toast('Playing on this ' + nowLabel()); return true; }
+    return false;
+  }
   function spPicked() { return spOn() && !!SPX.pick && !SPX.pickPhone; }   // (one of their Spotify speakers chosen for this visit: every song plays there, whatever they chose in Profile: John, 5 Nov 2026)
   function spCan(s) {   // this song through their Spotify: on, on this kind of device, as they chose (every song, or only those with no MP3, or no MP3 and no video), and not one it couldn't play
     var x = SPM.st || {}, w = x.when || 'all', picked = spPicked();
