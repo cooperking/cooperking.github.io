@@ -636,9 +636,9 @@ def main():
     import urllib.request
     with urllib.request.urlopen(urllib.request.Request(SONGS_URL, headers={'User-Agent': ytapi.UA}), timeout=30) as r:
         songs = json.loads(r.read())['songs']
-    # a member's song with an MP4 already (its own, or another copy's: the Worker marks it mp4) isn't searched for:
-    # its MP4 is its video (John, 5 Nov 2026: songs with MP3s and MP4s on other playlists still in the search)
-    songs = [s for s in songs if not (s.get('upl') and s.get('mp4') and not (data['songs'].get(s['id']) or {}).get('id'))]
+    # a member's song with an MP4 already (its own, or another copy's: the Worker marks it mp4) is still given a YouTube
+    # video, as a backup (John, 5 Nov 2026: "I want YouTube there as a backup"), but searched for after the songs with
+    # nothing (todo, below)
     undone = 0
     for s in songs:   # videos a web search found that today's matching wouldn't take (God Like by Tree, as a Darkseid video): searched for again
         e = data['songs'].get(s['id'])
@@ -699,13 +699,13 @@ def main():
     except Exception as x:   # (the free ways can wait for the next run; the search goes on)
         print('the free ways failed this run:', x)
         pending = {s['id'] for s in songs if s.get('upl')}
-    todo = [s for s in songs if 'ov' not in s and s['id'] not in pending and (s['id'] not in data['songs'] or due(data['songs'][s['id']]))]   # (ov: a member's own choice for their song)
+    todo = [s for s in songs if 'ov' not in s and s['id'] not in pending and (s['id'] not in data['songs'] or due(data['songs'][s['id']]))]
     newest = max((s['n'] for s in songs if not s.get('upl')), default=None)
     turn, seen = {}, {}
     for s in sorted((s for s in todo if s.get('upl')), key=lambda s: -s['n']):   # members' songs take turns: each playlist's newest, then each one's next
         seen[s['upl']] = seen.get(s['upl'], 0) + 1; turn[s['id']] = seen[s['upl']]
     again = lambda s: (data['songs'].get(s['id']) or {}).get('from') == 'YouTube search'   # (looked for before: after the new ones)
-    todo.sort(key=lambda s: (bool(s.get('upl')), again(s), turn.get(s['id'], 0), -s['n']))   # today's song first, and it may use the searches kept back for it; members' songs after John's
+    todo.sort(key=lambda s: (bool(s.get('upl')), bool(s.get('mp4')), again(s), turn.get(s['id'], 0), -s['n']))   # (an MP4 already: a backup, after those with nothing)   # today's song first, and it may use the searches kept back for it; members' songs after John's
     print(f'{len(todo)} songs to search YouTube for; {ytapi.ledger()["used"]} units used today')
     yt_out = False
     try:
