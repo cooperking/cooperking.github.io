@@ -212,7 +212,8 @@
       var res = r.st !== 'completed' ? ['going', r.st === 'queued' ? 'Waiting' : 'Running'] : (RES[r.res] || ['', r.res || r.st]);
       if (r.bad && r.ack) res = ['dealt', 'Dealt with'];
       out.push(item({ at: r.st === 'completed' ? r.end || r.at : r.at, title: r.name, what: 'job on GitHub, run ' + r.n, st: r.bad ? 'bad' : res[0],
-        badge: res, say: r.failed ? (r.steps && r.steps.length ? 'Stopped at: ' + r.steps.join(', ') : 'It failed') + (r.bad ? '' : ' · run again since (see its later run)') : '', url: r.url, dealt: r.bad ? r : null }));
+        badge: res, say: r.failed ? (r.steps && r.steps.length ? 'Stopped at: ' + r.steps.join(', ') : 'It failed') + (r.bad ? '' : ' · run again since (see its later run)') : '', url: r.url, dealt: r.bad ? r : null,
+        more: (r.why || []).map(function (x) { return el('span', 'err', x); }) }));   // (the download job's own last lines, from its log in the bucket)
     });
     (j.mails || []).forEach(function (e) {   // emails sent from your Gmail: sign-in codes, and tests
       out.push(item({ at: e.at, title: e.what === 'code' ? 'Email: a sign-in code' : 'Email: a test', what: 'to ' + e.to, by: { t: 'your Gmail' },

@@ -849,6 +849,13 @@ async function jobRuns(env, repo) {   // every run of the last two days (John, 2
       if (!r.steps.length) r.steps = (jj.jobs || []).filter(x => BAD_RUN.includes(x.conclusion)).map(x => x.name);
     } catch (e) {}
   }));
+  if (repo === R2_REPO && env.MEDIA) {   // the download job's public log says nothing (John, 4 Nov 2026): why it stopped, from its own log in the bucket
+    const r = out.find(x => x.failed && !x.later);
+    if (r) try {
+      const o = await env.MEDIA.get('playlist-r2/last-run.log');
+      if (o && Math.abs(o.uploaded.getTime() - Date.parse(r.end)) < 15 * 60e3) r.why = (await o.text()).split('\n').map(x => x.trim()).filter(x => x && !/^\+ |^(Reading|Building|Get:|Hit:|Fetched|Selecting|Preparing|Unpacking|Setting up|Processing)/.test(x)).slice(-12);
+    } catch (e) {}
+  }
   return out;
 }
 async function runHistory(env, wf, n) {   // a job's recent runs, to say which run did each step of a song
