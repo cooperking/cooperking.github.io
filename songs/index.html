@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="sotd-build" content="022892175aa4">
+<meta name="sotd-build" content="a5e4407467f8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 269 so far">
 <meta name="theme-color" content="#ec135b">
@@ -3055,7 +3055,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     }
   }
   function castPick() {
-    if (spOn() && !TV) { spSpeakers(); return; }   // (their Spotify on: its speakers here, with the phone's own AirPlay or Cast list: John, 3 Nov 2026, "with the speaker icon", not Profile)
+    // one list of speakers (John, 5 Nov 2026: "no separation between the airplay and Spotify. The original airplay or cast
+    // looks better so use that. Just plug speakers there"): this device, Chromecasts, AirPlay, and their Spotify ones
+    if (!TV && (NCAST || spOn())) { castSheet(); return; }
     castNative();
   }
   function castNative() {
@@ -3750,7 +3752,11 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   function spSpeakers() {   // the speaker icon: where songs play: their Spotify devices (moved there now if playing), this device, or AirPlay or Cast
     var playingSp = coverObj && coverObj.sp && SPX.playing;
-    spDevPick(null, playingSp ? 'Playing on ' + ((SPX.dev && SPX.dev.name) || 'your Spotify') + '. Play it on:' : 'Play songs on:', function (d) {
+    spDevPick(null, playingSp ? 'Playing on ' + ((SPX.dev && SPX.dev.name) || 'your Spotify') + '. Play it on:' : 'Play songs on:', spChoose, null, [{ here: true, name: 'This ' + nowLabel() }].concat(castAvail || NCAST ? [{ cast: true, name: AIRPLAY ? 'AirPlay speaker…' : 'Cast speaker…' }] : []));
+  }
+  function spChoose(d) {   // one chosen: this device (d.here), the phone's own list (d.cast), or one of their Spotify devices
+    var playingSp = coverObj && coverObj.sp && SPX.playing;
+    (function () {
       if (d.here) {   // this device, its own player: Spotify paused where it was, the song on here
         SPX.pick = ''; SPX.pickPhone = false; try { sessionStorage.removeItem('sotd-spdev'); } catch (e) {}
         if (playingSp) { var id = SPX.track; spCall({ op: 'pause' }).catch(function () {}); spxFallback(id, 'played here', true); }
@@ -3761,7 +3767,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       else if (vplay && vplay.cover && vplay.el && vplay.el.sotd && !audio.paused && spCan(vplay.el.sotd.s)) {   // a song playing here from its file: moved to the speaker now, from the same place
         var el = vplay.el, at = carryAt(el); watch(el, coverVd(el.sotd.s)); carryTo(el, at); toast('Playing on ' + d.name);
       } else toast('Songs play on ' + d.name);
-    }, null, [{ here: true, name: 'This ' + nowLabel() }].concat(castAvail || NCAST ? [{ cast: true, name: AIRPLAY ? 'AirPlay speaker…' : 'Cast speaker…' }] : []));
+    })();
   }
   function spDevChange() {   // the chip tapped: move what's playing to another of their devices
     spDevPick(null, 'Playing on ' + ((SPX.dev && SPX.dev.name) || 'your Spotify') + '. Move it to another of your devices:', function (d) {
@@ -7484,6 +7490,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   var PHONE_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></svg>';
   var AIR_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 17H4.5A2 2 0 0 1 2.5 15V5.5a2 2 0 0 1 2-2h15a2 2 0 0 1 2 2V15a2 2 0 0 1-2 2H18"/><path d="M12 14.5 7.5 20.5h9z"/></svg>';
   var CC_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 8V6a2 2 0 0 1 2-2h15a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6"/><path d="M2.5 12a8 8 0 0 1 8 8M2.5 16a4 4 0 0 1 4 4"/><circle cx="3" cy="20" r=".6" fill="currentColor"/></svg>';
+  var MAC_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="11" rx="1.5"/><path d="M2 19h20"/></svg>';
+  var SPK_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="3" width="12" height="18" rx="2"/><circle cx="12" cy="14" r="3.2"/><circle cx="12" cy="7.2" r="1"/></svg>';
   var TICK_ICON = '<svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
   function ccSong() { return (vplay && vplay.el && vplay.el.sotd && vplay.el.sotd.s) || (playing && playing.s) || null; }
   function ccUrl() {   // the song the page's audio is playing, if a speaker can fetch it
@@ -7517,9 +7525,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (r.connected && !castCC) { castCC = { name: r.name, state: 'connected' }; ccOn(); }
     castList();
   }
+  var castSp = null;   // their Spotify speakers, for the list (asked of Spotify as it opens)
   function castList() {
-    if (!NCAST) return;
     var ul = document.getElementById('castdevs'); ul.textContent = '';
+    var spNow = !!(coverObj && coverObj.sp && SPX.playing), spDevId = spNow && SPX.dev ? SPX.dev.id : SPX.pick && !SPX.pickPhone ? SPX.pick : '';
     var air = castNow && castKind !== 'cc';
     function row(icon, name, sub, on, go) {
       var li = document.createElement('li'), b = document.createElement('button'); b.type = 'button'; b.className = on ? 'on' : '';
@@ -7527,12 +7536,24 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       b.querySelector('b').textContent = name; b.querySelector('.cn span').textContent = sub || '';
       b.addEventListener('click', go); li.appendChild(b); ul.appendChild(li);
     }
-    row(PHONE_ICON, IPAD ? 'This iPad' : 'This iPhone', '', !castNow, function () {
+    row(PHONE_ICON, 'This ' + nowLabel(), '', !castNow && !spDevId, function () {
       closeDialog(castDlg);
+      if (spDevId) spChoose({ here: true });
       if (castKind === 'cc') NCAST.disconnect().catch(function () {});
       else if (air) try { audio.webkitShowPlaybackTargetPicker(); } catch (e) {}   // (only Apple's own list takes AirPlay off)
     });
-    castDevs.forEach(function (d) {
+    (castSp || []).forEach(function (d) {   // their Spotify ones, beside the rest (not the phone it's on, nor ones Spotify won't let be worked from here)
+      if (d.restricted || (d.type === spKind() && /Smartphone|Tablet/.test(d.type) && !d.active)) return;
+      var on = spDevId === d.id;
+      row(/Computer/.test(d.type) ? MAC_ICON : /Smartphone|Tablet/.test(d.type) ? PHONE_ICON : SPK_ICON, d.name, on && spNow ? 'Playing here' : on ? 'Songs play here' : d.active ? 'Playing now' : '', on, function () {
+        closeDialog(castDlg);
+        if (on) return;
+        if (castKind === 'cc') NCAST.disconnect().catch(function () {});
+        SPX.pick = d.id; SPX.pickPhone = d.type === spKind(); try { sessionStorage.setItem('sotd-spdev', d.id); } catch (e) {}
+        spChoose(d);
+      });
+    });
+    if (NCAST) castDevs.forEach(function (d) {
       var on = !!castCC && castCC.name === d.name;
       row(CC_ICON, d.name, on && castCC.state === 'connecting' ? 'Connecting…' : on ? 'Playing here' : d.model, on && castCC.state === 'connected', function () {
         if (on) { closeDialog(castDlg); return; }
@@ -7542,21 +7563,25 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     });
     if (AIRPLAY) row(AIR_ICON, 'AirPlay', air ? 'Playing on AirPlay' : 'HomePod, Apple TV and AirPlay speakers', air, function () {
       closeDialog(castDlg);
+      if (spDevId) spChoose({ here: true });
       if (castKind === 'cc') NCAST.disconnect().catch(function () {});
       try { audio.webkitShowPlaybackTargetPicker(); } catch (e) {}
     });
-    document.getElementById('castnote').textContent = castDevs.length ? '' : Date.now() - (castSheet.at || 0) < 6500 ? 'Looking for Chromecasts on the Wi-Fi…'
+    else if (!NCAST && RPLAY && castAvail) row(CC_ICON, 'Cast', castNow ? 'Playing on a speaker' : 'Chromecasts and Google speakers', castNow, function () { closeDialog(castDlg); if (spDevId) spChoose({ here: true }); castNative(); });
+    document.getElementById('castnote').textContent = !NCAST ? (castSp === null && spOn() ? 'Looking for your speakers…' : '') : castDevs.length || (castSp || []).length ? '' : Date.now() - (castSheet.at || 0) < 6500 ? 'Looking for speakers on the Wi-Fi…'
       : 'No Chromecasts found on this Wi-Fi. If there is one, check Settings › Song of the Day › Local Network is on.';
   }
   function castSheet() {
     try { localStorage.setItem('sotd-castok', '1'); } catch (e) {}
     castSheet.at = Date.now();
-    NCAST.start().then(ccStarted, function () {});
+    if (NCAST) NCAST.start().then(ccStarted, function () {});
+    castSp = spOn() ? null : [];
+    if (spOn()) spCall({ op: 'devices' }).then(function (j) { castSp = j.devices || []; if (castDlg.open) castList(); }, function () { castSp = []; if (castDlg.open) castList(); });
     castList(); openLayer(castDlg);
     clearTimeout(castSheet.t); castSheet.t = setTimeout(castList, 7000);
   }
+  document.getElementById('castclose').addEventListener('click', function () { closeDialog(castDlg); });
   if (NCAST) {
-    document.getElementById('castclose').addEventListener('click', function () { closeDialog(castDlg); });
     NCAST.addListener('devices', function (e) { castDevs = (e && e.devices) || []; castList(); });
     NCAST.addListener('session', function (e) {
       var st = e && e.state;
