@@ -583,6 +583,11 @@ html.upl-list .side-acts .listbtn { display: inline-grid; }
 .viewasbar { position: fixed; z-index: 2147483000; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 8px); transform: translateX(-50%); display: flex; align-items: center; gap: 10px; padding: 6px 6px 6px 14px; border-radius: 999px; background: #e23a6e; color: #fff; font: 600 13px/1.2 var(--sans); box-shadow: 0 6px 20px rgba(0,0,0,.3); max-width: calc(100vw - 24px); }
 .viewasbar button { border: 0; border-radius: 999px; padding: 6px 12px; background: #fff; color: #1b1020; font: 600 12px var(--sans); cursor: pointer; white-space: nowrap; }
 .imp-why { margin: 0 0 10px; font-size: 13px; line-height: 1.45; color: #e23a6e; }
+.uplprog-rows .whichl li.srow { display: flex; gap: 6px; align-items: stretch; }
+.uplprog-rows .whichl li.srow > button:first-child { flex: 1; min-width: 0; }
+.uplprog-rows .whichl li a.srch { flex: none; align-self: center; padding: 6px 11px; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--line); color: var(--fg); font: 600 12px/1.2 var(--sans); text-decoration: none; }
+a.srchpill { padding: 5px 12px; border-radius: 999px; background: var(--pill-bg); box-shadow: inset 0 0 0 1px var(--line); color: var(--fg); font: 600 12px var(--sans); text-decoration: none; }
+#upledsrch { color: inherit; font-weight: 600; }
 .dlwhy { display: block; margin-top: 4px; font-size: 12.5px; line-height: 1.4; color: var(--muted); white-space: normal; }
 .dlwhy.gone, .dlwhy.blocked { color: #e23a6e; }
 .dlacts { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 8px; }
@@ -2344,6 +2349,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         <label><input type="radio" name="upledv" value="none"><span><b>No video</b>Just the song.</span></label>
       </div>
       <label class="upld-day" id="upledlinkl" hidden><span>Link</span><input type="url" id="upledlink" inputmode="url" autocomplete="off" placeholder="https://youtu.be/…"></label>
+      <p class="upled-note"><a id="upledsrch" target="_blank" rel="noopener">Search for it on Google ↗</a> to find its video, then paste its YouTube link.</p>
       <div class="upled-yt" id="upledyt" hidden><img id="upledyti" alt=""><a id="upledyta" target="_blank" rel="noopener">Watch it on YouTube ↗</a></div>
     </section>
     <section class="upled-sec" aria-labelledby="upledfh">
@@ -8264,6 +8270,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       jobLook(draw);
     }, 15e3);
   }
+  // a Google search for the song (its artist and title), for a video the site couldn't find (John, 5 Nov 2026)
+  function songSearchUrl(x) { return 'https://www.google.com/search?q=' + encodeURIComponent(((x.artist || '') + ' ' + (x.title || '')).trim()); }
+  function searchLink(x, cls) { var a = document.createElement('a'); a.className = cls || 'srch'; a.href = songSearchUrl(x); a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'Search'; a.setAttribute('aria-label', 'Search Google for ' + x.title); a.addEventListener('click', function (e) { e.stopPropagation(); }); return a; }
   function uplWhich(li, x, ids, left) {   // the songs a part found nothing for, a tap away (John, 1 Nov 2026: "can we have it say which ones they are")
     var key = x.w + (left ? 'l' : ''), open = !!PROG.open && PROG.open[key];
     var label = function (o) { return (o ? 'Hide' : left ? 'Show which are left' : 'Show which') + (ids.length > 1 ? ' (' + ids.length + ')' : ''); };
@@ -8284,6 +8293,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         if (s.d && byDate[s.d] && byDate[s.d].some(function (p) { return p.track === t; })) openDay(s.d, { track: t }); else mineUplOpen(UPL.on, { track: t });
       });
       it.appendChild(a);
+      if (x.w === 'v' && !left) { it.classList.add('srow'); it.appendChild(searchLink(s, 'stop srch')); }   // (none found: look for it yourself)
       if (left) {
         var st = document.createElement('button'); st.type = 'button'; st.className = 'stop'; st.textContent = 'Stop looking';
         st.setAttribute('aria-label', 'Stop looking for ' + s.title);
@@ -8400,6 +8410,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         upledOpen(cs && cs.upl === UPL.on ? cs : uplSongMap(x, UPL.view), MISS.k);
       });
       li.appendChild(b);
+      if (m.k === 'v' && i >= looking.length) { var sa = document.createElement('div'); sa.className = 'dlacts'; sa.appendChild(searchLink(x, 'srchpill')); li.appendChild(sa); }   // (none found: a Google search for it)
       if (dx) {   // Try again, and Add my own copy
         var acts = document.createElement('div'); acts.className = 'dlacts';
         var tr = document.createElement('button'); tr.type = 'button'; tr.textContent = 'Try again';
@@ -9024,6 +9035,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var how = !('ov' in s) ? 'found' : s.ov ? 'link' : 'none';
     [].forEach.call(document.querySelectorAll('input[name="upledv"]'), function (r) { r.checked = r.value === how; });
     document.getElementById('upledlink').value = s.ov ? 'https://youtu.be/' + s.ov : '';
+    document.getElementById('upledsrch').href = songSearchUrl(s);
     var jo = s.jo || {};   // (what John has chosen for it on the Songs tab: his, not to change here)
     document.getElementById('upledvj').hidden = !jo.v; document.getElementById('upledmj').hidden = !jo.m; document.getElementById('upledgj').hidden = !jo.g;
     [].forEach.call(document.querySelectorAll('input[name="upledv"]'), function (r) { r.disabled = !!jo.v; });
