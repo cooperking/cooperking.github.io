@@ -1,0 +1,23 @@
+name: Diagnose (temporary)
+on: workflow_dispatch
+permissions:
+  contents: read
+jobs:
+  d:
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import json, os, urllib.request
+          r = urllib.request.Request('https://sotd-playlists.cooperking.workers.dev/upl/sync', headers={'Authorization': 'Bearer ' + os.environ['GITHUB_TOKEN'], 'User-Agent': 'SongOfTheDayCalendar/1.0'})
+          d = json.loads(urllib.request.urlopen(r, timeout=60).read())
+          for pid, p in d.items():
+              if not isinstance(p, dict) or 'songs' not in p: continue
+              s = p['songs']
+              if not pid.startswith('owB'): continue
+              print('playlist', pid[:6], 'songs', len(s))
+              for x in s:
+                  print(' ov' if 'ov' in x else ' -', repr(x.get('ov'))[:4] if 'ov' in x else '', 'mp4' if x.get('mp4') else '', 'retry' if x.get('retry') else '')
+          PY
