@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="15f61c687be8">
+<meta name="sotd-build" content="67cb4bbaebf1">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -3053,7 +3053,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     SPKS.at = Date.now();
     spCall({ op: 'devices' }).then(function (j) { SPKS.list = spUsable(j.devices || []); spkDraw(); }, function () {});
   }
-  function spkDraw() {
+  function spkDraw() { try { spkDraw0(); } catch (e) {} }   // (never stops the page: John, 5 Nov 2026, it did, as it started)
+  function spkDraw0() {
     if (typeof SPKS === 'undefined' || !SPKS) return;   // (before it's set up: the first draw)
     var more = !TV && (castAvail || castNow || (!!NCAST && (castDevs || []).length > 0) || (spOn() && SPKS.list.length > 0));
     var on = castNow || (typeof SPX !== 'undefined' && !!SPX.pick && !SPX.pickPhone);
@@ -10811,7 +10812,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // every song played as a song plays through their own Spotify (Spotify Connect, the Worker's /members/spotify), whether
   // or not it has an MP3; videos stay videos. Premium only (Spotify's rule); Spotify open on one of their devices. ----
   var SPM = { st: null, busy: false };
-  function spOn() { var x = SPM.st; return !!(MEMBER && x && x.linked && x.on && !x.blocked && !x.gone && x.product === 'premium' && !TV); }
+  function spOn() { var x = typeof SPM !== 'undefined' && SPM ? SPM.st : null;   // (asked before it's set up too: the speaker button, as the page starts)
+    return !!(MEMBER && x && x.linked && x.on && !x.blocked && !x.gone && x.product === 'premium' && !TV); }
   function spCall(body) {
     return fetch(MBASE + '/members/spotify', { method: 'POST', headers: { Authorization: 'Bearer ' + plTok(), 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { j.status = r.status; return j; }); });
