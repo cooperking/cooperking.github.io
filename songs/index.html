@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="sotd-build" content="32ce95377edd">
+<meta name="sotd-build" content="342e97b3f627">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 269 so far">
 <meta name="theme-color" content="#ec135b">
@@ -2229,7 +2229,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     <p class="msgv-b" id="msgb"></p>
     <figure class="msgv-pic" id="msgpicf" hidden><img id="msgpic" alt=""></figure>
     <div class="msgrx" id="msgrx" hidden><div class="rxchips" id="msgrxc"></div><div class="rxpick" id="msgrxp" role="group" aria-label="React"></div></div>
-    <div class="ask-acts" id="msgacts" hidden><button class="copy" id="msgreply" type="button">Reply</button></div>
+    <div class="ask-acts" id="msgacts" hidden><button class="copy" id="msggo" type="button" hidden>Open the song</button><button class="copy" id="msgreply" type="button">Reply</button></div>
   </div>
 </dialog>
 <dialog id="belldlg" aria-labelledby="bellh">
@@ -3758,7 +3758,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       }
       if (d.cast) { castNative(); return; }
       if (playingSp) spCall({ op: 'transfer', device: d.id }).then(function (j) { if (j.status === 200) { SPX.dev = { id: d.id, name: d.name }; spxMovedTo(d); spxShowDev(); toast('Playing on ' + d.name); } else toast(j.error || 'Spotify didn’t move it'); });
-      else toast('Songs play on ' + d.name);
+      else if (vplay && vplay.cover && vplay.el && vplay.el.sotd && !audio.paused && spCan(vplay.el.sotd.s)) {   // a song playing here from its file: moved to the speaker now, from the same place
+        var el = vplay.el, at = carryAt(el); watch(el, coverVd(el.sotd.s)); carryTo(el, at); toast('Playing on ' + d.name);
+      } else toast('Songs play on ' + d.name);
     }, null, [{ here: true, name: 'This ' + nowLabel() }].concat(castAvail || NCAST ? [{ cast: true, name: AIRPLAY ? 'AirPlay speaker…' : 'Cast speaker…' }] : []));
   }
   function spDevChange() {   // the chip tapped: move what's playing to another of their devices
@@ -4204,9 +4206,11 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function spNo(id) { if (!id || SPNO[id]) return; SPNO[id] = Date.now(); try { localStorage.setItem('sotd-spno', JSON.stringify(SPNO)); } catch (e) {} }
   function devKind() { var u = navigator.userAgent || ''; return /iPad|Tablet/.test(u) || (/Macintosh/.test(u) && navigator.maxTouchPoints > 1) || (/Android/.test(u) && !/Mobi/.test(u)) ? 'tablet' : /Mobi|iPhone|Android/.test(u) ? 'phone' : 'computer'; }
   function spHere() { var x = SPM.st || {}; return spOn() && (!x.kinds || x.kinds.indexOf(devKind()) !== -1); }   // (on the kinds of device they chose: John, 4 Nov 2026, "only on certain devices")
+  function spPicked() { return spOn() && !!SPX.pick && !SPX.pickPhone; }   // (one of their Spotify speakers chosen for this visit: every song plays there, whatever they chose in Profile: John, 5 Nov 2026)
   function spCan(s) {   // this song through their Spotify: on, on this kind of device, as they chose (every song, or only those with no MP3, or no MP3 and no video), and not one it couldn't play
-    var x = SPM.st || {}, w = x.when || 'all';
-    if (!spHere() || !s || s.sx || (SPNO[s.track] && Date.now() - SPNO[s.track] < 30 * 864e5)) return false;   // (asked of Spotify again after 30 days)
+    var x = SPM.st || {}, w = x.when || 'all', picked = spPicked();
+    if (!(spHere() || picked) || !s || s.sx || (SPNO[s.track] && Date.now() - SPNO[s.track] < 30 * 864e5)) return false;   // (asked of Spotify again after 30 days)
+    if (picked) return true;
     if (w !== 'all' && whole(s)) return false;
     if (w === 'nofile' && VIDS[s.track]) return false;
     return true;
@@ -7844,7 +7848,11 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var when = new Date(x.at).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
     var who = sent ? sentTo(x.to) : fromLine(x);
     document.getElementById('msgw').textContent = (who ? who + ' · ' : '') + when;
-    document.getElementById('msgacts').hidden = sent || !replyCan(x);
+    var where = !sent && x.u && msgWhere(x.u);   // (its song, a tap away, the message seen first: John, 5 Nov 2026, "the same one in the inbox opens a song immediately so you don't see it")
+    document.getElementById('msggo').hidden = !where;
+    document.getElementById('msggo').textContent = x.c ? 'Open the song' : 'Open it';
+    document.getElementById('msgreply').hidden = sent || !replyCan(x);
+    document.getElementById('msgacts').hidden = !where && (sent || !replyCan(x));
     msgRx(x);
     var b = document.getElementById('msgb'); b.textContent = x.b || ''; b.hidden = !x.b;
     var pic = x.i || x.c || '', f = document.getElementById('msgpicf'), im = document.getElementById('msgpic');
@@ -7860,6 +7868,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   });
   document.getElementById('msgclose').addEventListener('click', function () { closeDialog(msgDlg); });
   document.getElementById('msgreply').addEventListener('click', function () { var m = MSG; closeDialog(msgDlg); if (m) replyTo(m.x); });
+  document.getElementById('msggo').addEventListener('click', function () { var m = MSG; closeDialog(msgDlg); if (m && m.x.u) msgGo(m.x.u); });
   function inboxDraw() {
     var box = document.getElementById('acinbox'), ul = document.getElementById('acmsgs'), none = document.getElementById('acinnone');
     box.hidden = !MEMBER || !MBASE;
@@ -7913,11 +7922,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       var end = document.createElement('span'); end.className = 'rxend'; end.appendChild(tg); end.appendChild(dl); acts.appendChild(end);
       b.addEventListener('click', function () {
         if (INBOX.sel) { if (INBOX.sel.has(x.id)) INBOX.sel.delete(x.id); else INBOX.sel.add(x.id); inboxDraw(); return; }   // selecting: ticked or not
-        if (!msgWhere(x.u)) { msgOpen(x, false); return; }   // (no link of its own: opened; read when it's closed)
-        var go = function () { msgGo(x.u); };
-        if (x.r) { go(); return; }
-        x.r = Date.now(); unreadSet(INBOX.unread - 1); inboxDraw();
-        inboxCall({ read: [x.id] }).catch(function () {}).then(go);
+        msgOpen(x, false);   // (the message first, as its email shows it; its song from there: read when it's closed)
       });
       if (sel) b.setAttribute('aria-pressed', String(sel.has(x.id)));
       li.appendChild(b); if (!sel) { if (rxLine) li.appendChild(rxLine); li.appendChild(acts); if (pickRow) li.appendChild(pickRow); } ul.appendChild(li);
@@ -11599,9 +11604,11 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         setTimeout(function () { doAction(dm[1], iso); }, 400);
         return true;
       }
-      var q = /(?:^|&)play=(video|preview)\b/.exec(m[2] || ''), h = m[1] ? '#' + m[1] : '';
+      // its day or calendar: from its address (/songs/05-11-2026/) or after its # (an email's or a notification's: #5-11-2026,
+      // #u=<calendar>&d=<day>), which was left out (John, 5 Nov 2026: "If you're on a different calendar and get the email, it still doesn't open the link properly")
+      var q = /(?:^|&)play=(video|preview)\b/.exec(m[2] || ''), h = m[1] ? '#' + m[1] : m[3] ? '#' + m[3] : '';
       if (q) location.replace(SITE + '?play=' + q[1] + h);
-      else if (h && location.hash === h) openFromHash();
+      else if (h && location.hash === h) { uplFromHash(); openFromHash(); }
       else if (h) location.hash = h;
       return true;
     }
