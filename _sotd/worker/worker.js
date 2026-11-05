@@ -3884,12 +3884,25 @@ async function memberSpotify(request, url, env, answer) {
       if (!pick && b.device) {   // the one that played a moment ago, left out of Spotify's list (an iPhone, between songs): tried as it is
         const t = await spCall(env, who.id, rec, 'PUT', '/me/player/play?device_id=' + encodeURIComponent(String(b.device)), Object.assign({ uris }, b.ms ? { position_ms: Math.max(0, b.ms | 0) } : {}));
         if (t.status < 300) return answer(200, { ok: true, device: String(b.device), name: String(b.dname || ''), type: String(b.dtype || '') });
+        if (b.picked) {   // a speaker they chose, gone from Spotify's list: woken (handed over to), else said, never played somewhere else instead
+          await spCall(env, who.id, rec, 'PUT', '/me/player', { device_ids: [String(b.device)], play: false }).catch(() => null);
+          await new Promise(res => setTimeout(res, 1500));
+          const t2 = await spCall(env, who.id, rec, 'PUT', '/me/player/play?device_id=' + encodeURIComponent(String(b.device)), Object.assign({ uris }, b.ms ? { position_ms: Math.max(0, b.ms | 0) } : {}));
+          if (t2.status < 300) return answer(200, { ok: true, device: String(b.device), name: String(b.dname || ''), type: String(b.dtype || '') });
+          return answer(409, { why: 'pickgone', error: 'Spotify can’t find the speaker you chose' + (b.dname ? ' (' + String(b.dname).slice(0, 60) + ')' : '') + ': is it on?' });
+        }
       }
       if (!pick && kind) pick = list.find(x => x.type === kind && x.active) || list.find(x => x.type === kind);
       if (!pick && !kind) pick = list.find(x => x.active) || list[0];
       if (!pick) return answer(409, list.length ? { why: 'notHere', devices: brief, error: 'Spotify isn’t open on this device.' } : { why: 'nodevice', error: 'Spotify isn’t open on any of your devices.' });
-      const r = await spCall(env, who.id, rec, 'PUT', '/me/player/play?device_id=' + encodeURIComponent(pick.id), Object.assign({ uris }, b.ms ? { position_ms: Math.max(0, b.ms | 0) } : {}));
-      if (r.status >= 300) return answer(409, { why: r.why || 'other', error: r.msg || 'Spotify answered ' + r.status });
+      const body0 = Object.assign({ uris }, b.ms ? { position_ms: Math.max(0, b.ms | 0) } : {});
+      let r = await spCall(env, who.id, rec, 'PUT', '/me/player/play?device_id=' + encodeURIComponent(pick.id), body0);
+      if (r.status === 404) {   // a speaker or group Spotify has let go to sleep ("Device not found": John, 5 Nov 2026, the Everywhere speaker): handed over to first, as Spotify's own app does, then asked again
+        await spCall(env, who.id, rec, 'PUT', '/me/player', { device_ids: [pick.id], play: false }).catch(() => null);
+        await new Promise(res => setTimeout(res, 1500));
+        r = await spCall(env, who.id, rec, 'PUT', '/me/player/play?device_id=' + encodeURIComponent(pick.id), body0);
+      }
+      if (r.status >= 300) return answer(409, { why: r.why || 'other', error: (r.msg || 'Spotify answered ' + r.status) + (r.status === 404 ? ' (' + pick.name + ')' : '') });
       return answer(200, { ok: true, device: pick.id, name: pick.name, type: pick.type });
     }
     const simple = { pause: ['PUT', '/me/player/pause'], resume: ['PUT', '/me/player/play'], next: ['POST', '/me/player/next'], prev: ['POST', '/me/player/previous'] };

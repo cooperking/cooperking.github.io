@@ -4086,11 +4086,12 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var ld = SPX.pick ? null : SPX.last;   // (the device that played this visit: straight to it again)
     var from = resumeFor === id && resumeAt > 3 ? Math.round(resumeAt * 1000) : 0;   // (from the video, or a reload: on from the same place)
     if (from) { resumeAt = 0; resumeFor = ''; SPX.pos = from; }
-    spCall({ op: 'play', tracks: SPX.list, prefer: spKind(), device: SPX.pick || (ld && ld.id) || undefined, dname: ld && ld.name, dtype: ld && ld.type, ms: from || undefined }).then(function (j) {
+    spCall({ op: 'play', tracks: SPX.list, prefer: spKind(), device: SPX.pick || (ld && ld.id) || undefined, picked: spPicked() || undefined, dname: spPicked() ? spPickName() : ld && ld.name, dtype: ld && ld.type, ms: from || undefined }).then(function (j) {
       SPX.busy = false;
       if (!coverObj.sp || SPX.track !== id) return;
       if (j.status !== 200 && (j.why === 'notHere' || j.why === 'nodevice') && SPX.woke !== id && spxWakeThen(id, 'asleep')) return;
       if (j.status !== 200) {
+        if (j.why === 'pickgone') { SPX.pick = ''; SPX.pickPhone = false; try { sessionStorage.removeItem('sotd-spdev'); } catch (e) {} spkDraw(); spxFallback(id, j.error || 'Spotify can’t find that speaker', false); return; }   // (the speaker chosen isn't there: back to their own setting, said)
         if (j.why === 'premium' || j.why === 'blocked') { if (SPM.st) { SPM.st.product = j.why === 'premium' ? 'free' : SPM.st.product; SPM.st.blocked = j.why === 'blocked'; } }
         spxFallback(id, j.why === 'notHere' ? 'Spotify isn’t open on this ' + (spKind() === 'Computer' ? 'computer' : 'phone') + ': playing here'
           : j.why === 'busy' ? 'Spotify is busy just now: previews for a while' : j.why === 'nodevice' ? 'Spotify isn’t open on any of your devices: playing the preview' : j.why === 'premium' ? 'Spotify needs Premium to play whole songs here' : j.why === 'blocked' ? 'Spotify needs John to add you first' : 'Spotify didn’t play it (' + (j.error || 'try again') + '): playing the preview', j.why === 'notHere' || j.why === 'nodevice');
@@ -4228,6 +4229,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (coverObj && coverObj.sp && s && !spCan(s)) { var id = SPX.track; spCall({ op: 'pause' }).catch(function () {}); spxFallback(id, 'played here', true); toast('Playing on this ' + nowLabel()); return true; }
     return false;
   }
+  function spPickName() { var d = (SPKS.list || []).concat(castSp || []).filter(function (x) { return x.id === SPX.pick; })[0]; return d ? d.name : ''; }
   function spPicked() { return spOn() && !!SPX.pick && !SPX.pickPhone; }   // (one of their Spotify speakers chosen for this visit: every song plays there, whatever they chose in Profile: John, 5 Nov 2026)
   function spCan(s) {   // this song through their Spotify: on, on this kind of device, as they chose (every song, or only those with no MP3, or no MP3 and no video), and not one it couldn't play
     var x = SPM.st || {}, w = x.when || 'all', picked = spPicked();
