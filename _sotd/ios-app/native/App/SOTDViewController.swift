@@ -14,5 +14,15 @@ class SOTDViewController: CAPBridgeViewController {
         bridge?.registerPluginInstance(SotdSpotifyPlugin())   // (Spotify on this phone, woken through Spotify's iPhone toolkit: build 32 on)
         bridge?.registerPluginInstance(SotdBgPlugin())   // (the app's own player for the hand-over from Spotify: build 41 on)
         SotdGuard.shared.attach(bridge?.webView)   // (away, playing: stopped when another device begins: build 25 on)
+        // never white while the page loads or reloads (John, 5 Nov 2026: "Page flashes white on load occasionally on
+        // iPhone"): the web view see-through, over the app's dark ground, until the page paints its month's colour
+        let ground = UIColor(red: 0x1b / 255.0, green: 0x10 / 255.0, blue: 0x20 / 255.0, alpha: 1)
+        view.backgroundColor = ground
+        if let web = bridge?.webView {
+            web.isOpaque = false
+            web.backgroundColor = ground
+            web.scrollView.backgroundColor = ground
+            if #available(iOS 15.0, *) { web.underPageBackgroundColor = ground }
+        }
     }
 }
