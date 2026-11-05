@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="sotd-build" content="af170773481a">
+<meta name="sotd-build" content="b1ddd65322f7">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 269 so far">
 <meta name="theme-color" content="#ec135b">
@@ -614,6 +614,7 @@ a.srchpill { padding: 5px 12px; border-radius: 999px; background: var(--pill-bg)
 #missgone .linkbtn { padding: 0; border: 0; background: none; color: inherit; font: inherit; font-weight: 600; text-decoration: underline; cursor: pointer; }
 .newpage { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 84px); transform: translateX(-50%); z-index: 60; padding: 9px 16px; border: 0; border-radius: 999px; background: var(--fg); color: var(--bg); font: 600 13px var(--sans); box-shadow: 0 6px 20px rgba(0,0,0,.25); cursor: pointer; }
 .newpage[hidden] { display: none; }
+.iconbtn[hidden], a.srchpill[hidden] { display: none !important; }
 .dlwhy { display: block; margin-top: 4px; font-size: 12.5px; line-height: 1.4; color: var(--muted); white-space: normal; }
 .dlwhy.gone, .dlwhy.blocked { color: #e23a6e; }
 .dlacts { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 8px; }
@@ -5054,7 +5055,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       // the song's buttons, as icons at the end of its number's row: add to my playlist, share, open in Spotify
       var ln = document.createElement('a'); ln.className = 'iconbtn'; ln.href = 'https://open.spotify.com/track/' + s.track; ln.target = '_blank'; ln.rel = 'noopener';
       ln.setAttribute('aria-label', 'Open ' + s.title + ' in Spotify'); ln.title = 'Open in Spotify';
-      ln.innerHTML = NOTE_ICON;
+      ln.innerHTML = NOTE_ICON; if (s.sx) ln.hidden = true;   // (no longer on Spotify: nothing there to open)
       var af = document.createElement('button'); af.type = 'button'; af.className = 'iconbtn addfav'; af.setAttribute('data-track', s.track);
       af.innerHTML = HEART + '<span class="lbl">Add to my playlist</span>'; af.title = 'Add to my playlist';
       af.addEventListener('click', function () { toggleFav(s); });
@@ -8425,7 +8426,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function missSync() {
     if (!MISS_KINDS || !missDlg) return;   // (before they're set up: the first draw)
     var can = uplOwnCan() || !!(MEMBER && MEMBER.owner === true && UPL.on && UPL.view && !TV), L = can && missLists();   // (John: any playlist's, to look again)
-    var any = L && (MISS_KINDS.some(function (m) { return L[m.k].length || L[m.k + '_gone']; }) || (MEMBER && MEMBER.owner === true && UPL.view.songs.some(function (x) { return !x.w && !songYt(uplSongMap(x, UPL.view)); })));   // (John: a song with no YouTube link too, for Look again)
+    var any = L && MISS_KINDS.some(function (m) { return L[m.k].length || L[m.k + '_gone']; });
     [].forEach.call(document.querySelectorAll('.missbtn'), function (b) {
       b.hidden = !can || !L || !L.n || ED.on || !any;   // (only when something is missing: John, 3 Nov 2026)
     });
@@ -8444,8 +8445,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     });
     var m = MISS_KINDS.filter(function (x) { return x.k === MISS.k; })[0], list = L[m.k];
     var mj = document.getElementById('missjob'); mj.hidden = !(MEMBER && MEMBER.owner === true); if (!mj.hidden) { mj.textContent = ''; var jli = document.createElement('li'); jli.className = 'st jobline'; mj.appendChild(jli); jobDraw(jli); }
-    var rb = document.getElementById('missretry'); var noYt = m.k === 'v' ? v.songs.filter(function (x) { return !x.w && !songYt(uplSongMap(x, v)); }).length : 0;   // (any song with no YouTube link, an MP4 or not: a backup, John, 5 Nov 2026)
-    document.getElementById('missretryl').hidden = !(MEMBER && MEMBER.owner === true) || !(m.k === 'p' || m.k === 'v') || !(list.length || noYt);   // (John only)
+    var rb = document.getElementById('missretry'); document.getElementById('missretryl').hidden = true;   // (no job started from the calendar any more: John, 5 Nov 2026, "no need for anything outside admin to run a job again")   // (John only)
     rb.textContent = m.k === 'p' ? 'Look again for previews' : 'Look again for videos'; rb.disabled = false;
     // still being looked for (previews and videos: the progress's left), apart from those with none found (John, 3 Nov 2026: "If it's still being looked up that needs to be seen")
     var lf = (m.k === 'p' || m.k === 'v') && v.prog && v.prog.left && v.prog.left[m.k] || [], looking = list.filter(function (x) { return lf.indexOf(x.id) >= 0; }), found = list.filter(function (x) { return lf.indexOf(x.id) < 0; });
@@ -8489,9 +8489,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         nb.addEventListener('click', function () { nb.disabled = true; uplCall({ op: 'skip', id: UPL.on, track: x.id, k: MISS_SK[m.k] }).then(function (j) { if (j.view) uplApply(j.view, { keep: true }); if (j.status !== 200) toast(j.error || 'Couldn’t just now'); missDraw(); missSync(); }, function () { nb.disabled = false; }); });
         nf.appendChild(nb); li.appendChild(nf);
       }
-      if (dx) {   // Try again, and Add my own copy
+      if (dx) {   // Add my own copy
         var acts = document.createElement('div'); acts.className = 'dlacts';
-        var tr = document.createElement('button'); tr.type = 'button'; tr.textContent = 'Try again';
+        var tr = document.createElement('button'); tr.type = 'button'; tr.textContent = 'Try again'; tr.hidden = true;   // (not from the calendar)
         tr.addEventListener('click', function () { tr.disabled = true; uplCall({ op: 'dltry', id: UPL.on, track: x.id }).then(function (j) { if (j.view) uplApply(j.view, { keep: true }); toast(j.status === 200 ? 'It’s tried again on the download job’s next run' : (j.error || 'Couldn’t ask just now')); missDraw(); }, function () { tr.disabled = false; }); });
         var own = document.createElement('button'); own.type = 'button'; own.textContent = 'Add my own copy';
         own.addEventListener('click', function () { var cs = byTrack[x.id]; upledOpen(cs && cs.upl === UPL.on ? cs : uplSongMap(x, UPL.view), MISS.k); });
@@ -9114,7 +9114,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     [].forEach.call(document.querySelectorAll('input[name="upledv"]'), function (r) { r.checked = r.value === how; });
     document.getElementById('upledlink').value = s.ov ? 'https://youtu.be/' + s.ov : '';
     document.getElementById('upledsrc').value = s.osrc || '';
-    document.getElementById('upledsrch').href = songSearchUrl(s); document.getElementById('upledsrchy').href = ytSearchUrl(s); document.getElementById('upledsp').href = 'https://open.spotify.com/track/' + s.track;   // (to find its video, and Spotify's own to check it's the same: John, 5 Nov 2026)
+    document.getElementById('upledsrch').href = songSearchUrl(s); document.getElementById('upledsrchy').href = ytSearchUrl(s); document.getElementById('upledsp').href = 'https://open.spotify.com/track/' + s.track; document.getElementById('upledsp').hidden = !!s.sx;   // (to find its video, and Spotify's own to check it's the same: John, 5 Nov 2026)
     var jo = s.jo || {};   // (what John has chosen for it on the Songs tab: his, not to change here)
     document.getElementById('upledvj').hidden = !jo.v; document.getElementById('upledmj').hidden = !jo.m; document.getElementById('upledgj').hidden = !jo.g;
     [].forEach.call(document.querySelectorAll('input[name="upledv"]'), function (r) { r.disabled = !!jo.v; });
@@ -9172,13 +9172,14 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       var busy = UED['busy' + k], most = k === 'a' ? '80 MB at most' : '1.5 GB at most';
       if (jf[k]) {   // (John sees it as the Songs tab shows it)
         document.getElementById('upledst' + k).textContent = MEMBER && MEMBER.owner === true ? (k === 'a' ? 'Song · ' : 'Video · ') + (jf[k] >= 1e9 ? (jf[k] / 1e9).toFixed(1) + ' GB' : (jf[k] / 1e6).toFixed(jf[k] < 1e7 ? 1 : 0) + ' MB') : 'Already uploaded';
-        document.getElementById('upledadd' + k).hidden = true; document.getElementById('upleddrop' + k).hidden = true; document.getElementById('upledbar' + k).hidden = true;
+        document.getElementById('upledadd' + k).hidden = true; document.getElementById('upledbar' + k).hidden = true;
+        var dj = document.getElementById('upleddrop' + k); dj.hidden = !(MEMBER && MEMBER.owner === true); dj.dataset.jf = '1';   // (John: delete it)
         return;
       }
       document.getElementById('upledadd' + k).hidden = false;
       document.getElementById('upledst' + k).textContent = busy != null ? 'Going up… ' + busy + '%' : own[k] ? 'Added · ' + upledMB(own[k]) : 'None yet (' + most + ')';
       var add = document.getElementById('upledadd' + k); add.textContent = own[k] ? 'Replace' : 'Add'; add.disabled = busy != null;
-      document.getElementById('upleddrop' + k).hidden = !own[k] || busy != null;
+      document.getElementById('upleddrop' + k).hidden = !own[k] || busy != null; document.getElementById('upleddrop' + k).dataset.jf = '';
       var bar = document.getElementById('upledbar' + k); bar.hidden = busy == null; bar.firstChild.style.width = (busy || 0) + '%';
     });
     var fu = MEMBER && MEMBER.fu, fe = document.getElementById('upledfu');   // the songs with their own MP3 or MP4, across all their playlists, and the most (366)
@@ -9235,6 +9236,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     });
   }
   function upledDrop(k) {
+    if (k !== 'c' && document.getElementById('upleddrop' + k).dataset.jf === '1') { upledJfDrop(k); return; }
     var ed = UED, what = k === 'a' ? 'your MP3' : k === 'v' ? 'your MP4' : 'your picture';
     ask({ k: ed.s.title, h: 'Take off ' + what + '?', t: k === 'c' ? 'The album’s cover shows again.' : k === 'a' ? 'The preview plays again.' : 'The YouTube video plays again, if there is one.', ok: 'Take it off', no: 'Keep it' }).then(function (yes) {
       if (!yes) return;
@@ -9243,6 +9245,18 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         if (j.fu && MEMBER) MEMBER.fu = j.fu; upledView(j.view, ed); toast('Taken off');
       }).catch(function () { toast('Couldn’t reach the site. Try again.'); });
     });
+  }
+  function upledJfDrop(k) {   // John: the downloaded MP3 or MP4 deleted, then a fresh copy or none
+    var ed = UED, what = k === 'a' ? 'MP3' : 'MP4';
+    ask({ k: ed.s.title, h: 'Delete its ' + what + '?', t: 'The ' + what + ' fetched for it is deleted, for everyone.', ok: 'Delete it', no: 'Keep it' }).then(function (yes) {
+      if (!yes) return;
+      return ask({ k: ed.s.title, h: 'Get a new copy?', t: 'A fresh ' + what + ' from its video, in a few minutes, or none from now on.', ok: 'Get a new one', no: 'None from now on' }).then(function (again) {
+        return uplCall({ op: 'jfdrop', id: ed.p.id, track: ed.s.track, k: k, again: !!again }).then(function (j) {
+          if (j.status !== 200) { toast(j.error || 'Couldn’t delete it just now'); return; }
+          upledView(j.view, ed); toast(again ? 'Deleted: a new one comes in a few minutes' : 'Deleted, and none from now on');
+        });
+      });
+    }).catch(function () { toast('Couldn’t reach the site. Try again.'); });
   }
   function upledCover(f) {   // their own picture: cropped square, 640 pixels at most, as a JPEG
     var ed = UED;
