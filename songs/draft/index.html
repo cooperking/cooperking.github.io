@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="f5e714b2c14e">
+<meta name="sotd-build" content="35d7833a7d89">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -2230,7 +2230,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     <p class="msgv-b" id="msgb"></p>
     <figure class="msgv-pic" id="msgpicf" hidden><img id="msgpic" alt=""></figure>
     <div class="msgrx" id="msgrx" hidden><div class="rxchips" id="msgrxc"></div><div class="rxpick" id="msgrxp" role="group" aria-label="React"></div></div>
-    <div class="ask-acts" id="msgacts" hidden><button class="copy" id="msgreply" type="button">Reply</button></div>
+    <div class="ask-acts" id="msgacts" hidden><button class="copy" id="msggo" type="button" hidden>Open the song</button><button class="copy" id="msgreply" type="button">Reply</button></div>
   </div>
 </dialog>
 <dialog id="belldlg" aria-labelledby="bellh">
@@ -7845,7 +7845,11 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var when = new Date(x.at).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
     var who = sent ? sentTo(x.to) : fromLine(x);
     document.getElementById('msgw').textContent = (who ? who + ' · ' : '') + when;
-    document.getElementById('msgacts').hidden = sent || !replyCan(x);
+    var where = !sent && x.u && msgWhere(x.u);   // (its song, a tap away, the message seen first: John, 5 Nov 2026, "the same one in the inbox opens a song immediately so you don't see it")
+    document.getElementById('msggo').hidden = !where;
+    document.getElementById('msggo').textContent = x.c ? 'Open the song' : 'Open it';
+    document.getElementById('msgreply').hidden = sent || !replyCan(x);
+    document.getElementById('msgacts').hidden = !where && (sent || !replyCan(x));
     msgRx(x);
     var b = document.getElementById('msgb'); b.textContent = x.b || ''; b.hidden = !x.b;
     var pic = x.i || x.c || '', f = document.getElementById('msgpicf'), im = document.getElementById('msgpic');
@@ -7861,6 +7865,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   });
   document.getElementById('msgclose').addEventListener('click', function () { closeDialog(msgDlg); });
   document.getElementById('msgreply').addEventListener('click', function () { var m = MSG; closeDialog(msgDlg); if (m) replyTo(m.x); });
+  document.getElementById('msggo').addEventListener('click', function () { var m = MSG; closeDialog(msgDlg); if (m && m.x.u) msgGo(m.x.u); });
   function inboxDraw() {
     var box = document.getElementById('acinbox'), ul = document.getElementById('acmsgs'), none = document.getElementById('acinnone');
     box.hidden = !MEMBER || !MBASE;
@@ -7914,11 +7919,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       var end = document.createElement('span'); end.className = 'rxend'; end.appendChild(tg); end.appendChild(dl); acts.appendChild(end);
       b.addEventListener('click', function () {
         if (INBOX.sel) { if (INBOX.sel.has(x.id)) INBOX.sel.delete(x.id); else INBOX.sel.add(x.id); inboxDraw(); return; }   // selecting: ticked or not
-        if (!msgWhere(x.u)) { msgOpen(x, false); return; }   // (no link of its own: opened; read when it's closed)
-        var go = function () { msgGo(x.u); };
-        if (x.r) { go(); return; }
-        x.r = Date.now(); unreadSet(INBOX.unread - 1); inboxDraw();
-        inboxCall({ read: [x.id] }).catch(function () {}).then(go);
+        msgOpen(x, false);   // (the message first, as its email shows it; its song from there: read when it's closed)
       });
       if (sel) b.setAttribute('aria-pressed', String(sel.has(x.id)));
       li.appendChild(b); if (!sel) { if (rxLine) li.appendChild(rxLine); li.appendChild(acts); if (pickRow) li.appendChild(pickRow); } ul.appendChild(li);
