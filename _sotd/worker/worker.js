@@ -84,6 +84,8 @@ export default {
       if (url.pathname === '/status') return await status(env);
       if (url.pathname === '/facts/signed') return await factsSigned(env);
       if (url.pathname === '/facts/signoff') return await factsSignoff(request, env);
+      if (url.pathname === '/facts/video') return await factsSignoff(request, env, true);
+      if (url.pathname === '/facts/picks') return new Response((await env.SOTD.get('videoPicks')) || '{}', { headers: factsHeaders('*') });
       if (url.pathname === '/facts/redo') return await factsRedo(request, env);
       if (url.pathname.startsWith('/members/')) return await members(request, url, env);
       if (url.pathname === '/push/check') return await pushCheck(request, env, ctx);
@@ -678,7 +680,7 @@ async function factsRedo(request, env) {
   if (r.status !== 204) return answer(502, { error: 'GitHub answered ' + r.status + ': ' + (await r.text()).slice(0, 160) });
   return answer(200, { ok: true });
 }
-async function factsSignoff(request, env) {
+async function factsSignoff(request, env, videoOnly) {   // (videoOnly: /facts/video, a song's video saved on its own, its facts still waiting: John, 5 Nov 2026)
   const h = factsHeaders(ADMIN_ORIGIN);
   const answer = (status, body) => new Response(JSON.stringify(body), { status, headers: h });
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: h });
@@ -694,6 +696,13 @@ async function factsSignoff(request, env) {
     return answer(401, { error: 'Wrong password.' });
   }
   const body = await request.json().catch(() => null);
+  if (videoOnly) {
+    const t = String((body && body.track) || ''), v = String((body && body.video) || '');
+    if (!ID_RE.test(t) || !/^([\w-]{11})?$/.test(v)) return answer(400, { error: 'Which song, and which video?' });
+    const picks = (await env.SOTD.get('videoPicks', 'json')) || {}, at = new Date().toISOString();
+    picks[t] = { v, at }; await env.SOTD.put('videoPicks', JSON.stringify(picks));
+    return answer(200, { ok: true, at, job: await startFactsJob(env, null) });
+  }
   const items = body && Array.isArray(body.items) ? body.items.slice(0, FACTS_MAX.items) : null;
   if (!items) return answer(400, { error: 'Nothing to sign off.' });
   if (!items.length) return answer(200, { ok: true, signed: 0 });   // the page checking its password

@@ -603,6 +603,20 @@ body.dropping::after { content: 'Drop to match them (nothing goes up yet)'; posi
     var go = el('button', 'btn primary', s.m && st.held.length ? (st.held.every(function (c) { return c.oj; }) ? 'Publish' : 'Publish for ' + heldWho(st.held)) : !s.m && !isOut(s.id) ? 'Sign off and publish' : st.st === 'waiting' ? 'Sign off and publish' : s.m ? 'Save changes' : 'Publish changes')   // (John, 1 Nov 2026: "It's not clear if Save changes means they are immediately published"); go.type = 'button';
     go.addEventListener('click', function () { if (s.m) msignoff([s]); else signoff([s]); });
     foot.appendChild(go);
+    var wv = working(s, st);
+    if (!s.m && st.st !== 'signed' && (wv.video || '') !== (st.base.video || '')) {   // its video on its own, its facts still waiting (John, 5 Nov 2026: "I can't give a new video without signing off")
+      var vb = el('button', 'btn', 'Save the video only'); vb.type = 'button';
+      vb.addEventListener('click', function () {
+        vb.disabled = true; vb.textContent = 'Saving…';
+        api('/facts/video', { track: s.id, video: wv.video || '' }).then(function (j) {
+          if (!j.ok) { vb.disabled = false; vb.textContent = 'Save the video only'; toast(j.error || 'Not saved: the Worker said ' + j.status); return; }
+          VIDS[s.id] = { v: wv.video || '' }; st.base.video = wv.video || '';
+          if (edits[s.id]) { edits[s.id].video = wv.video || ''; if (JSON.stringify(edits[s.id]) === JSON.stringify(st.base)) delete edits[s.id]; saveEdits(); }
+          toast('Video saved: on the calendar in a few minutes. Its facts still wait for you.'); redraw(s); counts();
+        }).catch(function () { vb.disabled = false; vb.textContent = 'Save the video only'; toast('Couldn’t reach the Worker. Nothing was saved.'); });
+      });
+      foot.appendChild(vb);
+    }
     if (edits[s.id]) {
       var undo = el('button', 'btn', 'Discard changes'); undo.type = 'button';
       undo.addEventListener('click', function () { delete edits[s.id]; saveEdits(); redraw(s); counts(); });

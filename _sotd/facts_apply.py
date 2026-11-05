@@ -39,6 +39,7 @@ JOHN_VIDEOS = os.path.join(HERE, 'data', 'john-videos.json')
 MOODS_PUB = os.path.join(ROOT, 'songs', 'moods.json')
 VIDEOS_PUB = os.path.join(ROOT, 'songs', 'videos.json')
 SIGNED_URL = os.environ.get('SOTD_FACTS_URL', 'https://sotd-playlists.cooperking.workers.dev/facts/signed')
+PICKS_URL = SIGNED_URL.replace('/facts/signed', '/facts/picks')
 ABOUT = ('Facts about each song and its artists, written from Wikipedia (CC BY-SA 4.0), MusicBrainz (CC0), the artists\' and '
          'labels\' own pages and interviews and articles in the music press, each checked against its source, and signed off '
          'by John (who may have edited them or added his own). src: the sources; signed: when John signed each song off.')
@@ -127,6 +128,30 @@ def tags_and_videos(news):
     write(JOHN_VIDEOS, jv, False)
 
 
+def video_picks():
+    """Videos John saved on their own, the song's facts still waiting (the Worker's /facts/picks: John, 5 Nov 2026): each
+    taken once (by when it was saved), into john-videos.json."""
+    try:
+        with urllib.request.urlopen(urllib.request.Request(PICKS_URL, headers={'User-Agent': 'SongOfTheDayCalendar/1.0'}), timeout=30) as r:
+            picks = json.loads(r.read())
+    except Exception as x:
+        print('videos saved on their own: not read (%s)' % x)
+        return
+    jv = load(JOHN_VIDEOS, {'videos': {}, 'notes': {}})
+    took = jv.setdefault('picked', {})
+    n = 0
+    for tid, e in (picks or {}).items():
+        if not isinstance(e, dict) or e.get('at', '') <= took.get(tid, ''):
+            continue
+        jv.setdefault('videos', {})[tid] = e.get('v', '')
+        jv.setdefault('notes', {})[tid] = '%s: John, on the sign-off page, the video on its own (%s)' % (tid, e.get('at', '')[:10])
+        took[tid] = e.get('at', '')
+        n += 1
+    if n:
+        write(JOHN_VIDEOS, jv, False)
+        print(n, 'videos saved on their own taken')
+
+
 def main(offline, promote=()):
     live = load(LIVE, {'src': [], 'songs': {}, 'artists': {}})
     pending = load(PENDING, {'songs': {}})
@@ -162,6 +187,8 @@ def main(offline, promote=()):
                 applied.append(tid)
             live = merged
             tags_and_videos(news)
+    if not offline:
+        video_picks()
     if promote:
         ids = list(pending['songs']) if 'all' in promote else [t for t in promote if t in pending['songs']]
         if ids:
