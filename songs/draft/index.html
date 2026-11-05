@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="9dff2012e43c">
+<meta name="sotd-build" content="9f3e2ea8f7ae">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -8422,7 +8422,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     });
     var m = MISS_KINDS.filter(function (x) { return x.k === MISS.k; })[0], list = L[m.k];
     var mj = document.getElementById('missjob'); mj.hidden = !(MEMBER && MEMBER.owner === true); if (!mj.hidden) { mj.textContent = ''; var jli = document.createElement('li'); jli.className = 'st jobline'; mj.appendChild(jli); jobDraw(jli); }
-    var rb = document.getElementById('missretry'); document.getElementById('missretryl').hidden = !(MEMBER && MEMBER.owner === true) || !(m.k === 'p' || m.k === 'v') || !list.length;   // (John only)
+    var rb = document.getElementById('missretry'); var noYt = m.k === 'v' ? v.songs.filter(function (x) { return !x.w && !songYt(uplSongMap(x, v)); }).length : 0;   // (any song with no YouTube link, an MP4 or not: a backup, John, 5 Nov 2026)
+    document.getElementById('missretryl').hidden = !(MEMBER && MEMBER.owner === true) || !(m.k === 'p' || m.k === 'v') || !(list.length || noYt);   // (John only)
     rb.textContent = m.k === 'p' ? 'Look again for previews' : 'Look again for videos'; rb.disabled = false;
     // still being looked for (previews and videos: the progress's left), apart from those with none found (John, 3 Nov 2026: "If it's still being looked up that needs to be seen")
     var lf = (m.k === 'p' || m.k === 'v') && v.prog && v.prog.left && v.prog.left[m.k] || [], looking = list.filter(function (x) { return lf.indexOf(x.id) >= 0; }), found = list.filter(function (x) { return lf.indexOf(x.id) < 0; });
