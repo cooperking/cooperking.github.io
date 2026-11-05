@@ -3751,8 +3751,17 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (!d || /Smartphone|Tablet/.test(d.type || '') && d.type === spKind() && !d.other) return;
     if (SPX.bgLoaded || SPX.bg || SPX.shadow) spxBgStop();
     spxShadowOff();
-    SPX.native = false; SPX.pickPhone = false; SPX.list = [SPX.track];
+    SPX.native = false; SPX.pickPhone = false; SPX.list = spxUpcoming(SPX.track);
     spLog('moved to ' + d.name + ': no hand-over to the app');
+  }
+  // moved to a speaker: the song from where it is, and every one after it, so the speaker plays on by itself while the
+  // phone's away or locked (John, 5 Nov 2026: "played one song in everywhere speaker ... stopped after one song")
+  function spxMoveTo(d) {
+    var id = SPX.track, ms = Math.round(spxPos());
+    spCall({ op: 'play', tracks: spxUpcoming(id), device: d.id, picked: true, dname: d.name, dtype: d.type, ms: ms || undefined }).then(function (j) {
+      if (j.status === 200) { SPX.dev = { id: j.device || d.id, name: j.name || d.name }; spxMovedTo(d); spxShowDev(); toast('Playing on ' + d.name); return; }
+      spCall({ op: 'transfer', device: d.id }).then(function (k) { if (k.status === 200) { SPX.dev = { id: d.id, name: d.name }; spxMovedTo(d); spxShowDev(); toast('Playing on ' + d.name); } else toast(k.error || j.error || 'Spotify didn’t move it'); });
+    }).catch(function () { toast('Couldn’t reach Spotify just now'); });
   }
   function spSpeakers() {   // the speaker icon: where songs play: their Spotify devices (moved there now if playing), this device, or AirPlay or Cast
     var playingSp = coverObj && coverObj.sp && SPX.playing;
@@ -3767,7 +3776,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         toast('Playing on this ' + nowLabel()); return;
       }
       if (d.cast) { castNative(); return; }
-      if (playingSp) spCall({ op: 'transfer', device: d.id }).then(function (j) { if (j.status === 200) { SPX.dev = { id: d.id, name: d.name }; spxMovedTo(d); spxShowDev(); toast('Playing on ' + d.name); } else toast(j.error || 'Spotify didn’t move it'); });
+      if (playingSp) spxMoveTo(d);
       else if (vplay && vplay.cover && vplay.el && vplay.el.sotd && !audio.paused && spCan(vplay.el.sotd.s)) {   // a song playing here from its file: moved to the speaker now, from the same place
         var el = vplay.el, at = carryAt(el); watch(el, coverVd(el.sotd.s)); carryTo(el, at); toast('Playing on ' + d.name);
       } else toast('Songs play on ' + d.name);
@@ -3776,7 +3785,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function spDevChange() {   // the chip tapped: move what's playing to another of their devices
     spDevPick(null, 'Playing on ' + ((SPX.dev && SPX.dev.name) || 'your Spotify') + '. Move it to another of your devices:', function (d) {
       if (!coverObj || !coverObj.sp) return;
-      spCall({ op: 'transfer', device: d.id }).then(function (j) { if (j.status === 200) { SPX.dev = { id: d.id, name: d.name }; spxMovedTo(d); spxShowDev(); toast('Playing on ' + d.name); } else toast(j.error || 'Spotify didn’t move it'); });
+      spxMoveTo(d);
     });
   }
   spChip.addEventListener('click', function (e) { e.stopPropagation(); spDevChange(); });
