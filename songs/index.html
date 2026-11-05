@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="sotd-build" content="d19b7b971d45">
+<meta name="sotd-build" content="41d61f6abb49">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 268 so far">
 <meta name="theme-color" content="#ec135b">
@@ -23,6 +23,8 @@
 <meta name="apple-mobile-web-app-title" content="Song of the Day">
 <style>body{margin:0}[hidden]{display:none!important}</style>
 <title>John's Song of the Day</title>
+<script>/* the month's colour from the first moment, never white while loading or reloading (John, 5 Nov 2026: "Page flashes white on load occasionally on iPhone") */
+(function () { var c = '#ec135b'; try { c = localStorage.getItem('sotd-bg') || c; } catch (e) {} var d = document.documentElement; d.style.setProperty('--bg', c); d.style.background = c; })();</script>
 <script>/* on a TV (the Fire TV app says SOTDTV; ?tv=1 to try it elsewhere): laid out 1280 wide, worked by the remote */
 if (/SOTDTV/.test(navigator.userAgent) || /[?&]tv=1(&|$)/.test(location.search)) { document.documentElement.className += ' tv'; var tvvp = document.querySelector('meta[name=viewport]'); if (tvvp) tvvp.setAttribute('content', 'width=1280'); }</script>
 <script>/* the TV's layout (html.big) on a TV, and on a computer's screen (wide, with a mouse: html.desk), with its links */
@@ -30,7 +32,7 @@ if (/SOTDTV/.test(navigator.userAgent) || /[?&]tv=1(&|$)/.test(location.search))
   else if (window.matchMedia && matchMedia('(min-width: 1000px) and (min-height: 560px) and (hover: hover) and (pointer: fine)').matches) de.className += ' big desk'; })();</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..600&family=Hanken+Grotesk:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..600&family=Hanken+Grotesk:wght@400;500;600&display=swap" media="print" onload="this.media='all'">
 <style>
 /* Layout: a sunny poster whose ground and four glows change with the month (palettes in the script); white day view so the record reads. A glass pill bar on top, a centred serif headline for the month, covers on a quiet grid, everything else in small spaced capitals. One colourful look whatever the device theme. */
 @property --bg { syntax: "<color>"; inherits: true; initial-value: #ec135b; }
@@ -2752,6 +2754,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function tint(m) {
     var pal = PALETTES[m], root = document.documentElement.style;
     ['--bg', '--g1', '--g2', '--g3', '--g4'].forEach(function (name, i) { root.setProperty(name, pal[i]); });
+    root.removeProperty('background'); try { localStorage.setItem('sotd-bg', pal[0]); } catch (e) {}   // (for the next load's first moment)
     document.documentElement.setAttribute('data-ink', pal[5] ? 'light' : 'dark');
     // the browser's own bars (Safari's top and bottom, Chrome's address bar) take the month's ground colour.
     // A fresh tag each time: some browsers only notice a new one, not a changed one.
@@ -8755,6 +8758,19 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         var cb = document.createElement('button'); cb.type = 'button'; cb.textContent = 'Change date';
         var inp = document.createElement('input'); inp.type = 'date'; inp.value = iso; inp.hidden = true; inp.setAttribute('aria-label', 'The day for ' + s.title);
         var sv = document.createElement('button'); sv.type = 'button'; sv.className = 'dp-save'; sv.textContent = 'Move it'; sv.hidden = true;
+        var tk = document.createElement('button'); tk.type = 'button'; tk.className = 'dp-off'; tk.textContent = 'Take off';   // (John, 5 Nov 2026: "no way to remove a song on multiple days ... without moving it out of the day")
+        tk.addEventListener('click', function () {
+          ask({ k: longDate(iso), h: 'Take “' + s.title + '” off?', t: 'It comes off this calendar; the day’s other songs stay. It stays on Spotify.', ok: 'Take it off', no: 'Keep it' }).then(function (yes) {
+            if (!yes) return; tk.disabled = true;
+            uplCall({ op: 'del', id: UPL.on, track: s.track }).then(function (j) {
+              if (j.status !== 200) { tk.disabled = false; toast(j.error || 'Couldn’t take it off just now'); return; }
+              if (j.pls) MEMBER.pls = j.pls;
+              if (j.view) uplApply(j.view, { keep: true });
+              toast('“' + s.title + '” taken off');
+              if ((byDate[iso] || []).length > 1) dayPick(iso); else closeDialog(dpDlg);
+            }).catch(function () { tk.disabled = false; toast('Couldn’t reach the site. Try again.'); });
+          });
+        });
         cb.addEventListener('click', function () { cb.hidden = true; inp.hidden = false; sv.hidden = false; try { inp.showPicker && inp.showPicker(); } catch (e) {} inp.focus(); });
         sv.addEventListener('click', function () {
           var to = inp.value; if (!/^\d{4}-\d{2}-\d{2}$/.test(to) || to === iso) return;
@@ -8766,7 +8782,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
             toast('Moved “' + s.title + '” to ' + longDate(to));
           }).catch(function () { sv.disabled = false; sv.textContent = 'Move it'; toast('Couldn’t reach the site. Try again.'); });
         });
-        mv.appendChild(cb); mv.appendChild(inp); mv.appendChild(sv); li.appendChild(mv);
+        mv.appendChild(cb); mv.appendChild(inp); mv.appendChild(sv); mv.appendChild(tk); li.appendChild(mv);
       }
       ul.appendChild(li);
     });
