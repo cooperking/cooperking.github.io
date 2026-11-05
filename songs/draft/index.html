@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="911210169fe1">
+<meta name="sotd-build" content="4cae7b7012cc">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -2375,6 +2375,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         <label><input type="radio" name="upledv" value="none"><span><b>No video</b>Just the song.</span></label>
       </div>
       <label class="upld-day" id="upledlinkl" hidden><span>Link</span><input type="url" id="upledlink" inputmode="url" autocomplete="off" placeholder="https://youtu.be/…"></label>
+      <label class="upld-day" id="upledsrcl"><span>MP3 from</span><input type="url" id="upledsrc" inputmode="url" autocomplete="off" placeholder="A Bandcamp or SoundCloud link, if YouTube hasn’t got it"></label>
       <div class="srchrow" id="upledsr"><a class="srchpill" id="upledsrch" target="_blank" rel="noopener">Search Google</a><a class="srchpill" id="upledsrchy" target="_blank" rel="noopener">Search YouTube</a><a class="srchpill" id="upledsp" target="_blank" rel="noopener">Spotify’s song</a></div>
       <div class="upled-yt" id="upledyt" hidden><img id="upledyti" alt=""><a id="upledyta" target="_blank" rel="noopener">Watch it on YouTube ↗</a></div>
     </section>
@@ -9074,6 +9075,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var how = !('ov' in s) ? 'found' : s.ov ? 'link' : 'none';
     [].forEach.call(document.querySelectorAll('input[name="upledv"]'), function (r) { r.checked = r.value === how; });
     document.getElementById('upledlink').value = s.ov ? 'https://youtu.be/' + s.ov : '';
+    document.getElementById('upledsrc').value = s.osrc || '';
     document.getElementById('upledsrch').href = songSearchUrl(s); document.getElementById('upledsrchy').href = ytSearchUrl(s); document.getElementById('upledsp').href = 'https://open.spotify.com/track/' + s.track;   // (to find its video, and Spotify's own to check it's the same: John, 5 Nov 2026)
     var jo = s.jo || {};   // (what John has chosen for it on the Songs tab: his, not to change here)
     document.getElementById('upledvj').hidden = !jo.v; document.getElementById('upledmj').hidden = !jo.m; document.getElementById('upledgj').hidden = !jo.g;
@@ -9300,13 +9302,18 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       if (!id) { toast('That isn’t a YouTube link'); document.getElementById('upledlink').focus(); return; }
       if (s.ov !== id) body.v = id;
     }
+    var src = document.getElementById('upledsrc').value.trim();   // (its MP3 from another site's link)
+    if (src !== (s.osrc || '')) {
+      if (src && (!/^https:\/\/\S+\.\S+\/\S+/i.test(src) || /youtu\.?be/i.test(src))) { toast(/youtu/i.test(src) ? 'A YouTube link goes in the video’s Link above' : 'That isn’t a link'); document.getElementById('upledsrc').focus(); return; }
+      body.src = src;
+    }
     if (ed.tags === 'back') { body.m = null; body.g = null; } else if (ed.tags) { body.m = ed.m; body.g = ed.g; }
     [['tt', 'upledtt', 'title', 'ot'], ['ar', 'upledar', 'artist', 'oa']].forEach(function (r) {   // its title and artist: '' back to Spotify's
       var v = document.getElementById(r[1]).value.replace(/\s+/g, ' ').trim();
       if (v === (s[r[2]] || '')) return;
       body[r[0]] = !v || v === s[r[3]] ? '' : v;
     });
-    var facts = ed.fxDirty, edits = 'v' in body || 'm' in body || 'tt' in body || 'ar' in body;
+    var facts = ed.fxDirty, edits = 'v' in body || 'm' in body || 'tt' in body || 'ar' in body || 'src' in body;
     if (!edits && !facts) { closeDialog(upledDlg); return; }
     var ok = document.getElementById('upledok');
     var hasFiles = s.jf && (s.jf.a || s.jf.v), newVid = typeof body.v === 'string' && body.v;

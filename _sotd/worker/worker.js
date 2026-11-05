@@ -4409,6 +4409,7 @@ async function ytList(request, url, env) {
   for (const x of songs) {
     const v = (J[x.id] && J[x.id].v) || ('ov' in x ? x.ov : (x.vid && x.vid.v)) || '';
     const twinHas = x.jf && x.jf.a && x.jf.v;   // (files already, its own or another copy's of the same song: nothing to download)
+    if (!v && x.osrc && json) { out.push(Object.assign({ id: x.id, v: x.osrc, src: x.osrc, a: x.artist || '', t: x.title || '' }, (twinHas || (plan && !plan.allowed.has(x.id) && !plan.john.has(x.id))) ? { dl: 0 } : {})); continue; }   // (no YouTube video: its MP3 from another site's link, for the download job)
     if (v) out.push(Object.assign({ id: x.id, v, a: x.artist || '', t: x.title || '' }, x.f ? { f: 1 } : {}, x.w ? { w: 1 } : {}, twinHas || (plan && !plan.allowed.has(x.id) && !plan.john.has(x.id)) ? { dl: 0 } : {}));
   }
   if (json) return answer(200, { t: view.n, songs: out });
@@ -4653,6 +4654,7 @@ async function uplView(env, all, viewer, pid, rec, also) {   // (also: tracks wa
     if (mine) { if (fx && fx.w) x.fxw = fx.w; if (fx && fx.w && fx.nw) x.fxn = fx.nw; x.fxs = fx && fx.w ? 'wait' : fx && fx.ok ? 'ok' : fx && fx.none ? 'nil' : wanted.has(x.id) ? 'asked' : uplShareOf(rec) === 'public' ? 'none' : 'off'; }
     if (x.ab) { const nm = (await spWho(env, all))[x.ab]; if (nm || mine || adm) x.abn = nm || x.ab; delete x.ab; }   // (the Spotify id itself not sent on)   // (who added it on Spotify: a member's name for everyone, else the Spotify username for its owner and John: John, 3 Nov 2026)   // (who added it on Spotify, for its owner's editor: a member's name where it's one of theirs: John, 3 Nov 2026)
     if (e && 'v' in e) x.ov = e.v;
+    if (e && e.src && (mine || adm)) x.osrc = e.src;   // (its MP3 from another site's link)
     if (e && (e.tt || e.ar)) {   // its owner's own title and artist, for everyone; theirs: Spotify's too (ot, oa), to go back to
       if (mine) { x.ot = x.title; x.oa = x.artist; }
       if (e.tt) x.title = e.tt;
@@ -5099,6 +5101,12 @@ async function memberUpl(request, url, env, answer) {
       if (body.v === null) delete e.v;
       else if (body.v === '' || /^[\w-]{11}$/.test(String(body.v))) e.v = String(body.v);
       else return answer(400, { error: 'That isn’t a YouTube video.' });
+    }
+    if ('src' in body) {   // a link of another site's (Bandcamp, SoundCloud…) for its MP3, a song YouTube hasn't got (John, 5 Nov 2026: "This is just on bandcamp"); '' or null: none
+      const u = String(body.src || '').trim();
+      if (!u) delete e.src;
+      else if (/^https:\/\/[\w.-]+\.[a-z]{2,}\/\S{1,400}$/i.test(u) && !/youtu\.?be/i.test(u)) e.src = u;
+      else return answer(400, { error: 'That isn’t a link to the song on another site.' });
     }
     let refiled = 0;
     if (body.refile && typeof body.v === 'string' && body.v && env.MEDIA) {   // a new video chosen for a song with files already: its MP3 and MP4 from the new one (asked first: John, 5 Nov 2026, "if we change videos with a file there already it probably means I want an updated file")
