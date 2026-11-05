@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="9f3e2ea8f7ae">
+<meta name="sotd-build" content="dd63147feff7">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -8403,7 +8403,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function missSync() {
     if (!MISS_KINDS || !missDlg) return;   // (before they're set up: the first draw)
     var can = uplOwnCan() || !!(MEMBER && MEMBER.owner === true && UPL.on && UPL.view && !TV), L = can && missLists();   // (John: any playlist's, to look again)
-    var any = L && MISS_KINDS.some(function (m) { return L[m.k].length; });
+    var any = L && (MISS_KINDS.some(function (m) { return L[m.k].length; }) || (MEMBER && MEMBER.owner === true && UPL.view.songs.some(function (x) { return !x.w && !songYt(uplSongMap(x, UPL.view)); })));   // (John: a song with no YouTube link too, for Look again)
     [].forEach.call(document.querySelectorAll('.missbtn'), function (b) {
       b.hidden = !can || !L || !L.n || ED.on || !any;   // (only when something is missing: John, 3 Nov 2026)
     });
