@@ -11575,9 +11575,11 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         setTimeout(function () { doAction(dm[1], iso); }, 400);
         return true;
       }
-      var q = /(?:^|&)play=(video|preview)\b/.exec(m[2] || ''), h = m[1] ? '#' + m[1] : '';
+      // its day or calendar: from its address (/songs/05-11-2026/) or after its # (an email's or a notification's: #5-11-2026,
+      // #u=<calendar>&d=<day>), which was left out (John, 5 Nov 2026: "If you're on a different calendar and get the email, it still doesn't open the link properly")
+      var q = /(?:^|&)play=(video|preview)\b/.exec(m[2] || ''), h = m[1] ? '#' + m[1] : m[3] ? '#' + m[3] : '';
       if (q) location.replace(SITE + '?play=' + q[1] + h);
-      else if (h && location.hash === h) openFromHash();
+      else if (h && location.hash === h) { uplFromHash(); openFromHash(); }
       else if (h) location.hash = h;
       return true;
     }
