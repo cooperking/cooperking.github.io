@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="sotd-build" content="acb5fb0bbf58">
+<meta name="sotd-build" content="2acaafb96341">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 269 so far">
 <meta name="theme-color" content="#ec135b">
@@ -610,7 +610,7 @@ html.upl-list .side-acts .listbtn { display: inline-grid; }
 .uplprog-rows .whichl li.srow > button:first-child { flex: 1; min-width: 0; }
 .uplprog-rows .whichl li a.srch { flex: none; align-self: center; padding: 6px 11px; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--line); color: var(--fg); font: 600 12px/1.2 var(--sans); text-decoration: none; }
 a.srchpill { padding: 5px 12px; border-radius: 999px; background: var(--pill-bg); box-shadow: inset 0 0 0 1px var(--line); color: var(--fg); font: 600 12px var(--sans); text-decoration: none; }
-#upledsrch, #upledsrchy { color: inherit; font-weight: 600; }
+.srchrow { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 4px; }
 .dlwhy { display: block; margin-top: 4px; font-size: 12.5px; line-height: 1.4; color: var(--muted); white-space: normal; }
 .dlwhy.gone, .dlwhy.blocked { color: #e23a6e; }
 .dlacts { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 8px; }
@@ -2374,7 +2374,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         <label><input type="radio" name="upledv" value="none"><span><b>No video</b>Just the song.</span></label>
       </div>
       <label class="upld-day" id="upledlinkl" hidden><span>Link</span><input type="url" id="upledlink" inputmode="url" autocomplete="off" placeholder="https://youtu.be/…"></label>
-      <p class="upled-note">Search <a id="upledsrch" target="_blank" rel="noopener">Google ↗</a> or <a id="upledsrchy" target="_blank" rel="noopener">YouTube ↗</a> to find its video, then paste its YouTube link.</p>
+      <div class="srchrow" id="upledsr"><a class="srchpill" id="upledsrch" target="_blank" rel="noopener">Search Google</a><a class="srchpill" id="upledsrchy" target="_blank" rel="noopener">Search YouTube</a><a class="srchpill" id="upledsp" target="_blank" rel="noopener">Spotify’s song</a></div>
       <div class="upled-yt" id="upledyt" hidden><img id="upledyti" alt=""><a id="upledyta" target="_blank" rel="noopener">Watch it on YouTube ↗</a></div>
     </section>
     <section class="upled-sec" aria-labelledby="upledfh">
@@ -4092,7 +4092,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     }
     if (SPX.catchUp) {   // Spotify got further on by itself (while away, say): the page steps on to its song, sending nothing (John, 3 Nov 2026: "the app stops recognising it")
       var ci = SPX.list.indexOf(id), ct = SPX.list.indexOf(SPX.catchUp);
-      if (id === SPX.catchUp) { SPX.catchUp = null; spxWatch(); coverState(SPX.playing ? 1 : 2); return; }
+      if (id === SPX.catchUp) { SPX.catchUp = null; spxWatch(); coverState(SPX.playing ? 1 : 2); spxShowDev(); return; }   // (where it's playing, said: John, 5 Nov 2026)
       if (ci >= 0 && ct > ci) { setTimeout(function () { if (coverObj && coverObj.sp && SPX.catchUp) coverState(0); }, 60); return; }
       SPX.catchUp = null;   // (another song chosen here: as usual)
     }
@@ -8332,7 +8332,6 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         if (s.d && byDate[s.d] && byDate[s.d].some(function (p) { return p.track === t; })) openDay(s.d, { track: t }); else mineUplOpen(UPL.on, { track: t });
       });
       it.appendChild(a);
-      if (x.w === 'v' && !left) { it.classList.add('srow'); it.appendChild(searchLinks(s, 'stop srch')); }   // (none found: look for it yourself)
       if (left) {
         var st = document.createElement('button'); st.type = 'button'; st.className = 'stop'; st.textContent = 'Stop looking';
         st.setAttribute('aria-label', 'Stop looking for ' + s.title);
@@ -8450,7 +8449,6 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         upledOpen(cs && cs.upl === UPL.on ? cs : uplSongMap(x, UPL.view), MISS.k);
       });
       li.appendChild(b);
-      if (m.k === 'v' && i >= looking.length) { var sa = document.createElement('div'); sa.className = 'dlacts'; sa.appendChild(searchLinks(x, 'srchpill')); li.appendChild(sa); }   // (none found: a Google search for it)
       if (dx) {   // Try again, and Add my own copy
         var acts = document.createElement('div'); acts.className = 'dlacts';
         var tr = document.createElement('button'); tr.type = 'button'; tr.textContent = 'Try again';
@@ -9075,7 +9073,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var how = !('ov' in s) ? 'found' : s.ov ? 'link' : 'none';
     [].forEach.call(document.querySelectorAll('input[name="upledv"]'), function (r) { r.checked = r.value === how; });
     document.getElementById('upledlink').value = s.ov ? 'https://youtu.be/' + s.ov : '';
-    document.getElementById('upledsrch').href = songSearchUrl(s); document.getElementById('upledsrchy').href = ytSearchUrl(s);
+    document.getElementById('upledsrch').href = songSearchUrl(s); document.getElementById('upledsrchy').href = ytSearchUrl(s); document.getElementById('upledsp').href = 'https://open.spotify.com/track/' + s.track;   // (to find its video, and Spotify's own to check it's the same: John, 5 Nov 2026)
     var jo = s.jo || {};   // (what John has chosen for it on the Songs tab: his, not to change here)
     document.getElementById('upledvj').hidden = !jo.v; document.getElementById('upledmj').hidden = !jo.m; document.getElementById('upledgj').hidden = !jo.g;
     [].forEach.call(document.querySelectorAll('input[name="upledv"]'), function (r) { r.disabled = !!jo.v; });
@@ -10863,6 +10861,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       SPX.list = spxUpcoming(k.track); SPX.track = k.track; SPX.catchUp = k.track; SPX.native = false;
       SPX.playing = true; SPX.pos = k.pos || 0; SPX.at = Date.now(); SPX.dur = k.dur || 0; SPX.other = false;
       SPX.dev = { id: k.did || '', name: k.device || 'Spotify' }; SPX.last = { id: k.did || '', name: k.device || '', type: k.dtype || '' };
+      // (playing on one of their speakers: that speaker is the one chosen, for this visit, so the page follows Spotify there
+      // (its time, its next songs) whatever they chose for songs with files: John, 5 Nov 2026, "it doesn't synch with the time of the song")
+      if (k.did && !/Smartphone|Tablet/.test(k.dtype || '')) { SPX.pick = k.did; SPX.pickPhone = false; spkDraw(); }
       spLog('picked up (' + why + '): Spotify playing “' + (byTrack[k.track].title || k.track) + '” on ' + (k.device || 'a device') + ', ' + SPX.list.length + ' in its list');
       NOW.from = ''; root.classList.remove('nowelse'); PICK.follow = true;   // (not "on your iPhone": Spotify's, followed here quietly)
       PICK.force = true;
