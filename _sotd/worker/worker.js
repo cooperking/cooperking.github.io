@@ -4028,7 +4028,7 @@ function uplShareOf(rec) { return UPL_SHARES.includes(rec.share) ? rec.share : '
 // sees it, who edits it and removing it stay its owner's. Their files count against its owner's allowance.
 function uplCo(rec, id) { return !!(rec && id && (rec.cw || []).includes(id)); }
 const UPL_RETRY_FOR = 6 * 3600e3;   // (a song John asked to be looked for again: given to the job as retry for six hours)
-const UPL_CO_OPS = ['skip', 'unskip', 'edit', 'facts', 'askfacts', 'order', 'signoff', 'signoffall', 'del', 'move', 'unmove', 'place', 'dayorder', 'dltry'];
+const UPL_CO_OPS = ['skip', 'unskip', 'jfdrop', 'edit', 'facts', 'askfacts', 'order', 'signoff', 'signoffall', 'del', 'move', 'unmove', 'place', 'dayorder', 'dltry'];
 function uplCan(all, viewer, rec) {   // whether someone sees this playlist (viewer: a member's id, or none): theirs, or another's that's readable, shared with them and not kept apart
   if (!rec || !all[rec.o]) return false;
   if (viewer && rec.o === viewer) return true;
@@ -4410,7 +4410,7 @@ async function ytList(request, url, env) {
     const v = (J[x.id] && J[x.id].v) || ('ov' in x ? x.ov : (x.vid && x.vid.v)) || '';
     const twinHas = x.jf && x.jf.a && x.jf.v;   // (files already, its own or another copy's of the same song: nothing to download)
     if (!v && x.osrc && json) { out.push(Object.assign({ id: x.id, v: x.osrc, src: x.osrc, a: x.artist || '', t: x.title || '' }, (twinHas || (plan && !plan.allowed.has(x.id) && !plan.john.has(x.id))) ? { dl: 0 } : {})); continue; }   // (no YouTube video: its MP3 from another site's link, for the download job)
-    if (v) out.push(Object.assign({ id: x.id, v, a: x.artist || '', t: x.title || '' }, json && x.osrc ? { src: x.osrc } : {}, x.f ? { f: 1 } : {}, x.w ? { w: 1 } : {}, twinHas || (plan && !plan.allowed.has(x.id) && !plan.john.has(x.id)) ? { dl: 0 } : {}));
+    if (v) out.push(Object.assign({ id: x.id, v, a: x.artist || '', t: x.title || '' }, json && x.osrc ? { src: x.osrc } : {}, json && (x.sk || '').includes('a') ? { na: 1 } : {}, json && (x.sk || '').includes('f') ? { nv: 1 } : {}, x.f ? { f: 1 } : {}, x.w ? { w: 1 } : {}, twinHas || (plan && !plan.allowed.has(x.id) && !plan.john.has(x.id)) ? { dl: 0 } : {}));
   }
   if (json) return answer(200, { t: view.n, songs: out });
   if (!out.length) return new Response('No videos on “' + view.n + '” yet.', { status: 404, headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' } });
@@ -4880,6 +4880,21 @@ async function memberUpl(request, url, env, answer) {
   }
   if (rec.src === 'mpl' && ['link', 'check', 'signoff', 'signoffall', 'order', 'title', 'del'].includes(body.op)) return answer(400, { error: 'That’s done in the playlist itself.' });
   if (rec.src === 'csv' && ['link', 'check'].includes(body.op)) return answer(400, { error: 'Upload a fresh export from Exportify instead.' });
+  if (body.op === 'jfdrop') {   // John: a song's downloaded MP3 (k a) or MP4 (k v) deleted, a fresh copy fetched (again) or none from now on (John, 5 Nov 2026: "the ability to delete other peoples music")
+    if (!await uplAdm(env, me)) return answer(403, { error: 'Only John can do that.' });
+    const t = String(body.track || ''), k = body.k === 'v' ? 'v' : 'a', data = await uplSongs(env, pid);
+    if (!(data.songs || []).some(y => y.id === t)) return answer(404, { error: 'That song isn’t on this playlist.' });
+    const c = await catalog(env); if (!(c[t] || {})[k] || !env.MEDIA) return answer(404, { error: 'It has no file of its own of that kind (another copy’s are left as they are).' });
+    const keys = k === 'a' ? ['a/' + t + '.mp3', 'l/' + t + '.m4a'] : ['v/' + t + '.mp4', 'h/' + t + '.mp4'];
+    for (const key of keys) await env.MEDIA.delete(key).catch(() => {});
+    await catalogSet(env, keys[0], 0);
+    const sk = k === 'a' ? 'a' : 'f';
+    data.skip = data.skip || {};
+    if (body.again) { if (data.skip[t]) { data.skip[t] = data.skip[t].replace(sk, ''); if (!data.skip[t]) delete data.skip[t]; } await env.SOTD.put('r2want', JSON.stringify({ at: Date.now(), key: keys[0] })); }
+    else if (!(data.skip[t] || '').includes(sk)) data.skip[t] = (data.skip[t] || '') + sk;   // (none from now on: the download job leaves it)
+    await env.SOTD.put('upl:' + pid, JSON.stringify(data));
+    return answer(200, { ok: true, view: await uplView(env, all, me, pid, rec) });
+  }
   if (body.op === 'unskip') {   // the songs marked can't be found (k: which), back on its Missing and looked for again
     const k = String(body.k || ''), data = await uplSongs(env, pid);
     if (!/^[pvaf]$/.test(k)) return answer(400, { error: 'Which?' });
