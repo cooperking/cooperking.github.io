@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="85f6d552a63e">
+<meta name="sotd-build" content="582334f7bb7e">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -7916,13 +7916,30 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       box.appendChild(b);
     });
   }
+  // a reaction shows at once, as if done (John, 5 Nov 2026: "Tapping emojis is slow to respond so people retap"); taps
+  // made while one is on its way are kept, and only the last is sent after it
+  function rxLocal(x, want) {
+    var rx = (x.rx || []).map(function (r) { return { e: r.e, n: (r.n || []).slice(), me: r.me }; }), me = (MEMBER && MEMBER.name) || 'you';
+    rx.forEach(function (r) { if (r.me) { r.me = false; r.n = r.n.filter(function (n) { return n !== 'you' && n !== me; }); } });
+    rx = rx.filter(function (r) { return r.n.length; });
+    if (want) { var h = rx.filter(function (r) { return r.e === want; })[0]; if (h) { h.me = true; h.n.unshift('you'); } else rx.push({ e: want, n: ['you'], me: true }); }
+    x.rx = rx;
+  }
   function rxSend(x, e) {
     var want = rxMine(x) === e ? '' : e;
     INBOX.pick = null;
-    sendPost('/members/react', { id: x.id, e: want }).then(function (j) {
-      if (!j.ok) { toast(j.error || 'Couldn’t react just now'); return; }
-      x.rx = j.rx; inboxDraw(); if (MSG && MSG.x === x) msgRx(x);
-    }).catch(function () { toast('Couldn’t reach the site. Try again.'); });
+    rxLocal(x, want); inboxDraw(); if (MSG && MSG.x === x) msgRx(x);
+    if (x._rxBusy) { x._rxNext = want; return; }
+    var go = function (w) {
+      x._rxBusy = true;
+      sendPost('/members/react', { id: x.id, e: w }).then(function (j) {
+        x._rxBusy = false;
+        if ('_rxNext' in x) { var n = x._rxNext; delete x._rxNext; if (n !== w) { go(n); return; } }
+        if (!j.ok) { toast(j.error || 'Couldn’t react just now'); return; }
+        x.rx = j.rx; inboxDraw(); if (MSG && MSG.x === x) msgRx(x);
+      }).catch(function () { x._rxBusy = false; toast('Couldn’t reach the site. Try again.'); });
+    };
+    go(want);
   }
   function msgRx(x) {   // the message opened: its reactions, and the emoji to react with (one received from someone)
     var box = document.getElementById('msgrx'), chips = document.getElementById('msgrxc'), pick = document.getElementById('msgrxp'), mayReact = !MSG.sent && !!(x.f || x.s) && !!MEMBER;

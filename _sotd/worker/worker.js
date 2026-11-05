@@ -3501,14 +3501,15 @@ async function memberReact(request, env, answer) {
   const box = (await env.SOTD.get('inbox:' + who.id, 'json')) || [];
   const x = id && box.find(y => y.id === id && rxCan(y));
   if (!x) return answer(404, { error: 'No such message in your inbox.' });
-  const key = 'react:' + id, r = (await env.SOTD.get(key, 'json')) || {};
-  if (e) r[who.id] = { e, at: Date.now() }; else delete r[who.id];
+  const key = 'react:' + id, r = (await env.SOTD.get(key, 'json')) || {}, prev = r[who.id];
+  const again = !!prev && Date.now() - (prev.alerted || prev.at || 0) < 10 * 60e3;   // (reacted to it in the last ten minutes: no second alert: John, 5 Nov 2026, "people retap and get several alerts")
+  if (e) r[who.id] = Object.assign({ e, at: Date.now() }, again && prev.alerted ? { alerted: prev.alerted } : {}); else delete r[who.id];
   if (Object.keys(r).length) await env.SOTD.put(key, JSON.stringify(r), { expirationTtl: REACT_DAYS * 86400 }); else await env.SOTD.delete(key);
   // the bell: the sender's, or for the day's song John's (the member marked This is me)
   const ownerId = await env.SOTD.get('owner'), song = rxSong(x), to = song ? ownerId : x.fi;
   if (to && who.all[to]) {
     await bellNote(env, to, id, x.t, who.id, e, song ? x.u : '');
-    if (e && takesFrom(who.all, to, who.id, ownerId)) await bellPush(env, to, who.all[who.id].name, e, x.t, id, who.id, song);
+    if (e && !again && takesFrom(who.all, to, who.id, ownerId)) { await bellPush(env, to, who.all[who.id].name, e, x.t, id, who.id, song); r[who.id].alerted = Date.now(); await env.SOTD.put(key, JSON.stringify(r), { expirationTtl: REACT_DAYS * 86400 }); }
   }
   return answer(200, { ok: true, rx: rxView(who.all, who.id, r) });
 }
