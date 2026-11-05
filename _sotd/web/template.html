@@ -588,6 +588,7 @@ html.upl-list .side-acts .listbtn { display: inline-grid; }
 .uplprog-rows .whichl li a.srch { flex: none; align-self: center; padding: 6px 11px; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--line); color: var(--fg); font: 600 12px/1.2 var(--sans); text-decoration: none; }
 a.srchpill { padding: 5px 12px; border-radius: 999px; background: var(--pill-bg); box-shadow: inset 0 0 0 1px var(--line); color: var(--fg); font: 600 12px var(--sans); text-decoration: none; }
 .srchrow { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 4px; }
+#missgone .linkbtn { padding: 0; border: 0; background: none; color: inherit; font: inherit; font-weight: 600; text-decoration: underline; cursor: pointer; }
 .dlwhy { display: block; margin-top: 4px; font-size: 12.5px; line-height: 1.4; color: var(--muted); white-space: normal; }
 .dlwhy.gone, .dlwhy.blocked { color: #e23a6e; }
 .dlacts { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 8px; }
@@ -8368,16 +8369,17 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     { k: 'a', t: 'MP3s', tip: 'No MP3 (the whole song, for playing offline and in the background). Tap one to add your own.', no: function (x) { return !(x.ma || (x.own && x.own.a) || (x.jf && x.jf.a)); } },
     { k: 'mv', t: 'MP4s', tip: 'No MP4 (the video as a file). Tap one to add your own.', no: function (x) { return !(x.mv || (x.own && x.own.v) || (x.jf && x.jf.v)); } }
   ];
+  var MISS_SK = { p: 'p', v: 'v', a: 'a', mv: 'f' };   // each list's mark for "can't be found" (John, 5 Nov 2026: "a place to delete from missing if really can't be found")
   function missLists() {
     var v = UPL.view, out = {}; if (!v || !v.songs) return null;
     var songs = v.songs.filter(function (x) { return !x.w; });
-    MISS_KINDS.forEach(function (m) { out[m.k] = songs.filter(function (x) { return m.no(x, uplSongMap(x, v)); }); });
+    MISS_KINDS.forEach(function (m) { var sk = MISS_SK[m.k]; out[m.k] = songs.filter(function (x) { return m.no(x, uplSongMap(x, v)) && (x.sk || '').indexOf(sk) < 0; }); out[m.k + '_gone'] = songs.filter(function (x) { return m.no(x, uplSongMap(x, v)) && (x.sk || '').indexOf(sk) >= 0; }).length; });
     out.n = songs.length; return out;
   }
   function missSync() {
     if (!MISS_KINDS || !missDlg) return;   // (before they're set up: the first draw)
     var can = uplOwnCan() || !!(MEMBER && MEMBER.owner === true && UPL.on && UPL.view && !TV), L = can && missLists();   // (John: any playlist's, to look again)
-    var any = L && (MISS_KINDS.some(function (m) { return L[m.k].length; }) || (MEMBER && MEMBER.owner === true && UPL.view.songs.some(function (x) { return !x.w && !songYt(uplSongMap(x, UPL.view)); })));   // (John: a song with no YouTube link too, for Look again)
+    var any = L && (MISS_KINDS.some(function (m) { return L[m.k].length || L[m.k + '_gone']; }) || (MEMBER && MEMBER.owner === true && UPL.view.songs.some(function (x) { return !x.w && !songYt(uplSongMap(x, UPL.view)); })));   // (John: a song with no YouTube link too, for Look again)
     [].forEach.call(document.querySelectorAll('.missbtn'), function (b) {
       b.hidden = !can || !L || !L.n || ED.on || !any;   // (only when something is missing: John, 3 Nov 2026)
     });
@@ -8403,6 +8405,15 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var lf = (m.k === 'p' || m.k === 'v') && v.prog && v.prog.left && v.prog.left[m.k] || [], looking = list.filter(function (x) { return lf.indexOf(x.id) >= 0; }), found = list.filter(function (x) { return lf.indexOf(x.id) < 0; });
     var tips = { p: 'No preview on Spotify: these play their video if they have one; add your own MP3 to play the whole song.', v: 'No YouTube video found. Tap one to give it a YouTube link or your own MP4.' };
     document.getElementById('misstip').textContent = !list.length ? '' : looking.length ? looking.length + ' still being looked ' + (m.k === 'p' ? 'up on Spotify' : 'for on YouTube') + (found.length ? '; ' + found.length + ' with none found.' : '.') + (found.length ? ' ' + tips[m.k] : ' They come in by themselves over the next while.') : list.length + ' of ' + L.n + ' songs. ' + (tips[m.k] || m.tip);
+    var gone = L[m.k + '_gone'] || 0, gl = document.getElementById('missgone');
+    if (!gl) { gl = document.createElement('p'); gl.id = 'missgone'; gl.className = 'ask-t'; document.getElementById('missl').parentNode.appendChild(gl); }
+    gl.textContent = ''; gl.hidden = !gone || !uplOwnCan();
+    if (gone && uplOwnCan()) {
+      gl.appendChild(document.createTextNode(gone + (gone === 1 ? ' marked can’t be found. ' : ' marked can’t be found. ')));
+      var bb = document.createElement('button'); bb.type = 'button'; bb.className = 'linkbtn'; bb.textContent = 'Bring them back';
+      bb.addEventListener('click', function () { bb.disabled = true; uplCall({ op: 'unskip', id: UPL.on, k: MISS_SK[m.k] }).then(function (j) { if (j.view) uplApply(j.view, { keep: true }); missDraw(); missSync(); }, function () { bb.disabled = false; }); });
+      gl.appendChild(bb);
+    }
     var none = document.getElementById('missnone'); none.hidden = !!list.length;
     none.textContent = 'Every song has ' + (m.k === 'p' ? 'a preview' : m.k === 'v' ? 'a video' : m.k === 'a' ? 'an MP3' : 'an MP4') + '.';
     var ul = document.getElementById('missl'); ul.textContent = '';
@@ -8425,6 +8436,13 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         upledOpen(cs && cs.upl === UPL.on ? cs : uplSongMap(x, UPL.view), MISS.k);
       });
       li.appendChild(b);
+      if (i >= looking.length && uplOwnCan()) {   // can't be found: off this list (back with Bring them back, below)
+        var nf = document.createElement('div'); nf.className = 'dlacts';
+        var nb = document.createElement('button'); nb.type = 'button'; nb.textContent = 'Can’t be found';
+        nb.setAttribute('aria-label', 'Mark ' + x.title + ' as can’t be found');
+        nb.addEventListener('click', function () { nb.disabled = true; uplCall({ op: 'skip', id: UPL.on, track: x.id, k: MISS_SK[m.k] }).then(function (j) { if (j.view) uplApply(j.view, { keep: true }); if (j.status !== 200) toast(j.error || 'Couldn’t just now'); missDraw(); missSync(); }, function () { nb.disabled = false; }); });
+        nf.appendChild(nb); li.appendChild(nf);
+      }
       if (dx) {   // Try again, and Add my own copy
         var acts = document.createElement('div'); acts.className = 'dlacts';
         var tr = document.createElement('button'); tr.type = 'button'; tr.textContent = 'Try again';

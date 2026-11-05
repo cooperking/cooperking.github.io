@@ -4028,7 +4028,7 @@ function uplShareOf(rec) { return UPL_SHARES.includes(rec.share) ? rec.share : '
 // sees it, who edits it and removing it stay its owner's. Their files count against its owner's allowance.
 function uplCo(rec, id) { return !!(rec && id && (rec.cw || []).includes(id)); }
 const UPL_RETRY_FOR = 6 * 3600e3;   // (a song John asked to be looked for again: given to the job as retry for six hours)
-const UPL_CO_OPS = ['skip', 'edit', 'facts', 'askfacts', 'order', 'signoff', 'signoffall', 'del', 'move', 'unmove', 'place', 'dayorder', 'dltry'];
+const UPL_CO_OPS = ['skip', 'unskip', 'edit', 'facts', 'askfacts', 'order', 'signoff', 'signoffall', 'del', 'move', 'unmove', 'place', 'dayorder', 'dltry'];
 function uplCan(all, viewer, rec) {   // whether someone sees this playlist (viewer: a member's id, or none): theirs, or another's that's readable, shared with them and not kept apart
   if (!rec || !all[rec.o]) return false;
   if (viewer && rec.o === viewer) return true;
@@ -4655,6 +4655,7 @@ async function uplView(env, all, viewer, pid, rec, also) {   // (also: tracks wa
     if (x.ab) { const nm = (await spWho(env, all))[x.ab]; if (nm || mine || adm) x.abn = nm || x.ab; delete x.ab; }   // (the Spotify id itself not sent on)   // (who added it on Spotify: a member's name for everyone, else the Spotify username for its owner and John: John, 3 Nov 2026)   // (who added it on Spotify, for its owner's editor: a member's name where it's one of theirs: John, 3 Nov 2026)
     if (e && 'v' in e) x.ov = e.v;
     if (e && e.src && (mine || adm)) x.osrc = e.src;   // (its MP3 from another site's link)
+    if (mine && data.skip && data.skip[x.id]) x.sk = data.skip[x.id];   // (marked can't be found: p, v, a, f)
     if (e && (e.tt || e.ar)) {   // its owner's own title and artist, for everyone; theirs: Spotify's too (ot, oa), to go back to
       if (mine) { x.ot = x.title; x.oa = x.artist; }
       if (e.tt) x.title = e.tt;
@@ -4879,9 +4880,17 @@ async function memberUpl(request, url, env, answer) {
   }
   if (rec.src === 'mpl' && ['link', 'check', 'signoff', 'signoffall', 'order', 'title', 'del'].includes(body.op)) return answer(400, { error: 'That’s done in the playlist itself.' });
   if (rec.src === 'csv' && ['link', 'check'].includes(body.op)) return answer(400, { error: 'Upload a fresh export from Exportify instead.' });
+  if (body.op === 'unskip') {   // the songs marked can't be found (k: which), back on its Missing and looked for again
+    const k = String(body.k || ''), data = await uplSongs(env, pid);
+    if (!/^[pvaf]$/.test(k)) return answer(400, { error: 'Which?' });
+    let n = 0;
+    for (const t of Object.keys(data.skip || {})) if (data.skip[t].includes(k)) { data.skip[t] = data.skip[t].replace(k, ''); if (!data.skip[t]) delete data.skip[t]; n++; }
+    if (n) await env.SOTD.put('upl:' + pid, JSON.stringify(data));
+    return answer(200, { ok: true, n, view: await uplView(env, all, me, pid, rec) });
+  }
   if (body.op === 'skip') {   // its owner stops the look for one song's preview (p), video (v), moods (m) or year (y): counted as none found
     const k = String(body.k || ''), data = await uplSongs(env, pid), t = String(body.track || '');
-    if (!/^[pvmy]$/.test(k)) return answer(400, { error: 'Which look?' });
+    if (!/^[pvmyaf]$/.test(k)) return answer(400, { error: 'Which look?' });   // (a, f: its MP3 or MP4 can't be found: off its Missing: John, 5 Nov 2026)
     if (!(data.songs || []).some(y => y.id === t)) return answer(404, { error: 'That song isn’t on this playlist.' });
     data.skip = data.skip || {};
     if (!(data.skip[t] || '').includes(k)) data.skip[t] = (data.skip[t] || '') + k;
