@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="425723aec82a">
+<meta name="sotd-build" content="f5e714b2c14e">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -8303,7 +8303,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   var MISS = { k: 'p' }, missDlg = document.getElementById('missdlg');
   var MISS_KINDS = [
     { k: 'p', t: 'Previews', tip: 'No preview on Spotify (or still being looked up). These play their video if they have one; add your own MP3 to play the whole song.', no: function (x, s) { return !x.p; } },
-    { k: 'v', t: 'Videos', tip: 'No YouTube video found. Tap one to give it a YouTube link or your own MP4.', no: function (x, s) { return !songYt(s); } },
+    { k: 'v', t: 'Videos', tip: 'No YouTube video found. Tap one to give it a YouTube link or your own MP4.', no: function (x, s) { return !songYt(s) && !(x.mv || (x.own && x.own.v) || (x.jf && x.jf.v)); } },   // (an MP4 is its video)
     { k: 'a', t: 'MP3s', tip: 'No MP3 (the whole song, for playing offline and in the background). Tap one to add your own.', no: function (x) { return !(x.ma || (x.own && x.own.a) || (x.jf && x.jf.a)); } },
     { k: 'mv', t: 'MP4s', tip: 'No MP4 (the video as a file). Tap one to add your own.', no: function (x) { return !(x.mv || (x.own && x.own.v) || (x.jf && x.jf.v)); } }
   ];

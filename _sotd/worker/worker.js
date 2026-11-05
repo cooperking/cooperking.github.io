@@ -4503,14 +4503,15 @@ async function uplSync(request, env) {
     if (n) await uplPut(env, U);
     return answer(200, { ok: true, kept: n });
   }
-  const pv = Object.assign({}, pvMem, (await env.SOTD.get('previews', 'json')) || {}), tags = (await env.SOTD.get('tags', 'json')) || {}, out = {}, J = await uplJohnAll(env);
+  const pv = Object.assign({}, pvMem, (await env.SOTD.get('previews', 'json')) || {}), tags = (await env.SOTD.get('tags', 'json')) || {}, out = {}, J = await uplJohnAll(env), cat = await catalog(env), TW = await twinFiles(env);
   for (const [pid, rec] of Object.entries(U)) {
     if (rec.st !== 'ok' || !all[rec.o]) continue;
     const data = await uplSongs(env, pid);
     const ed = data.ed || {};   // (ov: its owner's video for a song, '' none)
     const gone = new Set((data.songs || []).filter(x => uplGone(data, x)).map(x => x.id));
     out[pid] = { title: uplTitle(all, rec), mode: rec.mode, base: rec.base || 0, yt: rec.yt || '', share: uplShareOf(rec), songs: composeSongs(data.songs || [], pv, tags).filter(x => !gone.has(x.id))
-      .map(x => J[x.id] && 'v' in J[x.id] ? Object.assign(x, { ov: J[x.id].v }) : ed[x.id] && 'v' in ed[x.id] ? Object.assign(x, { ov: ed[x.id].v }) : ((data.skip || {})[x.id] || '').includes('v') ? Object.assign(x, { ov: '' }) : (data.retry || {})[x.id] > Date.now() - UPL_RETRY_FOR ? Object.assign(x, { retry: 1 }) : x) };   // (its look for a video stopped by its owner: none, so the job doesn't search; retry: John's Look again, looked for again by the job, youtube.py)   // (John's video over its owner's)
+      .map(x => J[x.id] && 'v' in J[x.id] ? Object.assign(x, { ov: J[x.id].v }) : ed[x.id] && 'v' in ed[x.id] ? Object.assign(x, { ov: ed[x.id].v }) : ((data.skip || {})[x.id] || '').includes('v') ? Object.assign(x, { ov: '' }) : (data.retry || {})[x.id] > Date.now() - UPL_RETRY_FOR ? Object.assign(x, { retry: 1 }) : x)
+      .map(x => { if ('ov' in x) return x; const f = (data.files || {})[x.id], tw = (cat[x.id] && cat[x.id].v) || (f && f.v) ? null : twinOf(TW, x, pid); if ((cat[x.id] && cat[x.id].v) || (f && f.v) || (tw && (tw.pid ? tw.v : cat[tw.id] && cat[tw.id].v))) x.mp4 = 1; return x; }) };   // (mp4: it has an MP4 already, its own or another copy's: no YouTube search for it: John, 5 Nov 2026)   // (its look for a video stopped by its owner: none, so the job doesn't search; retry: John's Look again, looked for again by the job, youtube.py)   // (John's video over its owner's)
     if (uplShareOf(rec) === 'public') {   // its songs out, each with its day and cover: the cards for its links (share_pages.py)
       const v = await uplView(env, all, null, pid, rec);
       out[pid].pub = { t: v.t, n: v.n, songs: v.songs.map(x => ({ id: x.id, d: x.d, title: x.title, artist: x.artist, artists: x.artists, img: x.img || '' })) };
@@ -4638,6 +4639,8 @@ async function uplView(env, all, viewer, pid, rec, also) {   // (also: tracks wa
     let jcId = x.id, jc = cat[x.id] || {};
     let twOwn = null;
     if (!jc.a && !jc.v && !(f && (f.a || f.v))) { const tw = twinOf(TW, x, pid); if (tw && !tw.pid && cat[tw.id]) { jc = cat[tw.id]; jcId = tw.id; } else if (tw && tw.pid) twOwn = tw; }   // (another copy of the same song has them: those)
+    if (!x.vid && jcId !== x.id && JV[jcId] && JV[jcId].v) x.vid = JV[jcId];   // (the other copy's video too)
+    if (!x.vid && twOwn && meta[twOwn.id] && meta[twOwn.id].vid) x.vid = meta[twOwn.id].vid;
     if ((mine || adm) && (jc.a || jc.v)) x.jf = { a: jc.a || 0, v: jc.v || 0 };   // (John too, on anyone's: its Missing as its owner sees it, John, 3 Nov 2026)   // (its owner's editor: John's, with their sizes)
     if ((mine || adm) && env.ADMIN_KEY) for (const k of ['a', 'v']) if (jc[k]) x['m' + k] = LIVE_ORIGIN + '/m/' + k + '/' + jcId + '.' + MEDIA_KINDS[k].ext + '?e=' + exp + '&s=' + await mediaSig(env, k, jcId, exp);   // (John's, for its owner on their own playlist, whatever he lets them have elsewhere)
     { const ds = DLS[x.id], have = k => !!(jc[k] || (f && f[k]) || (twOwn && twOwn[k])); if (ds && !(have('a') && have('v'))) x.dlx = { k: ds.kind, how: ds.how, why: ds.why, tries: ds.tries || 1, at: ds.at }; }   // (why its files didn't come, for its Missing)
@@ -4669,7 +4672,8 @@ async function uplView(env, all, viewer, pid, rec, also) {   // (also: tracks wa
   if (mine) {   // (its owner: how far the calendar has got with its songs: each part found (p, v, m, y), looked at with none (pn, vn, mn, yn), and their own files (fa, fv: songs with an MP3, an MP4))
     const all2 = (data.songs || []).filter(x => !gone.has(x.id)), seen = (await env.SOTD.get('uplseen', 'json')) || {}, skip = data.skip || {};
     const off = (x, k) => (skip[x.id] || '').includes(k);   // (its owner stopped the look for it: John, 1 Nov 2026: "You should be able to cancel a search for something")
-    const has = (x, k) => k === 'v' ? !!(x.vid || x.ov) : k === 'm' ? !!(x.mt || x.tag) : !!x.yr;
+    const has = (x, k) => k === 'v' ? !!(x.vid || x.ov || x.mv || (x.own && x.own.v) || (x.jf && x.jf.v)) :   // (an MP4, its own or another copy's: a video already, never looked for: John, 5 Nov 2026)
+      k === 'm' ? !!(x.mt || x.tag) : !!x.yr;
     const noneOf = k => songs.filter(x => !has(x, k) && ((seen[x.id] || '').includes(k) || (k === 'v' && x.ov === '') || off(x, k))), none = k => noneOf(k).length;
     const leftOf = k => songs.filter(x => !has(x, k) && !(seen[x.id] || '').includes(k) && !(k === 'v' && x.ov === '') && !off(x, k));
     const pvNone = x => pv[x.id] === '-' || (!(x.id in pv) && off(x, 'p')), pvLeft = x => !(x.id in pv) && !off(x, 'p');

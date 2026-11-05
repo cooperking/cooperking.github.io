@@ -636,6 +636,9 @@ def main():
     import urllib.request
     with urllib.request.urlopen(urllib.request.Request(SONGS_URL, headers={'User-Agent': ytapi.UA}), timeout=30) as r:
         songs = json.loads(r.read())['songs']
+    # a member's song with an MP4 already (its own, or another copy's: the Worker marks it mp4) isn't searched for:
+    # its MP4 is its video (John, 5 Nov 2026: songs with MP3s and MP4s on other playlists still in the search)
+    songs = [s for s in songs if not (s.get('upl') and s.get('mp4') and not (data['songs'].get(s['id']) or {}).get('id'))]
     undone = 0
     for s in songs:   # videos a web search found that today's matching wouldn't take (God Like by Tree, as a Darkseid video): searched for again
         e = data['songs'].get(s['id'])
