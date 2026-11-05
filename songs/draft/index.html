@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="582334f7bb7e">
+<meta name="sotd-build" content="6811dd73ca89">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -8502,7 +8502,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       li.appendChild(b);
       if (i >= looking.length && uplOwnCan()) {   // can't be found: off this list (back with Bring them back, below)
         var nf = document.createElement('div'); nf.className = 'dlacts';
-        var nb = document.createElement('button'); nb.type = 'button'; nb.textContent = 'Can’t be found';
+        var nb = document.createElement('button'); nb.type = 'button'; nb.textContent = 'Mark as can’t be found';   // (a button, not a reason: John, 5 Nov 2026, read as songs that had failed)
         nb.setAttribute('aria-label', 'Mark ' + x.title + ' as can’t be found');
         nb.addEventListener('click', function () { nb.disabled = true; uplCall({ op: 'skip', id: UPL.on, track: x.id, k: MISS_SK[m.k] }).then(function (j) { if (j.view) uplApply(j.view, { keep: true }); if (j.status !== 200) toast(j.error || 'Couldn’t just now'); missDraw(); missSync(); }, function () { nb.disabled = false; }); });
         nf.appendChild(nb); li.appendChild(nf);
