@@ -4,19 +4,19 @@
   "about": "For songs Claude knows: how often the three strongest moods from Last.fm listeners' track tags, from the artist's Last.fm tags, and from the audio models include Claude's first pick.",
   "listeners": [
    2,
-   4
+   3
   ],
   "audio": [
-   152,
-   260
+   150,
+   256
   ],
   "artistTags": [
    5,
    29
   ],
-  "songsWithListenerTags": 314,
-  "songsWithListenerMoodTags": 172,
-  "songsWhereListenersCount": 73
+  "songsWithListenerTags": 14,
+  "songsWithListenerMoodTags": 11,
+  "songsWhereListenersCount": 5
  },
  "moods": [
   "Joyful",
@@ -8712,7 +8712,7 @@
    "sound": [
     "Energetic",
     "Dark",
-    "Uplifting"
+    "Bittersweet"
    ],
    "claude": [
     "Dark",
@@ -10512,7 +10512,7 @@
    "sound": [
     "Dark",
     "Bittersweet",
-    "Melancholy"
+    "Dreamy"
    ],
    "claude": [
     "Playful",
@@ -17644,7 +17644,7 @@
    "sound": [
     "Mellow",
     "Uplifting",
-    "Playful"
+    "Joyful"
    ],
    "claude": [
     "Mellow"
@@ -17832,8 +17832,8 @@
    ],
    "moodFrom": "Claude",
    "sound": [
-    "Joyful",
     "Energetic",
+    "Joyful",
     "Romantic"
    ],
    "claude": [
@@ -19181,8 +19181,8 @@
    "moodFrom": "Claude",
    "sound": [
     "Playful",
-    "Energetic",
-    "Joyful"
+    "Joyful",
+    "Energetic"
    ],
    "claude": [
     "Playful",
@@ -19192,9 +19192,9 @@
    "claudeWhy": "Cheeky electroclash: fuzzy synths, a dance-punk beat and deadpan come-on lyrics name-checking Death from Above.",
    "listeners": "none",
    "styles": [
-    "Electro",
     "House",
-    "Synth-pop"
+    "Synth-pop",
+    "Hip-House"
    ],
    "genres": [
     "Indie",
@@ -19208,11 +19208,11 @@
     ],
     [
      "Electronic",
-     31
+     28
     ],
     [
      "Pop",
-     3
+     4
     ]
    ],
    "genreEvidence": [
@@ -19250,15 +19250,15 @@
      [
       [
        "Electronic",
-       80
+       68
       ],
       [
        "Pop",
-       14
+       16
       ],
       [
-       "Soul & R&B",
-       7
+       "Hip-hop",
+       15
       ]
      ]
     ]
@@ -22119,8 +22119,8 @@
    ],
    "moodFrom": "Claude (researched)",
    "sound": [
-    "Melancholy",
     "Romantic",
+    "Melancholy",
     "Bittersweet"
    ],
    "claude": [
@@ -26019,7 +26019,7 @@
       ],
       [
        "Joyful",
-       24
+       23
       ],
       [
        "Romantic",
@@ -26503,7 +26503,7 @@
     ],
     [
      "Romantic",
-     27
+     28
     ],
     [
      "Melancholy",
@@ -26521,7 +26521,7 @@
       ],
       [
        "Romantic",
-       27
+       28
       ],
       [
        "Melancholy",
@@ -26876,7 +26876,7 @@
     ],
     [
      "Joyful",
-     28
+     27
     ],
     [
      "Playful",
@@ -26894,7 +26894,7 @@
       ],
       [
        "Joyful",
-       28
+       27
       ],
       [
        "Playful",
@@ -27119,7 +27119,7 @@
    "moodMix": [
     [
      "Energetic",
-     37
+     38
     ],
     [
      "Joyful",
@@ -27137,7 +27137,7 @@
      [
       [
        "Energetic",
-       37
+       38
       ],
       [
        "Joyful",
@@ -27558,7 +27558,7 @@
    "moodMix": [
     [
      "Playful",
-     24
+     23
     ],
     [
      "Energetic",
@@ -27576,7 +27576,7 @@
      [
       [
        "Playful",
-       24
+       23
       ],
       [
        "Energetic",
