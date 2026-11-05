@@ -70,6 +70,7 @@ export default {
     if (url.pathname === '/upl/vids') return await uplVids(request, env);
     if (url.pathname === '/upl/ytprog') return await uplYtProg(request, env);
     if (url.pathname === '/upl/pvneed') return await uplPvNeed(request, env);
+    if (url.pathname === '/upl/clips') return await uplClips(request, env);
     if (url.pathname === '/upl/websearch') return await uplWebSearch(request, env);
     if (url.pathname.startsWith('/yt/')) return await ytList(request, url, env);
       if (url.pathname === '/login') return await login(url);
@@ -370,7 +371,7 @@ async function makePlaylist(request, url, env) {
 // size than any kept is served at one that is, once Spotify has none. Copies no song uses any more are deleted by the
 // timer too, 200 looked at a run. ----------
 const SP_SIZES = ['ab67616d0000b273', 'ab67616d00001e02', 'ab67616d00004851'];
-function keptPreview(id) { return /^i\d+$/.test(id) ? LIVE_ORIGIN + '/sp/i/' + id.slice(1) + '.m4a' : LIVE_ORIGIN + '/sp/p/' + id + '.mp3'; }   // (i<id>: Apple's preview, below)
+function keptPreview(id) { return /^u[0-9A-Za-z]{22}$/.test(id) ? LIVE_ORIGIN + '/sp/u/' + id.slice(1) + '.mp3' : /^i\d+$/.test(id) ? LIVE_ORIGIN + '/sp/i/' + id.slice(1) + '.m4a' : LIVE_ORIGIN + '/sp/p/' + id + '.mp3'; }   // (i<id>: Apple's preview, below)
 // ---- Apple's preview, for a song Spotify gives none (John, 4 Nov 2026: Ride a White Swan, which Spotify won't preview,
 // "I found it easily here"): Apple's public iTunes Search finds the song by its title and artist, the match checked as
 // the video search's are (title, artist; not live, a cover or karaoke unless the song is), and the song keeps i<Apple's
@@ -473,6 +474,31 @@ async function uplPvNeed(request, env) {
   const kept = (await env.SOTD.get('pvurl', 'json')) || {}, nolink = [...new Set(Object.values(pv).filter(v => /^i\d+$/.test(v)).map(v => v.slice(1)))].filter(k => !kept[k]);
   return answer(200, { songs: out, nolink });
 }
+// /upl/clips (POST, Authorization: Bearer ADMIN_KEY; the download job): the songs with no preview anywhere (Spotify's, its
+// page, then Apple's all tried: '-' and asked of Apple) whose own MP3 or MP4 is in the bucket, each with the file to cut
+// a 30-second clip from; { done: [tracks] } (their clips put at sp/u/<track>.mp3) makes each one's preview that clip
+// (John, 5 Nov 2026: "can we make our own 30 second clip").
+async function uplClips(request, env) {
+  const answer = (status, body) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' } });
+  const bad = await adminOk(request, env, answer); if (bad) return bad;
+  const b = await request.json().catch(() => ({})), pv = Object.assign({}, pvMem, (await env.SOTD.get('previews', 'json')) || {});
+  if (Array.isArray(b.done) && b.done.length) {
+    let n = 0;
+    for (const t of b.done.map(String)) if (ID_RE.test(t) && (pv[t] === '-' || !(t in pv)) && env.MEDIA && await env.MEDIA.head('sp/u/' + t + '.mp3').catch(() => null)) { pv[t] = 'u' + t; pvMem[t] = pv[t]; n++; }
+    if (n) await kvSoft(env, 'previews', JSON.stringify(pv));
+    return answer(200, { ok: true, set: n });
+  }
+  const asked = (await env.SOTD.get('pvit', 'json')) || {}, c = await catalog(env), out = [], seen = new Set();
+  const take = (x, files, pid) => {
+    if (!x || !x.id || seen.has(x.id) || pv[x.id] !== '-' || !asked[x.id]) return;   // (only once Apple's been asked too)
+    const e = c[x.id] || {}, f = files && files[x.id];
+    const src = e.a ? 'l/' + x.id + '.m4a|a/' + x.id + '.mp3' : f && f.a ? 'ua/' + pid + '/' + x.id + '.mp3' : e.v ? 'v/' + x.id + '.mp4' : f && f.v ? 'uv/' + pid + '/' + x.id + '.mp4' : '';
+    if (src) { seen.add(x.id); out.push({ id: x.id, src }); }
+  };
+  for (const pid of Object.keys(await uplAll(env))) { const d = await uplSongs(env, pid); (d.songs || []).forEach(x => take(x, d.files, pid)); }
+  (((await env.SOTD.get('songsLast', 'json')) || {}).songs || []).forEach(x => take(x, null, ''));
+  return answer(200, { songs: out.slice(0, 60) });
+}
 async function itunesServe(request, env, id) {   // /sp/i/<id>.m4a: R2's copy, or Apple's fetched and kept
   const head = { 'Content-Type': 'audio/mp4', 'Cache-Control': 'public, max-age=31536000, immutable', 'Access-Control-Allow-Origin': '*', 'Accept-Ranges': 'bytes' }, key = 'sp/i/' + id + '.m4a';
   const serve = async () => {
@@ -500,6 +526,14 @@ async function itunesServe(request, env, id) {   // /sp/i/<id>.m4a: R2's copy, o
 function keptCover(u) { const m = /^https:\/\/i\.scdn\.co\/image\/([0-9a-f]{40})$/.exec(u || ''); return m ? LIVE_ORIGIN + '/sp/c/' + m[1] + '.jpg' : u; }
 async function spKept(request, url, env) {
   const mi = /^\/sp\/i\/(\d{1,15})\.m4a$/.exec(url.pathname); if (mi) return await itunesServe(request, env, mi[1]);
+  const mu = /^\/sp\/u\/([0-9A-Za-z]{22})\.mp3$/.exec(url.pathname);   // (a 30-second clip made here, from the song's own file: no preview anywhere else)
+  if (mu && env.MEDIA) {
+    const range = request.headers.get('Range'), o = await env.MEDIA.get('sp/u/' + mu[1] + '.mp3', range ? { range: request.headers } : undefined).catch(() => null);
+    if (!o || !o.body) return new Response('Not here.', { status: 404, headers: { 'Access-Control-Allow-Origin': '*' } });
+    const h = { 'Content-Type': 'audio/mpeg', 'Cache-Control': 'public, max-age=86400', 'Access-Control-Allow-Origin': '*', 'Accept-Ranges': 'bytes' };
+    if (range && o.range && o.range.length !== undefined) { const st = o.range.offset || 0, len = o.range.length; return new Response(o.body, { status: 206, headers: Object.assign(h, { 'Content-Range': 'bytes ' + st + '-' + (st + len - 1) + '/' + o.size, 'Content-Length': String(len) }) }); }
+    return new Response(o.body, { headers: Object.assign(h, { 'Content-Length': String(o.size) }) });
+  }
   const m = /^\/sp\/(p|c)\/([0-9a-f]{20,64})\.(mp3|jpg)$/.exec(url.pathname);
   if (!m || (m[1] === 'p') !== (m[3] === 'mp3')) return new Response('Not here.', { status: 404 });
   const kind = m[1], id = m[2], src = kind === 'p' ? 'https://p.scdn.co/mp3-preview/' + id : 'https://i.scdn.co/image/' + id;
@@ -554,7 +588,7 @@ async function spKeep(env) {   // the previews and covers not kept yet, from Joh
     songsSeen++;
     if (own && (own.a || own.v) && !(cat0[x.id] && (cat0[x.id].a || cat0[x.id].v))) { const k = songTitleKey(x); if (k) { const l = twins[k] = twins[k] || []; if (l.length < 8 && !l.some(e => e.id === x.id && e.pid === pid)) l.push({ id: x.id, n: songNames(x), pid, a: own.a ? 1 : 0, v: own.v ? 1 : 0 }); } }   // (a member's own uploads count too: Gauja's Aja, John, 4 Nov 2026)
     { const c = cat0[x.id]; if (c && (c.a || c.v)) { const k = songTitleKey(x); if (k) { const l = twins[k] = twins[k] || []; if (!l.some(e => e.id === x.id) && l.length < 8) { l.push({ id: x.id, n: songNames(x) }); const sc = e => e.pid ? (e.a || 0) + (e.v || 0) - .5 : (cat0[e.id] && cat0[e.id].a ? 1 : 0) + (cat0[e.id] && cat0[e.id].v ? 1 : 0); l.sort((p, q) => sc(q) - sc(p)); } } } }   // (each title's copies with files, the most files first)
-    if (pv[x.id] && pv[x.id] !== '-' && !/^i\d+$/.test(pv[x.id])) { add('p', pv[x.id]); used.add('p' + pv[x.id]); }   // (Apple's are fetched when first asked for)
+    if (pv[x.id] && pv[x.id] !== '-' && !/^[iu]/.test(pv[x.id])) { add('p', pv[x.id]); used.add('p' + pv[x.id]); }   // (Apple's are fetched when first asked for)
     if (pv[x.id] === '-') nopv.push(x);
     const m = /\/image\/([0-9a-f]{40})$/.exec(x.img || ''); if (m) { add('c', m[1]); used.add('c' + m[1].slice(16)); }
   };
