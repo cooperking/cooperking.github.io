@@ -5100,6 +5100,16 @@ async function memberUpl(request, url, env, answer) {
       else if (body.v === '' || /^[\w-]{11}$/.test(String(body.v))) e.v = String(body.v);
       else return answer(400, { error: 'That isn’t a YouTube video.' });
     }
+    let refiled = 0;
+    if (body.refile && typeof body.v === 'string' && body.v && env.MEDIA) {   // a new video chosen for a song with files already: its MP3 and MP4 from the new one (asked first: John, 5 Nov 2026, "if we change videos with a file there already it probably means I want an updated file")
+      const c = await catalog(env), ce = c[t] || {};   // (this song's own downloaded files only: another copy's are never touched)
+      for (const [k, keys] of [['a', ['a/' + t + '.mp3', 'l/' + t + '.m4a']], ['v', ['v/' + t + '.mp4', 'h/' + t + '.mp4']]]) {
+        if (!ce[k]) continue;
+        for (const key of keys) await env.MEDIA.delete(key).catch(() => {});
+        await catalogSet(env, keys[0], 0); refiled++;
+      }
+      if (refiled) await env.SOTD.put('r2want', JSON.stringify({ at: Date.now(), key: 'v/' + t + '.mp4' }));   // (the download job, at Playlist push's next look)
+    }
     for (const [k, list] of [['m', MOOD_LIST], ['g', GENRE_LIST]]) {
       if (body[k] === null) delete e[k];
       else if (Array.isArray(body[k])) e[k] = body[k].filter(x => list.includes(x)).slice(0, 2);

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="dd63147feff7">
+<meta name="sotd-build" content="f6509a6baba0">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -9310,14 +9310,20 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     });
     var facts = ed.fxDirty, edits = 'v' in body || 'm' in body || 'tt' in body || 'ar' in body;
     if (!edits && !facts) { closeDialog(upledDlg); return; }
-    var ok = document.getElementById('upledok'); ok.disabled = true;
+    var ok = document.getElementById('upledok');
+    var hasFiles = s.jf && (s.jf.a || s.jf.v), newVid = typeof body.v === 'string' && body.v;
+    var asked = hasFiles && newVid ? ask({ k: s.title, h: 'New files from this video?', t: 'It has its ' + (s.jf.a && s.jf.v ? 'MP3 and MP4' : s.jf.a ? 'MP3' : 'MP4') + ' already. Get new ones from the video you’ve chosen, or keep the ones it has?', ok: 'Get new files', no: 'Keep the files' }) : Promise.resolve(false);
+    asked.then(function (yes) {
+    if (yes) body.refile = true;
+    ok.disabled = true;
     (edits ? uplCall(body) : Promise.resolve({ status: 200 })).then(function (j) {
       if (j.status !== 200) throw new Error(j.error || 'Couldn’t save it just now');
       if (j.view) upledView(j.view, ed);
       return facts ? upledFactsSend(false, true) : null;
     }).then(function () {
-      ok.disabled = false; closeDialog(upledDlg); toast('Saved');
+      ok.disabled = false; closeDialog(upledDlg); toast(body.refile ? 'Saved: new files come from the new video in a few minutes' : 'Saved');
     }).catch(function (e) { ok.disabled = false; toast((e && e.message) || 'Couldn’t reach the site. Try again.'); });
+    });
   });
   // sharing a member's calendar, a month of it or one of its days, as John's are shared (Video or Preview, the
   // picture, WhatsApp, Messages, Copy, More, Send to members), as its owner chose: public, links anyone can open (the
