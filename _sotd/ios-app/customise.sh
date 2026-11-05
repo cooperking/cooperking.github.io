@@ -25,6 +25,15 @@ pb "Add :ITSAppUsesNonExemptEncryption bool false"
 pb "Set :CFBundleDisplayName Song of the Day" 2>/dev/null || pb "Add :CFBundleDisplayName string Song of the Day"
 pb "Delete :UIStatusBarStyle" 2>/dev/null || true
 pb "Add :UIStatusBarStyle string UIStatusBarStyleLightContent"
+# the camera and photos, for a picture in a message (John, 5 Nov 2026: "add picture and take a photo the app immediately
+# crashes": iOS stops an app that opens the camera without saying why)
+for k in "NSCameraUsageDescription:Song of the Day uses the camera when you take a photo to send in a message." \
+         "NSPhotoLibraryUsageDescription:Song of the Day opens your photos when you choose a picture to send in a message." \
+         "NSPhotoLibraryAddUsageDescription:Song of the Day can save pictures to your photos." \
+         "NSMicrophoneUsageDescription:Song of the Day uses the microphone only if you record a video to send in a message."; do
+  pb "Delete :${k%%:*}" 2>/dev/null || true
+  pb "Add :${k%%:*} string ${k#*:}"
+done
 # Chromecast: the iPhone's question before the app may look on the Wi-Fi, and what it looks for (Google's default receiver)
 pb "Delete :NSLocalNetworkUsageDescription" 2>/dev/null || true
 pb "Add :NSLocalNetworkUsageDescription string Song of the Day looks on your Wi-Fi for Chromecasts and Google speakers, so you can play songs on them."
