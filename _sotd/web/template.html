@@ -3965,7 +3965,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function spxShare(on) { var N = NAT && NAT.Plugins && NAT.Plugins.SotdSpotify; if (N && typeof N.share === 'function') N.share({ on: !!on }).catch(function () {}); }
   function spxFallback(id, why, quiet) {   // their Spotify can't play it: the song as before, this once (quiet: Spotify just not there on this device: played here, no alert, John, 3 Nov 2026)
     spLog('fallback to the app' + (why ? ': ' + why : ''));
-    if (why !== 'played here') spNo(id);   // (Spotify couldn't: not asked for this song again for a while)
+    // (not remembered against the song any more: every one of these is Spotify asleep, busy or unreachable, not the song,
+    // and the song then never went to Spotify for 30 days: John, 5 Nov 2026, O-o-h Child "It won't even look now")
     coverObj.sp = false; spxStop(true); spxShare(false);
     if (why && !quiet && Date.now() - SPX.warned > 60000) { SPX.warned = Date.now(); toast(why); }
     var s = songOf(id), src = s && songSrc(s);
@@ -4177,7 +4178,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function spxStop(quiet) { spxShadowOff(); SPX.dev = null; setTimeout(spxShowDev, 0); clearInterval(SPX.poll); if (!quiet && SPX.playing) spxCmd('pause'); SPX.playing = false; SPX.track = ''; SPX.list = []; }
   // songs Spotify couldn't play here (taken down, or not in this country): played here from then on, so the next tap plays
   // straight away, its video if it has nothing else (John, 4 Nov 2026: "it fails to play it from there first because it's been removed")
-  var SPNO = (function () { try { return JSON.parse(localStorage.getItem('sotd-spno') || '{}') || {}; } catch (e) { return {}; } })();
+  var SPNO = (function () { try { localStorage.removeItem('sotd-spno'); } catch (e) {} return {}; })();   // (those remembered before, wrongly, forgotten: every song goes to Spotify again)
   function spNo(id) { if (!id || SPNO[id]) return; SPNO[id] = Date.now(); try { localStorage.setItem('sotd-spno', JSON.stringify(SPNO)); } catch (e) {} }
   function devKind() { var u = navigator.userAgent || ''; return /iPad|Tablet/.test(u) || (/Macintosh/.test(u) && navigator.maxTouchPoints > 1) || (/Android/.test(u) && !/Mobi/.test(u)) ? 'tablet' : /Mobi|iPhone|Android/.test(u) ? 'phone' : 'computer'; }
   function spHere() { var x = SPM.st || {}; return spOn() && (!x.kinds || x.kinds.indexOf(devKind()) !== -1); }   // (on the kinds of device they chose: John, 4 Nov 2026, "only on certain devices")
