@@ -22,7 +22,6 @@ class SOTDViewController: CAPBridgeViewController {
             web.isOpaque = false
             web.backgroundColor = ground
             web.scrollView.backgroundColor = ground
-            if #available(iOS 15.0, *) { web.underPageBackgroundColor = ground }
         }
     }
 }
