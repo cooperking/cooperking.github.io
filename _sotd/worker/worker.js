@@ -4850,6 +4850,14 @@ async function memberUpl(request, url, env, answer) {
     if (k.includes('v') && noVid.length) {
       data.retry = data.retry || {}; const now = Date.now(); for (const x of noVid) { data.retry[x.id] = now; nv++; }
       if (data.skip) for (const x of noVid) if (data.skip[x.id]) { data.skip[x.id] = data.skip[x.id].replace('v', ''); if (!data.skip[x.id]) delete data.skip[x.id]; }
+      // a "no video" left on them (its owner's or John's: Gauja's, from when its videos came from John's own YouTube playlist, John, 5 Nov 2026) taken off too, so they're searched for
+      let jch = false;
+      for (const x of noVid) {
+        if (ed[x.id] && ed[x.id].v === '') { delete ed[x.id].v; if (!Object.keys(ed[x.id]).length) delete ed[x.id]; }
+        if (J[x.id] && J[x.id].v === '') { delete J[x.id].v; if (!Object.keys(J[x.id]).length) delete J[x.id]; jch = true; }
+      }
+      if (data.ed) data.ed = ed;
+      if (jch) await env.SOTD.put('uplJohn', JSON.stringify(J));
       await env.SOTD.put('upl:' + pid, JSON.stringify(data));
       const seen = (await env.SOTD.get('uplseen', 'json')) || {}; for (const x of noVid) if (seen[x.id]) seen[x.id] = seen[x.id].replace('v', ''); await kvSoft(env, 'uplseen', JSON.stringify(seen));
       rec.ch = now; rec.chw = { k: 'retry', n: nv }; await uplPut(env, U);
