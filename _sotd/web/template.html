@@ -10838,6 +10838,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       SPX.list = spxUpcoming(k.track); SPX.track = k.track; SPX.catchUp = k.track; SPX.native = false;
       SPX.playing = true; SPX.pos = k.pos || 0; SPX.at = Date.now(); SPX.dur = k.dur || 0; SPX.other = false;
       SPX.dev = { id: k.did || '', name: k.device || 'Spotify' }; SPX.last = { id: k.did || '', name: k.device || '', type: k.dtype || '' };
+      // (playing on one of their speakers: that speaker is the one chosen, for this visit, so the page follows Spotify there
+      // (its time, its next songs) whatever they chose for songs with files: John, 5 Nov 2026, "it doesn't synch with the time of the song")
+      if (k.did && !/Smartphone|Tablet/.test(k.dtype || '')) { SPX.pick = k.did; SPX.pickPhone = false; spkDraw(); }
       spLog('picked up (' + why + '): Spotify playing “' + (byTrack[k.track].title || k.track) + '” on ' + (k.device || 'a device') + ', ' + SPX.list.length + ' in its list');
       NOW.from = ''; root.classList.remove('nowelse'); PICK.follow = true;   // (not "on your iPhone": Spotify's, followed here quietly)
       PICK.force = true;
