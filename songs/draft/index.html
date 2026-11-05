@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="81c504b3ae21">
+<meta name="sotd-build" content="698080d6190d">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -613,6 +613,8 @@ html.upl-list .side-acts .listbtn { display: inline-grid; }
 a.srchpill { padding: 5px 12px; border-radius: 999px; background: var(--pill-bg); box-shadow: inset 0 0 0 1px var(--line); color: var(--fg); font: 600 12px var(--sans); text-decoration: none; }
 .srchrow { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 4px; }
 #missgone .linkbtn { padding: 0; border: 0; background: none; color: inherit; font: inherit; font-weight: 600; text-decoration: underline; cursor: pointer; }
+.newpage { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 84px); transform: translateX(-50%); z-index: 60; padding: 9px 16px; border: 0; border-radius: 999px; background: var(--fg); color: var(--bg); font: 600 13px var(--sans); box-shadow: 0 6px 20px rgba(0,0,0,.25); cursor: pointer; }
+.newpage[hidden] { display: none; }
 .dlwhy { display: block; margin-top: 4px; font-size: 12.5px; line-height: 1.4; color: var(--muted); white-space: normal; }
 .dlwhy.gone, .dlwhy.blocked { color: #e23a6e; }
 .dlacts { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 8px; }
@@ -7686,19 +7688,38 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // or it's another day since it loaded (the songs anew); not while something's playing, nor with no connection. ----
   var BUILD = (document.querySelector('meta[name="sotd-build"]') || {}).content || '', loadedOn = londonDay(new Date().toISOString()), awayAt = 0, freshAt = 0;
   function busyNow() { return (!!playing && !audio.paused) || (!!vplay && vplay.on) || (typeof SPX !== 'undefined' && !!coverObj && coverObj.sp && SPX.playing); }   // (Spotify playing for it, on a speaker say: not reloaded under it, so it keeps following: John, 3 Nov 2026)
-  function freshen() {
-    if (!awayAt || Date.now() - awayAt < 30e3) { awayAt = 0; return; }
-    awayAt = 0;
-    if (navigator.onLine === false || busyNow() || Date.now() - freshAt < 30e3) return;
-    freshAt = Date.now();
-    if (londonDay(new Date().toISOString()) !== loadedOn) { location.reload(); return; }
+  // (5 Nov 2026, John: "a blank screen. It gets in the way when doing things"): a newer page is looked for as the app goes
+  // away, not after it's back, so it never reloads under someone already tapping. Back after ten minutes or more: the
+  // newer page straight away, as the app opens; back sooner: a small Refresh button, used when they like.
+  var STALE = false;
+  function staleLook() {
+    if (STALE || navigator.onLine === false) return;
     fetch(location.pathname, { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (h) {
       var m = /<meta name="sotd-build" content="([^"]*)"/.exec(h);
-      if (m && m[1] !== BUILD && !busyNow()) location.reload();
+      if (m && m[1] !== BUILD) STALE = true;
     }).catch(function () {});
   }
+  function staleOffer() {
+    var b = document.getElementById('newpage');
+    if (!b) {
+      b = document.createElement('button'); b.type = 'button'; b.id = 'newpage'; b.className = 'newpage'; b.textContent = 'A newer version · Refresh';
+      b.addEventListener('click', function () { location.reload(); });
+      document.body.appendChild(b);
+    }
+    b.hidden = false;
+  }
+  function freshen() {
+    var away = awayAt ? Date.now() - awayAt : 0;
+    if (!awayAt || away < 30e3) { awayAt = 0; return; }
+    awayAt = 0;
+    if (navigator.onLine === false || busyNow() || Date.now() - freshAt < 30e3) { if (STALE) staleOffer(); return; }
+    freshAt = Date.now();
+    if (londonDay(new Date().toISOString()) !== loadedOn || (STALE && away >= 10 * 60e3)) { location.reload(); return; }
+    if (STALE) { staleOffer(); return; }
+    staleLook(); setTimeout(function () { if (STALE) staleOffer(); }, 4000);   // (looked for now too, for next time: a button, never a reload)
+  }
   if (TV || standalone || NAT) {
-    document.addEventListener('visibilitychange', function () { if (document.hidden) awayAt = awayAt || Date.now(); else freshen(); });
+    document.addEventListener('visibilitychange', function () { if (document.hidden) { awayAt = awayAt || Date.now(); staleLook(); } else freshen(); });
     if (TV) window.addEventListener('keydown', function () { if (awayAt) freshen(); }, true);   // (the TV app says when it goes, with 'pause'; back, the first press of the remote)
     window.addEventListener('pageshow', function (e) { if (e.persisted) { awayAt = awayAt || 1; freshen(); } });
   }
