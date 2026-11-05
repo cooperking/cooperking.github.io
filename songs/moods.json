@@ -4,19 +4,19 @@
   "about": "For songs Claude knows: how often the three strongest moods from Last.fm listeners' track tags, from the artist's Last.fm tags, and from the audio models include Claude's first pick.",
   "listeners": [
    2,
-   4
+   3
   ],
   "audio": [
-   152,
-   260
+   150,
+   256
   ],
   "artistTags": [
    5,
    29
   ],
-  "songsWithListenerTags": 314,
-  "songsWithListenerMoodTags": 172,
-  "songsWhereListenersCount": 73
+  "songsWithListenerTags": 14,
+  "songsWithListenerMoodTags": 11,
+  "songsWhereListenersCount": 5
  },
  "moods": [
   "Joyful",
@@ -22119,8 +22119,8 @@
    ],
    "moodFrom": "Claude (researched)",
    "sound": [
-    "Romantic",
     "Melancholy",
+    "Romantic",
     "Bittersweet"
    ],
    "claude": [
@@ -27542,6 +27542,137 @@
     "neo soul",
     "pop",
     "r&b",
+    "rock",
+    "soul"
+   ],
+   "check": true
+  },
+  "74JdR9aXE6I74oS1BVRsvb": {
+   "n": 269,
+   "title": "O-o-h Child",
+   "artist": "The Five Stairsteps",
+   "moods": [
+    "Playful",
+    "Energetic"
+   ],
+   "moodMix": [
+    [
+     "Playful",
+     24
+    ],
+    [
+     "Energetic",
+     21
+    ],
+    [
+     "Joyful",
+     15
+    ]
+   ],
+   "moodEvidence": [
+    [
+     "Audio",
+     100,
+     [
+      [
+       "Playful",
+       24
+      ],
+      [
+       "Energetic",
+       21
+      ],
+      [
+       "Joyful",
+       15
+      ]
+     ]
+    ]
+   ],
+   "moodFrom": "Weighed up",
+   "sound": [
+    "Playful",
+    "Energetic",
+    "Joyful"
+   ],
+   "listeners": "none",
+   "styles": [
+    "Soul",
+    "Funk",
+    "MPB"
+   ],
+   "genres": [
+    "Soul & R&B"
+   ],
+   "genreFrom": "Weighed up",
+   "genreMix": [
+    [
+     "Soul & R&B",
+     88
+    ],
+    [
+     "Pop",
+     7
+    ],
+    [
+     "Rock",
+     3
+    ]
+   ],
+   "genreEvidence": [
+    [
+     "MusicBrainz",
+     50,
+     [
+      [
+       "Soul & R&B",
+       90
+      ],
+      [
+       "Pop",
+       9
+      ],
+      [
+       "Rock",
+       1
+      ]
+     ]
+    ],
+    [
+     "Last.fm",
+     30,
+     [
+      [
+       "Soul & R&B",
+       100
+      ]
+     ]
+    ],
+    [
+     "Audio",
+     20,
+     [
+      [
+       "Soul & R&B",
+       63
+      ],
+      [
+       "World",
+       12
+      ],
+      [
+       "Rock",
+       12
+      ]
+     ]
+    ]
+   ],
+   "musicbrainz": [
+    "funk",
+    "funk soul",
+    "pop",
+    "r&b",
+    "rhythm and blues",
     "rock",
     "soul"
    ],
