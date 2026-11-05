@@ -13,9 +13,12 @@ jobs:
           import json, os, urllib.request
           r = urllib.request.Request('https://sotd-playlists.cooperking.workers.dev/upl/sync', headers={'Authorization': 'Bearer ' + os.environ['GITHUB_TOKEN'], 'User-Agent': 'SongOfTheDayCalendar/1.0'})
           d = json.loads(urllib.request.urlopen(r, timeout=60).read())
-          for pid, p in d.items():
+          print('top', list(d.keys())[:8])
+          pls = d.get('playlists', d)
+          for pid, p in pls.items():
               if not isinstance(p, dict) or 'songs' not in p: continue
               s = p['songs']
+              print('pl', pid[:6], len(s), p.get('mode'))
               if not pid.startswith('owB'): continue
               print('playlist', pid[:6], 'songs', len(s))
               for x in s:
