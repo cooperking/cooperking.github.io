@@ -4263,6 +4263,10 @@ async function uplJohnAuto(env, U, ownerId) {   // every imported playlist whose
     const rt = mr ? mr.tok : tok, map = await uplSpMap(env, rec, ownerId, tok).catch(() => ({})), main = rec.spid || map[rec.fk];
     if (!main) { rec.auto = false; rec.autoErr = 'No Spotify playlist of theirs by that name'; continue; }   // (asked again a day later)
     try {
+      // unchanged on Spotify since the last read (its snapshot): nothing read (every read shares one allowance with Spotify: John, 5 Nov 2026)
+      const srcs = [main].concat((rec.adds || []).map(k => map[k]).filter(x => x && x !== main)), snaps = {};
+      if (main !== 'liked') for (const sid of srcs) { const m = await spotify(rt, '/playlists/' + sid + '?fields=snapshot_id').catch(e => { if (e instanceof HttpError && e.extra && e.extra.spotify) throw e; return {}; }); if (m.snapshot_id) snaps[sid] = m.snapshot_id; }
+      if (srcs.every(sid => snaps[sid] && rec.snaps && rec.snaps[sid] === snaps[sid])) { rec.auto = true; delete rec.autoErr; continue; }
       const items = await spReadList(rt, main), ids = new Set(items.map(x => x.id));
       const data = await uplSongs(env, pid), have = (data.songs || []).filter(x => !(data.add || {})[x.id]).map(x => x.id), same = have.filter(t => ids.has(t)).length;
       if (have.length >= 5 && same < 0.5 * Math.min(have.length, items.length)) { rec.auto = false; rec.autoErr = 'The Spotify playlist of that name isn’t this one'; continue; }   // (another playlist with the same name: never its songs)
@@ -4274,7 +4278,7 @@ async function uplJohnAuto(env, U, ownerId) {   // every imported playlist whose
       }
       if (addNew) await env.SOTD.put('upl:' + pid, JSON.stringify(data));
       await uplTake(env, pid, rec, U, items, rec.st, now);
-      rec.auto = true; delete rec.autoErr;
+      rec.auto = true; delete rec.autoErr; rec.snaps = snaps;   // (kept once read and taken)
     } catch (e) { rec.auto = false; rec.autoErr = String(e && e.message || e).slice(0, 160); }
   }
   await uplPut(env, U);
@@ -4737,7 +4741,7 @@ async function memberUpl(request, url, env, answer) {
       const total = ((p.tracks || p.items || {}).total) || 0, img = ((p.images || [])[0] || {}).url || '', mine = p.id === 'liked' || !!(p.owner && p.owner.id === mr.sid) || !!p.collaborative;
       if (!total) continue;
       const base = { spid: p.id, name: p.name, owner: (p.owner && p.owner.display_name) || '', mine, img };
-      if (reads + Math.ceil(total / 100) > 30) {   // (a few read here, the rest by the page, one request each: a Worker's requests to Spotify are limited per request)
+      if (reads + Math.ceil(total / 100) > 8) {   // (a few read here, the rest by the page, one request each: a Worker's requests to Spotify are limited per request)
        lists.push(Object.assign(base, { total, later: true })); continue; }
       reads += Math.ceil(total / 100);
       const items = await spReadList(mr.tok, p.id).catch(() => null);

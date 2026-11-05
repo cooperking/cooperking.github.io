@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="da142410ae03">
+<meta name="sotd-build" content="62dab5c2df9a">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -10300,7 +10300,16 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     [].forEach.call(document.getElementById('upligrid').children, function (b) { var on = !v || (b._l.name + ' ' + impBy(b._l)).toLowerCase().indexOf(v) !== -1; b.hidden = !on; if (on) shown++; });
     document.getElementById('uplipicknone').hidden = shown > 0;
   });
+  function impSpSongs(l, then) {   // one Spotify playlist's songs, fetched when needed
+    if (l._getting) { l._then = (l._then || []).concat(then || []); return; }
+    l._getting = true; l._then = then ? [then] : [];
+    uplCall({ op: 'splist', spid: l.spid }).then(function (k) {
+      if (k.songs) { l.songs = k.songs; l.all = k.songs.length; l.later = false; l.last = k.songs.reduce(function (m, y) { return y.a > m ? y.a : m; }, ''); }
+      else if (k.error) toast(k.error);
+    }, function () {}).then(function () { l._getting = false; var t = l._then; l._then = []; t.forEach(function (f) { f(); }); });
+  }
   function impGot(l) {   // the playlist chosen: what happens to it
+    if (l.later) { toast('Reading “' + l.name + '” from Spotify…'); impSpSongs(l, function () { if (!l.later && impDlg.open) impGot(l); }); return; }
     IMP.pick = l;
     var h = impMineOf(l), up = !!h, swap = false, last = l.songs[l.songs.length - 1];   // (theirs from the same file: Update; any other: New, beside theirs)
     impMos(document.getElementById('uplimos'), l.songs);
@@ -10544,9 +10553,14 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       impWhose(lists);
       lists.forEach(function (l) { l.yours = l.mine; if (!l.mine) { l.maker = l.owner; l.spotify = false; } });
       IMP.lists = lists;
-      lists.filter(function (l) { return l.later; }).forEach(function (l) {   // (big ones: their songs fetched now)
-        uplCall({ op: 'splist', spid: l.spid }).then(function (k) { if (k.songs) { l.songs = k.songs; l.all = k.songs.length; l.later = false; } });
-      });
+      // the rest's songs, one at a time, a few seconds apart, while the pop-up is open (every request to Spotify shares
+      // one allowance: all at once had Spotify make the site wait for hours: John, 5 Nov 2026)
+      var queue = lists.filter(function (l) { return l.later; }), nextOne = function () {
+        var l = queue.shift(); if (!l || !impDlg.open || IMP.lists !== lists) return;
+        if (!l.later) { nextOne(); return; }
+        impSpSongs(l, function () { setTimeout(nextOne, 2500); });
+      };
+      setTimeout(nextOne, 1500);
       if (lists.length === 1) { impGot(lists[0]); return; }
       impPick();
     }).catch(function () { IMP.busy = false; b.disabled = false; b.textContent = label; if (auto === true) fall('the site didn’t answer'); else toast('Couldn’t reach the site. Try again.'); });
