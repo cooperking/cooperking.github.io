@@ -121,13 +121,14 @@ export default {
     ctx.waitUntil(appUpdates(env).catch(e => console.log('appUpdates: ' + (e && e.message))));
     ctx.waitUntil(catalogHeal(env).catch(e => console.log('catalogHeal: ' + (e && e.message))));
     ctx.waitUntil((async () => {   // one-off: Camilla's songs with no preview, and why (6 Nov 2026)
-      if (!env.MEDIA || await env.SOTD.get('diagPv1')) return;
-      await env.SOTD.put('diagPv1', '1', { expirationTtl: 86400 });
+      if (!env.MEDIA || await env.SOTD.get('diagPv2')) return;
+      await env.SOTD.put('diagPv2', '1', { expirationTtl: 86400 });
       const U = await uplAll(env), all = (await env.SOTD.get('members', 'json')) || {}, pv = Object.assign({}, pvMem, (await env.SOTD.get('previews', 'json')) || {}), cat = await catalog(env), out = [];
       for (const [pid, rec] of Object.entries(U)) {
         if (!/camilla/i.test((all[rec.o] && all[rec.o].name) || '')) continue;
         const data = await uplSongs(env, pid), songs = data.songs || [];
-        out.push({ pid, n: uplName(all, rec), st: rec.st, songs: songs.length, nopv: songs.filter(x => !pv[x.id]).map(x => ({ id: x.id, t: x.title, a: x.artist, looked: x.id in pv, pv: pv[x.id] === undefined ? 'unset' : pv[x.id], cat: cat[x.id] || null, own: (data.files || {})[x.id] || null, sk: (data.skip || {})[x.id] || '' })) });
+        const view = await uplView(env, all, rec.o, pid, rec), vp = {}; for (const y of view.songs || []) vp[y.id] = y.p || '';
+        out.push({ pid, n: uplName(all, rec), st: rec.st, songs: songs.length, nopv: songs.filter(x => !vp[x.id]).map(x => ({ raw: pv[x.id] === undefined ? 'unset' : String(pv[x.id]).slice(0, 80), clip: pv['u' + x.id], id: x.id, t: x.title, a: x.artist, looked: x.id in pv, pv: pv[x.id] === undefined ? 'unset' : pv[x.id], cat: cat[x.id] || null, own: (data.files || {})[x.id] || null, sk: (data.skip || {})[x.id] || '' })) });
       }
       await env.MEDIA.put('diag/pv-camilla.json', JSON.stringify(out, null, 1), { httpMetadata: { contentType: 'application/json' } });
     })().catch(e => console.log('diagPv: ' + (e && e.message))));
