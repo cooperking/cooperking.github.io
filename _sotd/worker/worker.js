@@ -707,6 +707,10 @@ async function keepLast(env, at, songs) {   // the list as last read (written on
 
 // ---------- song facts John has signed off ----------
 
+function appOrigin(request) {   // the site's own pages, and the apps showing them (John's own songs, edited on the calendar there too)
+  const o = request.headers.get('Origin') || '';
+  return /^(https:\/\/cooperking\.github\.io|capacitor:\/\/localhost|https?:\/\/localhost)$/.test(o) ? o : ADMIN_ORIGIN;
+}
 function factsHeaders(origin) {
   return { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'Access-Control-Allow-Origin': origin || '*',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Authorization, Content-Type, X-Device, X-App', 'Access-Control-Max-Age': '86400' };
@@ -728,13 +732,13 @@ function cleanFact(f) {
 // "I published today's song before facts came through. Now I can't see any facts"): song-tags.yml with facts_redo
 // puts it in _sotd/data/facts-redo.json and starts the facts task, whose facts then wait on the Songs tab as a new song's.
 async function factsRedo(request, env) {
-  const h = factsHeaders(ADMIN_ORIGIN);
+  const h = factsHeaders(appOrigin(request));
   const answer = (status, body) => new Response(JSON.stringify(body), { status, headers: h });
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: h });
   if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
   if (!env.ADMIN_KEY) return answer(503, { error: 'The ADMIN_KEY secret is not set on the Worker.' });
   const given = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
-  if (!given || await sha256hex(given) !== await sha256hex(env.ADMIN_KEY)) return answer(401, { error: 'Wrong password.' });
+  if ((!given || await sha256hex(given) !== await sha256hex(env.ADMIN_KEY)) && !await ownerSignedIn(request, env)) return answer(401, { error: 'Wrong password.' });
   const body = await request.json().catch(() => ({})), track = String((body && body.track) || '');
   if (!ID_RE.test(track)) return answer(400, { error: 'Which song?' });
   if (!env.GH_TOKEN) return answer(503, { error: 'The GH_TOKEN secret is not set.' });
@@ -747,7 +751,7 @@ async function factsRedo(request, env) {
   return answer(200, { ok: true });
 }
 async function factsSignoff(request, env, videoOnly) {   // (videoOnly: /facts/video, a song's video saved on its own, its facts still waiting: John, 5 Nov 2026)
-  const h = factsHeaders(ADMIN_ORIGIN);
+  const h = factsHeaders(appOrigin(request));
   const answer = (status, body) => new Response(JSON.stringify(body), { status, headers: h });
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: h });
   if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
@@ -757,7 +761,7 @@ async function factsSignoff(request, env, videoOnly) {   // (videoOnly: /facts/v
   const fails = Number(await env.SOTD.get(failKey)) || 0;
   if (fails >= 20) return answer(429, { error: 'Too many wrong passwords from here this hour.' });
   const given = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
-  if (!given || await sha256hex(given) !== await sha256hex(env.ADMIN_KEY)) {
+  if ((!given || await sha256hex(given) !== await sha256hex(env.ADMIN_KEY)) && !await ownerSignedIn(request, env)) {   // (or John signed in on the calendar)
     await env.SOTD.put(failKey, String(fails + 1), { expirationTtl: 7200 });
     return answer(401, { error: 'Wrong password.' });
   }
@@ -1187,6 +1191,13 @@ const LIGHT_KEY_RE = /^l\/[0-9A-Za-z]{22}\.m4a$/;   // a song uploaded already a
 
 function randomCode(bytes) { return b64url(crypto.getRandomValues(new Uint8Array(bytes))); }
 
+// John signed in on the calendar (the site's owner): his own songs edited there as any member's (John, 6 Nov 2026: "I should
+// be able to edit everything in my own playlist just as others can theirs"): the Songs tab's saves (pictures, files,
+// videos, facts, moods and genres) take his sign-in as well as the admin password, for those alone
+async function ownerSignedIn(request, env) {
+  const who = await memberWho(request, env).catch(() => null);
+  return !!who && who.id === await env.SOTD.get('owner');
+}
 async function adminOk(request, env, answer) {   // null if the admin password is right, else the answer to give
   if (!env.ADMIN_KEY) return answer(503, { error: 'The ADMIN_KEY secret is not set on the Worker.' });
   const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
@@ -1350,9 +1361,15 @@ async function members(request, url, env) {
     if (!who || who.id !== await env.SOTD.get('owner')) return answer(403, { error: 'Only John can do that.' });
     const b = await request.json().catch(() => ({})), C = (await env.SOTD.get('mainCaps', 'json')) || {}, clean = v => String(v || '').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim().slice(0, 300);
     if ('cal' in b) { const c = clean(b.cal); if (c) C.cal = c; else delete C.cal; }
-    for (const t of [b.track].concat(Array.isArray(b.tracks) ? b.tracks.slice(0, 20) : []).map(String).filter(t => ID_RE.test(t))) { C.songs = C.songs || {}; const c = clean(b.cap); if (c) C.songs[t] = c; else delete C.songs[t]; }   // (tracks: the day's others too, the same caption: John, 6 Nov 2026)
+    if ('cap' in b) for (const t of [b.track].concat(Array.isArray(b.tracks) ? b.tracks.slice(0, 20) : []).map(String).filter(t => ID_RE.test(t))) { C.songs = C.songs || {}; const c = clean(b.cap); if (c) C.songs[t] = c; else delete C.songs[t]; }   // (tracks: the day's others too, the same caption: John, 6 Nov 2026)
+    if (b.track && ID_RE.test(String(b.track)) && ('tt' in b || 'ar' in b || 'src' in b)) {   // his song's title and artist as he wants them shown ('' Spotify's), and its MP3 from another site's link ('' none)
+      C.ed = C.ed || {}; const e = C.ed[b.track] || {};
+      for (const k of ['tt', 'ar']) if (k in b) { const v = String(b[k] || '').replace(/\s+/g, ' ').trim().slice(0, 200); if (v) e[k] = v; else delete e[k]; }
+      if ('src' in b) { const u = String(b.src || '').trim(); if (!u) delete e.src; else if (/^https:\/\/[\w.-]+\.[a-z]{2,}\/\S{1,400}$/i.test(u) && !/youtu\.?be/i.test(u)) e.src = u; else return answer(400, { error: 'That isn’t a link to the song on another site.' }); }
+      if (Object.keys(e).length) C.ed[b.track] = e; else delete C.ed[b.track];
+    }
     await env.SOTD.put('mainCaps', JSON.stringify(C));
-    return answer(200, Object.assign({ ok: true }, C));
+    return answer(200, Object.assign({ ok: true }, C));   // (cal, songs, ed)
   }
   if (route === 'sent') return memberSent(request, env, answer);
   if (route === 'react') return memberReact(request, env, answer);
@@ -1376,7 +1393,8 @@ async function members(request, url, env) {
   if (route === 'spotify') return memberSpotify(request, url, env, answer);
   if (!['admin', 'upload', 'cover'].includes(route)) return answer(404, { error: 'Not here.' });
   if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
-  const no = await adminOk(request, env, answer);
+  const ownerOp = route !== 'admin' || ['delete'].includes(((await request.clone().json().catch(() => ({}))) || {}).op);   // (his sign-in: files and pictures; of the admin ops, deleting a file)
+  const no = ownerOp && await ownerSignedIn(request, env) ? null : await adminOk(request, env, answer);
   if (no) return no;
   if (route === 'upload') return memberUpload(request, url, env, answer);
   if (route === 'cover') return coverSet(request, url, env, answer);

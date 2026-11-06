@@ -313,7 +313,6 @@ html.pe-john #pageedit .pe-g:not(.pe-capg) { display: none; }
 .askchk[hidden], .upld-same[hidden] { display: none; }
 .pick .scap[hidden] { display: none; }
 .pick .scap { margin: 10px 0 0; padding: 2px 0 2px 12px; border-left: 3px solid #e23a6e; font: italic 16px/1.45 var(--serif); color: var(--fg); white-space: pre-line; overflow-wrap: anywhere; }
-#upled.johnmode .upled-sec ~ .upled-sec, #upled.johnmode .upled-sec .upled-row, #upled.johnmode #upledfc, #upled.johnmode label:has(#upledtt), #upled.johnmode label:has(#upledar), #upled.johnmode #upleddn { display: none; }
 .pe-captx, .upld-cap textarea { width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1.5px solid var(--line); border-radius: 12px; background: var(--pill-bg); color: var(--fg); font: italic 17px/1.4 var(--serif); resize: vertical; }
 .pe-captx:focus, .upld-cap textarea:focus { border-color: var(--fg); outline: none; }
 .upld-day.upld-cap { align-items: flex-start; }
@@ -7154,13 +7153,24 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     c.textContent = MAINCAP.cal || ''; c.hidden = !MAINCAP.cal;
     if (typeof uplEditSync === 'function') uplEditSync();
   }
+  function mainEdApply() {   // his songs' titles and artists as he set them (Spotify's kept, ot and oa, to go back to)
+    var ed = MAINCAP.ed || {}, list = typeof UPL !== 'undefined' && UPL && UPL.on ? UPL.john || [] : songs || [], changed = false;
+    list.forEach(function (x) {
+      if (!x || x.upl) return;
+      var e = ed[x.track] || {};
+      if (!e.tt && !e.ar && x.ot === undefined) return;
+      if (x.ot === undefined) { x.ot = x.title; x.oa = x.artist; }
+      var t = e.tt || x.ot, a = e.ar || x.oa; if (t !== x.title || a !== x.artist) { x.title = t; x.artist = a; changed = true; }
+    });
+    if (changed && !(UPL && UPL.on)) render();
+  }
   function mainCapSave(body) {
     return fetch(MBASE + '/members/captions', { method: 'POST', headers: { Authorization: 'Bearer ' + plTok(), 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
-      .then(function (r) { return r.json(); }).then(function (j) { if (!j.ok) throw new Error(j.error || 'not saved'); MAINCAP = { cal: j.cal, songs: j.songs || {} }; mainCapDraw(); return j; })
+      .then(function (r) { return r.json(); }).then(function (j) { if (!j.ok) throw new Error(j.error || 'not saved'); MAINCAP = { cal: j.cal, songs: j.songs || {}, ed: j.ed || {} }; mainCapDraw(); return j; })
       .catch(function (e) { toast('Couldn’t save the caption: ' + ((e && e.message) || 'try again')); throw e; });
   }
   if (MBASE && !TV) setTimeout(function () {
-    fetch(MBASE + '/captions.json', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : {}; }).then(function (j) { MAINCAP = j || {}; mainCapDraw(); }).catch(function () {});
+    fetch(MBASE + '/captions.json', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : {}; }).then(function (j) { MAINCAP = j || {}; mainCapDraw(); try { mainEdApply(); } catch (e) {} }).catch(function () {});
   }, 0);
   function ownSong(s) { return s.ma || (MEMBER && MEMBER.media && MEMBER.media[s.track] && MEMBER.media[s.track].a) || ''; }   // (ma: a member's own for their song)
   function whole(s) { return !!(ownSong(s) || OFFL[s.track]); }   // a member's whole song: online, or downloaded here
@@ -9318,10 +9328,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     return 'Added on Spotify ' + when + (s.abn ? ' by ' + s.abn : '') + '.';
   }
   function upledOpen(s, focus) {   // focus (from Missing): 'v' its video, 'a' or 'p' its MP3, 'mv' its MP4: scrolled to and lit
-    if (!s.upl) { upledJohn(s); return; }   // (a song of John's own calendar)
-    upledDlg.classList.remove('johnmode'); document.getElementById('upleddh').textContent = 'Its details';
+    if (!s.upl && !s._john) { upledJohn(s, focus); return; }   // (a song of John's own calendar: its state gathered first, then this same editor)
     var p = uplPls().filter(function (x) { return x.id === s.upl; })[0] || uplOwnRec(), t = tagOf(s) || { m: [], g: [] };
-    UED = { p: p, s: s, m: t.m.slice(), g: t.g.slice(), tags: false };
+    if (s._john) p = { id: '', mode: 'cal' };
+    UED = { p: p, s: s, m: t.m.slice(), g: t.g.slice(), tags: false, john: !!s._john, rec: s._rec || null };
     document.getElementById('upledk').textContent = p.mode === 'list' ? p.n : UPL.view && UPL.view.own === false && UPL.view.o ? UPL.view.o + '’s Song of the Day' : 'Your Song of the Day';
     document.getElementById('upleh').textContent = s.title;
     document.getElementById('upledby').textContent = s.artist;
@@ -9336,7 +9346,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     document.getElementById('upledlink').disabled = !!jo.v;
     document.getElementById('upledtt').value = s.title || ''; document.getElementById('upledar').value = s.artist || ''; document.getElementById('upledcap').value = s.cap || '';
     (function () {   // the day's other songs on this playlist: the same caption for all, ticked (John, 6 Nov 2026)
-      var v = UPL.view, sib = v && v.songs && s.d ? v.songs.filter(function (x) { return x.d === s.d && x.id !== s.track && !x.w; }) : [];
+      var v = UPL.view, sib = s._john ? (s.d && byDate[s.d] || []).filter(function (x) { return !x.upl && x.track !== s.track; }).map(function (x) { return { id: x.track }; })
+        : v && v.songs && s.d ? v.songs.filter(function (x) { return x.d === s.d && x.id !== s.track && !x.w; }) : [];
       UED_CAPSIB = sib.map(function (x) { return x.id; });
       document.getElementById('upledcapall').hidden = !sib.length; document.getElementById('upledcapallc').checked = false;
       document.getElementById('upledcapallt').textContent = 'Same caption for all ' + (sib.length + 1) + ' songs on this day';
@@ -9391,6 +9402,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var s = UED.s, own = s.own || {}, jf = s.jf || {};
     ['a', 'v'].forEach(function (k) {
       var busy = UED['busy' + k], most = k === 'a' ? '80 MB at most' : '1.5 GB at most';
+      if (jf[k] && UED.john) { document.getElementById('upledst' + k).textContent = k === 'a' ? 'Its MP3 is on the site' : 'Its MP4 is on the site'; document.getElementById('upledadd' + k).hidden = true; document.getElementById('upledbar' + k).hidden = true; var djj = document.getElementById('upleddrop' + k); djj.hidden = false; djj.dataset.jf = '1'; return; }
       if (jf[k]) {   // (John sees it as the Songs tab shows it)
         document.getElementById('upledst' + k).textContent = MEMBER && MEMBER.owner === true ? (k === 'a' ? 'Song · ' : 'Video · ') + (jf[k] >= 1e9 ? (jf[k] / 1e9).toFixed(1) + ' GB' : (jf[k] / 1e6).toFixed(jf[k] < 1e7 ? 1 : 0) + ' MB') : 'Already uploaded';
         document.getElementById('upledadd' + k).hidden = true; document.getElementById('upledbar' + k).hidden = true;
@@ -9427,20 +9439,44 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { j.status = r.status; return j; }); });
   }
   var UED_CAPSIB = [];
-  function upledJohn(s) {   // a song of John's own calendar, in the same editor: its caption (with the day's others); the rest of it is on the Songs tab in Admin for now
-    var day = (s.d && byDate[s.d] || []).filter(function (x) { return !x.upl; });
-    UED = { john: true, s: s, p: { id: '' } };
-    document.getElementById('upledk').textContent = 'Your Song of the Day';
-    document.getElementById('upleh').textContent = s.title; document.getElementById('upledby').textContent = s.artist;
-    document.getElementById('upledcap').value = (MAINCAP.songs && MAINCAP.songs[s.track]) || '';
-    UED_CAPSIB = day.filter(function (x) { return x.track !== s.track; }).map(function (x) { return x.track; });
-    document.getElementById('upledcapall').hidden = !UED_CAPSIB.length; document.getElementById('upledcapallc').checked = false;
-    document.getElementById('upledcapallt').textContent = 'Same caption for all ' + day.length + ' songs on this day';
-    upledDlg.classList.add('johnmode'); document.getElementById('upleddh').textContent = 'Its caption';
-    openLayer(upledDlg); upledDlg.scrollTop = 0;
+  // John's own calendar's songs, in this same editor (John, 6 Nov 2026: "I should be able to edit everything in my own
+  // playlist just as others can theirs. It's just mine is the default"): his sign-in saves them as the Songs tab does
+  // (pictures, files, videos, facts, moods and genres: johnApi); its title, artist, caption and MP3-from link with his
+  // captions (/members/captions)
+  function johnApi(path, body, raw, type) {
+    var h = { Authorization: 'Bearer ' + plTok() }; if (!raw) h['Content-Type'] = 'application/json'; else if (type) h['Content-Type'] = type;
+    return fetch(MBASE + path, { method: 'POST', headers: h, body: raw ? body : JSON.stringify(body || {}) })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { j.status = r.status; return j; }); });
   }
+  function johnGet(path) { return fetch(MBASE + path, { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; }); }
+  function upledJohn(s, focus) {
+    toast('Opening…');
+    Promise.all([johnGet('/facts/picks'), johnGet('/facts/signed')]).then(function (r) {
+      var picks = r[0] || {}, rec = (r[1] || {})[s.track] || null, e = (MAINCAP.ed && MAINCAP.ed[s.track]) || {}, md = (MEMBER && MEMBER.media && MEMBER.media[s.track]) || {};
+      var js = Object.assign({}, s, { _john: true, _rec: rec, cap: (MAINCAP.songs && MAINCAP.songs[s.track]) || '', osrc: e.src || '', jf: { a: md.a ? 1 : 0, v: md.v ? 1 : 0 }, own: { c: ownCover(s) ? 1 : 0 } });
+      if (picks[s.track]) js.ov = picks[s.track].v || '';   // (his own choice of video: else the one found)
+      if (s.ot !== undefined) { js.ot = s.ot; js.oa = s.oa; }
+      js.fx = rec ? { s: (rec.s || []).map(function (x) { return x.t; }), a: Object.keys(rec.a || {}).map(function (id) { return { id: id, n: rec.a[id].name, f: (rec.a[id].f || []).map(function (x) { return x.t; }) }; }) } : null;
+      js.fxs = rec && ((rec.s || []).length || Object.keys(rec.a || {}).length) ? 'ok' : 'none';
+      upledOpen(js, focus);
+    });
+  }
+  function johnSigned(ed) {   // its record, as he left it in the editor: its facts (each with its source while unchanged), moods, genres, video
+    var rec = ed.rec || {}, byT = {}, item = { track: ed.s.track, s: [], a: {}, moods: ed.m.slice(), genres: ed.g.slice() };
+    (rec.s || []).forEach(function (x) { byT[x.t] = x; }); Object.keys(rec.a || {}).forEach(function (id) { (rec.a[id].f || []).forEach(function (x) { byT[x.t] = x; }); });
+    [].forEach.call(document.querySelectorAll('#upledxl textarea'), function (ta) {
+      var k = ta.getAttribute('data-fx'), t = ta.value.replace(/\s+/g, ' ').trim(); if (!t) return;
+      var f = byT[t] || { t: t };
+      if (k === 's') item.s.push(f);
+      else { var id = k.slice(2); (item.a[id] = item.a[id] || { name: (rec.a && rec.a[id] && rec.a[id].name) || '', f: [] }).f.push(f); }
+    });
+    if (typeof rec.video === 'string') item.video = rec.video;
+    return item;
+  }
+  function johnFilesBack(ed) { memberLoad(); setTimeout(function () { if (UED === ed && upledDlg.open) upledFiles(); }, 1500); }
   function upledUp(k, f) {   // their MP3 or MP4, in parts
     var ed = UED, s = ed.s, max = k === 'a' ? 80e6 : 1500e6;
+    if (ed.john) { johnUp(k, f); return; }
     if (!(k === 'a' ? /\.mp3$/i.test(f.name || '') || f.type === 'audio/mpeg' : /\.mp4$/i.test(f.name || '') || f.type === 'video/mp4')) { toast(k === 'a' ? 'That isn’t an MP3' : 'That isn’t an MP4'); return; }
     if (f.size > max) { toast('That’s too big: ' + (k === 'a' ? 'an MP3 can be 80 MB' : 'an MP4 can be 1.5 GB') + ' at most'); return; }
     var part = Math.max(UPL_PART, Math.ceil(f.size / 38 / (1 << 20)) * (1 << 20)), n = Math.max(1, Math.ceil(f.size / part)), parts = [], uid = '';
@@ -9471,6 +9507,14 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   function upledDrop(k) {
     if (k !== 'c' && document.getElementById('upleddrop' + k).dataset.jf === '1') { upledJfDrop(k); return; }
+    if (k === 'c' && UED.john) {   // (his own cover off: the album's again)
+      var edc = UED, oc = ownCover(edc.s); if (!oc) return;
+      ask({ k: edc.s.title, h: 'Take off its picture?', t: 'The album’s cover shows again.', ok: 'Take it off', no: 'Keep it' }).then(function (yes) {
+        if (!yes) return;
+        johnApi('/members/cover?track=' + edc.s.track + '&op=remove&id=' + encodeURIComponent(oc.id), null, true).then(function (j) { if (!j.ok) { toast(j.error || 'Couldn’t just now'); return; } edc.s.own.c = 0; johnFilesBack(edc); toast('Taken off'); });
+      });
+      return;
+    }
     var ed = UED, what = k === 'a' ? 'your MP3' : k === 'v' ? 'your MP4' : 'your picture';
     ask({ k: ed.s.title, h: 'Take off ' + what + '?', t: k === 'c' ? 'The album’s cover shows again.' : k === 'a' ? 'The preview plays again.' : 'The YouTube video plays again, if there is one.', ok: 'Take it off', no: 'Keep it' }).then(function (yes) {
       if (!yes) return;
@@ -9480,8 +9524,35 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       }).catch(function () { toast('Couldn’t reach the site. Try again.'); });
     });
   }
+  function johnUp(k, f) {   // his own song's MP3 or MP4, up as the Songs tab sends it (/members/upload, in parts)
+    var ed = UED, s = ed.s, key = k + '/' + s.track + (k === 'a' ? '.mp3' : '.mp4');
+    if (!(k === 'a' ? /\.mp3$/i.test(f.name || '') || f.type === 'audio/mpeg' : /\.mp4$/i.test(f.name || '') || f.type === 'video/mp4')) { toast(k === 'a' ? 'That isn’t an MP3' : 'That isn’t an MP4'); return; }
+    var part = 20 << 20, n = Math.max(1, Math.ceil(f.size / part)), parts = [], uid = '';
+    var shown = function (pc) { ed['busy' + k] = pc; if (UED === ed && upledDlg.open) upledFiles(); };
+    var go = function (i) {
+      if (i > n) return johnApi('/members/upload?op=done&key=' + key + '&uploadId=' + encodeURIComponent(uid), { parts: parts });
+      return johnApi('/members/upload?op=part&key=' + key + '&uploadId=' + encodeURIComponent(uid) + '&n=' + i, f.slice((i - 1) * part, Math.min(f.size, i * part)), true).then(function (j) {
+        if (!j.etag) throw new Error(j.error || 'a part didn’t go up'); parts.push({ partNumber: j.partNumber, etag: j.etag }); shown(Math.min(99, Math.round(100 * i / n))); return go(i + 1);
+      });
+    };
+    shown(0);
+    johnApi('/members/upload?op=start&key=' + key).then(function (j) { if (!j.uploadId) throw new Error(j.error || 'it couldn’t start'); uid = j.uploadId; return go(1); }).then(function (j) {
+      if (!j.ok) throw new Error(j.error || 'it couldn’t finish');
+      ed['busy' + k] = null; ed.s.jf[k] = 1; johnFilesBack(ed); toast(k === 'a' ? 'Its MP3 is on' : 'Its MP4 is on');
+    }).catch(function (e) { if (uid) johnApi('/members/upload?op=abort&key=' + key + '&uploadId=' + encodeURIComponent(uid)); shown(null); toast('Couldn’t add it: ' + ((e && e.message) || e)); });
+  }
   function upledJfDrop(k) {   // John: the downloaded MP3 or MP4 deleted, then a fresh copy or none
     var ed = UED, what = k === 'a' ? 'MP3' : 'MP4';
+    if (ed.john) {   // (his own song's: deleted, and the download job fetches it again from its video)
+      ask({ k: ed.s.title, h: 'Delete its ' + what + '?', t: 'It’s deleted for everyone, and the download job fetches a fresh one from its video.', ok: 'Delete it', no: 'Keep it' }).then(function (yes) {
+        if (!yes) return;
+        johnApi('/members/admin', { op: 'delete', key: k + '/' + ed.s.track + (k === 'a' ? '.mp3' : '.mp4') }).then(function (j) {
+          if (j.status !== 200) { toast(j.error || 'Couldn’t delete it just now'); return; }
+          ed.s.jf[k] = 0; johnFilesBack(ed); toast('Deleted: a fresh one comes from its video');
+        });
+      });
+      return;
+    }
     ask({ k: ed.s.title, h: 'Delete its ' + what + '?', t: 'The ' + what + ' fetched for it is deleted, for everyone.', ok: 'Delete it', no: 'Keep it' }).then(function (yes) {
       if (!yes) return;
       return ask({ k: ed.s.title, h: 'Get a new copy?', t: 'A fresh ' + what + ' from its video, in a few minutes, or none from now on.', ok: 'Get a new one', no: 'None from now on' }).then(function (again) {
@@ -9503,8 +9574,15 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       }, function (e) { throw new Error(C.fileWhy(e, f)); });
     }).then(function (pic) {
       ed.busyc = true; if (UED === ed && upledDlg.open) upledFiles();
+      if (ed.john) {   // (his own: a cover for every member, as the Songs tab adds one; one there already replaced)
+        var oc = ownCover(ed.s), bin = atob(pic.split(',')[1]), u8 = new Uint8Array(bin.length); for (var bi = 0; bi < bin.length; bi++) u8[bi] = bin.charCodeAt(bi);
+        return johnApi('/members/cover?track=' + ed.s.track + (oc ? '&id=' + encodeURIComponent(oc.id) : ''), new Blob([u8], { type: 'image/jpeg' }), true, 'image/jpeg').then(function (j) {
+          ed.busyc = false; if (!j.ok) throw new Error(j.error || 'it couldn’t go up'); ed.s.own.c = 1; johnFilesBack(ed); toast('Its picture is on'); return { status: 0, john: true };
+        });
+      }
       return upledPost('uplcover?id=' + encodeURIComponent(ed.p.id) + '&track=' + ed.s.track, { pic: pic });
     }).then(function (j) {
+      if (j && j.john) return;
       ed.busyc = false;
       if (j.status !== 200) throw new Error(j.error || 'it couldn’t go up');
       upledView(j.view, ed); toast('Your picture is on');
@@ -9563,6 +9641,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   document.getElementById('upledxsign').addEventListener('click', function () { upledFactsSend(true); });
   document.getElementById('upledxask').addEventListener('click', function () {
     var ed = UED;
+    if (ed.john) { johnApi('/facts/redo', { track: ed.s.track }).then(function (j) { toast(j.status === 200 ? 'Asked: they’re written within the day, then wait on the Songs tab' : (j.error || 'Couldn’t ask just now')); }); return; }
     uplCall({ op: 'askfacts', id: ed.p.id, track: ed.s.track }).then(function (j) {
       if (j.status !== 200) { toast(j.error || 'Couldn’t ask just now'); return; }
       upledView(j.view, ed); if (UED === ed) upledFacts();
@@ -9580,13 +9659,26 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   document.getElementById('upledform').addEventListener('submit', function (e) {
     e.preventDefault();
     var ed = UED; if (!ed) return;
-    if (ed.john) {   // John's own song: its caption (and the day's others, ticked)
-      var cj = document.getElementById('upledcap').value.replace(/[ \t]+/g, ' ').trim(), allj = UED_CAPSIB.length && document.getElementById('upledcapallc').checked, oth = allj ? UED_CAPSIB.slice() : [];
-      if (cj === ((MAINCAP.songs && MAINCAP.songs[ed.s.track]) || '') && !allj) { closeDialog(upledDlg); return; }
-      mainCapSave({ track: ed.s.track, tracks: oth, cap: cj }).then(function () {
-        [].forEach.call(document.querySelectorAll('#picks .pick'), function (el) { if (el._cap && (el._cap.t === ed.s.track || oth.indexOf(el._cap.t) >= 0)) el._cap.set(cj); });
-        closeDialog(upledDlg); toast('Saved');
-      }, function () {});
+    if (ed.john) {   // John's own song: details, caption and MP3-from link (his captions), video, and facts, moods and genres (signed as the Songs tab does)
+      var sj = ed.s, cb = { track: sj.track }, calls = [];
+      [['tt', 'upledtt', 'title', 'ot'], ['ar', 'upledar', 'artist', 'oa']].forEach(function (r) {
+        var v = document.getElementById(r[1]).value.replace(/\s+/g, ' ').trim(); if (v === (sj[r[2]] || '')) return;
+        cb[r[0]] = !v || v === sj[r[3]] ? '' : v;
+      });
+      var cj = document.getElementById('upledcap').value.replace(/[ \t]+/g, ' ').trim(), allj = UED_CAPSIB.length && document.getElementById('upledcapallc').checked;
+      if (cj !== (sj.cap || '') || allj) { cb.cap = cj; if (allj) cb.tracks = UED_CAPSIB.slice(); }
+      var srcj = document.getElementById('upledsrc').value.trim(); if (srcj !== (sj.osrc || '')) cb.src = srcj;
+      if (Object.keys(cb).length > 1) calls.push(function () { return mainCapSave(cb).then(function () { mainEdApply(); [].forEach.call(document.querySelectorAll('#picks .pick'), function (el) { if (el._cap && (el._cap.t === sj.track || (cb.tracks || []).indexOf(el._cap.t) >= 0) && 'cap' in cb) el._cap.set(cj); }); }); });
+      var howj = (document.querySelector('input[name="upledv"]:checked') || {}).value, vj = null;
+      if (howj === 'none' && sj.ov !== '') vj = '';
+      else if (howj === 'link') { vj = ytIdOf(document.getElementById('upledlink').value); if (!vj) { toast('That isn’t a YouTube link'); return; } if (vj === sj.ov) vj = null; }
+      if (vj !== null) calls.push(function () { return johnApi('/facts/video', { track: sj.track, video: vj }).then(function (j) { if (j.status !== 200) throw new Error(j.error || 'the video wasn’t saved'); }); });
+      if (ed.tags || ed.fxDirty) calls.push(function () { return johnApi('/facts/signoff', { items: [johnSigned(ed)] }).then(function (j) { if (j.status !== 200) throw new Error(j.error || 'its facts, moods and genres weren’t saved'); }); });
+      if (!calls.length) { closeDialog(upledDlg); return; }
+      var okj = document.getElementById('upledok'); okj.disabled = true;
+      calls.reduce(function (p, f) { return p.then(f); }, Promise.resolve()).then(function () {
+        okj.disabled = false; closeDialog(upledDlg); toast(vj !== null || ed.tags || ed.fxDirty ? 'Saved: its video, facts, moods and genres show once the site job has run (a few minutes)' : 'Saved');
+      }).catch(function (e) { okj.disabled = false; toast((e && e.message) || 'Couldn’t save it just now'); });
       return;
     }
     var s = ed.s, how = (document.querySelector('input[name="upledv"]:checked') || {}).value, body = { op: 'edit', id: ed.p.id, track: s.track };
