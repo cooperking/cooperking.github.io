@@ -1516,6 +1516,15 @@ async function members(request, url, env) {
       await env.SOTD.put('members', JSON.stringify(all));
       return answer(200, { members: listing() });
     }
+    case 'drafts': {   // the Songs tab's changes not signed off yet, the same on every device of John's (John, 6 Nov 2026: "I made some changes on my chrome app ... when I went to my iphone they weren't there"); { set: { edits, at } } keeps them, else they're given
+      if (body.set && typeof body.set === 'object') {
+        const t = JSON.stringify({ edits: body.set.edits || {}, at: body.set.at || {}, saved: Date.now() });
+        if (t.length > 2e6) return answer(413, { error: 'Too much to keep.' });
+        await env.SOTD.put('factDrafts', t);
+        return answer(200, { ok: true });
+      }
+      return answer(200, (await env.SOTD.get('factDrafts', 'json')) || { edits: {}, at: {} });
+    }
     case 'nfact': {   // the fact chosen at sign-off for a song's notification (text; '' none), kept 60 days
       const t = String(body.track || ''), f = String(body.text || '').replace(/\s+/g, ' ').trim().slice(0, 600);
       if (!ID_RE.test(t)) return answer(400, { error: 'Which song?' });

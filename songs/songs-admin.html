@@ -267,7 +267,33 @@ a.srchpill { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--li
   function store(k, v) { try { if (v === undefined) localStorage.removeItem(k); else localStorage.setItem(k, typeof v === 'string' ? v : JSON.stringify(v)); } catch (e) {} }
   function read(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
   try { edits = JSON.parse(read(EDITS) || '{}') || {}; } catch (e) { edits = {}; }
-  function saveEdits() { store(EDITS, edits); }
+  // each song's changes, with when they were made (EDAT), kept on this device and by the Worker, so every device has
+  // them; a song's changes older than its newest facts are let go, so they never hide facts written since
+  var EDAT = {}; try { EDAT = JSON.parse(read('sotd-facts-edits-at') || '{}') || {}; } catch (e) { EDAT = {}; }
+  var draftT = 0;
+  function saveEdits() {
+    Object.keys(edits).forEach(function (k) { if (!EDAT[k]) EDAT[k] = Date.now(); });
+    Object.keys(EDAT).forEach(function (k) { if (!edits[k]) delete EDAT[k]; });
+    store(EDITS, edits); store('sotd-facts-edits-at', EDAT);
+    clearTimeout(draftT); draftT = setTimeout(function () { api('/members/admin', { op: 'drafts', set: { edits: edits, at: EDAT } }).catch(function () {}); }, 1200);
+  }
+  function draftsPull() {   // the changes made on his other devices: each song's newest
+    return api('/members/admin', { op: 'drafts' }).then(function (j) {
+      if (!j || j.status !== 200) return;
+      var se = j.edits || {}, sa = j.at || {}, changed = false;
+      Object.keys(se).forEach(function (k) { if (!edits[k] || (sa[k] || 0) > (EDAT[k] || 0)) { edits[k] = se[k]; EDAT[k] = sa[k] || Date.now(); changed = true; } });
+      Object.keys(edits).forEach(function (k) { if (!se[k] && EDAT[k] && j.saved && EDAT[k] < j.saved - 5000) { delete edits[k]; delete EDAT[k]; changed = true; } });   // (signed off or discarded on another device)
+      if (changed) { store(EDITS, edits); store('sotd-facts-edits-at', EDAT); }
+    }).catch(function () {});
+  }
+  function editsPrune() {   // changes made before its facts were last written: let go (the new facts show)
+    var n = 0;
+    Object.keys(edits).forEach(function (k) {
+      var p = (pending.songs || {})[k], w = p && p.written; if (!w || !/T/.test(w)) return;
+      if (!EDAT[k] || EDAT[k] < Date.parse(w)) { delete edits[k]; delete EDAT[k]; n++; }
+    });
+    if (n) saveEdits();
+  }
   function toast(msg) { var t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(function () { t.classList.remove('show'); }, Math.max(3200, msg.length * 60)); }
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
   function clone(x) { return JSON.parse(JSON.stringify(x)); }
@@ -396,7 +422,7 @@ a.srchpill { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--li
     var m = v.match(/(?:youtu\.be\/|[?&]v=|\/shorts\/|\/embed\/|\/live\/)([\w-]{11})/) || v.match(/^([\w-]{11})$/);
     return m ? m[1] : null;
   }
-  function commitOf(s, w) { return function (again) { edits[s.id] = w; saveEdits(); counts(); if (again) redraw(s); }; }
+  function commitOf(s, w) { return function (again) { edits[s.id] = w; EDAT[s.id] = Date.now(); saveEdits(); counts(); if (again) redraw(s); }; }
   function tagSection(s, w) {
     var sec = el('div', 'sec'), commit = commitOf(s, w), t = TAGS[s.id] || {};
     var kk = el('div', 'kicker'); kk.appendChild(el('span', null, 'Moods and genres'));
@@ -1342,7 +1368,8 @@ a.srchpill { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--li
     getJSON('facts-quotes.json').catch(function () { return {}; }),
     api('/members/admin', { op: 'list' }).catch(function () { return {}; }),
     getJSON('video-alts.json').catch(function () { return {}; }),
-    api('/members/admin', { op: 'uplsongs' }).catch(function () { return {}; })
+    api('/members/admin', { op: 'uplsongs' }).catch(function () { return {}; }),
+    draftsPull()   // (his changes from his other devices)
   ]).then(function (r) {
     uplLoad(); pushLoad();   // (Member Songs' playlist tiles)
     ALTS = (r[8] && r[8].songs) || {};
@@ -1363,7 +1390,7 @@ a.srchpill { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--li
       if (x.fx && (!m.fx || x.fx.st === 'wait')) m.fx = Object.assign({ pid: x.pid }, x.fx);   // (its facts: those of the public playlist that has them)
     });
     JOHN = (r[9] && r[9].john) || {};
-    MSONGS = Object.keys(by).map(function (k) { var m = by[k]; m.cals.sort(function (a, b) { return a.d < b.d ? 1 : -1; }); m.a = m.d + 'T12:00:00Z'; DAYS[m.id] = slugOf(m.d); return m; }).sort(function (a, b) { return a.d < b.d ? 1 : a.d > b.d ? -1 : 0; }); pending = r[2]; signedW = r[3] || {};
+    MSONGS = Object.keys(by).map(function (k) { var m = by[k]; m.cals.sort(function (a, b) { return a.d < b.d ? 1 : -1; }); m.a = m.d + 'T12:00:00Z'; DAYS[m.id] = slugOf(m.d); return m; }).sort(function (a, b) { return a.d < b.d ? 1 : a.d > b.d ? -1 : 0; }); pending = r[2]; editsPrune(); signedW = r[3] || {};
     TAGS = (r[4] && r[4].songs) || {}; VIDS = (r[5] && r[5].videos) || {}; QUOTES = r[6] || {};
     MSONGS.forEach(function (m) { if (m.vid && !VIDS[m.id]) VIDS[m.id] = m.vid; });   // (what was found for each member song)
     CAT = r[7].catalog || {}; media = r[7].media !== false; COVERS = r[7].covers || {}; MEMBERS = r[7].members || [];
