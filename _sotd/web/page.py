@@ -46,10 +46,13 @@ HEAD = """<!doctype html>
 DRAFT_FLAG = '''<style>
 .draftflag { position: fixed; z-index: 40; left: max(16px, env(safe-area-inset-left, 0px)); bottom: max(16px, env(safe-area-inset-bottom, 0px));
   padding: 6px 12px; border-radius: 999px; background: #1b1020; color: #fffaf5; font: 600 11px/1.2 "Hanken Grotesk", Arial, sans-serif;
-  letter-spacing: .14em; text-transform: uppercase; pointer-events: none; box-shadow: 0 6px 18px rgba(14, 6, 18, .3); }
+  letter-spacing: .14em; text-transform: uppercase; text-decoration: none; box-shadow: 0 6px 18px rgba(14, 6, 18, .3); }
+.draftflag b { font-weight: 600; opacity: .75; margin-left: 8px; }
 html.big .draftflag { position: static; flex: none; box-shadow: none; }
 </style>
-<div class="draftflag" aria-hidden="true">Draft</div>
+<a class="draftflag" id="draftflag" href="/songs/" title="Back to the live calendar">Draft<b>Go to live ›</b></a>
+<script>/* the same place on the live calendar, a tap away (John, 6 Nov 2026: "there isn't an easy way to switch back to live") */
+document.getElementById('draftflag').addEventListener('click', function (e) { e.preventDefault(); location.href = location.href.replace('/songs/draft/', '/songs/'); });</script>
 <script>/* on a TV or a computer, in the header beside the months: in the corner it covers a day */
 if (document.documentElement.classList.contains('big')) { var df = document.querySelector('.draftflag'), mn = document.querySelector('.hero .monthnav'); if (df && mn) mn.parentNode.insertBefore(df, mn); }</script>
 '''
