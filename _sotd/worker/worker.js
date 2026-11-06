@@ -125,7 +125,8 @@ export default {
     ctx.waitUntil(spKeep(env).catch(e => console.log('spKeep: ' + (e && e.message))));
     ctx.waitUntil(uplReseen(env).catch(e => console.log('uplReseen: ' + (e && e.message))));   // (once: the playlists' 'none' counts put right)
     ctx.waitUntil(mailDigests(env).catch(e => console.log('mailDigests: ' + (e && e.message))));
-    ctx.waitUntil(pushDigests(env).catch(e => console.log('pushDigests: ' + (e && e.message))));   // (and the one notification a day, for those who chose it)   // (notifications by email, once a day, for those who chose it)
+    ctx.waitUntil(pushDigests(env).catch(e => console.log('pushDigests: ' + (e && e.message))));
+    ctx.waitUntil(weekDigests(env).catch(e => console.log('weekDigests: ' + (e && e.message))));   // (Monday's, for those who chose once a week)   // (and the one notification a day, for those who chose it)   // (notifications by email, once a day, for those who chose it)
     ctx.waitUntil(catalogTidy(env).catch(e => console.log('catalogTidy: ' + (e && e.message))));   // (files for songs on no calendar or playlist)   // (previews and covers copied here, a few a run)
   }
 };
@@ -1517,7 +1518,7 @@ async function members(request, url, env) {
       const m = all[body.id]; if (!m) return answer(404, { error: 'No such member.' });
       const want = String(body.mode || ''); if (!MAIL_MODES.includes(want)) return answer(400, { error: 'Which setting?' });
       if (!m.email) return answer(400, { error: m.name + ' has no email address yet: they add it in their Profile.' });
-      m.mailme = want; if (want !== 'day') await env.SOTD.delete('mdig:' + body.id);
+      m.mailme = want; if (want !== 'day') await env.SOTD.delete('mdig:' + body.id); if (want !== 'week') await env.SOTD.delete('mwk:' + body.id);
       await env.SOTD.put('members', JSON.stringify(all));
       return answer(200, { members: listing() });
     }
@@ -1525,7 +1526,7 @@ async function members(request, url, env) {
       const m = all[body.id]; if (!m) return answer(404, { error: 'No such member.' });
       const want = String(body.mode || ''); if (!MAIL_MODES.includes(want)) return answer(400, { error: 'Which setting?' });
       if (want === 'all') delete m.pushme; else m.pushme = want;
-      if (want !== 'day') await env.SOTD.delete('pdig:' + body.id);
+      if (want !== 'day') await env.SOTD.delete('pdig:' + body.id); if (want !== 'week') await env.SOTD.delete('pwk:' + body.id);
       await env.SOTD.put('members', JSON.stringify(all));
       return answer(200, { members: listing() });
     }
@@ -3239,16 +3240,16 @@ async function memberPrefs(request, env, answer) {
   const hasMsgs = typeof body.msgs === 'boolean', hasMute = Array.isArray(body.mute), hasMail = typeof body.mailme === 'string';
   if (typeof body.pushme === 'string') {   // notifications on their devices: MAIL_MODES, as emails
     const want = body.pushme || 'off';
-    if (!MAIL_MODES.includes(want)) return answer(400, { error: 'Choose off, everything, once a day, the Song of the Day or messages to you.' });
+    if (!MAIL_MODES.includes(want)) return answer(400, { error: 'Choose off, everything, once a day, once a week, the Song of the Day or messages to you.' });
     if (want === 'all') delete who.all[who.id].pushme; else who.all[who.id].pushme = want;
-    if (want !== 'day') await env.SOTD.delete('pdig:' + who.id);
+    if (want !== 'day') await env.SOTD.delete('pdig:' + who.id); if (want !== 'week') await env.SOTD.delete('pwk:' + who.id);
     if (!hasMsgs && !hasMute && !hasMail) { await env.SOTD.put('members', JSON.stringify(who.all)); return answer(200, { ok: true, msgs: !who.all[who.id].nomsg, mute: who.all[who.id].mute || [], mailme: mailMode(who.all[who.id]), pushme: pushMode(who.all[who.id]) }); }
   }
   if (hasMail) {   // notifications by email: MAIL_MODES (noteMail)
     const want = body.mailme || 'off';
-    if (!MAIL_MODES.includes(want)) return answer(400, { error: 'Choose off, everything, once a day, the Song of the Day or messages to you.' });
+    if (!MAIL_MODES.includes(want)) return answer(400, { error: 'Choose off, everything, once a day, once a week, the Song of the Day or messages to you.' });
     if (want !== 'off' && !who.all[who.id].email) return answer(400, { error: 'Add your email address first.' });
-    who.all[who.id].mailme = want; if (want !== 'day') await env.SOTD.delete('mdig:' + who.id);
+    who.all[who.id].mailme = want; if (want !== 'day') await env.SOTD.delete('mdig:' + who.id); if (want !== 'week') await env.SOTD.delete('mwk:' + who.id);
     if (!hasMsgs && !hasMute) { await env.SOTD.put('members', JSON.stringify(who.all)); return answer(200, { ok: true, msgs: !who.all[who.id].nomsg, mute: who.all[who.id].mute || [], mailme: mailMode(who.all[who.id]), pushme: pushMode(who.all[who.id]) }); }
   }
   if (!hasMsgs && !hasMute) return answer(400, { error: 'Say whether to take them (msgs: true or false), or whose not to (mute).' });
@@ -3312,9 +3313,9 @@ const MAIL_EACH_DAY = 8, MAIL_ALL_DAY = 60, MAIL_DIG_MAX = 40;
 // each member's choice (mailme; none chosen: all): 'off' none; 'all' each one as it comes; 'day' one email a day with them
 // all; 'song' just the Song of the Day; 'direct' just what's to them (messages sent to them, reactions, hearts) (John, 3 Nov
 // 2026: "more granular ... one email a day for everything. Just receive song of the day, just ... a direct message or reaction")
-const MAIL_MODES = ['off', 'all', 'day', 'song', 'direct'];
+const MAIL_MODES = ['off', 'all', 'day', 'week', 'song', 'direct'];   // (week: one a week, Monday morning, John, 6 Nov 2026: "Could a weekly summary option be available too")
 function mailMode(m) { if (!m || !m.email) return ''; const v = m.mailme === undefined || m.mailme === 'each' ? 'all' : m.mailme; return v === 'off' || !MAIL_MODES.includes(v) ? '' : v; }
-function mailWants(mode, cat) { return mode === 'all' || mode === 'day' || mode === cat; }   // cat: 'song', 'direct' or 'other'
+function mailWants(mode, cat) { return mode === 'all' || mode === 'day' || mode === 'week' || mode === cat; }   // cat: 'song', 'direct' or 'other'
 // notifications on their devices chosen apart from emails (John, 6 Nov 2026: "Some people want to receive emails but not
 // notifications, and the other way around, and have all of the available options for both"): pushme on their record, the
 // same choices as emails (none chosen: everything); 'day' keeps them (KV pdig:<member>) for one notification each morning
@@ -3322,10 +3323,10 @@ function pushMode(m) { const v = m && m.pushme; return MAIL_MODES.includes(v) ? 
 async function pushGate(env, all, id, cat, msg) {   // true: to their devices now; 'day': kept for the morning's one
   const mode = pushMode(all && all[id]);
   if (!mailWants(mode, cat)) return false;
-  if (mode !== 'day') return true;
-  const k = 'pdig:' + id, had = (await env.SOTD.get(k, 'json')) || [];
-  had.push({ t: String(msg.title || msg.subject || '').slice(0, 120), at: Date.now() });
-  await kvSoft(env, k, JSON.stringify(had.slice(-40)), { expirationTtl: 3 * 86400 });
+  if (mode !== 'day' && mode !== 'week') return true;
+  const k = (mode === 'week' ? 'pwk:' : 'pdig:') + id, had = (await env.SOTD.get(k, 'json')) || [];
+  had.push({ t: String(msg.title || msg.subject || '').slice(0, 120), at: Date.now(), c: cat, i: mailImg(msg.icon) || mailImg(msg.image) || '' });
+  await kvSoft(env, k, JSON.stringify(had.slice(mode === 'week' ? -100 : -40)), { expirationTtl: (mode === 'week' ? 10 : 3) * 86400 });
   return false;
 }
 async function pushDigests(env) {   // the morning's one notification for each member who chose once a day: from 8am UK
@@ -3423,8 +3424,14 @@ async function noteMail(env, to, msg, cat) {   // cat: 'song' (the Song of the D
   cat = cat || 'other';
   const all = (await env.SOTD.get('members', 'json')) || {}, ids = (to || Object.keys(all)).filter(id => all[id] && mailWants(mailMode(all[id]), cat));
   for (const id of ids) {
-    const m = all[id], item = mailItem(msg), mode = mailMode(m);
+    const m = all[id], item = Object.assign(mailItem(msg), { c: cat }), mode = mailMode(m);
     let sent = false;
+    if (mode === 'week') {   // (kept for Monday's email)
+      const k = 'mwk:' + id, l = (await env.SOTD.get(k, 'json')) || [];
+      l.push(Object.assign({}, item, { h: undefined })); while (l.length > 80) l.shift();
+      await kvSoft(env, k, JSON.stringify(l), { expirationTtl: 10 * 86400 });
+      continue;
+    }
     if (mode !== 'day' && await dayCount(env, 'mailme:' + id, MAIL_EACH_DAY) && await dayCount(env, 'mailme-all', MAIL_ALL_DAY)) {
       try { await sendMail(env, m.email, item.t, (item.b ? item.b + '\n\n' : '') + (item.f ? 'Fact of the Day: ' + item.f + '\n\n' : '') + item.u + mailFoot(), 'note', mailShell(item.h || mailItemHtml(item, true), item.u, item.i)); sent = true; } catch (e) { console.log('noteMail: ' + (e && e.message)); }
     }
@@ -3433,6 +3440,71 @@ async function noteMail(env, to, msg, cat) {   // cat: 'song' (the Song of the D
       l.push(item); while (l.length > MAIL_DIG_MAX) l.shift();
       await kvSoft(env, k, JSON.stringify(l), { expirationTtl: 3 * 86400 });
     }
+  }
+}
+// a summary email, a day's or a week's (John, 6 Nov 2026: "a weekly summary option ... nicely formatted"): its heading and
+// dates, a line of counts, the songs as covers two to a row, then what was to them, then the rest
+function digestHtml(items, week, tint) {
+  const fmt = t => new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'Europe/London' });
+  const from = items.reduce((a, x) => Math.min(a, x.at || Date.now()), Date.now()), to = items.reduce((a, x) => Math.max(a, x.at || 0), 0) || Date.now();
+  const songs = items.filter(x => x.c === 'song'), mine = items.filter(x => x.c === 'direct'), rest = items.filter(x => x.c !== 'song' && x.c !== 'direct');
+  const n = (k, one, many) => k ? k + ' ' + (k === 1 ? one : many) : '';
+  const counts = [n(songs.length, 'new song', 'new songs'), n(mine.length, 'message to you', 'messages to you'), n(rest.length, 'other notification', 'other notifications')].filter(Boolean).join(' · ');
+  const h2 = t => '<p style="margin:26px 0 12px;font:700 11px/1 Helvetica,Arial,sans-serif;letter-spacing:.16em;text-transform:uppercase;color:' + tint + '">' + t + '</p>';
+  let out = '<h1 style="margin:0 0 4px;font:500 28px/1.2 Georgia,\'Times New Roman\',serif;color:#1d0b1e">Your ' + (week ? 'week' : 'day') + ' on Song of the Day</h1>'
+    + '<p style="margin:0 0 4px;font:14px/1.4 Helvetica,Arial,sans-serif;color:#8a7680">' + mailEsc(fmt(from) === fmt(to) ? fmt(to) : fmt(from) + ' – ' + fmt(to)) + '</p>'
+    + (counts ? '<p style="margin:0;font:15px/1.5 Helvetica,Arial,sans-serif;color:#4a3a42">' + mailEsc(counts) + '</p>' : '');
+  if (songs.length) {
+    out += h2(songs.length === 1 ? 'The song' : 'The songs') + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>';
+    songs.slice(0, 14).forEach((x, i) => {
+      const img = mailImg(x.i), link = x.u || SITE_SONGS;
+      if (i && i % 2 === 0) out += '</tr><tr>';
+      out += '<td width="50%" valign="top" style="padding:0 ' + (i % 2 ? '0' : '6px') + ' 16px ' + (i % 2 ? '6px' : '0') + '"><a href="' + mailEsc(link) + '" style="text-decoration:none">'
+        + (img ? '<img src="' + mailEsc(img) + '" alt="" width="250" style="display:block;width:100%;max-width:250px;height:auto;border:0;border-radius:12px;margin:0 0 8px">' : '')
+        + '<span style="display:block;font:600 15px/1.3 Georgia,\'Times New Roman\',serif;color:#1d0b1e">' + mailEsc(x.t) + '</span>'
+        + (x.b ? '<span style="display:block;margin-top:2px;font:13px/1.4 Helvetica,Arial,sans-serif;color:#6b5a62">' + mailEsc(String(x.b).split('\n')[0].slice(0, 90)) + '</span>' : '') + '</a></td>';
+    });
+    if (Math.min(songs.length, 14) % 2) out += '<td width="50%"></td>';
+    out += '</tr></table>' + (songs.length > 14 ? '<p style="margin:0;font:14px/1.4 Helvetica,Arial,sans-serif;color:#6b5a62">and ' + (songs.length - 14) + ' more on the calendar</p>' : '');
+  }
+  const list = (title, xs) => { if (!xs.length) return; out += h2(title) + xs.slice(0, 20).map((x, i) => '<div style="padding:' + (i ? '16px' : '0') + ' 0 16px;' + (i ? 'border-top:1px solid #eadfe3' : '') + '">' + (x.hs || mailItemHtml(x, false)) + '</div>').join('') + (xs.length > 20 ? '<p style="margin:0;font:14px/1.4 Helvetica,Arial,sans-serif;color:#6b5a62">and ' + (xs.length - 20) + ' more in your inbox</p>' : ''); };
+  list('For you', mine); list(songs.length || mine.length ? 'Also' : 'Your notifications', rest);
+  return out + '<div style="margin:26px 0 0"><a href="' + mailEsc(SITE_SONGS) + '" style="display:inline-block;padding:13px 26px;border-radius:999px;background:' + tint + ';color:#ffffff;font:600 13px/1 Helvetica,Arial,sans-serif;letter-spacing:.08em;text-transform:uppercase;text-decoration:none">Open the calendar</a></div>';
+}
+// the week's summaries, Monday from 8am UK: by email for those who chose it (mwk:<member>), and as one notification (pwk:<member>)
+async function weekDigests(env) {
+  if (Number(uplHM().slice(0, 2)) < 8 || new Date().toLocaleDateString('en-GB', { weekday: 'short', timeZone: 'Europe/London' }) !== 'Mon') return;
+  const done = 'wkday:' + londonDay();
+  if (await env.SOTD.get(done)) return;
+  await env.SOTD.put(done, '1', { expirationTtl: 3 * 86400 });
+  const all = (await env.SOTD.get('members', 'json')) || {}, subs = (await env.SOTD.get('pushSubs', 'json')) || {};
+  let k = null;
+  for (const pre of ['mwk:', 'pwk:']) {
+    let cursor;
+    do {
+      const l = await env.SOTD.list({ prefix: pre, cursor });
+      for (const key of l.keys) {
+        const id = key.name.slice(4), m = all[id], items = (await env.SOTD.get(key.name, 'json')) || [];
+        await env.SOTD.delete(key.name);
+        if (!m || !items.length) continue;
+        const songs = items.filter(x => x.c === 'song'), mine = items.filter(x => x.c === 'direct'), rest = items.length - songs.length - mine.length;
+        const counts = [songs.length ? songs.length + (songs.length === 1 ? ' new song' : ' new songs') : '', mine.length ? mine.length + (mine.length === 1 ? ' message to you' : ' messages to you') : '', rest ? rest + ' more' : ''].filter(Boolean).join(' · ');
+        if (pre === 'mwk:') {
+          if (!mailReady(env) || mailMode(m) !== 'week') continue;
+          const first = songs.find(x => mailImg(x.i)) || items[0], tint = mailTint(first.u, first.i);
+          const text = 'Your week on Song of the Day: ' + counts + '\n\n' + items.map(x => '• ' + x.t + (x.b ? '\n  ' + x.b : '') + '\n  ' + x.u).join('\n\n');
+          try { await sendMail(env, m.email, 'Your week on Song of the Day: ' + counts, text + mailFoot(), 'notes', mailShell(digestHtml(items, true, tint), first.u, first.i)); } catch (e) { console.log('weekDigests: ' + (e && e.message)); }
+        } else {
+          if (pushMode(m) !== 'week') continue;
+          k = k || await vapidKeys(env);
+          const unread = ((await env.SOTD.get('inbox:' + id, 'json')) || []).filter(y => !y.r).length;
+          const pic = (songs.find(x => x.i) || {}).i || '';
+          const msg = Object.assign({ title: 'Your week on Song of the Day', body: counts + (songs.length ? '\n' + songs.slice(-3).reverse().map(x => x.t).join(' · ') : ''), url: SITE_SONGS, tag: 'sotd-week', unread: unread || items.length }, pic ? { icon: pic } : {});
+          await Promise.all(Object.keys(subs).filter(sid => subs[sid].m === id).map(sid => pushTo(env, k, subs[sid], msg).catch(() => {})));
+        }
+      }
+      cursor = l.list_complete ? null : l.cursor;
+    } while (cursor);
   }
 }
 async function mailDigests(env) {   // the day's email for each member with notifications waiting: from 8am UK, once a day
@@ -3450,8 +3522,7 @@ async function mailDigests(env) {   // the day's email for each member with noti
       if (!mailMode(m) || !items.length) continue;
       const text = items.map(x => '• ' + x.t + (x.b ? '\n  ' + x.b : '') + '\n  ' + x.u).join('\n\n');
       const first = items.find(x => mailMonthOf(x.u) || mailMonthOf(x.i)) || items[0], lead = first.u;   // (the first song's month)
-      const html = mailShell(items.length === 1 ? items[0].h || mailItemHtml(items[0], true)
-        : '<h1 style="margin:0 0 18px;font:500 24px/1.25 Georgia,serif;color:#1d0b1e">Your day on Song of the Day</h1>' + items.map(x => '<div style="padding:18px 0;border-top:1px solid #eadfe3">' + (x.hs || mailItemHtml(x, false)) + '</div>').join(''), lead, first.i);
+      const html = mailShell(items.length === 1 ? items[0].h || mailItemHtml(items[0], true) : digestHtml(items, false, mailTint(lead, first.i)), lead, first.i);
       try { await sendMail(env, m.email, items.length === 1 ? items[0].t : items.length + ' notifications from Song of the Day', text + mailFoot(), 'notes', html); }
       catch (e) { console.log('mailDigests: ' + (e && e.message)); }
     }

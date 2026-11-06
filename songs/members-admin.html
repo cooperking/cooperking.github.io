@@ -441,14 +441,14 @@
         + ((PUSHON || {})[m.id] ? ' · notifications on' : '')
         + (m.nomsg ? ' · other members’ messages off' : '');   // (theirs to choose, Profile › Account; yours still reach them)
       // their email notifications and their Spotify, at a glance (John, 4 Nov 2026: "who has email notifications enabled ... who has connected Spotify and how they are using it")
-      var MAILSAY = { all: 'each one', day: 'once a day', song: 'Song of the Day only', direct: 'messages to them only', off: 'off' };
+      var MAILSAY = { all: 'each one', day: 'once a day', week: 'once a week', song: 'Song of the Day only', direct: 'messages to them only', off: 'off' };
       var info = el2('div', 'pinfo');
       var ml;
       if (!m.email) ml = el2('span', 'pi', 'Emails: no email address');
       else {   // (John can change it for them, when they ask: John, 4 Nov 2026)
         ml = el2('label', 'pi pisel' + (m.mail && m.mail !== 'off' ? ' on' : '')); ml.appendChild(document.createTextNode('Emails: '));
         var sel = document.createElement('select'); sel.setAttribute('aria-label', m.name + '’s email notifications');
-        ['all', 'day', 'song', 'direct', 'off'].forEach(function (k) { var o = document.createElement('option'); o.value = k; o.textContent = MAILSAY[k]; if (k === (m.mail || 'off')) o.selected = true; sel.appendChild(o); });
+        ['all', 'day', 'week', 'song', 'direct', 'off'].forEach(function (k) { var o = document.createElement('option'); o.value = k; o.textContent = MAILSAY[k]; if (k === (m.mail || 'off')) o.selected = true; sel.appendChild(o); });
         sel.addEventListener('change', function () {
           var v = sel.value; sel.disabled = true;
           api('/members/admin', { op: 'mailmode', id: m.id, mode: v }).then(function (j) {
@@ -461,7 +461,7 @@
       // their notifications, chosen apart from emails (John, 6 Nov 2026)
       var pl = el2('label', 'pi pisel' + ((m.push || 'all') !== 'off' ? ' on' : '')); pl.appendChild(document.createTextNode('Notifications: '));
       var psel = document.createElement('select'); psel.setAttribute('aria-label', m.name + '’s notifications');
-      ['all', 'day', 'song', 'direct', 'off'].forEach(function (k) { var o = document.createElement('option'); o.value = k; o.textContent = MAILSAY[k]; if (k === (m.push || 'all')) o.selected = true; psel.appendChild(o); });
+      ['all', 'day', 'week', 'song', 'direct', 'off'].forEach(function (k) { var o = document.createElement('option'); o.value = k; o.textContent = MAILSAY[k]; if (k === (m.push || 'all')) o.selected = true; psel.appendChild(o); });
       psel.addEventListener('change', function () {
         var v = psel.value; psel.disabled = true;
         api('/members/admin', { op: 'pushmode', id: m.id, mode: v }).then(function (j) {

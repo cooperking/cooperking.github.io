@@ -2113,7 +2113,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       <div class="ac-dev" id="acpm" hidden>
         <p class="ac-h">Which notifications</p>
         <p class="ac-none" id="acpmt"></p>
-        <div class="acmm-opts" id="acpmb" role="radiogroup" aria-label="Notifications on your devices"><button type="button" role="radio" data-pm="all"><b>Everything</b><span>Each notification as it comes</span></button><button type="button" role="radio" data-pm="day"><b>One a day</b><span>Everything, in one notification each morning</span></button><button type="button" role="radio" data-pm="song"><b>Just the Song of the Day</b><span>Each new song, as it comes out</span></button><button type="button" role="radio" data-pm="direct"><b>Just messages to me</b><span>Messages sent to you, reactions and hearts</span></button><button type="button" role="radio" data-pm="off"><b>Off</b><span>No notifications (your inbox still has them)</span></button></div>
+        <div class="acmm-opts" id="acpmb" role="radiogroup" aria-label="Notifications on your devices"><button type="button" role="radio" data-pm="all"><b>Everything</b><span>Each notification as it comes</span></button><button type="button" role="radio" data-pm="day"><b>One a day</b><span>Everything, in one notification each morning</span></button><button type="button" role="radio" data-pm="week"><b>One a week</b><span>A summary of the week, each Monday morning</span></button><button type="button" role="radio" data-pm="song"><b>Just the Song of the Day</b><span>Each new song, as it comes out</span></button><button type="button" role="radio" data-pm="direct"><b>Just messages to me</b><span>Messages sent to you, reactions and hearts</span></button><button type="button" role="radio" data-pm="off"><b>Off</b><span>No notifications (your inbox still has them)</span></button></div>
       </div>
       <div class="ac-dev" id="acsp" hidden>
         <p class="ac-h">Spotify</p>
@@ -2142,7 +2142,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       <div class="ac-dev" id="acmm" hidden>
         <p class="ac-h">Notifications by email</p>
         <p class="ac-none" id="acmmt"></p>
-        <div class="acmm-opts" id="acmmb" role="radiogroup" aria-label="Notifications by email"><button type="button" role="radio" data-mm="all"><b>Everything</b><span>Each notification as it comes</span></button><button type="button" role="radio" data-mm="day"><b>One email a day</b><span>Everything, in one email each morning</span></button><button type="button" role="radio" data-mm="song"><b>Just the Song of the Day</b><span>Each new song, as it comes out</span></button><button type="button" role="radio" data-mm="direct"><b>Just messages to me</b><span>Messages sent to you, reactions and hearts</span></button><button type="button" role="radio" data-mm=""><b>Off</b><span>No emails</span></button></div>
+        <div class="acmm-opts" id="acmmb" role="radiogroup" aria-label="Notifications by email"><button type="button" role="radio" data-mm="all"><b>Everything</b><span>Each notification as it comes</span></button><button type="button" role="radio" data-mm="day"><b>One email a day</b><span>Everything, in one email each morning</span></button><button type="button" role="radio" data-mm="week"><b>One email a week</b><span>A summary of the week, each Monday morning</span></button><button type="button" role="radio" data-mm="song"><b>Just the Song of the Day</b><span>Each new song, as it comes out</span></button><button type="button" role="radio" data-mm="direct"><b>Just messages to me</b><span>Messages sent to you, reactions and hearts</span></button><button type="button" role="radio" data-mm=""><b>Off</b><span>No emails</span></button></div>
       </div>
       <div class="ac-dev" id="acpk" hidden>
         <p class="ac-h">Passkeys</p>
@@ -7497,7 +7497,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     b.addEventListener('click', function () {
       if (!MEMBER) return;
       var v = b.getAttribute('data-pm'); if (v === (MEMBER.pushme || 'all')) return;
-      msgPrefs({ pushme: v }).then(function (j) { MEMBER.pushme = j.pushme || 'all'; pmDraw(); toast({ all: 'Every notification comes to your devices', day: 'One notification a day, each morning', song: 'Notifications for each Song of the Day', direct: 'Notifications for messages to you, reactions and hearts', off: 'No more notifications: they’re still in your inbox' }[MEMBER.pushme]); }, function () {});
+      msgPrefs({ pushme: v }).then(function (j) { MEMBER.pushme = j.pushme || 'all'; pmDraw(); toast({ all: 'Every notification comes to your devices', day: 'One notification a day, each morning', week: 'A summary notification each Monday morning', song: 'Notifications for each Song of the Day', direct: 'Notifications for messages to you, reactions and hearts', off: 'No more notifications: they’re still in your inbox' }[MEMBER.pushme]); }, function () {});
     });
   });
   // notifications by email (John, 3 Nov 2026): off, each one, or one email a day with them all
@@ -7516,7 +7516,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     b.addEventListener('click', function () {
       if (!MEMBER) return;
       var v = b.getAttribute('data-mm'); if (v === (MEMBER.mailme || '')) return;
-      msgPrefs({ mailme: v }).then(function (j) { MEMBER.mailme = j.mailme || ''; mmDraw(); toast({ all: 'Every notification comes by email', day: 'One email a day with your notifications', song: 'An email for each Song of the Day', direct: 'Emails for messages to you, reactions and hearts' }[j.mailme] || 'No more emails'); }, function () {});
+      msgPrefs({ mailme: v }).then(function (j) { MEMBER.mailme = j.mailme || ''; mmDraw(); toast({ all: 'Every notification comes by email', day: 'One email a day with your notifications', week: 'A summary email each Monday morning', song: 'An email for each Song of the Day', direct: 'Emails for messages to you, reactions and hearts' }[j.mailme] || 'No more emails'); }, function () {});
     });
   });
   function mailDraw() {
