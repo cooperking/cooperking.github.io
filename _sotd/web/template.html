@@ -8424,6 +8424,19 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     });
     if (missDlg.open) missDraw();
   }
+  // why its file didn't come, in a few plain words, and what to do (John, 6 Nov 2026: "Can those reasons always be put
+  // instead ... much easier to understand"); the download job's older, longer wording read the same way
+  function dlReason(dx) {
+    var w = String(dx.why || '').toLowerCase(), fix = ' Give it another link, or add your own copy.';
+    if (/premium/.test(w)) return 'YouTube Music Premium only: it can never download.' + fix;
+    if (/age/.test(w)) return 'Age-restricted on YouTube: the download account needs to be age-verified.' + fix;
+    if (/private/.test(w)) return 'A private video.' + fix;
+    if (/copyright|claim/.test(w)) return 'Blocked by a copyright claim.' + fix;
+    if (/members only|paying members/.test(w)) return 'For the channel’s members only.' + fix;
+    if (/where the job runs|country|blocks the video/.test(w)) return 'Blocked where the download runs (it plays for you), and no other upload worked.' + fix;
+    if (/taken down/.test(w)) return 'Taken down from YouTube.' + fix;
+    return 'Didn’t finish downloading: ' + (dx.tries >= 3 ? 'tried ' + dx.tries + ' times. Add your own copy, or give it another link.' : 'it’s tried again by itself.');
+  }
   function missDraw() {
     var L = missLists(), v = UPL.view; if (!L) return;
     document.getElementById('missname').textContent = v.n || 'Your playlist';
@@ -8466,7 +8479,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       var dx = (m.k === 'a' || m.k === 'mv') && x.dlx;   // (why its files didn't come, and what to do: John, 4 Nov 2026)
       if (dx) {
         var why = document.createElement('span'); why.className = 'dlwhy ' + dx.how;
-        why.textContent = 'Couldn’t download: ' + dx.why + '. ' + (dx.how === 'later' ? (dx.tries >= 3 ? 'Tried ' + dx.tries + ' times: add your own copy, or try again.' : 'It’s tried again by itself.') : dx.how === 'blocked' ? 'Give it another YouTube link, or add your own copy.' : 'This video can’t be downloaded: give it another YouTube link, or add your own copy.');
+        why.textContent = dlReason(dx);
         b.appendChild(why);
       }
       b.addEventListener('click', function () {   // its editor (at the part missing)
