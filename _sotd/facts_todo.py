@@ -58,6 +58,11 @@ def main(out):
         lines.append('Album (Spotify): %s · first released: %s' % (s.get('album'), yr))
         rd = redo.get(tid)
         if isinstance(rd, dict) and (rd.get('avoid') or rd.get('avoidSrc')):   # (asked for again: none of the facts it had, not from the same pages)
+            if rd.get('mode') == 'nf':
+                lines.append('**Asked by John: only its notification fact (`nf`, see FACTS.md). Its facts are kept: write no new facts (`facts`: []), just `nf`, which can be a tighter telling of one of these, or something better found while searching. Its facts now:**')
+                lines.extend('- ' + t for t in rd.get('avoid') or [])
+                lines.append('')
+                continue
             if rd.get('mode') == 'song':
                 lines.append('**Asked for again by John: more facts about the song itself, 3 to 5 new ones. Its artist facts are kept, so write none for the artist. None of the facts below, nothing close to them; look beyond the pages listed: interviews, books, liner notes and articles about the song (see FACTS.md).**')
             else:

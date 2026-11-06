@@ -53,7 +53,7 @@ def main(args):
             if s.get('upl'):
                 theirs['songs'][tid] = {'upl': s['upl'], 'title': s['title'], 'artist': s['artist'], 'written': today, 's': e['f'], 'a': a}
             else:
-                kp = (REDO_NOW.get(tid) or {}) if isinstance(REDO_NOW.get(tid), dict) and REDO_NOW[tid].get('mode') == 'song' else {}
+                kp = (REDO_NOW.get(tid) or {}) if isinstance(REDO_NOW.get(tid), dict) and REDO_NOW[tid].get('mode') in ('song', 'nf') else {}
                 if kp.get('keep'):   # (more about the song: the new song facts after the ones it had; its artist facts as they were, any new ones added)
                     k0 = kp['keep']
                     a = {k: {'name': (k0.get('a') or {}).get(k, {}).get('name') or v['name'], 'f': ((k0.get('a') or {}).get(k, {}).get('f') or []) + v['f']} for k, v in a.items()}

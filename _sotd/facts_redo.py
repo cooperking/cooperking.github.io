@@ -38,7 +38,7 @@ def main(tid):
         e = (d.get('songs') or {}).pop(tid, None)
         if e is None:
             continue
-        if mode == 'song' and keep is None and path.startswith(os.path.join(HERE, 'data')):
+        if mode in ('song', 'nf') and keep is None and path.startswith(os.path.join(HERE, 'data')):
             keep = e
         for f in (e.get('s') or []) + [f for a in (e.get('a') or {}).values() for f in (a.get('f') or [])]:
             if isinstance(f, dict) and f.get('t') and f['t'] not in avoid:
@@ -56,8 +56,8 @@ def main(tid):
             if len(f) > 1 and isinstance(f[1], int) and f[1] < len(src) and isinstance(src[f[1]], dict) and src[f[1]].get('u') and src[f[1]]['u'] not in srcs:
                 srcs.append(src[f[1]]['u'])
     redo[tid] = {'at': datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='seconds'), 'avoid': avoid[:20], 'avoidSrc': srcs[:20]}
-    if mode == 'song' and keep:
-        redo[tid].update({'mode': 'song', 'keep': keep})   # (its facts as they are, the new song facts added to them: facts_add.py)
+    if mode in ('song', 'nf') and keep:
+        redo[tid].update({'mode': mode, 'keep': keep})   # (nf: only its notification fact, the facts kept as they are)   # (its facts as they are, the new song facts added to them: facts_add.py)
     with open(REDO, 'w', encoding='utf-8') as f:
         json.dump(redo, f, indent=1)
     asked = load(ASKED)
