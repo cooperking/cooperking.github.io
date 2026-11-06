@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="829dc360fdc6">
+<meta name="sotd-build" content="0dd3e191db8a">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -7353,7 +7353,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         if (mine_ > l.at) plSend();   // changed here while offline
         else if (l.at > mine_ || l.tracks.join() !== fav.join()) plOpen(l);   // changed on another device
       }
-      syncFav(); plRender();
+      syncFav(); plRender(); if (typeof plWantGo === 'function') plWantGo();
     }).catch(function () {});
   }
   function plMember() {
@@ -9086,15 +9086,21 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   document.addEventListener('visibilitychange', function () { if (document.hidden) calKeep(UPL.on || 'john'); });   // (in use until now)
   function calWaitOn() { document.documentElement.classList.add('calwait'); clearTimeout(calWaitOn.t); calWaitOn.t = setTimeout(calWaitOff, 7000); }
+  function plWantGo() {   // the saved playlist it opens on, once their playlists have come
+    if (!PL.wantOpen || !PL.loaded) return;
+    var l = (PL.lists || []).filter(function (x) { return x.id === PL.wantOpen; })[0]; PL.wantOpen = null;
+    if (l) plOpenPop(l);
+  }
   function calWaitOff() { document.documentElement.classList.remove('calwait'); }
   function homeDraw() {   // Profile: Opens on
     var sel = document.getElementById('achome'); if (!sel) return;
     var box = document.getElementById('achomebox'), pls = uplPls().filter(function (p) { return p.st === 'ok' || p.st === undefined; });
-    box.hidden = !MEMBER || !pls.length; if (box.hidden) return;
+    box.hidden = !MEMBER || !(pls.length || (PL.lists || []).length); if (box.hidden) return;
     var cur = calHome(); sel.textContent = '';
     var opt = function (v, t) { var o = document.createElement('option'); o.value = v; o.textContent = t; sel.appendChild(o); };
     opt('', 'John’s Song of the Day');
     pls.forEach(function (p) { opt(p.id, (p.mine ? '' : p.o ? p.o + '’s: ' : '') + (p.n || p.t || 'A calendar')); });
+    (PL.lists || []).filter(function (l) { return !plOnCal(l); }).forEach(function (l) { opt('pl:' + l.id, (l.name || 'My playlist') + ' (your playlist)'); });   // (their saved playlists too: opened as My playlist)
     sel.value = [].some.call(sel.options, function (o) { return o.value === cur; }) ? cur : '';
   }
   function uplFromHash() {
@@ -9102,6 +9108,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (!m && /^#\d{1,2}-\d{1,2}-\d{4}$/.test(location.hash)) { UPL.linked = true; UPLREQ++; }   // (a day on John's calendar, linked: not the calendar this device was last on)
     if (!m) {
       var was = calStart();
+      if (was && /^pl:/.test(was) && (!location.hash || location.hash === '#')) { PL.wantOpen = was.slice(3); plWantGo(); return; }   // (a saved playlist of theirs: opened as My playlist once their playlists are in)
       if (was && was !== 'john' && /^[\w-]{6,40}$/.test(was) && (!location.hash || location.hash === '#') && !UPL.on) { calWaitOn(); UPL.want = { id: was, quiet: true }; uplWanted(); }
       return;
     }
