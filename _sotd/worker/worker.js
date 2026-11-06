@@ -1084,6 +1084,7 @@ async function adminStatus(env) {
   notes.forEach(e => { if (e.failed) mark(e, 'n:' + e.id); });   // (one that some devices didn't get)
   const jb = d.job;
   const cloudflare = await cfStats(env).catch(e => ({ errs: [String(e && e.message || e)] }));
+  await kvSoft(env, 'statusN', JSON.stringify({ n: Object.keys(bad).length, at: now }));   // (for the Admin button on John's Profile)
   return { at: new Date(now).toISOString(), problems: Object.keys(bad).length, songs, task, runs, notes, site, spotify, mails, ref, cloudflare,
     job: { at: jb.at || null, tried: jb.tried || null, err: jb.err || '' }, errors };
 }
@@ -1280,6 +1281,13 @@ async function members(request, url, env) {
   if (route === 'sent') return memberSent(request, env, answer);
   if (route === 'react') return memberReact(request, env, answer);
   if (route === 'bell') return memberBell(request, env, answer);
+  if (route === 'problems') {   // John only: how many things have failed or are stuck (the Status tab's count), for the Admin button on his Profile (John, 6 Nov 2026); worked out again at most every ten minutes
+    const who = await memberWho(request, env);
+    if (!who || who.id !== await env.SOTD.get('owner')) return answer(403, { error: 'Only John.' });
+    let c = await env.SOTD.get('statusN', 'json');
+    if (!c || Date.now() - (c.at || 0) > 10 * 60e3) { try { const st = await adminStatus(env); c = { n: st.problems || 0, at: Date.now() }; } catch (e) { c = c || { n: 0, at: 0 }; } }
+    return answer(200, { n: c.n || 0, at: c.at || 0 });
+  }
   if (route === 'heart') return memberHeart(request, env, answer);
   if (route === 'upl') return memberUpl(request, url, env, answer);
   if (route === 'uplup') return memberUplUp(request, url, env, answer);
