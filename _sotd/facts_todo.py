@@ -58,7 +58,10 @@ def main(out):
         lines.append('Album (Spotify): %s · first released: %s' % (s.get('album'), yr))
         rd = redo.get(tid)
         if isinstance(rd, dict) and (rd.get('avoid') or rd.get('avoidSrc')):   # (asked for again: none of the facts it had, not from the same pages)
-            lines.append('**Asked for again by John: the facts below weren\'t good enough. Write new ones: none of these, nothing close to them, and not from the pages listed; find interviews, books, liner notes and articles (see FACTS.md).**')
+            if rd.get('mode') == 'song':
+                lines.append('**Asked for again by John: more facts about the song itself, 3 to 5 new ones. Its artist facts are kept, so write none for the artist. None of the facts below, nothing close to them; look beyond the pages listed: interviews, books, liner notes and articles about the song (see FACTS.md).**')
+            else:
+                lines.append('**Asked for again by John: the facts below weren\'t good enough. Write new ones: none of these, nothing close to them, and not from the pages listed; find interviews, books, liner notes and articles (see FACTS.md).**')
             lines.extend('- not: ' + t for t in rd.get('avoid') or [])
             lines.extend('- not from: ' + u for u in rd.get('avoidSrc') or [])
         saved = []

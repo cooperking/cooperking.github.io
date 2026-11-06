@@ -24,19 +24,22 @@ def load(p):
 
 
 def main(tid):
+    tid, _, mode = (tid or '').partition(':')   # (<track>:song: only more facts about the song, the rest kept: John, 6 Nov 2026, "more about the song would be good")
     if not re.fullmatch(r'[0-9A-Za-z]{22}', tid or ''):
         sys.exit('not a track id: %r' % tid)
     redo = load(REDO)
     # the facts it has now (waiting or live), so the new ones are none of these and not from the same pages (John, 6 Nov
     # 2026: "Most of the new facts are the same ... the source is mainly just wikipedia"); a waiting song's come off the
     # waiting list, so it's written again
-    avoid, srcs = [], []
+    avoid, srcs, keep = [], [], None
     root = os.path.dirname(HERE)
     for path in (os.path.join(HERE, 'data', 'facts-pending.json'), os.path.join(root, 'songs', 'facts-pending.json')):
         d = load(path)
         e = (d.get('songs') or {}).pop(tid, None)
         if e is None:
             continue
+        if mode == 'song' and keep is None and path.startswith(os.path.join(HERE, 'data')):
+            keep = e
         for f in (e.get('s') or []) + [f for a in (e.get('a') or {}).values() for f in (a.get('f') or [])]:
             if isinstance(f, dict) and f.get('t') and f['t'] not in avoid:
                 avoid.append(f['t'])
@@ -53,6 +56,8 @@ def main(tid):
             if len(f) > 1 and isinstance(f[1], int) and f[1] < len(src) and isinstance(src[f[1]], dict) and src[f[1]].get('u') and src[f[1]]['u'] not in srcs:
                 srcs.append(src[f[1]]['u'])
     redo[tid] = {'at': datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='seconds'), 'avoid': avoid[:20], 'avoidSrc': srcs[:20]}
+    if mode == 'song' and keep:
+        redo[tid].update({'mode': 'song', 'keep': keep})   # (its facts as they are, the new song facts added to them: facts_add.py)
     with open(REDO, 'w', encoding='utf-8') as f:
         json.dump(redo, f, indent=1)
     asked = load(ASKED)

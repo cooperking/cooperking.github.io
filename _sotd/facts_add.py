@@ -38,6 +38,8 @@ def main(args):
     theirs = json.load(open(THEIRS, encoding='utf-8')) if os.path.exists(THEIRS) else {'songs': {}}
     today = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='seconds')   # (when they came in, to the second: John, 6 Nov 2026, "put a time they came in on so I can tell")
     added = []
+    rp = os.path.join(HERE, 'data', 'facts-redo.json')
+    REDO_NOW = json.load(open(rp, encoding='utf-8')) if os.path.exists(rp) else {}
     for wpath, vpath in zip(args[0::2], args[1::2]):
         w, v = json.load(open(wpath, encoding='utf-8')), json.load(open(vpath, encoding='utf-8'))
         songs, artists = checked(w.get('songs', {}), 's', v), checked(w.get('artists', {}), 'a', v)
@@ -51,6 +53,11 @@ def main(args):
             if s.get('upl'):
                 theirs['songs'][tid] = {'upl': s['upl'], 'title': s['title'], 'artist': s['artist'], 'written': today, 's': e['f'], 'a': a}
             else:
+                kp = (REDO_NOW.get(tid) or {}) if isinstance(REDO_NOW.get(tid), dict) and REDO_NOW[tid].get('mode') == 'song' else {}
+                if kp.get('keep'):   # (more about the song: the new song facts after the ones it had; its artist facts as they were, any new ones added)
+                    k0 = kp['keep']
+                    a = {k: {'name': (k0.get('a') or {}).get(k, {}).get('name') or v['name'], 'f': ((k0.get('a') or {}).get(k, {}).get('f') or []) + v['f']} for k, v in a.items()}
+                    e = dict(e, f=(k0.get('s') or []) + e['f'])
                 pending['songs'][tid] = {'n': s['n'], 'title': s['title'], 'artist': s['artist'], 'written': today, 's': e['f'], 'a': a}
             added.append('%d %s: %d song facts, %s' % (s['n'], s['title'], len(e['f']), ', '.join('%s %d' % (x['name'], len(x['f'])) for x in a.values()))
                          + (' (a member’s: waiting for its owner)' if s.get('upl') else ''))
