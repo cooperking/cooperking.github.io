@@ -1625,6 +1625,26 @@ async function members(request, url, env) {
       await env.SOTD.put('invpage:' + pid, JSON.stringify({ link, title: String(body.title || (m.name + ' is invited')).slice(0, 120), name: m.name, id: body.id, at }), { expirationTtl: ttl });
       return answer(200, { page: pid, url: new URL(request.url).origin + '/i/' + pid });
     }
+    case 'invitemail': {   // the invitation, sent as a designed email from John's Gmail, the card and a button to open it (John, 6 Nov 2026: "the email is plain text ... can the invite look good, like everything else")
+      const m = all[body.id];
+      if (!m) return answer(404, { error: 'No such member.' });
+      const pid = String(body.page || ''), page = /^[\w-]{16}$/.test(pid) ? await env.SOTD.get('invpage:' + pid, 'json') : null;
+      if (!page) return answer(400, { error: 'Make the invitation first.' });
+      const to = body.to ? cleanEmail(body.to) : (m.email || '');
+      if (!to) return answer(400, { error: body.to ? 'That doesn’t look like an email address.' : 'No email address for them yet.' });
+      if (!mailReady(env)) return answer(503, { error: 'Email isn’t set up yet.' });
+      const origin = new URL(request.url).origin, url = origin + '/i/' + pid, img = origin + '/i/' + pid + '.jpg', first = String(m.name || '').split(' ')[0];
+      const t = mailTint();
+      const inner = '<h1 style="margin:0 0 10px;font:500 26px/1.25 Georgia,\'Times New Roman\',serif;color:#1d0b1e">' + mailEsc(page.title || (m.name + ' is invited')) + '</h1>'
+        + '<p style="margin:0 0 18px;font:15px/1.5 Helvetica,Arial,sans-serif;color:#4a3a42">' + mailEsc((first ? first + ', you’re' : 'You’re') + ' invited to John’s Song of the Day: a song each day, with its story, on a calendar you can play from.') + '</p>'
+        + '<a href="' + mailEsc(url) + '" style="display:block;margin:0 0 20px"><img src="' + mailEsc(img) + '" width="512" alt="The invitation" style="display:block;width:100%;max-width:512px;height:auto;border:0;border-radius:14px"></a>'
+        + '<p style="margin:0 0 18px;text-align:center"><a href="' + mailEsc(url) + '" style="display:inline-block;padding:14px 28px;border-radius:999px;background:' + t + ';color:#ffffff;font:600 15px/1 Helvetica,Arial,sans-serif;text-decoration:none">Open your invitation</a></p>'
+        + '<p style="margin:0;font:13px/1.5 Helvetica,Arial,sans-serif;color:#6b5a62">It works for ' + INVITE_DAYS + ' days, on your phone or computer.</p>';
+      try { await sendMail(env, to, page.title || 'An invitation to John’s Song of the Day', (first ? first + ', you’re' : 'You’re') + ' invited to John’s Song of the Day.\n\nOpen your invitation: ' + url + '\n', 'invite', mailShell(inner)); }
+      catch (e) { return answer(502, { error: 'It didn’t send: ' + String(e && e.message || e).slice(0, 160) }); }
+      if (body.to && !m.email && !Object.values(all).some(x => x.email === to)) { m.email = to; await env.SOTD.put('members', JSON.stringify(all)); }   // (their address kept, for codes by email)
+      return answer(200, { ok: true, to });
+    }
     case 'files': {
       if (!env.MEDIA) return answer(503, { error: 'No R2 bucket is bound to the Worker as MEDIA yet.' });
       const files = [];

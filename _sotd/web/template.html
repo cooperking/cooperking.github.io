@@ -7674,7 +7674,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var rl = null, was = false;
     try { rl = JSON.parse(localStorage.getItem('sotd-rl') || 'null'); localStorage.removeItem('sotd-rl'); was = !!sessionStorage.getItem('sotd-open'); sessionStorage.setItem('sotd-open', String(Date.now())); } catch (e) {}
     var why = rl && Date.now() - rl.at < 120e3 ? rl.why : was ? 'not the page: the iPhone cleared the app from memory, or it was closed and opened' : '';
-    if (why) setTimeout(function () { if (MEMBER && MEMBER.owner === true) toast('Reloaded: ' + why); }, 4000);
+    void why;   // (the note to John is off now: it showed it was the iPhone clearing the app, 6 Nov 2026)
   })();
   function staleLook() {
     if (STALE || navigator.onLine === false) return;

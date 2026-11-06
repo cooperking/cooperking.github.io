@@ -239,7 +239,7 @@
       <button class="btn primary" id="invshare" type="button"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 10V2.5M5 5.5l3-3 3 3"/><path d="M3.5 8.5v4.5h9V8.5"/></svg>Share…</button>
       <a class="btn" id="invsms" target="_blank" rel="noopener">Messages</a>
       <a class="btn" id="invwa" target="_blank" rel="noopener">WhatsApp</a>
-      <a class="btn" id="invmail" target="_blank" rel="noopener">Email</a>
+      <a class="btn" id="invmail" href="#" role="button">Email</a>
       <button class="btn" id="invcopy" type="button">Copy link</button>
     </div>
   </div>
@@ -642,11 +642,25 @@
         var e = encodeURIComponent(j.url);
         $('invsms').href = 'sms:?&body=' + e;
         $('invwa').href = 'https://wa.me/?text=' + e;
-        $('invmail').href = 'mailto:?subject=' + encodeURIComponent(title) + '&body=' + e;
+        $('invmail').removeAttribute('href');   // (sent by the site as a designed email: invSendMail)
         invBusy(false);
       });
     }).catch(function () { if (mine === INV.busy) toast('Couldn’t make the invitation'); });
   }
+  function invSendMail(e) {   // the invitation as a designed email, sent from your Gmail (John, 6 Nov 2026)
+    e.preventDefault();
+    if (!INV.page) { toast('The invitation is still being made'); return; }
+    var im = (MEMBERS || []).filter(function (x) { return x.id === INV.id; })[0] || {};
+    var to = im.email || '';
+    if (!to) { to = (window.prompt('Their email address:') || '').trim(); if (!to) return; }
+    else if (!window.confirm('Send the invitation to ' + to + '?')) return;
+    var b = $('invmail'); b.classList.add('off');
+    api('/members/admin', { op: 'invitemail', id: INV.id, page: INV.page, to: im.email ? undefined : to }).then(function (j) {
+      b.classList.remove('off');
+      toast(j.ok ? 'Sent to ' + j.to : (j.error || 'It didn’t send'));
+    }).catch(function () { b.classList.remove('off'); toast('Couldn’t reach the Worker'); });
+  }
+  $('invmail').addEventListener('click', invSendMail);
   function invOpen() {
     $('invh').textContent = invTitle();
     var im = (MEMBERS || []).filter(function (x) { return x.id === INV.id; })[0];
