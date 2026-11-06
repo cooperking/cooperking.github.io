@@ -126,7 +126,18 @@ export default {
     ctx.waitUntil(uplReseen(env).catch(e => console.log('uplReseen: ' + (e && e.message))));   // (once: the playlists' 'none' counts put right)
     ctx.waitUntil(mailDigests(env).catch(e => console.log('mailDigests: ' + (e && e.message))));
     ctx.waitUntil(pushDigests(env).catch(e => console.log('pushDigests: ' + (e && e.message))));
-    ctx.waitUntil(weekDigests(env).catch(e => console.log('weekDigests: ' + (e && e.message))));   // (Monday's, for those who chose once a week)   // (and the one notification a day, for those who chose it)   // (notifications by email, once a day, for those who chose it)
+    ctx.waitUntil(weekDigests(env).catch(e => console.log('weekDigests: ' + (e && e.message))));
+    ctx.waitUntil((async () => {   // a sample of the weekly email, to John once (he asked, 6 Nov 2026: "can you send a mock email to me to see?"): from his own inbox's last 7 days
+      if (!mailReady(env) || await env.SOTD.get('wkSample1')) return;
+      await env.SOTD.put('wkSample1', String(Date.now()), { expirationTtl: 30 * 86400 });
+      const o = await env.SOTD.get('owner'), all = (await env.SOTD.get('members', 'json')) || {}, m = o && all[o];
+      if (!m || !m.email) return;
+      const since = Date.now() - 7 * 86400e3, box = ((await env.SOTD.get('inbox:' + o, 'json')) || []).filter(x => x.at >= since).reverse();
+      const items = box.map(x => ({ c: x.s ? 'song' : x.f ? 'direct' : 'other', t: x.t || '', b: x.s ? String(x.b || '').split('\n')[0] : x.b || '', u: x.u || SITE_SONGS, i: mailImg(x.c) || mailImg(x.i) || '', at: x.at }));
+      if (!items.length) return;
+      const first = items.find(x => x.c === 'song' && mailImg(x.i)) || items[0], tint = mailTint(first.u, first.i), title = 'Sample: ' + digestTitle(items, true);
+      await sendMail(env, m.email, title, title + '\n\n' + items.map(x => '• ' + x.t + (x.b ? '\n  ' + x.b : '') + '\n  ' + x.u).join('\n\n') + mailFoot(), 'notes', mailShell(digestHtml(items, true, tint), first.u, first.i));
+    })().catch(e => console.log('wkSample: ' + (e && e.message))));   // (Monday's, for those who chose once a week)   // (and the one notification a day, for those who chose it)   // (notifications by email, once a day, for those who chose it)
     ctx.waitUntil(catalogTidy(env).catch(e => console.log('catalogTidy: ' + (e && e.message))));   // (files for songs on no calendar or playlist)   // (previews and covers copied here, a few a run)
   }
 };
