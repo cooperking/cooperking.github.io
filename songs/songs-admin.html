@@ -73,7 +73,8 @@
 .alt .badge.k-video, .alt .badge.k-tv { background: var(--ok); border-color: var(--ok); color: #fff; }
 .facts { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
 .fact { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 8px; }
-.fact.gone textarea { text-decoration: line-through; opacity: .5; }
+.fact.gone textarea { text-decoration: line-through; opacity: .35; max-height: 3.2em; overflow: hidden; }
+.fact .gonenote { color: #e23a6e; font-weight: 600; }
 .fact textarea { overflow: hidden; resize: none; min-height: 3em; }
 .tools { display: flex; flex-direction: column; gap: 4px; }
 .tool { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--line); background: #fff; color: var(--fg); cursor: pointer; font: 600 13px var(--sans); }
@@ -498,6 +499,7 @@ a.srchpill { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--li
       var rm = el('button', 'tool', f.gone ? '↺' : '✕'); rm.type = 'button'; rm.title = f.gone ? 'Bring back' : 'Remove';
       rm.addEventListener('click', function () { if (!f.u && !String(f.t).trim()) arr.splice(i, 1); else f.gone = !f.gone; commit(true); });
       tools.appendChild(up); tools.appendChild(rm);
+      if (f.gone) meta.appendChild(el('span', 'gonenote', 'Taken off: it won’t be published. ↺ brings it back.'));   // (plain to see what ✕ did: John, 6 Nov 2026)
       li.appendChild(ta); li.appendChild(tools);
       var firstShown = arr.filter(function (x) { return !x.gone; })[0] === f, firstArtist = path === 's' || Object.keys(w.a)[0] === path;
       if (firstShown && firstArtist) meta.appendChild(el('span', 'pv', 'In the preview'));
