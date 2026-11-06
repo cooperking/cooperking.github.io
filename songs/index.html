@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="sotd-build" content="707f63dc711d">
+<meta name="sotd-build" content="898946bf1a78">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 269 so far">
 <meta name="theme-color" content="#ec135b">
@@ -9087,6 +9087,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function calWaitOn() { document.documentElement.classList.add('calwait'); clearTimeout(calWaitOn.t); calWaitOn.t = setTimeout(calWaitOff, 7000); }
   function plWantGo() {   // the saved playlist it opens on, once their playlists have come
     if (!PL.wantOpen || !PL.loaded) return;
+    if (UPL.linked || (location.hash && location.hash !== '#')) { PL.wantOpen = null; return; }   // (a link came first: it wins)
     var l = (PL.lists || []).filter(function (x) { return x.id === PL.wantOpen; })[0]; PL.wantOpen = null;
     if (l) plOpenPop(l);
   }
@@ -9104,6 +9105,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   function uplFromHash() {
     var m = /^#u=([\w-]+)(?:&d=(\d{1,2}-\d{1,2}-\d{4})|&m=(\d{1,2})-(\d{4}))?$/.exec(location.hash);
+    if (m || /^#\d{1,2}-\d{1,2}-\d{4}$/.test(location.hash)) { PL.wantOpen = null; calWaitOff(); }   // (a link: it wins over the calendar or playlist it opens on, nothing hidden for it)
     if (!m && /^#\d{1,2}-\d{1,2}-\d{4}$/.test(location.hash)) { UPL.linked = true; UPLREQ++; }   // (a day on John's calendar, linked: not the calendar this device was last on)
     if (!m) {
       var was = calStart();
