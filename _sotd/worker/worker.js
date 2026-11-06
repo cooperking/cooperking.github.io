@@ -3928,6 +3928,7 @@ async function memberSpotify(request, url, env, answer) {
     if (!lines.length) return answer(200, { ok: true });
     const k = 'splog:' + who.id, had = (await env.SOTD.get(k, 'json')) || [];
     await env.SOTD.put(k, JSON.stringify(had.concat(lines).slice(-150)), { expirationTtl: 14 * 86400 });
+  if (env.MEDIA && (await env.SOTD.get('owner')) === who.id) await env.MEDIA.put('diag/splog-john.txt', had.concat(lines).slice(-150).join('\n'), { httpMetadata: { contentType: 'text/plain; charset=utf-8' } }).catch(() => null);   // (John's, at once, for looking into it)
     return answer(200, { ok: true });
   }
   if (!rec) return answer(200, b.op === 'status' ? { linked: false, full: !await spAppFor(env, who.id) } : pub());
