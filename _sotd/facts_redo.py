@@ -27,7 +27,32 @@ def main(tid):
     if not re.fullmatch(r'[0-9A-Za-z]{22}', tid or ''):
         sys.exit('not a track id: %r' % tid)
     redo = load(REDO)
-    redo[tid] = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='seconds')
+    # the facts it has now (waiting or live), so the new ones are none of these and not from the same pages (John, 6 Nov
+    # 2026: "Most of the new facts are the same ... the source is mainly just wikipedia"); a waiting song's come off the
+    # waiting list, so it's written again
+    avoid, srcs = [], []
+    root = os.path.dirname(HERE)
+    for path in (os.path.join(HERE, 'data', 'facts-pending.json'), os.path.join(root, 'songs', 'facts-pending.json')):
+        d = load(path)
+        e = (d.get('songs') or {}).pop(tid, None)
+        if e is None:
+            continue
+        for f in (e.get('s') or []) + [f for a in (e.get('a') or {}).values() for f in (a.get('f') or [])]:
+            if isinstance(f, dict) and f.get('t') and f['t'] not in avoid:
+                avoid.append(f['t'])
+                if f.get('u') and f['u'] not in srcs:
+                    srcs.append(f['u'])
+        with open(path, 'w', encoding='utf-8') as fh:
+            json.dump(d, fh, ensure_ascii=False, indent=1)
+    live = load(os.path.join(root, 'songs', 'facts.json'))
+    src = live.get('src') or []
+    ls = (live.get('songs') or {}).get(tid) or {}
+    for f in (ls.get('s') or []):   # (live: [text, source index])
+        if isinstance(f, list) and f and f[0] not in avoid:
+            avoid.append(f[0])
+            if len(f) > 1 and isinstance(f[1], int) and f[1] < len(src) and isinstance(src[f[1]], dict) and src[f[1]].get('u') and src[f[1]]['u'] not in srcs:
+                srcs.append(src[f[1]]['u'])
+    redo[tid] = {'at': datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='seconds'), 'avoid': avoid[:20], 'avoidSrc': srcs[:20]}
     with open(REDO, 'w', encoding='utf-8') as f:
         json.dump(redo, f, indent=1)
     asked = load(ASKED)

@@ -109,6 +109,11 @@ Each fact should be a small story with a point, not a list (John, 6 Nov 2026: "F
 - Not a bare credit ("A, B and C wrote it") or chart run on its own: say what is surprising about how or why it was
   written, or leave it out.
 - Prefer one striking detail from an interview, a biography or a liner note to two facts from the same Wikipedia page.
+- Wikipedia is the start, not the whole: search for interviews with the artist and the people on the record, books,
+  liner notes and articles, and take at least half of a song's and an artist's facts from them where they exist.
+- A song asked for again (its todo.md entry says so, with the facts it had and their pages): none of those facts or
+  anything close, and none from those pages. If nothing new and good can be found, say so in `note` rather than
+  rewording the old ones.
 
 **Clear.** Each fact is read on its own, under its heading, with nothing around it.
 - The first time a fact mentions any person, use their full name ("Al Green and Mabon ‘Teenie’ Hodges wrote it...",

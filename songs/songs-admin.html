@@ -648,7 +648,7 @@ a.srchpill { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--li
       if (asked) foot.appendChild(el('span', 'stat', 'Asked ' + new Date(REDO[s.id]).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) + ': they come here, waiting for you, in about 15 minutes. Your facts so far stay as they are until you sign the new ones off.'));
     }
     if (st.st === 'signed') foot.appendChild(el('span', 'stat', 'Signed off ' + new Date(st.at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })));
-    if (st.st === 'waiting' && st.written) foot.appendChild(el('span', 'stat', 'Written ' + st.written));
+    if (st.st === 'waiting' && st.written) foot.appendChild(el('span', 'stat', 'Written ' + (/T/.test(st.written) ? new Date(st.written).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : st.written)));   // (with the time they came in)
     body.appendChild(foot);
     li.appendChild(body);
     return li;

@@ -36,7 +36,7 @@ def main(args):
     S = json.load(open(SOURCES, encoding='utf-8'))
     pending = json.load(open(PENDING, encoding='utf-8')) if os.path.exists(PENDING) else {'songs': {}}
     theirs = json.load(open(THEIRS, encoding='utf-8')) if os.path.exists(THEIRS) else {'songs': {}}
-    today = datetime.date.today().isoformat()
+    today = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='seconds')   # (when they came in, to the second: John, 6 Nov 2026, "put a time they came in on so I can tell")
     added = []
     for wpath, vpath in zip(args[0::2], args[1::2]):
         w, v = json.load(open(wpath, encoding='utf-8')), json.load(open(vpath, encoding='utf-8'))

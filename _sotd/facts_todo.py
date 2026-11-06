@@ -56,6 +56,11 @@ def main(out):
         yr = min([v for v in (y.get('mb'), y.get('sp')) if v] or ['?'])
         lines.append('## Song %d: “%s” by %s   [track: %s]' % (s['n'], s['title'], s['artist'], tid) + ('   (a member’s playlist’s: its owner checks them)' if s.get('upl') else ''))
         lines.append('Album (Spotify): %s · first released: %s' % (s.get('album'), yr))
+        rd = redo.get(tid)
+        if isinstance(rd, dict) and (rd.get('avoid') or rd.get('avoidSrc')):   # (asked for again: none of the facts it had, not from the same pages)
+            lines.append('**Asked for again by John: the facts below weren\'t good enough. Write new ones: none of these, nothing close to them, and not from the pages listed; find interviews, books, liner notes and articles (see FACTS.md).**')
+            lines.extend('- not: ' + t for t in rd.get('avoid') or [])
+            lines.extend('- not from: ' + u for u in rd.get('avoidSrc') or [])
         saved = []
         for label, t in (('song article', s.get('song')), ('album article', s.get('albumPage'))):
             if t in S['pages']:
