@@ -103,6 +103,12 @@ or between facts.
 a nickname and where it came from, an unexpected use, a record broken, who turned it down, what it was nearly called,
 a famous fan, a number that startles. Avoid the generic: where someone was born, which label released what, "is an
 American singer-songwriter", "received positive reviews", chart positions on their own unless remarkable.
+Each fact should be a small story with a point, not a list (John, 6 Nov 2026: "Facts brought in weren't great"):
+- At most one fact about cover versions, and only when the cover is famous or the story behind it is interesting
+  (who, and why it matters); never a run of minor covers, chart placings abroad or "X also recorded it".
+- Not a bare credit ("A, B and C wrote it") or chart run on its own: say what is surprising about how or why it was
+  written, or leave it out.
+- Prefer one striking detail from an interview, a biography or a liner note to two facts from the same Wikipedia page.
 
 **Clear.** Each fact is read on its own, under its heading, with nothing around it.
 - The first time a fact mentions any person, use their full name ("Al Green and Mabon ‘Teenie’ Hodges wrote it...",
