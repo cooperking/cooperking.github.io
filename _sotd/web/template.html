@@ -4115,6 +4115,13 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       SPX.lookedFor = id;
       spCall({ op: 'state' }).then(function (k) {
         if (k.status === 200 && k.playing && k.track && k.track !== id && byTrack[k.track]) { SPX.lookedFor = null; spxRefollow('playing something else already'); return; }
+        if (k.status === 200 && k.playing && k.track === id && !SPX.pickPhone) {   // already playing this very song (a refresh, say): followed where it is, nothing sent (John, 6 Nov 2026: a refresh restarted the song, or it stopped for a second)
+          SPX.lookedFor = null; SPX.native = false; SPX.track = id; SPX.list = spxUpcoming(id); SPX.playing = true; SPX.pos = k.pos || 0; SPX.at = Date.now(); SPX.dur = k.dur || 0; SPX.other = false;
+          SPX.dev = { id: k.did || '', name: k.device || 'Spotify' }; SPX.last = { id: k.did || '', name: k.device || '', type: k.dtype || '' };
+          if (resumeFor === id) { resumeAt = 0; resumeFor = ''; }
+          spLog('already playing it on ' + (k.device || 'a device') + ': followed, nothing sent');
+          spxShowDev(); coverState(1); spxWatch(); return;
+        }
         spxLoad(id);
       }, function () { spxLoad(id); });
       return;
@@ -8198,6 +8205,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   function uplApply(view, opts) {
     opts = opts || {};
+    if (SPX.pickLater && Date.now() - SPX.pickLater < 60e3) setTimeout(function () { SPX.pickLater = 0; spPickUp('playlist loaded', true); }, 300);   // (Spotify playing one of its songs as the page opened: followed, not started again)
     var list = uplSongsOf(view).filter(function (x) { return !x.w && (!x.f || view.mine || view.admin); });   // (John, the site's owner, sees its songs to come too)
     if (view.mode !== 'list') list = list.map(function (x, i) { return [x, i]; }).sort(function (a, b) { return a[0].d < b[0].d ? -1 : a[0].d > b[0].d ? 1 : a[1] - b[1]; }).map(function (p) { return p[0]; });   // (a calendar's songs in day order: its playlist's own order isn't, and its first and last songs are where the calendar starts and ends: John, 2 Nov 2026, Camilla's went back to 2015 but showed from October)   // (as the others see it, but its owner sees its songs still to come too, faded, to move them: John, 1 Nov 2026; waiting songs are in the pop-up)
     UPL.undated = view.mode !== 'list' ? list.filter(function (x) { return !x.d; }) : [];   // (no real date from Spotify: their own list, never 1 January 1970)
@@ -11049,6 +11057,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (bgOn || sheet.open || (coverObj && coverObj.sp && SPX.track) || busyNow()) return Promise.resolve(false);   // (playing or open here already)
     PICK.at = Date.now();
     return spCall({ op: 'state' }).then(function (k) {
+      if (k.status === 200 && k.playing && k.track && !byTrack[k.track]) SPX.pickLater = Date.now();   // (perhaps a song of a playlist still loading: looked at again once it's in)
       if (k.status !== 200 || k.none || !k.playing || !k.track || !byTrack[k.track]) return false;
       if (NAT && /Smartphone|Tablet/.test(k.dtype || '')) return false;   // (this phone's own Spotify: its own way, not picked up here)
       if (bgOn || sheet.open || (coverObj && coverObj.sp && SPX.track)) return false;
