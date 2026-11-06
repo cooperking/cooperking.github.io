@@ -6207,6 +6207,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function resumeForget() { try { localStorage.removeItem(RES_KEY); } catch (e) {} }
   setInterval(function () { if (vplay && vplay.on) resumeSave(); }, 4000);
   window.addEventListener('pagehide', function () { if (vplay && vplay.el) resumeSave(); });   // (paused too: a refresh then doesn't start it)
+  // (6 Nov 2026, John: "playing to an external spotify player and reload, the music stops for a second"): the page's coming
+  // and going in the Spotify log (Admin › Members › John), to see what's sent around a reload
+  window.addEventListener('pagehide', function () { if (typeof spLog === 'function' && coverObj && coverObj.sp) spLog('page leaving (reload or closed): Spotify ' + (SPX.playing ? 'playing' : 'paused') + ' on ' + ((SPX.dev && SPX.dev.name) || '?')); });
+  setTimeout(function () { if (typeof spLog === 'function' && SPM && SPM.st && SPM.st.on) spLog('page opened'); }, 2500);
   document.addEventListener('visibilitychange', function () { if (document.hidden && vplay && vplay.on) resumeSave(); });
   sheet.addEventListener('close', function () { if (!RESUME) { resumeForget(); nowStop(); setTimeout(nowFetch, 300); } });   // closed, not playing on: nothing to carry on here (another device's, if one's playing)
   function resumeInit() {
