@@ -4875,6 +4875,7 @@ async function uplView(env, all, viewer, pid, rec, also) {   // (also: tracks wa
     if (mine) { if (fx && fx.w) x.fxw = fx.w; if (fx && fx.w && fx.nw) x.fxn = fx.nw; x.fxs = fx && fx.w ? 'wait' : fx && fx.ok ? 'ok' : fx && fx.none ? 'nil' : wanted.has(x.id) ? 'asked' : uplShareOf(rec) === 'public' ? 'none' : 'off'; }
     if (x.ab) { const nm = (await spWho(env, all))[x.ab]; if (nm || mine || adm) x.abn = nm || x.ab; delete x.ab; }   // (the Spotify id itself not sent on)   // (who added it on Spotify: a member's name for everyone, else the Spotify username for its owner and John: John, 3 Nov 2026)   // (who added it on Spotify, for its owner's editor: a member's name where it's one of theirs: John, 3 Nov 2026)
     if (e && 'v' in e) x.ov = e.v;
+    if (e && e.cap) x.cap = e.cap;   // (its caption, for everyone who sees it)
     if (e && e.src && (mine || adm)) x.osrc = e.src;   // (its MP3 from another site's link)
     if (mine && data.skip && data.skip[x.id]) x.sk = data.skip[x.id];   // (marked can't be found: p, v, a, f)
     if (e && (e.tt || e.ar)) {   // its owner's own title and artist, for everyone; theirs: Spotify's too (ot, oa), to go back to
@@ -4937,7 +4938,7 @@ async function uplView(env, all, viewer, pid, rec, also) {   // (also: tracks wa
       left: { p: ids(all2.filter(pvLeft)), v: ids(leftOf('v')), m: ids(leftOf('m')), y: ids(leftOf('y')) },   // (still to look for: which, each one's look can be stopped)
       fa: songs.filter(x => x.ma || (x.own && x.own.a) || (x.jf && x.jf.a)).length, fv: songs.filter(x => x.mv || (x.own && x.own.v) || (x.jf && x.jf.v)).length, ch: rec.ch || rec.at || 0 };
   }
-  return { id: pid, n: uplName(all, rec), t: uplTitle(all, rec), o: all[rec.o].name, mine, own: !!viewer && rec.o === viewer, co: uplCo(rec, viewer) || undefined, admin: adm || undefined, mode: rec.mode, sp: rec.sp, src: uplSrc(rec), yt: rec.yt || '', st: rec.st, at: data.at || null, sh: uplShareOf(rec),
+  return { id: pid, n: uplName(all, rec), cap: rec.cap || undefined, t: uplTitle(all, rec), o: all[rec.o].name, mine, own: !!viewer && rec.o === viewer, co: uplCo(rec, viewer) || undefined, admin: adm || undefined, mode: rec.mode, sp: rec.sp, src: uplSrc(rec), yt: rec.yt || '', st: rec.st, at: data.at || null, sh: uplShareOf(rec),
     dates: rec.mode === 'list' ? null : Object.assign({ how: 'added' }, rec.dates || {}), send: mine ? uplSendOf(rec) : undefined, prog, songs };
 }
 // /members/upl: GET ?id= one playlist to show; POST { op: 'add', link, mode } | { op: 'csv', name, mode, songs } (from an
@@ -5306,6 +5307,13 @@ async function memberUpl(request, url, env, answer) {
     await uplPut(env, U);
     return answer(200, { ok: true, pls: await uplMine(env, uplList(all, me, U), U), view: rec.st === 'ok' ? await uplView(env, all, me, body.id, rec) : null });
   }
+  if (body.op === 'caption') {   // a line or two under its name on the calendar (John, 6 Nov 2026: "put a caption on a calendar page or on a song page"); '' none
+    const rec = own(body.id); if (!rec) return answer(404, { error: 'No such playlist of yours.' });
+    const c = String(body.cap || '').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim().slice(0, 300);
+    if (c) rec.cap = c; else delete rec.cap;
+    await uplPut(env, U);
+    return answer(200, { ok: true, pls: await uplMine(env, uplList(all, me, U), U), view: rec.st === 'ok' ? await uplView(env, all, me, body.id, rec) : null });
+  }
   if (body.op === 'share') {   // who sees it: public (anyone with its link, and every member), members (every member), some (the members in to), private (just them)
     const rec = own(body.id); if (!rec) return answer(404, { error: 'No such playlist of yours.' });
     if (!UPL_SHARES.includes(body.share)) return answer(400, { error: 'Public, members, some or private?' });
@@ -5366,6 +5374,10 @@ async function memberUpl(request, url, env, answer) {
     for (const [k, list] of [['m', MOOD_LIST], ['g', GENRE_LIST]]) {
       if (body[k] === null) delete e[k];
       else if (Array.isArray(body[k])) e[k] = body[k].filter(x => list.includes(x)).slice(0, 2);
+    }
+    if ('cap' in body) {   // a caption on its song page, by its owner or those editing with them (John, 6 Nov 2026); '' none
+      const c = String(body.cap || '').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim().slice(0, 300);
+      if (c) e.cap = c; else delete e.cap;
     }
     for (const k of ['tt', 'ar']) {   // its title and artist as its owner wants them shown (John, 3 Nov 2026: "change details"); '' or null: Spotify's
       if (!(k in body)) continue;
