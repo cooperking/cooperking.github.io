@@ -117,7 +117,11 @@ export default {
       await pushDaily(env, songs.map(x => ({ id: x.id, a: x.a, title: x.title, artist: x.artist, img: x.img })), { t: 'timer' });
       await uplLook(env).catch(e => console.log('uplLook: ' + (e && e.message)));
     })().catch(e => console.log('scheduled: ' + (e && e.message))));
-    ctx.waitUntil(appUpdates(env).catch(e => console.log('appUpdates: ' + (e && e.message))));   // (on its own: it needs nothing from Spotify)
+    ctx.waitUntil(appUpdates(env).catch(e => console.log('appUpdates: ' + (e && e.message))));
+    ctx.waitUntil((async () => {   // John's Spotify log, copied where his read-only key reaches it (diag/splog-john.txt), to look into what his phone sent (6 Nov 2026)
+      const o = await env.SOTD.get('owner'), l = o && env.MEDIA ? await env.SOTD.get('splog:' + o) : null;
+      if (l && (await env.SOTD.get('splogMirror')) !== String(l.length)) { await env.MEDIA.put('diag/splog-john.txt', JSON.parse(l).join('\n'), { httpMetadata: { contentType: 'text/plain; charset=utf-8' } }); await kvSoft(env, 'splogMirror', String(l.length)); }
+    })().catch(e => console.log('splog mirror: ' + (e && e.message))));   // (on its own: it needs nothing from Spotify)
     ctx.waitUntil(spKeep(env).catch(e => console.log('spKeep: ' + (e && e.message))));
     ctx.waitUntil(uplReseen(env).catch(e => console.log('uplReseen: ' + (e && e.message))));   // (once: the playlists' 'none' counts put right)
     ctx.waitUntil(mailDigests(env).catch(e => console.log('mailDigests: ' + (e && e.message))));   // (notifications by email, once a day, for those who chose it)
