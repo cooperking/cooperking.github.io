@@ -106,6 +106,9 @@ American singer-songwriter", "received positive reviews", chart positions on the
 Each fact should be a small story with a point, not a list (John, 6 Nov 2026: "Facts brought in weren't great"):
 - At most one fact about cover versions, and only when the cover is famous or the story behind it is interesting
   (who, and why it matters); never a run of minor covers, chart placings abroad or "X also recorded it".
+- Give the payoff, not a teaser (John, 6 Nov 2026, on "Bell took it personally and fired off a blistering reply": "it
+  doesn't say anything about what the blistering reply was"): if a fact mentions a reply, a reason, a reaction, a row,
+  a deal or a surprise, it says what it was. If the source doesn't say, leave the fact out.
 - Not a bare credit ("A, B and C wrote it") or chart run on its own: say what is surprising about how or why it was
   written, or leave it out.
 - Prefer one striking detail from an interview, a biography or a liner note to two facts from the same Wikipedia page.
@@ -169,7 +172,9 @@ fetch the result). Then decide:
 2. Clear on its own: full name at first mention of anyone other than the artist; under an artist's heading the artist
    is he, she or they (not their name, unless a pronoun would be unclear); a song fact names the artist and uses no
    pronoun for anyone it hasn't named.
-3. Fit to show: 30 words at most; no lyrics; no allegations, health details or how someone died; no gossip; not a
+3. Complete: it gives its own payoff (what the reply, reason, reaction or surprise actually was), not a teaser; drop
+   one that leaves the reader asking "so what was it?".
+4. Fit to show: 30 words at most; no lyrics; no allegations, health details or how someone died; no gossip; not a
    near-repeat of another fact for the same song or artist.
 
 Write `verdicts.json`: for the fact at index i of a song's list, the key is `new:s:<track id>:<i>`; for an artist's,
