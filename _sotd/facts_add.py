@@ -59,6 +59,9 @@ def main(args):
                     a = {k: {'name': (k0.get('a') or {}).get(k, {}).get('name') or v['name'], 'f': ((k0.get('a') or {}).get(k, {}).get('f') or []) + v['f']} for k, v in a.items()}
                     e = dict(e, f=(k0.get('s') or []) + e['f'])
                 pending['songs'][tid] = {'n': s['n'], 'title': s['title'], 'artist': s['artist'], 'written': today, 's': e['f'], 'a': a}
+                note = str((w.get('songs', {}).get(tid) or {}).get('note') or '').strip()[:600]
+                if note:
+                    pending['songs'][tid]['note'] = note   # (what was searched, when it has few song facts: shown to John)
                 nf = (w.get('songs', {}).get(tid) or {}).get('nf')   # (the punchy one for its notification, checked like the rest)
                 vn = next((x for k, x in v.items() if k.endswith(':nf:%s:0' % tid)), None)
                 if isinstance(nf, dict) and nf.get('t') and ((vn and vn.get('v') in ('keep', 'fix')) or (not vn and nf.get('u') and any(f.get('u') == nf['u'] for f in e['f']))):   # (no verdict for it: kept when it comes from a page one of its checked facts did)

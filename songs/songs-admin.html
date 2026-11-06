@@ -304,7 +304,7 @@ a.srchpill { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--li
   function state0(s) {
     var tid = s.id, w = signedW[tid], p = pending.songs[tid], ls = (live.signed || {})[tid];
     if (w && (!ls || w.at > ls) && !(p && p.written && p.written > w.at)) return { st: 'signed', at: w.at, base: { s: w.s, a: w.a }, going: true };
-    if (p) return { st: 'waiting', base: Object.assign({ s: p.s, a: p.a }, p.nf && p.nf.t ? { nf: p.nf.t } : {}), written: p.written, nfx: p.nf || null };   // (nf: the punchy one written for its notification)
+    if (p) return { st: 'waiting', base: Object.assign({ s: p.s, a: p.a }, p.nf && p.nf.t ? { nf: p.nf.t } : {}), written: p.written, nfx: p.nf || null, note: p.note || '' };   // (nf: the punchy one written for its notification)
     if (ls) return { st: 'signed', at: ls, base: fromLive(tid) };
     var l = fromLive(tid);
     if (l && (l.s.length || Object.keys(l.a).some(function (k) { return l.a[k].f.length; }))) return { st: 'old', base: l };
@@ -664,6 +664,7 @@ a.srchpill { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--li
       if (asked) foot.appendChild(el('span', 'stat', 'Asked ' + new Date(REDO[s.id]).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) + ': they come here, waiting for you, in about 15 minutes. Your facts so far stay as they are until you sign the new ones off.'));
     }
     if (st.st === 'signed') foot.appendChild(el('span', 'stat', 'Signed off ' + new Date(st.at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })));
+    if (st.st === 'waiting' && st.note) foot.appendChild(el('p', 'stat', 'The writer’s note: ' + st.note));   // (why it has few song facts, and what was searched)
     if (st.st === 'waiting' && st.written) foot.appendChild(el('span', 'stat', 'Written ' + (/T/.test(st.written) ? new Date(st.written).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : st.written)));   // (with the time they came in)
     body.appendChild(foot);
     li.appendChild(body);

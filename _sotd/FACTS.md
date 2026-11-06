@@ -94,6 +94,18 @@ For every song: 4 facts about the song (at least 3, up to 5 if they're all good)
 (at least 3, up to 5). Only where the sources really don't exist (an unknown artist with no articles, interviews or
 label pages) give fewer, and say in `note` what you searched.
 
+**Finding song facts** (John, 6 Nov 2026: "what can we do to make sure weak facts don't come in"): before writing, search
+for the song itself, not just the artist, and keep going past the first page of results. Search at least six ways, for
+example: the song title with "interview"; with the songwriters' and producer's names; with "recorded" or "session";
+with the studio; with "story behind"; with the album and the year; the record label's own history pages; books
+(Google Books) and newspaper archives; obituaries and tributes to the people who made it, which often tell its story.
+Read the artist's, songwriters' and producer's interviews for what they said about this song.
+
+A song fact is about this song. Not about another track on the same album, the album's other musicians, or a cover
+that is only a list entry. If after that search there really are fewer than three good song facts, give the good ones
+(at least one where any exists), make the artist facts strong, and say in `note` every search you made and what you
+found. That is a last resort after a real search, never a reason to search less, and John sees the note.
+
 Song facts are about the song: how and where it was written and recorded, who played on it, what it samples or
 borrows, what happened when it came out, who covered or sampled it, where it has been used, stories behind it. Artist
 facts are about the artist's life and career. Don't repeat information between a song's facts and its artist's facts,
@@ -176,6 +188,11 @@ fetch the result). Then decide:
    one that leaves the reader asking "so what was it?".
 4. Fit to show: 30 words at most; no lyrics; no allegations, health details or how someone died; no gossip; not a
    near-repeat of another fact for the same song or artist.
+5. On topic: a song fact is about this song (drop one about another track on the album, or the album's personnel in
+   general); an artist fact is about the artist.
+6. Worth reading: would a music fan say "oh, I didn't know that" or want to tell someone? Drop the generic and the
+   flat: chart positions and credits on their own, lists of covers, "influenced many artists", "was known for", praise
+   without a story, facts any sleeve would carry. Better three strong facts than five with two weak ones.
 
 Write `verdicts.json`: for the fact at index i of a song's list, the key is `new:s:<track id>:<i>`; for an artist's,
 `new:a:<artist id>:<i>`; a song's notification fact is `new:nf:<track id>:0` (check it the same way, and that it is
