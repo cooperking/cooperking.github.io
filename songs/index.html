@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="sotd-build" content="898946bf1a78">
+<meta name="sotd-build" content="82e9562bc1a8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 269 so far">
 <meta name="theme-color" content="#ec135b">
@@ -616,6 +616,10 @@ a.srchpill { padding: 5px 12px; border-radius: 999px; background: var(--pill-bg)
 .newpage[hidden] { display: none; }
 .iconbtn[hidden], a.srchpill[hidden] { display: none !important; }
 html.calwait #cal, html.calwait .hero, html.calwait #picks { visibility: hidden; }   /* (John's calendar not shown before the chosen one comes) */
+.ac-admin#adminpill { background: #e23a6e; color: #fff; box-shadow: none; gap: 6px; }   /* (noticed: John, 6 Nov 2026) */
+.ac-admin#adminpill:hover { box-shadow: 0 0 0 2px rgba(255,255,255,.5); }
+.adminn { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: #fff; color: #e23a6e; font: 700 11px/1 var(--sans); letter-spacing: 0; }
+.adminn[hidden] { display: none; }
 .dlwhy { display: block; margin-top: 4px; font-size: 12.5px; line-height: 1.4; color: var(--muted); white-space: normal; }
 .dlwhy.gone, .dlwhy.blocked { color: #e23a6e; }
 .dlacts { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 8px; }
@@ -2071,7 +2075,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   <div class="sheet-in">
     <div class="sheet-head">
       <p class="mine-top"><span class="chip">Profile</span></p>
-      <span class="head-r"><a class="ac-admin" id="adminpill" href="/songs/admin.html" hidden>Admin</a><button class="close bellbtn" id="acbell" type="button" aria-label="Reactions to your messages" hidden><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M8 2.2c-2.3 0-3.9 1.8-3.9 4v2.6L2.8 11h10.4l-1.3-2.2V6.2c0-2.2-1.6-4-3.9-4z"/><path d="M6.4 13.1c.3.6.9 1 1.6 1s1.3-.4 1.6-1"/></svg><span class="inbn" id="acbelln" hidden></span></button><button class="ac-out" id="acout" type="button">Sign out</button><button class="close" id="acclose" type="button" aria-label="Close" autofocus><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 2l10 10M12 2 2 12"/></svg></button></span>
+      <span class="head-r"><a class="ac-admin" id="adminpill" href="/songs/admin.html" hidden>Admin<span class="adminn" id="adminn" hidden></span></a><button class="close bellbtn" id="acbell" type="button" aria-label="Reactions to your messages" hidden><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M8 2.2c-2.3 0-3.9 1.8-3.9 4v2.6L2.8 11h10.4l-1.3-2.2V6.2c0-2.2-1.6-4-3.9-4z"/><path d="M6.4 13.1c.3.6.9 1 1.6 1s1.3-.4 1.6-1"/></svg><span class="inbn" id="acbelln" hidden></span></button><button class="ac-out" id="acout" type="button">Sign out</button><button class="close" id="acclose" type="button" aria-label="Close" autofocus><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 2l10 10M12 2 2 12"/></svg></button></span>
     </div>
     <div class="ac-who">
       <h3 id="acname">Signed in</h3>
@@ -11733,6 +11737,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var adm = document.getElementById('adminpill');
     adm.hidden = TV || !(adminKey || (MEMBER && MEMBER.owner === true));
     if (!adm.hidden) adm.href = '/songs/admin.html?v=' + Date.now();   // always its newest version
+    if (!adm.hidden && MBASE && plTok()) fetch(MBASE + '/members/problems', { headers: { Authorization: 'Bearer ' + plTok() }, cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {   // (anything failed or stuck: a count on it, as the Status tab shows: John, 6 Nov 2026)
+      var c = document.getElementById('adminn'); if (!c || !j) return; c.hidden = !j.n; c.textContent = j.n > 99 ? '99+' : String(j.n || '');
+      adm.title = j.n ? j.n + (j.n === 1 ? ' thing has' : ' things have') + ' failed or is stuck: see the Status tab' : 'Admin';
+    }).catch(function () {});
     var lab = tok ? (MEMBER && MEMBER.name ? 'Signed in as ' + MEMBER.name : 'Signed in') : 'Sign in';
     famBtn.setAttribute('aria-label', lab); famBtn.title = lab;
     document.documentElement.classList.toggle('signedin', !!tok);
