@@ -48,6 +48,14 @@ checked facts went live straight away.)
 
 ## The facts task: facts for new songs
 
+**Read this first, every run (John, 6 Nov 2026).** Quality matters far more than speed: a run of two minutes is far
+too short. Expect 15 to 30 minutes per song, most of it researching before writing (see "Finding song facts" below:
+at least six searches for the song itself, and reading what they turn up). Read todo.md closely: a song marked "Asked
+for again" says exactly what's wanted (all new facts, more song facts only, or the notification fact only) and lists
+the facts and pages to avoid. Every song must come with its notification fact (`nf`). If the checker drops facts so
+that a song has fewer than three song facts, research and write more and have those checked, once, before adding.
+Commit `_sotd/data/facts-redo.json` with the other files.
+
 Claude's routine "Song facts for new songs (on demand)" (claude.ai/code/routines) does this. It has no timer: song-tags.yml starts it through the routine's API
 trigger at the end of the run that saves a new song's sources (`_sotd/facts_ask.py`; the secrets SOTD_FACTS_URL and
 SOTD_FACTS_TOKEN hold its address and token). The new song stays off the live calendar until this has run. How each
