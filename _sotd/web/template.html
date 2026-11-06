@@ -2574,7 +2574,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   try { SONGX = JSON.parse(localStorage.getItem(SONGX_KEY) || '{}') || {}; } catch (e) {}
   // one of their own Spotify playlists open in the My playlist pop-up (its songs to order, edit and sign off)
   var MUPL = { id: null, view: null, map: {}, list: [], order: null, sorted: null, dirty: false, saveT: 0 };
-  function songOf(t) { return byTrack[t] || SONGX[t] || MUPL.map[t] || null; }   // a song by its track: on the calendar showing, kept, or in the pop-up
+  var AWAYBY = {};   // (the calendar left while its songs played on: still found, for the next one: sheetAway)
+  function songOf(t) { return byTrack[t] || SONGX[t] || MUPL.map[t] || AWAYBY[t] || null; }   // a song by its track: on the calendar showing, kept, or in the pop-up
   function songxKeep(s, quiet) {
     if (!s || !s.upl) return;
     var o = {}; SNAP.concat(['ma', 'mv']).forEach(function (k) { if (s[k] !== undefined) o[k] = s[k]; });
@@ -6215,6 +6216,11 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     resumeSave();
     document.dispatchEvent(new Event('sotd-bg'));   // (a TV: the remote back onto the calendar)
   }
+  function sheetAway() {   // another calendar opened: what's playing plays on in My playlist's box; nothing playing, the day just closes (John, 6 Nov 2026: "Switching Calendar is stopping the music playing")
+    if (!sheet.open || bgOn) return;
+    if (bgCan() || (MEMBER && coverObj && coverObj.sp && SPX.playing)) { AWAYBY = Object.assign({}, byTrack); bgStart(); return; }
+    closeDialog(sheet, true);
+  }
   function bgOff() {
     if (!bgOn) return;
     bgOn = false; sheet.classList.remove('bgplay'); root.classList.remove('bgplay', 'bgon'); vidfloat.classList.remove('bgv');
@@ -8318,7 +8324,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var keep = UPL.on === view.id && !!opts.keep;
     UPL.on = view.id; UPL.view = view;
     calKeep(view.id);   // (this device comes back to it for an hour: uplFromHash)
-    if (sheet.open && !keep) closeDialog(sheet, true);
+    if (sheet.open && !keep) sheetAway();
     var kept = 0; list.forEach(function (x) { if (SONGX[x.track]) { songxKeep(x, true); kept++; } }); if (kept) songxSave();
     setSongs(list, keep); vidsMerge();
     UPL.undated.forEach(function (x) { if (!byTrack[x.track]) byTrack[x.track] = x; });   // (found to play, on no day)
@@ -9120,7 +9126,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     calKeep('john'); calWaitOff();
     if (!UPL.on) return;
     var list = UPL.john; UPL.on = null; UPL.view = null; UPL.john = null; UPL.undated = [];
-    if (sheet.open && !quiet) closeDialog(sheet, true);
+    if (sheet.open && !quiet) sheetAway();
     setSongs(list, false); vidsMerge(); undatedSync();
     var root = document.documentElement; root.classList.remove('upl'); root.classList.remove('upl-list'); root.classList.remove('upl-nosp'); root.classList.remove('upl-noyt'); root.classList.remove('upl-mine'); root.classList.remove('upl-noshare');
     document.getElementById('uplkick').hidden = true; document.getElementById('uplcap').hidden = true; setTimeout(mainCapDraw, 0);
