@@ -119,6 +119,13 @@ export default {
       await uplLook(env).catch(e => console.log('uplLook: ' + (e && e.message)));
     })().catch(e => console.log('scheduled: ' + (e && e.message))));
     ctx.waitUntil(appUpdates(env).catch(e => console.log('appUpdates: ' + (e && e.message))));
+    ctx.waitUntil((async () => {   // a one-off look at one playlist's files, for working out why Missing listed songs with the job's files (6 Nov 2026)
+      if (!env.MEDIA || await env.SOTD.get('diagCat1')) return;
+      await env.SOTD.put('diagCat1', '1', { expirationTtl: 86400 });
+      const pid = 'hXXaGojDDcooDA', U = await uplAll(env), rec = U[pid], data = await uplSongs(env, pid), cat = await catalog(env), TW = await twinFiles(env);
+      const out = { at: new Date().toISOString(), name: rec ? uplName((await env.SOTD.get('members', 'json')) || {}, rec) : '?', o: rec && rec.o, catN: Object.keys(cat).length, files: data.files || {}, songs: (data.songs || []).map(x => ({ id: x.id, t: x.title, a: x.artist, dl: x.dl, cat: cat[x.id] || null, twin: twinOf(TW, x, pid) })) };
+      await env.MEDIA.put('diag/cat-hXXa.json', JSON.stringify(out, null, 1), { httpMetadata: { contentType: 'application/json' } });
+    })().catch(e => console.log('diagCat: ' + (e && e.message))));
     ctx.waitUntil((async () => {   // John's Spotify log, copied where his read-only key reaches it (diag/splog-john.txt), to look into what his phone sent (6 Nov 2026)
       const o = await env.SOTD.get('owner'), l = o && env.MEDIA ? await env.SOTD.get('splog:' + o) : null;
       if (l && (await env.SOTD.get('splogMirror')) !== String(l.length)) { await env.MEDIA.put('diag/splog-john.txt', JSON.parse(l).join('\n'), { httpMetadata: { contentType: 'text/plain; charset=utf-8' } }); await kvSoft(env, 'splogMirror', String(l.length)); }
