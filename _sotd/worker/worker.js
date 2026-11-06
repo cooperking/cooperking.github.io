@@ -119,13 +119,7 @@ export default {
       await uplLook(env).catch(e => console.log('uplLook: ' + (e && e.message)));
     })().catch(e => console.log('scheduled: ' + (e && e.message))));
     ctx.waitUntil(appUpdates(env).catch(e => console.log('appUpdates: ' + (e && e.message))));
-    ctx.waitUntil((async () => {   // a one-off look at one playlist's files, for working out why Missing listed songs with the job's files (6 Nov 2026)
-      if (!env.MEDIA || await env.SOTD.get('diagCat1')) return;
-      await env.SOTD.put('diagCat1', '1', { expirationTtl: 86400 });
-      const pid = 'hXXaGojDDcooDA', U = await uplAll(env), rec = U[pid], data = await uplSongs(env, pid), cat = await catalog(env), TW = await twinFiles(env);
-      const out = { at: new Date().toISOString(), name: rec ? uplName((await env.SOTD.get('members', 'json')) || {}, rec) : '?', o: rec && rec.o, catN: Object.keys(cat).length, files: data.files || {}, songs: (data.songs || []).map(x => ({ id: x.id, t: x.title, a: x.artist, dl: x.dl, cat: cat[x.id] || null, twin: twinOf(TW, x, pid) })) };
-      await env.MEDIA.put('diag/cat-hXXa.json', JSON.stringify(out, null, 1), { httpMetadata: { contentType: 'application/json' } });
-    })().catch(e => console.log('diagCat: ' + (e && e.message))));
+    ctx.waitUntil(catalogHeal(env).catch(e => console.log('catalogHeal: ' + (e && e.message))));   // (every few hours: files in the bucket the catalog lost)
     ctx.waitUntil((async () => {   // John's Spotify log, copied where his read-only key reaches it (diag/splog-john.txt), to look into what his phone sent (6 Nov 2026)
       const o = await env.SOTD.get('owner'), l = o && env.MEDIA ? await env.SOTD.get('splog:' + o) : null;
       if (l && (await env.SOTD.get('splogMirror')) !== String(l.length)) { await env.MEDIA.put('diag/splog-john.txt', JSON.parse(l).join('\n'), { httpMetadata: { contentType: 'text/plain; charset=utf-8' } }); await kvSoft(env, 'splogMirror', String(l.length)); }
@@ -1269,6 +1263,40 @@ async function catalogTidy(env) {
   const log = (await env.SOTD.get('catgone', 'json')) || [];
   await env.SOTD.put('catgone', JSON.stringify(gone.map(t => ({ t, n: titles[t] || '', at: Date.now() })).concat(log).slice(0, 200)));
   console.log('catalogTidy: ' + gone.length + ' songs on no calendar or playlist, their files deleted');
+}
+// the catalog put right from what's really in the bucket, every 3 hours (John, 6 Nov 2026: Missing listed songs the job
+// had files for, and they were downloaded again): two uploads saving the catalog at once can lose one's entry (KV keeps
+// the last write), so a file there that the catalog doesn't know of is added (its copy, l/ or h/, counts as it); nothing
+// is taken out here. Then, once: the copies added to 'Collaborations' by the download code on 6 Nov 2026 where the job's
+// own file was there all along, deleted (89, about 1.3 GB).
+async function catalogHeal(env) {
+  if (!env.MEDIA || (Date.now() - Number((await env.SOTD.get('catHealAt')) || 0)) < 3 * 3600e3) return;
+  await env.SOTD.put('catHealAt', String(Date.now()));
+  const files = []; let cursor;
+  do { const r = await env.MEDIA.list({ cursor, limit: 1000 }); r.objects.forEach(o => files.push({ key: o.key, size: o.size, at: o.uploaded })); cursor = r.truncated ? r.cursor : null; } while (cursor);
+  const c = await catalog(env), added = [];
+  for (const f of files) {
+    const m = /^([avlh])\/([0-9A-Za-z]{22})\.(mp3|mp4|m4a)$/.exec(f.key); if (!m) continue;
+    const k = m[1] === 'l' ? 'a' : m[1] === 'h' ? 'v' : m[1], t = m[2], e = c[t] || {};
+    if (e[k]) continue;
+    e[k] = f.size; e['t' + k] = new Date(f.at).toISOString(); c[t] = e; added.push(k + '/' + t);
+  }
+  if (added.length) { await env.SOTD.put('mediaCatalog', JSON.stringify(c)); console.log('catalogHeal: ' + added.length + ' files the catalog had lost, put back'); }
+  await kvSoft(env, 'catHealLast', JSON.stringify({ at: Date.now(), added: added.length, sample: added.slice(0, 20) }));
+  if (await env.SOTD.get('dupGone1')) return;   // (the one clear-out)
+  await env.SOTD.put('dupGone1', String(Date.now()));
+  const pid = 'hXXaGojDDcooDA', data = await uplSongs(env, pid), byKey = new Set(files.map(f => f.key)), gone = [];
+  for (const f of files) {
+    const m = /^u([av])\/hXXaGojDDcooDA\/([0-9A-Za-z]{22})\.(mp3|mp4)$/.exec(f.key); if (!m) continue;
+    const k = m[1], t = m[2], day = new Date(f.at).toISOString().slice(0, 10);
+    const job = k === 'a' ? byKey.has('a/' + t + '.mp3') || byKey.has('l/' + t + '.m4a') : byKey.has('v/' + t + '.mp4') || byKey.has('h/' + t + '.mp4');
+    if (!job || day !== '2026-11-06') continue;
+    await env.MEDIA.delete(f.key);
+    if (data.files && data.files[t]) { delete data.files[t][k]; if (!Object.keys(data.files[t]).length) delete data.files[t]; }
+    gone.push(f.key);
+  }
+  if (gone.length) await env.SOTD.put('upl:' + pid, JSON.stringify(data));
+  await env.MEDIA.put('diag/dup-gone.json', JSON.stringify({ at: new Date().toISOString(), catalogAdded: added.length, deleted: gone }, null, 1), { httpMetadata: { contentType: 'application/json' } });
 }
 async function catalogSet(env, key, size, fp) {   // which songs have which files: a and v, with their sizes (0: gone),
   const c = await catalog(env), kind = key[0], track = key.slice(2, 24);   // and fa, fv: each file's fingerprint, so a
