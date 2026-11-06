@@ -3407,10 +3407,11 @@ async function mailDigests(env) {   // the day's email for each member with noti
 }
 async function pushAll(env, msg, to, meta) {   // to: only these members (else everyone); meta: { kind: 'song' | 'note' | 'member', track, via, toNames, fromId, toIds }
   const mailMsg = msg;   // (the email: its fact as a block of its own)
-  if (msg.fact) msg = Object.assign({}, msg, { body: (msg.body ? msg.body + '\n' : '') + 'Fact of the Day: ' + (msg.fact.length > 160 ? msg.fact.slice(0, 157).replace(/\s+\S*$/, '') + '…' : msg.fact) });   // (phones and inboxes: the fact under the song, John, 4 Nov 2026)
-  delete msg.fact;
+  const inMsg = msg.fact ? Object.assign({}, msg, { body: (msg.body ? msg.body + '\n' : '') + 'Fact of the Day: ' + msg.fact }) : msg;   // (the inbox: the whole fact, as the email has it: John, 6 Nov 2026, "inbox messages cut off the fact")
+  if (msg.fact) msg = Object.assign({}, msg, { body: (msg.body ? msg.body + '\n' : '') + 'Fact of the Day: ' + (msg.fact.length > 160 ? msg.fact.slice(0, 157).replace(/\s+\S*$/, '') + '…' : msg.fact) });   // (a phone's lock screen: shortened)   // (phones and inboxes: the fact under the song, John, 4 Nov 2026)
+  delete msg.fact; delete inMsg.fact;
   const subs = (await env.SOTD.get('pushSubs', 'json')) || {}, k = await vapidKeys(env);
-  const unread = await inboxAdd(env, to, msg, meta);   // into each one's inbox first (notifications on or not); their unread counts
+  const unread = await inboxAdd(env, to, inMsg, meta);   // into each one's inbox first (notifications on or not); their unread counts
   const m0 = meta || {}, cat = m0.kind === 'song' ? 'song' : m0.direct || (m0.kind === 'member' && (m0.toNames || (m0.via && m0.via.t === 'spotify'))) ? 'direct' : 'other';   // (to them alone: direct)
   await noteMail(env, to, Object.assign({ cta: cat === 'song' ? 'Listen' : '' }, mailMsg), cat).catch(e => console.log('noteMail: ' + (e && e.message)));   // (and by email, for those who asked)
   let sent = 0, failed = 0; const gone = [], errors = [];
