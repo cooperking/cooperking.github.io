@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="sotd-build" content="9bdd9891215d">
+<meta name="sotd-build" content="3c721467e502">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 269 so far">
 <meta name="theme-color" content="#ec135b">
@@ -8449,6 +8449,19 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     });
     if (missDlg.open) missDraw();
   }
+  // why its file didn't come, in a few plain words, and what to do (John, 6 Nov 2026: "Can those reasons always be put
+  // instead ... much easier to understand"); the download job's older, longer wording read the same way
+  function dlReason(dx) {
+    var w = String(dx.why || '').toLowerCase(), fix = ' Give it another link, or add your own copy.';
+    if (/premium/.test(w)) return 'YouTube Music Premium only: it can never download.' + fix;
+    if (/age/.test(w)) return 'Age-restricted on YouTube: the download account needs to be age-verified.' + fix;
+    if (/private/.test(w)) return 'A private video.' + fix;
+    if (/copyright|claim/.test(w)) return 'Blocked by a copyright claim.' + fix;
+    if (/members only|paying members/.test(w)) return 'For the channel’s members only.' + fix;
+    if (/where the job runs|country|blocks the video/.test(w)) return 'Blocked where the download runs (it plays for you), and no other upload worked.' + fix;
+    if (/taken down/.test(w)) return 'Taken down from YouTube.' + fix;
+    return 'Didn’t finish downloading: ' + (dx.tries >= 3 ? 'tried ' + dx.tries + ' times. Add your own copy, or give it another link.' : 'it’s tried again by itself.');
+  }
   function missDraw() {
     var L = missLists(), v = UPL.view; if (!L) return;
     document.getElementById('missname').textContent = v.n || 'Your playlist';
@@ -8491,7 +8504,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       var dx = (m.k === 'a' || m.k === 'mv') && x.dlx;   // (why its files didn't come, and what to do: John, 4 Nov 2026)
       if (dx) {
         var why = document.createElement('span'); why.className = 'dlwhy ' + dx.how;
-        why.textContent = 'Couldn’t download: ' + dx.why + '. ' + (dx.how === 'later' ? (dx.tries >= 3 ? 'Tried ' + dx.tries + ' times: add your own copy, or try again.' : 'It’s tried again by itself.') : dx.how === 'blocked' ? 'Give it another YouTube link, or add your own copy.' : 'This video can’t be downloaded: give it another YouTube link, or add your own copy.');
+        why.textContent = dlReason(dx);
         b.appendChild(why);
       }
       b.addEventListener('click', function () {   // its editor (at the part missing)
@@ -8501,7 +8514,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       li.appendChild(b);
       if (i >= looking.length && uplOwnCan()) {   // can't be found: off this list (back with Bring them back, below)
         var nf = document.createElement('div'); nf.className = 'dlacts';
-        var nb = document.createElement('button'); nb.type = 'button'; nb.textContent = 'Can’t be found';
+        var nb = document.createElement('button'); nb.type = 'button'; nb.textContent = 'Mark as can’t be found';   // (a button, not a reason: John, 5 Nov 2026, read as songs that had failed)
         nb.setAttribute('aria-label', 'Mark ' + x.title + ' as can’t be found');
         nb.addEventListener('click', function () { nb.disabled = true; uplCall({ op: 'skip', id: UPL.on, track: x.id, k: MISS_SK[m.k] }).then(function (j) { if (j.view) uplApply(j.view, { keep: true }); if (j.status !== 200) toast(j.error || 'Couldn’t just now'); missDraw(); missSync(); }, function () { nb.disabled = false; }); });
         nf.appendChild(nb); li.appendChild(nf);
