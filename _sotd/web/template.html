@@ -2265,6 +2265,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     <p class="misstip" id="misstip"></p>
     <div class="ask-acts" id="missretryl" hidden><button class="copy ghost" id="missretry" type="button">Look again</button></div>
     <ul class="uplprog-rows missjob" id="missjob" hidden></ul>
+    <div class="ask-acts" id="misscodel" hidden><button class="copy ghost" id="misscode" type="button">Copy code to download these myself</button></div>
+    <p class="misstip" id="misscodet" hidden></p>
     <ul class="missl" id="missl"></ul>
     <p class="missnone" id="missnone" hidden></p>
   </div>
@@ -8492,6 +8494,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     });
     var m = MISS_KINDS.filter(function (x) { return x.k === MISS.k; })[0], list = L[m.k];
     var mj = document.getElementById('missjob'); mj.hidden = !(MEMBER && MEMBER.owner === true); if (!mj.hidden) { mj.textContent = ''; var jli = document.createElement('li'); jli.className = 'st jobline'; mj.appendChild(jli); jobDraw(jli); }
+    var mcl = document.getElementById('misscodel'), mct = document.getElementById('misscodet'), mcn = missCodeSongs(L, v);
+    mcl.hidden = mct.hidden = !(MEMBER && MEMBER.owner === true && MBASE && (m.k === 'a' || m.k === 'mv') && mcn.n);
+    if (!mcl.hidden) mct.textContent = 'For your Mac’s Terminal: it downloads the ' + mcn.n + (mcn.n === 1 ? ' song' : ' songs') + ' still missing an MP3 or MP4 here, as the download job does, and adds them to this playlist. Needs yt-dlp and ffmpeg (brew install yt-dlp ffmpeg). It holds your sign-in, so don’t share it.' + (mcn.novid ? ' ' + mcn.novid + ' with no video are left out: give them a link first.' : '');
     var rb = document.getElementById('missretry'); document.getElementById('missretryl').hidden = true;   // (no job started from the calendar any more: John, 5 Nov 2026, "no need for anything outside admin to run a job again")   // (John only)
     rb.textContent = m.k === 'p' ? 'Look again for previews' : 'Look again for videos'; rb.disabled = false;
     // still being looked for (previews and videos: the progress's left), apart from those with none found (John, 3 Nov 2026: "If it's still being looked up that needs to be seen")
@@ -8547,6 +8552,58 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       ul.appendChild(li);
     });
   }
+  // the code to download what's left myself (John, 6 Nov 2026: "a button that gives me the code based on my script, to
+  // download anything remaining myself, that I can copy and paste"): a script for the Mac's Terminal, yt-dlp with the
+  // download job's own settings (r2_sync.py's MP3 and MP4), each file then added to this playlist as the page adds one
+  // (/members/uplup: start, parts, done); songs with no video are left out
+  function missCodeSongs(L, v) {
+    var by = {}, novid = 0;
+    [['a', 'a'], ['mv', 'v']].forEach(function (r) {
+      L[r[0]].forEach(function (x) {
+        if ((x.sk || '').indexOf(r[0] === 'a' ? 'a' : 'f') >= 0) return;
+        var y = songYt(uplSongMap(x, v)); if (!y) { if (!by[x.id]) { novid++; by[x.id] = { none: true }; } return; }
+        var e = by[x.id] && !by[x.id].none ? by[x.id] : (by[x.id] = { id: x.id, yt: y, title: x.title || '', artist: x.artist || '', k: '' });
+        e.k += r[1];
+      });
+    });
+    var list = Object.keys(by).map(function (k) { return by[k]; }).filter(function (e) { return !e.none; });
+    return { list: list, n: list.length, novid: novid };
+  }
+  function missCode() {
+    var L = missLists(), v = UPL.view; if (!L || !v) return '';
+    var c = missCodeSongs(L, v), q = function (t) { return "'" + String(t).replace(/'/g, "'\\''") + "'"; };
+    var out = [
+      'bash <<\'SOTD\'',
+      '# Song of the Day: what\'s still missing on ' + String(v.n || 'this playlist').replace(/[\r\n]/g, ' ') + ', downloaded here and added to it (' + new Date().toISOString().slice(0, 10) + ')',
+      '# Paste into Terminal. Needs yt-dlp and ffmpeg (brew install yt-dlp ffmpeg). It holds your sign-in: don\'t share it.',
+      'API=' + q(MBASE + '/members') + '; TOKEN=' + q(plTok()) + '; PL=' + q(UPL.on),
+      'command -v yt-dlp >/dev/null && command -v ffmpeg >/dev/null || { echo "First: brew install yt-dlp ffmpeg"; exit 1; }',
+      'W=$(mktemp -d); cd "$W" || exit 1; OK=0; BAD=""',
+      'enc() { local s="$1" o="" i ch; for ((i=0;i<${#s};i++)); do ch="${s:i:1}"; case "$ch" in [a-zA-Z0-9.~_-]) o+="$ch";; *) o+=$(printf \'%%%02X\' "\'$ch");; esac; done; printf \'%s\' "$o"; }',
+      'up() {   # kind (a or v), track, file: in parts, as the site adds one',
+      '  local k=$1 t=$2 f=$3 q r uid parts="" n=1 p sz',
+      '  q="id=$PL&track=$t&kind=$k"; sz=$([ "$k" = a ] && echo 9m || echo 39m)',
+      '  r=$(curl -sS -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d "{}" "$API/uplup?$q&op=start")',
+      '  uid=$(printf \'%s\' "$r" | sed -n \'s/.*"uploadId": *"\\([^"]*\\)".*/\\1/p\'); [ -n "$uid" ] || { echo "   not added: $r"; return 1; }',
+      '  rm -f part_*; split -b "$sz" "$f" part_',
+      '  for p in part_*; do',
+      '    r=$(curl -sS -X POST -H "Authorization: Bearer $TOKEN" --data-binary @"$p" "$API/uplup?$q&op=part&n=$n&uploadId=$(enc "$uid")")',
+      '    case "$r" in *\'"etag"\'*) parts="$parts${parts:+,}$r"; n=$((n+1));; *) echo "   a part didn\'t go up: $r"; curl -sS -X POST -H "Authorization: Bearer $TOKEN" "$API/uplup?$q&op=abort&uploadId=$(enc "$uid")" >/dev/null; rm -f part_*; return 1;; esac',
+      '  done; rm -f part_*',
+      '  r=$(curl -sS -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d "{\\"parts\\":[$parts]}" "$API/uplup?$q&op=done&uploadId=$(enc "$uid")")',
+      '  if printf \'%s\' "$r" | grep -q \'"ok": *true\'; then echo "   added"; else echo "   not added: $r"; return 1; fi',
+      '}',
+      'get() {   # track, YouTube id, what\'s missing (a, v or av), its name',
+      '  local t=$1 y=$2 k=$3 u="https://www.youtube.com/watch?v=$2"; echo "$4"',
+      '  if [[ $k == *a* ]]; then rm -f "$t.mp3"; yt-dlp -q --no-warnings -f "bestaudio/best" -x --audio-format mp3 --audio-quality 0 -o "$t.%(ext)s" "$u" && [ -f "$t.mp3" ] && up a "$t" "$t.mp3" && OK=$((OK+1)) || BAD="$BAD\n  $4 (MP3)"; rm -f "$t.mp3"; fi',
+      '  if [[ $k == *v* ]]; then rm -f "$t.mp4"; yt-dlp -q --no-warnings -f "bv[vcodec^=avc1][height<=1080][width<=1920][tbr<?7800]+ba[ext=m4a]/bv*+ba" --merge-output-format mp4 --postprocessor-args "merger+ffmpeg_o:-movflags +faststart" -o "$t.%(ext)s" "$u" && [ -f "$t.mp4" ] && up v "$t" "$t.mp4" && OK=$((OK+1)) || BAD="$BAD\n  $4 (MP4)"; rm -f "$t.mp4"; fi',
+      '}'
+    ];
+    c.list.forEach(function (e) { out.push('get ' + e.id + ' ' + q(e.yt) + ' ' + e.k + ' ' + q((e.title + (e.artist ? ' · ' + e.artist : '')).replace(/[\r\n]/g, ' '))); });
+    out.push('cd ~; rm -rf "$W"; echo; echo "Done: $OK added."; [ -n "$BAD" ] && printf \'%b\\n\' "Didn\'t come:$BAD"', 'SOTD');
+    return out.join('\n') + '\n';
+  }
+  document.getElementById('misscode').addEventListener('click', function () { copyText(missCode(), this, 'Copied: paste it into Terminal'); });
   [].forEach.call(document.querySelectorAll('.missbtn'), function (b) {
     b.addEventListener('click', function () {
       var L = missLists(); if (!L) return;

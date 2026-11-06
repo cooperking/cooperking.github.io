@@ -5370,7 +5370,8 @@ async function memberUplUp(request, url, env, answer) {   // ?id&track&kind=a|v&
   const most = await filesMaxOf(env, o.rec.o);
   const fu = async () => ({ n: await uplFileCount(env, o.rec.o, await uplAll(env)), max: john || most >= FILES_NO_LIMIT ? 0 : most });   // (its owner's allowance, whoever adds it)   // (max 0: no limit, and the editor says nothing)
   const john = (await env.SOTD.get('owner')) === o.rec.o;   // (John's own playlists have no limit: John, 1 Nov 2026)
-  const over = async () => { if (john) return false; const had = await uplFileSongs(env, o.rec.o, await uplAll(env)); return !had.has(o.track) && had.size >= most; };   // (a song with one of theirs already takes the other freely)
+  const byJohn = (await env.SOTD.get('owner')) === o.who.id;   // (John adding a member's missing files, from his own download code: not held to their allowance)
+  const over = async () => { if (john || byJohn) return false; const had = await uplFileSongs(env, o.rec.o, await uplAll(env)); return !had.has(o.track) && had.size >= most; };   // (a song with one of theirs already takes the other freely)
   if (op === 'drop') { await env.MEDIA.delete(key); await uplFilesSet(env, o.pid, o.track, kind, 0); return answer(200, { ok: true, fu: await fu(), view: await uplView(env, o.who.all, o.who.id, o.pid, o.rec) }); }
   if (op === 'start') {
     if ((await catalog(env))[o.track] && (await catalog(env))[o.track][kind]) return answer(400, { error: 'Already uploaded.' });   // (John's, from the Songs tab)
