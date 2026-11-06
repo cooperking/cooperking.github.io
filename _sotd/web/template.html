@@ -4121,6 +4121,13 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
           spLog('already playing it on ' + (k.device || 'a device') + ': followed, nothing sent');
           spxShowDev(); coverState(1); spxWatch(); return;
         }
+        if (k.status === 200 && k.playing && k.track) {   // Spotify playing a song this page doesn't know yet (another playlist's, still loading): never interrupted unasked, followed once its songs are in (John, 6 Nov 2026: "refreshing still restarted the song from a different playlist")
+          SPX.lookedFor = null; SPX.pickLater = Date.now();
+          spLog('Spotify is playing a song not on this page yet (on ' + (k.device || 'a device') + '): left playing, nothing sent');
+          if (coverObj) { coverObj.sp = false; spxStop(true); coverState(2); }   // (shown paused here: not ended, so nothing moves on)
+          if (UPL.view) setTimeout(function () { SPX.pickLater = 0; PICK.at = 0; spPickUp('playlist loaded', true); }, 1500);
+          return;
+        }
         spxLoad(id);
       }, function () { spxLoad(id); });
       return;
@@ -4131,6 +4138,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var ld = SPX.pick ? null : SPX.last;   // (the device that played this visit: straight to it again)
     var from = resumeFor === id && resumeAt > 3 ? Math.round(resumeAt * 1000) : 0;   // (from the video, or a reload: on from the same place)
     if (from) { resumeAt = 0; resumeFor = ''; SPX.pos = from; }
+    if (Date.now() - NOW.gesture > 8000) spLog('playing “' + ((songOf(id) || {}).title || id) + '” (not a tap: ' + (from ? 'carrying on at ' + Math.round(from / 1000) + 's' : 'from the start') + ')');
     spCall({ op: 'play', tracks: SPX.list, prefer: spKind(), device: SPX.pick || (ld && ld.id) || undefined, picked: spPicked() || undefined, dname: spPicked() ? spPickName() : ld && ld.name, dtype: ld && ld.type, ms: from || undefined }).then(function (j) {
       SPX.busy = false;
       if (!coverObj.sp || SPX.track !== id) return;
