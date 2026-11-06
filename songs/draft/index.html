@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="d60544a3314a">
+<meta name="sotd-build" content="ba9d5f0601f8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -3722,7 +3722,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       stopVideo: function () { if (coverObj.sp) { spxSoon(); return; } audio.pause(); },
       seekTo: function (sec) {
         if (SPX.bg && spxNB()) { var B = spxNB(); if (typeof B.seek === 'function') { B.seek({ at: sec }).catch(function () {}); SPX.bg.at = sec; SPX.bg.t0 = Date.now(); } return; }   // (the app's own player has the song: the bar moves it)
-        if (coverObj.sp) { if (Math.abs(sec * 1000 - spxPos()) < 3000) return; SPX.pos = sec * 1000; SPX.at = Date.now(); spxCmd('seek', { ms: Math.round(sec * 1000) }); spxShadowSync(); return; }   // (already there, give or take: nothing sent, as a seek stops a speaker for a moment: John, 6 Nov 2026, "it still pauses when switching device") try { audio.currentTime = sec; } catch (x) {} },
+        // (Spotify already there, give or take: nothing sent, as a seek stops a speaker for a moment: John, 6 Nov 2026, "it still pauses when switching device")
+        if (coverObj.sp) { if (Math.abs(sec * 1000 - spxPos()) < 3000) return; SPX.pos = sec * 1000; SPX.at = Date.now(); spxCmd('seek', { ms: Math.round(sec * 1000) }); spxShadowSync(); return; } try { audio.currentTime = sec; } catch (x) {} },
       getCurrentTime: function () { if (SPX.bg) return SPX.bg.at + (SPX.bg.playing ? (Date.now() - SPX.bg.t0) / 1000 : 0); return coverObj.sp ? spxPos() / 1000 : audio.currentTime || 0; },
       getDuration: function () { if (SPX.bg) return SPX.bg.dur || 0; return coverObj.sp ? (SPX.dur || 0) / 1000 : isFinite(audio.duration) ? audio.duration : 0; },
       getPlayerState: function () { return coverObj.state; },
