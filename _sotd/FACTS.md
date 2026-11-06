@@ -153,7 +153,7 @@ Web searches are limited per session; if one is refused, work from the saved pag
 
 Order each list best first: the first song fact and the first artist fact are the two shown in the preview.
 
-**The notification fact (`nf`)** (John, 6 Nov 2026: "one punchy fact that would be particularly good for notifications"):
+**The notification fact (`nf`), every song, always** (John, 6 Nov 2026: "one punchy fact that would be particularly good for notifications"):
 one line that makes someone want to tap and hear the song, shown on a phone's lock screen under the song's name. The
 single most surprising, specific thing found, about the song (or the artist if nothing about the song beats it): 90
 characters at most, ideally under 75, no "Did you know", no opening name-check of the song or artist (the notification

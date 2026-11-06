@@ -61,7 +61,7 @@ def main(args):
                 pending['songs'][tid] = {'n': s['n'], 'title': s['title'], 'artist': s['artist'], 'written': today, 's': e['f'], 'a': a}
                 nf = (w.get('songs', {}).get(tid) or {}).get('nf')   # (the punchy one for its notification, checked like the rest)
                 vn = next((x for k, x in v.items() if k.endswith(':nf:%s:0' % tid)), None)
-                if isinstance(nf, dict) and nf.get('t') and vn and vn.get('v') in ('keep', 'fix'):
+                if isinstance(nf, dict) and nf.get('t') and ((vn and vn.get('v') in ('keep', 'fix')) or (not vn and nf.get('u') and any(f.get('u') == nf['u'] for f in e['f']))):   # (no verdict for it: kept when it comes from a page one of its checked facts did)
                     t = (vn.get('t') if vn['v'] == 'fix' and vn.get('t') else nf['t']).strip()
                     if len(t) <= 110:
                         pending['songs'][tid]['nf'] = {'t': t, 'u': nf.get('u', ''), 'src': nf.get('src', ''), 'q': nf.get('q', '')}
