@@ -1302,7 +1302,7 @@ async function members(request, url, env) {
     if (!who || who.id !== await env.SOTD.get('owner')) return answer(403, { error: 'Only John can do that.' });
     const b = await request.json().catch(() => ({})), C = (await env.SOTD.get('mainCaps', 'json')) || {}, clean = v => String(v || '').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim().slice(0, 300);
     if ('cal' in b) { const c = clean(b.cal); if (c) C.cal = c; else delete C.cal; }
-    if (b.track && ID_RE.test(String(b.track))) { C.songs = C.songs || {}; const c = clean(b.cap); if (c) C.songs[b.track] = c; else delete C.songs[b.track]; }
+    for (const t of [b.track].concat(Array.isArray(b.tracks) ? b.tracks.slice(0, 20) : []).map(String).filter(t => ID_RE.test(t))) { C.songs = C.songs || {}; const c = clean(b.cap); if (c) C.songs[t] = c; else delete C.songs[t]; }   // (tracks: the day's others too, the same caption: John, 6 Nov 2026)
     await env.SOTD.put('mainCaps', JSON.stringify(C));
     return answer(200, Object.assign({ ok: true }, C));
   }
@@ -5389,6 +5389,11 @@ async function memberUpl(request, url, env, answer) {
     if ('cap' in body) {   // a caption on its song page, by its owner or those editing with them (John, 6 Nov 2026); '' none
       const c = String(body.cap || '').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim().slice(0, 300);
       if (c) e.cap = c; else delete e.cap;
+      for (const t2 of (Array.isArray(body.capAlso) ? body.capAlso : []).map(String).slice(0, 20)) {   // the day's other songs, the same caption (John, 6 Nov 2026: "the same caption for all")
+        if (t2 === t || !(data.songs || []).some(y => y.id === t2)) continue;
+        const e2 = data.ed[t2] || {}; if (c) e2.cap = c; else delete e2.cap;
+        if (Object.keys(e2).length) data.ed[t2] = e2; else delete data.ed[t2];
+      }
     }
     for (const k of ['tt', 'ar']) {   // its title and artist as its owner wants them shown (John, 3 Nov 2026: "change details"); '' or null: Spotify's
       if (!(k in body)) continue;
