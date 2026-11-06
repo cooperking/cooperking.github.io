@@ -4,19 +4,19 @@
   "about": "For songs Claude knows: how often the three strongest moods from Last.fm listeners' track tags, from the artist's Last.fm tags, and from the audio models include Claude's first pick.",
   "listeners": [
    2,
-   4
+   3
   ],
   "audio": [
-   152,
-   260
+   149,
+   256
   ],
   "artistTags": [
    5,
    29
   ],
-  "songsWithListenerTags": 314,
-  "songsWithListenerMoodTags": 172,
-  "songsWhereListenersCount": 73
+  "songsWithListenerTags": 14,
+  "songsWithListenerMoodTags": 11,
+  "songsWhereListenersCount": 5
  },
  "moods": [
   "Joyful",
@@ -1466,7 +1466,7 @@
    "sound": [
     "Energetic",
     "Dark",
-    "Joyful"
+    "Playful"
    ],
    "claude": [
     "Joyful",
@@ -17644,7 +17644,7 @@
    "sound": [
     "Mellow",
     "Uplifting",
-    "Joyful"
+    "Playful"
    ],
    "claude": [
     "Mellow"
@@ -27673,6 +27673,131 @@
     "pop",
     "r&b",
     "rhythm and blues",
+    "rock",
+    "soul"
+   ],
+   "check": true
+  },
+  "5eX6j2j6gfaXEryl54oIKZ": {
+   "n": 270,
+   "title": "If You're Ready (Come Go With Me)",
+   "artist": "The Staple Singers",
+   "moods": [
+    "Joyful",
+    "Energetic"
+   ],
+   "moodMix": [
+    [
+     "Joyful",
+     19
+    ],
+    [
+     "Energetic",
+     18
+    ],
+    [
+     "Romantic",
+     17
+    ]
+   ],
+   "moodEvidence": [
+    [
+     "Audio",
+     100,
+     [
+      [
+       "Joyful",
+       19
+      ],
+      [
+       "Energetic",
+       18
+      ],
+      [
+       "Romantic",
+       17
+      ]
+     ]
+    ]
+   ],
+   "moodFrom": "Weighed up",
+   "sound": [
+    "Joyful",
+    "Energetic",
+    "Romantic"
+   ],
+   "listeners": "none",
+   "styles": [
+    "Pop Rock",
+    "Classic Rock",
+    "Glam"
+   ],
+   "genres": [
+    "Soul & R&B"
+   ],
+   "genreFrom": "Weighed up",
+   "genreMix": [
+    [
+     "Soul & R&B",
+     79
+    ],
+    [
+     "Rock",
+     11
+    ],
+    [
+     "Pop",
+     8
+    ]
+   ],
+   "genreEvidence": [
+    [
+     "MusicBrainz",
+     50,
+     [
+      [
+       "Soul & R&B",
+       96
+      ],
+      [
+       "Rock",
+       4
+      ]
+     ]
+    ],
+    [
+     "Last.fm",
+     30,
+     [
+      [
+       "Soul & R&B",
+       100
+      ]
+     ]
+    ],
+    [
+     "Audio",
+     20,
+     [
+      [
+       "Rock",
+       44
+      ],
+      [
+       "Pop",
+       41
+      ],
+      [
+       "Soul & R&B",
+       8
+      ]
+     ]
+    ]
+   ],
+   "musicbrainz": [
+    "gospel",
+    "motown",
+    "r&b",
     "rock",
     "soul"
    ],
