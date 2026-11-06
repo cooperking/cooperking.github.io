@@ -119,7 +119,20 @@ export default {
       await uplLook(env).catch(e => console.log('uplLook: ' + (e && e.message)));
     })().catch(e => console.log('scheduled: ' + (e && e.message))));
     ctx.waitUntil(appUpdates(env).catch(e => console.log('appUpdates: ' + (e && e.message))));
-    ctx.waitUntil(catalogHeal(env).catch(e => console.log('catalogHeal: ' + (e && e.message))));   // (every few hours: files in the bucket the catalog lost)
+    ctx.waitUntil(catalogHeal(env).catch(e => console.log('catalogHeal: ' + (e && e.message))));
+    ctx.waitUntil((async () => {   // one-off: where Forced Foot Massage (C O M R) is, and its MP3-from link (6 Nov 2026)
+      if (!env.MEDIA || await env.SOTD.get('diagFFM1')) return;
+      await env.SOTD.put('diagFFM1', '1', { expirationTtl: 86400 });
+      const U = await uplAll(env), all = (await env.SOTD.get('members', 'json')) || {}, out = [];
+      for (const [pid, rec] of Object.entries(U)) {
+        const data = await uplSongs(env, pid), hit = (data.songs || []).filter(x => /forced foot massage/i.test(x.title || ''));
+        for (const x of hit) {
+          const plan = await uplDlPlan(env, rec.o, U).catch(() => null);
+          out.push({ pid, n: uplName(all, rec), id: x.id, ed: (data.ed || {})[x.id] || null, sk: (data.skip || {})[x.id] || '', files: (data.files || {})[x.id] || null, gone: uplGone(data, x), allowed: plan ? plan.allowed.has(x.id) || plan.john.has(x.id) : null, cat: (await catalog(env))[x.id] || null, twin: twinOf(await twinFiles(env), x, pid) });
+        }
+      }
+      await env.MEDIA.put('diag/ffm.json', JSON.stringify(out, null, 1), { httpMetadata: { contentType: 'application/json' } });
+    })().catch(e => console.log('diagFFM: ' + (e && e.message))));   // (every few hours: files in the bucket the catalog lost)
     ctx.waitUntil((async () => {   // John's Spotify log, copied where his read-only key reaches it (diag/splog-john.txt), to look into what his phone sent (6 Nov 2026)
       const o = await env.SOTD.get('owner'), l = o && env.MEDIA ? await env.SOTD.get('splog:' + o) : null;
       if (l && (await env.SOTD.get('splogMirror')) !== String(l.length)) { await env.MEDIA.put('diag/splog-john.txt', JSON.parse(l).join('\n'), { httpMetadata: { contentType: 'text/plain; charset=utf-8' } }); await kvSoft(env, 'splogMirror', String(l.length)); }
