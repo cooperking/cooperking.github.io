@@ -3295,7 +3295,7 @@ function mailFactHtml(f, tint, big) {
   return '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px"><tr>'
     + '<td width="4" style="width:4px;background:' + tint + ';border-radius:4px 0 0 4px"></td>'
     + '<td style="padding:' + (big ? '16px 18px' : '12px 14px') + ';background:#f8f3f5;border-radius:0 12px 12px 0">'
-    + '<p style="margin:0 0 6px;font:700 11px/1 Helvetica,Arial,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:' + tint + '">Did you know?</p>'
+    + '<p style="margin:0 0 6px;font:700 11px/1 Helvetica,Arial,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:' + tint + '">Fact of the Day</p>'
     + '<p style="margin:0;font:italic ' + (big ? 17 : 15) + 'px/1.5 Georgia,\'Times New Roman\',serif;color:#2a1a24">' + mailEsc(f) + '</p></td></tr></table>';
 }
 function mailItem(msg) { return Object.assign({ t: msg.subject || msg.title || '', b: msg.body || '', f: msg.fact ? String(msg.fact).slice(0, 600) : undefined, u: msg.link || msg.url || SITE_SONGS, i: mailImg(msg.image) || mailImg(msg.icon), cta: msg.cta || '', at: Date.now() }, msg.html ? { h: String(msg.html).slice(0, 12000), hs: String(msg.htmlSmall || '').slice(0, 6000) } : {}); }
@@ -3335,7 +3335,7 @@ async function noteMail(env, to, msg, cat) {   // cat: 'song' (the Song of the D
     const m = all[id], item = mailItem(msg), mode = mailMode(m);
     let sent = false;
     if (mode !== 'day' && await dayCount(env, 'mailme:' + id, MAIL_EACH_DAY) && await dayCount(env, 'mailme-all', MAIL_ALL_DAY)) {
-      try { await sendMail(env, m.email, item.t, (item.b ? item.b + '\n\n' : '') + (item.f ? 'Did you know? ' + item.f + '\n\n' : '') + item.u + mailFoot(), 'note', mailShell(item.h || mailItemHtml(item, true), item.u, item.i)); sent = true; } catch (e) { console.log('noteMail: ' + (e && e.message)); }
+      try { await sendMail(env, m.email, item.t, (item.b ? item.b + '\n\n' : '') + (item.f ? 'Fact of the Day: ' + item.f + '\n\n' : '') + item.u + mailFoot(), 'note', mailShell(item.h || mailItemHtml(item, true), item.u, item.i)); sent = true; } catch (e) { console.log('noteMail: ' + (e && e.message)); }
     }
     if (!sent) {   // (once a day, or past today's allowance: in tomorrow morning's email)
       const k = 'mdig:' + id, l = (await env.SOTD.get(k, 'json')) || [];
@@ -3369,7 +3369,7 @@ async function mailDigests(env) {   // the day's email for each member with noti
 }
 async function pushAll(env, msg, to, meta) {   // to: only these members (else everyone); meta: { kind: 'song' | 'note' | 'member', track, via, toNames, fromId, toIds }
   const mailMsg = msg;   // (the email: its fact as a block of its own)
-  if (msg.fact) msg = Object.assign({}, msg, { body: (msg.body ? msg.body + '\n' : '') + (msg.fact.length > 180 ? msg.fact.slice(0, 177).replace(/\s+\S*$/, '') + '…' : msg.fact) });   // (phones and inboxes: the fact under the song, John, 4 Nov 2026)
+  if (msg.fact) msg = Object.assign({}, msg, { body: (msg.body ? msg.body + '\n' : '') + 'Fact of the Day: ' + (msg.fact.length > 160 ? msg.fact.slice(0, 157).replace(/\s+\S*$/, '') + '…' : msg.fact) });   // (phones and inboxes: the fact under the song, John, 4 Nov 2026)
   delete msg.fact;
   const subs = (await env.SOTD.get('pushSubs', 'json')) || {}, k = await vapidKeys(env);
   const unread = await inboxAdd(env, to, msg, meta);   // into each one's inbox first (notifications on or not); their unread counts
