@@ -59,6 +59,12 @@ def main(args):
                     a = {k: {'name': (k0.get('a') or {}).get(k, {}).get('name') or v['name'], 'f': ((k0.get('a') or {}).get(k, {}).get('f') or []) + v['f']} for k, v in a.items()}
                     e = dict(e, f=(k0.get('s') or []) + e['f'])
                 pending['songs'][tid] = {'n': s['n'], 'title': s['title'], 'artist': s['artist'], 'written': today, 's': e['f'], 'a': a}
+                nf = (w.get('songs', {}).get(tid) or {}).get('nf')   # (the punchy one for its notification, checked like the rest)
+                vn = next((x for k, x in v.items() if k.endswith(':nf:%s:0' % tid)), None)
+                if isinstance(nf, dict) and nf.get('t') and vn and vn.get('v') in ('keep', 'fix'):
+                    t = (vn.get('t') if vn['v'] == 'fix' and vn.get('t') else nf['t']).strip()
+                    if len(t) <= 110:
+                        pending['songs'][tid]['nf'] = {'t': t, 'u': nf.get('u', ''), 'src': nf.get('src', ''), 'q': nf.get('q', '')}
             added.append('%d %s: %d song facts, %s' % (s['n'], s['title'], len(e['f']), ', '.join('%s %d' % (x['name'], len(x['f'])) for x in a.values()))
                          + (' (a member’s: waiting for its owner)' if s.get('upl') else ''))
     with open(PENDING, 'w', encoding='utf-8') as f:

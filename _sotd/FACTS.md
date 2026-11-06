@@ -143,11 +143,19 @@ Web searches are limited per session; if one is refused, work from the saved pag
 `written.json`:
 
 ```json
-{"songs": {"<track id>": {"facts": [{"t": "the fact", "u": "https://...", "src": "page title", "q": "exact words"}], "note": "only if short"}},
+{"songs": {"<track id>": {"facts": [{"t": "the fact", "u": "https://...", "src": "page title", "q": "exact words"}],
+                           "nf": {"t": "the one for the notification", "u": "https://...", "src": "page title", "q": "exact words"}, "note": "only if short"}},
  "artists": {"<artist id>": {"name": "Artist", "facts": [ ... ], "note": "..."}}}
 ```
 
 Order each list best first: the first song fact and the first artist fact are the two shown in the preview.
+
+**The notification fact (`nf`)** (John, 6 Nov 2026: "one punchy fact that would be particularly good for notifications"):
+one line that makes someone want to tap and hear the song, shown on a phone's lock screen under the song's name. The
+single most surprising, specific thing found, about the song (or the artist if nothing about the song beats it): 90
+characters at most, ideally under 75, no "Did you know", no opening name-check of the song or artist (the notification
+already shows both), present or past tense as reads best, and true to its source like any other fact (`u`, `src`, `q`).
+It can be a tighter telling of one of the facts, or something better found while searching.
 
 ## Checking
 
@@ -165,6 +173,7 @@ fetch the result). Then decide:
    near-repeat of another fact for the same song or artist.
 
 Write `verdicts.json`: for the fact at index i of a song's list, the key is `new:s:<track id>:<i>`; for an artist's,
-`new:a:<artist id>:<i>`. Value: `{"v": "keep"}`, `{"v": "fix", "t": "corrected text", "why": "..."}` (substance right
+`new:a:<artist id>:<i>`; a song's notification fact is `new:nf:<track id>:0` (check it the same way, and that it is
+90 characters at most). Value: `{"v": "keep"}`, `{"v": "fix", "t": "corrected text", "why": "..."}` (substance right
 and backed, but a name, pronoun, claim or length needs fixing; the fix itself must be backed) or
 `{"v": "drop", "why": "..."}`. Every fact needs a verdict.

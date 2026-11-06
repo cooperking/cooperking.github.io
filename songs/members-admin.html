@@ -141,6 +141,13 @@
 .npic figure { margin: 0; border-radius: 10px; overflow: hidden; background: var(--tile); }
 .npic figure img { width: 100%; max-height: 260px; object-fit: contain; display: block; }
 .notify .row select { flex: 1 1 180px; min-width: 0; border: 1px solid var(--line); background: var(--field); color: var(--fg); border-radius: 12px; padding: 10px 12px; font: 16px var(--sans); }
+.impv { width: min(620px, calc(100vw - 24px)); max-height: calc(100vh - 24px); padding: 18px; border: 0; border-radius: 18px; }
+.impv h3 { margin: 0 0 6px; }
+.impvsub { margin: 0 0 10px; font-size: 14px; }
+.impv iframe { display: block; width: 100%; height: min(62vh, 640px); border: 1px solid rgba(0,0,0,.12); border-radius: 12px; background: #f6f0f2; }
+.impvto { display: flex; gap: 8px; align-items: center; margin: 12px 0 0; }
+.impvto input { flex: 1; min-width: 0; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(0,0,0,.2); font: inherit; }
+.impvacts { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
 </style>
 </head>
 <body>
@@ -244,6 +251,14 @@
     </div>
   </div>
 </dialog>
+<dialog id="impvdlg" class="impv" aria-labelledby="impvh">
+  <h3 id="impvh">The email, as it will arrive</h3>
+  <p class="impvsub"><b>Subject:</b> <span id="impvsub"></span></p>
+  <iframe id="impvframe" title="The invitation email" sandbox=""></iframe>
+  <label class="impvto"><span>To</span><input type="email" id="impvto" placeholder="Their email address" autocomplete="off"></label>
+  <div class="impvacts"><button class="btn" id="impvno" type="button">Not now</button><button class="btn primary" id="impvgo" type="button">Send it</button></div>
+</dialog>
+
 <dialog class="pop" id="spdlg" aria-labelledby="sph">
   <div class="pop-in">
     <div class="pop-head"><span class="kicker">Spotify playlists</span><button class="x" id="spx" type="button" aria-label="Close"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 2l10 10M12 2 2 12"/></svg></button></div>
@@ -651,15 +666,24 @@
     e.preventDefault();
     if (!INV.page) { toast('The invitation is still being made'); return; }
     var im = (MEMBERS || []).filter(function (x) { return x.id === INV.id; })[0] || {};
-    var to = im.email || '';
-    if (!to) { to = (window.prompt('Their email address:') || '').trim(); if (!to) return; }
-    else if (!window.confirm('Send the invitation to ' + to + '?')) return;
     var b = $('invmail'); b.classList.add('off');
-    api('/members/admin', { op: 'invitemail', id: INV.id, page: INV.page, to: im.email ? undefined : to }).then(function (j) {
+    api('/members/admin', { op: 'invitemail', id: INV.id, page: INV.page, preview: true }).then(function (j) {   // the email exactly as it will arrive, first (John, 6 Nov 2026: "a proper preview of the email before sending")
       b.classList.remove('off');
-      toast(j.ok ? 'Sent to ' + j.to : (j.error || 'It didn’t send'));
+      if (!j.ok) { toast(j.error || 'Couldn’t make the email'); return; }
+      $('impvsub').textContent = j.subject; $('impvto').value = im.email || ''; $('impvframe').srcdoc = j.html;
+      $('impvdlg').showModal(); setTimeout(function () { if (!im.email) $('impvto').focus(); }, 50);
     }).catch(function () { b.classList.remove('off'); toast('Couldn’t reach the Worker'); });
   }
+  $('impvno').addEventListener('click', function () { $('impvdlg').close(); });
+  $('impvgo').addEventListener('click', function () {
+    var im = (MEMBERS || []).filter(function (x) { return x.id === INV.id; })[0] || {}, to = $('impvto').value.trim();
+    if (!/@/.test(to)) { toast('Their email address, please'); $('impvto').focus(); return; }
+    var g = $('impvgo'); g.disabled = true; g.textContent = 'Sending…';
+    api('/members/admin', { op: 'invitemail', id: INV.id, page: INV.page, to: to !== (im.email || '') ? to : undefined }).then(function (j) {
+      g.disabled = false; g.textContent = 'Send it';
+      if (j.ok) { $('impvdlg').close(); toast('Sent to ' + j.to); } else toast(j.error || 'It didn’t send');
+    }).catch(function () { g.disabled = false; g.textContent = 'Send it'; toast('Couldn’t reach the Worker'); });
+  });
   $('invmail').addEventListener('click', invSendMail);
   function invOpen() {
     $('invh').textContent = invTitle();

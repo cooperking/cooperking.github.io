@@ -304,7 +304,7 @@ a.srchpill { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--li
   function state0(s) {
     var tid = s.id, w = signedW[tid], p = pending.songs[tid], ls = (live.signed || {})[tid];
     if (w && (!ls || w.at > ls) && !(p && p.written && p.written > w.at)) return { st: 'signed', at: w.at, base: { s: w.s, a: w.a }, going: true };
-    if (p) return { st: 'waiting', base: { s: p.s, a: p.a }, written: p.written };
+    if (p) return { st: 'waiting', base: Object.assign({ s: p.s, a: p.a }, p.nf && p.nf.t ? { nf: p.nf.t } : {}), written: p.written, nfx: p.nf || null };   // (nf: the punchy one written for its notification)
     if (ls) return { st: 'signed', at: ls, base: fromLive(tid) };
     var l = fromLive(tid);
     if (l && (l.s.length || Object.keys(l.a).some(function (k) { return l.a[k].f.length; }))) return { st: 'old', base: l };
@@ -339,6 +339,21 @@ a.srchpill { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--li
     var keep = function (f) { return !f.gone && String(f.t || '').trim(); };
     var f = (w.s || []).filter(keep)[0] || [].concat.apply([], Object.keys(w.a || {}).map(function (k) { return (w.a[k].f || []).filter(keep); }))[0];
     return f ? String(f.t).trim() : '';
+  }
+  function nfSection(s, st, w) {   // its notification's fact: the punchy one written for it, to keep, edit or swap for another (John, 6 Nov 2026)
+    var sec = el('div', 'sec nfsec'), commit = commitOf(s, w), cur = nfChoice(s);
+    var kk = el('div', 'kicker'); kk.appendChild(el('span', null, 'In the notification')); sec.appendChild(kk);
+    var ta = el('textarea', 'nfta'); ta.rows = 2; ta.value = cur; ta.placeholder = 'No fact in the notification'; ta.setAttribute('aria-label', 'The fact in its notification');
+    var n = el('span', 'stat', cur.length + ' characters'); n.style.marginLeft = '8px';
+    ta.addEventListener('input', function () { n.textContent = ta.value.trim().length + ' characters' + (ta.value.trim().length > 110 ? ': long for a phone' : ''); fit(ta); });
+    ta.addEventListener('change', function () { w.nf = ta.value.replace(/\s+/g, ' ').trim(); commit(true); });
+    sec.appendChild(ta);
+    var meta = el('div', 'meta'); meta.appendChild(n);
+    var x = st.nfx; if (x && x.u && cur === x.t) { var sl = el('span', null, ' · Source: '), a = el('a', null, (x.src || 'the page') + ' ↗'); a.href = x.u; a.target = '_blank'; a.rel = 'noopener'; sl.appendChild(a); meta.appendChild(sl); }
+    meta.appendChild(el('span', 'stat', ' · or tap “Use in the notification” on any fact below'));
+    sec.appendChild(meta);
+    setTimeout(function () { fit(ta); }, 0);
+    return sec;
   }
   function nfSave(list_) { list_.forEach(function (s) { api('/members/admin', { op: 'nfact', track: s.id, text: nfChoice(s) }).catch(function () {}); }); }
   function payload(s, st) {
@@ -605,6 +620,7 @@ a.srchpill { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--li
     if (s.m && !s.fx) body.appendChild(el('p', 'stat', s.cals.some(function (c) { return c.sh === 'public'; }) ? 'No facts yet: they’re written for public playlists’ songs, and come here for you and its member to sign off.' : 'No facts: they’re written only for songs on public playlists.'));
     else if (s.m && s.fx.st === 'nil') body.appendChild(el('p', 'stat', 'No facts could be found for it.'));
     else {
+      body.appendChild(nfSection(s, st, w));
       body.appendChild(factSection(s, st, w, 's', 'About the song'));
       Object.keys(w.a || {}).forEach(function (k) { body.appendChild(factSection(s, st, w, k, 'About ' + (w.a[k].name || 'the artist'))); });
     }
