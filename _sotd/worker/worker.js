@@ -3343,7 +3343,7 @@ async function pushDigests(env) {   // the morning's one notification for each m
       await env.SOTD.delete(key.name);
       if (!items.length) continue;
       const unread = ((await env.SOTD.get('inbox:' + id, 'json')) || []).filter(y => !y.r).length;
-      const msg = { title: items.length === 1 ? items[0].t : items.length + ' notifications from Song of the Day', body: items.length === 1 ? 'Yesterday on Song of the Day' : items.slice(-4).reverse().map(x => x.t).join(' · ').slice(0, 200), url: SITE_SONGS, tag: 'sotd-day', unread: unread || items.length };
+      const dt = digestTitle(items, false), msg = { title: items.length === 1 ? items[0].t : dt.replace(/:.*$/, ''), body: items.length === 1 ? 'Yesterday on Song of the Day' : (dt.replace(/^[^:]*:\s*/, '').replace(/ · your day: /, '\nYour day: ') + '\n' + items.slice(-3).reverse().map(x => x.t).join(' · ')).slice(0, 200), url: SITE_SONGS, tag: 'sotd-day', unread: unread || items.length };
       await Promise.all(Object.keys(subs).filter(sid => subs[sid].m === id).map(sid => pushTo(env, k, subs[sid], msg).catch(() => {})));
     }
     cursor = l.list_complete ? null : l.cursor;
@@ -3444,32 +3444,41 @@ async function noteMail(env, to, msg, cat) {   // cat: 'song' (the Song of the D
 }
 // a summary email, a day's or a week's (John, 6 Nov 2026: "a weekly summary option ... nicely formatted"): its heading and
 // dates, a line of counts, the songs as covers two to a row, then what was to them, then the rest
-function digestHtml(items, week, tint) {
+function digestHtml(items, week, tint) {   // "The week on Song of the Day": the songs, everyone's; "Your week": only what came to them (John, 6 Nov 2026)
   const fmt = t => new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'Europe/London' });
   const from = items.reduce((a, x) => Math.min(a, x.at || Date.now()), Date.now()), to = items.reduce((a, x) => Math.max(a, x.at || 0), 0) || Date.now();
   const songs = items.filter(x => x.c === 'song'), mine = items.filter(x => x.c === 'direct'), rest = items.filter(x => x.c !== 'song' && x.c !== 'direct');
-  const n = (k, one, many) => k ? k + ' ' + (k === 1 ? one : many) : '';
-  const counts = [n(songs.length, 'new song', 'new songs'), n(mine.length, 'message to you', 'messages to you'), n(rest.length, 'other notification', 'other notifications')].filter(Boolean).join(' · ');
-  const h2 = t => '<p style="margin:26px 0 12px;font:700 11px/1 Helvetica,Arial,sans-serif;letter-spacing:.16em;text-transform:uppercase;color:' + tint + '">' + t + '</p>';
-  let out = '<h1 style="margin:0 0 4px;font:500 28px/1.2 Georgia,\'Times New Roman\',serif;color:#1d0b1e">Your ' + (week ? 'week' : 'day') + ' on Song of the Day</h1>'
-    + '<p style="margin:0 0 4px;font:14px/1.4 Helvetica,Arial,sans-serif;color:#8a7680">' + mailEsc(fmt(from) === fmt(to) ? fmt(to) : fmt(from) + ' – ' + fmt(to)) + '</p>'
-    + (counts ? '<p style="margin:0;font:15px/1.5 Helvetica,Arial,sans-serif;color:#4a3a42">' + mailEsc(counts) + '</p>' : '');
+  const span = week ? 'week' : 'day', when = mailEsc(fmt(from) === fmt(to) ? fmt(to) : fmt(from) + ' – ' + fmt(to));
+  const big = t => '<h1 style="margin:0 0 4px;font:500 28px/1.2 Georgia,\'Times New Roman\',serif;color:#1d0b1e">' + t + '</h1>';
+  const sub = t => '<p style="margin:0;font:15px/1.5 Helvetica,Arial,sans-serif;color:#4a3a42">' + mailEsc(t) + '</p>';
+  const h2 = t => '<p style="margin:22px 0 12px;font:700 11px/1 Helvetica,Arial,sans-serif;letter-spacing:.16em;text-transform:uppercase;color:' + tint + '">' + t + '</p>';
+  let out = '';
   if (songs.length) {
-    out += h2(songs.length === 1 ? 'The song' : 'The songs') + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>';
+    out += big('The ' + span + ' on Song of the Day') + '<p style="margin:0 0 4px;font:14px/1.4 Helvetica,Arial,sans-serif;color:#8a7680">' + when + '</p>' + sub(digestCounts(songs, [], 0))
+      + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:18px"><tr>';
     songs.slice(0, 14).forEach((x, i) => {
       const img = mailImg(x.i), link = x.u || SITE_SONGS;
       if (i && i % 2 === 0) out += '</tr><tr>';
       out += '<td width="50%" valign="top" style="padding:0 ' + (i % 2 ? '0' : '6px') + ' 16px ' + (i % 2 ? '6px' : '0') + '"><a href="' + mailEsc(link) + '" style="text-decoration:none">'
         + (img ? '<img src="' + mailEsc(img) + '" alt="" width="250" style="display:block;width:100%;max-width:250px;height:auto;border:0;border-radius:12px;margin:0 0 8px">' : '')
-        + '<span style="display:block;font:600 15px/1.3 Georgia,\'Times New Roman\',serif;color:#1d0b1e">' + mailEsc(x.t) + '</span>'
-        + (x.b ? '<span style="display:block;margin-top:2px;font:13px/1.4 Helvetica,Arial,sans-serif;color:#6b5a62">' + mailEsc(String(x.b).split('\n')[0].slice(0, 90)) + '</span>' : '') + '</a></td>';
+        + '<span style="display:block;font:600 15px/1.3 Georgia,\'Times New Roman\',serif;color:#1d0b1e">' + mailEsc(String(x.t).replace(/\s+-\s+(\d{4}\s+)?(remaster(ed)?|mono|stereo|single version|radio edit)\b.*$/i, '')) + '</span>'
+        + (x.b ? '<span style="display:block;margin-top:2px;font:13px/1.4 Helvetica,Arial,sans-serif;color:#6b5a62">' + mailEsc(String(x.b).split('\n')[0].replace(/\s*·\s*(today’s|the latest) Song of the Day$/, '').slice(0, 90)) + '</span>' : '') + '</a></td>';
     });
     if (Math.min(songs.length, 14) % 2) out += '<td width="50%"></td>';
     out += '</tr></table>' + (songs.length > 14 ? '<p style="margin:0;font:14px/1.4 Helvetica,Arial,sans-serif;color:#6b5a62">and ' + (songs.length - 14) + ' more on the calendar</p>' : '');
   }
-  const list = (title, xs) => { if (!xs.length) return; out += h2(title) + xs.slice(0, 20).map((x, i) => '<div style="padding:' + (i ? '16px' : '0') + ' 0 16px;' + (i ? 'border-top:1px solid #eadfe3' : '') + '">' + (x.hs || mailItemHtml(x, false)) + '</div>').join('') + (xs.length > 20 ? '<p style="margin:0;font:14px/1.4 Helvetica,Arial,sans-serif;color:#6b5a62">and ' + (xs.length - 20) + ' more in your inbox</p>' : ''); };
-  list('For you', mine); list(songs.length || mine.length ? 'Also' : 'Your notifications', rest);
+  if (mine.length || rest.length) {
+    out += (songs.length ? '<div style="margin:26px 0 0;padding-top:24px;border-top:2px solid ' + tint + '"></div>' : '') + big('Your ' + span) + (songs.length ? '' : '<p style="margin:0 0 4px;font:14px/1.4 Helvetica,Arial,sans-serif;color:#8a7680">' + when + '</p>') + sub(digestCounts([], mine, rest.length));
+    const list = (title, xs) => { if (!xs.length) return; out += h2(title) + xs.slice(0, 20).map((x, i) => '<div style="padding:' + (i ? '16px' : '0') + ' 0 16px;' + (i ? 'border-top:1px solid #eadfe3' : '') + '">' + (x.hs || mailItemHtml(x, false)) + '</div>').join('') + (xs.length > 20 ? '<p style="margin:0;font:14px/1.4 Helvetica,Arial,sans-serif;color:#6b5a62">and ' + (xs.length - 20) + ' more in your inbox</p>' : ''); };
+    list('Messages to you', mine); list('Notifications', rest);
+  }
   return out + '<div style="margin:26px 0 0"><a href="' + mailEsc(SITE_SONGS) + '" style="display:inline-block;padding:13px 26px;border-radius:999px;background:' + tint + ';color:#ffffff;font:600 13px/1 Helvetica,Arial,sans-serif;letter-spacing:.08em;text-transform:uppercase;text-decoration:none">Open the calendar</a></div>';
+}
+function digestCounts(songs, mine, rest) { return [songs.length ? songs.length + (songs.length === 1 ? ' new song' : ' new songs') : '', mine.length ? mine.length + (mine.length === 1 ? ' message to you' : ' messages to you') : '', rest ? rest + (rest === 1 ? ' notification' : ' notifications') : ''].filter(Boolean).join(' · '); }
+function digestTitle(items, week) {   // the email's subject and the notification's title
+  const songs = items.filter(x => x.c === 'song'), mine = items.filter(x => x.c === 'direct'), rest = items.length - songs.length - mine.length, span = week ? 'week' : 'day';
+  if (!songs.length) return 'Your ' + span + ' on Song of the Day: ' + digestCounts([], mine, rest);
+  return 'The ' + span + ' on Song of the Day: ' + digestCounts(songs, [], 0) + (mine.length || rest ? ' · your ' + span + ': ' + digestCounts([], mine, rest) : '');
 }
 // the week's summaries, Monday from 8am UK: by email for those who chose it (mwk:<member>), and as one notification (pwk:<member>)
 async function weekDigests(env) {
@@ -3487,19 +3496,18 @@ async function weekDigests(env) {
         const id = key.name.slice(4), m = all[id], items = (await env.SOTD.get(key.name, 'json')) || [];
         await env.SOTD.delete(key.name);
         if (!m || !items.length) continue;
-        const songs = items.filter(x => x.c === 'song'), mine = items.filter(x => x.c === 'direct'), rest = items.length - songs.length - mine.length;
-        const counts = [songs.length ? songs.length + (songs.length === 1 ? ' new song' : ' new songs') : '', mine.length ? mine.length + (mine.length === 1 ? ' message to you' : ' messages to you') : '', rest ? rest + ' more' : ''].filter(Boolean).join(' · ');
+        const songs = items.filter(x => x.c === 'song'), title = digestTitle(items, true);
         if (pre === 'mwk:') {
           if (!mailReady(env) || mailMode(m) !== 'week') continue;
           const first = songs.find(x => mailImg(x.i)) || items[0], tint = mailTint(first.u, first.i);
-          const text = 'Your week on Song of the Day: ' + counts + '\n\n' + items.map(x => '• ' + x.t + (x.b ? '\n  ' + x.b : '') + '\n  ' + x.u).join('\n\n');
-          try { await sendMail(env, m.email, 'Your week on Song of the Day: ' + counts, text + mailFoot(), 'notes', mailShell(digestHtml(items, true, tint), first.u, first.i)); } catch (e) { console.log('weekDigests: ' + (e && e.message)); }
+          const text = title + '\n\n' + items.map(x => '• ' + x.t + (x.b ? '\n  ' + x.b : '') + '\n  ' + x.u).join('\n\n');
+          try { await sendMail(env, m.email, title, text + mailFoot(), 'notes', mailShell(digestHtml(items, true, tint), first.u, first.i)); } catch (e) { console.log('weekDigests: ' + (e && e.message)); }
         } else {
           if (pushMode(m) !== 'week') continue;
           k = k || await vapidKeys(env);
           const unread = ((await env.SOTD.get('inbox:' + id, 'json')) || []).filter(y => !y.r).length;
           const pic = (songs.find(x => x.i) || {}).i || '';
-          const msg = Object.assign({ title: 'Your week on Song of the Day', body: counts + (songs.length ? '\n' + songs.slice(-3).reverse().map(x => x.t).join(' · ') : ''), url: SITE_SONGS, tag: 'sotd-week', unread: unread || items.length }, pic ? { icon: pic } : {});
+          const msg = Object.assign({ title: title.replace(/:.*$/, ''), body: title.replace(/^[^:]*:\s*/, '').replace(/ · your week: /, '\nYour week: ') + (songs.length ? '\n' + songs.slice(-3).reverse().map(x => x.t).join(' · ') : ''), url: SITE_SONGS, tag: 'sotd-week', unread: unread || items.length }, pic ? { icon: pic } : {});
           await Promise.all(Object.keys(subs).filter(sid => subs[sid].m === id).map(sid => pushTo(env, k, subs[sid], msg).catch(() => {})));
         }
       }
@@ -3523,7 +3531,7 @@ async function mailDigests(env) {   // the day's email for each member with noti
       const text = items.map(x => '• ' + x.t + (x.b ? '\n  ' + x.b : '') + '\n  ' + x.u).join('\n\n');
       const first = items.find(x => mailMonthOf(x.u) || mailMonthOf(x.i)) || items[0], lead = first.u;   // (the first song's month)
       const html = mailShell(items.length === 1 ? items[0].h || mailItemHtml(items[0], true) : digestHtml(items, false, mailTint(lead, first.i)), lead, first.i);
-      try { await sendMail(env, m.email, items.length === 1 ? items[0].t : items.length + ' notifications from Song of the Day', text + mailFoot(), 'notes', html); }
+      try { await sendMail(env, m.email, items.length === 1 ? items[0].t : digestTitle(items, false), text + mailFoot(), 'notes', html); }
       catch (e) { console.log('mailDigests: ' + (e && e.message)); }
     }
     cursor = l.list_complete ? null : l.cursor;
