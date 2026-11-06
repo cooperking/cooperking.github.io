@@ -4689,8 +4689,9 @@ async function ytList(request, url, env) {
   for (const x of songs) {
     const v = (J[x.id] && J[x.id].v) || ('ov' in x ? x.ov : (x.vid && x.vid.v)) || '';
     const twinHas = x.jf && x.jf.a && x.jf.v;   // (files already, its own or another copy's of the same song: nothing to download)
-    if (!v && x.osrc && json) { out.push(Object.assign({ id: x.id, v: x.osrc, src: x.osrc, a: x.artist || '', t: x.title || '' }, (twinHas || (plan && !plan.allowed.has(x.id) && !plan.john.has(x.id))) ? { dl: 0 } : {})); continue; }   // (no YouTube video: its MP3 from another site's link, for the download job)
-    if (v) out.push(Object.assign({ id: x.id, v, a: x.artist || '', t: x.title || '' }, json && x.osrc ? { src: x.osrc } : {}, json && (x.sk || '').includes('a') ? { na: 1 } : {}, json && (x.sk || '').includes('f') ? { nv: 1 } : {}, x.f ? { f: 1 } : {}, x.w ? { w: 1 } : {}, twinHas || (plan && !plan.allowed.has(x.id) && !plan.john.has(x.id)) ? { dl: 0 } : {}));
+    if (!v && x.osrc && json) { out.push(Object.assign({ id: x.id, v: x.osrc, src: x.osrc, a: x.artist || '', t: x.title || '' }, x.img ? { img: x.img } : {}, (twinHas || (plan && !plan.allowed.has(x.id) && !plan.john.has(x.id))) ? { dl: 0 } : {})); continue; }   // (no YouTube video: its MP3 from another site's link, for the download job)
+    if (v) out.push(Object.assign({ id: x.id, v, a: x.artist || '', t: x.title || '' }, json && x.osrc ? { src: x.osrc } : {}, json && x.osrc && x.img ? { img: x.img } : {},   // (img: its cover, for a video made from it: John, 6 Nov 2026)
+      json && (x.sk || '').includes('a') ? { na: 1 } : {}, json && (x.sk || '').includes('f') ? { nv: 1 } : {}, x.f ? { f: 1 } : {}, x.w ? { w: 1 } : {}, twinHas || (plan && !plan.allowed.has(x.id) && !plan.john.has(x.id)) ? { dl: 0 } : {}));
   }
   if (json) return answer(200, { t: view.n, songs: out });
   if (!out.length) return new Response('No videos on “' + view.n + '” yet.', { status: 404, headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' } });
