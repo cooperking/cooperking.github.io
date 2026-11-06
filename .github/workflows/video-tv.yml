@@ -30,7 +30,15 @@ jobs:
       - uses: actions/checkout@v4
       - name: Tools
         run: |
-          for i in 1 2 3; do timeout 300 sudo apt-get update -qq && timeout 300 sudo apt-get install -y -qq ffmpeg > /dev/null && break; echo "apt stuck or failed (try $i)"; sleep 10; done   # (a run once hung here 30 minutes)
+          # ffmpeg: apt, briefly (it has hung, and failed three runs in a row on 6 Nov 2026); else a ready-made static build (else one through pip)
+          for i in 1 2; do timeout 150 sudo apt-get install -y -qq --no-install-recommends ffmpeg > /dev/null 2>&1 && break; timeout 150 sudo apt-get update -qq > /dev/null 2>&1; echo "apt stuck or failed (try $i)"; done
+          if ! command -v ffprobe > /dev/null; then
+            echo "apt didn't give ffmpeg: the ready-made one instead"
+            d="$RUNNER_TEMP/ffmpeg"; mkdir -p "$d"
+            if curl -fsSL --retry 3 -m 300 https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz | tar -xJ -C "$d" --strip-components=1; then :
+            else pip install --quiet static-ffmpeg && d=$(python -c "import os, static_ffmpeg.run as r; print(os.path.dirname(r.get_or_fetch_platform_executables_else_raise()[0]))"); fi
+            echo "$d" >> "$GITHUB_PATH"; export PATH="$d:$PATH"
+          fi
           which ffprobe
           pip install --quiet boto3
       - name: Make the copies
