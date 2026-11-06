@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="a577c67968b7">
+<meta name="sotd-build" content="0472229ad5ef">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -2135,6 +2135,11 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         <p class="ac-h">Notifications</p>
         <p class="ac-none" id="acnotet"></p>
         <div class="ac-acts"><button class="copy" id="acnotego" type="button" hidden>Turn on</button></div>
+      </div>
+      <div class="ac-dev" id="acpm" hidden>
+        <p class="ac-h">Which notifications</p>
+        <p class="ac-none" id="acpmt"></p>
+        <div class="acmm-opts" id="acpmb" role="radiogroup" aria-label="Notifications on your devices"><button type="button" role="radio" data-pm="all"><b>Everything</b><span>Each notification as it comes</span></button><button type="button" role="radio" data-pm="day"><b>One a day</b><span>Everything, in one notification each morning</span></button><button type="button" role="radio" data-pm="song"><b>Just the Song of the Day</b><span>Each new song, as it comes out</span></button><button type="button" role="radio" data-pm="direct"><b>Just messages to me</b><span>Messages sent to you, reactions and hearts</span></button><button type="button" role="radio" data-pm="off"><b>Off</b><span>No notifications (your inbox still has them)</span></button></div>
       </div>
       <div class="ac-dev" id="acsp" hidden>
         <p class="ac-h">Spotify</p>
@@ -7494,7 +7499,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       .then(function (r) { return r.json().catch(function () { return {}; }); })
       .then(function (j) {
         if (!j.ok) { toast(j.error || 'Couldn’t change it just now. Try again.'); throw new Error('not saved'); }
-        MEMBER.msgs = j.msgs; MEMBER.mute = j.mute || []; if ('mailme' in j) MEMBER.mailme = j.mailme; msgDraw(); mmDraw(); return j;
+        MEMBER.msgs = j.msgs; MEMBER.mute = j.mute || []; if ('mailme' in j) MEMBER.mailme = j.mailme; if ('pushme' in j) MEMBER.pushme = j.pushme; msgDraw(); mmDraw(); return j;
       }, function (e) { toast('Couldn’t reach the site. Try again.'); throw e; });
   }
   document.getElementById('acmsggo').addEventListener('click', function () {
@@ -7504,13 +7509,31 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       b.disabled = false; toast(j.msgs ? 'Other members can send you messages' : 'Other members can’t send you messages now');
     }, function () { b.disabled = false; });
   });
+  // which notifications come to their devices, chosen apart from emails (John, 6 Nov 2026: "Some people want to receive
+  // emails but not notifications, and the other way around"): the same choices
+  function pmDraw() {
+    var box = document.getElementById('acpm'); if (!box) return;
+    box.hidden = !MEMBER || !MBASE || TV;
+    if (box.hidden) return;
+    var v = MEMBER.pushme || 'all';
+    document.getElementById('acpmt').textContent = 'On your phones and computers with notifications turned on. Emails are chosen apart, below.';
+    [].forEach.call(document.querySelectorAll('#acpmb button'), function (b) { var on = b.getAttribute('data-pm') === v; b.setAttribute('aria-selected', on ? 'true' : 'false'); b.setAttribute('aria-checked', on ? 'true' : 'false'); });
+  }
+  [].forEach.call(document.querySelectorAll('#acpmb button'), function (b) {
+    b.addEventListener('click', function () {
+      if (!MEMBER) return;
+      var v = b.getAttribute('data-pm'); if (v === (MEMBER.pushme || 'all')) return;
+      msgPrefs({ pushme: v }).then(function (j) { MEMBER.pushme = j.pushme || 'all'; pmDraw(); toast({ all: 'Every notification comes to your devices', day: 'One notification a day, each morning', song: 'Notifications for each Song of the Day', direct: 'Notifications for messages to you, reactions and hearts', off: 'No more notifications: they’re still in your inbox' }[MEMBER.pushme]); }, function () {});
+    });
+  });
   // notifications by email (John, 3 Nov 2026): off, each one, or one email a day with them all
   function mmDraw() {
+    pmDraw();
     var box = document.getElementById('acmm');
     box.hidden = !MEMBER || !MBASE || TV;
     if (box.hidden) return;
     var v = MEMBER.mailme || '', e = MEMBER.email || '';
-    document.getElementById('acmmt').textContent = !e ? 'Add your email address (above), and your notifications can come by email too.' : v ? 'To ' + e + '. Choose which:' : 'Your notifications can come to ' + e + ' too. Choose which:';
+    document.getElementById('acmmt').textContent = !e ? 'Add your email address (above), and you can get emails too, chosen apart from your notifications.' : 'To ' + e + ', chosen apart from your notifications. Choose which:';
     [].forEach.call(document.querySelectorAll('#acmmb button'), function (b) {
       var on = b.getAttribute('data-mm') === v; b.setAttribute('aria-selected', on ? 'true' : 'false'); b.setAttribute('aria-checked', on ? 'true' : 'false'); b.disabled = !e && b.getAttribute('data-mm') !== '';
     });
@@ -7519,7 +7542,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     b.addEventListener('click', function () {
       if (!MEMBER) return;
       var v = b.getAttribute('data-mm'); if (v === (MEMBER.mailme || '')) return;
-      msgPrefs({ mailme: v }).then(function (j) { MEMBER.mailme = j.mailme || ''; mmDraw(); toast({ all: 'Every notification comes by email too', day: 'One email a day with your notifications', song: 'An email for each Song of the Day', direct: 'Emails for messages to you, reactions and hearts' }[j.mailme] || 'No more emails'); }, function () {});
+      msgPrefs({ mailme: v }).then(function (j) { MEMBER.mailme = j.mailme || ''; mmDraw(); toast({ all: 'Every notification comes by email', day: 'One email a day with your notifications', song: 'An email for each Song of the Day', direct: 'Emails for messages to you, reactions and hearts' }[j.mailme] || 'No more emails'); }, function () {});
     });
   });
   function mailDraw() {

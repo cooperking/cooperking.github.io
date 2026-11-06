@@ -458,6 +458,17 @@
         ml.appendChild(sel);
       }
       info.appendChild(ml);
+      // their notifications, chosen apart from emails (John, 6 Nov 2026)
+      var pl = el2('label', 'pi pisel' + ((m.push || 'all') !== 'off' ? ' on' : '')); pl.appendChild(document.createTextNode('Notifications: '));
+      var psel = document.createElement('select'); psel.setAttribute('aria-label', m.name + '’s notifications');
+      ['all', 'day', 'song', 'direct', 'off'].forEach(function (k) { var o = document.createElement('option'); o.value = k; o.textContent = MAILSAY[k]; if (k === (m.push || 'all')) o.selected = true; psel.appendChild(o); });
+      psel.addEventListener('change', function () {
+        var v = psel.value; psel.disabled = true;
+        api('/members/admin', { op: 'pushmode', id: m.id, mode: v }).then(function (j) {
+          if (j.members) { MEMBERS = j.members; people(); toast(m.name + '’s notifications: ' + MAILSAY[v]); } else { psel.disabled = false; toast(j.error || 'Couldn’t change it'); }
+        });
+      });
+      pl.appendChild(psel); info.appendChild(pl);
       var sp = m.sp, spt = !sp ? 'not connected' : sp.gone ? 'needs to connect again' : sp.blocked ? 'waiting for you to add them on Spotify’s dashboard'
         : [sp.name ? 'as ' + sp.name : 'connected', sp.product === 'premium' ? 'Premium' : 'not Premium (previews only)', sp.on ? 'plays songs through Spotify' : 'Spotify playing off', sp.lists ? 'shares playlists' + (sp.auto ? ' (' + sp.auto + ' updating)' : '') : 'playlists not shared yet'].join(' · ');
       info.appendChild(el2('span', 'pi' + (sp && !sp.gone && !sp.blocked ? ' on' : ''), 'Spotify: ' + spt));
