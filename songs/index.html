@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="sotd-build" content="b393e494c369">
+<meta name="sotd-build" content="d00e016fa174">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 269 so far">
 <meta name="theme-color" content="#ec135b">
@@ -615,6 +615,7 @@ a.srchpill { padding: 5px 12px; border-radius: 999px; background: var(--pill-bg)
 .newpage { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 84px); transform: translateX(-50%); z-index: 60; padding: 9px 16px; border: 0; border-radius: 999px; background: var(--fg); color: var(--bg); font: 600 13px var(--sans); box-shadow: 0 6px 20px rgba(0,0,0,.25); cursor: pointer; }
 .newpage[hidden] { display: none; }
 .iconbtn[hidden], a.srchpill[hidden] { display: none !important; }
+html.calwait #cal, html.calwait .hero, html.calwait #picks { visibility: hidden; }   /* (John's calendar not shown before the chosen one comes) */
 .dlwhy { display: block; margin-top: 4px; font-size: 12.5px; line-height: 1.4; color: var(--muted); white-space: normal; }
 .dlwhy.gone, .dlwhy.blocked { color: #e23a6e; }
 .dlacts { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 8px; }
@@ -2110,6 +2111,11 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       </div>
     </div>
     <div class="ac-pane" id="acpane-signin" data-pane="signin" role="tabpanel" aria-labelledby="actab-signin" hidden>
+      <div class="ac-dev" id="achomebox" hidden>
+        <p class="ac-h">Opens on</p>
+        <p class="ac-none">The calendar it shows when you open it. The one you were last on comes back if you were on it within the hour.</p>
+        <label class="ac-spwhen"><select id="achome" aria-label="The calendar it opens on"></select></label>
+      </div>
       <div class="ac-dev" id="acnote" hidden>
         <p class="ac-h">Notifications</p>
         <p class="ac-none" id="acnotet"></p>
@@ -8197,7 +8203,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (!UPL.on) UPL.john = songs;
     var keep = UPL.on === view.id && !!opts.keep;
     UPL.on = view.id; UPL.view = view;
-    try { localStorage.setItem('sotd-cal', view.id); } catch (e) {}   // (this device comes back to it: uplFromHash)
+    calKeep(view.id);   // (this device comes back to it for an hour: uplFromHash)
     if (sheet.open && !keep) closeDialog(sheet, true);
     var kept = 0; list.forEach(function (x) { if (SONGX[x.track]) { songxKeep(x, true); kept++; } }); if (kept) songxSave();
     setSongs(list, keep); vidsMerge();
@@ -8962,12 +8968,12 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (!opts.quiet) UPL.linked = true;
     return uplCall(null, '?id=' + encodeURIComponent(pid)).then(function (j) {
       if (req !== UPLREQ || (opts.quiet && UPL.linked)) return false;
-      if (j.status !== 200) { if (opts.quiet) { try { localStorage.removeItem('sotd-cal'); } catch (e) {} } else toast(j.error || 'Couldn’t open that calendar'); return false; }   // (quiet: the one this device was on, gone or no longer shared with them)
-      return uplApply(j, opts);
-    }).catch(function () { toast('Couldn’t reach the site. Try again.'); return false; });
+      if (j.status !== 200) { if (opts.quiet) { calWaitOff(); try { localStorage.removeItem('sotd-cal'); } catch (e) {} } else toast(j.error || 'Couldn’t open that calendar'); return false; }   // (quiet: the one this device was on, gone or no longer shared with them)
+      var r = uplApply(j, opts); calWaitOff(); return r;
+    }).catch(function () { calWaitOff(); toast('Couldn’t reach the site. Try again.'); return false; });
   }
   function uplBack(quiet) {   // John's calendar again
-    try { localStorage.removeItem('sotd-cal'); } catch (e) {}
+    calKeep('john'); calWaitOff();
     if (!UPL.on) return;
     var list = UPL.john; UPL.on = null; UPL.view = null; UPL.john = null; UPL.undated = [];
     if (sheet.open && !quiet) closeDialog(sheet, true);
@@ -9065,12 +9071,37 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // (ids are letters, digits, _ and -: one with a hyphen was never read back, so a reload or its link lost it, John, 1 Nov 2026)
   // With no address of its own (a refresh that lost it, or the app opened again), the calendar this device was last on
   // (sotd-cal, kept until John's own is chosen again: John, 1 Nov 2026: "Could it always stay on the chosen one").
+  // which calendar it opens on (John, 6 Nov 2026: "can the members choose the playlist they want to see by default ...
+  // The reload should still reload the last one chosen, but it shouldn't last forever"): the one last chosen on this
+  // device if it was in use within the hour, else the one they chose in their Profile (Opens on), else John's; John's
+  // calendar is hidden meanwhile, so it isn't shown and then swapped
+  var CAL_FOR = 60 * 60e3;
+  function calKeep(id) { try { localStorage.setItem('sotd-cal', JSON.stringify({ id: id, at: Date.now() })); } catch (e) {} }
+  function calHome() { try { return localStorage.getItem('sotd-home') || ''; } catch (e) { return ''; } }
+  function calStart() {
+    var c = null; try { c = JSON.parse(localStorage.getItem('sotd-cal') || 'null'); } catch (e) { c = null; }   // (an old plain id: as if long ago)
+    if (c && c.id && Date.now() - (c.at || 0) < CAL_FOR) return c.id;
+    return calHome();
+  }
+  document.addEventListener('visibilitychange', function () { if (document.hidden) calKeep(UPL.on || 'john'); });   // (in use until now)
+  function calWaitOn() { document.documentElement.classList.add('calwait'); clearTimeout(calWaitOn.t); calWaitOn.t = setTimeout(calWaitOff, 7000); }
+  function calWaitOff() { document.documentElement.classList.remove('calwait'); }
+  function homeDraw() {   // Profile: Opens on
+    var sel = document.getElementById('achome'); if (!sel) return;
+    var box = document.getElementById('achomebox'), pls = uplPls().filter(function (p) { return p.st === 'ok' || p.st === undefined; });
+    box.hidden = !MEMBER || !pls.length; if (box.hidden) return;
+    var cur = calHome(); sel.textContent = '';
+    var opt = function (v, t) { var o = document.createElement('option'); o.value = v; o.textContent = t; sel.appendChild(o); };
+    opt('', 'John’s Song of the Day');
+    pls.forEach(function (p) { opt(p.id, (p.mine ? '' : p.o ? p.o + '’s: ' : '') + (p.n || p.t || 'A calendar')); });
+    sel.value = [].some.call(sel.options, function (o) { return o.value === cur; }) ? cur : '';
+  }
   function uplFromHash() {
     var m = /^#u=([\w-]+)(?:&d=(\d{1,2}-\d{1,2}-\d{4})|&m=(\d{1,2})-(\d{4}))?$/.exec(location.hash);
     if (!m && /^#\d{1,2}-\d{1,2}-\d{4}$/.test(location.hash)) { UPL.linked = true; UPLREQ++; }   // (a day on John's calendar, linked: not the calendar this device was last on)
     if (!m) {
-      var was = null; try { was = localStorage.getItem('sotd-cal'); } catch (e) {}
-      if (was && /^[\w-]{6,40}$/.test(was) && (!location.hash || location.hash === '#') && !UPL.on) { UPL.want = { id: was, quiet: true }; uplWanted(); }
+      var was = calStart();
+      if (was && was !== 'john' && /^[\w-]{6,40}$/.test(was) && (!location.hash || location.hash === '#') && !UPL.on) { calWaitOn(); UPL.want = { id: was, quiet: true }; uplWanted(); }
       return;
     }
     var d = m[2] ? m[2].split('-') : null;
@@ -10973,7 +11004,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     }).catch(function () { return false; });
   }
   document.addEventListener('visibilitychange', function () { if (!document.hidden && SPM.st) setTimeout(function () { spPickUp('back'); }, 1500); });
+  document.getElementById('achome').addEventListener('change', function () { try { if (this.value) localStorage.setItem('sotd-home', this.value); else localStorage.removeItem('sotd-home'); } catch (e) {} toast('It opens on ' + this.options[this.selectedIndex].text + ' from now on'); });
   function spDraw() {
+    homeDraw();
     var box = document.getElementById('acsp'); box.hidden = !MEMBER || !MBASE || TV; if (box.hidden) return;
     var x = SPM.st || { linked: false }, t = document.getElementById('acspt'), go = document.getElementById('acspgo'), off = document.getElementById('acspoff');
     var on = document.getElementById('acspon'), chk = document.getElementById('acspchk'), mail = document.getElementById('acspmail');
