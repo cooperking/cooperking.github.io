@@ -1035,6 +1035,8 @@ dialog#sharesheet::backdrop { background: rgba(24, 8, 24, .35); -webkit-backdrop
 .castdevs .cn span:empty { display: none; }
 .castdevs button.on { border-color: #e23a6e; }
 .castdevs .tick { color: #e23a6e; }
+.castvol { display: flex; align-items: center; gap: 12px; padding: 10px 14px 4px; font-size: 13px; color: var(--muted); }
+.castvol input { flex: 1; min-width: 0; accent-color: #e23a6e; }
 @media (hover: hover) { .castdevs button:hover { background: var(--pill-hover); } }
 /* the first time a member joins from an invite: the app, offered once (appOffer) */
 .appin { text-align: center; justify-items: center; }
@@ -3798,10 +3800,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       spCall({ op: 'transfer', device: d.id }).then(function (k) { if (k.status === 200) { SPX.dev = { id: d.id, name: d.name }; spxMovedTo(d); spxShowDev(); toast('Playing on ' + d.name); } else toast(k.error || j.error || 'Spotify didn’t move it'); });
     }).catch(function () { toast('Couldn’t reach Spotify just now'); });
   }
-  function spSpeakers() {   // the speaker icon: where songs play: their Spotify devices (moved there now if playing), this device, or AirPlay or Cast
-    var playingSp = coverObj && coverObj.sp && SPX.playing;
-    spDevPick(null, playingSp ? 'Playing on ' + ((SPX.dev && SPX.dev.name) || 'your Spotify') + '. Play it on:' : 'Play songs on:', spChoose, null, [{ here: true, name: 'This ' + nowLabel() }].concat(castAvail || NCAST ? [{ cast: true, name: AIRPLAY ? 'AirPlay speaker…' : 'Cast speaker…' }] : []));
-  }
+  function spSpeakers() { castSheet(); }   // (the one speaker list)
   function spChoose(d) {   // one chosen: this device (d.here), the phone's own list (d.cast), or one of their Spotify devices
     var playingSp = coverObj && coverObj.sp && SPX.playing;
     (function () {
@@ -3817,12 +3816,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       } else toast('Songs play on ' + d.name);
     })();
   }
-  function spDevChange() {   // the chip tapped: move what's playing to another of their devices
-    spDevPick(null, 'Playing on ' + ((SPX.dev && SPX.dev.name) || 'your Spotify') + '. Move it to another of your devices:', function (d) {
-      if (!coverObj || !coverObj.sp) return;
-      spxMoveTo(d);
-    });
-  }
+  function spDevChange() { castSheet(); }   // the chip tapped: the one speaker list, its volume there too (John, 6 Nov 2026: "All should be done within the first, more nicely formated box. No need for the second one")
   spChip.addEventListener('click', function (e) { e.stopPropagation(); spDevChange(); });
   document.getElementById('fabsp').addEventListener('click', function (e) { e.stopPropagation(); spDevChange(); });
   function spxPos() { return Math.min(SPX.dur || Infinity, SPX.pos + (SPX.playing ? Date.now() - SPX.at : 0)); }
@@ -7624,7 +7618,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       var li = document.createElement('li'), b = document.createElement('button'); b.type = 'button'; b.className = on ? 'on' : '';
       b.innerHTML = icon + '<span class="cn"><b></b><span></span></span>' + (on ? TICK_ICON : '');
       b.querySelector('b').textContent = name; b.querySelector('.cn span').textContent = sub || '';
-      b.addEventListener('click', go); li.appendChild(b); ul.appendChild(li);
+      b.addEventListener('click', go); li.appendChild(b); ul.appendChild(li); return li;
     }
     row(PHONE_ICON, 'This ' + nowLabel(), '', !castNow && !spDevId, function () {
       closeDialog(castDlg);
@@ -7634,13 +7628,20 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     });
     spUsable(castSp).forEach(function (d) {   // their Spotify ones, beside the rest (not the phone it's on, nor ones Spotify won't let be worked from here)
       var on = spDevId === d.id;
-      row(/Computer/.test(d.type) ? MAC_ICON : /Smartphone|Tablet/.test(d.type) ? PHONE_ICON : SPK_ICON, d.name, on && spNow ? 'Playing here' : on ? 'Songs play here' : d.active ? 'Playing now' : '', on, function () {
+      var li = row(/Computer/.test(d.type) ? MAC_ICON : /Smartphone|Tablet/.test(d.type) ? PHONE_ICON : SPK_ICON, d.name, on && spNow ? 'Playing here' : on ? 'Songs play here' : d.active ? 'Playing now' : '', on, function () {
         closeDialog(castDlg);
         if (on) return;
         if (castKind === 'cc') NCAST.disconnect().catch(function () {});
         SPX.pick = d.id; SPX.pickPhone = d.type === spKind(); try { sessionStorage.setItem('sotd-spdev', d.id); } catch (e) {}
         spChoose(d);
       });
+      if (on && spNow && d.canVol) {   // its volume, right there (one tap: John, 6 Nov 2026)
+        var vr = document.createElement('label'), r = document.createElement('input'), t = 0;
+        vr.className = 'castvol'; vr.innerHTML = '<span>Volume</span>';
+        r.type = 'range'; r.min = 0; r.max = 100; r.step = 1; r.value = d.vol || 0; r.setAttribute('aria-label', d.name + ' volume');
+        r.addEventListener('input', function () { d.vol = +r.value; clearTimeout(t); t = setTimeout(function () { spCall({ op: 'volume', vol: +r.value, device: d.id }).then(function (j) { if (j.status !== 200) toast(j.error || 'That speaker won’t let its volume be set from here'); }); }, 250); });
+        vr.appendChild(r); li.appendChild(vr);
+      }
     });
     if (NCAST) castDevs.forEach(function (d) {
       var on = !!castCC && castCC.name === d.name;
@@ -7667,7 +7668,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     castSp = spOn() ? null : [];
     if (spOn()) spCall({ op: 'devices' }).then(function (j) { castSp = j.devices || []; SPKS.list = spUsable(castSp); SPKS.at = Date.now(); spkDraw(); if (castDlg.open) castList(); }, function () { castSp = []; if (castDlg.open) castList(); });
     castList(); openLayer(castDlg);
-    clearTimeout(castSheet.t); castSheet.t = setTimeout(castList, 7000);
+    clearTimeout(castSheet.t); castSheet.t = setTimeout(function () { if (!document.querySelector('.castvol input:active')) castList(); }, 7000);   // (not while the volume's being moved)
   }
   document.getElementById('castclose').addEventListener('click', function () { closeDialog(castDlg); });
   if (NCAST) {
@@ -11141,7 +11142,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   });
   document.getElementById('acspwhere').hidden = true;   // (chosen with the speaker icon now: John, 3 Nov 2026)
   document.getElementById('acspwhere').addEventListener('click', function () {
-    spDevPick(null, 'Choose where songs play this visit (on this device they play where Spotify is open here).', function (d) { toast('Songs play on ' + d.name + ' this visit'); if (coverObj && coverObj.sp && SPX.playing) spCall({ op: 'transfer', device: d.id }).then(function (j) { if (j.status === 200) { SPX.dev = { id: d.id, name: d.name }; spxMovedTo(d); spxShowDev(); } }); });
+    castSheet();
   });
   document.getElementById('acspoff').addEventListener('click', function () {
     var b = this; if (!b.dataset.sure) { b.dataset.sure = '1'; b.textContent = 'Disconnect? Tap again'; setTimeout(function () { delete b.dataset.sure; b.textContent = 'Disconnect'; }, 4000); return; }
