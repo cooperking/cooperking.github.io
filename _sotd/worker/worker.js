@@ -61,6 +61,7 @@ export default {
     const url = new URL(request.url);
     try {
       if (url.pathname === '/songs.json') return await songsJson(request, env, ctx);
+      if (url.pathname === '/captions.json') return new Response((await env.SOTD.get('mainCaps')) || '{}', { headers: { 'Content-Type': 'application/json; charset=utf-8', 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'public, max-age=30' } });   // John's captions on his own calendar
       if (url.pathname === '/upl/sync') return await uplSync(request, env);
     if (url.pathname === '/upl/data') return await uplData(request, env);
     if (url.pathname === '/upl/facts') return await uplFactsIn(request, env);
@@ -1295,6 +1296,16 @@ async function members(request, url, env) {
   if (route === 'send') return memberSend(request, env, answer);
   if (route === 'sendpic') return memberSendPic(request, env, answer);
   if (route === 'prefs') return memberPrefs(request, env, answer);
+  if (route === 'captions') {   // John's captions on his own calendar (John, 6 Nov 2026: "give me the option to put it there too"): { cal } under its name, or { track, cap } on a song's page; '' none. KV mainCaps { cal, songs: { track: cap } }
+    if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
+    const who = await memberWho(request, env);
+    if (!who || who.id !== await env.SOTD.get('owner')) return answer(403, { error: 'Only John can do that.' });
+    const b = await request.json().catch(() => ({})), C = (await env.SOTD.get('mainCaps', 'json')) || {}, clean = v => String(v || '').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim().slice(0, 300);
+    if ('cal' in b) { const c = clean(b.cal); if (c) C.cal = c; else delete C.cal; }
+    if (b.track && ID_RE.test(String(b.track))) { C.songs = C.songs || {}; const c = clean(b.cap); if (c) C.songs[b.track] = c; else delete C.songs[b.track]; }
+    await env.SOTD.put('mainCaps', JSON.stringify(C));
+    return answer(200, Object.assign({ ok: true }, C));
+  }
   if (route === 'sent') return memberSent(request, env, answer);
   if (route === 'react') return memberReact(request, env, answer);
   if (route === 'bell') return memberBell(request, env, answer);
