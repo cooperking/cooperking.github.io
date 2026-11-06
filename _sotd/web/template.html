@@ -3082,7 +3082,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     } else {
       // (Chrome knows once a song's loaded: it asks whether a speaker can play that one; where it can't keep watching,
       // an Android phone shows the button anyway and the list says if there's none)
-      RPLAY.watchAvailability(function (a) { castAvail = !!a; castDraw(); }).catch(function () { castAvail = /Android/.test(navigator.userAgent); castDraw(); });
+      RPLAY.watchAvailability(function (a) { castAvail = !!a; castDraw(); if (typeof spOn === 'function' && spOn()) spLog('Chrome found Cast speakers: ' + (a ? 'yes' : 'none')); }).catch(function () { castAvail = /Android/.test(navigator.userAgent); castDraw(); });
       ['connecting', 'connect', 'disconnect'].forEach(function (n) { RPLAY.addEventListener(n, function () { castSet(RPLAY.state !== 'disconnected'); }); });
     }
   }
@@ -3902,7 +3902,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function spLog(m) {
     var d = new Date(), line = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2) + ':' + ('0' + d.getSeconds()).slice(-2) + ' ' + m;
     SPLOG.push(line); if (SPLOG.length > 40) SPLOG.shift();
-    if (!SPSEND.length && !spSendT) SPSEND.push(d.toISOString().slice(0, 10) + ' · ' + (NAT ? 'iPhone app' : APK ? 'Android app' : 'browser') + ' · ' + navigator.userAgent.replace(/^.*?\(([^)]*)\).*$/, '$1').slice(0, 60));
+    if (!SPSEND.length && !spSendT) SPSEND.push(d.toISOString().slice(0, 10) + ' · ' + (NAT ? 'iPhone app' : APK ? 'Android app' : /Edg\//.test(navigator.userAgent) ? 'Edge' : /Chrome\//.test(navigator.userAgent) ? 'Chrome' : /Safari\//.test(navigator.userAgent) ? 'Safari' : 'browser') + ' · ' + navigator.userAgent.replace(/^.*?\(([^)]*)\).*$/, '$1').slice(0, 60));
     SPSEND.push(line);
     if (document.hidden) spSendNow(); else if (!spSendT) spSendT = setTimeout(spSendNow, 3000);
   }
@@ -10976,6 +10976,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function spOn() { var x = typeof SPM !== 'undefined' && SPM ? SPM.st : null;   // (asked before it's set up too: the speaker button, as the page starts)
     return !!(MEMBER && x && x.linked && x.on && !x.blocked && !x.gone && x.product === 'premium' && !TV); }
   function spCall(body) {
+    // every command sent to Spotify, in the log (John, 6 Nov 2026: the speaker stops for a second on a reload; this shows whether the page sent it)
+    if (body && /^(play|pause|resume|next|prev|seek|transfer|volume)$/.test(body.op) && typeof spLog === 'function') spLog('sent to Spotify: ' + body.op + (body.device ? ' (a chosen device)' : ''));
     return fetch(MBASE + '/members/spotify', { method: 'POST', headers: { Authorization: 'Bearer ' + plTok(), 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { j.status = r.status; return j; }); });
   }
