@@ -7698,7 +7698,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     awayAt = 0;
     if (navigator.onLine === false || busyNow() || Date.now() - freshAt < 30e3) { if (STALE) staleOffer(); return; }
     freshAt = Date.now();
-    if (londonDay(new Date().toISOString()) !== loadedOn || (STALE && away >= 10 * 60e3)) { reloadFor(londonDay(new Date().toISOString()) !== loadedOn ? 'a new day' : 'a newer version, after ten minutes away'); return; }
+    if (londonDay(new Date().toISOString()) !== loadedOn) { reloadFor('a new day'); return; }   // (a newer version never reloads by itself: any reload brings it, and the Refresh button offers it: John, 6 Nov 2026)
     if (STALE) { staleOffer(); return; }
     staleLook(); setTimeout(function () { if (STALE) staleOffer(); }, 4000);   // (looked for now too, for next time: a button, never a reload)
   }
