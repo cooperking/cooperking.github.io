@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="d9832d87eee2">
+<meta name="sotd-build" content="8c91d0d0a7b1">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -331,15 +331,13 @@ html.upl #monthdl, html.upl-noshare #siteshare, html.upl-noshare #monthshare, ht
 .uplcap { margin: 4px 0 0; max-width: 46ch; font: italic 17px/1.45 var(--serif); color: var(--fg-2); white-space: pre-line; overflow-wrap: anywhere; }
 html.big .uplcap { flex: 0 0 100%; order: 0; }
 .uplcap[hidden] { display: none; }
-.capbtn { margin: 4px 0 0; padding: 0; border: 0; background: none; font: 600 12px/1.3 var(--sans); letter-spacing: .06em; color: #e23a6e; cursor: pointer; }
-html.big .capbtn { flex: 0 0 100%; text-align: left; }
-.capbtn[hidden] { display: none; }
+html.pe-john #pageedit .pe-g:not(.pe-capg) { display: none; }
 .askchk, .upld-same { display: flex; align-items: center; gap: 8px; margin: 10px 0 0; font: 14px/1.35 var(--sans); color: var(--fg); cursor: pointer; }
 .askchk input, .upld-same input { width: 18px; height: 18px; accent-color: #e23a6e; flex: none; }
 .askchk[hidden], .upld-same[hidden] { display: none; }
 .pick .scap[hidden] { display: none; }
-.pick .capbtn { display: block; margin-top: 8px; }
 .pick .scap { margin: 10px 0 0; padding: 2px 0 2px 12px; border-left: 3px solid #e23a6e; font: italic 16px/1.45 var(--serif); color: var(--fg); white-space: pre-line; overflow-wrap: anywhere; }
+#upled.johnmode .upled-sec ~ .upled-sec, #upled.johnmode .upled-sec .upled-row, #upled.johnmode #upledfc, #upled.johnmode label:has(#upledtt), #upled.johnmode label:has(#upledar), #upled.johnmode #upleddn { display: none; }
 .pe-captx, .upld-cap textarea { width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1.5px solid var(--line); border-radius: 12px; background: var(--pill-bg); color: var(--fg); font: italic 17px/1.4 var(--serif); resize: vertical; }
 .pe-captx:focus, .upld-cap textarea:focus { border-color: var(--fg); outline: none; }
 .upld-day.upld-cap { align-items: flex-start; }
@@ -1873,7 +1871,6 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     <p class="uplkick" id="uplkick" hidden></p>
     <h1><span id="mname"></span> <em id="myr"></em></h1>
     <p class="uplcap" id="uplcap" hidden></p>
-    <button class="linkbtn capbtn" id="maincapbtn" type="button" hidden>Add a caption</button>
     <div class="heroacts" id="heroacts">
       <p class="hsub" id="count"></p>
       <button class="heroplay" id="heroplay" type="button" aria-label="Play every song, the newest first" title="Play all"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M4.5 2.5v11l9.5-5.5z"/></svg></button>
@@ -1883,7 +1880,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     <section class="pageedit" id="pageedit" hidden aria-labelledby="peh">
       <div class="pe-head"><h2 id="peh">Editing</h2></div>
       <div class="pe-g"><h3>Name</h3><div class="pe-name" id="pe-name"></div></div>
-      <div class="pe-g"><h3>Caption</h3><textarea class="pe-captx" id="pe-cap" maxlength="300" rows="2" placeholder="A line or two, shown under its name"></textarea></div>
+      <div class="pe-g pe-capg"><h3>Caption</h3><textarea class="pe-captx" id="pe-cap" maxlength="300" rows="2" placeholder="A line or two, shown under its name"></textarea></div>
       <div class="pe-g"><h3>Picture</h3><div class="pe-pic"><span class="cal-pic" id="pe-picimg"></span><div class="pe-picacts" id="pe-picacts"></div></div></div>
       <div class="pe-g"><button class="pe-settog" id="pe-settog" type="button" aria-expanded="false" aria-controls="pe-set"><span id="pe-settogt">Calendar set-up</span><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5"/></svg></button><div class="pe-setg" id="pe-set" hidden></div></div>
       <div class="pe-g" id="pe-songsg"><h3 id="pe-songsh">Songs</h3><ol class="pe-songs" id="pe-songs"></ol></div>
@@ -5131,7 +5128,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       sh.innerHTML = SHARE_ICON;
       sh.addEventListener('click', function () { shareDay(iso, s, sh); });
       var icons = div('icons'); icons.appendChild(af); icons.appendChild(sh); if (!s.sx) icons.appendChild(ln);
-      if (s.upl && !TV && uplPls().some(function (p) { return p.id === s.upl && (p.mine || p.co); })) {   // their own song: its editor, a tap away (John, 3 Nov 2026: "easier for a member to edit a song")
+      if (!TV && ((s.upl && uplPls().some(function (p) { return p.id === s.upl && (p.mine || p.co); })) || (!s.upl && MEMBER && MEMBER.owner === true))) {   // (John's own calendar's songs too: John, 6 Nov 2026)   // their own song: its editor, a tap away (John, 3 Nov 2026: "easier for a member to edit a song")
         var edb = document.createElement('button'); edb.type = 'button'; edb.className = 'iconbtn editsong';
         edb.setAttribute('aria-label', 'Edit ' + s.title + ': its picture, details, video, files and facts'); edb.title = 'Edit this song'; edb.innerHTML = PEN_ICON;
         edb.addEventListener('click', function () { upledOpen(s); });
@@ -5160,23 +5157,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       info.appendChild(price); info.appendChild(h); info.appendChild(by); info.appendChild(al);
       var capT = s.cap || (!s.upl && MAINCAP.songs && MAINCAP.songs[s.track]) || '', scp = document.createElement('p');   // (its caption, by its owner; John's on his own calendar's: John, 6 Nov 2026)
       scp.className = 'scap'; scp.textContent = capT; scp.hidden = !capT; info.appendChild(scp);
-      if (!s.upl && MEMBER && MEMBER.owner === true && !TV) (function (s, scp) {
-        var cb = document.createElement('button'); cb.type = 'button'; cb.className = 'capbtn'; cb.textContent = scp.textContent ? 'Edit caption' : 'Add a caption';
-        cb.addEventListener('click', function (e) {
-          e.stopPropagation(); var cur = (MAINCAP.songs && MAINCAP.songs[s.track]) || '';
-          var day = (s.d && byDate[s.d] || []).filter(function (x) { return !x.upl; });
-          mainCapAsk(cur, 'A caption for “' + s.title + '”', day.length).then(function (v) {
-            if (v === null || v === undefined || v === true) return;
-            var all = day.length > 1 && document.getElementById('askchk').checked, others = all ? day.filter(function (x) { return x.track !== s.track; }).map(function (x) { return x.track; }) : [];
-            mainCapSave({ track: s.track, tracks: others, cap: v }).then(function () {
-              [].forEach.call(document.querySelectorAll('#picks .pick'), function (el) { if (el._cap && (el._cap.t === s.track || others.indexOf(el._cap.t) >= 0)) el._cap.set(v); });
-              toast(v ? (others.length ? 'Caption saved on all ' + (others.length + 1) + ' songs' : 'Caption saved') : (others.length ? 'Captions taken off' : 'Caption taken off'));
-            }, function () {});
-          });
-        });
-        info.appendChild(cb);
-        a._cap = { t: s.track, set: function (v) { scp.textContent = v; scp.hidden = !v; cb.textContent = v ? 'Edit caption' : 'Add a caption'; } };
-      })(s, scp);
+      a._cap = { t: s.track, set: function (v) { scp.textContent = v; scp.hidden = !v; } };
       if (s.upl && (s.abn || s.at)) { var adb = document.createElement('p'); adb.className = 'addedby'; var adw = s.at && Date.parse(s.at) > Date.UTC(2000, 0, 1) ? new Date(s.at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : ''; adb.textContent = s.abn ? 'Added by ' + s.abn + (adw ? ' · ' + adw : '') : adw ? 'Added on Spotify ' + adw : ''; if (adb.textContent) info.appendChild(adb); }   // (who added it on Spotify: John, 3 Nov 2026, "I can't see it")
       a.appendChild(media); a.appendChild(info);
       var tg = tagOf(s);
@@ -7193,15 +7174,11 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // John's captions on his own calendar (John, 6 Nov 2026: "give me the option to put it there too"): under its name, and
   // on its songs' pages; from the Worker (/captions.json), set by him here (Add a caption)
   var MAINCAP = {};
-  function mainCapDraw() {
-    var b = document.getElementById('maincapbtn'), c = document.getElementById('uplcap');
-    if (!b || !c || TV || (typeof UPL !== 'undefined' && UPL && UPL.on)) { if (b) b.hidden = true; return; }
+  function mainCapDraw() {   // its caption under its name (Edit, by the calendar, sets it: peJohn)
+    var c = document.getElementById('uplcap');
+    if (!c || TV || (typeof UPL !== 'undefined' && UPL && UPL.on)) return;
     c.textContent = MAINCAP.cal || ''; c.hidden = !MAINCAP.cal;
-    b.hidden = !(MEMBER && MEMBER.owner === true); b.textContent = MAINCAP.cal ? 'Edit caption' : 'Add a caption';
-  }
-  function mainCapAsk(cur, what, n) {   // the caption box: its words, or '' taken off, or null left as it was; n: songs on its day (the same for all, ticked)
-    return ask({ k: 'Caption', h: what, t: 'A line or two, shown to everyone who sees it.', input: { value: cur || '', placeholder: 'Your caption' }, ok: 'Save',
-      alt: cur ? { label: 'Take it off', now: function () { askEnd(''); } } : null, check: n > 1 ? { label: 'Same caption for all ' + n + ' songs on this day' } : null });
+    if (typeof uplEditSync === 'function') uplEditSync();
   }
   function mainCapSave(body) {
     return fetch(MBASE + '/members/captions', { method: 'POST', headers: { Authorization: 'Bearer ' + plTok(), 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
@@ -7210,9 +7187,6 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   if (MBASE && !TV) setTimeout(function () {
     fetch(MBASE + '/captions.json', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : {}; }).then(function (j) { MAINCAP = j || {}; mainCapDraw(); }).catch(function () {});
-    document.getElementById('maincapbtn').addEventListener('click', function () {
-      mainCapAsk(MAINCAP.cal, 'The calendar’s caption').then(function (v) { if (v === null || v === undefined || v === true) return; mainCapSave({ cal: v }).then(function () { toast(v ? 'Caption saved' : 'Caption taken off'); }, function () {}); });
-    });
   }, 0);
   function ownSong(s) { return s.ma || (MEMBER && MEMBER.media && MEMBER.media[s.track] && MEMBER.media[s.track].a) || ''; }   // (ma: a member's own for their song)
   function whole(s) { return !!(ownSong(s) || OFFL[s.track]); }   // a member's whole song: online, or downloaded here
@@ -8358,7 +8332,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var root = document.documentElement;
     root.classList.add('upl'); root.classList.toggle('upl-list', view.mode === 'list'); root.classList.toggle('upl-mine', !!view.mine); root.classList.toggle('upl-noshare', view.sh === 'private'); root.classList.toggle('upl-nosp', !view.sp);
     var kick = document.getElementById('uplkick'); kick.textContent = view.mode === 'list' ? '' : view.n; kick.hidden = view.mode === 'list';
-    var capEl = document.getElementById('uplcap'); capEl.textContent = view.cap || ''; capEl.hidden = !view.cap; document.getElementById('maincapbtn').hidden = true;   // (its caption)
+    var capEl = document.getElementById('uplcap'); capEl.textContent = view.cap || ''; capEl.hidden = !view.cap;   // (its caption)
     UPL.order = view.mode === 'list' ? list.map(function (x) { return x.track; }) : null; UPL.sorted = null;
     if (view.sp) document.getElementById('spfollow').setAttribute('href', 'https://open.spotify.com/playlist/' + view.sp);   // (a saved playlist's calendar has none)
     var yf = document.getElementById('ytfollow');
@@ -8373,7 +8347,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     else if (opts.month) uplMonth(opts.month);
     uplProg(view);
     if (ED.on && !uplEditCan()) uplEditOff(); else uplEditSync();
-    if (typeof PE !== 'undefined' && PE.on) { if (view.mine) peDraw(); else peOff(); }   // (editing on the page: its panel as it is now)
+    if (typeof PE !== 'undefined' && PE.on) { if (view.mine && !PE.john) peDraw(); else peOff(); }   // (editing on the page: its panel as it is now)
     return true;
   }
   function uplMonth(ym) { months.forEach(function (x, i) { if (key(x[0], x[1]) === ym) cur = i; }); render(); }
@@ -8577,9 +8551,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // notifications), its songs, and Edit days (a calendar)
   function uplOwnCan() { return !!(UPL.on && UPL.view && UPL.view.mine && !TV); }
   function uplEditSync() {
-    document.getElementById('upleditbtn').hidden = !uplOwnCan() || ED.on;
+    var johnMain = !!(MEMBER && MEMBER.owner === true && !UPL.on && !TV);   // (John's own calendar: Edit too, as any other: John, 6 Nov 2026)
+    document.getElementById('upleditbtn').hidden = !(uplOwnCan() || johnMain) || ED.on;
     var johnSee = !!(MEMBER && MEMBER.owner === true && UPL.on && UPL.view && !TV);   // (John: Missing on anyone's, to look again)
-    document.getElementById('cal').classList.toggle('has-edit', (uplOwnCan() || johnSee) && !ED.on);   // (its row only when it's there)
+    document.getElementById('cal').classList.toggle('has-edit', (uplOwnCan() || johnSee || johnMain) && !ED.on);   // (its row only when it's there)
     document.getElementById('listedit').hidden = !uplOwnCan() && !johnSee;   // (a playlist's, above its list)
     document.getElementById('upleditbtn2').hidden = !uplOwnCan();
     missSync();
@@ -8817,7 +8792,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       if (yes) uplOp({ op: 'del', id: UPL.on, track: s.track }, '“' + s.title + '” taken off', function () { if (ED.on && UPL.view) uplApply(UPL.view, { keep: true }); });
     });
   }
-  document.getElementById('upleditbtn').addEventListener('click', function () { peOn(); });
+  document.getElementById('upleditbtn').addEventListener('click', function () { if (!UPL.on) peJohn(); else peOn(); });
   document.getElementById('upleditbtn2').addEventListener('click', function () { peOn(); });
   // ---- Edit, on the page itself (John, 1 Nov 2026: "I want all the edit actions on the playlist popup to actually happen
   // directly on the page when you click edit. It needs to be more obvious ... where you can edit things and how to
@@ -8845,8 +8820,17 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (uplEditCan()) uplEditOn();   // (a calendar: its days, on the calendar itself)
     setTimeout(function () { try { document.getElementById('pageedit').scrollIntoView({ block: 'start', behavior: 'smooth' }); } catch (e) {} }, 60);
   }
+  function peJohn() {   // John's own calendar, edited as any other (John, 6 Nov 2026: "just give me the ability to edit my Song of the Day as I could any other"): its caption here; its songs, each with its pencil
+    if (!MEMBER || MEMBER.owner !== true || UPL.on || TV) return;
+    PE.on = true; PE.john = true; PE.sel = []; document.documentElement.classList.add('page-edit', 'pe-john');
+    document.getElementById('pe-cap').value = MAINCAP.cal || '';
+    document.getElementById('pageedit').hidden = false; document.getElementById('pedock').hidden = false; peDock();
+    uplEditSync();
+    setTimeout(function () { try { document.getElementById('pageedit').scrollIntoView({ block: 'start', behavior: 'smooth' }); } catch (e) {} }, 60);
+  }
   function peOff() {
     if (!PE.on) return;
+    if (PE.john) { PE.on = false; PE.john = false; document.documentElement.classList.remove('page-edit', 'pe-john'); document.getElementById('pedock').hidden = true; document.getElementById('pageedit').hidden = true; uplEditSync(); return; }
     PE.on = false; PE.sel = []; document.documentElement.classList.remove('page-edit');
     document.getElementById('pedock').hidden = true;
     var nameEl = document.getElementById('uplname'), set = document.getElementById('mineset');
@@ -9360,6 +9344,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     return 'Added on Spotify ' + when + (s.abn ? ' by ' + s.abn : '') + '.';
   }
   function upledOpen(s, focus) {   // focus (from Missing): 'v' its video, 'a' or 'p' its MP3, 'mv' its MP4: scrolled to and lit
+    if (!s.upl) { upledJohn(s); return; }   // (a song of John's own calendar)
+    upledDlg.classList.remove('johnmode'); document.getElementById('upleddh').textContent = 'Its details';
     var p = uplPls().filter(function (x) { return x.id === s.upl; })[0] || uplOwnRec(), t = tagOf(s) || { m: [], g: [] };
     UED = { p: p, s: s, m: t.m.slice(), g: t.g.slice(), tags: false };
     document.getElementById('upledk').textContent = p.mode === 'list' ? p.n : UPL.view && UPL.view.own === false && UPL.view.o ? UPL.view.o + '’s Song of the Day' : 'Your Song of the Day';
@@ -9467,6 +9453,18 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { j.status = r.status; return j; }); });
   }
   var UED_CAPSIB = [];
+  function upledJohn(s) {   // a song of John's own calendar, in the same editor: its caption (with the day's others); the rest of it is on the Songs tab in Admin for now
+    var day = (s.d && byDate[s.d] || []).filter(function (x) { return !x.upl; });
+    UED = { john: true, s: s, p: { id: '' } };
+    document.getElementById('upledk').textContent = 'Your Song of the Day';
+    document.getElementById('upleh').textContent = s.title; document.getElementById('upledby').textContent = s.artist;
+    document.getElementById('upledcap').value = (MAINCAP.songs && MAINCAP.songs[s.track]) || '';
+    UED_CAPSIB = day.filter(function (x) { return x.track !== s.track; }).map(function (x) { return x.track; });
+    document.getElementById('upledcapall').hidden = !UED_CAPSIB.length; document.getElementById('upledcapallc').checked = false;
+    document.getElementById('upledcapallt').textContent = 'Same caption for all ' + day.length + ' songs on this day';
+    upledDlg.classList.add('johnmode'); document.getElementById('upleddh').textContent = 'Its caption';
+    openLayer(upledDlg); upledDlg.scrollTop = 0;
+  }
   function upledUp(k, f) {   // their MP3 or MP4, in parts
     var ed = UED, s = ed.s, max = k === 'a' ? 80e6 : 1500e6;
     if (!(k === 'a' ? /\.mp3$/i.test(f.name || '') || f.type === 'audio/mpeg' : /\.mp4$/i.test(f.name || '') || f.type === 'video/mp4')) { toast(k === 'a' ? 'That isn’t an MP3' : 'That isn’t an MP4'); return; }
@@ -9608,6 +9606,15 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   document.getElementById('upledform').addEventListener('submit', function (e) {
     e.preventDefault();
     var ed = UED; if (!ed) return;
+    if (ed.john) {   // John's own song: its caption (and the day's others, ticked)
+      var cj = document.getElementById('upledcap').value.replace(/[ \t]+/g, ' ').trim(), allj = UED_CAPSIB.length && document.getElementById('upledcapallc').checked, oth = allj ? UED_CAPSIB.slice() : [];
+      if (cj === ((MAINCAP.songs && MAINCAP.songs[ed.s.track]) || '') && !allj) { closeDialog(upledDlg); return; }
+      mainCapSave({ track: ed.s.track, tracks: oth, cap: cj }).then(function () {
+        [].forEach.call(document.querySelectorAll('#picks .pick'), function (el) { if (el._cap && (el._cap.t === ed.s.track || oth.indexOf(el._cap.t) >= 0)) el._cap.set(cj); });
+        closeDialog(upledDlg); toast('Saved');
+      }, function () {});
+      return;
+    }
     var s = ed.s, how = (document.querySelector('input[name="upledv"]:checked') || {}).value, body = { op: 'edit', id: ed.p.id, track: s.track };
     if (how === 'found') { if ('ov' in s) body.v = null; }
     else if (how === 'none') { if (s.ov !== '') body.v = ''; }
@@ -10260,6 +10267,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     uplOp({ op: 'title', id: p.id, title: t }, t ? 'Called “' + t + '” now' : 'Its first name again');
   });
   document.getElementById('pe-cap').addEventListener('change', function () {   // its caption, saved as it's left
+    if (PE.john) { var cj = this.value.replace(/[ \t]+/g, ' ').trim(); if (cj !== (MAINCAP.cal || '')) mainCapSave({ cal: cj }).then(function () { toast(cj ? 'Caption saved' : 'Caption taken off'); }, function () {}); return; }
     var p = uplOwnRec(); if (!p) return;
     var c = this.value.replace(/[ \t]+/g, ' ').trim();
     if (c === ((UPL.view && UPL.view.cap) || '')) return;
