@@ -4,19 +4,19 @@
   "about": "For songs Claude knows: how often the three strongest moods from Last.fm listeners' track tags, from the artist's Last.fm tags, and from the audio models include Claude's first pick.",
   "listeners": [
    2,
-   3
+   4
   ],
   "audio": [
-   149,
-   256
+   151,
+   260
   ],
   "artistTags": [
    5,
    29
   ],
-  "songsWithListenerTags": 14,
-  "songsWithListenerMoodTags": 11,
-  "songsWhereListenersCount": 5
+  "songsWithListenerTags": 314,
+  "songsWithListenerMoodTags": 172,
+  "songsWhereListenersCount": 73
  },
  "moods": [
   "Joyful",
