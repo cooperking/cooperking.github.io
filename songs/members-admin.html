@@ -690,7 +690,7 @@
     var im = (MEMBERS || []).filter(function (x) { return x.id === INV.id; })[0];
     $('invplay').textContent = !im ? '' : im.email ? 'On an Android phone: Google Play’s steps, with the website’s app should Play not have them yet (add their email to the test’s email list first).'
       : 'On an Android phone: the website’s app (no email address for Google Play’s test list).';
-    try { INV.pic = localStorage.getItem(PIC_KEY) || ''; } catch (e) { INV.pic = ''; }
+    INV.pic = '';   // (each invitation starts with the latest album cover; a photo chosen is for that one only: John, 6 Nov 2026)
     INV.page = ''; INV.url = ''; $('invimg').removeAttribute('src');
     $('invshare').hidden = !navigator.share;
     $('invdlg').showModal();
@@ -706,7 +706,7 @@
         var sd = Math.min(im.naturalWidth, im.naturalHeight), c = document.createElement('canvas'); c.width = c.height = 640;
         c.getContext('2d').drawImage(im, (im.naturalWidth - sd) / 2, (im.naturalHeight - sd) / 2, sd, sd, 0, 0, 640, 640);
         INV.pic = c.toDataURL('image/jpeg', 0.88);
-        try { localStorage.setItem(PIC_KEY, INV.pic); } catch (e) {}
+
         invMake();
       } catch (e) { toast(usedWhy(e, f)); }
     }, function (e) { toast(C.fileWhy(e, f)); });
