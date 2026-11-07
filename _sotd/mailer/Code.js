@@ -16,13 +16,14 @@ function doPost(e) {
   try { b = JSON.parse(e.postData.contents); } catch (x) { return answer({ error: 'That wasn’t JSON.' }); }
   var key = PropertiesService.getScriptProperties().getProperty('MAILER_KEY');
   if (!key || b.key !== key) return answer({ error: 'Wrong key.' });
+  if (b.ping) return answer({ ok: true, v: 2 });   // (version 2: signs as the sender asked, e.g. Grifflix; the Worker asks before Grifflix's emails)
   var to = String(b.to || '');
   if (!/^[^\s@<>,;]+@[^\s@<>,;]+\.[^\s@<>,;]+$/.test(to)) return answer({ error: 'No address to send it to.' });
   if (MailApp.getRemainingDailyQuota() < 1) return answer({ error: 'Today’s emails are used up (100 a day).' });
-  var mail = { to: to, subject: String(b.subject || '').slice(0, 200), body: String(b.text || '').slice(0, 5000), name: 'John’s Song of the Day' };
+  var mail = { to: to, subject: String(b.subject || '').slice(0, 200), body: String(b.text || '').slice(0, 5000), name: String(b.name || 'John’s Song of the Day').slice(0, 60) };   // (who it's from: Grifflix's emails say Grifflix)
   if (b.html) mail.htmlBody = String(b.html).slice(0, 200000);   // (notifications: formatted, with the share picture; text stays as the plain version)
   MailApp.sendEmail(mail);
-  return answer({ ok: true, left: MailApp.getRemainingDailyQuota() });
+  return answer({ ok: true, left: MailApp.getRemainingDailyQuota(), v: 2 });
 }
 
 function answer(o) {

@@ -2,7 +2,7 @@
 """Grifflix gateway: the only thing on the Mac mini the internet reaches (through the Cloudflare Tunnel).
 
 It sits in front of Jellyfin (which stays on 127.0.0.1) and:
-- lets in Song of the Day members only: each request's member token is checked with the Worker's /members/me;
+- lets in Grifflix's members only: each request's sign-in is checked with the Worker's /g/me (Grifflix's own members);
 - gives the Grifflix page its own small API (/api/...): the library, Movie of the Day, members' own calendars
   and playlists, and where each member stopped watching;
 - passes pictures (/img/...) and video (/v/...) through from Jellyfin, with a short-lived signed key in the link
@@ -340,7 +340,7 @@ class Gateway:
             try:
                 u = urllib.parse.urlparse(WORKER)
                 c = http.client.HTTPSConnection(u.hostname, timeout=15, context=tls())
-                c.request('GET', '/members/me', headers={'Authorization': 'Bearer ' + token, 'X-App': 'grifflix', 'User-Agent': 'Grifflix gateway'})
+                c.request('GET', '/g/me', headers={'Authorization': 'Bearer ' + token, 'User-Agent': 'Grifflix gateway'})   # (Grifflix's own members, on the Worker: apart from Song of the Day's)
                 r = c.getresponse()
                 body = r.read()
                 c.close()
@@ -353,7 +353,7 @@ class Gateway:
             except Exception as e:
                 log('Worker check failed:', e)
                 return hit[1] if hit else None   # (the Worker out of reach: someone checked before keeps their way in)
-        me['uid'] = 'owner' if me.get('owner') else ('m:' + me['id'] if me.get('id') else 'n:' + me['name'].strip().lower())
+        me['uid'] = 'owner' if me.get('owner') else ('g:' + me['id'] if me.get('id') else 'n:' + me['name'].strip().lower())
         with self.me_lock:
             self.me_cache[h] = (time.time() + ME_CACHE_S, me)
         return me
