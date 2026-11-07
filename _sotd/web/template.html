@@ -5453,8 +5453,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var all = document.getElementById('sndall'), some = document.getElementById('sndsome'), who = document.getElementById('sndwho');
     all.setAttribute('aria-pressed', String(!SND.some)); some.setAttribute('aria-pressed', String(SND.some));
     who.hidden = !SND.some; who.textContent = ''; all.hidden = !!SND.only;
-    if (SND.some) (MEMBER.others || []).filter(function (o) { return !SND.only || SND.only.indexOf(o.id) !== -1; }).forEach(function (o) {
-      var l = document.createElement('label'), c = document.createElement('input'); c.type = 'checkbox'; c.checked = SND.pick.indexOf(o.id) >= 0;
+    if (SND.some) (MEMBER.mem || MEMBER.others || []).filter(function (o) { return !SND.only || SND.only.indexOf(o.id) !== -1; }).forEach(function (o) {   // (every member: those who've turned messages off shown, not ticked: John, 7 Nov 2026)
+      var l = document.createElement('label'), c = document.createElement('input'); c.type = 'checkbox'; c.checked = !o.off && SND.pick.indexOf(o.id) >= 0;
+      if (o.off) { c.disabled = true; l.title = o.name + ' has turned off messages from members'; l.appendChild(c); l.appendChild(document.createTextNode(o.name + ' (messages off)')); l.style.opacity = '.55'; who.appendChild(l); return; }
       l.className = c.checked ? 'on' : '';
       c.addEventListener('change', function () { var i = SND.pick.indexOf(o.id); if (c.checked && i < 0) SND.pick.push(o.id); if (!c.checked && i >= 0) SND.pick.splice(i, 1); l.className = c.checked ? 'on' : ''; });
       l.appendChild(c); l.appendChild(document.createTextNode(o.name)); who.appendChild(l);
@@ -10127,7 +10128,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (p.sh === 'public') return 'public';
     if (p.sh === 'private') return 'private';
     if (p.sh !== 'some') return 'every member';
-    var names = ((MEMBER && MEMBER.others) || []).filter(function (m) { return (p.to || []).indexOf(m.id) !== -1; }).map(function (m) { return m.name; });
+    var names = ((MEMBER && (MEMBER.mem || MEMBER.others)) || []).filter(function (m) { return (p.to || []).indexOf(m.id) !== -1; }).map(function (m) { return m.name; });
     return 'for ' + (names.length > 3 ? names.slice(0, 2).join(', ') + ' and ' + (names.length - 2) + ' others' : andList(names) || (p.to || []).length + ' members');
   }
   // who sees it: public (anyone with its link, and every member), every member, the members they choose, or just them
@@ -10136,7 +10137,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function uplWhoOpen(p, then) {
     uplwFor = p; uplwThen = then || null;
     [].forEach.call(document.querySelectorAll('input[name="uplwho"]'), function (r) { r.checked = r.value === (p.sh || 'members'); });
-    var box = document.getElementById('uplwl'), others = ((MEMBER && MEMBER.others) || []).slice().sort(function (a, b) { return a.name.localeCompare(b.name); });
+    var box = document.getElementById('uplwl'), others = ((MEMBER && (MEMBER.mem || MEMBER.others)) || []).slice().sort(function (a, b) { return a.name.localeCompare(b.name); });
     box.textContent = '';
     if (!others.length) { var n = document.createElement('p'); n.textContent = 'No other members yet.'; box.appendChild(n); }
     others.forEach(function (m) {
@@ -10453,7 +10454,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     document.getElementById('setday').value = d.day || todayIso;
     document.getElementById('setdayl').hidden = (d.how || 'added') === 'added';
     setRadio('setwho', p.sh || 'members');
-    var wl = document.getElementById('setwhol'), others = ((MEMBER && MEMBER.others) || []).slice().sort(function (a, b) { return a.name.localeCompare(b.name); });
+    var wl = document.getElementById('setwhol'), others = ((MEMBER && (MEMBER.mem || MEMBER.others)) || []).slice().sort(function (a, b) { return a.name.localeCompare(b.name); });
     wl.textContent = ''; wl.hidden = p.sh !== 'some';
     if (!others.length) { var n = document.createElement('p'); n.textContent = 'No other members yet.'; wl.appendChild(n); }
     others.forEach(function (m) {
