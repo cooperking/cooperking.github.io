@@ -538,14 +538,15 @@ def make_handler(g):
             ms = (it.get('MediaSources') or [{}])[0]
             msid = ms.get('Id') or iid
             br = int(q.get('br') or 20000000)
+            hevc = q.get('hevc') == '1'   # the device plays HEVC itself (the page asks it): copied, not converted
             hls = ('/v/%s/master.m3u8?' % iid) + urllib.parse.urlencode({
-                'MediaSourceId': msid, 'DeviceId': dev, 'PlaySessionId': ps, 'VideoCodec': 'h264', 'AudioCodec': 'aac,mp3',
+                'MediaSourceId': msid, 'DeviceId': dev, 'PlaySessionId': ps, 'VideoCodec': 'h264,hevc' if hevc else 'h264', 'AudioCodec': 'aac,mp3',
                 'TranscodingMaxAudioChannels': 2, 'MaxStreamingBitrate': br, 'SegmentContainer': 'mp4', 'MinSegments': 1,
                 'BreakOnNonKeyFrames': 'True', 'RequireAvc': 'false', 'g': key})
             direct = None
             vs = [s for s in ms.get('MediaStreams', []) if s.get('Type') == 'Video']
             aus = [s for s in ms.get('MediaStreams', []) if s.get('Type') == 'Audio']
-            if (ms.get('Container') or '') in ('mp4', 'm4v', 'mov') and vs and (vs[0].get('Codec') or '') in ('h264', 'hevc') \
+            if (ms.get('Container') or '') in ('mp4', 'm4v', 'mov') and vs and (vs[0].get('Codec') or '') in (('h264', 'hevc') if hevc else ('h264',)) \
                     and all((a.get('Codec') or '') in ('aac', 'mp3', 'ac3', 'eac3') for a in aus[:1]):
                 direct = '/v/%s/stream?' % iid + urllib.parse.urlencode({'Static': 'true', 'MediaSourceId': msid, 'g': key})
             subs = [{'label': s.get('DisplayTitle') or s.get('Language') or 'Subtitles', 'lang': s.get('Language') or '',
