@@ -4419,7 +4419,7 @@ function uplCan(all, viewer, rec) {   // whether someone sees this playlist (vie
 }
 function uplList(all, viewer, U) {   // the playlists a member can switch to (/members/me pls)
   return Object.entries(U).filter(([, r]) => uplCan(all, viewer, r))
-    .map(([pid, r]) => Object.assign({ id: pid, n: uplName(all, r), t: uplTitle(all, r), o: all[r.o].name, mode: r.mode, cnt: r.cnt || 0, sp: r.sp, src: uplSrc(r), sh: uplShareOf(r) }, r.yt ? { yt: r.yt } : {}, r.pic ? { pic: LIVE_ORIGIN + '/up/' + pid + '.jpg?v=' + r.pic } : {}, r.pcov ? { pst: 'cov' } : r.pst ? { pst: r.pst } : {}, uplCo(r, viewer) ? { co: true } : {}, r.o === viewer ? { mine: true, auto: !!r.auto, spl: r.spid ? 1 : undefined, cw: r.cw || [], pl: r.pl || '', fk: r.fk || '', adds: r.adds || [], moved: r.dd ? Object.keys(r.dd).length : 0, st: r.st, err: r.err || '', sn: r.n || '', to: uplShareOf(r) === 'some' ? r.to || [] : [], dates: r.mode === 'list' ? null : Object.assign({ how: 'added' }, r.dates || {}), send: uplSendOf(r) } : {}))
+    .map(([pid, r]) => Object.assign({ id: pid, n: uplName(all, r), t: uplTitle(all, r), o: all[r.o].name, mode: r.mode, cnt: r.cnt || 0, sp: r.sp, src: uplSrc(r), sh: uplShareOf(r) }, r.yt ? { yt: r.yt } : {}, r.pic ? { pic: LIVE_ORIGIN + '/up/' + pid + '.jpg?v=' + r.pic } : {}, r.pcov ? { pst: 'cov' } : r.pst ? { pst: r.pst } : {}, r.cvt ? { cvt: r.cvt } : {}, r.cvb ? { cvb: r.cvb } : {}, r.art ? { art: { k: r.art.k, url: LIVE_ORIGIN + '/up/' + pid + '-art.jpg?v=' + r.art.v } } : {}, uplCo(r, viewer) ? { co: true } : {}, r.o === viewer ? { mine: true, auto: !!r.auto, spl: r.spid ? 1 : undefined, cw: r.cw || [], pl: r.pl || '', fk: r.fk || '', adds: r.adds || [], moved: r.dd ? Object.keys(r.dd).length : 0, st: r.st, err: r.err || '', sn: r.n || '', to: uplShareOf(r) === 'some' ? r.to || [] : [], dates: r.mode === 'list' ? null : Object.assign({ how: 'added' }, r.dates || {}), send: uplSendOf(r) } : {}))
     .sort((a, b) => (b.mine ? 2 : b.co ? 1 : 0) - (a.mine ? 2 : a.co ? 1 : 0) || a.o.localeCompare(b.o) || a.n.localeCompare(b.n));
 }
 async function uplMine(env, pls, U) {   // their own playlists' songs waiting for them to sign off (wait: the newest 20, oldest first)
@@ -5748,7 +5748,21 @@ async function memberUplPic(request, url, env, answer) {
   if (!env.MEDIA) return answer(503, { error: 'Pictures can’t be added yet.' });
   const U = await uplAll(env), pid = url.searchParams.get('id') || '', rec = U[pid];
   if (!rec || rec.o !== who.id) return answer(404, { error: 'No such playlist of yours.' });
-  const pop = url.searchParams.get('op');   // drop: the album-style picture made for it (the default: John, 7 Nov 2026); covers: its newest covers
+  const pop = url.searchParams.get('op');
+  if (pop === 'words') {   // its own words on its cover (John, 7 Nov 2026: "the option to change the wording on a playlist cover"): t its name there, b below the rule; '' as it comes
+    const body = await request.json().catch(() => ({})), cl = (v, n) => String(v || '').replace(/\s+/g, ' ').trim().slice(0, n);
+    if ('t' in body) { const t = cl(body.t, 60); if (t) rec.cvt = t; else delete rec.cvt; }
+    if ('b' in body) { const b = cl(body.b, 120); if (b) rec.cvb = b; else delete rec.cvb; }
+    await uplPut(env, U); return answer(200, { ok: true, pls: await uplMine(env, uplList(who.all, who.id, U), U) });
+  }
+  if (pop === 'art') {   // its drawn cover, kept for every device (John, 7 Nov 2026: "Can a playlist cover be saved to all devices"): k says what it shows, so a changed one is drawn again
+    const body = await request.json().catch(() => ({})), b64 = String(body.art || '').replace(/^data:image\/jpeg;base64,/, '');
+    if (!b64 || b64.length > UPL_COVER_MAX * 4 / 3 || !/^[A-Za-z0-9+/=]+$/.test(b64)) return answer(400, { error: 'The picture is missing or too big.' });
+    await env.MEDIA.put('up/' + pid + '-art.jpg', Uint8Array.from(atob(b64), ch => ch.charCodeAt(0)), { httpMetadata: { contentType: 'image/jpeg' } });
+    rec.art = { k: String(body.k || '').slice(0, 600), v: Date.now() };
+    await uplPut(env, U); return answer(200, { ok: true, pls: await uplMine(env, uplList(who.all, who.id, U), U) });
+  }
+  // drop: the album-style picture made for it (the default: John, 7 Nov 2026); covers: its newest covers
   const pst = url.searchParams.get('style');   // album, mos (all its covers small) or cov (its newest four): chosen; drop: as it comes (a collaborative one's covers, else the album style)
   if (pop === 'drop' || pop === 'covers' || pop === 'style') { await env.MEDIA.delete('up/' + pid + '.jpg'); delete rec.pic; delete rec.pcov; delete rec.pst; if (pop === 'covers') rec.pst = 'cov'; else if (pop === 'style' && ['album', 'mos', 'cov'].includes(pst)) rec.pst = pst; }
   else {

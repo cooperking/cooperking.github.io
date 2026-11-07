@@ -26,7 +26,7 @@ self.addEventListener('fetch', e => {
   if (url.hostname === 'i.scdn.co' || (/\.workers\.dev$/.test(url.hostname) && url.pathname.startsWith('/sp/c/'))) { e.respondWith(cover(req)); return; }   // (covers: Spotify's, or the copies the Worker keeps)
   const home = new URL(self.registration.scope).pathname;
   if (req.mode === 'navigate' && url.origin === location.origin && (url.pathname === home || url.pathname === home + 'index.html')) {
-    e.respondWith(fresh(req, new Request(self.registration.scope))); return;   // the calendar itself (not the day pages or others here)
+    e.respondWith(fresh(req, new Request(self.registration.scope), 1500)); return;   // the calendar itself (not the day pages or others here): its kept copy if the network is slow (John, 7 Nov 2026: the iPhone app reloading to a blank screen)
   }
   const data = (url.origin === location.origin && /\.(json|webmanifest)$/.test(url.pathname))
     || (/\.workers\.dev$/.test(url.hostname) && url.pathname === '/songs.json')
@@ -34,13 +34,23 @@ self.addEventListener('fetch', e => {
   if (data) e.respondWith(fresh(req, new Request(url.origin === location.origin ? url.origin + url.pathname : url.href)));   // the site's own data whatever's after its address
 });
 
-// the network first; the last copy kept when there's no connection (or the network fails)
-async function fresh(req, key) {
+// the network first; the last copy kept when there's no connection (or the network fails); with wait, the kept copy
+// as soon as the network's taken that long (the fresh one still kept, for next time and the page's Refresh)
+async function fresh(req, key, wait) {
   const c = await caches.open(SHELL);
+  const net = fetch(req).then(r => { if (r.ok || r.type === 'opaque') c.put(key, r.clone()).catch(() => {}); return r; });
+  if (wait) {
+    const hit = await c.match(key);
+    if (hit) {
+      const late = new Promise(res => setTimeout(() => res(null), wait));
+      const first = await Promise.race([net.catch(() => null), late]);
+      if (first) return first;
+      net.catch(() => {});   // (still kept when it comes)
+      return hit;
+    }
+  }
   try {
-    const r = await fetch(req);
-    if (r.ok || r.type === 'opaque') c.put(key, r.clone()).catch(() => {});
-    return r;
+    return await net;
   } catch (err) {
     const hit = await c.match(key);
     if (hit) return hit;

@@ -417,6 +417,10 @@ html.big.page-edit .pedock { left: 28px; right: calc(var(--pe-w) + 44px); }
 .pe-pic { display: flex; align-items: center; gap: 14px; }
 .pe-pic .cal-pic { width: 96px; flex: none; }
 .pe-picacts, .pe-more { display: flex; flex-wrap: wrap; gap: 8px; }
+.pe-words { display: grid; gap: 8px; margin-top: 12px; }
+.pe-words label { display: grid; gap: 4px; font: 600 10.5px/1.2 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.pe-words input { padding: 10px 12px; border: 1.5px solid var(--line); border-radius: 12px; background: var(--pill-bg); color: var(--fg); font: 16px var(--sans); text-transform: none; letter-spacing: 0; }
+.pe-words[hidden] { display: none; }
 .pe-picacts button, .pe-more button { height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: var(--pill-bg); box-shadow: inset 0 0 0 1px var(--line); color: var(--fg); font: 600 11px/1 var(--sans); letter-spacing: .1em; text-transform: uppercase; cursor: pointer; }
 .pe-more button.x { color: #e23a6e; }
 .pe-tip { margin: -4px 0 0; font-size: 13px; line-height: 1.4; color: var(--fg); opacity: .75; }
@@ -1859,7 +1863,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       <div class="pe-head"><h2 id="peh">Editing</h2></div>
       <div class="pe-g"><h3>Name</h3><div class="pe-name" id="pe-name"></div></div>
       <div class="pe-g pe-capg"><h3>Caption</h3><textarea class="pe-captx" id="pe-cap" maxlength="300" rows="2" placeholder="A line or two, shown under its name"></textarea></div>
-      <div class="pe-g"><h3>Picture</h3><div class="pe-pic"><span class="cal-pic" id="pe-picimg"></span><div class="pe-picacts" id="pe-picacts"></div></div></div>
+      <div class="pe-g"><h3>Picture</h3><div class="pe-pic"><span class="cal-pic" id="pe-picimg"></span><div class="pe-picacts" id="pe-picacts"></div></div><div class="pe-words" id="pe-words"><label><span>Words on its cover</span><input type="text" id="pe-cvt" maxlength="60" autocomplete="off"></label><label><span>Below the line</span><input type="text" id="pe-cvb" maxlength="120" autocomplete="off"></label></div></div>
       <div class="pe-g"><button class="pe-settog" id="pe-settog" type="button" aria-expanded="false" aria-controls="pe-set"><span id="pe-settogt">Calendar set-up</span><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5"/></svg></button><div class="pe-setg" id="pe-set" hidden></div></div>
       <div class="pe-g" id="pe-songsg"><h3 id="pe-songsh">Songs</h3><ol class="pe-songs" id="pe-songs"></ol></div>
       <div class="pe-g" id="pe-cwg"><h3>Who can edit</h3><p class="pe-cwn" id="pe-cwn"></p><div class="snd-who" id="pe-cw" role="group" aria-label="Members who can edit it"></div></div>
@@ -8884,6 +8888,15 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var pa = document.getElementById('pe-picacts'); pa.textContent = '';
     var btn = function (box, label, cls, fn) { var b = document.createElement('button'); b.type = 'button'; b.textContent = label; if (cls) b.className = cls; b.addEventListener('click', fn); box.appendChild(b); return b; };
     picActs(pa, p, btn);
+    var pw = document.getElementById('pe-words'), stp = picStyle(p); pw.hidden = stp === 'photo' || stp === 'cov';   // (its own words: on the drawn covers)
+    var cvt = document.getElementById('pe-cvt'), cvb = document.getElementById('pe-cvb'), who0 = ((CARDS[p.id] || {}).who || []);
+    if (document.activeElement !== cvt) cvt.value = p.cvt || ''; cvt.placeholder = p.n || '';
+    if (document.activeElement !== cvb) cvb.value = p.cvb || ''; cvb.placeholder = (p.mode === 'list' ? 'A playlist by ' : 'A calendar by ') + (who0.length > 1 ? andNames(who0) : p.mine ? (MEMBER && MEMBER.name) || '' : p.o || '');
+    cvt.onchange = cvb.onchange = function () {
+      var t = cvt.value.replace(/\s+/g, ' ').trim(), b2 = cvb.value.replace(/\s+/g, ' ').trim();
+      if (t === (p.cvt || '') && b2 === (p.cvb || '')) return;
+      upledPost('uplpic?id=' + encodeURIComponent(p.id) + '&op=words', { t: t, b: b2 }).then(function (j) { if (j.status !== 200) { toast(j.error || 'Couldn’t change it just now'); return; } MEMBER.pls = j.pls; uplMark(); peDraw(); toast('Its cover’s words changed'); });
+    };
     var more = document.getElementById('pe-more'); more.textContent = '';
     // its notifications, in sight (John, 4 Nov 2026: "I can't see any way to update notification settings from a shared playlist now": they were only inside the closed set-up)
     var snd = p.send || {}; btn(more, 'Notifications: ' + (snd.on ? 'on, at ' + (snd.at || '08:00') : 'off'), '', function () { peSetShow(true); setTimeout(function () { setGo('send'); }, 60); });
@@ -9195,14 +9208,14 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     for (var r = R * .97; r > R * .4; r -= S * .0085) { g.beginPath(); g.arc(cx, cy, r, 0, 7); g.strokeStyle = 'rgba(255,255,255,.07)'; g.lineWidth = 1; g.stroke(); }
     var shine = g.createLinearGradient(cx - R, cy - R, cx + R, cy + R); shine.addColorStop(.3, 'rgba(255,255,255,0)'); shine.addColorStop(.5, 'rgba(255,255,255,.12)'); shine.addColorStop(.7, 'rgba(255,255,255,0)');
     g.beginPath(); g.arc(cx, cy, R, 0, 7); g.fillStyle = shine; g.fill();
-    g.beginPath(); g.arc(cx, cy, R * .34, 0, 7); g.fillStyle = pal[(P.h >> 3) % 4 + 1]; g.fill();
+    g.beginPath(); g.arc(cx, cy, R * .34, 0, 7); g.fillStyle = pal[(P.h >>> 3) % 4 + 1]; g.fill();
     g.beginPath(); g.arc(cx, cy, R * .035, 0, 7); g.fillStyle = '#0d0d10'; g.fill();
     g.save(); g.shadowColor = 'rgba(0,0,0,.4)'; g.shadowBlur = S * .045; g.shadowOffsetY = S * .012; rrect(g, sx, sy, sz, sz, S * .014); g.fillStyle = pal[0]; g.fill(); g.restore();
     g.save(); rrect(g, sx, sy, sz, sz, S * .014); g.clip(); front(g, sx, sy, sz, pal, P.h); g.restore();
     return c.toDataURL('image/jpeg', .88);
   }
   function sleeveWords(g, o, x, y, sz, onPic) {   // its people or owner small, its name big (its last line in italics, as "the Day"), a rule and what it is
-    var pad = sz * .13, wide = sz - pad * 2, words = String(o.n || 'Playlist').split(/\s+/), size = sz * .19, lines, people = o.who && o.who.length > 1 ? o.who : o.o ? [o.o] : [], many = people.length > 2;
+    var pad = sz * .13, wide = sz - pad * 2, words = String(o.title || o.n || 'Playlist').split(/\s+/), size = sz * .19, lines, people = o.who && o.who.length > 1 ? o.who : o.o ? [o.o] : [], many = people.length > 2;
     var lf = '600 ' + Math.round(sz * (many ? .043 : .055)) + 'px "Hanken Grotesk", Helvetica, Arial, sans-serif', ls = Math.round(sz * (many ? .005 : .012)) + 'px';   // (a collaborative one's names a little smaller, so more of them fit)
     g.font = lf; if (g.letterSpacing !== undefined) g.letterSpacing = ls;
     var label = artLabel(o, g, wide); if (g.letterSpacing !== undefined) g.letterSpacing = '0px';
@@ -9215,27 +9228,27 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     lines.forEach(function (l, i) { g.font = (lines.length > 1 && i === lines.length - 1 ? 'italic 400 ' : '500 ') + Math.round(size) + 'px Newsreader, Georgia, serif'; g.fillText(l, x + pad, ty + i * size * .98); });
     var ly = y + sz * (many ? .66 : .76); g.shadowBlur = 0; g.fillStyle = 'rgba(255,255,255,.75)'; g.fillRect(x + pad, ly, wide, Math.max(1, sz * .004));
     g.fillStyle = '#fff'; if (onPic) { g.shadowColor = 'rgba(0,0,0,.55)'; g.shadowBlur = sz * .03; }
-    if (!people.length) {
+    if (!people.length && !o.by) {
       g.font = '600 ' + Math.round(sz * .045) + 'px "Hanken Grotesk", Helvetica, Arial, sans-serif'; if (g.letterSpacing !== undefined) g.letterSpacing = Math.round(sz * .012) + 'px';
       g.fillText(o.mode === 'list' ? 'A PLAYLIST' : 'A CALENDAR', x + pad, ly + sz * .1); if (g.letterSpacing !== undefined) g.letterSpacing = '0px';
       return;
     }
     // a collaborative one's people, every one of them (John, 7 Nov 2026: "The and 2 more will be upsetting to the people
     // missed out"): below its rule, over as many lines as it takes, smaller until they all fit
-    var names = [o.mode === 'list' ? 'A playlist by' : 'A calendar by'].concat(people.map(function (n, i) { return n + (i < people.length - 2 ? ',' : i === people.length - 2 ? ' &' : ''); })), bottom = y + sz - pad * .7, top = ly + sz * .05, nl, fs = sz * .052;
+    var names = o.by ? String(o.by).split(/\s+/) : [o.mode === 'list' ? 'A playlist by' : 'A calendar by'].concat(people.map(function (n, i) { return n + (i < people.length - 2 ? ',' : i === people.length - 2 ? ' &' : ''); })), bottom = y + sz - pad * .7, top = ly + sz * .05, nl, fs = sz * .052;
     var wrapN = function (f) { g.font = '600 ' + Math.round(f) + 'px "Hanken Grotesk", Helvetica, Arial, sans-serif'; if (g.letterSpacing !== undefined) g.letterSpacing = Math.max(0, Math.round(f * .12)) + 'px'; var out = [], cur = ''; names.forEach(function (w) { var t = cur ? cur + ' ' + w : w; if (g.measureText(t.toUpperCase()).width > wide && cur) { out.push(cur); cur = w; } else cur = t; }); if (cur) out.push(cur); return out; };
     for (;;) { nl = wrapN(fs); if (nl.length * fs * 1.3 <= bottom - top || fs < sz * .028) break; fs *= .92; }
     nl.forEach(function (l, i) { g.fillText(l.toUpperCase(), x + pad, top + fs + i * fs * 1.3); });
     if (g.letterSpacing !== undefined) g.letterSpacing = '0px';
   }
   function albumArt(o) {   // the album style: its name and whose it is on the sleeve
-    var key = 'sotd-art6:' + (o.id || '') + '|' + (o.n || '') + '|' + (o.o || '') + '|' + (o.mode || '') + '|' + (o.who || []).join(',');
+    var key = 'sotd-art7:' + (o.id || '') + '|' + (o.title || o.n || '') + '|' + (o.by || '') + '|' + (o.o || '') + '|' + (o.mode || '') + '|' + (o.who || []).join(',');
     if (ART[key]) return ART[key];
     try { var kept = localStorage.getItem(key); if (kept) return (ART[key] = kept); } catch (e) {}   // (drawn once, kept on this device: John, 7 Nov 2026, "It shouldn't draw every time. Just once")
     if (!o.now) return '';   // (not drawn yet: drawn just after the picker opens, then kept)
     ART[key] = sleeveArt(o, function (g, x, y, sz, pal, h) {
-      var f = g.createLinearGradient(x, y, x + sz, y + sz); f.addColorStop(0, pal[(h >> 5) % 4 + 1]); f.addColorStop(1, pal[0]); g.fillStyle = f; g.fillRect(x, y, sz, sz);
-      blobs(g, x, y, sz, sz, pal.slice(1), (h >> 2) % 4);
+      var f = g.createLinearGradient(x, y, x + sz, y + sz); f.addColorStop(0, pal[(h >>> 5) % 4 + 1]); f.addColorStop(1, pal[0]); g.fillStyle = f; g.fillRect(x, y, sz, sz);
+      blobs(g, x, y, sz, sz, pal.slice(1), (h >>> 2) % 4);
       sleeveWords(g, o, x, y, sz, false);
     });
     if (ART.fonts) try { localStorage.setItem(key, ART[key]); } catch (e) {}   // (kept once its fonts are in)
@@ -9243,7 +9256,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   var MOSING = {};
   function albumMosaic(o, urls, done) {   // all its covers small on the sleeve, its name and people over them
-    var key = 'sotd-mos7:' + o.id + '|' + o.n + '|' + (o.who || []).join(',') + '|' + urls.length + '|' + (urls[0] || '');
+    var key = 'sotd-mos8:' + o.id + '|' + (o.title || o.n) + '|' + (o.by || '') + '|' + (o.who || []).join(',') + '|' + urls.length + '|' + (urls[0] || '');
     if (ART[key]) return ART[key];
     try { var kept = localStorage.getItem(key); if (kept) return (ART[key] = kept); } catch (e) {}
     if (!o.now || MOSING[key] || urls.length < 4) return '';
@@ -9268,13 +9281,25 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     }
     return '';
   }
+  function artSig(p, card, st) {   // what its drawn cover shows: when this changes, it's drawn again
+    return 'v1|' + st + '|' + (p.cvt || p.n || '') + '|' + (p.cvb || '') + '|' + (p.mine ? (MEMBER && MEMBER.name) || '' : p.o || '') + '|' + (p.mode || '') + '|' + ((card.who || []).join(',')) + (st === 'mos' ? '|' + (card.all || []).length + '|' + ((card.all || [])[0] || '') : '');
+  }
+  var ARTUP = {};
+  function artSend(p, sig, art) {   // its owner's drawing, kept on the site for all their devices and everyone who sees it
+    if (!p.mine || !art || !ART.fonts || ARTUP[sig] || (st0(p) === 'mos' && !CARDS[p.id]) || TV) return;   // (only once its fonts are in: never kept for everyone in a stand-in font)
+    ARTUP[sig] = 1;
+    upledPost('uplpic?id=' + encodeURIComponent(p.id) + '&op=art', { art: art, k: sig }).then(function (j) { if (j.status === 200 && j.pls) { MEMBER.pls = j.pls; } }).catch(function () { delete ARTUP[sig]; });
+  }
+  function st0(p) { return picStyle(p); }
   function picStyle(p) { return p.pic ? 'photo' : p.pst || (((CARDS[p.id] || {}).who || []).length > 1 ? 'mos' : 'album'); }   // (as chosen; else a collaborative one's covers, else the album style)
   function calPics(p, covers, again) {   // its photo; else its covers, if chosen; else the album-style one (its covers if that can't be drawn here)
-    var st = picStyle(p), card = CARDS[p.id] || {}, o = { id: p.id, n: p.n, o: p.mine ? (MEMBER && MEMBER.name) || '' : p.o, mode: p.mode, now: calPics.now, who: card.who };
+    var st = picStyle(p), card = CARDS[p.id] || {}, o = { id: p.id, n: p.n, title: p.cvt || '', by: p.cvb || '', o: p.mine ? (MEMBER && MEMBER.name) || '' : p.o, mode: p.mode, now: calPics.now, who: card.who };
     if (st === 'photo') return [p.pic];
     if (st === 'cov') return covers;
-    if (st === 'mos') { try { var mo = albumMosaic(o, card.all || [], again); if (mo) return [mo]; } catch (e) {} }   // (until it's drawn: the album style)
-    try { var art = albumArt(o); return art ? [art] : covers; }
+    var sig = artSig(p, card, st);
+    if (p.art && p.art.k === sig) return [p.art.url];   // (drawn once and kept for every device: John, 7 Nov 2026)
+    if (st === 'mos') { try { var mo = albumMosaic(o, card.all || [], again); if (mo) { artSend(p, sig, mo); return [mo]; } } catch (e) {} }   // (until it's drawn: the album style)
+    try { var art = albumArt(o); if (art && st === 'album') artSend(p, sig, art); return art ? [art] : covers; }
     catch (e) { if (!calPics.said && typeof spLog === 'function') { calPics.said = true; spLog('album-style picture couldn’t be drawn: ' + ((e && e.message) || e)); } return covers; }
   }   // its photo; else its covers, if chosen; else the album-style one
   function picActs(box, p, btn) {   // the picture's choices: a photo, the album-style one, its covers (those it isn't now)
