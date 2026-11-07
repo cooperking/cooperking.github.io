@@ -41,7 +41,8 @@
   <div class="bar"><span class="name">Grifflix <em>admin</em></span><a class="glassbtn" href="/grifflix/">Grifflix</a></div>
 
   <div id="gate" class="gate" hidden><div class="card"><h2>Only <em>John</em></h2><p class="stat" id="gatewhy">This page is for John, signed in to Grifflix on this device.</p>
-    <div class="links"><a class="btn primary" href="/grifflix/" id="gatego">Open Grifflix</a><button class="btn" id="seed" type="button" hidden>Start Grifflix’s members</button></div></div></div>
+    <div class="links"><a class="btn primary" href="/grifflix/" id="gatego">Open Grifflix</a><button class="btn" id="seed" type="button" hidden>Start Grifflix’s members</button></div>
+    <div class="newrow" id="seedcode" hidden><input type="text" class="name" id="scode" placeholder="6-letter code" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false"><button class="btn primary" id="seed2" type="button">Start</button></div></div></div>
 
   <div id="app" hidden>
     <div class="top"><h1>Grifflix <em>admin</em></h1><p class="sub" id="hello"></p></div>
@@ -103,15 +104,23 @@
     $('#app').hidden = false; $('#hello').innerHTML = 'Signed in as <b>' + esc(me.name) + '</b>';
     members(); draftLive(); notes(); mac();
   }).catch(function () {
-    var other = store.get('sotd-member');
-    gate(other ? 'Grifflix has no members of its own yet. Start them from your existing members: their names and emails are copied, and nobody is signed in until you send them a Grifflix invitation. You’re signed in first, on this device.' : null, !!other);
+    // not signed in to Grifflix here: has Grifflix its members yet? (asked without a sign-in, the Worker says which)
+    fetch(WORKER + '/g/admin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"op":"list"}' }).then(function (r) { return r.json(); }).then(function (j) {
+      if (!/hasn’t its members/.test(j.error || '')) return gate('Grifflix isn’t signed in on this device. Sign in on Grifflix with a code from your Profile there (Account, Get a code), then come back.');
+      var other = store.get('sotd-member'), why = 'Grifflix has no members of its own yet. Start them from your existing members: their names and emails are copied, and nobody is signed in until you send them a Grifflix invitation. You’re signed in first, on this device.';
+      gate(other ? why : why + ' To show it’s you: in your Profile on your other site, Get a code, and type it here.', !!other);
+      $('#seedcode').hidden = !!other; $('#gatego').hidden = true;
+    }).catch(function () { gate('Couldn’t check just now. Try again in a minute.'); });
   });
-  $('#seed').onclick = function () {
-    var b = this; b.disabled = true;
+  function seed(b, body, tok) {
+    b.disabled = true;
     var did = store.get('grifflix-device') || Math.random().toString(36).slice(2, 14); store.set('grifflix-device', did);
-    g('admin', { op: 'seed', device: did }, store.get('sotd-member')).then(function (j) { store.set('grifflix-member', j.token); toast(j.members + ' members ready'); setTimeout(function () { location.reload(); }, 800); })
+    body.op = 'seed'; body.device = did;
+    g('admin', body, tok).then(function (j) { store.set('grifflix-member', j.token); toast(j.members + ' members ready'); setTimeout(function () { location.reload(); }, 800); })
       .catch(function (e) { b.disabled = false; toast(e.message); });
-  };
+  }
+  $('#seed').onclick = function () { seed(this, {}, store.get('sotd-member')); };
+  $('#seed2').onclick = function () { var c = $('#scode').value.trim(); if (!c) return toast('The code?'); seed(this, { code: c }, 'none'); };
 
   // ---- members and their invitations
   var MEM = [];
