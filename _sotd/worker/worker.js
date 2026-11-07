@@ -90,6 +90,8 @@ export default {
       if (url.pathname === '/facts/video') return await factsSignoff(request, env, true);
       if (url.pathname === '/facts/picks') return new Response((await env.SOTD.get('videoPicks')) || '{}', { headers: factsHeaders('*') });
       if (url.pathname === '/facts/redo') return await factsRedo(request, env);
+      if (url.pathname.startsWith('/g/')) return await grifflix(request, url, env);   // Grifflix's own members (apart from the songs')
+      if (url.pathname.startsWith('/gi/')) return await gInvitePage(url, env);
       if (url.pathname.startsWith('/members/')) return await members(request, url, env);
       if (url.pathname === '/push/check') return await pushCheck(request, env, ctx);
       if (url.pathname.startsWith('/m/')) return await mediaFile(request, url, env);
@@ -120,6 +122,7 @@ export default {
       await uplLook(env).catch(e => console.log('uplLook: ' + (e && e.message)));
     })().catch(e => console.log('scheduled: ' + (e && e.message))));
     ctx.waitUntil(appUpdates(env).catch(e => console.log('appUpdates: ' + (e && e.message))));
+    ctx.waitUntil(gDaily(env).then(r => { if (r && typeof r === 'object') console.log('gDaily: ' + JSON.stringify(r)); }).then(() => gWeekly(env)).catch(e => console.log('grifflix: ' + (e && e.message))));   // (Grifflix: its Movie of the Day and Monday's summaries)
     ctx.waitUntil(catalogHeal(env).catch(e => console.log('catalogHeal: ' + (e && e.message))));
     ctx.waitUntil((async () => {   // once: playlists' own files that were only part of the song (the download code before its length check: John, 7 Nov 2026), taken off so they show as missing again (each playlist's record written once)
       if (!env.MEDIA || await env.SOTD.get('ownShort3')) return;
@@ -1234,27 +1237,361 @@ function randomCode(bytes) { return b64url(crypto.getRandomValues(new Uint8Array
 // John signed in on the calendar (the site's owner): his own songs edited there as any member's (John, 6 Nov 2026: "I should
 // be able to edit everything in my own playlist just as others can theirs"): the Songs tab's saves (pictures, files,
 // videos, facts, moods and genres) take his sign-in as well as the admin password, for those alone
-// Grifflix (John's films, /grifflix/): Publish on its admin page (grifflix/admin.html) puts its draft live:
-// grifflix-golive.yml builds grifflix/index.html from _grifflix/web/template.html, as the draft is. John's own sign-in
-// only. KV gfgolive: when he last pressed it, for the admin page to follow the run. (John, 7 Nov 2026: "give me a
-// similar admin page with publish for changes")
-async function memberGrifflix(request, env, answer) {
+// ---------------------------------------------------------------- Grifflix (John's films, /grifflix/)
+// Completely apart from Song of the Day (John, 7 Nov 2026: "they should have separate profiles and it should be treated
+// as completely separate. When I'm ready, I will send them nicely made invites in the same way"): its own members (KV
+// gmembers: names and emails copied from the songs' once, to start; nobody signed in until a Grifflix invitation), its
+// own sign-ins, invitations (/gi/<id>, with their card), devices (KV gPushSubs), choices (gpush, gmail: 'all' each Movie
+// of the Day, 'week' one summary on Monday morning, 'off') and emails, signed "Grifflix" (only once John's mailer can:
+// v2). Only the mailer's daily allowance is shared. The Movie of the Day goes out from the timer once the Mac mini shows
+// one for today (gDaily). Routes: /g/<what> (grifflix()), /gi/<id> (gInvitePage()).
+const G_SITE = 'https://cooperking.github.io/grifflix/', G_API = 'https://media.grifflix.co.uk', G_MODES = ['all', 'week', 'off'];
+function gMode(m, k) {   // gpush: everything unless they say (as songs'); gmail: off unless they say, and only with an address
+  const v = m && m[k];
+  if (k === 'gmail') return m && m.email && G_MODES.includes(v) ? v : 'off';
+  return G_MODES.includes(v) ? v : 'all';
+}
+async function gMailOk(env) {   // John's mailer signs emails "Grifflix" (its version 2 answers a ping): else none go, rather than go as the songs'
+  if (!mailScript(env)) return false;
+  const c = await env.SOTD.get('gMailerV');
+  if (c) return c === '2';
+  const r = await fetch(env.MAILER_URL, { method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ key: env.MAILER_KEY, ping: 1 }) }).catch(() => null);
+  const j = r && await r.json().catch(() => null), ok = !!(j && j.ok && j.v >= 2);
+  await env.SOTD.put('gMailerV', ok ? '2' : '1', { expirationTtl: ok ? 86400 : 1800 });
+  return ok;
+}
+async function gSendMail(env, to, subject, text, html) {
+  const r = await fetch(env.MAILER_URL, { method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ key: env.MAILER_KEY, to, subject, text, html, name: 'Grifflix' }) });
+  const j = await r.json().catch(() => null);
+  const note = { id: randomCode(6), at: Date.now(), what: 'grifflix', to: mailShort(to) };
+  if (!j || !j.ok) { note.err = String((j && j.error) || r.status).slice(0, 160); await mailNote(env, note); throw new Error(note.err); }
+  note.ok = true; note.left = j.left; await mailNote(env, note);
+}
+function gShell(inner) {   // a Grifflix email: the June red bar with its name, a white card, the footer
+  return '<div style="margin:0;padding:24px 12px;background:#120914"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">'
+    + '<table role="presentation" width="560" cellpadding="0" cellspacing="0" style="width:100%;max-width:560px;background:#ffffff;border-radius:18px;overflow:hidden">'
+    + '<tr><td style="background:#ec1a13;padding:16px 24px;font:700 22px/1 Helvetica,Arial,sans-serif;letter-spacing:.04em;color:#ffffff">GRIFFLIX</td></tr>'
+    + '<tr><td style="padding:24px 24px 26px;font:15px/1.5 Helvetica,Arial,sans-serif;color:#2a1a22">' + inner
+    + '<p style="margin:28px 0 0;padding-top:16px;border-top:1px solid #eadfe3;font:13px/1.5 Helvetica,Arial,sans-serif;color:#7a6a72">You can change these emails in your Profile on <a href="' + G_SITE + '" style="color:#c2140e">Grifflix</a>.</p>'
+    + '</td></tr></table></td></tr></table></div>';
+}
+function gFilmHtml(f) {   // one film: its poster, name, year, John's note, and Watch
+  return (f.poster ? '<a href="' + mailEsc(f.url) + '"><img src="' + mailEsc(f.poster) + '" alt="" width="220" style="display:block;width:220px;max-width:60%;height:auto;border:0;border-radius:10px;margin:0 0 16px"></a>' : '')
+    + '<p style="margin:0 0 4px;font:700 11px/1 Helvetica,Arial,sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#c2140e">' + mailEsc(f.kicker || 'Movie of the Day') + '</p>'
+    + '<h1 style="margin:0 0 6px;font:500 28px/1.15 Georgia,\'Times New Roman\',serif;color:#1d0b1e">' + mailEsc(f.name) + (f.year ? ' <span style="color:#8a7680">(' + f.year + ')</span>' : '') + '</h1>'
+    + (f.note ? '<p style="margin:10px 0 0;font:italic 17px/1.45 Georgia,serif;color:#2a1a22">' + mailEsc(f.note) + '</p>' : '')
+    + (f.overview ? '<p style="margin:10px 0 0;color:#4a3a42">' + mailEsc(f.overview.length > 320 ? f.overview.slice(0, 317).replace(/\s+\S*$/, '') + '…' : f.overview) + '</p>' : '')
+    + '<p style="margin:18px 0 0"><a href="' + mailEsc(f.url) + '" style="display:inline-block;padding:11px 22px;border-radius:999px;background:#1d0b1e;color:#ffffff;font:600 13px/1 Helvetica,Arial,sans-serif;letter-spacing:.08em;text-transform:uppercase;text-decoration:none">Watch on Grifflix</a></p>';
+}
+async function gDaily(env) {   // today's Movie of the Day to the members, once, from 8am UK, when the Mac mini shows one
+  const day = londonDay();
+  if (londonHour() < 8) return 'before 8am';
+  const sent = (await env.SOTD.get('gSent', 'json')) || [];
+  if (sent.includes(day)) return 'sent already';
+  const r = await fetch(G_API + '/api/public/calendar', { headers: { 'User-Agent': 'SongOfTheDayWorker' } }).catch(() => null);
+  if (!r || !r.ok) return 'the Mac mini isn’t answering';
+  const c = await r.json().catch(() => ({})), it = c.days && c.days[day];
+  if (!it) return 'no Movie of the Day yet';
+  if (env.NOW) {   // (one look only sends it, as the songs')
+    const once = await env.NOW.get(env.NOW.idFromName('_once')).fetch('https://now/once', { method: 'POST', body: JSON.stringify({ key: 'gday:' + day }) }).then(x => x.json()).catch(() => null);
+    if (!once || !once.first) return 'being sent by another look';
+  }
+  if (!await kvSoft(env, 'gSent', JSON.stringify(sent.concat(day).slice(-60)))) return 'couldn’t note it: not sent';
+  const name = it.type === 'episode' ? (it.series || it.name) : it.name, note = (c.notes || {})[day] || '';
+  const f = { name, year: it.year || '', note, overview: it.overview || '', url: G_SITE + '#day/' + day,
+    poster: it.poster ? G_API + '/pimg/' + it.poster + '/Primary.jpg?maxWidth=500' : '',
+    image: it.backdrop ? G_API + '/pimg/' + it.backdrop + '/Backdrop.jpg?maxWidth=1000' : '' };
+  const msg = { title: name + (f.year ? ' (' + f.year + ')' : ''), body: note || 'Today’s Movie of the Day', icon: f.poster, image: f.image || f.poster, url: f.url, tag: 'grifflix-day' };
+  const pushed = await gPushAll(env, msg, f), mailed = await gMailAll(env, f);
+  const res = { at: Date.now(), day, name, pushed, mailed };
+  await kvSoft(env, 'gLast', JSON.stringify(res));
+  return res;
+}
+async function gPushAll(env, msg, f) {
+  const subs = (await env.SOTD.get('gPushSubs', 'json')) || {}, all = await gAll(env), k = await vapidKeys(env);
+  let sent = 0, kept = 0; const gone = [], weekDone = {};
+  for (const [id, sub] of Object.entries(subs)) {
+    const m = all[sub.m];
+    if (!m) { gone.push(id); continue; }
+    const mode = gMode(m, 'gpush');
+    if (mode === 'off') continue;
+    if (mode === 'week') {
+      if (!weekDone[sub.m]) { weekDone[sub.m] = 1; const key = 'gpwk:' + sub.m, l = (await env.SOTD.get(key, 'json')) || []; l.push({ t: f.name, y: f.year, i: f.poster }); await kvSoft(env, key, JSON.stringify(l.slice(-14)), { expirationTtl: 10 * 86400 }); kept++; }
+      continue;
+    }
+    try { const { st } = await pushTo(env, k, sub, msg); if (st >= 200 && st < 300) sent++; else if (st === 404 || st === 410) gone.push(id); } catch (e) { console.log('gpush: ' + (e && e.message)); }
+  }
+  if (gone.length) { const now = (await env.SOTD.get('gPushSubs', 'json')) || {}; gone.forEach(id => delete now[id]); await kvSoft(env, 'gPushSubs', JSON.stringify(now)); }
+  return { sent, kept, gone: gone.length };
+}
+async function gMailAll(env, f) {
+  const all = await gAll(env);
+  const ids = Object.keys(all).filter(id => gMode(all[id], 'gmail') !== 'off');
+  if (!ids.length) return { sent: 0 };
+  if (!await gMailOk(env)) return { sent: 0, why: 'the mailer can’t sign as Grifflix yet' };
+  let sent = 0, kept = 0;
+  for (const id of ids) {
+    const m = all[id];
+    if (gMode(m, 'gmail') === 'week') { const key = 'gmwk:' + id, l = (await env.SOTD.get(key, 'json')) || []; l.push(f); await kvSoft(env, key, JSON.stringify(l.slice(-14)), { expirationTtl: 10 * 86400 }); kept++; continue; }
+    if (!await dayCount(env, 'mailme-all', MAIL_ALL_DAY)) break;   // (the day's allowance, shared with the songs')
+    try { await gSendMail(env, m.email, f.name + (f.year ? ' (' + f.year + ')' : '') + ': today’s Movie of the Day', f.name + (f.note ? '\n\n' + f.note : '') + '\n\nWatch on Grifflix: ' + f.url + '\n\nYou can change these emails in your Profile on Grifflix.', gShell(gFilmHtml(f))); sent++; }
+    catch (e) { console.log('gmail: ' + (e && e.message)); }
+  }
+  return { sent, kept };
+}
+async function gWeekly(env) {   // Monday morning: the week's Movies of the Day, to those who chose once a week
+  if (londonHour() < 8 || new Date().toLocaleDateString('en-GB', { weekday: 'short', timeZone: 'Europe/London' }) !== 'Mon') return;
+  const done = 'gweek:' + londonDay();
+  if (await env.SOTD.get(done)) return;
+  await env.SOTD.put(done, '1', { expirationTtl: 3 * 86400 });
+  const all = await gAll(env), subs = (await env.SOTD.get('gPushSubs', 'json')) || {}, k = await vapidKeys(env);
+  for (const pre of ['gpwk:', 'gmwk:']) {
+    let cursor;
+    do {
+      const l = await env.SOTD.list({ prefix: pre, cursor });
+      for (const key of l.keys) {
+        const id = key.name.slice(pre.length), items = (await env.SOTD.get(key.name, 'json')) || [];
+        await env.SOTD.delete(key.name);
+        if (!items.length || !all[id]) continue;
+        if (pre === 'gpwk:') {
+          const msg = { title: 'The week on Grifflix', body: items.map(x => x.t).join(' · ').slice(0, 180), icon: (items[items.length - 1] || {}).i || '', url: G_SITE, tag: 'grifflix-week' };
+          for (const sub of Object.values(subs)) if (sub.m === id) await pushTo(env, k, sub, msg).catch(() => null);
+        } else if (all[id].email && await gMailOk(env) && await dayCount(env, 'mailme-all', MAIL_ALL_DAY)) {
+          const html = '<h1 style="margin:0 0 14px;font:500 28px/1.2 Georgia,serif;color:#1d0b1e">The week on Grifflix</h1>'
+            + items.map(f => '<div style="padding:16px 0;border-top:1px solid #eadfe3">' + gFilmHtml(Object.assign({}, f, { overview: '' })) + '</div>').join('');
+          await gSendMail(env, all[id].email, 'The week on Grifflix', items.map(f => f.name + (f.year ? ' (' + f.year + ')' : '')).join('\n') + '\n\n' + G_SITE, gShell(html)).catch(e => console.log('gweek mail: ' + (e && e.message)));
+        }
+      }
+      cursor = l.list_complete ? null : l.cursor;
+    } while (cursor);
+  }
+}
+// ---- Grifflix's members
+const G_INVITE_USES = 5, G_INVITE_DAYS = 30, G_ORIGIN = 'https://cooperking.github.io';
+async function gAll(env) { return (await env.SOTD.get('gmembers', 'json')) || {}; }
+async function gSave(env, all) { await env.SOTD.put('gmembers', JSON.stringify(all)); }
+async function gWho(request, env) {   // { id, all, owner } for a device signed in to Grifflix, else null
+  const token = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
+  if (!token) return null;
+  const hash = await sha256hex(token), all = await gAll(env), id = Object.keys(all).find(k => all[k].devices && all[k].devices[hash]);
+  if (!id) return null;
+  const dv = all[id].devices[hash];
+  if (!dv.seen || Date.now() - dv.seen > 6 * 3600e3) { dv.seen = Date.now(); await gSave(env, all); }
+  return { id, all, hash, owner: id === await env.SOTD.get('gowner') };
+}
+async function gSignIn(env, all, id, body) {   // a new sign-in for this member on this device: its token
+  const token = randomCode(32), m = all[id];
+  m.devices = m.devices || {};
+  const did = /^[A-Za-z0-9]{8,40}$/.test(String(body.device || '')) ? String(body.device) : '';
+  if (did) for (const [h, d] of Object.entries(m.devices)) if (d.did === did) delete m.devices[h];   // (the device's last sign-in)
+  m.devices[await sha256hex(token)] = Object.assign({ at: Date.now(), seen: Date.now() }, did ? { did } : {});
+  if (!m.joined) m.joined = Date.now();
+  await gSave(env, all);
+  return token;
+}
+function gInviteGone(inv) { return !inv ? 'This invitation isn’t valid.' : inv.until < Date.now() ? 'This invitation has run out.' : inv.uses >= G_INVITE_USES ? 'This invitation has been used ' + G_INVITE_USES + ' times already.' : ''; }
+async function gInvite(env, all, id) {   // a new invitation for a member: its code (in the link), kept only as a hash
+  const code = randomCode(18);
+  all[id].invite = { hash: await sha256hex(code), until: Date.now() + G_INVITE_DAYS * 86400e3, uses: 0, at: Date.now() };
+  await gSave(env, all);
+  return code;
+}
+async function grifflix(request, url, env) {
+  const h = factsHeaders(G_ORIGIN), answer = (status, body) => new Response(JSON.stringify(body), { status, headers: h });
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: h });
+  const route = url.pathname.slice(3), b = request.method === 'POST' ? await request.json().catch(() => ({})) : {};
+  if (route === 'join') {   // an invitation's code, or a 6-letter code from a member's Profile (a TV's)
+    if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
+    const ip = request.headers.get('CF-Connecting-IP') || 'unknown', failKey = 'gjoinfail:' + ip + ':' + new Date().toISOString().slice(0, 13), fails = Number(await env.SOTD.get(failKey)) || 0;
+    if (fails >= 20) return answer(429, { error: 'Too many tries from here this hour.' });
+    const all = await gAll(env), given = String(b.code || ''), short = given.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    let id;
+    if (short.length === 6) {
+      const tk = 'gtv:' + await sha256hex(short);
+      id = await env.SOTD.get(tk);
+      if (id && all[id]) await env.SOTD.delete(tk);
+    } else {
+      const hash = await sha256hex(given);
+      id = Object.keys(all).find(k => all[k].invite && all[k].invite.hash === hash);
+      const gone = id && gInviteGone(all[id].invite);
+      if (gone) return answer(403, { error: gone + ' Ask John for a new one.' });
+      if (id) all[id].invite.uses++;
+    }
+    if (!id || !all[id]) { await env.SOTD.put(failKey, String(fails + 1), { expirationTtl: 7200 }); return answer(403, { error: short.length === 6 ? 'That code isn’t right, or it has run out.' : 'This invitation isn’t valid. Ask John for a new one.' }); }
+    return answer(200, { token: await gSignIn(env, all, id, b), name: all[id].name });
+  }
+  const who = await gWho(request, env);
+  if (route === 'admin') return gAdmin(request, env, b, who, answer);
+  if (!who) return answer(401, { error: 'Not signed in to Grifflix.' });
+  const all = who.all, m = all[who.id];
+  const view = async () => {
+    const subs = (await env.SOTD.get('gPushSubs', 'json')) || {};
+    return { id: who.id, name: m.name, owner: who.owner, gpush: gMode(m, 'gpush'), gmail: gMode(m, 'gmail'), email: m.email || '', devices: Object.values(subs).filter(x => x.m === who.id).length, key: (await vapidKeys(env)).pub };
+  };
+  if (route === 'me') return answer(200, await view());
   if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
-  if (!await ownerSignedIn(request, env)) return answer(403, { error: 'Only John can do that.' });
-  const b = await request.json().catch(() => ({}));
-  if (b.op === 'status') return answer(200, { last: await env.SOTD.get('gfgolive', 'json') });
-  if (b.op !== 'publish') return answer(400, { error: 'What should happen?' });
-  if (!env.GH_TOKEN) return answer(503, { error: 'The GH_TOKEN secret is not set.' });
-  const say = String(b.say || '').replace(/\s+/g, ' ').trim().slice(0, 300);
-  const r = await fetch('https://api.github.com/repos/' + REPO + '/actions/workflows/grifflix-golive.yml/dispatches', {
-    method: 'POST',
-    headers: { Authorization: 'Bearer ' + env.GH_TOKEN, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28',
-      'User-Agent': 'SongOfTheDayWorker', 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ref: 'main', inputs: { say } })
-  }).catch(e => ({ status: 0, text: async () => String(e) }));
-  if (r.status !== 204) return answer(502, { error: 'GitHub didn’t start it: it answered ' + r.status + ' ' + (await r.text()).slice(0, 160) });
-  await env.SOTD.put('gfgolive', JSON.stringify({ at: new Date().toISOString(), say }), { expirationTtl: 2 * 86400 });
-  return answer(200, { ok: true });
+  if (route === 'signout') { delete m.devices[who.hash]; await gSave(env, all); return answer(200, { ok: true }); }
+  if (route === 'tvcode') {   // a code for a TV (or any device) to sign in as them: one use, 15 minutes
+    const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789', r = crypto.getRandomValues(new Uint8Array(6)), code = [...r].map(x => A[x % A.length]).join('');
+    await env.SOTD.put('gtv:' + await sha256hex(code), who.id, { expirationTtl: 900 });
+    return answer(200, { code, minutes: 15 });
+  }
+  if (route === 'prefs') {
+    for (const k of ['gpush', 'gmail']) if (k in b) {
+      if (!G_MODES.includes(b[k])) return answer(400, { error: 'Choose every one, once a week, or off.' });
+      if (k === 'gmail' && b[k] !== 'off' && !m.email) return answer(400, { error: 'Add your email address first.' });
+      m[k] = b[k];
+      if (b[k] !== 'week') await env.SOTD.delete((k === 'gpush' ? 'gpwk:' : 'gmwk:') + who.id);
+    }
+    await gSave(env, all);
+    return answer(200, await view());
+  }
+  if (route === 'push') {   // this device's notifications from Grifflix: a browser's push subscription, on or off
+    const sub = b.sub || {}, endpoint = String(sub.endpoint || ''), keys = sub.keys || {};
+    if (!/^https:\/\//.test(endpoint) || endpoint.length > 1000) return answer(400, { error: 'That isn’t a push subscription.' });
+    const id = 'g' + (await sha256hex(endpoint)).slice(0, 23), subs = (await env.SOTD.get('gPushSubs', 'json')) || {};
+    if (b.off) { if (subs[id]) { delete subs[id]; await env.SOTD.put('gPushSubs', JSON.stringify(subs)); } return answer(200, Object.assign(await view(), { on: false })); }
+    if (!keys.p256dh || !keys.auth || String(keys.p256dh).length > 200 || String(keys.auth).length > 100) return answer(400, { error: 'That subscription has no keys.' });
+    if (!subs[id] && Object.keys(subs).length >= PUSH_MAX) return answer(400, { error: 'Too many devices have notifications on.' });
+    subs[id] = { m: who.id, sub: { endpoint, keys: { p256dh: String(keys.p256dh), auth: String(keys.auth) } }, at: Date.now() };
+    await env.SOTD.put('gPushSubs', JSON.stringify(subs));
+    let test = 0;
+    if (b.test) try { test = (await pushOne(await vapidKeys(env), subs[id].sub, { title: 'Notifications are on', body: 'You’ll hear about each Movie of the Day as it goes up.', url: G_SITE, tag: 'grifflix-on' })).st; } catch (e) {}
+    return answer(200, Object.assign(await view(), { on: true, test }));
+  }
+  if (route === 'email') {   // their email address: a code to it, signed Grifflix
+    if (!await gMailOk(env)) return answer(503, { error: 'Emails from Grifflix aren’t ready yet. Ask John.' });
+    const key = 'gmailnew:' + who.id, hour = new Date().toISOString().slice(0, 13);
+    if (b.step === 'begin') {
+      const email = cleanEmail(b.email);
+      if (!email) return answer(400, { error: 'That doesn’t look like an email address.' });
+      if (email === m.email) return answer(400, { error: 'That’s your address already.' });
+      if (Object.entries(all).some(([k, x]) => k !== who.id && x.email === email)) return answer(400, { error: 'Another member has that address. Ask John.' });
+      const old = await env.SOTD.get(key, 'json'), n = (old && old.hour === hour ? old.n : 0) || 0;
+      if (old && old.sent > Date.now() - 60e3) return answer(429, { error: 'A code went a moment ago. Wait a minute, then ask again.' });
+      if (n >= MAIL_PER_HOUR) return answer(429, { error: 'That’s a lot of codes this hour. Try again later.' });
+      const code = String(crypto.getRandomValues(new Uint32Array(1))[0] % 1e6).padStart(6, '0');
+      await env.SOTD.put(key, JSON.stringify({ email, h: await sha256hex(who.id + ':' + email + ':' + code), until: Date.now() + MAIL_CODE_MINUTES * 60e3, tries: 0, sent: Date.now(), hour, n: n + 1 }), { expirationTtl: MAIL_CODE_MINUTES * 60 + 3600 });
+      try {
+        await gSendMail(env, email, 'Your Grifflix code: ' + code, 'Your code to add this address to your Grifflix profile is ' + code + '.\n\nType it in your Profile within ' + MAIL_CODE_MINUTES + ' minutes.\n\nIf you didn’t ask for it, you can ignore this email.\n',
+          gShell('<p style="margin:0 0 6px;font:700 11px/1 Helvetica,Arial,sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#c2140e">Your code</p><p style="margin:0 0 14px;font:600 40px/1 Helvetica,Arial,sans-serif;letter-spacing:.18em;color:#1d0b1e">' + code + '</p><p style="margin:0">Type it in your Profile within ' + MAIL_CODE_MINUTES + ' minutes to add this address to Grifflix. If you didn’t ask for it, you can ignore this email.</p>'));
+      } catch (e) { return answer(502, { error: 'The email couldn’t be sent just now. Try again later, or ask John.' }); }
+      return answer(200, { ok: true, minutes: MAIL_CODE_MINUTES });
+    }
+    if (b.step === 'confirm') {
+      const rec = await env.SOTD.get(key, 'json'), code = String(b.code || '').replace(/\D/g, '');
+      if (!rec || !rec.h || rec.until < Date.now() || rec.tries >= MAIL_CODE_TRIES) return answer(400, { error: 'That code has run out. Ask for a new one.' });
+      if (code.length !== 6 || await sha256hex(who.id + ':' + rec.email + ':' + code) !== rec.h) {
+        rec.tries++; await env.SOTD.put(key, JSON.stringify(rec), { expirationTtl: 3600 });
+        return answer(403, { error: rec.tries >= MAIL_CODE_TRIES ? 'That isn’t the code, and that was the last try. Ask for a new one.' : 'That isn’t the code. Check the email and try again.' });
+      }
+      await env.SOTD.delete(key);
+      if (Object.entries(all).some(([k, x]) => k !== who.id && x.email === rec.email)) return answer(400, { error: 'Another member has that address now. Ask John.' });
+      m.email = rec.email; m.emailAt = new Date().toISOString();
+      await gSave(env, all);
+      return answer(200, await view());
+    }
+  }
+  return answer(404, { error: 'Not here.' });
+}
+// John's admin (Grifflix's own: its admin page): members, invitations and their cards, Publish. The first time,
+// before Grifflix has any members, his Song of the Day sign-in starts it: the songs' members copied (names, emails),
+// nobody signed in, and this device signed in to Grifflix as him.
+async function gAdmin(request, env, b, who, answer) {
+  if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
+  let all = await gAll(env);
+  if (b.op === 'seed') {
+    if (Object.keys(all).length) return answer(409, { error: 'Grifflix has its members already.' });
+    if (!await ownerSignedIn(request, env)) return answer(403, { error: 'Only John can start Grifflix’s members (signed in as himself).' });
+    const songs = (await env.SOTD.get('members', 'json')) || {}, sOwner = await env.SOTD.get('owner');
+    let owner = '';
+    for (const [sid, sm] of Object.entries(songs)) {
+      if (!sm || !sm.name) continue;
+      const id = randomCode(9);
+      all[id] = Object.assign({ name: sm.name, devices: {}, from: 'songs' }, sm.email ? { email: sm.email } : {});
+      if (sid === sOwner) owner = id;
+    }
+    if (!owner) { owner = randomCode(9); all[owner] = { name: 'John', devices: {} }; }
+    await gSave(env, all);
+    await env.SOTD.put('gowner', owner);
+    return answer(200, { token: await gSignIn(env, all, owner, b), members: Object.keys(all).length });
+  }
+  if (!who || !who.owner) return answer(403, { error: Object.keys(all).length ? 'Only John.' : 'Grifflix hasn’t its members yet: start them from its admin page.' });
+  all = who.all;
+  const list = () => Object.entries(all).map(([id, m]) => ({ id, name: m.name, email: m.email || '', joined: m.joined || 0, devices: Object.keys(m.devices || {}).length,
+    seen: Math.max(0, ...Object.values(m.devices || {}).map(d => d.seen || 0)), owner: id === who.id,
+    invite: m.invite ? { until: m.invite.until, uses: m.invite.uses, gone: gInviteGone(m.invite), page: m.invite.page || '' } : null })).sort((a, b2) => a.name.localeCompare(b2.name));
+  if (b.op === 'list') return answer(200, { members: list() });
+  if (b.op === 'invite' || b.op === 'newlink') {   // a member (new, or one there) and their invitation's link
+    let id = b.id;
+    if (b.op === 'invite') {
+      const name = String(b.name || '').replace(/\s+/g, ' ').trim().slice(0, 60);
+      if (!name) return answer(400, { error: 'Their name?' });
+      id = randomCode(9); all[id] = { name, devices: {} };
+      const email = cleanEmail(b.email); if (email) all[id].email = email;
+    }
+    if (!all[id]) return answer(404, { error: 'No such member.' });
+    const code = await gInvite(env, all, id);
+    return answer(200, { id, name: all[id].name, link: G_SITE + '#join=' + code, members: list() });
+  }
+  if (b.op === 'card') {   // the invitation's card (drawn on the admin page) and its page: /gi/<page>, as long as the invitation lasts
+    const m = all[b.id]; if (!m || !m.invite) return answer(404, { error: 'No invitation for them.' });
+    const b64 = String(b.card || '').replace(/^data:image\/jpeg;base64,/, '');
+    if (!b64 || b64.length > 1.5e6 || !/^[A-Za-z0-9+/=]+$/.test(b64)) return answer(400, { error: 'The card is missing or too big.' });
+    if (!/^https:\/\/cooperking\.github\.io\/grifflix\/#join=[\w-]{16,}$/.test(String(b.link || ''))) return answer(400, { error: 'Which link?' });
+    const raw = atob(b64), bytes = new Uint8Array(raw.length); for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+    const pid = m.invite.page || randomCode(12), ttl = Math.max(3600, Math.round((m.invite.until - Date.now()) / 1000)), at = Date.now();
+    await env.SOTD.put('gicard:' + pid, bytes, { expirationTtl: ttl });
+    await env.SOTD.put('gipage:' + pid, JSON.stringify({ link: b.link, name: m.name, at }), { expirationTtl: ttl });
+    m.invite.page = pid; await gSave(env, all);
+    return answer(200, { page: new URL(request.url).origin + '/gi/' + pid });
+  }
+  if (b.op === 'remove') {
+    if (!all[b.id] || b.id === who.id) return answer(400, { error: b.id === who.id ? 'Not yourself.' : 'No such member.' });
+    delete all[b.id]; await gSave(env, all);
+    const subs = (await env.SOTD.get('gPushSubs', 'json')) || {}; let n = 0; for (const [k, x] of Object.entries(subs)) if (x.m === b.id) { delete subs[k]; n++; }
+    if (n) await env.SOTD.put('gPushSubs', JSON.stringify(subs));
+    return answer(200, { members: list() });
+  }
+  if (b.op === 'rename') {
+    const name = String(b.name || '').replace(/\s+/g, ' ').trim().slice(0, 60);
+    if (!all[b.id] || !name) return answer(400, { error: 'Who, and what name?' });
+    all[b.id].name = name; await gSave(env, all); return answer(200, { members: list() });
+  }
+  if (b.op === 'last') return answer(200, { sent: await env.SOTD.get('gLast', 'json'), mailer: await gMailOk(env) });
+  if (b.op === 'publish') {   // the draft put live (grifflix-golive.yml)
+    if (!env.GH_TOKEN) return answer(503, { error: 'The GH_TOKEN secret is not set.' });
+    const say = String(b.say || '').replace(/\s+/g, ' ').trim().slice(0, 300);
+    const r = await fetch('https://api.github.com/repos/' + REPO + '/actions/workflows/grifflix-golive.yml/dispatches', {
+      method: 'POST', headers: { Authorization: 'Bearer ' + env.GH_TOKEN, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', 'User-Agent': 'SongOfTheDayWorker', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ref: 'main', inputs: { say } })
+    }).catch(e => ({ status: 0, text: async () => String(e) }));
+    if (r.status !== 204) return answer(502, { error: 'GitHub didn’t start it: it answered ' + r.status + ' ' + (await r.text()).slice(0, 160) });
+    await env.SOTD.put('gfgolive', JSON.stringify({ at: new Date().toISOString(), say }), { expirationTtl: 2 * 86400 });
+    return answer(200, { ok: true });
+  }
+  return answer(400, { error: 'What should happen?' });
+}
+async function gInvitePage(url, env) {   // an invitation's link: a page with its card (WhatsApp, iMessage show it), then on to Grifflix
+  const m = /^\/gi\/([\w-]{16})(\.jpg)?$/.exec(url.pathname);
+  const gone = () => new Response('<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Grifflix</title><body style="margin:0;background:#120914;color:#fffaf5;font:18px Georgia,serif;padding:32px">This invitation has run out. Ask John for a new one.</body>', { status: 404, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+  if (!m) return gone();
+  if (m[2]) {
+    const img = await env.SOTD.get('gicard:' + m[1], 'arrayBuffer');
+    return img ? new Response(img, { headers: { 'Content-Type': 'image/jpeg', 'Cache-Control': 'public, max-age=3600' } }) : new Response('Not here.', { status: 404 });
+  }
+  const p = await env.SOTD.get('gipage:' + m[1], 'json');
+  if (!p) return gone();
+  const e = x => esc(String(x)), title = p.name + ' is invited to Grifflix', img = url.origin + '/gi/' + m[1] + '.jpg?v=' + p.at;
+  return new Response(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${e(title)}</title><meta name="description" content="John’s films and TV, for family and friends">
+<meta property="og:type" content="website"><meta property="og:title" content="${e(title)}"><meta property="og:description" content="John’s films and TV, for family and friends">
+<meta property="og:image" content="${e(img)}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#ec1a13"><style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#120914;color:#fffaf5;font:18px Georgia,serif;text-align:center;padding:24px}img{max-width:min(520px,90vw);border-radius:16px;display:block;margin:0 auto 22px}a{display:inline-block;padding:13px 26px;border-radius:999px;background:#fffaf5;color:#1b1020;font:600 14px Helvetica,Arial,sans-serif;letter-spacing:.08em;text-transform:uppercase;text-decoration:none}</style></head>
+<body><div><img src="${e(img)}" alt=""><p>${e(p.name)}, you’re invited to Grifflix.</p><p><a href="${e(p.link)}">Open your invitation</a></p></div>
+<script>setTimeout(function(){location.replace(${JSON.stringify(p.link)});},1600);</script></body></html>`, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } });
 }
 async function ownerSignedIn(request, env) {
   const who = await memberWho(request, env).catch(() => null);
@@ -1469,7 +1806,6 @@ async function members(request, url, env) {
     if (!c || Date.now() - (c.at || 0) > 10 * 60e3) { try { const st = await adminStatus(env); c = { n: st.problems || 0, at: Date.now() }; } catch (e) { c = c || { n: 0, at: 0 }; } }
     return answer(200, { n: c.n || 0, at: c.at || 0 });
   }
-  if (route === 'grifflix') return memberGrifflix(request, env, answer);   // Grifflix's Publish (John only)
   if (route === 'heart') return memberHeart(request, env, answer);
   if (route === 'upl') return memberUpl(request, url, env, answer);
   if (route === 'uplup') return memberUplUp(request, url, env, answer);
