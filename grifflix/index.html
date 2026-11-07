@@ -245,11 +245,27 @@ dialog::backdrop { background: rgba(10, 4, 12, .62); backdrop-filter: blur(6px);
 .welcome h1 i { font-weight: 300; }
 .welcome p { margin: 18px auto 0; max-width: 46ch; font: 400 19px/1.5 var(--serif); color: var(--fg-2); }
 .welcome .acts { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 28px; }
+.signin { display: grid; gap: 12px; max-width: 420px; margin: 26px auto 0; }
+.signin .how { margin: 0; font: 400 15px/1.5 var(--sans); color: var(--muted); }
+.signin input { width: 100%; padding: 14px 16px; border: 1px solid var(--line); border-radius: 14px; background: rgba(255, 255, 255, .08); color: var(--fg); font: 500 18px/1.2 var(--sans); letter-spacing: .06em; text-align: center; }
+.signin .pill { justify-self: center; min-height: 46px; padding: 0 28px; }
 .notice { margin: 14px 4px 0; padding: 12px 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--glass); font-size: 14px; color: var(--fg-2); }
 .notice b { color: var(--fg); }
 .toast { position: fixed; left: 50%; bottom: max(24px, env(safe-area-inset-bottom)); z-index: 200; transform: translate(-50%, 20px); padding: 12px 20px; border-radius: 999px; background: var(--fg); color: #1b1020; font: 500 14px/1.3 var(--sans); box-shadow: 0 10px 30px rgba(0, 0, 0, .4); opacity: 0; pointer-events: none; transition: .25s; }
 .toast.on { opacity: 1; transform: translate(-50%, 0); }
 .hide { display: none !important; }
+.tvbar { display: none; }
+html.tv .tvbar { position: absolute; left: 0; right: 0; bottom: 0; display: flex; align-items: center; gap: 18px; padding: 40px 48px 30px; background: linear-gradient(transparent, rgba(0, 0, 0, .75)); color: #fff; font: 500 15px/1 var(--sans); transition: opacity .3s; }
+html.tv .player.idle .tvbar { opacity: 0; }
+html.tv #pbar { flex: 1; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, .25); }
+html.tv #pbar i { display: block; height: 100%; width: 0; border-radius: 2px; background: #fff; }
+html.tv .tvbar .hint { color: rgba(255, 255, 255, .6); font-size: 13px; letter-spacing: .04em; }
+html.tv :focus { outline: 3px solid #fff !important; outline-offset: 3px; box-shadow: 0 0 0 7px rgba(20, 8, 24, .6); }
+html.tv .card:focus, html.tv .day:focus { transform: scale(1.06); z-index: 2; transition: transform .15s ease; }
+html.tv .card:focus { outline: none !important; box-shadow: none; }
+html.tv .card:focus .pic { outline: 3px solid #fff; outline-offset: 3px; }
+html.tv .wrap { max-width: none; padding-left: 48px; padding-right: 48px; }
+html.tv .bar-top { position: relative; top: 0; }
 .list-title { display: flex; align-items: center; gap: 10px; margin: 0 4px 12px; }
 .list-title h2 { margin: 0; }
 .list-title .sp { flex: 1; }
@@ -281,6 +297,7 @@ dialog::backdrop { background: rgba(10, 4, 12, .62); backdrop-filter: blur(6px);
   <div class="top"><button class="ico" id="pclose" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg></button><div><div class="t" id="ptitle"></div><div class="s" id="psub"></div></div></div>
   <div class="msg" id="pmsg"></div>
   <button class="pill on nextup" id="pnext">Next episode</button>
+  <div class="tvbar"><div id="pbar"><i></i></div><span id="ptime"></span><span class="hint">OK pause · ◀ 10 s · 30 s ▶</span></div>
 </div>
 <div class="toast" id="toast"></div>
 
@@ -300,7 +317,10 @@ if (Q.has('gateway')) store.set('grifflix-gateway', Q.get('gateway') || null);
 if (Q.has('demo')) store.set('grifflix-demo', Q.get('demo') === '0' ? null : '1');
 var DEMO = !!store.get('grifflix-demo');
 var GW = '', ME = null, KEY = '';
-var TOKEN = store.get('sotd-member') || '';   // the Song of the Day sign-in: same site, so the same storage
+var TOKEN = store.get('sotd-member') || '';
+var TV = /GRIFFLIXTV\//.test(navigator.userAgent) || Q.get('tv') === '1';   // the Fire TV app (its browser's name), or ?tv=1 to try it
+var IN_APP = TV || /GrifflixApp\//.test(navigator.userAgent) || !!(window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform());
+if (TV) document.documentElement.classList.add('tv');   // the Song of the Day sign-in: same site, so the same storage
 var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 var DOW = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 var S = { view: 'home', cal: 'motd', calData: null, cals: [], month: null, browse: 'movies', sort: 'name', lists: null };
@@ -367,12 +387,48 @@ function welcome(why) {
   var msg = {
     nogw: 'Grifflix is nearly ready: the Mac mini isn’t connected yet.',
     down: 'The Mac mini isn’t answering just now (it may be asleep or restarting). Try again in a few minutes.',
-    notmember: 'This device’s sign-in isn’t a member’s any more. Sign in again on Song of the Day.'
-  }[why] || 'Films and TV from John’s shelves, for family and friends. Sign in with your Song of the Day invitation, then come back here.';
-  $('#main').innerHTML = '<section class="welcome"><h1>Griff<i>lix</i></h1><p>' + esc(msg) + '</p><div class="acts">' +
-    (TOKEN ? '<button class="pill on" onclick="location.reload()">Try again</button>' : '<a class="pill on" href="../songs/">Sign in on Song of the Day</a>') +
-    '<a class="pill" href="?demo=1">See the demo</a></div></section>';
+    notmember: 'This device’s sign-in has run out. Sign in again below.'
+  }[why] || 'Films and TV from John’s shelves, for family and friends.';
+  var signin = !TOKEN || why === 'notmember';
+  $('#main').innerHTML = '<section class="welcome"><h1>Griff<i>lix</i></h1><p>' + esc(msg) + '</p>' +
+    (signin ? '<form class="signin" id="signin"><p class="how">Sign in with the 6-letter code from your Profile on Song of the Day (the code a TV uses), or paste your invitation link.</p>' +
+      '<input id="code" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false" placeholder="Code or invitation link" aria-label="Code or invitation link">' +
+      '<button class="pill on" type="submit">Sign in</button></form>' : '') +
+    '<div class="acts">' + (TOKEN && !signin ? '<button class="pill on" onclick="location.reload()">Try again</button>' : '') +
+    (!IN_APP ? '<a class="pill" href="../songs/">Song of the Day</a>' : '') + '<a class="pill" href="?demo=1">See the demo</a></div></section>';
+  var f = $('#signin');
+  if (f) f.onsubmit = function (e) { e.preventDefault(); join($('#code').value); };
 }
+
+/* signing in: Song of the Day's own way (the Worker's /members/join), with a TV code or an invitation; the sign-in is
+   kept where Song of the Day keeps it (same site), so a browser signed in to one is signed in to both. Each app has
+   storage of its own, so signs in here once. */
+var WORKER = 'https://sotd-playlists.cooperking.workers.dev';
+function deviceId() {
+  var d = store.get('sotd-device') || '';
+  if (!/^[A-Za-z0-9]{8,40}$/.test(d)) {
+    var a = new Uint8Array(12); crypto.getRandomValues(a);
+    d = [].map.call(a, function (x) { return 'abcdefghijklmnopqrstuvwxyz0123456789'[x % 36]; }).join('');
+    store.set('sotd-device', d);
+  }
+  return d;
+}
+function codeFrom(text) {
+  var t = String(text || '').trim(), m = /#join=([\w-]{16,}|[A-Za-z0-9]{6})(?![\w-])/.exec(t);
+  if (m) return m[1];
+  if (/^\s*[A-Za-z0-9]{3}[\s-]?[A-Za-z0-9]{3}\s*$/.test(t)) return t.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+  if (/^[\w-]{16,}$/.test(t)) return t;
+  return '';
+}
+function join(text) {
+  var code = codeFrom(text);
+  if (!code) return toast(/\/i\//.test(text) ? 'Open that invitation link first, then use the code it signs you in with, or paste the link it opens.' : 'That isn’t a code or an invitation link.');
+  fetch(WORKER + '/members/join', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: code, device: deviceId() }) })
+    .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || 'That didn’t work.'); return j; }); })
+    .then(function (j) { store.set('sotd-member', j.token); TOKEN = j.token; toast('Welcome, ' + (j.name || '').split(' ')[0]); setTimeout(function () { location.replace(location.pathname); }, 700); })
+    .catch(function (e) { toast(e.message || 'Couldn’t reach Song of the Day. Try again.'); });
+}
+(function () { var c = codeFrom(location.hash); if (c && /^#join=/.test(location.hash)) { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {} join(location.hash); } })();
 
 /* ------------------------------------------------------------------ pages */
 function route() {
@@ -813,6 +869,79 @@ var Demo = (function () {
   return { api: api, pic: pic };
 })();
 
+/* ------------------------------------------------------------------ the TV: worked by a remote
+   The Fire TV app (_grifflix/tvapp) names its browser GRIFFLIXTV and passes the buttons the page can't hear itself:
+   window.grifflixTV.key('play' | 'ff' | 'rew') and .back() (it closes the app when this answers 'page'). The arrows
+   and OK reach the page as keys: the arrows move between whatever can be pressed, nearest in that direction. In the
+   player, OK and play/pause pause and play, left and right go back 10 seconds and on 30, up and down show the bar. */
+function pressables() {
+  var scope = P.el.classList.contains('on') ? P.el : (dlg.open ? dlg : document);
+  return $$('button, a[href], input, select, textarea', scope).filter(function (el) {
+    if (el.disabled || el.closest('.hide')) return false;
+    if (scope === document && el.closest('dialog, .player')) return false;
+    var r = el.getBoundingClientRect(); return r.width > 2 && r.height > 2 && getComputedStyle(el).visibility !== 'hidden';
+  });
+}
+function moveFocus(dir) {
+  var all = pressables(), cur = document.activeElement;
+  if (!all.length) return;
+  if (all.indexOf(cur) < 0) { (all.filter(function (e) { return e.matches('.day.today'); })[0] || all[0]).focus(); return; }
+  var a = cur.getBoundingClientRect(), ax = a.left + a.width / 2, ay = a.top + a.height / 2, best = null, bestScore = 1e9;
+  all.forEach(function (el) {
+    if (el === cur) return;
+    var r = el.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2, dx = x - ax, dy = y - ay, main, side;
+    var sameRow = r.top < a.bottom - 2 && r.bottom > a.top + 2;   // (left and right stay on the row)
+    if (dir === 'right') { if (r.left < a.right - 4 || !sameRow) return; main = dx; side = dy; }
+    else if (dir === 'left') { if (r.right > a.left + 4 || !sameRow) return; main = -dx; side = dy; }
+    else if (dir === 'down') { if (r.top < a.bottom - 4) return; main = dy; side = dx; }
+    else { if (r.bottom > a.top + 4) return; main = -dy; side = dx; }
+    var score = main + Math.abs(side) * 2.2;
+    if (score < bestScore) { bestScore = score; best = el; }
+  });
+  if (best) { best.focus({ preventScroll: true }); best.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' }); }
+}
+function playerKeys(k) {
+  var v = P.v; wake();
+  if (k === 'play' || k === 'ok') { if (v.paused) v.play().catch(function () {}); else v.pause(); return true; }
+  if (k === 'rew' || k === 'left') { v.currentTime = Math.max(0, v.currentTime - 10); return true; }
+  if (k === 'ff' || k === 'right') { v.currentTime = Math.min((v.duration || 1e9) - 1, v.currentTime + 30); return true; }
+  return false;
+}
+document.addEventListener('keydown', function (e) {
+  if (!TV) return;
+  var k = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down', Enter: 'ok', MediaPlayPause: 'play', MediaFastForward: 'ff', MediaRewind: 'rew' }[e.key];
+  if (!k) return;
+  var ae = document.activeElement, inText = /^(INPUT|TEXTAREA|SELECT)$/.test((ae || {}).tagName || '');
+  if (P.el.classList.contains('on') && (!ae || ae === P.v || ae === document.body || !P.el.contains(ae))) {
+    if (k === 'up' || k === 'down') { wake(); $('#pclose').focus(); e.preventDefault(); return; }
+    if (playerKeys(k)) { e.preventDefault(); return; }
+  }
+  if (k === 'ok' || (inText && (k === 'left' || k === 'right'))) return;   // OK presses the button (the browser's own); text keeps its own left/right
+  e.preventDefault(); moveFocus(k);
+}, true);
+window.grifflixTV = {
+  key: function (k) {
+    if (P.el.classList.contains('on')) return playerKeys(k);
+    if (k === 'play') {
+      var it = document.activeElement && document.activeElement.closest('[data-day]'), d = S.calData && S.calData.days[it ? it.dataset.day : TODAY];
+      if (d) play(d);
+    }
+    if ((k === 'ff' || k === 'rew') && S.view === 'home') { var b = $(k === 'ff' ? '#mnext' : '#mprev'); if (b && !b.disabled) b.click(); }
+    return true;
+  },
+  back: function () {
+    if (P.el.classList.contains('on')) { stopPlayer(); return 'done'; }
+    if (dlg.open) { closeSheet(); return 'done'; }
+    if (S.view !== 'home') { location.hash = '#home'; return 'done'; }
+    return 'page';
+  }
+};
+if (TV) {
+  P.v.controls = false;   // (a remote can't work the browser's own controls: the bar below is the page's)
+  P.v.addEventListener('timeupdate', function () { if (P.v.duration) { $('#pbar i').style.width = (P.v.currentTime / P.v.duration * 100).toFixed(2) + '%'; $('#ptime').textContent = clock(P.v.currentTime) + ' / ' + clock(P.v.duration); } });
+  ['play', 'pause'].forEach(function (ev) { P.v.addEventListener(ev, function () { try { if (window.GRIFFLIXTV && GRIFFLIXTV.playing) GRIFFLIXTV.playing(ev === 'play'); } catch (x) {} wake(); }); });
+  dlg.addEventListener('close', function () { setTimeout(function () { var d = $('.day.today'); if (d && !P.el.classList.contains('on') && !dlg.open) d.focus(); }, 30); });
+}
 document.addEventListener('error', function (e) { if (e.target.tagName === 'IMG') e.target.style.visibility = 'hidden'; }, true);   // (a picture the Mac mini hasn't got)
 start();
 })();
