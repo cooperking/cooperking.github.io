@@ -7360,7 +7360,19 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // have them. My playlist is the one being played and changed; once it's saved (or a saved one is opened), changes to
   // it are saved as they're made. Close playlist puts it away (still saved) for an empty one.
   var PL = { lists: [], cur: null, loaded: false, t: 0, busy: null };
-  try { PL.cur = localStorage.getItem('sotd-plcur') || null; } catch (e) {}
+  // each visit starts on My playlist, the hearts (John, 7 Nov 2026: "the previous functionality, where My playlist showed
+  // up on the screen like the mini player has gone"): a saved playlist left open last time is put away (it's saved), and
+  // the hearts put aside behind it come back; a saved one opens only when chosen
+  (function () {
+    try {
+      if (!localStorage.getItem('sotd-plcur')) return;
+      var st = JSON.parse(localStorage.getItem('sotd-plunsaved') || 'null') || { tracks: [], name: '' };
+      var all = (st.tracks || []).slice();
+      FAVHELD = all.filter(function (t) { return !songOf(t); }); fav = all.filter(function (t) { return songOf(t); });
+      lsSet('sotd-playlist', JSON.stringify(all)); localStorage.setItem('sotd-plname', st.name || ''); if (typeof plname === 'object' && plname) plname.value = st.name || ''; if (typeof setTitles === 'function') setTitles();
+      localStorage.removeItem('sotd-plcur'); localStorage.removeItem('sotd-plunsaved'); localStorage.removeItem('sotd-plat');
+    } catch (e) {}
+  })();
   function plAny() { return !!(MEMBER && PL.lists.length); }
   function plTok() { try { return localStorage.getItem(MKEY) || ''; } catch (e) { return ''; } }
   function plSetCur(id) { PL.cur = id; try { if (id) localStorage.setItem('sotd-plcur', id); else localStorage.removeItem('sotd-plcur'); } catch (e) {} }
