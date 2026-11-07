@@ -206,7 +206,9 @@ SETS = ['A Hollis Frampton Odyssey', 'By Brakhage: An Anthology, Volumes One and
         'The Signifyin’ Works of Marlon Riggs']
 # box sets put in a collection by name, whether or not Plex had their films there: only the ones John names (7 Nov 2026:
 # "By Brakhage: An Anthology, Volumes One and Two should also be a box set in the Criterion"; not every set goes there)
-ALSO_IN = {'Criterion Collection': ['By Brakhage: An Anthology, Volumes One and Two']}
+ALSO_IN = {'Criterion Collection': ['By Brakhage: An Anthology, Volumes One and Two', 'Martha Graham: Dance on Film', 'Scorsese Shorts',
+                                    'Symbiopsychotaxiplasm: Two Takes by William Greaves', 'The Kennedy Films of Robert Drew & Associates',
+                                    'The Signifyin’ Works of Marlon Riggs']}   # (and the sets he named first, 7 Nov 2026; not Hollis Frampton, not named)
 cols.sort(key=lambda c: (c[1] not in SETS, c[1].lower()))   # (the sets first)
 set_id = {}   # a box set's name → its collection in Jellyfin (or, before it's made, 'set:' + its name)
 set_of = {}   # a film in a set → the set's collection (or, before it's made, the set's name)
