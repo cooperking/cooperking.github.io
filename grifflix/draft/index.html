@@ -496,15 +496,15 @@ function refreshAll() {   // forget what's kept, here and on the Mac, and load a
 }
 document.addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('#refresh, #refresh2'); if (b) { b.disabled = true; refreshAll(); } });
 // Pull down to refresh on a phone, as on the songs' site (its code): at the top of the page, pull and let go past the
-// mark, and a record spins while Grifflix looks again (John, 7 Nov 2026)
+// mark, and a film reel spins while Grifflix looks again (John, 7 Nov 2026)
 (function () {
   var touchy = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
   if (!touchy || document.documentElement.classList.contains('tv') || !(window.CSS && CSS.supports && CSS.supports('overscroll-behavior-y', 'none'))) return;
   var AT = 64;
   var css = '.aptr { position: fixed; left: 50%; top: 0; z-index: 60; width: 40px; height: 40px; margin-left: -20px; pointer-events: none; opacity: 0; transform: translateY(-60px); border-radius: 50%; box-shadow: 0 1px 3px rgba(14, 6, 18, .4); }'
-    + '.aptr-turn { display: block; width: 40px; height: 40px; border-radius: 50%; position: relative; background: repeating-radial-gradient(circle at 50% 50%, #08070c 0 .9px, #1b1922 .9px 1.7px); }'
-    + '.aptr-turn::before { content: ""; position: absolute; left: 31%; top: 31%; width: 38%; height: 38%; border-radius: 50%; background: radial-gradient(circle, var(--bg) 0 18%, transparent 19%), linear-gradient(135deg, var(--g1), var(--g3)); }'
-    + '.aptr-turn::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(from 20deg, rgba(255,255,255,0) 0deg, rgba(255,190,90,.22) 25deg, rgba(255,255,255,0) 55deg, rgba(255,255,255,0) 180deg, rgba(255,90,140,.16) 210deg, rgba(255,255,255,0) 240deg); -webkit-mask: radial-gradient(circle, transparent 0 34%, #000 35%); mask: radial-gradient(circle, transparent 0 34%, #000 35%); }'
+    + '.aptr { background: #fffaf5; }'
+    + '.aptr-turn { display: block; width: 40px; height: 40px; border-radius: 50%; color: var(--bg); }'
+    + '.aptr-turn svg { display: block; width: 40px; height: 40px; }'
     + '.aptr.spin .aptr-turn { animation: aptrspin .8s linear infinite; }'
     + '.aptr.back, .aptr-moving.back { transition: transform .28s cubic-bezier(.2, .8, .25, 1), opacity .2s ease; }'
     + '@keyframes aptrspin { to { transform: rotate(360deg); } }';
@@ -514,7 +514,7 @@ document.addEventListener('click', function (e) { var b = e.target.closest && e.
     var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
     document.documentElement.style.overscrollBehaviorY = 'none'; document.body.style.overscrollBehaviorY = 'none';
     var ptr = document.createElement('div'); ptr.className = 'aptr'; ptr.setAttribute('aria-hidden', 'true');
-    ptr.innerHTML = '<span class="aptr-turn"></span>'; document.body.appendChild(ptr);
+    ptr.innerHTML = '<span class="aptr-turn"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="17" fill="currentColor"/><circle cx="20" cy="20" r="3.2" fill="#fffaf5"/><circle cx="20.0" cy="9.8" r="4.6" fill="#fffaf5"/><circle cx="29.7" cy="16.8" r="4.6" fill="#fffaf5"/><circle cx="26.0" cy="28.3" r="4.6" fill="#fffaf5"/><circle cx="14.0" cy="28.3" r="4.6" fill="#fffaf5"/><circle cx="10.3" cy="16.8" r="4.6" fill="#fffaf5"/></svg></span>'; document.body.appendChild(ptr);   // (a film reel)
     var turn = ptr.firstChild, x0 = 0, y0 = null, pull = 0, mode = null;
     function set(p, back) {
       body.classList.add('aptr-moving'); body.classList.toggle('back', !!back); ptr.classList.toggle('back', !!back);
