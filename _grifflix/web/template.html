@@ -327,6 +327,7 @@ html.tv .wrap { max-width: none; }
 .monthnav .m { min-width: 0; height: auto; padding: 6px 10px 5px; font-size: 11px; letter-spacing: .12em; color: var(--faint); }
 .monthnav .ico { width: 38px; height: 38px; background: var(--glass); }
 .monthnav .ico:disabled { opacity: .3; }
+.hero, .stage { touch-action: pan-y pinch-zoom; }
 .stage { display: grid; grid-template-columns: minmax(0, 1fr); gap: 34px; margin-top: 34px; }
 .cal { display: grid; gap: 10px; padding: 12px clamp(8px, 2.4vw, 18px) clamp(10px, 2.4vw, 18px); border-radius: 18px; box-shadow: none; background: var(--panel); }
 .calhead:empty { display: none; }
@@ -518,7 +519,7 @@ function welcome(why) {
     notmember: 'This device’s sign-in has run out. Sign in again below.'
   }[why] || 'Films and TV from John’s shelves, for family and friends.';
   var signin = !TOKEN || why === 'notmember';
-  $('#main').innerHTML = '<section class="welcome"><h1>Griff<i>lix</i></h1><p>' + esc(msg) + '</p>' +
+  $('#main').innerHTML = '<section class="welcome"><h1>Grifflix</h1><p>' + esc(msg) + '</p>' +
     (signin ? '<form class="signin" id="signin"><p class="how">Sign in with your 6-letter code, or paste your invitation link. Haven’t one? Ask John.</p>' +
       '<input id="code" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false" placeholder="Code or invitation link" aria-label="Code or invitation link">' +
       '<button class="pill on" type="submit">Sign in</button></form>' : '') +
@@ -622,8 +623,22 @@ function drawMonth() {
   $('#mnav').innerHTML = '<nav class="monthnav">' + mh + '</nav>';
   var on = $('.monthnav .m.on'); if (on) on.scrollIntoView({ inline: 'center', block: 'nearest' });
   $$('.monthnav .m').forEach(function (b) { b.onclick = function () { S.month = b.dataset.m; drawMonth(); }; });
-  $('#mprev').onclick = function () { S.month = months[i - 1]; drawMonth(); };
-  $('#mnext').onclick = function () { S.month = months[i + 1]; drawMonth(); };
+  var step = function (d) { var k = months[i + d]; if (!k) return false; S.month = k; drawMonth(); var c = $('#cal'), sd = $('#side');
+    [c, sd].forEach(function (el) { if (el && el.animate) el.animate([{ transform: 'translateX(' + (d * 40) + 'px)', opacity: .3 }, { transform: 'none', opacity: 1 }], { duration: 260, easing: 'cubic-bezier(.2,.7,.2,1)' }); }); return true; };
+  $('#mprev').onclick = function () { step(-1); };
+  $('#mnext').onclick = function () { step(1); };
+  S.step = step;
+  var st = $('.stage'), hr = $('#hero');   // swipe the calendar, its list or the month's name: the month before or after
+  [st, hr].forEach(function (el) {
+    if (!el || el.dataset.swipe) return; el.dataset.swipe = 1;
+    var x0, y0, t0;
+    el.addEventListener('touchstart', function (e) { var t = e.touches[0]; x0 = t.clientX; y0 = t.clientY; t0 = Date.now(); }, { passive: true });
+    el.addEventListener('touchend', function (e) {
+      if (x0 == null) return; var t = e.changedTouches[0], dx = t.clientX - x0, dy = t.clientY - y0; x0 = null;
+      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5 && Date.now() - t0 < 800 && S.step(dx < 0 ? 1 : -1)) { el.dataset.swiped = Date.now(); }
+    }, { passive: true });
+    el.addEventListener('click', function (e) { if (Date.now() - (+el.dataset.swiped || 0) < 400) { e.stopPropagation(); e.preventDefault(); } }, true);   // (a swipe isn't a tap on a day)
+  });
 
   var first = new Date(y, m, 1), lead = (first.getDay() + 6) % 7, n = new Date(y, m + 1, 0).getDate();
   var h = '<div class="calhead">' + (mine ? '<span class="pill" style="pointer-events:none;opacity:.8">Tap a day to choose its film</span>' : '') + '</div><div class="dow">' + DOW.map(function (d) { return '<div>' + d + '</div>'; }).join('') + '</div><div class="grid">';

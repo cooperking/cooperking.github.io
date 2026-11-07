@@ -1524,7 +1524,17 @@ async function gAdmin(request, env, b, who, answer) {
   let all = await gAll(env);
   if (b.op === 'seed') {
     if (Object.keys(all).length) return answer(409, { error: 'Grifflix has its members already.' });
-    if (!await ownerSignedIn(request, env)) return answer(403, { error: 'Only John can start Grifflix’s members (signed in as himself).' });
+    let byCode = false;   // signed in as John on the other site, or a one-use code from his Profile there (a browser not signed in)
+    if (b.code) {
+      const ip = request.headers.get('CF-Connecting-IP') || 'unknown', failKey = 'gjoinfail:' + ip + ':' + new Date().toISOString().slice(0, 13), fails = Number(await env.SOTD.get(failKey)) || 0;
+      if (fails >= 20) return answer(429, { error: 'Too many tries from here this hour.' });
+      const key = 'tvcode:' + await sha256hex(String(b.code).toUpperCase().replace(/[^A-Z0-9]/g, ''));
+      const id = await env.SOTD.get(key);
+      if (!id || id !== await env.SOTD.get('owner')) { await env.SOTD.put(failKey, String(fails + 1), { expirationTtl: 7200 }); return answer(403, { error: 'That code isn’t right, or it has run out.' }); }
+      await env.SOTD.delete(key);   // (one use)
+      byCode = true;
+    }
+    if (!byCode && !await ownerSignedIn(request, env)) return answer(403, { error: 'Only John can start Grifflix’s members (signed in as himself).' });
     const songs = (await env.SOTD.get('members', 'json')) || {}, sOwner = await env.SOTD.get('owner');
     let owner = '';
     for (const [sid, sm] of Object.entries(songs)) {
