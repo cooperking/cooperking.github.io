@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="e4307802c88d">
+<meta name="sotd-build" content="1c622d6a6027">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -5136,7 +5136,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       sh.innerHTML = SHARE_ICON;
       sh.addEventListener('click', function () { shareDay(iso, s, sh); });
       var icons = div('icons'); icons.appendChild(af); icons.appendChild(sh); if (!s.sx) icons.appendChild(ln);
-      if (!TV && ((s.upl && uplPls().some(function (p) { return p.id === s.upl && (p.mine || p.co); })) || (!s.upl && MEMBER && MEMBER.owner === true))) {   // (John's own calendar's songs too: John, 6 Nov 2026)   // their own song: its editor, a tap away (John, 3 Nov 2026: "easier for a member to edit a song")
+      if (!TV && ((s.upl && uplPls().some(function (p) { return p.id === s.upl && (p.mine || p.co || p.boss); })) || (!s.upl && MEMBER && MEMBER.owner === true))) {   // (John's own calendar's songs too: John, 6 Nov 2026)   // their own song: its editor, a tap away (John, 3 Nov 2026: "easier for a member to edit a song")
         var edb = document.createElement('button'); edb.type = 'button'; edb.className = 'iconbtn editsong';
         edb.setAttribute('aria-label', 'Edit ' + s.title + ': its picture, details, video, files and facts'); edb.title = 'Edit this song'; edb.innerHTML = PEN_ICON;
         edb.addEventListener('click', function () { upledOpen(s); });
@@ -8907,7 +8907,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (UPL.view) uplApply(UPL.view, { keep: true });
   }
   function peCw(p, own) {   // who can edit it: the members its owner ticks (each told when added)
-    var g = document.getElementById('pe-cwg'), box = document.getElementById('pe-cw'), seen = (MEMBER && MEMBER.seen) || [], cw = p.cw || [];
+    var g = document.getElementById('pe-cwg'), box = document.getElementById('pe-cw'), seen = ((MEMBER && MEMBER.seen) || []).filter(function (o) { return !p.boss || o.name !== p.o; }), cw = p.cw || [];   // (John, editing another's: everyone but its owner)
     g.hidden = !own || !seen.length; box.textContent = '';
     if (g.hidden) return;
     document.getElementById('pe-cwn').textContent = cw.length ? 'They can change its songs, as you can: pictures, details, videos, files and facts, and moving or taking songs off. Its name, set-up and who sees it stay yours.' : 'Tick anyone you’d like to edit it with you. They’re told, and can change its songs as you can.';
@@ -8926,7 +8926,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     mineUplSet(UPL.view);
     var p = uplOwnRec(), v = UPL.view, list = v.mode === 'list';
     if (!list && !ED.on && uplEditCan()) { uplEditOn(); return; }   // (made a calendar while editing: its days editable too; uplEditOn draws this again)
-    document.getElementById('peh').textContent = 'Editing “' + (p.n || v.n) + '”' + (v.own === false ? ' · ' + v.o + '’s' : '');
+    document.getElementById('peh').textContent = 'Editing “' + (p.n || v.n) + '”' + (v.own === false || v.boss ? ' · ' + v.o + '’s' : '');
     // a collaborator (John, 3 Nov 2026: collaborative playlists): its songs only; its name, picture, set-up, who edits it and removing it are its owner's
     var own = v.own !== false;
     ['pe-name', 'pe-cap', 'pe-picimg', 'pe-settog', 'pe-more'].forEach(function (id) { var g = document.getElementById(id).closest('.pe-g'); if (g) g.hidden = !own; });
@@ -9333,7 +9333,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   var ARTUP = {};
   function artSend(p, sig, art) {   // its owner's drawing, kept on the site for all their devices and everyone who sees it
-    if (!p.mine || !art || !ART.fonts || ARTUP[sig] || (st0(p) === 'mos' && !CARDS[p.id]) || TV) return;   // (only once its fonts are in: never kept for everyone in a stand-in font)
+    if (!(p.mine || p.boss) || !art || !ART.fonts || ARTUP[sig] || (st0(p) === 'mos' && !CARDS[p.id]) || TV) return;   // (only once its fonts are in: never kept for everyone in a stand-in font)
     ARTUP[sig] = 1;
     upledPost('uplpic?id=' + encodeURIComponent(p.id) + '&op=art', { art: art, k: sig }).then(function (j) { if (j.status === 200 && j.pls) { MEMBER.pls = j.pls; } }).catch(function () { delete ARTUP[sig]; });
   }
@@ -9378,12 +9378,6 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       if (r.id) uplShow(r.id); else uplBack();
     });
     it.appendChild(b);
-    if (r.mine && !TV) {   // their own: its picture (not on the TV, which can't choose a photo)
-      var acts = document.createElement('div'); acts.className = 'cal-acts';
-      var drawActs = function () { acts.textContent = ''; picActs(acts, r.p, function (box, label, cls, fn) { var b2 = document.createElement('button'); b2.type = 'button'; b2.textContent = label; b2.addEventListener('click', fn); box.appendChild(b2); return b2; }); };
-      drawActs(); it._acts = drawActs;   // (again once its covers and people have come: its choices as it shows now)
-      it.appendChild(acts);
-    }
     return it;
   }
   function uplChooser() {
@@ -9550,7 +9544,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var p = uplPls().filter(function (x) { return x.id === s.upl; })[0] || uplOwnRec(), t = tagOf(s) || { m: [], g: [] };
     if (s._john) p = { id: '', mode: 'cal' };
     UED = { p: p, s: s, m: t.m.slice(), g: t.g.slice(), tags: false, john: !!s._john, rec: s._rec || null };
-    document.getElementById('upledk').textContent = p.mode === 'list' ? p.n : UPL.view && UPL.view.own === false && UPL.view.o ? UPL.view.o + '’s Song of the Day' : 'Your Song of the Day';
+    document.getElementById('upledk').textContent = p.mode === 'list' ? p.n : UPL.view && (UPL.view.own === false || UPL.view.boss) && UPL.view.o ? UPL.view.o + '’s Song of the Day' : 'Your Song of the Day';
     document.getElementById('upleh').textContent = s.title;
     document.getElementById('upledby').textContent = s.artist;
     var how = !('ov' in s) ? 'found' : s.ov ? 'link' : 'none';
@@ -10158,7 +10152,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     });
     document.getElementById('uplwk').textContent = p.n;
     var cwb = document.getElementById('uplwcw'); cwb.textContent = '';   // who edits it with them (John, 3 Nov 2026: "an option to make it collaborative straight away")
-    document.getElementById('uplwch').hidden = document.getElementById('uplwcn').hidden = cwb.hidden = !others.length || !p.mine;
+    document.getElementById('uplwch').hidden = document.getElementById('uplwcn').hidden = cwb.hidden = !others.length || !(p.mine || p.boss);
     others.forEach(function (m) {
       var l = document.createElement('label'), c = document.createElement('input'); c.type = 'checkbox'; c.value = m.id; c.checked = (p.cw || []).indexOf(m.id) !== -1;
       var t = document.createElement('span'); t.textContent = m.name; l.appendChild(c); l.appendChild(t); cwb.appendChild(l);
@@ -10177,7 +10171,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (sh === 'some' && !to.length) { toast('Tick at least one member'); return; }
     var ok = document.getElementById('uplwok'); ok.disabled = true;
     var cw = [].filter.call(document.querySelectorAll('#uplwcw input:checked'), function () { return true; }).map(function (c) { return c.value; });
-    var cwChanged = p.mine && cw.slice().sort().join() !== (p.cw || []).slice().sort().join();
+    var cwChanged = (p.mine || p.boss) && cw.slice().sort().join() !== (p.cw || []).slice().sort().join();
     uplCall({ op: 'share', id: p.id, share: sh, to: to }).then(function (j) {
       if (j.status !== 200 || !cwChanged) return j;
       return uplCall({ op: 'collab', id: p.id, cw: cw }).then(function (k) { return k.status === 200 ? Object.assign(k, { cwSaid: true }) : j; });
