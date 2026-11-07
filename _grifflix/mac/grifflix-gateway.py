@@ -455,6 +455,26 @@ def make_handler(g):
                     if not fn or method != 'GET':
                         return self.send_json(404, {'error': 'Not here.'})
                     return fn(q)
+                if u.path == '/local/remap' and method == 'POST':   # convert.py on this Mac: a film's new file has a new id; calendars, lists and progress follow it
+                    if not hmac.compare_digest(self.headers.get('X-Grifflix-Secret', ''), g.st['secret']):
+                        return self.send_json(403, {'error': 'Not here.'})
+                    m = {str(k): str(v) for k, v in (self.body().get('map') or {}).items() if re.match(r'^[0-9a-f]{32}$', str(k)) and re.match(r'^[0-9a-f]{32}$', str(v))}
+                    n = 0
+                    with g.store.lock:
+                        for c in g.store.d['calendars'].values():
+                            for d, i in list(c.get('days', {}).items()):
+                                if i in m:
+                                    c['days'][d] = m[i]; n += 1
+                        for usr in g.store.d['users'].values():
+                            usr['hearts'] = [m.get(i, i) for i in usr.get('hearts', [])]
+                            for pl in usr.get('lists', {}).values():
+                                pl['items'] = [m.get(i, i) for i in pl.get('items', [])]
+                            for old, new in m.items():
+                                if old in usr.get('progress', {}):
+                                    usr['progress'][new] = usr['progress'].pop(old); n += 1
+                        g.store.touch()
+                    g.pub_cache.clear()
+                    return self.send_json(200, {'ok': True, 'changed': n})
                 if not u.path.startswith('/api/'):
                     return self.send_json(404, {'error': 'Not here.'})
                 me = self.who()
