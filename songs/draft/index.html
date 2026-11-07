@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="cb5b7276c2b4">
+<meta name="sotd-build" content="c1e5b8b5e025">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -3409,6 +3409,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (document.fonts && document.fonts.addEventListener) document.fonts.addEventListener('loadingdone', function () { if (key) fit(); });   // the caption font arriving late changes every width
     box.fitCaption = function (s) { text = s; fit(); };   // for checking the layout of any fact
     window.addEventListener('resize', function () { if (key) fit(); });
+    // its lines worked out again whenever the box's width changes, not only the window's: a caption set while the box was
+    // still settling (the video being sized to fit) kept its narrow lines, two where one fits, and the panel's room went
+    // wrong with them (John, 7 Nov 2026: "sometimes a caption to a song is on two lines and sometimes one")
+    if ('ResizeObserver' in window) { var boxW = 0; new ResizeObserver(function () { var w = box.clientWidth; if (w && Math.abs(w - boxW) > 1) { boxW = w; if (key) fit(); } }).observe(box); }
     show.now = function () { return key; };
     show.refit = function () { if (key) fit(); };
     show.last = function () { return last; };   // the latest one shown: it may come back after a pause
@@ -4629,9 +4633,6 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       return;
     }
     var at = [r.left, r.top, r.width, r.height, cutTop, cutBottom].map(function (v) { return Math.round(v * 2) / 2; }).join();
-    if (vidfloat.style.transform && !vidfloat.style.transition) vidfloat.style.transform = '';   // (a full-screen move left behind)
-    var fr = vidfloat.getBoundingClientRect();   // where it really is: put right if anything else moved or sized it (John, 7 Nov 2026: the video over the facts' panel as they came)
-    if (at === floatAt && !vidfloat.style.transition && (Math.abs(fr.left - r.left) > 2 || Math.abs(fr.top - (r.top + cutTop)) > 2 && Math.abs(fr.top - r.top) > 2 || Math.abs(fr.width - r.width) > 2)) floatAt = '';
     if (at !== floatAt) {   // only when the box has moved
       floatAt = at;
       vidfloat.style.left = r.left + 'px'; vidfloat.style.top = r.top + 'px';
