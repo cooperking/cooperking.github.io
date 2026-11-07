@@ -1,0 +1,76 @@
+name: Grifflix Fire TV app
+
+# Builds the Grifflix Fire TV app (_grifflix/tvapp/) and puts it on the site at grifflix/tv.apk, for the Downloader app on the TV.
+# Signed with a key made the same every time from the YT_CLIENT_SECRET secret (_grifflix/tvapp/make_key.py, its own key), so each new
+# build installs over the last.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["_grifflix/tvapp/**", ".github/workflows/grifflix-tv.yml"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: grifflix-tv
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build
+        env:
+          SEED: ${{ secrets.YT_CLIENT_SECRET }}
+          VERSION_CODE: ${{ github.run_number }}
+        run: |
+          if [ -n "$SEED" ]; then
+            pip install --quiet "cryptography>=44"
+            export KS_PASS="$(openssl rand -hex 16)" KEYSTORE="$RUNNER_TEMP/tv.p12"
+            python _grifflix/tvapp/make_key.py "$KEYSTORE"
+          fi
+          mkdir -p _grifflix/tvapp/build
+          set -o pipefail
+          bash _grifflix/tvapp/build.sh 2>&1 | tee "$RUNNER_TEMP/build-log.txt"
+          rm -f "$RUNNER_TEMP/tv.p12"
+
+      - name: Keep the error, if it failed
+        if: failure()
+        run: |
+          { echo "build ${{ github.run_number }} FAILED"; tail -60 "$RUNNER_TEMP/build-log.txt"; } > _grifflix/tvapp/last-build.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add _grifflix/tvapp/last-build.txt && git commit -m "Grifflix Fire TV app, build ${{ github.run_number }} failed" && git pull --rebase --quiet && git push
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: grifflix-tv
+          path: _grifflix/tvapp/build/grifflix-tv.apk
+
+      - name: Put it on the site
+        run: |
+          cp _grifflix/tvapp/build/grifflix-tv.apk grifflix/tv.apk
+          printf '{"build": %s, "apk": "https://cooperking.github.io/grifflix/tv.apk"}\n' "${{ github.run_number }}" > grifflix/tv.json   # the app looks here for updates
+          { echo "build ${{ github.run_number }}"; cat _grifflix/tvapp/build/info.txt _grifflix/tvapp/build/badging.txt _grifflix/tvapp/build/verify.txt; } > _grifflix/tvapp/last-build.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add grifflix/tv.apk grifflix/tv.json _grifflix/tvapp/last-build.txt
+          if git diff --cached --quiet; then echo "nothing changed"; exit 0; fi
+          git commit -m "Grifflix Fire TV app, build ${{ github.run_number }}"
+          for i in 1 2 3 4 5; do git pull --rebase --quiet && git push && exit 0; sleep 5; done
+          exit 1

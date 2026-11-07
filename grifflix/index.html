@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Grifflix</title>
+<meta name="description" content="John's films and TV for family and friends, with a Movie of the Day.">
+<meta name="theme-color" content="#120914">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="favicon-96.png" type="image/png" sizes="96x96">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..600&family=Hanken+Grotesk:wght@400;500;600&display=swap">
+<style>
+:root {
+  --bg: #120914;
+  --fg: #fffaf5;
+  --fg-2: rgba(255, 250, 245, .92);
+  --muted: rgba(255, 250, 245, .74);
+  --faint: rgba(255, 250, 245, .55);
+  --line: rgba(255, 250, 245, .3);
+  --glass: rgba(16, 6, 18, .32);
+  --panel: rgba(14, 6, 18, .34);
+  --pill-bg: rgba(16, 6, 16, .22);
+  --pill-hover: rgba(16, 6, 16, .4);
+  --tag-bg: rgba(16, 6, 16, .82);
+  --empty-bg: rgba(255, 255, 255, .08);
+  --empty-line: rgba(255, 255, 255, .22);
+  --shadow: rgba(24, 8, 24, .34);
+  --g1: #ff3344; --g2: #ff30b3; --g3: #ff4c29; --g4: #fc00e7;
+  --serif: "Newsreader", "Iowan Old Style", Georgia, serif;
+  --sans: "Hanken Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --edge: clamp(14px, 3.2vw, 40px);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { background: var(--bg); }
+html.ready { transition: background-color .9s ease; }
+body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--fg-2); font: 15px/1.5 var(--sans); -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; cursor: pointer; }
+a { color: inherit; }
+:focus-visible { outline: 1.5px solid var(--fg); outline-offset: 3px; }
+img { display: block; }
+
+/* the moving colour behind everything, from today's film's poster */
+.glow { position: fixed; inset: -20vmax; z-index: 0; pointer-events: none; filter: blur(70px) saturate(1.2); opacity: .9;
+  background:
+    radial-gradient(40vmax 40vmax at 15% 20%, var(--g1), transparent 70%),
+    radial-gradient(45vmax 45vmax at 85% 15%, var(--g2), transparent 70%),
+    radial-gradient(50vmax 50vmax at 80% 85%, var(--g3), transparent 70%),
+    radial-gradient(40vmax 40vmax at 10% 90%, var(--g4), transparent 70%);
+  animation: drift 40s ease-in-out infinite alternate; transition: background .9s ease; }
+@keyframes drift { to { transform: translate3d(4vmax, -3vmax, 0) rotate(6deg) scale(1.06); } }
+.scrim { position: fixed; inset: 0; z-index: 0; pointer-events: none; background: linear-gradient(180deg, rgba(10, 4, 12, .1), rgba(10, 4, 12, .45)); }
+@media (prefers-reduced-motion: reduce) { .glow { animation: none; } }
+
+.wrap { position: relative; z-index: 1; max-width: 1400px; margin: 0 auto; padding: max(12px, env(safe-area-inset-top)) var(--edge) 80px; }
+
+/* the bar along the top */
+.bar-top { position: sticky; top: max(8px, env(safe-area-inset-top)); z-index: 20; display: flex; align-items: center; gap: 8px;
+  padding: 7px 8px 7px 20px; border: 1px solid var(--line); border-radius: 999px; background: var(--glass);
+  backdrop-filter: blur(22px) saturate(1.3); -webkit-backdrop-filter: blur(22px) saturate(1.3); box-shadow: 0 10px 30px var(--shadow); }
+.brand { margin-right: auto; font: 500 21px/1 var(--serif); letter-spacing: -.01em; color: var(--fg); text-decoration: none; background: none; border: 0; padding: 4px 0; }
+.brand i { font-style: italic; font-weight: 400; }
+.pill { display: inline-flex; align-items: center; gap: 8px; min-height: 38px; padding: 0 16px; border: 1px solid var(--line); border-radius: 999px;
+  background: var(--pill-bg); font: 500 12px/1 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--fg); text-decoration: none; white-space: nowrap; }
+.pill:hover { background: var(--pill-hover); }
+.pill.on { background: var(--fg); color: #1b1020; border-color: var(--fg); }
+.pill svg { width: 15px; height: 15px; flex: none; }
+.ico { display: inline-grid; place-items: center; width: 40px; height: 40px; padding: 0; border: 1px solid var(--line); border-radius: 50%; background: var(--pill-bg); color: var(--fg); }
+.ico:hover { background: var(--pill-hover); }
+.ico svg { width: 17px; height: 17px; }
+.ico.big { width: 52px; height: 52px; background: var(--fg); color: #1b1020; border-color: var(--fg); box-shadow: 0 6px 20px var(--shadow); }
+.ico.big svg { width: 20px; height: 20px; }
+.bar-top .ico { display: none; }
+@media (max-width: 760px) {
+  .bar-top { padding-left: 16px; gap: 6px; }
+  .bar-top .pill { display: none; }
+  .bar-top .ico { display: inline-grid; width: 34px; height: 34px; }
+  .bar-top .ico svg { width: 15px; height: 15px; }
+  .brand { font-size: 19px; }
+}
+
+/* the month's heading */
+.hero { display: flex; align-items: center; flex-wrap: wrap; gap: 14px 18px; margin: 26px 4px 14px; }
+.hero h1 { margin: 0; font: 400 clamp(40px, 6vw, 56px)/1 var(--serif); color: var(--fg); letter-spacing: -.02em; }
+.hero h1 i { font-weight: 300; }
+.hsub { font: 400 21px/1.2 var(--serif); color: var(--fg-2); }
+.hsub i { font-style: italic; }
+.kick { flex: 0 0 100%; margin-bottom: -10px; font: 600 11.5px/1.2 var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+@media (max-width: 760px) {
+  .hero { flex-direction: column; text-align: center; gap: 10px; margin-top: 30px; }
+  .hero h1 { font-size: 50px; }
+  .kick { margin-bottom: 0; }
+}
+.hbtns { display: flex; gap: 10px; align-items: center; }
+
+/* the calendars you can look at: Movie of the Day, yours, others' */
+.cals { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 2px 4px 12px; }
+.cals::-webkit-scrollbar { display: none; }
+.cals .pill { flex: none; }
+
+.monthnav { display: inline-flex; align-items: center; gap: 2px; max-width: 100%; padding: 5px; border: 1px solid var(--line); border-radius: 999px; background: var(--glass); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); margin-bottom: 14px; }
+.monthnav .ms { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; }
+.monthnav .ms::-webkit-scrollbar { display: none; }
+.monthnav .m { flex: none; min-width: 52px; height: 34px; padding: 0 12px; border: 1px solid transparent; border-radius: 999px; background: none; font: 500 12px/1 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--fg-2); }
+.monthnav .m.on { border-color: var(--line); color: var(--fg); background: var(--pill-bg); }
+.monthnav .ico { width: 34px; height: 34px; flex: none; }
+.monthnav .ico:disabled { opacity: .35; cursor: default; }
+
+/* the calendar */
+.cal { padding: 10px 12px 14px; border: 1px solid var(--line); border-radius: 22px; background: var(--panel); backdrop-filter: blur(22px) saturate(1.2); -webkit-backdrop-filter: blur(22px) saturate(1.2); box-shadow: 0 16px 40px var(--shadow); }
+.calhead { display: flex; gap: 8px; flex-wrap: wrap; margin: 2px 0 12px; }
+.dow, .grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }
+.dow div { padding: 0 2px; font: 600 11px/1 var(--sans); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.grid { margin-top: 10px; }
+.day { position: relative; aspect-ratio: 16 / 8.4; min-width: 0; padding: 0; border: 1px solid var(--empty-line); border-radius: 6px; background: var(--empty-bg); overflow: hidden; text-align: left; color: var(--fg); }
+.day.blank { visibility: hidden; }
+.day .num { position: absolute; top: 6px; left: 8px; z-index: 2; font: 500 11px/1 var(--sans); color: var(--fg-2); }
+.day.has { border-color: rgba(255, 255, 255, .14); background: #0d0610; }
+.day.has .num { top: 6px; left: 6px; min-width: 19px; padding: 4px 4px 3px; border-radius: 3px; background: var(--tag-bg); text-align: center; }
+.day.today { border: 1.5px solid var(--fg); }
+.day.today.has .num { background: var(--fg); color: #1b1020; }
+.day .art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.day .cap { position: absolute; left: 0; right: 0; bottom: 0; padding: 22px 8px 7px; background: linear-gradient(to bottom, transparent, rgba(10, 4, 12, .82) 45%); }
+.day .cap .t { font: 500 15px/1.12 var(--serif); color: #fff; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.day .cap .s { margin-top: 2px; font: 600 10px/1.2 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: rgba(255, 255, 255, .8); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.day .bar { position: absolute; left: 0; bottom: 0; height: 3px; background: var(--fg); z-index: 3; }
+.day:not(.has):hover { background: rgba(255, 255, 255, .14); }
+.day.has:hover .art { transform: scale(1.04); }
+.day .art { transition: transform .4s ease; }
+.day .plus { position: absolute; inset: 0; display: grid; place-items: center; font: 300 22px/1 var(--sans); color: var(--faint); opacity: 0; }
+.mine .day:not(.has):hover .plus { opacity: 1; }
+@media (max-width: 760px) {
+  .cal { padding: 10px 8px 12px; border-radius: 18px; }
+  .dow, .grid { gap: 5px; }
+  .dow div { text-align: center; font-size: 10px; letter-spacing: .06em; }
+  .day { aspect-ratio: 2 / 3; border-radius: 5px; }
+  .day .cap { display: none; }
+  .day .num { top: auto; bottom: 4px; left: 4px; font-size: 10px; }
+  .day.has .num { top: auto; bottom: 4px; left: 4px; min-width: 17px; padding: 3px 3px 2px; }
+}
+
+/* rows of posters */
+.rows { margin-top: 34px; display: grid; gap: 30px; }
+.row h2, .sect h2 { display: flex; align-items: baseline; gap: 10px; margin: 0 4px 12px; font: 400 26px/1.1 var(--serif); color: var(--fg); }
+.row h2 i, .sect h2 i { font-weight: 300; }
+.row h2 .more { margin-left: auto; font: 600 11px/1 var(--sans); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); background: none; border: 0; }
+.strip { display: grid; grid-auto-flow: column; grid-auto-columns: clamp(118px, 13vw, 168px); gap: 14px; overflow-x: auto; padding: 2px 4px 10px; scroll-snap-type: x proximity; scrollbar-width: thin; }
+.strip.wide { grid-auto-columns: clamp(220px, 24vw, 300px); }
+.card { position: relative; min-width: 0; padding: 0; border: 0; background: none; text-align: left; scroll-snap-align: start; }
+.card .pic { position: relative; aspect-ratio: 2 / 3; border-radius: 8px; overflow: hidden; background: rgba(255, 255, 255, .08); border: 1px solid rgba(255, 255, 255, .12); box-shadow: 0 8px 22px var(--shadow); }
+.strip.wide .card .pic, .card.land .pic { aspect-ratio: 16 / 9; }
+.card .pic img { width: 100%; height: 100%; object-fit: cover; transition: transform .4s ease; }
+.card:hover .pic img { transform: scale(1.04); }
+.card .bar { position: absolute; left: 0; bottom: 0; height: 3px; background: var(--fg); }
+.card .t { margin-top: 8px; font: 500 15px/1.2 var(--serif); color: var(--fg); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.card .s { margin-top: 2px; font: 600 10px/1.3 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.card .noimg { position: absolute; inset: 0; display: grid; place-items: center; padding: 12px; text-align: center; font: italic 400 17px/1.15 var(--serif); color: var(--fg-2);
+  background: linear-gradient(150deg, rgba(255, 255, 255, .14), rgba(255, 255, 255, .03)); }
+.gridcards { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 22px 16px; padding: 0 4px; }
+.gridcards.land { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
+@media (max-width: 760px) { .gridcards { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px 10px; } .gridcards.land { grid-template-columns: repeat(2, minmax(0, 1fr)); } .card .t { font-size: 13.5px; } }
+
+.sect { margin-top: 30px; }
+.tabs { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 4px 18px; align-items: center; }
+.tabs .sp { flex: 1; }
+.empty { margin: 30px 4px; padding: 30px; border: 1px dashed var(--line); border-radius: 18px; text-align: center; color: var(--muted); font: italic 400 19px/1.4 var(--serif); }
+select.pill { appearance: none; -webkit-appearance: none; padding-right: 16px; }
+select.pill option { color: #000; }
+
+/* pop-ups: a day, a film, a series */
+dialog { border: 0; padding: 0; color: var(--fg-2); background: transparent; max-width: none; max-height: none; }
+dialog::backdrop { background: rgba(10, 4, 12, .62); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+.sheet { width: min(860px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); margin: auto; border: 1px solid var(--line); border-radius: 22px; overflow: auto; overscroll-behavior: contain;
+  background: color-mix(in srgb, var(--bg) 78%, #000); box-shadow: 0 30px 80px rgba(0, 0, 0, .55); }
+.sheet .heroimg { position: relative; aspect-ratio: 16 / 8; background: #000; }
+.sheet .heroimg img { width: 100%; height: 100%; object-fit: cover; opacity: .9; }
+.sheet .heroimg::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0, 0, 0, .25), transparent 30%, color-mix(in srgb, var(--bg) 78%, #000) 98%); }
+.sheet .close { position: absolute; top: 14px; right: 14px; z-index: 3; }
+.sheet .in { position: relative; z-index: 2; padding: 0 30px 30px; margin-top: -90px; }
+.sheet .noimg-top { height: 70px; }
+.sheet .noimg-top + .in { margin-top: 0; }
+.sheet .date { font: 600 11.5px/1.2 var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.sheet h2 { margin: 6px 0 6px; font: 400 clamp(32px, 5vw, 46px)/1.02 var(--serif); color: var(--fg); letter-spacing: -.015em; }
+.sheet .meta { display: flex; flex-wrap: wrap; gap: 6px 14px; font: 500 12.5px/1.4 var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--fg-2); }
+.sheet .meta .c { padding: 1px 6px; border: 1px solid var(--line); border-radius: 4px; }
+.sheet .tag { margin: 12px 0 0; font: italic 400 19px/1.35 var(--serif); color: var(--fg); }
+.sheet .ov { margin: 14px 0 0; max-width: 64ch; font-size: 15.5px; line-height: 1.6; color: var(--fg-2); }
+.sheet .note { margin: 18px 0 0; padding: 14px 18px; border-left: 2px solid var(--fg); background: rgba(255, 255, 255, .06); border-radius: 0 12px 12px 0; font: italic 400 18px/1.45 var(--serif); color: var(--fg); }
+.sheet .note b { display: block; margin-bottom: 4px; font: 600 10.5px/1.2 var(--sans); font-style: normal; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.sheet .people { margin-top: 14px; font-size: 13.5px; color: var(--muted); }
+.sheet .people b { color: var(--fg-2); font-weight: 500; }
+.sheet .acts { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; align-items: center; }
+.sheet .acts .pill.go { min-height: 46px; padding: 0 22px; background: var(--fg); color: #1b1020; border-color: var(--fg); font-size: 13px; }
+.sheet .acts .pill.go svg { width: 16px; height: 16px; }
+.sheet .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+.sheet .chips span { padding: 4px 10px; border: 1px solid var(--line); border-radius: 999px; font: 500 11px/1.3 var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--fg-2); }
+.sheet .owner { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); display: grid; gap: 10px; }
+.sheet .owner h3 { margin: 0; font: 600 11px/1.2 var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.sheet textarea, .sheet input[type=text], .sheet input[type=search], .sheet input[type=date] { width: 100%; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: rgba(255, 255, 255, .06); color: var(--fg); font: 400 16px/1.4 var(--sans); }
+.sheet textarea { min-height: 76px; resize: vertical; font: italic 400 17px/1.45 var(--serif); }
+.eps { margin-top: 24px; }
+.eps .tabs { margin: 0 0 12px; }
+.ep { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 14px; align-items: start; width: 100%; padding: 10px; border: 0; border-radius: 12px; background: none; text-align: left; }
+.ep:hover { background: rgba(255, 255, 255, .06); }
+.ep .pic { position: relative; aspect-ratio: 16 / 9; border-radius: 6px; overflow: hidden; background: rgba(255, 255, 255, .08); }
+.ep .pic img { width: 100%; height: 100%; object-fit: cover; }
+.ep .pic .bar { position: absolute; left: 0; bottom: 0; height: 3px; background: var(--fg); }
+.ep .t { font: 500 17px/1.2 var(--serif); color: var(--fg); }
+.ep .s { font: 600 10.5px/1.4 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.ep .o { margin-top: 4px; font-size: 13.5px; line-height: 1.45; color: var(--fg-2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+@media (max-width: 760px) {
+  .sheet { width: 100vw; max-height: 100dvh; height: 100dvh; border-radius: 0; border: 0; }
+  .sheet .in { padding: 0 18px 40px; margin-top: -60px; }
+  .ep { grid-template-columns: 112px minmax(0, 1fr); padding: 8px 0; }
+}
+.results { display: grid; gap: 4px; margin-top: 12px; max-height: 50vh; overflow: auto; }
+.res { display: grid; grid-template-columns: 46px minmax(0, 1fr); gap: 12px; align-items: center; padding: 6px; border: 0; border-radius: 10px; background: none; text-align: left; }
+.res:hover, .res:focus-visible { background: rgba(255, 255, 255, .08); }
+.res .pic { aspect-ratio: 2 / 3; border-radius: 4px; overflow: hidden; background: rgba(255, 255, 255, .08); }
+.res .pic img { width: 100%; height: 100%; object-fit: cover; }
+.res .t { font: 500 16px/1.2 var(--serif); color: var(--fg); }
+.res .s { font: 600 10px/1.3 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.form { padding: 30px; }
+.form h2 { margin-top: 0; }
+
+/* the player */
+.player { position: fixed; inset: 0; z-index: 100; display: none; background: #000; }
+.player.on { display: block; }
+.player video { width: 100%; height: 100%; background: #000; }
+.player .top { position: absolute; top: 0; left: 0; right: 0; display: flex; align-items: center; gap: 12px; padding: max(14px, env(safe-area-inset-top)) 18px 30px; background: linear-gradient(rgba(0, 0, 0, .7), transparent); transition: opacity .3s; }
+.player .top .t { font: 500 20px/1.2 var(--serif); color: #fff; }
+.player .top .s { font: 600 10.5px/1.3 var(--sans); letter-spacing: .12em; text-transform: uppercase; color: rgba(255, 255, 255, .75); }
+.player.idle .top { opacity: 0; pointer-events: none; }
+.player .msg { position: absolute; inset: 0; display: none; place-items: center; padding: 30px; text-align: center; font: italic 400 22px/1.4 var(--serif); color: #fff; }
+.player .msg.on { display: grid; }
+.player .nextup { position: absolute; right: 20px; bottom: 90px; display: none; }
+.player .nextup.on { display: inline-flex; }
+
+/* the signed-out welcome, and messages */
+.welcome { max-width: 620px; margin: 12vh auto 0; text-align: center; }
+.welcome h1 { margin: 0; font: 400 clamp(56px, 10vw, 96px)/1 var(--serif); color: var(--fg); letter-spacing: -.025em; }
+.welcome h1 i { font-weight: 300; }
+.welcome p { margin: 18px auto 0; max-width: 46ch; font: 400 19px/1.5 var(--serif); color: var(--fg-2); }
+.welcome .acts { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 28px; }
+.signin { display: grid; gap: 12px; max-width: 420px; margin: 26px auto 0; }
+.signin .how { margin: 0; font: 400 15px/1.5 var(--sans); color: var(--muted); }
+.signin input { width: 100%; padding: 14px 16px; border: 1px solid var(--line); border-radius: 14px; background: rgba(255, 255, 255, .08); color: var(--fg); font: 500 18px/1.2 var(--sans); letter-spacing: .06em; text-align: center; }
+.signin .pill { justify-self: center; min-height: 46px; padding: 0 28px; }
+.notice { margin: 14px 4px 0; padding: 12px 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--glass); font-size: 14px; color: var(--fg-2); }
+.notice b { color: var(--fg); }
+.toast { position: fixed; left: 50%; bottom: max(24px, env(safe-area-inset-bottom)); z-index: 200; transform: translate(-50%, 20px); padding: 12px 20px; border-radius: 999px; background: var(--fg); color: #1b1020; font: 500 14px/1.3 var(--sans); box-shadow: 0 10px 30px rgba(0, 0, 0, .4); opacity: 0; pointer-events: none; transition: .25s; }
+.toast.on { opacity: 1; transform: translate(-50%, 0); }
+.hide { display: none !important; }
+html.public .members { display: none !important; }
+.trailer { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #000; }
+.tvbar { display: none; }
+html.tv .tvbar { position: absolute; left: 0; right: 0; bottom: 0; display: flex; align-items: center; gap: 18px; padding: 40px 48px 30px; background: linear-gradient(transparent, rgba(0, 0, 0, .75)); color: #fff; font: 500 15px/1 var(--sans); transition: opacity .3s; }
+html.tv .player.idle .tvbar { opacity: 0; }
+html.tv #pbar { flex: 1; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, .25); }
+html.tv #pbar i { display: block; height: 100%; width: 0; border-radius: 2px; background: #fff; }
+html.tv .tvbar .hint { color: rgba(255, 255, 255, .6); font-size: 13px; letter-spacing: .04em; }
+html.tv :focus { outline: 3px solid #fff !important; outline-offset: 3px; box-shadow: 0 0 0 7px rgba(20, 8, 24, .6); }
+html.tv .card:focus, html.tv .day:focus { transform: scale(1.06); z-index: 2; transition: transform .15s ease; }
+html.tv .card:focus { outline: none !important; box-shadow: none; }
+html.tv .card:focus .pic { outline: 3px solid #fff; outline-offset: 3px; }
+html.tv .wrap { max-width: none; padding-left: 48px; padding-right: 48px; }
+html.tv .bar-top { position: relative; top: 0; }
+.list-title { display: flex; align-items: center; gap: 10px; margin: 0 4px 12px; }
+.list-title h2 { margin: 0; }
+.list-title .sp { flex: 1; }
+</style>
+</head>
+<body>
+<div class="glow"></div><div class="scrim"></div>
+
+<div class="wrap">
+  <header class="bar-top">
+    <button class="brand" data-go="home" aria-label="Grifflix: Movie of the Day">Grifflix</button>
+    <button class="pill" data-go="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>Search</button>
+    <button class="pill" data-go="browse"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m10 9 5 3-5 3z" fill="currentColor"/></svg>Browse</button>
+    <button class="pill members" data-go="lists"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>My list</button>
+    <button class="pill" id="who" data-go="profile">Sign in</button>
+    <button class="ico" data-go="search" aria-label="Search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg></button>
+    <button class="ico" data-go="browse" aria-label="Browse"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m10 9 5 3-5 3z" fill="currentColor"/></svg></button>
+    <button class="ico members" data-go="lists" aria-label="My list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg></button>
+    <button class="ico" data-go="profile" aria-label="Profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></button>
+  </header>
+  <div id="note"></div>
+  <main id="main"></main>
+</div>
+
+<dialog id="sheet"><div class="sheet" id="sheetIn"></div></dialog>
+
+<div class="player" id="player">
+  <video id="vid" controls playsinline crossorigin="anonymous"></video>
+  <div class="top"><button class="ico" id="pclose" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg></button><div><div class="t" id="ptitle"></div><div class="s" id="psub"></div></div></div>
+  <div class="msg" id="pmsg"></div>
+  <button class="pill on nextup" id="pnext">Next episode</button>
+  <div class="tvbar"><div id="pbar"><i></i></div><span id="ptime"></span><span class="hint">OK pause · ◀ 10 s · 30 s ▶</span></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.15/hls.min.js"></script>
+<script>
+(function () {
+'use strict';
+/* ------------------------------------------------------------------ setup
+   The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
+   config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
+var $ = function (s, el) { return (el || document).querySelector(s); };
+var $$ = function (s, el) { return [].slice.call((el || document).querySelectorAll(s)); };
+var Q = new URLSearchParams(location.search);
+var store = { get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+              set: function (k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} } };
+if (Q.has('gateway')) store.set('grifflix-gateway', Q.get('gateway') || null);
+if (Q.has('demo')) store.set('grifflix-demo', Q.get('demo') === '0' ? null : '1');
+var DEMO = !!store.get('grifflix-demo');
+var GW = '', ME = null, KEY = '';
+var TOKEN = store.get('sotd-member') || '';
+var TV = /GRIFFLIXTV\//.test(navigator.userAgent) || Q.get('tv') === '1';   // the Fire TV app (its browser's name), or ?tv=1 to try it
+var IN_APP = TV || /GrifflixApp\//.test(navigator.userAgent) || !!(window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform());
+if (TV) document.documentElement.classList.add('tv');   // the Song of the Day sign-in: same site, so the same storage
+var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+var DOW = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+var S = { view: 'home', cal: 'motd', calData: null, cals: [], month: null, browse: 'movies', sort: 'name', lists: null };
+var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+var iso = function (d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+var TODAY = iso(new Date());
+
+function toast(t) { var el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(function () { el.classList.remove('on'); }, 2600); }
+
+/* ------------------------------------------------------------------ talking to the Mac mini */
+var PUBLIC = false;   // a visitor (not signed in): Movie of the Day, the films and TV, trailers; no playing
+function api(path, body) {
+  if (DEMO) return Demo.api(path, body);
+  if (PUBLIC) {
+    var name = path.split('?')[0];
+    if (name === 'calendars') return Promise.resolve({ calendars: [{ id: 'motd', name: 'Movie of the Day', ownerName: 'John', mine: false, shared: true, count: 0 }] });
+    if (name === 'calendar') path = 'calendar';
+    if (body || ['home', 'items', 'item', 'search', 'calendar'].indexOf(name) < 0) { var x = new Error('Sign in to do that.'); x.status = 401; signInSheet(); return Promise.reject(x); }
+    path = 'public/' + path;
+  }
+  return fetch(GW + '/api/' + path, { method: body ? 'POST' : 'GET', headers: Object.assign({ Authorization: 'Bearer ' + TOKEN }, body ? { 'Content-Type': 'application/json' } : {}), body: body ? JSON.stringify(body) : undefined })
+    .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) { var e = new Error(j.error || ('The Mac mini said ' + r.status)); e.status = r.status; throw e; } return j; }); });
+}
+function img(id, kind, w) {
+  if (!id) return '';
+  if (DEMO) return Demo.pic(id, kind);
+  if (PUBLIC) return GW + '/pimg/' + id + '/' + (kind || 'Primary') + '.jpg?maxWidth=' + (w || 400);   // (Cloudflare keeps copies)
+  return GW + '/img/' + id + '/' + (kind || 'Primary') + '?maxWidth=' + (w || 400) + '&g=' + encodeURIComponent(KEY);
+}
+function gwUrl(p) { return DEMO ? p : GW + p; }
+
+/* ------------------------------------------------------------------ colour from a poster, like Song of the Day's covers */
+function tint(src) {
+  if (!src) return;
+  var im = new Image(); im.crossOrigin = 'anonymous';
+  im.onload = function () {
+    try {
+      var c = document.createElement('canvas'); c.width = 24; c.height = 36; var g = c.getContext('2d'); g.drawImage(im, 0, 0, 24, 36);
+      var px = g.getImageData(0, 0, 24, 36).data, cols = [];
+      for (var i = 0; i < px.length; i += 4) { var r = px[i], gg = px[i + 1], b = px[i + 2], mx = Math.max(r, gg, b), mn = Math.min(r, gg, b); cols.push({ r: r, g: gg, b: b, s: mx ? (mx - mn) / mx : 0, v: mx }); }
+      cols.sort(function (a, b) { return (b.s * b.v) - (a.s * a.v); });
+      var pick = function (k) { var q = cols[Math.min(cols.length - 1, k)]; var f = 255 / Math.max(80, q.v); return 'rgb(' + [q.r, q.g, q.b].map(function (v) { return Math.min(255, Math.round(v * Math.min(f, 1.6))); }).join(',') + ')'; };
+      var R = document.documentElement.style;
+      R.setProperty('--g1', pick(0)); R.setProperty('--g2', pick(40)); R.setProperty('--g3', pick(120)); R.setProperty('--g4', pick(220));
+      var d = cols[Math.floor(cols.length * .7)]; R.setProperty('--bg', 'rgb(' + [d.r, d.g, d.b].map(function (v) { return Math.round(v * .22 + 8); }).join(',') + ')');
+    } catch (e) {}
+  };
+  im.src = src;
+}
+
+/* ------------------------------------------------------------------ starting */
+function start() {
+  document.documentElement.classList.add('ready');
+  var go = function () {
+    if (!DEMO && !GW) return welcome('nogw');
+    if (!DEMO && !TOKEN) {
+      PUBLIC = true; ME = { name: '', public: true };
+      document.documentElement.classList.add('public');
+      $('#who').textContent = 'Sign in';
+      return fetch(GW + '/health').then(function (r) { if (!r.ok) throw 0; route(); }).catch(function () { welcome('down'); });
+    }
+    api('me').then(function (me) {
+      ME = me; KEY = me.key || '';
+      $('#who').textContent = me.name ? me.name.split(' ')[0] : 'Profile';
+      if (DEMO) $('#note').innerHTML = '<div class="notice"><b>Demo.</b> Made-up films, so you can see how Grifflix works before the Mac mini is connected. Changes stay on this device. <a href="?demo=0">Leave the demo</a></div>';
+      setInterval(function () { api('me').then(function (m) { KEY = m.key || KEY; }).catch(function () {}); }, 6 * 3600e3);
+      route();
+    }).catch(function (e) { welcome(e.status === 401 ? 'notmember' : 'down'); });
+  };
+  if (DEMO) return go();
+  var saved = store.get('grifflix-gateway');
+  fetch('config.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).catch(function () { return {}; })
+    .then(function (c) { GW = String(saved || c.gateway || '').replace(/\/$/, ''); go(); });
+}
+
+function welcome(why) {
+  $('.bar-top').classList.add('hide');
+  var msg = {
+    nogw: 'Grifflix is nearly ready: the Mac mini isn’t connected yet.',
+    down: 'The Mac mini isn’t answering just now (it may be asleep or restarting). Try again in a few minutes.',
+    notmember: 'This device’s sign-in has run out. Sign in again below.'
+  }[why] || 'Films and TV from John’s shelves, for family and friends.';
+  var signin = !TOKEN || why === 'notmember';
+  $('#main').innerHTML = '<section class="welcome"><h1>Griff<i>lix</i></h1><p>' + esc(msg) + '</p>' +
+    (signin ? '<form class="signin" id="signin"><p class="how">Sign in with the 6-letter code from your Profile on Song of the Day (the code a TV uses), or paste your invitation link.</p>' +
+      '<input id="code" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false" placeholder="Code or invitation link" aria-label="Code or invitation link">' +
+      '<button class="pill on" type="submit">Sign in</button></form>' : '') +
+    '<div class="acts">' + (TOKEN && !signin ? '<button class="pill on" onclick="location.reload()">Try again</button>' : '') +
+    (!IN_APP ? '<a class="pill" href="../songs/">Song of the Day</a>' : '') + '<a class="pill" href="?demo=1">See the demo</a></div></section>';
+  var f = $('#signin');
+  if (f) f.onsubmit = function (e) { e.preventDefault(); join($('#code').value); };
+}
+
+/* signing in: Song of the Day's own way (the Worker's /members/join), with a TV code or an invitation; the sign-in is
+   kept where Song of the Day keeps it (same site), so a browser signed in to one is signed in to both. Each app has
+   storage of its own, so signs in here once. */
+var WORKER = 'https://sotd-playlists.cooperking.workers.dev';
+function deviceId() {
+  var d = store.get('sotd-device') || '';
+  if (!/^[A-Za-z0-9]{8,40}$/.test(d)) {
+    var a = new Uint8Array(12); crypto.getRandomValues(a);
+    d = [].map.call(a, function (x) { return 'abcdefghijklmnopqrstuvwxyz0123456789'[x % 36]; }).join('');
+    store.set('sotd-device', d);
+  }
+  return d;
+}
+function codeFrom(text) {
+  var t = String(text || '').trim(), m = /#join=([\w-]{16,}|[A-Za-z0-9]{6})(?![\w-])/.exec(t);
+  if (m) return m[1];
+  if (/^\s*[A-Za-z0-9]{3}[\s-]?[A-Za-z0-9]{3}\s*$/.test(t)) return t.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+  if (/^[\w-]{16,}$/.test(t)) return t;
+  return '';
+}
+function join(text) {
+  var code = codeFrom(text);
+  if (!code) return toast(/\/i\//.test(text) ? 'Open that invitation link first, then use the code it signs you in with, or paste the link it opens.' : 'That isn’t a code or an invitation link.');
+  fetch(WORKER + '/members/join', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: code, device: deviceId() }) })
+    .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || 'That didn’t work.'); return j; }); })
+    .then(function (j) { store.set('sotd-member', j.token); TOKEN = j.token; toast('Welcome, ' + (j.name || '').split(' ')[0]); setTimeout(function () { location.replace(location.pathname); }, 700); })
+    .catch(function (e) { toast(e.message || 'Couldn’t reach Song of the Day. Try again.'); });
+}
+window.grifflixJoin = join;   // (the Fire TV app's menu: Sign in with a code)
+(function () { var c = codeFrom(location.hash); if (c && /^#join=/.test(location.hash)) { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {} join(location.hash); } })();
+
+/* ------------------------------------------------------------------ pages */
+function route() {
+  var h = (location.hash || '#home').slice(1).split('/');
+  S.view = h[0] || 'home';
+  $$('.bar-top [data-go]').forEach(function (b) { b.classList.toggle('on', b.dataset.go === S.view && b.classList.contains('pill')); });
+  window.scrollTo(0, 0);
+  if (S.view === 'browse') { if (h[1]) S.browse = h[1]; return browse(); }
+  if (S.view === 'lists') return lists();
+  if (S.view === 'search') { location.hash = '#' + (S.lastView || 'home'); return searchSheet(); }
+  if (S.view === 'profile') { location.hash = '#' + (S.lastView || 'home'); return profile(); }
+  S.lastView = S.view;
+  if (h[1]) S.cal = h[1];
+  home();
+}
+window.addEventListener('hashchange', route);
+$$('[data-go]').forEach(function (b) { b.addEventListener('click', function () { var g = b.dataset.go; if (g === 'search') return searchSheet(); if (g === 'profile') return profile(); location.hash = '#' + g; }); });
+
+/* --- home: a calendar (Movie of the Day, or someone's own) and the rows */
+function home() {
+  var main = $('#main');
+  main.innerHTML = '<div class="hero" id="hero"></div><div class="cals" id="cals"></div><div id="mnav"></div><section class="cal" id="cal"></section><div class="rows" id="rows"></div>';
+  Promise.all([api('calendars'), api('calendar?id=' + encodeURIComponent(S.cal)).catch(function () { S.cal = 'motd'; return api('calendar?id=motd'); })]).then(function (r) {
+    S.cals = r[0].calendars; S.calData = r[1];
+    if (!S.month) S.month = TODAY.slice(0, 7);
+    drawCals(); drawMonth();
+    var t = S.calData.days[TODAY] || S.calData.days[Object.keys(S.calData.days).sort().pop()];
+    if (t) tint(img(t.poster || t.backdrop, t.poster ? 'Primary' : 'Backdrop', 120));
+  }).catch(oops);
+  api('home').then(drawRows).catch(function () {});
+}
+function drawCals() {
+  var el = $('#cals'), h = '';
+  S.cals.forEach(function (c) { h += '<button class="pill' + (c.id === S.cal ? ' on' : '') + '" data-cal="' + c.id + '">' + esc(c.id === 'motd' ? 'Movie of the Day' : (c.mine ? c.name : c.ownerName + ': ' + c.name)) + '</button>'; });
+  if (!PUBLIC) h += '<button class="pill" id="newcal">+ New calendar</button>';
+  el.innerHTML = h;
+  $$('[data-cal]', el).forEach(function (b) { b.onclick = function () { S.cal = b.dataset.cal; location.hash = '#home/' + S.cal; }; });
+  if ($('#newcal')) $('#newcal').onclick = newCalendar;
+}
+function monthsOf(days) {
+  var keys = Object.keys(days).sort(), first = keys[0] ? keys[0].slice(0, 7) : TODAY.slice(0, 7), last = TODAY.slice(0, 7);
+  if (keys.length && keys[keys.length - 1].slice(0, 7) > last) last = keys[keys.length - 1].slice(0, 7);
+  var out = [], y = +first.slice(0, 4), m = +first.slice(5, 7);
+  while (true) { var k = y + '-' + String(m).padStart(2, '0'); out.push(k); if (k >= last || out.length > 120) break; if (++m > 12) { m = 1; y++; } }
+  return out;
+}
+function drawMonth() {
+  var C = S.calData, mine = C.mine, months = monthsOf(C.days);
+  if (months.indexOf(S.month) < 0) S.month = months[months.length - 1];
+  var y = +S.month.slice(0, 4), m = +S.month.slice(5, 7) - 1, inMonth = Object.keys(C.days).filter(function (d) { return d.slice(0, 7) === S.month; });
+  var noun = function (n) { return n === 1 ? 'film' : 'films'; };
+  $('#hero').innerHTML = (C.id !== 'motd' ? '<div class="kick">' + esc(C.mine ? 'Your calendar · ' + C.name : C.ownerName + '’s calendar · ' + C.name) + '</div>' : '') +
+    '<h1>' + MONTHS[m] + ' <i>' + y + '</i></h1><div class="hsub">' + inMonth.length + ' ' + noun(inMonth.length) + ' · <i>' + C.count + ' total</i></div>' +
+    '<div class="hbtns"><button class="ico big" id="playtoday" aria-label="Play today’s film"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>' +
+    '<button class="ico" id="surprise" aria-label="Surprise me"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg></button>' +
+    '<button class="ico" id="sharecal" aria-label="Share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13M7 8l5-5 5 5M5 14v6h14v-6"/></svg></button></div>';
+  var i = months.indexOf(S.month), mh = '<button class="ico" id="mprev" aria-label="Earlier month"' + (i <= 0 ? ' disabled' : '') + '><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg></button><div class="ms">';
+  months.forEach(function (k) { mh += '<button class="m' + (k === S.month ? ' on' : '') + '" data-m="' + k + '">' + MONTHS[+k.slice(5, 7) - 1].slice(0, 3) + (k.slice(0, 4) !== TODAY.slice(0, 4) ? ' ’' + k.slice(2, 4) : '') + '</button>'; });
+  mh += '</div><button class="ico" id="mnext" aria-label="Later month"' + (i >= months.length - 1 ? ' disabled' : '') + '><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></button>';
+  $('#mnav').innerHTML = '<nav class="monthnav">' + mh + '</nav>';
+  var on = $('.monthnav .m.on'); if (on) on.scrollIntoView({ inline: 'center', block: 'nearest' });
+  $$('.monthnav .m').forEach(function (b) { b.onclick = function () { S.month = b.dataset.m; drawMonth(); }; });
+  $('#mprev').onclick = function () { S.month = months[i - 1]; drawMonth(); };
+  $('#mnext').onclick = function () { S.month = months[i + 1]; drawMonth(); };
+
+  var first = new Date(y, m, 1), lead = (first.getDay() + 6) % 7, n = new Date(y, m + 1, 0).getDate();
+  var h = '<div class="calhead">' + (mine ? '<span class="pill" style="pointer-events:none;opacity:.8">Tap a day to choose its film</span>' : '') + '</div><div class="dow">' + DOW.map(function (d) { return '<div>' + d + '</div>'; }).join('') + '</div><div class="grid">';
+  for (var k = 0; k < lead; k++) h += '<div class="day blank"></div>';
+  for (var d = 1; d <= n; d++) {
+    var key = S.month + '-' + String(d).padStart(2, '0'), it = C.days[key], cls = 'day' + (it ? ' has' : '') + (key === TODAY ? ' today' : '');
+    if (!it && !mine) { h += '<div class="' + cls + '"><span class="num">' + d + '</span></div>'; continue; }
+    h += '<button class="' + cls + '" data-day="' + key + '" aria-label="' + d + ' ' + MONTHS[m] + (it ? ': ' + esc(it.name) : '') + '">';
+    if (it) h += '<img class="art" loading="lazy" alt="" src="' + esc(dayPic(it)) + '"><div class="cap"><div class="t">' + esc(showName(it)) + '</div><div class="s">' + esc(subOf(it)) + '</div></div>' + progBar(it);
+    else h += '<span class="plus">+</span>';
+    h += '<span class="num">' + d + '</span></button>';
+  }
+  $('#cal').innerHTML = h + '</div>';
+  $('#cal').classList.toggle('mine', !!mine);
+  $$('#cal [data-day]').forEach(function (b) { b.onclick = function () { daySheet(b.dataset.day); }; });
+  $('#playtoday').onclick = function () { var t = C.days[TODAY] || C.days[inMonth.sort().pop()]; if (t) play(t); else toast('Nothing on this calendar yet.'); };
+  $('#surprise').onclick = function () { var all = Object.keys(C.days); if (!all.length) return toast('Nothing on this calendar yet.'); daySheet(all[Math.floor(Math.random() * all.length)]); };
+  $('#sharecal').onclick = function () { share('Grifflix: ' + (C.id === 'motd' ? 'Movie of the Day' : C.name), location.href.split('#')[0] + '#home/' + C.id); };
+}
+function dayPic(it) { return phone() ? (it.poster ? img(it.poster, 'Primary', 200) : img(it.thumb || it.backdrop, it.thumb ? 'Thumb' : 'Backdrop', 300)) : img(it.backdrop || it.thumb || it.poster, it.backdrop ? 'Backdrop' : (it.thumb ? 'Thumb' : 'Primary'), 420); }
+function phone() { return matchMedia('(max-width: 760px)').matches; }
+function showName(it) { return it.type === 'episode' ? (it.series || it.name) : it.name; }
+function subOf(it) {
+  if (it.type === 'episode') return 'S' + (it.season || 0) + ' · E' + (it.ep || 0) + ' · ' + it.name;
+  if (it.type === 'series') return [it.year, 'Series'].filter(Boolean).join(' · ');
+  return [it.year, it.mins ? it.mins + ' min' : (it.secs ? Math.max(1, Math.round(it.secs / 60)) + ' min' : '')].filter(Boolean).join(' · ');
+}
+function progBar(it) { return it.pos && it.secs ? '<span class="bar" style="width:' + Math.min(100, it.pos / it.secs * 100).toFixed(1) + '%"></span>' : ''; }
+
+function cardHTML(it, land) {
+  var src = land ? img(it.backdrop || it.thumb || it.poster, it.backdrop ? 'Backdrop' : (it.thumb ? 'Thumb' : 'Primary'), 480) : img(it.poster, 'Primary', 320);
+  return '<button class="card' + (land ? ' land' : '') + '" data-item="' + it.id + '"><div class="pic">' + (src ? '<img loading="lazy" alt="" src="' + esc(src) + '">' : '<div class="noimg">' + esc(showName(it)) + '</div>') + progBar(it) + '</div>' +
+    '<div class="t">' + esc(showName(it)) + '</div><div class="s">' + esc(subOf(it)) + '</div></button>';
+}
+function wireCards(el, items) {
+  var by = {}; items.forEach(function (i) { by[i.id] = i; });
+  $$('[data-item]', el).forEach(function (b) { b.onclick = function () { itemSheet(by[b.dataset.item]); }; });
+}
+function drawRows(R) {
+  var el = $('#rows'); if (!el) return;
+  var rows = [['continue', 'Carry on <i>watching</i>', true], ['movies', 'New <i>films</i>', false], ['tv', 'New on <i>TV</i>', false], ['home', 'Home <i>videos</i>', true]], h = '', all = [];
+  rows.forEach(function (r) {
+    var items = R[r[0]] || []; if (!items.length) return; all = all.concat(items);
+    h += '<section class="row"><h2>' + r[1] + (r[0] !== 'continue' ? '<button class="more" data-more="' + r[0] + '">See all</button>' : '') + '</h2><div class="strip' + (r[2] ? ' wide' : '') + '">' + items.map(function (i) { return cardHTML(i, r[2]); }).join('') + '</div></section>';
+  });
+  el.innerHTML = h; wireCards(el, all);
+  $$('[data-more]', el).forEach(function (b) { b.onclick = function () { location.hash = '#browse/' + b.dataset.more; }; });
+}
+
+/* --- browse: films, TV, home videos */
+function browse() {
+  var main = $('#main');
+  var tabs = [['movies', 'Films'], ['tv', 'TV']].concat(PUBLIC ? [] : [['home', 'Home videos']]);
+  if (PUBLIC && S.browse === 'home') S.browse = 'movies';   // (home videos are members' only)
+  main.innerHTML = '<div class="hero"><h1>' + { movies: 'Films', tv: 'TV', home: 'Home <i>videos</i>' }[S.browse] + '</h1><div class="hsub" id="bcount"></div></div>' +
+    '<div class="tabs">' + tabs.map(function (t) { return '<button class="pill' + (t[0] === S.browse ? ' on' : '') + '" data-b="' + t[0] + '">' + t[1] + '</button>'; }).join('') +
+    '<span class="sp"></span><select class="pill" id="sort" aria-label="Sort"><option value="name">A–Z</option><option value="added">Newest added</option><option value="year">Year</option><option value="rating">Rating</option></select></div><div id="bgrid"></div>';
+  $('#sort').value = S.sort;
+  $('#sort').onchange = function () { S.sort = this.value; fill(); };
+  $$('[data-b]').forEach(function (b) { b.onclick = function () { location.hash = '#browse/' + b.dataset.b; }; });
+  function fill() {
+    $('#bgrid').innerHTML = '<div class="empty">Looking on the shelves…</div>';
+    api('items?lib=' + S.browse + '&sort=' + S.sort).then(function (r) {
+      $('#bcount').innerHTML = '<i>' + r.total + '</i>';
+      if (!r.items.length) { $('#bgrid').innerHTML = '<div class="empty">Nothing here yet.</div>'; return; }
+      var land = S.browse === 'home';
+      $('#bgrid').innerHTML = '<div class="gridcards' + (land ? ' land' : '') + '">' + r.items.map(function (i) { return cardHTML(i, land); }).join('') + '</div>';
+      wireCards($('#bgrid'), r.items);
+    }).catch(oops);
+  }
+  fill();
+}
+
+/* --- My list and playlists */
+function lists() {
+  var main = $('#main');
+  main.innerHTML = '<div class="hero"><h1>My <i>list</i></h1></div><div id="lbody"><div class="empty">…</div></div>';
+  api('lists').then(drawLists).catch(oops);
+}
+function drawLists(L) {
+  S.lists = L;
+  var h = '<section class="sect"><div class="list-title"><h2>Saved <i>for later</i></h2><span class="sp"></span></div>' +
+    (L.hearts.length ? '<div class="gridcards">' + L.hearts.map(function (i) { return cardHTML(i); }).join('') + '</div>' : '<div class="empty">Tap the heart on any film or show to keep it here.</div>') + '</section>';
+  L.lists.forEach(function (pl) {
+    h += '<section class="sect"><div class="list-title"><h2>' + esc(pl.name) + ' <i>' + pl.items.length + '</i></h2><span class="sp"></span>' +
+      (pl.items.length ? '<button class="pill on" data-playlist="' + pl.id + '">Play all</button>' : '') + '<button class="pill" data-delpl="' + pl.id + '">Delete</button></div>' +
+      (pl.items.length ? '<div class="strip">' + pl.items.map(function (i) { return cardHTML(i); }).join('') + '</div>' : '<div class="empty">Empty: add to it from any film’s page.</div>') + '</section>';
+  });
+  h += '<div class="tabs" style="margin-top:28px"><button class="pill" id="newpl">+ New playlist</button></div>';
+  $('#lbody').innerHTML = h;
+  wireCards($('#lbody'), L.hearts.concat.apply(L.hearts, L.lists.map(function (p) { return p.items; })));
+  $$('[data-playlist]').forEach(function (b) { b.onclick = function () { var pl = L.lists.filter(function (p) { return p.id === b.dataset.playlist; })[0]; play(pl.items[0], pl.items.slice(1)); }; });
+  $$('[data-delpl]').forEach(function (b) { b.onclick = function () { if (b.dataset.sure) api('lists', { op: 'delete', id: b.dataset.delpl }).then(drawLists); else { b.dataset.sure = 1; b.textContent = 'Sure?'; } }; });
+  $('#newpl').onclick = function () { ask('New playlist', 'Its name', '', function (name) { api('lists', { op: 'create', name: name }).then(drawLists); }); };
+}
+
+/* ------------------------------------------------------------------ pop-ups */
+var dlg = $('#sheet');
+function openSheet(html) {
+  $('#sheetIn').innerHTML = html;
+  if (!dlg.open) dlg.showModal();
+  $('#sheetIn').scrollTop = 0;
+  var c = $('#sheetIn .close'); if (c) c.onclick = closeSheet;
+}
+function closeSheet() { if (dlg.open) dlg.close(); }
+dlg.addEventListener('click', function (e) { if (e.target === dlg) closeSheet(); });
+var X = '<button class="ico close" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6 6 18"/></svg></button>';
+var PLAY = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
+var HEART = function (on) { return '<svg viewBox="0 0 24 24" fill="' + (on ? 'currentColor' : 'none') + '" stroke="currentColor" stroke-width="2"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>'; };
+function longDate(k) { var d = new Date(k + 'T12:00'); return d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }); }
+
+function daySheet(date) {
+  var C = S.calData, it = C.days[date];
+  if (!it) {
+    if (!C.mine) return;
+    return pickFor(date);
+  }
+  itemSheet(it, { date: date, note: C.notes[date] });
+}
+
+function itemSheet(it, ctx) {
+  ctx = ctx || {};
+  if (!it) return;
+  var top = it.backdrop ? '<div class="heroimg"><img alt="" src="' + esc(img(it.backdrop, 'Backdrop', 1100)) + '">' + X + '</div>' : (it.thumb || (it.type === 'video' && it.poster) ? '<div class="heroimg"><img alt="" src="' + esc(img(it.thumb || it.poster, it.thumb ? 'Thumb' : 'Primary', 1100)) + '">' + X + '</div>' : '<div class="noimg-top" style="position:relative">' + X + '</div>');
+  openSheet(top + '<div class="in"><div class="date">' + (ctx.date ? esc(longDate(ctx.date)) : esc(typeName(it))) + '</div><h2>' + esc(showName(it)) + '</h2><div id="isbody">' + bodyHTML(it, ctx) + '</div></div>');
+  wireBody(it, ctx);
+  api('item?id=' + it.id).then(function (full) { if (!dlg.open) return; Object.assign(it, full); $('#isbody').innerHTML = bodyHTML(it, ctx); wireBody(it, ctx); }).catch(function () {});
+}
+function typeName(it) { return { movie: 'Film', series: 'Series', episode: it.series || 'Episode', video: 'Home video', photo: 'Photo' }[it.type] || ''; }
+function bodyHTML(it, ctx) {
+  var meta = [];
+  if (it.type === 'episode') meta.push('Series ' + (it.season || 0) + ', episode ' + (it.ep || 0) + ' · ' + esc(it.name));
+  if (it.year) meta.push(it.year);
+  if (it.mins) meta.push(it.mins >= 60 ? Math.floor(it.mins / 60) + ' h ' + (it.mins % 60) + ' min' : it.mins + ' min');
+  if (it.cert) meta.push('<span class="c">' + esc(it.cert) + '</span>');
+  if (it.rating) meta.push('★ ' + (+it.rating).toFixed(1));
+  var resume = it.pos && it.pos > 30, isSeries = it.type === 'series';
+  var h = '<div class="meta">' + meta.join('<span>·</span>') + '</div>';
+  if (it.tagline) h += '<p class="tag">' + esc(it.tagline) + '</p>';
+  if (it.overview) h += '<p class="ov">' + esc(it.overview) + '</p>';
+  if (ctx.note) h += '<div class="note"><b>' + (S.calData && S.calData.id !== 'motd' ? esc(S.calData.ownerName) + ' says' : 'John says') + '</b>' + esc(ctx.note) + '</div>';
+  if (it.genres && it.genres.length) h += '<div class="chips">' + it.genres.map(function (g) { return '<span>' + esc(g) + '</span>'; }).join('') + '</div>';
+  if ((it.directors && it.directors.length) || (it.cast && it.cast.length)) h += '<div class="people">' + (it.directors && it.directors.length ? '<b>Directed by</b> ' + esc(it.directors.join(', ')) + '. ' : '') + (it.cast && it.cast.length ? '<b>With</b> ' + esc(it.cast.join(', ')) + '.' : '') + '</div>';
+  h += '<div class="acts">';
+  var TR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 9h18M8 5v4M16 5v4"/></svg>';
+  if (PUBLIC) {
+    if (it.trailers && it.trailers.length) h += '<button class="pill go" id="atrailer">' + TR + 'Watch the trailer</button>';
+    h += '<button class="pill' + (it.trailers && it.trailers.length ? '' : ' go') + '" id="asignin">Sign in to watch</button>';
+  } else if (isSeries) { var nx = (it.episodes || []).filter(function (e) { return e.id === it.next; })[0]; h += '<button class="pill go" id="aplay">' + PLAY + (nx ? (nx.pos ? 'Carry on' : 'Play') + ' S' + nx.season + ' E' + nx.ep : 'Play') + '</button>'; }
+  else h += '<button class="pill go" id="aplay">' + PLAY + (resume ? 'Carry on from ' + clock(it.pos) : 'Play') + '</button>' + (resume ? '<button class="pill" id="afrom0">From the start</button>' : '');
+  if (!PUBLIC && it.trailers && it.trailers.length) h += '<button class="pill" id="atrailer">' + TR + 'Trailer</button>';
+  if (it.type === 'episode' && it.seriesId) h += '<button class="pill" id="aseries">All episodes</button>';
+  if (!PUBLIC) {
+    h += '<button class="ico" id="aheart" aria-label="Save for later">' + HEART(it.hearted) + '</button>';
+    h += '<button class="pill" id="aaddpl">+ Playlist</button><button class="pill" id="aaddcal">+ My calendar</button>';
+  }
+  h += '<button class="ico" id="ashare" aria-label="Share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13M7 8l5-5 5 5M5 14v6h14v-6"/></svg></button></div>';
+  if (isSeries && it.episodes) {
+    var seasons = {}; it.episodes.forEach(function (e) { (seasons[e.season || 0] = seasons[e.season || 0] || []).push(e); });
+    var keys = Object.keys(seasons).sort(function (a, b) { return a - b; }), cur = ctx.season || (it.next ? (it.episodes.filter(function (e) { return e.id === it.next; })[0] || {}).season : keys[0]) || keys[0];
+    h += '<div class="eps"><div class="tabs">' + keys.map(function (k) { return '<button class="pill' + (String(k) === String(cur) ? ' on' : '') + '" data-season="' + k + '">' + (k == 0 ? 'Specials' : 'Series ' + k) + '</button>'; }).join('') + '</div>';
+    (seasons[cur] || []).forEach(function (e) {
+      var src = img(e.thumb || e.poster || e.backdrop, e.thumb ? 'Thumb' : (e.poster ? 'Primary' : 'Backdrop'), 320);
+      h += '<button class="ep" data-ep="' + e.id + '"><div class="pic">' + (src ? '<img loading="lazy" alt="" src="' + esc(src) + '">' : '') + progBar(e) + '</div><div><div class="s">Episode ' + (e.ep || '') + (e.mins ? ' · ' + e.mins + ' min' : '') + '</div><div class="t">' + esc(e.name) + '</div><div class="o">' + esc(e.overview || '') + '</div></div></button>';
+    });
+    h += '</div>';
+  }
+  if (ctx.date && S.calData && S.calData.mine) {
+    h += '<div class="owner"><h3>' + (S.calData.id === 'motd' ? 'Your Movie of the Day' : 'Your calendar') + '</h3><textarea id="onote" placeholder="A note about why (optional)">' + esc(ctx.note || '') + '</textarea>' +
+      '<div class="acts" style="margin-top:0"><button class="pill on" id="osave">Save note</button><button class="pill" id="ochange">Change film</button><button class="pill" id="oclear">Take it off</button></div></div>';
+  }
+  return h;
+}
+function wireBody(it, ctx) {
+  var on = function (id, f) { var el = $('#' + id); if (el) el.onclick = f; };
+  on('aplay', function () {
+    if (it.type === 'series') { var nx = (it.episodes || []).filter(function (e) { return e.id === it.next; })[0] || (it.episodes || [])[0]; if (!nx) return toast('No episodes yet.'); var rest = it.episodes.slice(it.episodes.indexOf(nx) + 1); return play(nx, rest); }
+    play(it);
+  });
+  on('afrom0', function () { play(it, null, true); });
+  on('atrailer', function () { trailer(it); });
+  on('asignin', signInSheet);
+  on('aseries', function () { itemSheet({ id: it.seriesId, name: it.series, type: 'series', poster: it.poster, backdrop: it.backdrop }); });
+  on('aheart', function () { api('lists', { op: 'heart', item: it.id }).then(function (L) { it.hearted = L.hearts.some(function (h) { return h.id === it.id; }); $('#aheart').innerHTML = HEART(it.hearted); toast(it.hearted ? 'Saved for later' : 'Taken off My list'); }); });
+  on('aaddpl', function () { addToPlaylist(it); });
+  on('aaddcal', function () { addToCalendar(it); });
+  on('ashare', function () { share(showName(it), location.href.split('#')[0] + (ctx.date ? '#home/' + S.cal : '')); });
+  $$('[data-season]').forEach(function (b) { b.onclick = function () { ctx.season = b.dataset.season; $('#isbody').innerHTML = bodyHTML(it, ctx); wireBody(it, ctx); }; });
+  $$('[data-ep]').forEach(function (b) { b.onclick = function () { var i = it.episodes.map(function (e) { return e.id; }).indexOf(b.dataset.ep); play(it.episodes[i], it.episodes.slice(i + 1)); }; });
+  on('osave', function () { api('calendar', { op: 'set', id: S.cal, date: ctx.date, note: $('#onote').value }).then(function (c) { S.calData = c; ctx.note = c.notes[ctx.date]; toast('Saved'); }); });
+  on('ochange', function () { pickFor(ctx.date); });
+  on('oclear', function () { api('calendar', { op: 'clear', id: S.cal, date: ctx.date }).then(function (c) { S.calData = c; closeSheet(); drawMonth(); }); });
+}
+
+/* searching: on its own, or to choose a day's film */
+function searchSheet(onPick, title) {
+  openSheet('<div class="form" style="position:relative">' + X + '<h2 style="font:400 34px/1.1 var(--serif);color:var(--fg)">' + (title || 'Search') + '</h2><input type="search" id="sq" placeholder="A film, a series, an episode…" autocomplete="off"><div class="results" id="sres"></div></div>');
+  var t, inp = $('#sq'); setTimeout(function () { inp.focus(); }, 50);
+  inp.oninput = function () {
+    clearTimeout(t); var q = inp.value.trim();
+    t = setTimeout(function () {
+      if (q.length < 2) { $('#sres').innerHTML = ''; return; }
+      api('search?q=' + encodeURIComponent(q)).then(function (r) {
+        if (inp.value.trim() !== q) return;
+        $('#sres').innerHTML = r.items.length ? r.items.map(function (i) { var src = img(i.poster, 'Primary', 120); return '<button class="res" data-r="' + i.id + '"><div class="pic">' + (src ? '<img alt="" src="' + esc(src) + '">' : '') + '</div><div><div class="t">' + esc(showName(i)) + '</div><div class="s">' + esc(typeName(i) + ' · ' + subOf(i)) + '</div></div></button>'; }).join('') : '<div class="empty" style="margin:10px 0">Nothing by that name.</div>';
+        var by = {}; r.items.forEach(function (i) { by[i.id] = i; });
+        $$('[data-r]').forEach(function (b) { b.onclick = function () { onPick ? onPick(by[b.dataset.r]) : itemSheet(by[b.dataset.r]); }; });
+      }).catch(function () {});
+    }, 220);
+  };
+}
+function pickFor(date) {
+  searchSheet(function (it) {
+    api('calendar', { op: 'set', id: S.cal, date: date, item: it.id }).then(function (c) { S.calData = c; drawMonth(); itemSheet(c.days[date], { date: date, note: c.notes[date] }); toast('On ' + longDate(date)); }).catch(oops);
+  }, 'The film for <i>' + esc(longDate(date)) + '</i>');
+}
+function addToPlaylist(it) {
+  api('lists').then(function (L) {
+    openSheet('<div class="form" style="position:relative">' + X + '<h2 style="font:400 34px/1.1 var(--serif);color:var(--fg)">Add to a <i>playlist</i></h2><div class="results">' +
+      L.lists.map(function (p) { return '<button class="res" style="grid-template-columns:1fr" data-pl="' + p.id + '"><div><div class="t">' + esc(p.name) + '</div><div class="s">' + p.items.length + ' in it</div></div></button>'; }).join('') +
+      '</div><div class="acts" style="display:flex;gap:10px;margin-top:16px"><input type="text" id="plname" placeholder="Or a new playlist’s name"><button class="pill on" id="plnew">Make it</button></div></div>');
+    $$('[data-pl]').forEach(function (b) { b.onclick = function () { api('lists', { op: 'add', id: b.dataset.pl, item: it.id }).then(function () { toast('Added'); itemSheet(it); }); }; });
+    $('#plnew').onclick = function () { var n = $('#plname').value.trim(); if (!n) return; api('lists', { op: 'create', name: n, items: [it.id] }).then(function () { toast('Added to ' + n); itemSheet(it); }); };
+  });
+}
+function addToCalendar(it) {
+  var mine = S.cals.filter(function (c) { return c.mine && c.id !== 'motd'; });
+  if (ME && ME.owner) mine.unshift({ id: 'motd', name: 'Movie of the Day', mine: true });
+  openSheet('<div class="form" style="position:relative">' + X + '<h2 style="font:400 34px/1.1 var(--serif);color:var(--fg)">Put <i>' + esc(showName(it)) + '</i> on a calendar</h2>' +
+    (mine.length ? '<div class="tabs" style="margin:0 0 14px">' + mine.map(function (c, i) { return '<button class="pill' + (i === 0 ? ' on' : '') + '" data-tc="' + c.id + '">' + esc(c.name) + '</button>'; }).join('') + '</div>' : '<p class="ov" style="margin-top:0">You haven’t a calendar yet: this makes one.</p>') +
+    '<input type="date" id="tcd" value="' + TODAY + '"><div class="acts"><button class="pill go" id="tcgo">Put it there</button></div></div>');
+  var target = mine[0] ? mine[0].id : '';
+  $$('[data-tc]').forEach(function (b) { b.onclick = function () { $$('[data-tc]').forEach(function (x) { x.classList.toggle('on', x === b); }); target = b.dataset.tc; }; });
+  $('#tcgo').onclick = function () {
+    var d = $('#tcd').value; if (!d) return;
+    (target ? Promise.resolve({ id: target }) : api('calendar', { op: 'create', name: (ME.name || 'My').split(' ')[0] + '’s films' }))
+      .then(function (c) { return api('calendar', { op: 'set', id: c.id, date: d, item: it.id }); })
+      .then(function (c) { closeSheet(); S.cal = c.id; S.month = d.slice(0, 7); toast('On ' + longDate(d)); if (location.hash === '#home/' + c.id) home(); else location.hash = '#home/' + c.id; }).catch(oops);
+  };
+}
+function newCalendar() { ask('A calendar of your own', 'Its name (say, “Christmas films”)', '', function (name) { api('calendar', { op: 'create', name: name }).then(function (c) { S.cal = c.id; location.hash = '#home/' + c.id; toast('Tap a day to choose its film'); }).catch(oops); }); }
+function ask(title, ph, val, done) {
+  openSheet('<div class="form" style="position:relative">' + X + '<h2 style="font:400 34px/1.1 var(--serif);color:var(--fg)">' + esc(title) + '</h2><input type="text" id="askv" placeholder="' + esc(ph) + '" value="' + esc(val) + '"><div class="acts"><button class="pill go" id="askok">OK</button></div></div>');
+  var inp = $('#askv'); setTimeout(function () { inp.focus(); }, 50);
+  var ok = function () { var v = inp.value.trim(); if (!v) return; closeSheet(); done(v); };
+  $('#askok').onclick = ok; inp.onkeydown = function (e) { if (e.key === 'Enter') ok(); };
+}
+function profile() {
+  if (PUBLIC) return signInSheet();
+  if (!ME) return;
+  var mineCals = S.cals.filter(function (c) { return c.mine && c.id !== 'motd'; });
+  openSheet('<div class="form" style="position:relative">' + X + '<h2 style="font:400 38px/1.1 var(--serif);color:var(--fg)">' + esc(ME.name || 'You') + '</h2>' +
+    '<p class="ov" style="margin-top:0">Signed in with Song of the Day' + (ME.owner ? ': you choose the Movie of the Day.' : '.') + '</p>' +
+    (ME.libraries ? '<div class="chips">' + ['movies', 'tv', 'home'].map(function (k) { return '<span>' + (ME.libraries[k] || 0) + ' ' + { movies: 'films', tv: 'series', home: 'home videos' }[k] + '</span>'; }).join('') + '</div>' : '') +
+    (mineCals.length ? '<div class="owner"><h3>Your calendars</h3>' + mineCals.map(function (c) { return '<div class="acts" style="margin-top:0"><button class="pill" data-gocal="' + c.id + '">' + esc(c.name) + ' · ' + c.count + '</button><button class="pill" data-shcal="' + c.id + '" data-on="' + (c.shared ? 1 : 0) + '">' + (c.shared ? 'Family can see it' : 'Only you') + '</button><button class="pill" data-delcal="' + c.id + '">Delete</button></div>'; }).join('') + '</div>' : '') +
+    '<div class="acts"><a class="pill" href="../songs/">Song of the Day</a>' + (DEMO ? '<a class="pill" href="?demo=0">Leave the demo</a>' : '') + '</div></div>');
+  $$('[data-gocal]').forEach(function (b) { b.onclick = function () { closeSheet(); S.cal = b.dataset.gocal; location.hash = '#home/' + S.cal; }; });
+  $$('[data-shcal]').forEach(function (b) { b.onclick = function () { var to = b.dataset.on !== '1'; api('calendar', { op: 'share', id: b.dataset.shcal, shared: to }).then(function () { b.dataset.on = to ? 1 : 0; b.textContent = to ? 'Family can see it' : 'Only you'; return api('calendars'); }).then(function (r) { S.cals = r.calendars; }); }; });
+  $$('[data-delcal]').forEach(function (b) { b.onclick = function () { if (!b.dataset.sure) { b.dataset.sure = 1; b.textContent = 'Sure?'; return; } api('calendar', { op: 'delete', id: b.dataset.delcal }).then(function () { closeSheet(); S.cal = 'motd'; location.hash = '#home'; home(); }); }; });
+}
+function share(title, url) {
+  if (navigator.share) navigator.share({ title: title, url: url }).catch(function () {});
+  else if (navigator.clipboard) navigator.clipboard.writeText(url).then(function () { toast('Link copied'); });
+}
+function oops(e) { console.warn(e); toast((e && e.message) || 'Something went wrong.'); }
+function clock(s) { s = Math.round(s); var h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(x).padStart(2, '0'); }
+
+/* ------------------------------------------------------------------ the player */
+var P = { el: $('#player'), v: $('#vid'), hls: null, it: null, queue: [], info: null, saveT: null, idleT: null };
+function trailer(it) {
+  if (!it || !it.trailers || !it.trailers.length) return;
+  closeSheet();
+  P.it = null; P.queue = [];
+  $('#ptitle').textContent = showName(it) + ': the trailer'; $('#psub').textContent = it.year || '';
+  $('#pmsg').classList.remove('on'); $('#pnext').classList.remove('on');
+  P.v.classList.add('hide');
+  var f = document.createElement('iframe');
+  f.className = 'trailer'; f.allow = 'autoplay; fullscreen; picture-in-picture'; f.allowFullscreen = true;
+  f.src = 'https://www.youtube-nocookie.com/embed/' + encodeURIComponent(it.trailers[0]) + '?autoplay=1&rel=0&playsinline=1&modestbranding=1';
+  P.el.insertBefore(f, P.el.firstChild);
+  P.el.classList.add('on', 'trailering'); document.documentElement.style.overflow = 'hidden';
+}
+function signInSheet() {
+  openSheet('<div class="form" style="position:relative">' + X + '<h2 style="font:400 36px/1.1 var(--serif);color:var(--fg)">Sign in to <i>watch</i></h2>' +
+    '<p class="ov" style="margin-top:0">Grifflix is John’s films for family and friends. Members sign in with the 6-letter code from their Profile on Song of the Day, or with their invitation link.</p>' +
+    '<form class="signin" id="signin2" style="margin-top:14px"><input id="code2" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false" placeholder="Code or invitation link" aria-label="Code or invitation link"><button class="pill on" type="submit">Sign in</button></form></div>');
+  $('#signin2').onsubmit = function (e) { e.preventDefault(); join($('#code2').value); };
+  setTimeout(function () { var c = $('#code2'); if (c && !TV) c.focus(); }, 60);
+}
+function play(it, queue, fromStart) {
+  if (!it) return;
+  if (PUBLIC) return signInSheet();
+  closeSheet();
+  P.it = it; P.queue = queue || [];
+  $('#ptitle').textContent = showName(it); $('#psub').textContent = it.type === 'episode' ? subOf(it) : (it.year || '');
+  $('#pmsg').classList.remove('on'); $('#pnext').classList.remove('on');
+  P.el.classList.add('on'); document.documentElement.style.overflow = 'hidden';
+  if (DEMO) { $('#pmsg').textContent = 'In the demo there’s nothing to play. Once the Mac mini is connected, “' + showName(it) + '” plays here.'; $('#pmsg').classList.add('on'); return; }
+  api('play?id=' + it.id).then(function (info) {
+    P.info = info;
+    var v = P.v, start = fromStart ? 0 : (info.pos || 0);
+    while (v.firstChild) v.removeChild(v.firstChild);
+    (info.subs || []).forEach(function (s, i) { var t = document.createElement('track'); t.kind = 'subtitles'; t.label = s.label; t.srclang = s.lang || 'en'; t.src = gwUrl(s.url); v.appendChild(t); });
+    var begin = function () { if (start > 5) try { v.currentTime = start; } catch (e) {} v.play().catch(function () {}); };
+    if (P.hls) { P.hls.destroy(); P.hls = null; }
+    if (info.direct && !Q.has('hls')) { v.src = gwUrl(info.direct); v.addEventListener('loadedmetadata', begin, { once: true }); }
+    else if (v.canPlayType('application/vnd.apple.mpegurl')) { v.src = gwUrl(info.hls); v.addEventListener('loadedmetadata', begin, { once: true }); }
+    else if (window.Hls && Hls.isSupported()) {
+      P.hls = new Hls({ startPosition: start > 5 ? start : -1, maxBufferLength: 40 });
+      P.hls.loadSource(gwUrl(info.hls)); P.hls.attachMedia(v);
+      P.hls.on(Hls.Events.MANIFEST_PARSED, function () { v.play().catch(function () {}); });
+      P.hls.on(Hls.Events.ERROR, function (e, d) { if (d.fatal) { $('#pmsg').textContent = 'It won’t play just now (' + d.details + ').'; $('#pmsg').classList.add('on'); } });
+    } else { $('#pmsg').textContent = 'This browser can’t play it.'; $('#pmsg').classList.add('on'); }
+    clearInterval(P.saveT); P.saveT = setInterval(saveProgress, 10000);
+  }).catch(function (e) { $('#pmsg').textContent = (e && e.message) || 'It won’t play just now.'; $('#pmsg').classList.add('on'); });
+}
+function saveProgress() { if (P.it && P.v.currentTime > 0 && !DEMO && !PUBLIC) api('progress', { id: P.it.id, pos: P.v.currentTime, secs: P.v.duration || (P.info && P.info.secs) || 0 }).then(function () { P.it.pos = P.v.currentTime; }).catch(function () {}); }
+function stopPlayer() {
+  var tf = $('#player iframe.trailer');
+  if (tf) { tf.remove(); P.v.classList.remove('hide'); P.el.classList.remove('on', 'trailering'); document.documentElement.style.overflow = ''; return; }
+  saveProgress(); clearInterval(P.saveT);
+  if (P.info && !DEMO) api('stop', { ps: P.info.ps, device: P.info.device }).catch(function () {});
+  if (P.hls) { P.hls.destroy(); P.hls = null; }
+  P.v.pause(); P.v.removeAttribute('src'); P.v.load();
+  P.el.classList.remove('on'); document.documentElement.style.overflow = '';
+  if (document.fullscreenElement) document.exitFullscreen().catch(function () {});
+  if (S.view === 'home') api('home').then(drawRows).catch(function () {});
+}
+$('#pclose').onclick = stopPlayer;
+P.v.addEventListener('ended', function () { saveProgress(); if (P.queue.length) { var n = P.queue.shift(); play(n, P.queue); } else stopPlayer(); });
+P.v.addEventListener('timeupdate', function () { var left = (P.v.duration || 0) - P.v.currentTime; $('#pnext').classList.toggle('on', P.queue.length > 0 && P.v.duration > 0 && left < 40); });
+$('#pnext').onclick = function () { saveProgress(); var n = P.queue.shift(); play(n, P.queue); };
+var wake = function () { P.el.classList.remove('idle'); clearTimeout(P.idleT); P.idleT = setTimeout(function () { if (!P.v.paused) P.el.classList.add('idle'); }, 3000); };
+P.el.addEventListener('mousemove', wake); P.el.addEventListener('touchstart', wake, { passive: true });
+document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && P.el.classList.contains('on') && !document.fullscreenElement) stopPlayer(); });
+window.addEventListener('pagehide', saveProgress);
+
+/* ------------------------------------------------------------------ the demo: made-up films, kept on this device */
+var Demo = (function () {
+  var FILMS = [
+    ['The Lighthouse Keeper’s Daughter', 1987, 112, 'Drama', '#1f6f8b', '#e2b04a'], ['Paper Moonlight', 2004, 98, 'Romance', '#3b2a6b', '#f2a7c3'],
+    ['Night Train to Lisbon Road', 1999, 124, 'Thriller', '#0f1c2e', '#e04b3a'], ['Orchard', 2016, 101, 'Drama', '#2f5d34', '#f0d36b'],
+    ['A Very Small Heist', 2011, 94, 'Comedy', '#c2412d', '#ffd9a0'], ['Saltwater', 2020, 108, 'Drama', '#11506b', '#9be2e0'],
+    ['The Long Hot Summer of ’76', 1976, 117, 'Comedy', '#d9782d', '#fff0b3'], ['Kestrel', 2009, 103, 'Family', '#6b4a2a', '#e8c48a'],
+    ['Under the Viaduct', 1994, 89, 'Crime', '#252525', '#d4d4d4'], ['Cold Frame', 2018, 115, 'Mystery', '#1b3a4b', '#a9d6e5'],
+    ['Midnight at the Odeon', 1962, 96, 'Musical', '#5a1036', '#f7b2d9'], ['Fireworks Over Margate', 2013, 99, 'Comedy', '#20184a', '#ff8a3d'],
+    ['The Quiet Field', 2001, 121, 'War', '#3d3d2a', '#c9c38f'], ['Glasshouse', 2022, 110, 'Sci-fi', '#0a2f2a', '#5cf2c4'],
+    ['Rosebay', 1983, 92, 'Drama', '#7a1d3a', '#ffc2d1'], ['Big Weather', 2015, 105, 'Adventure', '#1d3557', '#f1faee'],
+    ['The Cartographer', 2007, 128, 'Drama', '#4a3b22', '#e9d8a6'], ['Two for the Ferry', 1971, 88, 'Romance', '#2a5d7a', '#ffd166'],
+    ['Lantern Season', 2019, 97, 'Animation', '#3a1d5c', '#ffb703'], ['Signal Box', 1958, 84, 'Thriller', '#2b2d42', '#ef233c']];
+  var SHOWS = [['Harbour Lights', 1999, '#0b4f6c', '#fbfbff', 2, 6], ['The Allotment', 2021, '#386641', '#f2e8cf', 1, 6]];
+  var HOME = [['Beach day', '2025-07-19', '#2a9d8f', '#f4e9cd'], ['Granny’s 90th', '2024-03-02', '#9b2226', '#ffd6a5'], ['First steps', '2023-10-11', '#5f0f40', '#fcbf49'], ['Snow in the garden', '2022-12-15', '#3d5a80', '#e0fbfc']];
+  var items = {}, order = { movies: [], tv: [], home: [] }, n = 0;
+  var id = function () { n++; return ('d' + String(n).padStart(31, '0')).slice(0, 32); };
+  FILMS.forEach(function (f) { var i = id(); items[i] = { id: i, name: f[0], type: 'movie', year: f[1], mins: f[2], secs: f[2] * 60, genres: [f[3]], cert: ['U', 'PG', '12A', '15'][f[1] % 4], rating: 6 + (f[1] % 30) / 10, overview: 'A made-up film for the demo. Once the Mac mini is connected, real descriptions, posters and cast come from Jellyfin.', poster: i, backdrop: i, c: [f[4], f[5]], added: '2026-' + String(1 + f[1] % 10).padStart(2, '0') + '-01' }; order.movies.push(i); });
+  SHOWS.forEach(function (s) {
+    var i = id(); items[i] = { id: i, name: s[0], type: 'series', year: s[1], genres: ['Drama'], overview: 'A made-up series for the demo.', poster: i, backdrop: i, c: [s[2], s[3]], episodes: [] }; order.tv.push(i);
+    for (var se = 1; se <= s[4]; se++) for (var e = 1; e <= s[5]; e++) { var j = id(); items[j] = { id: j, name: ['Arrivals', 'High Tide', 'The Storm', 'Lost Property', 'Regatta', 'Departures'][e - 1], type: 'episode', series: s[0], seriesId: i, season: se, ep: e, mins: 48, secs: 2880, overview: 'An episode of a made-up series.', thumb: j, poster: i, c: [s[2], s[3]] }; items[i].episodes.push(j); }
+  });
+  HOME.forEach(function (h) { var i = id(); items[i] = { id: i, name: h[0], type: 'video', mins: 3, secs: 180, premiere: h[1], thumb: i, c: [h[2], h[3]] }; order.home.push(i); });
+  var get = function (k, d) { try { return JSON.parse(localStorage.getItem('grifflix-demo-' + k)) || d; } catch (e) { return d; } };
+  var put = function (k, v) { try { localStorage.setItem('grifflix-demo-' + k, JSON.stringify(v)); } catch (e) {} };
+  var cals = get('cals', null);
+  if (!cals) {   // Movie of the Day: a film a day from mid-September to today
+    cals = { motd: { name: 'Movie of the Day', owner: 'me', ownerName: 'John', days: {}, notes: {}, shared: true } };
+    var d = new Date(); d.setDate(d.getDate() - 52); var k = 0;
+    while (iso(d) <= TODAY) { cals.motd.days[iso(d)] = order.movies[(k * 7) % order.movies.length]; if (k % 5 === 2) cals.motd.days[iso(d)] = items[order.tv[k % 2]].episodes[k % 6]; k++; d.setDate(d.getDate() + 1); }
+    cals.motd.notes[TODAY] = 'One for a Saturday night with the lights off.';
+    put('cals', cals);
+  }
+  var L = get('lists', { hearts: [], lists: {} }), prog = get('prog', {});
+  var out = function (i) { var o = Object.assign({}, items[i]); delete o.episodes; if (prog[i]) o.pos = prog[i]; return o; };
+  var calOut = function (cid, full) { var c = cals[cid]; var o = { id: cid, name: c.name, ownerName: c.ownerName, mine: true, shared: c.shared, count: Object.keys(c.days).length }; if (full) { o.days = {}; Object.keys(c.days).forEach(function (d) { o.days[d] = out(c.days[d]); }); o.notes = c.notes; } return o; };
+  var listsOut = function () { return { hearts: L.hearts.map(out), lists: Object.keys(L.lists).map(function (k) { return { id: k, name: L.lists[k].name, items: L.lists[k].items.map(out) }; }) }; };
+  function api(path, b) {
+    var u = new URL(path, 'http://x/'), q = Object.fromEntries(u.searchParams), p = u.pathname.slice(1), r;
+    if (p === 'me') r = { name: 'John (demo)', owner: true, key: 'demo', libraries: { movies: order.movies.length, tv: order.tv.length, home: order.home.length } };
+    else if (p === 'home') r = { 'continue': Object.keys(prog).filter(function (i) { return items[i]; }).map(out), movies: order.movies.slice().reverse().slice(0, 12).map(out), tv: order.tv.map(out), home: order.home.map(out) };
+    else if (p === 'items') { var list = order[q.lib || 'movies'].map(out); if (q.sort === 'year') list.sort(function (a, b) { return b.year - a.year; }); else if (q.sort === 'rating') list.sort(function (a, b) { return b.rating - a.rating; }); else list.sort(function (a, b) { return a.name.localeCompare(b.name); }); r = { items: list, total: list.length }; }
+    else if (p === 'item') { var it = out(q.id); if (items[q.id].episodes) { it.episodes = items[q.id].episodes.map(out); it.next = (it.episodes.filter(function (e) { return !prog[e.id]; })[0] || {}).id; } it.hearted = L.hearts.indexOf(q.id) >= 0; r = it; }
+    else if (p === 'search') { var t = (q.q || '').toLowerCase(); r = { items: Object.keys(items).filter(function (i) { return items[i].name.toLowerCase().indexOf(t) >= 0 && items[i].type !== 'photo'; }).slice(0, 30).map(out) }; }
+    else if (p === 'calendars') r = { calendars: Object.keys(cals).map(function (k) { return calOut(k); }) };
+    else if (p === 'calendar' && !b) r = calOut(cals[q.id] ? q.id : 'motd', true);
+    else if (p === 'calendar') {
+      if (b.op === 'create') { var cid = 'c' + Date.now().toString(36); cals[cid] = { name: b.name, owner: 'me', ownerName: 'John', days: {}, notes: {}, shared: true }; put('cals', cals); r = { id: cid }; }
+      else { var c = cals[b.id]; if (b.op === 'set') { if (b.item) c.days[b.date] = b.item; if ('note' in b) { if (b.note) c.notes[b.date] = b.note; else delete c.notes[b.date]; } } else if (b.op === 'clear') { delete c.days[b.date]; delete c.notes[b.date]; } else if (b.op === 'share') c.shared = b.shared; else if (b.op === 'delete') delete cals[b.id]; put('cals', cals); r = cals[b.id] ? calOut(b.id, true) : { ok: true }; }
+    }
+    else if (p === 'lists') {
+      if (b) { if (b.op === 'heart') { var x = L.hearts.indexOf(b.item); if (x >= 0) L.hearts.splice(x, 1); else L.hearts.unshift(b.item); } else if (b.op === 'create') L.lists['l' + Date.now().toString(36)] = { name: b.name, items: b.items || [] }; else if (L.lists[b.id]) { if (b.op === 'add' && L.lists[b.id].items.indexOf(b.item) < 0) L.lists[b.id].items.push(b.item); if (b.op === 'delete') delete L.lists[b.id]; } put('lists', L); }
+      r = listsOut();
+    } else r = { ok: true };
+    return new Promise(function (res) { setTimeout(function () { res(JSON.parse(JSON.stringify(r))); }, 60); });
+  }
+  var picCache = {};
+  function pic(i, kind) {
+    var it = items[i]; if (!it) return '';
+    var k = i + kind; if (picCache[k]) return picCache[k];
+    var tall = kind === 'Primary', w = tall ? 400 : 640, h = tall ? 600 : 360, c = it.c, title = it.type === 'episode' ? it.series : it.name;
+    var words = title.split(' '), lines = [], cur = '';
+    words.forEach(function (wd) { if ((cur + ' ' + wd).trim().length > (tall ? 12 : 22) && cur) { lines.push(cur); cur = wd; } else cur = (cur + ' ' + wd).trim(); }); lines.push(cur);
+    var fs = tall ? 46 : 40, y0 = tall ? h - 70 - (lines.length - 1) * fs * 1.05 : h - 50 - (lines.length - 1) * fs * 1.05;
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '"><defs><linearGradient id="g" x1="0" y1="0" x2=".6" y2="1"><stop offset="0" stop-color="' + c[1] + '"/><stop offset=".55" stop-color="' + c[0] + '"/><stop offset="1" stop-color="#0b0610"/></linearGradient></defs>' +
+      '<rect width="100%" height="100%" fill="url(#g)"/><circle cx="' + (w * .72) + '" cy="' + (h * .3) + '" r="' + (w * .22) + '" fill="' + c[1] + '" opacity=".55"/>' +
+      (tall ? lines : []).map(function (l, j) { return '<text x="28" y="' + (y0 + j * fs * 1.05) + '" font-family="Georgia,serif" font-size="' + fs + '" fill="#fff">' + l.replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</text>'; }).join('') +
+      (tall && it.year ? '<text x="30" y="' + (h - 28) + '" font-family="Arial" font-size="16" letter-spacing="3" fill="#fff" opacity=".8">' + it.year + '</text>' : '') + '</svg>';
+    return (picCache[k] = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg));
+  }
+  return { api: api, pic: pic };
+})();
+
+/* ------------------------------------------------------------------ the TV: worked by a remote
+   The Fire TV app (_grifflix/tvapp) names its browser GRIFFLIXTV and passes the buttons the page can't hear itself:
+   window.grifflixTV.key('play' | 'ff' | 'rew') and .back() (it closes the app when this answers 'page'). The arrows
+   and OK reach the page as keys: the arrows move between whatever can be pressed, nearest in that direction. In the
+   player, OK and play/pause pause and play, left and right go back 10 seconds and on 30, up and down show the bar. */
+function pressables() {
+  var scope = P.el.classList.contains('on') ? P.el : (dlg.open ? dlg : document);
+  return $$('button, a[href], input, select, textarea', scope).filter(function (el) {
+    if (el.disabled || el.closest('.hide')) return false;
+    if (scope === document && el.closest('dialog, .player')) return false;
+    var r = el.getBoundingClientRect(); return r.width > 2 && r.height > 2 && getComputedStyle(el).visibility !== 'hidden';
+  });
+}
+function moveFocus(dir) {
+  var all = pressables(), cur = document.activeElement;
+  if (!all.length) return;
+  if (all.indexOf(cur) < 0) { (all.filter(function (e) { return e.matches('.day.today'); })[0] || all[0]).focus(); return; }
+  var a = cur.getBoundingClientRect(), ax = a.left + a.width / 2, ay = a.top + a.height / 2, best = null, bestScore = 1e9;
+  all.forEach(function (el) {
+    if (el === cur) return;
+    var r = el.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2, dx = x - ax, dy = y - ay, main, side;
+    var sameRow = r.top < a.bottom - 2 && r.bottom > a.top + 2;   // (left and right stay on the row)
+    if (dir === 'right') { if (r.left < a.right - 4 || !sameRow) return; main = dx; side = dy; }
+    else if (dir === 'left') { if (r.right > a.left + 4 || !sameRow) return; main = -dx; side = dy; }
+    else if (dir === 'down') { if (r.top < a.bottom - 4) return; main = dy; side = dx; }
+    else { if (r.bottom > a.top + 4) return; main = -dy; side = dx; }
+    var score = main + Math.abs(side) * 2.2;
+    if (score < bestScore) { bestScore = score; best = el; }
+  });
+  if (best) { best.focus({ preventScroll: true }); best.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' }); }
+}
+function playerKeys(k) {
+  var v = P.v; wake();
+  if (k === 'play' || k === 'ok') { if (v.paused) v.play().catch(function () {}); else v.pause(); return true; }
+  if (k === 'rew' || k === 'left') { v.currentTime = Math.max(0, v.currentTime - 10); return true; }
+  if (k === 'ff' || k === 'right') { v.currentTime = Math.min((v.duration || 1e9) - 1, v.currentTime + 30); return true; }
+  return false;
+}
+document.addEventListener('keydown', function (e) {
+  if (!TV) return;
+  var k = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down', Enter: 'ok', MediaPlayPause: 'play', MediaFastForward: 'ff', MediaRewind: 'rew' }[e.key];
+  if (!k) return;
+  var ae = document.activeElement, inText = /^(INPUT|TEXTAREA|SELECT)$/.test((ae || {}).tagName || '');
+  if (P.el.classList.contains('on') && (!ae || ae === P.v || ae === document.body || !P.el.contains(ae))) {
+    if (k === 'up' || k === 'down') { wake(); $('#pclose').focus(); e.preventDefault(); return; }
+    if (playerKeys(k)) { e.preventDefault(); return; }
+  }
+  if (k === 'ok' || (inText && (k === 'left' || k === 'right'))) return;   // OK presses the button (the browser's own); text keeps its own left/right
+  e.preventDefault(); moveFocus(k);
+}, true);
+window.grifflixTV = {
+  key: function (k) {
+    if (P.el.classList.contains('on')) return playerKeys(k);
+    if (k === 'play') {
+      var it = document.activeElement && document.activeElement.closest('[data-day]'), d = S.calData && S.calData.days[it ? it.dataset.day : TODAY];
+      if (d) play(d);
+    }
+    if ((k === 'ff' || k === 'rew') && S.view === 'home') { var b = $(k === 'ff' ? '#mnext' : '#mprev'); if (b && !b.disabled) b.click(); }
+    return true;
+  },
+  back: function () {
+    if (P.el.classList.contains('on')) { stopPlayer(); return 'done'; }
+    if (dlg.open) { closeSheet(); return 'done'; }
+    if (S.view !== 'home') { location.hash = '#home'; return 'done'; }
+    return 'page';
+  }
+};
+if (TV) {
+  P.v.controls = false;   // (a remote can't work the browser's own controls: the bar below is the page's)
+  P.v.addEventListener('timeupdate', function () { if (P.v.duration) { $('#pbar i').style.width = (P.v.currentTime / P.v.duration * 100).toFixed(2) + '%'; $('#ptime').textContent = clock(P.v.currentTime) + ' / ' + clock(P.v.duration); } });
+  ['play', 'pause'].forEach(function (ev) { P.v.addEventListener(ev, function () { try { if (window.GRIFFLIXTV && GRIFFLIXTV.playing) GRIFFLIXTV.playing(ev === 'play'); } catch (x) {} wake(); }); });
+  dlg.addEventListener('close', function () { setTimeout(function () { var d = $('.day.today'); if (d && !P.el.classList.contains('on') && !dlg.open) d.focus(); }, 30); });
+}
+document.addEventListener('error', function (e) { if (e.target.tagName === 'IMG') e.target.style.visibility = 'hidden'; }, true);   // (a picture the Mac mini hasn't got)
+start();
+})();
+</script>
+</body>
+</html>

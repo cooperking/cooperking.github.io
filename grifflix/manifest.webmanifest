@@ -1,0 +1,27 @@
+{
+  "name": "Grifflix",
+  "short_name": "Grifflix",
+  "start_url": "/grifflix/",
+  "scope": "/grifflix/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#120914",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
