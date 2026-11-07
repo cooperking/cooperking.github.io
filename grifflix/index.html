@@ -428,6 +428,7 @@ function join(text) {
     .then(function (j) { store.set('sotd-member', j.token); TOKEN = j.token; toast('Welcome, ' + (j.name || '').split(' ')[0]); setTimeout(function () { location.replace(location.pathname); }, 700); })
     .catch(function (e) { toast(e.message || 'Couldn’t reach Song of the Day. Try again.'); });
 }
+window.grifflixJoin = join;   // (the Fire TV app's menu: Sign in with a code)
 (function () { var c = codeFrom(location.hash); if (c && /^#join=/.test(location.hash)) { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {} join(location.hash); } })();
 
 /* ------------------------------------------------------------------ pages */
