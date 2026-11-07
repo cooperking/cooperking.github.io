@@ -34,6 +34,30 @@ phone / browser / TV ──► cooperking.github.io/grifflix/  (the page: GitHub
   Jellyfin copies into pieces without converting when it can (an H.264 MKV), converting only when it must.
   Safari and iPhones play HLS themselves; other browsers through hls.js.
 
+## John's Mac mini (2010, macOS 10.13 High Sierra, 4 GB)
+
+The newest macOS it can have is High Sierra, which the current Jellyfin, cloudflared and Claude app don't run on.
+`Install.command` sees that and installs the last builds that do (checked 7 Nov 2026, each binary's minimum macOS
+read from the file): **Jellyfin 10.7.7** (2021; its app's own ffmpeg, min 10.10; app min 10.13), **Python 3.12.10**
+from python.org (Intel part min 10.13) with `certifi` for its certificates, **cloudflared 2023.10.0** (the last
+built with Go 1.20; 2024.1 on are Go 1.21, which needs 10.15). The gateway works the same with Jellyfin 10.7.7:
+tested end to end here, playback included.
+
+What the old Mac means:
+- **No converting video.** A 2010 Core 2 Duo can't convert HD in real time, and its graphics can't help. Jellyfin
+  only repackages (checked: `-codec:v:0 copy -codec:a:0 copy`), which costs little, so H.264 films (most MP4s and
+  MKVs) play everywhere; HEVC/H.265 and 4K files won't play in most browsers. Plex had the same limit on this Mac.
+- **cloudflared 2023.10.0 is old.** Cloudflare only promises a year's support for each version; it may one day be
+  turned away. If so, the gateway can be reached another way (another always-on device running a current
+  cloudflared, pointed at the Mac mini's 192.168.68.125:8097).
+- **No security updates for macOS.** Nothing on the Mac listens to the internet: the tunnel connects out, and only the
+  gateway (members only, signed links) is reachable through it; Jellyfin stays on 127.0.0.1.
+- 4 GB: run Plex or Grifflix, not both scanning at once; quit Plex once Grifflix has the films.
+- It's on Wi-Fi ("Cami", 192.168.68.125); give it a fixed address in the router.
+
+A newer Mac later: run `Install.command` there (it takes the current versions), copy `data.json` across, and point
+the tunnel's hostname at it. The page doesn't change.
+
 ## Setting up the Mac mini
 
 1. Copy the `_grifflix/mac` folder to the Mac mini; double-click `Install.command`. It installs Homebrew (if
@@ -61,4 +85,6 @@ calendars, playlists, HLS playback in Chromium through hls.js, progress and stop
 - Fire TV: the SOTD TV app's way (`_tvapp`), pointed at `/grifflix/`, with the remote moving between days.
 - iPhone/iPad Home Screen app; Apple TV (AirPlay from the iPhone first; its own app later).
 - Movie of the Day's share pages and cards, like the songs'.
+- Allow HEVC to be copied, not converted, for devices that play it (Safari, iPhone, Fire TV), since the old Mac
+  can't convert it.
 - An `id` in the Worker's `/members/me`, so two members with the same name are kept apart.

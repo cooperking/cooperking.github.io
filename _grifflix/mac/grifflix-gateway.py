@@ -51,6 +51,16 @@ def save(path, obj):
     os.replace(tmp, path)
 
 
+def tls():
+    """Python from python.org (an old Mac's) has no certificates of its own until certifi is installed."""
+    import ssl
+    try:
+        import certifi
+        return ssl.create_default_context(cafile=certifi.where())
+    except ImportError:
+        return ssl.create_default_context()
+
+
 # ---------------------------------------------------------------- Jellyfin
 
 class Jellyfin:
@@ -138,9 +148,11 @@ def setup(args):
             jf.call('POST', '/Library/VirtualFolders', {'LibraryOptions': {'EnableRealtimeMonitor': True, 'PathInfos': [{'Path': path}]}},
                     {'name': name, 'collectionType': ctype, 'refreshLibrary': 'true'})
         log('Library', name, '->', path)
-    try:   # the Mac's own video chip for converting (Apple VideoToolbox)
+    try:   # the Mac's own video chip for converting (VideoToolbox): Apple silicon, or --hwaccel yes on an Intel Mac that has
+        # it (2012 on). The 2010 Mac mini's chip can't, and converting is left to the processor (and mostly avoided).
+        import platform
         enc = jf.call('GET', '/System/Configuration/encoding')
-        if sys.platform == 'darwin' and enc.get('HardwareAccelerationType') != 'videotoolbox':
+        if sys.platform == 'darwin' and (platform.machine() == 'arm64' or opts.get('--hwaccel') == 'yes') and enc.get('HardwareAccelerationType') != 'videotoolbox':
             enc['HardwareAccelerationType'] = 'videotoolbox'
             enc['EnableHardwareEncoding'] = True
             jf.call('POST', '/System/Configuration/encoding', enc)
@@ -284,7 +296,7 @@ class Gateway:
         else:
             try:
                 u = urllib.parse.urlparse(WORKER)
-                c = http.client.HTTPSConnection(u.hostname, timeout=15)
+                c = http.client.HTTPSConnection(u.hostname, timeout=15, context=tls())
                 c.request('GET', '/members/me', headers={'Authorization': 'Bearer ' + token, 'X-App': 'grifflix', 'User-Agent': 'Grifflix gateway'})
                 r = c.getresponse()
                 body = r.read()
