@@ -212,7 +212,7 @@ ALSO_IN = {'Criterion Collection': ['By Brakhage: An Anthology, Volumes One and 
 # series put in a collection by name, each as one entry (John, 7 Nov 2026: "The Underground Railroad, Tanner 88, and Fishing
 # with John from TV Series should also be box sets in the Criterion Collection")
 SERIES_IN = {'Criterion Collection': ['The Underground Railroad', 'Tanner 88', 'Fishing with John']}
-def by_name(d, title):   # 'Criterion Collection' finds 'The Criterion Collection' (John's is called that)
+def named_in(d, title):   # 'Criterion Collection' finds 'The Criterion Collection' (John's is called that)
     k = lambda t: re.sub(r'^the\s+', '', (t or '').strip().lower())
     return next((v for n, v in d.items() if k(n) == k(title)), [])
 def skey(n):   # 'Tanner '88 (1988)' and 'Tanner 88' alike
@@ -255,11 +255,11 @@ for cid, title, h, thumb, summary, extra in cols:
                 swapped.append(j)
         ids = swapped
     put = []
-    for st in by_name(ALSO_IN, title):
+    for st in named_in(ALSO_IN, title):
         j = set_id.get(st)
         if j and j not in ids and not (GO and j.startswith('set:')):
             ids.append(j); put.append(st)
-    for sn in by_name(SERIES_IN, title):
+    for sn in named_in(SERIES_IN, title):
         j = series_id.get(skey(sn))
         if not j:
             print('   (series not found in Grifflix: %s)' % sn)
