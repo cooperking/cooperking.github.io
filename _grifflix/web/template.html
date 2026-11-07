@@ -301,6 +301,72 @@ html.tv .bar-top { position: relative; top: 0; }
 .list-title { display: flex; align-items: center; gap: 10px; margin: 0 4px 12px; }
 .list-title h2 { margin: 0; }
 .list-title .sp { flex: 1; }
+
+/* ---- Song of the Day's look: the month's colours, the title in the middle, square days, the month's films in a card beside or below */
+:root { --tile: rgba(255, 255, 255, .14); --tag-line: rgba(255, 255, 255, .22); --panel: rgba(14, 6, 18, .3); --glass: rgba(16, 6, 18, .3);
+  --line: rgba(255, 255, 255, .32); --muted: rgba(255, 250, 245, .9); --faint: rgba(255, 250, 245, .82); --empty-bg: rgba(255, 255, 255, .1); --empty-line: rgba(255, 255, 255, .26); }
+.scrim { background: none; }
+.wrap { max-width: 1000px; padding: calc(14px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) 56px max(16px, env(safe-area-inset-left, 0px)); overflow-x: clip; }
+html.tv .wrap { max-width: none; }
+.bar-top { padding: 10px 10px 10px 20px; }
+.hero { display: grid; grid-template-columns: minmax(0, 1fr); justify-items: center; gap: 16px; text-align: center; margin: 0; padding-top: 44px; }
+.hero h1 { font: 500 clamp(52px, 13vw, 104px)/.98 var(--serif); letter-spacing: -.02em; text-wrap: balance; }
+.hero h1 i { font-weight: 400; color: var(--fg-2); }
+.hero .kick { flex: none; margin: 0 0 -6px; }
+.hbtns { flex-wrap: wrap; justify-content: center; gap: 8px 10px; margin: -10px 0 2px; }
+.hsub { margin: 0 4px 0 0; font: 500 clamp(19px, 4.8vw, 26px)/1.1 var(--serif); letter-spacing: -.005em; }
+.hbtns .ico { width: 42px; height: 42px; }
+.hbtns .ico.big { background: var(--fg); color: var(--bg); }
+.hbtns .ico.big svg { width: 15px; height: 15px; margin-left: 2px; }
+.cals { justify-content: center; margin: 26px 0 0; padding: 2px 0 2px; }
+.cals:has(.pill:nth-child(3)) { justify-content: flex-start; }
+#mnav { margin-top: 18px; }
+.monthnav { display: flex; width: 100%; gap: 6px; padding: 4px; margin: 0; background: var(--panel); }
+.monthnav .ms { flex: 1; gap: 4px; padding: 2px; }
+.monthnav .ms .m:first-child { margin-left: auto; } .monthnav .ms .m:last-child { margin-right: auto; }
+.monthnav .m { min-width: 0; height: auto; padding: 6px 10px 5px; font-size: 11px; letter-spacing: .12em; color: var(--faint); }
+.monthnav .ico { width: 38px; height: 38px; background: var(--glass); }
+.monthnav .ico:disabled { opacity: .3; }
+.stage { display: grid; grid-template-columns: minmax(0, 1fr); gap: 34px; margin-top: 34px; }
+.cal { display: grid; gap: 10px; padding: 12px clamp(8px, 2.4vw, 18px) clamp(10px, 2.4vw, 18px); border-radius: 18px; box-shadow: none; background: var(--panel); }
+.calhead:empty { display: none; }
+.calhead { margin: 0; }
+.dow, .grid { gap: clamp(4px, 1.3vw, 12px); }
+.grid { margin: 0; }
+.dow div { padding-left: 2px; font: 400 10.5px/1 var(--sans); letter-spacing: .16em; color: var(--faint); text-align: left; }
+.day { aspect-ratio: 1; border: 0; border-radius: 4px; background: var(--empty-bg); box-shadow: inset 0 0 0 1px var(--empty-line); overflow: hidden; }
+.day.has { background: var(--tile); box-shadow: 0 10px 24px var(--shadow); }
+.day.has::after { content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .14); pointer-events: none; }
+.day .cap { display: none; }
+.day .art { object-position: 50% 22%; }
+.day .num, .day.has .num { top: auto; left: 4px; bottom: 4px; min-width: 1.9em; padding: 2px 5px 1px; border-radius: 2px; background: none; font: 400 clamp(9px, 2vw, 11px)/1.3 var(--sans); letter-spacing: .06em; text-align: center; color: var(--muted); }
+.day.has .num { background: var(--tag-bg); border: 1px solid var(--tag-line); color: var(--fg); }
+.day.today { border: 0; box-shadow: 0 0 0 1.5px var(--fg), 0 0 26px color-mix(in srgb, var(--g1) 75%, transparent); }
+.day.today .num, .day.today.has .num { background: var(--fg); color: #1b1020; border-color: var(--fg); }
+@media (hover: hover) { button.day.has { transition: transform .35s cubic-bezier(.2, .7, .2, 1), box-shadow .35s ease; } button.day.has:hover { transform: translateY(-3px) scale(1.03); } button.day.has:hover .art { transform: none; } }
+@media (max-width: 760px) { .cal { padding: 12px 8px 10px; } .dow div { font-size: 9.5px; letter-spacing: .1em; } .day { aspect-ratio: 1; } }
+.side { display: grid; gap: 14px; align-content: start; padding: 18px clamp(14px, 3vw, 24px) 10px; border-radius: 18px; background: var(--panel); border: 1px solid var(--line); }
+.side h2 { margin: 0; font: 400 clamp(28px, 6vw, 40px)/1.05 var(--serif); color: var(--fg); letter-spacing: -.01em; }
+.side h2 i { color: var(--muted); }
+.side .none { margin: 0 0 10px; font: italic 400 17px/1.4 var(--serif); color: var(--muted); }
+.tracks { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); }
+.tracks li { min-width: 0; border-bottom: 1px solid var(--line); }
+.tracks li:last-child { border-bottom: 0; }
+.tracks button { width: 100%; display: grid; grid-template-columns: 4.6em 40px minmax(0, 1fr); gap: 12px; align-items: center; padding: 9px 0; border: 0; background: none; text-align: left; }
+.tracks .td { font: 400 10.5px/1.2 var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--faint); font-variant-numeric: tabular-nums; }
+.tracks .thumb { position: relative; width: 40px; aspect-ratio: 2 / 3; overflow: hidden; border-radius: 3px; background: var(--tile); }
+.tracks .thumb img { width: 100%; height: 100%; object-fit: cover; }
+.tracks .tx { min-width: 0; display: grid; gap: 1px; }
+.tracks .tt { font: 600 12px/1.35 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--fg-2); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.tracks .ta { font: 400 15px/1.3 var(--serif); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tracks .today .td { color: var(--fg); font-weight: 600; }
+@media (max-width: 480px) { .tracks button { grid-template-columns: 3.6em 40px minmax(0, 1fr); gap: 10px; } }
+@media (min-width: 1100px) {   /* a wide screen: the month's films beside the calendar */
+  .wrap { max-width: 1400px; }
+  .stage { grid-template-columns: minmax(0, 1.55fr) minmax(300px, 1fr); gap: 24px; align-items: start; }
+  .side { max-height: calc(100vh - 120px); overflow: auto; position: sticky; top: 90px; }
+}
+.rows { margin-top: 44px; }
 </style>
 </head>
 <body>
@@ -386,6 +452,20 @@ function img(id, kind, w) {
 function gwUrl(p) { return DEMO ? p : GW + p; }
 
 /* ------------------------------------------------------------------ colour from a poster, like Song of the Day's covers */
+var PALETTES = [   // the month's colours: ground, then four glows
+  ['#0c1445', '#0094de', '#8833ff', '#f700f7', '#009aa8'], ['#652bee', '#3333ff', '#cc33ff', '#3388ff', '#ff2bb8'],
+  ['#11970c', '#429e00', '#00a150', '#7d9600', '#009e84'], ['#b613ec', '#fc00e7', '#8833ff', '#ff33aa', '#5533ff'],
+  ['#096a42', '#00a336', '#009e91', '#00a30e', '#0097c9'], ['#ec1a13', '#fa5300', '#ff3366', '#db6e00', '#ff3399'],
+  ['#1346ec', '#008ff5', '#5533ff', '#0097c9', '#8833ff'], ['#d85a06', '#c47c00', '#ff4a2e', '#b28600', '#ff3344'],
+  ['#0b86d3', '#0098b0', '#3370ff', '#009e91', '#3333ff'], ['#ec135b', '#ff3344', '#ff30b3', '#ff4c29', '#fc00e7'],
+  ['#09696d', '#009e77', '#0094d4', '#00a150', '#198cff'], ['#ec13c1', '#ff3399', '#dd33ff', '#ff3366', '#aa33ff']
+];
+function monthTint(m) {
+  var p = PALETTES[m] || PALETTES[0], R = document.documentElement.style;
+  ['--bg', '--g1', '--g2', '--g3', '--g4'].forEach(function (n, i) { R.setProperty(n, p[i]); });
+  var tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.content = p[0];
+}
+monthTint(new Date().getMonth());
 function tint(src) {
   if (!src) return;
   var im = new Image(); im.crossOrigin = 'anonymous';
@@ -500,14 +580,13 @@ $$('[data-go]').forEach(function (b) { b.addEventListener('click', function () {
 /* --- home: a calendar (Movie of the Day, or someone's own) and the rows */
 function home() {
   var main = $('#main');
-  main.innerHTML = '<div class="hero" id="hero"></div><div class="cals" id="cals"></div><div id="mnav"></div><section class="cal" id="cal"></section><div class="rows" id="rows"></div>';
+  main.innerHTML = '<div class="hero" id="hero"></div><div class="cals" id="cals"></div><div id="mnav"></div><div class="stage"><section class="cal" id="cal"></section><section class="side" id="side"></section></div><div class="rows" id="rows"></div>';
   Promise.all([api('calendars'), api('calendar?id=' + encodeURIComponent(S.cal)).catch(function () { S.cal = 'motd'; return api('calendar?id=motd'); })]).then(function (r) {
     S.cals = r[0].calendars; S.calData = r[1];
     if (!S.month) S.month = TODAY.slice(0, 7);
     drawCals(); drawMonth();
     if (S.pendingDay) { var pd = S.pendingDay; S.pendingDay = null; if (S.calData.days[pd]) daySheet(pd); }
     var t = S.calData.days[TODAY] || S.calData.days[Object.keys(S.calData.days).sort().pop()];
-    if (t) tint(img(t.poster || t.backdrop, t.poster ? 'Primary' : 'Backdrop', 120));
   }).catch(oops);
   api('home').then(drawRows).catch(function () {});
 }
@@ -531,9 +610,10 @@ function drawMonth() {
   if (months.indexOf(S.month) < 0) S.month = months[months.length - 1];
   var y = +S.month.slice(0, 4), m = +S.month.slice(5, 7) - 1, inMonth = Object.keys(C.days).filter(function (d) { return d.slice(0, 7) === S.month; });
   var noun = function (n) { return n === 1 ? 'film' : 'films'; };
+  monthTint(m);
   $('#hero').innerHTML = (C.id !== 'motd' ? '<div class="kick">' + esc(C.mine ? 'Your calendar · ' + C.name : C.ownerName + '’s calendar · ' + C.name) + '</div>' : '') +
-    '<h1>' + MONTHS[m] + ' <i>' + y + '</i></h1><div class="hsub">' + inMonth.length + ' ' + noun(inMonth.length) + ' · <i>' + C.count + ' total</i></div>' +
-    '<div class="hbtns"><button class="ico big" id="playtoday" aria-label="Play today’s film"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>' +
+    '<h1>' + MONTHS[m] + ' <i>' + y + '</i></h1>' +
+    '<div class="hbtns"><span class="hsub">' + inMonth.length + ' ' + noun(inMonth.length) + ' · <i>' + C.count + ' total</i></span><button class="ico big" id="playtoday" aria-label="Play today’s film"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>' +
     '<button class="ico" id="surprise" aria-label="Surprise me"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg></button>' +
     '<button class="ico" id="sharecal" aria-label="Share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13M7 8l5-5 5 5M5 14v6h14v-6"/></svg></button></div>';
   var i = months.indexOf(S.month), mh = '<button class="ico" id="mprev" aria-label="Earlier month"' + (i <= 0 ? ' disabled' : '') + '><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg></button><div class="ms">';
@@ -558,12 +638,20 @@ function drawMonth() {
   }
   $('#cal').innerHTML = h + '</div>';
   $('#cal').classList.toggle('mine', !!mine);
-  $$('#cal [data-day]').forEach(function (b) { b.onclick = function () { daySheet(b.dataset.day); }; });
+  var sorted = inMonth.slice().sort();
+  $('#side').innerHTML = '<h2>' + (sorted.length ? sorted.length + ' ' + noun(sorted.length) : 'No films') + ' <i>in ' + MONTHS[m] + '</i></h2>' +
+    (sorted.length ? '<ol class="tracks">' + sorted.map(function (k) {
+      var it = C.days[k], d = new Date(k + 'T12:00');
+      return '<li' + (k === TODAY ? ' class="today"' : '') + '><button data-day="' + k + '"><span class="td">' + DOW[(d.getDay() + 6) % 7] + ' ' + k.slice(8) + '</span>' +
+        '<span class="thumb">' + (it.poster || it.thumb ? '<img loading="lazy" alt="" src="' + esc(it.poster ? img(it.poster, 'Primary', 120) : img(it.thumb, 'Thumb', 160)) + '">' : '') + '</span>' +
+        '<span class="tx"><span class="tt">' + esc(showName(it)) + '</span><span class="ta">' + esc(subOf(it)) + '</span></span></button></li>';
+    }).join('') + '</ol>' : '<p class="none">' + (mine ? 'Tap a day on the calendar to choose its film.' : 'Nothing this month yet.') + '</p>');
+  $$('#cal [data-day], #side [data-day]').forEach(function (b) { b.onclick = function () { daySheet(b.dataset.day); }; });
   $('#playtoday').onclick = function () { var t = C.days[TODAY] || C.days[inMonth.sort().pop()]; if (t) play(t); else toast('Nothing on this calendar yet.'); };
   $('#surprise').onclick = function () { var all = Object.keys(C.days); if (!all.length) return toast('Nothing on this calendar yet.'); daySheet(all[Math.floor(Math.random() * all.length)]); };
   $('#sharecal').onclick = function () { share('Grifflix: ' + (C.id === 'motd' ? 'Movie of the Day' : C.name), location.href.split('#')[0] + '#home/' + C.id); };
 }
-function dayPic(it) { return phone() ? (it.poster ? img(it.poster, 'Primary', 200) : img(it.thumb || it.backdrop, it.thumb ? 'Thumb' : 'Backdrop', 300)) : img(it.backdrop || it.thumb || it.poster, it.backdrop ? 'Backdrop' : (it.thumb ? 'Thumb' : 'Primary'), 420); }
+function dayPic(it) { return it.poster ? img(it.poster, 'Primary', phone() ? 200 : 320) : img(it.thumb || it.backdrop, it.thumb ? 'Thumb' : 'Backdrop', 320); }   /* (square days: the poster, cut to its top) */
 function phone() { return matchMedia('(max-width: 760px)').matches; }
 function showName(it) { return it.type === 'episode' ? (it.series || it.name) : it.name; }
 function subOf(it) {
@@ -594,7 +682,7 @@ function collectionView(id) {
       (c.overview ? '<p class="ov">' + esc(c.overview) + '</p>' : '') + '</div></div>' +
       '<div class="gridcards">' + c.items.map(function (i) { return cardHTML(i); }).join('') + '</div>';
     wireCards($('#cbody'), c.items);
-    if (c.poster) tint(img(c.poster, 'Primary', 120));
+
   }).catch(oops);
 }
 function wireCards(el, items) {
