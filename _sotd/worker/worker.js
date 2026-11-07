@@ -121,6 +121,19 @@ export default {
     })().catch(e => console.log('scheduled: ' + (e && e.message))));
     ctx.waitUntil(appUpdates(env).catch(e => console.log('appUpdates: ' + (e && e.message))));
     ctx.waitUntil(catalogHeal(env).catch(e => console.log('catalogHeal: ' + (e && e.message))));
+    ctx.waitUntil((async () => {   // once: playlists' own files that were only part of the song (the download code before its length check: John, 7 Nov 2026), taken off so they show as missing again
+      if (!env.MEDIA || await env.SOTD.get('ownShort1')) return;
+      await env.SOTD.put('ownShort1', String(Date.now()));
+      const K = ["ua/G_N-fUAd7o8VUQ/0F2f7i7oIh81isg06NLv3f.mp3", "ua/G_N-fUAd7o8VUQ/0Oroc0HXQaxs8ONgI7dLnw.mp3", "ua/G_N-fUAd7o8VUQ/0f7i3Kkr1B0OPLxezI2vnX.mp3", "ua/G_N-fUAd7o8VUQ/0rG7kZtNbwLprtijSf3zhd.mp3", "ua/G_N-fUAd7o8VUQ/1e0hllQ23AG0QGFgezgLOq.mp3", "ua/G_N-fUAd7o8VUQ/254ujtd5Avf5mwBET7FASI.mp3", "ua/G_N-fUAd7o8VUQ/2B3ArhTa6DRox1W4CJZ1dM.mp3", "ua/G_N-fUAd7o8VUQ/2Fk411Ix3qnMG8t8Qa74ZX.mp3", "ua/G_N-fUAd7o8VUQ/3nhJDVdUrm6DnDW4iBfpKz.mp3", "ua/G_N-fUAd7o8VUQ/5AcM8eAOtusLByGW7XbRA6.mp3", "ua/G_N-fUAd7o8VUQ/5DhDfdsf619KwxsweNdulg.mp3", "ua/G_N-fUAd7o8VUQ/63uskN0xLezVg4281wzeQn.mp3", "ua/G_N-fUAd7o8VUQ/67VdmhC89bZ6yK2XRys0lA.mp3", "ua/G_N-fUAd7o8VUQ/6pTIIBntNSvDeUdZS3E8vz.mp3", "ua/G_N-fUAd7o8VUQ/727YRTVI7pKH1uCnXnyZul.mp3", "uv/G_N-fUAd7o8VUQ/0F2f7i7oIh81isg06NLv3f.mp4", "uv/G_N-fUAd7o8VUQ/0Oroc0HXQaxs8ONgI7dLnw.mp4", "uv/G_N-fUAd7o8VUQ/0f7i3Kkr1B0OPLxezI2vnX.mp4", "uv/G_N-fUAd7o8VUQ/0rG7kZtNbwLprtijSf3zhd.mp4", "uv/G_N-fUAd7o8VUQ/1e0hllQ23AG0QGFgezgLOq.mp4", "uv/G_N-fUAd7o8VUQ/254ujtd5Avf5mwBET7FASI.mp4", "uv/G_N-fUAd7o8VUQ/2B3ArhTa6DRox1W4CJZ1dM.mp4", "uv/G_N-fUAd7o8VUQ/2Fk411Ix3qnMG8t8Qa74ZX.mp4", "uv/G_N-fUAd7o8VUQ/3nhJDVdUrm6DnDW4iBfpKz.mp4", "uv/G_N-fUAd7o8VUQ/5AcM8eAOtusLByGW7XbRA6.mp4", "uv/G_N-fUAd7o8VUQ/63uskN0xLezVg4281wzeQn.mp4", "uv/G_N-fUAd7o8VUQ/67VdmhC89bZ6yK2XRys0lA.mp4", "uv/G_N-fUAd7o8VUQ/6pTIIBntNSvDeUdZS3E8vz.mp4"], done = [];
+      for (const key of K) {
+        const m = /^u([av])\/([\w-]+)\/([0-9A-Za-z]{22})\.(mp3|mp4)$/.exec(key); if (!m) continue;
+        await env.MEDIA.delete(key).catch(() => {});
+        await uplFilesSet(env, m[2], m[3], m[1], 0);
+        done.push(key);
+      }
+      await env.SOTD.put('r2want', JSON.stringify({ at: Date.now(), key: 'ownshort' }));
+      await env.MEDIA.put('diag/own-short-gone.json', JSON.stringify({ at: new Date().toISOString(), deleted: done }, null, 1), { httpMetadata: { contentType: 'application/json' } });
+    })().catch(e => console.log('ownShort: ' + (e && e.message))));
     ctx.waitUntil((async () => {   // once: the download job's copies that were only part of the song (a preview or a Short; John, 7 Nov 2026), deleted so they come again whole
       if (!env.MEDIA || await env.SOTD.get('shortGone1')) return;
       await env.SOTD.put('shortGone1', String(Date.now()));
