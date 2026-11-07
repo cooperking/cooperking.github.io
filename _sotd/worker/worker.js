@@ -3087,6 +3087,29 @@ async function probeMp4(env, key, size) {
   if (info.dur) info.kbps = Math.round(size * 8 / info.dur / 1000);
   return info;
 }
+// an MP3's length, from its first frames (its Xing or Info header's frame count, else its bitrate), in seconds; 0 unknown
+async function mp3Len(env, key, size) {
+  const o = await env.MEDIA.get(key, { range: { offset: 0, length: Math.min(size, 256 << 10) } }).catch(() => null); if (!o) return 0;
+  const b = new Uint8Array(await o.arrayBuffer());
+  let i = 0;
+  if (b[0] === 0x49 && b[1] === 0x44 && b[2] === 0x33) i = 10 + ((b[6] & 127) << 21 | (b[7] & 127) << 14 | (b[8] & 127) << 7 | (b[9] & 127));   // (an ID3 tag first)
+  for (; i + 4 < b.length; i++) if (b[i] === 0xff && (b[i + 1] & 0xe0) === 0xe0) break;
+  if (i + 4 >= b.length) return 0;
+  const ver = (b[i + 1] >> 3) & 3, lay = (b[i + 1] >> 1) & 3, bri = b[i + 2] >> 4, sri = (b[i + 2] >> 2) & 3, mono = (b[i + 3] >> 6) === 3;
+  if (lay !== 1 || bri === 0 || bri === 15 || sri === 3) return 0;   // (Layer III only)
+  const v1 = ver === 3, sr = [[11025, 12000, 8000], [0, 0, 0], [22050, 24000, 16000], [44100, 48000, 32000]][ver][sri];
+  const kbps = (v1 ? [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320] : [0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160])[bri];
+  const spf = v1 ? 1152 : 576, x = i + 4 + (v1 ? (mono ? 17 : 32) : (mono ? 9 : 17));
+  const tag = String.fromCharCode(b[x], b[x + 1], b[x + 2], b[x + 3]);
+  if ((tag === 'Xing' || tag === 'Info') && (b[x + 7] & 1)) { const frames = (b[x + 8] << 24 | b[x + 9] << 16 | b[x + 10] << 8 | b[x + 11]) >>> 0; return sr ? frames * spf / sr : 0; }
+  return kbps ? (size - i) * 8 / (kbps * 1000) : 0;
+}
+// a song's real length in seconds (Spotify's, kept in KV durs: songDurs), 0 unknown
+async function realLen(env, t) {
+  const kept = (await env.SOTD.get('durs', 'json')) || {};
+  if (!kept[t]) await songDurs(new URL('https://x/durs?ids=' + t), env).catch(() => null);
+  return (((await env.SOTD.get('durs', 'json')) || {})[t] || 0) / 1000;
+}
 async function mediaReport(url, env) {
   const h = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'Access-Control-Allow-Origin': '*' };
   if (!env.MEDIA) return new Response('{}', { headers: h });
@@ -5688,6 +5711,11 @@ async function memberUplUp(request, url, env, answer) {   // ?id&track&kind=a|v&
     if (!parts.length) return answer(400, { error: 'No parts.' });
     const obj = await up.complete(parts);
     if (obj.size > UPL_FILE_MAX[kind]) { await env.MEDIA.delete(key); return answer(400, { error: uplTooBig(kind) }); }
+    {   // the whole song, not a preview or a Short (John, 7 Nov 2026: "it downloaded songs of only 30 seconds again"), whatever sent it
+      const real = await realLen(env, o.track).catch(() => 0), got = real ? await (kind === 'v' ? probeMp4(env, key, obj.size).then(i => i.dur || 0) : mp3Len(env, key, obj.size)).catch(() => 0) : 0;
+      const mmss = x => Math.floor(x / 60) + ':' + String(Math.round(x % 60)).padStart(2, '0');
+      if (real && got && got < 0.8 * real) { await env.MEDIA.delete(key); return answer(400, { error: 'Only part of the song (' + mmss(got) + ' of ' + mmss(real) + '): not added', short: true }); }
+    }
     if (await over()) { await env.MEDIA.delete(key); return answer(400, { error: uplFilesFull(most) }); }   // (others went up meanwhile)
     await uplFilesSet(env, o.pid, o.track, kind, obj.size);
     return answer(200, { ok: true, size: obj.size, fu: await fu(), view: await uplView(env, o.who.all, o.who.id, o.pid, o.rec) });
