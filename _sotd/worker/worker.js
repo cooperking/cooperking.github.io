@@ -1220,6 +1220,10 @@ async function songDurs(url, env) {
     const j = await spotify(await getToken(env), '/tracks?ids=' + want.join(',')).catch(() => null);
     let n = 0;
     for (const t of (j && j.tracks) || []) if (t && t.id && t.duration_ms) { kept[t.id] = t.duration_ms; n++; }
+    for (const t of want.filter(t => !kept[t]).slice(0, 20)) {   // (else Spotify's player page for it, which says its length)
+      const r = await fetch('https://open.spotify.com/embed/track/' + t).catch(() => null), m = r && r.ok ? (await r.text()).match(/"duration":(\d{4,8})/) : null;
+      if (m) { kept[t] = Number(m[1]); n++; }
+    }
     if (n) await kvSoft(env, 'durs', JSON.stringify(kept));
   }
   for (const t of ids) if (kept[t]) out[t] = kept[t];
