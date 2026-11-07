@@ -5780,7 +5780,7 @@ async function uplCardCovers(env, all, viewer, U) {   // each playlist they see:
     const who = Object.keys(adds).sort((a, b) => adds[b] - adds[a]);
     for (const k of (rec.cw || [])) if (all[k] && !who.includes(all[k].name)) who.push(all[k].name);
     if (who.length && all[rec.o] && !who.includes(all[rec.o].name)) who.push(all[rec.o].name);
-    out[p.id] = Object.assign({ cv, all: allc }, who.length > 1 ? { who: who.slice(0, 6) } : {});
+    out[p.id] = Object.assign({ cv, all: allc }, who.length > 1 ? { who: who.slice(0, 12) } : {});
   }
   return out;
 }
