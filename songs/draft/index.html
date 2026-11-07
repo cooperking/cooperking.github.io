@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="bd51a1b303df">
+<meta name="sotd-build" content="58763b1d2c94">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -940,6 +940,11 @@ html.big.signedin .hsub { margin-right: 0; }
 .songnav button { height: 32px; padding: 0 12px; border: 0; border-radius: 999px; background: var(--pill-bg); box-shadow: inset 0 0 0 1px var(--line); color: var(--fg); font: 600 11px/1 var(--sans); letter-spacing: .08em; text-transform: uppercase; cursor: pointer; }
 .songnav button:disabled { opacity: .35; cursor: default; }
 .songnav button.on { background: var(--fg); color: var(--bg); box-shadow: none; }
+@media (max-width: 560px) {   /* a phone: the five in one row (John, 7 Nov 2026) */
+  .songnav { flex-wrap: nowrap; gap: 5px; }
+  .songnav button { padding: 0 10px; letter-spacing: .05em; flex: 0 1 auto; min-width: 0; }
+  .songnav .snw { display: none; }
+}
 .day.latest { box-shadow: 0 0 0 2px var(--fg); }
 .monthnav { display: flex; align-items: center; gap: 6px; max-width: 100%; padding: 4px; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); }
 .round { width: 38px; height: 38px; flex: 0 0 auto; border-radius: 50%; border: 1px solid var(--line); background: var(--glass); display: grid; place-items: center; cursor: pointer; color: var(--fg); }
@@ -1896,11 +1901,11 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     <button class="signedchip mk" id="plnew" type="button" hidden><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg><span>Create playlist</span></button>
     </div>
     <div class="songnav" id="songnav" hidden aria-label="Go to">
-      <button type="button" id="sn-first">First song</button>
+      <button type="button" id="sn-first" aria-label="First song">First<span class="snw"> song</span></button>
       <button type="button" id="sn-prev" aria-label="The month before with songs">‹ Songs</button>
       <button type="button" id="sn-today">Today</button>
       <button type="button" id="sn-next" aria-label="The month after with songs">Songs ›</button>
-      <button type="button" id="sn-last">Last song</button>
+      <button type="button" id="sn-last" aria-label="Last song">Last<span class="snw"> song</span></button>
     </div>
     <div class="monthnav">
       <button class="round" id="prev" type="button" aria-label="Previous month"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 3 5 8l5 5"/></svg></button>
