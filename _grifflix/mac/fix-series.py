@@ -9,7 +9,7 @@ Island, IT: Welcome to Derry with no picture, an empty untitled folder).
 Only Jellyfin's details for these series change (name, pictures, description); the files are not touched, and only
 folders with nothing in them (but a .DS_Store) are removed.
 """
-import json, os, re, sys, urllib.parse, urllib.request
+import json, os, re, shutil, sys, urllib.parse, urllib.request
 
 GO = len(sys.argv) > 1 and sys.argv[1] == 'go'
 APP = os.environ.get('GRIFFLIX_DIR') or os.path.expanduser('~/Library/Application Support/Grifflix')
@@ -36,27 +36,42 @@ def folder_key(path):   # 'The Curse (2023)', 'The Curse 2023', 'IT - Welcome to
     return re.sub(r'[^a-z0-9]', '', n)
 
 
-series = g(call('GET', '/Users/%s/Items' % s['jf_user_id'], Recursive='true', IncludeItemTypes='Series', Fields='Path,ProviderIds,ProductionYear'), 'Items') or []
+series = g(call('GET', '/Users/%s/Items' % s['jf_user_id'], Recursive='true', IncludeItemTypes='Series', Fields='Path,ProviderIds,ProductionYear,ImageTags'), 'Items') or []
 done = 0
+
+
+def wrong(it, key):
+    """Which of FIX this series should be, if Jellyfin has it wrong: matched to another series (The Curse shown as The
+    Curse of Oak Island, whatever its folder's called), or without its picture."""
+    name = (g(it, 'Name') or '').lower()
+    if ('oak island' in name and 'oakisland' not in key) or (key == 'thecurse' and (name != 'the curse' or g(it, 'ProductionYear') != 2023)):
+        return FIX[0]
+    if ('derry' in key or 'derry' in name) and (key == 'itwelcometoderry' or not (g(it, 'ImageTags') or {}).get('Primary') or 'welcome to derry' not in name):
+        return FIX[1]
+    return None
+
+
 for it in series:
     key = folder_key(g(it, 'Path'))
-    if ('curse' in key or 'derry' in key) and key not in [f[0] for f in FIX]:
-        print('%-40s folder %r: left as it is' % (g(it, 'Name'), os.path.basename(g(it, 'Path'))))
-    for start, name, year in FIX:
-        if key != start:
-            continue
-        have = '%s (%s)' % (g(it, 'Name'), g(it, 'ProductionYear') or '?')
-        found = call('POST', '/Items/RemoteSearch/Series', {'SearchInfo': {'Name': name, 'Year': year}, 'ItemId': g(it, 'Id'), 'IncludeDisabledProviders': False}) or []
-        pick = [r for r in found if g(r, 'ProductionYear') == year] or found
-        if not pick:
-            print('%-40s folder %r: nothing found for %s (%d)' % (have, os.path.basename(g(it, 'Path')), name, year))
-            break
-        r = pick[0]
-        print('%-40s folder %r  ->  %s (%s)%s' % (have, os.path.basename(g(it, 'Path')), g(r, 'Name'), g(r, 'ProductionYear'), '' if GO else '  (not yet: add go)'))
-        if GO:
-            call('POST', '/Items/RemoteSearch/Apply/%s' % g(it, 'Id'), r, ReplaceAllImages='true')
-            done += 1
-        break
+    nkey = re.sub(r'[^a-z0-9]', '', (g(it, 'Name') or '').lower())
+    if key and nkey and not (key.startswith(nkey[:8]) or nkey.startswith(key[:8])):   # (for you to see: named differently from its folder)
+        print('%-40s its folder is %r' % (g(it, 'Name'), os.path.basename(g(it, 'Path'))))
+    fix = wrong(it, key)
+    if not fix:
+        continue
+    start, name, year = fix
+    have = '%s (%s)' % (g(it, 'Name'), g(it, 'ProductionYear') or '?')
+    found = call('POST', '/Items/RemoteSearch/Series', {'SearchInfo': {'Name': name, 'Year': year}, 'ItemId': g(it, 'Id'), 'IncludeDisabledProviders': False}) or []
+    pick = [r for r in found if g(r, 'ProductionYear') == year and (g(r, 'Name') or '').lower().replace(':', '') == name.lower().replace(':', '')] or \
+           [r for r in found if g(r, 'ProductionYear') == year] or found
+    if not pick:
+        print('%-40s folder %r: nothing found for %s (%d)' % (have, os.path.basename(g(it, 'Path')), name, year))
+        continue
+    r = pick[0]
+    print('%-40s folder %r  ->  %s (%s)%s' % (have, os.path.basename(g(it, 'Path')), g(r, 'Name'), g(r, 'ProductionYear'), '' if GO else '  (not yet: add go)'))
+    if GO:
+        call('POST', '/Items/RemoteSearch/Apply/%s' % g(it, 'Id'), r, ReplaceAllImages='true')
+        done += 1
 
 # empty "untitled folder"s, in the libraries' folders
 roots = []
@@ -67,17 +82,18 @@ for root in roots:
     for dirpath, dirs, files in os.walk(root, topdown=False):
         if not os.path.basename(dirpath).lower().startswith('untitled folder'):
             continue
-        if [f for f in os.listdir(dirpath) if f != '.DS_Store']:
-            print('kept (not empty): ' + dirpath)
+        inside = os.listdir(dirpath)
+        if [f for f in inside if not f.startswith('.') and f != 'Icon\r']:   # (only the Mac's hidden files: still empty)
+            print('kept (not empty): %s  (has: %s)' % (dirpath, ', '.join(inside[:5])))
             continue
         print(('removed: ' if GO else 'would remove: ') + dirpath)
         if GO:
-            try:
-                os.remove(os.path.join(dirpath, '.DS_Store'))
-            except OSError:
-                pass
+            for f in inside:
+                p = os.path.join(dirpath, f)
+                shutil.rmtree(p) if os.path.isdir(p) else os.remove(p)
             os.rmdir(dirpath)
             gone += 1
+
 
 if GO:
     print('== %d series matched again (their pictures follow in a minute or two), %d empty folders removed.' % (done, gone))

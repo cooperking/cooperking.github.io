@@ -242,6 +242,10 @@ def ticks_to_min(t):
     return round((t or 0) / 600000000) or None
 
 
+def shown(items):   # a series with nothing in it (an empty folder, e.g. "untitled folder") isn't shown anywhere
+    return [i for i in items if not (i.get('Type') == 'Series' and not i.get('ChildCount') and not i.get('RecursiveItemCount'))]
+
+
 def item_out(it, prog=None):
     t = it.get('Type')
     o = {'id': it['Id'], 'name': it.get('Name'), 'type': {'Movie': 'movie', 'Series': 'series', 'Season': 'season',
@@ -320,6 +324,8 @@ class Gateway:
                 self.home_at = time.time()
             except Exception:
                 return False
+        if not self.home_paths:   # no home videos library (John has none): everything is films and TV, for anyone to look at
+            return True
         try:
             path = path or (self.one(iid) or {}).get('Path') or ''
         except Exception:
@@ -551,7 +557,7 @@ def make_handler(g):
             for key, lid in g.st.get('libraries', {}).items():
                 types = {'movies': 'Movie', 'tv': 'Series', 'home': 'Video'}[key]
                 r = g.items(ParentId=lid, Recursive='true', IncludeItemTypes=types, SortBy='DateCreated', SortOrder='Descending', Limit=24)
-                rows[key] = [item_out(i, prog) for i in r.get('Items', [])]
+                rows[key] = [item_out(i, prog) for i in shown(r.get('Items', []))]
             self.send_json(200, rows)
 
         def api_items(self, me, user, q, b):
@@ -567,7 +573,8 @@ def make_handler(g):
                 types = {'movies': 'Movie', 'tv': 'Series', 'home': 'Video,Photo'}[key]
                 r = g.items(ParentId=lid, Recursive='true', IncludeItemTypes=types, SortBy=sort, SortOrder=order,
                             Genres=q.get('genre'), StartIndex=q.get('start', 0), Limit=q.get('limit', 200))
-            self.send_json(200, {'items': [item_out(i, user['progress']) for i in r.get('Items', [])], 'total': r.get('TotalRecordCount', 0)})
+            its = shown(r.get('Items', []))
+            self.send_json(200, {'items': [item_out(i, user['progress']) for i in its], 'total': r.get('TotalRecordCount', 0) - (len(r.get('Items', [])) - len(its))})
 
         def api_item(self, me, user, q, b):
             it = g.one(q['id'])
@@ -659,7 +666,7 @@ def make_handler(g):
             if len(term) < 2:
                 return self.send_json(200, {'items': []})
             r = g.items(SearchTerm=term, Recursive='true', IncludeItemTypes='Movie,Series,Episode,Video', Limit=40)
-            self.send_json(200, {'items': [item_out(i, user['progress']) for i in r.get('Items', [])]})
+            self.send_json(200, {'items': [item_out(i, user['progress']) for i in shown(r.get('Items', []))]})
 
         def api_play(self, me, user, q, b):
             iid = q['id']
@@ -809,7 +816,7 @@ def make_handler(g):
                 lid = g.st.get('libraries', {}).get(key)
                 if lid:
                     r = g.items(ParentId=lid, Recursive='true', IncludeItemTypes={'movies': 'Movie', 'tv': 'Series'}[key], SortBy='DateCreated', SortOrder='Descending', Limit=24)
-                    rows[key] = [item_out(i) for i in r.get('Items', [])]
+                    rows[key] = [item_out(i) for i in shown(r.get('Items', []))]
             self.send_json(200, rows)
 
         def pub_items(self, q):
@@ -830,7 +837,7 @@ def make_handler(g):
             if len(term) < 2:
                 return self.send_json(200, {'items': []})
             r = g.items(SearchTerm=term, Recursive='true', IncludeItemTypes='Movie,Series,Episode', Limit=40)
-            self.send_json(200, {'items': [item_out(i) for i in r.get('Items', []) if g.is_public(i['Id'], i.get('Path'))]})
+            self.send_json(200, {'items': [item_out(i) for i in shown(r.get('Items', [])) if g.is_public(i['Id'], i.get('Path'))]})
 
         def pub_collections(self, q):
             self.send_json(200, {'collections': self.collections_out(True)})
