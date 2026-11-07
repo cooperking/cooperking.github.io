@@ -314,6 +314,16 @@ for cid, title, h, thumb, summary, extra in cols:
         it['Overview'] = summary
         call('POST', '/Items/%s' % bid, it)
 
+# only box sets sit inside other collections: any other collection found inside one (AFI Top 100, John, 7 Nov 2026:
+# "a collection of its own - shouldn't be inside others") is taken out of it; its films stay where they are
+for b in call('GET', '/Users/%s/Items' % s['jf_user_id'], Recursive='true', IncludeItemTypes='BoxSet').get('Items', []):
+    stray = [i for i in call('GET', '/Users/%s/Items' % s['jf_user_id'], ParentId=b['Id'], Fields='').get('Items', [])
+             if i.get('Type') == 'BoxSet' and i['Name'] not in SETS]
+    if stray:
+        print('%-52s %s: %s' % (b['Name'][:52], 'took out' if GO else 'would take out', '; '.join(i['Name'] for i in stray)))
+        if GO:
+            call('DELETE', '/Collections/%s/Items' % b['Id'], Ids=','.join(i['Id'] for i in stray))
+
 print('\n%d collections in Plex.' % len(cols))
 if lost:
     print('%d films not found in Grifflix (moved aside, or not on the drive any more), e.g.:' % len(lost))
