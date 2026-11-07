@@ -28,6 +28,10 @@ VERSION = '1'
 FIELDS = ('Overview,Genres,OfficialRating,CommunityRating,ProductionYear,PremiereDate,RunTimeTicks,ImageTags,'
           'BackdropImageTags,ParentBackdropImageTags,SeriesPrimaryImageTag,ChildCount,RecursiveItemCount,MediaSources,'
           'People,Taglines,Studios,DateCreated,Width,Height,RemoteTrailers,Path')
+# lists (rows, Browse, collections, calendars) need only this much: the old Mac answers far faster without each film's
+# files and cast (a film's own pop-up asks for everything)
+LIST_FIELDS = ('Overview,Genres,OfficialRating,CommunityRating,ProductionYear,PremiereDate,RunTimeTicks,ImageTags,'
+               'BackdropImageTags,ParentBackdropImageTags,SeriesPrimaryImageTag,ChildCount,RecursiveItemCount,DateCreated,Path')
 LIBS = {'movies': ('Movies', 'movies'), 'tv': ('TV', 'tvshows'), 'home': ('Home videos', 'homevideos')}
 
 
@@ -301,11 +305,12 @@ class Gateway:
         """A collection is for anyone to look at when anything in it is."""
         if ('set', iid) not in self.pub_cache:
             r = self.items(ParentId=iid, Limit=50, Fields='Path')
-            self.pub_cache[('set', iid)] = any(self.is_public(i['Id']) for i in r.get('Items', []))
+            self.pub_cache[('set', iid)] = any(self.is_public(i['Id'], i.get('Path')) for i in r.get('Items', []))
         return self.pub_cache[('set', iid)]
 
-    def is_public(self, iid):
-        """Films and TV are for anyone to look at (their pictures and trailers); home videos only for members."""
+    def is_public(self, iid, path=None):
+        """Films and TV are for anyone to look at (their pictures and trailers); home videos only for members. A list's
+        item brings its own path (no asking Jellyfin again for each: 956 one by one took the Criterion Collection 48 s)."""
         if iid in self.pub_cache:
             return self.pub_cache[iid]
         if time.time() - self.home_at > 600:
@@ -316,7 +321,7 @@ class Gateway:
             except Exception:
                 return False
         try:
-            path = (self.one(iid) or {}).get('Path') or ''
+            path = path or (self.one(iid) or {}).get('Path') or ''
         except Exception:
             return False
         ok = bool(path) and not any(path == h or path.startswith(h.rstrip('/') + '/') for h in self.home_paths)
@@ -364,7 +369,7 @@ class Gateway:
         """Jellyfin's lists, kept for up to 6 hours: the old Mac takes seconds to list 2,000 films, and they rarely
         change (John, 7 Nov 2026: "is it necessary to load them fresh like that every time?"). Forgotten at once by the
         page's Refresh button, when a collection is changed here, or files are converted."""
-        q.setdefault('Fields', FIELDS)
+        q.setdefault('Fields', LIST_FIELDS)
         q.setdefault('EnableImageTypes', 'Primary,Backdrop,Thumb')
         key = json.dumps(q, sort_keys=True, default=str)
         hit = self.list_cache.get(key)
@@ -387,8 +392,14 @@ class Gateway:
         ids = [i for i in ids if i]
         if not ids:
             return {}
-        r = self.items(Ids=','.join(sorted(set(ids))))
-        return {it['Id']: item_out(it, prog) for it in r.get('Items', [])}
+        return {it['Id']: item_out(it, prog) for it in self.by_ids(ids)}
+
+    def by_ids(self, ids):   # 100 at a time: a year of Movie of the Day in one address is too long for Jellyfin
+        ids = sorted(set(i for i in ids if i))
+        out = []
+        for n in range(0, len(ids), 100):
+            out += self.items(Ids=','.join(ids[n:n + 100])).get('Items', [])
+        return out
 
 
 def make_handler(g):
@@ -590,7 +601,7 @@ def make_handler(g):
                 return None
             o = item_out(c)
             r = g.items(ParentId=iid, SortBy='ProductionYear,SortName')
-            o['items'] = [item_out(i, prog) for i in r.get('Items', []) if not public or g.is_public(i['Id'])]
+            o['items'] = [item_out(i, prog) for i in r.get('Items', []) if not public or g.is_public(i['Id'], i.get('Path'))]
             return o
 
         def api_refresh(self, me, user, q, b):   # the page's Refresh button: look again for new films and changes
@@ -819,7 +830,7 @@ def make_handler(g):
             if len(term) < 2:
                 return self.send_json(200, {'items': []})
             r = g.items(SearchTerm=term, Recursive='true', IncludeItemTypes='Movie,Series,Episode', Limit=40)
-            self.send_json(200, {'items': [item_out(i) for i in r.get('Items', []) if g.is_public(i['Id'])]})
+            self.send_json(200, {'items': [item_out(i) for i in r.get('Items', []) if g.is_public(i['Id'], i.get('Path'))]})
 
         def pub_collections(self, q):
             self.send_json(200, {'collections': self.collections_out(True)})
@@ -830,10 +841,12 @@ def make_handler(g):
 
         def pub_calendar(self, q):   # Movie of the Day only (members' own calendars are theirs)
             c = g.store.d['calendars']['motd']
-            S = g.summaries(list(c.get('days', {}).values()), {})
+            ids = sorted(set(i for i in c.get('days', {}).values() if i))
+            raw = g.by_ids(ids)
+            S = {it['Id']: item_out(it) for it in raw if g.is_public(it['Id'], it.get('Path'))}   # (each one's path from the one list)
             self.send_json(200, {'id': 'motd', 'name': c.get('name'), 'ownerName': 'John', 'mine': False, 'shared': True,
                                  'count': len(c.get('days', {})), 'notes': c.get('notes', {}),
-                                 'days': {d: S[i] for d, i in c.get('days', {}).items() if i in S and g.is_public(i)}})
+                                 'days': {d: S[i] for d, i in c.get('days', {}).items() if i in S}})
 
         def image(self, rest, q, cache='private, max-age=86400'):
             m = re.match(r'^([0-9a-f]{32})(?:/(Primary|Backdrop|Thumb|Logo))?$', rest)
