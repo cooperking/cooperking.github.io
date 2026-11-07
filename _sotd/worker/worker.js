@@ -4534,6 +4534,7 @@ async function spWho(env, all) {   // Spotify user id → member's name (theirs 
   if (spWhoMem && Date.now() - spWhoMem.at < 10 * 60e3) return spWhoMem.map;
   const map = {}, ids = {}, owner = await env.SOTD.get('owner');
   if (owner && all[owner]) { map[OWNER_ID] = all[owner].name; ids[OWNER_ID] = owner; }
+  for (const [id, m] of Object.entries(all)) if (m && m.spu && !map[m.spu]) { map[m.spu] = m.name; ids[m.spu] = id; }   // (the Spotify usernames John gave on the Members tab: known without them connecting: John, 7 Nov 2026)
   let cursor;
   do { const l = await env.SOTD.list({ prefix: 'spm:', cursor }); for (const k of l.keys) { const id = k.name.slice(4), r = await env.SOTD.get(k.name, 'json'); if (r && r.sid && all[id]) { map[r.sid] = all[id].name; ids[r.sid] = id; } } cursor = l.list_complete ? null : l.cursor; } while (cursor);
   spWhoMem = { at: Date.now(), map, ids };
