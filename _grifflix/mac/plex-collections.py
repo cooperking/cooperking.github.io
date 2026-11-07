@@ -11,7 +11,7 @@ Plex keeps a collection as a metadata item (type 18: its name, summary and poste
 with the collection's name (checked on John's Plex, 7 Nov 2026). Films are found in Jellyfin by their file, at its
 new place if the tidy-up moved it (by its name).
 """
-import base64, json, os, shutil, sqlite3, sys, tempfile, time, unicodedata, urllib.parse, urllib.request
+import base64, json, os, re, shutil, sqlite3, sys, tempfile, time, unicodedata, urllib.parse, urllib.request
 
 
 def nf(x):   # accents written either way (macOS's file names often split them: é as e + ´) compare the same
@@ -209,6 +209,12 @@ SETS = ['A Hollis Frampton Odyssey', 'By Brakhage: An Anthology, Volumes One and
 ALSO_IN = {'Criterion Collection': ['By Brakhage: An Anthology, Volumes One and Two', 'Martha Graham: Dance on Film', 'Scorsese Shorts',
                                     'Symbiopsychotaxiplasm: Two Takes by William Greaves', 'The Kennedy Films of Robert Drew & Associates',
                                     'The Signifyin’ Works of Marlon Riggs']}   # (and the sets he named first, 7 Nov 2026; not Hollis Frampton, not named)
+# series put in a collection by name, each as one entry (John, 7 Nov 2026: "The Underground Railroad, Tanner 88, and Fishing
+# with John from TV Series should also be box sets in the Criterion Collection")
+SERIES_IN = {'Criterion Collection': ['The Underground Railroad', 'Tanner 88', 'Fishing with John']}
+def skey(n):   # 'Tanner '88 (1988)' and 'Tanner 88' alike
+    return re.sub(r'[^a-z0-9]', '', re.sub(r'\s*[\(\[](19|20)\d\d[\)\]]\s*$', '', (n or '').lower()))
+series_id = {skey(it['Name']): it['Id'] for it in call('GET', '/Users/%s/Items' % s['jf_user_id'], Recursive='true', IncludeItemTypes='Series').get('Items', [])}
 cols.sort(key=lambda c: (c[1] not in SETS, c[1].lower()))   # (the sets first)
 set_id = {}   # a box set's name → its collection in Jellyfin (or, before it's made, 'set:' + its name)
 set_of = {}   # a film in a set → the set's collection (or, before it's made, the set's name)
@@ -250,6 +256,12 @@ for cid, title, h, thumb, summary, extra in cols:
         j = set_id.get(st)
         if j and j not in ids and not (GO and j.startswith('set:')):
             ids.append(j); put.append(st)
+    for sn in SERIES_IN.get(title, []):
+        j = series_id.get(skey(sn))
+        if not j:
+            print('   (series not found in Grifflix: %s)' % sn)
+        elif j not in ids:
+            ids.append(j); put.append(sn + ' (series)')
     pic = poster(h, thumb)
     old = have.get(title)
     if title in SETS:
@@ -263,7 +275,7 @@ for cid, title, h, thumb, summary, extra in cols:
     elif in_set:
         print('   %d of its films are in box sets, shown as the sets' % in_set)
     if put:
-        print('   with the box sets: ' + '; '.join(put))
+        print("   with, as one entry each: " + "; ".join(put))
     if not GO or not ids:
         continue
     batches = [ids[i:i + CHUNK] for i in range(0, len(ids), CHUNK)]   # (50 at a time: Criterion USA's 502 in one go was too long an address)
