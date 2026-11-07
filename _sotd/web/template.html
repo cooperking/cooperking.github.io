@@ -2735,10 +2735,12 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (typeof PL === 'object' && PL && PL.cur) {   // a saved playlist open: the heart is the unsaved My playlist's, the saved one untouched
       var hl = heartList().slice(), k = hl.indexOf(s.track);
       if (k === -1) { hl.push(s.track); songxKeep(s); heartTell(s); } else hl.splice(k, 1);
-      heartSet(hl); syncFav(); return;
+      heartSet(hl);
+      if (k === -1) { spLog('hearted “' + s.title + '”: My playlist back on screen (a saved playlist was open)'); plOpen(null, true); toast('“' + cleanTitle(s.title) + '” added to My playlist'); return; }   // (the hearts in sight, not put aside behind the saved one: John, 7 Nov 2026, "I'm still not seeing my hearts")
+      syncFav(); return;
     }
     var i = fav.indexOf(s.track);
-    if (i === -1) { fav.push(s.track); songxKeep(s); heartTell(s); } else fav.splice(i, 1);
+    if (i === -1) { fav.push(s.track); songxKeep(s); heartTell(s); spLog('hearted “' + s.title + '”: My playlist has ' + fav.length); } else fav.splice(i, 1);
     saveFav();
     syncFav();
   }
@@ -7409,6 +7411,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var back = !l ? plStash() || { tracks: [], name: '' } : null;
     if (!l) plStash(null);
     plSetCur(l ? l.id : null); plAt(l ? l.at : 0);
+    if (!l) FAVHELD = back.tracks.filter(function (t) { return !songOf(t); });   // (hearted songs not known yet: held, never dropped)
     fav = l ? l.tracks.filter(function (t) { return songOf(t); }) : back.tracks.filter(function (t) { return songOf(t); });
     plname.value = l ? (l.name === 'My playlist' ? '' : l.name) : back.name || '';
     try { localStorage.setItem('sotd-plname', plname.value); } catch (e) {}
