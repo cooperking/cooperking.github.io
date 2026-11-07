@@ -139,6 +139,14 @@ export default {
       }
       await env.MEDIA.put('diag/own-short-gone3.json', JSON.stringify({ at: new Date().toISOString(), deleted: K }, null, 1), { httpMetadata: { contentType: 'application/json' } });
     })().catch(e => console.log('ownShort: ' + (e && e.message))));
+    ctx.waitUntil((async () => {   // once: Collaborations' songs, their added dates, days and captions, for checking
+      if (await env.SOTD.get('diagCollab1')) return;
+      await env.SOTD.put('diagCollab1', String(Date.now()));
+      const pid = 'hXXaGojDDcooDA', U = await uplAll(env), rec = U[pid]; if (!rec) return;
+      const data = await uplSongs(env, pid), days = uplDays(data.songs || [], rec), ed = data.ed || {};
+      const rows = (data.songs || []).map((x, i) => [x.a, days[i].d, (ed[x.id] || {}).cap || '', x.title, x.artist, x.ab || '']);
+      await env.MEDIA.put('diag/collab-songs.json', JSON.stringify({ mode: rec.mode, dates: rec.dates || null, dd: rec.dd ? Object.keys(rec.dd).length : 0, rows }), { httpMetadata: { contentType: 'application/json' } });
+    })().catch(e => console.log('diagCollab: ' + (e && e.message))));
     ctx.waitUntil((async () => {   // once: the Collaborations calendar's songs captioned with the group's subject for their week, Friday to Thursday (John, 7 Nov 2026: "if a song is the same as the date on a friday it counts for that date and anything up to the following thursday"); a week with several, its Friday's, else its latest; none past its week
       if (await env.SOTD.get('capWW2')) return;
       await env.SOTD.put('capWW2', String(Date.now()));
