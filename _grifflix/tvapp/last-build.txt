@@ -1,6 +1,6 @@
-build 1
-build-tools 37.0.0, platform android-36, target 34, version 1
-package: name='io.github.cooperking.grifflix' versionCode='1' versionName='1.1' platformBuildVersionName='16' platformBuildVersionCode='36' compileSdkVersion='36' compileSdkVersionCodename='16'
+build 2
+build-tools 37.0.0, platform android-36, target 34, version 2
+package: name='io.github.cooperking.grifflix' versionCode='2' versionName='1.2' platformBuildVersionName='16' platformBuildVersionCode='36' compileSdkVersion='36' compileSdkVersionCodename='16'
 minSdkVersion:'22'
 targetSdkVersion:'34'
 uses-permission: name='android.permission.INTERNET'
