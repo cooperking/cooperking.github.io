@@ -61,6 +61,7 @@ export default {
     const url = new URL(request.url);
     try {
       if (url.pathname === '/songs.json') return await songsJson(request, env, ctx);
+      if (url.pathname === '/durs') return await songDurs(url, env);   // songs' real lengths, from Spotify (the download job's check that a file is the whole song)
       if (url.pathname === '/captions.json') return new Response((await env.SOTD.get('mainCaps')) || '{}', { headers: { 'Content-Type': 'application/json; charset=utf-8', 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'public, max-age=30' } });   // John's captions on his own calendar
       if (url.pathname === '/upl/sync') return await uplSync(request, env);
     if (url.pathname === '/upl/data') return await uplData(request, env);
@@ -1209,6 +1210,20 @@ function randomCode(bytes) { return b64url(crypto.getRandomValues(new Uint8Array
 async function ownerSignedIn(request, env) {
   const who = await memberWho(request, env).catch(() => null);
   return !!who && who.id === await env.SOTD.get('owner');
+}
+// GET /durs?ids=a,b (50 at most): each song's real length in ms, from Spotify, kept for good (KV durs) (John, 7 Nov 2026:
+// "I just checked a song and what had been added was a 30 second version. Any song that short is suspicious")
+async function songDurs(url, env) {
+  const ids = [...new Set(String(url.searchParams.get('ids') || '').split(',').map(x => x.trim()).filter(x => ID_RE.test(x)))].slice(0, 50);
+  const kept = (await env.SOTD.get('durs', 'json')) || {}, want = ids.filter(t => !(t in kept)), out = {};
+  if (want.length) {
+    const j = await spotify(await getToken(env), '/tracks?ids=' + want.join(',')).catch(() => null);
+    let n = 0;
+    for (const t of (j && j.tracks) || []) if (t && t.id && t.duration_ms) { kept[t.id] = t.duration_ms; n++; }
+    if (n) await kvSoft(env, 'durs', JSON.stringify(kept));
+  }
+  for (const t of ids) if (kept[t]) out[t] = kept[t];
+  return new Response(JSON.stringify({ ms: out }), { headers: { 'Content-Type': 'application/json; charset=utf-8', 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'public, max-age=3600' } });
 }
 async function adminOk(request, env, answer) {   // null if the admin password is right, else the answer to give
   if (!env.ADMIN_KEY) return answer(503, { error: 'The ADMIN_KEY secret is not set on the Worker.' });
