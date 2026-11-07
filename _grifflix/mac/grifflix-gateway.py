@@ -544,7 +544,46 @@ def make_handler(g):
             return o
 
         def api_collections(self, me, user, q, b):
-            self.send_json(200, {'collections': self.collections_out(False)})
+            if not b:
+                return self.send_json(200, {'collections': self.collections_out(False)})
+            # John's own changes, made here (Grifflix keeps its collections in Jellyfin, nothing from Plex):
+            # in (which hold an item), add, remove, create, rename, delete
+            if not me.get('owner'):
+                return self.send_json(403, {'error': 'Only John changes the collections.'})
+            op, cid, item = b.get('op'), str(b.get('id') or ''), str(b.get('item') or '')
+            ok = lambda x: re.match(r'^[0-9a-f]{32}$', x)
+            sets = g.items(Recursive='true', IncludeItemTypes='BoxSet', SortBy='SortName', Fields='').get('Items', [])
+            if cid and not any(s['Id'] == cid for s in sets):
+                return self.send_json(404, {'error': 'No such collection.'})
+            if item and not ok(item):
+                return self.send_json(400, {'error': 'Which film?'})
+            if op == 'in':
+                held = [s['Id'] for s in sets if any(i['Id'] == item for i in g.items(ParentId=s['Id'], Fields='', EnableImageTypes='').get('Items', []))]   # (10.8 ignores Ids with ParentId: each one's list, checked)
+                return self.send_json(200, {'collections': [{'id': s['Id'], 'name': s['Name']} for s in sets], 'in': held})
+            if op in ('add', 'remove') and cid and item:
+                g.jf.call('POST' if op == 'add' else 'DELETE', '/Collections/%s/Items' % cid, query={'Ids': item})
+            elif op == 'create':
+                name = re.sub(r'\s+', ' ', str(b.get('name') or '')).strip()[:80]
+                if not name:
+                    return self.send_json(400, {'error': 'Its name?'})
+                if any(s['Name'].lower() == name.lower() for s in sets):
+                    return self.send_json(409, {'error': 'There’s a collection called that already.'})
+                r = g.jf.call('POST', '/Collections', query=dict({'Name': name, 'IsLocked': 'true'}, **({'Ids': item} if item else {})))
+                cid = (r or {}).get('Id', '')
+            elif op == 'rename' and cid:
+                name = re.sub(r'\s+', ' ', str(b.get('name') or '')).strip()[:80]
+                if not name:
+                    return self.send_json(400, {'error': 'Its name?'})
+                full = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, cid))
+                full['Name'] = name
+                full['LockedFields'] = sorted(set((full.get('LockedFields') or []) + ['Name']))
+                g.jf.call('POST', '/Items/%s' % cid, full)
+            elif op == 'delete' and cid:   # the collection only: its films stay
+                g.jf.call('DELETE', '/Items/%s' % cid)
+            else:
+                return self.send_json(400, {'error': 'What should happen?'})
+            g.pub_cache.pop(('set', cid), None)
+            self.send_json(200, {'ok': True, 'id': cid})
 
         def api_collection(self, me, user, q, b):
             o = self.collection_out(q.get('id', ''), user['progress'], False)
