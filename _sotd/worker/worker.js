@@ -1638,7 +1638,7 @@ async function members(request, url, env) {
           const m = meta[x.id] || {}, f = fx[x.id];
           out.push(Object.assign({ id: x.id, title: x.title, artist: x.artist, artists: x.artists, aids: x.aids, img: x.img || '', p: x.p || '', d: x.d, pid, t: v.t, n: v.n, mode: v.mode, sh: v.sh, o: v.o, oj: !!owner && rec.o === owner },
             x.w ? { w: 1 } : {}, x.f ? { f: 1 } : {},
-            m.vid ? { vid: m.vid } : {}, m.mt ? { mt: m.mt } : {}, m.yr ? { yr: m.yr } : {}, f && (f.w || f.ok) ? { fx: f.w ? { st: 'wait', f: f.w } : { st: 'ok', f: f.ok, at: f.sat || 0 } } : f && f.none ? { fx: { st: 'nil' } } : {}));
+            x.vid ? { vid: x.vid } : m.vid ? { vid: m.vid } : {}, 'ov' in x ? { ov: x.ov } : {}, x.mv || (x.own && x.own.v) || (x.jf && x.jf.v) ? { hv: 1 } : {}, x.ma || (x.own && x.own.a) || (x.jf && x.jf.a) ? { ha: 1 } : {}, m.mt ? { mt: m.mt } : {}, m.yr ? { yr: m.yr } : {}, f && (f.w || f.ok) ? { fx: f.w ? { st: 'wait', f: f.w } : { st: 'ok', f: f.ok, at: f.sat || 0 } } : f && f.none ? { fx: { st: 'nil' } } : {}));   // (its video as its calendar has it: found, another copy's, its owner's choice, or an MP4: John, 7 Nov 2026, "Videos definitely wrong")
         }
       }
       return answer(200, { songs: out, john: await uplJohnAll(env) });

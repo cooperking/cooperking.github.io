@@ -730,11 +730,12 @@ a.srchpill { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--li
 
   // ---- the list ----
   // no YouTube video, no preview (John, 5 Nov 2026: "I need other missing items here too"), his songs and members' alike
-  function hasYt(s) { return s.m ? !!((JOHN[s.id] && JOHN[s.id].v) || (s.vid && s.vid.v)) : !!(VIDS[s.id] || {}).v; }
+  function hasYt(s) { if (!s.m) return !!(VIDS[s.id] || {}).v; var j = JOHN[s.id]; if (j && 'v' in j) return !!j.v; return !!s.yt; }   // (a member song: John's choice, else its owner's, else what was found; an MP4 counts)
   function missing(s) { return (show === 'noyt' && hasYt(s)) || (show === 'nopv' && !!s.p); }
   function visible(s) {
     if (s.m) {   // a member song: in All, Member Songs, Waiting (its facts), Still picture, No MP3 and No MP4
-      var me = CAT[s.id] || {}, mq = $('q').value.trim().toLowerCase(), mm = $('month').value;
+      var me = Object.assign({}, CAT[s.id] || {}), mq = $('q').value.trim().toLowerCase(), mm = $('month').value;
+      if (s.ha) me.a = me.a || 1; if (s.hv) me.v = me.v || 1;   // (its owner's own file, or another copy's, as its calendar plays)
       if (show === 'check' || show === 'none' || show === 'files') return false;
       if (show === 'waiting' && state(s).st !== 'waiting') return false;
       if ((show === 'noa' && me.a) || (show === 'nov' && me.v) || (show === 'still' && !stillPic(s)) || missing(s)) return false;
@@ -959,7 +960,7 @@ a.srchpill { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--li
   function counts() {
     var c = { waiting: 0, signed: 0, old: 0, none: 0, mnone: 0 }, chk = 0, files = 0, noa = 0, nov = 0;
     songs.forEach(function (s) { c[state(s).st]++; if (toCheck(s)) chk++; var e = CAT[s.id] || {}; if (e.a || e.v) files++; if (!e.a) noa++; if (!e.v) nov++; });
-    var mwait = 0; MSONGS.forEach(function (s) { var e = CAT[s.id] || {}; if (!e.a) noa++; if (!e.v) nov++; if (state(s).st === 'waiting') mwait++; });
+    var mwait = 0; MSONGS.forEach(function (s) { var e = CAT[s.id] || {}; if (!e.a && !s.ha) noa++; if (!e.v && !s.hv) nov++; if (state(s).st === 'waiting') mwait++; });
     c.waiting += mwait;
     var noyt = songs.concat(MSONGS).filter(function (s) { return !hasYt(s); }).length, nopv = songs.concat(MSONGS).filter(function (s) { return !s.p; }).length;
     var n0 = { noa: noa, nov: nov, noyt: noyt, nopv: nopv, still: songs.filter(stillPic).length + MSONGS.filter(stillPic).length, waiting: c.waiting, check: chk, none: c.none, members: MSONGS.length };
@@ -1403,7 +1404,8 @@ a.srchpill { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--li
       var m = by[x.id] = by[x.id] || { m: true, id: x.id, title: x.title, artist: x.artist, artists: x.artists || [], aids: x.aids || [], img: x.img, p: x.p, d: x.d, cals: [] };
       m.cals.push({ pid: x.pid, t: x.t, n: x.n, mode: x.mode, o: x.o, oj: !!x.oj, d: x.d, sh: x.sh, w: !!x.w, f: !!x.f });
       if (x.d > m.d) m.d = x.d;
-      if (x.vid && !m.vid) m.vid = x.vid; if (x.mt && !m.mt) m.mt = x.mt; if (x.yr && !m.yr) m.yr = x.yr;
+      if (x.vid && !m.vid) m.vid = x.vid; if (x.mt && !m.mt) m.mt = x.mt; if (x.p && !m.p) m.p = x.p; if (x.ha) m.ha = 1; if (x.hv) m.hv = 1;
+      if ('ov' in x ? !!x.ov || x.hv : (x.vid && x.vid.v) || x.hv) m.yt = 1;   // (a video on any of its calendars: found, its owner's, or an MP4) if (x.yr && !m.yr) m.yr = x.yr;
       if (x.fx && (!m.fx || x.fx.st === 'wait')) m.fx = Object.assign({ pid: x.pid }, x.fx);   // (its facts: those of the public playlist that has them)
     });
     JOHN = (r[9] && r[9].john) || {};
