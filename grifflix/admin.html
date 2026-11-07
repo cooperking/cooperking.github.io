@@ -8,9 +8,8 @@
 <link rel="icon" type="image/png" sizes="96x96" href="/grifflix/favicon-96.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..600&family=Hanken+Grotesk:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..600&family=Hanken+Grotesk:wght@400;500;600;700&family=Bebas+Neue&family=Oswald:wght@500&display=swap">
 <meta name="theme-color" content="#ec135b">
-<!-- Song of the Day's admin look (the month's colours, white cards): the same files -->
 <script src="/songs/admin-theme.js"></script>
 <link rel="stylesheet" href="/songs/admin.css">
 <style>
@@ -21,11 +20,19 @@
 .changes { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .changes li { padding: 10px 12px; border-radius: 12px; background: var(--tile); font-size: 14px; color: var(--fg); }
 .changes li .when { display: block; margin-top: 2px; font-size: 12px; color: var(--muted); }
-.state { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.links { display: flex; flex-wrap: wrap; gap: 8px; }
-.gate { max-width: 420px; margin: 18vh auto 0; text-align: center; }
-.gate .card { text-align: left; }
+.state, .links { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.gate { max-width: 440px; margin: 16vh auto 0; }
 .toast { opacity: 0; transition: opacity .25s; background: #fff; color: var(--fg); }
+.mem { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.mem li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 11px 12px; border-radius: 12px; background: var(--tile); }
+.mem .who { flex: 1 1 180px; min-width: 0; }
+.mem .who b { display: block; font: 500 17px/1.2 var(--serif); color: var(--fg); }
+.mem .who span { font-size: 12.5px; color: var(--muted); }
+.newrow { display: flex; flex-wrap: wrap; gap: 8px; }
+.newrow input { flex: 1 1 160px; min-width: 0; }
+.invite { display: grid; gap: 12px; }
+.invite img { width: 100%; border-radius: 14px; box-shadow: 0 10px 30px rgba(24, 8, 24, .25); }
+.sharebtns { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 8px; }
 </style>
 </head>
 <body>
@@ -33,11 +40,19 @@
 <div class="wrap">
   <div class="bar"><span class="name">Grifflix <em>admin</em></span><a class="glassbtn" href="/grifflix/">Grifflix</a></div>
 
-  <div id="gate" class="gate" hidden><div class="card"><h2>Only <em>John</em></h2><p class="stat" id="gatewhy">This page is for John, signed in to Grifflix on this device.</p><div class="links"><a class="btn primary" href="/grifflix/">Open Grifflix</a></div></div></div>
+  <div id="gate" class="gate" hidden><div class="card"><h2>Only <em>John</em></h2><p class="stat" id="gatewhy">This page is for John, signed in to Grifflix on this device.</p>
+    <div class="links"><a class="btn primary" href="/grifflix/" id="gatego">Open Grifflix</a><button class="btn" id="seed" type="button" hidden>Start Grifflix’s members</button></div></div></div>
 
   <div id="app" hidden>
     <div class="top"><h1>Grifflix <em>admin</em></h1><p class="sub" id="hello"></p></div>
     <div class="cards">
+      <section class="card">
+        <div class="kicker">Members</div>
+        <h2 id="memhead">Members</h2>
+        <p class="stat">Invite someone, or send a member a new link. Each invitation has its own card for Messages and WhatsApp, and works on up to 5 devices for 30 days.</p>
+        <div class="newrow"><input type="text" class="name" id="nname" placeholder="Their name"><input type="text" class="name" id="nmail" placeholder="Their email (optional)" inputmode="email"><button class="btn primary" id="ninvite" type="button">Invite</button></div>
+        <ul class="mem" id="mem"></ul>
+      </section>
       <section class="card">
         <div class="kicker">Draft and live</div>
         <h2 id="dlhead">Looking…</h2>
@@ -46,21 +61,24 @@
         <div class="state"><button class="btn primary" id="publish" type="button" hidden>Publish</button><a class="btn" href="/grifflix/draft/" target="_blank" rel="noopener">Try the draft</a><a class="btn" href="/grifflix/" target="_blank" rel="noopener">The live page</a></div>
       </section>
       <section class="card">
+        <div class="kicker">Notifications and emails</div>
+        <h2 id="nothead">Looking…</h2>
+        <p class="stat" id="notsay"></p>
+      </section>
+      <section class="card">
         <div class="kicker">The Mac mini</div>
         <h2 id="machead">Looking…</h2>
         <p class="stat" id="macsay"></p>
       </section>
       <section class="card">
         <div class="kicker">Elsewhere</div>
-        <div class="links">
-          <a class="btn" href="/songs/admin.html#members">Members</a>
-          <a class="btn" href="/grifflix/tv.apk">Fire TV app</a>
-          <a class="btn" href="https://github.com/cooperking/cooperking.github.io/actions" target="_blank" rel="noopener">Builds on GitHub</a>
-        </div>
+        <div class="links"><a class="btn" href="/grifflix/tv.apk">Fire TV app</a><a class="btn" href="https://github.com/cooperking/cooperking.github.io/actions" target="_blank" rel="noopener">Builds on GitHub</a></div>
       </section>
     </div>
   </div>
 </div>
+
+<dialog class="pop" id="invpop"><div class="pop-in invite" id="invin"></div></dialog>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -68,33 +86,110 @@
   'use strict';
   var WORKER = 'https://sotd-playlists.cooperking.workers.dev', REPO = 'cooperking/cooperking.github.io';
   var $ = function (s) { return document.querySelector(s); };
-  var TOKEN = ''; try { TOKEN = localStorage.getItem('sotd-member') || ''; } catch (e) {}
+  var store = { get: function (k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }, set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
+  var TOKEN = store.get('grifflix-member');
   function toast(t) { var el = $('#toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(function () { el.classList.remove('show'); }, 3000); }
-  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function when(iso) { var d = new Date(iso); return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) + ', ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }); }
-  function gate(why) { $('#gate').hidden = false; if (why) $('#gatewhy').textContent = why; }
+  function g(op, body, tok) {   // Grifflix's own members on the Worker
+    return fetch(WORKER + '/g/' + op, body ? { method: 'POST', headers: { Authorization: 'Bearer ' + (tok || TOKEN), 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : { headers: { Authorization: 'Bearer ' + (tok || TOKEN) } })
+      .then(function (r) { return r.json().then(function (j) { if (!r.ok) { var e = new Error(j.error || 'That didn’t work.'); e.status = r.status; throw e; } return j; }); });
+  }
+  function gate(why, seed) { $('#gate').hidden = false; if (why) $('#gatewhy').textContent = why; $('#seed').hidden = !seed; }
 
-  if (!TOKEN) return gate();
-  fetch(WORKER + '/members/me', { headers: { Authorization: 'Bearer ' + TOKEN, 'X-App': 'web' } }).then(function (r) { return r.json().then(function (j) { j.ok = r.ok; return j; }); })
-    .then(function (me) { if (!me.ok || !me.owner) return gate(me.ok ? 'Signed in as ' + me.name + ': this page is only for John.' : null); $('#app').hidden = false; $('#hello').innerHTML = 'Signed in as <b>' + esc(me.name) + '</b>'; draftLive(); mac(); })
-    .catch(function () { gate('Couldn’t check who you are just now. Try again.'); });
+  // signed in to Grifflix as John? The first time, before Grifflix has members, his other sign-in on this site starts them
+  (TOKEN ? g('me') : Promise.reject({ status: 401 })).then(function (me) {
+    if (!me.owner) return gate('Signed in as ' + me.name + ': this page is only for John.');
+    $('#app').hidden = false; $('#hello').innerHTML = 'Signed in as <b>' + esc(me.name) + '</b>';
+    members(); draftLive(); notes(); mac();
+  }).catch(function () {
+    var other = store.get('sotd-member');
+    gate(other ? 'Grifflix has no members of its own yet. Start them from your existing members: their names and emails are copied, and nobody is signed in until you send them a Grifflix invitation. You’re signed in first, on this device.' : null, !!other);
+  });
+  $('#seed').onclick = function () {
+    var b = this; b.disabled = true;
+    var did = store.get('grifflix-device') || Math.random().toString(36).slice(2, 14); store.set('grifflix-device', did);
+    g('admin', { op: 'seed', device: did }, store.get('sotd-member')).then(function (j) { store.set('grifflix-member', j.token); toast(j.members + ' members ready'); setTimeout(function () { location.reload(); }, 800); })
+      .catch(function (e) { b.disabled = false; toast(e.message); });
+  };
 
-  // ---- draft and live: the two built pages, which differ only in their BUILD line when nothing's waiting
+  // ---- members and their invitations
+  var MEM = [];
+  function members(list) {
+    (list ? Promise.resolve({ members: list }) : g('admin', { op: 'list' })).then(function (j) {
+      MEM = j.members;
+      var signed = MEM.filter(function (m) { return m.devices; }).length;
+      $('#memhead').innerHTML = MEM.length + ' members <em>· ' + signed + ' signed in</em>';
+      $('#mem').innerHTML = MEM.map(function (m) {
+        var st = m.devices ? m.devices + ' device' + (m.devices === 1 ? '' : 's') + (m.seen ? ', last ' + when(m.seen) : '') : m.invite && !m.invite.gone ? 'Invited, not signed in yet' : 'Not invited yet';
+        return '<li><div class="who"><b>' + esc(m.name) + (m.owner ? ' <span class="badge signed">You</span>' : '') + '</b><span>' + esc(st) + (m.email ? ' · ' + esc(m.email) : '') + '</span></div>' +
+          (m.owner ? '' : '<button class="btn small primary" data-inv="' + m.id + '">' + (m.devices || m.invite ? 'New link' : 'Invite') + '</button><button class="btn small" data-rm="' + m.id + '">Remove</button>') + '</li>';
+      }).join('');
+      [].forEach.call(document.querySelectorAll('[data-inv]'), function (b) { b.onclick = function () { invite({ op: 'newlink', id: b.dataset.inv }); }; });
+      [].forEach.call(document.querySelectorAll('[data-rm]'), function (b) { b.onclick = function () {
+        if (!b.dataset.sure) { b.dataset.sure = 1; b.textContent = 'Tap again'; return; }
+        g('admin', { op: 'remove', id: b.dataset.rm }).then(function (j) { toast('Removed'); members(j.members); }).catch(function (e) { toast(e.message); });
+      }; });
+    }).catch(function (e) { $('#memhead').textContent = e.message; });
+  }
+  $('#ninvite').onclick = function () {
+    var name = $('#nname').value.trim(); if (!name) return toast('Their name?');
+    invite({ op: 'invite', name: name, email: $('#nmail').value.trim() }, function () { $('#nname').value = ''; $('#nmail').value = ''; });
+  };
+  function invite(body, done) {
+    g('admin', body).then(function (j) {
+      if (done) done();
+      members(j.members);
+      return drawCard(j.name).then(function (jpeg) { return g('admin', { op: 'card', id: j.id, card: jpeg, link: j.link }).then(function (c) { showInvite(j.name, c.page, jpeg); }); });
+    }).catch(function (e) { toast(e.message); });
+  }
+  // the card: 1200 × 630, as Messages and WhatsApp show it; the June colours, the clapperboard, their name
+  function drawCard(name) {
+    var c = document.createElement('canvas'); c.width = 1200; c.height = 630; var x = c.getContext('2d');
+    var load = function (src) { return new Promise(function (ok, no) { var i = new Image(); i.onload = function () { ok(i); }; i.onerror = no; i.src = src; }); };
+    return Promise.all([load('/grifflix/june-bg.jpg'), load('/grifflix/icon-1024.png'), document.fonts.load('400 120px "Bebas Neue"'), document.fonts.load('italic 400 60px Newsreader'), document.fonts.load('500 40px Oswald')]).then(function (r) {
+      x.drawImage(r[0], 0, -285, 1200, 1200);
+      x.fillStyle = 'rgba(20,0,10,.18)'; x.fillRect(0, 0, 1200, 630);
+      x.save(); x.beginPath(); var rr = 60, ix = 70, iy = 95, s = 440; x.moveTo(ix + rr, iy); x.arcTo(ix + s, iy, ix + s, iy + s, rr); x.arcTo(ix + s, iy + s, ix, iy + s, rr); x.arcTo(ix, iy + s, ix, iy, rr); x.arcTo(ix, iy, ix + s, iy, rr); x.closePath();
+      x.shadowColor = 'rgba(60,0,0,.45)'; x.shadowBlur = 40; x.shadowOffsetY = 14; x.fillStyle = '#fff'; x.fill(); x.restore();
+      x.save(); x.clip(); x.restore();
+      x.save(); x.beginPath(); x.moveTo(ix + rr, iy); x.arcTo(ix + s, iy, ix + s, iy + s, rr); x.arcTo(ix + s, iy + s, ix, iy + s, rr); x.arcTo(ix, iy + s, ix, iy, rr); x.arcTo(ix, iy, ix + s, iy, rr); x.closePath(); x.clip();
+      x.drawImage(r[1], ix, iy, s, s); x.restore();
+      x.fillStyle = '#fffaf5'; x.textBaseline = 'alphabetic';
+      var fit = function (t, font, max, size) { do { x.font = font.replace('$', size); size -= 4; } while (x.measureText(t).width > max && size > 30); return size + 4; };
+      fit(name, '400 $px Newsreader', 590, 112); x.fillText(name, 560, 270);
+      x.font = 'italic 400 54px Newsreader'; x.fillText('is invited to', 562, 345);
+      x.font = '400 128px "Bebas Neue"'; x.fillText('GRIFFLIX', 556, 470);
+      x.font = '500 30px Oswald'; x.fillStyle = 'rgba(255,250,245,.9)'; x.fillText('John’s films and TV, for family and friends', 562, 530);
+      return c.toDataURL('image/jpeg', .88);
+    });
+  }
+  function showInvite(name, page, jpeg) {
+    var text = name + ', you’re invited to Grifflix: John’s films and TV, for family and friends.', enc = encodeURIComponent;
+    $('#invin').innerHTML = '<div class="pop-head"><span class="kicker">Invitation</span><button class="x" id="invx" aria-label="Close"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 3l10 10M13 3 3 13"/></svg></button></div>' +
+      '<h3>' + esc(name) + ' <em>is invited</em></h3><img alt="" src="' + jpeg + '"><p>Send the link: Messages and WhatsApp show this card with it.</p>' +
+      '<div class="sharebtns">' + (navigator.share ? '<button class="btn primary" id="shnative">Share…</button>' : '') +
+      '<a class="btn" href="sms:&body=' + enc(text + ' ' + page) + '">Messages</a><a class="btn" href="https://wa.me/?text=' + enc(text + ' ' + page) + '" target="_blank" rel="noopener">WhatsApp</a>' +
+      '<a class="btn" href="mailto:?subject=' + enc(name + ', you’re invited to Grifflix') + '&body=' + enc(text + '\n\n' + page) + '">Email</a><button class="btn" id="shcopy">Copy link</button></div>';
+    var d = $('#invpop'); if (!d.open) d.showModal();
+    $('#invx').onclick = function () { d.close(); };
+    if ($('#shnative')) $('#shnative').onclick = function () { navigator.share({ title: name + ' is invited to Grifflix', text: text, url: page }).catch(function () {}); };
+    $('#shcopy').onclick = function () { navigator.clipboard.writeText(page).then(function () { toast('Link copied'); }); };
+  }
+
+  // ---- draft and live
   var page = function (u) { return fetch(u + '?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.text(); }).then(function (t) { return t.replace(/\/\*BUILD\*\/\{[^}]*\}/, ''); }); };
   var gh = function (p) { return fetch('https://api.github.com/repos/' + REPO + p, { headers: { Accept: 'application/vnd.github+json' } }).then(function (r) { return r.ok ? r.json() : []; }); };
   var watching = null;
   function draftLive() {
-    Promise.all([page('/grifflix/draft/index.html'), page('/grifflix/index.html'),
-      gh('/commits?path=grifflix/index.html&per_page=1'), gh('/commits?path=_grifflix/web/template.html&per_page=30')])
-      .then(function (r) {
-        var same = r[0] === r[1], lastLive = r[2][0] ? r[2][0].commit.committer.date : '1970-01-01', waiting = (r[3] || []).filter(function (c) { return c.commit.committer.date > lastLive; });
-        $('#dlhead').innerHTML = same ? 'The live page <em>is</em> the draft' : (waiting.length || 'Some') + ' change' + (waiting.length === 1 ? '' : 's') + ' <em>waiting</em>';
-        $('#dlsay').textContent = same ? 'Nothing waiting to go live. Last put live ' + (r[2][0] ? when(lastLive) : '—') + '.' : 'On the draft, not yet live. Try the draft, then Publish puts all of it live together.';
-        $('#changes').innerHTML = same ? '' : waiting.map(function (c) { return '<li>' + esc(c.commit.message.split('\n')[0].replace(/^Grifflix(\s+page)?:\s*/i, '')) + '<span class="when">' + when(c.commit.committer.date) + '</span></li>'; }).join('');
-        $('#publish').hidden = same;
-        if (watching && same) { watching = null; toast('Live now'); }
-      })
-      .catch(function () { $('#dlhead').textContent = 'Couldn’t compare them just now'; });
+    Promise.all([page('/grifflix/draft/index.html'), page('/grifflix/index.html'), gh('/commits?path=grifflix/index.html&per_page=1'), gh('/commits?path=_grifflix/web/template.html&per_page=30')]).then(function (r) {
+      var same = r[0] === r[1], lastLive = r[2][0] ? r[2][0].commit.committer.date : '1970-01-01', waiting = (r[3] || []).filter(function (c) { return c.commit.committer.date > lastLive; });
+      $('#dlhead').innerHTML = same ? 'The live page <em>is</em> the draft' : (waiting.length || 'Some') + ' change' + (waiting.length === 1 ? '' : 's') + ' <em>waiting</em>';
+      $('#dlsay').textContent = same ? 'Nothing waiting to go live. Last put live ' + (r[2][0] ? when(lastLive) : '—') + '.' : 'On the draft, not yet live. Try the draft, then Publish puts all of it live together.';
+      $('#changes').innerHTML = same ? '' : waiting.map(function (c) { return '<li>' + esc(c.commit.message.split('\n')[0].replace(/^Grifflix(\s+page)?:\s*/i, '')) + '<span class="when">' + when(c.commit.committer.date) + '</span></li>'; }).join('');
+      $('#publish').hidden = same;
+      if (watching && same) { clearInterval(watching); watching = null; toast('Live now'); }
+    }).catch(function () { $('#dlhead').textContent = 'Couldn’t compare them just now'; });
   }
   var armed = 0;
   $('#publish').onclick = function () {
@@ -102,26 +197,31 @@
     if (!armed) { armed = setTimeout(function () { armed = 0; b.textContent = 'Publish'; }, 4000); b.textContent = 'Tap again to publish'; return; }
     clearTimeout(armed); armed = 0; b.disabled = true; b.textContent = 'Publishing…';
     var say = [].map.call(document.querySelectorAll('#changes li'), function (li) { return li.firstChild.textContent; }).join('; ');
-    fetch(WORKER + '/members/grifflix', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify({ op: 'publish', say: say }) })
-      .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || 'It didn’t start.'); }); })
-      .then(function () {
-        b.textContent = 'Going live…'; toast('Started: live in a minute or two');
-        watching = setInterval(function () { if (!watching) return; draftLive(); }, 15000);
-      })
+    g('admin', { op: 'publish', say: say }).then(function () { b.textContent = 'Going live…'; toast('Started: live in a minute or two'); watching = setInterval(draftLive, 15000); })
       .catch(function (e) { b.disabled = false; b.textContent = 'Publish'; toast(e.message); });
   };
 
-  // ---- the Mac mini: the gateway through the tunnel, and the library
+  // ---- notifications and emails: the last Movie of the Day sent, and whether the mailer signs as Grifflix
+  function notes() {
+    g('admin', { op: 'last' }).then(function (j) {
+      var s = j.sent;
+      $('#nothead').innerHTML = s ? 'Last: <em>' + esc(s.name) + '</em>' : 'None sent yet';
+      $('#notsay').innerHTML = (s ? when(s.at) + ': to ' + ((s.pushed && s.pushed.sent) || 0) + ' devices, ' + ((s.mailed && s.mailed.sent) || 0) + ' emails. ' : 'Each Movie of the Day goes out from 8am, once it’s on the calendar. ') +
+        (j.mailer ? 'Emails go signed Grifflix.' : '<b>Emails are waiting for the mailer to be updated</b> (so they say Grifflix): notifications go meanwhile.');
+    }).catch(function (e) { $('#nothead').textContent = e.message; });
+  }
+
+  // ---- the Mac mini
   function mac() {
     fetch('/grifflix/config.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (c) {
       var gw = String(c.gateway || '').replace(/\/$/, ''), t0 = Date.now();
       if (!gw) { $('#machead').textContent = 'Not connected'; return; }
-      return fetch(gw + '/api/me', { headers: { Authorization: 'Bearer ' + TOKEN } }).then(function (r) { return r.json(); }).then(function (me) {
-        var ms = Date.now() - t0, L = me.libraries || {};
-        $('#machead').innerHTML = 'Answering <em>(' + ms + ' ms)</em>';
+      return fetch(gw + '/api/me', { headers: { Authorization: 'Bearer ' + TOKEN } }).then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (me) {
+        var L = me.libraries || {};
+        $('#machead').innerHTML = 'Answering <em>(' + (Date.now() - t0) + ' ms)</em>';
         $('#macsay').innerHTML = '<b>' + (L.movies || 0) + '</b> films and <b>' + (L.tv || 0) + '</b> series, through ' + esc(gw.replace(/^https:\/\//, '')) + '.';
       });
-    }).catch(function () { $('#machead').innerHTML = 'Not <em>answering</em>'; $('#macsay').textContent = 'It may be asleep, restarting, or off the internet. Grifflix shows its “Mac mini isn’t answering” page meanwhile.'; });
+    }).catch(function () { $('#machead').innerHTML = 'Not <em>answering</em>'; $('#macsay').textContent = 'It may be asleep, restarting, or not yet updated to Grifflix’s own sign-ins.'; });
   }
 })();
 </script>
