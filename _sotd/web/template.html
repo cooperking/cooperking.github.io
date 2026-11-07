@@ -5454,11 +5454,12 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     all.setAttribute('aria-pressed', String(!SND.some)); some.setAttribute('aria-pressed', String(SND.some));
     who.hidden = !SND.some; who.textContent = ''; all.hidden = !!SND.only;
     if (SND.some) (MEMBER.mem || MEMBER.others || []).filter(function (o) { return !SND.only || SND.only.indexOf(o.id) !== -1; }).forEach(function (o) {   // (every member: those who've turned messages off shown, not ticked: John, 7 Nov 2026)
-      var l = document.createElement('label'), c = document.createElement('input'); c.type = 'checkbox'; c.checked = !o.off && SND.pick.indexOf(o.id) >= 0;
-      if (o.off) { c.disabled = true; l.title = o.name + ' has turned off messages from members'; l.appendChild(c); l.appendChild(document.createTextNode(o.name + ' (messages off)')); l.style.opacity = '.55'; who.appendChild(l); return; }
+      var l = document.createElement('label'), c = document.createElement('input'); c.type = 'checkbox'; c.checked = o.off !== 2 && SND.pick.indexOf(o.id) >= 0;
+      if (o.off === 2) { c.disabled = true; l.title = 'Not taking messages from you'; l.appendChild(c); l.appendChild(document.createTextNode(o.name)); l.style.opacity = '.55'; who.appendChild(l); return; }
+      if (o.off) l.title = o.name + ' has notifications from members off: it goes to their inbox, and their email if they take emails';
       l.className = c.checked ? 'on' : '';
       c.addEventListener('change', function () { var i = SND.pick.indexOf(o.id); if (c.checked && i < 0) SND.pick.push(o.id); if (!c.checked && i >= 0) SND.pick.splice(i, 1); l.className = c.checked ? 'on' : ''; });
-      l.appendChild(c); l.appendChild(document.createTextNode(o.name)); who.appendChild(l);
+      l.appendChild(c); l.appendChild(document.createTextNode(o.name + (o.off ? ' (inbox only)' : ''))); who.appendChild(l);
     });
     var g = SND.song, card = document.getElementById('sndcard'), a = SND.att;
     card.hidden = !a || !!g;   // (a song has its own part below)

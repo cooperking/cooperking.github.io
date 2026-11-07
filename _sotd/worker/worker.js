@@ -2313,7 +2313,7 @@ async function memberMe(request, env, answer) {
   // only members who have joined (signed in at least once) in either; a send to everyone goes to these others only
   const others = Object.keys(all).filter(k => k !== id && hasJoined(all[k]) && takesFrom(all, k, id, ownerId)).map(k => ({ id: k, name: all[k].name })).sort(byName);
   // every member, to share a playlist with or send a share to (John, 7 Nov 2026: "Sharing should include any members, not just those with notifications on"): off, those who've turned off messages from them
-  const mem = Object.keys(all).filter(k => k !== id && !apart(all, id, k)).map(k => Object.assign({ id: k, name: all[k].name }, takesFrom(all, k, id, ownerId) && hasJoined(all[k]) ? {} : { off: 1 })).sort(byName);
+  const mem = Object.keys(all).filter(k => k !== id && !apart(all, id, k)).map(k => Object.assign({ id: k, name: all[k].name }, takesFrom(all, k, id, ownerId) ? {} : (all[k].mute || []).includes(id) ? { off: 2 } : { off: 1 })).sort(byName);
   const seen = Object.keys(all).filter(k => k !== id && k !== ownerId && hasJoined(all[k]) && !apart(all, id, k)).map(k => ({ id: k, name: all[k].name })).sort(byName);
   const bell = bellView(all, id, await env.SOTD.get('bell:' + id, 'json')).unseen;   // reactions to their messages not yet seen
   const U0 = await uplAll(env), pls = await uplMine(env, uplList(all, id, U0, await uplAdm(env, id)), U0);   // members' own playlists they can see, and their own (with the songs waiting for them)
@@ -3414,13 +3414,16 @@ async function memberSend(request, env, answer) {
   const everyone = body.to === 'all';
   const asked = everyone ? Object.keys(all).filter(k => hasJoined(all[k])) : Array.isArray(body.to) ? [...new Set(body.to.map(String))] : [];
   const to = asked.filter(takes);
+  // those who've turned off members' notifications: into their inbox all the same, and by email if they take emails, but nothing on their phones (John, 7 Nov 2026: "it should be inbox only no notifications"); not those who muted this member, nor those kept apart
+  const quiet = asked.filter(k => k !== id && all[k] && !takes(k) && !apart(all, k, id) && !(all[k].mute || []).includes(id));
+  to.push(...quiet);
   if (body.me && all[id] && !to.includes(id)) to.push(id);   // themselves too (John, 3 Nov 2026: "Include myself in Send"): the same notification, inbox, phone and email
   if (!to.length) return answer(400, { error: asked.some(k => k !== id && all[k] && !apart(all, id, k)) ? 'They’ve turned off messages from other members.' : 'Choose who it goes to.' });
   const n = await dayCount(env, 'sent:' + id, SEND_DAY);
   if (!n) return answer(429, { error: 'That’s ' + SEND_DAY + ' sent today, the most for a day. You can send more tomorrow.' });
   const name = all[id].name, msg = note.msg;
   Object.assign(msg, { subject: msg.title, title: name + ': ' + msg.title, from: name, tag: 'sotd-from-' + id + '-' + Date.now() });
-  const r = await pushAll(env, msg, to, { kind: 'member', via: { t: 'member', id, name }, toNames: everyone ? null : to.map(k => all[k].name),
+  const r = await pushAll(env, msg, to, { kind: 'member', quiet, via: { t: 'member', id, name }, toNames: everyone ? null : to.map(k => all[k].name),
     fromId: id, toIds: everyone ? 'all' : asked.filter(k => k !== id && all[k]) });
   // their Profile › Sent: who they chose, as the calendar said when it went ("Sent to …"), not who took it
   await sentAdd(env, id, msg, r, everyone ? 'all' : asked.filter(k => k !== id && all[k] && !apart(all, id, k)).map(k => all[k].name));
@@ -3746,7 +3749,7 @@ async function pushAll(env, msg, to, meta) {   // to: only these members (else e
   await noteMail(env, to, Object.assign({ cta: cat === 'song' ? 'Listen' : '' }, mailMsg), cat).catch(e => console.log('noteMail: ' + (e && e.message)));   // (and by email, for those who asked)
   let sent = 0, failed = 0; const gone = [], errors = [];
   const allM = (await env.SOTD.get('members', 'json')) || {}, gate = {};
-  for (const mid of new Set(Object.values(subs).map(x => x.m))) if (!to || to.includes(mid)) gate[mid] = await pushGate(env, allM, mid, cat, msg);   // (as each chose for their devices)
+  for (const mid of new Set(Object.values(subs).map(x => x.m))) if (!to || to.includes(mid)) gate[mid] = (m0.quiet || []).includes(mid) ? false : await pushGate(env, allM, mid, cat, msg);   // (quiet: inbox and email only)   // (as each chose for their devices)
   const ids = Object.keys(subs).filter(id => (!to || to.includes(subs[id].m)) && gate[subs[id].m] === true);
   for (let i = 0; i < ids.length; i += 20) {   // twenty at a time
     await Promise.all(ids.slice(i, i + 20).map(async id => {
