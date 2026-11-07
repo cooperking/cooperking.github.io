@@ -9,7 +9,7 @@ in English").
   * the rest: the best rated in the other collections (its rating, and the critics' where there is one)
   * feature films only: 70 minutes or more, never a film from inside a box set (those are short films)
   * in English (all but Dad's favourites): the film's sound marked English, or unmarked and made in an English-speaking country
-  * each film once; Christmas films around Christmas; a day already chosen is kept as it is
+  * each film once, on random days through the year; Christmas films around Christmas; a day already chosen is kept
 
   python3 motd-fill.py        the list, day by day (nothing changes): ~/Grifflix/motd-plan.csv
   python3 motd-fill.py go     puts them on the calendar
@@ -136,7 +136,7 @@ take([i for i in ok if where[i] & {g(c, 'Id') for c in oscars}], 'Oscar winner',
 take([i for i in ok if where[i] & {g(c, 'Id') for c in others}], 'best rated', n=max(0, len(open_days) - len(pick)))
 pick = pick[:len(open_days)]
 
-# the days: Christmas films 18-25 December; the rest spread out, Dad's favourites evenly through the year
+# the days: Christmas films 18-25 December; everything else, Dad's favourites too, on random days
 rnd = random.Random(2025)
 xmas = [i for i in pick if christmas(ok[i])]
 rest = [i for i in pick if i not in xmas]
@@ -150,10 +150,8 @@ for d, i in zip(xmas_days, xmas):
 free = [d for d in open_days if d not in plan]
 xmas = xmas[len(xmas_days):]
 rest = rest + xmas
-if dad:   # Dad's favourites at even steps through the year
-    step = len(free) / len(dad)
-    for k, i in enumerate(dad):
-        plan[free[min(len(free) - 1, int(k * step + step / 2))]] = i
+for d, i in zip(rnd.sample(free, min(len(dad), len(free))), dad):   # Dad's favourites on random days through the year (John, 7 Nov 2026)
+    plan[d] = i
 for d in [d for d in free if d not in plan]:
     if rest:
         plan[d] = rest.pop(0)
