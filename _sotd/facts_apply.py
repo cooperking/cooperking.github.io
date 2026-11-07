@@ -200,10 +200,11 @@ def main(offline, promote=()):
     # sign-off puts them live, and with them the song's day (released.py; John, 28 Oct 2026: "the site shouldn't publish
     # automatically for new song of the day as i'd like to check the facts and add videos and songs myself for members").
     # From 24 to 28 Oct they went live as soon as they were checked. The draft holds them back too (John, 26 Oct 2026:
-    # the live calendar and the draft exactly the same): it has the waiting facts only for songs already out.
+    # the live calendar and the draft exactly the same). Since 7 Nov 2026 the draft shows every new song at once, with its
+    # waiting facts, for John to check there ("Songs should upload immediately and then I sign off and publish").
     live = page_format(live)
     changed = [p for p, d, c in ((LIVE, live, True), (PENDING, pending, False), (PENDING_PUB, pending, True),
-                                 (DRAFT, page_format(live, {t: e for t, e in pending['songs'].items() if t in live.get('songs', {}) or t in live.get('signed', {})}), True),
+                                 (DRAFT, page_format(live, dict(pending['songs'])), True),   # (the draft: every waiting song's facts too, as it shows every song at once: John, 7 Nov 2026)
                                  (QUOTES, quotes, False),
                                  (QUOTES_PUB, quotes, True)) if write(p, d, c)]
     print(len(applied), 'songs signed off and put live;', len(pending['songs']), 'waiting;',

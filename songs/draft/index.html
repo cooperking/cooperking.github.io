@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="e4307802c88d">
+<meta name="sotd-build" content="b97089d6cd0f">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -12409,6 +12409,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // the draft exactly the same). Days are worked out from the whole playlist first, so a held-back song doesn't move the
   // day of the one before it.
   function outOnly(list, fx) {
+    if (DRAFT) return list;   // (the draft: every song at once, its facts waiting there for John to check, before he signs it off for the live calendar: John, 7 Nov 2026)
     return list.filter(function (s) { return fx ? !!((fx.songs && fx.songs[s.track]) || (fx.signed && fx.signed[s.track])) : !!byTrack[s.track]; });
   }
   if (DATA.live && window.fetch) {
