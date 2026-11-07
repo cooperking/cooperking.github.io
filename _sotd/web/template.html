@@ -409,6 +409,8 @@ html.big.page-edit .pedock { left: 28px; right: calc(var(--pe-w) + 44px); }
 .pe-head h2 { margin: 0; font: 500 26px/1.1 var(--serif); }
 .pe-done { height: 40px; padding: 0 20px; border: 0; border-radius: 999px; background: var(--fg); color: var(--bg); font: 600 12px/1 var(--sans); letter-spacing: .12em; text-transform: uppercase; cursor: pointer; }
 .pe-g { display: grid; gap: 10px; }
+#pe-who #setwhoh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }   /* (its section's own heading says it) */
+#pe-who .set-g { margin: 0; }
 .pe-g > h3, .pageedit .mine-set h4 { margin: 0; font: 600 11px/1.2 var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--fg); opacity: .8; }
 .pageedit .mine-set { margin: 0; padding: 0; border: 0; gap: 22px; }
 .pageedit .mine-set .savedh { display: none; }
@@ -1864,6 +1866,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       <div class="pe-g"><h3>Name</h3><div class="pe-name" id="pe-name"></div></div>
       <div class="pe-g pe-capg"><h3>Caption</h3><textarea class="pe-captx" id="pe-cap" maxlength="300" rows="2" placeholder="A line or two, shown under its name"></textarea></div>
       <div class="pe-g"><h3>Picture</h3><div class="pe-pic"><span class="cal-pic" id="pe-picimg"></span><div class="pe-picacts" id="pe-picacts"></div></div><div class="pe-words" id="pe-words"><label><span>Words on its cover</span><input type="text" id="pe-cvt" maxlength="60" autocomplete="off"></label><label><span>Below the line</span><input type="text" id="pe-cvb" maxlength="120" autocomplete="off"></label></div></div>
+      <div class="pe-g" id="pe-whog"><h3>Who sees it</h3><div id="pe-who"></div><div class="pe-picacts"><button type="button" id="pe-share">Share its link…</button></div></div>
       <div class="pe-g"><button class="pe-settog" id="pe-settog" type="button" aria-expanded="false" aria-controls="pe-set"><span id="pe-settogt">Calendar set-up</span><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5"/></svg></button><div class="pe-setg" id="pe-set" hidden></div></div>
       <div class="pe-g" id="pe-songsg"><h3 id="pe-songsh">Songs</h3><ol class="pe-songs" id="pe-songs"></ol></div>
       <div class="pe-g" id="pe-cwg"><h3>Who can edit</h3><p class="pe-cwn" id="pe-cwn"></p><div class="snd-who" id="pe-cw" role="group" aria-label="Members who can edit it"></div></div>
@@ -8847,8 +8850,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (!uplOwnCan() || !UPL.view) return;
     mineUplSet(UPL.view);
     var nameEl = document.getElementById('uplname'), set = document.getElementById('mineset');
-    if (!PE.home) PE.home = { name: [nameEl.parentNode, nameEl.nextSibling], set: [set.parentNode, set.nextSibling] };
+    var who = document.getElementById('setwho');
+    if (!PE.home) PE.home = { name: [nameEl.parentNode, nameEl.nextSibling], set: [set.parentNode, set.nextSibling], who: [who.parentNode, who.nextSibling] };
     document.getElementById('pe-name').appendChild(nameEl); document.getElementById('pe-set').appendChild(set);
+    document.getElementById('pe-who').appendChild(who);   // (who sees it, and its link, in sight: not folded into the set-up: John, 7 Nov 2026)
     var p = uplOwnRec(); nameEl.value = p.n || ''; nameEl.placeholder = p.sn || 'Its name';
     document.getElementById('pe-cap').value = (UPL.view && UPL.view.cap) || '';
     nameEl.setAttribute('aria-label', 'Its name');
@@ -8873,7 +8878,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     PE.on = false; PE.sel = []; document.documentElement.classList.remove('page-edit');
     document.getElementById('pedock').hidden = true;
     var nameEl = document.getElementById('uplname'), set = document.getElementById('mineset');
-    if (PE.home) { PE.home.name[0].insertBefore(nameEl, PE.home.name[1]); PE.home.set[0].insertBefore(set, PE.home.set[1]); }
+    if (PE.home) { PE.home.name[0].insertBefore(nameEl, PE.home.name[1]); PE.home.who[0].insertBefore(document.getElementById('setwho'), PE.home.who[1]); PE.home.set[0].insertBefore(set, PE.home.set[1]); }
     document.getElementById('pageedit').hidden = true;
     if (ED.on) uplEditOff();
     if (!mine.open) mineUplExit(); else setupDraw();
@@ -8903,7 +8908,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     document.getElementById('peh').textContent = 'Editing “' + (p.n || v.n) + '”' + (v.own === false || v.boss ? ' · ' + v.o + '’s' : '');
     // a collaborator (John, 3 Nov 2026: collaborative playlists): its songs only; its name, picture, set-up, who edits it and removing it are its owner's
     var own = v.own !== false;
-    ['pe-name', 'pe-cap', 'pe-picimg', 'pe-settog', 'pe-more'].forEach(function (id) { var g = document.getElementById(id).closest('.pe-g'); if (g) g.hidden = !own; });
+    ['pe-name', 'pe-cap', 'pe-picimg', 'pe-share', 'pe-settog', 'pe-more'].forEach(function (id) { var g = document.getElementById(id).closest('.pe-g'); if (g) g.hidden = !own; });
     peCw(p, own);
     var pic = document.getElementById('pe-picimg'); calPics.now = true; calMos(pic, calPics(p, ((CARDS[p.id] || {}).cv) || v.songs.slice(-4).map(function (x) { return x.img; }).filter(Boolean).reverse(), function () { if (PE.on) peDraw(); })); calPics.now = false;
     var pa = document.getElementById('pe-picacts'); pa.textContent = '';
@@ -9000,6 +9005,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     document.getElementById('pe-set').hidden = !on;
     document.getElementById('pe-settog').setAttribute('aria-expanded', on ? 'true' : 'false');
   }
+  document.getElementById('pe-share').addEventListener('click', function () { if (UPL.view) uplShareCal(UPL.view); });   // (Copy link, or send it: to the members it's shared with)
   document.getElementById('pe-settog').addEventListener('click', function () { peSetShow(document.getElementById('pe-set').hidden); });
   document.getElementById('pdfin').addEventListener('click', peOff);
   document.getElementById('pdclear').addEventListener('click', function () { PE.sel = []; peDock(); editMarks(); peDraw(); });
