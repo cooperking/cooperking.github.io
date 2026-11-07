@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="sotd-build" content="870150874c03">
+<meta name="sotd-build" content="49ef1762e67a">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 271 so far">
 <meta name="theme-color" content="#ec135b">
@@ -5561,7 +5561,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         var img = r[0], w = img.naturalWidth || img.width, h = img.naturalHeight || img.height, k = Math.min(1, 1200 / w, 1200 / h), c = document.createElement('canvas');
         c.width = Math.round(w * k); c.height = Math.round(h * k);
         c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-        SND.pic = c.toDataURL('image/jpeg', 0.85); SND.gif = r[1];
+        SND.pic = c.toDataURL('image/jpeg', 0.85); canvasFree(c); SND.gif = r[1];
         var g = SND.song;
         if (g && g.pic === 'photo') sndDraw();
         sendDraw();
@@ -9258,8 +9258,19 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     g.beginPath(); g.arc(cx, cy, R * .035, 0, 7); g.fillStyle = '#0d0d10'; g.fill();
     g.save(); g.shadowColor = 'rgba(0,0,0,.4)'; g.shadowBlur = S * .045; g.shadowOffsetY = S * .012; rrect(g, sx, sy, sz, sz, S * .014); g.fillStyle = pal[0]; g.fill(); g.restore();
     g.save(); rrect(g, sx, sy, sz, sz, S * .014); g.clip(); front(g, sx, sy, sz, pal, P.h); g.restore();
-    return c.toDataURL('image/jpeg', .88);
+    var url = c.toDataURL('image/jpeg', .88); canvasFree(c); return url;
   }
+  // a canvas let go at once: the iPhone keeps each one's memory till it's cleared, and clears the page when there's too
+  // much (John, 7 Nov 2026: "Still getting blackout reloads on iPhone a lot")
+  function canvasFree(c) { try { c.width = c.height = 0; } catch (e) {} }
+  (function artTidy() {   // drawn covers kept from earlier versions, or for names and covers since changed: let go (the iPhone holds all of them in the page's memory)
+    try {
+      var cur = [], old = [];
+      for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (/^sotd-(art|mos)\d+:/.test(k)) (/^sotd-(art7|mos9):/.test(k) ? cur : old).push(k); }
+      old.forEach(function (k) { localStorage.removeItem(k); });
+      if (cur.length > 60) cur.slice(0, cur.length - 60).forEach(function (k) { localStorage.removeItem(k); });
+    } catch (e) {}
+  })();
   function sleeveWords(g, o, x, y, sz, onPic) {   // its people or owner small, its name big (its last line in italics, as "the Day"), a rule and what it is
     var pad = sz * .13, wide = sz - pad * 2, words = String(o.title || o.n || 'Playlist').split(/\s+/), size = sz * .19, lines, people = o.who && o.who.length > 1 ? o.who : o.o ? [o.o] : [], many = people.length > 2;
     var lf = '600 ' + Math.round(sz * (many ? .043 : .055)) + 'px "Hanken Grotesk", Helvetica, Arial, sans-serif', ls = Math.round(sz * (many ? .005 : .012)) + 'px';   // (a collaborative one's names a little smaller, so more of them fit)
@@ -9324,6 +9335,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         });
         try { localStorage.setItem(key, ART[key]); } catch (e) {}
       } catch (e) { if (typeof spLog === 'function') spLog('all-covers picture couldn’t be drawn: ' + ((e && e.message) || e)); ART[key] = ''; }
+      imgs.forEach(function (im) { if (im) { im.onload = im.onerror = null; im.src = ''; } }); imgs = [];   // (its covers let go once drawn)
       delete MOSING[key]; if (done && ART[key]) done();
     }
     return '';
@@ -9415,7 +9427,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         var w = img.naturalWidth || img.width, h = img.naturalHeight || img.height, side = Math.min(w, h), out = Math.min(640, side), c = document.createElement('canvas');
         c.width = c.height = out;
         c.getContext('2d').drawImage(img, (w - side) / 2, (h - side) / 2, side, side, 0, 0, out, out);
-        return c.toDataURL('image/jpeg', 0.85);
+        var u = c.toDataURL('image/jpeg', 0.85); canvasFree(c); return u;
       }, function (e) { throw new Error(C.fileWhy(e, f)); });
     }).then(function (pic) { toast('Adding the picture…'); uplPicSend(p, pic); })
       .catch(function (e) { toast('That picture couldn’t be used: ' + ((e && e.message) || e)); });
@@ -9782,7 +9794,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         var w = img.naturalWidth || img.width, h = img.naturalHeight || img.height, side = Math.min(w, h), out = Math.min(640, side), c = document.createElement('canvas');
         c.width = c.height = out;
         c.getContext('2d').drawImage(img, (w - side) / 2, (h - side) / 2, side, side, 0, 0, out, out);
-        return c.toDataURL('image/jpeg', 0.85);
+        var u = c.toDataURL('image/jpeg', 0.85); canvasFree(c); return u;
       }, function (e) { throw new Error(C.fileWhy(e, f)); });
     }).then(function (pic) {
       ed.busyc = true; if (UED === ed && upledDlg.open) upledFiles();
