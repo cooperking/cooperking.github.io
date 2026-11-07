@@ -2078,33 +2078,35 @@ async function uplSharePage(url, env, pid, when) {   // a public member's calend
   if ((day && !s) || (month && !inMonth.length) || !v.songs.length) return Response.redirect(home + '#u=' + pid, 302);
   const to = home + '#u=' + pid + (s ? '&d=' + slugD(day) : month ? '&m=' + slugM(month) : '');
   const cardUrl = site + 'u/' + pid + '/' + (s ? slugD(day) + '/' : month ? slugM(month) + '/' : '') + 'card.jpg', card = await uplCardThere(cardUrl);
-  const newest = (month ? inMonth : v.songs)[(month ? inMonth : v.songs).length - 1], img = card ? cardUrl : ((s || newest).img || '');
+  const newest = (month ? inMonth : v.songs)[(month ? inMonth : v.songs).length - 1], own = !s && !month ? (rec.art ? LIVE_ORIGIN + '/up/' + pid + '-art.jpg?v=' + rec.art.v : rec.pic ? LIVE_ORIGIN + '/up/' + pid + '.jpg?v=' + rec.pic : '') : '', img = own || (card ? cardUrl : ((s || newest).img || ''));   // (the whole of it: its own picture, as the calendar shows it)
   const e = x => esc(String(x)), n = (month ? inMonth : v.songs).length, songsN = n + (n === 1 ? ' song' : ' songs');
   const monthName = month ? new Date(month + '-15T12:00:00Z').toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' }) : '';
-  const title = s ? s.title : month ? monthName : v.t;
-  const desc = s ? (s.artists && s.artists.length ? s.artists.join(', ') : s.artist) + ' · ' + v.t + ', ' + alexaDay(day) + ' ' + day.slice(0, 4)
-    : month ? songsN + ' for each day' : rec.mode === 'list' ? songsN : 'A song a day, ' + n + ' so far';
-  const alt = s ? s.title + ' by ' + s.artist : month ? 'Covers of the songs for ' + monthName : 'Covers of ' + v.t;
+  // its own name and caption (John, 7 Nov 2026: "it should be correct for the playlist or calendar it's sharing ... Should say the title and the caption")
+  const name = rec.cvt || v.n, cap = rec.cap || '', what = rec.mode === 'list' ? songsN : 'A song a day, ' + n + ' so far';
+  const title = s ? s.title : month ? name + ': ' + monthName : name;
+  const desc = s ? (s.artists && s.artists.length ? s.artists.join(', ') : s.artist) + ' · ' + name + ', ' + alexaDay(day) + ' ' + day.slice(0, 4)
+    : month ? (cap ? cap + ' · ' : '') + songsN + ' for each day' : (cap ? cap + ' · ' : '') + what;
+  const alt = s ? s.title + ' by ' + s.artist : month ? 'Covers of the songs for ' + monthName : 'Covers of ' + name;
   return new Response(`<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${e(title)} · ${e(v.t)}</title>
+<title>${e(title)}</title>
 <meta name="description" content="${e(desc)}">
 <meta property="og:type" content="${s ? 'music.song' : 'website'}">
-<meta property="og:site_name" content="${e(v.t)}">
+<meta property="og:site_name" content="Song of the Day">
 <meta property="og:title" content="${e(title)}">
 <meta property="og:description" content="${e(desc)}">
 <meta property="og:url" content="${e(url.origin + url.pathname)}">
 ${img ? `<meta property="og:image" content="${e(img)}">
 <meta property="og:image:secure_url" content="${e(img)}">
 <meta property="og:image:type" content="image/jpeg">
-${card ? `<meta property="og:image:width" content="1200">
+${card && !own ? `<meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 ` : ''}<meta property="og:image:alt" content="${e(alt)}">
 <meta name="twitter:image" content="${e(img)}">
-` : ''}<meta name="twitter:card" content="${card ? 'summary_large_image' : 'summary'}">
+` : ''}<meta name="twitter:card" content="${card && !own ? 'summary_large_image' : 'summary'}">
 <meta name="twitter:title" content="${e(title)}">
 <meta name="twitter:description" content="${e(desc)}">
 <link rel="icon" type="image/png" sizes="96x96" href="https://cooperking.github.io/songs/favicon-96.png?v=2">
@@ -4956,7 +4958,7 @@ async function uplSync(request, env) {
       .map(x => { if ('ov' in x) return x; const f = (data.files || {})[x.id], tw = (cat[x.id] && cat[x.id].v) || (f && f.v) ? null : twinOf(TW, x, pid); if ((cat[x.id] && cat[x.id].v) || (f && f.v) || (tw && (tw.pid ? tw.v : cat[tw.id] && cat[tw.id].v))) x.mp4 = 1; return x; }) };   // (mp4: it has an MP4 already, its own or another copy's: no YouTube search for it: John, 5 Nov 2026)   // (its look for a video stopped by its owner: none, so the job doesn't search; retry: John's Look again, looked for again by the job, youtube.py)   // (John's video over its owner's)
     if (uplShareOf(rec) === 'public') {   // its songs out, each with its day and cover: the cards for its links (share_pages.py)
       const v = await uplView(env, all, null, pid, rec);
-      out[pid].pub = { t: v.t, n: v.n, songs: v.songs.map(x => ({ id: x.id, d: x.d, title: x.title, artist: x.artist, artists: x.artists, img: x.img || '' })) };
+      out[pid].pub = { t: v.t, n: rec.cvt || v.n, cap: rec.cap || '', mode: rec.mode, songs: v.songs.map(x => ({ id: x.id, d: x.d, title: x.title, artist: x.artist, artists: x.artists, img: x.img || '' })) };
       out[pid].facts = uplFactsWanted(rec, data);   // (written by the facts task as John's are: songs added since, and those its owner asks for)
     }
   }

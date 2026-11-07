@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="545f9f315c5e">
+<meta name="sotd-build" content="3dfe7ff24f6a">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -5342,7 +5342,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     img.src = o.image;
     document.getElementById('shwa').href = 'https://wa.me/?text=' + encodeURIComponent(msg);
     document.getElementById('shurl').value = o.url;
-    document.getElementById('shmail').href = 'mailto:?subject=' + encodeURIComponent(o.lines[0] + ': ' + o.title) + '&body=' + encodeURIComponent(msg);
+    document.getElementById('shmail').href = 'mailto:?subject=' + encodeURIComponent(o.lines[0] === o.title ? o.title : o.lines[0] + ': ' + o.title) + '&body=' + encodeURIComponent(msg);
     var sms = document.getElementById('shsms');
     // on a Mac, Messages only draws the link's preview card (picture, song, date) for a link on its own
     var macMessages = window.matchMedia && matchMedia('(pointer: fine)').matches;
@@ -9972,15 +9972,18 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (v.sh === 'private') o.noSend = true;
     o.note = v.sh === 'public' ? '' : v.sh === 'some' ? 'Opens for the members it’s shared with' : 'Opens for members, signed in';
   }
+  // what a member's calendar is called where it's shared: its own name (its cover's words first) and its caption (John, 7 Nov 2026: "it should be correct for the playlist or calendar it's sharing ... Should say the title and the caption")
+  function calShareName(v) { var p = uplPls().filter(function (x) { return x.id === v.id; })[0] || {}; return { p: p, name: p.cvt || v.n || v.t, cap: (v.cap || '').trim() }; }
   function uplShareDay(iso, s, v, btn) {
     var slug = slugOf(iso), t = cleanTitle(s.title), hasVid = !!VIDS[s.track], hasPre = !!songSrc(s);
     var pick = btn && btn.closest ? btn.closest('.pick') : null, watching = !!(pick && pick.classList.contains('watching'));
     var mode = hasVid && (watching || !hasPre || playMode === 'video') ? 'video' : hasPre ? 'preview' : '';
-    var o = { lines: [v.t, longDate(iso), '', t, s.artist], title: t, sub: s.artist + ' · ' + longDate(iso), mode: mode, modes: hasVid && hasPre, pics: false, song: whole(s) };
+    var cn = calShareName(v);
+    var o = { lines: [t, s.artist, '', cn.name + ', ' + longDate(iso)], title: t, sub: s.artist + ' · ' + cn.name + ', ' + longDate(iso), mode: mode, modes: hasVid && hasPre, pics: false, song: whole(s) };
     o.urlFor = function (m) { return uplLinkFor(v, 'u=' + v.id + '&d=' + slug, iso, m); };
     o.url = o.urlFor(mode);
     o.image = v.sh === 'public' ? SITE + 'u/' + v.id + '/' + slug + '/card.jpg' : s.u || ''; o.imageAlt = s.u || '';
-    o.icon = s.u || ''; o.sendText = s.artist + ' · ' + v.t + ', ' + longDate(iso); o.sendSong = { iso: iso, s: s, cal: v };
+    o.icon = s.u || ''; o.sendText = s.artist + ' · ' + cn.name + ', ' + longDate(iso); o.sendSong = { iso: iso, s: s, cal: v };
     uplShareSend(o, v);
     if (o.note) o.sub += ' · ' + o.note;
     openShare(o);
@@ -9988,24 +9991,34 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function uplShareMonth(v) {
     var y = months[cur][0], m = months[cur][1], n = songs.filter(function (x) { return x.d.slice(0, 7) === key(y, m); }).length;
     var songsN = n + (n === 1 ? ' song' : ' songs'), ms = pad(m + 1) + '-' + y, mode = modeNow();
-    var o = { lines: [v.t, MONTHS[m] + ' ' + y + ': ' + songsN], title: MONTHS[m] + ' ' + y, sub: songsN + ' for each day', mode: mode, modes: true };
+    var cn = calShareName(v), inM = songs.filter(function (x) { return x.d.slice(0, 7) === key(y, m); });
+    var o = { lines: [cn.name + ': ' + MONTHS[m] + ' ' + y].concat(cn.cap ? [cn.cap] : [], [songsN]), title: cn.name + ': ' + MONTHS[m] + ' ' + y, sub: (cn.cap ? cn.cap + ' · ' : '') + songsN, mode: mode, modes: true };
     o.urlFor = function (md) { return uplLinkFor(v, 'u=' + v.id + '&m=' + ms, key(y, m), md); };
     o.url = o.urlFor(mode);
     var last = songs.filter(function (x) { return x.d.slice(0, 7) === key(y, m); }).slice(-1)[0];
     o.image = v.sh === 'public' ? SITE + 'u/' + v.id + '/' + ms + '/card.jpg' : (last && last.u) || ''; o.imageAlt = (last && last.u) || '';
+    shareMonthArt(o, v.id + ':' + key(y, m), cn, MONTHS[m] + ' ' + y, inM);   // (that month's covers, its name over them)
     uplShareSend(o, v);
     if (o.note) o.sub += ' · ' + o.note;
     openShare(o);
   }
   function uplShareCal(v) {
-    var n = outSongs().length, sub = v.mode === 'list' ? v.n + ' · ' + n + (n === 1 ? ' song' : ' songs') : 'A song a day, ' + n + ' so far', mode = modeNow(), last = songs[n - 1];
-    var o = { lines: [v.t, sub], title: v.t, sub: sub, mode: mode, modes: true };
+    var cn = calShareName(v), n = outSongs().length, what = v.mode === 'list' ? n + (n === 1 ? ' song' : ' songs') : 'A song a day, ' + n + ' so far', mode = modeNow(), last = songs[n - 1];
+    var o = { lines: [cn.name].concat(cn.cap ? [cn.cap] : [], [what]), title: cn.name, sub: (cn.cap ? cn.cap + ' · ' : '') + what, mode: mode, modes: true };
     o.urlFor = function (md) { return uplLinkFor(v, 'u=' + v.id, '', md); };
     o.url = o.urlFor(mode);
-    o.image = v.sh === 'public' ? SITE + 'u/' + v.id + '/card.jpg' : (last && last.u) || ''; o.imageAlt = (last && last.u) || '';
+    var pic = ''; try { calPics.now = true; pic = (calPics(cn.p.id ? cn.p : Object.assign({ id: v.id, n: v.n, mode: v.mode, o: v.o }, cn.p), ((CARDS[v.id] || {}).cv) || []) || [])[0] || ''; } catch (e) {} calPics.now = false;
+    o.image = pic || (v.sh === 'public' ? SITE + 'u/' + v.id + '/card.jpg' : (last && last.u) || ''); o.imageAlt = (last && last.u) || '';   // (its own picture, as the calendar shows it)
     uplShareSend(o, v);
     if (o.note) o.sub += ' · ' + o.note;
     openShare(o);
+  }
+  function shareMonthArt(o, id, cn, label, list) {   // a month shared: its songs' covers small, the month and the calendar's name over them
+    var urls = list.slice().reverse().map(function (x) { return x.u || x.img; }).filter(Boolean);
+    if (!urls.length) return;
+    var a = { id: 'mo-' + id, n: label, title: label, by: cn.name, o: '', who: [], mode: 'list', now: true };
+    var got = albumMosaic(a, urls, function () { var u2 = albumMosaic(a, urls); if (u2 && shareNow === o) { o.image = u2; drawShare(); } });
+    if (got) o.image = got;
   }
   // ---- one of their own Spotify playlists in the My playlist pop-up, as a saved playlist is (from its badge there, or
   // Profile › Playlists › Open): all its songs, the waiting ones and the days to come too, to order (a playlist: the

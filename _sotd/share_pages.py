@@ -534,7 +534,8 @@ def member_cards():
                 out.append(small[x['id']])
         return out
     for pid, pub in public.items():
-        title = pub['t']
+        title = pub.get('n') or pub['t']   # (its own name, as its calendar shows it: John, 7 Nov 2026)
+        is_list = pub.get('mode') == 'list'
         kick = title.replace('’', "'").upper()
         dated = sorted(((datetime.strptime(x['d'], '%Y-%m-%d').date(), x) for x in pub['songs']), key=lambda y: y[0])
         if not dated:
@@ -552,9 +553,10 @@ def member_cards():
                          lambda m=m, y=y, items=items, count=count: grid_card(m - 1, f"{items[0][0]:%B}", str(y), kick, count.upper(), covers(items)))
         latest = dated[-12:][::-1]
         roman, italic = (title[:-len(' of the Day')], 'of the Day') if title.endswith(' of the Day') else (title, '')
+        kind = 'A PLAYLIST' if is_list else 'A SONG A DAY'
         stamp = hashlib.sha1((GRID_VERSION + f' {title} {len(dated)} ' + ' '.join(x['id'] for _, x in latest)).encode()).hexdigest()[:12]
         refresh_card(os.path.join(root, pid, 'card.jpg'), stamp,
-                     lambda: grid_card(dated[-1][0].month - 1, roman, italic, 'A SONG A DAY' if italic else 'A PLAYLIST', f'{len(dated)} SO FAR', covers(latest)))
+                     lambda: grid_card(dated[-1][0].month - 1, roman, italic, kind, f"{len(dated)} {'SONGS' if is_list else 'SO FAR'}", covers(latest)))
         print(f'{title} ({pid}): {len(dated)} days, cards for its days, {len(by_month)} months and the whole of it')
 
 
