@@ -452,7 +452,7 @@ def make_handler(g):
                     return self.send_json(404, {'error': 'Not here.'})
                 me = self.who()
                 if not me:
-                    return self.send_json(401, {'error': 'Sign in with your Song of the Day invitation first.'})
+                    return self.send_json(401, {'error': 'Sign in to Grifflix first.'})
                 fn = getattr(self, 'api_' + u.path[5:].replace('/', '_'), None)
                 if not fn:
                     return self.send_json(404, {'error': 'Not here.'})
