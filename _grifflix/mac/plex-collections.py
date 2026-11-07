@@ -204,7 +204,11 @@ def find(f):
 SETS = ['A Hollis Frampton Odyssey', 'By Brakhage: An Anthology, Volumes One and Two', 'Martha Graham: Dance on Film',
         'Scorsese Shorts', 'Symbiopsychotaxiplasm: Two Takes by William Greaves', 'The Kennedy Films of Robert Drew & Associates',
         'The Signifyin’ Works of Marlon Riggs']
+# and every box set is in the Criterion Collection, whether or not Plex had its films there (John, 7 Nov 2026: "By
+# Brakhage: An Anthology, Volumes One and Two should also be a box set in the Criterion")
+ALSO_IN = {'Criterion Collection': SETS}
 cols.sort(key=lambda c: (c[1] not in SETS, c[1].lower()))   # (the sets first)
+set_id = {}   # a box set's name → its collection in Jellyfin (or, before it's made, 'set:' + its name)
 set_of = {}   # a film in a set → the set's collection (or, before it's made, the set's name)
 have = {it['Name']: it for it in (call('GET', '/Users/%s/Items' % s['jf_user_id'], Recursive='true', IncludeItemTypes='BoxSet', Fields='Overview').get('Items', []))}
 made = added = pics = 0
@@ -230,10 +234,15 @@ for cid, title, h, thumb, summary, extra in cols:
             if j not in swapped:
                 swapped.append(j)
         ids = swapped
+    put = []
+    for st in ALSO_IN.get(title, []):
+        j = set_id.get(st)
+        if j and j not in ids and not (GO and j.startswith('set:')):
+            ids.append(j); put.append(st)
     pic = poster(h, thumb)
     old = have.get(title)
     if title in SETS:
-        sid = old['Id'] if old else 'set:' + title
+        sid = set_id[title] = old['Id'] if old else 'set:' + title
         for i in ids:
             set_of[i] = sid
     print('%-52s %3d of %3d found%s%s%s%s' % (title[:52], len(ids), len(files), ', poster' if pic else '', (', smart (Plex had %s)' % plex_n) if '"at:smart":"1"' in extra.replace(' ', '') else '',
@@ -242,6 +251,8 @@ for cid, title, h, thumb, summary, extra in cols:
         print('   a box set: one entry in the other collections')
     elif in_set:
         print('   %d of its films are in box sets, shown as the sets' % in_set)
+    if put:
+        print('   with the box sets: ' + '; '.join(put))
     if not GO or not ids:
         continue
     batches = [ids[i:i + CHUNK] for i in range(0, len(ids), CHUNK)]   # (50 at a time: Criterion USA's 502 in one go was too long an address)
@@ -252,6 +263,7 @@ for cid, title, h, thumb, summary, extra in cols:
         bid = call('POST', '/Collections', b'', Name=title, Ids=','.join(batches.pop(0)), IsLocked='true')['Id']
         made += 1
     if title in SETS:
+        set_id[title] = bid
         for i in list(set_of):
             if set_of[i] == 'set:' + title:
                 set_of[i] = bid
