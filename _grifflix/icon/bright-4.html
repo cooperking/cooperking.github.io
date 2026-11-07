@@ -1,0 +1,39 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald:wght@500&display=block">
+<style>html,body{margin:0}.i{position:relative;width:320px;height:180px;overflow:hidden;background:#000}
+.art{position:absolute;left:69px;top:-1px;width:182px;height:182px}.art svg{width:100%;height:100%}
+</style></head>
+<body><div class="i" id="i"><div class="art"><svg viewBox="0 0 512 512">
+<defs>
+ <linearGradient id="cream" gradientUnits="userSpaceOnUse" x1="90" y1="140" x2="420" y2="430"><stop offset="0" stop-color="#7ff6ff"/><stop offset=".55" stop-color="#19e3f5"/><stop offset="1" stop-color="#00c2e0"/></linearGradient>
+ <filter id="sh" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#19e3f5" flood-opacity=".55"/></filter>
+ <clipPath id="top"><rect width="300" height="54" rx="8"/></clipPath>
+ <clipPath id="bot"><rect width="300" height="50" rx="8"/></clipPath>
+</defs>
+<g filter="url(#sh)" transform="translate(256,320) scale(1.15) translate(-256,-300)">
+ <!-- the board -->
+ <rect x="106" y="236" width="300" height="186" rx="18" fill="url(#cream)"/>
+ <!-- the fixed bar, striped -->
+ <g transform="translate(106,182)">
+  <rect width="300" height="50" rx="8" fill="url(#cream)"/>
+  <g clip-path="url(#bot)" fill="#ffe500">
+   <polygon points="20,0 56,0 30,50 -6,50"/><polygon points="92,0 128,0 102,50 66,50"/><polygon points="164,0 200,0 174,50 138,50"/><polygon points="236,0 272,0 246,50 210,50"/><polygon points="308,0 344,0 318,50 282,50"/>
+  </g>
+ </g>
+ <!-- the clapper, open -->
+ <g transform="translate(106,176) rotate(-16)">
+  <rect width="300" height="54" rx="8" y="-54" fill="url(#cream)"/>
+  <g transform="translate(0,-54)" clip-path="url(#top)" fill="#ffe500">
+   <polygon points="-6,0 30,0 56,54 20,54"/><polygon points="66,0 102,0 128,54 92,54"/><polygon points="138,0 174,0 200,54 164,54"/><polygon points="210,0 246,0 272,54 236,54"/><polygon points="282,0 318,0 344,54 308,54"/>
+  </g>
+ </g>
+ <circle cx="120" cy="180" r="12" fill="#ffe500"/><circle cx="120" cy="180" r="5" fill="#fffaf5"/>
+ <!-- the name -->
+ <text class="t" x="256" y="314" text-anchor="middle" fill="#e0161f" style="font-family:'Bebas Neue'">GRIFFLIX</text><text class="s" x="256" y="366" text-anchor="middle" fill="#e0161f" fill-opacity=".9" style="font-family:'Oswald';font-weight:500">Mostly films, some TV</text>
+</g>
+</svg></div></div><script>
+Promise.all([document.fonts.load("100px 'Bebas Neue'"),document.fonts.load('500 100px Oswald')]).then(function(){var sv=document.querySelector('svg'),t=sv.querySelector('.t'),s=sv.querySelector('.s');
+t.setAttribute('font-size',100);var fs=Math.min(100*250/t.getComputedTextLength(),92);t.setAttribute('font-size',fs.toFixed(1));
+var cap=fs*.72;t.setAttribute('y',(262+cap+12).toFixed(1));s.setAttribute('font-size',100);var fs2=Math.min(100*236/s.getComputedTextLength(),34);
+s.setAttribute('font-size',fs2.toFixed(1));s.setAttribute('y',(262+cap+12+18+fs2*.8).toFixed(1));document.body.setAttribute('data-ready','1');});
+</script></body></html>
