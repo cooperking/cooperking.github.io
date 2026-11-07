@@ -8189,7 +8189,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       });
       if (sel) b.setAttribute('aria-pressed', String(sel.has(x.id)));
       li.appendChild(b); if (!sel) { if (rxLine) li.appendChild(rxLine); li.appendChild(acts); if (pickRow) li.appendChild(pickRow); } ul.appendChild(li);
-      if (!sel && !x.r && x.f && x.c) seenWatch(li, x);   // (a song shared by a member: read once seen here)
+      if (!sel && !x.r && ((x.f && x.c) || x.s)) seenWatch(li, x);   // (a song shared by a member, or the Song of the Day's own message: read once seen here)
     });
     if (!sel && items.length > INBOX.shown) {
       var li = document.createElement('li'), m = document.createElement('button'); li.className = 'plain'; m.type = 'button'; m.className = 'copy ghost more'; m.textContent = 'Show more';
