@@ -491,6 +491,16 @@ def make_handler(g):
                         g.store.touch()
                     g.forget()
                     return self.send_json(200, {'ok': True, 'changed': n})
+                if u.path == '/local/calendar' and method == 'POST':   # motd-fill.py on this Mac: many Movie of the Day days at once (empty days only)
+                    if not hmac.compare_digest(self.headers.get('X-Grifflix-Secret', ''), g.st['secret']):
+                        return self.send_json(403, {'error': 'Not here.'})
+                    days = {str(d): str(i) for d, i in (self.body().get('days') or {}).items() if re.match(r'^\d{4}-\d\d-\d\d$', str(d)) and re.match(r'^[0-9a-f]{32}$', str(i))}
+                    with g.store.lock:
+                        c = g.store.d['calendars']['motd']
+                        new = {d: i for d, i in days.items() if d not in c['days']}
+                        c['days'].update(new)
+                        g.store.touch()
+                    return self.send_json(200, {'ok': True, 'added': len(new), 'kept': len(days) - len(new)})
                 if not u.path.startswith('/api/'):
                     return self.send_json(404, {'error': 'Not here.'})
                 me = self.who()
