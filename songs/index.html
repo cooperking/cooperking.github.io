@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="sotd-build" content="45c34ca72300">
+<meta name="sotd-build" content="8732c946f989">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 270 so far">
 <meta name="theme-color" content="#ec135b">
@@ -1157,7 +1157,7 @@ dialog#sharesheet::backdrop { background: rgba(24, 8, 24, .35); -webkit-backdrop
 .cal-card:focus-visible { outline: none; }
 .cal-card:focus-visible .cal-pic { outline: 2px solid var(--fg); outline-offset: 2px; }
 .cal-card.on .cal-pic { outline: 3px solid var(--fg); outline-offset: 3px; }
-.cal-on { position: absolute; left: 8px; top: 8px; padding: 3px 8px; border-radius: 999px; background: var(--fg); color: var(--bg); font: 600 10px/1.4 var(--sans); letter-spacing: .1em; text-transform: uppercase; }
+.cal-on { display: inline-block; vertical-align: 1px; margin: 0 8px 0 0; padding: 2px 8px; border-radius: 999px; background: var(--fg); color: var(--bg); font: 600 10px/1.4 var(--sans); letter-spacing: .1em; text-transform: uppercase; }
 .cal-nm { font: 500 17px/1.2 var(--serif); overflow-wrap: anywhere; }
 .cal-ct { margin-top: -3px; font-size: 12px; line-height: 1.35; color: var(--muted); }
 .cal-acts { display: flex; flex-wrap: wrap; gap: 4px 10px; }
@@ -8134,8 +8134,31 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   document.getElementById('msgclose').addEventListener('click', function () { closeDialog(msgDlg); });
   document.getElementById('msgreply').addEventListener('click', function () { var m = MSG; closeDialog(msgDlg); if (m) replyTo(m.x); });
   document.getElementById('msggo').addEventListener('click', function () { var m = MSG; closeDialog(msgDlg); if (m && m.x.u) msgGo(m.x.u); });
+  // a song shared by a member counts as read once it's been seen in the inbox, without opening it (John, 7 Nov 2026):
+  // on screen for a second, it's marked read (a few at once, one call)
+  var SEEN = { obs: null, t: {}, q: [], qt: 0 };
+  function seenFlush() {
+    var ids = SEEN.q.splice(0); if (!ids.length) return;
+    var n = 0; (INBOX.items || []).forEach(function (x) { if (ids.indexOf(x.id) >= 0 && !x.r) { x.r = Date.now(); n++; } });
+    if (!n) return;
+    unreadSet(INBOX.unread - n);
+    [].forEach.call(document.querySelectorAll('#acmsgs li[data-seen]'), function (li) { if (ids.indexOf(li.getAttribute('data-seen')) >= 0) { var b = li.querySelector('button.open'); if (b) b.classList.remove('new'); li.removeAttribute('data-seen'); var tg = li.querySelector('.rxend button'); if (tg) tg.textContent = 'Mark unread'; } });
+    inboxCall({ read: ids }).catch(function () {});
+  }
+  function seenWatch(li, x) {
+    if (!window.IntersectionObserver) return;
+    if (!SEEN.obs) SEEN.obs = new IntersectionObserver(function (es) {
+      es.forEach(function (e) {
+        var id = e.target.getAttribute('data-seen'); if (!id) return;
+        if (e.isIntersecting && e.intersectionRatio >= .6 && !document.hidden) { if (!SEEN.t[id]) SEEN.t[id] = setTimeout(function () { delete SEEN.t[id]; if (!e.target.isConnected || !e.target.getAttribute('data-seen')) return; SEEN.q.push(id); clearTimeout(SEEN.qt); SEEN.qt = setTimeout(seenFlush, 400); }, 1000); }
+        else if (SEEN.t[id]) { clearTimeout(SEEN.t[id]); delete SEEN.t[id]; }
+      });
+    }, { threshold: [0, .6] });
+    li.setAttribute('data-seen', x.id); SEEN.obs.observe(li);
+  }
   function inboxDraw() {
     var box = document.getElementById('acinbox'), ul = document.getElementById('acmsgs'), none = document.getElementById('acinnone');
+    if (SEEN.obs) SEEN.obs.disconnect();
     box.hidden = !MEMBER || !MBASE;
     if (box.hidden) return;
     document.getElementById('acsend').hidden = !sendCan();
@@ -8191,6 +8214,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       });
       if (sel) b.setAttribute('aria-pressed', String(sel.has(x.id)));
       li.appendChild(b); if (!sel) { if (rxLine) li.appendChild(rxLine); li.appendChild(acts); if (pickRow) li.appendChild(pickRow); } ul.appendChild(li);
+      if (!sel && !x.r && x.f && x.c) seenWatch(li, x);   // (a song shared by a member: read once seen here)
     });
     if (!sel && items.length > INBOX.shown) {
       var li = document.createElement('li'), m = document.createElement('button'); li.className = 'plain'; m.type = 'button'; m.className = 'copy ghost more'; m.textContent = 'Show more';
@@ -8881,7 +8905,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var own = v.own !== false;
     ['pe-name', 'pe-cap', 'pe-picimg', 'pe-settog', 'pe-more'].forEach(function (id) { var g = document.getElementById(id).closest('.pe-g'); if (g) g.hidden = !own; });
     peCw(p, own);
-    var pic = document.getElementById('pe-picimg'); calPics.now = true; calMos(pic, calPics(p, ((CARDS[p.id] || {}).cv) || v.songs.slice(-4).map(function (x) { return x.img; }).filter(Boolean).reverse())); calPics.now = false;
+    var pic = document.getElementById('pe-picimg'); calPics.now = true; calMos(pic, calPics(p, ((CARDS[p.id] || {}).cv) || v.songs.slice(-4).map(function (x) { return x.img; }).filter(Boolean).reverse(), function () { if (PE.on) peDraw(); })); calPics.now = false;
     var pa = document.getElementById('pe-picacts'); pa.textContent = '';
     var btn = function (box, label, cls, fn) { var b = document.createElement('button'); b.type = 'button'; b.textContent = label; if (cls) b.className = cls; b.addEventListener('click', fn); box.appendChild(b); return b; };
     picActs(pa, p, btn);
@@ -9169,50 +9193,121 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // or else its newest four covers (from the Worker: ?cards=1). Its owner changes it here: a photo, cropped square. ----
   var CARDS = {}, PICFOR = null, ART = {};
   if (document.fonts && document.fonts.load) Promise.all([document.fonts.load('italic 400 60px Newsreader'), document.fonts.load('600 20px "Hanken Grotesk"')]).then(function () { ART = { fonts: true }; if (uplDlg.open) { calPics.now = true; [].forEach.call(document.getElementById('upll').children, function (el) { try { if (el._fill) el._fill(); } catch (e) {} }); calPics.now = false; } }).catch(function () {});
-  function albumArt(o) {   // o: { id, n, o (owner), mode }: an album-style picture for a playlist with no photo of its own (John, 7 Nov 2026: "a nice album style picture"), its colours from the months' (by its id), its name, whose it is and a record; a JPEG, kept per playlist
-      var key = 'sotd-art1:' + (o.id || '') + '|' + (o.n || '') + '|' + (o.o || '') + '|' + (o.mode || '');
-      if (ART[key]) return ART[key];
-      try { var keptArt = localStorage.getItem(key); if (keptArt) return (ART[key] = keptArt); } catch (e) {}   // (drawn once, kept on this device: John, 7 Nov 2026, "It shouldn't draw every time. Just once")
-      if (!o.now) return '';   // (not drawn yet: drawn just after the picker opens, then kept)
-    var P = [['#0c1445','#0094de','#8833ff','#f700f7','#009aa8'],['#652bee','#3333ff','#cc33ff','#3388ff','#ff2bb8'],['#11970c','#429e00','#00a150','#7d9600','#009e84'],['#b613ec','#fc00e7','#8833ff','#ff33aa','#5533ff'],['#096a42','#00a336','#009e91','#00a30e','#0097c9'],['#ec1a13','#fa5300','#ff3366','#db6e00','#ff3399'],['#1346ec','#008ff5','#5533ff','#0097c9','#8833ff'],['#d85a06','#c47c00','#ff4a2e','#b28600','#ff3344'],['#0b86d3','#0098b0','#3370ff','#009e91','#3333ff'],['#ec135b','#ff3344','#ff30b3','#ff4c29','#fc00e7'],['#09696d','#009e77','#0094d4','#00a150','#198cff'],['#ec13c1','#ff3399','#dd33ff','#ff3366','#aa33ff']];
-    var h = 0, s = String(o.id || o.n || 'x'); for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
-    var pal = P[h % 12], S = 360, c = document.createElement('canvas'); c.width = c.height = S; var g = c.getContext('2d');
-    var bg = g.createLinearGradient(0, 0, S, S); bg.addColorStop(0, pal[0]); bg.addColorStop(1, pal[1 + (h >> 4) % 4]); g.fillStyle = bg; g.fillRect(0, 0, S, S);
-    var glow = g.createRadialGradient(S * .2, S * .15, 0, S * .2, S * .15, S * .9); glow.addColorStop(0, 'rgba(255,255,255,.22)'); glow.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = glow; g.fillRect(0, 0, S, S);
-    // the record, coming out of the sleeve on the right
-    var cx = S * .86, cy = S * .3, R = S * .38;
-    g.save(); g.shadowColor = 'rgba(0,0,0,.35)'; g.shadowBlur = 40; g.beginPath(); g.arc(cx, cy, R, 0, 7); g.fillStyle = '#111'; g.fill(); g.restore();
-    for (var r = R * .96; r > R * .38; r -= 7) { g.beginPath(); g.arc(cx, cy, r, 0, 7); g.strokeStyle = 'rgba(255,255,255,' + (0.04 + ((r | 0) % 3) * .015) + ')'; g.lineWidth = 1; g.stroke(); }
-    var sh = g.createLinearGradient(cx - R, cy - R, cx + R, cy + R); sh.addColorStop(.35, 'rgba(255,255,255,0)'); sh.addColorStop(.5, 'rgba(255,255,255,.10)'); sh.addColorStop(.65, 'rgba(255,255,255,0)');
-    g.beginPath(); g.arc(cx, cy, R, 0, 7); g.fillStyle = sh; g.fill();
-    g.beginPath(); g.arc(cx, cy, R * .33, 0, 7); g.fillStyle = pal[3 - (h >> 6) % 2]; g.fill();
-    g.beginPath(); g.arc(cx, cy, R * .04, 0, 7); g.fillStyle = '#111'; g.fill();
-    // the words
-    var pad = S * .08;
-    g.fillStyle = 'rgba(255,255,255,.85)'; g.font = '600 ' + Math.round(S * .036) + 'px "Hanken Grotesk", Helvetica, Arial, sans-serif';
-    if (g.letterSpacing !== undefined) g.letterSpacing = Math.round(S * .008) + 'px';
-    g.fillText(((o.o ? o.o + '’s ' : '') + (o.mode === 'list' ? 'playlist' : 'Song of the Day')).toUpperCase(), pad, pad + S * .03);
+  // its picture as John's own app icon is drawn (John, 7 Nov 2026: "more like the other icon, seeing the album with the record
+  // coming out of it"): an album sleeve on its months' colours, the record sliding out of it on the right; on the sleeve, its
+  // name and whose it is (the album style), or all its songs' covers small (all its covers). Drawn once, kept on this device.
+  var ART_P = [['#0c1445','#0094de','#8833ff','#f700f7','#009aa8'],['#652bee','#3333ff','#cc33ff','#3388ff','#ff2bb8'],['#11970c','#429e00','#00a150','#7d9600','#009e84'],['#b613ec','#fc00e7','#8833ff','#ff33aa','#5533ff'],['#096a42','#00a336','#009e91','#00a30e','#0097c9'],['#ec1a13','#fa5300','#ff3366','#db6e00','#ff3399'],['#1346ec','#008ff5','#5533ff','#0097c9','#8833ff'],['#d85a06','#c47c00','#ff4a2e','#b28600','#ff3344'],['#0b86d3','#0098b0','#3370ff','#009e91','#3333ff'],['#ec135b','#ff3344','#ff30b3','#ff4c29','#fc00e7'],['#09696d','#009e77','#0094d4','#00a150','#198cff'],['#ec13c1','#ff3399','#dd33ff','#ff3366','#aa33ff']];
+  function andNames(l) { return l.length < 2 ? (l[0] || '') : l.slice(0, -1).join(', ') + ' & ' + l[l.length - 1]; }
+  function artLabel(o, g, wide) {   // whose it is; a collaborative one's people, by name (John, 7 Nov 2026)
+    var t = '';   // (whose it is goes below its rule now: "A playlist by …", "A calendar by …", John, 7 Nov 2026)
+    while (t.length > 4 && g.measureText(t).width > wide) t = t.slice(0, -2).replace(/\s+$/, '') + '…';
+    return t;
+  }
+  function artPal(o) { var h = 0, s = String(o.id || o.n || 'x'); for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; return { h: h, p: ART_P[h % 12] }; }
+  function blobs(g, x, y, w, h, cols, seed) {   // soft lights of its colours, as on John's icon
+    [[.15, .2, .9], [.85, .85, .7], [.75, .1, .6]].forEach(function (b, i) {
+      var cx = x + w * b[0], cy = y + h * b[1], r = Math.max(w, h) * b[2], gr = g.createRadialGradient(cx, cy, 0, cx, cy, r);
+      gr.addColorStop(0, cols[(seed + i) % cols.length] + 'cc'); gr.addColorStop(1, cols[(seed + i) % cols.length] + '00'); g.fillStyle = gr; g.fillRect(x, y, w, h);
+    });
+  }
+  function rrect(g, x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
+  function sleeveArt(o, front) {   // the ground, the record and the sleeve; front(g, x, y, size) draws the sleeve's face
+    var S = 360, c = document.createElement('canvas'); c.width = c.height = S; var g = c.getContext('2d'), P = artPal(o), pal = P.p;
+    var bg = g.createLinearGradient(0, 0, S, S); bg.addColorStop(0, pal[0]); bg.addColorStop(1, pal[0]); g.fillStyle = bg; g.fillRect(0, 0, S, S);
+    blobs(g, 0, 0, S, S, pal.slice(1), P.h % 4);
+    var sx = S * .096, sy = S * .21, sz = S * .555, cx = S * .66, cy = sy + sz / 2, R = S * .265;
+    g.save(); g.shadowColor = 'rgba(0,0,0,.35)'; g.shadowBlur = S * .05; g.beginPath(); g.arc(cx, cy, R, 0, 7); g.fillStyle = '#0d0d10'; g.fill(); g.restore();
+    for (var r = R * .97; r > R * .4; r -= S * .0085) { g.beginPath(); g.arc(cx, cy, r, 0, 7); g.strokeStyle = 'rgba(255,255,255,.07)'; g.lineWidth = 1; g.stroke(); }
+    var shine = g.createLinearGradient(cx - R, cy - R, cx + R, cy + R); shine.addColorStop(.3, 'rgba(255,255,255,0)'); shine.addColorStop(.5, 'rgba(255,255,255,.12)'); shine.addColorStop(.7, 'rgba(255,255,255,0)');
+    g.beginPath(); g.arc(cx, cy, R, 0, 7); g.fillStyle = shine; g.fill();
+    g.beginPath(); g.arc(cx, cy, R * .34, 0, 7); g.fillStyle = pal[(P.h >> 3) % 4 + 1]; g.fill();
+    g.beginPath(); g.arc(cx, cy, R * .035, 0, 7); g.fillStyle = '#0d0d10'; g.fill();
+    g.save(); g.shadowColor = 'rgba(0,0,0,.4)'; g.shadowBlur = S * .045; g.shadowOffsetY = S * .012; rrect(g, sx, sy, sz, sz, S * .014); g.fillStyle = pal[0]; g.fill(); g.restore();
+    g.save(); rrect(g, sx, sy, sz, sz, S * .014); g.clip(); front(g, sx, sy, sz, pal, P.h); g.restore();
+    return c.toDataURL('image/jpeg', .88);
+  }
+  function sleeveWords(g, o, x, y, sz, onPic) {   // its people or owner small, its name big (its last line in italics, as "the Day"), a rule and what it is
+    var pad = sz * .13, wide = sz - pad * 2, words = String(o.n || 'Playlist').split(/\s+/), size = sz * .19, lines, people = o.who && o.who.length > 1 ? o.who : o.o ? [o.o] : [], many = people.length > 2;
+    var lf = '600 ' + Math.round(sz * (many ? .043 : .055)) + 'px "Hanken Grotesk", Helvetica, Arial, sans-serif', ls = Math.round(sz * (many ? .005 : .012)) + 'px';   // (a collaborative one's names a little smaller, so more of them fit)
+    g.font = lf; if (g.letterSpacing !== undefined) g.letterSpacing = ls;
+    var label = artLabel(o, g, wide); if (g.letterSpacing !== undefined) g.letterSpacing = '0px';
+    var fit = function (sz2) { g.font = '500 ' + Math.round(sz2) + 'px Newsreader, Georgia, serif'; var out = [], cur = ''; words.forEach(function (w) { var t = cur ? cur + ' ' + w : w; if (g.measureText(t).width > wide && cur) { out.push(cur); cur = w; } else cur = t; }); if (cur) out.push(cur); return out; };
+    var room = sz * (many ? .42 : label ? .5 : .56);   // (between its top words and the rule)
+    for (;;) { lines = fit(size); var widest = 0; lines.forEach(function (l) { widest = Math.max(widest, g.measureText(l).width); }); if ((lines.length * size * .98 <= room && widest <= wide) || size < sz * .07) break; size *= .92; }
+    g.fillStyle = '#fff'; if (onPic) { g.shadowColor = 'rgba(0,0,0,.55)'; g.shadowBlur = sz * .04; }
+    var ty = y + sz * .2;
+    if (label) { g.font = lf; if (g.letterSpacing !== undefined) g.letterSpacing = ls; g.fillText(label, x + pad, ty); if (g.letterSpacing !== undefined) g.letterSpacing = '0px'; ty += size * .95; } else ty += size * .7;
+    lines.forEach(function (l, i) { g.font = (lines.length > 1 && i === lines.length - 1 ? 'italic 400 ' : '500 ') + Math.round(size) + 'px Newsreader, Georgia, serif'; g.fillText(l, x + pad, ty + i * size * .98); });
+    var ly = y + sz * (many ? .66 : .76); g.shadowBlur = 0; g.fillStyle = 'rgba(255,255,255,.75)'; g.fillRect(x + pad, ly, wide, Math.max(1, sz * .004));
+    g.fillStyle = '#fff'; if (onPic) { g.shadowColor = 'rgba(0,0,0,.55)'; g.shadowBlur = sz * .03; }
+    if (!people.length) {
+      g.font = '600 ' + Math.round(sz * .045) + 'px "Hanken Grotesk", Helvetica, Arial, sans-serif'; if (g.letterSpacing !== undefined) g.letterSpacing = Math.round(sz * .012) + 'px';
+      g.fillText(o.mode === 'list' ? 'A PLAYLIST' : 'A CALENDAR', x + pad, ly + sz * .1); if (g.letterSpacing !== undefined) g.letterSpacing = '0px';
+      return;
+    }
+    // a collaborative one's people, every one of them (John, 7 Nov 2026: "The and 2 more will be upsetting to the people
+    // missed out"): below its rule, over as many lines as it takes, smaller until they all fit
+    var names = [o.mode === 'list' ? 'A playlist by' : 'A calendar by'].concat(people.map(function (n, i) { return n + (i < people.length - 2 ? ',' : i === people.length - 2 ? ' &' : ''); })), bottom = y + sz - pad * .7, top = ly + sz * .05, nl, fs = sz * .052;
+    var wrapN = function (f) { g.font = '600 ' + Math.round(f) + 'px "Hanken Grotesk", Helvetica, Arial, sans-serif'; if (g.letterSpacing !== undefined) g.letterSpacing = Math.max(0, Math.round(f * .12)) + 'px'; var out = [], cur = ''; names.forEach(function (w) { var t = cur ? cur + ' ' + w : w; if (g.measureText(t.toUpperCase()).width > wide && cur) { out.push(cur); cur = w; } else cur = t; }); if (cur) out.push(cur); return out; };
+    for (;;) { nl = wrapN(fs); if (nl.length * fs * 1.3 <= bottom - top || fs < sz * .028) break; fs *= .92; }
+    nl.forEach(function (l, i) { g.fillText(l.toUpperCase(), x + pad, top + fs + i * fs * 1.3); });
     if (g.letterSpacing !== undefined) g.letterSpacing = '0px';
-    var words = String(o.n || 'Playlist').split(/\s+/), size = S * .15, lines;
-    var wrap = function (sz) { g.font = 'italic 400 ' + Math.round(sz) + 'px Newsreader, Georgia, serif'; var out = [], cur = ''; words.forEach(function (w) { var t = cur ? cur + ' ' + w : w; if (g.measureText(t).width > S - pad * 2 && cur) { out.push(cur); cur = w; } else cur = t; }); if (cur) out.push(cur); return out; };
-    for (;;) { lines = wrap(size); var wide = Math.max.apply(null, lines.map(function (l) { return g.measureText(l).width; })); if ((lines.length <= 3 && wide <= S - pad * 2) || size < S * .06) break; size *= .9; }
-    g.fillStyle = '#fff'; g.shadowColor = 'rgba(0,0,0,.25)'; g.shadowBlur = 18; g.textBaseline = 'alphabetic';
-    var y = S - pad - (lines.length - 1) * size * 1.02;
-    lines.forEach(function (l, i) { g.fillText(l, pad, y + i * size * 1.02); });
-    ART[key] = c.toDataURL('image/jpeg', .85);
+  }
+  function albumArt(o) {   // the album style: its name and whose it is on the sleeve
+    var key = 'sotd-art6:' + (o.id || '') + '|' + (o.n || '') + '|' + (o.o || '') + '|' + (o.mode || '') + '|' + (o.who || []).join(',');
+    if (ART[key]) return ART[key];
+    try { var kept = localStorage.getItem(key); if (kept) return (ART[key] = kept); } catch (e) {}   // (drawn once, kept on this device: John, 7 Nov 2026, "It shouldn't draw every time. Just once")
+    if (!o.now) return '';   // (not drawn yet: drawn just after the picker opens, then kept)
+    ART[key] = sleeveArt(o, function (g, x, y, sz, pal, h) {
+      var f = g.createLinearGradient(x, y, x + sz, y + sz); f.addColorStop(0, pal[(h >> 5) % 4 + 1]); f.addColorStop(1, pal[0]); g.fillStyle = f; g.fillRect(x, y, sz, sz);
+      blobs(g, x, y, sz, sz, pal.slice(1), (h >> 2) % 4);
+      sleeveWords(g, o, x, y, sz, false);
+    });
     if (ART.fonts) try { localStorage.setItem(key, ART[key]); } catch (e) {}   // (kept once its fonts are in)
     return ART[key];
   }
-  function calPics(p, covers) {   // its photo; else its covers, if chosen; else the album-style one (its covers if that can't be drawn here)
-    if (p.pic) return [p.pic];
-    if (p.pcov) return covers;
-    try { var art = albumArt({ id: p.id, n: p.n, o: p.mine ? (MEMBER && MEMBER.name) || '' : p.o, mode: p.mode, now: calPics.now }); return art ? [art] : covers; }
+  var MOSING = {};
+  function albumMosaic(o, urls, done) {   // all its covers small on the sleeve, its name and people over them
+    var key = 'sotd-mos7:' + o.id + '|' + o.n + '|' + (o.who || []).join(',') + '|' + urls.length + '|' + (urls[0] || '');
+    if (ART[key]) return ART[key];
+    try { var kept = localStorage.getItem(key); if (kept) return (ART[key] = kept); } catch (e) {}
+    if (!o.now || MOSING[key] || urls.length < 4) return '';
+    MOSING[key] = 1;
+    var k = urls.length >= 36 ? 6 : urls.length >= 25 ? 5 : urls.length >= 16 ? 4 : urls.length >= 9 ? 3 : 2, use = urls.slice(0, k * k), got = 0, imgs = [];
+    use.forEach(function (u, i) {
+      var im = new Image(); im.crossOrigin = 'anonymous';
+      im.onload = im.onerror = function () { imgs[i] = im.naturalWidth ? im : null; if (++got === use.length) draw(); };
+      im.src = u;
+    });
+    function draw() {
+      try {
+        ART[key] = sleeveArt(o, function (g, x, y, sz) {
+          var cell = sz / k; g.fillStyle = '#1b1020'; g.fillRect(x, y, sz, sz);
+          imgs.forEach(function (im, i) { if (im) g.drawImage(im, x + (i % k) * cell, y + Math.floor(i / k) * cell, Math.ceil(cell), Math.ceil(cell)); });
+          var sh = g.createLinearGradient(0, y, 0, y + sz); sh.addColorStop(0, 'rgba(10,6,14,.72)'); sh.addColorStop(.55, 'rgba(10,6,14,.45)'); sh.addColorStop(1, 'rgba(10,6,14,.78)'); g.fillStyle = sh; g.fillRect(x, y, sz, sz);
+          sleeveWords(g, o, x, y, sz, true);
+        });
+        try { localStorage.setItem(key, ART[key]); } catch (e) {}
+      } catch (e) { if (typeof spLog === 'function') spLog('all-covers picture couldn’t be drawn: ' + ((e && e.message) || e)); ART[key] = ''; }
+      delete MOSING[key]; if (done && ART[key]) done();
+    }
+    return '';
+  }
+  function picStyle(p) { return p.pic ? 'photo' : p.pst || (((CARDS[p.id] || {}).who || []).length > 1 ? 'mos' : 'album'); }   // (as chosen; else a collaborative one's covers, else the album style)
+  function calPics(p, covers, again) {   // its photo; else its covers, if chosen; else the album-style one (its covers if that can't be drawn here)
+    var st = picStyle(p), card = CARDS[p.id] || {}, o = { id: p.id, n: p.n, o: p.mine ? (MEMBER && MEMBER.name) || '' : p.o, mode: p.mode, now: calPics.now, who: card.who };
+    if (st === 'photo') return [p.pic];
+    if (st === 'cov') return covers;
+    if (st === 'mos') { try { var mo = albumMosaic(o, card.all || [], again); if (mo) return [mo]; } catch (e) {} }   // (until it's drawn: the album style)
+    try { var art = albumArt(o); return art ? [art] : covers; }
     catch (e) { if (!calPics.said && typeof spLog === 'function') { calPics.said = true; spLog('album-style picture couldn’t be drawn: ' + ((e && e.message) || e)); } return covers; }
   }   // its photo; else its covers, if chosen; else the album-style one
   function picActs(box, p, btn) {   // the picture's choices: a photo, the album-style one, its covers (those it isn't now)
     btn(box, p.pic ? 'Change photo' : 'Choose a photo', '', function () { PICFOR = p; var f = document.getElementById('uplpicin'); f.value = ''; f.click(); });
-    if (p.pic || p.pcov) btn(box, 'Album style', '', function (e) { e.currentTarget.disabled = true; uplPicSend(p, null); });
-    if (!p.pcov) btn(box, 'Its covers', '', function (e) { e.currentTarget.disabled = true; uplPicSend(p, 'covers'); });
+    var st = picStyle(p);
+    if (st !== 'album') btn(box, 'Album style', '', function (e) { e.currentTarget.disabled = true; uplPicSend(p, 'style:album'); });
+    if (st !== 'mos') btn(box, 'All its covers', '', function (e) { e.currentTarget.disabled = true; uplPicSend(p, 'style:mos'); });
+    if (st !== 'cov') btn(box, 'Its newest covers', '', function (e) { e.currentTarget.disabled = true; uplPicSend(p, 'covers'); });
   }
   function calMos(el, urls) {   // (pictures load at once: a lazy one in a pop-up may never load on the Fire TV)
     el.textContent = '';
@@ -9224,10 +9319,11 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var it = document.createElement('div'); it.className = 'cal-item'; it.setAttribute('role', 'listitem');
     var b = document.createElement('button'); b.type = 'button'; b.className = 'cal-card' + (r.id === UPL.on ? ' on' : '');
     var pic = document.createElement('span'); pic.className = 'cal-pic'; b.appendChild(pic);
-    it._fill = function () { try { if (!r.p) calMos(pic, [r.pic]); else calMos(pic, calPics(r.p, ((CARDS[r.id] || {}).cv) || [])); } catch (e) { if (typeof spLog === 'function') spLog('a calendar’s picture: ' + ((e && e.message) || e)); } if (r.id === UPL.on) { var on = document.createElement('span'); on.className = 'cal-on'; on.textContent = 'Showing'; pic.appendChild(on); } };
+    it._fill = function () { try { if (!r.p) calMos(pic, [r.pic]); else calMos(pic, calPics(r.p, ((CARDS[r.id] || {}).cv) || [], function () { it._fill(); })); } catch (e) { if (typeof spLog === 'function') spLog('a calendar’s picture: ' + ((e && e.message) || e)); } };
     it._fill();
     var nm = document.createElement('span'); nm.className = 'cal-nm'; nm.textContent = r.n; b.appendChild(nm);
     var ct = document.createElement('span'); ct.className = 'cal-ct'; ct.textContent = r.ct; b.appendChild(ct);
+    if (r.id === UPL.on) { var on = document.createElement('span'); on.className = 'cal-on'; on.textContent = 'Showing'; ct.insertBefore(on, ct.firstChild); }   // (beside its words, not over its picture: John, 7 Nov 2026)
     b.setAttribute('aria-label', r.n + ', ' + r.ct + (r.id === UPL.on ? ', showing' : ''));
     b.addEventListener('click', function () {
       closeDialog(uplDlg);
@@ -9237,7 +9333,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     it.appendChild(b);
     if (r.mine && !TV) {   // their own: its picture (not on the TV, which can't choose a photo)
       var acts = document.createElement('div'); acts.className = 'cal-acts';
-      picActs(acts, r.p, function (box, label, cls, fn) { var b2 = document.createElement('button'); b2.type = 'button'; b2.textContent = label; b2.addEventListener('click', fn); box.appendChild(b2); return b2; });
+      var drawActs = function () { acts.textContent = ''; picActs(acts, r.p, function (box, label, cls, fn) { var b2 = document.createElement('button'); b2.type = 'button'; b2.textContent = label; b2.addEventListener('click', fn); box.appendChild(b2); return b2; }); };
+      drawActs(); it._acts = drawActs;   // (again once its covers and people have come: its choices as it shows now)
       it.appendChild(acts);
     }
     return it;
@@ -9257,16 +9354,16 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     (function next() { var el = todo.shift(); if (!el) return; setTimeout(function () { calPics.now = true; try { if (el._fill) el._fill(); } catch (e) {} calPics.now = false; next(); }, 30); })();
     if (plTok() || UPL.on) uplCall(null, '?cards=1').then(function (j) {
       if (j.status !== 200 || !j.cards) return;
-      CARDS = j.cards; [].forEach.call(grid.children, function (el) { if (el._fill) el._fill(); });
+      CARDS = j.cards; [].forEach.call(grid.children, function (el) { if (el._fill) el._fill(); if (el._acts) el._acts(); });
     }).catch(function () {});
   }
   function uplPicSend(p, pic) {   // their picture for it (null: the album-style one; 'covers': its newest covers)
-    var photo = pic && pic !== 'covers';
-    upledPost('uplpic?id=' + encodeURIComponent(p.id) + (photo ? '' : pic === 'covers' ? '&op=covers' : '&op=drop'), photo ? { pic: pic } : {}).then(function (j) {
+    var photo = pic && pic !== 'covers' && !/^style:/.test(pic);
+    upledPost('uplpic?id=' + encodeURIComponent(p.id) + (photo ? '' : pic === 'covers' ? '&op=covers' : /^style:/.test(pic || '') ? '&op=style&style=' + pic.slice(6) : '&op=drop'), photo ? { pic: pic } : {}).then(function (j) {
       if (j.status !== 200) { toast(j.error || 'Couldn’t change it just now'); return; }
       MEMBER.pls = j.pls; uplMark();
       if (uplDlg.open) uplChooser();
-      toast(photo ? 'Photo on' : pic === 'covers' ? 'Its covers now' : 'Album style now');
+      toast(photo ? 'Photo on' : pic === 'covers' ? 'Its newest covers now' : pic === 'style:mos' ? 'All its covers now' : 'Album style now');
       if (PE.on && !PE.john) peDraw();
     }).catch(function () { toast('Couldn’t reach the site. Try again.'); });
   }
