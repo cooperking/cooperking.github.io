@@ -8109,8 +8109,31 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   document.getElementById('msgclose').addEventListener('click', function () { closeDialog(msgDlg); });
   document.getElementById('msgreply').addEventListener('click', function () { var m = MSG; closeDialog(msgDlg); if (m) replyTo(m.x); });
   document.getElementById('msggo').addEventListener('click', function () { var m = MSG; closeDialog(msgDlg); if (m && m.x.u) msgGo(m.x.u); });
+  // a song shared by a member counts as read once it's been seen in the inbox, without opening it (John, 7 Nov 2026):
+  // on screen for a second, it's marked read (a few at once, one call)
+  var SEEN = { obs: null, t: {}, q: [], qt: 0 };
+  function seenFlush() {
+    var ids = SEEN.q.splice(0); if (!ids.length) return;
+    var n = 0; (INBOX.items || []).forEach(function (x) { if (ids.indexOf(x.id) >= 0 && !x.r) { x.r = Date.now(); n++; } });
+    if (!n) return;
+    unreadSet(INBOX.unread - n);
+    [].forEach.call(document.querySelectorAll('#acmsgs li[data-seen]'), function (li) { if (ids.indexOf(li.getAttribute('data-seen')) >= 0) { var b = li.querySelector('button.open'); if (b) b.classList.remove('new'); li.removeAttribute('data-seen'); var tg = li.querySelector('.rxend button'); if (tg) tg.textContent = 'Mark unread'; } });
+    inboxCall({ read: ids }).catch(function () {});
+  }
+  function seenWatch(li, x) {
+    if (!window.IntersectionObserver) return;
+    if (!SEEN.obs) SEEN.obs = new IntersectionObserver(function (es) {
+      es.forEach(function (e) {
+        var id = e.target.getAttribute('data-seen'); if (!id) return;
+        if (e.isIntersecting && e.intersectionRatio >= .6 && !document.hidden) { if (!SEEN.t[id]) SEEN.t[id] = setTimeout(function () { delete SEEN.t[id]; if (!e.target.isConnected || !e.target.getAttribute('data-seen')) return; SEEN.q.push(id); clearTimeout(SEEN.qt); SEEN.qt = setTimeout(seenFlush, 400); }, 1000); }
+        else if (SEEN.t[id]) { clearTimeout(SEEN.t[id]); delete SEEN.t[id]; }
+      });
+    }, { threshold: [0, .6] });
+    li.setAttribute('data-seen', x.id); SEEN.obs.observe(li);
+  }
   function inboxDraw() {
     var box = document.getElementById('acinbox'), ul = document.getElementById('acmsgs'), none = document.getElementById('acinnone');
+    if (SEEN.obs) SEEN.obs.disconnect();
     box.hidden = !MEMBER || !MBASE;
     if (box.hidden) return;
     document.getElementById('acsend').hidden = !sendCan();
@@ -8166,6 +8189,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       });
       if (sel) b.setAttribute('aria-pressed', String(sel.has(x.id)));
       li.appendChild(b); if (!sel) { if (rxLine) li.appendChild(rxLine); li.appendChild(acts); if (pickRow) li.appendChild(pickRow); } ul.appendChild(li);
+      if (!sel && !x.r && x.f && x.c) seenWatch(li, x);   // (a song shared by a member: read once seen here)
     });
     if (!sel && items.length > INBOX.shown) {
       var li = document.createElement('li'), m = document.createElement('button'); li.className = 'plain'; m.type = 'button'; m.className = 'copy ghost more'; m.textContent = 'Show more';
