@@ -1,0 +1,46 @@
+name: Grifflix live
+
+# Grifflix's live page (grifflix/index.html) built from its template (_grifflix/web/template.html), as the draft is:
+# John's go-ahead, from Publish on Grifflix's admin page (grifflix/admin.html), which asks the Worker (members/grifflix,
+# his own sign-in only) to start this. It won't go if the draft isn't what the template builds, since then what he
+# tried isn't what would go live. GitHub Pages then serves it within a minute or two.
+on:
+  workflow_dispatch:
+    inputs:
+      say:
+        description: "What goes live (for the commit message)"
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: grifflix-golive
+  cancel-in-progress: false
+
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Build the live page from the template and save it
+        env:
+          SAY: ${{ inputs.say }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          for i in 1 2 3 4 5; do
+            git fetch --quiet origin main && git reset --quiet --hard origin/main
+            python3 _grifflix/web/page.py --check || { echo "The draft isn't what the template builds: not going live."; exit 1; }
+            python3 _grifflix/web/page.py --live
+            git add grifflix/index.html
+            if git diff --cached --quiet; then echo "The live page is the draft already."; exit 0; fi
+            git commit --quiet -m "Grifflix live (John's go-ahead, from its admin page)${SAY:+: $SAY}"
+            git push --quiet origin HEAD:main && exit 0
+            sleep 5
+          done
+          exit 1

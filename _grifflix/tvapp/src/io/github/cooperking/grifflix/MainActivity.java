@@ -254,7 +254,7 @@ public class MainActivity extends Activity {
         box.addView(code);
         new AlertDialog.Builder(this)
             .setTitle("Sign in")
-            .setMessage("Type the code from your Profile on Song of the Day (on your phone: tap your person icon, then Get a code).")
+            .setMessage("Type your 6-letter sign-in code. Haven't one? Ask John.")
             .setView(box)
             .setPositiveButton("Sign in", new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface d, int w) {

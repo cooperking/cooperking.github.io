@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Grifflix admin</title>
+<link rel="icon" type="image/png" sizes="96x96" href="/grifflix/favicon-96.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..600&family=Hanken+Grotesk:wght@400;500;600&display=swap">
+<meta name="theme-color" content="#ec135b">
+<!-- Song of the Day's admin look (the month's colours, white cards): the same files -->
+<script src="/songs/admin-theme.js"></script>
+<link rel="stylesheet" href="/songs/admin.css">
+<style>
+.bar { margin: max(10px, env(safe-area-inset-top, 0px)) 0 0; display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 18px; border-radius: 999px; background: var(--glass-2); border: 1px solid var(--glass-line); }
+.bar .name { margin-right: auto; font: 500 18px/1 var(--serif); color: var(--ink); }
+.cards { display: grid; gap: 16px; }
+.card { padding: 18px 20px 20px; display: grid; gap: 12px; }
+.changes { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.changes li { padding: 10px 12px; border-radius: 12px; background: var(--tile); font-size: 14px; color: var(--fg); }
+.changes li .when { display: block; margin-top: 2px; font-size: 12px; color: var(--muted); }
+.state { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.links { display: flex; flex-wrap: wrap; gap: 8px; }
+.gate { max-width: 420px; margin: 18vh auto 0; text-align: center; }
+.gate .card { text-align: left; }
+.toast { opacity: 0; transition: opacity .25s; background: #fff; color: var(--fg); }
+</style>
+</head>
+<body>
+<div class="glow"></div>
+<div class="wrap">
+  <div class="bar"><span class="name">Grifflix <em>admin</em></span><a class="glassbtn" href="/grifflix/">Grifflix</a></div>
+
+  <div id="gate" class="gate" hidden><div class="card"><h2>Only <em>John</em></h2><p class="stat" id="gatewhy">This page is for John, signed in to Grifflix on this device.</p><div class="links"><a class="btn primary" href="/grifflix/">Open Grifflix</a></div></div></div>
+
+  <div id="app" hidden>
+    <div class="top"><h1>Grifflix <em>admin</em></h1><p class="sub" id="hello"></p></div>
+    <div class="cards">
+      <section class="card">
+        <div class="kicker">Draft and live</div>
+        <h2 id="dlhead">Looking…</h2>
+        <p class="stat" id="dlsay"></p>
+        <ul class="changes" id="changes"></ul>
+        <div class="state"><button class="btn primary" id="publish" type="button" hidden>Publish</button><a class="btn" href="/grifflix/draft/" target="_blank" rel="noopener">Try the draft</a><a class="btn" href="/grifflix/" target="_blank" rel="noopener">The live page</a></div>
+      </section>
+      <section class="card">
+        <div class="kicker">The Mac mini</div>
+        <h2 id="machead">Looking…</h2>
+        <p class="stat" id="macsay"></p>
+      </section>
+      <section class="card">
+        <div class="kicker">Elsewhere</div>
+        <div class="links">
+          <a class="btn" href="/songs/admin.html#members">Members</a>
+          <a class="btn" href="/grifflix/tv.apk">Fire TV app</a>
+          <a class="btn" href="https://github.com/cooperking/cooperking.github.io/actions" target="_blank" rel="noopener">Builds on GitHub</a>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  'use strict';
+  var WORKER = 'https://sotd-playlists.cooperking.workers.dev', REPO = 'cooperking/cooperking.github.io';
+  var $ = function (s) { return document.querySelector(s); };
+  var TOKEN = ''; try { TOKEN = localStorage.getItem('sotd-member') || ''; } catch (e) {}
+  function toast(t) { var el = $('#toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(function () { el.classList.remove('show'); }, 3000); }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function when(iso) { var d = new Date(iso); return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) + ', ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }); }
+  function gate(why) { $('#gate').hidden = false; if (why) $('#gatewhy').textContent = why; }
+
+  if (!TOKEN) return gate();
+  fetch(WORKER + '/members/me', { headers: { Authorization: 'Bearer ' + TOKEN, 'X-App': 'web' } }).then(function (r) { return r.json().then(function (j) { j.ok = r.ok; return j; }); })
+    .then(function (me) { if (!me.ok || !me.owner) return gate(me.ok ? 'Signed in as ' + me.name + ': this page is only for John.' : null); $('#app').hidden = false; $('#hello').innerHTML = 'Signed in as <b>' + esc(me.name) + '</b>'; draftLive(); mac(); })
+    .catch(function () { gate('Couldn’t check who you are just now. Try again.'); });
+
+  // ---- draft and live: the two built pages, which differ only in their BUILD line when nothing's waiting
+  var page = function (u) { return fetch(u + '?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.text(); }).then(function (t) { return t.replace(/\/\*BUILD\*\/\{[^}]*\}/, ''); }); };
+  var gh = function (p) { return fetch('https://api.github.com/repos/' + REPO + p, { headers: { Accept: 'application/vnd.github+json' } }).then(function (r) { return r.ok ? r.json() : []; }); };
+  var watching = null;
+  function draftLive() {
+    Promise.all([page('/grifflix/draft/index.html'), page('/grifflix/index.html'),
+      gh('/commits?path=grifflix/index.html&per_page=1'), gh('/commits?path=_grifflix/web/template.html&per_page=30')])
+      .then(function (r) {
+        var same = r[0] === r[1], lastLive = r[2][0] ? r[2][0].commit.committer.date : '1970-01-01', waiting = (r[3] || []).filter(function (c) { return c.commit.committer.date > lastLive; });
+        $('#dlhead').innerHTML = same ? 'The live page <em>is</em> the draft' : (waiting.length || 'Some') + ' change' + (waiting.length === 1 ? '' : 's') + ' <em>waiting</em>';
+        $('#dlsay').textContent = same ? 'Nothing waiting to go live. Last put live ' + (r[2][0] ? when(lastLive) : '—') + '.' : 'On the draft, not yet live. Try the draft, then Publish puts all of it live together.';
+        $('#changes').innerHTML = same ? '' : waiting.map(function (c) { return '<li>' + esc(c.commit.message.split('\n')[0].replace(/^Grifflix(\s+page)?:\s*/i, '')) + '<span class="when">' + when(c.commit.committer.date) + '</span></li>'; }).join('');
+        $('#publish').hidden = same;
+        if (watching && same) { watching = null; toast('Live now'); }
+      })
+      .catch(function () { $('#dlhead').textContent = 'Couldn’t compare them just now'; });
+  }
+  var armed = 0;
+  $('#publish').onclick = function () {
+    var b = this;
+    if (!armed) { armed = setTimeout(function () { armed = 0; b.textContent = 'Publish'; }, 4000); b.textContent = 'Tap again to publish'; return; }
+    clearTimeout(armed); armed = 0; b.disabled = true; b.textContent = 'Publishing…';
+    var say = [].map.call(document.querySelectorAll('#changes li'), function (li) { return li.firstChild.textContent; }).join('; ');
+    fetch(WORKER + '/members/grifflix', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify({ op: 'publish', say: say }) })
+      .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || 'It didn’t start.'); }); })
+      .then(function () {
+        b.textContent = 'Going live…'; toast('Started: live in a minute or two');
+        watching = setInterval(function () { if (!watching) return; draftLive(); }, 15000);
+      })
+      .catch(function (e) { b.disabled = false; b.textContent = 'Publish'; toast(e.message); });
+  };
+
+  // ---- the Mac mini: the gateway through the tunnel, and the library
+  function mac() {
+    fetch('/grifflix/config.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (c) {
+      var gw = String(c.gateway || '').replace(/\/$/, ''), t0 = Date.now();
+      if (!gw) { $('#machead').textContent = 'Not connected'; return; }
+      return fetch(gw + '/api/me', { headers: { Authorization: 'Bearer ' + TOKEN } }).then(function (r) { return r.json(); }).then(function (me) {
+        var ms = Date.now() - t0, L = me.libraries || {};
+        $('#machead').innerHTML = 'Answering <em>(' + ms + ' ms)</em>';
+        $('#macsay').innerHTML = '<b>' + (L.movies || 0) + '</b> films and <b>' + (L.tv || 0) + '</b> series, through ' + esc(gw.replace(/^https:\/\//, '')) + '.';
+      });
+    }).catch(function () { $('#machead').innerHTML = 'Not <em>answering</em>'; $('#macsay').textContent = 'It may be asleep, restarting, or off the internet. Grifflix shows its “Mac mini isn’t answering” page meanwhile.'; });
+  }
+})();
+</script>
+</body>
+</html>

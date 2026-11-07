@@ -1234,6 +1234,28 @@ function randomCode(bytes) { return b64url(crypto.getRandomValues(new Uint8Array
 // John signed in on the calendar (the site's owner): his own songs edited there as any member's (John, 6 Nov 2026: "I should
 // be able to edit everything in my own playlist just as others can theirs"): the Songs tab's saves (pictures, files,
 // videos, facts, moods and genres) take his sign-in as well as the admin password, for those alone
+// Grifflix (John's films, /grifflix/): Publish on its admin page (grifflix/admin.html) puts its draft live:
+// grifflix-golive.yml builds grifflix/index.html from _grifflix/web/template.html, as the draft is. John's own sign-in
+// only. KV gfgolive: when he last pressed it, for the admin page to follow the run. (John, 7 Nov 2026: "give me a
+// similar admin page with publish for changes")
+async function memberGrifflix(request, env, answer) {
+  if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
+  if (!await ownerSignedIn(request, env)) return answer(403, { error: 'Only John can do that.' });
+  const b = await request.json().catch(() => ({}));
+  if (b.op === 'status') return answer(200, { last: await env.SOTD.get('gfgolive', 'json') });
+  if (b.op !== 'publish') return answer(400, { error: 'What should happen?' });
+  if (!env.GH_TOKEN) return answer(503, { error: 'The GH_TOKEN secret is not set.' });
+  const say = String(b.say || '').replace(/\s+/g, ' ').trim().slice(0, 300);
+  const r = await fetch('https://api.github.com/repos/' + REPO + '/actions/workflows/grifflix-golive.yml/dispatches', {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + env.GH_TOKEN, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28',
+      'User-Agent': 'SongOfTheDayWorker', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ref: 'main', inputs: { say } })
+  }).catch(e => ({ status: 0, text: async () => String(e) }));
+  if (r.status !== 204) return answer(502, { error: 'GitHub didn’t start it: it answered ' + r.status + ' ' + (await r.text()).slice(0, 160) });
+  await env.SOTD.put('gfgolive', JSON.stringify({ at: new Date().toISOString(), say }), { expirationTtl: 2 * 86400 });
+  return answer(200, { ok: true });
+}
 async function ownerSignedIn(request, env) {
   const who = await memberWho(request, env).catch(() => null);
   return !!who && who.id === await env.SOTD.get('owner');
@@ -1447,6 +1469,7 @@ async function members(request, url, env) {
     if (!c || Date.now() - (c.at || 0) > 10 * 60e3) { try { const st = await adminStatus(env); c = { n: st.problems || 0, at: Date.now() }; } catch (e) { c = c || { n: 0, at: 0 }; } }
     return answer(200, { n: c.n || 0, at: c.at || 0 });
   }
+  if (route === 'grifflix') return memberGrifflix(request, env, answer);   // Grifflix's Publish (John only)
   if (route === 'heart') return memberHeart(request, env, answer);
   if (route === 'upl') return memberUpl(request, url, env, answer);
   if (route === 'uplup') return memberUplUp(request, url, env, answer);
