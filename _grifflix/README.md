@@ -80,7 +80,7 @@ then double-click `Install.command` again: Jellyfin starts as new, and Grifflix 
 2. Cloudflare: Zero Trust → Networks → Tunnels → Create a tunnel (Cloudflared) → name it `grifflix`; copy the token
    into the installer when it asks. Under Public Hostname, point a hostname (on a domain in the Cloudflare account)
    at `http://localhost:8097`. Under that hostname's settings turn caching off (it's video).
-3. Put that hostname in `grifflix/config.json` (`"gateway": "https://…"`).
+3. Put that hostname in `grifflix/config.json` (`"gateway": "https://…"`): John's is `https://media.grifflix.co.uk` (7 Nov 2026).
 4. Keep the Mac awake: System Settings → Energy → Prevent automatic sleeping.
 
 Folder names Jellyfin understands best: `Films/Paddington (2014)/Paddington (2014).mkv`,
