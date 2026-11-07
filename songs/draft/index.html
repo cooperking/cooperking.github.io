@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="c1e5b8b5e025">
+<meta name="sotd-build" content="66c25d98dc3b">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -3897,7 +3897,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function spxN() { var N = NAT && NAT.Plugins && NAT.Plugins.SotdSpotify; return N && typeof N.state === 'function' ? N : null; }
   function spxState() {
     var N = SPX.native && spxN();
-    if (!N) return spCall({ op: 'state' });   // (Web API)
+    if (!N) return spCall({ op: 'state' }).then(function (k) { if (k && k.lf) k.track = k.lf; return k; });   // (Web API; a song Spotify swapped for its country's copy: the one asked for)
     return N.state().then(function (r) { return { status: 200, track: r.track, pos: r.pos, dur: r.dur, playing: !!r.playing, device: 'this iPhone' }; }, function () { return { status: 0 }; });
   }
   function spxCmd(op, extra) {
@@ -4122,6 +4122,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // (2 Nov 2026, John: "I never want false information saying something is playing on the app when it's not"): a song sent
   // to Spotify shows as starting ("Starting on …") until Spotify says it's playing that song; if it doesn't within a few
   // seconds, it's paused there (in case it starts late) and the song's preview or MP3 plays instead, with why
+  function spxCast(d) { return !!d && !/^(Computer|Smartphone|Tablet)$/.test(d.type || '') && !!(d.type || d.name); }   // (a speaker, a group, a TV)
   function spxConfirm(id, dev, then) {
     var n = 0, look = function () {
       if (!coverObj.sp || SPX.track !== id) return;
@@ -4129,6 +4130,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         if (!coverObj.sp || SPX.track !== id) return;
         if (k.status === 200 && k.playing && k.track === id) { then(true, k); return; }
         if (++n < 7) { setTimeout(look, 1200); return; }
+        spLog('Spotify says: ' + (k.status !== 200 ? 'error ' + k.status : k.none ? 'nothing playing anywhere' : (k.playing ? 'playing ' : 'paused, ') + (k.track === id ? 'this song' : 'another song (' + k.track + ')') + ' on ' + (k.device || '?')));
+        if (k.status === 200 && k.none && spxCast(dev)) { spLog(dev.name + ' isn’t reported by Spotify (a speaker group): taken as playing'); then(true, { pos: 0, dur: 0, device: dev.name, did: dev.id }); return; }   // (a Cast group Spotify plays on but doesn't report: not paused under it: John, 7 Nov 2026, "it won't play for long on everywhere before stopping")
         then(false, k);
       }).catch(function () { if (++n < 7) setTimeout(look, 1200); else then(false, {}); });
     };
@@ -4260,7 +4263,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       if (!coverObj || !coverObj.sp || SPX.busy || document.hidden) return;
       spxState().then(function (j) {
         if (!coverObj.sp || SPX.busy || j.status !== 200) return;
-        if (j.none) { if (SPX.playing) { SPX.playing = false; SPX.other = true; coverState(2); } return; }   // (nothing playing anywhere now: shown as stopped)
+        if (j.none) { if (SPX.last && spxCast(SPX.last)) return; if (SPX.playing) { SPX.playing = false; SPX.other = true; coverState(2); } return; }   // (a speaker group Spotify doesn't report: left as it is)   // (nothing playing anywhere now: shown as stopped)
         if (j.track && j.track !== SPX.track) {
           if (SPX.list.indexOf(j.track) < 0 && SPX.list[SPX.list.length - 1] === SPX.track) {   // (past the end of what it was given: Spotify's own picks; stopped, and on to the next song here)
             spxCmd('pause').catch(function () {}); SPX.playing = false; coverState(0); return;

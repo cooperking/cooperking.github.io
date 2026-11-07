@@ -4327,12 +4327,12 @@ async function memberSpotify(request, url, env, answer) {
     }
     if (b.op === 'seek') { const r = await spCall(env, who.id, rec, 'PUT', '/me/player/seek?position_ms=' + Math.max(0, b.ms | 0)); return answer(r.status < 300 ? 200 : 409, r.status < 300 ? { ok: true } : { why: r.why || 'other', error: r.msg }); }
     if (b.op === 'state') {
-      const r = await spCall(env, who.id, rec, 'GET', '/me/player');
+      const r = await spCall(env, who.id, rec, 'GET', '/me/player?market=from_token');   // (market: a song Spotify swapped for its own country's copy says which it was, linked_from)
       if (r.status === 204 || !r.json) return answer(200, { none: true });
       if (r.status !== 200) return answer(409, { why: r.why || 'other', error: r.msg });
       const it = r.json.item || {};
       const dv = r.json.device || {};
-      return answer(200, { track: it.id || '', pos: r.json.progress_ms || 0, dur: it.duration_ms || 0, playing: !!r.json.is_playing, device: dv.name || '', dtype: dv.type || '', did: dv.id || '',
+      return answer(200, { track: it.id || '', lf: (it.linked_from && it.linked_from.id) || undefined, pos: r.json.progress_ms || 0, dur: it.duration_ms || 0, playing: !!r.json.is_playing, device: dv.name || '', dtype: dv.type || '', did: dv.id || '',
         vol: typeof dv.volume_percent === 'number' ? dv.volume_percent : null, canVol: dv.supports_volume !== false && typeof dv.volume_percent === 'number' });
     }
   } catch (e) { return answer(e instanceof HttpError ? e.status : 502, { error: String(e && e.message || e) }); }
