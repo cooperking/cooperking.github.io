@@ -730,7 +730,8 @@ a.srchpill { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--li
 
   // ---- the list ----
   // no YouTube video, no preview (John, 5 Nov 2026: "I need other missing items here too"), his songs and members' alike
-  function hasYt(s) { if (!s.m) return !!(VIDS[s.id] || {}).v; var j = JOHN[s.id]; if (j && 'v' in j) return !!j.v; return !!s.yt; }   // (a member song: John's choice, else its owner's, else what was found; an MP4 counts)
+  function hasYt(s) { if ((CAT[s.id] || {}).v) return true;   // (its MP4 here: a video already)
+    if (!s.m) return !!(VIDS[s.id] || {}).v; var j = JOHN[s.id]; if (j && 'v' in j) return !!j.v; return !!s.yt; }   // (a member song: John's choice, else its owner's, else what was found; an MP4 counts)
   function missing(s) { return (show === 'noyt' && hasYt(s)) || (show === 'nopv' && !!s.p); }
   function visible(s) {
     if (s.m) {   // a member song: in All, Member Songs, Waiting (its facts), Still picture, No MP3 and No MP4
