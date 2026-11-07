@@ -2592,7 +2592,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   function songxSave() {
     var o = {}; Object.keys(SONGX).forEach(function (t) { var x = Object.assign({}, SONGX[t]); delete x.ma; delete x.mv; o[t] = x; });   // (the links to own files: this visit's)
-    try { localStorage.setItem(SONGX_KEY, JSON.stringify(o)); } catch (e) {}
+    lsSet(SONGX_KEY, JSON.stringify(o));
   }
   // the songs out so far: on its owner's own calendar the songs still to come are on it too (faded, to move), but
   // the lists that play or show songs (Play all, shuffle, the index, On YouTube, the counts) take only the ones out
@@ -2708,9 +2708,16 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
 
   var HEART = '<svg class="heart" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 14s-5.5-3.3-5.5-7.4A3 3 0 0 1 8 4.6a3 3 0 0 1 5.5 2C13.5 10.7 8 14 8 14z"/></svg>';
-  function readFav() { try { return JSON.parse(localStorage.getItem('sotd-playlist') || '[]').filter(function (t) { return songOf(t); }); } catch (e) { return []; } }
+  // the device's storage full (the drawn covers took it, John, 7 Nov 2026: hearted songs from Camilla's playlist went
+  // missing): the drawn covers go first, so songs, hearts and playlists are always kept
+  function lsSet(k, v) {
+    try { localStorage.setItem(k, v); return true; } catch (e) {}
+    try { for (var i = localStorage.length - 1; i >= 0; i--) { var x = localStorage.key(i); if (/^sotd-(art|mos)\d+:/.test(x)) localStorage.removeItem(x); } localStorage.setItem(k, v); return true; } catch (e2) { return false; }
+  }
+  var FAVHELD = [];   // (hearted songs not known yet on this visit, a member's playlist's still loading: kept, never dropped)
+  function readFav() { try { var all = JSON.parse(localStorage.getItem('sotd-playlist') || '[]'); FAVHELD = all.filter(function (t) { return !songOf(t); }); return all.filter(function (t) { return songOf(t); }); } catch (e) { return []; } }
   var fav = readFav();
-  function saveFav() { try { localStorage.setItem('sotd-playlist', JSON.stringify(fav)); } catch (e) {} if (typeof plChanged === 'function') plChanged(); }
+  function saveFav() { lsSet('sotd-playlist', JSON.stringify(fav.concat(FAVHELD.filter(function (t) { return fav.indexOf(t) < 0 && !songOf(t); })))); if (typeof plChanged === 'function') plChanged(); }
   // hearts are always the unsaved My playlist (John, 3 Nov 2026: "heart automatically create a non-saved playlist - as soon as
   // it's saved it shouldn't matter if the song has a heart or not"): with a saved playlist open, they're kept apart from
   // it (the unsaved one, put aside: plStash), and that playlist changes only in its own list
@@ -7391,7 +7398,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // open a saved playlist as My playlist (or, with null, an empty unsaved one)
   // the unsaved My playlist, kept aside while a saved one is open (sotd-plunsaved), and back when it's put away
   function plStash(v) {
-    try { if (v === undefined) return JSON.parse(localStorage.getItem('sotd-plunsaved') || 'null'); if (v) localStorage.setItem('sotd-plunsaved', JSON.stringify(v)); else localStorage.removeItem('sotd-plunsaved'); } catch (e) {}
+    try { if (v === undefined) return JSON.parse(localStorage.getItem('sotd-plunsaved') || 'null'); if (v) lsSet('sotd-plunsaved', JSON.stringify(v)); else localStorage.removeItem('sotd-plunsaved'); } catch (e) {}
     return null;
   }
   function plStashN() { var st = plStash(); return st && st.tracks ? st.tracks.filter(function (t) { return songOf(t); }).length : 0; }
@@ -9252,13 +9259,20 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   // a canvas let go at once: the iPhone keeps each one's memory till it's cleared, and clears the page when there's too
   // much (John, 7 Nov 2026: "Still getting blackout reloads on iPhone a lot")
+  function artKeep(key, url) {   // a drawn cover kept on the device: eight at most (each is about 40 KB, and the device's storage is small)
+    try {
+      var ks = []; for (var i = 0; i < localStorage.length; i++) { var x = localStorage.key(i); if (/^sotd-(art|mos)\d+:/.test(x)) ks.push(x); }
+      if (ks.length >= 8) ks.slice(0, ks.length - 7).forEach(function (x) { localStorage.removeItem(x); });
+      localStorage.setItem(key, url);
+    } catch (e) {}
+  }
   function canvasFree(c) { try { c.width = c.height = 0; } catch (e) {} }
   (function artTidy() {   // drawn covers kept from earlier versions, or for names and covers since changed: let go (the iPhone holds all of them in the page's memory)
     try {
       var cur = [], old = [];
       for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (/^sotd-(art|mos)\d+:/.test(k)) (/^sotd-(art7|mos9):/.test(k) ? cur : old).push(k); }
       old.forEach(function (k) { localStorage.removeItem(k); });
-      if (cur.length > 60) cur.slice(0, cur.length - 60).forEach(function (k) { localStorage.removeItem(k); });
+      if (cur.length > 8) cur.slice(0, cur.length - 8).forEach(function (k) { localStorage.removeItem(k); });
     } catch (e) {}
   })();
   function sleeveWords(g, o, x, y, sz, onPic) {   // its people or owner small, its name big (its last line in italics, as "the Day"), a rule and what it is
@@ -9295,7 +9309,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     try { var kept = localStorage.getItem(key); if (kept) return (ART[key] = kept); } catch (e) {}   // (drawn once, kept on this device: John, 7 Nov 2026, "It shouldn't draw every time. Just once")
     if (!o.now) return '';   // (not drawn yet: drawn just after the picker opens, then kept)
     ART[key] = sleeveArt(o, albumFront(o));
-    if (ART.fonts) try { localStorage.setItem(key, ART[key]); } catch (e) {}   // (kept once its fonts are in)
+    if (ART.fonts) artKeep(key, ART[key]);   // (kept once its fonts are in)
     return ART[key];
   }
   function albumFront(o) { return function (g, x, y, sz, pal, h) {
@@ -9325,7 +9339,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
           var sh = g.createLinearGradient(0, y, 0, y + sz); sh.addColorStop(0, 'rgba(10,6,14,.72)'); sh.addColorStop(.55, 'rgba(10,6,14,.45)'); sh.addColorStop(1, 'rgba(10,6,14,.78)'); g.fillStyle = sh; g.fillRect(x, y, sz, sz);
           sleeveWords(g, o, x, y, sz, true);
         });
-        if (!o.S) try { localStorage.setItem(key, ART[key]); } catch (e) {}
+        if (!o.S) artKeep(key, ART[key]);
       } catch (e) { if (typeof spLog === 'function') spLog('all-covers picture couldn’t be drawn: ' + ((e && e.message) || e)); ART[key] = ''; }
       imgs.forEach(function (im) { if (im) { im.onload = im.onerror = null; im.src = ''; } }); imgs = [];   // (its covers let go once drawn)
       delete MOSING[key]; var got1 = ART[key]; if (o.S) delete ART[key];   // (a share's: not kept)
