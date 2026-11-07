@@ -3854,7 +3854,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function spxPos() { return Math.min(SPX.dur || Infinity, SPX.pos + (SPX.playing ? Date.now() - SPX.at : 0)); }
   function spxUpcoming(id) {   // the song and those after it, in the order the page plays them (Spotify takes 100 at most), up to (not including) one that's no longer on Spotify: that one plays here, as its MP3
     var out = [], gone = function (t) { var so = songOf(t); return !!(so && so.sx); };
-    if (queue) { var i = queue.list.indexOf(id); if (i < 0) return [id]; for (var k = i; k < queue.list.length && out.length < 100; k++) {   // (the list's own order is the order it plays in: Play all's newest first, on to the days before: John, 7 Nov 2026, "the order reversed") if (k !== i && gone(queue.list[k])) break; out.push(queue.list[k]); } return out; }
+    if (queue) { var i = queue.list.indexOf(id); if (i < 0) return [id]; for (var k = i; k < queue.list.length && out.length < 100; k++) { if (k !== i && gone(queue.list[k])) break; out.push(queue.list[k]); } return out; }   // (the list's own order is the order it plays in: Play all's newest first, on to the days before: John, 7 Nov 2026, "the order reversed")
     var all = songs.filter(function (x) { return x.d && x.d <= todayIso; }).slice().sort(function (a, b) { return a.d > b.d ? -1 : a.d < b.d ? 1 : 0; });   // (no list: on through the days before, as the page goes)
     var j = all.findIndex(function (x) { return x.track === id; }); if (j < 0) return [id];
     for (var m = j; m < all.length && out.length < 100; m++) { if (m !== j && all[m].sx) break; out.push(all[m].track); }
