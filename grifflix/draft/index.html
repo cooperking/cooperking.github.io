@@ -143,7 +143,8 @@ img { display: block; }
 }
 
 /* rows of posters */
-.rows { margin-top: 34px; display: grid; gap: 30px; }
+.rows { margin-top: 34px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 30px; }   /* (minmax: a row of posters scrolls within itself, never widens the page: it made a phone lay the page out 1560 wide) */
+.row { min-width: 0; }
 .row h2, .sect h2 { display: flex; align-items: baseline; gap: 10px; margin: 0 4px 12px; font: 400 26px/1.1 var(--serif); color: var(--fg); }
 .row h2 i, .sect h2 i { font-weight: 300; }
 .row h2 .more { margin-left: auto; font: 600 11px/1 var(--sans); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); background: none; border: 0; }
@@ -254,6 +255,26 @@ dialog::backdrop { background: rgba(10, 4, 12, .62); backdrop-filter: blur(6px);
 .toast { position: fixed; left: 50%; bottom: max(24px, env(safe-area-inset-bottom)); z-index: 200; transform: translate(-50%, 20px); padding: 12px 20px; border-radius: 999px; background: var(--fg); color: #1b1020; font: 500 14px/1.3 var(--sans); box-shadow: 0 10px 30px rgba(0, 0, 0, .4); opacity: 0; pointer-events: none; transition: .25s; }
 .toast.on { opacity: 1; transform: translate(-50%, 0); }
 .hide { display: none !important; }
+.prof .profhead { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.prof .chiplabel { padding: 5px 11px; border: 1px solid var(--line); border-radius: 6px; font: 600 11px/1 var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--fg-2); }
+.prof .adminpill { margin-left: auto; min-height: 34px; background: var(--fg); color: #1b1020; border-color: var(--fg); }
+.prof .profx { position: static !important; }
+.prof .profhead .ico.close { margin-left: 0; }
+.prof .profhead .chiplabel + .ico.close { margin-left: auto; }
+.profname { margin: 4px 0 0; font: 400 40px/1.05 var(--serif); color: var(--fg); }
+.proftabs { margin: 18px 0 6px !important; }
+.profsec { padding: 16px 0; border-top: 1px solid var(--line); }
+.profsec:first-child { border-top: 0; }
+.profh { margin: 0 0 4px; font: 600 11px/1.2 var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.profh i { font-style: normal; color: var(--fg-2); }
+.profp { margin: 0; font-size: 14.5px; line-height: 1.5; color: var(--fg-2); }
+.modes { display: grid; gap: 8px; margin-top: 10px; }
+.mode { display: grid; gap: 2px; padding: 11px 14px; border: 1px solid var(--line); border-radius: 12px; background: rgba(255, 255, 255, .04); text-align: left; color: var(--fg-2); }
+.mode b { font: 600 14px/1.3 var(--sans); color: var(--fg); }
+.mode span { font-size: 12.5px; color: var(--muted); }
+.mode.on { border-color: var(--fg); background: rgba(255, 255, 255, .12); box-shadow: inset 0 0 0 1px var(--fg); }
+.mode:disabled { opacity: .45; }
+.tvcode { font: 600 28px/1 var(--sans); letter-spacing: .2em; color: var(--fg); }
 a.card { display: block; text-decoration: none; color: inherit; }
 .collhead { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 26px; align-items: end; margin: 22px 4px 30px; }
 .collpic { width: 100%; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 10px; box-shadow: 0 14px 36px var(--shadow); }
@@ -329,7 +350,7 @@ if (Q.has('gateway')) store.set('grifflix-gateway', Q.get('gateway') || null);
 if (Q.has('demo')) store.set('grifflix-demo', Q.get('demo') === '0' ? null : '1');
 var DEMO = !!store.get('grifflix-demo');
 var GW = '', ME = null, KEY = '';
-var TOKEN = store.get('sotd-member') || '';
+var TOKEN = store.get('grifflix-member') || '';   // Grifflix's own sign-in (its own members: apart from Song of the Day's)
 var TV = /GRIFFLIXTV\//.test(navigator.userAgent) || Q.get('tv') === '1';   // the Fire TV app (its browser's name), or ?tv=1 to try it
 var IN_APP = TV || /GrifflixApp\//.test(navigator.userAgent) || !!(window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform());
 if (TV) document.documentElement.classList.add('tv');   // the Song of the Day sign-in: same site, so the same storage
@@ -427,16 +448,15 @@ function welcome(why) {
   if (f) f.onsubmit = function (e) { e.preventDefault(); join($('#code').value); };
 }
 
-/* signing in: Song of the Day's own way (the Worker's /members/join), with a TV code or an invitation; the sign-in is
-   kept where Song of the Day keeps it (same site), so a browser signed in to one is signed in to both. Each app has
-   storage of its own, so signs in here once. */
+/* signing in: Grifflix's own members (the Worker's /g/join), with an invitation or a 6-letter code from a member's
+   Profile (a TV's); kept on this device as grifflix-member. */
 var WORKER = 'https://sotd-playlists.cooperking.workers.dev';
 function deviceId() {
-  var d = store.get('sotd-device') || '';
+  var d = store.get('grifflix-device') || '';
   if (!/^[A-Za-z0-9]{8,40}$/.test(d)) {
     var a = new Uint8Array(12); crypto.getRandomValues(a);
     d = [].map.call(a, function (x) { return 'abcdefghijklmnopqrstuvwxyz0123456789'[x % 36]; }).join('');
-    store.set('sotd-device', d);
+    store.set('grifflix-device', d);
   }
   return d;
 }
@@ -450,9 +470,9 @@ function codeFrom(text) {
 function join(text) {
   var code = codeFrom(text);
   if (!code) return toast(/\/i\//.test(text) ? 'Open that invitation link first, then use the code it signs you in with, or paste the link it opens.' : 'That isn’t a code or an invitation link.');
-  fetch(WORKER + '/members/join', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: code, device: deviceId() }) })
+  fetch(WORKER + '/g/join', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: code, device: deviceId() }) })
     .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || 'That didn’t work.'); return j; }); })
-    .then(function (j) { store.set('sotd-member', j.token); TOKEN = j.token; toast('Welcome, ' + (j.name || '').split(' ')[0]); setTimeout(function () { location.replace(location.pathname); }, 700); })
+    .then(function (j) { store.set('grifflix-member', j.token); TOKEN = j.token; toast('Welcome, ' + (j.name || '').split(' ')[0]); setTimeout(function () { location.replace(location.pathname); }, 700); })
     .catch(function (e) { toast(e.message || 'Couldn’t sign in just now. Try again.'); });
 }
 window.grifflixJoin = join;   // (the Fire TV app's menu: Sign in with a code)
@@ -466,6 +486,7 @@ function route() {
   window.scrollTo(0, 0);
   if (S.view === 'browse') { if (h[1]) S.browse = h[1]; return browse(); }
   if (S.view === 'collection' && h[1]) return collectionView(h[1]);
+  if (S.view === 'day' && /^\d{4}-\d\d-\d\d$/.test(h[1] || '')) { S.cal = 'motd'; S.month = h[1].slice(0, 7); S.pendingDay = h[1]; S.view = 'home'; return home(); }
   if (S.view === 'lists') return lists();
   if (S.view === 'search') { location.hash = '#' + (S.lastView || 'home'); return searchSheet(); }
   if (S.view === 'profile') { location.hash = '#' + (S.lastView || 'home'); return profile(); }
@@ -484,6 +505,7 @@ function home() {
     S.cals = r[0].calendars; S.calData = r[1];
     if (!S.month) S.month = TODAY.slice(0, 7);
     drawCals(); drawMonth();
+    if (S.pendingDay) { var pd = S.pendingDay; S.pendingDay = null; if (S.calData.days[pd]) daySheet(pd); }
     var t = S.calData.days[TODAY] || S.calData.days[Object.keys(S.calData.days).sort().pop()];
     if (t) tint(img(t.poster || t.backdrop, t.poster ? 'Primary' : 'Backdrop', 120));
   }).catch(oops);
@@ -793,18 +815,115 @@ function ask(title, ph, val, done) {
   var ok = function () { var v = inp.value.trim(); if (!v) return; closeSheet(); done(v); };
   $('#askok').onclick = ok; inp.onkeydown = function (e) { if (e.key === 'Enter') ok(); };
 }
+/* The Profile (as Song of the Day's): Admin at the top for John; My list, Calendars and Account. Account: this device's
+   notifications (Grifflix's own service worker and devices list), which notifications, the email address and which
+   emails, sign out. Its choices live on the member's record on the Worker (members/grifflix), apart from the songs'. */
+var PROF = { tab: 'account', g: null };
+function wcall(body) {   // Grifflix's own members on the Worker: /g/<op>
+  var op = body.op; body = Object.assign({}, body); delete body.op;
+  return fetch(WORKER + '/g/' + op, op === 'me' ? { headers: { Authorization: 'Bearer ' + TOKEN } } : { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+    .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || 'That didn’t work.'); return j; }); });
+}
+var NOTE_OK = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+var IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+var STANDALONE = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+function swReg() { return navigator.serviceWorker.register('/grifflix/sw.js', { scope: '/grifflix/' }).then(function () { return navigator.serviceWorker.ready; }); }
+function b64key(k) { var p = '='.repeat((4 - k.length % 4) % 4), raw = atob((k + p).replace(/-/g, '+').replace(/_/g, '/')), a = new Uint8Array(raw.length); for (var i = 0; i < raw.length; i++) a[i] = raw.charCodeAt(i); return a; }
+function deviceSub() { return NOTE_OK ? navigator.serviceWorker.getRegistration('/grifflix/').then(function (r) { return r ? r.pushManager.getSubscription() : null; }).catch(function () { return null; }) : Promise.resolve(null); }
 function profile() {
   if (PUBLIC) return signInSheet();
   if (!ME) return;
-  var mineCals = S.cals.filter(function (c) { return c.mine && c.id !== 'motd'; });
-  openSheet('<div class="form" style="position:relative">' + X + '<h2 style="font:400 38px/1.1 var(--serif);color:var(--fg)">' + esc(ME.name || 'You') + '</h2>' +
-    '<p class="ov" style="margin-top:0">Signed in' + (ME.owner ? ': you choose the Movie of the Day. <a href="/grifflix/admin.html">Admin</a>' : '.') + '</p>' +
-    (ME.libraries ? '<div class="chips">' + ['movies', 'tv'].map(function (k) { return '<span>' + (ME.libraries[k] || 0) + ' ' + { movies: 'films', tv: 'series' }[k] + '</span>'; }).join('') + '</div>' : '') +
-    (mineCals.length ? '<div class="owner"><h3>Your calendars</h3>' + mineCals.map(function (c) { return '<div class="acts" style="margin-top:0"><button class="pill" data-gocal="' + c.id + '">' + esc(c.name) + ' · ' + c.count + '</button><button class="pill" data-shcal="' + c.id + '" data-on="' + (c.shared ? 1 : 0) + '">' + (c.shared ? 'Family can see it' : 'Only you') + '</button><button class="pill" data-delcal="' + c.id + '">Delete</button></div>'; }).join('') + '</div>' : '') +
-    (DEMO ? '<div class="acts"><a class="pill" href="?demo=0">Leave the demo</a></div>' : '') + '</div>');
-  $$('[data-gocal]').forEach(function (b) { b.onclick = function () { closeSheet(); S.cal = b.dataset.gocal; location.hash = '#home/' + S.cal; }; });
-  $$('[data-shcal]').forEach(function (b) { b.onclick = function () { var to = b.dataset.on !== '1'; api('calendar', { op: 'share', id: b.dataset.shcal, shared: to }).then(function () { b.dataset.on = to ? 1 : 0; b.textContent = to ? 'Family can see it' : 'Only you'; return api('calendars'); }).then(function (r) { S.cals = r.calendars; }); }; });
-  $$('[data-delcal]').forEach(function (b) { b.onclick = function () { if (!b.dataset.sure) { b.dataset.sure = 1; b.textContent = 'Sure?'; return; } api('calendar', { op: 'delete', id: b.dataset.delcal }).then(function () { closeSheet(); S.cal = 'motd'; location.hash = '#home'; home(); }); }; });
+  var admin = ME.owner ? '<a class="pill adminpill" href="/grifflix/admin.html">Admin</a>' : '';
+  openSheet('<div class="form prof" style="position:relative"><div class="profhead"><span class="chiplabel">Profile</span>' + admin + X.replace('ico close', 'ico close profx') + '</div>' +
+    '<h2 class="profname">' + esc(ME.name || 'You') + '</h2>' +
+    (ME.libraries ? '<div class="chips" style="margin-top:6px">' + ['movies', 'tv'].map(function (k) { return '<span>' + (ME.libraries[k] || 0) + ' ' + { movies: 'films', tv: 'series' }[k] + '</span>'; }).join('') + '</div>' : '') +
+    '<div class="tabs proftabs">' + [['list', 'My list'], ['cals', 'Calendars'], ['account', 'Account']].map(function (t) { return '<button class="pill' + (PROF.tab === t[0] ? ' on' : '') + '" data-ptab="' + t[0] + '">' + t[1] + '</button>'; }).join('') + '</div>' +
+    '<div id="profbody"></div>' + (DEMO ? '<div class="acts"><a class="pill" href="?demo=0">Leave the demo</a></div>' : '') + '</div>');
+  $$('[data-ptab]').forEach(function (b) { b.onclick = function () { PROF.tab = b.dataset.ptab; $$('[data-ptab]').forEach(function (x) { x.classList.toggle('on', x === b); }); profTab(); }; });
+  profTab();
+}
+function profTab() {
+  var el = $('#profbody'); if (!el) return;
+  if (PROF.tab === 'list') {
+    el.innerHTML = '<div class="empty" style="margin:16px 0">…</div>';
+    return api('lists').then(function (L) {
+      el.innerHTML = '<div class="profsec"><p class="profh">Saved for later <i>' + L.hearts.length + '</i></p>' +
+        (L.hearts.length ? '<div class="strip">' + L.hearts.slice(0, 12).map(function (i) { return cardHTML(i); }).join('') + '</div>' : '<p class="profp">Tap the heart on any film or series to keep it here.</p>') + '</div>' +
+        '<div class="profsec"><p class="profh">Playlists <i>' + L.lists.length + '</i></p>' + (L.lists.length ? L.lists.map(function (pl) { return '<p class="profp"><b>' + esc(pl.name) + '</b> · ' + pl.items.length + '</p>'; }).join('') : '<p class="profp">None yet: add a film to a playlist from its page.</p>') + '</div>' +
+        '<div class="acts"><button class="pill on" id="profall">Open My list</button></div>';
+      wireCards(el, L.hearts);
+      $('#profall').onclick = function () { closeSheet(); location.hash = '#lists'; };
+    }).catch(oops);
+  }
+  if (PROF.tab === 'cals') {
+    var mine = S.cals.filter(function (c) { return c.mine && c.id !== 'motd'; });
+    el.innerHTML = '<div class="profsec"><p class="profh">Your calendars</p>' + (mine.length ? mine.map(function (c) { return '<div class="acts" style="margin-top:8px"><button class="pill" data-gocal="' + c.id + '">' + esc(c.name) + ' · ' + c.count + '</button><button class="pill" data-shcal="' + c.id + '" data-on="' + (c.shared ? 1 : 0) + '">' + (c.shared ? 'Family can see it' : 'Only you') + '</button><button class="pill" data-delcal="' + c.id + '">Delete</button></div>'; }).join('') : '<p class="profp">None yet. Make one from the calendar (+ New calendar), or put a film on one from its page.</p>') + '</div>' +
+      '<div class="acts"><button class="pill on" id="profnewcal">+ New calendar</button></div>';
+    $('#profnewcal').onclick = function () { closeSheet(); newCalendar(); };
+    $$('[data-gocal]').forEach(function (b) { b.onclick = function () { closeSheet(); S.cal = b.dataset.gocal; location.hash = '#home/' + S.cal; }; });
+    $$('[data-shcal]').forEach(function (b) { b.onclick = function () { var to = b.dataset.on !== '1'; api('calendar', { op: 'share', id: b.dataset.shcal, shared: to }).then(function () { b.dataset.on = to ? 1 : 0; b.textContent = to ? 'Family can see it' : 'Only you'; return api('calendars'); }).then(function (r) { S.cals = r.calendars; }); }; });
+    $$('[data-delcal]').forEach(function (b) { b.onclick = function () { if (!b.dataset.sure) { b.dataset.sure = 1; b.textContent = 'Sure?'; return; } api('calendar', { op: 'delete', id: b.dataset.delcal }).then(function () { closeSheet(); S.cal = 'motd'; location.hash = '#home'; home(); }); }; });
+    return;
+  }
+  if (PROF.tab === 'account') {
+    el.innerHTML = '<div class="empty" style="margin:16px 0">…</div>';
+    if (DEMO) { PROF.g = PROF.g || { gpush: 'all', gmail: 'off', email: '', devices: 0 }; return Promise.resolve(drawAccount()); }
+    Promise.all([wcall({ op: 'me' }), deviceSub()]).then(function (r) { PROF.g = r[0]; PROF.sub = r[1]; drawAccount(); })
+      .catch(function (e) { el.innerHTML = '<p class="profp">' + esc(e.message) + '</p>'; });
+  }
+}
+var MODES = [['all', 'Every one', 'Each Movie of the Day as it goes up'], ['week', 'Once a week', 'A summary on Monday morning'], ['off', 'Off', 'None']];
+function drawAccount() {
+  var el = $('#profbody'), g = PROF.g, on = !!PROF.sub;
+  var noteText = !NOTE_OK ? (IOS && !STANDALONE ? 'On an iPhone or iPad, add Grifflix to your Home Screen first (Share, then Add to Home Screen), and turn them on there.' : 'This browser can’t show notifications.')
+    : on ? 'On for this device.' : Notification.permission === 'denied' ? 'This browser has blocked Grifflix’s notifications: allow them in its settings, then turn them on here.' : 'Off on this device.';
+  var opts = function (k, dis) { return '<div class="modes">' + MODES.map(function (m) { return '<button class="mode' + (g[k] === m[0] ? ' on' : '') + '" data-' + k + '="' + m[0] + '"' + (dis ? ' disabled' : '') + '><b>' + m[1] + '</b><span>' + m[2] + '</span></button>'; }).join('') + '</div>'; };
+  el.innerHTML =
+    '<div class="profsec"><p class="profh">Notifications</p><p class="profp">' + esc(noteText) + '</p>' +
+      (NOTE_OK ? '<div class="acts" style="margin-top:8px"><button class="pill' + (on ? '' : ' on') + '" id="notego">' + (on ? 'Turn off on this device' : 'Turn on') + '</button></div>' : '') + '</div>' +
+    '<div class="profsec"><p class="profh">Which notifications</p><p class="profp">On your devices with notifications turned on. Emails are chosen apart, below.</p>' + opts('gpush') + '</div>' +
+    '<div class="profsec"><p class="profh">Email</p><p class="profp">' + (g.email ? 'Your address: <b>' + esc(g.email) + '</b>' : 'Add your email address, and you can have the Movie of the Day by email too.') + '</p>' +
+      '<div class="acts" style="margin-top:8px"><button class="pill" id="mailgo">' + (g.email ? 'Change your email' : 'Add your email') + '</button></div></div>' +
+    '<div class="profsec"><p class="profh">Which emails</p><p class="profp">' + (g.email ? 'To ' + esc(g.email) + ', chosen apart from your notifications.' : 'Add your email first.') + '</p>' + opts('gmail', !g.email) + '</div>' +
+    '<div class="profsec"><p class="profh">A TV</p><p class="profp">To sign in on a TV (or another device), get a code and type it there.</p><div class="acts" style="margin-top:8px"><button class="pill" id="tvcode">Get a code</button></div></div>' +
+    '<div class="profsec"><p class="profh">This device</p><p class="profp">Signed in as ' + esc(ME.name || '') + '.</p><div class="acts" style="margin-top:8px"><button class="pill" id="signout">Sign out</button></div></div>';
+  $$('[data-gpush],[data-gmail]').forEach(function (b) { b.onclick = function () {
+    var k = b.dataset.gpush ? 'gpush' : 'gmail', v = b.dataset[k], body = { op: 'prefs' }; body[k] = v;
+    if (DEMO) { g[k] = v; return drawAccount(); }
+    wcall(body).then(function (j) { PROF.g = j; drawAccount(); toast({ all: 'Every Movie of the Day', week: 'A summary each Monday', off: 'None' }[v] + (k === 'gmail' ? ' by email' : ' on your devices')); }).catch(oops);
+  }; });
+  var ng = $('#notego'); if (ng) ng.onclick = function () { (on ? notesOff() : notesOn()).then(function () { profTab(); }).catch(oops); };
+  $('#mailgo').onclick = addEmail;
+  $('#tvcode').onclick = function () { var b = this; if (DEMO) return toast('Not in the demo.'); wcall({ op: 'tvcode' }).then(function (j) { b.outerHTML = '<span class="tvcode">' + j.code + '</span><span class="profp"> for ' + j.minutes + ' minutes, once</span>'; }).catch(oops); };
+  $('#signout').onclick = function () {
+    var b = this; if (!b.dataset.sure) { b.dataset.sure = 1; b.textContent = 'Tap again to sign out'; return; }
+    wcall({ op: 'signout' }).catch(function () {}).then(function () { store.set('grifflix-member', null); location.replace(location.pathname); });
+  };
+}
+function notesOn() {
+  if (DEMO) return Promise.reject(new Error('Not in the demo.'));
+  return Notification.requestPermission().then(function (p) {
+    if (p !== 'granted') throw new Error('Notifications weren’t allowed.');
+    return swReg();
+  }).then(function (reg) {
+    return reg.pushManager.getSubscription().then(function (s) { return s || reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64key(PROF.g.key) }); });
+  }).then(function (sub) { return wcall({ op: 'push', sub: sub.toJSON(), test: true }); }).then(function (j) { PROF.g = j; toast('Notifications on'); });
+}
+function notesOff() {
+  return deviceSub().then(function (sub) { if (!sub) return; var j = sub.toJSON(); return sub.unsubscribe().then(function () { return wcall({ op: 'push', sub: j, off: true }); }); }).then(function () { toast('Notifications off on this device'); });
+}
+function addEmail() {
+  if (DEMO) return toast('Not in the demo.');
+  openSheet('<div class="form" style="position:relative">' + X + '<h2 style="font:400 34px/1.1 var(--serif);color:var(--fg)">Your <i>email</i></h2><p class="ov" style="margin-top:0">A code goes to it, to check it’s yours.</p>' +
+    '<input type="text" id="em" inputmode="email" autocomplete="email" placeholder="Your email address" value="' + esc((PROF.g && PROF.g.email) || '') + '"><div class="acts"><button class="pill go" id="emgo">Send a code</button></div></div>');
+  $('#emgo').onclick = function () {
+    var addr = $('#em').value.trim();
+    wcall({ op: 'email', step: 'begin', email: addr }).then(function (j) {
+      openSheet('<div class="form" style="position:relative">' + X + '<h2 style="font:400 34px/1.1 var(--serif);color:var(--fg)">The <i>code</i></h2><p class="ov" style="margin-top:0">Sent to ' + esc(addr) + '. Type it within ' + (j.minutes || 10) + ' minutes.</p>' +
+        '<input type="text" id="emc" inputmode="numeric" autocomplete="one-time-code" placeholder="6 numbers"><div class="acts"><button class="pill go" id="emok">Add it</button></div></div>');
+      $('#emok').onclick = function () { wcall({ op: 'email', step: 'confirm', code: $('#emc').value }).then(function (g) { PROF.g = g; PROF.tab = 'account'; toast('Email added'); profile(); }).catch(oops); };
+    }).catch(oops);
+  };
 }
 function share(title, url) {
   if (navigator.share) navigator.share({ title: title, url: url }).catch(function () {});
