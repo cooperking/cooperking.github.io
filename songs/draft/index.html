@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="1d2ce842494b">
+<meta name="sotd-build" content="3013c8f5dfab">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -7844,7 +7844,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   document.addEventListener('visibilitychange', function () {
     clearTimeout(LIGHT.t);
-    if (document.hidden) LIGHT.t = setTimeout(lighten, 20e3);   // (not for a moment away)
+    if (document.hidden) LIGHT.t = setTimeout(lighten, 300);   // (at once: the iPhone stops the page within seconds of it going, so a later timer never ran in time: John, 7 Nov 2026)
   });
   function busyNow() { return (!!playing && !audio.paused) || (!!vplay && vplay.on) || (typeof SPX !== 'undefined' && !!coverObj && coverObj.sp && SPX.playing); }   // (Spotify playing for it, on a speaker say: not reloaded under it, so it keeps following: John, 3 Nov 2026)
   // (5 Nov 2026, John: "a blank screen. It gets in the way when doing things"): a newer page is looked for as the app goes
