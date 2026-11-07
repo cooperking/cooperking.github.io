@@ -1721,6 +1721,25 @@ async function members(request, url, env) {
       if (uplSrc(rec) === 'sp') await uplRead(env, body.id, rec, U);   // (a saved playlist's follows it; an Exportify one is its owner's uploads)
       return answer(200, { upls: await uplAdminFull(env, all, await uplAll(env)) });
     }
+    case 'songdel': {   // a member song off every playlist and calendar it's on, its days left empty (pids: only those), from the Songs tab (John, 7 Nov 2026: "I should be able to delete any song")
+      const t = String(body.track || ''), only = Array.isArray(body.pids) ? body.pids.map(String) : null, U = await uplAll(env);
+      if (!ID_RE.test(t)) return answer(400, { error: 'Which song?' });
+      let n = 0;
+      for (const [pid, rec] of Object.entries(U)) {
+        if (only && !only.includes(pid)) continue;
+        const data = await uplSongs(env, pid), xs = (data.songs || []).filter(y => y.id === t && !uplGone(data, y));
+        if (!xs.length) continue;
+        data.del = data.del || {}; xs.forEach(x => { data.del[x.id] = x.a; });
+        if (data.order) data.order = data.order.filter(k => k !== t);
+        await uplFilesGone(env, pid, data, [t]);
+        await env.SOTD.put('upl:' + pid, JSON.stringify(data));
+        rec.cnt = (data.songs || []).filter(y => !uplGone(data, y)).length; n++;
+      }
+      if (!n) return answer(404, { error: 'It isn’t on any playlist now.' });
+      await uplPut(env, U);
+      await startJob(env, null, null, 0, null, true).catch(() => {});   // (their cards, and their YouTube copies)
+      return answer(200, { ok: true, n });
+    }
     case 'uplremove': {
       const U = await uplAll(env);
       if (!U[body.id]) return answer(404, { error: 'No such playlist.' });

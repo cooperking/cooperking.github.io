@@ -559,7 +559,7 @@ a.srchpill { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--li
   }
   function fileSection(s, theirs) {   // (theirs: a song on members' playlists: no covers, which are for John's days)
     var sec = el('div', 'sec'), e = CAT[s.id] || {};
-    var kk = el('div', 'kicker'); kk.appendChild(el('span', null, 'Members only: your own')); sec.appendChild(kk);
+    var kk = el('div', 'kicker'); kk.appendChild(el('span', null, s.m ? 'Files (✕ deletes one; the download job fetches it again)' : 'Members only: your own')); sec.appendChild(kk);
     if (!media) { sec.appendChild(el('p', 'stat', 'The Worker has no storage for files yet.')); return sec; }
     var row = el('div', 'files');
     row.appendChild(fileBtn(e.a ? 'Song · ' + mb(e.a) : 'Add song (MP3)', !!e.a, function () { pick(s, 'a'); }, e.a && function () { drop(s, 'a'); }));
@@ -675,6 +675,23 @@ a.srchpill { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--li
       var undo = el('button', 'btn', 'Discard changes'); undo.type = 'button';
       undo.addEventListener('click', function () { delete edits[s.id]; saveEdits(); redraw(s); counts(); });
       foot.appendChild(undo);
+    }
+    if (s.m) {   // off every playlist it's on (John, 7 Nov 2026: "I should be able to delete any song")
+      var ds = el('button', 'btn', 'Delete song…'); ds.type = 'button';
+      ds.addEventListener('click', function () {
+        var where = s.cals.map(calSay).join(', ');
+        ask('Delete song', 'Delete “' + s.title + '”?', 'It comes off ' + (s.cals.length > 1 ? 'all ' + s.cals.length + ' playlists it’s on' : 'the playlist it’s on') + ' (' + where + ') for everyone, its day left empty, and its MP3 and MP4 deleted unless it’s saved somewhere else. It stays on Spotify.', 'Delete').then(function (yes) {
+          if (!yes) return;
+          ds.disabled = true; ds.textContent = 'Deleting…';
+          api('/members/admin', { op: 'songdel', track: s.id, pids: s.cals.map(function (c) { return c.pid; }) }).then(function (j) {
+            if (!j.ok) { ds.disabled = false; ds.textContent = 'Delete song…'; toast(j.error || 'Not deleted'); return; }
+            MSONGS = MSONGS.filter(function (x) { return x !== s; });
+            var li0 = list.querySelector('[data-id="' + s.id + '"]'); if (li0) li0.remove();
+            toast('Deleted from ' + j.n + (j.n === 1 ? ' playlist' : ' playlists')); counts();
+          }).catch(function () { ds.disabled = false; ds.textContent = 'Delete song…'; toast('Couldn’t reach the Worker. Nothing was deleted.'); });
+        });
+      });
+      foot.appendChild(ds);
     }
     if (!s.m) foot.appendChild(el('span', 'stat', 'Goes live on the calendar within about 2 minutes.'));
     if (!s.m && isOut(s.id) && st.st !== 'waiting') {   // out already: its facts written again (John, 1 Nov 2026: published before they came, it had none)
