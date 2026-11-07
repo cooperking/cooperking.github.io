@@ -7831,7 +7831,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       if (ownVid && ownVid.getAttribute('src')) { try { ownVid.pause(); ownVid.removeAttribute('src'); ownVid.load(); } catch (e) {} n++; }
       var picks = document.getElementById('picks'); if (picks && picks.children.length) { picks.textContent = ''; n++; }
       if (!uplDlg.open) { var gl = document.getElementById('upll'); if (gl && gl.children.length) { gl.textContent = ''; n++; } }
-      ART = { fonts: ART.fonts };   // (the drawn pictures stay kept on the device, not in memory)
+      var A2 = { fonts: ART.fonts }; Object.keys(ART).forEach(function (k) { if (/^blob:/.test(ART[k])) A2[k] = ART[k]; }); ART = A2;   // (the drawn pictures stay kept on the device: those read from there stay linked, the rest let go)
     } catch (e) {}
     if (n && typeof spLog === 'function') spLog('away: ' + n + ' heavy things let go, to stay small in the background');
   }
@@ -9259,21 +9259,29 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   // a canvas let go at once: the iPhone keeps each one's memory till it's cleared, and clears the page when there's too
   // much (John, 7 Nov 2026: "Still getting blackout reloads on iPhone a lot")
-  function artKeep(key, url) {   // a drawn cover kept on the device: eight at most (each is about 40 KB, and the device's storage is small)
-    try {
-      var ks = []; for (var i = 0; i < localStorage.length; i++) { var x = localStorage.key(i); if (/^sotd-(art|mos)\d+:/.test(x)) ks.push(x); }
-      if (ks.length >= 8) ks.slice(0, ks.length - 7).forEach(function (x) { localStorage.removeItem(x); });
-      localStorage.setItem(key, url);
-    } catch (e) {}
+  // drawn covers kept in the browser's picture cache (sotd-art), not its small storage for settings and songs (John, 7 Nov
+  // 2026: "We can keep more in storage should we need to - no need for things to fill up unnecessarily"): read in once
+  // as the page starts, each as a link to its kept picture
+  var ARTC = 'sotd-art', ARTRE = /^sotd-(art|mos)\d+:/, ARTNOW = /^sotd-(art7|mos9):/;
+  function artKeep(key, url) {
+    if (!window.caches || !/^data:/.test(url)) return;
+    fetch(url).then(function (r) { return r.blob(); }).then(function (b) { return caches.open(ARTC).then(function (c) { return c.put(new Request('/art/' + encodeURIComponent(key)), new Response(b, { headers: { 'Content-Type': 'image/jpeg' } })); }).then(function () { if (ART[key] === url) ART[key] = URL.createObjectURL(b); }); }).catch(function () {});
   }
   function canvasFree(c) { try { c.width = c.height = 0; } catch (e) {} }
-  (function artTidy() {   // drawn covers kept from earlier versions, or for names and covers since changed: let go (the iPhone holds all of them in the page's memory)
-    try {
-      var cur = [], old = [];
-      for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (/^sotd-(art|mos)\d+:/.test(k)) (/^sotd-(art7|mos9):/.test(k) ? cur : old).push(k); }
-      old.forEach(function (k) { localStorage.removeItem(k); });
-      if (cur.length > 8) cur.slice(0, cur.length - 8).forEach(function (k) { localStorage.removeItem(k); });
-    } catch (e) {}
+  var ARTREADY = (function artLoad() {   // the kept ones read in (and any from before, in the small storage, moved across and let go there)
+    var old = [];
+    try { for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (ARTRE.test(k)) old.push(k); } } catch (e) {}
+    old.forEach(function (k) { try { var v = localStorage.getItem(k); localStorage.removeItem(k); if (ARTNOW.test(k) && v) artKeep(k, v); } catch (e) {} });
+    if (!window.caches) return Promise.resolve();
+    return caches.open(ARTC).then(function (c) {
+      return c.keys().then(function (reqs) {
+        return Promise.all(reqs.map(function (rq) {
+          var k = decodeURIComponent(new URL(rq.url).pathname.replace(/^\/art\//, ''));
+          if (!ARTNOW.test(k)) return c.delete(rq);   // (an earlier version's)
+          return c.match(rq).then(function (r) { return r && r.blob(); }).then(function (b) { if (b && !ART[k]) ART[k] = URL.createObjectURL(b); });
+        }));
+      });
+    }).catch(function () {});
   })();
   function sleeveWords(g, o, x, y, sz, onPic) {   // its people or owner small, its name big (its last line in italics, as "the Day"), a rule and what it is
     var pad = sz * .13, wide = sz - pad * 2, words = String(o.title || o.n || 'Playlist').split(/\s+/), size = sz * .19, lines, people = o.who && o.who.length > 1 ? o.who : o.o ? [o.o] : [], many = people.length > 2;
@@ -9306,7 +9314,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var key = 'sotd-art7:' + (o.id || '') + '|' + (o.title || o.n || '') + '|' + (o.by || '') + '|' + (o.o || '') + '|' + (o.mode || '') + '|' + (o.who || []).join(',');
     if (o.S) return sleeveArt(o, albumFront(o));   // (a share's, full size: not kept)
     if (ART[key]) return ART[key];
-    try { var kept = localStorage.getItem(key); if (kept) return (ART[key] = kept); } catch (e) {}   // (drawn once, kept on this device: John, 7 Nov 2026, "It shouldn't draw every time. Just once")
+    // (drawn once, kept on this device: John, 7 Nov 2026, "It shouldn't draw every time. Just once")
     if (!o.now) return '';   // (not drawn yet: drawn just after the picker opens, then kept)
     ART[key] = sleeveArt(o, albumFront(o));
     if (ART.fonts) artKeep(key, ART[key]);   // (kept once its fonts are in)
@@ -9321,7 +9329,6 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   function albumMosaic(o, urls, done) {   // all its covers small on the sleeve, its name and people over them
     var key = 'sotd-mos9:' + o.id + '|' + (o.title || o.n) + '|' + (o.by || '') + '|' + (o.who || []).join(',') + '|' + urls.length + '|' + (urls[0] || '') + (o.S ? '|' + o.S : '');
     if (ART[key]) return ART[key];
-    if (!o.S) try { var kept = localStorage.getItem(key); if (kept) return (ART[key] = kept); } catch (e) {}
     if (!o.now || MOSING[key] || !urls.length) return '';   // (only a few covers: each used again till the sleeve is full: John, 7 Nov 2026)
     MOSING[key] = 1;
     var k = urls.length >= 36 ? 6 : urls.length >= 25 ? 5 : urls.length >= 16 ? 4 : urls.length >= 9 ? 3 : 2, use = urls.slice(0, k * k), got = 0, imgs = [];
@@ -9352,7 +9359,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   var ARTUP = {};
   function artSend(p, sig, art) {   // its owner's drawing, kept on the site for all their devices and everyone who sees it
-    if (!(p.mine || p.boss) || !art || !ART.fonts || ARTUP[sig] || (st0(p) === 'mos' && !CARDS[p.id]) || TV) return;   // (only once its fonts are in: never kept for everyone in a stand-in font)
+    if (!(p.mine || p.boss) || !/^data:/.test(art || '') || !ART.fonts || ARTUP[sig] || (st0(p) === 'mos' && !CARDS[p.id]) || TV) return;   // (only once its fonts are in: never kept for everyone in a stand-in font)
     ARTUP[sig] = 1;
     upledPost('uplpic?id=' + encodeURIComponent(p.id) + '&op=art', { art: art, k: sig }).then(function (j) { if (j.status === 200 && j.pls) { MEMBER.pls = j.pls; } }).catch(function () { delete ARTUP[sig]; });
   }
@@ -9411,7 +9418,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     rows.forEach(function (r) { try { grid.appendChild(calCard(r)); } catch (e) { if (typeof spLog === 'function') spLog('a calendar’s card couldn’t be drawn: ' + ((e && e.message) || e)); } });
     openLayer(uplDlg);
     var todo = [].slice.call(grid.children);   // (album-style pictures not drawn yet: drawn now, one at a time, then kept on this device)
-    (function next() { var el = todo.shift(); if (!el) return; setTimeout(function () { calPics.now = true; try { if (el._fill) el._fill(); } catch (e) {} calPics.now = false; next(); }, 30); })();
+    ARTREADY.then(function next() { var el = todo.shift(); if (!el) return; setTimeout(function () { calPics.now = true; try { if (el._fill) el._fill(); } catch (e) {} calPics.now = false; next(); }, 30); });   // (once the kept ones are read in: never drawn again)
     if (plTok() || UPL.on) uplCall(null, '?cards=1').then(function (j) {
       if (j.status !== 200 || !j.cards) return;
       CARDS = j.cards; [].forEach.call(grid.children, function (el) { if (el._fill) el._fill(); if (el._acts) el._acts(); });

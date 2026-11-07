@@ -5,7 +5,7 @@
 //   sotd-songs   members' downloaded songs, put there by the page at <folder>__offline/<track>.mp3; served from here,
 //                in ranges as phones ask for them (an iPhone won't play a song otherwise)
 const SHELL = 'sotd-shell-v1', COVERS = 'sotd-covers-v1', SONGS = 'sotd-songs', BADGE = 'sotd-badge';
-const KEEP = [SHELL, COVERS, SONGS, BADGE];
+const KEEP = [SHELL, COVERS, SONGS, BADGE, 'sotd-art', 'sotd-shared'];   // (sotd-art: the page's drawn playlist covers)
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(SHELL).then(c => c.add(new Request(self.registration.scope, { cache: 'reload' }))).catch(() => {}).then(() => self.skipWaiting()));
