@@ -62,7 +62,7 @@ public class MainActivity extends Activity {
     static final String TAG = "GRIFFLIX";
     static final String UPDATE_INFO = "https://cooperking.github.io/grifflix/tv.json";
     static final String UPDATE_APK = "https://cooperking.github.io/grifflix/tv.apk";
-    static final int GROUND = Color.rgb(0x12, 0x09, 0x14);
+    static final int GROUND = Color.BLACK;   // (black behind the page as it loads, as John asked for the Fire TV)
 
     WebView web;
     FrameLayout root;
@@ -133,7 +133,7 @@ public class MainActivity extends Activity {
                 String back = req.getUrl().toString().replace("'", "%27");
                 view.loadDataWithBaseURL(null,
                     "<html><body style=\"margin:0;height:100vh;display:flex;align-items:center;justify-content:center;"
-                    + "background:#120914;color:#fffaf5;font:24px Georgia,serif;text-align:center\"><div>Can't reach Grifflix just now."
+                    + "background:#000;color:#fffaf5;font:24px Georgia,serif;text-align:center\"><div>Can't reach Grifflix just now."
                     + "<br><br><button autofocus style=\"font:18px sans-serif;padding:12px 28px;border-radius:30px;border:0\" "
                     + "onclick=\"location.href='" + back + "'\">Try again</button></div></body></html>",
                     "text/html", "utf-8", null);
