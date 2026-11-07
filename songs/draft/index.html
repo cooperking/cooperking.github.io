@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="6c005cae4b46">
+<meta name="sotd-build" content="9f5231c8ce28">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -7150,6 +7150,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // each song's day is its UK added date, or the day before the next song's day if that is earlier.
   function londonDay(iso) {
     var o = {};
+    if (iso === undefined || iso === null || iso === '' || isNaN(new Date(iso).getTime())) return '';   // (no date, or a bad one: none, rather than the whole calendar failing to open)
     new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit' })
       .formatToParts(new Date(iso)).forEach(function (x) { o[x.type] = x.value; });
     return o.year + '-' + o.month + '-' + o.day;
@@ -9144,7 +9145,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       if (req !== UPLREQ || (opts.quiet && UPL.linked)) return false;
       if (j.status !== 200) { if (opts.quiet) { calWaitOff(); try { localStorage.removeItem('sotd-cal'); } catch (e) {} } else toast(j.error || 'Couldn’t open that calendar'); return false; }   // (quiet: the one this device was on, gone or no longer shared with them)
       var r = uplApply(j, opts); calWaitOff(); return r;
-    }).catch(function () { calWaitOff(); toast('Couldn’t reach the site. Try again.'); return false; });
+    }).catch(function (e) { calWaitOff(); if (typeof spLog === 'function') spLog('calendar didn’t open: ' + ((e && e.message) || e)); toast(/fetch|network|load failed/i.test((e && e.message) || '') ? 'Couldn’t reach the site. Try again.' : 'That calendar couldn’t open: ' + ((e && e.message) || 'something went wrong')); return false; });
   }
   function uplBack(quiet) {   // John's calendar again
     calKeep('john'); calWaitOff();
