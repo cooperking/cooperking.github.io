@@ -65,32 +65,79 @@ def files_of(item_ids):
 
 
 def smart(extra):
-    """A smart collection's films' files, and any part of its rule this couldn't follow."""
+    """A smart collection's films' files, Plex's own count, and any part of its rule this couldn't follow.
+    Plex's advanced rules come in order: push=1 opens a group, or=1 / and=1 says how its parts combine, pop=1 closes
+    it (Cassavetes: push, director=…, or, title==A Constant Forge, pop). key! is "not"; title=x contains, title==x is."""
     try:
-        uri = json.loads(extra).get('pv:uri') or ''
+        d = json.loads(extra)
     except ValueError:
-        return None, []
+        return None, [], None
+    uri, plex_n = d.get('pv:uri') or '', d.get('at:childCount')
     if '?' not in uri:
-        return None, []
+        return None, [], plex_n
     q = urllib.parse.parse_qsl(uri.split('?', 1)[1], keep_blank_values=True)
-    want_type = next((int(v) for k, v in q if k == 'type' and v.isdigit()), 1)
-    chosen, skipped = None, []
-    for k, v in q:
-        key = k.rstrip('!=<>')
-        if key in SKIP_KEYS:
-            continue
-        if key in TAG_KEYS and not k.endswith('!') and all(x.strip().isdigit() for x in v.split(',') if x.strip()):
+    t = next((int(v) for k, v in q if k == 'type' and v.isdigit()), 1)
+    every = set(r[0] for r in db.execute('select id from metadata_items where metadata_type=?', (t,)))
+    cols_of = set(r[1] for r in db.execute('pragma table_info(metadata_items)'))
+    skipped = []
+
+    def leaf(k, v):
+        neg = k.endswith('!')
+        key = k.rstrip('!')
+        got = None
+        if key in TAG_KEYS and all(x.strip().isdigit() for x in v.split(',') if x.strip()):
             ids = [int(x) for x in v.split(',') if x.strip()]
-            got = set(r[0] for r in db.execute('select g.metadata_item_id from taggings g join metadata_items mi on mi.id=g.metadata_item_id where mi.metadata_type=? and g.tag_id in (%s)' % ','.join('?' * len(ids)), [want_type] + ids))
-            chosen = got if chosen is None else chosen & got
-        elif key == 'year' and v.isdigit():
-            got = set(r[0] for r in db.execute('select id from metadata_items where metadata_type=? and year %s ?' % ('>=' if k.endswith('>>') else '<=' if k.endswith('<<') else '='), (want_type, int(v))))
-            chosen = got if chosen is None else chosen & got
+            got = set(r[0] for r in db.execute('select metadata_item_id from taggings where tag_id in (%s)' % ','.join('?' * len(ids)), ids)) & every
+        elif key == 'title':
+            exact = v.startswith('=')
+            v2 = v[1:] if exact else v
+            got = set(r[0] for r in db.execute('select id from metadata_items where metadata_type=? and ' + ('lower(title)=lower(?)' if exact else "lower(title) like '%'||lower(?)||'%'"), (t, v2)))
+        elif key == 'contentRating' and 'content_rating' in cols_of:
+            vals = [x for x in v.split(',') if x]
+            got = set(r[0] for r in db.execute('select id from metadata_items where metadata_type=? and content_rating in (%s)' % ','.join('?' * len(vals)), [t] + vals))
+        elif key.rstrip('<>') == 'year' and v.isdigit():
+            op = '>=' if key.endswith('>>') else '<=' if key.endswith('<<') else '='
+            got = set(r[0] for r in db.execute('select id from metadata_items where metadata_type=? and year %s ?' % op, (t, int(v))))
+        if got is None:
+            return None
+        return every - got if neg else got
+
+    def combine(g):
+        if not g['sets']:
+            return None
+        out = set(g['sets'][0])
+        for x in g['sets'][1:]:
+            out = out | x if g['op'] == 'or' else out & x
+        return out
+
+    stack = [{'op': 'and', 'sets': []}]
+    for k, v in q:
+        if k in SKIP_KEYS:
+            continue
+        if k == 'push':
+            stack.append({'op': 'and', 'sets': []})
+        elif k == 'pop' and len(stack) > 1:
+            g = combine(stack.pop())
+            if g is not None:
+                stack[-1]['sets'].append(g)
+        elif k in ('or', 'and'):
+            stack[-1]['op'] = k
         else:
-            skipped.append('%s=%s' % (k, v))
+            if '=' in k and not v:   # (title==x arrives whole as the name when its = signs were encoded)
+                k, v = k.split('=', 1)
+            x = leaf(k, v)
+            if x is None:
+                skipped.append('%s=%s' % (k, v))
+            else:
+                stack[-1]['sets'].append(x)
+    while len(stack) > 1:
+        g = combine(stack.pop())
+        if g is not None:
+            stack[-1]['sets'].append(g)
+    chosen = combine(stack[0])
     if chosen is None:
-        return None, skipped
-    return files_of(sorted(chosen)), skipped
+        return None, skipped, plex_n
+    return files_of(sorted(chosen)), skipped, plex_n
 
 
 def poster(h, url):
@@ -140,9 +187,9 @@ have = {it['Name']: it for it in (call('GET', '/Users/%s/Items' % s['jf_user_id'
 made = added = pics = 0
 lost = []
 for cid, title, h, thumb, summary, extra in cols:
-    files, skipped = members.get(title, []), []
+    files, skipped, plex_n = members.get(title, []), [], None
     if not files and '"at:smart":"1"' in extra.replace(' ', ''):
-        files, skipped = smart(extra)
+        files, skipped, plex_n = smart(extra)
         files = files or []
     ids = []
     for f in files:
@@ -153,7 +200,7 @@ for cid, title, h, thumb, summary, extra in cols:
             lost.append((title, os.path.basename(f)))
     pic = poster(h, thumb)
     old = have.get(title)
-    print('%-52s %3d of %3d found%s%s%s%s' % (title[:52], len(ids), len(files), ', poster' if pic else '', ', smart' if '"at:smart":"1"' in extra.replace(' ', '') else '',
+    print('%-52s %3d of %3d found%s%s%s%s' % (title[:52], len(ids), len(files), ', poster' if pic else '', (', smart (Plex had %s)' % plex_n) if '"at:smart":"1"' in extra.replace(' ', '') else '',
           ' (already in Jellyfin)' if old else '', (' NOT FOLLOWED: ' + '; '.join(skipped)) if skipped else ''))
     if not GO or not ids:
         continue
