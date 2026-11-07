@@ -11,13 +11,14 @@ Plex keeps a collection as a metadata item (type 18: its name, summary and poste
 with the collection's name (checked on John's Plex, 7 Nov 2026). Films are found in Jellyfin by their file, at its
 new place if the tidy-up moved it (by its name).
 """
-import base64, json, os, shutil, sqlite3, sys, tempfile, unicodedata, urllib.parse, urllib.request
+import base64, json, os, shutil, sqlite3, sys, tempfile, time, unicodedata, urllib.parse, urllib.request
 
 
 def nf(x):   # accents written either way (macOS's file names often split them: é as e + ´) compare the same
     return unicodedata.normalize('NFC', x or '')
 
 GO = len(sys.argv) > 1 and sys.argv[1] == 'go'
+CHUNK = int(os.environ.get("GRIFFLIX_CHUNK") or 50)
 APP = os.environ.get('GRIFFLIX_DIR') or os.path.expanduser('~/Library/Application Support/Grifflix')
 PLEX = os.environ.get('PLEX_DIR') or os.path.expanduser('~/Library/Application Support/Plex Media Server')
 s = json.load(open(os.path.join(APP, 'settings.json')))
@@ -218,13 +219,25 @@ for cid, title, h, thumb, summary, extra in cols:
           ' (already in Jellyfin)' if old else '', (' NOT FOLLOWED: ' + '; '.join(skipped)) if skipped else ''))
     if not GO or not ids:
         continue
+    batches = [ids[i:i + CHUNK] for i in range(0, len(ids), CHUNK)]   # (50 at a time: Criterion USA's 502 in one go was too long an address)
     if old:
         bid = old['Id']
-        call('POST', '/Collections/%s/Items' % bid, b'', Ids=','.join(ids))
         added += 1
     else:
-        bid = call('POST', '/Collections', b'', Name=title, Ids=','.join(ids), IsLocked='true')['Id']
+        bid = call('POST', '/Collections', b'', Name=title, Ids=','.join(batches.pop(0)), IsLocked='true')['Id']
         made += 1
+    for chunk in batches:
+        call('POST', '/Collections/%s/Items' % bid, b'', Ids=','.join(chunk))
+    for _ in range(3):   # (Jellyfin can drop one of several adds made in quick succession: what it holds, checked, and any missing added again)
+        time.sleep(1.5)
+        held = set(i['Id'] for i in call('GET', '/Users/%s/Items' % s['jf_user_id'], ParentId=bid, Fields='').get('Items', []))
+        missing = [i for i in ids if i not in held]
+        if not missing:
+            break
+        for i in range(0, len(missing), CHUNK):
+            call('POST', '/Collections/%s/Items' % bid, b'', Ids=','.join(missing[i:i + CHUNK]))
+    else:
+        print('   (%d of its films wouldn’t go in: run it again later)' % len(missing))
     if pic and not (old and (old.get('ImageTags') or {}).get('Primary')):
         ctype = 'image/png' if open(pic, 'rb').read(4) == b'\x89PNG' else 'image/jpeg'
         call('POST', '/Items/%s/Images/Primary' % bid, base64.b64encode(open(pic, 'rb').read()), ctype)
