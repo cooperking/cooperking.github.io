@@ -58,6 +58,20 @@ What the old Mac means:
 A newer Mac later: run `Install.command` there (it takes the current versions), copy `data.json` across, and point
 the tunnel's hostname at it. The page doesn't change.
 
+## Starting Jellyfin afresh
+
+A Jellyfin set up before Grifflix (John's, a test from a couple of years ago: 10.8.13, which runs on High Sierra
+too) needs its login, which the installer asks for. With the login forgotten, put its settings aside and start
+again (nothing is deleted; the films aren't touched):
+
+```
+osascript -e 'quit app "Jellyfin"'; sleep 5
+mv ~/Library/Application\ Support/jellyfin ~/Library/Application\ Support/jellyfin-old-test
+open -g -a Jellyfin
+```
+
+then double-click `Install.command` again: Jellyfin starts as new, and Grifflix sets it up.
+
 ## Setting up the Mac mini
 
 1. Copy the `_grifflix/mac` folder to the Mac mini; double-click `Install.command`. It installs Homebrew (if

@@ -83,7 +83,14 @@ ask_yes "Choose your TV folder? (each series in a folder, with “Season 01” f
 ask_yes "Choose your HOME VIDEOS folder?" && H=$(pick "Your home videos folder") && [ -n "$H" ] && ARGS+=(--home "$H")
 echo "Setting up Jellyfin's libraries…"
 "$PY" "$APP/grifflix-gateway.py" setup "${ARGS[@]}" 2>&1 | tee -a "$APP/setup.log"
-[ ${pipestatus[1]} -eq 0 ] || fail "Setting up Jellyfin didn't work: see $APP/setup.log"
+RC=${pipestatus[1]}
+while [ $RC -eq 3 ] || [ $RC -eq 4 ]; do   # Jellyfin was set up before Grifflix (3), or that login was wrong (4): its own login
+  JU=$(osascript -e 'text returned of (display dialog "Jellyfin was set up on this Mac before. Its username (the one you sign in to Jellyfin with):" default answer "" with title "Grifflix")' 2>/dev/null) || fail "Grifflix needs that Jellyfin login. (Forgotten it? See the read-me: Starting Jellyfin afresh.)"
+  JP=$(osascript -e 'text returned of (display dialog "Its password:" default answer "" with hidden answer with title "Grifflix")' 2>/dev/null) || exit 1
+  JF_PASSWORD="$JP" "$PY" "$APP/grifflix-gateway.py" setup --jf-user "$JU" "${ARGS[@]}" 2>&1 | tee -a "$APP/setup.log"
+  RC=${pipestatus[1]}
+done
+[ $RC -eq 0 ] || fail "Setting up Jellyfin didn't work: see $APP/setup.log"
 
 # The gateway, always running
 cat > "$AGENTS/io.github.cooperking.grifflix-gateway.plist" <<PLIST

@@ -130,24 +130,36 @@ def setup(args):
         jf.call('POST', '/Startup/RemoteAccess', {'EnableRemoteAccess': False, 'EnableAutomaticPortMapping': False})
         jf.call('POST', '/Startup/Complete')
         log('Jellyfin first-run setup done (its own user: grifflix)')
+    if opts.get('--jf-user') and os.environ.get('JF_PASSWORD'):   # a Jellyfin set up before Grifflix: its own login
+        st['jf_user'], st['jf_password'] = opts['--jf-user'], os.environ['JF_PASSWORD']
     if not st.get('jf_password'):
-        sys.exit('Jellyfin was set up before, without Grifflix. Add jf_user and jf_password to %s by hand.' % SETTINGS)
-    a = jf.call('POST', '/Users/AuthenticateByName', {'Username': st.get('jf_user', 'grifflix'), 'Pw': st['jf_password']})
+        log('Jellyfin was set up before Grifflix: run again with --jf-user NAME and JF_PASSWORD set (its login).')
+        sys.exit(3)
+    try:
+        a = jf.call('POST', '/Users/AuthenticateByName', {'Username': st.get('jf_user', 'grifflix'), 'Pw': st['jf_password']})
+    except RuntimeError as e:
+        log('Jellyfin turned that login down:', e)
+        sys.exit(4)
     st['jf_token'], st['jf_user_id'] = a['AccessToken'], a['User']['Id']
     jf.token = st['jf_token']
-    have = {v['Name']: v for v in jf.call('GET', '/Library/VirtualFolders') or []}
+    # Each of Grifflix's three shelves is a Jellyfin library of the right kind: one already there is used (the one
+    # holding the folder chosen, else the first), the folder added to it if it hasn't it; else one is made.
+    lib_ids = dict(st.get('libraries') or {})
     for key, (name, ctype) in LIBS.items():
+        have = [v for v in (jf.call('GET', '/Library/VirtualFolders') or []) if (v.get('CollectionType') or '') == ctype]
         path = opts.get('--' + key)
-        if not path:
-            continue
-        path = os.path.abspath(os.path.expanduser(path))
-        if name in have:
-            if path not in have[name].get('Locations', []):
-                jf.call('POST', '/Library/VirtualFolders/Paths', {'Name': name, 'PathInfo': {'Path': path}}, {'refreshLibrary': 'true'})
-        else:
+        path = os.path.abspath(os.path.expanduser(path)) if path else None
+        lib = next((v for v in have if path and path in (v.get('Locations') or [])), None) \
+            or next((v for v in have if v.get('ItemId') == lib_ids.get(key)), None) or (have[0] if have else None)
+        if lib and path and path not in (lib.get('Locations') or []):
+            jf.call('POST', '/Library/VirtualFolders/Paths', {'Name': lib['Name'], 'PathInfo': {'Path': path}}, {'refreshLibrary': 'true'})
+        if not lib and path:
             jf.call('POST', '/Library/VirtualFolders', {'LibraryOptions': {'EnableRealtimeMonitor': True, 'PathInfos': [{'Path': path}]}},
                     {'name': name, 'collectionType': ctype, 'refreshLibrary': 'true'})
-        log('Library', name, '->', path)
+            lib = next((v for v in (jf.call('GET', '/Library/VirtualFolders') or []) if v['Name'] == name), None)
+        if lib:
+            lib_ids[key] = lib['ItemId']
+            log('Library %s (Jellyfin’s “%s”): %s' % (key, lib['Name'], ', '.join((lib.get('Locations') or []) + ([path] if path and path not in (lib.get('Locations') or []) else []))))
     try:   # the Mac's own video chip for converting (VideoToolbox): Apple silicon, or --hwaccel yes on an Intel Mac that has
         # it (2012 on). The 2010 Mac mini's chip can't, and converting is left to the processor (and mostly avoided).
         import platform
@@ -159,11 +171,6 @@ def setup(args):
             log('Hardware converting on (VideoToolbox)')
     except Exception as e:
         log('Could not set hardware converting:', e)
-    lib_ids = {}
-    for v in jf.call('GET', '/Library/VirtualFolders') or []:
-        for key, (name, _) in LIBS.items():
-            if v['Name'] == name:
-                lib_ids[key] = v['ItemId']
     st['libraries'] = lib_ids
     save(SETTINGS, st)
     log('Saved', SETTINGS)
