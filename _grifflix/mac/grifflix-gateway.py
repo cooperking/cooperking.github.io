@@ -568,7 +568,11 @@ def make_handler(g):
         # collections (John's, from Plex: Jellyfin's BoxSets), for members and visitors alike
         def collections_out(self, public):
             r = g.items(Recursive='true', IncludeItemTypes='BoxSet', SortBy='SortName')
-            return [item_out(i) for i in r.get('Items', []) if not public or g.is_public_set(i['Id'])]
+            sets = r.get('Items', [])
+            # a box set inside another collection (Martha Graham in the Criterion Collection) shows only there, as one
+            # entry, not in the list of collections too (John, 7 Nov 2026)
+            inside = set(i['Id'] for c in sets for i in g.items(ParentId=c['Id'], Fields='', EnableImageTypes='').get('Items', []) if i.get('Type') == 'BoxSet')
+            return [item_out(i) for i in sets if i['Id'] not in inside and (not public or g.is_public_set(i['Id']))]
 
         def collection_out(self, iid, prog, public):
             c = g.one(iid)
