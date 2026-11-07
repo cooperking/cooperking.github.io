@@ -5306,7 +5306,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     [].forEach.call(pm.querySelectorAll('button'), function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-pic') === o.pic ? 'true' : 'false'); });
     [].forEach.call(sm.querySelectorAll('button'), function (b) {
       b.setAttribute('aria-pressed', b.getAttribute('data-mode') === o.mode ? 'true' : 'false');
-      if (b.getAttribute('data-mode') === 'preview') b.textContent = o.song ? 'Song' : 'Preview';
+      if (b.getAttribute('data-mode') === 'preview') b.textContent = o.song || MEMBER ? 'Song' : 'Preview';   // (signed in: Song or Video, everywhere: John, 7 Nov 2026)
     });
     document.getElementById('shtitle').textContent = o.title;
     document.getElementById('shsub').textContent = o.sub;
@@ -9229,7 +9229,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   function rrect(g, x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
   function sleeveArt(o, front) {   // the ground, the record and the sleeve; front(g, x, y, size) draws the sleeve's face
-    var S = 360, c = document.createElement('canvas'); c.width = c.height = S; var g = c.getContext('2d'), P = artPal(o), pal = P.p;
+    var S = o.S || 360, c = document.createElement('canvas'); c.width = c.height = S; var g = c.getContext('2d'), P = artPal(o), pal = P.p;   // (S: 1080 for a share, drawn then and not kept)
     var bg = g.createLinearGradient(0, 0, S, S); bg.addColorStop(0, pal[0]); bg.addColorStop(1, pal[0]); g.fillStyle = bg; g.fillRect(0, 0, S, S);
     blobs(g, 0, 0, S, S, pal.slice(1), P.h % 4);
     var sx = S * .096, sy = S * .21, sz = S * .555, cx = S * .66, cy = sy + sz / 2, R = S * .265;
@@ -9283,22 +9283,24 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   function albumArt(o) {   // the album style: its name and whose it is on the sleeve
     var key = 'sotd-art7:' + (o.id || '') + '|' + (o.title || o.n || '') + '|' + (o.by || '') + '|' + (o.o || '') + '|' + (o.mode || '') + '|' + (o.who || []).join(',');
+    if (o.S) return sleeveArt(o, albumFront(o));   // (a share's, full size: not kept)
     if (ART[key]) return ART[key];
     try { var kept = localStorage.getItem(key); if (kept) return (ART[key] = kept); } catch (e) {}   // (drawn once, kept on this device: John, 7 Nov 2026, "It shouldn't draw every time. Just once")
     if (!o.now) return '';   // (not drawn yet: drawn just after the picker opens, then kept)
-    ART[key] = sleeveArt(o, function (g, x, y, sz, pal, h) {
-      var f = g.createLinearGradient(x, y, x + sz, y + sz); f.addColorStop(0, pal[(h >>> 5) % 4 + 1]); f.addColorStop(1, pal[0]); g.fillStyle = f; g.fillRect(x, y, sz, sz);
-      blobs(g, x, y, sz, sz, pal.slice(1), (h >>> 2) % 4);
-      sleeveWords(g, o, x, y, sz, false);
-    });
+    ART[key] = sleeveArt(o, albumFront(o));
     if (ART.fonts) try { localStorage.setItem(key, ART[key]); } catch (e) {}   // (kept once its fonts are in)
     return ART[key];
   }
+  function albumFront(o) { return function (g, x, y, sz, pal, h) {
+    var f = g.createLinearGradient(x, y, x + sz, y + sz); f.addColorStop(0, pal[(h >>> 5) % 4 + 1]); f.addColorStop(1, pal[0]); g.fillStyle = f; g.fillRect(x, y, sz, sz);
+    blobs(g, x, y, sz, sz, pal.slice(1), (h >>> 2) % 4);
+    sleeveWords(g, o, x, y, sz, false);
+  }; }
   var MOSING = {};
   function albumMosaic(o, urls, done) {   // all its covers small on the sleeve, its name and people over them
-    var key = 'sotd-mos9:' + o.id + '|' + (o.title || o.n) + '|' + (o.by || '') + '|' + (o.who || []).join(',') + '|' + urls.length + '|' + (urls[0] || '');
+    var key = 'sotd-mos9:' + o.id + '|' + (o.title || o.n) + '|' + (o.by || '') + '|' + (o.who || []).join(',') + '|' + urls.length + '|' + (urls[0] || '') + (o.S ? '|' + o.S : '');
     if (ART[key]) return ART[key];
-    try { var kept = localStorage.getItem(key); if (kept) return (ART[key] = kept); } catch (e) {}
+    if (!o.S) try { var kept = localStorage.getItem(key); if (kept) return (ART[key] = kept); } catch (e) {}
     if (!o.now || MOSING[key] || !urls.length) return '';   // (only a few covers: each used again till the sleeve is full: John, 7 Nov 2026)
     MOSING[key] = 1;
     var k = urls.length >= 36 ? 6 : urls.length >= 25 ? 5 : urls.length >= 16 ? 4 : urls.length >= 9 ? 3 : 2, use = urls.slice(0, k * k), got = 0, imgs = [];
@@ -9316,10 +9318,11 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
           var sh = g.createLinearGradient(0, y, 0, y + sz); sh.addColorStop(0, 'rgba(10,6,14,.72)'); sh.addColorStop(.55, 'rgba(10,6,14,.45)'); sh.addColorStop(1, 'rgba(10,6,14,.78)'); g.fillStyle = sh; g.fillRect(x, y, sz, sz);
           sleeveWords(g, o, x, y, sz, true);
         });
-        try { localStorage.setItem(key, ART[key]); } catch (e) {}
+        if (!o.S) try { localStorage.setItem(key, ART[key]); } catch (e) {}
       } catch (e) { if (typeof spLog === 'function') spLog('all-covers picture couldn’t be drawn: ' + ((e && e.message) || e)); ART[key] = ''; }
       imgs.forEach(function (im) { if (im) { im.onload = im.onerror = null; im.src = ''; } }); imgs = [];   // (its covers let go once drawn)
-      delete MOSING[key]; if (done && ART[key]) done();
+      delete MOSING[key]; var got1 = ART[key]; if (o.S) delete ART[key];   // (a share's: not kept)
+      if (done && got1) done(got1);
     }
     return '';
   }
@@ -9981,17 +9984,44 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var o = { lines: [cn.name].concat(cn.cap ? [cn.cap] : [], [what]), title: cn.name, sub: (cn.cap ? cn.cap + ' · ' : '') + what, mode: mode, modes: true };
     o.urlFor = function (md) { return uplLinkFor(v, 'u=' + v.id, '', md); };
     o.url = o.urlFor(mode);
-    var pic = ''; try { calPics.now = true; pic = (calPics(cn.p.id ? cn.p : Object.assign({ id: v.id, n: v.n, mode: v.mode, o: v.o }, cn.p), ((CARDS[v.id] || {}).cv) || []) || [])[0] || ''; } catch (e) {} calPics.now = false;
-    o.image = pic || (v.sh === 'public' ? SITE + 'u/' + v.id + '/card.jpg' : (last && last.u) || ''); o.imageAlt = (last && last.u) || '';   // (its own picture, as the calendar shows it)
+    o.image = (v.sh === 'public' ? SITE + 'u/' + v.id + '/card.jpg' : (last && last.u) || ''); o.imageAlt = (last && last.u) || '';
+    sharePic(cn.p.id ? cn.p : Object.assign({ id: v.id, n: v.n, mode: v.mode, o: v.o }, cn.p), function (u) { if (u && shareNow === o) { o.image = u; drawShare(); } });   // (its own picture, as the calendar shows it, full size)
     uplShareSend(o, v);
     if (o.note) o.sub += ' · ' + o.note;
     openShare(o);
   }
+  function sharePic(p, set) {   // a calendar's own picture, full size, for a share (John, 7 Nov 2026: "The picture shared is low quality, and not the correct picture")
+    var go = function () {
+      try {
+        var st = picStyle(p), card = CARDS[p.id] || {}, o = { id: p.id, n: p.n, title: p.cvt || '', by: p.cvb || '', o: p.mine ? (MEMBER && MEMBER.name) || '' : p.o, mode: p.mode, now: true, who: card.who, S: 1080 };
+        if (st === 'photo') { set(p.pic); return; }
+        if (st === 'cov') { coversPic((card.cv || []).slice(0, 4), set); return; }
+        if (st === 'mos' && (card.all || []).length) { var a1 = albumMosaic(o, card.all, set); if (a1) set(a1); return; }
+        set(albumArt(o));
+      } catch (e) { if (typeof spLog === 'function') spLog('share picture: ' + ((e && e.message) || e)); }
+    };
+    if (CARDS[p.id]) go();
+    else uplCall(null, '?cards=1').then(function (j) { if (j.status === 200 && j.cards) CARDS = j.cards; go(); }).catch(go);   // (its covers and people first, so it's its own picture)
+  }
+  function coversPic(urls, set) {   // its newest covers, as the picker shows them: four in a square (one alone, if that's all)
+    if (!urls.length) return;
+    var use = urls.length >= 4 ? urls.slice(0, 4) : urls.slice(0, 1), imgs = [], got = 0;
+    use.forEach(function (u, i) { var im = new Image(); im.crossOrigin = 'anonymous'; im.onload = im.onerror = function () { imgs[i] = im.naturalWidth ? im : null; if (++got === use.length) draw(); }; im.src = u; });
+    function draw() {
+      try {
+        var S = 1080, c = document.createElement('canvas'); c.width = c.height = S; var g = c.getContext('2d'), k = use.length === 4 ? 2 : 1, cell = S / k;
+        g.fillStyle = '#1b1020'; g.fillRect(0, 0, S, S);
+        imgs.forEach(function (im, i) { if (im) g.drawImage(im, (i % k) * cell, Math.floor(i / k) * cell, cell, cell); });
+        var u = c.toDataURL('image/jpeg', .9); canvasFree(c); set(u);
+      } catch (e) {}
+      imgs.forEach(function (im) { if (im) im.src = ''; }); imgs = [];
+    }
+  }
   function shareMonthArt(o, id, cn, label, list) {   // a month shared: its songs' covers small, the month and the calendar's name over them
     var urls = list.slice().reverse().map(function (x) { return x.u || x.img; }).filter(Boolean);
     if (!urls.length) return;
-    var a = { id: 'mo-' + id, n: label, title: label, by: cn.name, o: '', who: [], mode: 'list', now: true };
-    var got = albumMosaic(a, urls, function () { var u2 = albumMosaic(a, urls); if (u2 && shareNow === o) { o.image = u2; drawShare(); } });
+    var a = { id: 'mo-' + id, n: label, title: label, by: cn.name, o: '', who: [], mode: 'list', now: true, S: 1080 };
+    var got = albumMosaic(a, urls, function (u2) { if (u2 && shareNow === o) { o.image = u2; drawShare(); } });
     if (got) o.image = got;
   }
   // ---- one of their own Spotify playlists in the My playlist pop-up, as a saved playlist is (from its badge there, or
