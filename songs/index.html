@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="sotd-build" content="807f6467f819">
+<meta name="sotd-build" content="de65670bf214">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 271 so far">
 <meta name="theme-color" content="#ec135b">
@@ -6829,7 +6829,12 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     mine.scrollTop = 0;
   });
   document.getElementById('mineclose').addEventListener('click', function () { closeDialog(mine); });
-  mine.addEventListener('close', function () { if (MUPL.id) { mineUplExit(); setTitles(); } });
+  mine.addEventListener('close', function () {
+    if (MUPL.id) { mineUplExit(); setTitles(); }
+    // the corner is always the hearts, to play (John, 7 Nov 2026: "you hearts should alway be there in the corner to play"):
+    // a saved playlist opened here is put away again as the pop-up closes (its changes saved first; one playing plays on)
+    if (PL.cur) { if (PL.t) { clearTimeout(PL.t); PL.t = 0; plSend(); } plOpen(null, true); }
+  });
   mine.addEventListener('click', function (e) { if (e.target === mine) closeDialog(mine); });
 
   render();
