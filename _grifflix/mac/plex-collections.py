@@ -11,7 +11,11 @@ Plex keeps a collection as a metadata item (type 18: its name, summary and poste
 with the collection's name (checked on John's Plex, 7 Nov 2026). Films are found in Jellyfin by their file, at its
 new place if the tidy-up moved it (by its name).
 """
-import base64, json, os, shutil, sqlite3, sys, tempfile, urllib.parse, urllib.request
+import base64, json, os, shutil, sqlite3, sys, tempfile, unicodedata, urllib.parse, urllib.request
+
+
+def nf(x):   # accents written either way (macOS's file names often split them: é as e + ´) compare the same
+    return unicodedata.normalize('NFC', x or '')
 
 GO = len(sys.argv) > 1 and sys.argv[1] == 'go'
 APP = os.environ.get('GRIFFLIX_DIR') or os.path.expanduser('~/Library/Application Support/Grifflix')
@@ -142,7 +146,7 @@ def smart(extra):
     return files_of(sorted(chosen)), skipped, plex_n
 
 
-PLEX_TY = {f: (t, y) for f, t, y in db.execute('''select mp.file, mi.title, mi.year from metadata_items mi
+PLEX_TY = {nf(f): (nf(t), y) for f, t, y in db.execute('''select mp.file, mi.title, mi.year from metadata_items mi
         join media_items m on m.metadata_item_id=mi.id join media_parts mp on mp.media_item_id=m.id where mi.metadata_type in (1, 4)''')}
 
 
@@ -164,13 +168,13 @@ for lib, typ in (('movies', 'Movie'), ('tv', 'Series')):
     if not lid:
         continue
     for it in call('GET', '/Users/%s/Items' % s['jf_user_id'], ParentId=lid, Recursive='true', IncludeItemTypes=typ, Fields='Path,ProductionYear').get('Items', []):
-        p = it.get('Path') or ''
+        p = nf(it.get('Path'))
         if typ == 'Movie':
-            by_title.setdefault(((it.get('Name') or '').lower(), it.get('ProductionYear')), it['Id'])
+            by_title.setdefault((nf(it.get('Name')).lower(), it.get('ProductionYear')), it['Id'])
         by_path[p] = it['Id']
         by_name.setdefault(os.path.basename(p), it['Id'])
         if typ == 'Series':
-            by_dir[os.path.basename(p.rstrip('/'))] = it['Id']   # (a series by its folder's name)
+            by_dir[nf(os.path.basename(p.rstrip('/')))] = it['Id']   # (a series by its folder's name)
 base = None
 for p in by_path:
     for root in ('/Volumes/G-Drive/Grifflix/', '/Volumes/G-Drive/plex/'):
@@ -181,6 +185,7 @@ for p in by_path:
 
 
 def find(f):
+    f = nf(f)
     now = f.replace('/Volumes/G-Drive/plex/', base or '/Volumes/G-Drive/Grifflix/')
     if now in by_path:
         return by_path[now]
