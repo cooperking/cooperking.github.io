@@ -4,11 +4,11 @@
 favourites - and the best rated from the other collections, plenty of oscar winners ... All should be a feature film,
 in English").
 
-  * every one of Dad's favourites
+  * every one of Dad's favourites, whatever its language or length (the one exception to the rules below)
   * plenty of Oscar winners (from collections named for the Oscars / Academy Awards): about two in five days
   * the rest: the best rated in the other collections (its rating, and the critics' where there is one)
   * feature films only: 70 minutes or more, never a film from inside a box set (those are short films)
-  * in English: the film's sound marked English, or unmarked and made in an English-speaking country
+  * in English (all but Dad's favourites): the film's sound marked English, or unmarked and made in an English-speaking country
   * each film once; Christmas films around Christmas; a day already chosen is kept as it is
 
   python3 motd-fill.py        the list, day by day (nothing changes): ~/Grifflix/motd-plan.csv
@@ -112,8 +112,11 @@ taken = {d for d in cal}
 already = {(v.get('id') if isinstance(v, dict) else v) for v in cal.values()}
 open_days = [d for d in days if d.isoformat() not in taken]
 
-ok = {i: it for i, it in films.items() if feature(it) and english(it) and i not in already}
-skipped_dads = [films[i] for c in dads for i in [g(x, 'Id') for x in held[g(c, 'Id')]] if i in films and i not in ok and i not in already]
+dad_ids = {g(x, 'Id') for c in dads for x in held[g(c, 'Id')]}
+# Dad's favourites: every one, whatever its language or length (John, 7 Nov 2026: "the exception to all English language
+# rule should be Dad's collection - all of those"); the rest English feature films
+ok = {i: it for i, it in films.items() if i not in already and (i in dad_ids or (feature(it) and english(it)))}
+skipped_dads = []
 pick, why = [], {}
 
 
