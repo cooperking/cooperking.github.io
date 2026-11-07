@@ -9345,7 +9345,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     it._fill();
     var nm = document.createElement('span'); nm.className = 'cal-nm'; nm.textContent = r.n; b.appendChild(nm);
     var ct = document.createElement('span'); ct.className = 'cal-ct'; ct.textContent = r.ct; b.appendChild(ct);
-    if (r.id === UPL.on) { var on = document.createElement('span'); on.className = 'cal-on'; on.textContent = 'Showing'; ct.insertBefore(on, ct.firstChild); }   // (beside its words, not over its picture: John, 7 Nov 2026)
+    // (no Showing badge: the one showing is marked by its outline: John, 7 Nov 2026)
     b.setAttribute('aria-label', r.n + ', ' + r.ct + (r.id === UPL.on ? ', showing' : ''));
     b.addEventListener('click', function () {
       closeDialog(uplDlg);
