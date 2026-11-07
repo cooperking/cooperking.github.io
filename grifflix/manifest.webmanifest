@@ -1,0 +1,10 @@
+{
+  "name": "Grifflix",
+  "short_name": "Grifflix",
+  "start_url": "/grifflix/",
+  "scope": "/grifflix/",
+  "display": "standalone",
+  "background_color": "#120914",
+  "theme_color": "#120914",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}
