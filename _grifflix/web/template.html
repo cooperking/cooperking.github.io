@@ -547,6 +547,7 @@ function showName(it) { return it.type === 'episode' ? (it.series || it.name) : 
 function subOf(it) {
   if (it.type === 'episode') return 'S' + (it.season || 0) + ' · E' + (it.ep || 0) + ' · ' + it.name;
   if (it.type === 'series') return [it.year, 'Series'].filter(Boolean).join(' · ');
+  if (it.type === 'collection') return 'Box set' + (it.children ? ' · ' + it.children + (it.children === 1 ? ' film' : ' films') : '');
   return [it.year, it.mins ? it.mins + ' min' : (it.secs ? Math.max(1, Math.round(it.secs / 60)) + ' min' : '')].filter(Boolean).join(' · ');
 }
 function progBar(it) { return it.pos && it.secs ? '<span class="bar" style="width:' + Math.min(100, it.pos / it.secs * 100).toFixed(1) + '%"></span>' : ''; }
@@ -576,7 +577,7 @@ function collectionView(id) {
 }
 function wireCards(el, items) {
   var by = {}; items.forEach(function (i) { by[i.id] = i; });
-  $$('[data-item]', el).forEach(function (b) { b.onclick = function () { itemSheet(by[b.dataset.item]); }; });
+  $$('[data-item]', el).forEach(function (b) { b.onclick = function () { var it = by[b.dataset.item]; if (it && it.type === 'collection') location.hash = '#collection/' + it.id; else itemSheet(it); }; });   // (a box set inside a collection opens as a collection)
 }
 function drawRows(R) {
   var el = $('#rows'); if (!el) return;

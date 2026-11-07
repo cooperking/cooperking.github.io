@@ -198,6 +198,14 @@ def find(f):
     return by_title.get(((t or '').lower(), y)) if t else None
 
 
+# Box sets: collections John made in Plex only to show a Criterion set (several short films) as one thing. Each is made
+# first, then stands as ONE entry in every other collection that holds its films (in place of the films), as he asked
+# (7 Nov 2026: "can they now be put inside the collection as one item each").
+SETS = ['A Hollis Frampton Odyssey', 'By Brakhage: An Anthology, Volumes One and Two', 'Martha Graham: Dance on Film',
+        'Scorsese Shorts', 'Symbiopsychotaxiplasm: Two Takes by William Greaves', 'The Kennedy Films of Robert Drew & Associates',
+        'The Signifyin’ Works of Marlon Riggs']
+cols.sort(key=lambda c: (c[1] not in SETS, c[1].lower()))   # (the sets first)
+set_of = {}   # a film in a set → the set's collection (or, before it's made, the set's name)
 have = {it['Name']: it for it in (call('GET', '/Users/%s/Items' % s['jf_user_id'], Recursive='true', IncludeItemTypes='BoxSet', Fields='Overview').get('Items', []))}
 made = added = pics = 0
 lost = []
@@ -213,10 +221,27 @@ for cid, title, h, thumb, summary, extra in cols:
             ids.append(i)
         elif not i:
             lost.append((title, os.path.basename(f)))
+    in_set = 0
+    if title not in SETS:   # films of a box set: the set, once, in their place
+        swapped = []
+        for i in ids:
+            j = set_of.get(i, i)
+            in_set += j != i
+            if j not in swapped:
+                swapped.append(j)
+        ids = swapped
     pic = poster(h, thumb)
     old = have.get(title)
+    if title in SETS:
+        sid = old['Id'] if old else 'set:' + title
+        for i in ids:
+            set_of[i] = sid
     print('%-52s %3d of %3d found%s%s%s%s' % (title[:52], len(ids), len(files), ', poster' if pic else '', (', smart (Plex had %s)' % plex_n) if '"at:smart":"1"' in extra.replace(' ', '') else '',
           ' (already in Jellyfin)' if old else '', (' NOT FOLLOWED: ' + '; '.join(skipped)) if skipped else ''))
+    if title in SETS:
+        print('   a box set: one entry in the other collections')
+    elif in_set:
+        print('   %d of its films are in box sets, shown as the sets' % in_set)
     if not GO or not ids:
         continue
     batches = [ids[i:i + CHUNK] for i in range(0, len(ids), CHUNK)]   # (50 at a time: Criterion USA's 502 in one go was too long an address)
@@ -226,12 +251,19 @@ for cid, title, h, thumb, summary, extra in cols:
     else:
         bid = call('POST', '/Collections', b'', Name=title, Ids=','.join(batches.pop(0)), IsLocked='true')['Id']
         made += 1
+    if title in SETS:
+        for i in list(set_of):
+            if set_of[i] == 'set:' + title:
+                set_of[i] = bid
     for chunk in batches:
         call('POST', '/Collections/%s/Items' % bid, b'', Ids=','.join(chunk))
     for _ in range(3):   # (Jellyfin can drop one of several adds made in quick succession: what it holds, checked, and any missing added again)
         time.sleep(1.5)
         held = set(i['Id'] for i in call('GET', '/Users/%s/Items' % s['jf_user_id'], ParentId=bid, Fields='').get('Items', []))
         missing = [i for i in ids if i not in held]
+        loose = [i for i in held if title not in SETS and i in set_of]   # a set's film still on its own here (from before): out
+        if loose:
+            call('DELETE', '/Collections/%s/Items' % bid, Ids=','.join(loose))
         if not missing:
             break
         for i in range(0, len(missing), CHUNK):
