@@ -254,6 +254,12 @@ dialog::backdrop { background: rgba(10, 4, 12, .62); backdrop-filter: blur(6px);
 .toast { position: fixed; left: 50%; bottom: max(24px, env(safe-area-inset-bottom)); z-index: 200; transform: translate(-50%, 20px); padding: 12px 20px; border-radius: 999px; background: var(--fg); color: #1b1020; font: 500 14px/1.3 var(--sans); box-shadow: 0 10px 30px rgba(0, 0, 0, .4); opacity: 0; pointer-events: none; transition: .25s; }
 .toast.on { opacity: 1; transform: translate(-50%, 0); }
 .hide { display: none !important; }
+a.card { display: block; text-decoration: none; color: inherit; }
+.collhead { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 26px; align-items: end; margin: 22px 4px 30px; }
+.collpic { width: 100%; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 10px; box-shadow: 0 14px 36px var(--shadow); }
+.colltitle { margin: 6px 0 8px; font: 400 clamp(38px, 6vw, 60px)/1 var(--serif); color: var(--fg); letter-spacing: -.02em; }
+.collhead .ov { margin: 12px 0 0; max-width: 60ch; color: var(--fg-2); }
+@media (max-width: 760px) { .collhead { grid-template-columns: 110px minmax(0, 1fr); gap: 16px; } }
 .drafttag { margin-right: auto; margin-left: -4px; padding: 5px 10px; border-radius: 999px; background: #ffe500; color: #1b1020; font: 700 10.5px/1 var(--sans); letter-spacing: .14em; text-transform: uppercase; text-decoration: none; }
 .drafttag + * { margin-left: 0; }
 .brand:has(+ .drafttag) { margin-right: 6px; }
@@ -344,7 +350,7 @@ function api(path, body) {
     var name = path.split('?')[0];
     if (name === 'calendars') return Promise.resolve({ calendars: [{ id: 'motd', name: 'Movie of the Day', ownerName: 'John', mine: false, shared: true, count: 0 }] });
     if (name === 'calendar') path = 'calendar';
-    if (body || ['home', 'items', 'item', 'search', 'calendar'].indexOf(name) < 0) { var x = new Error('Sign in to do that.'); x.status = 401; signInSheet(); return Promise.reject(x); }
+    if (body || ['home', 'items', 'item', 'search', 'calendar', 'collections', 'collection'].indexOf(name) < 0) { var x = new Error('Sign in to do that.'); x.status = 401; signInSheet(); return Promise.reject(x); }
     path = 'public/' + path;
   }
   return fetch(GW + '/api/' + path, { method: body ? 'POST' : 'GET', headers: Object.assign({ Authorization: 'Bearer ' + TOKEN }, body ? { 'Content-Type': 'application/json' } : {}), body: body ? JSON.stringify(body) : undefined })
@@ -459,6 +465,7 @@ function route() {
   $$('.bar-top [data-go]').forEach(function (b) { b.classList.toggle('on', b.dataset.go === S.view && b.classList.contains('pill')); });
   window.scrollTo(0, 0);
   if (S.view === 'browse') { if (h[1]) S.browse = h[1]; return browse(); }
+  if (S.view === 'collection' && h[1]) return collectionView(h[1]);
   if (S.view === 'lists') return lists();
   if (S.view === 'search') { location.hash = '#' + (S.lastView || 'home'); return searchSheet(); }
   if (S.view === 'profile') { location.hash = '#' + (S.lastView || 'home'); return profile(); }
@@ -549,6 +556,24 @@ function cardHTML(it, land) {
   return '<button class="card' + (land ? ' land' : '') + '" data-item="' + it.id + '"><div class="pic">' + (src ? '<img loading="lazy" alt="" src="' + esc(src) + '">' : '<div class="noimg">' + esc(showName(it)) + '</div>') + progBar(it) + '</div>' +
     '<div class="t">' + esc(showName(it)) + '</div><div class="s">' + esc(subOf(it)) + '</div></button>';
 }
+function collCard(c) {
+  var src = img(c.poster, 'Primary', 320);
+  return '<a class="card" href="#collection/' + c.id + '"><div class="pic">' + (src ? '<img loading="lazy" alt="" src="' + esc(src) + '">' : '<div class="noimg">' + esc(c.name) + '</div>') + '</div>' +
+    '<div class="t">' + esc(c.name) + '</div><div class="s">' + (c.children ? c.children + (c.children === 1 ? ' title' : ' titles') : 'Collection') + '</div></a>';
+}
+function collectionView(id) {
+  var main = $('#main');
+  main.innerHTML = '<div class="tabs" style="margin-top:22px"><a class="pill" href="#browse/collections">‹ Collections</a></div><div id="cbody"><div class="empty">Looking on the shelves…</div></div>';
+  api('collection?id=' + encodeURIComponent(id)).then(function (c) {
+    var src = img(c.poster, 'Primary', 400);
+    $('#cbody').innerHTML = '<div class="collhead">' + (src ? '<img class="collpic" alt="" src="' + esc(src) + '">' : '') +
+      '<div><div class="kick">Collection</div><h1 class="colltitle">' + esc(c.name) + '</h1><div class="hsub"><i>' + c.items.length + (c.items.length === 1 ? ' title' : ' titles') + '</i></div>' +
+      (c.overview ? '<p class="ov">' + esc(c.overview) + '</p>' : '') + '</div></div>' +
+      '<div class="gridcards">' + c.items.map(function (i) { return cardHTML(i); }).join('') + '</div>';
+    wireCards($('#cbody'), c.items);
+    if (c.poster) tint(img(c.poster, 'Primary', 120));
+  }).catch(oops);
+}
 function wireCards(el, items) {
   var by = {}; items.forEach(function (i) { by[i.id] = i; });
   $$('[data-item]', el).forEach(function (b) { b.onclick = function () { itemSheet(by[b.dataset.item]); }; });
@@ -567,16 +592,21 @@ function drawRows(R) {
 /* --- browse: films, TV, home videos */
 function browse() {
   var main = $('#main');
-  var tabs = [['movies', 'Films'], ['tv', 'TV']];   // (no Home videos tab: John, 7 Nov 2026; the gateway still serves a home videos library if one is added)
+  var tabs = [['movies', 'Films'], ['tv', 'TV'], ['collections', 'Collections']];   // (no Home videos tab: John, 7 Nov 2026; the gateway still serves a home videos library if one is added)
   if (S.browse === 'home') S.browse = 'movies';
-  main.innerHTML = '<div class="hero"><h1>' + { movies: 'Films', tv: 'TV', home: 'Home <i>videos</i>' }[S.browse] + '</h1><div class="hsub" id="bcount"></div></div>' +
+  main.innerHTML = '<div class="hero"><h1>' + { movies: 'Films', tv: 'TV', collections: 'Collections' }[S.browse] + '</h1><div class="hsub" id="bcount"></div></div>' +
     '<div class="tabs">' + tabs.map(function (t) { return '<button class="pill' + (t[0] === S.browse ? ' on' : '') + '" data-b="' + t[0] + '">' + t[1] + '</button>'; }).join('') +
     '<span class="sp"></span><select class="pill" id="sort" aria-label="Sort"><option value="name">A–Z</option><option value="added">Newest added</option><option value="year">Year</option><option value="rating">Rating</option></select></div><div id="bgrid"></div>';
   $('#sort').value = S.sort;
   $('#sort').onchange = function () { S.sort = this.value; fill(); };
   $$('[data-b]').forEach(function (b) { b.onclick = function () { location.hash = '#browse/' + b.dataset.b; }; });
+  $('#sort').classList.toggle('hide', S.browse === 'collections');
   function fill() {
     $('#bgrid').innerHTML = '<div class="empty">Looking on the shelves…</div>';
+    if (S.browse === 'collections') return api('collections').then(function (r) {
+      $('#bcount').innerHTML = '<i>' + r.collections.length + '</i>';
+      $('#bgrid').innerHTML = r.collections.length ? '<div class="gridcards">' + r.collections.map(collCard).join('') + '</div>' : '<div class="empty">No collections yet.</div>';
+    }).catch(oops);
     api('items?lib=' + S.browse + '&sort=' + S.sort).then(function (r) {
       $('#bcount').innerHTML = '<i>' + r.total + '</i>';
       if (!r.items.length) { $('#bgrid').innerHTML = '<div class="empty">Nothing here yet.</div>'; return; }
@@ -884,6 +914,9 @@ var Demo = (function () {
     for (var se = 1; se <= s[4]; se++) for (var e = 1; e <= s[5]; e++) { var j = id(); items[j] = { id: j, name: ['Arrivals', 'High Tide', 'The Storm', 'Lost Property', 'Regatta', 'Departures'][e - 1], type: 'episode', series: s[0], seriesId: i, season: se, ep: e, mins: 48, secs: 2880, overview: 'An episode of a made-up series.', thumb: j, poster: i, c: [s[2], s[3]] }; items[i].episodes.push(j); }
   });
   HOME.forEach(function (h) { var i = id(); items[i] = { id: i, name: h[0], type: 'video', mins: 3, secs: 180, premiere: h[1], thumb: i, c: [h[2], h[3]] }; order.home.push(i); });
+  var COLLS = [{ id: 'cfav', name: 'Dad’s favourites', about: 'The ones Dad always comes back to.', items: [order.movies[0], order.movies[4], order.movies[10], order.tv[0]] },
+               { id: 'csea', name: 'By the sea', about: '', items: [order.movies[5], order.movies[1], order.movies[17]] },
+               { id: 'csum', name: 'Long hot summers', about: '', items: [order.movies[6], order.movies[11], order.movies[18]] }];
   var get = function (k, d) { try { return JSON.parse(localStorage.getItem('grifflix-demo-' + k)) || d; } catch (e) { return d; } };
   var put = function (k, v) { try { localStorage.setItem('grifflix-demo-' + k, JSON.stringify(v)); } catch (e) {} };
   var cals = get('cals', null);
@@ -905,6 +938,8 @@ var Demo = (function () {
     else if (p === 'items') { var list = order[q.lib || 'movies'].map(out); if (q.sort === 'year') list.sort(function (a, b) { return b.year - a.year; }); else if (q.sort === 'rating') list.sort(function (a, b) { return b.rating - a.rating; }); else list.sort(function (a, b) { return a.name.localeCompare(b.name); }); r = { items: list, total: list.length }; }
     else if (p === 'item') { var it = out(q.id); if (items[q.id].episodes) { it.episodes = items[q.id].episodes.map(out); it.next = (it.episodes.filter(function (e) { return !prog[e.id]; })[0] || {}).id; } it.hearted = L.hearts.indexOf(q.id) >= 0; r = it; }
     else if (p === 'search') { var t = (q.q || '').toLowerCase(); r = { items: Object.keys(items).filter(function (i) { return items[i].name.toLowerCase().indexOf(t) >= 0 && items[i].type !== 'photo'; }).slice(0, 30).map(out) }; }
+    else if (p === 'collections') r = { collections: COLLS.map(function (c) { return { id: c.id, name: c.name, type: 'collection', poster: c.items[0], children: c.items.length }; }) };
+    else if (p === 'collection') { var cc = COLLS.filter(function (c) { return c.id === q.id; })[0]; r = { id: cc.id, name: cc.name, type: 'collection', poster: cc.items[0], overview: cc.about, items: cc.items.map(out) }; }
     else if (p === 'calendars') r = { calendars: Object.keys(cals).map(function (k) { return calOut(k); }) };
     else if (p === 'calendar' && !b) r = calOut(cals[q.id] ? q.id : 'motd', true);
     else if (p === 'calendar') {

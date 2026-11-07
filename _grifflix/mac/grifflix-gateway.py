@@ -242,7 +242,7 @@ def item_out(it, prog=None):
     t = it.get('Type')
     o = {'id': it['Id'], 'name': it.get('Name'), 'type': {'Movie': 'movie', 'Series': 'series', 'Season': 'season',
          'Episode': 'episode', 'Video': 'video', 'Photo': 'photo', 'Folder': 'folder', 'PhotoAlbum': 'folder',
-         'CollectionFolder': 'folder', 'BoxSet': 'folder'}.get(t, (t or '').lower())}
+         'CollectionFolder': 'folder', 'BoxSet': 'collection'}.get(t, (t or '').lower())}
     for src, dst in (('ProductionYear', 'year'), ('Overview', 'overview'), ('OfficialRating', 'cert'),
                      ('CommunityRating', 'rating'), ('SeriesName', 'series'), ('SeriesId', 'seriesId'),
                      ('SeasonId', 'seasonId'), ('ParentIndexNumber', 'season'), ('IndexNumber', 'ep'),
@@ -295,6 +295,13 @@ class Gateway:
         self.me_cache, self.me_lock = {}, threading.Lock()
         self.origins = ORIGINS + self.st.get('extra_origins', [])
         self.pub_cache, self.home_paths, self.home_at = {}, [], 0
+
+    def is_public_set(self, iid):
+        """A collection is for anyone to look at when anything in it is."""
+        if ('set', iid) not in self.pub_cache:
+            r = self.items(ParentId=iid, Limit=50, Fields='Path')
+            self.pub_cache[('set', iid)] = any(self.is_public(i['Id']) for i in r.get('Items', []))
+        return self.pub_cache[('set', iid)]
 
     def is_public(self, iid):
         """Films and TV are for anyone to look at (their pictures and trailers); home videos only for members."""
@@ -440,7 +447,7 @@ def make_handler(g):
                     return self.video(u.path[3:], q, method)
                 if u.path.startswith('/pimg/'):   # pictures of films and TV, for anyone (Cloudflare keeps copies: .jpg, public)
                     m = re.match(r'^/pimg/([0-9a-f]{32})/(Primary|Backdrop|Thumb)\.jpg$', u.path)
-                    if not m or not g.is_public(m.group(1)):
+                    if not m or not (g.is_public(m.group(1)) or g.is_public_set(m.group(1))):
                         return self.send_json(404, {'error': 'Not here.'})
                     return self.image(m.group(1) + '/' + m.group(2), q, cache='public, max-age=604800')
                 if u.path.startswith('/api/public/'):   # anyone: Movie of the Day, the films and TV, trailers; not playing
@@ -521,6 +528,27 @@ def make_handler(g):
                          for s in ms.get('MediaStreams', []) if s.get('Type') == 'Subtitle' and s.get('IsTextSubtitleStream')]
             o['hearted'] = o['id'] in user['hearts']
             self.send_json(200, o)
+
+        # collections (John's, from Plex: Jellyfin's BoxSets), for members and visitors alike
+        def collections_out(self, public):
+            r = g.items(Recursive='true', IncludeItemTypes='BoxSet', SortBy='SortName')
+            return [item_out(i) for i in r.get('Items', []) if not public or g.is_public_set(i['Id'])]
+
+        def collection_out(self, iid, prog, public):
+            c = g.one(iid)
+            if not c or c.get('Type') != 'BoxSet':
+                return None
+            o = item_out(c)
+            r = g.items(ParentId=iid, SortBy='ProductionYear,SortName')
+            o['items'] = [item_out(i, prog) for i in r.get('Items', []) if not public or g.is_public(i['Id'])]
+            return o
+
+        def api_collections(self, me, user, q, b):
+            self.send_json(200, {'collections': self.collections_out(False)})
+
+        def api_collection(self, me, user, q, b):
+            o = self.collection_out(q.get('id', ''), user['progress'], False)
+            self.send_json(200 if o else 404, o or {'error': 'No such collection.'})
 
         def api_search(self, me, user, q, b):
             term = (q.get('q') or '').strip()
@@ -699,6 +727,13 @@ def make_handler(g):
                 return self.send_json(200, {'items': []})
             r = g.items(SearchTerm=term, Recursive='true', IncludeItemTypes='Movie,Series,Episode', Limit=40)
             self.send_json(200, {'items': [item_out(i) for i in r.get('Items', []) if g.is_public(i['Id'])]})
+
+        def pub_collections(self, q):
+            self.send_json(200, {'collections': self.collections_out(True)})
+
+        def pub_collection(self, q):
+            o = self.collection_out(q.get('id', ''), {}, True)
+            self.send_json(200 if o else 404, o or {'error': 'No such collection.'})
 
         def pub_calendar(self, q):   # Movie of the Day only (members' own calendars are theirs)
             c = g.store.d['calendars']['motd']
