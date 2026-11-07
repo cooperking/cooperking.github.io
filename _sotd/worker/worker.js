@@ -2071,14 +2071,16 @@ async function uplSharePage(url, env, pid, when) {   // a public member's calend
   const U = await uplAll(env), rec = U[pid], all = (await env.SOTD.get('members', 'json')) || {}, site = 'https://cooperking.github.io/songs/';
   const q = new URLSearchParams(url.search), draft = q.get('draft') === '1'; q.delete('draft');
   const home = site + (draft ? 'draft/' : '') + (q.toString() ? '?' + q.toString() : '');
-  if (!uplCan(all, null, rec)) return Response.redirect(site, 302);
-  const v = await uplView(env, all, null, pid, rec), month = /^\d{4}-\d{2}$/.test(when) ? when : '', day = month ? '' : when;
+  // every playlist's links have a card (John, 7 Nov 2026: "Private and members-only playlists should use best quality pictures too, as I want to share it on whatsapp with members"): its name, caption and the card drawn where it was shared; the calendar itself still asks them to sign in
+  if (!rec || !all[rec.o] || rec.st !== 'ok') return Response.redirect(site, 302);
+  const pub = uplCan(all, null, rec), v0 = await uplView(env, all, pub ? null : rec.o, pid, rec), v = pub ? v0 : Object.assign({}, v0, { songs: v0.songs.filter(x => !x.w && !x.f) }), month = /^\d{4}-\d{2}$/.test(when) ? when : '', day = month ? '' : when;
   const s = day ? v.songs.find(x => x.d === day) : null, inMonth = month ? v.songs.filter(x => x.d.slice(0, 7) === month) : [];
   const slugD = d => d.slice(8, 10) + '-' + d.slice(5, 7) + '-' + d.slice(0, 4), slugM = m => m.slice(5, 7) + '-' + m.slice(0, 4);
   if ((day && !s) || (month && !inMonth.length) || !v.songs.length) return Response.redirect(home + '#u=' + pid, 302);
   const to = home + '#u=' + pid + (s ? '&d=' + slugD(day) : month ? '&m=' + slugM(month) : '');
   const cardUrl = site + 'u/' + pid + '/' + (s ? slugD(day) + '/' : month ? slugM(month) + '/' : '') + 'card.jpg', card = await uplCardThere(cardUrl);
-  const newest = (month ? inMonth : v.songs)[(month ? inMonth : v.songs).length - 1], own = '', img = card ? cardUrl : ((s || newest).img || '');   // (the site job's wide card, 1200 by 630, as John's own links have: WhatsApp shows it large; its own square picture only showed small: John, 7 Nov 2026)
+  const ck = s ? day : month || 'all', drawn = (rec.cards || {})[ck], own = drawn ? LIVE_ORIGIN + '/up/' + pid + '-c-' + ck + '.jpg?v=' + drawn : '';   // (the card drawn on the page as it was shared: 1200 by 630)
+  const newest = (month ? inMonth : v.songs)[(month ? inMonth : v.songs).length - 1], wide = !!own || card, img = own || (card ? cardUrl : ((s || newest).img || ''));   // (the site job's wide card, 1200 by 630, as John's own links have: WhatsApp shows it large; its own square picture only showed small: John, 7 Nov 2026)
   const e = x => esc(String(x)), n = (month ? inMonth : v.songs).length, songsN = n + (n === 1 ? ' song' : ' songs');
   const monthName = month ? new Date(month + '-15T12:00:00Z').toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' }) : '';
   // its own name and caption (John, 7 Nov 2026: "it should be correct for the playlist or calendar it's sharing ... Should say the title and the caption")
@@ -2102,11 +2104,11 @@ async function uplSharePage(url, env, pid, when) {   // a public member's calend
 ${img ? `<meta property="og:image" content="${e(img)}">
 <meta property="og:image:secure_url" content="${e(img)}">
 <meta property="og:image:type" content="image/jpeg">
-${card && !own ? `<meta property="og:image:width" content="1200">
+${wide ? `<meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 ` : ''}<meta property="og:image:alt" content="${e(alt)}">
 <meta name="twitter:image" content="${e(img)}">
-` : ''}<meta name="twitter:card" content="${card && !own ? 'summary_large_image' : 'summary'}">
+` : ''}<meta name="twitter:card" content="${wide ? 'summary_large_image' : 'summary'}">
 <meta name="twitter:title" content="${e(title)}">
 <meta name="twitter:description" content="${e(desc)}">
 <link rel="icon" type="image/png" sizes="96x96" href="https://cooperking.github.io/songs/favicon-96.png?v=2">
@@ -5781,8 +5783,18 @@ async function memberUplPic(request, url, env, answer) {
   if (!who) return answer(401, { error: 'Not a member (any more).' });
   if (!env.MEDIA) return answer(503, { error: 'Pictures can’t be added yet.' });
   const U = await uplAll(env), pid = url.searchParams.get('id') || '', rec = U[pid];
-  if (!rec || !(rec.o === who.id || (who.all[rec.o] && await uplAdm(env, who.id)))) return answer(404, { error: 'No such playlist of yours.' });   // (John: anyone's, as its owner: John, 7 Nov 2026)
   const pop = url.searchParams.get('op');
+  if (pop === 'card' && rec && (uplCan(who.all, who.id, rec) || await uplAdm(env, who.id))) {   // the card for a link to it (k: all, a month yyyy-mm or a day yyyy-mm-dd), drawn on the page by whoever shares it: 1200 by 630, for WhatsApp and the rest
+    const k = String(url.searchParams.get('k') || ''), body = await request.json().catch(() => ({})), b64 = String(body.pic || '').replace(/^data:image\/jpeg;base64,/, '');
+    if (!/^(all|\d{4}-\d{2}|\d{4}-\d{2}-\d{2})$/.test(k)) return answer(400, { error: 'Which card?' });
+    if (!b64 || b64.length > UPL_COVER_MAX * 4 / 3 || !/^[A-Za-z0-9+/=]+$/.test(b64)) return answer(400, { error: 'The picture is missing or too big.' });
+    if (!await dayCount(env, 'uplcard:' + who.id, 300)) return answer(429, { error: 'That’s a lot of cards for today.' });
+    await env.MEDIA.put('up/' + pid + '-c-' + k + '.jpg', Uint8Array.from(atob(b64), ch => ch.charCodeAt(0)), { httpMetadata: { contentType: 'image/jpeg' } });
+    const c = rec.cards = rec.cards || {}; c[k] = Date.now();
+    const ks = Object.keys(c); if (ks.length > 60) ks.sort((a, b) => c[a] - c[b]).slice(0, ks.length - 60).forEach(x => delete c[x]);
+    await uplPut(env, U); return answer(200, { ok: true });
+  }
+  if (!rec || !(rec.o === who.id || (who.all[rec.o] && await uplAdm(env, who.id)))) return answer(404, { error: 'No such playlist of yours.' });   // (John: anyone's, as its owner: John, 7 Nov 2026)
   if (pop === 'words') {   // its own words on its cover (John, 7 Nov 2026: "the option to change the wording on a playlist cover"): t its name there, b below the rule; '' as it comes
     const body = await request.json().catch(() => ({})), cl = (v, n) => String(v || '').replace(/\s+/g, ' ').trim().slice(0, n);
     if ('t' in body) { const t = cl(body.t, 60); if (t) rec.cvt = t; else delete rec.cvt; }

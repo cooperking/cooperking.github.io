@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="1467bb1b23e9">
+<meta name="sotd-build" content="c5635daccf3e">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -9963,7 +9963,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // only to them, by its owner); private, no Share. v: its calendar ({ id, t, n, sh, mode, mine, to })
   function uplLinkFor(v, frag, page, m) {   // frag: the calendar's #u=…; page: the Worker's /s/u/ path after the id
     var q = m ? 'play=' + m : '';
-    if (v.sh === 'public') return MBASE + '/s/u/' + v.id + (page ? '/' + page : '') + (q || DRAFT ? '?' + [q, DRAFT ? 'draft=1' : ''].filter(Boolean).join('&') : '');
+    if (MBASE) return MBASE + '/s/u/' + v.id + (page ? '/' + page : '') + (q || DRAFT ? '?' + [q, DRAFT ? 'draft=1' : ''].filter(Boolean).join('&') : '');
     return (DRAFT ? location.origin + '/songs/draft/' : SITE) + (q ? '?' + q : '') + '#' + frag;
   }
   function uplCalOf(s) {   // the calendar a song is from: the one showing, or (a song from My playlist) its own
@@ -9986,6 +9986,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     o.urlFor = function (m) { return uplLinkFor(v, 'u=' + v.id + '&d=' + slug, iso, m); };
     o.url = o.urlFor(mode);
     o.image = v.sh === 'public' ? SITE + 'u/' + v.id + '/' + slug + '/card.jpg' : s.u || ''; o.imageAlt = s.u || '';
+    shareWide(o, v, iso, s.u || s.img, { kick: cn.name, title: t, sub: s.artist, foot: longDate(iso) });   // (its card for the link, full size: John, 7 Nov 2026)
     o.icon = s.u || ''; o.sendText = s.artist + ' · ' + cn.name + ', ' + longDate(iso); o.sendSong = { iso: iso, s: s, cal: v };
     uplShareSend(o, v);
     if (o.note) o.sub += ' · ' + o.note;
@@ -10000,7 +10001,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     o.url = o.urlFor(mode);
     var last = songs.filter(function (x) { return x.d.slice(0, 7) === key(y, m); }).slice(-1)[0];
     o.image = v.sh === 'public' ? SITE + 'u/' + v.id + '/' + ms + '/card.jpg' : (last && last.u) || ''; o.imageAlt = (last && last.u) || '';
-    if (v.sh !== 'public') shareMonthArt(o, v.id + ':' + key(y, m), cn, MONTHS[m] + ' ' + y, inM);   // (a public one's: the wide card its link shows)   // (that month's covers, its name over them)
+    shareMonthArt(o, v.id + ':' + key(y, m), cn, MONTHS[m] + ' ' + y, inM, function (sq) { shareWide(o, v, key(y, m), sq, { kick: cn.name, title: MONTHS[m] + ' ' + y, sub: cn.cap, foot: songsN }); });   // (that month's covers, its name over them)
     uplShareSend(o, v);
     if (o.note) o.sub += ' · ' + o.note;
     openShare(o);
@@ -10011,7 +10012,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     o.urlFor = function (md) { return uplLinkFor(v, 'u=' + v.id, '', md); };
     o.url = o.urlFor(mode);
     o.image = (v.sh === 'public' ? SITE + 'u/' + v.id + '/card.jpg' : (last && last.u) || ''); o.imageAlt = (last && last.u) || '';
-    if (v.sh !== 'public') sharePic(cn.p.id ? cn.p : Object.assign({ id: v.id, n: v.n, mode: v.mode, o: v.o }, cn.p), function (u) { if (u && shareNow === o) { o.image = u; drawShare(); } });   // (its own picture, as the calendar shows it, full size)
+    sharePic(cn.p.id ? cn.p : Object.assign({ id: v.id, n: v.n, mode: v.mode, o: v.o }, cn.p), function (u) { if (u) shareWide(o, v, 'all', u, { kick: cn.p.cvb || (v.mode === 'list' ? 'A playlist by ' : 'A calendar by ') + v.o, title: cn.name, sub: cn.cap, foot: n + (v.mode === 'list' ? (n === 1 ? ' song' : ' songs') : ' songs so far') }); });   // (its own picture, as the calendar shows it, full size)
     uplShareSend(o, v);
     if (o.note) o.sub += ' · ' + o.note;
     openShare(o);
@@ -10043,12 +10044,51 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       imgs.forEach(function (im) { if (im) im.src = ''; }); imgs = [];
     }
   }
-  function shareMonthArt(o, id, cn, label, list) {   // a month shared: its songs' covers small, the month and the calendar's name over them
+  function shareMonthArt(o, id, cn, label, list, then) {   // a month shared: its songs' covers small, the month and the calendar's name over them
     var urls = list.slice().reverse().map(function (x) { return x.u || x.img; }).filter(Boolean);
     if (!urls.length) return;
     var a = { id: 'mo-' + id, n: label, title: label, by: cn.name, o: '', who: [], mode: 'list', now: true, S: 1080 };
-    var got = albumMosaic(a, urls, function (u2) { if (u2 && shareNow === o) { o.image = u2; drawShare(); } });
-    if (got) o.image = got;
+    var got = albumMosaic(a, urls, function (u2) { if (u2) then(u2); });
+    if (got) then(got);
+  }
+  // a link's card, as John's own links have (1200 by 630, the picture on the left, the words beside it), drawn here as it's
+  // shared and kept with the Worker, whose page for the link gives it to WhatsApp and the rest: every playlist, public or not
+  function shareWide(o, v, k, sq, t) {
+    if (!sq || TV || !MBASE) return;
+    var im = new Image(); im.crossOrigin = 'anonymous';
+    im.onload = function () {
+      try {
+        var W = 1200, H = 630, c = document.createElement('canvas'); c.width = W; c.height = H;
+        var g = c.getContext('2d'), P = artPal({ id: v.id, n: t.kick }), pal = P.p;
+        g.fillStyle = pal[0]; g.fillRect(0, 0, W, H); blobs(g, 0, 0, W, H, pal.slice(1), P.h % 4);
+        var sz = 530, x = 50, y = 50;
+        g.save(); g.shadowColor = 'rgba(0,0,0,.4)'; g.shadowBlur = 34; g.shadowOffsetY = 10; rrect(g, x, y, sz, sz, 12); g.fillStyle = '#0d0d10'; g.fill(); g.restore();
+        g.save(); rrect(g, x, y, sz, sz, 12); g.clip(); g.drawImage(im, x, y, sz, sz); g.restore();
+        var tx = 640, tw = W - tx - 56, ty = 104, sp = function (px) { if (g.letterSpacing !== undefined) g.letterSpacing = px + 'px'; };
+        g.fillStyle = '#fff'; g.shadowColor = 'rgba(0,0,0,.35)'; g.shadowBlur = 10;
+        g.font = '600 22px "Hanken Grotesk", Helvetica, Arial, sans-serif'; sp(3);
+        wideLines(g, String(t.kick || '').toUpperCase(), tw, 2).forEach(function (l) { g.fillStyle = 'rgba(255,255,255,.82)'; g.fillText(l, tx, ty); ty += 30; });
+        sp(0); ty += 30;
+        var size = 66, lines;
+        for (;;) { g.font = '500 ' + size + 'px Newsreader, Georgia, serif'; lines = wideLines(g, t.title || '', tw, 9); if (lines.length <= 3 || size <= 40) break; size -= 4; }
+        lines = lines.slice(0, 3); g.fillStyle = '#fff';
+        lines.forEach(function (l) { g.fillText(l, tx, ty + size * .2); ty += size * 1.04; });
+        if (t.sub) { ty += 10; g.font = '400 28px "Hanken Grotesk", Helvetica, Arial, sans-serif'; wideLines(g, t.sub, tw, 3).forEach(function (l) { g.fillStyle = 'rgba(255,255,255,.88)'; g.fillText(l, tx, ty + 10); ty += 38; }); }
+        if (t.foot) { g.font = '600 20px "Hanken Grotesk", Helvetica, Arial, sans-serif'; sp(3); g.fillStyle = 'rgba(255,255,255,.75)'; g.fillText(String(t.foot).toUpperCase(), tx, H - 66); sp(0); }
+        var u = c.toDataURL('image/jpeg', .9); canvasFree(c); im.src = '';
+        if (shareNow === o) { o.image = u; drawShare(); }
+        upledPost('uplpic?id=' + encodeURIComponent(v.id) + '&op=card&k=' + encodeURIComponent(k), { pic: u }).catch(function () {});
+      } catch (e) { if (typeof spLog === 'function') spLog('link card: ' + ((e && e.message) || e)); }
+    };
+    im.onerror = function () {};
+    im.src = sq;
+  }
+  function wideLines(g, text, w, most) {   // its words in lines that fit
+    var out = [], cur = '';
+    String(text).split(/\s+/).filter(Boolean).forEach(function (wd) { var tt = cur ? cur + ' ' + wd : wd; if (cur && g.measureText(tt).width > w) { out.push(cur); cur = wd; } else cur = tt; });
+    if (cur) out.push(cur);
+    if (out.length > most) { out = out.slice(0, most); out[most - 1] = out[most - 1].replace(/\s*\S*$/, '') + '…'; }
+    return out;
   }
   // ---- one of their own Spotify playlists in the My playlist pop-up, as a saved playlist is (from its badge there, or
   // Profile › Playlists › Open): all its songs, the waiting ones and the days to come too, to order (a playlist: the
