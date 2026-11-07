@@ -204,9 +204,9 @@ def find(f):
 SETS = ['A Hollis Frampton Odyssey', 'By Brakhage: An Anthology, Volumes One and Two', 'Martha Graham: Dance on Film',
         'Scorsese Shorts', 'Symbiopsychotaxiplasm: Two Takes by William Greaves', 'The Kennedy Films of Robert Drew & Associates',
         'The Signifyin’ Works of Marlon Riggs']
-# and every box set is in the Criterion Collection, whether or not Plex had its films there (John, 7 Nov 2026: "By
-# Brakhage: An Anthology, Volumes One and Two should also be a box set in the Criterion")
-ALSO_IN = {'Criterion Collection': SETS}
+# box sets put in a collection by name, whether or not Plex had their films there: only the ones John names (7 Nov 2026:
+# "By Brakhage: An Anthology, Volumes One and Two should also be a box set in the Criterion"; not every set goes there)
+ALSO_IN = {'Criterion Collection': ['By Brakhage: An Anthology, Volumes One and Two']}
 cols.sort(key=lambda c: (c[1] not in SETS, c[1].lower()))   # (the sets first)
 set_id = {}   # a box set's name → its collection in Jellyfin (or, before it's made, 'set:' + its name)
 set_of = {}   # a film in a set → the set's collection (or, before it's made, the set's name)
