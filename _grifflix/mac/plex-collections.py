@@ -32,7 +32,7 @@ def call(method, path, body=None, ctype='application/json', **q):
 tmp = tempfile.mkdtemp()
 shutil.copy(os.path.join(PLEX, 'Plug-in Support', 'Databases', 'com.plexapp.plugins.library.db'), os.path.join(tmp, 'plex.db'))
 db = sqlite3.connect(os.path.join(tmp, 'plex.db'))
-cols = db.execute("select id, title, hash, ifnull(user_thumb_url,''), ifnull(summary,'') from metadata_items where metadata_type=18 order by title").fetchall()
+cols = db.execute("select id, title, hash, ifnull(user_thumb_url,''), ifnull(summary,''), ifnull(extra_data,'') from metadata_items where metadata_type=18 order by title").fetchall()
 members = {}
 for tag, f in db.execute("""select t.tag, min(mp.file) from tags t join taggings g on g.tag_id=t.id
         join metadata_items mi on mi.id=g.metadata_item_id
@@ -42,6 +42,55 @@ for tag, f in db.execute("""select t.tag, min(mp.file) from tags t join taggings
         join media_parts mp on mp.media_item_id=m.id
         where t.tag_type=2 group by t.tag, mi.id"""):
     members.setdefault(tag, []).append(f)
+
+
+# Smart collections hold a rule, not a list: Plex's own address for the films, e.g. .../all?type=1&label=72873 or
+# &director=1234 (John's, 7 Nov 2026). The rule's tags (labels, directors, actors, genres...) are worked out here from
+# which films carry them: within one kind any of the tags (a,b), across kinds all of them.
+TAG_KEYS = {'label', 'director', 'actor', 'genre', 'writer', 'producer', 'collection', 'country', 'role', 'mood', 'style'}
+SKIP_KEYS = {'type', 'sort', 'includeGuids', 'includeCollections', 'includeExternalMedia'}
+
+
+def files_of(item_ids):
+    out = []
+    for i in item_ids:
+        r = db.execute("""select min(mp.file) from metadata_items mi
+                left join metadata_items se on mi.metadata_type=2 and se.parent_id=mi.id
+                left join metadata_items ep on ep.parent_id=se.id
+                join media_items m on m.metadata_item_id = case when mi.metadata_type=2 then ep.id else mi.id end
+                join media_parts mp on mp.media_item_id=m.id where mi.id=?""", (i,)).fetchone()
+        if r and r[0]:
+            out.append(r[0])
+    return out
+
+
+def smart(extra):
+    """A smart collection's films' files, and any part of its rule this couldn't follow."""
+    try:
+        uri = json.loads(extra).get('pv:uri') or ''
+    except ValueError:
+        return None, []
+    if '?' not in uri:
+        return None, []
+    q = urllib.parse.parse_qsl(uri.split('?', 1)[1], keep_blank_values=True)
+    want_type = next((int(v) for k, v in q if k == 'type' and v.isdigit()), 1)
+    chosen, skipped = None, []
+    for k, v in q:
+        key = k.rstrip('!=<>')
+        if key in SKIP_KEYS:
+            continue
+        if key in TAG_KEYS and not k.endswith('!') and all(x.strip().isdigit() for x in v.split(',') if x.strip()):
+            ids = [int(x) for x in v.split(',') if x.strip()]
+            got = set(r[0] for r in db.execute('select g.metadata_item_id from taggings g join metadata_items mi on mi.id=g.metadata_item_id where mi.metadata_type=? and g.tag_id in (%s)' % ','.join('?' * len(ids)), [want_type] + ids))
+            chosen = got if chosen is None else chosen & got
+        elif key == 'year' and v.isdigit():
+            got = set(r[0] for r in db.execute('select id from metadata_items where metadata_type=? and year %s ?' % ('>=' if k.endswith('>>') else '<=' if k.endswith('<<') else '='), (want_type, int(v))))
+            chosen = got if chosen is None else chosen & got
+        else:
+            skipped.append('%s=%s' % (k, v))
+    if chosen is None:
+        return None, skipped
+    return files_of(sorted(chosen)), skipped
 
 
 def poster(h, url):
@@ -90,8 +139,11 @@ def find(f):
 have = {it['Name']: it for it in (call('GET', '/Users/%s/Items' % s['jf_user_id'], Recursive='true', IncludeItemTypes='BoxSet', Fields='Overview').get('Items', []))}
 made = added = pics = 0
 lost = []
-for cid, title, h, thumb, summary in cols:
-    files = members.get(title, [])
+for cid, title, h, thumb, summary, extra in cols:
+    files, skipped = members.get(title, []), []
+    if not files and '"at:smart":"1"' in extra.replace(' ', ''):
+        files, skipped = smart(extra)
+        files = files or []
     ids = []
     for f in files:
         i = find(f)
@@ -101,7 +153,8 @@ for cid, title, h, thumb, summary in cols:
             lost.append((title, os.path.basename(f)))
     pic = poster(h, thumb)
     old = have.get(title)
-    print('%-52s %3d of %3d found%s%s' % (title[:52], len(ids), len(files), ', poster' if pic else '', ' (already in Jellyfin)' if old else ''))
+    print('%-52s %3d of %3d found%s%s%s%s' % (title[:52], len(ids), len(files), ', poster' if pic else '', ', smart' if '"at:smart":"1"' in extra.replace(' ', '') else '',
+          ' (already in Jellyfin)' if old else '', (' NOT FOLLOWED: ' + '; '.join(skipped)) if skipped else ''))
     if not GO or not ids:
         continue
     if old:
