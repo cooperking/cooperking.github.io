@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="sotd-build" content="ad4f81f221b4">
+<meta name="sotd-build" content="ad40dcc481a1">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 271 so far">
 <meta name="theme-color" content="#ec135b">
@@ -2038,8 +2038,14 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         <h4 id="setsendh">Notifications</h4>
         <div class="upld-opts" role="radiogroup" aria-labelledby="setsendh">
           <label><input type="radio" name="setsend" value="0"><span><b>Off</b>Each song is out for everyone to find; nothing goes to their inboxes or phones.</span></label>
-          <label><input type="radio" name="setsend" value="1"><span><b id="setonb">On</b><span id="setont"></span></span></label>
+          <label><input type="radio" name="setsend" value="now"><span><b>As each song comes out</b><span id="setnowt"></span></span></label>
+          <label><input type="radio" name="setsend" value="day"><span><b id="setonb">Once a day</b><span id="setont"></span></span></label>
+          <label><input type="radio" name="setsend" value="week"><span><b>Once a week</b>One message with the week’s songs, on the day and at the time you choose.</span></label>
+          <label><input type="radio" name="setsend" value="all"><span><b>When everyone you choose has added one</b>Tick who adds songs: once each of them has added a new one, all their new songs go out together in one message.</span></label>
         </div>
+        <div class="snd-who" id="setwhol2" hidden role="group" aria-label="Who adds songs"></div>
+        <div class="snd-who" id="setdaysl" hidden role="group" aria-label="Which days"></div>
+        <label class="upld-day" id="setwdl" hidden><span>On</span><select id="setwd"><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option><option value="7">Sunday</option></select></label>
         <label class="upld-day" id="setatl" hidden><span>At</span><input type="time" id="setat" value="08:00"></label>
       </div>
     </section>
@@ -8995,7 +9001,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     };
     var more = document.getElementById('pe-more'); more.textContent = '';
     // its notifications, in sight (John, 4 Nov 2026: "I can't see any way to update notification settings from a shared playlist now": they were only inside the closed set-up)
-    var snd = p.send || {}; btn(more, 'Notifications: ' + (snd.on ? 'on, at ' + (snd.at || '08:00') : 'off'), '', function () { peSetShow(true); setTimeout(function () { setGo('send'); }, 60); });
+    var snd = p.send || {}; btn(more, 'Notifications: ' + (!snd.on ? 'off' : snd.how === 'now' ? 'as each song comes out' : snd.how === 'all' ? 'when everyone chosen has added one' : snd.how === 'week' ? 'once a week, ' + ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][(snd.wd || 1) - 1] + ' at ' + (snd.at || '08:00') : 'daily at ' + (snd.at || '08:00')), '', function () { peSetShow(true); setTimeout(function () { setGo('send'); }, 60); });
     if (p.src === 'csv') btn(more, 'Update its songs', '', function () { impOpen(0, p.id); });
     if (p.src !== 'mpl') btn(more, 'Remove it', 'x', function () { uplRemoveAsk(p); });
     // its songs: each one's edit (its video, moods and genres, their MP3 and MP4, cover) and taking off; a playlist's order
@@ -10628,12 +10634,15 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       c.addEventListener('change', setWhoSave);
       var t = document.createElement('span'); t.textContent = m.name; lb.appendChild(c); lb.appendChild(t); wl.appendChild(lb);
     });
-    var snd = p.send || { on: false, at: '08:00' };
-    setRadio('setsend', snd.on ? '1' : '0');
+    var snd = p.send || { on: false, at: '08:00' }, how = !snd.on ? '0' : snd.how || 'day';
+    setRadio('setsend', how);
     document.getElementById('setat').value = snd.at || '08:00';
-    document.getElementById('setatl').hidden = !snd.on;
-    document.getElementById('setont').textContent = p.mode === 'list' ? 'Each song goes to the members who see it, as a message from you, on the day you ' + (isMine ? 'add' : 'sign off') + ' it, at the time you choose.'
-      : 'Each day’s song goes to the members who see it, as a message from you, on its day, at the time you choose.';
+    document.getElementById('setwd').value = String(snd.wd || 1);
+    SETDAYS = (snd.days && snd.days.length ? snd.days : [1, 2, 3, 4, 5, 6, 7]).slice(); SETWHO = (snd.who || []).slice();
+    setSendShow(how);
+    document.getElementById('setnowt').textContent = p.mode === 'list' ? 'Each song goes to the members who see it, as a message from you, as soon as you ' + (isMine ? 'add' : 'sign off') + ' it.' : 'Each day’s song goes to the members who see it, as a message from you, as its day begins.';
+    document.getElementById('setont').textContent = p.mode === 'list' ? 'Each song goes to the members who see it, as a message from you, on the day you ' + (isMine ? 'add' : 'sign off') + ' it, at the time you choose, on the days you choose (a skipped day’s go on the next).'
+      : 'Each day’s song goes to the members who see it, as a message from you, on its day, at the time you choose, on the days you choose (a skipped day’s go on the next).';
   }
   function setGo(k) {   // its setup, in sight (k: kind, days, who or send)
     var el = document.getElementById('set' + k);
@@ -10687,12 +10696,39 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   [].forEach.call(document.querySelectorAll('input[name="setdays"]'), function (x) { x.addEventListener('change', setDaysSave); });
   document.getElementById('setday').addEventListener('change', setDaysSave);
   [].forEach.call(document.querySelectorAll('input[name="setwho"]'), function (x) { x.addEventListener('change', setWhoSave); });
+  // its notifications (John, 7 Nov 2026: "more options than the one a day at 8am"): off; as each song comes out; once a day at a time, on chosen days; once a week
+  var SETDAYS = [1, 2, 3, 4, 5, 6, 7], SETWHO = [], DAYN = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  function setSendShow(how) {
+    document.getElementById('setatl').hidden = how !== 'day' && how !== 'week';
+    document.getElementById('setwdl').hidden = how !== 'week';
+    var wb = document.getElementById('setwhol2'); wb.hidden = how !== 'all'; wb.textContent = '';
+    if (how === 'all') {   // who adds songs: them, and every member (those who can edit it first)
+      var r0 = setRec(), cw = (r0 && r0.p && r0.p.cw) || [], ppl = (MEMBER && MEMBER.me ? [{ id: MEMBER.me, name: MEMBER.name + ' (you)' }] : []).concat((MEMBER && MEMBER.mem) || []);
+      ppl.sort(function (a, b) { return (cw.indexOf(b.id) >= 0 || b.id === MEMBER.me) - (cw.indexOf(a.id) >= 0 || a.id === MEMBER.me) || a.name.localeCompare(b.name); });
+      ppl.forEach(function (m) {
+        var l = document.createElement('label'), c = document.createElement('input'); c.type = 'checkbox'; c.checked = SETWHO.indexOf(m.id) >= 0; l.className = c.checked ? 'on' : '';
+        c.addEventListener('change', function () { SETWHO = SETWHO.filter(function (k) { return k !== m.id; }).concat(c.checked ? [m.id] : []); l.className = c.checked ? 'on' : ''; if (SETWHO.length) setSendSave(); });
+        l.appendChild(c); l.appendChild(document.createTextNode(m.name)); wb.appendChild(l);
+      });
+    }
+    var box = document.getElementById('setdaysl'); box.hidden = how !== 'day'; box.textContent = '';
+    if (how === 'day') DAYN.forEach(function (nm, i) {
+      var l = document.createElement('label'), c = document.createElement('input'); c.type = 'checkbox'; c.checked = SETDAYS.indexOf(i + 1) >= 0; l.className = c.checked ? 'on' : '';
+      c.addEventListener('change', function () { SETDAYS = SETDAYS.filter(function (d) { return d !== i + 1; }).concat(c.checked ? [i + 1] : []).sort(); l.className = c.checked ? 'on' : ''; setSendSave(); });
+      l.appendChild(c); l.appendChild(document.createTextNode(nm)); box.appendChild(l);
+    });
+  }
   function setSendSave() {
     var r = setRec(); if (!r || !r.p) return;
-    var on = setVal('setsend') === '1', at = document.getElementById('setat').value || '08:00';
-    document.getElementById('setatl').hidden = !on;
-    setOp({ op: 'send', id: r.p.id, on: on, at: at }, on ? 'Notifications on: its songs go to the members at ' + at : 'Notifications off');
+    var how = setVal('setsend') || '0', on = how !== '0', at = document.getElementById('setat').value || '08:00', wd = +document.getElementById('setwd').value || 1;
+    if (how === 'day' && !SETDAYS.length) { toast('Choose at least one day'); return; }
+    if (how === 'all' && !SETWHO.length) { if (document.getElementById('setwhol2').hidden) setSendShow(how); toast('Tick who adds songs'); return; }
+    if (document.getElementById('setdaysl').hidden !== (how !== 'day') || document.getElementById('setwhol2').hidden !== (how !== 'all')) setSendShow(how); else { document.getElementById('setatl').hidden = how !== 'day' && how !== 'week'; document.getElementById('setwdl').hidden = how !== 'week'; }
+    var all7 = SETDAYS.length === 7, dayWords = all7 ? 'every day' : SETDAYS.map(function (d) { return DAYN[d - 1]; }).join(', ');
+    setOp({ op: 'send', id: r.p.id, on: on, how: on ? how : undefined, at: at, days: SETDAYS, wd: wd, who: SETWHO },
+      !on ? 'Notifications off' : how === 'all' ? 'Notifications on: once each of them has added a song' : how === 'now' ? 'Notifications on: each song as it comes out' : how === 'week' ? 'Notifications on: once a week, ' + DAYN[wd - 1] + ' at ' + at : 'Notifications on: ' + dayWords + ' at ' + at);
   }
+  document.getElementById('setwd').addEventListener('change', setSendSave);
   [].forEach.call(document.querySelectorAll('input[name="setsend"]'), function (x) { x.addEventListener('change', setSendSave); });
   document.getElementById('setat').addEventListener('change', setSendSave);
   // its name: a saved playlist's is its own (Playlist name); a Spotify one's, its title, Spotify's until they change it
