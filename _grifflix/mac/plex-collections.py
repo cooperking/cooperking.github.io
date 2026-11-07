@@ -125,6 +125,8 @@ def smart(extra):
         else:
             if '=' in k and not v:   # (title==x arrives whole as the name when its = signs were encoded)
                 k, v = k.split('=', 1)
+            if k.endswith('='):   # (or as title= and =x: John's Cassavetes)
+                k, v = k[:-1], '=' + v
             x = leaf(k, v)
             if x is None:
                 skipped.append('%s=%s' % (k, v))
@@ -140,6 +142,10 @@ def smart(extra):
     return files_of(sorted(chosen)), skipped, plex_n
 
 
+PLEX_TY = {f: (t, y) for f, t, y in db.execute('''select mp.file, mi.title, mi.year from metadata_items mi
+        join media_items m on m.metadata_item_id=mi.id join media_parts mp on mp.media_item_id=m.id where mi.metadata_type in (1, 4)''')}
+
+
 def poster(h, url):
     if not url or '://' not in url:
         return None
@@ -152,13 +158,15 @@ def poster(h, url):
 
 
 # Jellyfin's films and series, by their file (films) or folder (series), and by name for the moved ones
-by_path, by_name, by_dir = {}, {}, {}
+by_path, by_name, by_dir, by_title = {}, {}, {}, {}
 for lib, typ in (('movies', 'Movie'), ('tv', 'Series')):
     lid = s['libraries'].get(lib)
     if not lid:
         continue
-    for it in call('GET', '/Users/%s/Items' % s['jf_user_id'], ParentId=lid, Recursive='true', IncludeItemTypes=typ, Fields='Path').get('Items', []):
+    for it in call('GET', '/Users/%s/Items' % s['jf_user_id'], ParentId=lid, Recursive='true', IncludeItemTypes=typ, Fields='Path,ProductionYear').get('Items', []):
         p = it.get('Path') or ''
+        if typ == 'Movie':
+            by_title.setdefault(((it.get('Name') or '').lower(), it.get('ProductionYear')), it['Id'])
         by_path[p] = it['Id']
         by_name.setdefault(os.path.basename(p), it['Id'])
         if typ == 'Series':
@@ -180,7 +188,8 @@ def find(f):
         return by_name[os.path.basename(f)]
     if '/TV/' in f:   # an episode: its series, by the series' folder (the first one under TV)
         return by_dir.get(f.split('/TV/', 1)[1].split('/')[0])
-    return None
+    t, y = PLEX_TY.get(f, (None, None))   # renamed by the tidy-up: by its title and year, as Plex knew them
+    return by_title.get(((t or '').lower(), y)) if t else None
 
 
 have = {it['Name']: it for it in (call('GET', '/Users/%s/Items' % s['jf_user_id'], Recursive='true', IncludeItemTypes='BoxSet', Fields='Overview').get('Items', []))}
