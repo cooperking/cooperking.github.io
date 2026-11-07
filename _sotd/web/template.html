@@ -7807,11 +7807,11 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var rl = null, was = false;
     try { rl = JSON.parse(localStorage.getItem('sotd-rl') || 'null'); localStorage.removeItem('sotd-rl'); was = !!sessionStorage.getItem('sotd-open'); sessionStorage.setItem('sotd-open', String(Date.now())); } catch (e) {}
     var why = rl && Date.now() - rl.at < 120e3 ? rl.why : was ? 'not the page: the iPhone cleared the app from memory, or it was closed and opened' : '';
-    void why;   // (the note to John is off now: it showed it was the iPhone clearing the app, 6 Nov 2026)
+    if (why) setTimeout(function () { if (typeof spLog === 'function') spLog('page reloaded: ' + why); }, 3000);   // (in his log, not on screen: John, 7 Nov 2026)
   })();
   function staleLook() {
     if (STALE || navigator.onLine === false) return;
-    fetch(location.pathname, { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (h) {
+    fetch(location.pathname, { cache: 'no-store', headers: { Range: 'bytes=0-3999' } }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (h) {   // (only its start, where its build is: the whole page is over a megabyte, and fetched each time the app went away and came back it could tip the iPhone into clearing the page from memory: John, 7 Nov 2026, the app's occasional reload)
       var m = /<meta name="sotd-build" content="([^"]*)"/.exec(h);
       if (m && m[1] !== BUILD) STALE = true;
     }).catch(function () {});
