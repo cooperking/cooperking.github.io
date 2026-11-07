@@ -215,6 +215,15 @@ set_of = {}   # a film in a set → the set's collection (or, before it's made, 
 have = {it['Name']: it for it in (call('GET', '/Users/%s/Items' % s['jf_user_id'], Recursive='true', IncludeItemTypes='BoxSet', Fields='Overview').get('Items', []))}
 made = added = pics = 0
 lost = []
+# not brought over, and taken out of Grifflix if there (only the collection; its films stay): John, 7 Nov 2026, "these
+# will be better off found by genres"
+DROP = ['Horror', 'Grifflix For Kids of all Sizes']
+cols = [c for c in cols if c[1] not in DROP]
+for name in DROP:
+    if name in have:
+        print('%-52s removed from Grifflix (its films stay)' % name if GO else '%-52s would be removed (its films stay)' % name)
+        if GO:
+            call('DELETE', '/Items/' + have[name]['Id'])
 for cid, title, h, thumb, summary, extra in cols:
     files, skipped, plex_n = members.get(title, []), [], None
     if not files and '"at:smart":"1"' in extra.replace(' ', ''):
