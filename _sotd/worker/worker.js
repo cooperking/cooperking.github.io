@@ -1352,8 +1352,9 @@ async function catalogTidy(env) {
 // is taken out here. Then, once: the copies added to 'Collaborations' by the download code on 6 Nov 2026 where the job's
 // own file was there all along, deleted (89, about 1.3 GB).
 async function catalogHeal(env) {
-  if (!env.MEDIA || (Date.now() - Number((await env.SOTD.get('catHealAt')) || 0)) < 3 * 3600e3) return;
-  await env.SOTD.put('catHealAt', String(Date.now()));
+  const first = !(await env.SOTD.get('catHeal2'));   // (once at once, then every half hour: John, 7 Nov 2026, "my list of missing things ... is out of date")
+  if (!env.MEDIA || (!first && (Date.now() - Number((await env.SOTD.get('catHealAt')) || 0)) < 30 * 60e3)) return;
+  await env.SOTD.put('catHealAt', String(Date.now())); if (first) await env.SOTD.put('catHeal2', String(Date.now()));
   const files = []; let cursor;
   do { const r = await env.MEDIA.list({ cursor, limit: 1000 }); r.objects.forEach(o => files.push({ key: o.key, size: o.size, at: o.uploaded })); cursor = r.truncated ? r.cursor : null; } while (cursor);
   const c = await catalog(env), added = [];
@@ -1363,8 +1364,15 @@ async function catalogHeal(env) {
     if (e[k]) continue;
     e[k] = f.size; e['t' + k] = new Date(f.at).toISOString(); c[t] = e; added.push(k + '/' + t);
   }
-  if (added.length) { await env.SOTD.put('mediaCatalog', JSON.stringify(c)); console.log('catalogHeal: ' + added.length + ' files the catalog had lost, put back'); }
-  await kvSoft(env, 'catHealLast', JSON.stringify({ at: Date.now(), added: added.length, sample: added.slice(0, 20) }));
+  const have = new Set(files.map(f => f.key)), dropped = [];   // (the other way: ones the catalog has that the bucket hasn't, any more)
+  for (const [t, e] of Object.entries(c)) {
+    if (e.a && !have.has('a/' + t + '.mp3') && !have.has('l/' + t + '.m4a')) { delete e.a; delete e.fa; delete e.ta; dropped.push('a/' + t); }
+    if (e.v && !have.has('v/' + t + '.mp4') && !have.has('h/' + t + '.mp4')) { delete e.v; delete e.fv; delete e.tv; dropped.push('v/' + t); }
+    if (!Object.keys(e).length) delete c[t];
+  }
+  if (added.length || dropped.length) { await env.SOTD.put('mediaCatalog', JSON.stringify(c)); console.log('catalogHeal: ' + added.length + ' put back, ' + dropped.length + ' gone'); }
+  await kvSoft(env, 'catHealLast', JSON.stringify({ at: Date.now(), added: added.length, dropped: dropped.length, sample: added.slice(0, 20) }));
+  if (added.length || dropped.length || first) await env.MEDIA.put('diag/catalog-heal.json', JSON.stringify({ at: new Date().toISOString(), files: files.length, added, dropped }, null, 1), { httpMetadata: { contentType: 'application/json' } }).catch(() => {});
   if (await env.SOTD.get('dupGone1')) return;   // (the one clear-out)
   await env.SOTD.put('dupGone1', String(Date.now()));
   const pid = 'hXXaGojDDcooDA', data = await uplSongs(env, pid), byKey = new Set(files.map(f => f.key)), gone = [];
