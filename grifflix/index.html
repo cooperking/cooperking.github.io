@@ -368,7 +368,32 @@ html.tv .wrap { max-width: none; }
   .side { max-height: calc(100vh - 120px); overflow: auto; position: sticky; top: 90px; }
 }
 .rows { margin-top: 44px; }
+/* html.big: a computer or the TV: the month's name, its buttons and the months in one row, then the whole calendar filling the window */
+html.big .wrap { max-width: none; padding-left: 28px; padding-right: 28px; }
+html.big #main { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 18px; align-items: center; }
+html.big #hero { grid-column: 1; grid-row: 1; }
+html.big #mnav { grid-column: 2; grid-row: 1; margin: 18px 0 0; }
+html.big #cals { grid-column: 1 / -1; grid-row: 2; justify-content: flex-start; margin-top: 12px; }
+html.big .stage { grid-column: 1 / -1; grid-row: 3; grid-template-columns: minmax(0, 1fr); margin-top: 12px; }
+html.big .rows { grid-column: 1 / -1; grid-row: 4; }
+html.big .side { display: none; }   /* (the month's films are on the calendar) */
+html.big .hero { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; padding-top: 18px; text-align: left; }
+html.big .hero .kick { flex: 0 0 100%; margin: 0 0 -10px; }
+html.big .hero h1 { font-size: 40px; white-space: nowrap; }
+html.big .hbtns { margin: 0; flex-wrap: nowrap; }
+html.big .hsub { font-size: 21px; white-space: nowrap; }
+html.big .cal { height: var(--calh, 70vh); min-height: 420px; grid-template-rows: auto auto minmax(0, 1fr); gap: 6px; padding: 8px 12px 10px; }
+html.big .grid { min-height: 0; grid-auto-rows: minmax(0, 1fr); gap: 6px 8px; }
+html.big .dow { gap: 6px 8px; }
+html.big .day { aspect-ratio: auto; height: 100%; min-height: 0; }
+html.big .day .art { object-position: 50% 50%; }
+html.big .day .cap { display: block; padding: 18px 8px 6px; }
+html.big .day .cap .t { font-size: 15px; }
+html.big .day .num, html.big .day.has .num { top: 4px; bottom: auto; }
+
 </style>
+<script>/* a computer's screen (wide, with a mouse) or the TV: the whole calendar in the window, as on the songs' site */
+(function () { var de = document.documentElement; if (/GRIFFLIXTV\//.test(navigator.userAgent) || /[?&]tv=1/.test(location.search) || (window.matchMedia && matchMedia('(min-width: 1000px) and (min-height: 560px) and (hover: hover) and (pointer: fine)').matches)) de.className += ' big'; })();</script>
 </head>
 <body>
 <div class="glow"></div><div class="scrim"></div>
@@ -461,8 +486,8 @@ var PALETTES = [   // the month's colours: ground, then four glows
   ['#0b86d3', '#0098b0', '#3370ff', '#009e91', '#3333ff'], ['#ec135b', '#ff3344', '#ff30b3', '#ff4c29', '#fc00e7'],
   ['#09696d', '#009e77', '#0094d4', '#00a150', '#198cff'], ['#ec13c1', '#ff3399', '#dd33ff', '#ff3366', '#aa33ff']
 ];
-function monthTint(m) {
-  var p = PALETTES[m] || PALETTES[0], R = document.documentElement.style;
+function monthTint(m) {   // (six months on from the songs' colours, so the two never look the same in a month)
+  var p = PALETTES[(m + 6) % 12] || PALETTES[0], R = document.documentElement.style;
   ['--bg', '--g1', '--g2', '--g3', '--g4'].forEach(function (n, i) { R.setProperty(n, p[i]); });
   var tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.content = p[0];
 }
@@ -628,6 +653,7 @@ function drawMonth() {
   $('#mprev').onclick = function () { step(-1); };
   $('#mnext').onclick = function () { step(1); };
   S.step = step;
+  fitCal();
   var st = $('.stage'), hr = $('#hero');   // swipe the calendar, its list or the month's name: the month before or after
   [st, hr].forEach(function (el) {
     if (!el || el.dataset.swipe) return; el.dataset.swipe = 1;
@@ -666,7 +692,13 @@ function drawMonth() {
   $('#surprise').onclick = function () { var all = Object.keys(C.days); if (!all.length) return toast('Nothing on this calendar yet.'); daySheet(all[Math.floor(Math.random() * all.length)]); };
   $('#sharecal').onclick = function () { share('Grifflix: ' + (C.id === 'motd' ? 'Movie of the Day' : C.name), location.href.split('#')[0] + '#home/' + C.id); };
 }
-function dayPic(it) { return it.poster ? img(it.poster, 'Primary', phone() ? 200 : 320) : img(it.thumb || it.backdrop, it.thumb ? 'Thumb' : 'Backdrop', 320); }   /* (square days: the poster, cut to its top) */
+function fitCal() {   // a computer or TV: the calendar down to the window's foot
+  var c = $('#cal'); if (!c || !document.documentElement.classList.contains('big')) return;
+  c.style.setProperty('--calh', Math.max(420, innerHeight - (c.getBoundingClientRect().top + scrollY) - 16) + 'px');
+}
+addEventListener('resize', function () { fitCal(); });
+function dayPic(it) { if (document.documentElement.classList.contains('big')) return img(it.backdrop || it.thumb || it.poster, it.backdrop ? 'Backdrop' : (it.thumb ? 'Thumb' : 'Primary'), 480);
+  return it.poster ? img(it.poster, 'Primary', phone() ? 200 : 320) : img(it.thumb || it.backdrop, it.thumb ? 'Thumb' : 'Backdrop', 320); }   /* (square days: the poster, cut to its top) */
 function phone() { return matchMedia('(max-width: 760px)').matches; }
 function showName(it) { return it.type === 'episode' ? (it.series || it.name) : it.name; }
 function subOf(it) {
