@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="sotd-build" content="de65670bf214">
+<meta name="sotd-build" content="ad4f81f221b4">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 271 so far">
 <meta name="theme-color" content="#ec135b">
@@ -8976,6 +8976,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var own = v.own !== false;
     ['pe-name', 'pe-cap', 'pe-picimg', 'pe-share', 'pe-settog', 'pe-more'].forEach(function (id) { var g = document.getElementById(id).closest('.pe-g'); if (g) g.hidden = !own; });
     peCw(p, own);
+    if (!CARDS[p.id] && peDraw.cards !== p.id) {   // its covers and people first (they came only with the playlist picker), so its picture is its own: then drawn again (John, 7 Nov 2026: "edit playlist showed an album cover without pictures")
+      peDraw.cards = p.id;
+      uplCall(null, '?cards=1').then(function (j) { if (j.status === 200 && j.cards) { CARDS = j.cards; if (PE.on) peDraw(); } }).catch(function () {});
+    }
     var pic = document.getElementById('pe-picimg'); calPics.now = true; calMos(pic, calPics(p, ((CARDS[p.id] || {}).cv) || v.songs.slice(-4).map(function (x) { return x.img; }).filter(Boolean).reverse(), function () { if (PE.on) peDraw(); })); calPics.now = false;
     var pa = document.getElementById('pe-picacts'); pa.textContent = '';
     var btn = function (box, label, cls, fn) { var b = document.createElement('button'); b.type = 'button'; b.textContent = label; if (cls) b.className = cls; b.addEventListener('click', fn); box.appendChild(b); return b; };
