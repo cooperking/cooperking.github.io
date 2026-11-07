@@ -5747,7 +5747,7 @@ async function memberUplPic(request, url, env, answer) {
   if (!who) return answer(401, { error: 'Not a member (any more).' });
   if (!env.MEDIA) return answer(503, { error: 'Pictures can’t be added yet.' });
   const U = await uplAll(env), pid = url.searchParams.get('id') || '', rec = U[pid];
-  if (!rec || rec.o !== who.id) return answer(404, { error: 'No such playlist of yours.' });
+  if (!rec || !(rec.o === who.id || (who.all[rec.o] && await uplAdm(env, who.id)))) return answer(404, { error: 'No such playlist of yours.' });   // (John: anyone's, as its owner: John, 7 Nov 2026)
   const pop = url.searchParams.get('op');
   if (pop === 'words') {   // its own words on its cover (John, 7 Nov 2026: "the option to change the wording on a playlist cover"): t its name there, b below the rule; '' as it comes
     const body = await request.json().catch(() => ({})), cl = (v, n) => String(v || '').replace(/\s+/g, ' ').trim().slice(0, n);
