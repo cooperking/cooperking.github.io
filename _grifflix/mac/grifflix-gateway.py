@@ -295,6 +295,7 @@ class Gateway:
         self.me_cache, self.me_lock = {}, threading.Lock()
         self.origins = ORIGINS + self.st.get('extra_origins', [])
         self.pub_cache, self.home_paths, self.home_at = {}, [], 0
+        self.list_cache = {}
 
     def is_public_set(self, iid):
         """A collection is for anyone to look at when anything in it is."""
@@ -360,9 +361,24 @@ class Gateway:
 
     # --- Jellyfin helpers
     def items(self, **q):
+        """Jellyfin's lists, kept for up to 6 hours: the old Mac takes seconds to list 2,000 films, and they rarely
+        change (John, 7 Nov 2026: "is it necessary to load them fresh like that every time?"). Forgotten at once by the
+        page's Refresh button, when a collection is changed here, or files are converted."""
         q.setdefault('Fields', FIELDS)
         q.setdefault('EnableImageTypes', 'Primary,Backdrop,Thumb')
-        return self.jf.call('GET', '/Users/%s/Items' % self.uid, query=q) or {}
+        key = json.dumps(q, sort_keys=True, default=str)
+        hit = self.list_cache.get(key)
+        if hit and time.time() - hit[0] < 6 * 3600:
+            return hit[1]
+        r = self.jf.call('GET', '/Users/%s/Items' % self.uid, query=q) or {}
+        if len(self.list_cache) > 400:
+            self.list_cache.clear()
+        self.list_cache[key] = (time.time(), r)
+        return r
+
+    def forget(self):
+        self.list_cache.clear()
+        self.pub_cache.clear()
 
     def one(self, iid):
         return self.jf.call('GET', '/Users/%s/Items/%s' % (self.uid, iid), query={'Fields': FIELDS})
@@ -473,7 +489,7 @@ def make_handler(g):
                                 if old in usr.get('progress', {}):
                                     usr['progress'][new] = usr['progress'].pop(old); n += 1
                         g.store.touch()
-                    g.pub_cache.clear()
+                    g.forget()
                     return self.send_json(200, {'ok': True, 'changed': n})
                 if not u.path.startswith('/api/'):
                     return self.send_json(404, {'error': 'Not here.'})
@@ -563,6 +579,10 @@ def make_handler(g):
             o['items'] = [item_out(i, prog) for i in r.get('Items', []) if not public or g.is_public(i['Id'])]
             return o
 
+        def api_refresh(self, me, user, q, b):   # the page's Refresh button: look again for new films and changes
+            g.forget()
+            self.send_json(200, {'ok': True})
+
         def api_collections(self, me, user, q, b):
             if not b:
                 return self.send_json(200, {'collections': self.collections_out(False)})
@@ -602,7 +622,7 @@ def make_handler(g):
                 g.jf.call('DELETE', '/Items/%s' % cid)
             else:
                 return self.send_json(400, {'error': 'What should happen?'})
-            g.pub_cache.pop(('set', cid), None)
+            g.forget()
             self.send_json(200, {'ok': True, 'id': cid})
 
         def api_collection(self, me, user, q, b):
