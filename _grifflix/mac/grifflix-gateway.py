@@ -27,7 +27,7 @@ VERSION = '1'
 
 FIELDS = ('Overview,Genres,OfficialRating,CommunityRating,ProductionYear,PremiereDate,RunTimeTicks,ImageTags,'
           'BackdropImageTags,ParentBackdropImageTags,SeriesPrimaryImageTag,ChildCount,RecursiveItemCount,MediaSources,'
-          'People,Taglines,Studios,DateCreated,Width,Height')
+          'People,Taglines,Studios,DateCreated,Width,Height,RemoteTrailers,Path')
 LIBS = {'movies': ('Movies', 'movies'), 'tv': ('TV', 'tvshows'), 'home': ('Home videos', 'homevideos')}
 
 
@@ -270,6 +270,13 @@ def item_out(it, prog=None):
     if it.get('People'):
         o['cast'] = [p['Name'] for p in it['People'] if p.get('Type') == 'Actor'][:6]
         o['directors'] = [p['Name'] for p in it['People'] if p.get('Type') == 'Director'][:2]
+    yt = []
+    for t in it.get('RemoteTrailers') or []:   # trailers Jellyfin found (TMDB's, on YouTube): played from YouTube, not the Mac
+        m = re.search(r'(?:youtube\.com/watch\?v=|youtu\.be/|youtube\.com/embed/)([\w-]{11})', t.get('Url') or '')
+        if m and m.group(1) not in yt:
+            yt.append(m.group(1))
+    if yt:
+        o['trailers'] = yt[:3]
     if prog and it['Id'] in prog:
         o['pos'] = prog[it['Id']].get('pos')
     return o
@@ -287,6 +294,28 @@ class Gateway:
         self.store = Store(DATA)
         self.me_cache, self.me_lock = {}, threading.Lock()
         self.origins = ORIGINS + self.st.get('extra_origins', [])
+        self.pub_cache, self.home_paths, self.home_at = {}, [], 0
+
+    def is_public(self, iid):
+        """Films and TV are for anyone to look at (their pictures and trailers); home videos only for members."""
+        if iid in self.pub_cache:
+            return self.pub_cache[iid]
+        if time.time() - self.home_at > 600:
+            try:
+                self.home_paths = [l for v in self.jf.call('GET', '/Library/VirtualFolders') or [] if (v.get('CollectionType') or '') == 'homevideos'
+                                   for l in v.get('Locations') or []]
+                self.home_at = time.time()
+            except Exception:
+                return False
+        try:
+            path = (self.one(iid) or {}).get('Path') or ''
+        except Exception:
+            return False
+        ok = bool(path) and not any(path == h or path.startswith(h.rstrip('/') + '/') for h in self.home_paths)
+        if len(self.pub_cache) > 20000:
+            self.pub_cache.clear()
+        self.pub_cache[iid] = ok
+        return ok
 
     # --- who's asking
     def member(self, token):
@@ -409,6 +438,16 @@ def make_handler(g):
                     if u.path.startswith('/img/'):
                         return self.image(u.path[5:], q)
                     return self.video(u.path[3:], q, method)
+                if u.path.startswith('/pimg/'):   # pictures of films and TV, for anyone (Cloudflare keeps copies: .jpg, public)
+                    m = re.match(r'^/pimg/([0-9a-f]{32})/(Primary|Backdrop|Thumb)\.jpg$', u.path)
+                    if not m or not g.is_public(m.group(1)):
+                        return self.send_json(404, {'error': 'Not here.'})
+                    return self.image(m.group(1) + '/' + m.group(2), q, cache='public, max-age=604800')
+                if u.path.startswith('/api/public/'):   # anyone: Movie of the Day, the films and TV, trailers; not playing
+                    fn = getattr(self, 'pub_' + u.path[12:].replace('/', '_'), None)
+                    if not fn or method != 'GET':
+                        return self.send_json(404, {'error': 'Not here.'})
+                    return fn(q)
                 if not u.path.startswith('/api/'):
                     return self.send_json(404, {'error': 'Not here.'})
                 me = self.who()
@@ -630,14 +669,51 @@ def make_handler(g):
                                  'lists': [{'id': k, 'name': v['name'], 'items': [S[i] for i in v['items'] if i in S]} for k, v in user['lists'].items()]})
 
         # --- pictures and video, passed through
-        def image(self, rest, q):
+        # --- the public API (no sign-in): read only, films and TV only
+        def pub_home(self, q):
+            rows = {}
+            for key in ('movies', 'tv'):
+                lid = g.st.get('libraries', {}).get(key)
+                if lid:
+                    r = g.items(ParentId=lid, Recursive='true', IncludeItemTypes={'movies': 'Movie', 'tv': 'Series'}[key], SortBy='DateCreated', SortOrder='Descending', Limit=24)
+                    rows[key] = [item_out(i) for i in r.get('Items', [])]
+            self.send_json(200, rows)
+
+        def pub_items(self, q):
+            key = q.get('lib', 'movies')
+            if key not in ('movies', 'tv'):
+                return self.send_json(403, {'error': 'Sign in to see those.'})
+            q = dict(q)
+            q.pop('parent', None)
+            return self.api_items({'uid': ''}, {'progress': {}}, q, {})
+
+        def pub_item(self, q):
+            if not g.is_public(q.get('id', '')):
+                return self.send_json(404, {'error': 'Not here.'})
+            return self.api_item({'uid': ''}, {'progress': {}, 'hearts': []}, q, {})
+
+        def pub_search(self, q):
+            term = (q.get('q') or '').strip()
+            if len(term) < 2:
+                return self.send_json(200, {'items': []})
+            r = g.items(SearchTerm=term, Recursive='true', IncludeItemTypes='Movie,Series,Episode', Limit=40)
+            self.send_json(200, {'items': [item_out(i) for i in r.get('Items', []) if g.is_public(i['Id'])]})
+
+        def pub_calendar(self, q):   # Movie of the Day only (members' own calendars are theirs)
+            c = g.store.d['calendars']['motd']
+            S = g.summaries(list(c.get('days', {}).values()), {})
+            self.send_json(200, {'id': 'motd', 'name': c.get('name'), 'ownerName': 'John', 'mine': False, 'shared': True,
+                                 'count': len(c.get('days', {})), 'notes': c.get('notes', {}),
+                                 'days': {d: S[i] for d, i in c.get('days', {}).items() if i in S and g.is_public(i)}})
+
+        def image(self, rest, q, cache='private, max-age=86400'):
             m = re.match(r'^([0-9a-f]{32})(?:/(Primary|Backdrop|Thumb|Logo))?$', rest)
             if not m:
                 return self.send_json(404, {'error': 'Not here.'})
             path = '/Items/%s/Images/%s' % (m.group(1), m.group(2) or 'Primary')
             qs = {k: v for k, v in q.items() if k in ('maxWidth', 'maxHeight', 'quality', 'fillWidth', 'fillHeight')}
             qs.setdefault('quality', '85')
-            self.passthrough('GET', path + '?' + urllib.parse.urlencode(qs), cache='private, max-age=86400')
+            self.passthrough('GET', path + '?' + urllib.parse.urlencode(qs), cache=cache)
 
         def video(self, rest, q, method):
             if not re.match(r'^[0-9a-f]{32}/[\w./-]+$', rest) or '..' in rest:

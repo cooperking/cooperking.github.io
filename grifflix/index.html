@@ -254,6 +254,8 @@ dialog::backdrop { background: rgba(10, 4, 12, .62); backdrop-filter: blur(6px);
 .toast { position: fixed; left: 50%; bottom: max(24px, env(safe-area-inset-bottom)); z-index: 200; transform: translate(-50%, 20px); padding: 12px 20px; border-radius: 999px; background: var(--fg); color: #1b1020; font: 500 14px/1.3 var(--sans); box-shadow: 0 10px 30px rgba(0, 0, 0, .4); opacity: 0; pointer-events: none; transition: .25s; }
 .toast.on { opacity: 1; transform: translate(-50%, 0); }
 .hide { display: none !important; }
+html.public .members { display: none !important; }
+.trailer { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #000; }
 .tvbar { display: none; }
 html.tv .tvbar { position: absolute; left: 0; right: 0; bottom: 0; display: flex; align-items: center; gap: 18px; padding: 40px 48px 30px; background: linear-gradient(transparent, rgba(0, 0, 0, .75)); color: #fff; font: 500 15px/1 var(--sans); transition: opacity .3s; }
 html.tv .player.idle .tvbar { opacity: 0; }
@@ -279,11 +281,11 @@ html.tv .bar-top { position: relative; top: 0; }
     <button class="brand" data-go="home" aria-label="Grifflix: Movie of the Day">Grifflix</button>
     <button class="pill" data-go="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>Search</button>
     <button class="pill" data-go="browse"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m10 9 5 3-5 3z" fill="currentColor"/></svg>Browse</button>
-    <button class="pill" data-go="lists"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>My list</button>
+    <button class="pill members" data-go="lists"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>My list</button>
     <button class="pill" id="who" data-go="profile">Sign in</button>
     <button class="ico" data-go="search" aria-label="Search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg></button>
     <button class="ico" data-go="browse" aria-label="Browse"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m10 9 5 3-5 3z" fill="currentColor"/></svg></button>
-    <button class="ico" data-go="lists" aria-label="My list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg></button>
+    <button class="ico members" data-go="lists" aria-label="My list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg></button>
     <button class="ico" data-go="profile" aria-label="Profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></button>
   </header>
   <div id="note"></div>
@@ -331,14 +333,23 @@ var TODAY = iso(new Date());
 function toast(t) { var el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(function () { el.classList.remove('on'); }, 2600); }
 
 /* ------------------------------------------------------------------ talking to the Mac mini */
+var PUBLIC = false;   // a visitor (not signed in): Movie of the Day, the films and TV, trailers; no playing
 function api(path, body) {
   if (DEMO) return Demo.api(path, body);
+  if (PUBLIC) {
+    var name = path.split('?')[0];
+    if (name === 'calendars') return Promise.resolve({ calendars: [{ id: 'motd', name: 'Movie of the Day', ownerName: 'John', mine: false, shared: true, count: 0 }] });
+    if (name === 'calendar') path = 'calendar';
+    if (body || ['home', 'items', 'item', 'search', 'calendar'].indexOf(name) < 0) { var x = new Error('Sign in to do that.'); x.status = 401; signInSheet(); return Promise.reject(x); }
+    path = 'public/' + path;
+  }
   return fetch(GW + '/api/' + path, { method: body ? 'POST' : 'GET', headers: Object.assign({ Authorization: 'Bearer ' + TOKEN }, body ? { 'Content-Type': 'application/json' } : {}), body: body ? JSON.stringify(body) : undefined })
     .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) { var e = new Error(j.error || ('The Mac mini said ' + r.status)); e.status = r.status; throw e; } return j; }); });
 }
 function img(id, kind, w) {
   if (!id) return '';
   if (DEMO) return Demo.pic(id, kind);
+  if (PUBLIC) return GW + '/pimg/' + id + '/' + (kind || 'Primary') + '.jpg?maxWidth=' + (w || 400);   // (Cloudflare keeps copies)
   return GW + '/img/' + id + '/' + (kind || 'Primary') + '?maxWidth=' + (w || 400) + '&g=' + encodeURIComponent(KEY);
 }
 function gwUrl(p) { return DEMO ? p : GW + p; }
@@ -366,8 +377,13 @@ function tint(src) {
 function start() {
   document.documentElement.classList.add('ready');
   var go = function () {
-    if (!DEMO && !TOKEN) return welcome();
     if (!DEMO && !GW) return welcome('nogw');
+    if (!DEMO && !TOKEN) {
+      PUBLIC = true; ME = { name: '', public: true };
+      document.documentElement.classList.add('public');
+      $('#who').textContent = 'Sign in';
+      return fetch(GW + '/health').then(function (r) { if (!r.ok) throw 0; route(); }).catch(function () { welcome('down'); });
+    }
     api('me').then(function (me) {
       ME = me; KEY = me.key || '';
       $('#who').textContent = me.name ? me.name.split(' ')[0] : 'Profile';
@@ -464,10 +480,10 @@ function home() {
 function drawCals() {
   var el = $('#cals'), h = '';
   S.cals.forEach(function (c) { h += '<button class="pill' + (c.id === S.cal ? ' on' : '') + '" data-cal="' + c.id + '">' + esc(c.id === 'motd' ? 'Movie of the Day' : (c.mine ? c.name : c.ownerName + ': ' + c.name)) + '</button>'; });
-  h += '<button class="pill" id="newcal">+ New calendar</button>';
+  if (!PUBLIC) h += '<button class="pill" id="newcal">+ New calendar</button>';
   el.innerHTML = h;
   $$('[data-cal]', el).forEach(function (b) { b.onclick = function () { S.cal = b.dataset.cal; location.hash = '#home/' + S.cal; }; });
-  $('#newcal').onclick = newCalendar;
+  if ($('#newcal')) $('#newcal').onclick = newCalendar;
 }
 function monthsOf(days) {
   var keys = Object.keys(days).sort(), first = keys[0] ? keys[0].slice(0, 7) : TODAY.slice(0, 7), last = TODAY.slice(0, 7);
@@ -546,7 +562,8 @@ function drawRows(R) {
 /* --- browse: films, TV, home videos */
 function browse() {
   var main = $('#main');
-  var tabs = [['movies', 'Films'], ['tv', 'TV'], ['home', 'Home videos']];
+  var tabs = [['movies', 'Films'], ['tv', 'TV']].concat(PUBLIC ? [] : [['home', 'Home videos']]);
+  if (PUBLIC && S.browse === 'home') S.browse = 'movies';   // (home videos are members' only)
   main.innerHTML = '<div class="hero"><h1>' + { movies: 'Films', tv: 'TV', home: 'Home <i>videos</i>' }[S.browse] + '</h1><div class="hsub" id="bcount"></div></div>' +
     '<div class="tabs">' + tabs.map(function (t) { return '<button class="pill' + (t[0] === S.browse ? ' on' : '') + '" data-b="' + t[0] + '">' + t[1] + '</button>'; }).join('') +
     '<span class="sp"></span><select class="pill" id="sort" aria-label="Sort"><option value="name">A–Z</option><option value="added">Newest added</option><option value="year">Year</option><option value="rating">Rating</option></select></div><div id="bgrid"></div>';
@@ -637,11 +654,18 @@ function bodyHTML(it, ctx) {
   if (it.genres && it.genres.length) h += '<div class="chips">' + it.genres.map(function (g) { return '<span>' + esc(g) + '</span>'; }).join('') + '</div>';
   if ((it.directors && it.directors.length) || (it.cast && it.cast.length)) h += '<div class="people">' + (it.directors && it.directors.length ? '<b>Directed by</b> ' + esc(it.directors.join(', ')) + '. ' : '') + (it.cast && it.cast.length ? '<b>With</b> ' + esc(it.cast.join(', ')) + '.' : '') + '</div>';
   h += '<div class="acts">';
-  if (isSeries) { var nx = (it.episodes || []).filter(function (e) { return e.id === it.next; })[0]; h += '<button class="pill go" id="aplay">' + PLAY + (nx ? (nx.pos ? 'Carry on' : 'Play') + ' S' + nx.season + ' E' + nx.ep : 'Play') + '</button>'; }
+  var TR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 9h18M8 5v4M16 5v4"/></svg>';
+  if (PUBLIC) {
+    if (it.trailers && it.trailers.length) h += '<button class="pill go" id="atrailer">' + TR + 'Watch the trailer</button>';
+    h += '<button class="pill' + (it.trailers && it.trailers.length ? '' : ' go') + '" id="asignin">Sign in to watch</button>';
+  } else if (isSeries) { var nx = (it.episodes || []).filter(function (e) { return e.id === it.next; })[0]; h += '<button class="pill go" id="aplay">' + PLAY + (nx ? (nx.pos ? 'Carry on' : 'Play') + ' S' + nx.season + ' E' + nx.ep : 'Play') + '</button>'; }
   else h += '<button class="pill go" id="aplay">' + PLAY + (resume ? 'Carry on from ' + clock(it.pos) : 'Play') + '</button>' + (resume ? '<button class="pill" id="afrom0">From the start</button>' : '');
+  if (!PUBLIC && it.trailers && it.trailers.length) h += '<button class="pill" id="atrailer">' + TR + 'Trailer</button>';
   if (it.type === 'episode' && it.seriesId) h += '<button class="pill" id="aseries">All episodes</button>';
-  h += '<button class="ico" id="aheart" aria-label="Save for later">' + HEART(it.hearted) + '</button>';
-  h += '<button class="pill" id="aaddpl">+ Playlist</button><button class="pill" id="aaddcal">+ My calendar</button>';
+  if (!PUBLIC) {
+    h += '<button class="ico" id="aheart" aria-label="Save for later">' + HEART(it.hearted) + '</button>';
+    h += '<button class="pill" id="aaddpl">+ Playlist</button><button class="pill" id="aaddcal">+ My calendar</button>';
+  }
   h += '<button class="ico" id="ashare" aria-label="Share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13M7 8l5-5 5 5M5 14v6h14v-6"/></svg></button></div>';
   if (isSeries && it.episodes) {
     var seasons = {}; it.episodes.forEach(function (e) { (seasons[e.season || 0] = seasons[e.season || 0] || []).push(e); });
@@ -666,6 +690,8 @@ function wireBody(it, ctx) {
     play(it);
   });
   on('afrom0', function () { play(it, null, true); });
+  on('atrailer', function () { trailer(it); });
+  on('asignin', signInSheet);
   on('aseries', function () { itemSheet({ id: it.seriesId, name: it.series, type: 'series', poster: it.poster, backdrop: it.backdrop }); });
   on('aheart', function () { api('lists', { op: 'heart', item: it.id }).then(function (L) { it.hearted = L.hearts.some(function (h) { return h.id === it.id; }); $('#aheart').innerHTML = HEART(it.hearted); toast(it.hearted ? 'Saved for later' : 'Taken off My list'); }); });
   on('aaddpl', function () { addToPlaylist(it); });
@@ -732,6 +758,7 @@ function ask(title, ph, val, done) {
   $('#askok').onclick = ok; inp.onkeydown = function (e) { if (e.key === 'Enter') ok(); };
 }
 function profile() {
+  if (PUBLIC) return signInSheet();
   if (!ME) return;
   var mineCals = S.cals.filter(function (c) { return c.mine && c.id !== 'motd'; });
   openSheet('<div class="form" style="position:relative">' + X + '<h2 style="font:400 38px/1.1 var(--serif);color:var(--fg)">' + esc(ME.name || 'You') + '</h2>' +
@@ -752,8 +779,29 @@ function clock(s) { s = Math.round(s); var h = Math.floor(s / 3600), m = Math.fl
 
 /* ------------------------------------------------------------------ the player */
 var P = { el: $('#player'), v: $('#vid'), hls: null, it: null, queue: [], info: null, saveT: null, idleT: null };
+function trailer(it) {
+  if (!it || !it.trailers || !it.trailers.length) return;
+  closeSheet();
+  P.it = null; P.queue = [];
+  $('#ptitle').textContent = showName(it) + ': the trailer'; $('#psub').textContent = it.year || '';
+  $('#pmsg').classList.remove('on'); $('#pnext').classList.remove('on');
+  P.v.classList.add('hide');
+  var f = document.createElement('iframe');
+  f.className = 'trailer'; f.allow = 'autoplay; fullscreen; picture-in-picture'; f.allowFullscreen = true;
+  f.src = 'https://www.youtube-nocookie.com/embed/' + encodeURIComponent(it.trailers[0]) + '?autoplay=1&rel=0&playsinline=1&modestbranding=1';
+  P.el.insertBefore(f, P.el.firstChild);
+  P.el.classList.add('on', 'trailering'); document.documentElement.style.overflow = 'hidden';
+}
+function signInSheet() {
+  openSheet('<div class="form" style="position:relative">' + X + '<h2 style="font:400 36px/1.1 var(--serif);color:var(--fg)">Sign in to <i>watch</i></h2>' +
+    '<p class="ov" style="margin-top:0">Grifflix is John’s films for family and friends. Members sign in with the 6-letter code from their Profile on Song of the Day, or with their invitation link.</p>' +
+    '<form class="signin" id="signin2" style="margin-top:14px"><input id="code2" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false" placeholder="Code or invitation link" aria-label="Code or invitation link"><button class="pill on" type="submit">Sign in</button></form></div>');
+  $('#signin2').onsubmit = function (e) { e.preventDefault(); join($('#code2').value); };
+  setTimeout(function () { var c = $('#code2'); if (c && !TV) c.focus(); }, 60);
+}
 function play(it, queue, fromStart) {
   if (!it) return;
+  if (PUBLIC) return signInSheet();
   closeSheet();
   P.it = it; P.queue = queue || [];
   $('#ptitle').textContent = showName(it); $('#psub').textContent = it.type === 'episode' ? subOf(it) : (it.year || '');
@@ -778,8 +826,10 @@ function play(it, queue, fromStart) {
     clearInterval(P.saveT); P.saveT = setInterval(saveProgress, 10000);
   }).catch(function (e) { $('#pmsg').textContent = (e && e.message) || 'It won’t play just now.'; $('#pmsg').classList.add('on'); });
 }
-function saveProgress() { if (P.it && P.v.currentTime > 0 && !DEMO) api('progress', { id: P.it.id, pos: P.v.currentTime, secs: P.v.duration || (P.info && P.info.secs) || 0 }).then(function () { P.it.pos = P.v.currentTime; }).catch(function () {}); }
+function saveProgress() { if (P.it && P.v.currentTime > 0 && !DEMO && !PUBLIC) api('progress', { id: P.it.id, pos: P.v.currentTime, secs: P.v.duration || (P.info && P.info.secs) || 0 }).then(function () { P.it.pos = P.v.currentTime; }).catch(function () {}); }
 function stopPlayer() {
+  var tf = $('#player iframe.trailer');
+  if (tf) { tf.remove(); P.v.classList.remove('hide'); P.el.classList.remove('on', 'trailering'); document.documentElement.style.overflow = ''; return; }
   saveProgress(); clearInterval(P.saveT);
   if (P.info && !DEMO) api('stop', { ps: P.info.ps, device: P.info.device }).catch(function () {});
   if (P.hls) { P.hls.destroy(); P.hls = null; }
