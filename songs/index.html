@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="sotd-build" content="5ec86da73e34">
+<meta name="sotd-build" content="0312036b7691">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 271 so far">
 <meta name="theme-color" content="#ec135b">
@@ -8913,7 +8913,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (UPL.view) uplApply(UPL.view, { keep: true });
   }
   function peCw(p, own) {   // who can edit it: the members its owner ticks (each told when added)
-    var g = document.getElementById('pe-cwg'), box = document.getElementById('pe-cw'), seen = ((MEMBER && (MEMBER.mem || MEMBER.seen)) || []).filter(function (o) { return !p.boss || o.name !== p.o; })   // (every member, signed in yet or not, notifications on or not: John, 7 Nov 2026), cw = p.cw || [];   // (John, editing another's: everyone but its owner)
+    var g = document.getElementById('pe-cwg'), box = document.getElementById('pe-cw'), seen = ((MEMBER && (MEMBER.mem || MEMBER.seen)) || []).filter(function (o) { return !p.boss || o.name !== p.o; }), cw = p.cw || [];   // (John, editing another's: everyone but its owner)   // (every member, signed in yet or not, notifications on or not: John, 7 Nov 2026)
     g.hidden = !own || !seen.length; box.textContent = '';
     if (g.hidden) return;
     document.getElementById('pe-cwn').textContent = cw.length ? 'They can change its songs, as you can: pictures, details, videos, files and facts, and moving or taking songs off. Its name, set-up and who sees it stay yours.' : 'Tick anyone you’d like to edit it with you. They’re told, and can change its songs as you can.';
