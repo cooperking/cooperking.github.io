@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="sotd-build" content="b31fdb9e2e45">
+<meta name="sotd-build" content="24beceae1c9f">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 270 so far">
 <meta name="theme-color" content="#ec135b">
@@ -9142,8 +9142,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (!opts.quiet) UPL.linked = true;
     return uplCall(null, '?id=' + encodeURIComponent(pid)).then(function (j) {
       if (req !== UPLREQ || (opts.quiet && UPL.linked)) return false;
+      if (j.status !== 200 && typeof spLog === 'function') spLog('calendar ' + pid + ' didn’t open: the site said ' + j.status + ' ' + (j.error || ''));
       if (j.status !== 200) { if (opts.quiet) { calWaitOff(); try { localStorage.removeItem('sotd-cal'); } catch (e) {} } else toast(j.error || 'Couldn’t open that calendar'); return false; }   // (quiet: the one this device was on, gone or no longer shared with them)
-      var r = uplApply(j, opts); calWaitOff(); return r;
+      var r = uplApply(j, opts); calWaitOff(); if (r === false && typeof spLog === 'function') spLog('calendar ' + pid + ' came but had nothing to show (' + ((j.songs || []).length) + ' songs)'); return r;
     }).catch(function (e) { calWaitOff(); if (typeof spLog === 'function') spLog('calendar didn’t open: ' + ((e && e.message) || e)); toast(/fetch|network|load failed/i.test((e && e.message) || '') ? 'Couldn’t reach the site. Try again.' : 'That calendar couldn’t open: ' + ((e && e.message) || 'something went wrong')); return false; });
   }
   function uplBack(quiet) {   // John's calendar again
@@ -9198,7 +9199,12 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     lines.forEach(function (l, i) { g.fillText(l, pad, y + i * size * 1.02); });
     return (ART[key] = c.toDataURL('image/jpeg', .9));
   }
-  function calPics(p, covers) { return p.pic ? [p.pic] : p.pcov ? covers : [albumArt({ id: p.id, n: p.n, o: p.mine ? (MEMBER && MEMBER.name) || '' : p.o, mode: p.mode })]; }   // its photo; else its covers, if chosen; else the album-style one
+  function calPics(p, covers) {   // its photo; else its covers, if chosen; else the album-style one (its covers if that can't be drawn here)
+    if (p.pic) return [p.pic];
+    if (p.pcov) return covers;
+    try { return [albumArt({ id: p.id, n: p.n, o: p.mine ? (MEMBER && MEMBER.name) || '' : p.o, mode: p.mode })]; }
+    catch (e) { if (!calPics.said && typeof spLog === 'function') { calPics.said = true; spLog('album-style picture couldn’t be drawn: ' + ((e && e.message) || e)); } return covers; }
+  }   // its photo; else its covers, if chosen; else the album-style one
   function picActs(box, p, btn) {   // the picture's choices: a photo, the album-style one, its covers (those it isn't now)
     btn(box, p.pic ? 'Change photo' : 'Choose a photo', '', function () { PICFOR = p; var f = document.getElementById('uplpicin'); f.value = ''; f.click(); });
     if (p.pic || p.pcov) btn(box, 'Album style', '', function (e) { e.currentTarget.disabled = true; uplPicSend(p, null); });
@@ -9214,7 +9220,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var it = document.createElement('div'); it.className = 'cal-item'; it.setAttribute('role', 'listitem');
     var b = document.createElement('button'); b.type = 'button'; b.className = 'cal-card' + (r.id === UPL.on ? ' on' : '');
     var pic = document.createElement('span'); pic.className = 'cal-pic'; b.appendChild(pic);
-    it._fill = function () { if (!r.p) calMos(pic, [r.pic]); else calMos(pic, calPics(r.p, ((CARDS[r.id] || {}).cv) || [])); if (r.id === UPL.on) { var on = document.createElement('span'); on.className = 'cal-on'; on.textContent = 'Showing'; pic.appendChild(on); } };
+    it._fill = function () { try { if (!r.p) calMos(pic, [r.pic]); else calMos(pic, calPics(r.p, ((CARDS[r.id] || {}).cv) || [])); } catch (e) { if (typeof spLog === 'function') spLog('a calendar’s picture: ' + ((e && e.message) || e)); } if (r.id === UPL.on) { var on = document.createElement('span'); on.className = 'cal-on'; on.textContent = 'Showing'; pic.appendChild(on); } };
     it._fill();
     var nm = document.createElement('span'); nm.className = 'cal-nm'; nm.textContent = r.n; b.appendChild(nm);
     var ct = document.createElement('span'); ct.className = 'cal-ct'; ct.textContent = r.ct; b.appendChild(ct);
@@ -9241,7 +9247,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     }));
     if (UPL.john && !UPL.on) rows[0].ct = 'John’s calendar · ' + songs.length + ' songs';
     else if (UPL.john) rows[0].ct = 'John’s calendar · ' + UPL.john.length + ' songs';
-    rows.forEach(function (r) { grid.appendChild(calCard(r)); });
+    rows.forEach(function (r) { try { grid.appendChild(calCard(r)); } catch (e) { if (typeof spLog === 'function') spLog('a calendar’s card couldn’t be drawn: ' + ((e && e.message) || e)); } });
     openLayer(uplDlg);
     if (plTok() || UPL.on) uplCall(null, '?cards=1').then(function (j) {
       if (j.status !== 200 || !j.cards) return;
@@ -9270,7 +9276,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     }).then(function (pic) { toast('Adding the picture…'); uplPicSend(p, pic); })
       .catch(function (e) { toast('That picture couldn’t be used: ' + ((e && e.message) || e)); });
   });
-  document.getElementById('mark').addEventListener('click', function () { if (this.classList.contains('can')) uplChooser(); });
+  document.getElementById('mark').addEventListener('click', function () { if (!this.classList.contains('can')) return; try { uplChooser(); } catch (e) { if (typeof spLog === 'function') spLog('Calendars and Playlists didn’t open: ' + ((e && e.message) || e) + ' ' + String((e && e.stack) || '').split('\n').slice(0, 3).join(' | ')); toast('That didn’t open: ' + ((e && e.message) || e)); } });
   document.getElementById('mark').addEventListener('keydown', function (e) { if (this.classList.contains('can') && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); uplChooser(); } });
   document.getElementById('uplclose').addEventListener('click', function () { closeDialog(uplDlg); });
   // #u=<playlist>, or #u=<playlist>&d=<day> (a member's song, from its message): that calendar, once signed in
