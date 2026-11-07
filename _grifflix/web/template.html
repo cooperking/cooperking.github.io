@@ -729,6 +729,12 @@ function collectionView(id) {
       (c.overview ? '<p class="ov">' + esc(c.overview) + '</p>' : '') + '</div></div>' +
       '<div class="gridcards">' + c.items.map(function (i) { return cardHTML(i); }).join('') + '</div>';
     wireCards($('#cbody'), c.items);
+    if (ME && ME.owner) {
+      $('#cbody .collhead > div:last-child').insertAdjacentHTML('beforeend', '<div class="tabs" style="margin:16px 0 0"><button class="pill" id="crename">Rename</button><button class="pill" id="cdelete">Delete the collection</button></div>');
+      $('#crename').onclick = function () { ask('Rename the collection', 'Its name', c.name, function (v) { api('collections', { op: 'rename', id: c.id, name: v }).then(function () { toast('Renamed'); collectionView(id); }).catch(oops); }); };
+      $('#cdelete').onclick = function () { var b = this; if (!b.dataset.sure) { b.dataset.sure = 1; b.textContent = 'Tap again: its films stay'; return; }
+        api('collections', { op: 'delete', id: c.id }).then(function () { toast('Deleted (its films stay)'); location.hash = '#browse/collections'; }).catch(oops); };
+    }
 
   }).catch(oops);
 }
@@ -858,6 +864,7 @@ function bodyHTML(it, ctx) {
   if (!PUBLIC) {
     h += '<button class="ico" id="aheart" aria-label="Save for later">' + HEART(it.hearted) + '</button>';
     h += '<button class="pill" id="aaddpl">+ Playlist</button><button class="pill" id="aaddcal">+ My calendar</button>';
+    if (ME && ME.owner && it.type !== 'video') h += '<button class="pill" id="acoll">Collections</button>';
   }
   h += '<button class="ico" id="ashare" aria-label="Share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13M7 8l5-5 5 5M5 14v6h14v-6"/></svg></button></div>';
   if (isSeries && it.episodes) {
@@ -889,6 +896,7 @@ function wireBody(it, ctx) {
   on('aheart', function () { api('lists', { op: 'heart', item: it.id }).then(function (L) { it.hearted = L.hearts.some(function (h) { return h.id === it.id; }); $('#aheart').innerHTML = HEART(it.hearted); toast(it.hearted ? 'Saved for later' : 'Taken off My list'); }); });
   on('aaddpl', function () { addToPlaylist(it); });
   on('aaddcal', function () { addToCalendar(it); });
+  on('acoll', function () { collPicker(it); });
   on('ashare', function () { share(showName(it), location.href.split('#')[0] + (ctx.date ? '#home/' + S.cal : '')); });
   $$('[data-season]').forEach(function (b) { b.onclick = function () { ctx.season = b.dataset.season; $('#isbody').innerHTML = bodyHTML(it, ctx); wireBody(it, ctx); }; });
   $$('[data-ep]').forEach(function (b) { b.onclick = function () { var i = it.episodes.map(function (e) { return e.id; }).indexOf(b.dataset.ep); play(it.episodes[i], it.episodes.slice(i + 1)); }; });
@@ -944,6 +952,27 @@ function addToCalendar(it) {
   };
 }
 function newCalendar() { ask('A calendar of your own', 'Its name (say, “Christmas films”)', '', function (name) { api('calendar', { op: 'create', name: name }).then(function (c) { S.cal = c.id; location.hash = '#home/' + c.id; toast('Tap a day to choose its film'); }).catch(oops); }); }
+/* John's collections, kept by Grifflix (nothing from Plex): tick a film (or an episode's series) in or out of any
+   collection, or start a new one with it */
+function collPicker(it) {
+  var item = it.type === 'episode' && it.seriesId ? it.seriesId : it.id, name = it.type === 'episode' ? (it.series || it.name) : it.name;
+  openSheet('<div class="form" style="position:relative">' + X + '<h2 style="font:400 34px/1.1 var(--serif);color:var(--fg);padding-right:44px"><i>' + esc(name) + '</i> in collections</h2><div id="cpk"><p class="ov">Looking…</p></div></div>');
+  var draw = function (r) {
+    var held = r['in'] || [];
+    $('#cpk').innerHTML = '<div class="newrow" style="display:flex;gap:8px;margin:0 0 14px"><input type="text" id="cpnew" placeholder="A new collection, with it in"><button class="pill go" id="cpgo">Make</button></div>' +
+      '<div class="modes" style="max-height:52vh;overflow:auto">' + r.collections.map(function (c) { var on = held.indexOf(c.id) >= 0; return '<button class="mode' + (on ? ' on' : '') + '" data-cp="' + c.id + '"><b>' + (on ? '✓ ' : '') + esc(c.name) + '</b></button>'; }).join('') + '</div>';
+    $$('[data-cp]').forEach(function (b) { b.onclick = function () {
+      var on = b.classList.contains('on'); b.disabled = true;
+      api('collections', { op: on ? 'remove' : 'add', id: b.dataset.cp, item: item }).then(function () {
+        if (on) held.splice(held.indexOf(b.dataset.cp), 1); else held.push(b.dataset.cp);
+        toast((on ? 'Taken out of ' : 'In ') + b.textContent.replace(/^✓ /, '')); draw(r);
+      }).catch(function (e) { b.disabled = false; oops(e); });
+    }; });
+    var make = function () { var v = $('#cpnew').value.trim(); if (!v) return; api('collections', { op: 'create', name: v, item: item }).then(function () { toast('Made: ' + v); return api('collections', { op: 'in', item: item }).then(draw); }).catch(oops); };
+    $('#cpgo').onclick = make; $('#cpnew').onkeydown = function (e) { if (e.key === 'Enter') make(); };
+  };
+  api('collections', { op: 'in', item: item }).then(draw).catch(oops);
+}
 function ask(title, ph, val, done) {
   openSheet('<div class="form" style="position:relative">' + X + '<h2 style="font:400 34px/1.1 var(--serif);color:var(--fg)">' + esc(title) + '</h2><input type="text" id="askv" placeholder="' + esc(ph) + '" value="' + esc(val) + '"><div class="acts"><button class="pill go" id="askok">OK</button></div></div>');
   var inp = $('#askv'); setTimeout(function () { inp.focus(); }, 50);
@@ -1193,6 +1222,15 @@ var Demo = (function () {
     else if (p === 'items') { var list = order[q.lib || 'movies'].map(out); if (q.sort === 'year') list.sort(function (a, b) { return b.year - a.year; }); else if (q.sort === 'rating') list.sort(function (a, b) { return b.rating - a.rating; }); else list.sort(function (a, b) { return a.name.localeCompare(b.name); }); r = { items: list, total: list.length }; }
     else if (p === 'item') { var it = out(q.id); if (items[q.id].episodes) { it.episodes = items[q.id].episodes.map(out); it.next = (it.episodes.filter(function (e) { return !prog[e.id]; })[0] || {}).id; } it.hearted = L.hearts.indexOf(q.id) >= 0; r = it; }
     else if (p === 'search') { var t = (q.q || '').toLowerCase(); r = { items: Object.keys(items).filter(function (i) { return items[i].name.toLowerCase().indexOf(t) >= 0 && items[i].type !== 'photo'; }).slice(0, 30).map(out) }; }
+    else if (p === 'collections' && b) {
+      var C1 = COLLS.filter(function (c) { return c.id === b.id; })[0];
+      if (b.op === 'in') r = { collections: COLLS.map(function (c) { return { id: c.id, name: c.name }; }), 'in': COLLS.filter(function (c) { return c.items.indexOf(b.item) >= 0; }).map(function (c) { return c.id; }) };
+      else if (b.op === 'add' && C1) { if (C1.items.indexOf(b.item) < 0) C1.items.push(b.item); r = { ok: true, id: C1.id }; }
+      else if (b.op === 'remove' && C1) { C1.items = C1.items.filter(function (x) { return x !== b.item; }); r = { ok: true, id: C1.id }; }
+      else if (b.op === 'create') { var nc = { id: 'c' + Date.now(), name: b.name, items: b.item ? [b.item] : [] }; COLLS.push(nc); r = { ok: true, id: nc.id }; }
+      else if (b.op === 'rename' && C1) { C1.name = b.name; r = { ok: true, id: C1.id }; }
+      else if (b.op === 'delete' && C1) { COLLS.splice(COLLS.indexOf(C1), 1); r = { ok: true }; }
+    }
     else if (p === 'collections') r = { collections: COLLS.map(function (c) { return { id: c.id, name: c.name, type: 'collection', poster: c.items[0], children: c.items.length }; }) };
     else if (p === 'collection') { var cc = COLLS.filter(function (c) { return c.id === q.id; })[0]; r = { id: cc.id, name: cc.name, type: 'collection', poster: cc.items[0], overview: cc.about, items: cc.items.map(out) }; }
     else if (p === 'calendars') r = { calendars: Object.keys(cals).map(function (k) { return calOut(k); }) };
