@@ -4,19 +4,19 @@
   "about": "For songs Claude knows: how often the three strongest moods from Last.fm listeners' track tags, from the artist's Last.fm tags, and from the audio models include Claude's first pick.",
   "listeners": [
    2,
-   3
+   4
   ],
   "audio": [
-   149,
-   256
+   151,
+   260
   ],
   "artistTags": [
    5,
    29
   ],
-  "songsWithListenerTags": 14,
-  "songsWithListenerMoodTags": 11,
-  "songsWhereListenersCount": 5
+  "songsWithListenerTags": 315,
+  "songsWithListenerMoodTags": 173,
+  "songsWhereListenersCount": 74
  },
  "moods": [
   "Joyful",
@@ -2116,7 +2116,7 @@
    "sound": [
     "Dreamy",
     "Joyful",
-    "Uplifting"
+    "Mellow"
    ],
    "claude": [
     "Bittersweet",
@@ -2691,8 +2691,8 @@
    "moodFrom": "Claude",
    "sound": [
     "Melancholy",
-    "Romantic",
-    "Dark"
+    "Dark",
+    "Romantic"
    ],
    "claude": [
     "Bittersweet",
@@ -4697,7 +4697,7 @@
    "musicbrainz": [
     "rock"
    ],
-   "checkWhy": "Energetic, but the audio sounds calmer than 86% of the songs",
+   "checkWhy": "Energetic, but the audio sounds calmer than 87% of the songs",
    "check": true
   },
   "72PoJMDfdaw9gGECgA9kTZ": {
@@ -17644,7 +17644,7 @@
    "sound": [
     "Mellow",
     "Uplifting",
-    "Joyful"
+    "Playful"
    ],
    "claude": [
     "Mellow"
@@ -18142,8 +18142,8 @@
    ],
    "moodFrom": "Claude",
    "sound": [
-    "Dreamy",
     "Mellow",
+    "Dreamy",
     "Melancholy"
    ],
    "claude": [
@@ -20920,7 +20920,7 @@
    "sound": [
     "Playful",
     "Energetic",
-    "Joyful"
+    "Romantic"
    ],
    "claude": [
     "Playful"
@@ -26507,7 +26507,7 @@
     ],
     [
      "Melancholy",
-     12
+     13
     ]
    ],
    "moodEvidence": [
@@ -26525,7 +26525,7 @@
       ],
       [
        "Melancholy",
-       12
+       13
       ]
      ]
     ]
@@ -26872,7 +26872,7 @@
    "moodMix": [
     [
      "Energetic",
-     53
+     52
     ],
     [
      "Joyful",
@@ -26890,7 +26890,7 @@
      [
       [
        "Energetic",
-       53
+       52
       ],
       [
        "Joyful",
@@ -27558,7 +27558,7 @@
    "moodMix": [
     [
      "Playful",
-     24
+     23
     ],
     [
      "Energetic",
@@ -27576,7 +27576,7 @@
      [
       [
        "Playful",
-       24
+       23
       ],
       [
        "Energetic",
@@ -27697,7 +27697,7 @@
     ],
     [
      "Romantic",
-     16
+     17
     ]
    ],
    "moodEvidence": [
@@ -27715,7 +27715,7 @@
       ],
       [
        "Romantic",
-       16
+       17
       ]
      ]
     ]
@@ -27800,120 +27800,6 @@
     "r&b",
     "rock",
     "soul"
-   ],
-   "check": true
-  },
-  "2jIyIMXAHeHSz3ip6ccMFl": {
-   "n": 271,
-   "title": "Cucurrucucu Paloma - Ao Vivo",
-   "artist": "Caetano Veloso",
-   "moods": [
-    "Mellow",
-    "Melancholy"
-   ],
-   "moodMix": [
-    [
-     "Mellow",
-     31
-    ],
-    [
-     "Melancholy",
-     27
-    ],
-    [
-     "Dark",
-     17
-    ]
-   ],
-   "moodEvidence": [
-    [
-     "Audio",
-     100,
-     [
-      [
-       "Mellow",
-       31
-      ],
-      [
-       "Melancholy",
-       27
-      ],
-      [
-       "Dark",
-       17
-      ]
-     ]
-    ]
-   ],
-   "moodFrom": "Weighed up",
-   "sound": [
-    "Mellow",
-    "Melancholy",
-    "Dark"
-   ],
-   "listeners": "none",
-   "styles": [
-    "Vocal",
-    "Score",
-    "Soundtrack"
-   ],
-   "genres": [
-    "World"
-   ],
-   "genreFrom": "Weighed up",
-   "genreMix": [
-    [
-     "World",
-     80
-    ],
-    [
-     "Pop",
-     16
-    ],
-    [
-     "Folk",
-     4
-    ]
-   ],
-   "genreEvidence": [
-    [
-     "MusicBrainz",
-     50,
-     [
-      [
-       "World",
-       100
-      ]
-     ]
-    ],
-    [
-     "Last.fm",
-     30,
-     [
-      [
-       "World",
-       100
-      ]
-     ]
-    ],
-    [
-     "Audio",
-     20,
-     [
-      [
-       "Pop",
-       79
-      ],
-      [
-       "Folk",
-       21
-      ]
-     ]
-    ]
-   ],
-   "musicbrainz": [
-    "latin",
-    "mpb"
    ],
    "check": true
   }
