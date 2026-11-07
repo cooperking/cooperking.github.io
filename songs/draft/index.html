@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="5f7ff8fd5b18">
+<meta name="sotd-build" content="af12f167e4b6">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -9143,8 +9143,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     if (!opts.quiet) UPL.linked = true;
     return uplCall(null, '?id=' + encodeURIComponent(pid)).then(function (j) {
       if (req !== UPLREQ || (opts.quiet && UPL.linked)) return false;
+      if (j.status !== 200 && typeof spLog === 'function') spLog('calendar ' + pid + ' didn’t open: the site said ' + j.status + ' ' + (j.error || ''));
       if (j.status !== 200) { if (opts.quiet) { calWaitOff(); try { localStorage.removeItem('sotd-cal'); } catch (e) {} } else toast(j.error || 'Couldn’t open that calendar'); return false; }   // (quiet: the one this device was on, gone or no longer shared with them)
-      var r = uplApply(j, opts); calWaitOff(); return r;
+      var r = uplApply(j, opts); calWaitOff(); if (r === false && typeof spLog === 'function') spLog('calendar ' + pid + ' came but had nothing to show (' + ((j.songs || []).length) + ' songs)'); return r;
     }).catch(function (e) { calWaitOff(); if (typeof spLog === 'function') spLog('calendar didn’t open: ' + ((e && e.message) || e)); toast(/fetch|network|load failed/i.test((e && e.message) || '') ? 'Couldn’t reach the site. Try again.' : 'That calendar couldn’t open: ' + ((e && e.message) || 'something went wrong')); return false; });
   }
   function uplBack(quiet) {   // John's calendar again
