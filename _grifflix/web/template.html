@@ -370,12 +370,12 @@ html.tv .wrap { max-width: none; }
 .rows { margin-top: 44px; }
 /* html.big: a computer or the TV: the month's name, its buttons and the months in one row, then the whole calendar filling the window */
 html.big .wrap { max-width: none; padding-left: 28px; padding-right: 28px; }
-html.big #main { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 18px; align-items: center; }
-html.big #hero { grid-column: 1; grid-row: 1; }
-html.big #mnav { grid-column: 2; grid-row: 1; margin: 18px 0 0; }
-html.big #cals { grid-column: 1 / -1; grid-row: 2; justify-content: flex-start; margin-top: 12px; }
-html.big .stage { grid-column: 1 / -1; grid-row: 3; grid-template-columns: minmax(0, 1fr); margin-top: 12px; }
-html.big .rows { grid-column: 1 / -1; grid-row: 4; }
+html.big #main.homeview { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 18px; align-items: center; }
+html.big #main.homeview #hero { grid-column: 1; grid-row: 1; }
+html.big #main.homeview #mnav { grid-column: 2; grid-row: 1; margin: 18px 0 0; }
+html.big #main.homeview #cals { grid-column: 1 / -1; grid-row: 2; justify-content: flex-start; margin-top: 12px; }
+html.big #main.homeview .stage { grid-column: 1 / -1; grid-row: 3; grid-template-columns: minmax(0, 1fr); margin-top: 12px; }
+html.big #main.homeview .rows { grid-column: 1 / -1; grid-row: 4; }
 html.big .side { display: none; }   /* (the month's films are on the calendar) */
 html.big .hero { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; padding-top: 18px; text-align: left; }
 html.big .hero .kick { flex: 0 0 100%; margin: 0 0 -10px; }
@@ -588,6 +588,7 @@ window.grifflixJoin = join;   // (the Fire TV app's menu: Sign in with a code)
 function route() {
   var h = (location.hash || '#home').slice(1).split('/');
   S.view = h[0] || 'home';
+  $('#main').className = '';
   $$('.bar-top [data-go]').forEach(function (b) { b.classList.toggle('on', b.dataset.go === S.view && b.classList.contains('pill')); });
   window.scrollTo(0, 0);
   if (S.view === 'browse') { if (h[1]) S.browse = h[1]; return browse(); }
@@ -606,6 +607,7 @@ $$('[data-go]').forEach(function (b) { b.addEventListener('click', function () {
 /* --- home: a calendar (Movie of the Day, or someone's own) and the rows */
 function home() {
   var main = $('#main');
+  main.className = 'homeview';   // (on a computer, only the calendar page is laid out as one screen)
   main.innerHTML = '<div class="hero" id="hero"></div><div class="cals" id="cals"></div><div id="mnav"></div><div class="stage"><section class="cal" id="cal"></section><section class="side" id="side"></section></div><div class="rows" id="rows"></div>';
   Promise.all([api('calendars'), api('calendar?id=' + encodeURIComponent(S.cal)).catch(function () { S.cal = 'motd'; return api('calendar?id=motd'); })]).then(function (r) {
     S.cals = r[0].calendars; S.calData = r[1];
