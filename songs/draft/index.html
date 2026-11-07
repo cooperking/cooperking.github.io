@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="3895cc6704aa">
+<meta name="sotd-build" content="2c284aba71c5">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -6313,7 +6313,12 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   // (6 Nov 2026, John: "playing to an external spotify player and reload, the music stops for a second"): the page's coming
   // and going in the Spotify log (Admin › Members › John), to see what's sent around a reload
   window.addEventListener('pagehide', function () { if (typeof spLog === 'function' && coverObj && coverObj.sp) spLog('page leaving (reload or closed): Spotify ' + (SPX.playing ? 'playing' : 'paused') + ' on ' + ((SPX.dev && SPX.dev.name) || '?')); });
-  setTimeout(function () { if (typeof spLog === 'function' && SPM && SPM.st && SPM.st.on) spLog('page opened'); }, 2500);
+  setTimeout(function () {   // (and My playlist as it stands, for John: John, 7 Nov 2026, hearts not showing)
+    if (typeof spLog !== 'function' || !MEMBER) return;
+    var st = null; try { st = plStash(); } catch (e) {}
+    var sv = PL.cur && (PL.lists || []).filter(function (x) { return x.id === PL.cur; })[0];
+    spLog('page opened (' + (BUILD || 'no build') + '): My playlist ' + fav.length + (FAVHELD.length ? ' (+' + FAVHELD.length + ' not known yet)' : '') + (PL.cur ? '; saved playlist open: “' + ((sv && sv.name) || PL.cur) + '”, hearts put aside ' + ((st && st.tracks) || []).length : ''));
+  }, 2500);
   document.addEventListener('visibilitychange', function () { if (document.hidden && vplay && vplay.on) resumeSave(); });
   sheet.addEventListener('close', function () { if (!RESUME) { resumeForget(); nowStop(); setTimeout(nowFetch, 300); } });   // closed, not playing on: nothing to carry on here (another device's, if one's playing)
   function resumeInit() {
