@@ -2078,7 +2078,7 @@ async function uplSharePage(url, env, pid, when) {   // a public member's calend
   if ((day && !s) || (month && !inMonth.length) || !v.songs.length) return Response.redirect(home + '#u=' + pid, 302);
   const to = home + '#u=' + pid + (s ? '&d=' + slugD(day) : month ? '&m=' + slugM(month) : '');
   const cardUrl = site + 'u/' + pid + '/' + (s ? slugD(day) + '/' : month ? slugM(month) + '/' : '') + 'card.jpg', card = await uplCardThere(cardUrl);
-  const newest = (month ? inMonth : v.songs)[(month ? inMonth : v.songs).length - 1], own = !s && !month ? (rec.art ? LIVE_ORIGIN + '/up/' + pid + '-art.jpg?v=' + rec.art.v : rec.pic ? LIVE_ORIGIN + '/up/' + pid + '.jpg?v=' + rec.pic : '') : '', img = own || (card ? cardUrl : ((s || newest).img || ''));   // (the whole of it: its own picture, as the calendar shows it)
+  const newest = (month ? inMonth : v.songs)[(month ? inMonth : v.songs).length - 1], own = '', img = card ? cardUrl : ((s || newest).img || '');   // (the site job's wide card, 1200 by 630, as John's own links have: WhatsApp shows it large; its own square picture only showed small: John, 7 Nov 2026)
   const e = x => esc(String(x)), n = (month ? inMonth : v.songs).length, songsN = n + (n === 1 ? ' song' : ' songs');
   const monthName = month ? new Date(month + '-15T12:00:00Z').toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' }) : '';
   // its own name and caption (John, 7 Nov 2026: "it should be correct for the playlist or calendar it's sharing ... Should say the title and the caption")
