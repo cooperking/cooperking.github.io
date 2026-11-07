@@ -550,7 +550,7 @@ function wireCards(el, items) {
 }
 function drawRows(R) {
   var el = $('#rows'); if (!el) return;
-  var rows = [['continue', 'Carry on <i>watching</i>', true], ['movies', 'New <i>films</i>', false], ['tv', 'New on <i>TV</i>', false], ['home', 'Home <i>videos</i>', true]], h = '', all = [];
+  var rows = [['continue', 'Carry on <i>watching</i>', true], ['movies', 'New <i>films</i>', false], ['tv', 'New on <i>TV</i>', false]], h = '', all = [];
   rows.forEach(function (r) {
     var items = R[r[0]] || []; if (!items.length) return; all = all.concat(items);
     h += '<section class="row"><h2>' + r[1] + (r[0] !== 'continue' ? '<button class="more" data-more="' + r[0] + '">See all</button>' : '') + '</h2><div class="strip' + (r[2] ? ' wide' : '') + '">' + items.map(function (i) { return cardHTML(i, r[2]); }).join('') + '</div></section>';
@@ -562,8 +562,8 @@ function drawRows(R) {
 /* --- browse: films, TV, home videos */
 function browse() {
   var main = $('#main');
-  var tabs = [['movies', 'Films'], ['tv', 'TV']].concat(PUBLIC ? [] : [['home', 'Home videos']]);
-  if (PUBLIC && S.browse === 'home') S.browse = 'movies';   // (home videos are members' only)
+  var tabs = [['movies', 'Films'], ['tv', 'TV']];   // (no Home videos tab: John, 7 Nov 2026; the gateway still serves a home videos library if one is added)
+  if (S.browse === 'home') S.browse = 'movies';
   main.innerHTML = '<div class="hero"><h1>' + { movies: 'Films', tv: 'TV', home: 'Home <i>videos</i>' }[S.browse] + '</h1><div class="hsub" id="bcount"></div></div>' +
     '<div class="tabs">' + tabs.map(function (t) { return '<button class="pill' + (t[0] === S.browse ? ' on' : '') + '" data-b="' + t[0] + '">' + t[1] + '</button>'; }).join('') +
     '<span class="sp"></span><select class="pill" id="sort" aria-label="Sort"><option value="name">A–Z</option><option value="added">Newest added</option><option value="year">Year</option><option value="rating">Rating</option></select></div><div id="bgrid"></div>';
@@ -763,7 +763,7 @@ function profile() {
   var mineCals = S.cals.filter(function (c) { return c.mine && c.id !== 'motd'; });
   openSheet('<div class="form" style="position:relative">' + X + '<h2 style="font:400 38px/1.1 var(--serif);color:var(--fg)">' + esc(ME.name || 'You') + '</h2>' +
     '<p class="ov" style="margin-top:0">Signed in with Song of the Day' + (ME.owner ? ': you choose the Movie of the Day.' : '.') + '</p>' +
-    (ME.libraries ? '<div class="chips">' + ['movies', 'tv', 'home'].map(function (k) { return '<span>' + (ME.libraries[k] || 0) + ' ' + { movies: 'films', tv: 'series', home: 'home videos' }[k] + '</span>'; }).join('') + '</div>' : '') +
+    (ME.libraries ? '<div class="chips">' + ['movies', 'tv'].map(function (k) { return '<span>' + (ME.libraries[k] || 0) + ' ' + { movies: 'films', tv: 'series' }[k] + '</span>'; }).join('') + '</div>' : '') +
     (mineCals.length ? '<div class="owner"><h3>Your calendars</h3>' + mineCals.map(function (c) { return '<div class="acts" style="margin-top:0"><button class="pill" data-gocal="' + c.id + '">' + esc(c.name) + ' · ' + c.count + '</button><button class="pill" data-shcal="' + c.id + '" data-on="' + (c.shared ? 1 : 0) + '">' + (c.shared ? 'Family can see it' : 'Only you') + '</button><button class="pill" data-delcal="' + c.id + '">Delete</button></div>'; }).join('') + '</div>' : '') +
     '<div class="acts"><a class="pill" href="../songs/">Song of the Day</a>' + (DEMO ? '<a class="pill" href="?demo=0">Leave the demo</a>' : '') + '</div></div>');
   $$('[data-gocal]').forEach(function (b) { b.onclick = function () { closeSheet(); S.cal = b.dataset.gocal; location.hash = '#home/' + S.cal; }; });
