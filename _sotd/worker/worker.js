@@ -91,7 +91,8 @@ export default {
       if (url.pathname === '/facts/picks') return new Response((await env.SOTD.get('videoPicks')) || '{}', { headers: factsHeaders('*') });
       if (url.pathname === '/facts/redo') return await factsRedo(request, env);
       if (url.pathname.startsWith('/g/')) return await grifflix(request, url, env);
-      if (url.pathname.startsWith('/gp/')) return await gPicGet(request, url, env, ctx);   // Grifflix's pictures, kept here (not the Mac's)   // Grifflix's own members (apart from the songs')
+      if (url.pathname.startsWith('/gp/')) return await gPicGet(request, url, env, ctx);
+      if (url.pathname.startsWith('/gs/')) return await gSharePage(url, env);   // a Movie of the Day's own link, with its card   // Grifflix's pictures, kept here (not the Mac's)   // Grifflix's own members (apart from the songs')
       if (url.pathname.startsWith('/gi/')) return await gInvitePage(url, env);
       if (url.pathname.startsWith('/members/')) return await members(request, url, env);
       if (url.pathname === '/push/check') return await pushCheck(request, env, ctx);
@@ -1417,6 +1418,55 @@ async function gMailAll(env, f) {
   }
   return { sent, kept };
 }
+// members' own things, kept here (John, 8 Nov 2026: only playing should need the Mac): My list and playlists
+// (glists:<member>), and members' own calendars (gcals); each film kept with what the page shows of it
+const G_SNAP_KEYS = ['id', 'name', 'type', 'year', 'mins', 'secs', 'cert', 'rating', 'series', 'seriesId', 'season', 'ep', 'poster', 'backdrop', 'thumb', 'children', 'tags'];
+function gSnap(snap, id) {
+  const s0 = snap && typeof snap === 'object' ? snap : {}, iid = String(s0.id || id || '');
+  if (!/^[0-9a-f]{32}$/.test(iid)) return null;
+  const o = { id: iid };
+  for (const k of G_SNAP_KEYS.slice(1)) {
+    const v = s0[k];
+    if (v == null || v === '') continue;
+    if (k === 'tags') { if (typeof v === 'object') o.tags = Object.fromEntries(Object.entries(v).filter(([a, t]) => ['poster', 'backdrop', 'thumb'].includes(a) && /^\w{1,16}$/.test(String(t))).map(([a, t]) => [a, String(t)])); }
+    else if (typeof v === 'number') o[k] = v;
+    else o[k] = String(v).slice(0, 120);
+  }
+  if (!o.name) o.name = 'A film';
+  return o;
+}
+async function gListsGet(env, id) { const L = (await env.SOTD.get('glists:' + id, 'json')) || {}; return { hearts: L.hearts || [], lists: L.lists || {} }; }
+async function gCalsGet(env) { return (await env.SOTD.get('gcals', 'json')) || {}; }
+function gCalOut(id, c, who, all, full) {
+  const o = { id, name: c.name, ownerName: ((all[c.owner] || {}).name || 'A member').split(' ')[0], mine: c.owner === who.id, shared: !!c.shared, count: Object.keys(c.days || {}).length };
+  if (full) { o.days = c.days || {}; o.notes = c.notes || {}; }
+  return o;
+}
+async function gPersonalImport(env, all, P) {   // once: what members kept on the Mac (My list, playlists, calendars) brought here
+  if (await env.SOTD.get('gpersonal')) return 'already';
+  const owner = await env.SOTD.get('gowner'), byName = {};
+  for (const [id, m] of Object.entries(all)) byName[(m.name || '').trim().toLowerCase()] = id;
+  const who = uid => uid === 'owner' ? owner : uid.startsWith('g:') ? (all[uid.slice(2)] ? uid.slice(2) : null) : uid.startsWith('n:') ? byName[uid.slice(2)] || null : null;
+  let lists = 0, cals = 0;
+  for (const [uid, u] of Object.entries(P.users || {})) {
+    const id = who(uid); if (!id) continue;
+    const hearts = (u.hearts || []).map(x => gSnap(x)).filter(Boolean), L = {};
+    for (const [lid, pl] of Object.entries(u.lists || {})) L[String(lid).slice(0, 16)] = { name: String(pl.name || 'Playlist').slice(0, 60), items: (pl.items || []).map(x => gSnap(x)).filter(Boolean).slice(0, 500) };
+    if (!hearts.length && !Object.keys(L).length) continue;
+    await env.SOTD.put('glists:' + id, JSON.stringify({ hearts, lists: L })); lists++;
+  }
+  const C = await gCalsGet(env);
+  for (const [cid, c] of Object.entries(P.calendars || {})) {
+    const id = who(String(c.owner || '')); if (!id || cid === 'motd') continue;
+    const days = {}, notes = {};
+    for (const [d, x] of Object.entries(c.days || {})) { const it = gSnap(x); if (it && /^\d{4}-\d\d-\d\d$/.test(d)) days[d] = it; }
+    for (const [d, n] of Object.entries(c.notes || {})) if (days[d] && n) notes[d] = String(n).slice(0, 500);
+    C[String(cid).slice(0, 16)] = { name: String(c.name || 'My calendar').slice(0, 60), owner: id, days, notes, shared: c.shared !== false }; cals++;
+  }
+  await env.SOTD.put('gcals', JSON.stringify(C));
+  await env.SOTD.put('gpersonal', JSON.stringify({ at: Date.now(), lists, cals }));
+  return { lists, cals };
+}
 async function gDataJob(env, mode) {   // the site's files made again (grifflix-data.yml): 'full' after an Update, 'days' each morning
   if (!env.GH_TOKEN) return { ok: false, error: 'The GH_TOKEN secret is not set.' };
   const r = await fetch('https://api.github.com/repos/' + REPO + '/actions/workflows/grifflix-data.yml/dispatches', {
@@ -1553,12 +1603,82 @@ async function grifflix(request, url, env) {
     return { id: who.id, name: m.name, owner: who.owner, gpush: gMode(m, 'gpush'), gmail: gMode(m, 'gmail'), email: m.email || '', devices: Object.values(subs).filter(x => x.m === who.id).length, key: (await vapidKeys(env)).pub };
   };
   if (route === 'me') return answer(200, await view());
-  if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
+  if (request.method !== 'POST' && !['lists', 'calendars', 'calendar'].includes(route)) return answer(405, { error: 'Use POST.' });
   if (route === 'signout') { delete m.devices[who.hash]; await gSave(env, all); return answer(200, { ok: true }); }
   if (route === 'tvcode') {   // a code for a TV (or any device) to sign in as them: one use, 15 minutes
     const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789', r = crypto.getRandomValues(new Uint8Array(6)), code = [...r].map(x => A[x % A.length]).join('');
     await env.SOTD.put('gtv:' + await sha256hex(code), who.id, { expirationTtl: 900 });
     return answer(200, { code, minutes: 15 });
+  }
+  if (route === 'card') {   // a day's share card, drawn by the page (the first to share it; John may draw it again)
+    const day = String(b.date || ''), c = await gCal(env);
+    if (!/^\d{4}-\d\d-\d\d$/.test(day) || !gRevealed(day) || !(c.days || {})[day]) return answer(404, { error: 'Not a day shown yet.' });
+    const mm = /^data:image\/jpeg;base64,([A-Za-z0-9+/=]+)$/.exec(String(b.card || ''));
+    if (!mm || mm[1].length > 900e3) return answer(400, { error: 'That isn’t a card.' });
+    const key = 'grifflix/cards/' + day + '.jpg';
+    if (!who.owner && await env.MEDIA.head(key).catch(() => null)) return answer(200, { ok: true, kept: true });
+    const bin = Uint8Array.from(atob(mm[1]), ch => ch.charCodeAt(0));
+    if (bin[0] !== 0xff || bin[1] !== 0xd8) return answer(400, { error: 'That isn’t a card.' });
+    await env.MEDIA.put(key, bin, { httpMetadata: { contentType: 'image/jpeg' } });
+    return answer(200, { ok: true });
+  }
+  if (route === 'lists') {   // My list (the hearts) and playlists: each member's own, kept here, not on the Mac
+    const L = await gListsGet(env, who.id);
+    if (request.method === 'POST') {
+      const item = gSnap(b.snap, b.item), op = b.op;
+      if (op === 'heart' && item) {
+        const i = L.hearts.findIndex(x => x.id === item.id);
+        if (i >= 0) L.hearts.splice(i, 1); else L.hearts.unshift(item);
+        L.hearts = L.hearts.slice(0, 1000);
+      } else if (op === 'create') {
+        if (Object.keys(L.lists).length >= 50) return answer(400, { error: 'That’s a lot of playlists: delete one first.' });
+        const id = randomCode(8);
+        L.lists[id] = { name: String(b.name || 'New playlist').replace(/\s+/g, ' ').trim().slice(0, 60) || 'New playlist', items: item ? [item] : [] };
+      } else if (L.lists[b.id]) {
+        const pl = L.lists[b.id];
+        if (op === 'add' && item && !pl.items.some(x => x.id === item.id) && pl.items.length < 500) pl.items.push(item);
+        else if (op === 'remove') pl.items = pl.items.filter(x => x.id !== String(b.item));
+        else if (op === 'rename') pl.name = String(b.name || pl.name).replace(/\s+/g, ' ').trim().slice(0, 60) || pl.name;
+        else if (op === 'order') { const by = Object.fromEntries(pl.items.map(x => [x.id, x])); pl.items = (b.items || []).map(String).filter(i => by[i]).map(i => by[i]); }
+        else if (op === 'delete') delete L.lists[b.id];
+      } else return answer(400, { error: 'What should happen?' });
+      await env.SOTD.put('glists:' + who.id, JSON.stringify(L));
+    }
+    return answer(200, { hearts: L.hearts, lists: Object.entries(L.lists).map(([id, v]) => ({ id, name: v.name, items: v.items })) });
+  }
+  if (route === 'calendars') {   // members' own calendars (Movie of the Day is the site's): theirs, and those shared with the family
+    const C = await gCalsGet(env);
+    return answer(200, { calendars: Object.entries(C).filter(([, c]) => c.owner === who.id || c.shared).map(([id, c]) => gCalOut(id, c, who, all, false)) });
+  }
+  if (route === 'calendar') {
+    const C = await gCalsGet(env);
+    if (request.method !== 'POST') {
+      const id = url.searchParams.get('id') || '', c = C[id];
+      if (!c || !(c.shared || c.owner === who.id)) return answer(404, { error: 'No such calendar.' });
+      return answer(200, gCalOut(id, c, who, all, true));
+    }
+    if (b.op === 'create') {
+      if (Object.values(C).filter(c => c.owner === who.id).length >= 20) return answer(400, { error: 'That’s a lot of calendars: delete one first.' });
+      const id = randomCode(8);
+      C[id] = { name: String(b.name || 'My calendar').replace(/\s+/g, ' ').trim().slice(0, 60) || 'My calendar', owner: who.id, days: {}, notes: {}, shared: b.shared !== false };
+      await env.SOTD.put('gcals', JSON.stringify(C));
+      return answer(200, gCalOut(id, C[id], who, all, true));
+    }
+    const c = C[b.id];
+    if (!c || c.owner !== who.id) return answer(403, { error: 'Only its owner can change that calendar.' });
+    const d = String(b.date || '');
+    if (b.op === 'set') {
+      if (!/^\d{4}-\d\d-\d\d$/.test(d)) return answer(400, { error: 'Which day?' });
+      const item = gSnap(b.snap, b.item);
+      if (item) { if (!c.days[d] && Object.keys(c.days).length >= 2000) return answer(400, { error: 'That calendar is full.' }); c.days[d] = item; }
+      if ('note' in b) { const n = String(b.note || '').trim().slice(0, 500); if (n) c.notes[d] = n; else delete c.notes[d]; }
+    } else if (b.op === 'clear') { delete c.days[d]; delete c.notes[d]; }
+    else if (b.op === 'rename') c.name = String(b.name || c.name).replace(/\s+/g, ' ').trim().slice(0, 60) || c.name;
+    else if (b.op === 'share') c.shared = !!b.shared;
+    else if (b.op === 'delete') { delete C[b.id]; await env.SOTD.put('gcals', JSON.stringify(C)); return answer(200, { ok: true }); }
+    else return answer(400, { error: 'What should happen?' });
+    await env.SOTD.put('gcals', JSON.stringify(C));
+    return answer(200, gCalOut(b.id, c, who, all, true));
   }
   if (route === 'prefs') {
     for (const k of ['gpush', 'gmail']) if (k in b) {
@@ -1730,8 +1850,9 @@ async function gAdmin(request, env, b, who, answer) {
     const snap = env.MEDIA ? await env.MEDIA.head('grifflix/snapshot.json').catch(() => null) : null;
     if (!snap) return answer(409, { error: 'The Mac’s copy didn’t arrive: try again.' });
     await env.SOTD.put('gcal', JSON.stringify({ at: Date.now(), days, notes }));
+    const moved = b.personal ? await gPersonalImport(env, all, b.personal).catch(e => 'failed: ' + e.message) : null;
     const r = await gDataJob(env, 'full');
-    const info = { at: Date.now(), days: Object.keys(days).length, counts: b.counts || null, started: r.ok, err: r.error || '' };
+    const info = { at: Date.now(), days: Object.keys(days).length, counts: b.counts || null, started: r.ok, err: r.error || '', moved };
     await env.SOTD.put('gdata', JSON.stringify(info));
     return r.ok ? answer(200, info) : answer(502, { error: r.error });
   }
@@ -1752,6 +1873,31 @@ async function gAdmin(request, env, b, who, answer) {
     return answer(200, { ok: true });
   }
   return answer(400, { error: 'What should happen?' });
+}
+// a day's film shared (John, 8 Nov 2026): its own link, /gs/<date>, a page with its card (WhatsApp, iMessage show it) that
+// goes on to the day on Grifflix. The card (1200 × 630) is drawn by the first member's page to share it and kept in R2;
+// until then the film's own picture stands in. Only days already shown (from 8am on the day).
+async function gSharePage(url, env) {
+  const m = /^\/gs\/(\d{4}-\d\d-\d\d)(\.jpg)?$/.exec(url.pathname), c = await gCal(env), it = m && gRevealed(m[1]) && (c.days || {})[m[1]];
+  if (!it) return new Response('<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Grifflix</title><body style="margin:0;background:' + gPal()[0] + ';color:#fffaf5;font:18px Georgia,serif;padding:32px">Nothing here yet: each Movie of the Day is a surprise until 8am on its day. <a style="color:#fffaf5" href="' + G_SITE + '">Grifflix</a></body>', { status: 404, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+  const day = m[1];
+  if (m[2]) {
+    const o = await env.MEDIA.get('grifflix/cards/' + day + '.jpg').catch(() => null);
+    if (o) return new Response(o.body, { headers: { 'Content-Type': 'image/jpeg', 'Cache-Control': 'public, max-age=86400', 'Access-Control-Allow-Origin': '*' } });
+    if (url.searchParams.has('have')) return new Response('none', { status: 404, headers: { 'Access-Control-Allow-Origin': '*' } });
+    return Response.redirect(gPicUrl(it.backdrop || it.poster, it.backdrop ? 'Backdrop' : 'Primary', 1100, (it.tags || {})[it.backdrop ? 'backdrop' : 'poster']), 302);
+  }
+  const f = gDayFilm(c, day), e = x => esc(String(x)), go = G_SITE + '#day/' + day;
+  const title = f.name + (f.year ? ' (' + f.year + ')' : ''), when = new Date(day + 'T12:00:00Z').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });
+  const desc = 'Movie of the Day on Grifflix, ' + when + (f.note ? ': ' + f.note : f.overview ? ': ' + f.overview.slice(0, 160) : '');
+  const card = await env.MEDIA.head('grifflix/cards/' + day + '.jpg').catch(() => null), img = url.origin + '/gs/' + day + '.jpg' + (card ? '?v=' + (card.uploaded ? +new Date(card.uploaded) : 1) : '');
+  return new Response(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${e(title)} · Grifflix</title><meta name="description" content="${e(desc)}">
+<meta property="og:type" content="website"><meta property="og:site_name" content="Grifflix"><meta property="og:title" content="${e(title)}"><meta property="og:description" content="${e(desc)}">
+<meta property="og:image" content="${e(img)}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="${gPal()[0]}"><style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:${gPal()[0]};color:#fffaf5;font:18px Georgia,serif;text-align:center;padding:24px}img{max-width:min(560px,90vw);border-radius:16px;display:block;margin:0 auto 22px}a{display:inline-block;padding:13px 26px;border-radius:999px;background:#fffaf5;color:#1b1020;font:600 14px Helvetica,Arial,sans-serif;letter-spacing:.08em;text-transform:uppercase;text-decoration:none}</style></head>
+<body><div><img src="${e(img)}" alt=""><p>${e(title)}: Movie of the Day, ${e(when)}.</p><p><a href="${e(go)}">See it on Grifflix</a></p></div>
+<script>setTimeout(function(){location.replace(${JSON.stringify(go)});},1400);</script></body></html>`, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } });
 }
 async function gInvitePage(url, env) {   // an invitation's link: a page with its card (WhatsApp, iMessage show it), then on to Grifflix
   const m = /^\/gi\/([\w-]{16})(\.jpg)?$/.exec(url.pathname);

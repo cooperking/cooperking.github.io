@@ -753,13 +753,31 @@ def make_handler(g):
             raw = [it for n in range(0, len(missing), 100) for it in g.items(Ids=','.join(missing[n:n + 100]), Fields=quick).get('Items', [])]
             for o in resolve(raw, ep_fields, slim=True):   # (a calendar day's film no longer in a library list)
                 items[o['id']] = o
+            # members' own things kept here so far (My list, playlists, their calendars): the Worker keeps them from now on
+            eps_by = {e['id']: e for v in series.values() for e in v['episodes']}
+            users = g.store.d.get('users', {})
+            cals = {k: v for k, v in g.store.d['calendars'].items() if k != 'motd'}
+            ids = set(i for u in users.values() for i in u.get('hearts', []) + [x for pl in u.get('lists', {}).values() for x in pl.get('items', [])])
+            ids |= set(i for c2 in cals.values() for i in c2.get('days', {}).values())
+            extra_items = {}
+            for it in g.by_ids([i for i in ids if i not in items and i not in eps_by]):
+                o = item_out(it)
+                o['tags'] = pic_tags(it)
+                extra_items[it['Id']] = o
+            snap = lambda i: items.get(i) or eps_by.get(i) or extra_items.get(i)
+            light = lambda o: {k: v for k, v in o.items() if k not in ('overview', 'cast', 'directors', 'trailers', 'tagline', 'genres')}
+            personal = {'users': {uid: {'hearts': [light(snap(i)) for i in u.get('hearts', []) if snap(i)],
+                                        'lists': {lid: {'name': pl.get('name'), 'items': [light(snap(i)) for i in pl.get('items', []) if snap(i)]} for lid, pl in u.get('lists', {}).items()}}
+                                  for uid, u in users.items()},
+                        'calendars': {cid: {'name': c2.get('name'), 'owner': c2.get('owner'), 'shared': c2.get('shared', True), 'notes': c2.get('notes', {}),
+                                            'days': {d: light(snap(i)) for d, i in c2.get('days', {}).items() if snap(i)}} for cid, c2 in cals.items()}}
             count['removed'] = len([k for k in old if k not in kept])
             try:
                 save(EXPORT_CACHE, {'at': int(time.time()), 'items': kept})
             except OSError as e:
                 log('Couldn’t keep the export:', e)
             log('Update: %d new, %d changed, %d gone (%d read in full)' % (count['new'], count['changed'], count['removed'], count['read']))
-            self.send_json(200, {'v': 1, 'at': int(time.time()), 'items': items, 'lists': lists, 'sets': members, 'series': series, 'changes': count,
+            self.send_json(200, {'v': 1, 'at': int(time.time()), 'items': items, 'lists': lists, 'sets': members, 'series': series, 'changes': count, 'personal': personal,
                                  'motd': {'days': days, 'notes': dict(c.get('notes', {}))}})
 
         def api_convert(self, me, user, q, b):
