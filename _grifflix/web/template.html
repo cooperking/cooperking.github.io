@@ -5,7 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Grifflix</title>
 <meta name="description" content="John's films and TV for family and friends, with a Movie of the Day.">
-<meta name="theme-color" content="#120914">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">   <!-- (the home-screen app: the theme's colour right up behind the clock, the page kept clear of it: John, 8 Nov 2026) -->
 <link rel="manifest" href="/grifflix/manifest.webmanifest">
 <link rel="icon" href="/grifflix/favicon-96.png" type="image/png" sizes="96x96">
 <link rel="apple-touch-icon" href="/grifflix/apple-touch-icon.png">
@@ -676,6 +678,8 @@ html:not(.mob) #sheet:has(.tcal) .tcal, html.tv #sheet .form { padding-top: 96px
 html.mob #sheet:has(.tcal) .tcal { padding-top: calc(env(safe-area-inset-top) + 54px) !important; }
 html.mob #sheetIn > .form:not(.tcal) { padding-top: calc(env(safe-area-inset-top) + 58px) !important; }   /* (a phone: the logo its own strip above a pop-up's words) */
 #shbrand { text-shadow: 0 1px 6px rgba(0, 0, 0, .35); }
+/* the home-screen app draws under the clock: pages that scroll (not the full-screen themes) start below it */
+html:not(.hall):not(.table) body { padding-top: env(safe-area-inset-top); }
 /* sort and filter: two icons on the tabs' row; their panel under them */
 .sfbar { display: inline-flex; gap: 8px; align-items: center; }
 .sfb { display: inline-flex !important; align-items: center; gap: 8px; min-height: 40px; padding: 0 12px !important; position: relative; }
@@ -771,8 +775,8 @@ html.klook { --muted: rgba(var(--kink), .6); --faint: rgba(var(--kink), .55); }
 html.mob .tcal > .tcgrid, html.mob .tcal > .tcside { border: 1px solid rgba(var(--kink), .22) !important; background: rgba(var(--kink), .05); padding: 12px 10px 14px !important; }
 html.mob .tcal > .tcside { margin-top: 18px; padding: 16px 14px 6px !important; }
 @media (max-width: 760px), (orientation: portrait) and (max-width: 1100px) {
-  html.klook:not(.tv) .stage > .cal, html.klook:not(.tv) .stage > .side { border: 1px solid rgba(var(--kink), .22) !important; background: rgba(var(--kink), .05) !important; padding: 12px 10px 14px !important; }
-  html.klook:not(.tv) .stage > .side { padding: 16px 14px 6px !important; }
+  html.klook:not(.tv):not([data-theme]) .stage > .cal, html.klook:not(.tv):not([data-theme]) .stage > .side { border: 1px solid rgba(var(--kink), .22) !important; background: rgba(var(--kink), .05) !important; padding: 12px 10px 14px !important; }
+  html.klook:not(.tv):not([data-theme]) .stage > .side { padding: 16px 14px 6px !important; }
   html.klook:not(.tv) .stage { gap: 18px; }
 }
 /* a phone: the calendar the whole screen, a poster a day */
