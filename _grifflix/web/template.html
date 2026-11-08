@@ -700,7 +700,11 @@ html.tv #sheet .form > .close, html.mob #sheet .form > .close { position: fixed;
 #shnav { position: fixed; z-index: 80; display: flex; align-items: center; gap: 22px; }
 #shnav button { background: none; border: 0; padding: 6px 2px; margin: 0; cursor: pointer; color: var(--fg); font: 500 12px/1 var(--kfont); letter-spacing: .3em; text-transform: uppercase; }
 #shnav button:focus-visible { outline: 2px solid rgb(var(--kink)); outline-offset: 4px; }
-html.tv #shnav button { font-size: 15px; }
+html.tv #shnav button { font-size: 15px; padding: 8px 12px; }
+html.tv #shnav button:focus { outline: none !important; box-shadow: none !important; background: #fff; color: #000; }
+html.tv #shbrand:focus { outline: none !important; box-shadow: none !important; background: #fff; color: #000 !important; }
+/* the TV: no X (Back closes), and no second set of words on the calendar (John, 8 Nov 2026: "we probably don't need the x") */
+html.tv #sheet .close, html.tv #sheet .tctools { display: none !important; }
 html.mob #shnav { gap: 14px; } html.mob #shnav button { font-size: 11px; letter-spacing: .2em; }
 /* sort and filter: two icons on the tabs' row; their panel under them */
 .sfbar { display: inline-flex; gap: 8px; align-items: center; }
@@ -2672,11 +2676,18 @@ function shBrand() {   // GRIFFLIX over a pop-up, just where the bar's is (the b
   band.style.height = Math.round(r.bottom + 16) + 'px';
   var oncal = !!$('#sheetIn .tcal'), onsearch = !!$('#sheetIn #sq');
   var words = oncal ? [['theme', 'Theme'], ['search', 'Search']] : onsearch ? [['calendar', 'Calendar'], ['theme', 'Theme']] : [];
+  if (!words.length && TV && $('#sheetIn .ipost, #sheetIn .heroimg, #sheetIn #aplay')) words = [S.fromCal ? ['calendar', 'Calendar'] : ['theme', 'Theme'], ['search', 'Search']];   // (a film: back to where you came from, or Search: John, 8 Nov 2026)
   nav.innerHTML = words.map(function (w) { return '<button type="button" data-sn="' + w[0] + '">' + w[1] + '</button>'; }).join('');
   nav.hidden = !words.length;
   $$('#shnav [data-sn]').forEach(function (x) { x.onclick = function () {
     var w = x.dataset.sn;
-    if (w === 'theme') return goHome();
+    if (w === 'theme') {   // the month you're on, not this month (John, 8 Nov 2026)
+      var d = S.sheetDate; store.set('grifflix-tvview', 'themes'); S.mcal = false; closeSheet();
+      if ((location.hash || '#home').split('/')[0] !== '#home') { if (d) S.month = d.slice(0, 7); location.hash = '#home'; return; }
+      if (d && d.slice(0, 7) !== S.month) { S.month = d.slice(0, 7); drawMonth(); }
+      if (TV) setTimeout(function () { var f = (d && $('#cal [data-day="' + d + '"]')) || $('#cal button.front') || $('#cal button[data-day]'); if (f) f.focus({ preventScroll: true }); }, 400);
+      return;
+    }
     if (w === 'calendar') { closeSheet(); S.calDay = null; return VIEW() === 'themes' ? calSheet() : null; }
     if (w === 'search') return searchSheet();
   }; });
