@@ -17,7 +17,9 @@ Safe:
   * stop it any time (Ctrl-C, or closing the window): the film it was on is simply done again next time
 
   python3 convert.py            what it would convert, and roughly how long (nothing changes)
-  python3 convert.py go         converts, best-rated films first, then episodes; stops when all are done
+  python3 convert.py go         converts, best-rated films first, then episodes, between 2am and 8am each night (it
+                                waits for 2am, pauses a film at 8am and carries on at 2am); stops when all are done
+  python3 convert.py go now     the same, at any hour
   python3 convert.py status     how far it has got
 Overnight, through SSH, so it keeps going after you disconnect:
   nohup caffeinate -i python3 ~/Grifflix/convert.py go > ~/Grifflix/convert.out 2>&1 &
@@ -33,6 +35,14 @@ STATE = os.path.join(HOME, 'convert-state.json')
 LOG = os.path.join(HOME, 'convert.log')
 MAX_W, MAX_H, MAX_MBPS = 1920, 1080, 20
 CMD = sys.argv[1] if len(sys.argv) > 1 else ''
+# it works only at night, 2am to 8am (John, 8 Nov 2026: "2am until 8am each night unless it's in use"); "go now" ignores
+# the hours (to try one straight away)
+NIGHT = (int(os.environ.get('GRIFFLIX_FROM') or 2), int(os.environ.get('GRIFFLIX_TO') or 8))
+ANYTIME = len(sys.argv) > 2 and sys.argv[2] == 'now'
+
+
+def night():
+    return ANYTIME or NIGHT[0] <= time.localtime().tm_hour < NIGHT[1]
 os.makedirs(HOME, exist_ok=True)
 
 
@@ -207,10 +217,10 @@ def convert(item, ffmpeg, ffprobe, st):
     try:
         while p.poll() is None:
             time.sleep(20)
-            busy = watching()
-            if busy and not paused:
-                p.send_signal(signal.SIGSTOP); paused = True; log('  paused: someone is watching')
-            elif not busy and paused:
+            why_ = 'someone is watching' if watching() else ('it’s past %d am: on again at %d am' % (NIGHT[1], NIGHT[0]) if not night() else '')
+            if why_ and not paused:
+                p.send_signal(signal.SIGSTOP); paused = True; log('  paused: ' + why_)
+            elif not why_ and paused:
                 p.send_signal(signal.SIGCONT); paused = False; log('  carrying on')
     except BaseException:
         if paused:
@@ -337,6 +347,10 @@ if 'libx264' not in subprocess.run([ffmpeg, '-hide_banner', '-encoders'], captur
 log('starting: %d to convert' % len(items))
 follow_up(st)
 for n, it in enumerate(items):
+    if not night():
+        log('waiting for %d am' % NIGHT[0])
+        while not night():
+            time.sleep(60)
     try:
         convert(it, ffmpeg, ffprobe, st)
     except RuntimeError as e:
