@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en-GB">
+<html lang="en-GB" class="klook">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -14,7 +14,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..600&family=Hanken+Grotesk:wght@400;500;600&family=Bebas+Neue&family=Jost:wght@400;500;600;700;800&display=swap">
 <style>
 :root {
-  --bg: #120914;
+  --bg: #0a0a0a;
   --fg: #fffaf5;
   --fg-2: rgba(255, 250, 245, .92);
   --muted: rgba(255, 250, 245, .74);
@@ -28,7 +28,7 @@
   --empty-bg: rgba(255, 255, 255, .08);
   --empty-line: rgba(255, 255, 255, .22);
   --shadow: rgba(24, 8, 24, .34);
-  --g1: #ff3344; --g2: #ff30b3; --g3: #ff4c29; --g4: #fc00e7;
+  --g1: #0a0a0a; --g2: #0a0a0a; --g3: #0a0a0a; --g4: #0a0a0a;   /* (no glow: the month's theme sets its own flat colour) */
   --serif: "Newsreader", "Iowan Old Style", Georgia, serif;
   --sans: "Hanken Grotesk", "Helvetica Neue", Arial, sans-serif;
   --edge: clamp(14px, 3.2vw, 40px);
@@ -1057,7 +1057,7 @@ html.big:not(.tv) .sheet .heroimg { aspect-ratio: 16 / 6; }   /* (a computer: a 
 (function () {   // no glimpse of the songs' look while the page loads (John, 8 Nov 2026): Grifflix's own look and the month's colour at
   // once, the page hidden until its theme is laid out (and shown regardless after 2.5s)
   var de = document.documentElement, bg = null;
-  try { if (localStorage.getItem('grifflix-look') !== 'off') de.classList.add('klook'); bg = localStorage.getItem('grifflix-lastbg'); } catch (e) { de.classList.add('klook'); }
+  try { localStorage.removeItem('grifflix-look'); bg = localStorage.getItem('grifflix-lastbg'); } catch (e) {}   // (Grifflix's look always: the old switch gone)
   if (bg && /^#[0-9a-f]{3,8}$/i.test(bg)) { de.style.setProperty('--bg', bg); de.style.background = bg; }
   de.classList.add('loading'); setTimeout(function () { de.classList.remove('loading'); }, 2500);
 })();
@@ -1119,8 +1119,7 @@ var TVHERO = TV && store.get('grifflix-tvhero') === '1';   // (a TV calendar to 
 if (TVHERO) document.documentElement.classList.add('tvhero');
 // the look: Futura, each month's bold colour and its theme (John, 8 Nov 2026: "Put new look live"); everyone's now.
 // ?look=0 turns it off on one device (the old look), ?look=1 back on
-if (Q.has('look')) store.set('grifflix-look', Q.get('look') === '0' ? 'off' : null);
-var KLOOK = store.get('grifflix-look') !== 'off';
+var KLOOK = true;   // (Grifflix's own look, always: the songs' look it began from never shows; John, 8 Nov 2026: "why would the song of the day styles come up at all?")
 // the TV's views in the trial look: each month its own theme (THEMES: the corridor in January, the table in November...;
 // John, 8 Nov 2026: "have the table and then the corridor be monthly themes ... As the user goes back through a month it
 // will transition to the next theme"), the calendar a button away. ?theme=<key> shows one theme in every month, to try
