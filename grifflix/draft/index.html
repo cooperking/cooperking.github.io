@@ -3295,6 +3295,13 @@ document.addEventListener('keydown', function (e) {
     if (k === 'up') { e.preventDefault(); document.documentElement.classList.remove('barhide'); var u = $('#tvview'); if (u) u.focus(); return; }
     if (k === 'down') { e.preventDefault(); var cp = $('#tinspo.link'); if (cp) cp.focus(); return; }   // (the film the theme comes from, at the foot)
   }
+  if (ae && ae.classList && ae.classList.contains('tcd') && (k === 'left' || k === 'right')) {   // the month's calendar: left and right the day before and after, in date order, on into the month before or after (John, 8 Nov 2026: "you get stuck on the edge of a box")
+    e.preventDefault();
+    var days = $$('#sheetIn .tcd.has'), at = days.indexOf(ae), to = days[at + (k === 'right' ? 1 : -1)];
+    if (to) { to.focus(); to.scrollIntoView({ block: 'nearest' }); return; }
+    if (calStep(k === 'right' ? 1 : -1)) setTimeout(function () { var ds = $$('#sheetIn .tcd.has'), f = k === 'right' ? ds[0] : ds[ds.length - 1]; if (f) f.focus(); }, 280);
+    return;
+  }
   if (ae && ae.id === 'tinspo') {   // the caption: back up (or along) to the day you were on
     if (k === 'up' || k === 'left' || k === 'right') { e.preventDefault(); var fr = $('#cal button.front') || $('#cal .tday.has'); if (fr) fr.focus({ preventScroll: true }); return; }
     if (k === 'down') { e.preventDefault(); return; }
