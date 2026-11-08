@@ -538,6 +538,8 @@ html.tv .th-umbrellas .vday:focus { outline: 0 !important; box-shadow: 0 0 0 4px
 html.tv .th-code .vday:focus { outline: 1px solid #eaffef !important; outline-offset: 0; }
 .codepic { position: absolute; left: calc(72% - 145px); top: calc(45% - 217px); width: 290px; height: 435px; background: #000 center/cover; z-index: 5; box-shadow: 0 0 0 1px #2bff6a; }
 html[data-theme=code] .hinfo { color: #2bff6a; }
+html[data-theme=code]:not(.mob) .hinfo .w { font-size: 56px; } html[data-theme=code]:not(.mob) .hinfo h2 { font-size: 34px; } html[data-theme=code]:not(.mob) .hinfo { max-width: 470px; }   /* (OCR-A is wide) */
+html.mob[data-theme=code] .hinfo .w { font-size: 34px !important; }
 .codepic.dec { animation: decode .5s steps(6) both; }   /* (the poster there at once, decoding from green in half a second) */
 @keyframes decode { 0% { filter: grayscale(1) sepia(1) hue-rotate(70deg) saturate(5) contrast(2); } 100% { filter: none; } }
 /* the slices */
