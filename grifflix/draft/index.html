@@ -415,7 +415,9 @@ html.tv .day .num { font-size: 13px; }
 html.tv .card:focus, html.tv .day:focus { transform: scale(1.1); box-shadow: 0 14px 34px rgba(0, 0, 0, .55); transition: transform .15s ease, box-shadow .15s ease; }
 /* the Kubrick look to try (?look=kubrick): Futura-style titles, the month's colours kept */
 html.klook { --kfont: "Jost", "Futura", "Century Gothic", sans-serif; }
-html.klook .glow { display: none; }   /* (one flat colour a month: no glow) */
+html.klook .glow { display: none; }
+html.klook.tv .bar-top { transition: max-height .3s ease, opacity .3s ease, margin .3s ease; max-height: 120px; }
+html.klook.tv.barhide .bar-top { max-height: 0; opacity: 0; margin-top: 0; margin-bottom: 0; padding-top: 0; padding-bottom: 0; border-width: 0; overflow: hidden; }   /* (one flat colour a month: no glow) */
 html.klook .hero h1, html.klook .sheet h2, html.klook .colltitle, html.klook .welcome h1, html.klook .list-title h2, html.klook .row h2, html.klook .sect h2, html.klook .side h2 { font-family: var(--kfont); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
 html.klook .hero h1 i, html.klook .sheet h2 i, html.klook .row h2 i, html.klook .side h2 i { font-family: var(--serif); font-weight: 400; text-transform: none; letter-spacing: 0; }
 html.klook .hero h1 { font-size: 34px; } html.klook .sheet h2 { font-size: 40px; line-height: 1.05; }
@@ -549,7 +551,7 @@ if (TVHERO) document.documentElement.classList.add('tvhero');
 // particularly"): Futura-style titles (Jost), and on a TV "the table" (Dr. Strangelove's War Room) with the calendar a button away
 if (Q.has('look')) store.set('grifflix-look', Q.get('look') === 'kubrick' ? 'kubrick' : null);
 var KLOOK = store.get('grifflix-look') === 'kubrick';
-var TABLE = function () { return TV && KLOOK && (store.get('grifflix-tvview') || 'table') === 'table'; };
+var TABLE = function () { return TV && KLOOK && store.get('grifflix-tvview') === 'table'; };   // (the calendar first; the table a button away)
 if (KLOOK) document.documentElement.classList.add('klook');   // the Fire TV app (its browser's name), or ?tv=1 to try it
 var IN_APP = TV || /GrifflixApp\//.test(navigator.userAgent) || !!(window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform());
 if (TV) document.documentElement.classList.add('tv');   // the Song of the Day sign-in: same site, so the same storage
@@ -806,17 +808,17 @@ var PALETTES = [   // the month's colours: ground, then four glows
 ];
 // Kubrick's colours: one film a month, its one colour, flat (no glow) (the Kubrick look, ?look=kubrick, to try;
 // John, 8 Nov 2026: "not a mix of colours, the clear choice from each. Remove the song of the day glow")
-var KCOLOURS = [
-  ['#4a3b2c', 'Paths of Glory'],        // January: the trenches' mud
+var KCOLOURS = [   // (John, 8 Nov 2026: back to the first choice of films, each its one colour)
+  ['#34506b', 'The Shining'],           // January: the hedge maze in snow
   ['#8c5e1e', 'Barry Lyndon'],          // February: candlelight
   ['#b0155e', 'Lolita'],                // March: the heart-shaped glasses
   ['#c85000', 'A Clockwork Orange'],    // April: orange
-  ['#5b1f6b', 'Spartacus'],             // May: Roman purple
-  ['#a8001a', '2001: A Space Odyssey'], // June: HAL's red eye
+  ['#8e1616', 'Spartacus'],             // May: Technicolor crimson
+  ['#7a1a8c', '2001: A Space Odyssey'], // June: the Star Gate
   ['#4a5320', 'Full Metal Jacket'],     // July: olive drab
-  ['#34383f', 'The Killing'],           // August: the racetrack's black and white
-  ['#1f3a26', 'Fear and Desire'],       // September: the forest
-  ['#2b4864', 'The Shining'],           // October: the hedge maze at night
+  ['#a8001a', '2001: A Space Odyssey'], // August: HAL's red eye
+  ['#4a3b2c', 'Paths of Glory'],        // September: the trenches' mud
+  ['#7e2a10', 'The Shining'],           // October: the Overlook's carpet
   ['#1c1d22', 'Dr. Strangelove'],       // November: the War Room
   ['#1a2a8a', 'Eyes Wide Shut']         // December: the blue Christmas night
 ];
@@ -1128,6 +1130,12 @@ function tvFeat(date) {   // the TV calendar to try: the day you're on, large, o
     var im = new Image(); im.alt = ''; im.dataset.src = src; im.onload = function () { if (im.dataset.src === src) im.classList.add('on'); }; im.src = src; bg.appendChild(im);
   }, 120);
 }
+if (TV && KLOOK) document.addEventListener('focusin', function (e) {   // the TV: the calendar full screen, the bar back when you go up to it
+  var inBar = !!(e.target.closest && e.target.closest('.bar-top')), home = S.view === 'home' && !dlg.open;
+  var was = document.documentElement.classList.contains('barhide'), hide = home && !inBar;
+  document.documentElement.classList.toggle('barhide', hide);
+  if (was !== hide) setTimeout(fitCal, 320);
+});
 function fitCal() {   // a computer or TV: the calendar down to the window's foot
   var c = $('#cal'); if (!c || !document.documentElement.classList.contains('big')) return;
   var vh = document.documentElement.clientHeight || innerHeight;   // (the page's own height: on a Fire Stick, shrunk from 1280 wide, innerHeight can be the screen's, too tall)
