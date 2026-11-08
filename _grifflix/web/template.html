@@ -3374,7 +3374,7 @@ document.addEventListener('keydown', function (e) {
   }
   if (ae && ae.classList && /\b(vday|hday|tday)\b/.test(ae.className)) {   // the month's theme: right and left through its days (and on into the next month's); up to the bar's words
     if (k === 'left' || k === 'right') { e.preventDefault(); themeStep(k === 'right' ? 1 : -1); return; }
-    if (k === 'up') { e.preventDefault(); document.documentElement.classList.remove('barhide'); var u = $('#tvview'); if (u) u.focus(); return; }
+    if (k === 'up') { e.preventDefault(); document.documentElement.classList.remove('barhide'); var u = barSearch(); if (u) u.focus(); return; }
     if (k === 'down') { e.preventDefault(); var cp = $('#tinspo.link'); if (cp) cp.focus(); return; }   // (the film the theme comes from, at the foot)
   }
   if (ae && ae.classList && ae.classList.contains('tcd') && (k === 'left' || k === 'right')) {   // the month's calendar: left and right the day before and after, in date order, on into the month before or after (John, 8 Nov 2026: "you get stuck on the edge of a box")
@@ -3396,9 +3396,12 @@ document.addEventListener('keydown', function (e) {
   if (k === 'up' && dlg.open && ae && (ae.id === 'sq' || (ae.closest && ae.closest('#shnav')))) { var si = $('#sheetIn'); if (si) si.scrollTo({ top: 0, behavior: 'smooth' }); }   // (up to the search box: Search's top in view again, John, 8 Nov 2026)
   e.preventDefault();
   if (!moveFocus(k) && k === 'up' && document.documentElement.classList.contains('barhide')) {   // (up from the top row: the words back)
-    document.documentElement.classList.remove('barhide'); setTimeout(function () { var t = $('#tvview') || $('.bar-top button'); if (t) t.focus(); }, 0);
+    document.documentElement.classList.remove('barhide'); setTimeout(function () { var t = barSearch(); if (t) t.focus(); }, 0);
   }
 }, true);
+function barSearch() {   // up into the bar lands on Search first (John, 8 Nov 2026: "the first click up ... go to Search not calendar")
+  return $$('.bar-top [data-go="search"]').filter(function (x) { return x.offsetParent; })[0] || $('#tvview') || $('.bar-top button');
+}
 window.grifflixTV = {
   key: function (k) {
     if (trailerOn()) return trailerKeys(k);
