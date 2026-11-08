@@ -151,12 +151,12 @@ export default {
       await env.SOTD.delete('diagCollab3');   // (the listing again, with his name on them)
     })().catch(e => console.log('spuAnt: ' + (e && e.message))));
     ctx.waitUntil((async () => {   // once: Collaborations' songs, their added dates, days and captions, for checking
-      if (await env.SOTD.get('diagCollab3')) return;
-      await env.SOTD.put('diagCollab3', String(Date.now()));
+      if (await env.SOTD.get('diagCollab4')) return;
+      await env.SOTD.put('diagCollab4', String(Date.now()));
       const who = await spWho(env, (await env.SOTD.get('members', 'json')) || {});
       const pid = 'hXXaGojDDcooDA', U = await uplAll(env), rec = U[pid]; if (!rec) return;
       const data = await uplSongs(env, pid), days = uplDays(data.songs || [], rec), ed = data.ed || {};
-      const rows = (data.songs || []).map((x, i) => [x.a, days[i].d, x.id, x.img || '', who[x.ab] || '', (data.add || {})[x.id + '|' + x.a] ? 'add' : (data.add || {})[x.id] ? 'addold' : '', (ed[x.id] || {}).cap || '', x.title, x.artist, x.ab || '']);
+      const rows = (data.songs || []).map((x, i) => [x.a, days[i].d, x.id, x.img || '', who[x.ab] || '', uplGone(data, x) ? 'gone' : uplWaiting(rec, data, x) ? 'waiting' : '', (data.add || {})[x.id + '|' + x.a] ? 'add' : (data.add || {})[x.id] ? 'addold' : '', (ed[x.id] || {}).cap || '', x.title, x.artist, x.ab || '']);
       await env.MEDIA.put('diag/collab-songs.json', JSON.stringify({ src: rec.src, adds: rec.adds || [], auto: rec.auto, autoErr: rec.autoErr || '', mode: rec.mode, dates: rec.dates || null, dd: rec.dd ? Object.keys(rec.dd).length : 0, rows }), { httpMetadata: { contentType: 'application/json' } });
     })().catch(e => console.log('diagCollab: ' + (e && e.message))));
     ctx.waitUntil((async () => {   // once: the Collaborations calendar's songs captioned with their subject: the group sets it, and the songs for it come in the days after, up to and including the next one's day (John, 7 Nov 2026: "I think you're going the wrong way"; ROY G BIV set 30 Apr 2023, its songs on 5 May); a long gap, its first nine days only
