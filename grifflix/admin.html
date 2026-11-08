@@ -31,6 +31,8 @@
 .changes { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .changes li { padding: 10px 12px; border-radius: 12px; background: var(--tile); font-size: 14px; color: var(--fg); }
 .changes li .when { display: block; margin-top: 2px; font-size: 12px; color: var(--muted); }
+.cvbar { height: 8px; border-radius: 99px; background: var(--tile); overflow: hidden; margin: 4px 0 14px; }
+.cvbar span { display: block; height: 100%; width: 0; background: currentColor; border-radius: 99px; transition: width .6s; }
 .state, .links { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .gate { max-width: 440px; margin: 16vh auto 0; }
 .toast { opacity: 0; transition: opacity .25s; background: #fff; color: var(--fg); }
@@ -82,7 +84,15 @@
         <div class="kicker">Update from the Mac</div>
         <h2 id="uphead">Looking…</h2>
         <p class="stat" id="upsay">Grifflix keeps its own copy of the films, TV, collections and Movie of the Day, so it shows them with the Mac mini asleep: the Mac is only asked to play. After changing films on the Mac, Update puts them on the site.</p>
-        <div class="state"><button class="btn primary" id="update" type="button">Update from the Mac</button></div>
+        <p class="stat" id="upjob"></p>
+        <div class="state"><button class="btn primary" id="update" type="button">Update from the Mac</button><button class="btn" id="upfull" type="button">Everything again</button></div>
+      </section>
+      <section class="card">
+        <div class="kicker">Conversions</div>
+        <h2 id="cvhead">Looking…</h2>
+        <p class="stat" id="cvsay"></p>
+        <div class="cvbar" id="cvbar" hidden><span id="cvfill"></span></div>
+        <ul class="changes" id="cvlist"></ul>
       </section>
       <section class="card">
         <div class="kicker">Movie of the Day</div>
@@ -132,7 +142,7 @@
   (TOKEN ? g('me') : Promise.reject({ status: 401 })).then(function (me) {
     if (!me.owner) return gate('Signed in as ' + me.name + ': this page is only for John.');
     $('#app').hidden = false; $('#hello').innerHTML = 'Signed in as <b>' + esc(me.name) + '</b>';
-    members(); draftLive(); notes(); mac(); dataStatus(); peek();
+    members(); draftLive(); notes(); mac(); dataStatus(); peek(); siteJob();
   }).catch(function () {
     // not signed in to Grifflix here: has Grifflix its members yet? (asked without a sign-in, the Worker says which)
     fetch(WORKER + '/g/admin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"op":"list"}' }).then(function (r) { return r.json(); }).then(function (j) {
@@ -291,12 +301,17 @@
       if (l && l.counts) $('#upsay').innerHTML = '<b>' + (l.counts.movies || 0) + '</b> films, <b>' + (l.counts.tv || 0) + '</b> series, <b>' + (l.counts.collections || 0) + '</b> collections and <b>' + (l.days || 0) + '</b> days of Movie of the Day, kept by the site: the Mac mini is only asked to play. After changing films on the Mac, Update again.';
     }).catch(function () {});
   }
-  $('#update').onclick = function () {
+  $('#upfull').onclick = function () {   // (everything read again, not only what's new: if something looks wrong)
+    var b = this; if (!b.dataset.sure) { b.dataset.sure = 1; b.textContent = 'Tap again: slower'; return; }
+    delete b.dataset.sure; b.textContent = 'Everything again'; update.call($('#update'), true);
+  };
+  $('#update').onclick = function () { update.call(this, false); };
+  function update(full) {
     var b = this, say = function (t) { b.textContent = t; };
     if (!GW) return toast('The Mac mini isn’t connected.');
     b.disabled = true; say('Asking the Mac… (a minute or two)');
     var text, snap;
-    fetch(GW + '/api/export', { headers: { Authorization: 'Bearer ' + TOKEN } }).then(function (r) {
+    fetch(GW + '/api/export' + (full ? '?full=1' : ''), { headers: { Authorization: 'Bearer ' + TOKEN } }).then(function (r) {
       if (r.status === 404) throw new Error('The Mac mini needs its update first (the new gateway).');
       if (!r.ok) throw new Error('The Mac mini said ' + r.status);
       return r.text();
@@ -312,10 +327,54 @@
       return g('admin', { op: 'update', cal: { days: days, notes: snap.motd.notes || {} }, counts: { movies: (L.movies || []).length, tv: (L.tv || []).length, collections: (L.collections || []).length } });
     }).then(function (j) {
       b.disabled = false; say('Update from the Mac');
-      toast('Updating: on the site in a few minutes (new pictures follow)');
-      dataStatus();
+      var c = snap.changes || {}, n = (c.new || 0) + (c.changed || 0) + (c.removed || 0);
+      toast(snap.changes ? (n ? (c.new || 0) + ' new, ' + (c.changed || 0) + ' changed, ' + (c.removed || 0) + ' gone: on the site in a few minutes' : 'Nothing new on the Mac: the site is as it was') : 'Updating: on the site in a few minutes');
+      dataStatus(); setTimeout(siteJob, 8000);
     }).catch(function (e) { b.disabled = false; say('Update from the Mac'); toast(e.message); });
-  };
+  }
+  // the site's own update (grifflix-data.yml on GitHub): running, or when it last finished
+  var jobWatch = null;
+  function siteJob() {
+    fetch('https://api.github.com/repos/' + REPO + '/actions/workflows/grifflix-data.yml/runs?per_page=1', { headers: { Accept: 'application/vnd.github+json' } })
+      .then(function (r) { return r.ok ? r.json() : {}; }).then(function (j) {
+        var run = (j.workflow_runs || [])[0];
+        if (!run) { $('#upjob').textContent = ''; return; }
+        var going = run.status !== 'completed', what = run.event === 'schedule' || /days/.test(run.display_title || '') ? 'the morning’s film' : 'the update';
+        $('#upjob').innerHTML = going ? '<b>The site is updating now</b> (' + what + ', started ' + esc(when(run.created_at)) + '): its films first, then any new pictures.'
+          : run.conclusion === 'success' ? 'The site last updated ' + esc(when(run.updated_at)) + '.' : '<b>The site’s last update didn’t finish</b> (' + esc(when(run.updated_at)) + '): <a href="' + esc(run.html_url) + '" target="_blank" rel="noopener">see why</a>, or Update again.';
+        clearTimeout(jobWatch); if (going) jobWatch = setTimeout(siteJob, 20000);
+      }).catch(function () {});
+  }
+
+  // ---- conversions (convert.py on the Mac): the film it's on and how far, and those done
+  function convert() {
+    if (!GW) return;
+    fetch(GW + '/api/convert', { headers: { Authorization: 'Bearer ' + TOKEN } }).then(function (r) { if (r.status === 404) throw new Error('old'); if (!r.ok) throw 0; return r.json(); }).then(function (c) {
+      var n = c.now, bar = $('#cvbar');
+      bar.hidden = !(n && c.alive && (n.state === 'converting' || n.state === 'paused'));
+      if (n && c.alive && (n.state === 'converting' || n.state === 'paused')) {
+        $('#cvhead').innerHTML = (n.state === 'paused' ? 'Paused: ' : 'Converting ') + '<em>' + esc(n.name) + '</em>';
+        $('#cvfill').style.width = (n.pct || 0) + '%';
+        $('#cvsay').innerHTML = '<b>' + Math.floor(n.pct || 0) + '%</b> through' + (n.state === 'paused' ? ' (' + esc(n.why) + ')' : ', started ' + esc(when(n.since * 1000))) + '. Film ' + ((n.n || 0) + 1) + ' of ' + (n.total || '?') + ' this run; ' + c.done + ' converted so far' + (c.failed.length ? ', ' + c.failed.length + ' couldn’t be' : '') + '.';
+      } else if (n && c.alive && n.state === 'waiting') {
+        $('#cvhead').innerHTML = 'Waiting <em>for the night</em>';
+        $('#cvsay').textContent = n.why + '. ' + (n.n || 0) + ' of ' + (n.total || '?') + ' done this run; ' + c.done + ' converted so far.';
+      } else if (c.alive) {
+        $('#cvhead').innerHTML = 'Converting <em>(running)</em>';
+        $('#cvsay').textContent = c.done + ' converted so far. Restart the converter with its update to see how far each film is.';
+      } else {
+        $('#cvhead').innerHTML = n && n.state === 'finished' ? 'All <em>converted</em>' : 'Not <em>running</em>';
+        $('#cvsay').textContent = c.done + ' converted so far' + (c.failed.length ? ', ' + c.failed.length + ' couldn’t be' : '') + '.';
+      }
+      $('#cvlist').innerHTML = c.recent.map(function (x) { return '<li>' + esc(x.name) + '<span class="when">' + esc(when(x.at * 1000)) + (x.mins ? ' · ' + x.mins + ' min' : '') + '</span></li>'; }).join('') +
+        c.failed.slice(0, 5).map(function (x) { return '<li><b>Couldn’t:</b> ' + esc(x.name) + '<span class="when">' + esc(String(x.why || '').slice(0, 90)) + '</span></li>'; }).join('');
+      clearTimeout(convert.t); convert.t = setTimeout(convert, c.alive ? 30000 : 120000);
+    }).catch(function (e) {
+      $('#cvhead').innerHTML = e && e.message === 'old' ? 'The Mac mini <em>needs its update</em>' : 'The Mac mini isn’t <em>answering</em>';
+      $('#cvsay').textContent = e && e.message === 'old' ? 'Update its gateway to see the conversions here.' : 'It may be asleep or restarting.';
+      clearTimeout(convert.t); convert.t = setTimeout(convert, 120000);
+    });
+  }
 
   // ---- the 8am email, as it goes out (the latest film already shown), and a copy to John
   $('#mailsee').onclick = function () {
@@ -339,7 +398,7 @@
     fetch('/grifflix/config.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (c) {
       var gw = String(c.gateway || '').replace(/\/$/, ''), t0 = Date.now();
       if (!gw) { $('#machead').textContent = 'Not connected'; return; }
-      GW = gw;
+      GW = gw; convert();
       return fetch(gw + '/api/me', { headers: { Authorization: 'Bearer ' + TOKEN } }).then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (me) {
         var L = me.libraries || {};
         $('#machead').innerHTML = 'Answering <em>(' + (Date.now() - t0) + ' ms)</em>';

@@ -32,6 +32,7 @@ FIELDS = ('Overview,Genres,OfficialRating,CommunityRating,ProductionYear,Premier
 # files and cast (a film's own pop-up asks for everything)
 LIST_FIELDS = ('Overview,Genres,OfficialRating,CommunityRating,ProductionYear,PremiereDate,RunTimeTicks,ImageTags,'
                'BackdropImageTags,ParentBackdropImageTags,SeriesPrimaryImageTag,ChildCount,RecursiveItemCount,DateCreated,Path')
+EXPORT_CACHE = os.path.join(APP_DIR, 'export-cache.json')   # what John's last Update sent (so the next reads only what's new)
 LIBS = {'movies': ('Movies', 'movies'), 'tv': ('TV', 'tvshows'), 'home': ('Home videos', 'homevideos')}
 
 
@@ -681,55 +682,118 @@ def make_handler(g):
             (the Worker keeps them, and shows each at 8am on its day): only the days already revealed go on the site."""
             if not me.get('owner'):
                 return self.send_json(403, {'error': 'Only John.'})
+            # Only what's new or changed is read in full: the Mac remembers what it sent last time (each item's Jellyfin
+            # Etag, which changes with its details or pictures). John, 8 Nov 2026: "almost every image and collection will
+            # be the same; a few more films or series might be added". ?full=1 reads everything again.
             g.forget()
             extra = LIST_FIELDS + ',People,Taglines,RemoteTrailers'
+            ep_fields = 'Overview,RunTimeTicks,ImageTags,ParentBackdropImageTags,SeriesPrimaryImageTag,DateCreated,PremiereDate,ProductionYear'
+            quick = 'Etag,ChildCount,RecursiveItemCount'
             libs = g.st.get('libraries', {})
+            old = {} if q.get('full') == '1' else (load(EXPORT_CACHE, {}).get('items') or {})
+            kept, count = {}, {'new': 0, 'changed': 0, 'read': 0}
             items, lists = {}, {}
 
-            def keep(raw, light=False):
-                for it in raw:
-                    o = item_out(it)
-                    if light:   # (episodes: no cast lists)
-                        o.pop('cast', None)
-                        o.pop('directors', None)
-                    o['tags'] = pic_tags(it)
-                    items[it['Id']] = o
+            def resolve(raw, fields, slim=False):
+                """raw: the quick list (ids and Etags). Each one's full entry: remembered, or read now if new or changed."""
+                need = [i['Id'] for i in raw if not i.get('Etag') or (old.get(i['Id']) or {}).get('e') != i.get('Etag')]
+                full = {}
+                for n in range(0, len(need), 100):
+                    for it in g.items(Ids=','.join(need[n:n + 100]), Fields=fields).get('Items', []):
+                        full[it['Id']] = it
+                out = []
+                for i in raw:
+                    if i['Id'] in full:
+                        o = item_out(full[i['Id']])
+                        if slim:
+                            o.pop('cast', None)
+                            o.pop('directors', None)
+                        o['tags'] = pic_tags(full[i['Id']])
+                        count['new' if i['Id'] not in old else 'changed'] += 1
+                        count['read'] += 1
+                    elif i['Id'] in old:
+                        o = old[i['Id']]['o']
+                    else:
+                        continue
+                    kept[i['Id']] = {'e': i.get('Etag'), 'o': o}
+                    out.append(o)
+                return out
             for key, types in (('movies', 'Movie'), ('tv', 'Series')):
                 if libs.get(key):
-                    raw = shown(g.items(ParentId=libs[key], Recursive='true', IncludeItemTypes=types, SortBy='SortName', Fields=extra).get('Items', []))
-                    keep(raw)
-                    lists[key] = [i['Id'] for i in raw]
-            sets = g.items(Recursive='true', IncludeItemTypes='BoxSet', SortBy='SortName', Fields=extra).get('Items', [])
-            keep(sets)
+                    raw = shown(g.items(ParentId=libs[key], Recursive='true', IncludeItemTypes=types, SortBy='SortName', Fields=quick).get('Items', []))
+                    for o in resolve(raw, extra):
+                        items[o['id']] = o
+                    lists[key] = [i['Id'] for i in raw if i['Id'] in items]
+            sets = g.items(Recursive='true', IncludeItemTypes='BoxSet', SortBy='SortName', Fields=quick).get('Items', [])
+            for o in resolve(sets, extra):
+                items[o['id']] = o
             inside, members = set(), {}
             for c in sets:
-                kids = g.items(ParentId=c['Id'], SortBy='ProductionYear,SortName', Fields=extra).get('Items', [])
-                keep([k for k in kids if k['Id'] not in items])
-                members[c['Id']] = [k['Id'] for k in kids]
+                kids = g.items(ParentId=c['Id'], SortBy='ProductionYear,SortName', Fields=quick).get('Items', [])
+                for o in resolve([k for k in kids if k['Id'] not in items], extra):
+                    items[o['id']] = o
+                members[c['Id']] = [k['Id'] for k in kids if k['Id'] in items]
                 inside.update(k['Id'] for k in kids if k.get('Type') == 'BoxSet')
             lists['collections'] = [c['Id'] for c in sets if c['Id'] not in inside]
             series = {}
             if libs.get('tv'):
-                eps = g.items(ParentId=libs['tv'], Recursive='true', IncludeItemTypes='Episode', SortBy='SortName',
-                              Fields='Overview,RunTimeTicks,ImageTags,ParentBackdropImageTags,SeriesPrimaryImageTag,DateCreated,PremiereDate,ProductionYear').get('Items', [])
-                ses = g.items(ParentId=libs['tv'], Recursive='true', IncludeItemTypes='Season', Fields='Overview,ImageTags').get('Items', [])
-                ses = [x for x in ses if x.get('SeriesId')]
-                eps = [x for x in eps if x.get('SeriesId')]   # (an episode Jellyfin hasn't put in a series: not shown)
-                for s in ses:
-                    series.setdefault(s.get('SeriesId'), {'seasons': [], 'episodes': []})['seasons'].append(item_out(s))
-                for e in sorted(eps, key=lambda e: (e.get('ParentIndexNumber') or 0, e.get('IndexNumber') or 0)):
-                    o = item_out(e)
-                    o['tags'] = pic_tags(e)
-                    series.setdefault(e.get('SeriesId'), {'seasons': [], 'episodes': []})['episodes'].append(o)
+                eps = [x for x in g.items(ParentId=libs['tv'], Recursive='true', IncludeItemTypes='Episode', SortBy='SortName', Fields=quick).get('Items', []) if x.get('SeriesId')]
+                ses = [x for x in g.items(ParentId=libs['tv'], Recursive='true', IncludeItemTypes='Season', Fields=quick).get('Items', []) if x.get('SeriesId')]
+                sid = {x['Id']: x['SeriesId'] for x in eps + ses}   # (an episode Jellyfin hasn't put in a series: not shown)
+                for o in resolve(ses, 'Overview,ImageTags', slim=True):
+                    series.setdefault(sid[o['id']], {'seasons': [], 'episodes': []})['seasons'].append(o)
+                for o in sorted(resolve(eps, ep_fields, slim=True), key=lambda e: (e.get('season') or 0, e.get('ep') or 0)):
+                    series.setdefault(sid[o['id']], {'seasons': [], 'episodes': []})['episodes'].append(o)
                 for v in series.values():
                     v['seasons'].sort(key=lambda s: s.get('ep') or 0)
             c = g.store.d['calendars']['motd']
             days = dict(c.get('days', {}))
             have = set(items) | set(e['id'] for v in series.values() for e in v['episodes'])
             missing = [i for i in set(days.values()) if i and i not in have]
-            keep(g.by_ids(missing), light=True)
-            self.send_json(200, {'v': 1, 'at': int(time.time()), 'items': items, 'lists': lists, 'sets': members, 'series': series,
+            raw = [it for n in range(0, len(missing), 100) for it in g.items(Ids=','.join(missing[n:n + 100]), Fields=quick).get('Items', [])]
+            for o in resolve(raw, ep_fields, slim=True):   # (a calendar day's film no longer in a library list)
+                items[o['id']] = o
+            count['removed'] = len([k for k in old if k not in kept])
+            try:
+                save(EXPORT_CACHE, {'at': int(time.time()), 'items': kept})
+            except OSError as e:
+                log('Couldn’t keep the export:', e)
+            log('Update: %d new, %d changed, %d gone (%d read in full)' % (count['new'], count['changed'], count['removed'], count['read']))
+            self.send_json(200, {'v': 1, 'at': int(time.time()), 'items': items, 'lists': lists, 'sets': members, 'series': series, 'changes': count,
                                  'motd': {'days': days, 'notes': dict(c.get('notes', {}))}})
+
+        def api_convert(self, me, user, q, b):
+            """John's: how the conversions are going (convert.py's files in ~/Grifflix), for the admin page."""
+            if not me.get('owner'):
+                return self.send_json(403, {'error': 'Only John.'})
+            home = os.path.expanduser('~/Grifflix')
+            st = load(os.path.join(home, 'convert-state.json'), {})
+            cur = load(os.path.join(home, 'convert-now.json'), None)
+            alive = False
+            if cur:
+                try:
+                    os.kill(int(cur.get('pid') or 0), 0)   # (still running?)
+                    alive = cur.get('state') != 'finished'
+                except (OSError, ValueError):
+                    alive = False
+            tail = []
+            try:
+                with open(os.path.join(home, 'convert.log'), 'rb') as f:
+                    f.seek(0, 2)
+                    f.seek(max(0, f.tell() - 6000))
+                    tail = f.read().decode('utf-8', 'replace').splitlines()[-8:]
+            except OSError:
+                pass
+            if not cur and tail:   # (a converter started before it wrote its progress: whether it's running, from the processes)
+                try:
+                    import subprocess
+                    alive = 'convert.py' in subprocess.run(['ps', '-axo', 'command'], capture_output=True, text=True, timeout=5).stdout
+                except Exception:
+                    pass
+            done = st.get('done') or {}
+            self.send_json(200, {'now': cur, 'alive': alive, 'done': len(done), 'failed': [{'name': x.get('name'), 'why': x.get('why')} for x in (st.get('failed') or {}).values()][:20],
+                                 'recent': [{'name': x.get('name'), 'at': x.get('at'), 'mins': x.get('mins')} for x in sorted(done.values(), key=lambda x: -(x.get('at') or 0))[:6]],
+                                 'log': tail})
 
         def api_refresh(self, me, user, q, b):   # the page's Refresh button: look again for new films and changes
             g.forget()

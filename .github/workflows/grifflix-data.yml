@@ -1,4 +1,5 @@
 name: Grifflix data
+run-name: Grifflix data (${{ inputs.mode || 'days' }})
 # Grifflix's own copy of its films, TV and Movie of the Day, kept on the site as the songs' calendar is (see
 # _grifflix/data_publish.py). Started by the Worker: "full" after John's Update on the admin page (the files, then the
 # pictures copied to R2), "days" each morning from 8am (the day's film onto the site's calendar file). The schedule is a
