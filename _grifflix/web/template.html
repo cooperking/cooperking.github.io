@@ -2613,7 +2613,9 @@ function dayNear(date, d) {
 function dayStep(d) {
   var k = S.sheetDate && dayNear(S.sheetDate, d); if (!k) return false;
   if (k.slice(0, 7) !== S.month && $('#cal')) { S.month = k.slice(0, 7); drawMonth(); }
+  var ae = document.activeElement, keep = ae && ae.dataset && ae.dataset.dstep ? ae.id : null;   // (an arrow chosen: kept chosen, to go on through the days: John, 8 Nov 2026)
   daySheet(k);
+  if (keep) { var refocus = function () { var b = $('#' + keep) || $('#sheetIn .dnav'); if (b && dlg.open) b.focus({ preventScroll: true }); }; refocus(); setTimeout(refocus, 60); setTimeout(refocus, 260); }
   var el = $('#sheetIn'); if (el && el.animate) el.animate([{ transform: 'translateX(' + (d * 48) + 'px)', opacity: .35 }, { transform: 'none', opacity: 1 }], { duration: 260, easing: 'cubic-bezier(.2,.7,.2,1)' });
   return true;
 }
@@ -2645,7 +2647,7 @@ function itemSheet(it, ctx) {
   if (!it) return;
   SEEN[it.id] = it;
   S.sheetDate = ctx.date || null;
-  var dnav = function (d) { return ctx.date && dayNear(ctx.date, d) ? '<button class="ico dnav" data-dstep="' + d + '" aria-label="' + (d < 0 ? 'The day before' : 'The day after') + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="' + (d < 0 ? 'M15 6l-6 6 6 6' : 'M9 6l6 6-6 6') + '"/></svg></button>' : ''; };
+  var dnav = function (d) { return ctx.date && dayNear(ctx.date, d) ? '<button class="ico dnav" id="dstep' + (d < 0 ? 'p' : 'n') + '" data-dstep="' + d + '" aria-label="' + (d < 0 ? 'The day before' : 'The day after') + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="' + (d < 0 ? 'M15 6l-6 6 6 6' : 'M9 6l6 6-6 6') + '"/></svg></button>' : ''; };
   var top = it.backdrop ? '<div class="heroimg"><img alt="" src="' + esc(img(it.backdrop, 'Backdrop', 1100)) + '">' + X + '</div>' : (it.thumb || (it.type === 'video' && it.poster) ? '<div class="heroimg"><img alt="" src="' + esc(img(it.thumb || it.poster, it.thumb ? 'Thumb' : 'Primary', 1100)) + '">' + X + '</div>' : '<div class="noimg-top" style="position:relative">' + X + '</div>');
   var pst = it.poster && it.type !== 'episode' ? img(it.poster, 'Primary', 400) : '';   // (the poster, whole, beside the words on a big screen)
   openSheet('<div class="film' + (pst ? ' hasposter' : '') + '">' + X + top + (pst ? '<div class="ipost"><img alt="" src="' + esc(pst) + '"></div>' : '') + '<div class="in"><div class="date">' + (ctx.date ? dnav(-1) + '<span>' + esc(longDate(ctx.date)) + '</span>' + dnav(1) : esc(typeName(it))) + '</div><h2>' + esc(showName(it)) + '</h2><div id="isbody">' + bodyHTML(it, ctx) + '</div></div></div>');
