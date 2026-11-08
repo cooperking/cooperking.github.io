@@ -73,6 +73,12 @@
         <div class="state"><button class="btn primary" id="publish" type="button" hidden>Publish</button><a class="btn" href="/grifflix/draft/" target="_blank" rel="noopener">Try the draft</a><a class="btn" href="/grifflix/" target="_blank" rel="noopener">The live page</a></div>
       </section>
       <section class="card">
+        <div class="kicker">Movie of the Day</div>
+        <h2 id="peekhead">Each one a <em>surprise</em></h2>
+        <p class="stat">Each day’s film shows on the calendar at 8am that day, when the alert goes out, for everyone, you too. Switch this on to see what’s coming (only you).</p>
+        <div class="state"><button class="btn" id="peek" type="button" disabled>Show upcoming films</button></div>
+      </section>
+      <section class="card">
         <div class="kicker">Notifications and emails</div>
         <h2 id="nothead">Looking…</h2>
         <p class="stat" id="notsay"></p>
@@ -231,11 +237,23 @@
     }).catch(function (e) { $('#nothead').textContent = e.message; });
   }
 
+  // ---- Movie of the Day: surprises till 8am, unless John switches on seeing what's coming (kept on the Mac mini)
+  function peek(gw) {
+    var b = $('#peek'), set = function (on) {
+      b.disabled = false; b.className = on ? 'btn primary' : 'btn'; b.textContent = on ? 'Showing upcoming films: hide them' : 'Show upcoming films';
+      $('#peekhead').innerHTML = on ? 'You can see <em>what’s coming</em>' : 'Each one a <em>surprise</em>';
+      b.onclick = function () { b.disabled = true; call({ peek: !on }).then(function (j) { set(j.peek); toast(j.peek ? 'Upcoming films shown to you: refresh Grifflix' : 'Hidden again: refresh Grifflix'); }).catch(function () { b.disabled = false; toast('The Mac mini didn’t answer.'); }); };
+    };
+    var call = function (body) { return fetch(gw + '/api/settings', body ? { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : { headers: { Authorization: 'Bearer ' + TOKEN } }).then(function (r) { if (!r.ok) throw 0; return r.json(); }); };
+    call().then(function (j) { set(j.peek); }).catch(function () { $('#peekhead').innerHTML = 'Each one a <em>surprise</em>'; b.textContent = 'The Mac mini needs updating for this'; });
+  }
+
   // ---- the Mac mini
   function mac() {
     fetch('/grifflix/config.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (c) {
       var gw = String(c.gateway || '').replace(/\/$/, ''), t0 = Date.now();
       if (!gw) { $('#machead').textContent = 'Not connected'; return; }
+      peek(gw);
       return fetch(gw + '/api/me', { headers: { Authorization: 'Bearer ' + TOKEN } }).then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (me) {
         var L = me.libraries || {};
         $('#machead').innerHTML = 'Answering <em>(' + (Date.now() - t0) + ' ms)</em>';

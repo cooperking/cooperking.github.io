@@ -242,6 +242,24 @@ def ticks_to_min(t):
     return round((t or 0) / 600000000) or None
 
 
+def london_now():
+    try:
+        from zoneinfo import ZoneInfo
+        import datetime
+        return datetime.datetime.now(ZoneInfo('Europe/London'))
+    except Exception:
+        import datetime
+        return datetime.datetime.now()
+
+
+def revealed(day):
+    """A Movie of the Day is a surprise until 8am (UK) on its day, when the alert goes out (John, 8 Nov 2026: "I don't
+    want to see the film on that day until I get an alert at 8am - unless I override it in admin")."""
+    now = london_now()
+    today = now.strftime('%Y-%m-%d')
+    return day < today or (day == today and now.hour >= 8)
+
+
 def shown(items):   # a series with nothing in it (an empty folder, e.g. "untitled folder") isn't shown anywhere
     return [i for i in items if not (i.get('Type') == 'Series' and not i.get('ChildCount') and not i.get('RecursiveItemCount'))]
 
@@ -511,9 +529,17 @@ def make_handler(g):
                 if u.path == '/local/calendar' and method == 'POST':   # motd-fill.py on this Mac: many Movie of the Day days at once (empty days only)
                     if not hmac.compare_digest(self.headers.get('X-Grifflix-Secret', ''), g.st['secret']):
                         return self.send_json(403, {'error': 'Not here.'})
-                    days = {str(d): str(i) for d, i in (self.body().get('days') or {}).items() if re.match(r'^\d{4}-\d\d-\d\d$', str(d)) and re.match(r'^[0-9a-f]{32}$', str(i))}
+                    body = self.body()   # (read once: a second read waits for nothing)
+                    days = {str(d): str(i) for d, i in (body.get('days') or {}).items() if re.match(r'^\d{4}-\d\d-\d\d$', str(d)) and re.match(r'^[0-9a-f]{32}$', str(i))}
+                    rf, rt = str(body.get('replace_from') or ''), str(body.get('replace_to') or '')
                     with g.store.lock:
                         c = g.store.d['calendars']['motd']
+                        if rf and rt:   # dealt again: the days in that range replaced (John, 8 Nov 2026: "randomise all choices so far again")
+                            old = len([d for d in c['days'] if rf <= d <= rt])
+                            c['days'] = {d: i for d, i in c['days'].items() if not (rf <= d <= rt)}
+                            c['days'].update(days)
+                            g.store.touch()
+                            return self.send_json(200, {'ok': True, 'added': len(days), 'replaced': old})
                         new = {d: i for d, i in days.items() if d not in c['days']}
                         c['days'].update(new)
                         g.store.touch()
@@ -610,6 +636,16 @@ def make_handler(g):
             r = g.items(ParentId=iid, SortBy='ProductionYear,SortName')
             o['items'] = [item_out(i, prog) for i in r.get('Items', []) if not public or g.is_public(i['Id'], i.get('Path'))]
             return o
+
+        def api_settings(self, me, user, q, b):   # John's: show him the films still to come (the admin page's switch)
+            if not me.get('owner'):
+                return self.send_json(403, {'error': 'Only John.'})
+            st = g.store.d.setdefault('settings', {})
+            if b:
+                with g.store.lock:
+                    st['peek'] = bool(b.get('peek'))
+                    g.store.touch()
+            self.send_json(200, {'peek': bool(st.get('peek'))})
 
         def api_refresh(self, me, user, q, b):   # the page's Refresh button: look again for new films and changes
             g.forget()
@@ -718,10 +754,21 @@ def make_handler(g):
         def cal_out(self, cid, c, me, user, full=True):
             o = {'id': cid, 'name': c.get('name'), 'ownerName': c.get('ownerName') or 'John', 'mine': c.get('owner') == me['uid'],
                  'shared': c.get('shared', True), 'count': len(c.get('days', {}))}
+            days, notes = c.get('days', {}), c.get('notes', {})
+            if cid == 'motd':   # the days still to come: hidden (John sees that they're chosen, not what; or all, if he's switched that on)
+                peek = me.get('owner') and g.store.d.get('settings', {}).get('peek')
+                if not peek:
+                    secret = [d for d in days if not revealed(d)]
+                    days = {d: i for d, i in days.items() if revealed(d)}
+                    notes = {d: n for d, n in notes.items() if revealed(d)}
+                    o['count'] = len(days)
             if full:
-                S = g.summaries(list(c.get('days', {}).values()), user['progress'])
-                o['days'] = {d: S[i] for d, i in c.get('days', {}).items() if i in S}
-                o['notes'] = c.get('notes', {})
+                S = g.summaries(list(days.values()), user['progress'])
+                o['days'] = {d: S[i] for d, i in days.items() if i in S}
+                o['notes'] = notes
+                if cid == 'motd' and me.get('owner') and not peek:
+                    for d in secret:
+                        o['days'][d] = {'secret': True}
             return o
 
         def api_calendars(self, me, user, q, b):
@@ -848,12 +895,13 @@ def make_handler(g):
 
         def pub_calendar(self, q):   # Movie of the Day only (members' own calendars are theirs)
             c = g.store.d['calendars']['motd']
-            ids = sorted(set(i for i in c.get('days', {}).values() if i))
+            days = {d: i for d, i in c.get('days', {}).items() if revealed(d)}   # (only those already revealed: the rest are a surprise)
+            ids = sorted(set(i for i in days.values() if i))
             raw = g.by_ids(ids)
             S = {it['Id']: item_out(it) for it in raw if g.is_public(it['Id'], it.get('Path'))}   # (each one's path from the one list)
             self.send_json(200, {'id': 'motd', 'name': c.get('name'), 'ownerName': 'John', 'mine': False, 'shared': True,
-                                 'count': len(c.get('days', {})), 'notes': c.get('notes', {}),
-                                 'days': {d: S[i] for d, i in c.get('days', {}).items() if i in S}})
+                                 'count': len(days), 'notes': {d: n for d, n in c.get('notes', {}).items() if revealed(d)},
+                                 'days': {d: S[i] for d, i in days.items() if i in S}})
 
         def image(self, rest, q, cache='private, max-age=86400'):
             m = re.match(r'^([0-9a-f]{32})(?:/(Primary|Backdrop|Thumb|Logo))?$', rest)

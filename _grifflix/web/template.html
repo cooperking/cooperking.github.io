@@ -394,6 +394,9 @@ html.big .day .num, html.big .day.has .num { top: 4px; bottom: auto; }
 html.tv .day .cap { padding: 14px 7px 5px; }
 html.tv .day .cap .t { font-size: 13px; -webkit-line-clamp: 1; }   /* (a TV: the title on one line, small, so the picture shows) */
 html.tv .day .cap .s { font-size: 9px; letter-spacing: .08em; }
+.day.secret { background: var(--empty-bg); box-shadow: inset 0 0 0 1px var(--empty-line); }
+.day.secret .q { position: absolute; inset: 0; display: grid; place-items: center; font: italic 400 clamp(20px, 3vw, 34px)/1 var(--serif); color: var(--faint); }
+.day.secret .num { background: none; border-color: transparent; color: var(--muted); }
 html.big .calhead:empty { display: block; height: 0; }   /* (keeps its row, so the days get the rest: without it a visitor's calendar had days of no height) */
 /* a film's pop-up on a TV, as the songs' is: the whole screen, its picture behind, the details on the left with Play in
    view at once, nothing to scroll for (John, 8 Nov 2026) */
@@ -731,7 +734,8 @@ function home() {
     if (!S.month) S.month = TODAY.slice(0, 7);
     drawCals(); drawMonth();
     if (S.pendingDay) { var pd = S.pendingDay; S.pendingDay = null; if (S.calData.days[pd]) daySheet(pd); }
-    var t = S.calData.days[TODAY] || S.calData.days[Object.keys(S.calData.days).sort().pop()];
+    var shownDays = Object.keys(S.calData.days).filter(function (k) { return !S.calData.days[k].secret; }).sort();
+    var t = (S.calData.days[TODAY] && !S.calData.days[TODAY].secret ? S.calData.days[TODAY] : null) || S.calData.days[shownDays.pop()];
   }).catch(oops);
   api('home').then(drawRows).catch(function () {});
 }
@@ -753,7 +757,7 @@ function monthsOf(days) {
 function drawMonth() {
   var C = S.calData, mine = C.mine, months = monthsOf(C.days);
   if (months.indexOf(S.month) < 0) S.month = months[months.length - 1];
-  var y = +S.month.slice(0, 4), m = +S.month.slice(5, 7) - 1, inMonth = Object.keys(C.days).filter(function (d) { return d.slice(0, 7) === S.month; });
+  var y = +S.month.slice(0, 4), m = +S.month.slice(5, 7) - 1, inMonth = Object.keys(C.days).filter(function (d) { return d.slice(0, 7) === S.month && !C.days[d].secret; });   // (a day still to come, chosen but a surprise till 8am that day: not counted or listed)
   var noun = function (n) { return n === 1 ? 'film' : 'films'; };
   monthTint(m);
   $('#hero').innerHTML = (C.id !== 'motd' ? '<div class="kick">' + esc(C.mine ? 'Your calendar · ' + C.name : C.ownerName + '’s calendar · ' + C.name) + '</div>' : '') +
@@ -812,6 +816,7 @@ function drawMonth() {
   for (var k = 0; k < lead; k++) h += '<div class="day blank"></div>';
   for (var d = 1; d <= n; d++) {
     var key = S.month + '-' + String(d).padStart(2, '0'), it = C.days[key], cls = 'day' + (it ? ' has' : '') + (key === TODAY ? ' today' : '');
+    if (it && it.secret) { h += '<button class="' + cls + ' secret" data-day="' + key + '" aria-label="' + d + ' ' + MONTHS[m] + ': chosen, a surprise until 8am that day"><span class="q">?</span><span class="num">' + d + '</span></button>'; continue; }
     if (!it && !mine) { h += '<div class="' + cls + '"><span class="num">' + d + '</span></div>'; continue; }
     h += '<button class="' + cls + '" data-day="' + key + '" aria-label="' + d + ' ' + MONTHS[m] + (it ? ': ' + esc(it.name) : '') + '">';
     if (it) h += '<img class="art" loading="lazy" alt="" src="' + esc(dayPic(it)) + '"><div class="cap"><div class="t">' + esc(showName(it)) + '</div><div class="s">' + esc(subOf(it)) + '</div></div>' + progBar(it);
@@ -830,7 +835,7 @@ function drawMonth() {
     }).join('') + '</ol>' : '<p class="none">' + (mine ? 'Tap a day on the calendar to choose its film.' : 'Nothing this month yet.') + '</p>');
   $$('#cal [data-day], #side [data-day]').forEach(function (b) { b.onclick = function () { daySheet(b.dataset.day); }; });
   $('#playtoday').onclick = function () { var t = C.days[TODAY] || C.days[inMonth.sort().pop()]; if (t) play(t); else toast('Nothing on this calendar yet.'); };
-  $('#surprise').onclick = function () { var all = Object.keys(C.days); if (!all.length) return toast('Nothing on this calendar yet.'); daySheet(all[Math.floor(Math.random() * all.length)]); };
+  $('#surprise').onclick = function () { var all = Object.keys(C.days).filter(function (k) { return !C.days[k].secret; }); if (!all.length) return toast('Nothing on this calendar yet.'); daySheet(all[Math.floor(Math.random() * all.length)]); };
   $('#sharecal').onclick = function () { share('Grifflix: ' + (C.id === 'motd' ? 'Movie of the Day' : C.name), location.href.split('#')[0] + '#home/' + C.id); };
 }
 function fitCal() {   // a computer or TV: the calendar down to the window's foot
@@ -989,6 +994,7 @@ function longDate(k) { var d = new Date(k + 'T12:00'); return d.toLocaleDateStri
 
 function daySheet(date) {
   var C = S.calData, it = C.days[date];
+  if (it && it.secret) return toast('Chosen: revealed at 8am on ' + longDate(date) + '. To see what’s coming, switch on “Show upcoming films” on the admin page.');
   if (!it) {
     if (!C.mine) return;
     return pickFor(date);
