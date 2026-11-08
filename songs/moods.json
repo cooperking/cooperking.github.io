@@ -4,19 +4,19 @@
   "about": "For songs Claude knows: how often the three strongest moods from Last.fm listeners' track tags, from the artist's Last.fm tags, and from the audio models include Claude's first pick.",
   "listeners": [
    2,
-   4
+   3
   ],
   "audio": [
-   151,
-   260
+   148,
+   256
   ],
   "artistTags": [
    5,
    29
   ],
-  "songsWithListenerTags": 315,
-  "songsWithListenerMoodTags": 173,
-  "songsWhereListenersCount": 74
+  "songsWithListenerTags": 15,
+  "songsWithListenerMoodTags": 12,
+  "songsWhereListenersCount": 5
  },
  "moods": [
   "Joyful",
@@ -15400,7 +15400,7 @@
     "pop",
     "synth-pop"
    ],
-   "checkWhy": "Mellow, but the audio sounds livelier than 87% of the songs",
+   "checkWhy": "Mellow, but the audio sounds livelier than 88% of the songs",
    "check": true
   },
   "748yv6bb3l3CcKS45a6SZ8": {
@@ -17644,7 +17644,7 @@
    "sound": [
     "Mellow",
     "Uplifting",
-    "Joyful"
+    "Playful"
    ],
    "claude": [
     "Mellow"
@@ -17834,7 +17834,7 @@
    "sound": [
     "Energetic",
     "Joyful",
-    "Romantic"
+    "Playful"
    ],
    "claude": [
     "Romantic",
@@ -25597,7 +25597,7 @@
    "sound": [
     "Joyful",
     "Uplifting",
-    "Mellow"
+    "Playful"
    ],
    "claude": [
     "Romantic"
@@ -26138,7 +26138,7 @@
    "moodMix": [
     [
      "Dark",
-     68
+     69
     ],
     [
      "Melancholy",
@@ -26156,7 +26156,7 @@
      [
       [
        "Dark",
-       68
+       69
       ],
       [
        "Melancholy",
@@ -27433,7 +27433,7 @@
      [
       [
        "Romantic",
-       25
+       24
       ],
       [
        "Joyful",
@@ -27914,6 +27914,137 @@
    "musicbrainz": [
     "latin",
     "mpb"
+   ],
+   "check": true
+  },
+  "72T5smavl9ONfOwI0gHf1A": {
+   "n": 272,
+   "title": "You're Dead",
+   "artist": "Norma Tanega",
+   "moods": [
+    "Romantic",
+    "Mellow"
+   ],
+   "moodMix": [
+    [
+     "Romantic",
+     23
+    ],
+    [
+     "Mellow",
+     18
+    ],
+    [
+     "Melancholy",
+     14
+    ]
+   ],
+   "moodEvidence": [
+    [
+     "Audio",
+     100,
+     [
+      [
+       "Romantic",
+       23
+      ],
+      [
+       "Mellow",
+       18
+      ],
+      [
+       "Melancholy",
+       14
+      ]
+     ]
+    ]
+   ],
+   "moodFrom": "Weighed up",
+   "sound": [
+    "Romantic",
+    "Mellow",
+    "Melancholy"
+   ],
+   "listeners": "none",
+   "styles": [
+    "Psychedelic Rock",
+    "Folk",
+    "Pop Rock"
+   ],
+   "genres": [
+    "Folk"
+   ],
+   "genreFrom": "Weighed up",
+   "genreMix": [
+    [
+     "Folk",
+     77
+    ],
+    [
+     "Rock",
+     12
+    ],
+    [
+     "Pop",
+     11
+    ]
+   ],
+   "genreEvidence": [
+    [
+     "MusicBrainz",
+     50,
+     [
+      [
+       "Folk",
+       84
+      ],
+      [
+       "Pop",
+       16
+      ]
+     ]
+    ],
+    [
+     "Last.fm",
+     30,
+     [
+      [
+       "Folk",
+       99
+      ],
+      [
+       "Country",
+       1
+      ],
+      [
+       "Pop",
+       1
+      ]
+     ]
+    ],
+    [
+     "Audio",
+     20,
+     [
+      [
+       "Rock",
+       58
+      ],
+      [
+       "Folk",
+       25
+      ],
+      [
+       "Pop",
+       16
+      ]
+     ]
+    ]
+   ],
+   "musicbrainz": [
+    "folk",
+    "folk rock",
+    "pop"
    ],
    "check": true
   }
