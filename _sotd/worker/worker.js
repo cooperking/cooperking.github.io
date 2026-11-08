@@ -1583,9 +1583,19 @@ async function grifflix(request, url, env) {
     const list = await env.MEDIA.list({ prefix: 'grifflix/fonts/' }).catch(() => ({ objects: [] }));
     return answer(200, { ok: true, fonts: (list.objects || []).map(o => o.key.slice(15)) });
   }
+  if (route === 'themes') {   // the months' themes, chosen and ordered on the admin page: twelve keys, or none for the page's own order
+    if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
+    const w = await gWho(request, env);
+    if (!w || !w.owner) return answer(403, { error: 'Only John.' });
+    const b = await request.json().catch(() => ({})), k = b.themes;
+    if (k == null) { await env.SOTD.delete('gthemes'); return answer(200, { ok: true, themes: null }); }
+    if (!Array.isArray(k) || k.length !== 12 || !k.every(x => typeof x === 'string' && /^[a-z0-9-]{2,24}$/.test(x))) return answer(400, { error: 'Twelve themes, please.' });
+    await env.SOTD.put('gthemes', JSON.stringify(k));
+    return answer(200, { ok: true, themes: k });
+  }
   if (route === 'cal') {   // Movie of the Day's days revealed after the site's own file (?after=), and for John, those still to come
     const c = await gCal(env), shown = gShownCal(c), after = url.searchParams.get('after') || '';
-    const out = { days: {}, notes: {} };
+    const out = { days: {}, notes: {}, themes: JSON.parse(await env.SOTD.get('gthemes') || 'null') };   // (the admin page's months, for everyone)
     for (const [d, it] of Object.entries(shown.days)) if (d > after) { out.days[d] = it; if (shown.notes[d]) out.notes[d] = shown.notes[d]; }
     const w = request.headers.get('Authorization') ? await gWho(request, env) : null;
     if (w && w.owner) {
