@@ -512,10 +512,6 @@ html.tv .th .vday:focus { outline: 3px solid rgb(var(--kink)) !important; outlin
 .th .vday.slab { background: #000; }
 .th .vday.empty { background: none; box-shadow: inset 0 0 0 2px rgba(var(--kink), .5); }
 .hlines polyline { fill: none; stroke: rgba(var(--kink), .55); stroke-width: 2; }
-#vwipe { position: fixed; inset: 0; z-index: 400; display: none; flex-direction: column; justify-content: center; padding: 0 96px; pointer-events: none; }
-#vwipe .a { font: 500 16px/1 var(--kfont); letter-spacing: .5em; text-transform: uppercase; }
-#vwipe .b { margin: 22px 0 18px; font: 700 112px/.95 var(--kfont); text-transform: uppercase; letter-spacing: .01em; }
-#vwipe .c { font: italic 400 26px var(--serif); }
 /* the reel */
 .th-reel .vday { width: 240px; height: 135px; background-image: var(--b); filter: sepia(.7) brightness(.7); }
 .th-reel .vday.front { filter: none; }
@@ -531,13 +527,17 @@ html.tv .th-umbrellas .vday:focus { outline: 0 !important; box-shadow: 0 0 0 4px
 /* the spiral */
 .th-spiral .vday { width: 170px; height: 255px; }
 .th-spiral .vday:not(.front) .vn { display: none; }
-/* the hotel */
-.hotel { position: absolute; background: #f7d4cf; box-shadow: inset 0 -56px 0 #e9b3ad; }
-.hotel .sign { position: absolute; left: 0; right: 0; top: 22px; text-align: center; font: 700 15px/1 var(--kfont); letter-spacing: .42em; text-transform: uppercase; color: #6d1a2a; }
-.hotel .door { position: absolute; left: 50%; bottom: 0; width: 64px; height: 50px; transform: translateX(-50%); background: #6d1a2a; box-shadow: 0 -8px 0 -2px #b0283f; }
-.th-hotel .vday { width: 50px; height: 68px; box-shadow: inset 0 0 0 3px #6d1a2a; }
-.th-hotel .vday.none, .th-hotel .vday.slab { background: repeating-linear-gradient(0deg, #c94c63 0 6px, #a93a50 6px 8px); }
-.th-hotel .vday .vn { display: none; }
+/* the code */
+.th-code .vday { top: 118px; width: 20px; height: calc(100% - 118px); background: none; overflow: hidden; color: #2bff6a; font: 400 18px/22px "Share Tech Mono", monospace; text-align: center; transition: none; }
+.th-code .rain { position: absolute; left: 0; right: 0; top: 0; display: block; font-style: normal; opacity: .5; animation: rain linear infinite; }
+@keyframes rain { from { transform: translateY(-50%); } to { transform: translateY(0); } }
+.th-code .vday.front .rain { opacity: 1; color: #eaffef; }
+.th-code .cdn { position: absolute; left: -4px; right: -4px; bottom: 30px; padding: 3px 0; background: var(--bg); font: 400 12px/1 "Share Tech Mono", monospace; color: #2bff6a; }
+html.tv .th-code .vday:focus { outline: 1px solid #eaffef !important; outline-offset: 0; }
+.codepic { position: absolute; left: calc(72% - 145px); top: calc(48% - 217px); width: 290px; height: 435px; background: #000 center/cover; z-index: 5; box-shadow: 0 0 0 1px #2bff6a; }
+.codepic.dec { animation: decode 1.3s steps(14) both; }
+@keyframes decode { 0% { clip-path: inset(0 0 100% 0); filter: grayscale(1) sepia(1) hue-rotate(70deg) saturate(6) contrast(3) brightness(.6); } 55% { clip-path: inset(0 0 0 0); filter: grayscale(1) sepia(1) hue-rotate(70deg) saturate(4) contrast(1.6); } 100% { clip-path: inset(0 0 0 0); filter: none; } }
+html[data-theme=code] .hinfo { color: #2bff6a; }
 /* the slices */
 .th-slices .vday { height: 405px; background-size: 270px 405px; background-position: center; filter: brightness(.55) saturate(1.3); transition: left .6s cubic-bezier(.3, .7, .2, 1), width .6s cubic-bezier(.3, .7, .2, 1), filter .5s; }
 .th-slices .vday.front { filter: none; }
@@ -578,16 +578,27 @@ html[data-theme=credits] .hinfo .k { letter-spacing: .2em; font-size: 12px; }
 .th-autumn .vday:not(.front) .vn { display: none; }
 .horizon { position: absolute; left: 0; right: 0; bottom: 0; border-top: 1px solid rgba(var(--kink), .55); background: rgba(0, 0, 0, .14); }
 html[data-theme=autumn] .hinfo { top: 112px; bottom: auto; }
-/* the advent calendar */
-.th-advent .vday { width: 58px; height: 92px; perspective: 260px; background-color: #062f1e; }
-.th-advent .vday.none, .th-advent .vday.slab { background: #062f1e; }
-.th-advent .leaf { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: #f4ecd8; box-shadow: inset 0 0 0 2px #c8102e; transform-origin: 0 50%; transition: transform .9s cubic-bezier(.3, .7, .2, 1); }
-.th-advent .vday:nth-child(3n) .leaf { background: #c8102e; box-shadow: inset 0 0 0 2px #f4ecd8; }
-.th-advent .leaf b { font: 400 34px/1 var(--serif); color: #c8102e; }
-.th-advent .vday:nth-child(3n) .leaf b { color: #f4ecd8; }
-.th-advent .vday.has .leaf { transform: rotateY(-78deg); }
-.th-advent .vday.has { filter: brightness(.78); }
-.th-advent .vday.front { filter: none; }
+/* the snow globe */
+.th-globe .vday { width: 36px; height: 36px; border-radius: 50%; box-shadow: 0 0 0 2px #e7c35a; }
+.th-globe .vday::before { content: ""; position: absolute; left: 50%; top: -6px; width: 10px; height: 6px; margin-left: -5px; background: #e7c35a; }
+.th-globe .str { position: absolute; left: 50%; bottom: calc(100% + 6px); width: 1px; background: rgba(var(--kink), .45); }
+html.tv .th-globe .vday:focus { outline: 0 !important; box-shadow: 0 0 0 2px #e7c35a, 0 0 0 5px #fff; }
+.globe { position: absolute; left: calc(73% - 165px); top: calc(64% - 165px); width: 330px; height: 330px; border-radius: 50%; overflow: hidden; background: radial-gradient(circle at 50% 60%, rgba(255, 255, 255, .08), rgba(255, 255, 255, .03) 62%, rgba(255, 255, 255, .2) 100%); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .6); transform-origin: 50% 100%; }
+.gpic { position: absolute; left: 50%; top: 50%; width: 150px; height: 225px; margin: -100px 0 0 -75px; background: center/cover; }
+.snow, .gsnow { position: absolute; left: 0; right: 0; top: -240px; bottom: 0; pointer-events: none; background-image: radial-gradient(circle at 20px 30px, #fff 0 2px, transparent 3px), radial-gradient(circle at 90px 130px, #fff 0 1.5px, transparent 2.5px), radial-gradient(circle at 160px 60px, #fff 0 2.5px, transparent 3.5px), radial-gradient(circle at 210px 190px, #fff 0 1.5px, transparent 2.5px), radial-gradient(circle at 120px 215px, #fff 0 2px, transparent 3px); background-size: 240px 240px; animation: snow 10s linear infinite; }
+.snow { opacity: .3; }
+@keyframes snow { from { transform: translateY(0); } to { transform: translateY(240px); } }
+.globe.shake { animation: gshake 1s cubic-bezier(.3, .7, .2, 1); }
+@keyframes gshake { 0% { transform: rotate(0); } 18% { transform: rotate(-7deg); } 42% { transform: rotate(6deg); } 68% { transform: rotate(-2deg); } 100% { transform: rotate(0); } }
+.gshine { position: absolute; left: 16%; top: 10%; width: 22%; height: 34%; border-radius: 50%; background: rgba(255, 255, 255, .16); transform: rotate(30deg); }
+.gbase { position: absolute; left: calc(73% - 140px); top: calc(64% + 148px); width: 280px; height: 72px; background: #2a1a10; clip-path: polygon(9% 0, 91% 0, 100% 100%, 0 100%); }
+/* each theme its own type (John: "fonts for the themes don't have to stick to the futura if it's not relevant") */
+html[data-theme] .hinfo .w, html[data-theme] .hinfo h2, .th-credits .ct { font-family: var(--tfont); font-weight: var(--tw); text-transform: var(--ttt); font-style: var(--tfs); }
+html[data-theme] .tmonth { font-family: var(--tfont); }
+.tinspo { position: absolute; top: 78px; right: 64px; z-index: 26; max-width: 520px; padding: 4px 0; border: 0; background: none; font: italic 400 15px/1.3 var(--serif); color: var(--fg-2); text-align: right; transition: opacity .3s; }
+.tinspo i { font-style: normal; color: var(--fg); }
+html.hall:not(.barhide) .tinspo, html.table:not(.barhide) .tinspo { opacity: 0; }
+html.tv .tinspo:focus { outline: 2px solid rgb(var(--kink)) !important; outline-offset: 6px; box-shadow: none; color: var(--fg); }
 /* the TV calendar to try (?tvhero=1): the day you're on large on the left, over its picture; the month beside it */
 html.tvhero #main.homeview { grid-template-columns: minmax(0, 40%) minmax(0, 1fr); column-gap: 36px; align-items: start; }
 html.tvhero #main.homeview #tvfeat { grid-column: 1; grid-row: 1 / span 3; align-self: stretch; }
@@ -970,20 +981,21 @@ var PALETTES = [   // the month's colours: ground, then four glows
 // Kubrick's colours: one film a month, its one colour, flat (no glow) (the Kubrick look, ?look=kubrick, to try;
 // John, 8 Nov 2026: "not a mix of colours, the clear choice from each. Remove the song of the day glow")
 // each month's theme on the TV, and its one bold colour (the trial look's colour for the month everywhere): black or white type
-var THEMES = [
-  { key: 'corridor', name: 'The Corridor', after: 'Kubrick’s The Shining', bg: '#f5c400', ink: '#000' },
-  { key: 'reel', name: 'The Reel', after: 'Cinema Paradiso', bg: '#e30613', ink: '#fff' },
-  { key: 'umbrellas', name: 'The Umbrellas', after: 'Demy’s The Umbrellas of Cherbourg', bg: '#ff8fb1', ink: '#000' },
-  { key: 'spiral', name: 'The Spiral', after: 'Saul Bass’s Vertigo', bg: '#ff5a1f', ink: '#000' },
-  { key: 'hotel', name: 'The Hotel', after: 'Wes Anderson’s The Grand Budapest Hotel', bg: '#d94f6a', ink: '#fff' },
-  { key: 'slices', name: 'The Slices', after: 'Wong Kar-wai’s In the Mood for Love', bg: '#8e1420', ink: '#fff' },
-  { key: 'pinboard', name: 'The Pinboard', after: 'Fincher’s Zodiac', bg: '#c8964f', ink: '#000' },
-  { key: 'moon', name: 'The Moon', after: 'Méliès’s A Trip to the Moon', bg: '#0b1d51', ink: '#fff' },
-  { key: 'credits', name: 'The Credits', after: 'Godard’s title cards', bg: '#1438c8', ink: '#fff' },
-  { key: 'autumn', name: 'Late Autumn', after: 'Ozu’s low, still camera', bg: '#b5471b', ink: '#fff' },
-  { key: 'table', name: 'The Table', after: 'Kubrick’s Dr. Strangelove', bg: '#0a0a0a', ink: '#fff' },
-  { key: 'advent', name: 'The Advent Calendar', after: 'It’s a Wonderful Life', bg: '#0b5d3b', ink: '#fff' }
+var THEMES = [   // (John, 8 Nov 2026: "a fun frontpage showcase" - each its own type, "a nice small caption linking to the film that inspired it")
+  { key: 'corridor', name: 'The Corridor', film: 'The Shining', year: 1980, by: 'Kubrick', bg: '#f5c400', ink: '#000' },
+  { key: 'reel', name: 'The Reel', film: 'Sherlock Jr.', year: 1924, by: 'Buster Keaton', bg: '#e30613', ink: '#fff', font: '"Limelight", serif', tw: 400, tt: 'none' },
+  { key: 'umbrellas', name: 'The Umbrellas', film: 'The Umbrellas of Cherbourg', year: 1964, by: 'Jacques Demy', bg: '#ff8fb1', ink: '#000', font: '"Playfair Display", serif', tw: 900, tt: 'none', fs: 'italic' },
+  { key: 'spiral', name: 'The Spiral', film: 'Vertigo', year: 1958, by: 'Hitchcock; titles by Saul Bass', bg: '#ff5a1f', ink: '#000', font: '"Oswald", sans-serif', tw: 600 },
+  { key: 'code', name: 'The Code', film: 'The Matrix', year: 1999, by: 'the Wachowskis', bg: '#03160a', ink: '#fff', font: '"Share Tech Mono", monospace', tw: 400 },
+  { key: 'slices', name: 'The Slices', film: 'In the Mood for Love', year: 2000, by: 'Wong Kar-wai', bg: '#8e1420', ink: '#fff', font: '"Cormorant Garamond", serif', tw: 600, tt: 'none', fs: 'italic' },
+  { key: 'pinboard', name: 'The Pinboard', film: 'All the President’s Men', year: 1976, by: 'Alan J. Pakula', bg: '#c8964f', ink: '#000', font: '"Special Elite", monospace', tw: 400 },
+  { key: 'moon', name: 'The Moon', film: 'Hugo', year: 2011, by: 'Scorsese, for Méliès', bg: '#0b1d51', ink: '#fff', font: '"IM Fell English SC", serif', tw: 400, tt: 'none' },
+  { key: 'credits', name: 'The Credits', film: 'Alphaville', year: 1965, by: 'Godard', bg: '#1438c8', ink: '#fff', font: '"Archivo Black", sans-serif', tw: 400 },
+  { key: 'autumn', name: 'Late Autumn', film: 'Late Autumn', year: 1960, by: 'Ozu', bg: '#b5471b', ink: '#fff', font: '"Shippori Mincho", serif', tw: 700, tt: 'none' },
+  { key: 'table', name: 'The Table', film: 'Dr. Strangelove', year: 1964, by: 'Kubrick', bg: '#0a0a0a', ink: '#fff' },
+  { key: 'globe', name: 'The Snow Globe', film: 'Citizen Kane', year: 1941, by: 'Orson Welles', bg: '#0b5d3b', ink: '#fff', font: '"Bodoni Moda", serif', tw: 800, tt: 'none' }
 ];
+var THEMEFONTS = 'https://fonts.googleapis.com/css2?family=Limelight&family=Playfair+Display:ital,wght@1,700;1,900&family=Oswald:wght@500;600&family=Share+Tech+Mono&family=Cormorant+Garamond:ital,wght@0,600;1,600&family=Special+Elite&family=IM+Fell+English+SC&family=IM+Fell+English:ital@1&family=Archivo+Black&family=Shippori+Mincho:wght@500;700&family=Bodoni+Moda:opsz,wght@6..96,800&display=swap';
 function themeFor(m) { return (THEMEQ && THEMES.filter(function (t) { return t.key === THEMEQ; })[0]) || THEMES[m]; }
 function monthTint(m) {   // (six months on from the songs' colours, so the two never look the same in a month)
   var tt = KLOOK && themeFor(m), k = tt && [tt.bg, tt.name, tt.ink], p = k ? [k[0], k[0], k[0], k[0], k[0]] : (PALETTES[(m + 6) % 12] || PALETTES[0]), R = document.documentElement.style;
@@ -1201,7 +1213,11 @@ function drawMonth() {
   var first = new Date(y, m, 1), lead = (first.getDay() + 6) % 7, n = new Date(y, m + 1, 0).getDate();
   document.documentElement.classList.toggle('table', TABLE(m));
   document.documentElement.classList.toggle('hall', HALL(m));
-  document.documentElement.dataset.theme = VIEW() === 'themes' ? themeFor(m).key : '';
+  if (VIEW() === 'themes') {
+    var th0 = themeFor(m), R0 = document.documentElement.style; document.documentElement.dataset.theme = th0.key;
+    R0.setProperty('--tfont', th0.font || 'var(--kfont)'); R0.setProperty('--tw', th0.tw || 700); R0.setProperty('--ttt', th0.tt || 'uppercase'); R0.setProperty('--tfs', th0.fs || 'normal');
+    if (!$('#themefonts')) document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" id="themefonts" href="' + THEMEFONTS + '">');
+  } else delete document.documentElement.dataset.theme;
   if (TV && KLOOK) {   // the view switch (the corridor, or the calendar): a word in the bar, by Search and Browse
     var old = $('#tvview'); if (old) old.remove();
     $('.bar-top .brand').insertAdjacentHTML('afterend', '<button class="pill" id="tvview">' + (VIEW() === 'calendar' ? 'The theme' : 'Calendar') + '</button>');
@@ -1262,7 +1278,7 @@ function drawHall(C, n, m, mine) {
     else if (it) h += '<button class="hday has' + (key === TODAY ? ' today' : '') + '" data-day="' + key + '" aria-label="' + d + ' ' + MONTHS[m] + ': ' + esc(it.name) + '" style="' + pos + 'background-image:url(' + esc(img(it.poster || it.thumb, it.poster ? 'Primary' : 'Thumb', 400)) + ')">' + lab + '</button>';
     else if (mine) h += '<button class="hday empty' + (key === TODAY ? ' today' : '') + '" data-day="' + key + '" aria-label="' + d + ' ' + MONTHS[m] + ': choose a film" style="' + pos + '"><span class="plus">+</span>' + lab + '</button>';
   }
-  h += '</div><div class="hinfo" id="hinfo"></div><div class="tmonth">' + tmonthText(m) + '</div>';
+  h += '</div><div class="hinfo" id="hinfo"></div><div class="tmonth">' + tmonthText(m) + '</div>' + themeCaption(m);
   $('#cal').innerHTML = h;
   $$('#cal button.hday').forEach(function (b) { b.onclick = function () { daySheet(b.dataset.day); }; b.addEventListener('focus', function () { hallTurn(b); }); });
   var start = $('#cal .hday.today.has') || $$('#cal button.hday.has').pop() || $('#cal button.hday');
@@ -1289,7 +1305,7 @@ function hallInfo(b) {   // the day you're on, in words: its day large (as The S
 function drawTable(C, n, m, mine) {   // the month round a table (Dr. Strangelove's War Room), the day you're on at the front
   var R = document.documentElement.style; R.setProperty('--bg', '#0a0a0a'); R.setProperty('--kink', '255, 255, 255');   // (black and white, always)
   var tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.content = '#0a0a0a';
-  var h = '<div class="tlight"></div><div class="tring"></div><div class="tcentre" id="tcentre"></div><div class="tmonth">' + tmonthText(m) + '</div>';
+  var h = '<div class="tlight"></div><div class="tring"></div><div class="tcentre" id="tcentre"></div><div class="tmonth">' + tmonthText(m) + '</div>' + themeCaption(m);
   for (var d = 1; d <= n; d++) {
     var key = S.month + '-' + String(d).padStart(2, '0'), it = C.days[key];
     if (it && !it.secret) h += '<button class="tday has' + (key === TODAY ? ' today' : '') + '" data-day="' + key + '" data-n="' + d + '" aria-label="' + d + ' ' + MONTHS[m] + ': ' + esc(it.name) + '" style="background-image:url(' + esc(img(it.poster || it.thumb, it.poster ? 'Primary' : 'Thumb', 400)) + ')">' + d + '</button>';
@@ -1319,6 +1335,20 @@ function tableTurn(b) {   // the table turned so b is at the front; its film in 
   c.innerHTML = '<div class="k">' + DOWL[d.getDay()] + ' · ' + d.getDate() + ' ' + MONTHS[d.getMonth()] + '</div><h2>' + esc(showName(it)) + '</h2><div class="y">' + [it.year, it.mins ? it.mins + ' minutes' : ''].filter(Boolean).join(' · ') + '</div>' + (note ? '<div class="n">“' + esc(note) + '”</div>' : '');
 }
 function tmonthText(m) { return MONTHS[m] + ' ' + S.month.slice(0, 4) + ' · ' + themeFor(m).name; }
+function themeFilm(t) {   // the film that inspired a theme, if it's in the library (by its name and year)
+  if (!LIB) return null;
+  if (t.fid !== undefined) return t.fid && LIB.items[t.fid] ? t.fid : null;
+  var want = t.film.toLowerCase().replace(/’/g, "'"); t.fid = '';
+  Object.keys(LIB.items).some(function (k) { var it = LIB.items[k]; if (it.type === 'movie' && +it.year === t.year && (it.name || '').toLowerCase().replace(/’/g, "'").indexOf(want) === 0) { t.fid = k; return true; } });
+  return t.fid || null;
+}
+function themeCaption(m) {   // a small caption under the month: the film the theme comes from, and a way to it when Grifflix has it
+  var t = themeFor(m), id = themeFilm(t), txt = 'after <i>' + esc(t.film) + '</i> (' + t.year + ') · ' + esc(t.by);
+  if (!LIB) library().then(function () { var c = $('#tinspo'); if (c && themeFilm(t)) c.outerHTML = themeCaption(m); wireCaption(); }).catch(function () {});
+  setTimeout(wireCaption, 0);
+  return id ? '<button class="tinspo link" id="tinspo" data-fid="' + id + '">' + txt + ' ›</button>' : '<div class="tinspo" id="tinspo">' + txt + '</div>';
+}
+function wireCaption() { var c = $('#tinspo.link'); if (c && !c.onclick) c.onclick = function () { api('item?id=' + c.dataset.fid).then(function (it) { if (it && it.id) itemSheet(it); }).catch(function () { toast('That film isn’t there just now.'); }); }; }
 // the months' themes, besides the corridor and the table: each lays out the month's days its own way (place: where each
 // day stands, the one you're on given); right and left step through the days, and across a month's end a title card
 // for the next month's theme wipes across (themeStep)
@@ -1342,7 +1372,7 @@ function drawTheme(t, C, n, m, mine) {
     else if (mine) h += '<button class="vday empty' + (key === TODAY ? ' today' : '') + '"' + at + ' aria-label="' + d + ' ' + MONTHS[m] + ': choose a film">' + inner + '</button>';
     else if (fx.all) h += '<div class="vday none"' + at + '>' + inner + '</div>';
   }
-  $('#cal').innerHTML = h + '</div><div class="hinfo" id="hinfo"></div><div class="tmonth">' + tmonthText(m) + '</div>';
+  $('#cal').innerHTML = h + '</div><div class="hinfo" id="hinfo"></div><div class="tmonth">' + tmonthText(m) + '</div>' + themeCaption(m);
   S.theme = { fx: fx, c: c };
   if (fx.ready) fx.ready(c);
   $$('#cal button.vday').forEach(function (b) { b.onclick = function () { daySheet(b.dataset.day); }; b.addEventListener('focus', function () { themeTurn(b); }); });
@@ -1355,26 +1385,12 @@ function themeTurn(b) {
   T.fx.place(all, at, T.c, b);
   hallInfo(b);
 }
-function themeStep(dir) {   // the day after or before with a film; at a month's end, the next month's title card, then its theme
-  if (themeStep.busy) return true;
+function themeStep(dir) {   // the day after or before with a film; at a month's end, on into the next month's theme
   var sel = '#cal button.vday, #cal button.hday, #cal button.tday', bs = $$(sel), i = bs.indexOf(document.activeElement), nb = bs[i + dir];
   if (i >= 0 && nb) { nb.focus({ preventScroll: true }); return true; }
   var ms = monthsOf(S.calData.days), j = ms.indexOf(S.month) + dir; if (j < 0 || j >= ms.length || !S.step) return false;
-  var nk = ms[j], nm = +nk.slice(5, 7) - 1, t = themeFor(nm), wp = $('#vwipe'), from = dir > 0 ? 100 : -100;
-  if (!wp) { wp = document.createElement('div'); wp.id = 'vwipe'; document.body.appendChild(wp); }
-  themeStep.busy = true;
-  wp.style.background = t.bg; wp.style.color = t.ink;
-  wp.innerHTML = '<div class="a">' + MONTHS[nm] + ' ' + nk.slice(0, 4) + '</div><div class="b">' + esc(t.name) + '</div><div class="c">after ' + esc(t.after) + '</div>';
-  wp.style.transition = 'none'; wp.style.transform = 'translateX(' + from + '%)'; wp.style.display = 'flex';
-  void wp.offsetWidth; wp.style.transition = 'transform .5s cubic-bezier(.6, 0, .3, 1)'; wp.style.transform = 'none';
-  setTimeout(function () {
-    S.step(dir);
-    var cs = $$(sel), f = dir > 0 ? cs[0] : cs[cs.length - 1]; if (f) f.focus({ preventScroll: true });
-    setTimeout(function () {
-      wp.style.transform = 'translateX(' + (-from) + '%)';
-      setTimeout(function () { wp.style.display = 'none'; themeStep.busy = false; }, 520);
-    }, 750);
-  }, 520);
+  S.step(dir);
+  var cs = $$(sel), f = dir > 0 ? cs[0] : cs[cs.length - 1]; if (f) f.focus({ preventScroll: true });
   return true;
 }
 // February: the reel (Cinema Paradiso): the days as frames along a strip of film; the one you're on in the gate, and on the screen
@@ -1416,18 +1432,19 @@ THEMEFX.spiral = {
     });
   }
 };
-// May: the hotel (Wes Anderson's Grand Budapest): the month a pink hotel's front, a window a day, a floor a week
-THEMEFX.hotel = { all: true,
-  decor: function (c) {
-    var rows = Math.ceil((c.lead + c.n) / 7), w = 7 * 50 + 6 * 16 + 2 * 34, top = 92, hg = 74 + rows * 80 - 12 + 56;
-    c.hx = c.W * .70 - w / 2; c.hy = top + 74;
-    return '<div class="hotel" style="left:' + c.hx.toFixed(0) + 'px;top:' + top + 'px;width:' + w + 'px;height:' + hg + 'px"><div class="sign">The Grand ' + MONTHS[c.m] + ' Hotel</div><div class="door"></div></div>';
+// May: the code (The Matrix): every day a column of falling code, its film's name in it; the one you're on decoded, large
+var GLYPHS = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ0123456789';
+THEMEFX.code = {
+  cell: function (d, it, key, c) {
+    var t = (it && !it.secret ? showName(it) : '').toUpperCase().replace(/[^A-Z0-9]/g, ''), out = '', sd = d * 7 + c.m * 131;
+    for (var i = 0; i < 34; i++) out += (i >= 5 && i - 5 < t.length ? t[i - 5] : GLYPHS[Math.floor(seeded(sd + i) * GLYPHS.length)]) + '<br>';
+    return '<i class="rain" style="animation-duration:' + (6 + seeded(sd) * 8).toFixed(1) + 's;animation-delay:-' + (seeded(sd + 1) * 9).toFixed(1) + 's">' + out + out + '</i><span class="cdn">' + d + '</span>';
   },
-  place: function (all, at, c) {
-    all.forEach(function (el, j) {
-      var p = c.lead + +el.dataset.n - 1, col = p % 7, row = Math.floor(p / 7);
-      vAt(el, c.hx + 34 + col * 66 + 25, c.hy + row * 80 + 34, j === at ? 1.5 : 1, 0, 1, j === at ? 50 : 1);
-    });
+  decor: function () { return '<div class="codepic" id="codepic"></div>'; },
+  place: function (all, at, c, b) {
+    var x0 = c.W * .43, x1 = c.W - 74, n = Math.max(1, all.length - 1);
+    all.forEach(function (el, j) { el.style.left = (x0 + (x1 - x0) * j / n - 10).toFixed(1) + 'px'; el.style.zIndex = j === at ? 3 : 1; });
+    var p = $('#codepic'); if (p && b) { p.style.backgroundImage = b.style.getPropertyValue('--p'); p.classList.remove('dec'); void p.offsetWidth; p.classList.add('dec'); }
   }
 };
 // June: the slices (Wong Kar-wai's In the Mood for Love): every day a thin slice of its poster; the one you're on opens out
@@ -1445,7 +1462,7 @@ THEMEFX.slices = {
 THEMEFX.pinboard = {
   cell: function (d) { return '<i class="ph"></i><span class="pc">' + d + '</span>'; },
   ready: function (c) {
-    var all = $$('#cal .vday'), cols = 7, rows = Math.max(1, Math.ceil(all.length / cols)), ax = c.W * .43 + 60, aw = c.W - 64 - 60 - ax, ay = 160, ah = c.H - 130 - ay;
+    var all = $$('#cal .vday'), cols = 7, rows = Math.max(1, Math.ceil(all.length / cols)), ax = c.W * .43 + 60, aw = c.W - 64 - 60 - ax, ay = 196, ah = c.H - 120 - ay;
     c.pin = all.map(function (el, j) {
       var col = j % cols, row = Math.floor(j / cols), sd = +el.dataset.n + c.m * 31;
       return { x: ax + col * aw / (cols - 1) + (seeded(sd) - .5) * 34, y: ay + (rows > 1 ? row * ah / (rows - 1) : ah / 2) + (seeded(sd + 7) - .5) * 26, r: (seeded(sd + 3) - .5) * 16 };
@@ -1480,7 +1497,7 @@ THEMEFX.credits = {
   place: function (all, at, c, b) {
     all.forEach(function (el, j) {
       var k = j - at; el.style.transform = 'translate(' + (c.W * .37).toFixed(0) + 'px,' + (c.H * .47 + k * 60 - 30).toFixed(0) + 'px) scale(' + (k === 0 ? 1 : .74) + ')';
-      el.style.opacity = k === 0 ? 1 : Math.abs(k) > 4 ? 0 : .55 - Math.abs(k) * .09; el.style.zIndex = 1;
+      el.style.opacity = k === 0 ? 1 : k < -3 || k > 4 ? 0 : .55 - Math.abs(k) * .09; el.style.zIndex = 1;
     });
     var p = $('#cposter'); if (p && b) p.style.backgroundImage = b.style.getPropertyValue('--p');
   }
@@ -1496,20 +1513,16 @@ THEMEFX.autumn = {
     });
   }
 };
-// December: the advent calendar (It's a Wonderful Life): a door a day; the days already shown stand open on their films
-THEMEFX.advent = { all: true,
-  cell: function (d) { return '<i class="leaf"><b>' + d + '</b></i>'; },
-  ready: function (c) {
-    var cells = [], i; for (i = 0; i < 32; i++) cells.push(i);
-    for (i = cells.length - 1; i > 0; i--) { var r = Math.floor(seeded(c.y * 12 + c.m + i) * (i + 1)), t = cells[i]; cells[i] = cells[r]; cells[r] = t; }
-    c.cells = cells;
-  },
-  place: function (all, at, c) {
-    var ax = c.W * .45, aw = c.W - 64 - ax, ay = 118, ah = c.H - 64 - ay, cw = aw / 8, ch = ah / 4;
-    all.forEach(function (el, j) {
-      var cell = c.cells[+el.dataset.n - 1], col = cell % 8, row = Math.floor(cell / 8);
-      vAt(el, ax + cw * col + cw / 2, ay + ch * row + ch / 2, j === at ? 1.6 : 1, 0, 1, j === at ? 50 : 1);
-    });
+// December: the snow globe (Citizen Kane): the days hung as baubles; the one you're on inside the globe, which shakes and snows
+THEMEFX.globe = {
+  hang: function (d) { return 160 + seeded(d * 5) * 80; },
+  cell: function (d) { return '<i class="str" style="height:' + (this.hang(d) - 18 - 116).toFixed(0) + 'px"></i>'; },
+  decor: function () { return '<div class="snow"></div><div class="globe" id="globe"><div class="gpic" id="gpic"></div><div class="gsnow"></div><i class="gshine"></i></div><div class="gbase"></div>'; },
+  place: function (all, at, c, b) {
+    var x0 = 90, x1 = c.W - 90, n = Math.max(1, all.length - 1), me = this;
+    all.forEach(function (el, j) { vAt(el, x0 + (x1 - x0) * j / n, me.hang(+el.dataset.n), j === at ? 1.5 : 1, 0, 1, j === at ? 5 : 1); });
+    var g = $('#globe'), p = $('#gpic'); if (p && b) p.style.backgroundImage = b.style.getPropertyValue('--p');
+    if (g) { g.classList.remove('shake'); void g.offsetWidth; g.classList.add('shake'); }
   }
 };
 var DOWL = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -2305,8 +2318,12 @@ document.addEventListener('keydown', function (e) {
   }
   if (ae && ae.classList && /\b(vday|hday|tday)\b/.test(ae.className)) {   // the month's theme: right and left through its days (and on into the next month's); up to the bar's words
     if (k === 'left' || k === 'right') { e.preventDefault(); themeStep(k === 'right' ? 1 : -1); return; }
-    if (k === 'up') { e.preventDefault(); document.documentElement.classList.remove('barhide'); var u = $('#tvview'); if (u) u.focus(); return; }
+    if (k === 'up') { e.preventDefault(); var cp = $('#tinspo.link'); if (cp) { cp.focus(); return; } document.documentElement.classList.remove('barhide'); var u = $('#tvview'); if (u) u.focus(); return; }
     if (k === 'down') { e.preventDefault(); return; }
+  }
+  if (ae && ae.id === 'tinspo') {   // the caption: down back to the day you were on; up to the bar's words
+    if (k === 'down' || k === 'left' || k === 'right') { e.preventDefault(); var fr = $('#cal button.front') || $('#cal .tday.has'); if (fr) fr.focus({ preventScroll: true }); return; }
+    if (k === 'up') { e.preventDefault(); document.documentElement.classList.remove('barhide'); var u2 = $('#tvview'); if (u2) u2.focus(); return; }
   }
   if (k === 'ok' || (inText && (k === 'left' || k === 'right'))) return;   // OK presses the button (the browser's own); text keeps its own left/right
   e.preventDefault();
