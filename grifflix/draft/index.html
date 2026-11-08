@@ -184,7 +184,9 @@ dialog::backdrop { background: rgba(10, 4, 12, .62); backdrop-filter: blur(6px);
 .sheet .in { position: relative; z-index: 2; padding: 0 30px 30px; margin-top: -90px; }
 .sheet .noimg-top { height: 70px; }
 .sheet .noimg-top + .in { margin-top: 0; }
-.sheet .date { font: 600 11.5px/1.2 var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.sheet .date { font: 600 11.5px/1.2 var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); display: flex; align-items: center; gap: 6px; min-height: 28px; }
+.sheet .date .dnav { width: 28px; height: 28px; flex: none; margin: 0 -2px; }
+.sheet .date .dnav svg { width: 16px; height: 16px; }
 .sheet h2 { margin: 6px 0 6px; font: 400 clamp(32px, 5vw, 46px)/1.02 var(--serif); color: var(--fg); letter-spacing: -.015em; }
 .sheet .meta { display: flex; flex-wrap: wrap; gap: 6px 14px; font: 500 12.5px/1.4 var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--fg-2); }
 .sheet .meta .c { padding: 1px 6px; border: 1px solid var(--line); border-radius: 4px; }
@@ -484,7 +486,22 @@ var IN_APP = TV || /GrifflixApp\//.test(navigator.userAgent) || !!(window.Capaci
 if (TV) document.documentElement.classList.add('tv');   // the Song of the Day sign-in: same site, so the same storage
 var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 var DOW = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-var S = { view: 'home', cal: 'motd', calData: null, cals: [], month: null, browse: 'collections', sort: 'year', lists: null };   // (Browse opens on Collections; films and TV newest to oldest: John, 8 Nov 2026)
+var S = { view: 'home', cal: 'motd', calData: null, cals: [], month: null, browse: 'collections', sort: 'year', lists: null, csort: store.get('grifflix-csort') || 'new' };
+// a collection's own sort (John, 8 Nov 2026): newest to oldest first, as Films and TV; a box set by its newest film's year
+var CSORTS = [['new', 'Newest to oldest'], ['old', 'Oldest to newest'], ['name', 'A–Z'], ['rating', 'Rating'], ['added', 'Recently added']];
+function sortItems(items, how) {
+  var key = function (i) { return String(i.name || '').replace(/^(the|a|an)\s+/i, '').toLowerCase(); };
+  var yr = function (i) { return +i.year || +String(i.premiere || '').slice(0, 4) || 0; };
+  var byName = function (a, b) { return key(a).localeCompare(key(b)); };
+  var f = {
+    'new': function (a, b) { return (yr(b) || -1) - (yr(a) || -1) || byName(a, b); },
+    old: function (a, b) { return (yr(a) || 99999) - (yr(b) || 99999) || byName(a, b); },
+    name: byName,
+    rating: function (a, b) { return (+b.rating || 0) - (+a.rating || 0) || byName(a, b); },
+    added: function (a, b) { return String(b.added || '').localeCompare(String(a.added || '')) || byName(a, b); }
+  }[how] || byName;
+  return items.slice().sort(f);
+}   // (Browse opens on Collections; films and TV newest to oldest: John, 8 Nov 2026)
 var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
 var iso = function (d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
 var TODAY = iso(new Date());
@@ -879,8 +896,12 @@ function collectionView(id) {
     $('#cbody').innerHTML = '<div class="collhead">' + (src ? '<img class="collpic" alt="" src="' + esc(src) + '">' : '') +
       '<div><div class="kick">Collection</div><h1 class="colltitle">' + esc(c.name) + '</h1><div class="hsub"><i>' + c.items.length + (c.items.length === 1 ? ' title' : ' titles') + '</i></div>' +
       (c.overview ? '<p class="ov">' + esc(c.overview) + '</p>' : '') + '</div></div>' +
-      '<div class="gridcards">' + c.items.map(function (i) { return cardHTML(i); }).join('') + '</div>';
-    wireCards($('#cbody'), c.items);
+      '<div class="tabs"><span class="sp"></span><select class="pill" id="csort" aria-label="Sort">' + CSORTS.map(function (o) { return '<option value="' + o[0] + '">' + o[1] + '</option>'; }).join('') + '</select></div>' +
+      '<div class="gridcards" id="cgrid"></div>';
+    var draw = function () { var items = sortItems(c.items, S.csort); $('#cgrid').innerHTML = items.map(function (i) { return cardHTML(i); }).join(''); wireCards($('#cgrid'), items); };
+    $('#csort').value = S.csort;
+    $('#csort').onchange = function () { S.csort = this.value; store.set('grifflix-csort', S.csort); draw(); };
+    draw();
     if (ME && ME.owner) {
       $('#cbody .collhead > div:last-child').insertAdjacentHTML('beforeend', '<div class="tabs" style="margin:16px 0 0"><button class="pill" id="crename">Rename</button><button class="pill" id="cdelete">Delete the collection</button></div>');
       $('#crename').onclick = function () { ask('Rename the collection', 'Its name', c.name, function (v) { api('collections', { op: 'rename', id: c.id, name: v }).then(function () { toast('Renamed'); collectionView(id); }).catch(oops); }); };
@@ -1006,12 +1027,51 @@ function daySheet(date) {
   }
   itemSheet(it, { date: date, note: C.notes[date] });
 }
+// a day's film open: swipe (or the trackpad sideways, the ← → keys, the arrows by its date) for the day before or after
+// with a film, across months (John, 8 Nov 2026); the calendar behind follows to that day's month
+function dayNear(date, d) {
+  var C = S.calData; if (!C) return null;
+  var keys = Object.keys(C.days).filter(function (k) { return !C.days[k].secret; }).sort(), i = keys.indexOf(date);
+  return i < 0 ? null : keys[i + d] || null;
+}
+function dayStep(d) {
+  var k = S.sheetDate && dayNear(S.sheetDate, d); if (!k) return false;
+  if (k.slice(0, 7) !== S.month && $('#cal')) { S.month = k.slice(0, 7); drawMonth(); }
+  daySheet(k);
+  var el = $('#sheetIn'); if (el && el.animate) el.animate([{ transform: 'translateX(' + (d * 48) + 'px)', opacity: .35 }, { transform: 'none', opacity: 1 }], { duration: 260, easing: 'cubic-bezier(.2,.7,.2,1)' });
+  return true;
+}
+(function () {
+  var el = $('#sheetIn'), x0 = null, y0, t0, wacc = 0, wlock = 0, wquiet = 0;
+  var skip = function (t) { return !S.sheetDate || (t.closest && t.closest('.strip, .tabs, input, select, textarea')); };
+  el.addEventListener('touchstart', function (e) { if (skip(e.target)) { x0 = null; return; } var t = e.touches[0]; x0 = t.clientX; y0 = t.clientY; t0 = Date.now(); }, { passive: true });
+  el.addEventListener('touchend', function (e) {
+    if (x0 == null) return; var t = e.changedTouches[0], dx = t.clientX - x0, dy = t.clientY - y0; x0 = null;
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.6 && Date.now() - t0 < 800) dayStep(dx < 0 ? 1 : -1);
+  }, { passive: true });
+  el.addEventListener('wheel', function (e) {
+    if (skip(e.target) || Math.abs(e.deltaX) <= Math.abs(e.deltaY) * 1.2) return;
+    e.preventDefault();
+    var t = Date.now();
+    if (t < wlock) { wlock = t + 400; return; }
+    if (t - wquiet > 250) wacc = 0;
+    wquiet = t; wacc += e.deltaX;
+    if (Math.abs(wacc) > 70) { var d = wacc > 0 ? 1 : -1; wacc = 0; wlock = t + 900; dayStep(d); }
+  }, { passive: false });
+  document.addEventListener('keydown', function (e) {
+    if (TV || !dlg.open || !S.sheetDate || (e.target.closest && e.target.closest('input, textarea, select'))) return;
+    if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && dayStep(e.key === 'ArrowRight' ? 1 : -1)) e.preventDefault();
+  });
+})();
 
 function itemSheet(it, ctx) {
   ctx = ctx || {};
   if (!it) return;
+  S.sheetDate = ctx.date || null;
+  var dnav = function (d) { return ctx.date && dayNear(ctx.date, d) ? '<button class="ico dnav" data-dstep="' + d + '" aria-label="' + (d < 0 ? 'The day before' : 'The day after') + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="' + (d < 0 ? 'M15 6l-6 6 6 6' : 'M9 6l6 6-6 6') + '"/></svg></button>' : ''; };
   var top = it.backdrop ? '<div class="heroimg"><img alt="" src="' + esc(img(it.backdrop, 'Backdrop', 1100)) + '">' + X + '</div>' : (it.thumb || (it.type === 'video' && it.poster) ? '<div class="heroimg"><img alt="" src="' + esc(img(it.thumb || it.poster, it.thumb ? 'Thumb' : 'Primary', 1100)) + '">' + X + '</div>' : '<div class="noimg-top" style="position:relative">' + X + '</div>');
-  openSheet(top + '<div class="in"><div class="date">' + (ctx.date ? esc(longDate(ctx.date)) : esc(typeName(it))) + '</div><h2>' + esc(showName(it)) + '</h2><div id="isbody">' + bodyHTML(it, ctx) + '</div></div>');
+  openSheet(top + '<div class="in"><div class="date">' + (ctx.date ? dnav(-1) + '<span>' + esc(longDate(ctx.date)) + '</span>' + dnav(1) : esc(typeName(it))) + '</div><h2>' + esc(showName(it)) + '</h2><div id="isbody">' + bodyHTML(it, ctx) + '</div></div>');
+  $$('#sheetIn [data-dstep]').forEach(function (b) { b.onclick = function () { dayStep(+b.dataset.dstep); }; });
   wireBody(it, ctx);
   api('item?id=' + it.id).then(function (full) { if (!dlg.open) return; Object.assign(it, full); var had = document.activeElement && document.activeElement.id; $('#isbody').innerHTML = bodyHTML(it, ctx); wireBody(it, ctx); if (TV) { var back = had && !/^(asignin|aplay|atrailer)$/.test(had) && $('#' + had); if (back) back.focus({ preventScroll: true }); else tvStart(); }   /* (the trailer arrives with the details: chosen then, unless something else was) */ }).catch(function () {});
 }
