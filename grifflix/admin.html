@@ -110,6 +110,13 @@
         <div class="state"><button class="btn" id="peek" type="button" disabled>Show upcoming films</button></div>
       </section>
       <section class="card">
+        <div class="kicker">Monthly themes</div>
+        <h2 id="thhead">Each theme’s <em>film</em> on its 1st</h2>
+        <p class="stat">The film behind each month’s TV theme as Movie of the Day on the 1st of its month (the theme named in its note). The films Grifflix hasn’t got yet are left for later. <b>It changes Movie of the Day for everyone</b> once you next press Update everything.</p>
+        <ul class="changes" id="thlist"></ul>
+        <div class="state"><button class="btn" id="thgo" type="button" disabled>Put them on the 1sts</button></div>
+      </section>
+      <section class="card">
         <div class="kicker">Notifications and emails</div>
         <h2 id="nothead">Looking…</h2>
         <p class="stat" id="notsay"></p>
@@ -503,6 +510,42 @@
   $('#mailme').onclick = function () {
     var b = this; b.disabled = true;
     g('admin', { op: 'testmail' }).then(function (j) { b.disabled = false; toast('Sent to ' + j.to); }).catch(function (e) { b.disabled = false; toast(e.message); });
+  };
+
+  // ---- the monthly themes' films, each on the 1st of its month (John, 8 Nov 2026: "replace the 1st of each month with the
+  // inspired movie in the calendar too. Add the others in later"); the films as in the page's THEMES
+  var TFILMS = [['The Shining', 1980, 'The Corridor'], ['Sherlock Jr.', 1924, 'The Reel'], ['The Umbrellas of Cherbourg', 1964, 'The Umbrellas'], ['Vertigo', 1958, 'The Spiral'],
+    ['The Matrix', 1999, 'The Code'], ['In the Mood for Love', 2000, 'The Slices'], ['All the President’s Men', 1976, 'The Pinboard'], ['Hugo', 2011, 'The Moon'],
+    ['Alphaville', 1965, 'The Credits'], ['Late Autumn', 1960, 'Late Autumn'], ['Dr. Strangelove', 1964, 'The Table'], ['Citizen Kane', 1941, 'The Snow Globe']];
+  var MON = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'], THJOBS = [];
+  function themeFirsts() {
+    var norm = function (t) { return String(t || '').toLowerCase().replace(/’/g, "'"); };
+    Promise.all([fetch('/grifflix/data/library.json', { cache: 'no-store' }).then(function (r) { return r.json(); }), fetch('/grifflix/data/days.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).catch(function () { return { days: {} }; })]).then(function (r) {
+      var L = r[0].items, D = r[1].days || {}, firsts = Object.keys(D).sort(), start = firsts.length ? firsts[0].slice(0, 7) : '2025-12';
+      var y = +start.slice(0, 4), m = +start.slice(5, 7) - 1, now = new Date(), end = new Date(now.getFullYear() + 1, now.getMonth(), 1), h = '';
+      for (; new Date(y, m, 1) <= end; m++) {
+        if (m > 11) { m = 0; y++; }
+        var f = TFILMS[m], date = y + '-' + String(m + 1).padStart(2, '0') + '-01', id = '';
+        Object.keys(L).some(function (k) { var it = L[k]; if (it.type === 'movie' && +it.year === f[1] && norm(it.name).indexOf(norm(f[0])) === 0) { id = k; return true; } });
+        var was = D[date], same = was && was.id === id;
+        if (id && !same) THJOBS.push({ date: date, item: id, note: 'This month’s theme: ' + f[2] + ', after ' + f[0] + ' (' + f[1] + ').' });
+        h += '<li>1 ' + MON[m] + ' ' + y + ': <b>' + esc(f[0]) + '</b>' + (!id ? ' <em>(not in Grifflix yet: later)</em>' : same ? ' <em>(already)</em>' : was ? ' <em>in place of ' + esc(was.name) + '</em>' : '') + '</li>';
+      }
+      $('#thlist').innerHTML = h;
+      $('#thgo').disabled = !THJOBS.length; if (!THJOBS.length) $('#thgo').textContent = 'All on';
+    }).catch(function () { $('#thlist').innerHTML = '<li>The site’s films couldn’t be read just now.</li>'; });
+  }
+  themeFirsts();
+  $('#thgo').onclick = function () {
+    var b = this;
+    if (!GW) return toast('The Mac isn’t answering: it keeps Movie of the Day.');
+    if (!b.dataset.sure) { b.dataset.sure = 1; b.textContent = 'Tap again: ' + THJOBS.length + ' days change'; return; }
+    b.disabled = true; var n = 0;
+    THJOBS.reduce(function (p, j) { return p.then(function () {
+      return fetch(GW + '/api/calendar', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify({ op: 'set', id: 'motd', date: j.date, item: j.item, note: j.note }) })
+        .then(function (r) { if (!r.ok) return r.json().then(function (e) { throw new Error(e.error || 'The Mac said no.'); }); n++; b.textContent = n + ' of ' + THJOBS.length + '…'; });
+    }); }, Promise.resolve()).then(function () { b.textContent = 'Done: now Update everything'; toast('On the Mac: Update everything puts them on the site.'); })
+      .catch(function (e) { b.disabled = false; delete b.dataset.sure; b.textContent = 'Put them on the 1sts'; toast(e.message || 'The Mac didn’t answer.'); });
   };
 
   // ---- the Mac mini
