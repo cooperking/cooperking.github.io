@@ -592,7 +592,7 @@ html[data-theme] #sheet::backdrop { background: rgba(0, 0, 0, .55); backdrop-fil
 .tcal { padding: 34px 34px 30px; }
 .tcside { display: grid !important; margin-top: 26px; padding-top: 18px; border-top: 1px solid rgba(var(--kink), .25); }
 .tcside h2 { margin: 0 0 10px; }
-html.mob #sheet .sheet:has(.tcal) { overflow: auto !important; }
+html.phone #sheet .sheet:has(.tcal) { overflow: auto !important; }
 html.mob .tcal { height: auto !important; }
 .tcal .tck { font: 500 12px/1 var(--kfont); letter-spacing: .4em; text-transform: uppercase; color: var(--fg-2); }
 .tcal h2 { margin: 0; }
@@ -600,8 +600,9 @@ html.mob .tcal { height: auto !important; }
 .tcal .tcm { min-height: 40px; width: 40px; padding: 0; justify-content: center; }
 .tcal .tcm:disabled { opacity: .25; }
 /* Search's pop-up: the box clear of the close button, the heading clear of the tabs under it (John, 8 Nov 2026) */
-html:not(.mob):not(.tv) #sheet #sq { width: calc(100% - 70px) !important; height: 60px; font: 500 22px/1 var(--kfont) !important; padding: 0 18px !important; }
+html:not(.phone):not(.tv) #sheet #sq { width: calc(100% - 70px) !important; height: 60px; font: 500 22px/1 var(--kfont) !important; padding: 0 18px !important; }
 html.tv #sheet #sq { width: calc(100% - 120px) !important; }
+html.phone #sheet #sq { width: 100% !important; box-sizing: border-box; }
 .tvkb { margin: 14px 0 6px; display: grid; gap: 8px; } .tvkb[hidden] { display: none; }
 .tvkb .kr { display: flex; gap: 8px; flex-wrap: nowrap; }
 .tvkb .kk { flex: 0 0 auto; min-width: 58px; height: 52px; padding: 0 10px; border: 1px solid rgba(255, 255, 255, .25); background: rgba(255, 255, 255, .06); color: var(--fg); font: 500 22px/1 var(--kfont); border-radius: 4px; cursor: pointer; }
@@ -618,9 +619,9 @@ html.tv[data-page] #main { padding-top: 120px; }
 html[data-page] .hero { margin-top: 0; }
 /* the logo over a pop-up; the full-screen pop-ups' tops kept clear of it */
 #shbrand { position: fixed; z-index: 80; margin: 0; padding: 0; background: none; border: 0; cursor: pointer; text-transform: uppercase; white-space: nowrap; }
-html:not(.mob) #sheet:has(.tcal) .tcal, html.tv #sheet .form { padding-top: 96px !important; }
-html.mob #sheet:has(.tcal) .tcal { padding-top: calc(env(safe-area-inset-top) + 54px) !important; }
-html.mob #sheetIn > .form:not(.tcal) { padding-top: calc(env(safe-area-inset-top) + 58px) !important; }   /* (a phone: the logo its own strip above a pop-up's words) */
+html:not(.phone) #sheet:has(.tcal) .tcal, html.tv #sheet .form { padding-top: 96px !important; }
+html.phone #sheet:has(.tcal) .tcal { padding-top: calc(env(safe-area-inset-top) + 54px) !important; }
+html.phone #sheetIn > .form:not(.tcal) { padding-top: calc(env(safe-area-inset-top) + 58px) !important; }   /* (a phone: the logo its own strip above a pop-up's words) */
 #shbrand { text-shadow: 0 1px 6px rgba(0, 0, 0, .35); }
 /* the home-screen app draws under the clock: pages that scroll (not the full-screen themes) start below it */
 html:not(.hall):not(.table) body { padding-top: env(safe-area-inset-top); }
@@ -712,11 +713,11 @@ html.phone .film .ov { font-size: 16px !important; line-height: 1.55 !important;
 .tpbar .ico svg { width: 20px; height: 20px; }
 html.tv .tpbar b { font-size: 28px; }
 #shband { position: fixed; left: 0; right: 0; top: 0; z-index: 79; background: var(--bg); pointer-events: none; }
-html:not(.mob) #sheet:has(#sq) { position: fixed; inset: 0; width: 100vw; height: 100%; max-width: none; max-height: none; margin: 0; border: 0; padding: 0; }
-html:not(.mob) #sheet .sheet:has(#sq) { width: 100% !important; height: 100%; max-height: none; border-radius: 0; box-shadow: none; }
-html:not(.mob):not(.tv) #sheet .form:has(#sq) { padding: 96px clamp(24px, 4vw, 64px) 40px !important; max-width: 1400px; margin: 0 auto; }
-html:not(.mob):not(.tv) #sheet .form:has(#sq) > .close { top: 24px; right: 24px; position: fixed; z-index: 81; }
-html.tv #sheet .form > .close, html.mob #sheet .form > .close { position: fixed; z-index: 81; }
+html:not(.phone) #sheet:has(#sq) { position: fixed; inset: 0; width: 100vw; height: 100%; max-width: none; max-height: none; margin: 0; border: 0; padding: 0; }
+html:not(.phone) #sheet .sheet:has(#sq) { width: 100% !important; height: 100%; max-height: none; border-radius: 0; box-shadow: none; }
+html:not(.phone):not(.tv) #sheet .form:has(#sq) { padding: 96px clamp(24px, 4vw, 64px) 40px !important; max-width: 1400px; margin: 0 auto; }
+html:not(.phone):not(.tv) #sheet .form:has(#sq) > .close { top: 24px; right: 24px; position: fixed; z-index: 81; }
+html.tv #sheet .form > .close, html.phone #sheet .form > .close { position: fixed; z-index: 81; }
 /* the pop-ups' own bar words (Theme, Calendar, Search) beside GRIFFLIX */
 #shnav { position: fixed; z-index: 80; display: flex; align-items: center; gap: 22px; }
 #shnav button { background: none; border: 0; padding: 6px 2px; margin: 0; cursor: pointer; color: var(--fg); font: 500 12px/1 var(--kfont); letter-spacing: .3em; text-transform: uppercase; }
@@ -726,7 +727,7 @@ html.tv #shnav button:focus { outline: none !important; box-shadow: none !import
 html.tv #shbrand:focus { outline: none !important; box-shadow: none !important; background: #fff; color: #000 !important; }
 /* the TV: no X (Back closes), and no second set of words on the calendar (John, 8 Nov 2026: "we probably don't need the x") */
 html.tv #sheet .close, html.tv #sheet .tctools { display: none !important; }
-html.mob #shnav { gap: 14px; } html.mob #shnav button { font-size: 11px; letter-spacing: .2em; }
+html.phone #shnav { gap: 14px; } html.phone #shnav button { font-size: 11px; letter-spacing: .2em; }
 /* sort and filter: two icons on the tabs' row; their panel under them */
 .sfbar { display: inline-flex; gap: 8px; align-items: center; }
 .sfb { display: inline-flex !important; align-items: center; gap: 8px; min-height: 40px; padding: 0 12px !important; position: relative; }
@@ -793,8 +794,8 @@ html.tv #sheet .res:focus { outline: none !important; box-shadow: none !importan
 html.tv #sheet .res:focus .t, html.tv #sheet .res:focus .s { color: #000 !important; }
 /* a computer or a TV: the calendar the whole screen, over the theme (John, 8 Nov 2026: "calendar is going in front of theme but
    not covering it so it looks odd - it should also be full screen and have titles in boxes - like song of the day") */
-html:not(.mob) #sheet:has(.tcal) { position: fixed; inset: 0; width: 100vw; height: 100%; max-width: none; max-height: none; margin: 0; border: 0; padding: 0; }
-html:not(.mob) #sheet .sheet:has(.tcal) { width: 100% !important; height: 100%; max-height: none; border-radius: 0; box-shadow: none; overflow: hidden; }
+html:not(.phone) #sheet:has(.tcal) { position: fixed; inset: 0; width: 100vw; height: 100%; max-width: none; max-height: none; margin: 0; border: 0; padding: 0; }
+html:not(.phone) #sheet .sheet:has(.tcal) { width: 100% !important; height: 100%; max-height: none; border-radius: 0; box-shadow: none; overflow: hidden; }
 html:not(.mob) .tcal { height: 100%; box-sizing: border-box; padding: clamp(18px, 3.5vh, 36px) clamp(20px, 3vw, 48px); }
 html:not(.mob) .tcal > .tcgrid { height: 100%; min-height: 0; grid-template-rows: auto; grid-auto-rows: minmax(0, 1fr); }
 html:not(.mob) .tcal > .tcside { max-height: none; height: 100%; min-height: 0; }
@@ -837,8 +838,8 @@ html.mob .tcal > .tcside { margin-top: 18px; padding: 16px 14px 6px !important; 
   html:not(.tv) .stage { gap: 18px; }
 }
 /* a phone: the calendar the whole screen, a poster a day */
-html.mob #sheet:has(.tcal) { position: fixed; inset: 0; width: 100vw; height: 100dvh; max-width: none; max-height: none; margin: 0; }
-html.mob #sheet .sheet:has(.tcal) { width: 100%; max-width: none; max-height: none; height: 100%; margin: 0; overflow: hidden; }
+html.phone #sheet:has(.tcal) { position: fixed; inset: 0; width: 100vw; height: 100dvh; max-width: none; max-height: none; margin: 0; }
+html.phone #sheet .sheet:has(.tcal) { width: 100%; max-width: none; max-height: none; height: 100%; margin: 0; overflow: hidden; }
 html.mob .tcal { display: flex; flex-direction: column; height: 100%; box-sizing: border-box; }
 html.mob .tcgrid { flex: 1; min-height: 0; grid-template-rows: auto; grid-auto-rows: 1fr; }
 html.mob .tcal .close { top: max(10px, env(safe-area-inset-top)); right: 10px; }
@@ -2902,7 +2903,7 @@ function searchSheet(onPick, title) {
     inp.addEventListener('click', function (e) { e.preventDefault(); wake(); });
     inp.addEventListener('focus', function () { var si = $('#sheetIn'); if (si) si.scrollTo({ top: 0, behavior: 'smooth' }); });
     setTimeout(function () { inp.focus(); }, 50);
-  } else setTimeout(function () { inp.focus(); }, 50);
+  } else if (!matchMedia('(pointer: coarse)').matches) setTimeout(function () { inp.focus(); }, 50);   // (a phone: no keyboard till the box is tapped, so Calendar, Theme and the close stay in view: John, 8 Nov 2026)
   inp.oninput = function () {
     clearTimeout(t); var q = inp.value.trim();
     if ($('#bsin')) $('#bsin').hidden = q.length >= 2;
