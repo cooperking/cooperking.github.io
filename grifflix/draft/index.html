@@ -483,7 +483,7 @@ var IN_APP = TV || /GrifflixApp\//.test(navigator.userAgent) || !!(window.Capaci
 if (TV) document.documentElement.classList.add('tv');   // the Song of the Day sign-in: same site, so the same storage
 var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 var DOW = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-var S = { view: 'home', cal: 'motd', calData: null, cals: [], month: null, browse: 'movies', sort: 'name', lists: null };
+var S = { view: 'home', cal: 'motd', calData: null, cals: [], month: null, browse: 'collections', sort: 'year', lists: null };   // (Browse opens on Collections; films and TV newest to oldest: John, 8 Nov 2026)
 var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
 var iso = function (d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
 var TODAY = iso(new Date());
@@ -907,11 +907,11 @@ function drawRows(R) {
 /* --- browse: films, TV, home videos */
 function browse() {
   var main = $('#main');
-  var tabs = [['movies', 'Films'], ['tv', 'TV'], ['collections', 'Collections']];   // (no Home videos tab: John, 7 Nov 2026; the gateway still serves a home videos library if one is added)
+  var tabs = [['collections', 'Collections'], ['movies', 'Films'], ['tv', 'TV']];   // (no Home videos tab: John, 7 Nov 2026; the gateway still serves a home videos library if one is added)
   if (S.browse === 'home') S.browse = 'movies';
   main.innerHTML = '<div class="hero"><h1>' + { movies: 'Films', tv: 'TV', collections: 'Collections' }[S.browse] + '</h1><div class="hsub" id="bcount"></div></div>' +
     '<div class="tabs">' + tabs.map(function (t) { return '<button class="pill' + (t[0] === S.browse ? ' on' : '') + '" data-b="' + t[0] + '">' + t[1] + '</button>'; }).join('') +
-    '<span class="sp"></span><select class="pill" id="sort" aria-label="Sort"><option value="name">A–Z</option><option value="added">Newest added</option><option value="year">Year</option><option value="rating">Rating</option></select></div><div id="bgrid"></div>';
+    '<span class="sp"></span><select class="pill" id="sort" aria-label="Sort"><option value="year">Newest to oldest</option><option value="added">Recently added</option><option value="name">A–Z</option><option value="rating">Rating</option></select></div><div id="bgrid"></div>';
   $('#sort').value = S.sort;
   $('#sort').onchange = function () { S.sort = this.value; fill(); };
   $$('[data-b]').forEach(function (b) { b.onclick = function () { location.hash = '#browse/' + b.dataset.b; }; });
