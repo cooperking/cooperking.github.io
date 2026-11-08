@@ -812,11 +812,26 @@ html.mob .tcd img { object-position: 50% 15%; }
 @media (max-width: 360px) { html.klook .bar-top .brand { font-size: 11px; letter-spacing: .2em; } html.klook .bar-top { gap: 5px !important; } html.klook .bar-top .drafttag { display: none !important; } }
 
 /* the bars (Psycho) */
-.th-bars .vday { background: #fff center/cover; background-image: var(--b); filter: grayscale(1) contrast(.2) brightness(1.9); transition: left .5s cubic-bezier(.3, .7, .2, 1), top .5s cubic-bezier(.3, .7, .2, 1), width .5s cubic-bezier(.3, .7, .2, 1), height .5s cubic-bezier(.3, .7, .2, 1), filter .3s, opacity .3s; }
-.th-bars .vday.front { filter: none; box-shadow: 0 0 0 4px #fff; }
+.th-bars .vday { overflow: hidden; background: #b9b9b9; filter: none; transition: left .5s cubic-bezier(.3, .7, .2, 1), top .5s cubic-bezier(.3, .7, .2, 1), width .5s cubic-bezier(.3, .7, .2, 1), height .5s cubic-bezier(.3, .7, .2, 1), filter .3s, opacity .3s; }
+.th-bars .vday.front { background: #000; box-shadow: 0 0 0 4px #000; }
+.th-bars .sl { position: absolute; left: 0; right: 0; background: center/cover; background-image: var(--b); opacity: 0; transition: opacity .15s; }
+.th-bars .s1 { top: 0; height: 34%; background-position: 50% 0; background-size: 100% 300%; }
+.th-bars .s2 { top: 33%; height: 34%; background-position: 50% 50%; background-size: 100% 300%; }
+.th-bars .s3 { top: 66%; height: 34%; background-position: 50% 100%; background-size: 100% 300%; }
+.th-bars .vday.front .sl { opacity: 1; animation: slin .45s cubic-bezier(.2, .7, .2, 1) both; }
+.th-bars .vday.front .s1 { --sx: -70px; } .th-bars .vday.front .s2 { --sx: 90px; animation-delay: .04s; } .th-bars .vday.front .s3 { --sx: -50px; animation-delay: .08s; }
+@keyframes slin { from { transform: translateX(var(--sx)); } to { transform: none; } }
+#cal.drag .th-bars .sl { animation: none !important; }
+/* Psycho's own: the 1960 one-sheet's yellow title on black, split as Bass split it */
+html[data-theme=bars] .hinfo { background: #000; padding: 26px 30px 24px; margin-left: -30px; }
+html[data-theme=bars] .hinfo .w > span[data-t] { position: relative; color: transparent; }
+html[data-theme=bars] .hinfo .w > span[data-t]::before, html[data-theme=bars] .hinfo .w > span[data-t]::after { content: attr(data-t); position: absolute; left: 0; top: 0; color: #fec402; }
+html[data-theme=bars] .hinfo .w > span[data-t]::before { clip-path: inset(0 0 52% 0); transform: translateX(-.06em); }
+html[data-theme=bars] .hinfo .w > span[data-t]::after { clip-path: inset(48% 0 0 0); transform: translateX(.07em); }
+html.mob[data-theme=bars] .hinfo { margin-left: 0; left: 0 !important; right: 0 !important; padding: 16px 16px 14px; }
 .th-bars .vday:not(.front) .vn { display: none; }
 .th-bars .vday .vn { top: auto; bottom: -24px; color: #fec402; }
-html[data-theme=bars] .hinfo .w { color: #fec402; }   /* (the poster's yellow for the day) */
+
 html.tv .th-bars .vday:focus { outline: 0 !important; }
 #cal.drag .th-bars .vday { transition: none; }
 html[data-theme=bars] .leaf2 { border-color: #fff; background: repeating-linear-gradient(0deg, transparent 0 .1em, rgba(255, 255, 255, .25) .1em .14em); }
@@ -1555,7 +1570,7 @@ function hallInfo(b) {   // the day you're on, in words: its day large (as The S
   var c = $('#hinfo'); if (!c) return;
   if (!b) { c.innerHTML = '<div class="w">' + (S.calData.mine ? 'Empty' : 'Nothing yet') + '</div>'; return; }
   var it = S.calData.days[b.dataset.day], d = new Date(b.dataset.day + 'T12:00'), note = (S.calData.notes || {})[b.dataset.day];
-  var top = '<div class="w">' + leafOf(d) + '<span>' + DOWL[d.getDay()] + '</span></div><div class="k">' + d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear() + (S.calData.id === 'motd' ? ' · Movie of the Day' : '') + '</div>';
+  var top = '<div class="w">' + leafOf(d) + '<span data-t="' + DOWL[d.getDay()] + '">' + DOWL[d.getDay()] + '</span></div><div class="k">' + d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear() + (S.calData.id === 'motd' ? ' · Movie of the Day' : '') + '</div>';
   if (!it || it.secret) { c.innerHTML = top + '<h2>' + (it ? 'A surprise' : 'No film yet') + '</h2><div class="y">' + (it ? 'Revealed at 8am on the day' : S.calData.mine ? 'OK to choose one' : '') + '</div>'; return; }
   c.innerHTML = top + '<h2>' + esc(showName(it)) + '</h2><div class="y">' + [it.year, it.mins ? it.mins + ' minutes' : ''].filter(Boolean).join(' · ') + '</div>' + (note ? '<div class="n">“' + esc(note) + '”</div>' : '');
 }
@@ -1925,6 +1940,7 @@ THEMEFX.autumn = {
 };
 // October: the bars (Saul Bass's titles for Psycho): the month's days as white bars sliding in from either side; the one you're on opens into its film
 THEMEFX.bars = {
+  cell: function () { return '<i class="sl s1"></i><i class="sl s2"></i><i class="sl s3"></i>'; },   // (the film in three strips, sliding together, as Bass split the titles)
   swipe: function (c) { return { x: 0, y: -1, px: c.mob ? 40 : 60 }; },
   place: function (all, at, c) {
     var g = c.mob ? { x0: 40, w: 700, cy: 440, fh: 394, bh: 16, gap: 26, top: 0, bot: 890 } : { x0: c.W * .45, w: c.W - 64 - c.W * .45, cy: c.H * .47, fh: 300, bh: 9, gap: 15, top: 104, bot: c.H - 104 };
