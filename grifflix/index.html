@@ -37,6 +37,7 @@
 * { box-sizing: border-box; }
 html { background: var(--bg); }
 html.ready { transition: background-color .9s ease; }
+html.loading body { visibility: hidden; }
 body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--fg-2); font: 15px/1.5 var(--sans); -webkit-font-smoothing: antialiased; }
 button { font: inherit; color: inherit; cursor: pointer; }
 a { color: inherit; }
@@ -657,6 +658,12 @@ html.mob .tcal { height: auto !important; }
 .tchead { display: flex; align-items: center; gap: 16px; margin: 10px 0 18px; }
 .tcal .tcm { min-height: 40px; width: 40px; padding: 0; justify-content: center; font: 400 22px/1 var(--kfont); letter-spacing: 0; }
 .tcal .tcm:disabled { opacity: .25; }
+/* Search's pop-up: the box clear of the close button, the heading clear of the tabs under it (John, 8 Nov 2026) */
+html:not(.mob):not(.tv) #sheet #sq { width: calc(100% - 70px) !important; height: 60px; font: 500 22px/1 var(--kfont) !important; padding: 0 18px !important; }
+html.tv #sheet #sq { width: calc(100% - 120px) !important; }
+#sheet .bsheet .hero { margin-bottom: 18px; }
+#sheet .bsheet .hero h1 { line-height: 1.1; }
+html.tv #sheet .bsheet .hero { margin-bottom: 26px; }
 /* a TV: the pop-ups use the whole screen to read from the sofa (John, 8 Nov 2026: "the popups seem to have forgotten that we need
    to maximise space for reading on a tv app, so search shouldn't be just small across the screen") */
 html.tv #sheet .form { padding: 5vh 5vw; }
@@ -1047,6 +1054,13 @@ html.big:not(.tv) .sheet .heroimg { aspect-ratio: 16 / 6; }   /* (a computer: a 
 </style>
 <script>/* a computer's screen (wide, with a mouse) or the TV: the whole calendar in the window, as on the songs' site */
 (function () { if (/GRIFFLIXTV\//.test(navigator.userAgent) || /[?&]tv=1(&|$)/.test(location.search)) { var vp = document.querySelector('meta[name=viewport]'); if (vp) vp.setAttribute('content', 'width=1280'); } })();   /* a TV: laid out 1280 wide and shrunk to the screen, as the songs' page is (a Fire Stick's browser is 960 wide: everything came out a third too big) */
+(function () {   // no glimpse of the songs' look while the page loads (John, 8 Nov 2026): Grifflix's own look and the month's colour at
+  // once, the page hidden until its theme is laid out (and shown regardless after 2.5s)
+  var de = document.documentElement, bg = null;
+  try { if (localStorage.getItem('grifflix-look') !== 'off') de.classList.add('klook'); bg = localStorage.getItem('grifflix-lastbg'); } catch (e) { de.classList.add('klook'); }
+  if (bg && /^#[0-9a-f]{3,8}$/i.test(bg)) { de.style.setProperty('--bg', bg); de.style.background = bg; }
+  de.classList.add('loading'); setTimeout(function () { de.classList.remove('loading'); }, 2500);
+})();
 (function () { var de = document.documentElement; if (/GRIFFLIXTV\//.test(navigator.userAgent) || /[?&]tv=1/.test(location.search) || (window.matchMedia && matchMedia('(min-width: 1000px) and (min-height: 560px) and (hover: hover) and (pointer: fine)').matches)) de.className += ' big'; })();</script>
 </head>
 <body>
@@ -1445,10 +1459,12 @@ function monthTint(m) {   // (six months on from the songs' colours, so the two 
   var tt = KLOOK && themeFor(m), k = tt && [tt.bg, tt.name, tt.ink], p = k ? [k[0], k[0], k[0], k[0], k[0]] : (PALETTES[(m + 6) % 12] || PALETTES[0]), R = document.documentElement.style;
   if (k) R.setProperty('--kink', k[2] === '#000' ? '0, 0, 0' : '255, 255, 255');
   ['--bg', '--g1', '--g2', '--g3', '--g4'].forEach(function (n, i) { R.setProperty(n, p[i]); });
+  store.set('grifflix-lastbg', p[0]); R.background = p[0];   // (the next load opens in it)
   var tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.content = p[0];
 }
 monthTint(new Date().getMonth());
 themeEarly();
+requestAnimationFrame(function () { document.documentElement.classList.remove('loading'); });   // (laid out: shown)
 function tint(src) {
   if (!src) return;
   var im = new Image(); im.crossOrigin = 'anonymous';
