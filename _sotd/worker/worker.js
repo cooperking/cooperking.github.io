@@ -1297,12 +1297,24 @@ async function gSendMail(env, to, subject, text, html) {
   if (!j || !j.ok) { note.err = String((j && j.error) || r.status).slice(0, 160); await mailNote(env, note); throw new Error(note.err); }
   note.ok = true; note.left = j.left; await mailNote(env, note);
 }
-function gShell(inner) {   // a Grifflix email: the June red bar with its name, a white card, the footer
-  return '<div style="margin:0;padding:24px 12px;background:#120914"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">'
-    + '<table role="presentation" width="560" cellpadding="0" cellspacing="0" style="width:100%;max-width:560px;background:#ffffff;border-radius:18px;overflow:hidden">'
-    + '<tr><td style="background:#ec1a13;padding:16px 24px;font:700 22px/1 Helvetica,Arial,sans-serif;letter-spacing:.04em;color:#ffffff">GRIFFLIX</td></tr>'
-    + '<tr><td style="padding:24px 24px 26px;font:15px/1.5 Helvetica,Arial,sans-serif;color:#2a1a22">' + inner
-    + '<p style="margin:28px 0 0;padding-top:16px;border-top:1px solid #eadfe3;font:13px/1.5 Helvetica,Arial,sans-serif;color:#7a6a72">You can change these emails in your Profile on <a href="' + G_SITE + '" style="color:#c2140e">Grifflix</a>.</p>'
+// Grifflix's colours: the month's, six months on from the songs' (as its page): ground, then four glows (John, 8 Nov 2026:
+// "Grifflix colours should match the month and font")
+const G_PALETTES = [['#0c1445', '#0094de', '#8833ff', '#f700f7', '#009aa8'], ['#652bee', '#3333ff', '#cc33ff', '#3388ff', '#ff2bb8'],
+  ['#11970c', '#429e00', '#00a150', '#7d9600', '#009e84'], ['#b613ec', '#fc00e7', '#8833ff', '#ff33aa', '#5533ff'],
+  ['#096a42', '#00a336', '#009e91', '#00a30e', '#0097c9'], ['#ec1a13', '#fa5300', '#ff3366', '#db6e00', '#ff3399'],
+  ['#1346ec', '#008ff5', '#5533ff', '#0097c9', '#8833ff'], ['#d85a06', '#c47c00', '#ff4a2e', '#b28600', '#ff3344'],
+  ['#0b86d3', '#0098b0', '#3370ff', '#009e91', '#3333ff'], ['#ec135b', '#ff3344', '#ff30b3', '#ff4c29', '#fc00e7'],
+  ['#09696d', '#009e77', '#0094d4', '#00a150', '#198cff'], ['#ec13c1', '#ff3399', '#dd33ff', '#ff3366', '#aa33ff']];
+function gPal() { return G_PALETTES[(+londonDay().slice(5, 7) - 1 + 6) % 12]; }
+const G_LOGO_FONT = "'Bebas Neue',Oswald,Impact,'Arial Narrow Bold','Arial Narrow',sans-serif";   // (Bebas where the email shows web fonts; else the nearest)
+function gShell(inner) {   // a Grifflix email: on the month's colour, GRIFFLIX in its own letters, a white card, the footer
+  const p = gPal();
+  return '<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">'
+    + '<div style="margin:0;padding:22px 12px 28px;background:' + p[0] + ';background-image:radial-gradient(circle at 15% 10%,' + p[1] + ',transparent 55%),radial-gradient(circle at 90% 90%,' + p[3] + ',transparent 55%)"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">'
+    + '<table role="presentation" width="560" cellpadding="0" cellspacing="0" style="width:100%;max-width:560px">'
+    + '<tr><td style="padding:4px 6px 14px;font:400 40px/1 ' + G_LOGO_FONT + ';letter-spacing:.03em;color:#ffffff">GRIFFLIX</td></tr>'
+    + '<tr><td style="background:#ffffff;border-radius:18px;padding:24px 24px 26px;font:15px/1.5 Helvetica,Arial,sans-serif;color:#2a1a22">' + inner.replace(/#c2140e/g, p[0])
+    + '<p style="margin:28px 0 0;padding-top:16px;border-top:1px solid #eadfe3;font:13px/1.5 Helvetica,Arial,sans-serif;color:#7a6a72">You can change these emails in your Profile on <a href="' + G_SITE + '" style="color:' + p[0] + '">Grifflix</a>.</p>'
     + '</td></tr></table></td></tr></table></div>';
 }
 function gFilmHtml(f) {   // one film: its poster, name, year, John's note, and Watch
@@ -1658,10 +1670,10 @@ async function gInvitePage(url, env) {   // an invitation's link: a page with it
   if (!p) return gone();
   const e = x => esc(String(x)), title = p.name + ' is invited to Grifflix', img = url.origin + '/gi/' + m[1] + '.jpg?v=' + p.at;
   return new Response(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${e(title)}</title><meta name="description" content="John’s films and TV, for family and friends">
-<meta property="og:type" content="website"><meta property="og:title" content="${e(title)}"><meta property="og:description" content="John’s films and TV, for family and friends">
+<title>${e(title)}</title><meta name="description" content="An invitation to Grifflix">
+<meta property="og:type" content="website"><meta property="og:title" content="${e(title)}"><meta property="og:description" content="An invitation to Grifflix">
 <meta property="og:image" content="${e(img)}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image">
-<meta name="theme-color" content="#ec1a13"><style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#120914;color:#fffaf5;font:18px Georgia,serif;text-align:center;padding:24px}img{max-width:min(520px,90vw);border-radius:16px;display:block;margin:0 auto 22px}a{display:inline-block;padding:13px 26px;border-radius:999px;background:#fffaf5;color:#1b1020;font:600 14px Helvetica,Arial,sans-serif;letter-spacing:.08em;text-transform:uppercase;text-decoration:none}</style></head>
+<meta name="theme-color" content="${gPal()[0]}"><style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:${gPal()[0]};color:#fffaf5;font:18px Georgia,serif;text-align:center;padding:24px}img{max-width:min(520px,90vw);border-radius:16px;display:block;margin:0 auto 22px}a{display:inline-block;padding:13px 26px;border-radius:999px;background:#fffaf5;color:#1b1020;font:600 14px Helvetica,Arial,sans-serif;letter-spacing:.08em;text-transform:uppercase;text-decoration:none}</style></head>
 <body><div><img src="${e(img)}" alt=""><p>${e(p.name)}, you’re invited to Grifflix.</p><p><a href="${e(p.link)}">Open your invitation</a></p></div>
 <script>setTimeout(function(){location.replace(${JSON.stringify(p.link)});},1600);</script></body></html>`, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } });
 }
