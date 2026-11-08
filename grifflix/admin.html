@@ -38,7 +38,8 @@
 .mem li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 11px 12px; border-radius: 12px; background: var(--tile); }
 .mem .who { flex: 1 1 180px; min-width: 0; }
 .mem .who b { display: block; font: 500 17px/1.2 var(--serif); color: var(--fg); }
-.mem .who span { font-size: 12.5px; color: var(--muted); }
+.mem .who > span { display: block; font-size: 12.5px; color: var(--muted); }
+.mem .who .prefs { margin-top: 2px; }
 .newrow { display: flex; flex-wrap: wrap; gap: 8px; }
 .newrow input { flex: 1 1 160px; min-width: 0; }
 .invite { display: grid; gap: 12px; }
@@ -148,7 +149,10 @@
       $('#memhead').innerHTML = MEM.length + ' members <em>· ' + signed + ' signed in</em>';
       $('#mem').innerHTML = MEM.map(function (m) {
         var st = m.devices ? m.devices + ' device' + (m.devices === 1 ? '' : 's') + (m.seen ? ', last ' + when(m.seen) : '') : m.invite && !m.invite.gone ? 'Invited, not signed in yet' : 'Not invited yet';
-        return '<li><div class="who"><b>' + esc(m.name) + (m.owner ? ' <span class="badge signed">You</span>' : '') + '</b><span>' + esc(st) + (m.email ? ' · ' + esc(m.email) : '') + '</span></div>' +
+        var MODE = { all: 'every day', week: 'once a week', off: 'off' };
+        var notes = 'Notifications: ' + (m.gpush === 'off' ? 'off' : MODE[m.gpush] || 'every day') + (m.pushDevices ? ' on ' + m.pushDevices + ' device' + (m.pushDevices === 1 ? '' : 's') : m.gpush === 'off' ? '' : ' (no device turned on yet)') +
+          ' · Emails: ' + (m.email ? (MODE[m.gmail] || 'off') + ' to ' + m.email : 'no address');
+        return '<li><div class="who"><b>' + esc(m.name) + (m.owner ? ' <span class="badge signed">You</span>' : '') + '</b><span>' + esc(st) + '</span><span class="prefs">' + esc(notes) + '</span></div>' +
           (m.owner ? '' : '<button class="btn small primary" data-inv="' + m.id + '">' + (m.devices || m.invite ? 'New link' : 'Invite') + '</button><button class="btn small" data-rm="' + m.id + '">Remove</button>') + '</li>';
       }).join('');
       [].forEach.call(document.querySelectorAll('[data-inv]'), function (b) { b.onclick = function () { invite({ op: 'newlink', id: b.dataset.inv }); }; });
