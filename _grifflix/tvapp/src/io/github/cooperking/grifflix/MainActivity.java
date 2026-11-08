@@ -194,7 +194,7 @@ public class MainActivity extends Activity {
                 public void run() {
                     web.requestFocus();
                     android.view.inputmethod.InputMethodManager im = (android.view.inputmethod.InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
-                    if (im != null) im.showSoftInput(web, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT);
+                    if (im != null) { im.showSoftInput(web, android.view.inputmethod.InputMethodManager.SHOW_FORCED); }
                 }
             });
         }

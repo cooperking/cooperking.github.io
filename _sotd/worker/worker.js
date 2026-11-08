@@ -1390,7 +1390,7 @@ function gShownCal(c) {   // what anyone may see of it: the days already reveale
 function gDayFilm(c, day) {   // a calendar day's film, as the alert (notification and email) shows it
   const it = c.days && c.days[day];
   if (!it) return null;
-  const name = it.type === 'episode' ? (it.series || it.name) : it.name, note = (c.notes || {})[day] || '';
+  const name = it.type === 'episode' ? (it.series || it.name) : it.name, note = /^This month[’']s theme:/.test((c.notes || {})[day] || '') ? '' : ((c.notes || {})[day] || '');   // (the theme's own note: not shown)
   return { name, year: it.year || '', note, overview: it.overview || '', url: G_SITE + '#day/' + day,
     poster: gPicUrl(it.poster, 'Primary', 400, (it.tags || {}).poster),
     image: gPicUrl(it.backdrop, 'Backdrop', 1100, (it.tags || {}).backdrop) };

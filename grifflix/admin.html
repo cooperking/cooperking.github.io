@@ -693,7 +693,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       for (; new Date(y, m, 1) <= end; m++) {
         if (m > 11) { m = 0; y++; }
         var x = TBY[GORDER[m]], date = y + '-' + String(m + 1).padStart(2, '0') + '-01', id = TID[x.k], was = D[date];
-        if (id && !(was && was.id === id)) THJOBS.push({ date: date, item: id, note: 'This month’s theme: ' + x.n + ', after ' + x.f + ' (' + x.y + ').' });
+        if (id && !(was && was.id === id)) THJOBS.push({ date: date, item: id, note: '' });
       }
       $('#thgo').disabled = !THJOBS.length; $('#thgo').textContent = THJOBS.length ? 'Put the films on their 1sts (' + THJOBS.length + ')' : 'All on their 1sts';
       tmDraw();

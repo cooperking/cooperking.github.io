@@ -1230,6 +1230,7 @@ function motdCal() {   // Movie of the Day: the site's file, and from the Worker
     var last = Object.keys(D.days).sort().pop() || '';
     return fetch(WORKER + '/g/cal?after=' + last, TOKEN ? { headers: { Authorization: 'Bearer ' + TOKEN } } : {}).then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; }).then(function (W) {
       var days = Object.assign({}, D.days, W.days || {}), notes = Object.assign({}, D.notes, W.notes || {});
+      Object.keys(notes).forEach(function (d) { if (/^This month[’']s theme:/.test(notes[d] || '')) delete notes[d]; });   // (the theme's own note on its 1st: not shown, it got in the way: John, 8 Nov 2026)
       if ('themes' in W) { store.set('grifflix-themes', JSON.stringify(W.themes || null)); if (themeOrder(W.themes)) monthTint(new Date().getMonth()); }   // (the admin page's months)
       Object.keys(W.days || {}).forEach(function (d) { if (LIB) LIB.tag(W.days[d]); else if (W.days[d].tags) { var t = W.days[d]; PICTAG[t.poster + 'Primary'] = (t.tags || {}).poster; PICTAG[t.backdrop + 'Backdrop'] = (t.tags || {}).backdrop; } });
       Object.keys(D.days).forEach(function (d) { var t = D.days[d]; if (t.tags) { PICTAG[t.poster + 'Primary'] = t.tags.poster; PICTAG[t.backdrop + 'Backdrop'] = t.tags.backdrop; if (t.thumb) PICTAG[t.thumb + 'Thumb'] = t.tags.thumb; } });
@@ -2756,9 +2757,9 @@ function searchSheet(onPick, title) {
   if (TV) {   // a TV: the box chosen first, and only OK on it brings Amazon's keyboard up (John, 8 Nov 2026: "when you click search the typing text from amazon comes up immediately which looks bad")
     inp.readOnly = true; inp.setAttribute('inputmode', 'none');
     var wake = function () {   // OK on it: typing on, and Fire TV's keyboard up (the app's own way where it has one)
-      if (!inp.readOnly) return; inp.readOnly = false; inp.removeAttribute('inputmode'); inp.focus();
-      try { if (window.GRIFFLIXTV && GRIFFLIXTV.keyboard) { GRIFFLIXTV.keyboard(); return; } } catch (e) {}
-      inp.waking = true; inp.blur(); setTimeout(function () { inp.focus(); inp.waking = false; }, 30);
+      if (!inp.readOnly) return; inp.readOnly = false; inp.removeAttribute('inputmode');
+      inp.waking = true; inp.blur();   // (focused afresh, as when Search first opened, which is what brings Fire TV's keyboard up; and the app asked too)
+      setTimeout(function () { inp.focus(); inp.waking = false; try { if (window.GRIFFLIXTV && GRIFFLIXTV.keyboard) GRIFFLIXTV.keyboard(); } catch (e) {} }, 40);
     };
     inp.addEventListener('keydown', function (e) { if (inp.readOnly && (e.key === 'Enter' || e.keyCode === 23 || e.keyCode === 13)) { e.preventDefault(); wake(); } });
     inp.addEventListener('click', wake);
