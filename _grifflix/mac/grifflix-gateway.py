@@ -13,7 +13,7 @@ Python 3 standard library only, so it runs on the Mac's own /usr/bin/python3.
   grifflix-gateway.py setup --movies DIR --tv DIR --home DIR   Jellyfin's first-run setup, done for you
   grifflix-gateway.py serve                                     the gateway (the LaunchAgent runs this)
 """
-import base64, hashlib, hmac, http.client, json, os, re, secrets, sys, threading, time, urllib.parse
+import base64, hashlib, hmac, http.client, json, os, re, secrets, sys, threading, time, urllib.parse, urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 APP_DIR = os.environ.get('GRIFFLIX_DIR') or os.path.expanduser('~/Library/Application Support/Grifflix')
@@ -32,7 +32,16 @@ FIELDS = ('Overview,Genres,OfficialRating,CommunityRating,ProductionYear,Premier
 # files and cast (a film's own pop-up asks for everything)
 LIST_FIELDS = ('Overview,Genres,OfficialRating,CommunityRating,ProductionYear,PremiereDate,RunTimeTicks,ImageTags,'
                'BackdropImageTags,ParentBackdropImageTags,SeriesPrimaryImageTag,ChildCount,RecursiveItemCount,DateCreated,Path')
-EXPORT_CACHE = os.path.join(APP_DIR, 'export-cache.json')   # what John's last Update sent (so the next reads only what's new)
+EXPORT_CACHE = os.path.join(APP_DIR, 'export-cache.json')
+INSTALLED = os.path.join(APP_DIR, 'installed.json')   # which commit of the Mac's Grifflix files this is (the admin page's Update the Mac)
+REPO = 'cooperking/cooperking.github.io'
+# the Mac's Grifflix files, where each is kept: (in the repository's _grifflix/mac/, on this Mac, what must be in it)
+SOFTWARE = [('grifflix-gateway.py', os.path.join(APP_DIR, 'grifflix-gateway.py'), 'Grifflix gateway'),
+            ('convert.py', os.path.expanduser('~/Grifflix/convert.py'), 'convert'),
+            ('motd-fill.py', os.path.expanduser('~/Grifflix/motd-fill.py'), 'Movie of the Day'),
+            ('fix-series.py', os.path.expanduser('~/Grifflix/fix-series.py'), ''),
+            ('plex-collections.py', os.path.expanduser('~/Grifflix/plex-collections.py'), ''),
+            ('streaming-report.py', os.path.expanduser('~/Grifflix/streaming-report.py'), '')]   # what John's last Update sent (so the next reads only what's new)
 LIBS = {'movies': ('Movies', 'movies'), 'tv': ('TV', 'tvshows'), 'home': ('Home videos', 'homevideos')}
 
 
@@ -59,6 +68,8 @@ def save(path, obj):
 def tls():
     """Python from python.org (an old Mac's) has no certificates of its own until certifi is installed."""
     import ssl
+    if os.environ.get('SSL_CERT_FILE'):   # (a certificate list chosen for this machine)
+        return ssl.create_default_context(cafile=os.environ['SSL_CERT_FILE'])
     try:
         import certifi
         return ssl.create_default_context(cafile=certifi.where())
@@ -510,7 +521,7 @@ def make_handler(g):
             q = dict(urllib.parse.parse_qsl(u.query))
             try:
                 if u.path == '/health':
-                    return self.send_json(200, {'ok': True, 'version': VERSION})
+                    return self.send_json(200, {'ok': True, 'version': VERSION, 'sha': (load(INSTALLED, {}).get('sha') or '')[:7]})
                 if u.path.startswith('/img/') or u.path.startswith('/v/'):
                     uid = check_key(g.st['secret'], q.pop('g', ''))
                     if not uid:
@@ -858,6 +869,77 @@ def make_handler(g):
                 free = total = 0
             self.send_json(200, {'originals': [{k2: v for k2, v in k.items() if k2 != 'path'} for k in sorted(kept, key=lambda k: -(k['at'] or 0))],
                                  'size': sum(k['size'] for k in kept), 'free': free, 'total': total})
+
+        def api_software(self, me, user, q, b):
+            """John's: the Mac's Grifflix files brought up to date from GitHub (the admin page's Update the Mac; John,
+            8 Nov 2026, instead of Terminal commands). Each file is checked (it must be Python, and what it should be)
+            before any is replaced; the old ones are kept beside them (.prev). The converter, if it was running, starts
+            again with its new file; then the gateway restarts (launchd starts it again at once)."""
+            if not me.get('owner'):
+                return self.send_json(403, {'error': 'Only John.'})
+            have = load(INSTALLED, {})
+            if b.get('op') != 'update':
+                return self.send_json(200, {'sha': have.get('sha', ''), 'at': have.get('at', 0), 'files': have.get('files', [])})
+
+            def fetch(url):
+                req = urllib.request.Request(url, headers={'User-Agent': 'Grifflix gateway', 'Accept': 'application/vnd.github+json'})
+                with urllib.request.urlopen(req, timeout=60, context=tls()) as r:
+                    return r.read()
+            try:
+                sha = json.loads(fetch('https://api.github.com/repos/%s/commits/main' % REPO))['sha']
+                got = {}
+                for name, dest, mark in SOFTWARE:
+                    src = fetch('https://raw.githubusercontent.com/%s/%s/_grifflix/mac/%s' % (REPO, sha, name)).decode('utf-8')
+                    compile(src, name, 'exec')   # (a file that isn't whole Python stops it all)
+                    if mark and mark not in src:
+                        raise ValueError('%s isn’t what it should be' % name)
+                    got[name] = src
+            except Exception as e:
+                log('Update the Mac: couldn’t fetch:', repr(e))
+                return self.send_json(502, {'error': 'Couldn’t get the new files from GitHub (%s). Nothing was changed.' % str(e)[:120]})
+            changed = []
+            for name, dest, mark in SOFTWARE:
+                old = None
+                try:
+                    with open(dest, encoding='utf-8') as f:
+                        old = f.read()
+                except OSError:
+                    pass
+                if old == got[name]:
+                    continue
+                if old is None and name not in ('grifflix-gateway.py', 'convert.py'):
+                    continue   # (a script John hasn't got on this Mac stays away)
+                os.makedirs(os.path.dirname(dest), exist_ok=True)
+                if old is not None:
+                    with open(dest + '.prev', 'w', encoding='utf-8') as f:
+                        f.write(old)
+                with open(dest + '.new', 'w', encoding='utf-8') as f:
+                    f.write(got[name])
+                os.replace(dest + '.new', dest)
+                changed.append(name)
+            save(INSTALLED, {'sha': sha, 'at': int(time.time()), 'files': [n for n, _, _ in SOFTWARE]})
+            restarted = False
+            if 'convert.py' in changed:   # the converter running: started again with its new file, as it was started
+                cur = load(os.path.expanduser('~/Grifflix/convert-now.json'), None) or {}
+                try:
+                    pid = int(cur.get('pid') or 0)
+                    if pid and cur.get('state') != 'finished':
+                        os.kill(pid, 0)
+                        os.kill(pid, 15)
+                        time.sleep(3)
+                        import subprocess
+                        args = cur.get('args') or ['go', 'now']
+                        out = open(os.path.expanduser('~/Grifflix/convert.out'), 'a')
+                        awake = ['/usr/bin/caffeinate', '-i'] if os.path.exists('/usr/bin/caffeinate') else []   # (the Mac kept awake while it converts)
+                        subprocess.Popen(awake + [sys.executable, os.path.expanduser('~/Grifflix/convert.py')] + [str(a) for a in args],
+                                         stdout=out, stderr=out, stdin=subprocess.DEVNULL, start_new_session=True, cwd=os.path.expanduser('~/Grifflix'))
+                        restarted = True
+                except (OSError, ValueError) as e:
+                    log('Update the Mac: the converter couldn’t be started again:', e)
+            log('Update the Mac: %s (%s)%s' % (sha[:7], ', '.join(changed) or 'nothing changed', '; converter started again' if restarted else ''))
+            self.send_json(200, {'sha': sha, 'changed': changed, 'converter': restarted, 'restarting': 'grifflix-gateway.py' in changed})
+            if 'grifflix-gateway.py' in changed:
+                threading.Timer(1.5, lambda: os._exit(0)).start()   # (launchd starts the new gateway)
 
         def api_refresh(self, me, user, q, b):   # the page's Refresh button: look again for new films and changes
             g.forget()
