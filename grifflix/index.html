@@ -190,6 +190,7 @@ dialog::backdrop { background: rgba(10, 4, 12, .62); backdrop-filter: blur(6px);
 .sheet .note b { display: block; margin-bottom: 4px; font: 600 10.5px/1.2 var(--sans); font-style: normal; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
 .sheet .people { margin-top: 14px; font-size: 13.5px; color: var(--muted); }
 .sheet .people b { color: var(--fg-2); font-weight: 500; }
+html.tv .sheet .people { font-size: var(--crfs, 15px); }
 .sheet .acts { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; align-items: center; }
 .sheet .acts .pill.go { min-height: 46px; padding: 0 22px; background: var(--fg); color: #1b1020; border-color: var(--fg); font-size: 13px; }
 .sheet .acts .pill.go svg { width: 16px; height: 16px; }
@@ -642,7 +643,7 @@ html:not(.mob) .film:not(.hasposter) .heroimg { display: block !important; posit
 html:not(.mob) .film:not(.hasposter) { grid-template-columns: minmax(300px, 42vw) minmax(0, 1fr); }
 html:not(.mob) .film .ipost img { display: block; width: 100%; height: auto; max-height: calc(100vh - 170px); object-fit: contain; object-position: center; box-shadow: 0 24px 60px rgba(0, 0, 0, .35); }
 html:not(.mob) .film .in { padding: 0 !important; min-height: 0 !important; display: block !important; }
-html.tv .film .ov { font-size: 21px !important; display: -webkit-box !important; -webkit-line-clamp: 6 !important; -webkit-box-orient: vertical; overflow: hidden !important; }
+html.tv .film .ov { font-size: var(--ovfs, 21px) !important; max-width: none !important; display: block !important; -webkit-line-clamp: unset !important; overflow: visible !important; }   /* (all of it, made smaller to fit: tvFit) */
 html.tv .film .tag { font-size: 24px !important; }
 html.tv .film .meta { font-size: 17px !important; }
 html.mob .film .ipost { display: none; }
@@ -1066,7 +1067,7 @@ html.tv .sheet .noimg-top { display: none; }
 html.tv .sheet .in { position: relative; margin: 0; min-height: 100%; max-width: 60vw; padding: 7vh 5vw 7vh; display: flex; flex-direction: column; justify-content: center; }
 html.tv .sheet h2 { font-size: clamp(46px, 4.2vw, 70px); }
 html.tv .sheet .tag { font-size: 24px; }
-html.tv .sheet .ov { font-size: 19px; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+html.tv .sheet .ov { font-size: var(--ovfs, 19px); display: block; -webkit-line-clamp: unset; overflow: visible; }
 html.tv #isbody { display: flex; flex-direction: column; }
 html.tv #isbody > * { order: 2; }
 html.tv #isbody > .meta { order: 0; }
@@ -2649,14 +2650,25 @@ function itemSheet(it, ctx) {
   var pst = it.poster && it.type !== 'episode' ? img(it.poster, 'Primary', 400) : '';   // (the poster, whole, beside the words on a big screen)
   openSheet('<div class="film' + (pst ? ' hasposter' : '') + '">' + X + top + (pst ? '<div class="ipost"><img alt="" src="' + esc(pst) + '"></div>' : '') + '<div class="in"><div class="date">' + (ctx.date ? dnav(-1) + '<span>' + esc(longDate(ctx.date)) + '</span>' + dnav(1) : esc(typeName(it))) + '</div><h2>' + esc(showName(it)) + '</h2><div id="isbody">' + bodyHTML(it, ctx) + '</div></div></div>');
   $$('#sheetIn [data-dstep]').forEach(function (b) { b.onclick = function () { dayStep(+b.dataset.dstep); }; });
-  wireBody(it, ctx);
+  wireBody(it, ctx); setTimeout(tvFit, 30);
   var mine = function (full) { if (PUBLIC || DEMO || !full.id) return full;   // (the member's own: from the Mac, if it's on)
     own('lists').then(function (L) { var h = L.hearts.some(function (x) { return x.id === it.id; }); if (h !== !!it.hearted) { it.hearted = full.hearted = h; var b = $('#aheart'); if (b && dlg.open) b.innerHTML = HEART(h); } }).catch(function () {});
     return soon(mac('item?id=' + it.id), 6000).then(function (m) { ['pos', 'next', 'subs'].forEach(function (k) { if (m[k] != null) full[k] = m[k]; });
       var at = {}; (m.episodes || []).forEach(function (e) { if (e.pos) at[e.id] = e.pos; }); (full.episodes || []).forEach(function (e) { if (at[e.id]) e.pos = at[e.id]; }); return full; }, function () { return full; }); };
-  var drawFull = function (full) { if (!dlg.open) return; Object.assign(it, full); var had = document.activeElement && document.activeElement.id; $('#isbody').innerHTML = bodyHTML(it, ctx); wireBody(it, ctx); if (TV) { var back = had && !/^(asignin|aplay|atrailer)$/.test(had) && $('#' + had); if (back) back.focus({ preventScroll: true }); else tvStart(); }   /* (the trailer arrives with the details: chosen then, unless something else was) */ };   // (the site's details at once; the Mac's own for this member when it answers, without waiting for it: John, 8 Nov 2026)
+  var drawFull = function (full) { if (!dlg.open) return; Object.assign(it, full); var had = document.activeElement && document.activeElement.id; $('#isbody').innerHTML = bodyHTML(it, ctx); wireBody(it, ctx); if (TV) { var back = had && !/^(asignin|aplay|atrailer)$/.test(had) && $('#' + had); if (back) back.focus({ preventScroll: true }); else tvStart(); }   /* (the trailer arrives with the details: chosen then, unless something else was) */  setTimeout(tvFit, 30); };   // (the site's details at once; the Mac's own for this member when it answers, without waiting for it: John, 8 Nov 2026)
   api('item?id=' + it.id).then(function (full) { drawFull(full); return mine(full); }).then(function (full) { if (full && dlg.open && S.sheetItem === it.id) drawFull(full); }).catch(function () {});
   S.sheetItem = it.id;
+}
+function tvFit() {   // a TV: a film's pop-up all on the screen, its description whole and as large as fits (John, 8 Nov 2026: "Descriptions on the tv app of a film can cut off its description. It should always fit on")
+  if (!TV) return;
+  var box = $('#sheetIn'); if (!box || !$('#sheetIn .ov')) return;
+  var go = function () {
+    var R = box.style, fs = 21;
+    R.removeProperty('--ovfs'); R.removeProperty('--crfs');
+    var low = function () { var b = 0; $$('#sheetIn .ov, #sheetIn .people, #sheetIn .acts, #sheetIn .meta').forEach(function (e) { b = Math.max(b, e.getBoundingClientRect().bottom); }); return b; };
+    while (low() > box.getBoundingClientRect().bottom - 24 && fs > 14) { fs -= 1; R.setProperty('--ovfs', fs + 'px'); R.setProperty('--crfs', Math.max(12, Math.round(fs * .75)) + 'px'); }
+  };
+  (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(function () { requestAnimationFrame(go); });
 }
 function typeName(it) { return { movie: 'Film', series: 'Series', episode: it.series || 'Episode', video: 'Home video', photo: 'Photo' }[it.type] || ''; }
 function bodyHTML(it, ctx) {
