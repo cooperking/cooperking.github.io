@@ -743,9 +743,10 @@ function home() {
 }
 function drawCals() {
   var el = $('#cals'), h = '';
-  S.cals.forEach(function (c) { h += '<button class="pill' + (c.id === S.cal ? ' on' : '') + '" data-cal="' + c.id + '">' + esc(c.id === 'motd' ? 'Movie of the Day' : (c.mine ? c.name : c.ownerName + ': ' + c.name)) + '</button>'; });
-  if (!PUBLIC) h += '<button class="pill" id="newcal">+ New calendar</button>';
+  if (S.cals.length > 1) S.cals.forEach(function (c) { h += '<button class="pill' + (c.id === S.cal ? ' on' : '') + '" data-cal="' + c.id + '">' + esc(c.id === 'motd' ? 'Movie of the Day' : (c.mine ? c.name : c.ownerName + ': ' + c.name)) + '</button>'; });
+  if (!PUBLIC && !TV) h += '<button class="pill" id="newcal">+ New calendar</button>';   // (not on a TV: calendars of your own are made on a phone or computer)
   el.innerHTML = h;
+  el.classList.toggle('hide', !h);
   $$('[data-cal]', el).forEach(function (b) { b.onclick = function () { S.cal = b.dataset.cal; location.hash = '#home/' + S.cal; }; });
   if ($('#newcal')) $('#newcal').onclick = newCalendar;
 }
@@ -814,7 +815,7 @@ function drawMonth() {
   });
 
   var first = new Date(y, m, 1), lead = (first.getDay() + 6) % 7, n = new Date(y, m + 1, 0).getDate();
-  var h = '<div class="calhead">' + (mine ? '<span class="pill" style="pointer-events:none;opacity:.8">Tap a day to choose its film</span>' : '') + '</div><div class="dow">' + DOW.map(function (d) { return '<div>' + d + '</div>'; }).join('') + '</div><div class="grid">';
+  var h = '<div class="calhead">' + '' + '</div><div class="dow">' + DOW.map(function (d) { return '<div>' + d + '</div>'; }).join('') + '</div><div class="grid">';
   for (var k = 0; k < lead; k++) h += '<div class="day blank"></div>';
   for (var d = 1; d <= n; d++) {
     var key = S.month + '-' + String(d).padStart(2, '0'), it = C.days[key], cls = 'day' + (it ? ' has' : '') + (key === TODAY ? ' today' : '');
