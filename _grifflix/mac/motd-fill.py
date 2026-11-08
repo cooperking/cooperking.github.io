@@ -13,6 +13,7 @@ in English").
 
   python3 motd-fill.py        the list, day by day (nothing changes): ~/Grifflix/motd-plan.csv
   python3 motd-fill.py go     puts them on the calendar
+  python3 motd-fill.py --to 2026-12-31 (go)   on to the end of the year too (days already chosen kept, no film twice)
 """
 import csv, datetime, json, os, random, re, sys, urllib.parse, urllib.request
 
@@ -21,9 +22,11 @@ HOME = os.path.expanduser('~/Grifflix')
 s = json.load(open(os.path.join(APP, 'settings.json')))
 JF = s.get('jellyfin', 'http://127.0.0.1:8096')
 GW = 'http://127.0.0.1:%s' % s.get('port', 8097)
-GO = len(sys.argv) > 1 and sys.argv[1] == 'go'
+GO = 'go' in sys.argv[1:]
 START = datetime.date(2025, 12, 1)
 TODAY = datetime.date.today()
+# --to YYYY-MM-DD: on to that day (John, 8 Nov 2026: the rest of the year laid out too); otherwise up to today
+END = next((datetime.date.fromisoformat(sys.argv[k + 1]) for k, a in enumerate(sys.argv[:-1]) if a == '--to'), TODAY)
 MIN_MINS = int(os.environ.get('GRIFFLIX_MIN_MINS') or 70)
 ENGLISH_PLACES = {'united states of america', 'united states', 'usa', 'us', 'united kingdom', 'uk', 'great britain', 'england',
                   'scotland', 'wales', 'ireland', 'canada', 'australia', 'new zealand'}
@@ -102,7 +105,7 @@ def christmas(it):
     return 'christmas' in text or 'xmas' in text
 
 
-days = [START + datetime.timedelta(n) for n in range((TODAY - START).days + 1)]
+days = [START + datetime.timedelta(n) for n in range((END - START).days + 1)]
 cal = {}
 try:
     cal = json.load(urllib.request.urlopen(urllib.request.Request(GW + '/api/public/calendar?id=motd'), timeout=60)).get('days') or {}
@@ -164,7 +167,7 @@ with open(os.path.join(HOME, 'motd-plan.csv'), 'w', newline='') as f:
         w.writerow([d.isoformat(), g(it, 'Name'), g(it, 'ProductionYear', ''), why[plan[d]], round(score(it), 1), '; '.join(sorted(name_of[c] for c in where[plan[d]]))])
 from collections import Counter
 cnt = Counter(why[i] for i in plan.values())
-print('%d days (%s to %s), %d already chosen and kept. Planned: %d — %s.' % (len(days), START, TODAY, len(taken), len(plan),
+print('%d days (%s to %s), %d already chosen and kept. Planned: %d — %s.' % (len(days), START, END, len(taken), len(plan),
       ', '.join('%d %s' % (v, k) for k, v in cnt.items())))
 if len(plan) < len(open_days):
     print('%d days left empty: not enough English feature films in the collections.' % (len(open_days) - len(plan)))
@@ -174,7 +177,7 @@ for d in sorted(plan)[-7:]:
     print('  %s  %s (%s)' % (d.strftime('%a %d %b'), g(ok[plan[d]], 'Name'), g(ok[plan[d]], 'ProductionYear', '')))
 print('Day by day: ~/Grifflix/motd-plan.csv')
 if not GO:
-    print('Nothing changed yet. To put them on the calendar:  python3 motd-fill.py go')
+    print('Nothing changed yet. To put them on the calendar:  python3 motd-fill.py go' + (' --to %s' % END if END != TODAY else ''))
     sys.exit()
 r = urllib.request.Request(GW + '/local/calendar', data=json.dumps({'days': {d.isoformat(): i for d, i in plan.items()}}).encode(), method='POST',
                            headers={'X-Grifflix-Secret': s['secret'], 'Content-Type': 'application/json'})
