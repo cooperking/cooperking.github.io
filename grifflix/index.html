@@ -239,6 +239,8 @@ dialog::backdrop { background: rgba(10, 4, 12, .62); backdrop-filter: blur(6px);
 .player video { width: 100%; height: 100%; background: #000; }
 .player .top { position: absolute; top: 0; left: 0; right: 0; display: flex; align-items: center; gap: 12px; padding: max(14px, env(safe-area-inset-top)) 18px 30px; background: linear-gradient(rgba(0, 0, 0, .7), transparent); transition: opacity .3s; }
 .player .top .t { font: 500 20px/1.2 var(--serif); color: #fff; }
+.player .top #pcast { margin-left: auto; color: #fff; }
+.player .top #pcast.on { background: #fff; color: #000; }
 .player .top .s { font: 600 10.5px/1.3 var(--sans); letter-spacing: .12em; text-transform: uppercase; color: rgba(255, 255, 255, .75); }
 .player.idle .top { opacity: 0; pointer-events: none; }
 .player .msg { position: absolute; inset: 0; display: none; place-items: center; padding: 30px; text-align: center; font: italic 400 22px/1.4 var(--serif); color: #fff; }
@@ -631,6 +633,10 @@ html[data-theme] #sheet .pill.go, html[data-theme] #sheet .pill.on { background:
 html[data-theme] #sheet .form > h2 { font-family: var(--tfont) !important; font-weight: var(--tw) !important; }
 html[data-theme] #sheet::backdrop { background: rgba(0, 0, 0, .55); backdrop-filter: none; -webkit-backdrop-filter: none; }
 .tcal { padding: 34px 34px 30px; }
+.tcside { display: grid !important; margin-top: 26px; padding-top: 18px; border-top: 1px solid rgba(var(--kink), .25); }
+.tcside h2 { margin: 0 0 10px; }
+html.mob #sheet .sheet:has(.tcal) { overflow: auto !important; }
+html.mob .tcal { height: auto !important; }
 .tcal .tck { font: 500 12px/1 var(--kfont); letter-spacing: .4em; text-transform: uppercase; color: var(--fg-2); }
 .tcal h2 { margin: 0; font-size: 44px; line-height: 1; }
 .tchead { display: flex; align-items: center; gap: 16px; margin: 10px 0 18px; }
@@ -916,7 +922,7 @@ html.big:not(.tv) .sheet .heroimg { aspect-ratio: 16 / 6; }   /* (a computer: a 
 
 <div class="player" id="player">
   <video id="vid" controls playsinline crossorigin="anonymous"></video>
-  <div class="top"><button class="ico" id="pclose" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg></button><div><div class="t" id="ptitle"></div><div class="s" id="psub"></div></div></div>
+  <div class="top"><button class="ico" id="pclose" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg></button><div><div class="t" id="ptitle"></div><div class="s" id="psub"></div></div><button class="ico" id="pcast" aria-label="Play on a TV" title="Play on a TV (AirPlay or Chromecast)" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 8V6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6"/><path d="M2 12a9 9 0 0 1 8 8M2 16a5 5 0 0 1 4 4"/><path d="M2 20h.01"/></svg></button></div>
   <div class="msg" id="pmsg"></div>
   <button class="pill on nextup" id="pnext">Next episode</button>
   <div class="tvbar"><div id="pbar"><i></i></div><span id="ptime"></span><span class="hint">OK pause · ◀ 10 s · 30 s ▶</span></div>
@@ -1730,8 +1736,14 @@ function calSheet() {   // the month's calendar, a pop-up in its theme's colour 
     if (it && !it.secret) h += '<button class="tcd has' + tc + '" data-day="' + key + '" aria-label="' + d + ' ' + MONTHS[m] + ': ' + esc(it.name) + '"><img alt="" loading="lazy" src="' + esc(mob && (it.poster || it.thumb) ? img(it.poster || it.thumb, it.poster ? 'Primary' : 'Thumb', 200) : img(it.backdrop || it.thumb || it.poster, it.backdrop ? 'Backdrop' : (it.thumb ? 'Thumb' : 'Primary'), 480)) + '"><b>' + d + '</b><span>' + esc(showName(it)) + '</span></button>';
     else h += '<div class="tcd' + tc + (it && it.secret ? ' secret' : '') + '"><b>' + d + '</b></div>';
   }
+  var films = Object.keys(C.days).filter(function (k) { return k.slice(0, 7) === S.month && !C.days[k].secret; }).sort();   // (the month's films listed under it, as the songs' calendar)
+  if (films.length) h += '</div><div class="side tcside"><h2>' + films.length + (films.length === 1 ? ' film' : ' films') + ' <i>in ' + MONTHS[m] + '</i></h2><ol class="tracks">' + films.map(function (k) {
+    var it = C.days[k], dd = new Date(k + 'T12:00');
+    return '<li' + (k === TODAY ? ' class="today"' : '') + '><button data-day="' + k + '" class="tcl"><span class="td">' + DOW[(dd.getDay() + 6) % 7] + ' ' + k.slice(8) + '</span><span class="thumb">' + (it.poster || it.thumb ? '<img loading="lazy" alt="" src="' + esc(it.poster ? img(it.poster, 'Primary', 120) : img(it.thumb, 'Thumb', 160)) + '">' : '') + '</span><span class="tx"><span class="tt">' + esc(showName(it)) + '</span><span class="ta">' + esc(subOf(it)) + '</span></span></button></li>';
+  }).join('') + '</ol>';
   openSheet(h + '</div></div>');
   S.fromCal = false;
+  $$('#sheetIn .tcl').forEach(function (b) { b.onclick = function () { S.fromCal = true; daySheet(b.dataset.day); }; });
   $$('#sheetIn .tcd[data-day]').forEach(function (b) { b.onclick = function () { S.fromCal = true; daySheet(b.dataset.day); }; });
   $('#tcprev').onclick = function () { calStep(-1); }; $('#tcnext').onclick = function () { calStep(1); };
   if (TV) setTimeout(function () { var f = $('#sheetIn .tcd.today.has') || $$('#sheetIn .tcd.has').pop(); if (f) f.focus(); }, 60);
@@ -2275,6 +2287,7 @@ function bodyHTML(it, ctx) {
     h += '<button class="ico" id="aheart" aria-label="Save for later">' + HEART(it.hearted) + '</button>';
     h += '<button class="pill" id="aaddpl">+ Playlist</button><button class="pill" id="aaddcal">+ My calendar</button>';
     if (ME && ME.owner && it.type !== 'video') h += '<button class="pill" id="acoll">Collections</button>';
+    if (ME && ME.downloads && !TV && !isSeries) h += '<button class="pill" id="adown"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13M7 11l5 5 5-5M5 21h14"/></svg>Download</button>';
   }
   h += '<button class="ico" id="ashare" aria-label="Share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13M7 8l5-5 5 5M5 14v6h14v-6"/></svg></button></div>';
   if (isSeries && it.episodes) {
@@ -2301,6 +2314,12 @@ function wireBody(it, ctx) {
   });
   on('afrom0', function () { play(it, null, true); });
   on('atrailer', function () { trailer(it); });
+  on('adown', function () {   // the film's own file, to keep (John, 8 Nov 2026: "Can members be allowed to download films to their device")
+    api('download?id=' + it.id).then(function (d) {
+      var a = document.createElement('a'); a.href = gwUrl(d.url); a.download = ''; document.body.appendChild(a); a.click(); a.remove();
+      toast('Downloading ' + showName(it) + (d.bytes ? ' (' + (d.bytes / 1e9).toFixed(1) + ' GB)' : '') + (/iPhone|iPad/.test(navigator.userAgent) ? ': it goes to Files' : ''));
+    }).catch(oops);
+  });
   on('asignin', signInSheet);
   on('aseries', function () { itemSheet({ id: it.seriesId, name: it.series, type: 'series', poster: it.poster, backdrop: it.backdrop }); });
   on('aheart', function () { api('lists', { op: 'heart', item: it.id }).then(function (L) { it.hearted = L.hearts.some(function (h) { return h.id === it.id; }); $('#aheart').innerHTML = HEART(it.hearted); toast(it.hearted ? 'Saved for later' : 'Taken off My list'); }); });
@@ -2629,6 +2648,33 @@ function stopPlayer() {
   if (S.view === 'home') homeRows();
 }
 $('#pclose').onclick = stopPlayer;
+// another screen: AirPlay (iPhone, iPad, Mac: Apple TVs, AirPlay TVs) and Google Cast (Chrome: Chromecasts, Google TVs),
+// as the songs' speakers (John, 8 Nov 2026: "we need to have casting options, like we do in sotd"). The other screen
+// fetches the film itself (its link carries the member's key). Not on the Fire TV app
+(function () {
+  var v = P.v, b = $('#pcast'), AIR = !!window.WebKitPlaybackTargetAvailabilityEvent && typeof v.webkitShowPlaybackTargetPicker === 'function', RP = !AIR && v.remote && typeof v.remote.prompt === 'function' ? v.remote : null;
+  if (TV || !(AIR || RP)) return;
+  var on = function (x) { b.classList.toggle('on', !!x); b.setAttribute('aria-pressed', x ? 'true' : 'false'); if (x) toast('Playing on the TV'); };
+  if (AIR) {
+    v.setAttribute('x-webkit-airplay', 'allow');
+    v.addEventListener('webkitplaybacktargetavailabilitychanged', function (e) { b.hidden = e.availability !== 'available'; });
+    v.addEventListener('webkitcurrentplaybacktargetiswirelesschanged', function () { on(v.webkitCurrentPlaybackTargetIsWireless); });
+  } else {
+    b.hidden = false;   // (Chrome: the list says if there's none)
+    ['connect', 'disconnect'].forEach(function (n) { RP.addEventListener(n, function () { on(RP.state === 'connected'); }); });
+  }
+  b.onclick = function () {
+    if (AIR) { try { v.webkitShowPlaybackTargetPicker(); } catch (e) {} return; }
+    if (P.hls && P.info) {   // (a Chromecast plays the film's own stream itself, not the page's pieces)
+      var t = v.currentTime; P.hls.destroy(); P.hls = null; v.src = gwUrl(P.info.direct || P.info.hls); try { v.currentTime = t; } catch (e) {}
+    }
+    RP.prompt().catch(function (e) {
+      var n = e && e.name;
+      if (n === 'NotFoundError') toast('No TVs found on this Wi-Fi');
+      else if (n === 'NotSupportedError' || n === 'InvalidStateError') toast('This film can’t be sent from here: try Chrome on a computer or phone');
+    });
+  };
+})();
 P.v.addEventListener('ended', function () { saveProgress(); if (P.queue.length) { var n = P.queue.shift(); play(n, P.queue); } else stopPlayer(); });
 P.v.addEventListener('timeupdate', function () { var left = (P.v.duration || 0) - P.v.currentTime; $('#pnext').classList.toggle('on', P.queue.length > 0 && P.v.duration > 0 && left < 40); });
 $('#pnext').onclick = function () { saveProgress(); var n = P.queue.shift(); play(n, P.queue); };
