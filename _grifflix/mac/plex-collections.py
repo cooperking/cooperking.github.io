@@ -208,7 +208,7 @@ SETS = ['A Hollis Frampton Odyssey', 'By Brakhage: An Anthology, Volumes One and
 # "By Brakhage: An Anthology, Volumes One and Two should also be a box set in the Criterion"; not every set goes there)
 ALSO_IN = {'Criterion Collection': ['By Brakhage: An Anthology, Volumes One and Two', 'Martha Graham: Dance on Film', 'Scorsese Shorts',
                                     'Symbiopsychotaxiplasm: Two Takes by William Greaves', 'The Kennedy Films of Robert Drew & Associates',
-                                    'The Signifyin’ Works of Marlon Riggs']}   # (and the sets he named first, 7 Nov 2026; not Hollis Frampton, not named)
+                                    'The Signifyin’ Works of Marlon Riggs', 'A Hollis Frampton Odyssey']}   # (the sets he named, 7-8 Nov 2026)
 # series put in a collection by name, each as one entry (John, 7 Nov 2026: "The Underground Railroad, Tanner 88, and Fishing
 # with John from TV Series should also be box sets in the Criterion Collection")
 SERIES_IN = {'Criterion Collection': ['The Underground Railroad', 'Tanner 88', 'Fishing with John']}
