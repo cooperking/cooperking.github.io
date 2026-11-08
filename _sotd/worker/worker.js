@@ -4706,17 +4706,22 @@ function uplInvite(link) {   // the link as pasted, when it's Spotify's own (the
 // sign-in. A snapshot: they upload a fresh export to bring in new songs (op csvup). UPL_CSV_MOST songs at most (Spotify's own
 // most for a playlist): members can have as many songs as they like; only songs with their own files are limited.
 const UPL_CSV_MOST = 10000, SP_ID = /^[0-9A-Za-z]{22}$/;
+// one adding of a song: the same song added again on another day is another adding, kept apart (John, 8 Nov 2026: Graceland,
+// in two playlists brought together, years apart: the later one was dropped as already there)
+function uplOcc(x) { return x.id + '|' + x.a; }
+function uplIsAdd(data, x) { const a = data.add || {}; return !!(a[uplOcc(x)] || a[x.id]); }   // (added from another playlist: by its adding; before 8 Nov 2026, by the song)
 function uplCsvSongs(list) {   // the songs as the page sends them, made safe: [{ a, id, title, artist, artists, aids, album, alid, img }] in the playlist's order
   if (!Array.isArray(list)) return null;
   const out = [], seen = new Set(), txt = (v, n) => String(v == null ? '' : v).replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, n);
   for (const x of list.slice(0, UPL_CSV_MOST)) {
-    if (!x || !SP_ID.test(String(x.id || '')) || seen.has(x.id)) continue;
+    if (!x || !SP_ID.test(String(x.id || ''))) continue;
     const at = Date.parse(x.a);
     if (isNaN(at)) continue;
+    const ok = x.id + '|' + new Date(at).toISOString().replace('.000Z', 'Z'); if (seen.has(ok)) continue;   // (the same adding twice: once; the same song added on another day: both)
     const artists = (Array.isArray(x.artists) ? x.artists : []).map(a => txt(a, 120)).filter(Boolean).slice(0, 12);
     const aids = (Array.isArray(x.aids) ? x.aids : []).map(String).filter(a => SP_ID.test(a)).slice(0, 12);
     const img = /^https:\/\/i\.scdn\.co\/image\/[0-9a-f]{20,60}$/.test(String(x.img || '')) ? String(x.img).replace('ab67616d0000b273', 'ab67616d00001e02') : '';   // (the 300-pixel cover, as Spotify's reads give)
-    seen.add(x.id);
+    seen.add(ok);
     out.push({ a: new Date(at).toISOString().replace('.000Z', 'Z'), id: x.id, title: txt(x.title, 200) || 'Untitled', artist: artists.join(', ') || txt(x.artist, 300), artists, aids,
       album: txt(x.album, 200), alid: SP_ID.test(String(x.alid || '')) ? x.alid : '', img, rd: /^\d{4}(-\d\d){0,2}$/.test(String(x.rd || '')) ? String(x.rd) : undefined, ab: /^[\w.-]{1,64}$/.test(String(x.ab || '')) ? String(x.ab) : undefined });   // (ab: who added it, their Spotify user id)   // (rd: Exportify's album release date)
   }
@@ -5264,8 +5269,15 @@ async function uplTake(env, pid, rec, U, items, was, now, quiet) {   // its song
   // a fresh export), and an update or John's own Spotify read never moves a song (John, 3 Nov 2026: "If we edit a playlist
   // date ... I don't want it automatically changed back via an import or my own spotify checks"). Days moved by hand (dd)
   // and the calendar's own setup (dates) are its owner's and no update touches them.
-  const keptA = new Map((data.songs || []).map(x => [x.id, x.a]));   // (not one its owner took off: put back on Spotify, it's back on its new day, as before)
-  items = items.map(x => keptA.get(x.id) && keptA.get(x.id) !== x.a && !(data.del || {})[x.id] ? Object.assign({}, x, { a: keptA.get(x.id) }) : x);
+  // (not one its owner took off: put back on Spotify, it's back on its new day, as before). A song there more than once (added
+  // again on another day) keeps each adding's own day: a new date only takes the place of one of its addings that's gone
+  const keptA = new Map(); (data.songs || []).forEach(x => { if (!keptA.has(x.id)) keptA.set(x.id, []); keptA.get(x.id).push(x.a); });
+  const nowA = new Set(items.map(uplOcc));
+  items = items.map(x => {
+    const ks = keptA.get(x.id); if (!ks || ks.includes(x.a) || (data.del || {})[x.id]) return x;
+    const free = ks.filter(a => !nowA.has(x.id + '|' + a)); if (!free.length) return x;
+    const a = free[0]; ks.splice(ks.indexOf(a), 1); nowA.add(x.id + '|' + a); return Object.assign({}, x, { a });
+  });
   items = uplKeepGone(rec, data, items, now);
   const fresh = items.filter(x => !had.has(x.id) && Date.parse(x.a) > (rec.base || 0) && !(data.rel || {})[x.id]);
   const bare = l => JSON.stringify((l || []).map(x => { const y = Object.assign({}, x); delete y.rd; return y; }));
@@ -5397,13 +5409,14 @@ async function uplJohnAuto(env, U, ownerId) {   // every imported playlist whose
       if (main !== 'liked') for (const sid of srcs) { const m = await spotify(rt, '/playlists/' + sid + '?fields=snapshot_id').catch(e => { if (e instanceof HttpError && e.extra && e.extra.spotify) throw e; return {}; }); if (m.snapshot_id) snaps[sid] = m.snapshot_id; }
       if (srcs.every(sid => snaps[sid] && rec.snaps && rec.snaps[sid] === snaps[sid])) { rec.auto = true; delete rec.autoErr; continue; }
       const items = await spReadList(rt, main), ids = new Set(items.map(x => x.id));
-      const data = await uplSongs(env, pid), have = (data.songs || []).filter(x => !(data.add || {})[x.id]).map(x => x.id), same = have.filter(t => ids.has(t)).length;
+      const data = await uplSongs(env, pid), have = (data.songs || []).filter(x => !uplIsAdd(data, x)).map(x => x.id), same = have.filter(t => ids.has(t)).length;
       if (have.length >= 5 && same < 0.5 * Math.min(have.length, items.length)) { rec.auto = false; rec.autoErr = 'The Spotify playlist of that name isn’t this one'; continue; }   // (another playlist with the same name: never its songs)
-      if (data.add) for (const x of data.songs || []) if (data.add[x.id] && !ids.has(x.id)) { items.push(x); ids.add(x.id); }   // (songs added to it from other playlists stay)
+      const occ = new Set(items.map(uplOcc));
+      if (data.add) for (const x of data.songs || []) if (uplIsAdd(data, x) && !occ.has(uplOcc(x))) { items.push(x); occ.add(uplOcc(x)); }   // (songs added to it from other playlists stay)
       let addNew = false;
       for (const k of rec.adds || []) {   // the playlists added to it: their new songs too
         const sid = map[k]; if (!sid || sid === main) continue;
-        for (const x of await spReadList(rt, sid)) if (!ids.has(x.id)) { items.push(x); ids.add(x.id); data.add = data.add || {}; data.add[x.id] = 1; addNew = true; }
+        for (const x of await spReadList(rt, sid)) if (!occ.has(uplOcc(x))) { items.push(x); occ.add(uplOcc(x)); data.add = data.add || {}; data.add[uplOcc(x)] = 1; addNew = true; }
       }
       if (addNew) await env.SOTD.put('upl:' + pid, JSON.stringify(data));
       await uplTake(env, pid, rec, U, items, rec.st, now);
@@ -6045,7 +6058,7 @@ async function memberUpl(request, url, env, answer) {
     if (body.file) rec.fk = uplFileKey(body.file);
     if (/^([0-9A-Za-z]{22}|liked)$/.test(String(body.spid || ''))) rec.spid = String(body.spid);   // (from Spotify itself: read from it from now on)
     const d0 = await uplSongs(env, pid);
-    if (d0.add) { const ids = new Set(items.map(x => x.id)); for (const x of d0.songs || []) if (d0.add[x.id] && !ids.has(x.id)) items.push(x); }   // (songs added to it from other playlists stay)
+    if (d0.add) { const occ = new Set(items.map(uplOcc)); for (const x of d0.songs || []) if (uplIsAdd(d0, x) && !occ.has(uplOcc(x))) { items.push(x); occ.add(uplOcc(x)); } }   // (songs added to it from other playlists stay)
     const r = await uplTake(env, pid, rec, U, items, rec.st, Date.now(), true);
     // songs in the download its owner took off the calendar: not put back, and said so (John, 3 Nov 2026: "it should be
     // flagged on import again, that it's not being put back"), with Put them back (op undel) on the page
@@ -6056,14 +6069,14 @@ async function memberUpl(request, url, env, answer) {
     if (rec.src !== 'csv') return answer(400, { error: rec.src === 'sp' ? 'That one is read from Spotify by itself: add songs to it in Spotify.' : 'Add songs to that one in the playlist itself.' });
     const items = uplCsvSongs(body.songs);
     if (!items || !items.length) return answer(400, { error: 'No songs in that file. Choose the file Exportify saved for your playlist.' });
-    const data = await uplSongs(env, pid), have = new Set((data.songs || []).map(x => x.id)), add = [], back = [];
+    const data = await uplSongs(env, pid), have = new Set((data.songs || []).map(uplOcc)), add = [], back = [];
     for (const x of items) {
-      if (!have.has(x.id)) { add.push(x); have.add(x.id); }
+      if (!have.has(uplOcc(x))) { add.push(x); have.add(uplOcc(x)); }
       else if (data.del && data.del[x.id]) back.push(x.id);   // (one taken off before: on again, as it was asked for)
     }
     if (body.file) { const k = uplFileKey(body.file); if (k && k !== rec.fk) { rec.adds = [...new Set((rec.adds || []).concat(k))].slice(0, 30); await uplPut(env, U); } }   // (the playlists added to it, so a fresh download updates them too: John, 3 Nov 2026)
     if (!add.length && !back.length) return answer(200, { ok: true, added: 0, pls: await uplMine(env, uplList(all, me, U, BOSS), U), view: await uplView(env, all, me, pid, rec) });
-    data.add = data.add || {}; for (const x of add) data.add[x.id] = 1;
+    data.add = data.add || {}; for (const x of add) data.add[uplOcc(x)] = 1;
     for (const t of back) delete data.del[t];
     if (data.order) data.order = add.map(x => x.id).concat(data.order);   // (a playlist: the new ones first, as its newest are)
     await env.SOTD.put('upl:' + pid, JSON.stringify(data));
