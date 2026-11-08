@@ -14,7 +14,7 @@
 <script>/* Grifflix's colours: the month's theme, as on Grifflix itself (John, 8 Nov 2026: "can my admin theme match the month too -
    main font can stay the same for readability, but colours"); the cards stay white to read */
 (function () {
-  var TL = window.GTHEMES = /*THEMELIST*/[{"k":"corridor","n":"The Corridor","f":"The Shining","y":1980,"bg":"#f5c400","d":0},{"k":"slices","n":"The Slices","f":"In the Mood for Love","y":2000,"bg":"#8e1420","d":1},{"k":"umbrellas","n":"The Umbrellas","f":"The Umbrellas of Cherbourg","y":1964,"bg":"#0495b1","d":0},{"k":"code","n":"The Code","f":"The Matrix","y":1999,"bg":"#03160a","d":1},{"k":"spiral","n":"The Spiral","f":"Vertigo","y":1958,"bg":"#d74719","d":0},{"k":"tron","n":"The Grid","f":"Tron","y":1982,"bg":"#030a1c","d":1},{"k":"pinboard","n":"The Pinboard","f":"All the President’s Men","y":1976,"bg":"#f4f1ea","d":0},{"k":"moon","n":"The Moon","f":"Hugo","y":2011,"bg":"#145063","d":1},{"k":"reel","n":"The Reel","f":"Sherlock Jr.","y":1924,"bg":"#e2aa1e","d":0},{"k":"oz","n":"The Yellow Brick Road","f":"The Wizard of Oz","y":1939,"bg":"#1e8c4e","d":1},{"k":"table","n":"The Table","f":"Dr. Strangelove","y":1964,"bg":"#0a0a0a","d":1},{"k":"globe","n":"The Snow Globe","f":"Citizen Kane","y":1941,"bg":"#a8161a","d":1},{"k":"jaws","n":"The Deep","f":"Jaws","y":1975,"bg":"#5a9fae","d":0},{"k":"credits","n":"Alpha 60","f":"Alphaville","y":1965,"bg":"#0b0b0c","d":1},{"k":"bars","n":"The Bars","f":"Psycho","y":1960,"bg":"#1578aa","d":1},{"k":"autumn","n":"Late Autumn","f":"Late Autumn","y":1960,"bg":"#c4321f","d":1}]/*THEMELIST END*/;   // (written by _grifflix/web/page.py from the page's THEMES; the first twelve its own order)
+  var TL = window.GTHEMES = /*THEMELIST*/[{"k":"corridor","n":"The Corridor","f":"The Shining","y":1980,"bg":"#f5c400","d":0,"font":"\"GF-corridor\", \"Bowlby One\", sans-serif","tw":400,"tt":"uppercase","fs":"normal"},{"k":"slices","n":"The Slices","f":"In the Mood for Love","y":2000,"bg":"#8e1420","d":1,"font":"\"Archivo Narrow\", sans-serif","tw":600,"tt":"lowercase","fs":"normal"},{"k":"umbrellas","n":"The Umbrellas","f":"The Umbrellas of Cherbourg","y":1964,"bg":"#0495b1","d":0,"font":"\"GF-umbrellas\", \"Special Gothic Expanded One\", sans-serif","tw":400,"tt":"lowercase","fs":"normal"},{"k":"code","n":"The Code","f":"The Matrix","y":1999,"bg":"#03160a","d":1,"font":"\"GF-code\", \"Share Tech Mono\", monospace","tw":400,"tt":"uppercase","fs":"normal"},{"k":"spiral","n":"The Spiral","f":"Vertigo","y":1958,"bg":"#d74719","d":0,"font":"\"GF-spiral\", \"Londrina Solid\", sans-serif","tw":900,"tt":"uppercase","fs":"normal"},{"k":"tron","n":"The Grid","f":"Tron","y":1982,"bg":"#030a1c","d":1,"font":"\"Orbitron\", sans-serif","tw":800,"tt":"uppercase","fs":"normal"},{"k":"pinboard","n":"The Pinboard","f":"All the President’s Men","y":1976,"bg":"#f4f1ea","d":0,"font":"\"GF-pinboard\", \"Anton\", sans-serif","tw":400,"tt":"uppercase","fs":"normal"},{"k":"moon","n":"The Moon","f":"Hugo","y":2011,"bg":"#145063","d":1,"font":"\"Cinzel\", serif","tw":700,"tt":"uppercase","fs":"normal"},{"k":"reel","n":"The Reel","f":"Sherlock Jr.","y":1924,"bg":"#e2aa1e","d":0,"font":"\"Della Respira\", serif","tw":400,"tt":"uppercase","fs":"normal"},{"k":"oz","n":"The Yellow Brick Road","f":"The Wizard of Oz","y":1939,"bg":"#1e8c4e","d":1,"font":"\"Federant\", serif","tw":400,"tt":"none","fs":"normal"},{"k":"table","n":"The Table","f":"Dr. Strangelove","y":1964,"bg":"#0a0a0a","d":1,"font":"\"Amatic SC\", sans-serif","tw":700,"tt":"uppercase","fs":"normal"},{"k":"globe","n":"The Snow Globe","f":"Citizen Kane","y":1941,"bg":"#a8161a","d":1,"font":"\"GF-globe\", \"League Gothic\", sans-serif","tw":400,"tt":"uppercase","fs":"normal"},{"k":"jaws","n":"The Deep","f":"Jaws","y":1975,"bg":"#5a9fae","d":0,"font":"\"Archivo Black\", sans-serif","tw":400,"tt":"uppercase","fs":"normal"},{"k":"credits","n":"Alpha 60","f":"Alphaville","y":1965,"bg":"#0b0b0c","d":1,"font":"\"Tilt Neon\", sans-serif","tw":400,"tt":"uppercase","fs":"normal"},{"k":"bars","n":"The Bars","f":"Psycho","y":1960,"bg":"#1578aa","d":1,"font":"\"News Cycle\", sans-serif","tw":700,"tt":"uppercase","fs":"normal"},{"k":"autumn","n":"Late Autumn","f":"Late Autumn","y":1960,"bg":"#c4321f","d":1,"font":"\"Yuji Syuku\", serif","tw":400,"tt":"none","fs":"normal"}]/*THEMELIST END*/;   // (written by _grifflix/web/page.py from the page's THEMES; the first twelve its own order)
   var ord = null; try { ord = JSON.parse(localStorage.getItem('grifflix-themes') || 'null'); } catch (e) {}
   var by = {}; TL.forEach(function (x) { by[x.k] = x; });
   if (!Array.isArray(ord) || ord.length !== 12 || !ord.every(function (k) { return by[k]; })) ord = TL.slice(0, 12).map(function (x) { return x.k; });
@@ -28,6 +28,15 @@
 })();
 </script>
 <link rel="stylesheet" href="/songs/admin.css">
+<!--THEMEFONTS--><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=Della+Respira&family=Special+Gothic+Expanded+One&family=Londrina+Solid:wght@400;900&family=Share+Tech+Mono&family=Archivo+Narrow:wght@600&family=Anton&family=IM+Fell+English+SC&family=Cinzel:wght@700&family=Tilt+Neon&family=Yuji+Syuku&family=Amatic+SC:wght@700&family=Big+Shoulders:wght@400;700&family=League+Gothic&family=News+Cycle:wght@700&family=Federant&family=Space+Mono:wght@400;700&family=Archivo+Black&family=Orbitron:wght@800&display=swap">
+<style>
+@font-face { font-family: "GF-corridor"; font-weight: 100 900; font-display: swap; src: url("https://sotd-playlists.cooperking.workers.dev/gf/helvetica-bold.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/helvetica-bold.woff") format("woff"); }
+@font-face { font-family: "GF-umbrellas"; font-weight: 100 900; font-display: swap; src: url("https://sotd-playlists.cooperking.workers.dev/gf/eurostile-extended.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/eurostile-extended.woff") format("woff"); }
+@font-face { font-family: "GF-spiral"; font-weight: 100 900; font-display: swap; src: url("https://sotd-playlists.cooperking.workers.dev/gf/clarendon-bold.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/clarendon-bold.woff") format("woff"); }
+@font-face { font-family: "GF-code"; font-weight: 100 900; font-display: swap; src: url("https://sotd-playlists.cooperking.workers.dev/gf/ocr-a.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/ocr-a.woff") format("woff"); }
+@font-face { font-family: "GF-pinboard"; font-weight: 100 900; font-display: swap; src: url("https://sotd-playlists.cooperking.workers.dev/gf/wood-gothic.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/wood-gothic.woff") format("woff"); }
+@font-face { font-family: "GF-globe"; font-weight: 100 900; font-display: swap; src: url("https://sotd-playlists.cooperking.workers.dev/gf/kane-display.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/kane-display.woff") format("woff"); }
+</style><!--THEMEFONTS END-->
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jost:wght@500;700&display=swap">
 <style>
 /* the headings in Grifflix's own type, as its pages (John, 8 Nov 2026: "Admin should match header fonts of Grifflix"); the words in cards as they were, to read */
@@ -74,6 +83,19 @@ h1 em { font-style: normal; font-weight: 400; }
 .reload svg { width: 20px; height: 20px; }
 .reload:active svg { transform: rotate(90deg); }
 .top h1 { padding-right: 56px; }
+/* the pop-ups (an invitation, its card and the ways to send it) in the month's theme, as Grifflix's own: its colour, Futura,
+   square edges (John, 8 Nov 2026: "the invite and share buttons to match themes") */
+dialog.pop { background: var(--bg); color: var(--ink); border: 1px solid var(--glass-line); border-radius: 0; box-shadow: 0 30px 80px rgba(0, 0, 0, .45); }
+dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: none; backdrop-filter: none; }
+.pop h3 { font: 700 24px/1.15 "GFutura", "Jost", sans-serif; letter-spacing: .14em; text-transform: uppercase; color: var(--ink); }
+.pop h3 em { font: italic 400 24px/1 var(--serif); letter-spacing: 0; text-transform: none; }
+.pop p { color: var(--ink-2); }
+.pop .kicker { color: var(--ink-2); }
+.pop img { border-radius: 0 !important; box-shadow: none !important; border: 1px solid var(--glass-line); }
+.pop .btn { border-radius: 0; background: transparent; color: var(--ink); border: 1px solid var(--ink); font-family: "GFutura", "Jost", sans-serif; letter-spacing: .18em; }
+.pop .btn.primary { background: var(--ink); color: var(--bg); }
+.pop .x { border-radius: 0; background: transparent; color: var(--ink); border: 1px solid var(--glass-line); }
+@media (max-width: 560px) { dialog.pop { border-radius: 0; } }
 .tmonths .fsw { grid-column: 3 / -1; margin-top: -3px; }
 .fs { font-size: 12px; }
 .fs.ok { color: #1a7a3c; }
@@ -282,31 +304,28 @@ h1 em { font-style: normal; font-weight: 400; }
     g('admin', body).then(function (j) {
       if (done) done();
       members(j.members);
-      return drawCard(j.name).then(function (jpeg) { return g('admin', { op: 'card', id: j.id, card: jpeg, link: j.link }).then(function (c) { showInvite(j.name, c.page, jpeg); }); });
+      return drawCard(j.name).then(function (jpeg) { var th = cardTheme(); return g('admin', { op: 'card', id: j.id, card: jpeg, link: j.link, bg: th.bg, ink: th.d ? '#fff' : '#000' }).then(function (c) { showInvite(j.name, c.page, jpeg); }); });
     }).catch(function (e) { toast(e.message); });
   }
-  // the card: 1200 × 630, as Messages and WhatsApp show it; the month's colours (as the page), the clapperboard, their name
+  // the card: 1200 × 630, as Messages and WhatsApp show it, in this month's theme (John, 8 Nov 2026: "the invite and share
+  // buttons to match themes"): its colour, their name in its type, "is invited to" and GRIFFLIX in Futura, Grifflix's icon
+  function cardTheme() { var m = new Date().getMonth(); try { m = +new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', month: 'numeric' }).format(new Date()) - 1; } catch (e) {} return TBY[GORDER[m]] || GTHEMES[0]; }
   function drawCard(name) {
     var c = document.createElement('canvas'); c.width = 1200; c.height = 630; var x = c.getContext('2d');
-    var load = function (src) { return new Promise(function (ok, no) { var i = new Image(); i.onload = function () { ok(i); }; i.onerror = no; i.src = src; }); };
-    return Promise.all([null, load('/grifflix/icon-1024.png'), document.fonts.load('400 120px "Bebas Neue"'), document.fonts.load('italic 400 60px Newsreader')]).then(function (r) {
-      var cs = getComputedStyle(document.documentElement), col = function (k) { return cs.getPropertyValue(k).trim(); };
-      x.fillStyle = col('--bg'); x.fillRect(0, 0, 1200, 630);   // (the month's ground, and its glows, as Grifflix's page draws them)
-      [['--g1', 180, 60, 620], ['--g2', 1080, 90, 640], ['--g3', 980, 600, 700], ['--g4', 120, 620, 560]].forEach(function (gl) {
-        var gr = x.createRadialGradient(gl[1], gl[2], 0, gl[1], gl[2], gl[3]); gr.addColorStop(0, col(gl[0])); gr.addColorStop(1, 'rgba(0,0,0,0)');
-        x.globalAlpha = .85; x.fillStyle = gr; x.fillRect(0, 0, 1200, 630); x.globalAlpha = 1;
-      });
-      x.fillStyle = 'rgba(10,4,12,.16)'; x.fillRect(0, 0, 1200, 630);
-      x.save(); x.beginPath(); var rr = 60, ix = 70, iy = 95, s = 440; x.moveTo(ix + rr, iy); x.arcTo(ix + s, iy, ix + s, iy + s, rr); x.arcTo(ix + s, iy + s, ix, iy + s, rr); x.arcTo(ix, iy + s, ix, iy, rr); x.arcTo(ix, iy, ix + s, iy, rr); x.closePath();
-      x.shadowColor = 'rgba(60,0,0,.45)'; x.shadowBlur = 40; x.shadowOffsetY = 14; x.fillStyle = '#fff'; x.fill(); x.restore();
-      x.save(); x.clip(); x.restore();
-      x.save(); x.beginPath(); x.moveTo(ix + rr, iy); x.arcTo(ix + s, iy, ix + s, iy + s, rr); x.arcTo(ix + s, iy + s, ix, iy + s, rr); x.arcTo(ix, iy + s, ix, iy, rr); x.arcTo(ix, iy, ix + s, iy, rr); x.closePath(); x.clip();
-      x.drawImage(r[1], ix, iy, s, s); x.restore();
-      x.fillStyle = '#fffaf5'; x.textBaseline = 'alphabetic';
-      var fit = function (t, font, max, size) { do { x.font = font.replace('$', size); size -= 4; } while (x.measureText(t).width > max && size > 30); return size + 4; };
-      fit(name, '400 $px Newsreader', 590, 112); x.fillText(name, 560, 290);
-      x.font = 'italic 400 54px Newsreader'; x.fillText('is invited to', 562, 365);
-      x.font = '400 140px "Bebas Neue"'; x.fillText('GRIFFLIX', 556, 500);
+    var t = cardTheme(), ink = t.d ? '#ffffff' : '#000000', soft = t.d ? 'rgba(255,255,255,.75)' : 'rgba(0,0,0,.7)';
+    var FUT = '"GFutura", "Futura", "Jost", "Century Gothic", sans-serif', tf = t.font || FUT, tw = t.tw || 700, it = t.fs === 'italic' ? 'italic ' : '';
+    var load = function (src) { return new Promise(function (ok) { var i = new Image(); i.onload = function () { ok(i); }; i.onerror = function () { ok(null); }; i.src = src; }); };
+    return Promise.all([load('/grifflix/icon-1024.png'), document.fonts.load('700 30px ' + FUT), document.fonts.load('400 24px ' + FUT), document.fonts.load(it + tw + ' 100px ' + tf)].map(function (p) { return p.catch(function () {}); })).then(function (r) {
+      x.fillStyle = t.bg; x.fillRect(0, 0, 1200, 630);
+      var spaced = function (txt, px, y, font, sp, col) { x.font = font; x.fillStyle = col; var cx = px; for (var k = 0; k < txt.length; k++) { x.fillText(txt[k], cx, y); cx += x.measureText(txt[k]).width + sp; } };
+      x.textBaseline = 'alphabetic';
+      if (r[0]) { x.drawImage(r[0], 760, 135, 360, 360); }   // (Grifflix's icon: black, the name, its one bright line)
+      var nm = (t.tt || 'uppercase') === 'uppercase' ? name.toUpperCase() : name, size = 130, maxW = 620;
+      do { x.font = it + tw + ' ' + size + 'px ' + tf; size -= 4; } while (x.measureText(nm).width > maxW && size > 40);
+      size += 4; x.fillStyle = ink; x.fillText(nm, 76, 270);
+      spaced('IS INVITED TO', 80, 340, '500 26px ' + FUT, 9, soft);
+      spaced('GRIFFLIX', 78, 470, '700 76px ' + FUT, 36, ink);
+      spaced(t.n.toUpperCase() + ' \u00b7 ' + t.f.toUpperCase(), 80, 560, '500 16px ' + FUT, 5, soft);   // (the month's theme, small)
       return c.toDataURL('image/jpeg', .88);
     });
   }
