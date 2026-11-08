@@ -614,6 +614,10 @@ html.tv #bgrid .nowrows .row h2 { font-size: 30px !important; }
   #bsin .hero h1, html[data-page] .hero h1 { font-size: 34px !important; margin: 0; }
   #bsin .hero { margin: 18px 0 10px !important; padding: 0 !important; text-align: left; }
 }
+/* in Search's pop-up the shelves' own title goes (the chosen tab says it): the tabs stay put as they're changed */
+#bsin .hero { display: none !important; }
+#bsin .tabs { margin-top: 26px; }
+html.tv #bsin .tabs .pill { min-height: 56px; font-size: 16px !important; padding: 0 22px !important; }
 /* sort and filter: two icons on the tabs' row; their panel under them */
 .sfbar { display: inline-flex; gap: 8px; align-items: center; }
 .sfb { display: inline-flex !important; align-items: center; gap: 8px; min-height: 40px; padding: 0 12px !important; position: relative; }
@@ -1745,7 +1749,7 @@ function drawMonth() {
   $('.bar-top .brand').insertAdjacentHTML('afterend', '<button class="pill" id="tvview" aria-label="Calendar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span>' + (VIEW() === 'calendar' ? 'The theme' : 'Calendar') + '</span></button>');
   $('#tvview').onclick = function () {
     if (MOBQ()) { S.mcal = !S.mcal; drawMonth(); window.scrollTo(0, 0); return; }   // (a phone: the month's calendar on the page, as the songs' calendar; again for the theme)
-    if (VIEW() === 'themes') return calSheet();   // (John, 8 Nov 2026: "calendar next to grifflix, which should bring that month's calendar up ... in the same style as that month")
+    if (VIEW() === 'themes') { S.calDay = null; return calSheet(); }   // (John, 8 Nov 2026: "calendar next to grifflix, which should bring that month's calendar up ... in the same style as that month")
     store.set('grifflix-tvview', VIEW() === 'calendar' ? 'themes' : 'calendar'); drawMonth(); var t = $('#cal .today') || $('#cal [data-day]'); if (t) t.focus(); };
   var h = '', tbl = TABLE(m), hall = HALL(m);
   if (!tbl && !hall) {
@@ -1990,13 +1994,13 @@ function calSheet() {   // the month's calendar, a pop-up in its theme's colour 
   }).join('') + '</ol>';
   openSheet(h + '</div></div>');
   S.fromCal = false;
-  $$('#sheetIn .tcl').forEach(function (b) { b.onclick = function () { S.fromCal = true; daySheet(b.dataset.day); }; });
-  $$('#sheetIn .tcd[data-day]').forEach(function (b) { b.onclick = function () { S.fromCal = true; daySheet(b.dataset.day); }; });
+  $$('#sheetIn .tcl').forEach(function (b) { b.onclick = function () { S.fromCal = true; S.calDay = b.dataset.day; daySheet(b.dataset.day); }; });
+  $$('#sheetIn .tcd[data-day]').forEach(function (b) { b.onclick = function () { S.fromCal = true; S.calDay = b.dataset.day; daySheet(b.dataset.day); }; });
   $$('#sheetIn .tctools [data-tt]').forEach(function (t) { t.onclick = function () {
     var w = t.dataset.tt, el = w === 'search' ? $$('.bar-top [data-go="search"]').filter(function (x) { return x.offsetParent; })[0] || $('.bar-top [data-go="search"]') : w === 'refresh' ? ($('#refresh') || $('#refresh2')) : $('#who');
     if (el) el.click(); }; });
   $('#tcprev').onclick = function () { calStep(-1); }; $('#tcnext').onclick = function () { calStep(1); };
-  if (TV) setTimeout(function () { var f = $('#sheetIn .tcd.today.has') || $$('#sheetIn .tcd.has').pop(); if (f) f.focus(); }, 60);
+  if (TV) setTimeout(function () { var f = (S.calDay && $('#sheetIn .tcd.has[data-day="' + S.calDay + '"]')) || $('#sheetIn .tcd.today.has') || $$('#sheetIn .tcd.has').pop(); if (f) f.focus(); }, 60);   // (back from a day: on that day, not the last)
 }
 function calStep(d) {   // the calendar pop-up: the month before or after (the theme behind it follows)
   if (!S.step || !S.step(d)) return false;
@@ -2685,10 +2689,14 @@ function searchSheet(onPick, title) {
   var t, inp = $('#sq');
   if (TV) {   // a TV: the box chosen first, and only OK on it brings Amazon's keyboard up (John, 8 Nov 2026: "when you click search the typing text from amazon comes up immediately which looks bad")
     inp.readOnly = true; inp.setAttribute('inputmode', 'none');
-    var wake = function () { if (!inp.readOnly) return; inp.readOnly = false; inp.removeAttribute('inputmode'); inp.blur(); setTimeout(function () { inp.focus(); }, 30); };
+    var wake = function () {   // OK on it: typing on, and Fire TV's keyboard up (the app's own way where it has one)
+      if (!inp.readOnly) return; inp.readOnly = false; inp.removeAttribute('inputmode'); inp.focus();
+      try { if (window.GRIFFLIXTV && GRIFFLIXTV.keyboard) { GRIFFLIXTV.keyboard(); return; } } catch (e) {}
+      inp.waking = true; inp.blur(); setTimeout(function () { inp.focus(); inp.waking = false; }, 30);
+    };
     inp.addEventListener('keydown', function (e) { if (inp.readOnly && (e.key === 'Enter' || e.keyCode === 23 || e.keyCode === 13)) { e.preventDefault(); wake(); } });
     inp.addEventListener('click', wake);
-    inp.addEventListener('blur', function () { if (!inp.value) { inp.readOnly = true; inp.setAttribute('inputmode', 'none'); } });
+    inp.addEventListener('blur', function () { if (!inp.value && !inp.waking) { inp.readOnly = true; inp.setAttribute('inputmode', 'none'); } });
     setTimeout(function () { inp.focus(); }, 50);
   } else setTimeout(function () { inp.focus(); }, 50);
   inp.oninput = function () {
