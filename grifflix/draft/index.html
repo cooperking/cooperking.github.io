@@ -1630,6 +1630,7 @@ function start() {
       $('#who').textContent = 'Sign in';
       return route();   // (all from the site's own files: the Mac mini needn't be on)
     }
+    macWake();
     api('me').then(function (me) {
       ME = me;
       $('#who').textContent = me.name ? me.name.split(' ')[0] : 'Profile';
@@ -1644,6 +1645,11 @@ function start() {
     .then(function (c) { GW = String(saved || c.gateway || '').replace(/\/$/, ''); go(); });
 }
 
+function macWake() {   // a knock on the Mac mini as Grifflix opens (and comes back): it wakes, so it's up by the time a film is chosen (John, 8 Nov 2026)
+  if (DEMO || !GW || !TOKEN) return;
+  try { fetch(GW + '/api/me', { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' }).catch(function () {}); } catch (e) {}
+}
+document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && Date.now() - (macWake.at || 0) > 120000) { macWake.at = Date.now(); macWake(); } });
 function welcome(why) {
   $('.bar-top').classList.add('hide');
   var msg = {
@@ -2684,7 +2690,9 @@ function itemSheet(it, ctx) {
     own('lists').then(function (L) { var h = L.hearts.some(function (x) { return x.id === it.id; }); if (h !== !!it.hearted) { it.hearted = full.hearted = h; var b = $('#aheart'); if (b && dlg.open) b.innerHTML = HEART(h); } }).catch(function () {});
     return soon(mac('item?id=' + it.id), 6000).then(function (m) { ['pos', 'next', 'subs'].forEach(function (k) { if (m[k] != null) full[k] = m[k]; });
       var at = {}; (m.episodes || []).forEach(function (e) { if (e.pos) at[e.id] = e.pos; }); (full.episodes || []).forEach(function (e) { if (at[e.id]) e.pos = at[e.id]; }); return full; }, function () { return full; }); };
-  api('item?id=' + it.id).then(mine).then(function (full) { if (!dlg.open) return; Object.assign(it, full); var had = document.activeElement && document.activeElement.id; $('#isbody').innerHTML = bodyHTML(it, ctx); wireBody(it, ctx); if (TV) { var back = had && !/^(asignin|aplay|atrailer)$/.test(had) && $('#' + had); if (back) back.focus({ preventScroll: true }); else tvStart(); }   /* (the trailer arrives with the details: chosen then, unless something else was) */ }).catch(function () {});
+  var drawFull = function (full) { if (!dlg.open) return; Object.assign(it, full); var had = document.activeElement && document.activeElement.id; $('#isbody').innerHTML = bodyHTML(it, ctx); wireBody(it, ctx); if (TV) { var back = had && !/^(asignin|aplay|atrailer)$/.test(had) && $('#' + had); if (back) back.focus({ preventScroll: true }); else tvStart(); }   /* (the trailer arrives with the details: chosen then, unless something else was) */ };   // (the site's details at once; the Mac's own for this member when it answers, without waiting for it: John, 8 Nov 2026)
+  api('item?id=' + it.id).then(function (full) { drawFull(full); return mine(full); }).then(function (full) { if (full && dlg.open && S.sheetItem === it.id) drawFull(full); }).catch(function () {});
+  S.sheetItem = it.id;
 }
 function typeName(it) { return { movie: 'Film', series: 'Series', episode: it.series || 'Episode', video: 'Home video', photo: 'Photo' }[it.type] || ''; }
 function bodyHTML(it, ctx) {
@@ -3052,7 +3060,15 @@ function play(it, queue, fromStart) {
   $('#pmsg').classList.remove('on'); $('#pnext').classList.remove('on');
   P.el.classList.add('on'); document.documentElement.style.overflow = 'hidden';
   if (DEMO) { $('#pmsg').textContent = 'In the demo there’s nothing to play. Once the Mac mini is connected, “' + showName(it) + '” plays here.'; $('#pmsg').classList.add('on'); return; }
-  api('play?id=' + it.id + (HEVC ? '&hevc=1' : '')).then(function (info) {
+  var tries = 0, ask = function () {   // (the Mac asleep: it wakes to the first knock; tell them, and knock again for a minute)
+    return api('play?id=' + it.id + (HEVC ? '&hevc=1' : '')).catch(function (e) {
+      if (e && (e.status === 401 || e.status === 403 || e.status === 404) || ++tries > 8 || P.it !== it) throw e;
+      $('#pmsg').textContent = 'Waking the Mac mini… (a moment)'; $('#pmsg').classList.add('on');
+      return new Promise(function (ok) { setTimeout(ok, 6000); }).then(ask);
+    });
+  };
+  ask().then(function (info) {
+    $('#pmsg').classList.remove('on');
     P.info = info;
     var v = P.v, start = fromStart ? 0 : (info.pos || 0);
     while (v.firstChild) v.removeChild(v.firstChild);
