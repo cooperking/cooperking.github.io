@@ -864,7 +864,7 @@ html[data-theme=oz] .leaf2 b { color: #0f7b3e; }
 .jawspic.rise { animation: jrise .6s cubic-bezier(.2, .7, .2, 1) both; }
 @keyframes jrise { from { transform: translateY(70px); opacity: .4; } to { transform: none; opacity: 1; } }
 .jawsfin { position: absolute; width: 120px; height: 100px; z-index: 1; pointer-events: none; animation: jfin 9s linear infinite; }
-@keyframes jfin { 0% { transform: translateX(-260px); } 45% { transform: translateX(260px) scaleX(1); } 50% { transform: translateX(260px) scaleX(-1); } 95% { transform: translateX(-260px) scaleX(-1); } 100% { transform: translateX(-260px) scaleX(1); } }   /* (to and fro past the day's barrel) */
+@keyframes jfin { 0% { transform: translateX(-260px) scaleX(-1); } 45% { transform: translateX(260px) scaleX(-1); } 50% { transform: translateX(260px) scaleX(1); } 95% { transform: translateX(-260px) scaleX(1); } 100% { transform: translateX(-260px) scaleX(-1); } }   /* (its tip always sweeping back, the way it swims) */   /* (to and fro past the day's barrel) */
 .th-jaws .vday { width: 70px; height: 96px; background: none; overflow: visible; z-index: 4; }
 .th-jaws .barrel { position: absolute; inset: 0; border-radius: 14px / 22px; background: linear-gradient(90deg, #b88a00, #ffd21f 35%, #ffe680 50%, #ffd21f 65%, #b88a00), #ffd21f; box-shadow: inset 0 14px 0 -10px rgba(0, 0, 0, .35), inset 0 -14px 0 -10px rgba(0, 0, 0, .35); animation: bob 2.6s ease-in-out infinite; }
 .th-jaws .vday:nth-child(2n) .barrel { animation-delay: -1.3s; }
@@ -2072,7 +2072,7 @@ THEMEFX.jaws = {
     for (var x = 0; x <= c.W + 40; x += 40) w += (x ? ' Q' + (x - 20) + ',' + (g.sy - 9) + ' ' : 'M') + x + ',' + g.sy;
     return '<svg class="jawsea" viewBox="0 0 ' + c.W + ' ' + c.H + '" preserveAspectRatio="none"><rect x="0" y="' + g.top + '" width="' + c.W + '" height="' + (g.sy - g.top) + '" fill="#f4f1ec"/><path d="' + w + ' L' + c.W + ',' + g.top + ' L0,' + g.top + ' Z" fill="#f4f1ec"/><path d="' + w + '" fill="none" stroke="#fff" stroke-width="3" opacity=".8"/></svg>' +
       '<div class="jawspic" id="jawspic" style="left:' + (g.fx - g.pw / 2).toFixed(0) + 'px;top:' + (g.sy + g.py - g.ph / 2).toFixed(0) + 'px;width:' + g.pw + 'px;height:' + g.ph + 'px"></div>' +
-      '<svg class="jawsfin" viewBox="0 0 120 100" style="left:' + (g.fx - 60).toFixed(0) + 'px;top:' + (g.sy - 92) + 'px"><path d="M4,100 C30,78 52,40 66,2 C78,30 92,70 116,100 Z" fill="#1c2a36"/><path d="M66,2 C76,34 88,66 104,92" stroke="#3a4b58" stroke-width="3" fill="none"/></svg>';   // (the fin, circling, as in the film)
+      '<svg class="jawsfin" viewBox="0 0 120 100" style="left:' + (g.fx - 60).toFixed(0) + 'px;top:' + (g.sy - 92) + 'px"><path d="M2,100 C24,72 50,28 104,2 C90,30 84,66 112,100 Z" fill="#2b3640"/><path d="M2,100 C24,72 50,28 104,2 C62,30 40,66 30,100 Z" fill="#3d4a55"/></svg>';   // (the fin, circling, as in the film)
   },
   cell: function (d) { return '<i class="barrel"></i><b class="bn">' + d + '</b>'; },
   swipe: function (c) { return { x: -1, y: 0, px: c.mob ? 50 : 80 }; },
