@@ -184,7 +184,13 @@ def convert(item, ffmpeg, ffprobe, st):
     base, ext = os.path.splitext(src)
     mkv = ext.lower() == '.mkv'   # (an .mkv stays .mkv: the same name, so Jellyfin keeps it as the same film)
     dst = base + ('.mkv' if mkv else '.mp4')
-    tmp = base + '.grifflix-converting' + ('.mkv' if mkv else '.mp4')
+    # the new file is made outside the libraries ("Grifflix Converting", beside them on the same drive), so Jellyfin
+    # doesn't list it as a new film while it's being made (John, 8 Nov 2026: Back to the Future showed as newest at 11%)
+    roots = [l for vf_ in call('GET', '/Library/VirtualFolders') or [] for l in g(vf_, 'Locations', [])]
+    root = next((r for r in roots if src.startswith(r.rstrip('/') + '/')), os.path.dirname(src))
+    work = os.path.join(os.path.dirname(root.rstrip('/')), 'Grifflix Converting')
+    os.makedirs(work, exist_ok=True)
+    tmp = os.path.join(work, os.path.basename(base) + '.grifflix-converting' + ('.mkv' if mkv else '.mp4'))
     # room: the new file (at most about the original's size) and the original kept
     free = shutil.disk_usage(os.path.dirname(src)).free
     if free < os.path.getsize(src) * 1.2 + 5e9:
@@ -258,18 +264,20 @@ def convert(item, ffmpeg, ffprobe, st):
         os.remove(tmp)
         raise RuntimeError('the new file is %.0f s long, the original %.0f s: kept the original' % (new_dur, dur))
 
-    # the original out of the library, kept; the new one in its place
-    roots = [l for vf_ in call('GET', '/Library/VirtualFolders') or [] for l in g(vf_, 'Locations', [])]
-    root = next((r for r in roots if src.startswith(r.rstrip('/') + '/')), os.path.dirname(src))
+    # the original out of the library, kept; the new one in its place (moved in only now, whole and checked)
     keep_at = os.path.join(os.path.dirname(root.rstrip('/')), 'Grifflix Originals', os.path.basename(root.rstrip('/')), os.path.relpath(src, root))
     os.makedirs(os.path.dirname(keep_at), exist_ok=True)
     shutil.move(src, keep_at)
-    os.replace(tmp, dst)
+    shutil.move(tmp, dst)   # (the same drive: a rename)
     mins = (time.time() - t0) / 60
     log('  done in %d min: %.1f GB → %.1f GB; original kept in %s' % (mins, item['gb'], os.path.getsize(dst) / 1e9, os.path.dirname(keep_at)))
     st['done'][item['id']] = {'name': item['name'], 'from': src, 'to': dst, 'kept': keep_at, 'at': int(time.time()), 'mins': round(mins)}
     if dst != src:   # a new name: Jellyfin will make it a new item; noted, so everything follows it once it's seen
-        st['remap'][item['id']] = {'to': dst, 'sets': sets_holding(item['id'])}
+        try:   # (when it was first added: the new item keeps it, so a converted film isn't "new")
+            added = g(call('GET', '/Users/%s/Items/%s' % (s['jf_user_id'], item['id'])) or {}, 'DateCreated')
+        except Exception:
+            added = None
+        st['remap'][item['id']] = {'to': dst, 'sets': sets_holding(item['id']), 'added': added}
     save_state(st)
     try:
         call('POST', '/Library/Media/Updated', {'Updates': [{'Path': src, 'UpdateType': 'Deleted'}, {'Path': dst, 'UpdateType': 'Created' if dst != src else 'Modified'}]})
@@ -318,6 +326,13 @@ def follow_up(st):
                 call('POST', '/Collections/%s/Items' % b, Ids=new)
             except Exception:
                 pass
+        if x.get('added'):   # its first "added" date back, so it doesn't show among the new films (John, 8 Nov 2026)
+            try:
+                full = call('GET', '/Users/%s/Items/%s' % (s['jf_user_id'], new))
+                full['DateCreated'] = x['added']
+                call('POST', '/Items/%s' % new, full)
+            except Exception as e:
+                log('  couldn’t keep its date added:', e)
         m[old] = new
     if m:
         try:
@@ -364,6 +379,26 @@ if CMD != 'go':
 ffmpeg, ffprobe = tools()
 if 'libx264' not in subprocess.run([ffmpeg, '-hide_banner', '-encoders'], capture_output=True, text=True).stdout:
     sys.exit('This ffmpeg has no H.264 encoder. Tell Claude.')
+def leftovers():
+    """Half-made files an earlier version left inside the libraries (it made them beside the film): removed, so they
+    don't show as films. Only files named *.grifflix-converting.*, which nothing else makes."""
+    n = 0
+    for root in [l for vf_ in call('GET', '/Library/VirtualFolders') or [] for l in g(vf_, 'Locations', [])]:
+        for d, _, files in os.walk(root):
+            for f in files:
+                if '.grifflix-converting.' in f:
+                    try:
+                        os.remove(os.path.join(d, f))
+                        n += 1
+                    except OSError:
+                        pass
+    if n:
+        log('%d half-made file%s from before taken out of the libraries' % (n, '' if n == 1 else 's'))
+        try:
+            call('POST', '/Library/Refresh')   # (Jellyfin looks again, so they go from Grifflix too)
+        except Exception:
+            pass
+leftovers()
 log('starting: %d to convert' % len(items))
 RUN['total'] = len(items)
 follow_up(st)
@@ -380,7 +415,10 @@ for n, it in enumerate(items):
         log('  FAILED', it['name'], e)
         st['failed'][it['id']] = {'name': it['name'], 'why': str(e)[:300], 'path': it['path']}
         save_state(st)
-    if n % 5 == 4:
+    for _ in range(9):   # (each film's follow-up straight away, once Jellyfin has the new file: its date added, collections, lists)
+        if not st['remap']:
+            break
+        time.sleep(10)
         follow_up(st)
 RUN['n'] = len(items)
 now('finished')
