@@ -93,6 +93,8 @@
         <p class="stat" id="cvsay"></p>
         <div class="cvbar" id="cvbar" hidden><span id="cvfill"></span></div>
         <ul class="changes" id="cvlist"></ul>
+        <p class="stat" id="orsay" style="margin-top:14px"></p>
+        <div class="state"><button class="btn" id="orsee" type="button" hidden>The originals</button></div>
       </section>
       <section class="card">
         <div class="kicker">Movie of the Day</div>
@@ -346,6 +348,35 @@
       }).catch(function () {});
   }
 
+  // ---- the originals convert.py kept ("Grifflix Originals" on the Mac's drive): what they take, and deleting them
+  var GB = function (n) { return n >= 1e12 ? (n / 1e12).toFixed(1) + ' TB' : (n / 1e9).toFixed(n >= 1e10 ? 0 : 1) + ' GB'; };
+  function originals(body) {
+    return fetch(GW + '/api/originals', body ? { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : { headers: { Authorization: 'Bearer ' + TOKEN } })
+      .then(function (r) { if (!r.ok) throw new Error(r.status === 404 ? 'The Mac mini needs its update for this.' : 'The Mac mini said ' + r.status); return r.json(); });
+  }
+  function orLine(o) {
+    $('#orsay').innerHTML = o.originals.length ? '<b>Originals kept:</b> ' + o.originals.length + ' film' + (o.originals.length === 1 ? '' : 's') + ', ' + GB(o.size) + ' · ' + GB(o.free) + ' free on the drive. Once converted films look and sound right, their originals can go.'
+      : 'No originals kept' + (o.free ? ' · ' + GB(o.free) + ' free on the drive' : '') + '.';
+    $('#orsee').hidden = !o.originals.length;
+  }
+  function orSheet(o) {
+    $('#invin').innerHTML = '<div class="pop-head"><span class="kicker">Grifflix Originals</span><button class="x" id="orx" aria-label="Close"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 3l10 10M13 3 3 13"/></svg></button></div>' +
+      '<h3>' + o.originals.length + ' <em>originals</em>, ' + GB(o.size) + '</h3><p>The films as they were before converting, kept on the Mac’s drive. Grifflix plays the converted ones; deleting an original can’t be undone.</p>' +
+      '<div class="state" style="margin:10px 0 14px"><button class="btn" id="orall" type="button">Delete all ' + o.originals.length + '</button></div>' +
+      '<ul class="changes">' + o.originals.map(function (k) { return '<li style="display:flex;gap:10px;align-items:center"><span style="flex:1">' + esc(k.name) + '<span class="when">' + GB(k.size) + ' · converted ' + esc(when(k.at * 1000)) + '</span></span><button class="btn small" data-ordel="' + k.id + '">Delete</button></li>'; }).join('') + '</ul>';
+    var d = $('#invpop'); if (!d.open) d.showModal();
+    $('#orx').onclick = function () { d.close(); };
+    var del = function (b, body, label) {
+      if (!b.dataset.sure) { b.dataset.sure = 1; b.textContent = label; return; }
+      b.disabled = true; b.textContent = 'Deleting…';
+      originals(body).then(function (n) { toast('Deleted: ' + GB(o.size - n.size) + ' freed'); orLine(n); if (n.originals.length) orSheet(n); else d.close(); })
+        .catch(function (e) { b.disabled = false; toast(e.message); });
+    };
+    $('#orall').onclick = function () { del(this, { op: 'delete', all: true }, 'Tap again: delete all ' + o.originals.length); };
+    [].forEach.call(document.querySelectorAll('[data-ordel]'), function (b) { b.onclick = function () { del(b, { op: 'delete', ids: [b.dataset.ordel] }, 'Sure?'); }; });
+  }
+  $('#orsee').onclick = function () { var b = this; b.disabled = true; originals().then(function (o) { b.disabled = false; orLine(o); orSheet(o); }).catch(function (e) { b.disabled = false; toast(e.message); }); };
+
   // ---- conversions (convert.py on the Mac): the film it's on and how far, and those done
   function convert() {
     if (!GW) return;
@@ -398,7 +429,7 @@
     fetch('/grifflix/config.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (c) {
       var gw = String(c.gateway || '').replace(/\/$/, ''), t0 = Date.now();
       if (!gw) { $('#machead').textContent = 'Not connected'; return; }
-      GW = gw; convert();
+      GW = gw; convert(); originals().then(orLine).catch(function () {});
       return fetch(gw + '/api/me', { headers: { Authorization: 'Bearer ' + TOKEN } }).then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (me) {
         var L = me.libraries || {};
         $('#machead').innerHTML = 'Answering <em>(' + (Date.now() - t0) + ' ms)</em>';
