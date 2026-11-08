@@ -618,6 +618,54 @@ html.tv #bgrid .nowrows .row h2, html.tv #sheet .row h2 { font-size: 28px !impor
 #bsin .hero { display: none !important; }
 #bsin .tabs { margin-top: 26px; }
 html.tv #bsin .tabs .pill { min-height: 56px; font-size: 16px !important; padding: 0 22px !important; }
+/* a film's own page, in the month's style (John, 8 Nov 2026: "should follow the month style nicely. Make it elegant and readable -
+   picture should always display correctly"): the whole screen in the month's colour; on a computer or TV the poster whole on
+   the left and the words beside it; on a phone the film's wide picture across the top at its own shape, the words under it */
+#sheet:has(.film) { position: fixed; inset: 0; width: 100vw; height: 100%; max-width: none; max-height: none; margin: 0; border: 0; padding: 0; }
+#sheet .sheet:has(.film) { width: 100% !important; height: 100%; max-height: none; border: 0; border-radius: 0; box-shadow: none; background: var(--bg) !important; overflow: auto; }
+.film { position: relative; min-height: 100%; color: var(--fg); }
+.film .heroimg::after { display: none !important; }
+.film .heroimg img { opacity: 1 !important; object-fit: cover; }
+.film .in { margin: 0 !important; max-width: none !important; }
+.film h2 { font-size: clamp(38px, 4.6vw, 76px) !important; line-height: 1.02 !important; margin: 10px 0 14px !important; overflow-wrap: break-word; }
+.film .date { font: 500 13px/1.2 var(--kfont) !important; letter-spacing: .3em; color: var(--fg-2) !important; }
+.film .meta { font: 500 14px/1.4 var(--kfont) !important; letter-spacing: .14em; color: var(--fg-2) !important; gap: 6px 16px; }
+.film .meta .c { border-radius: 0 !important; border-color: rgba(var(--kink), .45) !important; }
+.film .tag { font: 500 21px/1.4 var(--kfont) !important; font-style: normal !important; letter-spacing: .02em; color: var(--fg) !important; margin-top: 22px !important; }
+.film .ov { font: 400 18px/1.65 var(--kfont) !important; letter-spacing: .01em; color: var(--fg) !important; max-width: 62ch !important; margin-top: 14px !important; display: block !important; -webkit-line-clamp: unset !important; overflow: visible !important; }
+.film .tags .pill, .film .chips .pill { border-radius: 0 !important; }
+.film .cred, .film .credits { font: 400 14px/1.6 var(--kfont) !important; color: var(--fg-2) !important; max-width: 70ch; }
+.film .close { position: fixed !important; top: 22px; right: 22px; z-index: 6; background: var(--bg) !important; }
+html:not(.mob) .film { display: grid; grid-template-columns: minmax(220px, 30vw) minmax(0, 1fr); gap: clamp(32px, 4vw, 72px); align-items: center; padding: 96px clamp(40px, 6vw, 110px) 60px; box-sizing: border-box; }
+html:not(.mob) .film .heroimg { display: none !important; }
+html:not(.mob) .film:not(.hasposter) .heroimg { display: block !important; position: relative !important; inset: auto !important; height: auto !important; aspect-ratio: 16 / 9 !important; width: 100% !important; border: 1px solid rgba(var(--kink), .25); }
+html:not(.mob) .film:not(.hasposter) { grid-template-columns: minmax(300px, 42vw) minmax(0, 1fr); }
+html:not(.mob) .film .ipost img { display: block; width: 100%; height: auto; max-height: calc(100vh - 170px); object-fit: contain; object-position: center; box-shadow: 0 24px 60px rgba(0, 0, 0, .35); }
+html:not(.mob) .film .in { padding: 0 !important; min-height: 0 !important; display: block !important; }
+html.tv .film .ov { font-size: 21px !important; display: -webkit-box !important; -webkit-line-clamp: 6 !important; -webkit-box-orient: vertical; overflow: hidden !important; }
+html.tv .film .tag { font-size: 24px !important; }
+html.tv .film .meta { font-size: 17px !important; }
+html.mob .film .ipost { display: none; }
+.film .heroimg .close, .film .noimg-top .close { display: none !important; }   /* (the page's own close, above, instead) */
+.film .date { gap: 10px !important; }
+.film .date .dnav { flex: none; }
+.film .pill { border-radius: 0 !important; }
+html.mob .film .heroimg { margin-top: calc(env(safe-area-inset-top) + 54px); aspect-ratio: 16 / 9 !important; width: 100%; height: auto; }
+html.mob .film .heroimg img { width: 100%; height: 100%; object-fit: cover; }
+html.mob .film .in { padding: 18px 20px 48px !important; }
+html.mob .film h2 { font-size: 40px !important; }
+html.mob .film .ov { font-size: 17px !important; }
+html.mob .film .noimg-top { height: calc(env(safe-area-inset-top) + 54px); }
+/* the trailer's own player: YouTube's, the whole screen; the film's name and Close over it at its start, when paused or asked */
+.tplayer { position: fixed; inset: 0; z-index: 200; background: #000; outline: none; }
+.tplayer .tpwrap, .tplayer iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.tpbar { position: absolute; left: 0; right: 0; top: 0; display: flex; align-items: center; gap: 16px; padding: calc(env(safe-area-inset-top) + 18px) 24px 40px; background: linear-gradient(rgba(0, 0, 0, .75), transparent); color: #fff; opacity: 0; transition: opacity .3s; pointer-events: none; }
+.tplayer.show .tpbar { opacity: 1; pointer-events: auto; }
+.tpbar .tpk { font: 600 12px/1 var(--kfont); letter-spacing: .3em; text-transform: uppercase; opacity: .7; }
+.tpbar b { flex: 1; font: 700 20px/1.2 var(--kfont); letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tpbar .ico { width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid rgba(255, 255, 255, .5); background: rgba(0, 0, 0, .4); color: #fff; }
+.tpbar .ico svg { width: 20px; height: 20px; }
+html.tv .tpbar b { font-size: 28px; }
 /* sort and filter: two icons on the tabs' row; their panel under them */
 .sfbar { display: inline-flex; gap: 8px; align-items: center; }
 .sfb { display: inline-flex !important; align-items: center; gap: 8px; min-height: 40px; padding: 0 12px !important; position: relative; }
@@ -1633,6 +1681,7 @@ function goHome() {   // the logo: home, the month's theme, and the month it is 
   location.hash = '#home';
 }
 window.addEventListener('hashchange', route);
+document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && trailerOn()) { e.preventDefault(); trailerClose(); } });
 $$('[data-go]').forEach(function (b) { b.addEventListener('click', function () { var g = b.dataset.go; if (g === 'search') return searchSheet(); if (g === 'profile') return profile();
   if (g === 'home') return goHome();
   if (g === 'browse' && VIEW() === 'themes' && S.view === 'home') return browseSheet('movies');   // (the month's theme stays behind: Browse and Collections as pop-ups in its style)
@@ -2595,7 +2644,8 @@ function itemSheet(it, ctx) {
   S.sheetDate = ctx.date || null;
   var dnav = function (d) { return ctx.date && dayNear(ctx.date, d) ? '<button class="ico dnav" data-dstep="' + d + '" aria-label="' + (d < 0 ? 'The day before' : 'The day after') + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="' + (d < 0 ? 'M15 6l-6 6 6 6' : 'M9 6l6 6-6 6') + '"/></svg></button>' : ''; };
   var top = it.backdrop ? '<div class="heroimg"><img alt="" src="' + esc(img(it.backdrop, 'Backdrop', 1100)) + '">' + X + '</div>' : (it.thumb || (it.type === 'video' && it.poster) ? '<div class="heroimg"><img alt="" src="' + esc(img(it.thumb || it.poster, it.thumb ? 'Thumb' : 'Primary', 1100)) + '">' + X + '</div>' : '<div class="noimg-top" style="position:relative">' + X + '</div>');
-  openSheet(top + '<div class="in"><div class="date">' + (ctx.date ? dnav(-1) + '<span>' + esc(longDate(ctx.date)) + '</span>' + dnav(1) : esc(typeName(it))) + '</div><h2>' + esc(showName(it)) + '</h2><div id="isbody">' + bodyHTML(it, ctx) + '</div></div>');
+  var pst = it.poster && it.type !== 'episode' ? img(it.poster, 'Primary', 400) : '';   // (the poster, whole, beside the words on a big screen)
+  openSheet('<div class="film' + (pst ? ' hasposter' : '') + '">' + X + top + (pst ? '<div class="ipost"><img alt="" src="' + esc(pst) + '"></div>' : '') + '<div class="in"><div class="date">' + (ctx.date ? dnav(-1) + '<span>' + esc(longDate(ctx.date)) + '</span>' + dnav(1) : esc(typeName(it))) + '</div><h2>' + esc(showName(it)) + '</h2><div id="isbody">' + bodyHTML(it, ctx) + '</div></div></div>');
   $$('#sheetIn [data-dstep]').forEach(function (b) { b.onclick = function () { dayStep(+b.dataset.dstep); }; });
   wireBody(it, ctx);
   var mine = function (full) { if (PUBLIC || DEMO || !full.id) return full;   // (the member's own: from the Mac, if it's on)
@@ -2947,18 +2997,45 @@ var HEVC = (function () {
   } catch (e) { return false; }
 })();
 var P = { el: $('#player'), v: $('#vid'), hls: null, it: null, queue: [], info: null, saveT: null, idleT: null };
-function trailer(it) {
+function trailer(it) {   // a trailer: its own player, YouTube's, not the film player (John, 8 Nov 2026: "video player isn't set up for
+  // youtube trailers - it should probably have its own player"): the whole screen, the film's name and Close over it while it
+  // starts or when asked; a remote's OK pauses, left and right a jump, Back (or its end) back to the film's page
   if (!it || !it.trailers || !it.trailers.length) return;
-  closeSheet();
-  P.it = null; P.queue = [];
-  $('#ptitle').textContent = showName(it) + ': the trailer'; $('#psub').textContent = it.year || '';
-  $('#pmsg').classList.remove('on'); $('#pnext').classList.remove('on');
-  P.v.classList.add('hide');
-  var f = document.createElement('iframe');
-  f.className = 'trailer'; f.allow = 'autoplay; fullscreen; picture-in-picture'; f.allowFullscreen = true;
-  f.src = 'https://www.youtube-nocookie.com/embed/' + encodeURIComponent(it.trailers[0]) + '?autoplay=1&rel=0&playsinline=1&modestbranding=1';
-  P.el.insertBefore(f, P.el.firstChild);
-  P.el.classList.add('on', 'trailering'); document.documentElement.style.overflow = 'hidden';
+  var back = dlg.open ? it : null; closeSheet();
+  var T = $('#tplayer');
+  if (!T) { document.body.insertAdjacentHTML('beforeend', '<div class="tplayer" id="tplayer" tabindex="-1" hidden><div class="tpwrap"><div id="tpframe"></div></div><div class="tpbar"><span class="tpk">Trailer</span><b id="tptitle"></b><button class="ico" id="tpclose" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div></div>'); T = $('#tplayer'); }
+  $('#tptitle').textContent = showName(it) + (it.year ? ' (' + it.year + ')' : '');
+  T.hidden = false; T.classList.add('show'); document.documentElement.style.overflow = 'hidden';
+  var hideT = 0, peek = function () { T.classList.add('show'); clearTimeout(hideT); hideT = setTimeout(function () { T.classList.remove('show'); }, 3500); };
+  peek(); T.onmousemove = peek;
+  TP.back = back; TP.peek = peek;
+  $('#tpclose').onclick = trailerClose;
+  if (TV) setTimeout(function () { $('#tpclose').blur(); T.focus(); }, 50);
+  var make = function () {
+    $('#tpframe').outerHTML = '<div id="tpframe"></div>';
+    TP.p = new YT.Player('tpframe', { host: 'https://www.youtube-nocookie.com', videoId: it.trailers[0],
+      playerVars: { autoplay: 1, rel: 0, playsinline: 1, modestbranding: 1, controls: TV ? 0 : 1, iv_load_policy: 3, fs: TV ? 0 : 1 },
+      events: { onReady: function (e) { try { e.target.playVideo(); } catch (x) {} },
+        onStateChange: function (e) { if (e.data === 0) trailerClose(); else if (e.data === 2) T.classList.add('show'); else if (e.data === 1) peek(); } } });
+  };
+  if (window.YT && YT.Player) make();
+  else { window.onYouTubeIframeAPIReady = make; if (!$('#ytapi')) { var sc = document.createElement('script'); sc.id = 'ytapi'; sc.src = 'https://www.youtube.com/iframe_api'; document.head.appendChild(sc); } }
+}
+var TP = { p: null, back: null, peek: null };
+function trailerOn() { var T = $('#tplayer'); return !!(T && !T.hidden); }
+function trailerClose() {
+  var T = $('#tplayer'); if (!T) return;
+  try { if (TP.p && TP.p.destroy) TP.p.destroy(); } catch (x) {} TP.p = null;
+  T.hidden = true; T.classList.remove('show'); document.documentElement.style.overflow = '';
+  if (TP.back) { var b = TP.back; TP.back = null; itemSheet(b); }
+}
+function trailerKeys(k) {   // a remote, on a trailer
+  var p = TP.p; if (TP.peek) TP.peek();
+  if (!p || !p.getPlayerState) return true;
+  if (k === 'ok' || k === 'play') { if (p.getPlayerState() === 1) p.pauseVideo(); else p.playVideo(); return true; }
+  if (k === 'left' || k === 'rew') { p.seekTo(Math.max(0, p.getCurrentTime() - 10), true); return true; }
+  if (k === 'right' || k === 'ff') { p.seekTo(p.getCurrentTime() + 10, true); return true; }
+  return true;
 }
 function signInSheet() {
   openSheet('<div class="form" style="position:relative">' + X + '<h2 style="font:400 36px/1.1 var(--serif);color:var(--fg)">Sign in to <i>watch</i></h2>' +
@@ -3191,6 +3268,7 @@ document.addEventListener('keydown', function (e) {
   var k = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down', Enter: 'ok', MediaPlayPause: 'play', MediaFastForward: 'ff', MediaRewind: 'rew' }[e.key];
   if (!k) return;
   var ae = document.activeElement, inText = /^(INPUT|TEXTAREA|SELECT)$/.test((ae || {}).tagName || '');
+  if (trailerOn()) { if (k === 'up' || k === 'down') { if (TP.peek) TP.peek(); var c = $('#tpclose'); if (c) c.focus(); e.preventDefault(); return; } if (document.activeElement && document.activeElement.id === 'tpclose' && k === 'ok') return; e.preventDefault(); trailerKeys(k); return; }
   if (P.el.classList.contains('on') && (!ae || ae === P.v || ae === document.body || !P.el.contains(ae))) {
     if (k === 'up' || k === 'down') { wake(); $('#pclose').focus(); e.preventDefault(); return; }
     if (playerKeys(k)) { e.preventDefault(); return; }
@@ -3216,6 +3294,7 @@ document.addEventListener('keydown', function (e) {
 }, true);
 window.grifflixTV = {
   key: function (k) {
+    if (trailerOn()) return trailerKeys(k);
     if (P.el.classList.contains('on')) return playerKeys(k);
     if (k === 'play') {
       var it = document.activeElement && document.activeElement.closest('[data-day]'), d = S.calData && S.calData.days[it ? it.dataset.day : TODAY];
@@ -3225,6 +3304,7 @@ window.grifflixTV = {
     return true;
   },
   back: function () {
+    if (trailerOn()) { trailerClose(); return 'done'; }
     if (P.el.classList.contains('on')) { stopPlayer(); return 'done'; }
     if (dlg.open) {
       var bi = $('#bsin');
