@@ -570,13 +570,16 @@ html.tv[data-theme] .sheet .heroimg::after { background: linear-gradient(90deg, 
 html.tv[data-theme] .sheet .in { max-width: 46vw; }
 html.hall .bar-top .members, html.table .bar-top .members, html.hall .bar-top .ico, html.table .bar-top .ico { display: none !important; }
 .bar-top #refresh svg { display: block; width: 19px; height: 19px; }
-html:not(.tv):not(.mob) .bar-top #refresh, html:not(.tv):not(.mob) .tcal [data-tt="refresh"] { display: none !important; }   /* (a computer: the logo reloads instead: John, 8 Nov 2026) */   /* (the reload: an icon, beside the profile) */
+html:not(.mob) .bar-top #refresh, html:not(.mob) .tcal [data-tt="refresh"] { display: none !important; }   /* (a computer or the TV: the logo reloads instead: John, 8 Nov 2026) */   /* (the reload: an icon, beside the profile) */
 html.hall .bar-top #refresh, html.table .bar-top #refresh { margin-left: auto !important; padding: 4px 2px; }
 html.hall .tmonth, html.table .tmonth { top: auto; bottom: 66px; opacity: 1 !important; }
 .tinspo { position: fixed; top: auto; bottom: 36px; }
 html.tv .triallabel { bottom: auto; top: 6px; }
 html.hall .bar-top .pill[data-go="browse"], html.table .bar-top .pill[data-go="browse"] { display: none !important; }
 html.hall .bar-top #who, html.table .bar-top #who { margin-left: 0 !important; }
+html.hall:not(.mob) .bar-top #who, html.table:not(.mob) .bar-top #who { margin-left: auto !important; }   /* (the reload gone: the name still at the right) */
+/* the TV: whatever the remote moves to, in full view, clear of the pop-up's band at the top (John, 8 Nov 2026) */
+html.tv #sheet :is(button, a[href], input) { scroll-margin: 150px 0 40px; }
 .bar-top #who.whoico svg { display: block; width: 22px; height: 22px; }
 .tvprof { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; text-align: center; } .tvprof .tvwho { width: 100%; font-size: 34px; margin: 0 0 34px; text-align: center; } .tvprof .acts { justify-content: center; } .tvprof .pill { font-size: 22px; padding: 14px 30px; }
 /* the pop-ups (a day's film, the month's calendar, Search, Browse, the profile) in the month's theme: its colour, its type */
@@ -625,7 +628,6 @@ html:not(.hall):not(.table) body { padding-top: env(safe-area-inset-top); }
 #bgrid .nowrows { margin: 6px 0 0; }
 #bgrid .nowrows .row { margin: 0 0 22px; }
 #bgrid .nowrows .row h2, #sheet .row h2 { font: 700 22px/1.1 var(--kfont) !important; letter-spacing: .1em !important; text-transform: uppercase !important; font-style: normal !important; margin: 0 0 12px; display: flex; align-items: baseline; }
-html.tv #bgrid .nowrows .row h2, html.tv #sheet .row h2 { font-size: 28px !important; }
 /* a phone: the shelves' tabs one row that scrolls sideways, the title smaller (four tabs now) */
 @media (max-width: 760px) {
   .tabs { flex-wrap: nowrap !important; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
@@ -752,7 +754,18 @@ html.tv #sheet .form p, html.tv #sheet .form .stat, html.tv #sheet .form label {
 html.tv #sheet .form .pill, html.tv #sheet .form button.go { min-height: 64px; padding: 0 30px; font-size: 20px !important; }
 html.tv #sheet .res .t { font-size: 24px !important; }
 html.tv #sheet .res .s { font-size: 16px !important; }
-html.tv #sheet .card .t { font-size: 20px; }
+/* the TV's pop-ups: smaller cards, the chosen one ringed close round its picture and not grown, so nothing's cut off; a chosen
+   search result filled white (John, 8 Nov 2026: "a white line outside of the film ... can't all be seen, so looks messy";
+   "selections on search are highlighted strangely") */
+html.tv #sheet .strip { grid-auto-columns: 136px; gap: 20px; padding: 10px 10px 14px; scroll-padding: 0 12px; }
+html.tv #sheet .card:focus { transform: none !important; outline: none !important; box-shadow: none !important; }
+html.tv #sheet .card:focus .pic { outline: 3px solid #fff !important; outline-offset: 3px; box-shadow: none; }
+html.tv #sheet .card .t { font: 600 15px/1.2 var(--kfont) !important; letter-spacing: .04em !important; margin-top: 8px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+html.tv #sheet .card .s { font-size: 12px !important; }
+html.tv #bgrid .nowrows .row h2, html.tv #sheet .row h2 { font-size: 21px !important; }
+html.tv #sheet .res { border-radius: 4px; }
+html.tv #sheet .res:focus { outline: none !important; box-shadow: none !important; background: #fff !important; }
+html.tv #sheet .res:focus .t, html.tv #sheet .res:focus .s { color: #000 !important; }
 /* a computer or a TV: the calendar the whole screen, over the theme (John, 8 Nov 2026: "calendar is going in front of theme but
    not covering it so it looks odd - it should also be full screen and have titles in boxes - like song of the day") */
 html:not(.mob) #sheet:has(.tcal) { position: fixed; inset: 0; width: 100vw; height: 100%; max-width: none; max-height: none; margin: 0; border: 0; padding: 0; }
@@ -1718,7 +1731,7 @@ function route() {
 function goHome() {   // the logo: home, the month's theme, and the month it is now (John, 8 Nov 2026: "Clicking on Grifflix should
   // return you home", "home should be the current month"), from anywhere, a pop-up open or not
   store.set('grifflix-tvview', 'themes'); S.mcal = false; if (dlg.open) closeSheet();
-  if (!TV && !MOB()) { try { history.replaceState(null, '', location.pathname + location.search + '#home'); } catch (e) {} return refreshAll(); }   // (a computer: the logo reloads too, there being no reload button: John, 8 Nov 2026)
+  if (!MOB()) { try { history.replaceState(null, '', location.pathname + location.search + '#home'); } catch (e) {} return refreshAll(); }   // (a computer: the logo reloads too, there being no reload button: John, 8 Nov 2026)
   S.cal = 'motd'; S.month = TODAY.slice(0, 7);
   if ((location.hash || '#home').split('/')[0] === '#home') return home();
   location.hash = '#home';
@@ -1972,7 +1985,7 @@ function themeFit(m) {   // a phone: the theme drawn for an upright screen 780 w
   // a computer (Chrome's trackpad, or a mouse's wheel): two fingers up or across, or the wheel, a day each step (John, 8 Nov 2026: "a swipe function for chrome app, with touch pad too")
   var wacc = 0, wquiet = 0, wlast = 0;
   document.addEventListener('wheel', function (e) {
-    if (VIEW() !== 'themes' || TV || S.view !== 'home' || dlg.open || !S.theme || !(e.target.closest && e.target.closest('#cal, .wrap'))) return;
+    if (VIEW() !== 'themes' || TV || S.view !== 'home' || dlg.open || !S.theme || !e.target.closest || e.target.closest('.bar-top, dialog, .player, .tinspo')) return;   // (anywhere on the theme, not only over its middle: John, 8 Nov 2026)
     e.preventDefault();
     var t = Date.now(), d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
     if (e.deltaMode === 1) d *= 40;   // (a mouse's wheel, in lines)
@@ -3350,6 +3363,8 @@ function moveFocus(dir) {
   var a = cur.getBoundingClientRect(), ax = a.left + a.width / 2, ay = a.top + a.height / 2, best = null, bestScore = 1e9;
   if (dir === 'up' || dir === 'down') {   // up and down: the next row first (whatever's nearest above or below), then along it the nearest (John, 8 Nov 2026: up from the calendar went straight past the month's buttons to the bar)
     var cands = all.filter(function (el) { if (el === cur) return false; var r = el.getBoundingClientRect(); return dir === 'down' ? r.top >= a.bottom - 4 : r.bottom <= a.top + 4; });
+    var sc = cur.closest && cur.closest('#sheetIn'), pinned = function (el) { for (var x = el; x && x !== sc; x = x.parentElement) { var ps = getComputedStyle(x).position; if (ps === 'fixed' || ps === 'sticky') return true; } return false; };
+    if (sc && !pinned(cur)) { var inner = cands.filter(function (el) { return sc.contains(el) && !pinned(el); }); if (inner.length) cands = inner; }   // (in a pop-up, the next row of what scrolls, not the fixed X or words at the top: John, 8 Nov 2026)
     var gap = function (r) { return dir === 'down' ? r.top - a.bottom : a.top - r.bottom; };
     var first = null, fg = 1e9;
     cands.forEach(function (el) { var g0 = gap(el.getBoundingClientRect()); if (g0 < fg) { fg = g0; first = el.getBoundingClientRect(); } });
