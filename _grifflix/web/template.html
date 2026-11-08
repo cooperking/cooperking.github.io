@@ -599,6 +599,12 @@ html.mob #sheetIn > .form:not(.tcal) { padding-top: calc(env(safe-area-inset-top
 #shbrand { text-shadow: 0 1px 6px rgba(0, 0, 0, .35); }
 /* the home-screen app draws under the clock: pages that scroll (not the full-screen themes) start below it */
 html:not(.hall):not(.table) body { padding-top: env(safe-area-inset-top); }
+/* the rows in Search's pop-up: above the shelves */
+#sheet .srows { margin: 22px 0 6px; }
+#sheet .srows .row { margin: 0 0 18px; }
+#sheet .srows .row h2 { font-size: 22px !important; margin: 0 0 10px; display: flex; justify-content: space-between; align-items: baseline; }
+#sheet .srows:empty { display: none; }
+html.tv #sheet .srows .row h2 { font-size: 30px !important; }
 /* sort and filter: two icons on the tabs' row; their panel under them */
 .sfbar { display: inline-flex; gap: 8px; align-items: center; }
 .sfb { display: inline-flex !important; align-items: center; gap: 8px; min-height: 40px; padding: 0 12px !important; position: relative; }
@@ -2383,15 +2389,15 @@ function wireCards(el, items) {
   var by = {}; items.forEach(function (i) { by[i.id] = i; SEEN[i.id] = i; });
   $$('[data-item]', el).forEach(function (b) { b.onclick = function () { var it = by[b.dataset.item]; if (it && it.type === 'collection') { if (S.sheetInto && dlg.open && S.sheetInto.isConnected) { S.sheetInto.dataset.coll = 1; collectionView(it.id, S.sheetInto); } else location.hash = '#collection/' + it.id; } else itemSheet(it); }; });   // (a box set inside a collection opens as a collection)
 }
-function drawRows(R) {
-  var el = $('#rows'); if (!el) return;
+function drawRows(R, into) {
+  var el = into || $('#rows'); if (!el) return;
   var rows = [['continue', 'Carry on <i>watching</i>', true], ['movies', 'New <i>films</i>', false], ['tv', 'New on <i>TV</i>', false]], h = '', all = [];
   rows.forEach(function (r) {
     var items = R[r[0]] || []; if (!items.length) return; all = all.concat(items);
     h += '<section class="row"><h2>' + r[1] + (r[0] !== 'continue' ? '<button class="more" data-more="' + r[0] + '">See all</button>' : '') + '</h2><div class="strip' + (r[2] ? ' wide' : '') + '">' + items.map(function (i) { return cardHTML(i, r[2]); }).join('') + '</div></section>';
   });
   el.innerHTML = h; wireCards(el, all);
-  $$('[data-more]', el).forEach(function (b) { b.onclick = function () { location.hash = '#browse/' + b.dataset.more; }; });
+  $$('[data-more]', el).forEach(function (b) { b.onclick = function () { var bs = $('#bsin'); if (into && bs) { browseIn(bs, b.dataset.more); bs.scrollIntoView({ block: 'start', behavior: 'smooth' }); } else location.hash = '#browse/' + b.dataset.more; }; });
 }
 
 /* --- browse: films, TV, home videos */
@@ -2660,8 +2666,15 @@ function wireBody(it, ctx) {
 /* searching: on its own, or to choose a day's film */
 function searchSheet(onPick, title) {
   var withBrowse = !onPick && VIEW() === 'themes' && S.view === 'home';   // (in a theme, John: "Search can bring up the search bar plus collections and browse")
-  openSheet('<div class="form' + (withBrowse ? ' bsheet' : '') + '" style="position:relative">' + X + '<h2 style="font:400 34px/1.1 var(--serif);color:var(--fg)">' + (title || 'Search') + '</h2><input type="search" id="sq" placeholder="A film, a series, an episode…" autocomplete="off"><div class="results" id="sres"></div>' + (withBrowse ? '<div id="bsin"></div>' : '') + '</div>');
-  if (withBrowse) browseIn($('#bsin'), S.browse || 'collections');
+  openSheet('<div class="form' + (withBrowse ? ' bsheet' : '') + '" style="position:relative">' + X + '<h2 style="font:400 34px/1.1 var(--serif);color:var(--fg)">' + (title || 'Search') + '</h2><input type="search" id="sq" placeholder="A film, a series, an episode…" autocomplete="off"><div class="results" id="sres"></div>' + (withBrowse ? '<div class="rows srows" id="srows"></div><div id="bsin"></div>' : '') + '</div>');
+  if (withBrowse) {
+    browseIn($('#bsin'), S.browse || 'collections');
+    // Carry on watching, New films, New on TV: above the shelves (John, 8 Nov 2026: in the themes they were nowhere; "yes" to here)
+    api('home').then(function (R) {
+      var el = $('#srows'); if (!el) return; drawRows(R, el);
+      if (!PUBLIC && !DEMO) soon(mac('home'), 8000).then(function (m) { if (m.continue && m.continue.length && $('#srows')) { R.continue = m.continue; drawRows(R, $('#srows')); } }).catch(function () {});
+    }).catch(function () {});
+  }
   var t, inp = $('#sq');
   if (TV) {   // a TV: the box chosen first, and only OK on it brings Amazon's keyboard up (John, 8 Nov 2026: "when you click search the typing text from amazon comes up immediately which looks bad")
     inp.readOnly = true; inp.setAttribute('inputmode', 'none');
