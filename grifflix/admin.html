@@ -326,7 +326,7 @@
       var eps = {}; Object.keys(snap.series || {}).forEach(function (k) { (snap.series[k].episodes || []).forEach(function (e) { eps[e.id] = e; }); });
       var days = {}; Object.keys(snap.motd.days || {}).forEach(function (d) { var it = snap.items[snap.motd.days[d]] || eps[snap.motd.days[d]]; if (it) days[d] = it; });
       var L = snap.lists || {};
-      return g('admin', { op: 'update', cal: { days: days, notes: snap.motd.notes || {} }, counts: { movies: (L.movies || []).length, tv: (L.tv || []).length, collections: (L.collections || []).length } });
+      return g('admin', { op: 'update', cal: { days: days, notes: snap.motd.notes || {} }, personal: snap.personal || null, counts: { movies: (L.movies || []).length, tv: (L.tv || []).length, collections: (L.collections || []).length } });
     }).then(function (j) {
       b.disabled = false; say('Update from the Mac');
       var c = snap.changes || {}, n = (c.new || 0) + (c.changed || 0) + (c.removed || 0);
