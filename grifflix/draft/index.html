@@ -2293,7 +2293,7 @@ function collCard(c) {   // a collection's cover, drawn rather than a picture: a
 // (the drawn covers, window.GCOLLART: /grifflix/collection-art.js, fetched after the page is up; till then each its initial)
 function collArtLoad() {
   if (collArtLoad.p) return; collArtLoad.p = 1;
-  var sc = document.createElement('script'); sc.src = '/grifflix/collection-art.js?v=fa23dfcbb5'; sc.async = true;
+  var sc = document.createElement('script'); sc.src = '/grifflix/collection-art.js?v=1eeeb10bd5'; sc.async = true;
   sc.onload = function () { $$('.ccov[data-cn]').forEach(function (el) { var svg = el.querySelector('svg.ca'); if (svg) svg.outerHTML = collArt(+el.dataset.ch, el.dataset.nm, el.dataset.cn); }); };
   document.head.appendChild(sc);
 }
