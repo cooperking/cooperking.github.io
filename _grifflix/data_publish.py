@@ -68,6 +68,30 @@ def light(it):
     return {k: v for k, v in it.items() if k not in BIG}
 
 
+def added_key(v):
+    return '%s|%s|%s' % (v.get('type', ''), ' '.join(str(v.get('name', '')).lower().split()), v.get('year') or '')
+
+
+def keep_added(items):
+    """Each film's and series' date added: the first one ever seen, kept in added.json. A film converted on the Mac is a
+    new file there, so its new date would put it among the new films (John, 8 Nov 2026: "It's still showing new films as
+    those just converted")."""
+    try:
+        with open(os.path.join(OUT, 'added.json'), encoding='utf-8') as f:
+            first = json.load(f)
+    except (OSError, ValueError):
+        first = {}
+    for v in items.values():
+        if v.get('type') not in ('movie', 'series') or not v.get('added'):
+            continue
+        k = added_key(v)
+        if k in first and first[k] < v['added']:
+            v['added'] = first[k]
+        elif k not in first or v['added'] < first[k]:
+            first[k] = v['added']
+    return write('added.json', first)
+
+
 def build(snap, now, days_only=False):
     items, series = snap.get('items', {}), snap.get('series', {})
     eps = {e['id']: e for v in series.values() for e in v.get('episodes', [])}
@@ -85,6 +109,7 @@ def build(snap, now, days_only=False):
     if days_only:
         return changed
     L = snap.get('lists', {})
+    changed += keep_added(items)
     changed += write('library.json', {'at': snap.get('at'), 'items': {k: light(v) for k, v in items.items()},
                                       'movies': L.get('movies', []), 'tv': L.get('tv', []), 'collections': L.get('collections', []),
                                       'sets': snap.get('sets', {})})
