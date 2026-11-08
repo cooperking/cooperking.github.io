@@ -11,7 +11,6 @@ const { TwaManifest, TwaGenerator, ConsoleLog } = require('@bubblewrap/core');
     packageId: 'io.github.cooperking.grifflix.app',
     name: 'Grifflix', launcherName: 'Grifflix',
     startUrl: process.env.START_URL || '/grifflix/?app=android', enableNotifications: true, fallbackType: 'customtabs',
-    themeColor: '#000000', navigationColor: '#000000', backgroundColor: '#000000',
     appVersionCode: code, appVersionName: '1.' + code,
     signingKey: { path: process.env.KEYSTORE || 'upload.p12', alias: 'grifflix' },
     enableSiteSettingsShortcut: true,   // (the helper library looks for its activity on every start: without it the app can't open)
