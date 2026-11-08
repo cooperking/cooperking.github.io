@@ -521,7 +521,8 @@ html.tv .th .vday:focus { outline: 3px solid rgb(var(--kink)) !important; outlin
 html[data-theme=reel] .hinfo { max-width: 540px; }
 /* the umbrellas */
 .th-umbrellas .vday { width: 300px; height: 300px; border-radius: 50%; box-shadow: 10px 14px 0 rgba(0, 0, 0, .16); }
-.th-umbrellas .um { position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle, #1d1d1b 0 4%, transparent 5%), repeating-conic-gradient(var(--u1) 0 22.5deg, var(--u2) 22.5deg 45deg); transition: opacity .5s; }
+.th-umbrellas .um { position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle, #1d1d1b 0 4%, transparent 5%), repeating-conic-gradient(var(--u1) 0 22.5deg, var(--u2) 22.5deg 45deg); transition: opacity .2s; }
+#cal.drag .um { transition: none; }
 .th-umbrellas .vday.front .um { opacity: 0; }
 html.tv .th-umbrellas .vday:focus { outline: 0 !important; box-shadow: 0 0 0 4px rgb(var(--kink)), 10px 14px 0 rgba(0, 0, 0, .16); }
 /* the spiral */
@@ -535,8 +536,8 @@ html.tv .th-umbrellas .vday:focus { outline: 0 !important; box-shadow: 0 0 0 4px
 .th-code .cdn { position: absolute; left: -4px; right: -4px; bottom: 30px; padding: 3px 0; background: var(--bg); font: 400 12px/1 "Share Tech Mono", monospace; color: #03160a; }
 html.tv .th-code .vday:focus { outline: 1px solid #fff !important; outline-offset: 0; }
 .codepic { position: absolute; left: calc(72% - 145px); top: calc(45% - 217px); width: 290px; height: 435px; background: #000 center/cover; z-index: 5; box-shadow: 0 0 0 2px #03160a; }
-.codepic.dec { animation: decode 1.3s steps(14) both; }
-@keyframes decode { 0% { clip-path: inset(0 0 100% 0); filter: grayscale(1) sepia(1) hue-rotate(70deg) saturate(6) contrast(3) brightness(.6); } 55% { clip-path: inset(0 0 0 0); filter: grayscale(1) sepia(1) hue-rotate(70deg) saturate(4) contrast(1.6); } 100% { clip-path: inset(0 0 0 0); filter: none; } }
+.codepic.dec { animation: decode .5s steps(6) both; }   /* (the poster there at once, decoding from green in half a second) */
+@keyframes decode { 0% { filter: grayscale(1) sepia(1) hue-rotate(70deg) saturate(5) contrast(2); } 100% { filter: none; } }
 /* the slices */
 .th-slices .vday { height: 405px; background-size: 270px 405px; background-position: center; filter: brightness(.55) saturate(1.3); transition: left .6s cubic-bezier(.3, .7, .2, 1), width .6s cubic-bezier(.3, .7, .2, 1), filter .5s; }
 .th-slices .vday.front { filter: none; }
@@ -703,13 +704,14 @@ html.mob .bar-top #tvview svg { display: block; width: 16px; height: 16px; } htm
 html.klook:not(.mob) .bar-top #tvview svg { display: none; }
 html.mob.hall .bar-top .ico, html.mob.table .bar-top .ico { display: inline-grid !important; }
 html.mob .bar-top .ico[data-go="browse"], html.mob .bar-top .ico.members { display: none !important; }
+html.mob .bar-top #refresh2 { display: inline-grid !important; }
 html.mob .bar-top .ico[data-go="search"] { margin-left: auto !important; }
 html.mob .hinfo, html.mob[data-theme] .hinfo { position: absolute; top: calc(70px + var(--vk, .5) * 890px + 6px) !important; bottom: auto !important; left: 16px !important; right: 16px; width: auto !important; max-width: none !important; }
 html.mob .tmonth { display: none; }
-html.mob .tinspo b { display: block; font: 500 10px/1.6 var(--kfont); letter-spacing: .28em; text-transform: uppercase; font-style: normal; color: var(--fg-2); }
+html.mob .tinspo b { display: block; font: 500 12px/1.6 var(--kfont); letter-spacing: .28em; text-transform: uppercase; font-style: normal; color: var(--fg-2); }
 html.mob .hinfo .w { font-size: 40px !important; } html.mob .hinfo h2 { display: block !important; margin: 10px 0 4px; font-size: 23px !important; -webkit-line-clamp: 2; } html.mob .hinfo .k { margin-top: 6px; font-size: 10px !important; letter-spacing: .24em; } html.mob .hinfo .y { font-size: 15px; } html.mob .hinfo .n { display: none !important; }
 html.mob .tmonth, html.mob.hall .tmonth, html.mob.table .tmonth { left: 70px; right: 70px; bottom: calc(84px + env(safe-area-inset-bottom)); text-align: center; font-size: 10px; letter-spacing: .3em; }
-html.mob .tinspo { left: 70px; right: 70px; max-width: none; bottom: calc(12px + env(safe-area-inset-bottom)); display: block; padding: 4px 0; text-align: center; font-size: 12px; line-height: 1.3; }
+html.mob .tinspo { left: 66px; right: 66px; max-width: none; bottom: calc(12px + env(safe-area-inset-bottom)); display: block; padding: 4px 0; text-align: center; font-size: 15px; line-height: 1.3; }
 .mobnav { position: fixed; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); display: flex; justify-content: space-between; pointer-events: none; z-index: 27; }
 .mobnav .pill { pointer-events: auto; width: 46px; min-height: 46px; padding: 0; justify-content: center; font: 400 24px/1 var(--kfont); letter-spacing: 0; }
 html.mob .triallabel { top: 4px; bottom: auto; font-size: 9px; padding: 3px 8px; }
@@ -717,6 +719,13 @@ html.table #main.homeview .side { display: none; }
 html.mob.table .cal { position: fixed !important; inset: 0; height: 100% !important; width: 100%; overflow: hidden; }
 html.mob .triallabel { white-space: nowrap; }
 
+/* each theme's own font, once John adds it in admin (Fonts), by these names; the free one till then */
+@font-face { font-family: "GF-corridor"; font-weight: 100 900; font-display: swap; src: url("https://sotd-playlists.cooperking.workers.dev/gf/helvetica-bold.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/helvetica-bold.woff") format("woff"); }
+@font-face { font-family: "GF-umbrellas"; font-weight: 100 900; font-display: swap; src: url("https://sotd-playlists.cooperking.workers.dev/gf/eurostile-extended.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/eurostile-extended.woff") format("woff"); }
+@font-face { font-family: "GF-spiral"; font-weight: 100 900; font-display: swap; src: url("https://sotd-playlists.cooperking.workers.dev/gf/clarendon-bold.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/clarendon-bold.woff") format("woff"); }
+@font-face { font-family: "GF-code"; font-weight: 100 900; font-display: swap; src: url("https://sotd-playlists.cooperking.workers.dev/gf/ocr-a.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/ocr-a.woff") format("woff"); }
+@font-face { font-family: "GF-pinboard"; font-weight: 100 900; font-display: swap; src: url("https://sotd-playlists.cooperking.workers.dev/gf/wood-gothic.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/wood-gothic.woff") format("woff"); }
+@font-face { font-family: "GF-globe"; font-weight: 100 900; font-display: swap; src: url("https://sotd-playlists.cooperking.workers.dev/gf/kane-display.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/kane-display.woff") format("woff"); }
 /* the calendar page beside the day's name */
 .hinfo .w { display: flex; align-items: center; gap: .22em; }
 .leaf2 { flex: none; display: inline-flex; flex-direction: column; width: .95em; height: 1.02em; border: max(2px, .025em) solid rgb(var(--kink)); font-style: normal; text-transform: uppercase; letter-spacing: 0; overflow: hidden; }
@@ -1119,19 +1128,19 @@ var PALETTES = [   // the month's colours: ground, then four glows
 // each month's theme on the TV, and its one bold colour (the trial look's colour for the month everywhere): black or white type
 var THEMES = [   // each its film's own lettering and colour, researched (John, 8 Nov 2026: "do proper research into colours and fonts of the inspired film")
   // The Shining: Saul Bass's final yellow poster (#f0c801-#fcd202), his chunky hand-drawn "THE SHiNiNG"
-  { key: 'corridor', mob: [360, 40, 1260, 690], name: 'The Corridor', film: 'The Shining', year: 1980, by: 'Kubrick', bg: '#f5c400', ink: '#000', font: '"Bowlby One", sans-serif', tw: 400 },
+  { key: 'corridor', mob: [360, 40, 1260, 690], name: 'The Corridor', film: 'The Shining', year: 1980, by: 'Kubrick', bg: '#f5c400', ink: '#000', font: '"GF-corridor", "Bowlby One", sans-serif', tw: 400 },
   // Sherlock Jr.: its title card's hand-lettered flared capitals; the yellow of its 1924-era poster ("How to be a detective")
   { key: 'reel', mob: [300, 100, 1280, 640], name: 'The Reel', film: 'Sherlock Jr.', year: 1924, by: 'Buster Keaton', bg: '#e2aa1e', ink: '#000', font: '"Della Respira", serif', tw: 400 },
   // The Umbrellas of Cherbourg: Chica's 1964 poster, a pink bold extended sans in lowercase on turquoise
-  { key: 'umbrellas', mob: [300, 100, 1280, 540], name: 'The Umbrellas', film: 'The Umbrellas of Cherbourg', year: 1964, by: 'Jacques Demy', bg: '#0495b1', ink: '#000', font: '"Special Gothic Expanded One", sans-serif', tw: 400, tt: 'lowercase' },
+  { key: 'umbrellas', mob: [300, 100, 1280, 540], name: 'The Umbrellas', film: 'The Umbrellas of Cherbourg', year: 1964, by: 'Jacques Demy', bg: '#0495b1', ink: '#000', font: '"GF-umbrellas", "Special Gothic Expanded One", sans-serif', tw: 400, tt: 'lowercase' },
   // Vertigo: Saul Bass's poster, hand-cut black capitals on orange-red
-  { key: 'spiral', mob: [520, 40, 1250, 620], name: 'The Spiral', film: 'Vertigo', year: 1958, by: 'Hitchcock; titles by Saul Bass', bg: '#d74719', ink: '#000', font: '"Londrina Solid", sans-serif', tw: 900 },
+  { key: 'spiral', mob: [520, 40, 1250, 620], name: 'The Spiral', film: 'Vertigo', year: 1958, by: 'Hitchcock; titles by Saul Bass', bg: '#d74719', ink: '#000', font: '"GF-spiral", "Londrina Solid", sans-serif', tw: 900 },
   // The Matrix: OCR-A, and the green of its falling code (the code itself dark on it)
-  { key: 'code', mob: [530, 95, 1230, 640], name: 'The Code', film: 'The Matrix', year: 1999, by: 'the Wachowskis', bg: '#0ea055', ink: '#000', font: '"Share Tech Mono", monospace', tw: 400 },
+  { key: 'code', mob: [530, 95, 1230, 640], name: 'The Code', film: 'The Matrix', year: 1999, by: 'the Wachowskis', bg: '#0ea055', ink: '#000', font: '"GF-code", "Share Tech Mono", monospace', tw: 400 },
   // In the Mood for Love: the red of its curtains and cheongsams; the Hong Kong poster's condensed sans, lowercase
   { key: 'slices', mob: [530, 120, 1230, 560], name: 'The Slices', film: 'In the Mood for Love', year: 2000, by: 'Wong Kar-wai', bg: '#8e1420', ink: '#fff', font: '"Archivo Narrow", sans-serif', tw: 600, tt: 'lowercase' },
   // All the President's Men: the poster's wood-type gothic, black on newsprint
-  { key: 'pinboard', mob: [530, 70, 1250, 640], name: 'The Pinboard', film: 'All the President’s Men', year: 1976, by: 'Alan J. Pakula', bg: '#f4f1ea', ink: '#000', font: '"Anton", sans-serif', tw: 400 },
+  { key: 'pinboard', mob: [530, 70, 1250, 640], name: 'The Pinboard', film: 'All the President’s Men', year: 1976, by: 'Alan J. Pakula', bg: '#f4f1ea', ink: '#000', font: '"GF-pinboard", "Anton", sans-serif', tw: 400 },
   // Hugo / A Trip to the Moon: Méliès's 1902 title card's spurred capitals; the teal night sky of Hugo's poster
   { key: 'moon', mob: [40, 90, 1240, 620], name: 'The Moon', film: 'Hugo', year: 2011, by: 'Scorsese, for Méliès', bg: '#145063', ink: '#fff', font: '"IM Fell English SC", serif', tw: 400, tt: 'none' },
   // Alphaville: Jean Mascii's French poster's neon-tube lettering; the indigo of the US poster
@@ -1141,7 +1150,7 @@ var THEMES = [   // each its film's own lettering and colour, researched (John, 
   // Dr. Strangelove: Pablo Ferro's tall thin titles, drawn by hand on glass, over black and white
   { key: 'table', mob: [60, 0, 1220, 620], name: 'The Table', film: 'Dr. Strangelove', year: 1964, by: 'Kubrick; titles by Pablo Ferro', bg: '#0a0a0a', ink: '#fff', font: '"Amatic SC", sans-serif', tw: 700 },
   // Citizen Kane: its main title's outlined condensed capitals; the red title band of the 1941 Style A poster
-  { key: 'globe', mob: [40, 60, 1240, 640], name: 'The Snow Globe', film: 'Citizen Kane', year: 1941, by: 'Orson Welles', bg: '#a8161a', ink: '#fff', font: '"Big Shoulders", sans-serif', tw: 400 }
+  { key: 'globe', mob: [40, 60, 1240, 640], name: 'The Snow Globe', film: 'Citizen Kane', year: 1941, by: 'Orson Welles', bg: '#a8161a', ink: '#fff', font: '"GF-globe", "Big Shoulders", sans-serif', tw: 400 }
 ];
 var THEMEFONTS = 'https://fonts.googleapis.com/css2?family=Bowlby+One&family=Della+Respira&family=Special+Gothic+Expanded+One&family=Londrina+Solid:wght@400;900&family=Share+Tech+Mono&family=Archivo+Narrow:wght@600&family=Anton&family=IM+Fell+English+SC&family=Tilt+Neon&family=Yuji+Syuku&family=Amatic+SC:wght@700&family=Big+Shoulders:wght@400;700&display=swap';
 function themeEarly() {   // (before the films arrive: the page already laid out as this month's theme)
@@ -1477,7 +1486,7 @@ function themeFit(m) {   // a phone: the theme drawn for an upright screen 780 w
   var v = $('#cal .thv'), c = $('#cal'); if (!v) return;
   if (!MOB()) { v.style.transform = ''; v.style.width = ''; v.style.height = ''; c.style.removeProperty('--vk'); return; }
   var vw = document.documentElement.clientWidth || innerWidth, vh = document.documentElement.clientHeight || innerHeight;
-  var k = Math.min(vw / 780, (vh - 70 - 196) / 890), off = (vw - 780 * k) / 2;   // (the theme's 890 high, the day's words and the foot under it)
+  var k = Math.min(vw / 780, (vh - 70 - 222) / 890), off = (vw - 780 * k) / 2;   // (the theme's 890 high, the day's words and the foot under it)
   v.style.width = '780px'; v.style.height = '890px'; v.style.transform = 'translateX(' + off.toFixed(1) + 'px) scale(' + k.toFixed(4) + ')';
   c.style.setProperty('--vk', k.toFixed(4));
 }
@@ -1592,6 +1601,7 @@ function themeEls() { return $$('#cal .vday, #cal .hday, #cal .tday'); }
 function themeAtNow() { var all = themeEls(), f = $('#cal .front'); return Math.max(0, all.indexOf(f)); }
 function themeStart(fx, c) {
   S.theme = { fx: fx, c: c };
+  $$('#cal .vday').forEach(function (el) { var u = (el.style.getPropertyValue('--p') || '').match(/url\(["']?([^"')]+)/); if (u) (new Image()).src = u[1]; });   // (every poster ready before it's wanted)
   if (fx.ready) fx.ready(c);
   $$('#cal button.vday, #cal button.hday, #cal button.tday').forEach(function (b) { b.onclick = function () { daySheet(b.dataset.day); }; b.addEventListener('focus', function () { themeTurn(b); }); });
   themeTurn($('#cal .today.has') || $$('#cal button.has').pop() || $('#cal button[data-day]'));
@@ -1606,7 +1616,7 @@ function themeShow(at, force) {   // the theme at any point between days; the ne
   var b = all[Math.max(0, Math.min(all.length - 1, Math.round(at)))];
   if (force || !b.classList.contains('front')) {
     all.forEach(function (el) { el.classList.toggle('front', el === b); });
-    if (T.fx.front) T.fx.front(b, T.c);
+    if (T.fx.front) T.fx.front(b, T.c, $('#cal').classList.contains('drag'));   // (mid-swipe: the picture at once, no flourish)
     (T.fx.info || hallInfo)(b);
   }
   T.fx.place(all, at, T.c, b);
@@ -1747,7 +1757,7 @@ THEMEFX.code = {
     var x0 = c.mob ? 30 : c.W * .43, x1 = c.mob ? 750 : c.W - 74, n = Math.max(1, all.length - 1);
     all.forEach(function (el, j) { el.style.left = (x0 + (x1 - x0) * j / n - 10).toFixed(1) + 'px'; el.style.zIndex = el === b ? 3 : 1; });
   },
-  front: function (b) { var p = $('#codepic'); if (p && b) { p.style.backgroundImage = b.style.getPropertyValue('--p'); p.classList.remove('dec'); void p.offsetWidth; p.classList.add('dec'); } }
+  front: function (b, c, quiet) { var p = $('#codepic'); if (p && b) { p.style.backgroundImage = b.style.getPropertyValue('--p'); p.classList.remove('dec'); if (!quiet) { void p.offsetWidth; p.classList.add('dec'); } } }
 };
 // June: the slices (In the Mood for Love): every day a thin slice of its poster; the one you're on opens out
 THEMEFX.slices = {
@@ -1845,9 +1855,9 @@ THEMEFX.globe = {
     var x0 = c.mob ? 34 : 90, x1 = c.mob ? 746 : c.W - 90, n = Math.max(1, all.length - 1), me = this;
     all.forEach(function (el, j) { vAt(el, x0 + (x1 - x0) * j / n, me.hang(+el.dataset.n, c), 1 + .5 * near(j - at), 0, 1, el === b ? 5 : 1); });
   },
-  front: function (b) {
+  front: function (b, c, quiet) {
     var g = $('#globe'), p = $('#gpic'); if (p && b) p.style.backgroundImage = b.style.getPropertyValue('--p');
-    if (g) { g.classList.remove('shake'); void g.offsetWidth; g.classList.add('shake'); }
+    if (g) { g.classList.remove('shake'); if (!quiet) { void g.offsetWidth; g.classList.add('shake'); } }
   }
 };
 var DOWL = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
