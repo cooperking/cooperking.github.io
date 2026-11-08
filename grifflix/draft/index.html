@@ -420,6 +420,8 @@ html.tv .card:focus, html.tv .day:focus { transform: scale(1.1); box-shadow: 0 1
 @font-face { font-family: "GFutura"; font-weight: 300; font-display: swap; src: url("https://sotd-playlists.cooperking.workers.dev/gf/futurabt-light-webfont.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/futurabt-light-webfont.woff") format("woff"); }
 html.klook { --kfont: "GFutura", "futura-pt", "Futura PT", "Futura", "Jost", "Century Gothic", sans-serif; }   /* (Futura itself, John's choice: Adobe's Futura PT once its kit is added, the Futura Apple devices have; Jost only until then) */
 html.klook .glow { display: none; }
+.triallabel { position: fixed; left: 50%; bottom: 10px; transform: translateX(-50%); z-index: 90; padding: 5px 12px; background: #ffe600; color: #000; font: 600 11px/1.2 var(--sans); letter-spacing: .06em; text-transform: uppercase; pointer-events: auto; }
+.triallabel a { color: #000; }
 html.klook { --kink: 255, 255, 255; }
 html.klook .wrap { --fg: rgb(var(--kink)); --fg-2: rgba(var(--kink), .72); --line: rgba(var(--kink), .3); color: var(--fg-2); }   /* (the month's ink: black on its light colours, white on the rest; pop-ups keep their own) */
 /* the Kubrick look is its own design, not the songs' (John, 8 Nov 2026: "this had more simplicity that I liked - this is
@@ -446,15 +448,9 @@ html.klook .day { background: none; box-shadow: inset 0 0 0 1px rgba(var(--kink)
 html.klook .day.has { box-shadow: none; }
 html.klook .day .num { font-family: var(--kfont); font-weight: 500; }
 html.klook .day.has .num { color: #fff; }   /* (on the film's picture, white whatever the month's ink) */
-/* the table on the bold colours (John, 8 Nov 2026: "the war room look isn't as clear with a brightly coloured background
-   ... rework it for the new colours"): a solid table in the month's ink, the film's name on it in the month's colour,
-   the light above a line of ink: two flat colours, as a Saul Bass poster */
-html.klook .tring { background: rgb(var(--kink)); border: 0; box-shadow: 0 30px 60px rgba(0, 0, 0, .25); }
-html.klook .tlight { box-shadow: 0 0 0 3px rgba(var(--kink), .9); }
-html.klook .tcentre .k, html.klook .tcentre h2, html.klook .tcentre .y, html.klook .tcentre .n { color: var(--bg); }
-html.klook .tcentre .y, html.klook .tcentre .n { opacity: .85; }
-html.klook div.tday, html.klook button.tday:not(.has) { background: var(--bg); box-shadow: inset 0 0 0 1px rgba(var(--kink), .6); color: rgb(var(--kink)); }
-html.klook .tday.has { box-shadow: 0 8px 20px rgba(0, 0, 0, .35); }
+/* the table is the War Room, so always black and white whatever the month (John, 8 Nov 2026: "the war room is really
+   only relevant when it's black and white"); the months' colours are for the calendar */
+html.klook.table .tring { background: none; border: 1px solid rgba(255, 255, 255, .22); }
 /* the calendar on the TV: no row for the name alone (John: "a waste of tv space"); the month's row at the top, and
    the words (Search, Browse...) back when you go up from it */
 html.klook.tv.barhide:not(.table) .bar-top { display: none; }
@@ -603,7 +599,12 @@ if (TVHERO) document.documentElement.classList.add('tvhero');
 if (Q.has('look')) store.set('grifflix-look', Q.get('look') === 'kubrick' ? 'kubrick' : null);
 var KLOOK = store.get('grifflix-look') === 'kubrick';
 var TABLE = function () { return TV && KLOOK && (store.get('grifflix-tvview') || 'table') === 'table'; };   // (the table first, as John's favourite mock-up; the calendar a button away)
-if (KLOOK) document.documentElement.classList.add('klook');   // the Fire TV app (its browser's name), or ?tv=1 to try it
+if (KLOOK) document.documentElement.classList.add('klook');
+if (KLOOK || TVHERO) document.addEventListener('DOMContentLoaded', function () {   // (so it's clear a trial look is on: this device only, not everyone's)
+  var t = document.createElement('div'); t.className = 'triallabel';
+  t.innerHTML = 'Trial look · this device only' + (TV ? ' · <b>?look=0</b> turns it off' : ' · <a href="?look=0&tvhero=0">turn off</a>');
+  document.body.appendChild(t);
+});   // the Fire TV app (its browser's name), or ?tv=1 to try it
 var IN_APP = TV || /GrifflixApp\//.test(navigator.userAgent) || !!(window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform());
 if (TV) document.documentElement.classList.add('tv');   // the Song of the Day sign-in: same site, so the same storage
 var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -1126,6 +1127,8 @@ function drawMonth() {
   if (tbl) drawTable(C, n, m, mine);
 }
 function drawTable(C, n, m, mine) {   // the month round a table (Dr. Strangelove's War Room), the day you're on at the front
+  var R = document.documentElement.style; R.setProperty('--bg', '#0a0a0a'); R.setProperty('--kink', '255, 255, 255');   // (black and white, always)
+  var tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.content = '#0a0a0a';
   var h = '<div class="tlight"></div><div class="tring"></div><div class="tcentre" id="tcentre"></div><div class="tmonth">' + MONTHS[m] + ' ' + S.month.slice(0, 4) + '</div>';
   for (var d = 1; d <= n; d++) {
     var key = S.month + '-' + String(d).padStart(2, '0'), it = C.days[key];
