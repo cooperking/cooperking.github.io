@@ -416,8 +416,39 @@ html.tv .card:focus, html.tv .day:focus { transform: scale(1.1); box-shadow: 0 1
 /* the Kubrick look to try (?look=kubrick): Futura-style titles, the month's colours kept */
 html.klook { --kfont: "Jost", "Futura", "Century Gothic", sans-serif; }
 html.klook .glow { display: none; }
-html.klook.tv .bar-top { transition: max-height .3s ease, opacity .3s ease, margin .3s ease; max-height: 120px; }
-html.klook.tv.barhide .bar-top { max-height: 0; opacity: 0; margin-top: 0; margin-bottom: 0; padding-top: 0; padding-bottom: 0; border-width: 0; overflow: hidden; }   /* (one flat colour a month: no glow) */
+/* the Kubrick look is its own design, not the songs' (John, 8 Nov 2026: "this had more simplicity that I liked - this is
+   a full change from song of the day, so don't cling to those design choices"): no glass, no pills, no rounded corners,
+   no glow; plain tracked capitals, hairlines, the month's one colour */
+html.klook .scrim { display: none; }
+html.klook .bar-top { background: none; border: 0; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; padding: 0; min-height: 44px; gap: 26px; }
+html.klook .bar-top .brand { font: 700 15px/1 var(--kfont); letter-spacing: .55em; margin-right: auto; padding: 0; }
+html.klook .bar-top .pill, html.klook .bar-top .ico { border: 0; background: none; border-radius: 0; min-height: 0; padding: 4px 0; font: 500 12px/1 var(--kfont); letter-spacing: .3em; text-transform: uppercase; color: var(--fg); }
+html.klook .bar-top .pill svg { display: none; }
+html.klook .bar-top .ico { width: auto; height: auto; }
+html.klook.tv .bar-top > :not(.brand) { transition: opacity .3s ease; }
+html.klook.tv.barhide .bar-top > :not(.brand) { opacity: 0; }   /* (the calendar the whole screen; the words back when you go up to them) */
+html.klook .pill, html.klook .ico, html.klook .day, html.klook .card, html.klook .card .pic, html.klook .cal, html.klook .monthnav, html.klook .monthnav .m, html.klook .tday, html.klook .sheet, html.klook .tabs .pill, html.klook select.pill, html.klook input, html.klook .ep .pic { border-radius: 0 !important; }
+html.klook .pill { border: 1px solid rgba(255, 255, 255, .45); background: none; font: 500 12px/1 var(--kfont); letter-spacing: .26em; text-transform: uppercase; }
+html.klook .pill.go, html.klook .pill.on { background: #fff; color: #000; border-color: #fff; }
+html.klook .ico { border: 1px solid rgba(255, 255, 255, .45); background: none; }
+html.klook .ico.big { background: #fff; color: #000; border-color: #fff; }
+html.klook .monthnav { border: 0; background: none; -webkit-backdrop-filter: none; backdrop-filter: none; padding: 0; }
+html.klook .monthnav .m { font: 500 12px/1 var(--kfont); letter-spacing: .26em; border: 0; background: none; }
+html.klook .monthnav .m.on { color: var(--fg); background: none; box-shadow: inset 0 -2px 0 #fff; }
+html.klook .cal { background: none; border: 0; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; padding: 0; }
+html.klook .day { background: none; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .12); border: 0; }
+html.klook .day.has { box-shadow: none; }
+html.klook .day .num { font-family: var(--kfont); font-weight: 500; }
+html.klook.tv .day:focus, html.klook.tv .card:focus .pic, html.klook.tv :focus { outline: 2px solid #fff !important; outline-offset: 4px; }
+html.klook .hsub { font-family: var(--serif); }
+html.klook .side, html.klook .notice, html.klook .tracks button, html.klook .eps .ep, html.klook .res { border-radius: 0 !important; background: none; -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: none; }
+html.klook .side { border: 0; border-top: 1px solid rgba(255, 255, 255, .2); padding-left: 0; padding-right: 0; }
+/* the table, as the mock-up John chose: the whole screen, the ring of light above, the month's days round the table */
+html.table #main.homeview #hero, html.table #main.homeview #mnav, html.table #main.homeview #cals, html.table #main.homeview .rows { display: none; }
+html.table .bar-top { position: fixed; top: 36px; left: 64px; right: 64px; z-index: 30; }
+html.table .cal { position: fixed !important; inset: 0; height: 100% !important; width: 100%; z-index: 1; }
+.tmonth { position: fixed; top: 50px; right: 64px; font: 500 13px/1 var(--kfont); letter-spacing: .5em; text-transform: uppercase; color: var(--fg-2); z-index: 25; transition: opacity .3s; pointer-events: none; }
+html.table:not(.barhide) .tmonth { opacity: 0; }   /* (one flat colour a month: no glow) */
 html.klook .hero h1, html.klook .sheet h2, html.klook .colltitle, html.klook .welcome h1, html.klook .list-title h2, html.klook .row h2, html.klook .sect h2, html.klook .side h2 { font-family: var(--kfont); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
 html.klook .hero h1 i, html.klook .sheet h2 i, html.klook .row h2 i, html.klook .side h2 i { font-family: var(--serif); font-weight: 400; text-transform: none; letter-spacing: 0; }
 html.klook .hero h1 { font-size: 34px; } html.klook .sheet h2 { font-size: 40px; line-height: 1.05; }
@@ -427,15 +458,15 @@ html.klook .brand { font-family: var(--kfont); font-weight: 700; text-transform:
 html.klook.tv .sheet h2 { font-size: clamp(46px, 4.2vw, 70px); }
 /* the table: the month as a ring of days round a table, under a ring of light; left and right turn it */
 html.table .cal { position: relative; height: 470px !important; min-height: 0; background: none; border: 0; box-shadow: none; padding: 0; overflow: visible; display: block; }
-.tlight { position: absolute; left: 50%; top: 4px; width: 760px; height: 96px; transform: translateX(-50%); border-radius: 50%; box-shadow: 0 0 0 2px rgba(255, 255, 255, .6), 0 0 50px 14px rgba(255, 255, 255, .16), inset 0 0 50px 8px rgba(255, 255, 255, .14); pointer-events: none; }
-.tring { position: absolute; left: 50%; top: 286px; width: 1000px; height: 220px; transform: translate(-50%, -50%); border-radius: 50%; border: 1px solid rgba(255, 255, 255, .22); background: radial-gradient(ellipse at center, rgba(0, 0, 0, .28), rgba(0, 0, 0, .1) 60%, transparent 72%); pointer-events: none; }
-.tday { position: absolute; width: 58px; height: 86px; margin: -43px 0 0 -29px; padding: 0; border: 0; border-radius: 3px; background: rgba(0, 0, 0, .3) center/cover; color: var(--fg-2); font: 500 12px/86px var(--kfont); text-align: center; transition: left .5s cubic-bezier(.3, .7, .2, 1), top .5s cubic-bezier(.3, .7, .2, 1), transform .5s cubic-bezier(.3, .7, .2, 1), opacity .4s; box-shadow: 0 6px 18px rgba(0, 0, 0, .45); }
+.tlight { position: absolute; left: 50%; top: -60px; width: 980px; height: 240px; transform: translateX(-50%); border-radius: 50%; box-shadow: 0 0 0 2px rgba(255, 255, 255, .6), 0 0 50px 14px rgba(255, 255, 255, .16), inset 0 0 50px 8px rgba(255, 255, 255, .14); pointer-events: none; }
+.tring { position: absolute; left: 50%; top: 418px; width: 1060px; height: 300px; transform: translate(-50%, -50%); border-radius: 50%; border: 1px solid rgba(255, 255, 255, .22); background: radial-gradient(ellipse at center, rgba(0, 0, 0, .28), rgba(0, 0, 0, .1) 60%, transparent 72%); pointer-events: none; }
+.tday { position: absolute; width: 46px; height: 62px; margin: -31px 0 0 -23px; padding: 0; border: 0; border-radius: 0; background: rgba(0, 0, 0, .3) center/cover; color: var(--fg-2); font: 500 10px/62px var(--kfont); text-align: center; transition: left .5s cubic-bezier(.3, .7, .2, 1), top .5s cubic-bezier(.3, .7, .2, 1), transform .5s cubic-bezier(.3, .7, .2, 1), opacity .4s; box-shadow: 0 6px 18px rgba(0, 0, 0, .45); }
 .tday.has { color: transparent; }
 div.tday { background: rgba(255, 255, 255, .06); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .14); }
 html.tv .tday:focus { outline: 3px solid #fff !important; outline-offset: 4px; box-shadow: 0 16px 40px rgba(0, 0, 0, .6); }
-.tcentre { position: absolute; left: 0; right: 0; top: 214px; text-align: center; pointer-events: none; }
+.tcentre { position: absolute; left: 0; right: 0; top: 300px; text-align: center; pointer-events: none; }
 .tcentre .k { font: 500 15px/1 var(--kfont); letter-spacing: .5em; text-transform: uppercase; color: var(--fg-2); }
-.tcentre h2 { margin: 12px auto 6px; max-width: 700px; font: 700 46px/1.02 var(--kfont); text-transform: uppercase; letter-spacing: .04em; color: var(--fg); }
+.tcentre h2 { margin: 12px auto 6px; max-width: 760px; font: 700 52px/1 var(--kfont); text-transform: uppercase; letter-spacing: .04em; color: var(--fg); }
 .tcentre .y { font: italic 400 22px var(--serif); color: var(--fg-2); }
 .tcentre .n { margin: 10px auto 0; max-width: 640px; font: italic 400 19px/1.35 var(--serif); color: var(--fg); opacity: .9; }
 /* the TV calendar to try (?tvhero=1): the day you're on large on the left, over its picture; the month beside it */
@@ -551,7 +582,7 @@ if (TVHERO) document.documentElement.classList.add('tvhero');
 // particularly"): Futura-style titles (Jost), and on a TV "the table" (Dr. Strangelove's War Room) with the calendar a button away
 if (Q.has('look')) store.set('grifflix-look', Q.get('look') === 'kubrick' ? 'kubrick' : null);
 var KLOOK = store.get('grifflix-look') === 'kubrick';
-var TABLE = function () { return TV && KLOOK && store.get('grifflix-tvview') === 'table'; };   // (the calendar first; the table a button away)
+var TABLE = function () { return TV && KLOOK && (store.get('grifflix-tvview') || 'table') === 'table'; };   // (the table first, as John's favourite mock-up; the calendar a button away)
 if (KLOOK) document.documentElement.classList.add('klook');   // the Fire TV app (its browser's name), or ?tv=1 to try it
 var IN_APP = TV || /GrifflixApp\//.test(navigator.userAgent) || !!(window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform());
 if (TV) document.documentElement.classList.add('tv');   // the Song of the Day sign-in: same site, so the same storage
@@ -1036,8 +1067,9 @@ function drawMonth() {
 
   var first = new Date(y, m, 1), lead = (first.getDay() + 6) % 7, n = new Date(y, m + 1, 0).getDate();
   document.documentElement.classList.toggle('table', TABLE());
-  if (TV && KLOOK) {   // the view switch (the table, or the calendar)
-    $('.hbtns').insertAdjacentHTML('beforeend', '<button class="pill" id="tvview">' + (TABLE() ? 'Calendar' : 'The table') + '</button>');
+  if (TV && KLOOK) {   // the view switch (the table, or the calendar): a word in the bar, by Search and Browse
+    var old = $('#tvview'); if (old) old.remove();
+    $('.bar-top .brand').insertAdjacentHTML('afterend', '<button class="pill" id="tvview">' + (TABLE() ? 'Calendar' : 'The table') + '</button>');
     $('#tvview').onclick = function () { store.set('grifflix-tvview', TABLE() ? 'calendar' : 'table'); drawMonth(); var t = $('#cal .today') || $('#cal [data-day]'); if (t) t.focus(); };
   }
   var h = '', tbl = TABLE();
@@ -1073,7 +1105,7 @@ function drawMonth() {
   if (tbl) drawTable(C, n, m, mine);
 }
 function drawTable(C, n, m, mine) {   // the month round a table (Dr. Strangelove's War Room), the day you're on at the front
-  var h = '<div class="tlight"></div><div class="tring"></div><div class="tcentre" id="tcentre"></div>';
+  var h = '<div class="tlight"></div><div class="tring"></div><div class="tcentre" id="tcentre"></div><div class="tmonth">' + MONTHS[m] + ' ' + S.month.slice(0, 4) + '</div>';
   for (var d = 1; d <= n; d++) {
     var key = S.month + '-' + String(d).padStart(2, '0'), it = C.days[key];
     if (it && !it.secret) h += '<button class="tday has' + (key === TODAY ? ' today' : '') + '" data-day="' + key + '" data-n="' + d + '" aria-label="' + d + ' ' + MONTHS[m] + ': ' + esc(it.name) + '" style="background-image:url(' + esc(img(it.poster || it.thumb, it.poster ? 'Primary' : 'Thumb', 400)) + ')">' + d + '</button>';
@@ -1086,15 +1118,15 @@ function drawTable(C, n, m, mine) {   // the month round a table (Dr. Strangelov
   if (start) tableTurn(start); else tableTurn(null);
 }
 function tableTurn(b) {   // the table turned so b is at the front; its film in the middle
-  var all = $$('#cal .tday'), n = all.length, fi = b ? +b.dataset.n : 1, cx = 640 - 64, cy = 286, rx = 500, ry = 110;
-  var w = ($('#cal').clientWidth || 1152); cx = w / 2;
+  var all = $$('#cal .tday'), n = all.length, fi = b ? +b.dataset.n : 1, cx = 640, cy = 418, rx = 530, ry = 150;
+  var w = ($('#cal').clientWidth || 1280); cx = w / 2;
   all.forEach(function (el) {
     var a = Math.PI / 2 - (+el.dataset.n - fi) * 2 * Math.PI / n, x = cx + rx * Math.cos(a), y = cy + ry * Math.sin(a), depth = (Math.sin(a) + 1) / 2;
     el.style.left = x.toFixed(1) + 'px'; el.style.top = y.toFixed(1) + 'px';
-    el.style.transform = 'scale(' + (el === b ? 1.45 : (.5 + .45 * depth)).toFixed(3) + ')';
+    el.style.transform = 'scale(' + (el === b ? 1.52 : (.62 + .38 * depth)).toFixed(3) + ')';
     el.style.zIndex = el === b ? 200 : Math.round(depth * 100);
-    el.style.opacity = (.22 + .78 * depth * depth).toFixed(2);   // (the far side faint, behind the film's name)
-    el.style.filter = el === b ? 'none' : 'saturate(' + (.35 + .5 * depth).toFixed(2) + ')';
+    el.style.opacity = (.45 + .55 * depth).toFixed(2);
+    el.style.filter = el === b ? 'none' : 'grayscale(1) brightness(.78)';   // (the others in black and white, the day you're on in colour)
   });
   var c = $('#tcentre'); if (!c) return;
   var it = b && S.calData.days[b.dataset.day];
@@ -1900,7 +1932,8 @@ document.addEventListener('keydown', function (e) {
   }
   if (ae && ae.classList && ae.classList.contains('tday')) {   // the table: left and right turn it; up to the month's buttons
     if (k === 'left' || k === 'right') { e.preventDefault(); tableStep(k === 'right' ? 1 : -1); return; }
-    if (k === 'up') { e.preventDefault(); var t = $('#tvview') || $('#playtoday'); if (t) t.focus(); return; }
+    if (k === 'up') { e.preventDefault(); var t = $('#tvview'); if (t) t.focus(); return; }
+    if (k === 'down') { e.preventDefault(); return; }
   }
   if (k === 'ok' || (inText && (k === 'left' || k === 'right'))) return;   // OK presses the button (the browser's own); text keeps its own left/right
   e.preventDefault(); moveFocus(k);
