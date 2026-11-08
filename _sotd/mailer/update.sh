@@ -8,7 +8,7 @@ cd "$(dirname "$0")"
 command -v clasp >/dev/null || { echo "clasp isn't installed: see the steps Claude gave."; exit 1; }
 if [ ! -f .clasp.json ]; then
   list=$(clasp list 2>/dev/null || clasp list-scripts 2>/dev/null || true)
-  id=$(printf '%s\n' "$list" | grep -i "Song of the Day mailer" | grep -oE '[A-Za-z0-9_-]{40,}' | head -1)
+  id=$(printf '%s\n' "$list" | grep -i "Song of the Day mai" | grep -oE '[A-Za-z0-9_-]{40,}' | head -1)
   if [ -z "$id" ]; then echo "Couldn't find the 'Song of the Day mailer' project in your Apps Script (clasp list said:)"; echo "$list"; exit 1; fi
   printf '{"scriptId":"%s","rootDir":"."}\n' "$id" > .clasp.json
   echo "Found the mailer: $id"
