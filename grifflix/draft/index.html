@@ -415,6 +415,7 @@ html.tv .day .num { font-size: 13px; }
 html.tv .card:focus, html.tv .day:focus { transform: scale(1.1); box-shadow: 0 14px 34px rgba(0, 0, 0, .55); transition: transform .15s ease, box-shadow .15s ease; }
 /* the Kubrick look to try (?look=kubrick): Futura-style titles, the month's colours kept */
 html.klook { --kfont: "Jost", "Futura", "Century Gothic", sans-serif; }
+html.klook .glow { display: none; }   /* (one flat colour a month: no glow) */
 html.klook .hero h1, html.klook .sheet h2, html.klook .colltitle, html.klook .welcome h1, html.klook .list-title h2, html.klook .row h2, html.klook .sect h2, html.klook .side h2 { font-family: var(--kfont); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
 html.klook .hero h1 i, html.klook .sheet h2 i, html.klook .row h2 i, html.klook .side h2 i { font-family: var(--serif); font-weight: 400; text-transform: none; letter-spacing: 0; }
 html.klook .hero h1 { font-size: 34px; } html.klook .sheet h2 { font-size: 40px; line-height: 1.05; }
@@ -803,23 +804,24 @@ var PALETTES = [   // the month's colours: ground, then four glows
   ['#0b86d3', '#0098b0', '#3370ff', '#009e91', '#3333ff'], ['#ec135b', '#ff3344', '#ff30b3', '#ff4c29', '#fc00e7'],
   ['#09696d', '#009e77', '#0094d4', '#00a150', '#198cff'], ['#ec13c1', '#ff3399', '#dd33ff', '#ff3366', '#aa33ff']
 ];
-// Kubrick's colours, a film for each month (the Kubrick look, ?look=kubrick, to try): ground, then four glows
-var KPALETTES = [
-  ['#16263a', '#6f9fc6', '#a8c6e0', '#d4561c', '#3f6f9a'],   // January: The Shining, the hedge maze in snow (and the Overlook's orange)
-  ['#2e1f0d', '#d9a441', '#8fa9c4', '#c98a5a', '#7f9a6a'],   // February: Barry Lyndon, candlelight and powder blue
-  ['#4a0d24', '#ff5c8a', '#e0183c', '#c8a2d6', '#ff9fb6'],   // March: Lolita, the heart-shaped glasses
-  ['#24082f', '#e2007a', '#ff7a00', '#1f4fff', '#b000e0'],   // April: A Clockwork Orange, the Korova Milk Bar
-  ['#5a0d0d', '#e0b13a', '#c65d2e', '#4f86c6', '#9e1b1b'],   // May: Spartacus, Technicolor crimson and gold
-  ['#0b0b2e', '#ff2d95', '#ff8c1a', '#00c2ff', '#7b3cff'],   // June: 2001, the Star Gate
-  ['#262b12', '#e2621b', '#6b7a2a', '#b02a1a', '#f0a23a'],   // July: Full Metal Jacket, olive drab and Hue burning
-  ['#5e0910', '#ff2a12', '#ff6a3d', '#b8b8cc', '#e0182d'],   // August: 2001, HAL and the space station's red chairs
-  ['#26221c', '#8a7f6a', '#5e6b5a', '#b0a48a', '#6f5b48'],   // September: Paths of Glory, the trenches
-  ['#3a0d0a', '#d4561c', '#a3121c', '#c79a2a', '#7a3b1b'],   // October: The Shining, the Overlook's carpet and the Gold Room
-  ['#18181c', '#9a9aa8', '#5d6170', '#c8c8d0', '#4f6a8a'],   // November: Dr. Strangelove, the War Room
-  ['#121a48', '#e8a33d', '#c8102e', '#6a3fa0', '#2f5fd0']    // December: Eyes Wide Shut, Christmas lights in the blue night
+// Kubrick's colours: one film a month, its one colour, flat (no glow) (the Kubrick look, ?look=kubrick, to try;
+// John, 8 Nov 2026: "not a mix of colours, the clear choice from each. Remove the song of the day glow")
+var KCOLOURS = [
+  ['#4a3b2c', 'Paths of Glory'],        // January: the trenches' mud
+  ['#8c5e1e', 'Barry Lyndon'],          // February: candlelight
+  ['#b0155e', 'Lolita'],                // March: the heart-shaped glasses
+  ['#c85000', 'A Clockwork Orange'],    // April: orange
+  ['#5b1f6b', 'Spartacus'],             // May: Roman purple
+  ['#a8001a', '2001: A Space Odyssey'], // June: HAL's red eye
+  ['#4a5320', 'Full Metal Jacket'],     // July: olive drab
+  ['#34383f', 'The Killing'],           // August: the racetrack's black and white
+  ['#1f3a26', 'Fear and Desire'],       // September: the forest
+  ['#2b4864', 'The Shining'],           // October: the hedge maze at night
+  ['#1c1d22', 'Dr. Strangelove'],       // November: the War Room
+  ['#1a2a8a', 'Eyes Wide Shut']         // December: the blue Christmas night
 ];
 function monthTint(m) {   // (six months on from the songs' colours, so the two never look the same in a month)
-  var p = (KLOOK ? KPALETTES[m] : PALETTES[(m + 6) % 12]) || PALETTES[0], R = document.documentElement.style;
+  var k = KLOOK && KCOLOURS[m], p = k ? [k[0], k[0], k[0], k[0], k[0]] : (PALETTES[(m + 6) % 12] || PALETTES[0]), R = document.documentElement.style;
   ['--bg', '--g1', '--g2', '--g3', '--g4'].forEach(function (n, i) { R.setProperty(n, p[i]); });
   var tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.content = p[0];
 }
