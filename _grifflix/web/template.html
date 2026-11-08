@@ -391,6 +391,7 @@ html.big .day .art { object-position: 50% 50%; }
 html.big .day .cap { display: block; padding: 18px 8px 6px; }
 html.big .day .cap .t { font-size: 15px; }
 html.big .day .num, html.big .day.has .num { top: 4px; bottom: auto; }
+html.tv .cal { min-height: 300px; }
 html.tv .day .cap { padding: 14px 7px 5px; }
 html.tv .day .cap .t { font-size: 13px; -webkit-line-clamp: 1; }   /* (a TV: the title on one line, small, so the picture shows) */
 html.tv .day .cap .s { font-size: 9px; letter-spacing: .08em; }
@@ -400,12 +401,13 @@ html.tv .day .cap .s { font-size: 9px; letter-spacing: .08em; }
 html.big .calhead:empty { display: block; height: 0; }   /* (keeps its row, so the days get the rest: without it a visitor's calendar had days of no height) */
 /* a film's pop-up on a TV, as the songs' is: the whole screen, its picture behind, the details on the left with Play in
    view at once, nothing to scroll for (John, 8 Nov 2026) */
-html.tv .sheet { width: 100vw; height: 100vh; max-height: none; border: 0; border-radius: 0; background: #07040a; overflow: auto; }
-html.tv .sheet .heroimg { position: absolute; inset: 0; height: 100vh; aspect-ratio: auto; }
+html.tv dialog#sheet { position: fixed; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none; margin: 0; }
+html.tv .sheet { width: 100%; height: 100%; max-height: none; border: 0; border-radius: 0; background: #07040a; overflow: auto; position: relative; }   /* (sized to the page, not the screen: vh on a Fire Stick can be the screen's) */
+html.tv .sheet .heroimg { position: absolute; inset: 0; height: 100%; aspect-ratio: auto; }
 html.tv .sheet .heroimg img { object-position: 60% 20%; opacity: .62; }
 html.tv .sheet .heroimg::after { background: linear-gradient(90deg, rgba(7, 4, 10, .96) 0%, rgba(7, 4, 10, .82) 38%, rgba(7, 4, 10, .2) 70%, rgba(7, 4, 10, .1)), linear-gradient(0deg, rgba(7, 4, 10, .9), transparent 40%); }
 html.tv .sheet .noimg-top { display: none; }
-html.tv .sheet .in { position: relative; margin: 0; min-height: 100vh; max-width: 60vw; padding: 7vh 5vw 7vh; display: flex; flex-direction: column; justify-content: center; }
+html.tv .sheet .in { position: relative; margin: 0; min-height: 100%; max-width: 60vw; padding: 7vh 5vw 7vh; display: flex; flex-direction: column; justify-content: center; }
 html.tv .sheet h2 { font-size: clamp(48px, 4.4vw, 76px); }
 html.tv .sheet .tag { font-size: 24px; }
 html.tv .sheet .ov { font-size: 19px; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
@@ -840,7 +842,8 @@ function drawMonth() {
 }
 function fitCal() {   // a computer or TV: the calendar down to the window's foot
   var c = $('#cal'); if (!c || !document.documentElement.classList.contains('big')) return;
-  c.style.setProperty('--calh', Math.max(420, innerHeight - (c.getBoundingClientRect().top + scrollY) - 16) + 'px');
+  var vh = document.documentElement.clientHeight || innerHeight;   // (the page's own height: on a Fire Stick, shrunk from 1280 wide, innerHeight can be the screen's, too tall)
+  c.style.setProperty('--calh', Math.max(TV ? 300 : 420, vh - (c.getBoundingClientRect().top + scrollY) - 16) + 'px');
 }
 addEventListener('resize', function () { fitCal(); });
 function dayPic(it) { if (document.documentElement.classList.contains('big')) return img(it.backdrop || it.thumb || it.poster, it.backdrop ? 'Backdrop' : (it.thumb ? 'Thumb' : 'Primary'), 480);
