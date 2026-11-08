@@ -391,6 +391,9 @@ html.big .day .art { object-position: 50% 50%; }
 html.big .day .cap { display: block; padding: 18px 8px 6px; }
 html.big .day .cap .t { font-size: 15px; }
 html.big .day .num, html.big .day.has .num { top: 4px; bottom: auto; }
+html.tv .day .cap { padding: 14px 7px 5px; }
+html.tv .day .cap .t { font-size: 13px; -webkit-line-clamp: 1; }   /* (a TV: the title on one line, small, so the picture shows) */
+html.tv .day .cap .s { font-size: 9px; letter-spacing: .08em; }
 html.big .calhead:empty { display: block; height: 0; }   /* (keeps its row, so the days get the rest: without it a visitor's calendar had days of no height) */
 /* a film's pop-up on a TV, as the songs' is: the whole screen, its picture behind, the details on the left with Play in
    view at once, nothing to scroll for (John, 8 Nov 2026) */
@@ -417,6 +420,7 @@ html.big:not(.tv) .sheet .heroimg { aspect-ratio: 16 / 6; }   /* (a computer: a 
 
 </style>
 <script>/* a computer's screen (wide, with a mouse) or the TV: the whole calendar in the window, as on the songs' site */
+(function () { if (/GRIFFLIXTV\//.test(navigator.userAgent) || /[?&]tv=1(&|$)/.test(location.search)) { var vp = document.querySelector('meta[name=viewport]'); if (vp) vp.setAttribute('content', 'width=1280'); } })();   /* a TV: laid out 1280 wide and shrunk to the screen, as the songs' page is (a Fire Stick's browser is 960 wide: everything came out a third too big) */
 (function () { var de = document.documentElement; if (/GRIFFLIXTV\//.test(navigator.userAgent) || /[?&]tv=1/.test(location.search) || (window.matchMedia && matchMedia('(min-width: 1000px) and (min-height: 560px) and (hover: hover) and (pointer: fine)').matches)) de.className += ' big'; })();</script>
 </head>
 <body>
@@ -998,7 +1002,7 @@ function itemSheet(it, ctx) {
   var top = it.backdrop ? '<div class="heroimg"><img alt="" src="' + esc(img(it.backdrop, 'Backdrop', 1100)) + '">' + X + '</div>' : (it.thumb || (it.type === 'video' && it.poster) ? '<div class="heroimg"><img alt="" src="' + esc(img(it.thumb || it.poster, it.thumb ? 'Thumb' : 'Primary', 1100)) + '">' + X + '</div>' : '<div class="noimg-top" style="position:relative">' + X + '</div>');
   openSheet(top + '<div class="in"><div class="date">' + (ctx.date ? esc(longDate(ctx.date)) : esc(typeName(it))) + '</div><h2>' + esc(showName(it)) + '</h2><div id="isbody">' + bodyHTML(it, ctx) + '</div></div>');
   wireBody(it, ctx);
-  api('item?id=' + it.id).then(function (full) { if (!dlg.open) return; Object.assign(it, full); var had = document.activeElement && document.activeElement.id; $('#isbody').innerHTML = bodyHTML(it, ctx); wireBody(it, ctx); if (TV) { var back = had && $('#' + had); if (back) back.focus({ preventScroll: true }); else tvStart(); } }).catch(function () {});
+  api('item?id=' + it.id).then(function (full) { if (!dlg.open) return; Object.assign(it, full); var had = document.activeElement && document.activeElement.id; $('#isbody').innerHTML = bodyHTML(it, ctx); wireBody(it, ctx); if (TV) { var back = had && !/^(asignin|aplay|atrailer)$/.test(had) && $('#' + had); if (back) back.focus({ preventScroll: true }); else tvStart(); }   /* (the trailer arrives with the details: chosen then, unless something else was) */ }).catch(function () {});
 }
 function typeName(it) { return { movie: 'Film', series: 'Series', episode: it.series || 'Episode', video: 'Home video', photo: 'Photo' }[it.type] || ''; }
 function bodyHTML(it, ctx) {
