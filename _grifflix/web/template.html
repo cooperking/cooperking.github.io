@@ -404,7 +404,39 @@ html.tv .day .cap .s { font-size: 9px; letter-spacing: .08em; }
 .day.secret { background: var(--empty-bg); box-shadow: inset 0 0 0 1px var(--empty-line); }
 .day.secret .q { position: absolute; inset: 0; display: grid; place-items: center; font: italic 400 clamp(20px, 3vw, 34px)/1 var(--serif); color: var(--faint); }
 .day.secret .num { background: none; border-color: transparent; color: var(--muted); }
-html.big .calhead:empty { display: block; height: 0; }   /* (keeps its row, so the days get the rest: without it a visitor's calendar had days of no height) */
+html.big .calhead:empty { display: block; height: 0; }
+/* the TV (Android TV's design guide): text and buttons 5% in from each edge (64 and 36 of the page's 1280 × 720), text big
+   enough from the sofa, and the one you're on 10% larger, lifted, with room around it */
+html.tv.big .wrap { padding: 36px 64px 36px; }
+html.tv .grid { gap: 10px 12px; } html.tv .dow { gap: 10px 12px; }
+html.tv .day .cap .t { font-size: 17px; }
+html.tv .day .cap .s { font-size: 12px; letter-spacing: .06em; }
+html.tv .day .num { font-size: 13px; }
+html.tv .card:focus, html.tv .day:focus { transform: scale(1.1); box-shadow: 0 14px 34px rgba(0, 0, 0, .55); transition: transform .15s ease, box-shadow .15s ease; }
+/* the TV calendar to try (?tvhero=1): the day you're on large on the left, over its picture; the month beside it */
+html.tvhero #main.homeview { grid-template-columns: minmax(0, 40%) minmax(0, 1fr); column-gap: 36px; align-items: start; }
+html.tvhero #main.homeview #tvfeat { grid-column: 1; grid-row: 1 / span 3; align-self: stretch; }
+html.tvhero #main.homeview #hero { grid-column: 2; grid-row: 1; padding-top: 4px; }
+html.tvhero #main.homeview #mnav { grid-column: 2; grid-row: 2; margin: 8px 0 0; }
+html.tvhero #main.homeview #cals { display: none; }
+html.tvhero #main.homeview .stage { grid-column: 2; grid-row: 3; margin-top: 10px; }
+html.tvhero #main.homeview .rows { grid-column: 1 / -1; grid-row: 4; }
+html.tvhero .hero h1 { font-size: 30px; } html.tvhero .hsub { font-size: 17px; }
+html.tvhero .day .cap { display: none; }
+html.tvhero .cal { background: rgba(8, 4, 10, .35); }
+#tvbg { display: none; }
+html.tvhero #tvbg { display: block; position: fixed; inset: 0; z-index: -1; pointer-events: none; background: var(--bg); }
+#tvbg img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 25%; opacity: 0; transition: opacity .5s ease; }
+#tvbg img.on { opacity: .62; }
+#tvbg::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(7, 4, 10, .94) 0%, rgba(7, 4, 10, .78) 34%, rgba(7, 4, 10, .45) 62%, rgba(7, 4, 10, .55) 100%), linear-gradient(0deg, rgba(7, 4, 10, .6), transparent 45%); }
+.tvfeat { display: flex; flex-direction: column; justify-content: center; min-height: 100%; padding: 8px 0 24px; }
+.tvfeat .k { font: 600 14px/1.2 var(--sans); letter-spacing: .16em; text-transform: uppercase; color: var(--fg-2); }
+.tvfeat h2 { font: 400 54px/1.04 var(--serif); color: var(--fg); margin: 12px 0 10px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.tvfeat .m { font: 500 17px/1.3 var(--sans); color: var(--fg-2); }
+.tvfeat .m .c { border: 1px solid currentColor; border-radius: 4px; padding: 0 5px; font-size: 14px; }
+.tvfeat .note { font: italic 400 21px/1.4 var(--serif); color: var(--fg); margin-top: 16px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.tvfeat .ov { font: 400 18px/1.45 var(--sans); color: var(--fg-2); margin-top: 16px; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.tvfeat .h { font: 500 14px/1 var(--sans); letter-spacing: .08em; color: var(--fg-2); margin-top: 22px; opacity: .8; }   /* (keeps its row, so the days get the rest: without it a visitor's calendar had days of no height) */
 /* a film's pop-up on a TV, as the songs' is: the whole screen, its picture behind, the details on the left with Play in
    view at once, nothing to scroll for (John, 8 Nov 2026) */
 html.tv dialog#sheet { position: fixed; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none; margin: 0; }
@@ -484,7 +516,10 @@ if (Q.has('demo')) store.set('grifflix-demo', Q.get('demo') === '0' ? null : '1'
 var DEMO = !!store.get('grifflix-demo');
 var GW = '', ME = null, KEY = '';
 var TOKEN = store.get('grifflix-member') || '';   // Grifflix's own sign-in (its own members: apart from Song of the Day's)
-var TV = /GRIFFLIXTV\//.test(navigator.userAgent) || Q.get('tv') === '1';   // the Fire TV app (its browser's name), or ?tv=1 to try it
+var TV = /GRIFFLIXTV\//.test(navigator.userAgent) || Q.get('tv') === '1';
+if (Q.has('tvhero')) store.set('grifflix-tvhero', Q.get('tvhero') === '1' ? '1' : null);
+var TVHERO = TV && store.get('grifflix-tvhero') === '1';   // (a TV calendar to try, John's to decide: the day you're on shown large beside it; ?tvhero=1 on, ?tvhero=0 off)
+if (TVHERO) document.documentElement.classList.add('tvhero');   // the Fire TV app (its browser's name), or ?tv=1 to try it
 var IN_APP = TV || /GrifflixApp\//.test(navigator.userAgent) || !!(window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform());
 if (TV) document.documentElement.classList.add('tv');   // the Song of the Day sign-in: same site, so the same storage
 var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -722,7 +757,8 @@ function img(id, kind, w) {
   // the site's own copy of each picture (kept by the Worker, made by John's Update; the same address for everyone, its
   // version in it: the browser and Grifflix's service worker keep each one, shown at once next time, as the songs' covers)
   kind = kind || 'Primary';
-  var sizes = { Primary: [400], Backdrop: [480, 1100], Thumb: [480, 1100] }[kind] || [400], size = sizes.filter(function (x) { return x >= (w || 0); })[0] || sizes[sizes.length - 1];
+  if (TV && w >= 1100 && kind !== 'Primary') w = 1920;   // (a TV: its full-screen pictures sharp at 1080p)
+  var sizes = { Primary: [400], Backdrop: [480, 1100, 1920], Thumb: [480, 1100, 1920] }[kind] || [400], size = sizes.filter(function (x) { return x >= (w || 0); })[0] || sizes[sizes.length - 1];
   var t = PICTAG[id + kind];
   return WORKER + '/gp/' + id + '/' + kind + '-' + size + '.jpg' + (t ? '?t=' + t : '');
 }
@@ -859,7 +895,7 @@ $$('[data-go]').forEach(function (b) { b.addEventListener('click', function () {
 function home() {
   var main = $('#main');
   main.className = 'homeview';   // (on a computer, only the calendar page is laid out as one screen)
-  main.innerHTML = '<div class="hero" id="hero"></div><div class="cals" id="cals"></div><div id="mnav"></div><div class="stage"><section class="cal" id="cal"></section><section class="side" id="side"></section></div><div class="rows" id="rows"></div>';
+  main.innerHTML = (TVHERO ? '<div class="tvfeat" id="tvfeat"></div>' : '') + '<div class="hero" id="hero"></div><div class="cals" id="cals"></div><div id="mnav"></div><div class="stage"><section class="cal" id="cal"></section><section class="side" id="side"></section></div><div class="rows" id="rows"></div>';
   Promise.all([api('calendars'), api('calendar?id=' + encodeURIComponent(S.cal)).catch(function () { S.cal = 'motd'; return api('calendar?id=motd'); })]).then(function (r) {
     S.cals = r[0].calendars; S.calData = r[1];
     if (!S.month) S.month = TODAY.slice(0, 7);
@@ -972,9 +1008,32 @@ function drawMonth() {
         '<span class="tx"><span class="tt">' + esc(showName(it)) + '</span><span class="ta">' + esc(subOf(it)) + '</span></span></button></li>';
     }).join('') + '</ol>' : '<p class="none">' + (mine ? 'Tap a day on the calendar to choose its film.' : 'Nothing this month yet.') + '</p>');
   $$('#cal [data-day], #side [data-day]').forEach(function (b) { b.onclick = function () { daySheet(b.dataset.day); }; });
+  if (TVHERO) { $$('#cal .day').forEach(function (b) { b.addEventListener('focus', function () { tvFeat(b.dataset.day || ''); }); });
+    var start = C.days[TODAY] && TODAY.slice(0, 7) === S.month ? TODAY : inMonth.sort().pop(); tvFeat(start || ''); }
   $('#playtoday').onclick = function () { var t = C.days[TODAY] || C.days[inMonth.sort().pop()]; if (t) play(t); else toast('Nothing on this calendar yet.'); };
   $('#surprise').onclick = function () { var all = Object.keys(C.days).filter(function (k) { return !C.days[k].secret; }); if (!all.length) return toast('Nothing on this calendar yet.'); daySheet(all[Math.floor(Math.random() * all.length)]); };
   $('#sharecal').onclick = function () { share('Grifflix: ' + (C.id === 'motd' ? 'Movie of the Day' : C.name), location.href.split('#')[0] + '#home/' + C.id); };
+}
+function tvFeat(date) {   // the TV calendar to try: the day you're on, large, over its picture
+  var el = $('#tvfeat'); if (!el || !S.calData) return;
+  clearTimeout(tvFeat.t);
+  tvFeat.t = setTimeout(function () {
+    var it = date && S.calData.days[date], h;
+    if (it && !it.secret) {
+      var meta = [it.year, it.mins ? (it.mins >= 60 ? Math.floor(it.mins / 60) + ' h ' + (it.mins % 60) + ' min' : it.mins + ' min') : '', it.cert ? '<span class="c">' + esc(it.cert) + '</span>' : '', it.rating ? '★ ' + (+it.rating).toFixed(1) : ''].filter(Boolean);
+      var note = (S.calData.notes || {})[date];
+      h = '<div class="k">' + (S.calData.id === 'motd' ? 'Movie of the Day · ' : '') + esc(longDate(date)) + '</div><h2>' + esc(showName(it)) + '</h2><div class="m">' + meta.join(' · ') + '</div>' +
+        (note ? '<div class="note">“' + esc(note) + '”</div>' : it.overview ? '<div class="ov">' + esc(it.overview) + '</div>' : '') + '<div class="h">OK to open · ▶ to play</div>';
+    } else h = date ? '<div class="k">' + esc(longDate(date)) + '</div><h2>' + (it && it.secret ? 'A surprise' : 'No film') + '</h2><div class="m">' + (it && it.secret ? 'Revealed at 8am on the day' : (S.calData.mine ? 'OK to choose one' : '')) + '</div>' : '';
+    el.innerHTML = h;
+    var bg = $('#tvbg'); if (!bg) { bg = document.createElement('div'); bg.id = 'tvbg'; document.body.prepend(bg); }
+    var src = it && !it.secret ? (it.backdrop ? img(it.backdrop, 'Backdrop', 1920) : it.thumb ? img(it.thumb, 'Thumb', 1920) : '') : '';
+    var cur = bg.querySelector('img.on');
+    if (cur && cur.dataset.src === src) return;
+    if (cur) { cur.classList.remove('on'); setTimeout(function () { cur.remove(); }, 600); }
+    if (!src) return;
+    var im = new Image(); im.alt = ''; im.dataset.src = src; im.onload = function () { if (im.dataset.src === src) im.classList.add('on'); }; im.src = src; bg.appendChild(im);
+  }, 120);
 }
 function fitCal() {   // a computer or TV: the calendar down to the window's foot
   var c = $('#cal'); if (!c || !document.documentElement.classList.contains('big')) return;
