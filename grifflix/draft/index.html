@@ -680,6 +680,27 @@ html.mob .film .in { padding: 18px 20px 48px !important; }
 html.mob .film h2 { font-size: 40px !important; }
 html.mob .film .ov { font-size: 17px !important; }
 html.mob .film .noimg-top { height: calc(env(safe-area-inset-top) + 54px); }
+/* a phone: the close in reach over the strip at the top, the buttons straight under the name, all a size for a phone (John, 8 Nov 2026: "Mobile view of days is really wrong") */
+html.mob .film > .close { z-index: 82 !important; top: calc(env(safe-area-inset-top) + 8px) !important; right: 12px !important; width: 40px; height: 40px; }
+html.mob .film .date { font-size: 11px !important; letter-spacing: .2em !important; }
+html.mob .film .date .dnav { width: 34px; height: 34px; min-height: 34px; }
+html.mob .film h2 { font-size: clamp(30px, 10vw, 40px) !important; line-height: 1.05 !important; margin: 8px 0 10px !important; }
+html.mob .film #isbody { display: flex; flex-direction: column; }
+html.mob .film #isbody > * { order: 3; }
+html.mob .film #isbody > .meta { order: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: 12px !important; letter-spacing: .14em !important; }
+html.mob .film #isbody > .meta > span:not(.c) { opacity: .45; }
+html.mob .film #isbody > .meta .c { padding: 2px 6px; font-size: 11px; }
+html.mob .film #isbody > .acts { order: 1; display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0 6px !important; }
+html.mob .film #isbody > .acts .pill { min-height: 46px; padding: 0 16px; font-size: 12px !important; letter-spacing: .16em !important; }
+html.mob .film #isbody > .acts .pill.go { flex: 1 1 100%; justify-content: center; }
+html.mob .film #isbody > .acts .ico { width: 46px; height: 46px; }
+html.mob .film #isbody > .acts { gap: 8px; }
+html.mob .film #isbody > .acts .pill:not(.go) { min-height: 38px; padding: 0 11px; font-size: 10.5px !important; letter-spacing: .12em !important; }
+html.mob .film #isbody > .acts .ico { width: 38px; height: 38px; min-height: 38px; }
+html.mob .film #isbody > .acts .ico svg { width: 18px; height: 18px; }
+html.mob .film #isbody > .tag, html.mob .film #isbody > .ov, html.mob .film #isbody > .note, html.mob .film #isbody > .chips, html.mob .film #isbody > .people { order: 2; }
+html.mob .film .tag { font-size: 19px !important; margin: 14px 0 6px !important; }
+html.mob .film .ov { font-size: 16px !important; line-height: 1.55 !important; }
 /* the trailer's own player: YouTube's, the whole screen; the film's name and Close over it at its start, when paused or asked */
 .tplayer { position: fixed; inset: 0; z-index: 200; background: #000; outline: none; }
 .tplayer .tpwrap, .tplayer iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
