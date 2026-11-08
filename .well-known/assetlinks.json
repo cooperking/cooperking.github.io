@@ -11,5 +11,17 @@
         "42:1D:6F:88:F4:B4:F7:C1:AE:07:78:07:23:43:0F:13:39:F7:65:B6:E5:22:95:D5:1D:81:B4:07:BE:12:AB:A6"
       ]
     }
+  },
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "io.github.cooperking.grifflix.app",
+      "sha256_cert_fingerprints": [
+        "55:A9:07:AD:AC:73:98:6D:52:72:1B:E1:EF:30:9D:71:3E:74:52:F1:34:ED:BB:25:6E:DC:74:D6:C3:45:50:6A"
+      ]
+    }
   }
 ]
