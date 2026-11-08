@@ -678,7 +678,9 @@ html.mob .codepic { left: 225px; top: 195px; width: 330px; height: 495px; }
 html.mob .th-slices .vday { height: 510px; background-size: 340px 510px; }
 html.mob .th-moon .vday { width: 40px; height: 40px; }
 html.mob .bigmoon { left: 180px; right: auto; top: 230px; width: 420px; height: 420px; }
-html.mob .mphase { width: 200px; margin-left: -100px; font-size: 15px; letter-spacing: .2em; }
+html.mob .mphase { display: none; }   /* (no moon's phase on a phone) */
+#cal .bigmoon, #cal .globe, #cal .codepic, #cal .reelscreen, #cal .cposter, #cal .mfilm { cursor: pointer; }
+.tcentre h2 { pointer-events: auto; cursor: pointer; }
 html.mob .mfilm { left: 40px; right: 40px; width: auto; top: 800px; font-size: 36px; }
 html.mob .cposter { display: none; }
 html.mob .th-credits .vday { width: 720px; }
@@ -1047,6 +1049,7 @@ document.addEventListener('click', function (e) { var b = e.target.closest && e.
       y0 = null;
       if (e.touches.length !== 1 || ptr.classList.contains('spin') || (window.scrollY || document.documentElement.scrollTop) > 0) return;
       if (document.querySelector('dialog[open]') || (e.target.closest && e.target.closest('input, textarea, select, .seg, dialog'))) return;
+      if (document.documentElement.classList.contains('mob') && e.target.closest && e.target.closest('#cal')) return;   // (a theme on a phone: its own swipes, up and down too; the bar still pulls to refresh)
       x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; pull = 0; mode = null;
     }, { passive: true });
     document.addEventListener('touchmove', function (e) {
@@ -1128,6 +1131,10 @@ var THEMES = [   // each its film's own lettering and colour, researched (John, 
   { key: 'globe', mob: [40, 60, 1240, 640], name: 'The Snow Globe', film: 'Citizen Kane', year: 1941, by: 'Orson Welles', bg: '#a8161a', ink: '#fff', font: '"Big Shoulders", sans-serif', tw: 400 }
 ];
 var THEMEFONTS = 'https://fonts.googleapis.com/css2?family=Bowlby+One&family=Della+Respira&family=Special+Gothic+Expanded+One&family=Londrina+Solid:wght@400;900&family=Share+Tech+Mono&family=Archivo+Narrow:wght@600&family=Anton&family=IM+Fell+English+SC&family=Tilt+Neon&family=Yuji+Syuku&family=Amatic+SC:wght@700&family=Big+Shoulders:wght@400;700&display=swap';
+function themeEarly() {   // (before the films arrive: the page already laid out as this month's theme)
+  if (VIEW() !== 'themes') return; var R = document.documentElement, t = themeFor(new Date().getMonth());
+  R.classList.add(t.key === 'table' ? 'table' : 'hall'); if (MOB()) R.classList.add('mob'); R.dataset.theme = t.key;
+}
 function themeFor(m) { return (THEMEQ && THEMES.filter(function (t) { return t.key === THEMEQ; })[0]) || THEMES[m]; }
 function monthTint(m) {   // (six months on from the songs' colours, so the two never look the same in a month)
   var tt = KLOOK && themeFor(m), k = tt && [tt.bg, tt.name, tt.ink], p = k ? [k[0], k[0], k[0], k[0], k[0]] : (PALETTES[(m + 6) % 12] || PALETTES[0]), R = document.documentElement.style;
@@ -1136,6 +1143,7 @@ function monthTint(m) {   // (six months on from the songs' colours, so the two 
   var tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.content = p[0];
 }
 monthTint(new Date().getMonth());
+themeEarly();
 function tint(src) {
   if (!src) return;
   var im = new Image(); im.crossOrigin = 'anonymous';
@@ -1559,6 +1567,10 @@ function drawTheme(t, C, n, m, mine) {
   $('#cal').innerHTML = '<div class="thstage"><div class="thv">' + h + '</div></div></div><div class="hinfo" id="hinfo"></div><div class="tmonth">' + tmonthText(m) + '</div>' + themeCaption(m); themeFit(m);
   themeStart(fx, c);
 }
+document.addEventListener('click', function (e) {
+  var mid = e.target.closest && e.target.closest('#cal .bigmoon, #cal .mfilm, #cal .globe, #cal .codepic, #cal .reelscreen, #cal .cposter, #cal .tcentre h2');
+  var f = mid && $('#cal .front'); if (f && f.dataset.day && S.calData && S.calData.days[f.dataset.day] && !S.calData.days[f.dataset.day].secret) daySheet(f.dataset.day);
+});
 function themeEls() { return $$('#cal .vday, #cal .hday, #cal .tday'); }
 function themeAtNow() { var all = themeEls(), f = $('#cal .front'); return Math.max(0, all.indexOf(f)); }
 function themeStart(fx, c) {
