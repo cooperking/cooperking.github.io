@@ -279,6 +279,7 @@ dialog::backdrop { background: rgba(10, 4, 12, .62); backdrop-filter: blur(6px);
 a.card { display: block; text-decoration: none; color: inherit; }
 .collhead { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 26px; align-items: end; margin: 22px 4px 30px; }
 .collpic { width: 100%; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 10px; box-shadow: 0 14px 36px var(--shadow); }
+.collhead .kick { display: block; margin: 0 0 12px; }   /* (its own line, with room: the hero's kick pulled it into the title) */
 .colltitle { margin: 6px 0 8px; font: 400 clamp(38px, 6vw, 60px)/1 var(--serif); color: var(--fg); letter-spacing: -.02em; }
 .collhead .ov { margin: 12px 0 0; max-width: 60ch; color: var(--fg-2); }
 @media (max-width: 760px) { .collhead { grid-template-columns: 110px minmax(0, 1fr); gap: 16px; } }
@@ -391,6 +392,7 @@ html.big .day .art { object-position: 50% 50%; }
 html.big .day .cap { display: block; padding: 18px 8px 6px; }
 html.big .day .cap .t { font-size: 15px; }
 html.big .day .num, html.big .day.has .num { top: 4px; bottom: auto; }
+html.tv .cal { min-height: 300px; }
 html.tv .day .cap { padding: 14px 7px 5px; }
 html.tv .day .cap .t { font-size: 13px; -webkit-line-clamp: 1; }   /* (a TV: the title on one line, small, so the picture shows) */
 html.tv .day .cap .s { font-size: 9px; letter-spacing: .08em; }
@@ -400,12 +402,13 @@ html.tv .day .cap .s { font-size: 9px; letter-spacing: .08em; }
 html.big .calhead:empty { display: block; height: 0; }   /* (keeps its row, so the days get the rest: without it a visitor's calendar had days of no height) */
 /* a film's pop-up on a TV, as the songs' is: the whole screen, its picture behind, the details on the left with Play in
    view at once, nothing to scroll for (John, 8 Nov 2026) */
-html.tv .sheet { width: 100vw; height: 100vh; max-height: none; border: 0; border-radius: 0; background: #07040a; overflow: auto; }
-html.tv .sheet .heroimg { position: absolute; inset: 0; height: 100vh; aspect-ratio: auto; }
+html.tv dialog#sheet { position: fixed; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none; margin: 0; }
+html.tv .sheet { width: 100%; height: 100%; max-height: none; border: 0; border-radius: 0; background: #07040a; overflow: auto; position: relative; }   /* (sized to the page, not the screen: vh on a Fire Stick can be the screen's) */
+html.tv .sheet .heroimg { position: absolute; inset: 0; height: 100%; aspect-ratio: auto; }
 html.tv .sheet .heroimg img { object-position: 60% 20%; opacity: .62; }
 html.tv .sheet .heroimg::after { background: linear-gradient(90deg, rgba(7, 4, 10, .96) 0%, rgba(7, 4, 10, .82) 38%, rgba(7, 4, 10, .2) 70%, rgba(7, 4, 10, .1)), linear-gradient(0deg, rgba(7, 4, 10, .9), transparent 40%); }
 html.tv .sheet .noimg-top { display: none; }
-html.tv .sheet .in { position: relative; margin: 0; min-height: 100vh; max-width: 60vw; padding: 7vh 5vw 7vh; display: flex; flex-direction: column; justify-content: center; }
+html.tv .sheet .in { position: relative; margin: 0; min-height: 100%; max-width: 60vw; padding: 7vh 5vw 7vh; display: flex; flex-direction: column; justify-content: center; }
 html.tv .sheet h2 { font-size: clamp(48px, 4.4vw, 76px); }
 html.tv .sheet .tag { font-size: 24px; }
 html.tv .sheet .ov { font-size: 19px; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
@@ -481,7 +484,7 @@ var IN_APP = TV || /GrifflixApp\//.test(navigator.userAgent) || !!(window.Capaci
 if (TV) document.documentElement.classList.add('tv');   // the Song of the Day sign-in: same site, so the same storage
 var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 var DOW = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-var S = { view: 'home', cal: 'motd', calData: null, cals: [], month: null, browse: 'movies', sort: 'name', lists: null };
+var S = { view: 'home', cal: 'motd', calData: null, cals: [], month: null, browse: 'collections', sort: 'year', lists: null };   // (Browse opens on Collections; films and TV newest to oldest: John, 8 Nov 2026)
 var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
 var iso = function (d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
 var TODAY = iso(new Date());
@@ -741,9 +744,10 @@ function home() {
 }
 function drawCals() {
   var el = $('#cals'), h = '';
-  S.cals.forEach(function (c) { h += '<button class="pill' + (c.id === S.cal ? ' on' : '') + '" data-cal="' + c.id + '">' + esc(c.id === 'motd' ? 'Movie of the Day' : (c.mine ? c.name : c.ownerName + ': ' + c.name)) + '</button>'; });
-  if (!PUBLIC) h += '<button class="pill" id="newcal">+ New calendar</button>';
+  if (S.cals.length > 1) S.cals.forEach(function (c) { h += '<button class="pill' + (c.id === S.cal ? ' on' : '') + '" data-cal="' + c.id + '">' + esc(c.id === 'motd' ? 'Movie of the Day' : (c.mine ? c.name : c.ownerName + ': ' + c.name)) + '</button>'; });
+  if (!PUBLIC && !TV) h += '<button class="pill" id="newcal">+ New calendar</button>';   // (not on a TV: calendars of your own are made on a phone or computer)
   el.innerHTML = h;
+  el.classList.toggle('hide', !h);
   $$('[data-cal]', el).forEach(function (b) { b.onclick = function () { S.cal = b.dataset.cal; location.hash = '#home/' + S.cal; }; });
   if ($('#newcal')) $('#newcal').onclick = newCalendar;
 }
@@ -812,7 +816,7 @@ function drawMonth() {
   });
 
   var first = new Date(y, m, 1), lead = (first.getDay() + 6) % 7, n = new Date(y, m + 1, 0).getDate();
-  var h = '<div class="calhead">' + (mine ? '<span class="pill" style="pointer-events:none;opacity:.8">Tap a day to choose its film</span>' : '') + '</div><div class="dow">' + DOW.map(function (d) { return '<div>' + d + '</div>'; }).join('') + '</div><div class="grid">';
+  var h = '<div class="calhead">' + '' + '</div><div class="dow">' + DOW.map(function (d) { return '<div>' + d + '</div>'; }).join('') + '</div><div class="grid">';
   for (var k = 0; k < lead; k++) h += '<div class="day blank"></div>';
   for (var d = 1; d <= n; d++) {
     var key = S.month + '-' + String(d).padStart(2, '0'), it = C.days[key], cls = 'day' + (it ? ' has' : '') + (key === TODAY ? ' today' : '');
@@ -840,7 +844,8 @@ function drawMonth() {
 }
 function fitCal() {   // a computer or TV: the calendar down to the window's foot
   var c = $('#cal'); if (!c || !document.documentElement.classList.contains('big')) return;
-  c.style.setProperty('--calh', Math.max(420, innerHeight - (c.getBoundingClientRect().top + scrollY) - 16) + 'px');
+  var vh = document.documentElement.clientHeight || innerHeight;   // (the page's own height: on a Fire Stick, shrunk from 1280 wide, innerHeight can be the screen's, too tall)
+  c.style.setProperty('--calh', Math.max(TV ? 300 : 420, vh - (c.getBoundingClientRect().top + scrollY) - 16) + 'px');
 }
 addEventListener('resize', function () { fitCal(); });
 function dayPic(it) { if (document.documentElement.classList.contains('big')) return img(it.backdrop || it.thumb || it.poster, it.backdrop ? 'Backdrop' : (it.thumb ? 'Thumb' : 'Primary'), 480);
@@ -903,11 +908,11 @@ function drawRows(R) {
 /* --- browse: films, TV, home videos */
 function browse() {
   var main = $('#main');
-  var tabs = [['movies', 'Films'], ['tv', 'TV'], ['collections', 'Collections']];   // (no Home videos tab: John, 7 Nov 2026; the gateway still serves a home videos library if one is added)
+  var tabs = [['collections', 'Collections'], ['movies', 'Films'], ['tv', 'TV']];   // (no Home videos tab: John, 7 Nov 2026; the gateway still serves a home videos library if one is added)
   if (S.browse === 'home') S.browse = 'movies';
   main.innerHTML = '<div class="hero"><h1>' + { movies: 'Films', tv: 'TV', collections: 'Collections' }[S.browse] + '</h1><div class="hsub" id="bcount"></div></div>' +
     '<div class="tabs">' + tabs.map(function (t) { return '<button class="pill' + (t[0] === S.browse ? ' on' : '') + '" data-b="' + t[0] + '">' + t[1] + '</button>'; }).join('') +
-    '<span class="sp"></span><select class="pill" id="sort" aria-label="Sort"><option value="name">A–Z</option><option value="added">Newest added</option><option value="year">Year</option><option value="rating">Rating</option></select></div><div id="bgrid"></div>';
+    '<span class="sp"></span><select class="pill" id="sort" aria-label="Sort"><option value="year">Newest to oldest</option><option value="added">Recently added</option><option value="name">A–Z</option><option value="rating">Rating</option></select></div><div id="bgrid"></div>';
   $('#sort').value = S.sort;
   $('#sort').onchange = function () { S.sort = this.value; fill(); };
   $$('[data-b]').forEach(function (b) { b.onclick = function () { location.hash = '#browse/' + b.dataset.b; }; });
