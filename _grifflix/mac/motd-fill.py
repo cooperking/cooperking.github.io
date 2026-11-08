@@ -14,6 +14,7 @@ in English").
   python3 motd-fill.py        the list, day by day (nothing changes): ~/Grifflix/motd-plan.csv
   python3 motd-fill.py go     puts them on the calendar
   python3 motd-fill.py --to 2026-12-31 (go)   on to the end of the year too (days already chosen kept, no film twice)
+  python3 motd-fill.py --redo --to 2027-12-31 (go)   every day from 1 Dec 2025 dealt again, from scratch
 """
 import csv, datetime, json, os, random, re, sys, urllib.parse, urllib.request
 
@@ -23,6 +24,7 @@ s = json.load(open(os.path.join(APP, 'settings.json')))
 JF = s.get('jellyfin', 'http://127.0.0.1:8096')
 GW = 'http://127.0.0.1:%s' % s.get('port', 8097)
 GO = 'go' in sys.argv[1:]
+REDO = '--redo' in sys.argv[1:]   # deal every day from 1 December 2025 to --to again, from scratch (the days already chosen too)
 START = datetime.date(2025, 12, 1)
 TODAY = datetime.date.today()
 # --to YYYY-MM-DD: on to that day (John, 8 Nov 2026: the rest of the year laid out too); otherwise up to today
@@ -111,6 +113,8 @@ try:
     cal = json.load(urllib.request.urlopen(urllib.request.Request(GW + '/api/public/calendar?id=motd'), timeout=60)).get('days') or {}
 except Exception:
     pass
+if REDO:
+    cal = {}   # (all dealt again: the films already on the calendar can come again, on new days)
 taken = {d for d in cal}
 already = {(v.get('id') if isinstance(v, dict) else v) for v in cal.values()}
 open_days = [d for d in days if d.isoformat() not in taken]
@@ -140,7 +144,7 @@ take([i for i in ok if where[i] & {g(c, 'Id') for c in others}], 'best rated', n
 pick = pick[:len(open_days)]
 
 # the days: Christmas films 18-25 December; everything else, Dad's favourites too, on random days
-rnd = random.Random(2025)
+rnd = random.Random(TODAY.toordinal() if REDO else 2025)   # (a new deal each day it's redone; the same between looking and go)
 xmas = [i for i in pick if christmas(ok[i])]
 rest = [i for i in pick if i not in xmas]
 rnd.shuffle(rest)
@@ -177,9 +181,15 @@ for d in sorted(plan)[-7:]:
     print('  %s  %s (%s)' % (d.strftime('%a %d %b'), g(ok[plan[d]], 'Name'), g(ok[plan[d]], 'ProductionYear', '')))
 print('Day by day: ~/Grifflix/motd-plan.csv')
 if not GO:
-    print('Nothing changed yet. To put them on the calendar:  python3 motd-fill.py go' + (' --to %s' % END if END != TODAY else ''))
+    print('Nothing changed yet. To put them on the calendar:  python3 motd-fill.py go' + (' --redo' if REDO else '') + (' --to %s' % END if END != TODAY else ''))
     sys.exit()
-r = urllib.request.Request(GW + '/local/calendar', data=json.dumps({'days': {d.isoformat(): i for d, i in plan.items()}}).encode(), method='POST',
+body = {'days': {d.isoformat(): i for d, i in plan.items()}}
+if REDO:
+    body.update(replace_from=START.isoformat(), replace_to=END.isoformat())
+r = urllib.request.Request(GW + '/local/calendar', data=json.dumps(body).encode(), method='POST',
                            headers={'X-Grifflix-Secret': s['secret'], 'Content-Type': 'application/json'})
 res = json.load(urllib.request.urlopen(r, timeout=60))
+if REDO:
+    print('Dealt again: %d days on the calendar (%d were there before).' % (res.get('added', 0), res.get('replaced', 0)))
+    sys.exit()
 print('On the calendar: %d day%s added%s.' % (res.get('added', 0), '' if res.get('added') == 1 else 's', (', %d kept as they were' % res['kept']) if res.get('kept') else ''))

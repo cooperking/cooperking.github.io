@@ -529,9 +529,17 @@ def make_handler(g):
                 if u.path == '/local/calendar' and method == 'POST':   # motd-fill.py on this Mac: many Movie of the Day days at once (empty days only)
                     if not hmac.compare_digest(self.headers.get('X-Grifflix-Secret', ''), g.st['secret']):
                         return self.send_json(403, {'error': 'Not here.'})
-                    days = {str(d): str(i) for d, i in (self.body().get('days') or {}).items() if re.match(r'^\d{4}-\d\d-\d\d$', str(d)) and re.match(r'^[0-9a-f]{32}$', str(i))}
+                    body = self.body()   # (read once: a second read waits for nothing)
+                    days = {str(d): str(i) for d, i in (body.get('days') or {}).items() if re.match(r'^\d{4}-\d\d-\d\d$', str(d)) and re.match(r'^[0-9a-f]{32}$', str(i))}
+                    rf, rt = str(body.get('replace_from') or ''), str(body.get('replace_to') or '')
                     with g.store.lock:
                         c = g.store.d['calendars']['motd']
+                        if rf and rt:   # dealt again: the days in that range replaced (John, 8 Nov 2026: "randomise all choices so far again")
+                            old = len([d for d in c['days'] if rf <= d <= rt])
+                            c['days'] = {d: i for d, i in c['days'].items() if not (rf <= d <= rt)}
+                            c['days'].update(days)
+                            g.store.touch()
+                            return self.send_json(200, {'ok': True, 'added': len(days), 'replaced': old})
                         new = {d: i for d, i in days.items() if d not in c['days']}
                         c['days'].update(new)
                         g.store.touch()
