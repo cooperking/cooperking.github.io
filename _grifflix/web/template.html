@@ -425,7 +425,9 @@ html.tvhero .hero h1 { font-size: 30px; } html.tvhero .hsub { font-size: 17px; }
 html.tvhero .day .cap { display: none; }
 html.tvhero .cal { background: rgba(8, 4, 10, .35); }
 #tvbg { display: none; }
-html.tvhero #tvbg { display: block; position: fixed; inset: 0; z-index: -1; pointer-events: none; background: var(--bg); }
+html.tvhero #tvbg { display: block; position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+html.tvhero .glow { opacity: .55; }   /* (the month's colour still there, under the film's picture) */
+html.tvhero .wrap { position: relative; z-index: 1; }
 #tvbg img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 25%; opacity: 0; transition: opacity .5s ease; }
 #tvbg img.on { opacity: .62; }
 #tvbg::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(7, 4, 10, .94) 0%, rgba(7, 4, 10, .78) 34%, rgba(7, 4, 10, .45) 62%, rgba(7, 4, 10, .55) 100%), linear-gradient(0deg, rgba(7, 4, 10, .6), transparent 45%); }
@@ -1026,7 +1028,7 @@ function tvFeat(date) {   // the TV calendar to try: the day you're on, large, o
         (note ? '<div class="note">“' + esc(note) + '”</div>' : it.overview ? '<div class="ov">' + esc(it.overview) + '</div>' : '') + '<div class="h">OK to open · ▶ to play</div>';
     } else h = date ? '<div class="k">' + esc(longDate(date)) + '</div><h2>' + (it && it.secret ? 'A surprise' : 'No film') + '</h2><div class="m">' + (it && it.secret ? 'Revealed at 8am on the day' : (S.calData.mine ? 'OK to choose one' : '')) + '</div>' : '';
     el.innerHTML = h;
-    var bg = $('#tvbg'); if (!bg) { bg = document.createElement('div'); bg.id = 'tvbg'; document.body.prepend(bg); }
+    var bg = $('#tvbg'); if (!bg) { bg = document.createElement('div'); bg.id = 'tvbg'; var gl = $('.glow'); if (gl) gl.after(bg); else document.body.prepend(bg); }
     var src = it && !it.secret ? (it.backdrop ? img(it.backdrop, 'Backdrop', 1920) : it.thumb ? img(it.thumb, 'Thumb', 1920) : '') : '';
     var cur = bg.querySelector('img.on');
     if (cur && cur.dataset.src === src) return;
