@@ -2049,13 +2049,15 @@ function calSheet() {   // the month's calendar, a pop-up in its theme's colour 
     var w = t.dataset.tt, el = w === 'search' ? $$('.bar-top [data-go="search"]').filter(function (x) { return x.offsetParent; })[0] || $('.bar-top [data-go="search"]') : w === 'refresh' ? ($('#refresh') || $('#refresh2')) : $('#who');
     if (el) el.click(); }; });
   $('#tcprev').onclick = function () { calStep(-1); }; $('#tcnext').onclick = function () { calStep(1); };
+  if (S.calKeep) { var kb = $('#' + S.calKeep); if (kb && kb.disabled) kb = $('#' + (S.calKeep === 'tcprev' ? 'tcnext' : 'tcprev')); S.calKeep = null; if (kb && !kb.disabled) { kb.focus({ preventScroll: true }); setTimeout(function () { if (dlg.open && kb.isConnected) kb.focus({ preventScroll: true }); }, 220); return; } }   // (again once the theme behind has followed the month)
   if (TV) setTimeout(function () { var f = (S.calDay && $('#sheetIn .tcd.has[data-day="' + S.calDay + '"]')) || $('#sheetIn .tcd.today.has') || $$('#sheetIn .tcd.has').pop(); if (f) f.focus(); }, 60);   // (back from a day: on that day, not the last)
 }
 function calStep(d) {   // the calendar pop-up: the month before or after (the theme behind it follows)
   if (!S.step || !S.step(d)) return false;
+  var ae = document.activeElement; S.calKeep = ae && /^(tcprev|tcnext)$/.test(ae.id) ? ae.id : null;   // (an arrow chosen: kept chosen, to go on through the months: John, 8 Nov 2026)
   calSheet();
   var el = $('#sheetIn'); if (el && el.animate) el.animate([{ transform: 'translateX(' + (d * 48) + 'px)', opacity: .35 }, { transform: 'none', opacity: 1 }], { duration: 260, easing: 'cubic-bezier(.2,.7,.2,1)' });
-  if (TV) { var f = $('#sheetIn .tcd.has'); if (f) f.focus(); }
+  if (TV && !S.calKeep) { var f = $('#sheetIn .tcd.has'); if (f) f.focus(); }
   return true;
 }
 function sheetStep(d) { return $('#sheetIn .tcal') ? calStep(d) : dayStep(d); }   // (a swipe on a pop-up: a month on the calendar, a day on a day's page)
