@@ -775,10 +775,10 @@ var TV = /GRIFFLIXTV\//.test(navigator.userAgent) || Q.get('tv') === '1';
 if (Q.has('tvhero')) store.set('grifflix-tvhero', Q.get('tvhero') === '1' ? '1' : null);
 var TVHERO = TV && store.get('grifflix-tvhero') === '1';   // (a TV calendar to try, John's to decide: the day you're on shown large beside it; ?tvhero=1 on, ?tvhero=0 off)
 if (TVHERO) document.documentElement.classList.add('tvhero');
-// a look to try (?look=kubrick on, ?look=0 off; John to decide from screenshots, 8 Nov 2026: "a mix appeals - font
-// particularly"): Futura-style titles (Jost), and on a TV "the table" (Dr. Strangelove's War Room) with the calendar a button away
-if (Q.has('look')) store.set('grifflix-look', Q.get('look') === 'kubrick' ? 'kubrick' : null);
-var KLOOK = store.get('grifflix-look') === 'kubrick';
+// the look: Futura, each month's bold colour and its theme (John, 8 Nov 2026: "Put new look live"); everyone's now.
+// ?look=0 turns it off on one device (the old look), ?look=1 back on
+if (Q.has('look')) store.set('grifflix-look', Q.get('look') === '0' ? 'off' : null);
+var KLOOK = store.get('grifflix-look') !== 'off';
 // the TV's views in the trial look: each month its own theme (THEMES: the corridor in January, the table in November...;
 // John, 8 Nov 2026: "have the table and then the corridor be monthly themes ... As the user goes back through a month it
 // will transition to the next theme"), the calendar a button away. ?theme=<key> shows one theme in every month, to try
@@ -792,9 +792,9 @@ var MOB = function () { return !TV && matchMedia('(max-width: 760px), (orientati
 function themeW() { return MOB() ? 1280 : (innerWidth || 1280); }
 function themeH() { return MOB() ? 720 : (document.documentElement.clientHeight || innerHeight || 720); }
 if (KLOOK) document.documentElement.classList.add('klook');
-if (KLOOK || TVHERO) document.addEventListener('DOMContentLoaded', function () {   // (so it's clear a trial look is on: this device only, not everyone's)
+if (TVHERO) document.addEventListener('DOMContentLoaded', function () {   // (so it's clear a trial look is on: this device only, not everyone's)
   var t = document.createElement('div'); t.className = 'triallabel';
-  t.innerHTML = 'Trial look · this device only' + (TV ? ' · <b>?look=0</b> turns it off' : ' · <a href="?look=0&tvhero=0">turn off</a>');
+  t.innerHTML = 'Trial look · this device only' + (TV ? ' · <b>?tvhero=0</b> turns it off' : ' · <a href="?tvhero=0">turn off</a>');
   document.body.appendChild(t);
 });   // the Fire TV app (its browser's name), or ?tv=1 to try it
 var IN_APP = TV || /GrifflixApp\//.test(navigator.userAgent) || !!(window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform());
