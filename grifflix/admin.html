@@ -40,6 +40,11 @@
 .mem .who b { display: block; font: 500 17px/1.2 var(--serif); color: var(--fg); }
 .mem .who > span { display: block; font-size: 12.5px; color: var(--muted); }
 .mem .who .prefs { margin-top: 2px; }
+.prefedit { flex: 0 0 100%; display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; padding-top: 6px; }
+.prefedit input { flex: 1 1 220px; min-width: 0; }
+.prefedit label { font-size: 13px; color: var(--muted); display: inline-flex; gap: 6px; align-items: center; }
+.prefedit select { font: inherit; padding: 6px 8px; border-radius: 10px; border: 1px solid var(--line, #ccc); background: #fff; color: #1d0b1e; }
+.mailview { width: 100%; height: 70vh; border: 0; border-radius: 12px; background: #120914; }
 .newrow { display: flex; flex-wrap: wrap; gap: 8px; }
 .newrow input { flex: 1 1 160px; min-width: 0; }
 .invite { display: grid; gap: 12px; }
@@ -83,6 +88,7 @@
         <div class="kicker">Notifications and emails</div>
         <h2 id="nothead">Looking…</h2>
         <p class="stat" id="notsay"></p>
+        <div class="state"><button class="btn" id="mailsee" type="button">See the alert email</button><button class="btn" id="mailme" type="button">Send it to me</button></div>
       </section>
       <section class="card">
         <div class="kicker">The Mac mini</div>
@@ -153,8 +159,21 @@
         var notes = 'Notifications: ' + (m.gpush === 'off' ? 'off' : MODE[m.gpush] || 'every day') + (m.pushDevices ? ' on ' + m.pushDevices + ' device' + (m.pushDevices === 1 ? '' : 's') : m.gpush === 'off' ? '' : ' (no device turned on yet)') +
           ' · Emails: ' + (m.email ? (MODE[m.gmail] || 'off') + ' to ' + m.email : 'no address');
         return '<li><div class="who"><b>' + esc(m.name) + (m.owner ? ' <span class="badge signed">You</span>' : '') + '</b><span>' + esc(st) + '</span><span class="prefs">' + esc(notes) + '</span></div>' +
-          (m.owner ? '' : '<button class="btn small primary" data-inv="' + m.id + '">' + (m.devices || m.invite ? 'New link' : 'Invite') + '</button><button class="btn small" data-rm="' + m.id + '">Remove</button>') + '</li>';
+          '<button class="btn small" data-pref="' + m.id + '">Change</button>' +
+          (m.owner ? '' : '<button class="btn small primary" data-inv="' + m.id + '">' + (m.devices || m.invite ? 'New link' : 'Invite') + '</button><button class="btn small" data-rm="' + m.id + '">Remove</button>') +
+          '<div class="prefedit" id="pe-' + m.id + '" hidden><input type="email" class="name" placeholder="Their email address" value="' + esc(m.email || '') + '">' +
+          '<label>Emails <select data-k="gmail">' + ['all', 'week', 'off'].map(function (v) { return '<option value="' + v + '"' + (m.gmail === v ? ' selected' : '') + '>' + MODE[v] + '</option>'; }).join('') + '</select></label>' +
+          '<label>Notifications <select data-k="gpush">' + ['all', 'week', 'off'].map(function (v) { return '<option value="' + v + '"' + (m.gpush === v ? ' selected' : '') + '>' + MODE[v] + '</option>'; }).join('') + '</select></label>' +
+          '<button class="btn small primary" data-save="' + m.id + '">Save</button></div></li>';
       }).join('');
+      [].forEach.call(document.querySelectorAll('[data-pref]'), function (b) { b.onclick = function () { var e = $('#pe-' + b.dataset.pref); e.hidden = !e.hidden; }; });
+      [].forEach.call(document.querySelectorAll('[data-save]'), function (b) { b.onclick = function () {
+        var e = $('#pe-' + b.dataset.save), email = e.querySelector('input').value.trim(), gmail = e.querySelector('[data-k=gmail]').value;
+        if (gmail !== 'off' && !email) return toast('Their email address first.');
+        b.disabled = true;
+        g('admin', { op: 'setprefs', id: b.dataset.save, email: email, gmail: gmail, gpush: e.querySelector('[data-k=gpush]').value }).then(function (j) { toast('Saved'); members(j.members); })
+          .catch(function (x) { b.disabled = false; toast(x.message); });
+      }; });
       [].forEach.call(document.querySelectorAll('[data-inv]'), function (b) { b.onclick = function () { invite({ op: 'newlink', id: b.dataset.inv }); }; });
       [].forEach.call(document.querySelectorAll('[data-rm]'), function (b) { b.onclick = function () {
         if (!b.dataset.sure) { b.dataset.sure = 1; b.textContent = 'Tap again'; return; }
@@ -251,6 +270,23 @@
     var call = function (body) { return fetch(gw + '/api/settings', body ? { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : { headers: { Authorization: 'Bearer ' + TOKEN } }).then(function (r) { if (!r.ok) throw 0; return r.json(); }); };
     call().then(function (j) { set(j.peek); }).catch(function () { $('#peekhead').innerHTML = 'Each one a <em>surprise</em>'; b.textContent = 'The Mac mini needs updating for this'; });
   }
+
+  // ---- the 8am email, as it goes out (the latest film already shown), and a copy to John
+  $('#mailsee').onclick = function () {
+    var b = this; b.disabled = true;
+    g('admin', { op: 'preview' }).then(function (j) {
+      b.disabled = false;
+      $('#invin').innerHTML = '<div class="pop-head"><span class="kicker">The alert email</span><button class="x" id="mvx" aria-label="Close"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 3l10 10M13 3 3 13"/></svg></button></div>' +
+        '<p><b>Subject:</b> ' + esc(j.subject) + '<br><b>From:</b> Grifflix</p><iframe class="mailview" sandbox="" id="mvf"></iframe>';
+      $('#mvf').srcdoc = j.html;
+      var d = $('#invpop'); if (!d.open) d.showModal();
+      $('#mvx').onclick = function () { d.close(); };
+    }).catch(function (e) { b.disabled = false; toast(e.message); });
+  };
+  $('#mailme').onclick = function () {
+    var b = this; b.disabled = true;
+    g('admin', { op: 'testmail' }).then(function (j) { b.disabled = false; toast('Sent to ' + j.to); }).catch(function (e) { b.disabled = false; toast(e.message); });
+  };
 
   // ---- the Mac mini
   function mac() {
