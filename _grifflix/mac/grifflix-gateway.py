@@ -308,6 +308,23 @@ def item_out(it, prog=None):
     return o
 
 
+def pic_tags(it):
+    """Which version of each of an item's pictures it has (Jellyfin's image tags), so the site's copy of a picture is
+    made again only when the picture changes: {'poster': tag, 'backdrop': tag, 'thumb': tag}, matching item_out's ids."""
+    tags, t = it.get('ImageTags') or {}, {}
+    if 'Primary' in tags:
+        t['poster'] = tags['Primary']
+    elif it.get('SeriesPrimaryImageTag'):
+        t['poster'] = it['SeriesPrimaryImageTag']
+    if 'Thumb' in tags:
+        t['thumb'] = tags['Thumb']
+    if it.get('BackdropImageTags'):
+        t['backdrop'] = it['BackdropImageTags'][0]
+    elif it.get('ParentBackdropImageTags'):
+        t['backdrop'] = it['ParentBackdropImageTags'][0]
+    return {k: v[:12] for k, v in t.items()}
+
+
 # ---------------------------------------------------------------- the server
 
 class Gateway:
@@ -404,6 +421,10 @@ class Gateway:
             self.list_cache.clear()
         self.list_cache[key] = (time.time(), r)
         return r
+
+    def now_id(self, iid):
+        """A film's id now: convert.py's new file has a new one, and the site's copy keeps the old until John's Update."""
+        return (self.store.d.get('remap') or {}).get(iid, iid)
 
     def forget(self):
         self.list_cache.clear()
@@ -523,6 +544,11 @@ def make_handler(g):
                             for old, new in m.items():
                                 if old in usr.get('progress', {}):
                                     usr['progress'][new] = usr['progress'].pop(old); n += 1
+                        old = g.store.d.setdefault('remap', {})   # (kept: the site's copy has the old ids until John's next Update)
+                        for k in list(old):
+                            if old[k] in m:
+                                old[k] = m[old[k]]
+                        old.update(m)
                         g.store.touch()
                     g.forget()
                     return self.send_json(200, {'ok': True, 'changed': n})
@@ -603,8 +629,9 @@ def make_handler(g):
             self.send_json(200, {'items': [item_out(i, user['progress']) for i in its], 'total': r.get('TotalRecordCount', 0) - (len(r.get('Items', [])) - len(its))})
 
         def api_item(self, me, user, q, b):
-            it = g.one(q['id'])
+            it = g.one(g.now_id(q['id']))
             o = item_out(it, user['progress'])
+            o['id'] = q['id']   # (as the site knows it)
             if it.get('Type') == 'Series':
                 seasons = g.jf.call('GET', '/Shows/%s/Seasons' % it['Id'], query={'UserId': g.uid, 'Fields': 'Overview'}) or {}
                 eps = g.jf.call('GET', '/Shows/%s/Episodes' % it['Id'], query={'UserId': g.uid, 'Fields': 'Overview,RunTimeTicks'}) or {}
@@ -646,6 +673,63 @@ def make_handler(g):
                     st['peek'] = bool(b.get('peek'))
                     g.store.touch()
             self.send_json(200, {'peek': bool(st.get('peek'))})
+
+        def api_export(self, me, user, q, b):
+            """John's Update (the admin page): everything the site shows, for it to keep as its own files, as the songs'
+            site keeps its calendar (John, 8 Nov 2026: "the calendar should not load from the Mac once it's been added";
+            the Mac is then only for playing). Films and TV only: no home videos. The films still to come are in it
+            (the Worker keeps them, and shows each at 8am on its day): only the days already revealed go on the site."""
+            if not me.get('owner'):
+                return self.send_json(403, {'error': 'Only John.'})
+            g.forget()
+            extra = LIST_FIELDS + ',People,Taglines,RemoteTrailers'
+            libs = g.st.get('libraries', {})
+            items, lists = {}, {}
+
+            def keep(raw, light=False):
+                for it in raw:
+                    o = item_out(it)
+                    if light:   # (episodes: no cast lists)
+                        o.pop('cast', None)
+                        o.pop('directors', None)
+                    o['tags'] = pic_tags(it)
+                    items[it['Id']] = o
+            for key, types in (('movies', 'Movie'), ('tv', 'Series')):
+                if libs.get(key):
+                    raw = shown(g.items(ParentId=libs[key], Recursive='true', IncludeItemTypes=types, SortBy='SortName', Fields=extra).get('Items', []))
+                    keep(raw)
+                    lists[key] = [i['Id'] for i in raw]
+            sets = g.items(Recursive='true', IncludeItemTypes='BoxSet', SortBy='SortName', Fields=extra).get('Items', [])
+            keep(sets)
+            inside, members = set(), {}
+            for c in sets:
+                kids = g.items(ParentId=c['Id'], SortBy='ProductionYear,SortName', Fields=extra).get('Items', [])
+                keep([k for k in kids if k['Id'] not in items])
+                members[c['Id']] = [k['Id'] for k in kids]
+                inside.update(k['Id'] for k in kids if k.get('Type') == 'BoxSet')
+            lists['collections'] = [c['Id'] for c in sets if c['Id'] not in inside]
+            series = {}
+            if libs.get('tv'):
+                eps = g.items(ParentId=libs['tv'], Recursive='true', IncludeItemTypes='Episode', SortBy='SortName',
+                              Fields='Overview,RunTimeTicks,ImageTags,ParentBackdropImageTags,SeriesPrimaryImageTag,DateCreated,PremiereDate,ProductionYear').get('Items', [])
+                ses = g.items(ParentId=libs['tv'], Recursive='true', IncludeItemTypes='Season', Fields='Overview,ImageTags').get('Items', [])
+                ses = [x for x in ses if x.get('SeriesId')]
+                eps = [x for x in eps if x.get('SeriesId')]   # (an episode Jellyfin hasn't put in a series: not shown)
+                for s in ses:
+                    series.setdefault(s.get('SeriesId'), {'seasons': [], 'episodes': []})['seasons'].append(item_out(s))
+                for e in sorted(eps, key=lambda e: (e.get('ParentIndexNumber') or 0, e.get('IndexNumber') or 0)):
+                    o = item_out(e)
+                    o['tags'] = pic_tags(e)
+                    series.setdefault(e.get('SeriesId'), {'seasons': [], 'episodes': []})['episodes'].append(o)
+                for v in series.values():
+                    v['seasons'].sort(key=lambda s: s.get('ep') or 0)
+            c = g.store.d['calendars']['motd']
+            days = dict(c.get('days', {}))
+            have = set(items) | set(e['id'] for v in series.values() for e in v['episodes'])
+            missing = [i for i in set(days.values()) if i and i not in have]
+            keep(g.by_ids(missing), light=True)
+            self.send_json(200, {'v': 1, 'at': int(time.time()), 'items': items, 'lists': lists, 'sets': members, 'series': series,
+                                 'motd': {'days': days, 'notes': dict(c.get('notes', {}))}})
 
         def api_refresh(self, me, user, q, b):   # the page's Refresh button: look again for new films and changes
             g.forget()
@@ -705,7 +789,7 @@ def make_handler(g):
             self.send_json(200, {'items': [item_out(i, user['progress']) for i in shown(r.get('Items', []))]})
 
         def api_play(self, me, user, q, b):
-            iid = q['id']
+            iid = g.now_id(q['id'])
             ps = secrets.token_hex(8)
             key = make_key(g.st['secret'], me['uid'])
             dev = 'grifflix-' + hashlib.sha1(me['uid'].encode()).hexdigest()[:10]
@@ -738,7 +822,7 @@ def make_handler(g):
             self.send_json(200, {'ok': True})
 
         def api_progress(self, me, user, q, b):
-            iid, pos, secs = str(b.get('id', '')), float(b.get('pos') or 0), float(b.get('secs') or 0)
+            iid, pos, secs = g.now_id(str(b.get('id', ''))), float(b.get('pos') or 0), float(b.get('secs') or 0)
             if not re.match(r'^[0-9a-f]{32}$', iid):
                 return self.send_json(400, {'error': 'Which?'})
             with g.store.lock:

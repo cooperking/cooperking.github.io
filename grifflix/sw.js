@@ -10,7 +10,8 @@ self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
-  if (url.hostname === 'media.grifflix.co.uk' && url.pathname.startsWith('/pimg/')) e.respondWith(pic(url.href));
+  if ((url.hostname === 'media.grifflix.co.uk' && url.pathname.startsWith('/pimg/')) ||
+      (url.hostname === 'sotd-playlists.cooperking.workers.dev' && url.pathname.startsWith('/gp/'))) e.respondWith(pic(url.href));   // (the site's own copies, from John's Update)
 });
 
 async function pic(href) {   // a picture's address never changes (its film, its kind, its size): from here once fetched

@@ -508,42 +508,120 @@ var TODAY = iso(new Date());
 
 function toast(t) { var el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(function () { el.classList.remove('on'); }, 2600); }
 
-/* ------------------------------------------------------------------ talking to the Mac mini */
+/* ------------------------------------------------------------------ Grifflix's own files, and the Mac mini
+   What the page shows comes from the site's own files (grifflix/data/), as the songs' calendar does: John's Update on
+   the admin page makes them from the Mac (John, 8 Nov 2026: "the calendar should not load from the Mac once it's been
+   added ... Only function should be playing and getting an update from the Mac"). Movie of the Day's newest day (from
+   8am) comes from the Worker until the site's file has it. The Mac is asked only for playing, and for each member's own
+   things (where they stopped, My list, their own calendars); if it's asleep, everything else carries on. */
 var PUBLIC = false;   // a visitor (not signed in): Movie of the Day, the films and TV, trailers; no playing
-function api(path, body) {
-  if (DEMO) return Demo.api(path, body);
-  if (PUBLIC) {
-    var name = path.split('?')[0];
-    if (name === 'calendars') return Promise.resolve({ calendars: [{ id: 'motd', name: 'Movie of the Day', ownerName: 'John', mine: false, shared: true, count: 0 }] });
-    if (name === 'calendar') path = 'calendar';
-    if (body || ['home', 'items', 'item', 'search', 'calendar', 'collections', 'collection'].indexOf(name) < 0) { var x = new Error('Sign in to do that.'); x.status = 401; signInSheet(); return Promise.reject(x); }
-    path = 'public/' + path;
-  }
-  if (body && path === 'collections') forgetMemo();
-  return fetch(GW + '/api/' + path, { method: body ? 'POST' : 'GET', headers: Object.assign({ Authorization: 'Bearer ' + TOKEN }, body ? { 'Content-Type': 'application/json' } : {}), body: body ? JSON.stringify(body) : undefined })
-    .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) { var e = new Error(j.error || ('The Mac mini said ' + r.status)); e.status = r.status; throw e; } return j; }); });
+var DATA = '/grifflix/data/', LIB = null, LIBP = null, DAYSP = null, PICTAG = {};
+var MAC_ONLY = ['lists', 'play', 'progress', 'stop', 'settings', 'export'];
+function getJSON(u) { return fetch(u, { cache: 'no-cache' }).then(function (r) { if (!r.ok) { var e = new Error('Grifflix’s films aren’t on the site yet: John’s Update puts them there.'); e.status = r.status; throw e; } return r.json(); }); }
+function library() {
+  if (!LIBP) LIBP = getJSON(DATA + 'library.json').then(function (L) {
+    var tag = function (it) { var t = it.tags || {}; if (it.poster && t.poster) PICTAG[it.poster + 'Primary'] = t.poster; if (it.backdrop && t.backdrop) PICTAG[it.backdrop + 'Backdrop'] = t.backdrop; if (it.thumb && t.thumb) PICTAG[it.thumb + 'Thumb'] = t.thumb; };
+    Object.keys(L.items).forEach(function (k) { tag(L.items[k]); });
+    L.tag = tag; LIB = L; return L;
+  }).catch(function (e) { LIBP = null; throw e; });
+  return LIBP;
 }
-/* what the page has already shown, kept on this device until Refresh (the bar's button) is pressed (John, 7 Nov 2026:
-   "it should remember films until a refresh - chrome app need a refresh button") */
-var MEMO = {};
-function memoKey(path) { return 'gfx:' + (PUBLIC ? 'p:' : '') + path; }
-function apiMemo(path, draw) {
-  if (DEMO) return api(path).then(function (d) { draw(d); return d; });
-  var hit = MEMO[path];
-  if (!hit) try { hit = JSON.parse(localStorage.getItem(memoKey(path)) || 'null'); } catch (e) { hit = null; }
-  if (hit) { MEMO[path] = hit; draw(hit.d); return Promise.resolve(hit.d); }
-  return api(path).then(function (d) {
-    MEMO[path] = { at: Date.now(), d: d };
-    try { var txt = JSON.stringify(MEMO[path]); if (txt.length < 400e3) localStorage.setItem(memoKey(path), txt); } catch (e) {}
-    draw(d);
-    return d;
+function mac(path, body) {   // the Mac mini: playing, and a member's own things
+  if (!GW) return Promise.reject(new Error('The Mac mini isn’t connected.'));
+  return fetch(GW + '/api/' + path, { method: body ? 'POST' : 'GET', headers: Object.assign({ Authorization: 'Bearer ' + TOKEN }, body ? { 'Content-Type': 'application/json' } : {}), body: body ? JSON.stringify(body) : undefined })
+    .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) { var e = new Error(j.error || (r.status >= 500 ? 'The Mac mini isn’t answering just now: try again in a few minutes.' : 'The Mac mini said ' + r.status)); e.status = r.status; throw e; } return j; }); },
+      function () { throw new Error('The Mac mini isn’t answering just now: try again in a few minutes.'); });
+}
+function soon(p, ms) { return Promise.race([p, new Promise(function (ok, no) { setTimeout(function () { no(new Error('slow')); }, ms || 6000); })]); }
+function motdCal() {   // Movie of the Day: the site's file, and from the Worker any newer day (and, for John, those to come)
+  if (!DAYSP) DAYSP = getJSON(DATA + 'days.json').catch(function () { return { days: {}, notes: {} }; });
+  return DAYSP.then(function (D) {
+    var last = Object.keys(D.days).sort().pop() || '';
+    return fetch(WORKER + '/g/cal?after=' + last, TOKEN ? { headers: { Authorization: 'Bearer ' + TOKEN } } : {}).then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; }).then(function (W) {
+      var days = Object.assign({}, D.days, W.days || {}), notes = Object.assign({}, D.notes, W.notes || {});
+      Object.keys(W.days || {}).forEach(function (d) { if (LIB) LIB.tag(W.days[d]); else if (W.days[d].tags) { var t = W.days[d]; PICTAG[t.poster + 'Primary'] = (t.tags || {}).poster; PICTAG[t.backdrop + 'Backdrop'] = (t.tags || {}).backdrop; } });
+      Object.keys(D.days).forEach(function (d) { var t = D.days[d]; if (t.tags) { PICTAG[t.poster + 'Primary'] = t.tags.poster; PICTAG[t.backdrop + 'Backdrop'] = t.tags.backdrop; if (t.thumb) PICTAG[t.thumb + 'Thumb'] = t.tags.thumb; } });
+      (W.secret || []).forEach(function (d) { if (!days[d]) days[d] = { secret: true }; });
+      var count = Object.keys(days).filter(function (d) { return !days[d].secret; }).length;
+      return { id: 'motd', name: 'Movie of the Day', ownerName: 'John', mine: !!(ME && ME.owner), shared: true, count: count, days: days, notes: notes };
+    });
   });
 }
-function refreshAll() {   // forget what's kept, here and on the Mac, and load again
+var SORTS = {
+  year: function (a, b) { return (+b.year || 0) - (+a.year || 0) || nameKey(a).localeCompare(nameKey(b)); },
+  added: function (a, b) { return String(b.added || '').localeCompare(String(a.added || '')); },
+  name: function (a, b) { return nameKey(a).localeCompare(nameKey(b)); },
+  rating: function (a, b) { return (+b.rating || 0) - (+a.rating || 0) || nameKey(a).localeCompare(nameKey(b)); }
+};
+function nameKey(i) { return String(i.name || '').replace(/^(the|a|an)\s+/i, '').toLowerCase(); }
+function details(it) {   // a film's longer details (overview, cast, trailers), and a series' episodes, from the site's files
+  var id = it.id, jobs = [getJSON(DATA + 'd/' + id.slice(0, 2) + '.json').then(function (b) { return b[id] || {}; }).catch(function () { return {}; })];
+  if (it.type === 'series') jobs.push(getJSON(DATA + 's/' + id + '.json').catch(function () { return {}; }));
+  return Promise.all(jobs).then(function (r) {
+    var o = Object.assign({}, it, r[0]);
+    if (r[1]) { o.seasons = r[1].seasons || []; o.episodes = r[1].episodes || []; o.episodes.forEach(function (e) { if (LIB) LIB.tag(e); }); }
+    return o;
+  });
+}
+function fromSite(path) {   // what the site's own files answer (null: a thing only the Mac has)
+  var name = path.split('?')[0], q = new URLSearchParams(path.split('?')[1] || '');
+  if (name === 'me') {
+    return fetch(WORKER + '/g/me', { headers: { Authorization: 'Bearer ' + TOKEN } }).then(function (r) { return r.json().then(function (j) { if (!r.ok) { var e = new Error(j.error || 'Not signed in.'); e.status = r.status; throw e; } return j; }); })
+      .then(function (me) { return library().then(function (L) { me.libraries = { movies: L.movies.length, tv: L.tv.length }; return me; }, function () { return me; }); });
+  }
+  if (name === 'calendars') {
+    return motdCal().then(function (m) {
+      var mine = { id: 'motd', name: m.name, ownerName: 'John', mine: m.mine, shared: true, count: m.count };
+      if (PUBLIC) return { calendars: [mine] };
+      return soon(mac('calendars'), 5000).then(function (r) { return { calendars: [mine].concat((r.calendars || []).filter(function (c) { return c.id !== 'motd'; })) }; }, function () { return { calendars: [mine] }; });
+    });
+  }
+  if (name === 'calendar' && (q.get('id') || 'motd') === 'motd') return motdCal();
+  if (name === 'calendar') return null;
+  if (['home', 'items', 'item', 'collections', 'collection', 'search'].indexOf(name) < 0) return null;
+  return library().then(function (L) {
+    var I = L.items, get = function (ids) { return ids.map(function (i) { return I[i]; }).filter(Boolean); };
+    if (name === 'home') {
+      var newest = function (ids) { return get(ids).sort(SORTS.added).slice(0, 24); };
+      return { movies: newest(L.movies), tv: newest(L.tv) };
+    }
+    if (name === 'items') {
+      var all = get(L[q.get('lib') === 'tv' ? 'tv' : 'movies']).sort(SORTS[q.get('sort')] || SORTS.name), start = +q.get('start') || 0, n = +q.get('limit') || 120;
+      return { items: all.slice(start, start + n), total: all.length };
+    }
+    if (name === 'collections') return { collections: get(L.collections) };
+    if (name === 'collection') {
+      var c = I[q.get('id')]; if (!c) { var e = new Error('No such collection.'); e.status = 404; throw e; }
+      return details(c).then(function (o) { o.items = get(L.sets[c.id] || []); return o; });
+    }
+    if (name === 'item') {
+      var it = I[q.get('id')];
+      if (!it) return null;
+      return details(it);
+    }
+    if (name === 'search') {
+      var t = (q.get('q') || '').toLowerCase().trim(), words = t.split(/\s+/);
+      var hits = Object.keys(I).map(function (k) { return I[k]; }).filter(function (i) { if (i.type !== 'movie' && i.type !== 'series') return false; var n = (i.name || '').toLowerCase(); return words.every(function (w) { return n.indexOf(w) >= 0; }); });
+      hits.sort(function (a, b) { var an = (a.name || '').toLowerCase(), bn = (b.name || '').toLowerCase(); return (bn.indexOf(t) === 0) - (an.indexOf(t) === 0) || SORTS.name(a, b); });
+      return { items: hits.slice(0, 40) };
+    }
+  });
+}
+function api(path, body) {
+  if (DEMO) return Demo.api(path, body);
+  if (!body) { var site = fromSite(path); if (site) return Promise.resolve(site).then(function (r) { return r == null ? mac(path) : r; }); }
+  if (PUBLIC) { var x = new Error('Sign in to do that.'); x.status = 401; signInSheet(); return Promise.reject(x); }
+  return mac(path, body).then(function (r) {   // John's changes to Movie of the Day or the collections: made on the Mac, on the site with his next Update
+    if (ME && ME.owner && ((path === 'calendar' && body.id === 'motd') || (path === 'collections' && body.op !== 'in'))) setTimeout(function () { toast('Saved on the Mac: Update (on the admin page) puts it on the site'); }, 1400);
+    return r;
+  });
+}
+var MEMO = {};
+function apiMemo(path, draw) { return api(path).then(function (d) { draw(d); return d; }); }   // (the site's files: the browser keeps them)
+function refreshAll() {   // look again: the site's files and the pictures fetched afresh
   forgetMemo();
-  try { if (window.caches) caches.delete('gfx-pics-v1'); } catch (e) {}   // (pictures fetched again, in case one changed)
-  (DEMO || PUBLIC || !GW ? Promise.resolve() : fetch(GW + '/api/refresh', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: '{}' }).catch(function () {}))
-    .then(function () { location.reload(); });
+  try { if (window.caches) caches.delete('gfx-pics-v1'); } catch (e) {}
+  location.reload();
 }
 document.addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('#refresh, #refresh2'); if (b) { b.disabled = true; refreshAll(); } });
 // Pull down to refresh on a phone, as on the songs' site (its code): at the top of the page, pull and let go past the
@@ -610,9 +688,12 @@ function forgetMemo() {
 function img(id, kind, w) {
   if (!id) return '';
   if (DEMO) return Demo.pic(id, kind);
-  // films' and series' pictures: the same address for everyone, always (Cloudflare and the browser keep copies, and
-  // Grifflix's service worker keeps each one on the device: shown at once next time, as the songs' covers are)
-  return GW + '/pimg/' + id + '/' + (kind || 'Primary') + '.jpg?maxWidth=' + (w || 400);
+  // the site's own copy of each picture (kept by the Worker, made by John's Update; the same address for everyone, its
+  // version in it: the browser and Grifflix's service worker keep each one, shown at once next time, as the songs' covers)
+  kind = kind || 'Primary';
+  var sizes = { Primary: [400], Backdrop: [480, 1100], Thumb: [480, 1100] }[kind] || [400], size = sizes.filter(function (x) { return x >= (w || 0); })[0] || sizes[sizes.length - 1];
+  var t = PICTAG[id + kind];
+  return WORKER + '/gp/' + id + '/' + kind + '-' + size + '.jpg' + (t ? '?t=' + t : '');
 }
 function gwUrl(p) { return DEMO ? p : GW + p; }
 
@@ -654,20 +735,18 @@ function start() {
   document.documentElement.classList.add('ready');
   if (BUILD.draft) { var t = document.createElement('a'); t.className = 'drafttag'; t.href = '/grifflix/'; t.title = 'This is the draft: the live Grifflix is at /grifflix/'; t.textContent = 'Draft'; $('.brand').after(t); }
   var go = function () {
-    if (!DEMO && !GW) return welcome('nogw');
     if (!DEMO && !TOKEN) {
       PUBLIC = true; ME = { name: '', public: true };
       document.documentElement.classList.add('public');
       $('#who').textContent = 'Sign in';
-      return fetch(GW + '/health').then(function (r) { if (!r.ok) throw 0; route(); }).catch(function () { welcome('down'); });
+      return route();   // (all from the site's own files: the Mac mini needn't be on)
     }
     api('me').then(function (me) {
-      ME = me; KEY = me.key || '';
+      ME = me;
       $('#who').textContent = me.name ? me.name.split(' ')[0] : 'Profile';
       if (DEMO) $('#note').innerHTML = '<div class="notice"><b>Demo.</b> Made-up films, so you can see how Grifflix works before the Mac mini is connected. Changes stay on this device. <a href="?demo=0">Leave the demo</a></div>';
-      setInterval(function () { api('me').then(function (m) { KEY = m.key || KEY; }).catch(function () {}); }, 6 * 3600e3);
       route();
-    }).catch(function (e) { welcome(e.status === 401 ? 'notmember' : 'down'); });
+    }).catch(function (e) { welcome(e.status === 401 || e.status === 403 ? 'notmember' : 'down'); });
   };
   if (DEMO) return go();
   if ('serviceWorker' in navigator) try { swReg().catch(function () {}); } catch (e) {}   // (from the start: it keeps the pictures)
@@ -680,7 +759,7 @@ function welcome(why) {
   $('.bar-top').classList.add('hide');
   var msg = {
     nogw: 'Grifflix is nearly ready: the Mac mini isn’t connected yet.',
-    down: 'The Mac mini isn’t answering just now (it may be asleep or restarting). Try again in a few minutes.',
+    down: 'Grifflix isn’t answering just now. Try again in a few minutes.',
     notmember: 'This device’s sign-in has run out. Sign in again below.'
   }[why] || 'Films and TV from John’s shelves, for family and friends.';
   var signin = !TOKEN || why === 'notmember';
@@ -757,7 +836,13 @@ function home() {
     var shownDays = Object.keys(S.calData.days).filter(function (k) { return !S.calData.days[k].secret; }).sort();
     var t = (S.calData.days[TODAY] && !S.calData.days[TODAY].secret ? S.calData.days[TODAY] : null) || S.calData.days[shownDays.pop()];
   }).catch(oops);
-  api('home').then(drawRows).catch(function () {});
+  homeRows();
+}
+function homeRows() {   // New films and TV from the site's files; Carry on watching (each member's own) from the Mac, if it's on
+  api('home').then(function (R) {
+    drawRows(R);
+    if (!PUBLIC && !DEMO) soon(mac('home'), 8000).then(function (m) { if (m.continue && m.continue.length && $('#rows')) { R.continue = m.continue; drawRows(R); } }).catch(function () {});
+  }).catch(function () {});
 }
 function drawCals() {
   var el = $('#cals'), h = '';
@@ -1073,7 +1158,10 @@ function itemSheet(it, ctx) {
   openSheet(top + '<div class="in"><div class="date">' + (ctx.date ? dnav(-1) + '<span>' + esc(longDate(ctx.date)) + '</span>' + dnav(1) : esc(typeName(it))) + '</div><h2>' + esc(showName(it)) + '</h2><div id="isbody">' + bodyHTML(it, ctx) + '</div></div>');
   $$('#sheetIn [data-dstep]').forEach(function (b) { b.onclick = function () { dayStep(+b.dataset.dstep); }; });
   wireBody(it, ctx);
-  api('item?id=' + it.id).then(function (full) { if (!dlg.open) return; Object.assign(it, full); var had = document.activeElement && document.activeElement.id; $('#isbody').innerHTML = bodyHTML(it, ctx); wireBody(it, ctx); if (TV) { var back = had && !/^(asignin|aplay|atrailer)$/.test(had) && $('#' + had); if (back) back.focus({ preventScroll: true }); else tvStart(); }   /* (the trailer arrives with the details: chosen then, unless something else was) */ }).catch(function () {});
+  var mine = function (full) { if (PUBLIC || DEMO || !full.id) return full;   // (the member's own: from the Mac, if it's on)
+    return soon(mac('item?id=' + it.id), 6000).then(function (m) { ['pos', 'hearted', 'next', 'subs'].forEach(function (k) { if (m[k] != null) full[k] = m[k]; });
+      var at = {}; (m.episodes || []).forEach(function (e) { if (e.pos) at[e.id] = e.pos; }); (full.episodes || []).forEach(function (e) { if (at[e.id]) e.pos = at[e.id]; }); return full; }, function () { return full; }); };
+  api('item?id=' + it.id).then(mine).then(function (full) { if (!dlg.open) return; Object.assign(it, full); var had = document.activeElement && document.activeElement.id; $('#isbody').innerHTML = bodyHTML(it, ctx); wireBody(it, ctx); if (TV) { var back = had && !/^(asignin|aplay|atrailer)$/.test(had) && $('#' + had); if (back) back.focus({ preventScroll: true }); else tvStart(); }   /* (the trailer arrives with the details: chosen then, unless something else was) */ }).catch(function () {});
 }
 function typeName(it) { return { movie: 'Film', series: 'Series', episode: it.series || 'Episode', video: 'Home video', photo: 'Photo' }[it.type] || ''; }
 function bodyHTML(it, ctx) {
@@ -1405,7 +1493,7 @@ function stopPlayer() {
   P.v.pause(); P.v.removeAttribute('src'); P.v.load();
   P.el.classList.remove('on'); document.documentElement.style.overflow = '';
   if (document.fullscreenElement) document.exitFullscreen().catch(function () {});
-  if (S.view === 'home') api('home').then(drawRows).catch(function () {});
+  if (S.view === 'home') homeRows();
 }
 $('#pclose').onclick = stopPlayer;
 P.v.addEventListener('ended', function () { saveProgress(); if (P.queue.length) { var n = P.queue.shift(); play(n, P.queue); } else stopPlayer(); });

@@ -90,7 +90,8 @@ export default {
       if (url.pathname === '/facts/video') return await factsSignoff(request, env, true);
       if (url.pathname === '/facts/picks') return new Response((await env.SOTD.get('videoPicks')) || '{}', { headers: factsHeaders('*') });
       if (url.pathname === '/facts/redo') return await factsRedo(request, env);
-      if (url.pathname.startsWith('/g/')) return await grifflix(request, url, env);   // Grifflix's own members (apart from the songs')
+      if (url.pathname.startsWith('/g/')) return await grifflix(request, url, env);
+      if (url.pathname.startsWith('/gp/')) return await gPicGet(request, url, env, ctx);   // Grifflix's pictures, kept here (not the Mac's)   // Grifflix's own members (apart from the songs')
       if (url.pathname.startsWith('/gi/')) return await gInvitePage(url, env);
       if (url.pathname.startsWith('/members/')) return await members(request, url, env);
       if (url.pathname === '/push/check') return await pushCheck(request, env, ctx);
@@ -122,7 +123,7 @@ export default {
       await uplLook(env).catch(e => console.log('uplLook: ' + (e && e.message)));
     })().catch(e => console.log('scheduled: ' + (e && e.message))));
     ctx.waitUntil(appUpdates(env).catch(e => console.log('appUpdates: ' + (e && e.message))));
-    ctx.waitUntil(gDaily(env).then(r => { if (r && typeof r === 'object') console.log('gDaily: ' + JSON.stringify(r)); }).then(() => gWeekly(env)).catch(e => console.log('grifflix: ' + (e && e.message))));   // (Grifflix: its Movie of the Day and Monday's summaries)
+    ctx.waitUntil(gDaily(env).then(r => { if (r && typeof r === 'object') console.log('gDaily: ' + JSON.stringify(r)); }).then(() => gWeekly(env)).then(() => gDataDaily(env)).catch(e => console.log('grifflix: ' + (e && e.message))));   // (Grifflix: its Movie of the Day and Monday's summaries)
     ctx.waitUntil(catalogHeal(env).catch(e => console.log('catalogHeal: ' + (e && e.message))));
     ctx.waitUntil((async () => {   // once: playlists' own files that were only part of the song (the download code before its length check: John, 7 Nov 2026), taken off so they show as missing again (each playlist's record written once)
       if (!env.MEDIA || await env.SOTD.get('ownShort3')) return;
@@ -1325,13 +1326,40 @@ function gFilmHtml(f) {   // one film: its poster, name, year, John's note, and 
     + (f.overview ? '<p style="margin:10px 0 0;color:#4a3a42">' + mailEsc(f.overview.length > 320 ? f.overview.slice(0, 317).replace(/\s+\S*$/, '') + '…' : f.overview) + '</p>' : '')
     + '<p style="margin:18px 0 0"><a href="' + mailEsc(f.url) + '" style="display:inline-block;padding:11px 22px;border-radius:999px;background:#1d0b1e;color:#ffffff;font:600 13px/1 Helvetica,Arial,sans-serif;letter-spacing:.08em;text-transform:uppercase;text-decoration:none">Watch on Grifflix</a></p>';
 }
+// Grifflix's own copy of the site (John, 8 Nov 2026: the calendar "should load in exactly the same way as sotd serves the
+// calendar. Only function should be playing and getting an update from the Mac"): his Update (admin page) brings
+// everything from the Mac; the site keeps it as its own files (grifflix-data.yml), the pictures are kept in R2 (served
+// here at /gp/), and Movie of the Day's days, the ones to come too, are kept here (gcal), each shown from 8am on its day.
+const G_WORKER = 'https://sotd-playlists.cooperking.workers.dev', G_PIC_KINDS = { Primary: [400], Backdrop: [480, 1100], Thumb: [480, 1100] };
+function gPicUrl(id, kind, w, tag) {   // a picture's address: its size the nearest kept one; its version (tag) in it, so a new picture is a new address
+  const sizes = G_PIC_KINDS[kind] || [400], size = sizes.find(x => x >= (w || 0)) || sizes[sizes.length - 1];
+  return id ? G_WORKER + '/gp/' + id + '/' + kind + '-' + size + '.jpg' + (tag ? '?t=' + tag : '') : '';
+}
+async function gPicGet(request, url, env, ctx) {   // /gp/<id>/<Kind>-<w>.jpg: from R2; one not copied yet comes from the Mac
+  const m = /^\/gp\/([0-9a-f]{32})\/(Primary|Backdrop|Thumb)-(\d+)\.jpg$/.exec(url.pathname);
+  if (!m || !(G_PIC_KINDS[m[2]] || []).includes(+m[3])) return new Response('Not here.', { status: 404 });
+  const cache = caches.default, hit = await cache.match(request);
+  if (hit) return hit;
+  const o = await env.MEDIA.get('grifflix/p/' + m[1] + '/' + m[2] + '-' + m[3] + '.jpg').catch(() => null);
+  if (!o) return Response.redirect(G_API + '/pimg/' + m[1] + '/' + m[2] + '.jpg?maxWidth=' + m[3], 302);
+  const res = new Response(o.body, { headers: { 'Content-Type': 'image/jpeg', 'Cache-Control': 'public, max-age=' + (url.search ? 31536000 : 86400), 'Access-Control-Allow-Origin': '*' } });
+  if (ctx) ctx.waitUntil(cache.put(request, res.clone()));
+  return res;
+}
+function gRevealed(day) { const t = londonDay(); return day < t || (day === t && londonHour() >= 8); }
+async function gCal(env) { return (await env.SOTD.get('gcal', 'json')) || { days: {}, notes: {} }; }   // all of Movie of the Day, the days to come too
+function gShownCal(c) {   // what anyone may see of it: the days already revealed
+  const days = {}, notes = {};
+  for (const [d, it] of Object.entries(c.days || {})) if (gRevealed(d)) { days[d] = it; if ((c.notes || {})[d]) notes[d] = c.notes[d]; }
+  return { days, notes };
+}
 function gDayFilm(c, day) {   // a calendar day's film, as the alert (notification and email) shows it
   const it = c.days && c.days[day];
   if (!it) return null;
   const name = it.type === 'episode' ? (it.series || it.name) : it.name, note = (c.notes || {})[day] || '';
   return { name, year: it.year || '', note, overview: it.overview || '', url: G_SITE + '#day/' + day,
-    poster: it.poster ? G_API + '/pimg/' + it.poster + '/Primary.jpg?maxWidth=500' : '',
-    image: it.backdrop ? G_API + '/pimg/' + it.backdrop + '/Backdrop.jpg?maxWidth=1000' : '' };
+    poster: gPicUrl(it.poster, 'Primary', 400, (it.tags || {}).poster),
+    image: gPicUrl(it.backdrop, 'Backdrop', 1100, (it.tags || {}).backdrop) };
 }
 function gMailParts(f) {   // the daily email: subject, plain text, and its page
   return { subject: f.name + (f.year ? ' (' + f.year + ')' : '') + ': today’s Movie of the Day',
@@ -1343,9 +1371,7 @@ async function gDaily(env) {   // today's Movie of the Day to the members, once,
   if (londonHour() < 8) return 'before 8am';
   const sent = (await env.SOTD.get('gSent', 'json')) || [];
   if (sent.includes(day)) return 'sent already';
-  const r = await fetch(G_API + '/api/public/calendar', { headers: { 'User-Agent': 'SongOfTheDayWorker' } }).catch(() => null);
-  if (!r || !r.ok) return 'the Mac mini isn’t answering';
-  const c = await r.json().catch(() => ({})), it = c.days && c.days[day];
+  const c = gShownCal(await gCal(env)), it = c.days[day];   // (Grifflix's own copy: the Mac needn't be on)
   if (!it) return 'no Movie of the Day yet';
   if (env.NOW) {   // (one look only sends it, as the songs')
     const once = await env.NOW.get(env.NOW.idFromName('_once')).fetch('https://now/once', { method: 'POST', body: JSON.stringify({ key: 'gday:' + day }) }).then(x => x.json()).catch(() => null);
@@ -1390,6 +1416,24 @@ async function gMailAll(env, f) {
     catch (e) { console.log('gmail: ' + (e && e.message)); }
   }
   return { sent, kept };
+}
+async function gDataJob(env, mode) {   // the site's files made again (grifflix-data.yml): 'full' after an Update, 'days' each morning
+  if (!env.GH_TOKEN) return { ok: false, error: 'The GH_TOKEN secret is not set.' };
+  const r = await fetch('https://api.github.com/repos/' + REPO + '/actions/workflows/grifflix-data.yml/dispatches', {
+    method: 'POST', headers: { Authorization: 'Bearer ' + env.GH_TOKEN, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', 'User-Agent': 'SongOfTheDayWorker', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ref: 'main', inputs: { mode } })
+  }).catch(e => ({ status: 0, text: async () => String(e) }));
+  return r.status === 204 ? { ok: true } : { ok: false, error: 'GitHub didn’t start it: ' + r.status + ' ' + (await r.text()).slice(0, 160) };
+}
+async function gDataDaily(env) {   // from 8am: the day's film onto the site's own calendar file, once a day
+  if (londonHour() < 8) return;
+  const key = 'gdataday:' + londonDay();
+  if (await env.SOTD.get(key)) return;
+  const c = await gCal(env);
+  if (!c.days || !c.days[londonDay()]) return;
+  await env.SOTD.put(key, '1', { expirationTtl: 3 * 86400 });
+  const r = await gDataJob(env, 'days');
+  if (!r.ok) { await env.SOTD.delete(key); console.log('gDataDaily: ' + r.error); }
 }
 async function gWeekly(env) {   // Monday morning: the week's Movies of the Day, to those who chose once a week
   if (londonHour() < 8 || new Date().toLocaleDateString('en-GB', { weekday: 'short', timeZone: 'Europe/London' }) !== 'Mon') return;
@@ -1451,7 +1495,30 @@ async function gInvite(env, all, id) {   // a new invitation for a member: its c
 async function grifflix(request, url, env) {
   const h = factsHeaders(G_ORIGIN), answer = (status, body) => new Response(JSON.stringify(body), { status, headers: h });
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: h });
-  const route = url.pathname.slice(3), b = request.method === 'POST' ? await request.json().catch(() => ({})) : {};
+  const route = url.pathname.slice(3);
+  if (route === 'snapshot') {   // John's Update: everything from the Mac, kept in R2 as it came (read by grifflix-data.yml)
+    if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
+    const w = await gWho(request, env);
+    if (!w || !w.owner) return answer(403, { error: 'Only John.' });
+    const buf = await request.arrayBuffer();
+    if (buf.byteLength < 20 || buf.byteLength > 80e6) return answer(400, { error: 'That isn’t the Mac’s copy.' });
+    await env.MEDIA.put('grifflix/snapshot.json', buf, { httpMetadata: { contentType: 'application/json' } });
+    return answer(200, { ok: true, bytes: buf.byteLength });
+  }
+  if (route === 'cal') {   // Movie of the Day's days revealed after the site's own file (?after=), and for John, those still to come
+    const c = await gCal(env), shown = gShownCal(c), after = url.searchParams.get('after') || '';
+    const out = { days: {}, notes: {} };
+    for (const [d, it] of Object.entries(shown.days)) if (d > after) { out.days[d] = it; if (shown.notes[d]) out.notes[d] = shown.notes[d]; }
+    const w = request.headers.get('Authorization') ? await gWho(request, env) : null;
+    if (w && w.owner) {
+      const future = Object.keys(c.days || {}).filter(d => !gRevealed(d));
+      if (await env.SOTD.get('gpeek')) for (const d of future) { out.days[d] = c.days[d]; if ((c.notes || {})[d]) out.notes[d] = c.notes[d]; }
+      else out.secret = future;
+      out.peek = !!await env.SOTD.get('gpeek');
+    }
+    return answer(200, out);
+  }
+  const b = request.method === 'POST' ? await request.json().catch(() => ({})) : {};
   if (route === 'join') {   // an invitation's code, or a 6-letter code from a member's Profile (a TV's)
     if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
     const ip = request.headers.get('CF-Connecting-IP') || 'unknown', failKey = 'gjoinfail:' + ip + ':' + new Date().toISOString().slice(0, 13), fails = Number(await env.SOTD.get(failKey)) || 0;
@@ -1637,10 +1704,9 @@ async function gAdmin(request, env, b, who, answer) {
     return answer(200, { members: list() });
   }
   if (b.op === 'preview' || b.op === 'testmail') {   // the 8am email as it goes out: the latest day already shown (or today's)
-    const r = await fetch(G_API + '/api/public/calendar', { headers: { 'User-Agent': 'SongOfTheDayWorker' } }).catch(() => null);
-    const c = r && r.ok ? await r.json().catch(() => ({})) : {};
-    const day = Object.keys(c.days || {}).filter(d => d <= londonDay()).sort().pop();
-    if (!day) return answer(503, { error: r && r.ok ? 'No Movie of the Day shown yet.' : 'The Mac mini isn’t answering.' });
+    const c = gShownCal(await gCal(env));
+    const day = Object.keys(c.days).sort().pop();
+    if (!day) return answer(503, { error: 'No Movie of the Day shown yet (or no Update from the Mac yet).' });
     const p = gMailParts(gDayFilm(c, day));
     if (b.op === 'preview') return answer(200, Object.assign({ day }, p));
     const me = all[who.id];
@@ -1650,6 +1716,30 @@ async function gAdmin(request, env, b, who, answer) {
     return answer(200, { ok: true, to: me.email, day });
   }
   if (b.op === 'last') return answer(200, { sent: await env.SOTD.get('gLast', 'json'), mailer: await gMailOk(env) });
+  if (b.op === 'update') {   // John's Update: Movie of the Day kept here (all of it), and the site's files made again from what he sent (/g/snapshot)
+    const c = b.cal || {}, days = {}, notes = {};
+    for (const [d, it] of Object.entries(c.days || {})) {
+      if (!/^\d{4}-\d\d-\d\d$/.test(d) || !it || typeof it !== 'object' || !/^[0-9a-f]{32}$/.test(it.id || '')) continue;
+      const o = {};
+      for (const k of ['id', 'name', 'type', 'year', 'mins', 'secs', 'cert', 'rating', 'series', 'seriesId', 'season', 'ep', 'poster', 'backdrop', 'thumb', 'children', 'genres', 'tags', 'overview'])
+        if (it[k] != null && it[k] !== '') o[k] = k === 'overview' ? String(it[k]).slice(0, 400) : it[k];
+      days[d] = o;
+    }
+    for (const [d, n] of Object.entries(c.notes || {})) if (days[d] && n) notes[d] = String(n).slice(0, 500);
+    if (!Object.keys(days).length && !b.allowEmpty) return answer(400, { error: 'No Movie of the Day came from the Mac.' });
+    const snap = env.MEDIA ? await env.MEDIA.head('grifflix/snapshot.json').catch(() => null) : null;
+    if (!snap) return answer(409, { error: 'The Mac’s copy didn’t arrive: try again.' });
+    await env.SOTD.put('gcal', JSON.stringify({ at: Date.now(), days, notes }));
+    const r = await gDataJob(env, 'full');
+    const info = { at: Date.now(), days: Object.keys(days).length, counts: b.counts || null, started: r.ok, err: r.error || '' };
+    await env.SOTD.put('gdata', JSON.stringify(info));
+    return r.ok ? answer(200, info) : answer(502, { error: r.error });
+  }
+  if (b.op === 'datastatus') return answer(200, { last: await env.SOTD.get('gdata', 'json'), peek: !!await env.SOTD.get('gpeek') });
+  if (b.op === 'peek') {   // John sees the films still to come (only he)
+    if (b.peek) await env.SOTD.put('gpeek', '1'); else await env.SOTD.delete('gpeek');
+    return answer(200, { peek: !!b.peek });
+  }
   if (b.op === 'publish') {   // the draft put live (grifflix-golive.yml)
     if (!env.GH_TOKEN) return answer(503, { error: 'The GH_TOKEN secret is not set.' });
     const say = String(b.say || '').replace(/\s+/g, ' ').trim().slice(0, 300);
