@@ -667,6 +667,18 @@ html.mob .film .noimg-top { height: calc(env(safe-area-inset-top) + 54px); }
 .tpbar .ico { width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid rgba(255, 255, 255, .5); background: rgba(0, 0, 0, .4); color: #fff; }
 .tpbar .ico svg { width: 20px; height: 20px; }
 html.tv .tpbar b { font-size: 28px; }
+#shband { position: fixed; left: 0; right: 0; top: 0; z-index: 79; background: var(--bg); pointer-events: none; }
+html:not(.mob) #sheet:has(#sq) { position: fixed; inset: 0; width: 100vw; height: 100%; max-width: none; max-height: none; margin: 0; border: 0; padding: 0; }
+html:not(.mob) #sheet .sheet:has(#sq) { width: 100% !important; height: 100%; max-height: none; border-radius: 0; box-shadow: none; }
+html:not(.mob):not(.tv) #sheet .form:has(#sq) { padding: 96px clamp(24px, 4vw, 64px) 40px !important; max-width: 1400px; margin: 0 auto; }
+html:not(.mob):not(.tv) #sheet .form:has(#sq) > .close { top: 24px; right: 24px; position: fixed; z-index: 81; }
+html.tv #sheet .form > .close, html.mob #sheet .form > .close { position: fixed; z-index: 81; }
+/* the pop-ups' own bar words (Theme, Calendar, Search) beside GRIFFLIX */
+#shnav { position: fixed; z-index: 80; display: flex; align-items: center; gap: 22px; }
+#shnav button { background: none; border: 0; padding: 6px 2px; margin: 0; cursor: pointer; color: var(--fg); font: 500 12px/1 var(--kfont); letter-spacing: .3em; text-transform: uppercase; }
+#shnav button:focus-visible { outline: 2px solid rgb(var(--kink)); outline-offset: 4px; }
+html.tv #shnav button { font-size: 15px; }
+html.mob #shnav { gap: 14px; } html.mob #shnav button { font-size: 11px; letter-spacing: .2em; }
 /* sort and filter: two icons on the tabs' row; their panel under them */
 .sfbar { display: inline-flex; gap: 8px; align-items: center; }
 .sfb { display: inline-flex !important; align-items: center; gap: 8px; min-height: 40px; padding: 0 12px !important; position: relative; }
@@ -1797,7 +1809,7 @@ function drawMonth() {
   } else delete document.documentElement.dataset.theme;
   // the view switch (the corridor, or the calendar): a word in the bar, by Search and Browse
   var old = $('#tvview'); if (old) old.remove();
-  $('.bar-top .brand').insertAdjacentHTML('afterend', '<button class="pill" id="tvview" aria-label="Calendar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span>' + (VIEW() === 'calendar' ? 'The theme' : 'Calendar') + '</span></button>');
+  $('.bar-top .brand').insertAdjacentHTML('afterend', '<button class="pill" id="tvview" aria-label="Calendar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span>' + (VIEW() === 'calendar' || S.mcal ? 'Theme' : 'Calendar') + '</span></button>');
   $('#tvview').onclick = function () {
     if (MOBQ()) { S.mcal = !S.mcal; drawMonth(); window.scrollTo(0, 0); return; }   // (a phone: the month's calendar on the page, as the songs' calendar; again for the theme)
     if (VIEW() === 'themes') { S.calDay = null; return calSheet(); }   // (John, 8 Nov 2026: "calendar next to grifflix, which should bring that month's calendar up ... in the same style as that month")
@@ -2029,7 +2041,6 @@ function calSheet() {   // the month's calendar, a pop-up in its theme's colour 
   var ms = monthsOf(C.days), mi = ms.indexOf(S.month), mob = MOB();
   S.sheetDate = null;   // (not a day's page: a swipe here is the month before or after)
   var h = '<div class="form tcal" style="position:relative">' + X + '<div class="tctools">' +   // (Search, Profile and Reload here too, the bar being covered: John, 8 Nov 2026)
-    '<button class="ico" data-tt="search" aria-label="Search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg></button>' +
     '<button class="ico" data-tt="refresh" aria-label="Reload"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button>' +
     '<button class="ico" data-tt="who" aria-label="Profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></button></div><div class="tck">' + esc(t.name) + '</div><div class="tchead"><button class="pill tcm" id="tcprev" aria-label="Earlier month"' + (mi <= 0 ? ' disabled' : '') + '>‹</button><h2>' + MONTHS[m] + ' ' + y + '</h2><button class="pill tcm" id="tcnext" aria-label="Later month"' + (mi >= ms.length - 1 ? ' disabled' : '') + '>›</button></div><div class="tcgrid">' + DOW.map(function (d) { return '<div class="tch">' + d + '</div>'; }).join('');
   for (var k = 0; k < lead; k++) h += '<div></div>';
@@ -2586,6 +2597,23 @@ function shBrand() {   // GRIFFLIX over a pop-up, just where the bar's is (the b
   if (!b) { dlg.insertAdjacentHTML('afterbegin', '<button class="brand" id="shbrand" type="button" aria-label="Grifflix: home">Grifflix</button>'); b = $('#shbrand'); b.onclick = goHome; }
   if (!src) { b.hidden = true; return; }
   var r = src.getBoundingClientRect(), cs = getComputedStyle(src);
+  // the words beside it, as the bar's (John, 8 Nov 2026: "If you're on calendar, replace it with Theme. CALENDAR and THEME should be there to tab to on search")
+  var nav = $('#shnav'); if (!nav) { dlg.insertAdjacentHTML('afterbegin', '<div id="shnav"></div>'); nav = $('#shnav'); }
+  var band = $('#shband'); if (!band) { dlg.insertAdjacentHTML('afterbegin', '<div id="shband"></div>'); band = $('#shband'); }
+  var sr = $('#sheetIn').getBoundingClientRect(); band.hidden = sr.top > 2;   // (a pop-up filling the screen: what scrolls passes under the logo, not through it)
+  band.style.height = Math.round(r.bottom + 16) + 'px';
+  var oncal = !!$('#sheetIn .tcal'), onsearch = !!$('#sheetIn #sq');
+  var words = oncal ? [['theme', 'Theme'], ['search', 'Search']] : onsearch ? [['calendar', 'Calendar'], ['theme', 'Theme']] : [];
+  nav.innerHTML = words.map(function (w) { return '<button type="button" data-sn="' + w[0] + '">' + w[1] + '</button>'; }).join('');
+  nav.hidden = !words.length;
+  $$('#shnav [data-sn]').forEach(function (x) { x.onclick = function () {
+    var w = x.dataset.sn;
+    if (w === 'theme') return goHome();
+    if (w === 'calendar') { closeSheet(); S.calDay = null; return VIEW() === 'themes' ? calSheet() : null; }
+    if (w === 'search') return searchSheet();
+  }; });
+  var tv = $('#tvview'), tr = tv && tv.offsetParent ? tv.getBoundingClientRect() : null;
+  nav.style.top = Math.round(r.top) + 'px'; nav.style.left = Math.round(tr ? tr.left : r.right + 28) + 'px'; nav.style.height = Math.round(r.height) + 'px';
   b.hidden = false; b.style.left = Math.round(r.left) + 'px'; b.style.top = Math.round(r.top) + 'px'; ['fontFamily', 'fontWeight', 'fontSize', 'lineHeight', 'letterSpacing', 'color', 'textTransform'].forEach(function (k) { b.style[k] = cs[k]; });
 }
 dlg.addEventListener('click', function (e) { if (e.target === dlg) closeSheet(); });
@@ -2763,7 +2791,8 @@ function searchSheet(onPick, title) {
     };
     inp.addEventListener('keydown', function (e) { if (inp.readOnly && (e.key === 'Enter' || e.keyCode === 23 || e.keyCode === 13)) { e.preventDefault(); wake(); } });
     inp.addEventListener('click', wake);
-    inp.addEventListener('blur', function () { if (!inp.value && !inp.waking) { inp.readOnly = true; inp.setAttribute('inputmode', 'none'); } });
+    inp.addEventListener('focus', function () { if (TV) { var si = $('#sheetIn'); if (si) si.scrollTo({ top: 0, behavior: 'smooth' }); } });
+  inp.addEventListener('blur', function () { if (!inp.value && !inp.waking) { inp.readOnly = true; inp.setAttribute('inputmode', 'none'); } });
     setTimeout(function () { inp.focus(); }, 50);
   } else setTimeout(function () { inp.focus(); }, 50);
   inp.oninput = function () {
@@ -3311,6 +3340,7 @@ document.addEventListener('keydown', function (e) {
     if (k === 'up') { e.preventDefault(); return; }
   }
   if (k === 'ok' || (inText && (k === 'left' || k === 'right'))) return;   // OK presses the button (the browser's own); text keeps its own left/right
+  if (k === 'up' && dlg.open && ae && (ae.id === 'sq' || (ae.closest && ae.closest('#shnav')))) { var si = $('#sheetIn'); if (si) si.scrollTo({ top: 0, behavior: 'smooth' }); }   // (up to the search box: Search's top in view again, John, 8 Nov 2026)
   e.preventDefault();
   if (!moveFocus(k) && k === 'up' && document.documentElement.classList.contains('barhide')) {   // (up from the top row: the words back)
     document.documentElement.classList.remove('barhide'); setTimeout(function () { var t = $('#tvview') || $('.bar-top button'); if (t) t.focus(); }, 0);
