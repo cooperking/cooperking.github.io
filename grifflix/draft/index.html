@@ -391,6 +391,29 @@ html.big .day .art { object-position: 50% 50%; }
 html.big .day .cap { display: block; padding: 18px 8px 6px; }
 html.big .day .cap .t { font-size: 15px; }
 html.big .day .num, html.big .day.has .num { top: 4px; bottom: auto; }
+html.big .calhead:empty { display: block; height: 0; }   /* (keeps its row, so the days get the rest: without it a visitor's calendar had days of no height) */
+/* a film's pop-up on a TV, as the songs' is: the whole screen, its picture behind, the details on the left with Play in
+   view at once, nothing to scroll for (John, 8 Nov 2026) */
+html.tv .sheet { width: 100vw; height: 100vh; max-height: none; border: 0; border-radius: 0; background: #07040a; overflow: auto; }
+html.tv .sheet .heroimg { position: absolute; inset: 0; height: 100vh; aspect-ratio: auto; }
+html.tv .sheet .heroimg img { object-position: 60% 20%; opacity: .62; }
+html.tv .sheet .heroimg::after { background: linear-gradient(90deg, rgba(7, 4, 10, .96) 0%, rgba(7, 4, 10, .82) 38%, rgba(7, 4, 10, .2) 70%, rgba(7, 4, 10, .1)), linear-gradient(0deg, rgba(7, 4, 10, .9), transparent 40%); }
+html.tv .sheet .noimg-top { display: none; }
+html.tv .sheet .in { position: relative; margin: 0; min-height: 100vh; max-width: 60vw; padding: 7vh 5vw 7vh; display: flex; flex-direction: column; justify-content: center; }
+html.tv .sheet h2 { font-size: clamp(48px, 4.4vw, 76px); }
+html.tv .sheet .tag { font-size: 24px; }
+html.tv .sheet .ov { font-size: 19px; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+html.tv #isbody { display: flex; flex-direction: column; }
+html.tv #isbody > * { order: 2; }
+html.tv #isbody > .meta { order: 0; }
+html.tv #isbody > .acts { order: 1; margin: 22px 0 18px; }
+html.tv .sheet .acts .pill { min-height: 52px; font-size: 14px; }
+html.tv .sheet .acts .pill.go { min-height: 60px; padding: 0 30px; font-size: 16px; }
+html.tv .sheet .owner, html.tv .sheet .chips { display: none; }
+html.tv .sheet .eps { max-height: 34vh; overflow: auto; }
+html.tv .sheet .close { position: fixed; top: 28px; right: 32px; }
+html.big:not(.tv) .sheet .heroimg { aspect-ratio: 16 / 6; }   /* (a computer: a shorter picture, so Play is in view) */
+
 
 </style>
 <script>/* a computer's screen (wide, with a mouse) or the TV: the whole calendar in the window, as on the songs' site */
@@ -950,7 +973,7 @@ function openSheet(html) {
   if (TV) tvStart();
 }
 function tvStart() {   // the TV: a pop-up starts on its Play (or its first main button), not on Close
-  var b = $('#sheetIn #aplay') || $('#sheetIn .pill.go') || $('#sheetIn input') || $('#sheetIn .close');
+  var b = $('#sheetIn #aplay') || $('#sheetIn #atrailer') || $('#sheetIn .pill.go') || $('#sheetIn input') || $('#sheetIn .close');
   if (b) b.focus({ preventScroll: true });
 }
 function closeSheet() { if (dlg.open) dlg.close(); }
