@@ -79,6 +79,12 @@
         <div class="state"><button class="btn primary" id="publish" type="button" hidden>Publish</button><a class="btn" href="/grifflix/draft/" target="_blank" rel="noopener">Try the draft</a><a class="btn" href="/grifflix/" target="_blank" rel="noopener">The live page</a></div>
       </section>
       <section class="card">
+        <div class="kicker">Update from the Mac</div>
+        <h2 id="uphead">Looking…</h2>
+        <p class="stat" id="upsay">Grifflix keeps its own copy of the films, TV, collections and Movie of the Day, so it shows them with the Mac mini asleep: the Mac is only asked to play. After changing films on the Mac, Update puts them on the site.</p>
+        <div class="state"><button class="btn primary" id="update" type="button">Update from the Mac</button></div>
+      </section>
+      <section class="card">
         <div class="kicker">Movie of the Day</div>
         <h2 id="peekhead">Each one a <em>surprise</em></h2>
         <p class="stat">Each day’s film shows on the calendar at 8am that day, when the alert goes out, for everyone, you too. Switch this on to see what’s coming (only you).</p>
@@ -126,7 +132,7 @@
   (TOKEN ? g('me') : Promise.reject({ status: 401 })).then(function (me) {
     if (!me.owner) return gate('Signed in as ' + me.name + ': this page is only for John.');
     $('#app').hidden = false; $('#hello').innerHTML = 'Signed in as <b>' + esc(me.name) + '</b>';
-    members(); draftLive(); notes(); mac();
+    members(); draftLive(); notes(); mac(); dataStatus(); peek();
   }).catch(function () {
     // not signed in to Grifflix here: has Grifflix its members yet? (asked without a sign-in, the Worker says which)
     fetch(WORKER + '/g/admin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"op":"list"}' }).then(function (r) { return r.json(); }).then(function (j) {
@@ -250,7 +256,8 @@
     if (!armed) { armed = setTimeout(function () { armed = 0; b.textContent = 'Publish'; }, 4000); b.textContent = 'Tap again to publish'; return; }
     clearTimeout(armed); armed = 0; b.disabled = true; b.textContent = 'Publishing…';
     var say = [].map.call(document.querySelectorAll('#changes li'), function (li) { return li.firstChild.textContent; }).join('; ');
-    g('admin', { op: 'publish', say: say }).then(function () { b.textContent = 'Going live…'; toast('Started: live in a minute or two'); watching = setInterval(draftLive, 15000); })
+    fetch('/grifflix/data/library.json', { method: 'HEAD', cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error('Update from the Mac first (below): the new page shows the site’s own copy of the films.'); })
+      .then(function () { return g('admin', { op: 'publish', say: say }); }).then(function () { b.textContent = 'Going live…'; toast('Started: live in a minute or two'); watching = setInterval(draftLive, 15000); })
       .catch(function (e) { b.disabled = false; b.textContent = 'Publish'; toast(e.message); });
   };
 
@@ -264,16 +271,51 @@
     }).catch(function (e) { $('#nothead').textContent = e.message; });
   }
 
-  // ---- Movie of the Day: surprises till 8am, unless John switches on seeing what's coming (kept on the Mac mini)
-  function peek(gw) {
+  // ---- Movie of the Day: surprises till 8am, unless John switches on seeing what's coming (kept on the Worker)
+  function peek(on) {
     var b = $('#peek'), set = function (on) {
       b.disabled = false; b.className = on ? 'btn primary' : 'btn'; b.textContent = on ? 'Showing upcoming films: hide them' : 'Show upcoming films';
       $('#peekhead').innerHTML = on ? 'You can see <em>what’s coming</em>' : 'Each one a <em>surprise</em>';
-      b.onclick = function () { b.disabled = true; call({ peek: !on }).then(function (j) { set(j.peek); toast(j.peek ? 'Upcoming films shown to you: refresh Grifflix' : 'Hidden again: refresh Grifflix'); }).catch(function () { b.disabled = false; toast('The Mac mini didn’t answer.'); }); };
+      b.onclick = function () { b.disabled = true; g('admin', { op: 'peek', peek: !on }).then(function (j) { set(j.peek); toast(j.peek ? 'Upcoming films shown to you: refresh Grifflix' : 'Hidden again: refresh Grifflix'); }).catch(function (e) { b.disabled = false; toast(e.message); }); };
     };
-    var call = function (body) { return fetch(gw + '/api/settings', body ? { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : { headers: { Authorization: 'Bearer ' + TOKEN } }).then(function (r) { if (!r.ok) throw 0; return r.json(); }); };
-    call().then(function (j) { set(j.peek); }).catch(function () { $('#peekhead').innerHTML = 'Each one a <em>surprise</em>'; b.textContent = 'The Mac mini needs updating for this'; });
+    if (on != null) return set(on);
+    g('admin', { op: 'datastatus' }).then(function (j) { set(j.peek); }).catch(function () {});
   }
+
+  // ---- Update from the Mac: the Mac's films, TV, collections and Movie of the Day, kept by the site as its own
+  var GW = '';
+  function dataStatus() {
+    g('admin', { op: 'datastatus' }).then(function (j) {
+      var l = j.last;
+      $('#uphead').innerHTML = l ? 'Last update <em>' + esc(when(l.at)) + '</em>' : 'Not <em>updated</em> yet';
+      if (l && l.counts) $('#upsay').innerHTML = '<b>' + (l.counts.movies || 0) + '</b> films, <b>' + (l.counts.tv || 0) + '</b> series, <b>' + (l.counts.collections || 0) + '</b> collections and <b>' + (l.days || 0) + '</b> days of Movie of the Day, kept by the site: the Mac mini is only asked to play. After changing films on the Mac, Update again.';
+    }).catch(function () {});
+  }
+  $('#update').onclick = function () {
+    var b = this, say = function (t) { b.textContent = t; };
+    if (!GW) return toast('The Mac mini isn’t connected.');
+    b.disabled = true; say('Asking the Mac… (a minute or two)');
+    var text, snap;
+    fetch(GW + '/api/export', { headers: { Authorization: 'Bearer ' + TOKEN } }).then(function (r) {
+      if (r.status === 404) throw new Error('The Mac mini needs its update first (the new gateway).');
+      if (!r.ok) throw new Error('The Mac mini said ' + r.status);
+      return r.text();
+    }, function () { throw new Error('The Mac mini isn’t answering: is it on?'); }).then(function (t) {
+      text = t; snap = JSON.parse(t);
+      say('Sending it to the site…');
+      return fetch(WORKER + '/g/snapshot', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: text })
+        .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || 'That didn’t work.'); return j; }); });
+    }).then(function () {
+      var eps = {}; Object.keys(snap.series || {}).forEach(function (k) { (snap.series[k].episodes || []).forEach(function (e) { eps[e.id] = e; }); });
+      var days = {}; Object.keys(snap.motd.days || {}).forEach(function (d) { var it = snap.items[snap.motd.days[d]] || eps[snap.motd.days[d]]; if (it) days[d] = it; });
+      var L = snap.lists || {};
+      return g('admin', { op: 'update', cal: { days: days, notes: snap.motd.notes || {} }, counts: { movies: (L.movies || []).length, tv: (L.tv || []).length, collections: (L.collections || []).length } });
+    }).then(function (j) {
+      b.disabled = false; say('Update from the Mac');
+      toast('Updating: on the site in a few minutes (new pictures follow)');
+      dataStatus();
+    }).catch(function (e) { b.disabled = false; say('Update from the Mac'); toast(e.message); });
+  };
 
   // ---- the 8am email, as it goes out (the latest film already shown), and a copy to John
   $('#mailsee').onclick = function () {
@@ -297,7 +339,7 @@
     fetch('/grifflix/config.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (c) {
       var gw = String(c.gateway || '').replace(/\/$/, ''), t0 = Date.now();
       if (!gw) { $('#machead').textContent = 'Not connected'; return; }
-      peek(gw);
+      GW = gw;
       return fetch(gw + '/api/me', { headers: { Authorization: 'Bearer ' + TOKEN } }).then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (me) {
         var L = me.libraries || {};
         $('#machead').innerHTML = 'Answering <em>(' + (Date.now() - t0) + ' ms)</em>';

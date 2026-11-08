@@ -1,0 +1,55 @@
+name: Grifflix data
+# Grifflix's own copy of its films, TV and Movie of the Day, kept on the site as the songs' calendar is (see
+# _grifflix/data_publish.py). Started by the Worker: "full" after John's Update on the admin page (the files, then the
+# pictures copied to R2), "days" each morning from 8am (the day's film onto the site's calendar file). The schedule is a
+# fallback for the morning one.
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "full (after an Update) or days (the morning's film)"
+        default: days
+  schedule:
+    - cron: "20 7,8 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: grifflix-data
+  cancel-in-progress: false
+
+jobs:
+  data:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      R2_BUCKET: ${{ secrets.R2_BUCKET }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      MODE: ${{ inputs.mode || 'days' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - run: pip install --quiet boto3
+      - name: The site's files
+        run: |
+          set -euo pipefail
+          [ "$MODE" = full ] || MODE=days
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          for i in 1 2 3 4 5; do
+            git fetch --quiet origin main && git reset --quiet --hard origin/main
+            python3 _grifflix/data_publish.py "$MODE"
+            git add -A grifflix/data
+            if git diff --cached --quiet; then echo "Nothing changed."; exit 0; fi
+            git commit --quiet -m "Grifflix data ($MODE)"
+            git push --quiet origin HEAD:main && exit 0
+            sleep 5
+          done
+          exit 1
+      - name: The pictures
+        if: env.MODE == 'full'
+        run: python3 _grifflix/data_publish.py pictures
