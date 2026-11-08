@@ -14,7 +14,7 @@
 <script>/* Grifflix's colours: the month's theme, as on Grifflix itself (John, 8 Nov 2026: "can my admin theme match the month too -
    main font can stay the same for readability, but colours"); the cards stay white to read */
 (function () {
-  var T = [['#f5c400', 0], ['#e2aa1e', 0], ['#0495b1', 0], ['#d74719', 0], ['#03160a', 1], ['#8e1420', 1], ['#f4f1ea', 0], ['#145063', 1], ['#030b1a', 1], ['#1e8c4e', 1], ['#0a0a0a', 1], ['#a8161a', 1]];
+  var T = [['#f5c400', 0], ['#e2aa1e', 0], ['#0495b1', 0], ['#d74719', 0], ['#03160a', 1], ['#8e1420', 1], ['#f4f1ea', 0], ['#145063', 1], ['#030a1c', 1], ['#1e8c4e', 1], ['#0a0a0a', 1], ['#a8161a', 1]];
   var m = new Date().getMonth(); try { m = +new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', month: 'numeric' }).format(new Date()) - 1; } catch (e) {}
   var t = T[m], st = document.documentElement.style;
   ['--bg', '--g1', '--g2', '--g3', '--g4'].forEach(function (n) { st.setProperty(n, t[0]); });   // (one flat colour, as the themes)

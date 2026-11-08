@@ -870,20 +870,20 @@ html[data-theme=jaws] .leaf2 i { background: #b3202a; color: #fff; }
 html[data-theme=jaws] .leaf2 b { color: #051725; }
 /* the Grid (TRON) */
 .tgrid { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
-.tgrid line { stroke: rgba(70, 200, 255, .35); stroke-width: 1; vector-effect: non-scaling-stroke; }
-.tgrid .twall { fill: none; stroke: #46d7ff; stroke-width: 5; vector-effect: non-scaling-stroke; filter: drop-shadow(0 0 6px #46d7ff); stroke-linejoin: round; }
-.tgrid .twall.past { stroke: #ff6a1f; filter: drop-shadow(0 0 6px #ff6a1f); }
-.th-tron .vday { width: 200px; height: 300px; box-shadow: 0 0 0 2px #46d7ff, 0 0 18px rgba(70, 215, 255, .7); }
-.th-tron .vday.gone { box-shadow: 0 0 0 2px #ff6a1f, 0 0 18px rgba(255, 106, 31, .7); }
-.th-tron .vday.front { box-shadow: 0 0 0 4px #c9f6ff, 0 0 30px #46d7ff; }
-.th-tron .vday .vn { color: #46d7ff; font-family: var(--tfont); letter-spacing: .2em; }
+.tgrid line { stroke: rgba(30, 107, 255, .45); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.tgrid .twall { fill: none; stroke: #3fd8ff; stroke-width: 5; vector-effect: non-scaling-stroke; filter: drop-shadow(0 0 6px #3fd8ff); stroke-linejoin: round; }
+.tgrid .twall.past { stroke: #ff4a1f; filter: drop-shadow(0 0 6px #ff4a1f); }
+.th-tron .vday { width: 200px; height: 300px; box-shadow: 0 0 0 2px #3fd8ff, 0 0 18px rgba(70, 215, 255, .7); }
+.th-tron .vday.gone { box-shadow: 0 0 0 2px #ff4a1f, 0 0 18px rgba(255, 74, 31, .7); }
+.th-tron .vday.front { box-shadow: 0 0 0 4px #cff6ff, 0 0 30px #3fd8ff; }
+.th-tron .vday .vn { color: #3fd8ff; font-family: var(--tfont); letter-spacing: .2em; }
 .th-tron .vday:not(.front) .vn { display: none; }
 html.tv .th-tron .vday:focus { outline: 0 !important; }
-html[data-theme=tron] .hinfo .w > span { color: #c9f6ff; text-shadow: 0 0 .08em #46d7ff, 0 0 .3em rgba(70, 215, 255, .7); }
-html[data-theme=tron] .hinfo h2 { color: #46d7ff; }
-html[data-theme=tron] .leaf2 { border-color: #46d7ff; box-shadow: 0 0 .08em #46d7ff; background: #030b1a; }
-html[data-theme=tron] .leaf2 i { background: #46d7ff; color: #030b1a; }
-html[data-theme=tron] .leaf2 b { color: #c9f6ff; }
+html[data-theme=tron] .hinfo .w > span { color: #cff6ff; text-shadow: 0 0 .08em #3fd8ff, 0 0 .3em rgba(70, 215, 255, .7); }
+html[data-theme=tron] .hinfo h2 { color: #3fd8ff; }
+html[data-theme=tron] .leaf2 { border-color: #3fd8ff; box-shadow: 0 0 .08em #3fd8ff; background: #030b1a; }
+html[data-theme=tron] .leaf2 i { background: #3fd8ff; color: #030b1a; }
+html[data-theme=tron] .leaf2 b { color: #cff6ff; }
 
 /* the months' colours blend into each other */
 html, body, .wrap, #cal, .hinfo, .tinspo, .tmonth { transition: background-color .55s ease, color .55s ease; }
@@ -1318,7 +1318,7 @@ var THEMES = [   // each its film's own lettering and colour, researched (John, 
   // Hugo / A Trip to the Moon: Cinzel, nearest free face to the HUGO poster's roman (said to be University Roman Bold); the teal night sky of Hugo's poster
   { key: 'moon', mob: [40, 90, 1240, 620], name: 'The Moon', film: 'Hugo', year: 2011, by: 'Scorsese, for Méliès', bg: '#145063', ink: '#fff', font: '"Cinzel", serif', tw: 700, tt: 'uppercase' },
   // TRON: the Grid; the days as light cycles' walls on its floor in perspective, Flynn's cyan ahead, Sark's orange behind
-  { key: 'tron', mob: [0, 0, 1280, 720], name: 'The Grid', film: 'Tron', year: 1982, by: 'Steven Lisberger', bg: '#030b1a', ink: '#fff', font: '"Orbitron", sans-serif', tw: 700 },
+  { key: 'tron', mob: [0, 0, 1280, 720], name: 'The Grid', film: 'Tron', year: 1982, by: 'Steven Lisberger', bg: '#030a1c', ink: '#fff', font: '"Orbitron", sans-serif', tw: 800 },
   // The Wizard of Oz: the yellow brick road (#f2c230) through the Emerald City's green (#1e8c4e); the 1939 title card's
   // hand-drawn condensed capitals with curled ends and a deep shadow (Federant, the nearest free face)
   { key: 'oz', mob: [0, 0, 1280, 720], name: 'The Yellow Brick Road', film: 'The Wizard of Oz', year: 1939, by: 'Victor Fleming', bg: '#1e8c4e', ink: '#fff', font: '"Federant", serif', tw: 400, tt: 'none' },
@@ -1327,7 +1327,7 @@ var THEMES = [   // each its film's own lettering and colour, researched (John, 
   // Citizen Kane: its main title's outlined condensed capitals (League Gothic, the free revival of Alternate Gothic: John, 8 Nov 2026); the red title band of the 1941 Style A poster
   { key: 'globe', mob: [40, 60, 1240, 640], name: 'The Snow Globe', film: 'Citizen Kane', year: 1941, by: 'Orson Welles', bg: '#a8161a', ink: '#fff', font: '"GF-globe", "League Gothic", sans-serif', tw: 400 }
 ];
-var THEMEFONTS = 'https://fonts.googleapis.com/css2?family=Bowlby+One&family=Della+Respira&family=Special+Gothic+Expanded+One&family=Londrina+Solid:wght@400;900&family=Share+Tech+Mono&family=Archivo+Narrow:wght@600&family=Anton&family=IM+Fell+English+SC&family=Cinzel:wght@700&family=Tilt+Neon&family=Yuji+Syuku&family=Amatic+SC:wght@700&family=Big+Shoulders:wght@400;700&family=League+Gothic&family=News+Cycle:wght@700&family=Federant&family=Space+Mono:wght@400;700&family=Archivo+Black&family=Orbitron:wght@700&display=swap';
+var THEMEFONTS = 'https://fonts.googleapis.com/css2?family=Bowlby+One&family=Della+Respira&family=Special+Gothic+Expanded+One&family=Londrina+Solid:wght@400;900&family=Share+Tech+Mono&family=Archivo+Narrow:wght@600&family=Anton&family=IM+Fell+English+SC&family=Cinzel:wght@700&family=Tilt+Neon&family=Yuji+Syuku&family=Amatic+SC:wght@700&family=Big+Shoulders:wght@400;700&family=League+Gothic&family=News+Cycle:wght@700&family=Federant&family=Space+Mono:wght@400;700&family=Archivo+Black&family=Orbitron:wght@800&display=swap';
 function themeEarly() {   // (before the films arrive: the page already laid out as this month's theme)
   if (VIEW() !== 'themes') return; var R = document.documentElement, t = themeFor(new Date().getMonth());
   R.classList.add(t.key === 'table' ? 'table' : 'hall'); if (MOB()) R.classList.add('mob'); R.dataset.theme = t.key;
