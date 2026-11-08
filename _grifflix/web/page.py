@@ -21,7 +21,11 @@ def build(which):
     s = open(SRC, encoding='utf-8').read()
     marker = "/*BUILD*/{ draft: false, at: '' }"
     assert s.count(marker) == 1, 'template.html: the BUILD line is missing'
-    return s.replace(marker, "/*BUILD*/{ draft: %s }" % ('true' if which == 'draft' else 'false'))
+    s = s.replace(marker, "/*BUILD*/{ draft: %s }" % ('true' if which == 'draft' else 'false'))
+    art = os.path.join(HERE, 'collection-art.js')   # the collections' drawn covers, kept apart for size (one entry each)
+    if os.path.exists(art):
+        s = s.replace('var COLLICONS = {};   /*COLLICONS*/', open(art, encoding='utf-8').read().strip(), 1)
+    return s
 
 
 def theme_list():
