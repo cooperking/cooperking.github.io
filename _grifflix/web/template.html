@@ -517,7 +517,9 @@ html[data-theme=slices] .hinfo .w { font-size: 64px; }
 .th-moon .vday.none { opacity: .55 !important; }
 html.tv .th-moon .vday:focus { outline: 0 !important; clip-path: none; box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px #fff; }
 html.tv .th-moon .vday:focus .msh { border-radius: 50%; }
-.bigmoon { position: absolute; right: 110px; top: 226px; width: 320px; height: 320px; border-radius: 50%; background: #f3eacb center/cover; box-shadow: 0 0 0 2px #f3eacb; }
+.bigmoon { position: absolute; right: 110px; top: 226px; width: 320px; height: 320px; border-radius: 50%; background: radial-gradient(circle at 30% 34%, rgba(0, 0, 0, .07) 0 9%, transparent 10%), radial-gradient(circle at 68% 62%, rgba(0, 0, 0, .06) 0 12%, transparent 13%), radial-gradient(circle at 58% 24%, rgba(0, 0, 0, .05) 0 6%, transparent 7%), radial-gradient(circle at 40% 40%, #fbf4dc, #e9dcb0 75%) !important; box-shadow: 0 0 60px rgba(243, 234, 203, .25); }
+/* the day's poster whole, held up in front of the moon, not cut to its circle (John, 8 Nov 2026: "make sure the pictures can be properly seen") */
+.bigmoon .mpost { position: absolute; left: 50%; top: 50%; width: 62%; aspect-ratio: 2 / 3; transform: translate(-50%, -50%); background: #0b1d26 center/contain no-repeat; border: 3px solid #f3eacb; box-shadow: 0 18px 40px rgba(0, 0, 0, .45); }
 .mphase { position: absolute; top: calc(22% + 30px); width: 220px; margin-left: -110px; text-align: center; font: 500 12px/1 var(--kfont); letter-spacing: .3em; text-transform: uppercase; color: var(--fg-2); transition: left .5s cubic-bezier(.3, .7, .2, 1); }
 .mfilm { position: absolute; right: 110px; top: 568px; width: 320px; text-align: center; font: var(--tw) 26px/1.15 var(--tfont); text-transform: var(--ttt); color: var(--fg); }
 /* the credits */
@@ -570,7 +572,7 @@ html.tv[data-theme] .sheet .heroimg::after { background: linear-gradient(90deg, 
 html.tv[data-theme] .sheet .in { max-width: 46vw; }
 html.hall .bar-top .members, html.table .bar-top .members, html.hall .bar-top .ico, html.table .bar-top .ico { display: none !important; }
 .bar-top #refresh svg { display: block; width: 19px; height: 19px; }
-html:not(.mob) .bar-top #refresh, html:not(.mob) .tcal [data-tt="refresh"] { display: none !important; }   /* (a computer or the TV: the logo reloads instead: John, 8 Nov 2026) */   /* (the reload: an icon, beside the profile) */
+html .bar-top #refresh, html .bar-top #refresh2, html .tcal [data-tt="refresh"] { display: none !important; }   /* (a computer or the TV: the logo reloads instead: John, 8 Nov 2026) */   /* (the reload: an icon, beside the profile) */
 html.hall .bar-top #refresh, html.table .bar-top #refresh { margin-left: auto !important; padding: 4px 2px; }
 html.hall .tmonth, html.table .tmonth { top: auto; bottom: 66px; opacity: 1 !important; }
 .tinspo { position: fixed; top: auto; bottom: 36px; }
@@ -621,7 +623,7 @@ html[data-page] .hero { margin-top: 0; }
 #shbrand { position: fixed; z-index: 80; margin: 0; padding: 0; background: none; border: 0; cursor: pointer; text-transform: uppercase; white-space: nowrap; }
 html:not(.phone) #sheet:has(.tcal) .tcal, html.tv #sheet .form { padding-top: 96px !important; }
 html.phone #sheet:has(.tcal) .tcal { padding-top: calc(env(safe-area-inset-top) + 54px) !important; }
-html.phone #sheetIn > .form:not(.tcal) { padding-top: calc(env(safe-area-inset-top) + 58px) !important; }   /* (a phone: the logo its own strip above a pop-up's words) */
+html.phone #sheetIn > .form:not(.tcal) { padding-top: calc(env(safe-area-inset-top) + 76px) !important; }   /* (a phone: the logo its own strip above a pop-up's words) */
 #shbrand { text-shadow: 0 1px 6px rgba(0, 0, 0, .35); }
 /* the home-screen app draws under the clock: pages that scroll (not the full-screen themes) start below it */
 html:not(.hall):not(.table) body { padding-top: env(safe-area-inset-top); }
@@ -721,7 +723,7 @@ html.tv #sheet .form > .close, html.phone #sheet .form > .close { position: fixe
 /* the pop-ups' own bar words (Theme, Calendar, Search) beside GRIFFLIX */
 #shnav { position: fixed; z-index: 80; display: flex; align-items: center; gap: 22px; }
 #barnav { display: flex; align-items: center; gap: 22px; flex: none; margin: 0 6px 0 30px !important; }
-html.phone #barnav { gap: 12px; margin: 0 4px 0 12px !important; }
+html.phone #barnav { gap: 10px; margin: 0 2px 0 10px !important; }
 .bar-top .brand { margin-right: 0 !important; flex: none; }   /* (the words straight after it, in every view) */
 .bar-top .drafttag { margin-right: auto !important; }
 html.tv #barnav { margin-left: 34px !important; }
@@ -730,9 +732,9 @@ html.tv #barnav { margin-left: 34px !important; }
 #barnav button:focus-visible { outline: 2px solid rgb(var(--kink)); outline-offset: 4px; }
 html.tv #barnav button { font-size: 15px; padding: 8px 12px; }
 html.tv #barnav button:focus { outline: none !important; box-shadow: none !important; background: #fff; color: #000; }
-html.phone #barnav button { font-size: 10.5px; letter-spacing: .16em; padding: 6px 0; }
+html.phone #barnav button { font-size: 10.5px; letter-spacing: .13em; padding: 6px 0; }
 #barnav button.on, #shnav button.on { text-decoration: underline; text-underline-offset: 7px; text-decoration-thickness: 1px; }
-html.phone #shnav { gap: 12px !important; } html.phone #shnav button { font-size: 10.5px !important; letter-spacing: .16em !important; padding: 6px 0; }
+html.phone #shnav { gap: 10px !important; } html.phone #shnav button { font-size: 10.5px !important; letter-spacing: .13em !important; padding: 6px 0; }
 #shnav button { background: none; border: 0; padding: 6px 2px; margin: 0; cursor: pointer; color: var(--fg); font: 500 12px/1 var(--kfont); letter-spacing: .3em; text-transform: uppercase; }
 #shnav button:focus-visible { outline: 2px solid rgb(var(--kink)); outline-offset: 4px; }
 html.tv #shnav button { font-size: 15px; padding: 8px 12px; }
@@ -1246,6 +1248,7 @@ if (TVHERO) document.documentElement.classList.add('tvhero');
 // the TV's views in the trial look: each month its own theme (THEMES: the corridor in January, the table in November...;
 // John, 8 Nov 2026: "have the table and then the corridor be monthly themes ... As the user goes back through a month it
 // will transition to the next theme"), the calendar a button away. ?theme=<key> shows one theme in every month, to try
+var NOTES = false;   // (the first release: no notes on the days, no playlists, no calendars of your own: John, 8 Nov 2026)
 var THEMEQ = Q.get('theme') || (Q.get('tvview') === 'table' ? 'table' : '');
 var VIEW = function () { if (S.mcal) return 'calendar'; return store.get('grifflix-tvview') === 'calendar' ? 'calendar' : 'themes'; };
 var TABLE = function (m) { return VIEW() === 'themes' && themeFor(m).key === 'table'; };
@@ -1778,7 +1781,7 @@ function route() {
 function goHome() {   // the logo: home, the month's theme, and the month it is now (John, 8 Nov 2026: "Clicking on Grifflix should
   // return you home", "home should be the current month"), from anywhere, a pop-up open or not
   store.set('grifflix-tvview', 'themes'); S.mcal = false; if (dlg.open) closeSheet();
-  if (!MOB()) { try { history.replaceState(null, '', location.pathname + location.search + '#home'); } catch (e) {} return refreshAll(); }   // (a computer: the logo reloads too, there being no reload button: John, 8 Nov 2026)
+  { try { history.replaceState(null, '', location.pathname + location.search + '#home'); } catch (e) {} return refreshAll(); }   // (a computer: the logo reloads too, there being no reload button: John, 8 Nov 2026)
   S.cal = 'motd'; S.month = TODAY.slice(0, 7);
   if ((location.hash || '#home').split('/')[0] === '#home') return home();
   location.hash = '#home';
@@ -1814,7 +1817,7 @@ function homeRows() {   // New films and TV from the site's files; Carry on watc
 function drawCals() {
   var el = $('#cals'), h = '';
   if (S.cals.length > 1) S.cals.forEach(function (c) { h += '<button class="pill' + (c.id === S.cal ? ' on' : '') + '" data-cal="' + c.id + '">' + esc(c.id === 'motd' ? 'Movie of the Day' : (c.mine ? c.name : c.ownerName + ': ' + c.name)) + '</button>'; });
-  if (!PUBLIC && !TV) h += '<button class="pill" id="newcal">+ New calendar</button>';   // (not on a TV: calendars of your own are made on a phone or computer)
+  if (NOTES && !PUBLIC && !TV) h += '<button class="pill" id="newcal">+ New calendar</button>';   // (not on a TV: calendars of your own are made on a phone or computer)
   el.innerHTML = h;
   el.classList.toggle('hide', !h);
   $$('[data-cal]', el).forEach(function (b) { b.onclick = function () { S.cal = b.dataset.cal; location.hash = '#home/' + S.cal; }; });
@@ -1964,7 +1967,7 @@ function leafOf(d) { return '<span class="leaf2" aria-hidden="true"><i>' + MONTH
 function hallInfo(b) {   // the day you're on, in words: its day large (as The Shining's title cards), the film, its year
   var c = $('#hinfo'); if (!c) return;
   if (!b) { c.innerHTML = '<div class="w">' + (S.calData.mine ? 'Empty' : 'Nothing yet') + '</div>'; return; }
-  var it = S.calData.days[b.dataset.day], d = new Date(b.dataset.day + 'T12:00'), note = (S.calData.notes || {})[b.dataset.day];
+  var it = S.calData.days[b.dataset.day], d = new Date(b.dataset.day + 'T12:00'), note = (NOTES ? S.calData.notes || {} : {})[b.dataset.day];
   var top = '<div class="w">' + leafOf(d) + '<span data-t="' + DOWL[d.getDay()] + '">' + DOWL[d.getDay()] + '</span></div><div class="k">' + d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear() + (S.calData.id === 'motd' ? ' · Movie of the Day' : '') + '</div>';
   if (!it || it.secret) { c.innerHTML = top + '<h2>' + (it ? 'A surprise' : 'No film yet') + '</h2><div class="y">' + (it ? 'Revealed at 8am on the day' : S.calData.mine ? 'OK to choose one' : '') + '</div>'; return; }
   c.innerHTML = top + '<h2>' + esc(showName(it)) + '</h2><div class="y">' + [it.year, it.mins ? it.mins + ' minutes' : ''].filter(Boolean).join(' · ') + '</div>' + (note ? '<div class="n">“' + esc(note) + '”</div>' : '');
@@ -2224,7 +2227,7 @@ THEMEFX.table = {
     var c = $('#tcentre'); if (!c) return;
     var it = b && S.calData.days[b.dataset.day];
     if (!it || it.secret) { c.innerHTML = b ? '<div class="k">' + esc(longDate(b.dataset.day)) + '</div><h2>' + (it ? 'A surprise' : 'No film') + '</h2>' : ''; return; }
-    var d = new Date(b.dataset.day + 'T12:00'), note = (S.calData.notes || {})[b.dataset.day];
+    var d = new Date(b.dataset.day + 'T12:00'), note = (NOTES ? S.calData.notes || {} : {})[b.dataset.day];
     c.innerHTML = leafOf(d) + '<div class="k">' + DOWL[d.getDay()] + ' · ' + d.getDate() + ' ' + MONTHS[d.getMonth()] + '</div><h2 style="--tl:' + showName(it).length + '">' + esc(showName(it)) + '</h2><div class="y">' + [it.year, it.mins ? it.mins + ' minutes' : ''].filter(Boolean).join(' · ') + '</div>' + (note ? '<div class="n">“' + esc(note) + '”</div>' : '');
   }
 };
@@ -2346,7 +2349,7 @@ THEMEFX.moon = { all: true,
     if (mp) { if (c.mob) { mp.style.left = (390 + 395 * Math.cos(s.a)).toFixed(0) + 'px'; mp.style.top = (440 + 395 * Math.sin(s.a) - 6).toFixed(0) + 'px'; } else mp.style.left = s.x.toFixed(0) + 'px'; }   // (the moon's phase by the small moon)
   },
   front: function (b) {
-    var bm = $('#bigmoon'); if (bm && b) bm.style.backgroundImage = b.style.getPropertyValue('--p');
+    var bm = $('#bigmoon'); if (bm && b) { var mp0 = bm.querySelector('.mpost'); if (!mp0) { bm.innerHTML = '<span class="mpost"></span>'; mp0 = bm.querySelector('.mpost'); } mp0.style.backgroundImage = b.style.getPropertyValue('--p'); mp0.hidden = !b.style.getPropertyValue('--p'); }
     var mp = $('#mphase'); if (mp && b) mp.textContent = PHASES[Math.floor(moonPhase(b.dataset.day) * 8 + .5) % 8];
     var mf = $('#mfilm'), it = b && S.calData.days[b.dataset.day]; if (mf) mf.textContent = it && !it.secret ? showName(it) : '';   // (and its film under the large one)
   }
@@ -2483,7 +2486,7 @@ function tvFeat(date) {   // the TV calendar to try: the day you're on, large, o
     var it = date && S.calData.days[date], h;
     if (it && !it.secret) {
       var meta = [it.year, it.mins ? (it.mins >= 60 ? Math.floor(it.mins / 60) + ' h ' + (it.mins % 60) + ' min' : it.mins + ' min') : '', it.cert ? '<span class="c">' + esc(it.cert) + '</span>' : '', it.rating ? '★ ' + (+it.rating).toFixed(1) : ''].filter(Boolean);
-      var note = (S.calData.notes || {})[date];
+      var note = (NOTES ? S.calData.notes || {} : {})[date];
       h = '<div class="k">' + (S.calData.id === 'motd' ? 'Movie of the Day · ' : '') + esc(longDate(date)) + '</div><h2>' + esc(showName(it)) + '</h2><div class="m">' + meta.join(' · ') + '</div>' +
         (note ? '<div class="note">“' + esc(note) + '”</div>' : it.overview ? '<div class="ov">' + esc(it.overview) + '</div>' : '') + '<div class="h">OK to open · ▶ to play</div>';
     } else h = date ? '<div class="k">' + esc(longDate(date)) + '</div><h2>' + (it && it.secret ? 'A surprise' : 'No film') + '</h2><div class="m">' + (it && it.secret ? 'Revealed at 8am on the day' : (S.calData.mine ? 'OK to choose one' : '')) + '</div>' : '';
@@ -2674,17 +2677,17 @@ function drawLists(L) {
   S.lists = L;
   var h = '<section class="sect"><div class="list-title"><h2>Saved <i>for later</i></h2><span class="sp"></span></div>' +
     (L.hearts.length ? '<div class="gridcards">' + L.hearts.map(function (i) { return cardHTML(i); }).join('') + '</div>' : '<div class="empty">Tap the heart on any film or show to keep it here.</div>') + '</section>';
-  L.lists.forEach(function (pl) {
+  (NOTES ? L.lists : []).forEach(function (pl) {
     h += '<section class="sect"><div class="list-title"><h2>' + esc(pl.name) + ' <i>' + pl.items.length + '</i></h2><span class="sp"></span>' +
       (pl.items.length ? '<button class="pill on" data-playlist="' + pl.id + '">Play all</button>' : '') + '<button class="pill" data-delpl="' + pl.id + '">Delete</button></div>' +
       (pl.items.length ? '<div class="strip">' + pl.items.map(function (i) { return cardHTML(i); }).join('') + '</div>' : '<div class="empty">Empty: add to it from any film’s page.</div>') + '</section>';
   });
-  h += '<div class="tabs" style="margin-top:28px"><button class="pill" id="newpl">+ New playlist</button></div>';
+  if (NOTES) h += '<div class="tabs" style="margin-top:28px"><button class="pill" id="newpl">+ New playlist</button></div>';
   $('#lbody').innerHTML = h;
   wireCards($('#lbody'), L.hearts.concat.apply(L.hearts, L.lists.map(function (p) { return p.items; })));
   $$('[data-playlist]').forEach(function (b) { b.onclick = function () { var pl = L.lists.filter(function (p) { return p.id === b.dataset.playlist; })[0]; play(pl.items[0], pl.items.slice(1)); }; });
   $$('[data-delpl]').forEach(function (b) { b.onclick = function () { if (b.dataset.sure) api('lists', { op: 'delete', id: b.dataset.delpl }).then(drawLists); else { b.dataset.sure = 1; b.textContent = 'Sure?'; } }; });
-  $('#newpl').onclick = function () { ask('New playlist', 'Its name', '', function (name) { api('lists', { op: 'create', name: name }).then(drawLists); }); };
+  if ($('#newpl')) $('#newpl').onclick = function () { ask('New playlist', 'Its name', '', function (name) { api('lists', { op: 'create', name: name }).then(drawLists); }); };
 }
 
 /* ------------------------------------------------------------------ pop-ups */
@@ -2847,7 +2850,7 @@ function bodyHTML(it, ctx) {
   var h = '<div class="meta">' + meta.join('<span>·</span>') + '</div>';
   if (it.tagline) h += '<p class="tag">' + esc(it.tagline) + '</p>';
   if (it.overview) h += '<p class="ov">' + esc(it.overview) + '</p>';
-  if (ctx.note) h += '<div class="note"><b>' + (S.calData && S.calData.id !== 'motd' ? esc(S.calData.ownerName) + ' says' : 'John says') + '</b>' + esc(ctx.note) + '</div>';
+  if (NOTES && ctx.note) h += '<div class="note"><b>' + (S.calData && S.calData.id !== 'motd' ? esc(S.calData.ownerName) + ' says' : 'John says') + '</b>' + esc(ctx.note) + '</div>';
   if (it.genres && it.genres.length) h += '<div class="chips">' + it.genres.map(function (g) { return '<span>' + esc(g) + '</span>'; }).join('') + '</div>';
   if ((it.directors && it.directors.length) || (it.cast && it.cast.length)) h += '<div class="people">' + (it.directors && it.directors.length ? '<b>Directed by</b> ' + esc(it.directors.join(', ')) + '. ' : '') + (it.cast && it.cast.length ? '<b>With</b> ' + esc(it.cast.join(', ')) + '.' : '') + '</div>';
   h += '<div class="acts">';
@@ -2861,7 +2864,7 @@ function bodyHTML(it, ctx) {
   if (it.type === 'episode' && it.seriesId) h += '<button class="pill" id="aseries">All episodes</button>';
   if (!PUBLIC) {
     h += '<button class="ico" id="aheart" aria-label="Save for later">' + HEART(it.hearted) + '</button>';
-    h += '<button class="pill" id="aaddpl">+ Playlist</button><button class="pill" id="aaddcal">+ My calendar</button>';
+    if (NOTES) h += '<button class="pill" id="aaddpl">+ Playlist</button><button class="pill" id="aaddcal">+ My calendar</button>';
     if (ME && ME.owner && it.type !== 'video') h += '<button class="pill" id="acoll">Collections</button>';
     if (ME && ME.downloads && !TV && !isSeries) h += '<button class="pill" id="adown"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13M7 11l5 5 5-5M5 21h14"/></svg>Download</button>';
   }
@@ -2877,8 +2880,8 @@ function bodyHTML(it, ctx) {
     h += '</div>';
   }
   if (ctx.date && S.calData && S.calData.mine) {
-    h += '<div class="owner"><h3>' + (S.calData.id === 'motd' ? 'Your Movie of the Day' : 'Your calendar') + '</h3><textarea id="onote" placeholder="A note about why (optional)">' + esc(ctx.note || '') + '</textarea>' +
-      '<div class="acts" style="margin-top:0"><button class="pill on" id="osave">Save note</button><button class="pill" id="ochange">Change film</button><button class="pill" id="oclear">Take it off</button></div></div>';
+    h += '<div class="owner"><h3>' + (S.calData.id === 'motd' ? 'Your Movie of the Day' : 'Your calendar') + '</h3>' + (NOTES ? '<textarea id="onote" placeholder="A note about why (optional)">' + esc(ctx.note || '') + '</textarea>' : '') +
+      '<div class="acts" style="margin-top:0">' + (NOTES ? '<button class="pill on" id="osave">Save note</button>' : '') + '<button class="pill" id="ochange">Change film</button><button class="pill" id="oclear">Take it off</button></div></div>';
   }
   return h;
 }
@@ -3037,7 +3040,7 @@ function profile() {
   openSheet('<div class="form prof" style="position:relative"><div class="profhead"><span class="chiplabel">Profile</span>' + admin + X.replace('ico close', 'ico close profx') + '</div>' +
     '<h2 class="profname">' + esc(ME.name || 'You') + '</h2>' +
     (ME.libraries ? '<div class="chips" style="margin-top:6px">' + ['movies', 'tv'].map(function (k) { return '<span>' + (ME.libraries[k] || 0) + ' ' + { movies: 'films', tv: 'series' }[k] + '</span>'; }).join('') + '</div>' : '') +
-    '<div class="tabs proftabs">' + [['list', 'My list'], ['cals', 'Calendars'], ['account', 'Account']].map(function (t) { return '<button class="pill' + (PROF.tab === t[0] ? ' on' : '') + '" data-ptab="' + t[0] + '">' + t[1] + '</button>'; }).join('') + '</div>' +
+    '<div class="tabs proftabs">' + [['list', 'My list']].concat(NOTES ? [['cals', 'Calendars']] : [], [['account', 'Account']]).map(function (t) { return '<button class="pill' + (PROF.tab === t[0] ? ' on' : '') + '" data-ptab="' + t[0] + '">' + t[1] + '</button>'; }).join('') + '</div>' +
     '<div id="profbody"></div>' + (DEMO ? '<div class="acts"><a class="pill" href="?demo=0">Leave the demo</a></div>' : '') + '</div>');
   $$('[data-ptab]').forEach(function (b) { b.onclick = function () { PROF.tab = b.dataset.ptab; $$('[data-ptab]').forEach(function (x) { x.classList.toggle('on', x === b); }); profTab(); }; });
   profTab();
@@ -3049,7 +3052,7 @@ function profTab() {
     return api('lists').then(function (L) {
       el.innerHTML = '<div class="profsec"><p class="profh">Saved for later <i>' + L.hearts.length + '</i></p>' +
         (L.hearts.length ? '<div class="strip">' + L.hearts.slice(0, 12).map(function (i) { return cardHTML(i); }).join('') + '</div>' : '<p class="profp">Tap the heart on any film or series to keep it here.</p>') + '</div>' +
-        '<div class="profsec"><p class="profh">Playlists <i>' + L.lists.length + '</i></p>' + (L.lists.length ? L.lists.map(function (pl) { return '<p class="profp"><b>' + esc(pl.name) + '</b> · ' + pl.items.length + '</p>'; }).join('') : '<p class="profp">None yet: add a film to a playlist from its page.</p>') + '</div>' +
+        (NOTES ? '<div class="profsec"><p class="profh">Playlists <i>' + L.lists.length + '</i></p>' + (L.lists.length ? L.lists.map(function (pl) { return '<p class="profp"><b>' + esc(pl.name) + '</b> · ' + pl.items.length + '</p>'; }).join('') : '<p class="profp">None yet: add a film to a playlist from its page.</p>') + '</div>' : '') +
         '<div class="acts"><button class="pill on" id="profall">Open My list</button></div>';
       wireCards(el, L.hearts);
       $('#profall').onclick = function () { closeSheet(); location.hash = '#lists'; };
