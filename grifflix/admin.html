@@ -14,7 +14,12 @@
 <script>/* Grifflix's colours: the month's theme, as on Grifflix itself (John, 8 Nov 2026: "can my admin theme match the month too -
    main font can stay the same for readability, but colours"); the cards stay white to read */
 (function () {
-  var T = [['#f5c400', 0], ['#e2aa1e', 0], ['#0495b1', 0], ['#d74719', 0], ['#03160a', 1], ['#8e1420', 1], ['#f4f1ea', 0], ['#145063', 1], ['#030a1c', 1], ['#1e8c4e', 1], ['#0a0a0a', 1], ['#a8161a', 1]];
+  var TL = window.GTHEMES = /*THEMELIST*/[{"k":"corridor","n":"The Corridor","f":"The Shining","y":1980,"bg":"#f5c400","d":0},{"k":"slices","n":"The Slices","f":"In the Mood for Love","y":2000,"bg":"#8e1420","d":1},{"k":"umbrellas","n":"The Umbrellas","f":"The Umbrellas of Cherbourg","y":1964,"bg":"#0495b1","d":0},{"k":"code","n":"The Code","f":"The Matrix","y":1999,"bg":"#03160a","d":1},{"k":"spiral","n":"The Spiral","f":"Vertigo","y":1958,"bg":"#d74719","d":0},{"k":"tron","n":"The Grid","f":"Tron","y":1982,"bg":"#030a1c","d":1},{"k":"pinboard","n":"The Pinboard","f":"All the President’s Men","y":1976,"bg":"#f4f1ea","d":0},{"k":"moon","n":"The Moon","f":"Hugo","y":2011,"bg":"#145063","d":1},{"k":"reel","n":"The Reel","f":"Sherlock Jr.","y":1924,"bg":"#e2aa1e","d":0},{"k":"oz","n":"The Yellow Brick Road","f":"The Wizard of Oz","y":1939,"bg":"#1e8c4e","d":1},{"k":"table","n":"The Table","f":"Dr. Strangelove","y":1964,"bg":"#0a0a0a","d":1},{"k":"globe","n":"The Snow Globe","f":"Citizen Kane","y":1941,"bg":"#a8161a","d":1},{"k":"jaws","n":"The Deep","f":"Jaws","y":1975,"bg":"#5a9fae","d":0},{"k":"credits","n":"Alpha 60","f":"Alphaville","y":1965,"bg":"#0b0b0c","d":1},{"k":"bars","n":"The Bars","f":"Psycho","y":1960,"bg":"#1578aa","d":1},{"k":"autumn","n":"Late Autumn","f":"Late Autumn","y":1960,"bg":"#c4321f","d":1}]/*THEMELIST END*/;   // (written by _grifflix/web/page.py from the page's THEMES; the first twelve its own order)
+  var ord = null; try { ord = JSON.parse(localStorage.getItem('grifflix-themes') || 'null'); } catch (e) {}
+  var by = {}; TL.forEach(function (x) { by[x.k] = x; });
+  if (!Array.isArray(ord) || ord.length !== 12 || !ord.every(function (k) { return by[k]; })) ord = TL.slice(0, 12).map(function (x) { return x.k; });
+  window.GORDER = ord;
+  var T = ord.map(function (k) { return [by[k].bg, by[k].d]; });
   var m = new Date().getMonth(); try { m = +new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', month: 'numeric' }).format(new Date()) - 1; } catch (e) {}
   var t = T[m], st = document.documentElement.style;
   ['--bg', '--g1', '--g2', '--g3', '--g4'].forEach(function (n) { st.setProperty(n, t[0]); });   // (one flat colour, as the themes)
@@ -64,6 +69,17 @@ h1 em { font-style: normal; font-weight: 400; }
 .invite { display: grid; gap: 12px; }
 .invite img { width: 100%; border-radius: 14px; box-shadow: 0 10px 30px rgba(24, 8, 24, .25); }
 .sharebtns { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 8px; }
+.tmonths { list-style: none; margin: 14px 0 6px; padding: 0; display: grid; gap: 6px; }
+.tmonths li { display: grid; grid-template-columns: 6.2em 18px minmax(0, 1fr) auto; gap: 8px; align-items: center; font-size: 14px; }
+.tmonths .mn { font-weight: 600; color: var(--fg); }
+.tmonths .sw { width: 18px; height: 18px; border-radius: 50%; border: 1px solid rgba(0, 0, 0, .25); }
+.tmonths select { min-width: 0; width: 100%; border: 1px solid var(--line); background: var(--field); color: var(--fg); border-radius: 10px; padding: 7px 8px; font: 14px var(--sans); }
+.tmonths .mv { display: flex; gap: 4px; }
+.tmonths .mv button, .tmonths .mv a { min-width: 34px; height: 34px; border: 1px solid var(--line); background: var(--field); color: var(--fg); border-radius: 10px; font: 600 14px var(--sans); display: grid; place-items: center; text-decoration: none; padding: 0 6px; }
+.tmonths .mv button:disabled { opacity: .3; }
+.tmonths li.near select { outline: 2px solid #e0a000; }
+.tmonths .warn { grid-column: 3 / -1; font-size: 12px; color: #a06000; margin-top: -2px; }
+@media (max-width: 480px) { .tmonths li { grid-template-columns: 2.6em 16px minmax(0, 1fr) auto; } .tmonths .mv a { display: none; } }
 </style>
 </head>
 <body>
@@ -123,6 +139,13 @@ h1 em { font-style: normal; font-weight: 400; }
       </section>
       <section class="card">
         <div class="kicker">Monthly themes</div>
+        <h2>The <em>months</em> and their themes</h2>
+        <p class="stat">Choose each month’s theme and move them about with the arrows. Parked themes can go in too. <b>Save changes the site for everyone at once</b> (no Update needed). Try opens the draft in that theme.</p>
+        <ol class="tmonths" id="tmonths"></ol>
+        <div class="state"><button class="btn" id="tmsave" type="button" disabled>Save the months</button> <button class="btn" id="tmreset" type="button">Back to the usual order</button></div>
+      </section>
+      <section class="card">
+        <div class="kicker">Monthly themes</div>
         <h2 id="thhead">Each theme’s <em>film</em> on its 1st</h2>
         <p class="stat">The film behind each month’s TV theme as Movie of the Day on the 1st of its month (the theme named in its note). The films Grifflix hasn’t got yet are left for later. <b>It changes Movie of the Day for everyone</b> once you next press Update everything.</p>
         <ul class="changes" id="thlist"></ul>
@@ -151,7 +174,7 @@ h1 em { font-style: normal; font-weight: 400; }
         <div class="kicker">Fonts</div>
         <h2 id="fonthead">Futura</h2>
         <p class="stat" id="fontsay">Your Futura web fonts (.woff2 and .woff), kept in Grifflix’s own storage, not on GitHub: pick them all at once (Book, Bold, Light).</p>
-        <p class="stat">The monthly themes’ own fonts, when you have them, named like this (each takes over from the stand-in at once): <b>helvetica-bold</b> (January, The Shining’s credits), <b>eurostile-extended</b> (March, Cherbourg), <b>clarendon-bold</b> (April, Vertigo’s titles), <b>ocr-a</b> (May, The Matrix), <b>wood-gothic</b> (July, All the President’s Men’s poster), each .woff2 or .woff.</p>
+        <p class="stat">The monthly themes’ own fonts, when you have them, named like this (each takes over from the stand-in at once): <b>helvetica-bold</b> (The Shining’s credits), <b>eurostile-extended</b> (Cherbourg), <b>clarendon-bold</b> (Vertigo’s titles), <b>ocr-a</b> (The Matrix), <b>wood-gothic</b> (All the President’s Men’s poster), each .woff2 or .woff.</p>
         <div class="state"><label class="btn primary" for="fontfile">Choose the fonts (or their .zip)</label><input type="file" id="fontfile" multiple hidden></div>
       </section>
       <section class="card">
@@ -567,9 +590,8 @@ h1 em { font-style: normal; font-weight: 400; }
 
   // ---- the monthly themes' films, each on the 1st of its month (John, 8 Nov 2026: "replace the 1st of each month with the
   // inspired movie in the calendar too. Add the others in later"); the films as in the page's THEMES
-  var TFILMS = [['The Shining', 1980, 'The Corridor'], ['Sherlock Jr.', 1924, 'The Reel'], ['The Umbrellas of Cherbourg', 1964, 'The Umbrellas'], ['Vertigo', 1958, 'The Spiral'],
-    ['The Matrix', 1999, 'The Code'], ['In the Mood for Love', 2000, 'The Slices'], ['All the President’s Men', 1976, 'The Pinboard'], ['Hugo', 2011, 'The Moon'],
-    ['Tron', 1982, 'The Grid'], ['The Wizard of Oz', 1939, 'The Yellow Brick Road'], ['Dr. Strangelove', 1964, 'The Table'], ['Citizen Kane', 1941, 'The Snow Globe']];
+  var TBY = {}; GTHEMES.forEach(function (x) { TBY[x.k] = x; });
+  var TFILMS = GORDER.map(function (k) { var x = TBY[k]; return [x.f, x.y, x.n]; });   // (in the months' order, as chosen below)
   var MON = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'], THJOBS = [];
   function themeFirsts() {
     var norm = function (t) { return String(t || '').toLowerCase().replace(/’/g, "'"); };
@@ -589,6 +611,49 @@ h1 em { font-style: normal; font-weight: 400; }
     }).catch(function () { $('#thlist').innerHTML = '<li>The site’s films couldn’t be read just now.</li>'; });
   }
   themeFirsts();
+
+  // ---- the months and their themes (John, 8 Nov 2026: "give me the ability to choose and reorder month themes on the admin");
+  // kept by the Worker and sent with Movie of the Day's calendar, so the page and the TV app change at once
+  var TMO = GORDER.slice(), TMSAVED = GORDER.join();
+  function hexLum(h) { var n = parseInt(h.slice(1), 16), r = n >> 16 & 255, g = n >> 8 & 255, b = n & 255; return [r, g, b]; }
+  function alike(a, b) { var x = hexLum(TBY[a].bg), y = hexLum(TBY[b].bg); return Math.sqrt(Math.pow(x[0] - y[0], 2) + Math.pow(x[1] - y[1], 2) + Math.pow(x[2] - y[2], 2)) < 70; }
+  function tmDraw() {
+    var short = window.innerWidth <= 480;
+    $('#tmonths').innerHTML = TMO.map(function (k, m) {
+      var x = TBY[k], prev = TMO[(m + 11) % 12], next = TMO[(m + 1) % 12], twice = TMO.indexOf(k) !== m;
+      var warn = twice ? 'Already in ' + MON[TMO.indexOf(k)] : (alike(k, prev) ? 'Close in colour to ' + MON[(m + 11) % 12] : (alike(k, next) ? 'Close in colour to ' + MON[(m + 1) % 12] : ''));
+      return '<li' + (warn ? ' class="near"' : '') + '><span class="mn">' + (short ? MON[m].slice(0, 3) : MON[m]) + '</span><span class="sw" style="background:' + x.bg + '"></span><select data-m="' + m + '" aria-label="' + MON[m] + '’s theme">' +
+        GTHEMES.map(function (t, i) { return '<option value="' + t.k + '"' + (t.k === k ? ' selected' : '') + '>' + esc(t.n + ' · ' + t.f + (i >= 12 ? ' (parked)' : '')) + '</option>'; }).join('') + '</select>' +
+        '<span class="mv"><button type="button" data-up="' + m + '" aria-label="Earlier"' + (m ? '' : ' disabled') + '>↑</button><button type="button" data-dn="' + m + '" aria-label="Later"' + (m < 11 ? '' : ' disabled') + '>↓</button><a href="/grifflix/draft/?theme=' + k + '" target="_blank" rel="noopener">Try</a></span>' +
+        (warn ? '<span class="warn">' + warn + '</span>' : '') + '</li>';
+    }).join('');
+    var dup = TMO.some(function (k, i) { return TMO.indexOf(k) !== i; });
+    $('#tmsave').disabled = dup || TMO.join() === TMSAVED; $('#tmsave').textContent = dup ? 'A theme is in twice' : TMO.join() === TMSAVED ? 'Saved' : 'Save the months';
+  }
+  $('#tmonths').addEventListener('change', function (e) { var sel = e.target.closest('select'); if (sel) { TMO[+sel.dataset.m] = sel.value; tmDraw(); } });
+  $('#tmonths').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    var m = b.dataset.up != null ? +b.dataset.up : +b.dataset.dn, n = b.dataset.up != null ? m - 1 : m + 1, t = TMO[m];
+    TMO[m] = TMO[n]; TMO[n] = t; tmDraw();
+    var again = $('#tmonths [data-' + (b.dataset.up != null ? 'up' : 'dn') + '="' + n + '"]'); if (again && !again.disabled) again.focus();
+  });
+  $('#tmreset').onclick = function () { TMO = GTHEMES.slice(0, 12).map(function (x) { return x.k; }); tmDraw(); };
+  function tmTake(list) {   // the order the Worker keeps: this page's colours, the films for the 1sts, this device's copy
+    var ok = Array.isArray(list) && list.length === 12 && list.every(function (k) { return TBY[k]; });
+    GORDER = ok ? list.slice() : GTHEMES.slice(0, 12).map(function (x) { return x.k; });
+    try { localStorage.setItem('grifflix-themes', JSON.stringify(ok ? list : null)); } catch (e) {}
+    TMO = GORDER.slice(); TMSAVED = GORDER.join();
+    TFILMS = GORDER.map(function (k) { var x = TBY[k]; return [x.f, x.y, x.n]; });
+    THJOBS = []; themeFirsts(); tmDraw();
+  }
+  tmDraw();
+  fetch(WORKER + '/g/cal?after=9999', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) { if ('themes' in j) tmTake(j.themes); }).catch(function () {});
+  $('#tmsave').onclick = function () {
+    var b = this, same = TMO.join() === GTHEMES.slice(0, 12).map(function (x) { return x.k; }).join();
+    b.disabled = true; b.textContent = 'Saving…';
+    g('themes', { themes: same ? null : TMO }).then(function (j) { tmTake(j.themes); toast('Saved: the site has the new months now'); })
+      .catch(function (e) { b.disabled = false; b.textContent = 'Save the months'; toast(e.message || 'Not saved'); });
+  };
   $('#thgo').onclick = function () {
     var b = this;
     if (!GW) return toast('The Mac isn’t answering: it keeps Movie of the Day.');

@@ -8,11 +8,12 @@
 Change the page in template.html only, never in the built files. The two copies differ only in what BUILD says
 (draft or not), so what John tries on the draft is exactly what goes live. The draft shows a DRAFT tag in its bar.
 """
-import os, sys
+import json, os, re, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
 SRC = os.path.join(HERE, 'template.html')
+ADMIN = os.path.join(ROOT, 'grifflix', 'admin.html')
 OUT = {'draft': os.path.join(ROOT, 'grifflix', 'draft', 'index.html'), 'live': os.path.join(ROOT, 'grifflix', 'index.html')}
 
 
@@ -23,6 +24,26 @@ def build(which):
     return s.replace(marker, "/*BUILD*/{ draft: %s }" % ('true' if which == 'draft' else 'false'))
 
 
+def theme_list():
+    """The monthly themes for the admin page's months card: THEMES (the usual order) then THEMES_LATER (parked)."""
+    s = open(SRC, encoding='utf-8').read()
+    out = []
+    for name in ('var THEMES = [', 'var THEMES_LATER = ['):
+        i = s.index(name)
+        body = s[i:s.index('\n];', i)]
+        for m in re.finditer(r"\{ key: '(\w+)'.*?name: '((?:[^'\\]|\\.)*)', film: '((?:[^'\\]|\\.)*)', year: (\d+).*?bg: '(#[0-9a-f]{6})', ink: '(#\w+)'", body):
+            k, n, f, y, bg, ink = m.groups()
+            out.append({'k': k, 'n': n.replace("\\'", "'"), 'f': f.replace("\\'", "’"), 'y': int(y), 'bg': bg, 'd': 1 if ink == '#fff' else 0})
+    return out
+
+
+def admin():
+    a = open(ADMIN, encoding='utf-8').read()
+    new = re.sub(r'/\*THEMELIST\*/.*?/\*THEMELIST END\*/', lambda m: '/*THEMELIST*/' + json.dumps(theme_list(), ensure_ascii=False, separators=(',', ':')) + '/*THEMELIST END*/', a, count=1, flags=re.S)
+    if new != a:
+        open(ADMIN, 'w', encoding='utf-8').write(new)
+
+
 def main():
     args = sys.argv[1:]
     if '--check' in args:
@@ -30,6 +51,7 @@ def main():
         print('draft: %s, live: %s' % tuple('as built' if w not in bad else 'differs' for w in ('draft', 'live')))
         sys.exit(1 if 'draft' in bad else 0)   # (live differing from the template is normal: changes waiting to be published)
     which = 'live' if '--live' in args else 'draft'
+    admin()
     os.makedirs(os.path.dirname(OUT[which]), exist_ok=True)
     with open(OUT[which], 'w', encoding='utf-8') as f:
         f.write(build(which))
