@@ -664,6 +664,37 @@ html.tv #sheet #sq { width: calc(100% - 120px) !important; }
 #sheet .bsheet .hero { margin-bottom: 18px; }
 #sheet .bsheet .hero h1 { line-height: 1.1; }
 html.tv #sheet .bsheet .hero { margin-bottom: 26px; }
+/* sort and filter: two icons on the tabs' row; their panel under them */
+.sfbar { display: inline-flex; gap: 8px; align-items: center; }
+.sfb { display: inline-flex !important; align-items: center; gap: 8px; min-height: 40px; padding: 0 12px !important; position: relative; }
+.sfb svg { width: 18px; height: 18px; flex: none; }
+.sfb b { font-weight: 500; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; white-space: nowrap; }
+.sfb i { position: absolute; top: -7px; right: -7px; min-width: 18px; height: 18px; border-radius: 9px; background: rgb(var(--kink, 255, 255, 255)); color: var(--bg); font: 700 11px/18px var(--kfont, sans-serif); text-align: center; font-style: normal; }
+@media (max-width: 760px) { .sfb b { display: none; } }   /* (a phone: the icons alone) */
+.tabs { position: relative; }
+.sfpop { position: absolute; right: 0; top: calc(100% + 8px); z-index: 30; width: min(520px, calc(100vw - 24px)); max-height: min(70vh, 640px); overflow: auto; padding: 18px 18px 16px; background: var(--bg); color: var(--fg); border: 1px solid rgba(var(--kink, 255, 255, 255), .35); box-shadow: 0 24px 60px rgba(0, 0, 0, .45); }
+.sfh { display: flex; justify-content: space-between; align-items: center; font: 700 12px/1 var(--kfont, sans-serif); letter-spacing: .3em; text-transform: uppercase; margin: 0 0 12px; }
+.sfclear { background: none; border: 0; color: inherit; font: 500 12px/1 var(--kfont, sans-serif); letter-spacing: .12em; text-decoration: underline; cursor: pointer; padding: 4px; }
+.sfo { display: flex; justify-content: space-between; width: 100%; padding: 13px 4px; background: none; border: 0; border-top: 1px solid rgba(var(--kink, 255, 255, 255), .15); color: inherit; font: 500 16px/1 var(--kfont, sans-serif); letter-spacing: .08em; text-align: left; cursor: pointer; }
+.sfo.on { font-weight: 700; }
+.sfo span { font-size: 18px; }
+.sfn { margin: 10px 0 0; font-size: 12px; opacity: .65; }
+.sfg { margin: 0 0 14px; display: flex; flex-wrap: wrap; gap: 6px; }
+.sfl { width: 100%; font: 500 11px/1 var(--kfont, sans-serif); letter-spacing: .26em; text-transform: uppercase; opacity: .7; margin: 0 0 4px; }
+.sfg .pill { min-height: 32px; padding: 0 11px; font-size: 12px; letter-spacing: .06em; text-transform: none; }
+.sfg .pill small { opacity: .6; font-size: 10px; margin-left: 3px; }
+.sfend { position: sticky; bottom: -16px; background: var(--bg); padding: 10px 0 0; }
+.sfend .pill { width: 100%; justify-content: center; }
+#sheet .sfpop, .sfpop { text-transform: none; }
+.sfpop .pill, .sfb { letter-spacing: .06em !important; font-size: 12px !important; }
+.sfg .pill { text-transform: none !important; font-size: 13px !important; letter-spacing: .02em !important; min-height: 34px !important; padding: 0 10px !important; }
+.sfb { min-width: 40px; justify-content: center; }
+@media (max-width: 760px) {   /* a phone: the panel a sheet from the foot of the screen */
+  .sfpop { position: fixed; left: 0; right: 0; bottom: 0; top: auto; width: auto; max-height: 78vh; padding: 18px 16px calc(16px + env(safe-area-inset-bottom)); border-width: 1px 0 0; z-index: 60; }
+}
+html.tv .sfpop { width: 760px; max-height: 76vh; }
+html.tv .sfo { font-size: 24px; padding: 18px 6px; }
+html.tv .sfg .pill { min-height: 46px; font-size: 18px; }
 /* a TV: the pop-ups use the whole screen to read from the sofa (John, 8 Nov 2026: "the popups seem to have forgotten that we need
    to maximise space for reading on a tv app, so search shouldn't be just small across the screen") */
 html.tv #sheet .form { padding: 5vh 5vw; }
@@ -1238,6 +1269,94 @@ function fits(genre, mood) {
     return true;
   };
 }
+// sorting and filtering, as Plex's: a sort icon whose choices flip direction when chosen again, and filters (John, 8 Nov 2026:
+// "NEWEST TO OLDEST seems overlong on a mobile - just have a sort icon with options, and it should swap which way ... We should
+// also have advanced filters - same as plex have")
+var SK = [['year', 'Year', -1], ['added', 'Date added', -1], ['name', 'Title', 1], ['rating', 'Rating', -1], ['mins', 'Length', 1]];
+var SF = { sort: 'year', dir: -1, f: {} };
+try { var sf0 = JSON.parse(store.get('grifflix-sf') || 'null'); if (sf0 && sf0.sort) SF = { sort: sf0.sort, dir: sf0.dir || -1, f: {} }; } catch (e) {}
+function sfSave() { store.set('grifflix-sf', JSON.stringify({ sort: SF.sort, dir: SF.dir })); }
+function sfLen(i) { return i.mins || (i.secs ? Math.round(i.secs / 60) : 0); }
+function sfYear(i) { return +i.year || +String(i.premiere || '').slice(0, 4) || 0; }
+function sfSort(items, key, dir) {
+  var v = { year: sfYear, added: function (i) { return Date.parse(i.added || '') || 0; }, name: null, rating: function (i) { return +i.rating || 0; }, mins: sfLen }[key];
+  return items.slice().sort(function (a, b) {
+    if (!v) return dir * nameKey(a).localeCompare(nameKey(b));
+    var x = v(a), y = v(b); if (!x && y) return 1; if (x && !y) return -1;   // (those without one last, either way)
+    return dir * (x - y) || nameKey(a).localeCompare(nameKey(b));
+  });
+}
+var SFLEN = [['short', 'Under 1½ hours', function (m) { return m && m < 90; }], ['mid', '1½ to 2 hours', function (m) { return m >= 90 && m <= 120; }], ['long', 'Over 2 hours', function (m) { return m > 120; }]];
+var SFRATE = [['6', '6 and up'], ['7', '7 and up'], ['8', '8 and up']];
+var SFADD = [['30', 'Last month'], ['90', 'Last 3 months'], ['365', 'Last year']];
+function sfFits(f) {
+  return function (i) {
+    var g = i.genres || [], y = sfYear(i), m = sfLen(i);
+    if (f.genres && f.genres.length && !f.genres.every(function (x) { return g.indexOf(x) >= 0; })) return false;   // (all the genres chosen, as Plex)
+    if (f.decades && f.decades.length && f.decades.indexOf(Math.floor(y / 10) * 10) < 0) return false;
+    if (f.certs && f.certs.length && f.certs.indexOf(i.cert || 'Not rated') < 0) return false;
+    if (f.len && !SFLEN.filter(function (x) { return x[0] === f.len; })[0][2](m)) return false;
+    if (f.min && !((+i.rating || 0) >= +f.min)) return false;
+    if (f.added && !((Date.now() - (Date.parse(i.added || '') || 0)) / 864e5 <= +f.added)) return false;
+    return true;
+  };
+}
+function sfCount(f) { return ['genres', 'decades', 'certs'].reduce(function (n, k) { return n + ((f[k] || []).length ? 1 : 0); }, 0) + ['len', 'min', 'added'].filter(function (k) { return f[k]; }).length; }
+var SFICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 4v16M3 16l4 4 4-4M17 20V4M13 8l4-4 4 4"/></svg>';
+var FFICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg>';
+function sfBar() {   // the two icons, for a row of tabs
+  var n = sfCount(SF.f), k = SK.filter(function (x) { return x[0] === SF.sort; })[0] || SK[0];
+  return '<span class="sfbar"><button class="pill sfb" id="sfsort" aria-label="Sort: ' + k[1] + (SF.dir > 0 ? ', ascending' : ', descending') + '" title="Sort">' + SFICON + '<b>' + k[1] + ' ' + (SF.dir > 0 ? '↑' : '↓') + '</b></button>' +
+    '<button class="pill sfb' + (n ? ' on' : '') + '" id="sffilt" aria-label="Filters' + (n ? ' (' + n + ')' : '') + '" title="Filters">' + FFICON + (n ? '<i>' + n + '</i>' : '') + '</button></span><div class="sfpop" id="sfpop" hidden></div>';
+}
+function sfWire(root, items, redraw) {   // the icons' panels: items are what's on the shelf now (for the filters' choices and counts)
+  var pop = $('#sfpop', root), open = '', shelf = typeof items === 'function' ? items : function () { return items; };
+  var close = function () { pop.hidden = true; open = ''; };
+  var chips = function (key, list, multi) {
+    return list.map(function (o) {
+      var v = o[0], on = multi ? (SF.f[key] || []).indexOf(v) >= 0 : SF.f[key] === v;
+      return '<button class="pill' + (on ? ' on' : '') + '" data-fk="' + key + '" data-fv="' + esc(String(v)) + '"' + (multi ? ' data-multi="1"' : '') + '>' + esc(o[1]) + (typeof o[2] === 'number' ? ' <small>' + o[2] + '</small>' : '') + '</button>';
+    }).join('');
+  };
+  var draw = function () {
+    if (open === 'sort') {
+      pop.innerHTML = '<div class="sfh">Sort by</div>' + SK.map(function (k) { var on = SF.sort === k[0]; return '<button class="sfo' + (on ? ' on' : '') + '" data-sk="' + k[0] + '">' + k[1] + '<span>' + (on ? (SF.dir > 0 ? '↑' : '↓') : '') + '</span></button>'; }).join('') + '<p class="sfn">Choose it again to swap which way.</p>';
+    } else {
+      var items = shelf(), cnt = function (fn) { var c = {}; items.forEach(function (i) { fn(i).forEach(function (x) { c[x] = (c[x] || 0) + 1; }); }); return c; };
+      var gc = cnt(function (i) { return i.genres || []; }), dc = cnt(function (i) { var y = sfYear(i); return y ? [Math.floor(y / 10) * 10] : []; }), cc = cnt(function (i) { return [i.cert || 'Not rated']; });
+      pop.innerHTML = '<div class="sfh">Filters' + (sfCount(SF.f) ? '<button class="sfclear" id="sfclear">Clear all</button>' : '') + '</div>' +
+        '<div class="sfg"><div class="sfl">Genre</div>' + chips('genres', Object.keys(gc).sort().map(function (g) { return [g, g, gc[g]]; }), true) + '</div>' +
+        '<div class="sfg"><div class="sfl">Decade</div>' + chips('decades', Object.keys(dc).map(Number).sort(function (a, b) { return b - a; }).map(function (d) { return [d, d + 's', dc[d]]; }), true) + '</div>' +
+        '<div class="sfg"><div class="sfl">Rating</div>' + chips('min', SFRATE) + '</div>' +
+        '<div class="sfg"><div class="sfl">Length</div>' + chips('len', SFLEN) + '</div>' +
+        '<div class="sfg"><div class="sfl">Certificate</div>' + chips('certs', Object.keys(cc).sort().map(function (c) { return [c, c, cc[c]]; }), true) + '</div>' +
+        '<div class="sfg"><div class="sfl">Added</div>' + chips('added', SFADD) + '</div>' +
+        '<div class="sfend"><button class="pill go" id="sfdone">Show ' + items.filter(sfFits(SF.f)).length + '</button></div>';
+    }
+    pop.hidden = false;
+    if (TV) { var f = $('.sfo.on, .pill', pop); if (f) f.focus(); }
+  };
+  var bar = function () {   // the icons kept up to date
+    var n = sfCount(SF.f), k = SK.filter(function (x) { return x[0] === SF.sort; })[0] || SK[0], so = $('#sfsort', root), fi = $('#sffilt', root);
+    so.innerHTML = SFICON + '<b>' + k[1] + ' ' + (SF.dir > 0 ? '↑' : '↓') + '</b>'; so.setAttribute('aria-label', 'Sort: ' + k[1] + (SF.dir > 0 ? ', ascending' : ', descending'));
+    fi.innerHTML = FFICON + (n ? '<i>' + n + '</i>' : ''); fi.classList.toggle('on', !!n); fi.setAttribute('aria-label', 'Filters' + (n ? ' (' + n + ')' : ''));
+  };
+  var redo = redraw; redraw = function () { redo(); bar(); };
+  var toggle = function (which) { if (open === which) return close(); open = which; draw(); };
+  $('#sfsort', root).onclick = function () { toggle('sort'); };
+  $('#sffilt', root).onclick = function () { toggle('filt'); };
+  pop.onclick = function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.sk) { if (SF.sort === b.dataset.sk) SF.dir = -SF.dir; else { SF.sort = b.dataset.sk; SF.dir = SK.filter(function (k) { return k[0] === SF.sort; })[0][2]; } sfSave(); close(); redraw(); return; }
+    if (b.id === 'sfdone') { close(); return; }
+    if (b.id === 'sfclear') { SF.f = {}; redraw(); open = 'filt'; draw(); return; }
+    var k = b.dataset.fk; if (!k) return;
+    var v = /^(decades)$/.test(k) ? +b.dataset.fv : b.dataset.fv;
+    if (b.dataset.multi) { var l = (SF.f[k] || []).slice(), at = l.indexOf(v); if (at >= 0) l.splice(at, 1); else l.push(v); SF.f[k] = l; }
+    else SF.f[k] = SF.f[k] === v ? '' : v;
+    redraw(); open = 'filt'; draw();
+  };
+}
 function nameKey(i) { return String(i.name || '').replace(/^(the|a|an)\s+/i, '').toLowerCase(); }
 function details(it) {   // a film's longer details (overview, cast, trailers), and a series' episodes, from the site's files
   var id = it.id, jobs = [getJSON(DATA + 'd/' + id.slice(0, 2) + '.json').then(function (b) { return b[id] || {}; }).catch(function () { return {}; })];
@@ -1272,7 +1391,8 @@ function fromSite(path) {   // what the site's own files answer (null: a thing o
       return { movies: newest(L.movies), tv: newest(L.tv) };
     }
     if (name === 'items') {
-      var all = get(L[q.get('lib') === 'tv' ? 'tv' : 'movies']).filter(fits(q.get('genre'), q.get('mood'))).sort(SORTS[q.get('sort')] || SORTS.name), start = +q.get('start') || 0, n = +q.get('limit') || 120;
+      var ff = {}; try { ff = JSON.parse(q.get('f') || '{}') || {}; } catch (e) {}
+      var all = sfSort(get(L[q.get('lib') === 'tv' ? 'tv' : 'movies']).filter(fits(q.get('genre'), q.get('mood'))).filter(sfFits(ff)), q.get('sort') || 'name', +q.get('dir') || 1), start = +q.get('start') || 0, n = +q.get('limit') || 120;
       return { items: all.slice(start, start + n), total: all.length };
     }
     if (name === 'collections') return { collections: get(L.collections) };
@@ -2330,11 +2450,10 @@ function collectionView(id, into) {
     $('#cbody').innerHTML = '<div class="collhead"><div class="card coll collpic">' + cov + '</div>' +
       '<div><div class="kick">Collection</div><h1 class="colltitle">' + esc(c.name) + '</h1><div class="hsub"><i>' + c.items.length + (c.items.length === 1 ? ' title' : ' titles') + '</i></div>' +
       (c.overview ? '<p class="ov">' + esc(c.overview) + '</p>' : '') + '</div></div>' +
-      '<div class="tabs"><span class="sp"></span><select class="pill" id="csort" aria-label="Sort">' + CSORTS.map(function (o) { return '<option value="' + o[0] + '">' + o[1] + '</option>'; }).join('') + '</select></div>' +
+      '<div class="tabs"><span class="sp"></span>' + sfBar() + '</div>' +
       '<div class="gridcards" id="cgrid"></div>';
-    var draw = function () { var items = sortItems(c.items, S.csort); $('#cgrid').innerHTML = items.map(function (i) { return cardHTML(i); }).join(''); wireCards($('#cgrid'), items); };
-    $('#csort').value = S.csort;
-    $('#csort').onchange = function () { S.csort = this.value; store.set('grifflix-csort', S.csort); draw(); };
+    var draw = function () { var items = sfSort(c.items.filter(sfFits(SF.f)), SF.sort, SF.dir); $('#cgrid').innerHTML = items.length ? items.map(function (i) { return cardHTML(i); }).join('') : '<div class="empty">Nothing like that in this collection.</div>'; wireCards($('#cgrid'), items); };
+    sfWire($('#cbody'), c.items, draw);
     draw();
     if (ME && ME.owner) {
       $('#cbody .collhead > div:last-child').insertAdjacentHTML('beforeend', '<div class="tabs" style="margin:16px 0 0"><button class="pill" id="crename">Rename</button><button class="pill" id="cdelete">Delete the collection</button></div>');
@@ -2383,21 +2502,18 @@ function browse(into) {
   if (S.browse === 'home') S.browse = 'movies';
   main.innerHTML = '<div class="hero"><h1>' + { movies: 'Films', tv: 'TV', collections: 'Collections' }[S.browse] + '</h1><div class="hsub" id="bcount"></div></div>' +
     '<div class="tabs">' + tabs.map(function (t) { return '<button class="pill' + (t[0] === S.browse ? ' on' : '') + '" data-b="' + t[0] + '">' + t[1] + '</button>'; }).join('') +
-    '<span class="sp"></span><select class="pill" id="sort" aria-label="Sort"><option value="year">Newest to oldest</option><option value="added">Recently added</option><option value="name">A–Z</option><option value="rating">Rating</option></select></div>' +
+    '<span class="sp"></span>' + (S.browse === 'collections' ? '' : sfBar()) + '</div>' +
     '<div class="moods" id="moods"></div><div id="bgrid"></div>';
-  $('#sort').value = S.sort;
-  $('#sort').onchange = function () { S.sort = this.value; fill(); };
   $$('[data-b]', main).forEach(function (b) { b.onclick = function () { if (into) { S.browse = b.dataset.b; browse(into); var f = $('#bsin [data-b].on'); if (f && TV) f.focus(); } else location.hash = '#browse/' + b.dataset.b; }; });
-  $('#sort').classList.toggle('hide', S.browse === 'collections');
   // genres and moods (Films and TV): a row of moods, and every genre the shelves have, with how many
   if (S.browse !== 'collections' && !DEMO) library().then(function (L) {
     var count = {}; L[S.browse].forEach(function (id) { ((L.items[id] || {}).genres || []).forEach(function (g) { count[g] = (count[g] || 0) + 1; }); });
     if (S.genre && !count[S.genre]) S.genre = '';
-    $('#moods').innerHTML = '<button class="pill' + (!S.mood ? ' on' : '') + '" data-mood="">All</button>' + MOODS.map(function (m) { return '<button class="pill' + (S.mood === m[0] ? ' on' : '') + '" data-mood="' + m[0] + '">' + m[1] + '</button>'; }).join('') +
-      '<select class="pill" id="genre" aria-label="Genre"><option value="">Every genre</option>' + Object.keys(count).sort().map(function (g) { return '<option value="' + esc(g) + '"' + (S.genre === g ? ' selected' : '') + '>' + esc(g) + ' (' + count[g] + ')</option>'; }).join('') + '</select>';
+    $('#moods').innerHTML = '<button class="pill' + (!S.mood ? ' on' : '') + '" data-mood="">All</button>' + MOODS.map(function (m) { return '<button class="pill' + (S.mood === m[0] ? ' on' : '') + '" data-mood="' + m[0] + '">' + m[1] + '</button>'; }).join('');   // (genres now in the filters)
     $$('[data-mood]').forEach(function (b) { b.onclick = function () { S.mood = b.dataset.mood; $$('[data-mood]').forEach(function (x) { x.classList.toggle('on', x === b); }); fill(); }; });
-    $('#genre').onchange = function () { S.genre = this.value; fill(); };
+    sfWire(main, function () { return get0(L); }, fill);
   }).catch(function () {});
+  function get0(L) { return L[S.browse].map(function (id) { return L.items[id]; }).filter(Boolean).filter(fits('', S.mood)); }
   function fill() {
     var turn = fill.turn = (fill.turn || 0) + 1, here = function () { return turn === fill.turn && $('#bgrid'); };
     $('#bgrid').innerHTML = '<div class="empty">Looking on the shelves…</div>';
@@ -2407,12 +2523,12 @@ function browse(into) {
       $('#bgrid').innerHTML = r.collections.length ? '<div class="gridcards">' + r.collections.map(collCard).join('') + '</div>' : '<div class="empty">No collections yet.</div>';
     }).catch(oops);
     // films and series: 120 at a time, the next as you scroll down (all of them, not just the first 200)
-    var base = 'items?lib=' + S.browse + '&sort=' + S.sort + (S.genre ? '&genre=' + encodeURIComponent(S.genre) : '') + (S.mood ? '&mood=' + S.mood : '') + '&limit=' + (+Q.get('pagesize') || 120) + '&start=', all = [], total = 0, busy = false, land = S.browse === 'home', watcher;
+    var base = 'items?lib=' + S.browse + '&sort=' + SF.sort + '&dir=' + SF.dir + '&f=' + encodeURIComponent(JSON.stringify(SF.f)) + (S.mood ? '&mood=' + S.mood : '') + '&limit=' + (+Q.get('pagesize') || 120) + '&start=', all = [], total = 0, busy = false, land = S.browse === 'home', watcher;
     var first = function (r) {
       if (!here()) return;
       all = r.items.slice(); total = r.total;
       $('#bcount').innerHTML = '<i>' + r.total + '</i>';
-      if (!r.items.length) { $('#bgrid').innerHTML = '<div class="empty">' + (S.genre || S.mood ? 'Nothing like that on the shelves.' : 'Nothing here yet.') + '</div>'; return; }
+      if (!r.items.length) { $('#bgrid').innerHTML = '<div class="empty">' + (sfCount(SF.f) || S.mood ? 'Nothing like that on the shelves.' : 'Nothing here yet.') + '</div>'; return; }
       $('#bgrid').innerHTML = '<div class="gridcards' + (land ? ' land' : '') + '">' + r.items.map(function (i) { return cardHTML(i, land); }).join('') + '</div><div id="bmore" style="height:1px"></div>';
       wireCards($('#bgrid'), all);
       if (watcher) watcher.disconnect();
