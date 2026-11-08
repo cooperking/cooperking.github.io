@@ -192,13 +192,18 @@
       return drawCard(j.name).then(function (jpeg) { return g('admin', { op: 'card', id: j.id, card: jpeg, link: j.link }).then(function (c) { showInvite(j.name, c.page, jpeg); }); });
     }).catch(function (e) { toast(e.message); });
   }
-  // the card: 1200 × 630, as Messages and WhatsApp show it; the June colours, the clapperboard, their name
+  // the card: 1200 × 630, as Messages and WhatsApp show it; the month's colours (as the page), the clapperboard, their name
   function drawCard(name) {
     var c = document.createElement('canvas'); c.width = 1200; c.height = 630; var x = c.getContext('2d');
     var load = function (src) { return new Promise(function (ok, no) { var i = new Image(); i.onload = function () { ok(i); }; i.onerror = no; i.src = src; }); };
-    return Promise.all([load('/grifflix/june-bg.jpg'), load('/grifflix/icon-1024.png'), document.fonts.load('400 120px "Bebas Neue"'), document.fonts.load('italic 400 60px Newsreader'), document.fonts.load('500 40px Oswald')]).then(function (r) {
-      x.drawImage(r[0], 0, -285, 1200, 1200);
-      x.fillStyle = 'rgba(20,0,10,.18)'; x.fillRect(0, 0, 1200, 630);
+    return Promise.all([null, load('/grifflix/icon-1024.png'), document.fonts.load('400 120px "Bebas Neue"'), document.fonts.load('italic 400 60px Newsreader')]).then(function (r) {
+      var cs = getComputedStyle(document.documentElement), col = function (k) { return cs.getPropertyValue(k).trim(); };
+      x.fillStyle = col('--bg'); x.fillRect(0, 0, 1200, 630);   // (the month's ground, and its glows, as Grifflix's page draws them)
+      [['--g1', 180, 60, 620], ['--g2', 1080, 90, 640], ['--g3', 980, 600, 700], ['--g4', 120, 620, 560]].forEach(function (gl) {
+        var gr = x.createRadialGradient(gl[1], gl[2], 0, gl[1], gl[2], gl[3]); gr.addColorStop(0, col(gl[0])); gr.addColorStop(1, 'rgba(0,0,0,0)');
+        x.globalAlpha = .85; x.fillStyle = gr; x.fillRect(0, 0, 1200, 630); x.globalAlpha = 1;
+      });
+      x.fillStyle = 'rgba(10,4,12,.16)'; x.fillRect(0, 0, 1200, 630);
       x.save(); x.beginPath(); var rr = 60, ix = 70, iy = 95, s = 440; x.moveTo(ix + rr, iy); x.arcTo(ix + s, iy, ix + s, iy + s, rr); x.arcTo(ix + s, iy + s, ix, iy + s, rr); x.arcTo(ix, iy + s, ix, iy, rr); x.arcTo(ix, iy, ix + s, iy, rr); x.closePath();
       x.shadowColor = 'rgba(60,0,0,.45)'; x.shadowBlur = 40; x.shadowOffsetY = 14; x.fillStyle = '#fff'; x.fill(); x.restore();
       x.save(); x.clip(); x.restore();
@@ -206,15 +211,14 @@
       x.drawImage(r[1], ix, iy, s, s); x.restore();
       x.fillStyle = '#fffaf5'; x.textBaseline = 'alphabetic';
       var fit = function (t, font, max, size) { do { x.font = font.replace('$', size); size -= 4; } while (x.measureText(t).width > max && size > 30); return size + 4; };
-      fit(name, '400 $px Newsreader', 590, 112); x.fillText(name, 560, 270);
-      x.font = 'italic 400 54px Newsreader'; x.fillText('is invited to', 562, 345);
-      x.font = '400 128px "Bebas Neue"'; x.fillText('GRIFFLIX', 556, 470);
-      x.font = '500 30px Oswald'; x.fillStyle = 'rgba(255,250,245,.9)'; x.fillText('John’s films and TV, for family and friends', 562, 530);
+      fit(name, '400 $px Newsreader', 590, 112); x.fillText(name, 560, 290);
+      x.font = 'italic 400 54px Newsreader'; x.fillText('is invited to', 562, 365);
+      x.font = '400 140px "Bebas Neue"'; x.fillText('GRIFFLIX', 556, 500);
       return c.toDataURL('image/jpeg', .88);
     });
   }
   function showInvite(name, page, jpeg) {
-    var text = name + ', you’re invited to Grifflix: John’s films and TV, for family and friends.', enc = encodeURIComponent;
+    var text = name + ', you’re invited to Grifflix.', enc = encodeURIComponent;
     $('#invin').innerHTML = '<div class="pop-head"><span class="kicker">Invitation</span><button class="x" id="invx" aria-label="Close"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 3l10 10M13 3 3 13"/></svg></button></div>' +
       '<h3>' + esc(name) + ' <em>is invited</em></h3><img alt="" src="' + jpeg + '"><p>Send the link: Messages and WhatsApp show this card with it.</p>' +
       '<div class="sharebtns">' + (navigator.share ? '<button class="btn primary" id="shnative">Share…</button>' : '') +
