@@ -23,7 +23,19 @@
 })();
 </script>
 <link rel="stylesheet" href="/songs/admin.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jost:wght@500;700&display=swap">
 <style>
+/* the headings in Grifflix's own type, as its pages (John, 8 Nov 2026: "Admin should match header fonts of Grifflix"); the words in cards as they were, to read */
+@font-face { font-family: "GFutura"; font-weight: 700; font-display: swap; src: url("https://sotd-playlists.cooperking.workers.dev/gf/futura-bold-webfont.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/futura-bold-webfont.woff") format("woff"); }
+@font-face { font-family: "GFutura"; font-weight: 400; font-display: swap; src: url("https://sotd-playlists.cooperking.workers.dev/gf/futura-book-webfont.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/futura-book-webfont.woff") format("woff"); }
+:root { --kfont: "GFutura", "Futura PT", "Futura", "Jost", sans-serif; }
+h1, .top h1 { font-family: var(--kfont); font-weight: 700; text-transform: uppercase; letter-spacing: .08em; font-size: clamp(30px, 8vw, 48px); }
+h1 em { font-style: normal; font-weight: 400; }
+.card h2 { font-family: var(--kfont); font-weight: 700; text-transform: uppercase; letter-spacing: .03em; font-size: 22px; }
+.card h2 em { font-style: normal; font-weight: 400; }
+.bar .name { font-family: var(--kfont) !important; font-weight: 700; text-transform: uppercase; letter-spacing: .4em; font-size: 14px !important; }
+.bar .name em { font-style: normal; font-weight: 400; letter-spacing: .2em; }
+.kicker { font-family: var(--kfont); letter-spacing: .3em; }
 .bar { margin: max(10px, env(safe-area-inset-top, 0px)) 0 0; display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 18px; border-radius: 999px; background: var(--glass-2); border: 1px solid var(--glass-line); }
 .bar .name { margin-right: auto; font: 500 18px/1 var(--serif); color: var(--ink); }
 .cards { display: grid; gap: 16px; }
@@ -457,8 +469,13 @@
   }
 
   // ---- Futura (John's web fonts): into Grifflix's own storage on the Worker, for its pages only
-  function unzip(file) {   // a .zip of fonts, opened here (the phone can't open .woff2 files itself): its .woff2 and .woff files
-    return file.arrayBuffer().then(function (buf) {
+  function bytes(file) { return file.arrayBuffer ? file.arrayBuffer() : new Promise(function (ok, no) { var r = new FileReader(); r.onload = function () { ok(r.result); }; r.onerror = function () { no(new Error(file.name + ': it couldn’t be read.')); }; r.readAsArrayBuffer(file); }); }
+  function kindOf(buf) {   // (by what's in it, not its name: a phone may rename or retype what it hands over)
+    var b = new Uint8Array(buf, 0, Math.min(4, buf.byteLength)), t = String.fromCharCode.apply(null, b);
+    return t === 'wOF2' ? 'woff2' : t === 'wOFF' ? 'woff' : (b[0] === 0x50 && b[1] === 0x4b) ? 'zip' : '';
+  }
+  function unzip(file, buf0) {   // a .zip of fonts, opened here (the phone can't open .woff2 files itself): its .woff2 and .woff files
+    return (buf0 ? Promise.resolve(buf0) : bytes(file)).then(function (buf) {
       var v = new DataView(buf), out = [], i = buf.byteLength - 22;
       while (i >= 0 && v.getUint32(i, true) !== 0x06054b50) i--;
       if (i < 0) throw new Error(file.name + ': not a zip I can read.');
@@ -467,7 +484,7 @@
         var method = v.getUint16(at + 10, true), csize = v.getUint32(at + 20, true), nl = v.getUint16(at + 28, true), xl = v.getUint16(at + 30, true), cl = v.getUint16(at + 32, true), loc = v.getUint32(at + 42, true);
         var name = new TextDecoder().decode(new Uint8Array(buf, at + 46, nl)); at += 46 + nl + xl + cl;
         var base = name.split('/').pop();
-        if (!/\.(woff2?|WOFF2?)$/.test(base) || name.indexOf('__MACOSX') >= 0) continue;
+        if (!/\.(woff2?|WOFF2?)$/.test(base) || name.indexOf('__MACOSX') >= 0 || base.charAt(0) === '.') continue;
         var start = loc + 30 + v.getUint16(loc + 26, true) + v.getUint16(loc + 28, true), raw = new Uint8Array(buf, start, csize);
         jobs.push((method === 0 ? Promise.resolve(raw) : new Response(new Blob([raw]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer())
           .then((function (b) { return function (data) { return new File([data], b); }; })(base)));
@@ -479,9 +496,15 @@
     var picked = [].slice.call(this.files || []), done = 0, last = null;
     if (!picked.length) return;
     $('#fontsay').textContent = 'Opening…';
-    Promise.all(picked.map(function (f) { return /\.zip$/i.test(f.name) ? unzip(f) : Promise.resolve([f]); })).then(function (lists) {
+    Promise.all(picked.map(function (f) { return bytes(f).then(function (buf) {
+      var k = kindOf(buf);
+      if (k === 'zip') return unzip(f, buf);
+      if (k) { var nm = f.name.replace(/\.(woff2?|zip|bin|octet-stream)$/i, '').replace(/\.[^.]*$/, ''); return [new File([buf], (nm || 'font') + '.' + k)]; }
+      throw new Error(f.name + ' (' + Math.round(f.size / 1024) + ' KB) isn’t a font or a .zip of fonts.');
+    }); })).then(function (lists) {
     var files = [].concat.apply([], lists).filter(function (f) { return /\.woff2?$/i.test(f.name); });
     if (!files.length) { $('#fontsay').textContent = 'No .woff2 or .woff fonts in that.'; return; }
+    $('#fontsay').textContent = 'Found ' + files.map(function (f) { return f.name; }).join(', ') + '. Sending…';
     $('#fontsay').textContent = 'Sending ' + files.length + ' file' + (files.length === 1 ? '' : 's') + '…';
     files.reduce(function (p, f) {
       return p.then(function () {
