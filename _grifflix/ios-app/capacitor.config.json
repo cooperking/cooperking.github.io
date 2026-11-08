@@ -1,0 +1,20 @@
+{
+  "appId": "io.github.cooperking.grifflix",
+  "appName": "Grifflix",
+  "webDir": "www",
+  "server": {
+    "url": "https://cooperking.github.io/grifflix/?app=ios",
+    "allowNavigation": [
+      "cooperking.github.io",
+      "media.grifflix.co.uk",
+      "sotd-playlists.cooperking.workers.dev",
+      "www.youtube-nocookie.com"
+    ]
+  },
+  "ios": {
+    "contentInset": "never",
+    "backgroundColor": "#000000",
+    "limitsNavigationsToAppBoundDomains": true,
+    "allowsLinkPreview": false
+  }
+}

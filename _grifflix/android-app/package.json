@@ -1,0 +1,6 @@
+{
+  "name": "grifflix-android",
+  "private": true,
+  "description": "Grifflix as an Android app: a Trusted Web Activity (the site in Chrome, full screen), made by Bubblewrap's library. Built by .github/workflows/grifflix-android.yml.",
+  "dependencies": { "@bubblewrap/core": "1.27.0" }
+}

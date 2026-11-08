@@ -1,0 +1,71 @@
+name: Grifflix iPhone app
+# Builds Grifflix's iPhone app (_grifflix/ios-app: the site in the app's own browser) on one of GitHub's Macs and, with
+# the Apple keys (the same secrets as the songs' app) and Grifflix's app in App Store Connect, sends it to TestFlight.
+# Run by hand (Actions > Grifflix iPhone app > Run workflow): the site is the app's content, so changes to Grifflix reach
+# the app at once; only changes in _grifflix/ios-app need a new build. Also on the 15th of every second month, so
+# testers always have a build well inside TestFlight's 90 days.
+on:
+  workflow_dispatch:
+    inputs:
+      simulator_only:
+        description: "Only check that it builds (for the simulator: nothing signed or sent to Apple)"
+        type: boolean
+        default: false
+  schedule:
+    - cron: '41 4 15 */2 *'
+
+concurrency:
+  group: grifflix-ios
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-26
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check the Apple keys (says which secret is wrong, never its value)
+        if: ${{ !inputs.simulator_only }}
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APNS_KEY_ID: ${{ secrets.APNS_KEY_ID }}
+          APNS_KEY_P8: ${{ secrets.APNS_KEY_P8 }}
+        run: |
+          python3 -m venv "$RUNNER_TEMP/py" && "$RUNNER_TEMP/py/bin/pip" install --quiet pyjwt cryptography
+          "$RUNNER_TEMP/py/bin/python" _grifflix/ios-app/asc_check.py
+      - name: Xcode 26 (App Store Connect takes only apps built with the iOS 26 SDK or later)
+        run: |
+          X=$(ls -d /Applications/Xcode_2[6-9]*.app 2>/dev/null | grep -v -i beta | sort -V | tail -n 1)
+          [ -n "$X" ] || X=$(ls -d /Applications/Xcode_2[6-9]*.app 2>/dev/null | sort -V | tail -n 1)
+          if [ -z "$X" ]; then echo "::error title=Grifflix iPhone app::No Xcode 26 on this runner"; exit 1; fi
+          sudo xcode-select -s "$X/Contents/Developer"
+          echo "::notice title=Grifflix iPhone app::Building with $(xcodebuild -version | tr '\n' ' ')"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Make the Xcode project
+        working-directory: _grifflix/ios-app
+        run: |
+          npm install --no-audit --no-fund
+          npx cap add ios
+          bash customise.sh
+          npx cap sync ios
+      - name: Build, and send to TestFlight when the Apple keys are there
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}   # (the distribution certificate, shared with the songs' app's builds)
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          BUILD_NUMBER: ${{ github.run_number }}
+          SIMULATOR_ONLY: ${{ inputs.simulator_only && '1' || '' }}
+        run: bash _grifflix/ios-app/build.sh
