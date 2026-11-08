@@ -1310,7 +1310,11 @@ function picTags(j) {   // the picture versions of the films kept with lists and
   (j.hearts || []).forEach(one); (j.lists || []).forEach(function (l) { (l.items || []).forEach(one); });
   Object.keys(j.days || {}).forEach(function (d) { one(j.days[d]); });
 }
-function getJSON(u) { return fetch(u, { cache: 'no-cache' }).then(function (r) { if (!r.ok) { var e = new Error('Grifflix’s films aren’t on the site yet: John’s Update puts them there.'); e.status = r.status; throw e; } return r.json(); }); }
+function getJSON(u, tries) {   // the site's files, tried again a few times: while GitHub puts a new version up, one can fail for a minute (John, 8 Nov 2026: "Films seem to have gone suddenly")
+  tries = tries == null ? 5 : tries;
+  return getJSON1(u).catch(function (e) { if (tries <= 0) throw e; return new Promise(function (ok) { setTimeout(ok, 2000 * (6 - tries)); }).then(function () { return getJSON(u, tries - 1); }); });
+}
+function getJSON1(u) { return fetch(u, { cache: 'no-cache' }).then(function (r) { if (!r.ok) { var e = new Error('Grifflix’s films aren’t on the site yet: John’s Update puts them there.'); e.status = r.status; throw e; } return r.json(); }); }
 function library() {
   if (!LIBP) LIBP = getJSON(DATA + 'library.json').then(function (L) {
     var tag = function (it) { var t = it.tags || {}; if (it.poster && t.poster) PICTAG[it.poster + 'Primary'] = t.poster; if (it.backdrop && t.backdrop) PICTAG[it.backdrop + 'Backdrop'] = t.backdrop; if (it.thumb && t.thumb) PICTAG[it.thumb + 'Thumb'] = t.thumb; };
