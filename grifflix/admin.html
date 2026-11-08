@@ -123,6 +123,12 @@
         <ul class="changes" id="swlist"></ul>
       </section>
       <section class="card">
+        <div class="kicker">Fonts</div>
+        <h2 id="fonthead">Futura</h2>
+        <p class="stat" id="fontsay">Your Futura web fonts (.woff2 and .woff), kept in Grifflix’s own storage, not on GitHub: pick them all at once (Book, Bold, Light).</p>
+        <div class="state"><label class="btn primary" for="fontfile">Choose the font files</label><input type="file" id="fontfile" accept=".woff2,.woff" multiple hidden></div>
+      </section>
+      <section class="card">
         <div class="kicker">Elsewhere</div>
         <div class="links"><a class="btn" href="/grifflix/tv.apk">Fire TV app</a><a class="btn" href="https://github.com/cooperking/cooperking.github.io/actions" target="_blank" rel="noopener">Builds on GitHub</a></div>
       </section>
@@ -432,6 +438,22 @@
         });
       });
   }
+
+  // ---- Futura (John's web fonts): into Grifflix's own storage on the Worker, for its pages only
+  $('#fontfile').onchange = function () {
+    var files = [].slice.call(this.files || []), done = 0, last = null;
+    if (!files.length) return;
+    $('#fontsay').textContent = 'Sending ' + files.length + ' file' + (files.length === 1 ? '' : 's') + '…';
+    files.reduce(function (p, f) {
+      return p.then(function () {
+        var name = f.name.toLowerCase().replace(/[^a-z0-9.-]/g, '-');
+        return fetch(WORKER + '/g/font', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'X-Font-Name': name, 'Content-Type': 'application/octet-stream' }, body: f })
+          .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(f.name + ': ' + (j.error || r.status)); done++; last = j; }); });
+      });
+    }, Promise.resolve()).then(function () {
+      $('#fonthead').innerHTML = 'Futura <em>kept</em>'; $('#fontsay').textContent = done + ' sent. Kept now: ' + ((last && last.fonts) || []).join(', ') + '. Grifflix shows them next time it opens.';
+    }).catch(function (e) { $('#fontsay').textContent = e.message; });
+  };
 
   // ---- conversions (convert.py on the Mac): the film it's on and how far, and those done
   function convert() {
