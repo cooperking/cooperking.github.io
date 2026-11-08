@@ -19,7 +19,8 @@ dep=""
 [ -f mailer-url.txt ] && dep=$(grep -oE 'AKfy[A-Za-z0-9_-]{20,}' mailer-url.txt | head -1)
 [ -z "$dep" ] && dep=$(printf '%s\n' "$deps" | grep -v '@HEAD' | grep -oE 'AKfy[A-Za-z0-9_-]{20,}' | head -1)
 if [ -z "$dep" ]; then echo "Couldn't find the web app's deployment (clasp deployments said:)"; echo "$deps"; exit 1; fi
-clasp deploy -i "$dep" -d "v2: emails say who they're from (Grifflix too)" 2>/dev/null || clasp update-deployment "$dep" -d "v2: emails say who they're from (Grifflix too)"
+# (the same deployment moved to the new version, so its address stays: clasp 3 says update-deployment, clasp 2 deploy -i)
+clasp update-deployment "$dep" -d "v2: emails say who they're from (Grifflix too)" 2>/dev/null || clasp deploy -i "$dep" -d "v2: emails say who they're from (Grifflix too)"
 url="https://script.google.com/macros/s/$dep/exec"
 printf '%s\n' "$url" > mailer-url.txt
 echo
