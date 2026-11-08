@@ -516,7 +516,7 @@ html.tv .th .vday:focus { outline: 3px solid rgb(var(--kink)) !important; outlin
 .th-reel .vday { width: 240px; height: 135px; background-image: var(--b); filter: sepia(.7) brightness(.7); }
 .th-reel .vday.front { filter: none; }
 .th-reel .vday .vn { top: -24px; color: #f2c14e; font-size: 11px; }
-.reelband { position: absolute; left: 0; right: 0; top: calc(31% - 106px); height: 212px; background: linear-gradient(90deg, transparent 0 9px, #f4ecd8 9px 23px, transparent 23px) 0 9px / 32px 13px repeat-x, linear-gradient(90deg, transparent 0 9px, #f4ecd8 9px 23px, transparent 23px) 0 190px / 32px 13px repeat-x, #141414; transition: background-position .7s cubic-bezier(.3, .7, .2, 1); }
+.reelband { position: absolute; left: 0; right: 0; top: calc(35% - 106px); height: 212px; background: linear-gradient(90deg, transparent 0 9px, #f4ecd8 9px 23px, transparent 23px) 0 9px / 32px 13px repeat-x, linear-gradient(90deg, transparent 0 9px, #f4ecd8 9px 23px, transparent 23px) 0 190px / 32px 13px repeat-x, #141414; transition: background-position .7s cubic-bezier(.3, .7, .2, 1); }
 .reelscreen { position: absolute; right: 64px; bottom: 60px; width: 500px; height: 281px; background: #000 center/cover; box-shadow: 0 0 0 10px #000; }
 html[data-theme=reel] .hinfo { max-width: 540px; }
 /* the umbrellas */
@@ -528,13 +528,13 @@ html.tv .th-umbrellas .vday:focus { outline: 0 !important; box-shadow: 0 0 0 4px
 .th-spiral .vday { width: 170px; height: 255px; }
 .th-spiral .vday:not(.front) .vn { display: none; }
 /* the code */
-.th-code .vday { top: 118px; width: 20px; height: calc(100% - 118px); background: none; overflow: hidden; color: #2bff6a; font: 400 18px/22px "Share Tech Mono", monospace; text-align: center; transition: none; }
+.th-code .vday { top: 146px; width: 20px; height: calc(100% - 146px); background: none; overflow: hidden; color: #2bff6a; font: 400 18px/22px "Share Tech Mono", monospace; text-align: center; transition: none; }
 .th-code .rain { position: absolute; left: 0; right: 0; top: 0; display: block; font-style: normal; opacity: .5; animation: rain linear infinite; }
 @keyframes rain { from { transform: translateY(-50%); } to { transform: translateY(0); } }
 .th-code .vday.front .rain { opacity: 1; color: #eaffef; }
 .th-code .cdn { position: absolute; left: -4px; right: -4px; bottom: 30px; padding: 3px 0; background: var(--bg); font: 400 12px/1 "Share Tech Mono", monospace; color: #2bff6a; }
 html.tv .th-code .vday:focus { outline: 1px solid #eaffef !important; outline-offset: 0; }
-.codepic { position: absolute; left: calc(72% - 145px); top: calc(48% - 217px); width: 290px; height: 435px; background: #000 center/cover; z-index: 5; box-shadow: 0 0 0 1px #2bff6a; }
+.codepic { position: absolute; left: calc(72% - 145px); top: calc(54% - 217px); width: 290px; height: 435px; background: #000 center/cover; z-index: 5; box-shadow: 0 0 0 1px #2bff6a; }
 .codepic.dec { animation: decode 1.3s steps(14) both; }
 @keyframes decode { 0% { clip-path: inset(0 0 100% 0); filter: grayscale(1) sepia(1) hue-rotate(70deg) saturate(6) contrast(3) brightness(.6); } 55% { clip-path: inset(0 0 0 0); filter: grayscale(1) sepia(1) hue-rotate(70deg) saturate(4) contrast(1.6); } 100% { clip-path: inset(0 0 0 0); filter: none; } }
 html[data-theme=code] .hinfo { color: #2bff6a; }
@@ -560,8 +560,8 @@ html[data-theme=slices] .hinfo .w { font-size: 64px; }
 .th-moon .vday.none { opacity: .55 !important; }
 html.tv .th-moon .vday:focus { outline: 0 !important; clip-path: none; box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px #fff; }
 html.tv .th-moon .vday:focus .msh { border-radius: 50%; }
-.bigmoon { position: absolute; right: 110px; top: 236px; width: 330px; height: 330px; border-radius: 50%; background: #f3eacb center/cover; box-shadow: 0 0 0 2px #f3eacb; }
-.mphase { position: absolute; right: 110px; top: 586px; width: 330px; text-align: center; font: 500 14px/1 var(--kfont); letter-spacing: .4em; text-transform: uppercase; color: var(--fg-2); }
+.bigmoon { position: absolute; right: 110px; top: 262px; width: 310px; height: 310px; border-radius: 50%; background: #f3eacb center/cover; box-shadow: 0 0 0 2px #f3eacb; }
+.mphase { position: absolute; right: 110px; top: 590px; width: 310px; text-align: center; font: 500 14px/1 var(--kfont); letter-spacing: .4em; text-transform: uppercase; color: var(--fg-2); }
 /* the credits */
 .th-credits .vday { width: 740px; height: 60px; background: none; display: flex; align-items: center; gap: 22px; transform-origin: 0 50%; text-align: left; }
 .th-credits .cn { flex: none; width: 44px; text-align: right; font: 300 22px/1 var(--kfont); }
@@ -583,7 +583,7 @@ html[data-theme=autumn] .hinfo { top: 112px; bottom: auto; }
 .th-globe .vday::before { content: ""; position: absolute; left: 50%; top: -6px; width: 10px; height: 6px; margin-left: -5px; background: #e7c35a; }
 .th-globe .str { position: absolute; left: 50%; bottom: calc(100% + 6px); width: 1px; background: rgba(var(--kink), .45); }
 html.tv .th-globe .vday:focus { outline: 0 !important; box-shadow: 0 0 0 2px #e7c35a, 0 0 0 5px #fff; }
-.globe { position: absolute; left: calc(73% - 165px); top: calc(64% - 165px); width: 330px; height: 330px; border-radius: 50%; overflow: hidden; background: radial-gradient(circle at 50% 60%, rgba(255, 255, 255, .08), rgba(255, 255, 255, .03) 62%, rgba(255, 255, 255, .2) 100%); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .6); transform-origin: 50% 100%; }
+.globe { position: absolute; left: calc(73% - 150px); top: calc(65% - 150px); width: 300px; height: 300px; border-radius: 50%; overflow: hidden; background: radial-gradient(circle at 50% 60%, rgba(255, 255, 255, .08), rgba(255, 255, 255, .03) 62%, rgba(255, 255, 255, .2) 100%); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .6); transform-origin: 50% 100%; }
 .gpic { position: absolute; left: 50%; top: 50%; width: 150px; height: 225px; margin: -100px 0 0 -75px; background: center/cover; }
 .snow, .gsnow { position: absolute; left: 0; right: 0; top: -240px; bottom: 0; pointer-events: none; background-image: radial-gradient(circle at 20px 30px, #fff 0 2px, transparent 3px), radial-gradient(circle at 90px 130px, #fff 0 1.5px, transparent 2.5px), radial-gradient(circle at 160px 60px, #fff 0 2.5px, transparent 3.5px), radial-gradient(circle at 210px 190px, #fff 0 1.5px, transparent 2.5px), radial-gradient(circle at 120px 215px, #fff 0 2px, transparent 3px); background-size: 240px 240px; animation: snow 10s linear infinite; }
 .snow { opacity: .3; }
@@ -591,13 +591,47 @@ html.tv .th-globe .vday:focus { outline: 0 !important; box-shadow: 0 0 0 2px #e7
 .globe.shake { animation: gshake 1s cubic-bezier(.3, .7, .2, 1); }
 @keyframes gshake { 0% { transform: rotate(0); } 18% { transform: rotate(-7deg); } 42% { transform: rotate(6deg); } 68% { transform: rotate(-2deg); } 100% { transform: rotate(0); } }
 .gshine { position: absolute; left: 16%; top: 10%; width: 22%; height: 34%; border-radius: 50%; background: rgba(255, 255, 255, .16); transform: rotate(30deg); }
-.gbase { position: absolute; left: calc(73% - 140px); top: calc(64% + 148px); width: 280px; height: 72px; background: #2a1a10; clip-path: polygon(9% 0, 91% 0, 100% 100%, 0 100%); }
+.gbase { position: absolute; left: calc(73% - 128px); top: calc(65% + 134px); width: 256px; height: 64px; background: #2a1a10; clip-path: polygon(9% 0, 91% 0, 100% 100%, 0 100%); }
 /* each theme its own type (John: "fonts for the themes don't have to stick to the futura if it's not relevant") */
 html[data-theme] .hinfo .w, html[data-theme] .hinfo h2, .th-credits .ct { font-family: var(--tfont); font-weight: var(--tw); text-transform: var(--ttt); font-style: var(--tfs); }
 html[data-theme] .tmonth { font-family: var(--tfont); }
 .tinspo { position: absolute; top: 78px; right: 64px; z-index: 26; max-width: 520px; padding: 4px 0; border: 0; background: none; font: italic 400 15px/1.3 var(--serif); color: var(--fg-2); text-align: right; transition: opacity .3s; }
 .tinspo i { font-style: normal; color: var(--fg); }
-html.hall:not(.barhide) .tinspo, html.table:not(.barhide) .tinspo { opacity: 0; }
+html.klook.tv.hall .bar-top > :not(.brand), html.klook.tv.table .bar-top > :not(.brand) { opacity: 1; }
+html.hall .bar-top, html.table .bar-top { justify-content: flex-start; }
+html.hall .bar-top .brand, html.table .bar-top .brand { margin-right: 12px; }
+html.hall .bar-top > *, html.table .bar-top > * { margin-left: 0 !important; margin-right: 0 !important; }
+html.hall .bar-top, html.table .bar-top { gap: 30px; }
+/* a day's film on the TV, in the theme: its picture on the right, the words on the month's colour */
+html.tv[data-theme] .sheet .heroimg { left: auto; width: 56%; }
+html.tv[data-theme] .sheet .heroimg img { opacity: 1; object-position: 50% 30%; }
+html.tv[data-theme] .sheet .heroimg::after { background: linear-gradient(90deg, var(--bg) 0%, transparent 32%); }
+html.tv[data-theme] .sheet .in { max-width: 46vw; }
+html.hall .bar-top .members, html.table .bar-top .members, html.hall .bar-top #refresh, html.table .bar-top #refresh, html.hall .bar-top .ico, html.table .bar-top .ico { display: none !important; }
+html.hall .tmonth, html.table .tmonth { top: 96px; opacity: 1 !important; }
+.tinspo { top: 118px; }
+#tvcolls { display: none; } html.hall #tvcolls, html.table #tvcolls { display: inline-flex; }
+/* the pop-ups (a day's film, the month's calendar, Search, Browse, the profile) in the month's theme: its colour, its type */
+html[data-theme] #sheet { --fg: rgb(var(--kink)); --fg-2: rgba(var(--kink), .74); --line: rgba(var(--kink), .3); }
+html[data-theme] #sheet .sheet { background: var(--bg); border: 0; border-radius: 0; box-shadow: 0 0 0 1px rgba(var(--kink), .25); color: var(--fg-2); }
+html[data-theme] #sheet h1, html[data-theme] #sheet h2, html[data-theme] #sheet .profname { font-family: var(--tfont); font-weight: var(--tw); text-transform: var(--ttt); font-style: var(--tfs); color: var(--fg); letter-spacing: .01em; }
+html[data-theme] #sheet .pill.go, html[data-theme] #sheet .pill.on { background: rgb(var(--kink)); color: var(--bg) !important; border-color: rgb(var(--kink)); }
+html[data-theme] #sheet .form > h2 { font-family: var(--tfont) !important; font-weight: var(--tw) !important; }
+html[data-theme] #sheet::backdrop { background: rgba(0, 0, 0, .55); backdrop-filter: none; -webkit-backdrop-filter: none; }
+.tcal { padding: 34px 34px 30px; }
+.tcal .tck { font: 500 12px/1 var(--kfont); letter-spacing: .4em; text-transform: uppercase; color: var(--fg-2); }
+.tcal h2 { margin: 10px 0 18px; font-size: 44px; line-height: 1; }
+.tcgrid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.tch { font: 500 11px/1 var(--kfont); letter-spacing: .3em; text-transform: uppercase; color: var(--fg-2); padding: 0 0 6px; }
+.tcd { position: relative; aspect-ratio: 16 / 10; padding: 0; border: 0; border-radius: 0; overflow: hidden; background: rgba(var(--kink), .08); color: var(--fg); text-align: left; }
+.tcd img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.tcd b { position: absolute; left: 6px; top: 5px; font: 700 15px/1 var(--tfont, var(--kfont)); color: var(--fg); z-index: 1; }
+.tcd.has b { color: #fff; text-shadow: 0 1px 3px rgba(0, 0, 0, .8); }
+.tcd span { position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 6px 5px; background: linear-gradient(transparent, rgba(0, 0, 0, .75)); font: 600 10px/1.15 var(--sans); color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tcd.secret { background: #000; }
+.tcd.today { box-shadow: inset 0 0 0 2px rgb(var(--kink)); }
+html.tv .tcd:focus { outline: 3px solid rgb(var(--kink)) !important; outline-offset: 2px; box-shadow: none; transform: scale(1.08); z-index: 2; }
+.bsheet { padding: 20px 30px 30px; }
 html.tv .tinspo:focus { outline: 2px solid rgb(var(--kink)) !important; outline-offset: 6px; box-shadow: none; color: var(--fg); }
 /* the TV calendar to try (?tvhero=1): the day you're on large on the left, over its picture; the month beside it */
 html.tvhero #main.homeview { grid-template-columns: minmax(0, 40%) minmax(0, 1fr); column-gap: 36px; align-items: start; }
@@ -1114,7 +1148,9 @@ function route() {
   home();
 }
 window.addEventListener('hashchange', route);
-$$('[data-go]').forEach(function (b) { b.addEventListener('click', function () { var g = b.dataset.go; if (g === 'search') return searchSheet(); if (g === 'profile') return profile(); location.hash = '#' + g; }); });
+$$('[data-go]').forEach(function (b) { b.addEventListener('click', function () { var g = b.dataset.go; if (g === 'search') return searchSheet(); if (g === 'profile') return profile();
+  if (g === 'browse' && VIEW() === 'themes' && S.view === 'home') return browseSheet('movies');   // (the month's theme stays behind: Browse and Collections as pop-ups in its style)
+  location.hash = '#' + g; }); });
 
 /* --- home: a calendar (Movie of the Day, or someone's own) and the rows */
 function home() {
@@ -1221,7 +1257,9 @@ function drawMonth() {
   if (TV && KLOOK) {   // the view switch (the corridor, or the calendar): a word in the bar, by Search and Browse
     var old = $('#tvview'); if (old) old.remove();
     $('.bar-top .brand').insertAdjacentHTML('afterend', '<button class="pill" id="tvview">' + (VIEW() === 'calendar' ? 'The theme' : 'Calendar') + '</button>');
-    $('#tvview').onclick = function () { store.set('grifflix-tvview', VIEW() === 'calendar' ? 'themes' : 'calendar'); drawMonth(); var t = $('#cal .today') || $('#cal [data-day]'); if (t) t.focus(); };
+    if (!$('#tvcolls')) { $('.bar-top .pill[data-go="browse"]').insertAdjacentHTML('afterend', '<button class="pill" id="tvcolls">Collections</button>'); $('#tvcolls').onclick = function () { browseSheet('collections'); }; }
+    $('#tvview').onclick = function () { if (VIEW() === 'themes') return calSheet();   // (John, 8 Nov 2026: "calendar next to grifflix, which should bring that month's calendar up ... in the same style as that month")
+      store.set('grifflix-tvview', VIEW() === 'calendar' ? 'themes' : 'calendar'); drawMonth(); var t = $('#cal .today') || $('#cal [data-day]'); if (t) t.focus(); };
   }
   var h = '', tbl = TABLE(m), hall = HALL(m);
   if (!tbl && !hall) {
@@ -1378,6 +1416,20 @@ function drawTheme(t, C, n, m, mine) {
   $$('#cal button.vday').forEach(function (b) { b.onclick = function () { daySheet(b.dataset.day); }; b.addEventListener('focus', function () { themeTurn(b); }); });
   themeTurn($('#cal .vday.today.has') || $$('#cal button.vday.has').pop() || $('#cal button.vday'));
 }
+function calSheet() {   // the month's calendar, a pop-up in its theme's colour and type; a day opens its film
+  var C = S.calData; if (!C) return;
+  var y = +S.month.slice(0, 4), m = +S.month.slice(5, 7) - 1, n = new Date(y, m + 1, 0).getDate(), lead = (new Date(y, m, 1).getDay() + 6) % 7, t = themeFor(m);
+  var h = '<div class="form tcal" style="position:relative">' + X + '<div class="tck">' + esc(t.name) + '</div><h2>' + MONTHS[m] + ' ' + y + '</h2><div class="tcgrid">' + DOW.map(function (d) { return '<div class="tch">' + d + '</div>'; }).join('');
+  for (var k = 0; k < lead; k++) h += '<div></div>';
+  for (var d = 1; d <= n; d++) {
+    var key = S.month + '-' + String(d).padStart(2, '0'), it = C.days[key], tc = key === TODAY ? ' today' : '';
+    if (it && !it.secret) h += '<button class="tcd has' + tc + '" data-day="' + key + '" aria-label="' + d + ' ' + MONTHS[m] + ': ' + esc(it.name) + '"><img alt="" loading="lazy" src="' + esc(img(it.backdrop || it.thumb || it.poster, it.backdrop ? 'Backdrop' : (it.thumb ? 'Thumb' : 'Primary'), 480)) + '"><b>' + d + '</b><span>' + esc(showName(it)) + '</span></button>';
+    else h += '<div class="tcd' + tc + (it && it.secret ? ' secret' : '') + '"><b>' + d + '</b></div>';
+  }
+  openSheet(h + '</div></div>');
+  $$('#sheetIn .tcd[data-day]').forEach(function (b) { b.onclick = function () { daySheet(b.dataset.day); }; });
+  if (TV) setTimeout(function () { var f = $('#sheetIn .tcd.today.has') || $$('#sheetIn .tcd.has').pop(); if (f) f.focus(); }, 60);
+}
 function themeTurn(b) {
   var T = S.theme; if (!T) return;
   var all = $$('#cal .vday'), at = b ? all.indexOf(b) : -1;
@@ -1397,7 +1449,7 @@ function themeStep(dir) {   // the day after or before with a film; at a month's
 THEMEFX.reel = {
   decor: function () { return '<div class="reelband" id="reelband"></div><div class="reelscreen" id="reelscreen"></div>'; },
   place: function (all, at, c, b) {
-    var fx = c.W * .62, y = c.H * .31, gap = 262;
+    var fx = c.W * .62, y = c.H * .35, gap = 262;
     all.forEach(function (el, j) { var k = j - at; vAt(el, fx + k * gap, y, k === 0 ? 1.18 : 1, 0, Math.abs(k) > 6 ? 0 : 1, k === 0 ? 50 : 10); });
     var band = $('#reelband'); if (band) band.style.backgroundPositionX = (-at * gap) + 'px';
     var sc = $('#reelscreen'); if (sc && b) sc.style.backgroundImage = b.style.getPropertyValue('--b');
@@ -1417,7 +1469,7 @@ THEMEFX.umbrellas = {
 };
 // April: the spiral (Saul Bass's titles for Vertigo): the days winding into its middle, the one you're on at its edge
 THEMEFX.spiral = {
-  g: function (c) { return { cx: c.W * .73, cy: c.H * .46, r0: 250 }; },
+  g: function (c) { return { cx: c.W * .73, cy: c.H * .52, r0: 240 }; },
   decor: function (c) {
     var g = this.g(c), pts = [];
     for (var a = -0.7; a < 32; a += .06) { var r = g.r0 * Math.pow(.83, a / .9); pts.push((g.cx + r * Math.cos(Math.PI + a)).toFixed(1) + ',' + (g.cy + r * Math.sin(Math.PI + a)).toFixed(1)); }
@@ -1485,7 +1537,7 @@ THEMEFX.moon = { all: true,
   decor: function () { return '<div class="bigmoon" id="bigmoon"></div><div class="mphase" id="mphase"></div>'; },
   place: function (all, at, c, b) {
     var x0 = 80, x1 = c.W - 80, n = Math.max(1, all.length - 1);
-    all.forEach(function (el, j) { vAt(el, x0 + (x1 - x0) * j / n, c.H * .22 - Math.sin(j / n * Math.PI) * 40, j === at ? 1.5 : 1, 0, 1, j === at ? 5 : 1); });
+    all.forEach(function (el, j) { vAt(el, x0 + (x1 - x0) * j / n, c.H * .29 - Math.sin(j / n * Math.PI) * 34, j === at ? 1.5 : 1, 0, 1, j === at ? 5 : 1); });
     var bm = $('#bigmoon'); if (bm && b) bm.style.backgroundImage = b.style.getPropertyValue('--p');
     var mp = $('#mphase'); if (mp && b) mp.textContent = PHASES[Math.floor(moonPhase(b.dataset.day) * 8 + .5) % 8];
   }
@@ -1515,8 +1567,8 @@ THEMEFX.autumn = {
 };
 // December: the snow globe (Citizen Kane): the days hung as baubles; the one you're on inside the globe, which shakes and snows
 THEMEFX.globe = {
-  hang: function (d) { return 160 + seeded(d * 5) * 80; },
-  cell: function (d) { return '<i class="str" style="height:' + (this.hang(d) - 18 - 116).toFixed(0) + 'px"></i>'; },
+  hang: function (d) { return 184 + seeded(d * 5) * 70; },
+  cell: function (d) { return '<i class="str" style="height:' + (this.hang(d) - 18 - 146).toFixed(0) + 'px"></i>'; },
   decor: function () { return '<div class="snow"></div><div class="globe" id="globe"><div class="gpic" id="gpic"></div><div class="gsnow"></div><i class="gshine"></i></div><div class="gbase"></div>'; },
   place: function (all, at, c, b) {
     var x0 = 90, x1 = c.W - 90, n = Math.max(1, all.length - 1), me = this;
@@ -1581,8 +1633,8 @@ function collCard(c) {
   return '<a class="card" href="#collection/' + c.id + '"><div class="pic">' + (src ? '<img loading="lazy" alt="" src="' + esc(src) + '">' : '<div class="noimg">' + esc(c.name) + '</div>') + '</div>' +
     '<div class="t">' + esc(c.name) + '</div><div class="s">' + (c.children ? c.children + (c.children === 1 ? ' title' : ' titles') : 'Collection') + '</div></a>';
 }
-function collectionView(id) {
-  var main = $('#main');
+function collectionView(id, into) {
+  var main = into || $('#main');
   main.innerHTML = '<div class="tabs" style="margin-top:22px"><a class="pill" href="#browse/collections">‹ Collections</a></div><div id="cbody"><div class="empty">Looking on the shelves…</div></div>';
   apiMemo('collection?id=' + encodeURIComponent(id), function (c) {
     if (!$('#cbody')) return;
@@ -1607,7 +1659,7 @@ function collectionView(id) {
 }
 function wireCards(el, items) {
   var by = {}; items.forEach(function (i) { by[i.id] = i; SEEN[i.id] = i; });
-  $$('[data-item]', el).forEach(function (b) { b.onclick = function () { var it = by[b.dataset.item]; if (it && it.type === 'collection') location.hash = '#collection/' + it.id; else itemSheet(it); }; });   // (a box set inside a collection opens as a collection)
+  $$('[data-item]', el).forEach(function (b) { b.onclick = function () { var it = by[b.dataset.item]; if (it && it.type === 'collection') { if (S.sheetInto && dlg.open && S.sheetInto.isConnected) collectionView(it.id, S.sheetInto); else location.hash = '#collection/' + it.id; } else itemSheet(it); }; });   // (a box set inside a collection opens as a collection)
 }
 function drawRows(R) {
   var el = $('#rows'); if (!el) return;
@@ -1621,8 +1673,21 @@ function drawRows(R) {
 }
 
 /* --- browse: films, TV, home videos */
-function browse() {
-  var main = $('#main');
+function browseSheet(tab) {   // Browse (Films, TV, Collections) as a pop-up, over the month's theme
+  S.browse = tab || S.browse || 'movies';
+  openSheet('<div class="form bsheet" style="position:relative">' + X + '<div id="bsin"></div></div>');
+  var into = $('#bsin');
+  into.onclick = function (e) {   // (in the pop-up, a collection and the way back to Collections stay in it)
+    var a = e.target.closest && e.target.closest('a[href^="#collection/"], a[href^="#browse/"]'); if (!a) return;
+    e.preventDefault(); var h = a.getAttribute('href').slice(1).split('/');
+    if (h[0] === 'collection') collectionView(h[1], into); else { S.browse = h[1]; browse(into); }
+  };
+  browse(into);
+  if (TV) setTimeout(function () { var f = $('#bsin [data-b].on'); if (f) f.focus(); }, 80);
+}
+function browse(into) {
+  var main = into || $('#main');
+  S.sheetInto = into || null;
   var tabs = [['collections', 'Collections'], ['movies', 'Films'], ['tv', 'TV']];   // (no Home videos tab: John, 7 Nov 2026; the gateway still serves a home videos library if one is added)
   if (S.browse === 'home') S.browse = 'movies';
   main.innerHTML = '<div class="hero"><h1>' + { movies: 'Films', tv: 'TV', collections: 'Collections' }[S.browse] + '</h1><div class="hsub" id="bcount"></div></div>' +
@@ -1631,7 +1696,7 @@ function browse() {
     '<div class="moods" id="moods"></div><div id="bgrid"></div>';
   $('#sort').value = S.sort;
   $('#sort').onchange = function () { S.sort = this.value; fill(); };
-  $$('[data-b]').forEach(function (b) { b.onclick = function () { location.hash = '#browse/' + b.dataset.b; }; });
+  $$('[data-b]', main).forEach(function (b) { b.onclick = function () { if (into) { S.browse = b.dataset.b; browse(into); var f = $('#bsin [data-b].on'); if (f && TV) f.focus(); } else location.hash = '#browse/' + b.dataset.b; }; });
   $('#sort').classList.toggle('hide', S.browse === 'collections');
   // genres and moods (Films and TV): a row of moods, and every genre the shelves have, with how many
   if (S.browse !== 'collections' && !DEMO) library().then(function (L) {
