@@ -420,6 +420,8 @@ html.tv .card:focus, html.tv .day:focus { transform: scale(1.1); box-shadow: 0 1
 @font-face { font-family: "GFutura"; font-weight: 300; font-display: swap; src: url("https://sotd-playlists.cooperking.workers.dev/gf/futurabt-light-webfont.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/futurabt-light-webfont.woff") format("woff"); }
 html.klook { --kfont: "GFutura", "futura-pt", "Futura PT", "Futura", "Jost", "Century Gothic", sans-serif; }   /* (Futura itself, John's choice: Adobe's Futura PT once its kit is added, the Futura Apple devices have; Jost only until then) */
 html.klook .glow { display: none; }
+html.klook { --kink: 255, 255, 255; }
+html.klook .wrap { --fg: rgb(var(--kink)); --fg-2: rgba(var(--kink), .72); --line: rgba(var(--kink), .3); color: var(--fg-2); }   /* (the month's ink: black on its light colours, white on the rest; pop-ups keep their own) */
 /* the Kubrick look is its own design, not the songs' (John, 8 Nov 2026: "this had more simplicity that I liked - this is
    a full change from song of the day, so don't cling to those design choices"): no glass, no pills, no rounded corners,
    no glow; plain tracked capitals, hairlines, the month's one colour */
@@ -432,21 +434,35 @@ html.klook .bar-top .ico { width: auto; height: auto; }
 html.klook.tv .bar-top > :not(.brand) { transition: opacity .3s ease; }
 html.klook.tv.barhide .bar-top > :not(.brand) { opacity: 0; }   /* (the calendar the whole screen; the words back when you go up to them) */
 html.klook .pill, html.klook .ico, html.klook .day, html.klook .card, html.klook .card .pic, html.klook .cal, html.klook .monthnav, html.klook .monthnav .m, html.klook .tday, html.klook .sheet, html.klook .tabs .pill, html.klook select.pill, html.klook input, html.klook .ep .pic { border-radius: 0 !important; }
-html.klook .pill { border: 1px solid rgba(255, 255, 255, .45); background: none; font: 500 12px/1 var(--kfont); letter-spacing: .26em; text-transform: uppercase; }
-html.klook .pill.go, html.klook .pill.on { background: #fff; color: #000; border-color: #fff; }
-html.klook .ico { border: 1px solid rgba(255, 255, 255, .45); background: none; }
-html.klook .ico.big { background: #fff; color: #000; border-color: #fff; }
+html.klook .pill { border: 1px solid rgba(var(--kink), .45); background: none; font: 500 12px/1 var(--kfont); letter-spacing: .26em; text-transform: uppercase; }
+html.klook .pill.go, html.klook .pill.on { background: rgb(var(--kink)); color: var(--bg); border-color: rgb(var(--kink)); }
+html.klook .ico { border: 1px solid rgba(var(--kink), .45); background: none; }
+html.klook .ico.big { background: rgb(var(--kink)); color: var(--bg); border-color: rgb(var(--kink)); }
 html.klook .monthnav { border: 0; background: none; -webkit-backdrop-filter: none; backdrop-filter: none; padding: 0; }
 html.klook .monthnav .m { font: 500 12px/1 var(--kfont); letter-spacing: .26em; border: 0; background: none; }
-html.klook .monthnav .m.on { color: var(--fg); background: none; box-shadow: inset 0 -2px 0 #fff; }
+html.klook .monthnav .m.on { color: var(--fg); background: none; box-shadow: inset 0 -2px 0 rgb(var(--kink)); }
 html.klook .cal { background: none; border: 0; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; padding: 0; }
-html.klook .day { background: none; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .12); border: 0; }
+html.klook .day { background: none; box-shadow: inset 0 0 0 1px rgba(var(--kink), .12); border: 0; }
 html.klook .day.has { box-shadow: none; }
 html.klook .day .num { font-family: var(--kfont); font-weight: 500; }
-html.klook.tv .day:focus, html.klook.tv .card:focus .pic, html.klook.tv :focus { outline: 2px solid #fff !important; outline-offset: 4px; }
+html.klook .day.has .num { color: #fff; }   /* (on the film's picture, white whatever the month's ink) */
+/* the table on the bold colours (John, 8 Nov 2026: "the war room look isn't as clear with a brightly coloured background
+   ... rework it for the new colours"): a solid table in the month's ink, the film's name on it in the month's colour,
+   the light above a line of ink: two flat colours, as a Saul Bass poster */
+html.klook .tring { background: rgb(var(--kink)); border: 0; box-shadow: 0 30px 60px rgba(0, 0, 0, .25); }
+html.klook .tlight { box-shadow: 0 0 0 3px rgba(var(--kink), .9); }
+html.klook .tcentre .k, html.klook .tcentre h2, html.klook .tcentre .y, html.klook .tcentre .n { color: var(--bg); }
+html.klook .tcentre .y, html.klook .tcentre .n { opacity: .85; }
+html.klook div.tday, html.klook button.tday:not(.has) { background: var(--bg); box-shadow: inset 0 0 0 1px rgba(var(--kink), .6); color: rgb(var(--kink)); }
+html.klook .tday.has { box-shadow: 0 8px 20px rgba(0, 0, 0, .35); }
+/* the calendar on the TV: no row for the name alone (John: "a waste of tv space"); the month's row at the top, and
+   the words (Search, Browse...) back when you go up from it */
+html.klook.tv.barhide:not(.table) .bar-top { display: none; }
+html.klook.tv:not(.table) .hero::before { content: "GRIFFLIX"; font: 700 13px/1 var(--kfont); letter-spacing: .55em; color: var(--fg-2); margin-right: 8px; align-self: center; }
+html.klook.tv .day:focus, html.klook.tv .card:focus .pic, html.klook.tv :focus { outline: 2px solid rgb(var(--kink)) !important; outline-offset: 4px; }
 html.klook .hsub { font-family: var(--serif); }
 html.klook .side, html.klook .notice, html.klook .tracks button, html.klook .eps .ep, html.klook .res { border-radius: 0 !important; background: none; -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: none; }
-html.klook .side { border: 0; border-top: 1px solid rgba(255, 255, 255, .2); padding-left: 0; padding-right: 0; }
+html.klook .side { border: 0; border-top: 1px solid rgba(var(--kink), .2); padding-left: 0; padding-right: 0; }
 /* the table, as the mock-up John chose: the whole screen, the ring of light above, the month's days round the table */
 html.table #main.homeview #hero, html.table #main.homeview #mnav, html.table #main.homeview #cals, html.table #main.homeview .rows { display: none; }
 html.table .bar-top { position: fixed; top: 36px; left: 64px; right: 64px; z-index: 30; }
@@ -462,12 +478,12 @@ html.klook .brand { font-family: var(--kfont); font-weight: 700; text-transform:
 html.klook.tv .sheet h2 { font-size: clamp(46px, 4.2vw, 70px); }
 /* the table: the month as a ring of days round a table, under a ring of light; left and right turn it */
 html.table .cal { position: relative; height: 470px !important; min-height: 0; background: none; border: 0; box-shadow: none; padding: 0; overflow: visible; display: block; }
-.tlight { position: absolute; left: 50%; top: -60px; width: 980px; height: 240px; transform: translateX(-50%); border-radius: 50%; box-shadow: 0 0 0 2px rgba(255, 255, 255, .6), 0 0 50px 14px rgba(255, 255, 255, .16), inset 0 0 50px 8px rgba(255, 255, 255, .14); pointer-events: none; }
-.tring { position: absolute; left: 50%; top: 418px; width: 1060px; height: 300px; transform: translate(-50%, -50%); border-radius: 50%; border: 1px solid rgba(255, 255, 255, .22); background: radial-gradient(ellipse at center, rgba(0, 0, 0, .28), rgba(0, 0, 0, .1) 60%, transparent 72%); pointer-events: none; }
+.tlight { position: absolute; left: 50%; top: -60px; width: 980px; height: 240px; transform: translateX(-50%); border-radius: 50%; box-shadow: 0 0 0 2px rgba(var(--kink), .6), 0 0 50px 14px rgba(var(--kink), .16), inset 0 0 50px 8px rgba(var(--kink), .14); pointer-events: none; }
+.tring { position: absolute; left: 50%; top: 418px; width: 1060px; height: 300px; transform: translate(-50%, -50%); border-radius: 50%; border: 1px solid rgba(var(--kink), .22); background: radial-gradient(ellipse at center, rgba(0, 0, 0, .28), rgba(0, 0, 0, .1) 60%, transparent 72%); pointer-events: none; }
 .tday { position: absolute; width: 46px; height: 62px; margin: -31px 0 0 -23px; padding: 0; border: 0; border-radius: 0; background: rgba(0, 0, 0, .3) center/cover; color: var(--fg-2); font: 500 10px/62px var(--kfont); text-align: center; transition: left .5s cubic-bezier(.3, .7, .2, 1), top .5s cubic-bezier(.3, .7, .2, 1), transform .5s cubic-bezier(.3, .7, .2, 1), opacity .4s; box-shadow: 0 6px 18px rgba(0, 0, 0, .45); }
 .tday.has { color: transparent; }
-div.tday { background: rgba(255, 255, 255, .06); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .14); }
-html.tv .tday:focus { outline: 3px solid #fff !important; outline-offset: 4px; box-shadow: 0 16px 40px rgba(0, 0, 0, .6); }
+div.tday { background: rgba(var(--kink), .06); box-shadow: inset 0 0 0 1px rgba(var(--kink), .14); }
+html.tv .tday:focus { outline: 3px solid rgb(var(--kink)) !important; outline-offset: 4px; box-shadow: 0 16px 40px rgba(0, 0, 0, .6); }
 .tcentre { position: absolute; left: 0; right: 0; top: 300px; text-align: center; pointer-events: none; }
 .tcentre .k { font: 500 15px/1 var(--kfont); letter-spacing: .5em; text-transform: uppercase; color: var(--fg-2); }
 .tcentre h2 { margin: 12px auto 6px; max-width: 760px; font: 700 52px/1 var(--kfont); text-transform: uppercase; letter-spacing: .04em; color: var(--fg); }
@@ -843,22 +859,23 @@ var PALETTES = [   // the month's colours: ground, then four glows
 ];
 // Kubrick's colours: one film a month, its one colour, flat (no glow) (the Kubrick look, ?look=kubrick, to try;
 // John, 8 Nov 2026: "not a mix of colours, the clear choice from each. Remove the song of the day glow")
-var KCOLOURS = [   // (John, 8 Nov 2026: back to the first choice of films, each its one colour)
-  ['#34506b', 'The Shining'],           // January: the hedge maze in snow
-  ['#8c5e1e', 'Barry Lyndon'],          // February: candlelight
-  ['#b0155e', 'Lolita'],                // March: the heart-shaped glasses
-  ['#c85000', 'A Clockwork Orange'],    // April: orange
-  ['#8e1616', 'Spartacus'],             // May: Technicolor crimson
-  ['#7a1a8c', '2001: A Space Odyssey'], // June: the Star Gate
-  ['#4a5320', 'Full Metal Jacket'],     // July: olive drab
-  ['#a8001a', '2001: A Space Odyssey'], // August: HAL's red eye
-  ['#4a3b2c', 'Paths of Glory'],        // September: the trenches' mud
-  ['#7e2a10', 'The Shining'],           // October: the Overlook's carpet
-  ['#1c1d22', 'Dr. Strangelove'],       // November: the War Room
-  ['#1a2a8a', 'Eyes Wide Shut']         // December: the blue Christmas night
+var KCOLOURS = [   // (John, 8 Nov 2026: "a bold background color ... not his exact color palettes, but inspiration from his design and use of colour and text": big flat colour, black or white Futura)
+  ['#f5c400', 'The Shining', '#000'],          // January: the yellow of Saul Bass's poster
+  ['#e3001b', '2001: A Space Odyssey', '#fff'], // February: HAL's red
+  ['#ff3d8b', 'Lolita', '#fff'],               // March: the heart-shaped glasses
+  ['#ff6b00', 'A Clockwork Orange', '#000'],   // April: orange
+  ['#00845c', 'Barry Lyndon', '#fff'],         // May: an English summer's green
+  ['#5a2ca0', 'Spartacus', '#fff'],            // June: Roman purple
+  ['#9bc31c', 'Full Metal Jacket', '#000'],    // July: acid green
+  ['#00a0b0', '2001: A Space Odyssey', '#fff'], // August: the space station's turquoise
+  ['#b08a3e', 'Paths of Glory', '#000'],       // September: brass and khaki
+  ['#6e0f14', 'The Shining', '#fff'],          // October: oxblood
+  ['#0a0a0a', 'Dr. Strangelove', '#fff'],      // November: the War Room's black and white
+  ['#1d2bd8', 'Eyes Wide Shut', '#fff']        // December: ultramarine Christmas night
 ];
 function monthTint(m) {   // (six months on from the songs' colours, so the two never look the same in a month)
   var k = KLOOK && KCOLOURS[m], p = k ? [k[0], k[0], k[0], k[0], k[0]] : (PALETTES[(m + 6) % 12] || PALETTES[0]), R = document.documentElement.style;
+  if (k) R.setProperty('--kink', k[2] === '#000' ? '0, 0, 0' : '255, 255, 255');
   ['--bg', '--g1', '--g2', '--g3', '--g4'].forEach(function (n, i) { R.setProperty(n, p[i]); });
   var tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.content = p[0];
 }
@@ -1129,8 +1146,8 @@ function tableTurn(b) {   // the table turned so b is at the front; its film in 
     el.style.left = x.toFixed(1) + 'px'; el.style.top = y.toFixed(1) + 'px';
     el.style.transform = 'scale(' + (el === b ? 1.52 : (.62 + .38 * depth)).toFixed(3) + ')';
     el.style.zIndex = el === b ? 200 : Math.round(depth * 100);
-    el.style.opacity = (.45 + .55 * depth).toFixed(2);
-    el.style.filter = el === b ? 'none' : 'grayscale(1) brightness(.78)';   // (the others in black and white, the day you're on in colour)
+    el.style.opacity = KLOOK ? 1 : (.45 + .55 * depth).toFixed(2);   // (on the month's bold colour: crisp, not faded into it)
+    el.style.filter = el === b ? 'none' : 'grayscale(1) brightness(' + (.62 + .3 * depth).toFixed(2) + ')';   // (the others in black and white, the day you're on in colour)
   });
   var c = $('#tcentre'); if (!c) return;
   var it = b && S.calData.days[b.dataset.day];
@@ -1916,7 +1933,8 @@ function moveFocus(dir) {
     var score = main + Math.abs(side) * 2.2;
     if (score < bestScore) { bestScore = score; best = el; }
   });
-  if (best) { best.focus({ preventScroll: true }); best.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' }); }
+  if (best) { best.focus({ preventScroll: true }); best.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' }); return true; }
+  return false;
 }
 function playerKeys(k) {
   var v = P.v; wake();
@@ -1940,7 +1958,10 @@ document.addEventListener('keydown', function (e) {
     if (k === 'down') { e.preventDefault(); return; }
   }
   if (k === 'ok' || (inText && (k === 'left' || k === 'right'))) return;   // OK presses the button (the browser's own); text keeps its own left/right
-  e.preventDefault(); moveFocus(k);
+  e.preventDefault();
+  if (!moveFocus(k) && k === 'up' && KLOOK && document.documentElement.classList.contains('barhide')) {   // (up from the top row: the words back)
+    document.documentElement.classList.remove('barhide'); setTimeout(function () { var t = $('#tvview') || $('.bar-top button'); if (t) t.focus(); }, 0);
+  }
 }, true);
 window.grifflixTV = {
   key: function (k) {
