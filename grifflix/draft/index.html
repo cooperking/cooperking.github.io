@@ -2226,13 +2226,20 @@ function collCard(c) {   // a collection's cover, drawn rather than a picture: a
   if (mm) { k = mm[1]; nm = mm[2]; }
   var h = 0; for (var i = 0; i < (c.id || nm).length; i++) h = (h * 31 + (c.id || nm).charCodeAt(i)) >>> 0;
   var long = nm.length > 26 ? ' xl' : (nm.length > 13 ? ' l' : ''), n = c.children ? c.children + (c.children === 1 ? ' title' : ' titles') : 'Collection';
-  return '<a class="card coll" href="#collection/' + c.id + '" aria-label="' + esc(c.name + ', ' + n) + '"><div class="pic ccov">' + collArt(h, nm, c.name) +
+  return '<a class="card coll" href="#collection/' + c.id + '" aria-label="' + esc(c.name + ', ' + n) + '"><div class="pic ccov" data-cn="' + esc(c.name) + '" data-nm="' + esc(nm) + '" data-ch="' + h + '">' + collArt(h, nm, c.name) +
     '<div class="cc">' + (k ? '<small>' + esc(k) + '</small>' : '') + '<b class="' + long + '">' + esc(nm) + '</b><i></i><span>' + n + '</span></div></div></a>';
 }
-var COLLICONS = {};   /*COLLICONS*/
-function collArt(h, nm, full) {   // the graphic: an image from a film in the collection (COLLICONS, by its name); a new one
+// (the drawn covers, window.GCOLLART: /grifflix/collection-art.js, fetched after the page is up; till then each its initial)
+function collArtLoad() {
+  if (collArtLoad.p) return; collArtLoad.p = 1;
+  var sc = document.createElement('script'); sc.src = '/grifflix/collection-art.js?v=1e88656843'; sc.async = true;
+  sc.onload = function () { $$('.ccov[data-cn]').forEach(function (el) { var svg = el.querySelector('svg.ca'); if (svg) svg.outerHTML = collArt(+el.dataset.ch, el.dataset.nm, el.dataset.cn); }); };
+  document.head.appendChild(sc);
+}
+function collArt(h, nm, full) {
+  collArtLoad();   // the graphic: an image from a film in the collection (COLLICONS, by its name); a new one
   // without its own yet, its initial, huge (John, 8 Nov 2026: "these pictures aren't actually relevant to the collection")
-  var o = COLLICONS[full] || COLLICONS[nm], g = o ? o.svg : '<text x="100" y="186" text-anchor="middle" font-size="230" class="ca-l">' + esc(nm.replace(/^(the|a)\s+/i, '').charAt(0).toUpperCase()) + '</text>';
+  var A = window.GCOLLART || {}, o = A[full] || A[nm], g = o ? o.svg : '<text x="100" y="186" text-anchor="middle" font-size="230" class="ca-l">' + esc(nm.replace(/^(the|a)\s+/i, '').charAt(0).toUpperCase()) + '</text>';
   return '<svg class="ca" viewBox="0 0 200 300" preserveAspectRatio="xMidYMin slice" aria-hidden="true"><defs><clipPath id="cc' + h + '"><rect width="200" height="196"/></clipPath></defs><g clip-path="url(#cc' + h + ')">' + g + '</g></svg>';
 }
 function collectionView(id, into) {
