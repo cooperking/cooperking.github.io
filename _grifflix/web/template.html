@@ -810,6 +810,17 @@ html.mob .tcd img { object-position: 50% 15%; }
   html.klook .bar-top .pill[data-go="search"] { min-height: 32px; padding: 0 9px; font-size: 11px; gap: 6px; }
   html.klook .bar-top .pill[data-go="search"] svg { width: 14px; height: 14px; } }
 @media (max-width: 360px) { html.klook .bar-top .brand { font-size: 11px; letter-spacing: .2em; } html.klook .bar-top { gap: 5px !important; } html.klook .bar-top .drafttag { display: none !important; } }
+
+/* the bars (Psycho) */
+.th-bars .vday { background: #fff center/cover; background-image: var(--b); filter: grayscale(1) contrast(.2) brightness(1.9); transition: left .5s cubic-bezier(.3, .7, .2, 1), top .5s cubic-bezier(.3, .7, .2, 1), width .5s cubic-bezier(.3, .7, .2, 1), height .5s cubic-bezier(.3, .7, .2, 1), filter .3s, opacity .3s; }
+.th-bars .vday.front { filter: none; box-shadow: 0 0 0 4px #fff; }
+.th-bars .vday:not(.front) .vn { display: none; }
+.th-bars .vday .vn { top: auto; bottom: -24px; color: #fec402; }
+html[data-theme=bars] .hinfo .w { color: #fec402; }   /* (the poster's yellow for the day) */
+html.tv .th-bars .vday:focus { outline: 0 !important; }
+#cal.drag .th-bars .vday { transition: none; }
+html[data-theme=bars] .leaf2 { border-color: #fff; background: repeating-linear-gradient(0deg, transparent 0 .1em, rgba(255, 255, 255, .25) .1em .14em); }
+html[data-theme=bars] .leaf2 i { background: #fec402; color: #000; }
 /* the TV calendar to try (?tvhero=1): the day you're on large on the left, over its picture; the month beside it */
 html.tvhero #main.homeview { grid-template-columns: minmax(0, 40%) minmax(0, 1fr); column-gap: 36px; align-items: start; }
 html.tvhero #main.homeview #tvfeat { grid-column: 1; grid-row: 1 / span 3; align-self: stretch; }
@@ -1218,19 +1229,25 @@ var THEMES = [   // each its film's own lettering and colour, researched (John, 
   { key: 'moon', mob: [40, 90, 1240, 620], name: 'The Moon', film: 'Hugo', year: 2011, by: 'Scorsese, for Méliès', bg: '#145063', ink: '#fff', font: '"IM Fell English SC", serif', tw: 400, tt: 'none' },
   // Alphaville: Jean Mascii's French poster's neon-tube lettering; the indigo of the US poster
   { key: 'credits', mob: [40, 90, 1240, 620], name: 'The Credits', film: 'Alphaville', year: 1965, by: 'Godard', bg: '#2a2169', ink: '#fff', font: '"Tilt Neon", sans-serif', tw: 400 },
-  // Late Autumn: the 1960 poster's red brush calligraphy; Ozu's credits written by hand
-  { key: 'autumn', mob: [0, 250, 1280, 640], name: 'Late Autumn', film: 'Late Autumn', year: 1960, by: 'Ozu', bg: '#c4321f', ink: '#fff', font: '"Yuji Syuku", serif', tw: 400, tt: 'none' },
+  // Psycho: Saul Bass's titles, News Gothic Bold (News Cycle) on sliding bars; the blue of the 1960 one-sheet's cast panel, its yellow for the title
+  { key: 'bars', mob: [0, 0, 1280, 720], name: 'The Bars', film: 'Psycho', year: 1960, by: 'Hitchcock; titles by Saul Bass', bg: '#1578aa', ink: '#fff', font: '"News Cycle", sans-serif', tw: 700 },
   // Dr. Strangelove: Pablo Ferro's tall thin titles, drawn by hand on glass, over black and white
   { key: 'table', mob: [60, 0, 1220, 620], name: 'The Table', film: 'Dr. Strangelove', year: 1964, by: 'Kubrick; titles by Pablo Ferro', bg: '#0a0a0a', ink: '#fff', font: '"Amatic SC", sans-serif', tw: 700 },
   // Citizen Kane: its main title's outlined condensed capitals (League Gothic, the free revival of Alternate Gothic: John, 8 Nov 2026); the red title band of the 1941 Style A poster
   { key: 'globe', mob: [40, 60, 1240, 640], name: 'The Snow Globe', film: 'Citizen Kane', year: 1941, by: 'Orson Welles', bg: '#a8161a', ink: '#fff', font: '"GF-globe", "League Gothic", sans-serif', tw: 400 }
 ];
-var THEMEFONTS = 'https://fonts.googleapis.com/css2?family=Bowlby+One&family=Della+Respira&family=Special+Gothic+Expanded+One&family=Londrina+Solid:wght@400;900&family=Share+Tech+Mono&family=Archivo+Narrow:wght@600&family=Anton&family=IM+Fell+English+SC&family=Tilt+Neon&family=Yuji+Syuku&family=Amatic+SC:wght@700&family=Big+Shoulders:wght@400;700&family=League+Gothic&display=swap';
+var THEMEFONTS = 'https://fonts.googleapis.com/css2?family=Bowlby+One&family=Della+Respira&family=Special+Gothic+Expanded+One&family=Londrina+Solid:wght@400;900&family=Share+Tech+Mono&family=Archivo+Narrow:wght@600&family=Anton&family=IM+Fell+English+SC&family=Tilt+Neon&family=Yuji+Syuku&family=Amatic+SC:wght@700&family=Big+Shoulders:wght@400;700&family=League+Gothic&family=News+Cycle:wght@700&display=swap';
 function themeEarly() {   // (before the films arrive: the page already laid out as this month's theme)
   if (VIEW() !== 'themes') return; var R = document.documentElement, t = themeFor(new Date().getMonth());
   R.classList.add(t.key === 'table' ? 'table' : 'hall'); if (MOB()) R.classList.add('mob'); R.dataset.theme = t.key;
 }
-function themeFor(m) { return (THEMEQ && THEMES.filter(function (t) { return t.key === THEMEQ; })[0]) || THEMES[m]; }
+// themes saved for a later month, for when their film is in Grifflix (John, 8 Nov 2026: "put new themes in for films I do
+// have and save the ones I don't for later months"); ?theme=<key> still shows one
+var THEMES_LATER = [
+  // Late Autumn: the 1960 poster's red brush calligraphy; Ozu's credits written by hand
+  { key: 'autumn', mob: [0, 250, 1280, 640], name: 'Late Autumn', film: 'Late Autumn', year: 1960, by: 'Ozu', bg: '#c4321f', ink: '#fff', font: '"Yuji Syuku", serif', tw: 400, tt: 'none' },
+];
+function themeFor(m) { return (THEMEQ && THEMES.concat(THEMES_LATER).filter(function (t) { return t.key === THEMEQ; })[0]) || THEMES[m]; }
 function monthTint(m) {   // (six months on from the songs' colours, so the two never look the same in a month)
   var tt = KLOOK && themeFor(m), k = tt && [tt.bg, tt.name, tt.ink], p = k ? [k[0], k[0], k[0], k[0], k[0]] : (PALETTES[(m + 6) % 12] || PALETTES[0]), R = document.documentElement.style;
   if (k) R.setProperty('--kink', k[2] === '#000' ? '0, 0, 0' : '255, 255, 255');
@@ -1903,6 +1920,23 @@ THEMEFX.autumn = {
       var k = j - at, ak = Math.abs(k), nf = near(k), sg = k < 0 ? -1 : 1, s = ss + (1 - ss) * nf;
       var x = fx + sg * ((bw / 2 + 22 + bw * ss / 2) * Math.min(1, ak) + Math.max(0, ak - 1) * (bw * ss + 14));
       vAt(el, x, base - bh * s / 2, s, 0, 1, nf > .5 ? 5 : 1);
+    });
+  }
+};
+// October: the bars (Saul Bass's titles for Psycho): the month's days as white bars sliding in from either side; the one you're on opens into its film
+THEMEFX.bars = {
+  swipe: function (c) { return { x: 0, y: -1, px: c.mob ? 40 : 60 }; },
+  place: function (all, at, c) {
+    var g = c.mob ? { x0: 40, w: 700, cy: 440, fh: 394, bh: 16, gap: 26, top: 0, bot: 890 } : { x0: c.W * .45, w: c.W - 64 - c.W * .45, cy: c.H * .47, fh: 300, bh: 9, gap: 15, top: 104, bot: c.H - 104 };
+    g.fw = Math.min(g.w, g.fh * 16 / 9);
+    all.forEach(function (el, j) {
+      var k = j - at, ak = Math.abs(k), nf = near(k), sg = k < 0 ? -1 : 1;
+      var h = g.bh + (g.fh - g.bh) * nf, w = g.w * (.55 + .45 * seeded(j * 3 + c.m)) * (1 - nf) + g.fw * nf;
+      var y = ak < 1 ? g.cy + k * (g.fh / 2 + g.gap) : g.cy + sg * (g.fh / 2 + g.gap + (ak - 1) * g.gap);
+      var slide = (j % 2 ? 1 : -1) * (g.w - w) * .5 * (1 - nf) * (.4 + .6 * seeded(j + c.m * 7));   // (each bar slid in from one side or the other)
+      var x = g.x0 + (g.w - w) / 2 + slide;
+      el.style.left = x.toFixed(1) + 'px'; el.style.top = (y - h / 2).toFixed(1) + 'px'; el.style.width = w.toFixed(1) + 'px'; el.style.height = h.toFixed(1) + 'px';
+      el.style.opacity = y < g.top || y > g.bot ? 0 : 1; el.style.zIndex = nf > .5 ? 5 : 1; el.style.transform = 'none';   // (only within the theme's own part of the screen)
     });
   }
 };
