@@ -1227,6 +1227,9 @@ function drawAccount() {
     '<div class="profsec"><p class="profh">Email</p><p class="profp">' + (g.email ? 'Your address: <b>' + esc(g.email) + '</b>' : 'Add your email address, and you can have the Movie of the Day by email too.') + '</p>' +
       '<div class="acts" style="margin-top:8px"><button class="pill" id="mailgo">' + (g.email ? 'Change your email' : 'Add your email') + '</button></div></div>' +
     '<div class="profsec"><p class="profh">Which emails</p><p class="profp">' + (g.email ? 'To ' + esc(g.email) + ', chosen apart from your notifications.' : 'Add your email first.') + '</p>' + opts('gmail', !g.email) + '</div>' +
+    (/[?&]app=/.test(location.search) || TV ? '' : '<div class="profsec"><p class="profh">Grifflix on your phone</p><p class="profp">' +
+      (/Android/i.test(navigator.userAgent) ? 'The Grifflix app for Android: download it, then open the file and allow installing from Chrome when asked. Sign in with a code from here (below).' : 'An iPhone app is coming (through Apple’s TestFlight). On an Android phone, the Grifflix app is here.') +
+      '</p><div class="acts" style="margin-top:8px"><a class="pill" href="/grifflix/android.apk">Android app</a></div></div>') +
     '<div class="profsec"><p class="profh">A TV</p><p class="profp">To sign in on a TV (or another device), get a code and type it there.</p><div class="acts" style="margin-top:8px"><button class="pill" id="tvcode">Get a code</button></div></div>' +
     '<div class="profsec"><p class="profh">This device</p><p class="profp">Signed in as ' + esc(ME.name || '') + '.</p><div class="acts" style="margin-top:8px"><button class="pill" id="signout">Sign out</button></div></div>';
   $$('[data-gpush],[data-gmail]').forEach(function (b) { b.onclick = function () {
