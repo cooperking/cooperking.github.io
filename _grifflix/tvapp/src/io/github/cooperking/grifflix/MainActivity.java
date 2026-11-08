@@ -187,6 +187,17 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public int build() { return myBuild(); }
+
+        @JavascriptInterface
+        public void keyboard() {   // the page's search box chosen with OK: Fire TV's keyboard up for it
+            runOnUiThread(new Runnable() {
+                public void run() {
+                    web.requestFocus();
+                    android.view.inputmethod.InputMethodManager im = (android.view.inputmethod.InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+                    if (im != null) im.showSoftInput(web, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT);
+                }
+            });
+        }
     }
 
     void page(String k) { web.evaluateJavascript("window.grifflixTV && grifflixTV.key('" + k + "')", null); }
