@@ -599,6 +599,11 @@ html.mob .tcal { height: auto !important; }
 /* Search's pop-up: the box clear of the close button, the heading clear of the tabs under it (John, 8 Nov 2026) */
 html:not(.mob):not(.tv) #sheet #sq { width: calc(100% - 70px) !important; height: 60px; font: 500 22px/1 var(--kfont) !important; padding: 0 18px !important; }
 html.tv #sheet #sq { width: calc(100% - 120px) !important; }
+.tvkb { margin: 14px 0 6px; display: grid; gap: 8px; } .tvkb[hidden] { display: none; }
+.tvkb .kr { display: flex; gap: 8px; flex-wrap: nowrap; }
+.tvkb .kk { flex: 0 0 auto; min-width: 58px; height: 52px; padding: 0 10px; border: 1px solid rgba(255, 255, 255, .25); background: rgba(255, 255, 255, .06); color: var(--fg); font: 500 22px/1 var(--kfont); border-radius: 4px; cursor: pointer; }
+.tvkb .kk.wide { min-width: 120px; font-size: 18px; letter-spacing: .08em; text-transform: uppercase; }
+.tvkb .kk:focus { background: #fff; color: #000; outline: none; }
 #sheet .bsheet .hero { margin-bottom: 18px; }
 #sheet .bsheet .hero h1 { line-height: 1.1; }
 html.tv #sheet .bsheet .hero { margin-bottom: 26px; }
@@ -2827,17 +2832,24 @@ function searchSheet(onPick, title) {
   openSheet('<div class="form' + (withBrowse ? ' bsheet' : '') + '" style="position:relative">' + X + '<h2 style="font:400 34px/1.1 var(--serif);color:var(--fg)">' + (title || 'Search') + '</h2><input type="search" id="sq" placeholder="A film, a series, an episode…" autocomplete="off"><div class="results" id="sres"></div>' + (withBrowse ? '<div id="bsin"></div>' : '') + '</div>');
   if (withBrowse) browseIn($('#bsin'), 'now');   // (Search opens on Now showing)
   var t, inp = $('#sq');
-  if (TV) {   // a TV: the box chosen first, and only OK on it brings Amazon's keyboard up (John, 8 Nov 2026: "when you click search the typing text from amazon comes up immediately which looks bad")
-    inp.readOnly = true; inp.setAttribute('inputmode', 'none');
-    var wake = function () {   // OK on it: typing on, and Fire TV's keyboard up (the app's own way where it has one)
-      if (!inp.readOnly) return; inp.readOnly = false; inp.removeAttribute('inputmode');
-      inp.waking = true; inp.blur();   // (focused afresh, as when Search first opened, which is what brings Fire TV's keyboard up; and the app asked too)
-      setTimeout(function () { inp.focus(); inp.waking = false; try { if (window.GRIFFLIXTV && GRIFFLIXTV.keyboard) GRIFFLIXTV.keyboard(); } catch (e) {} }, 40);
+  if (TV) {   // a TV: Grifflix's own letters under the box, OK on the box to bring them up. Not Amazon's keyboard, which came up
+    // at once, and then let the remote's arrows and OK go to the page behind it, playing films (John, 8 Nov 2026)
+    inp.readOnly = true; inp.setAttribute('inputmode', 'none'); inp.placeholder = 'Press OK to type';
+    var kb = document.createElement('div'); kb.className = 'tvkb'; kb.id = 'tvkb'; kb.hidden = true;
+    kb.innerHTML = ['ABCDEFGHIJKLM', 'NOPQRSTUVWXYZ', '1234567890'].map(function (r, i) {
+      return '<div class="kr">' + r.split('').map(function (c) { return '<button class="kk" data-k="' + c + '">' + c + '</button>'; }).join('') +
+        (i === 2 ? '<button class="kk wide" data-k=" ">Space</button><button class="kk wide" data-k="del" aria-label="Delete">⌫</button><button class="kk wide" data-k="clr">Clear</button>' : '') + '</div>';
+    }).join('');
+    inp.after(kb);
+    var wake = function () { kb.hidden = !kb.hidden; if (!kb.hidden) setTimeout(function () { kb.querySelector('.kk').focus(); }, 30); };
+    kb.onclick = function (e) {
+      var b = e.target.closest('.kk'); if (!b) return; var k = b.dataset.k;
+      inp.value = k === 'del' ? inp.value.slice(0, -1) : k === 'clr' ? '' : (inp.value + k).replace(/^ +/, '');
+      if (inp.oninput) inp.oninput();
     };
-    inp.addEventListener('keydown', function (e) { if (inp.readOnly && (e.key === 'Enter' || e.keyCode === 23 || e.keyCode === 13)) { e.preventDefault(); wake(); } });
-    inp.addEventListener('click', wake);
-    inp.addEventListener('focus', function () { if (TV) { var si = $('#sheetIn'); if (si) si.scrollTo({ top: 0, behavior: 'smooth' }); } });
-  inp.addEventListener('blur', function () { if (!inp.value && !inp.waking) { inp.readOnly = true; inp.setAttribute('inputmode', 'none'); } });
+    inp.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.keyCode === 23 || e.keyCode === 13) { e.preventDefault(); wake(); } });
+    inp.addEventListener('click', function (e) { e.preventDefault(); wake(); });
+    inp.addEventListener('focus', function () { var si = $('#sheetIn'); if (si) si.scrollTo({ top: 0, behavior: 'smooth' }); });
     setTimeout(function () { inp.focus(); }, 50);
   } else setTimeout(function () { inp.focus(); }, 50);
   inp.oninput = function () {
@@ -3340,7 +3352,7 @@ function moveFocus(dir) {
       var r = el.getBoundingClientRect();
       if (!(r.top < first.bottom - 2 && r.bottom > first.top + 2)) return;   // (only that next row: what lines up with the nearest)
       var side = r.right < a.left ? a.left - r.right : r.left > a.right ? r.left - a.right : 0;
-      var score = side * 4 + Math.abs((r.left + r.width / 2) - ax) * .1 + gap(r);
+      var score = side * 4 + (a.width > 3 * r.width ? Math.abs(r.left - a.left) : Math.abs((r.left + r.width / 2) - ax)) * .1 + gap(r);   // (from a wide thing, the search box, the row's first: John, 8 Nov 2026)
       if (score < bestScore) { bestScore = score; best = el; }
     });
   } else all.forEach(function (el) {
