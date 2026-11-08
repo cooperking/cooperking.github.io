@@ -858,27 +858,32 @@ html[data-theme=oz] .leaf2 { border-color: #f3c623; background: #fff; }
 html[data-theme=oz] .leaf2 i { background: #b3122e; color: #fff; }
 html[data-theme=oz] .leaf2 b { color: #0f7b3e; }
 
-/* the barrels (Jaws) */
-.jawsea { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
-.jawspic { position: absolute; background: #062f55 center/cover; box-shadow: 0 0 0 4px rgba(255, 255, 255, .25), 0 30px 60px rgba(0, 10, 30, .5); cursor: pointer; z-index: 2; }
-.jawspic.rise { animation: jrise .6s cubic-bezier(.2, .7, .2, 1) both; }
-@keyframes jrise { from { transform: translateY(70px); opacity: .4; } to { transform: none; opacity: 1; } }
-.jawsfin { position: absolute; width: 120px; height: 100px; z-index: 1; pointer-events: none; animation: jfin 9s linear infinite; }
-@keyframes jfin { 0% { transform: translateX(-260px) scaleX(-1); } 45% { transform: translateX(260px) scaleX(-1); } 50% { transform: translateX(260px) scaleX(1); } 95% { transform: translateX(-260px) scaleX(1); } 100% { transform: translateX(-260px) scaleX(-1); } }   /* (its tip always sweeping back, the way it swims) */   /* (to and fro past the day's barrel) */
-.th-jaws .vday { width: 70px; height: 96px; background: none; overflow: visible; z-index: 4; }
-.th-jaws .barrel { position: absolute; inset: 0; border-radius: 14px / 22px; background: linear-gradient(90deg, #b88a00, #ffd21f 35%, #ffe680 50%, #ffd21f 65%, #b88a00), #ffd21f; box-shadow: inset 0 14px 0 -10px rgba(0, 0, 0, .35), inset 0 -14px 0 -10px rgba(0, 0, 0, .35); animation: bob 2.6s ease-in-out infinite; }
-.th-jaws .vday:nth-child(2n) .barrel { animation-delay: -1.3s; }
-@keyframes bob { 0%, 100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(6px) rotate(3deg); } }
-.th-jaws .bn { position: absolute; left: 0; right: 0; top: 34px; text-align: center; font: 400 24px/1 var(--tfont); color: #b3202a; pointer-events: none; }
+/* the deep (Jaws, parked) */
+.jsurf { position: absolute; left: 0; right: 0; background: #f4f1ec; box-shadow: 0 6px 0 rgba(255, 255, 255, .5); }
+.jdeep { position: absolute; left: 0; right: 0; bottom: 0; background: linear-gradient(#87b1bd, #5a9fae 25%, #4c8f9f 50%, #051725); }
+.th-jaws .vday { width: 200px; height: 300px; box-shadow: 0 0 0 3px rgba(255, 255, 255, .5); }
 .th-jaws .vday .vn { display: none; }
-html.tv .th-jaws .vday:focus { outline: 0 !important; }
-.th-jaws .vday.front .barrel { box-shadow: 0 0 0 4px #b3122e, inset 0 14px 0 -10px rgba(0, 0, 0, .35); }
 html[data-theme=jaws] .hinfo .w > span { color: #051725; letter-spacing: -.02em; }
 html[data-theme=jaws] .hinfo h2 { color: #b3202a; }
 html[data-theme=jaws] .leaf2 { border-color: #051725; background: #f4f1ec; }
 html[data-theme=jaws] .leaf2 i { background: #b3202a; color: #fff; }
 html[data-theme=jaws] .leaf2 b { color: #051725; }
-html.mob .jawspic { cursor: pointer; }
+/* the Grid (TRON) */
+.tgrid { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.tgrid line { stroke: rgba(70, 200, 255, .35); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.tgrid .twall { fill: none; stroke: #46d7ff; stroke-width: 5; vector-effect: non-scaling-stroke; filter: drop-shadow(0 0 6px #46d7ff); stroke-linejoin: round; }
+.tgrid .twall.past { stroke: #ff6a1f; filter: drop-shadow(0 0 6px #ff6a1f); }
+.th-tron .vday { width: 200px; height: 300px; box-shadow: 0 0 0 2px #46d7ff, 0 0 18px rgba(70, 215, 255, .7); }
+.th-tron .vday.gone { box-shadow: 0 0 0 2px #ff6a1f, 0 0 18px rgba(255, 106, 31, .7); }
+.th-tron .vday.front { box-shadow: 0 0 0 4px #c9f6ff, 0 0 30px #46d7ff; }
+.th-tron .vday .vn { color: #46d7ff; font-family: var(--tfont); letter-spacing: .2em; }
+.th-tron .vday:not(.front) .vn { display: none; }
+html.tv .th-tron .vday:focus { outline: 0 !important; }
+html[data-theme=tron] .hinfo .w > span { color: #c9f6ff; text-shadow: 0 0 .08em #46d7ff, 0 0 .3em rgba(70, 215, 255, .7); }
+html[data-theme=tron] .hinfo h2 { color: #46d7ff; }
+html[data-theme=tron] .leaf2 { border-color: #46d7ff; box-shadow: 0 0 .08em #46d7ff; background: #030b1a; }
+html[data-theme=tron] .leaf2 i { background: #46d7ff; color: #030b1a; }
+html[data-theme=tron] .leaf2 b { color: #c9f6ff; }
 
 /* the months' colours blend into each other */
 html, body, .wrap, #cal, .hinfo, .tinspo, .tmonth { transition: background-color .55s ease, color .55s ease; }
@@ -1312,9 +1317,8 @@ var THEMES = [   // each its film's own lettering and colour, researched (John, 
   { key: 'pinboard', mob: [530, 70, 1250, 640], name: 'The Pinboard', film: 'All the President’s Men', year: 1976, by: 'Alan J. Pakula', bg: '#f4f1ea', ink: '#000', font: '"GF-pinboard", "Anton", sans-serif', tw: 400 },
   // Hugo / A Trip to the Moon: Cinzel, nearest free face to the HUGO poster's roman (said to be University Roman Bold); the teal night sky of Hugo's poster
   { key: 'moon', mob: [40, 90, 1240, 620], name: 'The Moon', film: 'Hugo', year: 2011, by: 'Scorsese, for Méliès', bg: '#145063', ink: '#fff', font: '"Cinzel", serif', tw: 700, tt: 'uppercase' },
-  // Jaws: Amity's yellow barrels on the sea, the day's film rising beneath, as the shark on the poster; the 1975 poster's
-  // sea blue, its pale upper field and red logo (heavy wide capitals: Archivo Black)
-  { key: 'jaws', mob: [0, 0, 1280, 720], name: 'The Barrels', film: 'Jaws', year: 1975, by: 'Spielberg', bg: '#5a9fae', ink: '#000', font: '"Archivo Black", sans-serif', tw: 400 },
+  // TRON: the Grid; the days as light cycles' walls on its floor in perspective, Flynn's cyan ahead, Sark's orange behind
+  { key: 'tron', mob: [0, 0, 1280, 720], name: 'The Grid', film: 'Tron', year: 1982, by: 'Steven Lisberger', bg: '#030b1a', ink: '#fff', font: '"Orbitron", sans-serif', tw: 700 },
   // The Wizard of Oz: the yellow brick road (#f2c230) through the Emerald City's green (#1e8c4e); the 1939 title card's
   // hand-drawn condensed capitals with curled ends and a deep shadow (Federant, the nearest free face)
   { key: 'oz', mob: [0, 0, 1280, 720], name: 'The Yellow Brick Road', film: 'The Wizard of Oz', year: 1939, by: 'Victor Fleming', bg: '#1e8c4e', ink: '#fff', font: '"Federant", serif', tw: 400, tt: 'none' },
@@ -1323,7 +1327,7 @@ var THEMES = [   // each its film's own lettering and colour, researched (John, 
   // Citizen Kane: its main title's outlined condensed capitals (League Gothic, the free revival of Alternate Gothic: John, 8 Nov 2026); the red title band of the 1941 Style A poster
   { key: 'globe', mob: [40, 60, 1240, 640], name: 'The Snow Globe', film: 'Citizen Kane', year: 1941, by: 'Orson Welles', bg: '#a8161a', ink: '#fff', font: '"GF-globe", "League Gothic", sans-serif', tw: 400 }
 ];
-var THEMEFONTS = 'https://fonts.googleapis.com/css2?family=Bowlby+One&family=Della+Respira&family=Special+Gothic+Expanded+One&family=Londrina+Solid:wght@400;900&family=Share+Tech+Mono&family=Archivo+Narrow:wght@600&family=Anton&family=IM+Fell+English+SC&family=Cinzel:wght@700&family=Tilt+Neon&family=Yuji+Syuku&family=Amatic+SC:wght@700&family=Big+Shoulders:wght@400;700&family=League+Gothic&family=News+Cycle:wght@700&family=Federant&family=Space+Mono:wght@400;700&family=Archivo+Black&display=swap';
+var THEMEFONTS = 'https://fonts.googleapis.com/css2?family=Bowlby+One&family=Della+Respira&family=Special+Gothic+Expanded+One&family=Londrina+Solid:wght@400;900&family=Share+Tech+Mono&family=Archivo+Narrow:wght@600&family=Anton&family=IM+Fell+English+SC&family=Cinzel:wght@700&family=Tilt+Neon&family=Yuji+Syuku&family=Amatic+SC:wght@700&family=Big+Shoulders:wght@400;700&family=League+Gothic&family=News+Cycle:wght@700&family=Federant&family=Space+Mono:wght@400;700&family=Archivo+Black&family=Orbitron:wght@700&display=swap';
 function themeEarly() {   // (before the films arrive: the page already laid out as this month's theme)
   if (VIEW() !== 'themes') return; var R = document.documentElement, t = themeFor(new Date().getMonth());
   R.classList.add(t.key === 'table' ? 'table' : 'hall'); if (MOB()) R.classList.add('mob'); R.dataset.theme = t.key;
@@ -1331,6 +1335,9 @@ function themeEarly() {   // (before the films arrive: the page already laid out
 // themes saved for a later month, for when their film is in Grifflix (John, 8 Nov 2026: "put new themes in for films I do
 // have and save the ones I don't for later months"); ?theme=<key> still shows one
 var THEMES_LATER = [
+  // Jaws (parked, reworked: no shark, the 1975 poster's own composition): the pale surface above, the day's film at it as
+  // the swimmer, the days to come sinking into the darkening sea below; the poster's red for the day (Archivo Black)
+  { key: 'jaws', mob: [0, 0, 1280, 720], name: 'The Deep', film: 'Jaws', year: 1975, by: 'Spielberg', bg: '#5a9fae', ink: '#000', font: '"Archivo Black", sans-serif', tw: 400 },
   // Alphaville (parked for a later month, reworked): the film's own black and white; white neon (Tilt Neon) for the title,
   // the Alpha 60's lists in mono (Space Mono), an arrow and a negative flip for the day you're on, its E = mc² and E = hν signs
   { key: 'credits', mob: [40, 90, 1240, 620], name: 'Alpha 60', film: 'Alphaville', year: 1965, by: 'Godard', bg: '#0b0b0c', ink: '#fff', font: '"Tilt Neon", sans-serif', tw: 400 },
@@ -1764,7 +1771,7 @@ function drawTheme(t, C, n, m, mine) {
   themeStart(fx, c);
 }
 document.addEventListener('click', function (e) {
-  var mid = e.target.closest && e.target.closest('#cal .jawspic, #cal .bigmoon, #cal .mfilm, #cal .globe, #cal .codepic, #cal .reelscreen, #cal .cposter, #cal .tcentre h2');
+  var mid = e.target.closest && e.target.closest('#cal .bigmoon, #cal .mfilm, #cal .globe, #cal .codepic, #cal .reelscreen, #cal .cposter, #cal .tcentre h2');
   var f = mid && $('#cal .front'); if (f && f.dataset.day && S.calData && S.calData.days[f.dataset.day] && !S.calData.days[f.dataset.day].secret) daySheet(f.dataset.day);
 });
 function themeEls() { return $$('#cal .vday, #cal .hday, #cal .tday'); }
@@ -2064,27 +2071,47 @@ THEMEFX.oz = {
     });
   }
 };
-// September: the barrels (Jaws): the month's days as Amity's yellow barrels bobbing along the surface; the one you're on, its film rising beneath it from the deep, as the shark on the poster
+// Jaws (parked): the poster: the surface above, the day's film at it; the days to come sinking into the deep below
 THEMEFX.jaws = {
-  g: function (c) { return c.mob ? { sy: 230, fx: 390, gap: 150, pw: 200, ph: 300, py: 200, top: 0, kw: 420, ky: 500 } : { sy: 210, fx: c.W * .56, gap: 170, pw: 180, ph: 270, py: 175, top: 104, kw: 320, ky: 420 }; },
+  g: function (c) { return c.mob ? { sy: 260, fx: 390, top: 0 } : { sy: 230, fx: c.W * .68, top: 104 }; },
   decor: function (c) {
-    var g = this.g(c), w = '';
-    for (var x = 0; x <= c.W + 40; x += 40) w += (x ? ' Q' + (x - 20) + ',' + (g.sy - 9) + ' ' : 'M') + x + ',' + g.sy;
-    return '<svg class="jawsea" viewBox="0 0 ' + c.W + ' ' + c.H + '" preserveAspectRatio="none"><rect x="0" y="' + g.top + '" width="' + c.W + '" height="' + (g.sy - g.top) + '" fill="#f4f1ec"/><path d="' + w + ' L' + c.W + ',' + g.top + ' L0,' + g.top + ' Z" fill="#f4f1ec"/><path d="' + w + '" fill="none" stroke="#fff" stroke-width="3" opacity=".8"/></svg>' +
-      '<div class="jawspic" id="jawspic" style="left:' + (g.fx - g.pw / 2).toFixed(0) + 'px;top:' + (g.sy + g.py - g.ph / 2).toFixed(0) + 'px;width:' + g.pw + 'px;height:' + g.ph + 'px"></div>' +
-      '<svg class="jawsfin" viewBox="0 0 120 100" style="left:' + (g.fx - 60).toFixed(0) + 'px;top:' + (g.sy - 92) + 'px"><path d="M2,100 C24,72 50,28 104,2 C90,30 84,66 112,100 Z" fill="#2b3640"/><path d="M2,100 C24,72 50,28 104,2 C62,30 40,66 30,100 Z" fill="#3d4a55"/></svg>';   // (the fin, circling, as in the film)
-  },
-  cell: function (d) { return '<i class="barrel"></i><b class="bn">' + d + '</b>'; },
-  swipe: function (c) { return { x: -1, y: 0, px: c.mob ? 50 : 80 }; },
-  place: function (all, at, c) {
     var g = this.g(c);
-    all.forEach(function (el, j) {
-      var k = j - at, nf = near(k), x = g.fx + k * g.gap * (Math.abs(k) < 1 ? 1 : 1) - (k > 0 ? 0 : 0);
-      vAt(el, g.fx + k * g.gap, g.sy - 14 - 10 * nf, .8 + .5 * nf, Math.sin(j * 1.7) * 10 * (1 - nf), Math.abs(k) > 7 ? 0 : 1, nf > .5 ? 5 : 1);
-    });
+    return '<div class="jsurf" style="top:' + g.top + 'px;height:' + (g.sy - g.top) + 'px"></div><div class="jdeep" style="top:' + g.sy + 'px"></div>';
   },
-  front: function (b, c, quiet) {
-    var p = $('#jawspic'), k = null; if (p && b) { p.style.backgroundImage = b.style.getPropertyValue('--p'); [p, k].forEach(function (x) { if (!x) return; x.classList.remove('rise'); if (!quiet) { void x.getBoundingClientRect(); x.classList.add('rise'); } }); }
+  swipe: function (c) { return { x: 0, y: -1, px: c.mob ? 50 : 70 }; },
+  place: function (all, at, c) {
+    var g = this.g(c), ph = c.mob ? 330 : 260;
+    all.forEach(function (el, j) {
+      var k = j - at, nf = near(k), y, s, o = 1, br;
+      if (k >= 0) { y = g.sy + ph * .32 + k * (c.mob ? 150 : 120) * Math.pow(.88, k); s = Math.pow(.72, k); br = Math.max(.25, 1 - .16 * k); }
+      else { y = g.sy + ph * .32 + k * 160; s = 1 + .2 * -k; o = Math.max(0, 1 + k); br = 1; }
+      vAt(el, g.fx + Math.sin(j * 1.3) * 40 * (1 - nf), y, s * (c.mob ? 1.3 : 1), 0, k > 6 ? 0 : o, 100 - Math.round(k * 10));
+      el.style.filter = nf > .98 ? 'none' : 'brightness(' + br.toFixed(2) + ') saturate(' + (.5 + .5 * br).toFixed(2) + ')';
+    });
+  }
+};
+// September: the Grid (TRON): the floor in perspective, the days as glowing frames along a light cycle's wall winding into
+// the distance; the days to come Flynn's cyan, those gone Sark's orange
+THEMEFX.tron = {
+  g: function (c) { return c.mob ? { hy: 120, vx: 390, fy: 840, k: .32, wig: 230, fw: 250 } : { hy: 150, vx: c.W * .70, fy: c.H - 120, k: .32, wig: 260, fw: 200 }; },
+  at: function (g, u) { var s = 1 / (1 + g.k * u); return { s: s, x: g.vx + Math.sin(u * .7) * g.wig * s, y: g.hy + (g.fy - g.hy) * s }; },
+  decor: function (c) {
+    var g = this.g(c), L = '';
+    for (var u = 0; u < 40; u += .8) { var p = this.at(g, u); L += '<line x1="0" y1="' + p.y.toFixed(1) + '" x2="' + c.W + '" y2="' + p.y.toFixed(1) + '"/>'; }
+    for (var x = -12; x <= 12; x++) L += '<line x1="' + (g.vx + x * 160).toFixed(0) + '" y1="' + c.H + '" x2="' + g.vx.toFixed(0) + '" y2="' + g.hy + '"/>';
+    return '<svg class="tgrid" viewBox="0 0 ' + c.W + ' ' + c.H + '" preserveAspectRatio="none"><rect x="0" y="' + g.hy + '" width="' + c.W + '" height="' + (c.H - g.hy) + '" fill="#06142b"/>' + L +
+      '<polyline id="tpast" class="twall past" points=""/><polyline id="tnext" class="twall" points=""/></svg>';
+  },
+  swipe: function (c) { return { x: 0, y: 1, px: c.mob ? 50 : 70 }; },   // (pull the Grid towards you)
+  place: function (all, at, c) {
+    var g = this.g(c), me = this, next = [], past = [];
+    all.forEach(function (el, j) {
+      var k = j - at, nf = near(k), u = k >= 0 ? k * 1.6 : k * .9, p = me.at(g, Math.max(u, -.8));
+      vAt(el, p.x, p.y - g.fw * 1.5 / 2 * p.s * (.55 + .45 * nf), p.s * (.5 + .5 * nf), 0, k < -1 || k > 14 ? 0 : (k < 0 ? Math.max(0, 1 + k * 1.4) : 1), 200 - Math.round(u * 10));
+      el.classList.toggle('gone', k < -.5);
+      (k >= -.01 ? next : past).push(p.x.toFixed(1) + ',' + p.y.toFixed(1));
+    });
+    var pn = $('#tnext'), pp = $('#tpast'); if (pn) pn.setAttribute('points', next.join(' ')); if (pp) pp.setAttribute('points', past.concat(next.slice(0, 1)).join(' '));
   }
 };
 // December: the snow globe (Citizen Kane): the days hung as baubles; the one you're on inside the globe, which shakes and snows
