@@ -707,7 +707,8 @@ def make_handler(g):
             arranged = self.arrange()
             extra = LIST_FIELDS + ',People,Taglines,RemoteTrailers'
             ep_fields = 'Overview,RunTimeTicks,ImageTags,ParentBackdropImageTags,SeriesPrimaryImageTag,DateCreated,PremiereDate,ProductionYear'
-            quick = 'Etag,ChildCount,RecursiveItemCount'
+            quick = 'Etag,ChildCount,RecursiveItemCount,Path'
+            making = lambda i: '.grifflix-converting.' in (i.get('Path') or '')   # (a film being converted: not until it's ready)
             libs = g.st.get('libraries', {})
             old = {} if q.get('full') == '1' else (load(EXPORT_CACHE, {}).get('items') or {})
             kept, count = {}, {'new': 0, 'changed': 0, 'read': 0}
@@ -739,7 +740,7 @@ def make_handler(g):
                 return out
             for key, types in (('movies', 'Movie'), ('tv', 'Series')):
                 if libs.get(key):
-                    raw = shown(g.items(ParentId=libs[key], Recursive='true', IncludeItemTypes=types, SortBy='SortName', Fields=quick).get('Items', []))
+                    raw = [i for i in shown(g.items(ParentId=libs[key], Recursive='true', IncludeItemTypes=types, SortBy='SortName', Fields=quick).get('Items', [])) if not making(i)]
                     for o in resolve(raw, extra):
                         items[o['id']] = o
                     lists[key] = [i['Id'] for i in raw if i['Id'] in items]
@@ -748,7 +749,7 @@ def make_handler(g):
                 items[o['id']] = o
             inside, members = set(), {}
             for c in sets:
-                kids = g.items(ParentId=c['Id'], SortBy='ProductionYear,SortName', Fields=quick).get('Items', [])
+                kids = [k for k in g.items(ParentId=c['Id'], SortBy='ProductionYear,SortName', Fields=quick).get('Items', []) if not making(k)]
                 for o in resolve([k for k in kids if k['Id'] not in items], extra):
                     items[o['id']] = o
                 members[c['Id']] = [k['Id'] for k in kids if k['Id'] in items]
@@ -756,7 +757,7 @@ def make_handler(g):
             lists['collections'] = [c['Id'] for c in sets if c['Id'] not in inside]
             series = {}
             if libs.get('tv'):
-                eps = [x for x in g.items(ParentId=libs['tv'], Recursive='true', IncludeItemTypes='Episode', SortBy='SortName', Fields=quick).get('Items', []) if x.get('SeriesId')]
+                eps = [x for x in g.items(ParentId=libs['tv'], Recursive='true', IncludeItemTypes='Episode', SortBy='SortName', Fields=quick).get('Items', []) if x.get('SeriesId') and not making(x)]
                 ses = [x for x in g.items(ParentId=libs['tv'], Recursive='true', IncludeItemTypes='Season', Fields=quick).get('Items', []) if x.get('SeriesId')]
                 sid = {x['Id']: x['SeriesId'] for x in eps + ses}   # (an episode Jellyfin hasn't put in a series: not shown)
                 for o in resolve(ses, 'Overview,ImageTags', slim=True):
