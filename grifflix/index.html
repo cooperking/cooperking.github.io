@@ -688,7 +688,7 @@ html.mob .th-autumn .vday { width: 300px; height: 450px; }
 html.mob .tlight { top: 70px; width: 640px; height: 170px; }
 html.mob .tring { top: 520px; width: 720px; height: 380px; }
 html.mob .tday { width: 70px; height: 95px; margin: -47px 0 0 -35px; line-height: 95px; font-size: 14px; }
-html.mob .tcentre { top: 420px; }
+html.mob .tcentre { top: 300px; }
 html.mob .tcentre h2 { font-size: 56px; max-width: 520px; }
 html.mob .tcentre .k { font-size: 20px; } html.mob .tcentre .y { font-size: 28px; }
 html.mob .th-globe .vday { width: 44px; height: 44px; }
@@ -716,6 +716,19 @@ html.mob .triallabel { top: 4px; bottom: auto; font-size: 9px; padding: 3px 8px;
 html.table #main.homeview .side { display: none; }
 html.mob.table .cal { position: fixed !important; inset: 0; height: 100% !important; width: 100%; overflow: hidden; }
 html.mob .triallabel { white-space: nowrap; }
+
+/* the calendar page beside the day's name */
+.hinfo .w { display: flex; align-items: center; gap: .22em; }
+.leaf2 { flex: none; display: inline-flex; flex-direction: column; width: .95em; height: 1.02em; border: max(2px, .025em) solid rgb(var(--kink)); font-style: normal; text-transform: uppercase; letter-spacing: 0; overflow: hidden; }
+.leaf2 i { display: block; padding: .05em 0 .04em; background: rgb(var(--kink)); color: var(--bg); font: 700 .17em/1 var(--kfont); letter-spacing: .14em; text-align: center; font-style: normal; }
+.leaf2, .leaf2 * { -webkit-text-stroke: 0; }
+.leaf2 b { flex: 1; display: grid; place-items: center; font: 700 .52em/1 var(--kfont); color: rgb(var(--kink)); }
+.tcentre .leaf2 { margin: 0 auto 12px; font-size: 64px; }
+html.mob .tcentre .leaf2 { font-size: 72px; }
+/* the calendar pop-up on a phone: square days, as the songs' calendar, in the month's theme */
+html.mob .tcgrid { flex: none; grid-auto-rows: auto; }
+html.mob .tcd { aspect-ratio: 1 / 1; }
+html.mob .tcd img { object-position: 50% 15%; }
 /* the TV calendar to try (?tvhero=1): the day you're on large on the left, over its picture; the month beside it */
 html.tvhero #main.homeview { grid-template-columns: minmax(0, 40%) minmax(0, 1fr); column-gap: 36px; align-items: start; }
 html.tvhero #main.homeview #tvfeat { grid-column: 1; grid-row: 1 / span 3; align-self: stretch; }
@@ -1436,11 +1449,12 @@ function drawHall(C, n, m, mine) {
   themeStart(THEMEFX.corridor, { W: W, H: H, n: n, m: m, mob: MOB(), q: q });
 }
 function hallTurn(b) { themeTurn(b); }
+function leafOf(d) { return '<span class="leaf2" aria-hidden="true"><i>' + MONTHS[d.getMonth()].slice(0, 3) + '</i><b>' + d.getDate() + '</b></span>'; }   // (a page off a calendar: plainly a day of it, John: "It needs to be obvious that it's a calendar day view on every theme")
 function hallInfo(b) {   // the day you're on, in words: its day large (as The Shining's title cards), the film, its year
   var c = $('#hinfo'); if (!c) return;
   if (!b) { c.innerHTML = '<div class="w">' + (S.calData.mine ? 'Empty' : 'Nothing yet') + '</div>'; return; }
   var it = S.calData.days[b.dataset.day], d = new Date(b.dataset.day + 'T12:00'), note = (S.calData.notes || {})[b.dataset.day];
-  var top = '<div class="w">' + DOWL[d.getDay()] + '</div><div class="k">' + d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear() + (S.calData.id === 'motd' ? ' · Movie of the Day' : '') + '</div>';
+  var top = '<div class="w">' + leafOf(d) + '<span>' + DOWL[d.getDay()] + '</span></div><div class="k">' + d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear() + (S.calData.id === 'motd' ? ' · Movie of the Day' : '') + '</div>';
   if (!it || it.secret) { c.innerHTML = top + '<h2>' + (it ? 'A surprise' : 'No film yet') + '</h2><div class="y">' + (it ? 'Revealed at 8am on the day' : S.calData.mine ? 'OK to choose one' : '') + '</div>'; return; }
   c.innerHTML = top + '<h2>' + esc(showName(it)) + '</h2><div class="y">' + [it.year, it.mins ? it.mins + ' minutes' : ''].filter(Boolean).join(' · ') + '</div>' + (note ? '<div class="n">“' + esc(note) + '”</div>' : '');
 }
@@ -1475,7 +1489,10 @@ function themeFit(m) {   // a phone: the theme drawn for an upright screen 780 w
 (function () {
   var G = null, moved = false, fling = 0;
   var on = function (e) { return VIEW() === 'themes' && MOB() && S.view === 'home' && !dlg.open && S.theme && e.target.closest && e.target.closest('#cal') && !e.target.closest('.mobnav, .tinspo'); };
-  var dirOf = function () { var sw = (S.theme.fx.swipe || function () { return { x: -1, y: 0 }; })(S.theme.c), l = Math.hypot(sw.x, sw.y) || 1; return { x: sw.x / l, y: sw.y / l, px: sw.px || 64 }; };
+  var dirOf = function () {   // (up and down only, in every theme: John, 8 Nov 2026: "make it do both on the vertical only")
+    var sw = (S.theme.fx.swipe || function () { return { x: -1, y: 0 }; })(S.theme.c);
+    return { x: 0, y: -1, px: Math.max(34, sw.px || 64) };
+  };
   var len = function () { return themeEls().length; };
   function go(at) {   // the theme at a place between days (into the next or last month at the ends)
     var n = len();
@@ -1665,7 +1682,7 @@ THEMEFX.table = {
     var it = b && S.calData.days[b.dataset.day];
     if (!it || it.secret) { c.innerHTML = b ? '<div class="k">' + esc(longDate(b.dataset.day)) + '</div><h2>' + (it ? 'A surprise' : 'No film') + '</h2>' : ''; return; }
     var d = new Date(b.dataset.day + 'T12:00'), note = (S.calData.notes || {})[b.dataset.day];
-    c.innerHTML = '<div class="k">' + DOWL[d.getDay()] + ' · ' + d.getDate() + ' ' + MONTHS[d.getMonth()] + '</div><h2>' + esc(showName(it)) + '</h2><div class="y">' + [it.year, it.mins ? it.mins + ' minutes' : ''].filter(Boolean).join(' · ') + '</div>' + (note ? '<div class="n">“' + esc(note) + '”</div>' : '');
+    c.innerHTML = leafOf(d) + '<div class="k">' + DOWL[d.getDay()] + ' · ' + d.getDate() + ' ' + MONTHS[d.getMonth()] + '</div><h2>' + esc(showName(it)) + '</h2><div class="y">' + [it.year, it.mins ? it.mins + ' minutes' : ''].filter(Boolean).join(' · ') + '</div>' + (note ? '<div class="n">“' + esc(note) + '”</div>' : '');
   }
 };
 // February: the reel (Sherlock Jr.): the days as frames along a strip of film; on a phone the strip runs down the screen
