@@ -165,7 +165,7 @@ img { display: block; }
 .card.coll .ccov { background: var(--bg); color: rgb(var(--kink, 255, 255, 255)); border: 1.5px solid rgba(var(--kink, 255, 255, 255), .5); border-radius: 2px; container-type: inline-size; box-shadow: 0 10px 24px rgba(0, 0, 0, .28); }
 .card.coll .ca { position: absolute; inset: 0; width: 100%; height: 100%; fill: currentColor; stroke: currentColor; }
 .card.coll .ca * { stroke: none; }
-.card.coll .ca line, .card.coll .ca [fill=none] { stroke: currentColor; }
+.card.coll .ca line, .card.coll .ca polyline, .card.coll .ca [fill=none] { stroke: currentColor; }
 .card.coll .ca .ca-bg { fill: var(--bg); }
 .card.coll .ca .ca-l { font-family: var(--tfont, "GFutura", "Futura", sans-serif); font-weight: var(--tw, 700); font-style: var(--tfs, normal); }
 .card.coll .cc { position: absolute; inset: auto 0 0; height: 35%; padding: 0 7cqw 8cqw; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; text-align: center; }
@@ -2226,20 +2226,20 @@ function collCard(c) {   // a collection's cover, drawn rather than a picture: a
   if (mm) { k = mm[1]; nm = mm[2]; }
   var h = 0; for (var i = 0; i < (c.id || nm).length; i++) h = (h * 31 + (c.id || nm).charCodeAt(i)) >>> 0;
   var long = nm.length > 26 ? ' xl' : (nm.length > 13 ? ' l' : ''), n = c.children ? c.children + (c.children === 1 ? ' title' : ' titles') : 'Collection';
-  return '<a class="card coll" href="#collection/' + c.id + '" aria-label="' + esc(c.name + ', ' + n) + '"><div class="pic ccov">' + collArt(h, nm) +
+  return '<a class="card coll" href="#collection/' + c.id + '" aria-label="' + esc(c.name + ', ' + n) + '"><div class="pic ccov" data-cn="' + esc(c.name) + '" data-nm="' + esc(nm) + '" data-ch="' + h + '">' + collArt(h, nm, c.name) +
     '<div class="cc">' + (k ? '<small>' + esc(k) + '</small>' : '') + '<b class="' + long + '">' + esc(nm) + '</b><i></i><span>' + n + '</span></div></div></a>';
 }
-function collArt(h, nm) {   // the graphic: one of eight, turned and placed by the collection's own number (the same each time)
-  var r = function (n) { h = (h * 1103515245 + 12345) >>> 0; return (h >>> 8) % n; }, kind = r(8), g = '', i, a = r(360);
-  var L = function (x1, y1, x2, y2, w, o) { return '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke-width="' + (w || 2) + '"' + (o ? ' opacity="' + o + '"' : '') + '/>'; };
-  if (kind === 0) { var cx = 60 + r(80), cy = 70 + r(50), st = 10 + r(8); for (i = 9; i >= 1; i--) g += '<circle cx="' + cx + '" cy="' + cy + '" r="' + i * st + '" fill="none" stroke-width="' + (i % 2 ? st / 2 : 2) + '"/>'; }   // rings
-  else if (kind === 1) { g += '<g transform="rotate(' + (a % 2 ? 32 : -32) + ' 100 92)">'; for (i = -8; i < 9; i++) g += '<rect x="' + (100 + i * 22) + '" y="-80" width="' + (i % 3 ? 9 : 16) + '" height="360"/>'; g += '</g>'; }   // bars
-  else if (kind === 2) g += '<text x="' + (88 + r(30)) + '" y="190" text-anchor="middle" font-size="230" class="ca-l">' + esc(nm.replace(/^(the|a)\s+/i, '').charAt(0).toUpperCase()) + '</text>';   // the initial, huge
-  else if (kind === 3) { var lit = a % 12; for (i = 0; i < 12; i++) { var x = 22 + (i % 3) * 54, y = 18 + Math.floor(i / 3) * 42; g += '<rect x="' + x + '" y="' + y + '" width="46" height="34"' + (i === lit || i === (lit + 5) % 12 ? '' : ' fill="none" stroke-width="2"') + '/>'; } }   // frames, one lit
-  else if (kind === 4) { g += '<circle cx="' + (60 + r(80)) + '" cy="176" r="' + (60 + r(40)) + '"/>'; for (i = 0; i < 7; i++) g += '<rect x="0" y="' + (112 + i * 10 + i * i) + '" width="200" height="' + (2 + i) + '" class="ca-bg"/>'; }   // a sun going down
-  else if (kind === 5) { var vx = 50 + r(100); for (i = 0; i <= 10; i++) g += L(vx, 70, i * 20, 190, 1.5); for (i = 0; i < 6; i++) g += L(0, 190 - i * i * 3.4, 200, 190 - i * i * 3.4, 1.5); }   // a road to the horizon
-  else if (kind === 6) { for (i = 0; i < 9; i++) for (var j = 0; j < 7; j++) g += '<circle cx="' + (16 + j * 28) + '" cy="' + (16 + i * 21) + '" r="' + Math.max(.8, (Math.sin((i + j + a) / 2.2) + 1) * 5.4) + '"/>'; }   // halftone
-  else { g += '<g transform="rotate(' + (a % 4) * 90 + ' 100 92)">'; for (i = 0; i < 6; i++) g += '<rect x="' + (14 + i * 29) + '" y="' + (160 - i * 26) + '" width="30" height="' + (40 + i * 26) + '"/>'; g += '</g>'; }   // steps
+// (the drawn covers, window.GCOLLART: /grifflix/collection-art.js, fetched after the page is up; till then each its initial)
+function collArtLoad() {
+  if (collArtLoad.p) return; collArtLoad.p = 1;
+  var sc = document.createElement('script'); sc.src = '/grifflix/collection-art.js?v=1e88656843'; sc.async = true;
+  sc.onload = function () { $$('.ccov[data-cn]').forEach(function (el) { var svg = el.querySelector('svg.ca'); if (svg) svg.outerHTML = collArt(+el.dataset.ch, el.dataset.nm, el.dataset.cn); }); };
+  document.head.appendChild(sc);
+}
+function collArt(h, nm, full) {
+  collArtLoad();   // the graphic: an image from a film in the collection (COLLICONS, by its name); a new one
+  // without its own yet, its initial, huge (John, 8 Nov 2026: "these pictures aren't actually relevant to the collection")
+  var A = window.GCOLLART || {}, o = A[full] || A[nm], g = o ? o.svg : '<text x="100" y="186" text-anchor="middle" font-size="230" class="ca-l">' + esc(nm.replace(/^(the|a)\s+/i, '').charAt(0).toUpperCase()) + '</text>';
   return '<svg class="ca" viewBox="0 0 200 300" preserveAspectRatio="xMidYMin slice" aria-hidden="true"><defs><clipPath id="cc' + h + '"><rect width="200" height="196"/></clipPath></defs><g clip-path="url(#cc' + h + ')">' + g + '</g></svg>';
 }
 function collectionView(id, into) {
