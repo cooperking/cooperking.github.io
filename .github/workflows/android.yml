@@ -76,8 +76,12 @@ jobs:
           python3 - <<'PY'
           import json, os
           fps = [os.environ['FP']] + [l.strip().upper() for l in open('_sotd/android-app/play-fingerprints.txt') if l.strip() and not l.startswith('#')]
-          links = [{"relation": ["delegate_permission/common.handle_all_urls"],
-                    "target": {"namespace": "android_app", "package_name": "io.github.cooperking.sotd", "sha256_cert_fingerprints": fps}}]
+          try:   # (other apps' lines, Grifflix's, stay as they are)
+              links = [x for x in json.load(open('.well-known/assetlinks.json')) if x.get('target', {}).get('package_name') != 'io.github.cooperking.sotd']
+          except Exception:
+              links = []
+          links.insert(0, {"relation": ["delegate_permission/common.handle_all_urls"],
+                           "target": {"namespace": "android_app", "package_name": "io.github.cooperking.sotd", "sha256_cert_fingerprints": fps}})
           os.makedirs('.well-known', exist_ok=True)
           open('.well-known/assetlinks.json', 'w').write(json.dumps(links, indent=2) + '\n')
           PY
