@@ -660,47 +660,47 @@ html.tv #bsin .tabs .pill { min-height: 56px; font-size: 16px !important; paddin
 .film .tags .pill, .film .chips .pill { border-radius: 0 !important; }
 .film .cred, .film .credits { font: 400 14px/1.6 var(--kfont) !important; color: var(--fg-2) !important; max-width: 70ch; }
 .film .close { position: fixed !important; top: 22px; right: 22px; z-index: 6; background: var(--bg) !important; }
-html:not(.mob) .film { display: grid; grid-template-columns: minmax(220px, 30vw) minmax(0, 1fr); gap: clamp(32px, 4vw, 72px); align-items: center; padding: 96px clamp(40px, 6vw, 110px) 60px; box-sizing: border-box; }
-html:not(.mob) .film .heroimg { display: none !important; }
-html:not(.mob) .film:not(.hasposter) .heroimg { display: block !important; position: relative !important; inset: auto !important; height: auto !important; aspect-ratio: 16 / 9 !important; width: 100% !important; border: 1px solid rgba(var(--kink), .25); }
-html:not(.mob) .film:not(.hasposter) { grid-template-columns: minmax(300px, 42vw) minmax(0, 1fr); }
-html:not(.mob) .film .ipost img { display: block; width: 100%; height: auto; max-height: calc(100vh - 170px); object-fit: contain; object-position: center; box-shadow: 0 24px 60px rgba(0, 0, 0, .35); }
-html:not(.mob) .film .in { padding: 0 !important; min-height: 0 !important; display: block !important; }
+html:not(.phone) .film { display: grid; grid-template-columns: minmax(220px, 30vw) minmax(0, 1fr); gap: clamp(32px, 4vw, 72px); align-items: center; padding: 96px clamp(40px, 6vw, 110px) 60px; box-sizing: border-box; }
+html:not(.phone) .film .heroimg { display: none !important; }
+html:not(.phone) .film:not(.hasposter) .heroimg { display: block !important; position: relative !important; inset: auto !important; height: auto !important; aspect-ratio: 16 / 9 !important; width: 100% !important; border: 1px solid rgba(var(--kink), .25); }
+html:not(.phone) .film:not(.hasposter) { grid-template-columns: minmax(300px, 42vw) minmax(0, 1fr); }
+html:not(.phone) .film .ipost img { display: block; width: 100%; height: auto; max-height: calc(100vh - 170px); object-fit: contain; object-position: center; box-shadow: 0 24px 60px rgba(0, 0, 0, .35); }
+html:not(.phone) .film .in { padding: 0 !important; min-height: 0 !important; display: block !important; }
 html.tv .film .ov { font-size: var(--ovfs, 21px) !important; max-width: none !important; display: block !important; -webkit-line-clamp: unset !important; overflow: visible !important; }   /* (all of it, made smaller to fit: tvFit) */
 html.tv .film .tag { font-size: 24px !important; }
 html.tv .film .meta { font-size: 17px !important; }
-html.mob .film .ipost { display: none; }
+html.phone .film .ipost { display: none; }
 .film .heroimg .close, .film .noimg-top .close { display: none !important; }   /* (the page's own close, above, instead) */
 .film .date { gap: 10px !important; }
 .film .date .dnav { flex: none; }
 .film .pill { border-radius: 0 !important; }
-html.mob .film .heroimg { margin-top: calc(env(safe-area-inset-top) + 54px); aspect-ratio: 16 / 9 !important; width: 100%; height: auto; }
-html.mob .film .heroimg img { width: 100%; height: 100%; object-fit: cover; }
-html.mob .film .in { padding: 18px 20px 48px !important; }
-html.mob .film h2 { font-size: 40px !important; }
-html.mob .film .ov { font-size: 17px !important; }
-html.mob .film .noimg-top { height: calc(env(safe-area-inset-top) + 54px); }
+html.phone .film .heroimg { margin-top: calc(env(safe-area-inset-top) + 54px); aspect-ratio: 16 / 9 !important; width: 100%; height: auto; }
+html.phone .film .heroimg img { width: 100%; height: 100%; object-fit: cover; }
+html.phone .film .in { padding: 18px 20px 48px !important; }
+html.phone .film h2 { font-size: 40px !important; }
+html.phone .film .ov { font-size: 17px !important; }
+html.phone .film .noimg-top { height: calc(env(safe-area-inset-top) + 54px); }
 /* a phone: the close in reach over the strip at the top, the buttons straight under the name, all a size for a phone (John, 8 Nov 2026: "Mobile view of days is really wrong") */
-html.mob .film > .close { z-index: 82 !important; top: calc(env(safe-area-inset-top) + 8px) !important; right: 12px !important; width: 40px; height: 40px; }
-html.mob .film .date { font-size: 11px !important; letter-spacing: .2em !important; }
-html.mob .film .date .dnav { width: 34px; height: 34px; min-height: 34px; }
-html.mob .film h2 { font-size: clamp(30px, 10vw, 40px) !important; line-height: 1.05 !important; margin: 8px 0 10px !important; }
-html.mob .film #isbody { display: flex; flex-direction: column; }
-html.mob .film #isbody > * { order: 3; }
-html.mob .film #isbody > .meta { order: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: 12px !important; letter-spacing: .14em !important; }
-html.mob .film #isbody > .meta > span:not(.c) { opacity: .45; }
-html.mob .film #isbody > .meta .c { padding: 2px 6px; font-size: 11px; }
-html.mob .film #isbody > .acts { order: 1; display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0 6px !important; }
-html.mob .film #isbody > .acts .pill { min-height: 46px; padding: 0 16px; font-size: 12px !important; letter-spacing: .16em !important; }
-html.mob .film #isbody > .acts .pill.go { flex: 1 1 100%; justify-content: center; }
-html.mob .film #isbody > .acts .ico { width: 46px; height: 46px; }
-html.mob .film #isbody > .acts { gap: 8px; }
-html.mob .film #isbody > .acts .pill:not(.go) { min-height: 38px; padding: 0 11px; font-size: 10.5px !important; letter-spacing: .12em !important; }
-html.mob .film #isbody > .acts .ico { width: 38px; height: 38px; min-height: 38px; }
-html.mob .film #isbody > .acts .ico svg { width: 18px; height: 18px; }
-html.mob .film #isbody > .tag, html.mob .film #isbody > .ov, html.mob .film #isbody > .note, html.mob .film #isbody > .chips, html.mob .film #isbody > .people { order: 2; }
-html.mob .film .tag { font-size: 19px !important; margin: 14px 0 6px !important; }
-html.mob .film .ov { font-size: 16px !important; line-height: 1.55 !important; }
+html.phone .film > .close { z-index: 82 !important; top: calc(env(safe-area-inset-top) + 8px) !important; right: 12px !important; width: 40px; height: 40px; }
+html.phone .film .date { font-size: 11px !important; letter-spacing: .2em !important; }
+html.phone .film .date .dnav { width: 34px; height: 34px; min-height: 34px; }
+html.phone .film h2 { font-size: clamp(30px, 10vw, 40px) !important; line-height: 1.05 !important; margin: 8px 0 10px !important; }
+html.phone .film #isbody { display: flex; flex-direction: column; }
+html.phone .film #isbody > * { order: 3; }
+html.phone .film #isbody > .meta { order: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: 12px !important; letter-spacing: .14em !important; }
+html.phone .film #isbody > .meta > span:not(.c) { opacity: .45; }
+html.phone .film #isbody > .meta .c { padding: 2px 6px; font-size: 11px; }
+html.phone .film #isbody > .acts { order: 1; display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0 6px !important; }
+html.phone .film #isbody > .acts .pill { min-height: 46px; padding: 0 16px; font-size: 12px !important; letter-spacing: .16em !important; }
+html.phone .film #isbody > .acts .pill.go { flex: 1 1 100%; justify-content: center; }
+html.phone .film #isbody > .acts .ico { width: 46px; height: 46px; }
+html.phone .film #isbody > .acts { gap: 8px; }
+html.phone .film #isbody > .acts .pill:not(.go) { min-height: 38px; padding: 0 11px; font-size: 10.5px !important; letter-spacing: .12em !important; }
+html.phone .film #isbody > .acts .ico { width: 38px; height: 38px; min-height: 38px; }
+html.phone .film #isbody > .acts .ico svg { width: 18px; height: 18px; }
+html.phone .film #isbody > .tag, html.phone .film #isbody > .ov, html.phone .film #isbody > .note, html.phone .film #isbody > .chips, html.phone .film #isbody > .people { order: 2; }
+html.phone .film .tag { font-size: 19px !important; margin: 14px 0 6px !important; }
+html.phone .film .ov { font-size: 16px !important; line-height: 1.55 !important; }
 /* the trailer's own player: YouTube's, the whole screen; the film's name and Close over it at its start, when paused or asked */
 .tplayer { position: fixed; inset: 0; z-index: 200; background: #000; outline: none; }
 .tplayer .tpwrap, .tplayer iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
@@ -1233,6 +1233,7 @@ var HALL = function (m) { return VIEW() === 'themes' && themeFor(m).key !== 'tab
 // part (THEMES' mob: x0, y0, x1, y1), the day's words under it, and buttons for the day before and after
 var MOBQ = function () { return !TV && matchMedia('(max-width: 760px), (orientation: portrait) and (max-width: 1100px)').matches; };
 var MOB = function () { return !TV && matchMedia('(max-width: 760px), (orientation: portrait) and (max-width: 1100px)').matches; };
+(function () { var ph = function () { document.documentElement.classList.toggle('phone', MOB()); }; ph(); addEventListener('resize', ph); })();   // (a phone in any view, the calendar's too: a film's page laid out for it: John, 8 Nov 2026)
 function themeW() { return MOB() ? 780 : (innerWidth || 1280); }
 function themeH() { return MOB() ? 890 : (document.documentElement.clientHeight || innerHeight || 720); }   // (a phone: drawn 780 x 890 for an upright screen, the day's words under it)
 if (TVHERO) document.addEventListener('DOMContentLoaded', function () {   // (so it's clear a trial look is on: this device only, not everyone's)
