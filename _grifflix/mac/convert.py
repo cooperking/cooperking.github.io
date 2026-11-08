@@ -33,6 +33,8 @@ JF = s.get('jellyfin', 'http://127.0.0.1:8096')
 GW = 'http://127.0.0.1:%s' % s.get('port', 8097)
 STATE = os.path.join(HOME, 'convert-state.json')
 LOG = os.path.join(HOME, 'convert.log')
+NOW = os.path.join(HOME, 'convert-now.json')   # what it's doing this minute, for the admin page (through the gateway)
+RUN = {'n': 0, 'total': 0, 'started': int(time.time())}
 MAX_W, MAX_H, MAX_MBPS = 1920, 1080, 20
 CMD = sys.argv[1] if len(sys.argv) > 1 else ''
 # it works only at night, 2am to 8am (John, 8 Nov 2026: "2am until 8am each night unless it's in use"); "go now" ignores
@@ -64,6 +66,16 @@ def log(*a):
     print(line, flush=True)
     with open(LOG, 'a') as f:
         f.write(line + '\n')
+
+
+def now(state, **x):
+    """The admin page's Conversions card: converting (how far), paused (why), waiting for the night, or finished."""
+    try:
+        tmp = NOW + '.tmp'
+        json.dump(dict(RUN, state=state, at=int(time.time()), pid=os.getpid(), **x), open(tmp, 'w'))
+        os.replace(tmp, NOW)
+    except OSError:
+        pass
 
 
 def load_state():
@@ -208,15 +220,23 @@ def convert(item, ffmpeg, ffprobe, st):
     log('converting', item['name'], '(%s, %s min, %s GB)' % (item['why'], item['mins'], item['gb']))
     t0, paused = time.time(), False
     p = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True, preexec_fn=lambda: os.nice(15))
-    err_tail = []
+    err_tail, at = [], [0.0]
     def read_err():
-        for line in p.stderr:
-            err_tail.append(line)
-            del err_tail[:-30]
+        for line in p.stderr:   # (ffmpeg's progress lines: "... time=00:41:07.12 ...")
+            m = re.search(r'time=(\d+):(\d\d):(\d\d(?:\.\d+)?)', line)
+            if m:
+                at[0] = int(m.group(1)) * 3600 + int(m.group(2)) * 60 + float(m.group(3))
+            else:
+                err_tail.append(line)
+                del err_tail[:-30]
     threading.Thread(target=read_err, daemon=True).start()
+    show = lambda why_='': now('paused' if why_ else 'converting', name=item['name'], why=why_ or item['why'], gb=item['gb'], mins=item['mins'],
+                                pct=round(min(99.9, at[0] / dur * 100), 1) if dur else 0, since=int(t0))
+    show()
     try:
         while p.poll() is None:
             time.sleep(20)
+            show(why_ if paused else '')
             why_ = 'someone is watching' if watching() else ('it’s past %d am: on again at %d am' % (NIGHT[1], NIGHT[0]) if not night() else '')
             if why_ and not paused:
                 p.send_signal(signal.SIGSTOP); paused = True; log('  paused: ' + why_)
@@ -345,11 +365,14 @@ ffmpeg, ffprobe = tools()
 if 'libx264' not in subprocess.run([ffmpeg, '-hide_banner', '-encoders'], capture_output=True, text=True).stdout:
     sys.exit('This ffmpeg has no H.264 encoder. Tell Claude.')
 log('starting: %d to convert' % len(items))
+RUN['total'] = len(items)
 follow_up(st)
 for n, it in enumerate(items):
+    RUN['n'] = n
     if not night():
         log('waiting for %d am' % NIGHT[0])
         while not night():
+            now('waiting', why='waiting for %d am' % NIGHT[0])
             time.sleep(60)
     try:
         convert(it, ffmpeg, ffprobe, st)
@@ -359,6 +382,8 @@ for n, it in enumerate(items):
         save_state(st)
     if n % 5 == 4:
         follow_up(st)
+RUN['n'] = len(items)
+now('finished')
 time.sleep(30)
 follow_up(st)
 log('all done')
