@@ -34,7 +34,7 @@ GW = 'http://127.0.0.1:%s' % s.get('port', 8097)
 STATE = os.path.join(HOME, 'convert-state.json')
 LOG = os.path.join(HOME, 'convert.log')
 NOW = os.path.join(HOME, 'convert-now.json')   # what it's doing this minute, for the admin page (through the gateway)
-RUN = {'n': 0, 'total': 0, 'started': int(time.time())}
+RUN = {'n': 0, 'total': 0, 'started': int(time.time()), 'args': sys.argv[1:]}   # (args: so the admin page's Update the Mac starts it again the same way)
 MAX_W, MAX_H, MAX_MBPS = 1920, 1080, 20
 CMD = sys.argv[1] if len(sys.argv) > 1 else ''
 # it works only at night, 2am to 8am (John, 8 Nov 2026: "2am until 8am each night unless it's in use"); "go now" ignores

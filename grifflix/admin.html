@@ -112,6 +112,9 @@
         <div class="kicker">The Mac mini</div>
         <h2 id="machead">Looking…</h2>
         <p class="stat" id="macsay"></p>
+        <p class="stat" id="swsay"></p>
+        <ul class="changes" id="swlist"></ul>
+        <div class="state"><button class="btn" id="swgo" type="button" hidden>Update the Mac</button></div>
       </section>
       <section class="card">
         <div class="kicker">Elsewhere</div>
@@ -377,6 +380,36 @@
   }
   $('#orsee').onclick = function () { var b = this; b.disabled = true; originals().then(function (o) { b.disabled = false; orLine(o); orSheet(o); }).catch(function (e) { b.disabled = false; toast(e.message); }); };
 
+  // ---- the Mac's own Grifflix files (gateway, converter, scripts): up to date with GitHub, or an update waiting
+  function software() {
+    fetch(GW + '/api/software', { headers: { Authorization: 'Bearer ' + TOKEN } }).then(function (r) { if (r.status === 404) throw new Error('old'); if (!r.ok) throw 0; return r.json(); }).then(function (sw) {
+      if (!sw.sha) { $('#swsay').innerHTML = 'Its Grifflix files: <b>Update the Mac</b> brings them up to date from GitHub (and from then on, says when there’s something new).'; $('#swgo').hidden = false; return; }
+      return gh('/compare/' + sw.sha + '...main').then(function (c) {
+        var mac = (c.files || []).some(function (f) { return /^_grifflix\/mac\//.test(f.filename); });
+        var msgs = (c.commits || []).filter(function () { return mac; }).map(function (x) { return x.commit; }).filter(function (x) { return /^Grifflix/.test(x.message); }).slice(-5);
+        $('#swsay').innerHTML = mac ? '<b>An update for the Mac is waiting.</b> Update the Mac brings its Grifflix files up to date (the converter carries on, starting its film again).' : 'Its Grifflix files are up to date (' + esc(sw.sha.slice(0, 7)) + ', ' + esc(when(sw.at * 1000)) + ').';
+        $('#swlist').innerHTML = msgs.map(function (x) { return '<li>' + esc(x.message.split('\n')[0].replace(/^Grifflix[^:]*:\s*/i, '')) + '<span class="when">' + when(x.committer.date) + '</span></li>'; }).join('');
+        $('#swgo').hidden = !mac;
+      });
+    }).catch(function (e) { if (e && e.message === 'old') { $('#swsay').innerHTML = 'To update the Mac from here, it needs this one last Terminal command (from Claude); after that, it’s this button.'; } });
+  }
+  $('#swgo').onclick = function () {
+    var b = this; if (!b.dataset.sure) { b.dataset.sure = 1; b.textContent = 'Tap again to update the Mac'; return; }
+    delete b.dataset.sure; b.disabled = true; b.textContent = 'Updating the Mac…';
+    fetch(GW + '/api/software', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: '{"op":"update"}' })
+      .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || 'The Mac said ' + r.status); return j; }); })
+      .then(function (j) {
+        var said = j.changed.length ? 'Updated: ' + j.changed.join(', ') + (j.converter ? ' (the converter started again)' : '') : 'Nothing new for the Mac';
+        if (!j.restarting) { b.disabled = false; b.textContent = 'Update the Mac'; toast(said); return software(); }
+        b.textContent = 'Restarting the Mac’s gateway…';
+        var tries = 0, wait = function () {   // (back in a few seconds, with the new version)
+          fetch(GW + '/health', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (h) { if (h.sha !== j.sha.slice(0, 7)) throw 0; b.disabled = false; b.textContent = 'Update the Mac'; toast(said); software(); mac(); })
+            .catch(function () { if (++tries < 40) setTimeout(wait, 3000); else { b.disabled = false; b.textContent = 'Update the Mac'; toast('The Mac hasn’t come back yet: look again in a minute.'); } });
+        };
+        setTimeout(wait, 3000);
+      }).catch(function (e) { b.disabled = false; b.textContent = 'Update the Mac'; toast(e.message); });
+  };
+
   // ---- conversions (convert.py on the Mac): the film it's on and how far, and those done
   function convert() {
     if (!GW) return;
@@ -429,7 +462,7 @@
     fetch('/grifflix/config.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (c) {
       var gw = String(c.gateway || '').replace(/\/$/, ''), t0 = Date.now();
       if (!gw) { $('#machead').textContent = 'Not connected'; return; }
-      GW = gw; convert(); originals().then(orLine).catch(function () {});
+      GW = gw; convert(); software(); originals().then(orLine).catch(function () {});
       return fetch(gw + '/api/me', { headers: { Authorization: 'Bearer ' + TOKEN } }).then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (me) {
         var L = me.libraries || {};
         $('#machead').innerHTML = 'Answering <em>(' + (Date.now() - t0) + ' ms)</em>';
