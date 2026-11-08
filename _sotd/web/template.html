@@ -11309,7 +11309,9 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
         IMP.busy = false; b.disabled = false; b.textContent = label;
         if (last && last.pls) { MEMBER.pls = last.pls; uplMark(); uplWaitCount(); if (acct.open) uplDrawAcct(); }
         impForget(); closeDialog(impDlg);
-        toast((made.length ? (made.length === 1 ? '1 imported' : made.length + ' imported') + (done > made.length ? ', ' : '') : '') + (done > made.length ? 'updated from ' + (done - made.length) + (done - made.length === 1 ? ' playlist' : ' playlists') + ': ' + (fresh ? (fresh === 1 ? '1 new song' : fresh + ' new songs') : 'no new songs') : '') + (failed.length ? '. Not done: ' + andList(failed) : ''));
+        var said = (made.length ? (made.length === 1 ? '1 imported' : made.length + ' imported') + (done > made.length ? ', ' : '') : '') + (done > made.length ? 'updated from ' + (done - made.length) + (done - made.length === 1 ? ' playlist' : ' playlists') + ': ' + (fresh ? (fresh === 1 ? '1 new song' : fresh + ' new songs') : 'no new songs') : '') + (failed.length ? '. Not done: ' + andList(failed) : '');
+        spLog('import: ' + said);   // (in John's log too: John, 8 Nov 2026, "too quick for me to copy")
+        if (failed.length) setTimeout(function () { ask({ k: 'Import', h: 'Not all of it was done', t: said, ok: 'OK' }); }, 400); else toast(said);
         var showId = made[0] || (jobs[0] && jobs[0].id);
         if (showId) { if (acct.open) closeDialog(acct); if (UPL.on === showId && last && last.view && last.view.id === showId) uplRefreshViews(showId, last.view); else uplShow(showId); }
         impOffAsk(IMP.offs); IMP.offs = null;

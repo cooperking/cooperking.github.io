@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="/grifflix/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..600&family=Hanken+Grotesk:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..600&family=Hanken+Grotesk:wght@400;500;600&family=Bebas+Neue&display=swap">
 <style>
 :root {
   --bg: #120914;
@@ -184,7 +184,12 @@ dialog::backdrop { background: rgba(10, 4, 12, .62); backdrop-filter: blur(6px);
 .sheet .in { position: relative; z-index: 2; padding: 0 30px 30px; margin-top: -90px; }
 .sheet .noimg-top { height: 70px; }
 .sheet .noimg-top + .in { margin-top: 0; }
-.sheet .date { font: 600 11.5px/1.2 var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.sheet .date { font: 600 11.5px/1.2 var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); display: flex; align-items: center; gap: 6px; min-height: 28px; }
+.sheet .date .dnav { width: 28px; height: 28px; flex: none; margin: 0 -2px; }
+.moods { display: flex; gap: 8px; overflow-x: auto; padding: 2px 0 14px; scrollbar-width: none; } .moods::-webkit-scrollbar { display: none; } .moods .pill { flex: none; } .moods select.pill { margin-left: auto; }
+.shcard { margin: 6px 0 14px; } .shcard img { display: block; width: 100%; border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.35); }
+.shsheet .acts { display: flex; flex-wrap: wrap; gap: 10px; } .shsheet .acts a.pill { text-decoration: none; }
+.sheet .date .dnav svg { width: 16px; height: 16px; }
 .sheet h2 { margin: 6px 0 6px; font: 400 clamp(32px, 5vw, 46px)/1.02 var(--serif); color: var(--fg); letter-spacing: -.015em; }
 .sheet .meta { display: flex; flex-wrap: wrap; gap: 6px 14px; font: 500 12.5px/1.4 var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--fg-2); }
 .sheet .meta .c { padding: 1px 6px; border: 1px solid var(--line); border-radius: 4px; }
@@ -484,49 +489,170 @@ var IN_APP = TV || /GrifflixApp\//.test(navigator.userAgent) || !!(window.Capaci
 if (TV) document.documentElement.classList.add('tv');   // the Song of the Day sign-in: same site, so the same storage
 var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 var DOW = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-var S = { view: 'home', cal: 'motd', calData: null, cals: [], month: null, browse: 'collections', sort: 'year', lists: null };   // (Browse opens on Collections; films and TV newest to oldest: John, 8 Nov 2026)
+var S = { view: 'home', cal: 'motd', calData: null, cals: [], month: null, browse: 'collections', sort: 'year', lists: null, csort: store.get('grifflix-csort') || 'new' };
+// a collection's own sort (John, 8 Nov 2026): newest to oldest first, as Films and TV; a box set by its newest film's year
+var CSORTS = [['new', 'Newest to oldest'], ['old', 'Oldest to newest'], ['name', 'A–Z'], ['rating', 'Rating'], ['added', 'Recently added']];
+function sortItems(items, how) {
+  var key = function (i) { return String(i.name || '').replace(/^(the|a|an)\s+/i, '').toLowerCase(); };
+  var yr = function (i) { return +i.year || +String(i.premiere || '').slice(0, 4) || 0; };
+  var byName = function (a, b) { return key(a).localeCompare(key(b)); };
+  var f = {
+    'new': function (a, b) { return (yr(b) || -1) - (yr(a) || -1) || byName(a, b); },
+    old: function (a, b) { return (yr(a) || 99999) - (yr(b) || 99999) || byName(a, b); },
+    name: byName,
+    rating: function (a, b) { return (+b.rating || 0) - (+a.rating || 0) || byName(a, b); },
+    added: function (a, b) { return String(b.added || '').localeCompare(String(a.added || '')) || byName(a, b); }
+  }[how] || byName;
+  return items.slice().sort(f);
+}   // (Browse opens on Collections; films and TV newest to oldest: John, 8 Nov 2026)
 var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
 var iso = function (d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
 var TODAY = iso(new Date());
 
 function toast(t) { var el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(function () { el.classList.remove('on'); }, 2600); }
 
-/* ------------------------------------------------------------------ talking to the Mac mini */
+/* ------------------------------------------------------------------ Grifflix's own files, and the Mac mini
+   What the page shows comes from the site's own files (grifflix/data/), as the songs' calendar does: John's Update on
+   the admin page makes them from the Mac (John, 8 Nov 2026: "the calendar should not load from the Mac once it's been
+   added ... Only function should be playing and getting an update from the Mac"). Movie of the Day's newest day (from
+   8am) comes from the Worker until the site's file has it. The Mac is asked only for playing, and for each member's own
+   things (where they stopped, My list, their own calendars); if it's asleep, everything else carries on. */
 var PUBLIC = false;   // a visitor (not signed in): Movie of the Day, the films and TV, trailers; no playing
-function api(path, body) {
-  if (DEMO) return Demo.api(path, body);
-  if (PUBLIC) {
-    var name = path.split('?')[0];
-    if (name === 'calendars') return Promise.resolve({ calendars: [{ id: 'motd', name: 'Movie of the Day', ownerName: 'John', mine: false, shared: true, count: 0 }] });
-    if (name === 'calendar') path = 'calendar';
-    if (body || ['home', 'items', 'item', 'search', 'calendar', 'collections', 'collection'].indexOf(name) < 0) { var x = new Error('Sign in to do that.'); x.status = 401; signInSheet(); return Promise.reject(x); }
-    path = 'public/' + path;
-  }
-  if (body && path === 'collections') forgetMemo();
-  return fetch(GW + '/api/' + path, { method: body ? 'POST' : 'GET', headers: Object.assign({ Authorization: 'Bearer ' + TOKEN }, body ? { 'Content-Type': 'application/json' } : {}), body: body ? JSON.stringify(body) : undefined })
-    .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) { var e = new Error(j.error || ('The Mac mini said ' + r.status)); e.status = r.status; throw e; } return j; }); });
+var DATA = '/grifflix/data/', LIB = null, LIBP = null, DAYSP = null, PICTAG = {};
+var SEEN = {};   // films the page has shown, by id (what's kept with a list or calendar day: its name, year, pictures)
+function own(path, body) {   // a member's own things on the Worker: My list, playlists, their own calendars
+  if (body && body.item && !body.snap) { var it = SEEN[body.item] || (LIB && LIB.items[body.item]); if (it) body = Object.assign({ snap: it }, body); }
+  return fetch(WORKER + '/g/' + path, body ? { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : { headers: { Authorization: 'Bearer ' + TOKEN } })
+    .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) { var e = new Error(j.error || 'That didn’t work.'); e.status = r.status; throw e; } picTags(j); return j; }); });
 }
-/* what the page has already shown, kept on this device until Refresh (the bar's button) is pressed (John, 7 Nov 2026:
-   "it should remember films until a refresh - chrome app need a refresh button") */
-var MEMO = {};
-function memoKey(path) { return 'gfx:' + (PUBLIC ? 'p:' : '') + path; }
-function apiMemo(path, draw) {
-  if (DEMO) return api(path).then(function (d) { draw(d); return d; });
-  var hit = MEMO[path];
-  if (!hit) try { hit = JSON.parse(localStorage.getItem(memoKey(path)) || 'null'); } catch (e) { hit = null; }
-  if (hit) { MEMO[path] = hit; draw(hit.d); return Promise.resolve(hit.d); }
-  return api(path).then(function (d) {
-    MEMO[path] = { at: Date.now(), d: d };
-    try { var txt = JSON.stringify(MEMO[path]); if (txt.length < 400e3) localStorage.setItem(memoKey(path), txt); } catch (e) {}
-    draw(d);
-    return d;
+function picTags(j) {   // the picture versions of the films kept with lists and calendar days
+  var one = function (it) { var t = it && it.tags; if (!t) return; if (it.poster && t.poster) PICTAG[it.poster + 'Primary'] = t.poster; if (it.backdrop && t.backdrop) PICTAG[it.backdrop + 'Backdrop'] = t.backdrop; if (it.thumb && t.thumb) PICTAG[it.thumb + 'Thumb'] = t.thumb; };
+  (j.hearts || []).forEach(one); (j.lists || []).forEach(function (l) { (l.items || []).forEach(one); });
+  Object.keys(j.days || {}).forEach(function (d) { one(j.days[d]); });
+}
+function getJSON(u) { return fetch(u, { cache: 'no-cache' }).then(function (r) { if (!r.ok) { var e = new Error('Grifflix’s films aren’t on the site yet: John’s Update puts them there.'); e.status = r.status; throw e; } return r.json(); }); }
+function library() {
+  if (!LIBP) LIBP = getJSON(DATA + 'library.json').then(function (L) {
+    var tag = function (it) { var t = it.tags || {}; if (it.poster && t.poster) PICTAG[it.poster + 'Primary'] = t.poster; if (it.backdrop && t.backdrop) PICTAG[it.backdrop + 'Backdrop'] = t.backdrop; if (it.thumb && t.thumb) PICTAG[it.thumb + 'Thumb'] = t.thumb; };
+    Object.keys(L.items).forEach(function (k) { tag(L.items[k]); });
+    L.tag = tag; LIB = L; return L;
+  }).catch(function (e) { LIBP = null; throw e; });
+  return LIBP;
+}
+function mac(path, body) {   // the Mac mini: playing, and a member's own things
+  if (!GW) return Promise.reject(new Error('The Mac mini isn’t connected.'));
+  return fetch(GW + '/api/' + path, { method: body ? 'POST' : 'GET', headers: Object.assign({ Authorization: 'Bearer ' + TOKEN }, body ? { 'Content-Type': 'application/json' } : {}), body: body ? JSON.stringify(body) : undefined })
+    .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) { var e = new Error(j.error || (r.status >= 500 ? 'The Mac mini isn’t answering just now: try again in a few minutes.' : 'The Mac mini said ' + r.status)); e.status = r.status; throw e; } return j; }); },
+      function () { throw new Error('The Mac mini isn’t answering just now: try again in a few minutes.'); });
+}
+function soon(p, ms) { return Promise.race([p, new Promise(function (ok, no) { setTimeout(function () { no(new Error('slow')); }, ms || 6000); })]); }
+function motdCal() {   // Movie of the Day: the site's file, and from the Worker any newer day (and, for John, those to come)
+  if (!DAYSP) DAYSP = getJSON(DATA + 'days.json').catch(function () { return { days: {}, notes: {} }; });
+  return DAYSP.then(function (D) {
+    var last = Object.keys(D.days).sort().pop() || '';
+    return fetch(WORKER + '/g/cal?after=' + last, TOKEN ? { headers: { Authorization: 'Bearer ' + TOKEN } } : {}).then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; }).then(function (W) {
+      var days = Object.assign({}, D.days, W.days || {}), notes = Object.assign({}, D.notes, W.notes || {});
+      Object.keys(W.days || {}).forEach(function (d) { if (LIB) LIB.tag(W.days[d]); else if (W.days[d].tags) { var t = W.days[d]; PICTAG[t.poster + 'Primary'] = (t.tags || {}).poster; PICTAG[t.backdrop + 'Backdrop'] = (t.tags || {}).backdrop; } });
+      Object.keys(D.days).forEach(function (d) { var t = D.days[d]; if (t.tags) { PICTAG[t.poster + 'Primary'] = t.tags.poster; PICTAG[t.backdrop + 'Backdrop'] = t.tags.backdrop; if (t.thumb) PICTAG[t.thumb + 'Thumb'] = t.tags.thumb; } });
+      (W.secret || []).forEach(function (d) { if (!days[d]) days[d] = { secret: true }; });
+      var count = Object.keys(days).filter(function (d) { return !days[d].secret; }).length;
+      return { id: 'motd', name: 'Movie of the Day', ownerName: 'John', mine: !!(ME && ME.owner), shared: true, count: count, days: days, notes: notes };
+    });
   });
 }
-function refreshAll() {   // forget what's kept, here and on the Mac, and load again
+var SORTS = {
+  year: function (a, b) { return (+b.year || 0) - (+a.year || 0) || nameKey(a).localeCompare(nameKey(b)); },
+  added: function (a, b) { return String(b.added || '').localeCompare(String(a.added || '')); },
+  name: function (a, b) { return nameKey(a).localeCompare(nameKey(b)); },
+  rating: function (a, b) { return (+b.rating || 0) - (+a.rating || 0) || nameKey(a).localeCompare(nameKey(b)); }
+};
+// moods, from each film's genres and length (John, 8 Nov 2026: horror and the children's films "better off found by genres")
+var MOODS = [['feelgood', 'Feel-good', ['Comedy', 'Family', 'Animation', 'Romance', 'Music']], ['gripping', 'Gripping', ['Thriller', 'Crime', 'Mystery', 'Action']],
+  ['scary', 'Scary', ['Horror']], ['kids', 'For kids', ['Family', 'Animation']], ['big', 'Big adventures', ['Adventure', 'Fantasy', 'Science Fiction', 'Sci-Fi & Fantasy', 'Western', 'War', 'Action & Adventure']],
+  ['true', 'True stories', ['Documentary', 'History']], ['short', 'Under 1½ hours', null]];
+function fits(genre, mood) {
+  var m = MOODS.filter(function (x) { return x[0] === mood; })[0];
+  return function (i) {
+    var g = i.genres || [];
+    if (genre && g.indexOf(genre) < 0) return false;
+    if (m && m[2] && !g.some(function (x) { return m[2].indexOf(x) >= 0; })) return false;
+    if (m && m[0] === 'kids' && g.some(function (x) { return x === 'Horror' || x === 'Thriller'; })) return false;
+    var len = i.mins || (i.secs ? i.secs / 60 : 0);
+    if (m && !m[2] && !(len && len <= 90)) return false;
+    return true;
+  };
+}
+function nameKey(i) { return String(i.name || '').replace(/^(the|a|an)\s+/i, '').toLowerCase(); }
+function details(it) {   // a film's longer details (overview, cast, trailers), and a series' episodes, from the site's files
+  var id = it.id, jobs = [getJSON(DATA + 'd/' + id.slice(0, 2) + '.json').then(function (b) { return b[id] || {}; }).catch(function () { return {}; })];
+  if (it.type === 'series') jobs.push(getJSON(DATA + 's/' + id + '.json').catch(function () { return {}; }));
+  return Promise.all(jobs).then(function (r) {
+    var o = Object.assign({}, it, r[0]);
+    if (r[1]) { o.seasons = r[1].seasons || []; o.episodes = r[1].episodes || []; o.episodes.forEach(function (e) { if (LIB) LIB.tag(e); }); }
+    return o;
+  });
+}
+function fromSite(path) {   // what the site's own files answer (null: a thing only the Mac has)
+  var name = path.split('?')[0], q = new URLSearchParams(path.split('?')[1] || '');
+  if (name === 'me') {
+    return fetch(WORKER + '/g/me', { headers: { Authorization: 'Bearer ' + TOKEN } }).then(function (r) { return r.json().then(function (j) { if (!r.ok) { var e = new Error(j.error || 'Not signed in.'); e.status = r.status; throw e; } return j; }); })
+      .then(function (me) { return library().then(function (L) { me.libraries = { movies: L.movies.length, tv: L.tv.length }; return me; }, function () { return me; }); });
+  }
+  if (name === 'calendars') {
+    return motdCal().then(function (m) {
+      var mine = { id: 'motd', name: m.name, ownerName: 'John', mine: m.mine, shared: true, count: m.count };
+      if (PUBLIC) return { calendars: [mine] };
+      return own('calendars').then(function (r) { return { calendars: [mine].concat(r.calendars || []) }; }, function () { return { calendars: [mine] }; });
+    });
+  }
+  if (name === 'calendar' && (q.get('id') || 'motd') === 'motd') return motdCal();
+  if (name === 'calendar') return PUBLIC ? null : own(path);
+  if (name === 'lists') return PUBLIC ? null : own('lists');
+  if (['home', 'items', 'item', 'collections', 'collection', 'search'].indexOf(name) < 0) return null;
+  return library().then(function (L) {
+    var I = L.items, get = function (ids) { return ids.map(function (i) { return I[i]; }).filter(Boolean); };
+    if (name === 'home') {
+      var newest = function (ids) { return get(ids).sort(SORTS.added).slice(0, 24); };
+      return { movies: newest(L.movies), tv: newest(L.tv) };
+    }
+    if (name === 'items') {
+      var all = get(L[q.get('lib') === 'tv' ? 'tv' : 'movies']).filter(fits(q.get('genre'), q.get('mood'))).sort(SORTS[q.get('sort')] || SORTS.name), start = +q.get('start') || 0, n = +q.get('limit') || 120;
+      return { items: all.slice(start, start + n), total: all.length };
+    }
+    if (name === 'collections') return { collections: get(L.collections) };
+    if (name === 'collection') {
+      var c = I[q.get('id')]; if (!c) { var e = new Error('No such collection.'); e.status = 404; throw e; }
+      return details(c).then(function (o) { o.items = get(L.sets[c.id] || []); return o; });
+    }
+    if (name === 'item') {
+      var it = I[q.get('id')];
+      if (!it) return null;
+      return details(it);
+    }
+    if (name === 'search') {
+      var t = (q.get('q') || '').toLowerCase().trim(), words = t.split(/\s+/);
+      var hits = Object.keys(I).map(function (k) { return I[k]; }).filter(function (i) { if (i.type !== 'movie' && i.type !== 'series') return false; var n = (i.name || '').toLowerCase(); return words.every(function (w) { return n.indexOf(w) >= 0; }); });
+      hits.sort(function (a, b) { var an = (a.name || '').toLowerCase(), bn = (b.name || '').toLowerCase(); return (bn.indexOf(t) === 0) - (an.indexOf(t) === 0) || SORTS.name(a, b); });
+      return { items: hits.slice(0, 40) };
+    }
+  });
+}
+function api(path, body) {
+  if (DEMO) return Demo.api(path, body);
+  if (!body) { var site = fromSite(path); if (site) return Promise.resolve(site).then(function (r) { return r == null ? mac(path) : r; }); }
+  if (PUBLIC) { var x = new Error('Sign in to do that.'); x.status = 401; signInSheet(); return Promise.reject(x); }
+  if (path === 'lists' || (path === 'calendar' && body.id !== 'motd')) return own(path, body);
+  return mac(path, body).then(function (r) {   // John's changes to Movie of the Day or the collections: made on the Mac, on the site with his next Update
+    if (ME && ME.owner && ((path === 'calendar' && body.id === 'motd') || (path === 'collections' && body.op !== 'in'))) setTimeout(function () { toast('Saved on the Mac: Update (on the admin page) puts it on the site'); }, 1400);
+    return r;
+  });
+}
+var MEMO = {};
+function apiMemo(path, draw) { return api(path).then(function (d) { draw(d); return d; }); }   // (the site's files: the browser keeps them)
+function refreshAll() {   // look again: the site's files and the pictures fetched afresh
   forgetMemo();
-  try { if (window.caches) caches.delete('gfx-pics-v1'); } catch (e) {}   // (pictures fetched again, in case one changed)
-  (DEMO || PUBLIC || !GW ? Promise.resolve() : fetch(GW + '/api/refresh', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: '{}' }).catch(function () {}))
-    .then(function () { location.reload(); });
+  try { if (window.caches) caches.delete('gfx-pics-v1'); } catch (e) {}
+  location.reload();
 }
 document.addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('#refresh, #refresh2'); if (b) { b.disabled = true; refreshAll(); } });
 // Pull down to refresh on a phone, as on the songs' site (its code): at the top of the page, pull and let go past the
@@ -593,9 +719,12 @@ function forgetMemo() {
 function img(id, kind, w) {
   if (!id) return '';
   if (DEMO) return Demo.pic(id, kind);
-  // films' and series' pictures: the same address for everyone, always (Cloudflare and the browser keep copies, and
-  // Grifflix's service worker keeps each one on the device: shown at once next time, as the songs' covers are)
-  return GW + '/pimg/' + id + '/' + (kind || 'Primary') + '.jpg?maxWidth=' + (w || 400);
+  // the site's own copy of each picture (kept by the Worker, made by John's Update; the same address for everyone, its
+  // version in it: the browser and Grifflix's service worker keep each one, shown at once next time, as the songs' covers)
+  kind = kind || 'Primary';
+  var sizes = { Primary: [400], Backdrop: [480, 1100], Thumb: [480, 1100] }[kind] || [400], size = sizes.filter(function (x) { return x >= (w || 0); })[0] || sizes[sizes.length - 1];
+  var t = PICTAG[id + kind];
+  return WORKER + '/gp/' + id + '/' + kind + '-' + size + '.jpg' + (t ? '?t=' + t : '');
 }
 function gwUrl(p) { return DEMO ? p : GW + p; }
 
@@ -637,20 +766,18 @@ function start() {
   document.documentElement.classList.add('ready');
   if (BUILD.draft) { var t = document.createElement('a'); t.className = 'drafttag'; t.href = '/grifflix/'; t.title = 'This is the draft: the live Grifflix is at /grifflix/'; t.textContent = 'Draft'; $('.brand').after(t); }
   var go = function () {
-    if (!DEMO && !GW) return welcome('nogw');
     if (!DEMO && !TOKEN) {
       PUBLIC = true; ME = { name: '', public: true };
       document.documentElement.classList.add('public');
       $('#who').textContent = 'Sign in';
-      return fetch(GW + '/health').then(function (r) { if (!r.ok) throw 0; route(); }).catch(function () { welcome('down'); });
+      return route();   // (all from the site's own files: the Mac mini needn't be on)
     }
     api('me').then(function (me) {
-      ME = me; KEY = me.key || '';
+      ME = me;
       $('#who').textContent = me.name ? me.name.split(' ')[0] : 'Profile';
       if (DEMO) $('#note').innerHTML = '<div class="notice"><b>Demo.</b> Made-up films, so you can see how Grifflix works before the Mac mini is connected. Changes stay on this device. <a href="?demo=0">Leave the demo</a></div>';
-      setInterval(function () { api('me').then(function (m) { KEY = m.key || KEY; }).catch(function () {}); }, 6 * 3600e3);
       route();
-    }).catch(function (e) { welcome(e.status === 401 ? 'notmember' : 'down'); });
+    }).catch(function (e) { welcome(e.status === 401 || e.status === 403 ? 'notmember' : 'down'); });
   };
   if (DEMO) return go();
   if ('serviceWorker' in navigator) try { swReg().catch(function () {}); } catch (e) {}   // (from the start: it keeps the pictures)
@@ -663,7 +790,7 @@ function welcome(why) {
   $('.bar-top').classList.add('hide');
   var msg = {
     nogw: 'Grifflix is nearly ready: the Mac mini isn’t connected yet.',
-    down: 'The Mac mini isn’t answering just now (it may be asleep or restarting). Try again in a few minutes.',
+    down: 'Grifflix isn’t answering just now. Try again in a few minutes.',
     notmember: 'This device’s sign-in has run out. Sign in again below.'
   }[why] || 'Films and TV from John’s shelves, for family and friends.';
   var signin = !TOKEN || why === 'notmember';
@@ -716,6 +843,7 @@ function route() {
   window.scrollTo(0, 0);
   if (S.view === 'browse') { if (h[1]) S.browse = h[1]; return browse(); }
   if (S.view === 'collection' && h[1]) return collectionView(h[1]);
+  if (S.view === 'film' && /^[0-9a-f]{32}$/.test(h[1] || '')) { S.view = 'home'; var fid = h[1]; home(); api('item?id=' + fid).then(function (it) { if (it && it.id) itemSheet(it); }).catch(function () {}); return; }   // (a shared film's link)
   if (S.view === 'day' && /^\d{4}-\d\d-\d\d$/.test(h[1] || '')) { S.cal = 'motd'; S.month = h[1].slice(0, 7); S.pendingDay = h[1]; S.view = 'home'; return home(); }
   if (S.view === 'lists') return lists();
   if (S.view === 'search') { location.hash = '#' + (S.lastView || 'home'); return searchSheet(); }
@@ -740,7 +868,13 @@ function home() {
     var shownDays = Object.keys(S.calData.days).filter(function (k) { return !S.calData.days[k].secret; }).sort();
     var t = (S.calData.days[TODAY] && !S.calData.days[TODAY].secret ? S.calData.days[TODAY] : null) || S.calData.days[shownDays.pop()];
   }).catch(oops);
-  api('home').then(drawRows).catch(function () {});
+  homeRows();
+}
+function homeRows() {   // New films and TV from the site's files; Carry on watching (each member's own) from the Mac, if it's on
+  api('home').then(function (R) {
+    drawRows(R);
+    if (!PUBLIC && !DEMO) soon(mac('home'), 8000).then(function (m) { if (m.continue && m.continue.length && $('#rows')) { R.continue = m.continue; drawRows(R); } }).catch(function () {});
+  }).catch(function () {});
 }
 function drawCals() {
   var el = $('#cals'), h = '';
@@ -879,8 +1013,12 @@ function collectionView(id) {
     $('#cbody').innerHTML = '<div class="collhead">' + (src ? '<img class="collpic" alt="" src="' + esc(src) + '">' : '') +
       '<div><div class="kick">Collection</div><h1 class="colltitle">' + esc(c.name) + '</h1><div class="hsub"><i>' + c.items.length + (c.items.length === 1 ? ' title' : ' titles') + '</i></div>' +
       (c.overview ? '<p class="ov">' + esc(c.overview) + '</p>' : '') + '</div></div>' +
-      '<div class="gridcards">' + c.items.map(function (i) { return cardHTML(i); }).join('') + '</div>';
-    wireCards($('#cbody'), c.items);
+      '<div class="tabs"><span class="sp"></span><select class="pill" id="csort" aria-label="Sort">' + CSORTS.map(function (o) { return '<option value="' + o[0] + '">' + o[1] + '</option>'; }).join('') + '</select></div>' +
+      '<div class="gridcards" id="cgrid"></div>';
+    var draw = function () { var items = sortItems(c.items, S.csort); $('#cgrid').innerHTML = items.map(function (i) { return cardHTML(i); }).join(''); wireCards($('#cgrid'), items); };
+    $('#csort').value = S.csort;
+    $('#csort').onchange = function () { S.csort = this.value; store.set('grifflix-csort', S.csort); draw(); };
+    draw();
     if (ME && ME.owner) {
       $('#cbody .collhead > div:last-child').insertAdjacentHTML('beforeend', '<div class="tabs" style="margin:16px 0 0"><button class="pill" id="crename">Rename</button><button class="pill" id="cdelete">Delete the collection</button></div>');
       $('#crename').onclick = function () { ask('Rename the collection', 'Its name', c.name, function (v) { api('collections', { op: 'rename', id: c.id, name: v }).then(function () { toast('Renamed'); collectionView(id); }).catch(oops); }); };
@@ -891,7 +1029,7 @@ function collectionView(id) {
   }).catch(oops);
 }
 function wireCards(el, items) {
-  var by = {}; items.forEach(function (i) { by[i.id] = i; });
+  var by = {}; items.forEach(function (i) { by[i.id] = i; SEEN[i.id] = i; });
   $$('[data-item]', el).forEach(function (b) { b.onclick = function () { var it = by[b.dataset.item]; if (it && it.type === 'collection') location.hash = '#collection/' + it.id; else itemSheet(it); }; });   // (a box set inside a collection opens as a collection)
 }
 function drawRows(R) {
@@ -912,11 +1050,21 @@ function browse() {
   if (S.browse === 'home') S.browse = 'movies';
   main.innerHTML = '<div class="hero"><h1>' + { movies: 'Films', tv: 'TV', collections: 'Collections' }[S.browse] + '</h1><div class="hsub" id="bcount"></div></div>' +
     '<div class="tabs">' + tabs.map(function (t) { return '<button class="pill' + (t[0] === S.browse ? ' on' : '') + '" data-b="' + t[0] + '">' + t[1] + '</button>'; }).join('') +
-    '<span class="sp"></span><select class="pill" id="sort" aria-label="Sort"><option value="year">Newest to oldest</option><option value="added">Recently added</option><option value="name">A–Z</option><option value="rating">Rating</option></select></div><div id="bgrid"></div>';
+    '<span class="sp"></span><select class="pill" id="sort" aria-label="Sort"><option value="year">Newest to oldest</option><option value="added">Recently added</option><option value="name">A–Z</option><option value="rating">Rating</option></select></div>' +
+    '<div class="moods" id="moods"></div><div id="bgrid"></div>';
   $('#sort').value = S.sort;
   $('#sort').onchange = function () { S.sort = this.value; fill(); };
   $$('[data-b]').forEach(function (b) { b.onclick = function () { location.hash = '#browse/' + b.dataset.b; }; });
   $('#sort').classList.toggle('hide', S.browse === 'collections');
+  // genres and moods (Films and TV): a row of moods, and every genre the shelves have, with how many
+  if (S.browse !== 'collections' && !DEMO) library().then(function (L) {
+    var count = {}; L[S.browse].forEach(function (id) { ((L.items[id] || {}).genres || []).forEach(function (g) { count[g] = (count[g] || 0) + 1; }); });
+    if (S.genre && !count[S.genre]) S.genre = '';
+    $('#moods').innerHTML = '<button class="pill' + (!S.mood ? ' on' : '') + '" data-mood="">All</button>' + MOODS.map(function (m) { return '<button class="pill' + (S.mood === m[0] ? ' on' : '') + '" data-mood="' + m[0] + '">' + m[1] + '</button>'; }).join('') +
+      '<select class="pill" id="genre" aria-label="Genre"><option value="">Every genre</option>' + Object.keys(count).sort().map(function (g) { return '<option value="' + esc(g) + '"' + (S.genre === g ? ' selected' : '') + '>' + esc(g) + ' (' + count[g] + ')</option>'; }).join('') + '</select>';
+    $$('[data-mood]').forEach(function (b) { b.onclick = function () { S.mood = b.dataset.mood; $$('[data-mood]').forEach(function (x) { x.classList.toggle('on', x === b); }); fill(); }; });
+    $('#genre').onchange = function () { S.genre = this.value; fill(); };
+  }).catch(function () {});
   function fill() {
     var turn = fill.turn = (fill.turn || 0) + 1, here = function () { return turn === fill.turn && $('#bgrid'); };
     $('#bgrid').innerHTML = '<div class="empty">Looking on the shelves…</div>';
@@ -926,12 +1074,12 @@ function browse() {
       $('#bgrid').innerHTML = r.collections.length ? '<div class="gridcards">' + r.collections.map(collCard).join('') + '</div>' : '<div class="empty">No collections yet.</div>';
     }).catch(oops);
     // films and series: 120 at a time, the next as you scroll down (all of them, not just the first 200)
-    var base = 'items?lib=' + S.browse + '&sort=' + S.sort + '&limit=' + (+Q.get('pagesize') || 120) + '&start=', all = [], total = 0, busy = false, land = S.browse === 'home', watcher;
+    var base = 'items?lib=' + S.browse + '&sort=' + S.sort + (S.genre ? '&genre=' + encodeURIComponent(S.genre) : '') + (S.mood ? '&mood=' + S.mood : '') + '&limit=' + (+Q.get('pagesize') || 120) + '&start=', all = [], total = 0, busy = false, land = S.browse === 'home', watcher;
     var first = function (r) {
       if (!here()) return;
       all = r.items.slice(); total = r.total;
       $('#bcount').innerHTML = '<i>' + r.total + '</i>';
-      if (!r.items.length) { $('#bgrid').innerHTML = '<div class="empty">Nothing here yet.</div>'; return; }
+      if (!r.items.length) { $('#bgrid').innerHTML = '<div class="empty">' + (S.genre || S.mood ? 'Nothing like that on the shelves.' : 'Nothing here yet.') + '</div>'; return; }
       $('#bgrid').innerHTML = '<div class="gridcards' + (land ? ' land' : '') + '">' + r.items.map(function (i) { return cardHTML(i, land); }).join('') + '</div><div id="bmore" style="height:1px"></div>';
       wireCards($('#bgrid'), all);
       if (watcher) watcher.disconnect();
@@ -1006,14 +1154,58 @@ function daySheet(date) {
   }
   itemSheet(it, { date: date, note: C.notes[date] });
 }
+// a day's film open: swipe (or the trackpad sideways, the ← → keys, the arrows by its date) for the day before or after
+// with a film, across months (John, 8 Nov 2026); the calendar behind follows to that day's month
+function dayNear(date, d) {
+  var C = S.calData; if (!C) return null;
+  var keys = Object.keys(C.days).filter(function (k) { return !C.days[k].secret; }).sort(), i = keys.indexOf(date);
+  return i < 0 ? null : keys[i + d] || null;
+}
+function dayStep(d) {
+  var k = S.sheetDate && dayNear(S.sheetDate, d); if (!k) return false;
+  if (k.slice(0, 7) !== S.month && $('#cal')) { S.month = k.slice(0, 7); drawMonth(); }
+  daySheet(k);
+  var el = $('#sheetIn'); if (el && el.animate) el.animate([{ transform: 'translateX(' + (d * 48) + 'px)', opacity: .35 }, { transform: 'none', opacity: 1 }], { duration: 260, easing: 'cubic-bezier(.2,.7,.2,1)' });
+  return true;
+}
+(function () {
+  var el = $('#sheetIn'), x0 = null, y0, t0, wacc = 0, wlock = 0, wquiet = 0;
+  var skip = function (t) { return !S.sheetDate || (t.closest && t.closest('.strip, .tabs, input, select, textarea')); };
+  el.addEventListener('touchstart', function (e) { if (skip(e.target)) { x0 = null; return; } var t = e.touches[0]; x0 = t.clientX; y0 = t.clientY; t0 = Date.now(); }, { passive: true });
+  el.addEventListener('touchend', function (e) {
+    if (x0 == null) return; var t = e.changedTouches[0], dx = t.clientX - x0, dy = t.clientY - y0; x0 = null;
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.6 && Date.now() - t0 < 800) dayStep(dx < 0 ? 1 : -1);
+  }, { passive: true });
+  el.addEventListener('wheel', function (e) {
+    if (skip(e.target) || Math.abs(e.deltaX) <= Math.abs(e.deltaY) * 1.2) return;
+    e.preventDefault();
+    var t = Date.now();
+    if (t < wlock) { wlock = t + 400; return; }
+    if (t - wquiet > 250) wacc = 0;
+    wquiet = t; wacc += e.deltaX;
+    if (Math.abs(wacc) > 70) { var d = wacc > 0 ? 1 : -1; wacc = 0; wlock = t + 900; dayStep(d); }
+  }, { passive: false });
+  document.addEventListener('keydown', function (e) {
+    if (TV || !dlg.open || !S.sheetDate || (e.target.closest && e.target.closest('input, textarea, select'))) return;
+    if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && dayStep(e.key === 'ArrowRight' ? 1 : -1)) e.preventDefault();
+  });
+})();
 
 function itemSheet(it, ctx) {
   ctx = ctx || {};
   if (!it) return;
+  SEEN[it.id] = it;
+  S.sheetDate = ctx.date || null;
+  var dnav = function (d) { return ctx.date && dayNear(ctx.date, d) ? '<button class="ico dnav" data-dstep="' + d + '" aria-label="' + (d < 0 ? 'The day before' : 'The day after') + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="' + (d < 0 ? 'M15 6l-6 6 6 6' : 'M9 6l6 6-6 6') + '"/></svg></button>' : ''; };
   var top = it.backdrop ? '<div class="heroimg"><img alt="" src="' + esc(img(it.backdrop, 'Backdrop', 1100)) + '">' + X + '</div>' : (it.thumb || (it.type === 'video' && it.poster) ? '<div class="heroimg"><img alt="" src="' + esc(img(it.thumb || it.poster, it.thumb ? 'Thumb' : 'Primary', 1100)) + '">' + X + '</div>' : '<div class="noimg-top" style="position:relative">' + X + '</div>');
-  openSheet(top + '<div class="in"><div class="date">' + (ctx.date ? esc(longDate(ctx.date)) : esc(typeName(it))) + '</div><h2>' + esc(showName(it)) + '</h2><div id="isbody">' + bodyHTML(it, ctx) + '</div></div>');
+  openSheet(top + '<div class="in"><div class="date">' + (ctx.date ? dnav(-1) + '<span>' + esc(longDate(ctx.date)) + '</span>' + dnav(1) : esc(typeName(it))) + '</div><h2>' + esc(showName(it)) + '</h2><div id="isbody">' + bodyHTML(it, ctx) + '</div></div>');
+  $$('#sheetIn [data-dstep]').forEach(function (b) { b.onclick = function () { dayStep(+b.dataset.dstep); }; });
   wireBody(it, ctx);
-  api('item?id=' + it.id).then(function (full) { if (!dlg.open) return; Object.assign(it, full); var had = document.activeElement && document.activeElement.id; $('#isbody').innerHTML = bodyHTML(it, ctx); wireBody(it, ctx); if (TV) { var back = had && !/^(asignin|aplay|atrailer)$/.test(had) && $('#' + had); if (back) back.focus({ preventScroll: true }); else tvStart(); }   /* (the trailer arrives with the details: chosen then, unless something else was) */ }).catch(function () {});
+  var mine = function (full) { if (PUBLIC || DEMO || !full.id) return full;   // (the member's own: from the Mac, if it's on)
+    own('lists').then(function (L) { var h = L.hearts.some(function (x) { return x.id === it.id; }); if (h !== !!it.hearted) { it.hearted = full.hearted = h; var b = $('#aheart'); if (b && dlg.open) b.innerHTML = HEART(h); } }).catch(function () {});
+    return soon(mac('item?id=' + it.id), 6000).then(function (m) { ['pos', 'next', 'subs'].forEach(function (k) { if (m[k] != null) full[k] = m[k]; });
+      var at = {}; (m.episodes || []).forEach(function (e) { if (e.pos) at[e.id] = e.pos; }); (full.episodes || []).forEach(function (e) { if (at[e.id]) e.pos = at[e.id]; }); return full; }, function () { return full; }); };
+  api('item?id=' + it.id).then(mine).then(function (full) { if (!dlg.open) return; Object.assign(it, full); var had = document.activeElement && document.activeElement.id; $('#isbody').innerHTML = bodyHTML(it, ctx); wireBody(it, ctx); if (TV) { var back = had && !/^(asignin|aplay|atrailer)$/.test(had) && $('#' + had); if (back) back.focus({ preventScroll: true }); else tvStart(); }   /* (the trailer arrives with the details: chosen then, unless something else was) */ }).catch(function () {});
 }
 function typeName(it) { return { movie: 'Film', series: 'Series', episode: it.series || 'Episode', video: 'Home video', photo: 'Photo' }[it.type] || ''; }
 function bodyHTML(it, ctx) {
@@ -1075,7 +1267,7 @@ function wireBody(it, ctx) {
   on('aaddpl', function () { addToPlaylist(it); });
   on('aaddcal', function () { addToCalendar(it); });
   on('acoll', function () { collPicker(it); });
-  on('ashare', function () { share(showName(it), location.href.split('#')[0] + (ctx.date ? '#home/' + S.cal : '')); });
+  on('ashare', function () { if (ctx.date && S.cal === 'motd') return shareDay(ctx.date, it); share(showName(it), location.href.split('#')[0].split('?')[0] + (ctx.date ? '#home/' + S.cal : '#film/' + it.id)); });
   $$('[data-season]').forEach(function (b) { b.onclick = function () { ctx.season = b.dataset.season; $('#isbody').innerHTML = bodyHTML(it, ctx); wireBody(it, ctx); }; });
   $$('[data-ep]').forEach(function (b) { b.onclick = function () { var i = it.episodes.map(function (e) { return e.id; }).indexOf(b.dataset.ep); play(it.episodes[i], it.episodes.slice(i + 1)); }; });
   on('osave', function () { api('calendar', { op: 'set', id: S.cal, date: ctx.date, note: $('#onote').value }).then(function (c) { S.calData = c; ctx.note = c.notes[ctx.date]; toast('Saved'); }); });
@@ -1227,6 +1419,9 @@ function drawAccount() {
     '<div class="profsec"><p class="profh">Email</p><p class="profp">' + (g.email ? 'Your address: <b>' + esc(g.email) + '</b>' : 'Add your email address, and you can have the Movie of the Day by email too.') + '</p>' +
       '<div class="acts" style="margin-top:8px"><button class="pill" id="mailgo">' + (g.email ? 'Change your email' : 'Add your email') + '</button></div></div>' +
     '<div class="profsec"><p class="profh">Which emails</p><p class="profp">' + (g.email ? 'To ' + esc(g.email) + ', chosen apart from your notifications.' : 'Add your email first.') + '</p>' + opts('gmail', !g.email) + '</div>' +
+    (/[?&]app=/.test(location.search) || TV ? '' : '<div class="profsec"><p class="profh">Grifflix on your phone</p><p class="profp">' +
+      (/Android/i.test(navigator.userAgent) ? 'The Grifflix app for Android: download it, then open the file and allow installing from Chrome when asked. Sign in with a code from here (below).' : 'An iPhone app is coming (through Apple’s TestFlight). On an Android phone, the Grifflix app is here.') +
+      '</p><div class="acts" style="margin-top:8px"><a class="pill" href="/grifflix/android.apk">Android app</a></div></div>') +
     '<div class="profsec"><p class="profh">A TV</p><p class="profp">To sign in on a TV (or another device), get a code and type it there.</p><div class="acts" style="margin-top:8px"><button class="pill" id="tvcode">Get a code</button></div></div>' +
     '<div class="profsec"><p class="profh">This device</p><p class="profp">Signed in as ' + esc(ME.name || '') + '.</p><div class="acts" style="margin-top:8px"><button class="pill" id="signout">Sign out</button></div></div>';
   $$('[data-gpush],[data-gmail]').forEach(function (b) { b.onclick = function () {
@@ -1267,9 +1462,55 @@ function addEmail() {
     }).catch(oops);
   };
 }
-function share(title, url) {
-  if (navigator.share) navigator.share({ title: title, url: url }).catch(function () {});
-  else if (navigator.clipboard) navigator.clipboard.writeText(url).then(function () { toast('Link copied'); });
+function share(title, url, card) {   // Grifflix's share sheet: the card (a day's film), and each way to send it
+  var enc = encodeURIComponent, text = title;
+  openSheet('<div class="form shsheet" style="position:relative">' + X + '<h2 style="font:400 30px/1.15 var(--serif);color:var(--fg);margin-right:44px">Share <i>' + esc(title) + '</i></h2>' +
+    (card ? '<div class="shcard" id="shcard"><div class="empty" style="margin:0">Making its card…</div></div>' : '') +
+    '<div class="acts">' + (navigator.share ? '<button class="pill go" id="shnative">Share…</button>' : '') +
+    '<a class="pill" href="sms:&body=' + enc(text + ' ' + url) + '">Messages</a><a class="pill" href="https://wa.me/?text=' + enc(text + ' ' + url) + '" target="_blank" rel="noopener">WhatsApp</a>' +
+    '<a class="pill" href="mailto:?subject=' + enc(title) + '&body=' + enc(text + '\n\n' + url) + '">Email</a><button class="pill" id="shcopy">Copy link</button></div></div>');
+  if ($('#shnative')) $('#shnative').onclick = function () { navigator.share({ title: title, text: text, url: url }).catch(function () {}); };
+  $('#shcopy').onclick = function () { (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(function () { toast('Link copied'); }, function () { prompt('The link:', url); }); };
+  if (card) card.then(function (src) { var el = $('#shcard'); if (el) el.innerHTML = src ? '<img alt="" src="' + esc(src) + '">' : ''; }, function () { var el = $('#shcard'); if (el) el.innerHTML = ''; });
+}
+function shareDay(date, it) {   // a day's film: its own link (/gs/<date>: a page with its card), and the card made if it hasn't one
+  var url = WORKER + '/gs/' + date, title = showName(it) + (it.year ? ' (' + it.year + ')' : '');
+  var card = fetch(url + '.jpg?have=1').then(function (r) {
+    if (r.ok) return url + '.jpg';
+    if (PUBLIC || DEMO) return url + '.jpg';   // (the film's picture stands in until a member shares it)
+    return dayCard(date, it).then(function (jpeg) { return own('card', { date: date, card: jpeg }).then(function () { return jpeg; }, function () { return jpeg; }); });
+  }).catch(function () { return ''; });
+  share(title + ': Movie of the Day', url, card);
+}
+function dayCard(date, it) {   // 1200 × 630: the film's picture, the month's colour, Movie of the Day and its date, the name, GRIFFLIX
+  var c = document.createElement('canvas'); c.width = 1200; c.height = 630; var x = c.getContext('2d');
+  var load = function (src) { return new Promise(function (ok) { if (!src) return ok(null); var i = new Image(); i.crossOrigin = 'anonymous'; i.onload = function () { ok(i); }; i.onerror = function () { ok(null); }; i.src = src; }); };
+  var pal = PALETTES[(+date.slice(5, 7) - 1 + 6) % 12];
+  return Promise.all([load(it.backdrop ? img(it.backdrop, 'Backdrop', 1100) : it.thumb ? img(it.thumb, 'Thumb', 1100) : ''), load(it.poster ? img(it.poster, 'Primary', 400) : ''),
+    document.fonts ? Promise.all([document.fonts.load('400 120px "Bebas Neue"'), document.fonts.load('400 80px Newsreader'), document.fonts.load('italic 400 40px Newsreader'), document.fonts.load('600 24px "Hanken Grotesk"')]).catch(function () {}) : null]).then(function (r) {
+    var bd = r[0], po = r[1];
+    x.fillStyle = pal[0]; x.fillRect(0, 0, 1200, 630);
+    if (bd) { var sc = Math.max(1200 / bd.width, 630 / bd.height); x.drawImage(bd, (1200 - bd.width * sc) / 2, (630 - bd.height * sc) / 2, bd.width * sc, bd.height * sc); }
+    else [[pal[1], 160, 80, 640], [pal[3], 1100, 560, 700]].forEach(function (g) { var gr = x.createRadialGradient(g[1], g[2], 0, g[1], g[2], g[3]); gr.addColorStop(0, g[0]); gr.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = gr; x.fillRect(0, 0, 1200, 630); });
+    var sh = x.createLinearGradient(0, 0, 1200, 0); sh.addColorStop(0, 'rgba(8,4,10,.92)'); sh.addColorStop(.55, 'rgba(8,4,10,.72)'); sh.addColorStop(1, 'rgba(8,4,10,.15)');
+    x.fillStyle = sh; x.fillRect(0, 0, 1200, 630);
+    x.fillStyle = pal[0]; x.fillRect(0, 0, 14, 630);
+    if (po) { var pw = 270, ph = Math.round(pw * po.height / po.width); x.save(); x.shadowColor = 'rgba(0,0,0,.55)'; x.shadowBlur = 40; x.shadowOffsetY = 14; x.drawImage(po, 1200 - 70 - pw, (630 - ph) / 2, pw, ph); x.restore(); }
+    var maxW = po ? 720 : 1040;
+    x.fillStyle = '#fffaf5'; x.textBaseline = 'alphabetic';
+    try { x.letterSpacing = '4px'; } catch (e) {}
+    x.font = '600 24px "Hanken Grotesk", Helvetica, Arial, sans-serif'; x.globalAlpha = .85;
+    x.fillText(('Movie of the Day · ' + new Date(date + 'T12:00').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })).toUpperCase(), 72, 120);
+    x.globalAlpha = 1; try { x.letterSpacing = '0px'; } catch (e) {}
+    var name = showName(it), size = 92, lines;
+    var wrap = function () { var words = name.split(' '), out = [''], i; for (i = 0; i < words.length; i++) { var t = (out[out.length - 1] + ' ' + words[i]).trim(); if (x.measureText(t).width > maxW && out[out.length - 1]) out.push(words[i]); else out[out.length - 1] = t; } return out; };
+    do { x.font = '400 ' + size + 'px Newsreader, Georgia, serif'; lines = wrap(); size -= 6; } while ((lines.length > 3 || lines.some(function (l) { return x.measureText(l).width > maxW; })) && size > 44);
+    size += 6; var y = 140 + size;
+    lines.slice(0, 3).forEach(function (l) { x.fillText(l, 70, y); y += size * 1.05; });
+    if (it.year) { x.font = 'italic 400 40px Newsreader, Georgia, serif'; x.globalAlpha = .85; x.fillText(String(it.year), 72, y + 4); x.globalAlpha = 1; }
+    x.font = '400 78px "Bebas Neue", Oswald, Impact, sans-serif'; try { x.letterSpacing = '3px'; } catch (e) {} x.fillText('GRIFFLIX', 68, 572);
+    return c.toDataURL('image/jpeg', .86);
+  });
 }
 function oops(e) { console.warn(e); toast((e && e.message) || 'Something went wrong.'); }
 function clock(s) { s = Math.round(s); var h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(x).padStart(2, '0'); }
@@ -1342,7 +1583,7 @@ function stopPlayer() {
   P.v.pause(); P.v.removeAttribute('src'); P.v.load();
   P.el.classList.remove('on'); document.documentElement.style.overflow = '';
   if (document.fullscreenElement) document.exitFullscreen().catch(function () {});
-  if (S.view === 'home') api('home').then(drawRows).catch(function () {});
+  if (S.view === 'home') homeRows();
 }
 $('#pclose').onclick = stopPlayer;
 P.v.addEventListener('ended', function () { saveProgress(); if (P.queue.length) { var n = P.queue.shift(); play(n, P.queue); } else stopPlayer(); });
