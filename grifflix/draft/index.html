@@ -446,7 +446,19 @@ html.klook .day { background: none; box-shadow: inset 0 0 0 1px rgba(var(--kink)
 html.klook .day.has { box-shadow: none; }
 html.klook .day .num { font-family: var(--kfont); font-weight: 500; }
 html.klook .day.has .num { color: #fff; }   /* (on the film's picture, white whatever the month's ink) */
-html.klook .tring { background: none; }
+/* the table on the bold colours (John, 8 Nov 2026: "the war room look isn't as clear with a brightly coloured background
+   ... rework it for the new colours"): a solid table in the month's ink, the film's name on it in the month's colour,
+   the light above a line of ink: two flat colours, as a Saul Bass poster */
+html.klook .tring { background: rgb(var(--kink)); border: 0; box-shadow: 0 30px 60px rgba(0, 0, 0, .25); }
+html.klook .tlight { box-shadow: 0 0 0 3px rgba(var(--kink), .9); }
+html.klook .tcentre .k, html.klook .tcentre h2, html.klook .tcentre .y, html.klook .tcentre .n { color: var(--bg); }
+html.klook .tcentre .y, html.klook .tcentre .n { opacity: .85; }
+html.klook div.tday, html.klook button.tday:not(.has) { background: var(--bg); box-shadow: inset 0 0 0 1px rgba(var(--kink), .6); color: rgb(var(--kink)); }
+html.klook .tday.has { box-shadow: 0 8px 20px rgba(0, 0, 0, .35); }
+/* the calendar on the TV: no row for the name alone (John: "a waste of tv space"); the month's row at the top, and
+   the words (Search, Browse...) back when you go up from it */
+html.klook.tv.barhide:not(.table) .bar-top { display: none; }
+html.klook.tv:not(.table) .hero::before { content: "GRIFFLIX"; font: 700 13px/1 var(--kfont); letter-spacing: .55em; color: var(--fg-2); margin-right: 8px; align-self: center; }
 html.klook.tv .day:focus, html.klook.tv .card:focus .pic, html.klook.tv :focus { outline: 2px solid rgb(var(--kink)) !important; outline-offset: 4px; }
 html.klook .hsub { font-family: var(--serif); }
 html.klook .side, html.klook .notice, html.klook .tracks button, html.klook .eps .ep, html.klook .res { border-radius: 0 !important; background: none; -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: none; }
@@ -1921,7 +1933,8 @@ function moveFocus(dir) {
     var score = main + Math.abs(side) * 2.2;
     if (score < bestScore) { bestScore = score; best = el; }
   });
-  if (best) { best.focus({ preventScroll: true }); best.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' }); }
+  if (best) { best.focus({ preventScroll: true }); best.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' }); return true; }
+  return false;
 }
 function playerKeys(k) {
   var v = P.v; wake();
@@ -1945,7 +1958,10 @@ document.addEventListener('keydown', function (e) {
     if (k === 'down') { e.preventDefault(); return; }
   }
   if (k === 'ok' || (inText && (k === 'left' || k === 'right'))) return;   // OK presses the button (the browser's own); text keeps its own left/right
-  e.preventDefault(); moveFocus(k);
+  e.preventDefault();
+  if (!moveFocus(k) && k === 'up' && KLOOK && document.documentElement.classList.contains('barhide')) {   // (up from the top row: the words back)
+    document.documentElement.classList.remove('barhide'); setTimeout(function () { var t = $('#tvview') || $('.bar-top button'); if (t) t.focus(); }, 0);
+  }
 }, true);
 window.grifflixTV = {
   key: function (k) {
