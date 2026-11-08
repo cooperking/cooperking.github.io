@@ -92,7 +92,8 @@ export default {
       if (url.pathname === '/facts/redo') return await factsRedo(request, env);
       if (url.pathname.startsWith('/g/')) return await grifflix(request, url, env);
       if (url.pathname.startsWith('/gp/')) return await gPicGet(request, url, env, ctx);
-      if (url.pathname.startsWith('/gs/')) return await gSharePage(url, env);   // a Movie of the Day's own link, with its card   // Grifflix's pictures, kept here (not the Mac's)   // Grifflix's own members (apart from the songs')
+      if (url.pathname.startsWith('/gs/')) return await gSharePage(url, env);
+      if (url.pathname.startsWith('/gf/')) return await gFontGet(request, url, env);   // Grifflix's Futura (John's web fonts, kept in R2, for Grifflix's pages only)   // a Movie of the Day's own link, with its card   // Grifflix's pictures, kept here (not the Mac's)   // Grifflix's own members (apart from the songs')
       if (url.pathname.startsWith('/gi/')) return await gInvitePage(url, env);
       if (url.pathname.startsWith('/members/')) return await members(request, url, env);
       if (url.pathname === '/push/check') return await pushCheck(request, env, ctx);
@@ -1561,6 +1562,18 @@ async function grifflix(request, url, env) {
     await env.MEDIA.put('grifflix/snapshot.json', buf, { httpMetadata: { contentType: 'application/json' } });
     return answer(200, { ok: true, bytes: buf.byteLength });
   }
+  if (route === 'font') {   // John's Futura web fonts (the admin page's Fonts card): kept in R2, not in the public repository
+    if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
+    const w = await gWho(request, env);
+    if (!w || !w.owner) return answer(403, { error: 'Only John.' });
+    const name = String(request.headers.get('X-Font-Name') || '').toLowerCase();
+    if (!/^[a-z0-9-]{1,60}\.(woff2|woff)$/.test(name)) return answer(400, { error: 'A .woff2 or .woff file, please.' });
+    const buf = await request.arrayBuffer();
+    if (buf.byteLength < 100 || buf.byteLength > 600e3) return answer(400, { error: 'That isn’t a web font.' });
+    await env.MEDIA.put('grifflix/fonts/' + name, buf, { httpMetadata: { contentType: name.endsWith('2') ? 'font/woff2' : 'font/woff' } });
+    const list = await env.MEDIA.list({ prefix: 'grifflix/fonts/' }).catch(() => ({ objects: [] }));
+    return answer(200, { ok: true, fonts: (list.objects || []).map(o => o.key.slice(15)) });
+  }
   if (route === 'cal') {   // Movie of the Day's days revealed after the site's own file (?after=), and for John, those still to come
     const c = await gCal(env), shown = gShownCal(c), after = url.searchParams.get('after') || '';
     const out = { days: {}, notes: {} };
@@ -1883,6 +1896,14 @@ async function gAdmin(request, env, b, who, answer) {
 // a day's film shared (John, 8 Nov 2026): its own link, /gs/<date>, a page with its card (WhatsApp, iMessage show it) that
 // goes on to the day on Grifflix. The card (1200 × 630) is drawn by the first member's page to share it and kept in R2;
 // until then the film's own picture stands in. Only days already shown (from 8am on the day).
+async function gFontGet(request, url, env) {   // /gf/<name>: only for Grifflix's own pages (and its apps, which show them)
+  const name = url.pathname.slice(4).toLowerCase(), from = request.headers.get('Origin') || request.headers.get('Referer') || '';
+  if (!/^[a-z0-9-]{1,60}\.(woff2|woff)$/.test(name)) return new Response('Not here.', { status: 404 });
+  if (from && !/^https:\/\/cooperking\.github\.io(\/|$)/.test(from)) return new Response('Not here.', { status: 403 });
+  const o = await env.MEDIA.get('grifflix/fonts/' + name).catch(() => null);
+  if (!o) return new Response('Not here.', { status: 404, headers: { 'Access-Control-Allow-Origin': G_ORIGIN } });
+  return new Response(o.body, { headers: { 'Content-Type': name.endsWith('2') ? 'font/woff2' : 'font/woff', 'Cache-Control': 'public, max-age=2592000', 'Access-Control-Allow-Origin': G_ORIGIN, Vary: 'Origin' } });
+}
 async function gSharePage(url, env) {
   const m = /^\/gs\/(\d{4}-\d\d-\d\d)(\.jpg)?$/.exec(url.pathname), c = await gCal(env), it = m && gRevealed(m[1]) && (c.days || {})[m[1]];
   if (!it) return new Response('<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Grifflix</title><body style="margin:0;background:' + gPal()[0] + ';color:#fffaf5;font:18px Georgia,serif;padding:32px">Nothing here yet: each Movie of the Day is a surprise until 8am on its day. <a style="color:#fffaf5" href="' + G_SITE + '">Grifflix</a></body>', { status: 404, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
