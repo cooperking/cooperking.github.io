@@ -947,6 +947,11 @@ function openSheet(html) {
   if (!dlg.open) dlg.showModal();
   $('#sheetIn').scrollTop = 0;
   var c = $('#sheetIn .close'); if (c) c.onclick = closeSheet;
+  if (TV) tvStart();
+}
+function tvStart() {   // the TV: a pop-up starts on its Play (or its first main button), not on Close
+  var b = $('#sheetIn #aplay') || $('#sheetIn .pill.go') || $('#sheetIn input') || $('#sheetIn .close');
+  if (b) b.focus({ preventScroll: true });
 }
 function closeSheet() { if (dlg.open) dlg.close(); }
 dlg.addEventListener('click', function (e) { if (e.target === dlg) closeSheet(); });
@@ -970,7 +975,7 @@ function itemSheet(it, ctx) {
   var top = it.backdrop ? '<div class="heroimg"><img alt="" src="' + esc(img(it.backdrop, 'Backdrop', 1100)) + '">' + X + '</div>' : (it.thumb || (it.type === 'video' && it.poster) ? '<div class="heroimg"><img alt="" src="' + esc(img(it.thumb || it.poster, it.thumb ? 'Thumb' : 'Primary', 1100)) + '">' + X + '</div>' : '<div class="noimg-top" style="position:relative">' + X + '</div>');
   openSheet(top + '<div class="in"><div class="date">' + (ctx.date ? esc(longDate(ctx.date)) : esc(typeName(it))) + '</div><h2>' + esc(showName(it)) + '</h2><div id="isbody">' + bodyHTML(it, ctx) + '</div></div>');
   wireBody(it, ctx);
-  api('item?id=' + it.id).then(function (full) { if (!dlg.open) return; Object.assign(it, full); $('#isbody').innerHTML = bodyHTML(it, ctx); wireBody(it, ctx); }).catch(function () {});
+  api('item?id=' + it.id).then(function (full) { if (!dlg.open) return; Object.assign(it, full); var had = document.activeElement && document.activeElement.id; $('#isbody').innerHTML = bodyHTML(it, ctx); wireBody(it, ctx); if (TV) { var back = had && $('#' + had); if (back) back.focus({ preventScroll: true }); else tvStart(); } }).catch(function () {});
 }
 function typeName(it) { return { movie: 'Film', series: 'Series', episode: it.series || 'Episode', video: 'Home video', photo: 'Photo' }[it.type] || ''; }
 function bodyHTML(it, ctx) {
@@ -1413,16 +1418,26 @@ function pressables() {
 function moveFocus(dir) {
   var all = pressables(), cur = document.activeElement;
   if (!all.length) return;
-  if (all.indexOf(cur) < 0) { (all.filter(function (e) { return e.matches('.day.today'); })[0] || all[0]).focus(); return; }
+  if (all.indexOf(cur) < 0) { (all.filter(function (e) { return e.matches('.day.today'); })[0] || all.filter(function (e) { return e.matches('.card, #aplay, .day.has'); })[0] || all[0]).focus(); return; }
   var a = cur.getBoundingClientRect(), ax = a.left + a.width / 2, ay = a.top + a.height / 2, best = null, bestScore = 1e9;
-  all.forEach(function (el) {
+  if (dir === 'up' || dir === 'down') {   // up and down: the next row first (whatever's nearest above or below), then along it the nearest (John, 8 Nov 2026: up from the calendar went straight past the month's buttons to the bar)
+    var cands = all.filter(function (el) { if (el === cur) return false; var r = el.getBoundingClientRect(); return dir === 'down' ? r.top >= a.bottom - 4 : r.bottom <= a.top + 4; });
+    var gap = function (r) { return dir === 'down' ? r.top - a.bottom : a.top - r.bottom; };
+    var first = null, fg = 1e9;
+    cands.forEach(function (el) { var g0 = gap(el.getBoundingClientRect()); if (g0 < fg) { fg = g0; first = el.getBoundingClientRect(); } });
+    cands.forEach(function (el) {
+      var r = el.getBoundingClientRect();
+      if (!(r.top < first.bottom - 2 && r.bottom > first.top + 2)) return;   // (only that next row: what lines up with the nearest)
+      var side = r.right < a.left ? a.left - r.right : r.left > a.right ? r.left - a.right : 0;
+      var score = side * 4 + Math.abs((r.left + r.width / 2) - ax) * .1 + gap(r);
+      if (score < bestScore) { bestScore = score; best = el; }
+    });
+  } else all.forEach(function (el) {
     if (el === cur) return;
     var r = el.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2, dx = x - ax, dy = y - ay, main, side;
     var sameRow = r.top < a.bottom - 2 && r.bottom > a.top + 2;   // (left and right stay on the row)
     if (dir === 'right') { if (r.left < a.right - 4 || !sameRow) return; main = dx; side = dy; }
-    else if (dir === 'left') { if (r.right > a.left + 4 || !sameRow) return; main = -dx; side = dy; }
-    else if (dir === 'down') { if (r.top < a.bottom - 4) return; main = dy; side = dx; }
-    else { if (r.bottom > a.top + 4) return; main = -dy; side = dx; }
+    else { if (r.right > a.left + 4 || !sameRow) return; main = -dx; side = dy; }
     var score = main + Math.abs(side) * 2.2;
     if (score < bestScore) { bestScore = score; best = el; }
   });
