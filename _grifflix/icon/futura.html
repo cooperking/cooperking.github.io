@@ -16,6 +16,7 @@ html, body { margin: 0; background: #000; }
 <script>
 var q = new URLSearchParams(location.search), s = document.getElementById('i').style;
 ['w', 'h', 'fs', 'cw', 'ch', 'cg'].forEach(function (k) { if (q.get(k)) s.setProperty('--' + k, q.get(k)); });
+if (q.get('clear')) { document.documentElement.style.background = document.body.style.background = s.background = 'transparent'; }   // (?clear=1: no ground, for the Fire TV launcher, which shows bars round a filled one: John, 8 Nov 2026)
 if (q.get('t')) { var t = document.getElementById('t'); t.textContent = q.get('t'); t.style.letterSpacing = '0'; t.style.marginRight = '0'; }
 document.fonts.load('700 76px F').then(function () { document.body.dataset.ready = 1; });
 </script></body></html>
