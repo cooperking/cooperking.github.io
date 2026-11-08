@@ -150,6 +150,7 @@ img { display: block; }
 .row h2 i, .sect h2 i { font-weight: 300; }
 .row h2 .more { margin-left: auto; font: 600 11px/1 var(--sans); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); background: none; border: 0; }
 .strip { display: grid; grid-auto-flow: column; grid-auto-columns: clamp(118px, 13vw, 168px); gap: 14px; overflow-x: auto; padding: 2px 4px 10px; scroll-snap-type: x proximity; scrollbar-width: thin; }
+.strip, .gridcards { align-items: start; }   /* (a card is a button, which centres what's in it: a title on two lines lifted its poster above its neighbours') */
 .strip.wide { grid-auto-columns: clamp(220px, 24vw, 300px); }
 .card { position: relative; min-width: 0; padding: 0; border: 0; background: none; text-align: left; scroll-snap-align: start; }
 .card .pic { position: relative; aspect-ratio: 2 / 3; border-radius: 8px; overflow: hidden; background: rgba(255, 255, 255, .08); border: 1px solid rgba(255, 255, 255, .12); box-shadow: 0 8px 22px var(--shadow); }
@@ -656,8 +657,30 @@ html.mob .tcal { height: auto !important; }
 .tchead { display: flex; align-items: center; gap: 16px; margin: 10px 0 18px; }
 .tcal .tcm { min-height: 40px; width: 40px; padding: 0; justify-content: center; font: 400 22px/1 var(--kfont); letter-spacing: 0; }
 .tcal .tcm:disabled { opacity: .25; }
+/* a computer or a TV: the calendar the whole screen, over the theme (John, 8 Nov 2026: "calendar is going in front of theme but
+   not covering it so it looks odd - it should also be full screen and have titles in boxes - like song of the day") */
+html:not(.mob) #sheet:has(.tcal) { position: fixed; inset: 0; width: 100vw; height: 100%; max-width: none; max-height: none; margin: 0; border: 0; padding: 0; }
+html:not(.mob) #sheet .sheet:has(.tcal) { width: 100% !important; height: 100%; max-height: none; border-radius: 0; box-shadow: none; overflow: hidden; }
+html:not(.mob) .tcal { height: 100%; box-sizing: border-box; padding: clamp(18px, 3.5vh, 36px) clamp(20px, 3vw, 48px); }
+html:not(.mob) .tcal > .tcgrid { height: 100%; min-height: 0; grid-template-rows: auto; grid-auto-rows: minmax(0, 1fr); }
+html:not(.mob) .tcal > .tcside { max-height: none; height: 100%; min-height: 0; }
+html:not(.mob) .tcal { grid-template-rows: auto auto minmax(0, 1fr) !important; }
+/* each day a box, as the songs' calendar: its number boxed at the top, the poster to the right, the title and year below */
+html:not(.mob) .tcd { aspect-ratio: auto; min-height: 0; border: 1px solid rgba(var(--kink), .18); background: rgba(var(--kink), .06); }
+html:not(.mob) .tcd.has { background: rgba(var(--kink), .1); }
+html:not(.mob) .tcd img { inset: 0 0 0 auto; width: auto; height: 100%; aspect-ratio: 2 / 3; max-width: 36%; object-fit: cover; }
+html:not(.mob) .tcd b { left: 6px; top: 6px; min-width: 1.6em; padding: 3px 4px; box-sizing: border-box; text-align: center; font: 600 12px/1 var(--kfont); letter-spacing: .04em; color: var(--fg); text-shadow: none; border: 1px solid rgba(var(--kink), .45); }
+html:not(.mob) .tcd.has b { background: var(--bg); color: var(--fg); text-shadow: none; }
+html:not(.mob) .tcd.today b { background: rgb(var(--kink)); color: var(--bg); }
+html:not(.mob) .tcd span { left: 7px; right: calc(36% + 5px); bottom: 7px; padding: 0; background: none; color: var(--fg); white-space: normal; display: flex; flex-direction: column; gap: 3px; text-overflow: clip; }
+html:not(.mob) .tcd span em { font: 600 clamp(10.5px, .85vw, 13px)/1.15 var(--kfont); font-style: normal; letter-spacing: 0; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: normal; word-break: normal; }
+html.tv .tcd span em { -webkit-line-clamp: 2; font-size: 11px; }
+html.tv .tcd img { max-width: 32%; }
+html.tv .tcd span { right: calc(32% + 4px); left: 6px; }
+html:not(.mob) .tcd span small { font: 500 10px/1 var(--kfont); letter-spacing: .2em; color: var(--fg-2); }
+html:not(.mob) .tcd.today { box-shadow: inset 0 0 0 2px rgb(var(--kink)); }
+html:not(.mob) .tcd:focus-visible, html:not(.mob) .tcd.has:hover { outline: 3px solid rgb(var(--kink)); outline-offset: 1px; z-index: 2; }
 /* a computer or a TV: the calendar wide, the month's films beside it (John, 8 Nov 2026: "Calendar can open wider on desktop and fire tv app") */
-html:not(.mob):not(.tv) #sheet .sheet:has(.tcal) { width: min(1440px, calc(100vw - 48px)); }
 html:not(.mob) .tcal { display: grid; grid-template-columns: minmax(0, 1fr) clamp(280px, 26vw, 380px); grid-template-rows: auto auto 1fr; column-gap: 40px; align-items: start; }
 html:not(.mob) .tcal > .tck { grid-column: 1; grid-row: 1; }
 html:not(.mob) .tcal > .tchead { grid-column: 1; grid-row: 2; }
@@ -670,6 +693,16 @@ html.tv .tcal { grid-template-rows: auto auto minmax(0, 1fr); }
 html[data-theme] #sheet .tcside { --faint: rgba(var(--kink), .62); --muted: rgba(var(--kink), .62); }
 html.tv .tcal .tcside h2 { font-size: 34px; }
 html[data-theme] #sheet .tcside h2 i { color: var(--fg-2); }
+/* a phone: the month and its films each in a box, as the songs' page (John, 8 Nov 2026: "Iphone needs the films below the
+   calendar in the same way"); the quieter words readable on a light month too */
+html.klook { --muted: rgba(var(--kink), .6); --faint: rgba(var(--kink), .55); }
+html.mob .tcal > .tcgrid, html.mob .tcal > .tcside { border: 1px solid rgba(var(--kink), .22) !important; background: rgba(var(--kink), .05); padding: 12px 10px 14px !important; }
+html.mob .tcal > .tcside { margin-top: 18px; padding: 16px 14px 6px !important; }
+@media (max-width: 760px), (orientation: portrait) and (max-width: 1100px) {
+  html.klook:not(.tv) .stage > .cal, html.klook:not(.tv) .stage > .side { border: 1px solid rgba(var(--kink), .22) !important; background: rgba(var(--kink), .05) !important; padding: 12px 10px 14px !important; }
+  html.klook:not(.tv) .stage > .side { padding: 16px 14px 6px !important; }
+  html.klook:not(.tv) .stage { gap: 18px; }
+}
 /* a phone: the calendar the whole screen, a poster a day */
 html.mob #sheet:has(.tcal) { position: fixed; inset: 0; width: 100vw; height: 100dvh; max-width: none; max-height: none; margin: 0; }
 html.mob #sheet .sheet:has(.tcal) { width: 100%; max-width: none; max-height: none; height: 100%; margin: 0; overflow: hidden; }
@@ -1854,7 +1887,7 @@ function calSheet() {   // the month's calendar, a pop-up in its theme's colour 
   for (var k = 0; k < lead; k++) h += '<div></div>';
   for (var d = 1; d <= n; d++) {
     var key = S.month + '-' + String(d).padStart(2, '0'), it = C.days[key], tc = key === TODAY ? ' today' : '';
-    if (it && !it.secret) h += '<button class="tcd has' + tc + '" data-day="' + key + '" aria-label="' + d + ' ' + MONTHS[m] + ': ' + esc(it.name) + '"><img alt="" loading="lazy" src="' + esc(mob && (it.poster || it.thumb) ? img(it.poster || it.thumb, it.poster ? 'Primary' : 'Thumb', 200) : img(it.backdrop || it.thumb || it.poster, it.backdrop ? 'Backdrop' : (it.thumb ? 'Thumb' : 'Primary'), 480)) + '"><b>' + d + '</b><span>' + esc(showName(it)) + '</span></button>';
+    if (it && !it.secret) h += '<button class="tcd has' + tc + '" data-day="' + key + '" aria-label="' + d + ' ' + MONTHS[m] + ': ' + esc(it.name) + '"><img alt="" loading="lazy" src="' + esc(it.poster || it.thumb ? img(it.poster || it.thumb, it.poster ? 'Primary' : 'Thumb', mob ? 200 : 240) : img(it.backdrop, 'Backdrop', 480)) + '"><b>' + d + '</b><span><em>' + esc(showName(it)) + '</em>' + (it.year ? '<small>' + esc(String(it.year)) + '</small>' : '') + '</span></button>';
     else h += '<div class="tcd' + tc + (it && it.secret ? ' secret' : '') + '"><b>' + d + '</b></div>';
   }
   var films = Object.keys(C.days).filter(function (k) { return k.slice(0, 7) === S.month && !C.days[k].secret; }).sort();   // (the month's films listed under it, as the songs' calendar)
