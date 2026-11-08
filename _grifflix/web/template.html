@@ -660,7 +660,7 @@ html.tv #bsin .tabs .pill { min-height: 56px; font-size: 16px !important; paddin
 .film .ov { font: 400 18px/1.65 var(--kfont) !important; letter-spacing: .01em; color: var(--fg) !important; max-width: 62ch !important; margin-top: 14px !important; display: block !important; -webkit-line-clamp: unset !important; overflow: visible !important; }
 .film .tags .pill, .film .chips .pill { border-radius: 0 !important; }
 .film .cred, .film .credits { font: 400 14px/1.6 var(--kfont) !important; color: var(--fg-2) !important; max-width: 70ch; }
-.film .close { position: fixed !important; top: 22px; right: 22px; z-index: 6; background: var(--bg) !important; }
+.film .close { position: fixed !important; top: 22px; right: 22px; z-index: 82; background: var(--bg) !important; }
 html:not(.phone) .film { display: grid; grid-template-columns: minmax(220px, 30vw) minmax(0, 1fr); gap: clamp(32px, 4vw, 72px); align-items: center; padding: 96px clamp(40px, 6vw, 110px) 60px; box-sizing: border-box; }
 html:not(.phone) .film .heroimg { display: none !important; }
 html:not(.phone) .film:not(.hasposter) .heroimg { display: block !important; position: relative !important; inset: auto !important; height: auto !important; aspect-ratio: 16 / 9 !important; width: 100% !important; border: 1px solid rgba(var(--kink), .25); }
@@ -2699,7 +2699,7 @@ function shBrand() {   // GRIFFLIX over a pop-up, just where the bar's is (the b
   band.style.height = Math.round(r.bottom + 16) + 'px';
   var oncal = !!$('#sheetIn .tcal'), onsearch = !!$('#sheetIn #sq');
   var words = oncal ? [['theme', 'Theme'], ['search', 'Search']] : onsearch ? [['calendar', 'Calendar'], ['theme', 'Theme']] : [];
-  if (!words.length && TV && $('#sheetIn .ipost, #sheetIn .heroimg, #sheetIn #aplay')) words = [S.fromCal ? ['calendar', 'Calendar'] : ['theme', 'Theme'], ['search', 'Search']];   // (a film: back to where you came from, or Search: John, 8 Nov 2026)
+  if (!words.length && $('#sheetIn .film')) words = [S.fromCal || VIEW() === 'calendar' ? ['calendar', 'Calendar'] : ['theme', 'Theme'], ['search', 'Search']];   // (a film: back to where you came from, or Search: John, 8 Nov 2026)
   nav.innerHTML = words.map(function (w) { return '<button type="button" data-sn="' + w[0] + '">' + w[1] + '</button>'; }).join('');
   nav.hidden = !words.length;
   $$('#shnav [data-sn]').forEach(function (x) { x.onclick = function () {
@@ -2715,7 +2715,7 @@ function shBrand() {   // GRIFFLIX over a pop-up, just where the bar's is (the b
     if (w === 'search') return searchSheet();
   }; });
   var tv = $('#tvview'), tr = tv && tv.offsetParent ? tv.getBoundingClientRect() : null;
-  nav.style.top = Math.round(r.top) + 'px'; nav.style.left = Math.round(tr ? tr.left : r.right + 28) + 'px'; nav.style.height = Math.round(r.height) + 'px';
+  nav.style.top = Math.round(r.top) + 'px'; nav.style.left = Math.round(tr && tr.left < r.right + 120 ? tr.left : r.right + 28) + 'px'; nav.style.height = Math.round(r.height) + 'px';
   b.hidden = false; b.style.left = Math.round(r.left) + 'px'; b.style.top = Math.round(r.top) + 'px'; ['fontFamily', 'fontWeight', 'fontSize', 'lineHeight', 'letterSpacing', 'color', 'textTransform'].forEach(function (k) { b.style[k] = cs[k]; });
 }
 dlg.addEventListener('click', function (e) { if (e.target === dlg) closeSheet(); });
