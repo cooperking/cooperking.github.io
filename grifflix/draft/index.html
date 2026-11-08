@@ -820,7 +820,7 @@ function drawMonth() {
   for (var k = 0; k < lead; k++) h += '<div class="day blank"></div>';
   for (var d = 1; d <= n; d++) {
     var key = S.month + '-' + String(d).padStart(2, '0'), it = C.days[key], cls = 'day' + (it ? ' has' : '') + (key === TODAY ? ' today' : '');
-    if (it && it.secret) { h += '<button class="' + cls + ' secret" data-day="' + key + '" aria-label="' + d + ' ' + MONTHS[m] + ': chosen, a surprise until 8am that day"><span class="q">?</span><span class="num">' + d + '</span></button>'; continue; }
+    if (it && it.secret) { h += '<div class="day' + (key === TODAY ? ' today' : '') + '"><span class="num">' + d + '</span></div>'; continue; }   // (chosen, a surprise till 8am that day: shown as an empty day, John, 8 Nov 2026; not a button, so not chosen over by mistake)
     if (!it && !mine) { h += '<div class="' + cls + '"><span class="num">' + d + '</span></div>'; continue; }
     h += '<button class="' + cls + '" data-day="' + key + '" aria-label="' + d + ' ' + MONTHS[m] + (it ? ': ' + esc(it.name) : '') + '">';
     if (it) h += '<img class="art" loading="lazy" alt="" src="' + esc(dayPic(it)) + '"><div class="cap"><div class="t">' + esc(showName(it)) + '</div><div class="s">' + esc(subOf(it)) + '</div></div>' + progBar(it);

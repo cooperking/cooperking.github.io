@@ -1558,7 +1558,10 @@ async function gAdmin(request, env, b, who, answer) {
   }
   if (!who || !who.owner) return answer(403, { error: Object.keys(all).length ? 'Only John.' : 'Grifflix hasn’t its members yet: start them from its admin page.' });
   all = who.all;
+  const gsubs = (await env.SOTD.get('gPushSubs', 'json')) || {}, pushes = {};   // (each member's devices with notifications on: John sees everyone's choices, signed in or not)
+  for (const x of Object.values(gsubs)) pushes[x.m] = (pushes[x.m] || 0) + 1;
   const list = () => Object.entries(all).map(([id, m]) => ({ id, name: m.name, email: m.email || '', joined: m.joined || 0, devices: Object.keys(m.devices || {}).length,
+    gpush: gMode(m, 'gpush'), gmail: gMode(m, 'gmail'), pushDevices: pushes[id] || 0,
     seen: Math.max(0, ...Object.values(m.devices || {}).map(d => d.seen || 0)), owner: id === who.id,
     invite: m.invite ? { until: m.invite.until, uses: m.invite.uses, gone: gInviteGone(m.invite), page: m.invite.page || '' } : null })).sort((a, b2) => a.name.localeCompare(b2.name));
   if (b.op === 'list') return answer(200, { members: list() });
