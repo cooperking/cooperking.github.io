@@ -795,6 +795,52 @@ def make_handler(g):
                                  'recent': [{'name': x.get('name'), 'at': x.get('at'), 'mins': x.get('mins')} for x in sorted(done.values(), key=lambda x: -(x.get('at') or 0))[:6]],
                                  'log': tail})
 
+        def api_originals(self, me, user, q, b):
+            """John's: the originals convert.py kept in "Grifflix Originals" (what they take, the drive's free space), and
+            deleting them from the admin page (John, 8 Nov 2026: "can I delete from the app"). Only files convert.py moved
+            there, and only inside a "Grifflix Originals" folder, can be deleted."""
+            if not me.get('owner'):
+                return self.send_json(403, {'error': 'Only John.'})
+            st = load(os.path.expanduser('~/Grifflix/convert-state.json'), {})
+
+            def safe(path):
+                real = os.path.realpath(path or '')
+                return '/Grifflix Originals/' in real and os.path.isfile(real) and real
+            kept = []
+            for iid, x in (st.get('done') or {}).items():
+                real = safe(x.get('kept'))
+                if real:
+                    kept.append({'id': iid, 'name': x.get('name'), 'at': x.get('at'), 'size': os.path.getsize(real), 'path': real})
+            if b.get('op') == 'delete':
+                want = set(b.get('ids') or []) if not b.get('all') else set(k['id'] for k in kept)
+                gone, freed = 0, 0
+                for k in kept:
+                    if k['id'] in want:
+                        try:
+                            os.remove(k['path'])
+                            gone += 1
+                            freed += k['size']
+                            d = os.path.dirname(k['path'])   # (its now-empty folders, up to Grifflix Originals)
+                            while '/Grifflix Originals/' in d + '/' and os.path.basename(d) != 'Grifflix Originals' and not os.listdir(d):
+                                os.rmdir(d)
+                                d = os.path.dirname(d)
+                        except OSError as e:
+                            log('Couldn’t delete an original:', e)
+                log('Deleted %d originals (%.1f GB)' % (gone, freed / 1e9))
+                kept = [k for k in kept if os.path.isfile(k['path'])]
+            drive = os.path.dirname(kept[0]['path']) if kept else None
+            if not drive:
+                roots = [l for v in g.jf.call('GET', '/Library/VirtualFolders') or [] for l in v.get('Locations') or []]
+                drive = roots[0] if roots else os.path.expanduser('~')
+            try:
+                import shutil
+                du = shutil.disk_usage(drive)
+                free, total = du.free, du.total
+            except OSError:
+                free = total = 0
+            self.send_json(200, {'originals': [{k2: v for k2, v in k.items() if k2 != 'path'} for k in sorted(kept, key=lambda k: -(k['at'] or 0))],
+                                 'size': sum(k['size'] for k in kept), 'free': free, 'total': total})
+
         def api_refresh(self, me, user, q, b):   # the page's Refresh button: look again for new films and changes
             g.forget()
             self.send_json(200, {'ok': True})
