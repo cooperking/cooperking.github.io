@@ -600,11 +600,20 @@ html.mob #sheetIn > .form:not(.tcal) { padding-top: calc(env(safe-area-inset-top
 /* the home-screen app draws under the clock: pages that scroll (not the full-screen themes) start below it */
 html:not(.hall):not(.table) body { padding-top: env(safe-area-inset-top); }
 /* the rows in Search's pop-up: above the shelves */
-#sheet .srows { margin: 22px 0 6px; }
-#sheet .srows .row { margin: 0 0 18px; }
-#sheet .srows .row h2 { font-size: 22px !important; margin: 0 0 10px; display: flex; justify-content: space-between; align-items: baseline; }
-#sheet .srows:empty { display: none; }
-html.tv #sheet .srows .row h2 { font-size: 30px !important; }
+#bgrid .nowrows { margin: 6px 0 0; }
+#bgrid .nowrows .row { margin: 0 0 22px; }
+#bgrid .nowrows .row h2 { font-size: 22px !important; margin: 0 0 10px; display: flex; justify-content: space-between; align-items: baseline; }
+html.tv #bgrid .nowrows .row h2 { font-size: 30px !important; }
+/* a phone: the shelves' tabs one row that scrolls sideways, the title smaller (four tabs now) */
+@media (max-width: 760px) {
+  .tabs { flex-wrap: nowrap !important; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tabs .pill { flex: none; padding: 0 12px !important; letter-spacing: .14em !important; }
+  .tabs .sp { display: none; }
+  .tabs .sfbar { position: sticky; right: 0; margin-left: auto; padding-left: 8px; background: var(--bg); box-shadow: -12px 0 12px -4px var(--bg); z-index: 2; }
+  #bsin .hero h1, html[data-page] .hero h1 { font-size: 34px !important; margin: 0; }
+  #bsin .hero { margin: 18px 0 10px !important; padding: 0 !important; text-align: left; }
+}
 /* sort and filter: two icons on the tabs' row; their panel under them */
 .sfbar { display: inline-flex; gap: 8px; align-items: center; }
 .sfb { display: inline-flex !important; align-items: center; gap: 8px; min-height: 40px; padding: 0 12px !important; position: relative; }
@@ -2397,7 +2406,7 @@ function drawRows(R, into) {
     h += '<section class="row"><h2>' + r[1] + (r[0] !== 'continue' ? '<button class="more" data-more="' + r[0] + '">See all</button>' : '') + '</h2><div class="strip' + (r[2] ? ' wide' : '') + '">' + items.map(function (i) { return cardHTML(i, r[2]); }).join('') + '</div></section>';
   });
   el.innerHTML = h; wireCards(el, all);
-  $$('[data-more]', el).forEach(function (b) { b.onclick = function () { var bs = $('#bsin'); if (into && bs) { browseIn(bs, b.dataset.more); bs.scrollIntoView({ block: 'start', behavior: 'smooth' }); } else location.hash = '#browse/' + b.dataset.more; }; });
+  $$('[data-more]', el).forEach(function (b) { b.onclick = function () { var bs = $('#bsin'); if (into && bs && bs.contains(into)) { browseIn(bs, b.dataset.more); } else location.hash = '#browse/' + b.dataset.more; }; });
 }
 
 /* --- browse: films, TV, home videos */
@@ -2419,15 +2428,15 @@ function browseIn(into, tab) {   // Browse drawn inside a pop-up (a collection, 
 function browse(into) {
   var main = into || $('#main');
   S.sheetInto = into || null;
-  var tabs = [['collections', 'Collections'], ['movies', 'Films'], ['tv', 'TV']];   // (no Home videos tab: John, 7 Nov 2026; the gateway still serves a home videos library if one is added)
+  var tabs = [['now', 'Now showing'], ['collections', 'Collections'], ['movies', 'Films'], ['tv', 'TV']];   // (Now showing: Carry on watching, New films, New on TV - John, 8 Nov 2026: "it should be a tab like collections")   // (no Home videos tab: John, 7 Nov 2026; the gateway still serves a home videos library if one is added)
   if (S.browse === 'home') S.browse = 'movies';
-  main.innerHTML = '<div class="hero"><h1>' + { movies: 'Films', tv: 'TV', collections: 'Collections' }[S.browse] + '</h1><div class="hsub" id="bcount"></div></div>' +
+  main.innerHTML = '<div class="hero"><h1>' + { now: 'Now showing', movies: 'Films', tv: 'TV', collections: 'Collections' }[S.browse] + '</h1><div class="hsub" id="bcount"></div></div>' +
     '<div class="tabs">' + tabs.map(function (t) { return '<button class="pill' + (t[0] === S.browse ? ' on' : '') + '" data-b="' + t[0] + '">' + t[1] + '</button>'; }).join('') +
-    '<span class="sp"></span>' + (S.browse === 'collections' ? '' : sfBar()) + '</div>' +
+    '<span class="sp"></span>' + (S.browse === 'collections' || S.browse === 'now' ? '' : sfBar()) + '</div>' +
     '<div class="moods" id="moods"></div><div id="bgrid"></div>';
   $$('[data-b]', main).forEach(function (b) { b.onclick = function () { if (into) { S.browse = b.dataset.b; browse(into); var f = $('#bsin [data-b].on'); if (f && TV) f.focus(); } else location.hash = '#browse/' + b.dataset.b; }; });
   // genres and moods (Films and TV): a row of moods, and every genre the shelves have, with how many
-  if (S.browse !== 'collections' && !DEMO) library().then(function (L) {
+  if (S.browse !== 'collections' && S.browse !== 'now' && !DEMO) library().then(function (L) {
     var count = {}; L[S.browse].forEach(function (id) { ((L.items[id] || {}).genres || []).forEach(function (g) { count[g] = (count[g] || 0) + 1; }); });
     if (S.genre && !count[S.genre]) S.genre = '';
     $('#moods').innerHTML = '<button class="pill' + (!S.mood ? ' on' : '') + '" data-mood="">All</button>' + MOODS.map(function (m) { return '<button class="pill' + (S.mood === m[0] ? ' on' : '') + '" data-mood="' + m[0] + '">' + m[1] + '</button>'; }).join('');   // (genres now in the filters)
@@ -2438,6 +2447,11 @@ function browse(into) {
   function fill() {
     var turn = fill.turn = (fill.turn || 0) + 1, here = function () { return turn === fill.turn && $('#bgrid'); };
     $('#bgrid').innerHTML = '<div class="empty">Looking on the shelves…</div>';
+    if (S.browse === 'now') return api('home').then(function (R) {   // the rows: Carry on watching (from the Mac, for a member), New films, New on TV
+      if (!here()) return; $('#bcount').innerHTML = '';
+      var el = $('#bgrid'); el.innerHTML = '<div class="rows nowrows"></div>'; drawRows(R, $('.nowrows', el));
+      if (!PUBLIC && !DEMO) soon(mac('home'), 8000).then(function (m) { if (m.continue && m.continue.length && here()) { R.continue = m.continue; drawRows(R, $('.nowrows', el)); } }).catch(function () {});
+    }).catch(oops);
     if (S.browse === 'collections') return apiMemo('collections', function (r) {
       if (!here()) return;
       $('#bcount').innerHTML = '<i>' + r.collections.length + '</i>';
@@ -2666,15 +2680,8 @@ function wireBody(it, ctx) {
 /* searching: on its own, or to choose a day's film */
 function searchSheet(onPick, title) {
   var withBrowse = !onPick && VIEW() === 'themes' && S.view === 'home';   // (in a theme, John: "Search can bring up the search bar plus collections and browse")
-  openSheet('<div class="form' + (withBrowse ? ' bsheet' : '') + '" style="position:relative">' + X + '<h2 style="font:400 34px/1.1 var(--serif);color:var(--fg)">' + (title || 'Search') + '</h2><input type="search" id="sq" placeholder="A film, a series, an episode…" autocomplete="off"><div class="results" id="sres"></div>' + (withBrowse ? '<div class="rows srows" id="srows"></div><div id="bsin"></div>' : '') + '</div>');
-  if (withBrowse) {
-    browseIn($('#bsin'), S.browse || 'collections');
-    // Carry on watching, New films, New on TV: above the shelves (John, 8 Nov 2026: in the themes they were nowhere; "yes" to here)
-    api('home').then(function (R) {
-      var el = $('#srows'); if (!el) return; drawRows(R, el);
-      if (!PUBLIC && !DEMO) soon(mac('home'), 8000).then(function (m) { if (m.continue && m.continue.length && $('#srows')) { R.continue = m.continue; drawRows(R, $('#srows')); } }).catch(function () {});
-    }).catch(function () {});
-  }
+  openSheet('<div class="form' + (withBrowse ? ' bsheet' : '') + '" style="position:relative">' + X + '<h2 style="font:400 34px/1.1 var(--serif);color:var(--fg)">' + (title || 'Search') + '</h2><input type="search" id="sq" placeholder="A film, a series, an episode…" autocomplete="off"><div class="results" id="sres"></div>' + (withBrowse ? '<div id="bsin"></div>' : '') + '</div>');
+  if (withBrowse) browseIn($('#bsin'), 'now');   // (Search opens on Now showing)
   var t, inp = $('#sq');
   if (TV) {   // a TV: the box chosen first, and only OK on it brings Amazon's keyboard up (John, 8 Nov 2026: "when you click search the typing text from amazon comes up immediately which looks bad")
     inp.readOnly = true; inp.setAttribute('inputmode', 'none');
