@@ -665,21 +665,21 @@ html:not(.mob) .tcal { height: 100%; box-sizing: border-box; padding: clamp(18px
 html:not(.mob) .tcal > .tcgrid { height: 100%; min-height: 0; grid-template-rows: auto; grid-auto-rows: minmax(0, 1fr); }
 html:not(.mob) .tcal > .tcside { max-height: none; height: 100%; min-height: 0; }
 html:not(.mob) .tcal { grid-template-rows: auto auto minmax(0, 1fr) !important; }
-/* each day a box, as the songs' calendar: its number boxed at the top, the poster to the right, the title and year below */
+/* each day a box, as the songs' calendar: the film's picture filling it, its number boxed at the top, the title and year
+   written over the foot of the picture (John, 8 Nov 2026: "no need to split a calendar image in two ... no right hand column") */
 html:not(.mob) .tcd { aspect-ratio: auto; min-height: 0; border: 1px solid rgba(var(--kink), .18); background: rgba(var(--kink), .06); }
-html:not(.mob) .tcd.has { background: rgba(var(--kink), .1); }
-html:not(.mob) .tcd img { inset: 0 0 0 auto; width: auto; height: 100%; aspect-ratio: 2 / 3; max-width: 36%; object-fit: cover; }
-html:not(.mob) .tcd b { left: 6px; top: 6px; min-width: 1.6em; padding: 3px 4px; box-sizing: border-box; text-align: center; font: 600 12px/1 var(--kfont); letter-spacing: .04em; color: var(--fg); text-shadow: none; border: 1px solid rgba(var(--kink), .45); }
-html:not(.mob) .tcd.has b { background: var(--bg); color: var(--fg); text-shadow: none; }
-html:not(.mob) .tcd.today b { background: rgb(var(--kink)); color: var(--bg); }
-html:not(.mob) .tcd span { left: 7px; right: calc(36% + 5px); bottom: 7px; padding: 0; background: none; color: var(--fg); white-space: normal; display: flex; flex-direction: column; gap: 3px; text-overflow: clip; }
-html:not(.mob) .tcd span em { font: 600 clamp(10.5px, .85vw, 13px)/1.15 var(--kfont); font-style: normal; letter-spacing: 0; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: normal; word-break: normal; }
-html.tv .tcd span em { -webkit-line-clamp: 2; font-size: 11px; }
-html.tv .tcd img { max-width: 32%; }
-html.tv .tcd span { right: calc(32% + 4px); left: 6px; }
-html:not(.mob) .tcd span small { font: 500 10px/1 var(--kfont); letter-spacing: .2em; color: var(--fg-2); }
+html:not(.mob) .tcd img { inset: 0; width: 100%; height: 100%; object-fit: cover; }
+html:not(.mob) .tcd b { left: 7px; top: 7px; min-width: 1.6em; padding: 3px 4px; box-sizing: border-box; text-align: center; font: 600 12px/1 var(--kfont); letter-spacing: .04em; color: var(--fg); text-shadow: none; border: 1px solid rgba(var(--kink), .45); }
+html:not(.mob) .tcd.has b { background: rgba(0, 0, 0, .55); color: #fff; border-color: rgba(255, 255, 255, .6); }
+html:not(.mob) .tcd.today b { background: #fff; color: #000; }
+html:not(.mob) .tcd span { left: 0; right: 0; bottom: 0; padding: 26px 9px 8px; background: linear-gradient(transparent, rgba(0, 0, 0, .82)); color: #fff; white-space: normal; display: flex; flex-direction: column; gap: 3px; }
+html:not(.mob) .tcd span em { font: 600 clamp(12px, 1vw, 16px)/1.15 var(--kfont); font-style: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+html:not(.mob) .tcd span small { font: 500 10px/1 var(--kfont); letter-spacing: .2em; color: rgba(255, 255, 255, .78); }
 html:not(.mob) .tcd.today { box-shadow: inset 0 0 0 2px rgb(var(--kink)); }
 html:not(.mob) .tcd:focus-visible, html:not(.mob) .tcd.has:hover { outline: 3px solid rgb(var(--kink)); outline-offset: 1px; z-index: 2; }
+html:not(.mob) .tcal > .tcside { display: none !important; }
+html:not(.mob) .tcal { grid-template-columns: minmax(0, 1fr) !important; }
+html.tv .tcd span em { font-size: 13px; }
 /* a computer or a TV: the calendar wide, the month's films beside it (John, 8 Nov 2026: "Calendar can open wider on desktop and fire tv app") */
 html:not(.mob) .tcal { display: grid; grid-template-columns: minmax(0, 1fr) clamp(280px, 26vw, 380px); grid-template-rows: auto auto 1fr; column-gap: 40px; align-items: start; }
 html:not(.mob) .tcal > .tck { grid-column: 1; grid-row: 1; }
@@ -1887,7 +1887,7 @@ function calSheet() {   // the month's calendar, a pop-up in its theme's colour 
   for (var k = 0; k < lead; k++) h += '<div></div>';
   for (var d = 1; d <= n; d++) {
     var key = S.month + '-' + String(d).padStart(2, '0'), it = C.days[key], tc = key === TODAY ? ' today' : '';
-    if (it && !it.secret) h += '<button class="tcd has' + tc + '" data-day="' + key + '" aria-label="' + d + ' ' + MONTHS[m] + ': ' + esc(it.name) + '"><img alt="" loading="lazy" src="' + esc(it.poster || it.thumb ? img(it.poster || it.thumb, it.poster ? 'Primary' : 'Thumb', mob ? 200 : 240) : img(it.backdrop, 'Backdrop', 480)) + '"><b>' + d + '</b><span><em>' + esc(showName(it)) + '</em>' + (it.year ? '<small>' + esc(String(it.year)) + '</small>' : '') + '</span></button>';
+    if (it && !it.secret) h += '<button class="tcd has' + tc + '" data-day="' + key + '" aria-label="' + d + ' ' + MONTHS[m] + ': ' + esc(it.name) + '"><img alt="" loading="lazy" src="' + esc(mob && (it.poster || it.thumb) ? img(it.poster || it.thumb, it.poster ? 'Primary' : 'Thumb', 200) : img(it.backdrop || it.thumb || it.poster, it.backdrop ? 'Backdrop' : (it.thumb ? 'Thumb' : 'Primary'), 480)) + '"><b>' + d + '</b><span><em>' + esc(showName(it)) + '</em>' + (it.year ? '<small>' + esc(String(it.year)) + '</small>' : '') + '</span></button>';
     else h += '<div class="tcd' + tc + (it && it.secret ? ' secret' : '') + '"><b>' + d + '</b></div>';
   }
   var films = Object.keys(C.days).filter(function (k) { return k.slice(0, 7) === S.month && !C.days[k].secret; }).sort();   // (the month's films listed under it, as the songs' calendar)
