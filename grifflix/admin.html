@@ -14,7 +14,7 @@
 <script>/* Grifflix's colours: the month's theme, as on Grifflix itself (John, 8 Nov 2026: "can my admin theme match the month too -
    main font can stay the same for readability, but colours"); the cards stay white to read */
 (function () {
-  var T = [['#f5c400', 0], ['#e2aa1e', 0], ['#0495b1', 0], ['#d74719', 0], ['#03160a', 1], ['#8e1420', 1], ['#f4f1ea', 0], ['#145063', 1], ['#0b4f8a', 1], ['#0f7b3e', 1], ['#0a0a0a', 1], ['#a8161a', 1]];
+  var T = [['#f5c400', 0], ['#e2aa1e', 0], ['#0495b1', 0], ['#d74719', 0], ['#03160a', 1], ['#8e1420', 1], ['#f4f1ea', 0], ['#145063', 1], ['#030a1c', 1], ['#1e8c4e', 1], ['#0a0a0a', 1], ['#a8161a', 1]];
   var m = new Date().getMonth(); try { m = +new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', month: 'numeric' }).format(new Date()) - 1; } catch (e) {}
   var t = T[m], st = document.documentElement.style;
   ['--bg', '--g1', '--g2', '--g3', '--g4'].forEach(function (n) { st.setProperty(n, t[0]); });   // (one flat colour, as the themes)
@@ -546,7 +546,7 @@
   // inspired movie in the calendar too. Add the others in later"); the films as in the page's THEMES
   var TFILMS = [['The Shining', 1980, 'The Corridor'], ['Sherlock Jr.', 1924, 'The Reel'], ['The Umbrellas of Cherbourg', 1964, 'The Umbrellas'], ['Vertigo', 1958, 'The Spiral'],
     ['The Matrix', 1999, 'The Code'], ['In the Mood for Love', 2000, 'The Slices'], ['All the President’s Men', 1976, 'The Pinboard'], ['Hugo', 2011, 'The Moon'],
-    ['Jaws', 1975, 'The Barrels'], ['The Wizard of Oz', 1939, 'The Yellow Brick Road'], ['Dr. Strangelove', 1964, 'The Table'], ['Citizen Kane', 1941, 'The Snow Globe']];
+    ['Tron', 1982, 'The Grid'], ['The Wizard of Oz', 1939, 'The Yellow Brick Road'], ['Dr. Strangelove', 1964, 'The Table'], ['Citizen Kane', 1941, 'The Snow Globe']];
   var MON = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'], THJOBS = [];
   function themeFirsts() {
     var norm = function (t) { return String(t || '').toLowerCase().replace(/’/g, "'"); };
