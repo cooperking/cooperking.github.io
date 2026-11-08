@@ -1462,6 +1462,11 @@ async function grifflix(request, url, env) {
       const tk = 'gtv:' + await sha256hex(short);
       id = await env.SOTD.get(tk);
       if (id && all[id]) await env.SOTD.delete(tk);
+      else {   // John only: a code from his Profile on the other site signs him in to Grifflix as himself (one use)
+        const sk = 'tvcode:' + await sha256hex(short), sid = await env.SOTD.get(sk), gown = await env.SOTD.get('gowner');
+        id = undefined;
+        if (sid && gown && all[gown] && sid === await env.SOTD.get('owner')) { await env.SOTD.delete(sk); id = gown; }
+      }
     } else {
       const hash = await sha256hex(given);
       id = Object.keys(all).find(k => all[k].invite && all[k].invite.hash === hash);
