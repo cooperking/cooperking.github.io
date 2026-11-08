@@ -739,6 +739,54 @@ html.mob .triallabel { white-space: nowrap; }
 .leaf2, .leaf2 * { -webkit-text-stroke: 0; }
 .leaf2 b { flex: 1; display: grid; place-items: center; font: 700 .52em/1 var(--kfont); color: rgb(var(--kink)); }
 .tcentre .leaf2 { margin: 0 auto 12px; font-size: 64px; }
+/* each theme's own calendar page (John: "the calendar icon for the day could be in the style of the theme too") */
+html[data-theme] .leaf2 b { font-family: var(--tfont); font-weight: var(--tw); }
+/* January, The Shining: the Overlook's carpet, its hexagons, under the number */
+html[data-theme=corridor] .leaf2 { border-width: .05em; }
+html[data-theme=corridor] .leaf2 i { background: #b4231c; color: #f5c400; }
+/* February, Sherlock Jr.: a frame of film, sprocket holes down its sides */
+html[data-theme=reel] .leaf2 { border: 0; background: #141414; padding: 0 .12em; background-image: linear-gradient(#f4ecd8 50%, transparent 50%), linear-gradient(#f4ecd8 50%, transparent 50%); background-size: .06em .14em; background-position: .03em 0, calc(100% - .03em) 0; background-repeat: repeat-y; }
+html[data-theme=reel] .leaf2 i { background: none; color: #f4ecd8; }
+html[data-theme=reel] .leaf2 b { color: #f4ecd8; background: #3a3a3a; margin: 0 0 .08em; }
+/* March, Cherbourg: an umbrella's canopy over the day */
+html[data-theme=umbrellas] .leaf2 { border: 0; border-radius: .5em .5em .08em .08em; background: #fff; }
+html[data-theme=umbrellas] .leaf2 i { height: .3em; padding: 0; background: repeating-conic-gradient(from 0deg at 50% 100%, #e30613 0 22.5deg, #ffe600 22.5deg 45deg); color: transparent; }
+html[data-theme=umbrellas] .leaf2 b { color: #000; }
+/* April, Vertigo: Bass's spiral behind the number */
+html[data-theme=spiral] .leaf2 { background: repeating-radial-gradient(circle at 50% 62%, transparent 0 .05em, rgba(0, 0, 0, .18) .05em .08em); }
+/* May, The Matrix: a green terminal */
+html[data-theme=code] .leaf2 { border-color: #2bff6a; box-shadow: 0 0 .12em rgba(43, 255, 106, .6); }
+html[data-theme=code] .leaf2 i { background: #2bff6a; color: #03160a; }
+html[data-theme=code] .leaf2 b { color: #2bff6a; }
+/* June, In the Mood for Love: a slit of red through the page */
+html[data-theme=slices] .leaf2 { border: 0; background: linear-gradient(90deg, #8e1420 0 12%, #f4ecd8 12% 88%, #8e1420 88%); }   /* (the page between two red slices) */
+html[data-theme=slices] .leaf2 i { background: #000; color: #f4ecd8; }
+html[data-theme=slices] .leaf2 b { color: #8e1420; text-shadow: 0 0 0 #000; }
+/* July, All the President's Men: a photograph pinned up */
+html[data-theme=pinboard] .leaf2 { position: relative; overflow: visible; border: 0; background: #fff; box-shadow: .03em .04em 0 rgba(0, 0, 0, .25); transform: rotate(-4deg); }
+html[data-theme=pinboard] .leaf2 i { background: none; color: #555; padding-top: .17em; }
+html[data-theme=pinboard] .leaf2 b { color: #000; }
+html[data-theme=pinboard] .leaf2::before { content: ""; position: absolute; left: 50%; top: -.07em; width: .12em; height: .12em; margin-left: -.06em; border-radius: 50%; background: #c8102e; }
+/* August, the moon: the day as a full moon */
+html[data-theme=moon] .leaf2 { border: 0; border-radius: 50%; width: 1em; height: 1em; background: radial-gradient(circle at 35% 35%, #fff9e3, #f3eacb 60%, #d9cda5); }
+html[data-theme=moon] .leaf2 i { background: none; color: #145063; padding-top: .14em; }
+html[data-theme=moon] .leaf2 b { color: #145063; margin-top: -.06em; }
+/* September, Alphaville: a neon sign */
+html[data-theme=credits] .leaf2 { border-radius: .1em; box-shadow: 0 0 .1em #fff, inset 0 0 .1em #fff; }
+html[data-theme=credits] .leaf2 i { background: none; color: #fff; text-shadow: 0 0 .1em #fff; }
+html[data-theme=credits] .leaf2 b { text-shadow: 0 0 .12em #fff; }
+/* October, Late Autumn: rice paper with a red seal */
+html[data-theme=autumn] .leaf2 { border: 0; background: #f4ecd8; }
+html[data-theme=autumn] .leaf2 i { align-self: center; background: #c4321f; color: #f4ecd8; margin: .1em 0 0; padding: .05em .07em; letter-spacing: .06em; }   /* (a red seal) */
+html[data-theme=autumn] .leaf2 b { color: #1d1d1b; }
+/* November, Dr. Strangelove: the War Room's board, black and white */
+html[data-theme=table] .leaf2 { border-width: .02em; }
+/* December, Citizen Kane: a bauble on its cap */
+html[data-theme=globe] .leaf2 { position: relative; overflow: visible; border: 0; border-radius: 50%; width: 1em; height: 1em; background: radial-gradient(circle at 35% 30%, #fff, #e7c35a 40%, #8a6a1c); margin-top: .12em; }
+html[data-theme=globe] .leaf2::before { content: ""; position: absolute; left: 50%; top: -.1em; width: .26em; height: .14em; margin-left: -.13em; background: #e7c35a; }
+html[data-theme=globe] .leaf2 i { background: none; color: #5a1010; padding-top: .16em; }
+html[data-theme=globe] .leaf2 b { color: #5a1010; margin-top: -.08em; }
+
 html.mob .tcentre .leaf2 { font-size: 72px; }
 /* the calendar pop-up on a phone: square days, as the songs' calendar, in the month's theme */
 html.mob .tcgrid { flex: none; grid-auto-rows: auto; }
@@ -1521,7 +1569,19 @@ function themeFit(m) {   // a phone: the theme drawn for an upright screen 780 w
 // at once; a flick runs on a few more days, slowing (John, 8 Nov 2026: "Swipe is still confusing"); a tap opens the day
 (function () {
   var G = null, moved = false, fling = 0, STEP = 56;
-  var on = function (e) { return VIEW() === 'themes' && MOB() && S.view === 'home' && !dlg.open && S.theme && e.target.closest && e.target.closest('#cal') && !e.target.closest('.mobnav, .tinspo'); };
+  var on = function (e) { return VIEW() === 'themes' && !TV && S.view === 'home' && !dlg.open && S.theme && e.target.closest && e.target.closest('#cal') && !e.target.closest('.mobnav, .tinspo'); };
+  // a computer (Chrome's trackpad, or a mouse's wheel): two fingers up or across, or the wheel, a day each step (John, 8 Nov 2026: "a swipe function for chrome app, with touch pad too")
+  var wacc = 0, wquiet = 0, wlast = 0;
+  document.addEventListener('wheel', function (e) {
+    if (VIEW() !== 'themes' || TV || S.view !== 'home' || dlg.open || !S.theme || !(e.target.closest && e.target.closest('#cal, .wrap'))) return;
+    e.preventDefault();
+    var t = Date.now(), d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+    if (e.deltaMode === 1) d *= 40;   // (a mouse's wheel, in lines)
+    if (t - wquiet > 220) wacc = 0;   // (a new gesture)
+    wquiet = t; wacc += d;
+    var need = Math.abs(d) >= 90 ? 1 : 70;   // (a mouse's notch: a day each; a trackpad: a day each 70px of its scroll)
+    while (Math.abs(wacc) >= need && t - wlast > 80) { var dir = wacc > 0 ? 1 : -1; wacc -= dir * need; wlast = t; themeStep(dir); if (need === 1) { wacc = 0; break; } }
+  }, { passive: false });
   document.addEventListener('touchstart', function (e) {
     clearTimeout(fling); if (!on(e) || e.touches.length > 1) { G = null; return; }
     var t = e.touches[0], el = e.target;
