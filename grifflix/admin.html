@@ -11,15 +11,15 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..600&family=Hanken+Grotesk:wght@400;500;600;700&family=Bebas+Neue&family=Oswald:wght@500&display=swap">
 <meta name="theme-color" content="#ec135b">
 <script src="/songs/admin-theme.js"></script>
-<script>/* Grifflix's colours: six months on from the songs' (the same palettes) */
+<script>/* Grifflix's colours: the month's theme, as on Grifflix itself (John, 8 Nov 2026: "can my admin theme match the month too -
+   main font can stay the same for readability, but colours"); the cards stay white to read */
 (function () {
-  var P = [['#0c1445', '#0094de', '#8833ff', '#f700f7', '#009aa8'], ['#652bee', '#3333ff', '#cc33ff', '#3388ff', '#ff2bb8'], ['#11970c', '#429e00', '#00a150', '#7d9600', '#009e84'], ['#b613ec', '#fc00e7', '#8833ff', '#ff33aa', '#5533ff'],
-    ['#096a42', '#00a336', '#009e91', '#00a30e', '#0097c9'], ['#ec1a13', '#fa5300', '#ff3366', '#db6e00', '#ff3399'], ['#1346ec', '#008ff5', '#5533ff', '#0097c9', '#8833ff'], ['#d85a06', '#c47c00', '#ff4a2e', '#b28600', '#ff3344'],
-    ['#0b86d3', '#0098b0', '#3370ff', '#009e91', '#3333ff'], ['#ec135b', '#ff3344', '#ff30b3', '#ff4c29', '#fc00e7'], ['#09696d', '#009e77', '#0094d4', '#00a150', '#198cff'], ['#ec13c1', '#ff3399', '#dd33ff', '#ff3366', '#aa33ff']];
+  var T = [['#f5c400', 0], ['#e2aa1e', 0], ['#0495b1', 0], ['#d74719', 0], ['#03160a', 1], ['#8e1420', 1], ['#f4f1ea', 0], ['#145063', 1], ['#2a2169', 1], ['#1578aa', 1], ['#0a0a0a', 1], ['#a8161a', 1]];
   var m = new Date().getMonth(); try { m = +new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', month: 'numeric' }).format(new Date()) - 1; } catch (e) {}
-  var p = P[(m + 6) % 12], st = document.documentElement.style;
-  ['--bg', '--g1', '--g2', '--g3', '--g4'].forEach(function (n, i) { st.setProperty(n, p[i]); });
-  var tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.content = p[0];
+  var t = T[m], st = document.documentElement.style;
+  ['--bg', '--g1', '--g2', '--g3', '--g4'].forEach(function (n) { st.setProperty(n, t[0]); });   // (one flat colour, as the themes)
+  if (!t[1]) { st.setProperty('--ink', '#000'); st.setProperty('--ink-2', 'rgba(0, 0, 0, .78)'); st.setProperty('--glass', 'rgba(0, 0, 0, .08)'); st.setProperty('--glass-2', 'rgba(0, 0, 0, .12)'); st.setProperty('--glass-line', 'rgba(0, 0, 0, .35)'); }
+  var tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.content = t[0];
 })();
 </script>
 <link rel="stylesheet" href="/songs/admin.css">
@@ -115,6 +115,12 @@
         <p class="stat">The film behind each month’s TV theme as Movie of the Day on the 1st of its month (the theme named in its note). The films Grifflix hasn’t got yet are left for later. <b>It changes Movie of the Day for everyone</b> once you next press Update everything.</p>
         <ul class="changes" id="thlist"></ul>
         <div class="state"><button class="btn" id="thgo" type="button" disabled>Put them on the 1sts</button></div>
+      </section>
+      <section class="card">
+        <div class="kicker">Downloads</div>
+        <h2 id="dlh">Looking…</h2>
+        <p class="stat">Members can keep a film on their phone or computer (a Download button on each film; not the Fire TV app). It comes from the Mac, so the Mac must be on while it downloads.</p>
+        <div class="state"><button class="btn" id="dlgo" type="button" disabled>Allow downloads</button></div>
       </section>
       <section class="card">
         <div class="kicker">Notifications and emails</div>
@@ -572,12 +578,21 @@
       .catch(function (e) { b.disabled = false; delete b.dataset.sure; b.textContent = 'Put them on the 1sts'; toast(e.message || 'The Mac didn’t answer.'); });
   };
 
+  // ---- downloads: whether members may keep films on their devices (the Mac's setting)
+  function dlDraw(on) { $('#dlh').innerHTML = on ? 'Downloads <em>on</em>' : 'Downloads <em>off</em>'; var b = $('#dlgo'); b.disabled = false; b.textContent = on ? 'Turn downloads off' : 'Allow downloads'; b.dataset.on = on ? '1' : ''; }
+  function dlLook() { if (!GW) return; fetch(GW + '/api/settings', { headers: { Authorization: 'Bearer ' + TOKEN } }).then(function (r) { if (r.status === 404) throw new Error('old'); return r.json(); }).then(function (j) { dlDraw(j.downloads); }).catch(function (e) { $('#dlh').innerHTML = e.message === 'old' ? 'Needs the Mac’s <em>update</em>' : 'The Mac isn’t <em>answering</em>'; }); }
+  $('#dlgo').onclick = function () {
+    var b = this; b.disabled = true;
+    fetch(GW + '/api/settings', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify({ downloads: !b.dataset.on }) })
+      .then(function (r) { return r.json(); }).then(function (j) { dlDraw(j.downloads); toast(j.downloads ? 'Members can download films' : 'Downloads off'); }).catch(function () { b.disabled = false; toast('The Mac didn’t answer.'); });
+  };
+
   // ---- the Mac mini
   function mac() {
     fetch('/grifflix/config.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (c) {
       var gw = String(c.gateway || '').replace(/\/$/, ''), t0 = Date.now();
       if (!gw) { $('#machead').textContent = 'Not connected'; return; }
-      GW = gw; convert(); software(); originals().then(orLine).catch(function () {});
+      GW = gw; convert(); software(); dlLook(); originals().then(orLine).catch(function () {});
       return fetch(gw + '/api/me', { headers: { Authorization: 'Bearer ' + TOKEN } }).then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (me) {
         var L = me.libraries || {};
         $('#machead').innerHTML = 'Answering <em>(' + (Date.now() - t0) + ' ms)</em>';
