@@ -1172,10 +1172,10 @@ var THEMES = [   // each its film's own lettering and colour, researched (John, 
   { key: 'autumn', mob: [0, 250, 1280, 640], name: 'Late Autumn', film: 'Late Autumn', year: 1960, by: 'Ozu', bg: '#c4321f', ink: '#fff', font: '"Yuji Syuku", serif', tw: 400, tt: 'none' },
   // Dr. Strangelove: Pablo Ferro's tall thin titles, drawn by hand on glass, over black and white
   { key: 'table', mob: [60, 0, 1220, 620], name: 'The Table', film: 'Dr. Strangelove', year: 1964, by: 'Kubrick; titles by Pablo Ferro', bg: '#0a0a0a', ink: '#fff', font: '"Amatic SC", sans-serif', tw: 700 },
-  // Citizen Kane: its main title's outlined condensed capitals; the red title band of the 1941 Style A poster
-  { key: 'globe', mob: [40, 60, 1240, 640], name: 'The Snow Globe', film: 'Citizen Kane', year: 1941, by: 'Orson Welles', bg: '#a8161a', ink: '#fff', font: '"GF-globe", "Big Shoulders", sans-serif', tw: 400 }
+  // Citizen Kane: its main title's outlined condensed capitals (League Gothic, the free revival of Alternate Gothic: John, 8 Nov 2026); the red title band of the 1941 Style A poster
+  { key: 'globe', mob: [40, 60, 1240, 640], name: 'The Snow Globe', film: 'Citizen Kane', year: 1941, by: 'Orson Welles', bg: '#a8161a', ink: '#fff', font: '"GF-globe", "League Gothic", sans-serif', tw: 400 }
 ];
-var THEMEFONTS = 'https://fonts.googleapis.com/css2?family=Bowlby+One&family=Della+Respira&family=Special+Gothic+Expanded+One&family=Londrina+Solid:wght@400;900&family=Share+Tech+Mono&family=Archivo+Narrow:wght@600&family=Anton&family=IM+Fell+English+SC&family=Tilt+Neon&family=Yuji+Syuku&family=Amatic+SC:wght@700&family=Big+Shoulders:wght@400;700&display=swap';
+var THEMEFONTS = 'https://fonts.googleapis.com/css2?family=Bowlby+One&family=Della+Respira&family=Special+Gothic+Expanded+One&family=Londrina+Solid:wght@400;900&family=Share+Tech+Mono&family=Archivo+Narrow:wght@600&family=Anton&family=IM+Fell+English+SC&family=Tilt+Neon&family=Yuji+Syuku&family=Amatic+SC:wght@700&family=Big+Shoulders:wght@400;700&family=League+Gothic&display=swap';
 function themeEarly() {   // (before the films arrive: the page already laid out as this month's theme)
   if (VIEW() !== 'themes') return; var R = document.documentElement, t = themeFor(new Date().getMonth());
   R.classList.add(t.key === 'table' ? 'table' : 'hall'); if (MOB()) R.classList.add('mob'); R.dataset.theme = t.key;
