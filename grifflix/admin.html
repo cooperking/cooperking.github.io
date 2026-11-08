@@ -134,7 +134,7 @@
         <h2 id="fonthead">Futura</h2>
         <p class="stat" id="fontsay">Your Futura web fonts (.woff2 and .woff), kept in Grifflix’s own storage, not on GitHub: pick them all at once (Book, Bold, Light).</p>
         <p class="stat">The monthly themes’ own fonts, when you have them, named like this (each takes over from the stand-in at once): <b>helvetica-bold</b> (January, The Shining’s credits), <b>eurostile-extended</b> (March, Cherbourg), <b>clarendon-bold</b> (April, Vertigo’s titles), <b>ocr-a</b> (May, The Matrix), <b>wood-gothic</b> (July, All the President’s Men’s poster), each .woff2 or .woff.</p>
-        <div class="state"><label class="btn primary" for="fontfile">Choose the font files</label><input type="file" id="fontfile" accept=".woff2,.woff" multiple hidden></div>
+        <div class="state"><label class="btn primary" for="fontfile">Choose the fonts (or their .zip)</label><input type="file" id="fontfile" multiple hidden></div>
       </section>
       <section class="card">
         <div class="kicker">Elsewhere</div>
@@ -451,9 +451,31 @@
   }
 
   // ---- Futura (John's web fonts): into Grifflix's own storage on the Worker, for its pages only
+  function unzip(file) {   // a .zip of fonts, opened here (the phone can't open .woff2 files itself): its .woff2 and .woff files
+    return file.arrayBuffer().then(function (buf) {
+      var v = new DataView(buf), out = [], i = buf.byteLength - 22;
+      while (i >= 0 && v.getUint32(i, true) !== 0x06054b50) i--;
+      if (i < 0) throw new Error(file.name + ': not a zip I can read.');
+      var n = v.getUint16(i + 10, true), at = v.getUint32(i + 16, true), jobs = [];
+      for (var k = 0; k < n; k++) {
+        var method = v.getUint16(at + 10, true), csize = v.getUint32(at + 20, true), nl = v.getUint16(at + 28, true), xl = v.getUint16(at + 30, true), cl = v.getUint16(at + 32, true), loc = v.getUint32(at + 42, true);
+        var name = new TextDecoder().decode(new Uint8Array(buf, at + 46, nl)); at += 46 + nl + xl + cl;
+        var base = name.split('/').pop();
+        if (!/\.(woff2?|WOFF2?)$/.test(base) || name.indexOf('__MACOSX') >= 0) continue;
+        var start = loc + 30 + v.getUint16(loc + 26, true) + v.getUint16(loc + 28, true), raw = new Uint8Array(buf, start, csize);
+        jobs.push((method === 0 ? Promise.resolve(raw) : new Response(new Blob([raw]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer())
+          .then((function (b) { return function (data) { return new File([data], b); }; })(base)));
+      }
+      return Promise.all(jobs);
+    });
+  }
   $('#fontfile').onchange = function () {
-    var files = [].slice.call(this.files || []), done = 0, last = null;
-    if (!files.length) return;
+    var picked = [].slice.call(this.files || []), done = 0, last = null;
+    if (!picked.length) return;
+    $('#fontsay').textContent = 'Opening…';
+    Promise.all(picked.map(function (f) { return /\.zip$/i.test(f.name) ? unzip(f) : Promise.resolve([f]); })).then(function (lists) {
+    var files = [].concat.apply([], lists).filter(function (f) { return /\.woff2?$/i.test(f.name); });
+    if (!files.length) { $('#fontsay').textContent = 'No .woff2 or .woff fonts in that.'; return; }
     $('#fontsay').textContent = 'Sending ' + files.length + ' file' + (files.length === 1 ? '' : 's') + '…';
     files.reduce(function (p, f) {
       return p.then(function () {
@@ -464,6 +486,7 @@
     }, Promise.resolve()).then(function () {
       $('#fonthead').innerHTML = 'Futura <em>kept</em>'; $('#fontsay').textContent = done + ' sent. Kept now: ' + ((last && last.fonts) || []).join(', ') + '. Grifflix shows them next time it opens.';
     }).catch(function (e) { $('#fontsay').textContent = e.message; });
+    }).catch(function (e) { $('#fontsay').textContent = e.message || 'That couldn’t be opened.'; });
   };
 
   // ---- conversions (convert.py on the Mac): the film it's on and how far, and those done

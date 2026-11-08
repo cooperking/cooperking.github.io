@@ -1569,7 +1569,19 @@ function themeFit(m) {   // a phone: the theme drawn for an upright screen 780 w
 // at once; a flick runs on a few more days, slowing (John, 8 Nov 2026: "Swipe is still confusing"); a tap opens the day
 (function () {
   var G = null, moved = false, fling = 0, STEP = 56;
-  var on = function (e) { return VIEW() === 'themes' && MOB() && S.view === 'home' && !dlg.open && S.theme && e.target.closest && e.target.closest('#cal') && !e.target.closest('.mobnav, .tinspo'); };
+  var on = function (e) { return VIEW() === 'themes' && !TV && S.view === 'home' && !dlg.open && S.theme && e.target.closest && e.target.closest('#cal') && !e.target.closest('.mobnav, .tinspo'); };
+  // a computer (Chrome's trackpad, or a mouse's wheel): two fingers up or across, or the wheel, a day each step (John, 8 Nov 2026: "a swipe function for chrome app, with touch pad too")
+  var wacc = 0, wquiet = 0, wlast = 0;
+  document.addEventListener('wheel', function (e) {
+    if (VIEW() !== 'themes' || TV || S.view !== 'home' || dlg.open || !S.theme || !(e.target.closest && e.target.closest('#cal, .wrap'))) return;
+    e.preventDefault();
+    var t = Date.now(), d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+    if (e.deltaMode === 1) d *= 40;   // (a mouse's wheel, in lines)
+    if (t - wquiet > 220) wacc = 0;   // (a new gesture)
+    wquiet = t; wacc += d;
+    var need = Math.abs(d) >= 90 ? 1 : 70;   // (a mouse's notch: a day each; a trackpad: a day each 70px of its scroll)
+    while (Math.abs(wacc) >= need && t - wlast > 80) { var dir = wacc > 0 ? 1 : -1; wacc -= dir * need; wlast = t; themeStep(dir); if (need === 1) { wacc = 0; break; } }
+  }, { passive: false });
   document.addEventListener('touchstart', function (e) {
     clearTimeout(fling); if (!on(e) || e.touches.length > 1) { G = null; return; }
     var t = e.touches[0], el = e.target;
