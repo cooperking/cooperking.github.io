@@ -610,12 +610,14 @@ html.tv[data-theme] .sheet .heroimg { left: auto; width: 56%; }
 html.tv[data-theme] .sheet .heroimg img { opacity: 1; object-position: 50% 30%; }
 html.tv[data-theme] .sheet .heroimg::after { background: linear-gradient(90deg, var(--bg) 0%, transparent 32%); }
 html.tv[data-theme] .sheet .in { max-width: 46vw; }
-html.hall .bar-top .members, html.table .bar-top .members, html.hall .bar-top #refresh, html.table .bar-top #refresh, html.hall .bar-top .ico, html.table .bar-top .ico { display: none !important; }
+html.hall .bar-top .members, html.table .bar-top .members, html.hall .bar-top .ico, html.table .bar-top .ico { display: none !important; }
+html.klook .bar-top #refresh svg { display: block; width: 19px; height: 19px; }   /* (the reload: an icon, beside the profile) */
+html.hall .bar-top #refresh, html.table .bar-top #refresh { margin-left: auto !important; padding: 4px 2px; }
 html.hall .tmonth, html.table .tmonth { top: auto; bottom: 66px; opacity: 1 !important; }
 .tinspo { position: fixed; top: auto; bottom: 36px; }
 html.klook.tv .triallabel { bottom: auto; top: 6px; }
 html.hall .bar-top .pill[data-go="browse"], html.table .bar-top .pill[data-go="browse"] { display: none !important; }
-html.hall .bar-top #who, html.table .bar-top #who { margin-left: auto !important; }
+html.hall .bar-top #who, html.table .bar-top #who { margin-left: 0 !important; }
 /* the pop-ups (a day's film, the month's calendar, Search, Browse, the profile) in the month's theme: its colour, its type */
 html[data-theme] #sheet { --fg: rgb(var(--kink)); --fg-2: rgba(var(--kink), .74); --line: rgba(var(--kink), .3); }
 html[data-theme] #sheet .sheet { background: var(--bg); border: 0; border-radius: 0; box-shadow: 0 0 0 1px rgba(var(--kink), .25); color: var(--fg-2); }
@@ -1386,7 +1388,8 @@ function tableTurn(b) {   // the table turned so b is at the front; its film in 
     el.style.transform = 'scale(' + (el === b ? 1.52 : (.62 + .38 * depth)).toFixed(3) + ')';
     el.style.zIndex = el === b ? 200 : Math.round(depth * 100);
     el.style.opacity = KLOOK ? 1 : (.45 + .55 * depth).toFixed(2);   // (on the month's bold colour: crisp, not faded into it)
-    el.style.filter = el === b ? 'none' : 'grayscale(1) brightness(' + (.62 + .3 * depth).toFixed(2) + ')';   // (the others in black and white, the day you're on in colour)
+    el.style.filter = el === b ? 'none' : 'grayscale(1) brightness(' + (.62 + .3 * depth).toFixed(2) + ')';
+    el.classList.toggle('front', el === b);   // (the day you're on: where Down and Back come back to)   // (the others in black and white, the day you're on in colour)
   });
   var c = $('#tcentre'); if (!c) return;
   var it = b && S.calData.days[b.dataset.day];
@@ -1449,7 +1452,8 @@ function calSheet() {   // the month's calendar, a pop-up in its theme's colour 
     else h += '<div class="tcd' + tc + (it && it.secret ? ' secret' : '') + '"><b>' + d + '</b></div>';
   }
   openSheet(h + '</div></div>');
-  $$('#sheetIn .tcd[data-day]').forEach(function (b) { b.onclick = function () { daySheet(b.dataset.day); }; });
+  S.fromCal = false;
+  $$('#sheetIn .tcd[data-day]').forEach(function (b) { b.onclick = function () { S.fromCal = true; daySheet(b.dataset.day); }; });
   if (TV) setTimeout(function () { var f = $('#sheetIn .tcd.today.has') || $$('#sheetIn .tcd.has').pop(); if (f) f.focus(); }, 60);
 }
 function themeTurn(b) {
@@ -1682,7 +1686,7 @@ function collectionView(id, into) {
 }
 function wireCards(el, items) {
   var by = {}; items.forEach(function (i) { by[i.id] = i; SEEN[i.id] = i; });
-  $$('[data-item]', el).forEach(function (b) { b.onclick = function () { var it = by[b.dataset.item]; if (it && it.type === 'collection') { if (S.sheetInto && dlg.open && S.sheetInto.isConnected) collectionView(it.id, S.sheetInto); else location.hash = '#collection/' + it.id; } else itemSheet(it); }; });   // (a box set inside a collection opens as a collection)
+  $$('[data-item]', el).forEach(function (b) { b.onclick = function () { var it = by[b.dataset.item]; if (it && it.type === 'collection') { if (S.sheetInto && dlg.open && S.sheetInto.isConnected) { S.sheetInto.dataset.coll = 1; collectionView(it.id, S.sheetInto); } else location.hash = '#collection/' + it.id; } else itemSheet(it); }; });   // (a box set inside a collection opens as a collection)
 }
 function drawRows(R) {
   var el = $('#rows'); if (!el) return;
@@ -1706,7 +1710,8 @@ function browseIn(into, tab) {   // Browse drawn inside a pop-up (a collection, 
   into.onclick = function (e) {   // (in the pop-up, a collection and the way back to Collections stay in it)
     var a = e.target.closest && e.target.closest('a[href^="#collection/"], a[href^="#browse/"]'); if (!a) return;
     e.preventDefault(); var h = a.getAttribute('href').slice(1).split('/');
-    if (h[0] === 'collection') collectionView(h[1], into); else { S.browse = h[1]; browse(into); }
+    if (h[0] === 'collection') { into.dataset.coll = 1; collectionView(h[1], into); } else { delete into.dataset.coll; S.browse = h[1]; browse(into); }
+    if (TV) setTimeout(function () { var f = $('#bsin .tabs a, #bsin [data-b].on, #bsin .card'); if (f) f.focus(); }, 120);
   };
   browse(into);
 }
@@ -1807,6 +1812,7 @@ function tvStart() {   // the TV: a pop-up starts on its Play (or its first main
 }
 function closeSheet() { if (dlg.open) dlg.close(); }
 dlg.addEventListener('click', function (e) { if (e.target === dlg) closeSheet(); });
+dlg.addEventListener('close', function () { S.fromCal = false; });
 var X = '<button class="ico close" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6 6 18"/></svg></button>';
 var PLAY = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
 var HEART = function (on) { return '<svg viewBox="0 0 24 24" fill="' + (on ? 'currentColor' : 'none') + '" stroke="currentColor" stroke-width="2"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>'; };
@@ -2411,12 +2417,16 @@ document.addEventListener('keydown', function (e) {
   }
   if (ae && ae.classList && /\b(vday|hday|tday)\b/.test(ae.className)) {   // the month's theme: right and left through its days (and on into the next month's); up to the bar's words
     if (k === 'left' || k === 'right') { e.preventDefault(); themeStep(k === 'right' ? 1 : -1); return; }
-    if (k === 'up') { e.preventDefault(); var cp = $('#tinspo.link'); if (cp) { cp.focus(); return; } document.documentElement.classList.remove('barhide'); var u = $('#tvview'); if (u) u.focus(); return; }
+    if (k === 'up') { e.preventDefault(); document.documentElement.classList.remove('barhide'); var u = $('#tvview'); if (u) u.focus(); return; }
+    if (k === 'down') { e.preventDefault(); var cp = $('#tinspo.link'); if (cp) cp.focus(); return; }   // (the film the theme comes from, at the foot)
+  }
+  if (ae && ae.id === 'tinspo') {   // the caption: back up (or along) to the day you were on
+    if (k === 'up' || k === 'left' || k === 'right') { e.preventDefault(); var fr = $('#cal button.front') || $('#cal .tday.has'); if (fr) fr.focus({ preventScroll: true }); return; }
     if (k === 'down') { e.preventDefault(); return; }
   }
-  if (ae && ae.id === 'tinspo') {   // the caption: down back to the day you were on; up to the bar's words
-    if (k === 'down' || k === 'left' || k === 'right') { e.preventDefault(); var fr = $('#cal button.front') || $('#cal .tday.has'); if (fr) fr.focus({ preventScroll: true }); return; }
-    if (k === 'up') { e.preventDefault(); document.documentElement.classList.remove('barhide'); var u2 = $('#tvview'); if (u2) u2.focus(); return; }
+  if (ae && ae.closest && ae.closest('.bar-top') && VIEW() === 'themes' && S.view === 'home' && !dlg.open) {   // the bar: down back to the day you were on; up nowhere
+    if (k === 'down') { e.preventDefault(); var fb = $('#cal button.front') || $('#cal .tday.has') || $('#cal button[data-day]'); if (fb) fb.focus({ preventScroll: true }); return; }
+    if (k === 'up') { e.preventDefault(); return; }
   }
   if (k === 'ok' || (inText && (k === 'left' || k === 'right'))) return;   // OK presses the button (the browser's own); text keeps its own left/right
   e.preventDefault();
@@ -2436,8 +2446,14 @@ window.grifflixTV = {
   },
   back: function () {
     if (P.el.classList.contains('on')) { stopPlayer(); return 'done'; }
-    if (dlg.open) { closeSheet(); return 'done'; }
+    if (dlg.open) {
+      var bi = $('#bsin');
+      if (bi && bi.dataset.coll) { delete bi.dataset.coll; browse(bi); var bt = $('#bsin [data-b].on'); if (bt) bt.focus(); return 'done'; }   // (a collection, opened in a pop-up: back to Collections)
+      if (S.fromCal && $('#sheetIn .tcal') === null) { S.fromCal = false; calSheet(); return 'done'; }   // (a day opened from the month's calendar: back to it)
+      closeSheet(); return 'done';
+    }
     if (S.view !== 'home') { location.hash = '#home'; return 'done'; }
+    if (VIEW() === 'themes') { var fr = $('#cal button.front'), ae = document.activeElement; if (fr && ae !== fr) { fr.focus({ preventScroll: true }); return 'done'; } }   // (anywhere else on the page: back to the day you're on first)
     return 'page';
   }
 };
