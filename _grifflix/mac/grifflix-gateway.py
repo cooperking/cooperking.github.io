@@ -529,6 +529,13 @@ def make_handler(g):
             try:
                 if u.path == '/health':
                     return self.send_json(200, {'ok': True, 'version': VERSION, 'sha': (load(INSTALLED, {}).get('sha') or '')[:7]})
+                if u.path.startswith('/dl/'):   # a film's file, to keep on a phone or computer (while John allows it)
+                    uid = check_key(g.st['secret'], q.pop('g', ''))
+                    if not uid:
+                        return self.send_json(403, {'error': 'That link has run out. Reload the page.'})
+                    if not g.store.d.get('settings', {}).get('downloads'):
+                        return self.send_json(403, {'error': 'Downloads are off just now.'})
+                    return self.download(u.path[4:], method)
                 if u.path.startswith('/img/') or u.path.startswith('/v/'):
                     uid = check_key(g.st['secret'], q.pop('g', ''))
                     if not uid:
@@ -618,7 +625,7 @@ def make_handler(g):
                 except Exception:
                     libs[key] = 0
             self.send_json(200, {'name': me['name'], 'owner': me['owner'], 'uid': me['uid'], 'key': make_key(g.st['secret'], me['uid']),
-                                 'keyHours': KEY_HOURS, 'libraries': libs})
+                                 'keyHours': KEY_HOURS, 'libraries': libs, 'downloads': bool(g.store.d.get('settings', {}).get('downloads'))})
 
         def api_home(self, me, user, q, b):
             prog = user['progress']
@@ -1062,6 +1069,30 @@ def make_handler(g):
             self.send_json(200, {'hls': hls, 'direct': direct, 'subs': subs, 'ps': ps, 'device': dev,
                                  'pos': user['progress'].get(iid, {}).get('pos', 0), 'secs': round((it.get('RunTimeTicks') or 0) / 1e7)})
 
+        def api_download(self, me, user, q, b):
+            """A member's link to keep a film on their phone or computer (John, 8 Nov 2026: "Can members be allowed to download
+            films to their device"), while John allows downloads (admin); its size, so they know."""
+            if not g.store.d.get('settings', {}).get('downloads'):
+                return self.send_json(403, {'error': 'Downloads are off just now.'})
+            iid = g.now_id(q.get('id', ''))
+            if not re.match(r'^[0-9a-f]{32}$', iid):
+                return self.send_json(400, {'error': 'Which film?'})
+            it = g.one(iid)
+            ms = (it.get('MediaSources') or [{}])[0]
+            self.send_json(200, {'url': '/dl/%s?g=%s' % (iid, make_key(g.st['secret'], me['uid'])), 'bytes': ms.get('Size') or 0,
+                                 'container': (ms.get('Container') or '').split(',')[0]})
+
+        def api_settings(self, me, user, q, b):   # John's: whether members may download films
+            st = g.store.d.setdefault('settings', {})
+            if b:
+                if not me.get('owner'):
+                    return self.send_json(403, {'error': 'Only John.'})
+                with g.store.lock:
+                    if 'downloads' in b:
+                        st['downloads'] = bool(b['downloads'])
+                    g.store.touch()
+            self.send_json(200, {'downloads': bool(st.get('downloads'))})
+
         def api_stop(self, me, user, q, b):
             try:
                 g.jf.call('DELETE', '/Videos/ActiveEncodings', query={'DeviceId': b.get('device'), 'PlaySessionId': b.get('ps')})
@@ -1244,6 +1275,17 @@ def make_handler(g):
             qs.setdefault('quality', '85')
             self.passthrough('GET', path + '?' + urllib.parse.urlencode(qs), cache=cache)
 
+        def download(self, iid, method):   # the film's own file, named for it (Jellyfin's Download), so the phone or computer keeps it as a file
+            if not re.match(r'^[0-9a-f]{32}$', iid):
+                return self.send_json(404, {'error': 'Not here.'})
+            iid = g.now_id(iid)
+            it = g.one(iid)
+            ms = (it.get('MediaSources') or [{}])[0]
+            ext = (ms.get('Container') or 'mp4').split(',')[0]
+            name = re.sub(r'[^\w .()&,!\'-]+', '', '%s (%s)' % (it.get('Name') or 'Film', it.get('ProductionYear') or '')).strip() or 'Film'
+            self.dl_name = '%s.%s' % (name, ext)
+            self.passthrough(method, '/Items/%s/Download' % iid)
+
         def video(self, rest, q, method):
             if not re.match(r'^[0-9a-f]{32}/[\w./-]+$', rest) or '..' in rest:
                 return self.send_json(404, {'error': 'Not here.'})
@@ -1276,6 +1318,9 @@ def make_handler(g):
             for h in ('Content-Type', 'Content-Length', 'Content-Range', 'Accept-Ranges', 'Last-Modified', 'ETag'):
                 if r.getheader(h):
                     self.send_header(h, r.getheader(h))
+            if getattr(self, 'dl_name', None):   # (a download: kept as a file, by the film's name)
+                self.send_header('Content-Disposition', "attachment; filename*=UTF-8''" + urllib.parse.quote(self.dl_name))
+                self.dl_name = None
             self.send_header('Cache-Control', cache)
             if not r.getheader('Content-Length'):
                 self.send_header('Connection', 'close')
