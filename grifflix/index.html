@@ -401,7 +401,21 @@ html.tv .bar-top > :not(.brand) { transition: opacity .3s ease; }
 html.tv.barhide .bar-top > :not(.brand) { opacity: 0; }   /* (the calendar the whole screen; the words back when you go up to them) */
 /* the table is the War Room, so always black and white whatever the month (John, 8 Nov 2026: "the war room is really
    only relevant when it's black and white"); the months' colours are for the calendar */
-html.table .tring { background: none; border: 1px solid rgba(255, 255, 255, .22); }
+html.table .tring { background: radial-gradient(ellipse at center, rgba(255, 255, 255, .085), rgba(255, 255, 255, .035) 55%, rgba(255, 255, 255, 0) 72%); border: 1px solid rgba(255, 255, 255, .34); box-shadow: 0 0 60px 4px rgba(255, 255, 255, .05); }
+/* the War Room, so it reads as one (John, 8 Nov 2026: "it's very abstract"): the Big Board on the wall at the back, its
+   bombers' paths creeping towards their targets, and the ring of lamps hung just over the table; under the bar, never on it */
+.tboard { position: absolute; left: 50%; top: 104px; width: 640px; transform: translateX(-50%); pointer-events: none; opacity: .9; }
+.tboard svg { display: block; width: 100%; height: auto; overflow: visible; }
+.tboard .land { fill: url(#tbdots); stroke: rgba(255, 255, 255, .45); stroke-width: 1.4; }
+.tboard .frame { fill: rgba(255, 255, 255, .02); stroke: rgba(255, 255, 255, .3); stroke-width: 2; }
+.tboard .grid { stroke: rgba(255, 255, 255, .08); stroke-width: 1; }
+.tboard .path { fill: none; stroke: #fff; stroke-width: 2.4; stroke-dasharray: 10 8; animation: tbfly 2.4s linear infinite; }
+.tboard .tgt { fill: none; stroke: #fff; stroke-width: 2; animation: tbblink 1.6s steps(2) infinite; }
+.tboard .lt { fill: rgba(255, 255, 255, .14); } .tboard .lt.on { fill: rgba(255, 255, 255, .85); } .tboard .lt.bl { animation: tbblink 1.2s steps(2) infinite; }
+@keyframes tbfly { to { stroke-dashoffset: -36; } }
+@keyframes tbblink { 50% { opacity: .15; } }
+@media (prefers-reduced-motion: reduce) { .tboard .path, .tboard .tgt, .tboard .lt.bl { animation: none; } }
+.tlamp { position: absolute; left: 50%; top: 392px; width: 1000px; height: 250px; transform: translate(-50%, -50%); border-radius: 50%; border: 2px solid rgba(255, 255, 255, .5); box-shadow: 0 0 22px 2px rgba(255, 255, 255, .22), inset 0 0 22px 2px rgba(255, 255, 255, .12); pointer-events: none; }
 /* the calendar on the TV: no row for the name alone (John: "a waste of tv space"); the month's row at the top, and
    the words (Search, Browse...) back when you go up from it */
 html.tv.barhide:not(.table):not(.hall) .bar-top { display: none; }
@@ -433,7 +447,6 @@ html.tv .hday:focus { outline: 3px solid rgb(var(--kink)) !important; outline-of
 .hinfo .n { margin-top: 14px; font: italic 400 19px/1.35 var(--serif); }   /* (one flat colour a month: no glow) */
 /* the table: the month as a ring of days round a table, under a ring of light; left and right turn it */
 html.table .cal { position: relative; height: 470px !important; min-height: 0; background: none; border: 0; box-shadow: none; padding: 0; overflow: visible; display: block; }
-.tlight { position: absolute; left: 50%; top: -60px; width: 980px; height: 240px; transform: translateX(-50%); border-radius: 50%; box-shadow: 0 0 0 2px rgba(var(--kink), .6), 0 0 50px 14px rgba(var(--kink), .16), inset 0 0 50px 8px rgba(var(--kink), .14); pointer-events: none; }
 .tring { position: absolute; left: 50%; top: 418px; width: 1060px; height: 300px; transform: translate(-50%, -50%); border-radius: 50%; border: 1px solid rgba(var(--kink), .22); background: radial-gradient(ellipse at center, rgba(0, 0, 0, .28), rgba(0, 0, 0, .1) 60%, transparent 72%); pointer-events: none; }
 .tday { position: absolute; width: 46px; height: 62px; margin: -31px 0 0 -23px; padding: 0; border: 0; border-radius: 0; background: rgba(0, 0, 0, .3) center/cover; color: var(--fg-2); font: 500 10px/62px var(--kfont); text-align: center; transition: left .5s cubic-bezier(.3, .7, .2, 1), top .5s cubic-bezier(.3, .7, .2, 1), transform .5s cubic-bezier(.3, .7, .2, 1), opacity .4s; box-shadow: 0 6px 18px rgba(0, 0, 0, .45); }
 .tday.has { color: transparent; }
@@ -556,13 +569,16 @@ html.tv[data-theme] .sheet .heroimg img { opacity: 1; object-position: 50% 30%; 
 html.tv[data-theme] .sheet .heroimg::after { background: linear-gradient(90deg, var(--bg) 0%, transparent 32%); }
 html.tv[data-theme] .sheet .in { max-width: 46vw; }
 html.hall .bar-top .members, html.table .bar-top .members, html.hall .bar-top .ico, html.table .bar-top .ico { display: none !important; }
-.bar-top #refresh svg { display: block; width: 19px; height: 19px; }   /* (the reload: an icon, beside the profile) */
+.bar-top #refresh svg { display: block; width: 19px; height: 19px; }
+html:not(.tv):not(.mob) .bar-top #refresh, html:not(.tv):not(.mob) .tcal [data-tt="refresh"] { display: none !important; }   /* (a computer: the logo reloads instead: John, 8 Nov 2026) */   /* (the reload: an icon, beside the profile) */
 html.hall .bar-top #refresh, html.table .bar-top #refresh { margin-left: auto !important; padding: 4px 2px; }
 html.hall .tmonth, html.table .tmonth { top: auto; bottom: 66px; opacity: 1 !important; }
 .tinspo { position: fixed; top: auto; bottom: 36px; }
 html.tv .triallabel { bottom: auto; top: 6px; }
 html.hall .bar-top .pill[data-go="browse"], html.table .bar-top .pill[data-go="browse"] { display: none !important; }
 html.hall .bar-top #who, html.table .bar-top #who { margin-left: 0 !important; }
+.bar-top #who.whoico svg { display: block; width: 22px; height: 22px; }
+.tvprof { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; text-align: center; } .tvprof .tvwho { width: 100%; font-size: 34px; margin: 0 0 34px; text-align: center; } .tvprof .acts { justify-content: center; } .tvprof .pill { font-size: 22px; padding: 14px 30px; }
 /* the pop-ups (a day's film, the month's calendar, Search, Browse, the profile) in the month's theme: its colour, its type */
 html[data-theme] #sheet { --fg: rgb(var(--kink)); --fg-2: rgba(var(--kink), .74); --line: rgba(var(--kink), .3); }
 html[data-theme] #sheet .sheet { background: var(--bg); border: 0; border-radius: 0; box-shadow: 0 0 0 1px rgba(var(--kink), .25); color: var(--fg-2); }
@@ -829,7 +845,8 @@ html.mob .mfilm { left: 40px; right: 40px; width: auto; top: 800px; font-size: 3
 html.mob .cposter { display: none; }
 html.mob .th-credits .vday { width: 720px; }
 html.mob .th-autumn .vday { width: 300px; height: 450px; }
-html.mob .tlight { top: 70px; width: 640px; height: 170px; }
+html.mob .tboard { top: 70px; width: 740px; }
+html.mob .tlamp { top: 486px; width: 680px; height: 320px; }
 html.mob .tring { top: 520px; width: 720px; height: 380px; }
 html.mob .tday { width: 70px; height: 95px; margin: -47px 0 0 -35px; line-height: 95px; font-size: 14px; }
 html.mob .tcentre { top: 800px; }
@@ -1604,6 +1621,7 @@ function start() {
     api('me').then(function (me) {
       ME = me;
       $('#who').textContent = me.name ? me.name.split(' ')[0] : 'Profile';
+      if (TV) { $('#who').innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>'; $('#who').setAttribute('aria-label', 'Profile'); $('#who').classList.add('whoico'); }   // (the TV: an icon, not the name: John, 8 Nov 2026)
       if (DEMO) $('#note').innerHTML = '<div class="notice"><b>Demo.</b> Made-up films, so you can see how Grifflix works before the Mac mini is connected. Changes stay on this device. <a href="?demo=0">Leave the demo</a></div>';
       route();
     }).catch(function (e) { welcome(e.status === 401 || e.status === 403 ? 'notmember' : 'down'); });
@@ -1690,6 +1708,7 @@ function route() {
 function goHome() {   // the logo: home, the month's theme, and the month it is now (John, 8 Nov 2026: "Clicking on Grifflix should
   // return you home", "home should be the current month"), from anywhere, a pop-up open or not
   store.set('grifflix-tvview', 'themes'); S.mcal = false; if (dlg.open) closeSheet();
+  if (!TV && !MOB()) { try { history.replaceState(null, '', location.pathname + location.search + '#home'); } catch (e) {} return refreshAll(); }   // (a computer: the logo reloads too, there being no reload button: John, 8 Nov 2026)
   S.cal = 'motd'; S.month = TODAY.slice(0, 7);
   if ((location.hash || '#home').split('/')[0] === '#home') return home();
   location.hash = '#home';
@@ -1889,7 +1908,7 @@ function hallInfo(b) {   // the day you're on, in words: its day large (as The S
 function drawTable(C, n, m, mine) {
   var R = document.documentElement.style; R.setProperty('--bg', '#0a0a0a'); R.setProperty('--kink', '255, 255, 255');   // (black and white, always)
   var tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.content = '#0a0a0a';
-  var h = '<div class="thstage"><div class="thv"><div class="tlight"></div><div class="tring"></div><div class="tcentre" id="tcentre"></div>';
+  var h = '<div class="thstage"><div class="thv">' + bigBoard() + '<div class="tring"></div><div class="tlamp"></div><div class="tcentre" id="tcentre"></div>';
   for (var d = 1; d <= n; d++) {
     var key = S.month + '-' + String(d).padStart(2, '0'), it = C.days[key];
     if (it && !it.secret) h += '<button class="tday has' + (key === TODAY ? ' today' : '') + '" data-day="' + key + '" data-n="' + d + '" aria-label="' + d + ' ' + MONTHS[m] + ': ' + esc(it.name) + '" style="background-image:url(' + esc(img(it.poster || it.thumb, it.poster ? 'Primary' : 'Thumb', 400)) + ')">' + d + '</button>';
@@ -1898,6 +1917,32 @@ function drawTable(C, n, m, mine) {
   }
   $('#cal').innerHTML = h + '</div></div><div class="tmonth">' + tmonthText(m) + '</div>' + themeCaption(m); themeFit(m);
   themeStart(THEMEFX.table, { W: themeW(), H: themeH(), n: n, m: m, mob: MOB() });
+}
+function bigBoard() {   // the Big Board: the world at the centre, its fuel and target lights either side, bombers on their way
+  var P = function (pts) { return pts.map(function (q) { return ((q[0] + 170) * 2.2 + 250).toFixed(0) + ',' + ((80 - q[1]) * 2.2).toFixed(0); }).join(' '); };
+  var L = [
+    [[-168,66],[-140,70],[-95,72],[-80,63],[-60,55],[-66,45],[-75,35],[-81,25],[-97,26],[-105,20],[-92,15],[-83,9],[-78,8],[-90,15],[-105,22],[-117,32],[-124,40],[-125,49],[-135,58],[-150,60],[-165,60]],
+    [[-50,60],[-42,60],[-20,70],[-20,79],[-60,79],[-70,76]],
+    [[-80,8],[-60,10],[-50,0],[-35,-6],[-40,-22],[-48,-28],[-58,-38],[-66,-54],[-75,-50],[-72,-30],[-70,-18],[-81,-5]],
+    [[-10,36],[-9,43],[-2,48],[5,52],[8,57],[5,62],[15,69],[28,71],[40,67],[60,70],[80,73],[105,77],[140,72],[170,70],[179,66],[160,60],[140,55],[135,44],[122,40],[122,30],[110,20],[105,10],[100,2],[98,15],[92,22],[80,15],[77,8],[72,20],[60,25],[50,30],[57,22],[52,15],[43,13],[35,30],[28,37],[26,40],[18,40],[12,44],[8,44],[3,42],[-5,36]],
+    [[-17,21],[-10,30],[-5,36],[10,37],[20,32],[32,31],[35,28],[43,12],[51,12],[40,-15],[35,-25],[20,-35],[15,-28],[12,-5],[9,4],[-8,5],[-17,14]],
+    [[114,-22],[122,-17],[130,-12],[142,-11],[146,-19],[153,-27],[150,-37],[140,-38],[131,-31],[115,-34]],
+    [[-5,50],[1,51],[-2,56],[-5,58],[-6,54]], [[130,31],[141,36],[142,44],[139,40],[132,34]]];
+  var X = function (lon) { return (lon + 170) * 2.2 + 250; }, Y = function (lat) { return (80 - lat) * 2.2; };
+  var tg = [[38, 56], [60, 57], [83, 55], [104, 52], [131, 43]], fr = [[-150, 64], [-100, 66], [-45, 68], [-15, 62], [15, 66]];
+  var h = '<div class="tboard" aria-hidden="true"><svg viewBox="0 0 1300 300"><defs><pattern id="tbdots" width="7" height="7" patternUnits="userSpaceOnUse"><circle cx="3.5" cy="3.5" r="1.5" fill="rgba(255,255,255,.55)"/></pattern></defs>';
+  h += '<rect class="frame" x="246" y="-4" width="800" height="308"/>';
+  for (var gx = 1; gx < 8; gx++) h += '<line class="grid" x1="' + (246 + gx * 100) + '" y1="-4" x2="' + (246 + gx * 100) + '" y2="304"/>';
+  for (var gy = 1; gy < 4; gy++) h += '<line class="grid" x1="246" y1="' + (gy * 77 - 4) + '" x2="1046" y2="' + (gy * 77 - 4) + '"/>';
+  L.forEach(function (l) { h += '<polygon class="land" points="' + P(l) + '"/>'; });
+  tg.forEach(function (t, i) { var f = fr[i], x0 = X(f[0]), y0 = Y(f[1]), x1 = X(t[0]), y1 = Y(t[1]), mx = (x0 + x1) / 2, my = Math.max(8, Math.min(y0, y1) - 24);
+    h += '<path class="path" style="animation-delay:-' + (i * .5) + 's" d="M' + x0.toFixed(0) + ' ' + y0.toFixed(0) + ' Q' + mx.toFixed(0) + ' ' + my.toFixed(0) + ' ' + x1.toFixed(0) + ' ' + y1.toFixed(0) + '"/>';
+    h += '<circle class="tgt" style="animation-delay:-' + (i * .3) + 's" cx="' + x1.toFixed(0) + '" cy="' + y1.toFixed(0) + '" r="9"/>'; });
+  [[0, 226], [1074, 1300]].forEach(function (side, k) {   // (the panels either side: rows of lamps, a few blinking)
+    h += '<rect class="frame" x="' + side[0] + '" y="-4" width="' + (side[1] - side[0]) + '" height="308"/>';
+    for (var r = 0; r < 9; r++) for (var c = 0; c < 6; c++) { var n = (r * 7 + c * 3 + k * 5) % 11;
+      h += '<rect class="lt' + (n < 4 ? ' on' : '') + (n === 2 ? ' bl' : '') + '" x="' + (side[0] + 16 + c * 34) + '" y="' + (12 + r * 32) + '" width="24" height="14"/>'; } });
+  return h + '</svg></div>';
 }
 function tableTurn(b) { themeTurn(b); }
 function themeFit(m) {   // a phone: the theme drawn for an upright screen 780 wide, shown at the phone's own width
@@ -2884,6 +2929,14 @@ function deviceSub() { return NOTE_OK ? navigator.serviceWorker.getRegistration(
 function profile() {
   if (PUBLIC) return signInSheet();
   if (!ME) return;
+  if (TV) {   // the TV: who's signed in and Sign out, nothing else (John, 8 Nov 2026)
+    openSheet('<div class="form tvprof" style="position:relative">' + X + '<p class="profp tvwho">Signed in as <b>' + esc(ME.name || 'you') + '</b></p><div class="acts"><button class="pill on" id="signout">Sign out</button></div></div>');
+    var so = $('#signout'); so.onclick = function () {
+      if (!so.dataset.sure) { so.dataset.sure = 1; so.textContent = 'Press again to sign out'; return; }
+      wcall({ op: 'signout' }).catch(function () {}).then(function () { store.set('grifflix-member', null); location.replace(location.pathname); });
+    };
+    setTimeout(function () { so.focus(); }, 60); return;
+  }
   var admin = ME.owner ? '<a class="pill adminpill" href="/grifflix/admin.html">Admin</a>' : '';
   openSheet('<div class="form prof" style="position:relative"><div class="profhead"><span class="chiplabel">Profile</span>' + admin + X.replace('ico close', 'ico close profx') + '</div>' +
     '<h2 class="profname">' + esc(ME.name || 'You') + '</h2>' +
