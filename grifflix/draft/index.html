@@ -657,6 +657,28 @@ html.mob .tcal { height: auto !important; }
 .tchead { display: flex; align-items: center; gap: 16px; margin: 10px 0 18px; }
 .tcal .tcm { min-height: 40px; width: 40px; padding: 0; justify-content: center; font: 400 22px/1 var(--kfont); letter-spacing: 0; }
 .tcal .tcm:disabled { opacity: .25; }
+/* a TV: the pop-ups use the whole screen to read from the sofa (John, 8 Nov 2026: "the popups seem to have forgotten that we need
+   to maximise space for reading on a tv app, so search shouldn't be just small across the screen") */
+html.tv #sheet .form { padding: 5vh 5vw; }
+html.tv #sheet .form > h2 { font-size: 52px !important; margin: 0 90px 22px 0; }
+html.tv #sheet input[type=search], html.tv #sheet input[type=text], html.tv #sheet .form input:not([type=checkbox]):not([type=radio]) { width: calc(100% - 90px) !important; max-width: none !important; height: 96px; padding: 0 32px !important; font: 500 40px/1 var(--kfont) !important; letter-spacing: .02em; text-align: left !important; color: var(--fg) !important; background: rgba(var(--kink), .08) !important; border: 3px solid rgba(var(--kink), .55) !important; box-sizing: border-box; }
+html.tv #sheet form.signin { display: flex !important; flex-wrap: wrap; gap: 18px; align-items: center; justify-content: flex-start !important; max-width: none !important; width: 100%; margin-top: 30px !important; }
+html.tv #sheet form.signin input { flex: 1 1 60%; width: auto !important; text-transform: uppercase; }
+html.tv #sheet form.signin input::placeholder { text-transform: none; }
+html.tv #sheet form.signin .pill { min-height: 96px; padding: 0 44px; font-size: 24px !important; }
+.tctools { position: absolute; top: 14px; right: 66px; display: flex; gap: 8px; z-index: 3; }
+.tctools .ico { width: 40px; height: 40px; min-height: 40px; display: grid; place-items: center; padding: 0; border: 1px solid rgba(var(--kink), .35); background: none; color: var(--fg); border-radius: 0; }
+.tctools .ico svg { width: 19px; height: 19px; }
+html.tv .tctools { top: 28px; right: 84px; gap: 12px; }
+html.tv .tctools .ico { width: 48px; height: 48px; }
+html.mob .tctools { top: max(10px, env(safe-area-inset-top)); right: 58px; }
+html.tv #sheet input::placeholder { color: rgba(var(--kink), .55) !important; opacity: 1; }
+html.tv #sheet input:focus { outline: 4px solid rgb(var(--kink)) !important; outline-offset: 3px; }
+html.tv #sheet .form p, html.tv #sheet .form .stat, html.tv #sheet .form label { font-size: 26px !important; line-height: 1.45 !important; max-width: 60ch !important; }
+html.tv #sheet .form .pill, html.tv #sheet .form button.go { min-height: 64px; padding: 0 30px; font-size: 20px !important; }
+html.tv #sheet .res .t { font-size: 24px !important; }
+html.tv #sheet .res .s { font-size: 16px !important; }
+html.tv #sheet .card .t { font-size: 20px; }
 /* a computer or a TV: the calendar the whole screen, over the theme (John, 8 Nov 2026: "calendar is going in front of theme but
    not covering it so it looks odd - it should also be full screen and have titles in boxes - like song of the day") */
 html:not(.mob) #sheet:has(.tcal) { position: fixed; inset: 0; width: 100vw; height: 100%; max-width: none; max-height: none; margin: 0; border: 0; padding: 0; }
@@ -1883,7 +1905,10 @@ function calSheet() {   // the month's calendar, a pop-up in its theme's colour 
   var y = +S.month.slice(0, 4), m = +S.month.slice(5, 7) - 1, n = new Date(y, m + 1, 0).getDate(), lead = (new Date(y, m, 1).getDay() + 6) % 7, t = themeFor(m);
   var ms = monthsOf(C.days), mi = ms.indexOf(S.month), mob = MOB();
   S.sheetDate = null;   // (not a day's page: a swipe here is the month before or after)
-  var h = '<div class="form tcal" style="position:relative">' + X + '<div class="tck">' + esc(t.name) + '</div><div class="tchead"><button class="pill tcm" id="tcprev" aria-label="Earlier month"' + (mi <= 0 ? ' disabled' : '') + '>‹</button><h2>' + MONTHS[m] + ' ' + y + '</h2><button class="pill tcm" id="tcnext" aria-label="Later month"' + (mi >= ms.length - 1 ? ' disabled' : '') + '>›</button></div><div class="tcgrid">' + DOW.map(function (d) { return '<div class="tch">' + d + '</div>'; }).join('');
+  var h = '<div class="form tcal" style="position:relative">' + X + '<div class="tctools">' +   // (Search, Profile and Reload here too, the bar being covered: John, 8 Nov 2026)
+    '<button class="ico" data-tt="search" aria-label="Search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg></button>' +
+    '<button class="ico" data-tt="refresh" aria-label="Reload"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button>' +
+    '<button class="ico" data-tt="who" aria-label="Profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></button></div><div class="tck">' + esc(t.name) + '</div><div class="tchead"><button class="pill tcm" id="tcprev" aria-label="Earlier month"' + (mi <= 0 ? ' disabled' : '') + '>‹</button><h2>' + MONTHS[m] + ' ' + y + '</h2><button class="pill tcm" id="tcnext" aria-label="Later month"' + (mi >= ms.length - 1 ? ' disabled' : '') + '>›</button></div><div class="tcgrid">' + DOW.map(function (d) { return '<div class="tch">' + d + '</div>'; }).join('');
   for (var k = 0; k < lead; k++) h += '<div></div>';
   for (var d = 1; d <= n; d++) {
     var key = S.month + '-' + String(d).padStart(2, '0'), it = C.days[key], tc = key === TODAY ? ' today' : '';
@@ -1899,6 +1924,9 @@ function calSheet() {   // the month's calendar, a pop-up in its theme's colour 
   S.fromCal = false;
   $$('#sheetIn .tcl').forEach(function (b) { b.onclick = function () { S.fromCal = true; daySheet(b.dataset.day); }; });
   $$('#sheetIn .tcd[data-day]').forEach(function (b) { b.onclick = function () { S.fromCal = true; daySheet(b.dataset.day); }; });
+  $$('#sheetIn .tctools [data-tt]').forEach(function (t) { t.onclick = function () {
+    var w = t.dataset.tt, el = w === 'search' ? $$('.bar-top [data-go="search"]').filter(function (x) { return x.offsetParent; })[0] || $('.bar-top [data-go="search"]') : w === 'refresh' ? ($('#refresh') || $('#refresh2')) : $('#who');
+    if (el) el.click(); }; });
   $('#tcprev').onclick = function () { calStep(-1); }; $('#tcnext').onclick = function () { calStep(1); };
   if (TV) setTimeout(function () { var f = $('#sheetIn .tcd.today.has') || $$('#sheetIn .tcd.has').pop(); if (f) f.focus(); }, 60);
 }
