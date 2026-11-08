@@ -70,7 +70,7 @@
         <div class="kicker">Updates</div>
         <h2 id="allhead">Looking…</h2>
         <ul class="changes" id="alllist"></ul>
-        <p class="stat">One button: the Mac’s Grifflix files brought up to date (if there’s an update), the films brought over from the Mac, and the draft put live (if it has changes).</p>
+        <p class="stat">One button: the Mac’s Grifflix files brought up to date (if there’s an update), the films brought over from the Mac, and, if the draft has changes, <b>the draft put live for everyone</b> (listed above). Try the draft first.</p>
         <div class="state"><button class="btn primary" id="allgo" type="button">Update everything</button><a class="btn" href="/grifflix/draft/" target="_blank" rel="noopener">Try the draft</a></div>
       </section>
       <section class="card">
@@ -280,19 +280,22 @@
   // ---- Updates: what's waiting, and the one button that does it all (John, 8 Nov 2026: "can update the mac and
   // publish be the same button?"): the Mac's files (if there's an update), the films from the Mac, the draft put live
   var WAIT = { mac: null, page: null };
-  function summary() {
+  function summary() {   // what's waiting; and, plainly, what the button will put live for everyone (John, 8 Nov 2026)
     var w = [WAIT.mac, WAIT.page].filter(Boolean);
     $('#allhead').innerHTML = w.length ? w.length + ' thing' + (w.length === 1 ? '' : 's') + ' <em>waiting</em>' : 'All <em>up to date</em>';
-    $('#alllist').innerHTML = w.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('');
+    var pageItems = WAIT.page ? [].map.call(document.querySelectorAll('#changes li'), function (li) { var t = li.firstChild.textContent; return /kubrick|to try|trial|\?look=|\?tvhero=/i.test(t) ? t + ' (a trial look: only on a device that asks for it)' : t; }) : [];
+    $('#alllist').innerHTML = (WAIT.mac ? '<li>' + esc(WAIT.mac) + '</li>' : '') +
+      (pageItems.length ? '<li><b>Goes live for everyone:</b><ul style="margin:6px 0 0 18px;padding:0">' + pageItems.map(function (t) { return '<li style="background:none;padding:2px 0">' + esc(t) + '</li>'; }).join('') + '</ul></li>' : '');
+    $('#allgo').textContent = WAIT.page ? 'Update everything and put the draft live' : 'Update everything';
   }
   var armed = 0;
   $('#allgo').onclick = function () {
     var b = this, say = function (t) { b.textContent = t; }, done = [];
-    if (!armed) { armed = setTimeout(function () { armed = 0; say('Update everything'); }, 4000); say('Tap again to update everything'); return; }
+    if (!armed) { armed = setTimeout(function () { armed = 0; summary(); }, 4000); say(WAIT.page ? 'Tap again: the draft goes live for everyone' : 'Tap again to update everything'); return; }
     clearTimeout(armed); armed = 0; b.disabled = true;
     stepMac(say).then(function (m) { if (m) done.push(m); return stepData(say, false); })
       .then(function (d) { if (d) done.push(d); return stepPublish(say); })
-      .then(function (p) { if (p) done.push(p); b.disabled = false; say('Update everything'); toast(done.join(' · ') || 'Everything was up to date'); })
+      .then(function (p) { if (p) done.push(p); b.disabled = false; summary(); toast(done.join(' · ') || 'Everything was up to date'); })
       .catch(function (e) { b.disabled = false; say('Update everything'); toast(e.message); });
   };
   function stepPublish(say) {   // the draft put live, if it has changes (and the site has its films: the page shows them)
