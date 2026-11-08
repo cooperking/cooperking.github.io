@@ -787,7 +787,7 @@ function appOrigin(request) {   // the site's own pages, and the apps showing th
 }
 function factsHeaders(origin) {
   return { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'Access-Control-Allow-Origin': origin || '*',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Authorization, Content-Type, X-Device, X-App', 'Access-Control-Max-Age': '86400' };
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Authorization, Content-Type, X-Device, X-App, X-Font-Name', 'Access-Control-Max-Age': '86400' };
 }
 
 async function factsSigned(env) {
@@ -1566,7 +1566,7 @@ async function grifflix(request, url, env) {
     if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
     const w = await gWho(request, env);
     if (!w || !w.owner) return answer(403, { error: 'Only John.' });
-    const name = String(request.headers.get('X-Font-Name') || '').toLowerCase();
+    const name = String(url.searchParams.get('name') || request.headers.get('X-Font-Name') || '').toLowerCase();   // (the name in the address: a header of its own was refused by browsers)
     if (!/^[a-z0-9-]{1,60}\.(woff2|woff)$/.test(name)) return answer(400, { error: 'A .woff2 or .woff file, please.' });
     const buf = await request.arrayBuffer();
     if (buf.byteLength < 100 || buf.byteLength > 600e3) return answer(400, { error: 'That isn’t a web font.' });
