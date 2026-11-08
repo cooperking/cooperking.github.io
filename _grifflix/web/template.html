@@ -627,7 +627,26 @@ html[data-theme] #sheet .form > h2 { font-family: var(--tfont) !important; font-
 html[data-theme] #sheet::backdrop { background: rgba(0, 0, 0, .55); backdrop-filter: none; -webkit-backdrop-filter: none; }
 .tcal { padding: 34px 34px 30px; }
 .tcal .tck { font: 500 12px/1 var(--kfont); letter-spacing: .4em; text-transform: uppercase; color: var(--fg-2); }
-.tcal h2 { margin: 10px 0 18px; font-size: 44px; line-height: 1; }
+.tcal h2 { margin: 0; font-size: 44px; line-height: 1; }
+.tchead { display: flex; align-items: center; gap: 16px; margin: 10px 0 18px; }
+.tcal .tcm { min-height: 40px; width: 40px; padding: 0; justify-content: center; font: 400 22px/1 var(--kfont); letter-spacing: 0; }
+.tcal .tcm:disabled { opacity: .25; }
+/* a phone: the calendar the whole screen, a poster a day */
+html.mob #sheet:has(.tcal) { position: fixed; inset: 0; width: 100vw; height: 100dvh; max-width: none; max-height: none; margin: 0; }
+html.mob #sheet .sheet:has(.tcal) { width: 100%; max-width: none; max-height: none; height: 100%; margin: 0; overflow: hidden; }
+html.mob .tcal { display: flex; flex-direction: column; height: 100%; box-sizing: border-box; }
+html.mob .tcgrid { flex: 1; min-height: 0; grid-template-rows: auto; grid-auto-rows: 1fr; }
+html.mob .tcal .close { top: max(10px, env(safe-area-inset-top)); right: 10px; }
+html.mob .tcal { padding: max(14px, env(safe-area-inset-top)) 8px 20px; }
+html.mob .tcal .tck { padding: 0 6px; font-size: 10px; }
+html.mob .tchead { justify-content: space-between; gap: 6px; margin: 24px 0 12px; }
+html.mob .tcal h2 { font-size: 26px; text-align: center; flex: 1; }
+html.mob .tcal .tcm { width: 40px; min-height: 40px; }
+html.mob .tcgrid { gap: 3px; }
+html.mob .tch { font-size: 9px; letter-spacing: .12em; text-align: center; }
+html.mob .tcd { aspect-ratio: auto; min-height: 0; }
+html.mob .tcd b { left: 3px; top: 3px; font-size: 11px; }
+html.mob .tcd span { display: none; }
 .tcgrid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
 .tch { font: 500 11px/1 var(--kfont); letter-spacing: .3em; text-transform: uppercase; color: var(--fg-2); padding: 0 0 6px; }
 .tcd { position: relative; aspect-ratio: 16 / 10; padding: 0; border: 0; border-radius: 0; overflow: hidden; background: rgba(var(--kink), .08); color: var(--fg); text-align: left; }
@@ -1524,18 +1543,29 @@ function drawTheme(t, C, n, m, mine) {
 function calSheet() {   // the month's calendar, a pop-up in its theme's colour and type; a day opens its film
   var C = S.calData; if (!C) return;
   var y = +S.month.slice(0, 4), m = +S.month.slice(5, 7) - 1, n = new Date(y, m + 1, 0).getDate(), lead = (new Date(y, m, 1).getDay() + 6) % 7, t = themeFor(m);
-  var h = '<div class="form tcal" style="position:relative">' + X + '<div class="tck">' + esc(t.name) + '</div><h2>' + MONTHS[m] + ' ' + y + '</h2><div class="tcgrid">' + DOW.map(function (d) { return '<div class="tch">' + d + '</div>'; }).join('');
+  var ms = monthsOf(C.days), mi = ms.indexOf(S.month), mob = MOB();
+  S.sheetDate = null;   // (not a day's page: a swipe here is the month before or after)
+  var h = '<div class="form tcal" style="position:relative">' + X + '<div class="tck">' + esc(t.name) + '</div><div class="tchead"><button class="pill tcm" id="tcprev" aria-label="Earlier month"' + (mi <= 0 ? ' disabled' : '') + '>‹</button><h2>' + MONTHS[m] + ' ' + y + '</h2><button class="pill tcm" id="tcnext" aria-label="Later month"' + (mi >= ms.length - 1 ? ' disabled' : '') + '>›</button></div><div class="tcgrid">' + DOW.map(function (d) { return '<div class="tch">' + d + '</div>'; }).join('');
   for (var k = 0; k < lead; k++) h += '<div></div>';
   for (var d = 1; d <= n; d++) {
     var key = S.month + '-' + String(d).padStart(2, '0'), it = C.days[key], tc = key === TODAY ? ' today' : '';
-    if (it && !it.secret) h += '<button class="tcd has' + tc + '" data-day="' + key + '" aria-label="' + d + ' ' + MONTHS[m] + ': ' + esc(it.name) + '"><img alt="" loading="lazy" src="' + esc(img(it.backdrop || it.thumb || it.poster, it.backdrop ? 'Backdrop' : (it.thumb ? 'Thumb' : 'Primary'), 480)) + '"><b>' + d + '</b><span>' + esc(showName(it)) + '</span></button>';
+    if (it && !it.secret) h += '<button class="tcd has' + tc + '" data-day="' + key + '" aria-label="' + d + ' ' + MONTHS[m] + ': ' + esc(it.name) + '"><img alt="" loading="lazy" src="' + esc(mob && (it.poster || it.thumb) ? img(it.poster || it.thumb, it.poster ? 'Primary' : 'Thumb', 200) : img(it.backdrop || it.thumb || it.poster, it.backdrop ? 'Backdrop' : (it.thumb ? 'Thumb' : 'Primary'), 480)) + '"><b>' + d + '</b><span>' + esc(showName(it)) + '</span></button>';
     else h += '<div class="tcd' + tc + (it && it.secret ? ' secret' : '') + '"><b>' + d + '</b></div>';
   }
   openSheet(h + '</div></div>');
   S.fromCal = false;
   $$('#sheetIn .tcd[data-day]').forEach(function (b) { b.onclick = function () { S.fromCal = true; daySheet(b.dataset.day); }; });
+  $('#tcprev').onclick = function () { calStep(-1); }; $('#tcnext').onclick = function () { calStep(1); };
   if (TV) setTimeout(function () { var f = $('#sheetIn .tcd.today.has') || $$('#sheetIn .tcd.has').pop(); if (f) f.focus(); }, 60);
 }
+function calStep(d) {   // the calendar pop-up: the month before or after (the theme behind it follows)
+  if (!S.step || !S.step(d)) return false;
+  calSheet();
+  var el = $('#sheetIn'); if (el && el.animate) el.animate([{ transform: 'translateX(' + (d * 48) + 'px)', opacity: .35 }, { transform: 'none', opacity: 1 }], { duration: 260, easing: 'cubic-bezier(.2,.7,.2,1)' });
+  if (TV) { var f = $('#sheetIn .tcd.has'); if (f) f.focus(); }
+  return true;
+}
+function sheetStep(d) { return $('#sheetIn .tcal') ? calStep(d) : dayStep(d); }   // (a swipe on a pop-up: a month on the calendar, a day on a day's page)
 function themeTurn(b) {
   var T = S.theme; if (!T) return;
   var all = $$('#cal .vday'), at = b ? all.indexOf(b) : -1;
@@ -1925,11 +1955,11 @@ function dayStep(d) {
 }
 (function () {
   var el = $('#sheetIn'), x0 = null, y0, t0, wacc = 0, wlock = 0, wquiet = 0;
-  var skip = function (t) { return !S.sheetDate || (t.closest && t.closest('.strip, .tabs, input, select, textarea')); };
+  var skip = function (t) { return (!S.sheetDate && !$('#sheetIn .tcal')) || (t.closest && t.closest('.strip, .tabs, input, select, textarea')); };
   el.addEventListener('touchstart', function (e) { if (skip(e.target)) { x0 = null; return; } var t = e.touches[0]; x0 = t.clientX; y0 = t.clientY; t0 = Date.now(); }, { passive: true });
   el.addEventListener('touchend', function (e) {
     if (x0 == null) return; var t = e.changedTouches[0], dx = t.clientX - x0, dy = t.clientY - y0; x0 = null;
-    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.6 && Date.now() - t0 < 800) dayStep(dx < 0 ? 1 : -1);
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.6 && Date.now() - t0 < 800) sheetStep(dx < 0 ? 1 : -1);
   }, { passive: true });
   el.addEventListener('wheel', function (e) {
     if (skip(e.target) || Math.abs(e.deltaX) <= Math.abs(e.deltaY) * 1.2) return;
@@ -1938,11 +1968,11 @@ function dayStep(d) {
     if (t < wlock) { wlock = t + 400; return; }
     if (t - wquiet > 250) wacc = 0;
     wquiet = t; wacc += e.deltaX;
-    if (Math.abs(wacc) > 70) { var d = wacc > 0 ? 1 : -1; wacc = 0; wlock = t + 900; dayStep(d); }
+    if (Math.abs(wacc) > 70) { var d = wacc > 0 ? 1 : -1; wacc = 0; wlock = t + 900; sheetStep(d); }
   }, { passive: false });
   document.addEventListener('keydown', function (e) {
-    if (TV || !dlg.open || !S.sheetDate || (e.target.closest && e.target.closest('input, textarea, select'))) return;
-    if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && dayStep(e.key === 'ArrowRight' ? 1 : -1)) e.preventDefault();
+    if (TV || !dlg.open || (!S.sheetDate && !$('#sheetIn .tcal')) || (e.target.closest && e.target.closest('input, textarea, select'))) return;
+    if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && sheetStep(e.key === 'ArrowRight' ? 1 : -1)) e.preventDefault();
   });
 })();
 
