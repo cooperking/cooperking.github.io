@@ -2409,7 +2409,7 @@ function collCard(c) {   // a collection's cover, drawn rather than a picture: a
   var h = 0; for (var i = 0; i < (c.id || nm).length; i++) h = (h * 31 + (c.id || nm).charCodeAt(i)) >>> 0;
   var long = nm.length > 26 ? ' xl' : (nm.length > 13 ? ' l' : ''), n = c.children ? c.children + (c.children === 1 ? ' title' : ' titles') : 'Collection';
   return '<a class="card coll" href="#collection/' + c.id + '" aria-label="' + esc(c.name + ', ' + n) + '"><div class="pic ccov" data-cn="' + esc(c.name) + '" data-nm="' + esc(nm) + '" data-ch="' + h + '">' + collArt(h, nm, c.name) +
-    '<div class="cc">' + (k ? '<small>' + esc(k) + '</small>' : '') + '<b class="' + long + '">' + esc(nm) + '</b><i></i><span>' + n + '</span></div></div></a>';
+    '<div class="cc">' + (k ? '<small>' + esc(k) + '</small>' : '') + '<b class="' + long + '">' + esc(nm) + '</b><i></i><span>' + n + '</span></div></div><div class="t">' + esc(c.name) + '</div><div class="s">' + n + '</div></a>';   // (its name under it too, as a film's: John, 8 Nov 2026)
 }
 // (the drawn covers, window.GCOLLART: /grifflix/collection-art.js, fetched after the page is up; till then each its initial)
 function collArtLoad() {
