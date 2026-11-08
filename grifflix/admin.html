@@ -29,13 +29,13 @@
 @font-face { font-family: "GFutura"; font-weight: 700; font-display: swap; src: url("https://sotd-playlists.cooperking.workers.dev/gf/futura-bold-webfont.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/futura-bold-webfont.woff") format("woff"); }
 @font-face { font-family: "GFutura"; font-weight: 400; font-display: swap; src: url("https://sotd-playlists.cooperking.workers.dev/gf/futura-book-webfont.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/futura-book-webfont.woff") format("woff"); }
 :root { --kfont: "GFutura", "Futura PT", "Futura", "Jost", sans-serif; }
-h1, .top h1 { font-family: var(--kfont); font-weight: 700; text-transform: uppercase; letter-spacing: .08em; font-size: clamp(30px, 8vw, 48px); }
+h1, .top h1 { font-family: var(--kfont); font-weight: 700; text-transform: uppercase; letter-spacing: .3em; font-size: clamp(22px, 6.2vw, 44px); }
 h1 em { font-style: normal; font-weight: 400; }
-.card h2 { font-family: var(--kfont); font-weight: 700; text-transform: uppercase; letter-spacing: .03em; font-size: 22px; }
+.card h2 { font-family: var(--kfont); font-weight: 700; text-transform: uppercase; letter-spacing: .22em; font-size: 20px; }
 .card h2 em { font-style: normal; font-weight: 400; }
 .bar .name { font-family: var(--kfont) !important; font-weight: 700; text-transform: uppercase; letter-spacing: .4em; font-size: 14px !important; }
 .bar .name em { font-style: normal; font-weight: 400; letter-spacing: .2em; }
-.kicker { font-family: var(--kfont); letter-spacing: .3em; }
+.kicker { font-family: var(--kfont); letter-spacing: .4em; }
 .bar { margin: max(10px, env(safe-area-inset-top, 0px)) 0 0; display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 18px; border-radius: 999px; background: var(--glass-2); border: 1px solid var(--glass-line); }
 .bar .name { margin-right: auto; font: 500 18px/1 var(--serif); color: var(--ink); }
 .cards { display: grid; gap: 16px; }
@@ -509,7 +509,7 @@ h1 em { font-style: normal; font-weight: 400; }
     files.reduce(function (p, f) {
       return p.then(function () {
         var name = f.name.toLowerCase().replace(/[^a-z0-9.-]/g, '-');
-        return fetch(WORKER + '/g/font', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'X-Font-Name': name, 'Content-Type': 'application/octet-stream' }, body: f })
+        return fetch(WORKER + '/g/font?name=' + encodeURIComponent(name), { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/octet-stream' }, body: f })
           .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(f.name + ': ' + (j.error || r.status)); done++; last = j; }); });
       });
     }, Promise.resolve()).then(function () {
