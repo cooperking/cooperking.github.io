@@ -493,7 +493,7 @@
         });
       });
       var su = m.owner ? null : button('Spotify username', function () {
-        var v = window.prompt(m.name + '’s Spotify username, or their profile link (Spotify › their name › ••• › Share › Copy link). Leave it empty to clear it.', m.spu || '');
+        var v = window.prompt(m.name + '’s Spotify username, or their profile link (Spotify › their name › ••• › Share › Copy link). Someone with more than one account: all of them, with commas between. Leave it empty to clear it.', m.spu || '');
         if (v == null) return;
         api('/members/admin', { op: 'spuser', id: m.id, u: v.trim() }).then(function (j) {
           if (j.members) { MEMBERS = j.members; people(); toast(v.trim() ? m.name + '’s public Spotify playlists can be imported now' : 'Cleared'); }

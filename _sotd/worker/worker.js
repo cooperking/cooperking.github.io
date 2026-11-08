@@ -142,6 +142,14 @@ export default {
       }
       await env.MEDIA.put('diag/own-short-gone3.json', JSON.stringify({ at: new Date().toISOString(), deleted: K }, null, 1), { httpMetadata: { contentType: 'application/json' } });
     })().catch(e => console.log('ownShort: ' + (e && e.message))));
+    ctx.waitUntil((async () => {   // once: Anthony Morcom's second Spotify account (John, 8 Nov 2026: "That's Anthony Morcom too")
+      if (await env.SOTD.get('spuAnt1')) return;
+      await env.SOTD.put('spuAnt1', String(Date.now()));
+      const all = (await env.SOTD.get('members', 'json')) || {}, id = Object.keys(all).find(k => all[k] && all[k].name === 'Anthony Morcom'); if (!id) return;
+      const m = all[id], u = '31m2j5ituxflogbuosj2gsq5wu5y';
+      if (m.spu !== u && !(m.spus || []).includes(u)) { if (m.spu) m.spus = (m.spus || []).concat(u); else m.spu = u; await env.SOTD.put('members', JSON.stringify(all)); }
+      await env.SOTD.delete('diagCollab3');   // (the listing again, with his name on them)
+    })().catch(e => console.log('spuAnt: ' + (e && e.message))));
     ctx.waitUntil((async () => {   // once: Collaborations' songs, their added dates, days and captions, for checking
       if (await env.SOTD.get('diagCollab3')) return;
       await env.SOTD.put('diagCollab3', String(Date.now()));
@@ -2193,7 +2201,7 @@ async function members(request, url, env) {
   const listing = (own = owner) => Object.entries(all).map(([id, m]) => ({ mail: m.email ? (mailMode(m) || 'off') : '', push: pushMode(m), sp: spInfo[id] || null, id, name: m.name, created: m.created, owner: id === own, email: m.email || '', emailAt: m.emailAt || null,
     devices: Object.values(m.devices || {}).filter(d => d.did).length, apps: deviceApps(m, seenAt), passkeys: (m.passkeys || []).length, nomsg: !!m.nomsg, apart: m.apart || [], see: mediaFor(m),
     seen: Math.max(0, ...Object.entries(m.devices || {}).map(([h, d]) => Math.max(seenAt[h] || 0, d.seen || 0))) || null,
-    fmax: filesMax(m), fset: Number.isInteger(m.fmax), spu: m.spu || '', invite: m.invite ? Object.assign({ uses: m.invite.uses, left: Math.max(0, INVITE_USES - m.invite.uses), until: m.invite.until }, m.invite.asked ? { asked: m.invite.asked } : {}) : null }));
+    fmax: filesMax(m), fset: Number.isInteger(m.fmax), spu: [m.spu].concat(m.spus || []).filter(Boolean).join(', '), invite: m.invite ? Object.assign({ uses: m.invite.uses, left: Math.max(0, INVITE_USES - m.invite.uses), until: m.invite.until }, m.invite.asked ? { asked: m.invite.asked } : {}) : null }));
   switch (body.op) {
     case 'list': return answer(200, { members: listing(), catalog: await catalog(env), media: !!env.MEDIA, covers: await coversAll(env) });
     case 'people': return answer(200, { members: listing() });   // (the Apps tab: who has which app, and the emails for Google Play)
@@ -2273,8 +2281,11 @@ async function members(request, url, env) {
     }
     case 'spuser': {   // a member's Spotify username (John knows it: John, 4 Nov 2026), for their public playlists
       const m = all[body.id]; if (!m) return answer(404, { error: 'No such member.' });
-      const u = spUserOf(body.u); if (body.u && !u) return answer(400, { error: 'That isn’t a Spotify username or profile link.' });
-      if (u) m.spu = u; else delete m.spu;
+      // several, one per line or with commas (John, 8 Nov 2026: "can more than one spotify account be added ... for when they have more than one"): the first is theirs for their public playlists; every one counts as theirs for who added a song
+      const parts = String(body.u || '').split(/[\s,]+/).filter(Boolean), us = [...new Set(parts.map(spUserOf))];
+      if (us.some(x => !x)) return answer(400, { error: 'One of those isn’t a Spotify username or profile link.' });
+      if (us.length) { m.spu = us[0]; if (us.length > 1) m.spus = us.slice(1, 8); else delete m.spus; } else { delete m.spu; delete m.spus; }
+      spWhoMem = null;
       await env.SOTD.put('members', JSON.stringify(all)); await env.SOTD.delete('spmap:' + body.id);
       return answer(200, { members: listing() });
     }
@@ -5251,7 +5262,7 @@ async function spWho(env, all) {   // Spotify user id → member's name (theirs 
   if (spWhoMem && Date.now() - spWhoMem.at < 10 * 60e3) return spWhoMem.map;
   const map = {}, ids = {}, owner = await env.SOTD.get('owner');
   if (owner && all[owner]) { map[OWNER_ID] = all[owner].name; ids[OWNER_ID] = owner; }
-  for (const [id, m] of Object.entries(all)) if (m && m.spu && !map[m.spu]) { map[m.spu] = m.name; ids[m.spu] = id; }   // (the Spotify usernames John gave on the Members tab: known without them connecting: John, 7 Nov 2026)
+  for (const [id, m] of Object.entries(all)) if (m) for (const u of [m.spu].concat(m.spus || []).filter(Boolean)) if (!map[u]) { map[u] = m.name; ids[u] = id; }   // (the Spotify usernames John gave on the Members tab: known without them connecting: John, 7 Nov 2026)
   let cursor;
   do { const l = await env.SOTD.list({ prefix: 'spm:', cursor }); for (const k of l.keys) { const id = k.name.slice(4), r = await env.SOTD.get(k.name, 'json'); if (r && r.sid && all[id]) { map[r.sid] = all[id].name; ids[r.sid] = id; } } cursor = l.list_complete ? null : l.cursor; } while (cursor);
   spWhoMem = { at: Date.now(), map, ids };
