@@ -279,6 +279,7 @@ dialog::backdrop { background: rgba(10, 4, 12, .62); backdrop-filter: blur(6px);
 a.card { display: block; text-decoration: none; color: inherit; }
 .collhead { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 26px; align-items: end; margin: 22px 4px 30px; }
 .collpic { width: 100%; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 10px; box-shadow: 0 14px 36px var(--shadow); }
+.collhead .kick { display: block; margin: 0 0 12px; }   /* (its own line, with room: the hero's kick pulled it into the title) */
 .colltitle { margin: 6px 0 8px; font: 400 clamp(38px, 6vw, 60px)/1 var(--serif); color: var(--fg); letter-spacing: -.02em; }
 .collhead .ov { margin: 12px 0 0; max-width: 60ch; color: var(--fg-2); }
 @media (max-width: 760px) { .collhead { grid-template-columns: 110px minmax(0, 1fr); gap: 16px; } }
