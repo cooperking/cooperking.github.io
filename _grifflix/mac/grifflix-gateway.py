@@ -33,6 +33,13 @@ FIELDS = ('Overview,Genres,OfficialRating,CommunityRating,ProductionYear,Premier
 LIST_FIELDS = ('Overview,Genres,OfficialRating,CommunityRating,ProductionYear,PremiereDate,RunTimeTicks,ImageTags,'
                'BackdropImageTags,ParentBackdropImageTags,SeriesPrimaryImageTag,ChildCount,RecursiveItemCount,DateCreated,Path')
 EXPORT_CACHE = os.path.join(APP_DIR, 'export-cache.json')
+# what John has said goes inside which collection, each as ONE entry: box sets (several short films shown as one) and
+# series. Put right at the start of every Update, so it's always so, whatever was run before (John, 8 Nov 2026: Frampton
+# "should have been done, as it's been there from the start"). A box set inside another collection isn't listed on its own.
+ARRANGE = {'The Criterion Collection': {
+    'sets': ['A Hollis Frampton Odyssey', 'By Brakhage: An Anthology, Volumes One and Two', 'Martha Graham: Dance on Film', 'Scorsese Shorts',
+             'Symbiopsychotaxiplasm: Two Takes by William Greaves', 'The Kennedy Films of Robert Drew & Associates', 'The Signifyin’ Works of Marlon Riggs'],
+    'series': ['The Underground Railroad', 'Tanner 88', 'Fishing with John']}}
 INSTALLED = os.path.join(APP_DIR, 'installed.json')   # which commit of the Mac's Grifflix files this is (the admin page's Update the Mac)
 REPO = 'cooperking/cooperking.github.io'
 # the Mac's Grifflix files, where each is kept: (in the repository's _grifflix/mac/, on this Mac, what must be in it)
@@ -697,6 +704,7 @@ def make_handler(g):
             # Etag, which changes with its details or pictures). John, 8 Nov 2026: "almost every image and collection will
             # be the same; a few more films or series might be added". ?full=1 reads everything again.
             g.forget()
+            arranged = self.arrange()
             extra = LIST_FIELDS + ',People,Taglines,RemoteTrailers'
             ep_fields = 'Overview,RunTimeTicks,ImageTags,ParentBackdropImageTags,SeriesPrimaryImageTag,DateCreated,PremiereDate,ProductionYear'
             quick = 'Etag,ChildCount,RecursiveItemCount'
@@ -783,6 +791,7 @@ def make_handler(g):
                         'calendars': {cid: {'name': c2.get('name'), 'owner': c2.get('owner'), 'shared': c2.get('shared', True), 'notes': c2.get('notes', {}),
                                             'days': {d: light(snap(i)) for d, i in c2.get('days', {}).items() if snap(i)}} for cid, c2 in cals.items()}}
             count['removed'] = len([k for k in old if k not in kept])
+            count['arranged'] = arranged
             try:
                 save(EXPORT_CACHE, {'at': int(time.time()), 'items': kept})
             except OSError as e:
@@ -940,6 +949,34 @@ def make_handler(g):
             self.send_json(200, {'sha': sha, 'changed': changed, 'converter': restarted, 'restarting': 'grifflix-gateway.py' in changed})
             if 'grifflix-gateway.py' in changed:
                 threading.Timer(1.5, lambda: os._exit(0)).start()   # (launchd starts the new gateway)
+
+        def arrange(self):
+            """ARRANGE made so in Jellyfin: each named box set and series inside its collection. Returns what it put in."""
+            key = lambda t: re.sub(r'[^a-z0-9]', '', re.sub(r'^the\s+', '', re.sub(r'\s*[\(\[](19|20)\d\d[\)\]]\s*$', '', (t or '').strip().lower()).replace('’', "'")))
+            try:
+                sets = {key(i['Name']): i for i in g.items(Recursive='true', IncludeItemTypes='BoxSet', Fields='').get('Items', [])}
+                series = {key(i['Name']): i for i in g.items(Recursive='true', IncludeItemTypes='Series', Fields='').get('Items', [])}
+            except Exception as e:
+                log('Arranging the collections: couldn’t ask Jellyfin:', e)
+                return []
+            put = []
+            for cname, want in ARRANGE.items():
+                c = sets.get(key(cname))
+                if not c:
+                    log('Arranging the collections: no collection called', cname)
+                    continue
+                held = set(i['Id'] for i in g.items(ParentId=c['Id'], Fields='', EnableImageTypes='').get('Items', []))
+                for name, pool in [(n, sets) for n in want.get('sets', [])] + [(n, series) for n in want.get('series', [])]:
+                    it = pool.get(key(name))
+                    if not it:
+                        log('Arranging the collections: not found:', name)
+                    elif it['Id'] not in held and it['Id'] != c['Id']:
+                        g.jf.call('POST', '/Collections/%s/Items' % c['Id'], query={'Ids': it['Id']})
+                        put.append('%s in %s' % (it['Name'], c['Name']))
+            if put:
+                log('Arranging the collections:', '; '.join(put))
+                g.forget()
+            return put
 
         def api_refresh(self, me, user, q, b):   # the page's Refresh button: look again for new films and changes
             g.forget()

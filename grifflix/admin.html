@@ -332,7 +332,8 @@
       return g('admin', { op: 'update', cal: { days: days, notes: snap.motd.notes || {} }, personal: snap.personal || null, counts: { movies: (L.movies || []).length, tv: (L.tv || []).length, collections: (L.collections || []).length } });
     }).then(function (j) {
       b.disabled = false; say('Update from the Mac');
-      var c = snap.changes || {}, n = (c.new || 0) + (c.changed || 0) + (c.removed || 0);
+      var c = snap.changes || {}, n = (c.new || 0) + (c.changed || 0) + (c.removed || 0) + (c.arranged || []).length;
+      if ((c.arranged || []).length) setTimeout(function () { toast('Put in place: ' + c.arranged.join('; ')); }, 3200);
       toast(snap.changes ? (n ? (c.new || 0) + ' new, ' + (c.changed || 0) + ' changed, ' + (c.removed || 0) + ' gone: on the site in a few minutes' : 'Nothing new on the Mac: the site is as it was') : 'Updating: on the site in a few minutes');
       dataStatus(); setTimeout(siteJob, 8000);
     }).catch(function (e) { b.disabled = false; say('Update from the Mac'); toast(e.message); });
