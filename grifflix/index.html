@@ -1246,8 +1246,8 @@ var THEMES = [   // each its film's own lettering and colour, researched (John, 
   { key: 'slices', mob: [530, 120, 1230, 560], name: 'The Slices', film: 'In the Mood for Love', year: 2000, by: 'Wong Kar-wai', bg: '#8e1420', ink: '#fff', font: '"Archivo Narrow", sans-serif', tw: 600, tt: 'lowercase' },
   // All the President's Men: the poster's wood-type gothic, black on newsprint
   { key: 'pinboard', mob: [530, 70, 1250, 640], name: 'The Pinboard', film: 'All the President’s Men', year: 1976, by: 'Alan J. Pakula', bg: '#f4f1ea', ink: '#000', font: '"GF-pinboard", "Anton", sans-serif', tw: 400 },
-  // Hugo / A Trip to the Moon: Méliès's 1902 title card's spurred capitals; the teal night sky of Hugo's poster
-  { key: 'moon', mob: [40, 90, 1240, 620], name: 'The Moon', film: 'Hugo', year: 2011, by: 'Scorsese, for Méliès', bg: '#145063', ink: '#fff', font: '"IM Fell English SC", serif', tw: 400, tt: 'none' },
+  // Hugo / A Trip to the Moon: Cinzel, nearest free face to the HUGO poster's roman (said to be University Roman Bold); the teal night sky of Hugo's poster
+  { key: 'moon', mob: [40, 90, 1240, 620], name: 'The Moon', film: 'Hugo', year: 2011, by: 'Scorsese, for Méliès', bg: '#145063', ink: '#fff', font: '"Cinzel", serif', tw: 700, tt: 'uppercase' },
   // Alphaville: Jean Mascii's French poster's neon-tube lettering; the indigo of the US poster
   { key: 'credits', mob: [40, 90, 1240, 620], name: 'The Credits', film: 'Alphaville', year: 1965, by: 'Godard', bg: '#2a2169', ink: '#fff', font: '"Tilt Neon", sans-serif', tw: 400 },
   // Psycho: Saul Bass's titles, News Gothic Bold (News Cycle) on sliding bars; the blue of the 1960 one-sheet's cast panel, its yellow for the title
@@ -1257,7 +1257,7 @@ var THEMES = [   // each its film's own lettering and colour, researched (John, 
   // Citizen Kane: its main title's outlined condensed capitals (League Gothic, the free revival of Alternate Gothic: John, 8 Nov 2026); the red title band of the 1941 Style A poster
   { key: 'globe', mob: [40, 60, 1240, 640], name: 'The Snow Globe', film: 'Citizen Kane', year: 1941, by: 'Orson Welles', bg: '#a8161a', ink: '#fff', font: '"GF-globe", "League Gothic", sans-serif', tw: 400 }
 ];
-var THEMEFONTS = 'https://fonts.googleapis.com/css2?family=Bowlby+One&family=Della+Respira&family=Special+Gothic+Expanded+One&family=Londrina+Solid:wght@400;900&family=Share+Tech+Mono&family=Archivo+Narrow:wght@600&family=Anton&family=IM+Fell+English+SC&family=Tilt+Neon&family=Yuji+Syuku&family=Amatic+SC:wght@700&family=Big+Shoulders:wght@400;700&family=League+Gothic&family=News+Cycle:wght@700&display=swap';
+var THEMEFONTS = 'https://fonts.googleapis.com/css2?family=Bowlby+One&family=Della+Respira&family=Special+Gothic+Expanded+One&family=Londrina+Solid:wght@400;900&family=Share+Tech+Mono&family=Archivo+Narrow:wght@600&family=Anton&family=IM+Fell+English+SC&family=Cinzel:wght@700&family=Tilt+Neon&family=Yuji+Syuku&family=Amatic+SC:wght@700&family=Big+Shoulders:wght@400;700&family=League+Gothic&family=News+Cycle:wght@700&display=swap';
 function themeEarly() {   // (before the films arrive: the page already laid out as this month's theme)
   if (VIEW() !== 'themes') return; var R = document.documentElement, t = themeFor(new Date().getMonth());
   R.classList.add(t.key === 'table' ? 'table' : 'hall'); if (MOB()) R.classList.add('mob'); R.dataset.theme = t.key;
