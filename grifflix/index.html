@@ -863,6 +863,8 @@ html[data-theme=oz] .leaf2 b { color: #0f7b3e; }
 .jawspic { position: absolute; background: #062f55 center/cover; box-shadow: 0 0 0 4px rgba(255, 255, 255, .25), 0 30px 60px rgba(0, 10, 30, .5); cursor: pointer; z-index: 2; }
 .jawspic.rise { animation: jrise .6s cubic-bezier(.2, .7, .2, 1) both; }
 @keyframes jrise { from { transform: translateY(70px); opacity: .4; } to { transform: none; opacity: 1; } }
+.jshark { position: absolute; z-index: 1; pointer-events: none; filter: drop-shadow(0 -10px 30px rgba(0, 20, 40, .35)); }
+.jshark.rise { animation: jrise .8s cubic-bezier(.2, .7, .2, 1) both; }
 .jawsfin { position: absolute; width: 60px; height: 58px; background: #1c2a36; clip-path: polygon(15% 100%, 70% 0, 100% 100%); z-index: 3; pointer-events: none; animation: jfin 3s ease-in-out infinite; }
 @keyframes jfin { 0%, 100% { transform: translateX(-30px); } 50% { transform: translateX(30px); } }
 .th-jaws .vday { width: 70px; height: 96px; background: none; overflow: visible; z-index: 4; }
@@ -2066,13 +2068,14 @@ THEMEFX.oz = {
 };
 // September: the barrels (Jaws): the month's days as Amity's yellow barrels bobbing along the surface; the one you're on, its film rising beneath it from the deep, as the shark on the poster
 THEMEFX.jaws = {
-  g: function (c) { return c.mob ? { sy: 250, fx: 390, gap: 150, pw: 300, ph: 450, py: 300, top: 0 } : { sy: 210, fx: c.W * .70, gap: 170, pw: 240, ph: 360, py: 240, top: 104 }; },
+  g: function (c) { return c.mob ? { sy: 230, fx: 390, gap: 150, pw: 200, ph: 300, py: 200, top: 0, kw: 420, ky: 500 } : { sy: 210, fx: c.W * .56, gap: 170, pw: 180, ph: 270, py: 175, top: 104, kw: 320, ky: 420 }; },
   decor: function (c) {
     var g = this.g(c), w = '';
     for (var x = 0; x <= c.W + 40; x += 40) w += (x ? ' Q' + (x - 20) + ',' + (g.sy - 9) + ' ' : 'M') + x + ',' + g.sy;
     return '<svg class="jawsea" viewBox="0 0 ' + c.W + ' ' + c.H + '" preserveAspectRatio="none"><rect x="0" y="' + g.top + '" width="' + c.W + '" height="' + (g.sy - g.top) + '" fill="#f4f1ec"/><path d="' + w + ' L' + c.W + ',' + g.top + ' L0,' + g.top + ' Z" fill="#f4f1ec"/><path d="' + w + '" fill="none" stroke="#fff" stroke-width="3" opacity=".8"/></svg>' +
       '<div class="jawspic" id="jawspic" style="left:' + (g.fx - g.pw / 2).toFixed(0) + 'px;top:' + (g.sy + g.py - g.ph / 2).toFixed(0) + 'px;width:' + g.pw + 'px;height:' + g.ph + 'px"></div>' +
-      '<div class="jawsfin" id="jawsfin" style="left:' + (g.fx - 30).toFixed(0) + 'px;top:' + (g.sy - 56) + 'px"></div>';
+      '<div class="jawsfin" id="jawsfin" style="left:' + (g.fx - 30).toFixed(0) + 'px;top:' + (g.sy - 56) + 'px"></div>' +
+      '<svg class="jshark" id="jshark" viewBox="0 0 400 520" style="left:' + (g.fx - g.kw / 2).toFixed(0) + 'px;top:' + g.ky + 'px;width:' + g.kw + 'px;height:' + (g.kw * 1.3).toFixed(0) + 'px"><defs><linearGradient id="jsk" x1="0" x2="1"><stop offset="0" stop-color="#2c3b47"/><stop offset=".5" stop-color="#6c7d8a"/><stop offset="1" stop-color="#2c3b47"/></linearGradient></defs><path d="M200,0 C262,36 336,170 362,330 L388,520 L12,520 L38,330 C64,170 138,36 200,0 Z" fill="url(#jsk)"/><path d="M96,190 Q200,128 304,190 Q282,330 200,356 Q118,330 96,190 Z" fill="#e9e4dc"/><path d="M112,200 Q200,150 288,200 Q266,312 200,334 Q134,312 112,200 Z" fill="#3a0c10"/><path d="M116,204 L128,226 L140,196 L152,222 L164,190 L176,218 L188,186 L200,216 L212,186 L224,218 L236,190 L248,222 L260,196 L272,226 L284,204 Q200,160 116,204 Z" fill="#fff"/><path d="M134,300 L148,280 L158,306 L172,284 L182,314 L194,290 L200,318 L206,290 L218,314 L228,284 L242,306 L252,280 L266,300 Q236,330 200,334 Q164,330 134,300 Z" fill="#fff"/><circle cx="132" cy="128" r="7" fill="#0b0f14"/><circle cx="268" cy="128" r="7" fill="#0b0f14"/></svg>';   // (the great white rising from the deep, as on the 1975 poster)
   },
   cell: function (d) { return '<i class="barrel"></i><b class="bn">' + d + '</b>'; },
   swipe: function (c) { return { x: -1, y: 0, px: c.mob ? 50 : 80 }; },
@@ -2084,7 +2087,7 @@ THEMEFX.jaws = {
     });
   },
   front: function (b, c, quiet) {
-    var p = $('#jawspic'); if (p && b) { p.style.backgroundImage = b.style.getPropertyValue('--p'); p.classList.remove('rise'); if (!quiet) { void p.offsetWidth; p.classList.add('rise'); } }
+    var p = $('#jawspic'), k = $('#jshark'); if (p && b) { p.style.backgroundImage = b.style.getPropertyValue('--p'); [p, k].forEach(function (x) { if (!x) return; x.classList.remove('rise'); if (!quiet) { void x.getBoundingClientRect(); x.classList.add('rise'); } }); }
   }
 };
 // December: the snow globe (Citizen Kane): the days hung as baubles; the one you're on inside the globe, which shakes and snows
