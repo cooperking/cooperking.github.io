@@ -645,6 +645,7 @@ html.tv .tinspo:focus { outline: 2px solid rgb(var(--kink)) !important; outline-
 html.klook .prof .adminpill { background: rgb(var(--kink)); color: var(--bg); border-color: rgb(var(--kink)); }
 /* each theme on a stage: the whole screen on a TV or computer; on a phone, cut to the theme's own part and scaled */
 .thstage, .thv { position: absolute; inset: 0; }
+html.mob #cal { touch-action: pan-y; }
 html.mob .thstage { inset: auto; left: 0; right: 0; top: 76px; height: var(--sth, 300px); overflow: hidden; }
 html.mob .thv { inset: auto; left: 0; top: 0; width: 1280px; height: 720px; transform-origin: 0 0; }
 html.mob.hall .bar-top, html.mob.table .bar-top { top: max(26px, env(safe-area-inset-top)); left: 16px; right: 16px; gap: 14px; }
@@ -1438,6 +1439,39 @@ function themeFit(m) {   // a phone: the theme's own part of the TV-sized stage,
   v.style.transform = 'translate(' + ((vw - w) / 2 - b[0] * k).toFixed(1) + 'px,' + (-b[1] * k).toFixed(1) + 'px) scale(' + k.toFixed(4) + ')';
   c.style.setProperty('--sth', ((b[3] - b[1]) * k).toFixed(0) + 'px');
 }
+// a phone: drag across a theme to go through its days, a day every 34px under the finger; a flick carries on, the
+// faster the further, slowing to a stop (John, 8 Nov 2026: "scroll through the themes days on mobile via touch.
+// Swiping fast will cause them to change quickly"); a tap still opens the day
+(function () {
+  var x0 = null, y0 = 0, last = 0, moved = false, horiz = null, trail = [], fling = 0, STEP = 34;
+  var on = function (e) { return VIEW() === 'themes' && MOB() && S.view === 'home' && !dlg.open && e.target.closest && e.target.closest('#cal') && !e.target.closest('.mobnav, .tinspo'); };
+  // (the moves and the lift heard on the element first touched: when the drag crosses into the next month, the theme is
+  // drawn again and that element leaves the page, and what happens to it no longer reaches the page itself)
+  document.addEventListener('touchstart', function (e) {
+    clearTimeout(fling); if (!on(e) || e.touches.length > 1) { x0 = null; return; }
+    var t = e.touches[0]; x0 = last = t.clientX; y0 = t.clientY; moved = false; horiz = null; trail = [[t.clientX, Date.now()]];
+    var el = e.target, done = function () { el.removeEventListener('touchmove', move); el.removeEventListener('touchend', end); el.removeEventListener('touchcancel', end); };
+    var end = function () { done(); lift(); };
+    el.addEventListener('touchmove', move, { passive: false }); el.addEventListener('touchend', end); el.addEventListener('touchcancel', end);
+  }, { passive: true });
+  function move(e) {
+    if (x0 == null) return; var t = e.touches[0], dx = t.clientX - x0, dy = t.clientY - y0;
+    if (horiz === null && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) horiz = Math.abs(dx) > Math.abs(dy);
+    if (!horiz) return;
+    e.preventDefault(); moved = true;
+    trail.push([t.clientX, Date.now()]); if (trail.length > 6) trail.shift();
+    while (Math.abs(t.clientX - last) >= STEP) { var dir = t.clientX < last ? 1 : -1; last += dir > 0 ? -STEP : STEP; themeStep(dir); }   // (finger left: on to the next day)
+  }
+  function lift() {
+    if (x0 == null) return; x0 = null; if (!moved) return;
+    var a = trail[0], b = trail[trail.length - 1], dt = Math.max(1, b[1] - a[1]), v = (b[0] - a[0]) / dt;   // (px a millisecond, over the last moments)
+    if (Math.abs(v) < .45 || Date.now() - b[1] > 80) return;
+    var n = Math.min(24, Math.round(Math.abs(v) * 7)), dir = v < 0 ? 1 : -1, gap = 55;
+    var go = function () { if (n-- <= 0 || !themeStep(dir)) return; gap *= 1.16; fling = setTimeout(go, gap); };
+    fling = setTimeout(go, gap);
+  }
+  document.addEventListener('click', function (e) { if (moved && e.target.closest && e.target.closest('#cal')) { e.stopPropagation(); e.preventDefault(); moved = false; } }, true);   // (a swipe isn't a tap)
+})();
 var MOBWAS = null;
 addEventListener('resize', function () { if (VIEW() !== 'themes' || S.view !== 'home' || !S.calData) return; var mb = MOB(); if (MOBWAS !== null && mb !== MOBWAS) drawMonth(); else themeFit(+S.month.slice(5, 7) - 1); MOBWAS = mb; });
 function tmonthText(m) { return MONTHS[m] + ' ' + S.month.slice(0, 4) + ' · ' + themeFor(m).name; }
