@@ -1331,7 +1331,7 @@ function gFilmHtml(f) {   // one film: its poster, name, year, John's note, and 
 // calendar. Only function should be playing and getting an update from the Mac"): his Update (admin page) brings
 // everything from the Mac; the site keeps it as its own files (grifflix-data.yml), the pictures are kept in R2 (served
 // here at /gp/), and Movie of the Day's days, the ones to come too, are kept here (gcal), each shown from 8am on its day.
-const G_WORKER = 'https://sotd-playlists.cooperking.workers.dev', G_PIC_KINDS = { Primary: [400], Backdrop: [480, 1100], Thumb: [480, 1100] };
+const G_WORKER = 'https://sotd-playlists.cooperking.workers.dev', G_PIC_KINDS = { Primary: [400], Backdrop: [480, 1100, 1920], Thumb: [480, 1100, 1920] };   // (1920: the TV's full-screen pictures)
 function gPicUrl(id, kind, w, tag) {   // a picture's address: its size the nearest kept one; its version (tag) in it, so a new picture is a new address
   const sizes = G_PIC_KINDS[kind] || [400], size = sizes.find(x => x >= (w || 0)) || sizes[sizes.length - 1];
   return id ? G_WORKER + '/gp/' + id + '/' + kind + '-' + size + '.jpg' + (tag ? '?t=' + tag : '') : '';
@@ -1341,9 +1341,15 @@ async function gPicGet(request, url, env, ctx) {   // /gp/<id>/<Kind>-<w>.jpg: f
   if (!m || !(G_PIC_KINDS[m[2]] || []).includes(+m[3])) return new Response('Not here.', { status: 404 });
   const cache = caches.default, hit = await cache.match(request);
   if (hit) return hit;
-  const o = await env.MEDIA.get('grifflix/p/' + m[1] + '/' + m[2] + '-' + m[3] + '.jpg').catch(() => null);
-  if (!o) return Response.redirect(G_API + '/pimg/' + m[1] + '/' + m[2] + '.jpg?maxWidth=' + m[3], 302);
-  const res = new Response(o.body, { headers: { 'Content-Type': 'image/jpeg', 'Cache-Control': 'public, max-age=' + (url.search ? 31536000 : 86400), 'Access-Control-Allow-Origin': '*' } });
+  const key = 'grifflix/p/' + m[1] + '/' + m[2] + '-' + m[3] + '.jpg';
+  let o = await env.MEDIA.get(key).catch(() => null), body;
+  if (!o) {   // not copied yet: from the Mac now, and kept from then on (if the Mac answers)
+    const r = await fetch(G_API + '/pimg/' + m[1] + '/' + m[2] + '.jpg?maxWidth=' + m[3] + '&quality=82', { headers: { 'User-Agent': 'Grifflix Worker' } }).catch(() => null);
+    if (!r || !r.ok || !/image\/jpeg/.test(r.headers.get('Content-Type') || '')) return Response.redirect(G_API + '/pimg/' + m[1] + '/' + m[2] + '.jpg?maxWidth=' + m[3], 302);
+    body = await r.arrayBuffer();
+    if (body.byteLength > 200) { if (ctx) ctx.waitUntil(env.MEDIA.put(key, body, { httpMetadata: { contentType: 'image/jpeg' } })); else await env.MEDIA.put(key, body, { httpMetadata: { contentType: 'image/jpeg' } }); }
+  }
+  const res = new Response(o ? o.body : body, { headers: { 'Content-Type': 'image/jpeg', 'Cache-Control': 'public, max-age=' + (url.search ? 31536000 : 86400), 'Access-Control-Allow-Origin': '*' } });
   if (ctx) ctx.waitUntil(cache.put(request, res.clone()));
   return res;
 }

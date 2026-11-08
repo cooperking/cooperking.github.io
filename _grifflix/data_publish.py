@@ -164,7 +164,7 @@ def main():
     now = london_now()
     if mode == 'pictures':
         return pictures(s3, bucket, snap)
-    n = build(snap, now, days_only=(mode == 'days'))
+    n = build(snap, now)   # (the morning's run makes all the files too: if a waiting Update's run was replaced by it, nothing is lost)
     print('%s: %d files changed; %d films, %d series, %d collections' % (mode, n, len(snap.get('lists', {}).get('movies', [])),
           len(snap.get('lists', {}).get('tv', [])), len(snap.get('lists', {}).get('collections', []))), flush=True)
 
