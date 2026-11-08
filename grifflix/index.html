@@ -491,6 +491,7 @@ function apiMemo(path, draw) {
 }
 function refreshAll() {   // forget what's kept, here and on the Mac, and load again
   forgetMemo();
+  try { if (window.caches) caches.delete('gfx-pics-v1'); } catch (e) {}   // (pictures fetched again, in case one changed)
   (DEMO || PUBLIC || !GW ? Promise.resolve() : fetch(GW + '/api/refresh', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: '{}' }).catch(function () {}))
     .then(function () { location.reload(); });
 }
@@ -559,8 +560,9 @@ function forgetMemo() {
 function img(id, kind, w) {
   if (!id) return '';
   if (DEMO) return Demo.pic(id, kind);
-  if (PUBLIC) return GW + '/pimg/' + id + '/' + (kind || 'Primary') + '.jpg?maxWidth=' + (w || 400);   // (Cloudflare keeps copies)
-  return GW + '/img/' + id + '/' + (kind || 'Primary') + '?maxWidth=' + (w || 400) + '&g=' + encodeURIComponent(KEY);
+  // films' and series' pictures: the same address for everyone, always (Cloudflare and the browser keep copies, and
+  // Grifflix's service worker keeps each one on the device: shown at once next time, as the songs' covers are)
+  return GW + '/pimg/' + id + '/' + (kind || 'Primary') + '.jpg?maxWidth=' + (w || 400);
 }
 function gwUrl(p) { return DEMO ? p : GW + p; }
 
@@ -618,6 +620,7 @@ function start() {
     }).catch(function (e) { welcome(e.status === 401 ? 'notmember' : 'down'); });
   };
   if (DEMO) return go();
+  if ('serviceWorker' in navigator) try { swReg().catch(function () {}); } catch (e) {}   // (from the start: it keeps the pictures)
   var saved = store.get('grifflix-gateway');
   fetch('/grifflix/config.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).catch(function () { return {}; })
     .then(function (c) { GW = String(saved || c.gateway || '').replace(/\/$/, ''); go(); });
@@ -743,6 +746,28 @@ function drawMonth() {
   $('#mnext').onclick = function () { step(1); };
   S.step = step;
   fitCal();
+  // a computer: two fingers sideways on the trackpad (the songs' own code), or the ← → keys, for the month before or after
+  var wrapEl = $('#main');
+  if (wrapEl && !wrapEl.dataset.wheel) {
+    wrapEl.dataset.wheel = 1;
+    var wacc = 0, wlock = 0, wquiet = 0;
+    wrapEl.addEventListener('wheel', function (e) {
+      if (!$('.stage') || Math.abs(e.deltaX) <= Math.abs(e.deltaY) * 1.2 || (e.target.closest && e.target.closest('.monthnav, .strip, .cals'))) return;
+      e.preventDefault();
+      var t = Date.now();
+      if (t < wlock) { wlock = t + 400; return; }
+      if (t - wquiet > 250) wacc = 0;
+      wquiet = t; wacc += e.deltaX;
+      if (Math.abs(wacc) > 70) { var d = wacc > 0 ? 1 : -1; wacc = 0; wlock = t + 900; if (S.step) S.step(d); }
+    }, { passive: false });
+  }
+  if (!document.body.dataset.arrows) {
+    document.body.dataset.arrows = 1;
+    document.addEventListener('keydown', function (e) {
+      if (TV || !$('.stage') || $('dialog[open]') || (e.target.closest && e.target.closest('input, textarea, select'))) return;
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { if (S.step && S.step(e.key === 'ArrowRight' ? 1 : -1)) e.preventDefault(); }
+    });
+  }
   var st = $('.stage'), hr = $('#hero');   // swipe the calendar, its list or the month's name: the month before or after
   [st, hr].forEach(function (el) {
     if (!el || el.dataset.swipe) return; el.dataset.swipe = 1;
