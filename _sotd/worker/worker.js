@@ -1654,10 +1654,12 @@ async function grifflix(request, url, env) {
     const mm = /^data:image\/jpeg;base64,([A-Za-z0-9+/=]+)$/.exec(String(b.card || ''));
     if (!mm || mm[1].length > 900e3) return answer(400, { error: 'That isn’t a card.' });
     const key = 'grifflix/cards/' + day + '.jpg';
-    if (!who.owner && await env.MEDIA.head(key).catch(() => null)) return answer(200, { ok: true, kept: true });
+    const had = await env.MEDIA.head(key).catch(() => null);
+    if (!who.owner && had && (had.customMetadata || {}).bg) return answer(200, { ok: true, kept: true });   // (one drawn before the themes may be drawn again)
     const bin = Uint8Array.from(atob(mm[1]), ch => ch.charCodeAt(0));
     if (bin[0] !== 0xff || bin[1] !== 0xd8) return answer(400, { error: 'That isn’t a card.' });
-    await env.MEDIA.put(key, bin, { httpMetadata: { contentType: 'image/jpeg' } });
+    const th = {}; if (/^#[0-9a-f]{6}$/i.test(String(b.bg || ''))) th.bg = b.bg; if (b.ink === '#000' || b.ink === '#fff') th.ink = b.ink;   // (its theme, for its page)
+    await env.MEDIA.put(key, bin, { httpMetadata: { contentType: 'image/jpeg' }, customMetadata: th });
     return answer(200, { ok: true });
   }
   if (route === 'lists') {   // My list (the hearts) and playlists: each member's own, kept here, not on the Mac
@@ -1837,7 +1839,8 @@ async function gAdmin(request, env, b, who, answer) {
     const raw = atob(b64), bytes = new Uint8Array(raw.length); for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
     const pid = m.invite.page || randomCode(12), ttl = Math.max(3600, Math.round((m.invite.until - Date.now()) / 1000)), at = Date.now();
     await env.SOTD.put('gicard:' + pid, bytes, { expirationTtl: ttl });
-    await env.SOTD.put('gipage:' + pid, JSON.stringify({ link: b.link, name: m.name, at }), { expirationTtl: ttl });
+    const bg = /^#[0-9a-f]{6}$/i.test(String(b.bg || '')) ? b.bg : '', ink = b.ink === '#000' ? '#000' : '#fff';   // (the month's theme, for its page)
+    await env.SOTD.put('gipage:' + pid, JSON.stringify({ link: b.link, name: m.name, at, bg, ink }), { expirationTtl: ttl });
     m.invite.page = pid; await gSave(env, all);
     return answer(200, { page: new URL(request.url).origin + '/gi/' + pid });
   }
@@ -1923,12 +1926,28 @@ async function gFontGet(request, url, env) {   // /gf/<name>: only for Grifflix'
   if (!o) return new Response('Not here.', { status: 404, headers: { 'Access-Control-Allow-Origin': G_ORIGIN } });
   return new Response(o.body, { headers: { 'Content-Type': name.endsWith('2') ? 'font/woff2' : 'font/woff', 'Cache-Control': 'public, max-age=2592000', 'Access-Control-Allow-Origin': G_ORIGIN, Vary: 'Origin' } });
 }
+// Grifflix's link pages (a day's film, an invitation): the card on the month's theme colour, Futura, square edges (John, 8 Nov 2026:
+// "the invite and share buttons to match themes"); bg and ink come with the card, else Grifflix's black
+function gLanding({ title, desc, img, line, go, label, bg, ink, wait }) {
+  const e = x => esc(String(x)), BG = /^#[0-9a-f]{6}$/i.test(bg || '') ? bg : '#0a0a0a', INK = ink === '#000' ? '#000' : '#fff', F = 'https://sotd-playlists.cooperking.workers.dev/gf/';
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${e(title)}</title><meta name="description" content="${e(desc)}">
+<meta property="og:type" content="website"><meta property="og:site_name" content="Grifflix"><meta property="og:title" content="${e(title)}"><meta property="og:description" content="${e(desc)}">
+<meta property="og:image" content="${e(img)}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="${BG}"><style>@font-face{font-family:F;font-weight:700;src:url(${F}futura-bold-webfont.woff2) format("woff2")}@font-face{font-family:F;font-weight:400;src:url(${F}futura-book-webfont.woff2) format("woff2")}
+html,body{margin:0;background:${BG};color:${INK}}body{min-height:100vh;display:grid;place-items:center;font:400 17px/1.5 F,Futura,"Century Gothic",sans-serif;text-align:center;padding:24px;box-sizing:border-box}
+.w{font-weight:700;letter-spacing:.55em;margin-right:-.55em;font-size:22px;margin-bottom:26px}img{display:block;width:min(620px,90vw);height:auto;margin:0 auto 22px;border:1px solid ${INK}33}
+p{margin:0 0 18px;letter-spacing:.08em}a{display:inline-block;padding:14px 26px;border:1px solid ${INK};color:${INK};text-decoration:none;font-weight:700;letter-spacing:.22em;text-transform:uppercase;font-size:13px}a:hover{background:${INK};color:${BG}}</style></head>
+<body><div><div class="w">GRIFFLIX</div><img src="${e(img)}" alt=""><p>${e(line)}</p><a href="${e(go)}">${e(label)}</a></div>
+<script>setTimeout(function(){location.replace(${JSON.stringify(go)});},${wait || 1600});</script></body></html>`;
+}
 async function gSharePage(url, env) {
   const m = /^\/gs\/(\d{4}-\d\d-\d\d)(\.jpg)?$/.exec(url.pathname), c = await gCal(env), it = m && gRevealed(m[1]) && (c.days || {})[m[1]];
   if (!it) return new Response('<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Grifflix</title><body style="margin:0;background:' + gPal()[0] + ';color:#fffaf5;font:18px Georgia,serif;padding:32px">Nothing here yet: each Movie of the Day is a surprise until 8am on its day. <a style="color:#fffaf5" href="' + G_SITE + '">Grifflix</a></body>', { status: 404, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
   const day = m[1];
   if (m[2]) {
     const o = await env.MEDIA.get('grifflix/cards/' + day + '.jpg').catch(() => null);
+    if (o && url.searchParams.has('have') && !(o.customMetadata || {}).bg) return new Response('old', { status: 404, headers: { 'Access-Control-Allow-Origin': '*' } });   // (drawn before the themes: drawn again)
     if (o) return new Response(o.body, { headers: { 'Content-Type': 'image/jpeg', 'Cache-Control': 'public, max-age=86400', 'Access-Control-Allow-Origin': '*' } });
     if (url.searchParams.has('have')) return new Response('none', { status: 404, headers: { 'Access-Control-Allow-Origin': '*' } });
     return Response.redirect(gPicUrl(it.backdrop || it.poster, it.backdrop ? 'Backdrop' : 'Primary', 1100, (it.tags || {})[it.backdrop ? 'backdrop' : 'poster']), 302);
@@ -1937,13 +1956,8 @@ async function gSharePage(url, env) {
   const title = f.name + (f.year ? ' (' + f.year + ')' : ''), when = new Date(day + 'T12:00:00Z').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });
   const desc = 'Movie of the Day on Grifflix, ' + when + (f.note ? ': ' + f.note : f.overview ? ': ' + f.overview.slice(0, 160) : '');
   const card = await env.MEDIA.head('grifflix/cards/' + day + '.jpg').catch(() => null), img = url.origin + '/gs/' + day + '.jpg' + (card ? '?v=' + (card.uploaded ? +new Date(card.uploaded) : 1) : '');
-  return new Response(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${e(title)} · Grifflix</title><meta name="description" content="${e(desc)}">
-<meta property="og:type" content="website"><meta property="og:site_name" content="Grifflix"><meta property="og:title" content="${e(title)}"><meta property="og:description" content="${e(desc)}">
-<meta property="og:image" content="${e(img)}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image">
-<meta name="theme-color" content="${gPal()[0]}"><style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:${gPal()[0]};color:#fffaf5;font:18px Georgia,serif;text-align:center;padding:24px}img{max-width:min(560px,90vw);border-radius:16px;display:block;margin:0 auto 22px}a{display:inline-block;padding:13px 26px;border-radius:999px;background:#fffaf5;color:#1b1020;font:600 14px Helvetica,Arial,sans-serif;letter-spacing:.08em;text-transform:uppercase;text-decoration:none}</style></head>
-<body><div><img src="${e(img)}" alt=""><p>${e(title)}: Movie of the Day, ${e(when)}.</p><p><a href="${e(go)}">See it on Grifflix</a></p></div>
-<script>setTimeout(function(){location.replace(${JSON.stringify(go)});},1400);</script></body></html>`, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } });
+  const th = (card && card.customMetadata) || {};
+  return new Response(gLanding({ title: title + ' · Grifflix', desc, img, line: title + ': Movie of the Day, ' + when + '.', go, label: 'See it on Grifflix', bg: th.bg, ink: th.ink, wait: 1400 }), { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } });
 }
 async function gInvitePage(url, env) {   // an invitation's link: a page with its card (WhatsApp, iMessage show it), then on to Grifflix
   const m = /^\/gi\/([\w-]{16})(\.jpg)?$/.exec(url.pathname);
@@ -1955,14 +1969,8 @@ async function gInvitePage(url, env) {   // an invitation's link: a page with it
   }
   const p = await env.SOTD.get('gipage:' + m[1], 'json');
   if (!p) return gone();
-  const e = x => esc(String(x)), title = p.name + ' is invited to Grifflix', img = url.origin + '/gi/' + m[1] + '.jpg?v=' + p.at;
-  return new Response(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${e(title)}</title><meta name="description" content="An invitation to Grifflix">
-<meta property="og:type" content="website"><meta property="og:title" content="${e(title)}"><meta property="og:description" content="An invitation to Grifflix">
-<meta property="og:image" content="${e(img)}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image">
-<meta name="theme-color" content="${gPal()[0]}"><style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:${gPal()[0]};color:#fffaf5;font:18px Georgia,serif;text-align:center;padding:24px}img{max-width:min(520px,90vw);border-radius:16px;display:block;margin:0 auto 22px}a{display:inline-block;padding:13px 26px;border-radius:999px;background:#fffaf5;color:#1b1020;font:600 14px Helvetica,Arial,sans-serif;letter-spacing:.08em;text-transform:uppercase;text-decoration:none}</style></head>
-<body><div><img src="${e(img)}" alt=""><p>${e(p.name)}, you’re invited to Grifflix.</p><p><a href="${e(p.link)}">Open your invitation</a></p></div>
-<script>setTimeout(function(){location.replace(${JSON.stringify(p.link)});},1600);</script></body></html>`, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } });
+  const title = p.name + ' is invited to Grifflix', img = url.origin + '/gi/' + m[1] + '.jpg?v=' + p.at;
+  return new Response(gLanding({ title, desc: 'An invitation to Grifflix', img, line: p.name + ', you’re invited to Grifflix.', go: p.link, label: 'Open your invitation', bg: p.bg, ink: p.ink, wait: 1600 }), { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } });
 }
 async function ownerSignedIn(request, env) {
   const who = await memberWho(request, env).catch(() => null);
