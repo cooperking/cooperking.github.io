@@ -135,7 +135,7 @@ img { display: block; }
 .card .bar { position: absolute; left: 0; bottom: 0; height: 3px; background: var(--fg); }
 .card .t { margin-top: 8px; font: 600 15px/1.2 var(--kfont); text-transform: uppercase; letter-spacing: .03em; color: var(--fg); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .card .s { margin-top: 2px; font: 600 10px/1.3 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
-.card .noimg { position: absolute; inset: 0; display: grid; place-items: center; padding: 12px; text-align: center; font: italic 400 17px/1.15 var(--serif); color: var(--fg-2);
+.card .noimg { position: absolute; inset: 0; display: grid; place-items: center; padding: 12px; text-align: center; font: 600 14px/1.2 var(--kfont); letter-spacing: .08em; text-transform: uppercase; color: var(--fg-2);
   background: linear-gradient(150deg, rgba(255, 255, 255, .14), rgba(255, 255, 255, .03)); }
 /* a collection's cover, drawn: the month's colour and type (the page's own when it has no theme) */
 .card.coll .ccov { background: var(--bg); color: rgb(var(--kink, 255, 255, 255)); border: 1.5px solid rgba(var(--kink, 255, 255, 255), .5); container-type: inline-size; box-shadow: 0 10px 24px rgba(0, 0, 0, .28); }
@@ -602,8 +602,8 @@ html:not(.hall):not(.table) body { padding-top: env(safe-area-inset-top); }
 /* the rows in Search's pop-up: above the shelves */
 #bgrid .nowrows { margin: 6px 0 0; }
 #bgrid .nowrows .row { margin: 0 0 22px; }
-#bgrid .nowrows .row h2 { font-size: 22px !important; margin: 0 0 10px; display: flex; justify-content: space-between; align-items: baseline; }
-html.tv #bgrid .nowrows .row h2 { font-size: 30px !important; }
+#bgrid .nowrows .row h2, #sheet .row h2 { font: 700 22px/1.1 var(--kfont) !important; letter-spacing: .1em !important; text-transform: uppercase !important; font-style: normal !important; margin: 0 0 12px; display: flex; align-items: baseline; }
+html.tv #bgrid .nowrows .row h2, html.tv #sheet .row h2 { font-size: 28px !important; }
 /* a phone: the shelves' tabs one row that scrolls sideways, the title smaller (four tabs now) */
 @media (max-width: 760px) {
   .tabs { flex-wrap: nowrap !important; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
@@ -2404,10 +2404,10 @@ function wireCards(el, items) {
 }
 function drawRows(R, into) {
   var el = into || $('#rows'); if (!el) return;
-  var rows = [['continue', 'Carry on <i>watching</i>', true], ['movies', 'New <i>films</i>', false], ['tv', 'New on <i>TV</i>', false]], h = '', all = [];
+  var rows = [['continue', 'Carry on watching', true], ['movies', 'New films', false], ['tv', 'New on TV', false]], h = '', all = [];   // (one font: John, 8 Nov 2026)
   rows.forEach(function (r) {
     var items = R[r[0]] || []; if (!items.length) return; all = all.concat(items);
-    h += '<section class="row"><h2>' + r[1] + (r[0] !== 'continue' ? '<button class="more" data-more="' + r[0] + '">See all</button>' : '') + '</h2><div class="strip' + (r[2] ? ' wide' : '') + '">' + items.map(function (i) { return cardHTML(i, r[2]); }).join('') + '</div></section>';
+    h += '<section class="row"><h2><span>' + r[1] + '</span>' + (r[0] !== 'continue' ? '<button class="more" data-more="' + r[0] + '">See all</button>' : '') + '</h2><div class="strip' + (r[2] ? ' wide' : '') + '">' + items.map(function (i) { return cardHTML(i, r[2]); }).join('') + '</div></section>';
   });
   el.innerHTML = h; wireCards(el, all);
   $$('[data-more]', el).forEach(function (b) { b.onclick = function () { var bs = $('#bsin'); if (into && bs && bs.contains(into)) { browseIn(bs, b.dataset.more); } else location.hash = '#browse/' + b.dataset.more; }; });
