@@ -93,6 +93,8 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
 .pop .kicker { color: var(--ink-2); }
 .pop img { border-radius: 0 !important; box-shadow: none !important; border: 1px solid var(--glass-line); }
 .pop .btn { border-radius: 0; background: transparent; color: var(--ink); border: 1px solid var(--ink); font-family: "GFutura", "Jost", sans-serif; letter-spacing: .18em; }
+.pop .invpics { grid-template-columns: 1fr 1fr; }
+.pop .btn { letter-spacing: .1em; font-size: 12px; white-space: nowrap; padding-left: 8px; padding-right: 8px; justify-content: center; text-align: center; }
 .pop .btn.primary { background: var(--ink); color: var(--bg); }
 .pop .x { border-radius: 0; background: transparent; color: var(--ink); border: 1px solid var(--glass-line); }
 @media (max-width: 560px) { dialog.pop { border-radius: 0; } }
@@ -304,40 +306,75 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     g('admin', body).then(function (j) {
       if (done) done();
       members(j.members);
-      return drawCard(j.name).then(function (jpeg) { var th = cardTheme(); return g('admin', { op: 'card', id: j.id, card: jpeg, link: j.link, bg: th.bg, ink: th.d ? '#fff' : '#000' }).then(function (c) { showInvite(j.name, c.page, jpeg); }); });
+      INV = { id: j.id, name: j.name, link: j.link, pic: null };   // (each invitation starts with the latest film's poster; a photo is for that one only)
+      return invMake();
     }).catch(function (e) { toast(e.message); });
   }
-  // the card: 1200 × 630, as Messages and WhatsApp show it, in this month's theme (John, 8 Nov 2026: "the invite and share
-  // buttons to match themes"): its colour, their name in its type, "is invited to" and GRIFFLIX in Futura, Grifflix's icon
-  function cardTheme() { var m = new Date().getMonth(); try { m = +new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', month: 'numeric' }).format(new Date()) - 1; } catch (e) {} return TBY[GORDER[m]] || GTHEMES[0]; }
-  function drawCard(name) {
+  // the card: 1200 × 630, as Messages and WhatsApp show it. Not in a month's theme, which someone invited hasn't seen (John, 8 Nov
+  // 2026: "don't have themes for invites ... A film poster would be good, with the option to put in a chosen photo of them,
+  // like song of the day"): Grifflix's black, the latest Movie of the Day's poster or John's photo of them, their name, GRIFFLIX
+  var INV = null;
+  function latestFilm() {   // the newest day shown on the site, its poster's address (the Worker's copy, as the page uses)
+    return fetch('/grifflix/data/days.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (D) {
+      var k = Object.keys(D.days || {}).sort().pop(), it = k && D.days[k]; if (!it || !it.poster) return null;
+      return { name: it.name, year: it.year, src: WORKER + '/gp/' + it.poster + '/Primary-400.jpg' + ((it.tags || {}).poster ? '?t=' + it.tags.poster : '') };
+    }).catch(function () { return null; });
+  }
+  function drawCard(name, pic) {
     var c = document.createElement('canvas'); c.width = 1200; c.height = 630; var x = c.getContext('2d');
-    var t = cardTheme(), ink = t.d ? '#ffffff' : '#000000', soft = t.d ? 'rgba(255,255,255,.75)' : 'rgba(0,0,0,.7)';
-    var FUT = '"GFutura", "Futura", "Jost", "Century Gothic", sans-serif', tf = t.font || FUT, tw = t.tw || 700, it = t.fs === 'italic' ? 'italic ' : '';
-    var load = function (src) { return new Promise(function (ok) { var i = new Image(); i.onload = function () { ok(i); }; i.onerror = function () { ok(null); }; i.src = src; }); };
-    return Promise.all([load('/grifflix/icon-1024.png'), document.fonts.load('700 30px ' + FUT), document.fonts.load('400 24px ' + FUT), document.fonts.load(it + tw + ' 100px ' + tf)].map(function (p) { return p.catch(function () {}); })).then(function (r) {
-      x.fillStyle = t.bg; x.fillRect(0, 0, 1200, 630);
-      var spaced = function (txt, px, y, font, sp, col) { x.font = font; x.fillStyle = col; var cx = px; for (var k = 0; k < txt.length; k++) { x.fillText(txt[k], cx, y); cx += x.measureText(txt[k]).width + sp; } };
-      x.textBaseline = 'alphabetic';
-      if (r[0]) { x.drawImage(r[0], 760, 135, 360, 360); }   // (Grifflix's icon: black, the name, its one bright line)
-      var nm = (t.tt || 'uppercase') === 'uppercase' ? name.toUpperCase() : name, size = 130, maxW = 620;
-      do { x.font = it + tw + ' ' + size + 'px ' + tf; size -= 4; } while (x.measureText(nm).width > maxW && size > 40);
-      size += 4; x.fillStyle = ink; x.fillText(nm, 76, 270);
-      spaced('IS INVITED TO', 80, 340, '500 26px ' + FUT, 9, soft);
-      spaced('GRIFFLIX', 78, 470, '700 76px ' + FUT, 36, ink);
-      spaced(t.n.toUpperCase() + ' \u00b7 ' + t.f.toUpperCase(), 80, 560, '500 16px ' + FUT, 5, soft);   // (the month's theme, small)
-      return c.toDataURL('image/jpeg', .88);
+    var FUT = '"GFutura", "Futura", "Jost", "Century Gothic", sans-serif';
+    var load = function (src) { return new Promise(function (ok) { if (!src) return ok(null); var i = new Image(); i.crossOrigin = 'anonymous'; i.onload = function () { ok(i); }; i.onerror = function () { ok(null); }; i.src = src; }); };
+    var film = pic ? Promise.resolve(null) : latestFilm();
+    return film.then(function (f) {
+      return Promise.all([load(pic || (f && f.src)), document.fonts.load('700 30px ' + FUT).catch(function () {}), document.fonts.load('400 24px ' + FUT).catch(function () {})]).then(function (r) {
+        var im = r[0];
+        x.fillStyle = '#0a0a0a'; x.fillRect(0, 0, 1200, 630);
+        var PX = 64, PY = 60, PW = 340, PH = 510;   // (the picture: a poster's shape)
+        if (im) { var sc = Math.max(PW / im.width, PH / im.height), sw = PW / sc, sh = PH / sc; x.drawImage(im, (im.width - sw) / 2, (im.height - sh) / 2, sw, sh, PX, PY, PW, PH); }
+        else { x.fillStyle = '#1a1a1a'; x.fillRect(PX, PY, PW, PH); }
+        var spaced = function (txt, px, y, font, sp, col) { x.font = font; x.fillStyle = col; var cx = px; for (var k = 0; k < txt.length; k++) { x.fillText(txt[k], cx, y); cx += x.measureText(txt[k]).width + sp; } return cx; };
+        x.textBaseline = 'alphabetic';
+        var TX = 470, maxW = 1200 - TX - 60, nm = name.toUpperCase(), size = 92, sp = function (z) { return z * .12; }, wid;
+        var measure = function () { x.font = '700 ' + size + 'px ' + FUT; var w = 0; for (var k = 0; k < nm.length; k++) w += x.measureText(nm[k]).width + sp(size); return w; };
+        while ((wid = measure()) > maxW && size > 36) size -= 4;
+        spaced(nm, TX, 240, '700 ' + size + 'px ' + FUT, sp(size), '#fff');
+        spaced('IS INVITED TO', TX + 2, 318, '400 26px ' + FUT, 9, 'rgba(255,255,255,.75)');
+        var end = spaced('GRIFFLIX', TX, 440, '700 72px ' + FUT, 38, '#fff');
+        x.fillStyle = '#2bff6a'; x.fillRect(TX + 2, 470, end - TX - 40, 8);   // (Grifflix's one bright line, as its icon)
+        if (!pic && f) spaced(('Movie of the Day: ' + f.name + (f.year ? ' (' + f.year + ')' : '')).toUpperCase(), TX + 2, 560, '400 16px ' + FUT, 4, 'rgba(255,255,255,.6)');
+        return c.toDataURL('image/jpeg', .88);
+      });
+    });
+  }
+  function invMake() {   // the card drawn and kept by the Worker with its page (again when the picture changes)
+    var me = INV, b = $('#invwait'); if (b) b.hidden = false;
+    return drawCard(me.name, me.pic).then(function (jpeg) {
+      return g('admin', { op: 'card', id: me.id, card: jpeg, link: me.link, bg: '#0a0a0a', ink: '#fff' }).then(function (c) { if (me === INV) showInvite(me.name, c.page, jpeg); });
     });
   }
   function showInvite(name, page, jpeg) {
     var text = name + ', you’re invited to Grifflix.', enc = encodeURIComponent;
     $('#invin').innerHTML = '<div class="pop-head"><span class="kicker">Invitation</span><button class="x" id="invx" aria-label="Close"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 3l10 10M13 3 3 13"/></svg></button></div>' +
-      '<h3>' + esc(name) + ' <em>is invited</em></h3><img alt="" src="' + jpeg + '"><p>Send the link: Messages and WhatsApp show this card with it.</p>' +
+      '<h3>' + esc(name) + ' <em>is invited</em></h3><img alt="" src="' + jpeg + '">' +
+      '<div class="sharebtns invpics"><label class="btn" for="invfile">Choose a photo…</label><input type="file" id="invfile" accept="image/*" hidden><button class="btn" id="invdef" type="button">Latest film’s poster</button></div>' +
+      '<p>Send the link: Messages and WhatsApp show this card with it.</p>' +
       '<div class="sharebtns">' + (navigator.share ? '<button class="btn primary" id="shnative">Share…</button>' : '') +
       '<a class="btn" href="sms:&body=' + enc(text + ' ' + page) + '">Messages</a><a class="btn" href="https://wa.me/?text=' + enc(text + ' ' + page) + '" target="_blank" rel="noopener">WhatsApp</a>' +
       '<a class="btn" href="mailto:?subject=' + enc(name + ', you’re invited to Grifflix') + '&body=' + enc(text + '\n\n' + page) + '">Email</a><button class="btn" id="shcopy">Copy link</button></div>';
     var d = $('#invpop'); if (!d.open) d.showModal();
     $('#invx').onclick = function () { d.close(); };
+    $('#invdef').onclick = function () { if (!INV.pic) return; INV.pic = null; toast('Drawing the card…'); invMake().catch(function (e) { toast(e.message); }); };
+    $('#invfile').onchange = function () {   // a photo of them: the middle of it, in the card's poster shape
+      var f = this.files && this.files[0]; this.value = ''; if (!f) return;
+      var u = URL.createObjectURL(f), im = new Image();
+      im.onload = function () {
+        var W = 680, H = 1020, sc = Math.max(W / im.naturalWidth, H / im.naturalHeight), sw = W / sc, sh = H / sc, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+        cv.getContext('2d').drawImage(im, (im.naturalWidth - sw) / 2, (im.naturalHeight - sh) / 2, sw, sh, 0, 0, W, H); URL.revokeObjectURL(u);
+        INV.pic = cv.toDataURL('image/jpeg', .9); toast('Drawing the card…'); invMake().catch(function (e) { toast(e.message); });
+      };
+      im.onerror = function () { URL.revokeObjectURL(u); toast('That photo couldn’t be opened here: try a JPEG.'); };
+      im.src = u;
+    };
     if ($('#shnative')) $('#shnative').onclick = function () { navigator.share({ title: name + ' is invited to Grifflix', text: text, url: page }).catch(function () {}); };
     $('#shcopy').onclick = function () { navigator.clipboard.writeText(page).then(function () { toast('Link copied'); }); };
   }
