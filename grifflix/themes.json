@@ -1,0 +1,130 @@
+{
+ "order": [
+  "corridor",
+  "slices",
+  "umbrellas",
+  "code",
+  "spiral",
+  "tron",
+  "pinboard",
+  "moon",
+  "reel",
+  "oz",
+  "table",
+  "globe"
+ ],
+ "themes": {
+  "corridor": {
+   "bg": "#f5c400",
+   "ink": "#000",
+   "name": "The Corridor",
+   "film": "The Shining",
+   "year": 1980
+  },
+  "slices": {
+   "bg": "#8e1420",
+   "ink": "#fff",
+   "name": "The Slices",
+   "film": "In the Mood for Love",
+   "year": 2000
+  },
+  "umbrellas": {
+   "bg": "#0495b1",
+   "ink": "#000",
+   "name": "The Umbrellas",
+   "film": "The Umbrellas of Cherbourg",
+   "year": 1964
+  },
+  "code": {
+   "bg": "#03160a",
+   "ink": "#fff",
+   "name": "The Code",
+   "film": "The Matrix",
+   "year": 1999
+  },
+  "spiral": {
+   "bg": "#d74719",
+   "ink": "#000",
+   "name": "The Spiral",
+   "film": "Vertigo",
+   "year": 1958
+  },
+  "tron": {
+   "bg": "#030a1c",
+   "ink": "#fff",
+   "name": "The Grid",
+   "film": "Tron",
+   "year": 1982
+  },
+  "pinboard": {
+   "bg": "#f4f1ea",
+   "ink": "#000",
+   "name": "The Pinboard",
+   "film": "All the President’s Men",
+   "year": 1976
+  },
+  "moon": {
+   "bg": "#145063",
+   "ink": "#fff",
+   "name": "The Moon",
+   "film": "Hugo",
+   "year": 2011
+  },
+  "reel": {
+   "bg": "#e2aa1e",
+   "ink": "#000",
+   "name": "The Reel",
+   "film": "Sherlock Jr.",
+   "year": 1924
+  },
+  "oz": {
+   "bg": "#1e8c4e",
+   "ink": "#fff",
+   "name": "The Yellow Brick Road",
+   "film": "The Wizard of Oz",
+   "year": 1939
+  },
+  "table": {
+   "bg": "#0a0a0a",
+   "ink": "#fff",
+   "name": "The Table",
+   "film": "Dr. Strangelove",
+   "year": 1964
+  },
+  "globe": {
+   "bg": "#a8161a",
+   "ink": "#fff",
+   "name": "The Snow Globe",
+   "film": "Citizen Kane",
+   "year": 1941
+  },
+  "jaws": {
+   "bg": "#5a9fae",
+   "ink": "#000",
+   "name": "The Deep",
+   "film": "Jaws",
+   "year": 1975
+  },
+  "credits": {
+   "bg": "#0b0b0c",
+   "ink": "#fff",
+   "name": "Alpha 60",
+   "film": "Alphaville",
+   "year": 1965
+  },
+  "bars": {
+   "bg": "#1578aa",
+   "ink": "#fff",
+   "name": "The Bars",
+   "film": "Psycho",
+   "year": 1960
+  },
+  "autumn": {
+   "bg": "#c4321f",
+   "ink": "#fff",
+   "name": "Late Autumn",
+   "film": "Late Autumn",
+   "year": 1960
+  }
+ }
+}

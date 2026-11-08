@@ -1318,24 +1318,41 @@ const G_PALETTES = [['#0c1445', '#0094de', '#8833ff', '#f700f7', '#009aa8'], ['#
   ['#0b86d3', '#0098b0', '#3370ff', '#009e91', '#3333ff'], ['#ec135b', '#ff3344', '#ff30b3', '#ff4c29', '#fc00e7'],
   ['#09696d', '#009e77', '#0094d4', '#00a150', '#198cff'], ['#ec13c1', '#ff3399', '#dd33ff', '#ff3366', '#aa33ff']];
 function gPal() { return G_PALETTES[(+londonDay().slice(5, 7) - 1 + 6) % 12]; }
-const G_LOGO_FONT = "'Bebas Neue',Oswald,Impact,'Arial Narrow Bold','Arial Narrow',sans-serif";   // (Bebas where the email shows web fonts; else the nearest)
-function gShell(inner) {   // a Grifflix email: on the month's colour, GRIFFLIX in its own letters, a white card, the footer
-  const p = gPal();
-  return '<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">'
-    + '<div style="margin:0;padding:22px 12px 28px;background:' + p[0] + ';background-image:radial-gradient(circle at 15% 10%,' + p[1] + ',transparent 55%),radial-gradient(circle at 90% 90%,' + p[3] + ',transparent 55%)"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">'
+// Grifflix's emails, in the month's theme as its page (John, 8 Nov 2026: "have the daily alerts and emails been updated to new
+// styling?"): the theme's flat colour and ink, Futura, GRIFFLIX spaced as on the site, square edges; the month's theme from the
+// site's themes.json (page.py writes it) in the order John set on the admin page (gthemes)
+let G_TH = null;
+async function gThemeLoad(env) {
+  try {
+    const t = await fetch(G_SITE + 'themes.json', { cf: { cacheTtl: 3600 } }).then(r => r.json());
+    const order = JSON.parse(await env.SOTD.get('gthemes') || 'null') || t.order, k = order[+londonDay().slice(5, 7) - 1];
+    G_TH = t.themes[k] || null;
+  } catch (e) { G_TH = null; }
+  return G_TH;
+}
+const G_FUT = "Futura,'Futura PT','Century Gothic','Trebuchet MS',Helvetica,Arial,sans-serif";
+function gShell(inner) {   // a Grifflix email: the month's colour, GRIFFLIX in Futura, the words in its ink, the footer
+  const th = G_TH || { bg: '#0a0a0a', ink: '#fff' }, bg = th.bg, ink = th.ink === '#000' ? '#000000' : '#ffffff', soft = th.ink === '#000' ? 'rgba(0,0,0,.68)' : 'rgba(255,255,255,.72)', line = th.ink === '#000' ? 'rgba(0,0,0,.22)' : 'rgba(255,255,255,.25)';
+  const F = G_WORKER + '/gf/';
+  return '<style>@font-face{font-family:Futura;font-weight:700;src:url(' + F + 'futura-bold-webfont.woff2) format("woff2")}@font-face{font-family:Futura;font-weight:400;src:url(' + F + 'futura-book-webfont.woff2) format("woff2")}</style>'
+    + '<div style="margin:0;padding:30px 14px 34px;background:' + bg + ';color:' + ink + '"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">'
     + '<table role="presentation" width="560" cellpadding="0" cellspacing="0" style="width:100%;max-width:560px">'
-    + '<tr><td style="padding:4px 6px 14px;font:400 40px/1 ' + G_LOGO_FONT + ';letter-spacing:.03em;color:#ffffff">GRIFFLIX</td></tr>'
-    + '<tr><td style="background:#ffffff;border-radius:18px;padding:24px 24px 26px;font:15px/1.5 Helvetica,Arial,sans-serif;color:#2a1a22">' + inner.replace(/#c2140e/g, p[0])
-    + '<p style="margin:28px 0 0;padding-top:16px;border-top:1px solid #eadfe3;font:13px/1.5 Helvetica,Arial,sans-serif;color:#7a6a72">You can change these emails in your Profile on <a href="' + G_SITE + '" style="color:' + p[0] + '">Grifflix</a>.</p>'
+    + '<tr><td style="padding:0 0 10px;font:700 22px/1 ' + G_FUT + ';letter-spacing:.55em;color:' + ink + '">GRIFFLIX</td></tr>'
+    + '<tr><td style="padding:0 0 26px"><div style="height:3px;width:132px;background:' + ink + ';font-size:0;line-height:0">&nbsp;</div></td></tr>'
+    + '<tr><td style="font:16px/1.55 ' + G_FUT + ';color:' + ink + '">' + inner.replace(/\{INK\}/g, ink).replace(/\{SOFT\}/g, soft).replace(/\{LINE\}/g, line).replace(/\{BG\}/g, bg)
+    + '<p style="margin:30px 0 0;padding-top:16px;border-top:1px solid ' + line + ';font:12px/1.6 ' + G_FUT + ';letter-spacing:.06em;color:' + soft + '">'
+    + (th.name ? 'This month’s theme: ' + mailEsc(th.name) + ', after ' + mailEsc(th.film) + (th.year ? ' (' + th.year + ')' : '') + '.<br>' : '')
+    + 'You can change these emails in your Profile on <a href="' + G_SITE + '" style="color:' + ink + '">Grifflix</a>.</p>'
     + '</td></tr></table></td></tr></table></div>';
 }
-function gFilmHtml(f) {   // one film: its poster, name, year, John's note, and Watch
-  return (f.poster ? '<a href="' + mailEsc(f.url) + '"><img src="' + mailEsc(f.poster) + '" alt="" width="220" style="display:block;width:220px;max-width:60%;height:auto;border:0;border-radius:10px;margin:0 0 16px"></a>' : '')
-    + '<p style="margin:0 0 4px;font:700 11px/1 Helvetica,Arial,sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#c2140e">' + mailEsc(f.kicker || 'Movie of the Day') + '</p>'
-    + '<h1 style="margin:0 0 6px;font:500 28px/1.15 Georgia,\'Times New Roman\',serif;color:#1d0b1e">' + mailEsc(f.name) + (f.year ? ' <span style="color:#8a7680">(' + f.year + ')</span>' : '') + '</h1>'
-    + (f.note ? '<p style="margin:10px 0 0;font:italic 17px/1.45 Georgia,serif;color:#2a1a22">' + mailEsc(f.note) + '</p>' : '')
-    + (f.overview ? '<p style="margin:10px 0 0;color:#4a3a42">' + mailEsc(f.overview.length > 320 ? f.overview.slice(0, 317).replace(/\s+\S*$/, '') + '…' : f.overview) + '</p>' : '')
-    + '<p style="margin:18px 0 0"><a href="' + mailEsc(f.url) + '" style="display:inline-block;padding:11px 22px;border-radius:999px;background:#1d0b1e;color:#ffffff;font:600 13px/1 Helvetica,Arial,sans-serif;letter-spacing:.08em;text-transform:uppercase;text-decoration:none">Watch on Grifflix</a></p>';
+function gFilmHtml(f) {   // one film: its poster, Movie of the Day, the name and year, John's note, and Watch
+  return (f.poster ? '<a href="' + mailEsc(f.url) + '"><img src="' + mailEsc(f.poster) + '" alt="" width="240" style="display:block;width:240px;max-width:62%;height:auto;border:0;margin:0 0 22px"></a>' : '')
+    + '<p style="margin:0 0 8px;font:700 12px/1 ' + G_FUT + ';letter-spacing:.3em;text-transform:uppercase;color:{SOFT}">' + mailEsc(f.kicker || 'Movie of the Day') + '</p>'
+    + '<h1 style="margin:0 0 6px;font:700 30px/1.12 ' + G_FUT + ';letter-spacing:.06em;text-transform:uppercase;color:{INK}">' + mailEsc(f.name) + '</h1>'
+    + (f.year ? '<p style="margin:0;font:400 14px/1 ' + G_FUT + ';letter-spacing:.24em;color:{SOFT}">' + f.year + '</p>' : '')
+    + (f.note ? '<p style="margin:16px 0 0;font:400 17px/1.5 ' + G_FUT + ';color:{INK}">' + mailEsc(f.note) + '</p>' : '')
+    + (f.overview ? '<p style="margin:12px 0 0;color:{SOFT}">' + mailEsc(f.overview.length > 320 ? f.overview.slice(0, 317).replace(/\s+\S*$/, '') + '…' : f.overview) + '</p>' : '')
+    + '<p style="margin:22px 0 0"><a href="' + mailEsc(f.url) + '" style="display:inline-block;padding:13px 26px;background:{INK};color:{BG};font:700 13px/1 ' + G_FUT + ';letter-spacing:.24em;text-transform:uppercase;text-decoration:none">Watch</a></p>';
 }
 // Grifflix's own copy of the site (John, 8 Nov 2026: the calendar "should load in exactly the same way as sotd serves the
 // calendar. Only function should be playing and getting an update from the Mac"): his Update (admin page) brings
@@ -1384,6 +1401,7 @@ function gMailParts(f) {   // the daily email: subject, plain text, and its page
     html: gShell(gFilmHtml(f)) };
 }
 async function gDaily(env) {   // today's Movie of the Day to the members, once, from 8am UK, when the Mac mini shows one
+  await gThemeLoad(env);
   const day = londonDay();
   if (londonHour() < 8) return 'before 8am';
   const sent = (await env.SOTD.get('gSent', 'json')) || [];
@@ -1502,6 +1520,7 @@ async function gDataDaily(env) {   // from 8am: the day's film onto the site's o
   if (!r.ok) { await env.SOTD.delete(key); console.log('gDataDaily: ' + r.error); }
 }
 async function gWeekly(env) {   // Monday morning: the week's Movies of the Day, to those who chose once a week
+  await gThemeLoad(env);
   if (londonHour() < 8 || new Date().toLocaleDateString('en-GB', { weekday: 'short', timeZone: 'Europe/London' }) !== 'Mon') return;
   const done = 'gweek:' + londonDay();
   if (await env.SOTD.get(done)) return;
@@ -1519,8 +1538,8 @@ async function gWeekly(env) {   // Monday morning: the week's Movies of the Day,
           const msg = { title: 'The week on Grifflix', body: items.map(x => x.t).join(' · ').slice(0, 180), icon: (items[items.length - 1] || {}).i || '', url: G_SITE, tag: 'grifflix-week' };
           for (const sub of Object.values(subs)) if (sub.m === id) await pushTo(env, k, sub, msg).catch(() => null);
         } else if (all[id].email && await gMailOk(env) && await dayCount(env, 'mailme-all', MAIL_ALL_DAY)) {
-          const html = '<h1 style="margin:0 0 14px;font:500 28px/1.2 Georgia,serif;color:#1d0b1e">The week on Grifflix</h1>'
-            + items.map(f => '<div style="padding:16px 0;border-top:1px solid #eadfe3">' + gFilmHtml(Object.assign({}, f, { overview: '' })) + '</div>').join('');
+          const html = '<h1 style="margin:0 0 18px;font:700 26px/1.2 ' + G_FUT + ';letter-spacing:.12em;text-transform:uppercase;color:{INK}">The week on Grifflix</h1>'
+            + items.map(f => '<div style="padding:22px 0;border-top:1px solid {LINE}">' + gFilmHtml(Object.assign({}, f, { overview: '' })) + '</div>').join('');
           await gSendMail(env, all[id].email, 'The week on Grifflix', items.map(f => f.name + (f.year ? ' (' + f.year + ')' : '')).join('\n') + '\n\n' + G_SITE, gShell(html)).catch(e => console.log('gweek mail: ' + (e && e.message)));
         }
       }
@@ -1755,10 +1774,11 @@ async function grifflix(request, url, env) {
       if (old && old.sent > Date.now() - 60e3) return answer(429, { error: 'A code went a moment ago. Wait a minute, then ask again.' });
       if (n >= MAIL_PER_HOUR) return answer(429, { error: 'That’s a lot of codes this hour. Try again later.' });
       const code = String(crypto.getRandomValues(new Uint32Array(1))[0] % 1e6).padStart(6, '0');
+      await gThemeLoad(env);
       await env.SOTD.put(key, JSON.stringify({ email, h: await sha256hex(who.id + ':' + email + ':' + code), until: Date.now() + MAIL_CODE_MINUTES * 60e3, tries: 0, sent: Date.now(), hour, n: n + 1 }), { expirationTtl: MAIL_CODE_MINUTES * 60 + 3600 });
       try {
         await gSendMail(env, email, 'Your Grifflix code: ' + code, 'Your code to add this address to your Grifflix profile is ' + code + '.\n\nType it in your Profile within ' + MAIL_CODE_MINUTES + ' minutes.\n\nIf you didn’t ask for it, you can ignore this email.\n',
-          gShell('<p style="margin:0 0 6px;font:700 11px/1 Helvetica,Arial,sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#c2140e">Your code</p><p style="margin:0 0 14px;font:600 40px/1 Helvetica,Arial,sans-serif;letter-spacing:.18em;color:#1d0b1e">' + code + '</p><p style="margin:0">Type it in your Profile within ' + MAIL_CODE_MINUTES + ' minutes to add this address to Grifflix. If you didn’t ask for it, you can ignore this email.</p>'));
+          gShell('<p style="margin:0 0 6px;font:700 12px/1 ' + G_FUT + ';letter-spacing:.3em;text-transform:uppercase;color:{SOFT}">Your code</p><p style="margin:0 0 14px;font:700 44px/1 ' + G_FUT + ';letter-spacing:.24em;color:{INK}">' + code + '</p><p style="margin:0">Type it in your Profile within ' + MAIL_CODE_MINUTES + ' minutes to add this address to Grifflix. If you didn’t ask for it, you can ignore this email.</p>'));
       } catch (e) { return answer(502, { error: 'The email couldn’t be sent just now. Try again later, or ask John.' }); }
       return answer(200, { ok: true, minutes: MAIL_CODE_MINUTES });
     }
@@ -1865,6 +1885,7 @@ async function gAdmin(request, env, b, who, answer) {
     return answer(200, { members: list() });
   }
   if (b.op === 'preview' || b.op === 'testmail') {   // the 8am email as it goes out: the latest day already shown (or today's)
+    await gThemeLoad(env);
     const c = gShownCal(await gCal(env));
     const day = Object.keys(c.days).sort().pop();
     if (!day) return answer(503, { error: 'No Movie of the Day shown yet (or no Update from the Mac yet).' });
@@ -1943,7 +1964,7 @@ p{margin:0 0 18px;letter-spacing:.08em}a{display:inline-block;padding:14px 26px;
 }
 async function gSharePage(url, env) {
   const m = /^\/gs\/(\d{4}-\d\d-\d\d)(\.jpg)?$/.exec(url.pathname), c = await gCal(env), it = m && gRevealed(m[1]) && (c.days || {})[m[1]];
-  if (!it) return new Response('<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Grifflix</title><body style="margin:0;background:' + gPal()[0] + ';color:#fffaf5;font:18px Georgia,serif;padding:32px">Nothing here yet: each Movie of the Day is a surprise until 8am on its day. <a style="color:#fffaf5" href="' + G_SITE + '">Grifflix</a></body>', { status: 404, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+  if (!it) return new Response('<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Grifflix</title><body style="margin:0;background:#0a0a0a;color:#fff;font:18px Futura,\'Century Gothic\',Helvetica,sans-serif;padding:32px">Nothing here yet: each Movie of the Day is a surprise until 8am on its day. <a style="color:#fffaf5" href="' + G_SITE + '">Grifflix</a></body>', { status: 404, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
   const day = m[1];
   if (m[2]) {
     const o = await env.MEDIA.get('grifflix/cards/' + day + '.jpg').catch(() => null);
@@ -1961,7 +1982,7 @@ async function gSharePage(url, env) {
 }
 async function gInvitePage(url, env) {   // an invitation's link: a page with its card (WhatsApp, iMessage show it), then on to Grifflix
   const m = /^\/gi\/([\w-]{16})(\.jpg)?$/.exec(url.pathname);
-  const gone = () => new Response('<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Grifflix</title><body style="margin:0;background:#120914;color:#fffaf5;font:18px Georgia,serif;padding:32px">This invitation has run out. Ask John for a new one.</body>', { status: 404, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+  const gone = () => new Response('<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Grifflix</title><body style="margin:0;background:#0a0a0a;color:#fff;font:18px Futura,\'Century Gothic\',Helvetica,sans-serif;padding:32px">This invitation has run out. Ask John for a new one.</body>', { status: 404, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
   if (!m) return gone();
   if (m[2]) {
     const img = await env.SOTD.get('gicard:' + m[1], 'arrayBuffer');

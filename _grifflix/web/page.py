@@ -43,6 +43,15 @@ def theme_list():
     return out
 
 
+def themes_json():
+    """grifflix/themes.json: each theme's colours and film, and the usual order, for the Worker's emails in the month's theme."""
+    tl = theme_list()
+    out = {'order': [t['k'] for t in tl[:12]], 'themes': {t['k']: {'bg': t['bg'], 'ink': '#fff' if t['d'] else '#000', 'name': t['n'], 'film': t['f'], 'year': t['y']} for t in tl}}
+    p = os.path.join(ROOT, 'grifflix', 'themes.json'); new = json.dumps(out, ensure_ascii=False, indent=1)
+    if not os.path.exists(p) or open(p, encoding='utf-8').read() != new:
+        open(p, 'w', encoding='utf-8').write(new)
+
+
 def admin():
     a = open(ADMIN, encoding='utf-8').read()
     new = re.sub(r'/\*THEMELIST\*/.*?/\*THEMELIST END\*/', lambda m: '/*THEMELIST*/' + json.dumps(theme_list(), ensure_ascii=False, separators=(',', ':')) + '/*THEMELIST END*/', a, count=1, flags=re.S)
@@ -73,6 +82,7 @@ def main():
     which = 'live' if '--live' in args else 'draft'
     admin()
     art()
+    themes_json()
     os.makedirs(os.path.dirname(OUT[which]), exist_ok=True)
     with open(OUT[which], 'w', encoding='utf-8') as f:
         f.write(build(which))
