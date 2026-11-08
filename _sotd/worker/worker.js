@@ -1313,6 +1313,19 @@ function gFilmHtml(f) {   // one film: its poster, name, year, John's note, and 
     + (f.overview ? '<p style="margin:10px 0 0;color:#4a3a42">' + mailEsc(f.overview.length > 320 ? f.overview.slice(0, 317).replace(/\s+\S*$/, '') + '…' : f.overview) + '</p>' : '')
     + '<p style="margin:18px 0 0"><a href="' + mailEsc(f.url) + '" style="display:inline-block;padding:11px 22px;border-radius:999px;background:#1d0b1e;color:#ffffff;font:600 13px/1 Helvetica,Arial,sans-serif;letter-spacing:.08em;text-transform:uppercase;text-decoration:none">Watch on Grifflix</a></p>';
 }
+function gDayFilm(c, day) {   // a calendar day's film, as the alert (notification and email) shows it
+  const it = c.days && c.days[day];
+  if (!it) return null;
+  const name = it.type === 'episode' ? (it.series || it.name) : it.name, note = (c.notes || {})[day] || '';
+  return { name, year: it.year || '', note, overview: it.overview || '', url: G_SITE + '#day/' + day,
+    poster: it.poster ? G_API + '/pimg/' + it.poster + '/Primary.jpg?maxWidth=500' : '',
+    image: it.backdrop ? G_API + '/pimg/' + it.backdrop + '/Backdrop.jpg?maxWidth=1000' : '' };
+}
+function gMailParts(f) {   // the daily email: subject, plain text, and its page
+  return { subject: f.name + (f.year ? ' (' + f.year + ')' : '') + ': today’s Movie of the Day',
+    text: f.name + (f.note ? '\n\n' + f.note : '') + '\n\nWatch on Grifflix: ' + f.url + '\n\nYou can change these emails in your Profile on Grifflix.',
+    html: gShell(gFilmHtml(f)) };
+}
 async function gDaily(env) {   // today's Movie of the Day to the members, once, from 8am UK, when the Mac mini shows one
   const day = londonDay();
   if (londonHour() < 8) return 'before 8am';
@@ -1327,10 +1340,7 @@ async function gDaily(env) {   // today's Movie of the Day to the members, once,
     if (!once || !once.first) return 'being sent by another look';
   }
   if (!await kvSoft(env, 'gSent', JSON.stringify(sent.concat(day).slice(-60)))) return 'couldn’t note it: not sent';
-  const name = it.type === 'episode' ? (it.series || it.name) : it.name, note = (c.notes || {})[day] || '';
-  const f = { name, year: it.year || '', note, overview: it.overview || '', url: G_SITE + '#day/' + day,
-    poster: it.poster ? G_API + '/pimg/' + it.poster + '/Primary.jpg?maxWidth=500' : '',
-    image: it.backdrop ? G_API + '/pimg/' + it.backdrop + '/Backdrop.jpg?maxWidth=1000' : '' };
+  const f = gDayFilm(c, day), name = f.name, note = f.note;
   const msg = { title: name + (f.year ? ' (' + f.year + ')' : ''), body: note || 'Today’s Movie of the Day', icon: f.poster, image: f.image || f.poster, url: f.url, tag: 'grifflix-day' };
   const pushed = await gPushAll(env, msg, f), mailed = await gMailAll(env, f);
   const res = { at: Date.now(), day, name, pushed, mailed };
@@ -1364,7 +1374,7 @@ async function gMailAll(env, f) {
     const m = all[id];
     if (gMode(m, 'gmail') === 'week') { const key = 'gmwk:' + id, l = (await env.SOTD.get(key, 'json')) || []; l.push(f); await kvSoft(env, key, JSON.stringify(l.slice(-14)), { expirationTtl: 10 * 86400 }); kept++; continue; }
     if (!await dayCount(env, 'mailme-all', MAIL_ALL_DAY)) break;   // (the day's allowance, shared with the songs')
-    try { await gSendMail(env, m.email, f.name + (f.year ? ' (' + f.year + ')' : '') + ': today’s Movie of the Day', f.name + (f.note ? '\n\n' + f.note : '') + '\n\nWatch on Grifflix: ' + f.url + '\n\nYou can change these emails in your Profile on Grifflix.', gShell(gFilmHtml(f))); sent++; }
+    try { const p = gMailParts(f); await gSendMail(env, m.email, p.subject, p.text, p.html); sent++; }
     catch (e) { console.log('gmail: ' + (e && e.message)); }
   }
   return { sent, kept };
@@ -1600,6 +1610,27 @@ async function gAdmin(request, env, b, who, answer) {
     const name = String(b.name || '').replace(/\s+/g, ' ').trim().slice(0, 60);
     if (!all[b.id] || !name) return answer(400, { error: 'Who, and what name?' });
     all[b.id].name = name; await gSave(env, all); return answer(200, { members: list() });
+  }
+  if (b.op === 'setprefs') {   // John sets a member's email address and choices (they can change them in their Profile)
+    const m = all[b.id]; if (!m) return answer(404, { error: 'No such member.' });
+    if ('email' in b) { const e = cleanEmail(b.email); if (b.email && !e) return answer(400, { error: 'That email address doesn’t look right.' }); if (e) m.email = e; else delete m.email; }
+    if (G_MODES.includes(b.gmail)) { if (b.gmail !== 'off' && !m.email) return answer(400, { error: 'Add their email address first.' }); m.gmail = b.gmail; }
+    if (G_MODES.includes(b.gpush)) m.gpush = b.gpush;
+    await gSave(env, all);
+    return answer(200, { members: list() });
+  }
+  if (b.op === 'preview' || b.op === 'testmail') {   // the 8am email as it goes out: the latest day already shown (or today's)
+    const r = await fetch(G_API + '/api/public/calendar', { headers: { 'User-Agent': 'SongOfTheDayWorker' } }).catch(() => null);
+    const c = r && r.ok ? await r.json().catch(() => ({})) : {};
+    const day = Object.keys(c.days || {}).filter(d => d <= londonDay()).sort().pop();
+    if (!day) return answer(503, { error: r && r.ok ? 'No Movie of the Day shown yet.' : 'The Mac mini isn’t answering.' });
+    const p = gMailParts(gDayFilm(c, day));
+    if (b.op === 'preview') return answer(200, Object.assign({ day }, p));
+    const me = all[who.id];
+    if (!me || !me.email) return answer(400, { error: 'Add your own email address in your Profile (or here) first.' });
+    if (!await gMailOk(env)) return answer(503, { error: 'The mailer can’t sign as Grifflix yet.' });
+    await gSendMail(env, me.email, p.subject, p.text, p.html);
+    return answer(200, { ok: true, to: me.email, day });
   }
   if (b.op === 'last') return answer(200, { sent: await env.SOTD.get('gLast', 'json'), mailer: await gMailOk(env) });
   if (b.op === 'publish') {   // the draft put live (grifflix-golive.yml)
