@@ -665,8 +665,34 @@ html.klook .prof .adminpill { background: rgb(var(--kink)); color: var(--bg); bo
 /* each theme on a stage: the whole screen on a TV or computer; on a phone, cut to the theme's own part and scaled */
 .thstage, .thv { position: absolute; inset: 0; }
 html.mob #cal { touch-action: pan-y; }
-html.mob .thstage { inset: auto; left: 0; right: 0; top: 76px; height: var(--sth, 300px); overflow: hidden; }
-html.mob .thv { inset: auto; left: 0; top: 0; width: 1280px; height: 720px; transform-origin: 0 0; }
+html.mob .thstage { inset: auto; left: 0; right: 0; top: 70px; bottom: 0; overflow: hidden; }
+html.mob .thv { inset: auto; left: 0; top: 0; width: 780px; height: 890px; transform-origin: 0 0; overflow: hidden; }
+/* a drag: the theme follows the finger at once (no easing), and eases back onto a day when let go */
+#cal.drag .vday, #cal.drag .hday, #cal.drag .tday, #cal.drag .reelband { transition: none !important; }
+/* each theme drawn for an upright phone (780 wide, the info under it) */
+html.mob .reelband { left: 255px; right: auto; width: 270px; top: 0; bottom: 0; height: auto; background: linear-gradient(180deg, transparent 0 9px, #f4ecd8 9px 23px, transparent 23px) 9px 0 / 13px 32px repeat-y, linear-gradient(180deg, transparent 0 9px, #f4ecd8 9px 23px, transparent 23px) 248px 0 / 13px 32px repeat-y, #141414; }
+html.mob .reelscreen { display: none; }
+html.mob .th-reel .vday .vn { top: auto; bottom: -22px; }
+html.mob .th-code .vday { top: 20px; height: 860px; }
+html.mob .codepic { left: 225px; top: 195px; width: 330px; height: 495px; }
+html.mob .th-slices .vday { height: 510px; background-size: 340px 510px; }
+html.mob .th-moon .vday { width: 40px; height: 40px; }
+html.mob .bigmoon { left: 180px; right: auto; top: 230px; width: 420px; height: 420px; }
+html.mob .mphase { width: 200px; margin-left: -100px; font-size: 15px; letter-spacing: .2em; }
+html.mob .mfilm { left: 40px; right: 40px; width: auto; top: 800px; font-size: 36px; }
+html.mob .cposter { display: none; }
+html.mob .th-credits .vday { width: 720px; }
+html.mob .th-autumn .vday { width: 300px; height: 450px; }
+html.mob .tlight { top: 70px; width: 640px; height: 170px; }
+html.mob .tring { top: 520px; width: 720px; height: 380px; }
+html.mob .tday { width: 70px; height: 95px; margin: -47px 0 0 -35px; line-height: 95px; font-size: 14px; }
+html.mob .tcentre { top: 420px; }
+html.mob .tcentre h2 { font-size: 56px; max-width: 520px; }
+html.mob .tcentre .k { font-size: 20px; } html.mob .tcentre .y { font-size: 28px; }
+html.mob .th-globe .vday { width: 44px; height: 44px; }
+html.mob .globe { left: 190px; top: 390px; width: 400px; height: 400px; }
+html.mob .gpic { width: 180px; height: 270px; margin: -120px 0 0 -90px; }
+html.mob .gbase { left: 216px; top: 772px; width: 348px; height: 84px; }
 html.mob.hall .bar-top, html.mob.table .bar-top { top: max(26px, env(safe-area-inset-top)); left: 16px; right: 16px; gap: 14px; }
 html.mob.hall .bar-top .brand, html.mob.table .bar-top .brand { font-size: 13px; letter-spacing: .42em; margin-right: 0; }
 html.mob .bar-top .pill { display: none !important; }
@@ -676,11 +702,13 @@ html.klook:not(.mob) .bar-top #tvview svg { display: none; }
 html.mob.hall .bar-top .ico, html.mob.table .bar-top .ico { display: inline-grid !important; }
 html.mob .bar-top .ico[data-go="browse"], html.mob .bar-top .ico.members { display: none !important; }
 html.mob .bar-top .ico[data-go="search"] { margin-left: auto !important; }
-html.mob .hinfo, html.mob[data-theme] .hinfo { position: absolute; top: calc(76px + var(--sth, 300px) + 18px) !important; bottom: auto !important; left: 16px !important; right: 16px; width: auto !important; max-width: none !important; }
-html.mob .hinfo .w { font-size: 46px !important; } html.mob .hinfo h2 { display: block !important; margin: 18px 0 6px; font-size: 26px !important; -webkit-line-clamp: 2; } html.mob .hinfo .k { margin-top: 10px; font-size: 11px !important; letter-spacing: .26em; } html.mob .hinfo .y { font-size: 16px; } html.mob .hinfo .n { display: block !important; font-size: 15px; }
+html.mob .hinfo, html.mob[data-theme] .hinfo { position: absolute; top: calc(70px + var(--vk, .5) * 890px + 6px) !important; bottom: auto !important; left: 16px !important; right: 16px; width: auto !important; max-width: none !important; }
+html.mob .tmonth { display: none; }
+html.mob .tinspo b { display: block; font: 500 10px/1.6 var(--kfont); letter-spacing: .28em; text-transform: uppercase; font-style: normal; color: var(--fg-2); }
+html.mob .hinfo .w { font-size: 40px !important; } html.mob .hinfo h2 { display: block !important; margin: 10px 0 4px; font-size: 23px !important; -webkit-line-clamp: 2; } html.mob .hinfo .k { margin-top: 6px; font-size: 10px !important; letter-spacing: .24em; } html.mob .hinfo .y { font-size: 15px; } html.mob .hinfo .n { display: none !important; }
 html.mob .tmonth, html.mob.hall .tmonth, html.mob.table .tmonth { left: 70px; right: 70px; bottom: calc(84px + env(safe-area-inset-bottom)); text-align: center; font-size: 10px; letter-spacing: .3em; }
-html.mob .tinspo { left: 70px; right: 70px; max-width: none; bottom: calc(16px + env(safe-area-inset-bottom)); display: block; padding: 6px 0; text-align: center; font-size: 13px; line-height: 1.35; }
-.mobnav { position: fixed; left: 16px; right: 16px; bottom: calc(18px + env(safe-area-inset-bottom)); display: flex; justify-content: space-between; pointer-events: none; z-index: 27; }
+html.mob .tinspo { left: 70px; right: 70px; max-width: none; bottom: calc(12px + env(safe-area-inset-bottom)); display: block; padding: 4px 0; text-align: center; font-size: 12px; line-height: 1.3; }
+.mobnav { position: fixed; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); display: flex; justify-content: space-between; pointer-events: none; z-index: 27; }
 .mobnav .pill { pointer-events: auto; width: 46px; min-height: 46px; padding: 0; justify-content: center; font: 400 24px/1 var(--kfont); letter-spacing: 0; }
 html.mob .triallabel { top: 4px; bottom: auto; font-size: 9px; padding: 3px 8px; }
 html.table #main.homeview .side { display: none; }
@@ -809,8 +837,8 @@ var HALL = function (m) { return VIEW() === 'themes' && themeFor(m).key !== 'tab
 // a phone (or a tablet held upright): each theme drawn at the TV's size (1280 x 720) and shown smaller, cut to its own
 // part (THEMES' mob: x0, y0, x1, y1), the day's words under it, and buttons for the day before and after
 var MOB = function () { return !TV && matchMedia('(max-width: 760px), (orientation: portrait) and (max-width: 1100px)').matches; };
-function themeW() { return MOB() ? 1280 : (innerWidth || 1280); }
-function themeH() { return MOB() ? 720 : (document.documentElement.clientHeight || innerHeight || 720); }
+function themeW() { return MOB() ? 780 : (innerWidth || 1280); }
+function themeH() { return MOB() ? 890 : (document.documentElement.clientHeight || innerHeight || 720); }   // (a phone: drawn 780 x 890 for an upright screen, the day's words under it)
 if (KLOOK) document.documentElement.classList.add('klook');
 if (TVHERO) document.addEventListener('DOMContentLoaded', function () {   // (so it's clear a trial look is on: this device only, not everyone's)
   var t = document.createElement('div'); t.className = 'triallabel';
@@ -1283,7 +1311,7 @@ function drawMonth() {
   var on = $('.monthnav .m.on'); if (on) on.scrollIntoView({ inline: 'center', block: 'nearest' });
   $$('.monthnav .m').forEach(function (b) { b.onclick = function () { S.month = b.dataset.m; drawMonth(); }; });
   var step = function (d) { var k = months[i + d]; if (!k) return false; S.month = k; drawMonth(); var c = $('#cal'), sd = $('#side');
-    [c, sd].forEach(function (el) { if (el && el.animate) el.animate([{ transform: 'translateX(' + (d * 40) + 'px)', opacity: .3 }, { transform: 'none', opacity: 1 }], { duration: 260, easing: 'cubic-bezier(.2,.7,.2,1)' }); }); return true; };
+    if (!S.quiet) [c, sd].forEach(function (el) { if (el && el.animate) el.animate([{ transform: 'translateX(' + (d * 40) + 'px)', opacity: .3 }, { transform: 'none', opacity: 1 }], { duration: 260, easing: 'cubic-bezier(.2,.7,.2,1)' }); }); return true; };
   $('#mprev').onclick = function () { step(-1); };
   $('#mnext').onclick = function () { step(1); };
   S.step = step;
@@ -1371,18 +1399,21 @@ function drawMonth() {
   if (tbl) drawTable(C, n, m, mine);
   if (hall) { if (themeFor(m).key === 'corridor') drawHall(C, n, m, mine); else drawTheme(themeFor(m), C, n, m, mine); }
 }
-// the corridor (the Kubrick look on a TV): the month's days down a corridor in one-point perspective, as in his
-// tracking shots (The Shining's hallways, 2001's centrifuge); the day you're on at the front, the days after it
-// standing in the doorways behind; right walks on down it, left back. The month's own bold colour; a surprise still
-// to come stands there as a black slab (2001's monolith) till 8am on its day
+// the corridor (January): the month's days down a corridor in one-point perspective, as in Kubrick's tracking shots;
+// the day you're on at the front, the days after it standing in the doorways behind. A surprise still to come stands
+// there as a black slab (2001's monolith) till 8am on its day
 var HALLG = { vx: .40, vy: .40, fx: .80, fy: .57, ph: .56, p: 900, dz: 560 };
 function hallScale(i) { return HALLG.p / (HALLG.p + i * HALLG.dz); }
+function hallGeo(W, H) {   // (on a phone: the far end up and to the left, the front low and to the right)
+  if (MOB()) return { vx: 250, vy: 150, fx: 500, fy: 560, ph: 450, bw: W, bh: 890 };
+  return { vx: W * HALLG.vx, vy: H * HALLG.vy, fx: W * HALLG.fx, fy: H * HALLG.fy, ph: H * HALLG.ph, bw: W, bh: H };
+}
 function drawHall(C, n, m, mine) {
-  var W = themeW(), H = themeH(), g = HALLG;
-  var vx = W * g.vx, vy = H * g.vy, ph = H * g.ph, pw = ph * 2 / 3, fx = W * g.fx, fy = H * g.fy;
-  var lines = '';   // (the corridor's lines: from the corners of the screen to the far end, and a doorway at each day's depth)
-  [[0, 0], [W, 0], [W, H], [0, H]].forEach(function (c) { lines += '<line x1="' + c[0] + '" y1="' + c[1] + '" x2="' + vx + '" y2="' + vy + '"/>'; });
-  for (var i = 1; i < 7; i++) { var s = hallScale(i), x0 = vx + (0 - vx) * s, y0 = vy + (0 - vy) * s, x1 = vx + (W - vx) * s, y1 = vy + (H - vy) * s;
+  var W = themeW(), H = themeH(), g = HALLG, q = hallGeo(W, H);
+  var vx = q.vx, vy = q.vy, ph = q.ph, pw = ph * 2 / 3, fx = q.fx, fy = q.fy;
+  var lines = '';   // (the corridor's lines: from the corners to the far end, and a doorway at each day's depth)
+  [[0, 0], [q.bw, 0], [q.bw, q.bh], [0, q.bh]].forEach(function (c) { lines += '<line x1="' + c[0] + '" y1="' + c[1] + '" x2="' + vx + '" y2="' + vy + '"/>'; });
+  for (var i = 1; i < 7; i++) { var s = hallScale(i), x0 = vx + (0 - vx) * s, y0 = vy + (0 - vy) * s, x1 = vx + (q.bw - vx) * s, y1 = vy + (q.bh - vy) * s;
     lines += '<rect x="' + x0.toFixed(1) + '" y="' + y0.toFixed(1) + '" width="' + (x1 - x0).toFixed(1) + '" height="' + (y1 - y0).toFixed(1) + '"/>'; }
   var h = '<svg class="hlines" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none">' + lines + '</svg>' +
     '<div class="hstage" style="perspective:' + g.p + 'px;perspective-origin:' + vx.toFixed(0) + 'px ' + vy.toFixed(0) + 'px">';
@@ -1393,31 +1424,20 @@ function drawHall(C, n, m, mine) {
     else if (it) h += '<button class="hday has' + (key === TODAY ? ' today' : '') + '" data-day="' + key + '" aria-label="' + d + ' ' + MONTHS[m] + ': ' + esc(it.name) + '" style="' + pos + 'background-image:url(' + esc(img(it.poster || it.thumb, it.poster ? 'Primary' : 'Thumb', 400)) + ')">' + lab + '</button>';
     else if (mine) h += '<button class="hday empty' + (key === TODAY ? ' today' : '') + '" data-day="' + key + '" aria-label="' + d + ' ' + MONTHS[m] + ': choose a film" style="' + pos + '"><span class="plus">+</span>' + lab + '</button>';
   }
-  h = '<div class="thstage"><div class="thv">' + h + '</div></div></div><div class="hinfo" id="hinfo"></div><div class="tmonth">' + tmonthText(m) + '</div>' + themeCaption(m);
-  $('#cal').innerHTML = h; themeFit(m);
-  $$('#cal button.hday').forEach(function (b) { b.onclick = function () { daySheet(b.dataset.day); }; b.addEventListener('focus', function () { hallTurn(b); }); });
-  var start = $('#cal .hday.today.has') || $$('#cal button.hday.has').pop() || $('#cal button.hday');
-  hallTurn(start || null);
+  $('#cal').innerHTML = '<div class="thstage"><div class="thv">' + h + '</div></div></div><div class="hinfo" id="hinfo"></div><div class="tmonth">' + tmonthText(m) + '</div>' + themeCaption(m); themeFit(m);
+  themeStart(THEMEFX.corridor, { W: W, H: H, n: n, m: m, mob: MOB(), q: q });
 }
-function hallTurn(b) {   // the corridor walked so b is at the front; its film on the left, large
-  var all = $$('#cal .hday'), at = b ? all.indexOf(b) : 0;
-  all.forEach(function (el, j) {
-    var i = j - at;
-    if (i < 0) { el.style.transform = 'translate3d(0, 0, ' + (HALLG.p * .7).toFixed(0) + 'px)'; el.style.opacity = 0; el.style.zIndex = 300; el.style.pointerEvents = 'none'; }   // (the days passed: behind you)
-    else { el.style.transform = 'translate3d(0, 0, ' + (-i * HALLG.dz) + 'px)'; el.style.opacity = i > 6 ? 0 : 1; el.style.zIndex = 200 - i; el.style.pointerEvents = ''; }
-    el.classList.toggle('front', i === 0);
-  });
-  hallInfo(b);
-}
+function hallTurn(b) { themeTurn(b); }
 function hallInfo(b) {   // the day you're on, in words: its day large (as The Shining's title cards), the film, its year
   var c = $('#hinfo'); if (!c) return;
   if (!b) { c.innerHTML = '<div class="w">' + (S.calData.mine ? 'Empty' : 'Nothing yet') + '</div>'; return; }
   var it = S.calData.days[b.dataset.day], d = new Date(b.dataset.day + 'T12:00'), note = (S.calData.notes || {})[b.dataset.day];
   var top = '<div class="w">' + DOWL[d.getDay()] + '</div><div class="k">' + d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear() + (S.calData.id === 'motd' ? ' · Movie of the Day' : '') + '</div>';
-  if (!it) { c.innerHTML = top + '<h2>No film yet</h2><div class="y">OK to choose one</div>'; return; }
+  if (!it || it.secret) { c.innerHTML = top + '<h2>' + (it ? 'A surprise' : 'No film yet') + '</h2><div class="y">' + (it ? 'Revealed at 8am on the day' : S.calData.mine ? 'OK to choose one' : '') + '</div>'; return; }
   c.innerHTML = top + '<h2>' + esc(showName(it)) + '</h2><div class="y">' + [it.year, it.mins ? it.mins + ' minutes' : ''].filter(Boolean).join(' · ') + '</div>' + (note ? '<div class="n">“' + esc(note) + '”</div>' : '');
 }
-function drawTable(C, n, m, mine) {   // the month round a table (Dr. Strangelove's War Room), the day you're on at the front
+// the table (November): the month round a table (Dr. Strangelove's War Room), black and white, the day you're on at the front
+function drawTable(C, n, m, mine) {
   var R = document.documentElement.style; R.setProperty('--bg', '#0a0a0a'); R.setProperty('--kink', '255, 255, 255');   // (black and white, always)
   var tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.content = '#0a0a0a';
   var h = '<div class="thstage"><div class="thv"><div class="tlight"></div><div class="tring"></div><div class="tcentre" id="tcentre"></div>';
@@ -1425,69 +1445,70 @@ function drawTable(C, n, m, mine) {   // the month round a table (Dr. Strangelov
     var key = S.month + '-' + String(d).padStart(2, '0'), it = C.days[key];
     if (it && !it.secret) h += '<button class="tday has' + (key === TODAY ? ' today' : '') + '" data-day="' + key + '" data-n="' + d + '" aria-label="' + d + ' ' + MONTHS[m] + ': ' + esc(it.name) + '" style="background-image:url(' + esc(img(it.poster || it.thumb, it.poster ? 'Primary' : 'Thumb', 400)) + ')">' + d + '</button>';
     else if (mine && !(it && it.secret)) h += '<button class="tday' + (key === TODAY ? ' today' : '') + '" data-day="' + key + '" data-n="' + d + '">' + d + '</button>';
-    else h += '<div class="tday" data-n="' + d + '">' + d + '</div>';
+    else h += '<div class="tday" data-day="' + key + '" data-n="' + d + '">' + d + '</div>';
   }
   $('#cal').innerHTML = h + '</div></div><div class="tmonth">' + tmonthText(m) + '</div>' + themeCaption(m); themeFit(m);
-  $$('#cal button.tday').forEach(function (b) { b.onclick = function () { daySheet(b.dataset.day); }; b.addEventListener('focus', function () { tableTurn(b); }); });
-  var start = $('#cal .tday.today.has') || $$('#cal button.tday.has').pop() || $('#cal button.tday');
-  if (start) tableTurn(start); else tableTurn(null);
+  themeStart(THEMEFX.table, { W: themeW(), H: themeH(), n: n, m: m, mob: MOB() });
 }
-function tableTurn(b) {   // the table turned so b is at the front; its film in the middle
-  var all = $$('#cal .tday'), n = all.length, fi = b ? +b.dataset.n : 1, cx = 640, cy = 418, rx = 530, ry = 150;
-  var w = MOB() ? 1280 : ($('#cal').clientWidth || 1280); cx = w / 2;
-  all.forEach(function (el) {
-    var a = Math.PI / 2 - (+el.dataset.n - fi) * 2 * Math.PI / n, x = cx + rx * Math.cos(a), y = cy + ry * Math.sin(a), depth = (Math.sin(a) + 1) / 2;
-    el.style.left = x.toFixed(1) + 'px'; el.style.top = y.toFixed(1) + 'px';
-    el.style.transform = 'scale(' + (el === b ? 1.52 : (.62 + .38 * depth)).toFixed(3) + ')';
-    el.style.zIndex = el === b ? 200 : Math.round(depth * 100);
-    el.style.opacity = KLOOK ? 1 : (.45 + .55 * depth).toFixed(2);   // (on the month's bold colour: crisp, not faded into it)
-    el.style.filter = el === b ? 'none' : 'grayscale(1) brightness(' + (.62 + .3 * depth).toFixed(2) + ')';
-    el.classList.toggle('front', el === b);   // (the day you're on: where Down and Back come back to)   // (the others in black and white, the day you're on in colour)
-  });
-  var c = $('#tcentre'); if (!c) return;
-  var it = b && S.calData.days[b.dataset.day];
-  if (!it) { c.innerHTML = b ? '<div class="k">' + esc(longDate(b.dataset.day)) + '</div><h2>No film</h2>' : ''; return; }
-  var d = new Date(b.dataset.day + 'T12:00'), note = (S.calData.notes || {})[b.dataset.day];
-  c.innerHTML = '<div class="k">' + DOWL[d.getDay()] + ' · ' + d.getDate() + ' ' + MONTHS[d.getMonth()] + '</div><h2>' + esc(showName(it)) + '</h2><div class="y">' + [it.year, it.mins ? it.mins + ' minutes' : ''].filter(Boolean).join(' · ') + '</div>' + (note ? '<div class="n">“' + esc(note) + '”</div>' : '');
-}
-function themeFit(m) {   // a phone: the theme's own part of the TV-sized stage, as large as fits the top of the screen
+function tableTurn(b) { themeTurn(b); }
+function themeFit(m) {   // a phone: the theme drawn for an upright screen 780 wide, shown at the phone's own width
   var v = $('#cal .thv'), c = $('#cal'); if (!v) return;
-  if (!MOB()) { v.style.transform = ''; c.style.removeProperty('--sth'); return; }
-  var b = themeFor(m).mob || [0, 0, 1280, 720], vw = document.documentElement.clientWidth || innerWidth, vh = document.documentElement.clientHeight || innerHeight;
-  var k = Math.min(vw / (b[2] - b[0]), vh * .48 / (b[3] - b[1])), w = (b[2] - b[0]) * k;
-  v.style.transform = 'translate(' + ((vw - w) / 2 - b[0] * k).toFixed(1) + 'px,' + (-b[1] * k).toFixed(1) + 'px) scale(' + k.toFixed(4) + ')';
-  c.style.setProperty('--sth', ((b[3] - b[1]) * k).toFixed(0) + 'px');
+  if (!MOB()) { v.style.transform = ''; v.style.width = ''; v.style.height = ''; c.style.removeProperty('--vk'); return; }
+  var vw = document.documentElement.clientWidth || innerWidth, vh = document.documentElement.clientHeight || innerHeight;
+  var k = Math.min(vw / 780, (vh - 70 - 196) / 890), off = (vw - 780 * k) / 2;   // (the theme's 890 high, the day's words and the foot under it)
+  v.style.width = '780px'; v.style.height = '890px'; v.style.transform = 'translateX(' + off.toFixed(1) + 'px) scale(' + k.toFixed(4) + ')';
+  c.style.setProperty('--vk', k.toFixed(4));
 }
-// a phone: drag across a theme to go through its days, a day every 34px under the finger; a flick carries on, the
-// faster the further, slowing to a stop (John, 8 Nov 2026: "scroll through the themes days on mobile via touch.
-// Swiping fast will cause them to change quickly"); a tap still opens the day
+// a phone (and a computer's trackpad, by touch only): drag to go through a theme's days, the theme moving with the
+// finger, the way its days move on the screen (each theme's swipe: the direction its days travel as you go on);
+// the day nearest the front is the day you're on, its words with it. A flick carries on, the faster the further,
+// slowing to a stop on a day (John, 8 Nov 2026: "Theme swipe should be intuitive to the direction of what's on
+// screen. Everything should scroll at once"); a tap still opens the day
 (function () {
-  var x0 = null, y0 = 0, last = 0, moved = false, horiz = null, trail = [], fling = 0, STEP = 34;
-  var on = function (e) { return VIEW() === 'themes' && MOB() && S.view === 'home' && !dlg.open && e.target.closest && e.target.closest('#cal') && !e.target.closest('.mobnav, .tinspo'); };
-  // (the moves and the lift heard on the element first touched: when the drag crosses into the next month, the theme is
-  // drawn again and that element leaves the page, and what happens to it no longer reaches the page itself)
+  var G = null, moved = false, fling = 0;
+  var on = function (e) { return VIEW() === 'themes' && MOB() && S.view === 'home' && !dlg.open && S.theme && e.target.closest && e.target.closest('#cal') && !e.target.closest('.mobnav, .tinspo'); };
+  var dirOf = function () { var sw = (S.theme.fx.swipe || function () { return { x: -1, y: 0 }; })(S.theme.c), l = Math.hypot(sw.x, sw.y) || 1; return { x: sw.x / l, y: sw.y / l, px: sw.px || 64 }; };
+  var len = function () { return themeEls().length; };
+  function go(at) {   // the theme at a place between days (into the next or last month at the ends)
+    var n = len();
+    if (at > n - .5) { if (themeCross(1)) { G.base -= n; at -= n; } else at = Math.min(at, n - 1 + .25); }
+    else if (at < -.5) { var was = n; if (themeCross(-1)) { var m2 = len(); G.base += m2; at += m2; } else at = Math.max(at, -.25); }
+    G.at = at; themeShow(at); return at;
+  }
   document.addEventListener('touchstart', function (e) {
-    clearTimeout(fling); if (!on(e) || e.touches.length > 1) { x0 = null; return; }
-    var t = e.touches[0]; x0 = last = t.clientX; y0 = t.clientY; moved = false; horiz = null; trail = [[t.clientX, Date.now()]];
-    var el = e.target, done = function () { el.removeEventListener('touchmove', move); el.removeEventListener('touchend', end); el.removeEventListener('touchcancel', end); };
+    cancelAnimationFrame(fling); if (!on(e) || e.touches.length > 1) { G = null; return; }
+    var t = e.touches[0], el = e.target;
+    G = { x0: t.clientX, y0: t.clientY, base: themeAtNow(), at: themeAtNow(), d: dirOf(), trail: [[0, Date.now()]], live: false };
+    moved = false;
+    var done = function () { el.removeEventListener('touchmove', move); el.removeEventListener('touchend', end); el.removeEventListener('touchcancel', end); };
     var end = function () { done(); lift(); };
     el.addEventListener('touchmove', move, { passive: false }); el.addEventListener('touchend', end); el.addEventListener('touchcancel', end);
   }, { passive: true });
   function move(e) {
-    if (x0 == null) return; var t = e.touches[0], dx = t.clientX - x0, dy = t.clientY - y0;
-    if (horiz === null && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) horiz = Math.abs(dx) > Math.abs(dy);
-    if (!horiz) return;
-    e.preventDefault(); moved = true;
-    trail.push([t.clientX, Date.now()]); if (trail.length > 6) trail.shift();
-    while (Math.abs(t.clientX - last) >= STEP) { var dir = t.clientX < last ? 1 : -1; last += dir > 0 ? -STEP : STEP; themeStep(dir); }   // (finger left: on to the next day)
+    if (!G) return; var t = e.touches[0], dx = t.clientX - G.x0, dy = t.clientY - G.y0;
+    if (!G.live) { if (Math.hypot(dx, dy) < 9) return; G.live = true; moved = true; $('#cal').classList.add('drag'); }
+    e.preventDefault();
+    var p = dx * G.d.x + dy * G.d.y;   // (along the way the theme's days travel)
+    G.trail.push([p, Date.now()]); if (G.trail.length > 6) G.trail.shift();
+    go(G.base + p / G.d.px);
   }
   function lift() {
-    if (x0 == null) return; x0 = null; if (!moved) return;
-    var a = trail[0], b = trail[trail.length - 1], dt = Math.max(1, b[1] - a[1]), v = (b[0] - a[0]) / dt;   // (px a millisecond, over the last moments)
-    if (Math.abs(v) < .45 || Date.now() - b[1] > 80) return;
-    var n = Math.min(24, Math.round(Math.abs(v) * 7)), dir = v < 0 ? 1 : -1, gap = 55;
-    var go = function () { if (n-- <= 0 || !themeStep(dir)) return; gap *= 1.16; fling = setTimeout(go, gap); };
-    fling = setTimeout(go, gap);
+    if (!G) return; var g = G; G = null; if (!g.live) return; G = g;
+    var a = g.trail[0], b = g.trail[g.trail.length - 1], v = (b[0] - a[0]) / Math.max(1, b[1] - a[1]) / g.d.px;   // (days a millisecond)
+    if (Date.now() - b[1] > 90) v = 0;
+    var t0 = performance.now();
+    var step = function (now) {
+      var dt = Math.min(40, now - t0); t0 = now;
+      if (Math.abs(v) > .0006) { go(G.at + v * dt); v *= Math.pow(.9965, dt); fling = requestAnimationFrame(step); return; }
+      settle();
+    };
+    fling = requestAnimationFrame(step);
+  }
+  function settle() {   // (to the nearest day with a film, smoothly)
+    var all = themeEls(), i = Math.max(0, Math.min(all.length - 1, Math.round(G ? G.at : 0))), best = null;
+    for (var r = 0; r < all.length && !best; r++) [i + r, i - r].some(function (j) { if (all[j] && all[j].tagName === 'BUTTON') { best = all[j]; return true; } });
+    $('#cal').classList.remove('drag'); G = null;
+    if (best) themeTurn(best);
   }
   document.addEventListener('click', function (e) { if (moved && e.target.closest && e.target.closest('#cal')) { e.stopPropagation(); e.preventDefault(); moved = false; } }, true);   // (a swipe isn't a tap)
 })();
@@ -1502,7 +1523,7 @@ function themeFilm(t) {   // the film that inspired a theme, if it's in the libr
   return t.fid || null;
 }
 function themeCaption(m) {   // a small caption under the month: the film the theme comes from, and a way to it when Grifflix has it
-  var t = themeFor(m), id = themeFilm(t), txt = 'after <i>' + esc(t.film) + '</i> (' + t.year + ') · ' + esc(t.by);
+  var t = themeFor(m), id = themeFilm(t), txt = (MOB() ? '<b>' + esc(tmonthText(m)) + '</b> ' : '') + 'after <i>' + esc(t.film) + '</i> (' + t.year + ') · ' + esc(t.by);
   if (!LIB) library().then(function () { var c = $('#tinspo'); if (c && themeFilm(t)) c.outerHTML = themeCaption(m); wireCaption(); }).catch(function () {});
   setTimeout(wireCaption, 0);
   var nav = MOB() ? '<div class="mobnav"><button class="pill" id="mbprev" aria-label="The day before">‹</button><button class="pill" id="mbnext" aria-label="The day after">›</button></div>' : '';
@@ -1511,18 +1532,19 @@ function themeCaption(m) {   // a small caption under the month: the film the th
 function wireCaption() {
   var bp = $('#mbprev'), bn = $('#mbnext'); if (bp && !bp.onclick) { bp.onclick = function () { themeStep(-1); }; bn.onclick = function () { themeStep(1); }; }
   var c = $('#tinspo.link'); if (c && !c.onclick) c.onclick = function () { api('item?id=' + c.dataset.fid).then(function (it) { if (it && it.id) itemSheet(it); }).catch(function () { toast('That film isn’t there just now.'); }); }; }
-// the months' themes, besides the corridor and the table: each lays out the month's days its own way (place: where each
-// day stands, the one you're on given); right and left step through the days, and across a month's end a title card
-// for the next month's theme wipes across (themeStep)
+// the months' themes: each lays out the month's days its own way (place: where each day stands, at any point between
+// one day and the next, so the theme can follow a finger); right and left on a remote step through the days, on into
+// the next or last month's theme at the ends
 var THEMEFX = {};
 function seeded(n) { var x = Math.sin(n * 9301 + 49297) * 233280; return x - Math.floor(x); }
 function vAt(el, x, y, s, r, o, z) {
   el.style.transform = 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px) translate(-50%,-50%) scale(' + (s == null ? 1 : +s.toFixed(3)) + ')' + (r ? ' rotate(' + r.toFixed(1) + 'deg)' : '');
   el.style.opacity = o == null ? 1 : o; el.style.zIndex = z == null ? 1 : z;
 }
+function near(k) { return Math.max(0, 1 - Math.abs(k)); }   // (1 for the day you're on, 0 a day or more away)
 function drawTheme(t, C, n, m, mine) {
   var fx = THEMEFX[t.key], W = themeW(), H = themeH();
-  var c = { W: W, H: H, n: n, m: m, y: +S.month.slice(0, 4), lead: (new Date(+S.month.slice(0, 4), m, 1).getDay() + 6) % 7 };
+  var c = { W: W, H: H, n: n, m: m, mob: MOB(), y: +S.month.slice(0, 4), lead: (new Date(+S.month.slice(0, 4), m, 1).getDay() + 6) % 7 };
   var h = '<div class="th th-' + t.key + '">' + (fx.decor ? fx.decor(c) : '');
   for (var d = 1; d <= n; d++) {
     var key = S.month + '-' + String(d).padStart(2, '0'), it = C.days[key], dt = new Date(key + 'T12:00');
@@ -1535,10 +1557,34 @@ function drawTheme(t, C, n, m, mine) {
     else if (fx.all) h += '<div class="vday none"' + at + '>' + inner + '</div>';
   }
   $('#cal').innerHTML = '<div class="thstage"><div class="thv">' + h + '</div></div></div><div class="hinfo" id="hinfo"></div><div class="tmonth">' + tmonthText(m) + '</div>' + themeCaption(m); themeFit(m);
+  themeStart(fx, c);
+}
+function themeEls() { return $$('#cal .vday, #cal .hday, #cal .tday'); }
+function themeAtNow() { var all = themeEls(), f = $('#cal .front'); return Math.max(0, all.indexOf(f)); }
+function themeStart(fx, c) {
   S.theme = { fx: fx, c: c };
   if (fx.ready) fx.ready(c);
-  $$('#cal button.vday').forEach(function (b) { b.onclick = function () { daySheet(b.dataset.day); }; b.addEventListener('focus', function () { themeTurn(b); }); });
-  themeTurn($('#cal .vday.today.has') || $$('#cal button.vday.has').pop() || $('#cal button.vday'));
+  $$('#cal button.vday, #cal button.hday, #cal button.tday').forEach(function (b) { b.onclick = function () { daySheet(b.dataset.day); }; b.addEventListener('focus', function () { themeTurn(b); }); });
+  themeTurn($('#cal .today.has') || $$('#cal button.has').pop() || $('#cal button[data-day]'));
+}
+function themeTurn(b) {   // the theme with b at the front
+  if (!S.theme) return; var all = themeEls();
+  themeShow(b ? Math.max(0, all.indexOf(b)) : 0, true);
+}
+function themeShow(at, force) {   // the theme at any point between days; the nearest the day you're on, its words with it
+  var T = S.theme; if (!T) return; var all = themeEls();
+  if (!all.length) { (T.fx.info || hallInfo)(null); return; }
+  var b = all[Math.max(0, Math.min(all.length - 1, Math.round(at)))];
+  if (force || !b.classList.contains('front')) {
+    all.forEach(function (el) { el.classList.toggle('front', el === b); });
+    if (T.fx.front) T.fx.front(b, T.c);
+    (T.fx.info || hallInfo)(b);
+  }
+  T.fx.place(all, at, T.c, b);
+}
+function themeCross(dir) {   // on into the next or last month (its own theme), quietly
+  var ms = monthsOf(S.calData.days), j = ms.indexOf(S.month) + dir; if (j < 0 || j >= ms.length || !S.step) return false;
+  S.quiet = true; S.step(dir); S.quiet = false; return true;
 }
 function calSheet() {   // the month's calendar, a pop-up in its theme's colour and type; a day opens its film
   var C = S.calData; if (!C) return;
@@ -1566,59 +1612,95 @@ function calStep(d) {   // the calendar pop-up: the month before or after (the t
   return true;
 }
 function sheetStep(d) { return $('#sheetIn .tcal') ? calStep(d) : dayStep(d); }   // (a swipe on a pop-up: a month on the calendar, a day on a day's page)
-function themeTurn(b) {
-  var T = S.theme; if (!T) return;
-  var all = $$('#cal .vday'), at = b ? all.indexOf(b) : -1;
-  all.forEach(function (el) { el.classList.toggle('front', el === b); });
-  T.fx.place(all, at, T.c, b);
-  hallInfo(b);
-}
 function themeStep(dir) {   // the day after or before with a film; at a month's end, on into the next month's theme
   var sel = '#cal button.vday, #cal button.hday, #cal button.tday', bs = $$(sel), i = bs.indexOf(document.activeElement);
   if (i < 0) i = bs.indexOf($('#cal button.front'));   // (a phone's buttons, a click: from the day that's showing)
   var nb = bs[i + dir];
-  if (i >= 0 && nb) { nb.focus({ preventScroll: true }); return true; }
+  if (i >= 0 && nb) { nb.focus({ preventScroll: true }); if (MOB()) themeTurn(nb); return true; }
   var ms = monthsOf(S.calData.days), j = ms.indexOf(S.month) + dir; if (j < 0 || j >= ms.length || !S.step) return false;
   S.step(dir);
-  var cs = $$(sel), f = dir > 0 ? cs[0] : cs[cs.length - 1]; if (f) f.focus({ preventScroll: true });
+  var cs = $$(sel), f = dir > 0 ? cs[0] : cs[cs.length - 1]; if (f) { f.focus({ preventScroll: true }); if (MOB()) themeTurn(f); }
   return true;
 }
-// February: the reel (Cinema Paradiso): the days as frames along a strip of film; the one you're on in the gate, and on the screen
-THEMEFX.reel = {
-  decor: function () { return '<div class="reelband" id="reelband"></div><div class="reelscreen" id="reelscreen"></div>'; },
-  place: function (all, at, c, b) {
-    var fx = c.W * .62, y = c.H * .31, gap = 262;
-    all.forEach(function (el, j) { var k = j - at; vAt(el, fx + k * gap, y, k === 0 ? 1.18 : 1, 0, Math.abs(k) > 6 ? 0 : 1, k === 0 ? 50 : 10); });
-    var band = $('#reelband'); if (band) band.style.backgroundPositionX = (-at * gap) + 'px';
-    var sc = $('#reelscreen'); if (sc && b) sc.style.backgroundImage = b.style.getPropertyValue('--b');
+// January: the corridor (Kubrick's The Shining): the days down a corridor, coming towards you as you go on
+THEMEFX.corridor = {
+  swipe: function (c) { var q = c.q; return { x: q.fx - q.vx, y: q.fy - q.vy, px: 70 }; },   // (pull the corridor towards you)
+  place: function (all, at) {
+    all.forEach(function (el, j) {
+      var i = j - at;
+      if (i < 0) { var f = Math.min(1, -i); el.style.transform = 'translate3d(0, 0, ' + (HALLG.p * .7 * f).toFixed(0) + 'px)'; el.style.opacity = (1 - f).toFixed(3); el.style.zIndex = 300; el.style.pointerEvents = f > .5 ? 'none' : ''; }   // (the days passed: behind you)
+      else { el.style.transform = 'translate3d(0, 0, ' + (-i * HALLG.dz).toFixed(1) + 'px)'; el.style.opacity = i > 6 ? Math.max(0, 7 - i).toFixed(2) : 1; el.style.zIndex = 200 - Math.round(i); el.style.pointerEvents = ''; }
+    });
   }
 };
-// March: the umbrellas (Demy's The Umbrellas of Cherbourg, its opening, from above): the days crossing as umbrellas; the one you're on opens on its film
+// November: the table (Dr. Strangelove's War Room): the month round a table, turning
+THEMEFX.table = {
+  geo: function (c) { return c.mob ? { cx: 390, cy: 520, rx: 330, ry: 170, fs: 1.6 } : { cx: ($('#cal').clientWidth || 1280) / 2, cy: 418, rx: 530, ry: 150, fs: 1.52 }; },
+  swipe: function (c) { return { x: -1, y: 0, px: c.mob ? 34 : 60 }; },   // (the table turns with the finger)
+  place: function (all, at, c) {
+    var g = this.geo(c), n = all.length;
+    all.forEach(function (el, j) {
+      var a = Math.PI / 2 - (j - at) * 2 * Math.PI / n, x = g.cx + g.rx * Math.cos(a), y = g.cy + g.ry * Math.sin(a), depth = (Math.sin(a) + 1) / 2, nf = near(j - at);
+      el.style.left = x.toFixed(1) + 'px'; el.style.top = y.toFixed(1) + 'px';
+      el.style.transform = 'scale(' + (.62 + .38 * depth + nf * (g.fs - 1)).toFixed(3) + ')';
+      el.style.zIndex = Math.round(depth * 100) + (nf > .5 ? 100 : 0);
+      el.style.opacity = 1;
+      el.style.filter = nf > .98 ? 'none' : 'grayscale(' + (1 - nf).toFixed(2) + ') brightness(' + (.62 + .3 * depth + .08 * nf).toFixed(2) + ')';   // (the others in black and white, the day you're on in colour)
+    });
+  },
+  info: function (b) {   // (its words in the middle of the table)
+    var c = $('#tcentre'); if (!c) return;
+    var it = b && S.calData.days[b.dataset.day];
+    if (!it || it.secret) { c.innerHTML = b ? '<div class="k">' + esc(longDate(b.dataset.day)) + '</div><h2>' + (it ? 'A surprise' : 'No film') + '</h2>' : ''; return; }
+    var d = new Date(b.dataset.day + 'T12:00'), note = (S.calData.notes || {})[b.dataset.day];
+    c.innerHTML = '<div class="k">' + DOWL[d.getDay()] + ' · ' + d.getDate() + ' ' + MONTHS[d.getMonth()] + '</div><h2>' + esc(showName(it)) + '</h2><div class="y">' + [it.year, it.mins ? it.mins + ' minutes' : ''].filter(Boolean).join(' · ') + '</div>' + (note ? '<div class="n">“' + esc(note) + '”</div>' : '');
+  }
+};
+// February: the reel (Sherlock Jr.): the days as frames along a strip of film; on a phone the strip runs down the screen
+THEMEFX.reel = {
+  decor: function () { return '<div class="reelband" id="reelband"></div><div class="reelscreen" id="reelscreen"></div>'; },
+  swipe: function (c) { return c.mob ? { x: 0, y: -1, px: 75 } : { x: -1, y: 0, px: 130 }; },   // (the film runs with the finger)
+  place: function (all, at, c) {
+    all.forEach(function (el, j) {
+      var k = j - at, nf = near(k), sg = k < 0 ? -1 : 1;
+      if (c.mob) vAt(el, 390, 430 + k * 150 + sg * Math.min(1, Math.abs(k)) * 70, 1 + .75 * nf, 0, Math.abs(k) > 5 ? 0 : 1, 50 - Math.round(Math.abs(k)));
+      else vAt(el, c.W * .62 + k * 262, c.H * .31, 1 + .18 * nf, 0, Math.abs(k) > 6 ? 0 : 1, nf > .5 ? 50 : 10);
+    });
+    var band = $('#reelband'); if (band) { if (c.mob) band.style.backgroundPositionY = (-at * 150).toFixed(1) + 'px'; else band.style.backgroundPositionX = (-at * 262).toFixed(1) + 'px'; }
+  },
+  front: function (b) { var sc = $('#reelscreen'); if (sc && b) sc.style.backgroundImage = b.style.getPropertyValue('--b'); }
+};
+// March: the umbrellas (The Umbrellas of Cherbourg, its opening, from above): the days crossing as umbrellas; the one you're on opens on its film
 var UMB = [['#e30613', '#ffe600'], ['#ffffff', '#1d2bd8'], ['#ff6b00', '#fff3c4'], ['#00845c', '#ffe600'], ['#1d1d1b', '#e30613'], ['#5a2ca0', '#7fd1ff']];
 THEMEFX.umbrellas = {
   cell: function (d) { var u = UMB[d % UMB.length]; return '<i class="um" style="--u1:' + u[0] + ';--u2:' + u[1] + '"></i>'; },
+  swipe: function (c) { return c.mob ? { x: 0, y: -1, px: 60 } : { x: -1, y: 0, px: 60 }; },   // (on a phone they walk down the street)
   place: function (all, at, c) {
-    var fx = c.W * .68, fy = c.H * .42;
     all.forEach(function (el, j) {
-      var k = j - at, x = fx + (k === 0 ? 0 : (k > 0 ? 1 : -1) * (150 + (Math.abs(k) - 1) * 100)), y = k === 0 ? fy : fy - 30 + Math.sin(j * 1.1) * 62;
-      vAt(el, x, y, k === 0 ? 1 : .32, k === 0 ? 0 : j * 41 + at * 25, Math.abs(k) > 8 ? 0 : 1, k === 0 ? 50 : 10 - Math.abs(k));
+      var k = j - at, ak = Math.abs(k), nf = near(k), sg = k < 0 ? -1 : 1, rot = (j * 41 + at * 25) * (1 - nf), x, y, s;
+      if (c.mob) { y = 430 + sg * (255 * Math.min(1, ak) + Math.max(0, ak - 1) * 112); x = 390 + Math.sin(j * 1.1) * 230 * (1 - nf); s = .36 + (1.27 - .36) * nf; }
+      else { x = c.W * .68 + sg * (150 * Math.min(1, ak) + Math.max(0, ak - 1) * 100); y = c.H * .42 * nf + (c.H * .42 - 30 + Math.sin(j * 1.1) * 62) * (1 - nf); s = .32 + .68 * nf; }
+      vAt(el, x, y, s, rot, ak > 8 ? 0 : 1, nf > .5 ? 50 : 10 - Math.round(ak));
     });
   }
 };
 // April: the spiral (Saul Bass's titles for Vertigo): the days winding into its middle, the one you're on at its edge
 THEMEFX.spiral = {
-  g: function (c) { return { cx: c.W * .73, cy: c.H * .46, r0: 250 }; },
+  g: function (c) { return c.mob ? { cx: 390, cy: 440, r0: 300, a0: Math.PI / 2 } : { cx: c.W * .73, cy: c.H * .46, r0: 250, a0: Math.PI }; },
   decor: function (c) {
     var g = this.g(c), pts = [];
-    for (var a = -0.7; a < 32; a += .06) { var r = g.r0 * Math.pow(.83, a / .9); pts.push((g.cx + r * Math.cos(Math.PI + a)).toFixed(1) + ',' + (g.cy + r * Math.sin(Math.PI + a)).toFixed(1)); }
+    for (var a = -0.7; a < 32; a += .06) { var r = g.r0 * Math.pow(.83, a / .9); pts.push((g.cx + r * Math.cos(g.a0 + a)).toFixed(1) + ',' + (g.cy + r * Math.sin(g.a0 + a)).toFixed(1)); }
     return '<svg class="hlines spiral" viewBox="0 0 ' + c.W + ' ' + c.H + '"><polyline points="' + pts.join(' ') + '"/></svg>';
   },
+  swipe: function (c) { return c.mob ? { x: .8, y: .6, px: 70 } : { x: .3, y: 1, px: 90 }; },   // (the spiral unwinds towards you)
   place: function (all, at, c) {
-    var g = this.g(c);
+    var g = this.g(c), sb = c.mob ? 1.15 : 1;
     all.forEach(function (el, j) {
-      var k = j - at, a = k * .9, r = g.r0 * Math.pow(.83, k), s = k === 0 ? 1 : .55 * Math.pow(.84, k - 1);
-      if (k < 0) { r = g.r0 * 1.7; s = 1.3; }
-      vAt(el, g.cx + r * Math.cos(Math.PI + a), g.cy + r * Math.sin(Math.PI + a), s, 0, k < 0 || k > 16 ? 0 : 1, 100 - k);
+      var k = j - at, a = g.a0 + k * .9, r, s, o = k > 16 ? 0 : 1;
+      if (k >= 1) { r = g.r0 * Math.pow(.83, k); s = .55 * Math.pow(.84, k - 1); }
+      else if (k >= 0) { r = g.r0 * Math.pow(.83, k); s = 1 - .45 * k; }
+      else { var f = Math.min(1, -k); r = g.r0 * (1 + .7 * f); s = 1 + .3 * f; o = 1 - f; }
+      vAt(el, g.cx + r * Math.cos(a), g.cy + r * Math.sin(a), s * sb, 0, o, 100 - Math.round(k));
     });
   }
 };
@@ -1627,91 +1709,114 @@ var GLYPHS = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆ
 THEMEFX.code = {
   cell: function (d, it, key, c) {
     var t = (it && !it.secret ? showName(it) : '').toUpperCase().replace(/[^A-Z0-9]/g, ''), out = '', sd = d * 7 + c.m * 131;
-    for (var i = 0; i < 34; i++) out += (i >= 5 && i - 5 < t.length ? t[i - 5] : GLYPHS[Math.floor(seeded(sd + i) * GLYPHS.length)]) + '<br>';
+    for (var i = 0; i < 40; i++) out += (i >= 5 && i - 5 < t.length ? t[i - 5] : GLYPHS[Math.floor(seeded(sd + i) * GLYPHS.length)]) + '<br>';
     return '<i class="rain" style="animation-duration:' + (6 + seeded(sd) * 8).toFixed(1) + 's;animation-delay:-' + (seeded(sd + 1) * 9).toFixed(1) + 's">' + out + out + '</i><span class="cdn">' + d + '</span>';
   },
   decor: function () { return '<div class="codepic" id="codepic"></div>'; },
+  swipe: function (c) { return { x: 1, y: 0, px: c.mob ? 22 : 40 }; },   // (the finger runs along the columns)
   place: function (all, at, c, b) {
-    var x0 = c.W * .43, x1 = c.W - 74, n = Math.max(1, all.length - 1);
-    all.forEach(function (el, j) { el.style.left = (x0 + (x1 - x0) * j / n - 10).toFixed(1) + 'px'; el.style.zIndex = j === at ? 3 : 1; });
-    var p = $('#codepic'); if (p && b) { p.style.backgroundImage = b.style.getPropertyValue('--p'); p.classList.remove('dec'); void p.offsetWidth; p.classList.add('dec'); }
-  }
+    var x0 = c.mob ? 30 : c.W * .43, x1 = c.mob ? 750 : c.W - 74, n = Math.max(1, all.length - 1);
+    all.forEach(function (el, j) { el.style.left = (x0 + (x1 - x0) * j / n - 10).toFixed(1) + 'px'; el.style.zIndex = el === b ? 3 : 1; });
+  },
+  front: function (b) { var p = $('#codepic'); if (p && b) { p.style.backgroundImage = b.style.getPropertyValue('--p'); p.classList.remove('dec'); void p.offsetWidth; p.classList.add('dec'); } }
 };
-// June: the slices (Wong Kar-wai's In the Mood for Love): every day a thin slice of its poster; the one you're on opens out
+// June: the slices (In the Mood for Love): every day a thin slice of its poster; the one you're on opens out
 THEMEFX.slices = {
+  swipe: function (c) { return { x: 1, y: 0, px: c.mob ? 22 : 40 }; },   // (the open slice follows the finger)
   place: function (all, at, c) {
-    var x0 = c.W * .43, x1 = c.W - 64, fw = 270, sw = all.length > 1 ? (x1 - x0 - fw) / (all.length - 1) : 0, x = x0;
+    var x0 = c.mob ? 20 : c.W * .43, x1 = c.mob ? 760 : c.W - 64, fw = c.mob ? 340 : 270, sw = all.length > 1 ? (x1 - x0 - fw) / (all.length - 1) : 0;
+    var ws = all.map(function (el, j) { return sw + (fw - sw) * near(j - at); }), tot = ws.reduce(function (a, b) { return a + b; }, 0) || 1, f = (x1 - x0) / tot, x = x0;
     all.forEach(function (el, j) {
-      var w = j === at ? fw : sw;
-      el.style.left = x.toFixed(1) + 'px'; el.style.width = Math.max(1, w - (j === at ? 0 : 2)).toFixed(1) + 'px'; x += w;
-      el.style.top = (c.H * .46).toFixed(0) + 'px'; el.style.transform = 'translateY(-50%)'; el.style.zIndex = j === at ? 5 : 1; el.style.opacity = 1;
+      var w = ws[j] * f, nf = near(j - at);
+      el.style.left = x.toFixed(1) + 'px'; el.style.width = Math.max(1, w - 2 * (1 - nf)).toFixed(1) + 'px'; x += w;
+      el.style.top = (c.mob ? 450 : c.H * .46).toFixed(0) + 'px'; el.style.transform = 'translateY(-50%)'; el.style.zIndex = nf > .5 ? 5 : 1; el.style.opacity = 1;
     });
   }
 };
-// July: the pinboard (Fincher's Zodiac): the days as photographs pinned to cork, a red thread from each to the next
+// July: the pinboard (All the President's Men / Zodiac): the days as photographs pinned to the board, a red thread from each to the next
 THEMEFX.pinboard = {
   cell: function (d) { return '<i class="ph"></i><span class="pc">' + d + '</span>'; },
+  swipe: function () { return { x: 1, y: 0, px: 34 }; },
   ready: function (c) {
-    var all = $$('#cal .vday'), cols = 7, rows = Math.max(1, Math.ceil(all.length / cols)), ax = c.W * .43 + 60, aw = c.W - 64 - 60 - ax, ay = 160, ah = c.H - 150 - ay;
+    var all = $$('#cal .vday'), cols = c.mob ? 5 : 7, rows = Math.max(1, Math.ceil(all.length / cols));
+    var ax = c.mob ? 95 : c.W * .43 + 60, aw = c.mob ? 590 : c.W - 64 - 60 - ax, ay = c.mob ? 95 : 160, ah = c.mob ? 740 : c.H - 150 - ay;
     c.pin = all.map(function (el, j) {
       var col = j % cols, row = Math.floor(j / cols), sd = +el.dataset.n + c.m * 31;
       return { x: ax + col * aw / (cols - 1) + (seeded(sd) - .5) * 34, y: ay + (rows > 1 ? row * ah / (rows - 1) : ah / 2) + (seeded(sd + 7) - .5) * 26, r: (seeded(sd + 3) - .5) * 16 };
     });
-    $('#cal .th').insertAdjacentHTML('beforeend', '<svg class="hlines string" viewBox="0 0 ' + c.W + ' ' + c.H + '"><polyline points="' + c.pin.map(function (p) { return p.x.toFixed(0) + ',' + (p.y - 52).toFixed(0); }).join(' ') + '"/></svg>');
+    var sc = c.mob ? 1.3 : 1;
+    $('#cal .th').insertAdjacentHTML('beforeend', '<svg class="hlines string" viewBox="0 0 ' + c.W + ' ' + c.H + '"><polyline points="' + c.pin.map(function (p) { return p.x.toFixed(0) + ',' + (p.y - 52 * sc).toFixed(0); }).join(' ') + '"/></svg>');
   },
-  place: function (all, at, c) {
+  place: function (all, at, c, b) {
+    var sc = c.mob ? 1.3 : 1;
     all.forEach(function (el, j) {
       var p = c.pin[j];
-      if (j === at) vAt(el, Math.min(Math.max(p.x, c.W * .43 + 130), c.W - 64 - 110), Math.min(Math.max(p.y, 190), c.H - 160), 2.1, 0, 1, 60);
-      else vAt(el, p.x, p.y, 1, p.r, 1, 2 + j);
+      if (el === b) { if (c.mob) vAt(el, Math.min(Math.max(p.x, 200), 580), Math.min(Math.max(p.y, 230), 690), 2.7, 0, 1, 60); else vAt(el, Math.min(Math.max(p.x, c.W * .43 + 130), c.W - 64 - 110), Math.min(Math.max(p.y, 190), c.H - 160), 2.1, 0, 1, 60); }
+      else vAt(el, p.x, p.y, sc, p.r, 1, 2 + j);
     });
   }
 };
-// August: the moon (Méliès): the month's moons across the sky, each its phase that night; the one you're on, large, its film in it
+// August: the moon (Hugo, for Méliès): the month's moons, each its phase that night (on a phone, a ring round the large one); the one you're on, large, its film in it
 function moonPhase(key) { var p = ((Date.parse(key + 'T21:00:00Z') - Date.UTC(2000, 0, 6, 18, 14)) / 864e5 / 29.530588853) % 1; return p < 0 ? p + 1 : p; }
 var PHASES = ['New moon', 'Waxing crescent', 'First quarter', 'Waxing gibbous', 'Full moon', 'Waning gibbous', 'Last quarter', 'Waning crescent'];
 THEMEFX.moon = { all: true,
   cell: function (d, it, key) { var p = moonPhase(key), off = p < .5 ? -2 * p : 2 - 2 * p; return '<i class="msh" style="transform:translateX(' + (off * 100).toFixed(1) + '%)"></i><span class="mn">' + d + '</span>'; },
   decor: function () { return '<div class="bigmoon" id="bigmoon"></div><div class="mphase" id="mphase"></div><div class="mfilm" id="mfilm"></div>'; },
+  swipe: function (c) { return { x: 1, y: 0, px: c.mob ? 26 : 40 }; },
+  spot: function (c, j, n) {   // (where a small moon is: a row across the sky, or on a phone a ring round the large moon, the 1st at the top)
+    if (c.mob) { var a = -Math.PI / 2 + 2 * Math.PI * j / (n + 1); return { x: 390 + 330 * Math.cos(a), y: 440 + 330 * Math.sin(a), a: a }; }
+    var m = Math.max(1, n - 1); return { x: 80 + (c.W - 160) * j / m, y: c.H * .22 - Math.sin(j / m * Math.PI) * 40 };
+  },
   place: function (all, at, c, b) {
-    var x0 = 80, x1 = c.W - 80, n = Math.max(1, all.length - 1);
-    all.forEach(function (el, j) { vAt(el, x0 + (x1 - x0) * j / n, c.H * .22 - Math.sin(j / n * Math.PI) * 40, j === at ? 1.5 : 1, 0, 1, j === at ? 5 : 1); });
+    var me = this, n = all.length;
+    all.forEach(function (el, j) { var s = me.spot(c, j, n); vAt(el, s.x, s.y, 1 + .5 * near(j - at), 0, 1, el === b ? 5 : 1); });
+    var mp = $('#mphase'), i = all.indexOf(b), s = me.spot(c, i, n);
+    if (mp) { if (c.mob) { mp.style.left = (390 + 395 * Math.cos(s.a)).toFixed(0) + 'px'; mp.style.top = (440 + 395 * Math.sin(s.a) - 6).toFixed(0) + 'px'; } else mp.style.left = s.x.toFixed(0) + 'px'; }   // (the moon's phase by the small moon)
+  },
+  front: function (b) {
     var bm = $('#bigmoon'); if (bm && b) bm.style.backgroundImage = b.style.getPropertyValue('--p');
-    var mp = $('#mphase'); if (mp && b) { mp.textContent = PHASES[Math.floor(moonPhase(b.dataset.day) * 8 + .5) % 8]; mp.style.left = (x0 + (x1 - x0) * at / n).toFixed(0) + 'px'; }   // (the moon's phase under the small moons)
-    var mf = $('#mfilm'), it = b && S.calData.days[b.dataset.day]; if (mf) mf.textContent = it ? showName(it) : '';   // (and its film under the big one)
+    var mp = $('#mphase'); if (mp && b) mp.textContent = PHASES[Math.floor(moonPhase(b.dataset.day) * 8 + .5) % 8];
+    var mf = $('#mfilm'), it = b && S.calData.days[b.dataset.day]; if (mf) mf.textContent = it && !it.secret ? showName(it) : '';   // (and its film under the large one)
   }
 };
-// September: the credits (Godard's title cards): the month's films as a roll of titles, the one you're on in the middle
+// September: the credits (Godard's Alphaville): the month's films as a roll of titles, the one you're on in the middle
 THEMEFX.credits = {
   cell: function (d, it) { return '<span class="cn">' + d + '</span><span class="ct">' + (it && !it.secret ? esc(showName(it)) : '+') + '</span>'; },
   decor: function () { return '<div class="cposter" id="cposter"></div>'; },
-  place: function (all, at, c, b) {
+  swipe: function (c) { return { x: 0, y: -1, px: c.mob ? 32 : 60 }; },   // (the titles roll up with the finger)
+  place: function (all, at, c) {
     all.forEach(function (el, j) {
-      var k = j - at; el.style.transform = 'translate(' + (c.W * .37).toFixed(0) + 'px,' + (c.H * .47 + k * 60 - 30).toFixed(0) + 'px) scale(' + (k === 0 ? 1 : .74) + ')';
-      el.style.opacity = k === 0 ? 1 : Math.abs(k) > 4 ? 0 : .55 - Math.abs(k) * .09; el.style.zIndex = 1;
+      var k = j - at, ak = Math.abs(k), nf = near(k), sc = c.mob ? .8 + .2 * nf : .74 + .26 * nf;
+      el.style.transform = 'translate(' + (c.mob ? 30 : c.W * .37).toFixed(0) + 'px,' + ((c.mob ? 450 : c.H * .47) + k * (c.mob ? 64 : 60) - 30).toFixed(0) + 'px) scale(' + sc.toFixed(3) + ')';
+      el.style.opacity = (ak < 1 ? 1 - .54 * ak : ak < 4 + (c.mob ? 2 : 0) ? .55 - .09 * ak * (c.mob ? .6 : 1) : Math.max(0, .19 * (5 + (c.mob ? 2 : 0) - ak))).toFixed(3); el.style.zIndex = 1;
     });
-    var p = $('#cposter'); if (p && b) p.style.backgroundImage = b.style.getPropertyValue('--p');
-  }
+  },
+  front: function (b) { var p = $('#cposter'); if (p && b) p.style.backgroundImage = b.style.getPropertyValue('--p'); }
 };
 // October: late autumn (Ozu): the camera low and still, the days standing along the floor; the one you're on a step nearer
 THEMEFX.autumn = {
-  decor: function (c) { return '<div class="horizon" style="top:' + (c.H * .80).toFixed(0) + 'px"></div>'; },
+  decor: function (c) { return '<div class="horizon" style="top:' + (c.mob ? 870 : c.H * .80).toFixed(0) + 'px"></div>'; },
+  swipe: function (c) { return { x: -1, y: 0, px: c.mob ? 64 : 100 }; },   // (the row slides with the finger)
   place: function (all, at, c) {
-    var base = c.H * .80, fx = c.W * .70, bw = 200, bh = 300, ss = .42;
+    var base = c.mob ? 870 : c.H * .80, fx = c.mob ? 470 : c.W * .70, bw = c.mob ? 300 : 200, bh = c.mob ? 450 : 300, ss = .42;
     all.forEach(function (el, j) {
-      var k = j - at, s = k === 0 ? 1 : ss, sg = k > 0 ? 1 : -1, x = k === 0 ? fx : fx + sg * (bw / 2 + 22 + bw * ss / 2) + (k - sg) * (bw * ss + 14);
-      vAt(el, x, base - bh * s / 2, s, 0, 1, k === 0 ? 5 : 1);
+      var k = j - at, ak = Math.abs(k), nf = near(k), sg = k < 0 ? -1 : 1, s = ss + (1 - ss) * nf;
+      var x = fx + sg * ((bw / 2 + 22 + bw * ss / 2) * Math.min(1, ak) + Math.max(0, ak - 1) * (bw * ss + 14));
+      vAt(el, x, base - bh * s / 2, s, 0, 1, nf > .5 ? 5 : 1);
     });
   }
 };
 // December: the snow globe (Citizen Kane): the days hung as baubles; the one you're on inside the globe, which shakes and snows
 THEMEFX.globe = {
-  hang: function (d) { return 112 + seeded(d * 5) * 92; },
-  cell: function (d) { return '<i class="str" style="height:' + (this.hang(d) - 18 - 92).toFixed(0) + 'px"></i>'; },
+  hang: function (d, c) { return c && c.mob ? 70 + (d % 2) * 120 + seeded(d * 5) * 40 : 112 + seeded(d * 5) * 92; },
+  cell: function (d, it, key, c) { return '<i class="str" style="height:' + (this.hang(d, c) - 18 - (c.mob ? 0 : 92)).toFixed(0) + 'px"></i>'; },
   decor: function () { return '<div class="snow"></div><div class="globe" id="globe"><div class="gpic" id="gpic"></div><div class="gsnow"></div><i class="gshine"></i></div><div class="gbase"></div>'; },
+  swipe: function (c) { return { x: 1, y: 0, px: c.mob ? 24 : 40 }; },
   place: function (all, at, c, b) {
-    var x0 = 90, x1 = c.W - 90, n = Math.max(1, all.length - 1), me = this;
-    all.forEach(function (el, j) { vAt(el, x0 + (x1 - x0) * j / n, me.hang(+el.dataset.n), j === at ? 1.5 : 1, 0, 1, j === at ? 5 : 1); });
+    var x0 = c.mob ? 34 : 90, x1 = c.mob ? 746 : c.W - 90, n = Math.max(1, all.length - 1), me = this;
+    all.forEach(function (el, j) { vAt(el, x0 + (x1 - x0) * j / n, me.hang(+el.dataset.n, c), 1 + .5 * near(j - at), 0, 1, el === b ? 5 : 1); });
+  },
+  front: function (b) {
     var g = $('#globe'), p = $('#gpic'); if (p && b) p.style.backgroundImage = b.style.getPropertyValue('--p');
     if (g) { g.classList.remove('shake'); void g.offsetWidth; g.classList.add('shake'); }
   }
