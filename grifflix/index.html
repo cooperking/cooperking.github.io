@@ -2585,7 +2585,7 @@ function wireCards(el, items) {
 }
 function drawRows(R, into) {
   var el = into || $('#rows'); if (!el) return;
-  var rows = [['continue', 'Carry on watching', true], ['movies', 'New films', false], ['tv', 'New on TV', false]], h = '', all = [];   // (one font: John, 8 Nov 2026)
+  var rows = [['continue', 'Carry on watching', true], ['movies', 'Recently added', false], ['tv', 'Recent TV', false]], h = '', all = [];   // (one font: John, 8 Nov 2026)
   rows.forEach(function (r) {
     var items = R[r[0]] || []; if (!items.length) return; all = all.concat(items);
     h += '<section class="row"><h2><span>' + r[1] + '</span>' + (r[0] !== 'continue' ? '<button class="more" data-more="' + r[0] + '">See all</button>' : '') + '</h2><div class="strip' + (r[2] ? ' wide' : '') + '">' + items.map(function (i) { return cardHTML(i, r[2]); }).join('') + '</div></section>';
