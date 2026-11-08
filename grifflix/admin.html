@@ -69,6 +69,11 @@ h1 em { font-style: normal; font-weight: 400; }
 .invite { display: grid; gap: 12px; }
 .invite img { width: 100%; border-radius: 14px; box-shadow: 0 10px 30px rgba(24, 8, 24, .25); }
 .sharebtns { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 8px; }
+.top { position: relative; }
+.reload { position: absolute; right: 0; top: 18px; width: 44px; height: 44px; display: grid; place-items: center; padding: 0; border: 1px solid var(--glass-line); background: var(--glass); color: var(--ink); border-radius: 50%; cursor: pointer; }   /* (John, 8 Nov 2026: "I need a reload icon on the admin page") */
+.reload svg { width: 20px; height: 20px; }
+.reload:active svg { transform: rotate(90deg); }
+.top h1 { padding-right: 56px; }
 .tmonths { list-style: none; margin: 14px 0 6px; padding: 0; display: grid; gap: 6px; }
 .tmonths li { display: grid; grid-template-columns: 6.2em 18px minmax(0, 1fr) auto; gap: 8px; align-items: center; font-size: 14px; }
 .tmonths .mn { font-weight: 600; color: var(--fg); }
@@ -92,7 +97,7 @@ h1 em { font-style: normal; font-weight: 400; }
     <div class="newrow" id="seedcode" hidden><input type="text" class="name" id="scode" placeholder="6-letter code" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false"><button class="btn primary" id="seed2" type="button">Start</button></div></div></div>
 
   <div id="app" hidden>
-    <div class="top"><h1>Grifflix <em>admin</em></h1><p class="sub" id="hello"></p></div>
+    <div class="top"><button type="button" class="reload" id="reload" aria-label="Reload" title="Reload" onclick="location.reload()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button><h1>Grifflix <em>admin</em></h1><p class="sub" id="hello"></p></div>
     <div class="cards">
       <section class="card">
         <div class="kicker">Updates</div>
