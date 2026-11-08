@@ -664,6 +664,18 @@ html.tv #sheet #sq { width: calc(100% - 120px) !important; }
 #sheet .bsheet .hero { margin-bottom: 18px; }
 #sheet .bsheet .hero h1 { line-height: 1.1; }
 html.tv #sheet .bsheet .hero { margin-bottom: 26px; }
+/* a page of its own (Films, a collection, My list) in a themed month: under the bar that floats over the theme, never behind it
+   (John, 8 Nov 2026: "careful that it looks tidy - those screenshots had text on text") */
+html.hall[data-page] #main, html.table[data-page] #main { padding-top: 104px; }
+html.mob[data-page] #main { padding-top: calc(78px + env(safe-area-inset-top)); }
+html.tv[data-page] #main { padding-top: 120px; }
+html[data-page] .hero { margin-top: 0; }
+/* the logo over a pop-up; the full-screen pop-ups' tops kept clear of it */
+#shbrand { position: fixed; z-index: 80; margin: 0; padding: 0; background: none; border: 0; cursor: pointer; text-transform: uppercase; white-space: nowrap; }
+html:not(.mob) #sheet:has(.tcal) .tcal, html.tv #sheet .form { padding-top: 96px !important; }
+html.mob #sheet:has(.tcal) .tcal { padding-top: calc(env(safe-area-inset-top) + 54px) !important; }
+html.mob #sheetIn > .form:not(.tcal) { padding-top: calc(env(safe-area-inset-top) + 58px) !important; }   /* (a phone: the logo its own strip above a pop-up's words) */
+#shbrand { text-shadow: 0 1px 6px rgba(0, 0, 0, .35); }
 /* sort and filter: two icons on the tabs' row; their panel under them */
 .sfbar { display: inline-flex; gap: 8px; align-items: center; }
 .sfb { display: inline-flex !important; align-items: center; gap: 8px; min-height: 40px; padding: 0 12px !important; position: relative; }
@@ -1681,6 +1693,7 @@ function route() {
   var h = (location.hash || '#home').slice(1).split('/');
   S.view = h[0] || 'home';
   $('#main').className = '';
+  document.documentElement.toggleAttribute('data-page', ['browse', 'collection', 'lists'].indexOf(S.view) >= 0);   // (a page of its own: kept clear of the theme's floating bar)
   $$('.bar-top [data-go]').forEach(function (b) { b.classList.toggle('on', b.dataset.go === S.view && b.classList.contains('pill')); });
   window.scrollTo(0, 0);
   if (S.view === 'browse') { if (h[1]) S.browse = h[1]; return browse(); }
@@ -1694,12 +1707,16 @@ function route() {
   if (h[1]) S.cal = h[1];
   home();
 }
+function goHome() {   // the logo: home, the month's theme, and the month it is now (John, 8 Nov 2026: "Clicking on Grifflix should
+  // return you home", "home should be the current month"), from anywhere, a pop-up open or not
+  store.set('grifflix-tvview', 'themes'); S.mcal = false; if (dlg.open) closeSheet();
+  S.cal = 'motd'; S.month = TODAY.slice(0, 7);
+  if ((location.hash || '#home').split('/')[0] === '#home') return home();
+  location.hash = '#home';
+}
 window.addEventListener('hashchange', route);
 $$('[data-go]').forEach(function (b) { b.addEventListener('click', function () { var g = b.dataset.go; if (g === 'search') return searchSheet(); if (g === 'profile') return profile();
-  if (g === 'home' && KLOOK) {   // the logo: back to the month's theme (John, 8 Nov 2026: "get back to theme by clicking on the logo")
-    store.set('grifflix-tvview', 'themes'); S.mcal = false; if (dlg.open) closeSheet();
-    if ((location.hash || '#home').split('/')[0] === '#home') { S.cal = 'motd'; return home(); }
-  }
+  if (g === 'home') return goHome();
   if (g === 'browse' && VIEW() === 'themes' && S.view === 'home') return browseSheet('movies');   // (the month's theme stays behind: Browse and Collections as pop-ups in its style)
   location.hash = '#' + g; }); });
 
@@ -2579,6 +2596,7 @@ var dlg = $('#sheet');
 function openSheet(html) {
   $('#sheetIn').innerHTML = html;
   if (!dlg.open) dlg.showModal();
+  shBrand();
   $('#sheetIn').scrollTop = 0;
   var c = $('#sheetIn .close'); if (c) c.onclick = closeSheet;
   if (TV) tvStart();
@@ -2588,6 +2606,13 @@ function tvStart() {   // the TV: a pop-up starts on its Play (or its first main
   if (b) b.focus({ preventScroll: true });
 }
 function closeSheet() { if (dlg.open) dlg.close(); }
+function shBrand() {   // GRIFFLIX over a pop-up, just where the bar's is (the bar is behind it): home from there too
+  var b = $('#shbrand'), src = $$('.bar-top .brand').filter(function (x) { return x.offsetParent; })[0];
+  if (!b) { dlg.insertAdjacentHTML('afterbegin', '<button class="brand" id="shbrand" type="button" aria-label="Grifflix: home">Grifflix</button>'); b = $('#shbrand'); b.onclick = goHome; }
+  if (!src) { b.hidden = true; return; }
+  var r = src.getBoundingClientRect(), cs = getComputedStyle(src);
+  b.hidden = false; b.style.left = Math.round(r.left) + 'px'; b.style.top = Math.round(r.top) + 'px'; ['fontFamily', 'fontWeight', 'fontSize', 'lineHeight', 'letterSpacing', 'color', 'textTransform'].forEach(function (k) { b.style[k] = cs[k]; });
+}
 dlg.addEventListener('click', function (e) { if (e.target === dlg) closeSheet(); });
 dlg.addEventListener('close', function () { S.fromCal = false; });
 var X = '<button class="ico close" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6 6 18"/></svg></button>';
