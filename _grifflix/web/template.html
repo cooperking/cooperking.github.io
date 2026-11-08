@@ -2618,7 +2618,15 @@ function searchSheet(onPick, title) {
   var withBrowse = !onPick && VIEW() === 'themes' && S.view === 'home';   // (in a theme, John: "Search can bring up the search bar plus collections and browse")
   openSheet('<div class="form' + (withBrowse ? ' bsheet' : '') + '" style="position:relative">' + X + '<h2 style="font:400 34px/1.1 var(--serif);color:var(--fg)">' + (title || 'Search') + '</h2><input type="search" id="sq" placeholder="A film, a series, an episode…" autocomplete="off"><div class="results" id="sres"></div>' + (withBrowse ? '<div id="bsin"></div>' : '') + '</div>');
   if (withBrowse) browseIn($('#bsin'), S.browse || 'collections');
-  var t, inp = $('#sq'); setTimeout(function () { inp.focus(); }, 50);
+  var t, inp = $('#sq');
+  if (TV) {   // a TV: the box chosen first, and only OK on it brings Amazon's keyboard up (John, 8 Nov 2026: "when you click search the typing text from amazon comes up immediately which looks bad")
+    inp.readOnly = true; inp.setAttribute('inputmode', 'none');
+    var wake = function () { if (!inp.readOnly) return; inp.readOnly = false; inp.removeAttribute('inputmode'); inp.blur(); setTimeout(function () { inp.focus(); }, 30); };
+    inp.addEventListener('keydown', function (e) { if (inp.readOnly && (e.key === 'Enter' || e.keyCode === 23 || e.keyCode === 13)) { e.preventDefault(); wake(); } });
+    inp.addEventListener('click', wake);
+    inp.addEventListener('blur', function () { if (!inp.value) { inp.readOnly = true; inp.setAttribute('inputmode', 'none'); } });
+    setTimeout(function () { inp.focus(); }, 50);
+  } else setTimeout(function () { inp.focus(); }, 50);
   inp.oninput = function () {
     clearTimeout(t); var q = inp.value.trim();
     if ($('#bsin')) $('#bsin').hidden = q.length >= 2;
