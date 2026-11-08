@@ -330,7 +330,8 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         var im = r[0];
         x.fillStyle = '#0a0a0a'; x.fillRect(0, 0, 1200, 630);
         var PX = 64, PY = 60, PW = 340, PH = 510;   // (the picture: a poster's shape)
-        if (im) { var sc = Math.max(PW / im.width, PH / im.height), sw = PW / sc, sh = PH / sc; x.drawImage(im, (im.width - sw) / 2, (im.height - sh) / 2, sw, sh, PX, PY, PW, PH); }
+        if (im && pic) x.drawImage(im, PX, PY, PW, PH);   // (their photo: already a poster, drawn to this shape)
+        else if (im) { var sc = Math.min(PW / im.width, PH / im.height), dw = im.width * sc, dh = im.height * sc; x.drawImage(im, PX + (PW - dw) / 2, PY + (PH - dh) / 2, dw, dh); }   // (a film's poster: the whole of it)
         else { x.fillStyle = '#1a1a1a'; x.fillRect(PX, PY, PW, PH); }
         var spaced = function (txt, px, y, font, sp, col) { x.font = font; x.fillStyle = col; var cx = px; for (var k = 0; k < txt.length; k++) { x.fillText(txt[k], cx, y); cx += x.measureText(txt[k]).width + sp; } return cx; };
         x.textBaseline = 'alphabetic';
@@ -345,6 +346,25 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         return c.toDataURL('image/jpeg', .88);
       });
     });
+  }
+  function posterOf(cv, name) {   // their photo as a film poster: GRIFFLIX PRESENTS, their name as the title, a billing block
+    var x = cv.getContext('2d'), W = cv.width, H = cv.height, FUT = '"GFutura", "Futura", "Jost", sans-serif';
+    var top = x.createLinearGradient(0, 0, 0, H * .3); top.addColorStop(0, 'rgba(0,0,0,.7)'); top.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = top; x.fillRect(0, 0, W, H * .3);
+    var bot = x.createLinearGradient(0, H * .5, 0, H); bot.addColorStop(0, 'rgba(0,0,0,0)'); bot.addColorStop(.55, 'rgba(0,0,0,.82)'); bot.addColorStop(1, 'rgba(0,0,0,.95)'); x.fillStyle = bot; x.fillRect(0, H * .5, W, H * .5);
+    var spacedC = function (t, y, font, sp, col) { x.font = font; var w = 0, k; for (k = 0; k < t.length; k++) w += x.measureText(t[k]).width + sp; w -= sp; var cx = (W - w) / 2; x.fillStyle = col; for (k = 0; k < t.length; k++) { x.fillText(t[k], cx, y); cx += x.measureText(t[k]).width + sp; } };
+    x.textBaseline = 'alphabetic';
+    spacedC('GRIFFLIX PRESENTS', 70, '700 24px ' + FUT, 9, 'rgba(255,255,255,.92)');
+    var words = name.toUpperCase().split(' '), size = 132, maxW = W - 80, lines;
+    var fit = function () { x.font = '700 ' + size + 'px ' + FUT; return words.every(function (w) { return x.measureText(w).width + w.length * size * .06 <= maxW; }); };
+    while (!fit() && size > 40) size -= 6;
+    lines = words.length > 2 ? [words.slice(0, Math.ceil(words.length / 2)).join(' '), words.slice(Math.ceil(words.length / 2)).join(' ')] : words;
+    var y = H - 170 - (lines.length - 1) * size * .95;
+    lines.forEach(function (l) { spacedC(l, y, '700 ' + size + 'px ' + FUT, size * .06, '#fff'); y += size * .95; });
+    x.fillStyle = '#2bff6a'; x.fillRect(W * .3, H - 128, W * .4, 6);   // (Grifflix's bright line)
+    var bill = 'A GRIFFLIX FAMILY PICTURE  ·  STARRING ' + name.toUpperCase() + '  ·  AND A GREAT MANY FILMS', bs = 15;
+    x.font = '400 ' + bs + 'px ' + FUT; while (x.measureText(bill).width > W - 60 && bs > 9) { bs -= 1; x.font = '400 ' + bs + 'px ' + FUT; }
+    x.fillStyle = 'rgba(255,255,255,.72)'; x.fillText(bill, (W - x.measureText(bill).width) / 2, H - 82);
+    spacedC('NOW SHOWING', H - 40, '700 20px ' + FUT, 8, '#fff');
   }
   function invMake() {   // the card drawn and kept by the Worker with its page (again when the picture changes)
     var me = INV, b = $('#invwait'); if (b) b.hidden = false;
@@ -370,6 +390,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       im.onload = function () {
         var W = 680, H = 1020, sc = Math.max(W / im.naturalWidth, H / im.naturalHeight), sw = W / sc, sh = H / sc, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
         cv.getContext('2d').drawImage(im, (im.naturalWidth - sw) / 2, (im.naturalHeight - sh) / 2, sw, sh, 0, 0, W, H); URL.revokeObjectURL(u);
+        posterOf(cv, INV.name);   // (made into a film poster starring them: John, 8 Nov 2026)
         INV.pic = cv.toDataURL('image/jpeg', .9); toast('Drawing the card…'); invMake().catch(function (e) { toast(e.message); });
       };
       im.onerror = function () { URL.revokeObjectURL(u); toast('That photo couldn’t be opened here: try a JPEG.'); };
