@@ -135,6 +135,13 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
 .thxfmt button.on { background: var(--fg); color: var(--bg, #fff); border-color: var(--fg); }
 #thxopen { display: inline-flex; align-items: center; min-height: 38px; padding: 0 14px; border: 1px solid var(--fg); color: var(--fg); text-decoration: none; font: 600 12px/1 "Hanken Grotesk", sans-serif; letter-spacing: .14em; text-transform: uppercase; }
 .thxview .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; font-size: 14px; }
+/* the tabs (John, 9 Nov 2026: "can you tidy up my admin page by having tabs") */
+.tabs { position: sticky; top: 0; z-index: 20; display: flex; gap: 4px; margin: 0 0 16px; padding: 8px 0; overflow-x: auto; scrollbar-width: none; background: var(--bg, #f6f3ee); }
+.tabs::-webkit-scrollbar { display: none; }
+.tabs button { flex: 1 1 0; min-width: 0; min-height: 40px; padding: 0 8px; border: 1px solid var(--glass-line); border-radius: 999px; background: var(--glass); color: var(--ink); font: 600 11.5px/1 var(--sans); letter-spacing: .1em; text-transform: uppercase; cursor: pointer; white-space: nowrap; }
+.tabs button.on { background: var(--ink); color: var(--fg); border-color: var(--ink); }
+@media (max-width: 420px) { .tabs { gap: 3px; } .tabs button { padding: 0 4px; font-size: 10.5px; letter-spacing: .06em; } }
+.cards > [data-tab]:not(.tabon) { display: none; }
 </style>
 </head>
 <body>
@@ -148,36 +155,39 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
 
   <div id="app" hidden>
     <div class="top"><button type="button" class="reload" id="reload" aria-label="Reload" title="Reload" onclick="location.reload()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button><h1>Grifflix <em>admin</em></h1><p class="sub" id="hello"></p></div>
+    <nav class="tabs" id="tabs" role="tablist" aria-label="Admin">
+      <button type="button" role="tab" data-go="updates">Updates</button><button type="button" role="tab" data-go="films">Films</button><button type="button" role="tab" data-go="themes">Themes</button><button type="button" role="tab" data-go="members">Members</button><button type="button" role="tab" data-go="mac">Mac</button>
+    </nav>
     <div class="cards">
-      <section class="card">
+      <section class="card" data-tab="updates">
         <div class="kicker">Updates</div>
         <h2 id="allhead">Looking…</h2>
         <ul class="changes" id="alllist"></ul>
         <p class="stat">One button: the Mac’s Grifflix files brought up to date (if there’s an update), the films brought over from the Mac, and, if the draft has changes, <b>the draft put live for everyone</b> (listed above). Try the draft first.</p>
         <div class="state"><button class="btn primary" id="allgo" type="button">Update everything</button><a class="btn" href="/grifflix/draft/" target="_blank" rel="noopener">Try the draft</a></div>
       </section>
-      <section class="card">
+      <section class="card" data-tab="members">
         <div class="kicker">Members</div>
         <h2 id="memhead">Members</h2>
         <p class="stat">Invite someone, or send a member a new link. Each invitation has its own card for Messages and WhatsApp, and works on up to 5 devices for 30 days.</p>
         <div class="newrow"><input type="text" class="name" id="nname" placeholder="Their name"><input type="text" class="name" id="nmail" placeholder="Their email (optional)" inputmode="email"><button class="btn primary" id="ninvite" type="button">Invite</button></div>
         <ul class="mem" id="mem"></ul>
       </section>
-      <section class="card">
+      <section class="card" data-tab="updates">
         <div class="kicker">Draft and live</div>
         <h2 id="dlhead">Looking…</h2>
         <p class="stat" id="dlsay"></p>
         <ul class="changes" id="changes"></ul>
         <div class="state"><a class="btn" href="/grifflix/draft/" target="_blank" rel="noopener">Try the draft</a><a class="btn" href="/grifflix/" target="_blank" rel="noopener">The live page</a></div>
       </section>
-      <section class="card">
+      <section class="card" data-tab="updates">
         <div class="kicker">Update from the Mac</div>
         <h2 id="uphead">Looking…</h2>
         <p class="stat" id="upsay">Grifflix keeps its own copy of the films, TV, collections and Movie of the Day, so it shows them with the Mac mini asleep: the Mac is only asked to play. After changing films on the Mac, Update puts them on the site.</p>
         <p class="stat" id="upjob"></p>
         <div class="state"><button class="btn" id="upfull" type="button">Everything again</button></div>
       </section>
-      <section class="card">
+      <section class="card" data-tab="films">
         <div class="kicker">Conversions</div>
         <h2 id="cvhead">Looking…</h2>
         <p class="stat" id="cvsay"></p>
@@ -186,13 +196,13 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <p class="stat" id="orsay" style="margin-top:14px"></p>
         <div class="state"><button class="btn" id="orsee" type="button" hidden>The originals</button></div>
       </section>
-      <section class="card">
+      <section class="card" data-tab="films">
         <div class="kicker">Movie of the Day</div>
         <h2 id="peekhead">Each one a <em>surprise</em></h2>
         <p class="stat">Each day’s film shows on the calendar at 8am that day, when the alert goes out, for everyone, you too. Switch this on to see what’s coming (only you).</p>
         <div class="state"><button class="btn" id="peek" type="button" disabled>Show upcoming films</button></div>
       </section>
-      <section class="card">
+      <section class="card" data-tab="themes">
         <div class="kicker">Monthly themes</div>
         <h2>The <em>months</em> and their themes</h2>
         <p class="stat">The themes in order, as many as you like: January 2026 has the first, each month the next, and round again at the end (twelve: each month its own). Choose, move with the arrows, add from <i>Not used now</i>, or take one out with ×. <b>Save changes the site for everyone at once</b> (no Update needed). Under each: whether its film is in Grifflix, and whether it’s Movie of the Day on that month’s next 1st. Try opens the draft in that theme.</p>
@@ -203,40 +213,40 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <p class="stat">Putting the films on their 1sts changes Movie of the Day for everyone once you next press Update everything. Films Grifflix hasn’t got are left until it has.</p>
         <div class="state"><button class="btn" id="thgo" type="button" disabled>Put the films on their 1sts</button></div>
       </section>
-      <section class="card">
+      <section class="card" data-tab="themes">
         <div class="kicker">Theme explorer</div>
         <h2>Try <em>every</em> theme</h2>
         <p class="stat">Each theme in its own colour and lettering. Choose one to see it working here, on the films (the draft page), on a computer, an iPhone, an iPad or the TV, each at its own size shrunk to fit; swipe, scroll or use the arrows in it to go through the days. <i>Month</i> marks the ones in use now.</p>
         <div class="thx" id="thx"></div>
         <div class="thxview" id="thxview" hidden><div class="row"><b id="thxname"></b><span class="state"><a class="btn" id="thxopen" target="_blank" rel="noopener">Open it full screen</a></span></div><div class="thxfmt" id="thxfmt" role="group" aria-label="Shown on"><button type="button" data-fmt="computer" class="on">Computer</button><button type="button" data-fmt="iphone">iPhone</button><button type="button" data-fmt="ipad">iPad</button><button type="button" data-fmt="tv">TV</button></div><div class="thxbox" id="thxbox"><iframe id="thxf" title="The theme, working" loading="lazy"></iframe></div></div>
       </section>
-      <section class="card">
+      <section class="card" data-tab="films">
         <div class="kicker">Downloads</div>
         <h2 id="dlh">Looking…</h2>
         <p class="stat">Members can keep a film on their phone or computer (a Download button on each film; not the Fire TV app). It comes from the Mac, so the Mac must be on while it downloads.</p>
         <div class="state"><button class="btn" id="dlgo" type="button" disabled>Allow downloads</button></div>
       </section>
-      <section class="card">
+      <section class="card" data-tab="members">
         <div class="kicker">Notifications and emails</div>
         <h2 id="nothead">Looking…</h2>
         <p class="stat" id="notsay"></p>
         <div class="state"><button class="btn" id="mailsee" type="button">See the alert email</button><button class="btn" id="mailme" type="button">Send it to me</button></div>
       </section>
-      <section class="card">
+      <section class="card" data-tab="mac">
         <div class="kicker">The Mac mini</div>
         <h2 id="machead">Looking…</h2>
         <p class="stat" id="macsay"></p>
         <p class="stat" id="swsay"></p>
         <ul class="changes" id="swlist"></ul>
       </section>
-      <section class="card">
+      <section class="card" data-tab="themes">
         <div class="kicker">Fonts</div>
         <h2 id="fonthead">Futura</h2>
         <p class="stat" id="fontsay">Your own fonts (.woff2, .woff, .ttf or .otf, or a .zip of them), kept in Grifflix’s own storage, not on GitHub: Futura (Book, Bold, Light), and the themes’ own, such as Magneto for The Lane (name it magneto).</p>
         <p class="stat">The monthly themes’ own fonts, when you have them, named like this (each takes over from the stand-in at once): <b>helvetica-bold</b> (The Shining’s credits), <b>eurostile-extended</b> (Cherbourg), <b>clarendon-bold</b> (Vertigo’s titles), <b>ocr-a</b> (The Matrix), <b>wood-gothic</b> (All the President’s Men’s poster), each .woff2 or .woff.</p>
         <div class="state"><label class="btn primary" for="fontfile">Choose the fonts (or their .zip)</label><input type="file" id="fontfile" multiple hidden></div>
       </section>
-      <section class="card">
+      <section class="card" data-tab="mac">
         <div class="kicker">Elsewhere</div>
         <div class="links"><a class="btn" href="/grifflix/tv.apk">Fire TV app</a><a class="btn" href="https://github.com/cooperking/cooperking.github.io/actions" target="_blank" rel="noopener">Builds on GitHub</a></div>
       </section>
@@ -811,6 +821,20 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     themeFirsts(); tmDraw();
   }
   tmDraw();
+  (function () {   // ---- the tabs: one group of cards at a time, the last one chosen kept (and #themes etc. in the address)
+    var TABS = ['updates', 'films', 'themes', 'members', 'mac'];
+    function show(t, push) {
+      if (TABS.indexOf(t) < 0) t = 'updates';
+      [].forEach.call(document.querySelectorAll('.cards > [data-tab]'), function (c) { c.classList.toggle('tabon', c.dataset.tab === t); });
+      [].forEach.call(document.querySelectorAll('#tabs [data-go]'), function (b) { var on = b.dataset.go === t; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
+      store.set('grifflix-admintab', t);
+      if (push) { try { history.replaceState(null, '', '#' + t); } catch (e) {} }
+      dispatchEvent(new Event('resize'));   // (the theme explorer's preview, sized now it can be seen)
+    }
+    $('#tabs').addEventListener('click', function (e) { var b = e.target.closest('[data-go]'); if (b) { show(b.dataset.go, true); scrollTo(0, 0); } });
+    addEventListener('hashchange', function () { show(location.hash.slice(1)); });
+    show(location.hash.slice(1) || store.get('grifflix-admintab') || 'updates');
+  })();
   fetch(WORKER + '/g/cal?after=9999', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) { if ('themes' in j) tmTake(j.themes); }).catch(function () {});
   $('#tmsave').onclick = function () {
     var b = this, same = TMO.join() === GTHEMES.slice(0, 12).map(function (x) { return x.k; }).join();   // (the usual twelve: kept as none)
