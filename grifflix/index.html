@@ -561,6 +561,16 @@ html.tv .th-lane .vday:focus { outline: 0 !important; box-shadow: 0 0 0 4px #1a1
 .zgrain { position: absolute; inset: 0; opacity: .07; pointer-events: none; background: repeating-radial-gradient(circle at 17% 32%, #fff 0 .6px, transparent 1px 3px), repeating-radial-gradient(circle at 71% 63%, #fff 0 .5px, transparent 1px 4px); animation: zgrain .4s steps(3) infinite; }
 @keyframes zgrain { 33% { transform: translate(-6px, 4px); } 66% { transform: translate(5px, -3px); } }
 .zdrum { position: absolute; left: 0; top: 0; pointer-events: none; overflow: visible; }
+.zstagef { position: absolute; }
+.zstagef .zcin { inset: 0; }
+.zpost { position: absolute; inset: 0; opacity: 0; overflow: hidden; background: #0c0b0a; transition: opacity 1.4s ease; }
+.zpost::before { content: ""; position: absolute; inset: -30px; background: var(--pp) center / cover; filter: blur(20px) brightness(.45); }
+.zpost::after { content: ""; position: absolute; inset: 4% 0; background: var(--pp) center / contain no-repeat; filter: drop-shadow(0 8px 20px rgba(0, 0, 0, .6)); }   /* (the day's poster on the screen, its own colours blurred round it) */
+.zpost.on { opacity: 1; } .zpost.now, .zstagef.now .zcurt { transition: none; }
+.zcurt { position: absolute; top: -7%; bottom: -3%; width: 53%; z-index: 3; pointer-events: none; background: #3a0508 url("/grifflix/img/cinema-curtain.webp") 0 0 / 100% 100%; box-shadow: 0 10px 30px rgba(0, 0, 0, .6); transition: transform 2.2s cubic-bezier(.6, .02, .25, 1); }   /* (red velvet: John, 9 Nov 2026: "curtain looks like a cartoon") */
+.zcurt.l { left: -2%; transform-origin: 0 0; } .zcurt.r { right: -2%; transform-origin: 100% 0; background-position: 100% 0; background-size: 180% 100%; }
+.zcurt::after { content: ""; position: absolute; inset: 0; background: linear-gradient(rgba(0, 0, 0, .55), transparent 18%, transparent 80%, rgba(0, 0, 0, .35)); }
+.zstagef.open .zcurt { transform: scaleX(.16); }   /* (drawn back to the sides, gathered) */
 .zcin { position: absolute; background: #0c0b0a; box-shadow: 0 0 0 3px #1a1210, 0 0 0 5px rgba(201, 162, 90, .55), 0 0 60px 10px rgba(235, 230, 215, .10); overflow: hidden; }   /* (the cinema's screen, gilt-edged) */
 .zcin video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: sepia(.18) contrast(1.06) brightness(.92); }
 .zflick { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 45%, transparent 55%, rgba(0, 0, 0, .45)); animation: zflick .18s steps(2) infinite; pointer-events: none; }   /* (the projector's flicker, the lens's fall-off) */
@@ -3448,7 +3458,8 @@ THEMEFX.picture = {
     // back into the dark; rows of seats before it)
     var sl = g.scx - g.sw / 2, st0 = g.sy0;
     h += '<div class="zbeam" style="left:' + F(g.scx - g.sw) + 'px;top:' + F(st0 - g.sh * .2) + 'px;width:' + F(g.sw * 2) + 'px;height:' + F(g.sh * 1.9) + 'px"></div>' +
-      '<div class="zcin" style="left:' + F(sl) + 'px;top:' + F(st0) + 'px;width:' + F(g.sw) + 'px;height:' + F(g.sh) + 'px"><video class="zfilm" id="zfilm" muted loop playsinline preload="none" poster="/grifflix/img/lumiere-train.jpg"></video><i class="zflick"></i></div>';
+      '<div class="zstagef" id="zstagef" style="left:' + F(sl) + 'px;top:' + F(st0) + 'px;width:' + F(g.sw) + 'px;height:' + F(g.sh) + 'px"><div class="zcin"><video class="zfilm" id="zfilm" muted playsinline preload="none"></video><i class="zpost" id="zpost"></i><i class="zflick"></i></div>' +
+      '<i class="zcurt l"></i><i class="zcurt r"></i></div>';   // (its curtains: they part, the film's shown, then the day's poster: John, 9 Nov 2026: "Have it with a curtain ... After it ends, put today's poster on the screen")
     var seats = '', rows = 2;
     for (var r = 0; r < rows; r++) { var yy = st0 + g.sh + (20 + r * 30) * g.f, n = Math.round(g.sw * (1.1 + r * .2) / (46 * g.f)), w0 = g.sw * (1.1 + r * .2), x0 = g.scx - w0 / 2;
       for (var q = 0; q < n; q++) { var xx = x0 + (q + .5) * w0 / n, sw2 = w0 / n * .82, hh = (26 + r * 6) * g.f;
@@ -3491,8 +3502,18 @@ THEMEFX.picture = {
     return h;
   },
   ready: function (c) { fxReset(this); this.c = c;
-    var v = $('#zfilm'); if (!v) return;   // (the film fetched once the page has settled, so the page itself is quick)
-    setTimeout(function () { if (!v.isConnected) return; v.src = '/grifflix/video/lumiere-train.mp4'; if (!CALM) { var pr = v.play(); if (pr && pr.catch) pr.catch(function () {}); } }, 1200);
+    var v = $('#zfilm'), st = $('#zstagef'), po = $('#zpost'); if (!v || !st) return;
+    var poster = function () { if (po) po.classList.add('on'); st.classList.add('open'); };
+    if (window.ZFILMED || CALM) { st.classList.add('open', 'now'); if (po) po.classList.add('on', 'now'); return; }   // (shown once a visit: after that, the day's poster)
+    // (the train arriving, its dull end cut, a little quicker: the curtains part once it's ready, the poster after it; fetched once the
+    // page has settled, so the page itself is quick)
+    setTimeout(function () {
+      if (!v.isConnected) return; window.ZFILMED = 1;
+      v.addEventListener('canplay', function () { st.classList.add('open'); setTimeout(function () { var pr = v.play(); if (pr && pr.catch) pr.catch(poster); }, 900); }, { once: true });
+      v.addEventListener('ended', poster); v.addEventListener('error', poster);
+      v.preload = 'auto'; v.src = '/grifflix/video/lumiere-train.mp4'; v.load();
+      setTimeout(function () { if (!st.classList.contains('open')) poster(); }, 9000);   // (too slow to come: the poster)
+    }, 900);
   },
   leader: function (asked) {   // (a film leader: 3, 2, 1, a flash, GRIFFLIX; the first visit each day; a tap skips it)
     // (the first visit of the day only; home, GRIFFLIX and reloads don't replay it. ?leader=1 always plays it: admin's preview. John, 9 Nov 2026)
@@ -3601,6 +3622,7 @@ THEMEFX.picture = {
   },
   front: function (b) {   // (the room lit by the day's film)
     var z = $('#zamb'); if (z && b && b.classList.contains('has')) z.style.backgroundImage = b.style.getPropertyValue('--b');   // (a day still to come: the room stays lit by the last)
+    var po = $('#zpost'); if (po && b) po.style.setProperty('--pp', b.classList.contains('has') ? b.style.getPropertyValue('--p') : 'none');   // (the day's poster, for the screen)
   }
 };
 // a month with no theme yet: black, the days a plain row of posters, the day you're on large
