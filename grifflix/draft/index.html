@@ -581,7 +581,7 @@ html.tv .th-lane .vday:focus { outline: 0 !important; box-shadow: 0 0 0 4px #1a1
 .zdrum .zoak { fill: url(#zoak); } .zdrum .zring { fill: none; stroke: #c9935a; stroke-opacity: .28; stroke-width: 1; } .zdrum .zedge { fill: none; stroke: #f0cf9c; stroke-opacity: .5; stroke-width: 1.2; } .zdrum .zshadow { fill: rgba(0, 0, 0, .55); filter: blur(6px); }
 .zdrum .spin { fill: url(#zwood); } .zdrum .foot { fill: #24170f; } .zdrum .foott { fill: url(#zwood); stroke: #e9c46a; stroke-opacity: .3; } .zdrum .coll { fill: #b8913f; }
 .zh { position: absolute; left: 0; top: 0; background: url("/grifflix/img/muybridge-horse.webp") 0 0 no-repeat; pointer-events: none; will-change: transform; filter: drop-shadow(0 0 4px rgba(233, 196, 106, .35)); }
-.zlt { position: absolute; left: 0; top: 0; font: 600 30px/1 var(--serif); color: #f3d98e; text-shadow: 0 1px 0 rgba(0, 0, 0, .5); pointer-events: none; will-change: transform; }
+.zlt { position: absolute; left: 0; top: 0; font: 700 26px/1 var(--kfont); color: #f3d98e; text-shadow: 0 1px 0 rgba(0, 0, 0, .5); pointer-events: none; will-change: transform; }
 .th-picture .vday { width: 170px; height: 255px; transition: none; will-change: transform, opacity; box-shadow: 0 20px 50px rgba(0, 0, 0, .6); }
 .th-picture .vday .vn { display: none; }
 .th-picture .vday::after { content: ""; position: absolute; inset: 0; background: #000; opacity: var(--dk, 0); pointer-events: none; will-change: opacity; }
@@ -1354,13 +1354,14 @@ html[data-theme=oz] .leaf2 i { background: #b3122e; color: #fff; }
 html[data-theme=oz] .leaf2 b { color: #0f7b3e; }
 
 /* the deep (Jaws, parked) */
-.jsurf { position: absolute; left: 0; right: 0; background: #f4f1ec; box-shadow: 0 6px 0 rgba(255, 255, 255, .5); }
-.jdeep { position: absolute; left: 0; right: 0; bottom: 0; background: linear-gradient(#87b1bd, #5a9fae 25%, #4c8f9f 50%, #051725); }
-.jattack { position: absolute; z-index: 400; pointer-events: none; opacity: 0; -webkit-mask-image: radial-gradient(ellipse 52% 60% at 50% 42%, #000 62%, transparent 100%); mask-image: radial-gradient(ellipse 52% 60% at 50% 42%, #000 62%, transparent 100%); }
-.jattack i { position: absolute; inset: 0; background: url("/grifflix/img/jaws-attack.webp") 0 0 / 1200% 100% no-repeat; filter: saturate(.68) brightness(.98); }   /* (its blue toned to the theme's sea) */
+.jsurf { position: absolute; left: 0; right: 0; background: #f6f5f1; }
+.jwave { position: absolute; left: 0; pointer-events: none; overflow: visible; } .jwave path { fill: #f6f5f1; }   /* (the sea's surface, moving with the attack) */
+.jdeep { position: absolute; left: 0; right: 0; bottom: 0; background: linear-gradient(#1494b9, #057ca0 22%, #006f90 45%, #024057 75%, #021820); }   /* (the painting's sea) */
+.jattack { position: absolute; z-index: 1; pointer-events: none; opacity: 1; -webkit-mask-image: radial-gradient(ellipse 52% 60% at 50% 42%, #000 62%, transparent 100%); mask-image: radial-gradient(ellipse 52% 60% at 50% 42%, #000 62%, transparent 100%); }
+.jattack i { position: absolute; inset: 0; background: url("/grifflix/img/jaws-attack.webp") 0 0 / 1200% 100% no-repeat; }
 .jattack i + i { opacity: 0; }
 #cal .vday.xwin, #cal .hday.xwin, #cal .tday.xwin { visibility: hidden !important; pointer-events: none !important; }   /* (beyond the month's count of days) */
-.th-jaws .vday { width: 200px; height: 300px; box-shadow: 0 0 0 3px rgba(255, 255, 255, .5); }
+.th-jaws .vday { transition: opacity .25s; will-change: transform; width: 200px; height: 300px; box-shadow: 0 0 0 3px rgba(255, 255, 255, .5); }
 .th-jaws .vday .vn { display: none; }
 html[data-theme=jaws] .hinfo .w > span { color: #051725; letter-spacing: -.02em; }
 html[data-theme=jaws] .hinfo h2 { color: #b3202a; }
@@ -1974,7 +1975,7 @@ function themeEarly() {   // (before the films arrive: the page already laid out
 var THEMES_LATER = [
   // Jaws (parked, reworked: no shark, the 1975 poster's own composition): the pale surface above, the day's film at it as
   // the swimmer, the days to come sinking into the darkening sea below; the poster's red for the day (Archivo Black)
-  { key: 'jaws', mob: [0, 0, 1280, 720], name: 'The Deep', film: 'Jaws', year: 1975, by: 'Spielberg', bg: '#5a9fae', ink: '#000', font: '"Archivo Black", sans-serif', tw: 400 },
+  { key: 'jaws', mob: [0, 0, 1280, 720], name: 'The Deep', film: 'Jaws', year: 1975, by: 'Spielberg', bg: '#1494b9', ink: '#000', font: '"Archivo Black", sans-serif', tw: 400 },
   // Alphaville (parked for a later month, reworked): the film's own black and white; white neon (Tilt Neon) for the title,
   // the Alpha 60's lists in mono (Space Mono), an arrow and a negative flip for the day you're on, its E = mc² and E = hν signs
   { key: 'credits', mob: [40, 90, 1240, 620], name: 'Alpha 60', film: 'Alphaville', year: 1965, by: 'Godard', bg: '#0b0b0c', ink: '#fff', font: '"Tilt Neon", sans-serif', tw: 400 },
@@ -3101,49 +3102,40 @@ THEMEFX.jaws = {
     // (the attack, its waterline on the sea's: John's twelve frames, 9 Nov 2026: "can we work an animation into the jaws using this")
     var ah = c.mob ? 860 : c.H - g.top - 110, aw = ah * 320 / 392, at = g.sy - ah * .135;
     return '<div class="jsurf" style="top:' + g.top + 'px;height:' + (g.sy - g.top) + 'px"></div><div class="jdeep" style="top:' + g.sy + 'px"></div>' +
+      '<svg class="jwave" id="jwave" width="' + c.W + '" height="' + (g.sy + 40) + '" style="top:' + g.top + 'px"><path transform="translate(0,' + (-g.top) + ')" d=""/></svg>' +
       '<div class="jattack" id="jattack" style="left:' + (g.fx - aw / 2).toFixed(0) + 'px;top:' + at.toFixed(0) + 'px;width:' + aw.toFixed(0) + 'px;height:' + ah.toFixed(0) + 'px"><i></i><i></i></div>';
   },
-  // (the month opening: the shark rising under the swimmer, the strike, the sea closing over, then the days coming up through the calm;
-  // once a day (the theme explorer: every time). Going on a day: the sea breaking and settling over the change)
-  ready: function () {
-    var me = this, el = $('#jattack'); me._at = null; me.busy = false; if (!el) return;
-    // (every time the theme's opened, coming to it or back to it: John, 9 Nov 2026: "should play when you go to and from theme")
-    if (CALM) return;
-    var days = $$('#cal .vday'); days.forEach(function (d) { d.style.visibility = 'hidden'; });
-    me.busy = true;
-    me.play([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], [420, 340, 300, 300, 240, 190, 170, 230, 260, 300, 360, 420], 1, function () {
-      me.busy = false;
-      days.forEach(function (d, i) { d.style.visibility = ''; if (d.animate) d.animate([{ translate: '0 60px', filter: 'brightness(.4)' }, { translate: '0 0', filter: 'none' }], { duration: 900, delay: Math.min(6, i % 8) * 40, easing: 'cubic-bezier(.2,.7,.2,1)', composite: 'add' }); });
-    });
-  },
-  play: function (fr, ms, peak, done) {   // (the frames, each easing into the next, then the sea fading back to the theme's)
-    var el = $('#jattack'); if (!el) return done && done(); var a = el.children[0], b = el.children[1], tok = this._tok = {};
-    var pos = function (n) { return (n / 11 * 100).toFixed(3) + '% 0'; }, go = function () {
-      var t0 = performance.now(), tot = ms.reduce(function (x, y) { return x + y; }, 0);
-      el.style.transition = 'opacity .35s'; el.style.opacity = peak;
-      (function f(t) {
-        if (tok !== THEMEFX.jaws._tok || !el.isConnected) return;
-        var e = t - t0, i = 0; while (i < fr.length - 1 && e > ms[i]) { e -= ms[i]; i++; }
-        var u = i < fr.length - 1 ? Math.min(1, Math.max(0, (e / ms[i] - .55) / .45)) : 0;
-        a.style.backgroundPosition = pos(fr[i]); b.style.backgroundPosition = pos(fr[Math.min(fr.length - 1, i + 1)]); b.style.opacity = u.toFixed(2);
-        if (t - t0 < tot) requestAnimationFrame(f); else { el.style.transition = 'opacity .9s'; el.style.opacity = 0; if (done) done(); }
-      })(t0);
-    };
-    var im = new Image(); im.src = '/grifflix/img/jaws-attack.webp';
-    if (im.decode) im.decode().then(go, go); else go();
-  },
+  // (the attack follows the days: going from one day to the next, the shark rises under the swimmer, strikes, the sea closes over and
+  // calms, and the next comes up from the deep; stopped halfway, it stops halfway; the sea's surface swelling with the strike (John,
+  // 9 Nov 2026: "can the jaws effect happen as the cards move rather than an animation that plays first, so it's controlled. can the
+  // water move and match the animation")
+  ready: function (c) { fxReset(this); this.c = c; var im = new Image(); im.src = '/grifflix/img/jaws-attack.webp'; },
   swipe: function (c) { return { x: 0, y: -1, px: c.mob ? 50 : 70 }; },
-  place: function (all, at, c) {
-    if (this._at != null && Math.abs(this._at - at) > .5 && !this.busy && !CALM && !$('#cal').classList.contains('drag')) this.play([7, 8, 9, 10, 11], [180, 200, 220, 260, 300], .9);   // (the sea breaking over the change of day)
-    this._at = at;
-    var g = this.g(c), ph = c.mob ? 330 : 260;
-    all.forEach(function (el, j) {
+  place: function (all, at, c) { this.all = all; this.c = c; fxTween(this, at, 1400); },
+  draw: function (at) {
+    var me = this, c = me.c, g = me.g(c), ph = c.mob ? 330 : 260;
+    me.all.forEach(function (el, j) {
       var k = j - at, nf = near(k), y, s, o = 1, br;
       if (k >= 0) { y = g.sy + ph * .32 + k * (c.mob ? 150 : 120) * Math.pow(.88, k); s = Math.pow(.72, k); br = Math.max(.25, 1 - .16 * k); }
       else { y = g.sy + ph * .32 + k * 160; s = 1 + .2 * -k; o = Math.max(0, 1 + k); br = 1; }
       vAt(el, g.fx + Math.sin(j * 1.3) * 40 * (1 - nf), y, s * (c.mob ? 1.3 : 1), 0, k > 6 ? 0 : o, 100 - Math.round(k * 10));
       el.style.filter = nf > .98 ? 'none' : 'brightness(' + br.toFixed(2) + ') saturate(' + (.5 + .5 * br).toFixed(2) + ')';
     });
+    // (the frame: where between two days you are, the whole attack across one day's move; the last frame's calm easing into the next
+    // shark below)
+    var p = (at - Math.floor(at)) * 12, i = Math.floor(p) % 12, u = p - Math.floor(p), el = $('#jattack');
+    if (el) { var A = el.children[0], B = el.children[1], pos = function (n) { return (n / 11 * 100).toFixed(3) + '% 0'; };
+      A.style.backgroundPosition = pos(i); B.style.backgroundPosition = pos((i + 1) % 12); B.style.opacity = u.toFixed(3); }
+    // (the sea's surface, right across: a gentle swell, rising with the strike and spreading, settling as the sea calms)
+    var w = $('#jwave');
+    if (w) {
+      var I = Math.exp(-Math.pow((p - 6.5) / 2.4, 2)), W = c.W, ph0 = at * 9, d = 'M0,0 L0,' + g.sy.toFixed(1);
+      for (var x = 0; x <= W; x += 16) {
+        var near2 = Math.exp(-Math.pow((x - g.fx) / (W * .28), 2));
+        d += ' L' + x + ',' + (g.sy + 3 * Math.sin(x * .021 + ph0) + 2 * Math.sin(x * .047 - ph0 * 1.3) - I * (6 + 18 * near2) * Math.abs(Math.sin(x * .013 + ph0 * .7))).toFixed(1);
+      }
+      w.firstChild.setAttribute('d', d + ' L' + W + ',0 Z');
+    }
   }
 };
 // a theme that moves its days itself, frame by frame, along its own paths (not the straight line a CSS transition takes
@@ -3562,7 +3554,7 @@ THEMEFX.picture = {
     $$('#cal .zlt').forEach(function (t, i, L) {   // (GRIFFLIX in gilt round the drum, between its bands)
       var th = (i / L.length) * Math.PI * 2 - a * st, cs = Math.cos(th), sn = Math.sin(th);
       if (cs < .05) { t.style.visibility = 'hidden'; return; } t.style.visibility = '';
-      t.style.transform = 'translate(' + (g.cx + R * sn).toFixed(1) + 'px,' + (ty + g.Hw * .17 + ry * cs).toFixed(1) + 'px) translate(-50%,-50%) perspective(' + g.P + 'px) rotateY(' + (th * 180 / Math.PI).toFixed(1) + 'deg) scale(' + (g.f * .62).toFixed(3) + ')';
+      t.style.transform = 'translate(' + (g.cx + R * sn).toFixed(1) + 'px,' + (ty + g.Hw * .17 + ry * cs).toFixed(1) + 'px) translate(-50%,-50%) perspective(' + g.P + 'px) rotateY(' + (th * 180 / Math.PI).toFixed(1) + 'deg) scale(' + (g.f * .78).toFixed(3) + ')';
       t.style.opacity = (.5 + .5 * cs).toFixed(2); t.style.zIndex = 105;
     });
   },
