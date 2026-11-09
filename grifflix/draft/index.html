@@ -586,19 +586,19 @@ html[data-theme=slices] .hinfo .w { font-size: 64px; }
 .th-moon .vday.none { opacity: .55 !important; }
 html.tv .th-moon .vday:focus { outline: 0 !important; clip-path: none; box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px #fff; }
 html.tv .th-moon .vday:focus .msh { border-radius: 50%; }
-.bigmoon { position: absolute; right: 110px; top: 226px; width: 320px; height: 320px; border-radius: 50%; overflow: hidden; background: #f3eacb; box-shadow: 0 0 0 2px #f3eacb; }
-.bigmoon .msoon { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; font: var(--tw) 34px/1.05 var(--tfont); text-transform: uppercase; color: #145063; z-index: 2; }
-.bigmoon .msoon[hidden] { display: none; }
+/* the day's poster, whole and square-cornered, above its words (John, 9 Nov 2026: "just put the poster on the screen above the title, not circular") */
+.mposter { display: block; width: 168px; height: 252px; margin: 0 0 22px; background: #0c2f3b center / cover; box-shadow: 0 0 0 1px rgba(243, 234, 203, .45), 0 14px 30px rgba(0, 0, 0, .4); pointer-events: auto; cursor: pointer; position: relative; }
+.mposter .msoon { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 10%; font: var(--tw) 26px/1.05 var(--tfont); text-transform: uppercase; color: #f3eacb; }
 /* Méliès's Man in the Moon beside it, the rocket in his eye, fired at him again each new day (John, 9 Nov 2026: "stick with
    the posters in the moon for Hugo, but add a detail somewhere else") */
-.mmeli { position: absolute; right: 440px; top: 216px; width: 210px; height: 210px; pointer-events: none; filter: sepia(.2) drop-shadow(0 8px 18px rgba(0, 0, 0, .45)); }   /* (A Trip to the Moon, 1902: the moon cut out from the film itself, public domain, Internet Archive) */
+.mmeli { position: absolute; right: 70px; top: 262px; width: 400px; height: 400px; pointer-events: none; filter: sepia(.2) drop-shadow(0 12px 26px rgba(0, 0, 0, .45)); }   /* (A Trip to the Moon, 1902: the moon cut out from the film itself, public domain, Internet Archive; where the poster's circle was) */
 .mmeli img { display: block; width: 100%; height: 100%; }
 /* (the day's poster whole, the moon's height, in the middle; the copies either side blurred and dimmed, so the one poster
    stands out: John, 9 Nov 2026: "show the full poster but allow it to repeat ... try blurring the repeated ones") */
-.bigmoon::before, .upic::before { content: ""; position: absolute; inset: -16px; background: var(--p) center / auto calc(100% - 32px) repeat-x; filter: blur(7px) brightness(.78) saturate(.8); }
-.bigmoon::after, .upic::after { content: ""; position: absolute; inset: 0; background: var(--p) center / auto 100% no-repeat; }
+.upic::before { content: ""; position: absolute; inset: -16px; background: var(--p) center / auto calc(100% - 32px) repeat-x; filter: blur(7px) brightness(.78) saturate(.8); }
+.upic::after { content: ""; position: absolute; inset: 0; background: var(--p) center / auto 100% no-repeat; }
 .mphase { position: absolute; top: calc(22% + 30px); width: 220px; margin-left: -110px; text-align: center; font: 500 12px/1 var(--kfont); letter-spacing: .3em; text-transform: uppercase; color: var(--fg-2); transition: left .5s cubic-bezier(.3, .7, .2, 1); }
-.mfilm { position: absolute; right: 110px; top: 568px; width: 320px; text-align: center; font: var(--tw) 26px/1.15 var(--tfont); text-transform: var(--ttt); color: var(--fg); }
+
 /* the credits */
 .th-credits .vday { width: 740px; height: 60px; background: none; display: flex; align-items: center; gap: 22px; transform-origin: 0 50%; text-align: left; }
 .th-credits .cn { flex: none; width: 44px; text-align: right; font: 300 22px/1 var(--kfont); }
@@ -1001,12 +1001,15 @@ html.mob .th-code .vday { top: 20px; height: 860px; }
 html.mob .codepic { left: 225px; top: 195px; width: 330px; height: 495px; }
 html.mob .th-slices .vday { height: 510px; background-size: 340px 510px; }
 html.mob .th-moon .vday { width: 40px; height: 40px; }
-html.mob .bigmoon { left: 180px; right: auto; top: 230px; width: 420px; height: 420px; }
-html.mob .mmeli { right: auto; left: 6px; top: 8px; width: 150px; height: 150px; }
+html.mob .mmeli { right: auto; left: 150px; top: 200px; width: 480px; height: 480px; }   /* (a phone: in the ring of moons) */
+html.mob[data-theme=moon] .hinfo { display: grid; grid-template-columns: 76px minmax(0, 1fr); column-gap: 14px; align-content: start; }
+html.mob[data-theme=moon] .hinfo > * { grid-column: 2; }
+html.mob[data-theme=moon] .hinfo > .w { grid-column: 1 / -1; }
+html.mob .mposter { grid-column: 1 !important; grid-row: 2 / span 4; width: 76px; height: 114px; margin: 6px 0 0; }
+html.mob .mposter .msoon { font-size: 15px; }
 html.mob .mphase { display: none; }   /* (no moon's phase on a phone) */
 #cal .bigmoon, #cal .globe, #cal .codepic, #cal .reelscreen, #cal .cposter, #cal .mfilm { cursor: pointer; }
 .tcentre h2 { pointer-events: auto; cursor: pointer; }
-html.mob .mfilm { left: 40px; right: 40px; width: auto; top: 800px; font-size: 36px; }
 html.mob .cposter { display: none; }
 html.mob .th-credits .vday { width: 720px; }
 html.mob .th-autumn .vday { width: 300px; height: 450px; }
@@ -1107,9 +1110,9 @@ html[data-theme=pinboard] .leaf2 i { background: none; color: #555; padding-top:
 html[data-theme=pinboard] .leaf2 b { color: #000; }
 html[data-theme=pinboard] .leaf2::before { content: ""; position: absolute; left: 50%; top: -.07em; width: .12em; height: .12em; margin-left: -.06em; border-radius: 50%; background: #c8102e; }
 /* August, the moon: the day as a full moon */
-html[data-theme=moon] .leaf2 { border: 0; border-radius: 50%; width: 1em; height: 1em; background: radial-gradient(circle at 35% 35%, #fff9e3, #f3eacb 60%, #d9cda5); }
-html[data-theme=moon] .leaf2 i { background: none; color: #145063; padding-top: .14em; }
-html[data-theme=moon] .leaf2 b { color: #145063; margin-top: -.06em; }
+html[data-theme=moon] .leaf2 { border: 0; border-radius: 50%; width: 1.06em; height: 1.06em; justify-content: center; background: radial-gradient(circle at 35% 35%, #fff9e3, #f3eacb 60%, #d9cda5); }   /* (the month and day within the moon: John, 9 Nov 2026) */
+html[data-theme=moon] .leaf2 i { background: none; color: #145063; padding: 0; margin-top: .02em; font-size: .15em; }
+html[data-theme=moon] .leaf2 b { flex: none; color: #145063; font-size: .44em; line-height: 1; margin: .04em 0 .1em; }
 /* September, Alphaville: a neon sign */
 html[data-theme=credits] .leaf2 { border-radius: .1em; box-shadow: 0 0 .1em #fff, inset 0 0 .1em #fff; }
 html[data-theme=credits] .leaf2 i { background: none; color: #fff; text-shadow: 0 0 .1em #fff; }
@@ -2565,7 +2568,14 @@ var PHASES = ['New moon', 'Waxing crescent', 'First quarter', 'Waxing gibbous', 
 var MELI = null;   // (the rocket's landing, fetched once)
 THEMEFX.moon = { all: true,
   cell: function (d, it, key) { var p = moonPhase(key), off = p < .5 ? -2 * p : 2 - 2 * p; return '<i class="msh" style="transform:translateX(' + (off * 100).toFixed(1) + '%)"></i><span class="mn">' + d + '</span>'; },
-  decor: function () { return '<div class="bigmoon" id="bigmoon"><span class="msoon" hidden>Coming<br>soon</span></div><div class="mmeli"><img id="mmeli" alt="The Man in the Moon, from Méliès\'s A Trip to the Moon (1902)" src="/grifflix/img/melies-face.webp"></div><div class="mphase" id="mphase"></div><div class="mfilm" id="mfilm"></div>'; },
+  decor: function () { return '<div class="mmeli"><img id="mmeli" alt="The Man in the Moon, from Méliès\'s A Trip to the Moon (1902)" src="/grifflix/img/melies-face.webp"></div><div class="mphase" id="mphase"></div>'; },
+  info: function (b) {   // (the day's words, its poster above them)
+    hallInfo(b); var c = $('#hinfo'), it = b && S.calData.days[b.dataset.day]; if (!c || !b) return;
+    var has = it && !it.secret, p = document.createElement('div'); p.className = 'mposter';
+    if (has) { p.style.backgroundImage = b.style.getPropertyValue('--p'); p.setAttribute('role', 'button'); p.setAttribute('aria-label', 'Open ' + showName(it)); p.onclick = function () { daySheet(b.dataset.day); }; }
+    else p.innerHTML = '<span class="msoon">Coming<br>soon</span>';
+    c.insertBefore(p, c.firstChild);
+  },
   swipe: function (c) { return { x: 1, y: 0, px: c.mob ? 26 : 40 }; },
   spot: function (c, j, n) {   // (where a small moon is: a row across the sky, or on a phone a ring round the large moon, the 1st at the top)
     if (c.mob) { var a = -Math.PI / 2 + 2 * Math.PI * j / (n + 1); return { x: 390 + 330 * Math.cos(a), y: 440 + 330 * Math.sin(a), a: a }; }
@@ -2578,8 +2588,6 @@ THEMEFX.moon = { all: true,
     if (mp) { if (c.mob) { mp.style.left = (390 + 395 * Math.cos(s.a)).toFixed(0) + 'px'; mp.style.top = (440 + 395 * Math.sin(s.a) - 6).toFixed(0) + 'px'; } else mp.style.left = s.x.toFixed(0) + 'px'; }   // (the moon's phase by the small moon)
   },
   front: function (b) {
-    var bm = $('#bigmoon'), has = b && b.classList.contains('has');
-    if (bm && b) { bm.style.setProperty('--p', has ? b.style.getPropertyValue('--p') || 'none' : 'none'); var so = bm.querySelector('.msoon'); if (so) so.hidden = has; }
     var ml = $('#mmeli');   // (each new day: his face, then the film's own rocket landing in his eye, once: John, 9 Nov 2026)
     if (ml && b) {
       if (arguments[2] || CALM) { ml.src = '/grifflix/img/melies-moon.webp'; }
@@ -2589,7 +2597,6 @@ THEMEFX.moon = { all: true,
       }
     }
     var mp = $('#mphase'); if (mp && b) mp.textContent = PHASES[Math.floor(moonPhase(b.dataset.day) * 8 + .5) % 8];
-    var mf = $('#mfilm'), it = b && S.calData.days[b.dataset.day]; if (mf) mf.textContent = it && !it.secret ? showName(it) : '';   // (and its film under the large one)
   }
 };
 // September: the credits (Godard's Alphaville): the month's films as a roll of titles, the one you're on in the middle
