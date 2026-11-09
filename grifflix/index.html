@@ -796,6 +796,13 @@ html.tv #sheet .form > .close, html.phone #sheet .form > .close { position: fixe
 #barnav { display: flex; align-items: center; gap: 22px; flex: none; margin: 0 6px 0 30px !important; }
 html.phone #barnav { gap: 10px; margin: 0 2px 0 10px !important; }
 .bar-top .brand { margin-right: 0 !important; flex: none; }   /* (the words straight after it, in every view) */
+.homeic { flex: none; display: grid; place-items: center; width: 30px; height: 30px; margin: 0 14px 0 -18px; padding: 0; border: 0; background: none; color: var(--fg); cursor: pointer; opacity: .85; }
+.homeic svg { width: 17px; height: 17px; }
+.homeic:hover, .homeic:focus-visible { opacity: 1; }
+html.tv .homeic:focus { outline: 2px solid rgb(var(--kink)) !important; outline-offset: 2px; }
+#shhome { position: fixed; z-index: 80; margin: 0; }
+html.hall .bar-top > .homeic, html.table .bar-top > .homeic { margin-left: -18px !important; }   /* (close to the name: GRIFFLIX's wide spacing leaves room after its X) */
+html.phone .bar-top .homeic, html.phone.hall .bar-top > .homeic, html.phone.table .bar-top > .homeic { width: 24px; margin: 0 2px 0 -6px !important; } html.phone .bar-top .homeic svg { width: 15px; height: 15px; }
 .bar-top .drafttag { margin-right: auto !important; }
 html.tv #barnav { margin-left: 34px !important; }
 .bar-top > [data-go="search"], .bar-top > [data-go="browse"] { display: none !important; }   /* (Search in the words; Browse inside Search) */
@@ -1285,7 +1292,7 @@ html.phone .bar-top #refresh2, html.phone .bar-top #who, html.phone .bar-top > .
 
 <div class="wrap">
   <header class="bar-top">
-    <button class="brand" data-go="home" aria-label="Grifflix: Movie of the Day">Grifflix</button>
+    <button class="brand" data-go="reload" aria-label="Grifflix: look again, staying here" title="Look again (you stay where you are)">Grifflix</button><button class="homeic" data-go="home" aria-label="Home" title="Home: this month's theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/><path d="M10 20v-5.5h4V20"/></svg></button>
     <button class="pill" data-go="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>Search</button>
     <button class="pill" data-go="browse"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m10 9 5 3-5 3z" fill="currentColor"/></svg>Browse</button>
     <button class="pill members" data-go="lists"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>My list</button>
@@ -1613,7 +1620,9 @@ function api(path, body) {
 }
 var MEMO = {};
 function apiMemo(path, draw) { return api(path).then(function (d) { draw(d); return d; }); }   // (the site's files: the browser keeps them)
-function refreshAll() {   // look again: the site's files and the pictures fetched afresh
+function refreshAll() {   // look again: the site's files and the pictures fetched afresh, staying where you are (the page, month, day, pop-up)
+  var f = $('#cal button.front') || $('#cal .today');
+  try { sessionStorage.setItem('grifflix-resume', JSON.stringify({ m: S.month, d: f && f.dataset.day, s: dlg.open ? S.sheetNow : null, y: scrollY, t: Date.now() })); } catch (e) {}
   forgetMemo();
   try { if (window.caches) caches.delete('gfx-pics-v1'); } catch (e) {}
   location.reload();
@@ -1794,7 +1803,7 @@ requestAnimationFrame(function () { document.documentElement.classList.remove('l
 /* ------------------------------------------------------------------ starting */
 function start() {
   document.documentElement.classList.add('ready');
-  if (BUILD.draft) { var t = document.createElement('a'); t.className = 'drafttag'; t.href = '/grifflix/'; t.title = 'This is the draft: the live Grifflix is at /grifflix/'; t.textContent = 'Draft'; $('.brand').after(t); }
+  if (BUILD.draft) { var t = document.createElement('a'); t.className = 'drafttag'; t.href = '/grifflix/'; t.title = 'This is the draft: the live Grifflix is at /grifflix/'; t.textContent = 'Draft'; ($('.bar-top .homeic') || $('.brand')).after(t); }
   var go = function () {
     if (!DEMO && !TOKEN) {
       PUBLIC = true; ME = { name: '', public: true };
@@ -1883,6 +1892,7 @@ function route() {
   if (S.view === 'collection' && h[1]) return collectionView(h[1]);
   if (S.view === 'film' && /^[0-9a-f]{32}$/.test(h[1] || '')) { S.view = 'home'; var fid = h[1]; home(); api('item?id=' + fid).then(function (it) { if (it && it.id) itemSheet(it); }).catch(function () {}); return; }   // (a shared film's link)
   if (S.view === 'day' && /^\d{4}-\d\d-\d\d$/.test(h[1] || '')) { S.cal = 'motd'; S.month = h[1].slice(0, 7); S.pendingDay = h[1]; S.view = 'home'; return home(); }
+  if (S.view !== 'home') setTimeout(resumeHere, 300);
   if (S.view === 'lists') return lists();
   if (S.view === 'search') { location.hash = '#' + (S.lastView || 'home'); return searchSheet(); }
   if (S.view === 'profile') { location.hash = '#' + (S.lastView || 'home'); return profile(); }
@@ -1893,15 +1903,34 @@ function route() {
 function goHome() {   // the logo: home, the month's theme, and the month it is now (John, 8 Nov 2026: "Clicking on Grifflix should
   // return you home", "home should be the current month"), from anywhere, a pop-up open or not
   store.set('grifflix-tvview', 'themes'); S.mcal = false; if (dlg.open) closeSheet();
-  { try { history.replaceState(null, '', location.pathname + location.search + '#home'); } catch (e) {} return refreshAll(); }   // (a computer: the logo reloads too, there being no reload button: John, 8 Nov 2026)
   S.cal = 'motd'; S.month = TODAY.slice(0, 7);
   if ((location.hash || '#home').split('/')[0] === '#home') return home();
   location.hash = '#home';
+}
+// the logo: look again, and stay where you were: the same page, month, day, and the pop-up that was open (John, 9 Nov 2026:
+// "Can grifflix have a little home icon next to it and can reload keep you on your current page"); home is the house beside it
+function reloadHere() { refreshAll(); }   // (the address stays as it is: the same page)
+(function () {   // (just reloaded: back where you were)
+  var r = null; try { r = JSON.parse(sessionStorage.getItem('grifflix-resume') || 'null'); sessionStorage.removeItem('grifflix-resume'); } catch (e) {}
+  if (!r || Date.now() - r.t > 60000) return;
+  if (r.m) S.month = r.m; S.resumeDay = r.d || null; S.resumeSheet = r.s || null; S.resumeY = r.y || 0;
+})();
+function resumeHere() {   // (once the page is drawn: its pop-up open again, scrolled as it was)
+  var r = S.resumeSheet, y = S.resumeY; S.resumeSheet = null; S.resumeY = 0;
+  if (y) setTimeout(function () { window.scrollTo(0, y); }, 400);
+  if (!r) return;
+  if (r.k === 'day' && S.calData && S.calData.days[r.d]) return daySheet(r.d);
+  if (r.k === 'film' && r.id) return api('item?id=' + r.id).then(function (it) { if (it && it.id) itemSheet(it); }).catch(function () {});
+  if (r.k === 'cal' && S.calData) return calSheet();
+  if (r.k === 'search') return searchSheet();
+  if (r.k === 'browse') return browseSheet(r.t);
+  if (r.k === 'profile') return profile();
 }
 window.addEventListener('hashchange', route);
 document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && trailerOn()) { e.preventDefault(); trailerClose(); } });
 $$('[data-go]').forEach(function (b) { b.addEventListener('click', function () { var g = b.dataset.go; if (g === 'search') return searchSheet(); if (g === 'profile') return profile();
   if (g === 'home') return goHome();
+  if (g === 'reload') return reloadHere();
   if (g === 'browse' && VIEW() === 'themes' && S.view === 'home') return browseSheet('movies');   // (the month's theme stays behind: Browse and Collections as pop-ups in its style)
   location.hash = '#' + g; }); });
 
@@ -1916,6 +1945,7 @@ function home() {
     if (!S.month) S.month = TODAY.slice(0, 7);
     drawCals(); drawMonth();
     if (S.pendingDay) { var pd = S.pendingDay; S.pendingDay = null; if (S.calData.days[pd]) daySheet(pd); }
+    resumeHere();
     var shownDays = Object.keys(S.calData.days).filter(function (k) { return !S.calData.days[k].secret; }).sort();
     var t = (S.calData.days[TODAY] && !S.calData.days[TODAY].secret ? S.calData.days[TODAY] : null) || S.calData.days[shownDays.pop()];
   }).catch(oops);
@@ -2263,7 +2293,8 @@ function themeStart(fx, c) {
   $$('#cal .vday').forEach(function (el) { var u = (el.style.getPropertyValue('--p') || '').match(/url\(["']?([^"')]+)/); if (u) (new Image()).src = u[1]; });   // (every poster ready before it's wanted)
   if (fx.ready) fx.ready(c);
   $$('#cal button.vday, #cal button.hday, #cal button.tday').forEach(function (b) { b.onclick = function () { daySheet(b.dataset.day); }; b.addEventListener('focus', function () { themeTurn(b); }); });
-  themeTurn($('#cal .today.has') || $$('#cal button.has').pop() || $('#cal button[data-day]'));
+  var was = S.resumeDay && $('#cal button[data-day="' + S.resumeDay + '"]'); S.resumeDay = null;   // (reloaded: the day you were on)
+  themeTurn(was || $('#cal .today.has') || $$('#cal button.has').pop() || $('#cal button[data-day]'));
 }
 function themeTurn(b) {   // the theme with b at the front
   if (!S.theme) return; var all = themeEls();
@@ -2289,7 +2320,7 @@ function themeFadeIn(dir) {   // (a new month's theme: faded in, drifting in fro
   [st, inf].forEach(function (el) { if (el && el.animate) el.animate([{ opacity: 0, transform: 'translateY(' + (dir * 24) + 'px)' }, { opacity: 1, transform: 'none' }], { duration: 520, easing: 'cubic-bezier(.2,.7,.2,1)' }); });
 }
 function calSheet() {   // the month's calendar, a pop-up in its theme's colour and type; a day opens its film
-  var C = S.calData; if (!C) return;
+  var C = S.calData; if (!C) return; S.sheetNow = { k: 'cal' };
   var y = +S.month.slice(0, 4), m = +S.month.slice(5, 7) - 1, n = new Date(y, m + 1, 0).getDate(), lead = (new Date(y, m, 1).getDay() + 6) % 7, t = themeFor(m);
   var ms = monthsOf(C.days), mi = ms.indexOf(S.month), mob = MOB();
   S.sheetDate = null;   // (not a day's page: a swipe here is the month before or after)
@@ -2931,6 +2962,7 @@ function drawRows(R, into) {
 
 /* --- browse: films, TV, home videos */
 function browseSheet(tab) {   // Browse (Films, TV, Collections) as a pop-up, over the month's theme
+  S.sheetNow = { k: 'browse', t: tab };
   openSheet('<div class="form bsheet" style="position:relative">' + X + '<div id="bsin"></div></div>');
   browseIn($('#bsin'), tab);
   if (TV) setTimeout(function () { var f = $('#bsin [data-b].on'); if (f) f.focus(); }, 80);
@@ -3071,13 +3103,15 @@ function navGo(w) {
   }
 }
 function navBar() {
-  var n = $('#barnav'); if (!n) { $('.bar-top .brand').insertAdjacentHTML('afterend', '<nav id="barnav" aria-label="Grifflix"></nav>'); n = $('#barnav'); }
+  var n = $('#barnav'); if (!n) { ($('.bar-top .homeic') || $('.bar-top .brand')).insertAdjacentHTML('afterend', '<nav id="barnav" aria-label="Grifflix"></nav>'); n = $('#barnav'); }
   n.innerHTML = navWords(VIEW() === 'themes' && !S.mcal ? 'theme' : 'calendar');
   $$('#barnav [data-nv]').forEach(function (b) { b.onclick = function () { navGo(b.dataset.nv); }; });
 }
 function shBrand() {   // GRIFFLIX over a pop-up, just where the bar's is (the bar is behind it): home from there too
   var b = $('#shbrand'), src = $$('.bar-top .brand').filter(function (x) { return x.offsetParent; })[0];
-  if (!b) { dlg.insertAdjacentHTML('afterbegin', '<button class="brand" id="shbrand" type="button" aria-label="Grifflix: home">Grifflix</button>'); b = $('#shbrand'); b.onclick = goHome; }
+  if (!b) { dlg.insertAdjacentHTML('afterbegin', '<button class="brand" id="shbrand" type="button" aria-label="Grifflix: look again, staying here">Grifflix</button><button class="homeic" id="shhome" type="button" aria-label="Home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/><path d="M10 20v-5.5h4V20"/></svg></button>'); b = $('#shbrand'); b.onclick = reloadHere; $('#shhome').onclick = goHome; }
+  var hi = $$('.bar-top .homeic').filter(function (x) { return x.offsetParent; })[0], sh = $('#shhome');
+  if (sh) { sh.hidden = !hi || !src; if (hi && src) { var hr = hi.getBoundingClientRect(); sh.style.left = Math.round(hr.left) + 'px'; sh.style.top = Math.round(hr.top) + 'px'; sh.style.width = Math.round(hr.width) + 'px'; sh.style.height = Math.round(hr.height) + 'px'; sh.style.color = getComputedStyle(hi).color; } }
   if (!src) { b.hidden = true; return; }
   var r = src.getBoundingClientRect(), cs = getComputedStyle(src);
   // the words beside it, as the bar's (John, 8 Nov 2026: "If you're on calendar, replace it with Theme. CALENDAR and THEME should be there to tab to on search")
@@ -3093,7 +3127,7 @@ function shBrand() {   // GRIFFLIX over a pop-up, just where the bar's is (the b
   b.hidden = false; b.style.left = Math.round(r.left) + 'px'; b.style.top = Math.round(r.top) + 'px'; ['fontFamily', 'fontWeight', 'fontSize', 'lineHeight', 'letterSpacing', 'color', 'textTransform'].forEach(function (k) { b.style[k] = cs[k]; });
 }
 dlg.addEventListener('click', function (e) { if (e.target === dlg) closeSheet(); });
-dlg.addEventListener('close', function () { S.fromCal = false; });
+dlg.addEventListener('close', function () { S.fromCal = false; S.sheetNow = null; });
 var X = '<button class="ico close" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6 6 18"/></svg></button>';
 var PLAY = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
 var HEART = function (on) { return '<svg viewBox="0 0 24 24" fill="' + (on ? 'currentColor' : 'none') + '" stroke="currentColor" stroke-width="2"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>'; };
@@ -3101,6 +3135,7 @@ function longDate(k) { var d = new Date(k + 'T12:00'); return d.toLocaleDateStri
 
 function daySheet(date) {
   var C = S.calData, it = C.days[date];
+  S.sheetNowNext = { k: 'day', d: date };
   if (it && it.secret) return toast('Chosen: revealed at 8am on ' + longDate(date) + '. To see what’s coming, switch on “Show upcoming films” on the admin page.');
   if (!it) {
     if (!C.mine) return;
@@ -3148,6 +3183,7 @@ function dayStep(d) {
 })();
 
 function itemSheet(it, ctx) {
+  S.sheetNow = S.sheetNowNext || { k: 'film', id: it && it.id }; S.sheetNowNext = null;
   ctx = ctx || {};
   if (!it) return;
   SEEN[it.id] = it; land(it);
@@ -3254,6 +3290,7 @@ function wireBody(it, ctx) {
 
 /* searching: on its own, or to choose a day's film */
 function searchSheet(onPick, title) {
+  if (!onPick) S.sheetNow = { k: 'search' };
   var withBrowse = !onPick && VIEW() === 'themes' && S.view === 'home';   // (in a theme, John: "Search can bring up the search bar plus collections and browse")
   openSheet('<div class="form' + (withBrowse ? ' bsheet' : '') + '" style="position:relative">' + X + '<h2 style="font:400 34px/1.1 var(--serif);color:var(--fg)">' + (title || 'Search') + '</h2><input type="search" id="sq" placeholder="A film, a series, an episode…" autocomplete="off"><div class="results" id="sres"></div>' + (withBrowse ? '<div id="bsin"></div>' : '') + '</div>');
   if (withBrowse) browseIn($('#bsin'), 'now');   // (Search opens on Now showing)
@@ -3379,6 +3416,7 @@ function swReg() { return navigator.serviceWorker.register('/grifflix/sw.js', { 
 function b64key(k) { var p = '='.repeat((4 - k.length % 4) % 4), raw = atob((k + p).replace(/-/g, '+').replace(/_/g, '/')), a = new Uint8Array(raw.length); for (var i = 0; i < raw.length; i++) a[i] = raw.charCodeAt(i); return a; }
 function deviceSub() { return NOTE_OK ? navigator.serviceWorker.getRegistration('/grifflix/').then(function (r) { return r ? r.pushManager.getSubscription() : null; }).catch(function () { return null; }) : Promise.resolve(null); }
 function profile() {
+  S.sheetNow = { k: 'profile' };
   if (PUBLIC) return signInSheet();
   if (!ME) return;
   if (TV) {   // the TV: who's signed in and Sign out, nothing else (John, 8 Nov 2026)
