@@ -509,7 +509,7 @@ html[data-theme=reel] .hinfo h2 { color: #ebdeca; }
 .th-moon .vday .cs, .th-code .vday .cs, .th-credits .vday .cs, .th-slices .vday:not(.front) .cs { display: none; }
 .th-umbrellas .vday.soon:not(.front) .cs { display: none; }
 .th-umbrellas .vday.soon { box-shadow: 10px 14px 0 rgba(0, 0, 0, .16); }
-.tday.soon { cursor: default; }
+.tday.soon { cursor: default; background: rgba(255, 255, 255, .06); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .24), 0 6px 18px rgba(0, 0, 0, .45); }   /* (the days to come: their places round the table) */
 /* the umbrellas */
 .th-umbrellas .vday { width: 300px; height: 300px; border-radius: 50%; box-shadow: 10px 14px 0 rgba(0, 0, 0, .16); }
 .th-umbrellas .vday { background-image: none; }
@@ -2843,8 +2843,9 @@ THEMEFX.table = {
   geo: function (c) { return c.mob ? { cx: 390, cy: 520, rx: 330, ry: 170, fs: 2 } : { cx: ($('#cal').clientWidth || 1280) / 2, cy: 418, rx: 530, ry: 150, fs: 2.6 }; },   // (the day you're on large at the table's front: John, 9 Nov 2026: "chosen poster on Dr Strangelove very small")
   swipe: function (c) { return { x: -1, y: 0, px: c.mob ? 34 : 60 }; },   // (the table turns with the finger)
   place: function (all, at, c) {
-    var g = this.geo(c), n = all.length;
+    var g = this.geo(c), n = 31;   // (a month round the table, evenly, whatever days either side are there too: the table's look kept)
     all.forEach(function (el, j) {
+      if (Math.abs(j - at) > 15.4) { el.style.opacity = 0; el.style.pointerEvents = 'none'; return; } el.style.pointerEvents = '';
       var a = Math.PI / 2 - (j - at) * 2 * Math.PI / n, x = g.cx + g.rx * Math.cos(a), y = g.cy + g.ry * Math.sin(a), depth = (Math.sin(a) + 1) / 2, nf = near(j - at);
       el.style.left = x.toFixed(1) + 'px'; el.style.top = y.toFixed(1) + 'px';
       el.style.transform = 'scale(' + (.62 + .38 * depth + nf * (g.fs - 1)).toFixed(3) + ')';
@@ -3162,7 +3163,7 @@ function pts(a) { return a.map(function (p) { return p[0].toFixed(1) + ',' + p[1
 // wall and overhead, upside down. Going on a day carries you along the street, the paving and buildings rolling past,
 // the next day coming down the wall to you
 THEMEFX.fold = {
-  sp: 4.5, tf: 8, L: 14, R: 16, sw: 4.6, eye: 2, tilt: 0,   // (the camera level, its view raised instead of tilted, so the buildings stand upright as an architect's photograph: John, 9 Nov 2026: "can the perspective on the buildings in inception be corrected")
+  sp: 4.5, tf: 8, L: 15, R: 6, sw: 4.6, eye: 2, tilt: 0,   // (the camera level, its view raised instead of tilted, so the buildings stand upright as an architect's photograph: John, 9 Nov 2026: "can the perspective on the buildings in inception be corrected")
      // (a day's walk; the day you're on 8 ahead; the street flat for 24, then the fold; the camera looking up a little)
   g: function (c) {   // (the day you're on its height on the screen, its foot just above the theme's name)
     var g = c.mob ? { cx: 390, ph: 330, yb: 800, mask: 0 } : { cx: c.W * .7, ph: Math.min(300, c.H * .36), yb: c.H * .855, mask: c.W * .4 }, me = this;
@@ -3208,6 +3209,7 @@ THEMEFX.fold = {
     [-1, 1].forEach(function (sd) {   // (the buildings either side, their fronts to the street; each its storeys and its roofline)
       for (var n = Math.ceil((1 + sh) / 2.3); n * 2.3 - sh < tm; n++) {
         var t1 = n * 2.3 - sh, t2 = Math.min(tm, t1 + 2.15), h = 3 + seeded(n * 7 + (sd > 0 ? 3 : 0)) * 2.4, x = sd * sw;
+        if (t2 > me.L) h = Math.min(h, 2.2 + me.R / Math.max(phi, .02) * .22);   // (lower where the street bends over, so they don't crowd together on the curve)
         // (a front in pieces where the street bends, so it curves with it rather than cutting across the fold)
         var nseg = t2 > me.L - 1 ? 4 : 1;
         for (var q = 0; q < nseg; q++) { var u1 = t1 + (t2 - t1) * q / nseg, u2 = t1 + (t2 - t1) * (q + 1) / nseg;
