@@ -435,14 +435,16 @@ html.hall .cal { position: fixed !important; inset: 0; height: 100% !important; 
 .hlines line, .hlines rect { fill: none; stroke: rgba(var(--kink), .22); stroke-width: 1; vector-effect: non-scaling-stroke; }
 .hlines .hend { fill: rgba(0, 0, 0, .04); stroke: rgba(var(--kink), .3); }
 .hlines .hdoor { fill: rgba(0, 0, 0, .05); stroke: rgba(var(--kink), .26); stroke-width: 1; vector-effect: non-scaling-stroke; }
-.hlines .r237d { fill: #000; stroke: none; }
-.hlines .n237 { fill: #000; font-family: var(--tfont); font-weight: var(--tw, 400); text-anchor: middle; letter-spacing: .02em; }
+.hlines polygon.hwall, .hlines .hendw { stroke: none; } .hlines .hendw { fill: #ddd6ce; }
+.hlines .hbeam { fill: #eee9e3; stroke: rgba(0, 0, 0, .1); } .hlines .hpil { fill: #e8e3dd; stroke: rgba(0, 0, 0, .08); }
+.hlines .hlamp { fill: #fffdf7; stroke: rgba(0, 0, 0, .15); } .hlines .hpic { fill: #2a2420; stroke: #8f8a84; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.hlines .hskirt { fill: #2b1913; stroke: none; } .hlines rect.r2d { fill: #3a2116; stroke: #1c0f0a; } .hlines .r2s { stroke: #1c0f0a; stroke-width: 1.5; }
 .hstage { position: absolute; inset: 0; }
 /* the Overlook's carpet (David Hicks's hexagons) down the corridor's floor, to the far end (John, 9 Nov 2026: "The shining
    theme is a little abstract. The carpet is the obvious symbol to use to identify it") */
 .hcarpet { position: absolute; transform-origin: 50% 0; transform: rotateX(-90deg); background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='103.9' viewBox='0 0 60 103.9'%3E%3Crect width='60' height='103.9' fill='%233a1e17'/%3E%3Cpolygon points='0.0,-28.6 24.8,-14.3 24.8,14.3 0.0,28.6 -24.8,14.3 -24.8,-14.3' fill='%23d2692b'/%3E%3Cpolygon points='60.0,-28.6 84.8,-14.3 84.8,14.3 60.0,28.6 35.2,14.3 35.2,-14.3' fill='%23d2692b'/%3E%3Cpolygon points='0.0,75.3 24.8,89.6 24.8,118.2 0.0,132.5 -24.8,118.2 -24.8,89.6' fill='%23d2692b'/%3E%3Cpolygon points='60.0,75.3 84.8,89.6 84.8,118.2 60.0,132.5 35.2,118.2 35.2,89.6' fill='%23d2692b'/%3E%3Cpolygon points='30.0,23.4 54.8,37.7 54.8,66.3 30.0,80.6 5.2,66.3 5.2,37.7' fill='%23d2692b'/%3E%3Cpolygon points='0.0,-20.5 17.8,-10.3 17.8,10.2 0.0,20.5 -17.8,10.3 -17.8,-10.2' fill='%233a1e17'/%3E%3Cpolygon points='60.0,-20.5 77.8,-10.3 77.8,10.2 60.0,20.5 42.2,10.3 42.2,-10.2' fill='%233a1e17'/%3E%3Cpolygon points='0.0,83.4 17.8,93.7 17.8,114.2 0.0,124.4 -17.8,114.2 -17.8,93.7' fill='%233a1e17'/%3E%3Cpolygon points='60.0,83.4 77.8,93.7 77.8,114.2 60.0,124.4 42.2,114.2 42.2,93.7' fill='%233a1e17'/%3E%3Cpolygon points='30.0,31.5 47.8,41.7 47.8,62.2 30.0,72.5 12.2,62.2 12.2,41.7' fill='%233a1e17'/%3E%3Cpolygon points='0.0,-14.5 12.6,-7.3 12.6,7.2 0.0,14.5 -12.6,7.3 -12.6,-7.2' fill='%238e1b24'/%3E%3Cpolygon points='60.0,-14.5 72.6,-7.3 72.6,7.2 60.0,14.5 47.4,7.3 47.4,-7.2' fill='%238e1b24'/%3E%3Cpolygon points='0.0,89.4 12.6,96.7 12.6,111.2 0.0,118.4 -12.6,111.2 -12.6,96.7' fill='%238e1b24'/%3E%3Cpolygon points='60.0,89.4 72.6,96.7 72.6,111.2 60.0,118.4 47.4,111.2 47.4,96.7' fill='%238e1b24'/%3E%3Cpolygon points='30.0,37.5 42.6,44.7 42.6,59.2 30.0,66.5 17.4,59.2 17.4,44.7' fill='%238e1b24'/%3E%3C/svg%3E") 0 0 / 120px auto; pointer-events: none; box-shadow: inset 0 0 0 3px #3a1e17; }
 html[data-theme=corridor] .hday .hn { display: none; }   /* (the date is on the card; not on the carpet) */
-html[data-theme=corridor]:not(.mob) .hinfo { width: max-content; max-width: min(760px, 52vw); padding: 26px 34px 22px; margin: 0 0 -22px -34px; background: #f5cc05; box-shadow: 0 10px 30px rgba(40, 14, 4, .35); }   /* (the day's words on a card of their own, as the film's title cards, not on the carpet) */
+html[data-theme=corridor]:not(.mob) .hinfo { width: max-content; max-width: min(760px, 52vw); padding: 26px 34px 22px; margin: 0 0 -22px -34px; background: #1c2421; box-shadow: 0 10px 30px rgba(40, 14, 4, .35); }   /* (the day's words on a card of their own, as the film's title cards, not on the carpet) */
 .hcarpet::after { content: ""; position: absolute; inset: 0; background: linear-gradient(rgba(0, 0, 0, 0) 30%, rgba(20, 8, 4, .55)); }
 .hday { position: absolute; padding: 0; border: 0; border-radius: 0; background: rgba(var(--kink), .08) center/cover; transform-origin: 50% 50%; transition: transform .7s cubic-bezier(.3, .7, .2, 1), opacity .5s; }
 .hday .hn { position: absolute; left: 0; top: calc(100% + 12px); font: 500 16px/1 var(--kfont); letter-spacing: .32em; text-transform: uppercase; color: var(--fg); white-space: nowrap; }
@@ -555,7 +557,10 @@ html.tv .th-lane .vday:focus { outline: 0 !important; box-shadow: 0 0 0 4px #1a1
 .zdrum { position: absolute; left: 0; top: 0; pointer-events: none; overflow: visible; }
 .zdrum .rim { fill: none; stroke: #e9c46a; stroke-width: 2; opacity: .55; }
 .zdrum .rimf { fill: rgba(233, 196, 106, .06); }
-.zdrum .pole { fill: #2a2224; } .zdrum .base { fill: #1a1416; stroke: #e9c46a; stroke-opacity: .35; }
+.zdrum .zin { fill: #0d0809; } .zdrum.zfront { z-index: 2; }
+.zdrum .lac { fill: url(#zlac); opacity: .9; } .zdrum .gilt { fill: none; stroke: #e9c46a; stroke-width: 1.2; opacity: .6; }
+.zdrum .spin { fill: url(#zwood); } .zdrum .foot { fill: #24170f; } .zdrum .foott { fill: url(#zwood); stroke: #e9c46a; stroke-opacity: .3; } .zdrum .coll { fill: #b8913f; }
+.zh { position: absolute; left: 0; top: 0; background: url("/grifflix/img/muybridge-horse.webp") 0 0 no-repeat; pointer-events: none; will-change: transform; filter: drop-shadow(0 0 4px rgba(233, 196, 106, .35)); }
 .zlt { position: absolute; left: 0; top: 0; font: 700 26px/1 var(--kfont); color: #e9c46a; pointer-events: none; will-change: transform; }
 .th-picture .vday { width: 170px; height: 255px; transition: opacity .25s; will-change: transform; box-shadow: 0 18px 40px rgba(0, 0, 0, .55); backface-visibility: hidden; }
 .th-picture .vday .vn { display: none; }
@@ -571,16 +576,21 @@ html[data-theme=picture] .leaf2 i { background: #e9c46a; color: #0b0809; }
 html[data-theme=picture] .leaf2 b { color: #e9c46a; }
 /* the opening: a film leader counting down, once a visit */
 @property --zsw { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
-.zlead { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; background: #141113; cursor: pointer; transition: opacity .5s ease; }
+.zlead { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; background: #0b0809; overflow: hidden; cursor: pointer; transition: opacity .5s ease; }
 .zlead.out { opacity: 0; pointer-events: none; }
-.zlead .ring { position: relative; width: min(64vh, 64vw); aspect-ratio: 1; border-radius: 50%; box-shadow: 0 0 0 3px #d8cfbf, inset 0 0 0 14px #141113, inset 0 0 0 17px #d8cfbf; overflow: hidden;
+.zlead .ring { position: relative; width: min(64vh, 64vw); aspect-ratio: 1; border-radius: 50%; box-shadow: 0 0 0 3px #d8cfbf, inset 0 0 0 14px rgba(11, 8, 9, .55), inset 0 0 0 17px #d8cfbf, 0 0 60px rgba(0, 0, 0, .5); overflow: hidden;
   background: conic-gradient(rgba(216, 207, 191, .22) var(--zsw), transparent 0); animation: zsweep .8s linear infinite; }
 @keyframes zsweep { from { --zsw: 0deg; } to { --zsw: 360deg; } }
 .zlead .ring::before, .zlead .ring::after { content: ""; position: absolute; background: rgba(216, 207, 191, .5); }
 .zlead .ring::before { left: 50%; top: 0; bottom: 0; width: 2px; } .zlead .ring::after { top: 50%; left: 0; right: 0; height: 2px; }
 .zlead .n { position: absolute; inset: 0; display: grid; place-items: center; font: 700 min(30vh, 30vw)/1 var(--kfont); color: #d8cfbf; }
 .zlead .gx { position: absolute; font: 700 min(11vw, 120px)/1 var(--kfont); text-transform: uppercase; letter-spacing: .5em; text-indent: .5em; color: #fff; opacity: 0; }
-.zlead.flash { background: #fff; transition: background .12s; } .zlead.flash .ring { opacity: 0; }
+.zglow { position: absolute; inset: 0; transition: opacity .2s; }
+.zglow i { position: absolute; width: 70vmax; height: 70vmax; border-radius: 50%; background: center / cover; filter: blur(90px) saturate(1.7) brightness(.75); opacity: .85; animation: zdrift 5s ease-in-out infinite alternate; }
+.zglow i:nth-child(1) { left: -22vmax; top: -26vmax; } .zglow i:nth-child(2) { right: -24vmax; top: 6vh; animation-delay: -2s; } .zglow i:nth-child(3) { left: 18vw; bottom: -40vmax; animation-delay: -3.5s; }
+.zglow::after { content: ""; position: absolute; inset: 0; background: radial-gradient(circle, rgba(11, 8, 9, .15) 20%, rgba(11, 8, 9, .7) 80%); }
+@keyframes zdrift { to { transform: translate(6vmax, 4vmax) scale(1.12); } }
+.zlead.flash { background: #fff; transition: background .12s; } .zlead.flash .ring, .zlead.flash .zglow { opacity: 0; }
 .zlead.name { background: #0b0809; } .zlead.name .ring { display: none; } .zlead.name .gx { opacity: 1; animation: zname 1.1s cubic-bezier(.2, .8, .2, 1) both; }
 @keyframes zname { from { letter-spacing: 1.4em; opacity: 0; filter: blur(10px); } to { letter-spacing: .5em; opacity: 1; filter: none; } }
 .zlead .skip { position: absolute; bottom: 28px; right: 32px; font: 500 11px/1 var(--kfont); letter-spacing: .3em; text-transform: uppercase; color: rgba(216, 207, 191, .55); }
@@ -1174,7 +1184,11 @@ html.mob .triallabel { white-space: nowrap; }
 html[data-theme] .leaf2 b { font-family: var(--tfont); font-weight: var(--tw); }
 /* January, The Shining: the Overlook's carpet, its hexagons, under the number */
 html[data-theme=corridor] .leaf2 { border-width: .05em; }
-html[data-theme=corridor] .leaf2 i { background: #b4231c; color: #f5cc05; }
+html[data-theme=corridor] .leaf2 { border-color: #5cc6f6; } html[data-theme=corridor] .leaf2 i { background: #5cc6f6; color: #1c2421; } html[data-theme=corridor] .leaf2 b { color: #5cc6f6; }
+html[data-theme=corridor] .hinfo .w > span, html[data-theme=corridor] .hinfo h2 { color: #5cc6f6; text-shadow: 0 0 .14em rgba(92, 198, 246, .55); }
+html.mob[data-theme=corridor] .hinfo .w > span, html.mob[data-theme=corridor] .hinfo h2 { color: #2c9ad6; text-shadow: none; }   /* (on the white wall: a shade deeper to read) */
+html[data-theme=corridor]:not(.mob) .hinfo .k, html[data-theme=corridor]:not(.mob) .hinfo .n, html[data-theme=corridor]:not(.mob) .hinfo .y { color: rgba(238, 232, 218, .75); }   /* (the film's own titles: Helvetica in a hot blue) */
+html[data-theme=corridor] .hlines .hdoor { fill: #3a2116; stroke: #1c0f0a; }   /* (the guest rooms' dark-wood doors) */
 /* February, Sherlock Jr.: a frame of film, sprocket holes down its sides */
 html[data-theme=reel] .leaf2 { border: 0; background: #141414; padding: 0 .12em; background-image: linear-gradient(#f4ecd8 50%, transparent 50%), linear-gradient(#f4ecd8 50%, transparent 50%); background-size: .06em .14em; background-position: .03em 0, calc(100% - .03em) 0; background-repeat: repeat-y; }
 html[data-theme=reel] .leaf2 i { background: none; color: #f4ecd8; }
@@ -1875,7 +1889,10 @@ var PALETTES = [   // the share card's colours for each month: ground, then four
 // each month's theme on the TV, and its one bold colour (the trial look's colour for the month everywhere): black or white type
 var THEMES = [   // each its film's own lettering and colour, researched (John, 8 Nov 2026: "do proper research into colours and fonts of the inspired film")
   // The Shining: Saul Bass's final yellow poster (#f0c801-#fcd202), his chunky hand-drawn "THE SHiNiNG"
-  { key: 'corridor', mob: [360, 40, 1260, 690], name: 'The Corridor', film: 'The Shining', year: 1980, by: 'Kubrick', bg: '#f5cc05', ink: '#000', font: '"GF-corridor", "Bowlby One", sans-serif', tw: 400 },
+  { key: 'corridor', mob: [360, 40, 1260, 690], name: 'The Corridor', film: 'The Shining', year: 1980, by: 'Kubrick', bg: '#e9e4de', ink: '#000', font: '"Helvetica Neue", Helvetica, "Arimo", Arial, sans-serif', tw: 500 },
+  // (John, 9 Nov 2026: "Can The Shining font be the one from the film, same colour. The yellow is only from the poster": the film's
+  // own titles, plain Helvetica, not bold, in a glowing sky blue over the dark mountains (John's frame of the title); the colours from the film's
+  // Overlook corridors, not the poster: cream walls, dark-wood doors, Hicks's red, orange and brown carpet)
   // In the Mood for Love: the red of its curtains and cheongsams; the Hong Kong poster's condensed sans, lowercase
   { key: 'slices', mob: [530, 120, 1230, 560], name: 'The Slices', film: 'In the Mood for Love', year: 2000, by: 'Wong Kar-wai', bg: '#8e1420', ink: '#fff', font: '"Archivo Narrow", sans-serif', tw: 600, tt: 'lowercase' },
   // The Umbrellas of Cherbourg: Chica's 1964 poster, a pink bold extended sans in lowercase on turquoise
@@ -1905,7 +1922,7 @@ var THEMES = [   // each its film's own lettering and colour, researched (John, 
   // Citizen Kane: its main title's outlined condensed capitals (League Gothic, the free revival of Alternate Gothic: John, 8 Nov 2026); the red title band of the 1941 Style A poster
   { key: 'globe', mob: [40, 60, 1240, 640], name: 'The Snow Globe', film: 'Citizen Kane', year: 1941, by: 'Orson Welles', bg: '#a8161a', ink: '#fff', font: '"GF-globe", "League Gothic", sans-serif', tw: 400 }
 ];
-var THEMEFONTS = 'https://fonts.googleapis.com/css2?family=Bowlby+One&family=Della+Respira&family=Special+Gothic+Expanded+One&family=Londrina+Solid:wght@400;900&family=Share+Tech+Mono&family=Archivo+Narrow:wght@600&family=Anton&family=IM+Fell+English+SC&family=Cinzel:wght@700&family=Tilt+Neon&family=Yuji+Syuku&family=Amatic+SC:wght@700&family=Big+Shoulders:wght@400;700&family=League+Gothic&family=News+Cycle:wght@700&family=Federant&family=Space+Mono:wght@400;700&family=Archivo+Black&family=Orbitron:wght@800&family=Montserrat:wght@800&family=Big+Shoulders+Stencil:wght@800&family=Lobster&family=UnifrakturMaguntia&family=Titan+One&family=Arvo:wght@700&family=Marcellus&family=Stint+Ultra+Condensed&family=Special+Elite&display=swap';
+var THEMEFONTS = 'https://fonts.googleapis.com/css2?family=Bowlby+One&family=Arimo:wght@400&family=Della+Respira&family=Special+Gothic+Expanded+One&family=Londrina+Solid:wght@400;900&family=Share+Tech+Mono&family=Archivo+Narrow:wght@600&family=Anton&family=IM+Fell+English+SC&family=Cinzel:wght@700&family=Tilt+Neon&family=Yuji+Syuku&family=Amatic+SC:wght@700&family=Big+Shoulders:wght@400;700&family=League+Gothic&family=News+Cycle:wght@700&family=Federant&family=Space+Mono:wght@400;700&family=Archivo+Black&family=Orbitron:wght@800&family=Montserrat:wght@800&family=Big+Shoulders+Stencil:wght@800&family=Lobster&family=UnifrakturMaguntia&family=Titan+One&family=Arvo:wght@700&family=Marcellus&family=Stint+Ultra+Condensed&family=Special+Elite&display=swap';
 function themeEarly() {   // (before the films arrive: the page already laid out as this month's theme)
   if (VIEW() !== 'themes') return; var R = document.documentElement, t = themeFor(new Date().getMonth(), new Date().getFullYear());
   R.classList.add(t.key === 'table' ? 'table' : 'hall'); if (MOB()) R.classList.add('mob'); R.dataset.theme = t.key;
@@ -2277,24 +2294,39 @@ function hallGeo(W, H) {   // (on a phone: the far end up and to the left, the f
 function drawHall(C, n, m, mine) {
   var W = themeW(), H = themeH(), g = HALLG, q = hallGeo(W, H);
   var vx = q.vx, vy = q.vy, ph = q.ph, pw = ph * 2 / 3, fx = q.fx, fy = q.fy;
-  // the corridor: its four edges to the far end, a door now and then along each wall, and at the end Room 237 (John, 9 Nov
-  // 2026: "can we have the corridor end in room 237, and tidy the lines")
+  // (the Overlook's guest corridor as in the film (John, 9 Nov 2026: "remove the 237 completely - base the image on the corridor
+  // properly"): gloss-white walls and ceiling, the ceiling's coffered beams going away, a pendant light under each, dark-wood
+  // doors either side with small framed pictures between, dark double doors at the far end; Hicks's carpet on the floor)
   var se = hallScale(8), P = function (x, y, s) { return (vx + (x - vx) * s).toFixed(1) + ',' + (vy + (y - vy) * s).toFixed(1); }, lines = '';
   var e0 = [vx + (0 - vx) * se, vy + (0 - vy) * se], e1 = [vx + (q.bw - vx) * se, vy + (q.bh - vy) * se], ew = e1[0] - e0[0], eh = e1[1] - e0[1];
-  [[0, 0], [q.bw, 0], [q.bw, q.bh], [0, q.bh]].forEach(function (c) { lines += '<line x1="' + c[0] + '" y1="' + c[1] + '" x2="' + P(c[0], 0, se).split(',')[0] + '" y2="' + P(0, c[1], se).split(',')[1] + '"/>'; });
-  lines += '<rect class="hend" x="' + e0[0].toFixed(1) + '" y="' + e0[1].toFixed(1) + '" width="' + ew.toFixed(1) + '" height="' + eh.toFixed(1) + '"/>';
-  [1.2, 3.1, 5.2].forEach(function (z, n) {   // (the guest rooms' doors, either side, staggered)
-    [0, q.bw].forEach(function (x, side) {
-      var z1 = z + (side ? .9 : 0), a = hallScale(z1), b = hallScale(z1 + .55), top = q.bh * .3;
-      lines += '<polygon class="hdoor" points="' + [P(x, q.bh, a), P(x, q.bh, b), P(x, top, b), P(x, top, a)].join(' ') + '"/>';
+  var Q = function (pp) { return '<polygon points="' + pp.join(' ') + '"'; }, bw = q.bw, bh = q.bh;
+  lines += '<defs><linearGradient id="hwl" x1="0" x2="1"><stop offset="0" stop-color="#f4f1ec"/><stop offset="1" stop-color="#c9c2b9"/></linearGradient>' +
+    '<linearGradient id="hwr" x1="1" x2="0"><stop offset="0" stop-color="#ebe7e1"/><stop offset="1" stop-color="#c4bdb4"/></linearGradient>' +
+    '<linearGradient id="hcl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e4ded8"/><stop offset="1" stop-color="#cfc7bf"/></linearGradient>' +
+    '<radialGradient id="hlt"><stop offset="0" stop-color="#fff" stop-opacity=".95"/><stop offset=".35" stop-color="#fff8ec" stop-opacity=".5"/><stop offset="1" stop-color="#fff8ec" stop-opacity="0"/></radialGradient></defs>';
+  lines += Q([P(0, 0, 1), P(0, 0, se), P(0, bh, se), P(0, bh, 1)]) + ' class="hwall" fill="url(#hwl)"/>' + Q([P(bw, 0, 1), P(bw, 0, se), P(bw, bh, se), P(bw, bh, 1)]) + ' class="hwall" fill="url(#hwr)"/>' +
+    Q([P(0, 0, 1), P(bw, 0, 1), P(bw, 0, se), P(0, 0, se)]) + ' class="hwall" fill="url(#hcl)"/>' +
+    '<rect class="hendw" x="' + e0[0].toFixed(1) + '" y="' + e0[1].toFixed(1) + '" width="' + ew.toFixed(1) + '" height="' + eh.toFixed(1) + '"/>';
+  [7, 5.4, 4, 2.8, 1.8, .9, .15].forEach(function (z) {   // (far to near, so each light shows under its beam)   // (the ceiling's beams, each a frame across the corridor, and its light)
+    var s1 = hallScale(z), s2 = hallScale(z + .1), dr = bh * .035;
+    lines += Q([P(0, 0, s1), P(bw, 0, s1), P(bw, dr, s1), P(bw - bw * .03, dr * 1.5, s1), P(bw * .03, dr * 1.5, s1), P(0, dr, s1)]) + ' class="hbeam"/>' +
+      Q([P(0, dr, s1), P(0, dr, s2), P(0, bh, s2), P(0, bh, s1)]) + ' class="hpil"/>' + Q([P(bw, dr, s1), P(bw, dr, s2), P(bw, bh, s2), P(bw, bh, s1)]) + ' class="hpil"/>';
+    var lz = hallScale(z + .5), lx = vx + (bw / 2 - vx) * lz, ly = vy + (dr * 2.4 - vy) * lz, lr = bw * .05 * lz;
+    lines += '<ellipse cx="' + lx.toFixed(1) + '" cy="' + (ly + lr * .5).toFixed(1) + '" rx="' + (lr * 3).toFixed(1) + '" ry="' + (lr * 1.6).toFixed(1) + '" fill="url(#hlt)"/>' +
+      '<path class="hlamp" d="M' + (lx - lr).toFixed(1) + ',' + ly.toFixed(1) + ' h' + (lr * 2).toFixed(1) + ' q-' + (lr * .2).toFixed(1) + ',' + (lr * .7).toFixed(1) + ' -' + lr.toFixed(1) + ',' + (lr * .75).toFixed(1) + ' q-' + (lr * .8).toFixed(1) + ',-' + (lr * .05).toFixed(1) + ' -' + lr.toFixed(1) + ',-' + (lr * .75).toFixed(1) + 'Z"/>';
+  });
+  [.6, 2.2, 3.9, 5.6].forEach(function (z, n) {   // (the guest rooms' doors, either side, staggered; a small picture between)
+    [0, bw].forEach(function (x, side) {
+      var z1 = z + (side ? .8 : 0), a = hallScale(z1), b = hallScale(z1 + .45), top = bh * .3;
+      lines += Q([P(x, bh, a), P(x, bh, b), P(x, top, b), P(x, top, a)]) + ' class="hdoor"/>';
+      var c1 = hallScale(z1 + .75), c2 = hallScale(z1 + .9);
+      if (n < 3) lines += Q([P(x, bh * .34, c1), P(x, bh * .34, c2), P(x, bh * .5, c2), P(x, bh * .5, c1)]) + ' class="hpic"/>';
     });
   });
-  var dw = ew * .26, dh = eh * .68, dx = vx - dw / 2, dy = e1[1] - dh, fs = Math.max(6, dw * .2);   // (Room 237: dark wood, its brass number, the key left in it on its red fob)
-  // (Room 237 in the corridor's own flat lines and colours, as the poster's: the doorway open and black like the days' slabs,
-  // its door swung in, flat, drawn as the others; 237 above it in the theme's heavy black capitals: John, 9 Nov 2026)
-  lines += '<rect class="r237d" x="' + dx.toFixed(1) + '" y="' + dy.toFixed(1) + '" width="' + dw.toFixed(1) + '" height="' + dh.toFixed(1) + '"/>' +
-    '<polygon class="hdoor" points="' + [[dx + dw, dy], [dx + dw * .8, dy + dh * .06], [dx + dw * .8, dy + dh * .96], [dx + dw, dy + dh]].map(function (p) { return p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join(' ') + '"/>' +
-    '<text class="n237" x="' + vx.toFixed(1) + '" y="' + (dy - dh * .07).toFixed(1) + '" font-size="' + (dh * .3).toFixed(1) + '">237</text>';
+  [0, bw].forEach(function (x) { lines += Q([P(x, bh, 1), P(x, bh, se), P(x, bh - bh * .025, se), P(x, bh - bh * .025, 1)]) + ' class="hskirt"/>'; });   // (the dark skirting)
+  var dw = ew * .26, dh = eh * .62, dx = vx - dw / 2, dy = e1[1] - dh;   // (the far end's double doors; the days to come go in through them)
+  lines += '<rect class="r2d" x="' + dx.toFixed(1) + '" y="' + dy.toFixed(1) + '" width="' + dw.toFixed(1) + '" height="' + dh.toFixed(1) + '"/>' +
+    '<line class="r2s" x1="' + vx.toFixed(1) + '" y1="' + dy.toFixed(1) + '" x2="' + vx.toFixed(1) + '" y2="' + (dy + dh).toFixed(1) + '"/>';
   var h = '<svg class="hlines" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none">' + lines + '</svg>' +
     '<div class="hstage" style="perspective:' + g.p + 'px;perspective-origin:' + vx.toFixed(0) + 'px ' + vy.toFixed(0) + 'px">' +
     '<div class="hcarpet" style="left:0;top:' + q.bh + 'px;width:' + q.bw + 'px;height:' + (8 * g.dz) + 'px"></div>';   // (the carpet: flat on the floor, to the far end)
@@ -2563,7 +2595,7 @@ function themeStep(dir) {   // the day after or before with a film; at a month's
 THEMEFX.corridor = {
   swipe: function (c) { var q = c.q; return { x: q.fx - q.vx, y: q.fy - q.vy, px: 70 }; },   // (pull the corridor towards you)
   place: function (all, at, c) {
-    // the days to come lined up down the corridor to Room 237, the farthest going in through its door (John, 9 Nov 2026: "can the
+    // the days to come lined up down the corridor to the far doors, the farthest going in through them (John, 9 Nov 2026: "can the
     // movies in the Shining go through the door"): each drawn towards the door's line the further it is, gone at its threshold
     var q = c && c.q, D = 8, N = 4.5, se = hallScale(D), ox = 0, oy = 0;   // (four or so days on the way, the next going in)
     if (q) { var eh = q.bh * se, doorY = q.vy + (q.bh - q.vy) * se - eh * .68 / 2; ox = q.vx - q.fx; oy = q.vy + (doorY - q.vy) / se - q.fy; }
@@ -3055,13 +3087,26 @@ THEMEFX.lane = {
 THEMEFX.picture = {
   st: Math.PI * 2 / 14,   // (a day's turn of the drum: fourteen posters round)
   g: function (c) { return c.mob ? { cx: 390, cy: 420, R: 300, P: 1100, ch: 255 } : { cx: c.W * .62, cy: c.H * .49, R: Math.min(430, c.W * .26), P: 1400, ch: 255 }; },
+  bh: 62, NH: 30,   // (the drum's lower band, and the frames of Muybridge's horse round it)
   decor: function (c) {
-    var g = this.g(c), ry = g.R * .2, top = g.cy - g.ch * .62 - 26, bot = g.cy + g.ch * .62 + 26, h = '<div class="zamb" id="zamb"></div><div class="zvig"></div><div class="zgrain"></div>';
-    h += '<svg class="zdrum" width="' + c.W + '" height="' + c.H + '">' +
-      '<rect class="pole" x="' + (g.cx - 7) + '" y="' + bot + '" width="14" height="' + (c.H - bot) + '"/>' +
-      '<ellipse class="base" cx="' + g.cx + '" cy="' + (bot + 36) + '" rx="' + (g.R * .42) + '" ry="' + (ry * .42) + '"/>' +
-      '<ellipse class="rimf" cx="' + g.cx + '" cy="' + bot + '" rx="' + g.R + '" ry="' + ry + '"/>' +
-      '<ellipse class="rim" cx="' + g.cx + '" cy="' + top + '" rx="' + g.R + '" ry="' + ry + '"/><ellipse class="rim" cx="' + g.cx + '" cy="' + bot + '" rx="' + g.R + '" ry="' + ry + '"/></svg>';
+    var g = this.g(c), ry = g.R * .2, top = g.cy - g.ch * .62 - 26, bot = g.cy + g.ch * .62 + 26, bh = this.bh, b2 = bot + bh, h = '<div class="zamb" id="zamb"></div><div class="zvig"></div><div class="zgrain"></div>';
+    var cx = g.cx, R = g.R, by = Math.min(c.H - 40, b2 + (c.mob ? 150 : 120)), arc = function (y, sw) { return 'A' + R + ' ' + ry + ' 0 0 ' + sw + ' '; };
+    // (the stand: a turned wooden spindle on a round foot, a brass collar under the drum)
+    h += '<svg class="zdrum" width="' + c.W + '" height="' + c.H + '"><defs>' +
+      '<linearGradient id="zwood" x1="0" x2="1"><stop offset="0" stop-color="#2a1a12"/><stop offset=".35" stop-color="#8a5a38"/><stop offset=".55" stop-color="#5a3a26"/><stop offset="1" stop-color="#1e130d"/></linearGradient>' +
+      '<linearGradient id="zlac" x1="0" x2="1"><stop offset="0" stop-color="#170a0b"/><stop offset=".42" stop-color="#4a1a1c"/><stop offset=".6" stop-color="#2c0f11"/><stop offset="1" stop-color="#120708"/></linearGradient></defs>' +
+      '<path class="zin" d="M' + (cx - R) + ',' + bot + ' ' + arc(bot, 1) + (cx + R) + ',' + bot + ' L' + (cx + R) + ',' + b2 + ' ' + arc(b2, 0) + (cx - R) + ',' + b2 + ' Z"/>' +
+      '<path class="spin" d="M' + (cx - 9) + ',' + b2 + ' h18 l5,' + ((by - b2) * .32).toFixed(0) + ' q-9,10 0,20 l-7,' + ((by - b2) * .68 - 38).toFixed(0) + ' h-14 l-7,-' + ((by - b2) * .68 - 38).toFixed(0) + ' q9,-10 0,-20 Z"/>' +
+      '<ellipse class="foot" cx="' + cx + '" cy="' + (by + 14) + '" rx="' + (R * .4) + '" ry="' + (ry * .4) + '"/><rect class="foot" x="' + (cx - R * .4) + '" y="' + by + '" width="' + (R * .8) + '" height="14"/><ellipse class="foott" cx="' + cx + '" cy="' + by + '" rx="' + (R * .4) + '" ry="' + (ry * .4) + '"/>' +
+      '<ellipse class="coll" cx="' + cx + '" cy="' + (b2 + 6) + '" rx="22" ry="6"/>' +
+      '<ellipse class="rimf" cx="' + cx + '" cy="' + bot + '" rx="' + R + '" ry="' + ry + '"/>' +
+      '<ellipse class="rim" cx="' + cx + '" cy="' + top + '" rx="' + R + '" ry="' + ry + '"/></svg>';
+    // (the band's outside, in front of the frames at the back: Victorian japanned tin, red-black, gilt-lined; its slits let you see in)
+    h += '<svg class="zdrum zfront" width="' + c.W + '" height="' + c.H + '">' +
+      '<path class="lac" d="M' + (cx - R) + ',' + bot + ' ' + arc(bot, 0) + (cx + R) + ',' + bot + ' L' + (cx + R) + ',' + b2 + ' ' + arc(b2, 1) + (cx - R) + ',' + b2 + ' Z"/>' +
+      '<path class="gilt" d="M' + (cx - R) + ',' + (bot + 4) + ' ' + arc(bot, 0) + (cx + R) + ',' + (bot + 4) + '"/><path class="gilt" d="M' + (cx - R) + ',' + (b2 - 4) + ' ' + arc(b2, 0) + (cx + R) + ',' + (b2 - 4) + '"/>' +
+      '<path class="rim" d="M' + (cx - R) + ',' + bot + ' ' + arc(bot, 0) + (cx + R) + ',' + bot + '"/><path class="rim" d="M' + (cx - R) + ',' + b2 + ' ' + arc(b2, 0) + (cx + R) + ',' + b2 + '"/></svg>';
+    for (var j = 0; j < this.NH; j++) h += '<i class="zh" data-zh="' + j + '"></i>';   // (the horse, a frame a slot: 1878, Eadweard Muybridge, The Horse in Motion)
     var L = 'GRIFFLIX·GRIFFLIX·GRIFFLIX·';   // (round the rim)
     for (var i = 0; i < L.length; i++) h += '<span class="zlt" data-zi="' + i + '">' + L[i] + '</span>';
     return h;
@@ -3076,13 +3121,18 @@ THEMEFX.picture = {
       var dt = new Date(), today = dt.getFullYear() + '-' + (dt.getMonth() + 1) + '-' + dt.getDate();
       try { if (localStorage.getItem('grifflix-leader') === today) return; localStorage.setItem('grifflix-leader', today); } catch (e) {}
     }
-    var d = document.createElement('div'); d.className = 'zlead'; d.innerHTML = '<div class="ring"></div><div class="n">3</div><div class="gx">Grifflix</div><div class="skip">Tap to skip</div>';
+    var d = document.createElement('div'); d.className = 'zlead'; d.innerHTML = '<div class="zglow">' + this.glow() + '</div><div class="ring"></div><div class="n">3</div><div class="gx">Grifflix</div><div class="skip">Tap to skip</div>';
     document.body.appendChild(d);
     var T = [], gone = function () { T.forEach(clearTimeout); d.classList.add('out'); setTimeout(function () { d.remove(); }, 600); };
     var n = d.querySelector('.n');
     T.push(setTimeout(function () { n.textContent = '2'; }, 800), setTimeout(function () { n.textContent = '1'; }, 1600),
       setTimeout(function () { d.classList.add('flash'); n.textContent = ''; }, 2400), setTimeout(function () { d.classList.remove('flash'); d.classList.add('name'); }, 2520), setTimeout(gone, 3900));
     d.onclick = gone; addEventListener('keydown', function k() { removeEventListener('keydown', k); if (d.isConnected) gone(); });
+  },
+  glow: function () {   // (behind the countdown, the month's films glowing, as the room round the drum: John, 9 Nov 2026)
+    var u = $$('#cal .vday.has').map(function (b) { return b.style.getPropertyValue('--b'); }).filter(Boolean);
+    if (!u.length) return '<i style="background:#7a2a1c"></i><i style="background:#e9c46a"></i><i style="background:#1d4a5a"></i>';
+    return [0, 1, 2].map(function (k) { return '<i style="background-image:' + u[(u.length - 1 - k * 3 % u.length + u.length) % u.length].replace(/"/g, "'") + '"></i>'; }).join('');
   },
   swipe: function (c) { return { x: -1, y: 0, px: c.mob ? 60 : 90 }; },   // (spin the drum with the finger)
   place: function (all, at, c) { this.all = all; this.c = c; fxTween(this, at, 1100); },
@@ -3096,12 +3146,31 @@ THEMEFX.picture = {
       el.style.opacity = (front ? o : o * .35 * (1 - depth * .5)).toFixed(2); el.style.zIndex = Math.round(depth * 100) + (nf > .5 ? 100 : 0);
       el.style.filter = nf > .98 ? 'none' : 'brightness(' + (.35 + .55 * depth).toFixed(2) + ')';
     });
-    var ry = g.R * .2, top = g.cy - g.ch * .62 - 26;
+    var ry = g.R * .2, top = g.cy - g.ch * .62 - 26, mid = g.cy + g.ch * .62 + 26 + me.bh / 2;
+    me.za = a; me.horse(g, ry, mid);
     $$('#cal .zlt').forEach(function (t, i, L) {   // (the rim's letters, turning with the drum)
       var th = (i / L.length) * Math.PI * 2 - a * st, cs = Math.cos(th), sn = Math.sin(th);
       t.style.transform = 'translate(' + (g.cx + g.R * sn).toFixed(1) + 'px,' + (top + ry * cs - 34).toFixed(1) + 'px) translate(-50%,0) scaleX(' + Math.max(.08, Math.abs(cs)).toFixed(2) + ')';
       t.style.opacity = cs > 0 ? (.35 + .65 * cs).toFixed(2) : (.12 * -cs).toFixed(2); t.style.zIndex = cs > 0 ? 160 : 1;
     });
+  },
+  // (Muybridge's horse round the drum's band, seen through its slits: each slot steps on a frame twelve times a second, so it
+  // gallops in place, as it does in a zoetrope; the slots turn with the drum. Still, for those who'd rather no movement)
+  horse: function (g, ry, mid) {
+    var me = this, N = me.NH, fw = 2 * Math.PI * g.R / N * .74, fh = fw * 91 / 150, a = me.za || 0;
+    me._zhs = me._zhs && me._zhs[0] && me._zhs[0].isConnected ? me._zhs : $$('#cal .zh');
+    me._zhs.forEach(function (t, i) {
+      var th = (i / N) * Math.PI * 2 - a * me.st, cs = Math.cos(th), sn = Math.sin(th), fr = cs > 0;
+      t.style.width = fw.toFixed(1) + 'px'; t.style.height = fh.toFixed(1) + 'px'; t.style.backgroundSize = (fw * 15).toFixed(1) + 'px ' + fh.toFixed(1) + 'px';
+      t.style.transform = 'translate(' + (g.cx + g.R * sn).toFixed(1) + 'px,' + (mid + ry * cs).toFixed(1) + 'px) translate(-50%,-50%) scaleX(' + ((fr ? 1 : -1) * Math.max(.06, Math.abs(cs))).toFixed(2) + ')';
+      t.style.opacity = fr ? (.4 + .6 * cs).toFixed(2) : (.3 * -cs).toFixed(2); t.style.zIndex = fr ? 150 : 1;
+    });
+    me._fw = fw;
+    if (!me._zt && !CALM) me._zt = setInterval(function () {
+      if (!me._zhs || !me._zhs[0] || !me._zhs[0].isConnected) { clearInterval(me._zt); me._zt = 0; return; }
+      me._tk = (me._tk || 0) + 1;
+      me._zhs.forEach(function (t, i) { t.style.backgroundPosition = (-((i + me._tk) % 15) * me._fw).toFixed(1) + 'px 0'; });
+    }, 83);
   },
   front: function (b) {   // (the room lit by the day's film)
     var z = $('#zamb'); if (z && b) z.style.backgroundImage = b.classList.contains('has') ? b.style.getPropertyValue('--b') : 'none';
