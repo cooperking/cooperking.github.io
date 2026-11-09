@@ -1645,7 +1645,7 @@ var THEMES = [   // each its film's own lettering and colour, researched (John, 
 ];
 var THEMEFONTS = 'https://fonts.googleapis.com/css2?family=Bowlby+One&family=Della+Respira&family=Special+Gothic+Expanded+One&family=Londrina+Solid:wght@400;900&family=Share+Tech+Mono&family=Archivo+Narrow:wght@600&family=Anton&family=IM+Fell+English+SC&family=Cinzel:wght@700&family=Tilt+Neon&family=Yuji+Syuku&family=Amatic+SC:wght@700&family=Big+Shoulders:wght@400;700&family=League+Gothic&family=News+Cycle:wght@700&family=Federant&family=Space+Mono:wght@400;700&family=Archivo+Black&family=Orbitron:wght@800&display=swap';
 function themeEarly() {   // (before the films arrive: the page already laid out as this month's theme)
-  if (VIEW() !== 'themes') return; var R = document.documentElement, t = themeFor(new Date().getMonth());
+  if (VIEW() !== 'themes') return; var R = document.documentElement, t = themeFor(new Date().getMonth(), new Date().getFullYear());
   R.classList.add(t.key === 'table' ? 'table' : 'hall'); if (MOB()) R.classList.add('mob'); R.dataset.theme = t.key;
 }
 // themes saved for a later month, for when their film is in Grifflix (John, 8 Nov 2026: "put new themes in for films I do
@@ -1668,11 +1668,16 @@ var THEMES_LATER = [
 var THEMEALL = THEMES.concat(THEMES_LATER), THEMEDEF = THEMES.slice();
 function themeOrder(keys) {   // true when the months changed
   var t = THEMEDEF;
-  if (Array.isArray(keys) && keys.length === 12) { var u = keys.map(function (k) { return THEMEALL.filter(function (x) { return x.key === k; })[0]; }); if (u.every(Boolean)) t = u; }
-  var same = t.every(function (x, i) { return x === THEMES[i]; }); THEMES = t; return !same;
+  if (Array.isArray(keys) && keys.length >= 1) { var u = keys.map(function (k) { return THEMEALL.filter(function (x) { return x.key === k; })[0]; }); if (u.every(Boolean)) t = u; }
+  var same = t.length === THEMES.length && t.every(function (x, i) { return x === THEMES[i]; }); THEMES = t; return !same;
 }
 try { themeOrder(JSON.parse(store.get('grifflix-themes') || 'null')); } catch (e) {}
-function themeFor(m) { return (THEMEQ && THEMEALL.filter(function (t) { return t.key === THEMEQ; })[0]) || THEMES[m]; }
+function themeFor(m, y) {   // a month's theme: the list (any length: John, 9 Nov 2026) from January 2026, each month the next, round again at its end
+  if (THEMEQ) { var q = THEMEALL.filter(function (t) { return t.key === THEMEQ; })[0]; if (q) return q; }
+  if (y == null) { var now = new Date(); y = S.month && +S.month.slice(5, 7) - 1 === m ? +S.month.slice(0, 4) : now.getMonth() === m ? now.getFullYear() : S.month ? +S.month.slice(0, 4) : now.getFullYear(); }
+  var n = THEMES.length, i = (y - 2026) * 12 + m;
+  return THEMES[((i % n) + n) % n];
+}
 function monthTint(m) {   // the month's theme's one flat colour, and its ink: black on its light colours, white on the rest
   var t = themeFor(m), R = document.documentElement.style;
   R.setProperty('--kink', t.ink === '#000' ? '0, 0, 0' : '255, 255, 255');
@@ -3171,7 +3176,7 @@ function shareDay(date, it) {   // a day's film: its own link (/gs/<date>: a pag
   var card = fetch(url + '.jpg?have=1').then(function (r) {
     if (r.ok) return url + '.jpg';
     if (PUBLIC || DEMO) return url + '.jpg';   // (the film's picture stands in until a member shares it)
-    var th = THEMES[+date.slice(5, 7) - 1] || THEMES[0];
+    var th = themeFor(+date.slice(5, 7) - 1, +date.slice(0, 4));
     return dayCard(date, it).then(function (jpeg) { return own('card', { date: date, card: jpeg, bg: th.bg, ink: th.ink === '#fff' ? '#fff' : '#000' }).then(function () { return jpeg; }, function () { return jpeg; }); });
   }).catch(function () { return ''; });
   share(title + ': Movie of the Day', url, card);
@@ -3179,7 +3184,7 @@ function shareDay(date, it) {   // a day's film: its own link (/gs/<date>: a pag
 function dayCard(date, it) {   // 1200 × 630, in the month's theme (John, 8 Nov 2026: "the invite and share buttons to match themes"):
   // its colour on the left with the film's name in its type, Movie of the Day and the date and GRIFFLIX in Futura; the film's picture on the right
   var c = document.createElement('canvas'); c.width = 1200; c.height = 630; var x = c.getContext('2d');
-  var t = THEMES[+date.slice(5, 7) - 1] || THEMES[0], ink = t.ink === '#fff' ? '#ffffff' : '#000000', soft = t.ink === '#fff' ? 'rgba(255,255,255,.72)' : 'rgba(0,0,0,.68)';
+  var t = themeFor(+date.slice(5, 7) - 1, +date.slice(0, 4)), ink = t.ink === '#fff' ? '#ffffff' : '#000000', soft = t.ink === '#fff' ? 'rgba(255,255,255,.72)' : 'rgba(0,0,0,.68)';
   var FUT = '"GFutura", "Futura", "Jost", "Century Gothic", sans-serif', tf = String(t.font || FUT), tw = t.tw || 700, upper = (t.tt || 'uppercase') === 'uppercase';
   var load = function (src) { return new Promise(function (ok) { if (!src) return ok(null); var i = new Image(); i.crossOrigin = 'anonymous'; i.onload = function () { ok(i); }; i.onerror = function () { ok(null); }; i.src = src; }); };
   var fonts = document.fonts ? Promise.all([document.fonts.load('700 30px ' + FUT), document.fonts.load('400 24px ' + FUT), document.fonts.load((t.fs === 'italic' ? 'italic ' : '') + tw + ' 90px ' + tf)]).catch(function () {}) : null;
