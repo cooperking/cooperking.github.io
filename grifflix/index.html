@@ -2163,6 +2163,7 @@ function calSheet() {   // the month's calendar, a pop-up in its theme's colour 
   for (var d = 1; d <= n; d++) {
     var key = S.month + '-' + String(d).padStart(2, '0'), it = C.days[key], tc = key === TODAY ? ' today' : '';
     if (it && !it.secret) h += '<button class="tcd has' + tc + '" data-day="' + key + '" aria-label="' + d + ' ' + MONTHS[m] + ': ' + esc(it.name) + '"><img alt="" loading="lazy" src="' + esc(mob && (it.poster || it.thumb) ? img(it.poster || it.thumb, it.poster ? 'Primary' : 'Thumb', 200) : img(it.backdrop || it.thumb || it.poster, it.backdrop ? 'Backdrop' : (it.thumb ? 'Thumb' : 'Primary'), 480)) + '"><b>' + d + '</b><span><em>' + esc(showName(it)) + '</em>' + (it.year ? '<small>' + esc(String(it.year)) + '</small>' : '') + '</span></button>';
+    else if (it && it.secret && C.mine) h += '<button class="tcd secret' + tc + '" data-sday="' + key + '" aria-label="' + d + ' ' + MONTHS[m] + ': a surprise"><b>' + d + '</b></button>';   // (John: a hidden day changed without seeing it)
     else h += '<div class="tcd' + tc + (it && it.secret ? ' secret' : '') + '"><b>' + d + '</b></div>';
   }
   var films = Object.keys(C.days).filter(function (k) { return k.slice(0, 7) === S.month && !C.days[k].secret; }).sort();   // (the month's films listed under it, as the songs' calendar)
@@ -2173,6 +2174,7 @@ function calSheet() {   // the month's calendar, a pop-up in its theme's colour 
   openSheet(h + '</div></div>');
   S.fromCal = false;
   $$('#sheetIn .tcl').forEach(function (b) { b.onclick = function () { S.fromCal = true; S.calDay = b.dataset.day; daySheet(b.dataset.day); }; });
+  $$('#sheetIn .tcd[data-sday]').forEach(function (b) { b.onclick = function () { secretSheet(b.dataset.sday); }; });
   $$('#sheetIn .tcd[data-day]').forEach(function (b) { b.onclick = function () { S.fromCal = true; S.calDay = b.dataset.day; daySheet(b.dataset.day); }; });
   $$('#sheetIn .tctools [data-tt]').forEach(function (t) { t.onclick = function () {
     var w = t.dataset.tt, el = w === 'search' ? $$('.bar-top [data-go="search"]').filter(function (x) { return x.offsetParent; })[0] || $('.bar-top [data-go="search"]') : w === 'refresh' ? ($('#refresh') || $('#refresh2')) : $('#who');
@@ -2954,6 +2956,20 @@ function searchSheet(onPick, title) {
         $$('[data-r]').forEach(function (b) { b.onclick = function () { onPick ? onPick(by[b.dataset.r]) : itemSheet(by[b.dataset.r]); }; });
       }).catch(function () {});
     }, 220);
+  };
+}
+function secretSheet(date) {   // John, on a day still a surprise: its film changed or taken off without being shown it (John, 9 Nov 2026: "Remove the kings speech")
+  openSheet('<div class="form" style="position:relative">' + X + '<h2 style="font:400 30px/1.15 var(--serif);color:var(--fg)">' + esc(longDate(date)) + '</h2>' +
+    '<p>A film is chosen for this day: a surprise till 8am then. You can change it or take it off without seeing it.</p>' +
+    '<div class="acts"><button class="pill on" id="schange">Choose another film</button><button class="pill" id="sclear">Take it off</button></div></div>');
+  $('#schange').onclick = function () {
+    searchSheet(function (it) {
+      api('calendar', { op: 'set', id: S.cal, date: date, item: it.id }).then(function (c) { S.calData.days[date] = c.days[date] || it; drawMonth(); closeSheet(); toast('On ' + longDate(date) + ': ' + showName(it)); }).catch(oops);
+    }, 'The film for <i>' + esc(longDate(date)) + '</i>');
+  };
+  $('#sclear').onclick = function () {
+    var b = this; if (!b.dataset.sure) { b.dataset.sure = 1; b.textContent = 'Sure? Tap again'; return; }
+    api('calendar', { op: 'clear', id: S.cal, date: date }).then(function () { delete S.calData.days[date]; drawMonth(); closeSheet(); toast('Taken off ' + longDate(date)); }).catch(oops);
   };
 }
 function pickFor(date) {
