@@ -4,19 +4,19 @@
   "about": "For songs Claude knows: how often the three strongest moods from Last.fm listeners' track tags, from the artist's Last.fm tags, and from the audio models include Claude's first pick.",
   "listeners": [
    2,
-   4
+   3
   ],
   "audio": [
-   150,
-   260
+   148,
+   256
   ],
   "artistTags": [
    5,
    29
   ],
-  "songsWithListenerTags": 316,
-  "songsWithListenerMoodTags": 174,
-  "songsWhereListenersCount": 74
+  "songsWithListenerTags": 15,
+  "songsWithListenerMoodTags": 12,
+  "songsWhereListenersCount": 5
  },
  "moods": [
   "Joyful",
@@ -14157,8 +14157,8 @@
    "moodFrom": "Claude",
    "sound": [
     "Dark",
-    "Melancholy",
-    "Energetic"
+    "Energetic",
+    "Melancholy"
    ],
    "claude": [
     "Uplifting",
@@ -26019,7 +26019,7 @@
       ],
       [
        "Joyful",
-       23
+       24
       ],
       [
        "Romantic",
@@ -28045,6 +28045,129 @@
     "folk",
     "folk rock",
     "pop"
+   ],
+   "check": true
+  },
+  "5NFkC0umAKe8An9SflzrCn": {
+   "n": 273,
+   "title": "Today Won’t Come Again",
+   "artist": "Donal Leace",
+   "moods": [
+    "Mellow",
+    "Romantic"
+   ],
+   "moodMix": [
+    [
+     "Mellow",
+     24
+    ],
+    [
+     "Romantic",
+     14
+    ],
+    [
+     "Dreamy",
+     14
+    ]
+   ],
+   "moodEvidence": [
+    [
+     "Audio",
+     100,
+     [
+      [
+       "Mellow",
+       24
+      ],
+      [
+       "Romantic",
+       14
+      ],
+      [
+       "Dreamy",
+       14
+      ]
+     ]
+    ]
+   ],
+   "moodFrom": "Weighed up",
+   "sound": [
+    "Mellow",
+    "Romantic",
+    "Dreamy"
+   ],
+   "listeners": "none",
+   "styles": [
+    "Soul",
+    "Blues Rock",
+    "Pop Rock"
+   ],
+   "genres": [
+    "Soul & R&B",
+    "Folk"
+   ],
+   "genreFrom": "Weighed up",
+   "genreMix": [
+    [
+     "Soul & R&B",
+     60
+    ],
+    [
+     "Folk",
+     25
+    ],
+    [
+     "Rock",
+     8
+    ]
+   ],
+   "genreEvidence": [
+    [
+     "MusicBrainz",
+     50,
+     [
+      [
+       "Folk",
+       50
+      ],
+      [
+       "Soul & R&B",
+       50
+      ]
+     ]
+    ],
+    [
+     "Last.fm",
+     30,
+     [
+      [
+       "Soul & R&B",
+       100
+      ]
+     ]
+    ],
+    [
+     "Audio",
+     20,
+     [
+      [
+       "Rock",
+       38
+      ],
+      [
+       "Soul & R&B",
+       27
+      ],
+      [
+       "Pop",
+       24
+      ]
+     ]
+    ]
+   ],
+   "musicbrainz": [
+    "folk",
+    "soul"
    ],
    "check": true
   }
