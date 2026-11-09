@@ -1352,6 +1352,9 @@ html[data-theme=oz] .leaf2 b { color: #0f7b3e; }
 /* the deep (Jaws, parked) */
 .jsurf { position: absolute; left: 0; right: 0; background: #f4f1ec; box-shadow: 0 6px 0 rgba(255, 255, 255, .5); }
 .jdeep { position: absolute; left: 0; right: 0; bottom: 0; background: linear-gradient(#87b1bd, #5a9fae 25%, #4c8f9f 50%, #051725); }
+.jattack { position: absolute; z-index: 400; pointer-events: none; opacity: 0; -webkit-mask-image: radial-gradient(ellipse 52% 60% at 50% 42%, #000 62%, transparent 100%); mask-image: radial-gradient(ellipse 52% 60% at 50% 42%, #000 62%, transparent 100%); }
+.jattack i { position: absolute; inset: 0; background: url("/grifflix/img/jaws-attack.webp") 0 0 / 1200% 100% no-repeat; filter: saturate(.68) brightness(.98); }   /* (its blue toned to the theme's sea) */
+.jattack i + i { opacity: 0; }
 .th-jaws .vday { width: 200px; height: 300px; box-shadow: 0 0 0 3px rgba(255, 255, 255, .5); }
 .th-jaws .vday .vn { display: none; }
 html[data-theme=jaws] .hinfo .w > span { color: #051725; letter-spacing: -.02em; }
@@ -3082,10 +3085,44 @@ THEMEFX.jaws = {
   g: function (c) { return c.mob ? { sy: 260, fx: 390, top: 0 } : { sy: 230, fx: c.W * .68, top: 104 }; },
   decor: function (c) {
     var g = this.g(c);
-    return '<div class="jsurf" style="top:' + g.top + 'px;height:' + (g.sy - g.top) + 'px"></div><div class="jdeep" style="top:' + g.sy + 'px"></div>';
+    // (the attack, its waterline on the sea's: John's twelve frames, 9 Nov 2026: "can we work an animation into the jaws using this")
+    var ah = c.mob ? 860 : c.H - g.top - 110, aw = ah * 320 / 392, at = g.sy - ah * .135;
+    return '<div class="jsurf" style="top:' + g.top + 'px;height:' + (g.sy - g.top) + 'px"></div><div class="jdeep" style="top:' + g.sy + 'px"></div>' +
+      '<div class="jattack" id="jattack" style="left:' + (g.fx - aw / 2).toFixed(0) + 'px;top:' + at.toFixed(0) + 'px;width:' + aw.toFixed(0) + 'px;height:' + ah.toFixed(0) + 'px"><i></i><i></i></div>';
+  },
+  // (the month opening: the shark rising under the swimmer, the strike, the sea closing over, then the days coming up through the calm;
+  // once a day (the theme explorer: every time). Going on a day: the sea breaking and settling over the change)
+  ready: function () {
+    var me = this, el = $('#jattack'); me._at = null; me.busy = false; if (!el) return;
+    // (every time the theme's opened, coming to it or back to it: John, 9 Nov 2026: "should play when you go to and from theme")
+    if (CALM) return;
+    var days = $$('#cal .vday'); days.forEach(function (d) { d.style.visibility = 'hidden'; });
+    me.busy = true;
+    me.play([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], [420, 340, 300, 300, 240, 190, 170, 230, 260, 300, 360, 420], 1, function () {
+      me.busy = false;
+      days.forEach(function (d, i) { d.style.visibility = ''; if (d.animate) d.animate([{ translate: '0 60px', filter: 'brightness(.4)' }, { translate: '0 0', filter: 'none' }], { duration: 900, delay: Math.min(6, i % 8) * 40, easing: 'cubic-bezier(.2,.7,.2,1)', composite: 'add' }); });
+    });
+  },
+  play: function (fr, ms, peak, done) {   // (the frames, each easing into the next, then the sea fading back to the theme's)
+    var el = $('#jattack'); if (!el) return done && done(); var a = el.children[0], b = el.children[1], tok = this._tok = {};
+    var pos = function (n) { return (n / 11 * 100).toFixed(3) + '% 0'; }, go = function () {
+      var t0 = performance.now(), tot = ms.reduce(function (x, y) { return x + y; }, 0);
+      el.style.transition = 'opacity .35s'; el.style.opacity = peak;
+      (function f(t) {
+        if (tok !== THEMEFX.jaws._tok || !el.isConnected) return;
+        var e = t - t0, i = 0; while (i < fr.length - 1 && e > ms[i]) { e -= ms[i]; i++; }
+        var u = i < fr.length - 1 ? Math.min(1, Math.max(0, (e / ms[i] - .55) / .45)) : 0;
+        a.style.backgroundPosition = pos(fr[i]); b.style.backgroundPosition = pos(fr[Math.min(fr.length - 1, i + 1)]); b.style.opacity = u.toFixed(2);
+        if (t - t0 < tot) requestAnimationFrame(f); else { el.style.transition = 'opacity .9s'; el.style.opacity = 0; if (done) done(); }
+      })(t0);
+    };
+    var im = new Image(); im.src = '/grifflix/img/jaws-attack.webp';
+    if (im.decode) im.decode().then(go, go); else go();
   },
   swipe: function (c) { return { x: 0, y: -1, px: c.mob ? 50 : 70 }; },
   place: function (all, at, c) {
+    if (this._at != null && Math.abs(this._at - at) > .5 && !this.busy && !CALM && !$('#cal').classList.contains('drag')) this.play([7, 8, 9, 10, 11], [180, 200, 220, 260, 300], .9);   // (the sea breaking over the change of day)
+    this._at = at;
     var g = this.g(c), ph = c.mob ? 330 : 260;
     all.forEach(function (el, j) {
       var k = j - at, nf = near(k), y, s, o = 1, br;
