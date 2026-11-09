@@ -435,10 +435,8 @@ html.hall .cal { position: fixed !important; inset: 0; height: 100% !important; 
 .hlines line, .hlines rect { fill: none; stroke: rgba(var(--kink), .22); stroke-width: 1; vector-effect: non-scaling-stroke; }
 .hlines .hend { fill: rgba(0, 0, 0, .04); stroke: rgba(var(--kink), .3); }
 .hlines .hdoor { fill: rgba(0, 0, 0, .05); stroke: rgba(var(--kink), .26); stroke-width: 1; vector-effect: non-scaling-stroke; }
-.hlines .r237 { fill: #4a2c1c; stroke: #2a170e; } .hlines .r237f { fill: #4a2c1c; stroke: #2a170e; }
-.hlines .r237d { fill: #120a06; stroke: #2a170e; }
-.hlines .n237 { fill: #d9b45a; font: 700 10px/1 Georgia, serif; text-anchor: middle; letter-spacing: .04em; }
-.hlines .k237 { fill: #d9b45a; stroke: none; } .hlines .fob { fill: #b4231c; stroke: none; }
+.hlines .r237d { fill: #000; stroke: none; }
+.hlines .n237 { fill: #000; font-family: var(--tfont); font-weight: var(--tw, 400); text-anchor: middle; letter-spacing: .02em; }
 .hstage { position: absolute; inset: 0; }
 /* the Overlook's carpet (David Hicks's hexagons) down the corridor's floor, to the far end (John, 9 Nov 2026: "The shining
    theme is a little abstract. The carpet is the obvious symbol to use to identify it") */
@@ -2158,13 +2156,11 @@ function drawHall(C, n, m, mine) {
     });
   });
   var dw = ew * .26, dh = eh * .68, dx = vx - dw / 2, dy = e1[1] - dh, fs = Math.max(6, dw * .2);   // (Room 237: dark wood, its brass number, the key left in it on its red fob)
-  // (the door open, its leaf swung in against the jamb, the room dark beyond; its brass 237 on the lintel above, the key on its red fob)
+  // (Room 237 in the corridor's own flat lines and colours, as the poster's: the doorway open and black like the days' slabs,
+  // its door swung in, flat, drawn as the others; 237 above it in the theme's heavy black capitals: John, 9 Nov 2026)
   lines += '<rect class="r237d" x="' + dx.toFixed(1) + '" y="' + dy.toFixed(1) + '" width="' + dw.toFixed(1) + '" height="' + dh.toFixed(1) + '"/>' +
-    '<polygon class="r237" points="' + [[dx + dw, dy], [dx + dw * .78, dy + dh * .05], [dx + dw * .78, dy + dh * .97], [dx + dw, dy + dh]].map(function (p) { return p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join(' ') + '"/>' +
-    '<rect class="r237f" x="' + (dx - dw * .06).toFixed(1) + '" y="' + (dy - dh * .2).toFixed(1) + '" width="' + (dw * 1.12).toFixed(1) + '" height="' + (dh * .16).toFixed(1) + '"/>' +
-    '<text class="n237" x="' + vx.toFixed(1) + '" y="' + (dy - dh * .12 + fs * .35).toFixed(1) + '" font-size="' + fs.toFixed(1) + '">237</text>' +
-    '<circle class="k237" cx="' + (dx + dw * .82).toFixed(1) + '" cy="' + (dy + dh * .5).toFixed(1) + '" r="' + Math.max(1.4, dw * .05).toFixed(1) + '"/>' +
-    '<rect class="fob" x="' + (dx + dw * .8).toFixed(1) + '" y="' + (dy + dh * .54).toFixed(1) + '" width="' + Math.max(2, dw * .07).toFixed(1) + '" height="' + Math.max(5, dh * .14).toFixed(1) + '" rx="1"/>';
+    '<polygon class="hdoor" points="' + [[dx + dw, dy], [dx + dw * .8, dy + dh * .06], [dx + dw * .8, dy + dh * .96], [dx + dw, dy + dh]].map(function (p) { return p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join(' ') + '"/>' +
+    '<text class="n237" x="' + vx.toFixed(1) + '" y="' + (dy - dh * .07).toFixed(1) + '" font-size="' + (dh * .3).toFixed(1) + '">237</text>';
   var h = '<svg class="hlines" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none">' + lines + '</svg>' +
     '<div class="hstage" style="perspective:' + g.p + 'px;perspective-origin:' + vx.toFixed(0) + 'px ' + vy.toFixed(0) + 'px">' +
     '<div class="hcarpet" style="left:0;top:' + q.bh + 'px;width:' + q.bw + 'px;height:' + (8 * g.dz) + 'px"></div>';   // (the carpet: flat on the floor, to the far end)
