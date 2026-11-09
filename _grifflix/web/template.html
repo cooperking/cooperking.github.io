@@ -3436,7 +3436,7 @@ THEMEFX.picture = {
       var th = (i / L.length) * Math.PI * 2 - a * st, cs = Math.cos(th), sn = Math.sin(th);
       var ds = (.55 + .45 * (cs + 1) / 2) * g.f;   // (smaller at the back, as the posters: John, 9 Nov 2026: "like the back is at the front")
       // (each letter printed on the rim: turned with it and seen from the same height, so it leans and narrows as the rim does)
-      t.style.transform = 'translate(' + (g.cx + g.R * sn).toFixed(1) + 'px,' + (top + ry * cs - 34 * ds).toFixed(1) + 'px) translate(-50%,0) perspective(' + g.P + 'px) rotateX(' + (-ZTILT).toFixed(2) + 'deg) rotateY(' + (th * 180 / Math.PI).toFixed(1) + 'deg) scale(' + ds.toFixed(3) + ')';
+      t.style.transform = 'translate(' + (g.cx + g.R * sn).toFixed(1) + 'px,' + (top + ry * cs - 34 * ds).toFixed(1) + 'px) translate(-50%,0) perspective(' + g.P + 'px) rotateY(' + (th * 180 / Math.PI).toFixed(1) + 'deg) scale(' + ds.toFixed(3) + ')';   // (upright, not tilted: John, 9 Nov 2026)
       t.style.opacity = cs > 0 ? (.35 + .65 * cs).toFixed(2) : (.12 * -cs).toFixed(2); t.style.zIndex = cs > 0 ? 160 : 1;
     });
   },
