@@ -435,7 +435,8 @@ html.hall .cal { position: fixed !important; inset: 0; height: 100% !important; 
 .hlines line, .hlines rect { fill: none; stroke: rgba(var(--kink), .22); stroke-width: 1; vector-effect: non-scaling-stroke; }
 .hlines .hend { fill: rgba(0, 0, 0, .04); stroke: rgba(var(--kink), .3); }
 .hlines .hdoor { fill: rgba(0, 0, 0, .05); stroke: rgba(var(--kink), .26); stroke-width: 1; vector-effect: non-scaling-stroke; }
-.hlines .r237 { fill: #4a2c1c; stroke: #2a170e; } .hlines .r237f { fill: none; stroke: #6b4129; }
+.hlines .r237 { fill: #4a2c1c; stroke: #2a170e; } .hlines .r237f { fill: #4a2c1c; stroke: #2a170e; }
+.hlines .r237d { fill: #120a06; stroke: #2a170e; }
 .hlines .n237 { fill: #d9b45a; font: 700 10px/1 Georgia, serif; text-anchor: middle; letter-spacing: .04em; }
 .hlines .k237 { fill: #d9b45a; stroke: none; } .hlines .fob { fill: #b4231c; stroke: none; }
 .hstage { position: absolute; inset: 0; }
@@ -590,7 +591,8 @@ html.tv .th-moon .vday:focus .msh { border-radius: 50%; }
 .bigmoon .msoon[hidden] { display: none; }
 /* Méliès's Man in the Moon beside it, the rocket in his eye, fired at him again each new day (John, 9 Nov 2026: "stick with
    the posters in the moon for Hugo, but add a detail somewhere else") */
-.mmeli { position: absolute; right: 450px; top: 236px; width: 170px; height: 170px; border-radius: 50%; overflow: hidden; pointer-events: none; background: #1a1712 url("/grifflix/img/melies-moon.jpg") center / cover; box-shadow: 0 0 0 3px #1a1712, 0 0 0 5px rgba(243, 234, 203, .55), 0 10px 30px rgba(0, 0, 0, .45); }   /* (the hand-coloured frame of A Trip to the Moon, 1902, in a silent film's iris: public domain, Wikimedia Commons) */
+.mmeli { position: absolute; right: 440px; top: 216px; width: 210px; height: 210px; pointer-events: none; filter: sepia(.2) drop-shadow(0 8px 18px rgba(0, 0, 0, .45)); }   /* (A Trip to the Moon, 1902: the moon cut out from the film itself, public domain, Internet Archive) */
+.mmeli img { display: block; width: 100%; height: 100%; }
 /* (the day's poster whole, the moon's height, in the middle; the copies either side blurred and dimmed, so the one poster
    stands out: John, 9 Nov 2026: "show the full poster but allow it to repeat ... try blurring the repeated ones") */
 .bigmoon::before, .upic::before { content: ""; position: absolute; inset: -16px; background: var(--p) center / auto calc(100% - 32px) repeat-x; filter: blur(7px) brightness(.78) saturate(.8); }
@@ -1000,7 +1002,7 @@ html.mob .codepic { left: 225px; top: 195px; width: 330px; height: 495px; }
 html.mob .th-slices .vday { height: 510px; background-size: 340px 510px; }
 html.mob .th-moon .vday { width: 40px; height: 40px; }
 html.mob .bigmoon { left: 180px; right: auto; top: 230px; width: 420px; height: 420px; }
-html.mob .mmeli { right: auto; left: 16px; top: 18px; width: 124px; height: 124px; }
+html.mob .mmeli { right: auto; left: 6px; top: 8px; width: 150px; height: 150px; }
 html.mob .mphase { display: none; }   /* (no moon's phase on a phone) */
 #cal .bigmoon, #cal .globe, #cal .codepic, #cal .reelscreen, #cal .cposter, #cal .mfilm { cursor: pointer; }
 .tcentre h2 { pointer-events: auto; cursor: pointer; }
@@ -2136,10 +2138,11 @@ function drawHall(C, n, m, mine) {
     });
   });
   var dw = ew * .26, dh = eh * .68, dx = vx - dw / 2, dy = e1[1] - dh, fs = Math.max(6, dw * .2);   // (Room 237: dark wood, its brass number, the key left in it on its red fob)
-  lines += '<rect class="r237" x="' + dx.toFixed(1) + '" y="' + dy.toFixed(1) + '" width="' + dw.toFixed(1) + '" height="' + dh.toFixed(1) + '"/>' +
-    '<rect class="r237f" x="' + (dx + dw * .14).toFixed(1) + '" y="' + (dy + dh * .1).toFixed(1) + '" width="' + (dw * .72).toFixed(1) + '" height="' + (dh * .34).toFixed(1) + '"/>' +
-    '<rect class="r237f" x="' + (dx + dw * .14).toFixed(1) + '" y="' + (dy + dh * .52).toFixed(1) + '" width="' + (dw * .72).toFixed(1) + '" height="' + (dh * .38).toFixed(1) + '"/>' +
-    '<text class="n237" x="' + vx.toFixed(1) + '" y="' + (dy + dh * .1 + dh * .17 + fs * .35).toFixed(1) + '" font-size="' + fs.toFixed(1) + '">237</text>' +
+  // (the door open, its leaf swung in against the jamb, the room dark beyond; its brass 237 on the lintel above, the key on its red fob)
+  lines += '<rect class="r237d" x="' + dx.toFixed(1) + '" y="' + dy.toFixed(1) + '" width="' + dw.toFixed(1) + '" height="' + dh.toFixed(1) + '"/>' +
+    '<polygon class="r237" points="' + [[dx + dw, dy], [dx + dw * .78, dy + dh * .05], [dx + dw * .78, dy + dh * .97], [dx + dw, dy + dh]].map(function (p) { return p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join(' ') + '"/>' +
+    '<rect class="r237f" x="' + (dx - dw * .06).toFixed(1) + '" y="' + (dy - dh * .2).toFixed(1) + '" width="' + (dw * 1.12).toFixed(1) + '" height="' + (dh * .16).toFixed(1) + '"/>' +
+    '<text class="n237" x="' + vx.toFixed(1) + '" y="' + (dy - dh * .12 + fs * .35).toFixed(1) + '" font-size="' + fs.toFixed(1) + '">237</text>' +
     '<circle class="k237" cx="' + (dx + dw * .82).toFixed(1) + '" cy="' + (dy + dh * .5).toFixed(1) + '" r="' + Math.max(1.4, dw * .05).toFixed(1) + '"/>' +
     '<rect class="fob" x="' + (dx + dw * .8).toFixed(1) + '" y="' + (dy + dh * .54).toFixed(1) + '" width="' + Math.max(2, dw * .07).toFixed(1) + '" height="' + Math.max(5, dh * .14).toFixed(1) + '" rx="1"/>';
   var h = '<svg class="hlines" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none">' + lines + '</svg>' +
@@ -2408,11 +2411,19 @@ function themeStep(dir) {   // the day after or before with a film; at a month's
 // January: the corridor (Kubrick's The Shining): the days down a corridor, coming towards you as you go on
 THEMEFX.corridor = {
   swipe: function (c) { var q = c.q; return { x: q.fx - q.vx, y: q.fy - q.vy, px: 70 }; },   // (pull the corridor towards you)
-  place: function (all, at) {
+  place: function (all, at, c) {
+    // the days to come lined up down the corridor to Room 237, the farthest going in through its door (John, 9 Nov 2026: "can the
+    // movies in the Shining go through the door"): each drawn towards the door's line the further it is, gone at its threshold
+    var q = c && c.q, D = 8, N = 4.5, se = hallScale(D), ox = 0, oy = 0;   // (four or so days on the way, the next going in)
+    if (q) { var eh = q.bh * se, doorY = q.vy + (q.bh - q.vy) * se - eh * .68 / 2; ox = q.vx - q.fx; oy = q.vy + (doorY - q.vy) / se - q.fy; }
     all.forEach(function (el, j) {
       var i = j - at;
+      if (i >= 0) {
+        var u = Math.min(i, N) / N, t = u * u * (3 - 2 * u), z = u * D;   // (u: how far down the corridor, 1 at the door)
+        el.style.transform = 'translate3d(' + (ox * t).toFixed(1) + 'px, ' + (oy * t).toFixed(1) + 'px, ' + (-z * HALLG.dz).toFixed(1) + 'px)';
+        el.style.opacity = i > N - .8 ? Math.max(0, (N - i) / .8).toFixed(2) : 1; el.style.zIndex = 200 - Math.round(i); el.style.pointerEvents = i > N - .5 ? 'none' : ''; return;
+      }
       if (i < 0) { var f = Math.min(1, -i); el.style.transform = 'translate3d(0, 0, ' + (HALLG.p * .7 * f).toFixed(0) + 'px)'; el.style.opacity = (1 - f).toFixed(3); el.style.zIndex = 300; el.style.pointerEvents = f > .5 ? 'none' : ''; }   // (the days passed: behind you)
-      else { el.style.transform = 'translate3d(0, 0, ' + (-i * HALLG.dz).toFixed(1) + 'px)'; el.style.opacity = i > 6 ? Math.max(0, 7 - i).toFixed(2) : 1; el.style.zIndex = 200 - Math.round(i); el.style.pointerEvents = ''; }
     });
   }
 };
@@ -2551,9 +2562,10 @@ THEMEFX.pinboard = {
 // August: the moon (Hugo, for Méliès): the month's moons, each its phase that night (on a phone, a ring round the large one); the one you're on, large, its film in it
 function moonPhase(key) { var p = ((Date.parse(key + 'T21:00:00Z') - Date.UTC(2000, 0, 6, 18, 14)) / 864e5 / 29.530588853) % 1; return p < 0 ? p + 1 : p; }
 var PHASES = ['New moon', 'Waxing crescent', 'First quarter', 'Waxing gibbous', 'Full moon', 'Waning gibbous', 'Last quarter', 'Waning crescent'];
+var MELI = null;   // (the rocket's landing, fetched once)
 THEMEFX.moon = { all: true,
   cell: function (d, it, key) { var p = moonPhase(key), off = p < .5 ? -2 * p : 2 - 2 * p; return '<i class="msh" style="transform:translateX(' + (off * 100).toFixed(1) + '%)"></i><span class="mn">' + d + '</span>'; },
-  decor: function () { return '<div class="bigmoon" id="bigmoon"><span class="msoon" hidden>Coming<br>soon</span></div><div class="mmeli" id="mmeli" role="img" aria-label="The Man in the Moon, from Méliès\'s A Trip to the Moon (1902)"></div><div class="mphase" id="mphase"></div><div class="mfilm" id="mfilm"></div>'; },
+  decor: function () { return '<div class="bigmoon" id="bigmoon"><span class="msoon" hidden>Coming<br>soon</span></div><div class="mmeli"><img id="mmeli" alt="The Man in the Moon, from Méliès\'s A Trip to the Moon (1902)" src="/grifflix/img/melies-face.webp"></div><div class="mphase" id="mphase"></div><div class="mfilm" id="mfilm"></div>'; },
   swipe: function (c) { return { x: 1, y: 0, px: c.mob ? 26 : 40 }; },
   spot: function (c, j, n) {   // (where a small moon is: a row across the sky, or on a phone a ring round the large moon, the 1st at the top)
     if (c.mob) { var a = -Math.PI / 2 + 2 * Math.PI * j / (n + 1); return { x: 390 + 330 * Math.cos(a), y: 440 + 330 * Math.sin(a), a: a }; }
@@ -2568,7 +2580,14 @@ THEMEFX.moon = { all: true,
   front: function (b) {
     var bm = $('#bigmoon'), has = b && b.classList.contains('has');
     if (bm && b) { bm.style.setProperty('--p', has ? b.style.getPropertyValue('--p') || 'none' : 'none'); var so = bm.querySelector('.msoon'); if (so) so.hidden = has; }
-    var ml = $('#mmeli'); if (ml && ml.animate && b && !arguments[2] && !CALM) ml.animate([{ clipPath: 'circle(0% at 50% 50%)' }, { clipPath: 'circle(50% at 50% 50%)' }], { duration: 700, easing: 'cubic-bezier(.3,.6,.3,1)' });   // (each new day: the iris opening on him, as a silent film's)
+    var ml = $('#mmeli');   // (each new day: his face, then the film's own rocket landing in his eye, once: John, 9 Nov 2026)
+    if (ml && b) {
+      if (arguments[2] || CALM) { ml.src = '/grifflix/img/melies-moon.webp'; }
+      else {
+        if (!MELI) MELI = fetch('/grifflix/img/melies-impact.webp').then(function (r) { return r.blob(); }).catch(function () { return null; });
+        MELI.then(function (bl) { if (!bl) { ml.src = '/grifflix/img/melies-moon.webp'; return; } var u = URL.createObjectURL(bl), old = ml.dataset.u; ml.src = u; ml.dataset.u = u; if (old) setTimeout(function () { URL.revokeObjectURL(old); }, 500); });   // (a fresh copy each time, so it plays from the start)
+      }
+    }
     var mp = $('#mphase'); if (mp && b) mp.textContent = PHASES[Math.floor(moonPhase(b.dataset.day) * 8 + .5) % 8];
     var mf = $('#mfilm'), it = b && S.calData.days[b.dataset.day]; if (mf) mf.textContent = it && !it.secret ? showName(it) : '';   // (and its film under the large one)
   }
