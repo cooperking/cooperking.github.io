@@ -779,12 +779,26 @@ body.tdragging { user-select: none; -webkit-user-select: none; }
     var x = TEXT[k]; return x && x.id ? { date: date, item: x.id, ext: x, note: '' } : null;
   }
   function putFirsts(jobs, say) {   // (on the Mac, one at a time; on the site with Update everything)
+    // (never a film twice: where the theme's film is already on another day, the 1st's old film goes there instead, a swap; John,
+    // 9 Nov 2026: "it allowed repeats, so Jaws in in twice")
     if (!jobs.length) return Promise.resolve(0); if (!GW) return Promise.reject(new Error('The Mac isn’t answering: it keeps Movie of the Day.'));
-    var n = 0;
-    return jobs.reduce(function (p, j) { return p.then(function () {
-      return fetch(GW + '/api/calendar', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify({ op: 'set', id: 'motd', date: j.date, item: j.item, ext: j.ext, note: j.note }) })
-        .then(function (r) { if (!r.ok) return r.json().then(function (e) { throw new Error(e.error || 'The Mac said no.'); }); n++; if (say) say(n + ' of ' + jobs.length + '…'); });
-    }); }, Promise.resolve()).then(function () { return n; });
+    var H = { Authorization: 'Bearer ' + TOKEN }, nm = function (t) { return String(t || '').toLowerCase().replace(/’/g, "'").trim(); };
+    var post = function (b) { return fetch(GW + '/api/calendar', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, H), body: JSON.stringify(Object.assign({ id: 'motd' }, b)) })
+      .then(function (r) { if (!r.ok) return r.json().catch(function () { return {}; }).then(function (e) { throw new Error(e.error || 'The Mac said no.'); }); }); };
+    return fetch(GW + '/api/calendar?id=motd', { headers: H }).then(function (r) { return r.json(); }).then(function (c) {
+      var D = c.days || {}, steps = [], n = 0;
+      var same = function (a, j) { return !!a && (a.id === j.item || (!!j.ext && nm(a.name) === nm(j.ext.name) && +a.year === +j.ext.year)); };
+      jobs.forEach(function (j) {
+        var was = D[j.date]; if (same(was, j)) return;
+        Object.keys(D).forEach(function (d) {
+          if (d === j.date || !same(D[d], j)) return;
+          if (was) { steps.push({ op: 'set', date: d, item: was.id, ext: was.ext, note: was.note || '' }); D[d] = was; was = null; }
+          else { steps.push({ op: 'clear', date: d }); delete D[d]; }
+        });
+        steps.push({ op: 'set', date: j.date, item: j.item, ext: j.ext, note: j.note }); D[j.date] = { id: j.item, name: j.ext && j.ext.name, year: j.ext && j.ext.year };
+      });
+      return steps.reduce(function (p, st) { return p.then(function () { return post(st).then(function () { n++; if (say) say(n + ' of ' + steps.length + '…'); }); }); }, Promise.resolve()).then(function () { return jobs.length; });
+    });
   }
   // ---- film requests (John, 9 Nov 2026: "I would like a warning that I haven't got it - I need a tab for film requests")
   var RQ = [], LIBI = {};
@@ -1048,7 +1062,13 @@ body.tdragging { user-select: none; -webkit-user-select: none; }
     $('#dres').addEventListener('click', function (e) {
       var b = e.target.closest('[data-fid]'); if (!b) return; var d = $('#dday').value;
       $('#dsay').textContent = 'Saving…';
-      gw({ op: 'set', id: 'motd', date: d, item: b.dataset.fid }).then(function () { toast('On ' + d + ': ' + b.firstChild.textContent.trim() + '. Update everything puts it on the site.'); look(); }).catch(function (e) { $('#dsay').textContent = e.message; });
+      // (a film already on another day: this day's film goes there instead, so none is on twice)
+      var fid = b.dataset.fid, nm = b.firstChild.textContent.trim();
+      gw(null, '?id=motd').then(function (c) {
+        var D = c.days || {}, other = Object.keys(D).filter(function (x) { return x !== d && D[x] && D[x].id === fid; }), was = D[d], p = Promise.resolve(), moved = '';
+        other.forEach(function (x, i) { p = p.then(function () { return i === 0 && was ? gw({ op: 'set', id: 'motd', date: x, item: was.id, ext: was.ext, note: was.note || '' }) : gw({ op: 'clear', id: 'motd', date: x }); }); moved = i === 0 && was ? ' (' + (was.name || 'its old film') + ' moved to ' + x + ')' : ' (taken off ' + x + ')'; });
+        return p.then(function () { return gw({ op: 'set', id: 'motd', date: d, item: fid }); }).then(function () { toast('On ' + d + ': ' + nm + moved + '. Update everything puts it on the site.'); look(); });
+      }).catch(function (e) { $('#dsay').textContent = e.message; });
     });
     $('#dclear').onclick = function () {
       var b = this, d = $('#dday').value; if (!b.dataset.sure) { b.dataset.sure = 1; b.textContent = 'Sure? Tap again'; return; }
