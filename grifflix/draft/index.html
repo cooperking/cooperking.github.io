@@ -438,7 +438,11 @@ html.hall .cal { position: fixed !important; inset: 0; height: 100% !important; 
 .hlines polygon.hwall, .hlines .hendw { stroke: none; } .hlines .hendw { fill: #ddd6ce; }
 .hlines .hbeam { fill: #eee9e3; stroke: rgba(0, 0, 0, .1); } .hlines .hpil { fill: #e8e3dd; stroke: rgba(0, 0, 0, .08); }
 .hlines .hlamp { fill: #fffdf7; stroke: rgba(0, 0, 0, .15); } .hlines .hpic { fill: #2a2420; stroke: #8f8a84; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
-.hlines .hskirt { fill: #2b1913; stroke: none; } .hlines rect.r2d { fill: #3a2116; stroke: #1c0f0a; } .hlines .r2s { stroke: #1c0f0a; stroke-width: 1.5; }
+.hlines .hskirt { fill: #2b1913; stroke: none; }
+.hlines .hceil { fill: #e6e0da; stroke: rgba(0, 0, 0, .08); } .hlines .hback { fill: #efebe6; stroke: none; } .hlines .hjamb { fill: #ddd6ce; stroke: none; }
+.hlines .hexit { fill: #121010; stroke: none; } .hlines .hgreen { fill: #7fc79a; stroke: none; opacity: .85; } .hlines .hplate { fill: #9a948c; stroke: none; }
+.hlines .hsign { fill: #f2f2ec; stroke: #9a948c; } .hlines .hsignt { fill: #3f8f5a; font: 600 10px/1 "Helvetica Neue", Helvetica, Arial, sans-serif; text-anchor: middle; letter-spacing: .04em; }
+.hlines .hlift { fill: #141010; stroke: none; } .hlines .hliftd { fill: #b4161e; stroke: none; } .hlines polyline.hzig { fill: none; stroke: #c01a22; stroke-width: 2; vector-effect: non-scaling-stroke; } .hlines rect.r2d { fill: #3a2116; stroke: #1c0f0a; } .hlines .r2s { stroke: #1c0f0a; stroke-width: 1.5; }
 .hstage { position: absolute; inset: 0; }
 /* the Overlook's carpet (David Hicks's hexagons) down the corridor's floor, to the far end (John, 9 Nov 2026: "The shining
    theme is a little abstract. The carpet is the obvious symbol to use to identify it") */
@@ -2286,51 +2290,71 @@ function drawMonth() {
 // the corridor (January): the month's days down a corridor in one-point perspective, as in Kubrick's tracking shots;
 // the day you're on at the front, the days after it standing in the doorways behind. A surprise still to come stands
 // there as a black slab (2001's monolith) till 8am on its day
-var HALLG = { vx: .40, vy: .40, fx: .80, fy: .57, ph: .56, p: 900, dz: 560 };
+var HALLG = { vx: .40, vy: .40, fx: .80, fy: .57, ph: .56, p: 900, dz: 560, li: 1.1, cw: .17 };   // (li: the landing's depth; cw: half the corridor's width, of the screen's)
 function hallScale(i) { return HALLG.p / (HALLG.p + i * HALLG.dz); }
 function hallGeo(W, H) {   // (on a phone: the far end up and to the left, the front low and to the right)
-  if (MOB()) return { vx: 250, vy: 150, fx: 500, fy: 560, ph: 450, bw: W, bh: 890 };
-  return { vx: W * HALLG.vx, vy: H * HALLG.vy, fx: W * HALLG.fx, fy: H * HALLG.fy, ph: H * HALLG.ph, bw: W, bh: H };
+  if (MOB()) return { vx: 250, vy: 150, fx: 500, fy: 560, ph: 450, bw: W, bh: 890, cx0: 250 - W * .2, cx1: 250 + W * .2 };
+  return { vx: W * HALLG.vx, vy: H * HALLG.vy, fx: W * HALLG.fx, fy: H * HALLG.fy, ph: H * HALLG.ph, bw: W, bh: H, cx0: W * (HALLG.vx - HALLG.cw), cx1: W * (HALLG.vx + HALLG.cw) };
 }
 function drawHall(C, n, m, mine) {
   var W = themeW(), H = themeH(), g = HALLG, q = hallGeo(W, H);
   var vx = q.vx, vy = q.vy, ph = q.ph, pw = ph * 2 / 3, fx = q.fx, fy = q.fy;
   // (the Overlook's guest corridor as in the film (John, 9 Nov 2026: "remove the 237 completely - base the image on the corridor
-  // properly"): gloss-white walls and ceiling, the ceiling's coffered beams going away, a pendant light under each, dark-wood
-  // doors either side with small framed pictures between, dark double doors at the far end; Hicks's carpet on the floor)
+  // properly"; "too wide and not like the picture"): a landing in front, the lifts' red doors in black carved surrounds on its
+  // left, the exit's black double doors with their green windows and EXIT sign on its right; in the middle the corridor going
+  // away, narrow, gloss-white walls and ceiling, its beams and pendant lights, dark-wood doors and small pictures, dark double
+  // doors at the far end; Hicks's carpet over all the floor)
   var se = hallScale(8), P = function (x, y, s) { return (vx + (x - vx) * s).toFixed(1) + ',' + (vy + (y - vy) * s).toFixed(1); }, lines = '';
-  var e0 = [vx + (0 - vx) * se, vy + (0 - vy) * se], e1 = [vx + (q.bw - vx) * se, vy + (q.bh - vy) * se], ew = e1[0] - e0[0], eh = e1[1] - e0[1];
-  var Q = function (pp) { return '<polygon points="' + pp.join(' ') + '"'; }, bw = q.bw, bh = q.bh;
-  lines += '<defs><linearGradient id="hwl" x1="0" x2="1"><stop offset="0" stop-color="#f4f1ec"/><stop offset="1" stop-color="#c9c2b9"/></linearGradient>' +
-    '<linearGradient id="hwr" x1="1" x2="0"><stop offset="0" stop-color="#ebe7e1"/><stop offset="1" stop-color="#c4bdb4"/></linearGradient>' +
-    '<linearGradient id="hcl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e4ded8"/><stop offset="1" stop-color="#cfc7bf"/></linearGradient>' +
+  var bw = q.bw, bh = q.bh, LI = HALLG.li, sL = hallScale(LI), x0 = q.cx0, x1 = q.cx1, y0 = bh * .1;   // (the landing's depth; the corridor's sides and ceiling)
+  var Q = function (pp, c, ex) { return '<polygon class="' + c + '" points="' + pp.join(' ') + '"' + (ex || '') + '/>'; };
+  var e0 = P(x0, y0, se).split(','), e1 = P(x1, bh, se).split(','), ew = e1[0] - e0[0], eh = e1[1] - e0[1];
+  lines += '<defs><linearGradient id="hwl" x1="0" x2="1"><stop offset="0" stop-color="#f4f1ec"/><stop offset="1" stop-color="#cdc6bd"/></linearGradient>' +
+    '<linearGradient id="hwr" x1="1" x2="0"><stop offset="0" stop-color="#ebe7e1"/><stop offset="1" stop-color="#c8c1b8"/></linearGradient>' +
     '<radialGradient id="hlt"><stop offset="0" stop-color="#fff" stop-opacity=".95"/><stop offset=".35" stop-color="#fff8ec" stop-opacity=".5"/><stop offset="1" stop-color="#fff8ec" stop-opacity="0"/></radialGradient></defs>';
-  lines += Q([P(0, 0, 1), P(0, 0, se), P(0, bh, se), P(0, bh, 1)]) + ' class="hwall" fill="url(#hwl)"/>' + Q([P(bw, 0, 1), P(bw, 0, se), P(bw, bh, se), P(bw, bh, 1)]) + ' class="hwall" fill="url(#hwr)"/>' +
-    Q([P(0, 0, 1), P(bw, 0, 1), P(bw, 0, se), P(0, 0, se)]) + ' class="hwall" fill="url(#hcl)"/>' +
-    '<rect class="hendw" x="' + e0[0].toFixed(1) + '" y="' + e0[1].toFixed(1) + '" width="' + ew.toFixed(1) + '" height="' + eh.toFixed(1) + '"/>';
-  [7, 5.4, 4, 2.8, 1.8, .9, .15].forEach(function (z) {   // (far to near, so each light shows under its beam)   // (the ceiling's beams, each a frame across the corridor, and its light)
-    var s1 = hallScale(z), s2 = hallScale(z + .1), dr = bh * .035;
-    lines += Q([P(0, 0, s1), P(bw, 0, s1), P(bw, dr, s1), P(bw - bw * .03, dr * 1.5, s1), P(bw * .03, dr * 1.5, s1), P(0, dr, s1)]) + ' class="hbeam"/>' +
-      Q([P(0, dr, s1), P(0, dr, s2), P(0, bh, s2), P(0, bh, s1)]) + ' class="hpil"/>' + Q([P(bw, dr, s1), P(bw, dr, s2), P(bw, bh, s2), P(bw, bh, s1)]) + ' class="hpil"/>';
-    var lz = hallScale(z + .5), lx = vx + (bw / 2 - vx) * lz, ly = vy + (dr * 2.4 - vy) * lz, lr = bw * .05 * lz;
+  // the corridor, back to front
+  lines += Q([P(x0, y0, sL), P(x0, y0, se), P(x0, bh, se), P(x0, bh, sL)], 'hwall', ' fill="url(#hwl)"') + Q([P(x1, y0, sL), P(x1, y0, se), P(x1, bh, se), P(x1, bh, sL)], 'hwall', ' fill="url(#hwr)"') +
+    Q([P(x0, y0, sL), P(x1, y0, sL), P(x1, y0, se), P(x0, y0, se)], 'hceil') +
+    '<rect class="hendw" x="' + (+e0[0]).toFixed(1) + '" y="' + (+e0[1]).toFixed(1) + '" width="' + ew.toFixed(1) + '" height="' + eh.toFixed(1) + '"/>';
+  var dw = ew * .34, dh = eh * .62, dx = vx - dw / 2, dy = +e1[1] - dh;   // (the far end's double doors; the days to come go in through them)
+  lines += '<rect class="r2d" x="' + dx.toFixed(1) + '" y="' + dy.toFixed(1) + '" width="' + dw.toFixed(1) + '" height="' + dh.toFixed(1) + '"/><line class="r2s" x1="' + vx.toFixed(1) + '" y1="' + dy.toFixed(1) + '" x2="' + vx.toFixed(1) + '" y2="' + (dy + dh).toFixed(1) + '"/>';
+  [LI + 1.2, LI + 2.6, LI + 4.1, LI + 5.6].forEach(function (z, n) {   // (the guest rooms' doors, either side, staggered; a small picture between)
+    [x0, x1].forEach(function (x, side) {
+      var z1 = z + (side ? .7 : 0), a = hallScale(z1), b2 = hallScale(z1 + .4), top = bh * .3;
+      lines += Q([P(x, bh, a), P(x, bh, b2), P(x, top, b2), P(x, top, a)], 'hdoor');
+      var c1 = hallScale(z1 - .45), c2 = hallScale(z1 - .3);
+      lines += Q([P(x, bh * .36, c1), P(x, bh * .36, c2), P(x, bh * .52, c2), P(x, bh * .52, c1)], 'hpic');
+    });
+  });
+  [7.4, 6.2, 5, 3.9, 2.9, 2].forEach(function (z) {   // (the corridor's beams and lights, far to near)
+    var s1 = hallScale(z), s2 = hallScale(z + .1), dr = bh * .03;
+    lines += Q([P(x0, y0, s1), P(x1, y0, s1), P(x1, y0 + dr, s1), P(x0, y0 + dr, s1)], 'hbeam') +
+      Q([P(x0, y0, s1), P(x0, y0, s2), P(x0, bh, s2), P(x0, bh, s1)], 'hpil') + Q([P(x1, y0, s1), P(x1, y0, s2), P(x1, bh, s2), P(x1, bh, s1)], 'hpil');
+    var lz = hallScale(z + .55), lx = vx + ((x0 + x1) / 2 - vx) * lz, ly = vy + (y0 + dr * 2 - vy) * lz, lr = (x1 - x0) * .11 * lz;
     lines += '<ellipse cx="' + lx.toFixed(1) + '" cy="' + (ly + lr * .5).toFixed(1) + '" rx="' + (lr * 3).toFixed(1) + '" ry="' + (lr * 1.6).toFixed(1) + '" fill="url(#hlt)"/>' +
       '<path class="hlamp" d="M' + (lx - lr).toFixed(1) + ',' + ly.toFixed(1) + ' h' + (lr * 2).toFixed(1) + ' q-' + (lr * .2).toFixed(1) + ',' + (lr * .7).toFixed(1) + ' -' + lr.toFixed(1) + ',' + (lr * .75).toFixed(1) + ' q-' + (lr * .8).toFixed(1) + ',-' + (lr * .05).toFixed(1) + ' -' + lr.toFixed(1) + ',-' + (lr * .75).toFixed(1) + 'Z"/>';
   });
-  [.6, 2.2, 3.9, 5.6].forEach(function (z, n) {   // (the guest rooms' doors, either side, staggered; a small picture between)
-    [0, bw].forEach(function (x, side) {
-      var z1 = z + (side ? .8 : 0), a = hallScale(z1), b = hallScale(z1 + .45), top = bh * .3;
-      lines += Q([P(x, bh, a), P(x, bh, b), P(x, top, b), P(x, top, a)]) + ' class="hdoor"/>';
-      var c1 = hallScale(z1 + .75), c2 = hallScale(z1 + .9);
-      if (n < 3) lines += Q([P(x, bh * .34, c1), P(x, bh * .34, c2), P(x, bh * .5, c2), P(x, bh * .5, c1)]) + ' class="hpic"/>';
-    });
+  [x0, x1].forEach(function (x) { lines += Q([P(x, bh, sL), P(x, bh, se), P(x, bh - bh * .02, se), P(x, bh - bh * .02, sL)], 'hskirt'); });
+  // the landing: its back wall round the corridor's mouth, its ceiling, its side walls
+  lines += Q([P(0, 0, sL), P(bw, 0, sL), P(bw, y0, sL), P(0, y0, sL)], 'hback') + Q([P(0, y0, sL), P(x0, y0, sL), P(x0, bh, sL), P(0, bh, sL)], 'hback') + Q([P(x1, y0, sL), P(bw, y0, sL), P(bw, bh, sL), P(x1, bh, sL)], 'hback') +
+    Q([P(x0, y0, sL), P(x0, y0, sL * .985), P(x0, bh, sL * .985), P(x0, bh, sL)], 'hjamb') + Q([P(x1, y0, sL), P(x1, y0, sL * .985), P(x1, bh, sL * .985), P(x1, bh, sL)], 'hjamb');
+  lines += Q([P(0, 0, 1), P(bw, 0, 1), P(bw, 0, sL), P(0, 0, sL)], 'hceil') + Q([P(0, 0, 1), P(0, 0, sL), P(0, bh, sL), P(0, bh, 1)], 'hwall', ' fill="url(#hwl)"') + Q([P(bw, 0, 1), P(bw, 0, sL), P(bw, bh, sL), P(bw, bh, 1)], 'hwall', ' fill="url(#hwr)"');
+  var ex = x1 + (bw - x1) * .2, exw = (bw - x1) * .62, ey = bh * .3;   // (the exit: black double doors, two green windows, the sign above)
+  lines += Q([P(ex, ey, sL), P(ex + exw, ey, sL), P(ex + exw, bh, sL), P(ex, bh, sL)], 'hexit') +
+    Q([P(ex + exw * .08, ey + bh * .07, sL), P(ex + exw * .42, ey + bh * .07, sL), P(ex + exw * .42, ey + bh * .2, sL), P(ex + exw * .08, ey + bh * .2, sL)], 'hgreen') +
+    Q([P(ex + exw * .58, ey + bh * .07, sL), P(ex + exw * .92, ey + bh * .07, sL), P(ex + exw * .92, ey + bh * .2, sL), P(ex + exw * .58, ey + bh * .2, sL)], 'hgreen') +
+    Q([P(ex + exw * .49, ey + bh * .25, sL), P(ex + exw * .51, ey + bh * .25, sL), P(ex + exw * .51, ey + bh * .43, sL), P(ex + exw * .49, ey + bh * .43, sL)], 'hplate') +
+    Q([P(ex + exw * .3, ey - bh * .1, sL), P(ex + exw * .58, ey - bh * .1, sL), P(ex + exw * .58, ey - bh * .03, sL), P(ex + exw * .3, ey - bh * .03, sL)], 'hsign') +
+    '<text class="hsignt" x="' + P(ex + exw * .44, 0, sL).split(',')[0] + '" y="' + P(0, ey - bh * .045, sL).split(',')[1] + '" font-size="' + (bh * .055 * sL).toFixed(1) + '">EXIT</text>';
+  [[.08, .42], [.5, .84]].forEach(function (z) {   // (the lifts: red doors in black surrounds carved with red zigzags)
+    var a = hallScale(z[0] * LI), b2 = hallScale(z[1] * LI), m1 = hallScale((z[0] + .07) * LI), m2 = hallScale((z[1] - .07) * LI);
+    lines += Q([P(0, bh * .16, a), P(0, bh * .16, b2), P(0, bh, b2), P(0, bh, a)], 'hlift') + Q([P(0, bh * .28, m1), P(0, bh * .28, m2), P(0, bh, m2), P(0, bh, m1)], 'hliftd');
+    var zz = []; for (var k = 0; k <= 8; k++) { var t = z[0] + (z[1] - z[0]) * k / 8; zz.push(P(0, bh * (k % 2 ? .19 : .24), hallScale(t * LI))); }
+    lines += '<polyline class="hzig" points="' + zz.join(' ') + '"/>';
   });
-  [0, bw].forEach(function (x) { lines += Q([P(x, bh, 1), P(x, bh, se), P(x, bh - bh * .025, se), P(x, bh - bh * .025, 1)]) + ' class="hskirt"/>'; });   // (the dark skirting)
-  var dw = ew * .26, dh = eh * .62, dx = vx - dw / 2, dy = e1[1] - dh;   // (the far end's double doors; the days to come go in through them)
-  lines += '<rect class="r2d" x="' + dx.toFixed(1) + '" y="' + dy.toFixed(1) + '" width="' + dw.toFixed(1) + '" height="' + dh.toFixed(1) + '"/>' +
-    '<line class="r2s" x1="' + vx.toFixed(1) + '" y1="' + dy.toFixed(1) + '" x2="' + vx.toFixed(1) + '" y2="' + (dy + dh).toFixed(1) + '"/>';
   var h = '<svg class="hlines" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none">' + lines + '</svg>' +
     '<div class="hstage" style="perspective:' + g.p + 'px;perspective-origin:' + vx.toFixed(0) + 'px ' + vy.toFixed(0) + 'px">' +
-    '<div class="hcarpet" style="left:0;top:' + q.bh + 'px;width:' + q.bw + 'px;height:' + (8 * g.dz) + 'px"></div>';   // (the carpet: flat on the floor, to the far end)
+    '<div class="hcarpet" style="left:0;top:' + q.bh + 'px;width:' + q.bw + 'px;height:' + (HALLG.li * g.dz + 2) + 'px"></div>' +   // (the landing's carpet)
+    '<div class="hcarpet" style="left:' + q.cx0.toFixed(0) + 'px;top:' + q.bh + 'px;width:' + (q.cx1 - q.cx0).toFixed(0) + 'px;height:' + ((8 - HALLG.li) * g.dz) + 'px;transform:rotateX(-90deg) translateY(' + (HALLG.li * g.dz) + 'px);background-position:' + (-q.cx0).toFixed(0) + 'px ' + (-HALLG.li * g.dz) + 'px"></div>';   // (from the corridor's mouth)   // (the corridor's, the pattern running on)   // (the carpet: flat on the floor, to the far end)
   var pos = 'left:' + (fx - pw / 2).toFixed(0) + 'px;top:' + (fy - ph / 2).toFixed(0) + 'px;width:' + pw.toFixed(0) + 'px;height:' + ph.toFixed(0) + 'px;';
   for (var d = 1; d <= n; d++) {
     var key = S.month + '-' + String(d).padStart(2, '0'), it = C.days[key], dt = new Date(key + 'T12:00'), lab = '<span class="hn">' + DOW[(dt.getDay() + 6) % 7] + ' ' + d + '</span>';
