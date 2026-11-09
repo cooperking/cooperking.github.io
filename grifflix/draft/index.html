@@ -18,6 +18,7 @@ page shown inside another, stay where they are. On grifflix.co.uk, what came wit
   if (app) { try { ls.setItem('grifflix-app', app); } catch (e) {} return; }
   if (/GRIFFLIXTV\//.test(navigator.userAgent) || ls.getItem('grifflix-app') || window.top !== window || /[?&](stay|tv)=1/.test(L.search)) return;
   var o = {}; for (var j = 0; j < ls.length; j++) { var k = ls.key(j); if (/^grifflix-/.test(k)) o[k] = ls.getItem(k); }
+  Object.keys(o).forEach(function (k) { try { ls.removeItem(k); } catch (e) {} });   // (handed over once: kept here, a sign-out there would be undone: John, 9 Nov 2026: "I don't seem to be able to sign out")
   var p = L.pathname.replace(/^\/grifflix\/?/, '/'); if (p === '/admin.html') p = '/admin'; else if (p === '/index.html') p = '/';
   L.replace('https://grifflix.co.uk' + p + L.search + (Object.keys(o).length ? '#carry=' + encodeURIComponent(JSON.stringify(o)) + '|' + L.hash.slice(1) : L.hash));
 })();
@@ -260,7 +261,7 @@ html.tv .sheet .people { font-size: var(--crfs, 15px); }
 
 /* the signed-out welcome, and messages */
 .welcome { max-width: 620px; margin: 12vh auto 0; text-align: center; }
-.welcome h1 { margin: 0; font: 700 clamp(56px, 10vw, 96px)/1 var(--kfont); letter-spacing: .04em; text-transform: uppercase; color: var(--fg); }
+.welcome h1 { margin: 0; font: 700 clamp(30px, 6vw, 52px)/1 "GFutura", "futura-pt", "Futura PT", "Futura", "Jost", sans-serif !important; letter-spacing: .55em !important; margin-right: -.55em; text-transform: uppercase !important; color: var(--fg); }   /* (as the logo: Futura, spaced as it is) */
 .welcome h1 i { font-weight: 300; }
 .welcome p { margin: 18px auto 0; max-width: 46ch; font: 400 19px/1.5 var(--serif); color: var(--fg-2); }
 .welcome .acts { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 28px; }
@@ -2119,14 +2120,14 @@ function welcome(why) {
     nogw: 'Grifflix is nearly ready: the Mac mini isn’t connected yet.',
     down: 'Grifflix isn’t answering just now. Try again in a few minutes.',
     notmember: 'This device’s sign-in has run out. Sign in again below.'
-  }[why] || 'Films and TV from John’s shelves, for family and friends.';
+  }[why] || '';   // (no strapline: John, 9 Nov 2026)
   var signin = !TOKEN || why === 'notmember';
-  $('#main').innerHTML = '<section class="welcome"><h1>Grifflix</h1><p>' + esc(msg) + '</p>' +
+  $('#main').innerHTML = '<section class="welcome"><h1 class="wlogo">Grifflix</h1>' + (msg ? '<p>' + esc(msg) + '</p>' : '') +
     (signin ? '<form class="signin" id="signin"><p class="how">Sign in with your 6-letter code, or paste your invitation link. Haven’t one? Ask John.</p>' +
       '<input id="code" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false" placeholder="Code or invitation link" aria-label="Code or invitation link">' +
       '<button class="pill on" type="submit">Sign in</button></form>' : '') +
     '<div class="acts">' + (TOKEN && !signin ? '<button class="pill on" onclick="location.reload()">Try again</button>' : '') +
-    '<a class="pill" href="?demo=1">See the demo</a></div></section>';
+    '</div></section>';   // (no demo: John, 9 Nov 2026)
   var f = $('#signin');
   if (f) f.onsubmit = function (e) { e.preventDefault(); join($('#code').value); };
 }

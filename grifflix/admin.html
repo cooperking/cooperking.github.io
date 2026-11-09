@@ -18,6 +18,7 @@ page shown inside another, stay where they are. On grifflix.co.uk, what came wit
   if (app) { try { ls.setItem('grifflix-app', app); } catch (e) {} return; }
   if (/GRIFFLIXTV\//.test(navigator.userAgent) || ls.getItem('grifflix-app') || window.top !== window || /[?&](stay|tv)=1/.test(L.search)) return;
   var o = {}; for (var j = 0; j < ls.length; j++) { var k = ls.key(j); if (/^grifflix-/.test(k)) o[k] = ls.getItem(k); }
+  Object.keys(o).forEach(function (k) { try { ls.removeItem(k); } catch (e) {} });   // (handed over once: kept here, a sign-out there would be undone: John, 9 Nov 2026: "I don't seem to be able to sign out")
   var p = L.pathname.replace(/^\/grifflix\/?/, '/'); if (p === '/admin.html') p = '/admin'; else if (p === '/index.html') p = '/';
   L.replace('https://grifflix.co.uk' + p + L.search + (Object.keys(o).length ? '#carry=' + encodeURIComponent(JSON.stringify(o)) + '|' + L.hash.slice(1) : L.hash));
 })();
