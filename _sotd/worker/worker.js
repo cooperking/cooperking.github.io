@@ -423,7 +423,7 @@ async function spotify(token, path, method, body) {
 
 async function playlistItems(token, sp) {   // sp: a playlist's Spotify id (John's when not given)
   const out = [];
-  let next = '/playlists/' + (sp || SOURCE_PLAYLIST) + '/items?limit=100';
+  let next = '/playlists/' + (sp || SOURCE_PLAYLIST) + '/items?limit=100&market=GB';   // (market: each song as Spotify has it in the UK, as John sees it: a compilation's copy swapped for the album's own, with its cover: John, 9 Nov 2026, Donal Leace's on a Fatboy Slim mix)
   while (next) {
     const j = await spotify(token, next);
     for (const it of j.items || []) {
@@ -431,7 +431,8 @@ async function playlistItems(token, sp) {   // sp: a playlist's Spotify id (John
       if (!t || !t.id) continue;
       const imgs = (t.album && t.album.images) || [];
       const img = imgs.find(i => i.width === 300) || imgs[1] || imgs[0];
-      out.push({ a: it.added_at, ab: it.added_by && /^[\w.-]{1,64}$/.test(String(it.added_by.id || '')) ? it.added_by.id : undefined, id: t.id, title: t.name, artist: (t.artists || []).map(x => x.name).join(', '), artists: (t.artists || []).map(x => x.name),
+      // (swapped for the UK's copy: the song keeps the id it has on the playlist, so its files, facts and choices stay with it)
+      out.push({ a: it.added_at, ab: it.added_by && /^[\w.-]{1,64}$/.test(String(it.added_by.id || '')) ? it.added_by.id : undefined, id: (t.linked_from && t.linked_from.id) || t.id, title: t.name, artist: (t.artists || []).map(x => x.name).join(', '), artists: (t.artists || []).map(x => x.name),
         aids: (t.artists || []).map(x => x.id), album: t.album ? t.album.name : '', alid: t.album ? t.album.id : '', img: img ? img.url : '',
         rd: t.album && /^\d{4}(-\d\d){0,2}$/.test(t.album.release_date || '') ? t.album.release_date : undefined });   // rd: its album's release date (a year for it straight away: years.py)   // aids, alid: Spotify ids, for finding the song facts' sources
     }
