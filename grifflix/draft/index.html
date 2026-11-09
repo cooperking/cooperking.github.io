@@ -3214,11 +3214,15 @@ function trailer(it) {   // a trailer: its own player, YouTube's, not the film p
   TP.back = back; TP.peek = peek;
   $('#tpclose').onclick = trailerClose;
   if (TV) setTimeout(function () { $('#tpclose').blur(); T.focus(); }, 50);
-  var make = function () {
-    $('#tpframe').outerHTML = '<div id="tpframe"></div>';
-    TP.p = new YT.Player('tpframe', { host: 'https://www.youtube-nocookie.com', videoId: it.trailers[0],
+  var at = 0, make = function () {
+    $('#tplayer .tpwrap').innerHTML = '<div id="tpframe"></div>';
+    TP.p = new YT.Player('tpframe', { host: 'https://www.youtube-nocookie.com', videoId: it.trailers[at],
       playerVars: { autoplay: 1, rel: 0, playsinline: 1, modestbranding: 1, controls: TV ? 0 : 1, iv_load_policy: 3, fs: TV ? 0 : 1 },
       events: { onReady: function (e) { try { e.target.playVideo(); } catch (x) {} },
+        onError: function () {   // (gone, or not shown in the UK, or not allowed off YouTube: the film's next trailer, else back to it: John, 9 Nov 2026)
+          try { TP.p.destroy(); } catch (x) {}
+          if (++at < it.trailers.length) return make();
+          toast('That trailer isn’t available here.'); trailerClose(); },
         onStateChange: function (e) { if (e.data === 0) trailerClose(); else if (e.data === 2) T.classList.add('show'); else if (e.data === 1) peek(); } } });
   };
   if (window.YT && YT.Player) make();
