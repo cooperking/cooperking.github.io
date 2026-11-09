@@ -1578,8 +1578,8 @@ var Q = new URLSearchParams(location.search);
 var store = { get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
               set: function (k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} } };
 if (Q.has('gateway')) store.set('grifflix-gateway', Q.get('gateway') || null);
-if (Q.has('demo')) store.set('grifflix-demo', Q.get('demo') === '0' ? null : '1');
-var DEMO = !!store.get('grifflix-demo');
+store.set('grifflix-demo', null);   // (no demo any more, and none left switched on from before: John, 9 Nov 2026: "grifflix seems to be redirecting me to a demo")
+var DEMO = false;
 var GW = '', ME = null, KEY = '';
 var TOKEN = store.get('grifflix-member') || '';   // Grifflix's own sign-in (its own members: apart from Song of the Day's)
 var TV = /GRIFFLIXTV\//.test(navigator.userAgent) || Q.get('tv') === '1';
