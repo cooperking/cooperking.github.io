@@ -678,6 +678,7 @@ html.mob[data-theme=code] .hinfo .w { font-size: 34px !important; }
 .th-slices .vday:not(.front) .vn { display: none; }
 html[data-theme=slices] .hinfo, html[data-theme=spiral] .hinfo, html[data-theme=pinboard] .hinfo { max-width: 450px; }
 html[data-theme=spiral] .hinfo h2, html[data-theme=pinboard] .hinfo h2 { font-size: 34px; }
+html[data-theme=spiral]:not(.mob) .hinfo { max-width: calc(73vw - min(250px, 19vw) - 190px); } html[data-theme=spiral]:not(.mob) .hinfo .w { font-size: min(84px, 5.6vw); }   /* (the day's words left of the day's poster: "Vertigo titles go over spiral sometimes") */
 html[data-theme=slices] .hinfo .w { font-size: 64px; }
 /* the pinboard */
 .th-pinboard .vday { width: 96px; height: 116px; background: #fbfaf6; box-shadow: 2px 3px 0 rgba(0, 0, 0, .2); }
@@ -2763,7 +2764,7 @@ THEMEFX.umbrellas = {
 };
 // April: the spiral (Saul Bass's titles for Vertigo): the days winding into its middle, the one you're on at its edge
 THEMEFX.spiral = {
-  g: function (c) { return c.mob ? { cx: 390, cy: 440, r0: 300, a0: Math.PI / 2 } : { cx: c.W * .73, cy: c.H * .46, r0: 250, a0: Math.PI }; },
+  g: function (c) { return c.mob ? { cx: 390, cy: 440, r0: 300, a0: Math.PI / 2 } : { cx: c.W * .73, cy: c.H * .46, r0: Math.min(250, c.W * .19), a0: Math.PI }; },   // (smaller on a narrow screen, clear of the day's words: John, 9 Nov 2026)
   decor: function (c) {
     var g = this.g(c), pts = [];
     for (var a = -0.7; a < 32; a += .06) { var r = g.r0 * Math.pow(.83, a / .9); pts.push((g.cx + r * Math.cos(g.a0 + a)).toFixed(1) + ',' + (g.cy + r * Math.sin(g.a0 + a)).toFixed(1)); }
