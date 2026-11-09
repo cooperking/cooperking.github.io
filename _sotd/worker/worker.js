@@ -59,6 +59,14 @@ class HttpError extends Error {
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+    if (url.hostname === G_LINK_HOST) {   // grifflix.co.uk: Grifflix's own links (invitations, a day's film) and nothing of the songs' (John, 9 Nov 2026: "it still said song of the day in the link")
+      if (url.pathname === '/g/ping') return new Response('grifflix', { headers: { 'Cache-Control': 'no-store' } });
+      try {
+        if (url.pathname.startsWith('/gi/')) return await gInvitePage(url, env);
+        if (url.pathname.startsWith('/gs/')) return await gSharePage(url, env);
+      } catch (e) { return new Response('Grifflix isn’t answering just now.', { status: 500 }); }
+      return Response.redirect(G_SITE, 302);
+    }
     try {
       if (url.pathname === '/songs.json') return await songsJson(request, env, ctx);
       if (url.pathname === '/durs') return await songDurs(url, env);   // songs' real lengths, from Spotify (the download job's check that a file is the whole song)
@@ -1285,6 +1293,15 @@ function randomCode(bytes) { return b64url(crypto.getRandomValues(new Uint8Array
 // of the Day, 'week' one summary on Monday morning, 'off') and emails, signed "Grifflix" (only once John's mailer can:
 // v2). Only the mailer's daily allowance is shared. The Movie of the Day goes out from the timer once the Mac mini shows
 // one for today (gDaily). Routes: /g/<what> (grifflix()), /gi/<id> (gInvitePage()).
+const G_LINK_HOST = 'grifflix.co.uk';   // (the Worker on John's own domain, once Cloudflare has it: worker_deploy.py)
+async function gLinkBase(env, url) {   // where Grifflix's links point: grifflix.co.uk when it answers, else the Worker's own address
+  let ok = await env.SOTD.get('gLinkOk');
+  if (ok === null) {
+    ok = await fetch('https://' + G_LINK_HOST + '/g/ping', { cf: { cacheTtl: 0 } }).then(r => r.ok && r.text()).then(t => t === 'grifflix' ? '1' : '0').catch(() => '0');
+    await env.SOTD.put('gLinkOk', ok, { expirationTtl: ok === '1' ? 86400 : 1800 });
+  }
+  return ok === '1' ? 'https://' + G_LINK_HOST : url.origin;
+}
 const G_SITE = 'https://cooperking.github.io/grifflix/', G_API = 'https://media.grifflix.co.uk', G_MODES = ['all', 'week', 'off'];
 function gMode(m, k) {   // gpush: everything unless they say (as songs'); gmail: off unless they say, and only with an address
   const v = m && m[k];
@@ -1581,6 +1598,7 @@ async function grifflix(request, url, env) {
   const h = factsHeaders(G_ORIGIN), answer = (status, body) => new Response(JSON.stringify(body), { status, headers: h });
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: h });
   const route = url.pathname.slice(3);
+  if (route === 'linkbase') return answer(200, { base: await gLinkBase(env, url) });   // (a day's film shared: its link's address)
   if (route === 'snapshot') {   // John's Update: everything from the Mac, kept in R2 as it came (read by grifflix-data.yml)
     if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
     const w = await gWho(request, env);
@@ -1862,7 +1880,7 @@ async function gAdmin(request, env, b, who, answer) {
     const bg = /^#[0-9a-f]{6}$/i.test(String(b.bg || '')) ? b.bg : '', ink = b.ink === '#000' ? '#000' : '#fff';   // (the month's theme, for its page)
     await env.SOTD.put('gipage:' + pid, JSON.stringify({ link: b.link, name: m.name, at, bg, ink }), { expirationTtl: ttl });
     m.invite.page = pid; await gSave(env, all);
-    return answer(200, { page: new URL(request.url).origin + '/gi/' + pid });
+    return answer(200, { page: (await gLinkBase(env, new URL(request.url))) + '/gi/' + pid });
   }
   if (b.op === 'remove') {
     if (!all[b.id] || b.id === who.id) return answer(400, { error: b.id === who.id ? 'Not yourself.' : 'No such member.' });
