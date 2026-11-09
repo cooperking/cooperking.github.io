@@ -208,13 +208,7 @@ body.tdragging { user-select: none; -webkit-user-select: none; }
         <div class="newrow"><input type="text" class="name" id="nname" placeholder="Their name"><input type="text" class="name" id="nmail" placeholder="Their email (optional)" inputmode="email"><button class="btn primary" id="ninvite" type="button">Invite</button></div>
         <ul class="mem" id="mem"></ul>
       </section>
-      <section class="card" data-tab="updates">
-        <div class="kicker">Draft and live</div>
-        <h2 id="dlhead">Looking…</h2>
-        <p class="stat" id="dlsay"></p>
-        <ul class="changes" id="changes"></ul>
-        <div class="state"><a class="btn" href="/grifflix/draft/" target="_blank" rel="noopener">Try the draft</a><a class="btn" href="/grifflix/" target="_blank" rel="noopener">The live page</a></div>
-      </section>
+      <div hidden><h2 id="dlhead"></h2><p id="dlsay"></p><ul id="changes"></ul></div>   <!-- (the draft's changes, read for Updates above; the card itself gone: John, 9 Nov 2026) -->
       <section class="card" data-tab="updates">
         <div class="kicker">Update from the Mac</div>
         <h2 id="uphead">Looking…</h2>
