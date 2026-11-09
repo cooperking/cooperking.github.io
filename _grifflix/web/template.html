@@ -567,10 +567,12 @@ html.tv .th-lane .vday:focus { outline: 0 !important; box-shadow: 0 0 0 4px #1a1
 .zdrum .zgb { fill: none; stroke: #e9c46a; stroke-width: 2; opacity: .85; } .zdrum .zrim { fill: none; stroke: #f6e0a4; stroke-width: 3; }
 .zdrum.zmid { z-index: 8; }
 .zm { position: absolute; left: 0; top: 0; display: grid; place-items: center; pointer-events: none; will-change: transform; backface-visibility: hidden; background: linear-gradient(180deg, #f3ead2, #dccdaa); box-shadow: inset 0 0 0 2px #c9ccd0, inset 0 0 0 3px rgba(40, 30, 20, .4); }   /* (a mirror, the strip's paper and horse in it, its silvered edge) */
-.zpic { position: absolute; left: 0; top: 0; width: 170px; height: 255px; background: #1a1416 center/cover; z-index: 2; pointer-events: none; will-change: transform; box-shadow: 0 0 0 4px #2a1810; }
+.zpic { position: absolute; left: 0; top: 0; width: 170px; height: 255px; background: #1a1416 center/cover; z-index: 104; pointer-events: none; will-change: transform; backface-visibility: hidden; box-shadow: 0 0 0 5px #e9c46a; }   /* (on the red band, gilt-framed) */
 .zpic.soon { background: #2a1810; }
 .zpic::after { content: ""; position: absolute; inset: 0; background: #000; opacity: var(--dk, 0); }
-.zsl { position: absolute; left: 0; top: 0; z-index: 2; pointer-events: none; will-change: transform; font: 700 20px/1 var(--serif); color: #8a1a1c; letter-spacing: .02em; }
+.zst { position: absolute; left: 0; top: 0; z-index: 2; pointer-events: none; will-change: transform; display: grid; place-items: center; background: #ece0c2; box-shadow: inset 1px 0 0 rgba(60, 40, 20, .35); }
+.zst i { display: block; background: url("/grifflix/img/muybridge-horse.webp") 0 0 no-repeat; filter: brightness(0); }   /* (Muybridge's horse, black on the strip's paper) */
+.zst::after { content: ""; position: absolute; inset: 0; background: #000; opacity: var(--dk, 0); }
 .zm i { display: block; background: url("/grifflix/img/muybridge-horse.webp") 0 0 no-repeat; filter: brightness(0); }   /* (Muybridge's horse, black on the strip's paper) */
 .zm::after { content: ""; position: absolute; inset: 0; background: #000; opacity: var(--dk, 0); }
 .zm::before { content: ""; position: absolute; inset: 0; z-index: 1; opacity: var(--sh, 0); background: linear-gradient(100deg, rgba(255, 244, 220, 0) 25%, rgba(255, 244, 220, .25) 45%, rgba(255, 244, 220, 0) 62%); }
@@ -3428,10 +3430,9 @@ THEMEFX.picture = {
     // (the mirror column's core: no gap between its mirrors)
     var rc = g.rm * .97;
     h += '<svg class="zdrum zmid" width="' + c.W + '" height="' + c.H + '"><path fill="#1a1410" d="M' + F(cx - rc) + ',' + F(g.capy) + ' L' + F(cx - rc) + ',' + F(g.capy + g.mh + 4) + ' ' + arc(0, 0, rc, g.rym) + F(cx + rc) + ',' + F(g.capy + g.mh + 4) + ' L' + F(cx + rc) + ',' + F(g.capy) + ' Z"/></svg>';
-    // (inside, round its wall, the paper strip: GRIFFLIX along its top, the month's posters along it, small (John, 9 Nov 2026: "Posters and
-    // lettering on the paper strip"); at its centre the mirrors, Muybridge's horse in them)
-    var SL = 'GRIFFLIX ✦ GRIFFLIX ✦ GRIFFLIX ✦ GRIFFLIX ✦ ';
-    for (var q = 0; q < SL.length; q++) h += '<span class="zsl">' + SL[q] + '</span>';
+    // (inside, round its wall, the paper strip of the horse's stills: 1878, Eadweard Muybridge, The Horse in Motion; at its centre the
+    // mirrors, the horse in them)
+    for (var q = 0; q < 15; q++) h += '<span class="zst"><i></i></span>';
     for (var i = 0; i < this.NM; i++) h += '<span class="zm"><i></i></span>';
     // (in front: the near wall, red and gilt; the column's brass top and the spindle's knob)
     var cy2 = g.capy, fr = 12 * g.f;
@@ -3443,7 +3444,10 @@ THEMEFX.picture = {
       '<ellipse cx="' + F(cx) + '" cy="' + F(cy2) + '" rx="' + F(g.rm * .5) + '" ry="' + F(g.rym * .5) + '" fill="none" stroke="#3a260c" stroke-opacity=".5" stroke-width="1"/>' +
       '<path fill="url(#zbrass)" d="M' + F(cx - fr * .3) + ',' + F(cy2) + ' L' + F(cx - fr * .3) + ',' + F(cy2 - fr * 2.4) + ' L' + F(cx + fr * .3) + ',' + F(cy2 - fr * 2.4) + ' L' + F(cx + fr * .3) + ',' + F(cy2) + ' Z"/>' +
       '<circle cx="' + F(cx) + '" cy="' + F(cy2 - fr * 2.8) + '" r="' + F(fr * .75) + '" fill="url(#zbrass)"/></svg>';
-    for (var k = 0; k < 28; k++) h += '<span class="zlt">✦</span>';   // (gilt stars round the band)
+    // (round the red band outside: GRIFFLIX in gilt along its top, the month's posters along it, small (John, 9 Nov 2026: "I meant the red
+    // strip on the outside"))
+    var L = 'GRIFFLIX ✦ GRIFFLIX ✦ GRIFFLIX ✦ ';
+    for (var k = 0; k < L.length; k++) h += '<span class="zlt">' + L[k] + '</span>';
     return h;
   },
   ready: function (c) { fxReset(this); this.c = c; },
@@ -3507,7 +3511,7 @@ THEMEFX.picture = {
       var host = me.all[0] && me.all[0].parentNode || cal;
       me._zp = me.all.map(function (el) { var d = document.createElement('i'); d.className = 'zpic' + (el.classList.contains('has') ? '' : ' soon'); var p = el.style.getPropertyValue('--p'); if (p && el.classList.contains('has')) d.style.backgroundImage = p; host.appendChild(d); return d; });
     }
-    var pps = g.Hw * .64 / 255, pcy = ty + g.Hw * .58;
+    var pps = g.Hw * .6 / 255, pcy = ty + g.Hw * .6;
     me.all.forEach(function (el, j) {
       var k = j - a, ph = k * st, cs = Math.cos(ph), sn = Math.sin(ph), nf = near(k);
       // (the day's poster, large, below the drum: the next sliding in as the drum turns)
@@ -3515,17 +3519,21 @@ THEMEFX.picture = {
       el.style.transform = 'translate(' + (g.cx - k * 70 * g.f).toFixed(1) + 'px,' + (g.pt + 255 * g.ps / 2).toFixed(1) + 'px) translate(-50%,-50%) scale(' + (g.ps * (.94 + .06 * nf)).toFixed(3) + ')';
       el.style.opacity = o.toFixed(2); el.style.pointerEvents = o < .5 ? 'none' : ''; el.style.zIndex = 150 + Math.round(nf * 10);
       el.style.setProperty('--dk', '0');
-      // (its poster on the strip, turning with the drum: the far side seen over the near rim)
-      var t = me._zp[j], wo = Math.abs(k) > 7 || cs > -.02 ? 0 : Math.min(1, -cs / .2);
+      // (its poster on the red band, turning with the drum: the near side)
+      var t = me._zp[j], wo = Math.abs(k) > 7 || cs < .02 ? 0 : Math.min(1, cs / .2);
       if (!wo) { t.style.visibility = 'hidden'; return; } t.style.visibility = '';
-      t.style.transform = 'translate(' + (g.cx + R * .985 * sn).toFixed(1) + 'px,' + (pcy + ry * .985 * cs).toFixed(1) + 'px) translate(-50%,-50%) perspective(' + g.P + 'px) rotateX(' + (-tilt).toFixed(2) + 'deg) rotateY(' + ((ph - Math.PI) * 180 / Math.PI).toFixed(1) + 'deg) scale(' + pps.toFixed(3) + ')';
-      t.style.setProperty('--dk', Math.max(0, .4 - .4 * -cs).toFixed(2));
+      t.style.transform = 'translate(' + (g.cx + R * sn).toFixed(1) + 'px,' + (pcy + ry * cs).toFixed(1) + 'px) translate(-50%,-50%) perspective(' + g.P + 'px) rotateX(' + (-tilt).toFixed(2) + 'deg) rotateY(' + (ph * 180 / Math.PI).toFixed(1) + 'deg) scale(' + pps.toFixed(3) + ')';
+      t.style.setProperty('--dk', Math.max(0, .5 - .5 * cs).toFixed(2));
     });
-    $$('#cal .zsl').forEach(function (t, i, L) {   // (GRIFFLIX along the strip's top, turning with it)
-      var th = (i / L.length) * Math.PI * 2 - a * st, cs = Math.cos(th), sn = Math.sin(th);
-      if (cs > -.02) { t.style.visibility = 'hidden'; return; } t.style.visibility = '';
-      t.style.transform = 'translate(' + (g.cx + R * .985 * sn).toFixed(1) + 'px,' + (ty + g.Hw * .14 + ry * .985 * cs).toFixed(1) + 'px) translate(-50%,-50%) perspective(' + g.P + 'px) rotateY(' + ((th - Math.PI) * 180 / Math.PI).toFixed(1) + 'deg) scale(' + g.f.toFixed(3) + ')';
-      t.style.opacity = Math.min(1, -cs / .2).toFixed(2);
+    // (the paper strip round the inside wall, a still of the horse in each frame: the far side seen over the near rim, behind the column)
+    var sw = 2 * Math.PI * R * .985 / 15, shh = Math.min(g.Hw * .86, sw * 91 / 150 * 1.1);
+    me._zst = me._zst && me._zst[0] && me._zst[0].isConnected ? me._zst : $$('#cal .zst');
+    me._zst.forEach(function (m, i) {
+      var ph = i * 2 * Math.PI / 15 - a * st, cs = Math.cos(ph), sn = Math.sin(ph);
+      if (cs > -.02) { m.style.visibility = 'hidden'; return; } m.style.visibility = '';
+      if (!m._sz) { m._sz = 1; m.style.width = (sw + 1).toFixed(1) + 'px'; m.style.height = shh.toFixed(1) + 'px'; var fw = shh / 1.1 * 150 / 91; m.firstChild.style.width = fw.toFixed(1) + 'px'; m.firstChild.style.height = (shh / 1.1).toFixed(1) + 'px'; m.firstChild.style.backgroundSize = (fw * 15).toFixed(1) + 'px ' + (shh / 1.1).toFixed(1) + 'px'; m.firstChild.style.backgroundPosition = (-i * fw).toFixed(1) + 'px 0'; }
+      m.style.transform = 'translate(' + (g.cx + R * .985 * sn).toFixed(1) + 'px,' + (ty + g.Hw / 2 + ry * .985 * cs).toFixed(1) + 'px) translate(-50%,-50%) perspective(' + g.P + 'px) rotateX(' + (-tilt).toFixed(2) + 'deg) rotateY(' + ((ph - Math.PI) * 180 / Math.PI).toFixed(1) + 'deg)';
+      m.style.setProperty('--dk', Math.max(0, .45 - .45 * -cs).toFixed(2));
     });
     // (the mirrors, the horse's frame in each: one frame on as each next mirror comes round and more as it turns, so the horse gallops
     // through its stride as the drum turns a day, and stands when it stops)
@@ -3544,7 +3552,7 @@ THEMEFX.picture = {
     $$('#cal .zlt').forEach(function (t, i, L) {   // (GRIFFLIX in gilt round the drum, between its bands)
       var th = (i / L.length) * Math.PI * 2 - a * st, cs = Math.cos(th), sn = Math.sin(th);
       if (cs < .05) { t.style.visibility = 'hidden'; return; } t.style.visibility = '';
-      t.style.transform = 'translate(' + (g.cx + R * sn).toFixed(1) + 'px,' + (ty + g.Hw / 2 + ry * cs).toFixed(1) + 'px) translate(-50%,-50%) perspective(' + g.P + 'px) rotateY(' + (th * 180 / Math.PI).toFixed(1) + 'deg) scale(' + g.f.toFixed(3) + ')';
+      t.style.transform = 'translate(' + (g.cx + R * sn).toFixed(1) + 'px,' + (ty + g.Hw * .17 + ry * cs).toFixed(1) + 'px) translate(-50%,-50%) perspective(' + g.P + 'px) rotateY(' + (th * 180 / Math.PI).toFixed(1) + 'deg) scale(' + (g.f * .62).toFixed(3) + ')';
       t.style.opacity = (.5 + .5 * cs).toFixed(2); t.style.zIndex = 105;
     });
   },
