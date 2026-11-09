@@ -72,6 +72,14 @@ def added_key(v):
     return '%s|%s|%s' % (v.get('type', ''), ' '.join(str(v.get('name', '')).lower().split()), v.get('year') or '')
 
 
+def loadj(name):
+    try:
+        with open(os.path.join(OUT, name), encoding='utf-8') as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return {}
+
+
 def keep_added(items):
     """Each film's and series' date added: the first one ever seen, kept in added.json. A film converted on the Mac is a
     new file there, so its new date would put it among the new films (John, 8 Nov 2026: "It's still showing new films as
@@ -97,6 +105,10 @@ def build(snap, now, days_only=False):
     eps = {e['id']: e for v in series.values() for e in v.get('episodes', [])}
     changed = 0
     # Movie of the Day: the days shown so far, each with its film (an episode too)
+    lands = loadj('landscapes.json')
+    for v in list(items.values()) + list(eps.values()):
+        if lands.get(added_key(v)):
+            v['land'] = lands[added_key(v)]
     motd = snap.get('motd', {})
     days, notes = {}, {}
     for d, i in sorted((motd.get('days') or {}).items()):
@@ -110,6 +122,10 @@ def build(snap, now, days_only=False):
         return changed
     L = snap.get('lists', {})
     changed += keep_added(items)
+    lands = loadj('landscapes.json')   # (each title's landscape poster from TMDB, for the wide pictures: tmdb_trailers.py)
+    for v in items.values():
+        if lands.get(added_key(v)):
+            v['land'] = lands[added_key(v)]
     changed += write('library.json', {'at': snap.get('at'), 'items': {k: light(v) for k, v in items.items()},
                                       'movies': L.get('movies', []), 'tv': L.get('tv', []), 'collections': L.get('collections', []),
                                       'sets': snap.get('sets', {})})
