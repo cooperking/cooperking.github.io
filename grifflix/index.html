@@ -523,7 +523,7 @@ html.tv .th-stairs .vday:focus { outline: 0 !important; box-shadow: 0 0 0 4px #f
 .sstairs .ri { fill: #29241e; } .sstairs .tr { fill: #f4e6cb; } .sstairs .ed { stroke: #29241e; stroke-width: 1.2; fill: none; }   /* (the one-sheet's film-strip black and its cream) */
 .sstairs .rail { stroke: #29241e; stroke-width: 15; fill: none; stroke-linejoin: round; } .sstairs .holes { stroke: #f4e6cb; stroke-width: 5; stroke-dasharray: 4 7; fill: none; } .sstairs .bal { stroke: #29241e; stroke-width: 2; }   /* (the banister: the poster's film strip) */
 .sbeam { position: absolute; pointer-events: none; background: linear-gradient(rgba(244, 230, 203, 0), rgba(244, 230, 203, .28)); clip-path: polygon(46% 0, 54% 0, 100% 100%, 0 100%); }
-.sflash { position: absolute; inset: -40px; background: #fffaf0; opacity: 0; pointer-events: none; z-index: 400; mix-blend-mode: screen; }   /* (the photographers' flashbulbs) */
+.sflash { position: absolute; width: 640px; height: 640px; margin: -320px 0 0 -320px; border-radius: 50%; background: radial-gradient(circle, rgba(255, 250, 235, .9), rgba(255, 250, 235, 0) 62%); opacity: 0; pointer-events: none; z-index: 400; mix-blend-mode: screen; }   /* (a flashbulb's glow round the day's film, not the whole screen: John, 9 Nov 2026: "sunset boulevard flashes in a distracting way") */
 .spool { position: absolute; pointer-events: none; border-radius: 50%; background: radial-gradient(ellipse, rgba(255, 246, 220, .45), rgba(255, 246, 220, 0) 70%); }
 /* the lane (The Big Lebowski): a lane in perspective, the pins at the far end, the days rolling down it */
 .th-lane .vday { width: 200px; height: 300px; box-shadow: 0 8px 20px rgba(0, 0, 0, .5); }
@@ -599,10 +599,12 @@ html[data-theme=credits] .hinfo .k { letter-spacing: .2em; font-size: 12px; }
 .horizon { position: absolute; left: 0; right: 0; bottom: 0; border-top: 1px solid rgba(var(--kink), .55); background: rgba(0, 0, 0, .14); }
 html[data-theme=autumn] .hinfo { top: 112px; bottom: auto; }
 /* the snow globe */
-.th-globe .vday { width: 36px; height: 36px; border-radius: 50%; box-shadow: 0 0 0 2px #e7c35a; }
-.th-globe .vday::before { content: ""; position: absolute; left: 50%; top: -6px; width: 10px; height: 6px; margin-left: -5px; background: #e7c35a; }
-.th-globe .str { position: absolute; left: 50%; bottom: calc(100% + 6px); width: 1px; background: rgba(var(--kink), .45); }
-html.tv .th-globe .vday:focus { outline: 0 !important; box-shadow: 0 0 0 2px #e7c35a, 0 0 0 5px #fff; }
+.th-globe .vday { width: 44px; height: 44px; border-radius: 1px; filter: grayscale(1) contrast(1.05); box-shadow: inset 0 0 0 3px #6e5432, inset 0 0 0 4px rgba(0, 0, 0, .35), 0 4px 8px rgba(0, 0, 0, .35); }   /* (the days as Kane's packing crates, from the warehouse in the last shot) */
+.th-globe .vday::after { content: ""; position: absolute; inset: 3px; background: linear-gradient(45deg, transparent 46%, rgba(110, 84, 50, .85) 46% 54%, transparent 54%); pointer-events: none; }
+.th-globe .vday.front { filter: none; } .th-globe .vday.front::after { display: none; }
+.th-globe .vday .cs, .th-globe .vday:not(.front) .vn { display: none; }   /* (a crate too small for words: a plain one till it's filled) */
+.th-globe .vday.soon { background: #8a6a3e; }
+html.tv .th-globe .vday:focus { outline: 0 !important; box-shadow: inset 0 0 0 3px #6e5432, 0 0 0 3px #fff; }
 .globe { position: absolute; left: calc(73% - 150px); top: calc(55% - 150px); width: 300px; height: 300px; border-radius: 50%; overflow: hidden; background: radial-gradient(circle at 50% 60%, rgba(255, 255, 255, .08), rgba(255, 255, 255, .03) 62%, rgba(255, 255, 255, .2) 100%); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .6); transform-origin: 50% 100%; }
 .gpic { position: absolute; left: 50%; top: 50%; width: 150px; height: 225px; margin: -100px 0 0 -75px; background: center/cover; }
 .snow, .gsnow { position: absolute; left: 0; right: 0; top: -240px; bottom: 0; pointer-events: none; background-image: radial-gradient(circle at 20px 30px, #fff 0 2px, transparent 3px), radial-gradient(circle at 90px 130px, #fff 0 1.5px, transparent 2.5px), radial-gradient(circle at 160px 60px, #fff 0 2.5px, transparent 3.5px), radial-gradient(circle at 210px 190px, #fff 0 1.5px, transparent 2.5px), radial-gradient(circle at 120px 215px, #fff 0 2px, transparent 3px); background-size: 240px 240px; animation: snow 10s linear infinite; }
@@ -992,7 +994,7 @@ html.mob .tcentre { top: 800px; }
 html.mob[data-theme=table] #cal .thv, html.mob[data-theme=table] #cal .thstage { overflow: visible !important; }   /* (a phone: the day's name under the table, not inside it: John, 8 Nov 2026) */
 html.mob .tcentre h2 { font-size: 56px; max-width: 520px; }
 html.mob .tcentre .k { font-size: 20px; } html.mob .tcentre .y { font-size: 28px; }
-html.mob .th-globe .vday { width: 44px; height: 44px; }
+html.mob .th-globe .vday { width: 52px; height: 52px; }
 html.mob .globe { left: 190px; top: 390px; width: 400px; height: 400px; }
 html.mob .gpic { width: 180px; height: 270px; margin: -120px 0 0 -90px; }
 html.mob .gbase { left: 216px; top: 772px; width: 348px; height: 84px; }
@@ -1093,11 +1095,11 @@ html[data-theme=autumn] .leaf2 i { align-self: center; background: #c4321f; colo
 html[data-theme=autumn] .leaf2 b { color: #1d1d1b; }
 /* November, Dr. Strangelove: the War Room's board, black and white */
 html[data-theme=table] .leaf2 { border-width: .02em; }
-/* December, Citizen Kane: a bauble on its cap */
-html[data-theme=globe] .leaf2 { position: relative; overflow: visible; border: 0; border-radius: 50%; width: 1em; height: 1em; background: radial-gradient(circle at 35% 30%, #fff, #e7c35a 40%, #8a6a1c); margin-top: .12em; }
-html[data-theme=globe] .leaf2::before { content: ""; position: absolute; left: 50%; top: -.1em; width: .26em; height: .14em; margin-left: -.13em; background: #e7c35a; }
-html[data-theme=globe] .leaf2 i { background: none; color: #5a1010; padding-top: .16em; }
-html[data-theme=globe] .leaf2 b { color: #5a1010; margin-top: -.08em; }
+/* December, Citizen Kane: the date on a plain card in the poster's red and white (no baubles: John, 9 Nov 2026: "Citizen Kane's
+   baubles are leftover from a christmas theme, but not relevant to the film") */
+html[data-theme=globe] .leaf2 { border-color: #fff; background: #a8161a; }
+html[data-theme=globe] .leaf2 i { background: #fff; color: #a8161a; }
+html[data-theme=globe] .leaf2 b { color: #fff; }
 
 html.mob .tcentre .leaf2 { font-size: 72px; }
 /* the calendar pop-up on a phone: square days, as the songs' calendar, in the month's theme */
@@ -2406,7 +2408,7 @@ THEMEFX.table = {
   info: function (b) {   // (its words in the middle of the table)
     var c = $('#tcentre'); if (!c) return;
     var it = b && S.calData.days[b.dataset.day];
-    if (!it || it.secret) { c.innerHTML = b ? '<div class="k">' + esc(longDate(b.dataset.day)) + '</div><h2>' + (it ? 'A surprise' : 'No film') + '</h2>' : ''; return; }
+    if (!it || it.secret) { c.innerHTML = b ? '<div class="k">' + esc(longDate(b.dataset.day)) + '</div><h2>' + 'Coming soon' + '</h2>' : ''; return; }
     var d = new Date(b.dataset.day + 'T12:00'), note = (NOTES ? S.calData.notes || {} : {})[b.dataset.day];
     c.innerHTML = leafOf(d) + '<div class="k">' + DOWL[d.getDay()] + ' · ' + d.getDate() + ' ' + MONTHS[d.getMonth()] + '</div><h2 style="--tl:' + showName(it).length + '">' + esc(showName(it)) + '</h2><div class="y">' + [it.year, it.mins ? it.mins + ' minutes' : ''].filter(Boolean).join(' · ') + '</div>' + (note ? '<div class="n">“' + esc(note) + '”</div>' : '');
   }
@@ -2727,12 +2729,13 @@ THEMEFX.stairs = {
       '<div class="sbeam" style="left:' + (f.x - bw / 2).toFixed(0) + 'px;top:-40px;width:' + bw + 'px;height:' + (g.fy + 70) + 'px"></div>' +
       '<div class="sflash" id="sflash"></div><div class="spool" style="left:' + (f.x - 260).toFixed(0) + 'px;top:' + (g.fy - 40).toFixed(0) + 'px;width:520px;height:90px"></div>';
   },
-  ready: function () { fxReset(this); },
+  ready: function () { fxReset(this); this._seen = false; },
   swipe: function (c) { var g = this.g(c); return { x: g.fx - g.vx, y: g.fy - g.vy, px: c.mob ? 60 : 70 }; },   // (bring her down the stairs towards you)
   place: function (all, at, c) { this.all = all; this.c = c; fxTween(this, at, 1100); },
   front: function (b, c, drag) {   // (the flashbulbs, for the one at the foot of the stairs)
-    var fl = $('#sflash'); if (!fl || drag || CALM || !fl.animate) return;
-    fl.animate([{ opacity: 0 }, { opacity: .7, offset: .08 }, { opacity: 0, offset: .3 }, { opacity: .45, offset: .42 }, { opacity: 0 }], { duration: 900, delay: 700, easing: 'ease-out' });
+    var fl = $('#sflash'); if (!fl || drag || CALM || !fl.animate || !this._seen) { this._seen = true; return; }   // (not on opening the month; one soft glow, once it's at the foot)
+    var g = this.g(c), f = this.at(g, 0); fl.style.left = f.x.toFixed(0) + 'px'; fl.style.top = (f.y - 150 * g.fs * 1.25).toFixed(0) + 'px';
+    fl.animate([{ opacity: 0 }, { opacity: .32, offset: .25 }, { opacity: 0 }], { duration: 900, delay: 750, easing: 'ease-out' });
   },
   draw: function (a) {
     var me = this, c = me.c, g = me.g(c);
@@ -2852,15 +2855,17 @@ THEMEFX.tron = {
     var pn = $('#tnext'), pp = $('#tpast'); if (pn) pn.setAttribute('points', next.join(' ')); if (pp) pp.setAttribute('points', past.concat(next.slice(0, 1)).join(' '));
   }
 };
-// December: the snow globe (Citizen Kane): the days hung as baubles; the one you're on inside the globe, which shakes and snows
+// December: the snow globe (Citizen Kane): the days as the crates of Kane's things in the warehouse, a row of them askew;
+// the one you're on inside the globe, which shakes and snows
 THEMEFX.globe = {
   hang: function (d, c) { return c && c.mob ? 70 + (d % 2) * 120 + seeded(d * 5) * 40 : 112 + seeded(d * 5) * 92; },
-  cell: function (d, it, key, c) { return '<i class="str" style="height:' + (this.hang(d, c) - 18 - (c.mob ? 0 : 92)).toFixed(0) + 'px"></i>'; },
+
   decor: function () { return '<div class="snow"></div><div class="globe" id="globe"><div class="gpic" id="gpic"></div><div class="gsnow"></div><i class="gshine"></i></div><div class="gbase"></div>'; },
   swipe: function (c) { return { x: 1, y: 0, px: c.mob ? 24 : 40 }; },
   place: function (all, at, c, b) {
     var x0 = c.mob ? 34 : 90, x1 = c.mob ? 746 : c.W - 90, n = Math.max(1, all.length - 1), me = this;
-    all.forEach(function (el, j) { vAt(el, x0 + (x1 - x0) * j / n, me.hang(+el.dataset.n, c), 1 + .5 * near(j - at), 0, 1, el === b ? 5 : 1); });
+    var base = c.mob ? 150 : 205, h = c.mob ? 50 : 42;   // (stacked two high, staggered as in the warehouse; each crate a little askew)
+    all.forEach(function (el, j) { var d = +el.dataset.n; vAt(el, x0 + (x1 - x0) * j / n, base - (j % 2) * h - (seeded(d * 7) - .5) * 4, 1 + .5 * near(j - at), (seeded(d * 3) - .5) * 7, 1, el === b ? 50 : 10 - (j % 2)); });
   },
   front: function (b, c, quiet) {
     var g = $('#globe'), p = $('#gpic'); if (p && b) p.style.backgroundImage = b.style.getPropertyValue('--p');
@@ -2878,7 +2883,7 @@ function tvFeat(date) {   // the TV calendar to try: the day you're on, large, o
       var note = (NOTES ? S.calData.notes || {} : {})[date];
       h = '<div class="k">' + (S.calData.id === 'motd' ? 'Movie of the Day · ' : '') + esc(longDate(date)) + '</div><h2>' + esc(showName(it)) + '</h2><div class="m">' + meta.join(' · ') + '</div>' +
         (note ? '<div class="note">“' + esc(note) + '”</div>' : it.overview ? '<div class="ov">' + esc(it.overview) + '</div>' : '') + '<div class="h">OK to open · ▶ to play</div>';
-    } else h = date ? '<div class="k">' + esc(longDate(date)) + '</div><h2>' + (it && it.secret ? 'A surprise' : 'No film') + '</h2><div class="m">' + (it && it.secret ? 'Revealed at 8am on the day' : (S.calData.mine ? 'OK to choose one' : '')) + '</div>' : '';
+    } else h = date ? '<div class="k">' + esc(longDate(date)) + '</div><h2>' + 'Coming soon' + '</h2><div class="m">' + (it && it.secret ? 'Revealed at 8am on the day' : '') + '</div>' : '';
     el.innerHTML = h;
     var bg = $('#tvbg'); if (!bg) { bg = document.createElement('div'); bg.id = 'tvbg'; document.body.prepend(bg); }
     var src = it && !it.secret ? (it.backdrop ? img(it.backdrop, 'Backdrop', 1920) : it.thumb ? img(it.thumb, 'Thumb', 1920) : '') : '';
