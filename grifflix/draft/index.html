@@ -3636,7 +3636,7 @@ var dlg = $('#sheet');
 function openSheet(html) {
   $('#sheetIn').innerHTML = html;
   if (!dlg.open) dlg.showModal();
-  shBrand();
+  shBrand(); setTimeout(function () { if (dlg.open) shBrand(); }, 420);   // (again once it has slid in: where its words start)
   $('#sheetIn').scrollTop = 0;
   var c = $('#sheetIn .close'); if (c) c.onclick = closeSheet;
   if (TV) tvStart();
@@ -3695,6 +3695,14 @@ function shBrand() {   // GRIFFLIX over a pop-up, just where the bar's is (the b
   var bn = $('#barnav'), br = bn && bn.offsetParent ? bn.getBoundingClientRect() : null;
   nav.style.top = Math.round(br ? br.top : r.top) + 'px'; nav.style.left = Math.round(br ? br.left : r.right + 28) + 'px'; nav.style.height = Math.round(br ? br.height : r.height) + 'px';
   b.hidden = false; b.style.left = Math.round(r.left) + 'px'; b.style.top = Math.round(r.top) + 'px'; ['fontFamily', 'fontWeight', 'fontSize', 'lineHeight', 'letterSpacing', 'color', 'textTransform'].forEach(function (k) { b.style[k] = cs[k]; });
+  // (the pop-up's own words start below the logo and its words, never under them: John, 9 Nov 2026: "profile pop up on computer
+  // causes words to be on top of each other - be careful of clashes"); what scrolls up passes under a strip, not through them
+  var nr = nav.getBoundingClientRect(), barB = Math.max(r.bottom, nr.bottom, br ? br.bottom : 0), barR = Math.max(r.right, nr.right), f = $('#sheetIn > .form');
+  if (f && !f.classList.contains('tcal') && !TV && !document.documentElement.classList.contains('phone')) {
+    f.style.removeProperty('padding-top'); var fr = f.getBoundingClientRect(), pt = parseFloat(getComputedStyle(f).paddingTop) || 0;
+    if (fr.top + pt < barB + 14 && fr.left < barR && fr.right > r.left) f.style.setProperty('padding-top', Math.round(pt + barB + 14 - (fr.top + pt)) + 'px', 'important');
+  }
+  band.hidden = sr.top > barB - 4 || !(sr.left < barR && sr.right > r.left); band.style.height = Math.round(barB + 12) + 'px';
 }
 dlg.addEventListener('click', function (e) { if (e.target === dlg) closeSheet(); });
 dlg.addEventListener('close', function () { S.fromCal = false; S.sheetNow = null; });
