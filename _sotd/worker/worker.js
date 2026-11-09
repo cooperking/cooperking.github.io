@@ -101,6 +101,7 @@ export default {
       if (url.pathname.startsWith('/g/')) return await grifflix(request, url, env);
       if (url.pathname.startsWith('/gp/')) return await gPicGet(request, url, env, ctx);
       if (url.pathname.startsWith('/gs/')) return await gSharePage(url, env);
+      if (url.pathname.startsWith('/gm/')) return await gMusicGet(request, url, env);   // the months' themes' music (30-second previews, kept in R2)
       if (url.pathname.startsWith('/gf/')) return await gFontGet(request, url, env);   // Grifflix's Futura (John's web fonts, kept in R2, for Grifflix's pages only)   // a Movie of the Day's own link, with its card   // Grifflix's pictures, kept here (not the Mac's)   // Grifflix's own members (apart from the songs')
       if (url.pathname.startsWith('/gi/')) return await gInvitePage(url, env);
       if (url.pathname.startsWith('/members/')) return await members(request, url, env);
@@ -1987,6 +1988,35 @@ async function gAdmin(request, env, b, who, answer) {
 // a day's film shared (John, 8 Nov 2026): its own link, /gs/<date>, a page with its card (WhatsApp, iMessage show it) that
 // goes on to the day on Grifflix. The card (1200 × 630) is drawn by the first member's page to share it and kept in R2;
 // until then the film's own picture stands in. Only days already shown (from 8am on the day).
+// /gm/<theme>-<h>.m4a: a theme's 30-second music preview (John, 9 Nov 2026: "thirty second sound clips with each theme ...
+// downloaded"). The first ask brings it from Apple's preview server (only there) into R2; h is the first 12 hex of its
+// URL's sha256, so a stored clip always is the one asked for; served in ranges, as Safari needs for audio
+async function gMusicGet(request, url, env) {
+  const name = url.pathname.slice(4).toLowerCase(), m = name.match(/^([a-z0-9]{1,20})-([0-9a-f]{12})\.m4a$/), from = request.headers.get('Origin') || request.headers.get('Referer') || '';
+  const H = { 'Access-Control-Allow-Origin': G_ORIGIN, Vary: 'Origin' };
+  if (!m || !env.MEDIA) return new Response('Not here.', { status: 404, headers: H });
+  if (from && !/^https:\/\/cooperking\.github\.io(\/|$)/.test(from)) return new Response('Not here.', { status: 403 });
+  const key = 'grifflix/music/' + name;
+  let buf = null; const o = await env.MEDIA.get(key).catch(() => null);
+  if (o) buf = await o.arrayBuffer();
+  else {
+    const src = url.searchParams.get('src') || ''; let u = null; try { u = new URL(src); } catch (e) {}
+    if (!u || u.protocol !== 'https:' || u.hostname !== 'audio-ssl.itunes.apple.com') return new Response('Not here.', { status: 404, headers: H });
+    const d = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(src)))).map(b => b.toString(16).padStart(2, '0')).join('');
+    if (d.slice(0, 12) !== m[2]) return new Response('Not here.', { status: 404, headers: H });
+    const r = await fetch(src); if (!r.ok) return new Response('Not there just now.', { status: 502, headers: H });
+    buf = await r.arrayBuffer(); if (buf.byteLength > 4e6) return new Response('Too big.', { status: 413, headers: H });
+    await env.MEDIA.put(key, buf, { httpMetadata: { contentType: 'audio/mp4' } });
+  }
+  const n = buf.byteLength, base = Object.assign({ 'Content-Type': 'audio/mp4', 'Accept-Ranges': 'bytes', 'Cache-Control': 'public, max-age=2592000' }, H);
+  const rg = (request.headers.get('Range') || '').match(/^bytes=(\d*)-(\d*)$/);
+  if (rg && (rg[1] || rg[2])) {
+    let a = rg[1] ? +rg[1] : Math.max(0, n - +rg[2]), b = rg[1] && rg[2] ? Math.min(+rg[2], n - 1) : n - 1;
+    if (a >= n || a > b) return new Response('', { status: 416, headers: Object.assign({ 'Content-Range': 'bytes */' + n }, base) });
+    return new Response(buf.slice(a, b + 1), { status: 206, headers: Object.assign({ 'Content-Range': 'bytes ' + a + '-' + b + '/' + n, 'Content-Length': String(b - a + 1) }, base) });
+  }
+  return new Response(buf, { headers: Object.assign({ 'Content-Length': String(n) }, base) });
+}
 async function gFontGet(request, url, env) {   // /gf/<name>: only for Grifflix's own pages (and its apps, which show them)
   const name = url.pathname.slice(4).toLowerCase(), from = request.headers.get('Origin') || request.headers.get('Referer') || '';
   if (!/^[a-z0-9-]{1,60}\.(woff2|woff)$/.test(name)) return new Response('Not here.', { status: 404 });

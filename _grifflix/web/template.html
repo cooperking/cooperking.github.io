@@ -439,6 +439,8 @@ html.hall .cal { position: fixed !important; inset: 0; height: 100% !important; 
 .hlines .hbeam { fill: #eee9e3; stroke: rgba(0, 0, 0, .1); } .hlines .hpil { fill: #e8e3dd; stroke: rgba(0, 0, 0, .08); }
 .hlines .hlamp { fill: #fffdf7; stroke: rgba(0, 0, 0, .15); } .hlines .hpic { fill: #2a2420; stroke: #8f8a84; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
 .hlines .hskirt { fill: #2b1913; stroke: none; }
+.hbg { position: absolute; inset: 0; background: linear-gradient(rgba(242, 231, 212, .92), rgba(242, 231, 212, .6) 9%, rgba(242, 231, 212, 0) 17%), #efe3cf url("/grifflix/img/shining-corridor.webp") center / cover no-repeat; }   /* (a cream veil at the top: the bar reads) */
+html.mob .hbg { height: 890px; bottom: auto; }
 .hlines .hceil { fill: #e6e0da; stroke: rgba(0, 0, 0, .08); } .hlines .hback { fill: #efebe6; stroke: none; } .hlines .hjamb { fill: #ddd6ce; stroke: none; }
 .hlines .hexit { fill: #121010; stroke: none; } .hlines .hgreen { fill: #7fc79a; stroke: none; opacity: .85; } .hlines .hplate { fill: #9a948c; stroke: none; }
 .hlines .hsign { fill: #f2f2ec; stroke: #9a948c; } .hlines .hsignt { fill: #3f8f5a; font: 600 10px/1 "Helvetica Neue", Helvetica, Arial, sans-serif; text-anchor: middle; letter-spacing: .04em; }
@@ -2247,6 +2249,7 @@ function drawMonth() {
   document.documentElement.classList.toggle('table', TABLE(m));
   document.documentElement.classList.toggle('hall', HALL(m));
   document.documentElement.classList.toggle('mob', VIEW() === 'themes' && MOB());
+  themeMusic(VIEW() === 'themes' ? themeFor(m).key : null);
   if (VIEW() === 'themes') {
     var th0 = themeFor(m), R0 = document.documentElement.style; document.documentElement.dataset.theme = th0.key;
     R0.setProperty('--tfont', th0.font || 'var(--kfont)'); R0.setProperty('--tw', th0.tw || 700); R0.setProperty('--ttt', th0.tt || 'uppercase'); R0.setProperty('--tfs', th0.fs || 'normal');
@@ -2293,6 +2296,9 @@ function drawMonth() {
 var HALLG = { vx: .40, vy: .40, fx: .80, fy: .57, ph: .56, p: 900, dz: 560, li: 1.1, cw: .17 };   // (li: the landing's depth; cw: half the corridor's width, of the screen's)
 function hallScale(i) { return HALLG.p / (HALLG.p + i * HALLG.dz); }
 function hallGeo(W, H) {   // (on a phone: the far end up and to the left, the front low and to the right)
+  // (John's picture of the corridor, filling the screen: the far end where its corridor ends, the day you're on in front, to the right)
+  var bh = MOB() ? 890 : H, sc = Math.max(W / 1672, bh / 941), px = function (x) { return W / 2 + (x - 836) * sc; }, py = function (y) { return bh / 2 + (y - 470.5) * sc; };
+  return { vx: px(836), vy: py(412), fx: MOB() ? W * .66 : W * HALLG.fx, fy: MOB() ? bh * .66 : H * HALLG.fy, ph: MOB() ? 450 : H * HALLG.ph, bw: W, bh: bh, cx0: px(560), cx1: px(1110) };
   if (MOB()) return { vx: 250, vy: 150, fx: 500, fy: 560, ph: 450, bw: W, bh: 890, cx0: 250 - W * .2, cx1: 250 + W * .2 };
   return { vx: W * HALLG.vx, vy: H * HALLG.vy, fx: W * HALLG.fx, fy: H * HALLG.fy, ph: H * HALLG.ph, bw: W, bh: H, cx0: W * (HALLG.vx - HALLG.cw), cx1: W * (HALLG.vx + HALLG.cw) };
 }
@@ -2351,10 +2357,9 @@ function drawHall(C, n, m, mine) {
     var zz = []; for (var k = 0; k <= 8; k++) { var t = z[0] + (z[1] - z[0]) * k / 8; zz.push(P(0, bh * (k % 2 ? .19 : .24), hallScale(t * LI))); }
     lines += '<polyline class="hzig" points="' + zz.join(' ') + '"/>';
   });
-  var h = '<svg class="hlines" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none">' + lines + '</svg>' +
-    '<div class="hstage" style="perspective:' + g.p + 'px;perspective-origin:' + vx.toFixed(0) + 'px ' + vy.toFixed(0) + 'px">' +
-    '<div class="hcarpet" style="left:0;top:' + q.bh + 'px;width:' + q.bw + 'px;height:' + (HALLG.li * g.dz + 2) + 'px"></div>' +   // (the landing's carpet)
-    '<div class="hcarpet" style="left:' + q.cx0.toFixed(0) + 'px;top:' + q.bh + 'px;width:' + (q.cx1 - q.cx0).toFixed(0) + 'px;height:' + ((8 - HALLG.li) * g.dz) + 'px;transform:rotateX(-90deg) translateY(' + (HALLG.li * g.dz) + 'px);background-position:' + (-q.cx0).toFixed(0) + 'px ' + (-HALLG.li * g.dz) + 'px"></div>';   // (from the corridor's mouth)   // (the corridor's, the pattern running on)   // (the carpet: flat on the floor, to the far end)
+  // (John's own picture of the corridor in place of the drawing: John, 9 Nov 2026: "Can we use this image for the shining")
+  var h = '<div class="hbg" role="img" aria-label="The Overlook Hotel’s corridor"></div>' +
+    '<div class="hstage" style="perspective:' + g.p + 'px;perspective-origin:' + vx.toFixed(0) + 'px ' + vy.toFixed(0) + 'px">';
   var pos = 'left:' + (fx - pw / 2).toFixed(0) + 'px;top:' + (fy - ph / 2).toFixed(0) + 'px;width:' + pw.toFixed(0) + 'px;height:' + ph.toFixed(0) + 'px;';
   for (var d = 1; d <= n; d++) {
     var key = S.month + '-' + String(d).padStart(2, '0'), it = C.days[key], dt = new Date(key + 'T12:00'), lab = '<span class="hn">' + DOW[(dt.getDay() + 6) % 7] + ' ' + d + '</span>';
@@ -2510,6 +2515,57 @@ function vAt(el, x, y, s, r, o, z) {
   el.style.opacity = o == null ? 1 : o; el.style.zIndex = z == null ? 1 : z;
 }
 function near(k) { return Math.max(0, 1 - Math.abs(k)); }   // (1 for the day you're on, 0 a day or more away)
+// ---- the months' music (John, 9 Nov 2026: "Can we get thirty second sound clips with each theme ... Grifflix theme should have
+// a sound appropriate to the theme too - mute can be an option on profile"): on the theme's page, each month's film's music
+// (a 30-second preview, kept by Grifflix: /gm/ on the Worker), once, faded in and out; Grifflix's own theme a projector
+// running, its sprockets clattering faster as the drum turns, and the leader's beeps. Browsers keep quiet till a first tap
+// or key; Theme music on the profile turns it off on that device
+var TMUS = { on: store.get('grifflix-music') !== 'off', list: null, a: null, k: null, ok: false, pj: null, ctx: null };
+fetch('/grifflix/data/thememusic.json').then(function (r) { return r.json(); }).then(function (j) { TMUS.list = j; if (TMUS.k && !TMUS.a && !TMUS.pj) { var k = TMUS.k; TMUS.k = null; themeMusic(k); } }).catch(function () {});
+function musicCtx() { var A = window.AudioContext || window.webkitAudioContext; if (!A) return null; if (!TMUS.ctx) TMUS.ctx = new A(); if (TMUS.ctx.state === 'suspended') TMUS.ctx.resume(); return TMUS.ctx; }
+function themeMusic(k) {   // the theme on the page now (null: none)
+  if (k === TMUS.k && (TMUS.a || TMUS.pj || !TMUS.ok)) return;
+  musicHush(); TMUS.k = k;
+  if (!k || !TMUS.on || !TMUS.ok) return;
+  if (k === 'picture') { TMUS.pj = projector(); return; }
+  var t = TMUS.list && TMUS.list[k]; if (!t) return;
+  var a = new Audio('https://sotd-playlists.cooperking.workers.dev/gm/' + k + '-' + t.h + '.m4a?src=' + encodeURIComponent(t.src)); a.volume = 0; TMUS.a = a;
+  var fade = function (to, ms, then) { var v0 = a.volume, t0 = performance.now(); (function f() { var u = Math.min(1, (performance.now() - t0) / ms); a.volume = v0 + (to - v0) * u; if (u < 1 && TMUS.a === a) requestAnimationFrame(f); else if (then) then(); })(); };
+  a.addEventListener('timeupdate', function () { if (a.duration && a.currentTime > a.duration - 3 && !a.dataset.out) { a.dataset.out = 1; fade(0, 2800); } });
+  a.addEventListener('ended', function () { if (TMUS.a === a) TMUS.a = null; });
+  a.play().then(function () { fade(.5, 1800); }).catch(function () { if (TMUS.a === a) TMUS.a = null; });
+}
+function musicHush() {   // (quiet: a film or trailer starting, the page hidden, another theme)
+  var a = TMUS.a; TMUS.a = null;
+  if (a) { var v0 = a.volume, t0 = performance.now(); (function f() { var u = Math.min(1, (performance.now() - t0) / 600); a.volume = v0 * (1 - u); if (u < 1) requestAnimationFrame(f); else a.pause(); })(); }
+  if (TMUS.pj) { TMUS.pj.stop(); TMUS.pj = null; }
+}
+function projector() {   // (an old projector running: its motor's hum and the film's 24 frames a second through the gate; all made here)
+  var c = musicCtx(); if (!c) return null;
+  var sr = c.sampleRate, mk = function (sec, f) { var b = c.createBuffer(1, Math.floor(sr * sec), sr); f(b.getChannelData(0)); return b; };
+  var hum = mk(2, function (d) { var l = 0; for (var i = 0; i < d.length; i++) { l = (l + .02 * (Math.random() * 2 - 1)) / 1.02; d[i] = l * 3.2 + .05 * Math.sin(i / sr * 2 * Math.PI * 50); } });
+  var gate = mk(1, function (d) { for (var k = 0; k < 24; k++) { var at = Math.floor((k + (Math.random() - .5) * .1) / 24 * sr); for (var j = 0; j < sr * .008; j++) if (at + j < d.length) d[at + j] += (Math.random() * 2 - 1) * Math.exp(-j / (sr * .0015)) * (k % 2 ? .7 : 1); } });
+  var out = c.createGain(); out.gain.value = 0; out.connect(c.destination);
+  var s1 = c.createBufferSource(), f1 = c.createBiquadFilter(), g1 = c.createGain(); s1.buffer = hum; s1.loop = true; f1.type = 'lowpass'; f1.frequency.value = 600; g1.gain.value = .55; s1.connect(f1); f1.connect(g1); g1.connect(out);
+  var s2 = c.createBufferSource(), f2 = c.createBiquadFilter(), g2 = c.createGain(); s2.buffer = gate; s2.loop = true; f2.type = 'bandpass'; f2.frequency.value = 2400; f2.Q.value = .7; g2.gain.value = .45; s2.connect(f2); f2.connect(g2); g2.connect(out);
+  s1.start(); s2.start(); out.gain.linearRampToValueAtTime(.16, c.currentTime + 1.6);
+  return {
+    stop: function () { var t = c.currentTime; out.gain.cancelScheduledValues(t); out.gain.setValueAtTime(out.gain.value, t); out.gain.linearRampToValueAtTime(0, t + .7); setTimeout(function () { try { s1.stop(); s2.stop(); } catch (e) {} out.disconnect(); }, 900); },
+    kick: function () { var t = c.currentTime; s2.playbackRate.cancelScheduledValues(t); s2.playbackRate.setValueAtTime(1, t); s2.playbackRate.linearRampToValueAtTime(1.7, t + .35); s2.playbackRate.linearRampToValueAtTime(1, t + 1.2);
+      g2.gain.cancelScheduledValues(t); g2.gain.setValueAtTime(.45, t); g2.gain.linearRampToValueAtTime(.9, t + .3); g2.gain.linearRampToValueAtTime(.45, t + 1.2); }
+  };
+}
+function musicKick() { if (TMUS.pj) TMUS.pj.kick(); }   // (the drum turning)
+function musicBeep() {   // (the leader's beep on each number)
+  if (!TMUS.on || !TMUS.ok) return; var c = musicCtx(); if (!c) return;
+  var o = c.createOscillator(), g = c.createGain(), t = c.currentTime; o.frequency.value = 1000; g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.14, t + .01); g.gain.linearRampToValueAtTime(0, t + .13); o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + .15);
+}
+['pointerdown', 'keydown', 'touchend'].forEach(function (ev) { addEventListener(ev, function () {   // (the first tap or key lets it play)
+  if (TMUS.ok) return; TMUS.ok = true; musicCtx(); var k = TMUS.k; TMUS.k = null; if (k) themeMusic(k);
+}, true); });
+document.addEventListener('visibilitychange', function () { if (document.hidden) { musicHush(); } });
+document.addEventListener('play', function (e) { if (e.target && e.target.id === 'vid') musicHush(); }, true);
+setInterval(function () { if ((TMUS.a || TMUS.pj) && !(VIEW() === 'themes' && $('#cal'))) musicHush(); }, 1000);   // (off the theme's page: quiet)
 function drawTheme(t, C, n, m, mine) {
   var fx = THEMEFX[t.key], W = themeW(), H = themeH();
   var c = { W: W, H: H, n: n, m: m, mob: MOB(), y: +S.month.slice(0, 4), lead: (new Date(+S.month.slice(0, 4), m, 1).getDay() + 6) % 7 };
@@ -3149,8 +3205,8 @@ THEMEFX.picture = {
     var d = document.createElement('div'); d.className = 'zlead'; d.innerHTML = '<div class="zglow">' + this.glow() + '</div><div class="ring"></div><div class="n">3</div><div class="gx">Grifflix</div><div class="skip">Tap to skip</div>';
     document.body.appendChild(d);
     var T = [], gone = function () { T.forEach(clearTimeout); d.classList.add('out'); setTimeout(function () { d.remove(); }, 600); };
-    var n = d.querySelector('.n');
-    T.push(setTimeout(function () { n.textContent = '2'; }, 800), setTimeout(function () { n.textContent = '1'; }, 1600),
+    var n = d.querySelector('.n'); musicBeep();
+    T.push(setTimeout(function () { n.textContent = '2'; musicBeep(); }, 800), setTimeout(function () { n.textContent = '1'; musicBeep(); }, 1600),
       setTimeout(function () { d.classList.add('flash'); n.textContent = ''; }, 2400), setTimeout(function () { d.classList.remove('flash'); d.classList.add('name'); }, 2520), setTimeout(gone, 3900));
     d.onclick = gone; addEventListener('keydown', function k() { removeEventListener('keydown', k); if (d.isConnected) gone(); });
   },
@@ -3160,7 +3216,7 @@ THEMEFX.picture = {
     return [0, 1, 2].map(function (k) { return '<i style="background-image:' + u[(u.length - 1 - k * 3 % u.length + u.length) % u.length].replace(/"/g, "'") + '"></i>'; }).join('');
   },
   swipe: function (c) { return { x: -1, y: 0, px: c.mob ? 60 : 90 }; },   // (spin the drum with the finger)
-  place: function (all, at, c) { this.all = all; this.c = c; fxTween(this, at, 1100); },
+  place: function (all, at, c) { this.all = all; this.c = c; if (this._at != null && Math.abs(this._at - at) > .3) musicKick(); fxTween(this, at, 1100); },
   draw: function (a) {
     var me = this, c = me.c, g = me.g(c), st = me.st;
     me.all.forEach(function (el, j) {
@@ -3954,6 +4010,9 @@ function drawAccount() {
     (/[?&]app=/.test(location.search) || TV ? '' : '<div class="profsec"><p class="profh">Grifflix on your phone</p><p class="profp">' +
       (/Android/i.test(navigator.userAgent) ? 'The Grifflix app for Android: download it, then open the file and allow installing from Chrome when asked. Sign in with a code from here (below).' : 'An iPhone app is coming (through Apple’s TestFlight). On an Android phone, the Grifflix app is here.') +
       '</p><div class="acts" style="margin-top:8px"><a class="pill" href="/grifflix/android.apk">Android app</a></div></div>') +
+    '<div class="profsec"><p class="profh">Theme music</p><p class="profp">' + (TMUS.on ? 'On this device: each month’s theme plays its film’s music (30 seconds) when you open it, and Grifflix’s own a projector running.' : 'Off on this device.') +
+      (TMUS.on && TMUS.k && TMUS.list && TMUS.list[TMUS.k] ? ' This month: <b>' + esc(TMUS.list[TMUS.k].title) + '</b>, ' + esc(TMUS.list[TMUS.k].artist) + '.' : '') +
+      '</p><div class="acts" style="margin-top:8px"><button class="pill" id="musgo">' + (TMUS.on ? 'Turn off' : 'Turn on') + '</button></div></div>' +
     '<div class="profsec"><p class="profh">A TV</p><p class="profp">To sign in on a TV (or another device), get a code and type it there.</p><div class="acts" style="margin-top:8px"><button class="pill" id="tvcode">Get a code</button></div></div>' +
     '<div class="profsec"><p class="profh">This device</p><p class="profp">Signed in as ' + esc(ME.name || '') + '.</p><div class="acts" style="margin-top:8px"><button class="pill" id="signout">Sign out</button></div></div>';
   $$('[data-gpush],[data-gmail]').forEach(function (b) { b.onclick = function () {
@@ -3963,6 +4022,7 @@ function drawAccount() {
   }; });
   var ng = $('#notego'); if (ng) ng.onclick = function () { (on ? notesOff() : notesOn()).then(function () { profTab(); }).catch(oops); };
   $('#mailgo').onclick = addEmail;
+  $('#musgo').onclick = function () { TMUS.on = !TMUS.on; store.set('grifflix-music', TMUS.on ? 'on' : 'off'); if (!TMUS.on) musicHush(); toast(TMUS.on ? 'Theme music on' : 'Theme music off'); drawAccount(); };
   $('#tvcode').onclick = function () { var b = this; if (DEMO) return toast('Not in the demo.'); wcall({ op: 'tvcode' }).then(function (j) { b.outerHTML = '<span class="tvcode">' + j.code + '</span><span class="profp"> for ' + j.minutes + ' minutes, once</span>'; }).catch(oops); };
   $('#signout').onclick = function () {
     var b = this; if (!b.dataset.sure) { b.dataset.sure = 1; b.textContent = 'Tap again to sign out'; return; }
@@ -4060,7 +4120,8 @@ var HEVC = (function () {
   } catch (e) { return false; }
 })();
 var P = { el: $('#player'), v: $('#vid'), hls: null, it: null, queue: [], info: null, saveT: null, idleT: null };
-function trailer(it) {   // a trailer: its own player, YouTube's, not the film player (John, 8 Nov 2026: "video player isn't set up for
+function trailer(it) {
+  musicHush();   // a trailer: its own player, YouTube's, not the film player (John, 8 Nov 2026: "video player isn't set up for
   // youtube trailers - it should probably have its own player"): the whole screen, the film's name and Close over it while it
   // starts or when asked; a remote's OK pauses, left and right a jump, Back (or its end) back to the film's page
   if (!it || !it.trailers || !it.trailers.length) return;
