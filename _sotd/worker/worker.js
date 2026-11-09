@@ -150,6 +150,18 @@ export default {
       }
       await env.MEDIA.put('diag/own-short-gone3.json', JSON.stringify({ at: new Date().toISOString(), deleted: K }, null, 1), { httpMetadata: { contentType: 'application/json' } });
     })().catch(e => console.log('ownShort: ' + (e && e.message))));
+    ctx.waitUntil((async () => {   // once: today's song (9 Nov 2026) came from a compilation, so Spotify gives its cover: the original album's (Donal Leace, 1972) as John's own cover for all members (John: "Album cover is wrong on today's song of the day")
+      if (!env.MEDIA || await env.SOTD.get('coverDL1')) return;
+      await env.SOTD.put('coverDL1', String(Date.now()));
+      const track = '5NFkC0umAKe8An9SflzrCn', r = await fetch('https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/5f/d0/34/5fd03474-9a46-07b8-9b55-f8e232a9c422/603497808823.jpg/1000x1000bb.jpg');
+      if (!r.ok) return;
+      const bytes = await r.arrayBuffer(), covers = await coversAll(env), list = (covers[track] || { list: [] }).list;
+      const c = { id: randomCode(6), who: 'all', at: new Date().toISOString() };
+      await env.MEDIA.put(coverKey(track, c.id), bytes, { httpMetadata: { contentType: 'image/jpeg' } });
+      list.push(c); covers[track] = { list };
+      await env.SOTD.put('covers', JSON.stringify(covers));
+      await startJob(env, null, null, 0, null, true).catch(() => {});   // (the day's sharing card made again with it)
+    })().catch(e => console.log('coverDL: ' + (e && e.message))));
     ctx.waitUntil((async () => {   // once: Anthony Morcom's second Spotify account (John, 8 Nov 2026: "That's Anthony Morcom too")
       if (await env.SOTD.get('spuAnt1')) return;
       await env.SOTD.put('spuAnt1', String(Date.now()));
