@@ -575,11 +575,20 @@ html[data-theme=slices] .hinfo .w { font-size: 64px; }
 .th-moon .vday.none { opacity: .55 !important; }
 html.tv .th-moon .vday:focus { outline: 0 !important; clip-path: none; box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px #fff; }
 html.tv .th-moon .vday:focus .msh { border-radius: 50%; }
-.bigmoon { position: absolute; right: 110px; top: 226px; width: 320px; height: 320px; border-radius: 50%; overflow: hidden; background: #f3eacb; box-shadow: 0 0 0 2px #f3eacb; }
+.bigmoon { position: absolute; right: 110px; top: 226px; width: 320px; height: 320px; }
+/* the Man in the Moon, as Méliès drew him (A Trip to the Moon, 1902), the rocket in his eye, the day's film on the rocket
+   (John, 9 Nov 2026: "the Hugo theme need something more Méliès to make it clear") */
+.mface { position: absolute; inset: 0; filter: drop-shadow(0 0 18px rgba(243, 234, 203, .35)); }
+.mface svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.mshell { position: absolute; left: 16%; top: 40%; width: 37.5%; height: 56%; transform-origin: 50% 0; transform: rotate(45deg) translateY(-9%); border-radius: 50% 50% 8% 8% / 44% 44% 6% 6%; overflow: hidden; background: #b9b2a2; box-shadow: inset 0 0 0 3px #6f6754, inset -10px 0 18px rgba(0, 0, 0, .35), 0 10px 24px rgba(0, 0, 0, .4); z-index: 2; }
+.mshell .mpic { position: absolute; inset: 0 0 12% 0; background: var(--p, none) center / cover; filter: sepia(.25) contrast(1.05); }
+.mshell::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 12%; background: repeating-linear-gradient(90deg, #8e8778 0 6px, #c4bdad 6px 12px); box-shadow: inset 0 2px 0 #6f6754; }
+.mshell .msoon { position: absolute; inset: 0 0 12% 0; display: grid; place-items: center; text-align: center; padding: 10%; font: var(--tw) 22px/1.05 var(--tfont); text-transform: uppercase; color: #3b3427; }
+.mshell .msoon[hidden] { display: none; }
 /* (the day's poster whole, the moon's height, in the middle; the copies either side blurred and dimmed, so the one poster
    stands out: John, 9 Nov 2026: "show the full poster but allow it to repeat ... try blurring the repeated ones") */
-.bigmoon::before, .upic::before { content: ""; position: absolute; inset: -16px; background: var(--p) center / auto calc(100% - 32px) repeat-x; filter: blur(7px) brightness(.78) saturate(.8); }
-.bigmoon::after, .upic::after { content: ""; position: absolute; inset: 0; background: var(--p) center / auto 100% no-repeat; }
+.upic::before { content: ""; position: absolute; inset: -16px; background: var(--p) center / auto calc(100% - 32px) repeat-x; filter: blur(7px) brightness(.78) saturate(.8); }
+.upic::after { content: ""; position: absolute; inset: 0; background: var(--p) center / auto 100% no-repeat; }
 .mphase { position: absolute; top: calc(22% + 30px); width: 220px; margin-left: -110px; text-align: center; font: 500 12px/1 var(--kfont); letter-spacing: .3em; text-transform: uppercase; color: var(--fg-2); transition: left .5s cubic-bezier(.3, .7, .2, 1); }
 .mfilm { position: absolute; right: 110px; top: 568px; width: 320px; text-align: center; font: var(--tw) 26px/1.15 var(--tfont); text-transform: var(--ttt); color: var(--fg); }
 /* the credits */
@@ -2525,7 +2534,7 @@ function moonPhase(key) { var p = ((Date.parse(key + 'T21:00:00Z') - Date.UTC(20
 var PHASES = ['New moon', 'Waxing crescent', 'First quarter', 'Waxing gibbous', 'Full moon', 'Waning gibbous', 'Last quarter', 'Waning crescent'];
 THEMEFX.moon = { all: true,
   cell: function (d, it, key) { var p = moonPhase(key), off = p < .5 ? -2 * p : 2 - 2 * p; return '<i class="msh" style="transform:translateX(' + (off * 100).toFixed(1) + '%)"></i><span class="mn">' + d + '</span>'; },
-  decor: function () { return '<div class="bigmoon" id="bigmoon"></div><div class="mphase" id="mphase"></div><div class="mfilm" id="mfilm"></div>'; },
+  decor: function () { return '<div class="bigmoon" id="bigmoon"><div class="mface" id="mface"><svg viewBox="0 0 200 200" aria-hidden="true"><defs><radialGradient id="mgr" cx=".42" cy=".38" r=".7"><stop offset="0" stop-color="#fdf8e8"/><stop offset=".7" stop-color="#efe4c2"/><stop offset="1" stop-color="#d4c497"/></radialGradient></defs><circle cx="100" cy="100" r="97" fill="url(#mgr)" stroke="#9b8f6e" stroke-width="1.2"/><circle cx="150" cy="40" r="9" fill="#e6d9b2" stroke="#b5a77f" stroke-width=".8"/><circle cx="162" cy="122" r="7" fill="#e6d9b2" stroke="#b5a77f" stroke-width=".8"/><circle cx="134" cy="162" r="11" fill="#e6d9b2" stroke="#b5a77f" stroke-width=".8"/><circle cx="50" cy="152" r="8" fill="#e6d9b2" stroke="#b5a77f" stroke-width=".8"/><circle cx="40" cy="58" r="6" fill="#e6d9b2" stroke="#b5a77f" stroke-width=".8"/><circle cx="96" cy="28" r="5" fill="#e6d9b2" stroke="#b5a77f" stroke-width=".8"/><circle cx="174" cy="84" r="5" fill="#e6d9b2" stroke="#b5a77f" stroke-width=".8"/><circle cx="70" cy="176" r="4" fill="#e6d9b2" stroke="#b5a77f" stroke-width=".8"/><g fill="none" stroke="#5d533f" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M117 67 Q130 59 144 66"/><ellipse cx="130" cy="80" rx="8.5" ry="5.2" fill="#fffaf0"/><circle cx="131" cy="80.5" r="2.7" fill="#5d533f" stroke="none"/><path d="M55 63 Q68 52 84 60"/><path d="M58 84 L49 79"/><path d="M59 92 L49 95"/><path d="M66 98 L60 106"/><path d="M100 72 Q95 97 104 110 Q100 115 93 111"/><path d="M80 111 Q73 118 78 127"/><path d="M123 111 Q129 118 125 127"/><path d="M79 135 Q100 124 123 137"/><path d="M86 139 Q101 147 116 140"/><path d="M92 166 Q100 171 108 166"/><path d="M150 150 q8 -6 12 -16" stroke-width="1" opacity=".5"/><path d="M158 140 q6 -6 8 -14" stroke-width="1" opacity=".5"/><path d="M164 128 q4 -6 5 -12" stroke-width="1" opacity=".5"/></g></svg></div><div class="mshell" id="mshell"><i class="mpic"></i><span class="msoon" hidden>Coming<br>soon</span></div></div><div class="mphase" id="mphase"></div><div class="mfilm" id="mfilm"></div>'; },
   swipe: function (c) { return { x: 1, y: 0, px: c.mob ? 26 : 40 }; },
   spot: function (c, j, n) {   // (where a small moon is: a row across the sky, or on a phone a ring round the large moon, the 1st at the top)
     if (c.mob) { var a = -Math.PI / 2 + 2 * Math.PI * j / (n + 1); return { x: 390 + 330 * Math.cos(a), y: 440 + 330 * Math.sin(a), a: a }; }
@@ -2538,7 +2547,12 @@ THEMEFX.moon = { all: true,
     if (mp) { if (c.mob) { mp.style.left = (390 + 395 * Math.cos(s.a)).toFixed(0) + 'px'; mp.style.top = (440 + 395 * Math.sin(s.a) - 6).toFixed(0) + 'px'; } else mp.style.left = s.x.toFixed(0) + 'px'; }   // (the moon's phase by the small moon)
   },
   front: function (b) {
-    var bm = $('#bigmoon'); if (bm && b) bm.style.setProperty('--p', b.style.getPropertyValue('--p') || 'none');
+    var bm = $('#bigmoon'), sh = $('#mshell'), has = b && b.classList.contains('has');
+    if (bm && b) { bm.style.setProperty('--p', has ? b.style.getPropertyValue('--p') || 'none' : 'none'); var so = bm.querySelector('.msoon'); if (so) so.hidden = has; }
+    if (sh && sh.animate && b && !arguments[2] && !CALM) {   // (the rocket fired from the cannon, into the Man in the Moon's eye; he flinches)
+      sh.animate([{ transform: 'translate(-230%, 160%) rotate(45deg) translateY(-9%) scale(.45)', opacity: 0 }, { opacity: 1, offset: .2 }, { transform: 'rotate(45deg) translateY(-9%)', opacity: 1 }], { duration: 900, easing: 'cubic-bezier(.45, 0, .8, .55)' });
+      var fc = $('#mface'); if (fc && fc.animate) fc.animate([{ transform: 'none' }, { transform: 'rotate(-5deg) scale(.97)', offset: .4 }, { transform: 'rotate(2deg)', offset: .7 }, { transform: 'none' }], { duration: 600, delay: 860, easing: 'ease-out' });
+    }
     var mp = $('#mphase'); if (mp && b) mp.textContent = PHASES[Math.floor(moonPhase(b.dataset.day) * 8 + .5) % 8];
     var mf = $('#mfilm'), it = b && S.calData.days[b.dataset.day]; if (mf) mf.textContent = it && !it.secret ? showName(it) : '';   // (and its film under the large one)
   }
