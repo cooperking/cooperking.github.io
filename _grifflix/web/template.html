@@ -2707,7 +2707,12 @@ function themeKeys(own) {   // (the month's days, with the neighbouring months' 
   return out;
 }
 function themeOther(b) {   // (a neighbouring month's day come to the front: once it's settled there, that month's theme, on that day)
-  clearTimeout(S.crossT); S.moved = Date.now(); if (!b || !b.dataset.om || S.quiet) return;
+  clearTimeout(S.crossT); S.moved = Date.now();
+  // (no longer: the neighbouring month's days stay in this month's theme, a preview; going on past the last of them takes you into
+  // that month (themeStep). John, 9 Nov 2026: "It shouldn't change theme the moment you leave the first day of the month backwards or
+  // the last day of the month forwards. It shouldn't let a scroll finish and then change")
+  return;
+  if (!b || !b.dataset.om || S.quiet) return;
   var wait = function () {
     if (!b.isConnected || !b.classList.contains('front')) return;
     var cal = $('#cal'), still = Date.now() - (S.moved || 0);
