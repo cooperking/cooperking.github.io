@@ -2160,7 +2160,7 @@ function join(text) {
     .catch(function (e) { toast(e.message || 'Couldn’t sign in just now. Try again.'); });
 }
 window.grifflixJoin = join;   // (the Fire TV app's menu: Sign in with a code)
-(function () { var c = codeFrom(location.hash); if (c && /^#join=/.test(location.hash)) { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {} join(location.hash); } })();
+(function () { var hs = location.hash, c = codeFrom(hs); if (c && /^#join=/.test(hs)) { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {} join(hs); } })();   // (the link's code read before the address is tidied: it was read after, and lost)
 
 /* ------------------------------------------------------------------ pages */
 function route() {
