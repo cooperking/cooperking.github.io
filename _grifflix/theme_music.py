@@ -10,26 +10,27 @@ Run: python3 _grifflix/theme_music.py
 """
 import hashlib, json, os, sys, time, urllib.error, urllib.parse, urllib.request
 
-# theme: (search, the artist the result must name, the title it must contain[, the album it must be from])
+# theme: (search, the artist the result must name, the title it must contain[, the album it must be from]): each the piece the
+# film is best known by, short where possible, so its 30 seconds are the part everyone knows (John, 9 Nov 2026)
 PICKS = {
     'corridor': ('The Shining Main Title Wendy Carlos', 'carlos', 'main title'),
     'slices': ("Yumeji's Theme Shigeru Umebayashi", 'umebayashi', 'yumeji'),
     'umbrellas': ('Les Parapluies de Cherbourg Michel Legrand', 'legrand', 'parapluies'),
-    'code': ('The Matrix Main Title Don Davis', 'davis', 'main title'),
-    'spiral': ('Vertigo Prelude Bernard Herrmann', 'herrmann', 'prelude'),
-    'tron': ('Tron Scherzo Wendy Carlos', 'carlos', 'tron'),
+    'code': ('Clubbed to Death Rob Dougan', 'robert d', 'clubbed to death', ''),   # (the film's best-known piece)
+    'spiral': ('Vertigo Prelude Herrmann', 'herrmann', 'vertigo: prelude', 'hitchcock: the great'),   # (the Prelude alone, Herrmann conducting: the 30 seconds can't miss it)
+    'tron': ('Tron Main Title Wendy Carlos', 'carlos', 'theme from tron', ''),
     'pinboard': ('Hurdy Gurdy Man Donovan', 'donovan', 'hurdy gurdy'),
     'moon': ('Hugo Howard Shore', 'shore', 'the thief', 'hugo (original'),
     'reel': ('Cinema Paradiso Ennio Morricone', 'morricone', 'cinema paradiso'),
     'oz': ('Over the Rainbow Judy Garland Wizard of Oz', 'garland', 'over the rainbow', 'wizard of oz'),
     'table': ("We'll Meet Again Vera Lynn", 'lynn', 'meet again'),
-    'globe': ('Citizen Kane Herrmann', 'herrmann', 'from "citizen kane"', ''),   # (its Prelude and The Inquirer polka: the theme's front pages)
-    'jaws': ('Jaws Main Title John Williams', 'williams', 'main title'),
+    'globe': ('Citizen Kane Herrmann Prelude', 'herrmann', 'prelude', 'music from the 1941 motion picture'),   # (the original 1941 recording: Xanadu, Rosebud, as the film opens)
+    'jaws': ('Jaws Main Title 2025 Mix John Williams', 'williams', 'main title', 'remastered'),   # (57 seconds: the shark's two notes from the start)
     'credits': ('Alphaville Paul Misraki', 'misraki', ''),
-    'bars': ('Psycho Prelude Bernard Herrmann', 'herrmann', 'prelude'),
+    'bars': ('Psycho The Murder Bernard Herrmann', 'herrmann', 'the murder', 'psycho'),   # (the shower: the strings everyone knows)
     'fold': ('Time Hans Zimmer Inception', 'zimmer', 'time'),
     'stairs': ('Sunset Boulevard Main Title Franz Waxman', 'waxman', ''),
-    'lane': ('The Man in Me Bob Dylan', 'dylan', 'man in me'),
+    'lane': ('Tumbling Tumbleweeds Sons of the Pioneers', 'sons of the pioneers', 'tumbling tumbleweeds', 'rca country legends'),   # (the film's opening, the tumbleweed)
     'hotel': ('Mr. Moustafa Alexandre Desplat', 'desplat', 'moustafa'),
     'bedford': ("It's a Wonderful Life Main Title Dimitri Tiomkin", 'tiomkin', ''),
     'autumn': ('Late Autumn Takanobu Saito Ozu', 'saito', ''),
@@ -61,7 +62,7 @@ def main():
             if not r.get('previewUrl'):
                 continue
             tn, cn = (r.get('trackName') or '').lower(), (r.get('collectionName') or '').lower()
-            if who in (r.get('artistName') or '').lower() and title in tn and alb in cn and 'live' not in tn and 'north by' not in tn:
+            if who in (r.get('artistName') or '').lower() and title in tn and alb in cn and 'live' not in tn and 'interview' not in tn and 'north by' not in tn:
                 hit = r
                 break
         if not hit:
@@ -69,7 +70,7 @@ def main():
             time.sleep(4)
             continue
         src = hit['previewUrl']
-        out[k] = {'title': hit['trackName'], 'artist': hit['artistName'], 'src': src, 'h': hashlib.sha256(src.encode()).hexdigest()[:12]}
+        out[k] = {'title': hit['trackName'], 'artist': hit['artistName'], 'secs': round(hit.get('trackTimeMillis', 0) / 1000), 'src': src, 'h': hashlib.sha256(src.encode()).hexdigest()[:12]}
         print(k, '|', hit['trackName'], '|', hit['artistName'], '|', hit.get('collectionName'))
         json.dump(out, open(p, 'w'), indent=1, ensure_ascii=False, sort_keys=True)
         time.sleep(4)
