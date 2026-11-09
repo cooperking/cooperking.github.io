@@ -599,7 +599,6 @@ html.tv .th-lane .vday:focus { outline: 0 !important; box-shadow: 0 0 0 4px #1a1
 @keyframes zflick { 50% { background-color: rgba(255, 250, 235, .035); } }
 @media (prefers-reduced-motion: reduce) { .zflick { animation: none; } }
 .zbeam { position: absolute; pointer-events: none; background: radial-gradient(closest-side, rgba(235, 228, 210, .14), rgba(235, 228, 210, 0)); }   /* (the screen's light in the room) */
-.zseats { position: absolute; left: 0; top: 0; pointer-events: none; } .zseats path { fill: #120b0b; stroke: rgba(235, 228, 210, .16); stroke-width: 1; }   /* (the seats, their tops caught by the screen's light) */
 .zdrum .rim { fill: none; stroke: #e9c46a; stroke-width: 2; opacity: .55; }
 .zdrum .rimf { fill: rgba(233, 196, 106, .06); }
 .zdrum .zin { fill: #0d0809; } .zdrum.zfront { z-index: 100; }
@@ -3500,11 +3499,7 @@ THEMEFX.picture = {
     h += '<div class="zbeam" style="left:' + F(g.scx - g.sw) + 'px;top:' + F(st0 - g.sh * .2) + 'px;width:' + F(g.sw * 2) + 'px;height:' + F(g.sh * 1.9) + 'px"></div>' +
       '<div class="zstagef" id="zstagef" style="left:' + F(sl) + 'px;top:' + F(st0) + 'px;width:' + F(g.sw) + 'px;height:' + F(g.sh) + 'px"><div class="zcin"><i class="zpost on" id="zpost"></i><i class="ztrain" id="ztrain"></i><i class="zflick"></i></div>' +
       '<i class="zcurt l"></i><i class="zcurt r"></i></div>';   // (its curtains: they part, the film's shown, then the day's poster: John, 9 Nov 2026: "Have it with a curtain ... After it ends, put today's poster on the screen")
-    var seats = '', rows = 2;
-    for (var r = 0; r < rows; r++) { var yy = st0 + g.sh + (20 + r * 30) * g.f, n = Math.round(g.sw * (1.1 + r * .2) / (46 * g.f)), w0 = g.sw * (1.1 + r * .2), x0 = g.scx - w0 / 2;
-      for (var q = 0; q < n; q++) { var xx = x0 + (q + .5) * w0 / n, sw2 = w0 / n * .82, hh = (26 + r * 6) * g.f;
-        seats += '<path d="M' + F(xx - sw2 / 2) + ',' + F(yy + hh) + ' L' + F(xx - sw2 / 2) + ',' + F(yy + hh * .35) + ' Q' + F(xx - sw2 / 2) + ',' + F(yy) + ' ' + F(xx) + ',' + F(yy) + ' Q' + F(xx + sw2 / 2) + ',' + F(yy) + ' ' + F(xx + sw2 / 2) + ',' + F(yy + hh * .35) + ' L' + F(xx + sw2 / 2) + ',' + F(yy + hh) + ' Z"/>'; } }
-    h += '<svg class="zseats" width="' + c.W + '" height="' + c.H + '">' + seats + '</svg>';
+    // (no seats: John, 9 Nov 2026)
     // (behind it all: the stand, the drum's inside (its paper-lined far wall, its floor), the far half of its rim)
     h += '<svg class="zdrum" width="' + c.W + '" height="' + c.H + '"><defs>' +
       '<linearGradient id="zoak" x1="0" x2="1"><stop offset="0" stop-color="#1a0d08"/><stop offset=".2" stop-color="#4a2817"/><stop offset=".4" stop-color="#8a5230"/><stop offset=".55" stop-color="#5e3520"/><stop offset=".8" stop-color="#2e180d"/><stop offset="1" stop-color="#120805"/></linearGradient>' +
