@@ -564,14 +564,12 @@ html.tv .th-lane .vday:focus { outline: 0 !important; box-shadow: 0 0 0 4px #1a1
 .zdrum .rim { fill: none; stroke: #e9c46a; stroke-width: 2; opacity: .55; }
 .zdrum .rimf { fill: rgba(233, 196, 106, .06); }
 .zdrum .zin { fill: #0d0809; } .zdrum.zfront { z-index: 100; }
+.zdrum .zgb { fill: none; stroke: #e9c46a; stroke-width: 2; opacity: .85; } .zdrum .zrim { fill: none; stroke: #f6e0a4; stroke-width: 3; }
 .zdrum.zmid { z-index: 8; }
-.zm { position: absolute; left: 0; top: 0; display: grid; place-items: center; pointer-events: none; will-change: transform; backface-visibility: hidden; background: linear-gradient(180deg, #2b2a2c, #121113 55%, #1d1b1d); box-shadow: inset 0 0 0 1px rgba(233, 196, 106, .4); }
-.zst, .zrefl { position: absolute; left: 0; top: 0; pointer-events: none; will-change: transform; }
-.zst { z-index: 2; background: #e9dcc0; box-shadow: 0 0 0 2px #2a1810; filter: brightness(.6) sepia(.4); }
-.zst i, .zrefl i { display: block; width: 100%; height: 100%; background: url("/grifflix/img/muybridge-horse.webp") 0 0 no-repeat; }
-.zst i { filter: brightness(0) ; opacity: .8; }   /* (the stills: black horse on the strip's paper) */
-.zrefl { z-index: 45; }
-.zrefl i { filter: drop-shadow(0 0 4px rgba(233, 196, 106, .4)); }
+.zm { position: absolute; left: 0; top: 0; display: grid; place-items: center; pointer-events: none; will-change: transform; backface-visibility: hidden; background: linear-gradient(180deg, #f3ead2, #dccdaa); box-shadow: inset 0 0 0 2px #c9ccd0, inset 0 0 0 3px rgba(40, 30, 20, .4); }   /* (a mirror, the strip's paper and horse in it, its silvered edge) */
+.zst { position: absolute; left: 0; top: 0; z-index: 2; pointer-events: none; will-change: transform; display: grid; place-items: center; background: #ece0c2; box-shadow: inset 1px 0 0 rgba(60, 40, 20, .35); }
+.zst i, .zm i { display: block; background: url("/grifflix/img/muybridge-horse.webp") 0 0 no-repeat; filter: brightness(0); }   /* (Muybridge's horse, black on the strip's paper) */
+.zst::after, .zst i { filter: brightness(0) ; opacity: .8; }   /* (the stills: black horse on the strip's paper) */
 .zm::after { content: ""; position: absolute; inset: 0; background: #000; opacity: var(--dk, 0); }
 .zm::before { content: ""; position: absolute; inset: 0; z-index: 1; opacity: var(--sh, 0); background: linear-gradient(100deg, rgba(255, 244, 220, 0) 25%, rgba(255, 244, 220, .25) 45%, rgba(255, 244, 220, 0) 62%); }
 .zdrum .zback { fill: url(#zin); } .zdrum .zfloor { fill: #070303; }
@@ -579,7 +577,7 @@ html.tv .th-lane .vday:focus { outline: 0 !important; box-shadow: 0 0 0 4px #1a1
 .zdrum .zoak { fill: url(#zoak); } .zdrum .zring { fill: none; stroke: #c9935a; stroke-opacity: .28; stroke-width: 1; } .zdrum .zedge { fill: none; stroke: #f0cf9c; stroke-opacity: .5; stroke-width: 1.2; } .zdrum .zshadow { fill: rgba(0, 0, 0, .55); filter: blur(6px); }
 .zdrum .spin { fill: url(#zwood); } .zdrum .foot { fill: #24170f; } .zdrum .foott { fill: url(#zwood); stroke: #e9c46a; stroke-opacity: .3; } .zdrum .coll { fill: #b8913f; }
 .zh { position: absolute; left: 0; top: 0; background: url("/grifflix/img/muybridge-horse.webp") 0 0 no-repeat; pointer-events: none; will-change: transform; filter: drop-shadow(0 0 4px rgba(233, 196, 106, .35)); }
-.zlt { position: absolute; left: 0; top: 0; font: 700 26px/1 var(--kfont); color: #e9c46a; pointer-events: none; will-change: transform; }
+.zlt { position: absolute; left: 0; top: 0; font: 600 30px/1 var(--serif); color: #f3d98e; text-shadow: 0 1px 0 rgba(0, 0, 0, .5); pointer-events: none; will-change: transform; }
 .th-picture .vday { width: 170px; height: 255px; transition: opacity .25s; will-change: transform; box-shadow: 0 6px 16px rgba(0, 0, 0, .5); backface-visibility: hidden; }
 .th-picture .vday .vn { display: none; }
 .th-picture .vday::after { content: ""; position: absolute; inset: 0; background: #000; opacity: var(--dk, 0); pointer-events: none; will-change: opacity; }
@@ -3356,58 +3354,55 @@ function zstand(cx, y0, R, ry, maxY) {   // (the zoetrope's turned oak pedestal,
   return '<clipPath id="zstclip"><path d="M' + F(cx - R * 1.2) + ',' + F(y0) + ' L' + F(cx - R) + ',' + F(y0) + ' A' + F(R) + ' ' + F(ry) + ' 0 0 0 ' + F(cx + R) + ',' + F(y0) + ' L' + F(cx + R * 1.2) + ',' + F(y0) + ' L' + F(cx + R * 1.2) + ',' + F(maxY + 200) + ' L' + F(cx - R * 1.2) + ',' + F(maxY + 200) + ' Z"/></clipPath><g clip-path="url(#zstclip)">' + h + '</g>';
 }
 THEMEFX.picture = {
-  st: Math.PI * 2 / 14,   // (a day's turn of the drum: fourteen cards round its outside)
-  // (a praxinoscope (Émile Reynaud, 1877): the month's cards round the drum's outside, the day you're on at the front; inside, the
-  // column of mirrors, Muybridge's horse galloping in them as it turns. John, 9 Nov 2026: "try the horses being the effect on the
-  // mirrors and the cards being on the outside")
-  NM: 15,   // (the mirrors: one for each of the horse's frames)
+  st: Math.PI * 2 / 14,   // (a day's turn of the drum: fourteen slides round it)
+  // (a praxinoscope as Reynaud made it (1877), to be known at a glance (John, 9 Nov 2026: "it isn't recognisable to people ... unless
+  // we can really make it work we can't have it as a front page" - Faithful Victorian): a low, open drum, red-japanned and gilt, on a
+  // turned stand; inside it a paper strip of Muybridge's horse, and at its centre the column of mirrors, the horse in each, galloping as
+  // it turns. The month's films hang round it as slides, the day you're on lifted out at the front)
+  NM: 10,   // (the mirrors round the column)
   g: function (c) {   // (on a screen less tall than 900, all of it smaller, so it fits with its stand and clear of the caption)
-    var f = c.mob ? 1 : Math.min(1, c.H / 900), R = c.mob ? 360 : Math.min(400, c.W * .27) * f, E = .26;
-    var cw = 2 * R * Math.sin(this.st / 2) * .9, s = cw / 170, ch = 255 * s, band = 34 * f, Hw = ch + 14 * f + band;   // (a card the width of its slot, the wall as tall as a card and a band below)
-    var ty = c.mob ? 330 : c.H * .4, ry = R * E, rm = R * .6, rym = rm * E, mw = 2 * rm * Math.tan(Math.PI / this.NM), mh = mw * 1.05;
-    var mcy = ty + ry + 14 * f - rym - mh / 2;   // (the mirrors' middle: their feet just below the near rim)
-    return { cx: c.mob ? 390 : c.W - R - Math.max(70, c.W * .055), ty: ty, R: R, E: E, ry: ry, Hw: Hw, P: c.mob ? 1100 : 1400, f: f, band: band,
-      s: s, ch: ch, rm: rm, rym: rym, mw: mw, mh: mh, mcy: mcy, capy: mcy - mh / 2 };
+    var f = c.mob ? 1 : Math.min(1, c.H / 900), R = c.mob ? 350 : Math.min(390, c.W * .27) * f, E = .24;
+    var cw = 2 * R * Math.sin(this.st / 2) * (c.mob ? .66 : .6), s = cw / 170, Hw = 100 * f;
+    var ty = c.mob ? 290 : c.H * .3, ry = R * E, rm = R * .5, rym = rm * E, mw = 2 * rm * Math.tan(Math.PI / this.NM), mh = mw * .95;
+    var mcy = ty + ry + 6 * f - rym - mh / 2;   // (the mirrors' middle: their feet just below the near rim)
+    return { cx: c.mob ? 390 : c.W - R - Math.max(70, c.W * .055), ty: ty, R: R, E: E, ry: ry, Hw: Hw, P: c.mob ? 1100 : 1400, f: f,
+      s: s, rm: rm, rym: rym, mw: mw, mh: mh, mcy: mcy, capy: mcy - mh / 2, big: c.mob ? 1.75 : 1.6 };
   },
   decor: function (c) {
     var g = this.g(c), R = g.R, ry = g.ry, cx = g.cx, ty = g.ty, yb = ty + g.Hw, F = function (n) { return (+n).toFixed(1); };
     var arc = function (y, sw, r, e) { r = r || R; return 'A' + F(r) + ' ' + F(e || ry) + ' 0 0 ' + sw + ' '; };   // (sw 0: left to right by the front; 1: by the back)
     var h = '<div class="zamb" id="zamb"></div><div class="zvig"></div><div class="zgrain"></div>';
-    // (behind it all: the stand, the drum's inside (its far wall and floor, lit by the lamp above), the far half of its rim)
+    // (behind it all: the stand, the drum's inside (its paper-lined far wall, its floor), the far half of its rim)
     h += '<svg class="zdrum" width="' + c.W + '" height="' + c.H + '"><defs>' +
-      '<linearGradient id="zoak" x1="0" x2="1"><stop offset="0" stop-color="#140a07"/><stop offset=".2" stop-color="#3a2015"/><stop offset=".4" stop-color="#6b3d24"/><stop offset=".55" stop-color="#4a2a1a"/><stop offset=".8" stop-color="#26140c"/><stop offset="1" stop-color="#0f0705"/></linearGradient>' +
-      '<linearGradient id="zin" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#3a1a14"/><stop offset=".55" stop-color="#170b09"/><stop offset="1" stop-color="#080404"/></linearGradient>' +
-      '<linearGradient id="zlac" x1="0" x2="1"><stop offset="0" stop-color="#120607"/><stop offset=".38" stop-color="#4a1a1c"/><stop offset=".55" stop-color="#2c0f11"/><stop offset="1" stop-color="#0e0506"/></linearGradient>' +
-      '<linearGradient id="zbrass" x1="0" x2="1"><stop offset="0" stop-color="#3a2a12"/><stop offset=".35" stop-color="#c9a25a"/><stop offset=".5" stop-color="#f0d494"/><stop offset=".7" stop-color="#8a6a30"/><stop offset="1" stop-color="#2a1d0c"/></linearGradient>' +
-      '<radialGradient id="zcap" cx=".5" cy=".35" r=".7"><stop offset="0" stop-color="#2a1a10"/><stop offset="1" stop-color="#0c0705"/></radialGradient>' +
-      '<radialGradient id="zlamp" cx=".5" cy=".3" r=".6"><stop offset="0" stop-color="#ffd9a0" stop-opacity=".22"/><stop offset="1" stop-color="#ffd9a0" stop-opacity="0"/></radialGradient></defs>' +
-      zstand(cx, yb, R, ry, c.mob ? 1000 : c.H - 118) +
-      '<ellipse class="zfloor" cx="' + F(cx) + '" cy="' + F(yb) + '" rx="' + F(R) + '" ry="' + F(ry) + '"/>' +
-      '<path class="zback" d="M' + F(cx - R) + ',' + F(ty) + ' ' + arc(ty, 1) + F(cx + R) + ',' + F(ty) + ' L' + F(cx + R) + ',' + F(ty + 80) + ' ' + arc(ty + 80, 0) + F(cx - R) + ',' + F(ty + 80) + ' Z"/>' +
-      '<ellipse cx="' + F(cx) + '" cy="' + F(ty + 20) + '" rx="' + F(R * .9) + '" ry="' + F(ry * 1.2) + '" fill="url(#zlamp)"/>' +
+      '<linearGradient id="zoak" x1="0" x2="1"><stop offset="0" stop-color="#1a0d08"/><stop offset=".2" stop-color="#4a2817"/><stop offset=".4" stop-color="#8a5230"/><stop offset=".55" stop-color="#5e3520"/><stop offset=".8" stop-color="#2e180d"/><stop offset="1" stop-color="#120805"/></linearGradient>' +
+      '<linearGradient id="zin" x1="0" x2="1"><stop offset="0" stop-color="#6f6148"/><stop offset=".5" stop-color="#e8dbbb"/><stop offset="1" stop-color="#6f6148"/></linearGradient>' +
+      '<linearGradient id="zlac" x1="0" x2="1"><stop offset="0" stop-color="#3a0709"/><stop offset=".3" stop-color="#9e1b1f"/><stop offset=".45" stop-color="#c4312f"/><stop offset=".6" stop-color="#8a1518"/><stop offset="1" stop-color="#2a0507"/></linearGradient>' +
+      '<linearGradient id="zbrass" x1="0" x2="1"><stop offset="0" stop-color="#5a4218"/><stop offset=".35" stop-color="#d4ae62"/><stop offset=".5" stop-color="#f6e0a4"/><stop offset=".7" stop-color="#a07c38"/><stop offset="1" stop-color="#4a3410"/></linearGradient>' +
+      '<radialGradient id="zcap" cx=".5" cy=".4" r=".7"><stop offset="0" stop-color="#b89048"/><stop offset=".6" stop-color="#6a4a1c"/><stop offset="1" stop-color="#3a260c"/></radialGradient>' +
+      '<radialGradient id="zlamp" cx=".5" cy=".3" r=".6"><stop offset="0" stop-color="#ffe2b0" stop-opacity=".35"/><stop offset="1" stop-color="#ffe2b0" stop-opacity="0"/></radialGradient></defs>' +
+      zstand(cx, yb, R * .8, ry * .8, c.mob ? 1000 : c.H - 118) +
+      '<ellipse cx="' + F(cx) + '" cy="' + F(yb) + '" rx="' + F(R) + '" ry="' + F(ry) + '" fill="#2a1a10"/>' +
+      '<path fill="url(#zin)" d="M' + F(cx - R) + ',' + F(ty) + ' ' + arc(ty, 1) + F(cx + R) + ',' + F(ty) + ' L' + F(cx + R) + ',' + F(yb) + ' ' + arc(yb, 0) + F(cx - R) + ',' + F(yb) + ' Z"/>' +
+      '<ellipse cx="' + F(cx) + '" cy="' + F(ty + g.Hw * .3) + '" rx="' + F(R * .95) + '" ry="' + F(ry * 1.4) + '" fill="url(#zlamp)"/>' +
       '<path class="rim" d="M' + F(cx - R) + ',' + F(ty) + ' ' + arc(ty, 1) + F(cx + R) + ',' + F(ty) + '"/></svg>';
-    // (the mirror column's dark core: no gap between its mirrors)
+    // (the mirror column's core: no gap between its mirrors)
     var rc = g.rm * .97;
-    h += '<svg class="zdrum zmid" width="' + c.W + '" height="' + c.H + '"><path fill="#0a0607" d="M' + F(cx - rc) + ',' + F(g.capy) + ' L' + F(cx - rc) + ',' + F(g.capy + g.mh + 4) + ' ' + arc(0, 0, rc, g.rym) + F(cx + rc) + ',' + F(g.capy + g.mh + 4) + ' L' + F(cx + rc) + ',' + F(g.capy) + ' Z"/></svg>';
-    // (inside the drum, round its wall, the horse's stills: 1878, Eadweard Muybridge, The Horse in Motion; at its centre the mirrors,
-    // the one facing you showing the horse moving: John, 9 Nov 2026: "for a true praxinoscope the horse would animate once as it span
-    // and stills of the horse would be seen on the inside")
+    h += '<svg class="zdrum zmid" width="' + c.W + '" height="' + c.H + '"><path fill="#1a1410" d="M' + F(cx - rc) + ',' + F(g.capy) + ' L' + F(cx - rc) + ',' + F(g.capy + g.mh + 4) + ' ' + arc(0, 0, rc, g.rym) + F(cx + rc) + ',' + F(g.capy + g.mh + 4) + ' L' + F(cx + rc) + ',' + F(g.capy) + ' Z"/></svg>';
+    // (inside, round its wall, the horse's stills: 1878, Eadweard Muybridge, The Horse in Motion; at its centre the mirrors)
     for (var q = 0; q < 15; q++) h += '<span class="zst"><i></i></span>';
-    for (var i = 0; i < this.NM; i++) h += '<span class="zm" data-zm="' + i + '"></span>';
-    h += '<span class="zrefl"><i></i></span>';
-    // (the near wall, japanned tin, red-black, gilt-lined, the cards on it; the column's brass cap and finial)
-    var cy2 = g.capy, fr = 14 * g.f;
+    for (var i = 0; i < this.NM; i++) h += '<span class="zm"><i></i></span>';
+    // (in front: the near wall, red and gilt; the column's brass top and the spindle's knob)
+    var cy2 = g.capy, fr = 12 * g.f;
     h += '<svg class="zdrum zfront" width="' + c.W + '" height="' + c.H + '">' +
-      '<path class="lac" d="M' + F(cx - R) + ',' + F(ty) + ' ' + arc(ty, 0) + F(cx + R) + ',' + F(ty) + ' L' + F(cx + R) + ',' + F(yb) + ' ' + arc(yb, 1) + F(cx - R) + ',' + F(yb) + ' Z"/>' +
-      '<path class="gilt" d="M' + F(cx - R) + ',' + F(yb - g.band) + ' ' + arc(0, 0) + F(cx + R) + ',' + F(yb - g.band) + '"/><path class="gilt" d="M' + F(cx - R) + ',' + F(yb - 4) + ' ' + arc(0, 0) + F(cx + R) + ',' + F(yb - 4) + '"/>' +
-      '<path class="rim" d="M' + F(cx - R) + ',' + F(ty) + ' ' + arc(ty, 0) + F(cx + R) + ',' + F(ty) + '"/><path class="rim" d="M' + F(cx - R) + ',' + F(yb) + ' ' + arc(yb, 0) + F(cx + R) + ',' + F(yb) + '"/>' +
-      '<ellipse cx="' + F(cx) + '" cy="' + F(cy2 + 2 * g.f) + '" rx="' + F(g.rm * 1.06) + '" ry="' + F(g.rym * 1.06) + '" fill="url(#zbrass)"/>' +
-      '<ellipse cx="' + F(cx) + '" cy="' + F(cy2) + '" rx="' + F(g.rm * 1.05) + '" ry="' + F(g.rym * 1.05) + '" fill="url(#zcap)"/>' +
-      '<path fill="url(#zbrass)" d="M' + F(cx - fr * .35) + ',' + F(cy2) + ' L' + F(cx - fr * .35) + ',' + F(cy2 - fr * 1.6) + ' L' + F(cx + fr * .35) + ',' + F(cy2 - fr * 1.6) + ' L' + F(cx + fr * .35) + ',' + F(cy2) + ' Z"/>' +
-      '<ellipse cx="' + F(cx) + '" cy="' + F(cy2 - fr * 1.6) + '" rx="' + F(fr * .8) + '" ry="' + F(fr * .28) + '" fill="url(#zbrass)"/>' +
-      '<circle cx="' + F(cx) + '" cy="' + F(cy2 - fr * 2.3) + '" r="' + F(fr * .6) + '" fill="url(#zbrass)"/></svg>';
-    var L = 'GRIFFLIX·GRIFFLIX·GRIFFLIX·';   // (round the band at its foot)
-    for (var k = 0; k < L.length; k++) h += '<span class="zlt" data-zi="' + k + '">' + L[k] + '</span>';
+      '<path fill="url(#zlac)" d="M' + F(cx - R) + ',' + F(ty) + ' ' + arc(ty, 0) + F(cx + R) + ',' + F(ty) + ' L' + F(cx + R) + ',' + F(yb) + ' ' + arc(yb, 1) + F(cx - R) + ',' + F(yb) + ' Z"/>' +
+      '<path class="zgb" d="M' + F(cx - R) + ',' + F(ty + 9 * g.f) + ' ' + arc(0, 0) + F(cx + R) + ',' + F(ty + 9 * g.f) + '"/><path class="zgb" d="M' + F(cx - R) + ',' + F(yb - 9 * g.f) + ' ' + arc(0, 0) + F(cx + R) + ',' + F(yb - 9 * g.f) + '"/>' +
+      '<path class="zrim" d="M' + F(cx - R) + ',' + F(ty) + ' ' + arc(ty, 0) + F(cx + R) + ',' + F(ty) + '"/><path class="zrim" d="M' + F(cx - R) + ',' + F(yb) + ' ' + arc(yb, 0) + F(cx + R) + ',' + F(yb) + '"/>' +
+      '<ellipse cx="' + F(cx) + '" cy="' + F(cy2) + '" rx="' + F(g.rm * 1.05) + '" ry="' + F(g.rym * 1.05) + '" fill="url(#zcap)" stroke="#f6e0a4" stroke-opacity=".7" stroke-width="1.2"/>' +
+      '<ellipse cx="' + F(cx) + '" cy="' + F(cy2) + '" rx="' + F(g.rm * .5) + '" ry="' + F(g.rym * .5) + '" fill="none" stroke="#3a260c" stroke-opacity=".5" stroke-width="1"/>' +
+      '<path fill="url(#zbrass)" d="M' + F(cx - fr * .3) + ',' + F(cy2) + ' L' + F(cx - fr * .3) + ',' + F(cy2 - fr * 2.4) + ' L' + F(cx + fr * .3) + ',' + F(cy2 - fr * 2.4) + ' L' + F(cx + fr * .3) + ',' + F(cy2) + ' Z"/>' +
+      '<circle cx="' + F(cx) + '" cy="' + F(cy2 - fr * 2.8) + '" r="' + F(fr * .75) + '" fill="url(#zbrass)"/></svg>';
+    var L = 'GRIFFLIX ✦ GRIFFLIX ✦ GRIFFLIX ✦ ';   // (in gilt round the drum, between its bands)
+    for (var k = 0; k < L.length; k++) h += '<span class="zlt">' + L[k] + '</span>';
     return h;
   },
   ready: function (c) { fxReset(this); this.c = c; },
@@ -3465,49 +3460,43 @@ THEMEFX.picture = {
   place: function (all, at, c) { this.all = all; this.c = c; if (this._at != null && Math.abs(this._at - at) > .3) musicKick(Math.abs(this._at - at)); fxTween(this, at, 1100); },
   draw: function (a) {
     var me = this, c = me.c, g = me.g(c), st = me.st, R = g.R, ry = g.ry, ty = g.ty, yb = ty + g.Hw, tilt = Math.asin(g.E) * 180 / Math.PI;
-    var cmid = ty + 10 * g.f + g.ch / 2;   // (the cards' middle on the wall)
-    me.all.forEach(function (el, j) {   // (the cards round the outside: the day you're on at the front, standing out from the wall)
-      var k = j - a, ph = k * st, cs = Math.cos(ph), sn = Math.sin(ph), nf = near(k), sc = g.s * (1 + .14 * nf);
-      var x = g.cx + R * sn * (1 + .06 * nf), y = cmid + ry * cs + nf * 4 * g.f, o = cs < 0 || Math.abs(k) > 3.6 ? 0 : Math.min(1, cs / .2);
-      el.style.transform = 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px) translate(-50%,-50%) perspective(' + g.P + 'px) rotateX(' + (-tilt).toFixed(2) + 'deg) rotateY(' + (ph * 180 / Math.PI).toFixed(1) + 'deg) scale(' + sc.toFixed(3) + ')';
+    me.all.forEach(function (el, j) {   // (the slides, hung round the drum below its foot: the day you're on lifted out, larger, at the front)
+      var k = j - a, ph = k * st, cs = Math.cos(ph), sn = Math.sin(ph), nf = near(k), sc = g.s * (1 + (g.big - 1) * nf), hh = 255 * sc;
+      var x = g.cx + R * sn * (1 + .04 * nf), y = yb + ry * cs + 10 * g.f + hh / 2 + nf * 6 * g.f, o = cs < 0 || Math.abs(k) > 3.6 ? 0 : Math.min(1, cs / .25);
+      el.style.transform = 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px) translate(-50%,-50%) perspective(' + g.P + 'px) rotateX(' + (-tilt).toFixed(2) + 'deg) rotateY(' + (ph * 180 / Math.PI * (1 - nf)).toFixed(1) + 'deg) scale(' + sc.toFixed(3) + ')';
       el.style.opacity = o.toFixed(2); el.style.pointerEvents = o < .3 ? 'none' : '';
       el.style.zIndex = 110 + Math.round(cs * 20) + (nf > .5 ? 30 : 0);
-      el.style.setProperty('--dk', nf > .98 ? '0' : Math.min(.7, .1 + .8 * (1 - cs)).toFixed(2));   // (turned from the light towards the sides)
+      el.style.setProperty('--dk', nf > .98 ? '0' : Math.min(.6, .12 + .6 * (1 - cs)).toFixed(2));
     });
-    // (the stills round the inside wall, turning with the drum: the far side seen over the near rim, behind the column)
-    var sw = 2 * Math.PI * R * .97 / 15 * .72, shh = sw * 91 / 150;
+    // (the paper strip round the inside wall, a still of the horse in each frame: the far side seen over the near rim, behind the column)
+    var sw = 2 * Math.PI * R * .985 / 15, shh = Math.min(g.Hw * .86, sw * 91 / 150 * 1.1);
     me._zst = me._zst && me._zst[0] && me._zst[0].isConnected ? me._zst : $$('#cal .zst');
     me._zst.forEach(function (m, i) {
       var ph = i * 2 * Math.PI / 15 - a * st, cs = Math.cos(ph), sn = Math.sin(ph);
-      if (cs > -.05) { m.style.visibility = 'hidden'; return; } m.style.visibility = '';
-      if (!m._sz) { m._sz = 1; m.style.width = sw.toFixed(1) + 'px'; m.style.height = shh.toFixed(1) + 'px'; m.firstChild.style.backgroundSize = (sw * 15).toFixed(1) + 'px ' + shh.toFixed(1) + 'px'; m.firstChild.style.backgroundPosition = (-i * sw).toFixed(1) + 'px 0'; }
-      m.style.transform = 'translate(' + (g.cx + R * .97 * sn).toFixed(1) + 'px,' + (ty + 10 * g.f + shh / 2 + ry * .97 * cs).toFixed(1) + 'px) translate(-50%,-50%) perspective(' + g.P + 'px) rotateX(' + (-tilt).toFixed(2) + 'deg) rotateY(' + ((ph - Math.PI) * 180 / Math.PI).toFixed(1) + 'deg)';
-      m.style.opacity = Math.min(1, -cs / .25).toFixed(2);
+      if (cs > -.02) { m.style.visibility = 'hidden'; return; } m.style.visibility = '';
+      if (!m._sz) { m._sz = 1; m.style.width = (sw + 1).toFixed(1) + 'px'; m.style.height = shh.toFixed(1) + 'px'; var fw = shh / 1.1 * 150 / 91; m.firstChild.style.width = fw.toFixed(1) + 'px'; m.firstChild.style.height = (shh / 1.1).toFixed(1) + 'px'; m.firstChild.style.backgroundSize = (fw * 15).toFixed(1) + 'px ' + (shh / 1.1).toFixed(1) + 'px'; m.firstChild.style.backgroundPosition = (-i * fw).toFixed(1) + 'px 0'; }
+      m.style.transform = 'translate(' + (g.cx + R * .985 * sn).toFixed(1) + 'px,' + (ty + g.Hw / 2 + ry * .985 * cs).toFixed(1) + 'px) translate(-50%,-50%) perspective(' + g.P + 'px) rotateX(' + (-tilt).toFixed(2) + 'deg) rotateY(' + ((ph - Math.PI) * 180 / Math.PI).toFixed(1) + 'deg)';
+      m.style.setProperty('--dk', Math.max(0, .45 - .45 * -cs).toFixed(2));
     });
-    // (the mirrors, turning with the drum, a glint passing over each as it turns through the light)
+    // (the mirrors, the horse's frame in each: one frame on as each next mirror comes round and more as it turns, so the horse gallops
+    // through its stride as the drum turns a day, and stands when it stops)
+    var NM = me.NM, step = Math.floor(a * 15), fw = g.mw * .9, fh = fw * 91 / 150;
     me._zm = me._zm && me._zm[0] && me._zm[0].isConnected ? me._zm : $$('#cal .zm');
     me._zm.forEach(function (m, i) {
-      var ph = i * 2 * Math.PI / me.NM - a * st, cs = Math.cos(ph), sn = Math.sin(ph);
+      var ph = i * 2 * Math.PI / NM - a * st, cs = Math.cos(ph), sn = Math.sin(ph);
       if (cs < 0) { m.style.visibility = 'hidden'; return; } m.style.visibility = '';
-      if (!m._sz) { m._sz = 1; m.style.width = g.mw.toFixed(1) + 'px'; m.style.height = g.mh.toFixed(1) + 'px'; }
+      if (!m._sz) { m._sz = 1; m.style.width = g.mw.toFixed(1) + 'px'; m.style.height = g.mh.toFixed(1) + 'px'; var t = m.firstChild; t.style.width = fw.toFixed(1) + 'px'; t.style.height = fh.toFixed(1) + 'px'; t.style.backgroundSize = (fw * 15).toFixed(1) + 'px ' + fh.toFixed(1) + 'px'; }
+      m.firstChild.style.backgroundPosition = (-(((i + step) % 15 + 15) % 15) * fw).toFixed(1) + 'px 0';
       m.style.transform = 'translate(' + (g.cx + g.rm * sn).toFixed(1) + 'px,' + (g.mcy + g.rym * cs).toFixed(1) + 'px) translate(-50%,-50%) perspective(' + g.P + 'px) rotateX(' + (-tilt).toFixed(2) + 'deg) rotateY(' + (ph * 180 / Math.PI).toFixed(1) + 'deg)';
       m.style.zIndex = 10 + Math.round(cs * 30);
-      m.style.setProperty('--dk', Math.min(.75, .05 + .8 * (1 - cs)).toFixed(2));
-      m.style.setProperty('--sh', Math.max(0, 1 - Math.abs(sn - .35) * 3).toFixed(2));
+      m.style.setProperty('--dk', Math.min(.7, .8 * (1 - cs)).toFixed(2));
+      m.style.setProperty('--sh', Math.max(0, 1 - Math.abs(sn - .3) * 3).toFixed(2));
     });
-    // (in the mirror facing you, the horse: still where the drum stands, galloping through its stride once as it turns a day)
-    var rf = me._zr && me._zr.isConnected ? me._zr : (me._zr = $('#cal .zrefl'));
-    if (rf) {
-      var fw = g.mw * .92, fh = fw * 91 / 150, fr = ((Math.floor(a * 15) % 15) + 15) % 15, t = rf.firstChild;
-      if (!rf._sz) { rf._sz = 1; t.style.width = fw.toFixed(1) + 'px'; t.style.height = fh.toFixed(1) + 'px'; t.style.backgroundSize = (fw * 15).toFixed(1) + 'px ' + fh.toFixed(1) + 'px'; }
-      t.style.backgroundPosition = (-fr * fw).toFixed(1) + 'px 0';
-      rf.style.transform = 'translate(' + g.cx.toFixed(1) + 'px,' + (g.mcy + g.rym).toFixed(1) + 'px) translate(-50%,-50%)';
-    }
-    $$('#cal .zlt').forEach(function (t, i, L) {   // (GRIFFLIX round the band at its foot, upright, turning with the drum)
+    $$('#cal .zlt').forEach(function (t, i, L) {   // (GRIFFLIX in gilt round the drum, between its bands)
       var th = (i / L.length) * Math.PI * 2 - a * st, cs = Math.cos(th), sn = Math.sin(th);
       if (cs < .05) { t.style.visibility = 'hidden'; return; } t.style.visibility = '';
-      t.style.transform = 'translate(' + (g.cx + R * sn).toFixed(1) + 'px,' + (yb - g.band * .5 + ry * cs).toFixed(1) + 'px) translate(-50%,-50%) perspective(' + g.P + 'px) rotateY(' + (th * 180 / Math.PI).toFixed(1) + 'deg) scale(' + (g.f * .75).toFixed(3) + ')';
-      t.style.opacity = (.55 + .45 * cs).toFixed(2); t.style.zIndex = 105;
+      t.style.transform = 'translate(' + (g.cx + R * sn).toFixed(1) + 'px,' + (ty + g.Hw / 2 + ry * cs).toFixed(1) + 'px) translate(-50%,-50%) perspective(' + g.P + 'px) rotateY(' + (th * 180 / Math.PI).toFixed(1) + 'deg) scale(' + g.f.toFixed(3) + ')';
+      t.style.opacity = (.6 + .4 * cs).toFixed(2); t.style.zIndex = 105;
     });
   },
   front: function (b) {   // (the room lit by the day's film)
