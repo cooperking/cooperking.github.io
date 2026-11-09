@@ -3053,9 +3053,8 @@ THEMEFX.picture = {
     return h;
   },
   ready: function (c) { fxReset(this); this.c = c; this.leader(); },
-  leader: function () {   // (a film leader: 3, 2, 1, a flash, GRIFFLIX; once a visit; a tap skips it)
-    var seen = false; try { seen = sessionStorage.getItem('grifflix-leader'); sessionStorage.setItem('grifflix-leader', 1); } catch (e) {}
-    if (seen || CALM || $('.zlead')) return;
+  leader: function () {   // (a film leader: 3, 2, 1, a flash, GRIFFLIX; once each page load; a tap skips it)
+    if (window.ZLED || CALM || $('.zlead')) return; window.ZLED = 1;   // (once each time the page loads: a reload, or GRIFFLIX, shows it again: John, 9 Nov 2026)
     var d = document.createElement('div'); d.className = 'zlead'; d.innerHTML = '<div class="ring"></div><div class="n">3</div><div class="gx">Grifflix</div><div class="skip">Tap to skip</div>';
     document.body.appendChild(d);
     var T = [], gone = function () { T.forEach(clearTimeout); d.classList.add('out'); setTimeout(function () { d.remove(); }, 600); };
