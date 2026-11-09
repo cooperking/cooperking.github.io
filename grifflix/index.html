@@ -2517,8 +2517,8 @@ function vAt(el, x, y, s, r, o, z) {
 function near(k) { return Math.max(0, 1 - Math.abs(k)); }   // (1 for the day you're on, 0 a day or more away)
 // ---- the months' music (John, 9 Nov 2026: "Can we get thirty second sound clips with each theme ... Grifflix theme should have
 // a sound appropriate to the theme too - mute can be an option on profile"): on the theme's page, each month's film's music
-// (a 30-second preview, kept by Grifflix: /gm/ on the Worker), once, faded in and out; Grifflix's own theme a projector
-// running, its sprockets clattering faster as the drum turns, and the leader's beeps. Browsers keep quiet till a first tap
+// (a 30-second preview, kept by Grifflix: /gm/ on the Worker), once, faded in and out; Grifflix's own theme the zoetrope's
+// sound as it turns, and the leader's beeps. Browsers keep quiet till a first tap
 // or key; Theme music on the profile turns it off on that device
 var TMUS = { on: store.get('grifflix-music') !== 'off', list: null, a: null, k: null, ok: /[?&]sound=1/.test(location.search), pj: null, ctx: null };   // (sound=1: admin's preview, opened by a click there, may play at once)
 fetch('/grifflix/data/thememusic.json').then(function (r) { return r.json(); }).then(function (j) { TMUS.list = j; if (TMUS.k && !TMUS.a && !TMUS.pj) { var k = TMUS.k; TMUS.k = null; themeMusic(k); } }).catch(function () {});
@@ -2540,22 +2540,32 @@ function musicHush() {   // (quiet: a film or trailer starting, the page hidden,
   if (a) { var v0 = a.volume, t0 = performance.now(); (function f() { var u = Math.min(1, (performance.now() - t0) / 600); a.volume = v0 * (1 - u); if (u < 1) requestAnimationFrame(f); else a.pause(); })(); }
   if (TMUS.pj) { TMUS.pj.stop(); TMUS.pj = null; }
 }
-function projector() {   // (an old projector running: its motor's hum and the film's 24 frames a second through the gate; all made here)
+function projector() {   // (the zoetrope: quiet while it stands; turning, a soft whoosh and its slits ticking past, fast then slowing as it
+  // settles, eased as the drum is: John, 9 Nov 2026: "the zoetrope sound should only play while it's spinning")
   var c = musicCtx(); if (!c) return null;
-  var sr = c.sampleRate, mk = function (sec, f) { var b = c.createBuffer(1, Math.floor(sr * sec), sr); f(b.getChannelData(0)); return b; };
-  var hum = mk(2, function (d) { var l = 0; for (var i = 0; i < d.length; i++) { l = (l + .02 * (Math.random() * 2 - 1)) / 1.02; d[i] = l * 3.2 + .05 * Math.sin(i / sr * 2 * Math.PI * 50); } });
-  var gate = mk(1, function (d) { for (var k = 0; k < 24; k++) { var at = Math.floor((k + (Math.random() - .5) * .1) / 24 * sr); for (var j = 0; j < sr * .008; j++) if (at + j < d.length) d[at + j] += (Math.random() * 2 - 1) * Math.exp(-j / (sr * .0015)) * (k % 2 ? .7 : 1); } });
-  var out = c.createGain(); out.gain.value = 0; out.connect(c.destination);
-  var s1 = c.createBufferSource(), f1 = c.createBiquadFilter(), g1 = c.createGain(); s1.buffer = hum; s1.loop = true; f1.type = 'lowpass'; f1.frequency.value = 600; g1.gain.value = .55; s1.connect(f1); f1.connect(g1); g1.connect(out);
-  var s2 = c.createBufferSource(), f2 = c.createBiquadFilter(), g2 = c.createGain(); s2.buffer = gate; s2.loop = true; f2.type = 'bandpass'; f2.frequency.value = 2400; f2.Q.value = .7; g2.gain.value = .45; s2.connect(f2); f2.connect(g2); g2.connect(out);
-  s1.start(); s2.start(); out.gain.linearRampToValueAtTime(.16, c.currentTime + 1.6);
+  var sr = c.sampleRate, nz = c.createBuffer(1, Math.floor(sr * 1.5), sr), d = nz.getChannelData(0); for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  var out = c.createGain(); out.gain.value = .9; out.connect(c.destination); var live = [];
   return {
-    stop: function () { var t = c.currentTime; out.gain.cancelScheduledValues(t); out.gain.setValueAtTime(out.gain.value, t); out.gain.linearRampToValueAtTime(0, t + .7); setTimeout(function () { try { s1.stop(); s2.stop(); } catch (e) {} out.disconnect(); }, 900); },
-    kick: function () { var t = c.currentTime; s2.playbackRate.cancelScheduledValues(t); s2.playbackRate.setValueAtTime(1, t); s2.playbackRate.linearRampToValueAtTime(1.7, t + .35); s2.playbackRate.linearRampToValueAtTime(1, t + 1.2);
-      g2.gain.cancelScheduledValues(t); g2.gain.setValueAtTime(.45, t); g2.gain.linearRampToValueAtTime(.9, t + .3); g2.gain.linearRampToValueAtTime(.45, t + 1.2); }
+    stop: function () { live.forEach(function (n) { try { n.stop(); } catch (e) {} }); live = []; setTimeout(function () { out.disconnect(); }, 50); },
+    kick: function (days, dur) {
+      var t0 = c.currentTime + .02, D = (dur || 1100) / 1000, N = Math.max(6, Math.min(48, Math.round(14 * (days || 1))));
+      // the whoosh: air round the drum, loudest at the start, falling as it slows
+      var w = c.createBufferSource(), wf = c.createBiquadFilter(), wg = c.createGain(); w.buffer = nz; wf.type = 'bandpass'; wf.Q.value = .8;
+      wf.frequency.setValueAtTime(1400, t0); wf.frequency.exponentialRampToValueAtTime(380, t0 + D);
+      wg.gain.setValueAtTime(0, t0); wg.gain.linearRampToValueAtTime(.09, t0 + .06); wg.gain.exponentialRampToValueAtTime(.002, t0 + D);
+      w.connect(wf); wf.connect(wg); wg.connect(out); w.start(t0); w.stop(t0 + D + .05); live.push(w);
+      // the slits passing: one tick each, timed by the drum's own easing (1 - (1 - p)^3)
+      for (var k = 1; k <= N; k++) {
+        var at = t0 + D * (1 - Math.cbrt(1 - k / N)), v = .16 * (1 - .6 * k / N);
+        var o = c.createOscillator(), g = c.createGain(); o.type = 'triangle'; o.frequency.value = 820 + 120 * Math.random();
+        g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(v, at + .002); g.gain.exponentialRampToValueAtTime(.0005, at + .035);
+        o.connect(g); g.connect(out); o.start(at); o.stop(at + .04); live.push(o);
+      }
+      live = live.slice(-120);
+    }
   };
 }
-function musicKick() { if (TMUS.pj) TMUS.pj.kick(); }   // (the drum turning)
+function musicKick(days) { if (TMUS.pj) TMUS.pj.kick(days, 1100); }   // (the drum turning, by so many days)
 function musicBeep() {   // (the leader's beep on each number)
   if (!TMUS.on || !TMUS.ok) return; var c = musicCtx(); if (!c) return;
   var o = c.createOscillator(), g = c.createGain(), t = c.currentTime; o.frequency.value = 1000; g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.14, t + .01); g.gain.linearRampToValueAtTime(0, t + .13); o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + .15);
@@ -3216,7 +3226,7 @@ THEMEFX.picture = {
     return [0, 1, 2].map(function (k) { return '<i style="background-image:' + u[(u.length - 1 - k * 3 % u.length + u.length) % u.length].replace(/"/g, "'") + '"></i>'; }).join('');
   },
   swipe: function (c) { return { x: -1, y: 0, px: c.mob ? 60 : 90 }; },   // (spin the drum with the finger)
-  place: function (all, at, c) { this.all = all; this.c = c; if (this._at != null && Math.abs(this._at - at) > .3) musicKick(); fxTween(this, at, 1100); },
+  place: function (all, at, c) { this.all = all; this.c = c; if (this._at != null && Math.abs(this._at - at) > .3) musicKick(Math.abs(this._at - at)); fxTween(this, at, 1100); },
   draw: function (a) {
     var me = this, c = me.c, g = me.g(c), st = me.st;
     me.all.forEach(function (el, j) {
@@ -4010,7 +4020,7 @@ function drawAccount() {
     (/[?&]app=/.test(location.search) || TV ? '' : '<div class="profsec"><p class="profh">Grifflix on your phone</p><p class="profp">' +
       (/Android/i.test(navigator.userAgent) ? 'The Grifflix app for Android: download it, then open the file and allow installing from Chrome when asked. Sign in with a code from here (below).' : 'An iPhone app is coming (through Apple’s TestFlight). On an Android phone, the Grifflix app is here.') +
       '</p><div class="acts" style="margin-top:8px"><a class="pill" href="/grifflix/android.apk">Android app</a></div></div>') +
-    '<div class="profsec"><p class="profh">Theme music</p><p class="profp">' + (TMUS.on ? 'On this device: each month’s theme plays its film’s music (30 seconds) when you open it, and Grifflix’s own a projector running.' : 'Off on this device.') +
+    '<div class="profsec"><p class="profh">Theme music</p><p class="profp">' + (TMUS.on ? 'On this device: each month’s theme plays its film’s music (30 seconds) when you open it, and Grifflix’s own the zoetrope’s sound as it turns.' : 'Off on this device.') +
       (TMUS.on && TMUS.k && TMUS.list && TMUS.list[TMUS.k] ? ' This month: <b>' + esc(TMUS.list[TMUS.k].title) + '</b>, ' + esc(TMUS.list[TMUS.k].artist) + '.' : '') +
       '</p><div class="acts" style="margin-top:8px"><button class="pill" id="musgo">' + (TMUS.on ? 'Turn off' : 'Turn on') + '</button></div></div>' +
     '<div class="profsec"><p class="profh">A TV</p><p class="profp">To sign in on a TV (or another device), get a code and type it there.</p><div class="acts" style="margin-top:8px"><button class="pill" id="tvcode">Get a code</button></div></div>' +
