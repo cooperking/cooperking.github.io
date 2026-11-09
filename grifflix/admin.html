@@ -127,7 +127,11 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
 .thx button .use { align-self: flex-start; margin-bottom: -2px; font: 600 9px/1 "Hanken Grotesk", sans-serif; letter-spacing: .14em; text-transform: uppercase; padding: 3px 5px; background: rgba(0, 0, 0, .55); color: #fff; }
 .thx button.on { outline: 3px solid var(--fg); outline-offset: 2px; }
 .thxview { display: grid; gap: 8px; }
-.thxview iframe { width: 100%; height: min(78vh, 640px); border: 1px solid var(--line); background: #000; }
+.thxbox { position: relative; margin: 0 auto; overflow: hidden; border: 1px solid var(--line); background: #000; }
+.thxbox iframe { position: absolute; left: 0; top: 0; border: 0; transform-origin: 0 0; background: #000; }
+.thxfmt { display: flex; flex-wrap: wrap; gap: 6px; }
+.thxfmt button { min-height: 34px; padding: 0 12px; border: 1px solid var(--line); background: var(--field); color: var(--fg); font: 600 12px/1 "Hanken Grotesk", sans-serif; letter-spacing: .1em; text-transform: uppercase; cursor: pointer; }
+.thxfmt button.on { background: var(--fg); color: var(--bg, #fff); border-color: var(--fg); }
 #thxopen { display: inline-flex; align-items: center; min-height: 38px; padding: 0 14px; border: 1px solid var(--fg); color: var(--fg); text-decoration: none; font: 600 12px/1 "Hanken Grotesk", sans-serif; letter-spacing: .14em; text-transform: uppercase; }
 .thxview .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; font-size: 14px; }
 </style>
@@ -201,9 +205,9 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       <section class="card">
         <div class="kicker">Theme explorer</div>
         <h2>Try <em>every</em> theme</h2>
-        <p class="stat">Each theme in its own colour and lettering. Choose one to see it working here, on the films (the draft page, as it would be on this screen); swipe or use the arrows in it to go through the days. <i>Month</i> marks the ones in use now.</p>
+        <p class="stat">Each theme in its own colour and lettering. Choose one to see it working here, on the films (the draft page), on a computer, an iPhone, an iPad or the TV, each at its own size shrunk to fit; swipe, scroll or use the arrows in it to go through the days. <i>Month</i> marks the ones in use now.</p>
         <div class="thx" id="thx"></div>
-        <div class="thxview" id="thxview" hidden><div class="row"><b id="thxname"></b><span class="state"><a class="btn" id="thxopen" target="_blank" rel="noopener">Open it full screen</a></span></div><iframe id="thxf" title="The theme, working" loading="lazy"></iframe></div>
+        <div class="thxview" id="thxview" hidden><div class="row"><b id="thxname"></b><span class="state"><a class="btn" id="thxopen" target="_blank" rel="noopener">Open it full screen</a></span></div><div class="thxfmt" id="thxfmt" role="group" aria-label="Shown on"><button type="button" data-fmt="computer" class="on">Computer</button><button type="button" data-fmt="iphone">iPhone</button><button type="button" data-fmt="ipad">iPad</button><button type="button" data-fmt="tv">TV</button></div><div class="thxbox" id="thxbox"><iframe id="thxf" title="The theme, working" loading="lazy"></iframe></div></div>
       </section>
       <section class="card">
         <div class="kicker">Downloads</div>
@@ -764,12 +768,28 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         '<b style="font-family:' + esc(t.font) + ';font-weight:' + (t.tw || 400) + ';text-transform:' + (t.tt || 'none') + ';font-style:' + (t.fs || 'normal') + '">' + esc(t.n) + '</b><small>' + esc(t.f) + ' (' + t.y + ')</small></button>';
     }).join('');
   }
+  // each format at its own size, shrunk to fit here (John, 9 Nov 2026: "can theme explorer show what it will look like on any format")
+  var FMT = { computer: [1440, 900, '&big=1'], iphone: [390, 844, ''], ipad: [820, 1180, ''], tv: [1280, 720, '&tv=1'] }, THF = 'computer';
+  function thxFit() {
+    var f = FMT[THF], box = $('#thxbox'), wrap = $('#thxview'); if (!box || wrap.hidden) return;
+    var k = Math.min(wrap.clientWidth / f[0], Math.max(320, innerHeight * .78) / f[1], 1);
+    box.style.width = Math.round(f[0] * k) + 'px'; box.style.height = Math.round(f[1] * k) + 'px';
+    var fr = $('#thxf'); fr.style.width = f[0] + 'px'; fr.style.height = f[1] + 'px'; fr.style.transform = 'scale(' + k + ')';
+  }
+  function thxShow() {
+    var u = '/grifflix/draft/?view=themes&theme=' + THX + FMT[THF][2], t = TBY[THX];
+    $('#thxview').hidden = false; $('#thxf').src = u; $('#thxopen').href = '/grifflix/draft/?view=themes&theme=' + THX; $('#thxname').textContent = t.n + ' · ' + t.f + ' (' + t.y + ')';
+    thxFit();
+  }
   $('#thx').addEventListener('click', function (e) {
-    var b = e.target.closest('[data-thx]'); if (!b) return; THX = b.dataset.thx; thxDraw();
-    var u = '/grifflix/draft/?view=themes&theme=' + THX, t = TBY[THX];
-    $('#thxview').hidden = false; $('#thxf').src = u; $('#thxopen').href = u; $('#thxname').textContent = t.n + ' · ' + t.f + ' (' + t.y + ')';
+    var b = e.target.closest('[data-thx]'); if (!b) return; THX = b.dataset.thx; thxDraw(); thxShow();
     $('#thxview').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   });
+  $('#thxfmt').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-fmt]'); if (!b || !THX) return; THF = b.dataset.fmt;
+    [].forEach.call(document.querySelectorAll('#thxfmt [data-fmt]'), function (x) { x.classList.toggle('on', x === b); }); thxShow();
+  });
+  addEventListener('resize', thxFit);
   $('#tmonths').addEventListener('change', function (e) { var sel = e.target.closest('select'); if (sel) { TMO[+sel.dataset.m] = sel.value; tmDraw(); } });
   $('#tmonths').addEventListener('click', function (e) {
     var b = e.target.closest('button'); if (!b) return;
