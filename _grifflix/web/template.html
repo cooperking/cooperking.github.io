@@ -2852,9 +2852,10 @@ THEMEFX.table = {
   geo: function (c) { return c.mob ? { cx: 390, cy: 520, rx: 330, ry: 170, fs: 2 } : { cx: ($('#cal').clientWidth || 1280) / 2, cy: 418, rx: 530, ry: 150, fs: 2.6 }; },   // (the day you're on large at the table's front: John, 9 Nov 2026: "chosen poster on Dr Strangelove very small")
   swipe: function (c) { return { x: -1, y: 0, px: c.mob ? 34 : 60 }; },   // (the table turns with the finger)
   place: function (all, at, c) {
-    var g = this.geo(c), n = 31;   // (a month round the table, evenly, whatever days either side are there too: the table's look kept)
+    // (the month's days round the whole table, going on round it as you go through the month, the next month's coming round to the
+    // front as you reach them: John, 9 Nov 2026: "should carry on spinning around the table until we reach the next month")
+    var g = this.geo(c), mo = (S.month || '').split('-'), n = mo.length > 1 ? new Date(+mo[0], +mo[1], 0).getDate() : 31;
     all.forEach(function (el, j) {
-      if (Math.abs(j - at) > 15.4) { el.style.opacity = 0; el.style.pointerEvents = 'none'; return; } el.style.pointerEvents = '';
       var a = Math.PI / 2 - (j - at) * 2 * Math.PI / n, x = g.cx + g.rx * Math.cos(a), y = g.cy + g.ry * Math.sin(a), depth = (Math.sin(a) + 1) / 2, nf = near(j - at);
       el.style.left = x.toFixed(1) + 'px'; el.style.top = y.toFixed(1) + 'px';
       el.style.transform = 'scale(' + (.62 + .38 * depth + nf * (g.fs - 1)).toFixed(3) + ')';
@@ -3096,14 +3097,18 @@ THEMEFX.oz = {
 };
 // Jaws (parked): the poster: the surface above, the day's film at it; the days to come sinking into the deep below
 THEMEFX.jaws = {
-  g: function (c) { return c.mob ? { sy: 260, fx: 390, top: 0 } : { sy: 230, fx: c.W * .68, top: 104 }; },
+  g: function (c) {   // (the attack to the right, the days to its left, never over the shark: John, 9 Nov 2026: "we don't want the card to cover jaws")
+    if (c.mob) { var mh = 560, mw = mh * 320 / 392; return { sy: 260, top: 0, ah: mh, aw: mw, px: 780 - mw / 2 - 6, fx: 168, cs: .95 }; }
+    var ah = c.H - 104 - 110, aw = ah * 320 / 392, px = c.W - aw / 2 - 40;
+    return { sy: 230, top: 104, ah: ah, aw: aw, px: px, fx: Math.max(c.W * .47, px - aw / 2 - 70), cs: 1 };
+  },
   decor: function (c) {
     var g = this.g(c);
     // (the attack, its waterline on the sea's: John's twelve frames, 9 Nov 2026: "can we work an animation into the jaws using this")
-    var ah = c.mob ? 860 : c.H - g.top - 110, aw = ah * 320 / 392, at = g.sy - ah * .135;
+    var ah = g.ah, aw = g.aw, at = g.sy - ah * .135;
     return '<div class="jsurf" style="top:' + g.top + 'px;height:' + (g.sy - g.top) + 'px"></div><div class="jdeep" style="top:' + g.sy + 'px"></div>' +
       '<svg class="jwave" id="jwave" width="' + c.W + '" height="' + (g.sy + 40) + '" style="top:' + g.top + 'px"><path transform="translate(0,' + (-g.top) + ')" d=""/></svg>' +
-      '<div class="jattack" id="jattack" style="left:' + (g.fx - aw / 2).toFixed(0) + 'px;top:' + at.toFixed(0) + 'px;width:' + aw.toFixed(0) + 'px;height:' + ah.toFixed(0) + 'px"><i></i><i></i></div>';
+      '<div class="jattack" id="jattack" style="left:' + (g.px - aw / 2).toFixed(0) + 'px;top:' + at.toFixed(0) + 'px;width:' + aw.toFixed(0) + 'px;height:' + ah.toFixed(0) + 'px"><i></i><i></i></div>';
   },
   // (the attack follows the days: going from one day to the next, the shark rises under the swimmer, strikes, the sea closes over and
   // calms, and the next comes up from the deep; stopped halfway, it stops halfway; the sea's surface swelling with the strike (John,
@@ -3118,7 +3123,7 @@ THEMEFX.jaws = {
       var k = j - at, nf = near(k), y, s, o = 1, br;
       if (k >= 0) { y = g.sy + ph * .32 + k * (c.mob ? 150 : 120) * Math.pow(.88, k); s = Math.pow(.72, k); br = Math.max(.25, 1 - .16 * k); }
       else { y = g.sy + ph * .32 + k * 160; s = 1 + .2 * -k; o = Math.max(0, 1 + k); br = 1; }
-      vAt(el, g.fx + Math.sin(j * 1.3) * 40 * (1 - nf), y, s * (c.mob ? 1.3 : 1), 0, k > 6 ? 0 : o, 100 - Math.round(k * 10));
+      vAt(el, g.fx + Math.sin(j * 1.3) * 26 * (1 - nf), y, s * g.cs, 0, k > 6 ? 0 : o, 100 - Math.round(k * 10));
       el.style.filter = nf > .98 ? 'none' : 'brightness(' + br.toFixed(2) + ') saturate(' + (.5 + .5 * br).toFixed(2) + ')';
     });
     // (the frame: where between two days you are, the whole attack across one day's move; the last frame's calm easing into the next
@@ -3131,7 +3136,7 @@ THEMEFX.jaws = {
     if (w) {
       var I = Math.exp(-Math.pow((p - 6.5) / 2.4, 2)), W = c.W, ph0 = at * 9, d = 'M0,0 L0,' + g.sy.toFixed(1);
       for (var x = 0; x <= W; x += 16) {
-        var near2 = Math.exp(-Math.pow((x - g.fx) / (W * .28), 2));
+        var near2 = Math.exp(-Math.pow((x - g.px) / (W * .28), 2));
         d += ' L' + x + ',' + (g.sy + 3 * Math.sin(x * .021 + ph0) + 2 * Math.sin(x * .047 - ph0 * 1.3) - I * (6 + 18 * near2) * Math.abs(Math.sin(x * .013 + ph0 * .7))).toFixed(1);
       }
       w.firstChild.setAttribute('d', d + ' L' + W + ',0 Z');
