@@ -2553,11 +2553,11 @@ function themeMusic(k) {   // the theme on the page now (null: none)
   if (k === TMUS.k && (TMUS.a || TMUS.pj || !TMUS.ok)) return;
   musicHush(); TMUS.k = k;
   if (!k || !TMUS.on || !TMUS.ok) return;
+  if ($('.zlead')) { TMUS.after = true; if (k === 'picture') TMUS.pj = projector(); return; }   // (the opening's still on: its end starts the theme's music)
   var src, vol = .5;
   if (k === 'picture') {   // (Grifflix's own: the drum's sound as it turns, and its music after the leader: Emotional Blockbuster 2, film music, public domain
     // (FreePD), John's choice of three, 9 Nov 2026: "something more cinematic", "a bit less recognisable")
     TMUS.pj = projector(); setTimeout(function () { if (TMUS.pj && TMUS.ctx && TMUS.ctx.state !== 'running') { TMUS.pj.stop(); TMUS.pj = null; TMUS.ok = false; } }, 400);
-    if ($('.zlead')) { TMUS.after = true; return; }   // (the leader's still on: its end starts the music)
     src = '/grifflix/audio/grifflix-theme.m4a'; vol = .34;
   } else {
     var t = TMUS.list && TMUS.list[k]; if (!t) return;
@@ -2579,8 +2579,8 @@ function themeMusic(k) {   // the theme on the page now (null: none)
   a.addEventListener('playing', function () { setTimeout(begin, TV ? 1600 : 1100); }, { once: true });
   a.play().catch(fail);
 }
-function musicHold() { if (TMUS.k === 'picture' && TMUS.a) { TMUS.a.pause(); TMUS.a = null; } if (TMUS.k === 'picture') TMUS.after = true; }   // (the leader first: the music after it)
-function musicAfterLeader() { if (!TMUS.after) return; TMUS.after = false; if (TMUS.k === 'picture' && !TMUS.a) { var pj = TMUS.pj; TMUS.pj = null; TMUS.k = null; if (pj) pj.stop(); themeMusic('picture'); } }
+function musicHold() { if (TMUS.a) { TMUS.a.pause(); TMUS.a = null; } TMUS.after = true; }   // (the opening first: the theme's music after it)
+function musicAfterLeader() { if (!TMUS.after) return; TMUS.after = false; var k = TMUS.k; if (k && !TMUS.a) { var pj = TMUS.pj; TMUS.pj = null; TMUS.k = null; if (pj) pj.stop(); themeMusic(k); } }
 function musicHush() {   // (quiet: a film or trailer starting, the page hidden, another theme)
   var a = TMUS.a; TMUS.a = null;
   if (a) { var v0 = a.volume, t0 = performance.now(); (function f() { var u = Math.min(1, (performance.now() - t0) / 600); a.volume = v0 * (1 - u); if (u < 1) requestAnimationFrame(f); else a.pause(); })(); }
@@ -2644,7 +2644,7 @@ function musicBeep(at) {   // (the leader's beep on each number, at its moment o
 document.addEventListener('visibilitychange', function () { if (document.hidden) { musicHush(); } else leaderNewDay(); });
 // (an app that stays loaded, as a Fire Stick's does: a new day's first look at it, or first key, still opens with the leader)
 function leaderNewDay() {
-  if (document.documentElement.dataset.theme !== 'picture' || $('.zlead') || /[?&]view=themes/.test(location.search)) return;
+  if (!document.documentElement.dataset.theme || $('.zlead') || /[?&]view=themes/.test(location.search)) return;
   var dt = new Date(), today = dt.getFullYear() + '-' + (dt.getMonth() + 1) + '-' + dt.getDate();
   try { if (localStorage.getItem('grifflix-leader') === today) return; } catch (e) { return; }
   window.ZLED = 0; THEMEFX.picture.leader();
@@ -2701,6 +2701,9 @@ function themeEls() { return $$('#cal .vday, #cal .hday, #cal .tday'); }
 function themeAtNow() { var all = themeEls(), f = $('#cal .front'); return Math.max(0, all.indexOf(f)); }
 function themeStart(fx, c) {
   S.theme = { fx: fx, c: c };
+  // (the 3 2 1: Grifflix's own opening, whatever the month's theme, not the zoetrope's: John, 9 Nov 2026: "Should be separated as a
+  // loader anyway. Not part of the theme")
+  if (!S.leaderTried) { S.leaderTried = 1; setTimeout(function () { THEMEFX.picture.leader(); }, 0); }
   var cal0 = $('#cal'); if (cal0 && !cal0._noscroll) { cal0._noscroll = 1; cal0.addEventListener('scroll', function () { if (cal0.scrollTop || cal0.scrollLeft) { cal0.scrollTop = 0; cal0.scrollLeft = 0; } }); }   // (a day taking the focus never scrolls the theme away)
   $$('#cal .vday').forEach(function (el) { var u = (el.style.getPropertyValue('--p') || '').match(/url\(["']?([^"')]+)/); if (u) (new Image()).src = u[1]; });   // (every poster ready before it's wanted)
   if (fx.ready) fx.ready(c);
@@ -3359,7 +3362,7 @@ THEMEFX.picture = {
     for (var i = 0; i < L.length; i++) h += '<span class="zlt" data-zi="' + i + '">' + L[i] + '</span>';
     return h;
   },
-  ready: function (c) { fxReset(this); this.c = c; this.leader(); },
+  ready: function (c) { fxReset(this); this.c = c; },
   leader: function (asked) {   // (a film leader: 3, 2, 1, a flash, GRIFFLIX; the first visit each day; a tap skips it)
     // (the first visit of the day only; home, GRIFFLIX and reloads don't replay it. ?leader=1 always plays it: admin's preview. John, 9 Nov 2026)
     var force = asked === true || /[?&]leader=1/.test(location.search);
@@ -4260,7 +4263,7 @@ function drawAccount() {
       '</p><div class="acts" style="margin-top:8px"><a class="pill" href="/grifflix/android.apk">Android app</a></div></div>') +
     '<div class="profsec"><p class="profh">Theme music</p><p class="profp">' + (TMUS.on ? 'On this device.' : 'Off on this device.') +
       (TMUS.on && TMUS.k && TMUS.list && TMUS.list[TMUS.k] ? ' This month: <b>' + esc(TMUS.list[TMUS.k].title) + '</b>, ' + esc(TMUS.list[TMUS.k].artist) + '.' : '') +
-      '</p><div class="acts" style="margin-top:8px"><button class="pill" id="musgo">' + (TMUS.on ? 'Turn off' : 'Turn on') + '</button></div></div>' +
+      '</p><div class="acts" style="margin-top:8px"><button class="pill" id="musgo">' + (TMUS.on ? 'Turn off' : 'Turn on') + '</button><button class="pill" id="leadgo">Play the 3 2 1</button></div></div>' +
     '<div class="profsec"><p class="profh">A TV</p><p class="profp">To sign in on a TV (or another device), get a code and type it there.</p><div class="acts" style="margin-top:8px"><button class="pill" id="tvcode">Get a code</button></div></div>' +
     '<div class="profsec"><p class="profh">This device</p><p class="profp">Signed in as ' + esc(ME.name || '') + '.</p><div class="acts" style="margin-top:8px"><button class="pill" id="signout">Sign out</button></div></div>';
   $$('[data-gpush],[data-gmail]').forEach(function (b) { b.onclick = function () {
@@ -4270,6 +4273,7 @@ function drawAccount() {
   }; });
   var ng = $('#notego'); if (ng) ng.onclick = function () { (on ? notesOff() : notesOn()).then(function () { profTab(); }).catch(oops); };
   $('#mailgo').onclick = addEmail;
+  $('#leadgo').onclick = function () { closeSheet(); window.ZLED = 0; TMUS.ok = true; musicCtx(); THEMEFX.picture.leader(true); };   // (Grifflix's opening again, with its sound: a tap allows it, an iPhone too)
   $('#musgo').onclick = function () { TMUS.on = !TMUS.on; store.set('grifflix-music', TMUS.on ? 'on' : 'off'); if (!TMUS.on) musicHush(); toast(TMUS.on ? 'Theme music on' : 'Theme music off'); drawAccount(); };
   $('#tvcode').onclick = function () { var b = this; if (DEMO) return toast('Not in the demo.'); wcall({ op: 'tvcode' }).then(function (j) { b.outerHTML = '<span class="tvcode">' + j.code + '</span><span class="profp"> for ' + j.minutes + ' minutes, once</span>'; }).catch(oops); };
   $('#signout').onclick = function () {
