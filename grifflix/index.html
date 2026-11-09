@@ -606,7 +606,7 @@ html.tv .th-picture .zamb { filter: blur(18px) grayscale(1) brightness(.42); }
 .zdrum .rim { fill: none; stroke: #e9c46a; stroke-width: 2; opacity: .55; }
 .zdrum .rimf { fill: rgba(233, 196, 106, .06); }
 .zdrum .zin { fill: #0d0809; } .zdrum.zfront { z-index: 100; }
-.zlt { position: absolute; left: 0; top: 0; z-index: 105; font-family: var(--kfont); font-weight: 700; line-height: 1; color: #e9c87e; text-shadow: 0 1px 0 rgba(0, 0, 0, .7), 0 0 10px rgba(233, 196, 106, .18); pointer-events: none; will-change: transform; }   /* (GRIFFLIX round the band, gilt, the logo's Futura) */
+.zlt { position: absolute; left: 0; top: 0; z-index: 105; font-family: var(--kfont); font-weight: 500; line-height: 1; color: #d9d4c8; pointer-events: none; will-change: transform; }   /* (GRIFFLIX painted round the band, the logo's Futura) */
 .zdrum .zgb { fill: none; stroke: #e9c46a; stroke-width: 2; opacity: .85; } .zdrum .zrim { fill: none; stroke: #f6e0a4; stroke-width: 3; }
 .zdrum.zmid { z-index: 8; }
 .zm { position: absolute; left: 0; top: 0; display: grid; place-items: center; pointer-events: none; will-change: transform; backface-visibility: hidden; background: linear-gradient(180deg, #f3ead2, #dccdaa); box-shadow: inset 0 0 0 2px #c9ccd0, inset 0 0 0 3px rgba(40, 30, 20, .4); }   /* (a mirror, the strip's paper and horse in it, its silvered edge) */
@@ -3675,13 +3675,16 @@ THEMEFX.picture = {
       m.style.setProperty('--dk', Math.min(.7, .8 * (1 - cs)).toFixed(2));
       m.style.setProperty('--sh', Math.max(0, 1 - Math.abs(sn - .3) * 3).toFixed(2));
     });
-    var LT = me._zl && me._zl[0] && me._zl[0].isConnected ? me._zl : (me._zl = $$('#cal .zlt')), fs = g.Hw * .3;
+    var LT = me._zl && me._zl[0] && me._zl[0].isConnected ? me._zl : (me._zl = $$('#cal .zlt')), fs = g.Hw * .36;
     LT.forEach(function (t, i, L) {
       var th = (i - 3.5) / L.length * Math.PI * 2 - a * Math.PI, cs = Math.cos(th), sn = Math.sin(th);
       if (cs < .12 || !t.textContent) { if (t._v !== 0) { t.style.visibility = 'hidden'; t._v = 0; } return; } if (t._v !== 1) { t.style.visibility = ''; t._v = 1; }
       t.style.fontSize = fs.toFixed(1) + 'px';
-      t.style.transform = 'translate(' + (g.cx + R * sn).toFixed(1) + 'px,' + (ty + g.Hw / 2 + ry * cs).toFixed(1) + 'px) translate(-50%,-50%) perspective(' + g.P + 'px) rotateY(' + (th * 180 / Math.PI).toFixed(1) + 'deg)';
-      t.style.opacity = Math.min(1, cs * 1.8).toFixed(2);
+      // (painted on the band: narrower towards its sides, its lines along the band's curve, upright as the drum's wall: John, 9 Nov 2026:
+      // "grifflix doesn't actually look like it's on the praxinoscope")
+      var sk = Math.atan2(-ry * sn, R * cs) * 180 / Math.PI;
+      t.style.transform = 'translate(' + (g.cx + R * sn).toFixed(1) + 'px,' + (ty + g.Hw / 2 + ry * cs).toFixed(1) + 'px) translate(-50%,-50%) skewY(' + sk.toFixed(1) + 'deg) scaleX(' + Math.max(.04, cs).toFixed(3) + ')';
+      t.style.opacity = Math.min(1, cs * 1.4).toFixed(2);
     });
   },
   front: function (b) {   // (the room lit by the day's film)
