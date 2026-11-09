@@ -1997,6 +1997,11 @@ async function gMusicGet(request, url, env) {
   if (!m || !env.MEDIA) return new Response('Not here.', { status: 404, headers: H });
   if (from && !/^https:\/\/cooperking\.github\.io(\/|$)/.test(from)) return new Response('Not here.', { status: 403 });
   const key = 'grifflix/music/' + name;
+  // (kept at the edge too, so a clip comes at once, in ranges, without reading R2 each time: John, 9 Nov 2026: "sound is slow to
+  // load on a firestick")
+  const ck = new Request(url.origin + url.pathname), cache = caches.default;
+  const hit = await cache.match(new Request(ck.url, { headers: request.headers })).catch(() => null);
+  if (hit) return hit;
   let buf = null; const o = await env.MEDIA.get(key).catch(() => null);
   if (o) buf = await o.arrayBuffer();
   else {
@@ -2009,6 +2014,7 @@ async function gMusicGet(request, url, env) {
     await env.MEDIA.put(key, buf, { httpMetadata: { contentType: 'audio/mp4' } });
   }
   const n = buf.byteLength, base = Object.assign({ 'Content-Type': 'audio/mp4', 'Accept-Ranges': 'bytes', 'Cache-Control': 'public, max-age=2592000' }, H);
+  await cache.put(ck, new Response(buf.slice(0), { headers: Object.assign({ 'Content-Length': String(n) }, base) })).catch(() => {});
   const rg = (request.headers.get('Range') || '').match(/^bytes=(\d*)-(\d*)$/);
   if (rg && (rg[1] || rg[2])) {
     let a = rg[1] ? +rg[1] : Math.max(0, n - +rg[2]), b = rg[1] && rg[2] ? Math.min(+rg[2], n - 1) : n - 1;

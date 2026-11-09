@@ -743,6 +743,8 @@ html.tv .th-globe .vday:focus { outline: 0 !important; box-shadow: 0 0 0 3px #ff
 .snow, .gsnow { position: absolute; left: 0; right: 0; top: -240px; bottom: 0; pointer-events: none; background-image: radial-gradient(circle at 20px 30px, #fff 0 2px, transparent 3px), radial-gradient(circle at 90px 130px, #fff 0 1.5px, transparent 2.5px), radial-gradient(circle at 160px 60px, #fff 0 2.5px, transparent 3.5px), radial-gradient(circle at 210px 190px, #fff 0 1.5px, transparent 2.5px), radial-gradient(circle at 120px 215px, #fff 0 2px, transparent 3px); background-size: 240px 240px; animation: snow 10s linear infinite; }
 .snow { opacity: .3; }
 @keyframes snow { from { transform: translateY(0); } to { transform: translateY(240px); } }
+.snowfront { z-index: 70; } .gpile { position: absolute; left: 6%; right: 6%; bottom: -14%; height: 26%; border-radius: 50%; background: radial-gradient(ellipse at 50% 30%, #fff, #e7edf2 60%, #c9d3da); box-shadow: inset 0 4px 10px rgba(255, 255, 255, .8); }   /* (the snow settled in the globe) */
+.snow.cv, .gsnow.cv { top: 0; background: none !important; animation: none !important; opacity: 1; } .snow.cv canvas, .gsnow.cv canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .globe.shake { animation: gshake 1s cubic-bezier(.3, .7, .2, 1); }
 @keyframes gshake { 0% { transform: rotate(0); } 18% { transform: rotate(-7deg); } 42% { transform: rotate(6deg); } 68% { transform: rotate(-2deg); } 100% { transform: rotate(0); } }
 .gshine { position: absolute; left: 16%; top: 10%; width: 22%; height: 34%; border-radius: 50%; background: rgba(255, 255, 255, .16); transform: rotate(30deg); }
@@ -2538,11 +2540,18 @@ function themeMusic(k) {   // the theme on the page now (null: none)
     var t = TMUS.list && TMUS.list[k]; if (!t) return;
     src = 'https://sotd-playlists.cooperking.workers.dev/gm/' + k + '-' + t.h + '.m4a?src=' + encodeURIComponent(t.src);
   }
-  var a = new Audio(src); a.volume = 0; TMUS.a = a;
+  var a = new Audio(); a.preload = 'auto'; a.src = src; a.volume = 0; TMUS.a = a;
   var fade = function (to, ms, then) { var v0 = a.volume, t0 = performance.now(); (function f() { var u = Math.min(1, (performance.now() - t0) / ms); a.volume = v0 + (to - v0) * u; if (u < 1 && TMUS.a === a) requestAnimationFrame(f); else if (then) then(); })(); };
   a.addEventListener('timeupdate', function () { if (a.duration && a.currentTime > a.duration - 3 && !a.dataset.out) { a.dataset.out = 1; fade(0, 2800); } });
   a.addEventListener('ended', function () { if (TMUS.a === a) TMUS.a = null; });
-  a.play().then(function () { fade(vol, k === 'picture' ? 3500 : 1800); }).catch(function () { if (TMUS.a === a) { TMUS.a = null; TMUS.ok = false; } });   // (not allowed yet: the next tap plays it)
+  // (loaded before it starts, so it never stutters while it fills: John, 9 Nov 2026: "sound is slow to load on a firestick and
+  // initially a bit jerky"; on a TV a moment more, for the theme's opening to settle. Started silently at once, in the tap that
+  // allows it, and paused: a browser then lets it play when it's ready)
+  var fail = function () { if (TMUS.a === a) { TMUS.a = null; TMUS.ok = false; } }, began = false, ready = false;   // (not allowed yet: the next tap plays it)
+  var begin = function () { if (began || TMUS.a !== a) return; began = true; if (a.currentTime > .3) a.currentTime = 0; a.play().then(function () { fade(vol, k === 'picture' ? 3500 : 1800); }).catch(fail); };
+  var whenReady = function () { if (ready) return; ready = true; setTimeout(begin, TV ? 900 : 60); };
+  a.addEventListener('canplaythrough', whenReady, { once: true }); setTimeout(whenReady, 8000);
+  a.play().then(function () { if (!began) a.pause(); }).catch(fail);
 }
 function musicHold() { if (TMUS.k === 'picture' && TMUS.a) { TMUS.a.pause(); TMUS.a = null; } if (TMUS.k === 'picture') TMUS.after = true; }   // (the leader first: the music after it)
 function musicAfterLeader() { if (!TMUS.after) return; TMUS.after = false; if (TMUS.k === 'picture' && !TMUS.a) { var pj = TMUS.pj; TMUS.pj = null; TMUS.k = null; if (pj) pj.stop(); themeMusic('picture'); } }
@@ -2557,6 +2566,8 @@ function projector() {   // (the zoetrope turning: a soft whirr of air through i
   var sr = c.sampleRate, nz = c.createBuffer(1, Math.floor(sr * 2), sr), d = nz.getChannelData(0), l = 0;
   for (var i = 0; i < d.length; i++) { l = (l + .04 * (Math.random() * 2 - 1)) / 1.04; d[i] = l * 3; }   // (soft, brownish noise)
   var out = c.createGain(); out.gain.value = 1; out.connect(c.destination); var live = [];
+  var ir = c.createBuffer(2, Math.floor(sr * 2.6), sr);   // (the title's hall, made now rather than as it plays: a TV is slow)
+  for (var ch = 0; ch < 2; ch++) { var q0 = ir.getChannelData(ch); for (var j0 = 0; j0 < q0.length; j0++) q0[j0] = (Math.random() * 2 - 1) * Math.pow(1 - j0 / q0.length, 2.6); }
   return {
     stop: function () { live.forEach(function (n) { try { n.stop(); } catch (e) {} }); live = []; setTimeout(function () { out.disconnect(); }, 50); },
     kick: function (days, dur) {
@@ -2571,9 +2582,7 @@ function projector() {   // (the zoetrope turning: a soft whirr of air through i
       src.start(t0); lfo.start(t0); src.stop(t0 + D + .05); lfo.stop(t0 + D + .05); live.push(src, lfo); live = live.slice(-40);
     },
     sting: function () {   // (GRIFFLIX after the countdown: a rising shimmer into a warm chord and a soft drum, as a studio's title)
-      var t = c.currentTime, rv = c.createConvolver(), ir = c.createBuffer(2, Math.floor(sr * 2.6), sr);
-      for (var ch = 0; ch < 2; ch++) { var q = ir.getChannelData(ch); for (var j = 0; j < q.length; j++) q[j] = (Math.random() * 2 - 1) * Math.pow(1 - j / q.length, 2.6); }
-      rv.buffer = ir; var wet = c.createGain(); wet.gain.value = .5; rv.connect(wet); wet.connect(out);
+      var t = c.currentTime, rv = c.createConvolver(); rv.buffer = ir; var wet = c.createGain(); wet.gain.value = .5; rv.connect(wet); wet.connect(out);
       var bus = c.createGain(); bus.gain.value = 1; bus.connect(out); bus.connect(rv);
       // the swell up to the flash
       var sw = c.createBufferSource(), hp = c.createBiquadFilter(), sg = c.createGain(); sw.buffer = nz; sw.loop = true; hp.type = 'bandpass'; hp.Q.value = .7;
@@ -2636,6 +2645,9 @@ function themeStart(fx, c) {
   S.theme = { fx: fx, c: c };
   $$('#cal .vday').forEach(function (el) { var u = (el.style.getPropertyValue('--p') || '').match(/url\(["']?([^"')]+)/); if (u) (new Image()).src = u[1]; });   // (every poster ready before it's wanted)
   if (fx.ready) fx.ready(c);
+  $$('#cal .snow').forEach(function (h) { var kane = !!h.closest('.th-globe'); snowfall(h, kane ? { alpha: .5, density: .00012 } : { density: .0006, big: 4.6 });
+    if (!kane && h.parentNode) { var fr = document.createElement('div'); fr.className = 'snow snowfront'; h.parentNode.appendChild(fr); snowfall(fr, { near: true, density: .000035, big: 7, alpha: .85, slow: 1.15 }); } });   // (and a few large, soft, near flakes in front of the street)
+  $$('#cal .gsnow').forEach(function (h) { snowfall(h, { density: .0042, slow: .4, big: 3.6, wind: 0 }); });
   $$('#cal button.vday, #cal button.hday, #cal button.tday').forEach(function (b) { b.onclick = function () { daySheet(b.dataset.day); }; b.addEventListener('focus', function () { themeTurn(b); }); });
   var was = S.resumeDay && $('#cal button[data-day="' + S.resumeDay + '"]'); S.resumeDay = null;   // (reloaded: the day you were on)
   themeTurn(was || $('#cal .today.has') || $$('#cal button.has').pop() || $('#cal button[data-day]'));
@@ -3341,6 +3353,45 @@ THEMEFX.hotel = {
     });
   }
 };
+// ---- snow, falling as snow does (John, 9 Nov 2026: "can snow be much better on the themes that have it"): soft flakes at every
+// depth, the far ones small, faint and slow, the near ones large and soft; each swaying in its own time, the wind gusting; in
+// Kane's globe a shake throws them up to swirl and settle. Drawn on a canvas, frame by frame; still for those who'd rather
+var FLAKE = null;
+function snowfall(host, o) {
+  if (!host || host._snow) return host && host._snow;
+  o = o || {}; var cv = document.createElement('canvas'), g = cv.getContext('2d'); if (!g) return null;
+  host.classList.add('cv'); host.appendChild(cv);
+  if (!FLAKE) { FLAKE = document.createElement('canvas'); FLAKE.width = FLAKE.height = 64; var q = FLAKE.getContext('2d'), rg = q.createRadialGradient(32, 32, 0, 32, 32, 32);
+    rg.addColorStop(0, 'rgba(255,255,255,1)'); rg.addColorStop(.35, 'rgba(255,255,255,.85)'); rg.addColorStop(.7, 'rgba(255,255,255,.25)'); rg.addColorStop(1, 'rgba(255,255,255,0)'); q.fillStyle = rg; q.fillRect(0, 0, 64, 64); }
+  if (TV) o.density = (o.density || .00016) * .45;   // (a TV's little computer: fewer flakes, drawn at its own size)
+  var dpr = TV ? 1 : Math.min(2, window.devicePixelRatio || 1), W = 0, H = 0, F = [], t0 = performance.now(), last = t0, raf = 0, slow = o.slow || 1;
+  function size() { var r = host.getBoundingClientRect(); W = Math.max(1, r.width); H = Math.max(1, r.height); cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); g.setTransform(dpr, 0, 0, dpr, 0, 0); }
+  function flake(anywhere) { var z = o.near ? .82 + Math.random() * .18 : Math.pow(Math.random(), 1.6);   // (most far away; a front layer all near)
+    return { z: z, x: Math.random() * W, y: anywhere ? Math.random() * H : -10 - Math.random() * 40, r: .7 + z * z * (o.big || 4.2), v: (14 + z * 62) * slow, a: (.25 + .65 * z) * (o.alpha || 1),
+      sw: 4 + z * 22, fq: .4 + Math.random() * .9, ph: Math.random() * 6.3, kx: 0, ky: 0 }; }
+  size(); var N = Math.round(W * H * (o.density || .00016)); for (var i = 0; i < N; i++) F.push(flake(true));
+  F.sort(function (a, b) { return a.z - b.z; });
+  function frame(now) {
+    if (!host.isConnected) { raf = 0; return; }
+    var dt = Math.min(.05, (now - last) / 1000), t = (now - t0) / 1000; last = now;
+    if (cv.width !== Math.round(host.getBoundingClientRect().width * dpr)) size();
+    var wind = (o.wind || 6) + Math.sin(t * .23) * 10 + Math.sin(t * .61) * 5;   // (gusting)
+    g.clearRect(0, 0, W, H);
+    for (var i = 0; i < F.length; i++) { var f = F[i];
+      f.kx *= Math.exp(-dt * 1.4); f.ky *= Math.exp(-dt * 1.4);
+      f.y += (f.v + f.ky) * dt; f.x += (wind * (.3 + f.z) + f.kx) * dt;
+      var x = f.x + Math.sin(t * f.fq + f.ph) * f.sw;
+      if (f.y > H + 10) { var n = flake(false); n.z = f.z; n.r = f.r; n.v = f.v; n.a = f.a; n.sw = f.sw; F[i] = n; continue; }
+      if (f.y < -60) f.y = H + 5;
+      if (x < -20) f.x += W + 40; else if (x > W + 20) f.x -= W + 40;
+      var d = f.r * (f.z > .85 ? 3.4 : 2.4); g.globalAlpha = f.a; g.drawImage(FLAKE, x - d / 2, f.y - d / 2, d, d);
+    }
+    g.globalAlpha = 1; raf = requestAnimationFrame(frame);
+  }
+  if (CALM) frame(performance.now()), cancelAnimationFrame(raf); else raf = requestAnimationFrame(frame);
+  host._snow = { stir: function () { if (CALM) return; F.forEach(function (f) { f.kx = (Math.random() - .5) * 320; f.ky = -(60 + Math.random() * 260); }); } };   // (the globe shaken)
+  return host._snow;
+}
 // Bedford Falls (It's a Wonderful Life): its main street at night in the snow, a shop a day, the day's film in its lit window;
 // going on a day walks you down the street; a bell rings on the street's Christmas tree as you reach each one
 THEMEFX.bedford = {
@@ -3403,7 +3454,7 @@ THEMEFX.globe = {
     var dt = new Date(key + 'T12:00'), hl = it && !it.secret ? showName(it) : 'Coming soon';
     return '<i class="np"><b>The Inquirer</b><s><span>' + DOW[(dt.getDay() + 6) % 7] + '</span><span>' + d + ' ' + MONTHS[c.m].slice(0, 3) + '</span><span>2¢</span></s><em>' + esc(hl) + '</em><u></u><i></i></i><span class="vn">' + DOW[(dt.getDay() + 6) % 7] + ' ' + d + '</span>';
   },
-  decor: function () { return '<div class="snow"></div><div class="globe" id="globe"><div class="gpic" id="gpic"></div><div class="gsoon" id="gsoon" hidden>Coming<br>soon</div><div class="gsnow"></div><i class="gshine"></i></div><div class="gbase"></div>'; },
+  decor: function () { return '<div class="snow"></div><div class="globe" id="globe"><div class="gpic" id="gpic"></div><div class="gsoon" id="gsoon" hidden>Coming<br>soon</div><i class="gpile"></i><div class="gsnow"></div><i class="gshine"></i></div><div class="gbase"></div>'; },
   swipe: function (c) { return { x: 1, y: 0, px: c.mob ? 24 : 40 }; },
   place: function (all, at, c, b) {
     var x0 = c.mob ? 34 : 90, x1 = c.mob ? 746 : c.W - 90, n = Math.max(1, all.length - 1), me = this;
@@ -3414,7 +3465,7 @@ THEMEFX.globe = {
     var g = $('#globe'), p = $('#gpic'), so = $('#gsoon'), has = b && b.classList.contains('has');
     if (p && b) p.style.backgroundImage = has ? b.style.getPropertyValue('--p') : 'none';
     if (so) so.hidden = has;   // (a day not filled yet: Coming soon in the globe)
-    if (g) { g.classList.remove('shake'); if (!quiet) { void g.offsetWidth; g.classList.add('shake'); } }
+    if (g) { g.classList.remove('shake'); if (!quiet) { void g.offsetWidth; g.classList.add('shake'); var gs = g.querySelector('.gsnow'); if (gs && gs._snow) gs._snow.stir(); } }
     var np = b && b.querySelector('.np'); if (np && np.animate && !quiet && !CALM) np.animate([{ transform: 'rotate(-540deg) scale(.2)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 650, easing: 'cubic-bezier(.2,.8,.2,1)' });   // (the spinning front page)
   }
 };
