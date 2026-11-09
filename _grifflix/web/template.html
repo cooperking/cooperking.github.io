@@ -2442,7 +2442,15 @@ function bigBoard() {   // the Big Board: the world at the centre, its fuel and 
 function tableTurn(b) { themeTurn(b); }
 function themeFit(m) {   // a phone: the theme drawn for an upright screen 780 wide, shown at the phone's own width
   var v = $('#cal .thv'), c = $('#cal'); if (!v) return;
-  if (!MOB()) { v.style.transform = ''; v.style.width = ''; v.style.height = ''; c.style.removeProperty('--vk'); return; }
+  if (!MOB()) {
+    v.style.transform = ''; v.style.width = ''; v.style.height = ''; c.style.removeProperty('--vk');
+    if (document.documentElement.classList.contains('table')) {   // (the War Room filling the screen between the bar and the caption, not crowded at its top:
+      // John, 9 Nov 2026: "Dr Strangelove seems squashed to the top in computer"; its scene 104 to 615 as laid out)
+      var H = themeH(), W = themeW(), av = H - 90 - 130, k = Math.max(.8, Math.min(1.5, av / 511, (W - 120) / 1070)), ty = 90 + (av - 511 * k) / 2 - 104 * k;
+      v.style.transformOrigin = '50% 0'; v.style.transform = 'translateY(' + ty.toFixed(1) + 'px) scale(' + k.toFixed(3) + ')';
+    }
+    return;
+  }
   var vw = document.documentElement.clientWidth || innerWidth, vh = document.documentElement.clientHeight || innerHeight;
   var k = Math.min(vw / 780, (vh - 112 - 224) / 890), off = (vw - 780 * k) / 2;   // (the theme's 890 high, the day's words and the foot under it)
   v.style.width = '780px'; v.style.height = '890px'; v.style.transform = 'translateX(' + off.toFixed(1) + 'px) scale(' + k.toFixed(4) + ')';
@@ -3401,7 +3409,8 @@ THEMEFX.picture = {
     me.za = a; me.horse(g, ry, mid);
     $$('#cal .zlt').forEach(function (t, i, L) {   // (the rim's letters, turning with the drum)
       var th = (i / L.length) * Math.PI * 2 - a * st, cs = Math.cos(th), sn = Math.sin(th);
-      t.style.transform = 'translate(' + (g.cx + g.R * sn).toFixed(1) + 'px,' + (top + ry * cs - 34).toFixed(1) + 'px) translate(-50%,0) scaleX(' + Math.max(.08, Math.abs(cs)).toFixed(2) + ')';
+      var lean = Math.abs(cs) > .04 ? Math.atan(-ry * sn / (g.R * cs)) * 180 / Math.PI : 0;   // (each letter along the rim's curve: John, 9 Nov 2026: "The angle of the Grifflix at the top of the zoetrope is wrong")
+      t.style.transform = 'translate(' + (g.cx + g.R * sn).toFixed(1) + 'px,' + (top + ry * cs - 34).toFixed(1) + 'px) translate(-50%,0) rotate(' + lean.toFixed(1) + 'deg) scaleX(' + Math.max(.08, Math.abs(cs)).toFixed(2) + ')';
       t.style.opacity = cs > 0 ? (.35 + .65 * cs).toFixed(2) : (.12 * -cs).toFixed(2); t.style.zIndex = cs > 0 ? 160 : 1;
     });
   },
