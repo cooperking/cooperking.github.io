@@ -603,7 +603,7 @@ html.tv .th-lane .vday:focus { outline: 0 !important; box-shadow: 0 0 0 4px #1a1
 .zdrum .rim { fill: none; stroke: #e9c46a; stroke-width: 2; opacity: .55; }
 .zdrum .rimf { fill: rgba(233, 196, 106, .06); }
 .zdrum .zin { fill: #0d0809; } .zdrum.zfront { z-index: 100; }
-.zdrum .ztitle { font-family: var(--kfont); font-weight: 700; letter-spacing: .62em; fill: url(#zgold); filter: drop-shadow(0 1px 0 rgba(0, 0, 0, .7)); }   /* (GRIFFLIX on the band, the logo's Futura, spaced as the logo is) */
+.zlt { position: absolute; left: 0; top: 0; z-index: 105; font-family: var(--kfont); font-weight: 700; line-height: 1; color: #e9c87e; text-shadow: 0 1px 0 rgba(0, 0, 0, .7), 0 0 10px rgba(233, 196, 106, .18); pointer-events: none; will-change: transform; }   /* (GRIFFLIX round the band, gilt, the logo's Futura) */
 .zdrum .zgb { fill: none; stroke: #e9c46a; stroke-width: 2; opacity: .85; } .zdrum .zrim { fill: none; stroke: #f6e0a4; stroke-width: 3; }
 .zdrum.zmid { z-index: 8; }
 .zm { position: absolute; left: 0; top: 0; display: grid; place-items: center; pointer-events: none; will-change: transform; backface-visibility: hidden; background: linear-gradient(180deg, #f3ead2, #dccdaa); box-shadow: inset 0 0 0 2px #c9ccd0, inset 0 0 0 3px rgba(40, 30, 20, .4); }   /* (a mirror, the strip's paper and horse in it, its silvered edge) */
@@ -2083,24 +2083,25 @@ requestAnimationFrame(function () { document.documentElement.classList.remove('l
 /* ------------------------------------------------------------------ starting */
 function start() {
   document.documentElement.classList.add('ready');
+  if (!S.leaderTried) { S.leaderTried = 1; try { THEMEFX.picture.leader(); } catch (e) {} }   // (the 3 2 1 at once, while Grifflix reaches the Mac)
   if (BUILD.draft) { var t = document.createElement('a'); t.className = 'drafttag'; t.href = '/grifflix/'; t.title = 'This is the draft: the live Grifflix is at /grifflix/'; t.textContent = 'Draft'; ($('.bar-top .homeic') || $('.brand')).after(t); }
   var go = function () {
     if (!DEMO && !TOKEN) {
-      PUBLIC = true; ME = { name: '', public: true };
+      PUBLIC = true; ME = { name: '', public: true }; window.MACOK = true;
       document.documentElement.classList.add('public');
       $('#who').textContent = 'Sign in';
       return route();   // (all from the site's own files: the Mac mini needn't be on)
     }
     macWake();
     api('me').then(function (me) {
-      ME = me;
+      ME = me; window.MACOK = true;
       $('#who').textContent = me.name ? me.name.split(' ')[0] : 'Profile';
       if (TV) { $('#who').innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>'; $('#who').setAttribute('aria-label', 'Profile'); $('#who').classList.add('whoico'); }   // (the TV: an icon, not the name: John, 8 Nov 2026)
       if (DEMO) $('#note').innerHTML = '<div class="notice"><b>Demo.</b> Made-up films, so you can see how Grifflix works before the Mac mini is connected. Changes stay on this device. <a href="?demo=0">Leave the demo</a></div>';
       route();
-    }).catch(function (e) { welcome(e.status === 401 || e.status === 403 ? 'notmember' : 'down'); });
+    }).catch(function (e) { window.MACOK = true; welcome(e.status === 401 || e.status === 403 ? 'notmember' : 'down'); });
   };
-  if (DEMO) return go();
+  if (DEMO) { window.MACOK = true; return go(); }
   if ('serviceWorker' in navigator) try { swReg().catch(function () {}); } catch (e) {}   // (from the start: it keeps the pictures)
   var saved = store.get('grifflix-gateway');
   fetch('/grifflix/config.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).catch(function () { return {}; })
@@ -2108,8 +2109,9 @@ function start() {
 }
 
 function macWake() {   // a knock on the Mac mini as Grifflix opens (and comes back): it wakes, so it's up by the time a film is chosen (John, 8 Nov 2026)
-  if (DEMO || !GW || !TOKEN) return;
-  try { fetch(GW + '/api/me', { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' }).catch(function () {}); } catch (e) {}
+  if (DEMO || !GW || !TOKEN) { window.MACOK = true; return; }
+  var done = function () { window.MACOK = true; };   // (the 3 2 1 waits on it: John, 9 Nov 2026)
+  try { fetch(GW + '/api/me', { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' }).then(done, done); } catch (e) { done(); }
 }
 document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && Date.now() - (macWake.at || 0) > 120000) { macWake.at = Date.now(); macWake(); } });
 function welcome(why) {
@@ -2698,13 +2700,17 @@ function musicBeep(at) {   // (the leader's beep on each number, at its moment o
 }, true); });
 document.addEventListener('visibilitychange', function () { if (document.hidden) { musicHush(); } else leaderNewDay(); });
 // (an app that stays loaded, as a Fire Stick's does: a new day's first look at it, or first key, still opens with the leader)
-function leaderNewDay() {
-  if (!document.documentElement.dataset.theme || $('.zlead') || /[?&]view=themes/.test(location.search)) return;
-  var dt = new Date(), today = dt.getFullYear() + '-' + (dt.getMonth() + 1) + '-' + dt.getDate();
-  try { if (localStorage.getItem('grifflix-leader') === today) return; } catch (e) { return; }
-  window.ZLED = 0; THEMEFX.picture.leader();
+function leaderNewDay() {   // (back after a while: away 10 minutes, or a TV left on and not touched for half an hour: the 3 2 1 again, the Mac checked)
+  var now = Date.now(), idle = now - (leaderNewDay.act || now); leaderNewDay.act = now;
+  if (!document.documentElement.dataset.theme || $('.zlead') || /[?&]view=themes/.test(location.search) || VIEW() !== 'themes') return;
+  // (never over a film or a trailer, playing or paused: John, 9 Nov 2026: "so long as it doesn't happen if a film is playing")
+  var tp = $('#tplayer'); if ((P && P.el && P.el.classList.contains('on')) || (tp && !tp.hidden)) return;
+  if (!(leaderNewDay.away && now - leaderNewDay.away > 6e5) && idle < 18e5) return;
+  leaderNewDay.away = 0; window.MACOK = false; macWake(); window.ZLED = 0; THEMEFX.picture.leader(true);
 }
-addEventListener('keydown', leaderNewDay, true);
+leaderNewDay.act = Date.now();
+addEventListener('keydown', leaderNewDay, true); addEventListener('pointerdown', function () { leaderNewDay.act = Date.now(); }, true);
+document.addEventListener('visibilitychange', function () { if (document.hidden) leaderNewDay.away = Date.now(); });
 document.addEventListener('play', function (e) { if (e.target && e.target.id === 'vid') musicHush(); }, true);
 function musicFilm() { var n = S.sheetNow; return !!(n && (n.k === 'film' || n.k === 'day' || n.k === 'cal') && $('#sheet').open); }   // (a film chosen, or the calendar open: John, 9 Nov 2026: "calendar should also stop the music")
 setInterval(function () {   // (off the theme's page, or a film chosen: quiet; the film's page closed, the theme's music again:
@@ -3530,12 +3536,11 @@ THEMEFX.picture = {
       '<ellipse cx="' + F(cx) + '" cy="' + F(cy2) + '" rx="' + F(g.rm * 1.07) + '" ry="' + F(g.rym * 1.07) + '" fill="url(#zcap)" stroke="#f6e0a4" stroke-opacity=".75" stroke-width="1.1"/>' +
       '<ellipse cx="' + F(cx) + '" cy="' + F(cy2 - .5 * g.f) + '" rx="' + F(g.rm * .62) + '" ry="' + F(g.rym * .62) + '" fill="none" stroke="#f6e0a4" stroke-opacity=".35" stroke-width="1"/>' +
       '<ellipse cx="' + F(cx) + '" cy="' + F(cy2 - 1 * g.f) + '" rx="' + F(g.rm * .16) + '" ry="' + F(g.rym * .16) + '" fill="url(#zbrass)"/>' +
-      // (GRIFFLIX once, in the middle of the band, along its curve, in gilt: John, 9 Nov 2026: "just have Grifflix on there written in the middle")
-      (function () { var ym = ty + g.Hw * .5 + 9 * g.f * 0, a = .62, x1 = cx - R * Math.sin(a), x2 = cx + R * Math.sin(a), y = ym + ry * Math.cos(a), fs = Math.max(14, g.Hw * .34);
-        return '<defs><path id="ztitlep" d="M' + F(x1) + ',' + F(y + fs * .35) + ' A' + F(R) + ' ' + F(ry) + ' 0 0 0 ' + F(x2) + ',' + F(y + fs * .35) + '"/>' +
-          '<linearGradient id="zgold" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#fbe7b0"/><stop offset=".55" stop-color="#d9b062"/><stop offset="1" stop-color="#a47a32"/></linearGradient></defs>' +
-          '<text class="ztitle" style="font-size:' + F(fs) + 'px"><textPath href="#ztitlep" startOffset="50%" text-anchor="middle">GRIFFLIX</textPath></text>'; })() +
       '</svg>';
+    // (GRIFFLIX round the band in gilt, spaced out, turning with the drum, twice round: each move a half turn, the next word coming round
+    // to the front as it stops: John, 9 Nov 2026: "the GRIFFLIX on the praxinoscope is meant to spin too - and should be nicely spread out")
+    var L = 'GRIFFLIX    GRIFFLIX    ';
+    for (var k2 = 0; k2 < L.length; k2++) h += '<span class="zlt">' + (L[k2] === ' ' ? '' : L[k2]) + '</span>';
     return h;
   },
   // (the Lumières' train, from coming into view to drawing into the station, run by the days as they move, quick: forwards going on,
@@ -3584,10 +3589,8 @@ THEMEFX.picture = {
     var force = asked === true || /[?&]leader=1/.test(location.search);
     if (window.ZLED || $('.zlead') || (!force && CALM)) return; window.ZLED = 1;
     if (!force && /[?&]view=themes/.test(location.search)) return;   // (admin's theme explorer: only its Play the 3 2 1, and it doesn't use up the day's)
-    if (!force) {
-      var dt = new Date(), today = dt.getFullYear() + '-' + (dt.getMonth() + 1) + '-' + dt.getDate();
-      try { if (localStorage.getItem('grifflix-leader') === today) return; localStorage.setItem('grifflix-leader', today); } catch (e) {}
-    }
+    // (every visit, and whenever they come back after a while, while Grifflix checks in with the Mac: John, 9 Nov 2026: "could the 3 2 1 be
+    // more than once a day - whenever the visitor returns and we need to check in with the mac")
     var d = document.createElement('div'); d.className = 'zlead'; d.innerHTML = '<div class="zbg"></div><div class="zglow">' + (TV ? '' : this.glow()) + '</div><div class="ring"><i></i></div><div class="n">3</div><div class="gx">Grifflix</div><div class="skip">Tap to skip</div>';
     document.body.appendChild(d); musicHold();
     // (picture and sound on one clock, the sound's: the numbers follow it, so a busy TV can't put them out of step: John, 9 Nov 2026:
@@ -3615,7 +3618,7 @@ THEMEFX.picture = {
         if (done) return;
         if (!live && la && performance.now() - t00 < 1500 && la.paused) { raf = requestAnimationFrame(tick); return; }   // (a moment for its sound to start)
         if (!live && !p0) p0 = performance.now();   // (no sound: its own clock, from now)
-        var e = live ? la.currentTime - .1 : (performance.now() - p0) / 1000, st = e < 0 ? '3' : e < .8 ? '3' : e < 1.6 ? '2' : e < 2.4 ? '1' : e < 2.52 ? 'flash' : e < 3.9 ? 'name' : 'end';
+        var e = live ? la.currentTime - .1 : (performance.now() - p0) / 1000, st = e < 0 ? '3' : e < .8 ? '3' : e < 1.6 ? '2' : e < 2.4 ? '1' : e < 2.52 ? 'flash' : e < 3.9 || (!window.MACOK && e < 8) ? 'name' : 'end';   // (GRIFFLIX held till the Mac has answered, 8s at most)
         if (st !== stage) { stage = st;
           if (st === 'flash') { d.classList.add('flash'); n.textContent = ''; } else if (st === 'name') { d.classList.remove('flash'); d.classList.add('name'); } else if (st === 'end') return gone(); else n.textContent = st; }
         raf = requestAnimationFrame(tick);
@@ -3671,6 +3674,14 @@ THEMEFX.picture = {
       m.style.zIndex = 10 + Math.round(cs * 30);
       m.style.setProperty('--dk', Math.min(.7, .8 * (1 - cs)).toFixed(2));
       m.style.setProperty('--sh', Math.max(0, 1 - Math.abs(sn - .3) * 3).toFixed(2));
+    });
+    var LT = me._zl && me._zl[0] && me._zl[0].isConnected ? me._zl : (me._zl = $$('#cal .zlt')), fs = g.Hw * .3;
+    LT.forEach(function (t, i, L) {
+      var th = (i - 3.5) / L.length * Math.PI * 2 - a * Math.PI, cs = Math.cos(th), sn = Math.sin(th);
+      if (cs < .12 || !t.textContent) { if (t._v !== 0) { t.style.visibility = 'hidden'; t._v = 0; } return; } if (t._v !== 1) { t.style.visibility = ''; t._v = 1; }
+      t.style.fontSize = fs.toFixed(1) + 'px';
+      t.style.transform = 'translate(' + (g.cx + R * sn).toFixed(1) + 'px,' + (ty + g.Hw / 2 + ry * cs).toFixed(1) + 'px) translate(-50%,-50%) perspective(' + g.P + 'px) rotateY(' + (th * 180 / Math.PI).toFixed(1) + 'deg)';
+      t.style.opacity = Math.min(1, cs * 1.8).toFixed(2);
     });
   },
   front: function (b) {   // (the room lit by the day's film)
