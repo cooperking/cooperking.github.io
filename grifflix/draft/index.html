@@ -565,7 +565,7 @@ html.tv .th-lane .vday:focus { outline: 0 !important; box-shadow: 0 0 0 4px #1a1
 .zdrum .rimf { fill: rgba(233, 196, 106, .06); }
 .zdrum .zin { fill: #0d0809; } .zdrum.zfront { z-index: 2; }
 .zdrum .lac { fill: url(#zlac); opacity: .9; } .zdrum .gilt { fill: none; stroke: #e9c46a; stroke-width: 1.2; opacity: .6; }
-.zdrum .zoak { fill: url(#zoak); } .zdrum .zring { fill: none; stroke: #6a4224; stroke-opacity: .45; stroke-width: 1.2; } .zdrum .zedge { fill: none; stroke: #f0cf9c; stroke-opacity: .5; stroke-width: 1.2; } .zdrum .zshadow { fill: rgba(0, 0, 0, .55); filter: blur(6px); }
+.zdrum .zoak { fill: url(#zoak); } .zdrum .zring { fill: none; stroke: #c9935a; stroke-opacity: .28; stroke-width: 1; } .zdrum .zedge { fill: none; stroke: #f0cf9c; stroke-opacity: .5; stroke-width: 1.2; } .zdrum .zshadow { fill: rgba(0, 0, 0, .55); filter: blur(6px); }
 .zdrum .spin { fill: url(#zwood); } .zdrum .foot { fill: #24170f; } .zdrum .foott { fill: url(#zwood); stroke: #e9c46a; stroke-opacity: .3; } .zdrum .coll { fill: #b8913f; }
 .zh { position: absolute; left: 0; top: 0; background: url("/grifflix/img/muybridge-horse.webp") 0 0 no-repeat; pointer-events: none; will-change: transform; filter: drop-shadow(0 0 4px rgba(233, 196, 106, .35)); }
 .zlt { position: absolute; left: 0; top: 0; font: 700 26px/1 var(--kfont); color: #e9c46a; pointer-events: none; will-change: transform; }
@@ -3293,9 +3293,10 @@ function zstand(cx, y0, R, ry, maxY) {   // (the zoetrope's turned oak pedestal,
   h += '<ellipse class="zshadow" cx="' + F(cx) + '" cy="' + F(y0 + T * k + R * .57 * e * 1.1) + '" rx="' + F(R * .85) + '" ry="' + F(R * .57 * e * 1.4) + '"/>';
   for (var t = T; t >= 0; t -= step) {   // (from the foot up: each ring over the one below)
     var r = rAt(t) * R, sl = (rAt(t + step) - rAt(t)) / step * 400 / 1;   // (the slope: + where it widens going down, a face turned up to the light)
-    var lit = sl > .002 ? Math.min(.35, sl * 18) : sl < -.002 ? -Math.min(.3, -sl * 10) : 0;
+    var lit = sl > .002 ? Math.min(.22, sl * 12) : sl < -.002 ? -Math.min(.3, -sl * 10) : 0, down = .45 * t / T;   // (darker towards the floor, away from the light)
     h += '<ellipse cx="' + F(cx) + '" cy="' + F(y0 + t * k) + '" rx="' + F(r) + '" ry="' + F(r * e) + '" fill="url(#zoak)"' + (lit ? '' : '') + '/>' +
-      (lit > 0 ? '<ellipse cx="' + F(cx) + '" cy="' + F(y0 + t * k) + '" rx="' + F(r) + '" ry="' + F(r * e) + '" fill="#ffe6bf" opacity="' + lit.toFixed(2) + '"/>' : lit < 0 ? '<ellipse cx="' + F(cx) + '" cy="' + F(y0 + t * k) + '" rx="' + F(r) + '" ry="' + F(r * e) + '" fill="#2a1608" opacity="' + (-lit).toFixed(2) + '"/>' : '');
+      (lit > 0 ? '<ellipse cx="' + F(cx) + '" cy="' + F(y0 + t * k) + '" rx="' + F(r) + '" ry="' + F(r * e) + '" fill="#d89a5e" opacity="' + lit.toFixed(2) + '"/>' : '') +
+      '<ellipse cx="' + F(cx) + '" cy="' + F(y0 + t * k) + '" rx="' + F(r) + '" ry="' + F(r * e) + '" fill="#050202" opacity="' + Math.min(.75, down + (lit < 0 ? -lit : 0)).toFixed(2) + '"/>';
   }
   // (the turned grooves: the front of each ring where the profile turns)
   [10, 14, 22, 58, 70, 88].forEach(function (t) { var r = rAt(t) * R, y = y0 + t * k;
@@ -3316,7 +3317,7 @@ THEMEFX.picture = {
     var cx = g.cx, R = g.R, by = Math.min(c.H - 40, b2 + (c.mob ? 150 : 120)), arc = function (y, sw) { return 'A' + R + ' ' + ry + ' 0 0 ' + sw + ' '; };
     // (the stand: a turned wooden spindle on a round foot, a brass collar under the drum)
     h += '<svg class="zdrum" width="' + c.W + '" height="' + c.H + '"><defs>' +
-      '<linearGradient id="zoak" x1="0" x2="1"><stop offset="0" stop-color="#7a4f2a"/><stop offset=".22" stop-color="#c99560"/><stop offset=".42" stop-color="#e8bf88"/><stop offset=".62" stop-color="#c58f58"/><stop offset="1" stop-color="#6a4224"/></linearGradient>' +
+      '<linearGradient id="zoak" x1="0" x2="1"><stop offset="0" stop-color="#140a07"/><stop offset=".2" stop-color="#3a2015"/><stop offset=".4" stop-color="#6b3d24"/><stop offset=".55" stop-color="#4a2a1a"/><stop offset=".8" stop-color="#26140c"/><stop offset="1" stop-color="#0f0705"/></linearGradient>' +   // (dark polished walnut, lit as the drum is: from above, warm, falling away at the sides: John, 9 Nov 2026: "It sits differently in the light to the rest")
       '<linearGradient id="zoakt" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#f0cf9c"/><stop offset="1" stop-color="#c99560"/></linearGradient>' +
       '<linearGradient id="zwood" x1="0" x2="1"><stop offset="0" stop-color="#2a1a12"/><stop offset=".35" stop-color="#8a5a38"/><stop offset=".55" stop-color="#5a3a26"/><stop offset="1" stop-color="#1e130d"/></linearGradient>' +
       '<linearGradient id="zlac" x1="0" x2="1"><stop offset="0" stop-color="#170a0b"/><stop offset=".42" stop-color="#4a1a1c"/><stop offset=".6" stop-color="#2c0f11"/><stop offset="1" stop-color="#120708"/></linearGradient></defs>' +
