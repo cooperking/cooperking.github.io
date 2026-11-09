@@ -15,6 +15,11 @@ in English").
   python3 motd-fill.py go     puts them on the calendar
   python3 motd-fill.py --to 2026-12-31 (go)   on to the end of the year too (days already chosen kept, no film twice)
   python3 motd-fill.py --redo --to 2027-12-31 (go)   every day from 1 Dec 2025 dealt again, from scratch
+  python3 motd-fill.py --unrepeat (go)   a film on more than one day still to come (a month's theme film put on its 1st
+                                         when it was already on another day): the other days given new films, the 1st kept
+                                         (John, 9 Nov 2026: "The playlist shouldn't have repeated films")
+
+The whole calendar is read from this Mac's own copy (the days still to come too), so no film is put on a second day.
 """
 import csv, datetime, json, os, random, re, sys, urllib.parse, urllib.request
 
@@ -24,6 +29,7 @@ s = json.load(open(os.path.join(APP, 'settings.json')))
 JF = s.get('jellyfin', 'http://127.0.0.1:8096')
 GW = 'http://127.0.0.1:%s' % s.get('port', 8097)
 GO = 'go' in sys.argv[1:]
+UNREPEAT = '--unrepeat' in sys.argv[1:]
 REDO = '--redo' in sys.argv[1:]   # deal every day from 1 December 2025 to --to again, from scratch (the days already chosen too)
 START = datetime.date(2025, 12, 1)
 TODAY = datetime.date.today()
@@ -109,15 +115,34 @@ def christmas(it):
 
 days = [START + datetime.timedelta(n) for n in range((END - START).days + 1)]
 cal = {}
-try:
-    cal = json.load(urllib.request.urlopen(urllib.request.Request(GW + '/api/public/calendar?id=motd'), timeout=60)).get('days') or {}
+try:   # (the whole calendar, the days still to come too: the gateway's own file on this Mac)
+    cal = json.load(open(os.path.join(APP, 'data.json')))['calendars']['motd'].get('days') or {}
 except Exception:
-    pass
+    try:
+        cal = json.load(urllib.request.urlopen(urllib.request.Request(GW + '/api/public/calendar?id=motd'), timeout=60)).get('days') or {}
+    except Exception:
+        pass
+cal = {d: (v.get('id') if isinstance(v, dict) else v) for d, v in cal.items()}
 if REDO:
     cal = {}   # (all dealt again: the films already on the calendar can come again, on new days)
 taken = {d for d in cal}
 already = {(v.get('id') if isinstance(v, dict) else v) for v in cal.values()}
 open_days = [d for d in days if d.isoformat() not in taken]
+if UNREPEAT:   # the days still to come whose film is on another day too: given new films (a 1st's kept: its month's theme film)
+    def who(i):
+        it = films.get(i) or {}
+        return ('%s|%s' % (str(g(it, 'Name') or '').lower(), g(it, 'ProductionYear', ''))) if it else i
+    seen = {}
+    for d in sorted(cal):
+        seen.setdefault(who(cal[d]), []).append(d)
+    again = []
+    for k, ds in seen.items():
+        if len(ds) < 2:
+            continue
+        keep = next((d for d in ds if d.endswith('-01')), ds[0])
+        again += [d for d in ds if d != keep and d > TODAY.isoformat()]
+    open_days = sorted(datetime.date.fromisoformat(d) for d in again)
+    print('%d days still to come have a film that is on another day too.' % len(open_days))
 
 dad_ids = {g(x, 'Id') for c in dads for x in held[g(c, 'Id')]}
 # Dad's favourites: every one, whatever its language or length (John, 7 Nov 2026: "the exception to all English language
@@ -177,11 +202,19 @@ if len(plan) < len(open_days):
     print('%d days left empty: not enough English feature films in the collections.' % (len(open_days) - len(plan)))
 if skipped_dads:
     print('Dad’s favourites left out (not English, or under %d minutes): %s' % (MIN_MINS, '; '.join(g(x, 'Name') for x in skipped_dads)))
-for d in sorted(plan)[-7:]:
+for d in ([] if UNREPEAT else sorted(plan)[-7:]):   # (not the films for days still a surprise)
     print('  %s  %s (%s)' % (d.strftime('%a %d %b'), g(ok[plan[d]], 'Name'), g(ok[plan[d]], 'ProductionYear', '')))
 print('Day by day: ~/Grifflix/motd-plan.csv')
 if not GO:
     print('Nothing changed yet. To put them on the calendar:  python3 motd-fill.py go' + (' --redo' if REDO else '') + (' --to %s' % END if END != TODAY else ''))
+    sys.exit()
+if UNREPEAT:   # (each of those days replaced on its own, the rest of the calendar as it is)
+    n = 0
+    for d, i in sorted(plan.items()):
+        r = urllib.request.Request(GW + '/local/calendar', data=json.dumps({'days': {d.isoformat(): i}, 'replace_from': d.isoformat(), 'replace_to': d.isoformat()}).encode(),
+                                   method='POST', headers={'X-Grifflix-Secret': s['secret'], 'Content-Type': 'application/json'})
+        n += json.load(urllib.request.urlopen(r, timeout=60)).get('added', 0)
+    print('%d repeated day%s given a new film. Press Update on the admin page to put them on the site.' % (n, '' if n == 1 else 's'))
     sys.exit()
 body = {'days': {d.isoformat(): i for d, i in plan.items()}}
 if REDO:
