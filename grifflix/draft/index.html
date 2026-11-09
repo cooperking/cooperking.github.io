@@ -3069,7 +3069,7 @@ THEMEFX.fold = {
     var g = this.g(c), m = g.mask ? ';-webkit-mask-image:linear-gradient(90deg,transparent ' + g.mask + 'px,#000 ' + (g.mask + 140) + 'px);mask-image:linear-gradient(90deg,transparent ' + g.mask + 'px,#000 ' + (g.mask + 140) + 'px)' : '';
     // (drawn on a canvas, not hundreds of shapes made anew each frame: John, 9 Nov 2026: "movement is not as smooth on firestick
     // ... Inception felt particularly clunky")
-    return '<canvas class="fcity" id="fscene" style="width:' + c.W + 'px;height:' + c.H + 'px"></canvas>';
+    return '<canvas class="fcity" id="fscene" style="left:' + g.mask + 'px;width:' + (c.W - g.mask) + 'px;height:' + c.H + 'px"></canvas>';   // (only where the city is: right of the day's words)
   },
   ready: function () { fxReset(this); this.t0 = performance.now(); },
   swipe: function (c) { return { x: 0, y: 1, px: c.mob ? 50 : 70 }; },   // (pull the street towards you)
@@ -3097,12 +3097,12 @@ THEMEFX.fold = {
     polys.sort(function (p, q) { return q[0] - p[0]; });
     var cv = $('#fscene'), x = cv && cv.getContext('2d');
     if (x) {
-      var dpr = TV ? .5 : Math.min(2, window.devicePixelRatio || 1);   // (a TV: drawn at half size and scaled up, a quarter of the filling)
-      if (cv.width !== Math.round(c.W * dpr)) { cv.width = Math.round(c.W * dpr); cv.height = Math.round(c.H * dpr); }
-      x.setTransform(dpr, 0, 0, dpr, 0, 0); x.clearRect(0, 0, c.W, c.H); x.lineJoin = 'round';
+      var dpr = TV ? 1 : Math.min(2, window.devicePixelRatio || 1);   // (a TV: at full size: half was too soft on the screen, John, 9 Nov 2026)
+      if (cv.width !== Math.round((c.W - g.mask) * dpr)) { cv.width = Math.round((c.W - g.mask) * dpr); cv.height = Math.round(c.H * dpr); }
+      x.setTransform(dpr, 0, 0, dpr, -g.mask * dpr, 0); x.clearRect(g.mask, 0, c.W, c.H); x.lineJoin = 'round';
       var FC = { pv1: '#1f4c5e', pv2: '#2d5f72', ln: '#a8bcc3', bl: '#a8bcc3', br: '#8fa6ae', wn: '#083345', rf: '#2d5f72' }, ST = { bl: '#6f8a95', br: '#5d7883' };
       polys.forEach(function (p) { var q = p[2]; x.beginPath(); x.moveTo(q[0][0], q[0][1]); for (var i = 1; i < q.length; i++) x.lineTo(q[i][0], q[i][1]); x.closePath();
-        x.globalAlpha = p[1] === 'ln' ? .55 : 1; x.fillStyle = FC[p[1]]; x.fill(); if (ST[p[1]]) { x.strokeStyle = ST[p[1]]; x.lineWidth = .6; x.stroke(); } });
+        x.globalAlpha = p[1] === 'ln' ? .55 : 1; x.fillStyle = FC[p[1]]; x.fill(); if (ST[p[1]] && !TV) { x.strokeStyle = ST[p[1]]; x.lineWidth = .6; x.stroke(); } });
       x.globalAlpha = 1;
       if (g.mask) { x.globalCompositeOperation = 'destination-out'; var gr = x.createLinearGradient(g.mask, 0, g.mask + 140, 0); gr.addColorStop(0, 'rgba(0,0,0,1)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
         x.fillStyle = gr; x.fillRect(0, 0, g.mask + 140, c.H); x.globalCompositeOperation = 'source-over'; }   // (the city fading out behind the day's words)
