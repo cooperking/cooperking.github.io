@@ -1636,14 +1636,27 @@ async function grifflix(request, url, env) {
     const w = await gWho(request, env);
     if (!w || !w.owner) return answer(403, { error: 'Only John.' });
     const b = await request.json().catch(() => ({})), k = b.themes;
-    if (k == null) { await env.SOTD.delete('gthemes'); return answer(200, { ok: true, themes: null }); }
-    if (!Array.isArray(k) || k.length < 1 || k.length > 120 || !k.every(x => typeof x === 'string' && /^[a-z0-9-]{2,24}$/.test(x))) return answer(400, { error: 'A list of themes, please.' });
-    await env.SOTD.put('gthemes', JSON.stringify(k));
+    // (saved as the draft's order, put live with the site's next update: John, 9 Nov 2026: "Themes should be easily saved in
+    // order but not publish until I update the site")
+    if (b.publish) {
+      const dr = await env.SOTD.get('gthemes-draft');
+      if (dr != null) { if (dr === 'null') await env.SOTD.delete('gthemes'); else await env.SOTD.put('gthemes', dr); await env.SOTD.delete('gthemes-draft'); }
+      return answer(200, { ok: true, published: dr != null, themes: JSON.parse(await env.SOTD.get('gthemes') || 'null') });
+    }
+    if (k != null && (!Array.isArray(k) || k.length < 1 || k.length > 120 || !k.every(x => typeof x === 'string' && /^[a-z0-9-]{2,24}$/.test(x)))) return answer(400, { error: 'A list of themes, please.' });
+    if (b.draft) {
+      const live = await env.SOTD.get('gthemes') || 'null', want = JSON.stringify(k == null ? null : k);
+      if (want === live) await env.SOTD.delete('gthemes-draft'); else await env.SOTD.put('gthemes-draft', want);
+      return answer(200, { ok: true, draft: want === live ? undefined : (k == null ? null : k), themes: JSON.parse(live) });
+    }
+    if (k == null) { await env.SOTD.delete('gthemes'); await env.SOTD.delete('gthemes-draft'); return answer(200, { ok: true, themes: null }); }
+    await env.SOTD.put('gthemes', JSON.stringify(k)); await env.SOTD.delete('gthemes-draft');
     return answer(200, { ok: true, themes: k });
   }
   if (route === 'cal') {   // Movie of the Day's days revealed after the site's own file (?after=), and for John, those still to come
     const c = await gCal(env), shown = gShownCal(c), after = url.searchParams.get('after') || '';
     const out = { days: {}, notes: {}, themes: JSON.parse(await env.SOTD.get('gthemes') || 'null') };   // (the admin page's months, for everyone)
+    const tdr = await env.SOTD.get('gthemes-draft'); if (tdr != null) out.themesDraft = JSON.parse(tdr);   // (an order saved but not yet put live: the draft page shows it)
     for (const [d, it] of Object.entries(shown.days)) if (d > after) { out.days[d] = it; if (shown.notes[d]) out.notes[d] = shown.notes[d]; }
     const w = request.headers.get('Authorization') ? await gWho(request, env) : null;
     if (w && w.owner) {
