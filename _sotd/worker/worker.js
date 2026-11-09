@@ -7199,7 +7199,9 @@ async function timerSongs(env, ctx, now) {
   const list = (kept && kept.songs) || [];
   const newest = list.reduce((m, x) => (x.a > m ? x.a : m), '');
   const today = londonDay(now), haveToday = !!newest && londonDay(newest) === today;
-  if (list.length && (haveToday || londonHour(now) < TIMER_FROM_HOUR)) return list;
+  const once = !(await env.SOTD.get('readGB1'));   // (once: read again as the UK sees it, for the album covers: John, 9 Nov 2026)
+  if (once) await env.SOTD.put('readGB1', String(Date.now()));
+  if (!once && list.length && (haveToday || londonHour(now) < TIMER_FROM_HOUR)) return list;
   try {
     return (await readPlaylist(env, ctx)).songs;
   } catch (e) {   // Spotify says wait: the kept list (for the notification), Spotify asked nothing more until the wait is over
