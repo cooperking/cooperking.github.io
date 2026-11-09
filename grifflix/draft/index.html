@@ -1304,7 +1304,7 @@ function own(path, body) {   // a member's own things on the Worker: My list, pl
     .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) { var e = new Error(j.error || 'That didn’t work.'); e.status = r.status; throw e; } picTags(j); return j; }); });
 }
 function picTags(j) {   // the picture versions of the films kept with lists and calendar days
-  var one = function (it) { var t = it && it.tags; if (!t) return; if (it.poster && t.poster) PICTAG[it.poster + 'Primary'] = t.poster; if (it.backdrop && t.backdrop) PICTAG[it.backdrop + 'Backdrop'] = t.backdrop; if (it.thumb && t.thumb) PICTAG[it.thumb + 'Thumb'] = t.thumb; };
+  var one = function (it) { land(it); var t = it && it.tags; if (!t) return; if (it.poster && t.poster) PICTAG[it.poster + 'Primary'] = t.poster; if (it.backdrop && t.backdrop) PICTAG[it.backdrop + 'Backdrop'] = t.backdrop; if (it.thumb && t.thumb) PICTAG[it.thumb + 'Thumb'] = t.thumb; };
   (j.hearts || []).forEach(one); (j.lists || []).forEach(function (l) { (l.items || []).forEach(one); });
   Object.keys(j.days || {}).forEach(function (d) { one(j.days[d]); });
 }
@@ -1315,7 +1315,7 @@ function getJSON(u, tries) {   // the site's files, tried again a few times: whi
 function getJSON1(u) { return fetch(u, { cache: 'no-cache' }).then(function (r) { if (!r.ok) { var e = new Error('Grifflix’s films aren’t on the site yet: John’s Update puts them there.'); e.status = r.status; throw e; } return r.json(); }); }
 function library() {
   if (!LIBP) LIBP = getJSON(DATA + 'library.json').then(function (L) {
-    var tag = function (it) { var t = it.tags || {}; if (it.poster && t.poster) PICTAG[it.poster + 'Primary'] = t.poster; if (it.backdrop && t.backdrop) PICTAG[it.backdrop + 'Backdrop'] = t.backdrop; if (it.thumb && t.thumb) PICTAG[it.thumb + 'Thumb'] = t.thumb; };
+    var tag = function (it) { land(it); var t = it.tags || {}; if (it.poster && t.poster) PICTAG[it.poster + 'Primary'] = t.poster; if (it.backdrop && t.backdrop) PICTAG[it.backdrop + 'Backdrop'] = t.backdrop; if (it.thumb && t.thumb) PICTAG[it.thumb + 'Thumb'] = t.thumb; };
     Object.keys(L.items).forEach(function (k) { tag(L.items[k]); });
     L.tag = tag; LIB = L; return L;
   }).catch(function (e) { LIBP = null; throw e; });
@@ -1336,8 +1336,8 @@ function motdCal() {   // Movie of the Day: the site's file, and from the Worker
       var days = Object.assign({}, D.days, W.days || {}), notes = Object.assign({}, D.notes, W.notes || {});
       Object.keys(notes).forEach(function (d) { if (/^This month[’']s theme:/.test(notes[d] || '')) delete notes[d]; });   // (the theme's own note on its 1st: not shown, it got in the way: John, 8 Nov 2026)
       if ('themes' in W) { store.set('grifflix-themes', JSON.stringify(W.themes || null)); if (themeOrder(W.themes)) monthTint(new Date().getMonth()); }   // (the admin page's months)
-      Object.keys(W.days || {}).forEach(function (d) { if (LIB) LIB.tag(W.days[d]); else if (W.days[d].tags) { var t = W.days[d]; PICTAG[t.poster + 'Primary'] = (t.tags || {}).poster; PICTAG[t.backdrop + 'Backdrop'] = (t.tags || {}).backdrop; } });
-      Object.keys(D.days).forEach(function (d) { var t = D.days[d]; if (t.tags) { PICTAG[t.poster + 'Primary'] = t.tags.poster; PICTAG[t.backdrop + 'Backdrop'] = t.tags.backdrop; if (t.thumb) PICTAG[t.thumb + 'Thumb'] = t.tags.thumb; } });
+      Object.keys(W.days || {}).forEach(function (d) { land(W.days[d]); if (LIB) LIB.tag(W.days[d]); else if (W.days[d].tags) { var t = W.days[d]; PICTAG[t.poster + 'Primary'] = (t.tags || {}).poster; PICTAG[t.backdrop + 'Backdrop'] = (t.tags || {}).backdrop; } });
+      Object.keys(D.days).forEach(function (d) { var t = D.days[d]; land(t); if (t.tags) { PICTAG[t.poster + 'Primary'] = t.tags.poster; PICTAG[t.backdrop + 'Backdrop'] = t.tags.backdrop; if (t.thumb) PICTAG[t.thumb + 'Thumb'] = t.tags.thumb; } });
       (W.secret || []).forEach(function (d) { if (!days[d]) days[d] = { secret: true }; });
       var count = Object.keys(days).filter(function (d) { return !days[d].secret; }).length;
       return { id: 'motd', name: 'Movie of the Day', ownerName: 'John', mine: !!(ME && ME.owner), shared: true, count: count, days: days, notes: notes };
@@ -1590,9 +1590,12 @@ function forgetMemo() {
   MEMO = {};
   try { Object.keys(localStorage).forEach(function (k) { if (k.indexOf('gfx:') === 0) localStorage.removeItem(k); }); } catch (e) {}
 }
+var LANDS = {};   // each film's landscape poster from TMDB (its own artwork with its title), by its backdrop: the wide pictures (John, 9 Nov 2026: "I actually want a landscaped poster of the film - real")
+function land(it) { if (it && it.land && it.backdrop) LANDS[it.backdrop] = it.land; }
 function img(id, kind, w) {
   if (!id) return '';
   if (DEMO) return Demo.pic(id, kind);
+  if (kind === 'Backdrop' && LANDS[id]) return 'https://image.tmdb.org/t/p/' + ((w || 0) > 780 || TV ? 'w1280' : 'w780') + LANDS[id];
   // the site's own copy of each picture (kept by the Worker, made by John's Update; the same address for everyone, its
   // version in it: the browser and Grifflix's service worker keep each one, shown at once next time, as the songs' covers)
   kind = kind || 'Primary';
@@ -2816,7 +2819,7 @@ function dayStep(d) {
 function itemSheet(it, ctx) {
   ctx = ctx || {};
   if (!it) return;
-  SEEN[it.id] = it;
+  SEEN[it.id] = it; land(it);
   S.sheetDate = ctx.date || null;
   var dnav = function (d) { return ctx.date && dayNear(ctx.date, d) ? '<button class="ico dnav" id="dstep' + (d < 0 ? 'p' : 'n') + '" data-dstep="' + d + '" aria-label="' + (d < 0 ? 'The day before' : 'The day after') + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="' + (d < 0 ? 'M15 6l-6 6 6 6' : 'M9 6l6 6-6 6') + '"/></svg></button>' : ''; };
   var top = it.backdrop ? '<div class="heroimg"><img alt="" src="' + esc(img(it.backdrop, 'Backdrop', 1100)) + '">' + X + '</div>' : (it.thumb || (it.type === 'video' && it.poster) ? '<div class="heroimg"><img alt="" src="' + esc(img(it.thumb || it.poster, it.thumb ? 'Thumb' : 'Primary', 1100)) + '">' + X + '</div>' : '<div class="noimg-top" style="position:relative">' + X + '</div>');
