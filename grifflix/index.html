@@ -475,10 +475,30 @@ html.tv .th .vday:focus { outline: 3px solid rgb(var(--kink)) !important; outlin
 html[data-theme=reel] .hinfo { max-width: 540px; }
 /* the umbrellas */
 .th-umbrellas .vday { width: 300px; height: 300px; border-radius: 50%; box-shadow: 10px 14px 0 rgba(0, 0, 0, .16); }
+.th-umbrellas .vday { background-image: none; }
+.th-umbrellas .upic { position: absolute; inset: 0; border-radius: 50%; overflow: hidden; }   /* (the poster whole in its circle, blurred either side, as the moon) */
+.th-umbrellas .vday:not(.front) .upic::before { display: none; }   /* (only the open umbrella needs it) */
 .th-umbrellas .um { position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle, #1d1d1b 0 4%, transparent 5%), repeating-conic-gradient(var(--u1) 0 22.5deg, var(--u2) 22.5deg 45deg); transition: opacity .2s; }
 #cal.drag .um { transition: none; }
 .th-umbrellas .vday.front .um { opacity: 0; }
 html.tv .th-umbrellas .vday:focus { outline: 0 !important; box-shadow: 0 0 0 4px rgb(var(--kink)), 10px 14px 0 rgba(0, 0, 0, .16); }
+/* the fold (Inception): Paris folding over onto itself, the days standing in its street */
+.th-fold .vday { width: 200px; height: 300px; box-shadow: 0 8px 22px rgba(0, 0, 0, .5); }
+.th-fold .vday:not(.front) { filter: saturate(.35) brightness(.78); }
+.th-fold .vday:not(.front) .vn { display: none; }
+.th-fold .vday .vn { color: #dfe7eb; letter-spacing: .32em; }
+html.tv .th-fold .vday:focus { outline: 0 !important; box-shadow: 0 0 0 4px #dfe7eb, 0 8px 22px rgba(0, 0, 0, .5); }
+.fcity { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
+.fcity .st { fill: none; stroke: #8b9ca5; stroke-width: 2; opacity: .55; }
+.fcity .b1 { fill: #3b4c56; } .fcity .b2 { fill: #4a5d68; } .fcity .b3 { fill: #2f3e47; }
+.fcity .wn { fill: #c9b98a; opacity: .5; }
+.ftop { position: absolute; width: 44px; height: 62px; margin: -31px 0 0 -22px; pointer-events: none; }
+.ftop b { display: block; width: 100%; height: 100%; transform-origin: 50% 100%; animation: fwob 2.8s ease-in-out infinite; }
+.ftop i { display: block; width: 100%; height: 100%; clip-path: polygon(45% 0, 55% 0, 55% 24%, 100% 47%, 100% 55%, 52% 100%, 48% 100%, 0 55%, 0 47%, 45% 24%); background: repeating-linear-gradient(90deg, #9fadb4 0 7px, #55646c 7px 13px, #e4eaed 13px 16px); animation: fspin .3s linear infinite; }
+.ftop::after { content: ""; position: absolute; left: 4px; right: 4px; bottom: -7px; height: 8px; border-radius: 50%; background: rgba(0, 0, 0, .35); filter: blur(2px); }
+@keyframes fspin { to { background-position: 32px 0; } }
+@keyframes fwob { 0%, 100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
+@media (prefers-reduced-motion: reduce) { .ftop b, .ftop i { animation: none; } }
 /* the spiral */
 .th-spiral .vday { width: 170px; height: 255px; }
 .th-spiral .vday:not(.front) .vn { display: none; }
@@ -517,7 +537,11 @@ html[data-theme=slices] .hinfo .w { font-size: 64px; }
 .th-moon .vday.none { opacity: .55 !important; }
 html.tv .th-moon .vday:focus { outline: 0 !important; clip-path: none; box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px #fff; }
 html.tv .th-moon .vday:focus .msh { border-radius: 50%; }
-.bigmoon { position: absolute; right: 110px; top: 226px; width: 320px; height: 320px; border-radius: 50%; background: #f3eacb center / auto 100% repeat-x; box-shadow: 0 0 0 2px #f3eacb; }   /* (the day's poster whole, the moon's height, in the middle, and again either side: John, 9 Nov 2026: "show the full poster but allow it to repeat") */
+.bigmoon { position: absolute; right: 110px; top: 226px; width: 320px; height: 320px; border-radius: 50%; overflow: hidden; background: #f3eacb; box-shadow: 0 0 0 2px #f3eacb; }
+/* (the day's poster whole, the moon's height, in the middle; the copies either side blurred and dimmed, so the one poster
+   stands out: John, 9 Nov 2026: "show the full poster but allow it to repeat ... try blurring the repeated ones") */
+.bigmoon::before, .upic::before { content: ""; position: absolute; inset: -16px; background: var(--p) center / auto calc(100% - 32px) repeat-x; filter: blur(7px) brightness(.78) saturate(.8); }
+.bigmoon::after, .upic::after { content: ""; position: absolute; inset: 0; background: var(--p) center / auto 100% no-repeat; }
 .mphase { position: absolute; top: calc(22% + 30px); width: 220px; margin-left: -110px; text-align: center; font: 500 12px/1 var(--kfont); letter-spacing: .3em; text-transform: uppercase; color: var(--fg-2); transition: left .5s cubic-bezier(.3, .7, .2, 1); }
 .mfilm { position: absolute; right: 110px; top: 568px; width: 320px; text-align: center; font: var(--tw) 26px/1.15 var(--tfont); text-transform: var(--ttt); color: var(--fg); }
 /* the credits */
@@ -965,6 +989,13 @@ html[data-theme=reel] .leaf2 b { color: #f4ecd8; background: #3a3a3a; margin: 0 
 html[data-theme=umbrellas] .leaf2 { border: 0; border-radius: .5em .5em .08em .08em; background: #fff; }
 html[data-theme=umbrellas] .leaf2 i { height: .3em; padding: 0; background: repeating-conic-gradient(from 0deg at 50% 100%, #e30613 0 22.5deg, #ffe600 22.5deg 45deg); color: transparent; }
 html[data-theme=umbrellas] .leaf2 b { color: #000; }
+html[data-theme=fold] .hinfo .w > span { letter-spacing: .06em; }
+html[data-theme=fold]:not(.mob) .hinfo .w { font-size: 54px; } html[data-theme=fold]:not(.mob) .hinfo h2 { font-size: 32px; } html[data-theme=fold]:not(.mob) .hinfo { max-width: 600px; }   /* (Michroma is wide) */
+html.mob[data-theme=fold] .hinfo .w { font-size: 30px !important; }
+html[data-theme=fold] .hinfo h2 { color: #c9b98a; }
+html[data-theme=fold] .leaf2 { border-color: #dfe7eb; background: #26343c; }
+html[data-theme=fold] .leaf2 i { background: #dfe7eb; color: #26343c; }
+html[data-theme=fold] .leaf2 b { color: #dfe7eb; font-size: .36em; letter-spacing: -.04em; }   /* (two wide figures in the box) */
 /* April, Vertigo: Bass's spiral behind the number */
 html[data-theme=spiral] .leaf2 { background: repeating-radial-gradient(circle at 50% 62%, transparent 0 .05em, rgba(0, 0, 0, .18) .05em .08em); }
 /* May, The Matrix: a green terminal */
@@ -1643,7 +1674,7 @@ var THEMES = [   // each its film's own lettering and colour, researched (John, 
   // Citizen Kane: its main title's outlined condensed capitals (League Gothic, the free revival of Alternate Gothic: John, 8 Nov 2026); the red title band of the 1941 Style A poster
   { key: 'globe', mob: [40, 60, 1240, 640], name: 'The Snow Globe', film: 'Citizen Kane', year: 1941, by: 'Orson Welles', bg: '#a8161a', ink: '#fff', font: '"GF-globe", "League Gothic", sans-serif', tw: 400 }
 ];
-var THEMEFONTS = 'https://fonts.googleapis.com/css2?family=Bowlby+One&family=Della+Respira&family=Special+Gothic+Expanded+One&family=Londrina+Solid:wght@400;900&family=Share+Tech+Mono&family=Archivo+Narrow:wght@600&family=Anton&family=IM+Fell+English+SC&family=Cinzel:wght@700&family=Tilt+Neon&family=Yuji+Syuku&family=Amatic+SC:wght@700&family=Big+Shoulders:wght@400;700&family=League+Gothic&family=News+Cycle:wght@700&family=Federant&family=Space+Mono:wght@400;700&family=Archivo+Black&family=Orbitron:wght@800&display=swap';
+var THEMEFONTS = 'https://fonts.googleapis.com/css2?family=Bowlby+One&family=Della+Respira&family=Special+Gothic+Expanded+One&family=Londrina+Solid:wght@400;900&family=Share+Tech+Mono&family=Archivo+Narrow:wght@600&family=Anton&family=IM+Fell+English+SC&family=Cinzel:wght@700&family=Tilt+Neon&family=Yuji+Syuku&family=Amatic+SC:wght@700&family=Big+Shoulders:wght@400;700&family=League+Gothic&family=News+Cycle:wght@700&family=Federant&family=Space+Mono:wght@400;700&family=Archivo+Black&family=Orbitron:wght@800&family=Michroma&display=swap';
 function themeEarly() {   // (before the films arrive: the page already laid out as this month's theme)
   if (VIEW() !== 'themes') return; var R = document.documentElement, t = themeFor(new Date().getMonth(), new Date().getFullYear());
   R.classList.add(t.key === 'table' ? 'table' : 'hall'); if (MOB()) R.classList.add('mob'); R.dataset.theme = t.key;
@@ -1660,6 +1691,9 @@ var THEMES_LATER = [
   // Psycho: Saul Bass's titles, News Gothic Bold (News Cycle) on sliding bars; the blue of the 1960 one-sheet's cast panel, its yellow for the title
   { key: 'bars', mob: [0, 0, 1280, 720], name: 'The Bars', film: 'Psycho', year: 1960, by: 'Hitchcock; titles by Saul Bass', bg: '#1578aa', ink: '#fff', font: '"News Cycle", sans-serif', tw: 700 },
   // Late Autumn: the 1960 poster's red brush calligraphy; Ozu's credits written by hand
+  // Inception: Paris folding over itself; the cold steel blue of the 2010 one-sheets, their wide thin capitals (Michroma, the
+  // nearest free face), the warm gold of the city's lights
+  { key: 'fold', mob: [0, 0, 1280, 720], name: 'The Fold', film: 'Inception', year: 2010, by: 'Christopher Nolan', bg: '#26343c', ink: '#fff', font: '"Michroma", sans-serif', tw: 400, tt: 'uppercase' },
   { key: 'autumn', mob: [0, 250, 1280, 640], name: 'Late Autumn', film: 'Late Autumn', year: 1960, by: 'Ozu', bg: '#c4321f', ink: '#fff', font: '"Yuji Syuku", serif', tw: 400, tt: 'none' },
 ];
 // the months' order and choice, set on the admin page (kept by the Worker, sent with the calendar; this device remembers the
@@ -2261,7 +2295,7 @@ THEMEFX.reel = {
 // March: the umbrellas (The Umbrellas of Cherbourg, its opening, from above): the days crossing as umbrellas; the one you're on opens on its film
 var UMB = [['#e30613', '#ffe600'], ['#ffffff', '#1d2bd8'], ['#ff6b00', '#fff3c4'], ['#00845c', '#ffe600'], ['#1d1d1b', '#e30613'], ['#5a2ca0', '#7fd1ff']];
 THEMEFX.umbrellas = {
-  cell: function (d) { var u = UMB[d % UMB.length]; return '<i class="um" style="--u1:' + u[0] + ';--u2:' + u[1] + '"></i>'; },
+  cell: function (d) { var u = UMB[d % UMB.length]; return '<i class="upic"></i><i class="um" style="--u1:' + u[0] + ';--u2:' + u[1] + '"></i>'; },
   swipe: function (c) { return c.mob ? { x: 0, y: -1, px: 60 } : { x: -1, y: 0, px: 60 }; },   // (on a phone they walk down the street)
   place: function (all, at, c) {
     all.forEach(function (el, j) {
@@ -2362,7 +2396,7 @@ THEMEFX.moon = { all: true,
     if (mp) { if (c.mob) { mp.style.left = (390 + 395 * Math.cos(s.a)).toFixed(0) + 'px'; mp.style.top = (440 + 395 * Math.sin(s.a) - 6).toFixed(0) + 'px'; } else mp.style.left = s.x.toFixed(0) + 'px'; }   // (the moon's phase by the small moon)
   },
   front: function (b) {
-    var bm = $('#bigmoon'); if (bm && b) bm.style.backgroundImage = b.style.getPropertyValue('--p');
+    var bm = $('#bigmoon'); if (bm && b) bm.style.setProperty('--p', b.style.getPropertyValue('--p') || 'none');
     var mp = $('#mphase'); if (mp && b) mp.textContent = PHASES[Math.floor(moonPhase(b.dataset.day) * 8 + .5) % 8];
     var mf = $('#mfilm'), it = b && S.calData.days[b.dataset.day]; if (mf) mf.textContent = it && !it.secret ? showName(it) : '';   // (and its film under the large one)
   }
@@ -2450,6 +2484,35 @@ THEMEFX.jaws = {
       vAt(el, g.fx + Math.sin(j * 1.3) * 40 * (1 - nf), y, s * (c.mob ? 1.3 : 1), 0, k > 6 ? 0 : o, 100 - Math.round(k * 10));
       el.style.filter = nf > .98 ? 'none' : 'brightness(' + br.toFixed(2) + ') saturate(' + (.5 + .5 * br).toFixed(2) + ')';
     });
+  }
+};
+// The Fold (Inception): Paris folding up and over itself (John, 9 Nov 2026: "Let's do an inception theme"): the street a
+// ring, its buildings standing inwards all the way round; the day you're on standing in it at the bottom, the days gone
+// up the right and over the top, upside down, those to come up the left; the whole city turns as you go, a top spinning in the middle
+THEMEFX.fold = {
+  st: Math.PI * 2 / 14,   // (a day's turn of the city: fourteen days round)
+  g: function (c) { return c.mob ? { cx: 390, cy: 430, R: 345, fs: 1.1, ty: 300 } : { cx: c.W * .69, cy: c.H * .47, R: Math.min(305, c.H * .43), fs: .82, ty: c.H * .47 - 20 }; },
+  pt: function (g, a, r) { return (g.cx + r * Math.sin(a)).toFixed(1) + ',' + (g.cy + r * Math.cos(a)).toFixed(1); },
+  decor: function (c) {
+    var g = this.g(c), B = '', a = 0, n = 0;
+    while (a < Math.PI * 2 - .05) {   // (the buildings: each its width along the street, its height in towards the middle)
+      var w = .045 + seeded(n * 3 + 1) * .05, h = 26 + seeded(n * 3 + 2) * (c.mob ? 70 : 62), a1 = a + w - .008, r1 = g.R - h;
+      B += '<polygon class="b' + (1 + Math.floor(seeded(n * 3 + 3) * 3)) + '" points="' + [this.pt(g, a, g.R), this.pt(g, a1, g.R), this.pt(g, a1, r1), this.pt(g, a, r1)].join(' ') + '"/>';
+      for (var f = 1; f < h / 14; f++) if (seeded(n * 7 + f) > .55) B += '<circle class="wn" r="1.6" cx="' + (g.cx + (g.R - f * 14) * Math.sin(a + w / 2)).toFixed(1) + '" cy="' + (g.cy + (g.R - f * 14) * Math.cos(a + w / 2)).toFixed(1) + '"/>';
+      a += w; n++;
+    }
+    return '<svg class="fcity" width="' + c.W + '" height="' + c.H + '" viewBox="0 0 ' + c.W + ' ' + c.H + '"><g id="fring"><circle class="st" cx="' + g.cx + '" cy="' + g.cy + '" r="' + (g.R + 3) + '"/>' + B + '</g></svg>' +
+      '<div class="ftop" style="left:' + g.cx.toFixed(0) + 'px;top:' + g.ty.toFixed(0) + 'px"><b><i></i></b></div>';
+  },
+  swipe: function (c) { return { x: 1, y: 0, px: c.mob ? 60 : 70 }; },   // (the city turns with the finger)
+  place: function (all, at, c) {
+    var g = this.g(c), st = this.st;
+    all.forEach(function (el, j) {
+      var k = j - at, nf = near(k), a = -k * st, s = .4 + (g.fs - .4) * nf, r = g.R - 150 * s - 6;
+      var o = k > 3.5 ? Math.max(0, 4.5 - k) : k < -8.5 ? Math.max(0, 9.5 + k) : 1;
+      vAt(el, g.cx + r * Math.sin(a), g.cy + r * Math.cos(a), s, -a * 180 / Math.PI, o, nf > .5 ? 50 : 20 - Math.round(Math.abs(k)));
+    });
+    var ring = $('#fring'); if (ring) ring.setAttribute('transform', 'rotate(' + (-at * st * 180 / Math.PI).toFixed(2) + ' ' + g.cx.toFixed(1) + ' ' + g.cy.toFixed(1) + ')');
   }
 };
 // September: the Grid (TRON): the floor in perspective, the days as glowing frames along a light cycle's wall winding into
