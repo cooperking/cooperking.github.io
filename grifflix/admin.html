@@ -135,6 +135,9 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
 .thxfmt button.on { background: var(--fg); color: #fff; border-color: var(--fg); }
 #thxopen { display: inline-flex; align-items: center; min-height: 38px; padding: 0 14px; border: 1px solid var(--fg); color: var(--fg); text-decoration: none; font: 600 12px/1 "Hanken Grotesk", sans-serif; letter-spacing: .14em; text-transform: uppercase; }
 .thxview .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; font-size: 14px; }
+.dres { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 4px; }
+.dres button { width: 100%; text-align: left; padding: 9px 12px; border: 1px solid var(--line); background: var(--field); color: var(--fg); font: 14px var(--sans); cursor: pointer; border-radius: 10px; }
+.dres button small { color: var(--muted); }
 /* the tabs (John, 9 Nov 2026: "can you tidy up my admin page by having tabs") */
 .tabs { position: sticky; top: 0; z-index: 20; display: flex; gap: 4px; margin: 0 0 16px; padding: 8px 0; overflow-x: auto; scrollbar-width: none; background: var(--bg, #f6f3ee); }
 .tabs::-webkit-scrollbar { display: none; }
@@ -201,6 +204,14 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <h2 id="peekhead">Each one a <em>surprise</em></h2>
         <p class="stat">Each day’s film shows on the calendar at 8am that day, when the alert goes out, for everyone, you too. Switch this on to see what’s coming (only you).</p>
         <div class="state"><button class="btn" id="peek" type="button" disabled>Show upcoming films</button></div>
+      </section>
+      <section class="card" data-tab="films">
+        <div class="kicker">A day’s film</div>
+        <h2>Change <em>a day</em></h2>
+        <p class="stat">Choose a day to change its film or take it off (only here now, not on the site). A day still to come stays a surprise: you change it without seeing what it was. Changes are made on the Mac; <b>Update everything</b> puts them on the site.</p>
+        <div class="state"><input type="date" id="dday" class="name" style="max-width:190px"> <span id="dsay" class="fs">Looking…</span></div>
+        <div class="state"><button class="btn" id="dchange" type="button" disabled>Choose another film</button><button class="btn" id="dclear" type="button" disabled>Take it off</button></div>
+        <div id="dpick" hidden><input type="search" id="dq" class="name" placeholder="A film’s name" autocomplete="off" style="width:100%"><ul class="dres" id="dres"></ul></div>
       </section>
       <section class="card" data-tab="themes">
         <div class="kicker">Monthly themes</div>
@@ -821,6 +832,50 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     themeFirsts(); tmDraw();
   }
   tmDraw();
+  (function () {   // ---- a day's film: changed or taken off here only, not on the site (John, 9 Nov 2026: "remove it from there - give me the ability in admin page only")
+    var LIBP = null, today = new Date().toISOString().slice(0, 10), cur = null;
+    try { today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date()); } catch (e) {}
+    $('#dday').value = today;
+    function gw(body, q) {
+      if (!GW) return Promise.reject(new Error('The Mac mini isn’t connected just now.'));
+      return fetch(GW + '/api/calendar' + (q || ''), { method: body ? 'POST' : 'GET', headers: Object.assign({ Authorization: 'Bearer ' + TOKEN }, body ? { 'Content-Type': 'application/json' } : {}), body: body ? JSON.stringify(body) : undefined })
+        .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.error || 'The Mac mini didn’t take that.'); return j; }); });
+    }
+    function look() {
+      var d = $('#dday').value; cur = null; $('#dpick').hidden = true; $('#dclear').textContent = 'Take it off'; delete $('#dclear').dataset.sure;
+      if (!d) return;
+      $('#dsay').textContent = 'Looking…'; $('#dchange').disabled = $('#dclear').disabled = true;
+      gw(null, '?id=motd').then(function (c) {
+        if ($('#dday').value !== d) return;
+        var it = (c.days || {})[d]; cur = it || null;
+        $('#dsay').textContent = !it ? 'No film on this day.' : it.secret ? 'A film is chosen: still a surprise.' : (it.name || 'A film') + (it.year ? ' (' + it.year + ')' : '');
+        $('#dchange').disabled = false; $('#dclear').disabled = !it;
+      }).catch(function (e) { $('#dsay').textContent = e.message; });
+    }
+    $('#dday').onchange = look;
+    $('#dchange').onclick = function () {
+      $('#dpick').hidden = false; $('#dq').value = ''; $('#dres').innerHTML = ''; $('#dq').focus();
+      if (!LIBP) LIBP = fetch('/grifflix/data/library.json', { cache: 'no-store' }).then(function (r) { return r.json(); });
+    };
+    $('#dq').oninput = function () {
+      var q = this.value.trim().toLowerCase(); if (q.length < 2) { $('#dres').innerHTML = ''; return; }
+      LIBP.then(function (L) {
+        var hits = Object.keys(L.items).map(function (k) { var x = L.items[k]; return x && x.type === 'movie' && (x.name || '').toLowerCase().indexOf(q) >= 0 ? Object.assign({ id: k }, x) : null; }).filter(Boolean)
+          .sort(function (a, b) { return (a.name.toLowerCase().indexOf(q) === 0 ? 0 : 1) - (b.name.toLowerCase().indexOf(q) === 0 ? 0 : 1) || a.name.localeCompare(b.name); }).slice(0, 12);
+        $('#dres').innerHTML = hits.map(function (x) { return '<li><button type="button" data-fid="' + x.id + '">' + esc(x.name) + ' <small>' + (x.year || '') + '</small></button></li>'; }).join('') || '<li class="fs">No film by that name.</li>';
+      });
+    };
+    $('#dres').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-fid]'); if (!b) return; var d = $('#dday').value;
+      $('#dsay').textContent = 'Saving…';
+      gw({ op: 'set', id: 'motd', date: d, item: b.dataset.fid }).then(function () { toast('On ' + d + ': ' + b.firstChild.textContent.trim() + '. Update everything puts it on the site.'); look(); }).catch(function (e) { $('#dsay').textContent = e.message; });
+    });
+    $('#dclear').onclick = function () {
+      var b = this, d = $('#dday').value; if (!b.dataset.sure) { b.dataset.sure = 1; b.textContent = 'Sure? Tap again'; return; }
+      gw({ op: 'clear', id: 'motd', date: d }).then(function () { toast('Taken off ' + d + '. Update everything puts it on the site.'); look(); }).catch(function (e) { $('#dsay').textContent = e.message; });
+    };
+    var wait = setInterval(function () { if (GW) { clearInterval(wait); look(); } }, 500); setTimeout(function () { clearInterval(wait); if (!GW) $('#dsay').textContent = 'The Mac mini isn’t connected just now.'; }, 15000);
+  })();
   (function () {   // ---- the tabs: one group of cards at a time, the last one chosen kept (and #themes etc. in the address)
     var TABS = ['updates', 'films', 'themes', 'members', 'mac'];
     function show(t, push) {
