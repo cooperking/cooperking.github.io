@@ -1357,7 +1357,7 @@ html[data-theme=oz] .leaf2 b { color: #0f7b3e; }
 .jsurf { position: absolute; left: 0; right: 0; background: #f6f5f1; }
 .jwave { position: absolute; left: 0; pointer-events: none; overflow: visible; } .jwave path { fill: #f6f5f1; }   /* (the sea's surface, moving with the attack) */
 .jdeep { position: absolute; left: 0; right: 0; bottom: 0; background: linear-gradient(#1494b9, #057ca0 22%, #006f90 45%, #024057 75%, #021820); }   /* (the painting's sea) */
-.jattack { position: absolute; z-index: 1; pointer-events: none; opacity: 1; -webkit-mask-image: radial-gradient(ellipse 52% 60% at 50% 42%, #000 62%, transparent 100%); mask-image: radial-gradient(ellipse 52% 60% at 50% 42%, #000 62%, transparent 100%); }
+.jattack { position: absolute; z-index: 1; pointer-events: none; opacity: 1; -webkit-mask-image: linear-gradient(90deg, transparent, #000 13%, #000 87%, transparent), linear-gradient(#000 88%, transparent); -webkit-mask-composite: source-in; mask-image: linear-gradient(90deg, transparent, #000 13%, #000 87%, transparent), linear-gradient(#000 88%, transparent); mask-composite: intersect; }   /* (soft at its sides and foot, the shark whole) */
 .jattack i { position: absolute; inset: 0; background: url("/grifflix/img/jaws-attack.webp") 0 0 / 1200% 100% no-repeat; }
 .jattack i + i { opacity: 0; }
 #cal .vday.xwin, #cal .hday.xwin, #cal .tday.xwin { visibility: hidden !important; pointer-events: none !important; }   /* (beyond the month's count of days) */
@@ -3098,8 +3098,8 @@ THEMEFX.oz = {
 // Jaws (parked): the poster: the surface above, the day's film at it; the days to come sinking into the deep below
 THEMEFX.jaws = {
   g: function (c) {   // (the attack to the right, the days to its left, never over the shark: John, 9 Nov 2026: "we don't want the card to cover jaws")
-    if (c.mob) { var mh = 560, mw = mh * 320 / 392; return { sy: 260, top: 0, ah: mh, aw: mw, px: 780 - mw / 2 - 6, fx: 168, cs: .95 }; }
-    var ah = c.H - 104 - 110, aw = ah * 320 / 392, px = c.W - aw / 2 - 40;
+    if (c.mob) { var mh = 600, mw = mh * 320 / 392; return { sy: 260, top: 0, ah: mh, aw: mw, px: 780 - mw / 2 - 6, fx: 168, cs: .95 }; }
+    var ah = (c.H - 230) / .865, aw = ah * 320 / 392, px = c.W - aw / 2 - 30;   // (down to the foot of the screen, the shark whole: John, 9 Nov 2026: "so he's not cut off at the bottom")
     return { sy: 230, top: 104, ah: ah, aw: aw, px: px, fx: Math.max(c.W * .47, px - aw / 2 - 70), cs: 1 };
   },
   decor: function (c) {
@@ -3114,11 +3114,17 @@ THEMEFX.jaws = {
   // calms, and the next comes up from the deep; stopped halfway, it stops halfway; the sea's surface swelling with the strike (John,
   // 9 Nov 2026: "can the jaws effect happen as the cards move rather than an animation that plays first, so it's controlled. can the
   // water move and match the animation")
-  ready: function (c) { fxReset(this); this.c = c; var im = new Image(); im.src = '/grifflix/img/jaws-attack.webp'; },
+  ready: function (c) { fxReset(this); this.c = c; this._pa = null; this._acc = 0; this._ftok = null; this._fin = 0; var im = new Image(); im.src = '/grifflix/img/jaws-attack.webp'; },
   swipe: function (c) { return { x: 0, y: -1, px: c.mob ? 50 : 70 }; },
   place: function (all, at, c) { this.all = all; this.c = c; fxTween(this, at, 1400); },
-  draw: function (at) {
+  finish: function () {   // (the attack played on to its end, the next shark waiting below)
+    var me = this, a0 = me._acc, a1 = a0 % 1 < .12 ? Math.floor(a0) : Math.ceil(a0), t0 = performance.now(), d = 700 * Math.abs(a1 - a0) + 150; me._fin = 1; var tok = me._ftok = {};
+    (function f(t) { if (tok !== me._ftok) return; var u = Math.min(1, (t - t0) / d); me._acc = a0 + (a1 - a0) * u; me._pa = me._at != null ? me._at : me._pa; me.frame(); if (u < 1 && me.all && me.all[0] && me.all[0].isConnected) requestAnimationFrame(f); else { me._acc = a1; me._fin = 0; me.frame(); } })(t0);
+  },
+  frame: function () { var me = this; if (me.c && me._pa != null) me.draw(me._pa, true); },
+  draw: function (at, only) {
     var me = this, c = me.c, g = me.g(c), ph = c.mob ? 330 : 260;
+    only = only === true; if (only) me._pa = at;
     me.all.forEach(function (el, j) {
       var k = j - at, nf = near(k), y, s, o = 1, br;
       if (k >= 0) { y = g.sy + ph * .32 + k * (c.mob ? 150 : 120) * Math.pow(.88, k); s = Math.pow(.72, k); br = Math.max(.25, 1 - .16 * k); }
@@ -3128,7 +3134,11 @@ THEMEFX.jaws = {
     });
     // (the frame: where between two days you are, the whole attack across one day's move; the last frame's calm easing into the next
     // shark below)
-    var p = (at - Math.floor(at)) * 12, i = Math.floor(p) % 12, u = p - Math.floor(p), el = $('#jattack');
+    // (always forwards, whichever way the days go: the distance moved, not the direction (John, 9 Nov 2026: "can jaws only go one way -
+    // never backwards. Play the animation either directions"); left part-way, it plays on to the end)
+    if (me._pa == null) me._pa = at; var dd = Math.abs(at - me._pa); if (dd > 1e-6 && !only) { me._ftok = null; me._fin = 0; } me._acc = (me._acc || 0) + dd; me._pa = at;
+    if (Math.abs(at - Math.round(at)) < 1e-3 && !$('#cal').classList.contains('drag') && me._acc % 1 > .002 && !me._fin) me.finish();
+    var p = (me._acc % 1) * 12, i = Math.floor(p) % 12, u = p - Math.floor(p), el = $('#jattack');
     if (el) { var A = el.children[0], B = el.children[1], pos = function (n) { return (n / 11 * 100).toFixed(3) + '% 0'; };
       A.style.backgroundPosition = pos(i); B.style.backgroundPosition = pos((i + 1) % 12); B.style.opacity = u.toFixed(3); }
     // (the sea's surface, right across: a gentle swell, rising with the strike and spreading, settling as the sea calms)
