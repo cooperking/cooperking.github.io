@@ -2442,7 +2442,15 @@ function bigBoard() {   // the Big Board: the world at the centre, its fuel and 
 function tableTurn(b) { themeTurn(b); }
 function themeFit(m) {   // a phone: the theme drawn for an upright screen 780 wide, shown at the phone's own width
   var v = $('#cal .thv'), c = $('#cal'); if (!v) return;
-  if (!MOB()) { v.style.transform = ''; v.style.width = ''; v.style.height = ''; c.style.removeProperty('--vk'); return; }
+  if (!MOB()) {
+    v.style.transform = ''; v.style.width = ''; v.style.height = ''; c.style.removeProperty('--vk');
+    if (document.documentElement.classList.contains('table')) {   // (the War Room filling the screen between the bar and the caption, not crowded at its top:
+      // John, 9 Nov 2026: "Dr Strangelove seems squashed to the top in computer"; its scene 104 to 615 as laid out)
+      var H = themeH(), W = themeW(), av = H - 90 - 130, k = Math.max(.8, Math.min(1.5, av / 511, (W - 120) / 1070)), ty = 90 + (av - 511 * k) / 2 - 104 * k;
+      v.style.transformOrigin = '50% 0'; v.style.transform = 'translateY(' + ty.toFixed(1) + 'px) scale(' + k.toFixed(3) + ')';
+    }
+    return;
+  }
   var vw = document.documentElement.clientWidth || innerWidth, vh = document.documentElement.clientHeight || innerHeight;
   var k = Math.min(vw / 780, (vh - 112 - 224) / 890), off = (vw - 780 * k) / 2;   // (the theme's 890 high, the day's words and the foot under it)
   v.style.width = '780px'; v.style.height = '890px'; v.style.transform = 'translateX(' + off.toFixed(1) + 'px) scale(' + k.toFixed(4) + ')';
@@ -2650,13 +2658,17 @@ function themeKeys() {   // (the month's days, with the neighbouring months' nea
   return out;
 }
 function themeOther(b) {   // (a neighbouring month's day come to the front: once it's settled there, that month's theme, on that day)
-  clearTimeout(S.crossT); if (!b || !b.dataset.om || S.quiet) return;
-  S.crossT = setTimeout(function () {
+  clearTimeout(S.crossT); S.moved = Date.now(); if (!b || !b.dataset.om || S.quiet) return;
+  var wait = function () {
     if (!b.isConnected || !b.classList.contains('front')) return;
+    var cal = $('#cal'), still = Date.now() - (S.moved || 0);
+    // (only once it's stopped there: not mid-swipe, not while a key's still going, and not just after a change of month)
+    if ((cal && cal.classList.contains('drag')) || still < 700 || Date.now() - (S.crossAt || 0) < 1400) { S.crossT = setTimeout(wait, 250); return; }
     var key = b.dataset.day, dir = key.slice(0, 7) < S.month ? -1 : 1, fk = document.activeElement === b;
-    S.resumeDay = key; S.quiet = true; var ok = S.step && S.step(dir); S.quiet = false; if (!ok) return;
+    S.resumeDay = key; S.crossAt = Date.now(); S.quiet = true; var ok = S.step && S.step(dir); S.quiet = false; if (!ok) return;
     themeFadeIn(dir); var nb = $('#cal button[data-day="' + key + '"]'); if (nb && fk) nb.focus({ preventScroll: true });
-  }, 750);
+  };
+  S.crossT = setTimeout(wait, 750);
 }
 function drawTheme(t, C, n, m, mine) {
   var fx = THEMEFX[t.key], W = themeW(), H = themeH();
@@ -2768,8 +2780,14 @@ function themeStep(dir) {   // the day after or before with a film; at a month's
   var nb = bs[i + dir];
   if (i >= 0 && nb) { nb.focus({ preventScroll: true }); if (MOB()) themeTurn(nb); return true; }
   var ms = monthsOf(S.calData.days), j = ms.indexOf(S.month) + dir; if (j < 0 || j >= ms.length || !S.step) return false;
+  // (past the last of the neighbouring days: on into that month, on the very next day, never back onto the month just left:
+  // John, 9 Nov 2026: "can sometimes cause it to change back to the other theme unexpectedly")
+  var cur = i >= 0 && bs[i] ? bs[i].dataset.day : null, nx = cur ? new Date(new Date(cur + 'T12:00').getTime() + dir * 864e5) : null;
+  var key = nx ? nx.getFullYear() + '-' + String(nx.getMonth() + 1).padStart(2, '0') + '-' + String(nx.getDate()).padStart(2, '0') : null;
+  S.crossAt = Date.now(); if (key) S.resumeDay = key;
   S.quiet = true; S.step(dir); S.quiet = false; themeFadeIn(dir);
-  var cs = $$(sel), f = dir > 0 ? cs[0] : cs[cs.length - 1]; if (f) { f.focus({ preventScroll: true }); if (MOB()) themeTurn(f); }
+  var own = $$(sel).filter(function (x) { return !x.dataset.om; }), f = (key && $('#cal button[data-day="' + key + '"]')) || (dir > 0 ? own[0] : own[own.length - 1]);
+  if (f) { f.focus({ preventScroll: true }); if (MOB()) themeTurn(f); }
   return true;
 }
 // January: the corridor (Kubrick's The Shining): the days down a corridor, coming towards you as you go on
@@ -3401,7 +3419,8 @@ THEMEFX.picture = {
     me.za = a; me.horse(g, ry, mid);
     $$('#cal .zlt').forEach(function (t, i, L) {   // (the rim's letters, turning with the drum)
       var th = (i / L.length) * Math.PI * 2 - a * st, cs = Math.cos(th), sn = Math.sin(th);
-      t.style.transform = 'translate(' + (g.cx + g.R * sn).toFixed(1) + 'px,' + (top + ry * cs - 34).toFixed(1) + 'px) translate(-50%,0) scaleX(' + Math.max(.08, Math.abs(cs)).toFixed(2) + ')';
+      var lean = Math.abs(cs) > .04 ? Math.atan(-ry * sn / (g.R * cs)) * 180 / Math.PI : 0;   // (each letter along the rim's curve: John, 9 Nov 2026: "The angle of the Grifflix at the top of the zoetrope is wrong")
+      t.style.transform = 'translate(' + (g.cx + g.R * sn).toFixed(1) + 'px,' + (top + ry * cs - 34).toFixed(1) + 'px) translate(-50%,0) rotate(' + lean.toFixed(1) + 'deg) scaleX(' + Math.max(.08, Math.abs(cs)).toFixed(2) + ')';
       t.style.opacity = cs > 0 ? (.35 + .65 * cs).toFixed(2) : (.12 * -cs).toFixed(2); t.style.zIndex = cs > 0 ? 160 : 1;
     });
   },
