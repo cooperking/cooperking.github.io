@@ -565,22 +565,23 @@ html.tv .th-lane .vday:focus { outline: 0 !important; box-shadow: 0 0 0 4px #1a1
 .zdrum .rimf { fill: rgba(233, 196, 106, .06); }
 .zdrum .zin { fill: #0d0809; } .zdrum.zfront { z-index: 100; }
 .zdrum.zmid { z-index: 8; }
-.zpic { position: absolute; left: 0; top: 0; width: 170px; height: 255px; background: #1a1416 center/cover; z-index: 2; pointer-events: none; will-change: transform; filter: brightness(.55) saturate(.8); box-shadow: 0 0 0 3px rgba(233, 196, 106, .35); }
-.zpic.soon { box-shadow: inset 0 0 0 4px rgba(233, 196, 106, .4); }
+.zm { position: absolute; left: 0; top: 0; display: grid; place-items: center; pointer-events: none; will-change: transform; backface-visibility: hidden; background: linear-gradient(180deg, #2b2a2c, #121113 55%, #1d1b1d); box-shadow: inset 0 0 0 1px rgba(233, 196, 106, .4); }
+.zm i { display: block; background: url("/grifflix/img/muybridge-horse.webp") 0 0 no-repeat; filter: drop-shadow(0 0 3px rgba(233, 196, 106, .35)); }
+.zm::after { content: ""; position: absolute; inset: 0; background: #000; opacity: var(--dk, 0); }
+.zm::before { content: ""; position: absolute; inset: 0; z-index: 1; opacity: var(--sh, 0); background: linear-gradient(100deg, rgba(255, 244, 220, 0) 25%, rgba(255, 244, 220, .25) 45%, rgba(255, 244, 220, 0) 62%); }
 .zdrum .zback { fill: url(#zin); } .zdrum .zfloor { fill: #070303; }
 .zdrum .lac { fill: url(#zlac); opacity: .9; } .zdrum .gilt { fill: none; stroke: #e9c46a; stroke-width: 1.2; opacity: .6; }
 .zdrum .zoak { fill: url(#zoak); } .zdrum .zring { fill: none; stroke: #c9935a; stroke-opacity: .28; stroke-width: 1; } .zdrum .zedge { fill: none; stroke: #f0cf9c; stroke-opacity: .5; stroke-width: 1.2; } .zdrum .zshadow { fill: rgba(0, 0, 0, .55); filter: blur(6px); }
 .zdrum .spin { fill: url(#zwood); } .zdrum .foot { fill: #24170f; } .zdrum .foott { fill: url(#zwood); stroke: #e9c46a; stroke-opacity: .3; } .zdrum .coll { fill: #b8913f; }
 .zh { position: absolute; left: 0; top: 0; background: url("/grifflix/img/muybridge-horse.webp") 0 0 no-repeat; pointer-events: none; will-change: transform; filter: drop-shadow(0 0 4px rgba(233, 196, 106, .35)); }
 .zlt { position: absolute; left: 0; top: 0; font: 700 26px/1 var(--kfont); color: #e9c46a; pointer-events: none; will-change: transform; }
-.th-picture .vday { width: 170px; height: 255px; transition: opacity .25s; will-change: transform; box-shadow: inset 0 0 0 1px rgba(233, 196, 106, .45); backface-visibility: hidden; }
+.th-picture .vday { width: 170px; height: 255px; transition: opacity .25s; will-change: transform; box-shadow: 0 6px 16px rgba(0, 0, 0, .5); backface-visibility: hidden; }
 .th-picture .vday .vn { display: none; }
 .th-picture .vday::after { content: ""; position: absolute; inset: 0; background: #000; opacity: var(--dk, 0); pointer-events: none; will-change: opacity; }
-.th-picture .vday::before { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; opacity: var(--sh, 0); background: linear-gradient(100deg, rgba(255, 244, 220, 0) 25%, rgba(255, 244, 220, .22) 45%, rgba(255, 244, 220, 0) 62%); }   /* (the mirror's glint) */
 html.tv .zgrain { display: none; }   /* (a TV: no grain flickering over the whole screen) */
 html.tv .zamb { inset: auto; left: -60px; top: -60px; width: calc((100% + 120px) / 4); height: calc((100% + 120px) / 4); transform: scale(4); transform-origin: 0 0; filter: blur(18px) saturate(1.4) brightness(.42); transition: none; }   /* (the room's glow blurred small and scaled up: a quarter of the work) */
 html.tv .th-fold .vday:not(.front) { filter: none; opacity: .85; }
-.th-picture .vday.front { box-shadow: 0 0 0 2px #e9c46a, 0 0 60px rgba(233, 196, 106, .22); }
+.th-picture .vday.front { box-shadow: 0 0 0 2px #e9c46a, 0 24px 50px rgba(0, 0, 0, .65), 0 0 60px rgba(233, 196, 106, .22); }
 .th-picture .vday.soon { background: #1a1416; box-shadow: inset 0 0 0 2px rgba(233, 196, 106, .4), 0 18px 40px rgba(0, 0, 0, .55); }
 .th-picture .vday.soon .cs { color: #e9c46a; }
 html.tv .th-picture .vday:focus { outline: 0 !important; }
@@ -677,7 +678,7 @@ html[data-theme=bedford] .leaf2 i { background: #e8402a; color: #f9ead1; }
 html[data-theme=bedford] .leaf2 b { color: #0b4946; }
 .extnote { align-self: center; font: italic 400 14px/1.3 var(--serif); color: var(--fg-2); }
 /* the spiral */
-.th-spiral .vday { width: 170px; height: 255px; }
+.th-spiral .vday { width: 170px; height: 255px; transition: opacity .25s; will-change: transform; }   /* (moved along the spiral frame by frame) */
 .th-spiral .vday:not(.front) .vn { display: none; }
 /* the code */
 .th-code .vday { top: 104px; width: 20px; height: calc(100% - 200px); background: none; overflow: hidden; color: #2bff6a; font: 400 18px/22px "Share Tech Mono", monospace; text-align: center; transition: none; }
@@ -1983,7 +1984,7 @@ var THEMES_LATER = [
   { key: 'lane', mob: [0, 0, 1280, 720], name: 'The Lane', film: 'The Big Lebowski', year: 1998, by: 'the Coen brothers', bg: '#d79e48', ink: '#000', font: '"GF-lane", "Lobster", cursive', tw: 700, tt: 'none' },
   // Grifflix's own, the launch's showcase (John, 9 Nov 2026: "fully reworked - it's the showcase - an exciting launch screen -
   // the way things move and display should be original and creative"): the zoetrope, where moving pictures began
-  { key: 'picture', mob: [0, 0, 1280, 720], name: 'Grifflix', film: 'the praxinoscope', year: 1877, by: 'where cartoons began', bg: '#0b0809', ink: '#fff', font: 'var(--serif)', tw: 500, tt: 'none' },
+  { key: 'picture', mob: [0, 0, 1280, 720], name: 'Grifflix', film: 'the praxinoscope', year: 1877, by: ''   /* (just its name: John, 9 Nov 2026) */, bg: '#0b0809', ink: '#fff', font: 'var(--serif)', tw: 500, tt: 'none' },
   // The Grand Budapest Hotel (back again: John, 9 Nov 2026): the façade's pink (#f1b1b3), Mendl's box pink and ribbon blue
   // (#f498b5, #6c77b8), the lobby red (#d61302), the gold sign (#e3c183), the bellboy's purple (#5a3d4e); the posters' billing
   // in Archer (Fonts In Use: John's own copy, Arvo till then); the sign hand-lettered (Annie Atkins): Marcellus for it
@@ -2516,7 +2517,7 @@ function themeFilm(t) {   // the film that inspired a theme, if it's in the libr
   return t.fid || null;
 }
 function themeCaption(m) {   // a small caption under the month: the film the theme comes from, and a way to it when Grifflix has it
-  var t = themeFor(m), id = t.film ? themeFilm(t) : null, txt = (MOB() ? '<b>' + MONTHS[m] + '’s theme · ' + esc(t.name) + '</b> ' : '') + (t.film ? 'after <i>' + esc(t.film) + '</i> (' + t.year + ') · ' + esc(t.by) : '');
+  var t = themeFor(m), id = t.film ? themeFilm(t) : null, txt = (MOB() ? '<b>' + MONTHS[m] + '’s theme · ' + esc(t.name) + '</b> ' : '') + (t.film ? (t.by ? 'after ' : '') + '<i>' + esc(t.film) + '</i> (' + t.year + ')' + (t.by ? ' · ' + esc(t.by) : '') : '');
   if (!t.film && !MOB()) return '';
   if (!LIB) library().then(function () { var c = $('#tinspo'); if (c && themeFilm(t)) c.outerHTML = themeCaption(m); wireCaption(); }).catch(function () {});
   setTimeout(wireCaption, 0);
@@ -2526,7 +2527,7 @@ function themeCaption(m) {   // a small caption under the month: the film the th
 function capBar(m, y, prev, next) {   // the theme's caption on the calendar too, ‹ › to the month before or after, its theme with it (John, 9 Nov 2026: "Can the theme caption remain on the page when the calendar is up, with arrows to jump to the next or previous one")
   var t = themeFor(m, y), id = t.film ? themeFilm(t) : null;
   return '<div class="tcap"><button class="tcarr" data-cap="-1" aria-label="The month before’s theme"' + (prev ? '' : ' disabled') + '>‹</button>' +
-    '<' + (id ? 'button class="tctx link" data-fid="' + id + '"' : 'div class="tctx"') + '><b>' + MONTHS[m] + ' ' + y + ' · ' + esc(t.name) + '</b>' + (t.film ? '<span>after <i>' + esc(t.film) + '</i> (' + t.year + ') · ' + esc(t.by) + (id ? ' ›' : '') + '</span>' : '<span>No theme yet</span>') + '</' + (id ? 'button' : 'div') + '>' +
+    '<' + (id ? 'button class="tctx link" data-fid="' + id + '"' : 'div class="tctx"') + '><b>' + MONTHS[m] + ' ' + y + ' · ' + esc(t.name) + '</b>' + (t.film ? '<span>' + (t.by ? 'after ' : '') + '<i>' + esc(t.film) + '</i> (' + t.year + ')' + (t.by ? ' · ' + esc(t.by) : '') + (id ? ' ›' : '') + '</span>' : '<span>No theme yet</span>') + '</' + (id ? 'button' : 'div') + '>' +
     '<button class="tcarr" data-cap="1" aria-label="The month after’s theme"' + (next ? '' : ' disabled') + '>›</button></div>';
 }
 function wireCap(root, step) {
@@ -2892,18 +2893,23 @@ THEMEFX.spiral = {
   g: function (c) { return c.mob ? { cx: 390, cy: 440, r0: 300, a0: Math.PI / 2 } : { cx: c.W * .73, cy: c.H * .46, r0: Math.min(250, c.W * .19), a0: Math.PI }; },   // (smaller on a narrow screen, clear of the day's words: John, 9 Nov 2026)
   decor: function (c) {
     var g = this.g(c), pts = [];
-    for (var a = -0.7; a < 32; a += .06) { var r = g.r0 * Math.pow(.83, a / .9); pts.push((g.cx + r * Math.cos(g.a0 + a)).toFixed(1) + ',' + (g.cy + r * Math.sin(g.a0 + a)).toFixed(1)); }
+    for (var a = -1.2; a < 32; a += .06) { var r = g.r0 * Math.pow(.83, a / .9); pts.push((g.cx + r * Math.cos(g.a0 + a)).toFixed(1) + ',' + (g.cy + r * Math.sin(g.a0 + a)).toFixed(1)); }
     return '<svg class="hlines spiral" viewBox="0 0 ' + c.W + ' ' + c.H + '"><polyline points="' + pts.join(' ') + '"/></svg>';
   },
   swipe: function (c) { return c.mob ? { x: .8, y: .6, px: 70 } : { x: .3, y: 1, px: 90 }; },   // (the spiral unwinds towards you)
-  place: function (all, at, c) {
-    var g = this.g(c), sb = c.mob ? 1.15 : 1;
-    all.forEach(function (el, j) {
-      var k = j - at, a = g.a0 + k * .9, r, s, o = k > 16 ? 0 : 1;
-      if (k >= 1) { r = g.r0 * Math.pow(.83, k); s = .55 * Math.pow(.84, k - 1); }
-      else if (k >= 0) { r = g.r0 * Math.pow(.83, k); s = 1 - .45 * k; }
-      else { var f = Math.min(1, -k); r = g.r0 * (1 + .7 * f); s = 1 + .3 * f; o = 1 - f; }
+  // (the days ride the spiral itself, frame by frame, round its curve and never across it: John, 9 Nov 2026: "Vertigo the cards need to
+  // follow the spiral properly"); the days gone unwind out along it, growing and fading
+  ready: function (c) { fxReset(this); this.c = c; },
+  place: function (all, at, c) { this.all = all; this.c = c; fxTween(this, at, 900); },
+  draw: function (at) {
+    var c = this.c, g = this.g(c), sb = c.mob ? 1.15 : 1;
+    this.all.forEach(function (el, j) {
+      var k = j - at, a = g.a0 + k * .9, r = g.r0 * Math.pow(.83, k), s, o = k > 16 ? 0 : 1;
+      if (k >= 1) s = .55 * Math.pow(.84, k - 1);
+      else if (k >= 0) s = 1 - .45 * k;
+      else { var f = Math.min(1, -k); s = 1 + .3 * f; o = 1 - f; }
       vAt(el, g.cx + r * Math.cos(a), g.cy + r * Math.sin(a), s * sb, 0, o, 100 - Math.round(k));
+      el.style.pointerEvents = o < .3 ? 'none' : '';
     });
   }
 };
@@ -3112,7 +3118,7 @@ function pts(a) { return a.map(function (p) { return p[0].toFixed(1) + ',' + p[1
 // wall and overhead, upside down. Going on a day carries you along the street, the paving and buildings rolling past,
 // the next day coming down the wall to you
 THEMEFX.fold = {
-  sp: 4.5, tf: 8, L: 18, R: 6, sw: 4.6, eye: 2, tilt: 0,   // (the camera level, its view raised instead of tilted, so the buildings stand upright as an architect's photograph: John, 9 Nov 2026: "can the perspective on the buildings in inception be corrected")
+  sp: 4.5, tf: 8, L: 14, R: 16, sw: 4.6, eye: 2, tilt: 0,   // (the camera level, its view raised instead of tilted, so the buildings stand upright as an architect's photograph: John, 9 Nov 2026: "can the perspective on the buildings in inception be corrected")
      // (a day's walk; the day you're on 8 ahead; the street flat for 24, then the fold; the camera looking up a little)
   g: function (c) {   // (the day you're on its height on the screen, its foot just above the theme's name)
     var g = c.mob ? { cx: 390, ph: 330, yb: 800, mask: 0 } : { cx: c.W * .7, ph: Math.min(300, c.H * .36), yb: c.H * .855, mask: c.W * .4 }, me = this;
@@ -3158,9 +3164,12 @@ THEMEFX.fold = {
     [-1, 1].forEach(function (sd) {   // (the buildings either side, their fronts to the street; each its storeys and its roofline)
       for (var n = Math.ceil((1 + sh) / 2.3); n * 2.3 - sh < tm; n++) {
         var t1 = n * 2.3 - sh, t2 = Math.min(tm, t1 + 2.15), h = 3 + seeded(n * 7 + (sd > 0 ? 3 : 0)) * 2.4, x = sd * sw;
-        Q(sd < 0 ? 'bl' : 'br', [me.P(t1, x, 0, phi), me.P(t2, x, 0, phi), me.P(t2, x, h, phi), me.P(t1, x, h, phi)]);
+        // (a front in pieces where the street bends, so it curves with it rather than cutting across the fold)
+        var nseg = t2 > me.L - 1 ? 4 : 1;
+        for (var q = 0; q < nseg; q++) { var u1 = t1 + (t2 - t1) * q / nseg, u2 = t1 + (t2 - t1) * (q + 1) / nseg;
+          Q((sd < 0 ? 'bl' : 'br') + (nseg > 1 ? '2' : ''), [me.P(u1, x, 0, phi), me.P(u2, x, 0, phi), me.P(u2, x, h, phi), me.P(u1, x, h, phi)]); }
         if (!TV || t1 < 30) for (var f = 1.1; f < h - .8; f += 1.15) Q('wn', [me.P(t1 + .25, x, f, phi), me.P(t2 - .25, x, f, phi), me.P(t2 - .25, x, f + .55, phi), me.P(t1 + .25, x, f + .55, phi)]);
-        Q('rf', [me.P(t1, x, h, phi), me.P(t2, x, h, phi), me.P(t2, x - sd * .5, h + .6, phi), me.P(t1, x - sd * .5, h + .6, phi)]);   // (the mansard roof)
+        Q('rf', [me.P(t1, x, h, phi), me.P(t2, x, h, phi), me.P(t2, x + sd * .5, h + .6, phi), me.P(t1, x + sd * .5, h + .6, phi)]);   // (the mansard roof, sloping back from the street, as Paris's do: John, 9 Nov 2026: "perspective still seems wrong on the inception")
       }
     });
     polys.sort(function (p, q) { return q[0] - p[0]; });
@@ -3169,9 +3178,9 @@ THEMEFX.fold = {
       var dpr = TV ? 1 : Math.min(2, window.devicePixelRatio || 1);   // (a TV: at full size: half was too soft on the screen, John, 9 Nov 2026)
       if (cv.width !== Math.round((c.W - g.mask) * dpr)) { cv.width = Math.round((c.W - g.mask) * dpr); cv.height = Math.round(c.H * dpr); }
       x.setTransform(dpr, 0, 0, dpr, -g.mask * dpr, 0); x.clearRect(g.mask, 0, c.W, c.H); x.lineJoin = 'round';
-      var FC = { pv1: '#1f4c5e', pv2: '#2d5f72', ln: '#a8bcc3', bl: '#a8bcc3', br: '#8fa6ae', wn: '#083345', rf: '#2d5f72' }, ST = { bl: '#6f8a95', br: '#5d7883' };
+      var FC = { pv1: '#1f4c5e', pv2: '#2d5f72', ln: '#a8bcc3', bl: '#a8bcc3', br: '#8fa6ae', bl2: '#a8bcc3', br2: '#8fa6ae', wn: '#083345', rf: '#2d5f72' }, ST = { bl: '#6f8a95', br: '#5d7883' };
       polys.forEach(function (p) { var q = p[2]; x.beginPath(); x.moveTo(q[0][0], q[0][1]); for (var i = 1; i < q.length; i++) x.lineTo(q[i][0], q[i][1]); x.closePath();
-        x.globalAlpha = p[1] === 'ln' ? .55 : 1; x.fillStyle = FC[p[1]]; x.fill(); if (ST[p[1]] && !TV) { x.strokeStyle = ST[p[1]]; x.lineWidth = .6; x.stroke(); } });
+        x.globalAlpha = p[1] === 'ln' ? .55 : 1; x.fillStyle = FC[p[1]]; x.fill(); if (p[1].length > 2) { x.strokeStyle = FC[p[1]]; x.lineWidth = .8; x.stroke(); } if (ST[p[1]] && !TV) { x.strokeStyle = ST[p[1]]; x.lineWidth = .6; x.stroke(); } });
       x.globalAlpha = 1;
       if (g.mask) { x.globalCompositeOperation = 'destination-out'; var gr = x.createLinearGradient(g.mask, 0, g.mask + 140, 0); gr.addColorStop(0, 'rgba(0,0,0,1)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
         x.fillStyle = gr; x.fillRect(0, 0, g.mask + 140, c.H); x.globalCompositeOperation = 'source-over'; }   // (the city fading out behind the day's words)
@@ -3342,18 +3351,19 @@ function zstand(cx, y0, R, ry, maxY) {   // (the zoetrope's turned oak pedestal,
   return '<clipPath id="zstclip"><path d="M' + F(cx - R * 1.2) + ',' + F(y0) + ' L' + F(cx - R) + ',' + F(y0) + ' A' + F(R) + ' ' + F(ry) + ' 0 0 0 ' + F(cx + R) + ',' + F(y0) + ' L' + F(cx + R * 1.2) + ',' + F(y0) + ' L' + F(cx + R * 1.2) + ',' + F(maxY + 200) + ' L' + F(cx - R * 1.2) + ',' + F(maxY + 200) + ' Z"/></clipPath><g clip-path="url(#zstclip)">' + h + '</g>';
 }
 THEMEFX.picture = {
-  st: Math.PI * 2 / 10,   // (a day's turn of the drum: ten mirrors round its column)
-  // (a praxinoscope, the zoetrope's successor (Émile Reynaud, 1877): a shallow drum, the month's posters round its inside wall, a
-  // column of mirrors at its centre, each showing the poster facing it; the day you're on in the mirror facing you. John, 9 Nov 2026:
-  // "something doesn't seem right about the zoetrope. How can we rework it and have the same effect?" - Praxinoscope)
+  st: Math.PI * 2 / 14,   // (a day's turn of the drum: fourteen cards round its outside)
+  // (a praxinoscope (Émile Reynaud, 1877): the month's cards round the drum's outside, the day you're on at the front; inside, the
+  // column of mirrors, Muybridge's horse galloping in them as it turns. John, 9 Nov 2026: "try the horses being the effect on the
+  // mirrors and the cards being on the outside")
+  NM: 15,   // (the mirrors: one for each of the horse's frames)
   g: function (c) {   // (on a screen less tall than 900, all of it smaller, so it fits with its stand and clear of the caption)
-    var f = c.mob ? 1 : Math.min(1, c.H / 900), R = c.mob ? 370 : Math.min(400, c.W * .27) * f, E = .26;
-    var rm = R * (c.mob ? .74 : .68), w = 2 * rm * Math.tan(this.st / 2), s = w / 170, Hf = 255 * s, ty = c.mob ? 380 : c.H * .47, ry = R * E, rym = rm * E;
-    var cyc = ty + ry + 30 * f - rym - Hf / 2;   // (the column's middle: its mirrors' feet just below the near rim)
-    return { cx: c.mob ? 390 : c.W - R - Math.max(70, c.W * .055), ty: ty, R: R, E: E, ry: ry, Hw: 150 * f, P: c.mob ? 1100 : 1400, f: f, bh: 50 * f,
-      rm: rm, rym: rym, w: w, s: s, Hf: Hf, cyc: cyc, capy: cyc - Hf / 2 };
+    var f = c.mob ? 1 : Math.min(1, c.H / 900), R = c.mob ? 360 : Math.min(400, c.W * .27) * f, E = .26;
+    var cw = 2 * R * Math.sin(this.st / 2) * .9, s = cw / 170, ch = 255 * s, band = 34 * f, Hw = ch + 14 * f + band;   // (a card the width of its slot, the wall as tall as a card and a band below)
+    var ty = c.mob ? 330 : c.H * .4, ry = R * E, rm = R * .6, rym = rm * E, mw = 2 * rm * Math.tan(Math.PI / this.NM), mh = mw * 1.05;
+    var mcy = ty + ry + 14 * f - rym - mh / 2;   // (the mirrors' middle: their feet just below the near rim)
+    return { cx: c.mob ? 390 : c.W - R - Math.max(70, c.W * .055), ty: ty, R: R, E: E, ry: ry, Hw: Hw, P: c.mob ? 1100 : 1400, f: f, band: band,
+      s: s, ch: ch, rm: rm, rym: rym, mw: mw, mh: mh, mcy: mcy, capy: mcy - mh / 2 };
   },
-  NH: 30,   // (the frames of Muybridge's horse round the drum's outside)
   decor: function (c) {
     var g = this.g(c), R = g.R, ry = g.ry, cx = g.cx, ty = g.ty, yb = ty + g.Hw, F = function (n) { return (+n).toFixed(1); };
     var arc = function (y, sw, r, e) { r = r || R; return 'A' + F(r) + ' ' + F(e || ry) + ' 0 0 ' + sw + ' '; };   // (sw 0: left to right by the front; 1: by the back)
@@ -3364,28 +3374,29 @@ THEMEFX.picture = {
       '<linearGradient id="zin" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#3a1a14"/><stop offset=".55" stop-color="#170b09"/><stop offset="1" stop-color="#080404"/></linearGradient>' +
       '<linearGradient id="zlac" x1="0" x2="1"><stop offset="0" stop-color="#120607"/><stop offset=".38" stop-color="#4a1a1c"/><stop offset=".55" stop-color="#2c0f11"/><stop offset="1" stop-color="#0e0506"/></linearGradient>' +
       '<linearGradient id="zbrass" x1="0" x2="1"><stop offset="0" stop-color="#3a2a12"/><stop offset=".35" stop-color="#c9a25a"/><stop offset=".5" stop-color="#f0d494"/><stop offset=".7" stop-color="#8a6a30"/><stop offset="1" stop-color="#2a1d0c"/></linearGradient>' +
-      '<radialGradient id="zcap" cx=".5" cy=".35" r=".7"><stop offset="0" stop-color="#2a1a10"/><stop offset="1" stop-color="#0c0705"/></radialGradient><radialGradient id="zlamp" cx=".5" cy=".3" r=".6"><stop offset="0" stop-color="#ffd9a0" stop-opacity=".22"/><stop offset="1" stop-color="#ffd9a0" stop-opacity="0"/></radialGradient></defs>' +
+      '<radialGradient id="zcap" cx=".5" cy=".35" r=".7"><stop offset="0" stop-color="#2a1a10"/><stop offset="1" stop-color="#0c0705"/></radialGradient>' +
+      '<radialGradient id="zlamp" cx=".5" cy=".3" r=".6"><stop offset="0" stop-color="#ffd9a0" stop-opacity=".22"/><stop offset="1" stop-color="#ffd9a0" stop-opacity="0"/></radialGradient></defs>' +
       zstand(cx, yb, R, ry, c.mob ? 1000 : c.H - 118) +
       '<ellipse class="zfloor" cx="' + F(cx) + '" cy="' + F(yb) + '" rx="' + F(R) + '" ry="' + F(ry) + '"/>' +
-      '<path class="zback" d="M' + F(cx - R) + ',' + F(ty) + ' ' + arc(ty, 1) + F(cx + R) + ',' + F(ty) + ' L' + F(cx + R) + ',' + F(yb) + ' ' + arc(yb, 0) + F(cx - R) + ',' + F(yb) + ' Z"/>' +
-      '<ellipse cx="' + F(cx) + '" cy="' + F(ty + g.Hw * .35) + '" rx="' + F(R * .9) + '" ry="' + F(g.Hw * .7) + '" fill="url(#zlamp)"/>' +
+      '<path class="zback" d="M' + F(cx - R) + ',' + F(ty) + ' ' + arc(ty, 1) + F(cx + R) + ',' + F(ty) + ' L' + F(cx + R) + ',' + F(ty + 80) + ' ' + arc(ty + 80, 0) + F(cx - R) + ',' + F(ty + 80) + ' Z"/>' +
+      '<ellipse cx="' + F(cx) + '" cy="' + F(ty + 20) + '" rx="' + F(R * .9) + '" ry="' + F(ry * 1.2) + '" fill="url(#zlamp)"/>' +
       '<path class="rim" d="M' + F(cx - R) + ',' + F(ty) + ' ' + arc(ty, 1) + F(cx + R) + ',' + F(ty) + '"/></svg>';
-    // (the mirror column's dark core, in front of the far wall: no gap between its mirrors)
+    // (the mirror column's dark core: no gap between its mirrors)
     var rc = g.rm * .97;
-    h += '<svg class="zdrum zmid" width="' + c.W + '" height="' + c.H + '"><path fill="#0a0607" d="M' + F(cx - rc) + ',' + F(g.capy) + ' L' + F(cx - rc) + ',' + F(g.capy + g.Hf + 4) + ' ' + arc(0, 0, rc, g.rym) + F(cx + rc) + ',' + F(g.capy + g.Hf + 4) + ' L' + F(cx + rc) + ',' + F(g.capy) + ' Z"/></svg>';
-    // (in front: the near wall, japanned tin, red-black, gilt-lined; the column's brass cap and its finial)
-    var cy2 = g.capy, fr = 18 * g.f;
+    h += '<svg class="zdrum zmid" width="' + c.W + '" height="' + c.H + '"><path fill="#0a0607" d="M' + F(cx - rc) + ',' + F(g.capy) + ' L' + F(cx - rc) + ',' + F(g.capy + g.mh + 4) + ' ' + arc(0, 0, rc, g.rym) + F(cx + rc) + ',' + F(g.capy + g.mh + 4) + ' L' + F(cx + rc) + ',' + F(g.capy) + ' Z"/></svg>';
+    for (var i = 0; i < this.NM; i++) h += '<span class="zm" data-zm="' + i + '"><i></i></span>';   // (the mirrors, each with the horse's frame facing it: 1878, Eadweard Muybridge, The Horse in Motion)
+    // (the near wall, japanned tin, red-black, gilt-lined, the cards on it; the column's brass cap and finial)
+    var cy2 = g.capy, fr = 14 * g.f;
     h += '<svg class="zdrum zfront" width="' + c.W + '" height="' + c.H + '">' +
       '<path class="lac" d="M' + F(cx - R) + ',' + F(ty) + ' ' + arc(ty, 0) + F(cx + R) + ',' + F(ty) + ' L' + F(cx + R) + ',' + F(yb) + ' ' + arc(yb, 1) + F(cx - R) + ',' + F(yb) + ' Z"/>' +
-      '<path class="gilt" d="M' + F(cx - R) + ',' + F(yb - g.bh - 4) + ' ' + arc(0, 0) + F(cx + R) + ',' + F(yb - g.bh - 4) + '"/><path class="gilt" d="M' + F(cx - R) + ',' + F(yb - 4) + ' ' + arc(0, 0) + F(cx + R) + ',' + F(yb - 4) + '"/>' +
+      '<path class="gilt" d="M' + F(cx - R) + ',' + F(yb - g.band) + ' ' + arc(0, 0) + F(cx + R) + ',' + F(yb - g.band) + '"/><path class="gilt" d="M' + F(cx - R) + ',' + F(yb - 4) + ' ' + arc(0, 0) + F(cx + R) + ',' + F(yb - 4) + '"/>' +
       '<path class="rim" d="M' + F(cx - R) + ',' + F(ty) + ' ' + arc(ty, 0) + F(cx + R) + ',' + F(ty) + '"/><path class="rim" d="M' + F(cx - R) + ',' + F(yb) + ' ' + arc(yb, 0) + F(cx + R) + ',' + F(yb) + '"/>' +
       '<ellipse cx="' + F(cx) + '" cy="' + F(cy2 + 2 * g.f) + '" rx="' + F(g.rm * 1.06) + '" ry="' + F(g.rym * 1.06) + '" fill="url(#zbrass)"/>' +
       '<ellipse cx="' + F(cx) + '" cy="' + F(cy2) + '" rx="' + F(g.rm * 1.05) + '" ry="' + F(g.rym * 1.05) + '" fill="url(#zcap)"/>' +
       '<path fill="url(#zbrass)" d="M' + F(cx - fr * .35) + ',' + F(cy2) + ' L' + F(cx - fr * .35) + ',' + F(cy2 - fr * 1.6) + ' L' + F(cx + fr * .35) + ',' + F(cy2 - fr * 1.6) + ' L' + F(cx + fr * .35) + ',' + F(cy2) + ' Z"/>' +
       '<ellipse cx="' + F(cx) + '" cy="' + F(cy2 - fr * 1.6) + '" rx="' + F(fr * .8) + '" ry="' + F(fr * .28) + '" fill="url(#zbrass)"/>' +
       '<circle cx="' + F(cx) + '" cy="' + F(cy2 - fr * 2.3) + '" r="' + F(fr * .6) + '" fill="url(#zbrass)"/></svg>';
-    for (var j = 0; j < this.NH; j++) h += '<i class="zh" data-zh="' + j + '"></i>';   // (the horse, a frame a slot: 1878, Eadweard Muybridge, The Horse in Motion)
-    var L = 'GRIFFLIX·GRIFFLIX·GRIFFLIX·';   // (round the outside, above the horse)
+    var L = 'GRIFFLIX·GRIFFLIX·GRIFFLIX·';   // (round the band at its foot)
     for (var k = 0; k < L.length; k++) h += '<span class="zlt" data-zi="' + k + '">' + L[k] + '</span>';
     return h;
   },
@@ -3444,48 +3455,34 @@ THEMEFX.picture = {
   place: function (all, at, c) { this.all = all; this.c = c; if (this._at != null && Math.abs(this._at - at) > .3) musicKick(Math.abs(this._at - at)); fxTween(this, at, 1100); },
   draw: function (a) {
     var me = this, c = me.c, g = me.g(c), st = me.st, R = g.R, ry = g.ry, ty = g.ty, yb = ty + g.Hw, tilt = Math.asin(g.E) * 180 / Math.PI;
-    var cal = $('#cal'); if (!cal) return;
-    if (!me._zp || !me._zp[0] || !me._zp[0].isConnected || me._zp.length !== me.all.length) {   // (the strip round the inside wall: each day's poster)
-      $$('#cal .zpic').forEach(function (x) { x.remove(); });
-      var host = me.all[0] && me.all[0].parentNode || cal;
-      me._zp = me.all.map(function (el) { var d = document.createElement('i'); d.className = 'zpic' + (el.classList.contains('has') ? '' : ' soon'); var p = el.style.getPropertyValue('--p'); if (p && el.classList.contains('has')) d.style.backgroundImage = p; host.appendChild(d); return d; });
-    }
-    var pw = g.Hw * .78 * 2 / 3, ps = g.Hw * .78 / 255;
-    me.all.forEach(function (el, j) {
-      var k = j - a, ph = k * st, cs = Math.cos(ph), sn = Math.sin(ph), nf = near(k);
-      // (the mirror facing it, on the column: the day you're on in the mirror facing you, its neighbours turning away round the column)
-      var x = g.cx + g.rm * sn, y = g.cyc + g.rym * cs, o = Math.abs(k) > 5 || cs < 0 ? 0 : Math.min(1, cs / .18);
-      el.style.transform = 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px) translate(-50%,-50%) perspective(' + g.P + 'px) rotateX(' + (-tilt).toFixed(2) + 'deg) rotateY(' + (ph * 180 / Math.PI).toFixed(1) + 'deg) scale(' + g.s.toFixed(3) + ')';
+    var cmid = ty + 10 * g.f + g.ch / 2;   // (the cards' middle on the wall)
+    me.all.forEach(function (el, j) {   // (the cards round the outside: the day you're on at the front, standing out from the wall)
+      var k = j - a, ph = k * st, cs = Math.cos(ph), sn = Math.sin(ph), nf = near(k), sc = g.s * (1 + .32 * nf);
+      var x = g.cx + R * sn * (1 + .06 * nf), y = cmid + ry * cs - nf * 30 * g.f, o = cs < 0 || Math.abs(k) > 3.6 ? 0 : Math.min(1, cs / .2);
+      el.style.transform = 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px) translate(-50%,-50%) perspective(' + g.P + 'px) rotateX(' + (-tilt).toFixed(2) + 'deg) rotateY(' + (ph * 180 / Math.PI).toFixed(1) + 'deg) scale(' + sc.toFixed(3) + ')';
       el.style.opacity = o.toFixed(2); el.style.pointerEvents = o < .3 ? 'none' : '';
-      el.style.zIndex = 10 + Math.round((1 + cs) * 20);
-      el.style.setProperty('--dk', nf > .98 ? '0' : Math.min(.7, .08 + .75 * (1 - cs)).toFixed(2));   // (the mirrors turned from the lamp darker)
-      el.style.setProperty('--sh', Math.max(0, 1 - Math.abs(sn - .35) * 3).toFixed(2));   // (a glint across a mirror as it turns through the light)
-      // (its poster on the inside wall: the far side seen over the near rim, behind the column)
-      var t = me._zp[j], wx = g.cx + R * .97 * sn, wy = ty + g.Hw * .5 + ry * .97 * cs, wo = Math.abs(k) > 5 || cs > -.05 ? 0 : Math.min(1, -cs / .2);
-      if (!wo) { t.style.visibility = 'hidden'; return; } t.style.visibility = '';
-      t.style.transform = 'translate(' + wx.toFixed(1) + 'px,' + wy.toFixed(1) + 'px) translate(-50%,-50%) perspective(' + g.P + 'px) rotateX(' + (-tilt).toFixed(2) + 'deg) rotateY(' + ((ph - Math.PI) * 180 / Math.PI).toFixed(1) + 'deg) scale(' + ps.toFixed(3) + ')';
-      t.style.opacity = wo.toFixed(2);
+      el.style.zIndex = 110 + Math.round(cs * 20) + (nf > .5 ? 30 : 0);
+      el.style.setProperty('--dk', nf > .98 ? '0' : Math.min(.7, .1 + .8 * (1 - cs)).toFixed(2));   // (turned from the light towards the sides)
     });
-    me.za = a; me.horse(g, ry, yb - g.bh / 2 - 4, tilt);
-    $$('#cal .zlt').forEach(function (t, i, L) {   // (round the outside, upright, turning with the drum: the near side only)
+    // (the mirrors, turning with the drum; in each the horse's frame facing it, the next frame coming round as it turns, so it gallops
+    // while the drum spins and stands when it stops)
+    var NM = me.NM, step = Math.floor(a * 24), fw = g.mw * .9, fh = fw * 91 / 150;
+    me._zm = me._zm && me._zm[0] && me._zm[0].isConnected ? me._zm : $$('#cal .zm');
+    me._zm.forEach(function (m, i) {
+      var ph = i * 2 * Math.PI / NM - a * st, cs = Math.cos(ph), sn = Math.sin(ph);
+      if (cs < 0) { m.style.visibility = 'hidden'; return; } m.style.visibility = '';
+      if (!m._sz) { m._sz = 1; m.style.width = g.mw.toFixed(1) + 'px'; m.style.height = g.mh.toFixed(1) + 'px'; var t = m.firstChild; t.style.width = fw.toFixed(1) + 'px'; t.style.height = fh.toFixed(1) + 'px'; t.style.backgroundSize = (fw * 15).toFixed(1) + 'px ' + fh.toFixed(1) + 'px'; }
+      m.firstChild.style.backgroundPosition = (-(((i + step) % 15 + 15) % 15) * fw).toFixed(1) + 'px 0';
+      m.style.transform = 'translate(' + (g.cx + g.rm * sn).toFixed(1) + 'px,' + (g.mcy + g.rym * cs).toFixed(1) + 'px) translate(-50%,-50%) perspective(' + g.P + 'px) rotateX(' + (-tilt).toFixed(2) + 'deg) rotateY(' + (ph * 180 / Math.PI).toFixed(1) + 'deg)';
+      m.style.zIndex = 10 + Math.round(cs * 30);
+      m.style.setProperty('--dk', Math.min(.75, .05 + .8 * (1 - cs)).toFixed(2));
+      m.style.setProperty('--sh', Math.max(0, 1 - Math.abs(sn - .35) * 3).toFixed(2));   // (a glint as it turns through the light)
+    });
+    $$('#cal .zlt').forEach(function (t, i, L) {   // (GRIFFLIX round the band at its foot, upright, turning with the drum)
       var th = (i / L.length) * Math.PI * 2 - a * st, cs = Math.cos(th), sn = Math.sin(th);
       if (cs < .05) { t.style.visibility = 'hidden'; return; } t.style.visibility = '';
-      t.style.transform = 'translate(' + (g.cx + R * sn).toFixed(1) + 'px,' + (ty + 16 * g.f + ry * cs).toFixed(1) + 'px) translate(-50%,0) perspective(' + g.P + 'px) rotateY(' + (th * 180 / Math.PI).toFixed(1) + 'deg) scale(' + (g.f * .9).toFixed(3) + ')';
-      t.style.opacity = (.55 + .45 * cs).toFixed(2); t.style.zIndex = 160;
-    });
-  },
-  // (Muybridge's horse round the drum's foot, a frame a slot: each frame on as the drum turns, so it gallops while the drum spins and
-  // stands still when it stops, as in a real zoetrope)
-  horse: function (g, ry, mid, tilt) {
-    var me = this, N = me.NH, fw = 2 * Math.PI * g.R / N * .74, fh = fw * 91 / 150, a = me.za || 0, step = Math.floor(a * 24);
-    me._zhs = me._zhs && me._zhs[0] && me._zhs[0].isConnected ? me._zhs : $$('#cal .zh');
-    me._zhs.forEach(function (t, i) {
-      var th = (i / N) * Math.PI * 2 - a * me.st, cs = Math.cos(th), sn = Math.sin(th);
-      if (cs < .05) { t.style.visibility = 'hidden'; return; } t.style.visibility = '';
-      t.style.width = fw.toFixed(1) + 'px'; t.style.height = fh.toFixed(1) + 'px'; t.style.backgroundSize = (fw * 15).toFixed(1) + 'px ' + fh.toFixed(1) + 'px';
-      t.style.backgroundPosition = (-(((i + step) % 15 + 15) % 15) * fw).toFixed(1) + 'px 0';
-      t.style.transform = 'translate(' + (g.cx + g.R * sn).toFixed(1) + 'px,' + (mid + ry * cs).toFixed(1) + 'px) translate(-50%,-50%) perspective(' + g.P + 'px) rotateX(' + (-tilt).toFixed(2) + 'deg) rotateY(' + (th * 180 / Math.PI).toFixed(1) + 'deg)';
-      t.style.opacity = (.45 + .55 * cs).toFixed(2); t.style.zIndex = 150;
+      t.style.transform = 'translate(' + (g.cx + R * sn).toFixed(1) + 'px,' + (yb - g.band * .5 + ry * cs).toFixed(1) + 'px) translate(-50%,-50%) perspective(' + g.P + 'px) rotateY(' + (th * 180 / Math.PI).toFixed(1) + 'deg) scale(' + (g.f * .75).toFixed(3) + ')';
+      t.style.opacity = (.55 + .45 * cs).toFixed(2); t.style.zIndex = 105;
     });
   },
   front: function (b) {   // (the room lit by the day's film)
