@@ -3147,8 +3147,10 @@ function share(title, url, card) {   // Grifflix's share sheet: the card (a day'
   $('#shcopy').onclick = function () { (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(function () { toast('Link copied'); }, function () { prompt('The link:', url); }); };
   if (card) card.then(function (src) { var el = $('#shcard'); if (el) el.innerHTML = src ? '<img alt="" src="' + esc(src) + '">' : ''; }, function () { var el = $('#shcard'); if (el) el.innerHTML = ''; });
 }
+var LINKBASE = '';   // (grifflix.co.uk, once the Worker is on it: asked once)
+fetch(WORKER + '/g/linkbase').then(function (r) { return r.json(); }).then(function (j) { if (j && j.base) LINKBASE = j.base; }).catch(function () {});
 function shareDay(date, it) {   // a day's film: its own link (/gs/<date>: a page with its card), and the card made if it hasn't one
-  var url = WORKER + '/gs/' + date, title = showName(it) + (it.year ? ' (' + it.year + ')' : '');
+  var url = (LINKBASE || WORKER) + '/gs/' + date, title = showName(it) + (it.year ? ' (' + it.year + ')' : '');
   var card = fetch(url + '.jpg?have=1').then(function (r) {
     if (r.ok) return url + '.jpg';
     if (PUBLIC || DEMO) return url + '.jpg';   // (the film's picture stands in until a member shares it)
