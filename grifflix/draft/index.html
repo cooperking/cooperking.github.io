@@ -434,6 +434,12 @@ html.hall .cal { position: fixed !important; inset: 0; height: 100% !important; 
 .hlines { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .hlines line, .hlines rect { fill: none; stroke: rgba(var(--kink), .22); stroke-width: 1; vector-effect: non-scaling-stroke; }
 .hstage { position: absolute; inset: 0; }
+/* the Overlook's carpet (David Hicks's hexagons) down the corridor's floor, to the far end (John, 9 Nov 2026: "The shining
+   theme is a little abstract. The carpet is the obvious symbol to use to identify it") */
+.hcarpet { position: absolute; transform-origin: 50% 0; transform: rotateX(-90deg); background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='103.9' viewBox='0 0 60 103.9'%3E%3Crect width='60' height='103.9' fill='%233b1a12'/%3E%3Cpolygon points='0.0,-28.6 24.8,-14.3 24.8,14.3 0.0,28.6 -24.8,14.3 -24.8,-14.3' fill='%23e2611d'/%3E%3Cpolygon points='60.0,-28.6 84.8,-14.3 84.8,14.3 60.0,28.6 35.2,14.3 35.2,-14.3' fill='%23e2611d'/%3E%3Cpolygon points='0.0,75.3 24.8,89.6 24.8,118.2 0.0,132.5 -24.8,118.2 -24.8,89.6' fill='%23e2611d'/%3E%3Cpolygon points='60.0,75.3 84.8,89.6 84.8,118.2 60.0,132.5 35.2,118.2 35.2,89.6' fill='%23e2611d'/%3E%3Cpolygon points='30.0,23.4 54.8,37.7 54.8,66.3 30.0,80.6 5.2,66.3 5.2,37.7' fill='%23e2611d'/%3E%3Cpolygon points='0.0,-20.5 17.8,-10.3 17.8,10.2 0.0,20.5 -17.8,10.3 -17.8,-10.2' fill='%233b1a12'/%3E%3Cpolygon points='60.0,-20.5 77.8,-10.3 77.8,10.2 60.0,20.5 42.2,10.3 42.2,-10.2' fill='%233b1a12'/%3E%3Cpolygon points='0.0,83.4 17.8,93.7 17.8,114.2 0.0,124.4 -17.8,114.2 -17.8,93.7' fill='%233b1a12'/%3E%3Cpolygon points='60.0,83.4 77.8,93.7 77.8,114.2 60.0,124.4 42.2,114.2 42.2,93.7' fill='%233b1a12'/%3E%3Cpolygon points='30.0,31.5 47.8,41.7 47.8,62.2 30.0,72.5 12.2,62.2 12.2,41.7' fill='%233b1a12'/%3E%3Cpolygon points='0.0,-14.5 12.6,-7.3 12.6,7.2 0.0,14.5 -12.6,7.3 -12.6,-7.2' fill='%23b3241a'/%3E%3Cpolygon points='60.0,-14.5 72.6,-7.3 72.6,7.2 60.0,14.5 47.4,7.3 47.4,-7.2' fill='%23b3241a'/%3E%3Cpolygon points='0.0,89.4 12.6,96.7 12.6,111.2 0.0,118.4 -12.6,111.2 -12.6,96.7' fill='%23b3241a'/%3E%3Cpolygon points='60.0,89.4 72.6,96.7 72.6,111.2 60.0,118.4 47.4,111.2 47.4,96.7' fill='%23b3241a'/%3E%3Cpolygon points='30.0,37.5 42.6,44.7 42.6,59.2 30.0,66.5 17.4,59.2 17.4,44.7' fill='%23b3241a'/%3E%3C/svg%3E") 0 0 / 120px auto; pointer-events: none; box-shadow: inset 0 0 0 3px #3b1a12; }
+html[data-theme=corridor] .hday .hn { display: none; }   /* (the date is on the card; not on the carpet) */
+html[data-theme=corridor]:not(.mob) .hinfo { width: max-content; max-width: min(760px, 52vw); padding: 26px 34px 22px; margin: 0 0 -22px -34px; background: #f5c400; box-shadow: 0 10px 30px rgba(40, 14, 4, .35); }   /* (the day's words on a card of their own, as the film's title cards, not on the carpet) */
+.hcarpet::after { content: ""; position: absolute; inset: 0; background: linear-gradient(rgba(0, 0, 0, 0) 30%, rgba(20, 8, 4, .55)); }
 .hday { position: absolute; padding: 0; border: 0; border-radius: 0; background: rgba(var(--kink), .08) center/cover; transform-origin: 50% 50%; transition: transform .7s cubic-bezier(.3, .7, .2, 1), opacity .5s; }
 .hday .hn { position: absolute; left: 0; top: calc(100% + 12px); font: 500 16px/1 var(--kfont); letter-spacing: .32em; text-transform: uppercase; color: var(--fg); white-space: nowrap; }
 .hday.slab { background: #000; }   /* (2001's monolith: a surprise still to come) */
@@ -499,6 +505,26 @@ html.tv .th-fold .vday:focus { outline: 0 !important; box-shadow: 0 0 0 4px #dfe
 @keyframes fspin { to { background-position: 32px 0; } }
 @keyframes fwob { 0%, 100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
 @media (prefers-reduced-motion: reduce) { .ftop b, .ftop i { animation: none; } }
+/* the staircase (Sunset Boulevard): black and white; the day's film at the foot of the stairs, in colour, in the light */
+.th-stairs .vday { width: 200px; height: 300px; box-shadow: 0 10px 26px rgba(0, 0, 0, .6); }
+.th-stairs .vday:not(.front) { filter: grayscale(1) contrast(1.05) brightness(.8); }
+.th-stairs .vday:not(.front) .vn { display: none; }
+.th-stairs .vday .vn { color: #e8e4dc; }
+html.tv .th-stairs .vday:focus { outline: 0 !important; box-shadow: 0 0 0 4px #e8e4dc, 0 10px 26px rgba(0, 0, 0, .6); }
+.sstairs { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
+.sstairs .ri { fill: #1d1d1d; } .sstairs .tr { fill: #4a4a48; } .sstairs .ed { stroke: #8a8780; stroke-width: 1.2; fill: none; }
+.sstairs .rail { stroke: #b9b4aa; stroke-width: 3; fill: none; } .sstairs .bal { stroke: #77736c; stroke-width: 1.5; }
+.sbeam { position: absolute; pointer-events: none; background: linear-gradient(rgba(255, 252, 240, 0), rgba(255, 252, 240, .16)); clip-path: polygon(46% 0, 54% 0, 100% 100%, 0 100%); }
+.spool { position: absolute; pointer-events: none; border-radius: 50%; background: radial-gradient(ellipse, rgba(255, 252, 240, .3), rgba(255, 252, 240, 0) 70%); }
+/* the lane (The Big Lebowski): a lane in perspective, the pins at the far end, the days rolling down it */
+.th-lane .vday { width: 200px; height: 300px; box-shadow: 0 8px 20px rgba(0, 0, 0, .5); }
+.th-lane .vday:not(.front) { filter: saturate(.7) brightness(.82); }
+.th-lane .vday:not(.front) .vn { display: none; }
+.th-lane .vday .vn { color: #2b1b47; font-weight: 700; }   /* (on the wood) */
+html.tv .th-lane .vday:focus { outline: 0 !important; box-shadow: 0 0 0 4px #f6a02d, 0 8px 20px rgba(0, 0, 0, .5); }
+.llane { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
+.llane .wd { fill: #d49a55; } .llane .bd { stroke: #b57b3b; stroke-width: 1; } .llane .gt { fill: #1b1030; } .llane .ar { fill: #5a2a12; }
+.llane .fl { stroke: #1b1030; stroke-width: 3; } .llane .pin { fill: #f8f4ec; } .llane .nk { fill: #d62a2a; } .llane .st { fill: #f6a02d; opacity: .8; }
 /* the spiral */
 .th-spiral .vday { width: 170px; height: 255px; }
 .th-spiral .vday:not(.front) .vn { display: none; }
@@ -993,6 +1019,14 @@ html[data-theme=fold] .hinfo .w > span { letter-spacing: .06em; }
 html[data-theme=fold]:not(.mob) .hinfo .w { font-size: 54px; } html[data-theme=fold]:not(.mob) .hinfo h2 { font-size: 32px; } html[data-theme=fold]:not(.mob) .hinfo { max-width: 600px; }   /* (Michroma is wide) */
 html.mob[data-theme=fold] .hinfo .w { font-size: 30px !important; }
 html[data-theme=fold] .hinfo h2 { color: #c9b98a; }
+html[data-theme=stairs] .hinfo h2 { color: #e8e4dc; }
+html[data-theme=stairs] .leaf2 { border-color: #e8e4dc; background: #111; }
+html[data-theme=stairs] .leaf2 i { background: #e8e4dc; color: #111; }
+html[data-theme=stairs] .leaf2 b { color: #e8e4dc; }
+html[data-theme=lane] .hinfo h2 { color: #f6a02d; }
+html[data-theme=lane] .leaf2 { border-color: #f6a02d; background: #2b1b47; }
+html[data-theme=lane] .leaf2 i { background: #f6a02d; color: #2b1b47; }
+html[data-theme=lane] .leaf2 b { color: #f8f4ec; }
 html[data-theme=fold] .leaf2 { border-color: #dfe7eb; background: #26343c; }
 html[data-theme=fold] .leaf2 i { background: #dfe7eb; color: #26343c; }
 html[data-theme=fold] .leaf2 b { color: #dfe7eb; font-size: .36em; letter-spacing: -.04em; }   /* (two wide figures in the box) */
@@ -1674,7 +1708,7 @@ var THEMES = [   // each its film's own lettering and colour, researched (John, 
   // Citizen Kane: its main title's outlined condensed capitals (League Gothic, the free revival of Alternate Gothic: John, 8 Nov 2026); the red title band of the 1941 Style A poster
   { key: 'globe', mob: [40, 60, 1240, 640], name: 'The Snow Globe', film: 'Citizen Kane', year: 1941, by: 'Orson Welles', bg: '#a8161a', ink: '#fff', font: '"GF-globe", "League Gothic", sans-serif', tw: 400 }
 ];
-var THEMEFONTS = 'https://fonts.googleapis.com/css2?family=Bowlby+One&family=Della+Respira&family=Special+Gothic+Expanded+One&family=Londrina+Solid:wght@400;900&family=Share+Tech+Mono&family=Archivo+Narrow:wght@600&family=Anton&family=IM+Fell+English+SC&family=Cinzel:wght@700&family=Tilt+Neon&family=Yuji+Syuku&family=Amatic+SC:wght@700&family=Big+Shoulders:wght@400;700&family=League+Gothic&family=News+Cycle:wght@700&family=Federant&family=Space+Mono:wght@400;700&family=Archivo+Black&family=Orbitron:wght@800&family=Michroma&display=swap';
+var THEMEFONTS = 'https://fonts.googleapis.com/css2?family=Bowlby+One&family=Della+Respira&family=Special+Gothic+Expanded+One&family=Londrina+Solid:wght@400;900&family=Share+Tech+Mono&family=Archivo+Narrow:wght@600&family=Anton&family=IM+Fell+English+SC&family=Cinzel:wght@700&family=Tilt+Neon&family=Yuji+Syuku&family=Amatic+SC:wght@700&family=Big+Shoulders:wght@400;700&family=League+Gothic&family=News+Cycle:wght@700&family=Federant&family=Space+Mono:wght@400;700&family=Archivo+Black&family=Orbitron:wght@800&family=Michroma&family=Limelight&family=Righteous&display=swap';
 function themeEarly() {   // (before the films arrive: the page already laid out as this month's theme)
   if (VIEW() !== 'themes') return; var R = document.documentElement, t = themeFor(new Date().getMonth(), new Date().getFullYear());
   R.classList.add(t.key === 'table' ? 'table' : 'hall'); if (MOB()) R.classList.add('mob'); R.dataset.theme = t.key;
@@ -1694,6 +1728,10 @@ var THEMES_LATER = [
   // Inception: Paris folding over itself; the cold steel blue of the 2010 one-sheets, their wide thin capitals (Michroma, the
   // nearest free face), the warm gold of the city's lights
   { key: 'fold', mob: [0, 0, 1280, 720], name: 'The Fold', film: 'Inception', year: 2010, by: 'Christopher Nolan', bg: '#26343c', ink: '#fff', font: '"Michroma", sans-serif', tw: 400, tt: 'uppercase' },
+  // Sunset Boulevard: its own black and white, silver; the Art Deco glamour of Norma Desmond's silent days (Limelight)
+  { key: 'stairs', mob: [0, 0, 1280, 720], name: 'The Staircase', film: 'Sunset Boulevard', year: 1950, by: 'Billy Wilder', bg: '#111111', ink: '#fff', font: '"Limelight", serif', tw: 400, tt: 'uppercase' },
+  // The Big Lebowski: the bowling alley, the purple and orange of the Gutterballs dream, 70s lettering (Righteous)
+  { key: 'lane', mob: [0, 0, 1280, 720], name: 'The Lane', film: 'The Big Lebowski', year: 1998, by: 'the Coen brothers', bg: '#2b1b47', ink: '#fff', font: '"Righteous", sans-serif', tw: 400, tt: 'uppercase' },
   { key: 'autumn', mob: [0, 250, 1280, 640], name: 'Late Autumn', film: 'Late Autumn', year: 1960, by: 'Ozu', bg: '#c4321f', ink: '#fff', font: '"Yuji Syuku", serif', tw: 400, tt: 'none' },
 ];
 // the months' order and choice, set on the admin page (kept by the Worker, sent with the calendar; this device remembers the
@@ -1996,7 +2034,8 @@ function drawHall(C, n, m, mine) {
   for (var i = 1; i < 7; i++) { var s = hallScale(i), x0 = vx + (0 - vx) * s, y0 = vy + (0 - vy) * s, x1 = vx + (q.bw - vx) * s, y1 = vy + (q.bh - vy) * s;
     lines += '<rect x="' + x0.toFixed(1) + '" y="' + y0.toFixed(1) + '" width="' + (x1 - x0).toFixed(1) + '" height="' + (y1 - y0).toFixed(1) + '"/>'; }
   var h = '<svg class="hlines" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none">' + lines + '</svg>' +
-    '<div class="hstage" style="perspective:' + g.p + 'px;perspective-origin:' + vx.toFixed(0) + 'px ' + vy.toFixed(0) + 'px">';
+    '<div class="hstage" style="perspective:' + g.p + 'px;perspective-origin:' + vx.toFixed(0) + 'px ' + vy.toFixed(0) + 'px">' +
+    '<div class="hcarpet" style="left:0;top:' + q.bh + 'px;width:' + q.bw + 'px;height:' + (8 * g.dz) + 'px"></div>';   // (the carpet: flat on the floor, to the far end)
   var pos = 'left:' + (fx - pw / 2).toFixed(0) + 'px;top:' + (fy - ph / 2).toFixed(0) + 'px;width:' + pw.toFixed(0) + 'px;height:' + ph.toFixed(0) + 'px;';
   for (var d = 1; d <= n; d++) {
     var key = S.month + '-' + String(d).padStart(2, '0'), it = C.days[key], dt = new Date(key + 'T12:00'), lab = '<span class="hn">' + DOW[(dt.getDay() + 6) % 7] + ' ' + d + '</span>';
@@ -2513,6 +2552,78 @@ THEMEFX.fold = {
       vAt(el, g.cx + r * Math.sin(a), g.cy + r * Math.cos(a), s, -a * 180 / Math.PI, o, nf > .5 ? 50 : 20 - Math.round(Math.abs(k)));
     });
     var ring = $('#fring'); if (ring) ring.setAttribute('transform', 'rotate(' + (-at * st * 180 / Math.PI).toFixed(2) + ' ' + g.cx.toFixed(1) + ' ' + g.cy.toFixed(1) + ')');
+  }
+};
+// The Staircase (Sunset Boulevard): Norma Desmond's staircase (John, 9 Nov 2026: "Sunset boulevard should be a theme too"):
+// the days to come up the stairs, in black and white; the day you're on at the foot, in colour, in the light, ready for
+// its close-up; the days gone come past you
+THEMEFX.stairs = {
+  g: function (c) { return c.mob ? { fx: 430, fy: 700, vx: 230, vy: -330, hw: 300, k: .2, fs: 1.05 } : { fx: c.W * .66, fy: c.H * .86, vx: c.W * .44, vy: -c.H * .3, hw: 290, k: .2, fs: .9 }; },
+  at: function (g, u) { var s = 1 / (1 + g.k * u); return { s: s, x: g.vx + (g.fx - g.vx) * s + 70 * Math.sin(u * .22) * s, y: g.vy + (g.fy - g.vy) * s }; },
+  decor: function (c) {
+    var g = this.g(c), S = '', rail = [], bal = '';
+    for (var u = 24; u >= 0; u--) {   // (the far steps first)
+      var a = this.at(g, u), b = this.at(g, u + 1), ya = a.y, yb = b.y, ym = yb + (ya - yb) * .62;
+      var L = function (p) { return (p.x - g.hw * p.s).toFixed(1); }, R = function (p) { return (p.x + g.hw * p.s).toFixed(1); };
+      S += '<polygon class="tr" points="' + L(b) + ',' + yb.toFixed(1) + ' ' + R(b) + ',' + yb.toFixed(1) + ' ' + R(a) + ',' + ym.toFixed(1) + ' ' + L(a) + ',' + ym.toFixed(1) + '"/>' +
+        '<polygon class="ri" points="' + L(a) + ',' + ym.toFixed(1) + ' ' + R(a) + ',' + ym.toFixed(1) + ' ' + R(a) + ',' + ya.toFixed(1) + ' ' + L(a) + ',' + ya.toFixed(1) + '"/>' +
+        '<line class="ed" x1="' + L(a) + '" y1="' + ym.toFixed(1) + '" x2="' + R(a) + '" y2="' + ym.toFixed(1) + '"/>';
+      var bx = a.x - g.hw * a.s - 6 * a.s, top = ya - 150 * a.s; rail.push(bx.toFixed(1) + ',' + top.toFixed(1));   // (the banister, its balusters)
+      bal += '<line class="bal" x1="' + bx.toFixed(1) + '" y1="' + ym.toFixed(1) + '" x2="' + bx.toFixed(1) + '" y2="' + top.toFixed(1) + '"/>';
+    }
+    var f = this.at(g, 0), bw = 520 * (c.mob ? 1.1 : 1);
+    return '<svg class="sstairs" width="' + c.W + '" height="' + c.H + '" viewBox="0 0 ' + c.W + ' ' + c.H + '">' + S + bal + '<polyline class="rail" points="' + rail.join(' ') + '"/></svg>' +
+      '<div class="sbeam" style="left:' + (f.x - bw / 2).toFixed(0) + 'px;top:-40px;width:' + bw + 'px;height:' + (g.fy + 70) + 'px"></div>' +
+      '<div class="spool" style="left:' + (f.x - 260).toFixed(0) + 'px;top:' + (g.fy - 40).toFixed(0) + 'px;width:520px;height:90px"></div>';
+  },
+  swipe: function (c) { var g = this.g(c); return { x: g.fx - g.vx, y: g.fy - g.vy, px: c.mob ? 60 : 70 }; },   // (pull her down the stairs towards you)
+  place: function (all, at, c) {
+    var g = this.g(c), me = this;
+    all.forEach(function (el, j) {
+      var k = j - at, nf = near(k), p, s, o = 1;
+      if (k >= 0) { p = me.at(g, k * 1.7); s = p.s * g.fs * (1 + .25 * nf); o = k > 9 ? Math.max(0, 10 - k) : 1; }
+      else { var f = Math.min(1, -k); p = me.at(g, 0); p = { x: p.x + 160 * f, y: p.y + 260 * f }; s = g.fs * 1.25 * (1 + .6 * f); o = 1 - f; }
+      vAt(el, p.x, p.y - 150 * s, s, 0, o, 100 - Math.round(k * 4));
+    });
+  }
+};
+// The Lane (The Big Lebowski): a lane in perspective, the pins at its far end (John, 9 Nov 2026: "The big lebowski"); the
+// day you're on near you on the lane, the days to come rolling away towards the pins, those gone rolling past you
+THEMEFX.lane = {
+  g: function (c) {
+    var g = c.mob ? { cx: 390, y0: 150, y1: 930, w0: 120, w1: 660, yf: 760 } : { cx: c.W * .68, y0: c.H * .2, y1: c.H + 40, w0: 116, w1: 600, yf: c.H * .88 };
+    g.s0 = g.w0 / g.w1; g.vy = (g.y0 - g.y1 * g.s0) / (1 - g.s0); g.sf = (g.yf - g.vy) / (g.y1 - g.vy); return g;
+  },
+  y: function (g, s) { return g.vy + (g.y1 - g.vy) * s; },
+  decor: function (c) {
+    var g = this.g(c), me = this, P = function (s, f) { return (g.cx + f * g.w1 / 2 * s).toFixed(1) + ',' + me.y(g, s).toFixed(1); }, L = '';
+    L += '<polygon class="gt" points="' + P(1, -1.18) + ' ' + P(1, 1.18) + ' ' + P(g.s0, 1.18) + ' ' + P(g.s0, -1.18) + '"/>';   // (the gutters)
+    L += '<polygon class="wd" points="' + P(1, -1) + ' ' + P(1, 1) + ' ' + P(g.s0, 1) + ' ' + P(g.s0, -1) + '"/>';
+    for (var i = 1; i < 20; i++) { var f = -1 + i / 10; L += '<line class="bd" x1="' + P(1, f).split(',')[0] + '" y1="' + P(1, f).split(',')[1] + '" x2="' + P(g.s0, f).split(',')[0] + '" y2="' + P(g.s0, f).split(',')[1] + '"/>'; }
+    var sl = function (d) { return 1 / (1 / g.s0 * (d) + (1 - d)); };   // (a depth along the lane, 0 near to 1 far, as its scale)
+    var fl = sl(.12); L += '<line class="fl" x1="' + P(fl, -1).split(',')[0] + '" y1="' + me.y(g, fl).toFixed(1) + '" x2="' + P(fl, 1).split(',')[0] + '" y2="' + me.y(g, fl).toFixed(1) + '"/>';   // (the foul line)
+    [-.6, -.4, -.2, 0, .2, .4, .6].forEach(function (f, i) {   // (the arrows, in their chevron)
+      var s = sl(.32 + Math.abs(f) * .12), s2 = sl(.32 + Math.abs(f) * .12 + .03), y = me.y(g, s), y2 = me.y(g, s2), x = g.cx + f * g.w1 / 2 * s, x2 = g.cx + f * g.w1 / 2 * s2, w = 9 * s;
+      L += '<polygon class="ar" points="' + (x - w).toFixed(1) + ',' + y.toFixed(1) + ' ' + (x + w).toFixed(1) + ',' + y.toFixed(1) + ' ' + x2.toFixed(1) + ',' + y2.toFixed(1) + '"/>';
+    });
+    var ps = g.s0, py = g.y0, pw = g.w0 / 2;   // (the ten pins, at the far end)
+    [[0, 0], [-1, 1], [1, 1], [-2, 2], [0, 2], [2, 2], [-3, 3], [-1, 3], [1, 3], [3, 3]].reverse().forEach(function (q) {
+      var x = g.cx + q[0] * pw / 4, y = py - 6 - q[1] * 5;
+      L += '<path class="pin" d="M' + (x - 4.5) + ',' + y + ' q-1,-10 2,-16 q-2,-5 1,-9 q1.5,-2 3,0 q3,4 1,9 q3,6 2,16 z"/><rect class="nk" x="' + (x - 2.2) + '" y="' + (y - 18) + '" width="4.4" height="1.6"/>';
+    });
+    var st = '';   // (the Gutterballs stars on the dark either side)
+    for (var n = 0; n < 26; n++) { var sx = seeded(n * 2 + 1) * c.W, sy = 120 + seeded(n * 2 + 2) * (c.H * .7 - 120), r = 2 + seeded(n * 5) * 3; if (Math.abs(sx - g.cx) < g.w1 * .55) continue; st += '<circle class="st" cx="' + sx.toFixed(0) + '" cy="' + sy.toFixed(0) + '" r="' + r.toFixed(1) + '"/>'; }
+    return '<svg class="llane" width="' + c.W + '" height="' + c.H + '" viewBox="0 0 ' + c.W + ' ' + c.H + '">' + st + L + '</svg>';
+  },
+  swipe: function (c) { return { x: 0, y: 1, px: c.mob ? 50 : 70 }; },   // (pull the lane towards you)
+  place: function (all, at, c) {
+    var g = this.g(c), me = this;
+    all.forEach(function (el, j) {
+      var k = j - at, nf = near(k), s, o = 1;
+      if (k >= 0) s = g.s0 + (g.sf - g.s0) / (1 + .7 * k); else { var f = Math.min(1, -k); s = g.sf * (1 + .5 * f); o = 1 - f; }
+      var sc = .95 * s / g.sf * (c.mob ? 1.2 : 1) * (1 + .12 * nf);
+      vAt(el, g.cx, me.y(g, s) - 150 * sc, sc, 0, k > 12 ? 0 : o, 100 - Math.round(k * 4));
+    });
   }
 };
 // September: the Grid (TRON): the floor in perspective, the days as glowing frames along a light cycle's wall winding into
