@@ -2708,9 +2708,7 @@ function themeKeys(own) {   // (the month's days, with the neighbouring months' 
 }
 function themeOther(b) {   // (a neighbouring month's day come to the front: once it's settled there, that month's theme, on that day)
   clearTimeout(S.crossT); S.moved = Date.now();
-  // (no longer: the neighbouring month's days stay in this month's theme, a preview; going on past the last of them takes you into
-  // that month (themeStep). John, 9 Nov 2026: "It shouldn't change theme the moment you leave the first day of the month backwards or
-  // the last day of the month forwards. It shouldn't let a scroll finish and then change")
+  // (no longer after it's settled: themeStep changes month the moment the scroll leaves the month's 1st or last day)
   return;
   if (!b || !b.dataset.om || S.quiet) return;
   var wait = function () {
@@ -2841,7 +2839,10 @@ function themeStep(dir) {   // the day after or before with a film; at a month's
   var sel = '#cal button.vday, #cal button.hday, #cal button.tday', bs = $$(sel), i = bs.indexOf(document.activeElement);
   if (i < 0) i = bs.indexOf($('#cal button.front'));   // (a phone's buttons, a click: from the day that's showing)
   var nb = bs[i + dir];
-  if (i >= 0 && nb) { nb.focus({ preventScroll: true }); if (MOB()) themeTurn(nb); return true; }
+  // (from the month's own 1st or last day onto the other month's: that month's theme at once, as the scroll leaves it, never after it's
+  // stopped: John, 9 Nov 2026: "Change the moment the scroll leaves the first of the month into the last month, or the moment it leaves
+  // the last day of the month into the new month")
+  if (i >= 0 && nb && !(nb.dataset.om && !bs[i].dataset.om)) { nb.focus({ preventScroll: true }); if (MOB()) themeTurn(nb); return true; }
   var ms = monthsOf(S.calData.days), j = ms.indexOf(S.month) + dir; if (j < 0 || j >= ms.length || !S.step) return false;
   // (past the last of the neighbouring days: on into that month, on the very next day, never back onto the month just left:
   // John, 9 Nov 2026: "can sometimes cause it to change back to the other theme unexpectedly")
