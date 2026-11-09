@@ -1359,6 +1359,7 @@ html[data-theme=oz] .leaf2 b { color: #0f7b3e; }
 .jattack { position: absolute; z-index: 400; pointer-events: none; opacity: 0; -webkit-mask-image: radial-gradient(ellipse 52% 60% at 50% 42%, #000 62%, transparent 100%); mask-image: radial-gradient(ellipse 52% 60% at 50% 42%, #000 62%, transparent 100%); }
 .jattack i { position: absolute; inset: 0; background: url("/grifflix/img/jaws-attack.webp") 0 0 / 1200% 100% no-repeat; filter: saturate(.68) brightness(.98); }   /* (its blue toned to the theme's sea) */
 .jattack i + i { opacity: 0; }
+#cal .vday.xwin, #cal .hday.xwin, #cal .tday.xwin { visibility: hidden !important; pointer-events: none !important; }   /* (beyond the month's count of days) */
 .th-jaws .vday { width: 200px; height: 300px; box-shadow: 0 0 0 3px rgba(255, 255, 255, .5); }
 .th-jaws .vday .vn { display: none; }
 html[data-theme=jaws] .hinfo .w > span { color: #051725; letter-spacing: -.02em; }
@@ -2675,8 +2676,9 @@ setInterval(function () {   // (off the theme's page, or a film chosen: quiet; t
   if ((TMUS.a || TMUS.pj) && (!on || film)) { musicHush(); if (on && film) TMUS.film = true; }
   else if (TMUS.film && !film) { TMUS.film = false; var k = TMUS.k; if (on && k && !TMUS.a && !TMUS.pj && !$('.zlead')) { TMUS.k = null; themeMusic(k); } }
 }, 1000);
-function themeKeys() {   // (the month's days, with the neighbouring months' nearest week each side, where those months are on the calendar)
-  var y = +S.month.slice(0, 4), m = +S.month.slice(5, 7) - 1, n = new Date(y, m + 1, 0).getDate(), K = 6, out = [], ms = S.calData ? monthsOf(S.calData.days) : [], f = function (dt) { return dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0'); };
+function themeKeys(own) {   // (the month's days, with the neighbouring months' nearest week each side, where those months are on the calendar;
+  // own: a theme laying the whole month out at once, its own days only, never more than the month's)
+  var y = +S.month.slice(0, 4), m = +S.month.slice(5, 7) - 1, n = new Date(y, m + 1, 0).getDate(), K = own ? 0 : 6, out = [], ms = S.calData ? monthsOf(S.calData.days) : [], f = function (dt) { return dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0'); };
   var pm = f(new Date(y, m - 1, 1)).slice(0, 7), nm = f(new Date(y, m + 1, 1)).slice(0, 7);
   if (ms.indexOf(pm) >= 0) for (var i = K; i >= 1; i--) out.push(f(new Date(y, m, 1 - i)));
   for (var d = 1; d <= n; d++) out.push(f(new Date(y, m, d)));
@@ -2703,7 +2705,7 @@ function drawTheme(t, C, n, m, mine) {
   // (the month's days, and the last week of the month before and the first of the month after on either side of them, so the
   // films beyond it are there coming up; reaching one, its month's theme takes over: John, 9 Nov 2026: "you should be able to see
   // the films in a previous month ... coming up, it should just change theme when it gets to them" - "that should be true of all")
-  themeKeys().forEach(function (key) {
+  themeKeys(fx.own).forEach(function (key) {
     var d = +key.slice(8), om = key.slice(0, 7) !== S.month, mm = +key.slice(5, 7) - 1, it = C.days[key], dt = new Date(key + 'T12:00'), cx = om ? Object.assign({}, c, { m: mm }) : c, m = mm;
     var inner = fx.cell ? fx.cell(d, it, key, cx) : '<span class="vn">' + DOW[(dt.getDay() + 6) % 7] + ' ' + d + '</span>';
     var pics = it && !it.secret ? '--p:url(' + esc(img(it.poster || it.thumb, it.poster ? 'Primary' : 'Thumb', 400)) + ');--b:url(' + esc(img(it.backdrop || it.thumb || it.poster, it.backdrop ? 'Backdrop' : (it.thumb ? 'Thumb' : 'Primary'), 480)) + ')' : '';
@@ -2752,6 +2754,12 @@ function themeShow(at, force) {   // the theme at any point between days; the ne
     themeOther(b);
   }
   T.fx.place(all, at, T.c, b);
+  // (never more posters than the month has days, in any theme: the day you're on in the middle, the days either side, its own month's
+  // or the next's or last's, up to the month's count; the rest out of sight: John, 9 Nov 2026: "there shouldn't ever be more posters
+  // than there would be in that month on a theme")
+  var mo = (S.month || '').split('-'), N = mo.length > 1 ? new Date(+mo[0], +mo[1], 0).getDate() : all.length, lo = Math.round(at) - Math.floor((N - 1) / 2);
+  lo = Math.max(0, Math.min(lo, all.length - N));
+  all.forEach(function (el, j) { el.classList.toggle('xwin', j < lo || j >= lo + N); });
 }
 function themeCross(dir) {   // on into the next or last month (its own theme), quietly
   var ms = monthsOf(S.calData.days), j = ms.indexOf(S.month) + dir; if (j < 0 || j >= ms.length || !S.step) return false;
@@ -2926,7 +2934,7 @@ THEMEFX.spiral = {
 };
 // May: the code (The Matrix): every day a column of falling code, its film's name in it; the one you're on decoded, large
 var GLYPHS = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ0123456789';
-THEMEFX.code = {
+THEMEFX.code = { own: true,   // (the whole month laid out at once: its own days only)
   cell: function (d, it, key, c) {
     var t = (it && !it.secret ? showName(it) : '').toUpperCase().replace(/[^A-Z0-9]/g, ''), out = '', sd = d * 7 + c.m * 131;
     for (var i = 0; i < 40; i++) out += (i >= 5 && i - 5 < t.length ? t[i - 5] : GLYPHS[Math.floor(seeded(sd + i) * GLYPHS.length)]) + '<br>';
@@ -2941,7 +2949,7 @@ THEMEFX.code = {
   front: function (b, c, quiet) { var p = $('#codepic'); if (p && b) { p.style.backgroundImage = b.style.getPropertyValue('--p'); p.classList.remove('dec'); if (!quiet) { void p.offsetWidth; p.classList.add('dec'); } } }
 };
 // June: the slices (In the Mood for Love): every day a thin slice of its poster; the one you're on opens out
-THEMEFX.slices = {
+THEMEFX.slices = { own: true,   // (the whole month laid out at once: its own days only)
   swipe: function (c) { return { x: 1, y: 0, px: c.mob ? 22 : 40 }; },   // (the open slice follows the finger)
   place: function (all, at, c) {
     var x0 = c.mob ? 20 : c.W * .43, x1 = c.mob ? 760 : c.W - 64, fw = c.mob ? 340 : 270, sw = all.length > 1 ? (x1 - x0 - fw) / (all.length - 1) : 0;
@@ -2954,7 +2962,7 @@ THEMEFX.slices = {
   }
 };
 // July: the pinboard (All the President's Men / Zodiac): the days as photographs pinned to the board, a red thread from each to the next
-THEMEFX.pinboard = {
+THEMEFX.pinboard = { own: true,   // (the whole month laid out at once: its own days only)
   cell: function (d) { return '<i class="ph"></i><span class="pc">' + d + '</span>'; },
   decor: function (c) {   // (Zodiac: the killer's cipher written over the board, and his crossed circle, faint)
     var G = 'ΘΔΠ⊕ΦΛKΓ⊿ʎƎ⅃ꟼ/+●▲◢⊤ЯИƧϘ', t = '';
@@ -2986,7 +2994,7 @@ THEMEFX.pinboard = {
 function moonPhase(key) { var p = ((Date.parse(key + 'T21:00:00Z') - Date.UTC(2000, 0, 6, 18, 14)) / 864e5 / 29.530588853) % 1; return p < 0 ? p + 1 : p; }
 var PHASES = ['New moon', 'Waxing crescent', 'First quarter', 'Waxing gibbous', 'Full moon', 'Waning gibbous', 'Last quarter', 'Waning crescent'];
 var MELI = null;   // (the rocket's landing, fetched once)
-THEMEFX.moon = { all: true,
+THEMEFX.moon = { all: true, own: true,
   cell: function (d, it, key) { var p = moonPhase(key), off = p < .5 ? -2 * p : 2 - 2 * p; return '<i class="msh" style="transform:translateX(' + (off * 100).toFixed(1) + '%)"></i><span class="mn">' + d + '</span>'; },
   decor: function () { return '<div class="mmeli"><img id="mmeli" alt="The Man in the Moon, from Méliès\'s A Trip to the Moon (1902)" src="/grifflix/img/melies-face.webp"></div><div class="mphase" id="mphase"></div>'; },
   info: function (b) {   // (the day's words, its poster above them)
@@ -3696,7 +3704,7 @@ THEMEFX.tron = {
 // December: the snow globe (Citizen Kane): the days as front pages of Kane's Inquirer, scattered along the top, each day's film
 // its headline and photograph (one not filled yet: COMING SOON); the one you land on spins in, as the film's headline
 // montages do, and is inside the globe, which shakes and snows
-THEMEFX.globe = {
+THEMEFX.globe = { own: true,   // (the whole month laid out at once: its own days only)
   hang: function (d, c) { return c && c.mob ? 70 + (d % 2) * 120 + seeded(d * 5) * 40 : 112 + seeded(d * 5) * 92; },
 
   cell: function (d, it, key, c) {
