@@ -1334,10 +1334,13 @@ function gPal() { return G_PALETTES[(+londonDay().slice(5, 7) - 1 + 6) % 12]; }
 // styling?"): the theme's flat colour and ink, Futura, GRIFFLIX spaced as on the site, square edges; the month's theme from the
 // site's themes.json (page.py writes it) in the order John set on the admin page (gthemes)
 let G_TH = null;
+// the months' themes: a list as long as John likes, the first for January 2026 and each next month the next, round again
+// at its end (John, 9 Nov 2026: "I want to be able to add as many themes as I want not just 12"); twelve: each month its own
+function gThemeAt(day, n) { const i = (+day.slice(0, 4) - 2026) * 12 + (+day.slice(5, 7) - 1); return ((i % n) + n) % n; }
 async function gThemeLoad(env) {
   try {
     const t = await fetch(G_SITE + 'themes.json', { cf: { cacheTtl: 3600 } }).then(r => r.json());
-    const order = JSON.parse(await env.SOTD.get('gthemes') || 'null') || t.order, k = order[+londonDay().slice(5, 7) - 1];
+    const order = JSON.parse(await env.SOTD.get('gthemes') || 'null') || t.order, k = order[gThemeAt(londonDay(), order.length)];
     G_TH = t.themes[k] || null;
   } catch (e) { G_TH = null; }
   return G_TH;
@@ -1615,13 +1618,13 @@ async function grifflix(request, url, env) {
     const list = await env.MEDIA.list({ prefix: 'grifflix/fonts/' }).catch(() => ({ objects: [] }));
     return answer(200, { ok: true, fonts: (list.objects || []).map(o => o.key.slice(15)) });
   }
-  if (route === 'themes') {   // the months' themes, chosen and ordered on the admin page: twelve keys, or none for the page's own order
+  if (route === 'themes') {   // the months' themes, chosen and ordered on the admin page: a list (any length), or none for the page's own order
     if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
     const w = await gWho(request, env);
     if (!w || !w.owner) return answer(403, { error: 'Only John.' });
     const b = await request.json().catch(() => ({})), k = b.themes;
     if (k == null) { await env.SOTD.delete('gthemes'); return answer(200, { ok: true, themes: null }); }
-    if (!Array.isArray(k) || k.length !== 12 || !k.every(x => typeof x === 'string' && /^[a-z0-9-]{2,24}$/.test(x))) return answer(400, { error: 'Twelve themes, please.' });
+    if (!Array.isArray(k) || k.length < 1 || k.length > 120 || !k.every(x => typeof x === 'string' && /^[a-z0-9-]{2,24}$/.test(x))) return answer(400, { error: 'A list of themes, please.' });
     await env.SOTD.put('gthemes', JSON.stringify(k));
     return answer(200, { ok: true, themes: k });
   }

@@ -107,6 +107,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
 .tmspare li { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; gap: 10px; align-items: center; font-size: 14px; }
 .tmspare .sw { width: 18px; height: 18px; border-radius: 50%; border: 1px solid rgba(0, 0, 0, .25); }
 .tmspare a { min-width: 34px; height: 34px; border: 1px solid var(--line); background: var(--field); color: var(--fg); border-radius: 10px; font: 600 14px var(--sans); display: grid; place-items: center; text-decoration: none; padding: 0 8px; }
+.tmspare .mv { display: flex; gap: 4px; align-items: center; } .tmspare .mv .btn { min-height: 34px; padding: 0 12px; }
 .tmonths { list-style: none; margin: 14px 0 6px; padding: 0; display: grid; gap: 6px; }
 .tmonths li { display: grid; grid-template-columns: 6.2em 18px minmax(0, 1fr) auto; gap: 8px; align-items: center; font-size: 14px; }
 .tmonths .mn { font-weight: 600; color: var(--fg); }
@@ -178,9 +179,9 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       <section class="card">
         <div class="kicker">Monthly themes</div>
         <h2>The <em>months</em> and their themes</h2>
-        <p class="stat">Choose each month’s theme and move them about with the arrows. <b>Save changes the site for everyone at once</b> (no Update needed). Under each: whether its film is in Grifflix, and whether it’s Movie of the Day on that month’s next 1st. Try opens the draft in that theme.</p>
+        <p class="stat">The themes in order, as many as you like: January 2026 has the first, each month the next, and round again at the end (twelve: each month its own). Choose, move with the arrows, add from <i>Not used now</i>, or take one out with ×. <b>Save changes the site for everyone at once</b> (no Update needed). Under each: whether its film is in Grifflix, and whether it’s Movie of the Day on that month’s next 1st. Try opens the draft in that theme.</p>
         <ol class="tmonths" id="tmonths"></ol>
-        <div class="state"><button class="btn" id="tmsave" type="button" disabled>Save the months</button> <button class="btn" id="tmreset" type="button">Back to the usual order</button></div>
+        <div class="state"><button class="btn" id="tmsave" type="button" disabled>Save the themes</button> <button class="btn" id="tmreset" type="button">Back to the usual order</button></div>
         <h3 class="tmh">Not used now</h3>
         <ul class="tmspare" id="tmspare"></ul>
         <p class="stat">Putting the films on their 1sts changes Movie of the Day for everyone once you next press Update everything. Films Grifflix hasn’t got are left until it has.</p>
@@ -682,7 +683,13 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   var TFILMS = GORDER.map(function (k) { var x = TBY[k]; return [x.f, x.y, x.n]; });   // (in the months' order, as chosen below)
   var MON = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'], THJOBS = [];
   var TL_ = null, TID = {}, TD = {};   // (the site's films and days, read once; each theme's film found in them)
-  function nextFirst(m) { var n = new Date(), y = n.getFullYear() + (m < n.getMonth() ? 1 : 0); return y + '-' + String(m + 1).padStart(2, '0') + '-01'; }
+  function seqAt(y, m) { var n = GORDER.length, i = (y - 2026) * 12 + m; return ((i % n) + n) % n; }   // (a month's place in the list: January 2026 the first, round again at its end)
+  function nextFirst(i, list) {   // the next 1st (this month's or later) whose theme is the list's i-th
+    var L = (list || GORDER).length, n = new Date(), y = n.getFullYear(), m = n.getMonth();
+    for (var k = 0; k < L + 1; k++, m++) { if (m > 11) { m = 0; y++; } var j = (y - 2026) * 12 + m; if (((j % L) + L) % L === i) break; }
+    return y + '-' + String(m + 1).padStart(2, '0') + '-01';
+  }
+  function monLabel(d) { return MON[+d.slice(5, 7) - 1].slice(0, 3) + ' ' + d.slice(0, 4); }
   function themeFirsts() {
     var norm = function (t) { return String(t || '').toLowerCase().replace(/’/g, "'"); };
     (TL_ || (TL_ = Promise.all([fetch('/grifflix/data/library.json', { cache: 'no-store' }).then(function (r) { return r.json(); }), fetch('/grifflix/data/days.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).catch(function () { return { days: {} }; })]))).then(function (r) {
@@ -692,7 +699,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       var y = +start.slice(0, 4), m = +start.slice(5, 7) - 1, now = new Date(), end = new Date(now.getFullYear() + 1, now.getMonth(), 1);
       for (; new Date(y, m, 1) <= end; m++) {
         if (m > 11) { m = 0; y++; }
-        var x = TBY[GORDER[m]], date = y + '-' + String(m + 1).padStart(2, '0') + '-01', id = TID[x.k], was = D[date];
+        var x = TBY[GORDER[seqAt(y, m)]], date = y + '-' + String(m + 1).padStart(2, '0') + '-01', id = TID[x.k], was = D[date];
         if (id && !(was && was.id === id)) THJOBS.push({ date: date, item: id, note: '' });
       }
       $('#thgo').disabled = !THJOBS.length; $('#thgo').textContent = THJOBS.length ? 'Put the films on their 1sts (' + THJOBS.length + ')' : 'All on their 1sts';
@@ -703,7 +710,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     if (!TL_ || !(k in TID)) return '';
     var id = TID[k]; if (!id) return '<span class="fs no">Film not in Grifflix yet</span>';
     if (m == null) return '<span class="fs ok">Film in Grifflix</span>';
-    var d = nextFirst(m), was = TD[d], dd = new Date(d + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    var d = nextFirst(m, TMO), was = TD[d], dd = new Date(d + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
     return '<span class="fs ok">Film in Grifflix · ' + (was && was.id === id ? 'on ' + dd : 'not yet on ' + dd + (was ? ' (now ' + esc(was.name) + ')' : '')) + '</span>';
   }
   themeFirsts();
@@ -714,31 +721,33 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   function hexLum(h) { var n = parseInt(h.slice(1), 16), r = n >> 16 & 255, g = n >> 8 & 255, b = n & 255; return [r, g, b]; }
   function alike(a, b) { var x = hexLum(TBY[a].bg), y = hexLum(TBY[b].bg); return Math.sqrt(Math.pow(x[0] - y[0], 2) + Math.pow(x[1] - y[1], 2) + Math.pow(x[2] - y[2], 2)) < 70; }
   function tmDraw() {
-    var short = window.innerWidth <= 480;
+    var L = TMO.length;
     $('#tmonths').innerHTML = TMO.map(function (k, m) {
-      var x = TBY[k], prev = TMO[(m + 11) % 12], next = TMO[(m + 1) % 12], twice = TMO.indexOf(k) !== m;
-      var warn = twice ? 'Already in ' + MON[TMO.indexOf(k)] : (alike(k, prev) ? 'Close in colour to ' + MON[(m + 11) % 12] : (alike(k, next) ? 'Close in colour to ' + MON[(m + 1) % 12] : ''));
-      return '<li' + (warn ? ' class="near"' : '') + '><span class="mn">' + (short ? MON[m].slice(0, 3) : MON[m]) + '</span><span class="sw" style="background:' + x.bg + '"></span><select data-m="' + m + '" aria-label="' + MON[m] + '’s theme">' +
-        GTHEMES.map(function (t, i) { return '<option value="' + t.k + '"' + (t.k === k ? ' selected' : '') + '>' + esc(t.n + ' · ' + t.f + (i >= 12 ? ' (parked)' : '')) + '</option>'; }).join('') + '</select>' +
-        '<span class="mv"><button type="button" data-up="' + m + '" aria-label="Earlier"' + (m ? '' : ' disabled') + '>↑</button><button type="button" data-dn="' + m + '" aria-label="Later"' + (m < 11 ? '' : ' disabled') + '>↓</button><a href="/grifflix/draft/?theme=' + k + '" target="_blank" rel="noopener">Try</a></span>' +
+      var x = TBY[k], prev = TMO[(m + L - 1) % L], next = TMO[(m + 1) % L], twice = TMO.indexOf(k) !== m, when = nextFirst(m, TMO);
+      var warn = twice ? 'In the list twice' : (L > 1 && alike(k, prev) ? 'Close in colour to the one before' : (L > 1 && alike(k, next) ? 'Close in colour to the one after' : ''));
+      return '<li' + (warn ? ' class="near"' : '') + '><span class="mn">' + monLabel(when) + '</span><span class="sw" style="background:' + x.bg + '"></span><select data-m="' + m + '" aria-label="Theme ' + (m + 1) + '">' +
+        GTHEMES.map(function (t) { return '<option value="' + t.k + '"' + (t.k === k ? ' selected' : '') + '>' + esc(t.n + ' · ' + t.f) + '</option>'; }).join('') + '</select>' +
+        '<span class="mv"><button type="button" data-up="' + m + '" aria-label="Earlier"' + (m ? '' : ' disabled') + '>↑</button><button type="button" data-dn="' + m + '" aria-label="Later"' + (m < L - 1 ? '' : ' disabled') + '>↓</button><button type="button" data-rm="' + m + '" aria-label="Take it out"' + (L > 1 ? '' : ' disabled') + '>×</button><a href="/grifflix/draft/?theme=' + k + '" target="_blank" rel="noopener">Try</a></span>' +
         (warn ? '<span class="warn">' + warn + '</span>' : '') + '<span class="fsw">' + filmState(k, m) + '</span></li>';
     }).join('');
     $('#tmspare').innerHTML = GTHEMES.filter(function (t) { return TMO.indexOf(t.k) < 0; }).map(function (t) {
-      return '<li><span class="sw" style="background:' + t.bg + '"></span><span><b>' + esc(t.n) + '</b> · ' + esc(t.f) + ' (' + t.y + ')<br>' + filmState(t.k) + '</span><a href="/grifflix/draft/?theme=' + t.k + '" target="_blank" rel="noopener">Try</a></li>';
-    }).join('') || '<li>Every theme is in a month.</li>';
+      return '<li><span class="sw" style="background:' + t.bg + '"></span><span><b>' + esc(t.n) + '</b> · ' + esc(t.f) + ' (' + t.y + ')<br>' + filmState(t.k) + '</span><span class="mv"><button type="button" class="btn" data-add="' + t.k + '">Add</button><a href="/grifflix/draft/?theme=' + t.k + '" target="_blank" rel="noopener">Try</a></span></li>';
+    }).join('') || '<li>Every theme is in the list.</li>';
     var dup = TMO.some(function (k, i) { return TMO.indexOf(k) !== i; });
-    $('#tmsave').disabled = dup || TMO.join() === TMSAVED; $('#tmsave').textContent = dup ? 'A theme is in twice' : TMO.join() === TMSAVED ? 'Saved' : 'Save the months';
+    $('#tmsave').disabled = dup || TMO.join() === TMSAVED; $('#tmsave').textContent = dup ? 'A theme is in twice' : TMO.join() === TMSAVED ? 'Saved' : 'Save the themes (' + L + ')';
   }
   $('#tmonths').addEventListener('change', function (e) { var sel = e.target.closest('select'); if (sel) { TMO[+sel.dataset.m] = sel.value; tmDraw(); } });
   $('#tmonths').addEventListener('click', function (e) {
     var b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.rm != null) { TMO.splice(+b.dataset.rm, 1); return tmDraw(); }
     var m = b.dataset.up != null ? +b.dataset.up : +b.dataset.dn, n = b.dataset.up != null ? m - 1 : m + 1, t = TMO[m];
     TMO[m] = TMO[n]; TMO[n] = t; tmDraw();
     var again = $('#tmonths [data-' + (b.dataset.up != null ? 'up' : 'dn') + '="' + n + '"]'); if (again && !again.disabled) again.focus();
   });
+  $('#tmspare').addEventListener('click', function (e) { var b = e.target.closest('[data-add]'); if (b) { TMO.push(b.dataset.add); tmDraw(); } });
   $('#tmreset').onclick = function () { TMO = GTHEMES.slice(0, 12).map(function (x) { return x.k; }); tmDraw(); };
   function tmTake(list) {   // the order the Worker keeps: this page's colours, the films for the 1sts, this device's copy
-    var ok = Array.isArray(list) && list.length === 12 && list.every(function (k) { return TBY[k]; });
+    var ok = Array.isArray(list) && list.length >= 1 && list.every(function (k) { return TBY[k]; });
     GORDER = ok ? list.slice() : GTHEMES.slice(0, 12).map(function (x) { return x.k; });
     try { localStorage.setItem('grifflix-themes', JSON.stringify(ok ? list : null)); } catch (e) {}
     TMO = GORDER.slice(); TMSAVED = GORDER.join();
@@ -748,10 +757,10 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   tmDraw();
   fetch(WORKER + '/g/cal?after=9999', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) { if ('themes' in j) tmTake(j.themes); }).catch(function () {});
   $('#tmsave').onclick = function () {
-    var b = this, same = TMO.join() === GTHEMES.slice(0, 12).map(function (x) { return x.k; }).join();
+    var b = this, same = TMO.join() === GTHEMES.slice(0, 12).map(function (x) { return x.k; }).join();   // (the usual twelve: kept as none)
     b.disabled = true; b.textContent = 'Saving…';
     g('themes', { themes: same ? null : TMO }).then(function (j) { tmTake(j.themes); toast('Saved: the site has the new months now'); })
-      .catch(function (e) { b.disabled = false; b.textContent = 'Save the months'; toast(e.message || 'Not saved'); });
+      .catch(function (e) { b.disabled = false; b.textContent = 'Save the themes'; toast(e.message || 'Not saved'); });
   };
   $('#thgo').onclick = function () {
     var b = this;
