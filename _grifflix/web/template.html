@@ -901,6 +901,11 @@ html.tv #sheet input:focus { outline: 4px solid rgb(var(--kink)) !important; out
 html.tv #sheet .form p, html.tv #sheet .form .stat, html.tv #sheet .form label { font-size: 26px !important; line-height: 1.45 !important; max-width: 60ch !important; }
 html.tv #sheet .form .pill, html.tv #sheet .form button.go { min-height: 64px; padding: 0 30px; font-size: 20px !important; }
 html.tv #sheet .res .t { font-size: 24px !important; }
+/* a TV's search as a computer's (John, 9 Nov 2026: "can that be true of search too, which also looks much too big") */
+html.tv #sheet .form.srch { max-width: 1100px; margin: 0 auto; padding-left: 64px !important; padding-right: 64px !important; }
+html.tv #sheet .form.srch > h2 { font-size: 34px !important; margin: 0 0 6px !important; }
+html.tv #sheet .form.srch #sq { font-size: 22px !important; height: 60px !important; min-height: 0 !important; padding: 0 18px !important; width: calc(100% - 70px) !important; }
+html.tv #sheet .form.srch .res .t { font-size: 16px !important; } html.tv #sheet .form.srch .res .s { font-size: 11px !important; }
 html.tv #sheet .res .s { font-size: 16px !important; }
 /* the TV's pop-ups: smaller cards, the chosen one ringed close round its picture and not grown, so nothing's cut off; a chosen
    search result filled white (John, 8 Nov 2026: "a white line outside of the film ... can't all be seen, so looks messy";
@@ -1003,6 +1008,8 @@ html.mob .codepic { left: 225px; top: 195px; width: 330px; height: 495px; }
 html.mob .th-slices .vday { height: 510px; background-size: 340px 510px; }
 html.mob .th-moon .vday { width: 40px; height: 40px; }
 html.mob .mmeli { right: auto; left: 150px; top: 200px; width: 480px; height: 480px; }   /* (a phone: in the ring of moons) */
+html.tv.hall #cal, html.tv.table #cal { zoom: .8; }   /* (TVZ: the themes as on a computer, shrunk to the TV) */
+html.tv[data-theme=moon] .hinfo .w { font-size: 84px !important; } html.tv[data-theme=moon] .hinfo h2 { font-size: 40px !important; margin-top: 30px !important; } html.tv .mposter { height: 225px; } html.tv .mmeli { top: 261px; width: 396px; height: 396px; }   /* (on a TV, laid out as at 900 high and shrunk) */
 html:not(.mob)[data-theme=moon] .hinfo .w { font-size: min(84px, 9.3vh); } html:not(.mob)[data-theme=moon] .hinfo h2 { font-size: min(40px, 4.4vh); margin-top: min(30px, 3.3vh); }   /* (the same proportions on a TV's shorter screen as on a computer's: John, 9 Nov 2026) */
 html.mob[data-theme=moon] .hinfo { display: grid; grid-template-columns: 76px minmax(0, 1fr); column-gap: 14px; align-content: start; }
 html.mob[data-theme=moon] .hinfo > * { grid-column: 2; }
@@ -1387,8 +1394,12 @@ var HALL = function (m) { return VIEW() === 'themes' && themeFor(m).key !== 'tab
 var MOBQ = function () { return !TV && matchMedia('(max-width: 760px), (orientation: portrait) and (max-width: 1100px)').matches; };
 var MOB = function () { return !TV && matchMedia('(max-width: 760px), (orientation: portrait) and (max-width: 1100px)').matches; };
 (function () { var ph = function () { document.documentElement.classList.toggle('phone', MOB()); }; ph(); addEventListener('resize', ph); })();   // (a phone in any view, the calendar's too: a film's page laid out for it: John, 8 Nov 2026)
-function themeW() { return MOB() ? 780 : (innerWidth || 1280); }
-function themeH() { return MOB() ? 890 : (document.documentElement.clientHeight || innerHeight || 720); }   // (a phone: drawn 780 x 890 for an upright screen, the day's words under it)
+// a TV: the months' themes laid out as on a computer, 1600 x 900, and shrunk to its screen (1280 x 720), not drawn at the TV's
+// own size, which made each a fifth too big for its screen (John, 9 Nov 2026: "tv tends to be oversized spoiling the theme look,
+// while computer is better")
+var TVZ = .8;
+function themeW() { return MOB() ? 780 : (innerWidth || 1280) / (TV ? TVZ : 1); }
+function themeH() { return MOB() ? 890 : (document.documentElement.clientHeight || innerHeight || 720) / (TV ? TVZ : 1); }   // (a phone: drawn 780 x 890 for an upright screen, the day's words under it)
 if (TVHERO) document.addEventListener('DOMContentLoaded', function () {   // (so it's clear a trial look is on: this device only, not everyone's)
   var t = document.createElement('div'); t.className = 'triallabel';
   t.innerHTML = 'Trial look · this device only' + (TV ? ' · <b>?tvhero=0</b> turns it off' : ' · <a href="?tvhero=0">turn off</a>');
@@ -3393,7 +3404,7 @@ function wireBody(it, ctx) {
 function searchSheet(onPick, title) {
   if (!onPick) S.sheetNow = { k: 'search' };
   var withBrowse = !onPick && VIEW() === 'themes' && S.view === 'home';   // (in a theme, John: "Search can bring up the search bar plus collections and browse")
-  openSheet('<div class="form' + (withBrowse ? ' bsheet' : '') + '" style="position:relative">' + X + '<h2 style="font:400 34px/1.1 var(--serif);color:var(--fg)">' + (title || 'Search') + '</h2><input type="search" id="sq" placeholder="A film, a series, an episode…" autocomplete="off"><div class="results" id="sres"></div>' + (withBrowse ? '<div id="bsin"></div>' : '') + '</div>');
+  openSheet('<div class="form srch' + (withBrowse ? ' bsheet' : '') + '" style="position:relative">' + X + '<h2 style="font:400 34px/1.1 var(--serif);color:var(--fg)">' + (title || 'Search') + '</h2><input type="search" id="sq" placeholder="A film, a series, an episode…" autocomplete="off"><div class="results" id="sres"></div>' + (withBrowse ? '<div id="bsin"></div>' : '') + '</div>');
   if (withBrowse) browseIn($('#bsin'), 'now');   // (Search opens on Now showing)
   var t, inp = $('#sq');
   if (TV) {   // a TV: Grifflix's own letters under the box, OK on the box to bring them up. Not Amazon's keyboard, which came up
