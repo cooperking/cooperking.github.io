@@ -2528,41 +2528,72 @@ function themeMusic(k) {   // the theme on the page now (null: none)
   if (k === TMUS.k && (TMUS.a || TMUS.pj || !TMUS.ok)) return;
   musicHush(); TMUS.k = k;
   if (!k || !TMUS.on || !TMUS.ok) return;
-  if (k === 'picture') { TMUS.pj = projector(); setTimeout(function () { if (TMUS.pj && TMUS.ctx && TMUS.ctx.state !== 'running') { TMUS.pj.stop(); TMUS.pj = null; TMUS.ok = false; } }, 400); return; }   // (not allowed yet: wait for a tap)
-  var t = TMUS.list && TMUS.list[k]; if (!t) return;
-  var a = new Audio('https://sotd-playlists.cooperking.workers.dev/gm/' + k + '-' + t.h + '.m4a?src=' + encodeURIComponent(t.src)); a.volume = 0; TMUS.a = a;
+  var src, vol = .5;
+  if (k === 'picture') {   // (Grifflix's own: the drum's sound as it turns, and its music: Smetana's Vltava, after the leader)
+    TMUS.pj = projector(); setTimeout(function () { if (TMUS.pj && TMUS.ctx && TMUS.ctx.state !== 'running') { TMUS.pj.stop(); TMUS.pj = null; TMUS.ok = false; } }, 400);
+    if ($('.zlead')) { TMUS.after = true; return; }   // (the leader's still on: its end starts the music)
+    src = '/grifflix/audio/vltava.m4a'; vol = .32;
+  } else {
+    var t = TMUS.list && TMUS.list[k]; if (!t) return;
+    src = 'https://sotd-playlists.cooperking.workers.dev/gm/' + k + '-' + t.h + '.m4a?src=' + encodeURIComponent(t.src);
+  }
+  var a = new Audio(src); a.volume = 0; TMUS.a = a;
   var fade = function (to, ms, then) { var v0 = a.volume, t0 = performance.now(); (function f() { var u = Math.min(1, (performance.now() - t0) / ms); a.volume = v0 + (to - v0) * u; if (u < 1 && TMUS.a === a) requestAnimationFrame(f); else if (then) then(); })(); };
   a.addEventListener('timeupdate', function () { if (a.duration && a.currentTime > a.duration - 3 && !a.dataset.out) { a.dataset.out = 1; fade(0, 2800); } });
   a.addEventListener('ended', function () { if (TMUS.a === a) TMUS.a = null; });
-  a.play().then(function () { fade(.5, 1800); }).catch(function () { if (TMUS.a === a) { TMUS.a = null; TMUS.ok = false; } });   // (not allowed yet: the next tap plays it)
+  a.play().then(function () { fade(vol, k === 'picture' ? 3500 : 1800); }).catch(function () { if (TMUS.a === a) { TMUS.a = null; TMUS.ok = false; } });   // (not allowed yet: the next tap plays it)
 }
+function musicHold() { if (TMUS.k === 'picture' && TMUS.a) { TMUS.a.pause(); TMUS.a = null; } if (TMUS.k === 'picture') TMUS.after = true; }   // (the leader first: the music after it)
+function musicAfterLeader() { if (!TMUS.after) return; TMUS.after = false; if (TMUS.k === 'picture' && !TMUS.a) { var pj = TMUS.pj; TMUS.pj = null; TMUS.k = null; if (pj) pj.stop(); themeMusic('picture'); } }
 function musicHush() {   // (quiet: a film or trailer starting, the page hidden, another theme)
   var a = TMUS.a; TMUS.a = null;
   if (a) { var v0 = a.volume, t0 = performance.now(); (function f() { var u = Math.min(1, (performance.now() - t0) / 600); a.volume = v0 * (1 - u); if (u < 1) requestAnimationFrame(f); else a.pause(); })(); }
   if (TMUS.pj) { TMUS.pj.stop(); TMUS.pj = null; }
 }
-function projector() {   // (the zoetrope: quiet while it stands; turning, a soft whoosh and its slits ticking past, fast then slowing as it
-  // settles, eased as the drum is: John, 9 Nov 2026: "the zoetrope sound should only play while it's spinning")
+function projector() {   // (the zoetrope turning: a soft whirr of air through its slits, fluttering as they pass, quick then slowing
+  // as the drum settles; quiet while it stands: John, 9 Nov 2026: "a very unpleasant sound and not like a spinning zoetrope")
   var c = musicCtx(); if (!c) return null;
-  var sr = c.sampleRate, nz = c.createBuffer(1, Math.floor(sr * 1.5), sr), d = nz.getChannelData(0); for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-  var out = c.createGain(); out.gain.value = .9; out.connect(c.destination); var live = [];
+  var sr = c.sampleRate, nz = c.createBuffer(1, Math.floor(sr * 2), sr), d = nz.getChannelData(0), l = 0;
+  for (var i = 0; i < d.length; i++) { l = (l + .04 * (Math.random() * 2 - 1)) / 1.04; d[i] = l * 3; }   // (soft, brownish noise)
+  var out = c.createGain(); out.gain.value = 1; out.connect(c.destination); var live = [];
   return {
     stop: function () { live.forEach(function (n) { try { n.stop(); } catch (e) {} }); live = []; setTimeout(function () { out.disconnect(); }, 50); },
     kick: function (days, dur) {
-      var t0 = c.currentTime + .02, D = (dur || 1100) / 1000, N = Math.max(6, Math.min(48, Math.round(14 * (days || 1))));
-      // the whoosh: air round the drum, loudest at the start, falling as it slows
-      var w = c.createBufferSource(), wf = c.createBiquadFilter(), wg = c.createGain(); w.buffer = nz; wf.type = 'bandpass'; wf.Q.value = .8;
-      wf.frequency.setValueAtTime(1400, t0); wf.frequency.exponentialRampToValueAtTime(380, t0 + D);
-      wg.gain.setValueAtTime(0, t0); wg.gain.linearRampToValueAtTime(.09, t0 + .06); wg.gain.exponentialRampToValueAtTime(.002, t0 + D);
-      w.connect(wf); wf.connect(wg); wg.connect(out); w.start(t0); w.stop(t0 + D + .05); live.push(w);
-      // the slits passing: one tick each, timed by the drum's own easing (1 - (1 - p)^3)
-      for (var k = 1; k <= N; k++) {
-        var at = t0 + D * (1 - Math.cbrt(1 - k / N)), v = .16 * (1 - .6 * k / N);
-        var o = c.createOscillator(), g = c.createGain(); o.type = 'triangle'; o.frequency.value = 820 + 120 * Math.random();
-        g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(v, at + .002); g.gain.exponentialRampToValueAtTime(.0005, at + .035);
-        o.connect(g); g.connect(out); o.start(at); o.stop(at + .04); live.push(o);
-      }
-      live = live.slice(-120);
+      var t0 = c.currentTime + .02, D = (dur || 1100) / 1000 + .5, sp = Math.min(3, days || 1);
+      var src = c.createBufferSource(), bp = c.createBiquadFilter(), lp = c.createBiquadFilter(), am = c.createGain(), env = c.createGain(), lfo = c.createOscillator(), depth = c.createGain();
+      src.buffer = nz; src.loop = true; bp.type = 'bandpass'; bp.Q.value = .9; lp.type = 'lowpass'; lp.frequency.value = 1400;
+      bp.frequency.setValueAtTime(520 + 140 * sp, t0); bp.frequency.exponentialRampToValueAtTime(260, t0 + D);
+      lfo.type = 'sine'; lfo.frequency.setValueAtTime(9 + 5 * sp, t0); lfo.frequency.exponentialRampToValueAtTime(2.2, t0 + D);   // (the slits' flutter, slowing)
+      am.gain.value = .55; depth.gain.value = .45; lfo.connect(depth); depth.connect(am.gain);
+      env.gain.setValueAtTime(0, t0); env.gain.linearRampToValueAtTime(.11 + .03 * sp, t0 + .12); env.gain.exponentialRampToValueAtTime(.001, t0 + D);
+      src.connect(bp); bp.connect(lp); lp.connect(am); am.connect(env); env.connect(out);
+      src.start(t0); lfo.start(t0); src.stop(t0 + D + .05); lfo.stop(t0 + D + .05); live.push(src, lfo); live = live.slice(-40);
+    },
+    sting: function () {   // (GRIFFLIX after the countdown: a rising shimmer into a warm chord and a soft drum, as a studio's title)
+      var t = c.currentTime, rv = c.createConvolver(), ir = c.createBuffer(2, Math.floor(sr * 2.6), sr);
+      for (var ch = 0; ch < 2; ch++) { var q = ir.getChannelData(ch); for (var j = 0; j < q.length; j++) q[j] = (Math.random() * 2 - 1) * Math.pow(1 - j / q.length, 2.6); }
+      rv.buffer = ir; var wet = c.createGain(); wet.gain.value = .5; rv.connect(wet); wet.connect(out);
+      var bus = c.createGain(); bus.gain.value = 1; bus.connect(out); bus.connect(rv);
+      // the swell up to the flash
+      var sw = c.createBufferSource(), hp = c.createBiquadFilter(), sg = c.createGain(); sw.buffer = nz; sw.loop = true; hp.type = 'bandpass'; hp.Q.value = .7;
+      hp.frequency.setValueAtTime(300, t); hp.frequency.exponentialRampToValueAtTime(5000, t + .8); sg.gain.setValueAtTime(0, t); sg.gain.linearRampToValueAtTime(.12, t + .78); sg.gain.linearRampToValueAtTime(0, t + .86);
+      sw.connect(hp); hp.connect(sg); sg.connect(bus); sw.start(t); sw.stop(t + .9);
+      var t1 = t + .82;
+      // the drum
+      var bo = c.createOscillator(), bg = c.createGain(); bo.frequency.setValueAtTime(90, t1); bo.frequency.exponentialRampToValueAtTime(42, t1 + .6);
+      bg.gain.setValueAtTime(0, t1); bg.gain.linearRampToValueAtTime(.45, t1 + .01); bg.gain.exponentialRampToValueAtTime(.001, t1 + 1.6); bo.connect(bg); bg.connect(bus); bo.start(t1); bo.stop(t1 + 1.7);
+      // the chord: C, G, C, E, G, D, warm and slow
+      [130.81, 196, 261.63, 329.63, 392, 587.33].forEach(function (f, n) {
+        [-6, 6].forEach(function (dt) {
+          var o = c.createOscillator(), lp2 = c.createBiquadFilter(), g = c.createGain(); o.type = 'sawtooth'; o.frequency.value = f; o.detune.value = dt;
+          lp2.type = 'lowpass'; lp2.frequency.setValueAtTime(500, t1); lp2.frequency.linearRampToValueAtTime(2200, t1 + 1.2); lp2.frequency.linearRampToValueAtTime(900, t1 + 3.5);
+          g.gain.setValueAtTime(0, t1); g.gain.linearRampToValueAtTime(.03 - n * .003, t1 + .5); g.gain.setValueAtTime(.03 - n * .003, t1 + 1.6); g.gain.exponentialRampToValueAtTime(.0005, t1 + 4);
+          o.connect(lp2); lp2.connect(g); g.connect(bus); o.start(t1); o.stop(t1 + 4.1);
+        });
+      });
+      // a glint on top
+      [1046.5, 1568].forEach(function (f, n) { var o = c.createOscillator(), g = c.createGain(), at = t1 + .25 + n * .18; o.frequency.value = f;
+        g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(.035, at + .02); g.gain.exponentialRampToValueAtTime(.0005, at + 1.8); o.connect(g); g.connect(bus); o.start(at); o.stop(at + 1.9); });
     }
   };
 }
@@ -3214,11 +3245,12 @@ THEMEFX.picture = {
       try { if (localStorage.getItem('grifflix-leader') === today) return; localStorage.setItem('grifflix-leader', today); } catch (e) {}
     }
     var d = document.createElement('div'); d.className = 'zlead'; d.innerHTML = '<div class="zglow">' + this.glow() + '</div><div class="ring"></div><div class="n">3</div><div class="gx">Grifflix</div><div class="skip">Tap to skip</div>';
-    document.body.appendChild(d);
-    var T = [], gone = function () { T.forEach(clearTimeout); d.classList.add('out'); setTimeout(function () { d.remove(); }, 600); };
+    document.body.appendChild(d); musicHold();
+    var T = [], gone = function () { T.forEach(clearTimeout); d.classList.add('out'); setTimeout(function () { d.remove(); musicAfterLeader(); }, 600); };
     var n = d.querySelector('.n'); musicBeep();
     T.push(setTimeout(function () { n.textContent = '2'; musicBeep(); }, 800), setTimeout(function () { n.textContent = '1'; musicBeep(); }, 1600),
-      setTimeout(function () { d.classList.add('flash'); n.textContent = ''; }, 2400), setTimeout(function () { d.classList.remove('flash'); d.classList.add('name'); }, 2520), setTimeout(gone, 3900));
+      setTimeout(function () { if (TMUS.pj && TMUS.ok && TMUS.on) TMUS.pj.sting(); }, 1700),   // (its chord as GRIFFLIX comes)
+       setTimeout(function () { d.classList.add('flash'); n.textContent = ''; }, 2400), setTimeout(function () { d.classList.remove('flash'); d.classList.add('name'); }, 2520), setTimeout(gone, 3900));
     d.onclick = gone; addEventListener('keydown', function k() { removeEventListener('keydown', k); if (d.isConnected) gone(); });
   },
   glow: function () {   // (behind the countdown, the month's films glowing, as the room round the drum: John, 9 Nov 2026)
@@ -4021,7 +4053,7 @@ function drawAccount() {
     (/[?&]app=/.test(location.search) || TV ? '' : '<div class="profsec"><p class="profh">Grifflix on your phone</p><p class="profp">' +
       (/Android/i.test(navigator.userAgent) ? 'The Grifflix app for Android: download it, then open the file and allow installing from Chrome when asked. Sign in with a code from here (below).' : 'An iPhone app is coming (through Apple’s TestFlight). On an Android phone, the Grifflix app is here.') +
       '</p><div class="acts" style="margin-top:8px"><a class="pill" href="/grifflix/android.apk">Android app</a></div></div>') +
-    '<div class="profsec"><p class="profh">Theme music</p><p class="profp">' + (TMUS.on ? 'On this device: each month’s theme plays its film’s music (30 seconds) when you open it, and Grifflix’s own the zoetrope’s sound as it turns.' : 'Off on this device.') +
+    '<div class="profsec"><p class="profh">Theme music</p><p class="profp">' + (TMUS.on ? 'On this device: each month’s theme plays its film’s music (30 seconds) when you open it, and Grifflix’s own its title’s sound, the zoetrope as it turns, and Smetana’s Vltava (Musopen’s recording, public domain).' : 'Off on this device.') +
       (TMUS.on && TMUS.k && TMUS.list && TMUS.list[TMUS.k] ? ' This month: <b>' + esc(TMUS.list[TMUS.k].title) + '</b>, ' + esc(TMUS.list[TMUS.k].artist) + '.' : '') +
       '</p><div class="acts" style="margin-top:8px"><button class="pill" id="musgo">' + (TMUS.on ? 'Turn off' : 'Turn on') + '</button></div></div>' +
     '<div class="profsec"><p class="profh">A TV</p><p class="profp">To sign in on a TV (or another device), get a code and type it there.</p><div class="acts" style="margin-top:8px"><button class="pill" id="tvcode">Get a code</button></div></div>' +
