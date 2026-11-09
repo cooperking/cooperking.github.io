@@ -2085,11 +2085,11 @@ function start() {
   if (!S.leaderTried) { S.leaderTried = 1; try { THEMEFX.picture.leader(); } catch (e) {} }   // (the 3 2 1 at once, while Grifflix reaches the Mac)
   if (BUILD.draft) { var t = document.createElement('a'); t.className = 'drafttag'; t.href = '/grifflix/'; t.title = 'This is the draft: the live Grifflix is at /grifflix/'; t.textContent = 'Draft'; ($('.bar-top .homeic') || $('.brand')).after(t); }
   var go = function () {
-    if (!DEMO && !TOKEN) {
+    if (!DEMO && !TOKEN) {   // (not signed in: only the way in, nothing of Grifflix behind it: John, 9 Nov 2026: "can we actually get all of
+      // grifflix behind a sign in")
       PUBLIC = true; ME = { name: '', public: true }; window.MACOK = true;
       document.documentElement.classList.add('public');
-      $('#who').textContent = 'Sign in';
-      return route();   // (all from the site's own files: the Mac mini needn't be on)
+      return welcome();
     }
     macWake();
     api('me').then(function (me) {
@@ -2163,6 +2163,7 @@ window.grifflixJoin = join;   // (the Fire TV app's menu: Sign in with a code)
 
 /* ------------------------------------------------------------------ pages */
 function route() {
+  if (PUBLIC && !DEMO) { if (!$('#signin')) welcome(); return; }   // (not signed in: nothing past the way in, a shared link included)
   var h = (location.hash || '#home').slice(1).split('/');
   S.view = h[0] || 'home';
   $('#main').className = '';
