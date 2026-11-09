@@ -231,9 +231,30 @@ def after_upload(base, before, code):
         note('/songs.json FAILS (%s): %s' % (s, words), 'warning')
 
 
+def grifflix_domain():
+    """6. Grifflix's links on John's own domain: the Worker as grifflix.co.uk (a Cloudflare custom domain), so an invitation's
+    link doesn't say sotd-playlists (John, 9 Nov 2026). Needs the token to see the zone and add Workers custom domains; if it
+    can't, it says what to do by hand and the links stay on the Worker's own address."""
+    host = 'grifflix.co.uk'
+    try:
+        doms = cf('GET', '/accounts/%s/workers/domains?hostname=%s' % (ACCOUNT, host)) or []
+        if any(d.get('hostname') == host and d.get('service') == NAME for d in doms):
+            note('%s: the Worker is on it.' % host); return
+        zones = cf('GET', '/zones?name=grifflix.co.uk') or []
+        if not zones:
+            raise Refused('the token can\'t see the zone grifflix.co.uk')
+        cf('PUT', '/accounts/%s/workers/domains' % ACCOUNT, {'environment': 'production', 'hostname': host, 'service': NAME, 'zone_id': zones[0]['id']})
+        note('%s: the Worker put on it (Grifflix\'s invitations and shared days now link there).' % host)
+    except Refused as e:
+        note('%s not added (%s). By hand: Cloudflare > Workers & Pages > %s > Settings > Domains & Routes > Add > Custom domain > %s. '
+             'Until then Grifflix\'s links stay on the Worker\'s own address.' % (host, e, NAME, host), 'warning')
+
+
 if __name__ == '__main__':
     try:
         main()
+        if TOKEN:
+            grifflix_domain()
     except Refused as e:
         note(str(e), 'error'); raise SystemExit(1)
     except SystemExit as e:
