@@ -570,6 +570,7 @@ html.tv .th-lane .vday:focus { outline: 0 !important; box-shadow: 0 0 0 4px #1a1
 html.tv .th-picture .vday:focus { outline: 0 !important; }
 html[data-theme=picture] .hinfo h2 { color: #e9c46a; }
 html[data-theme=picture] .hinfo .w > span { letter-spacing: -.01em; }
+html[data-theme=picture]:not(.mob) .hinfo .w { font-size: min(84px, 5.2vw); } html[data-theme=picture]:not(.mob) .hinfo { max-width: calc(100vw - 2 * min(400px, 24vw) - 200px); }
 html[data-theme=picture] .th-picture .vday.soon .cs, html[data-theme=blank] .vday.soon .cs { text-transform: none; font-style: italic; font-weight: 400; }
 html[data-theme=picture] .leaf2 { border-color: #e9c46a; background: #0b0809; }
 html[data-theme=picture] .leaf2 i { background: #e9c46a; color: #0b0809; }
@@ -3086,7 +3087,7 @@ THEMEFX.lane = {
 // the site starts with a film leader counting down, once a visit
 THEMEFX.picture = {
   st: Math.PI * 2 / 14,   // (a day's turn of the drum: fourteen posters round)
-  g: function (c) { return c.mob ? { cx: 390, cy: 420, R: 300, P: 1100, ch: 255 } : { cx: c.W * .62, cy: c.H * .49, R: Math.min(430, c.W * .26), P: 1400, ch: 255 }; },
+  g: function (c) { return c.mob ? { cx: 390, cy: 420, R: 300, P: 1100, ch: 255 } : { cx: c.W - Math.min(400, c.W * .24) - Math.max(70, c.W * .055), cy: c.H * .49, R: Math.min(400, c.W * .24), P: 1400, ch: 255 }; },   // (the drum against the right, clear of the day's words: John, 9 Nov 2026: "day is sometimes going into the animation")
   bh: 62, NH: 30,   // (the drum's lower band, and the frames of Muybridge's horse round it)
   decor: function (c) {
     var g = this.g(c), ry = g.R * .2, top = g.cy - g.ch * .62 - 26, bot = g.cy + g.ch * .62 + 26, bh = this.bh, b2 = bot + bh, h = '<div class="zamb" id="zamb"></div><div class="zvig"></div><div class="zgrain"></div>';
