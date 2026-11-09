@@ -1341,7 +1341,7 @@ async function gThemeLoad(env) {
   try {
     const t = await fetch(G_SITE + 'themes.json', { cf: { cacheTtl: 3600 } }).then(r => r.json());
     const raw = JSON.parse(await env.SOTD.get('gthemes') || 'null'), order = (Array.isArray(raw) ? raw : raw && raw.order) || t.order;
-    const k = (raw && raw.months || {})[londonDay().slice(0, 7)] || order[gThemeAt(londonDay(), order.length)];   // (a month given its own theme on the admin page, else the order's)
+    const ym = londonDay().slice(0, 7), k = (raw && raw.months || {})[ym] || (ym >= '2026-12' ? null : order[gThemeAt(londonDay(), order.length)]);   // (a month not chosen yet from Dec 2026: none, Grifflix's own look)   // (a month given its own theme on the admin page, else the order's)
     G_TH = t.themes[k] || null;
   } catch (e) { G_TH = null; }
   return G_TH;
