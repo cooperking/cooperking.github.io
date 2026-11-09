@@ -565,6 +565,7 @@ html.tv .th-lane .vday:focus { outline: 0 !important; box-shadow: 0 0 0 4px #1a1
 .zdrum .rimf { fill: rgba(233, 196, 106, .06); }
 .zdrum .zin { fill: #0d0809; } .zdrum.zfront { z-index: 2; }
 .zdrum .lac { fill: url(#zlac); opacity: .9; } .zdrum .gilt { fill: none; stroke: #e9c46a; stroke-width: 1.2; opacity: .6; }
+.zdrum .zoak { fill: url(#zoak); } .zdrum .zring { fill: none; stroke: #6a4224; stroke-opacity: .45; stroke-width: 1.2; } .zdrum .zedge { fill: none; stroke: #f0cf9c; stroke-opacity: .5; stroke-width: 1.2; } .zdrum .zshadow { fill: rgba(0, 0, 0, .55); filter: blur(6px); }
 .zdrum .spin { fill: url(#zwood); } .zdrum .foot { fill: #24170f; } .zdrum .foott { fill: url(#zwood); stroke: #e9c46a; stroke-opacity: .3; } .zdrum .coll { fill: #b8913f; }
 .zh { position: absolute; left: 0; top: 0; background: url("/grifflix/img/muybridge-horse.webp") 0 0 no-repeat; pointer-events: none; will-change: transform; filter: drop-shadow(0 0 4px rgba(233, 196, 106, .35)); }
 .zlt { position: absolute; left: 0; top: 0; font: 700 26px/1 var(--kfont); color: #e9c46a; pointer-events: none; will-change: transform; }
@@ -2619,7 +2620,15 @@ function musicBeep() {   // (the leader's beep on each number)
 ['pointerdown', 'keydown', 'touchend'].forEach(function (ev) { addEventListener(ev, function () {   // (the first tap or key lets it play)
   if (TMUS.ok) return; TMUS.ok = true; musicCtx(); var k = TMUS.k; TMUS.k = null; if (k) themeMusic(k);
 }, true); });
-document.addEventListener('visibilitychange', function () { if (document.hidden) { musicHush(); } });
+document.addEventListener('visibilitychange', function () { if (document.hidden) { musicHush(); } else leaderNewDay(); });
+// (an app that stays loaded, as a Fire Stick's does: a new day's first look at it, or first key, still opens with the leader)
+function leaderNewDay() {
+  if (document.documentElement.dataset.theme !== 'picture' || $('.zlead') || /[?&]view=themes/.test(location.search)) return;
+  var dt = new Date(), today = dt.getFullYear() + '-' + (dt.getMonth() + 1) + '-' + dt.getDate();
+  try { if (localStorage.getItem('grifflix-leader') === today) return; } catch (e) { return; }
+  window.ZLED = 0; THEMEFX.picture.leader();
+}
+addEventListener('keydown', leaderNewDay, true);
 document.addEventListener('play', function (e) { if (e.target && e.target.id === 'vid') musicHush(); }, true);
 setInterval(function () { if ((TMUS.a || TMUS.pj) && !(VIEW() === 'themes' && $('#cal'))) musicHush(); }, 1000);   // (off the theme's page: quiet)
 function drawTheme(t, C, n, m, mine) {
@@ -3237,6 +3246,22 @@ THEMEFX.lane = {
 // The month's posters stand round it, GRIFFLIX round its rim; going on a day spins the drum (frame by frame, eased, as a
 // hand would), the day's poster coming round to the front and lifting out towards you, the room lit by its film. Opening
 // the site starts with a film leader counting down, once a visit
+function zstand(cx, y0, R, ry) {   // (the zoetrope's turned oak pedestal, its parts sized to the drum)
+  var k = R / 400, F = function (n) { return n.toFixed(1); }, h = '';
+  var dy = 18 * k, dw = R * 1.03, dry = ry * 1.03;   // (the drum's oak floor: its rim below the drum)
+  h += '<path class="zoak" d="M' + F(cx - dw) + ',' + F(y0) + ' A' + F(dw) + ' ' + F(dry) + ' 0 0 0 ' + F(cx + dw) + ',' + F(y0) + ' L' + F(cx + dw) + ',' + F(y0 + dy) + ' A' + F(dw) + ' ' + F(dry) + ' 0 0 1 ' + F(cx - dw) + ',' + F(y0 + dy) + ' Z"/>';
+  var bt = y0 + dy + dry * .55, bw = R * .62, nw = R * .14, bh = 70 * k, nh = 16 * k, fw = R * .46, fh = 26 * k, fry = ry * .46;
+  // (the bowl, its curve narrowing to the neck)
+  h += '<path class="zoak" d="M' + F(cx - bw) + ',' + F(bt) + ' C' + F(cx - bw) + ',' + F(bt + bh * .7) + ' ' + F(cx - nw * 1.6) + ',' + F(bt + bh * .75) + ' ' + F(cx - nw) + ',' + F(bt + bh) +
+    ' L' + F(cx - nw) + ',' + F(bt + bh + nh) + ' L' + F(cx + nw) + ',' + F(bt + bh + nh) + ' L' + F(cx + nw) + ',' + F(bt + bh) + ' C' + F(cx + nw * 1.6) + ',' + F(bt + bh * .75) + ' ' + F(cx + bw) + ',' + F(bt + bh * .7) + ' ' + F(cx + bw) + ',' + F(bt) + ' Z"/>';
+  h += '<ellipse class="zring" cx="' + F(cx) + '" cy="' + F(bt + bh * .38) + '" rx="' + F(bw * .93) + '" ry="' + F(fry * .9) + '"/>';   // (a turned ring on the bowl)
+  // (the foot, flaring out to its rounded edge)
+  var ft = bt + bh + nh;
+  h += '<path class="zoak" d="M' + F(cx - nw) + ',' + F(ft) + ' C' + F(cx - nw) + ',' + F(ft + fh * .6) + ' ' + F(cx - fw) + ',' + F(ft + fh * .3) + ' ' + F(cx - fw) + ',' + F(ft + fh) +
+    ' A' + F(fw) + ' ' + F(fry) + ' 0 0 0 ' + F(cx + fw) + ',' + F(ft + fh) + ' C' + F(cx + fw) + ',' + F(ft + fh * .3) + ' ' + F(cx + nw) + ',' + F(ft + fh * .6) + ' ' + F(cx + nw) + ',' + F(ft) + ' Z"/>';
+  h += '<path class="zedge" d="M' + F(cx - fw) + ',' + F(ft + fh) + ' A' + F(fw) + ' ' + F(fry) + ' 0 0 0 ' + F(cx + fw) + ',' + F(ft + fh) + '"/>';
+  return '<ellipse class="zshadow" cx="' + F(cx) + '" cy="' + F(ft + fh + fry * .7) + '" rx="' + F(fw * 1.5) + '" ry="' + F(fry * 1.1) + '"/>' + h;
+}
 THEMEFX.picture = {
   st: Math.PI * 2 / 14,   // (a day's turn of the drum: fourteen posters round)
   g: function (c) { return c.mob ? { cx: 390, cy: 420, R: 300, P: 1100, ch: 255 } : { cx: c.W - Math.min(400, c.W * .24) - Math.max(70, c.W * .055), cy: c.H * .49, R: Math.min(400, c.W * .24), P: 1400, ch: 255 }; },   // (the drum against the right, clear of the day's words: John, 9 Nov 2026: "day is sometimes going into the animation")
@@ -3246,12 +3271,15 @@ THEMEFX.picture = {
     var cx = g.cx, R = g.R, by = Math.min(c.H - 40, b2 + (c.mob ? 150 : 120)), arc = function (y, sw) { return 'A' + R + ' ' + ry + ' 0 0 ' + sw + ' '; };
     // (the stand: a turned wooden spindle on a round foot, a brass collar under the drum)
     h += '<svg class="zdrum" width="' + c.W + '" height="' + c.H + '"><defs>' +
+      '<linearGradient id="zoak" x1="0" x2="1"><stop offset="0" stop-color="#7a4f2a"/><stop offset=".22" stop-color="#c99560"/><stop offset=".42" stop-color="#e8bf88"/><stop offset=".62" stop-color="#c58f58"/><stop offset="1" stop-color="#6a4224"/></linearGradient>' +
+      '<linearGradient id="zoakt" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#f0cf9c"/><stop offset="1" stop-color="#c99560"/></linearGradient>' +
       '<linearGradient id="zwood" x1="0" x2="1"><stop offset="0" stop-color="#2a1a12"/><stop offset=".35" stop-color="#8a5a38"/><stop offset=".55" stop-color="#5a3a26"/><stop offset="1" stop-color="#1e130d"/></linearGradient>' +
       '<linearGradient id="zlac" x1="0" x2="1"><stop offset="0" stop-color="#170a0b"/><stop offset=".42" stop-color="#4a1a1c"/><stop offset=".6" stop-color="#2c0f11"/><stop offset="1" stop-color="#120708"/></linearGradient></defs>' +
       '<path class="zin" d="M' + (cx - R) + ',' + bot + ' ' + arc(bot, 1) + (cx + R) + ',' + bot + ' L' + (cx + R) + ',' + b2 + ' ' + arc(b2, 0) + (cx - R) + ',' + b2 + ' Z"/>' +
-      '<path class="spin" d="M' + (cx - 9) + ',' + b2 + ' h18 l5,' + ((by - b2) * .32).toFixed(0) + ' q-9,10 0,20 l-7,' + ((by - b2) * .68 - 38).toFixed(0) + ' h-14 l-7,-' + ((by - b2) * .68 - 38).toFixed(0) + ' q9,-10 0,-20 Z"/>' +
-      '<ellipse class="foot" cx="' + cx + '" cy="' + (by + 14) + '" rx="' + (R * .4) + '" ry="' + (ry * .4) + '"/><rect class="foot" x="' + (cx - R * .4) + '" y="' + by + '" width="' + (R * .8) + '" height="14"/><ellipse class="foott" cx="' + cx + '" cy="' + by + '" rx="' + (R * .4) + '" ry="' + (ry * .4) + '"/>' +
-      '<ellipse class="coll" cx="' + cx + '" cy="' + (b2 + 6) + '" rx="22" ry="6"/>' +
+      // (the stand, after a real zoetrope's (a turned oak pedestal: Wikimedia Commons, Zoetrope.jpg; John, 9 Nov 2026: "stand on the
+      // zoetrope doesn't look good - can you find a real reference"): the drum's oak floor, a turned bowl narrowing to a short
+      // neck, a flared round foot)
+      zstand(cx, b2, R, ry) +
       '<ellipse class="rimf" cx="' + cx + '" cy="' + bot + '" rx="' + R + '" ry="' + ry + '"/>' +
       '<ellipse class="rim" cx="' + cx + '" cy="' + top + '" rx="' + R + '" ry="' + ry + '"/></svg>';
     // (the band's outside, in front of the frames at the back: Victorian japanned tin, red-black, gilt-lined; its slits let you see in)
@@ -3265,9 +3293,9 @@ THEMEFX.picture = {
     return h;
   },
   ready: function (c) { fxReset(this); this.c = c; this.leader(); },
-  leader: function () {   // (a film leader: 3, 2, 1, a flash, GRIFFLIX; the first visit each day; a tap skips it)
+  leader: function (asked) {   // (a film leader: 3, 2, 1, a flash, GRIFFLIX; the first visit each day; a tap skips it)
     // (the first visit of the day only; home, GRIFFLIX and reloads don't replay it. ?leader=1 always plays it: admin's preview. John, 9 Nov 2026)
-    var force = /[?&]leader=1/.test(location.search);
+    var force = asked === true || /[?&]leader=1/.test(location.search);
     if (window.ZLED || $('.zlead') || (!force && CALM)) return; window.ZLED = 1;
     if (!force && /[?&]view=themes/.test(location.search)) return;   // (admin's theme explorer: only its Play the 3 2 1, and it doesn't use up the day's)
     if (!force) {
@@ -4068,7 +4096,8 @@ function profile() {
   if (PUBLIC) return signInSheet();
   if (!ME) return;
   if (TV) {   // the TV: who's signed in and Sign out, nothing else (John, 8 Nov 2026)
-    openSheet('<div class="form tvprof" style="position:relative">' + X + '<p class="profp tvwho">Signed in as <b>' + esc(ME.name || 'you') + '</b></p><div class="acts"><button class="pill on" id="signout">Sign out</button></div></div>');
+    openSheet('<div class="form tvprof" style="position:relative">' + X + '<p class="profp tvwho">Signed in as <b>' + esc(ME.name || 'you') + '</b></p><div class="acts"><button class="pill" id="tvlead">Play the 3 2 1</button><button class="pill on" id="signout">Sign out</button></div></div>');
+    $('#tvlead').onclick = function () { closeSheet(); window.ZLED = 0; THEMEFX.picture.leader(true); };   // (John, 9 Nov 2026: "how can I get the firestick to reload the 3 2 1")
     var so = $('#signout'); so.onclick = function () {
       if (!so.dataset.sure) { so.dataset.sure = 1; so.textContent = 'Press again to sign out'; return; }
       wcall({ op: 'signout' }).catch(function () {}).then(function () { store.set('grifflix-member', null); location.replace(location.pathname); });
