@@ -816,6 +816,17 @@ body.tdragging { user-select: none; -webkit-user-select: none; }
       tmDraw(); rqDraw();
     }).catch(function () { $('#tspare').innerHTML = '<p class="stat">The site’s films couldn’t be read just now.</p>'; });
   }
+  function firstsJobs(MM, ORDER) {   // (each month's 1st from the calendar's start to a year ahead, its theme's film where it hasn't it)
+    var ks = Object.keys(TD).sort(), start = ks.length ? ks[0].slice(0, 7) : '2025-12', y = +start.slice(0, 4), m = +start.slice(5, 7) - 1, now = new Date(), end = new Date(now.getFullYear() + 1, now.getMonth(), 1), out = [], L = ORDER.length;
+    Object.keys(MM).forEach(function (k) { if (k < start) { start = k; } }); y = +start.slice(0, 4); m = +start.slice(5, 7) - 1;
+    for (; new Date(y, m, 1) <= end; m++) {
+      if (m > 11) { m = 0; y++; }
+      var ymk = y + '-' + String(m + 1).padStart(2, '0'), i = (y - 2026) * 12 + m, k = MM[ymk] || (ymk >= BLANKFROM ? null : ORDER[((i % L) + L) % L]);
+      var date = ymk + '-01', j = k && firstJob(k, date), was = TD[date];
+      if (j && !(was && was.id === j.item)) out.push(j);
+    }
+    return out;
+  }
   function filmState(k, m) {   // a theme's film: in Grifflix or not, and (in a month) on its next 1st or not
     if (!TL_ || !(k in TID) || k === 'picture') return '';   // (Grifflix's own theme: no one film)
     var id = TID[k]; if (!id) return '<span class="fs no">Film not in Grifflix yet: its trailer on its 1sts</span>';
@@ -1066,8 +1077,9 @@ body.tdragging { user-select: none; -webkit-user-select: none; }
     var mm = Object.keys(TMM).length, body = mm ? { order: same ? null : TMO, months: TMM } : (same ? null : TMO);
     b.disabled = true; b.textContent = 'Saving…';
     var today = new Date().toISOString().slice(0, 10); try { today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date()); } catch (e) {}
-    // (a 1st still to come: one already shown is left as it was)
-    var jobs = Object.keys(TMM).filter(function (k) { return k + '-01' >= today; }).sort().map(function (k) { return firstJob(TMM[k], k + '-01'); }).filter(Boolean);   // (each month's film on its 1st: John, 9 Nov 2026)
+    // (every month's 1st, past ones too, given its theme's film where it hasn't it already: John, 9 Nov 2026: "after setting the themes
+    // for the month, they haven't been pulled to the first of that month")
+    var jobs = firstsJobs(TMM, TMO);
     g('themes', { themes: body, draft: true }).then(function (j) {
       tmDraft(j);
       var want = jobs.filter(function (x) { return x.ext; }).map(function (x) { return { name: x.ext.name, year: x.ext.year, why: 'Theme film for ' + monLabel(x.date) }; });
