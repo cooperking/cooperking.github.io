@@ -564,7 +564,8 @@ html.tv .th-lane .vday:focus { outline: 0 !important; box-shadow: 0 0 0 4px #1a1
 .th-picture .vday.soon .cs { color: #e9c46a; }
 html.tv .th-picture .vday:focus { outline: 0 !important; }
 html[data-theme=picture] .hinfo h2 { color: #e9c46a; }
-html[data-theme=picture] .hinfo .w > span { letter-spacing: .04em; }
+html[data-theme=picture] .hinfo .w > span { letter-spacing: -.01em; }
+html[data-theme=picture] .th-picture .vday.soon .cs, html[data-theme=blank] .vday.soon .cs { text-transform: none; font-style: italic; font-weight: 400; }
 html[data-theme=picture] .leaf2 { border-color: #e9c46a; background: #0b0809; }
 html[data-theme=picture] .leaf2 i { background: #e9c46a; color: #0b0809; }
 html[data-theme=picture] .leaf2 b { color: #e9c46a; }
@@ -1165,7 +1166,7 @@ html.mob .triallabel { white-space: nowrap; }
 /* the calendar page beside the day's name */
 .hinfo .w { display: flex; align-items: center; gap: .22em; }
 .leaf2 { flex: none; display: inline-flex; flex-direction: column; width: .95em; height: 1.02em; border: max(2px, .025em) solid rgb(var(--kink)); font-style: normal; text-transform: uppercase; letter-spacing: 0; overflow: hidden; }
-.leaf2 i { display: block; padding: .05em 0 .04em; background: rgb(var(--kink)); color: var(--bg); font: 700 .17em/1 var(--kfont); letter-spacing: .14em; text-align: center; font-style: normal; }
+.leaf2 i { display: block; padding: .05em 0 .04em; background: rgb(var(--kink)); color: var(--bg); font: 700 .17em/1 var(--kfont); letter-spacing: .3em; text-indent: .3em; text-align: center; font-style: normal; }
 .leaf2, .leaf2 * { -webkit-text-stroke: 0; }
 .leaf2 b { flex: 1; display: grid; place-items: center; font: 700 .52em/1 var(--kfont); color: rgb(var(--kink)); }
 .tcentre .leaf2 { margin: 0 auto 12px; font-size: 64px; }
@@ -1414,6 +1415,15 @@ html.phone .bar-top .brand { font-size: 12px !important; letter-spacing: .3em !i
 html.phone.hall .bar-top, html.phone.table .bar-top { top: max(14px, env(safe-area-inset-top)); gap: 8px; }
 html.phone .bar-top { gap: 8px !important; }
 html.phone .bar-top #refresh2, html.phone .bar-top #who, html.phone .bar-top > .pill, html.phone .bar-top .pill[data-go="search"], html.phone .bar-top .pill[data-go="browse"] { display: none !important; }   /* (a phone: pull down to refresh; the profile's icon) */
+
+/* Futura in capitals only when spread wide, as the GRIFFLIX logo; elsewhere the brand's serif for titles, its sans for small
+   names (John, 9 Nov 2026: "futura capitals should only be used if they're spread out like the grifflix logo, otherwise use a
+   different font from the branding"). A theme's own lettering, set by the theme, stays as it is */
+.hero h1, .row h2, .sect h2, .sheet h2, .welcome h1, .colltitle, .list-title h2, .side h2, .hinfo .w, .hinfo h2, .tcentre h2, .th-credits .ct, #bgrid .nowrows .row h2, #sheet .row h2 { font-family: var(--serif); font-weight: 500; text-transform: none; letter-spacing: -.005em; }
+.day .cap .t, .card .t, .card .noimg, .tracks .tt, .tpbar b { font-family: var(--sans); text-transform: none; letter-spacing: 0; }
+html[data-theme=pinboard] .hinfo .w > span { letter-spacing: .32em; }
+html[data-theme=pinboard] .hinfo h2 { letter-spacing: .24em; }   /* (Zodiac's own Futura, spaced as its poster's logo) */
+html[data-theme=pinboard] .th-pinboard .vday .cs { letter-spacing: .22em; }
 </style>
 <script>/* a computer's screen (wide, with a mouse) or the TV: the whole calendar in the window, as on the songs' site */
 (function () { if (/GRIFFLIXTV\//.test(navigator.userAgent) || /[?&]tv=1(&|$)/.test(location.search)) { var vp = document.querySelector('meta[name=viewport]'); if (vp) vp.setAttribute('content', 'width=1280'); } })();   /* a TV: laid out 1280 wide and shrunk to the screen, as the songs' page is (a Fire Stick's browser is 960 wide: everything came out a third too big) */
@@ -1922,7 +1932,7 @@ var THEMES_LATER = [
   { key: 'lane', mob: [0, 0, 1280, 720], name: 'The Lane', film: 'The Big Lebowski', year: 1998, by: 'the Coen brothers', bg: '#d79e48', ink: '#000', font: '"GF-lane", "Lobster", cursive', tw: 700, tt: 'none' },
   // Grifflix's own, the launch's showcase (John, 9 Nov 2026: "fully reworked - it's the showcase - an exciting launch screen -
   // the way things move and display should be original and creative"): the zoetrope, where moving pictures began
-  { key: 'picture', mob: [0, 0, 1280, 720], name: 'Grifflix', film: 'the zoetrope', year: 1834, by: 'where moving pictures began', bg: '#0b0809', ink: '#fff', font: '"GFutura", "Jost", sans-serif', tw: 700, tt: 'uppercase' },
+  { key: 'picture', mob: [0, 0, 1280, 720], name: 'Grifflix', film: 'the zoetrope', year: 1834, by: 'where moving pictures began', bg: '#0b0809', ink: '#fff', font: 'var(--serif)', tw: 500, tt: 'none' },
   // The Grand Budapest Hotel (back again: John, 9 Nov 2026): the façade's pink (#f1b1b3), Mendl's box pink and ribbon blue
   // (#f498b5, #6c77b8), the lobby red (#d61302), the gold sign (#e3c183), the bellboy's purple (#5a3d4e); the posters' billing
   // in Archer (Fonts In Use: John's own copy, Arvo till then); the sign hand-lettered (Annie Atkins): Marcellus for it
@@ -1940,7 +1950,7 @@ var THEMEALL = THEMES.concat(THEMES_LATER), THEMEDEF = THEMES.slice();
 // a month not yet given a theme, from December 2026: plain black, a holding space till John chooses its theme on the admin page
 // (John, 9 Nov 2026: "can upcoming months have no theme - on the screen it will just be black, as a holding space - until I
 // have added them in. It makes it easier to choose")
-var BLANKFROM = '2026-12', THEMEBLANK = { key: 'blank', mob: [0, 0, 1280, 720], name: 'Grifflix', film: '', year: 0, by: '', bg: '#000000', ink: '#fff', font: 'var(--kfont)', tw: 700, tt: 'uppercase' };
+var BLANKFROM = '2026-12', THEMEBLANK = { key: 'blank', mob: [0, 0, 1280, 720], name: 'Grifflix', film: '', year: 0, by: '', bg: '#000000', ink: '#fff', font: 'var(--serif)', tw: 500, tt: 'none' };
 THEMEALL.push(THEMEBLANK);
 var THEMEMONTHS = {};   // (months given their own theme on the admin page: { 'YYYY-MM': key })
 function themeOrder(keys) {   // true when the months changed
