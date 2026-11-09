@@ -111,8 +111,12 @@ def build(snap, now, days_only=False):
             v['land'] = lands[added_key(v)]
     motd = snap.get('motd', {})
     days, notes = {}, {}
+    ext = motd.get('ext') or {}   # (a theme's film Grifflix hasn't: its details from TMDB, its trailer played)
     for d, i in sorted((motd.get('days') or {}).items()):
         it = items.get(i) or eps.get(i)
+        if not it and i in ext and revealed(d, now):
+            days[d] = dict(ext[i], ext=1)
+            continue
         if it and revealed(d, now):
             days[d] = dict(light(it), overview=(it.get('overview') or '')[:400]) if it.get('overview') else light(it)
             if (motd.get('notes') or {}).get(d):
