@@ -517,7 +517,7 @@ html[data-theme=slices] .hinfo .w { font-size: 64px; }
 .th-moon .vday.none { opacity: .55 !important; }
 html.tv .th-moon .vday:focus { outline: 0 !important; clip-path: none; box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px #fff; }
 html.tv .th-moon .vday:focus .msh { border-radius: 50%; }
-.bigmoon { position: absolute; right: 110px; top: 226px; width: 320px; height: 320px; border-radius: 50%; background: #f3eacb center/cover no-repeat; box-shadow: 0 0 0 2px #f3eacb; }   /* (the day's still in the moon: a poster cut to a circle lost its title or its faces: John, 9 Nov 2026) */
+.bigmoon { position: absolute; right: 110px; top: 226px; width: 320px; height: 320px; border-radius: 50%; background: #f3eacb center / auto 100% repeat-x; box-shadow: 0 0 0 2px #f3eacb; }   /* (the day's poster whole, the moon's height, in the middle, and again either side: John, 9 Nov 2026: "show the full poster but allow it to repeat") */
 .mphase { position: absolute; top: calc(22% + 30px); width: 220px; margin-left: -110px; text-align: center; font: 500 12px/1 var(--kfont); letter-spacing: .3em; text-transform: uppercase; color: var(--fg-2); transition: left .5s cubic-bezier(.3, .7, .2, 1); }
 .mfilm { position: absolute; right: 110px; top: 568px; width: 320px; text-align: center; font: var(--tw) 26px/1.15 var(--tfont); text-transform: var(--ttt); color: var(--fg); }
 /* the credits */
@@ -2352,8 +2352,7 @@ THEMEFX.moon = { all: true,
     if (mp) { if (c.mob) { mp.style.left = (390 + 395 * Math.cos(s.a)).toFixed(0) + 'px'; mp.style.top = (440 + 395 * Math.sin(s.a) - 6).toFixed(0) + 'px'; } else mp.style.left = s.x.toFixed(0) + 'px'; }   // (the moon's phase by the small moon)
   },
   front: function (b) {
-    var bm = $('#bigmoon'), fi = b && S.calData.days[b.dataset.day];
-    if (bm && b) { var still = fi && !fi.secret && (fi.backdrop || fi.thumb); bm.style.backgroundImage = still ? 'url("' + img(still, fi.backdrop ? 'Backdrop' : 'Thumb', 1100) + '")' : b.style.getPropertyValue('--p'); bm.style.backgroundPosition = still ? 'center' : 'center 22%'; }
+    var bm = $('#bigmoon'); if (bm && b) bm.style.backgroundImage = b.style.getPropertyValue('--p');
     var mp = $('#mphase'); if (mp && b) mp.textContent = PHASES[Math.floor(moonPhase(b.dataset.day) * 8 + .5) % 8];
     var mf = $('#mfilm'), it = b && S.calData.days[b.dataset.day]; if (mf) mf.textContent = it && !it.secret ? showName(it) : '';   // (and its film under the large one)
   }
