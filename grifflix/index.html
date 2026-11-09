@@ -3246,21 +3246,28 @@ THEMEFX.lane = {
 // The month's posters stand round it, GRIFFLIX round its rim; going on a day spins the drum (frame by frame, eased, as a
 // hand would), the day's poster coming round to the front and lifting out towards you, the room lit by its film. Opening
 // the site starts with a film leader counting down, once a visit
-function zstand(cx, y0, R, ry) {   // (the zoetrope's turned oak pedestal, its parts sized to the drum)
-  var k = R / 400, F = function (n) { return n.toFixed(1); }, h = '';
-  var dy = 18 * k, dw = R * 1.03, dry = ry * 1.03;   // (the drum's oak floor: its rim below the drum)
-  h += '<path class="zoak" d="M' + F(cx - dw) + ',' + F(y0) + ' A' + F(dw) + ' ' + F(dry) + ' 0 0 0 ' + F(cx + dw) + ',' + F(y0) + ' L' + F(cx + dw) + ',' + F(y0 + dy) + ' A' + F(dw) + ' ' + F(dry) + ' 0 0 1 ' + F(cx - dw) + ',' + F(y0 + dy) + ' Z"/>';
-  var bt = y0 + dy + dry * .55, bw = R * .62, nw = R * .14, bh = 70 * k, nh = 16 * k, fw = R * .46, fh = 26 * k, fry = ry * .46;
-  // (the bowl, its curve narrowing to the neck)
-  h += '<path class="zoak" d="M' + F(cx - bw) + ',' + F(bt) + ' C' + F(cx - bw) + ',' + F(bt + bh * .7) + ' ' + F(cx - nw * 1.6) + ',' + F(bt + bh * .75) + ' ' + F(cx - nw) + ',' + F(bt + bh) +
-    ' L' + F(cx - nw) + ',' + F(bt + bh + nh) + ' L' + F(cx + nw) + ',' + F(bt + bh + nh) + ' L' + F(cx + nw) + ',' + F(bt + bh) + ' C' + F(cx + nw * 1.6) + ',' + F(bt + bh * .75) + ' ' + F(cx + bw) + ',' + F(bt + bh * .7) + ' ' + F(cx + bw) + ',' + F(bt) + ' Z"/>';
-  h += '<ellipse class="zring" cx="' + F(cx) + '" cy="' + F(bt + bh * .38) + '" rx="' + F(bw * .93) + '" ry="' + F(fry * .9) + '"/>';   // (a turned ring on the bowl)
-  // (the foot, flaring out to its rounded edge)
-  var ft = bt + bh + nh;
-  h += '<path class="zoak" d="M' + F(cx - nw) + ',' + F(ft) + ' C' + F(cx - nw) + ',' + F(ft + fh * .6) + ' ' + F(cx - fw) + ',' + F(ft + fh * .3) + ' ' + F(cx - fw) + ',' + F(ft + fh) +
-    ' A' + F(fw) + ' ' + F(fry) + ' 0 0 0 ' + F(cx + fw) + ',' + F(ft + fh) + ' C' + F(cx + fw) + ',' + F(ft + fh * .3) + ' ' + F(cx + nw) + ',' + F(ft + fh * .6) + ' ' + F(cx + nw) + ',' + F(ft) + ' Z"/>';
-  h += '<path class="zedge" d="M' + F(cx - fw) + ',' + F(ft + fh) + ' A' + F(fw) + ' ' + F(fry) + ' 0 0 0 ' + F(cx + fw) + ',' + F(ft + fh) + '"/>';
-  return '<ellipse class="zshadow" cx="' + F(cx) + '" cy="' + F(ft + fh + fry * .7) + '" rx="' + F(fw * 1.5) + '" ry="' + F(fry * 1.1) + '"/>' + h;
+function zstand(cx, y0, R, ry, maxY) {   // (the zoetrope's turned oak pedestal, made as a lathe makes it: its profile spun round, drawn as
+  // thin rings from the foot up, each in the drum's perspective, so the rounded bowl hides the neck and the foot's top shows round it)
+  var e = ry / R, F = function (n) { return n.toFixed(1); }, k;
+  // (its profile, as the photograph's: the drum's oak floor as wide as the drum; a round-shouldered bowl tapering to the neck; the
+  // neck; the foot flaring to a rounded edge. t: down from the drum's foot, in the drum's own size; r: the radius, of the drum's)
+  var P = [[0, 1], [10, 1], [11, .9], [14, .87], [22, .87], [30, .85], [37, .8], [43, .71], [48, .58], [52, .42], [55, .3], [58, .24], [70, .22], [73, .26], [79, .46], [84, .6], [88, .64], [92, .65], [95, .62]];   // (a round-shouldered bowl, as the photograph's)
+  var rAt = function (t) { for (var i = 1; i < P.length; i++) if (t <= P[i][0]) { var u = (t - P[i - 1][0]) / (P[i][0] - P[i - 1][0]); return P[i - 1][1] + (P[i][1] - P[i - 1][1]) * u; } return P[P.length - 1][1]; };
+  var T = P[P.length - 1][0], h = '', step = 1.4;
+  k = Math.min(R / 400 * 2.4, (maxY - y0 - R * .57 * e * 2) / T);   // (as tall as the photograph's, as far as the screen allows)
+  step = Math.max(.6, 1.2 / k);
+  h += '<ellipse class="zshadow" cx="' + F(cx) + '" cy="' + F(y0 + T * k + R * .57 * e * 1.1) + '" rx="' + F(R * .85) + '" ry="' + F(R * .57 * e * 1.4) + '"/>';
+  for (var t = T; t >= 0; t -= step) {   // (from the foot up: each ring over the one below)
+    var r = rAt(t) * R, sl = (rAt(t + step) - rAt(t)) / step * 400 / 1;   // (the slope: + where it widens going down, a face turned up to the light)
+    var lit = sl > .002 ? Math.min(.35, sl * 18) : sl < -.002 ? -Math.min(.3, -sl * 10) : 0;
+    h += '<ellipse cx="' + F(cx) + '" cy="' + F(y0 + t * k) + '" rx="' + F(r) + '" ry="' + F(r * e) + '" fill="url(#zoak)"' + (lit ? '' : '') + '/>' +
+      (lit > 0 ? '<ellipse cx="' + F(cx) + '" cy="' + F(y0 + t * k) + '" rx="' + F(r) + '" ry="' + F(r * e) + '" fill="#ffe6bf" opacity="' + lit.toFixed(2) + '"/>' : lit < 0 ? '<ellipse cx="' + F(cx) + '" cy="' + F(y0 + t * k) + '" rx="' + F(r) + '" ry="' + F(r * e) + '" fill="#2a1608" opacity="' + (-lit).toFixed(2) + '"/>' : '');
+  }
+  // (the turned grooves: the front of each ring where the profile turns)
+  [10, 14, 22, 58, 70, 88].forEach(function (t) { var r = rAt(t) * R, y = y0 + t * k;
+    h += '<path class="zring" d="M' + F(cx - r) + ',' + F(y) + ' A' + F(r) + ' ' + F(r * e) + ' 0 0 0 ' + F(cx + r) + ',' + F(y) + '"/>'; });
+  // (kept below the drum's front edge: the drum's inside isn't covered)
+  return '<clipPath id="zstclip"><path d="M' + F(cx - R * 1.2) + ',' + F(y0) + ' L' + F(cx - R) + ',' + F(y0) + ' A' + F(R) + ' ' + F(ry) + ' 0 0 0 ' + F(cx + R) + ',' + F(y0) + ' L' + F(cx + R * 1.2) + ',' + F(y0) + ' L' + F(cx + R * 1.2) + ',' + F(maxY + 200) + ' L' + F(cx - R * 1.2) + ',' + F(maxY + 200) + ' Z"/></clipPath><g clip-path="url(#zstclip)">' + h + '</g>';
 }
 THEMEFX.picture = {
   st: Math.PI * 2 / 14,   // (a day's turn of the drum: fourteen posters round)
@@ -3279,7 +3286,7 @@ THEMEFX.picture = {
       // (the stand, after a real zoetrope's (a turned oak pedestal: Wikimedia Commons, Zoetrope.jpg; John, 9 Nov 2026: "stand on the
       // zoetrope doesn't look good - can you find a real reference"): the drum's oak floor, a turned bowl narrowing to a short
       // neck, a flared round foot)
-      zstand(cx, b2, R, ry) +
+      zstand(cx, b2, R, ry, c.mob ? 1000 : c.H - 118) +   // (clear of the month's caption below it)
       '<ellipse class="rimf" cx="' + cx + '" cy="' + bot + '" rx="' + R + '" ry="' + ry + '"/>' +
       '<ellipse class="rim" cx="' + cx + '" cy="' + top + '" rx="' + R + '" ry="' + ry + '"/></svg>';
     // (the band's outside, in front of the frames at the back: Victorian japanned tin, red-black, gilt-lined; its slits let you see in)
