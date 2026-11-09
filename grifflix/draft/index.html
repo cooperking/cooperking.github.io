@@ -591,7 +591,10 @@ html[data-theme=picture] .leaf2 b { color: #e9c46a; }
 .zlead { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; background: #0b0809; overflow: hidden; cursor: pointer; transition: opacity .5s ease; }
 .zlead.out { opacity: 0; pointer-events: none; }
 .zlead .ring { position: relative; width: min(64vh, 64vw); aspect-ratio: 1; border-radius: 50%; box-shadow: 0 0 0 3px #d8cfbf, inset 0 0 0 14px rgba(11, 8, 9, .55), inset 0 0 0 17px #d8cfbf, 0 0 60px rgba(0, 0, 0, .5); overflow: hidden;
-  background: conic-gradient(rgba(216, 207, 191, .22) var(--zsw), transparent 0); animation: zsweep .8s linear infinite; }
+  }
+.zlead .ring > i { position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(rgba(216, 207, 191, .22) 0 70deg, transparent 70deg); will-change: transform; }
+.zlead.run .ring > i { animation: zturn .8s linear infinite; }   /* (the leader's sweep, turned as a whole: the TV's graphics chip moves it) */
+@keyframes zturn { to { transform: rotate(360deg); } }
 @keyframes zsweep { from { --zsw: 0deg; } to { --zsw: 360deg; } }
 .zlead .ring::before, .zlead .ring::after { content: ""; position: absolute; background: rgba(216, 207, 191, .5); }
 .zlead .ring::before { left: 50%; top: 0; bottom: 0; width: 2px; } .zlead .ring::after { top: 50%; left: 0; right: 0; height: 2px; }
@@ -600,11 +603,12 @@ html[data-theme=picture] .leaf2 b { color: #e9c46a; }
 .zglow { position: absolute; inset: 0; transition: opacity .2s; }
 .zglow i { position: absolute; width: 70vmax; height: 70vmax; border-radius: 50%; background: center / cover; filter: blur(90px) saturate(1.7) brightness(.75); opacity: .85; animation: zdrift 5s ease-in-out infinite alternate; }
 .zglow i:nth-child(1) { left: -22vmax; top: -26vmax; } .zglow i:nth-child(2) { right: -24vmax; top: 6vh; animation-delay: -2s; } .zglow i:nth-child(3) { left: 18vw; bottom: -40vmax; animation-delay: -3.5s; }
+html.tv .zglow i { animation: none; filter: blur(60px) saturate(1.7) brightness(.75); }   /* (a TV: the glow still, drawn once) */
 .zglow::after { content: ""; position: absolute; inset: 0; background: radial-gradient(circle, rgba(11, 8, 9, .15) 20%, rgba(11, 8, 9, .7) 80%); }
 @keyframes zdrift { to { transform: translate(6vmax, 4vmax) scale(1.12); } }
 .zlead.flash { background: #fff; transition: background .12s; } .zlead.flash .ring, .zlead.flash .zglow { opacity: 0; }
-.zlead.name { background: #0b0809; } .zlead.name .ring { display: none; } .zlead.name .gx { opacity: 1; animation: zname 1.1s cubic-bezier(.2, .8, .2, 1) both; }
-@keyframes zname { from { letter-spacing: 1.4em; opacity: 0; filter: blur(10px); } to { letter-spacing: .5em; opacity: 1; filter: none; } }
+.zlead.name { background: #0b0809; } .zlead.name .ring { display: none; } .zlead.name .gx { opacity: 1; animation: zname 1.1s cubic-bezier(.2, .8, .2, 1) both; will-change: transform, opacity; }
+@keyframes zname { from { transform: scale(1.35); opacity: 0; } 60% { opacity: 1; } to { transform: none; opacity: 1; } }   /* (zoomed in, not spread and blurred: smooth on a TV) */
 .zlead .skip { position: absolute; bottom: 28px; right: 32px; font: 500 11px/1 var(--kfont); letter-spacing: .3em; text-transform: uppercase; color: rgba(216, 207, 191, .55); }
 @media (prefers-reduced-motion: reduce) { .zgrain { animation: none; } }
 /* a month with no theme yet: black */
@@ -2586,8 +2590,8 @@ function projector() {   // (the zoetrope turning: a soft whirr of air through i
       src.connect(bp); bp.connect(lp); lp.connect(am); am.connect(env); env.connect(out);
       src.start(t0); lfo.start(t0); src.stop(t0 + D + .05); lfo.stop(t0 + D + .05); live.push(src, lfo); live = live.slice(-40);
     },
-    sting: function () {   // (GRIFFLIX after the countdown: a rising shimmer into a warm chord and a soft drum, as a studio's title)
-      var t = c.currentTime, rv = c.createConvolver(); rv.buffer = ir; var wet = c.createGain(); wet.gain.value = .5; rv.connect(wet); wet.connect(out);
+    sting: function (at) {   // (GRIFFLIX after the countdown: a rising shimmer into a warm chord and a soft drum, as a studio's title)
+      var t = at || c.currentTime, rv = c.createConvolver(); rv.buffer = ir; var wet = c.createGain(); wet.gain.value = .5; rv.connect(wet); wet.connect(out);
       var bus = c.createGain(); bus.gain.value = 1; bus.connect(out); bus.connect(rv);
       // the swell up to the flash
       var sw = c.createBufferSource(), hp = c.createBiquadFilter(), sg = c.createGain(); sw.buffer = nz; sw.loop = true; hp.type = 'bandpass'; hp.Q.value = .7;
@@ -2613,9 +2617,9 @@ function projector() {   // (the zoetrope turning: a soft whirr of air through i
   };
 }
 function musicKick(days) { if (TMUS.pj) TMUS.pj.kick(days, 1100); }   // (the drum turning, by so many days)
-function musicBeep() {   // (the leader's beep on each number)
+function musicBeep(at) {   // (the leader's beep on each number, at its moment on the sound's own clock)
   if (!TMUS.on || !TMUS.ok) return; var c = musicCtx(); if (!c) return;
-  var o = c.createOscillator(), g = c.createGain(), t = c.currentTime; o.frequency.value = 1000; g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.14, t + .01); g.gain.linearRampToValueAtTime(0, t + .13); o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + .15);
+  var o = c.createOscillator(), g = c.createGain(), t = at || c.currentTime; o.frequency.value = 1000; g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.14, t + .01); g.gain.linearRampToValueAtTime(0, t + .13); o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + .15);
 }
 ['pointerdown', 'keydown', 'touchend'].forEach(function (ev) { addEventListener(ev, function () {   // (the first tap or key lets it play)
   if (TMUS.ok) return; TMUS.ok = true; musicCtx(); var k = TMUS.k; TMUS.k = null; if (k) themeMusic(k);
@@ -3337,13 +3341,22 @@ THEMEFX.picture = {
       var dt = new Date(), today = dt.getFullYear() + '-' + (dt.getMonth() + 1) + '-' + dt.getDate();
       try { if (localStorage.getItem('grifflix-leader') === today) return; localStorage.setItem('grifflix-leader', today); } catch (e) {}
     }
-    var d = document.createElement('div'); d.className = 'zlead'; d.innerHTML = '<div class="zglow">' + this.glow() + '</div><div class="ring"></div><div class="n">3</div><div class="gx">Grifflix</div><div class="skip">Tap to skip</div>';
+    var d = document.createElement('div'); d.className = 'zlead'; d.innerHTML = '<div class="zglow">' + this.glow() + '</div><div class="ring"><i></i></div><div class="n">3</div><div class="gx">Grifflix</div><div class="skip">Tap to skip</div>';
     document.body.appendChild(d); musicHold();
-    var T = [], gone = function () { T.forEach(clearTimeout); d.classList.add('out'); setTimeout(function () { d.remove(); musicAfterLeader(); }, 600); };
-    var n = d.querySelector('.n'); musicBeep();
-    T.push(setTimeout(function () { n.textContent = '2'; musicBeep(); }, 800), setTimeout(function () { n.textContent = '1'; musicBeep(); }, 1600),
-      setTimeout(function () { if (TMUS.pj && TMUS.ok && TMUS.on) TMUS.pj.sting(); }, 1700),   // (its chord as GRIFFLIX comes)
-       setTimeout(function () { d.classList.add('flash'); n.textContent = ''; }, 2400), setTimeout(function () { d.classList.remove('flash'); d.classList.add('name'); }, 2520), setTimeout(gone, 3900));
+    // (picture and sound on one clock, the sound's: the numbers follow it, so a busy TV can't put them out of step: John, 9 Nov 2026:
+    // "3 2 1 doesn't synch with the music and the Grifflix coming in as jerky"; begun once the page has drawn, two frames on)
+    var n = d.querySelector('.n'), done = false, raf = 0, stage = '', gone = function () { if (done) return; done = true; cancelAnimationFrame(raf); d.classList.add('out'); setTimeout(function () { d.remove(); musicAfterLeader(); }, 600); };
+    requestAnimationFrame(function () { requestAnimationFrame(function () {
+      var c = TMUS.on && TMUS.ok ? musicCtx() : null, live = c && c.state === 'running', t0 = live ? c.currentTime + .12 : 0, p0 = performance.now() + 120;
+      if (live) { musicBeep(t0); musicBeep(t0 + .8); musicBeep(t0 + 1.6); if (TMUS.pj) TMUS.pj.sting(t0 + 1.7); }
+      var tick = function () {
+        if (done) return; var e = live ? c.currentTime - t0 : (performance.now() - p0) / 1000, st = e < 0 ? '3' : e < .8 ? '3' : e < 1.6 ? '2' : e < 2.4 ? '1' : e < 2.52 ? 'flash' : e < 3.9 ? 'name' : 'end';
+        if (st !== stage) { stage = st;
+          if (st === 'flash') { d.classList.add('flash'); n.textContent = ''; } else if (st === 'name') { d.classList.remove('flash'); d.classList.add('name'); } else if (st === 'end') return gone(); else n.textContent = st; }
+        raf = requestAnimationFrame(tick);
+      };
+      d.classList.add('run'); tick();
+    }); });
     d.onclick = gone; addEventListener('keydown', function k() { removeEventListener('keydown', k); if (d.isConnected) gone(); });
   },
   glow: function () {   // (behind the countdown, the month's films glowing, as the room round the drum: John, 9 Nov 2026)
