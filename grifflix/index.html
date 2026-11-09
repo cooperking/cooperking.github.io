@@ -3254,7 +3254,9 @@ function zstand(cx, y0, R, ry, maxY) {   // (the zoetrope's turned oak pedestal,
   var P = [[0, 1], [10, 1], [11, .9], [14, .87], [22, .87], [30, .85], [37, .8], [43, .71], [48, .58], [52, .42], [55, .3], [58, .24], [70, .22], [73, .26], [79, .46], [84, .6], [88, .64], [92, .65], [95, .62]];   // (a round-shouldered bowl, as the photograph's)
   var rAt = function (t) { for (var i = 1; i < P.length; i++) if (t <= P[i][0]) { var u = (t - P[i - 1][0]) / (P[i][0] - P[i - 1][0]); return P[i - 1][1] + (P[i][1] - P[i - 1][1]) * u; } return P[P.length - 1][1]; };
   var T = P[P.length - 1][0], h = '', step = 1.4;
-  k = Math.min(R / 400 * 2.4, (maxY - y0 - R * .57 * e * 2) / T);   // (as tall as the photograph's, as far as the screen allows)
+  var fy = R * .57 * e * 2, kk = R / 400;   // (as tall as the photograph's where there's room; never less than a real base, within the screen:
+  // John, 9 Nov 2026: "I can't see a base at all now")
+  k = Math.max(kk * 1.1, Math.min(kk * 2.4, (maxY - y0 - fy) / T)); k = Math.max(kk * .6, Math.min(k, (maxY + 104 - y0 - fy) / T));
   step = Math.max(.6, 1.2 / k);
   h += '<ellipse class="zshadow" cx="' + F(cx) + '" cy="' + F(y0 + T * k + R * .57 * e * 1.1) + '" rx="' + F(R * .85) + '" ry="' + F(R * .57 * e * 1.4) + '"/>';
   for (var t = T; t >= 0; t -= step) {   // (from the foot up: each ring over the one below)
@@ -3271,10 +3273,14 @@ function zstand(cx, y0, R, ry, maxY) {   // (the zoetrope's turned oak pedestal,
 }
 THEMEFX.picture = {
   st: Math.PI * 2 / 14,   // (a day's turn of the drum: fourteen posters round)
-  g: function (c) { return c.mob ? { cx: 390, cy: 420, R: 300, P: 1100, ch: 255 } : { cx: c.W - Math.min(400, c.W * .24) - Math.max(70, c.W * .055), cy: c.H * .49, R: Math.min(400, c.W * .24), P: 1400, ch: 255 }; },   // (the drum against the right, clear of the day's words: John, 9 Nov 2026: "day is sometimes going into the animation")
+  g: function (c) {   // (on a screen less tall than 900, all of it smaller, so it fits with its stand and clear of the caption: John, 9 Nov 2026)
+    if (c.mob) return { cx: 390, cy: 420, R: 300, P: 1100, ch: 255, f: 1, bh: this.bh };
+    var f = Math.min(1, c.H / 900), R = Math.min(400, c.W * .24) * f;
+    return { cx: c.W - R - Math.max(70, c.W * .055), cy: c.H * (f < 1 ? .45 : .49), R: R, P: 1400, ch: 255 * f, f: f, bh: this.bh * f };
+  },
   bh: 62, NH: 30,   // (the drum's lower band, and the frames of Muybridge's horse round it)
   decor: function (c) {
-    var g = this.g(c), ry = g.R * .2, top = g.cy - g.ch * .62 - 26, bot = g.cy + g.ch * .62 + 26, bh = this.bh, b2 = bot + bh, h = '<div class="zamb" id="zamb"></div><div class="zvig"></div><div class="zgrain"></div>';
+    var g = this.g(c), ry = g.R * .2, top = g.cy - g.ch * .62 - 26, bot = g.cy + g.ch * .62 + 26, bh = g.bh, b2 = bot + bh, h = '<div class="zamb" id="zamb"></div><div class="zvig"></div><div class="zgrain"></div>';
     var cx = g.cx, R = g.R, by = Math.min(c.H - 40, b2 + (c.mob ? 150 : 120)), arc = function (y, sw) { return 'A' + R + ' ' + ry + ' 0 0 ' + sw + ' '; };
     // (the stand: a turned wooden spindle on a round foot, a brass collar under the drum)
     h += '<svg class="zdrum" width="' + c.W + '" height="' + c.H + '"><defs>' +
@@ -3329,13 +3335,13 @@ THEMEFX.picture = {
     var me = this, c = me.c, g = me.g(c), st = me.st;
     me.all.forEach(function (el, j) {
       var k = j - a, th = k * st, cs = Math.cos(th), sn = Math.sin(th), nf = near(k), front = cs > 0;
-      var depth = (cs + 1) / 2, s = .5 + .5 * depth, x = g.cx + g.R * sn, y = g.cy - nf * 30, lift = 1 + .32 * nf;
+      var depth = (cs + 1) / 2, s = (.5 + .5 * depth) * g.f, x = g.cx + g.R * sn, y = g.cy - nf * 30 * g.f, lift = 1 + .32 * nf;
       var o = Math.abs(k) > 6.6 ? Math.max(0, 7.1 - Math.abs(k)) * 2 : 1;
       el.style.transform = 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px) translate(-50%,-50%) perspective(' + g.P + 'px) rotateY(' + ((front ? th : th + Math.PI) * 180 / Math.PI).toFixed(1) + 'deg) scale(' + (s * lift).toFixed(3) + ')';
       el.style.opacity = (front ? o : o * .35 * (1 - depth * .5)).toFixed(2); el.style.zIndex = Math.round(depth * 100) + (nf > .5 ? 100 : 0);
       el.style.setProperty('--dk', nf > .98 ? '0' : (.65 - .55 * depth).toFixed(2));   // (dimmed by a veil, not a filter redrawn each frame: smooth on a TV)
     });
-    var ry = g.R * .2, top = g.cy - g.ch * .62 - 26, mid = g.cy + g.ch * .62 + 26 + me.bh / 2;
+    var ry = g.R * .2, top = g.cy - g.ch * .62 - 26, mid = g.cy + g.ch * .62 + 26 + g.bh / 2;
     me.za = a; me.horse(g, ry, mid);
     $$('#cal .zlt').forEach(function (t, i, L) {   // (the rim's letters, turning with the drum)
       var th = (i / L.length) * Math.PI * 2 - a * st, cs = Math.cos(th), sn = Math.sin(th);
