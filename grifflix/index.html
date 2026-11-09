@@ -2653,7 +2653,13 @@ function leaderNewDay() {
 }
 addEventListener('keydown', leaderNewDay, true);
 document.addEventListener('play', function (e) { if (e.target && e.target.id === 'vid') musicHush(); }, true);
-setInterval(function () { if ((TMUS.a || TMUS.pj) && !(VIEW() === 'themes' && $('#cal'))) musicHush(); }, 1000);   // (off the theme's page: quiet)
+function musicFilm() { var n = S.sheetNow; return !!(n && (n.k === 'film' || n.k === 'day') && $('#sheet').open); }   // (a film chosen: its page open)
+setInterval(function () {   // (off the theme's page, or a film chosen: quiet; the film's page closed, the theme's music again:
+  // John, 9 Nov 2026: "can music stop when a film is chosen")
+  var on = VIEW() === 'themes' && $('#cal'), film = musicFilm();
+  if ((TMUS.a || TMUS.pj) && (!on || film)) { musicHush(); if (on && film) TMUS.film = true; }
+  else if (TMUS.film && !film) { TMUS.film = false; var k = TMUS.k; if (on && k && !TMUS.a && !TMUS.pj && !$('.zlead')) { TMUS.k = null; themeMusic(k); } }
+}, 1000);
 function themeKeys() {   // (the month's days, with the neighbouring months' nearest week each side, where those months are on the calendar)
   var y = +S.month.slice(0, 4), m = +S.month.slice(5, 7) - 1, n = new Date(y, m + 1, 0).getDate(), K = 6, out = [], ms = S.calData ? monthsOf(S.calData.days) : [], f = function (dt) { return dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0'); };
   var pm = f(new Date(y, m - 1, 1)).slice(0, 7), nm = f(new Date(y, m + 1, 1)).slice(0, 7);
@@ -3968,6 +3974,7 @@ function dayStep(d) {
 
 function itemSheet(it, ctx) {
   S.sheetNow = S.sheetNowNext || { k: 'film', id: it && it.id }; S.sheetNowNext = null;
+  if (TMUS.a || TMUS.pj) { musicHush(); TMUS.film = true; }   // (a film chosen: the theme's music stops at once)
   ctx = ctx || {};
   if (!it) return;
   SEEN[it.id] = it; land(it);
