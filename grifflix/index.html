@@ -626,6 +626,7 @@ html.mob[data-theme=bedford] .hinfo { max-width: none; width: auto; margin: 0; p
 html[data-theme=bedford] .leaf2 { border-color: #f9ead1; background: #f9ead1; }
 html[data-theme=bedford] .leaf2 i { background: #e8402a; color: #f9ead1; }
 html[data-theme=bedford] .leaf2 b { color: #0b4946; }
+.extnote { align-self: center; font: italic 400 14px/1.3 var(--serif); color: var(--fg-2); }
 /* the spiral */
 .th-spiral .vday { width: 170px; height: 255px; }
 .th-spiral .vday:not(.front) .vn { display: none; }
@@ -1825,6 +1826,7 @@ function land(it) { if (it && it.land && it.backdrop) LANDS[it.backdrop] = it.la
 function img(id, kind, w) {
   if (!id) return '';
   if (DEMO) return Demo.pic(id, kind);
+  if (id[0] === '/') return 'https://image.tmdb.org/t/p/' + ((w || 0) > 500 || (TV && kind !== 'Primary') ? 'w1280' : (w || 0) > 342 ? 'w500' : 'w342') + id;   // (a theme's film Grifflix hasn't: TMDB's own picture)
   if (kind === 'Backdrop' && LANDS[id]) return 'https://image.tmdb.org/t/p/' + ((w || 0) > 780 || TV ? 'w1280' : 'w780') + LANDS[id];
   // the site's own copy of each picture (kept by the Worker, made by John's Update; the same address for everyone, its
   // version in it: the browser and Grifflix's service worker keep each one, shown at once next time, as the songs' covers)
@@ -3542,7 +3544,7 @@ function itemSheet(it, ctx) {
     return soon(mac('item?id=' + it.id), 6000).then(function (m) { ['pos', 'next', 'subs'].forEach(function (k) { if (m[k] != null) full[k] = m[k]; });
       var at = {}; (m.episodes || []).forEach(function (e) { if (e.pos) at[e.id] = e.pos; }); (full.episodes || []).forEach(function (e) { if (at[e.id]) e.pos = at[e.id]; }); return full; }, function () { return full; }); };
   var drawFull = function (full) { if (!dlg.open) return; Object.assign(it, full); var had = document.activeElement && document.activeElement.id; $('#isbody').innerHTML = bodyHTML(it, ctx); wireBody(it, ctx); if (TV) { var back = had && !/^(asignin|aplay|atrailer)$/.test(had) && $('#' + had); if (back) back.focus({ preventScroll: true }); else tvStart(); }   /* (the trailer arrives with the details: chosen then, unless something else was) */  setTimeout(tvFit, 30); };   // (the site's details at once; the Mac's own for this member when it answers, without waiting for it: John, 8 Nov 2026)
-  api('item?id=' + it.id).then(function (full) { drawFull(full); return mine(full); }).then(function (full) { if (full && dlg.open && S.sheetItem === it.id) drawFull(full); }).catch(function () {});
+  if (!it.ext) api('item?id=' + it.id).then(function (full) { drawFull(full); return mine(full); }).then(function (full) { if (full && dlg.open && S.sheetItem === it.id) drawFull(full); }).catch(function () {});
   S.sheetItem = it.id;
 }
 function tvFit() {   // a TV: a film's pop-up all on the screen, its description whole and as large as fits (John, 8 Nov 2026: "Descriptions on the tv app of a film can cut off its description. It should always fit on")
@@ -3573,14 +3575,16 @@ function bodyHTML(it, ctx) {
   if ((it.directors && it.directors.length) || (it.cast && it.cast.length)) h += '<div class="people">' + (it.directors && it.directors.length ? '<b>Directed by</b> ' + esc(it.directors.join(', ')) + '. ' : '') + (it.cast && it.cast.length ? '<b>With</b> ' + esc(it.cast.join(', ')) + '.' : '') + '</div>';
   h += '<div class="acts">';
   var TR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 9h18M8 5v4M16 5v4"/></svg>';
-  if (PUBLIC) {
+  if (it.ext) {   // (a theme's film Grifflix hasn't yet: its trailer, the film itself to come: John, 9 Nov 2026)
+    h += (it.trailers && it.trailers.length ? '<button class="pill go" id="atrailer">' + TR + 'Watch the trailer</button>' : '') + '<span class="extnote">Not in Grifflix yet: the trailer for now</span>';
+  } else if (PUBLIC) {
     if (it.trailers && it.trailers.length) h += '<button class="pill go" id="atrailer">' + TR + 'Watch the trailer</button>';
     h += '<button class="pill' + (it.trailers && it.trailers.length ? '' : ' go') + '" id="asignin">Sign in to watch</button>';
   } else if (isSeries) { var nx = (it.episodes || []).filter(function (e) { return e.id === it.next; })[0]; h += '<button class="pill go" id="aplay">' + PLAY + (nx ? (nx.pos ? 'Carry on' : 'Play') + ' S' + nx.season + ' E' + nx.ep : 'Play') + '</button>'; }
   else h += '<button class="pill go" id="aplay">' + PLAY + (resume ? 'Carry on from ' + clock(it.pos) : 'Play') + '</button>' + (resume ? '<button class="pill" id="afrom0">From the start</button>' : '');
-  if (!PUBLIC && it.trailers && it.trailers.length) h += '<button class="pill" id="atrailer">' + TR + 'Trailer</button>';
+  if (!PUBLIC && !it.ext && it.trailers && it.trailers.length) h += '<button class="pill" id="atrailer">' + TR + 'Trailer</button>';
   if (it.type === 'episode' && it.seriesId) h += '<button class="pill" id="aseries">All episodes</button>';
-  if (!PUBLIC) {
+  if (!PUBLIC && !it.ext) {   // (none of these for a film Grifflix hasn't)
     h += '<button class="ico" id="aheart" aria-label="Save for later">' + HEART(it.hearted) + '</button>';
     if (NOTES) h += '<button class="pill" id="aaddpl">+ Playlist</button><button class="pill" id="aaddcal">+ My calendar</button>';
     if (ME && ME.owner && it.type !== 'video') h += '<button class="pill" id="acoll">Collections</button>';
