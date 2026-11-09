@@ -2529,8 +2529,8 @@ function themeMusic(k) {   // the theme on the page now (null: none)
   musicHush(); TMUS.k = k;
   if (!k || !TMUS.on || !TMUS.ok) return;
   var src, vol = .5;
-  if (k === 'picture') {   // (Grifflix's own: the drum's sound as it turns, and its music after the leader: Novus Initium, film music, public domain
-    // (FreePD), a new beginning, quiet then building: John, 9 Nov 2026: "something more cinematic", "a bit less recognisable")
+  if (k === 'picture') {   // (Grifflix's own: the drum's sound as it turns, and its music after the leader: Emotional Blockbuster 2, film music, public domain
+    // (FreePD), John's choice of three, 9 Nov 2026: "something more cinematic", "a bit less recognisable")
     TMUS.pj = projector(); setTimeout(function () { if (TMUS.pj && TMUS.ctx && TMUS.ctx.state !== 'running') { TMUS.pj.stop(); TMUS.pj = null; TMUS.ok = false; } }, 400);
     if ($('.zlead')) { TMUS.after = true; return; }   // (the leader's still on: its end starts the music)
     src = '/grifflix/audio/grifflix-theme.m4a'; vol = .34;
