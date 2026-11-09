@@ -1311,7 +1311,7 @@ const G_LINK_HOST = 'grifflix.co.uk';   // (the Worker on John's own domain, onc
 async function gLinkBase(env, url) {   // where Grifflix's links point: grifflix.co.uk (the Worker is on it: worker_deploy.py)
   return 'https://' + G_LINK_HOST;
 }
-const G_SITE = 'https://cooperking.github.io/grifflix/', G_API = 'https://media.grifflix.co.uk', G_MODES = ['all', 'week', 'off'];
+const G_SITE = 'https://grifflix.co.uk/', G_RAW = 'https://cooperking.github.io/grifflix/', G_API = 'https://media.grifflix.co.uk', G_MODES = ['all', 'week', 'off'];
 function gMode(m, k) {   // gpush: everything unless they say (as songs'); gmail: off unless they say, and only with an address
   const v = m && m[k];
   if (k === 'gmail') return m && m.email && G_MODES.includes(v) ? v : 'off';
@@ -1353,7 +1353,7 @@ let G_TH = null;
 function gThemeAt(day, n) { const i = (+day.slice(0, 4) - 2026) * 12 + (+day.slice(5, 7) - 1); return ((i % n) + n) % n; }
 async function gThemeLoad(env) {
   try {
-    const t = await fetch(G_SITE + 'themes.json', { cf: { cacheTtl: 3600 } }).then(r => r.json());
+    const t = await fetch(G_RAW + 'themes.json', { cf: { cacheTtl: 3600 } }).then(r => r.json());
     const raw = JSON.parse(await env.SOTD.get('gthemes') || 'null'), order = (Array.isArray(raw) ? raw : raw && raw.order) || t.order;
     const ym = londonDay().slice(0, 7), k = (raw && raw.months || {})[ym] || (ym >= '2026-12' ? null : order[gThemeAt(londonDay(), order.length)]);   // (a month not chosen yet from Dec 2026: none, Grifflix's own look)   // (a month given its own theme on the admin page, else the order's)
     G_TH = t.themes[k] || null;
