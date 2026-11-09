@@ -567,7 +567,7 @@ html.tv .th-lane .vday:focus { outline: 0 !important; box-shadow: 0 0 0 4px #1a1
 .zpost::before { content: ""; position: absolute; inset: -30px; background: var(--pp) center / cover; filter: blur(20px) brightness(.45); }
 .zpost::after { content: ""; position: absolute; inset: 4% 0; background: var(--pp) center / contain no-repeat; filter: drop-shadow(0 8px 20px rgba(0, 0, 0, .6)); }   /* (the day's poster on the screen, its own colours blurred round it) */
 .zstagef { cursor: pointer; }
-.ztrain { position: absolute; inset: 0; opacity: 0; background: #0c0b0a url("/grifflix/img/lumiere-train-frames.webp") 0 0 / 800% 400% no-repeat; filter: sepia(.18) contrast(1.06) brightness(.92); will-change: opacity; }   /* (the Lumières' train, a frame at a time) */
+.ztrain { position: absolute; inset: 0; opacity: 0; background: #0c0b0a url("/grifflix/img/lumiere-train-frames.webp?v=2") 0 0 / 800% 500% no-repeat; filter: sepia(.18) contrast(1.06) brightness(.92); will-change: opacity; }   /* (the Lumières' train, a frame at a time) */
 .zpost.on { opacity: 1; } .zpost.now, .zstagef.now .zcurt { transition: none; }
 .zcurt { position: absolute; top: -7%; bottom: -3%; width: 53%; z-index: 3; pointer-events: none; background: #3a0508 url("/grifflix/img/cinema-curtain.webp") 0 0 / 100% 100%; box-shadow: 0 10px 30px rgba(0, 0, 0, .6); transition: transform 2.2s cubic-bezier(.6, .02, .25, 1); }   /* (red velvet: John, 9 Nov 2026: "curtain looks like a cartoon") */
 .zcurt.l { left: -2%; transform-origin: 0 0; } .zcurt.r { right: -2%; transform-origin: 100% 0; background-position: 100% 0; background-size: 180% 100%; }
@@ -2841,7 +2841,7 @@ function themeStep(dir) {   // the day after or before with a film; at a month's
   // (from the month's own 1st or last day onto the other month's: that month's theme at once, as the scroll leaves it, never after it's
   // stopped: John, 9 Nov 2026: "Change the moment the scroll leaves the first of the month into the last month, or the moment it leaves
   // the last day of the month into the new month")
-  if (i >= 0 && nb && !(nb.dataset.om && !bs[i].dataset.om)) { nb.focus({ preventScroll: true }); if (MOB()) themeTurn(nb); return true; }
+  if (i >= 0 && nb && !(nb.dataset.om && !bs[i].dataset.om)) { nb.focus({ preventScroll: true }); if (MOB() || document.activeElement !== nb) themeTurn(nb); return true; }   // (a day hidden for now takes no focus: turned to all the same)
   var ms = monthsOf(S.calData.days), j = ms.indexOf(S.month) + dir; if (j < 0 || j >= ms.length || !S.step) return false;
   // (past the last of the neighbouring days: on into that month, on the very next day, never back onto the month just left:
   // John, 9 Nov 2026: "can sometimes cause it to change back to the other theme unexpectedly")
@@ -2850,7 +2850,7 @@ function themeStep(dir) {   // the day after or before with a film; at a month's
   S.crossAt = Date.now(); if (key) S.resumeDay = key;
   S.quiet = true; S.step(dir); S.quiet = false; themeFadeIn(dir);
   var own = $$(sel).filter(function (x) { return !x.dataset.om; }), f = (key && $('#cal button[data-day="' + key + '"]')) || (dir > 0 ? own[0] : own[own.length - 1]);
-  if (f) { f.focus({ preventScroll: true }); if (MOB()) themeTurn(f); }
+  if (f) { f.focus({ preventScroll: true }); if (MOB() || document.activeElement !== f) themeTurn(f); }
   return true;
 }
 // January: the corridor (Kubrick's The Shining): the days down a corridor, coming towards you as you go on
@@ -3528,10 +3528,10 @@ THEMEFX.picture = {
     me._intro = true; window.ZFILMED = 1;
     var go = function () {
       if (!st.isConnected) return; st.classList.add('open'); me.train(0, 1);
-      setTimeout(function () { me._intro = false; me.trainOnce(2600); }, 1500);
+      setTimeout(function () { me._intro = false; me.trainOnce(3400); }, 1500);
     };
     var im = new Image(), done = false, once = function () { if (!done) { done = true; go(); } };
-    setTimeout(function () { im.onload = once; im.onerror = once; im.src = '/grifflix/img/lumiere-train-frames.webp'; if (im.complete) once(); setTimeout(once, 5000); }, 700);
+    setTimeout(function () { im.onload = once; im.onerror = once; im.src = '/grifflix/img/lumiere-train-frames.webp?v=2'; if (im.complete) once(); setTimeout(once, 5000); }, 700);
   },
   // (once per scroll, in its own time, however far the days go; going on, the screen goes through their posters: John, 9 Nov 2026:
   // "Have the film only play once per scroll and then scroll through the posters after that")
@@ -3539,8 +3539,10 @@ THEMEFX.picture = {
     var me = this, t0 = performance.now(), tok = me._ttok = {}; me._tplay = true;
     (function f(t) {
       if (tok !== me._ttok || !$('#ztrain')) { me._tplay = false; return; }
-      var u = Math.min(1, (t - t0) / D), v = u < .78 ? 1 : 1 - (u - .78) / .22;
-      me.train(Math.min(1, u / .78), v); if (u < 1) requestAnimationFrame(f); else { me._tplay = false; me.train(1, 0); }
+      // (it rolls on into the station as the poster fades in over it: John, 9 Nov 2026: "can the train carry on a little further and then fade
+      // in, it looks a little abrupt")
+      var u = Math.min(1, (t - t0) / D), w = u < .6 ? 0 : (u - .6) / .4, v = 1 - w * w * (3 - 2 * w);
+      me.train(Math.min(1, u / .92), v); if (u < 1) requestAnimationFrame(f); else { me._tplay = false; me.train(1, 0); }
     })(t0);
   },
   lo: function (el) {   // (a day's poster below: its own fade, and gone while the screen shows it)
@@ -3553,8 +3555,8 @@ THEMEFX.picture = {
     // (the poster below only until the screen shows it, so it's never there twice: John, 9 Nov 2026: "Lower picture should only show
     // until main one shows on screen and then disappear")
     var st = $('#zstagef'), me = this; me._lo = st && st.classList.contains('open') ? Math.min(1, vis * 1.6) : 1; (me.all || []).forEach(function (el) { me.lo(el); });
-    var n = Math.max(0, Math.min(31, Math.round(u * 31)));
-    el.style.backgroundPosition = (n % 8 / 7 * 100).toFixed(3) + '% ' + (Math.floor(n / 8) / 3 * 100).toFixed(3) + '%';
+    var n = Math.max(0, Math.min(39, Math.round(u * 39)));
+    el.style.backgroundPosition = (n % 8 / 7 * 100).toFixed(3) + '% ' + (Math.floor(n / 8) / 4 * 100).toFixed(3) + '%';
     el.style.opacity = Math.max(0, Math.min(1, vis)).toFixed(3);
   },
   leader: function (asked) {   // (a film leader: 3, 2, 1, a flash, GRIFFLIX; the first visit each day; a tap skips it)
@@ -3611,7 +3613,7 @@ THEMEFX.picture = {
   place: function (all, at, c) {
     this.all = all; this.c = c; if (this._at != null && Math.abs(this._at - at) > .3) musicKick(Math.abs(this._at - at));
     var now = performance.now(), mv = this._at != null && Math.abs(at - this._at) > 1e-3;
-    if (mv && !this._intro && !this._tplay && now - (this._lp || 0) > 650 && $('#zstagef.open')) this.trainOnce(1100);
+    if (mv && !this._intro && !this._tplay && now - (this._lp || 0) > 650 && $('#zstagef.open')) this.trainOnce(1700);
     if (mv) this._lp = now;
     fxTween(this, at, 1100);
   },
