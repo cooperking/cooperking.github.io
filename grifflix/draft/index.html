@@ -566,6 +566,8 @@ html.tv .th-lane .vday:focus { outline: 0 !important; box-shadow: 0 0 0 4px #1a1
 .zpost { position: absolute; inset: 0; opacity: 0; overflow: hidden; background: #0c0b0a; transition: opacity 1.4s ease; }
 .zpost::before { content: ""; position: absolute; inset: -30px; background: var(--pp) center / cover; filter: blur(20px) brightness(.45); }
 .zpost::after { content: ""; position: absolute; inset: 4% 0; background: var(--pp) center / contain no-repeat; filter: drop-shadow(0 8px 20px rgba(0, 0, 0, .6)); }   /* (the day's poster on the screen, its own colours blurred round it) */
+.th-picture .vday { filter: opacity(var(--lo, 1)); }
+.zstagef { cursor: pointer; }
 .ztrain { position: absolute; inset: 0; opacity: 0; background: #0c0b0a url("/grifflix/img/lumiere-train-frames.webp") 0 0 / 800% 400% no-repeat; filter: sepia(.18) contrast(1.06) brightness(.92); will-change: opacity; }   /* (the Lumières' train, a frame at a time) */
 .zpost.on { opacity: 1; } .zpost.now, .zstagef.now .zcurt { transition: none; }
 .zcurt { position: absolute; top: -7%; bottom: -3%; width: 53%; z-index: 3; pointer-events: none; background: #3a0508 url("/grifflix/img/cinema-curtain.webp") 0 0 / 100% 100%; box-shadow: 0 10px 30px rgba(0, 0, 0, .6); transition: transform 2.2s cubic-bezier(.6, .02, .25, 1); }   /* (red velvet: John, 9 Nov 2026: "curtain looks like a cartoon") */
@@ -2738,7 +2740,7 @@ function drawTheme(t, C, n, m, mine) {
   themeStart(fx, c);
 }
 document.addEventListener('click', function (e) {
-  var mid = e.target.closest && e.target.closest('#cal .bigmoon, #cal .mfilm, #cal .globe, #cal .codepic, #cal .reelscreen, #cal .cposter, #cal .tcentre h2');
+  var mid = e.target.closest && e.target.closest('#cal .zstagef, #cal .bigmoon, #cal .mfilm, #cal .globe, #cal .codepic, #cal .reelscreen, #cal .cposter, #cal .tcentre h2');
   var f = mid && $('#cal .front'); if (f && f.dataset.day && S.calData && S.calData.days[f.dataset.day] && !S.calData.days[f.dataset.day].secret) daySheet(f.dataset.day);
 });
 function themeEls() { return $$('#cal .vday, #cal .hday, #cal .tday'); }
@@ -3137,7 +3139,7 @@ THEMEFX.jaws = {
   place: function (all, at, c) {   // (each swipe or press, either way, sets the attack going forwards; quick ones in a row only once:
     // John, 9 Nov 2026: "you should be able to swipe either way and get the forward animation on the shark")
     var now = performance.now(), mv = this._at != null && Math.abs(at - this._at) > 1e-3;
-    if (mv && now - (this._lp || 0) > 400 && (!this._playing || this._p > 7)) this.attack();
+    if (mv && now - (this._lp || 0) > 650 && (!this._playing || this._p > 7)) this.attack();
     if (mv) this._lp = now;
     this.all = all; this.c = c; fxTween(this, at, 1400);
   },
@@ -3517,16 +3519,26 @@ THEMEFX.picture = {
     me._intro = true; window.ZFILMED = 1;
     var go = function () {
       if (!st.isConnected) return; st.classList.add('open'); me.train(0, 1);
-      setTimeout(function () { var t0 = performance.now();
-        (function f(t) { if (!st.isConnected) return; var u = Math.min(1, (t - t0) / 2600), v = u < .8 ? 1 : 1 - (u - .8) / .2;
-          me.train(Math.min(1, u * 1.1), v); if (u < 1) requestAnimationFrame(f); else { me._intro = false; me.train(0, 0); } })(t0);
-      }, 1500);
+      setTimeout(function () { me._intro = false; me.trainOnce(2600); }, 1500);
     };
     var im = new Image(), done = false, once = function () { if (!done) { done = true; go(); } };
     setTimeout(function () { im.onload = once; im.onerror = once; im.src = '/grifflix/img/lumiere-train-frames.webp'; if (im.complete) once(); setTimeout(once, 5000); }, 700);
   },
+  // (once per scroll, in its own time, however far the days go; going on, the screen goes through their posters: John, 9 Nov 2026:
+  // "Have the film only play once per scroll and then scroll through the posters after that")
+  trainOnce: function (D) {
+    var me = this, t0 = performance.now(), tok = me._ttok = {}; me._tplay = true;
+    (function f(t) {
+      if (tok !== me._ttok || !$('#ztrain')) { me._tplay = false; return; }
+      var u = Math.min(1, (t - t0) / D), v = u < .78 ? 1 : 1 - (u - .78) / .22;
+      me.train(Math.min(1, u / .78), v); if (u < 1) requestAnimationFrame(f); else { me._tplay = false; me.train(1, 0); }
+    })(t0);
+  },
   train: function (u, vis) {   // (frame u of the arrival, 0 to 1; vis: how much of it over the poster)
     var el = this._tr && this._tr.isConnected ? this._tr : (this._tr = $('#ztrain')); if (!el) return;
+    // (the poster below only until the screen shows it, so it's never there twice: John, 9 Nov 2026: "Lower picture should only show
+    // until main one shows on screen and then disappear")
+    var th = $('#cal .th-picture'), st = $('#zstagef'); if (th) th.style.setProperty('--lo', st && st.classList.contains('open') ? Math.min(1, vis * 1.6).toFixed(3) : '1');
     var n = Math.max(0, Math.min(31, Math.round(u * 31)));
     el.style.backgroundPosition = (n % 8 / 7 * 100).toFixed(3) + '% ' + (Math.floor(n / 8) / 3 * 100).toFixed(3) + '%';
     el.style.opacity = Math.max(0, Math.min(1, vis)).toFixed(3);
@@ -3582,10 +3594,15 @@ THEMEFX.picture = {
     return [0, 1, 2].map(function (k) { return '<i style="background-image:' + u[(u.length - 1 - k * 3 % u.length + u.length) % u.length].replace(/"/g, "'") + '"></i>'; }).join('');
   },
   swipe: function (c) { return { x: -1, y: 0, px: c.mob ? 60 : 90 }; },   // (spin the drum with the finger)
-  place: function (all, at, c) { this.all = all; this.c = c; if (this._at != null && Math.abs(this._at - at) > .3) musicKick(Math.abs(this._at - at)); fxTween(this, at, 1100); },
+  place: function (all, at, c) {
+    this.all = all; this.c = c; if (this._at != null && Math.abs(this._at - at) > .3) musicKick(Math.abs(this._at - at));
+    var now = performance.now(), mv = this._at != null && Math.abs(at - this._at) > 1e-3;
+    if (mv && !this._intro && !this._tplay && now - (this._lp || 0) > 650 && $('#zstagef.open')) this.trainOnce(1100);
+    if (mv) this._lp = now;
+    fxTween(this, at, 1100);
+  },
   draw: function (a) {
     var me = this, c = me.c, g = me.g(c), st = me.st, R = g.R, ry = g.ry, ty = g.ty, yb = ty + g.Hw, tilt = Math.asin(g.E) * 180 / Math.PI;
-    if (!me._intro) { var fr = a - Math.floor(a); me.train(fr, Math.min(1, 3 * Math.sin(Math.PI * fr))); }   // (the train, run by the move)
     var cal = $('#cal');
     if (!me._zp || !me._zp[0] || !me._zp[0].isConnected || me._zp.length !== me.all.length) {   // (the strip's posters: each day's, small)
       $$('#cal .zpic').forEach(function (x) { x.remove(); });
