@@ -477,13 +477,19 @@ html.tv .th .vday:focus { outline: 3px solid rgb(var(--kink)) !important; outlin
 .th .vday.slab { background: #000; }
 .th .vday.empty { background: none; box-shadow: inset 0 0 0 2px rgba(var(--kink), .5); }
 .hlines polyline { fill: none; stroke: rgba(var(--kink), .55); stroke-width: 2; }
-/* the reel */
+/* the reel (Cinema Paradiso): the one-sheet's starry night, the film strip, the open-air screen framed in bulbs */
+.reelsky { position: absolute; inset: 0; background: radial-gradient(circle at 12% 18%, rgba(255, 254, 226, .9) 0 1px, transparent 2px) 0 0 / 97px 83px, radial-gradient(circle at 60% 40%, rgba(255, 254, 226, .7) 0 1px, transparent 2px) 0 0 / 131px 109px, linear-gradient(#1f2c3c, #26405a 55%, #326088); }
 .th-reel .vday { width: 240px; height: 135px; background-image: var(--b); filter: sepia(.7) brightness(.7); }
 .th-reel .vday.front { filter: none; }
 .th-reel .vday .vn { display: none; }   /* (no dates printed on the film: John, 9 Nov 2026) */
 .reelband { position: absolute; left: 0; right: 0; top: calc(31% - 106px); height: 212px; background: linear-gradient(90deg, transparent 0 9px, #f4ecd8 9px 23px, transparent 23px) 0 9px / 32px 13px repeat-x, linear-gradient(90deg, transparent 0 9px, #f4ecd8 9px 23px, transparent 23px) 0 190px / 32px 13px repeat-x, #141414; transition: background-position .7s cubic-bezier(.3, .7, .2, 1); }
-.reelscreen { position: absolute; right: 64px; bottom: 112px; width: 460px; height: 259px; background: #000 center/cover; box-shadow: 0 0 0 10px #000; }
+.reelscreen { position: absolute; right: 74px; bottom: 156px; width: 460px; height: 259px; background: #000 center/cover; box-shadow: 0 0 0 10px #000, 0 0 0 26px #2a2420, 0 0 60px 30px rgba(235, 222, 202, .25); }
+.reelscreen::before { content: ""; position: absolute; inset: -24px; pointer-events: none;   /* (the marquee bulbs round it) */
+  --bulb: radial-gradient(circle, #fff8e6 0 3px, #ebdeca 4px, rgba(235, 222, 202, .35) 5px, transparent 7px);
+  background: var(--bulb) left top / 20px 20px repeat-x, var(--bulb) left bottom / 20px 20px repeat-x, var(--bulb) left top / 20px 20px repeat-y, var(--bulb) right top / 20px 20px repeat-y; }
 html[data-theme=reel] .hinfo { max-width: 540px; }
+html[data-theme=reel] .hinfo .w > span { color: #fffee2; text-shadow: .05em .05em 0 #b954be; letter-spacing: .02em; }   /* (the one-sheet's cream title, its magenta shadow) */
+html[data-theme=reel] .hinfo h2 { color: #ebdeca; }
 /* a day not filled yet: coming soon, in the theme's colours and lettering */
 .th .vday.soon { background: color-mix(in srgb, var(--bg) 78%, #000); box-shadow: inset 0 0 0 2px rgba(var(--kink), .35); }
 .vday .cs, .hday .cs { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 8%; font: var(--tw, 700) 30px/1 var(--tfont, var(--kfont)); text-transform: uppercase; letter-spacing: .04em; color: rgb(var(--kink)); pointer-events: none; }
@@ -1042,6 +1048,7 @@ html.mob .triallabel { white-space: nowrap; }
 @font-face { font-family: "GF-pinboard"; font-weight: 100 900; font-display: swap; src: url("https://sotd-playlists.cooperking.workers.dev/gf/wood-gothic.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/wood-gothic.woff") format("woff"); }
 @font-face { font-family: "GF-globe"; font-weight: 100 900; font-display: swap; src: url("https://sotd-playlists.cooperking.workers.dev/gf/kane-display.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/kane-display.woff") format("woff"); }
 @font-face { font-family: "GF-lane"; font-weight: 100 900; font-display: swap; src: url("https://sotd-playlists.cooperking.workers.dev/gf/magneto.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/magneto.woff") format("woff"), url("https://sotd-playlists.cooperking.workers.dev/gf/magneto-bold.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/magneto-bold.woff") format("woff"), url("https://sotd-playlists.cooperking.workers.dev/gf/magnetob.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/magnetob.woff") format("woff"), url("https://sotd-playlists.cooperking.workers.dev/gf/magneto-regular.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/magneto-regular.woff") format("woff"), url("https://sotd-playlists.cooperking.workers.dev/gf/itc-magneto.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/itc-magneto.woff") format("woff"), url("https://sotd-playlists.cooperking.workers.dev/gf/magnetobold.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/magnetobold.woff") format("woff"); }   /* (Magneto, John's own, as uploaded on the admin page's Fonts card under any of its usual names) */
+@font-face { font-family: "GF-reel"; font-weight: 100 900; font-display: swap; src: url("https://sotd-playlists.cooperking.workers.dev/gf/materhorn-nf.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/materhorn-nf.woff") format("woff"), url("https://sotd-playlists.cooperking.workers.dev/gf/materhorn.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/materhorn.woff") format("woff"), url("https://sotd-playlists.cooperking.workers.dev/gf/materhornnf.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/materhornnf.woff") format("woff"), url("https://sotd-playlists.cooperking.workers.dev/gf/materhorn-nf-regular.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/materhorn-nf-regular.woff") format("woff"), url("https://sotd-playlists.cooperking.workers.dev/gf/fanfare.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/fanfare.woff") format("woff"); }   /* (Materhorn NF, Fanfare's revival, for Cinema Paradiso: John's own copy, as uploaded on the admin page's Fonts card) */
 /* the calendar page beside the day's name */
 .hinfo .w { display: flex; align-items: center; gap: .22em; }
 .leaf2 { flex: none; display: inline-flex; flex-direction: column; width: .95em; height: 1.02em; border: max(2px, .025em) solid rgb(var(--kink)); font-style: normal; text-transform: uppercase; letter-spacing: 0; overflow: hidden; }
@@ -1748,8 +1755,11 @@ var THEMES = [   // each its film's own lettering and colour, researched (John, 
   { key: 'pinboard', mob: [530, 70, 1250, 640], name: 'The Pinboard', film: 'All the President’s Men', year: 1976, by: 'Alan J. Pakula', bg: '#f4f1ea', ink: '#000', font: '"GF-pinboard", "Anton", sans-serif', tw: 400 },
   // Hugo / A Trip to the Moon: Cinzel, nearest free face to the HUGO poster's roman (said to be University Roman Bold); the teal night sky of Hugo's poster
   { key: 'moon', mob: [40, 90, 1240, 620], name: 'The Moon', film: 'Hugo', year: 2011, by: 'Scorsese, for Méliès', bg: '#145063', ink: '#fff', font: '"Cinzel", serif', tw: 700, tt: 'uppercase' },
-  // Sherlock Jr.: its title card's hand-lettered flared capitals; the yellow of its 1924-era poster ("How to be a detective")
-  { key: 'reel', mob: [300, 100, 1280, 640], name: 'The Reel', film: 'Sherlock Jr.', year: 1924, by: 'Buster Keaton', bg: '#e2aa1e', ink: '#000', font: '"Della Respira", serif', tw: 400 },
+  // Cinema Paradiso (John, 9 Nov 2026: "Change Sherlock Jr to Cinema Paradiso and re-do colours and fonts research"): the 1990
+  // US one-sheet, Totò on Alfredo's shoulders under a starry night (#1f2c3c to #326088), the open-air screen framed in bulbs
+  // (#ebdeca); its title in cream (#fffee2) with a magenta shadow (#b954be), heavy flared 1920s capitals: Fanfare (1927),
+  // revived as Materhorn NF, John's own copy once uploaded (a visual match: no design source names it); Luckiest Guy till then
+  { key: 'reel', mob: [300, 100, 1280, 640], name: 'The Reel', film: 'Cinema Paradiso', year: 1988, by: 'Giuseppe Tornatore', bg: '#1f2c3c', ink: '#fff', font: '"GF-reel", "Luckiest Guy", sans-serif', tw: 400, tt: 'uppercase' },
   // The Wizard of Oz: the yellow brick road (#f2c230) through the Emerald City's green (#1e8c4e); the 1939 title card's
   // hand-drawn condensed capitals with curled ends and a deep shadow (Federant, the nearest free face)
   { key: 'oz', mob: [0, 0, 1280, 720], name: 'The Yellow Brick Road', film: 'The Wizard of Oz', year: 1939, by: 'Victor Fleming', bg: '#1e8c4e', ink: '#fff', font: '"Federant", serif', tw: 400, tt: 'none' },
@@ -1758,7 +1768,7 @@ var THEMES = [   // each its film's own lettering and colour, researched (John, 
   // Citizen Kane: its main title's outlined condensed capitals (League Gothic, the free revival of Alternate Gothic: John, 8 Nov 2026); the red title band of the 1941 Style A poster
   { key: 'globe', mob: [40, 60, 1240, 640], name: 'The Snow Globe', film: 'Citizen Kane', year: 1941, by: 'Orson Welles', bg: '#a8161a', ink: '#fff', font: '"GF-globe", "League Gothic", sans-serif', tw: 400 }
 ];
-var THEMEFONTS = 'https://fonts.googleapis.com/css2?family=Bowlby+One&family=Della+Respira&family=Special+Gothic+Expanded+One&family=Londrina+Solid:wght@400;900&family=Share+Tech+Mono&family=Archivo+Narrow:wght@600&family=Anton&family=IM+Fell+English+SC&family=Cinzel:wght@700&family=Tilt+Neon&family=Yuji+Syuku&family=Amatic+SC:wght@700&family=Big+Shoulders:wght@400;700&family=League+Gothic&family=News+Cycle:wght@700&family=Federant&family=Space+Mono:wght@400;700&family=Archivo+Black&family=Orbitron:wght@800&family=Montserrat:wght@800&family=Big+Shoulders+Stencil:wght@800&family=Lobster&family=UnifrakturMaguntia&display=swap';
+var THEMEFONTS = 'https://fonts.googleapis.com/css2?family=Bowlby+One&family=Della+Respira&family=Special+Gothic+Expanded+One&family=Londrina+Solid:wght@400;900&family=Share+Tech+Mono&family=Archivo+Narrow:wght@600&family=Anton&family=IM+Fell+English+SC&family=Cinzel:wght@700&family=Tilt+Neon&family=Yuji+Syuku&family=Amatic+SC:wght@700&family=Big+Shoulders:wght@400;700&family=League+Gothic&family=News+Cycle:wght@700&family=Federant&family=Space+Mono:wght@400;700&family=Archivo+Black&family=Orbitron:wght@800&family=Montserrat:wght@800&family=Big+Shoulders+Stencil:wght@800&family=Lobster&family=UnifrakturMaguntia&family=Luckiest+Guy&display=swap';
 function themeEarly() {   // (before the films arrive: the page already laid out as this month's theme)
   if (VIEW() !== 'themes') return; var R = document.documentElement, t = themeFor(new Date().getMonth(), new Date().getFullYear());
   R.classList.add(t.key === 'table' ? 'table' : 'hall'); if (MOB()) R.classList.add('mob'); R.dataset.theme = t.key;
@@ -2425,9 +2435,10 @@ THEMEFX.table = {
     c.innerHTML = leafOf(d) + '<div class="k">' + DOWL[d.getDay()] + ' · ' + d.getDate() + ' ' + MONTHS[d.getMonth()] + '</div><h2 style="--tl:' + showName(it).length + '">' + esc(showName(it)) + '</h2><div class="y">' + [it.year, it.mins ? it.mins + ' minutes' : ''].filter(Boolean).join(' · ') + '</div>' + (note ? '<div class="n">“' + esc(note) + '”</div>' : '');
   }
 };
-// February: the reel (Sherlock Jr.): the days as frames along a strip of film; on a phone the strip runs down the screen
+// February: the reel (Cinema Paradiso): the days as frames along a strip of film under its starry night, the day's film on the
+// open-air screen in its bulbs; on a phone the strip runs down the screen
 THEMEFX.reel = {
-  decor: function () { return '<div class="reelband" id="reelband"></div><div class="reelscreen" id="reelscreen"></div>'; },
+  decor: function () { return '<div class="reelsky"></div><div class="reelband" id="reelband"></div><div class="reelscreen" id="reelscreen"></div>'; },
   swipe: function (c) { return c.mob ? { x: 0, y: -1, px: 75 } : { x: -1, y: 0, px: 130 }; },   // (the film runs with the finger)
   place: function (all, at, c) {
     all.forEach(function (el, j) {
