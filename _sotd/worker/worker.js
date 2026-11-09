@@ -65,7 +65,7 @@ export default {
         if (url.pathname.startsWith('/gi/')) return await gInvitePage(url, env);
         if (url.pathname.startsWith('/gs/')) return await gSharePage(url, env);
       } catch (e) { return new Response('Grifflix isn’t answering just now.', { status: 500 }); }
-      return Response.redirect(G_SITE, 302);
+      return await gSiteProxy(request, url);   // (Grifflix itself, on its own address: John, 9 Nov 2026: "how can we get it on grifflix.co.uk now?")
     }
     try {
       if (url.pathname === '/songs.json') return await songsJson(request, env, ctx);
@@ -1580,6 +1580,30 @@ async function gWeekly(env) {   // Monday morning: the week's Movies of the Day,
 }
 // ---- Grifflix's members
 const G_INVITE_USES = 5, G_INVITE_DAYS = 30, G_ORIGIN = 'https://cooperking.github.io';
+const G_ORIGINS = ['https://grifflix.co.uk', 'https://cooperking.github.io'], G_FROM = /^https:\/\/(cooperking\.github\.io|grifflix\.co\.uk)(\/|$)/;
+function gOrigin(request) { const o = request.headers.get('Origin') || ''; return G_ORIGINS.includes(o) ? o : G_ORIGIN; }   // (Grifflix's page on either address)
+// Grifflix on grifflix.co.uk: its pages from GitHub Pages (/grifflix/ there), at the root here: / the page, /admin its admin page,
+// /sw.js its service worker (so it covers the whole site), the rest as on the site (/grifflix/... as it is, else under /grifflix/)
+async function gSiteProxy(request, url) {
+  if (request.method !== 'GET' && request.method !== 'HEAD') return new Response('Not here.', { status: 405 });
+  let p = url.pathname;
+  if (p === '/' || p === '/index.html') p = '/grifflix/';
+  else if (p === '/admin' || p === '/admin/' || p === '/admin.html') p = '/grifflix/admin.html';
+  else if (p === '/draft' || p === '/draft/') p = '/grifflix/draft/';
+  else if (!p.startsWith('/grifflix/') && !p.startsWith('/songs/')) p = '/grifflix' + p;
+  const r = await fetch('https://cooperking.github.io' + p + url.search, { headers: { 'User-Agent': request.headers.get('User-Agent') || 'Grifflix' }, cf: { cacheTtl: 60 } });
+  const h = new Headers(r.headers);
+  ['x-github-request-id', 'x-fastly-request-id', 'x-served-by', 'x-cache', 'x-cache-hits', 'x-timer', 'via', 'access-control-allow-origin'].forEach(k => h.delete(k));
+  if (url.pathname === '/sw.js') h.set('Service-Worker-Allowed', '/');
+  if (p.endsWith('manifest.webmanifest') && r.ok) {   // (installed from here: the whole of grifflix.co.uk its own)
+    const m = await r.json().catch(() => null); if (m) { m.start_url = '/'; m.scope = '/'; h.delete('content-length'); return new Response(JSON.stringify(m), { status: 200, headers: h }); }
+  }
+  if (r.status === 301 || r.status === 302) {   // (GitHub's own redirect, a folder without its slash: kept on this address)
+    const to = new URL(r.headers.get('Location') || '/', 'https://cooperking.github.io');
+    h.set('Location', to.pathname.replace(/^\/grifflix\//, '/') + to.search);
+  }
+  return new Response(r.body, { status: r.status, headers: h });
+}
 async function gAll(env) { return (await env.SOTD.get('gmembers', 'json')) || {}; }
 async function gSave(env, all) { await env.SOTD.put('gmembers', JSON.stringify(all)); }
 async function gWho(request, env) {   // { id, all, owner } for a device signed in to Grifflix, else null
@@ -1609,7 +1633,7 @@ async function gInvite(env, all, id) {   // a new invitation for a member: its c
   return code;
 }
 async function grifflix(request, url, env) {
-  const h = factsHeaders(G_ORIGIN), answer = (status, body) => new Response(JSON.stringify(body), { status, headers: h });
+  const h = Object.assign(factsHeaders(gOrigin(request)), { Vary: 'Origin' }), answer = (status, body) => new Response(JSON.stringify(body), { status, headers: h });
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: h });
   const route = url.pathname.slice(3);
   if (route === 'linkbase') return answer(200, { base: await gLinkBase(env, url) });   // (a day's film shared: its link's address)
@@ -1917,7 +1941,7 @@ async function gAdmin(request, env, b, who, answer) {
     const m = all[b.id]; if (!m || !m.invite) return answer(404, { error: 'No invitation for them.' });
     const b64 = String(b.card || '').replace(/^data:image\/jpeg;base64,/, '');
     if (!b64 || b64.length > 1.5e6 || !/^[A-Za-z0-9+/=]+$/.test(b64)) return answer(400, { error: 'The card is missing or too big.' });
-    if (!/^https:\/\/cooperking\.github\.io\/grifflix\/#join=[\w-]{16,}$/.test(String(b.link || ''))) return answer(400, { error: 'Which link?' });
+    if (!/^https:\/\/(cooperking\.github\.io\/grifflix|grifflix\.co\.uk)\/#join=[\w-]{16,}$/.test(String(b.link || ''))) return answer(400, { error: 'Which link?' });
     const raw = atob(b64), bytes = new Uint8Array(raw.length); for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
     const pid = m.invite.page || randomCode(12), ttl = Math.max(3600, Math.round((m.invite.until - Date.now()) / 1000)), at = Date.now();
     await env.SOTD.put('gicard:' + pid, bytes, { expirationTtl: ttl });
@@ -2006,9 +2030,9 @@ async function gAdmin(request, env, b, who, answer) {
 // URL's sha256, so a stored clip always is the one asked for; served in ranges, as Safari needs for audio
 async function gMusicGet(request, url, env) {
   const name = url.pathname.slice(4).toLowerCase(), m = name.match(/^([a-z0-9]{1,20})-([0-9a-f]{12})\.m4a$/), from = request.headers.get('Origin') || request.headers.get('Referer') || '';
-  const H = { 'Access-Control-Allow-Origin': G_ORIGIN, Vary: 'Origin' };
+  const H = { 'Access-Control-Allow-Origin': gOrigin(request), Vary: 'Origin' };
   if (!m || !env.MEDIA) return new Response('Not here.', { status: 404, headers: H });
-  if (from && !/^https:\/\/cooperking\.github\.io(\/|$)/.test(from)) return new Response('Not here.', { status: 403 });
+  if (from && !G_FROM.test(from)) return new Response('Not here.', { status: 403 });
   const key = 'grifflix/music/' + name;
   // (kept at the edge too, so a clip comes at once, in ranges, without reading R2 each time: John, 9 Nov 2026: "sound is slow to
   // load on a firestick")
@@ -2039,10 +2063,10 @@ async function gMusicGet(request, url, env) {
 async function gFontGet(request, url, env) {   // /gf/<name>: only for Grifflix's own pages (and its apps, which show them)
   const name = url.pathname.slice(4).toLowerCase(), from = request.headers.get('Origin') || request.headers.get('Referer') || '';
   if (!/^[a-z0-9-]{1,60}\.(woff2|woff)$/.test(name)) return new Response('Not here.', { status: 404 });
-  if (from && !/^https:\/\/cooperking\.github\.io(\/|$)/.test(from)) return new Response('Not here.', { status: 403 });
+  if (from && !G_FROM.test(from)) return new Response('Not here.', { status: 403 });
   const o = await env.MEDIA.get('grifflix/fonts/' + name).catch(() => null);
-  if (!o) return new Response('Not here.', { status: 404, headers: { 'Access-Control-Allow-Origin': G_ORIGIN } });
-  return new Response(o.body, { headers: { 'Content-Type': name.endsWith('2') ? 'font/woff2' : 'font/woff', 'Cache-Control': 'public, max-age=2592000', 'Access-Control-Allow-Origin': G_ORIGIN, Vary: 'Origin' } });
+  if (!o) return new Response('Not here.', { status: 404, headers: { 'Access-Control-Allow-Origin': gOrigin(request), Vary: 'Origin' } });
+  return new Response(o.body, { headers: { 'Content-Type': name.endsWith('2') ? 'font/woff2' : 'font/woff', 'Cache-Control': 'public, max-age=2592000', 'Access-Control-Allow-Origin': gOrigin(request), Vary: 'Origin' } });
 }
 // Grifflix's link pages (a day's film, an invitation): the card on the month's theme colour, Futura, square edges (John, 8 Nov 2026:
 // "the invite and share buttons to match themes"); bg and ink come with the card, else Grifflix's black
