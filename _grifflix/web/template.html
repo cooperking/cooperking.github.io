@@ -1419,8 +1419,12 @@ html.phone .bar-top #refresh2, html.phone .bar-top #who, html.phone .bar-top > .
 /* Futura in capitals only when spread wide, as the GRIFFLIX logo; elsewhere the brand's serif for titles, its sans for small
    names (John, 9 Nov 2026: "futura capitals should only be used if they're spread out like the grifflix logo, otherwise use a
    different font from the branding"). A theme's own lettering, set by the theme, stays as it is */
-.hero h1, .row h2, .sect h2, .sheet h2, .welcome h1, .colltitle, .list-title h2, .side h2, .hinfo .w, .hinfo h2, .tcentre h2, .th-credits .ct, #bgrid .nowrows .row h2, #sheet .row h2 { font-family: var(--serif); font-weight: 500; text-transform: none; letter-spacing: -.005em; }
+.hero h1, .row h2, .sect h2, .sheet h2, .welcome h1, .colltitle, .list-title h2, .side h2, #bgrid .nowrows .row h2, #sheet .row h2 { font-family: var(--serif); font-weight: 500; text-transform: none; letter-spacing: -.005em; }
 .day .cap .t, .card .t, .card .noimg, .tracks .tt, .tpbar b { font-family: var(--sans); text-transform: none; letter-spacing: 0; }
+/* (a film's theme keeps its own lettering and spacing, as its film's titles: John, 9 Nov 2026: "that futura rule shouldn't
+   apply to themes if they have that specific font - the spacing should match the film style". Only Grifflix's own and the
+   months not yet given a theme take the brand's serif) */
+html[data-theme=picture] .hinfo .w, html[data-theme=picture] .hinfo h2, html[data-theme=picture] .tcentre h2, html[data-theme=blank] .hinfo .w, html[data-theme=blank] .hinfo h2, html[data-theme=blank] .tcentre h2, html:not([data-theme]) .hinfo .w, html:not([data-theme]) .hinfo h2 { font-family: var(--serif); font-weight: 500; text-transform: none; letter-spacing: -.005em; }
 html[data-theme=pinboard] .hinfo .w > span { letter-spacing: .32em; }
 html[data-theme=pinboard] .hinfo h2 { letter-spacing: .24em; }   /* (Zodiac's own Futura, spaced as its poster's logo) */
 html[data-theme=pinboard] .th-pinboard .vday .cs { letter-spacing: .22em; }
@@ -3063,8 +3067,15 @@ THEMEFX.picture = {
     return h;
   },
   ready: function (c) { fxReset(this); this.c = c; this.leader(); },
-  leader: function () {   // (a film leader: 3, 2, 1, a flash, GRIFFLIX; once each page load; a tap skips it)
-    if (window.ZLED || CALM || $('.zlead')) return; window.ZLED = 1;   // (once each time the page loads: a reload, or GRIFFLIX, shows it again: John, 9 Nov 2026)
+  leader: function () {   // (a film leader: 3, 2, 1, a flash, GRIFFLIX; the first visit each day; a tap skips it)
+    // (the first visit of the day only; home, GRIFFLIX and reloads don't replay it. ?leader=1 always plays it: admin's preview. John, 9 Nov 2026)
+    var force = /[?&]leader=1/.test(location.search);
+    if (window.ZLED || $('.zlead') || (!force && CALM)) return; window.ZLED = 1;
+    if (!force && /[?&]view=themes/.test(location.search)) return;   // (admin's theme explorer: only its Play the 3 2 1, and it doesn't use up the day's)
+    if (!force) {
+      var dt = new Date(), today = dt.getFullYear() + '-' + (dt.getMonth() + 1) + '-' + dt.getDate();
+      try { if (localStorage.getItem('grifflix-leader') === today) return; localStorage.setItem('grifflix-leader', today); } catch (e) {}
+    }
     var d = document.createElement('div'); d.className = 'zlead'; d.innerHTML = '<div class="ring"></div><div class="n">3</div><div class="gx">Grifflix</div><div class="skip">Tap to skip</div>';
     document.body.appendChild(d);
     var T = [], gone = function () { T.forEach(clearTimeout); d.classList.add('out'); setTimeout(function () { d.remove(); }, 600); };
