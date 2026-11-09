@@ -1027,6 +1027,7 @@ html.mob .triallabel { white-space: nowrap; }
 @font-face { font-family: "GF-code"; font-weight: 100 900; font-display: swap; src: url("https://sotd-playlists.cooperking.workers.dev/gf/ocr-a.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/ocr-a.woff") format("woff"); }
 @font-face { font-family: "GF-pinboard"; font-weight: 100 900; font-display: swap; src: url("https://sotd-playlists.cooperking.workers.dev/gf/wood-gothic.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/wood-gothic.woff") format("woff"); }
 @font-face { font-family: "GF-globe"; font-weight: 100 900; font-display: swap; src: url("https://sotd-playlists.cooperking.workers.dev/gf/kane-display.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/kane-display.woff") format("woff"); }
+@font-face { font-family: "GF-lane"; font-weight: 100 900; font-display: swap; src: url("https://sotd-playlists.cooperking.workers.dev/gf/magneto.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/magneto.woff") format("woff"), url("https://sotd-playlists.cooperking.workers.dev/gf/magneto-bold.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/magneto-bold.woff") format("woff"), url("https://sotd-playlists.cooperking.workers.dev/gf/magnetob.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/magnetob.woff") format("woff"), url("https://sotd-playlists.cooperking.workers.dev/gf/magneto-regular.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/magneto-regular.woff") format("woff"), url("https://sotd-playlists.cooperking.workers.dev/gf/itc-magneto.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/itc-magneto.woff") format("woff"), url("https://sotd-playlists.cooperking.workers.dev/gf/magnetobold.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/magnetobold.woff") format("woff"); }   /* (Magneto, John's own, as uploaded on the admin page's Fonts card under any of its usual names) */
 /* the calendar page beside the day's name */
 .hinfo .w { display: flex; align-items: center; gap: .22em; }
 .leaf2 { flex: none; display: inline-flex; flex-direction: column; width: .95em; height: 1.02em; border: max(2px, .025em) solid rgb(var(--kink)); font-style: normal; text-transform: uppercase; letter-spacing: 0; overflow: hidden; }
@@ -1055,10 +1056,8 @@ html[data-theme=stairs] .hinfo h2 { color: #f4e6cb; }
 html[data-theme=stairs] .leaf2 { border-color: #29241e; background: #f4e6cb; }
 html[data-theme=stairs] .leaf2 i { background: #29241e; color: #f3da54; }
 html[data-theme=stairs] .leaf2 b { color: #29241e; }
-html[data-theme=lane] .hinfo .w > span, html[data-theme=lane] .hinfo h2 { display: inline-block; transform: scaleX(1.32); transform-origin: 0 50%; }   /* (Sabon stretched wide, as the campaign's) */
 html[data-theme=lane] .hinfo h2 { color: #743c1a; max-width: 76%; }
-html[data-theme=lane]:not(.mob) .hinfo .w { font-size: 60px; } html.mob[data-theme=lane] .hinfo .w { font-size: 34px !important; }
-html[data-theme=lane] .hinfo .w > span { margin-left: .08em; }
+html[data-theme=lane] .hinfo .w > span { margin-left: .12em; }
 html[data-theme=lane] .leaf2 { border-color: #1a120a; background: #fbefc4; }
 html[data-theme=lane] .leaf2 i { background: #743c1a; color: #fbefc4; }
 html[data-theme=lane] .leaf2 b { color: #1a120a; }
@@ -1745,7 +1744,7 @@ var THEMES = [   // each its film's own lettering and colour, researched (John, 
   // Citizen Kane: its main title's outlined condensed capitals (League Gothic, the free revival of Alternate Gothic: John, 8 Nov 2026); the red title band of the 1941 Style A poster
   { key: 'globe', mob: [40, 60, 1240, 640], name: 'The Snow Globe', film: 'Citizen Kane', year: 1941, by: 'Orson Welles', bg: '#a8161a', ink: '#fff', font: '"GF-globe", "League Gothic", sans-serif', tw: 400 }
 ];
-var THEMEFONTS = 'https://fonts.googleapis.com/css2?family=Bowlby+One&family=Della+Respira&family=Special+Gothic+Expanded+One&family=Londrina+Solid:wght@400;900&family=Share+Tech+Mono&family=Archivo+Narrow:wght@600&family=Anton&family=IM+Fell+English+SC&family=Cinzel:wght@700&family=Tilt+Neon&family=Yuji+Syuku&family=Amatic+SC:wght@700&family=Big+Shoulders:wght@400;700&family=League+Gothic&family=News+Cycle:wght@700&family=Federant&family=Space+Mono:wght@400;700&family=Archivo+Black&family=Orbitron:wght@800&family=Montserrat:wght@800&family=Big+Shoulders+Stencil:wght@800&family=EB+Garamond:wght@600&display=swap';
+var THEMEFONTS = 'https://fonts.googleapis.com/css2?family=Bowlby+One&family=Della+Respira&family=Special+Gothic+Expanded+One&family=Londrina+Solid:wght@400;900&family=Share+Tech+Mono&family=Archivo+Narrow:wght@600&family=Anton&family=IM+Fell+English+SC&family=Cinzel:wght@700&family=Tilt+Neon&family=Yuji+Syuku&family=Amatic+SC:wght@700&family=Big+Shoulders:wght@400;700&family=League+Gothic&family=News+Cycle:wght@700&family=Federant&family=Space+Mono:wght@400;700&family=Archivo+Black&family=Orbitron:wght@800&family=Montserrat:wght@800&family=Big+Shoulders+Stencil:wght@800&family=Lobster&display=swap';
 function themeEarly() {   // (before the films arrive: the page already laid out as this month's theme)
   if (VIEW() !== 'themes') return; var R = document.documentElement, t = themeFor(new Date().getMonth(), new Date().getFullYear());
   R.classList.add(t.key === 'table' ? 'table' : 'hall'); if (MOB()) R.classList.add('mob'); R.dataset.theme = t.key;
@@ -1771,8 +1770,9 @@ var THEMES_LATER = [
   // the film's own title stencilled on the kerb ("Sunset Blvd."): Big Shoulders Stencil, slanted
   { key: 'stairs', mob: [0, 0, 1280, 720], name: 'The Staircase', film: 'Sunset Boulevard', year: 1950, by: 'Billy Wilder', bg: '#c62624', ink: '#fff', font: '"Big Shoulders Stencil", "Big Shoulders Stencil Display", sans-serif', tw: 800, tt: 'uppercase' },
   // The Big Lebowski: the 1998 US one-sheet: its amber clouds (#d79e48), pale gold (#edd584), burnt brown (#743c1a) and
-  // cream (#fbefc4); the campaign's title in Sabon stretched wide (Fonts In Use): EB Garamond, its free relative, stretched
-  { key: 'lane', mob: [0, 0, 1280, 720], name: 'The Lane', film: 'The Big Lebowski', year: 1998, by: 'the Coen brothers', bg: '#d79e48', ink: '#000', font: '"EB Garamond", serif', tw: 600, tt: 'uppercase' },
+  // cream (#fbefc4); the lettering of the film's opening titles, Magneto (Fonts In Use; John's choice, 9 Nov 2026), John's own
+  // copy; Lobster, a free retro script, till it's there
+  { key: 'lane', mob: [0, 0, 1280, 720], name: 'The Lane', film: 'The Big Lebowski', year: 1998, by: 'the Coen brothers', bg: '#d79e48', ink: '#000', font: '"GF-lane", "Lobster", cursive', tw: 700, tt: 'none' },
   { key: 'autumn', mob: [0, 250, 1280, 640], name: 'Late Autumn', film: 'Late Autumn', year: 1960, by: 'Ozu', bg: '#c4321f', ink: '#fff', font: '"Yuji Syuku", serif', tw: 400, tt: 'none' },
 ];
 // the months' order and choice, set on the admin page (kept by the Worker, sent with the calendar; this device remembers the
