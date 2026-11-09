@@ -250,7 +250,7 @@ body.tdragging { user-select: none; -webkit-user-select: none; }
         <p class="stat" style="margin:0 0 6px">Drag one onto any month above (a theme can be on as many months as you like). Drag a month here, or tap its ×, to put it back as it was.</p>
         <div class="tspare" id="tspare" data-dz="spare"></div>
         <div class="state"><button class="btn primary" id="tmsave" type="button" disabled>Saved</button></div>
-        <div class="thxview" id="thxview" hidden><div class="row"><b id="thxname"></b><span class="state"><button class="btn" id="thxlead" type="button" hidden>Play the 3 2 1</button><a class="btn" id="thxopen" target="_blank" rel="noopener">Open it full screen</a></span></div><div class="thxfmt" id="thxfmt" role="group" aria-label="Shown on"><button type="button" data-fmt="computer" class="on">Computer</button><button type="button" data-fmt="iphone">iPhone</button><button type="button" data-fmt="ipad">iPad</button><button type="button" data-fmt="tv">TV</button></div><div class="thxbox" id="thxbox"><iframe id="thxf" title="The theme, working" loading="lazy"></iframe></div></div>
+        <div class="thxview" id="thxview" hidden><div class="row"><b id="thxname"></b><span class="state"><button class="btn" id="thxlead" type="button" hidden>Play the 3 2 1</button><a class="btn" id="thxopen" target="_blank" rel="noopener">Open it full screen</a></span></div><div class="thxfmt" id="thxfmt" role="group" aria-label="Shown on"><button type="button" data-fmt="computer" class="on">Computer</button><button type="button" data-fmt="iphone">iPhone</button><button type="button" data-fmt="ipad">iPad</button><button type="button" data-fmt="tv">TV</button></div><div class="thxbox" id="thxbox"><iframe id="thxf" title="The theme, working" loading="lazy" allow="autoplay"></iframe></div></div>
         <p class="stat">Saving puts each month’s theme film on its 1st: Grifflix’s own copy, or its trailer if Grifflix hasn’t got it (that film goes on your <a href="#requests">Requests</a>). <b>Update everything</b> puts them on the site.</p>
       </section>
       <section class="card" data-tab="films">
@@ -898,12 +898,12 @@ body.tdragging { user-select: none; -webkit-user-select: none; }
   }
   function thxShow(k, label) {
     THX = k; var u = '/grifflix/draft/?view=themes&theme=' + k, t = TBY[k];
-    $('#thxview').hidden = false; $('#thxf').src = u + FMT[THF][2]; $('#thxopen').href = u; $('#thxname').textContent = (label ? label + ' · ' : '') + t.n + ' · ' + t.f + ' (' + t.y + ')';
+    $('#thxview').hidden = false; $('#thxf').src = u + FMT[THF][2] + '&sound=1';   // (its music at once: John, 9 Nov 2026: "does the preview play the music?") $('#thxopen').href = u; $('#thxname').textContent = (label ? label + ' · ' : '') + t.n + ' · ' + t.f + ' (' + t.y + ')';
     $('#thxlead').hidden = k !== 'picture';
     thxFit(); tmDraw();
   }
   // (the film leader: the site plays it once a day, so the preview asks for it)
-  $('#thxlead').onclick = function () { if (!THX) return; var u = '/grifflix/draft/?view=themes&theme=' + THX + '&leader=1'; $('#thxf').src = u + FMT[THF][2]; $('#thxopen').href = u; };
+  $('#thxlead').onclick = function () { if (!THX) return; var u = '/grifflix/draft/?view=themes&theme=' + THX + '&leader=1'; $('#thxf').src = u + FMT[THF][2] + '&sound=1'; $('#thxopen').href = u; };
   $('#thxfmt').addEventListener('click', function (e) {
     var b = e.target.closest('[data-fmt]'); if (!b || !THX) return; THF = b.dataset.fmt;
     [].forEach.call(document.querySelectorAll('#thxfmt [data-fmt]'), function (x) { x.classList.toggle('on', x === b); }); thxShow(THX, ($('#thxname').textContent.split(' · ')[0] || ''));
