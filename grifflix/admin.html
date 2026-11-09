@@ -155,11 +155,10 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
 .ttile.now { outline: 3px solid var(--fg); outline-offset: 2px; }
 .ttile.pick { box-shadow: inset 0 0 0 3px #fff, 0 0 0 2px var(--fg); }
 .ttile.over { transform: scale(.96); box-shadow: inset 0 0 0 4px #fff, 0 0 0 3px #1a7a3c; }
+.ttile .own { font: 600 9px/1 var(--sans); letter-spacing: .1em; text-transform: uppercase; padding: 2px 4px; background: rgba(0, 0, 0, .5); color: #fff; }
 .ttile .x { position: absolute; top: 4px; right: 4px; width: 28px; height: 28px; border: 0; border-radius: 50%; background: rgba(0, 0, 0, .45); color: #fff; font: 600 16px/1 var(--sans); cursor: pointer; }
 .ttile .on2 { font: 400 11px/1.3 var(--sans); opacity: .85; }
 .ttile .warn2 { font: 600 10px/1.2 var(--sans); padding: 2px 4px; background: #e0a000; color: #000; align-self: flex-start; }
-.torder { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; counter-reset: ord; }
-.torder li { display: contents; }
 .tspare { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; min-height: 60px; padding: 6px; border: 1px dashed var(--line); border-radius: 12px; }
 .tspare.over { border-color: #1a7a3c; background: rgba(26, 122, 60, .06); }
 .tghost { position: fixed; z-index: 999; pointer-events: none; transform: rotate(-2deg) scale(1.04); box-shadow: 0 14px 34px rgba(0, 0, 0, .35); opacity: .94; }
@@ -242,16 +241,15 @@ body.tdragging { user-select: none; -webkit-user-select: none; }
       <section class="card" data-tab="themes">
         <div class="kicker">Themes</div>
         <h2>The <em>months</em> and their themes</h2>
-        <p class="stat">Each month in its theme, a year at a time; tap one to see it working below. <b>Drag</b> (on a phone, hold then drag) a month onto another to swap them, a theme in <i>The order</i> to move it, one from <i>Not used now</i> onto a month or into the order to use it, or one into <i>Not used now</i> to take it out. January 2026 has the first in the order, each month the next, round again at its end. <b>Save</b> keeps the order and shows it on the draft; <b>Update everything</b> puts it live for everyone.</p>
+        <p class="stat">Each year’s twelve months in their themes. <b>Drag</b> any theme from <i>The themes</i> below onto a month (on a phone, hold then drag), or a month onto another to swap them; tap one to see it working. <b>Save</b> keeps it and shows it on the draft; <b>Update everything</b> puts it live for everyone.</p>
         <div class="tyears" id="tyears" role="tablist" aria-label="Year"></div>
         <p class="stat tprog" id="tprog">Looking at the films…</p>
         <div class="tgrid" id="tgrid"></div>
+        <h3 class="tmh">The themes</h3>
+        <p class="stat" style="margin:0 0 6px">Drag one onto any month above (a theme can be on as many months as you like). Drag a month here, or tap its ×, to put it back as it was.</p>
+        <div class="tspare" id="tspare" data-dz="spare"></div>
         <div class="state"><button class="btn primary" id="tmsave" type="button" disabled>Saved</button> <button class="btn" id="tmreset" type="button">Back to the usual order</button></div>
         <div class="thxview" id="thxview" hidden><div class="row"><b id="thxname"></b><span class="state"><a class="btn" id="thxopen" target="_blank" rel="noopener">Open it full screen</a></span></div><div class="thxfmt" id="thxfmt" role="group" aria-label="Shown on"><button type="button" data-fmt="computer" class="on">Computer</button><button type="button" data-fmt="iphone">iPhone</button><button type="button" data-fmt="ipad">iPad</button><button type="button" data-fmt="tv">TV</button></div><div class="thxbox" id="thxbox"><iframe id="thxf" title="The theme, working" loading="lazy"></iframe></div></div>
-        <h3 class="tmh">The order</h3>
-        <ol class="torder" id="torder"></ol>
-        <h3 class="tmh">Not used now</h3>
-        <div class="tspare" id="tspare" data-dz="spare"></div>
         <p class="stat">Putting the films on their 1sts changes Movie of the Day for everyone once you next press Update everything. Films Grifflix hasn’t got are left until it has.</p>
         <div class="state"><button class="btn" id="thgo" type="button" disabled>Put the films on their 1sts</button></div>
       </section>
@@ -755,6 +753,7 @@ body.tdragging { user-select: none; -webkit-user-select: none; }
   // ---- the monthly themes' films, each on the 1st of its month (John, 8 Nov 2026: "replace the 1st of each month with the
   // inspired movie in the calendar too. Add the others in later"); the films as in the page's THEMES
   var TBY = {}; GTHEMES.forEach(function (x) { TBY[x.k] = x; });
+  var GMONTHS = {};   // (the saved months given their own theme)
   var TFILMS = GORDER.map(function (k) { var x = TBY[k]; return [x.f, x.y, x.n]; });   // (in the months' order, as chosen below)
   var MON = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'], THJOBS = [];
   var TL_ = null, TID = {}, TD = {};   // (the site's films and days, read once; each theme's film found in them)
@@ -774,7 +773,7 @@ body.tdragging { user-select: none; -webkit-user-select: none; }
       var y = +start.slice(0, 4), m = +start.slice(5, 7) - 1, now = new Date(), end = new Date(now.getFullYear() + 1, now.getMonth(), 1);
       for (; new Date(y, m, 1) <= end; m++) {
         if (m > 11) { m = 0; y++; }
-        var x = TBY[GORDER[seqAt(y, m)]], date = y + '-' + String(m + 1).padStart(2, '0') + '-01', id = TID[x.k], was = D[date];
+        var x = TBY[GMONTHS[y + '-' + String(m + 1).padStart(2, '0')] || GORDER[seqAt(y, m)]], date = y + '-' + String(m + 1).padStart(2, '0') + '-01', id = TID[x.k], was = D[date];
         if (id && !(was && was.id === id)) THJOBS.push({ date: date, item: id, note: '' });
       }
       $('#thgo').disabled = !THJOBS.length; $('#thgo').textContent = THJOBS.length ? 'Put the films on their 1sts (' + THJOBS.length + ')' : 'All on their 1sts';
@@ -809,36 +808,32 @@ body.tdragging { user-select: none; -webkit-user-select: none; }
     return '<div class="ttile" ' + attrs + ' style="background:' + t.bg + ';color:' + (t.d ? '#fff' : '#000') + '">' + (top || '') +
       '<b style="font-family:' + esc(t.font) + ';font-weight:' + (t.tw || 400) + ';text-transform:' + (t.tt || 'none') + ';font-style:' + (t.fs || 'normal') + '">' + esc(t.n) + '</b>' + (extra || '') + '<small>' + esc(t.f) + ' (' + t.y + ')</small></div>';
   }
-  function monthsOn(seq) {   // (the months, programmed so far, that the order's seq-th theme is on; and the next after that)
-    var L = TMO.length, out = [], last = idxOf(progLast()), i = Math.max(0, idxOf(PROG.from));
-    for (; i <= last; i++) if (i % L === seq) out.push(ym(i));
-    var nx = i; while (nx % L !== seq) nx++;
-    return { on: out, next: ym(nx) };
-  }
+  var TMM = {};   // (months given their own theme: { 'YYYY-MM': key }; the rest follow the order, TMO)
+  function themeAt(i) { var L = TMO.length; return TMM[ym(i)] || TMO[((i % L) + L) % L]; }
+  function tmState() { return JSON.stringify([TMO, TMM]); }
+  TMSAVED = tmState();
   function tmDraw() {
-    var L = TMO.length, y0 = Math.min(2026, +PROG.from.slice(0, 4)), y1 = +progLast().slice(0, 4);
+    var y0 = Math.min(2026, +PROG.from.slice(0, 4)), y1 = +progLast().slice(0, 4);
     if (TYEAR < y0 || TYEAR > y1) TYEAR = Math.min(Math.max(TYEAR, y0), y1);
     var ys = ''; for (var y = Math.max(2026, y0); y <= y1; y++) ys += '<button type="button" role="tab" data-y="' + y + '"' + (y === TYEAR ? ' class="on" aria-selected="true"' : '') + '>' + y + '</button>';
     $('#tyears').innerHTML = ys;
     $('#tprog').innerHTML = PROG.to ? 'Films programmed to <b>' + MON[+PROG.to.slice(5, 7) - 1] + ' ' + PROG.to.slice(0, 4) + '</b>' + (PROG.to <= ym(idxOf(NOWM) + 1) ? ' · <b>time to add more</b>' : '') + '.' : 'Looking at the films…';
-    var g = '';
+    var g = '', used = {};
     for (var m = 0; m < 12; m++) {
-      var key = TYEAR + '-' + String(m + 1).padStart(2, '0'), i = idxOf(key), k = TMO[((i % L) + L) % L], off = !PROG.to || key > PROG.to, prev = TMO[(((i - 1) % L) + L) % L];
-      var top = '<span class="mo">' + MON[m].slice(0, 3) + (key === NOWM ? '<i>Now</i>' : '') + '</span>', warn = L > 1 && k !== prev && alike(k, prev) ? '<span class="warn2">Close in colour to ' + MON[(m + 11) % 12].slice(0, 3) + '</span>' : '';
+      var key = TYEAR + '-' + String(m + 1).padStart(2, '0'), i = idxOf(key), k = themeAt(i), prev = themeAt(i - 1), off = !PROG.to || key > PROG.to;
+      used[k] = (used[k] || 0) + 1;
+      var top = '<span class="mo">' + MON[m].slice(0, 3) + (key === NOWM ? '<i>Now</i>' : '') + '</span>' + (TMM[key] ? '<button type="button" class="x" data-rm="' + key + '" aria-label="Put ' + MON[m] + ' back as it was">×</button>' : '');
+      var warn = k !== prev && alike(k, prev) ? '<span class="warn2">Close in colour to ' + MON[(m + 11) % 12].slice(0, 3) + '</span>' : (k === prev ? '<span class="warn2">Same as ' + MON[(m + 11) % 12].slice(0, 3) + '</span>' : '');
       var t = tileHtml(k, 'data-dk="m:' + i + '" data-k="' + k + '" tabindex="0" role="button" aria-label="' + MON[m] + ' ' + TYEAR + ': ' + esc(TBY[k].n) + '"', top, warn);
       g += t.replace('class="ttile"', 'class="ttile' + (off && key > NOWM ? ' off' : '') + (key === NOWM ? ' now' : '') + (k === THX ? ' pick' : '') + '"');
     }
     $('#tgrid').innerHTML = g;
-    $('#torder').innerHTML = TMO.map(function (k, j) {
-      var mo = monthsOn(j), twice = TMO.indexOf(k) !== j, on = mo.on.length ? mo.on.slice(-3).map(monShort).join(', ') : 'Next: ' + monShort(mo.next);
-      var top = '<span class="mo">' + (j + 1) + (twice ? '<i>Twice</i>' : '') + '</span><button type="button" class="x" data-rm="' + j + '" aria-label="Take it out"' + (L > 1 ? '' : ' hidden') + '>×</button>';
-      return '<li>' + tileHtml(k, 'data-dk="o:' + j + '" data-k="' + k + '" tabindex="0" role="button" aria-label="' + (j + 1) + ': ' + esc(TBY[k].n) + '"', top, '<span class="on2">' + (mo.on.length ? 'On ' : '') + on + '</span>') + '</li>';
+    $('#tspare').innerHTML = GTHEMES.map(function (t) {
+      var n = used[t.k] || 0;
+      return tileHtml(t.k, 'data-dk="s:' + t.k + '" data-k="' + t.k + '" tabindex="0" role="button" aria-label="' + esc(t.n) + '"', '<span class="mo">' + (n ? 'On ' + n + ' in ' + TYEAR : 'Not in ' + TYEAR) + '</span>', '<span class="on2">' + filmState(t.k) + '</span>');
     }).join('');
-    $('#tspare').innerHTML = GTHEMES.filter(function (t) { return TMO.indexOf(t.k) < 0; }).map(function (t) {
-      return tileHtml(t.k, 'data-dk="s:' + t.k + '" data-k="' + t.k + '" tabindex="0" role="button" aria-label="' + esc(t.n) + ', not used"', '<span class="mo">Not used</span>', '<span class="on2">' + filmState(t.k) + '</span>');
-    }).join('') || '<p class="stat" style="margin:6px">Every theme is in the order. Drag one here to take it out.</p>';
-    var dup = TMO.some(function (k, i) { return TMO.indexOf(k) !== i; });
-    $('#tmsave').disabled = dup || TMO.join() === TMSAVED; $('#tmsave').textContent = dup ? 'A theme is in twice' : TMO.join() === TMSAVED ? (TDRAFT !== undefined ? 'Saved · live with Update everything' : 'Saved') : 'Save the themes (' + L + ')';
+    var same = tmState() === TMSAVED;
+    $('#tmsave').disabled = same; $('#tmsave').textContent = same ? (TDRAFT !== undefined ? 'Saved · live with Update everything' : 'Saved') : 'Save the themes';
   }
   // (what's programmed: Movie of the Day's days on the Mac, still to come too, else the site's)
   function progLook() {
@@ -876,24 +871,24 @@ body.tdragging { user-select: none; -webkit-user-select: none; }
     if (dk.indexOf('m:') === 0) { var key = ym(+dk.slice(2)); lab = MON[+key.slice(5, 7) - 1] + ' ' + key.slice(0, 4); }
     thxShow(k, lab); $('#thxview').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
-  ['#tgrid', '#torder', '#tspare'].forEach(function (sel) {
+  ['#tgrid', '#tspare'].forEach(function (sel) {
     $(sel).addEventListener('click', function (e) {
       if (TDRAG.just) return;
-      var x = e.target.closest('[data-rm]'); if (x) { if (TMO.length > 1) { TMO.splice(+x.dataset.rm, 1); tmDraw(); } return; }
+      var x = e.target.closest('[data-rm]'); if (x) { delete TMM[x.dataset.rm]; tmDraw(); return; }
       var t = e.target.closest('[data-dk]'); if (t) tapTile(t);
     });
     $(sel).addEventListener('keydown', function (e) { var t = e.target.closest('[data-dk]'); if (t && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); tapTile(t); } });
   });
   // (the drag: a mouse at once, a finger after a moment's hold so the page still scrolls)
   var TDRAG = { just: false };
-  function dropOn(from, to) {   // from/to: "m:<month index>", "o:<place in the order>", "s:<theme>", or "spare"
-    var L = TMO.length, pos = function (d) { var n = +d.slice(2); return d[0] === 'm' ? ((n % L) + L) % L : n; };
+  function dropOn(from, to) {   // from: "m:<month index>" or "s:<theme>"; to: a month, or "spare" (the themes below)
     if (!to || from === to) return;
-    if (to === 'spare') { if (from[0] !== 's' && L > 1) TMO.splice(pos(from), 1); }
-    else if (from[0] === 's') { var k = from.slice(2); if (to[0] === 'o') TMO.splice(pos(to), 0, k); else if (to[0] === 'm') TMO[pos(to)] = k; else return; }
-    else if (to[0] === 's') { if (L > 1) TMO.splice(pos(from), 1); }
-    else if (from[0] === 'o' && to[0] === 'o') { var a = pos(from), b = pos(to), x = TMO.splice(a, 1)[0]; TMO.splice(b, 0, x); }
-    else { var i = pos(from), j = pos(to), t = TMO[i]; TMO[i] = TMO[j]; TMO[j] = t; }   // (two months, or a month and a place in the order: swapped)
+    if (to === 'spare' || to[0] === 's') { if (from[0] === 'm') delete TMM[ym(+from.slice(2))]; }   // (a month back as it was)
+    else if (to[0] === 'm') {
+      var j = +to.slice(2);
+      if (from[0] === 's') TMM[ym(j)] = from.slice(2);   // (any theme onto any month: repeats as you like)
+      else { var i = +from.slice(2), a = themeAt(i), b = themeAt(j); TMM[ym(i)] = b; TMM[ym(j)] = a; }   // (two months swapped)
+    }
     tmDraw();
   }
   (function () {
@@ -952,11 +947,13 @@ body.tdragging { user-select: none; -webkit-user-select: none; }
     tmTake(TDRAFT !== undefined ? TDRAFT : j.themes);
     WAIT.themes = TDRAFT !== undefined ? 'A new order of the months’ themes' : null; summary();
   }
-  function tmTake(list) {   // the order the Worker keeps: this page's colours, the films for the 1sts, this device's copy
+  $('#tmreset').onclick = function () { TMO = GTHEMES.slice(0, 12).map(function (x) { return x.k; }); TMM = {}; tmDraw(); };
+  function tmTake(list) {
+    var o = list && !Array.isArray(list) && typeof list === 'object' ? list : null; GMONTHS = o && o.months || {}; if (o) list = o.order;   // the order the Worker keeps: this page's colours, the films for the 1sts, this device's copy
     var ok = Array.isArray(list) && list.length >= 1 && list.every(function (k) { return TBY[k]; });
     GORDER = ok ? list.slice() : GTHEMES.slice(0, 12).map(function (x) { return x.k; });
-    try { localStorage.setItem('grifflix-themes', JSON.stringify(ok ? list : null)); } catch (e) {}
-    TMO = GORDER.slice(); TMSAVED = GORDER.join();
+    try { localStorage.setItem('grifflix-themes', JSON.stringify(o || (ok ? list : null))); } catch (e) {}
+    TMO = GORDER.slice(); TMM = JSON.parse(JSON.stringify(GMONTHS)); TMSAVED = tmState();
     TFILMS = GORDER.map(function (k) { var x = TBY[k]; return [x.f, x.y, x.n]; });
     themeFirsts(); tmDraw();
   }
@@ -1022,8 +1019,10 @@ body.tdragging { user-select: none; -webkit-user-select: none; }
   fetch(WORKER + '/g/cal?after=9999', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) { if ('themes' in j) tmDraft(j); }).catch(function () {});
   $('#tmsave').onclick = function () {
     var b = this, same = TMO.join() === GTHEMES.slice(0, 12).map(function (x) { return x.k; }).join();   // (the usual twelve: kept as none)
+    Object.keys(TMM).forEach(function (k) { var i = idxOf(k), L = TMO.length; if (TMM[k] === TMO[((i % L) + L) % L]) delete TMM[k]; });   // (a month set to what it would be anyway: not kept)
+    var mm = Object.keys(TMM).length, body = mm ? { order: same ? null : TMO, months: TMM } : (same ? null : TMO);
     b.disabled = true; b.textContent = 'Saving…';
-    g('themes', { themes: same ? null : TMO, draft: true }).then(function (j) { tmDraft(j); toast(j.draft !== undefined ? 'Saved: on the draft now; Update everything puts it live' : 'Saved: the same as the live site'); })
+    g('themes', { themes: body, draft: true }).then(function (j) { tmDraft(j); toast(j.draft !== undefined ? 'Saved: on the draft now; Update everything puts it live' : 'Saved: the same as the live site'); })
       .catch(function (e) { b.disabled = false; b.textContent = 'Save the themes'; toast(e.message || 'Not saved'); });
   };
   $('#thgo').onclick = function () {

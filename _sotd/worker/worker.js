@@ -1353,7 +1353,8 @@ function gThemeAt(day, n) { const i = (+day.slice(0, 4) - 2026) * 12 + (+day.sli
 async function gThemeLoad(env) {
   try {
     const t = await fetch(G_SITE + 'themes.json', { cf: { cacheTtl: 3600 } }).then(r => r.json());
-    const order = JSON.parse(await env.SOTD.get('gthemes') || 'null') || t.order, k = order[gThemeAt(londonDay(), order.length)];
+    const raw = JSON.parse(await env.SOTD.get('gthemes') || 'null'), order = (Array.isArray(raw) ? raw : raw && raw.order) || t.order;
+    const k = (raw && raw.months || {})[londonDay().slice(0, 7)] || order[gThemeAt(londonDay(), order.length)];   // (a month given its own theme on the admin page, else the order's)
     G_TH = t.themes[k] || null;
   } catch (e) { G_TH = null; }
   return G_TH;
@@ -1643,7 +1644,10 @@ async function grifflix(request, url, env) {
       if (dr != null) { if (dr === 'null') await env.SOTD.delete('gthemes'); else await env.SOTD.put('gthemes', dr); await env.SOTD.delete('gthemes-draft'); }
       return answer(200, { ok: true, published: dr != null, themes: JSON.parse(await env.SOTD.get('gthemes') || 'null') });
     }
-    if (k != null && (!Array.isArray(k) || k.length < 1 || k.length > 120 || !k.every(x => typeof x === 'string' && /^[a-z0-9-]{2,24}$/.test(x)))) return answer(400, { error: 'A list of themes, please.' });
+    // (a list of themes in order; or { order, months: { 'YYYY-MM': theme } }, each month its own, repeats allowed: John, 9 Nov 2026)
+    const isKey = x => typeof x === 'string' && /^[a-z0-9-]{2,24}$/.test(x), isList = a => Array.isArray(a) && a.length >= 1 && a.length <= 120 && a.every(isKey);
+    const ok = k == null || isList(k) || (typeof k === 'object' && !Array.isArray(k) && (k.order == null || isList(k.order)) && k.months && typeof k.months === 'object' && Object.keys(k.months).length <= 600 && Object.entries(k.months).every(([m, x]) => /^\d{4}-\d\d$/.test(m) && isKey(x)));
+    if (!ok) return answer(400, { error: 'A list of themes, please.' });
     if (b.draft) {
       const live = await env.SOTD.get('gthemes') || 'null', want = JSON.stringify(k == null ? null : k);
       if (want === live) await env.SOTD.delete('gthemes-draft'); else await env.SOTD.put('gthemes-draft', want);
