@@ -1977,8 +1977,11 @@ function monthsOf(days) {
   while (true) { var k = y + '-' + String(m).padStart(2, '0'); out.push(k); if (k >= last || out.length > 120) break; if (++m > 12) { m = 1; y++; } }
   return out;
 }
+// Movie of the Day's films changed or taken off on the admin page only, not here (John, 9 Nov 2026: "remove it from there -
+// give me the ability in admin page only"): no choosing, changing or taking off on the site, for anyone
+var SITEEDIT = false;
 function drawMonth() {
-  var C = S.calData, mine = C.mine, months = monthsOf(C.days);
+  var C = S.calData, mine = C.mine && SITEEDIT, months = monthsOf(C.days);
   if (months.indexOf(S.month) < 0) S.month = months[months.length - 1];
   var y = +S.month.slice(0, 4), m = +S.month.slice(5, 7) - 1, inMonth = Object.keys(C.days).filter(function (d) { return d.slice(0, 7) === S.month && !C.days[d].secret; });   // (a day still to come, chosen but a surprise till 8am that day: not counted or listed)
   var noun = function (n) { return n === 1 ? 'film' : 'films'; };
@@ -2129,10 +2132,10 @@ function hallTurn(b) { themeTurn(b); }
 function leafOf(d) { return '<span class="leaf2" aria-hidden="true"><i>' + MONTHS[d.getMonth()].slice(0, 3) + '</i><b>' + d.getDate() + '</b></span>'; }   // (a page off a calendar: plainly a day of it, John: "It needs to be obvious that it's a calendar day view on every theme")
 function hallInfo(b) {   // the day you're on, in words: its day large (as The Shining's title cards), the film, its year
   var c = $('#hinfo'); if (!c) return;
-  if (!b) { c.innerHTML = '<div class="w">' + (S.calData.mine ? 'Empty' : 'Nothing yet') + '</div>'; return; }
+  if (!b) { c.innerHTML = '<div class="w">Nothing yet</div>'; return; }
   var it = S.calData.days[b.dataset.day], d = new Date(b.dataset.day + 'T12:00'), note = (NOTES ? S.calData.notes || {} : {})[b.dataset.day];
   var top = '<div class="w">' + leafOf(d) + '<span data-t="' + DOWL[d.getDay()] + '">' + DOWL[d.getDay()] + '</span></div><div class="k">' + d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear() + (S.calData.id === 'motd' ? ' · Movie of the Day' : '') + '</div>';
-  if (!it || it.secret) { c.innerHTML = top + '<h2>' + (it || !S.calData.mine ? 'Coming soon' : 'No film yet') + '</h2><div class="y">' + (it ? 'Revealed at 8am on the day' : S.calData.mine ? 'OK to choose one' : '') + '</div>'; return; }
+  if (!it || it.secret) { c.innerHTML = top + '<h2>Coming soon</h2><div class="y">' + (it ? 'Revealed at 8am on the day' : '') + '</div>'; return; }
   c.innerHTML = top + '<h2>' + esc(showName(it)) + '</h2><div class="y">' + [it.year, it.mins ? it.mins + ' minutes' : ''].filter(Boolean).join(' · ') + '</div>' + (note ? '<div class="n">“' + esc(note) + '”</div>' : '');
 }
 // the table (November): the month round a table (Dr. Strangelove's War Room), black and white, the day you're on at the front
@@ -2334,7 +2337,7 @@ function calSheet() {   // the month's calendar, a pop-up in its theme's colour 
   for (var d = 1; d <= n; d++) {
     var key = S.month + '-' + String(d).padStart(2, '0'), it = C.days[key], tc = key === TODAY ? ' today' : '';
     if (it && !it.secret) h += '<button class="tcd has' + tc + '" data-day="' + key + '" aria-label="' + d + ' ' + MONTHS[m] + ': ' + esc(it.name) + '"><img alt="" loading="lazy" src="' + esc(mob && (it.poster || it.thumb) ? img(it.poster || it.thumb, it.poster ? 'Primary' : 'Thumb', 200) : img(it.backdrop || it.thumb || it.poster, it.backdrop ? 'Backdrop' : (it.thumb ? 'Thumb' : 'Primary'), 480)) + '"><b>' + d + '</b><span><em>' + esc(showName(it)) + '</em>' + (it.year ? '<small>' + esc(String(it.year)) + '</small>' : '') + '</span></button>';
-    else if (it && it.secret && C.mine) h += '<button class="tcd secret' + tc + '" data-sday="' + key + '" aria-label="' + d + ' ' + MONTHS[m] + ': a surprise"><b>' + d + '</b></button>';   // (John: a hidden day changed without seeing it)
+    else if (it && it.secret && C.mine && SITEEDIT) h += '<button class="tcd secret' + tc + '" data-sday="' + key + '" aria-label="' + d + ' ' + MONTHS[m] + ': a surprise"><b>' + d + '</b></button>';   // (John: a hidden day changed without seeing it)
     else h += '<div class="tcd' + tc + (it && it.secret ? ' secret' : '') + '"><b>' + d + '</b></div>';
   }
   var films = Object.keys(C.days).filter(function (k) { return k.slice(0, 7) === S.month && !C.days[k].secret; }).sort();   // (the month's films listed under it, as the songs' calendar)
@@ -3152,9 +3155,9 @@ function longDate(k) { var d = new Date(k + 'T12:00'); return d.toLocaleDateStri
 function daySheet(date) {
   var C = S.calData, it = C.days[date];
   S.sheetNowNext = { k: 'day', d: date };
-  if (it && it.secret) return toast('Chosen: revealed at 8am on ' + longDate(date) + '. To see what’s coming, switch on “Show upcoming films” on the admin page.');
+  if (it && it.secret) return toast('Coming soon: revealed at 8am on ' + longDate(date) + '.');
   if (!it) {
-    if (!C.mine) return toast('Coming soon');
+    if (!C.mine || !SITEEDIT) return toast('Coming soon');
     return pickFor(date);
   }
   itemSheet(it, { date: date, note: C.notes[date] });
@@ -3270,7 +3273,7 @@ function bodyHTML(it, ctx) {
     });
     h += '</div>';
   }
-  if (ctx.date && S.calData && S.calData.mine) {
+  if (SITEEDIT && ctx.date && S.calData && S.calData.mine) {
     h += '<div class="owner"><h3>' + (S.calData.id === 'motd' ? 'Your Movie of the Day' : 'Your calendar') + '</h3>' + (NOTES ? '<textarea id="onote" placeholder="A note about why (optional)">' + esc(ctx.note || '') + '</textarea>' : '') +
       '<div class="acts" style="margin-top:0">' + (NOTES ? '<button class="pill on" id="osave">Save note</button>' : '') + '<button class="pill" id="ochange">Change film</button><button class="pill" id="oclear">Take it off</button></div></div>';
   }
