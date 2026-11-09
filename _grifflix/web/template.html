@@ -478,7 +478,11 @@ html.tv .th .vday:focus { outline: 3px solid rgb(var(--kink)) !important; outlin
 .th .vday.empty { background: none; box-shadow: inset 0 0 0 2px rgba(var(--kink), .5); }
 .hlines polyline { fill: none; stroke: rgba(var(--kink), .55); stroke-width: 2; }
 /* the reel (Cinema Paradiso): the one-sheet's starry night, the film strip, the open-air screen framed in bulbs */
-.reelsky { position: absolute; inset: 0; background: radial-gradient(circle at 12% 18%, rgba(255, 254, 226, .9) 0 1px, transparent 2px) 0 0 / 97px 83px, radial-gradient(circle at 60% 40%, rgba(255, 254, 226, .7) 0 1px, transparent 2px) 0 0 / 131px 109px, linear-gradient(#1f2c3c, #26405a 55%, #326088); }
+.reelsky { position: absolute; inset: 0; background: linear-gradient(#1f2c3c, #26405a 55%, #326088); }
+.reelsky svg { position: absolute; left: 0; top: 0; overflow: visible; }
+.reelsky .s { fill: #fffee2; } .reelsky .tw { fill: #fffee2; animation: twinkle 3.2s ease-in-out infinite; }
+@keyframes twinkle { 50% { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { .reelsky .tw { animation: none; } }
 .th-reel .vday { width: 240px; height: 135px; background-image: var(--b); filter: sepia(.7) brightness(.7); }
 .th-reel .vday.front { filter: none; }
 .th-reel .vday .vn { display: none; }   /* (no dates printed on the film: John, 9 Nov 2026) */
@@ -1048,7 +1052,7 @@ html.mob .triallabel { white-space: nowrap; }
 @font-face { font-family: "GF-pinboard"; font-weight: 100 900; font-display: swap; src: url("https://sotd-playlists.cooperking.workers.dev/gf/wood-gothic.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/wood-gothic.woff") format("woff"); }
 @font-face { font-family: "GF-globe"; font-weight: 100 900; font-display: swap; src: url("https://sotd-playlists.cooperking.workers.dev/gf/kane-display.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/kane-display.woff") format("woff"); }
 @font-face { font-family: "GF-lane"; font-weight: 100 900; font-display: swap; src: url("https://sotd-playlists.cooperking.workers.dev/gf/magneto.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/magneto.woff") format("woff"), url("https://sotd-playlists.cooperking.workers.dev/gf/magneto-bold.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/magneto-bold.woff") format("woff"), url("https://sotd-playlists.cooperking.workers.dev/gf/magnetob.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/magnetob.woff") format("woff"), url("https://sotd-playlists.cooperking.workers.dev/gf/magneto-regular.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/magneto-regular.woff") format("woff"), url("https://sotd-playlists.cooperking.workers.dev/gf/itc-magneto.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/itc-magneto.woff") format("woff"), url("https://sotd-playlists.cooperking.workers.dev/gf/magnetobold.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/magnetobold.woff") format("woff"); }   /* (Magneto, John's own, as uploaded on the admin page's Fonts card under any of its usual names) */
-@font-face { font-family: "GF-reel"; font-weight: 100 900; font-display: swap; src: url("https://sotd-playlists.cooperking.workers.dev/gf/materhorn-nf.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/materhorn-nf.woff") format("woff"), url("https://sotd-playlists.cooperking.workers.dev/gf/materhorn.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/materhorn.woff") format("woff"), url("https://sotd-playlists.cooperking.workers.dev/gf/materhornnf.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/materhornnf.woff") format("woff"), url("https://sotd-playlists.cooperking.workers.dev/gf/materhorn-nf-regular.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/materhorn-nf-regular.woff") format("woff"), url("https://sotd-playlists.cooperking.workers.dev/gf/fanfare.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/fanfare.woff") format("woff"); }   /* (Materhorn NF, Fanfare's revival, for Cinema Paradiso: John's own copy, as uploaded on the admin page's Fonts card) */
+@font-face { font-family: "GF-reel"; font-weight: 100 900; font-display: swap; src: url("https://sotd-playlists.cooperking.workers.dev/gf/materhornnf-y0ld.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/materhornnf-y0ld.woff") format("woff"), url("https://sotd-playlists.cooperking.workers.dev/gf/materhorn-nf.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/materhorn-nf.woff") format("woff"), url("https://sotd-playlists.cooperking.workers.dev/gf/materhornnf.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/materhornnf.woff") format("woff"), url("https://sotd-playlists.cooperking.workers.dev/gf/materhorn.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/materhorn.woff") format("woff"), url("https://sotd-playlists.cooperking.workers.dev/gf/materhorn-6ndq.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/materhorn-6ndq.woff") format("woff"), url("https://sotd-playlists.cooperking.workers.dev/gf/materhorn-nf-regular.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/materhorn-nf-regular.woff") format("woff"); }   /* (Materhorn NF, Fanfare's revival, freeware but not to be redistributed: John's copy, uploaded on the admin page's Fonts card) */
 /* the calendar page beside the day's name */
 .hinfo .w { display: flex; align-items: center; gap: .22em; }
 .leaf2 { flex: none; display: inline-flex; flex-direction: column; width: .95em; height: 1.02em; border: max(2px, .025em) solid rgb(var(--kink)); font-style: normal; text-transform: uppercase; letter-spacing: 0; overflow: hidden; }
@@ -1455,7 +1459,7 @@ function motdCal() {   // Movie of the Day: the site's file, and from the Worker
     return fetch(WORKER + '/g/cal?after=' + last, TOKEN ? { headers: { Authorization: 'Bearer ' + TOKEN } } : {}).then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; }).then(function (W) {
       var days = Object.assign({}, D.days, W.days || {}), notes = Object.assign({}, D.notes, W.notes || {});
       Object.keys(notes).forEach(function (d) { if (/^This month[’']s theme:/.test(notes[d] || '')) delete notes[d]; });   // (the theme's own note on its 1st: not shown, it got in the way: John, 8 Nov 2026)
-      if ('themes' in W) { store.set('grifflix-themes', JSON.stringify(W.themes || null)); if (themeOrder(W.themes)) monthTint(new Date().getMonth()); }   // (the admin page's months)
+      if ('themes' in W) { var TO = BUILD.draft && 'themesDraft' in W ? W.themesDraft : W.themes; store.set('grifflix-themes', JSON.stringify(TO || null)); if (themeOrder(TO)) monthTint(new Date().getMonth()); }   // (the admin page's months: on the draft, an order saved but not yet live)
       Object.keys(W.days || {}).forEach(function (d) { land(W.days[d]); if (LIB) LIB.tag(W.days[d]); else if (W.days[d].tags) { var t = W.days[d]; PICTAG[t.poster + 'Primary'] = (t.tags || {}).poster; PICTAG[t.backdrop + 'Backdrop'] = (t.tags || {}).backdrop; } });
       Object.keys(D.days).forEach(function (d) { var t = D.days[d]; land(t); if (t.tags) { PICTAG[t.poster + 'Primary'] = t.tags.poster; PICTAG[t.backdrop + 'Backdrop'] = t.tags.backdrop; if (t.thumb) PICTAG[t.thumb + 'Thumb'] = t.tags.thumb; } });
       (W.secret || []).forEach(function (d) { if (!days[d]) days[d] = { secret: true }; });
@@ -1758,8 +1762,8 @@ var THEMES = [   // each its film's own lettering and colour, researched (John, 
   // Cinema Paradiso (John, 9 Nov 2026: "Change Sherlock Jr to Cinema Paradiso and re-do colours and fonts research"): the 1990
   // US one-sheet, Totò on Alfredo's shoulders under a starry night (#1f2c3c to #326088), the open-air screen framed in bulbs
   // (#ebdeca); its title in cream (#fffee2) with a magenta shadow (#b954be), heavy flared 1920s capitals: Fanfare (1927),
-  // revived as Materhorn NF, John's own copy once uploaded (a visual match: no design source names it); Luckiest Guy till then
-  { key: 'reel', mob: [300, 100, 1280, 640], name: 'The Reel', film: 'Cinema Paradiso', year: 1988, by: 'Giuseppe Tornatore', bg: '#1f2c3c', ink: '#fff', font: '"GF-reel", "Luckiest Guy", sans-serif', tw: 400, tt: 'uppercase' },
+  // revived as Materhorn NF, John's own copy once uploaded (a visual match: no design source names it); Titan One, upright and soft like it, till then
+  { key: 'reel', mob: [300, 100, 1280, 640], name: 'The Reel', film: 'Cinema Paradiso', year: 1988, by: 'Giuseppe Tornatore', bg: '#1f2c3c', ink: '#fff', font: '"GF-reel", "Titan One", sans-serif', tw: 400, tt: 'uppercase' },
   // The Wizard of Oz: the yellow brick road (#f2c230) through the Emerald City's green (#1e8c4e); the 1939 title card's
   // hand-drawn condensed capitals with curled ends and a deep shadow (Federant, the nearest free face)
   { key: 'oz', mob: [0, 0, 1280, 720], name: 'The Yellow Brick Road', film: 'The Wizard of Oz', year: 1939, by: 'Victor Fleming', bg: '#1e8c4e', ink: '#fff', font: '"Federant", serif', tw: 400, tt: 'none' },
@@ -1768,7 +1772,7 @@ var THEMES = [   // each its film's own lettering and colour, researched (John, 
   // Citizen Kane: its main title's outlined condensed capitals (League Gothic, the free revival of Alternate Gothic: John, 8 Nov 2026); the red title band of the 1941 Style A poster
   { key: 'globe', mob: [40, 60, 1240, 640], name: 'The Snow Globe', film: 'Citizen Kane', year: 1941, by: 'Orson Welles', bg: '#a8161a', ink: '#fff', font: '"GF-globe", "League Gothic", sans-serif', tw: 400 }
 ];
-var THEMEFONTS = 'https://fonts.googleapis.com/css2?family=Bowlby+One&family=Della+Respira&family=Special+Gothic+Expanded+One&family=Londrina+Solid:wght@400;900&family=Share+Tech+Mono&family=Archivo+Narrow:wght@600&family=Anton&family=IM+Fell+English+SC&family=Cinzel:wght@700&family=Tilt+Neon&family=Yuji+Syuku&family=Amatic+SC:wght@700&family=Big+Shoulders:wght@400;700&family=League+Gothic&family=News+Cycle:wght@700&family=Federant&family=Space+Mono:wght@400;700&family=Archivo+Black&family=Orbitron:wght@800&family=Montserrat:wght@800&family=Big+Shoulders+Stencil:wght@800&family=Lobster&family=UnifrakturMaguntia&family=Luckiest+Guy&display=swap';
+var THEMEFONTS = 'https://fonts.googleapis.com/css2?family=Bowlby+One&family=Della+Respira&family=Special+Gothic+Expanded+One&family=Londrina+Solid:wght@400;900&family=Share+Tech+Mono&family=Archivo+Narrow:wght@600&family=Anton&family=IM+Fell+English+SC&family=Cinzel:wght@700&family=Tilt+Neon&family=Yuji+Syuku&family=Amatic+SC:wght@700&family=Big+Shoulders:wght@400;700&family=League+Gothic&family=News+Cycle:wght@700&family=Federant&family=Space+Mono:wght@400;700&family=Archivo+Black&family=Orbitron:wght@800&family=Montserrat:wght@800&family=Big+Shoulders+Stencil:wght@800&family=Lobster&family=UnifrakturMaguntia&family=Titan+One&display=swap';
 function themeEarly() {   // (before the films arrive: the page already laid out as this month's theme)
   if (VIEW() !== 'themes') return; var R = document.documentElement, t = themeFor(new Date().getMonth(), new Date().getFullYear());
   R.classList.add(t.key === 'table' ? 'table' : 'hall'); if (MOB()) R.classList.add('mob'); R.dataset.theme = t.key;
@@ -2438,7 +2442,15 @@ THEMEFX.table = {
 // February: the reel (Cinema Paradiso): the days as frames along a strip of film under its starry night, the day's film on the
 // open-air screen in its bulbs; on a phone the strip runs down the screen
 THEMEFX.reel = {
-  decor: function () { return '<div class="reelsky"></div><div class="reelband" id="reelband"></div><div class="reelscreen" id="reelscreen"></div>'; },
+  decor: function (c) {   // (the stars scattered at random, some small, some the poster's four-pointed twinklers: John, 9 Nov 2026: "stars look uniform like a grid")
+    var st = '';
+    for (var i = 0; i < 150; i++) {
+      var x = seeded(i * 7 + 1) * c.W, y = seeded(i * 7 + 2) * c.H * .9, r = .7 + Math.pow(seeded(i * 7 + 3), 3) * 2.2, o = .35 + seeded(i * 7 + 4) * .65;
+      if (i % 11 === 0) { var k = 5 + seeded(i * 7 + 5) * 6; st += '<path class="tw" style="animation-delay:-' + (seeded(i) * 3).toFixed(1) + 's" d="M' + x.toFixed(0) + ' ' + (y - k).toFixed(0) + 'Q' + x.toFixed(0) + ' ' + y.toFixed(0) + ' ' + (x + k).toFixed(0) + ' ' + y.toFixed(0) + 'Q' + x.toFixed(0) + ' ' + y.toFixed(0) + ' ' + x.toFixed(0) + ' ' + (y + k).toFixed(0) + 'Q' + x.toFixed(0) + ' ' + y.toFixed(0) + ' ' + (x - k).toFixed(0) + ' ' + y.toFixed(0) + 'Q' + x.toFixed(0) + ' ' + y.toFixed(0) + ' ' + x.toFixed(0) + ' ' + (y - k).toFixed(0) + 'Z"/>'; }
+      else st += '<circle class="s" cx="' + x.toFixed(0) + '" cy="' + y.toFixed(0) + '" r="' + r.toFixed(1) + '" opacity="' + o.toFixed(2) + '"/>';
+    }
+    return '<div class="reelsky"><svg width="' + c.W + '" height="' + c.H + '">' + st + '</svg></div><div class="reelband" id="reelband"></div><div class="reelscreen" id="reelscreen"></div>';
+  },
   swipe: function (c) { return c.mob ? { x: 0, y: -1, px: 75 } : { x: -1, y: 0, px: 130 }; },   // (the film runs with the finger)
   place: function (all, at, c) {
     all.forEach(function (el, j) {
