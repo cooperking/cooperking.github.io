@@ -2,6 +2,26 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
+<script>/* Grifflix's own address (John, 9 Nov 2026: "how can we get it on grifflix.co.uk now?"): on the old one, a visit goes there,
+its sign-in and choices with it (in the link's #, never sent anywhere), and keeps its place; Grifflix's apps (?app=, the TV), and a
+page shown inside another, stay where they are. On grifflix.co.uk, what came with it is kept and the link tidied */
+(function () {
+  var L = location, ls; try { ls = localStorage; } catch (e) { return; }
+  if (L.hostname === 'grifflix.co.uk' && L.hash.indexOf('#carry=') === 0) {
+    var i = L.hash.indexOf('|'), raw = i < 0 ? L.hash.slice(7) : L.hash.slice(7, i), rest = i < 0 ? '' : L.hash.slice(i + 1);
+    try { var o = JSON.parse(decodeURIComponent(raw)); Object.keys(o).forEach(function (k) { if (/^grifflix-/.test(k) && ls.getItem(k) == null) ls.setItem(k, o[k]); }); } catch (e) {}
+    try { history.replaceState(null, '', L.pathname + L.search + (rest ? '#' + rest : '')); } catch (e) {}
+    return;
+  }
+  if (L.hostname !== 'cooperking.github.io') return;
+  var app = (L.search.match(/[?&]app=([^&]*)/) || [])[1];
+  if (app) { try { ls.setItem('grifflix-app', app); } catch (e) {} return; }
+  if (/GRIFFLIXTV\//.test(navigator.userAgent) || ls.getItem('grifflix-app') || window.top !== window || /[?&](stay|tv)=1/.test(L.search)) return;
+  var o = {}; for (var j = 0; j < ls.length; j++) { var k = ls.key(j); if (/^grifflix-/.test(k)) o[k] = ls.getItem(k); }
+  var p = L.pathname.replace(/^\/grifflix\/?/, '/'); if (p === '/admin.html') p = '/admin'; else if (p === '/index.html') p = '/';
+  L.replace('https://grifflix.co.uk' + p + L.search + (Object.keys(o).length ? '#carry=' + encodeURIComponent(JSON.stringify(o)) + '|' + L.hash.slice(1) : L.hash));
+})();
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Grifflix</title>
 <meta name="description" content="John's films and TV for family and friends, with a Movie of the Day.">
