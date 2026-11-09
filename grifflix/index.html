@@ -566,7 +566,6 @@ html.tv .th-lane .vday:focus { outline: 0 !important; box-shadow: 0 0 0 4px #1a1
 .zpost { position: absolute; inset: 0; opacity: 0; overflow: hidden; background: #0c0b0a; transition: opacity 1.4s ease; }
 .zpost::before { content: ""; position: absolute; inset: -30px; background: var(--pp) center / cover; filter: blur(20px) brightness(.45); }
 .zpost::after { content: ""; position: absolute; inset: 4% 0; background: var(--pp) center / contain no-repeat; filter: drop-shadow(0 8px 20px rgba(0, 0, 0, .6)); }   /* (the day's poster on the screen, its own colours blurred round it) */
-.th-picture .vday { filter: opacity(var(--lo, 1)); }
 .zstagef { cursor: pointer; }
 .ztrain { position: absolute; inset: 0; opacity: 0; background: #0c0b0a url("/grifflix/img/lumiere-train-frames.webp") 0 0 / 800% 400% no-repeat; filter: sepia(.18) contrast(1.06) brightness(.92); will-change: opacity; }   /* (the Lumières' train, a frame at a time) */
 .zpost.on { opacity: 1; } .zpost.now, .zstagef.now .zcurt { transition: none; }
@@ -3250,25 +3249,29 @@ THEMEFX.fold = {
       var s = ps.map(function (p) { return me.S(g, p); }); if (s.some(function (q) { return q[2] < .4; })) return;
       polys.push([(s[0][2] + s[2][2]) / 2, cls, s]);
     };
+    // (a TV: the city redrawn every other frame while the days move, the days themselves every frame; the last frame always drawn)
+    var skip = TV && phi >= 1 && me._to != null && Math.abs(a - me._to) > 1e-3 && ((me._fc = (me._fc || 0) + 1) % 2);
+    if (!skip) {
     for (var n = Math.ceil((1.2 + sh) / 1.5); n * 1.5 - sh < tm; n++) {   // (the paving, in bands across the street, moving with you)
       var t1 = n * 1.5 - sh, t2 = Math.min(tm, t1 + 1.5);
       Q(n % 2 ? 'pv1' : 'pv2', [me.P(t1, -sw, 0, phi), me.P(t1, sw, 0, phi), me.P(t2, sw, 0, phi), me.P(t2, -sw, 0, phi)]);
-      if (n % 2) Q('ln', [me.P(t1, -.07, .01, phi), me.P(t1, .07, .01, phi), me.P(t2, .07, .01, phi), me.P(t2, -.07, .01, phi)]);
+      if (n % 2 && (!TV || t1 < 20)) Q('ln', [me.P(t1, -.07, .01, phi), me.P(t1, .07, .01, phi), me.P(t2, .07, .01, phi), me.P(t2, -.07, .01, phi)]);
     }
     [-1, 1].forEach(function (sd) {   // (the buildings either side, their fronts to the street; each its storeys and its roofline)
       for (var n = Math.ceil((1 + sh) / 2.3); n * 2.3 - sh < tm; n++) {
         var t1 = n * 2.3 - sh, t2 = Math.min(tm, t1 + 2.15), h = 3 + seeded(n * 7 + (sd > 0 ? 3 : 0)) * 2.4, x = sd * sw;
         if (t2 > me.L) h = Math.min(h, 2.2 + me.R / Math.max(phi, .02) * .22);   // (lower where the street bends over, so they don't crowd together on the curve)
         // (a front in pieces where the street bends, so it curves with it rather than cutting across the fold)
-        var nseg = t2 > me.L - 1 ? 4 : 1;
+        var nseg = t2 > me.L - 1 ? (TV ? 2 : 4) : 1;
         for (var q = 0; q < nseg; q++) { var u1 = t1 + (t2 - t1) * q / nseg, u2 = t1 + (t2 - t1) * (q + 1) / nseg;
           Q((sd < 0 ? 'bl' : 'br') + (nseg > 1 ? '2' : ''), [me.P(u1, x, 0, phi), me.P(u2, x, 0, phi), me.P(u2, x, h, phi), me.P(u1, x, h, phi)]); }
-        if (!TV || t1 < 30) for (var f = 1.1; f < h - .8; f += 1.15) Q('wn', [me.P(t1 + .25, x, f, phi), me.P(t2 - .25, x, f, phi), me.P(t2 - .25, x, f + .55, phi), me.P(t1 + .25, x, f + .55, phi)]);
+        if (!TV || t1 < 12) for (var f = 1.1; f < h - .8; f += 1.15) Q('wn', [me.P(t1 + .25, x, f, phi), me.P(t2 - .25, x, f, phi), me.P(t2 - .25, x, f + .55, phi), me.P(t1 + .25, x, f + .55, phi)]);
         Q('rf', [me.P(t1, x, h, phi), me.P(t2, x, h, phi), me.P(t2, x + sd * .5, h + .6, phi), me.P(t1, x + sd * .5, h + .6, phi)]);   // (the mansard roof, sloping back from the street, as Paris's do: John, 9 Nov 2026: "perspective still seems wrong on the inception")
       }
     });
     polys.sort(function (p, q) { return q[0] - p[0]; });
-    var cv = $('#fscene'), x = cv && cv.getContext('2d');
+    }
+    var cv = !skip && $('#fscene'), x = cv && cv.getContext('2d');
     if (x) {
       var dpr = TV ? 1 : Math.min(2, window.devicePixelRatio || 1);   // (a TV: at full size: half was too soft on the screen, John, 9 Nov 2026)
       if (cv.width !== Math.round((c.W - g.mask) * dpr)) { cv.width = Math.round((c.W - g.mask) * dpr); cv.height = Math.round(c.H * dpr); }
@@ -3520,7 +3523,7 @@ THEMEFX.picture = {
   // "I'd like the train animated with the swipe. It can be sped up loads and it only need the part from where the train is in view to
   // when it get into the station")
   ready: function (c) {
-    fxReset(this); this.c = c; var me = this, st = $('#zstagef'); if (!st) return;
+    fxReset(this); this.c = c; var me = this, st = $('#zstagef'); me._lo = window.ZFILMED || CALM ? 0 : 1; if (!st) return;
     if (window.ZFILMED || CALM) { st.classList.add('open', 'now'); return; }
     me._intro = true; window.ZFILMED = 1;
     var go = function () {
@@ -3540,11 +3543,16 @@ THEMEFX.picture = {
       me.train(Math.min(1, u / .78), v); if (u < 1) requestAnimationFrame(f); else { me._tplay = false; me.train(1, 0); }
     })(t0);
   },
+  lo: function (el) {   // (a day's poster below: its own fade, and gone while the screen shows it)
+    var v = (el._o == null ? 0 : el._o) * (this._lo == null ? 1 : this._lo);
+    if (Math.abs((el._v == null ? -1 : el._v) - v) < .004) return; el._v = v;
+    el.style.opacity = v.toFixed(3); el.style.visibility = v < .005 ? 'hidden' : '';
+  },
   train: function (u, vis) {   // (frame u of the arrival, 0 to 1; vis: how much of it over the poster)
     var el = this._tr && this._tr.isConnected ? this._tr : (this._tr = $('#ztrain')); if (!el) return;
     // (the poster below only until the screen shows it, so it's never there twice: John, 9 Nov 2026: "Lower picture should only show
     // until main one shows on screen and then disappear")
-    var th = $('#cal .th-picture'), st = $('#zstagef'); if (th) th.style.setProperty('--lo', st && st.classList.contains('open') ? Math.min(1, vis * 1.6).toFixed(3) : '1');
+    var st = $('#zstagef'), me = this; me._lo = st && st.classList.contains('open') ? Math.min(1, vis * 1.6) : 1; (me.all || []).forEach(function (el) { me.lo(el); });
     var n = Math.max(0, Math.min(31, Math.round(u * 31)));
     el.style.backgroundPosition = (n % 8 / 7 * 100).toFixed(3) + '% ' + (Math.floor(n / 8) / 3 * 100).toFixed(3) + '%';
     el.style.opacity = Math.max(0, Math.min(1, vis)).toFixed(3);
@@ -3620,9 +3628,10 @@ THEMEFX.picture = {
       var k = j - a, ph = k * st, cs = Math.cos(ph), sn = Math.sin(ph), nf = near(k);
       // (the day's poster, large, below the drum: the next sliding in as the drum turns)
       var o = nf * nf * (3 - 2 * nf);
-      el.style.transform = 'translate(' + (g.pcx - k * 50 * g.f).toFixed(1) + 'px,' + (g.pt + 255 * g.ps / 2).toFixed(1) + 'px) translate(-50%,-50%) scale(' + (g.ps * (.94 + .06 * nf)).toFixed(3) + ')';
-      el.style.opacity = o.toFixed(2); el.style.pointerEvents = o < .5 ? 'none' : ''; el.style.zIndex = 150 + Math.round(nf * 10);
-      el.style.setProperty('--dk', '0');
+      // (only the one or two showing drawn at all: the rest hidden, not kept as layers; a Fire Stick was struggling: John, 9 Nov 2026)
+      el._o = o; me.lo(el);
+      if (o > .005) el.style.transform = 'translate(' + (g.pcx - k * 50 * g.f).toFixed(1) + 'px,' + (g.pt + 255 * g.ps / 2).toFixed(1) + 'px) translate(-50%,-50%) scale(' + (g.ps * (.94 + .06 * nf)).toFixed(3) + ')';
+      el.style.pointerEvents = o < .5 ? 'none' : ''; el.style.zIndex = 150 + Math.round(nf * 10);
       // (its poster on the red band, turning with the drum: the near side)
       var t = me._zp[j], wo = Math.abs(k) > 7 || cs < .02 ? 0 : Math.min(1, cs / .2);
       if (!wo) { t.style.visibility = 'hidden'; return; } t.style.visibility = '';
