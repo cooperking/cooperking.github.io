@@ -2570,11 +2570,14 @@ function themeMusic(k) {   // the theme on the page now (null: none)
   // (loaded before it starts, so it never stutters while it fills: John, 9 Nov 2026: "sound is slow to load on a firestick and
   // initially a bit jerky"; on a TV a moment more, for the theme's opening to settle. Started silently at once, in the tap that
   // allows it, and paused: a browser then lets it play when it's ready)
-  var fail = function () { if (TMUS.a === a) { TMUS.a = null; TMUS.ok = false; } }, began = false, ready = false;   // (not allowed yet: the next tap plays it)
-  var begin = function () { if (began || TMUS.a !== a) return; began = true; if (a.currentTime > .3) a.currentTime = 0; a.play().then(function () { fade(vol, k === 'picture' ? 3500 : 1800); }).catch(fail); };
-  var whenReady = function () { if (ready) return; ready = true; setTimeout(begin, TV ? 900 : 60); };
-  a.addEventListener('canplaythrough', whenReady, { once: true }); setTimeout(whenReady, 8000);
-  a.play().then(function () { if (!began) a.pause(); }).catch(fail);
+  // (kept playing, muted, while it loads: an iPhone loads only what's playing: John, 9 Nov 2026: "Music very slow to load"; heard
+  // from its start once it can play through, or a moment after it's begun)
+  var fail = function () { if (TMUS.a === a) { TMUS.a = null; TMUS.ok = false; } }, began = false;   // (not allowed yet: the next tap plays it)
+  var begin = function () { if (began || TMUS.a !== a) return; began = true; try { a.currentTime = 0; } catch (e) {} a.muted = false; fade(vol, k === 'picture' ? 3500 : 1800); };
+  a.muted = true;
+  a.addEventListener('canplaythrough', function () { setTimeout(begin, TV ? 900 : 60); }, { once: true });
+  a.addEventListener('playing', function () { setTimeout(begin, TV ? 1600 : 1100); }, { once: true });
+  a.play().catch(fail);
 }
 function musicHold() { if (TMUS.k === 'picture' && TMUS.a) { TMUS.a.pause(); TMUS.a = null; } if (TMUS.k === 'picture') TMUS.after = true; }   // (the leader first: the music after it)
 function musicAfterLeader() { if (!TMUS.after) return; TMUS.after = false; if (TMUS.k === 'picture' && !TMUS.a) { var pj = TMUS.pj; TMUS.pj = null; TMUS.k = null; if (pj) pj.stop(); themeMusic('picture'); } }
@@ -3371,7 +3374,7 @@ THEMEFX.picture = {
     // (picture and sound on one clock, the sound's: the numbers follow it, so a busy TV can't put them out of step: John, 9 Nov 2026:
     // "3 2 1 doesn't synch with the music and the Grifflix coming in as jerky"; begun once the page has drawn, two frames on)
     var n = d.querySelector('.n'), done = false, raf = 0, stage = '', gone = function (skip) {
-      if (done) return; done = true; cancelAnimationFrame(raf);
+      if (done) return; done = true; cancelAnimationFrame(raf); if (skip === true && d._la) d._la.pause();
       var gx = d.querySelector('.gx'), br = $$('.bar-top .brand').filter(function (x) { return x.offsetParent; })[0];
       if (skip !== true && gx && br && d.classList.contains('name')) {   // (GRIFFLIX rises to its place in the bar, the theme coming up under it: John, 9 Nov 2026: "should fade into the theme nicely")
         var a = gx.getBoundingClientRect(), tr = function (el) { var r = document.createRange(); r.selectNodeContents(el); return r.getBoundingClientRect(); }, ra = tr(gx), rb = tr(br), k = rb.height / ra.height;   // (the letters themselves, onto the bar's)
@@ -3383,11 +3386,17 @@ THEMEFX.picture = {
         setTimeout(function () { d.remove(); musicAfterLeader(); }, 1350);
       } else { d.classList.add('out'); setTimeout(function () { d.remove(); musicAfterLeader(); }, 600); }
     };
+    // (its sound one recorded track, played as the music is, so an iPhone plays it too, silent switch and all; the numbers follow its
+    // own clock: John, 9 Nov 2026: "The 321 didn't play the beeps on iPhone")
+    var la = TMUS.on ? new Audio() : null; if (la) { la.preload = 'auto'; la.src = '/grifflix/audio/leader.m4a'; d._la = la; }
     requestAnimationFrame(function () { requestAnimationFrame(function () {
-      var c = TMUS.on && TMUS.ok ? musicCtx() : null, live = c && c.state === 'running', t0 = live ? c.currentTime + .12 : 0, p0 = performance.now() + 120;
-      if (live) { musicBeep(t0); musicBeep(t0 + .8); musicBeep(t0 + 1.6); if (TMUS.pj) TMUS.pj.sting(t0 + 1.7); }
+      var live = false, p0 = 0, t00 = performance.now();
+      if (la) la.play().then(function () { if (!done && performance.now() - t00 < 1500) live = true; else la.pause(); }).catch(function () {});   // (not allowed yet, or too slow: the countdown goes on in silence)
       var tick = function () {
-        if (done) return; var e = live ? c.currentTime - t0 : (performance.now() - p0) / 1000, st = e < 0 ? '3' : e < .8 ? '3' : e < 1.6 ? '2' : e < 2.4 ? '1' : e < 2.52 ? 'flash' : e < 3.9 ? 'name' : 'end';
+        if (done) return;
+        if (!live && la && performance.now() - t00 < 1500 && la.paused) { raf = requestAnimationFrame(tick); return; }   // (a moment for its sound to start)
+        if (!live && !p0) p0 = performance.now();   // (no sound: its own clock, from now)
+        var e = live ? la.currentTime - .1 : (performance.now() - p0) / 1000, st = e < 0 ? '3' : e < .8 ? '3' : e < 1.6 ? '2' : e < 2.4 ? '1' : e < 2.52 ? 'flash' : e < 3.9 ? 'name' : 'end';
         if (st !== stage) { stage = st;
           if (st === 'flash') { d.classList.add('flash'); n.textContent = ''; } else if (st === 'name') { d.classList.remove('flash'); d.classList.add('name'); } else if (st === 'end') return gone(); else n.textContent = st; }
         raf = requestAnimationFrame(tick);
@@ -3420,7 +3429,8 @@ THEMEFX.picture = {
     $$('#cal .zlt').forEach(function (t, i, L) {   // (the rim's letters, turning with the drum)
       var th = (i / L.length) * Math.PI * 2 - a * st, cs = Math.cos(th), sn = Math.sin(th);
       var lean = Math.abs(cs) > .04 ? Math.atan(-ry * sn / (g.R * cs)) * 180 / Math.PI : 0;   // (each letter along the rim's curve: John, 9 Nov 2026: "The angle of the Grifflix at the top of the zoetrope is wrong")
-      t.style.transform = 'translate(' + (g.cx + g.R * sn).toFixed(1) + 'px,' + (top + ry * cs - 34).toFixed(1) + 'px) translate(-50%,0) rotate(' + lean.toFixed(1) + 'deg) scaleX(' + Math.max(.08, Math.abs(cs)).toFixed(2) + ')';
+      var ds = (.55 + .45 * (cs + 1) / 2) * g.f;   // (smaller at the back, as the posters: John, 9 Nov 2026: "like the back is at the front")
+      t.style.transform = 'translate(' + (g.cx + g.R * sn).toFixed(1) + 'px,' + (top + ry * cs - 34 * ds).toFixed(1) + 'px) translate(-50%,0) scale(' + ds.toFixed(3) + ') rotate(' + lean.toFixed(1) + 'deg) scaleX(' + Math.max(.08, Math.abs(cs)).toFixed(2) + ')';
       t.style.opacity = cs > 0 ? (.35 + .65 * cs).toFixed(2) : (.12 * -cs).toFixed(2); t.style.zIndex = cs > 0 ? 160 : 1;
     });
   },
