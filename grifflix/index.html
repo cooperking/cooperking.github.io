@@ -1475,7 +1475,7 @@ function fromSite(path) {   // what the site's own files answer (null: a thing o
   if (name === 'calendars') {
     return motdCal().then(function (m) {
       var mine = { id: 'motd', name: m.name, ownerName: 'John', mine: m.mine, shared: true, count: m.count };
-      if (PUBLIC) return { calendars: [mine] };
+      if (PUBLIC || !NOTES) return { calendars: [mine] };   // (the first release: Movie of the Day only, any of your own kept but out of sight)
       return own('calendars').then(function (r) { return { calendars: [mine].concat(r.calendars || []) }; }, function () { return { calendars: [mine] }; });
     });
   }
@@ -1779,7 +1779,7 @@ function route() {
   if (S.view === 'search') { location.hash = '#' + (S.lastView || 'home'); return searchSheet(); }
   if (S.view === 'profile') { location.hash = '#' + (S.lastView || 'home'); return profile(); }
   S.lastView = S.view;
-  if (h[1]) S.cal = h[1];
+  if (h[1]) S.cal = NOTES ? h[1] : 'motd';
   home();
 }
 function goHome() {   // the logo: home, the month's theme, and the month it is now (John, 8 Nov 2026: "Clicking on Grifflix should
@@ -1802,6 +1802,7 @@ function home() {
   var main = $('#main');
   main.className = 'homeview';   // (on a computer, only the calendar page is laid out as one screen)
   main.innerHTML = (TVHERO ? '<div class="tvfeat" id="tvfeat"></div>' : '') + '<div class="hero" id="hero"></div><div class="cals" id="cals"></div><div id="mnav"></div><div class="stage"><section class="cal" id="cal"></section><section class="side" id="side"></section></div><div class="rows" id="rows"></div>';
+  if (!NOTES) S.cal = 'motd';
   Promise.all([api('calendars'), api('calendar?id=' + encodeURIComponent(S.cal)).catch(function () { S.cal = 'motd'; return api('calendar?id=motd'); })]).then(function (r) {
     S.cals = r[0].calendars; S.calData = r[1];
     if (!S.month) S.month = TODAY.slice(0, 7);
