@@ -3302,6 +3302,7 @@ THEMEFX.lane = {
 // The month's posters stand round it, GRIFFLIX round its rim; going on a day spins the drum (frame by frame, eased, as a
 // hand would), the day's poster coming round to the front and lifting out towards you, the room lit by its film. Opening
 // the site starts with a film leader counting down, once a visit
+var ZTILT = Math.asin(.2) * 180 / Math.PI;   // (the zoetrope seen from a little above: its ellipses' height a fifth of their width)
 function zstand(cx, y0, R, ry, maxY) {   // (the zoetrope's turned oak pedestal, made as a lathe makes it: its profile spun round, drawn as
   // thin rings from the foot up, each in the drum's perspective, so the rounded bowl hides the neck and the foot's top shows round it)
   var e = ry / R, F = function (n) { return n.toFixed(1); }, k;
@@ -3423,7 +3424,9 @@ THEMEFX.picture = {
       // "the angle of movement on the zoetrope is different from the posters coming into view")
       var depth = (cs + 1) / 2, s = (.5 + .5 * depth) * g.f, x = g.cx + g.R * sn, y = g.cy + g.R * .2 * (cs - .5) - nf * 30 * g.f, lift = 1 + .32 * nf;
       var o = Math.abs(k) > 6.6 ? Math.max(0, 7.1 - Math.abs(k)) * 2 : 1;
-      el.style.transform = 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px) translate(-50%,-50%) perspective(' + g.P + 'px) rotateY(' + ((front ? th : th + Math.PI) * 180 / Math.PI).toFixed(1) + 'deg) scale(' + (s * lift).toFixed(3) + ')';
+      // (seen as the drum is, from a little above: its rims' ellipses say 11.5 degrees down: John, 9 Nov 2026: "The angle of the rotation
+      // and the top still don't feel like they match the zoetrope")
+      el.style.transform = 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px) translate(-50%,-50%) perspective(' + g.P + 'px) rotateX(' + (-ZTILT).toFixed(2) + 'deg) rotateY(' + ((front ? th : th + Math.PI) * 180 / Math.PI).toFixed(1) + 'deg) scale(' + (s * lift).toFixed(3) + ')';
       el.style.opacity = (front ? o : o * .35 * (1 - depth * .5)).toFixed(2); el.style.zIndex = Math.round(depth * 100) + (nf > .5 ? 100 : 0);
       el.style.setProperty('--dk', nf > .98 ? '0' : (.65 - .55 * depth).toFixed(2));   // (dimmed by a veil, not a filter redrawn each frame: smooth on a TV)
     });
@@ -3431,9 +3434,9 @@ THEMEFX.picture = {
     me.za = a; me.horse(g, ry, mid);
     $$('#cal .zlt').forEach(function (t, i, L) {   // (the rim's letters, turning with the drum)
       var th = (i / L.length) * Math.PI * 2 - a * st, cs = Math.cos(th), sn = Math.sin(th);
-      var lean = Math.abs(cs) > .04 ? Math.atan(-ry * sn / (g.R * cs)) * 180 / Math.PI : 0;   // (each letter along the rim's curve: John, 9 Nov 2026: "The angle of the Grifflix at the top of the zoetrope is wrong")
       var ds = (.55 + .45 * (cs + 1) / 2) * g.f;   // (smaller at the back, as the posters: John, 9 Nov 2026: "like the back is at the front")
-      t.style.transform = 'translate(' + (g.cx + g.R * sn).toFixed(1) + 'px,' + (top + ry * cs - 34 * ds).toFixed(1) + 'px) translate(-50%,0) scale(' + ds.toFixed(3) + ') rotate(' + lean.toFixed(1) + 'deg) scaleX(' + Math.max(.08, Math.abs(cs)).toFixed(2) + ')';
+      // (each letter printed on the rim: turned with it and seen from the same height, so it leans and narrows as the rim does)
+      t.style.transform = 'translate(' + (g.cx + g.R * sn).toFixed(1) + 'px,' + (top + ry * cs - 34 * ds).toFixed(1) + 'px) translate(-50%,0) perspective(' + g.P + 'px) rotateX(' + (-ZTILT).toFixed(2) + 'deg) rotateY(' + (th * 180 / Math.PI).toFixed(1) + 'deg) scale(' + ds.toFixed(3) + ')';
       t.style.opacity = cs > 0 ? (.35 + .65 * cs).toFixed(2) : (.12 * -cs).toFixed(2); t.style.zIndex = cs > 0 ? 160 : 1;
     });
   },
@@ -3445,7 +3448,7 @@ THEMEFX.picture = {
     me._zhs.forEach(function (t, i) {
       var th = (i / N) * Math.PI * 2 - a * me.st, cs = Math.cos(th), sn = Math.sin(th), fr = cs > 0;
       t.style.width = fw.toFixed(1) + 'px'; t.style.height = fh.toFixed(1) + 'px'; t.style.backgroundSize = (fw * 15).toFixed(1) + 'px ' + fh.toFixed(1) + 'px';
-      t.style.transform = 'translate(' + (g.cx + g.R * sn).toFixed(1) + 'px,' + (mid + ry * cs).toFixed(1) + 'px) translate(-50%,-50%) scaleX(' + ((fr ? 1 : -1) * Math.max(.06, Math.abs(cs))).toFixed(2) + ')';
+      t.style.transform = 'translate(' + (g.cx + g.R * sn).toFixed(1) + 'px,' + (mid + ry * cs).toFixed(1) + 'px) translate(-50%,-50%) perspective(' + g.P + 'px) rotateX(' + (-ZTILT).toFixed(2) + 'deg) rotateY(' + (th * 180 / Math.PI).toFixed(1) + 'deg)';
       t.style.opacity = fr ? (.4 + .6 * cs).toFixed(2) : (.3 * -cs).toFixed(2); t.style.zIndex = fr ? 150 : 1; if (TV) t.style.visibility = fr ? '' : 'hidden';
     });
     me._fw = fw;
