@@ -4389,7 +4389,7 @@ function wcall(body) {   // Grifflix's own members on the Worker: /g/<op>
 var NOTE_OK = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
 var IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 var STANDALONE = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
-function swReg() { return navigator.serviceWorker.register('/grifflix/sw.js', { scope: '/grifflix/' }).then(function () { return navigator.serviceWorker.ready; }); }
+function swReg() { var own = location.hostname === 'grifflix.co.uk'; return navigator.serviceWorker.register(own ? '/sw.js' : '/grifflix/sw.js', { scope: own ? '/' : '/grifflix/' }).then(function () { return navigator.serviceWorker.ready; }); }   // (on grifflix.co.uk the whole site)
 function b64key(k) { var p = '='.repeat((4 - k.length % 4) % 4), raw = atob((k + p).replace(/-/g, '+').replace(/_/g, '/')), a = new Uint8Array(raw.length); for (var i = 0; i < raw.length; i++) a[i] = raw.charCodeAt(i); return a; }
 function deviceSub() { return NOTE_OK ? navigator.serviceWorker.getRegistration('/grifflix/').then(function (r) { return r ? r.pushManager.getSubscription() : null; }).catch(function () { return null; }) : Promise.resolve(null); }
 function profile() {
