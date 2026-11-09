@@ -2369,13 +2369,13 @@ function drawHall(C, n, m, mine) {
   var h = '<div class="hbg" role="img" aria-label="The Overlook Hotel’s corridor"></div>' +
     '<div class="hstage" style="perspective:' + g.p + 'px;perspective-origin:' + vx.toFixed(0) + 'px ' + vy.toFixed(0) + 'px">';
   var pos = 'left:' + (fx - pw / 2).toFixed(0) + 'px;top:' + (fy - ph / 2).toFixed(0) + 'px;width:' + pw.toFixed(0) + 'px;height:' + ph.toFixed(0) + 'px;';
-  for (var d = 1; d <= n; d++) {
-    var key = S.month + '-' + String(d).padStart(2, '0'), it = C.days[key], dt = new Date(key + 'T12:00'), lab = '<span class="hn">' + DOW[(dt.getDay() + 6) % 7] + ' ' + d + '</span>';
-    if (it && it.secret) h += '<button class="hday slab soon" data-day="' + key + '" aria-label="' + d + ' ' + MONTHS[m] + ': coming soon" style="' + pos + '">' + '<span class="cs">Coming<br>soon</span>' + lab + '</button>';
-    else if (it) h += '<button class="hday has' + (key === TODAY ? ' today' : '') + '" data-day="' + key + '" aria-label="' + d + ' ' + MONTHS[m] + ': ' + esc(it.name) + '" style="' + pos + 'background-image:url(' + esc(img(it.poster || it.thumb, it.poster ? 'Primary' : 'Thumb', 400)) + ')">' + lab + '</button>';
-    else if (mine) h += '<button class="hday empty' + (key === TODAY ? ' today' : '') + '" data-day="' + key + '" aria-label="' + d + ' ' + MONTHS[m] + ': choose a film" style="' + pos + '"><span class="plus">+</span>' + lab + '</button>';
-    else h += '<button class="hday slab soon" data-day="' + key + '" aria-label="' + d + ' ' + MONTHS[m] + ': coming soon" style="' + pos + '">' + '<span class="cs">Coming<br>soon</span>' + lab + '</button>';
-  }
+  themeKeys().forEach(function (key) {   // (with the neighbouring months' nearest days: see drawTheme)
+    var d = +key.slice(8), om = key.slice(0, 7) !== S.month, it = C.days[key], dt = new Date(key + 'T12:00'), lab = '<span class="hn">' + DOW[(dt.getDay() + 6) % 7] + ' ' + d + '</span>';
+    if (it && it.secret) h += '<button class="hday slab soon" data-day="' + key + '"' + (om ? ' data-om="1"' : '') + ' aria-label="' + d + ' ' + MONTHS[m] + ': coming soon" style="' + pos + '">' + '<span class="cs">Coming<br>soon</span>' + lab + '</button>';
+    else if (it) h += '<button class="hday has' + (key === TODAY ? ' today' : '') + '" data-day="' + key + '"' + (om ? ' data-om="1"' : '') + ' aria-label="' + d + ' ' + MONTHS[m] + ': ' + esc(it.name) + '" style="' + pos + 'background-image:url(' + esc(img(it.poster || it.thumb, it.poster ? 'Primary' : 'Thumb', 400)) + ')">' + lab + '</button>';
+    else if (mine) h += '<button class="hday empty' + (key === TODAY ? ' today' : '') + '" data-day="' + key + '"' + (om ? ' data-om="1"' : '') + ' aria-label="' + d + ' ' + MONTHS[m] + ': choose a film" style="' + pos + '"><span class="plus">+</span>' + lab + '</button>';
+    else h += '<button class="hday slab soon" data-day="' + key + '"' + (om ? ' data-om="1"' : '') + ' aria-label="' + d + ' ' + MONTHS[m] + ': coming soon" style="' + pos + '">' + '<span class="cs">Coming<br>soon</span>' + lab + '</button>';
+  });
   $('#cal').innerHTML = '<div class="thstage"><div class="thv">' + h + '</div></div></div><div class="hinfo" id="hinfo"></div><div class="tmonth">' + tmonthText(m) + '</div>' + themeCaption(m); themeFit(m);
   themeStart(THEMEFX.corridor, { W: W, H: H, n: n, m: m, mob: MOB(), q: q });
 }
@@ -2394,12 +2394,12 @@ function drawTable(C, n, m, mine) {
   var R = document.documentElement.style; R.setProperty('--bg', '#0a0a0a'); R.setProperty('--kink', '255, 255, 255');   // (black and white, always)
   var tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.content = '#0a0a0a';
   var h = '<div class="thstage"><div class="thv">' + bigBoard() + '<div class="tring"></div><div class="tlamp"></div><div class="tcentre" id="tcentre"></div>';
-  for (var d = 1; d <= n; d++) {
-    var key = S.month + '-' + String(d).padStart(2, '0'), it = C.days[key];
-    if (it && !it.secret) h += '<button class="tday has' + (key === TODAY ? ' today' : '') + '" data-day="' + key + '" data-n="' + d + '" aria-label="' + d + ' ' + MONTHS[m] + ': ' + esc(it.name) + '" style="background-image:url(' + esc(img(it.poster || it.thumb, it.poster ? 'Primary' : 'Thumb', 400)) + ')">' + d + '</button>';
-    else if (mine && !(it && it.secret)) h += '<button class="tday' + (key === TODAY ? ' today' : '') + '" data-day="' + key + '" data-n="' + d + '">' + d + '</button>';
-    else h += '<button class="tday soon" data-day="' + key + '" data-n="' + d + '" aria-label="' + d + ' ' + MONTHS[m] + ': coming soon">' + d + '</button>';
-  }
+  themeKeys().forEach(function (key) {   // (with the neighbouring months' nearest days: see drawTheme)
+    var d = +key.slice(8), om = key.slice(0, 7) !== S.month, it = C.days[key];
+    if (it && !it.secret) h += '<button class="tday has' + (key === TODAY ? ' today' : '') + '" data-day="' + key + '"' + (om ? ' data-om="1"' : '') + ' data-n="' + d + '" aria-label="' + d + ' ' + MONTHS[m] + ': ' + esc(it.name) + '" style="background-image:url(' + esc(img(it.poster || it.thumb, it.poster ? 'Primary' : 'Thumb', 400)) + ')">' + d + '</button>';
+    else if (mine && !(it && it.secret)) h += '<button class="tday' + (key === TODAY ? ' today' : '') + '" data-day="' + key + '"' + (om ? ' data-om="1"' : '') + ' data-n="' + d + '">' + d + '</button>';
+    else h += '<button class="tday soon" data-day="' + key + '"' + (om ? ' data-om="1"' : '') + ' data-n="' + d + '" aria-label="' + d + ' ' + MONTHS[m] + ': coming soon">' + d + '</button>';
+  });
   $('#cal').innerHTML = h + '</div></div><div class="tmonth">' + tmonthText(m) + '</div>' + themeCaption(m); themeFit(m);
   themeStart(THEMEFX.table, { W: themeW(), H: themeH(), n: n, m: m, mob: MOB() });
 }
@@ -2631,20 +2631,40 @@ function leaderNewDay() {
 addEventListener('keydown', leaderNewDay, true);
 document.addEventListener('play', function (e) { if (e.target && e.target.id === 'vid') musicHush(); }, true);
 setInterval(function () { if ((TMUS.a || TMUS.pj) && !(VIEW() === 'themes' && $('#cal'))) musicHush(); }, 1000);   // (off the theme's page: quiet)
+function themeKeys() {   // (the month's days, with the neighbouring months' nearest week each side, where those months are on the calendar)
+  var y = +S.month.slice(0, 4), m = +S.month.slice(5, 7) - 1, n = new Date(y, m + 1, 0).getDate(), K = 6, out = [], ms = S.calData ? monthsOf(S.calData.days) : [], f = function (dt) { return dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0'); };
+  var pm = f(new Date(y, m - 1, 1)).slice(0, 7), nm = f(new Date(y, m + 1, 1)).slice(0, 7);
+  if (ms.indexOf(pm) >= 0) for (var i = K; i >= 1; i--) out.push(f(new Date(y, m, 1 - i)));
+  for (var d = 1; d <= n; d++) out.push(f(new Date(y, m, d)));
+  if (ms.indexOf(nm) >= 0) for (var j = 1; j <= K; j++) out.push(f(new Date(y, m, n + j)));
+  return out;
+}
+function themeOther(b) {   // (a neighbouring month's day come to the front: once it's settled there, that month's theme, on that day)
+  clearTimeout(S.crossT); if (!b || !b.dataset.om || S.quiet) return;
+  S.crossT = setTimeout(function () {
+    if (!b.isConnected || !b.classList.contains('front')) return;
+    var key = b.dataset.day, dir = key.slice(0, 7) < S.month ? -1 : 1, fk = document.activeElement === b;
+    S.resumeDay = key; S.quiet = true; var ok = S.step && S.step(dir); S.quiet = false; if (!ok) return;
+    themeFadeIn(dir); var nb = $('#cal button[data-day="' + key + '"]'); if (nb && fk) nb.focus({ preventScroll: true });
+  }, 750);
+}
 function drawTheme(t, C, n, m, mine) {
   var fx = THEMEFX[t.key], W = themeW(), H = themeH();
   var c = { W: W, H: H, n: n, m: m, mob: MOB(), y: +S.month.slice(0, 4), lead: (new Date(+S.month.slice(0, 4), m, 1).getDay() + 6) % 7 };
   var h = '<div class="th th-' + t.key + '">' + (fx.decor ? fx.decor(c) : '');
-  for (var d = 1; d <= n; d++) {
-    var key = S.month + '-' + String(d).padStart(2, '0'), it = C.days[key], dt = new Date(key + 'T12:00');
-    var inner = fx.cell ? fx.cell(d, it, key, c) : '<span class="vn">' + DOW[(dt.getDay() + 6) % 7] + ' ' + d + '</span>';
+  // (the month's days, and the last week of the month before and the first of the month after on either side of them, so the
+  // films beyond it are there coming up; reaching one, its month's theme takes over: John, 9 Nov 2026: "you should be able to see
+  // the films in a previous month ... coming up, it should just change theme when it gets to them" - "that should be true of all")
+  themeKeys().forEach(function (key) {
+    var d = +key.slice(8), om = key.slice(0, 7) !== S.month, mm = +key.slice(5, 7) - 1, it = C.days[key], dt = new Date(key + 'T12:00'), cx = om ? Object.assign({}, c, { m: mm }) : c, m = mm;
+    var inner = fx.cell ? fx.cell(d, it, key, cx) : '<span class="vn">' + DOW[(dt.getDay() + 6) % 7] + ' ' + d + '</span>';
     var pics = it && !it.secret ? '--p:url(' + esc(img(it.poster || it.thumb, it.poster ? 'Primary' : 'Thumb', 400)) + ');--b:url(' + esc(img(it.backdrop || it.thumb || it.poster, it.backdrop ? 'Backdrop' : (it.thumb ? 'Thumb' : 'Primary'), 480)) + ')' : '';
-    var at = ' data-day="' + key + '" data-n="' + d + '" style="' + pics + '"';
+    var at = ' data-day="' + key + '" data-n="' + d + '"' + (om ? ' data-om="1"' : '') + ' style="' + pics + '"';
     if (it && it.secret) h += '<button class="vday slab soon"' + at + ' aria-label="' + d + ' ' + MONTHS[m] + ': coming soon">' + inner + '<span class="cs">Coming<br>soon</span>' + '</button>';   // (a surprise still to come: coming soon, and there to go on to)
     else if (it) h += '<button class="vday has' + (key === TODAY ? ' today' : '') + '"' + at + ' aria-label="' + d + ' ' + MONTHS[m] + ': ' + esc(it.name) + '">' + inner + '</button>';
     else if (mine) h += '<button class="vday empty' + (key === TODAY ? ' today' : '') + '"' + at + ' aria-label="' + d + ' ' + MONTHS[m] + ': choose a film">' + inner + '</button>';
     else h += '<button class="vday none soon"' + at + ' aria-label="' + d + ' ' + MONTHS[m] + ': coming soon">' + inner + '<span class="cs">Coming<br>soon</span>' + '</button>';
-  }
+  });
   $('#cal').innerHTML = '<div class="thstage"><div class="thv">' + h + '</div></div></div><div class="hinfo" id="hinfo"></div><div class="tmonth">' + tmonthText(m) + '</div>' + themeCaption(m); themeFit(m);
   themeStart(fx, c);
 }
@@ -2656,6 +2676,7 @@ function themeEls() { return $$('#cal .vday, #cal .hday, #cal .tday'); }
 function themeAtNow() { var all = themeEls(), f = $('#cal .front'); return Math.max(0, all.indexOf(f)); }
 function themeStart(fx, c) {
   S.theme = { fx: fx, c: c };
+  var cal0 = $('#cal'); if (cal0 && !cal0._noscroll) { cal0._noscroll = 1; cal0.addEventListener('scroll', function () { if (cal0.scrollTop || cal0.scrollLeft) { cal0.scrollTop = 0; cal0.scrollLeft = 0; } }); }   // (a day taking the focus never scrolls the theme away)
   $$('#cal .vday').forEach(function (el) { var u = (el.style.getPropertyValue('--p') || '').match(/url\(["']?([^"')]+)/); if (u) (new Image()).src = u[1]; });   // (every poster ready before it's wanted)
   if (fx.ready) fx.ready(c);
   $$('#cal .snow').forEach(function (h) { var kane = !!h.closest('.th-globe'); snowfall(h, kane ? { alpha: .5, density: .00012 } : { density: .0006, big: 4.6 });
@@ -2663,7 +2684,7 @@ function themeStart(fx, c) {
   $$('#cal .gsnow').forEach(function (h) { snowfall(h, { density: .0042, slow: .4, big: 3.6, wind: 0 }); });
   $$('#cal button.vday, #cal button.hday, #cal button.tday').forEach(function (b) { b.onclick = function () { daySheet(b.dataset.day); }; b.addEventListener('focus', function () { themeTurn(b); }); });
   var was = S.resumeDay && $('#cal button[data-day="' + S.resumeDay + '"]'); S.resumeDay = null;   // (reloaded: the day you were on)
-  themeTurn(was || $('#cal .today.has') || $$('#cal button.has').pop() || $('#cal button[data-day]'));
+  themeTurn(was || $('#cal .today.has') || $$('#cal button.has:not([data-om])').pop() || $('#cal button[data-day]:not([data-om])') || $('#cal button[data-day]'));   // (a month opened: on one of its own days)
 }
 function themeTurn(b) {   // the theme with b at the front
   if (!S.theme) return; var all = themeEls();
@@ -2677,6 +2698,7 @@ function themeShow(at, force) {   // the theme at any point between days; the ne
     all.forEach(function (el) { el.classList.toggle('front', el === b); });
     if (T.fx.front) T.fx.front(b, T.c, $('#cal').classList.contains('drag'));   // (mid-swipe: the picture at once, no flourish)
     (T.fx.info || hallInfo)(b);
+    themeOther(b);
   }
   T.fx.place(all, at, T.c, b);
 }
