@@ -588,9 +588,12 @@ html[data-theme=picture] .leaf2 i { background: #e9c46a; color: #0b0809; }
 html[data-theme=picture] .leaf2 b { color: #e9c46a; }
 /* the opening: a film leader counting down, once a visit */
 @property --zsw { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
-.zlead { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; background: #0b0809; overflow: hidden; cursor: pointer; transition: opacity .5s ease; }
+.zlead { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; overflow: hidden; cursor: pointer; transition: opacity .5s ease; }
+.zlead .zbg { position: absolute; inset: 0; background: #0b0809; transition: opacity 1s ease; }
+.zlead.leave .zbg, .zlead.leave .zglow, .zlead.leave .ring, .zlead.leave .skip { opacity: 0; transition: opacity 1s ease; }   /* (the leader giving way to the theme, GRIFFLIX going up to its place) */
+.zlead.leave { pointer-events: none; }
 .zlead.out { opacity: 0; pointer-events: none; }
-.zlead .ring { position: relative; width: min(64vh, 64vw); aspect-ratio: 1; border-radius: 50%; box-shadow: 0 0 0 3px #d8cfbf, inset 0 0 0 14px rgba(11, 8, 9, .55), inset 0 0 0 17px #d8cfbf, 0 0 60px rgba(0, 0, 0, .5); overflow: hidden;
+.zlead .ring { position: relative; width: min(64vh, 64vw); aspect-ratio: 1; border-radius: 50%; box-shadow: 0 0 0 3px #d8cfbf, inset 0 0 0 14px rgba(11, 8, 9, .55), inset 0 0 0 17px #d8cfbf, 0 0 60px rgba(0, 0, 0, .5);
   }
 .zlead .ring > i { position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(rgba(216, 207, 191, .22) 0 70deg, transparent 70deg); will-change: transform; }
 .zlead.run .ring > i { animation: zturn .8s linear infinite; }   /* (the leader's sweep, turned as a whole: the TV's graphics chip moves it) */
@@ -599,6 +602,9 @@ html[data-theme=picture] .leaf2 b { color: #e9c46a; }
 .zlead .ring::before, .zlead .ring::after { content: ""; position: absolute; background: rgba(216, 207, 191, .5); }
 .zlead .ring::before { left: 50%; top: 0; bottom: 0; width: 2px; } .zlead .ring::after { top: 50%; left: 0; right: 0; height: 2px; }
 .zlead .n { position: absolute; inset: 0; display: grid; place-items: center; font: 700 min(30vh, 30vw)/1 var(--kfont); color: #d8cfbf; }
+.zlead .gx, .zlead .n { will-change: transform, opacity; }
+html.tv .zglow i { display: none !important; }
+html.tv .zglow { background: radial-gradient(circle at 22% 18%, rgba(140, 46, 30, .75), transparent 52%), radial-gradient(circle at 82% 38%, rgba(233, 196, 106, .32), transparent 46%), radial-gradient(circle at 42% 96%, rgba(29, 74, 90, .65), transparent 52%); }   /* (a TV: the glow painted, not blurred posters) */
 .zlead .gx { position: absolute; font: 700 min(11vw, 120px)/1 var(--kfont); text-transform: uppercase; letter-spacing: .5em; text-indent: .5em; color: #fff; opacity: 0; }
 .zglow { position: absolute; inset: 0; transition: opacity .2s; }
 .zglow i { position: absolute; width: 70vmax; height: 70vmax; border-radius: 50%; background: center / cover; filter: blur(90px) saturate(1.7) brightness(.75); opacity: .85; animation: zdrift 5s ease-in-out infinite alternate; }
@@ -606,8 +612,8 @@ html[data-theme=picture] .leaf2 b { color: #e9c46a; }
 html.tv .zglow i { animation: none; filter: blur(60px) saturate(1.7) brightness(.75); }   /* (a TV: the glow still, drawn once) */
 .zglow::after { content: ""; position: absolute; inset: 0; background: radial-gradient(circle, rgba(11, 8, 9, .15) 20%, rgba(11, 8, 9, .7) 80%); }
 @keyframes zdrift { to { transform: translate(6vmax, 4vmax) scale(1.12); } }
-.zlead.flash { background: #fff; transition: background .12s; } .zlead.flash .ring, .zlead.flash .zglow { opacity: 0; }
-.zlead.name { background: #0b0809; } .zlead.name .ring { display: none; } .zlead.name .gx { opacity: 1; animation: zname 1.1s cubic-bezier(.2, .8, .2, 1) both; will-change: transform, opacity; }
+.zlead.flash .zbg { background: #fff; transition: background .12s; } .zlead.flash .ring, .zlead.flash .zglow { opacity: 0; }
+.zlead.name .ring { display: none; } .zlead.name .gx { opacity: 1; animation: zname 1.1s cubic-bezier(.2, .8, .2, 1) both; will-change: transform, opacity; }
 @keyframes zname { from { transform: scale(1.35); opacity: 0; } 60% { opacity: 1; } to { transform: none; opacity: 1; } }   /* (zoomed in, not spread and blurred: smooth on a TV) */
 .zlead .skip { position: absolute; bottom: 28px; right: 32px; font: 500 11px/1 var(--kfont); letter-spacing: .3em; text-transform: uppercase; color: rgba(216, 207, 191, .55); }
 @media (prefers-reduced-motion: reduce) { .zgrain { animation: none; } }
@@ -3341,11 +3347,23 @@ THEMEFX.picture = {
       var dt = new Date(), today = dt.getFullYear() + '-' + (dt.getMonth() + 1) + '-' + dt.getDate();
       try { if (localStorage.getItem('grifflix-leader') === today) return; localStorage.setItem('grifflix-leader', today); } catch (e) {}
     }
-    var d = document.createElement('div'); d.className = 'zlead'; d.innerHTML = '<div class="zglow">' + this.glow() + '</div><div class="ring"><i></i></div><div class="n">3</div><div class="gx">Grifflix</div><div class="skip">Tap to skip</div>';
+    var d = document.createElement('div'); d.className = 'zlead'; d.innerHTML = '<div class="zbg"></div><div class="zglow">' + (TV ? '' : this.glow()) + '</div><div class="ring"><i></i></div><div class="n">3</div><div class="gx">Grifflix</div><div class="skip">Tap to skip</div>';
     document.body.appendChild(d); musicHold();
     // (picture and sound on one clock, the sound's: the numbers follow it, so a busy TV can't put them out of step: John, 9 Nov 2026:
     // "3 2 1 doesn't synch with the music and the Grifflix coming in as jerky"; begun once the page has drawn, two frames on)
-    var n = d.querySelector('.n'), done = false, raf = 0, stage = '', gone = function () { if (done) return; done = true; cancelAnimationFrame(raf); d.classList.add('out'); setTimeout(function () { d.remove(); musicAfterLeader(); }, 600); };
+    var n = d.querySelector('.n'), done = false, raf = 0, stage = '', gone = function (skip) {
+      if (done) return; done = true; cancelAnimationFrame(raf);
+      var gx = d.querySelector('.gx'), br = $$('.bar-top .brand').filter(function (x) { return x.offsetParent; })[0];
+      if (skip !== true && gx && br && d.classList.contains('name')) {   // (GRIFFLIX rises to its place in the bar, the theme coming up under it: John, 9 Nov 2026: "should fade into the theme nicely")
+        var a = gx.getBoundingClientRect(), tr = function (el) { var r = document.createRange(); r.selectNodeContents(el); return r.getBoundingClientRect(); }, ra = tr(gx), rb = tr(br), k = rb.height / ra.height;   // (the letters themselves, onto the bar's)
+        gx.style.animation = 'none'; gx.style.opacity = '1'; gx.style.transformOrigin = '0 0';
+        void gx.offsetWidth;
+        gx.style.transition = 'transform 1.1s cubic-bezier(.65, 0, .2, 1), opacity .35s ease .95s';
+        gx.style.transform = 'translate(' + (rb.left - a.left - k * (ra.left - a.left)).toFixed(1) + 'px,' + (rb.top + rb.height / 2 - a.top - k * (ra.top + ra.height / 2 - a.top)).toFixed(1) + 'px) scale(' + k.toFixed(4) + ')';
+        gx.style.opacity = '0'; d.classList.add('leave');
+        setTimeout(function () { d.remove(); musicAfterLeader(); }, 1350);
+      } else { d.classList.add('out'); setTimeout(function () { d.remove(); musicAfterLeader(); }, 600); }
+    };
     requestAnimationFrame(function () { requestAnimationFrame(function () {
       var c = TMUS.on && TMUS.ok ? musicCtx() : null, live = c && c.state === 'running', t0 = live ? c.currentTime + .12 : 0, p0 = performance.now() + 120;
       if (live) { musicBeep(t0); musicBeep(t0 + .8); musicBeep(t0 + 1.6); if (TMUS.pj) TMUS.pj.sting(t0 + 1.7); }
@@ -3357,7 +3375,7 @@ THEMEFX.picture = {
       };
       d.classList.add('run'); tick();
     }); });
-    d.onclick = gone; addEventListener('keydown', function k() { removeEventListener('keydown', k); if (d.isConnected) gone(); });
+    d.onclick = function () { gone(true); }; addEventListener('keydown', function k() { removeEventListener('keydown', k); if (d.isConnected) gone(true); });
   },
   glow: function () {   // (behind the countdown, the month's films glowing, as the room round the drum: John, 9 Nov 2026)
     var u = $$('#cal .vday.has').map(function (b) { return b.style.getPropertyValue('--b'); }).filter(Boolean);
@@ -3398,6 +3416,7 @@ THEMEFX.picture = {
     me._fw = fw;
     if (!me._zt && !CALM) me._zt = setInterval(function () {
       if (!me._zhs || !me._zhs[0] || !me._zhs[0].isConnected) { clearInterval(me._zt); me._zt = 0; return; }
+      if (document.querySelector('.zlead')) return;   // (still while the leader's up: all the TV's effort to it)
       me._tk = (me._tk || 0) + 1;
       me._zhs.forEach(function (t, i) { if (t.style.visibility !== 'hidden') t.style.backgroundPosition = (-((i + me._tk) % 15) * me._fw).toFixed(1) + 'px 0'; });
     }, TV ? 110 : 83);
