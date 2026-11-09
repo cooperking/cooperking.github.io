@@ -3389,7 +3389,9 @@ THEMEFX.picture = {
     var me = this, c = me.c, g = me.g(c), st = me.st;
     me.all.forEach(function (el, j) {
       var k = j - a, th = k * st, cs = Math.cos(th), sn = Math.sin(th), nf = near(k), front = cs > 0;
-      var depth = (cs + 1) / 2, s = (.5 + .5 * depth) * g.f, x = g.cx + g.R * sn, y = g.cy - nf * 30 * g.f, lift = 1 + .32 * nf;
+      // (round the drum's own ellipse, as its rims, letters and horses go: higher at the back, lower at the front: John, 9 Nov 2026:
+      // "the angle of movement on the zoetrope is different from the posters coming into view")
+      var depth = (cs + 1) / 2, s = (.5 + .5 * depth) * g.f, x = g.cx + g.R * sn, y = g.cy + g.R * .2 * (cs - .5) - nf * 30 * g.f, lift = 1 + .32 * nf;
       var o = Math.abs(k) > 6.6 ? Math.max(0, 7.1 - Math.abs(k)) * 2 : 1;
       el.style.transform = 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px) translate(-50%,-50%) perspective(' + g.P + 'px) rotateY(' + ((front ? th : th + Math.PI) * 180 / Math.PI).toFixed(1) + 'deg) scale(' + (s * lift).toFixed(3) + ')';
       el.style.opacity = (front ? o : o * .35 * (1 - depth * .5)).toFixed(2); el.style.zIndex = Math.round(depth * 100) + (nf > .5 ? 100 : 0);
