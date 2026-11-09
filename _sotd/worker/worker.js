@@ -1294,13 +1294,8 @@ function randomCode(bytes) { return b64url(crypto.getRandomValues(new Uint8Array
 // v2). Only the mailer's daily allowance is shared. The Movie of the Day goes out from the timer once the Mac mini shows
 // one for today (gDaily). Routes: /g/<what> (grifflix()), /gi/<id> (gInvitePage()).
 const G_LINK_HOST = 'grifflix.co.uk';   // (the Worker on John's own domain, once Cloudflare has it: worker_deploy.py)
-async function gLinkBase(env, url) {   // where Grifflix's links point: grifflix.co.uk when it answers, else the Worker's own address
-  let ok = await env.SOTD.get('gLinkOk2');
-  if (ok === null) {
-    ok = await fetch('https://' + G_LINK_HOST + '/g/ping', { cf: { cacheTtl: 0 } }).then(r => r.ok && r.text()).then(t => t === 'grifflix' ? '1' : '0').catch(() => '0');
-    await env.SOTD.put('gLinkOk2', ok, { expirationTtl: ok === '1' ? 86400 : 1800 });
-  }
-  return ok === '1' ? 'https://' + G_LINK_HOST : url.origin;
+async function gLinkBase(env, url) {   // where Grifflix's links point: grifflix.co.uk (the Worker is on it: worker_deploy.py)
+  return 'https://' + G_LINK_HOST;
 }
 const G_SITE = 'https://cooperking.github.io/grifflix/', G_API = 'https://media.grifflix.co.uk', G_MODES = ['all', 'week', 'off'];
 function gMode(m, k) {   // gpush: everything unless they say (as songs'); gmail: off unless they say, and only with an address
