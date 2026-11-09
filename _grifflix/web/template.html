@@ -580,11 +580,7 @@ html.tv .th-moon .vday:focus .msh { border-radius: 50%; }
 .bigmoon .msoon[hidden] { display: none; }
 /* Méliès's Man in the Moon beside it, the rocket in his eye, fired at him again each new day (John, 9 Nov 2026: "stick with
    the posters in the moon for Hugo, but add a detail somewhere else") */
-.mmeli { position: absolute; right: 450px; top: 250px; width: 128px; height: 128px; pointer-events: none; }
-.mface { position: absolute; inset: 0; filter: drop-shadow(0 0 12px rgba(243, 234, 203, .3)); }
-.mface svg { display: block; width: 100%; height: 100%; overflow: visible; }
-.mshell { position: absolute; left: 16%; top: 40%; width: 30%; height: 46%; transform-origin: 50% 0; transform: rotate(45deg) translateY(-9%); border-radius: 50% 50% 8% 8% / 44% 44% 6% 6%; background: linear-gradient(90deg, #8e8778, #d9d2c2 45%, #8e8778); box-shadow: inset 0 0 0 1.5px #5d533f, 0 6px 12px rgba(0, 0, 0, .35); z-index: 2; }
-.mshell::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 16%; background: repeating-linear-gradient(90deg, #6f6754 0 3px, #b9b2a2 3px 6px); }
+.mmeli { position: absolute; right: 450px; top: 236px; width: 170px; height: 170px; border-radius: 50%; overflow: hidden; pointer-events: none; background: #1a1712 url("/grifflix/img/melies-moon.jpg") center / cover; box-shadow: 0 0 0 3px #1a1712, 0 0 0 5px rgba(243, 234, 203, .55), 0 10px 30px rgba(0, 0, 0, .45); }   /* (the hand-coloured frame of A Trip to the Moon, 1902, in a silent film's iris: public domain, Wikimedia Commons) */
 /* (the day's poster whole, the moon's height, in the middle; the copies either side blurred and dimmed, so the one poster
    stands out: John, 9 Nov 2026: "show the full poster but allow it to repeat ... try blurring the repeated ones") */
 .bigmoon::before, .upic::before { content: ""; position: absolute; inset: -16px; background: var(--p) center / auto calc(100% - 32px) repeat-x; filter: blur(7px) brightness(.78) saturate(.8); }
@@ -994,7 +990,7 @@ html.mob .codepic { left: 225px; top: 195px; width: 330px; height: 495px; }
 html.mob .th-slices .vday { height: 510px; background-size: 340px 510px; }
 html.mob .th-moon .vday { width: 40px; height: 40px; }
 html.mob .bigmoon { left: 180px; right: auto; top: 230px; width: 420px; height: 420px; }
-html.mob .mmeli { right: auto; left: 18px; top: 22px; width: 110px; height: 110px; }
+html.mob .mmeli { right: auto; left: 16px; top: 18px; width: 124px; height: 124px; }
 html.mob .mphase { display: none; }   /* (no moon's phase on a phone) */
 #cal .bigmoon, #cal .globe, #cal .codepic, #cal .reelscreen, #cal .cposter, #cal .mfilm { cursor: pointer; }
 .tcentre h2 { pointer-events: auto; cursor: pointer; }
@@ -2534,7 +2530,7 @@ function moonPhase(key) { var p = ((Date.parse(key + 'T21:00:00Z') - Date.UTC(20
 var PHASES = ['New moon', 'Waxing crescent', 'First quarter', 'Waxing gibbous', 'Full moon', 'Waning gibbous', 'Last quarter', 'Waning crescent'];
 THEMEFX.moon = { all: true,
   cell: function (d, it, key) { var p = moonPhase(key), off = p < .5 ? -2 * p : 2 - 2 * p; return '<i class="msh" style="transform:translateX(' + (off * 100).toFixed(1) + '%)"></i><span class="mn">' + d + '</span>'; },
-  decor: function () { return '<div class="bigmoon" id="bigmoon"><span class="msoon" hidden>Coming<br>soon</span></div><div class="mmeli" aria-hidden="true"><div class="mface" id="mface"><svg viewBox="0 0 200 200" aria-hidden="true"><defs><radialGradient id="mgr" cx=".42" cy=".38" r=".7"><stop offset="0" stop-color="#fdf8e8"/><stop offset=".7" stop-color="#efe4c2"/><stop offset="1" stop-color="#d4c497"/></radialGradient></defs><circle cx="100" cy="100" r="97" fill="url(#mgr)" stroke="#9b8f6e" stroke-width="1.2"/><circle cx="150" cy="40" r="9" fill="#e6d9b2" stroke="#b5a77f" stroke-width=".8"/><circle cx="162" cy="122" r="7" fill="#e6d9b2" stroke="#b5a77f" stroke-width=".8"/><circle cx="134" cy="162" r="11" fill="#e6d9b2" stroke="#b5a77f" stroke-width=".8"/><circle cx="50" cy="152" r="8" fill="#e6d9b2" stroke="#b5a77f" stroke-width=".8"/><circle cx="40" cy="58" r="6" fill="#e6d9b2" stroke="#b5a77f" stroke-width=".8"/><circle cx="96" cy="28" r="5" fill="#e6d9b2" stroke="#b5a77f" stroke-width=".8"/><circle cx="174" cy="84" r="5" fill="#e6d9b2" stroke="#b5a77f" stroke-width=".8"/><circle cx="70" cy="176" r="4" fill="#e6d9b2" stroke="#b5a77f" stroke-width=".8"/><g fill="none" stroke="#5d533f" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M117 67 Q130 59 144 66"/><ellipse cx="130" cy="80" rx="8.5" ry="5.2" fill="#fffaf0"/><circle cx="131" cy="80.5" r="2.7" fill="#5d533f" stroke="none"/><path d="M55 63 Q68 52 84 60"/><path d="M58 84 L49 79"/><path d="M59 92 L49 95"/><path d="M66 98 L60 106"/><path d="M100 72 Q95 97 104 110 Q100 115 93 111"/><path d="M80 111 Q73 118 78 127"/><path d="M123 111 Q129 118 125 127"/><path d="M79 135 Q100 124 123 137"/><path d="M86 139 Q101 147 116 140"/><path d="M92 166 Q100 171 108 166"/><path d="M150 150 q8 -6 12 -16" stroke-width="1" opacity=".5"/><path d="M158 140 q6 -6 8 -14" stroke-width="1" opacity=".5"/><path d="M164 128 q4 -6 5 -12" stroke-width="1" opacity=".5"/></g></svg></div><i class="mshell" id="mshell"></i></div><div class="mphase" id="mphase"></div><div class="mfilm" id="mfilm"></div>'; },
+  decor: function () { return '<div class="bigmoon" id="bigmoon"><span class="msoon" hidden>Coming<br>soon</span></div><div class="mmeli" id="mmeli" role="img" aria-label="The Man in the Moon, from Méliès\'s A Trip to the Moon (1902)"></div><div class="mphase" id="mphase"></div><div class="mfilm" id="mfilm"></div>'; },
   swipe: function (c) { return { x: 1, y: 0, px: c.mob ? 26 : 40 }; },
   spot: function (c, j, n) {   // (where a small moon is: a row across the sky, or on a phone a ring round the large moon, the 1st at the top)
     if (c.mob) { var a = -Math.PI / 2 + 2 * Math.PI * j / (n + 1); return { x: 390 + 330 * Math.cos(a), y: 440 + 330 * Math.sin(a), a: a }; }
@@ -2547,12 +2543,9 @@ THEMEFX.moon = { all: true,
     if (mp) { if (c.mob) { mp.style.left = (390 + 395 * Math.cos(s.a)).toFixed(0) + 'px'; mp.style.top = (440 + 395 * Math.sin(s.a) - 6).toFixed(0) + 'px'; } else mp.style.left = s.x.toFixed(0) + 'px'; }   // (the moon's phase by the small moon)
   },
   front: function (b) {
-    var bm = $('#bigmoon'), sh = $('#mshell'), has = b && b.classList.contains('has');
+    var bm = $('#bigmoon'), has = b && b.classList.contains('has');
     if (bm && b) { bm.style.setProperty('--p', has ? b.style.getPropertyValue('--p') || 'none' : 'none'); var so = bm.querySelector('.msoon'); if (so) so.hidden = has; }
-    if (sh && sh.animate && b && !arguments[2] && !CALM) {   // (the rocket fired from the cannon, into the Man in the Moon's eye; he flinches)
-      sh.animate([{ transform: 'translate(-420%, 300%) rotate(45deg) translateY(-9%) scale(.6)', opacity: 0 }, { opacity: 1, offset: .2 }, { transform: 'rotate(45deg) translateY(-9%)', opacity: 1 }], { duration: 900, easing: 'cubic-bezier(.45, 0, .8, .55)' });
-      var fc = $('#mface'); if (fc && fc.animate) fc.animate([{ transform: 'none' }, { transform: 'rotate(-5deg) scale(.97)', offset: .4 }, { transform: 'rotate(2deg)', offset: .7 }, { transform: 'none' }], { duration: 600, delay: 860, easing: 'ease-out' });
-    }
+    var ml = $('#mmeli'); if (ml && ml.animate && b && !arguments[2] && !CALM) ml.animate([{ clipPath: 'circle(0% at 50% 50%)' }, { clipPath: 'circle(50% at 50% 50%)' }], { duration: 700, easing: 'cubic-bezier(.3,.6,.3,1)' });   // (each new day: the iris opening on him, as a silent film's)
     var mp = $('#mphase'); if (mp && b) mp.textContent = PHASES[Math.floor(moonPhase(b.dataset.day) * 8 + .5) % 8];
     var mf = $('#mfilm'), it = b && S.calData.days[b.dataset.day]; if (mf) mf.textContent = it && !it.secret ? showName(it) : '';   // (and its film under the large one)
   }
