@@ -113,8 +113,15 @@ def build(snap, now, days_only=False):
     changed += write('library.json', {'at': snap.get('at'), 'items': {k: light(v) for k, v in items.items()},
                                       'movies': L.get('movies', []), 'tv': L.get('tv', []), 'collections': L.get('collections', []),
                                       'sets': snap.get('sets', {})})
+    try:   # each title's trailers best first, from TMDB (tmdb_trailers.py), in place of Jellyfin's
+        with open(os.path.join(OUT, 'trailers.json'), encoding='utf-8') as f:
+            best = json.load(f)
+    except (OSError, ValueError):
+        best = {}
     buckets = {}
     for k, v in items.items():
+        if best.get(added_key(v)):
+            v['trailers'] = best[added_key(v)]
         det = {f: v[f] for f in BIG if v.get(f)}
         if det:
             buckets.setdefault(k[:2], {})[k] = det
