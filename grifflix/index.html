@@ -566,6 +566,7 @@ html.tv .th-lane .vday:focus { outline: 0 !important; box-shadow: 0 0 0 4px #1a1
 .zpost { position: absolute; inset: 0; opacity: 0; overflow: hidden; background: #0c0b0a; transition: opacity 1.4s ease; }
 .zpost::before { content: ""; position: absolute; inset: -30px; background: var(--pp) center / cover; filter: blur(20px) brightness(.45); }
 .zpost::after { content: ""; position: absolute; inset: 4% 0; background: var(--pp) center / contain no-repeat; filter: drop-shadow(0 8px 20px rgba(0, 0, 0, .6)); }   /* (the day's poster on the screen, its own colours blurred round it) */
+.ztrain { position: absolute; inset: 0; opacity: 0; background: #0c0b0a url("/grifflix/img/lumiere-train-frames.webp") 0 0 / 800% 400% no-repeat; filter: sepia(.18) contrast(1.06) brightness(.92); will-change: opacity; }   /* (the Lumières' train, a frame at a time) */
 .zpost.on { opacity: 1; } .zpost.now, .zstagef.now .zcurt { transition: none; }
 .zcurt { position: absolute; top: -7%; bottom: -3%; width: 53%; z-index: 3; pointer-events: none; background: #3a0508 url("/grifflix/img/cinema-curtain.webp") 0 0 / 100% 100%; box-shadow: 0 10px 30px rgba(0, 0, 0, .6); transition: transform 2.2s cubic-bezier(.6, .02, .25, 1); }   /* (red velvet: John, 9 Nov 2026: "curtain looks like a cartoon") */
 .zcurt.l { left: -2%; transform-origin: 0 0; } .zcurt.r { right: -2%; transform-origin: 100% 0; background-position: 100% 0; background-size: 180% 100%; }
@@ -3131,14 +3132,20 @@ THEMEFX.jaws = {
   // calms, and the next comes up from the deep; stopped halfway, it stops halfway; the sea's surface swelling with the strike (John,
   // 9 Nov 2026: "can the jaws effect happen as the cards move rather than an animation that plays first, so it's controlled. can the
   // water move and match the animation")
-  ready: function (c) { fxReset(this); this.c = c; this._pa = null; this._ptok = null; this._playing = false; this._mt = 0; var im = new Image(); im.src = '/grifflix/img/jaws-attack.webp'; },
+  ready: function (c) { fxReset(this); this.c = c; this._pa = null; this._ptok = null; this._playing = false; this._lp = 0; this._p = 0; var im = new Image(); im.src = '/grifflix/img/jaws-attack.webp'; },
   swipe: function (c) { return { x: 0, y: -1, px: c.mob ? 50 : 70 }; },
-  place: function (all, at, c) { this.all = all; this.c = c; fxTween(this, at, 1400); },
+  place: function (all, at, c) {   // (each swipe or press, either way, sets the attack going forwards; quick ones in a row only once:
+    // John, 9 Nov 2026: "you should be able to swipe either way and get the forward animation on the shark")
+    var now = performance.now(), mv = this._at != null && Math.abs(at - this._at) > 1e-3;
+    if (mv && now - (this._lp || 0) > 400 && (!this._playing || this._p > 7)) this.attack();
+    if (mv) this._lp = now;
+    this.all = all; this.c = c; fxTween(this, at, 1400);
+  },
   attack: function () {   // (the attack once, in its own time, however far and fast the days go; then the sea settles)
     var me = this, t0 = performance.now(), tok = me._ptok = {}, D = 1700; me._playing = true;
     (function f(t) {
       if (tok !== me._ptok || !me.all || !me.all[0] || !me.all[0].isConnected) { me._playing = false; return; }
-      var u = Math.min(1, (t - t0) / D); me.show(12 * (1 - Math.pow(1 - u, 1.6)));
+      var u = Math.min(1, (t - t0) / D); me._p = 12 * (1 - Math.pow(1 - u, 1.6)); me.show(me._p);
       if (u < 1) requestAnimationFrame(f); else { me._playing = false; me.show(0); }
     })(t0);
   },
@@ -3168,8 +3175,7 @@ THEMEFX.jaws = {
     // (once for each burst of movement, played in its own time and always forwards, whichever way the days go: going on quickly, the
     // posters keep moving and the sea settles (John, 9 Nov 2026: "can jaws only go one way - never backwards", "can it only animate once
     // per movement, so if you do it quickly the posters keep scrolling but the water settles"))
-    var now = performance.now(), moved = me._pa != null && Math.abs(at - me._pa) > 1e-4; me._pa = at;
-    if (moved) { if (!me._playing && now - (me._mt || 0) > 450) me.attack(); me._mt = now; }
+    me._pa = at;
     if (!me._playing) me.show(0);
   }
 };
@@ -3458,7 +3464,7 @@ THEMEFX.picture = {
     // back into the dark; rows of seats before it)
     var sl = g.scx - g.sw / 2, st0 = g.sy0;
     h += '<div class="zbeam" style="left:' + F(g.scx - g.sw) + 'px;top:' + F(st0 - g.sh * .2) + 'px;width:' + F(g.sw * 2) + 'px;height:' + F(g.sh * 1.9) + 'px"></div>' +
-      '<div class="zstagef" id="zstagef" style="left:' + F(sl) + 'px;top:' + F(st0) + 'px;width:' + F(g.sw) + 'px;height:' + F(g.sh) + 'px"><div class="zcin"><video class="zfilm" id="zfilm" muted playsinline preload="none"></video><i class="zpost" id="zpost"></i><i class="zflick"></i></div>' +
+      '<div class="zstagef" id="zstagef" style="left:' + F(sl) + 'px;top:' + F(st0) + 'px;width:' + F(g.sw) + 'px;height:' + F(g.sh) + 'px"><div class="zcin"><i class="zpost on" id="zpost"></i><i class="ztrain" id="ztrain"></i><i class="zflick"></i></div>' +
       '<i class="zcurt l"></i><i class="zcurt r"></i></div>';   // (its curtains: they part, the film's shown, then the day's poster: John, 9 Nov 2026: "Have it with a curtain ... After it ends, put today's poster on the screen")
     var seats = '', rows = 2;
     for (var r = 0; r < rows; r++) { var yy = st0 + g.sh + (20 + r * 30) * g.f, n = Math.round(g.sw * (1.1 + r * .2) / (46 * g.f)), w0 = g.sw * (1.1 + r * .2), x0 = g.scx - w0 / 2;
@@ -3501,19 +3507,29 @@ THEMEFX.picture = {
     for (var k = 0; k < L.length; k++) h += '<span class="zlt">' + L[k] + '</span>';
     return h;
   },
-  ready: function (c) { fxReset(this); this.c = c;
-    var v = $('#zfilm'), st = $('#zstagef'), po = $('#zpost'); if (!v || !st) return;
-    var poster = function () { if (po) po.classList.add('on'); st.classList.add('open'); };
-    if (window.ZFILMED || CALM) { st.classList.add('open', 'now'); if (po) po.classList.add('on', 'now'); return; }   // (shown once a visit: after that, the day's poster)
-    // (the train arriving, its dull end cut, a little quicker: the curtains part once it's ready, the poster after it; fetched once the
-    // page has settled, so the page itself is quick)
-    setTimeout(function () {
-      if (!v.isConnected) return; window.ZFILMED = 1;
-      v.addEventListener('canplay', function () { st.classList.add('open'); setTimeout(function () { var pr = v.play(); if (pr && pr.catch) pr.catch(poster); }, 900); }, { once: true });
-      v.addEventListener('ended', poster); v.addEventListener('error', poster);
-      v.preload = 'auto'; v.src = '/grifflix/video/lumiere-train.mp4'; v.load();
-      setTimeout(function () { if (!st.classList.contains('open')) poster(); }, 9000);   // (too slow to come: the poster)
-    }, 900);
+  // (the Lumières' train, from coming into view to drawing into the station, run by the days as they move, quick: forwards going on,
+  // backwards going back; at rest the day's poster on the screen. The curtains part on it arriving, once a visit: John, 9 Nov 2026:
+  // "I'd like the train animated with the swipe. It can be sped up loads and it only need the part from where the train is in view to
+  // when it get into the station")
+  ready: function (c) {
+    fxReset(this); this.c = c; var me = this, st = $('#zstagef'); if (!st) return;
+    if (window.ZFILMED || CALM) { st.classList.add('open', 'now'); return; }
+    me._intro = true; window.ZFILMED = 1;
+    var go = function () {
+      if (!st.isConnected) return; st.classList.add('open'); me.train(0, 1);
+      setTimeout(function () { var t0 = performance.now();
+        (function f(t) { if (!st.isConnected) return; var u = Math.min(1, (t - t0) / 2600), v = u < .8 ? 1 : 1 - (u - .8) / .2;
+          me.train(Math.min(1, u * 1.1), v); if (u < 1) requestAnimationFrame(f); else { me._intro = false; me.train(0, 0); } })(t0);
+      }, 1500);
+    };
+    var im = new Image(), done = false, once = function () { if (!done) { done = true; go(); } };
+    setTimeout(function () { im.onload = once; im.onerror = once; im.src = '/grifflix/img/lumiere-train-frames.webp'; if (im.complete) once(); setTimeout(once, 5000); }, 700);
+  },
+  train: function (u, vis) {   // (frame u of the arrival, 0 to 1; vis: how much of it over the poster)
+    var el = this._tr && this._tr.isConnected ? this._tr : (this._tr = $('#ztrain')); if (!el) return;
+    var n = Math.max(0, Math.min(31, Math.round(u * 31)));
+    el.style.backgroundPosition = (n % 8 / 7 * 100).toFixed(3) + '% ' + (Math.floor(n / 8) / 3 * 100).toFixed(3) + '%';
+    el.style.opacity = Math.max(0, Math.min(1, vis)).toFixed(3);
   },
   leader: function (asked) {   // (a film leader: 3, 2, 1, a flash, GRIFFLIX; the first visit each day; a tap skips it)
     // (the first visit of the day only; home, GRIFFLIX and reloads don't replay it. ?leader=1 always plays it: admin's preview. John, 9 Nov 2026)
@@ -3569,6 +3585,7 @@ THEMEFX.picture = {
   place: function (all, at, c) { this.all = all; this.c = c; if (this._at != null && Math.abs(this._at - at) > .3) musicKick(Math.abs(this._at - at)); fxTween(this, at, 1100); },
   draw: function (a) {
     var me = this, c = me.c, g = me.g(c), st = me.st, R = g.R, ry = g.ry, ty = g.ty, yb = ty + g.Hw, tilt = Math.asin(g.E) * 180 / Math.PI;
+    if (!me._intro) { var fr = a - Math.floor(a); me.train(fr, Math.min(1, 3 * Math.sin(Math.PI * fr))); }   // (the train, run by the move)
     var cal = $('#cal');
     if (!me._zp || !me._zp[0] || !me._zp[0].isConnected || me._zp.length !== me.all.length) {   // (the strip's posters: each day's, small)
       $$('#cal .zpic').forEach(function (x) { x.remove(); });
