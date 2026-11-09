@@ -776,7 +776,8 @@ def make_handler(g):
             c = g.store.d['calendars']['motd']
             days = dict(c.get('days', {}))
             have = set(items) | set(e['id'] for v in series.values() for e in v['episodes'])
-            missing = [i for i in set(days.values()) if i and i not in have]
+            ext = {i: x for i, x in c.get('ext', {}).items() if i in set(days.values())}
+            missing = [i for i in set(days.values()) if i and i not in have and i not in ext]
             raw = [it for n in range(0, len(missing), 100) for it in g.items(Ids=','.join(missing[n:n + 100]), Fields=quick).get('Items', [])]
             for o in resolve(raw, ep_fields, slim=True):   # (a calendar day's film no longer in a library list)
                 items[o['id']] = o
@@ -806,7 +807,7 @@ def make_handler(g):
                 log('Couldn’t keep the export:', e)
             log('Update: %d new, %d changed, %d gone (%d read in full)' % (count['new'], count['changed'], count['removed'], count['read']))
             self.send_json(200, {'v': 1, 'at': int(time.time()), 'items': items, 'lists': lists, 'sets': members, 'series': series, 'changes': count, 'personal': personal,
-                                 'motd': {'days': days, 'notes': dict(c.get('notes', {}))}})
+                                 'motd': {'days': days, 'notes': dict(c.get('notes', {})), 'ext': ext}})
 
         def api_convert(self, me, user, q, b):
             """John's: how the conversions are going (convert.py's files in ~/Grifflix), for the admin page."""
@@ -1126,7 +1127,9 @@ def make_handler(g):
                     notes = {d: n for d, n in notes.items() if revealed(d)}
                     o['count'] = len(days)
             if full:
-                S = g.summaries(list(days.values()), user['progress'])
+                ext = c.get('ext', {})
+                S = g.summaries([i for i in days.values() if i not in ext], user['progress'])
+                S.update({i: ext[i] for i in days.values() if i in ext})
                 o['days'] = {d: S[i] for d, i in days.items() if i in S}
                 o['notes'] = notes
                 if cid == 'motd' and me.get('owner') and not peek:
@@ -1162,6 +1165,10 @@ def make_handler(g):
                             return self.send_json(400, {'error': 'Which day?'})
                         if b.get('item'):
                             c['days'][d] = str(b['item'])
+                            x = b.get('ext')   # (a film Grifflix hasn't, a theme's film: kept with its details, its trailer played: John, 9 Nov 2026)
+                            if isinstance(x, dict) and x.get('id') == c['days'][d] and re.match(r'^[0-9a-f]{32}$', c['days'][d]):
+                                keep = ('id', 'type', 'name', 'year', 'mins', 'cert', 'overview', 'poster', 'backdrop', 'trailers', 'tmdb')
+                                c.setdefault('ext', {})[c['days'][d]] = dict({k: x[k] for k in keep if k in x}, ext=1)
                         if 'note' in b:
                             n = str(b.get('note') or '').strip()[:500]
                             if n:

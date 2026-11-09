@@ -766,6 +766,21 @@ body.tdragging { user-select: none; -webkit-user-select: none; }
     return y + '-' + String(m + 1).padStart(2, '0') + '-01';
   }
   function monLabel(d) { return MON[+d.slice(5, 7) - 1].slice(0, 3) + ' ' + d.slice(0, 4); }
+  // each theme's own film from TMDB (theme_films.py): put on a 1st as its trailer when Grifflix hasn't the film (John, 9 Nov 2026)
+  var TEXT = {}; fetch('/grifflix/data/themefilms.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) { TEXT = j || {}; }).catch(function () {});
+  function firstJob(k, date) {   // (the film for a theme's 1st: Grifflix's own, else TMDB's details, its trailer played)
+    if (!k || k === 'picture' || k === 'blank') return null;
+    if (TID[k]) return { date: date, item: TID[k], note: '' };
+    var x = TEXT[k]; return x && x.id ? { date: date, item: x.id, ext: x, note: '' } : null;
+  }
+  function putFirsts(jobs, say) {   // (on the Mac, one at a time; on the site with Update everything)
+    if (!jobs.length) return Promise.resolve(0); if (!GW) return Promise.reject(new Error('The Mac isn’t answering: it keeps Movie of the Day.'));
+    var n = 0;
+    return jobs.reduce(function (p, j) { return p.then(function () {
+      return fetch(GW + '/api/calendar', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify({ op: 'set', id: 'motd', date: j.date, item: j.item, ext: j.ext, note: j.note }) })
+        .then(function (r) { if (!r.ok) return r.json().then(function (e) { throw new Error(e.error || 'The Mac said no.'); }); n++; if (say) say(n + ' of ' + jobs.length + '…'); });
+    }); }, Promise.resolve()).then(function () { return n; });
+  }
   function themeFirsts() {
     var norm = function (t) { return String(t || '').toLowerCase().replace(/’/g, "'"); };
     (TL_ || (TL_ = Promise.all([fetch('/grifflix/data/library.json', { cache: 'no-store' }).then(function (r) { return r.json(); }), fetch('/grifflix/data/days.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).catch(function () { return { days: {} }; })]))).then(function (r) {
@@ -776,8 +791,8 @@ body.tdragging { user-select: none; -webkit-user-select: none; }
       for (; new Date(y, m, 1) <= end; m++) {
         if (m > 11) { m = 0; y++; }
         var ymk = y + '-' + String(m + 1).padStart(2, '0'); if (!GMONTHS[ymk] && ymk >= '2026-12') continue;   // (a month with no theme yet: no film for its 1st)
-        var x = TBY[GMONTHS[ymk] || GORDER[seqAt(y, m)]], date = y + '-' + String(m + 1).padStart(2, '0') + '-01', id = TID[x.k], was = D[date];
-        if (id && !(was && was.id === id)) THJOBS.push({ date: date, item: id, note: '' });
+        var x = TBY[GMONTHS[ymk] || GORDER[seqAt(y, m)]], date = y + '-' + String(m + 1).padStart(2, '0') + '-01', j = firstJob(x.k, date), was = D[date];
+        if (j && !(was && was.id === j.item)) THJOBS.push(j);
       }
       $('#thgo').disabled = !THJOBS.length; $('#thgo').textContent = THJOBS.length ? 'Put the films on their 1sts (' + THJOBS.length + ')' : 'All on their 1sts';
       tmDraw();
@@ -785,7 +800,7 @@ body.tdragging { user-select: none; -webkit-user-select: none; }
   }
   function filmState(k, m) {   // a theme's film: in Grifflix or not, and (in a month) on its next 1st or not
     if (!TL_ || !(k in TID) || k === 'picture') return '';   // (Grifflix's own theme: no one film)
-    var id = TID[k]; if (!id) return '<span class="fs no">Film not in Grifflix yet</span>';
+    var id = TID[k]; if (!id) return '<span class="fs no">Film not in Grifflix yet: its trailer on its 1sts</span>';
     if (m == null) return '<span class="fs ok">Film in Grifflix</span>';
     var d = nextFirst(m, TMO), was = TD[d], dd = new Date(d + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
     return '<span class="fs ok">Film in Grifflix · ' + (was && was.id === id ? 'on ' + dd : 'not yet on ' + dd + (was ? ' (now ' + esc(was.name) + ')' : '')) + '</span>';
@@ -1029,18 +1044,22 @@ body.tdragging { user-select: none; -webkit-user-select: none; }
     Object.keys(TMM).forEach(function (k) { if (TMM[k] === themeBase(idxOf(k))) delete TMM[k]; });   // (a month set to what it would be anyway: not kept)
     var mm = Object.keys(TMM).length, body = mm ? { order: same ? null : TMO, months: TMM } : (same ? null : TMO);
     b.disabled = true; b.textContent = 'Saving…';
-    g('themes', { themes: body, draft: true }).then(function (j) { tmDraft(j); toast(j.draft !== undefined ? 'Saved: on the draft now; Update everything puts it live' : 'Saved: the same as the live site'); })
+    var today = new Date().toISOString().slice(0, 10); try { today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date()); } catch (e) {}
+    // (a 1st still to come: one already shown is left as it was)
+    var jobs = Object.keys(TMM).filter(function (k) { return k + '-01' >= today; }).sort().map(function (k) { return firstJob(TMM[k], k + '-01'); }).filter(Boolean);   // (each month's film on its 1st: John, 9 Nov 2026)
+    g('themes', { themes: body, draft: true }).then(function (j) {
+      tmDraft(j);
+      return putFirsts(jobs, function (t) { b.textContent = 'Films on their 1sts: ' + t; }).then(function (n) { toast('Saved' + (n ? ', and ' + n + ' film' + (n === 1 ? '' : 's') + ' put on ' + (n === 1 ? 'its' : 'their') + ' 1st' + (n === 1 ? '' : 's') : '') + ': Update everything puts it live'); tmDraw(); },
+        function (e) { toast('Themes saved; the films for the 1sts weren’t: ' + e.message); tmDraw(); });
+    })
       .catch(function (e) { b.disabled = false; b.textContent = 'Save the themes'; toast(e.message || 'Not saved'); });
   };
   $('#thgo').onclick = function () {
     var b = this;
     if (!GW) return toast('The Mac isn’t answering: it keeps Movie of the Day.');
     if (!b.dataset.sure) { b.dataset.sure = 1; b.textContent = 'Tap again: ' + THJOBS.length + ' days change'; return; }
-    b.disabled = true; var n = 0;
-    THJOBS.reduce(function (p, j) { return p.then(function () {
-      return fetch(GW + '/api/calendar', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify({ op: 'set', id: 'motd', date: j.date, item: j.item, note: j.note }) })
-        .then(function (r) { if (!r.ok) return r.json().then(function (e) { throw new Error(e.error || 'The Mac said no.'); }); n++; b.textContent = n + ' of ' + THJOBS.length + '…'; });
-    }); }, Promise.resolve()).then(function () { b.textContent = 'Done: now Update everything'; toast('On the Mac: Update everything puts them on the site.'); })
+    b.disabled = true;
+    putFirsts(THJOBS, function (t) { b.textContent = t; }).then(function () { b.textContent = 'Done: now Update everything'; toast('On the Mac: Update everything puts them on the site.'); })
       .catch(function (e) { b.disabled = false; delete b.dataset.sure; b.textContent = 'Put them on the 1sts'; toast(e.message || 'The Mac didn’t answer.'); });
   };
 

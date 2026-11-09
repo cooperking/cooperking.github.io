@@ -1389,6 +1389,7 @@ function gFilmHtml(f) {   // one film: its poster, Movie of the Day, the name an
 // here at /gp/), and Movie of the Day's days, the ones to come too, are kept here (gcal), each shown from 8am on its day.
 const G_WORKER = 'https://sotd-playlists.cooperking.workers.dev', G_PIC_KINDS = { Primary: [400], Backdrop: [480, 1100, 1920], Thumb: [480, 1100, 1920] };   // (1920: the TV's full-screen pictures)
 function gPicUrl(id, kind, w, tag) {   // a picture's address: its size the nearest kept one; its version (tag) in it, so a new picture is a new address
+  if (typeof id === 'string' && id[0] === '/') return 'https://image.tmdb.org/t/p/' + ((w || 0) > 500 ? 'w1280' : 'w500') + id;   // (a theme's film Grifflix hasn't: TMDB's picture)
   const sizes = G_PIC_KINDS[kind] || [400], size = sizes.find(x => x >= (w || 0)) || sizes[sizes.length - 1];
   return id ? G_WORKER + '/gp/' + id + '/' + kind + '-' + size + '.jpg' + (tag ? '?t=' + tag : '') : '';
 }
@@ -1949,7 +1950,7 @@ async function gAdmin(request, env, b, who, answer) {
     for (const [d, it] of Object.entries(c.days || {})) {
       if (!/^\d{4}-\d\d-\d\d$/.test(d) || !it || typeof it !== 'object' || !/^[0-9a-f]{32}$/.test(it.id || '')) continue;
       const o = {};
-      for (const k of ['id', 'name', 'type', 'year', 'mins', 'secs', 'cert', 'rating', 'series', 'seriesId', 'season', 'ep', 'poster', 'backdrop', 'thumb', 'children', 'genres', 'tags', 'overview'])
+      for (const k of ['id', 'name', 'type', 'year', 'mins', 'secs', 'cert', 'rating', 'series', 'seriesId', 'season', 'ep', 'poster', 'backdrop', 'thumb', 'children', 'genres', 'tags', 'overview', 'ext', 'trailers', 'tmdb'])   // (ext: a theme's film Grifflix hasn't, its trailer played)
         if (it[k] != null && it[k] !== '') o[k] = k === 'overview' ? String(it[k]).slice(0, 400) : it[k];
       days[d] = o;
     }
