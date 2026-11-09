@@ -118,7 +118,18 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
 .tmonths .mv button:disabled { opacity: .3; }
 .tmonths li.near select { outline: 2px solid #e0a000; }
 .tmonths .warn { grid-column: 3 / -1; font-size: 12px; color: #a06000; margin-top: -2px; }
-@media (max-width: 480px) { .tmonths li { grid-template-columns: 2.6em 16px minmax(0, 1fr) auto; } .tmonths .mv a { display: none; } }
+@media (max-width: 480px) { .tmonths li { grid-template-columns: 2.6em 16px minmax(0, 1fr); } .tmonths .mv { grid-column: 3; justify-self: end; } .tmonths .fsw, .tmonths .warn { grid-column: 1 / -1; } }   /* (Try there on a phone too: John, 9 Nov 2026) */
+/* the theme explorer: every theme a tile in its own colour and lettering; one chosen, shown live under them */
+.thx { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin: 14px 0; }
+.thx button { position: relative; min-height: 92px; padding: 10px 12px 10px; border: 0; border-radius: 0; text-align: left; cursor: pointer; display: flex; flex-direction: column; justify-content: flex-start; gap: 8px; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .12); }
+.thx button b { display: block; font-size: 21px; line-height: 1; letter-spacing: .01em; }
+.thx button small { margin-top: auto;  font: italic 400 12px/1.25 "Newsreader", Georgia, serif; opacity: .8; }
+.thx button .use { align-self: flex-start; margin-bottom: -2px; font: 600 9px/1 "Hanken Grotesk", sans-serif; letter-spacing: .14em; text-transform: uppercase; padding: 3px 5px; background: rgba(0, 0, 0, .55); color: #fff; }
+.thx button.on { outline: 3px solid var(--fg); outline-offset: 2px; }
+.thxview { display: grid; gap: 8px; }
+.thxview iframe { width: 100%; height: min(78vh, 640px); border: 1px solid var(--line); background: #000; }
+#thxopen { display: inline-flex; align-items: center; min-height: 38px; padding: 0 14px; border: 1px solid var(--fg); color: var(--fg); text-decoration: none; font: 600 12px/1 "Hanken Grotesk", sans-serif; letter-spacing: .14em; text-transform: uppercase; }
+.thxview .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; font-size: 14px; }
 </style>
 </head>
 <body>
@@ -186,6 +197,13 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <ul class="tmspare" id="tmspare"></ul>
         <p class="stat">Putting the films on their 1sts changes Movie of the Day for everyone once you next press Update everything. Films Grifflix hasn’t got are left until it has.</p>
         <div class="state"><button class="btn" id="thgo" type="button" disabled>Put the films on their 1sts</button></div>
+      </section>
+      <section class="card">
+        <div class="kicker">Theme explorer</div>
+        <h2>Try <em>every</em> theme</h2>
+        <p class="stat">Each theme in its own colour and lettering. Choose one to see it working here, on the films (the draft page, as it would be on this screen); swipe or use the arrows in it to go through the days. <i>Month</i> marks the ones in use now.</p>
+        <div class="thx" id="thx"></div>
+        <div class="thxview" id="thxview" hidden><div class="row"><b id="thxname"></b><span class="state"><a class="btn" id="thxopen" target="_blank" rel="noopener">Open it full screen</a></span></div><iframe id="thxf" title="The theme, working" loading="lazy"></iframe></div>
       </section>
       <section class="card">
         <div class="kicker">Downloads</div>
@@ -733,9 +751,25 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     $('#tmspare').innerHTML = GTHEMES.filter(function (t) { return TMO.indexOf(t.k) < 0; }).map(function (t) {
       return '<li><span class="sw" style="background:' + t.bg + '"></span><span><b>' + esc(t.n) + '</b> · ' + esc(t.f) + ' (' + t.y + ')<br>' + filmState(t.k) + '</span><span class="mv"><button type="button" class="btn" data-add="' + t.k + '">Add</button><a href="/grifflix/draft/?theme=' + t.k + '" target="_blank" rel="noopener">Try</a></span></li>';
     }).join('') || '<li>Every theme is in the list.</li>';
+    thxDraw();
     var dup = TMO.some(function (k, i) { return TMO.indexOf(k) !== i; });
     $('#tmsave').disabled = dup || TMO.join() === TMSAVED; $('#tmsave').textContent = dup ? 'A theme is in twice' : TMO.join() === TMSAVED ? 'Saved' : 'Save the themes (' + L + ')';
   }
+  // ---- the theme explorer (John, 9 Nov 2026: "Can my admin page have a theme explorer so I can try each out")
+  var THX = null;
+  function thxDraw() {
+    $('#thx').innerHTML = GTHEMES.map(function (t) {
+      var i = TMO.indexOf(t.k), use = i >= 0 ? monLabel(nextFirst(i, TMO)) : '';
+      return '<button type="button" data-thx="' + t.k + '"' + (t.k === THX ? ' class="on"' : '') + ' style="background:' + t.bg + ';color:' + (t.d ? '#fff' : '#000') + '">' + (use ? '<span class="use">' + esc(use) + '</span>' : '') +
+        '<b style="font-family:' + esc(t.font) + ';font-weight:' + (t.tw || 400) + ';text-transform:' + (t.tt || 'none') + ';font-style:' + (t.fs || 'normal') + '">' + esc(t.n) + '</b><small>' + esc(t.f) + ' (' + t.y + ')</small></button>';
+    }).join('');
+  }
+  $('#thx').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-thx]'); if (!b) return; THX = b.dataset.thx; thxDraw();
+    var u = '/grifflix/draft/?view=themes&theme=' + THX, t = TBY[THX];
+    $('#thxview').hidden = false; $('#thxf').src = u; $('#thxopen').href = u; $('#thxname').textContent = t.n + ' · ' + t.f + ' (' + t.y + ')';
+    $('#thxview').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  });
   $('#tmonths').addEventListener('change', function (e) { var sel = e.target.closest('select'); if (sel) { TMO[+sel.dataset.m] = sel.value; tmDraw(); } });
   $('#tmonths').addEventListener('click', function (e) {
     var b = e.target.closest('button'); if (!b) return;

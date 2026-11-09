@@ -433,6 +433,11 @@ html.hall .bar-top { position: fixed; top: 36px; left: 64px; right: 64px; z-inde
 html.hall .cal { position: fixed !important; inset: 0; height: 100% !important; width: 100%; z-index: 1; display: block; overflow: hidden; padding: 0; }
 .hlines { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .hlines line, .hlines rect { fill: none; stroke: rgba(var(--kink), .22); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.hlines .hend { fill: rgba(0, 0, 0, .04); stroke: rgba(var(--kink), .3); }
+.hlines .hdoor { fill: rgba(0, 0, 0, .05); stroke: rgba(var(--kink), .26); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.hlines .r237 { fill: #4a2c1c; stroke: #2a170e; } .hlines .r237f { fill: none; stroke: #6b4129; }
+.hlines .n237 { fill: #d9b45a; font: 700 10px/1 Georgia, serif; text-anchor: middle; letter-spacing: .04em; }
+.hlines .k237 { fill: #d9b45a; stroke: none; } .hlines .fob { fill: #b4231c; stroke: none; }
 .hstage { position: absolute; inset: 0; }
 /* the Overlook's carpet (David Hicks's hexagons) down the corridor's floor, to the far end (John, 9 Nov 2026: "The shining
    theme is a little abstract. The carpet is the obvious symbol to use to identify it") */
@@ -650,6 +655,19 @@ html[data-theme] #sheet::backdrop { background: rgba(0, 0, 0, .55); backdrop-fil
 html.phone #sheet .sheet:has(.tcal) { overflow: auto !important; }
 html.mob .tcal { height: auto !important; }
 .tcal .tck { font: 500 12px/1 var(--kfont); letter-spacing: .4em; text-transform: uppercase; color: var(--fg-2); }
+/* the theme's caption on the calendar: as on the theme, with ‹ › for the month before or after */
+.tcap { display: flex; align-items: stretch; gap: 0; max-width: 100%; background: color-mix(in srgb, var(--bg) 72%, #000); }
+.tcap .tcarr { flex: none; width: 40px; border: 0; background: none; color: var(--fg); font: 400 24px/1 var(--kfont); cursor: pointer; }
+.tcap .tcarr:disabled { opacity: .25; cursor: default; }
+.tcap .tcarr:hover:not(:disabled), .tcap .tcarr:focus-visible { background: rgba(var(--kink), .12); }
+.tcap .tctx { flex: 1; min-width: 0; padding: 8px 6px; border: 0; background: none; text-align: center; color: var(--fg-2); font: italic 400 14px/1.3 var(--serif); cursor: default; }
+.tcap .tctx.link { cursor: pointer; }
+.tcap .tctx b { display: block; margin-bottom: 3px; font: 500 11px/1.3 var(--kfont); font-style: normal; letter-spacing: .32em; text-transform: uppercase; color: var(--fg); }
+.tcap .tctx i { font-style: normal; color: var(--fg); }
+.tcap .tctx span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html.tv .tcap .tcarr:focus, html.tv .tcap .tctx:focus { outline: 2px solid rgb(var(--kink)) !important; outline-offset: -2px; }
+#mnav .tcap { margin-top: 14px; }
+html:not(.mob) .tcal > .tcap { grid-column: 1; grid-row: 1 / 3; justify-self: end; align-self: end; width: min(480px, 44%); margin-bottom: 4px; }
 .tcal h2 { margin: 0; }
 .tchead { display: flex; align-items: center; gap: 16px; margin: 10px 0 18px; }
 .tcal .tcm { min-height: 40px; width: 40px; padding: 0; justify-content: center; }
@@ -1941,13 +1959,14 @@ function drawMonth() {
   var i = months.indexOf(S.month), mh = '<button class="ico" id="mprev" aria-label="Earlier month"' + (i <= 0 ? ' disabled' : '') + '><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg></button><div class="ms">';
   months.forEach(function (k) { mh += '<button class="m' + (k === S.month ? ' on' : '') + '" data-m="' + k + '">' + MONTHS[+k.slice(5, 7) - 1].slice(0, 3) + (k.slice(0, 4) !== TODAY.slice(0, 4) ? ' ’' + k.slice(2, 4) : '') + '</button>'; });
   mh += '</div><button class="ico" id="mnext" aria-label="Later month"' + (i >= months.length - 1 ? ' disabled' : '') + '><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></button>';
-  $('#mnav').innerHTML = '<nav class="monthnav">' + mh + '</nav>';
+  $('#mnav').innerHTML = '<nav class="monthnav">' + mh + '</nav>' + capBar(m, y, i > 0, i < months.length - 1);
   var on = $('.monthnav .m.on'); if (on) { var ms0 = $('.monthnav .ms'); var cen = function () { if (ms0 && on.isConnected) ms0.scrollLeft = on.offsetLeft - (ms0.clientWidth - on.offsetWidth) / 2; }; cen(); requestAnimationFrame(cen); }
   $$('.monthnav .m').forEach(function (b) { b.onclick = function () { S.month = b.dataset.m; drawMonth(); }; });
   var step = function (d) { var k = months[i + d]; if (!k) return false; S.month = k; drawMonth(); var c = $('#cal'), sd = $('#side');
     if (!S.quiet) [c, sd].forEach(function (el) { if (el && el.animate) el.animate([{ transform: 'translateX(' + (d * 40) + 'px)', opacity: .3 }, { transform: 'none', opacity: 1 }], { duration: 260, easing: 'cubic-bezier(.2,.7,.2,1)' }); }); return true; };
   $('#mprev').onclick = function () { step(-1); };
   $('#mnext').onclick = function () { step(1); };
+  wireCap('#mnav', step);
   S.step = step;
   fitCal();
   // a computer: two fingers sideways on the trackpad (the songs' own code), or the ← → keys, for the month before or after
@@ -2041,10 +2060,25 @@ function hallGeo(W, H) {   // (on a phone: the far end up and to the left, the f
 function drawHall(C, n, m, mine) {
   var W = themeW(), H = themeH(), g = HALLG, q = hallGeo(W, H);
   var vx = q.vx, vy = q.vy, ph = q.ph, pw = ph * 2 / 3, fx = q.fx, fy = q.fy;
-  var lines = '';   // (the corridor's lines: from the corners to the far end, and a doorway at each day's depth)
-  [[0, 0], [q.bw, 0], [q.bw, q.bh], [0, q.bh]].forEach(function (c) { lines += '<line x1="' + c[0] + '" y1="' + c[1] + '" x2="' + vx + '" y2="' + vy + '"/>'; });
-  for (var i = 1; i < 7; i++) { var s = hallScale(i), x0 = vx + (0 - vx) * s, y0 = vy + (0 - vy) * s, x1 = vx + (q.bw - vx) * s, y1 = vy + (q.bh - vy) * s;
-    lines += '<rect x="' + x0.toFixed(1) + '" y="' + y0.toFixed(1) + '" width="' + (x1 - x0).toFixed(1) + '" height="' + (y1 - y0).toFixed(1) + '"/>'; }
+  // the corridor: its four edges to the far end, a door now and then along each wall, and at the end Room 237 (John, 9 Nov
+  // 2026: "can we have the corridor end in room 237, and tidy the lines")
+  var se = hallScale(8), P = function (x, y, s) { return (vx + (x - vx) * s).toFixed(1) + ',' + (vy + (y - vy) * s).toFixed(1); }, lines = '';
+  var e0 = [vx + (0 - vx) * se, vy + (0 - vy) * se], e1 = [vx + (q.bw - vx) * se, vy + (q.bh - vy) * se], ew = e1[0] - e0[0], eh = e1[1] - e0[1];
+  [[0, 0], [q.bw, 0], [q.bw, q.bh], [0, q.bh]].forEach(function (c) { lines += '<line x1="' + c[0] + '" y1="' + c[1] + '" x2="' + P(c[0], 0, se).split(',')[0] + '" y2="' + P(0, c[1], se).split(',')[1] + '"/>'; });
+  lines += '<rect class="hend" x="' + e0[0].toFixed(1) + '" y="' + e0[1].toFixed(1) + '" width="' + ew.toFixed(1) + '" height="' + eh.toFixed(1) + '"/>';
+  [1.2, 3.1, 5.2].forEach(function (z, n) {   // (the guest rooms' doors, either side, staggered)
+    [0, q.bw].forEach(function (x, side) {
+      var z1 = z + (side ? .9 : 0), a = hallScale(z1), b = hallScale(z1 + .55), top = q.bh * .3;
+      lines += '<polygon class="hdoor" points="' + [P(x, q.bh, a), P(x, q.bh, b), P(x, top, b), P(x, top, a)].join(' ') + '"/>';
+    });
+  });
+  var dw = ew * .26, dh = eh * .68, dx = vx - dw / 2, dy = e1[1] - dh, fs = Math.max(6, dw * .2);   // (Room 237: dark wood, its brass number, the key left in it on its red fob)
+  lines += '<rect class="r237" x="' + dx.toFixed(1) + '" y="' + dy.toFixed(1) + '" width="' + dw.toFixed(1) + '" height="' + dh.toFixed(1) + '"/>' +
+    '<rect class="r237f" x="' + (dx + dw * .14).toFixed(1) + '" y="' + (dy + dh * .1).toFixed(1) + '" width="' + (dw * .72).toFixed(1) + '" height="' + (dh * .34).toFixed(1) + '"/>' +
+    '<rect class="r237f" x="' + (dx + dw * .14).toFixed(1) + '" y="' + (dy + dh * .52).toFixed(1) + '" width="' + (dw * .72).toFixed(1) + '" height="' + (dh * .38).toFixed(1) + '"/>' +
+    '<text class="n237" x="' + vx.toFixed(1) + '" y="' + (dy + dh * .1 + dh * .17 + fs * .35).toFixed(1) + '" font-size="' + fs.toFixed(1) + '">237</text>' +
+    '<circle class="k237" cx="' + (dx + dw * .82).toFixed(1) + '" cy="' + (dy + dh * .5).toFixed(1) + '" r="' + Math.max(1.4, dw * .05).toFixed(1) + '"/>' +
+    '<rect class="fob" x="' + (dx + dw * .8).toFixed(1) + '" y="' + (dy + dh * .54).toFixed(1) + '" width="' + Math.max(2, dw * .07).toFixed(1) + '" height="' + Math.max(5, dh * .14).toFixed(1) + '" rx="1"/>';
   var h = '<svg class="hlines" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none">' + lines + '</svg>' +
     '<div class="hstage" style="perspective:' + g.p + 'px;perspective-origin:' + vx.toFixed(0) + 'px ' + vy.toFixed(0) + 'px">' +
     '<div class="hcarpet" style="left:0;top:' + q.bh + 'px;width:' + q.bw + 'px;height:' + (8 * g.dz) + 'px"></div>';   // (the carpet: flat on the floor, to the far end)
@@ -2178,6 +2212,16 @@ function themeCaption(m) {   // a small caption under the month: the film the th
   var nav = MOB() ? '<div class="mobnav"><button class="pill" id="mbprev" aria-label="The day before">‹ Day before</button><span class="mbhint">or swipe</span><button class="pill" id="mbnext" aria-label="The day after">Day after ›</button></div>' : '';
   return (id ? '<button class="tinspo link" id="tinspo" data-fid="' + id + '">' + txt + ' ›</button>' : '<div class="tinspo" id="tinspo">' + txt + '</div>') + nav;
 }
+function capBar(m, y, prev, next) {   // the theme's caption on the calendar too, ‹ › to the month before or after, its theme with it (John, 9 Nov 2026: "Can the theme caption remain on the page when the calendar is up, with arrows to jump to the next or previous one")
+  var t = themeFor(m, y), id = themeFilm(t);
+  return '<div class="tcap"><button class="tcarr" data-cap="-1" aria-label="The month before’s theme"' + (prev ? '' : ' disabled') + '>‹</button>' +
+    '<' + (id ? 'button class="tctx link" data-fid="' + id + '"' : 'div class="tctx"') + '><b>' + MONTHS[m] + ' ' + y + ' · ' + esc(t.name) + '</b><span>after <i>' + esc(t.film) + '</i> (' + t.year + ') · ' + esc(t.by) + (id ? ' ›' : '') + '</span></' + (id ? 'button' : 'div') + '>' +
+    '<button class="tcarr" data-cap="1" aria-label="The month after’s theme"' + (next ? '' : ' disabled') + '>›</button></div>';
+}
+function wireCap(root, step) {
+  $$(root + ' .tcarr').forEach(function (b) { b.onclick = function () { step(+b.dataset.cap); }; });
+  var c = $(root + ' .tctx.link'); if (c) c.onclick = function () { api('item?id=' + c.dataset.fid).then(function (it) { if (it && it.id) itemSheet(it); }).catch(function () { toast('That film isn’t there just now.'); }); };
+}
 function wireCaption() {
   var bp = $('#mbprev'), bn = $('#mbnext'); if (bp && !bp.onclick) { bp.onclick = function () { themeStep(-1); }; bn.onclick = function () { themeStep(1); }; }
   var c = $('#tinspo.link'); if (c && !c.onclick) c.onclick = function () { api('item?id=' + c.dataset.fid).then(function (it) { if (it && it.id) itemSheet(it); }).catch(function () { toast('That film isn’t there just now.'); }); }; }
@@ -2251,7 +2295,7 @@ function calSheet() {   // the month's calendar, a pop-up in its theme's colour 
   S.sheetDate = null;   // (not a day's page: a swipe here is the month before or after)
   var h = '<div class="form tcal" style="position:relative">' + X + '<div class="tctools">' +   // (Search, Profile and Reload here too, the bar being covered: John, 8 Nov 2026)
     '<button class="ico" data-tt="refresh" aria-label="Reload"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button>' +
-    '<button class="ico" data-tt="who" aria-label="Profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></button></div><div class="tck">' + esc(t.name) + '</div><div class="tchead"><button class="pill tcm" id="tcprev" aria-label="Earlier month"' + (mi <= 0 ? ' disabled' : '') + '>‹</button><h2>' + MONTHS[m] + ' ' + y + '</h2><button class="pill tcm" id="tcnext" aria-label="Later month"' + (mi >= ms.length - 1 ? ' disabled' : '') + '>›</button></div><div class="tcgrid">' + DOW.map(function (d) { return '<div class="tch">' + d + '</div>'; }).join('');
+    '<button class="ico" data-tt="who" aria-label="Profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></button></div>' + capBar(m, y, mi > 0, mi < ms.length - 1) + '<div class="tchead"><button class="pill tcm" id="tcprev" aria-label="Earlier month"' + (mi <= 0 ? ' disabled' : '') + '>‹</button><h2>' + MONTHS[m] + ' ' + y + '</h2><button class="pill tcm" id="tcnext" aria-label="Later month"' + (mi >= ms.length - 1 ? ' disabled' : '') + '>›</button></div><div class="tcgrid">' + DOW.map(function (d) { return '<div class="tch">' + d + '</div>'; }).join('');
   for (var k = 0; k < lead; k++) h += '<div></div>';
   for (var d = 1; d <= n; d++) {
     var key = S.month + '-' + String(d).padStart(2, '0'), it = C.days[key], tc = key === TODAY ? ' today' : '';
@@ -2273,6 +2317,7 @@ function calSheet() {   // the month's calendar, a pop-up in its theme's colour 
     var w = t.dataset.tt, el = w === 'search' ? $$('.bar-top [data-go="search"]').filter(function (x) { return x.offsetParent; })[0] || $('.bar-top [data-go="search"]') : w === 'refresh' ? ($('#refresh') || $('#refresh2')) : $('#who');
     if (el) el.click(); }; });
   $('#tcprev').onclick = function () { calStep(-1); }; $('#tcnext').onclick = function () { calStep(1); };
+  wireCap('#sheetIn', calStep);
   if (S.calKeep) { var kb = $('#' + S.calKeep); if (kb && kb.disabled) kb = $('#' + (S.calKeep === 'tcprev' ? 'tcnext' : 'tcprev')); S.calKeep = null; if (kb && !kb.disabled) { kb.focus({ preventScroll: true }); setTimeout(function () { if (dlg.open && kb.isConnected) kb.focus({ preventScroll: true }); }, 220); return; } }   // (again once the theme behind has followed the month)
   if (TV) setTimeout(function () { var f = (S.calDay && $('#sheetIn .tcd.has[data-day="' + S.calDay + '"]')) || $('#sheetIn .tcd.today.has') || $$('#sheetIn .tcd.has').pop(); if (f) f.focus(); }, 60);   // (back from a day: on that day, not the last)
 }
