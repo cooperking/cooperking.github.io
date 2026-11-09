@@ -2546,7 +2546,7 @@ function near(k) { return Math.max(0, 1 - Math.abs(k)); }   // (1 for the day yo
 // (a 30-second preview, kept by Grifflix: /gm/ on the Worker), once, faded in and out; Grifflix's own theme the zoetrope's
 // sound as it turns, and the leader's beeps. Browsers keep quiet till a first tap
 // or key; Theme music on the profile turns it off on that device
-var TMUS = { on: store.get('grifflix-music') !== 'off', list: null, a: null, k: null, ok: /[?&]sound=1/.test(location.search), pj: null, ctx: null };   // (sound=1: admin's preview, opened by a click there, may play at once)
+var TMUS = { on: store.get('grifflix-music') !== 'off', list: null, a: null, k: null, ok: /[?&](sound=1|app=)/.test(location.search) || /GRIFFLIXTV\//.test(navigator.userAgent), pj: null, ctx: null };   // (Grifflix's own apps let sound start without a tap: the 3 2 1 and the music from the start; if one won't, the first tap)   // (sound=1: admin's preview, opened by a click there, may play at once)
 fetch('/grifflix/data/thememusic.json').then(function (r) { return r.json(); }).then(function (j) { TMUS.list = j; if (TMUS.k && !TMUS.a && !TMUS.pj) { var k = TMUS.k; TMUS.k = null; themeMusic(k); } }).catch(function () {});
 function musicCtx() { var A = window.AudioContext || window.webkitAudioContext; if (!A) return null; if (!TMUS.ctx) TMUS.ctx = new A(); if (TMUS.ctx.state === 'suspended') TMUS.ctx.resume(); return TMUS.ctx; }
 function themeMusic(k) {   // the theme on the page now (null: none)
