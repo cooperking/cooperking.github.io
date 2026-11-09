@@ -570,6 +570,10 @@ html.tv .th-lane .vday:focus { outline: 0 !important; box-shadow: 0 0 0 4px #1a1
 .zlt { position: absolute; left: 0; top: 0; font: 700 26px/1 var(--kfont); color: #e9c46a; pointer-events: none; will-change: transform; }
 .th-picture .vday { width: 170px; height: 255px; transition: opacity .25s; will-change: transform; box-shadow: 0 18px 40px rgba(0, 0, 0, .55); backface-visibility: hidden; }
 .th-picture .vday .vn { display: none; }
+.th-picture .vday::after { content: ""; position: absolute; inset: 0; background: #000; opacity: var(--dk, 0); pointer-events: none; will-change: opacity; }
+html.tv .zgrain { display: none; }   /* (a TV: no grain flickering over the whole screen) */
+html.tv .zamb { inset: auto; left: -60px; top: -60px; width: calc((100% + 120px) / 4); height: calc((100% + 120px) / 4); transform: scale(4); transform-origin: 0 0; filter: blur(18px) saturate(1.4) brightness(.42); transition: none; }   /* (the room's glow blurred small and scaled up: a quarter of the work) */
+html.tv .th-fold .vday:not(.front) { filter: none; opacity: .85; }
 .th-picture .vday.front { box-shadow: 0 0 0 2px #e9c46a, 0 30px 70px rgba(0, 0, 0, .7), 0 0 80px rgba(233, 196, 106, .25); }
 .th-picture .vday.soon { background: #1a1416; box-shadow: inset 0 0 0 2px rgba(233, 196, 106, .4), 0 18px 40px rgba(0, 0, 0, .55); }
 .th-picture .vday.soon .cs { color: #e9c46a; }
@@ -3054,7 +3058,9 @@ THEMEFX.fold = {
   tmax: function (phi) { return this.L + Math.PI * this.R / Math.max(phi, .02) + (phi > .98 ? this.L - 1 : 0); },
   decor: function (c) {
     var g = this.g(c), m = g.mask ? ';-webkit-mask-image:linear-gradient(90deg,transparent ' + g.mask + 'px,#000 ' + (g.mask + 140) + 'px);mask-image:linear-gradient(90deg,transparent ' + g.mask + 'px,#000 ' + (g.mask + 140) + 'px)' : '';
-    return '<svg class="fcity" width="' + c.W + '" height="' + c.H + '" viewBox="0 0 ' + c.W + ' ' + c.H + '" style="' + m + '"><g id="fscene"></g></svg>';
+    // (drawn on a canvas, not hundreds of shapes made anew each frame: John, 9 Nov 2026: "movement is not as smooth on firestick
+    // ... Inception felt particularly clunky")
+    return '<canvas class="fcity" id="fscene" style="width:' + c.W + 'px;height:' + c.H + 'px"></canvas>';
   },
   ready: function () { fxReset(this); this.t0 = performance.now(); },
   swipe: function (c) { return { x: 0, y: 1, px: c.mob ? 50 : 70 }; },   // (pull the street towards you)
@@ -3064,7 +3070,7 @@ THEMEFX.fold = {
     phi = phi < 1 ? .02 + .98 * (1 - Math.pow(1 - phi, 3)) : 1; tm = me.tmax(phi);
     var Q = function (cls, ps) {   // (a face of the city, in front of the camera only)
       var s = ps.map(function (p) { return me.S(g, p); }); if (s.some(function (q) { return q[2] < .4; })) return;
-      polys.push([(s[0][2] + s[2][2]) / 2, '<polygon class="' + cls + '" points="' + pts(s) + '"/>']);
+      polys.push([(s[0][2] + s[2][2]) / 2, cls, s]);
     };
     for (var n = Math.ceil((1.2 + sh) / 1.5); n * 1.5 - sh < tm; n++) {   // (the paving, in bands across the street, moving with you)
       var t1 = n * 1.5 - sh, t2 = Math.min(tm, t1 + 1.5);
@@ -3075,12 +3081,23 @@ THEMEFX.fold = {
       for (var n = Math.ceil((1 + sh) / 2.3); n * 2.3 - sh < tm; n++) {
         var t1 = n * 2.3 - sh, t2 = Math.min(tm, t1 + 2.15), h = 3 + seeded(n * 7 + (sd > 0 ? 3 : 0)) * 2.4, x = sd * sw;
         Q(sd < 0 ? 'bl' : 'br', [me.P(t1, x, 0, phi), me.P(t2, x, 0, phi), me.P(t2, x, h, phi), me.P(t1, x, h, phi)]);
-        for (var f = 1.1; f < h - .8; f += 1.15) Q('wn', [me.P(t1 + .25, x, f, phi), me.P(t2 - .25, x, f, phi), me.P(t2 - .25, x, f + .55, phi), me.P(t1 + .25, x, f + .55, phi)]);
+        if (!TV || t1 < 30) for (var f = 1.1; f < h - .8; f += 1.15) Q('wn', [me.P(t1 + .25, x, f, phi), me.P(t2 - .25, x, f, phi), me.P(t2 - .25, x, f + .55, phi), me.P(t1 + .25, x, f + .55, phi)]);
         Q('rf', [me.P(t1, x, h, phi), me.P(t2, x, h, phi), me.P(t2, x - sd * .5, h + .6, phi), me.P(t1, x - sd * .5, h + .6, phi)]);   // (the mansard roof)
       }
     });
     polys.sort(function (p, q) { return q[0] - p[0]; });
-    var sc = $('#fscene'); if (sc) sc.innerHTML = polys.map(function (p) { return p[1]; }).join('');
+    var cv = $('#fscene'), x = cv && cv.getContext('2d');
+    if (x) {
+      var dpr = TV ? .5 : Math.min(2, window.devicePixelRatio || 1);   // (a TV: drawn at half size and scaled up, a quarter of the filling)
+      if (cv.width !== Math.round(c.W * dpr)) { cv.width = Math.round(c.W * dpr); cv.height = Math.round(c.H * dpr); }
+      x.setTransform(dpr, 0, 0, dpr, 0, 0); x.clearRect(0, 0, c.W, c.H); x.lineJoin = 'round';
+      var FC = { pv1: '#1f4c5e', pv2: '#2d5f72', ln: '#a8bcc3', bl: '#a8bcc3', br: '#8fa6ae', wn: '#083345', rf: '#2d5f72' }, ST = { bl: '#6f8a95', br: '#5d7883' };
+      polys.forEach(function (p) { var q = p[2]; x.beginPath(); x.moveTo(q[0][0], q[0][1]); for (var i = 1; i < q.length; i++) x.lineTo(q[i][0], q[i][1]); x.closePath();
+        x.globalAlpha = p[1] === 'ln' ? .55 : 1; x.fillStyle = FC[p[1]]; x.fill(); if (ST[p[1]]) { x.strokeStyle = ST[p[1]]; x.lineWidth = .6; x.stroke(); } });
+      x.globalAlpha = 1;
+      if (g.mask) { x.globalCompositeOperation = 'destination-out'; var gr = x.createLinearGradient(g.mask, 0, g.mask + 140, 0); gr.addColorStop(0, 'rgba(0,0,0,1)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+        x.fillStyle = gr; x.fillRect(0, 0, g.mask + 140, c.H); x.globalCompositeOperation = 'source-over'; }   // (the city fading out behind the day's words)
+    }
     me.all.forEach(function (el, j) {   // (the days, standing in the street: their foot on it, their head along its up)
       var k = j - a, t = me.tf + k * me.sp, b = me.S(g, me.P(t, 0, 0, phi)), h = me.S(g, me.P(t, 0, 3, phi));
       var dx = h[0] - b[0], dy = h[1] - b[1], len = Math.sqrt(dx * dx + dy * dy), o = Math.min(clamp01((t - (me.tf - me.sp * .8)) / (me.sp * .8)), t > tm - 1 ? 0 : 1);   // (the day you've left fades as you pass it)
@@ -3281,7 +3298,7 @@ THEMEFX.picture = {
       var o = Math.abs(k) > 6.6 ? Math.max(0, 7.1 - Math.abs(k)) * 2 : 1;
       el.style.transform = 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px) translate(-50%,-50%) perspective(' + g.P + 'px) rotateY(' + ((front ? th : th + Math.PI) * 180 / Math.PI).toFixed(1) + 'deg) scale(' + (s * lift).toFixed(3) + ')';
       el.style.opacity = (front ? o : o * .35 * (1 - depth * .5)).toFixed(2); el.style.zIndex = Math.round(depth * 100) + (nf > .5 ? 100 : 0);
-      el.style.filter = nf > .98 ? 'none' : 'brightness(' + (.35 + .55 * depth).toFixed(2) + ')';
+      el.style.setProperty('--dk', nf > .98 ? '0' : (.65 - .55 * depth).toFixed(2));   // (dimmed by a veil, not a filter redrawn each frame: smooth on a TV)
     });
     var ry = g.R * .2, top = g.cy - g.ch * .62 - 26, mid = g.cy + g.ch * .62 + 26 + me.bh / 2;
     me.za = a; me.horse(g, ry, mid);
@@ -3300,14 +3317,14 @@ THEMEFX.picture = {
       var th = (i / N) * Math.PI * 2 - a * me.st, cs = Math.cos(th), sn = Math.sin(th), fr = cs > 0;
       t.style.width = fw.toFixed(1) + 'px'; t.style.height = fh.toFixed(1) + 'px'; t.style.backgroundSize = (fw * 15).toFixed(1) + 'px ' + fh.toFixed(1) + 'px';
       t.style.transform = 'translate(' + (g.cx + g.R * sn).toFixed(1) + 'px,' + (mid + ry * cs).toFixed(1) + 'px) translate(-50%,-50%) scaleX(' + ((fr ? 1 : -1) * Math.max(.06, Math.abs(cs))).toFixed(2) + ')';
-      t.style.opacity = fr ? (.4 + .6 * cs).toFixed(2) : (.3 * -cs).toFixed(2); t.style.zIndex = fr ? 150 : 1;
+      t.style.opacity = fr ? (.4 + .6 * cs).toFixed(2) : (.3 * -cs).toFixed(2); t.style.zIndex = fr ? 150 : 1; if (TV) t.style.visibility = fr ? '' : 'hidden';
     });
     me._fw = fw;
     if (!me._zt && !CALM) me._zt = setInterval(function () {
       if (!me._zhs || !me._zhs[0] || !me._zhs[0].isConnected) { clearInterval(me._zt); me._zt = 0; return; }
       me._tk = (me._tk || 0) + 1;
-      me._zhs.forEach(function (t, i) { t.style.backgroundPosition = (-((i + me._tk) % 15) * me._fw).toFixed(1) + 'px 0'; });
-    }, 83);
+      me._zhs.forEach(function (t, i) { if (t.style.visibility !== 'hidden') t.style.backgroundPosition = (-((i + me._tk) % 15) * me._fw).toFixed(1) + 'px 0'; });
+    }, TV ? 110 : 83);
   },
   front: function (b) {   // (the room lit by the day's film)
     var z = $('#zamb'); if (z && b) z.style.backgroundImage = b.classList.contains('has') ? b.style.getPropertyValue('--b') : 'none';
