@@ -3422,7 +3422,7 @@ THEMEFX.picture = {
       var k = j - a, th = k * st, cs = Math.cos(th), sn = Math.sin(th), nf = near(k), front = cs > 0;
       // (round the drum's own ellipse, as its rims, letters and horses go: higher at the back, lower at the front: John, 9 Nov 2026:
       // "the angle of movement on the zoetrope is different from the posters coming into view")
-      var depth = (cs + 1) / 2, s = (.5 + .5 * depth) * g.f, x = g.cx + g.R * sn, y = g.cy + g.R * .2 * (cs - .5) + (50 - nf * 30) * g.f, lift = 1 + .32 * nf;
+      var depth = (cs + 1) / 2, s = (.5 + .5 * depth) * g.f, x = g.cx + g.R * sn, y = g.cy + g.R * .2 * (cs - .5) + (66 - nf * 30) * g.f, lift = 1 + .32 * nf;
       var o = Math.abs(k) > 6.6 ? Math.max(0, 7.1 - Math.abs(k)) * 2 : 1;
       // (seen as the drum is, from a little above: its rims' ellipses say 11.5 degrees down: John, 9 Nov 2026: "The angle of the rotation
       // and the top still don't feel like they match the zoetrope")
@@ -3434,10 +3434,10 @@ THEMEFX.picture = {
     me.za = a; me.horse(g, ry, mid);
     $$('#cal .zlt').forEach(function (t, i, L) {   // (the rim's letters, turning with the drum)
       var th = (i / L.length) * Math.PI * 2 - a * st, cs = Math.cos(th), sn = Math.sin(th);
-      var ds = (.55 + .45 * (cs + 1) / 2) * g.f;   // (smaller at the back, as the posters: John, 9 Nov 2026: "like the back is at the front")
+      var ds = (.82 + .18 * (cs + 1) / 2) * g.f;   // (a little smaller towards the back, not much: John, 9 Nov 2026)   // (smaller at the back, as the posters: John, 9 Nov 2026: "like the back is at the front")
       // (each letter printed on the rim: turned with it and seen from the same height, so it leans and narrows as the rim does)
       t.style.transform = 'translate(' + (g.cx + g.R * sn).toFixed(1) + 'px,' + (top + ry * cs - 34 * ds).toFixed(1) + 'px) translate(-50%,0) perspective(' + g.P + 'px) rotateY(' + (th * 180 / Math.PI).toFixed(1) + 'deg) scale(' + ds.toFixed(3) + ')';   // (upright, not tilted: John, 9 Nov 2026)
-      t.style.opacity = cs > 0 ? (.35 + .65 * cs).toFixed(2) : (.12 * -cs).toFixed(2); t.style.zIndex = cs > 0 ? 160 : 1;
+      t.style.opacity = cs > 0 ? (.7 + .3 * cs).toFixed(2) : (.45 - .15 * -cs).toFixed(2); t.style.zIndex = cs > 0 ? 160 : 1;   // (faded only a little at the back)
     });
   },
   // (Muybridge's horse round the drum's band, seen through its slits: each slot steps on a frame twelve times a second, so it
