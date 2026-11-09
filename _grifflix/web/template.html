@@ -561,6 +561,13 @@ html.tv .th-lane .vday:focus { outline: 0 !important; box-shadow: 0 0 0 4px #1a1
 .zgrain { position: absolute; inset: 0; opacity: .07; pointer-events: none; background: repeating-radial-gradient(circle at 17% 32%, #fff 0 .6px, transparent 1px 3px), repeating-radial-gradient(circle at 71% 63%, #fff 0 .5px, transparent 1px 4px); animation: zgrain .4s steps(3) infinite; }
 @keyframes zgrain { 33% { transform: translate(-6px, 4px); } 66% { transform: translate(5px, -3px); } }
 .zdrum { position: absolute; left: 0; top: 0; pointer-events: none; overflow: visible; }
+.zcin { position: absolute; background: #0c0b0a; box-shadow: 0 0 0 3px #1a1210, 0 0 0 5px rgba(201, 162, 90, .55), 0 0 60px 10px rgba(235, 230, 215, .10); overflow: hidden; }   /* (the cinema's screen, gilt-edged) */
+.zcin video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: sepia(.18) contrast(1.06) brightness(.92); }
+.zflick { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 45%, transparent 55%, rgba(0, 0, 0, .45)); animation: zflick .18s steps(2) infinite; pointer-events: none; }   /* (the projector's flicker, the lens's fall-off) */
+@keyframes zflick { 50% { background-color: rgba(255, 250, 235, .035); } }
+@media (prefers-reduced-motion: reduce) { .zflick { animation: none; } }
+.zbeam { position: absolute; pointer-events: none; background: radial-gradient(closest-side, rgba(235, 228, 210, .14), rgba(235, 228, 210, 0)); }   /* (the screen's light in the room) */
+.zseats { position: absolute; left: 0; top: 0; pointer-events: none; } .zseats path { fill: #120b0b; stroke: rgba(235, 228, 210, .16); stroke-width: 1; }   /* (the seats, their tops caught by the screen's light) */
 .zdrum .rim { fill: none; stroke: #e9c46a; stroke-width: 2; opacity: .55; }
 .zdrum .rimf { fill: rgba(233, 196, 106, .06); }
 .zdrum .zin { fill: #0d0809; } .zdrum.zfront { z-index: 100; }
@@ -3421,19 +3428,32 @@ THEMEFX.picture = {
   // turned stand; inside it a paper strip of Muybridge's horse, and at its centre the column of mirrors, the horse in each, galloping as
   // it turns. The month's films hang round it as slides, the day you're on lifted out at the front)
   NM: 8,   // (the mirrors round the column)
-  g: function (c) {   // (on a screen less tall than 900, all of it smaller, so it fits with its stand and clear of the caption)
-    var f = c.mob ? 1 : Math.min(1, c.H / 900), R = c.mob ? 350 : Math.min(390, c.W * .27) * f, E = .24;
-    var Hw = 124 * f;
-    var ty = c.mob ? 290 : c.H * .3, ry = R * E, rm = R * .38, rym = rm * E, mw = 2 * rm * Math.tan(Math.PI / this.NM), mh = mw * .95;
+  // (in a cinema: the Lumières' train arriving on the screen above, the praxinoscope before it, the day's film beside it as the bill: John,
+  // 9 Nov 2026: "praxinoscope and a cinema actually showing a Lumiere short film")
+  g: function (c) {
+    var mob = c.mob, f = mob ? 1 : Math.min(1, c.H / 900), E = .24;
+    var sw = mob ? 600 : Math.min(470, c.W * .33) * f, sh = sw * .75, scx = mob ? 390 : c.W * .7, sy0 = mob ? 24 : 112;   // (the screen)
+    var R = mob ? 200 : Math.min(215, c.W * .15) * f, cx = mob ? 250 : scx - 150 * f, ty = mob ? 548 : sy0 + sh + 70 * f, Hw = R * .32;
+    var ry = R * E, rm = R * .38, rym = rm * E, mw = 2 * rm * Math.tan(Math.PI / this.NM), mh = mw * .95;
     var mcy = ty + ry + 6 * f - rym - mh / 2;   // (the mirrors' middle: their feet just below the near rim)
-    var pt = ty + Hw + ry + 18 * f, ph = Math.max(200, (c.mob ? 850 : c.H - 112) - pt);   // (the day's poster below the drum, down to the caption)
-    return { cx: c.mob ? 390 : c.W - R - Math.max(70, c.W * .055), ty: ty, R: R, E: E, ry: ry, Hw: Hw, P: c.mob ? 1100 : 1400, f: f,
-      pt: pt, ps: ph / 255, rm: rm, rym: rym, mw: mw, mh: mh, mcy: mcy, capy: mcy - mh / 2, big: c.mob ? 1.75 : 1.6 };
+    var pt = ty - 24 * f, ph = Math.max(180, (mob ? 850 : c.H - 112) - pt), pw = ph * 170 / 255;   // (the day's poster, beside the praxinoscope)
+    return { cx: cx, ty: ty, R: R, E: E, ry: ry, Hw: Hw, P: mob ? 1100 : 1400, f: f, ls: R / 390, sw: sw, sh: sh, scx: scx, sy0: sy0,
+      pcx: cx + R + 34 * f + pw / 2, pt: pt, ps: ph / 255, rm: rm, rym: rym, mw: mw, mh: mh, mcy: mcy, capy: mcy - mh / 2, maxY: mob ? 850 : c.H - 118 };
   },
   decor: function (c) {
     var g = this.g(c), R = g.R, ry = g.ry, cx = g.cx, ty = g.ty, yb = ty + g.Hw, F = function (n) { return (+n).toFixed(1); };
     var arc = function (y, sw, r, e) { r = r || R; return 'A' + F(r) + ' ' + F(e || ry) + ' 0 0 ' + sw + ' '; };   // (sw 0: left to right by the front; 1: by the back)
     var h = '<div class="zamb" id="zamb"></div><div class="zvig"></div><div class="zgrain"></div>';
+    // (the cinema: its screen, lit by the Lumières' L'Arrivée d'un train en gare de La Ciotat (1896, public domain), the light thrown
+    // back into the dark; rows of seats before it)
+    var sl = g.scx - g.sw / 2, st0 = g.sy0;
+    h += '<div class="zbeam" style="left:' + F(g.scx - g.sw) + 'px;top:' + F(st0 - g.sh * .2) + 'px;width:' + F(g.sw * 2) + 'px;height:' + F(g.sh * 1.9) + 'px"></div>' +
+      '<div class="zcin" style="left:' + F(sl) + 'px;top:' + F(st0) + 'px;width:' + F(g.sw) + 'px;height:' + F(g.sh) + 'px"><video class="zfilm" id="zfilm" muted loop playsinline preload="none" poster="/grifflix/img/lumiere-train.jpg"></video><i class="zflick"></i></div>';
+    var seats = '', rows = 2;
+    for (var r = 0; r < rows; r++) { var yy = st0 + g.sh + (20 + r * 30) * g.f, n = Math.round(g.sw * (1.1 + r * .2) / (46 * g.f)), w0 = g.sw * (1.1 + r * .2), x0 = g.scx - w0 / 2;
+      for (var q = 0; q < n; q++) { var xx = x0 + (q + .5) * w0 / n, sw2 = w0 / n * .82, hh = (26 + r * 6) * g.f;
+        seats += '<path d="M' + F(xx - sw2 / 2) + ',' + F(yy + hh) + ' L' + F(xx - sw2 / 2) + ',' + F(yy + hh * .35) + ' Q' + F(xx - sw2 / 2) + ',' + F(yy) + ' ' + F(xx) + ',' + F(yy) + ' Q' + F(xx + sw2 / 2) + ',' + F(yy) + ' ' + F(xx + sw2 / 2) + ',' + F(yy + hh * .35) + ' L' + F(xx + sw2 / 2) + ',' + F(yy + hh) + ' Z"/>'; } }
+    h += '<svg class="zseats" width="' + c.W + '" height="' + c.H + '">' + seats + '</svg>';
     // (behind it all: the stand, the drum's inside (its paper-lined far wall, its floor), the far half of its rim)
     h += '<svg class="zdrum" width="' + c.W + '" height="' + c.H + '"><defs>' +
       '<linearGradient id="zoak" x1="0" x2="1"><stop offset="0" stop-color="#1a0d08"/><stop offset=".2" stop-color="#4a2817"/><stop offset=".4" stop-color="#8a5230"/><stop offset=".55" stop-color="#5e3520"/><stop offset=".8" stop-color="#2e180d"/><stop offset="1" stop-color="#120805"/></linearGradient>' +
@@ -3442,7 +3462,7 @@ THEMEFX.picture = {
       '<linearGradient id="zbrass" x1="0" x2="1"><stop offset="0" stop-color="#5a4218"/><stop offset=".35" stop-color="#d4ae62"/><stop offset=".5" stop-color="#f6e0a4"/><stop offset=".7" stop-color="#a07c38"/><stop offset="1" stop-color="#4a3410"/></linearGradient>' +
       '<radialGradient id="zcap" cx=".5" cy=".4" r=".7"><stop offset="0" stop-color="#b89048"/><stop offset=".6" stop-color="#6a4a1c"/><stop offset="1" stop-color="#3a260c"/></radialGradient>' +
       '<radialGradient id="zlamp" cx=".5" cy=".3" r=".6"><stop offset="0" stop-color="#ffe2b0" stop-opacity=".35"/><stop offset="1" stop-color="#ffe2b0" stop-opacity="0"/></radialGradient></defs>' +
-      zstand(cx, yb, R * .8, ry * .8, c.mob ? 1000 : c.H - 118) +
+      zstand(cx, yb, R * .8, ry * .8, g.maxY) +
       '<ellipse cx="' + F(cx) + '" cy="' + F(yb) + '" rx="' + F(R) + '" ry="' + F(ry) + '" fill="#2a1a10"/>' +
       '<path fill="url(#zin)" d="M' + F(cx - R) + ',' + F(ty) + ' ' + arc(ty, 1) + F(cx + R) + ',' + F(ty) + ' L' + F(cx + R) + ',' + F(yb) + ' ' + arc(yb, 0) + F(cx - R) + ',' + F(yb) + ' Z"/>' +
       '<ellipse cx="' + F(cx) + '" cy="' + F(ty + g.Hw * .3) + '" rx="' + F(R * .95) + '" ry="' + F(ry * 1.4) + '" fill="url(#zlamp)"/>' +
@@ -3470,7 +3490,10 @@ THEMEFX.picture = {
     for (var k = 0; k < L.length; k++) h += '<span class="zlt">' + L[k] + '</span>';
     return h;
   },
-  ready: function (c) { fxReset(this); this.c = c; },
+  ready: function (c) { fxReset(this); this.c = c;
+    var v = $('#zfilm'); if (!v) return;   // (the film fetched once the page has settled, so the page itself is quick)
+    setTimeout(function () { if (!v.isConnected) return; v.src = '/grifflix/video/lumiere-train.mp4'; if (!CALM) { var pr = v.play(); if (pr && pr.catch) pr.catch(function () {}); } }, 1200);
+  },
   leader: function (asked) {   // (a film leader: 3, 2, 1, a flash, GRIFFLIX; the first visit each day; a tap skips it)
     // (the first visit of the day only; home, GRIFFLIX and reloads don't replay it. ?leader=1 always plays it: admin's preview. John, 9 Nov 2026)
     var force = asked === true || /[?&]leader=1/.test(location.search);
@@ -3536,7 +3559,7 @@ THEMEFX.picture = {
       var k = j - a, ph = k * st, cs = Math.cos(ph), sn = Math.sin(ph), nf = near(k);
       // (the day's poster, large, below the drum: the next sliding in as the drum turns)
       var o = nf * nf * (3 - 2 * nf);
-      el.style.transform = 'translate(' + (g.cx - k * 70 * g.f).toFixed(1) + 'px,' + (g.pt + 255 * g.ps / 2).toFixed(1) + 'px) translate(-50%,-50%) scale(' + (g.ps * (.94 + .06 * nf)).toFixed(3) + ')';
+      el.style.transform = 'translate(' + (g.pcx - k * 50 * g.f).toFixed(1) + 'px,' + (g.pt + 255 * g.ps / 2).toFixed(1) + 'px) translate(-50%,-50%) scale(' + (g.ps * (.94 + .06 * nf)).toFixed(3) + ')';
       el.style.opacity = o.toFixed(2); el.style.pointerEvents = o < .5 ? 'none' : ''; el.style.zIndex = 150 + Math.round(nf * 10);
       el.style.setProperty('--dk', '0');
       // (its poster on the red band, turning with the drum: the near side)
@@ -3572,7 +3595,7 @@ THEMEFX.picture = {
     $$('#cal .zlt').forEach(function (t, i, L) {   // (GRIFFLIX in gilt round the drum, between its bands)
       var th = (i / L.length) * Math.PI * 2 - a * st, cs = Math.cos(th), sn = Math.sin(th);
       if (cs < .05) { t.style.visibility = 'hidden'; return; } t.style.visibility = '';
-      t.style.transform = 'translate(' + (g.cx + R * sn).toFixed(1) + 'px,' + (ty + g.Hw * .17 + ry * cs).toFixed(1) + 'px) translate(-50%,-50%) perspective(' + g.P + 'px) rotateY(' + (th * 180 / Math.PI).toFixed(1) + 'deg) scale(' + (g.f * .78).toFixed(3) + ')';
+      t.style.transform = 'translate(' + (g.cx + R * sn).toFixed(1) + 'px,' + (ty + g.Hw * .17 + ry * cs).toFixed(1) + 'px) translate(-50%,-50%) perspective(' + g.P + 'px) rotateY(' + (th * 180 / Math.PI).toFixed(1) + 'deg) scale(' + (g.ls * .95).toFixed(3) + ')';
       t.style.opacity = (.5 + .5 * cs).toFixed(2); t.style.zIndex = 105;
     });
   },
