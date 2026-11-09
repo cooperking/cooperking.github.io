@@ -1620,6 +1620,20 @@ async function grifflix(request, url, env) {
     const list = await env.MEDIA.list({ prefix: 'grifflix/fonts/' }).catch(() => ({ objects: [] }));
     return answer(200, { ok: true, fonts: (list.objects || []).map(o => o.key.slice(15)) });
   }
+  if (route === 'frequests') {   // John's film requests: films to get for Grifflix (a month's theme film it hasn't, or his own: John, 9 Nov 2026)
+    const w = await gWho(request, env);
+    if (!w || !w.owner) return answer(403, { error: 'Only John.' });
+    let L = JSON.parse(await env.SOTD.get('gfreq') || '[]');
+    if (request.method === 'POST') {
+      const b = await request.json().catch(() => ({})), key = x => String(x.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '') + '|' + (x.year || '');
+      const one = x => ({ name: String(x.name || '').trim().slice(0, 120), year: /^\d{4}$/.test(String(x.year || '')) ? +x.year : null, why: String(x.why || '').slice(0, 120), at: Date.now() });
+      if (b.op === 'add') for (const x of [].concat(b.films || []).slice(0, 50)) { const f = one(x); if (!f.name) continue; const i = L.findIndex(y => key(y) === key(f)); if (i < 0) L.push(f); else if (f.why && !(L[i].why || '').includes(f.why)) L[i].why = [L[i].why, f.why].filter(Boolean).join(' · ').slice(0, 200); }
+      else if (b.op === 'remove') L = L.filter(y => key(y) !== key(b));
+      else return answer(400, { error: 'Add or remove, please.' });
+      L = L.slice(-300); await env.SOTD.put('gfreq', JSON.stringify(L));
+    }
+    return answer(200, { films: L });
+  }
   if (route === 'themes') {   // the months' themes, chosen and ordered on the admin page: a list (any length), or none for the page's own order
     if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
     const w = await gWho(request, env);

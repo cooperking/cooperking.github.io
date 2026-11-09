@@ -165,6 +165,11 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
 .tspare.over { border-color: #1a7a3c; background: rgba(26, 122, 60, .06); }
 .tghost { position: fixed; z-index: 999; pointer-events: none; transform: rotate(-2deg) scale(1.04); box-shadow: 0 14px 34px rgba(0, 0, 0, .35); opacity: .94; }
 body.tdragging { user-select: none; -webkit-user-select: none; }
+.rqlist { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.rqlist li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--field); font-size: 14px; color: var(--fg); }
+.rqlist li.got { opacity: .6; } .rqlist li small { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
+.rqlist button { min-width: 34px; height: 34px; border: 1px solid var(--line); background: none; border-radius: 10px; cursor: pointer; color: var(--fg); }
+.ttile .miss { font: 700 9px/1.2 var(--sans); letter-spacing: .08em; text-transform: uppercase; padding: 3px 5px; background: #e0a000; color: #000; align-self: flex-start; }
 /* the tabs (John, 9 Nov 2026: "can you tidy up my admin page by having tabs") */
 .tabs { position: sticky; top: 0; z-index: 20; display: flex; gap: 4px; margin: 0 0 16px; padding: 8px 0; overflow-x: auto; scrollbar-width: none; background: var(--bg, #f6f3ee); }
 .tabs::-webkit-scrollbar { display: none; }
@@ -186,7 +191,7 @@ body.tdragging { user-select: none; -webkit-user-select: none; }
   <div id="app" hidden>
     <div class="top"><button type="button" class="reload" id="reload" aria-label="Reload" title="Reload" onclick="location.reload()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button><h1>Grifflix <em>admin</em></h1><p class="sub" id="hello"></p></div>
     <nav class="tabs" id="tabs" role="tablist" aria-label="Admin">
-      <button type="button" role="tab" data-go="updates">Updates</button><button type="button" role="tab" data-go="films">Films</button><button type="button" role="tab" data-go="themes">Themes</button><button type="button" role="tab" data-go="members">Members</button><button type="button" role="tab" data-go="mac">Mac</button>
+      <button type="button" role="tab" data-go="updates">Updates</button><button type="button" role="tab" data-go="films">Films</button><button type="button" role="tab" data-go="themes">Themes</button><button type="button" role="tab" data-go="requests">Requests</button><button type="button" role="tab" data-go="members">Members</button><button type="button" role="tab" data-go="mac">Mac</button>
     </nav>
     <div class="cards">
       <section class="card" data-tab="updates">
@@ -250,10 +255,9 @@ body.tdragging { user-select: none; -webkit-user-select: none; }
         <h3 class="tmh">The themes</h3>
         <p class="stat" style="margin:0 0 6px">Drag one onto any month above (a theme can be on as many months as you like). Drag a month here, or tap its ×, to put it back as it was.</p>
         <div class="tspare" id="tspare" data-dz="spare"></div>
-        <div class="state"><button class="btn primary" id="tmsave" type="button" disabled>Saved</button> <button class="btn" id="tmreset" type="button">Back to the usual order</button></div>
+        <div class="state"><button class="btn primary" id="tmsave" type="button" disabled>Saved</button></div>
         <div class="thxview" id="thxview" hidden><div class="row"><b id="thxname"></b><span class="state"><a class="btn" id="thxopen" target="_blank" rel="noopener">Open it full screen</a></span></div><div class="thxfmt" id="thxfmt" role="group" aria-label="Shown on"><button type="button" data-fmt="computer" class="on">Computer</button><button type="button" data-fmt="iphone">iPhone</button><button type="button" data-fmt="ipad">iPad</button><button type="button" data-fmt="tv">TV</button></div><div class="thxbox" id="thxbox"><iframe id="thxf" title="The theme, working" loading="lazy"></iframe></div></div>
-        <p class="stat">Putting the films on their 1sts changes Movie of the Day for everyone once you next press Update everything. Films Grifflix hasn’t got are left until it has.</p>
-        <div class="state"><button class="btn" id="thgo" type="button" disabled>Put the films on their 1sts</button></div>
+        <p class="stat">Saving puts each month’s theme film on its 1st: Grifflix’s own copy, or its trailer if Grifflix hasn’t got it (that film goes on your <a href="#requests">Requests</a>). <b>Update everything</b> puts them on the site.</p>
       </section>
       <section class="card" data-tab="films">
         <div class="kicker">Downloads</div>
@@ -266,6 +270,13 @@ body.tdragging { user-select: none; -webkit-user-select: none; }
         <h2 id="nothead">Looking…</h2>
         <p class="stat" id="notsay"></p>
         <div class="state"><button class="btn" id="mailsee" type="button">See the alert email</button><button class="btn" id="mailme" type="button">Send it to me</button></div>
+      </section>
+      <section class="card" data-tab="requests">
+        <div class="kicker">Film requests</div>
+        <h2>Films to <em>get</em></h2>
+        <p class="stat">Films Grifflix hasn’t got yet: a month’s theme film is added here when you save it on a month (its trailer stands in on the 1st till then), and you can add your own. Each one says when it’s in Grifflix.</p>
+        <div class="state"><input type="text" id="rqname" class="name" placeholder="A film’s name" autocomplete="off" style="flex:1;min-width:160px"><input type="text" id="rqyear" class="name" placeholder="Year" inputmode="numeric" maxlength="4" style="width:80px"><button class="btn primary" id="rqadd" type="button">Add</button></div>
+        <ul class="rqlist" id="rqlist"><li class="fs">Looking…</li></ul>
       </section>
       <section class="card" data-tab="mac">
         <div class="kicker">The Mac mini</div>
@@ -781,10 +792,24 @@ body.tdragging { user-select: none; -webkit-user-select: none; }
         .then(function (r) { if (!r.ok) return r.json().then(function (e) { throw new Error(e.error || 'The Mac said no.'); }); n++; if (say) say(n + ' of ' + jobs.length + '…'); });
     }); }, Promise.resolve()).then(function () { return n; });
   }
+  // ---- film requests (John, 9 Nov 2026: "I would like a warning that I haven't got it - I need a tab for film requests")
+  var RQ = [], LIBI = {};
+  function rqHave(f) { var n = String(f.name || '').toLowerCase().replace(/’/g, "'"); return Object.keys(LIBI).some(function (k) { var it = LIBI[k]; return it.type === 'movie' && String(it.name || '').toLowerCase().replace(/’/g, "'") === n && (!f.year || +it.year === +f.year); }); }
+  function rqDraw() {
+    $('#rqlist').innerHTML = RQ.length ? RQ.slice().reverse().map(function (f) {
+      var got = rqHave(f);
+      return '<li' + (got ? ' class="got"' : '') + '><span><b>' + esc(f.name) + '</b>' + (f.year ? ' (' + f.year + ')' : '') + (got ? ' · <span class="fs ok">In Grifflix now</span>' : '') + (f.why ? '<small>' + esc(f.why) + '</small>' : '') + '</span><button type="button" data-rqrm="' + esc(f.name) + '|' + (f.year || '') + '" aria-label="Take it off the list">×</button></li>';
+    }).join('') : '<li class="fs">No requests: every film wanted is in Grifflix.</li>';
+  }
+  function rqLoad() { g('frequests').then(function (j) { RQ = j.films || []; rqDraw(); }).catch(function () { $('#rqlist').innerHTML = '<li class="fs">Couldn’t read them just now.</li>'; }); }
+  function rqAdd(films) { return g('frequests', { op: 'add', films: films }).then(function (j) { RQ = j.films || []; rqDraw(); }); }
+  $('#rqadd').onclick = function () { var n = $('#rqname').value.trim(), y = $('#rqyear').value.trim(); if (!n) return; rqAdd([{ name: n, year: y, why: 'Added by you' }]).then(function () { $('#rqname').value = ''; $('#rqyear').value = ''; toast('Added to your requests'); }).catch(function (e) { toast(e.message); }); };
+  $('#rqlist').addEventListener('click', function (e) { var b = e.target.closest('[data-rqrm]'); if (!b) return; var p = b.dataset.rqrm.split('|'); g('frequests', { op: 'remove', name: p[0], year: p[1] || null }).then(function (j) { RQ = j.films || []; rqDraw(); }); });
+  rqLoad();
   function themeFirsts() {
     var norm = function (t) { return String(t || '').toLowerCase().replace(/’/g, "'"); };
     (TL_ || (TL_ = Promise.all([fetch('/grifflix/data/library.json', { cache: 'no-store' }).then(function (r) { return r.json(); }), fetch('/grifflix/data/days.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).catch(function () { return { days: {} }; })]))).then(function (r) {
-      var L = r[0].items, D = TD = r[1].days || {}, firsts = Object.keys(D).sort(), start = firsts.length ? firsts[0].slice(0, 7) : '2025-12';
+      var L = LIBI = r[0].items, D = TD = r[1].days || {}, firsts = Object.keys(D).sort(), start = firsts.length ? firsts[0].slice(0, 7) : '2025-12';
       GTHEMES.forEach(function (t) { TID[t.k] = ''; Object.keys(L).some(function (k) { var it = L[k]; if (it.type === 'movie' && +it.year === t.y && norm(it.name).indexOf(norm(t.f)) === 0) { TID[t.k] = k; return true; } }); });
       THJOBS = [];
       var y = +start.slice(0, 4), m = +start.slice(5, 7) - 1, now = new Date(), end = new Date(now.getFullYear() + 1, now.getMonth(), 1);
@@ -794,8 +819,7 @@ body.tdragging { user-select: none; -webkit-user-select: none; }
         var x = TBY[GMONTHS[ymk] || GORDER[seqAt(y, m)]], date = y + '-' + String(m + 1).padStart(2, '0') + '-01', j = firstJob(x.k, date), was = D[date];
         if (j && !(was && was.id === j.item)) THJOBS.push(j);
       }
-      $('#thgo').disabled = !THJOBS.length; $('#thgo').textContent = THJOBS.length ? 'Put the films on their 1sts (' + THJOBS.length + ')' : 'All on their 1sts';
-      tmDraw();
+      tmDraw(); rqDraw();
     }).catch(function () { $('#tspare').innerHTML = '<p class="stat">The site’s films couldn’t be read just now.</p>'; });
   }
   function filmState(k, m) {   // a theme's film: in Grifflix or not, and (in a month) on its next 1st or not
@@ -845,6 +869,7 @@ body.tdragging { user-select: none; -webkit-user-select: none; }
       used[k] = (used[k] || 0) + 1; (onm[k] = onm[k] || []).push(MON[m].slice(0, 3));
       var top = '<span class="mo">' + MON[m].slice(0, 3) + (key === NOWM ? '<i>Now</i>' : '') + '</span>' + (TMM[key] ? '<button type="button" class="x" data-rm="' + key + '" aria-label="Put ' + MON[m] + ' back as it was">×</button>' : '');
       var warn = k === 'blank' ? '' : k !== prev && alike(k, prev) ? '<span class="warn2">Close in colour to ' + MON[(m + 11) % 12].slice(0, 3) + '</span>' : (k === prev && k !== 'blank' ? '<span class="warn2">Same as ' + MON[(m + 11) % 12].slice(0, 3) + '</span>' : '');
+      if (TL_ && k !== 'blank' && k !== 'picture' && !TID[k]) warn += '<span class="miss">Not in Grifflix: trailer</span>';
       var t = tileHtml(k, 'data-dk="m:' + i + '" data-k="' + k + '" tabindex="0" role="button" aria-label="' + MON[m] + ' ' + TYEAR + ': ' + esc(TBY[k].n) + '"', top, warn);
       g += t.replace('class="ttile"', 'class="ttile' + (off && key > NOWM ? ' off' : '') + (key === NOWM ? ' now' : '') + (k === THX ? ' pick' : '') + '"');
     }
@@ -908,7 +933,7 @@ body.tdragging { user-select: none; -webkit-user-select: none; }
     if (to === 'spare' || to[0] === 's') { if (from[0] === 'm') delete TMM[ym(+from.slice(2))]; }   // (a month back as it was)
     else if (to[0] === 'm') {
       var j = +to.slice(2);
-      if (from[0] === 's') TMM[ym(j)] = from.slice(2);   // (any theme onto any month: repeats as you like)
+      if (from[0] === 's') { var tk = from.slice(2); TMM[ym(j)] = tk; if (TL_ && TBY[tk] && tk !== 'picture' && !TID[tk]) toast('You haven’t got ' + TBY[tk].f + ': its trailer goes on the 1st, and it goes on your Requests when you save'); }   // (any theme onto any month: repeats as you like)
       else { var i = +from.slice(2), a = themeAt(i), b = themeAt(j); TMM[ym(i)] = b; TMM[ym(j)] = a; }   // (two months swapped)
     }
     tmDraw();
@@ -969,7 +994,6 @@ body.tdragging { user-select: none; -webkit-user-select: none; }
     tmTake(TDRAFT !== undefined ? TDRAFT : j.themes);
     WAIT.themes = TDRAFT !== undefined ? 'A new order of the months’ themes' : null; summary();
   }
-  $('#tmreset').onclick = function () { TMO = GTHEMES.slice(0, 12).map(function (x) { return x.k; }); TMM = {}; tmDraw(); };
   function tmTake(list) {
     var o = list && !Array.isArray(list) && typeof list === 'object' ? list : null; GMONTHS = o && o.months || {}; if (o) list = o.order;   // the order the Worker keeps: this page's colours, the films for the 1sts, this device's copy
     var ok = Array.isArray(list) && list.length >= 1 && list.every(function (k) { return TBY[k]; });
@@ -1025,7 +1049,7 @@ body.tdragging { user-select: none; -webkit-user-select: none; }
     var wait = setInterval(function () { if (GW) { clearInterval(wait); look(); } }, 500); setTimeout(function () { clearInterval(wait); if (!GW) $('#dsay').textContent = 'The Mac mini isn’t connected just now.'; }, 15000);
   })();
   (function () {   // ---- the tabs: one group of cards at a time, the last one chosen kept (and #themes etc. in the address)
-    var TABS = ['updates', 'films', 'themes', 'members', 'mac'];
+    var TABS = ['updates', 'films', 'themes', 'requests', 'members', 'mac'];
     function show(t, push) {
       if (TABS.indexOf(t) < 0) t = 'updates';
       [].forEach.call(document.querySelectorAll('.cards > [data-tab]'), function (c) { c.classList.toggle('tabon', c.dataset.tab === t); });
@@ -1049,18 +1073,12 @@ body.tdragging { user-select: none; -webkit-user-select: none; }
     var jobs = Object.keys(TMM).filter(function (k) { return k + '-01' >= today; }).sort().map(function (k) { return firstJob(TMM[k], k + '-01'); }).filter(Boolean);   // (each month's film on its 1st: John, 9 Nov 2026)
     g('themes', { themes: body, draft: true }).then(function (j) {
       tmDraft(j);
+      var want = jobs.filter(function (x) { return x.ext; }).map(function (x) { return { name: x.ext.name, year: x.ext.year, why: 'Theme film for ' + monLabel(x.date) }; });
+      if (want.length) rqAdd(want).catch(function () {});
       return putFirsts(jobs, function (t) { b.textContent = 'Films on their 1sts: ' + t; }).then(function (n) { toast('Saved' + (n ? ', and ' + n + ' film' + (n === 1 ? '' : 's') + ' put on ' + (n === 1 ? 'its' : 'their') + ' 1st' + (n === 1 ? '' : 's') : '') + ': Update everything puts it live'); tmDraw(); },
         function (e) { toast('Themes saved; the films for the 1sts weren’t: ' + e.message); tmDraw(); });
     })
       .catch(function (e) { b.disabled = false; b.textContent = 'Save the themes'; toast(e.message || 'Not saved'); });
-  };
-  $('#thgo').onclick = function () {
-    var b = this;
-    if (!GW) return toast('The Mac isn’t answering: it keeps Movie of the Day.');
-    if (!b.dataset.sure) { b.dataset.sure = 1; b.textContent = 'Tap again: ' + THJOBS.length + ' days change'; return; }
-    b.disabled = true;
-    putFirsts(THJOBS, function (t) { b.textContent = t; }).then(function () { b.textContent = 'Done: now Update everything'; toast('On the Mac: Update everything puts them on the site.'); })
-      .catch(function (e) { b.disabled = false; delete b.dataset.sure; b.textContent = 'Put them on the 1sts'; toast(e.message || 'The Mac didn’t answer.'); });
   };
 
   // ---- downloads: whether members may keep films on their devices (the Mac's setting)
