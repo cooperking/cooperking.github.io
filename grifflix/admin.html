@@ -899,7 +899,7 @@ body.tdragging { user-select: none; -webkit-user-select: none; }
   function thxShow(k, label) {
     THX = k; var u = '/grifflix/draft/?view=themes&theme=' + k, t = TBY[k];
     $('#thxview').hidden = false; $('#thxf').src = u + FMT[THF][2] + '&sound=1';   // (its music at once: John, 9 Nov 2026: "does the preview play the music?") $('#thxopen').href = u; $('#thxname').textContent = (label ? label + ' · ' : '') + t.n + ' · ' + t.f + ' (' + t.y + ')';
-    $('#thxlead').hidden = k !== 'picture';
+    $('#thxlead').hidden = false;   // (Grifflix's opening, before any theme)
     thxFit(); tmDraw();
   }
   // (the film leader: the site plays it once a day, so the preview asks for it)
