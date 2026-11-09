@@ -497,9 +497,10 @@ html[data-theme=reel] .hinfo .w > span { color: #fffee2; text-shadow: .05em .05e
 html[data-theme=reel] .hinfo h2 { color: #ebdeca; }
 /* a day not filled yet: coming soon, in the theme's colours and lettering */
 .th .vday.soon { background: color-mix(in srgb, var(--bg) 78%, #000); box-shadow: inset 0 0 0 2px rgba(var(--kink), .35); }
-.vday .cs, .hday .cs { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 8%; font: var(--tw, 700) 30px/1 var(--tfont, var(--kfont)); text-transform: uppercase; letter-spacing: .04em; color: rgb(var(--kink)); pointer-events: none; }
-.hday.soon .cs { color: #f5f0e0; font-size: 44px; }
-.th-moon .vday .cs, .th-code .vday .cs, .th-credits .vday .cs, .th-pinboard .vday .cs, .th-slices .vday:not(.front) .cs { display: none; }
+.vday.soon, .hday.soon { container-type: inline-size; }   /* (Coming soon sized to its card, whatever its shape, in every theme: John, 9 Nov 2026) */
+.vday .cs, .hday .cs { position: absolute; inset: 0; display: grid; place-items: center; align-content: center; text-align: center; padding: 8%; overflow: hidden; font: var(--tw, 700) min(30px, 13cqw)/1.02 var(--tfont, var(--kfont)); text-transform: uppercase; letter-spacing: .02em; white-space: nowrap; color: rgb(var(--kink)); pointer-events: none; }
+.hday.soon .cs { color: #f5f0e0; font-size: min(44px, 13cqw); }
+.th-moon .vday .cs, .th-code .vday .cs, .th-credits .vday .cs, .th-slices .vday:not(.front) .cs { display: none; }
 .th-umbrellas .vday.soon:not(.front) .cs { display: none; }
 .th-umbrellas .vday.soon { box-shadow: 10px 14px 0 rgba(0, 0, 0, .16); }
 .tday.soon { cursor: default; }
@@ -587,11 +588,11 @@ html[data-theme=slices] .hinfo .w { font-size: 64px; }
 html.tv .th-moon .vday:focus { outline: 0 !important; clip-path: none; box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px #fff; }
 html.tv .th-moon .vday:focus .msh { border-radius: 50%; }
 /* the day's poster, whole and square-cornered, above its words (John, 9 Nov 2026: "just put the poster on the screen above the title, not circular") */
-.mposter { display: block; width: 168px; height: 252px; margin: 0 0 22px; background: #0c2f3b center / cover; box-shadow: 0 0 0 1px rgba(243, 234, 203, .45), 0 14px 30px rgba(0, 0, 0, .4); pointer-events: auto; cursor: pointer; position: relative; }
+.mposter { display: block; height: min(252px, 25vh); aspect-ratio: 2 / 3; margin: 0 0 min(22px, 2.4vh); background: #0c2f3b center / cover; box-shadow: 0 0 0 1px rgba(243, 234, 203, .45), 0 14px 30px rgba(0, 0, 0, .4); pointer-events: auto; cursor: pointer; position: relative; }
 .mposter .msoon { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 10%; font: var(--tw) 26px/1.05 var(--tfont); text-transform: uppercase; color: #f3eacb; }
 /* Méliès's Man in the Moon beside it, the rocket in his eye, fired at him again each new day (John, 9 Nov 2026: "stick with
    the posters in the moon for Hugo, but add a detail somewhere else") */
-.mmeli { position: absolute; right: 70px; top: 262px; width: 400px; height: 400px; pointer-events: none; filter: sepia(.2) drop-shadow(0 12px 26px rgba(0, 0, 0, .45)); }   /* (A Trip to the Moon, 1902: the moon cut out from the film itself, public domain, Internet Archive; where the poster's circle was) */
+.mmeli { position: absolute; right: 70px; top: 29vh; width: min(400px, 44vh); height: min(400px, 44vh); pointer-events: none; filter: sepia(.2) drop-shadow(0 12px 26px rgba(0, 0, 0, .45)); }   /* (A Trip to the Moon, 1902: the moon cut out from the film itself, public domain, Internet Archive; where the poster's circle was) */
 .mmeli img { display: block; width: 100%; height: 100%; }
 /* (the day's poster whole, the moon's height, in the middle; the copies either side blurred and dimmed, so the one poster
    stands out: John, 9 Nov 2026: "show the full poster but allow it to repeat ... try blurring the repeated ones") */
@@ -1002,10 +1003,11 @@ html.mob .codepic { left: 225px; top: 195px; width: 330px; height: 495px; }
 html.mob .th-slices .vday { height: 510px; background-size: 340px 510px; }
 html.mob .th-moon .vday { width: 40px; height: 40px; }
 html.mob .mmeli { right: auto; left: 150px; top: 200px; width: 480px; height: 480px; }   /* (a phone: in the ring of moons) */
+html:not(.mob)[data-theme=moon] .hinfo .w { font-size: min(84px, 9.3vh); } html:not(.mob)[data-theme=moon] .hinfo h2 { font-size: min(40px, 4.4vh); margin-top: min(30px, 3.3vh); }   /* (the same proportions on a TV's shorter screen as on a computer's: John, 9 Nov 2026) */
 html.mob[data-theme=moon] .hinfo { display: grid; grid-template-columns: 76px minmax(0, 1fr); column-gap: 14px; align-content: start; }
 html.mob[data-theme=moon] .hinfo > * { grid-column: 2; }
 html.mob[data-theme=moon] .hinfo > .w { grid-column: 1 / -1; }
-html.mob .mposter { grid-column: 1 !important; grid-row: 2 / span 4; width: 76px; height: 114px; margin: 6px 0 0; }
+html.mob .mposter { grid-column: 1 !important; grid-row: 2 / span 4; width: 76px; height: 114px; aspect-ratio: auto; margin: 6px 0 0; }
 html.mob .mposter .msoon { font-size: 15px; }
 html.mob .mphase { display: none; }   /* (no moon's phase on a phone) */
 #cal .bigmoon, #cal .globe, #cal .codepic, #cal .reelscreen, #cal .cposter, #cal .mfilm { cursor: pointer; }
@@ -1812,15 +1814,19 @@ var THEMES_LATER = [
 // last it heard so the page opens in it at once); twelve keys of THEMES or THEMES_LATER, or none for the order above
 // (John, 8 Nov 2026: "give me the ability to choose and reorder month themes on the admin")
 var THEMEALL = THEMES.concat(THEMES_LATER), THEMEDEF = THEMES.slice();
+var THEMEMONTHS = {};   // (months given their own theme on the admin page: { 'YYYY-MM': key })
 function themeOrder(keys) {   // true when the months changed
+  var mm = keys && !Array.isArray(keys) && typeof keys === 'object' ? keys.months || {} : {}, mmWas = JSON.stringify(THEMEMONTHS); THEMEMONTHS = mm;
+  if (keys && !Array.isArray(keys) && typeof keys === 'object') keys = keys.order;
   var t = THEMEDEF;
   if (Array.isArray(keys) && keys.length >= 1) { var u = keys.map(function (k) { return THEMEALL.filter(function (x) { return x.key === k; })[0]; }); if (u.every(Boolean)) t = u; }
-  var same = t.length === THEMES.length && t.every(function (x, i) { return x === THEMES[i]; }); THEMES = t; return !same;
+  var same = t.length === THEMES.length && t.every(function (x, i) { return x === THEMES[i]; }) && mmWas === JSON.stringify(mm); THEMES = t; return !same;
 }
 try { themeOrder(JSON.parse(store.get('grifflix-themes') || 'null')); } catch (e) {}
 function themeFor(m, y) {   // a month's theme: the list (any length: John, 9 Nov 2026) from January 2026, each month the next, round again at its end
   if (THEMEQ) { var q = THEMEALL.filter(function (t) { return t.key === THEMEQ; })[0]; if (q) return q; }
   if (y == null) { var now = new Date(); y = S.month && +S.month.slice(5, 7) - 1 === m ? +S.month.slice(0, 4) : now.getMonth() === m ? now.getFullYear() : S.month ? +S.month.slice(0, 4) : now.getFullYear(); }
+  var own = THEMEMONTHS[y + '-' + String(m + 1).padStart(2, '0')]; if (own) { var o = THEMEALL.filter(function (t) { return t.key === own; })[0]; if (o) return o; }   // (a month's own theme)
   var n = THEMES.length, i = (y - 2026) * 12 + m;
   return THEMES[((i % n) + n) % n];
 }
