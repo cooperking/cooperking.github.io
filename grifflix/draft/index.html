@@ -858,7 +858,7 @@ html.mob .tcal { height: auto !important; }
 .tcap .tctx span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 html.tv .tcap .tcarr:focus, html.tv .tcap .tctx:focus { outline: 2px solid rgb(var(--kink)) !important; outline-offset: -2px; }
 #mnav .tcap { margin-top: 14px; }
-html:not(.mob) .tcal > .tcap { grid-column: 1; grid-row: 1 / 3; justify-self: end; align-self: end; width: min(480px, 44%); margin-bottom: 4px; }
+html:not(.mob) .tcal > .tcap { grid-column: 1; grid-row: 1 / 3; justify-self: end; align-self: end; width: min(480px, 44%); margin-bottom: 4px; position: relative; z-index: 2; }   /* (over the month's heading, which shares its row: its arrows answer: John, 9 Nov 2026) */
 .tcal h2 { margin: 0; }
 .tchead { display: flex; align-items: center; gap: 16px; margin: 10px 0 18px; }
 .tcal .tcm { min-height: 40px; width: 40px; padding: 0; justify-content: center; }
@@ -2015,7 +2015,7 @@ var THEMES_LATER = [
   { key: 'lane', mob: [0, 0, 1280, 720], name: 'The Lane', film: 'The Big Lebowski', year: 1998, by: 'the Coen brothers', bg: '#d79e48', ink: '#000', font: '"GF-lane", "Lobster", cursive', tw: 700, tt: 'none' },
   // Grifflix's own, the launch's showcase (John, 9 Nov 2026: "fully reworked - it's the showcase - an exciting launch screen -
   // the way things move and display should be original and creative"): the zoetrope, where moving pictures began
-  { key: 'picture', mob: [0, 0, 1280, 720], name: 'Grifflix', film: 'the praxinoscope', year: 1877, by: ''   /* (just its name: John, 9 Nov 2026) */, bg: '#0b0809', ink: '#fff', font: 'var(--serif)', tw: 500, tt: 'none' },
+  { key: 'picture', mob: [0, 0, 1280, 720], name: 'Grifflix', film: 'the praxinoscope', year: 1877, by: '', credit: '<i>L’Arrivée d’un train</i> (1896, Lumière)', creditM: 'the Lumières’ <i>train</i> (1896)'   /* (just its name, and the film's credit: John, 9 Nov 2026) */, bg: '#0b0809', ink: '#fff', font: 'var(--serif)', tw: 500, tt: 'none' },
   // The Grand Budapest Hotel (back again: John, 9 Nov 2026): the façade's pink (#f1b1b3), Mendl's box pink and ribbon blue
   // (#f498b5, #6c77b8), the lobby red (#d61302), the gold sign (#e3c183), the bellboy's purple (#5a3d4e); the posters' billing
   // in Archer (Fonts In Use: John's own copy, Arvo till then); the sign hand-lettered (Annie Atkins): Marcellus for it
@@ -2548,7 +2548,7 @@ function themeFilm(t) {   // the film that inspired a theme, if it's in the libr
   return t.fid || null;
 }
 function themeCaption(m) {   // a small caption under the month: the film the theme comes from, and a way to it when Grifflix has it
-  var t = themeFor(m), id = t.film ? themeFilm(t) : null, txt = (MOB() ? '<b>' + MONTHS[m] + '’s theme · ' + esc(t.name) + '</b> ' : '') + (t.film ? (t.by ? 'after ' : '') + '<i>' + esc(t.film) + '</i> (' + t.year + ')' + (t.by ? ' · ' + esc(t.by) : '') : '');
+  var t = themeFor(m), id = t.film ? themeFilm(t) : null, txt = (MOB() ? '<b>' + MONTHS[m] + '’s theme · ' + esc(t.name) + '</b> ' : '') + (t.film ? (t.by ? 'after ' : '') + '<i>' + esc(t.film) + '</i> (' + t.year + ')' + (t.by ? ' · ' + esc(t.by) : '') + (t.credit ? ' · ' + (MOB() && t.creditM || t.credit) : '') : '');
   if (!t.film && !MOB()) return '';
   if (!LIB) library().then(function () { var c = $('#tinspo'); if (c && themeFilm(t)) c.outerHTML = themeCaption(m); wireCaption(); }).catch(function () {});
   setTimeout(wireCaption, 0);
@@ -2558,7 +2558,7 @@ function themeCaption(m) {   // a small caption under the month: the film the th
 function capBar(m, y, prev, next) {   // the theme's caption on the calendar too, ‹ › to the month before or after, its theme with it (John, 9 Nov 2026: "Can the theme caption remain on the page when the calendar is up, with arrows to jump to the next or previous one")
   var t = themeFor(m, y), id = t.film ? themeFilm(t) : null;
   return '<div class="tcap"><button class="tcarr" data-cap="-1" aria-label="The month before’s theme"' + (prev ? '' : ' disabled') + '>‹</button>' +
-    '<' + (id ? 'button class="tctx link" data-fid="' + id + '"' : 'div class="tctx"') + '><b>' + MONTHS[m] + ' ' + y + ' · ' + esc(t.name) + '</b>' + (t.film ? '<span>' + (t.by ? 'after ' : '') + '<i>' + esc(t.film) + '</i> (' + t.year + ')' + (t.by ? ' · ' + esc(t.by) : '') + (id ? ' ›' : '') + '</span>' : '<span>No theme yet</span>') + '</' + (id ? 'button' : 'div') + '>' +
+    '<' + (id ? 'button class="tctx link" data-fid="' + id + '"' : 'div class="tctx"') + '><b>' + MONTHS[m] + ' ' + y + ' · ' + esc(t.name) + '</b>' + (t.film ? '<span>' + (t.by ? 'after ' : '') + '<i>' + esc(t.film) + '</i> (' + t.year + ')' + (t.by ? ' · ' + esc(t.by) : '') + (t.credit ? ' · ' + (MOB() && t.creditM || t.credit) : '') + (id ? ' ›' : '') + '</span>' : '<span>No theme yet</span>') + '</' + (id ? 'button' : 'div') + '>' +
     '<button class="tcarr" data-cap="1" aria-label="The month after’s theme"' + (next ? '' : ' disabled') + '>›</button></div>';
 }
 function wireCap(root, step) {
@@ -3506,7 +3506,7 @@ THEMEFX.picture = {
     var cy2 = g.capy, fr = 12 * g.f;
     h += '<svg class="zdrum zfront" width="' + c.W + '" height="' + c.H + '">' +
       '<path fill="url(#zlac)" d="M' + F(cx - R) + ',' + F(ty) + ' ' + arc(ty, 0) + F(cx + R) + ',' + F(ty) + ' L' + F(cx + R) + ',' + F(yb) + ' ' + arc(yb, 1) + F(cx - R) + ',' + F(yb) + ' Z"/>' +
-      '<path class="zgb" d="M' + F(cx - R) + ',' + F(ty + 9 * g.f) + ' ' + arc(0, 0) + F(cx + R) + ',' + F(ty + 9 * g.f) + '"/><path class="zgb" d="M' + F(cx - R) + ',' + F(yb - 9 * g.f) + ' ' + arc(0, 0) + F(cx + R) + ',' + F(yb - 9 * g.f) + '"/>' +
+      '<path class="zgb" d="M' + F(cx - R) + ',' + F(yb - 9 * g.f) + ' ' + arc(0, 0) + F(cx + R) + ',' + F(yb - 9 * g.f) + '"/>' +   // (no line through GRIFFLIX: John, 9 Nov 2026)
       '<path class="zrim" d="M' + F(cx - R) + ',' + F(ty) + ' ' + arc(ty, 0) + F(cx + R) + ',' + F(ty) + '"/><path class="zrim" d="M' + F(cx - R) + ',' + F(yb) + ' ' + arc(yb, 0) + F(cx + R) + ',' + F(yb) + '"/>' +
       '<ellipse cx="' + F(cx) + '" cy="' + F(cy2) + '" rx="' + F(g.rm * 1.05) + '" ry="' + F(g.rym * 1.05) + '" fill="url(#zcap)" stroke="#f6e0a4" stroke-opacity=".7" stroke-width="1.2"/>' +
       '<ellipse cx="' + F(cx) + '" cy="' + F(cy2) + '" rx="' + F(g.rm * .5) + '" ry="' + F(g.rym * .5) + '" fill="none" stroke="#3a260c" stroke-opacity=".5" stroke-width="1"/>' +
