@@ -138,6 +138,31 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
 .dres { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 4px; }
 .dres button { width: 100%; text-align: left; padding: 9px 12px; border: 1px solid var(--line); background: var(--field); color: var(--fg); font: 14px var(--sans); cursor: pointer; border-radius: 10px; }
 .dres button small { color: var(--muted); }
+/* the themes: a year's months, the order, those not used; dragged about (John, 9 Nov 2026) */
+.tyears { display: flex; gap: 6px; flex-wrap: wrap; }
+.tyears button { min-height: 36px; padding: 0 14px; border: 1px solid var(--line); border-radius: 999px; background: var(--field); color: var(--fg); font: 600 13px/1 var(--sans); letter-spacing: .08em; cursor: pointer; }
+.tyears button.on { background: var(--fg); color: #fff; border-color: var(--fg); }
+.tprog { margin: 0; } .tprog b { color: var(--fg); }
+.tgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+.ttile { position: relative; min-height: 104px; padding: 9px 10px 9px; display: flex; flex-direction: column; gap: 4px; text-align: left; border: 0; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .12); cursor: pointer; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; touch-action: manipulation; }
+.ttile .mo { font: 700 11px/1 var(--sans); letter-spacing: .16em; text-transform: uppercase; opacity: .85; display: flex; gap: 6px; align-items: center; }
+.ttile .mo i { font-style: normal; padding: 2px 5px; background: rgba(0, 0, 0, .55); color: #fff; letter-spacing: .1em; }
+.ttile b { display: block; font-size: 20px; line-height: 1.02; letter-spacing: .01em; }
+.ttile small { margin-top: auto; font: italic 400 12px/1.25 "Newsreader", Georgia, serif; opacity: .8; }
+.ttile .fs { color: inherit !important; opacity: .85; }
+.ttile.off { opacity: .38; } .ttile.off::after { content: "No films yet"; position: absolute; right: 8px; top: 9px; font: 600 9px/1 var(--sans); letter-spacing: .12em; text-transform: uppercase; }
+.ttile.now { outline: 3px solid var(--fg); outline-offset: 2px; }
+.ttile.pick { box-shadow: inset 0 0 0 3px #fff, 0 0 0 2px var(--fg); }
+.ttile.over { transform: scale(.96); box-shadow: inset 0 0 0 4px #fff, 0 0 0 3px #1a7a3c; }
+.ttile .x { position: absolute; top: 4px; right: 4px; width: 28px; height: 28px; border: 0; border-radius: 50%; background: rgba(0, 0, 0, .45); color: #fff; font: 600 16px/1 var(--sans); cursor: pointer; }
+.ttile .on2 { font: 400 11px/1.3 var(--sans); opacity: .85; }
+.ttile .warn2 { font: 600 10px/1.2 var(--sans); padding: 2px 4px; background: #e0a000; color: #000; align-self: flex-start; }
+.torder { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; counter-reset: ord; }
+.torder li { display: contents; }
+.tspare { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; min-height: 60px; padding: 6px; border: 1px dashed var(--line); border-radius: 12px; }
+.tspare.over { border-color: #1a7a3c; background: rgba(26, 122, 60, .06); }
+.tghost { position: fixed; z-index: 999; pointer-events: none; transform: rotate(-2deg) scale(1.04); box-shadow: 0 14px 34px rgba(0, 0, 0, .35); opacity: .94; }
+body.tdragging { user-select: none; -webkit-user-select: none; }
 /* the tabs (John, 9 Nov 2026: "can you tidy up my admin page by having tabs") */
 .tabs { position: sticky; top: 0; z-index: 20; display: flex; gap: 4px; margin: 0 0 16px; padding: 8px 0; overflow-x: auto; scrollbar-width: none; background: var(--bg, #f6f3ee); }
 .tabs::-webkit-scrollbar { display: none; }
@@ -214,22 +239,20 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <div id="dpick" hidden><input type="search" id="dq" class="name" placeholder="A film’s name" autocomplete="off" style="width:100%"><ul class="dres" id="dres"></ul></div>
       </section>
       <section class="card" data-tab="themes">
-        <div class="kicker">Monthly themes</div>
+        <div class="kicker">Themes</div>
         <h2>The <em>months</em> and their themes</h2>
-        <p class="stat">The themes in order, as many as you like: January 2026 has the first, each month the next, and round again at the end (twelve: each month its own). Choose, move with the arrows, add from <i>Not used now</i>, or take one out with ×. <b>Save changes the site for everyone at once</b> (no Update needed). Under each: whether its film is in Grifflix, and whether it’s Movie of the Day on that month’s next 1st. Try opens the draft in that theme.</p>
-        <ol class="tmonths" id="tmonths"></ol>
-        <div class="state"><button class="btn" id="tmsave" type="button" disabled>Save the themes</button> <button class="btn" id="tmreset" type="button">Back to the usual order</button></div>
+        <p class="stat">Each month in its theme, a year at a time; tap one to see it working below. <b>Drag</b> (on a phone, hold then drag) a month onto another to swap them, a theme in <i>The order</i> to move it, one from <i>Not used now</i> onto a month or into the order to use it, or one into <i>Not used now</i> to take it out. January 2026 has the first in the order, each month the next, round again at its end. <b>Save changes the site for everyone at once.</b></p>
+        <div class="tyears" id="tyears" role="tablist" aria-label="Year"></div>
+        <p class="stat tprog" id="tprog">Looking at the films…</p>
+        <div class="tgrid" id="tgrid"></div>
+        <div class="state"><button class="btn primary" id="tmsave" type="button" disabled>Saved</button> <button class="btn" id="tmreset" type="button">Back to the usual order</button></div>
+        <div class="thxview" id="thxview" hidden><div class="row"><b id="thxname"></b><span class="state"><a class="btn" id="thxopen" target="_blank" rel="noopener">Open it full screen</a></span></div><div class="thxfmt" id="thxfmt" role="group" aria-label="Shown on"><button type="button" data-fmt="computer" class="on">Computer</button><button type="button" data-fmt="iphone">iPhone</button><button type="button" data-fmt="ipad">iPad</button><button type="button" data-fmt="tv">TV</button></div><div class="thxbox" id="thxbox"><iframe id="thxf" title="The theme, working" loading="lazy"></iframe></div></div>
+        <h3 class="tmh">The order</h3>
+        <ol class="torder" id="torder"></ol>
         <h3 class="tmh">Not used now</h3>
-        <ul class="tmspare" id="tmspare"></ul>
+        <div class="tspare" id="tspare" data-dz="spare"></div>
         <p class="stat">Putting the films on their 1sts changes Movie of the Day for everyone once you next press Update everything. Films Grifflix hasn’t got are left until it has.</p>
         <div class="state"><button class="btn" id="thgo" type="button" disabled>Put the films on their 1sts</button></div>
-      </section>
-      <section class="card" data-tab="themes">
-        <div class="kicker">Theme explorer</div>
-        <h2>Try <em>every</em> theme</h2>
-        <p class="stat">Each theme in its own colour and lettering. Choose one to see it working here, on the films (the draft page), on a computer, an iPhone, an iPad or the TV, each at its own size shrunk to fit; swipe, scroll or use the arrows in it to go through the days. <i>Month</i> marks the ones in use now.</p>
-        <div class="thx" id="thx"></div>
-        <div class="thxview" id="thxview" hidden><div class="row"><b id="thxname"></b><span class="state"><a class="btn" id="thxopen" target="_blank" rel="noopener">Open it full screen</a></span></div><div class="thxfmt" id="thxfmt" role="group" aria-label="Shown on"><button type="button" data-fmt="computer" class="on">Computer</button><button type="button" data-fmt="iphone">iPhone</button><button type="button" data-fmt="ipad">iPad</button><button type="button" data-fmt="tv">TV</button></div><div class="thxbox" id="thxbox"><iframe id="thxf" title="The theme, working" loading="lazy"></iframe></div></div>
       </section>
       <section class="card" data-tab="films">
         <div class="kicker">Downloads</div>
@@ -749,7 +772,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       }
       $('#thgo').disabled = !THJOBS.length; $('#thgo').textContent = THJOBS.length ? 'Put the films on their 1sts (' + THJOBS.length + ')' : 'All on their 1sts';
       tmDraw();
-    }).catch(function () { $('#tmspare').innerHTML = '<li>The site’s films couldn’t be read just now.</li>'; });
+    }).catch(function () { $('#tspare').innerHTML = '<p class="stat">The site’s films couldn’t be read just now.</p>'; });
   }
   function filmState(k, m) {   // a theme's film: in Grifflix or not, and (in a month) on its next 1st or not
     if (!TL_ || !(k in TID)) return '';
@@ -765,33 +788,64 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   var TMO = GORDER.slice(), TMSAVED = GORDER.join();
   function hexLum(h) { var n = parseInt(h.slice(1), 16), r = n >> 16 & 255, g = n >> 8 & 255, b = n & 255; return [r, g, b]; }
   function alike(a, b) { var x = hexLum(TBY[a].bg), y = hexLum(TBY[b].bg); return Math.sqrt(Math.pow(x[0] - y[0], 2) + Math.pow(x[1] - y[1], 2) + Math.pow(x[2] - y[2], 2)) < 70; }
+  // ---- the themes card: a year's months, the order, those not used, the preview; all dragged about (John, 9 Nov 2026: "everything
+  // can be done from the theme explorer ... see what month and rearrange themes from there - with drag and drop - it should say what
+  // month it's on ... tab by year - up to the amount of months programmed in grifflix, so we know when to add more")
+  var THX = null, TYEAR = new Date().getFullYear(), PROG = { from: '2026-01', to: null }, NOWM = new Date().toISOString().slice(0, 7);
+  try { NOWM = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London', year: 'numeric', month: '2-digit' }).format(new Date()).slice(0, 7); } catch (e) {}
+  function ym(i) { var y = 2026 + Math.floor(i / 12), m = ((i % 12) + 12) % 12; return y + '-' + String(m + 1).padStart(2, '0'); }
+  function idxOf(k) { return (+k.slice(0, 4) - 2026) * 12 + (+k.slice(5, 7) - 1); }
+  function monShort(k) { return MON[+k.slice(5, 7) - 1].slice(0, 3) + ' ' + k.slice(0, 4); }
+  function progLast() { return PROG.to && PROG.to > NOWM ? PROG.to : NOWM; }
+  function tileHtml(k, attrs, top, extra) {
+    var t = TBY[k]; if (!t) return '';
+    return '<div class="ttile" ' + attrs + ' style="background:' + t.bg + ';color:' + (t.d ? '#fff' : '#000') + '">' + (top || '') +
+      '<b style="font-family:' + esc(t.font) + ';font-weight:' + (t.tw || 400) + ';text-transform:' + (t.tt || 'none') + ';font-style:' + (t.fs || 'normal') + '">' + esc(t.n) + '</b>' + (extra || '') + '<small>' + esc(t.f) + ' (' + t.y + ')</small></div>';
+  }
+  function monthsOn(seq) {   // (the months, programmed so far, that the order's seq-th theme is on; and the next after that)
+    var L = TMO.length, out = [], last = idxOf(progLast()), i = Math.max(0, idxOf(PROG.from));
+    for (; i <= last; i++) if (i % L === seq) out.push(ym(i));
+    var nx = i; while (nx % L !== seq) nx++;
+    return { on: out, next: ym(nx) };
+  }
   function tmDraw() {
-    var L = TMO.length;
-    $('#tmonths').innerHTML = TMO.map(function (k, m) {
-      var x = TBY[k], prev = TMO[(m + L - 1) % L], next = TMO[(m + 1) % L], twice = TMO.indexOf(k) !== m, when = nextFirst(m, TMO);
-      var warn = twice ? 'In the list twice' : (L > 1 && alike(k, prev) ? 'Close in colour to the one before' : (L > 1 && alike(k, next) ? 'Close in colour to the one after' : ''));
-      return '<li' + (warn ? ' class="near"' : '') + '><span class="mn">' + monLabel(when) + '</span><span class="sw" style="background:' + x.bg + '"></span><select data-m="' + m + '" aria-label="Theme ' + (m + 1) + '">' +
-        GTHEMES.map(function (t) { return '<option value="' + t.k + '"' + (t.k === k ? ' selected' : '') + '>' + esc(t.n + ' · ' + t.f) + '</option>'; }).join('') + '</select>' +
-        '<span class="mv"><button type="button" data-up="' + m + '" aria-label="Earlier"' + (m ? '' : ' disabled') + '>↑</button><button type="button" data-dn="' + m + '" aria-label="Later"' + (m < L - 1 ? '' : ' disabled') + '>↓</button><button type="button" data-rm="' + m + '" aria-label="Take it out"' + (L > 1 ? '' : ' disabled') + '>×</button><a href="/grifflix/draft/?theme=' + k + '" target="_blank" rel="noopener">Try</a></span>' +
-        (warn ? '<span class="warn">' + warn + '</span>' : '') + '<span class="fsw">' + filmState(k, m) + '</span></li>';
+    var L = TMO.length, y0 = Math.min(2026, +PROG.from.slice(0, 4)), y1 = +progLast().slice(0, 4);
+    if (TYEAR < y0 || TYEAR > y1) TYEAR = Math.min(Math.max(TYEAR, y0), y1);
+    var ys = ''; for (var y = Math.max(2026, y0); y <= y1; y++) ys += '<button type="button" role="tab" data-y="' + y + '"' + (y === TYEAR ? ' class="on" aria-selected="true"' : '') + '>' + y + '</button>';
+    $('#tyears').innerHTML = ys;
+    $('#tprog').innerHTML = PROG.to ? 'Films programmed to <b>' + MON[+PROG.to.slice(5, 7) - 1] + ' ' + PROG.to.slice(0, 4) + '</b>' + (PROG.to <= ym(idxOf(NOWM) + 1) ? ' · <b>time to add more</b>' : '') + '.' : 'Looking at the films…';
+    var g = '';
+    for (var m = 0; m < 12; m++) {
+      var key = TYEAR + '-' + String(m + 1).padStart(2, '0'), i = idxOf(key), k = TMO[((i % L) + L) % L], off = !PROG.to || key > PROG.to, prev = TMO[(((i - 1) % L) + L) % L];
+      var top = '<span class="mo">' + MON[m].slice(0, 3) + (key === NOWM ? '<i>Now</i>' : '') + '</span>', warn = L > 1 && k !== prev && alike(k, prev) ? '<span class="warn2">Close in colour to ' + MON[(m + 11) % 12].slice(0, 3) + '</span>' : '';
+      var t = tileHtml(k, 'data-dk="m:' + i + '" data-k="' + k + '" tabindex="0" role="button" aria-label="' + MON[m] + ' ' + TYEAR + ': ' + esc(TBY[k].n) + '"', top, warn);
+      g += t.replace('class="ttile"', 'class="ttile' + (off && key > NOWM ? ' off' : '') + (key === NOWM ? ' now' : '') + (k === THX ? ' pick' : '') + '"');
+    }
+    $('#tgrid').innerHTML = g;
+    $('#torder').innerHTML = TMO.map(function (k, j) {
+      var mo = monthsOn(j), twice = TMO.indexOf(k) !== j, on = mo.on.length ? mo.on.slice(-3).map(monShort).join(', ') : 'Next: ' + monShort(mo.next);
+      var top = '<span class="mo">' + (j + 1) + (twice ? '<i>Twice</i>' : '') + '</span><button type="button" class="x" data-rm="' + j + '" aria-label="Take it out"' + (L > 1 ? '' : ' hidden') + '>×</button>';
+      return '<li>' + tileHtml(k, 'data-dk="o:' + j + '" data-k="' + k + '" tabindex="0" role="button" aria-label="' + (j + 1) + ': ' + esc(TBY[k].n) + '"', top, '<span class="on2">' + (mo.on.length ? 'On ' : '') + on + '</span>') + '</li>';
     }).join('');
-    $('#tmspare').innerHTML = GTHEMES.filter(function (t) { return TMO.indexOf(t.k) < 0; }).map(function (t) {
-      return '<li><span class="sw" style="background:' + t.bg + '"></span><span><b>' + esc(t.n) + '</b> · ' + esc(t.f) + ' (' + t.y + ')<br>' + filmState(t.k) + '</span><span class="mv"><button type="button" class="btn" data-add="' + t.k + '">Add</button><a href="/grifflix/draft/?theme=' + t.k + '" target="_blank" rel="noopener">Try</a></span></li>';
-    }).join('') || '<li>Every theme is in the list.</li>';
-    thxDraw();
+    $('#tspare').innerHTML = GTHEMES.filter(function (t) { return TMO.indexOf(t.k) < 0; }).map(function (t) {
+      return tileHtml(t.k, 'data-dk="s:' + t.k + '" data-k="' + t.k + '" tabindex="0" role="button" aria-label="' + esc(t.n) + ', not used"', '<span class="mo">Not used</span>', '<span class="on2">' + filmState(t.k) + '</span>');
+    }).join('') || '<p class="stat" style="margin:6px">Every theme is in the order. Drag one here to take it out.</p>';
     var dup = TMO.some(function (k, i) { return TMO.indexOf(k) !== i; });
     $('#tmsave').disabled = dup || TMO.join() === TMSAVED; $('#tmsave').textContent = dup ? 'A theme is in twice' : TMO.join() === TMSAVED ? 'Saved' : 'Save the themes (' + L + ')';
   }
-  // ---- the theme explorer (John, 9 Nov 2026: "Can my admin page have a theme explorer so I can try each out")
-  var THX = null;
-  function thxDraw() {
-    $('#thx').innerHTML = GTHEMES.map(function (t) {
-      var i = TMO.indexOf(t.k), use = i >= 0 ? monLabel(nextFirst(i, TMO)) : '';
-      return '<button type="button" data-thx="' + t.k + '"' + (t.k === THX ? ' class="on"' : '') + ' style="background:' + t.bg + ';color:' + (t.d ? '#fff' : '#000') + '">' + (use ? '<span class="use">' + esc(use) + '</span>' : '') +
-        '<b style="font-family:' + esc(t.font) + ';font-weight:' + (t.tw || 400) + ';text-transform:' + (t.tt || 'none') + ';font-style:' + (t.fs || 'normal') + '">' + esc(t.n) + '</b><small>' + esc(t.f) + ' (' + t.y + ')</small></button>';
-    }).join('');
+  // (what's programmed: Movie of the Day's days on the Mac, still to come too, else the site's)
+  function progLook() {
+    var keys = function (o) { return Object.keys(o || {}).filter(function (d) { return /^\d{4}-\d\d-\d\d$/.test(d); }).sort(); };
+    var take = function (ks) { if (!ks.length) return; PROG.from = ks[0].slice(0, 7) < '2026-01' ? '2026-01' : ks[0].slice(0, 7); var t = ks[ks.length - 1].slice(0, 7); if (!PROG.to || t > PROG.to) PROG.to = t; tmDraw(); };
+    fetch('/grifflix/data/days.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) { take(keys(j.days)); }).catch(function () {});
+    var tries = 0, w = setInterval(function () {
+      if (!GW && ++tries < 30) return; clearInterval(w); if (!GW) return;
+      fetch(GW + '/api/calendar?id=motd', { headers: { Authorization: 'Bearer ' + TOKEN } }).then(function (r) { return r.json(); }).then(function (c) { take(keys(c.days)); }).catch(function () {});
+    }, 500);
   }
-  // each format at its own size, shrunk to fit here (John, 9 Nov 2026: "can theme explorer show what it will look like on any format")
+  progLook();
+  $('#tyears').addEventListener('click', function (e) { var b = e.target.closest('[data-y]'); if (b) { TYEAR = +b.dataset.y; tmDraw(); } });
+  // (the preview: each format at its own size, shrunk to fit: John, 9 Nov 2026: "can theme explorer show what it will look like on any format")
   var FMT = { computer: [1440, 900, '&big=1'], iphone: [390, 844, ''], ipad: [820, 1180, ''], tv: [1280, 720, '&tv=1'] }, THF = 'computer';
   function thxFit() {
     var f = FMT[THF], box = $('#thxbox'), wrap = $('#thxview'); if (!box || wrap.hidden) return;
@@ -799,30 +853,92 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     box.style.width = Math.round(f[0] * k) + 'px'; box.style.height = Math.round(f[1] * k) + 'px';
     var fr = $('#thxf'); fr.style.width = f[0] + 'px'; fr.style.height = f[1] + 'px'; fr.style.transform = 'scale(' + k + ')';
   }
-  function thxShow() {
-    var u = '/grifflix/draft/?view=themes&theme=' + THX + FMT[THF][2], t = TBY[THX];
-    $('#thxview').hidden = false; $('#thxf').src = u; $('#thxopen').href = '/grifflix/draft/?view=themes&theme=' + THX; $('#thxname').textContent = t.n + ' · ' + t.f + ' (' + t.y + ')';
-    thxFit();
+  function thxShow(k, label) {
+    THX = k; var u = '/grifflix/draft/?view=themes&theme=' + k, t = TBY[k];
+    $('#thxview').hidden = false; $('#thxf').src = u + FMT[THF][2]; $('#thxopen').href = u; $('#thxname').textContent = (label ? label + ' · ' : '') + t.n + ' · ' + t.f + ' (' + t.y + ')';
+    thxFit(); tmDraw();
   }
-  $('#thx').addEventListener('click', function (e) {
-    var b = e.target.closest('[data-thx]'); if (!b) return; THX = b.dataset.thx; thxDraw(); thxShow();
-    $('#thxview').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  });
   $('#thxfmt').addEventListener('click', function (e) {
     var b = e.target.closest('[data-fmt]'); if (!b || !THX) return; THF = b.dataset.fmt;
-    [].forEach.call(document.querySelectorAll('#thxfmt [data-fmt]'), function (x) { x.classList.toggle('on', x === b); }); thxShow();
+    [].forEach.call(document.querySelectorAll('#thxfmt [data-fmt]'), function (x) { x.classList.toggle('on', x === b); }); thxShow(THX, ($('#thxname').textContent.split(' · ')[0] || ''));
   });
   addEventListener('resize', thxFit);
-  $('#tmonths').addEventListener('change', function (e) { var sel = e.target.closest('select'); if (sel) { TMO[+sel.dataset.m] = sel.value; tmDraw(); } });
-  $('#tmonths').addEventListener('click', function (e) {
-    var b = e.target.closest('button'); if (!b) return;
-    if (b.dataset.rm != null) { TMO.splice(+b.dataset.rm, 1); return tmDraw(); }
-    var m = b.dataset.up != null ? +b.dataset.up : +b.dataset.dn, n = b.dataset.up != null ? m - 1 : m + 1, t = TMO[m];
-    TMO[m] = TMO[n]; TMO[n] = t; tmDraw();
-    var again = $('#tmonths [data-' + (b.dataset.up != null ? 'up' : 'dn') + '="' + n + '"]'); if (again && !again.disabled) again.focus();
+  // (a tap: that theme in the preview; × takes it out of the order)
+  function tapTile(el) {
+    var dk = el.dataset.dk, k = el.dataset.k, lab = '';
+    if (dk.indexOf('m:') === 0) { var key = ym(+dk.slice(2)); lab = MON[+key.slice(5, 7) - 1] + ' ' + key.slice(0, 4); }
+    thxShow(k, lab); $('#thxview').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+  ['#tgrid', '#torder', '#tspare'].forEach(function (sel) {
+    $(sel).addEventListener('click', function (e) {
+      if (TDRAG.just) return;
+      var x = e.target.closest('[data-rm]'); if (x) { if (TMO.length > 1) { TMO.splice(+x.dataset.rm, 1); tmDraw(); } return; }
+      var t = e.target.closest('[data-dk]'); if (t) tapTile(t);
+    });
+    $(sel).addEventListener('keydown', function (e) { var t = e.target.closest('[data-dk]'); if (t && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); tapTile(t); } });
   });
-  $('#tmspare').addEventListener('click', function (e) { var b = e.target.closest('[data-add]'); if (b) { TMO.push(b.dataset.add); tmDraw(); } });
-  $('#tmreset').onclick = function () { TMO = GTHEMES.slice(0, 12).map(function (x) { return x.k; }); tmDraw(); };
+  // (the drag: a mouse at once, a finger after a moment's hold so the page still scrolls)
+  var TDRAG = { just: false };
+  function dropOn(from, to) {   // from/to: "m:<month index>", "o:<place in the order>", "s:<theme>", or "spare"
+    var L = TMO.length, pos = function (d) { var n = +d.slice(2); return d[0] === 'm' ? ((n % L) + L) % L : n; };
+    if (!to || from === to) return;
+    if (to === 'spare') { if (from[0] !== 's' && L > 1) TMO.splice(pos(from), 1); }
+    else if (from[0] === 's') { var k = from.slice(2); if (to[0] === 'o') TMO.splice(pos(to), 0, k); else if (to[0] === 'm') TMO[pos(to)] = k; else return; }
+    else if (to[0] === 's') { if (L > 1) TMO.splice(pos(from), 1); }
+    else if (from[0] === 'o' && to[0] === 'o') { var a = pos(from), b = pos(to), x = TMO.splice(a, 1)[0]; TMO.splice(b, 0, x); }
+    else { var i = pos(from), j = pos(to), t = TMO[i]; TMO[i] = TMO[j]; TMO[j] = t; }   // (two months, or a month and a place in the order: swapped)
+    tmDraw();
+  }
+  (function () {
+    var D = null, card = $('#tgrid').closest('section');
+    function targetAt(x, y) { var el = document.elementFromPoint(x, y); if (!el) return null; var t = el.closest('[data-dk]'); if (t && card.contains(t)) return t; var z = el.closest('[data-dz]'); return z && card.contains(z) ? z : null; }
+    function start() {
+      D.live = true; document.body.classList.add('tdragging'); if (navigator.vibrate) try { navigator.vibrate(12); } catch (e) {}
+      var r = D.el.getBoundingClientRect(), g = D.el.cloneNode(true); g.classList.add('tghost'); g.style.width = r.width + 'px'; g.style.height = r.height + 'px';
+      D.dx = D.x - r.left; D.dy = D.y - r.top; document.body.appendChild(g); D.g = g; move(D.x, D.y);
+    }
+    function move(x, y) {
+      D.g.style.left = (x - D.dx) + 'px'; D.g.style.top = (y - D.dy) + 'px';
+      var t = targetAt(x, y); if (D.over && D.over !== t) D.over.classList.remove('over'); D.over = t && t !== D.el ? t : null; if (D.over) D.over.classList.add('over');
+      if (y < 70) scrollBy(0, -12); else if (y > innerHeight - 70) scrollBy(0, 12);
+    }
+    function end(drop) {
+      if (!D) return; clearTimeout(D.t);
+      if (D.live) {
+        var to = D.over ? (D.over.dataset.dk || D.over.dataset.dz) : null, from = D.el.dataset.dk;
+        if (D.over) D.over.classList.remove('over'); D.g.remove(); document.body.classList.remove('tdragging');
+        TDRAG.just = true; setTimeout(function () { TDRAG.just = false; }, 250);
+        if (drop) dropOn(from, to);
+      }
+      D = null;
+    }
+    // a mouse: pointer events, dragging as soon as it moves
+    card.addEventListener('pointerdown', function (e) {
+      if (e.pointerType !== 'mouse') return;
+      var el = e.target.closest('[data-dk]'); if (!el || e.target.closest('[data-rm]') || e.button > 0) return;
+      D = { el: el, x: e.clientX, y: e.clientY, live: false, mouse: true };
+    });
+    addEventListener('pointermove', function (e) {
+      if (!D || !D.mouse) return; var far = Math.abs(e.clientX - D.x) + Math.abs(e.clientY - D.y);
+      if (!D.live) { if (far > 6) start(); return; }
+      e.preventDefault(); move(e.clientX, e.clientY);
+    });
+    addEventListener('pointerup', function () { if (D && D.mouse) end(true); });
+    // a finger: touch events (the browser takes pointer events for scrolling), held a moment first so the page still scrolls
+    card.addEventListener('touchstart', function (e) {
+      var el = e.target.closest('[data-dk]'); if (!el || e.target.closest('[data-rm]') || e.touches.length > 1) return;
+      var t = e.touches[0]; D = { el: el, x: t.clientX, y: t.clientY, live: false, mouse: false };
+      D.t = setTimeout(function () { if (D && !D.live) start(); }, 300);
+    }, { passive: true });
+    addEventListener('touchmove', function (e) {
+      if (!D || D.mouse) return; var t = e.touches[0], far = Math.abs(t.clientX - D.x) + Math.abs(t.clientY - D.y);
+      if (!D.live) { if (far > 10) { clearTimeout(D.t); D = null; } return; }   // (moved first: a scroll)
+      e.preventDefault(); move(t.clientX, t.clientY);
+    }, { passive: false });
+    addEventListener('touchend', function () { if (D && !D.mouse) end(true); });
+    addEventListener('touchcancel', function () { if (D && !D.mouse) end(false); });
+    card.addEventListener('contextmenu', function (e) { if (e.target.closest('[data-dk]')) e.preventDefault(); });
+  })();
   function tmTake(list) {   // the order the Worker keeps: this page's colours, the films for the 1sts, this device's copy
     var ok = Array.isArray(list) && list.length >= 1 && list.every(function (k) { return TBY[k]; });
     GORDER = ok ? list.slice() : GTHEMES.slice(0, 12).map(function (x) { return x.k; });
