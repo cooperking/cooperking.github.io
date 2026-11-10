@@ -578,12 +578,12 @@ html.tv .th-lane .vday:focus { outline: 0 !important; box-shadow: 0 0 0 4px #1a1
 .llane .fl { stroke: #1a120a; stroke-width: 3; } .llane .pin { stroke: rgba(60, 40, 20, .35); stroke-width: .8; } .llane .nk { fill: #c8201c; } .llane .psh { fill: rgba(40, 20, 8, .28); }
 .llane .ldeck { fill: #e2c477; } .llane .st { fill: #fbefc4; opacity: .55; filter: blur(6px); }   /* (its clouds) */
 /* the view through the zoetrope's slits (John, 10 Nov 2026) */
-.zback { position: absolute; z-index: 1; pointer-events: none; background: radial-gradient(ellipse 60% 55% at 50% 52%, #3b3632, #141210 62%, #070606); }
+.zback { position: absolute; z-index: 1; pointer-events: none; background: #0d0b0a; }   /* (the drum's inside, unlit: John, 10 Nov 2026: "I don't need the lighting on the zoetrope") */
 .zpaper { position: absolute; z-index: 6; opacity: 1; pointer-events: none; will-change: opacity; }
 .zhs { position: absolute; background: url("/grifflix/img/muybridge-horse.webp") 0 0 no-repeat; filter: brightness(0); }   /* (black on the strip's paper) */
-.zstrip { position: absolute; left: 0; right: 0; background: linear-gradient(rgba(60, 50, 35, .55), transparent 4%, transparent 96%, rgba(60, 50, 35, .55)), linear-gradient(90deg, #6d6658, #e9e2cf 30%, #f2ecdc 50%, #e9e2cf 70%, #6d6658); }
+.zstrip { position: absolute; left: 0; right: 0; background: #e6dfcc; }   /* (the strip's paper, plain) */
 .zfrontw { position: absolute; inset: 0; z-index: 10; pointer-events: none; }
-.zw { position: absolute; left: 0; top: 0; width: 10px; transform-origin: 0 0; will-change: transform; background: linear-gradient(90deg, #020202, #24211e 30%, #2f2b27 55%, #0c0b0a 90%, #000); }
+.zw { position: absolute; left: 0; top: 0; width: 10px; transform-origin: 0 0; will-change: transform; background: #141210; }
 .zw::after { content: ""; position: absolute; inset: 0; background: #000; opacity: var(--dk, 0); }
 .zfrontw .zdrum { z-index: 2; }
 .zlogo { position: absolute; left: 0; top: 0; z-index: 3; background: #f2ece0; -webkit-mask: var(--gx-mark) center / contain no-repeat; mask: var(--gx-mark) center / contain no-repeat; will-change: transform; }
@@ -3579,7 +3579,7 @@ THEMEFX.picture = {
     // (the near wall: its slits, a rim above them, a band below with GRIFFLIX round it)
     h += '<div class="zfrontw" style="' + mk + '">';
     for (var k = 0; k < this.NB; k++) h += '<i class="zw" style="height:' + F(g.yS - g.yT) + 'px"></i>';
-    h += '<svg class="zdrum" width="' + c.W + '" height="' + c.H + '"><defs><linearGradient id="zlac" x1="0" x2="1"><stop offset="0" stop-color="#050505"/><stop offset=".3" stop-color="#1c1a18"/><stop offset=".5" stop-color="#3a3530"/><stop offset=".7" stop-color="#191715"/><stop offset="1" stop-color="#040404"/></linearGradient></defs>' +
+    h += '<svg class="zdrum" width="' + c.W + '" height="' + c.H + '"><defs><linearGradient id="zlac" x1="0" x2="1"><stop offset="0" stop-color="#121010"/><stop offset="1" stop-color="#121010"/></linearGradient></defs>' +
       '<path fill="url(#zlac)" d="M' + F(cx - R) + ',' + F(g.yT - 18 * g.f) + ' ' + arc(0) + F(cx + R) + ',' + F(g.yT - 18 * g.f) + ' L' + F(cx + R) + ',' + F(g.yT) + ' ' + arc(1) + F(cx - R) + ',' + F(g.yT) + ' Z"/>' +
       '<path fill="url(#zlac)" d="M' + F(cx - R) + ',' + F(g.yS) + ' ' + arc(0) + F(cx + R) + ',' + F(g.yS) + ' L' + F(cx + R) + ',' + F(g.yB) + ' ' + arc(1) + F(cx - R) + ',' + F(g.yB) + ' Z"/>' +
       ['yT18', 'yT', 'yS', 'yB'].map(function (k) { var y = k === 'yT18' ? g.yT - 18 * g.f : g[k]; return '<path class="zrim" d="M' + F(cx - R) + ',' + F(y) + ' ' + arc(0) + F(cx + R) + ',' + F(y) + '"/>'; }).join('') + '</svg>';
