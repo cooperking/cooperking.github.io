@@ -1687,6 +1687,11 @@ html[data-theme=picture]:not(.mob) .hinfo { top: calc(var(--zft, 52%) + 48px) !i
 html[data-theme=picture]:not(.mob) .hinfo h2 { font-size: min(34px, 2.4vw) !important; line-height: 1.12 !important; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 html.mob[data-theme=picture] .hinfo h2 { font-size: 22px !important; line-height: 1.15 !important; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 html[data-theme=picture] .zpost { background: #000; } html[data-theme=picture] .zpost::before { display: none; } html[data-theme=picture] .zpost::after { inset: 0; background-size: contain; filter: none; }   /* (the wide picture whole, letterboxed in black, not zoomed: John, 10 Nov 2026) */
+.th-picture .zstagef::before { display: none !important; }   /* (no bulbs round the screen: John, 10 Nov 2026) */
+.th-picture .zproj { filter: blur(6px) !important; z-index: 9 !important; }
+.th-picture .zproj i { background: linear-gradient(calc(var(--ang) + 180deg), rgba(255, 250, 235, .7), rgba(255, 246, 226, .36) 45%, rgba(255, 244, 222, .18)), repeating-linear-gradient(var(--ang), transparent 0 22px, rgba(255, 246, 226, .1) 22px 30px, transparent 30px 61px) !important; }   /* (the projector's beam brighter) */
+.th-picture .zlit { background: radial-gradient(60% 75% at var(--lx) 0%, rgba(255, 238, 205, .42), rgba(255, 238, 205, .14) 45%, transparent 75%) !important; }
+html.gxproj .th-picture .zcin { box-shadow: 0 0 0 10px #000, 0 0 0 26px #2a2420, 0 0 110px 44px rgba(255, 240, 215, .38), 0 30px 160px 50px rgba(255, 236, 205, .18) !important; }
 </style>
 <script>/* a computer's screen (wide, with a mouse) or the TV: the whole calendar in the window, as on the songs' site */
 (function () { if (/GRIFFLIXTV\//.test(navigator.userAgent) || /[?&]tv=1(&|$)/.test(location.search)) { var vp = document.querySelector('meta[name=viewport]'); if (vp) vp.setAttribute('content', 'width=1280'); } })();   /* a TV: laid out 1280 wide and shrunk to the screen, as the songs' page is (a Fire Stick's browser is 960 wide: everything came out a third too big) */
