@@ -621,6 +621,7 @@ html.tv .th-picture .zamb { filter: blur(18px) saturate(1.4) brightness(.42); }
 .zdrum .zin { fill: #0d0809; } .zdrum.zfront { z-index: 100; }
 .zlt { position: absolute; left: 0; top: 0; z-index: 105; font-family: var(--kfont); font-weight: 700; line-height: 1; color: #ece7dd; text-transform: uppercase; pointer-events: none; will-change: transform; backface-visibility: hidden; -webkit-backface-visibility: hidden; text-shadow: 0 0 1px rgba(0, 0, 0, .5); }   /* (the logo's own Futura, bold, as the bar's GRIFFLIX: John, 10 Nov 2026) */
 #sharecal, #ashare { display: none !important; }
+html.public .bar-top [data-go="search"], html.public .bar-top [data-go="browse"], html.public .bar-top .members, html.public #refresh, html.public #refresh2, html.public #rows, html.public .tinspo .tfilm { display: none !important; }   /* (signed out: no library, no search) */
 #shwho { cursor: pointer; line-height: 1; } #shwho svg { display: block; width: 15px; height: 15px; } #shwho.whoico svg { width: 22px; height: 22px; }   /* (no sharing links until they're sorted: John, 10 Nov 2026) */
 html .bar-top > .ico[data-go="profile"] { margin-left: auto !important; }
 html:not(.x) .bar-top > #who { margin-left: auto !important; }   /* (the profile always at the bar's right: John, 10 Nov 2026) */   /* (GRIFFLIX painted round the band, the logo's Futura) */
@@ -1889,6 +1890,15 @@ function fromSite(path) {   // what the site's own files answer (null: a thing o
   if (name === 'calendar') return PUBLIC ? null : own(path);
   if (name === 'lists') return PUBLIC ? null : own('lists');
   if (['home', 'items', 'item', 'collections', 'collection', 'search'].indexOf(name) < 0) return null;
+  if (PUBLIC && !DEMO) {   // (signed out: only the films on the calendar, never the library's list)
+    if (name === 'home') return Promise.resolve({ movies: [], tv: [] });
+    if (name !== 'item') return Promise.reject(Object.assign(new Error('Sign in to see the library.'), { status: 401 }));
+    return motdCal().then(function (C) {
+      var id = q.get('id'), it = null; Object.keys(C.days).some(function (d) { var x = C.days[d]; if (x && !x.secret && x.id === id) { it = x; return true; } });
+      if (!it) throw Object.assign(new Error('Not on the calendar.'), { status: 404 });
+      return details(it);
+    });
+  }
   return library().then(function (L) {
     var I = L.items, get = function (ids) { return ids.map(function (i) { return I[i]; }).filter(Boolean); };
     if (name === 'home') {
@@ -1920,7 +1930,8 @@ function fromSite(path) {   // what the site's own files answer (null: a thing o
 }
 function api(path, body) {
   if (DEMO) return Demo.api(path, body);
-  if (!body) { var site = fromSite(path); if (site) return Promise.resolve(site).then(function (r) { return r == null ? mac(path) : r; }); }
+  if (!body) { var site = fromSite(path); if (site) return Promise.resolve(site).then(function (r) { if (r == null && PUBLIC) throw Object.assign(new Error('Sign in to see that.'), { status: 401 }); return r == null ? mac(path) : r; }); }
+  if (PUBLIC && !body) return Promise.reject(Object.assign(new Error('Sign in to see that.'), { status: 401 }));   // (signed out: never the Mac)
   if (PUBLIC) { var x = new Error('Sign in to do that.'); x.status = 401; signInSheet(); return Promise.reject(x); }
   if (path === 'lists' || (path === 'calendar' && body.id !== 'motd')) return own(path, body);
   return mac(path, body).then(function (r) {   // John's changes to Movie of the Day or the collections: made on the Mac, on the site with his next Update
@@ -2013,7 +2024,7 @@ function img(id, kind, w) {
   if (TV && w >= 1100 && kind !== 'Primary') w = 1920;   // (a TV: its full-screen pictures sharp at 1080p)
   var sizes = { Primary: [400], Backdrop: [480, 1100, 1920], Thumb: [480, 1100, 1920] }[kind] || [400], size = sizes.filter(function (x) { return x >= (w || 0); })[0] || sizes[sizes.length - 1];
   var t = PICTAG[id + kind];
-  return WORKER + '/gp/' + id + '/' + kind + '-' + size + '.jpg' + (t ? '?t=' + t : '');
+  return WORKER + '/gp/' + id + '/' + kind + '-' + size + '.jpg' + (t ? '?t=' + t : '') + (PUBLIC ? '' : (t ? '&' : '?') + 'm=1');   // (signed out: the site's copies only, never the Mac)
 }
 function gwUrl(p) { return DEMO ? p : GW + p; }
 
@@ -2149,9 +2160,13 @@ function start() {
   var go = function () {
     if (!DEMO && !TOKEN) {   // (not signed in: only the way in, nothing of Grifflix behind it: John, 9 Nov 2026: "can we actually get all of
       // grifflix behind a sign in")
+      // (now: signed out, Movie of the Day, its films' pages and trailers and the themes, all from the site's own files; nothing of
+      // the Mac, the collections or the whole library: John, 10 Nov 2026: "I want the site to work legitimately as a place to get
+      // film information about the film of the day and watch trailers and themes, without any contact from my mac")
       PUBLIC = true; ME = { name: '', public: true }; window.MACOK = true;
       document.documentElement.classList.add('public');
-      return welcome();
+      $('#who').textContent = 'Sign in';
+      return route();
     }
     macWake();
     api('me').then(function (me) {
@@ -2225,7 +2240,11 @@ window.grifflixJoin = join;   // (the Fire TV app's menu: Sign in with a code)
 
 /* ------------------------------------------------------------------ pages */
 function route() {
-  if (PUBLIC && !DEMO) { if (!$('#signin')) welcome(); return; }   // (not signed in: nothing past the way in, a shared link included)
+  if (PUBLIC && !DEMO) {   // (signed out: the calendar, the themes and the films on it; the library's pages want a sign-in)
+    var ph = (location.hash || '#home').slice(1).split('/')[0];
+    if (ph === 'profile') { location.hash = '#home'; return signInSheet(); }
+    if (['browse', 'collection', 'lists', 'search'].indexOf(ph) >= 0) { location.hash = '#home'; return; }
+  }
   var h = (location.hash || '#home').slice(1).split('/');
   S.view = h[0] || 'home';
   $('#main').className = '';
@@ -2632,7 +2651,7 @@ function themeFilm(t) {   // the film that inspired a theme, if it's in the libr
 function themeCaption(m) {   // a small caption under the month: the film the theme comes from, and a way to it when Grifflix has it
   var t = themeFor(m), id = t.film ? themeFilm(t) : null, txt = (MOB() ? '<b>' + MONTHS[m] + '’s theme · ' + esc(t.name) + '</b> ' : '') + (t.film ? (t.by ? 'after ' : '') + '<i>' + esc(t.film) + '</i> (' + t.year + ')' + (t.by ? ' · ' + esc(t.by) : '') + (t.credit ? ' · ' + (MOB() && t.creditM || t.credit) : '') : '');
   if (!t.film && !MOB()) return '';
-  if (!LIB) library().then(function () { var c = $('#tinspo'); if (c && themeFilm(t)) c.outerHTML = themeCaption(m); wireCaption(); }).catch(function () {});
+  if (!LIB && !PUBLIC) library().then(function () { var c = $('#tinspo'); if (c && themeFilm(t)) c.outerHTML = themeCaption(m); wireCaption(); }).catch(function () {});
   setTimeout(wireCaption, 0);
   var nav = MOB() ? '<div class="mobnav"><button class="pill" id="mbprev" aria-label="The day before">‹ Day before</button><span class="mbhint">or swipe</span><button class="pill" id="mbnext" aria-label="The day after">Day after ›</button></div>' : '';
   return (id ? '<button class="tinspo link" id="tinspo" data-fid="' + id + '">' + txt + ' ›</button>' : '<div class="tinspo" id="tinspo">' + txt + '</div>') + nav;
@@ -4130,7 +4149,7 @@ function closeSheet() { if (dlg.open) dlg.close(); }
 // on a phone, a computer and the TV; the one you're on marked (John, 8 Nov 2026: "Search theme/calendar should always be in
 // the same place no matter what the format")
 function navWords(on) {
-  return [['calendar', 'Calendar'], ['theme', 'Theme'], ['search', 'Search']].map(function (w) {
+  return [['calendar', 'Calendar'], ['theme', 'Theme']].concat(PUBLIC && !DEMO ? [] : [['search', 'Search']]).map(function (w) {   // (signed out: no searching the library)
     return '<button type="button" data-nv="' + w[0] + '"' + (w[0] === on ? ' class="on" aria-current="page"' : '') + '>' + w[1] + '</button>'; }).join('');
 }
 function navGo(w) {
@@ -4303,8 +4322,7 @@ function bodyHTML(it, ctx) {
   if (it.ext) {   // (a theme's film Grifflix hasn't yet: its trailer, the film itself to come: John, 9 Nov 2026)
     h += (it.trailers && it.trailers.length ? '<button class="pill go" id="atrailer">' + TR + 'Watch the trailer</button>' : '') + '<span class="extnote">Not in Grifflix yet: the trailer for now</span>';
   } else if (PUBLIC) {
-    if (it.trailers && it.trailers.length) h += '<button class="pill go" id="atrailer">' + TR + 'Watch the trailer</button>';
-    h += '<button class="pill' + (it.trailers && it.trailers.length ? '' : ' go') + '" id="asignin">Sign in to watch</button>';
+    if (it.trailers && it.trailers.length) h += '<button class="pill go" id="atrailer">' + TR + 'Watch the trailer</button>';   // (no sign-in on a film's page: John, 10 Nov 2026)
   } else if (isSeries) { var nx = (it.episodes || []).filter(function (e) { return e.id === it.next; })[0]; h += '<button class="pill go" id="aplay">' + PLAY + (nx ? (nx.pos ? 'Carry on' : 'Play') + ' S' + nx.season + ' E' + nx.ep : 'Play') + '</button>'; }
   else h += '<button class="pill go" id="aplay">' + PLAY + (resume ? 'Carry on from ' + clock(it.pos) : 'Play') + '</button>' + (resume ? '<button class="pill" id="afrom0">From the start</button>' : '');
   if (!PUBLIC && !it.ext && it.trailers && it.trailers.length) h += '<button class="pill" id="atrailer">' + TR + 'Trailer</button>';
@@ -4712,8 +4730,8 @@ function trailerKeys(k) {   // a remote, on a trailer
   return true;
 }
 function signInSheet() {
-  openSheet('<div class="form" style="position:relative">' + X + '<h2 style="font:400 36px/1.1 var(--serif);color:var(--fg)">Sign in to <i>watch</i></h2>' +
-    '<p class="ov" style="margin-top:0">Grifflix is John’s films for family and friends. Members sign in with their 6-letter code or their invitation link. Haven’t one? Ask John.</p>' +
+  openSheet('<div class="form" style="position:relative">' + X + '<h2 style="color:var(--fg)">Sign in</h2>' +
+    '<p class="ov" style="margin-top:0">With your 6-letter code or your invitation link.</p>' +
     '<form class="signin" id="signin2" style="margin-top:14px"><input id="code2" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false" placeholder="Code or invitation link" aria-label="Code or invitation link"><button class="pill on" type="submit">Sign in</button></form></div>');
   $('#signin2').onsubmit = function (e) { e.preventDefault(); join($('#code2').value); };
   setTimeout(function () { var c = $('#code2'); if (c && !TV) c.focus(); }, 60);
