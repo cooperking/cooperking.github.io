@@ -607,7 +607,8 @@ html.tv .th-picture .zamb { filter: blur(18px) grayscale(1) brightness(.42); }
 .zdrum .rimf { fill: rgba(233, 196, 106, .06); }
 .zdrum .zin { fill: #0d0809; } .zdrum.zfront { z-index: 100; }
 .zlt { position: absolute; left: 0; top: 0; z-index: 105; font-family: var(--kfont); font-weight: 700; line-height: 1; color: #ece7dd; text-transform: uppercase; pointer-events: none; will-change: transform; backface-visibility: hidden; -webkit-backface-visibility: hidden; text-shadow: 0 0 1px rgba(0, 0, 0, .5); }   /* (the logo's own Futura, bold, as the bar's GRIFFLIX: John, 10 Nov 2026) */
-#sharecal, #ashare { display: none !important; }   /* (no sharing links until they're sorted: John, 10 Nov 2026) */
+#sharecal, #ashare { display: none !important; }
+#shwho { cursor: pointer; line-height: 1; } #shwho svg { display: block; width: 15px; height: 15px; } #shwho.whoico svg { width: 22px; height: 22px; }   /* (no sharing links until they're sorted: John, 10 Nov 2026) */
 html .bar-top > .ico[data-go="profile"] { margin-left: auto !important; }
 html:not(.x) .bar-top > #who { margin-left: auto !important; }   /* (the profile always at the bar's right: John, 10 Nov 2026) */   /* (GRIFFLIX painted round the band, the logo's Futura) */
 .zdrum .zgb { fill: none; stroke: #e9c46a; stroke-width: 2; opacity: .85; } .zdrum .zrim { fill: none; stroke: #f6e0a4; stroke-width: 3; }
@@ -4148,6 +4149,17 @@ function shBrand() {   // GRIFFLIX over a pop-up, just where the bar's is (the b
     if (fr.top + pt < barB + 14 && fr.left < barR && fr.right > r.left) f.style.setProperty('padding-top', Math.round(pt + barB + 14 - (fr.top + pt)) + 'px', 'important');
   }
   band.hidden = sr.top > barB - 4 || !(sr.left < barR && sr.right > r.left); band.style.height = Math.round(barB + 12) + 'px';
+  // the profile too, at the bar's right as always, and the pop-up's close moved to its left, not on top of it (John, 10 Nov 2026:
+  // "Profile button disappears on the search page")
+  var wsrc = $$('.bar-top #who, .bar-top .ico[data-go="profile"]').filter(function (x) { return x.offsetParent; })[0], sw = $('#shwho'), cx = $('#sheetIn .close');
+  if (cx) cx.style.removeProperty('transform');
+  if (!sw) { dlg.insertAdjacentHTML('afterbegin', '<button id="shwho" type="button" aria-label="Profile"></button>'); sw = $('#shwho'); sw.onclick = function () { var w = $$('.bar-top #who, .bar-top .ico[data-go="profile"]').filter(function (x) { return x.offsetParent; })[0]; if (w) w.click(); }; }
+  if (!wsrc || TV) { sw.hidden = true; return; }
+  var wr = wsrc.getBoundingClientRect(), wc = getComputedStyle(wsrc);
+  sw.hidden = false; sw.innerHTML = wsrc.innerHTML; sw.className = wsrc.className;
+  sw.style.cssText = 'position:fixed;z-index:81;margin:0;min-height:0;min-width:0;box-sizing:border-box;left:' + Math.round(wr.left) + 'px;top:' + Math.round(wr.top) + 'px;width:' + Math.round(wr.width) + 'px;height:' + Math.round(wr.height) + 'px;';
+  ['fontFamily', 'fontWeight', 'fontSize', 'letterSpacing', 'color', 'textTransform', 'background', 'border'].forEach(function (k) { sw.style[k] = wc[k]; }); sw.style.display = 'flex'; sw.style.alignItems = 'center'; sw.style.justifyContent = 'center'; sw.style.padding = '0';
+  if (cx) { var cr = cx.getBoundingClientRect(); if (cr.right > wr.left - 8 && cr.left < wr.right + 8 && cr.bottom > wr.top - 8 && cr.top < wr.bottom + 8) cx.style.transform = 'translateX(' + Math.round(wr.left - 14 - cr.right) + 'px)'; }
 }
 dlg.addEventListener('click', function (e) { if (e.target === dlg) closeSheet(); });
 dlg.addEventListener('close', function () { S.fromCal = false; S.sheetNow = null; });
