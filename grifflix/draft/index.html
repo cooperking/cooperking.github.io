@@ -625,7 +625,7 @@ html.tv .th-picture .zamb { filter: blur(18px) saturate(1.4) brightness(.42); }
 .tshare { position: fixed; z-index: 27; right: 52px; bottom: 104px; width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid rgba(var(--kink), .35); background: color-mix(in srgb, var(--bg) 72%, #000); color: var(--fg); padding: 0; cursor: pointer; }
 .tshare svg { width: 15px; height: 15px; }
 html.mob .tshare { right: 16px; bottom: auto; top: max(66px, calc(env(safe-area-inset-top) + 64px)); border: 0; background: none; } html.mob .tinspo { right: 52px !important; }
-html.tv .tshare { display: none; }
+html.tv .tshare, html.tv #sharecal, html.tv #ashare, html.tv #shnative { display: none !important; }   /* (no sharing on the TV: John, 10 Nov 2026) */
 .zlt { position: absolute; left: 0; top: 0; z-index: 105; font-family: var(--kfont); font-weight: 700; line-height: 1; color: #ece7dd; text-transform: uppercase; pointer-events: none; will-change: transform; backface-visibility: hidden; -webkit-backface-visibility: hidden; text-shadow: 0 0 1px rgba(0, 0, 0, .5); }   /* (the logo's own Futura, bold, as the bar's GRIFFLIX: John, 10 Nov 2026) */
 html.public .bar-top [data-go="search"], html.public .bar-top [data-go="browse"], html.public .bar-top .members, html.public #refresh, html.public #refresh2, html.public #rows, html.public .tinspo .tfilm { display: none !important; }   /* (signed out: no library, no search) */
 #shwho { cursor: pointer; line-height: 1; } #shwho svg { display: block; width: 15px; height: 15px; } #shwho.whoico svg { width: 22px; height: 22px; }   /* (no sharing links until they're sorted: John, 10 Nov 2026) */
@@ -1693,6 +1693,9 @@ html[data-theme=picture] .zpost { background: #000; } html[data-theme=picture] .
 .th-picture .zproj i { background: linear-gradient(calc(var(--ang) + 180deg), rgba(255, 250, 235, .7), rgba(255, 246, 226, .36) 45%, rgba(255, 244, 222, .18)), repeating-linear-gradient(var(--ang), transparent 0 22px, rgba(255, 246, 226, .1) 22px 30px, transparent 30px 61px) !important; }   /* (the projector's beam brighter) */
 .th-picture .zlit { background: radial-gradient(60% 75% at var(--lx) 0%, rgba(255, 238, 205, .42), rgba(255, 238, 205, .14) 45%, transparent 75%) !important; }
 html.gxproj .th-picture .zcin { box-shadow: 0 0 0 6px #000, 0 0 110px 44px rgba(255, 240, 215, .38), 0 30px 160px 50px rgba(255, 236, 205, .18) !important; }
+/* (the TV: the day you're on is the film behind the screen, so the screen itself shows it's chosen, a cream ring and an orange glow
+   round its black edge: John, 10 Nov 2026: "it needs to be clear on firestick what's highlighted - it's not on Grifflix theme") */
+html.tv.tvfront .th-picture .zcin { box-shadow: 0 0 0 6px #000, 0 0 0 13px #fbf6ec, 0 0 0 16px #f08a4b, 0 0 40px 18px rgba(240, 138, 75, .7), 0 0 110px 44px rgba(255, 240, 215, .38) !important; }
 /* (Vertigo: the day and its film in the credits' clean lettering, clear, a white line round each letter: John, 10 Nov 2026) */
 html[data-theme=spiral] .hinfo .w, html[data-theme=spiral] .hinfo .w > span, html[data-theme=spiral] .hinfo h2 { font-family: "Special Gothic Expanded One", "Archivo Black", Futura, sans-serif !important; font-weight: 400 !important; text-transform: uppercase; letter-spacing: .04em; color: transparent !important; -webkit-text-stroke: 1.6px #fff; paint-order: stroke; text-shadow: none !important; }
 html[data-theme=spiral] .hinfo .w > span { -webkit-text-stroke-width: 2.2px; }
@@ -1745,7 +1748,7 @@ html[data-theme=spiral] .hinfo .w > span { -webkit-text-stroke-width: 2.2px; }
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: '2e082023115a' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: '00766631c20d' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -2482,8 +2485,8 @@ function drawMonth() {
   monthTint(m);
   $('#hero').innerHTML = (C.id !== 'motd' ? '<div class="kick">' + esc(C.mine ? 'Your calendar · ' + C.name : C.ownerName + '’s calendar · ' + C.name) + '</div>' : '') +
     '<h1>' + MONTHS[m] + ' <i>' + y + '</i></h1>' +
-    '<div class="hbtns"><span class="hsub">' + inMonth.length + ' ' + noun(inMonth.length) + ' · <i>' + C.count + ' total</i></span><button class="ico big" id="playtoday" aria-label="Play today’s film"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>' +
-    '<button class="ico" id="surprise" aria-label="Surprise me"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg></button>' +
+    '<div class="hbtns"><span class="hsub">' + inMonth.length + ' ' + noun(inMonth.length) + ' · <i>' + C.count + ' total</i></span>' +
+    // (no Play or Surprise me on the month's calendar: John, 10 Nov 2026: "remove the shuffle option on a calendar and play button")
     '<button class="ico" id="sharecal" aria-label="Share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13M7 8l5-5 5 5M5 14v6h14v-6"/></svg></button></div>';
   var i = months.indexOf(S.month), mh = '<button class="ico" id="mprev" aria-label="Earlier month"' + (i <= 0 ? ' disabled' : '') + '><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg></button><div class="ms">';
   months.forEach(function (k) { mh += '<button class="m' + (k === S.month ? ' on' : '') + '" data-m="' + k + '">' + MONTHS[+k.slice(5, 7) - 1].slice(0, 3) + (k.slice(0, 4) !== TODAY.slice(0, 4) ? ' ’' + k.slice(2, 4) : '') + '</button>'; });
@@ -2572,8 +2575,6 @@ function drawMonth() {
   $$('#cal [data-day], #side [data-day]').forEach(function (b) { b.onclick = function () { daySheet(b.dataset.day); }; });
   if (TVHERO) { $$('#cal .day').forEach(function (b) { b.addEventListener('focus', function () { tvFeat(b.dataset.day || ''); }); });
     var start = C.days[TODAY] && TODAY.slice(0, 7) === S.month ? TODAY : inMonth.sort().pop(); tvFeat(start || ''); }
-  $('#playtoday').onclick = function () { var t = C.days[TODAY] || C.days[inMonth.sort().pop()]; if (t) play(t); else toast('Nothing on this calendar yet.'); };
-  $('#surprise').onclick = function () { var all = Object.keys(C.days).filter(function (k) { return !C.days[k].secret; }); if (!all.length) return toast('Nothing on this calendar yet.'); daySheet(all[Math.floor(Math.random() * all.length)]); };
   $('#sharecal').onclick = function () { if (C.id === 'motd') shareCal(); else share('Grifflix: ' + C.name, location.href.split('#')[0] + '#home/' + C.id); };
   if (tbl) drawTable(C, n, m, mine);
   if (hall) { if (themeFor(m).key === 'corridor') drawHall(C, n, m, mine); else drawTheme(themeFor(m), C, n, m, mine); }
@@ -4406,6 +4407,7 @@ if (TV) document.addEventListener('focusin', function (e) {   // the TV: the cal
   var inBar = !!(e.target.closest && e.target.closest('.bar-top')), home = S.view === 'home' && !dlg.open;
   var was = document.documentElement.classList.contains('barhide'), hide = home && !inBar;
   document.documentElement.classList.toggle('barhide', hide);
+  document.documentElement.classList.toggle('tvfront', !!(e.target.matches && e.target.matches('#cal button[data-day]')));
   if (was !== hide) setTimeout(fitCal, 320);
 });
 function fitCal() {   // a computer or TV: the calendar down to the window's foot
@@ -4597,7 +4599,10 @@ function drawLists(L) {
 var dlg = $('#sheet');
 function openSheet(html) {
   $('#sheetIn').innerHTML = html;
-  if (!dlg.open) dlg.showModal();
+  // (what the remote's on in a pop-up is kept when it's redrawn only if they moved there: the browser's own first choice, the day
+  // before, isn't kept over Play: John, 10 Nov 2026: "Tab order is still not remote control intuitive")
+  if (!dlg.open) { dlg._moved = false; dlg.showModal(); }
+  if (!dlg._mv) { dlg._mv = 1; dlg.addEventListener('keydown', function (e) { if (/^Arrow/.test(e.key)) dlg._moved = true; }); }
   if (!dlg._gx) { dlg._gx = 1; dlg.addEventListener('close', function () { setTimeout(gxLights, 0); }); } gxLights();
   shBrand(); setTimeout(function () { if (dlg.open) shBrand(); }, 420);   // (again once it has slid in: where its words start)
   $('#sheetIn').scrollTop = 0;
@@ -4754,7 +4759,7 @@ function itemSheet(it, ctx) {
     own('lists').then(function (L) { var h = L.hearts.some(function (x) { return x.id === it.id; }); if (h !== !!it.hearted) { it.hearted = full.hearted = h; var b = $('#aheart'); if (b && dlg.open) b.innerHTML = HEART(h); } }).catch(function () {});
     return soon(mac('item?id=' + it.id), 6000).then(function (m) { ['pos', 'next', 'subs'].forEach(function (k) { if (m[k] != null) full[k] = m[k]; });
       var at = {}; (m.episodes || []).forEach(function (e) { if (e.pos) at[e.id] = e.pos; }); (full.episodes || []).forEach(function (e) { if (at[e.id]) e.pos = at[e.id]; }); return full; }, function () { return full; }); };
-  var drawFull = function (full) { if (!dlg.open) return; Object.assign(it, full); var had = document.activeElement && document.activeElement.id; $('#isbody').innerHTML = bodyHTML(it, ctx); wireBody(it, ctx); if (TV) { var back = had && !/^(asignin|aplay|atrailer)$/.test(had) && $('#' + had); if (back) back.focus({ preventScroll: true }); else tvStart(); }   /* (the trailer arrives with the details: chosen then, unless something else was) */  setTimeout(tvFit, 30); };   // (the site's details at once; the Mac's own for this member when it answers, without waiting for it: John, 8 Nov 2026)
+  var drawFull = function (full) { if (!dlg.open) return; Object.assign(it, full); var had = document.activeElement && document.activeElement.id; $('#isbody').innerHTML = bodyHTML(it, ctx); wireBody(it, ctx); if (TV) { var back = had && dlg._moved && !/^(asignin|aplay|atrailer)$/.test(had) && $('#' + had); if (back) back.focus({ preventScroll: true }); else tvStart(); }   /* (the trailer arrives with the details: chosen then, unless something else was) */  setTimeout(tvFit, 30); };   // (the site's details at once; the Mac's own for this member when it answers, without waiting for it: John, 8 Nov 2026)
   if (!it.ext) api('item?id=' + it.id).then(function (full) { drawFull(full); return mine(full); }).then(function (full) { if (full && dlg.open && S.sheetItem === it.id) drawFull(full); }).catch(function () {});
   S.sheetItem = it.id;
 }
@@ -5423,7 +5428,7 @@ function pressables() {
 function moveFocus(dir) {
   var all = pressables(), cur = document.activeElement;
   if (!all.length) return;
-  if (all.indexOf(cur) < 0) { (all.filter(function (e) { return e.matches('.day.today, .hday.today, .tday.today, .vday.today'); })[0] || all.filter(function (e) { return e.matches('.card, #aplay, .day.has, .hday.front, .vday.front'); })[0] || all[0]).focus(); return; }
+  if (all.indexOf(cur) < 0) { (all.filter(function (e) { return e.matches('#cal button.front'); })[0] || all.filter(function (e) { return e.matches('.day.today, .hday.today, .tday.today, .vday.today'); })[0] || all.filter(function (e) { return e.matches('.card, #aplay, .day.has, .hday.front, .vday.front'); })[0] || all[0]).focus(); return; }
   var a = cur.getBoundingClientRect(), ax = a.left + a.width / 2, ay = a.top + a.height / 2, best = null, bestScore = 1e9;
   if (dir === 'up' || dir === 'down') {   // up and down: the next row first (whatever's nearest above or below), then along it the nearest (John, 8 Nov 2026: up from the calendar went straight past the month's buttons to the bar)
     var cands = all.filter(function (el) { if (el === cur) return false; var r = el.getBoundingClientRect(); return dir === 'down' ? r.top >= a.bottom - 4 : r.bottom <= a.top + 4; });
