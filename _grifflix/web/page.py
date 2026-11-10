@@ -17,11 +17,17 @@ ADMIN = os.path.join(ROOT, 'grifflix', 'admin.html')
 OUT = {'draft': os.path.join(ROOT, 'grifflix', 'draft', 'index.html'), 'live': os.path.join(ROOT, 'grifflix', 'index.html')}
 
 
+def version():
+    """Which version of the page this is (its template's own fingerprint): the page checks version.json beside it and reloads
+    itself when a newer one is put live (John, 10 Nov 2026: "make the fire tv update each time we make a big update")."""
+    return hashlib.sha1(open(SRC, 'rb').read()).hexdigest()[:12]
+
+
 def build(which):
     s = open(SRC, encoding='utf-8').read()
     marker = "/*BUILD*/{ draft: false, at: '' }"
     assert s.count(marker) == 1, 'template.html: the BUILD line is missing'
-    s = s.replace(marker, "/*BUILD*/{ draft: %s }" % ('true' if which == 'draft' else 'false'))
+    s = s.replace(marker, "/*BUILD*/{ draft: %s, v: '%s' }" % ('true' if which == 'draft' else 'false', version()))
     art = os.path.join(HERE, 'collection-art.js')   # (the covers' file by what's in it, so a new drawing is fetched fresh)
     v = hashlib.sha1(open(art, 'rb').read()).hexdigest()[:10] if os.path.exists(art) else '0'
     return s.replace('/*ARTV*/', v)
@@ -86,6 +92,8 @@ def main():
     os.makedirs(os.path.dirname(OUT[which]), exist_ok=True)
     with open(OUT[which], 'w', encoding='utf-8') as f:
         f.write(build(which))
+    with open(os.path.join(os.path.dirname(OUT[which]), 'version.json'), 'w', encoding='utf-8') as f:
+        f.write(json.dumps({'v': version()}) + '\n')
     print('built', os.path.relpath(OUT[which], ROOT))
 
 
