@@ -290,7 +290,11 @@ a.srchpill { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--li
     var n = 0;
     Object.keys(edits).forEach(function (k) {
       var p = (pending.songs || {})[k], w = p && p.written; if (!w || !/T/.test(w)) return;
-      if (!EDAT[k] || EDAT[k] < Date.parse(w)) { delete edits[k]; delete EDAT[k]; n++; }
+      if (!EDAT[k] || EDAT[k] < Date.parse(w)) {   // (its facts written again: those changes go; its video, moods and genres stay: John, 10 Nov 2026, "the youtube video I put in is gone")
+        var o = edits[k] || {}, keep = {}; ['video', 'moods', 'genres'].forEach(function (f) { if (f in o) keep[f] = o[f]; });
+        if (Object.keys(keep).length && !o._keep) edits[k] = { _keep: keep }; else if (!o._keep) { delete edits[k]; delete EDAT[k]; }
+        n++;
+      }
     });
     if (n) saveEdits();
   }
@@ -357,7 +361,8 @@ a.srchpill { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--li
     if (!('video' in b)) b.video = (st.going && w && 'video' in w) ? w.video : ((VIDS[s.id] || {}).v || '');
     return st;
   }
-  function working(s, st) { var w = edits[s.id] || clone(st.base); if (!('moods' in w)) { w.moods = clone(st.base.moods); w.genres = clone(st.base.genres); w.video = st.base.video; } return w; }
+  function working(s, st) { var w0 = edits[s.id]; if (w0 && w0._keep) { var nw = clone(st.base); Object.keys(w0._keep).forEach(function (f) { nw[f] = w0._keep[f]; }); edits[s.id] = nw; saveEdits(); }   // (kept through a rewrite of its facts)
+    var w = edits[s.id] || clone(st.base); if (!('moods' in w)) { w.moods = clone(st.base.moods); w.genres = clone(st.base.genres); w.video = st.base.video; } return w; }
   function changed(s, st) { return !!edits[s.id] && JSON.stringify(edits[s.id]) !== JSON.stringify(st.base); }
   function toCheck(s) { var t = TAGS[s.id] || {}; return !!t.check && t.moodFrom !== 'John' && !signedW[s.id]; }
   function nfChoice(s) {   // the fact chosen for its notification: the one picked, else its first fact about the song ('' none)
