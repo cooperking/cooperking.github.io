@@ -3024,7 +3024,7 @@ function themeShow(at, force) {   // the theme at any point between days; the ne
   // than there would be in that month on a theme")
   var mo = (S.month || '').split('-'), N = mo.length > 1 ? new Date(+mo[0], +mo[1], 0).getDate() : all.length, lo = Math.round(at) - Math.floor((N - 1) / 2);
   lo = Math.max(0, Math.min(lo, all.length - N));
-  all.forEach(function (el, j) { el.classList.toggle('xwin', j < lo || j >= lo + N); });
+  all.forEach(function (el, j) { el.classList.toggle('xwin', !T.fx.whole && (j < lo || j >= lo + N)); });   // (the table seats its own month's days itself)
 }
 function themeCross(dir) {   // on into the next or last month (its own theme), quietly
   var ms = monthsOf(S.calData.days), j = ms.indexOf(S.month) + dir; if (j < 0 || j >= ms.length || !S.step) return false;
@@ -3119,6 +3119,7 @@ THEMEFX.corridor = {
 };
 // November: the table (Dr. Strangelove's War Room): the month round a table, turning
 THEMEFX.table = {
+  whole: true,   // (all the month's days round the table, always: none dropped out of sight)
   geo: function (c) { return c.mob ? { cx: 390, cy: 520, rx: 352, ry: 196, fs: 2.4 } : { cx: ($('#cal').clientWidth || 1280) / 2, cy: 418, rx: 530, ry: 150, fs: 2.6 }; },   // (the day you're on large at the table's front: John, 9 Nov 2026: "chosen poster on Dr Strangelove very small")
   swipe: function (c) { return { x: -1, y: 0, px: c.mob ? 34 : 60 }; },   // (the table turns with the finger)
   place: function (all, at, c) {
@@ -3129,12 +3130,22 @@ THEMEFX.table = {
     // 10 Nov 2026: "Dr strange love still has far more sitting around the table than in the month")
     var j0 = 0; for (var q = 0; q < all.length; q++) if (!all[q].hasAttribute('data-om')) { j0 = q; break; }
     var jc = Math.max(j0, Math.min(j0 + n - 1, at));
+    // (spaced by equal distances round the table's edge, not equal angles, which bunched them up at its two ends: John,
+    // 10 Nov 2026: "the posters need to be evenly spaced around the table")
+    var M = 720, cum = [0];
+    for (var i = 1; i <= M; i++) { var t0 = Math.PI / 2 - (i - 1) / M * 2 * Math.PI, t1 = Math.PI / 2 - i / M * 2 * Math.PI; cum.push(cum[i - 1] + Math.hypot(g.rx * (Math.cos(t1) - Math.cos(t0)), g.ry * (Math.sin(t1) - Math.sin(t0)))); }
+    var arcA = function (fr) {   // (the angle a fraction of the way round from the front, going the way the angles did before)
+      var want = ((fr % 1) + 1) % 1 * cum[M], lo = 0, hi = M;
+      while (hi - lo > 1) { var md = (lo + hi) >> 1; if (cum[md] < want) lo = md; else hi = md; }
+      var u = lo + (want - cum[lo]) / Math.max(1e-6, cum[hi] - cum[lo]);
+      return Math.PI / 2 - u / M * 2 * Math.PI;
+    };
     all.forEach(function (el, j) {
       var om = el.hasAttribute('data-om');
       el.style.visibility = om ? 'hidden' : ''; el.style.pointerEvents = om ? 'none' : '';
       if (om) return;
       var kk = j - jc; kk = ((kk + n / 2) % n + n) % n - n / 2;
-      var a = Math.PI / 2 - kk * 2 * Math.PI / n, x = g.cx + g.rx * Math.cos(a), y = g.cy + g.ry * Math.sin(a), depth = (Math.sin(a) + 1) / 2, nf = near(j - at);
+      var a = arcA(kk / n), x = g.cx + g.rx * Math.cos(a), y = g.cy + g.ry * Math.sin(a), depth = (Math.sin(a) + 1) / 2, nf = near(j - at);
       el.style.left = x.toFixed(1) + 'px'; el.style.top = y.toFixed(1) + 'px';
       el.style.transform = 'scale(' + (.62 + .38 * depth + nf * (g.fs - 1)).toFixed(3) + ')';
       el.style.zIndex = Math.round(depth * 100) + (nf > .5 ? 100 : 0);
