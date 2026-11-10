@@ -398,6 +398,8 @@ public class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
         web.onResume();
+        // (back to it: the page looks for a new version and picks it up: John, 10 Nov 2026: "make the fire tv update each time")
+        web.evaluateJavascript("try{window.grifflixTV&&grifflixTV.here&&grifflixTV.here();}catch(e){}", null);
         if (System.currentTimeMillis() - lastCheck > 20L * 60 * 1000) { lastCheck = System.currentTimeMillis(); later.postDelayed(autoCheck, 3000); }
         if (handedOver) { handedOver = false; updating = false; }
         if (pendingApk == null && System.currentTimeMillis() < prefs.getLong("pendingUntil", 0)) pendingApk = prefs.getString("pendingApk", null);
@@ -410,7 +412,10 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onStop() {   // off the screen (Home, or another app): the film pauses, and its place is kept
-        web.evaluateJavascript("(function(){var v=document.getElementById('vid'); if (v && !v.paused) v.pause();})()", null);
+        // (the theme's music and every other sound off too: John, 10 Nov 2026: "The music carries on when you leave the app too")
+        web.evaluateJavascript("(function(){var v=document.getElementById('vid'); if (v && !v.paused) v.pause();"
+            + "try{window.grifflixTV&&grifflixTV.away&&grifflixTV.away();}catch(e){}"
+            + "[].forEach.call(document.querySelectorAll('audio,video'),function(a){try{a.pause();}catch(e){}});})()", null);
         web.onPause();
         super.onStop();
     }

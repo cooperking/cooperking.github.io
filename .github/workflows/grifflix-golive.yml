@@ -37,7 +37,7 @@ jobs:
             git fetch --quiet origin main && git reset --quiet --hard origin/main
             python3 _grifflix/web/page.py --check || { echo "The draft isn't what the template builds: not going live."; exit 1; }
             python3 _grifflix/web/page.py --live
-            git add grifflix/index.html
+            git add grifflix/index.html grifflix/version.json
             if git diff --cached --quiet; then echo "The live page is the draft already."; exit 0; fi
             git commit --quiet -m "Grifflix live (John's go-ahead, from its admin page)${SAY:+: $SAY}"
             git push --quiet origin HEAD:main && exit 0
