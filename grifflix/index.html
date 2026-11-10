@@ -2914,8 +2914,16 @@ THEMEFX.table = {
     // (the month's days round the whole table, going on round it as you go through the month, the next month's coming round to the
     // front as you reach them: John, 9 Nov 2026: "should carry on spinning around the table until we reach the next month")
     var g = this.geo(c), mo = (S.month || '').split('-'), n = mo.length > 1 ? new Date(+mo[0], +mo[1], 0).getDate() : 31;
+    // (exactly the month's own days round the table, all the way round, turning as you go: its neighbours' days not seated: John,
+    // 10 Nov 2026: "Dr strange love still has far more sitting around the table than in the month")
+    var j0 = 0; for (var q = 0; q < all.length; q++) if (!all[q].hasAttribute('data-om')) { j0 = q; break; }
+    var jc = Math.max(j0, Math.min(j0 + n - 1, at));
     all.forEach(function (el, j) {
-      var a = Math.PI / 2 - (j - at) * 2 * Math.PI / n, x = g.cx + g.rx * Math.cos(a), y = g.cy + g.ry * Math.sin(a), depth = (Math.sin(a) + 1) / 2, nf = near(j - at);
+      var om = el.hasAttribute('data-om');
+      el.style.visibility = om ? 'hidden' : ''; el.style.pointerEvents = om ? 'none' : '';
+      if (om) return;
+      var kk = j - jc; kk = ((kk + n / 2) % n + n) % n - n / 2;
+      var a = Math.PI / 2 - kk * 2 * Math.PI / n, x = g.cx + g.rx * Math.cos(a), y = g.cy + g.ry * Math.sin(a), depth = (Math.sin(a) + 1) / 2, nf = near(j - at);
       el.style.left = x.toFixed(1) + 'px'; el.style.top = y.toFixed(1) + 'px';
       el.style.transform = 'scale(' + (.62 + .38 * depth + nf * (g.fs - 1)).toFixed(3) + ')';
       el.style.zIndex = Math.round(depth * 100) + (nf > .5 ? 100 : 0);
