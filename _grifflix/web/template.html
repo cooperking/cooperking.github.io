@@ -1640,6 +1640,8 @@ html.tv #barnav button.vtog:focus { background: none; color: var(--fg); box-shad
 .zw { background-position: center !important; background-size: auto 84% !important; background-repeat: no-repeat !important; }   /* (a day's poster on each panel) */
 .zw[data-n]:not([data-n=""])::before { content: attr(data-n); position: absolute; inset: 0; display: grid; place-items: center; font: 500 22px/1 var(--kfont); color: rgba(255, 244, 226, .35); }
 html .zlogo.zol, html.gxown .zlogo.zol { background: none !important; -webkit-mask: none !important; mask: none !important; background-image: var(--gx-outline) !important; background-size: contain !important; background-repeat: no-repeat !important; background-position: center !important; }
+.zlg { position: absolute; left: 0; top: 0; z-index: 3; background-image: var(--gx-outline); background-repeat: no-repeat; will-change: transform; pointer-events: none; }
+.zhs { transform-origin: 50% 50%; }
 </style>
 <script>/* a computer's screen (wide, with a mouse) or the TV: the whole calendar in the window, as on the songs' site */
 (function () { if (/GRIFFLIXTV\//.test(navigator.userAgent) || /[?&]tv=1(&|$)/.test(location.search)) { var vp = document.querySelector('meta[name=viewport]'); if (vp) vp.setAttribute('content', 'width=1280'); } })();   /* a TV: laid out 1280 wide and shrunk to the screen, as the songs' page is (a Fire Stick's browser is 960 wide: everything came out a third too big) */
@@ -3703,7 +3705,12 @@ THEMEFX.picture = {
     // (the strip: black figures on its paper, a frame apart, as Muybridge's horse on a zoetrope's strip; smaller: John, 10 Nov 2026)
     var hh = (g.yS - g.yT) * .5, hw = hh * 150 / 91, NH = Math.ceil(2 * R / (hw * 1.25)) | 1;
     h += '<div class="zpaper" id="zpaper" style="' + mk + 'left:' + F(cx - R) + 'px;top:' + F(g.yT) + 'px;width:' + F(2 * R) + 'px;height:' + F(g.yS - g.yT + 2 * ry) + 'px"><i class="zstrip" style="top:' + F(g.pcy - g.yT - hh * .72) + 'px;height:' + F(hh * 1.44) + 'px"></i>';
-    for (var i = 0; i < NH; i++) h += '<i class="zhs" style="left:' + F(R + (i - (NH - 1) / 2) * hw * 1.25 - hw / 2) + 'px;top:' + F(g.pcy - g.yT - hh / 2) + 'px;width:' + F(hw) + 'px;height:' + F(hh) + 'px;background-size:' + F(hw * 15) + 'px ' + F(hh) + 'px"></i>';
+    // (the horses on the far wall's strip, one to each slit, round its curve: smaller towards the sides, the middle furthest back and
+    // highest (John, 10 Nov 2026: "Horses are working as a 2 D strip ... rather than appearing on the 3D drum"); they stay where they
+    // are as it turns, galloping, as a zoetrope's horse is seen)
+    var NBh = this.nb(c), Dh = 2 * Math.PI / NBh; hw = Math.min(hw, R * Dh * .92); hh = hw * 91 / 150;
+    for (var i = -Math.ceil(NBh / 4); i < Math.ceil(NBh / 4); i++) { var ca = Math.cos((i + .5) * Dh), xa = R + R * Math.sin((i + .5) * Dh);   // (behind each slit)
+      h += '<i class="zhs" style="left:' + F(xa - hw / 2) + 'px;top:' + F(g.pcy - g.yT - hh / 2 - ry * ca * .6) + 'px;width:' + F(hw) + 'px;height:' + F(hh) + 'px;background-size:' + F(hw * 15) + 'px ' + F(hh) + 'px;transform:scaleX(' + ca.toFixed(3) + ')"></i>'; }
     h += '</div>';
     // (the open top: the inside of the far side, seen a little from above, its rim curving round behind; its slits drawn as it turns)
     var rt = g.yT - 18 * g.f;
@@ -3721,7 +3728,9 @@ THEMEFX.picture = {
       ['yT18', 'yT', 'yS', 'yB'].map(function (k) { var y = k === 'yT18' ? g.yT - 18 * g.f : g[k]; return '<path class="zrim" d="M' + F(cx - R) + ',' + F(y) + ' ' + arc(0) + F(cx + R) + ',' + F(y) + '"/>'; }).join('') + '</svg>';
     // (the GRIFFLIX logo itself painted round the band, twice, turning with the drum: John, 10 Nov 2026: "put the new grifflix logo properly on there")
     var lh = (g.yB - g.yS) * .5, lw = Math.min(lh * 9.49, R * 1.1);   lh = lw / 9.49;
-    for (var q = 0; q < 4; q++) h += '<i class="zlogo zol" style="width:' + F(lw) + 'px;height:' + F(lh) + 'px"></i>';   // (four times round: one always near the front)
+    // (painted round the band four times, in thin upright slices so it bends round the drum and follows its curve)
+    for (var q = 0; q < 4; q++) for (var sl2 = 0; sl2 < 24; sl2++) h += '<i class="zlg" data-q="' + q + '" data-s="' + sl2 + '" style="width:' + F(lw / 24 + .6) + 'px;height:' + F(lh) + 'px;background-size:' + F(lw) + 'px ' + F(lh) + 'px;background-position:' + F(-sl2 * lw / 24) + 'px 0"></i>';
+    this._lw = lw;
     return h + '</div>';
   },
   // (the pictures the drum is painted from: the horse's frames in black, GRIFFLIX in the band's lettering colour)
@@ -3842,13 +3851,14 @@ THEMEFX.picture = {
       b.style.transform = 'translate(' + (g.cx + R * Math.sin(th) - w / 2).toFixed(1) + 'px,' + (rt + g.ry * cs + 2).toFixed(1) + 'px) scaleX(' + (w / 4).toFixed(3) + ')';
     });
     // (the logo round the band below the slits, turning with them, centred at rest)
-    var LG = me._zg && me._zg[0] && me._zg[0].isConnected ? me._zg : (me._zg = $$('#cal .zlogo'));
-    if (me._l0 == null || !LG[0] || LG[0]._l0 !== 1) { me._l0 = a; if (LG[0]) LG[0]._l0 = 1; }   // (the logo centred where the drum first comes to rest)
-    LG.forEach(function (lg, i) {
-      var th = ((i * Math.PI / 2 - (ad - me._l0) * st) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI, cs = Math.cos(th);
-      if (cs < .1) { if (lg._v !== 0) { lg.style.visibility = 'hidden'; lg._v = 0; } return; } if (lg._v !== 1) { lg.style.visibility = ''; lg._v = 1; }
-      lg.style.transform = 'translate(' + (g.cx + R * Math.sin(th)).toFixed(1) + 'px,' + ((g.yS + g.yB) / 2 + g.ry * cs).toFixed(1) + 'px) translate(-50%,-50%) scaleX(' + Math.pow(cs, 1.5).toFixed(3) + ')';
-      lg.style.opacity = Math.min(1, cs * 1.3).toFixed(2);
+    var LG = me._zg && me._zg[0] && me._zg[0].isConnected ? me._zg : (me._zg = $$('#cal .zlg')), lw = me._lw || 300;
+    if (me._l0 == null || !LG[0] || LG[0]._l0 !== 1) { me._l0 = a; if (LG[0]) LG[0]._l0 = 1; }   // (centred where the drum first comes to rest)
+    var my = (g.yS + g.yB) / 2;
+    LG.forEach(function (lg) {
+      var q = +lg.dataset.q, k = +lg.dataset.s, th = ((q * Math.PI / 2 - (ad - me._l0) * st + ((k + .5) / 24 - .5) * lw / R) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI, cs = Math.cos(th);
+      if (cs < .06) { if (lg._v !== 0) { lg.style.visibility = 'hidden'; lg._v = 0; } return; } if (lg._v !== 1) { lg.style.visibility = ''; lg._v = 1; }
+      lg.style.transform = 'translate(' + (g.cx + R * Math.sin(th)).toFixed(1) + 'px,' + (my + g.ry * cs).toFixed(1) + 'px) translate(-50%,-50%) scaleX(' + cs.toFixed(3) + ')';
+      lg.style.opacity = Math.min(1, cs * 1.4).toFixed(2);
     });
   },
   leader: function (asked) {   // (a film leader: 3, 2, 1, a flash, GRIFFLIX; the first visit each day; a tap skips it)
