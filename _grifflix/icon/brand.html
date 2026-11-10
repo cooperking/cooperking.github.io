@@ -1,0 +1,18 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+@font-face { font-family: F; font-weight: 700; src: url(fonts/futura-bold-webfont.woff2) format("woff2"); }
+html, body { margin: 0; background: transparent; }
+#i { width: 512px; height: 512px; background: #173a5e; position: relative; overflow: hidden; display: grid; place-items: center; }
+#i.r { border-radius: 112px; }
+.t { font-family: F; font-weight: 700; color: transparent; -webkit-text-stroke: 11px rgb(243,232,210); text-transform: uppercase; line-height: 1; }
+.g { font-size: 318px; margin-top: -10px; }
+.bar { position: absolute; left: 30%; right: 30%; bottom: 17%; height: 18px; background: #f08a4b; }
+#i.m .g { font-size: 230px; -webkit-text-stroke-width: 8px; margin-top: -8px; } #i.m .bar { left: 35%; right: 35%; bottom: 27%; height: 13px; }
+#i.f .t { font-size: 54px; letter-spacing: .3em; text-indent: .3em; -webkit-text-stroke-width: 2.6px; margin-top: -24px; } #i.f .bar { left: 15%; right: 15%; bottom: auto; top: 60%; height: 10px; }
+#i.b { width: 1280px; height: 720px; } #i.b .t { font-size: 124px; letter-spacing: .3em; text-indent: .3em; -webkit-text-stroke-width: 4.5px; margin-top: -40px; } #i.b .bar { left: 22%; right: 22%; bottom: auto; top: 61%; height: 14px; }
+</style></head><body><div id="i"></div><script>
+const q = new URLSearchParams(location.search), k = q.get('k') || 'sq', i = document.getElementById('i');
+if (k === 'full') { i.className = 'f'; i.innerHTML = '<div class="t">Grifflix</div><i class="bar"></i>'; }
+else if (k === 'banner') { i.className = 'b'; i.innerHTML = '<div class="t">Grifflix</div><i class="bar"></i>'; }
+else { i.className = (k === 'mask' ? 'm' : '') + (k === 'round' ? ' r' : ''); i.innerHTML = '<div class="t g">G</div><i class="bar"></i>'; }
+document.fonts.ready.then(() => document.body.dataset.ready = 1);
+</script></body></html>
