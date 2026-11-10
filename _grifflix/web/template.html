@@ -651,6 +651,7 @@ html.tv .th-picture .vday:focus { outline: 0 !important; }
 html[data-theme=picture] .hinfo h2 { color: #e9c46a; }
 html[data-theme=picture] .hinfo .w > span { letter-spacing: -.01em; }
 html[data-theme=picture]:not(.mob) .tinspo { max-width: 760px; white-space: nowrap; } html.mob[data-theme=picture] .tinspo { font-size: 12px !important; letter-spacing: -.005em; }   /* (its three credits on one line) */
+html.mob.mob[data-theme=picture] .hinfo.hinfo { top: calc(112px + max(0px, env(safe-area-inset-top) - 2px) + var(--vk, .5) * 890px + max(26px, (100dvh - 112px - max(0px, env(safe-area-inset-top) - 2px) - var(--vk, .5) * 890px - 74px - env(safe-area-inset-bottom) - 180px) / 2)) !important; }   /* (a phone: the day's words in the middle of the space under the zoetrope, clear of it: John, 10 Nov 2026) */
 html[data-theme=picture]:not(.mob) .hinfo .w { font-size: min(84px, 5.6vw); } html[data-theme=picture]:not(.mob) .hinfo { top: 50%; bottom: auto; transform: translateY(-46%); width: calc(39vw - 90px); max-width: none; } html[data-theme=picture]:not(.mob) .hinfo .k { white-space: nowrap; letter-spacing: .22em; }   /* (the day's words down the left, beside the screen) */
 html[data-theme=picture] .th-picture .vday.soon .cs, html[data-theme=blank] .vday.soon .cs { text-transform: none; font-style: italic; font-weight: 400; }
 html[data-theme=picture] .leaf2 { border-color: #e9c46a; background: #0b0809; }
@@ -3553,7 +3554,7 @@ THEMEFX.picture = {
     // (laid out to fill the screen, every format (John, 10 Nov 2026: "it can make better use of the screen in all formats"): a computer or
     // TV, the day's words down the left, the cinema screen and the zoetrope below it filling the right; a phone, both full width)
     var colL = c.W * .39, colR = c.W - 56 * f, cw = colR - colL;
-    var yB = mob ? 846 : c.H - 132 * f, yS = yB - (mob ? 66 : 54 * f), yT = yS - (mob ? 214 : Math.max(150, c.H * .2));   // (clear of the caption under it)
+    var yB = mob ? 846 : c.H - 154 * f, yS = yB - (mob ? 66 : 54 * f), yT = yS - (mob ? 214 : Math.max(150, c.H * .2));   // (clear of the caption under it)
     var sy0 = mob ? 16 : 96 * f, sh = yT - (mob ? 50 : 48 * f) - sy0, sw = Math.min(mob ? 740 : cw, sh * 4 / 3); sh = sw * .75;
     var scx = mob ? 390 : (colL + colR) / 2, cx = scx, Rv = mob ? 560 : cw * .62, ry = mob ? 30 : 24 * f;
     var zh = yS - yT, ps = zh * .8 / 255;
