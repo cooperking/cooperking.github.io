@@ -1643,6 +1643,7 @@ html .zlogo.zol, html.gxown .zlogo.zol { background: none !important; -webkit-ma
 .zlg { position: absolute; left: 0; top: 0; z-index: 3; background-image: var(--gx-outline); background-repeat: no-repeat; will-change: transform; pointer-events: none; }
 .zhs { transform-origin: 50% 50%; }
 .zstripc { position: absolute; left: 0; top: 0; pointer-events: none; overflow: visible; } .zstripc polygon { fill: var(--gx-strip, #f3e8d2); }
+.zbsl { position: absolute; z-index: 1; background: #050406; pointer-events: none; }
 </style>
 <script>/* a computer's screen (wide, with a mouse) or the TV: the whole calendar in the window, as on the songs' site */
 (function () { if (/GRIFFLIXTV\//.test(navigator.userAgent) || /[?&]tv=1(&|$)/.test(location.search)) { var vp = document.querySelector('meta[name=viewport]'); if (vp) vp.setAttribute('content', 'width=1280'); } })();   /* a TV: laid out 1280 wide and shrunk to the screen, as the songs' page is (a Fire Stick's browser is 960 wide: everything came out a third too big) */
@@ -3680,7 +3681,7 @@ THEMEFX.picture = {
     var colL = c.W * .39, colR = c.W - 56 * f, cw = colR - colL;
     var yB = mob ? 846 : c.H - 160 * f, yS = yB - (mob ? 60 : 48 * f), yT = yS - (mob ? 190 : Math.max(130, c.H * .17));   // (clear of the caption under it)
     var sy0 = mob ? 16 : 96 * f, sh = yT - (mob ? 50 : 48 * f) - sy0, sw = Math.min(mob ? 740 : cw, sh * 4 / 3); sh = sw * .75;
-    var scx = mob ? 390 : (colL + colR) / 2, cx = scx, Rv = mob ? 360 : Math.min(cw * .46, sw * .8), ry = mob ? 40 : 34 * f;   // (smaller: all of it in view, curving away at both sides)
+    var scx = mob ? 390 : (colL + colR) / 2, cx = scx, Rv = mob ? 360 : Math.min(cw * .46, sw * .8), ry = mob ? 16 : 14 * f;   // (nearly level: only the top of the far side seen: John, 10 Nov 2026)   // (smaller: all of it in view, curving away at both sides)
     var zh = yS - yT, ps = zh * .8 / 255;
     return { sw: sw, sh: sh, scx: scx, sy0: sy0, cx: cx, Rv: Rv, ry: ry, yT: yT, yS: yS, yB: yB, ps: ps, pw: 170 * ps, pcy: (yT + yS) / 2 + ry, f: f, mob: mob };
   },
@@ -3716,6 +3717,10 @@ THEMEFX.picture = {
       top.push(F(xx) + ',' + F(pc - cv * c2 - hb)); bot.unshift(F(xx) + ',' + F(pc - cv * c2 + hb)); }
     h += '<svg class="zstripc" width="' + F(2 * R) + '" height="' + F(g.yS - g.yT + 2 * ry) + '"><polygon points="' + top.concat(bot).join(' ') + '"/></svg>';
     for (var i = -Math.ceil(NBh / 4); i < Math.ceil(NBh / 4); i++) { var ca = Math.cos((i + .5) * Dh), xa = R + R * Math.sin((i + .5) * Dh), sc = sk(ca);   // (behind each slit)
+      // (the far wall's slit between this frame and the next, dark, as on a zoetrope's strip: John, 10 Nov 2026: "the horses on the
+      // strip need to show the slit at the back between each frame")
+      var cb = Math.cos(i * Dh), xb = R + R * Math.sin(i * Dh), sb = sk(cb), bw = Math.max(1, R * Dh * .16 * cb * sb), bh = hh * 1.9 * sb;
+      h += '<i class="zbsl" style="left:' + F(xb - bw / 2) + 'px;top:' + F(pc - bh / 2 - cv * cb) + 'px;width:' + F(bw) + 'px;height:' + F(bh) + 'px"></i>';
       h += '<i class="zhs" style="left:' + F(xa - hw / 2) + 'px;top:' + F(pc - hh / 2 - cv * ca) + 'px;width:' + F(hw) + 'px;height:' + F(hh) + 'px;background-size:' + F(hw * 15) + 'px ' + F(hh) + 'px;transform:scale(' + (ca * sc).toFixed(3) + ',' + sc.toFixed(3) + ')"></i>'; }
     h += '</div>';
     // (the open top: the inside of the far side, seen a little from above, its rim curving round behind; its slits drawn as it turns)
