@@ -1640,6 +1640,7 @@ html.tv #barnav button.vtog:focus { background: none; color: var(--fg); box-shad
 .zw { background-position: center !important; background-size: auto 84% !important; background-repeat: no-repeat !important; }   /* (a day's poster on each panel) */
 .zw[data-n]:not([data-n=""])::before { content: attr(data-n); position: absolute; inset: 0; display: grid; place-items: center; font: 500 22px/1 var(--kfont); color: rgba(255, 244, 226, .35); }
 html .zlogo.zol, html.gxown .zlogo.zol { background: none !important; -webkit-mask: none !important; mask: none !important; background-image: var(--gx-outline) !important; background-size: contain !important; background-repeat: no-repeat !important; background-position: center !important; }
+.zlgc { position: absolute; left: 0; top: 0; z-index: 3; pointer-events: none; }
 .zlg { position: absolute; left: 0; top: 0; z-index: 3; background-image: var(--gx-outline); background-repeat: no-repeat; will-change: transform; pointer-events: none; }
 .zhs { transform-origin: 50% 50%; }
 .zstripc { position: absolute; left: 0; top: 0; pointer-events: none; overflow: visible; } .zstripc polygon { fill: var(--gx-strip, #f3e8d2); }
@@ -2810,6 +2811,7 @@ function wireCaption() {
 // the next or last month's theme at the ends
 var THEMEFX = {};
 function seeded(n) { var x = Math.sin(n * 9301 + 49297) * 233280; return x - Math.floor(x); }
+function ZDPR() { return Math.min(2, window.devicePixelRatio || 1); }
 function vAt(el, x, y, s, r, o, z) {
   el.style.transform = 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px) translate(-50%,-50%) scale(' + (s == null ? 1 : +s.toFixed(3)) + ')' + (r ? ' rotate(' + r.toFixed(1) + 'deg)' : '');
   el.style.opacity = o == null ? 1 : o; el.style.zIndex = z == null ? 1 : z;
@@ -2829,6 +2831,7 @@ function themeMusic(k) {   // the theme on the page now (null: none)
   if (k === TMUS.k && (TMUS.a || TMUS.pj || !TMUS.ok)) return;
   musicHush(); TMUS.k = k;
   if (!k || !TMUS.on || !TMUS.ok) return;
+  if (musicFilm() || VIEW() !== 'themes') { TMUS.film = true; return; }   // (the theme drawn again behind a pop-up: its music waits till that's closed)
   if ($('.zlead')) { TMUS.after = true; if (k === 'picture') TMUS.pj = projector(); return; }   // (the opening's still on: its end starts the theme's music)
   var src, vol = .5;
   if (k === 'picture') {   // (Grifflix's own: the drum's sound as it turns, and its music after the leader: Emotional Blockbuster 2, film music, public domain
@@ -2952,7 +2955,10 @@ leaderNewDay.act = Date.now();
 addEventListener('keydown', leaderNewDay, true); addEventListener('pointerdown', function () { leaderNewDay.act = Date.now(); }, true);
 document.addEventListener('visibilitychange', function () { if (document.hidden) leaderNewDay.away = Date.now(); });
 document.addEventListener('play', function (e) { if (e.target && e.target.id === 'vid') musicHush(); }, true);
-function musicFilm() { var n = S.sheetNow; return !!(n && (n.k === 'film' || n.k === 'day' || n.k === 'cal') && $('#sheet').open); }   // (a film chosen, or the calendar open: John, 9 Nov 2026: "calendar should also stop the music")
+function musicFilm() {   // (a film chosen, the calendar open, Search or Browse open, or a film or trailer on: quiet; John, 10 Nov 2026: "Search and Calendar should also turn off music but they don't")
+  var n = S.sheetNow, tp = $('#tplayer');
+  return !!((n && /^(film|day|cal|search|browse)$/.test(n.k) && $('#sheet').open) || (P && P.el && P.el.classList.contains('on')) || (tp && !tp.hidden));
+}   // (a film chosen, or the calendar open: John, 9 Nov 2026: "calendar should also stop the music")
 setInterval(function () {   // (off the theme's page, or a film chosen: quiet; the film's page closed, the theme's music again:
   // John, 9 Nov 2026: "can music stop when a film is chosen")
   var on = VIEW() === 'themes' && $('#cal'), film = musicFilm();
@@ -3836,7 +3842,9 @@ THEMEFX.picture = { own: true,   // (the month's own days only: John, 10 Nov 202
     // (the GRIFFLIX logo itself painted round the band, twice, turning with the drum: John, 10 Nov 2026: "put the new grifflix logo properly on there")
     var lh = (g.yB - g.yS) * .5, lw = Math.min(lh * 9.49, R * 1.1);   lh = lw / 9.49;
     // (painted round the band four times, in thin upright slices so it bends round the drum and follows its curve)
-    for (var q = 0; q < 4; q++) for (var sl2 = 0; sl2 < 24; sl2++) h += '<i class="zlg" data-q="' + q + '" data-s="' + sl2 + '" style="width:' + F(lw / 24 + .6) + 'px;height:' + F(lh) + 'px;background-size:' + F(lw) + 'px ' + F(lh) + 'px;background-position:' + F(-sl2 * lw / 24) + 'px 0"></i>';
+    // (drawn on one canvas, slice by slice, rather than as 96 moving pieces of page: a Fire Stick spent its time restyling them; John, 10 Nov 2026)
+    var my0 = (g.yS + g.yB) / 2, bx0 = Math.floor(cx - R - lw / 24 - 4), by0 = Math.floor(my0 - g.ryAt(my0) - lh / 2 - 4), bw0 = Math.ceil(2 * R + lw / 12 + 8), bh0 = Math.ceil(2 * g.ryAt(my0) + lh + 8);   // (just the band, not the screen)
+    h += '<canvas class="zlgc" data-x="' + bx0 + '" data-y="' + by0 + '" width="' + Math.round(bw0 * ZDPR()) + '" height="' + Math.round(bh0 * ZDPR()) + '" style="left:' + bx0 + 'px;top:' + by0 + 'px;width:' + bw0 + 'px;height:' + bh0 + 'px"></canvas>';
     this._lw = lw;
     return h + '</div>';
   },
@@ -3853,7 +3861,10 @@ THEMEFX.picture = { own: true,   // (the month's own days only: John, 10 Nov 202
       var cv = document.createElement('canvas'); cv.width = Math.ceil(tw + 2 * P); cv.height = Math.ceil(fs * .82 + 2 * P); var x = cv.getContext('2d');
       x.font = x0.font; x.textBaseline = 'alphabetic'; x.lineJoin = 'round'; x.strokeStyle = '#fbf6ec'; x.lineWidth = fs * .045;
       var at = P; L.forEach(function (l, i) { x.strokeText(l, at, P + fs * .72); at += ws[i] + sp; });
-      A.logo = cv; A.ok++; try { document.documentElement.style.setProperty('--gx-outline', 'url(' + cv.toDataURL() + ')'); } catch (e) {} };
+      A.logo = cv; A.ok++; try { if (me.all && $('#cal .zlgc')) me.draw(me._last || 0); } catch (e) {} try {   // (a short blob address, not the picture written out: the band's slices are restyled every frame as it turns, and each
+        // time a data: address is read again in full; a Fire Stick stalled on it: John, 10 Nov 2026: "fire tv is really struggling")
+        cv.toBlob(function (bl) { if (bl) document.documentElement.style.setProperty('--gx-outline', 'url(' + URL.createObjectURL(bl) + ')'); });
+      } catch (e) {} };
     if (document.fonts && document.fonts.load) document.fonts.load('400 120px "Grifflix Display"').then(word, word); else word();
     return A;
   },
@@ -4035,7 +4046,10 @@ THEMEFX.picture = { own: true,   // (the month's own days only: John, 10 Nov 202
       var r = H.indexOf(j); if (r < 0 || !L) { el.style.opacity = 0; el.style.pointerEvents = 'none'; return; }
       var k = r - pr; k = ((k + L / 2) % L + L) % L - L / 2;
       var x = g.scx + off(k), l = g.colL - (x - fw / 2);
-      vAt(el, x, fy, fs, 0, Math.abs(k) > 12 ? 0 : 1, Math.abs(k) < .5 ? 4 : 3);
+      // (off the screen: left where it is, hidden, not moved every frame: John, 10 Nov 2026: "fire tv is really struggling")
+      if (x + fw / 2 < -40 || x - fw / 2 > c.W + 40 || Math.abs(k) > 12) { if (el._off !== 1) { el._off = 1; el.style.visibility = 'hidden'; } return; }
+      if (el._off) { el._off = 0; el.style.visibility = ''; }
+      vAt(el, x, fy, fs, 0, 1, Math.abs(k) < .5 ? 4 : 3);
       el.style.clipPath = l > 0 ? 'inset(0 0 0 ' + Math.min(240, l / fs).toFixed(1) + 'px)' : '';
     });
     pos = pr;
@@ -4099,25 +4113,31 @@ THEMEFX.picture = { own: true,   // (the month's own days only: John, 10 Nov 202
       var P = function (t, y0) { return F2(cx + R * Math.sin(t)) + ',' + F2(y0 + g.ryAt(y0) * Math.cos(t)); };
       var edge = function (a0, a1, y0, y1) { var n = 10, pts = [], j; for (j = 0; j <= n; j++) pts.push(P(a0 + (a1 - a0) * j / n, y0)); for (j = n; j >= 0; j--) pts.push(P(a0 + (a1 - a0) * j / n, y1)); return 'M' + pts.join('L') + 'Z'; };
       var sh = function (c) { var k = Math.max(0, Math.min(1, c)), r = Math.round(13 + 30 * k), gg = Math.round(12 + 26 * k), b = Math.round(13 + 28 * k); return 'rgb(' + r + ',' + gg + ',' + b + ')'; };
-      var hn = '', hf = '';
+      // (the same shapes moved each frame, not new ones made: a Fire Stick's time went on making and placing them: John, 10 Nov 2026)
+      var hn = [], hf = [], put = function (svg, list) {
+        var ks = svg._ps || (svg._ps = []);
+        while (ks.length < list.length) { var e = document.createElementNS('http://www.w3.org/2000/svg', 'path'); svg.appendChild(e); ks.push(e); }
+        for (var q = 0; q < ks.length; q++) { var w = list[q] || ['', 'none'], el = ks[q]; if (el._d !== w[0]) { el._d = w[0]; el.setAttribute('d', w[0]); } if (el._f !== w[1]) { el._f = w[1]; el.setAttribute('fill', w[1]); } }
+      };
+      if (NS._ps && !NS.contains(NS._ps[0])) NS._ps = null; if (FS._ps && !FS.contains(FS._ps[0])) FS._ps = null;
       for (var i = 0; i < NB; i++) {
         var m = ((i * D - rotN) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI, a0 = Math.max(-Math.PI / 2, m - half), a1 = Math.min(Math.PI / 2, m + half);
         if (a1 > a0) {
-          hn += '<path d="' + edge(a0, a1, yT, yS) + '" fill="' + sh(Math.cos(m)) + '"/>';
+          hn.push([edge(a0, a1, yT, yS), sh(Math.cos(m))]);
           // (the wall's thickness, on the edge that turns towards you)
           var ex = m > 0 ? a0 : a1, ew = th2 * Math.abs(Math.sin(ex)) / R * 6;
-          if (Math.abs(Math.sin(ex)) > .05 && ex > -Math.PI / 2 && ex < Math.PI / 2) hn += '<path d="' + edge(m > 0 ? ex - ew : ex, m > 0 ? ex : ex + ew, yT, yS) + '" fill="rgba(70,62,60,.9)"/>';
+          if (Math.abs(Math.sin(ex)) > .05 && ex > -Math.PI / 2 && ex < Math.PI / 2) hn.push([edge(m > 0 ? ex - ew : ex, m > 0 ? ex : ex + ew, yT, yS), 'rgba(70,62,60,.9)']);
         }
         // (the far wall's slit, a hole: dark through to the room, its cut edge lit on the side facing you)
         var fm = (((i + .5) * D - rotN) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI, cf = Math.cos(fm);
         if (cf < -.04) {
           var fw = D * .11, b0 = fm - fw, b1 = fm + fw;
-          hf += '<path d="' + edge(b0, b1, yT, yS) + '" fill="#030304"/>';
+          hf.push([edge(b0, b1, yT, yS), '#030304']);
           var cut = fm > 0 ? b0 : b1, cw = .012 + .02 * Math.abs(Math.sin(fm));
-          hf += '<path d="' + edge(fm > 0 ? cut : cut - cw, fm > 0 ? cut + cw : cut, yT, yS) + '" fill="rgba(120,108,92,.55)"/>';
+          hf.push([edge(fm > 0 ? cut : cut - cw, fm > 0 ? cut + cw : cut, yT, yS), 'rgba(120,108,92,.55)']);
         }
       }
-      NS.innerHTML = hn; FS.innerHTML = hf;
+      put(NS, hn); put(FS, hf);
       var op = (1 - .74 * (me._gal ? Math.max(0, Math.min(1, ((me._w || 0) - 5) / 12)) : 0)).toFixed(3); NS.style.opacity = op; FS.style.opacity = (1 - (me._gal ? Math.max(0, Math.min(1, ((me._w || 0) - 3) / 8)) : 0)).toFixed(3);
     })();
     // (the far side's slits, seen over the near rim, turning the other way across)
@@ -4131,15 +4151,22 @@ THEMEFX.picture = { own: true,   // (the month's own days only: John, 10 Nov 202
       b.style.transform = 'translate(' + (g.cx + R * Math.sin(th) - w / 2).toFixed(1) + 'px,' + (rt + g.ry * cs + 2).toFixed(1) + 'px) scaleX(' + (w / 4).toFixed(3) + ')';
     });
     // (the logo round the band below the slits, turning with them, centred at rest)
-    var LG = me._zg && me._zg[0] && me._zg[0].isConnected ? me._zg : (me._zg = $$('#cal .zlg')), lw = me._lw || 300;
-    if (me._l0 == null || !LG[0] || LG[0]._l0 !== 1) { me._l0 = a; if (LG[0]) LG[0]._l0 = 1; }   // (centred where the drum first comes to rest)
+    var LC = me._lc && me._lc.isConnected ? me._lc : (me._lc = $('#cal .zlgc')), lw = me._lw || 300, LI = me._art && me._art.logo;
+    if (me._l0 == null || !LC || LC._l0 !== 1) { me._l0 = a; if (LC) LC._l0 = 1; }   // (centred where the drum first comes to rest)
     var my = (g.yS + g.yB) / 2;
-    LG.forEach(function (lg) {
-      var q = +lg.dataset.q, k = +lg.dataset.s, th = ((q * Math.PI / 2 - (ad - me._l0) * st - XR + .5 * D + ((k + .5) / 24 - .5) * lw / R) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI, cs = Math.cos(th);
-      if (cs < .06) { if (lg._v !== 0) { lg.style.visibility = 'hidden'; lg._v = 0; } return; } if (lg._v !== 1) { lg.style.visibility = ''; lg._v = 1; }
-      lg.style.transform = 'translate(' + (g.cx + R * Math.sin(th)).toFixed(1) + 'px,' + (my + g.ryAt(my) * cs).toFixed(1) + 'px) translate(-50%,-50%) scaleX(' + cs.toFixed(3) + ')';
-      lg.style.opacity = Math.min(1, cs * 1.4).toFixed(2);
-    });
+    if (LC && LI) {
+      var cx2 = LC._x || (LC._x = LC.getContext('2d')), dp = ZDPR(), ox = +LC.dataset.x, oy = +LC.dataset.y, lh = lw / 9.49, sw = lw / 24, sx = LI.width / lw;
+      cx2.setTransform(1, 0, 0, 1, 0, 0); cx2.clearRect(0, 0, LC.width, LC.height);
+      for (var q = 0; q < 4; q++) for (var k = 0; k < 24; k++) {
+        var th = ((q * Math.PI / 2 - (ad - me._l0) * st - XR + .5 * D + ((k + .5) / 24 - .5) * lw / R) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI, cs = Math.cos(th);
+        if (cs < .06) continue;
+        var w = sw + .6;
+        cx2.globalAlpha = Math.min(1, cs * 1.4);
+        cx2.setTransform(dp * cs, 0, 0, dp, dp * (g.cx + R * Math.sin(th) - ox), dp * (my + g.ryAt(my) * cs - oy));
+        cx2.drawImage(LI, k * sw * sx, 0, Math.min(LI.width - k * sw * sx, w * sx), LI.height, -w / 2, -lh / 2, w, lh);
+      }
+      cx2.globalAlpha = 1;
+    }
   },
   leader: function (asked) {   // (a film leader: 3, 2, 1, a flash, GRIFFLIX; the first visit each day; a tap skips it)
     // (the first visit of the day only; home, GRIFFLIX and reloads don't replay it. ?leader=1 always plays it: admin's preview. John, 9 Nov 2026)
