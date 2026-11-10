@@ -3942,14 +3942,18 @@ THEMEFX.picture = { own: true,   // (the month's own days only: John, 10 Nov 202
     var rs0 = rankOf(me._d0 + ((me._xs || .5) - .5) / NB), r0 = me._r0 != null ? me._r0 : Math.round(rs0), r1 = r0 + dir * (L + 1); while (dir * (r1 - rs0) < 1) r1 += dir * L; for (var g2 = 0; g2 < L && !(AL[H[((r1 % L) + L) % L]] || { classList: { contains: function () { return true; } } }).classList.contains('has'); g2++) r1 += dir; var rf = ((r1 % L) + L) % L;   // (onward past days still to come)   // (from where the swipe began: once round and one on)
     // (one motion: off at the swipe's own speed, slowing evenly all the way round the month, to rest on the next day)
     var rs = rankOf(me._d0 + ((me._xs || .5) - .5) / NB), S = r1 - rs, vr = Math.max(4, (v0 || 0) / NB);   // (ranks a second)
-    var T = Math.max(6500, Math.min(9000, 2 * Math.abs(S) / vr * 1000)), m = Math.max(.8, Math.min(2.2, vr * T / 1000 / Math.abs(S)));   // (a whole month at a pace you can follow: John, 10 Nov 2026: "too fast")
+    var T = Math.max(2600, Math.min(4200, 2 * Math.abs(S) / vr * 1000)), m = Math.max(.8, Math.min(2.4, vr * T / 1000 / Math.abs(S)));
     var h = function (u) { return m * u + (3 - 2 * m) * u * u + (m - 2) * u * u * u; }, hd = function (u) { return m + 2 * (3 - 2 * m) * u + 3 * (m - 2) * u * u; };
+    // (the film races through the month; the drum turns only at the horse's galloping pace, slowing with it to rest on the day's slit:
+    // John, 10 Nov 2026: "the film strip can go just as fast as it should on a big spin, but the zoetrope should just go at galloping horse speed")
+    var xs0 = me._xs || .5, xt = .5 + (H[rf] - me._d0) * NB, G = 26, want = dir * G * T / 1000 / m, Sd = xt - xs0;
+    Sd += NB * Math.round((want - Sd) / NB); if (Sd * dir <= 0) Sd += dir * NB;
     var t0 = performance.now(), tok = me._gtok = {}; me._bigUntil = t0 + T; me._gal = true;
     (function f(t) {
-      if (tok !== me._gtok || !$('#zstagef') || me._at == null) return;
+      if (tok !== me._gtok || !$('#zstagef') || me._at == null) { me._fpos = null; return; }
       var u = Math.min(1, (t - t0) / T), r = rs + S * h(u);
-      me._xs = .5 + (dayOf(r) - me._d0) * NB; me._w = Math.abs(S) * NB * hd(u) / (T / 1000);
-      if (u >= 1) { me._gal = false; me._w = 0; me._xs = .5 + (H[rf] - me._d0) * NB; me.draw(me._at); if (H[rf] !== me._day) { me._noGal = true; themeShow(H[rf], true); } return; }
+      me._fpos = dayOf(r); me._xs = xs0 + Sd * h(u); me._w = Math.abs(Sd) * hd(u) / (T / 1000);
+      if (u >= 1) { me._fpos = null; me._gal = false; me._w = 0; me._xs = xt; me.draw(me._at); if (H[rf] !== me._day) { me._noGal = true; themeShow(H[rf], true); } return; }
       me.draw(me._at); requestAnimationFrame(f);
     })(t0);
   },
@@ -3982,7 +3986,7 @@ THEMEFX.picture = { own: true,   // (the month's own days only: John, 10 Nov 202
     // does, showing the previous film next to the screen")
     var fy = g.fT + g.fH / 2, fs = 1, fw = 240, f2 = 262, f1 = Math.max(f2, g.sw / 2 + 30 * g.f + fw / 2), tgt = me._tgt != null ? me._tgt : a, pos = a;
     var off = function (k) { var ak = Math.abs(k); return (k < 0 ? -1 : 1) * (ak <= 1 ? ak * f1 : f1 + (ak - 1) * f2); };   // (the day's behind the screen, the ones either side just past its edges, the rest along the strip)
-    if (me._d0 != null) pos = me._d0 + ((me._xs || .5) - .5) / NB;   // (the film where the drum has turned it)
+    if (me._fpos != null) pos = me._fpos; else if (me._d0 != null) pos = me._d0 + ((me._xs || .5) - .5) / NB;   // (the film where the drum has turned it)
     // (only the month's films on the strip, round and round: after the last, the first again)
     // (every day of the month on the film, a day without its film yet a frame saying so: John, 10 Nov 2026: "film reel should have a gap for any missing days")
     var AL = me.all || [], H = []; AL.forEach(function (el, j) { H.push(j); });
