@@ -3781,7 +3781,7 @@ THEMEFX.picture = {
     return A;
   },
   ready: function (c) {
-    fxReset(this); this.c = c; var me = this, st = $('#zstagef'); me._lo = window.ZFILMED || CALM ? 0 : 1; if (!st) return;
+    fxReset(this); this.c = c; var me = this, st = $('#zstagef'); me._xs = .5; me._push = null; me._lo = window.ZFILMED || CALM ? 0 : 1; if (!st) return;   // (a slit centred under the screen at rest: John, 10 Nov 2026)
     // (no lights going down: the zoetrope reads better in the room's own colour: John, 10 Nov 2026)
     // (the drum spun up as the theme opens, slowing to rest, the horse galloping in its mirrors: John, 10 Nov 2026: "the praxinoscope
     // needs to spin when it first starts")
@@ -3846,19 +3846,21 @@ THEMEFX.picture = {
   // with my track pad")
   push: function (px) {
     var me = this; if (!me.c || me._at == null || CALM) return; me._gtok = null;
-    var g = me.g(me.c), per = g.Rv * 2 * Math.PI / me.nb(), t = performance.now(), d = px / per;
+    var g = me.g(me.c), per = g.Rv * 2 * Math.PI / me.nb(), t = performance.now(), d = px / per * .6;
     me._xs = (me._xs || 0) + d;
     var P = me._push || (me._push = { v: 0, t: t, last: t }), dt = Math.max(8, t - P.t) / 1000;
-    P.v = P.v * .5 + (d / dt) * .5; P.t = t; P.last = t; me._gal = true; me._w = Math.abs(P.v);
+    P.v = P.v * .5 + (d / .6 / dt) * .5; P.t = t; P.last = t; me._gal = true; me._w = Math.abs(P.v);
     me.draw(me._at);
     if (P.raf) return;
     (function f(tt) {
       var Q = me._push; if (!Q || !$('#zstagef')) { me._gal = false; me._w = 0; if (Q) Q.raf = 0; return; }
       var dt2 = Math.min(.05, (tt - (Q.ft || tt)) / 1000); Q.ft = tt;
-      if (tt - Q.last > 70) { me._xs += Q.v * dt2; Q.v *= Math.exp(-dt2 * 1.6); }   // (let go: it runs on, slowing)
+      if (tt - Q.last > 70 && !Q.rel) { Q.rel = 1; var sv = Math.abs(Q.v); Q.v = (Q.v < 0 ? -1 : 1) * Math.min(40, .5 * Math.pow(sv, 1.35)); }   // (let go: a gentle push turns it slowly, only a big swipe brings it up to speed: John, 10 Nov 2026)
+      if (tt - Q.last <= 70) Q.rel = 0;
+      if (tt - Q.last > 70) { me._xs += Q.v * dt2; Q.v *= Math.exp(-dt2 * (Math.abs(Q.v) > 8 ? .7 : 1.1)); }   // (it runs on, slowing)
       me._w = Math.abs(Q.v);
-      if (tt - Q.last > 70 && Math.abs(Q.v) < .8) {   // (slowing to a stop, it settles with a slit square in front)
-        Q.v = 0; var tgt = Math.round(me._xs); me._xs += (tgt - me._xs) * .18;
+      if (tt - Q.last > 70 && Math.abs(Q.v) < .5) {   // (slowing to a stop, it settles with a slit square in front)
+        Q.v = 0; var tgt = Math.round(me._xs - .5) + .5; me._xs += (tgt - me._xs) * .12;   // (coming to rest with a slit square under the screen)
         if (Math.abs(tgt - me._xs) < .004) { me._xs = tgt; me._push = null; me._gal = false; me._w = 0; me.draw(me._at); return; }
       }
       me.draw(me._at); Q.raf = requestAnimationFrame(f);
@@ -3992,7 +3994,7 @@ THEMEFX.picture = {
     if (me._l0 == null || !LG[0] || LG[0]._l0 !== 1) { me._l0 = a; if (LG[0]) LG[0]._l0 = 1; }   // (centred where the drum first comes to rest)
     var my = (g.yS + g.yB) / 2;
     LG.forEach(function (lg) {
-      var q = +lg.dataset.q, k = +lg.dataset.s, th = ((q * Math.PI / 2 - (ad - me._l0) * st - XR + ((k + .5) / 24 - .5) * lw / R) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI, cs = Math.cos(th);
+      var q = +lg.dataset.q, k = +lg.dataset.s, th = ((q * Math.PI / 2 - (ad - me._l0) * st - XR + .5 * D + ((k + .5) / 24 - .5) * lw / R) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI, cs = Math.cos(th);
       if (cs < .06) { if (lg._v !== 0) { lg.style.visibility = 'hidden'; lg._v = 0; } return; } if (lg._v !== 1) { lg.style.visibility = ''; lg._v = 1; }
       lg.style.transform = 'translate(' + (g.cx + R * Math.sin(th)).toFixed(1) + 'px,' + (my + g.ry * cs).toFixed(1) + 'px) translate(-50%,-50%) scaleX(' + cs.toFixed(3) + ')';
       lg.style.opacity = Math.min(1, cs * 1.4).toFixed(2);
