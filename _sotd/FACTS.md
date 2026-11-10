@@ -110,7 +110,15 @@ with the studio; with "story behind"; with the album and the year; the record la
 Read the artist's, songwriters' and producer's interviews for what they said about this song.
 
 A song fact is about this song. Not about another track on the same album, the album's other musicians, or a cover
-that is only a list entry. If after that search there really are fewer than three good song facts, give the good ones
+that is only a list entry.
+
+**The recording on the playlist** (John, 10 Nov 2026: "Facts today are all about the live version of the song, which
+isn't the song on the playlist, so can't use them"): the song's facts are about the recording John chose, the one on
+the album its details name (the album and year in todo.md), not another recording of it. When the best-known
+recording is a different one (a live album, a later re-recording, a single edit, a remix), its stories are not this
+recording's: at most one fact may be about that other recording, saying plainly which it is ("the live version on Blow
+Your Face Out, two years later, …"), and never as if it were this one. Facts about the song itself (its writing, its
+origins, covers, samples, its use) are true of every recording and are fine. If after that search there really are fewer than three good song facts, give the good ones
 (at least one where any exists), make the artist facts strong, and say in `note` every search you made and what you
 found. That is a last resort after a real search, never a reason to search less, and John sees the note.
 
@@ -198,6 +206,8 @@ fetch the result). Then decide:
    near-repeat of another fact for the same song or artist.
 5. On topic: a song fact is about this song (drop one about another track on the album, or the album's personnel in
    general); an artist fact is about the artist.
+   It is about the recording on the playlist (its album and year): drop one about another recording of the song (a live
+   version, a re-recording, a remix) unless it says plainly which recording it means, and keep at most one of those.
 6. Worth reading: would a music fan say "oh, I didn't know that" or want to tell someone? Drop the generic and the
    flat: chart positions and credits on their own, lists of covers, "influenced many artists", "was known for", praise
    without a story, facts any sleeve would carry. Better three strong facts than five with two weak ones.

@@ -56,7 +56,10 @@ def main(out):
         yr = min([v for v in (y.get('mb'), y.get('sp')) if v] or ['?'])
         lines.append('## Song %d: “%s” by %s   [track: %s]' % (s['n'], s['title'], s['artist'], tid) + ('   (a member’s playlist’s: its owner checks them)' if s.get('upl') else ''))
         lines.append('Album (Spotify): %s · first released: %s' % (s.get('album'), yr))
+        lines.append('The recording on the playlist is the one on %s: its song facts are about this recording, not a live version, re-recording or remix of it (FACTS.md)' % (s.get('album') or 'its album'))   # (John, 10 Nov 2026)
         rd = redo.get(tid)
+        if isinstance(rd, dict) and rd.get('note'):
+            lines.append('John asks: ' + rd['note'])
         if isinstance(rd, dict) and (rd.get('avoid') or rd.get('avoidSrc')):   # (asked for again: none of the facts it had, not from the same pages)
             if rd.get('mode') == 'nf':
                 lines.append('**Asked by John: only its notification fact (`nf`, see FACTS.md). Its facts are kept: write no new facts (`facts`: []), just `nf`, which can be a tighter telling of one of these, or something better found while searching. Its facts now:**')
