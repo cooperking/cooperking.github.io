@@ -1643,7 +1643,8 @@ html .zlogo.zol, html.gxown .zlogo.zol { background: none !important; -webkit-ma
 .zlg { position: absolute; left: 0; top: 0; z-index: 3; background-image: var(--gx-outline); background-repeat: no-repeat; will-change: transform; pointer-events: none; }
 .zhs { transform-origin: 50% 50%; }
 .zstripc { position: absolute; left: 0; top: 0; pointer-events: none; overflow: visible; } .zstripc polygon { fill: var(--gx-strip, #f3e8d2); }
-.zbsl { position: absolute; z-index: 1; background: #050406; pointer-events: none; }
+.zbsl { position: absolute; left: 0; top: 0; z-index: 1; width: 4px; background: #050406; pointer-events: none; transform-origin: 0 0; }
+.zpaper .zhs { left: 0; top: 0; transform-origin: 50% 50%; }
 </style>
 <script>/* a computer's screen (wide, with a mouse) or the TV: the whole calendar in the window, as on the songs' site */
 (function () { if (/GRIFFLIXTV\//.test(navigator.userAgent) || /[?&]tv=1(&|$)/.test(location.search)) { var vp = document.querySelector('meta[name=viewport]'); if (vp) vp.setAttribute('content', 'width=1280'); } })();   /* a TV: laid out 1280 wide and shrunk to the screen, as the songs' page is (a Fire Stick's browser is 960 wide: everything came out a third too big) */
@@ -3716,12 +3717,9 @@ THEMEFX.picture = {
     for (var j = 0; j <= 48; j++) { var aa = -Math.PI / 2 + j / 48 * Math.PI, c2 = Math.cos(aa), xx = R + R * Math.sin(aa), hb = hh * .72 * sk(c2);
       top.push(F(xx) + ',' + F(pc - cv * c2 - hb)); bot.unshift(F(xx) + ',' + F(pc - cv * c2 + hb)); }
     h += '<svg class="zstripc" width="' + F(2 * R) + '" height="' + F(g.yS - g.yT + 2 * ry) + '"><polygon points="' + top.concat(bot).join(' ') + '"/></svg>';
-    for (var i = -Math.ceil(NBh / 4); i < Math.ceil(NBh / 4); i++) { var ca = Math.cos((i + .5) * Dh), xa = R + R * Math.sin((i + .5) * Dh), sc = sk(ca);   // (behind each slit)
-      // (the far wall's slit between this frame and the next, dark, as on a zoetrope's strip: John, 10 Nov 2026: "the horses on the
-      // strip need to show the slit at the back between each frame")
-      var cb = Math.cos(i * Dh), xb = R + R * Math.sin(i * Dh), sb = sk(cb), bw = Math.max(1, R * Dh * .16 * cb * sb), bh = hh * 1.9 * sb;
-      h += '<i class="zbsl" style="left:' + F(xb - bw / 2) + 'px;top:' + F(pc - bh / 2 - cv * cb) + 'px;width:' + F(bw) + 'px;height:' + F(bh) + 'px"></i>';
-      h += '<i class="zhs" style="left:' + F(xa - hw / 2) + 'px;top:' + F(pc - hh / 2 - cv * ca) + 'px;width:' + F(hw) + 'px;height:' + F(hh) + 'px;background-size:' + F(hw * 15) + 'px ' + F(hh) + 'px;transform:scale(' + (ca * sc).toFixed(3) + ',' + sc.toFixed(3) + ')"></i>'; }
+    // (the far wall's own slits, the same ones seen over the top, and a horse between each pair, placed as the drum turns (draw))
+    for (var i = 0; i < NBh; i++) h += '<i class="zbsl"></i><i class="zhs" style="width:' + F(hw) + 'px;height:' + F(hh) + 'px;background-size:' + F(hw * 15) + 'px ' + F(hh) + 'px"></i>';
+    this._hz = { hw: hw, hh: hh, pc: pc, cv: cv };
     h += '</div>';
     // (the open top: the inside of the far side, seen a little from above, its rim curving round behind; its slits drawn as it turns)
     var rt = g.yT - 18 * g.f;
@@ -3837,7 +3835,24 @@ THEMEFX.picture = {
       // (turning, the wall blurs and the strip's seen whole through it, as the eye sees a zoetrope; at rest only through the slits)
       wo = (1 - Math.min(.62, sp * .75) * (.85 + .15 * Math.cos(2 * Math.PI * ph))).toFixed(3);
       var step = Math.floor(ad * 15), hs = me._hs && me._hs[0] && me._hs[0].isConnected ? me._hs : (me._hs = $$('#cal .zhs'));
-      hs.forEach(function (h, i) { var w = parseFloat(h.style.width), n = (((step + i * 5) % 15) + 15) % 15; if (h._n !== n) { h._n = n; h.style.backgroundPosition = (-n * w).toFixed(1) + 'px 0'; } });
+      // (the far wall: its slits, and the horses between them on the strip, going round with the drum; turning, seen a slit at a time, as
+      // a zoetrope is, so the horse stays in its place and gallops: John, 10 Nov 2026: "the top slits which you see over the top are the
+      // same slits that are between the horses")
+      var Z = me._hz || { hw: 60, hh: 36, pc: 60, cv: 10 }, rot = ad * st, rq = sp > .02 ? Math.round(rot / D) * D : rot, R0 = g.Rv;
+      var BL = me._bl && me._bl[0] && me._bl[0].isConnected ? me._bl : (me._bl = $$('#cal .zbsl')), ang = function (v) { return ((v % (2 * Math.PI)) + 3 * Math.PI) % (2 * Math.PI) - Math.PI; };
+      var skf = function (c) { return .78 + .22 * (1 - c); };
+      hs.forEach(function (hz, k) {
+        var th = ang(k * D - rq), c = -Math.cos(th);
+        if (c < .03) { if (hz._v !== 0) { hz.style.visibility = 'hidden'; hz._v = 0; } } else {
+          if (hz._v !== 1) { hz.style.visibility = ''; hz._v = 1; } var sc = skf(c);
+          hz.style.transform = 'translate(' + (R0 + R0 * Math.sin(th) - Z.hw / 2).toFixed(1) + 'px,' + (Z.pc - Z.hh / 2 - Z.cv * c).toFixed(1) + 'px) scale(' + (c * sc).toFixed(3) + ',' + sc.toFixed(3) + ')';
+          var n = ((k % 15) + 15) % 15; if (hz._n !== n) { hz._n = n; hz.style.backgroundPosition = (-n * Z.hw).toFixed(1) + 'px 0'; } }
+        var bl = BL[k]; if (!bl) return; var tb = ang((k + .5) * D - rq), cb = -Math.cos(tb);
+        if (cb < .03) { if (bl._v !== 0) { bl.style.visibility = 'hidden'; bl._v = 0; } return; } if (bl._v !== 1) { bl.style.visibility = ''; bl._v = 1; }
+        var bw = Math.max(1, R0 * D * .16 * cb), bot = Z.pc - Z.cv * cb + Z.hh * .9 * skf(cb);
+        bl.style.transform = 'translate(' + (R0 + R0 * Math.sin(tb) - bw / 2).toFixed(1) + 'px,0) scaleX(' + (bw / 4).toFixed(3) + ')'; bl.style.height = Math.max(0, bot).toFixed(1) + 'px';
+      });
+      me._rq = rq;
     }
     // (the near wall's slits, sweeping past)
     var W = me._zw && me._zw[0] && me._zw[0].isConnected ? me._zw : (me._zw = $$('#cal .zw')), R = g.Rv;
@@ -3856,9 +3871,9 @@ THEMEFX.picture = {
     // (the far side's slits, seen over the near rim, turning the other way across)
     var BS = me._bs && me._bs[0] && me._bs[0].isConnected ? me._bs : (me._bs = $$('#cal .zbs')), rt = g.yT - 18 * g.f;
     BS.forEach(function (b, i) {
-      var th = ((i * D + D / 2 - ad * st) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI, cs = Math.cos(th);
-      if (cs > -.08) { if (b._v !== 0) { b.style.visibility = 'hidden'; b._v = 0; } return; } if (b._v !== 1) { b.style.visibility = ''; b._v = 1; }
-      var w = Math.max(.6, R * D * .18 * -cs);
+      var th = (((i + .5) * D - (me._rq != null ? me._rq : ad * st)) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI, cs = Math.cos(th);
+      if (cs > -.03) { if (b._v !== 0) { b.style.visibility = 'hidden'; b._v = 0; } return; } if (b._v !== 1) { b.style.visibility = ''; b._v = 1; }
+      var w = Math.max(1, R * D * .16 * -cs);
       b.style.transform = 'translate(' + (g.cx + R * Math.sin(th) - w / 2).toFixed(1) + 'px,' + (rt + g.ry * cs + 2).toFixed(1) + 'px) scaleX(' + (w / 4).toFixed(3) + ')';
     });
     // (the logo round the band below the slits, turning with them, centred at rest)
