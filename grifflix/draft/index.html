@@ -1682,6 +1682,7 @@ html.gxproj .th-picture .zcin { box-shadow: 0 0 0 10px #000, 0 0 0 26px #2a2420,
 .th-picture .zstagef { z-index: 12; }   /* (the screen in front of the drum) */
 .th-picture .vday { transition: filter .4s, opacity .4s !important; }
 .zfilm { right: 0; }
+.zshad { position: absolute; z-index: 5; pointer-events: none; border-radius: 50%; background: radial-gradient(closest-side, rgba(20, 14, 10, .55), rgba(20, 14, 10, .25) 55%, transparent); filter: blur(4px); }
 </style>
 <script>/* a computer's screen (wide, with a mouse) or the TV: the whole calendar in the window, as on the songs' site */
 (function () { if (/GRIFFLIXTV\//.test(navigator.userAgent) || /[?&]tv=1(&|$)/.test(location.search)) { var vp = document.querySelector('meta[name=viewport]'); if (vp) vp.setAttribute('content', 'width=1280'); } })();   /* a TV: laid out 1280 wide and shrunk to the screen, as the songs' page is (a Fire Stick's browser is 960 wide: everything came out a third too big) */
@@ -3722,12 +3723,12 @@ THEMEFX.picture = {
     var yB = mob ? 846 : c.H - 160 * f, yS = yB - (mob ? 60 : 48 * f), yT = yS - (mob ? 215 : Math.max(150, c.H * .2));   // (bigger: a whole horse seen in a gap: John, 10 Nov 2026)   // (clear of the caption under it)
     // (the screen brought forward, its foot over the drum's rim; the film strip behind it, through its middle, the days either side showing
     // past its edges: John, 10 Nov 2026: "the film strip can go behind the screen, and the screen can go forward a bit so it's over the drum")
-    var sy0 = mob ? 16 : 96 * f, sh = yT + (mob ? 34 : 30 * f) - sy0, sw = Math.min(mob ? 560 : cw * .74, sh * 4 / 3); sh = sw * .75;
-    var fH = sh * .44, fT = sy0 + sh / 2 - fH / 2;
-    var scx = mob ? 390 : (colL + colR) / 2, cx = scx, Rv = mob ? 378 : Math.min(cw * .5, sw * 1.25), ry = mob ? 16 : 14 * f;   // (nearly level: only the top of the far side seen: John, 10 Nov 2026)   // (smaller: all of it in view, curving away at both sides)
+    var fT0 = mob ? 16 : 92 * f, fH = mob ? 132 : 96 * f, sy0 = fT0 + fH + (mob ? 30 : 24 * f), sh = yT - (mob ? 50 : 48 * f) - sy0, sw = Math.min(mob ? 740 : cw, sh * 4 / 3); sh = sw * .75;
+    var fT = fT0 + (mob ? 74 : 62 * f);   // (the strip a little lower, passing behind the screen's top, the screen floating above the drum: John, 10 Nov 2026)
+    var scx = mob ? 390 : (colL + colR) / 2, cx = scx, Rv = mob ? 378 : Math.min(cw * .5, 420 * f), ry = mob ? 16 : 14 * f;   // (nearly level: only the top of the far side seen: John, 10 Nov 2026)   // (smaller: all of it in view, curving away at both sides)
     var zh = yS - yT, ps = zh * .8 / 255;
     var y0p = yT - 18 * f, ryAt = function (y) { return ry * (1 + .45 * (y - y0p) / (yB - y0p)); };   // (seen from above: the lower the circle, the rounder)
-    return { colL: mob ? 0 : colL - 26 * f, fT: fT, fH: fH, ryAt: ryAt, sw: sw, sh: sh, scx: scx, sy0: sy0, cx: cx, Rv: Rv, ry: ry, yT: yT, yS: yS, yB: yB, ps: ps, pw: 170 * ps, pcy: (yT + yS) / 2 + ry, f: f, mob: mob };
+    return { colL: 0, fT: fT, fH: fH, ryAt: ryAt, sw: sw, sh: sh, scx: scx, sy0: sy0, cx: cx, Rv: Rv, ry: ry, yT: yT, yS: yS, yB: yB, ps: ps, pw: 170 * ps, pcy: (yT + yS) / 2 + ry, f: f, mob: mob };
   },
   decor: function (c) {
     this.art(); var g = this.g(c), cx = g.cx, R = g.Rv, ry = g.ry, F = function (n) { return (+n).toFixed(1); };
@@ -3770,6 +3771,7 @@ THEMEFX.picture = {
     h += '<svg class="ztop" width="' + c.W + '" height="' + c.H + '"><defs><linearGradient id="zin2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity=".05"/><stop offset=".6" stop-color="#000" stop-opacity=".25"/><stop offset="1" stop-color="#000" stop-opacity=".45"/></linearGradient></defs>' +
       '<ellipse class="zinb" cx="' + F(cx) + '" cy="' + F(rt) + '" rx="' + F(R) + '" ry="' + F(ry) + '"/><ellipse cx="' + F(cx) + '" cy="' + F(rt) + '" rx="' + F(R) + '" ry="' + F(ry) + '" fill="url(#zin2)"/>' +
       '<path class="zbrim" d="M' + F(cx - R) + ',' + F(rt) + ' A' + F(R) + ' ' + F(ry) + ' 0 0 1 ' + F(cx + R) + ',' + F(rt) + '"/></svg>';
+    h += '<i class="zshad" style="left:' + F(g.scx - g.sw * .42) + 'px;top:' + F(rt - ry * .9) + 'px;width:' + F(g.sw * .84) + 'px;height:' + F(ry * 2.2) + 'px"></i>';   // (the screen's shadow on the drum, hovering above it)
     for (var kb = 0, NBb = this.nb(c); kb < NBb; kb++) h += '<i class="zbs" style="height:' + F(ry * .9) + 'px"></i>';
     // (the near wall: its slits, a rim above them, a band below with GRIFFLIX round it)
     h += '<svg class="zfar" id="zfar" width="' + c.W + '" height="' + c.H + '"></svg>';   // (the far wall's slits, drawn as it turns)
@@ -3919,14 +3921,15 @@ THEMEFX.picture = {
     // (the days along the film strip behind the screen, the day you're on behind it, the ones before and after showing either side; it runs
     // with the drum, speeding up and slowing with it, as a change of day spins it: John, 10 Nov 2026: "It should move like the zoetrope
     // does, showing the previous film next to the screen")
-    var fy = g.fT + g.fH / 2, fs = g.fH * .74 / 66, fw = 150 * fs, fstep = g.sw / 2 + 36 * g.f + fw / 2 + 10, tgt = me._tgt != null ? me._tgt : a, pos = a;
+    var fy = g.fT + g.fH / 2, fs = g.fH / 96 * (g.mob ? .78 : 1), fw = 150 * fs, f1 = g.sw / 2 + 30 * g.f + fw / 2, f2 = 168 * fs, tgt = me._tgt != null ? me._tgt : a, pos = a;
+    var off = function (k) { var ak = Math.abs(k); return (k < 0 ? -1 : 1) * (ak <= 1 ? ak * f1 : f1 + (ak - 1) * f2); };   // (the day's behind the screen, the ones either side just past its edges, the rest along the strip)
     if (me._gal && me._gS) { var pr = 1 - (me._xs - me._gx0) / (-me._gdir * me._gS); pos = me._gprev + (tgt - me._gprev) * Math.max(0, Math.min(1, pr)); }
     (me.all || []).forEach(function (el, j) {
-      var k = j - pos, x = g.scx + k * fstep, l = g.colL - (x - fw / 2);
-      vAt(el, x, fy, fs, 0, Math.abs(k) > 6 ? 0 : 1, Math.abs(k) < .5 ? 4 : 3);
+      var k = j - pos, x = g.scx + off(k), l = g.colL - (x - fw / 2);
+      vAt(el, x, fy, fs, 0, Math.abs(k) > 12 ? 0 : 1, Math.abs(k) < .5 ? 4 : 3);
       el.style.clipPath = l > 0 ? 'inset(0 0 0 ' + Math.min(150, l / fs).toFixed(1) + 'px)' : '';
     });
-    var ZF = me._zf && me._zf.isConnected ? me._zf : (me._zf = $('#zfilm')); if (ZF) ZF.style.backgroundPositionX = (-pos * fstep).toFixed(1) + 'px';
+    var ZF = me._zf && me._zf.isConnected ? me._zf : (me._zf = $('#zfilm')); if (ZF) ZF.style.backgroundPositionX = (-off(pos) ).toFixed(1) + 'px';
     // (the horse, galloping in place as the drum turns, flickering as each slit goes by; standing when it stops)
     var pp = me._pp && me._pp.isConnected ? me._pp : (me._pp = $('#zpaper')), wo = '1';
     if (pp) {
