@@ -3806,7 +3806,7 @@ THEMEFX.picture = {
   },
   swipe: function (c) { return { x: -1, y: 0, px: c.mob ? 60 : 90 }; },   // (turn the drum with the finger)
   place: function (all, at, c) {
-    this.all = all; this.c = c; if (this._at != null && Math.abs(this._at - at) > .3) musicKick(Math.abs(this._at - at));
+    this.all = all; this.c = c; this._tgt = at; if (this._at != null && Math.abs(this._at - at) > .3) musicKick(Math.abs(this._at - at));
     var now = performance.now(), mv = this._at != null && Math.abs(at - this._at) > 1e-3;
     if (mv && !this._intro && !this._tplay && now - (this._lp || 0) > 650 && $('#zstagef.open')) this.trainOnce(1700);
     if (mv) this._lp = now;
@@ -3831,14 +3831,14 @@ THEMEFX.picture = {
     var pp = me._pp && me._pp.isConnected ? me._pp : (me._pp = $('#zpaper')), wo = '1';
     if (pp) {
       var ph = ((ad * st / D) % 1 + 1) % 1, fl = 1 - Math.min(1, sp * 1.5) * .35 * (1 - Math.abs(Math.cos(Math.PI * ph)));
-      pp.style.opacity = fl.toFixed(3);
+      pp.style.opacity = '1';   // (no fading: the drum solid, the far side seen only through the slits and over the top: John, 10 Nov 2026: "If it was done properly the effect would actually be achieved without fading")
       // (turning, the wall blurs and the strip's seen whole through it, as the eye sees a zoetrope; at rest only through the slits)
-      wo = (1 - Math.min(.62, sp * .75) * (.85 + .15 * Math.cos(2 * Math.PI * ph))).toFixed(3);
+      wo = '1';
       var step = Math.floor(ad * 15), hs = me._hs && me._hs[0] && me._hs[0].isConnected ? me._hs : (me._hs = $$('#cal .zhs'));
       // (the far wall: its slits, and the horses between them on the strip, going round with the drum; turning, seen a slit at a time, as
       // a zoetrope is, so the horse stays in its place and gallops: John, 10 Nov 2026: "the top slits which you see over the top are the
       // same slits that are between the horses")
-      var Z = me._hz || { hw: 60, hh: 36, pc: 60, cv: 10 }, rot = ad * st, rq = sp > .02 ? Math.round(rot / D) * D : rot, R0 = g.Rv;
+      var Z = me._hz || { hw: 60, hh: 36, pc: 60, cv: 10 }, rot = ad * st, rq = rot, R0 = g.Rv;   // (all of it turning together, as one drum)
       var BL = me._bl && me._bl[0] && me._bl[0].isConnected ? me._bl : (me._bl = $$('#cal .zbsl')), ang = function (v) { return ((v % (2 * Math.PI)) + 3 * Math.PI) % (2 * Math.PI) - Math.PI; };
       var skf = function (c) { return .78 + .22 * (1 - c); };
       hs.forEach(function (hz, k) {
@@ -3846,7 +3846,7 @@ THEMEFX.picture = {
         if (c < .03) { if (hz._v !== 0) { hz.style.visibility = 'hidden'; hz._v = 0; } } else {
           if (hz._v !== 1) { hz.style.visibility = ''; hz._v = 1; } var sc = skf(c);
           hz.style.transform = 'translate(' + (R0 + R0 * Math.sin(th) - Z.hw / 2).toFixed(1) + 'px,' + (Z.pc - Z.hh / 2 - Z.cv * c).toFixed(1) + 'px) scale(' + (c * sc).toFixed(3) + ',' + sc.toFixed(3) + ')';
-          var n = ((k % 15) + 15) % 15; if (hz._n !== n) { hz._n = n; hz.style.backgroundPosition = (-n * Z.hw).toFixed(1) + 'px 0'; } }
+          var n = Math.floor(k * 15 / NB) % 15; if (hz._n !== n) { hz._n = n; hz.style.backgroundPosition = (-n * Z.hw).toFixed(1) + 'px 0'; } }
         var bl = BL[k]; if (!bl) return; var tb = ang((k + .5) * D - rq), cb = -Math.cos(tb);
         if (cb < .03) { if (bl._v !== 0) { bl.style.visibility = 'hidden'; bl._v = 0; } return; } if (bl._v !== 1) { bl.style.visibility = ''; bl._v = 1; }
         var bw = Math.max(1, R0 * D * .16 * cb), bot = Z.pc - Z.cv * cb + Z.hh * .9 * skf(cb);
@@ -3858,14 +3858,17 @@ THEMEFX.picture = {
     var W = me._zw && me._zw[0] && me._zw[0].isConnected ? me._zw : (me._zw = $$('#cal .zw')), R = g.Rv;
     W.forEach(function (b, i) {
       var th = ((i * D - ad * st) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI, cs = Math.cos(th);
+      // (only the panels you can see carry posters: the day you're on at the front, the days before it to the left and after it to the
+      // right (John, 10 Nov 2026: "you only need as many posters as you can actually see"); a panel takes its day's poster while it's
+      // round the back, out of sight, so the new days come round as the drum turns)
+      if (b._pu == null || cs < .04 || sp <= .004) {
+        var off = ((i + NB / 2) % NB + NB) % NB - NB / 2, el = me.all && me.all[Math.round(me._tgt != null ? me._tgt : ad) + off], pu = el ? el.style.getPropertyValue('--p') : '';
+        var key = (el ? el.dataset.day || el.dataset.n : '') + '|' + pu; if (b._pu !== key) { b._pu = key; b.style.backgroundImage = pu && pu !== 'none' ? pu : 'none'; b.dataset.n = el && !(pu && pu !== 'none') ? (el.dataset.n || '') : ''; }
+      }
       if (cs < .04) { if (b._v !== 0) { b.style.visibility = 'hidden'; b._v = 0; } return; } if (b._v !== 1) { b.style.visibility = ''; b._v = 1; }
       var x0 = R * Math.sin(th - D * .41), x1 = R * Math.sin(th + D * .41);   // (the panels, the slits between them)
       var pw0 = parseFloat(b.style.width) || 10;
       b.style.transform = 'translate(' + (g.cx + x0).toFixed(1) + 'px,' + (g.yT + g.ry * cs).toFixed(1) + 'px) scaleX(' + ((x1 - x0) / pw0).toFixed(3) + ')';
-      // (only the panels you can see carry posters: the day you're on at the front, the days before it to the left and after it to the
-      // right: John, 10 Nov 2026: "you only need as many posters as you can actually see")
-      var off = ((i + NB / 2) % NB + NB) % NB - NB / 2, el = me.all && me.all[Math.round(ad) + off], pu = el ? el.style.getPropertyValue('--p') : '';
-      var key = (el ? el.dataset.day || el.dataset.n : '') + '|' + pu; if (b._pu !== key) { b._pu = key; b.style.backgroundImage = pu && pu !== 'none' ? pu : 'none'; b.dataset.n = el && !(pu && pu !== 'none') ? (el.dataset.n || '') : ''; }
       b.style.setProperty('--dk', Math.min(.85, .9 * (1 - cs)).toFixed(2)); if (b._wo !== wo) { b._wo = wo; b.style.opacity = wo; }
     });
     // (the far side's slits, seen over the near rim, turning the other way across)
