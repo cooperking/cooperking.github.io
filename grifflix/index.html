@@ -1744,7 +1744,7 @@ html[data-theme=spiral] .hinfo .w > span { -webkit-text-stroke-width: 2.2px; }
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: false };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: false, v: 'fdd6601a8901' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -2857,9 +2857,12 @@ function themeMusic(k) {   // the theme on the page now (null: none)
 }
 function musicHold() { if (TMUS.a) { TMUS.a.pause(); TMUS.a = null; } TMUS.after = true; }   // (the opening first: the theme's music after it)
 function musicAfterLeader() { if (!TMUS.after) return; TMUS.after = false; var k = TMUS.k; if (k && !TMUS.a) { var pj = TMUS.pj; TMUS.pj = null; TMUS.k = null; if (pj) pj.stop(); themeMusic(k); } }
-function musicHush() {   // (quiet: a film or trailer starting, the page hidden, another theme)
+function musicHush(now) {   // (quiet: a film or trailer starting, the page hidden, another theme)
   var a = TMUS.a; TMUS.a = null;
-  if (a) { var v0 = a.volume, t0 = performance.now(); (function f() { var u = Math.min(1, (performance.now() - t0) / 600); a.volume = v0 * (1 - u); if (u < 1) requestAnimationFrame(f); else a.pause(); })(); }
+  // (hidden, or the app left: stopped at once, since a fade's frames stop with the page and it would never finish; John, 10 Nov 2026:
+  // "The music carries on when you leave the app too - which is not good")
+  if (a && (now || document.hidden)) a.pause();
+  else if (a) { var v0 = a.volume, t0 = performance.now(); (function f() { var u = Math.min(1, (performance.now() - t0) / 600); a.volume = v0 * (1 - u); if (u < 1) requestAnimationFrame(f); else a.pause(); })(); }
   if (TMUS.pj) { TMUS.pj.stop(); TMUS.pj = null; }
 }
 function projector() {   // (the zoetrope turning: a soft whirr of air through its slits, fluttering as they pass, quick then slowing
@@ -2917,7 +2920,25 @@ function musicBeep(at) {   // (the leader's beep on each number, at its moment o
 ['pointerdown', 'keydown', 'touchend'].forEach(function (ev) { addEventListener(ev, function () {   // (the first tap or key lets it play)
   if (TMUS.ok) return; TMUS.ok = true; musicCtx(); var k = TMUS.k; TMUS.k = null; if (k) themeMusic(k);
 }, true); });
-document.addEventListener('visibilitychange', function () { if (document.hidden) { musicHush(); } else leaderNewDay(); });
+document.addEventListener('visibilitychange', function () { if (document.hidden) { allQuiet(); } else { leaderNewDay(); freshCheck(); } });
+function allQuiet() {   // (the page left: every sound off at once, the theme's, the leader's, the projector's whirr)
+  musicHush(true);
+  [].forEach.call(document.querySelectorAll('audio'), function (a) { try { a.pause(); } catch (e) {} });
+  var z = $('.zlead'); if (z && z._la) try { z._la.pause(); } catch (e) {}
+  if (TMUS.ctx && TMUS.ctx.state === 'running') try { TMUS.ctx.suspend(); } catch (e) {}
+}
+// (a new version put live: the page picks it up by itself, coming back to it or left alone a while, never over a film, a trailer or a
+// pop-up; John, 10 Nov 2026: "how can we make the fire tv update each time we make a big update?")
+function freshCheck() {
+  if (!BUILD.v || freshCheck.busy) return; freshCheck.busy = true;
+  fetch((BUILD.draft ? '/grifflix/draft/' : '/grifflix/') + 'version.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+    freshCheck.busy = false; if (!j || !j.v || j.v === BUILD.v) return;
+    var tp = $('#tplayer'), busy = (P && P.el && P.el.classList.contains('on')) || (tp && !tp.hidden) || (dlg && dlg.open) || $('.zlead');
+    if (busy) { freshCheck.want = true; return; }
+    location.reload();
+  }).catch(function () { freshCheck.busy = false; });
+}
+setInterval(function () { if (!document.hidden && Date.now() - (leaderNewDay.act || 0) > 3e5) freshCheck(); }, 6e5);   // (every 10 minutes, after 5 untouched)
 // (an app that stays loaded, as a Fire Stick's does: a new day's first look at it, or first key, still opens with the leader)
 function leaderNewDay() {   // (back after a while: away 10 minutes, or a TV left on and not touched for half an hour: the 3 2 1 again, the Mac checked)
   var now = Date.now(), idle = now - (leaderNewDay.act || now); leaderNewDay.act = now;
@@ -5451,6 +5472,8 @@ function barSearch() {   // up into the bar lands on Search first (John, 8 Nov 2
   return $('#barnav [data-nv="search"]') || $('.bar-top button');
 }
 window.grifflixTV = {
+  away: function () { allQuiet(); leaderNewDay.away = Date.now(); },   // (the app left: Home, or another app)
+  here: function () { if (TMUS.ctx && TMUS.ctx.state === 'suspended') try { TMUS.ctx.resume(); } catch (e) {} leaderNewDay(); freshCheck(); },   // (back to it)
   key: function (k) {
     if (trailerOn()) return trailerKeys(k);
     if (P.el.classList.contains('on')) return playerKeys(k);
