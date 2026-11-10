@@ -155,11 +155,12 @@ jobs:
           git add -A _sotd/data songs
           if git diff --cached --quiet; then echo "nothing changed"; exit 0; fi
           git commit -m "Song moods and genres: John's songs first"
-          for i in 1 2 3; do git pull --rebase -X theirs --quiet || { git rebase --abort 2>/dev/null; false; } && git push && { echo "pushed=1" >> "$GITHUB_OUTPUT"; exit 0; }; sleep 5; done   # (where both jobs changed the same lines: John's own commit kept)
+          site=0; git diff --quiet HEAD^ HEAD -- songs || site=1   # 1 when the commit changes the published songs/ folder
+          for i in 1 2 3; do git pull --rebase -X theirs --quiet || { git rebase --abort 2>/dev/null; false; } && git push && { echo "site=$site" >> "$GITHUB_OUTPUT"; exit 0; }; sleep 5; done   # (where both jobs changed the same lines: John's own commit kept)
           exit 1
 
       - name: Publish the site now
-        if: ${{ steps.save.outputs.pushed == '1' }}
+        if: ${{ steps.save.outputs.site == '1' }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh workflow run pages.yml --ref main
