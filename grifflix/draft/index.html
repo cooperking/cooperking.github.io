@@ -1645,6 +1645,9 @@ html .zlogo.zol, html.gxown .zlogo.zol { background: none !important; -webkit-ma
 .zstripc { position: absolute; left: 0; top: 0; pointer-events: none; overflow: visible; } .zstripc polygon { fill: var(--gx-strip, #f3e8d2); }
 .zbsl { position: absolute; left: 0; top: 0; z-index: 1; width: 4px; background: #050406; pointer-events: none; transform-origin: 0 0; }
 .zpaper .zhs { left: 0; top: 0; transform-origin: 50% 50%; }
+html .th-picture .zw, html.gxown .th-picture .zw { background-color: #0b0a0c !important; }   /* (the zoetrope black, outside: John, 10 Nov 2026: "the zoetrope can be black") */
+html .th-picture .zfrontw svg path[fill], html.gxown .th-picture .zfrontw svg path[fill] { fill: #0b0a0c !important; }
+.th-picture .ztop .zinb { fill: #070608; }
 </style>
 <script>/* a computer's screen (wide, with a mouse) or the TV: the whole calendar in the window, as on the songs' site */
 (function () { if (/GRIFFLIXTV\//.test(navigator.userAgent) || /[?&]tv=1(&|$)/.test(location.search)) { var vp = document.querySelector('meta[name=viewport]'); if (vp) vp.setAttribute('content', 'width=1280'); } })();   /* a TV: laid out 1280 wide and shrunk to the screen, as the songs' page is (a Fire Stick's browser is 960 wide: everything came out a third too big) */
@@ -3765,7 +3768,7 @@ THEMEFX.picture = {
     // (the drum spun up as the theme opens, slowing to rest, the horse galloping in its mirrors: John, 10 Nov 2026: "the praxinoscope
     // needs to spin when it first starts")
     me._sp = CALM ? 0 : 1; me._la = null;
-    if (!CALM) { var s0 = 3, D = 3400, t0 = performance.now() + 500, tk = me._stok = {}; me._spin = s0;
+    if (!CALM) { setTimeout(function () { if (me._at != null) me.gallop(1, 3); }, 600); var s0 = 0, D = 3400, t0 = performance.now() + 500, tk = me._stok = {}; me._spin = s0;
       (function f(t) { if (tk !== me._stok || !$('#zstagef')) { me._spin = 0; return; } var u = Math.max(0, Math.min(1, (t - t0) / D)); me._spin = s0 * Math.pow(1 - u, 3);
         if (me.all && me._at != null) me.draw(me._at); if (u < 1) requestAnimationFrame(f); else me._spin = 0; })(performance.now()); }
     if (window.ZFILMED || CALM) { st.classList.add('open', 'now'); return; }
@@ -3810,15 +3813,34 @@ THEMEFX.picture = {
     var now = performance.now(), mv = this._at != null && Math.abs(at - this._at) > 1e-3;
     if (mv && !this._intro && !this._tplay && now - (this._lp || 0) > 650 && $('#zstagef.open')) this.trainOnce(1700);
     if (mv) this._lp = now;
-    fxTween(this, at, 1100);
+    // (a new day: the drum spins at a steady pace, a slit every two of the screen's frames, so the slits stand still and the horse
+    // gallops through them, a real zoetrope's effect; four turns, then it stops on the day: John, 10 Nov 2026: "what could we do to
+    // get a perfect working zoetrope?")
+    var me = this, drag = $('#cal') && $('#cal').classList.contains('drag'), day = Math.round(at);
+    if (me._at == null || drag || Math.abs(at - day) > 1e-3) { if (me._at == null && !drag) me._day = day; fxTween(me, at, drag ? 300 : 1100); return; }
+    if (me._day == null || day === me._day) { me._day = day; fxTween(me, at, 600); return; }
+    var dir = day > me._day ? 1 : -1; me._day = day;
+    if (me._raf) { cancelAnimationFrame(me._raf); me._raf = 0; } me._at = at;
+    me.gallop(dir, 4);
+  },
+  gallop: function (dir, turns) {
+    var me = this, NB = me.nb(), S = NB * turns, t0 = performance.now(), tok = me._gtok = {};
+    if (CALM) { me._xs = 0; me._gal = false; me.draw(me._at); return; }
+    me._gal = true; me._xs = -dir * S;
+    (function f(t) {
+      if (tok !== me._gtok || !$('#zstagef') || me._at == null) { if (tok === me._gtok) { me._gal = false; me._xs = 0; } return; }
+      var k = Math.floor((t - t0) / (2000 / 60));   // (a slit every two frames at 60 a second, whatever the screen's own rate)
+      if (k >= S) { me._gal = false; me._xs = 0; me.draw(me._at); return; }
+      me._xs = -dir * (S - k); me.draw(me._at); requestAnimationFrame(f);
+    })(t0);
   },
   draw: function (a) {
     var me = this, c = me.c, g = me.g(c), NB = me.nb(c), D = Math.PI * 2 / NB, st = Math.PI * 2;   // (a day's turn: a whole spin, the slits flickering by, the horse galloping: John, 10 Nov 2026: "previously it did one full spin with a click")
     var ad = a + (me._spin || 0), t = performance.now();
     if (me._la != null) { var v = Math.abs(ad - me._la) / Math.max(8, t - me._lt) * 1000, tg = Math.min(1, v / .5); me._sp += (tg - me._sp) * (tg > me._sp ? .45 : .09); }
     me._la = ad; me._lt = t; me._last = a;
-    var sp = me._sp || 0;
-    if (sp > .004 && !me._zraf) me._zraf = requestAnimationFrame(function () { me._zraf = 0; if (me.all && $('#zpaper')) me.draw(me._last); });   // (its own frame, not the move's: the slits close up again after a spin)
+    var sp = me._gal ? 1 : me._sp || 0, XR = (me._xs || 0) * D;   // (galloping: the drum's turn beyond the day's, a slit at a time)
+    if (!me._gal && sp > .004 && !me._zraf) me._zraf = requestAnimationFrame(function () { me._zraf = 0; if (me.all && $('#zpaper')) me.draw(me._last); });   // (its own frame, not the move's: the slits close up again after a spin)
     // (the month's films going by behind the horse, the other way to the slits; the day's own at the middle)
     var lo = g.mob ? -80 : c.W * .36, hi = g.mob ? 860 : c.W + 60;
     me.all.forEach(function (el, j) {
@@ -3838,7 +3860,7 @@ THEMEFX.picture = {
       // (the far wall: its slits, and the horses between them on the strip, going round with the drum; turning, seen a slit at a time, as
       // a zoetrope is, so the horse stays in its place and gallops: John, 10 Nov 2026: "the top slits which you see over the top are the
       // same slits that are between the horses")
-      var Z = me._hz || { hw: 60, hh: 36, pc: 60, cv: 10 }, rot = ad * st, rq = rot, R0 = g.Rv;   // (all of it turning together, as one drum)
+      var Z = me._hz || { hw: 60, hh: 36, pc: 60, cv: 10 }, rot = ad * st + XR, rq = rot, R0 = g.Rv;   // (all of it turning together, as one drum)
       var BL = me._bl && me._bl[0] && me._bl[0].isConnected ? me._bl : (me._bl = $$('#cal .zbsl')), ang = function (v) { return ((v % (2 * Math.PI)) + 3 * Math.PI) % (2 * Math.PI) - Math.PI; };
       var skf = function (c) { return .78 + .22 * (1 - c); };
       hs.forEach(function (hz, k) {
@@ -3857,11 +3879,14 @@ THEMEFX.picture = {
     // (the near wall's slits, sweeping past)
     var W = me._zw && me._zw[0] && me._zw[0].isConnected ? me._zw : (me._zw = $$('#cal .zw')), R = g.Rv;
     W.forEach(function (b, i) {
-      var th = ((i * D - ad * st) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI, cs = Math.cos(th);
+      var th = ((i * D - ad * st - XR) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI, cs = Math.cos(th);
       // (only the panels you can see carry posters: the day you're on at the front, the days before it to the left and after it to the
       // right (John, 10 Nov 2026: "you only need as many posters as you can actually see"); a panel takes its day's poster while it's
       // round the back, out of sight, so the new days come round as the drum turns)
-      if (b._pu == null || cs < .04 || sp <= .004) {
+      // (turning, the outside plain black, no posters to catch the eye; they come back as it stops: John, 10 Nov 2026)
+      var turning = me._gal || ($('#cal') && $('#cal').classList.contains('drag'));
+      if (turning) { if (b._pu !== 'spin') { b._pu = 'spin'; b.style.backgroundImage = 'none'; b.dataset.n = ''; } }
+      else if (b._pu == null || b._pu === 'spin' || cs < .04 || sp <= .004) {
         var off = ((i + NB / 2) % NB + NB) % NB - NB / 2, el = me.all && me.all[Math.round(me._tgt != null ? me._tgt : ad) + off], pu = el ? el.style.getPropertyValue('--p') : '';
         var key = (el ? el.dataset.day || el.dataset.n : '') + '|' + pu; if (b._pu !== key) { b._pu = key; b.style.backgroundImage = pu && pu !== 'none' ? pu : 'none'; b.dataset.n = el && !(pu && pu !== 'none') ? (el.dataset.n || '') : ''; }
       }
@@ -3874,7 +3899,7 @@ THEMEFX.picture = {
     // (the far side's slits, seen over the near rim, turning the other way across)
     var BS = me._bs && me._bs[0] && me._bs[0].isConnected ? me._bs : (me._bs = $$('#cal .zbs')), rt = g.yT - 18 * g.f;
     BS.forEach(function (b, i) {
-      var th = (((i + .5) * D - (me._rq != null ? me._rq : ad * st)) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI, cs = Math.cos(th);
+      var th = (((i + .5) * D - (me._rq != null ? me._rq : ad * st + XR)) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI, cs = Math.cos(th);
       if (cs > -.03) { if (b._v !== 0) { b.style.visibility = 'hidden'; b._v = 0; } return; } if (b._v !== 1) { b.style.visibility = ''; b._v = 1; }
       var w = Math.max(1, R * D * .42 * -cs);
       b.style.transform = 'translate(' + (g.cx + R * Math.sin(th) - w / 2).toFixed(1) + 'px,' + (rt + g.ry * cs + 2).toFixed(1) + 'px) scaleX(' + (w / 4).toFixed(3) + ')';
@@ -3884,7 +3909,7 @@ THEMEFX.picture = {
     if (me._l0 == null || !LG[0] || LG[0]._l0 !== 1) { me._l0 = a; if (LG[0]) LG[0]._l0 = 1; }   // (centred where the drum first comes to rest)
     var my = (g.yS + g.yB) / 2;
     LG.forEach(function (lg) {
-      var q = +lg.dataset.q, k = +lg.dataset.s, th = ((q * Math.PI / 2 - (ad - me._l0) * st + ((k + .5) / 24 - .5) * lw / R) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI, cs = Math.cos(th);
+      var q = +lg.dataset.q, k = +lg.dataset.s, th = ((q * Math.PI / 2 - (ad - me._l0) * st - XR + ((k + .5) / 24 - .5) * lw / R) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI, cs = Math.cos(th);
       if (cs < .06) { if (lg._v !== 0) { lg.style.visibility = 'hidden'; lg._v = 0; } return; } if (lg._v !== 1) { lg.style.visibility = ''; lg._v = 1; }
       lg.style.transform = 'translate(' + (g.cx + R * Math.sin(th)).toFixed(1) + 'px,' + (my + g.ry * cs).toFixed(1) + 'px) translate(-50%,-50%) scaleX(' + cs.toFixed(3) + ')';
       lg.style.opacity = Math.min(1, cs * 1.4).toFixed(2);
