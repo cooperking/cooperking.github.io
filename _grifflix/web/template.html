@@ -3885,7 +3885,8 @@ THEMEFX.picture = { own: true,   // (the month's own days only: John, 10 Nov 202
     me._xs = (me._xs || 0) + d;
     if (!me._push) { var Z0 = me.hr(); me._r0 = Math.round(Z0.rankOf(me._d0 + ((me._xs || .5) - .5) / me.nb())); }
     var P = me._push || (me._push = { v: 0, t: t, last: t }), dt = Math.max(8, t - P.t) / 1000;
-    P.v = P.v * .5 + (d / dt) * .5; P.t = t; P.last = t; P.peak = Math.max(P.peak || 0, Math.abs(px)); if (d) P.dir = d > 0 ? 1 : -1; me._gal = true; me._w = Math.abs(P.v);
+    P.v = P.v * .5 + (d / dt) * .5; P.t = t; P.last = t; P.peak = Math.max(P.peak || 0, Math.abs(px)); if (d) P.dir = d > 0 ? 1 : -1;
+    if (P.peak >= 55) { var v0 = Math.abs(P.v); me._push = null; if (P.raf) cancelAnimationFrame(P.raf); me.bigSpin(P.dir, v0); return; }   // (a big swipe: at once the one long spin, from the swipe's own speed) me._gal = true; me._w = Math.abs(P.v);
     me.draw(me._at);
     if (P.raf) return;
     (function f(tt) {
@@ -3916,21 +3917,21 @@ THEMEFX.picture = { own: true,   // (the month's own days only: John, 10 Nov 202
       dayOf: function (r) { if (!L) return r; if (r <= 0) return H[0] + r; if (r >= L - 1) return H[L - 1] + (r - (L - 1)); var i = Math.floor(r); return H[i] + (H[i + 1] - H[i]) * (r - i); },
       rankOf: function (x) { if (!L) return x; if (x <= H[0]) return x - H[0]; for (var i = 0; i < L - 1; i++) if (x <= H[i + 1]) return i + (x - H[i]) / (H[i + 1] - H[i]); return L - 1 + (x - H[L - 1]); } };
   },
-  bigSpin: function (dir) {
+  bigSpin: function (dir, v0) {
     var me = this, NB = me.nb(), AL = me.all || [], H = []; AL.forEach(function (el, j) { if (el.classList.contains('has')) H.push(j); });
     var L = H.length; if (!L || me._d0 == null) return;
     var dayOf = function (r) { if (r <= 0) return H[0] + r; if (r >= L - 1) return H[L - 1] + (r - (L - 1)); var i = Math.floor(r); return H[i] + (H[i + 1] - H[i]) * (r - i); };
     var rankOf = function (x) { if (x <= H[0]) return x - H[0]; for (var i = 0; i < L - 1; i++) if (x <= H[i + 1]) return i + (x - H[i]) / (H[i + 1] - H[i]); return L - 1 + (x - H[L - 1]); };
     var rs0 = rankOf(me._d0 + ((me._xs || .5) - .5) / NB), r0 = me._r0 != null ? me._r0 : Math.round(rs0), r1 = r0 + dir * (L + 1); while (dir * (r1 - rs0) < 1) r1 += dir * L; var rf = ((r1 % L) + L) % L;   // (from where the swipe began: once round and one on)
-    var T = 3200, t0 = performance.now(), tok = me._gtok = {}; me._bigUntil = t0 + T;
-    var A = .18, B = .6, area = A / 2 + (B - A) + (1 - B) / 2;
-    var pos = function (u) { var x = u <= A ? u * u / (2 * A) : u <= B ? A / 2 + (u - A) : A / 2 + (B - A) + (u - B) - (u - B) * (u - B) / (2 * (1 - B)); return x / area; };
-    var rs = rankOf(me._d0 + ((me._xs || .5) - .5) / NB);
-    me._gal = true;
+    // (one motion: off at the swipe's own speed, slowing evenly all the way round the month, to rest on the next day)
+    var rs = rankOf(me._d0 + ((me._xs || .5) - .5) / NB), S = r1 - rs, vr = Math.max(4, (v0 || 0) / NB);   // (ranks a second)
+    var T = Math.max(2400, Math.min(4200, 2 * Math.abs(S) / vr * 1000)), m = Math.max(.8, Math.min(2.6, vr * T / 1000 / Math.abs(S)));
+    var h = function (u) { return m * u + (3 - 2 * m) * u * u + (m - 2) * u * u * u; }, hd = function (u) { return m + 2 * (3 - 2 * m) * u + 3 * (m - 2) * u * u; };
+    var t0 = performance.now(), tok = me._gtok = {}; me._bigUntil = t0 + T; me._gal = true;
     (function f(t) {
       if (tok !== me._gtok || !$('#zstagef') || me._at == null) return;
-      var u = Math.min(1, (t - t0) / T), v = u <= A ? u / A : u <= B ? 1 : (1 - u) / (1 - B), r = rs + (r1 - rs) * pos(u);
-      me._xs = .5 + (dayOf(r) - me._d0) * NB; me._w = Math.abs(r1 - rs) * NB * v / (area * T / 1000);
+      var u = Math.min(1, (t - t0) / T), r = rs + S * h(u);
+      me._xs = .5 + (dayOf(r) - me._d0) * NB; me._w = Math.abs(S) * NB * hd(u) / (T / 1000);
       if (u >= 1) { me._gal = false; me._w = 0; me._xs = .5 + (H[rf] - me._d0) * NB; me.draw(me._at); if (H[rf] !== me._day) { me._noGal = true; themeShow(H[rf], true); } return; }
       me.draw(me._at); requestAnimationFrame(f);
     })(t0);
