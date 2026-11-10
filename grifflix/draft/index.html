@@ -3917,7 +3917,8 @@ THEMEFX.picture = { own: true,   // (the month's own days only: John, 10 Nov 202
       if (tt - Q.last > 110 && Math.abs(Q.v) < 1.5) {   // (slowing to a stop, it settles with a slit square in front)
         // (coming to rest on the next day it's heading for, always on, never back: John, 10 Nov 2026: "it shouldn't ever reverse to get
         // itself back on track")
-        if (Q.rt == null) { var Z = me.hr(), rc = Z.rankOf(me._d0 + (me._xs - .5) / me.nb()), dq = Q.dir || 1; Q.rt = Math.abs(rc - Math.round(rc)) < .03 ? Math.round(rc) : dq > 0 ? Math.ceil(rc) : Math.floor(rc); for (var g3 = 0; g3 < Z.L && !Z.ok(Q.rt); g3++) Q.rt += dq; Q.Z = Z; }
+        if (Q.rt == null) { var Z = me.hr(), rc = Z.rankOf(me._d0 + (me._xs - .5) / me.nb()), dq = Q.dir || 1; Q.rt = Math.abs(rc - Math.round(rc)) < .03 ? Math.round(rc) : dq > 0 ? Math.ceil(rc) : Math.floor(rc); for (var g3 = 0; g3 < Z.L && !Z.ok(Q.rt); g3++) Q.rt += dq; if (dq > 0 && Q.rt >= Z.L && !Z.ok(Z.L - 1)) { Q.rt = Math.round(rc); while (Q.rt > 0 && !Z.ok(Q.rt)) Q.rt--; }   // (nothing yet after today's: it stays on today's, not on into next month's days to come)
+          Q.Z = Z; }
         var xt = .5 + (Q.Z.dayOf(Q.rt) - me._d0) * me.nb(); Q.v = 0; me._xs += (xt - me._xs) * .16;
         if (Math.abs(xt - me._xs) < .01) { var rf = ((Q.rt % Q.Z.L) + Q.Z.L) % Q.Z.L, dT = Q.Z.H[rf]; me._xs = .5 + (dT - me._d0) * me.nb(); me._push = null; me._gal = false; me._w = 0; me.draw(me._at);
           if (Q.rt < 0 || Q.rt >= Q.Z.L) { me.cross(Q.rt < 0 ? -1 : 1); return; }   // (past the 1st or the last: on into that month's theme)
@@ -3948,7 +3949,7 @@ THEMEFX.picture = { own: true,   // (the month's own days only: John, 10 Nov 202
     var rs0 = rankOf(me._d0 + ((me._xs || .5) - .5) / NB), r0 = me._r0 != null ? me._r0 : Math.round(rs0), r1 = r0 + dir * (L + 1); while (dir * (r1 - rs0) < 1) r1 += dir * L; for (var g2 = 0; g2 < L && !(AL[H[((r1 % L) + L) % L]] || { classList: { contains: function () { return true; } } }).classList.contains('has'); g2++) r1 += dir; var rf = ((r1 % L) + L) % L;   // (onward past days still to come)   // (from where the swipe began: once round and one on)
     // (one motion: off at the swipe's own speed, slowing evenly all the way round the month, to rest on the next day)
     var rs = rankOf(me._d0 + ((me._xs || .5) - .5) / NB), S = r1 - rs, vr = Math.max(4, (v0 || 0) / NB);   // (ranks a second)
-    var T = Math.max(2600, Math.min(4200, 2 * Math.abs(S) / vr * 1000)), m = Math.max(.8, Math.min(2.4, vr * T / 1000 / Math.abs(S)));
+    var T = Math.max(1500, Math.min(2200, 2 * Math.abs(S) / vr * 1000)), m = Math.max(.8, Math.min(2.6, vr * T / 1000 / Math.abs(S)));   // (the film through the month quickly: John, 10 Nov 2026)
     var h = function (u) { return m * u + (3 - 2 * m) * u * u + (m - 2) * u * u * u; }, hd = function (u) { return m + 2 * (3 - 2 * m) * u + 3 * (m - 2) * u * u; };
     // (the film races through the month; the drum turns only at the horse's galloping pace, slowing with it to rest on the day's slit:
     // John, 10 Nov 2026: "the film strip can go just as fast as it should on a big spin, but the zoetrope should just go at galloping horse speed")
