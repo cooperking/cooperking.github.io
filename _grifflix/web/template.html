@@ -1613,7 +1613,7 @@ html.gxown body { transition: background-color 1.8s ease; }
 html.gxown .hinfo .w, html.gxown .hinfo .w > span { color: var(--fg) !important; }
 .zproj, .zlit { position: absolute; pointer-events: none; opacity: 0; transition: opacity 2.4s ease 1s; }
 .zproj { z-index: 6; filter: blur(10px); mix-blend-mode: screen; }
-.zproj i { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255, 246, 226, .16), rgba(255, 244, 222, .07) 50%, rgba(255, 244, 222, .03)), repeating-linear-gradient(97deg, transparent 0 22px, rgba(255, 246, 226, .035) 22px 30px, transparent 30px 61px); }   /* (its dusty rays) */
+.zproj i { position: absolute; inset: 0; background: linear-gradient(calc(var(--ang) + 180deg), rgba(255, 246, 226, .17), rgba(255, 244, 222, .07) 50%, rgba(255, 244, 222, .03)), repeating-linear-gradient(var(--ang), transparent 0 22px, rgba(255, 246, 226, .035) 22px 30px, transparent 30px 61px); }   /* (its dusty rays) */
 .zlit { z-index: 11; background: radial-gradient(60% 75% at var(--lx) 0%, rgba(255, 238, 205, .26), rgba(255, 238, 205, .08) 45%, transparent 75%); mix-blend-mode: screen; -webkit-mask-image: linear-gradient(transparent, #000 14%); mask-image: linear-gradient(transparent, #000 14%); }
 html.gxdim .zproj { opacity: 1; animation: zprojf 4.2s steps(1) infinite 3.4s; } html.gxdim .zlit { opacity: 1; animation: zlitf 4.2s steps(1) infinite 3.4s; }
 @keyframes zprojf { 0% { opacity: 1; } 12% { opacity: .86; } 14% { opacity: 1; } 47% { opacity: .92; } 49% { opacity: 1; } 78% { opacity: .88; } 80% { opacity: 1; } }
@@ -3648,9 +3648,19 @@ THEMEFX.picture = {
     var sl = g.scx - g.sw / 2, st0 = g.sy0;
     // (lights down: the projector's beam from behind and above you to the screen, and the screen's light on the curtains and the drum: John,
     // 10 Nov 2026: "There should be a sense of light projecting onto the screen and light on the zoetrope and curtains")
-    var px = g.scx + (g.mob ? 0 : g.sw * .08), py = -g.sh * (g.mob ? .9 : .6), bx0 = Math.min(px, sl) - 4, bw = Math.max(px, sl + g.sw) - bx0 + 8, bh = st0 + g.sh - py;
-    var P = function (x, y) { return F((x - bx0) / bw * 100) + '% ' + F((y - py) / bh * 100) + '%'; };
-    h += '<div class="zproj" style="left:' + F(bx0) + 'px;top:' + F(py) + 'px;width:' + F(bw) + 'px;height:' + F(bh) + 'px"><i style="clip-path:polygon(' + P(px - 3, py) + ',' + P(px + 3, py) + ',' + P(sl + g.sw, st0) + ',' + P(sl + g.sw, st0 + g.sh) + ',' + P(sl, st0 + g.sh) + ',' + P(sl, st0) + ')"></i></div>';
+    // (the projector off to the right and above, behind you, its beam coming across the room to the screen, not straight down: John,
+    // 10 Nov 2026: "Light can come from across the screen not directly down")
+    var px = g.scx + g.sw * (g.mob ? .95 : 1.05), py = -g.sh * (g.mob ? .7 : .45);
+    var pts = [[px, py - 4], [px, py + 4], [sl, st0], [sl + g.sw, st0], [sl + g.sw, st0 + g.sh], [sl, st0 + g.sh]];
+    var hull = (function (q) {   // (the beam's outline: the lens and the screen's corners, the outside of them)
+      q = q.slice().sort(function (u, v) { return u[0] - v[0] || u[1] - v[1]; });
+      var cr = function (o, u, v) { return (u[0] - o[0]) * (v[1] - o[1]) - (u[1] - o[1]) * (v[0] - o[0]); }, lo = [], hi = [];
+      q.forEach(function (p) { while (lo.length > 1 && cr(lo[lo.length - 2], lo[lo.length - 1], p) <= 0) lo.pop(); lo.push(p); });
+      q.slice().reverse().forEach(function (p) { while (hi.length > 1 && cr(hi[hi.length - 2], hi[hi.length - 1], p) <= 0) hi.pop(); hi.push(p); });
+      return lo.slice(0, -1).concat(hi.slice(0, -1)); })(pts);
+    var bx0 = sl - 4, bw = px - bx0 + 8, by0 = py - 8, bh = st0 + g.sh - by0 + 4;
+    var P = function (x, y) { return F((x - bx0) / bw * 100) + '% ' + F((y - by0) / bh * 100) + '%'; };
+    h += '<div class="zproj" style="left:' + F(bx0) + 'px;top:' + F(by0) + 'px;width:' + F(bw) + 'px;height:' + F(bh) + 'px"><i style="clip-path:polygon(' + hull.map(function (p) { return P(p[0], p[1]); }).join(',') + ');--ang:' + F(Math.atan2(st0 + g.sh / 2 - py, sl + g.sw / 2 - px) * 180 / Math.PI + 90) + 'deg"></i></div>';
     h += '<div class="zlit" style="left:' + F(cx - R) + 'px;top:' + F(g.yT - ry) + 'px;width:' + F(2 * R) + 'px;height:' + F(g.yB - g.yT + 2 * ry) + 'px;--lx:' + F((g.scx - (cx - R)) / (2 * R) * 100) + '%"></div>';
     h += '<div class="zbeam" style="left:' + F(g.scx - g.sw) + 'px;top:' + F(st0 - g.sh * .2) + 'px;width:' + F(g.sw * 2) + 'px;height:' + F(g.sh * 1.9) + 'px"></div>' +
       '<div class="zstagef" id="zstagef" style="left:' + F(sl) + 'px;top:' + F(st0) + 'px;width:' + F(g.sw) + 'px;height:' + F(g.sh) + 'px"><div class="zcin"><i class="zpost on" id="zpost"></i><i class="ztrain" id="ztrain"></i><i class="zflick"></i></div>' +
