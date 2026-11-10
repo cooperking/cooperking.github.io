@@ -650,6 +650,7 @@ html.tv .th-fold .vday:not(.front) { filter: none; opacity: .85; }
 html.tv .th-picture .vday:focus { outline: 0 !important; }
 html[data-theme=picture] .hinfo h2 { color: #e9c46a; }
 html[data-theme=picture] .hinfo .w > span { letter-spacing: -.01em; }
+html[data-theme=picture]:not(.mob) .tinspo { max-width: 760px; white-space: nowrap; } html.mob[data-theme=picture] .tinspo { font-size: 12px !important; letter-spacing: -.005em; }   /* (its three credits on one line) */
 html[data-theme=picture]:not(.mob) .hinfo .w { font-size: min(84px, 5.6vw); } html[data-theme=picture]:not(.mob) .hinfo { top: 50%; bottom: auto; transform: translateY(-46%); width: calc(39vw - 90px); max-width: none; } html[data-theme=picture]:not(.mob) .hinfo .k { white-space: nowrap; letter-spacing: .22em; }   /* (the day's words down the left, beside the screen) */
 html[data-theme=picture] .th-picture .vday.soon .cs, html[data-theme=blank] .vday.soon .cs { text-transform: none; font-style: italic; font-weight: 400; }
 html[data-theme=picture] .leaf2 { border-color: #e9c46a; background: #0b0809; }
@@ -2091,7 +2092,7 @@ var THEMES_LATER = [
   { key: 'lane', mob: [0, 0, 1280, 720], name: 'The Lane', film: 'The Big Lebowski', year: 1998, by: 'the Coen brothers', bg: '#d79e48', ink: '#000', font: '"GF-lane", "Lobster", cursive', tw: 700, tt: 'none' },
   // Grifflix's own, the launch's showcase (John, 9 Nov 2026: "fully reworked - it's the showcase - an exciting launch screen -
   // the way things move and display should be original and creative"): the zoetrope, where moving pictures began
-  { key: 'picture', mob: [0, 0, 1280, 720], name: 'Grifflix', film: 'the zoetrope', year: 1834, by: '', credit: '<i>L’Arrivée d’un train</i> (1896, Lumière)', creditM: 'the Lumières’ <i>train</i> (1896)'   /* (just its name, and the film's credit: John, 9 Nov 2026) */, bg: '#0b0809', ink: '#fff', font: '"Grifflix Display", "Federo", Georgia, serif', tw: 400, tt: 'none' },   /* (Grifflix's own headline face: John, 10 Nov 2026) */
+  { key: 'picture', mob: [0, 0, 1280, 720], name: 'Grifflix', film: 'the zoetrope', year: 1834, by: '', credit: 'Muybridge’s horse (1878) · the Lumières’ <i>train</i> (1896)', creditM: 'Muybridge (1878) · Lumière (1896)'   /* (all three: John, 10 Nov 2026) */   /* (just its name, and the film's credit: John, 9 Nov 2026) */, bg: '#0b0809', ink: '#fff', font: '"Grifflix Display", "Federo", Georgia, serif', tw: 400, tt: 'none' },   /* (Grifflix's own headline face: John, 10 Nov 2026) */
   // The Grand Budapest Hotel (back again: John, 9 Nov 2026): the façade's pink (#f1b1b3), Mendl's box pink and ribbon blue
   // (#f498b5, #6c77b8), the lobby red (#d61302), the gold sign (#e3c183), the bellboy's purple (#5a3d4e); the posters' billing
   // in Archer (Fonts In Use: John's own copy, Arvo till then); the sign hand-lettered (Annie Atkins): Marcellus for it
@@ -3561,7 +3562,8 @@ THEMEFX.picture = {
   decor: function (c) {
     var g = this.g(c), cx = g.cx, R = g.Rv, ry = g.ry, F = function (n) { return (+n).toFixed(1); };
     var arc = function (sw) { return 'A' + F(R) + ' ' + F(ry) + ' 0 0 ' + sw + ' '; };   // (sw 0: left to right by the front; 1: back again)
-    var mk = g.mob ? '' : '-webkit-mask-image:linear-gradient(90deg,transparent ' + F(c.W * .36) + 'px,#000 ' + F(c.W * .47) + 'px);mask-image:linear-gradient(90deg,transparent ' + F(c.W * .36) + 'px,#000 ' + F(c.W * .47) + 'px);';
+    // (its left edge fading into the room, beside the day's words; measured from each layer's own left, so the strip runs the whole drum)
+    var mkAt = function (x0) { if (g.mob) return ''; var a1 = F(c.W * .36 - x0), a2 = F(c.W * .44 - x0); return '-webkit-mask-image:linear-gradient(90deg,transparent ' + a1 + 'px,#000 ' + a2 + 'px);mask-image:linear-gradient(90deg,transparent ' + a1 + 'px,#000 ' + a2 + 'px);'; }, mk = mkAt(cx - R);
     var h = '<div class="zamb" id="zamb"></div><div class="zvig"></div><div class="zgrain"></div>';
     // (the cinema: its screen, lit by the Lumières' L'Arrivée d'un train en gare de La Ciotat (1896, public domain); its curtains)
     var sl = g.scx - g.sw / 2, st0 = g.sy0;
@@ -3577,7 +3579,7 @@ THEMEFX.picture = {
     for (var i = 0; i < NH; i++) h += '<i class="zhs" style="left:' + F(R + (i - (NH - 1) / 2) * hw * 1.25 - hw / 2) + 'px;top:' + F(g.pcy - g.yT - hh / 2) + 'px;width:' + F(hw) + 'px;height:' + F(hh) + 'px;background-size:' + F(hw * 15) + 'px ' + F(hh) + 'px"></i>';
     h += '</div>';
     // (the near wall: its slits, a rim above them, a band below with GRIFFLIX round it)
-    h += '<div class="zfrontw" style="' + mk + '">';
+    h += '<div class="zfrontw" style="' + mkAt(0) + '">';
     for (var k = 0; k < this.NB; k++) h += '<i class="zw" style="height:' + F(g.yS - g.yT) + 'px"></i>';
     h += '<svg class="zdrum" width="' + c.W + '" height="' + c.H + '"><defs><linearGradient id="zlac" x1="0" x2="1"><stop offset="0" stop-color="#121010"/><stop offset="1" stop-color="#121010"/></linearGradient></defs>' +
       '<path fill="url(#zlac)" d="M' + F(cx - R) + ',' + F(g.yT - 18 * g.f) + ' ' + arc(0) + F(cx + R) + ',' + F(g.yT - 18 * g.f) + ' L' + F(cx + R) + ',' + F(g.yT) + ' ' + arc(1) + F(cx - R) + ',' + F(g.yT) + ' Z"/>' +
