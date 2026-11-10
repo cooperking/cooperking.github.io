@@ -1686,7 +1686,7 @@ html.gxproj .th-picture .zcin { box-shadow: 0 0 0 10px #000, 0 0 0 26px #2a2420,
 html[data-theme=picture]:not(.mob) .hinfo { top: calc(var(--zft, 52%) + 48px) !important; transform: none !important; }   /* (the day's words from a fixed line under the film, never moving with the title's length: John, 10 Nov 2026: "Shouldn't jump around") */
 html[data-theme=picture]:not(.mob) .hinfo h2 { font-size: min(34px, 2.4vw) !important; line-height: 1.12 !important; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 html.mob[data-theme=picture] .hinfo h2 { font-size: 22px !important; line-height: 1.15 !important; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-html[data-theme=picture] .zpost::after { inset: 0; background-size: cover; filter: none; }   /* (the wide picture filling the screen) */
+html[data-theme=picture] .zpost { background: #000; } html[data-theme=picture] .zpost::before { display: none; } html[data-theme=picture] .zpost::after { inset: 0; background-size: contain; filter: none; }   /* (the wide picture whole, letterboxed in black, not zoomed: John, 10 Nov 2026) */
 </style>
 <script>/* a computer's screen (wide, with a mouse) or the TV: the whole calendar in the window, as on the songs' site */
 (function () { if (/GRIFFLIXTV\//.test(navigator.userAgent) || /[?&]tv=1(&|$)/.test(location.search)) { var vp = document.querySelector('meta[name=viewport]'); if (vp) vp.setAttribute('content', 'width=1280'); } })();   /* a TV: laid out 1280 wide and shrunk to the screen, as the songs' page is (a Fire Stick's browser is 960 wide: everything came out a third too big) */
