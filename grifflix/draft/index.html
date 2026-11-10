@@ -1684,6 +1684,7 @@ html.gxproj .th-picture .zcin { box-shadow: 0 0 0 10px #000, 0 0 0 26px #2a2420,
 .zfilm { right: 0; }
 .zshad { position: absolute; z-index: 5; pointer-events: none; border-radius: 50%; background: radial-gradient(closest-side, rgba(20, 14, 10, .55), rgba(20, 14, 10, .25) 55%, transparent); filter: blur(4px); }
 html[data-theme=picture]:not(.mob) .hinfo { top: 70% !important; }   /* (the day's words lower: John, 10 Nov 2026) */
+html[data-theme=picture] .zpost::after { inset: 0; background-size: cover; filter: none; }   /* (the wide picture filling the screen) */
 </style>
 <script>/* a computer's screen (wide, with a mouse) or the TV: the whole calendar in the window, as on the songs' site */
 (function () { if (/GRIFFLIXTV\//.test(navigator.userAgent) || /[?&]tv=1(&|$)/.test(location.search)) { var vp = document.querySelector('meta[name=viewport]'); if (vp) vp.setAttribute('content', 'width=1280'); } })();   /* a TV: laid out 1280 wide and shrunk to the screen, as the songs' page is (a Fire Stick's browser is 960 wide: everything came out a third too big) */
@@ -4133,7 +4134,7 @@ THEMEFX.picture = { own: true,   // (the month's own days only: John, 10 Nov 202
   },
   front: function (b) {   // (the room lit by the day's film; its poster on the screen)
     var z = $('#zamb'); if (z && b && b.classList.contains('has')) z.style.backgroundImage = b.style.getPropertyValue('--b');
-    var po = $('#zpost'); if (po && b) po.style.setProperty('--pp', b.classList.contains('has') ? b.style.getPropertyValue('--p') : 'none');
+    var po = $('#zpost'); if (po && b) po.style.setProperty('--pp', b.classList.contains('has') ? (b.style.getPropertyValue('--b') || b.style.getPropertyValue('--p')) : 'none');   // (the wide picture on the screen, as on the film: John, 10 Nov 2026)
   }
 };
 // a month with no theme yet: black, the days a plain row of posters, the day you're on large
