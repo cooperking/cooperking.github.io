@@ -2710,7 +2710,7 @@ function leaderNewDay() {   // (back after a while: away 10 minutes, or a TV lef
   // (never over a film or a trailer, playing or paused: John, 9 Nov 2026: "so long as it doesn't happen if a film is playing")
   var tp = $('#tplayer'); if ((P && P.el && P.el.classList.contains('on')) || (tp && !tp.hidden)) return;
   if (!(leaderNewDay.away && now - leaderNewDay.away > 6e5) && idle < 18e5) return;
-  leaderNewDay.away = 0; window.MACOK = false; macWake(); window.ZLED = 0; THEMEFX.picture.leader(true);
+  leaderNewDay.away = 0; window.MACOK = false; macWake(); window.ZLED = 0; THEMEFX.picture.leader();
 }
 leaderNewDay.act = Date.now();
 addEventListener('keydown', leaderNewDay, true); addEventListener('pointerdown', function () { leaderNewDay.act = Date.now(); }, true);
@@ -3549,6 +3549,11 @@ THEMEFX.picture = {
   // when it get into the station")
   ready: function (c) {
     fxReset(this); this.c = c; var me = this, st = $('#zstagef'); me._lo = window.ZFILMED || CALM ? 0 : 1; if (!st) return;
+    // (the drum spun up as the theme opens, slowing to rest, the horse galloping in its mirrors: John, 10 Nov 2026: "the praxinoscope
+    // needs to spin when it first starts")
+    if (!CALM) { var s0 = 8, D = 3400, t0 = performance.now() + 500, tk = me._stok = {}; me._spin = s0;
+      (function f(t) { if (tk !== me._stok || !$('#zstagef')) { me._spin = 0; return; } var u = Math.max(0, Math.min(1, (t - t0) / D)); me._spin = s0 * Math.pow(1 - u, 3);
+        if (me.all && me._at != null) me.draw(me._at); if (u < 1) requestAnimationFrame(f); else me._spin = 0; })(performance.now()); }
     if (window.ZFILMED || CALM) { st.classList.add('open', 'now'); return; }
     me._intro = true; window.ZFILMED = 1;
     var go = function () {
@@ -3589,8 +3594,11 @@ THEMEFX.picture = {
     var force = asked === true || /[?&]leader=1/.test(location.search);
     if (window.ZLED || $('.zlead') || (!force && CALM)) return; window.ZLED = 1;
     if (!force && /[?&]view=themes/.test(location.search)) return;   // (admin's theme explorer: only its Play the 3 2 1, and it doesn't use up the day's)
-    // (every visit, and whenever they come back after a while, while Grifflix checks in with the Mac: John, 9 Nov 2026: "could the 3 2 1 be
-    // more than once a day - whenever the visitor returns and we need to check in with the mac")
+    // (as Grifflix opens, or they come back, while it checks in with the Mac (John, 9 Nov 2026: "could the 3 2 1 be more than once a day -
+    // whenever the visitor returns and we need to check in with the mac"), but not more than once in three hours ("I think the 3 2 1
+    // thing might be happening too much now"); its Play the 3 2 1 buttons any time)
+    if (!force) { var last = 0; try { last = +localStorage.getItem('grifflix-leader-at') || 0; } catch (e) {} if (Date.now() - last < 3 * 3600e3) return; }
+    try { localStorage.setItem('grifflix-leader-at', String(Date.now())); } catch (e) {}
     var d = document.createElement('div'); d.className = 'zlead'; d.innerHTML = '<div class="zbg"></div><div class="zglow">' + (TV ? '' : this.glow()) + '</div><div class="ring"><i></i></div><div class="n">3</div><div class="gx">Grifflix</div><div class="skip">Tap to skip</div>';
     document.body.appendChild(d); musicHold();
     // (picture and sound on one clock, the sound's: the numbers follow it, so a busy TV can't put them out of step: John, 9 Nov 2026:
@@ -3642,6 +3650,7 @@ THEMEFX.picture = {
   },
   draw: function (a) {
     var me = this, c = me.c, g = me.g(c), st = me.st, R = g.R, ry = g.ry, ty = g.ty, yb = ty + g.Hw, tilt = Math.asin(g.E) * 180 / Math.PI;
+    var ad = a + (me._spin || 0);   // (the drum, with its spin as the theme opens)
     me.all.forEach(function (el, j) {
       var k = j - a, ph = k * st, cs = Math.cos(ph), sn = Math.sin(ph), nf = near(k);
       // (the day's poster, large, below the drum: the next sliding in as the drum turns)
@@ -3655,7 +3664,7 @@ THEMEFX.picture = {
     var sw = 2 * Math.PI * R * .985 / 15, shh = Math.min(g.Hw * .86, sw * 91 / 150 * 1.1);
     me._zst = me._zst && me._zst[0] && me._zst[0].isConnected ? me._zst : $$('#cal .zst');
     me._zst.forEach(function (m, i) {
-      var ph = i * 2 * Math.PI / 15 - a * st, cs = Math.cos(ph), sn = Math.sin(ph);
+      var ph = i * 2 * Math.PI / 15 - ad * st, cs = Math.cos(ph), sn = Math.sin(ph);
       if (cs > -.02) { m.style.visibility = 'hidden'; return; } m.style.visibility = '';
       if (!m._sz) { m._sz = 1; m.style.width = (sw + 1).toFixed(1) + 'px'; m.style.height = shh.toFixed(1) + 'px'; var fw = shh / 1.1 * 150 / 91; m.firstChild.style.width = fw.toFixed(1) + 'px'; m.firstChild.style.height = (shh / 1.1).toFixed(1) + 'px'; m.firstChild.style.backgroundSize = (fw * 15).toFixed(1) + 'px ' + (shh / 1.1).toFixed(1) + 'px'; m.firstChild.style.backgroundPosition = (-i * fw).toFixed(1) + 'px 0'; }
       m.style.transform = 'translate(' + (g.cx + R * .985 * sn).toFixed(1) + 'px,' + (ty + g.Hw / 2 + ry * .985 * cs).toFixed(1) + 'px) translate(-50%,-50%) perspective(' + g.P + 'px) rotateX(' + (-tilt).toFixed(2) + 'deg) rotateY(' + ((ph - Math.PI) * 180 / Math.PI).toFixed(1) + 'deg)';
@@ -3663,10 +3672,10 @@ THEMEFX.picture = {
     });
     // (the mirrors, the horse's frame in each: one frame on as each next mirror comes round and more as it turns, so the horse gallops
     // through its stride as the drum turns a day, and stands when it stops)
-    var NM = me.NM, step = Math.floor(a * 15), fw = g.mw * .9, fh = fw * 91 / 150;
+    var NM = me.NM, step = Math.floor(ad * 15), fw = g.mw * .9, fh = fw * 91 / 150;
     me._zm = me._zm && me._zm[0] && me._zm[0].isConnected ? me._zm : $$('#cal .zm');
     me._zm.forEach(function (m, i) {
-      var ph = i * 2 * Math.PI / NM - a * st, cs = Math.cos(ph), sn = Math.sin(ph);
+      var ph = i * 2 * Math.PI / NM - ad * st, cs = Math.cos(ph), sn = Math.sin(ph);
       if (cs < 0) { m.style.visibility = 'hidden'; return; } m.style.visibility = '';
       if (!m._sz) { m._sz = 1; m.style.width = g.mw.toFixed(1) + 'px'; m.style.height = g.mh.toFixed(1) + 'px'; var t = m.firstChild; t.style.width = fw.toFixed(1) + 'px'; t.style.height = fh.toFixed(1) + 'px'; t.style.backgroundSize = (fw * 15).toFixed(1) + 'px ' + fh.toFixed(1) + 'px'; }
       m.firstChild.style.backgroundPosition = (-(((i + step) % 15 + 15) % 15) * fw).toFixed(1) + 'px 0';
@@ -3677,7 +3686,7 @@ THEMEFX.picture = {
     });
     var LT = me._zl && me._zl[0] && me._zl[0].isConnected ? me._zl : (me._zl = $$('#cal .zlt')), fs = g.Hw * .36;
     LT.forEach(function (t, i, L) {
-      var th = (i - 3.5) / L.length * Math.PI * 2 - a * Math.PI, cs = Math.cos(th), sn = Math.sin(th);
+      var th = (i - 3.5) / L.length * Math.PI * 2 - ad * Math.PI, cs = Math.cos(th), sn = Math.sin(th);
       if (cs < .12 || !t.textContent) { if (t._v !== 0) { t.style.visibility = 'hidden'; t._v = 0; } return; } if (t._v !== 1) { t.style.visibility = ''; t._v = 1; }
       t.style.fontSize = fs.toFixed(1) + 'px';
       // (painted on the band: narrower towards its sides, its lines along the band's curve, upright as the drum's wall: John, 9 Nov 2026:
