@@ -1683,7 +1683,7 @@ html.gxproj .th-picture .zcin { box-shadow: 0 0 0 10px #000, 0 0 0 26px #2a2420,
 .th-picture .vday { transition: filter .4s, opacity .4s !important; }
 .zfilm { right: 0; }
 .zshad { position: absolute; z-index: 5; pointer-events: none; border-radius: 50%; background: radial-gradient(closest-side, rgba(20, 14, 10, .55), rgba(20, 14, 10, .25) 55%, transparent); filter: blur(4px); }
-html[data-theme=picture]:not(.mob) .hinfo { top: 60% !important; }   /* (the day's words lower: John, 10 Nov 2026) */
+html[data-theme=picture]:not(.mob) .hinfo { top: 70% !important; }   /* (the day's words lower: John, 10 Nov 2026) */
 </style>
 <script>/* a computer's screen (wide, with a mouse) or the TV: the whole calendar in the window, as on the songs' site */
 (function () { if (/GRIFFLIXTV\//.test(navigator.userAgent) || /[?&]tv=1(&|$)/.test(location.search)) { var vp = document.querySelector('meta[name=viewport]'); if (vp) vp.setAttribute('content', 'width=1280'); } })();   /* a TV: laid out 1280 wide and shrunk to the screen, as the songs' page is (a Fire Stick's browser is 960 wide: everything came out a third too big) */
@@ -3725,7 +3725,7 @@ THEMEFX.picture = {
     // (the screen brought forward, its foot over the drum's rim; the film strip behind it, through its middle, the days either side showing
     // past its edges: John, 10 Nov 2026: "the film strip can go behind the screen, and the screen can go forward a bit so it's over the drum")
     var fT0 = mob ? 16 : 92 * f, fH = mob ? 132 : 96 * f, sy0 = fT0 + fH + (mob ? 30 : 24 * f), sh = yT - (mob ? 50 : 48 * f) - sy0, sw = Math.min(mob ? 740 : cw, sh * 4 / 3); sh = sw * .75;
-    fH = 212; var fT = sy0 - fH * .2;   // (further down: John, 10 Nov 2026)   // (the strip Cinema Paradiso's own size, passing behind the screen's top, the screen floating above the drum: John, 10 Nov 2026)
+    fH = 212; var fT = sy0 + sh * .12;   // (further down: John, 10 Nov 2026)   // (the strip Cinema Paradiso's own size, passing behind the screen's top, the screen floating above the drum: John, 10 Nov 2026)
     var scx = mob ? 390 : (colL + colR) / 2, cx = scx, Rv = mob ? 378 : Math.min(cw * .5, 420 * f), ry = mob ? 16 : 14 * f;   // (nearly level: only the top of the far side seen: John, 10 Nov 2026)   // (smaller: all of it in view, curving away at both sides)
     var zh = yS - yT, ps = zh * .8 / 255;
     var y0p = yT - 18 * f, ryAt = function (y) { return ry * (1 + .45 * (y - y0p) / (yB - y0p)); };   // (seen from above: the lower the circle, the rounder)
@@ -3872,7 +3872,7 @@ THEMEFX.picture = {
     if (me._day == null || day === me._day) { me._day = day; fxTween(me, at, 600); return; }
     var n = day - me._day; me._day = day;
     if (me._raf) { cancelAnimationFrame(me._raf); me._raf = 0; } me._at = at;
-    me.spinTo(.5 + (day - me._d0) * me.nb(), Math.min(3000, 1300 + 420 * Math.abs(n)));
+    me.spinTo(.5 + (day - me._d0) * me.nb(), Math.min(2200, 900 + 300 * Math.abs(n)));
   },
   // (pushed and pulled by hand, two fingers across a trackpad: the drum turns under them and runs on when let go, slowing; fast
   // enough, the horses gallop, backwards if it's turned backwards: John, 10 Nov 2026: "I should be able to push and pull the zoetrope
@@ -3880,7 +3880,7 @@ THEMEFX.picture = {
   push: function (px) {
     var me = this; if (!me.c || me._at == null || CALM) return; me._gtok = null; if (me._d0 == null) me._d0 = me._day != null ? me._day : me._at;
     // (the faster the fingers, the further each bit of their swipe throws it: a gentle push nudges, a big swipe races the film by: John, 10 Nov 2026)
-    var t = performance.now(), d = px * .02 * (1 + Math.abs(px) / 35);
+    var t = performance.now(), d = px * .035 * (1 + Math.abs(px) / 30);   // (lively: John, 10 Nov 2026: "It's sluggish")
     me._xs = (me._xs || 0) + d;
     var P = me._push || (me._push = { v: 0, t: t, last: t }), dt = Math.max(8, t - P.t) / 1000;
     P.v = P.v * .5 + (d / dt) * .5; P.t = t; P.last = t; me._gal = true; me._w = Math.abs(P.v);
@@ -3889,17 +3889,17 @@ THEMEFX.picture = {
     (function f(tt) {
       var Q = me._push; if (!Q || !$('#zstagef')) { me._gal = false; me._w = 0; if (Q) Q.raf = 0; return; }
       var dt2 = Math.min(.05, (tt - (Q.ft || tt)) / 1000); Q.ft = tt;
-      if (tt - Q.last > 70 && !Q.rel) { Q.rel = 1; var sv = Math.abs(Q.v); Q.v = (Q.v < 0 ? -1 : 1) * Math.min(160, .9 * Math.pow(sv, 1.35)); }   // (let go: a gentle push turns it slowly, only a big swipe brings it up to speed: John, 10 Nov 2026)
+      if (tt - Q.last > 70 && !Q.rel) { Q.rel = 1; var sv = Math.abs(Q.v); Q.v = (Q.v < 0 ? -1 : 1) * Math.min(240, 1.2 * Math.pow(sv, 1.3)); }   // (let go: a gentle push turns it slowly, only a big swipe brings it up to speed: John, 10 Nov 2026)
       if (tt - Q.last <= 70) Q.rel = 0;
-      if (tt - Q.last > 70) { me._xs += Q.v * dt2; Q.v *= Math.exp(-dt2 * (Math.abs(Q.v) > 8 ? .85 : 1.1)); }   // (it runs on, slowing)
+      if (tt - Q.last > 70) { me._xs += Q.v * dt2; Q.v *= Math.exp(-dt2 * (Math.abs(Q.v) > 8 ? .9 : 1.8)); }   // (it runs on, slowing)
       me._w = Math.abs(Q.v);
-      if (tt - Q.last > 70 && Math.abs(Q.v) < .5) {   // (slowing to a stop, it settles with a slit square in front)
+      if (tt - Q.last > 70 && Math.abs(Q.v) < 1.5) {   // (slowing to a stop, it settles with a slit square in front)
         // (coming to rest on a day, the film's picture square behind the screen, the one before it to its left, a slit square under it)
         var NBp = me.nb(), AL = me.all || [], last = Math.max(0, AL.length - 1), want = me._d0 + (me._xs - .5) / NBp, dT = Math.max(0, Math.min(last, Math.round(want)));
         if (AL[dT] && !AL[dT].classList.contains('has')) { var best = -1; AL.forEach(function (el, j) { if (el.classList.contains('has') && (best < 0 || Math.abs(j - want) < Math.abs(best - want))) best = j; }); if (best >= 0) dT = best; }   // (never stopping on a day still to come)
         var tgt = .5 + (dT - me._d0) * NBp;
-        Q.v = 0; me._xs += (tgt - me._xs) * .1;
-        if (Math.abs(tgt - me._xs) < .004) { me._xs = tgt; me._push = null; me._gal = false; me._w = 0; me.draw(me._at);
+        Q.v = 0; me._xs += (tgt - me._xs) * .22;
+        if (Math.abs(tgt - me._xs) < .01) { me._xs = tgt; me._push = null; me._gal = false; me._w = 0; me.draw(me._at);
           if (dT !== me._day && typeof themeShow === 'function') { me._noGal = true; themeShow(dT, true); }
           return; }
       }
