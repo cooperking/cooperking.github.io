@@ -1674,8 +1674,8 @@ html.gxproj .th-picture .zcin { box-shadow: 0 0 0 10px #000, 0 0 0 26px #2a2420,
   background: var(--bulb) left top / 20px 20px repeat-x, var(--bulb) left bottom / 20px 20px repeat-x, var(--bulb) left top / 20px 20px repeat-y, var(--bulb) right top / 20px 20px repeat-y; animation: zbulb 2.4s steps(2) infinite; }
 @keyframes zbulb { 50% { filter: brightness(1.25); } }
 @media (prefers-reduced-motion: reduce) { .th-picture .zstagef::before { animation: none; } }
-.zfilm { position: absolute; left: 0; right: 0; z-index: 2; pointer-events: none; background: linear-gradient(90deg, transparent 0 9px, #f4ecd8 9px 23px, transparent 23px) 0 6px / 32px 11px repeat-x, linear-gradient(90deg, transparent 0 9px, #f4ecd8 9px 23px, transparent 23px) 0 calc(100% - 6px) / 32px 11px repeat-x, #141414; box-shadow: 0 6px 20px rgba(0, 0, 0, .35); }
-.th-picture .vday { width: 150px; height: 66px; background-image: var(--b); background-size: cover; background-position: center; filter: sepia(.7) brightness(.7); transition: transform .9s cubic-bezier(.3, .7, .2, 1), filter .4s, opacity .4s; box-shadow: none; border-radius: 0; z-index: 3; }
+.zfilm { position: absolute; left: 0; right: 0; z-index: 2; pointer-events: none; background: linear-gradient(90deg, transparent 0 9px, #f4ecd8 9px 23px, transparent 23px) 0 9px / 32px 13px repeat-x, linear-gradient(90deg, transparent 0 9px, #f4ecd8 9px 23px, transparent 23px) 0 190px / 32px 13px repeat-x, #141414; box-shadow: 0 6px 20px rgba(0, 0, 0, .35); }
+.th-picture .vday { width: 240px; height: 135px; background-image: var(--b); background-size: cover; background-position: center; filter: sepia(.7) brightness(.7); transition: transform .9s cubic-bezier(.3, .7, .2, 1), filter .4s, opacity .4s; box-shadow: none; border-radius: 0; z-index: 3; }
 .th-picture .vday.front { filter: none; }
 .th-picture .vday .vn, .th-picture .vday .cs { display: none !important; }
 #cal.drag .th-picture .vday { transition: none; }
@@ -3724,7 +3724,7 @@ THEMEFX.picture = {
     // (the screen brought forward, its foot over the drum's rim; the film strip behind it, through its middle, the days either side showing
     // past its edges: John, 10 Nov 2026: "the film strip can go behind the screen, and the screen can go forward a bit so it's over the drum")
     var fT0 = mob ? 16 : 92 * f, fH = mob ? 132 : 96 * f, sy0 = fT0 + fH + (mob ? 30 : 24 * f), sh = yT - (mob ? 50 : 48 * f) - sy0, sw = Math.min(mob ? 740 : cw, sh * 4 / 3); sh = sw * .75;
-    var fT = fT0 + (mob ? 74 : 62 * f);   // (the strip a little lower, passing behind the screen's top, the screen floating above the drum: John, 10 Nov 2026)
+    fH = 212; var fT = sy0 - fH * .55;   // (the strip Cinema Paradiso's own size, passing behind the screen's top, the screen floating above the drum: John, 10 Nov 2026)
     var scx = mob ? 390 : (colL + colR) / 2, cx = scx, Rv = mob ? 378 : Math.min(cw * .5, 420 * f), ry = mob ? 16 : 14 * f;   // (nearly level: only the top of the far side seen: John, 10 Nov 2026)   // (smaller: all of it in view, curving away at both sides)
     var zh = yS - yT, ps = zh * .8 / 255;
     var y0p = yT - 18 * f, ryAt = function (y) { return ry * (1 + .45 * (y - y0p) / (yB - y0p)); };   // (seen from above: the lower the circle, the rounder)
@@ -3808,12 +3808,12 @@ THEMEFX.picture = {
     return A;
   },
   ready: function (c) {
-    fxReset(this); this.c = c; var me = this, st = $('#zstagef'); me._xs = .5; me._push = null; me._lo = window.ZFILMED || CALM ? 0 : 1; if (!st) return;   // (a slit centred under the screen at rest: John, 10 Nov 2026)
+    fxReset(this); this.c = c; var me = this, st = $('#zstagef'); me._xs = .5; me._push = null; me._d0 = null; me._day = null; me._lo = window.ZFILMED || CALM ? 0 : 1; if (!st) return;   // (a slit centred under the screen at rest: John, 10 Nov 2026)
     clearTimeout(window._gxdim); window._gxdim = setTimeout(function () { if ($('#zstagef')) lightsDown(); }, CALM || window.ZFILMED ? 0 : 900);   // (the lights down again: John, 10 Nov 2026: "put the lighting back in")
     // (the drum spun up as the theme opens, slowing to rest, the horse galloping in its mirrors: John, 10 Nov 2026: "the praxinoscope
     // needs to spin when it first starts")
     me._sp = CALM ? 0 : 1; me._la = null;
-    if (!CALM) { setTimeout(function () { if (me._at != null) { me._gprev = me._at; me.gallop(1, 3); } }, 600); var s0 = 0, D = 3400, t0 = performance.now() + 500, tk = me._stok = {}; me._spin = s0;
+    if (!CALM) { setTimeout(function () { if (me._at != null) { if (me._d0 == null) me._d0 = me._at; var xe = .5 + (me._at - me._d0) * me.nb(); me._xs = xe - 2 * me.nb(); me.spinTo(xe, 2400); } }, 600); var s0 = 0, D = 3400, t0 = performance.now() + 500, tk = me._stok = {}; me._spin = s0;
       (function f(t) { if (tk !== me._stok || !$('#zstagef')) { me._spin = 0; return; } var u = Math.max(0, Math.min(1, (t - t0) / D)); me._spin = s0 * Math.pow(1 - u, 3);
         if (me.all && me._at != null) me.draw(me._at); if (u < 1) requestAnimationFrame(f); else me._spin = 0; })(performance.now()); }
     if (window.ZFILMED || CALM) { st.classList.add('open', 'now'); return; }
@@ -3862,17 +3862,22 @@ THEMEFX.picture = {
     // gallops through them, a real zoetrope's effect; four turns, then it stops on the day: John, 10 Nov 2026: "what could we do to
     // get a perfect working zoetrope?")
     var me = this, drag = $('#cal') && $('#cal').classList.contains('drag'), day = Math.round(at);
-    if (me._at == null || drag || Math.abs(at - day) > 1e-3) { if (me._at == null && !drag) me._day = day; fxTween(me, at, drag ? 300 : 1100); return; }
+    // (the drum and the film one machine: a whole turn of the drum a frame of the film; a day's change turns it round to that day, the film
+    // running with it: John, 10 Nov 2026: "I want the motion to work the same as the drum, movement moves both")
+    if (me._noGal) { me._noGal = false; me._day = day; me._at = at; me.draw(at); return; }
+    if (me._at == null) { me._day = day; me._d0 = at; me._xs = .5; fxTween(me, at, 600); return; }
+    if (me._d0 == null) me._d0 = me._day != null ? me._day : at;
+    if (drag || Math.abs(at - day) > 1e-3) { me._push = null; me._gtok = null; me._xs = .5 + (at - me._d0) * me.nb(); me._at = at; me.draw(at); return; }
     if (me._day == null || day === me._day) { me._day = day; fxTween(me, at, 600); return; }
-    var dir = day > me._day ? 1 : -1; me._gprev = me._day; me._day = day;
+    var n = day - me._day; me._day = day;
     if (me._raf) { cancelAnimationFrame(me._raf); me._raf = 0; } me._at = at;
-    me.gallop(dir, 4);
+    me.spinTo(.5 + (day - me._d0) * me.nb(), Math.min(3000, 1300 + 420 * Math.abs(n)));
   },
   // (pushed and pulled by hand, two fingers across a trackpad: the drum turns under them and runs on when let go, slowing; fast
   // enough, the horses gallop, backwards if it's turned backwards: John, 10 Nov 2026: "I should be able to push and pull the zoetrope
   // with my track pad")
   push: function (px) {
-    var me = this; if (!me.c || me._at == null || CALM) return; me._gtok = null;
+    var me = this; if (!me.c || me._at == null || CALM) return; me._gtok = null; if (me._d0 == null) me._d0 = me._day != null ? me._day : me._at;
     var g = me.g(me.c), per = g.Rv * 2 * Math.PI / me.nb(), t = performance.now(), d = px / per * .6;
     me._xs = (me._xs || 0) + d;
     var P = me._push || (me._push = { v: 0, t: t, last: t }), dt = Math.max(8, t - P.t) / 1000;
@@ -3887,26 +3892,29 @@ THEMEFX.picture = {
       if (tt - Q.last > 70) { me._xs += Q.v * dt2; Q.v *= Math.exp(-dt2 * (Math.abs(Q.v) > 8 ? .7 : 1.1)); }   // (it runs on, slowing)
       me._w = Math.abs(Q.v);
       if (tt - Q.last > 70 && Math.abs(Q.v) < .5) {   // (slowing to a stop, it settles with a slit square in front)
-        Q.v = 0; var tgt = Math.round(me._xs - .5) + .5; me._xs += (tgt - me._xs) * .12;   // (coming to rest with a slit square under the screen)
-        if (Math.abs(tgt - me._xs) < .004) { me._xs = tgt; me._push = null; me._gal = false; me._w = 0; me.draw(me._at); return; }
+        // (coming to rest on a day, the film's picture square behind the screen, the one before it to its left, a slit square under it)
+        var NBp = me.nb(), last = Math.max(0, (me.all || []).length - 1), dT = Math.max(0, Math.min(last, Math.round(me._d0 + (me._xs - .5) / NBp))), tgt = .5 + (dT - me._d0) * NBp;
+        Q.v = 0; me._xs += (tgt - me._xs) * .1;
+        if (Math.abs(tgt - me._xs) < .004) { me._xs = tgt; me._push = null; me._gal = false; me._w = 0; me.draw(me._at);
+          if (dT !== me._day && typeof themeShow === 'function') { me._noGal = true; themeShow(dT, true); }
+          return; }
       }
       me.draw(me._at); Q.raf = requestAnimationFrame(f);
     })(t);
   },
-  gallop: function (dir, turns) {
-    // (a real spin: it speeds up, runs, slows to a stop on the day, never in step with the slits, so the drum is seen to whirl;
-    // fast, its wall blurs to a veil and the horses inside hold their places and gallop, as the eye sees a zoetrope: John, 10 Nov
-    // 2026: "the spinning is being faked again")
-    var me = this, NB = me.nb(), S = NB * turns + .37, T = 2600, t0 = performance.now(), tok = me._gtok = {}, A = .22, B = .62, area = A / 2 + (B - A) + (1 - B) / 2;
-    if (CALM) { me._xs = 0; me._gal = false; me._w = 0; me.draw(me._at); return; }
+  spinTo: function (x1, T) {
+    // (a real spin to x1: it speeds up, runs, slows to a stop, never in step with the slits, so the drum is seen to whirl; fast, its
+    // wall blurs to a veil and the horses inside hold their places and gallop, as the eye sees a zoetrope)
+    var me = this, t0 = performance.now(), tok = me._gtok = {}, A = .22, B = .62, area = A / 2 + (B - A) + (1 - B) / 2, x0 = me._xs || 0, S = x1 - x0;
+    if (CALM || !S) { me._xs = x1; me._gal = false; me._w = 0; me.draw(me._at); return; }
     var pos = function (u) { var x = u <= A ? u * u / (2 * A) : u <= B ? A / 2 + (u - A) : A / 2 + (B - A) + (u - B) - (u - B) * (u - B) / (2 * (1 - B)); return x / area; };
-    var x0 = me._xs || 0; me._push = null; me._gal = true; me._xs = x0 - dir * S; me._w = 0; me._gx0 = x0; me._gdir = dir; me._gS = S; if (me._gprev == null) me._gprev = me._tgt;
+    me._push = null; me._gal = true; me._w = 0;
     (function f(t) {
-      if (tok !== me._gtok || !$('#zstagef') || me._at == null) { if (tok === me._gtok) { me._gal = false; me._xs = x0; me._w = 0; } return; }
+      if (tok !== me._gtok || !$('#zstagef') || me._at == null) { if (tok === me._gtok) { me._gal = false; me._xs = x1; me._w = 0; } return; }
       var u = Math.min(1, (t - t0) / T), v = u <= A ? u / A : u <= B ? 1 : (1 - u) / (1 - B);
-      me._w = S * v / (area * T / 1000);   // (slits a second)
-      if (u >= 1) { me._gal = false; me._xs = x0; me._w = 0; me.draw(me._at); return; }
-      me._xs = x0 - dir * S * (1 - pos(u)); me.draw(me._at); requestAnimationFrame(f);
+      me._w = Math.abs(S) * v / (area * T / 1000);   // (slits a second)
+      if (u >= 1) { me._gal = false; me._xs = x1; me._w = 0; me.draw(me._at); return; }
+      me._xs = x0 + S * pos(u); me.draw(me._at); requestAnimationFrame(f);
     })(t0);
   },
   draw: function (a) {
@@ -3921,13 +3929,13 @@ THEMEFX.picture = {
     // (the days along the film strip behind the screen, the day you're on behind it, the ones before and after showing either side; it runs
     // with the drum, speeding up and slowing with it, as a change of day spins it: John, 10 Nov 2026: "It should move like the zoetrope
     // does, showing the previous film next to the screen")
-    var fy = g.fT + g.fH / 2, fs = g.fH / 96 * (g.mob ? .78 : 1), fw = 150 * fs, f1 = g.sw / 2 + 30 * g.f + fw / 2, f2 = 168 * fs, tgt = me._tgt != null ? me._tgt : a, pos = a;
+    var fy = g.fT + g.fH / 2, fs = 1, fw = 240, f2 = 262, f1 = Math.max(f2, g.sw / 2 + 30 * g.f + fw / 2), tgt = me._tgt != null ? me._tgt : a, pos = a;
     var off = function (k) { var ak = Math.abs(k); return (k < 0 ? -1 : 1) * (ak <= 1 ? ak * f1 : f1 + (ak - 1) * f2); };   // (the day's behind the screen, the ones either side just past its edges, the rest along the strip)
-    if (me._gal && me._gS) { var pr = 1 - (me._xs - me._gx0) / (-me._gdir * me._gS); pos = me._gprev + (tgt - me._gprev) * Math.max(0, Math.min(1, pr)); }
+    if (me._d0 != null) pos = me._d0 + ((me._xs || .5) - .5) / NB;   // (the film where the drum has turned it)
     (me.all || []).forEach(function (el, j) {
       var k = j - pos, x = g.scx + off(k), l = g.colL - (x - fw / 2);
       vAt(el, x, fy, fs, 0, Math.abs(k) > 12 ? 0 : 1, Math.abs(k) < .5 ? 4 : 3);
-      el.style.clipPath = l > 0 ? 'inset(0 0 0 ' + Math.min(150, l / fs).toFixed(1) + 'px)' : '';
+      el.style.clipPath = l > 0 ? 'inset(0 0 0 ' + Math.min(240, l / fs).toFixed(1) + 'px)' : '';
     });
     var ZF = me._zf && me._zf.isConnected ? me._zf : (me._zf = $('#zfilm')); if (ZF) ZF.style.backgroundPositionX = (-off(pos) ).toFixed(1) + 'px';
     // (the horse, galloping in place as the drum turns, flickering as each slit goes by; standing when it stops)
