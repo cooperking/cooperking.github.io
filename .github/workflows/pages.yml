@@ -1,0 +1,68 @@
+name: Publish the site
+
+# Builds the site with Jekyll (the same build GitHub Pages ran from the branch) and publishes it to GitHub Pages.
+# Starts on a push to main, when a workflow that pushes to main finishes, and by hand or from another workflow.
+# One publish runs at a time: a newer start replaces one still waiting, never one already running.
+on:
+  push:
+    branches: [main]
+    paths-ignore: ["_sotd/**", "_grifflix/**", "_tvapp/**", ".github/**"]
+  workflow_run:
+    workflows:   # every workflow that pushes to main
+      - Android app check
+      - Android app
+      - Song report
+      - Essentia raw outputs
+      - Song facts signed off
+      - Put the draft live
+      - Grifflix Android app
+      - Grifflix data
+      - Grifflix live
+      - Grifflix Fire TV app
+      - "iPhone app, public link"
+      - Video report
+      - Song moods and genres
+      - Fire TV app check
+      - Fire TV app
+      - Find official videos
+      - Widgets check
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main   # the newest commit on main when this run starts
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./
+          destination: ./_site
+
+      - uses: actions/upload-pages-artifact@v3   # keeps folders starting with a dot (.well-known)
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

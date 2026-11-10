@@ -121,8 +121,9 @@ def main():
         'trackTagsFrom': COUNTS,
         'problems': ERRORS,
     }
-    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'lastfm-status.json'), 'w') as f:
-        json.dump(status, f, indent=1)
+    if not os.environ.get('SOTD_JOHN_ONLY'):   # John's songs only: lastfm-status.json is left as it is
+        with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'lastfm-status.json'), 'w') as f:
+            json.dump(status, f, indent=1)
     print(status)
 
 

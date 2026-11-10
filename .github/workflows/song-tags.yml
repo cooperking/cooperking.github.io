@@ -46,6 +46,11 @@ jobs:
       group: song-tags-john
       cancel-in-progress: false
     timeout-minutes: 30
+    permissions:
+      contents: write
+      actions: write   # starts Publish the site
+    env:
+      SOTD_JOHN_ONLY: "1"   # lastfm.py and make_tags.py leave the Last.fm status and the agreement figures as they are
     steps:
       - uses: actions/checkout@v4
         with:
@@ -143,14 +148,21 @@ jobs:
           python _sotd/share_pages.py
 
       - name: Save changes
+        id: save
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
           git add -A _sotd/data songs
           if git diff --cached --quiet; then echo "nothing changed"; exit 0; fi
           git commit -m "Song moods and genres: John's songs first"
-          for i in 1 2 3; do git pull --rebase -X theirs --quiet || { git rebase --abort 2>/dev/null; false; } && git push && exit 0; sleep 5; done   # (where both jobs changed the same lines: John's own commit kept)
+          for i in 1 2 3; do git pull --rebase -X theirs --quiet || { git rebase --abort 2>/dev/null; false; } && git push && { echo "pushed=1" >> "$GITHUB_OUTPUT"; exit 0; }; sleep 5; done   # (where both jobs changed the same lines: John's own commit kept)
           exit 1
+
+      - name: Publish the site now
+        if: ${{ steps.save.outputs.pushed == '1' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run pages.yml --ref main
 
       - name: Ask Claude for the new songs' facts
         env:

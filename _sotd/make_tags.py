@@ -336,6 +336,18 @@ def main():
         stats['voices %d' % len(voices)] += 1
         stats['listeners ' + rec['listeners']] += 1
 
+    agreement = {
+        'about': "For songs Claude knows: how often the three strongest moods from Last.fm listeners' track tags, "
+                 "from the artist's Last.fm tags, and from the audio models include Claude's first pick.",
+        'listeners': [stats['listeners back Claude'], stats['listeners heard']],
+        'audio': [stats['audio backs Claude'], stats['audio heard']],
+        'artistTags': [stats['artist tags back Claude'], stats['artist tags heard']],
+        'songsWithListenerTags': stats['listener tags'],
+        'songsWithListenerMoodTags': stats['listener mood tags'],
+        'songsWhereListenersCount': stats['listener mood tags strong enough'],
+    }
+    if os.environ.get('SOTD_JOHN_ONLY'):   # John's songs only: the agreement already in the file is kept
+        agreement = load(OUT, {}).get('agreement', agreement)
     tags = {
         'about': ("Moods and broad genres for each song on John's Song of the Day. Each song gets up to two of ten moods, "
                   "weighed up from Claude's picks (songs Claude knows or has read about, sound and lyrics), Last.fm listener tags, and "
@@ -344,16 +356,7 @@ def main():
                   "Last.fm listeners' tags back the first mood; check = nothing firmer than a guess or the audio "
                   "models, or listeners and audio both disagree with Claude. Genres come from MusicBrainz, Last.fm and Essentia's Discogs styles. John's "
                   "corrections from the admin page always win."),
-        'agreement': {
-            'about': "For songs Claude knows: how often the three strongest moods from Last.fm listeners' track tags, "
-                     "from the artist's Last.fm tags, and from the audio models include Claude's first pick.",
-            'listeners': [stats['listeners back Claude'], stats['listeners heard']],
-            'audio': [stats['audio backs Claude'], stats['audio heard']],
-            'artistTags': [stats['artist tags back Claude'], stats['artist tags heard']],
-            'songsWithListenerTags': stats['listener tags'],
-            'songsWithListenerMoodTags': stats['listener mood tags'],
-            'songsWhereListenersCount': stats['listener mood tags strong enough'],
-        },
+        'agreement': agreement,
         'moods': MOODS, 'moodInfo': MOOD_INFO, 'genres': GENRES, 'songs': out,
     }
     with open(OUT, 'w', encoding='utf-8') as f:
