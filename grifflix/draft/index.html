@@ -1645,9 +1645,14 @@ html .zlogo.zol, html.gxown .zlogo.zol { background: none !important; -webkit-ma
 .zstripc { position: absolute; left: 0; top: 0; pointer-events: none; overflow: visible; } .zstripc polygon { fill: var(--gx-strip, #f3e8d2); }
 .zbsl { position: absolute; left: 0; top: 0; z-index: 1; width: 4px; background: #050406; pointer-events: none; transform-origin: 0 0; }
 .zpaper .zhs { left: 0; top: 0; transform-origin: 50% 50%; }
-html .th-picture .zw, html.gxown .th-picture .zw { background-color: #0b0a0c !important; }   /* (the zoetrope black, outside: John, 10 Nov 2026: "the zoetrope can be black") */
-html .th-picture .zfrontw svg path[fill], html.gxown .th-picture .zfrontw svg path[fill] { fill: #0b0a0c !important; }
-.th-picture .ztop .zinb { fill: #070608; }
+/* (the zoetrope black lacquer, but seen: lighter where it faces you, darker as it turns away, its edges catching the screen's light:
+   John, 10 Nov 2026: "it needs to be done subtly and look real") */
+html .th-picture .zw, html.gxown .th-picture .zw { background-color: #242022 !important; box-shadow: inset 0 1px 0 rgba(255, 244, 226, .16), inset 0 -14px 18px -6px rgba(0, 0, 0, .55), inset 1px 0 0 rgba(255, 244, 226, .07), inset -1px 0 0 rgba(0, 0, 0, .6); }
+html .th-picture .zw::after, html.gxown .th-picture .zw::after { opacity: var(--dk, 0) !important; }
+html .th-picture .zfrontw svg path[fill], html.gxown .th-picture .zfrontw svg path[fill] { fill: url(#zlac) !important; }
+html .th-picture .zfrontw .zrim, html.gxown .th-picture .zfrontw .zrim { opacity: 1 !important; stroke: rgba(255, 244, 226, .2); stroke-width: 1.1; }
+.th-picture .ztop .zinb { fill: #0a090b; } .th-picture .ztop .zbrim { stroke: rgba(255, 244, 226, .3); }
+.th-picture .zbs, .th-picture .zbsl { background: #020203; }
 </style>
 <script>/* a computer's screen (wide, with a mouse) or the TV: the whole calendar in the window, as on the songs' site */
 (function () { if (/GRIFFLIXTV\//.test(navigator.userAgent) || /[?&]tv=1(&|$)/.test(location.search)) { var vp = document.querySelector('meta[name=viewport]'); if (vp) vp.setAttribute('content', 'width=1280'); } })();   /* a TV: laid out 1280 wide and shrunk to the screen, as the songs' page is (a Fire Stick's browser is 960 wide: everything came out a third too big) */
@@ -3734,7 +3739,7 @@ THEMEFX.picture = {
     h += '<div class="zfrontw" style="' + mkAt(0) + '">';
     var NB = this.nb(c), PWd = R * 2 * Math.PI / NB * .58;
     for (var k = 0; k < NB; k++) h += '<i class="zw" style="width:' + F(PWd) + 'px;height:' + F(g.yS - g.yT) + 'px"></i>';
-    h += '<svg class="zdrum" width="' + c.W + '" height="' + c.H + '"><defs><linearGradient id="zlac" x1="0" x2="1"><stop offset="0" stop-color="#121010"/><stop offset="1" stop-color="#121010"/></linearGradient></defs>' +
+    h += '<svg class="zdrum" width="' + c.W + '" height="' + c.H + '"><defs><linearGradient id="zlac" x1="0" x2="1"><stop offset="0" stop-color="#070607"/><stop offset=".18" stop-color="#131113"/><stop offset=".5" stop-color="#262224"/><stop offset=".82" stop-color="#131113"/><stop offset="1" stop-color="#070607"/></linearGradient></defs>' +
       '<path fill="url(#zlac)" d="M' + F(cx - R) + ',' + F(g.yT - 18 * g.f) + ' ' + arc(0) + F(cx + R) + ',' + F(g.yT - 18 * g.f) + ' L' + F(cx + R) + ',' + F(g.yT) + ' ' + arc(1) + F(cx - R) + ',' + F(g.yT) + ' Z"/>' +
       '<path fill="url(#zlac)" d="M' + F(cx - R) + ',' + F(g.yS) + ' ' + arc(0) + F(cx + R) + ',' + F(g.yS) + ' L' + F(cx + R) + ',' + F(g.yB) + ' ' + arc(1) + F(cx - R) + ',' + F(g.yB) + ' Z"/>' +
       ['yT18', 'yT', 'yS', 'yB'].map(function (k) { var y = k === 'yT18' ? g.yT - 18 * g.f : g[k]; return '<path class="zrim" d="M' + F(cx - R) + ',' + F(y) + ' ' + arc(0) + F(cx + R) + ',' + F(y) + '"/>'; }).join('') + '</svg>';
