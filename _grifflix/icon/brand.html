@@ -8,6 +8,7 @@ html, body { margin: 0; background: transparent; }
 .bar { position: absolute; left: 30%; right: 30%; bottom: 17%; height: 18px; background: #f08a4b; }
 #i.m .g { font-size: 230px; -webkit-text-stroke-width: 8px; margin-top: -8px; } #i.m .bar { left: 35%; right: 35%; bottom: 27%; height: 13px; }
 #i.f .t { font-size: 54px; letter-spacing: .3em; text-indent: .3em; -webkit-text-stroke-width: 2.6px; margin-top: -24px; } #i.f .bar { left: 15%; right: 15%; bottom: auto; top: 60%; height: 10px; }
+#i.f::before, #i.f::after { content: ""; position: absolute; top: 0; bottom: 0; width: 14px; background: #f08a4b; } #i.f::before { left: 0; } #i.f::after { right: 0; }   /* (a sideloaded Fire TV shows the square in a wider tile: orange down its sides, so it looks meant: John, 11 Nov 2026) */
 #i.b { width: 1280px; height: 720px; } #i.b .t { font-size: 124px; letter-spacing: .3em; text-indent: .3em; -webkit-text-stroke-width: 4.5px; margin-top: -40px; } #i.b .bar { left: 22%; right: 22%; bottom: auto; top: 61%; height: 14px; }
 </style></head><body><div id="i"></div><script>
 const q = new URLSearchParams(location.search), k = q.get('k') || 'sq', i = document.getElementById('i');
