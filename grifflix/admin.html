@@ -199,6 +199,44 @@ body.tdragging { user-select: none; -webkit-user-select: none; }
 @media (max-width: 420px) { .tabs { gap: 3px; } .tabs button { padding: 0 4px; font-size: 10.5px; letter-spacing: .06em; } }
 .cards > [data-tab]:not(.tabon) { display: none; }
 </style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&display=swap">
+<style>
+/* Grifflix's own branding, as the site: poster blue, cream ink, the soft orange; Futura for the words in capitals, Caslon to read,
+   GRIFFLIX see-through with a cream line round each letter (John, 10 Nov 2026: "admin page to look like the proper branding").
+   Over the month's colours the page used to take (!important: those are set on the page itself) */
+:root {
+  --bg: #173a5e !important; --g1: #173a5e !important; --g2: #173a5e !important; --g3: #173a5e !important; --g4: #173a5e !important;
+  --ink: rgb(243, 232, 210) !important; --ink-2: rgba(243, 232, 210, .82) !important;
+  --glass: rgba(6, 18, 32, .22) !important; --glass-2: rgba(6, 18, 32, .34) !important; --glass-line: rgba(243, 232, 210, .28) !important;
+  --fg: rgb(243, 232, 210) !important; --fg-2: rgba(243, 232, 210, .92) !important; --muted: rgba(243, 232, 210, .68) !important; --faint: rgba(243, 232, 210, .5) !important;
+  --line: rgba(243, 232, 210, .2) !important; --chip: rgba(243, 232, 210, .06) !important; --tile: rgba(6, 18, 32, .26) !important; --field: rgba(6, 18, 32, .3) !important;
+  --ok: #9ad9a8 !important; --warn: #f08a4b !important; --accent: #f08a4b !important;
+  --serif: "Libre Caslon Text", "Iowan Old Style", Georgia, serif !important;
+  --sans: "GFutura", "Futura PT", "Futura", "Jost", "Century Gothic", sans-serif !important;
+  color-scheme: dark;
+}
+html, body { background: #173a5e !important; }
+.glow { display: none !important; }
+.card { background: #1e4670 !important; color: var(--fg-2); box-shadow: 0 18px 50px rgba(4, 12, 24, .35) !important; border: 1px solid rgba(243, 232, 210, .08); }
+.card h2 { color: var(--fg) !important; }
+.card h2 em, h1 em, .bar .name em { color: #f08a4b; }
+h1, .top h1, .bar .name { color: transparent !important; -webkit-text-stroke: .045em rgb(243, 232, 210); paint-order: stroke fill; }
+h1 em, .bar .name em { -webkit-text-stroke: 0; }
+.bar .name { -webkit-text-stroke-width: 1px; }
+.btn { color: var(--fg); border-color: var(--line); }
+.btn:hover { border-color: rgb(243, 232, 210); }
+.btn.primary, .thxfmt button.on, .tyears button.on { background: #f08a4b !important; border-color: #f08a4b !important; color: #12304f !important; }
+.seg button[aria-pressed="true"], .tabs button.on, .tabs button[aria-selected="true"] { background: rgb(243, 232, 210) !important; color: #173a5e !important; }
+.card input, .card textarea, .card select, .prefedit select { background: var(--field) !important; color: var(--fg) !important; border-color: var(--line) !important; }
+.card input::placeholder, .card textarea::placeholder { color: var(--faint); }
+.toast { background: rgb(243, 232, 210) !important; color: #173a5e !important; }
+.fs.ok { color: #9ad9a8 !important; } .fs.no, .tmonths .warn { color: #f2b36d !important; }
+.ttile.over { box-shadow: inset 0 0 0 4px rgb(243, 232, 210), 0 0 0 3px #9ad9a8 !important; }
+.ttile.pick { box-shadow: inset 0 0 0 3px rgb(243, 232, 210), 0 0 0 2px #f08a4b !important; }
+a { color: #f2b36d; }
+@media (max-width: 560px) { .tabs button { letter-spacing: .03em !important; font-size: 10px !important; padding: 0 3px !important; } }
+</style>
+<script>document.addEventListener('DOMContentLoaded', function () { var tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.content = '#173a5e'; });</script>
 </head>
 <body>
 <div class="glow"></div>
