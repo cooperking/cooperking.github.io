@@ -2599,6 +2599,7 @@ function seeded(n) { var x = Math.sin(n * 9301 + 49297) * 233280; return x - Mat
 function vAt(el, x, y, s, r, o, z) {
   el.style.transform = 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px) translate(-50%,-50%) scale(' + (s == null ? 1 : +s.toFixed(3)) + ')' + (r ? ' rotate(' + r.toFixed(1) + 'deg)' : '');
   el.style.opacity = o == null ? 1 : o; el.style.zIndex = z == null ? 1 : z;
+  el.style.pointerEvents = o != null && o < .3 ? 'none' : '';   // (a day faded out takes no taps: it lay over the others, and a tap opened it: John, 10 Nov 2026)
 }
 function near(k) { return Math.max(0, 1 - Math.abs(k)); }   // (1 for the day you're on, 0 a day or more away)
 // ---- the months' music (John, 9 Nov 2026: "Can we get thirty second sound clips with each theme ... Grifflix theme should have
