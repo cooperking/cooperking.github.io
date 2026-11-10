@@ -3724,12 +3724,12 @@ THEMEFX.picture = {
     h += '<div class="zback" style="' + mk + 'left:' + F(cx - R) + 'px;top:' + F(g.yT) + 'px;width:' + F(2 * R) + 'px;height:' + F(g.yS - g.yT + 2 * ry) + 'px"></div>';
     // (Muybridge's horse (The Horse in Motion, 1878), big, in front of the films going by)
     // (the strip: black figures on its paper, a frame apart, as Muybridge's horse on a zoetrope's strip; smaller: John, 10 Nov 2026)
-    var hh = (g.yS - g.yT) * .3, hw = hh * 150 / 91, NH = Math.ceil(2 * R / (hw * 1.25)) | 1;
+    var hh = (g.yS - g.yT) * .46, hw = hh * 150 / 91, NH = Math.ceil(2 * R / (hw * 1.25)) | 1;
     h += '<div class="zpaper" id="zpaper" style="' + mk + 'left:' + F(cx - R) + 'px;top:' + F(g.yT) + 'px;width:' + F(2 * R) + 'px;height:' + F(g.yS - g.yT + 2 * ry) + 'px">';
     // (the horses on the far wall's strip, one to each slit, round its curve: smaller towards the sides, the middle furthest back and
     // highest (John, 10 Nov 2026: "Horses are working as a 2 D strip ... rather than appearing on the 3D drum"); they stay where they
     // are as it turns, galloping, as a zoetrope's horse is seen)
-    var NBh = this.nb(c), Dh = 2 * Math.PI / NBh; hw = Math.min(hw, R * Dh * .92); hh = hw * 91 / 150;
+    var NBh = this.nb(c), Dh = 2 * Math.PI / NBh; hw = Math.min(hw, R * Dh * 1.0); hh = hw * 91 / 150;   // (bigger horses, narrower slits: John, 10 Nov 2026)
     // (the paper strip round the far wall: curving, higher and narrower in the middle where it's furthest away)
     var pc = g.pcy - g.yT + ry * .35, cv = ry * 1.05, sk = function (ca) { return .78 + .22 * (1 - ca); }, top = [], bot = [];
     for (var j = 0; j <= 48; j++) { var aa = -Math.PI / 2 + j / 48 * Math.PI, c2 = Math.cos(aa), xx = R + R * Math.sin(aa), hb = hh * .72 * sk(c2);
@@ -3928,7 +3928,7 @@ THEMEFX.picture = {
     // are just 2D rectangles. They don't join up with the drum. The back ones don't have the illusion of being a hole either")
     (function () {
       var NS = $('#znear'), FS = $('#zfar'); if (!NS || !FS) return;
-      var rotN = ad * st + XR, cx = g.cx, ry = g.ry, yT = g.yT, yS = g.yS, half = D * .29, th2 = R * .018, F2 = function (n) { return n.toFixed(1); };
+      var rotN = ad * st + XR, cx = g.cx, ry = g.ry, yT = g.yT, yS = g.yS, half = D * .385, th2 = R * .018, F2 = function (n) { return n.toFixed(1); };
       var P = function (t, y0) { return F2(cx + R * Math.sin(t)) + ',' + F2(y0 + ry * Math.cos(t)); };
       var edge = function (a0, a1, y0, y1) { var n = 10, pts = [], j; for (j = 0; j <= n; j++) pts.push(P(a0 + (a1 - a0) * j / n, y0)); for (j = n; j >= 0; j--) pts.push(P(a0 + (a1 - a0) * j / n, y1)); return 'M' + pts.join('L') + 'Z'; };
       var sh = function (c) { var k = Math.max(0, Math.min(1, c)), r = Math.round(13 + 30 * k), gg = Math.round(12 + 26 * k), b = Math.round(13 + 28 * k); return 'rgb(' + r + ',' + gg + ',' + b + ')'; };
@@ -3944,7 +3944,7 @@ THEMEFX.picture = {
         // (the far wall's slit, a hole: dark through to the room, its cut edge lit on the side facing you)
         var fm = (((i + .5) * D - rotN) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI, cf = Math.cos(fm);
         if (cf < -.04) {
-          var fw = D * .21, b0 = fm - fw, b1 = fm + fw;
+          var fw = D * .11, b0 = fm - fw, b1 = fm + fw;
           hf += '<path d="' + edge(b0, b1, yT, yS) + '" fill="#030304"/>';
           var cut = fm > 0 ? b0 : b1, cw = .012 + .02 * Math.abs(Math.sin(fm));
           hf += '<path d="' + edge(fm > 0 ? cut : cut - cw, fm > 0 ? cut + cw : cut, yT, yS) + '" fill="rgba(120,108,92,.55)"/>';
