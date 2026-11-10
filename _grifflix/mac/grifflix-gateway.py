@@ -1137,6 +1137,32 @@ def make_handler(g):
                         o['days'][d] = {'secret': True}
             return o
 
+        def api_unrepeat(self, me, user, q, b):
+            """John's: no film on Movie of the Day twice, the days gone by too. Each film on more than one day keeps the
+            1st of the month whose theme it is (the admin page sends those, keep), and its other days get films not yet on
+            the calendar, by motd-fill.py's own rules (John, 10 Nov 2026: "there are still repeats in the films - I thought
+            moving the themes about was meant to get rid of them?"). Update everything then puts them on the site."""
+            if not me.get('owner'):
+                return self.send_json(403, {'error': 'Only John.'})
+            keep = [str(d) for d in (b.get('keep') or []) if re.match(r'^\d{4}-\d\d-01$', str(d))]
+            script = os.path.expanduser('~/Grifflix/motd-fill.py')
+            if not os.path.exists(script):
+                return self.send_json(404, {'error': 'Movie of the Day’s file isn’t on the Mac yet.'})
+            import subprocess
+            try:
+                r = subprocess.run([sys.executable, script, '--unrepeat', '--all', '--keep', ','.join(keep), 'go'], capture_output=True,
+                                   text=True, timeout=900, stdin=subprocess.DEVNULL, cwd=os.path.expanduser('~/Grifflix'))
+            except subprocess.TimeoutExpired:
+                return self.send_json(504, {'error': 'Finding the repeated films took too long.'})
+            out = (r.stdout or '') + (r.stderr or '')
+            m = re.search(r'(\d+) repeated day', out)
+            if r.returncode != 0 and not m:
+                log('Unrepeat failed:', out[-800:])
+                return self.send_json(500, {'error': 'The Mac couldn’t sort out the repeated films.'})
+            n = int(m.group(1)) if m else 0
+            log('Unrepeat: %d day%s given a new film' % (n, '' if n == 1 else 's'))
+            self.send_json(200, {'ok': True, 'fixed': n})
+
         def api_calendars(self, me, user, q, b):
             out = []
             for cid, c in g.store.d['calendars'].items():

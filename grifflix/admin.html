@@ -525,7 +525,8 @@ body.tdragging { user-select: none; -webkit-user-select: none; }
     var b = this, say = function (t) { b.textContent = t; }, done = [];
     if (!armed) { armed = setTimeout(function () { armed = 0; summary(); }, 4000); say(WAIT.page || WAIT.themes ? 'Tap again: the draft goes live for everyone' : 'Tap again to update everything'); return; }
     clearTimeout(armed); armed = 0; b.disabled = true;
-    stepMac(say).then(function (m) { if (m) done.push(m); return stepData(say, false); })
+    stepMac(say).then(function (m) { if (m) done.push(m); return unrepeat(say).then(function (u) { if (u) done.push(u + ' repeated day' + (u === 1 ? '' : 's') + ' given a new film'); }, function () {}); })
+      .then(function () { return stepData(say, false); })
       .then(function (d) { if (d) done.push(d); return stepThemes(say); })
       .then(function (t) { if (t) done.push(t); return stepPublish(say); })
       .then(function (p) { if (p) done.push(p); b.disabled = false; summary(); toast(done.join(' · ') || 'Everything was up to date'); })
@@ -851,16 +852,26 @@ body.tdragging { user-select: none; -webkit-user-select: none; }
       tmDraw(); rqDraw();
     }).catch(function () { $('#tspare').innerHTML = '<p class="stat">The site’s films couldn’t be read just now.</p>'; });
   }
-  function firstsJobs(MM, ORDER) {   // (each month's 1st from the calendar's start to a year ahead, its theme's film where it hasn't it)
+  function firstsJobs(MM, ORDER, every) {   // (each month's 1st from the calendar's start to a year ahead, its theme's film where it hasn't it; every: all of them)
     var ks = Object.keys(TD).sort(), start = ks.length ? ks[0].slice(0, 7) : '2025-12', y = +start.slice(0, 4), m = +start.slice(5, 7) - 1, now = new Date(), end = new Date(now.getFullYear() + 1, now.getMonth(), 1), out = [], L = ORDER.length;
     Object.keys(MM).forEach(function (k) { if (k < start) { start = k; } }); y = +start.slice(0, 4); m = +start.slice(5, 7) - 1;
     for (; new Date(y, m, 1) <= end; m++) {
       if (m > 11) { m = 0; y++; }
       var ymk = y + '-' + String(m + 1).padStart(2, '0'), i = (y - 2026) * 12 + m, k = MM[ymk] || (ymk >= BLANKFROM ? null : ORDER[((i % L) + L) % L]);
       var date = ymk + '-01', j = k && firstJob(k, date), was = TD[date];
-      if (j && !(was && was.id === j.item)) out.push(j);
+      if (j && (every || !(was && was.id === j.item))) out.push(j);
     }
     return out;
+  }
+  // (no film twice, the days gone by too: the Mac gives a repeated film's other days new films, keeping the 1st of the month whose
+  // theme it is; John, 10 Nov 2026: "there are still repeats in the films - I thought moving the themes about was meant to get rid of them?")
+  function unrepeat(say) {
+    if (!GW || !TD) return Promise.resolve(0);
+    if (say) say('Looking for films on twice…');
+    var keep = firstsJobs(GMONTHS, GORDER, true).map(function (j) { return j.date; });
+    return fetch(GW + '/api/unrepeat', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify({ keep: keep }) })
+      .then(function (r) { if (r.status === 404) return { fixed: 0 }; return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || 'The Mac said no.'); return j; }); })
+      .then(function (j) { return j.fixed || 0; });
   }
   function filmState(k, m) {   // a theme's film: in Grifflix or not, and (in a month) on its next 1st or not
     if (!TL_ || !(k in TID) || k === 'picture') return '';   // (Grifflix's own theme: no one film)
@@ -1125,7 +1136,7 @@ body.tdragging { user-select: none; -webkit-user-select: none; }
       tmDraft(j);
       var want = jobs.filter(function (x) { return x.ext; }).map(function (x) { return { name: x.ext.name, year: x.ext.year, why: 'Theme film for ' + monLabel(x.date) }; });
       if (want.length) rqAdd(want).catch(function () {});
-      return putFirsts(jobs, function (t) { b.textContent = 'Films on their 1sts: ' + t; }).then(function (n) { toast('Saved' + (n ? ', and ' + n + ' film' + (n === 1 ? '' : 's') + ' put on ' + (n === 1 ? 'its' : 'their') + ' 1st' + (n === 1 ? '' : 's') : '') + ': Update everything puts it live'); tmDraw(); },
+      return putFirsts(jobs, function (t) { b.textContent = 'Films on their 1sts: ' + t; }).then(function (n) { return unrepeat(function (t) { b.textContent = t; }).catch(function () { return 0; }).then(function (u) { toast('Saved' + (n ? ', and ' + n + ' film' + (n === 1 ? '' : 's') + ' put on ' + (n === 1 ? 'its' : 'their') + ' 1st' + (n === 1 ? '' : 's') : '') + (u ? '; ' + u + ' repeated day' + (u === 1 ? '' : 's') + ' given a new film' : '') + ': Update everything puts it live'); tmDraw(); }); },
         function (e) { toast('Themes saved; the films for the 1sts weren’t: ' + e.message); tmDraw(); });
     })
       .catch(function (e) { b.disabled = false; b.textContent = 'Save the themes'; toast(e.message || 'Not saved'); });
