@@ -1,5 +1,13 @@
 # Grifflix's icon
 
+**Now (10 Nov 2026): `brand.html`.** In Grifflix's own branding, poster blue with the logo's see-through Futura in cream
+and the orange line (John chose B, E and TV from the options): the square icons a G over the orange line (the site's,
+the phone's home screen, the iPhone and Android apps, the browser tab, rounded); the Fire TV app's icon GRIFFLIX in full
+over the line; its banner the same, wide. With `fonts/futura-bold-webfont.woff2` in place, `node render-brand.js` makes
+every size at once into the site, `ios-app/` and `tvapp/res/`.
+
+Before that:
+
 **Now (8 Nov 2026): `futura.html`.** GRIFFLIX in Futura Bold, spaced as on the site, with the twelve monthly themes'
 colours under it, on black: on a sideloaded Fire Stick the square icon is shown in a wider space, so its black melts
 into the black around it (John's choice). Futura isn't on GitHub: copy `futura-bold-webfont.woff2` (John's, uploaded in
