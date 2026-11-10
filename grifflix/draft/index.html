@@ -2199,8 +2199,10 @@ function monthTint(m) {   // the month's theme's one flat colour, and its ink: b
   if (!dim) store.set('grifflix-lastbg', t.bg); R.background = t.bg;   // (the next load opens in it, lights up)
   var tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.content = t.bg;
 }
+window.addEventListener('resize', function () { setTimeout(zBeamFit, 120); });
 function gxLights() { monthTint(S.month ? +S.month.slice(5, 7) - 1 : new Date().getMonth()); }
 function lightsDown() {   // the zoetrope's theme, open: the house lights dim
+  zBeamFit();
   GXDIM = true; monthTint(S.month ? +S.month.slice(5, 7) - 1 : new Date().getMonth());
 }
 monthTint(new Date().getMonth());
@@ -2591,6 +2593,7 @@ function hallInfo(b) {   // the day you're on, in words: its day large (as The S
   var top = '<div class="w">' + leafOf(d) + '<span data-t="' + DOWL[d.getDay()] + '">' + DOWL[d.getDay()] + '</span></div><div class="k">' + d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear() + (S.calData.id === 'motd' ? ' · Movie of the Day' : '') + '</div>';
   if (!it || it.secret) { c.innerHTML = top + '<h2>Coming soon</h2><div class="y">' + (it ? 'Revealed at 8am on the day' : '') + '</div>'; return; }
   c.innerHTML = top + '<h2>' + esc(showName(it)) + '</h2><div class="y">' + [it.year, it.mins ? it.mins + ' minutes' : ''].filter(Boolean).join(' · ') + '</div>' + (note ? '<div class="n">“' + esc(note) + '”</div>' : '');
+  requestAnimationFrame(zBeamFit); if (document.fonts) document.fonts.ready.then(zBeamFit);
 }
 // the table (November): the month round a table (Dr. Strangelove's War Room), black and white, the day you're on at the front
 function drawTable(C, n, m, mine) {
@@ -3620,6 +3623,26 @@ function zstand(cx, y0, R, ry, maxY) {   // (the zoetrope's turned oak pedestal,
   // (kept below the drum's front edge: the drum's inside isn't covered)
   return '<clipPath id="zstclip"><path d="M' + F(cx - R * 1.2) + ',' + F(y0) + ' L' + F(cx - R) + ',' + F(y0) + ' A' + F(R) + ' ' + F(ry) + ' 0 0 0 ' + F(cx + R) + ',' + F(y0) + ' L' + F(cx + R * 1.2) + ',' + F(y0) + ' L' + F(cx + R * 1.2) + ',' + F(maxY + 200) + ' L' + F(cx - R * 1.2) + ',' + F(maxY + 200) + ' Z"/></clipPath><g clip-path="url(#zstclip)">' + h + '</g>';
 }
+// the projector's beam, from the day's film title to the screen (John, 10 Nov 2026: "Angle should be from the title to the screen"):
+// measured where they are, each day and size
+function zBeamFit() {
+  var pj = $('#zproj'), st = $('#zstagef'), t = $('.hinfo h2'); if (!pj || !st || !t || !pj.offsetParent) return;
+  var o = pj.offsetParent.getBoundingClientRect(), sr = st.getBoundingClientRect(), rg = document.createRange(); rg.selectNodeContents(t);
+  var tr = rg.getBoundingClientRect(); if (!tr.width) tr = t.getBoundingClientRect();
+  var k = o.width / (pj.offsetParent.offsetWidth || o.width) || 1, X = function (x) { return (x - o.left) / k; }, Y = function (y) { return (y - o.top) / k; };   // (a phone's stage is drawn scaled)
+  var sl = X(sr.left), st0 = Y(sr.top), sw = sr.width / k, sh = sr.height / k, below = tr.top > sr.bottom;
+  var px = below ? X(tr.left + tr.width / 2) : X(tr.right + 10), py = below ? Y(tr.top - 6) : Y(tr.top + tr.height / 2);
+  var pts = [[px, py - 3], [px, py + 3], [px - 3, py], [px + 3, py], [sl, st0], [sl + sw, st0], [sl + sw, st0 + sh], [sl, st0 + sh]];
+  pts.sort(function (u, v) { return u[0] - v[0] || u[1] - v[1]; });
+  var cr = function (q, u, v) { return (u[0] - q[0]) * (v[1] - q[1]) - (u[1] - q[1]) * (v[0] - q[0]); }, lo = [], hi = [];
+  pts.forEach(function (p) { while (lo.length > 1 && cr(lo[lo.length - 2], lo[lo.length - 1], p) <= 0) lo.pop(); lo.push(p); });
+  pts.slice().reverse().forEach(function (p) { while (hi.length > 1 && cr(hi[hi.length - 2], hi[hi.length - 1], p) <= 0) hi.pop(); hi.push(p); });
+  var hull = lo.slice(0, -1).concat(hi.slice(0, -1));
+  var x0 = Math.min(px, sl) - 6, y0 = Math.min(py, st0) - 6, w = Math.max(px, sl + sw) - x0 + 6, h = Math.max(py, st0 + sh) - y0 + 6;
+  pj.style.cssText = 'left:' + x0.toFixed(1) + 'px;top:' + y0.toFixed(1) + 'px;width:' + w.toFixed(1) + 'px;height:' + h.toFixed(1) + 'px';
+  var i = pj.firstChild; i.style.clipPath = 'polygon(' + hull.map(function (p) { return ((p[0] - x0) / w * 100).toFixed(2) + '% ' + ((p[1] - y0) / h * 100).toFixed(2) + '%'; }).join(',') + ')';
+  i.style.setProperty('--ang', (Math.atan2(st0 + sh / 2 - py, sl + sw / 2 - px) * 180 / Math.PI + 90).toFixed(1) + 'deg');
+}
 THEMEFX.picture = {
   // (Grifflix's own: a cinema, the Lumières' train arriving on its screen and then the day's poster; below it, the view through a
   // zoetrope's slits, up close (John, 10 Nov 2026: "I actually wanted to keep the cinema screen but have a view more like you have made
@@ -3648,19 +3671,7 @@ THEMEFX.picture = {
     var sl = g.scx - g.sw / 2, st0 = g.sy0;
     // (lights down: the projector's beam from behind and above you to the screen, and the screen's light on the curtains and the drum: John,
     // 10 Nov 2026: "There should be a sense of light projecting onto the screen and light on the zoetrope and curtains")
-    // (the projector off to the right and above, behind you, its beam coming across the room to the screen, not straight down: John,
-    // 10 Nov 2026: "Light can come from across the screen not directly down")
-    var px = g.scx + g.sw * (g.mob ? .95 : 1.05), py = -g.sh * (g.mob ? .7 : .45);
-    var pts = [[px, py - 4], [px, py + 4], [sl, st0], [sl + g.sw, st0], [sl + g.sw, st0 + g.sh], [sl, st0 + g.sh]];
-    var hull = (function (q) {   // (the beam's outline: the lens and the screen's corners, the outside of them)
-      q = q.slice().sort(function (u, v) { return u[0] - v[0] || u[1] - v[1]; });
-      var cr = function (o, u, v) { return (u[0] - o[0]) * (v[1] - o[1]) - (u[1] - o[1]) * (v[0] - o[0]); }, lo = [], hi = [];
-      q.forEach(function (p) { while (lo.length > 1 && cr(lo[lo.length - 2], lo[lo.length - 1], p) <= 0) lo.pop(); lo.push(p); });
-      q.slice().reverse().forEach(function (p) { while (hi.length > 1 && cr(hi[hi.length - 2], hi[hi.length - 1], p) <= 0) hi.pop(); hi.push(p); });
-      return lo.slice(0, -1).concat(hi.slice(0, -1)); })(pts);
-    var bx0 = sl - 4, bw = px - bx0 + 8, by0 = py - 8, bh = st0 + g.sh - by0 + 4;
-    var P = function (x, y) { return F((x - bx0) / bw * 100) + '% ' + F((y - by0) / bh * 100) + '%'; };
-    h += '<div class="zproj" style="left:' + F(bx0) + 'px;top:' + F(by0) + 'px;width:' + F(bw) + 'px;height:' + F(bh) + 'px"><i style="clip-path:polygon(' + hull.map(function (p) { return P(p[0], p[1]); }).join(',') + ');--ang:' + F(Math.atan2(st0 + g.sh / 2 - py, sl + g.sw / 2 - px) * 180 / Math.PI + 90) + 'deg"></i></div>';
+    h += '<div class="zproj" id="zproj"><i></i></div>';   // (drawn to fit, from the film's title: zBeamFit)
     h += '<div class="zlit" style="left:' + F(cx - R) + 'px;top:' + F(g.yT - ry) + 'px;width:' + F(2 * R) + 'px;height:' + F(g.yB - g.yT + 2 * ry) + 'px;--lx:' + F((g.scx - (cx - R)) / (2 * R) * 100) + '%"></div>';
     h += '<div class="zbeam" style="left:' + F(g.scx - g.sw) + 'px;top:' + F(st0 - g.sh * .2) + 'px;width:' + F(g.sw * 2) + 'px;height:' + F(g.sh * 1.9) + 'px"></div>' +
       '<div class="zstagef" id="zstagef" style="left:' + F(sl) + 'px;top:' + F(st0) + 'px;width:' + F(g.sw) + 'px;height:' + F(g.sh) + 'px"><div class="zcin"><i class="zpost on" id="zpost"></i><i class="ztrain" id="ztrain"></i><i class="zflick"></i></div>' +
