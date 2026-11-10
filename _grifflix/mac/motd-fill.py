@@ -18,6 +18,10 @@ in English").
   python3 motd-fill.py --unrepeat (go)   a film on more than one day still to come (a month's theme film put on its 1st
                                          when it was already on another day): the other days given new films, the 1st kept
                                          (John, 9 Nov 2026: "The playlist shouldn't have repeated films")
+  python3 motd-fill.py --unrepeat --all --keep 2026-05-01,2026-08-01 (go)   the days gone by too, and the days given (the
+                                         months' theme 1sts) kept first: the admin page runs this through the gateway when the
+                                         themes are saved and on Update everything (John, 10 Nov 2026: "there are still repeats
+                                         in the films - I thought moving the themes about was meant to get rid of them?")
 
 The whole calendar is read from this Mac's own copy (the days still to come too), so no film is put on a second day.
 """
@@ -30,6 +34,8 @@ JF = s.get('jellyfin', 'http://127.0.0.1:8096')
 GW = 'http://127.0.0.1:%s' % s.get('port', 8097)
 GO = 'go' in sys.argv[1:]
 UNREPEAT = '--unrepeat' in sys.argv[1:]
+ALL = '--all' in sys.argv[1:]   # (with --unrepeat: the days gone by too, not only those still to come)
+KEEP = set(next((sys.argv[k + 1] for k, a in enumerate(sys.argv[:-1]) if a == '--keep'), '').split(',')) - {''}
 REDO = '--redo' in sys.argv[1:]   # deal every day from 1 December 2025 to --to again, from scratch (the days already chosen too)
 START = datetime.date(2025, 12, 1)
 TODAY = datetime.date.today()
@@ -139,10 +145,11 @@ if UNREPEAT:   # the days still to come whose film is on another day too: given 
     for k, ds in seen.items():
         if len(ds) < 2:
             continue
-        keep = next((d for d in ds if d.endswith('-01')), ds[0])
-        again += [d for d in ds if d != keep and d > TODAY.isoformat()]
+        # (kept: the 1st of the month whose theme it is, else a 1st, else the first day it was on)
+        keep = next((d for d in ds if d in KEEP), None) or next((d for d in ds if d.endswith('-01')), ds[0])
+        again += [d for d in ds if d != keep and (ALL or d > TODAY.isoformat())]
     open_days = sorted(datetime.date.fromisoformat(d) for d in again)
-    print('%d days still to come have a film that is on another day too.' % len(open_days))
+    print('%d days %shave a film that is on another day too.' % (len(open_days), '' if ALL else 'still to come '))
 
 dad_ids = {g(x, 'Id') for c in dads for x in held[g(c, 'Id')]}
 # Dad's favourites: every one, whatever its language or length (John, 7 Nov 2026: "the exception to all English language
