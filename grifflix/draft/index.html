@@ -3673,7 +3673,7 @@ THEMEFX.picture = {
   // zoetrope's slits, up close (John, 10 Nov 2026: "I actually wanted to keep the cinema screen but have a view more like you have made
   // below it - have both - but the posters scroll by behind the horse. Horse can be bigger behind the slits"): the slits sweep past as
   // the drum turns, Muybridge's horse galloping big behind them, flickering as each slit goes by, the month's films going by behind it)
-  NB: 22,
+  NB: 15,   // (15 slits: one for each of the horse's 15 frames, a whole stride to a turn: John, 10 Nov 2026)
   nb: function () { return this.NB; },   // (22 slits, as before: John, 10 Nov 2026: "You don't actually need as many slits as months - have the same amount as before")
   g: function (c) {
     var mob = c.mob, f = mob ? 1 : Math.min(1, c.H / 900);
@@ -3729,7 +3729,7 @@ THEMEFX.picture = {
     for (var kb = 0, NBb = this.nb(c); kb < NBb; kb++) h += '<i class="zbs" style="height:' + F(ry * .9) + 'px"></i>';
     // (the near wall: its slits, a rim above them, a band below with GRIFFLIX round it)
     h += '<div class="zfrontw" style="' + mkAt(0) + '">';
-    var NB = this.nb(c), PWd = R * 2 * Math.PI / NB * .82;
+    var NB = this.nb(c), PWd = R * 2 * Math.PI / NB * .7;
     for (var k = 0; k < NB; k++) h += '<i class="zw" style="width:' + F(PWd) + 'px;height:' + F(g.yS - g.yT) + 'px"></i>';
     h += '<svg class="zdrum" width="' + c.W + '" height="' + c.H + '"><defs><linearGradient id="zlac" x1="0" x2="1"><stop offset="0" stop-color="#121010"/><stop offset="1" stop-color="#121010"/></linearGradient></defs>' +
       '<path fill="url(#zlac)" d="M' + F(cx - R) + ',' + F(g.yT - 18 * g.f) + ' ' + arc(0) + F(cx + R) + ',' + F(g.yT - 18 * g.f) + ' L' + F(cx + R) + ',' + F(g.yT) + ' ' + arc(1) + F(cx - R) + ',' + F(g.yT) + ' Z"/>' +
@@ -3849,7 +3849,7 @@ THEMEFX.picture = {
           var n = Math.floor(k * 15 / NB) % 15; if (hz._n !== n) { hz._n = n; hz.style.backgroundPosition = (-n * Z.hw).toFixed(1) + 'px 0'; } }
         var bl = BL[k]; if (!bl) return; var tb = ang((k + .5) * D - rq), cb = -Math.cos(tb);
         if (cb < .03) { if (bl._v !== 0) { bl.style.visibility = 'hidden'; bl._v = 0; } return; } if (bl._v !== 1) { bl.style.visibility = ''; bl._v = 1; }
-        var bw = Math.max(1, R0 * D * .16 * cb), bot = Z.pc - Z.cv * cb + Z.hh * .9 * skf(cb);
+        var bw = Math.max(1, R0 * D * .3 * cb), bot = Z.pc - Z.cv * cb + Z.hh * .9 * skf(cb);
         bl.style.transform = 'translate(' + (R0 + R0 * Math.sin(tb) - bw / 2).toFixed(1) + 'px,0) scaleX(' + (bw / 4).toFixed(3) + ')'; bl.style.height = Math.max(0, bot).toFixed(1) + 'px';
       });
       me._rq = rq;
@@ -3866,7 +3866,7 @@ THEMEFX.picture = {
         var key = (el ? el.dataset.day || el.dataset.n : '') + '|' + pu; if (b._pu !== key) { b._pu = key; b.style.backgroundImage = pu && pu !== 'none' ? pu : 'none'; b.dataset.n = el && !(pu && pu !== 'none') ? (el.dataset.n || '') : ''; }
       }
       if (cs < .04) { if (b._v !== 0) { b.style.visibility = 'hidden'; b._v = 0; } return; } if (b._v !== 1) { b.style.visibility = ''; b._v = 1; }
-      var x0 = R * Math.sin(th - D * .41), x1 = R * Math.sin(th + D * .41);   // (the panels, the slits between them)
+      var x0 = R * Math.sin(th - D * .35), x1 = R * Math.sin(th + D * .35);   // (the panels, and the wider slits between them to see through: John, 10 Nov 2026)
       var pw0 = parseFloat(b.style.width) || 10;
       b.style.transform = 'translate(' + (g.cx + x0).toFixed(1) + 'px,' + (g.yT + g.ry * cs).toFixed(1) + 'px) scaleX(' + ((x1 - x0) / pw0).toFixed(3) + ')';
       b.style.setProperty('--dk', Math.min(.85, .9 * (1 - cs)).toFixed(2)); if (b._wo !== wo) { b._wo = wo; b.style.opacity = wo; }
@@ -3876,7 +3876,7 @@ THEMEFX.picture = {
     BS.forEach(function (b, i) {
       var th = (((i + .5) * D - (me._rq != null ? me._rq : ad * st)) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI, cs = Math.cos(th);
       if (cs > -.03) { if (b._v !== 0) { b.style.visibility = 'hidden'; b._v = 0; } return; } if (b._v !== 1) { b.style.visibility = ''; b._v = 1; }
-      var w = Math.max(1, R * D * .16 * -cs);
+      var w = Math.max(1, R * D * .3 * -cs);
       b.style.transform = 'translate(' + (g.cx + R * Math.sin(th) - w / 2).toFixed(1) + 'px,' + (rt + g.ry * cs + 2).toFixed(1) + 'px) scaleX(' + (w / 4).toFixed(3) + ')';
     });
     // (the logo round the band below the slits, turning with them, centred at rest)
