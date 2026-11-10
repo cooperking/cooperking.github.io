@@ -588,16 +588,16 @@ html.tv .th-lane .vday:focus { outline: 0 !important; box-shadow: 0 0 0 4px #1a1
 .zfrontw .zdrum { z-index: 2; }
 .zlogo { position: absolute; left: 0; top: 0; z-index: 3; background: #f2ece0; -webkit-mask: var(--gx-mark) center / contain no-repeat; mask: var(--gx-mark) center / contain no-repeat; will-change: transform; }
 .zfrontw .zrim { fill: none; stroke: #cfc6b4; stroke-width: 1.6; opacity: .55; }
-.th-picture .zback, .th-picture .zpaper, .th-picture .zfrontw { filter: grayscale(1); }
 /* Grifflix's own: the zoetrope. The room lit by the day's film; the month's posters round a spinning drum, GRIFFLIX round its rim */
 .zamb { position: absolute; inset: -60px; background: #0b0809 center / cover; filter: blur(70px) saturate(1.4) brightness(.42); transition: background-image .9s ease; }
 .zvig { position: absolute; inset: 0; background: radial-gradient(ellipse at 62% 46%, transparent 25%, rgba(11, 8, 9, .82) 72%), linear-gradient(transparent 70%, rgba(11, 8, 9, .9)); }
 .zgrain { position: absolute; inset: 0; opacity: .07; pointer-events: none; background: repeating-radial-gradient(circle at 17% 32%, #fff 0 .6px, transparent 1px 3px), repeating-radial-gradient(circle at 71% 63%, #fff 0 .5px, transparent 1px 4px); animation: zgrain .4s steps(3) infinite; }
 @keyframes zgrain { 33% { transform: translate(-6px, 4px); } 66% { transform: translate(5px, -3px); } }
 .zdrum { position: absolute; left: 0; top: 0; pointer-events: none; overflow: visible; }
-.th-picture .zdrum, .th-picture .zst, .th-picture .zm, .th-picture .zlt, .th-picture .zcurt, .th-picture .ztrain { filter: grayscale(1); }   /* (the cinema and praxinoscope in black and white, the day's poster as it is: John, 9 Nov 2026) */
-.th-picture .zamb { filter: blur(70px) grayscale(1) brightness(.42); }
-html.tv .th-picture .zamb { filter: blur(18px) grayscale(1) brightness(.42); }
+.th-picture .zcurt { filter: saturate(.85) brightness(.82) contrast(.88); }   /* (colour again, the curtains' velvet matt, not shiny: John, 10 Nov 2026) */
+/* (was black and white: the cinema and praxinoscope in black and white, the day's poster as it is: John, 9 Nov 2026) */
+.th-picture .zamb { filter: blur(70px) saturate(1.4) brightness(.42); }
+html.tv .th-picture .zamb { filter: blur(18px) saturate(1.4) brightness(.42); }
 .zstagef { position: absolute; }
 .zstagef .zcin { inset: 0; }
 .zpost { position: absolute; inset: 0; opacity: 0; overflow: hidden; background: #0c0b0a; transition: opacity 1.4s ease; }
@@ -608,7 +608,7 @@ html.tv .th-picture .zamb { filter: blur(18px) grayscale(1) brightness(.42); }
 .zpost.on { opacity: 1; } .zpost.now, .zstagef.now .zcurt { transition: none; }
 .zcurt { position: absolute; top: -7%; bottom: -3%; width: 53%; z-index: 3; pointer-events: none; background: #3a0508 url("/grifflix/img/cinema-curtain.webp") 0 0 / 100% 100%; box-shadow: 0 10px 30px rgba(0, 0, 0, .6); transition: transform 2.2s cubic-bezier(.6, .02, .25, 1); }   /* (red velvet: John, 9 Nov 2026: "curtain looks like a cartoon") */
 .zcurt.l { left: -2%; transform-origin: 0 0; } .zcurt.r { right: -2%; transform-origin: 100% 0; background-position: 100% 0; background-size: 180% 100%; }
-.zcurt::after { content: ""; position: absolute; inset: 0; background: linear-gradient(rgba(0, 0, 0, .55), transparent 18%, transparent 80%, rgba(0, 0, 0, .35)); }
+.zcurt::after { content: ""; position: absolute; inset: 0; background: linear-gradient(rgba(0, 0, 0, .55), transparent 18%, transparent 80%, rgba(0, 0, 0, .35)), rgba(40, 4, 8, .28); mix-blend-mode: multiply; }   /* (velvet's deep, soft red: no satin highlights) */
 .zstagef.open .zcurt { transform: scaleX(.16); }   /* (drawn back to the sides, gathered) */
 .zcin { position: absolute; background: #0c0b0a; box-shadow: 0 0 0 3px #141414, 0 0 0 5px rgba(205, 205, 205, .45), 0 0 60px 10px rgba(235, 230, 215, .10); overflow: hidden; }   /* (the cinema's screen, gilt-edged) */
 .zcin video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: sepia(.18) contrast(1.06) brightness(.92); }
@@ -650,7 +650,7 @@ html.tv .th-fold .vday:not(.front) { filter: none; opacity: .85; }
 html.tv .th-picture .vday:focus { outline: 0 !important; }
 html[data-theme=picture] .hinfo h2 { color: #e9c46a; }
 html[data-theme=picture] .hinfo .w > span { letter-spacing: -.01em; }
-html[data-theme=picture]:not(.mob) .hinfo .w { font-size: min(84px, 5.2vw); } html[data-theme=picture]:not(.mob) .hinfo { max-width: calc(100vw - 2 * min(400px, 24vw) - 200px); }
+html[data-theme=picture]:not(.mob) .hinfo .w { font-size: min(84px, 5.6vw); } html[data-theme=picture]:not(.mob) .hinfo { top: 50%; bottom: auto; transform: translateY(-46%); width: calc(39vw - 90px); max-width: none; } html[data-theme=picture]:not(.mob) .hinfo .k { white-space: nowrap; letter-spacing: .22em; }   /* (the day's words down the left, beside the screen) */
 html[data-theme=picture] .th-picture .vday.soon .cs, html[data-theme=blank] .vday.soon .cs { text-transform: none; font-style: italic; font-weight: 400; }
 html[data-theme=picture] .leaf2 { border-color: #e9c46a; background: #0b0809; }
 html[data-theme=picture] .leaf2 i { background: #e9c46a; color: #0b0809; }
@@ -3549,16 +3549,19 @@ THEMEFX.picture = {
   NB: 22,   // (the slits round the drum: narrow, tall and well apart, as a zoetrope's are: John, 10 Nov 2026)
   g: function (c) {
     var mob = c.mob, f = mob ? 1 : Math.min(1, c.H / 900);
-    var sw = mob ? 600 : Math.min(470, c.W * .33) * f, sh = sw * .75, scx = mob ? 390 : c.W * .7, sy0 = mob ? 24 : 104 * f;   // (the screen)
-    var cx = mob ? 390 : scx, Rv = mob ? 560 : c.W * .42, ry = mob ? 30 : 24 * f;
-    var yT = sy0 + sh + (mob ? 64 : 58 * f), yS = mob ? 800 : c.H - 176 * f, yB = yS + (mob ? 68 : 60 * f);
+    // (laid out to fill the screen, every format (John, 10 Nov 2026: "it can make better use of the screen in all formats"): a computer or
+    // TV, the day's words down the left, the cinema screen and the zoetrope below it filling the right; a phone, both full width)
+    var colL = c.W * .39, colR = c.W - 56 * f, cw = colR - colL;
+    var yB = mob ? 846 : c.H - 132 * f, yS = yB - (mob ? 66 : 54 * f), yT = yS - (mob ? 214 : Math.max(150, c.H * .2));   // (clear of the caption under it)
+    var sy0 = mob ? 16 : 96 * f, sh = yT - (mob ? 50 : 48 * f) - sy0, sw = Math.min(mob ? 740 : cw, sh * 4 / 3); sh = sw * .75;
+    var scx = mob ? 390 : (colL + colR) / 2, cx = scx, Rv = mob ? 560 : cw * .62, ry = mob ? 30 : 24 * f;
     var zh = yS - yT, ps = zh * .8 / 255;
     return { sw: sw, sh: sh, scx: scx, sy0: sy0, cx: cx, Rv: Rv, ry: ry, yT: yT, yS: yS, yB: yB, ps: ps, pw: 170 * ps, pcy: (yT + yS) / 2 + ry, f: f, mob: mob };
   },
   decor: function (c) {
     var g = this.g(c), cx = g.cx, R = g.Rv, ry = g.ry, F = function (n) { return (+n).toFixed(1); };
     var arc = function (sw) { return 'A' + F(R) + ' ' + F(ry) + ' 0 0 ' + sw + ' '; };   // (sw 0: left to right by the front; 1: back again)
-    var mk = g.mob ? '' : '-webkit-mask-image:linear-gradient(90deg,transparent ' + F(c.W * .32) + 'px,#000 ' + F(c.W * .5) + 'px);mask-image:linear-gradient(90deg,transparent ' + F(c.W * .32) + 'px,#000 ' + F(c.W * .5) + 'px);';
+    var mk = g.mob ? '' : '-webkit-mask-image:linear-gradient(90deg,transparent ' + F(c.W * .36) + 'px,#000 ' + F(c.W * .47) + 'px);mask-image:linear-gradient(90deg,transparent ' + F(c.W * .36) + 'px,#000 ' + F(c.W * .47) + 'px);';
     var h = '<div class="zamb" id="zamb"></div><div class="zvig"></div><div class="zgrain"></div>';
     // (the cinema: its screen, lit by the Lumières' L'Arrivée d'un train en gare de La Ciotat (1896, public domain); its curtains)
     var sl = g.scx - g.sw / 2, st0 = g.sy0;
