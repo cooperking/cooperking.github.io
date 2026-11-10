@@ -579,7 +579,7 @@ html.tv .th-lane .vday:focus { outline: 0 !important; box-shadow: 0 0 0 4px #1a1
 .llane .ldeck { fill: #e2c477; } .llane .st { fill: #fbefc4; opacity: .55; filter: blur(6px); }   /* (its clouds) */
 /* the view through the zoetrope's slits (John, 10 Nov 2026) */
 .zback { position: absolute; z-index: 1; pointer-events: none; background: #0d0b0a; }   /* (the drum's inside, unlit: John, 10 Nov 2026: "I don't need the lighting on the zoetrope") */
-.zpaper { position: absolute; z-index: 6; opacity: 1; pointer-events: none; will-change: opacity; }
+.zpaper { position: absolute; z-index: 6; opacity: 1; overflow: hidden; pointer-events: none; will-change: opacity; }
 .zhs { position: absolute; background: url("/grifflix/img/muybridge-horse.webp") 0 0 no-repeat; filter: brightness(0); }   /* (black on the strip's paper) */
 .zstrip { position: absolute; left: 0; right: 0; background: #e6dfcc; }   /* (the strip's paper, plain) */
 .zfrontw { position: absolute; inset: 0; z-index: 10; pointer-events: none; }
@@ -3592,7 +3592,8 @@ THEMEFX.picture = {
     var g = this.g(c), cx = g.cx, R = g.Rv, ry = g.ry, F = function (n) { return (+n).toFixed(1); };
     var arc = function (sw) { return 'A' + F(R) + ' ' + F(ry) + ' 0 0 ' + sw + ' '; };   // (sw 0: left to right by the front; 1: back again)
     // (its left edge fading into the room, beside the day's words; measured from each layer's own left, so the strip runs the whole drum)
-    var mkAt = function (x0) { if (g.mob) return ''; var a1 = F(c.W * .36 - x0), a2 = F(c.W * .44 - x0); return '-webkit-mask-image:linear-gradient(90deg,transparent ' + a1 + 'px,#000 ' + a2 + 'px);mask-image:linear-gradient(90deg,transparent ' + a1 + 'px,#000 ' + a2 + 'px);'; }, mk = mkAt(cx - R);
+    var mkAt = function (x0) { return '';   // (no fade at its edge: the slits solid all along: John, 10 Nov 2026)
+      if (g.mob) return ''; var a1 = F(c.W * .36 - x0), a2 = F(c.W * .44 - x0); return '-webkit-mask-image:linear-gradient(90deg,transparent ' + a1 + 'px,#000 ' + a2 + 'px);mask-image:linear-gradient(90deg,transparent ' + a1 + 'px,#000 ' + a2 + 'px);'; }, mk = mkAt(cx - R);
     var h = '<div class="zamb" id="zamb"></div><div class="zvig"></div><div class="zgrain"></div>';
     // (the cinema: its screen, lit by the Lumières' L'Arrivée d'un train en gare de La Ciotat (1896, public domain); its curtains)
     var sl = g.scx - g.sw / 2, st0 = g.sy0;
@@ -3677,7 +3678,7 @@ THEMEFX.picture = {
     if (me._la != null) { var v = Math.abs(ad - me._la) / Math.max(8, t - me._lt) * 1000, tg = Math.min(1, v / .5); me._sp += (tg - me._sp) * (tg > me._sp ? .45 : .09); }
     me._la = ad; me._lt = t; me._last = a;
     var sp = me._sp || 0;
-    if (sp > .004 && !me._raf) me._raf = requestAnimationFrame(function () { me._raf = 0; if (me.all && $('#zpaper')) me.draw(me._last); });
+    if (sp > .004 && !me._zraf) me._zraf = requestAnimationFrame(function () { me._zraf = 0; if (me.all && $('#zpaper')) me.draw(me._last); });   // (its own frame, not the move's: the slits close up again after a spin)
     // (the month's films going by behind the horse, the other way to the slits; the day's own at the middle)
     var lo = g.mob ? -80 : c.W * .36, hi = g.mob ? 860 : c.W + 60;
     me.all.forEach(function (el, j) {
