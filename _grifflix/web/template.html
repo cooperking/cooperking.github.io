@@ -1653,6 +1653,13 @@ html .th-picture .zfrontw svg path[fill], html.gxown .th-picture .zfrontw svg pa
 html .th-picture .zfrontw .zrim, html.gxown .th-picture .zfrontw .zrim { opacity: 1 !important; stroke: rgba(255, 244, 226, .2); stroke-width: 1.1; }
 .th-picture .ztop .zinb { fill: #0a090b; } .th-picture .ztop .zbrim { stroke: rgba(255, 244, 226, .3); }
 .th-picture .zbs, .th-picture .zbsl { background: #020203; }
+/* (inside the drum all the horses' paper, softly shaded round its curve; no posters on the drum: John, 10 Nov 2026: "can the whole of the
+   inside of the drum be the same colour as the background for the horses. Move the posters off the zoetrope drum completely") */
+.th-picture .zback, .th-picture .zpaper { background: linear-gradient(90deg, #a99d88 0%, #ddd1bb 14%, #efe4ce 32%, #f3e8d2 50%, #efe4ce 68%, #ddd1bb 86%, #a99d88 100%) !important; }
+.th-picture .zpaper::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(40, 30, 20, .28), transparent 22%, transparent 80%, rgba(40, 30, 20, .22)); }
+.th-picture .zstripc { display: none; }
+.th-picture .ztop .zinb { fill: #e6dac4 !important; }
+.th-picture .zw { background-image: none !important; } .th-picture .zw::before { display: none !important; }
 </style>
 <script>/* a computer's screen (wide, with a mouse) or the TV: the whole calendar in the window, as on the songs' site */
 (function () { if (/GRIFFLIXTV\//.test(navigator.userAgent) || /[?&]tv=1(&|$)/.test(location.search)) { var vp = document.querySelector('meta[name=viewport]'); if (vp) vp.setAttribute('content', 'width=1280'); } })();   /* a TV: laid out 1280 wide and shrunk to the screen, as the songs' page is (a Fire Stick's browser is 960 wide: everything came out a third too big) */
@@ -3731,7 +3738,7 @@ THEMEFX.picture = {
     h += '</div>';
     // (the open top: the inside of the far side, seen a little from above, its rim curving round behind; its slits drawn as it turns)
     var rt = g.yT - 18 * g.f;
-    h += '<svg class="ztop" width="' + c.W + '" height="' + c.H + '"><defs><linearGradient id="zin2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity=".2"/><stop offset=".5" stop-color="#000" stop-opacity=".55"/><stop offset="1" stop-color="#000" stop-opacity=".9"/></linearGradient></defs>' +
+    h += '<svg class="ztop" width="' + c.W + '" height="' + c.H + '"><defs><linearGradient id="zin2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity=".05"/><stop offset=".6" stop-color="#000" stop-opacity=".25"/><stop offset="1" stop-color="#000" stop-opacity=".45"/></linearGradient></defs>' +
       '<ellipse class="zinb" cx="' + F(cx) + '" cy="' + F(rt) + '" rx="' + F(R) + '" ry="' + F(ry) + '"/><ellipse cx="' + F(cx) + '" cy="' + F(rt) + '" rx="' + F(R) + '" ry="' + F(ry) + '" fill="url(#zin2)"/>' +
       '<path class="zbrim" d="M' + F(cx - R) + ',' + F(rt) + ' A' + F(R) + ' ' + F(ry) + ' 0 0 1 ' + F(cx + R) + ',' + F(rt) + '"/></svg>';
     for (var kb = 0, NBb = this.nb(c); kb < NBb; kb++) h += '<i class="zbs" style="height:' + F(ry * .9) + 'px"></i>';
