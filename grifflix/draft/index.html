@@ -2705,6 +2705,7 @@ function themeFit(m) {   // a phone: the theme drawn for an upright screen 780 w
     e.preventDefault();
     var t = Date.now(), d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
     if (e.deltaMode === 1) d *= 40;   // (a mouse's wheel, in lines)
+    if (S.theme.fx && S.theme.fx.push && e.deltaMode === 0 && Math.abs(e.deltaX) > Math.abs(e.deltaY)) { S.theme.fx.push(-e.deltaX); return; }   // (the zoetrope: across turns the drum by hand; up and down still the days)
     if (t - wquiet > 220) wacc = 0;   // (a new gesture)
     wquiet = t; wacc += d;
     var need = Math.abs(d) >= 90 ? 1 : 70;   // (a mouse's notch: a day each; a trackpad: a day each 70px of its scroll)
@@ -3724,7 +3725,7 @@ THEMEFX.picture = {
     h += '<div class="zback" style="' + mk + 'left:' + F(cx - R) + 'px;top:' + F(g.yT) + 'px;width:' + F(2 * R) + 'px;height:' + F(g.yS - g.yT + 2 * ry) + 'px"></div>';
     // (Muybridge's horse (The Horse in Motion, 1878), big, in front of the films going by)
     // (the strip: black figures on its paper, a frame apart, as Muybridge's horse on a zoetrope's strip; smaller: John, 10 Nov 2026)
-    var hh = (g.yS - g.yT) * .46, hw = hh * 150 / 91, NH = Math.ceil(2 * R / (hw * 1.25)) | 1;
+    var hh = (g.yS - g.yT) * .64, hw = hh * 150 / 91, NH = Math.ceil(2 * R / (hw * 1.25)) | 1;
     h += '<div class="zpaper" id="zpaper" style="' + mk + 'left:' + F(cx - R) + 'px;top:' + F(g.yT) + 'px;width:' + F(2 * R) + 'px;height:' + F(g.yS - g.yT + 2 * ry) + 'px">';
     // (the horses on the far wall's strip, one to each slit, round its curve: smaller towards the sides, the middle furthest back and
     // highest (John, 10 Nov 2026: "Horses are working as a 2 D strip ... rather than appearing on the 3D drum"); they stay where they
@@ -3840,6 +3841,29 @@ THEMEFX.picture = {
     if (me._raf) { cancelAnimationFrame(me._raf); me._raf = 0; } me._at = at;
     me.gallop(dir, 4);
   },
+  // (pushed and pulled by hand, two fingers across a trackpad: the drum turns under them and runs on when let go, slowing; fast
+  // enough, the horses gallop, backwards if it's turned backwards: John, 10 Nov 2026: "I should be able to push and pull the zoetrope
+  // with my track pad")
+  push: function (px) {
+    var me = this; if (!me.c || me._at == null || CALM) return; me._gtok = null;
+    var g = me.g(me.c), per = g.Rv * 2 * Math.PI / me.nb(), t = performance.now(), d = px / per;
+    me._xs = (me._xs || 0) + d;
+    var P = me._push || (me._push = { v: 0, t: t, last: t }), dt = Math.max(8, t - P.t) / 1000;
+    P.v = P.v * .5 + (d / dt) * .5; P.t = t; P.last = t; me._gal = true; me._w = Math.abs(P.v);
+    me.draw(me._at);
+    if (P.raf) return;
+    (function f(tt) {
+      var Q = me._push; if (!Q || !$('#zstagef')) { me._gal = false; me._w = 0; if (Q) Q.raf = 0; return; }
+      var dt2 = Math.min(.05, (tt - (Q.ft || tt)) / 1000); Q.ft = tt;
+      if (tt - Q.last > 70) { me._xs += Q.v * dt2; Q.v *= Math.exp(-dt2 * 1.6); }   // (let go: it runs on, slowing)
+      me._w = Math.abs(Q.v);
+      if (tt - Q.last > 70 && Math.abs(Q.v) < .8) {   // (slowing to a stop, it settles with a slit square in front)
+        Q.v = 0; var tgt = Math.round(me._xs); me._xs += (tgt - me._xs) * .18;
+        if (Math.abs(tgt - me._xs) < .004) { me._xs = tgt; me._push = null; me._gal = false; me._w = 0; me.draw(me._at); return; }
+      }
+      me.draw(me._at); Q.raf = requestAnimationFrame(f);
+    })(t);
+  },
   gallop: function (dir, turns) {
     // (a real spin: it speeds up, runs, slows to a stop on the day, never in step with the slits, so the drum is seen to whirl;
     // fast, its wall blurs to a veil and the horses inside hold their places and gallop, as the eye sees a zoetrope: John, 10 Nov
@@ -3847,13 +3871,13 @@ THEMEFX.picture = {
     var me = this, NB = me.nb(), S = NB * turns + .37, T = 2600, t0 = performance.now(), tok = me._gtok = {}, A = .22, B = .62, area = A / 2 + (B - A) + (1 - B) / 2;
     if (CALM) { me._xs = 0; me._gal = false; me._w = 0; me.draw(me._at); return; }
     var pos = function (u) { var x = u <= A ? u * u / (2 * A) : u <= B ? A / 2 + (u - A) : A / 2 + (B - A) + (u - B) - (u - B) * (u - B) / (2 * (1 - B)); return x / area; };
-    me._gal = true; me._xs = -dir * S; me._w = 0;
+    var x0 = me._xs || 0; me._push = null; me._gal = true; me._xs = x0 - dir * S; me._w = 0;
     (function f(t) {
-      if (tok !== me._gtok || !$('#zstagef') || me._at == null) { if (tok === me._gtok) { me._gal = false; me._xs = 0; me._w = 0; } return; }
+      if (tok !== me._gtok || !$('#zstagef') || me._at == null) { if (tok === me._gtok) { me._gal = false; me._xs = x0; me._w = 0; } return; }
       var u = Math.min(1, (t - t0) / T), v = u <= A ? u / A : u <= B ? 1 : (1 - u) / (1 - B);
       me._w = S * v / (area * T / 1000);   // (slits a second)
-      if (u >= 1) { me._gal = false; me._xs = 0; me._w = 0; me.draw(me._at); return; }
-      me._xs = -dir * S * (1 - pos(u)); me.draw(me._at); requestAnimationFrame(f);
+      if (u >= 1) { me._gal = false; me._xs = x0; me._w = 0; me.draw(me._at); return; }
+      me._xs = x0 - dir * S * (1 - pos(u)); me.draw(me._at); requestAnimationFrame(f);
     })(t0);
   },
   draw: function (a) {
