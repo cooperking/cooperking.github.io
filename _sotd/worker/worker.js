@@ -1406,6 +1406,7 @@ async function gPicGet(request, url, env, ctx) {   // /gp/<id>/<Kind>-<w>.jpg: f
   if (hit) return hit;
   const key = 'grifflix/p/' + m[1] + '/' + m[2] + '-' + m[3] + '.jpg';
   let o = await env.MEDIA.get(key).catch(() => null), body;
+  if (!o && url.searchParams.get('m') !== '1') return new Response('Not here.', { status: 404, headers: { 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'public, max-age=300' } });   // (a visitor, not signed in: the site's copies only, never the Mac: John, 10 Nov 2026)
   if (!o) {   // not copied yet: from the Mac now, and kept from then on (if the Mac answers)
     const r = await fetch(G_API + '/pimg/' + m[1] + '/' + m[2] + '.jpg?maxWidth=' + m[3] + '&quality=82', { headers: { 'User-Agent': 'Grifflix Worker' } }).catch(() => null);
     if (!r || !r.ok || !/image\/jpeg/.test(r.headers.get('Content-Type') || '')) return Response.redirect(G_API + '/pimg/' + m[1] + '/' + m[2] + '.jpg?maxWidth=' + m[3], 302);
