@@ -3680,9 +3680,9 @@ THEMEFX.picture = {
     // (laid out to fill the screen, every format (John, 10 Nov 2026: "it can make better use of the screen in all formats"): a computer or
     // TV, the day's words down the left, the cinema screen and the zoetrope below it filling the right; a phone, both full width)
     var colL = c.W * .39, colR = c.W - 56 * f, cw = colR - colL;
-    var yB = mob ? 846 : c.H - 160 * f, yS = yB - (mob ? 60 : 48 * f), yT = yS - (mob ? 190 : Math.max(130, c.H * .17));   // (clear of the caption under it)
+    var yB = mob ? 846 : c.H - 160 * f, yS = yB - (mob ? 60 : 48 * f), yT = yS - (mob ? 215 : Math.max(150, c.H * .2));   // (bigger: a whole horse seen in a gap: John, 10 Nov 2026)   // (clear of the caption under it)
     var sy0 = mob ? 16 : 96 * f, sh = yT - (mob ? 50 : 48 * f) - sy0, sw = Math.min(mob ? 740 : cw, sh * 4 / 3); sh = sw * .75;
-    var scx = mob ? 390 : (colL + colR) / 2, cx = scx, Rv = mob ? 360 : Math.min(cw * .46, sw * .8), ry = mob ? 16 : 14 * f;   // (nearly level: only the top of the far side seen: John, 10 Nov 2026)   // (smaller: all of it in view, curving away at both sides)
+    var scx = mob ? 390 : (colL + colR) / 2, cx = scx, Rv = mob ? 378 : Math.min(cw * .5, sw * .92), ry = mob ? 16 : 14 * f;   // (nearly level: only the top of the far side seen: John, 10 Nov 2026)   // (smaller: all of it in view, curving away at both sides)
     var zh = yS - yT, ps = zh * .8 / 255;
     return { sw: sw, sh: sh, scx: scx, sy0: sy0, cx: cx, Rv: Rv, ry: ry, yT: yT, yS: yS, yB: yB, ps: ps, pw: 170 * ps, pcy: (yT + yS) / 2 + ry, f: f, mob: mob };
   },
@@ -3706,7 +3706,7 @@ THEMEFX.picture = {
     h += '<div class="zback" style="' + mk + 'left:' + F(cx - R) + 'px;top:' + F(g.yT) + 'px;width:' + F(2 * R) + 'px;height:' + F(g.yS - g.yT + 2 * ry) + 'px"></div>';
     // (Muybridge's horse (The Horse in Motion, 1878), big, in front of the films going by)
     // (the strip: black figures on its paper, a frame apart, as Muybridge's horse on a zoetrope's strip; smaller: John, 10 Nov 2026)
-    var hh = (g.yS - g.yT) * .5, hw = hh * 150 / 91, NH = Math.ceil(2 * R / (hw * 1.25)) | 1;
+    var hh = (g.yS - g.yT) * .3, hw = hh * 150 / 91, NH = Math.ceil(2 * R / (hw * 1.25)) | 1;
     h += '<div class="zpaper" id="zpaper" style="' + mk + 'left:' + F(cx - R) + 'px;top:' + F(g.yT) + 'px;width:' + F(2 * R) + 'px;height:' + F(g.yS - g.yT + 2 * ry) + 'px">';
     // (the horses on the far wall's strip, one to each slit, round its curve: smaller towards the sides, the middle furthest back and
     // highest (John, 10 Nov 2026: "Horses are working as a 2 D strip ... rather than appearing on the 3D drum"); they stay where they
@@ -3729,7 +3729,7 @@ THEMEFX.picture = {
     for (var kb = 0, NBb = this.nb(c); kb < NBb; kb++) h += '<i class="zbs" style="height:' + F(ry * .9) + 'px"></i>';
     // (the near wall: its slits, a rim above them, a band below with GRIFFLIX round it)
     h += '<div class="zfrontw" style="' + mkAt(0) + '">';
-    var NB = this.nb(c), PWd = R * 2 * Math.PI / NB * .7;
+    var NB = this.nb(c), PWd = R * 2 * Math.PI / NB * .58;
     for (var k = 0; k < NB; k++) h += '<i class="zw" style="width:' + F(PWd) + 'px;height:' + F(g.yS - g.yT) + 'px"></i>';
     h += '<svg class="zdrum" width="' + c.W + '" height="' + c.H + '"><defs><linearGradient id="zlac" x1="0" x2="1"><stop offset="0" stop-color="#121010"/><stop offset="1" stop-color="#121010"/></linearGradient></defs>' +
       '<path fill="url(#zlac)" d="M' + F(cx - R) + ',' + F(g.yT - 18 * g.f) + ' ' + arc(0) + F(cx + R) + ',' + F(g.yT - 18 * g.f) + ' L' + F(cx + R) + ',' + F(g.yT) + ' ' + arc(1) + F(cx - R) + ',' + F(g.yT) + ' Z"/>' +
@@ -3849,7 +3849,7 @@ THEMEFX.picture = {
           var n = Math.floor(k * 15 / NB) % 15; if (hz._n !== n) { hz._n = n; hz.style.backgroundPosition = (-n * Z.hw).toFixed(1) + 'px 0'; } }
         var bl = BL[k]; if (!bl) return; var tb = ang((k + .5) * D - rq), cb = -Math.cos(tb);
         if (cb < .03) { if (bl._v !== 0) { bl.style.visibility = 'hidden'; bl._v = 0; } return; } if (bl._v !== 1) { bl.style.visibility = ''; bl._v = 1; }
-        var bw = Math.max(1, R0 * D * .3 * cb), bot = Z.pc - Z.cv * cb + Z.hh * .9 * skf(cb);
+        var bw = Math.max(1, R0 * D * .42 * cb), bot = Z.pc - Z.cv * cb + Z.hh * .9 * skf(cb);
         bl.style.transform = 'translate(' + (R0 + R0 * Math.sin(tb) - bw / 2).toFixed(1) + 'px,0) scaleX(' + (bw / 4).toFixed(3) + ')'; bl.style.height = Math.max(0, bot).toFixed(1) + 'px';
       });
       me._rq = rq;
@@ -3866,7 +3866,7 @@ THEMEFX.picture = {
         var key = (el ? el.dataset.day || el.dataset.n : '') + '|' + pu; if (b._pu !== key) { b._pu = key; b.style.backgroundImage = pu && pu !== 'none' ? pu : 'none'; b.dataset.n = el && !(pu && pu !== 'none') ? (el.dataset.n || '') : ''; }
       }
       if (cs < .04) { if (b._v !== 0) { b.style.visibility = 'hidden'; b._v = 0; } return; } if (b._v !== 1) { b.style.visibility = ''; b._v = 1; }
-      var x0 = R * Math.sin(th - D * .35), x1 = R * Math.sin(th + D * .35);   // (the panels, and the wider slits between them to see through: John, 10 Nov 2026)
+      var x0 = R * Math.sin(th - D * .29), x1 = R * Math.sin(th + D * .29);   // (the panels, and the wider slits between them to see through: John, 10 Nov 2026)
       var pw0 = parseFloat(b.style.width) || 10;
       b.style.transform = 'translate(' + (g.cx + x0).toFixed(1) + 'px,' + (g.yT + g.ry * cs).toFixed(1) + 'px) scaleX(' + ((x1 - x0) / pw0).toFixed(3) + ')';
       b.style.setProperty('--dk', Math.min(.85, .9 * (1 - cs)).toFixed(2)); if (b._wo !== wo) { b._wo = wo; b.style.opacity = wo; }
@@ -3876,7 +3876,7 @@ THEMEFX.picture = {
     BS.forEach(function (b, i) {
       var th = (((i + .5) * D - (me._rq != null ? me._rq : ad * st)) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI, cs = Math.cos(th);
       if (cs > -.03) { if (b._v !== 0) { b.style.visibility = 'hidden'; b._v = 0; } return; } if (b._v !== 1) { b.style.visibility = ''; b._v = 1; }
-      var w = Math.max(1, R * D * .3 * -cs);
+      var w = Math.max(1, R * D * .42 * -cs);
       b.style.transform = 'translate(' + (g.cx + R * Math.sin(th) - w / 2).toFixed(1) + 'px,' + (rt + g.ry * cs + 2).toFixed(1) + 'px) scaleX(' + (w / 4).toFixed(3) + ')';
     });
     // (the logo round the band below the slits, turning with them, centred at rest)
