@@ -502,13 +502,27 @@ def make_handler(g):
             self.end_headers()
 
         def body(self):
-            n = int(self.headers.get('Content-Length') or 0)
-            if n > 1_000_000:
-                return {}
+            return getattr(self, '_b', None) or {}
+
+        def take_body(self, method):
+            """A POST's body read in full as the request arrives, before anything can refuse it: one refused unread left its
+            body on the connection, and the next request on it came out garbled (John, 10 Nov 2026: "yes, fix that")."""
+            self._b = {}
+            if method != 'POST':
+                return
             try:
-                return json.loads(self.rfile.read(n) or b'{}')
+                n = int(self.headers.get('Content-Length') or 0)
             except ValueError:
-                return {}
+                n = -1
+            if n < 0 or n > 1_000_000:   # (too big, or no length given: not read, and the connection closed after the answer)
+                self.close_connection = True
+                return
+            raw = self.rfile.read(n) if n else b''
+            try:
+                v = json.loads(raw or b'{}')
+                self._b = v if isinstance(v, dict) else {}
+            except ValueError:
+                self._b = {}
 
         def who(self):
             tok = (self.headers.get('Authorization') or '').replace('Bearer ', '').strip()
@@ -524,6 +538,7 @@ def make_handler(g):
             self.route('POST')
 
         def route(self, method):
+            self.take_body(method)
             u = urllib.parse.urlparse(self.path)
             q = dict(urllib.parse.parse_qsl(u.query))
             try:
@@ -581,7 +596,7 @@ def make_handler(g):
                 if u.path == '/local/calendar' and method == 'POST':   # motd-fill.py on this Mac: many Movie of the Day days at once (empty days only)
                     if not hmac.compare_digest(self.headers.get('X-Grifflix-Secret', ''), g.st['secret']):
                         return self.send_json(403, {'error': 'Not here.'})
-                    body = self.body()   # (read once: a second read waits for nothing)
+                    body = self.body()
                     days = {str(d): str(i) for d, i in (body.get('days') or {}).items() if re.match(r'^\d{4}-\d\d-\d\d$', str(d)) and re.match(r'^[0-9a-f]{32}$', str(i))}
                     rf, rt = str(body.get('replace_from') or ''), str(body.get('replace_to') or '')
                     with g.store.lock:
