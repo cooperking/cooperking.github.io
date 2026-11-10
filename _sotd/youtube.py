@@ -204,20 +204,30 @@ def lookup(s, tok):
     if s.get('listId'):
         e['listId'] = s['listId']   # his link was looked at already; don't look again
     q = clean_title(s['title']) + ' ' + (s.get('artists') or [s['artist']])[0]
-    j = ytapi.get('search', {'part': 'snippet', 'type': 'video', 'maxResults': 10, 'q': q, 'regionCode': 'GB'},
-                  tok, units=1, search=True, priority=bool(s.get('newest')))
-    if '_status' in j:
-        e['error'] = j['_status']; e['detail'] = j.get('_text', '')[:200]
-        return e
-    cands = []
-    for it in j.get('items', []):
-        vid = (it.get('id') or {}).get('videoId')
-        sn = it.get('snippet') or {}
-        if not vid or vid == s.get('listId'):
-            continue
-        c = {'id': vid, 'title': unescape(sn.get('title', '')), 'channel': sn.get('channelTitle', '')}
-        c['score'], c['why'], c['kind'] = score(s, c)
-        cands.append(c)
+    cands, seen = [], set()
+    # then, when none of the first search's passes, again with the album's name: an "Artist - Topic" upload of the
+    # recording is labelled with its album, and a better-known live or fan upload can push it out of the first ten
+    # (John, 10 Nov 2026: 'Must of Got Lost' on The J. Geils Band - Topic, "very easy to find", missed)
+    for qq in [q] + ([q + ' ' + s['album']] if s.get('album') and fold(s['album']) not in fold(q) else []):
+        if cands and cands[0]['score'] >= GOOD:
+            break
+        j = ytapi.get('search', {'part': 'snippet', 'type': 'video', 'maxResults': 10, 'q': qq, 'regionCode': 'GB'},
+                      tok, units=1, search=True, priority=bool(s.get('newest')))
+        if '_status' in j:
+            if cands:
+                break
+            e['error'] = j['_status']; e['detail'] = j.get('_text', '')[:200]
+            return e
+        for it in j.get('items', []):
+            vid = (it.get('id') or {}).get('videoId')
+            sn = it.get('snippet') or {}
+            if not vid or vid == s.get('listId') or vid in seen:
+                continue
+            seen.add(vid)
+            c = {'id': vid, 'title': unescape(sn.get('title', '')), 'channel': sn.get('channelTitle', '')}
+            c['score'], c['why'], c['kind'] = score(s, c)
+            cands.append(c)
+        cands.sort(key=lambda c: -c['score'])
     return choose(s, e, cands, tok)
 
 
