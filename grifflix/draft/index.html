@@ -3669,7 +3669,7 @@ THEMEFX.picture = {
   // below it - have both - but the posters scroll by behind the horse. Horse can be bigger behind the slits"): the slits sweep past as
   // the drum turns, Muybridge's horse galloping big behind them, flickering as each slit goes by, the month's films going by behind it)
   NB: 22,
-  nb: function (c) { return Math.max(12, (this.all && this.all.length) || (c && c.n) || 22); },   // (a panel for each day)
+  nb: function () { return this.NB; },   // (22 slits, as before: John, 10 Nov 2026: "You don't actually need as many slits as months - have the same amount as before")
   g: function (c) {
     var mob = c.mob, f = mob ? 1 : Math.min(1, c.H / 900);
     // (laid out to fill the screen, every format (John, 10 Nov 2026: "it can make better use of the screen in all formats"): a computer or
@@ -3747,7 +3747,7 @@ THEMEFX.picture = {
     // (the drum spun up as the theme opens, slowing to rest, the horse galloping in its mirrors: John, 10 Nov 2026: "the praxinoscope
     // needs to spin when it first starts")
     me._sp = CALM ? 0 : 1; me._la = null;
-    if (!CALM) { var s0 = me.nb ? me.nb(c) : 6, D = 3400, t0 = performance.now() + 500, tk = me._stok = {}; me._spin = s0;
+    if (!CALM) { var s0 = 3, D = 3400, t0 = performance.now() + 500, tk = me._stok = {}; me._spin = s0;
       (function f(t) { if (tk !== me._stok || !$('#zstagef')) { me._spin = 0; return; } var u = Math.max(0, Math.min(1, (t - t0) / D)); me._spin = s0 * Math.pow(1 - u, 3);
         if (me.all && me._at != null) me.draw(me._at); if (u < 1) requestAnimationFrame(f); else me._spin = 0; })(performance.now()); }
     if (window.ZFILMED || CALM) { st.classList.add('open', 'now'); return; }
@@ -3795,7 +3795,7 @@ THEMEFX.picture = {
     fxTween(this, at, 1100);
   },
   draw: function (a) {
-    var me = this, c = me.c, g = me.g(c), NB = me.nb(c), D = Math.PI * 2 / NB, st = D;   // (a day's turn: one panel round, the day's own at the front)
+    var me = this, c = me.c, g = me.g(c), NB = me.nb(c), D = Math.PI * 2 / NB, st = Math.PI * 2;   // (a day's turn: a whole spin, the slits flickering by, the horse galloping: John, 10 Nov 2026: "previously it did one full spin with a click")
     var ad = a + (me._spin || 0), t = performance.now();
     if (me._la != null) { var v = Math.abs(ad - me._la) / Math.max(8, t - me._lt) * 1000, tg = Math.min(1, v / .5); me._sp += (tg - me._sp) * (tg > me._sp ? .45 : .09); }
     me._la = ad; me._lt = t; me._last = a;
@@ -3827,8 +3827,10 @@ THEMEFX.picture = {
       var x0 = R * Math.sin(th - D * .41), x1 = R * Math.sin(th + D * .41);   // (the panels, the slits between them)
       var pw0 = parseFloat(b.style.width) || 10;
       b.style.transform = 'translate(' + (g.cx + x0).toFixed(1) + 'px,' + (g.yT + g.ry * cs).toFixed(1) + 'px) scaleX(' + ((x1 - x0) / pw0).toFixed(3) + ')';
-      var el = me.all && me.all[i], pu = el ? el.style.getPropertyValue('--p') : '';   // (its day's poster on the panel)
-      if (b._pu !== pu) { b._pu = pu; b.style.backgroundImage = pu && pu !== 'none' ? pu : 'none'; b.dataset.n = el && !(pu && pu !== 'none') ? (el.dataset.n || '') : ''; }
+      // (only the panels you can see carry posters: the day you're on at the front, the days before it to the left and after it to the
+      // right: John, 10 Nov 2026: "you only need as many posters as you can actually see")
+      var off = ((i + NB / 2) % NB + NB) % NB - NB / 2, el = me.all && me.all[Math.round(ad) + off], pu = el ? el.style.getPropertyValue('--p') : '';
+      var key = (el ? el.dataset.day || el.dataset.n : '') + '|' + pu; if (b._pu !== key) { b._pu = key; b.style.backgroundImage = pu && pu !== 'none' ? pu : 'none'; b.dataset.n = el && !(pu && pu !== 'none') ? (el.dataset.n || '') : ''; }
       b.style.setProperty('--dk', Math.min(.85, .9 * (1 - cs)).toFixed(2)); if (b._wo !== wo) { b._wo = wo; b.style.opacity = wo; }
     });
     // (the far side's slits, seen over the near rim, turning the other way across)
