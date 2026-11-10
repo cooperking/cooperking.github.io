@@ -1611,6 +1611,19 @@ html.gxown .zlead .zbg { background: var(--bg); }
 html.gxown { transition: --bg 1.8s ease, --gx-band 1.8s ease, --gx-c1 1.8s ease, --gx-c2 1.8s ease, background-color 1.8s ease; }   /* (the house lights, down and up) */
 html.gxown body { transition: background-color 1.8s ease; }
 html.gxown .hinfo .w, html.gxown .hinfo .w > span { color: var(--fg) !important; }
+.zproj, .zlit { position: absolute; pointer-events: none; opacity: 0; transition: opacity 2.4s ease 1s; }
+.zproj { z-index: 6; filter: blur(10px); mix-blend-mode: screen; }
+.zproj i { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255, 246, 226, .16), rgba(255, 244, 222, .07) 50%, rgba(255, 244, 222, .03)), repeating-linear-gradient(97deg, transparent 0 22px, rgba(255, 246, 226, .035) 22px 30px, transparent 30px 61px); }   /* (its dusty rays) */
+.zlit { z-index: 11; background: radial-gradient(60% 75% at var(--lx) 0%, rgba(255, 238, 205, .26), rgba(255, 238, 205, .08) 45%, transparent 75%); mix-blend-mode: screen; -webkit-mask-image: linear-gradient(transparent, #000 14%); mask-image: linear-gradient(transparent, #000 14%); }
+html.gxdim .zproj { opacity: 1; animation: zprojf 4.2s steps(1) infinite 3.4s; } html.gxdim .zlit { opacity: 1; animation: zlitf 4.2s steps(1) infinite 3.4s; }
+@keyframes zprojf { 0% { opacity: 1; } 12% { opacity: .86; } 14% { opacity: 1; } 47% { opacity: .92; } 49% { opacity: 1; } 78% { opacity: .88; } 80% { opacity: 1; } }
+@keyframes zlitf { 0% { opacity: 1; } 12% { opacity: .9; } 14% { opacity: 1; } 47% { opacity: .95; } 49% { opacity: 1; } 78% { opacity: .92; } 80% { opacity: 1; } }
+html.gxdim .zcin { box-shadow: 0 0 0 6px var(--gx-band), 0 0 90px 24px rgba(255, 240, 215, .16), 0 30px 140px 40px rgba(255, 236, 205, .10) !important; transition: box-shadow 2.4s ease 1s; }
+html.gxown .zcurt::before { content: ""; position: absolute; inset: 0; opacity: 0; transition: opacity 2.4s ease 1s; mix-blend-mode: screen; }
+html.gxown .zcurt.l::before { background: linear-gradient(90deg, transparent 20%, rgba(255, 238, 210, .22)); }
+html.gxown .zcurt.r::before { background: linear-gradient(270deg, transparent 20%, rgba(255, 238, 210, .22)); }
+html.gxdim .zcurt::before { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { html.gxdim .zproj, html.gxdim .zlit { animation: none; } }
 </style>
 <script>/* a computer's screen (wide, with a mouse) or the TV: the whole calendar in the window, as on the songs' site */
 (function () { if (/GRIFFLIXTV\//.test(navigator.userAgent) || /[?&]tv=1(&|$)/.test(location.search)) { var vp = document.querySelector('meta[name=viewport]'); if (vp) vp.setAttribute('content', 'width=1280'); } })();   /* a TV: laid out 1280 wide and shrunk to the screen, as the songs' page is (a Fire Stick's browser is 960 wide: everything came out a third too big) */
@@ -2178,7 +2191,7 @@ var GX = { bg: '#173a5e', ink: '243, 232, 210', title: '#f08a4b', label: '#f3e8d
 function monthTint(m) {   // the month's theme's one flat colour, and its ink: black on its light colours, white on the rest
   var t = themeFor(m), R = document.documentElement.style, own = t.key === 'picture' || t.key === 'blank',
     dim = own && GXDIM && t.key === 'picture' && VIEW() === 'themes' && (!S.view || S.view === 'home') && !!document.getElementById('zstagef') && !(document.getElementById('sheet') || {}).open;   // (a pop-up open over it: lights up)
-  document.documentElement.classList.toggle('gxown', own);
+  document.documentElement.classList.toggle('gxown', own); document.documentElement.classList.toggle('gxdim', dim);
   if (own) { t = Object.assign({}, t, { bg: dim ? GXDARK : GX.bg });
     ['title', 'label', 'band', 'strip', 'logo', 'c1', 'c2', 'tile', 'tilet', 'tiletop'].forEach(function (k) { R.setProperty('--gx-' + k, dim && /^(band|c1|c2)$/.test(k) ? GX.bg : GX[k]); }); }
   R.setProperty('--kink', own ? GX.ink : t.ink === '#000' ? '0, 0, 0' : '255, 255, 255');
@@ -3633,6 +3646,12 @@ THEMEFX.picture = {
     var h = '<div class="zamb" id="zamb"></div><div class="zvig"></div><div class="zgrain"></div>';
     // (the cinema: its screen, lit by the Lumières' L'Arrivée d'un train en gare de La Ciotat (1896, public domain); its curtains)
     var sl = g.scx - g.sw / 2, st0 = g.sy0;
+    // (lights down: the projector's beam from behind and above you to the screen, and the screen's light on the curtains and the drum: John,
+    // 10 Nov 2026: "There should be a sense of light projecting onto the screen and light on the zoetrope and curtains")
+    var px = g.scx + (g.mob ? 0 : g.sw * .08), py = -g.sh * (g.mob ? .9 : .6), bx0 = Math.min(px, sl) - 4, bw = Math.max(px, sl + g.sw) - bx0 + 8, bh = st0 + g.sh - py;
+    var P = function (x, y) { return F((x - bx0) / bw * 100) + '% ' + F((y - py) / bh * 100) + '%'; };
+    h += '<div class="zproj" style="left:' + F(bx0) + 'px;top:' + F(py) + 'px;width:' + F(bw) + 'px;height:' + F(bh) + 'px"><i style="clip-path:polygon(' + P(px - 3, py) + ',' + P(px + 3, py) + ',' + P(sl + g.sw, st0) + ',' + P(sl + g.sw, st0 + g.sh) + ',' + P(sl, st0 + g.sh) + ',' + P(sl, st0) + ')"></i></div>';
+    h += '<div class="zlit" style="left:' + F(cx - R) + 'px;top:' + F(g.yT - ry) + 'px;width:' + F(2 * R) + 'px;height:' + F(g.yB - g.yT + 2 * ry) + 'px;--lx:' + F((g.scx - (cx - R)) / (2 * R) * 100) + '%"></div>';
     h += '<div class="zbeam" style="left:' + F(g.scx - g.sw) + 'px;top:' + F(st0 - g.sh * .2) + 'px;width:' + F(g.sw * 2) + 'px;height:' + F(g.sh * 1.9) + 'px"></div>' +
       '<div class="zstagef" id="zstagef" style="left:' + F(sl) + 'px;top:' + F(st0) + 'px;width:' + F(g.sw) + 'px;height:' + F(g.sh) + 'px"><div class="zcin"><i class="zpost on" id="zpost"></i><i class="ztrain" id="ztrain"></i><i class="zflick"></i></div>' +
       '<i class="zcurt l"></i><i class="zcurt r"></i></div>';
